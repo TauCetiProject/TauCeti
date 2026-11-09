@@ -43,13 +43,13 @@ scheme-theoretic intersection: on a proper curve `C` over `k` with finite-dimens
 On such a curve, singular, reducible or nonreduced as it may be, twisting by `D` is additive:
 `(L(-D) · C) = (L · C) + (-D · C)` and `(L(D) · C) = (L · C) + (D · C)` for every line bundle `L`
 whose restriction to `C` has finite-dimensional `H⁰` and `H¹`, and
-`(D · C) = dim_k Γ(D ∩ C, 𝒪_{D ∩ C}) ≥ 0`. On a regular model, this computes the intersection
-numbers of a component `C` of the special fibre with the other components, which are effective
-Cartier divisors meeting `C` properly. Full additivity of `L ↦ (L · C)` on `Pic X` holds on every
-proper integral curve `C` over `k` with finite-dimensional `H⁰` and `H¹` of `𝒪_C`, possibly
-singular, such as an irreducible component of the special fibre with its reduced structure; on a
-proper integral curve whose codimension-one local rings are discrete valuation rings the
-finiteness of `H¹(C, 𝒪_C)` suffices.
+`(D · C) = dim_k Γ(D ∩ C, 𝒪_{D ∩ C}) ≥ 0`, with `(D · C) > 0` exactly when `C` meets `D`. On a
+regular model, this computes the intersection numbers of a component `C` of the special fibre with
+the other components, which are effective Cartier divisors meeting `C` properly. Full additivity
+of `L ↦ (L · C)` on `Pic X` holds on every proper integral curve `C` over `k` with
+finite-dimensional `H⁰` and `H¹` of `𝒪_C`, possibly singular, such as an irreducible component of
+the special fibre with its reduced structure; on a proper integral curve whose codimension-one
+local rings are discrete valuation rings the finiteness of `H¹(C, 𝒪_C)` suffices.
 
 Two effective Cartier divisors `D` and `E` on `X` which are proper curves over `k`, and which meet
 properly in the sense that each cuts out an effective Cartier divisor on the other, have
@@ -74,7 +74,8 @@ off-diagonal entries of the intersection matrix.
   effective Cartier divisor `D` meeting a proper curve `C` properly;
 * `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf`: `(D · C) = dim_k Γ(D ∩ C)` for
   an effective Cartier divisor `D` meeting a proper curve `C` properly, so that `(D · C) ≥ 0`
-  (`LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_nonneg`);
+  (`LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_nonneg`), with equality exactly
+  when `C` misses `D` (`LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_pos_iff`);
 * `LineBundleClass.intersectionNumber_mk_mul_mk_toInvertibleSheaf` and
   `LineBundleClass.intersectionNumber_mk_mul_inv_mk_toInvertibleSheaf`: additivity of twisting a
   line bundle by an effective Cartier divisor meeting a proper curve properly;
@@ -89,7 +90,8 @@ off-diagonal entries of the intersection matrix.
   `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_comm`: `(-D · E) = (-E · D)` and
   `(D · E) = (E · D)` for effective Cartier divisors `D` and `E` meeting properly;
 * `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_nonneg_of_ne`: distinct prime
-  divisors on a regular surface have nonnegative intersection number.
+  divisors on a regular surface have nonnegative intersection number, positive exactly when they
+  meet (`LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_pos_iff_of_ne`).
 
 ## References
 
@@ -195,6 +197,26 @@ theorem intersectionNumber_inv_mk_toInvertibleSheaf_nonneg {I : X.IdealSheafData
     0 ≤ intersectionNumber k ι (mk hI.toInvertibleSheaf)⁻¹ := by
   rw [intersectionNumber_inv_mk_toInvertibleSheaf k ι hI hI' default]
   exact Nat.cast_nonneg _
+
+/-- **An effective Cartier divisor meets a curve positively exactly when it meets it.** Let `D`
+be an effective Cartier divisor on `X` with ideal sheaf `I = 𝒪_X(-D)`, and let `C` be a proper curve
+over `k` with finite-dimensional `H⁰(C, 𝒪_C)` and `H¹(C, 𝒪_C)` meeting `D` properly. Then
+`(D · C) > 0` if and only if the image of `C` in `X` meets `D`. -/
+theorem intersectionNumber_inv_mk_toInvertibleSheaf_pos_iff {I : X.IdealSheafData}
+    (hI : I.IsEffectiveCartier) (hI' : (I.comap ι).IsEffectiveCartier) :
+    0 < intersectionNumber k ι (mk hI.toInvertibleSheaf)⁻¹ ↔
+      (Set.range ι ∩ I.support).Nonempty := by
+  have : IsFinite ((I.comap ι).subschemeι ≫ C ↘ Spec (.of k)) := hI'.isFinite_subschemeι_comp
+  rw [intersectionNumber_inv_mk_toInvertibleSheaf k ι hI hI' default, Nat.cast_pos,
+    Nat.pos_iff_ne_zero, Ne, Scheme.Hom.finrank_eq_zero_iff_notMem_range, not_not,
+    ← Set.image_preimage_eq_range_inter, Set.image_nonempty]
+  -- The preimage of `D` in `C` is the support of `D ∩ C`, which has a point exactly when its
+  -- structure morphism to `Spec k` hits the unique point.
+  have hsupp : ι ⁻¹' I.support = Set.range (I.comap ι).subschemeι := by
+    rw [Scheme.IdealSheafData.range_subschemeι, Scheme.IdealSheafData.support_comap,
+      TopologicalSpace.Closeds.coe_preimage]
+  rw [hsupp, Set.range_nonempty_iff_nonempty]
+  exact ⟨fun ⟨z, _⟩ ↦ ⟨z⟩, fun ⟨z⟩ ↦ ⟨z, Subsingleton.elim _ _⟩⟩
 
 variable {I : X.IdealSheafData} (L : InvertibleSheaf X)
   [FiniteDimensional k (Cohomology ((InvertibleSheaf.pullback ι).obj L).obj 0)]
@@ -410,6 +432,29 @@ theorem intersectionNumber_inv_mk_toInvertibleSheaf_nonneg_of_ne
         hX η'.2).toInvertibleSheaf)⁻¹ :=
   intersectionNumber_inv_mk_toInvertibleSheaf_nonneg k _ _
     (isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular hX hne)
+
+/-- **Distinct prime divisors on a regular surface meet positively exactly when they meet.** Under
+the hypotheses of `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_nonneg_of_ne`, the
+intersection number `(C' · C)` of the closures `C'` of `η'` and `C` of `η` is positive if and only
+if `C` and `C'` have a common point. -/
+theorem intersectionNumber_inv_mk_toInvertibleSheaf_pos_iff_of_ne
+    [TauCeti.AlgebraicGeometry.IsRegular X] (hX : ∀ x : X, coheight x ≤ 2)
+    {η η' : CodimensionOnePoint X} (hne : η ≠ η')
+    [(vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme.Over (Spec (.of k))]
+    [IsProper ((vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme ↘ Spec (.of k))]
+    [RelativeDimensionLE 1
+      ((vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme ↘ Spec (.of k))]
+    [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial
+      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj 0)]
+    [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial
+      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj 1)] :
+    0 < intersectionNumber k (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subschemeι
+      (mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
+        hX η'.2).toInvertibleSheaf)⁻¹ ↔ (closure {(η : X)} ∩ closure {(η' : X)}).Nonempty := by
+  rw [intersectionNumber_inv_mk_toInvertibleSheaf_pos_iff k _ _
+    (isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular hX hne),
+    Scheme.IdealSheafData.range_subschemeι]
+  simp
 
 end PrimeDivisor
 

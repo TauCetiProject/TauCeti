@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.SpecialFiber
 public import TauCeti.AlgebraicGeometry.SpecialFiber.Dimension
 public import TauCeti.LinearAlgebra.Matrix.NegSemidef
+public import TauCeti.Topology.Connected.Basic
 
 /-!
 # The intersection matrix of the special fibre of a regular model
@@ -35,10 +36,14 @@ the properties of [Stacks, Tag 0C5X](https://stacks.math.columbia.edu/tag/0C5X):
 * it is symmetric, `(Cⱼ · Cᵢ) = (Cᵢ · Cⱼ)`: for distinct components both are the length over `κ`
   of the scheme-theoretic intersection `Cᵢ ∩ Cⱼ` of two prime divisors meeting properly, and on the
   diagonal there is nothing to prove;
-* its off-diagonal entries are nonnegative.
+* its off-diagonal entries are nonnegative, and an off-diagonal entry is positive exactly when the
+  two components meet.
 
 Since the multiplicities are positive, the intersection form `x ↦ xᵀ A x` is therefore negative
-semidefinite over every linearly ordered field.
+semidefinite over every linearly ordered field. Since the special fibre is the union of its
+finitely many components, it is connected exactly when the graph on the components with an edge
+where `aᵢⱼ > 0` is connected; this is the connectedness condition on the intersection matrix of a
+numerical type ([Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z)).
 
 ## Main declarations
 
@@ -50,6 +55,10 @@ semidefinite over every linearly ordered field.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_isSymm`: `A` is symmetric.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_nonneg_of_ne`: the off-diagonal
   entries of `A` are nonnegative.
+* `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_pos_iff`: an off-diagonal entry
+  of `A` is positive exactly when the two components meet.
+* `AlgebraicGeometry.Scheme.Hom.isPreconnected_preimage_closedPoint_iff_reflTransGen`: the special
+  fibre is connected exactly when the graph of positive off-diagonal entries of `A` is connected.
 * `AlgebraicGeometry.Scheme.Hom.dotProduct_mulVec_specialFiberIntersectionMatrix_nonpos`: the
   intersection form is negative semidefinite.
 
@@ -210,6 +219,47 @@ theorem specialFiberIntersectionMatrix_nonneg_of_ne {i j} (hij : i ≠ j) :
   obtain ⟨_, _, _, _⟩ := toBase.component_hypotheses hX h₀ h₁ hi
   exact LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_nonneg_of_ne _ hX
     fun h ↦ hij (Subtype.ext h)
+
+/-- **Distinct components meet exactly when their intersection number is positive.** Under the
+hypotheses of `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_isSymm`, for distinct
+components `Cᵢ` and `Cⱼ` of the special fibre, `(Cⱼ · Cᵢ) > 0` if and only if `Cᵢ ∩ Cⱼ` is
+nonempty: the intersection number is the dimension over the residue field of the ring of
+functions on the finite scheme `Cᵢ ∩ Cⱼ`. -/
+theorem specialFiberIntersectionMatrix_pos_iff {i j} (hij : i ≠ j) :
+    0 < toBase.specialFiberIntersectionMatrix hX hη i j ↔
+      (closure {((i : CodimensionOnePoint X) : X)} ∩
+        closure {((j : CodimensionOnePoint X) : X)}).Nonempty := by
+  have hi : toBase (i : CodimensionOnePoint X) = closedPoint R := (Set.Finite.mem_toFinset _).mp i.2
+  let := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hi)
+  obtain ⟨_, _, _, _⟩ := toBase.component_hypotheses hX h₀ h₁ hi
+  exact LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_pos_iff_of_ne _ hX
+    fun h ↦ hij (Subtype.ext h)
+
+/-- **The special fibre is connected exactly when its intersection graph is.** Under the
+hypotheses of `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_isSymm`, the special
+fibre is connected if and only if any two of its components `Cᵢ` and `Cⱼ` are joined by a chain of
+components in which consecutive components are distinct and have positive intersection number,
+that is, the graph on the components with an edge where `(Cⱼ · Cᵢ) > 0` is connected. -/
+theorem isPreconnected_preimage_closedPoint_iff_reflTransGen :
+    _root_.IsPreconnected (toBase ⁻¹' {closedPoint R}) ↔ ∀ i j, Relation.ReflTransGen
+      (fun i j ↦ i ≠ j ∧ 0 < toBase.specialFiberIntersectionMatrix hX hη i j) i j := by
+  -- The special fibre is the union of the finitely many irreducible closed sets `Cᵢ`, and
+  -- distinct components meet exactly when their intersection number is positive.
+  have hunion : ⋃ k : (toBase.finite_setOf_base_eq_closedPoint
+      (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset,
+      closure {((k : CodimensionOnePoint X) : X)} = toBase ⁻¹' {closedPoint R} := by
+    rw [← toBase.biUnion_closure_eq_preimage_closedPoint hη, Set.iUnion_subtype]
+    simp
+  rw [← hunion]
+  refine ⟨fun hconn i j ↦ Relation.reflTransGen_closed (fun a b hab ↦ ?_) _ _
+    (hconn.transGen_of_iUnion_of_isClosed (locallyFinite_of_finite _) (fun _ ↦ isClosed_closure)
+      ⟨_, subset_closure rfl⟩ ⟨_, subset_closure rfl⟩).to_reflTransGen,
+    fun h ↦ IsPreconnected.iUnion_of_reflTransGen (fun _ ↦ isPreconnected_singleton.closure)
+      fun i j ↦ Relation.ReflTransGen.mono (fun a b hab ↦ ?_) _ _ (h i j)⟩
+  · rcases eq_or_ne a b with rfl | hne
+    · rfl
+    · exact .single ⟨hne, (toBase.specialFiberIntersectionMatrix_pos_iff hX hη h₀ h₁ hne).mpr hab⟩
+  · exact (toBase.specialFiberIntersectionMatrix_pos_iff hX hη h₀ h₁ hab.1).mp hab.2
 
 /-- **The intersection form of the special fibre is negative semidefinite.** Under the hypotheses
 of `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_mulVec_specialFiberMultiplicity`,
