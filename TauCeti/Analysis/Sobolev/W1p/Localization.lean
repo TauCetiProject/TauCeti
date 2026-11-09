@@ -213,9 +213,9 @@ theorem W1p.localizeL_restrictL_mem_w1p0Submodule {V : Opens E}
   let Φ : TestFunction V ℝ ⊤ := ⟨fun x => ψ x • (φ : E → ℝ) x, hψ.smul φ.contDiff,
     HasCompactSupport.smul_left (f := ψ) φ.hasCompactSupport, fun x hx =>
       hKV ⟨tsupport_smul_subset_right _ _ hx, tsupport_smul_subset_left _ _ hx⟩⟩
+  have hΦ_coe : (Φ : E → ℝ) = fun x => ψ x • (φ : E → ℝ) x := TestFunction.coe_mk
   suffices hTφ : T (W1p.ofTestFunctionₗ μ Ω p φ) = W1p.ofTestFunctionₗ μ V p Φ from
-    (show T (W1p.ofTestFunctionₗ μ Ω p φ) ∈ w1p0Submodule μ V p from
-      hTφ ▸ W1p.ofTestFunctionₗ_mem_w1p0Submodule Φ)
+    Set.mem_preimage.2 (hTφ ▸ W1p.ofTestFunctionₗ_mem_w1p0Submodule Φ)
   refine W1p.ext_value (Lp.ext ?_)
   have hrestrict := (ae_restrict_iff' (Ω ⊓ V).isOpen.measurableSet).1
     (W1p.value_restrictL_ae (p := p) (inf_le_left : Ω ⊓ V ≤ Ω)
@@ -228,11 +228,11 @@ theorem W1p.localizeL_restrictL_mem_w1p0Submodule {V : Opens E}
     W1p.value_ofTestFunctionₗ_ae (mu := μ) (p := p) Φ] with x hx hr hf hΦ
   rw [ContinuousLinearMap.comp_apply, hx, hΦ]
   by_cases hxU : x ∈ ((Ω ⊓ V : Opens E) : Set E)
-  · rw [indicator_of_mem hxU, hr hxU, W1p.value_ofTestFunctionₗ, hf hxU.1]
-    rfl
+  · rw [indicator_of_mem hxU, hr hxU, W1p.value_ofTestFunctionₗ, hf hxU.1, hΦ_coe]
   · rw [indicator_of_notMem hxU]
     refine (image_eq_zero_of_notMem_tsupport fun hx' => hxU ⟨?_, ?_⟩).symm
-    · exact φ.tsupport_subset (tsupport_smul_subset_right _ _ hx')
+    · rw [hΦ_coe] at hx'
+      exact φ.tsupport_subset (tsupport_smul_subset_right _ _ hx')
     · exact Φ.tsupport_subset hx'
 
 /-- **Zero boundary values localize.** Let `u ∈ W^{1,p}_0(Ω)` vanish almost everywhere
