@@ -88,21 +88,24 @@ theorem hypergeometricWeight_of_not_le {N K n k : ℕ} (hkn : ¬ k ≤ n) :
     hypergeometricWeight N K n k = 0 := by
   simp [hypergeometricWeight, hkn]
 
+/-- A hypergeometric weight is nonzero exactly on its classical support. -/
+@[simp]
+theorem hypergeometricWeight_ne_zero_iff (N K n k : ℕ) :
+    hypergeometricWeight N K n k ≠ 0 ↔
+      k ≤ K ∧ k ≤ n ∧ n - k ≤ N - K := by
+  rw [hypergeometricWeight]
+  by_cases hkn : k ≤ n
+  · simp [hkn, Nat.choose_ne_zero_iff]
+  · simp [hkn]
+
 /-- When the sample size exceeds the population size and `K ≤ N`, every hypergeometric weight
 vanishes, because the numerator of the defining ratio is zero. -/
+@[simp]
 theorem hypergeometricWeight_eq_zero_of_lt {N K n k : ℕ} (hK : K ≤ N) (hn : N < n) :
     hypergeometricWeight N K n k = 0 := by
-  rw [hypergeometricWeight]
-  split_ifs
-  · have h : (K.choose k : ℝ≥0∞) * ((N - K).choose (n - k) : ℝ≥0∞) = 0 := by
-      by_cases hkK : k ≤ K
-      · rw [Nat.choose_eq_zero_of_lt (show N - K < n - k by omega)]
-        simp
-      · rw [Nat.choose_eq_zero_of_lt (not_le.mp hkK)]
-        simp
-    rw [h]
-    simp
-  · rfl
+  by_contra h
+  have := (hypergeometricWeight_ne_zero_iff N K n k).mp h
+  omega
 
 /-- The hypergeometric measure with population size `N`, marked count `K`, and sample size `n`.
 
@@ -199,16 +202,6 @@ theorem hypergeometricMeasure_real_singleton (hK : K ≤ N) (k : ℕ) :
   · rw [ENNReal.toReal_div, ENNReal.toReal_mul]
     norm_cast
   · simp
-
-/-- A hypergeometric weight is nonzero exactly on its classical support. -/
-@[simp]
-theorem hypergeometricWeight_ne_zero_iff (N K n k : ℕ) :
-    hypergeometricWeight N K n k ≠ 0 ↔
-      k ≤ K ∧ k ≤ n ∧ n - k ≤ N - K := by
-  rw [hypergeometricWeight]
-  by_cases hkn : k ≤ n
-  · simp [hkn, Nat.choose_ne_zero_iff]
-  · simp [hkn]
 
 /-- When `K ≤ N`, the singleton mass of a hypergeometric law is nonzero exactly on its classical
 support. -/

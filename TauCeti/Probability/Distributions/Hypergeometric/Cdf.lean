@@ -59,15 +59,13 @@ theorem cdf_map_cast_hypergeometricMeasure_of_neg {N K n : ℕ} (hK : K ≤ N) (
 
 /-- The cumulative mass below the lower endpoint of the hypergeometric support is zero. -/
 theorem hypergeometricMeasure_real_Iic_eq_zero_of_lt_lower
-    {N K n k : ℕ} (hK : K ≤ N) (hn : n ≤ N) (hk : k < n - (N - K)) :
+    {N K n k : ℕ} (hK : K ≤ N) (hk : k < n - (N - K)) :
     (hypergeometricMeasure N K n).real (Iic k) = 0 := by
-  let _ := isProbabilityMeasure_hypergeometricMeasure hK hn
   rw [← Set.Iic_def, hypergeometricMeasure_real_Iic]
   apply Finset.sum_eq_zero
   intro j hj
-  rw [measureReal_eq_zero_iff, hypergeometricMeasure_singleton hK]
-  apply not_ne_iff.mp
-  intro hjne
+  rw [measureReal_def, hypergeometricMeasure_singleton hK, ENNReal.toReal_eq_zero_iff]
+  refine Or.inl (not_ne_iff.mp fun hjne ↦ ?_)
   have hsupp := (hypergeometricWeight_ne_zero_iff N K n j).mp hjne
   have hjk : j ≤ k := by simpa using hj
   omega
