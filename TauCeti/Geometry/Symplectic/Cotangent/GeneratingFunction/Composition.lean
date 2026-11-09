@@ -220,10 +220,10 @@ theorem exists_cotangentGeneratingComposition {n : WithTop ℕ∞}
     simpa only [R, Function.comp_def, id_eq] using
       (hFat.of_le (by gcongr; norm_num : n + 1 ≤ n + 2)).comp (q, Q)
         (contDiffAt_id.prodMk hb)
-  have hs := (hS₂.eventually_differentiableAt_comp (a := ((q, Q), a))
-      (g := fun x ↦ (x.1.1, x.2)) (by fun_prop) (by norm_num)).and
-    (hT₂.eventually_differentiableAt_comp (a := ((q, Q), a))
-      (g := fun x ↦ (x.2, x.1.2)) (by fun_prop) (by norm_num))
+  have hg₁ : ContinuousAt (fun x : (V × U) × W ↦ (x.1.1, x.2)) ((q, Q), a) := by fun_prop
+  have hg₂ : ContinuousAt (fun x : (V × U) × W ↦ (x.2, x.1.2)) ((q, Q), a) := by fun_prop
+  have hs := (hg₁.eventually (hS₂.eventually_differentiableAt (by norm_num))).and
+    (hg₂.eventually (hT₂.eventually_differentiableAt (by norm_num)))
   have hmatching : ∀ᶠ x in 𝓝 ((q, Q), a),
       cotangentGeneratingTarget S (x.1.1, x.2) =
         cotangentGeneratingSource T (x.2, x.1.2) ↔ b x.1 = x.2 := by
