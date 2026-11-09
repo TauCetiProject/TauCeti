@@ -53,11 +53,14 @@ def gram (A : Type*) [Inner Aᵐᵒᵖ E] (x : n → E) : CStarMatrix n n A :=
 lemma gram_apply [Inner Aᵐᵒᵖ E] (x : n → E) (i j : n) :
     gram A x i j = unop (inner Aᵐᵒᵖ (x i) (x j)) := (rfl)
 
-variable [NonUnitalCStarAlgebra A] [PartialOrder A]
+section Algebraic
+
+variable [NonUnitalSeminormedRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A] [PartialOrder A]
   [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
 
 /-- The quadratic forms of a Gram matrix are the inner products of the corresponding right
-linear combinations. -/
+linear combinations. This only uses the algebraic `CStarModule` axioms, so the coefficients need
+not form a complete C⋆-algebra. -/
 lemma sum_star_mul_gram_mul [Fintype n] (x : n → E) (a b : n → A) :
     ∑ i, ∑ j, star (a i) * gram A x i j * b j =
       unop (inner Aᵐᵒᵖ (∑ i, op (a i) • x i) (∑ j, op (b j) • x j)) := by
@@ -66,7 +69,10 @@ lemma sum_star_mul_gram_mul [Fintype n] (x : n → E) (a b : n → A) :
     CStarModule.inner_sum_left, CStarModule.inner_op_smul_left, Finset.unop_sum, unop_mul,
     unop_star, unop_op, Finset.sum_mul, mul_assoc]
 
-variable [StarOrderedRing A]
+end Algebraic
+
+variable [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
 
 /-- The Gram matrix of a finite family in a right Hilbert C⋆-module is positive. -/
 theorem gram_nonneg [Fintype n] (x : n → E) : 0 ≤ gram A x :=

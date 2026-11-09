@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Algebra.Star.Basic
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.PosPart.Basic
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
@@ -33,6 +34,8 @@ Hilbert C⋆-module.
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
 * `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an
   ordinary matrix respects multiplication and sends `star` to the conjugate transpose.
+* `CStarMatrix.sum_star_mul_mul_eq_dotProduct`: the quadratic form of a C⋆-matrix as a
+  matrix-vector product.
 * `CStarMatrix.isSelfAdjoint_of_forall_isSelfAdjoint_sum`: a matrix all of whose quadratic forms
   are self-adjoint is self-adjoint.
 * `CStarMatrix.nonneg_iff_forall_sum_nonneg`: the quadratic-form criterion for positivity.
@@ -74,21 +77,15 @@ lemma ofMatrix_symm_mul [Fintype n] [Mul A] [AddCommMonoid A] (M N : CStarMatrix
 lemma ofMatrix_symm_star [Star A] (M : CStarMatrix n n A) :
     ofMatrix.symm (star M) = (ofMatrix.symm M)ᴴ := (rfl)
 
-end Algebraic
-
-variable {n A : Type*} [Fintype n] [NonUnitalCStarAlgebra A]
-
 /-- The quadratic form of a C⋆-matrix, written as a matrix-vector product. -/
-private lemma sum_star_mul_mul_eq_dotProduct (M : CStarMatrix n n A) (x y : n → A) :
+lemma sum_star_mul_mul_eq_dotProduct [Fintype n] [NonUnitalSemiring A] [Star A]
+    (M : CStarMatrix n n A) (x y : n → A) :
     ∑ i, ∑ j, star (x i) * M i j * y j = star x ⬝ᵥ (ofMatrix.symm M *ᵥ y) := by
   simp [dotProduct, mulVec, Finset.mul_sum, mul_assoc]
 
-/-- An element of a C⋆-algebra annihilated by every two-sided multiplication vanishes. -/
-private lemma eq_zero_of_forall_star_mul_mul_eq_zero {X : A}
-    (h : ∀ c d : A, star d * X * c = 0) : X = 0 := by
-  have h' : star (X * star X) * (X * star X) = 0 := by
-    simpa [star_mul, mul_assoc] using h (star X) (X * star X)
-  exact mul_star_self_eq_zero.mp (star_mul_self_eq_zero.mp h')
+end Algebraic
+
+variable {n A : Type*} [Fintype n] [NonUnitalCStarAlgebra A]
 
 /-- A matrix over a C⋆-algebra all of whose quadratic forms are self-adjoint is self-adjoint. -/
 theorem isSelfAdjoint_of_forall_isSelfAdjoint_sum {M : CStarMatrix n n A}
