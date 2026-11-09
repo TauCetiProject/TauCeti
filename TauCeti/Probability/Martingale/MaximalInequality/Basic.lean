@@ -10,7 +10,7 @@ public import Mathlib.Analysis.SpecificLimits.Basic
 public import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.RightContinuous
 
-import Mathlib.MeasureTheory.Function.ConditionalExpectation.CondJensen
+public import TauCeti.Probability.Martingale.Basic
 
 /-!
 # Doob's maximal inequality over finite and countable sets and in continuous time
@@ -34,6 +34,9 @@ records the case `p = 1 / 2`, `E[sup_{t ≤ T} √f_t] ≤ P(Ω) + 4 E[f_T]`. Ap
 bounds the expected running maximum of a nonnegative process `g` whose square is a submartingale;
 this is how the running maximum of an exponential martingale is shown to be integrable.
 
+The martingale norm estimates use `MeasureTheory.Martingale.norm`, whose proof applies
+Mathlib's conditional Jensen inequality `norm_condExp_le`.
+
 ## Main declarations
 
 * `MeasureTheory.Submartingale.mul_measure_exists_mem_le_le_setIntegral`: the finite-set
@@ -47,8 +50,6 @@ this is how the running maximum of an exponential martingale is shown to be inte
 * `MeasureTheory.Submartingale.mul_measure_exists_le_lt_le`: the maximal inequality over all times
   `t ≤ T`, for right-continuous paths.
 * `MeasureTheory.Submartingale.lintegral_iSup_sqrt_le`: the bound on `E[sup_{t ≤ T} √f_t]`.
-* `MeasureTheory.Martingale.submartingale_norm`: the norm of a Banach-valued martingale is a
-  submartingale, using Mathlib's conditional Jensen inequality `norm_condExp_le`.
 * `MeasureTheory.Martingale.mul_measure_exists_le_norm_lt_le`: the weak maximal inequality for
   martingale norms.
 * `MeasureTheory.Martingale.measure_exists_le_norm_lt_le`: a terminal L¹ bound gives an outer
@@ -298,15 +299,6 @@ namespace MeasureTheory.Martingale
 variable {Ω E ι : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
-/-- The norm of a Banach-valued martingale is a submartingale. -/
-theorem submartingale_norm [Preorder ι] {ℱ : Filtration ι mΩ}
-    {M : ι → Ω → E} (hM : Martingale M ℱ μ) :
-    Submartingale (fun t ω ↦ ‖M t ω‖) ℱ μ := by
-  refine ⟨fun t ↦ (hM.stronglyAdapted t).norm, fun s t hst ↦ ?_,
-    fun t ↦ (hM.integrable t).norm⟩
-  filter_upwards [norm_condExp_le (m := ℱ s) (M t), hM.condExp_ae_eq hst] with ω h₁ h₂
-  simpa only [h₂] using h₁
-
 variable [LinearOrder ι] [TopologicalSpace ι] [OrderTopology ι] [SecondCountableTopology ι]
   [IsFiniteMeasure μ] {ℱ : Filtration ι mΩ} {M : ι → Ω → E}
 
@@ -317,7 +309,7 @@ theorem mul_measure_exists_le_norm_lt_le (hM : Martingale M ℱ μ) {T : ι}
     (ε : ℝ≥0) :
     ε * μ {ω | ∃ t ≤ T, (ε : ℝ) < ‖M t ω‖} ≤
       ENNReal.ofReal (∫ ω, ‖M T ω‖ ∂μ) := by
-  exact hM.submartingale_norm.mul_measure_exists_le_lt_le (fun _ _ ↦ norm_nonneg _)
+  exact hM.norm.mul_measure_exists_le_lt_le (fun _ _ ↦ norm_nonneg _)
     (hcont.mono fun ω hω t ht ↦ (hω t ht).norm) ε
 
 /-- A terminal L¹ bound of `ε * δ` bounds by `δ` the outer probability that a martingale's

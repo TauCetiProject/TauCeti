@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Martingale.MaximalInequality
+public import TauCeti.Probability.Martingale.MaximalInequality.Basic
 
 /-!
 # Uniform approximation of martingales
