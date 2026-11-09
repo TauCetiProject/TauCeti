@@ -131,15 +131,6 @@ private theorem compCLE_mem_w1p0Submodule (hp : p ≠ ⊤) (e : E ≃L[ℝ] E)
 
 /-! ### Precomposition with a linear automorphism in `W^{2,p}` -/
 
-private theorem value_firstOrder_one (u : Wkp mu W p 2) :
-    W1p.value (Wkp.firstOrder 1 u) = Wkp.value 2 u := by
-  rw [Wkp.value_succ, Wkp.value_one, (Wkp.firstOrder_succ 0 u).trans (Wkp.firstOrder_zero _)]
-
-private theorem gradient_firstOrder_one (u : Wkp mu W p 2) :
-    W1p.gradient (Wkp.firstOrder 1 u) = Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) :=
-  (congrArg W1p.gradient ((Wkp.firstOrder_succ 0 u).trans (Wkp.firstOrder_zero _))).trans
-    (Wkp.iteratedGradient_zero (Wkp.lowerOrder 1 u)).symm
-
 /-- Almost-everywhere statements on `W` pull back along a linear automorphism `e` to
 `U = e⁻¹(W)`. -/
 private theorem quasiMeasurePreserving_restrict_of_coe_eq_preimage (e : E ≃L[ℝ] E)
@@ -160,7 +151,7 @@ private theorem exists_w1p_value_eq_inner_gradient (u : Wkp mu W p 2) (c : E) :
   obtain ⟨d, hd⟩ := Wkp.exists_hasWeakLineDerivOn_value 1 u c
   have h1 : HasWeakLineDerivOn mu W (Wkp.value 2 u) (fun y => ⟪g y, c⟫_ℝ) c := by
     have h := (W1p.hasWeakFDerivOn (Wkp.firstOrder 1 u)).hasWeakLineDerivOn c
-    rw [value_firstOrder_one, gradient_firstOrder_one] at h
+    rw [Wkp.value_firstOrder, Wkp.gradient_firstOrder_one] at h
     simpa only [innerSL_apply_apply] using h
   have hvd : W1p.value d =ᵐ[mu.restrict W] (fun y => ⟪g y, c⟫_ℝ) := by
     rw [← Wkp.value_one]
@@ -206,8 +197,8 @@ theorem Wkp.exists_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤) (e : 
   set T := compCLE (mu := mu) hp e hUW
   have hqmp := quasiMeasurePreserving_restrict_of_coe_eq_preimage (mu := mu) e hUW
   set u₁ := Wkp.firstOrder 1 u
-  have hgrad := gradient_firstOrder_one u
-  have hval := value_firstOrder_one u
+  have hgrad := Wkp.gradient_firstOrder_one u
+  have hval := Wkp.value_firstOrder 1 u
   -- Each component `⟪∇u, c⟫` is the value of some `d c ∈ W^{1,p}(W)`, whose weak gradient has
   -- the components `⟪D²u f, c⟫`.
   choose d hdv hdg using exists_w1p_value_eq_inner_gradient u
@@ -277,7 +268,7 @@ theorem Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp {A : E →L[ℝ]
       fun x _ => abs_det_le e x
   have hC' : (ENNReal.ofReal |(e : E →L[ℝ] E).det|)⁻¹ ≠ ⊤ :=
     ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 habs).ne'
-  have hqmp := QuasiMeasurePreserving.of_map_le_smul e.continuous.measurable hmap
+  have hqmp := quasiMeasurePreserving_restrict_of_coe_eq_preimage (mu := mu) e hUW
   -- `v` solves Poisson's equation with forcing term `f ∘ e`
   set f' := Lp.compOfMapLeSmul ℝ e.continuous.measurable hC' hmap f
   have hf'e := Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) e.continuous.measurable hC' hmap f

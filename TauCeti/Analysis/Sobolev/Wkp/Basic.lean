@@ -326,6 +326,13 @@ theorem iteratedGradient_zero (u : Wkp mu Omega p 1) :
   | zero => exact (value_one u).symm
   | succ k ih => rw [firstOrder_succ, ih, value_succ (k + 1) u]
 
+/-- At second order, the weak gradient of the first-order part is the highest derivative of the
+lower-order part. -/
+theorem gradient_firstOrder_one (u : Wkp mu Omega p 2) :
+    W1p.gradient (firstOrder 1 u) = iteratedGradient 0 (lowerOrder 1 u) :=
+  (congrArg W1p.gradient ((firstOrder_succ 0 u).trans (firstOrder_zero _))).trans
+    (iteratedGradient_zero (lowerOrder 1 u)).symm
+
 /-- The highest derivative projection is the one stored in the corresponding recursive stage. -/
 theorem iteratedGradient_eq_sobolevStage_iteratedGradientL
     (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
