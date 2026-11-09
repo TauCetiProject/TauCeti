@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Topology.Homeomorph.Quotient
 public import TauCeti.AlgebraicTopology.Disk
+public import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.Homotopy.Cube.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
@@ -361,20 +362,16 @@ cube is a point, sent to the south pole, the only other point of the zero-sphere
 theorem exists_cubeToSphere_eq_of_ne {s : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1}
     (hs : s ≠ sphereNorthPole n) : ∃ y, cubeToSphere n y = s := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
-  · -- A point of the zero-sphere other than the north pole has coordinate `-1`.
+  · -- A point of the zero-sphere other than the north pole is its antipode.
     have key (t : sphere (0 : EuclideanSpace ℝ (Fin 1)) 1) (ht : t ≠ sphereNorthPole 0) :
-        (t : EuclideanSpace ℝ (Fin 1)) (Fin.last 0) = -1 := by
-      have h1 := apply_last_lt_one_iff_ne_sphereNorthPole.2 ht
-      have h2 := EuclideanSpace.real_norm_sq_eq (t : EuclideanSpace ℝ (Fin 1))
-      rw [norm_eq_of_mem_sphere, Fin.sum_univ_one] at h2
-      have hl : Fin.last 0 = 0 := rfl
-      rw [hl] at h1 ⊢
-      nlinarith
+        (t : EuclideanSpace ℝ (Fin 1)) = -(sphereNorthPole 0 : EuclideanSpace ℝ (Fin 1)) :=
+      (eq_or_eq_neg_of_norm_eq_of_finrank_eq_one finrank_euclideanSpace_fin
+        (by rw [norm_eq_of_mem_sphere, norm_eq_of_mem_sphere])).resolve_left
+        fun h ↦ ht (Subtype.ext h)
     have h0 : cubeToSphere 0 0 ≠ sphereNorthPole 0 := by
       rw [Ne, cubeToSphere_eq_sphereNorthPole_iff, Cube.boundary_eq_empty]
       exact Set.notMem_empty _
-    refine ⟨0, Subtype.ext (PiLp.ext fun i ↦ ?_)⟩
-    rw [Subsingleton.elim (α := Fin 1) i (Fin.last 0), key _ h0, key _ hs]
+    exact ⟨0, Subtype.ext ((key _ h0).trans (key _ hs).symm)⟩
   · have : NeZero n := ⟨hn.ne'⟩
     exact cubeToSphere_surjective n s
 

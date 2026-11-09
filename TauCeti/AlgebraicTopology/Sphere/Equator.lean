@@ -277,7 +277,7 @@ variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [NormedA
 variable (u : V) in
 /-- The equator of the unit sphere orthogonal to `u`: the unit vectors orthogonal to `u`. For a
 unit vector `p` orthogonal to `u` it is the equator through `p` orthogonal to `u`. -/
-@[expose] def sphereEquator : Set (sphere (0 : V) 1) :=
+def sphereEquator : Set (sphere (0 : V) 1) :=
   {q | ⟪(q : V), u⟫ = 0}
 
 variable {u : V}
