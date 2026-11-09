@@ -95,7 +95,7 @@ theorem mapDomainRingEquiv_eq_mapDomain [Monoid M] [Monoid N] (e : M ≃* N)
 
 section Group
 
-variable {R G : Type*} [CommSemiring R] [CommGroup G]
+variable {R G : Type*} [Semiring R] [CommGroup G]
 
 /-- The coefficient of the identity in `x * σ x`, where `σ x` is the image of `x` under the
 involution induced by inversion, is the sum of the squares of the coefficients of `x`. -/

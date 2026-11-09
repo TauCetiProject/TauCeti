@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Energy
+public import TauCeti.Analysis.Complex.RealChart
 public import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # Pulling back Hamiltonian perturbation data along changes of domain coordinates
@@ -49,6 +51,12 @@ domain.
   coordinate changes.
 * `TauCeti.Floer.fderiv_perturbationPullback_sub_fderiv_perturbationPullback`: the domain-derivative
   part `∂_s K_t - ∂_t K_s` of the curvature scales by `det dφ`, for any target.
+* `TauCeti.Floer.perturbationPullback_realChart`: the pullback of a datum on `ℂ` along a
+  holomorphic map `f` evaluates the datum at `f w` on `f'(w) v`.
+* `TauCeti.Floer.differentiableAt_domain_of_differentiableAt`,
+  `TauCeti.Floer.differentiableAt_target_of_differentiableAt`: a datum on `ℂ` that is
+  differentiable jointly in the domain and target points is differentiable in each of them, in
+  real coordinates.
 * `TauCeti.SymplecticForm.perturbedFDeriv_perturbationPullback`: the perturbed derivative of the
   reparametrized map is the original one precomposed with `dφ`.
 * `TauCeti.SymplecticForm.floerEnergyDensity_perturbationPullback`: the energy density scales by
@@ -77,6 +85,7 @@ domain.
 public section
 
 open Function MeasureTheory Set
+open TauCeti.Complex (realChart realChart_apply fderiv_realChart_apply)
 
 namespace TauCeti
 
@@ -183,6 +192,43 @@ theorem fderiv_perturbationPullback_sub_fderiv_perturbationPullback {φ : ℝ ×
   simp only [ContinuousLinearMap.det, LinearMap.det_finTwoProd, ContinuousLinearMap.coe_coe,
     stdComplexLineReal_eq, stdComplexLineImag_eq]
   ring
+
+/-! ### Holomorphic changes of coordinates -/
+
+/-- The pullback along a holomorphic map `f` of a datum `P` on `ℂ`, written in the real
+coordinates through its values on `1` and `i`, evaluates `P` at the image point `f w` on the image
+`f'(w) v` of the tangent vector. -/
+theorem perturbationPullback_realChart (P : ℂ → X → ℂ →L[ℝ] ℝ) {f : ℂ → ℂ} {f' : ℂ}
+    {w : ℝ × ℝ} (hf : HasDerivAt f f' (Complex.equivRealProdCLM.symm w)) (v : ℝ × ℝ) (x : X) :
+    perturbationPullback (realChart f) (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x Complex.I) v w x =
+      P (f (Complex.equivRealProdCLM.symm w)) x (f' * Complex.equivRealProdCLM.symm v) := by
+  rw [perturbationPullback_apply, fderiv_realChart_apply hf, realChart_apply,
+    ContinuousLinearEquiv.symm_apply_apply, Complex.equivRealProdCLM_apply]
+  exact ((P _ x : ℂ →ₗ[ℝ] ℝ).apply_eq_re_smul_one_add_im_smul_I _).symm
+
+section Differentiable
+
+variable [NormedAddCommGroup X] [NormedSpace ℝ X] {P : ℂ → X → ℂ →L[ℝ] ℝ} {w : ℝ × ℝ} {x : X}
+
+/-- If a datum `P` on `ℂ` is differentiable jointly in the domain and target points, then, in the
+real coordinates, its value on a fixed tangent vector is differentiable in the domain point. -/
+theorem differentiableAt_domain_of_differentiableAt
+    (hP : DifferentiableAt ℝ (fun p : ℂ × X ↦ P p.1 p.2) (Complex.equivRealProdCLM.symm w, x))
+    (v : ℂ) : DifferentiableAt ℝ (fun z ↦ P (Complex.equivRealProdCLM.symm z) x v) w :=
+  (hP.comp (f := fun z ↦ (Complex.equivRealProdCLM.symm z, x)) w
+    (Complex.equivRealProdCLM.symm.differentiableAt.prodMk (differentiableAt_const x))).clm_apply
+    (differentiableAt_const v)
+
+/-- If a datum `P` on `ℂ` is differentiable jointly in the domain and target points, then, in the
+real coordinates, its value on a fixed tangent vector is differentiable in the target point. -/
+theorem differentiableAt_target_of_differentiableAt
+    (hP : DifferentiableAt ℝ (fun p : ℂ × X ↦ P p.1 p.2) (Complex.equivRealProdCLM.symm w, x))
+    (v : ℂ) : DifferentiableAt ℝ (fun y ↦ P (Complex.equivRealProdCLM.symm w) y v) x :=
+  (hP.comp (f := fun y ↦ (Complex.equivRealProdCLM.symm w, y)) x
+    ((differentiableAt_const _).prodMk differentiableAt_id)).clm_apply (differentiableAt_const v)
+
+end Differentiable
 
 end Floer
 

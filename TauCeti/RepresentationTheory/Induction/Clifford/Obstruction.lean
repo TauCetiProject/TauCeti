@@ -162,10 +162,18 @@ variable {k : Type u} {G : Type v} [Field k] [Group G] {N : Subgroup G}
 
 include hScalar
 
-/-- A nonzero representation with scalar equivariant endomorphisms extends projectively to
-its inertia group, agreeing with `A` on `N` with factor set inflated from the inertia quotient. -/
-theorem exists_isProjectiveInertiaExtension :
-    ∃ ρ β, IsProjectiveInertiaExtension A ρ β := by
+/-- The construction behind `TauCeti.exists_isProjectiveInertiaExtension`: from a projective
+extension `ρ₀` of `A` to its inertia group, choose coset representatives `s t` and put
+`ρ t = ρ₀ (s t) ∘ A (m t)`. The result is a family of linear automorphisms of `A` that is `1`
+at `1`, absorbs the action of `N` on either side and intertwines conjugation by `t` on `N`. -/
+private theorem exists_linearEquiv_inertia_apply_mul_inclusion :
+    ∃ ρ : inertia A → A ≃ₗ[k] A, ρ 1 = 1 ∧
+      (∀ (t : inertia A) (n : N) (x : A),
+        ρ (t * Subgroup.inclusion (le_inertia A) n) x = ρ t (A.ρ n x)) ∧
+      (∀ (t : inertia A) (n : N) (x : A),
+        ρ t (A.ρ n x) = A.ρ (MulAut.conjNormal (t : G) n) (ρ t x)) ∧
+      ∀ (n : N) (t : inertia A) (x : A),
+        ρ (Subgroup.inclusion (le_inertia A) n * t) x = A.ρ n (ρ t x) := by
   classical
   set M := N.subgroupOf (inertia A)
   set ι : N →* inertia A := Subgroup.inclusion (le_inertia A) with hι
@@ -198,8 +206,6 @@ theorem exists_isProjectiveInertiaExtension :
       rw [hm, hst]
       simp [hm, hι, mul_assoc])
     rw [hρ, hρ, hst, hmt, map_mul, mul_apply_eq_comp]
-  have hρι (n : N) (x : A) : ρ (ι n) x = A.ρ n x := by
-    simpa [hρ1] using hρmul 1 n x
   have hρconj (t : inertia A) (n : N) (x : A) :
       ρ t (A.ρ n x) = A.ρ (MulAut.conjNormal (t : G) n) (ρ t x) := by
     have hconj : MulAut.conjNormal (t : G) n
@@ -215,6 +221,18 @@ theorem exists_isProjectiveInertiaExtension :
     have hc : MulAut.conjNormal (t : G) (MulAut.conjNormal ((t : G)⁻¹) n) = n := by
       simp
     rw [hn, hρmul, hρconj, hc]
+  exact ⟨ρ, hρ1, hρmul, hρconj, hιmul⟩
+
+/-- A nonzero representation with scalar equivariant endomorphisms extends projectively to
+its inertia group, agreeing with `A` on `N` with factor set inflated from the inertia quotient. -/
+theorem exists_isProjectiveInertiaExtension :
+    ∃ ρ β, IsProjectiveInertiaExtension A ρ β := by
+  classical
+  obtain ⟨ρ, hρ1, hρmul, hρconj, hιmul⟩ := exists_linearEquiv_inertia_apply_mul_inclusion A hScalar
+  set M := N.subgroupOf (inertia A)
+  set ι : N →* inertia A := Subgroup.inclusion (le_inertia A) with hι
+  have hρι (n : N) (x : A) : ρ (ι n) x = A.ρ n x := by
+    simpa [hρ1] using hρmul 1 n x
   -- By Schur's lemma `ρ` is a projective representation.
   obtain ⟨α, hproj⟩ := exists_isProjectiveRep_of_apply_apply_conjNormal A hScalar hρ1 hρconj
   -- Its factor set is trivial as soon as one argument lies in `N`, so it descends to `T/N`.

@@ -207,8 +207,8 @@ episode has no closing event in the timeline.
 
 Note that labelling and commenting both bump the PR's `updatedAt`, which
 `housekeeping.py` treats as freshness — so a conflict episode resets that PR's
-seven-day stale-close clock. That is the intended trade: a PR that just learned it
-conflicts should get its week to act on it.
+nine-day stale-close clock. That is the intended trade: a PR that just learned it
+conflicts should get nine days to act on it.
 
 ## Stuck-automation alerts (Tau Ceti > "Stuck PRs")
 

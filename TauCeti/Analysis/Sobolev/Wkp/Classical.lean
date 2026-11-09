@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Classical derivatives of smooth Sobolev representatives
@@ -238,20 +239,17 @@ theorem Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn :
   | 0, u, f, hf, hu => by
       rw [Finset.sum_range_one, ← norm_value_eq_lpNorm_of_contDiffOn 0 u hf hu, value_zero]
   | 1, u, f, hf, hu => by
-      have h := W1p.norm_le_norm_value_add_norm_gradient u
+      have h := norm_le_norm_lowerOrder_add_norm_iteratedGradient 0 u
       rw [Finset.sum_range_succ, Finset.sum_range_one,
         ← norm_value_eq_lpNorm_of_contDiffOn 1 u hf hu, value_one,
         ← norm_iteratedGradient_eq_lpNorm_of_contDiffOn 0 u hf hu, iteratedGradient_zero]
-      exact h
+      simpa only [lowerOrder_zero, iteratedGradient_zero] using h
   | k + 2, u, f, hf, hu => by
       have hlow := norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn (k + 1) (lowerOrder (k + 1) u)
         (hf.of_le (by exact_mod_cast (by omega : k + 1 ≤ k + 2)))
         (by simpa only [value_succ] using hu)
       have hhigh := norm_iteratedGradient_eq_lpNorm_of_contDiffOn (k + 1) u hf hu
-      have hsq := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u
-      have hle : ‖u‖ ≤ ‖lowerOrder (k + 1) u‖ + ‖iteratedGradient (k + 1) u‖ :=
-        le_of_pow_le_pow_left₀ two_ne_zero (by positivity) (by
-          nlinarith [norm_nonneg (lowerOrder (k + 1) u), norm_nonneg (iteratedGradient (k + 1) u)])
+      have hle := norm_le_norm_lowerOrder_add_norm_iteratedGradient (k + 1) u
       rw [Finset.sum_range_succ _ (k + 2)]
       linarith
 
@@ -297,7 +295,6 @@ theorem Wkp.exists_value_ae_eq_of_contDiffOn :
           (.of_forall fun x => (norm_iteratedGradientChain f (k + 1) x).symm)
       have hweak : HasWeakFDerivOn mu Omega (iteratedGradient k u) (hD.toLp _) :=
         ((hasWeakFDerivOn_of_differentiableOn
-          (hs.continuousOn.locallyIntegrableOn Omega.isOpen.measurableSet)
           (hc'.locallyIntegrableOn Omega.isOpen.measurableSet)
           fun x hx => (hs.contDiffAt (Omega.isOpen.mem_nhds hx)).differentiableAt
             (by simp)).congr_ae
@@ -305,6 +302,17 @@ theorem Wkp.exists_value_ae_eq_of_contDiffOn :
             (hf.of_le (by exact_mod_cast (by omega : k + 1 ≤ k + 2))) hu).symm).congr_ae_deriv
           (by rw [← iteratedGradientChain_succ]; exact hD.coeFn_toLp.symm)
       exact ⟨mk k u _ hweak, by rw [value_mk]; exact hu⟩
+
+/-- **A `Cᵏ` function is a Sobolev function on compactly contained subdomains.** If `f` is `Cᵏ` on
+an open set `U` and `Ω` lies in a compact subset `K` of `U`, then `f` represents an element of
+`W^{k,p}(Ω)`: its derivatives through order `k` are continuous on `K`, hence bounded on `Ω`. -/
+theorem Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact (k : ℕ) {f : E → ℝ} {U K : Set E}
+    (hU : IsOpen U) (hf : ContDiffOn ℝ k f U) (hK : IsCompact K) (hΩK : (Omega : Set E) ⊆ K)
+    (hKU : K ⊆ U) :
+    ∃ u : Wkp mu Omega p k, (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f :=
+  exists_value_ae_eq_of_contDiffOn k (hf.mono (hΩK.trans hKU)) fun i hi =>
+    ((ContinuousOn.continuousOn_iteratedFDeriv hf hU (by exact_mod_cast hi)).mono
+      hKU).memLp_restrict_of_subset_isCompact hK Omega.isOpen.measurableSet hΩK p
 
 end Sobolev
 

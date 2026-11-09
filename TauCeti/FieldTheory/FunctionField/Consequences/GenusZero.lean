@@ -9,7 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.Consequences.HighDegree
 -- Proof-only: inseparable parameters of prime degree are `p`-th powers.
 import TauCeti.FieldTheory.FunctionField.Frobenius
 -- Proof-only: the generator of `k(x)` generates it.
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 -- Proof-only: Lüroth's theorem and the genus of `k(t)`, for subfields of a rational function field.
 import Mathlib.FieldTheory.RatFunc.Luroth
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.Equiv
@@ -108,7 +108,7 @@ theorem exists_place_degree_eq_one_of_genus_eq_zero_of_divisor_degree_eq_one
   have hEdeg : Divisor.degree E = 1 := by
     simp [E, hD]
   obtain ⟨P, _, hP⟩ :=
-    Divisor.exists_place_degree_eq_one_of_isEffective_of_degree_eq_one hF hE hEdeg
+    Divisor.exists_place_degree_eq_one_of_nonneg_of_degree_eq_one hF hE hEdeg
   exact ⟨P, hP⟩
 
 /-- **Genus zero plus a divisor of degree one implies rationality** (the nontrivial direction of

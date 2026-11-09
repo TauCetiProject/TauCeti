@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.OpenPartialHomeomorph.Basic
 public import TauCeti.AlgebraicTopology.Disk
+public import TauCeti.AlgebraicTopology.Disk.LinearIsometry
 public import TauCeti.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Normed.Lp.PiLp
 public import TauCeti.Topology.Order.Sublevel
@@ -40,6 +41,13 @@ attaching map `∂D^k → M_{c-ε}`. These are the maps out of which the compari
 `M_{c-ε}` with cells attached along the attaching maps and the sublevel `M_{c+ε}` is built, as
 the map induced on the pushout by the inclusion of `M_{c-ε}` and the characteristic maps.
 
+Two normal-form charts of the same index may parametrize the cell differently. When the
+characteristic map `χ₁` of one is homotopic as a map of pairs to `χ₀ ∘ g` for the characteristic
+map `χ₀` of the other and an orthogonal map `g` of determinant `1` (in Milnor's comparison of two
+charts, the polar factor of the negative block of the transition, when it preserves orientation),
+`g` can be removed: it is joined to the identity in the special orthogonal group, so `χ₁` is
+homotopic to `χ₀` as a map of pairs, and the two attaching maps are homotopic.
+
 ## Main definitions
 
 * `OpenPartialHomeomorph.morseCellMap`: the parametrization `w ↦ ψ⁻¹(√ε • (w, 0))` of the cell
@@ -60,6 +68,10 @@ the map induced on the pushout by the inclusion of `M_{c-ε}` and the characteri
   closed embedding.
 * `OpenPartialHomeomorph.morseAttachingMap_comp_sublevelInclusion`: the attaching map is the
   restriction of the characteristic map to the boundary sphere.
+* `TauCeti.exists_homotopy_morseCharacteristicMap_of_det_eq_one`,
+  `TauCeti.homotopic_morseAttachingMap_of_det_eq_one`: an orthogonal change of parametrization of
+  determinant `1` is removed from a homotopy of characteristic maps, and the attaching maps are
+  then homotopic.
 
 ## References
 
@@ -102,6 +114,13 @@ theorem morseCellMap_def (hk : k ≤ n) (w : EuclideanSpace ℝ (Fin k)) :
 @[simp]
 theorem morseCellMap_zero (hk : k ≤ n) : morseCellMap ψ hk ε 0 = ψ.symm 0 := by
   simp [morseCellMap_def]
+
+/-- Scaling the parameter of a characteristic disc rescales its width quadratically. -/
+theorem morseCellMap_smul (hk : k ≤ n) {a : ℝ} (ha : 0 ≤ a)
+    (w : EuclideanSpace ℝ (Fin k)) :
+    morseCellMap ψ hk ε (a • w) = morseCellMap ψ hk (ε * a ^ 2) w := by
+  simp only [morseCellMap_def, map_smul, smul_smul, Real.sqrt_mul' ε (sq_nonneg a),
+    Real.sqrt_sq ha]
 
 private theorem norm_smul_piLpExtendByZero (hk : k ≤ n) (w : EuclideanSpace ℝ (Fin k)) :
     ‖√ε • piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk) w‖ = √ε * ‖w‖ := by
@@ -328,3 +347,67 @@ theorem range_morseCharacteristicMap (hk : k ≤ n) (hε : 0 < ε) :
     exact ⟨ULift.up ⟨w, hw⟩, Subtype.ext hwx⟩
 
 end OpenPartialHomeomorph
+
+namespace TauCeti
+
+section Orientation
+
+variable {M : Type u} [TopologicalSpace M] {n : ℕ} {f : M → ℝ} {c ε : ℝ}
+  {ψ₀ ψ₁ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))} {k : ℕ} (hk : k ≤ n)
+  (hε : 0 ≤ ε) (hball₀ : closedBall 0 √ε ⊆ ψ₀.target) (hball₁ : closedBall 0 √ε ⊆ ψ₁.target)
+  (hf₀ : ∀ y ∈ ψ₀.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ₀ y j ^ 2)
+  (hf₁ : ∀ y ∈ ψ₁.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ₁ y j ^ 2)
+  {g : EuclideanSpace ℝ (Fin k) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin k)}
+
+/-- **An orientation-preserving change of parametrization of a Morse cell can be removed.** Let
+`χ₀` and `χ₁` be the characteristic maps of the cells of two normal-form charts of the same index
+`k`, and let `g` be a linear isometry of `ℝᵏ` with `det g = 1`. A homotopy of maps of pairs from
+`χ₁` to `χ₀ ∘ g`, keeping the boundary sphere in the lower sublevel `M_{c-ε}`, can be replaced by
+a homotopy of maps of pairs from `χ₁` to `χ₀` with the same property. Then
+`TauCeti.morseCellReattachment` applies with the identity of the disc. -/
+theorem exists_homotopy_morseCharacteristicMap_of_det_eq_one (hg : LinearMap.det g.toLinearMap = 1)
+    (K : (ψ₁.morseCharacteristicMap hk hε hball₁ hf₁).hom.Homotopy
+      (g.diskMap ≫ ψ₀.morseCharacteristicMap hk hε hball₀ hf₀).hom)
+    (hK : ∀ t (s : TopCat.diskBoundary.{u} k),
+      f (K (t, TopCat.diskBoundaryInclusion k s)) ≤ c - ε) :
+    ∃ K' : (ψ₁.morseCharacteristicMap hk hε hball₁ hf₁).hom.Homotopy
+        (ψ₀.morseCharacteristicMap hk hε hball₀ hf₀).hom,
+      ∀ t (s : TopCat.diskBoundary.{u} k),
+        f (K' (t, TopCat.diskBoundaryInclusion k s)) ≤ c - ε := by
+  obtain ⟨H, hH⟩ := TauCeti.TopCat.exists_homotopy_diskMap_comp_of_det_eq_one hg
+    (ψ₀.morseCharacteristicMap hk hε hball₀ hf₀) (S := {x | f x ≤ c - ε}) fun s ↦ by
+      rw [mem_ofPred_eq, OpenPartialHomeomorph.coe_morseCharacteristicMap_diskBoundaryInclusion]
+      exact (ψ₀.morseAttachingMap hk hε hball₀ hf₀ s).2
+  refine ⟨K.trans H, fun t s ↦ ?_⟩
+  rw [ContinuousMap.Homotopy.trans_apply]
+  split_ifs
+  exacts [hK _ s, hH _ s]
+
+/-- **Orientation-preserving changes of chart give homotopic attaching maps.** If the
+characteristic map `χ₁` of one normal-form chart is homotopic, as a map of pairs into
+`(M_{c+ε}, M_{c-ε})`, to `χ₀ ∘ g` for the characteristic map `χ₀` of another chart of the same
+index and a linear isometry `g` with `det g = 1`, then the two attaching maps
+`∂D^k → M_{c-ε}` are homotopic. -/
+theorem homotopic_morseAttachingMap_of_det_eq_one (hg : LinearMap.det g.toLinearMap = 1)
+    (K : (ψ₁.morseCharacteristicMap hk hε hball₁ hf₁).hom.Homotopy
+      (g.diskMap ≫ ψ₀.morseCharacteristicMap hk hε hball₀ hf₀).hom)
+    (hK : ∀ t (s : TopCat.diskBoundary.{u} k),
+      f (K (t, TopCat.diskBoundaryInclusion k s)) ≤ c - ε) :
+    (ψ₁.morseAttachingMap hk hε hball₁ hf₁).hom.Homotopic
+      (ψ₀.morseAttachingMap hk hε hball₀ hf₀).hom := by
+  obtain ⟨K', hK'⟩ := exists_homotopy_morseCharacteristicMap_of_det_eq_one hk hε hball₀ hball₁ hf₀
+    hf₁ hg K hK
+  exact ⟨
+    { toFun p := ⟨K' (p.1, TopCat.diskBoundaryInclusion k p.2), hK' p.1 p.2⟩
+      continuous_toFun := (continuous_subtype_val.comp (K'.continuous.comp
+        (continuous_fst.prodMk ((TopCat.diskBoundaryInclusion k).hom.continuous.comp
+          continuous_snd)))).subtype_mk _
+      map_zero_left s := Subtype.ext ((congrArg Subtype.val (K'.apply_zero _)).trans
+        (OpenPartialHomeomorph.coe_morseCharacteristicMap_diskBoundaryInclusion hball₁ hf₁ hk hε s))
+      map_one_left s := Subtype.ext ((congrArg Subtype.val (K'.apply_one _)).trans
+        (OpenPartialHomeomorph.coe_morseCharacteristicMap_diskBoundaryInclusion hball₀ hf₀ hk
+          hε s)) }⟩
+
+end Orientation
+
+end TauCeti

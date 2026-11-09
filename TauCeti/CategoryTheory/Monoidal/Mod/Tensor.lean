@@ -65,7 +65,7 @@ namespace Mod
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
   [HasCoequalizers C]
   [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorLeft X)]
-  [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorRight X)]
+  [∀ X : C, PreservesColimitsOfSize.{0, 0} (MonoidalCategory.tensorRight X)]
   {A : C} [MonObj A] [IsCommMonObj A]
 
 /-- The balanced tensor product `M ⊗_A N` of modules over a commutative monoid object: the
@@ -171,7 +171,7 @@ instance (M N : Mod C A) : Epi (tensorπ M N) :=
 /-- Tensoring on the right preserves the coequalizer defining `M ⊗_A N`, so the whiskered quotient
 map is still an epimorphism. -/
 instance (M N : Mod C A) (X : C) : Epi (tensorπ M N ▷ X) :=
-  inferInstanceAs (Epi ((tensorRight X).map (coequalizer.π _ _)))
+  inferInstanceAs (Epi ((MonoidalCategory.tensorRight X).map (coequalizer.π _ _)))
 
 /-- Tensoring on the left preserves the coequalizer defining `M ⊗_A N`, so the whiskered quotient
 map is still an epimorphism. -/
@@ -304,7 +304,7 @@ theorem tensorπ_associator_inv_hom (M N P : Mod C A) :
     Category.comp_id]
 
 omit [HasCoequalizers C] [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorLeft X)]
-  [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorRight X)] in
+  [∀ X : C, PreservesColimitsOfSize.{0, 0} (MonoidalCategory.tensorRight X)] in
 /- The regular module has carrier `A`, so the comparison `toBimodRegularIso` is the identity. -/
 private lemma toBimodRegularIso_hom_hom_eq_id : (toBimodRegularIso (A := A)).hom.hom = 𝟙 A :=
   toBimodRegularIso_hom_hom.trans (eqToHom_refl _ _)

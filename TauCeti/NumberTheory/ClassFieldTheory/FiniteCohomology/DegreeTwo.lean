@@ -65,12 +65,15 @@ theorem finite_continuousCohomology_muNRep_two (hn : IsUnit (n : F)) :
     ((invMap F).injective (congrArg Subtype.val h))
 
 /-- Degree-two cohomology of a cyclic trivial module of order dividing `n` is finite over a local
-field containing a primitive `n`th root of unity. The group may be any topological copy of `G_F`. -/
+field containing a primitive `n`th root of unity. The group may be any topological copy of `G_F`.
+Continuity of the action, needed to state `H²(H, M)`, holds automatically because the action is
+trivial; the final argument defaults to that proof, so callers never need to supply it. -/
 theorem finite_H2_of_isPrimitiveRoot_of_natCard_dvd [NeZero n] {ζ : F}
     (hζ : IsPrimitiveRoot ζ n) {H : Type} [Group H] [TopologicalSpace H] [ContinuousMul H]
     (φ : AbsoluteGaloisGroup F ≃ₜ* H) (M : Type) [AddCommGroup M]
-    [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction H M] [ContinuousSMul H M]
-    [IsAddCyclic M] (hMn : Nat.card M ∣ n) (htriv : ∀ (h : H) (m : M), h • m = m) :
+    [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction H M] [IsAddCyclic M]
+    (hMn : Nat.card M ∣ n) (htriv : ∀ (h : H) (m : M), h • m = m)
+    (_ : ContinuousSMul H M := continuousSMul_of_forall_smul_eq_self htriv) :
     Finite (H2 H M) := by
   have : NeZero (Nat.card M) := ⟨fun h ↦ NeZero.ne n (Nat.eq_zero_of_zero_dvd (h ▸ hMn))⟩
   -- A primitive n-th root supplies a primitive root of every order dividing n.

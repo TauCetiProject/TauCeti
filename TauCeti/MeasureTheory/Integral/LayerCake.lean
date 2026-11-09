@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Layercake
 public import Mathlib.Data.Set.SymmDiff
+-- Proof-only: integrability of a real power on a bounded interval.
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 -- Proof-only: the layer-cake formula for a power and the power integral on `(0, a)`.
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 -- Proof-only: the integrability of indicators of bounded intervals.
@@ -15,7 +17,7 @@ import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
 
 /-!
-# Layer-cake formulas for products and distances
+# Layer-cake formulas for products, distances, and moments
 
 For two nonnegative measurable functions, their product integral is the double integral of the
 measures of intersections of their strict superlevel sets. This is the two-function form of the
@@ -48,6 +50,18 @@ Finally, it records the signed layer-cake representation of a real number,
 the integral over all levels `t` of the indicators of its superlevel sets `{u > t}`, corrected by
 `1_{t < 0}` so that the integrand is integrable.
 
+The truncated power formula `∫ min(f, k) ^ p = p ∫_0^k m {f > t} t ^ (p - 1) dt` is recorded
+together with the measurability of the distribution function `t ↦ m {f > t}`. The truncation lets
+a layer-cake argument work with finite quantities; monotone convergence removes it again, and the
+truncated integrals `∫ g ^ q min(g, k) ^ δ` increase to `∫ g ^ (q + δ)` as `k → ∞`.
+
+For positive real powers on a finite measure space, it also characterizes integrability by the
+weighted strict tail `μ.real {x | t < f x} * t ^ (p - 1)`, either on `(0, ∞)` or at infinity.
+The weighted tail is measurable without any measurability assumption on `f`, and its contribution
+from bounded thresholds is integrable. For measures on the nonnegative half-line, the integral
+of the shifted tail is the extended integral of a truncated difference. A finite first moment
+therefore makes every shifted tail integrable.
+
 ## Main statements
 
 * `TauCeti.lintegral_mul_eq_lintegral_lintegral_measure_inter` — the integral of a product of
@@ -65,6 +79,12 @@ the integral over all levels `t` of the indicators of its superlevel sets `{u > 
 * `MeasureTheory.Measure.exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt` — along a
   subsequence of an `L¹`-convergent sequence, the superlevel sets converge in measure at almost
   every level;
+* `MeasureTheory.Measure.measurable_measure_ofReal_lt` — the distribution function
+  `t ↦ m {f > t}` is measurable;
+* `MeasureTheory.Measure.lintegral_min_rpow_eq` — the integral of a truncated power
+  `min f k ^ p`, level by level up to the cap `k`;
+* `MeasureTheory.Measure.tendsto_lintegral_mul_min_rpow` — the truncated integrals
+  `∫ g ^ q min(g, k) ^ δ` increase to `∫ g ^ (q + δ)` as `k → ∞`;
 * `TauCeti.lintegral_ofReal_sub_eq_lintegral_measure` — the integral of a positive part
   `(g - f)⁺`, level by level;
 * `TauCeti.lintegral_sub_eq_lintegral_measure_sdiff` — the integral of a truncated difference
@@ -77,7 +97,10 @@ the integral over all levels `t` of the indicators of its superlevel sets `{u > 
 * `TauCeti.integral_indicator_Iio_sub_indicator_Iio_zero` — the signed layer-cake representation
   `a = ∫ (1_{t < a} - 1_{t < 0}) dt` of a real number, with
   `TauCeti.integral_abs_indicator_Iio_sub_indicator_Iio_zero` computing the `L¹` norm `|a|` of
-  its integrand.
+  its integrand;
+* `TauCeti.integrable_rpow_iff_integrableOn_weighted_tail` and
+  `TauCeti.integrable_rpow_iff_integrableAtFilter_weighted_tail` — the weighted-tail
+  integrability criteria for positive real-power moments.
 -/
 
 public section
@@ -85,7 +108,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set
-open scoped ENNReal symmDiff
+open scoped ENNReal NNReal symmDiff
 
 namespace TauCeti
 
@@ -234,6 +257,60 @@ end TauCeti
 namespace MeasureTheory.Measure
 
 variable {α : Type*} [MeasurableSpace α]
+
+/-- **The layer cake formula for a truncation.** For `p > 0` and a cap `k`, the integral of
+`min f k ^ p` is `p` times the integral of `m {t < f} t ^ (p - 1)` over the heights `0 < t < k`. -/
+theorem lintegral_min_rpow_eq (m : Measure α) {f : α → ℝ≥0∞} (hf : AEMeasurable f m) (k : ℝ≥0)
+    {p : ℝ} (hp : 0 < p) :
+    ∫⁻ x, min (f x) k ^ p ∂m = ENNReal.ofReal p *
+      ∫⁻ t in Ioo 0 (k : ℝ), m {x | ENNReal.ofReal t < f x} * ENNReal.ofReal (t ^ (p - 1)) := by
+  rw [TauCeti.lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul m (hf.min aemeasurable_const) hp,
+    ← Ioi_inter_Iio, inter_comm, ← setLIntegral_indicator measurableSet_Iio]
+  congr 1
+  refine setLIntegral_congr_fun measurableSet_Ioi fun t ht => ?_
+  rcases lt_or_ge t k with htk | htk
+  · -- Below the cap, `min (f x) k` exceeds `t` exactly when `f x` does.
+    have hk : ENNReal.ofReal t < k := by
+      rw [← ENNReal.ofReal_coe_nnreal]
+      exact (ENNReal.ofReal_lt_ofReal_iff (lt_trans ht htk)).2 htk
+    rw [indicator_of_mem (by exact htk)]
+    simp only [lt_min_iff, hk, and_true]
+  · -- At or above the cap, `min (f x) k` never exceeds `t`.
+    have hk : (k : ℝ≥0∞) ≤ ENNReal.ofReal t := by
+      rw [← ENNReal.ofReal_coe_nnreal]
+      exact ENNReal.ofReal_le_ofReal htk
+    have hempty : {x | ENNReal.ofReal t < min (f x) k} = ∅ :=
+      eq_empty_iff_forall_notMem.2 fun x hx => not_lt.2 ((min_le_right _ _).trans hk) hx
+    rw [indicator_of_notMem (by simpa using htk), hempty, measure_empty, zero_mul]
+
+/-- The distribution function `t ↦ m {f > t}` is measurable, being antitone. -/
+theorem measurable_measure_ofReal_lt (m : Measure α) (f : α → ℝ≥0∞) :
+    Measurable fun t : ℝ => m {x | ENNReal.ofReal t < f x} :=
+  Antitone.measurable fun _ _ htt' =>
+    measure_mono fun _ hx => lt_of_le_of_lt (ENNReal.ofReal_le_ofReal htt') hx
+
+open Filter Topology in
+/-- **Removing a truncation.** As `k → ∞`, the integrals of `g ^ q min(g, k) ^ δ` increase to the
+integral of `g ^ (q + δ)`. -/
+theorem tendsto_lintegral_mul_min_rpow (m : Measure α) {g : α → ℝ≥0∞} (hg : Measurable g)
+    {q δ : ℝ} (hq : 0 ≤ q) (hδ : 0 < δ) :
+    Tendsto (fun k : ℕ => ∫⁻ x, g x ^ q * min (g x) (k : ℝ≥0) ^ δ ∂m) atTop
+      (𝓝 (∫⁻ x, g x ^ (q + δ) ∂m)) := by
+  refine lintegral_tendsto_of_tendsto_of_monotone
+    (fun k => ((hg.pow_const q).mul ((hg.min measurable_const).pow_const δ)).aemeasurable)
+    (ae_of_all _ fun x k k' hkk' => ?_) (ae_of_all _ fun x => ?_)
+  · dsimp only
+    gcongr
+  · have hmin : Tendsto (fun k : ℕ => min (g x) ((k : ℝ≥0) : ℝ≥0∞)) atTop (𝓝 (g x)) := by
+      simpa using tendsto_const_nhds.min ENNReal.tendsto_nat_nhds_top
+    have hpow := (ENNReal.continuous_rpow_const (y := δ)).tendsto (g x) |>.comp hmin
+    rw [ENNReal.rpow_add_of_nonneg _ _ hq hδ.le]
+    refine ENNReal.Tendsto.const_mul hpow ?_
+    by_cases hgx : g x = ∞
+    · left
+      simp [hgx, hδ]
+    · right
+      exact ENNReal.rpow_ne_top_of_nonneg hq hgx
 
 /-- Thresholding a real function at a level separated from `0` and `1` by `δ > 0`
 approximates a set in measure, with error at most its `L¹` distance from the indicator
@@ -571,4 +648,121 @@ theorem integral_abs_indicator_Iio_sub_indicator_Iio_zero (a : ℝ) :
   rw [h, integral_add' (integrable_indicator_Ico_one _ _) (integrable_indicator_Ico_one _ _)]
   simp [integral_indicator_one measurableSet_Ico]
 
+/-! ### Real-power moments and weighted tails -/
+
+section WeightedTail
+
+open Filter Real
+open scoped Topology
+
+variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ]
+  {f : Ω → ℝ} {p : ℝ}
+
+omit [IsFiniteMeasure μ] in
+/-- The real-valued strict tail weighted by a real power is measurable in the threshold.
+No measurability of `f` or finiteness of `μ` is required. -/
+theorem measurable_weighted_tail (f : Ω → ℝ) (p : ℝ) :
+    Measurable fun t : ℝ ↦ μ.real {x | t < f x} * t ^ (p - 1) := by
+  have hm : Measurable fun t : ℝ ↦ μ {x | t < f x} :=
+    Antitone.measurable fun _ _ h ↦ measure_mono fun _ hx ↦ h.trans_lt hx
+  exact hm.ennreal_toReal.mul (by fun_prop)
+
+/-- The layer-cake integrability test for positive real powers on a finite measure space.
+The function may be nonnegative only almost everywhere. -/
+theorem integrable_rpow_iff_integrableOn_weighted_tail
+    (hf : AEMeasurable f μ) (hfn : 0 ≤ᵐ[μ] f) (hp : 0 < p) :
+    Integrable (fun x ↦ f x ^ p) μ ↔
+      IntegrableOn (fun t : ℝ ↦ μ.real {x | t < f x} * t ^ (p - 1)) (Ioi 0) := by
+  have hpow : AEStronglyMeasurable (fun x ↦ f x ^ p) μ :=
+    (hf.pow_const p).aestronglyMeasurable
+  have hnonneg : 0 ≤ᵐ[μ] fun x ↦ f x ^ p := hfn.mono fun _ hx ↦ rpow_nonneg hx _
+  rw [← lintegral_ofReal_ne_top_iff_integrable hpow hnonneg,
+    ← lt_top_iff_ne_top,
+    lintegral_rpow_eq_lintegral_meas_lt_mul μ hfn hf hp]
+  have heq : (∫⁻ t in Ioi (0 : ℝ), μ {x | t < f x} * ENNReal.ofReal (t ^ (p - 1))) =
+      ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (μ.real {x | t < f x} * t ^ (p - 1)) := by
+    refine setLIntegral_congr_fun measurableSet_Ioi fun t ht ↦ ?_
+    rw [ENNReal.ofReal_mul measureReal_nonneg, measureReal_def,
+      ENNReal.ofReal_toReal (measure_ne_top μ _)]
+  rw [heq, ENNReal.mul_lt_top_iff]
+  have htail : 0 ≤ᵐ[volume.restrict (Ioi (0 : ℝ))]
+      fun t ↦ μ.real {x | t < f x} * t ^ (p - 1) := by
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+    exact mul_nonneg measureReal_nonneg (rpow_nonneg ht.le _)
+  rw [IntegrableOn, ← lintegral_ofReal_ne_top_iff_integrable
+    (measurable_weighted_tail f p).aestronglyMeasurable htail, ← lt_top_iff_ne_top]
+  simp only [ENNReal.ofReal_lt_top, true_and, ENNReal.ofReal_eq_zero, not_le.mpr hp,
+    false_or, or_iff_left_iff_imp]
+  intro hz
+  rw [hz]
+  exact ENNReal.zero_lt_top
+
+/-- On a finite measure space, the tail weighted by `t ^ (p - 1)` is integrable over every
+bounded interval `(0, b]` when `0 < p`, without any measurability assumption on `f`. -/
+theorem integrableOn_weighted_tail_Ioc (f : Ω → ℝ) (hp : 0 < p) {b : ℝ} :
+    IntegrableOn (fun t : ℝ ↦ μ.real {x | t < f x} * t ^ (p - 1)) (Ioc 0 b) := by
+  have hpow : IntegrableOn (fun t : ℝ ↦ t ^ (p - 1)) (Ioc 0 b) :=
+    (intervalIntegral.intervalIntegrable_rpow' (by linarith : -1 < p - 1)).1
+  refine (hpow.const_mul (μ.real univ)).mono'
+    (measurable_weighted_tail f p).aestronglyMeasurable ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
+  rw [Real.norm_eq_abs, abs_of_nonneg
+    (mul_nonneg measureReal_nonneg (rpow_nonneg ht.1.le _))]
+  exact mul_le_mul_of_nonneg_right (measureReal_mono (subset_univ _)) (rpow_nonneg ht.1.le _)
+
+/-- On a finite measure space, only the behavior of the weighted tail at infinity matters
+for the existence of a positive real-power moment. -/
+theorem integrable_rpow_iff_integrableAtFilter_weighted_tail
+    (hf : AEMeasurable f μ) (hfn : 0 ≤ᵐ[μ] f) (hp : 0 < p) :
+    Integrable (fun x ↦ f x ^ p) μ ↔
+      IntegrableAtFilter (fun t : ℝ ↦ μ.real {x | t < f x} * t ^ (p - 1)) atTop := by
+  rw [integrable_rpow_iff_integrableOn_weighted_tail hf hfn hp]
+  constructor
+  · intro h
+    exact ⟨Ioi 0, Ioi_mem_atTop 0, h⟩
+  · rintro ⟨s, hs, hint⟩
+    obtain ⟨b, hb⟩ := mem_atTop_sets.mp hs
+    have htail : IntegrableOn (fun t : ℝ ↦ μ.real {x | t < f x} * t ^ (p - 1))
+        (Ioi (max b 0)) :=
+      hint.mono_set fun t ht ↦ hb t ((le_max_left b 0).trans ht.le)
+    have hbounded := integrableOn_weighted_tail_Ioc (μ := μ) (b := max b 0) f hp
+    have hcover : Ioc 0 (max b 0) ∪ Ioi (max b 0) = Ioi 0 :=
+      Ioc_union_Ioi_eq_Ioi (le_max_right b 0)
+    rw [← hcover]
+    exact hbounded.union htail
+
+end WeightedTail
+
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+/-- The integral of the shifted tail of a half-line measure is the extended integral of
+its truncated distance above the threshold. No finiteness or normalization is required. -/
+theorem lintegral_Ioi_tail_add (F : Measure ℝ≥0) (x : ℝ≥0) :
+    (∫⁻ t : ℝ in Ioi 0, F (Ioi (t.toNNReal + x))) =
+      ∫⁻ u, ((u - x : ℝ≥0) : ℝ≥0∞) ∂F := by
+  have hlayer := lintegral_eq_lintegral_meas_lt F
+    (f := fun u : ℝ≥0 => ((u - x : ℝ≥0) : ℝ))
+    (ae_of_all _ fun u => NNReal.coe_nonneg _) (by fun_prop)
+  simp only [ENNReal.ofReal_coe_nnreal] at hlayer
+  rw [hlayer]
+  refine setLIntegral_congr_fun measurableSet_Ioi fun t ht => ?_
+  congr 1
+  ext u
+  simp only [mem_Ioi, mem_ofPred_eq, ← Real.toNNReal_lt_iff_lt_coe ht.le,
+    lt_tsub_iff_right]
+
+/-- A finite extended first moment makes every shifted tail integrable on the positive
+half-line. The measure need not be finite or normalized. -/
+theorem integrableOn_Ioi_measureReal_tail_add (F : Measure ℝ≥0) (x : ℝ≥0)
+    (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂F) ≠ ∞) :
+    IntegrableOn (fun t : ℝ => F.real (Ioi (t.toNNReal + x))) (Ioi 0) := by
+  have hm : Measurable fun t : ℝ => F (Ioi (t.toNNReal + x)) :=
+    Antitone.measurable fun _ _ h => measure_mono (Ioi_subset_Ioi (by gcongr))
+  apply integrable_toReal_of_lintegral_ne_top hm.aemeasurable
+  rw [lintegral_Ioi_tail_add]
+  exact ne_top_of_le_ne_top hmean
+    (lintegral_mono fun u => ENNReal.coe_le_coe.mpr (tsub_le_self : u - x ≤ u))
+
+end MeasureTheory.Measure

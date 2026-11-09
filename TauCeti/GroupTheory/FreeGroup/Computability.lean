@@ -25,6 +25,12 @@ free-group elements.
 The computability arguments use Mathlib's primitive-recursion theorems for lists,
 especially `Primrec.list_rec` and `Primrec.list_casesOn`.
 
+Evaluation into a primitively encoded group with primitive-recursive multiplication and
+inversion is primitive recursive under a primitive-recursive family of generator assignments.
+In particular, it is primitive recursive jointly in a finite table `Fin n → G` and an
+arbitrary, possibly unreduced word, including rank zero. The evaluation proofs use
+Mathlib's `FreeGroup.lift_mk` and `Primrec.list_foldr`.
+
 `primrecPred_exists_encode_toWord` recognizes exactly the natural numbers encoding
 reduced representatives. It uses `Encodable.decode₂`, which rejects noncanonical
 codes even if the alphabet's decoder accepts redundant codes.
@@ -135,5 +141,31 @@ theorem primrecPred_exists_encode_toWord [DecidableEq α] :
       have hw : x.toWord = w := by
         simpa only [← hx, Encodable.decode₂_encode, Option.some.injEq] using hd
       exact hw ▸ isReduced_toWord
+
+variable {P G : Type*} [Primcodable P] [Primcodable G] [Group G]
+
+/-- Evaluation of words under a primitive-recursive family of generator assignments is
+primitive recursive jointly in the family parameter and the word. -/
+theorem primrec₂_lift_mk (hmul : Primrec₂ ((· * ·) : G → G → G))
+    (hinv : Primrec (Inv.inv : G → G)) {f : P → α → G} (hf : Primrec₂ f) :
+    Primrec₂ fun p (w : List (α × Bool)) => lift (f p) (mk w) := by
+  have letter : Primrec₂ fun p (a : α × Bool) =>
+      cond a.2 (f p a.1) (f p a.1)⁻¹ := by
+    exact (Primrec.cond (Primrec.snd.comp Primrec.snd)
+      (hf.comp Primrec.fst (Primrec.fst.comp Primrec.snd))
+      (hinv.comp (hf.comp Primrec.fst (Primrec.fst.comp Primrec.snd)))).to₂
+  apply Primrec₂.mk
+  refine (Primrec.list_foldr Primrec.snd (Primrec.const (1 : G))
+    (hmul.comp (letter.comp (Primrec.fst.comp Primrec.fst)
+      (Primrec.fst.comp Primrec.snd)) (Primrec.snd.comp Primrec.snd)).to₂).of_eq
+    fun p => ?_
+  simp only [lift_mk, List.prod_eq_foldr, List.foldr_map]
+
+/-- For a finite basis, word evaluation is primitive recursive uniformly in the entire
+assignment table, including rank zero. The table uses Mathlib's finite-function encoding. -/
+theorem primrec₂_lift_mk_fin (hmul : Primrec₂ ((· * ·) : G → G → G))
+    (hinv : Primrec (Inv.inv : G → G)) (n : ℕ) :
+    Primrec₂ fun (f : Fin n → G) (w : List (Fin n × Bool)) => lift f (mk w) :=
+  primrec₂_lift_mk hmul hinv Primrec.fin_app
 
 end FreeGroup

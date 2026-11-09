@@ -460,17 +460,23 @@ private theorem coords_smul_eq_and_add_self_eq_zero {P : W.toAffine.Point}
       _root_.map_zero, basePointCoeff_some, AddEquiv.symm_apply_apply]
 
 open scoped Classical in
-/-- **A Kummer root of `x(P) - e`**: if `2Q = P ≠ O`, the unit `x(P) - e` (or `c_T` at `P = T`)
-has a square root `α` in `Kˢ` on which `σ` acts by `1` when `σ Q - Q ∈ {O, T}` and by `-1`
-otherwise. -/
-private theorem exists_sq_eq_and_smul_eq {xP yP : K} (hP : W.toAffine.Nonsingular xP yP)
-    {Q : W.PointCoeff} (hQ : 2 • Q = W.basePointCoeff (some xP yP hP)) :
+/-- **A Kummer root of `x(P) - e` for an affine halving point**: the case of
+`exists_sq_eq_and_smul_eq` where `Q = (x, y)` is an affine point with `ψ₂(Q) ≠ 0`. -/
+private theorem exists_sq_eq_and_smul_eq_some {xP yP : K} (hP : W.toAffine.Nonsingular xP yP)
+    {x y : SeparableClosure K} (hQ' : (W⁄(SeparableClosure K)).toAffine.Nonsingular x y)
+    (hP' : (W⁄(SeparableClosure K)).toAffine.Nonsingular
+      (algebraMap K (SeparableClosure K) xP) (algebraMap K (SeparableClosure K) yP))
+    (hQ : 2 • W.pointCoeffEquiv (some x y hQ') = W.basePointCoeff (some xP yP hP))
+    (hQQ : some x y hQ' + some x y hQ' = some (algebraMap K (SeparableClosure K) xP)
+      (algebraMap K (SeparableClosure K) yP) hP')
+    (hy : (W⁄(SeparableClosure K)).toAffine.polynomialY.evalEval x y ≠ 0) :
     ∃ α : (SeparableClosure K)ˣ,
       α ^ 2 = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom
         (W.twoDescentUnit hT hψ (some xP yP hP)) ∧
       ∀ σ : AbsoluteGaloisGroup K, σ • α =
-        (if σ • Q - Q = 0 ∨ σ • Q - Q = W.basePointCoeff (some e t hT) then 1 else -1) * α := by
-  obtain ⟨Q, rfl⟩ := W.pointCoeffEquiv.surjective Q
+        (if σ • W.pointCoeffEquiv (some x y hQ') - W.pointCoeffEquiv (some x y hQ') = 0 ∨
+          σ • W.pointCoeffEquiv (some x y hQ') - W.pointCoeffEquiv (some x y hQ') =
+            W.basePointCoeff (some e t hT) then 1 else -1) * α := by
   set ι := algebraMap K (SeparableClosure K)
   have hT' : (W⁄(SeparableClosure K)).toAffine.Nonsingular (ι e) (ι t) :=
     (W.toAffine.baseChange_nonsingular (Algebra.ofId K (SeparableClosure K)).injective e t).2 hT
@@ -480,16 +486,6 @@ private theorem exists_sq_eq_and_smul_eq {xP yP : K} (hP : W.toAffine.Nonsingula
   have hc' : (W⁄(SeparableClosure K)).toAffine.polynomialX.evalEval (ι e) (ι t) =
       ι (W.toAffine.polynomialX.evalEval e t) := by
     rw [baseChange, Affine.map_polynomialX, Polynomial.map_mapRingHom_evalEval]
-  have hP' : (W⁄(SeparableClosure K)).toAffine.Nonsingular (ι xP) (ι yP) :=
-    (W.toAffine.baseChange_nonsingular (Algebra.ofId K (SeparableClosure K)).injective xP yP).2 hP
-  have hQQ : Q + Q = some (ι xP) (ι yP) hP' := W.pointCoeffEquiv.injective <| by
-    rw [map_add, ← two_nsmul, hQ, basePointCoeff_some]
-  -- `Q` is an affine point with `ψ₂(Q) ≠ 0`, since `2Q ≠ O`
-  rcases Q with _ | ⟨x, y, hQ'⟩
-  · rw [← zero_def, add_zero] at hQQ
-    exact absurd hQQ.symm (some_ne_zero _)
-  have hy : (W⁄(SeparableClosure K)).toAffine.polynomialY.evalEval x y ≠ 0 := fun hy ↦
-    some_ne_zero hP' <| hQQ ▸ (Affine.Point.some_add_self_eq_zero_iff hQ').2 hy
   -- `x(2Q) - e` is the square of `((x - e)² + W_X(e, t)) / ψ₂(Q)`
   have hdup := Affine.Point.xCoord_add_self_sub_mul_sq hT'.1 hψ' hQ' hy
   rw [hQQ, xCoord_some, hc'] at hdup
@@ -526,6 +522,31 @@ private theorem exists_sq_eq_and_smul_eq {xP yP : K} (hP : W.toAffine.Nonsingula
       simp only [Units.val_mul, val_smul_mk0, Units.val_mk0, map_div₀, map_add, map_pow, map_sub]
       rw [AlgEquiv.commutes, AlgEquiv.commutes, evalEval_polynomialY_galois, hσx, hσy, hroot]
       simp only [hiff, apply_ite Units.val, Units.val_one, Units.val_neg, ι, ψ]
+
+open scoped Classical in
+/-- **A Kummer root of `x(P) - e`**: if `2Q = P ≠ O`, the unit `x(P) - e` (or `c_T` at `P = T`)
+has a square root `α` in `Kˢ` on which `σ` acts by `1` when `σ Q - Q ∈ {O, T}` and by `-1`
+otherwise. -/
+private theorem exists_sq_eq_and_smul_eq {xP yP : K} (hP : W.toAffine.Nonsingular xP yP)
+    {Q : W.PointCoeff} (hQ : 2 • Q = W.basePointCoeff (some xP yP hP)) :
+    ∃ α : (SeparableClosure K)ˣ,
+      α ^ 2 = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom
+        (W.twoDescentUnit hT hψ (some xP yP hP)) ∧
+      ∀ σ : AbsoluteGaloisGroup K, σ • α =
+        (if σ • Q - Q = 0 ∨ σ • Q - Q = W.basePointCoeff (some e t hT) then 1 else -1) * α := by
+  obtain ⟨Q, rfl⟩ := W.pointCoeffEquiv.surjective Q
+  set ι := algebraMap K (SeparableClosure K)
+  have hP' : (W⁄(SeparableClosure K)).toAffine.Nonsingular (ι xP) (ι yP) :=
+    (W.toAffine.baseChange_nonsingular (Algebra.ofId K (SeparableClosure K)).injective xP yP).2 hP
+  have hQQ : Q + Q = some (ι xP) (ι yP) hP' := W.pointCoeffEquiv.injective <| by
+    rw [map_add, ← two_nsmul, hQ, basePointCoeff_some]
+  -- `Q` is an affine point with `ψ₂(Q) ≠ 0`, since `2Q ≠ O`
+  rcases Q with _ | ⟨x, y, hQ'⟩
+  · rw [← zero_def, add_zero] at hQQ
+    exact absurd hQQ.symm (some_ne_zero _)
+  have hy : (W⁄(SeparableClosure K)).toAffine.polynomialY.evalEval x y ≠ 0 := fun hy ↦
+    some_ne_zero hP' <| hQQ ▸ (Affine.Point.some_add_self_eq_zero_iff hQ').2 hy
+  exact exists_sq_eq_and_smul_eq_some hT hψ hP hQ' hP' hQ hQQ hy
 
 /-- **The Kummer map of `[2]`, read through a point of order two, is `x - e`** (Silverman X.1.4).
 Let `T = (e, t)` be a point of `W(K)` of order two, with `2` invertible in `K`. The character

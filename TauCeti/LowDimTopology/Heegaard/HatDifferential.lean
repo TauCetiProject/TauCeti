@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.LowDimTopology.Heegaard.Admissibility
 public import TauCeti.LowDimTopology.Heegaard.Nice
 public import TauCeti.LowDimTopology.Heegaard.RelativeGrading
+public import TauCeti.LowDimTopology.Heegaard.SpincAdmissibility
 
 /-!
 # The combinatorial hat differential of a Heegaard diagram
@@ -29,18 +30,18 @@ complex of Sarkar–Wang and Ozsváth–Stipsicz–Szabó.
 This file defines that count for the abstract region incidence data
 `TauCeti.HeegaardRegionSystem` with region Euler characteristics `χ`. The counted domains from
 `x` to `y` form the set `H.hatDomains χ x y`. It is finite when the diagram is weakly admissible,
-and the matrix coefficient `H.hatCoefficient χ x y` is its cardinality modulo two. The linear
-map `H.hatDifferential χ` on `H.Generator →₀ ZMod 2` has these coefficients. The abstract
-condition `TauCeti.HeegaardRegionSystem.IsNice` only records that every region containing no
-basepoint has Euler characteristic one and two or four corners; it does not say that `H` and `χ`
-come from regions of an actual surface. The agreement of this count with the holomorphic
-differential therefore applies only to incidence data realized by a genuine nice Heegaard
-diagram with these region Euler characteristics, and neither that realization nor the agreement
-is formalized here. Otherwise the count of domains need not be the count of holomorphic disks.
-In a diagram that is not weakly admissible the set can be infinite, in which case the
-coefficient is `0` by the convention of `Set.ncard`; the results below carry the combinatorial
-hypotheses under which the count is finite and has the properties listed next. That the
-differential squares to zero on nice diagrams is not proved here.
+or merely weakly admissible at `y`, and the matrix coefficient `H.hatCoefficient χ x y` is its
+cardinality modulo two. The linear map `H.hatDifferential χ` on `H.Generator →₀ ZMod 2` has
+these coefficients. The abstract condition `TauCeti.HeegaardRegionSystem.IsNice` only records
+that every region containing no basepoint has Euler characteristic one and two or four corners;
+it does not say that `H` and `χ` come from regions of an actual surface. The agreement of this
+count with the holomorphic differential therefore applies only to incidence data realized by a
+genuine nice Heegaard diagram with these region Euler characteristics, and neither that
+realization nor the agreement is formalized here. Otherwise the count of domains need not be the
+count of holomorphic disks. In a diagram that is not weakly admissible at `y` the set can be
+infinite, in which case the coefficient is `0` by the convention of `Set.ncard`; the results below
+carry the combinatorial hypotheses under which the count is finite and has the properties listed
+next. That the differential squares to zero on nice diagrams is not proved here.
 
 The basic properties of the count are the following. In a weakly admissible diagram nothing is
 counted from a generator to itself, since a nonnegative periodic domain vanishes. Without nonzero
@@ -60,8 +61,10 @@ indices of the periodic domains, and on the nose when those vanish.
 
 ## Main results
 
-* `TauCeti.HeegaardRegionSystem.WeaklyAdmissible.finite_hatDomains`: in a weakly admissible
-  diagram only finitely many domains are counted.
+* `TauCeti.HeegaardRegionSystem.WeaklyAdmissibleAt.finite_hatDomains` and
+  `TauCeti.HeegaardRegionSystem.WeaklyAdmissible.finite_hatDomains`: in a diagram weakly
+  admissible at the terminal generator, in particular in a weakly admissible diagram, only
+  finitely many domains are counted.
 * `TauCeti.HeegaardRegionSystem.WeaklyAdmissible.hatCoefficient_self`: in a weakly admissible
   diagram the differential has no diagonal terms.
 * `TauCeti.HeegaardRegionSystem.hatCoefficient_eq_one_iff_of_periodicDomains_eq_bot`: without
@@ -124,12 +127,17 @@ theorem mem_hatDomains_iff : D ∈ H.hatDomains χ x y ↔
       H.maslovIndex χ x y D = 1 :=
   Iff.rfl
 
+/-- In a diagram weakly admissible at `y` only finitely many domains are counted by the hat
+differential from any generator to `y`. -/
+theorem WeaklyAdmissibleAt.finite_hatDomains (hW : H.WeaklyAdmissibleAt χ y) (x : H.Generator) :
+    (H.hatDomains χ x y).Finite :=
+  hW.finite_setOf_isDomainBetween_basepoint_eq_nonneg_index x 0 1
+
 /-- In a weakly admissible diagram only finitely many domains are counted by the hat
 differential between two generators. -/
 theorem WeaklyAdmissible.finite_hatDomains (hW : H.WeaklyAdmissible) (χ : Region → ℤ)
     (x y : H.Generator) : (H.hatDomains χ x y).Finite :=
-  (hW.finite_setOf_isDomainBetween_basepoint_eq_nonneg x y 0).subset fun _ hD =>
-    ⟨hD.1, hD.2.1, hD.2.2.1⟩
+  (hW.weaklyAdmissibleAt χ y).finite_hatDomains x
 
 /-- In a weakly admissible diagram no domain is counted by the hat differential from a generator
 to itself: such a domain is a nonnegative periodic domain, hence zero, and the zero domain has

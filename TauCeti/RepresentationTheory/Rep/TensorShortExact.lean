@@ -72,11 +72,9 @@ theorem exact_iff_function_exact (S : ShortComplex (Rep.{w} k G)) :
 theorem exists_leftInverse_of_rightInverse {S : ShortComplex (Rep.{w} k G)} (hS : S.Exact)
     [Mono S.f] {s : S.X₃.V →ₗ[k] S.X₂.V} (hs : Function.RightInverse s S.g.hom) :
     ∃ r : S.X₂.V →ₗ[k] S.X₁.V, Function.LeftInverse r S.f.hom := by
-  have tfae := ((exact_iff_function_exact S).1 hS).split_tfae
-    ((mono_iff_injective S.f).1 inferInstance) hs.surjective
-  have key : (∃ l, S.g.hom.toLinearMap ∘ₗ l = LinearMap.id) ↔
-      ∃ l, l ∘ₗ S.f.hom.toLinearMap = LinearMap.id := tfae.out 1 2
-  obtain ⟨r, hr⟩ := key.1 ⟨s, LinearMap.ext hs⟩
+  have h := (exact_iff_function_exact S).1 hS
+  obtain ⟨r, hr⟩ := (h.splitInjectiveEquiv hs.surjective).symm
+    (h.splitSurjectiveEquiv ((mono_iff_injective S.f).1 ‹_›) ⟨s, LinearMap.ext hs⟩)
   exact ⟨r, LinearMap.congr_fun hr⟩
 
 /-- In a short exact sequence of representations, a `k`-linear retraction of the first map gives
@@ -84,11 +82,9 @@ a `k`-linear section of the last map. -/
 theorem exists_rightInverse_of_leftInverse {S : ShortComplex (Rep.{w} k G)} (hS : S.Exact)
     [Epi S.g] {r : S.X₂.V →ₗ[k] S.X₁.V} (hr : Function.LeftInverse r S.f.hom) :
     ∃ s : S.X₃.V →ₗ[k] S.X₂.V, Function.RightInverse s S.g.hom := by
-  have tfae := ((exact_iff_function_exact S).1 hS).split_tfae hr.injective
-    ((epi_iff_surjective S.g).1 inferInstance)
-  have key : (∃ l, S.g.hom.toLinearMap ∘ₗ l = LinearMap.id) ↔
-      ∃ l, l ∘ₗ S.f.hom.toLinearMap = LinearMap.id := tfae.out 1 2
-  obtain ⟨s, hs⟩ := key.2 ⟨r, LinearMap.ext hr⟩
+  have h := (exact_iff_function_exact S).1 hS
+  obtain ⟨s, hs⟩ := (h.splitSurjectiveEquiv hr.injective).symm
+    (h.splitInjectiveEquiv ((epi_iff_surjective S.g).1 ‹_›) ⟨r, LinearMap.ext hr⟩)
   exact ⟨s, LinearMap.congr_fun hs⟩
 
 end Ring
@@ -120,10 +116,7 @@ representations: `M ⊗ r` is a retraction of `M ◁ f`. -/
 theorem leftInverse_whiskerLeft (M : Rep k G) {A B : Rep.{u} k G} (f : A ⟶ B)
     {r : B.V →ₗ[k] A.V} (hr : Function.LeftInverse r f.hom) :
     Function.LeftInverse (LinearMap.lTensor M.V r) (M ◁ f).hom := fun x ↦ by
-  have h : r ∘ₗ f.hom.toLinearMap = LinearMap.id := LinearMap.ext hr
-  rw [hom_whiskerLeft, ← Representation.IntertwiningMap.toLinearMap_apply,
-    Representation.IntertwiningMap.toLinearMap_lTensor, ← LinearMap.lTensor_comp_apply, h,
-    LinearMap.lTensor_id, LinearMap.id_apply]
+  induction x using TensorProduct.inductionOn <;> simp_all [hr _]
 
 /-- Tensoring on the left with `M` sends an exact sequence ending in an epimorphism to a
 short exact sequence if the first map has a `k`-linear retraction. -/

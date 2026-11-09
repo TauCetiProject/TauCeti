@@ -72,8 +72,7 @@ noncomputable def quotSMulTop (f : IntertwiningMap ρ σ) (r : k) :
     IntertwiningMap (ρ.quotSMulTop r) (σ.quotSMulTop r) where
   toLinearMap := QuotSMulTop.map r f.toLinearMap
   isIntertwining' g := by
-    rw [quotSMulTop_apply, quotSMulTop_apply, ← QuotSMulTop.map_comp, ← QuotSMulTop.map_comp,
-      f.isIntertwining']
+    simp only [quotSMulTop_apply, ← QuotSMulTop.map_comp, f.isIntertwining']
 
 /-- The linear map underlying the reduction of an intertwining map is `QuotSMulTop.map`. -/
 @[simp]
@@ -90,8 +89,9 @@ variable {G : Type*} [Group G] [Fintype G] {ρ : Representation k G V}
 /-- If the identity of `ρ` is the norm `x ↦ ∑ g, ρ g (φ (ρ g⁻¹ x))` of a `k`-linear map `φ`, then
 the identity of `ρ.quotSMulTop r` is the norm of the reduction `QuotSMulTop.map r φ`. -/
 theorem quotSMulTop_forall_eq_sum (φ : V →ₗ[k] V) (hφ : ∀ x, x = ∑ g : G, ρ g (φ (ρ g⁻¹ x)))
-    (r : k) (x : QuotSMulTop r V) :
-    x = ∑ g : G, ρ.quotSMulTop r g (QuotSMulTop.map r φ (ρ.quotSMulTop r g⁻¹ x)) := by
+    (r : k) : ∀ x : QuotSMulTop r V,
+      x = ∑ g : G, ρ.quotSMulTop r g (QuotSMulTop.map r φ (ρ.quotSMulTop r g⁻¹ x)) := by
+  intro x
   induction x using Submodule.Quotient.induction_on with | H x => ?_
   conv_lhs => rw [hφ x, ← Submodule.mkQ_apply, map_sum]
   simp
