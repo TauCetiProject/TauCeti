@@ -30,8 +30,9 @@ behaviour of crossings when a horizontal strand moves, developed in
 `TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Horizontal`: moving a strand identifies the
 factorizations of a diagram, and the diagrams resolving to it, with those of the moved diagram.
 
-The matched subalgebra does not contain the unit of the strands algebra, but it has a unit of its
-own, the sum `TauCeti.StrandsAlgebra.matchedUnit` of the idempotents `I(s)`. The type
+The matched subalgebra need not contain the unit of the strands algebra, but it has a unit of its
+own, the sum `TauCeti.StrandsAlgebra.matchedUnit` of the idempotents `I(s)`, which need not equal
+the unit of the strands algebra. The type
 `TauCeti.MatchedAlgebra R M` is the matched subalgebra with this unit and with the restricted
 differential: a unital algebra, and over a ring of characteristic two an ungraded differential
 algebra, which is what type `D` structures and box tensor products
@@ -71,6 +72,9 @@ Thurston.
 * `TauCeti.MatchedAlgebra.isMulCentral_occupancyIdem`,
   `TauCeti.MatchedAlgebra.completeOrthogonalIdempotents_occupancyIdem`: the occupancy idempotents
   are central and form a complete family of orthogonal idempotents.
+* `TauCeti.MatchedAlgebra.occupancyRingEquiv_apply_coe`,
+  `TauCeti.MatchedAlgebra.occupancyRingEquiv_symm_apply`: the components of the occupancy
+  decomposition are the corners `e_i x e_i`, and an element is the sum of its components.
 
 ## References
 
@@ -339,7 +343,8 @@ variable [Fintype β]
 variable (R) in
 /-- The unit of the matched subalgebra: the sum of its idempotents `I(s)` over all sets `s` of
 values of the matching `M`. Equivalently, it is the sum of the idempotents `I(S)` of the strands
-algebra over the sets `S` on which `M` is injective. It is not the unit of the strands algebra. -/
+algebra over the sets `S` on which `M` is injective. It need not be the unit of the strands
+algebra. -/
 def matchedUnit (M : α → β) : StrandsAlgebra R α :=
   ∑ s, matchedIdem R M s
 
@@ -412,8 +417,11 @@ variable (R) in
 unit is `TauCeti.StrandsAlgebra.matchedUnit R M`, the sum of its idempotents `I(s)`, together with
 the restriction of the differential of the strands algebra. For the matching of a pointed matched
 circle `Z` and `R = ZMod 2` it is the differential algebra `A(Z)` of Lipshitz, Ozsváth and
-Thurston. Its unit is not that of the strands algebra, so the inclusion
-`TauCeti.MatchedAlgebra.toStrandsAlgebra` is only a homomorphism of non-unital algebras. -/
+Thurston. Its unit need not be that of the strands algebra, so the inclusion
+`TauCeti.MatchedAlgebra.toStrandsAlgebra` need not preserve units and is only a homomorphism of
+non-unital algebras. As for Mathlib's `IsIdempotentElem.Corner`, on which this construction is
+modelled, it is a type synonym for a non-unital subalgebra equipped with an idempotent of the
+ambient algebra as its own unit. -/
 @[expose]
 def MatchedAlgebra (M : α → β) : Type _ :=
   matchedSubalgebra R M
@@ -642,6 +650,20 @@ def occupancyRingEquiv :
     MatchedAlgebra R M ≃+*
       Π i, ((completeOrthogonalIdempotents_occupancyIdem (R := R) (M := M)).idem i).Corner :=
   completeOrthogonalIdempotents_occupancyIdem.ringEquivOfIsMulCentral isMulCentral_occupancyIdem
+
+/-- The component of `x` in the summand with `i` strands is `e_i x e_i`. -/
+@[simp]
+theorem occupancyRingEquiv_apply_coe (x : MatchedAlgebra R M) (i : Fin (Fintype.card β + 1)) :
+    (occupancyRingEquiv R M x i).1 =
+      occupancyIdem R M i * x * occupancyIdem R M i :=
+  (rfl)
+
+/-- An element is recovered from its occupancy components as their sum. -/
+@[simp]
+theorem occupancyRingEquiv_symm_apply
+    (y : Π i, ((completeOrthogonalIdempotents_occupancyIdem (R := R) (M := M)).idem i).Corner) :
+    (occupancyRingEquiv R M).symm y = ∑ i, (y i).1 :=
+  (rfl)
 
 end Idempotents
 
