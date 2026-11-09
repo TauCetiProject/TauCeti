@@ -216,8 +216,8 @@ theorem mongeAmpereMeasure_ite_mul_of_pos {Ω : Set E} [DecidablePred (· ∈ Ω
 
 /-- Positive scaling and a constant shift of a real potential on a set, extended by `⊤` off that
 set: the Monge–Ampère measure is multiplied by `c ^ finrank ℝ E`. -/
-theorem mongeAmpereMeasure_ite_mul_add_of_pos {Ω : Set E} [DecidablePred (· ∈ Ω)] {u : E → ℝ}
-    {c : ℝ} (hc : 0 < c) (b : ℝ) :
+theorem _root_.MeasureTheory.Measure.mongeAmpereMeasure_ite_mul_add_of_pos {Ω : Set E}
+    [DecidablePred (· ∈ Ω)] {u : E → ℝ} {c : ℝ} (hc : 0 < c) (b : ℝ) :
     mongeAmpereMeasure μ (fun x => if x ∈ Ω then ((c * u x + b : ℝ) : EReal) else ⊤) =
       ENNReal.ofReal (c ^ finrank ℝ E) •
         mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) := by

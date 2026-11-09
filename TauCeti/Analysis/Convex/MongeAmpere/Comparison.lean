@@ -135,7 +135,8 @@ omit [Nontrivial E] in
 convex on `Ω` and continuous on its closure. Then the subgradient images of `u` and `w` over `G`
 (whose measures are the Monge–Ampère measures of `G`) satisfy `S_w ⊆ S_u`, and `S_u` contains a
 ball. -/
-private theorem exists_measure_eq_subset_ball (hΩo : IsOpen Ω) (hu : ConvexOn ℝ Ω u) {w : E → ℝ}
+private theorem _root_.MeasureTheory.Measure.exists_measure_eq_subset_ball (hΩo : IsOpen Ω)
+    (hu : ConvexOn ℝ Ω u) {w : E → ℝ}
     (hwconv : ConvexOn ℝ Ω w) (huc : ContinuousOn u (closure Ω)) (hwc : ContinuousOn w (closure Ω))
     {G : Set E} (hGo : IsOpen G) (hGΩ : G ⊆ Ω) (hGb : Bornology.IsBounded G)
     (hfrG : ∀ y ∈ frontier G, w y ≤ u y) (hpos : ∀ y ∈ G, 0 < w y - u y) (hG : G.Nonempty) :
@@ -183,19 +184,19 @@ theorem le_of_mongeAmpereMeasure_le_of_le_frontier (hΩo : IsOpen Ω)
   by_contra! hlt
   -- Replace `v` by `w = (1 + ε) v + b`: then `u < w` at `x₀` and `w < u` on the frontier of `Ω`.
   obtain ⟨ε, hε, b, hwc, hwconv, hfrw, hx₀w⟩ :=
-    exists_convexOn_lt_frontier_of_lt hΩ hv hvc hfr hx₀ hlt
+    exists_convexOn_lt_frontier_of_lt hΩ.isCompact_closure hv hvc hfr hx₀ hlt
   set w : E → ℝ := fun y => (1 + ε) * v y + b with hw
   -- The open set `G = {u < w}` contains `x₀`, and `w ≤ u` on its frontier.
   obtain ⟨G, hGo, hGΩ, hGc, hx₀G, hpos, hfrG⟩ :=
     exists_isOpen_subset_pos_forall_frontier_le hΩo huc hwc hfrw hx₀ hx₀w
   have hGb : Bornology.IsBounded G := hΩ.subset hGΩ
-  obtain ⟨Su, Sw, hSu, hSw, hsub, hball⟩ := exists_measure_eq_subset_ball μ hΩo hu hwconv huc hwc
-    hGo hGΩ hGb hfrG hpos ⟨x₀, hx₀G⟩
+  obtain ⟨Su, Sw, hSu, hSw, hsub, hball⟩ := Measure.exists_measure_eq_subset_ball μ hΩo hu hwconv
+    huc hwc hGo hGΩ hGb hfrG hpos ⟨x₀, hx₀G⟩
   -- Compare `(1 + ε) ^ n MA_v(G) ≤ MA_u(G) ≤ MA_v(G)` with `0 < MA_u(G)` and `MA_v(G) < ∞`.
   have hεpos : 0 < 1 + ε := by positivity
   obtain ⟨c, η, hη, hcη⟩ := hball
   refine Measure.false_of_subset_of_pos μ ?_ hMA
-    (mongeAmpereMeasure_ite_mul_add_of_pos μ hεpos b) hSu hSw hsub
+    (Measure.mongeAmpereMeasure_ite_mul_add_of_pos μ hεpos b) hSu hSw hsub
     ((measure_ball_pos μ c hη).trans_le (measure_mono hcη)) ?_
   · rw [← ENNReal.ofReal_one, ENNReal.ofReal_lt_ofReal_iff (by positivity)]
     exact one_lt_pow₀ (by linarith) finrank_pos.ne'

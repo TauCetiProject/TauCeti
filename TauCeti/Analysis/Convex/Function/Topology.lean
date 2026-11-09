@@ -27,7 +27,7 @@ A function convex on `s` and continuous on `closure s` remains convex on that cl
 A convex function on `(0, ∞)` bounded above by `L` stays convex when extended by the value `L` at
 `0` (`ConvexOn.apply_mul_le_of_forall_le`), as the limit of convex combinations approaching `0`.
 
-On a bounded set of a proper space, a convex function continuous on the closure can be rescaled and
+On a set with compact closure, a convex function continuous on the closure can be rescaled and
 shifted to `(1 + ε) v + b` so that it passes from above to below another continuous function
 (`TauCeti.exists_convexOn_lt_frontier_of_lt`).
 -/
@@ -60,14 +60,14 @@ theorem convexOn_of_tendsto {l : Filter ι} [l.NeBot] {F : ι → α → β} {f 
 
 section FrontierShift
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E] {Ω : Set E}
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Set E}
   {u v : E → ℝ}
 
-/-- If `v ≤ u` on the frontier of a bounded set `Ω` and `u x₀ < v x₀` at some `x₀ ∈ Ω`, with `v`
-convex on `Ω` and `u`, `v` continuous on its closure, then for a small `ε > 0` and a constant `b`
-the function `(1 + ε) v + b` is convex on `Ω` and continuous on its closure, lies below `u` on the
-frontier, and lies above `u` at `x₀`. -/
-theorem exists_convexOn_lt_frontier_of_lt (hΩ : Bornology.IsBounded Ω)
+/-- If `v ≤ u` on the frontier of a set `Ω` with compact closure and `u x₀ < v x₀` at some
+`x₀ ∈ Ω`, with `v` convex on `Ω` and `u`, `v` continuous on its closure, then for a small `ε > 0`
+and a constant `b` the function `(1 + ε) v + b` is convex on `Ω` and continuous on its closure,
+lies below `u` on the frontier, and lies above `u` at `x₀`. -/
+theorem exists_convexOn_lt_frontier_of_lt (hΩ : IsCompact (closure Ω))
     (hv : ConvexOn ℝ Ω v) (hvc : ContinuousOn v (closure Ω))
     (hfr : ∀ x ∈ frontier Ω, v x ≤ u x) {x₀ : E} (hx₀ : x₀ ∈ Ω)
     (hlt : u x₀ < v x₀) :
@@ -78,7 +78,7 @@ theorem exists_convexOn_lt_frontier_of_lt (hΩ : Bornology.IsBounded Ω)
   -- take `b = -a / 2`.
   set a := v x₀ - u x₀
   have ha : 0 < a := sub_pos.2 hlt
-  obtain ⟨M, hM⟩ := hΩ.isCompact_closure.exists_bound_of_continuousOn hvc
+  obtain ⟨M, hM⟩ := hΩ.exists_bound_of_continuousOn hvc
   set ε := a / (4 * (|M| + 1))
   have hε : 0 < ε := by positivity
   have hεv : ∀ y ∈ closure Ω, |ε * v y| ≤ a / 4 := fun y hy => by
