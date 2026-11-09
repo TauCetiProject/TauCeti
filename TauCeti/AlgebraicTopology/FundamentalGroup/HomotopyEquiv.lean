@@ -29,6 +29,8 @@ homeomorphism is what is available.
 * `ContinuousMap.HomotopyEquiv.fundamentalGroupMulEquiv_refl`,
   `ContinuousMap.HomotopyEquiv.fundamentalGroupMulEquiv_trans`: the construction respects
   identities and composition of homotopy equivalences.
+* `ContinuousMap.HomotopyEquiv.subsingleton_fundamentalGroup`: trivial fundamental groups pull
+  back along a homotopy equivalence.
 * `ContinuousMap.HomotopyEquiv.fundamentalGroup_map_bijective`: the homomorphism
   `FundamentalGroup.map e.toFun x` induced by the forward map itself is bijective.
 * `ContinuousMap.HomotopyEquiv.nonempty_fundamentalGroupMulEquiv`: over a path connected
@@ -111,6 +113,12 @@ theorem _root_.ContinuousMap.HomotopyEquiv.fundamentalGroupMulEquiv_trans {Z : T
             (_root_.HomotopyGroup.pi1MulEquivFundamentalGroup.symm b)))
         (e.fundamentalGroupMulEquiv_apply x a).symm).trans
         (e'.fundamentalGroupMulEquiv_apply (e.toFun x) _).symm))
+
+/-- If the fundamental group of `Y` at `e x` is trivial, then so is the fundamental group of `X`
+at `x`, for a homotopy equivalence `e : X ≃ₕ Y`. -/
+theorem _root_.ContinuousMap.HomotopyEquiv.subsingleton_fundamentalGroup (e : X ≃ₕ Y) (x : X)
+    [Subsingleton (_root_.FundamentalGroup Y (e x))] : Subsingleton (_root_.FundamentalGroup X x) :=
+  (e.fundamentalGroupMulEquiv x).injective.subsingleton
 
 /-- **The forward map of a homotopy equivalence is bijective on fundamental groups.** Unlike
 `ContinuousMap.HomotopyEquiv.fundamentalGroupMulEquiv`, this is stated for Mathlib's
