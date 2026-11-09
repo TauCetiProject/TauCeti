@@ -337,15 +337,17 @@ theorem hamiltonianAction_le_hamiltonianAction (ω : SymplecticForm V)
 
 /-- **The energy of a Floer cylinder.** Let `H` be a `C¹` time-dependent Hamiltonian and let `u`
 be `C²` on an open neighbourhood `U` of `ℝ × [0, 1]`, with `u(s, 1) = u(s, 0)` for all `s`,
-solving the Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` there for an almost complex
-structure `J` tamed by `ω`. If the actions of the loops `t ↦ u(s, t)` tend to `A₁` as `s → -∞`
-and to `A₂` as `s → ∞`, then the energy of `u` is `A₂ - A₁`. -/
+solving the Floer equation `∂_s u + J_z (∂_t u - X_{H_t}(u)) = 0` there for almost complex
+structures `J_z` tamed by `ω`, which may depend on the domain point. If the actions of the loops
+`t ↦ u(s, t)` tend to `A₁` as `s → -∞` and to `A₂` as `s → ∞`, then the energy of `u` is
+`A₂ - A₁`. -/
 theorem lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction (ω : SymplecticForm V)
-    {J : AlmostComplexStructure V} (hJ : ω.Tames J) (hH : ContDiff ℝ 1 (uncurry H))
+    {J : ℝ × ℝ → AlmostComplexStructure V} (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z))
+    (hH : ContDiff ℝ 1 (uncurry H))
     (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hRU : (univ : Set ℝ) ×ˢ Icc 0 1 ⊆ U)
     (hper : ∀ s, u (s, 1) = u (s, 0))
     (hfloer : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, fderiv ℝ u z stdComplexLineReal +
-      J (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (H z.2) (u z)) = 0)
+      J z (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (H z.2) (u z)) = 0)
     {A₁ A₂ : ℝ}
     (hbot : Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) atBot (𝓝 A₁))
     (htop : Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) atTop (𝓝 A₂)) :
@@ -354,8 +356,7 @@ theorem lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction (ω : Sympl
       ENNReal.ofReal (A₂ - A₁) := by
   simpa only [fderiv_cylindrical_apply_stdComplexLineReal, integral_zero, sub_zero] using
     ω.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction_sub_integral
-      (H := fun w ↦ H w.2) (J := fun _ ↦ J) (fun _ _ ↦ hJ) (contDiff_uncurry_cylindrical hH) hU hu
-      hRU hper hfloer
+      (H := fun w ↦ H w.2) hJ (contDiff_uncurry_cylindrical hH) hU hu hRU hper hfloer
       (by simp only [fderiv_cylindrical_apply_stdComplexLineReal]; exact integrableOn_zero) hbot
       htop
 
