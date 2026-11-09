@@ -20,7 +20,7 @@ The proof is the classical one: every term is at most `‖f‖_{ℓᵖ}`, so
 
 ## Main statements
 
-* `MeasureTheory.eLpNorm_count_le_of_exponent_le`: `‖f‖_{ℓ^q} ≤ ‖f‖_{ℓ^p}` for `0 < p ≤ q`.
+* `MeasureTheory.eLpNorm_count_le_of_exponent_ge`: `‖f‖_{ℓ^q} ≤ ‖f‖_{ℓ^p}` for `0 < p ≤ q`.
 * `MeasureTheory.eLpNorm_pow_count_lt_top`: a geometric sequence with ratio `a < 1` lies in every
   `ℓ^q`.
 -/
@@ -38,7 +38,7 @@ variable {α ε : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
 
 /-- **Nesting of the `ℓᵖ` seminorms.** For the counting measure, the `Lᵖ` seminorm decreases as
 the exponent grows: `‖f‖_{ℓ^q} ≤ ‖f‖_{ℓᵖ}` whenever `0 < p ≤ q`. -/
-theorem eLpNorm_count_le_of_exponent_le (hp : p ≠ 0) (hpq : p ≤ q) :
+theorem eLpNorm_count_le_of_exponent_ge (hp : p ≠ 0) (hpq : p ≤ q) :
     eLpNorm f q count ≤ eLpNorm f p count := by
   by_cases hf : AEStronglyMeasurable f count
   swap

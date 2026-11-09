@@ -40,7 +40,7 @@ are bounded on `Lᵖ` uniformly in `j`.
 * `TemperedDistribution.besovENorm_eq_zero_iff`, `TemperedDistribution.besovENorm_add_le`,
   `TemperedDistribution.besovENorm_smul`: the norm axioms.
 * `TemperedDistribution.besovENorm_le_of_smoothness_le`,
-  `TemperedDistribution.besovENorm_le_of_exponent_le`: monotonicity in `s` and in `q`.
+  `TemperedDistribution.besovENorm_le_of_exponent_ge`: monotonicity in `s` and in `q`.
 * `TemperedDistribution.besovENorm_le_mul_of_smoothness_lt`: `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for
   `s' < s`, with an explicit finite constant.
 * `TemperedDistribution.exists_besovENorm_le_mul_enorm`: `Lᵖ ⊆ B⁰_{p,∞}`.
@@ -135,8 +135,7 @@ theorem besovENorm_add_le (hq : 1 ≤ q) (u v : 𝓢'(E, F)) :
   unfold besovENorm
   refine (MeasureTheory.eLpNorm_mono_enorm
     MeasureTheory.StronglyMeasurable.of_discrete.aestronglyMeasurable fun j ↦ ?_).trans
-    (MeasureTheory.eLpNorm_add_le (g := fun j : ℕ ↦
-      (2 : ℝ≥0∞) ^ (s * j) * eLpNorm p (littlewoodPaleyBlock F φ j v)) hq)
+    (MeasureTheory.eLpNorm_add_le hq)
   simp only [enorm_eq_self, map_add, Pi.add_apply, ← mul_add]
   gcongr
   exact eLpNorm_add_le _ _
@@ -164,9 +163,9 @@ theorem besovENorm_le_of_smoothness_le (hs : s' ≤ s) (u : 𝓢'(E, F)) :
 
 /-- The Besov norm **decreases with the summability exponent**: `‖u‖_{B^s_{p,q'}} ≤ ‖u‖_{B^s_{p,q}}`
 for `0 < q ≤ q'`. -/
-theorem besovENorm_le_of_exponent_le (hq : q ≠ 0) (hqq' : q ≤ q') (u : 𝓢'(E, F)) :
+theorem besovENorm_le_of_exponent_ge (hq : q ≠ 0) (hqq' : q ≤ q') (u : 𝓢'(E, F)) :
     besovENorm φ s p q' u ≤ besovENorm φ s p q u :=
-  MeasureTheory.eLpNorm_count_le_of_exponent_le hq hqq'
+  MeasureTheory.eLpNorm_count_le_of_exponent_ge hq hqq'
 
 /-- **Strict loss of smoothness absorbs the summability exponent.** For `s' < s` and any `q, q'`,
 `‖u‖_{B^{s'}_{p,q'}} ≤ ‖(2^{(s' - s) j})_j‖_{ℓ^{q'}} ‖u‖_{B^s_{p,q}}`; the geometric constant is
@@ -232,9 +231,9 @@ theorem MemBesov.of_smoothness_le (hs : s' ≤ s) {u : 𝓢'(E, F)} (hu : MemBes
   (besovENorm_le_of_smoothness_le φ hs u).trans_lt hu
 
 /-- `B^s_{p,q} ⊆ B^s_{p,q'}` for `0 < q ≤ q'`. -/
-theorem MemBesov.of_exponent_le (hq : q ≠ 0) (hqq' : q ≤ q') {u : 𝓢'(E, F)}
+theorem MemBesov.of_exponent_ge (hq : q ≠ 0) (hqq' : q ≤ q') {u : 𝓢'(E, F)}
     (hu : MemBesov φ s p q u) : MemBesov φ s p q' u :=
-  (besovENorm_le_of_exponent_le φ hq hqq' u).trans_lt hu
+  (besovENorm_le_of_exponent_ge φ hq hqq' u).trans_lt hu
 
 /-- `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' < s` and any `q ≠ 0`, `q'`. -/
 theorem MemBesov.of_smoothness_lt (hs : s' < s) (hq : q ≠ 0) (q' : ℝ≥0∞) {u : 𝓢'(E, F)}
