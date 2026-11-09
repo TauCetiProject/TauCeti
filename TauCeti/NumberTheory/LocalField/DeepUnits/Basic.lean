@@ -150,17 +150,18 @@ theorem coe_deepUnitExpLogEquiv_symm_apply (hi : absoluteRamificationIndex K p <
     (((deepUnitExpLogEquiv K hi).symm x : Kˣ) : K) = exp ((x.toAdd : 𝒪[K]) : K) :=
   coe_deepUnitExp hi x.toAdd
 
-/-- **Deep logarithms in every direction.** Every element `z` of `K` has a nonzero `ℚ_p`-multiple
-which is the logarithm of a unit in `U(K,i)`. For `i` beyond the ramification bound this is a deep
-unit: a nonzero element of `𝒪[ℚ_p]` carries `z` into `𝒪[K]`, a further factor `p ^ j` carries it
-into `𝓂[K] ^ j`, and every element of `𝓂[K] ^ j` is the logarithm of a deep unit. For smaller `i`
-it follows by passing to the deeper level `j = max i (e + 1)` and using that `U(K,j) ≤ U(K,i)`. -/
+/-- **Deep logarithms in every direction.** For every depth `i` and every `z` in `K`, some nonzero
+`ℚ_p`-scalar multiple of `z` is the logarithm of a unit in `U(K,i)`. No hypothesis relates `i` to
+the ramification bound. -/
 theorem exists_mem_unitFiltration_log_eq_smul (z : K) :
     ∃ u ∈ unitFiltration K i, ∃ c : ℚ_[p], c ≠ 0 ∧ log (u : K) = c • z := by
+  -- Pass to a deeper level `j ≥ i` beyond the ramification bound, where `U(K,j) ≤ U(K,i)`.
   set j := max i (absoluteRamificationIndex K p + 1)
   have hi : absoluteRamificationIndex K p < (p - 1) * j :=
     (Nat.lt_succ_self _).trans_le <| (le_max_right _ _).trans <|
       Nat.le_mul_of_pos_left _ (Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt)
+  -- A nonzero element `a` of `𝒪[ℚ_p]` carries `z` into `𝒪[K]`, and a further factor `p ^ j`
+  -- carries it into `𝓂[K] ^ j`, every element of which is the logarithm of a deep unit.
   obtain ⟨a, ha, haz⟩ := exists_algebraMap_mul_mem_integerRing ℚ_[p] K z
   set w : (𝓂[K] ^ j : Ideal 𝒪[K]) := ⟨(p : 𝒪[K]) ^ j * ⟨_, haz⟩,
     Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow (residuePrime_mem_maximalIdeal K p) j)⟩
