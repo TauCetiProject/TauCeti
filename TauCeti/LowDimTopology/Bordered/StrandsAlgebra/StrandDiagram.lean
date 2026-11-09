@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Basic.PEquiv
 public import Mathlib.Data.Fintype.Prod
 public import TauCeti.Data.Finset.Inversions
@@ -256,6 +257,13 @@ theorem startpoint_endpoint {φ : StrandDiagram α} {x : α} (hx : x ∈ φ.sour
 theorem endpoint_startpoint {φ : StrandDiagram α} {y : α} (hy : y ∈ φ.target) :
     φ.endpoint (φ.startpoint y) = y :=
   endpoint_eq_of_mem (mem_startpoint hy)
+
+/-- Reindex a sum over the starting points of the strands of `φ` by their end points. -/
+theorem sum_source_endpoint {M : Type*} [AddCommMonoid M] (φ : StrandDiagram α) (f : α → M) :
+    ∑ x ∈ φ.source, f (φ.endpoint x) = ∑ y ∈ φ.target, f y :=
+  sum_nbij' φ.endpoint φ.startpoint (fun _ hx ↦ endpoint_mem_target hx)
+    (fun _ hy ↦ startpoint_mem_source hy) (fun _ hx ↦ startpoint_endpoint hx)
+    (fun _ hy ↦ endpoint_startpoint hy) fun _ _ ↦ rfl
 
 theorem idOn_trans_of_eq_source {s : Finset α} {φ : StrandDiagram α} (h : s = φ.source) :
     (idOn s).trans φ = φ := by
