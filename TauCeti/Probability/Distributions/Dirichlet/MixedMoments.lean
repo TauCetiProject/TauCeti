@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Dirichlet.Density
 import TauCeti.Probability.Distributions.Dirichlet.Aggregation
-import TauCeti.Probability.Distributions.Dirichlet.StickBreaking
+import TauCeti.Probability.Distributions.Dirichlet.StickBreaking.Basic
 import TauCeti.Probability.Distributions.Beta.Basic
 import TauCeti.MeasureTheory.Integral.Prod
 
