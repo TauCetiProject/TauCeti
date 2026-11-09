@@ -9,6 +9,7 @@ public import Mathlib.Topology.MetricSpace.Thickening
 
 import Mathlib.Topology.Compactness.LocallyFinite
 import Mathlib.Topology.MetricSpace.ProperSpace
+import Mathlib.Topology.Order.AtTopBotIxx
 import Mathlib.Topology.Order.DenselyOrdered
 
 /-!
@@ -27,6 +28,16 @@ points at distance at most `δ` from it (`TauCeti.mem_cthickening_iff_infDist_le
 closed counterpart of Mathlib's `Metric.mem_thickening_iff_infDist_lt`, and describes closed
 thickenings as sublevel sets of the distance function, and their complements as strict
 superlevel sets (`TauCeti.compl_cthickening_eq_setOf_lt_infDist`).
+
+A closed set in a pseudometric space is the intersection of an antitone sequence of open sets
+inside any set whose interior contains it, namely the intersections of that interior with
+thickenings of radii `1 / (n + 1)` (`IsClosed.exists_antitone_isOpen_iInter_eq`).
+
+On the real line, the terms of an injective two-sided sequence tending to `-∞` and `+∞` at its two
+ends have pairwise disjoint closed intervals around them forming a locally finite family
+(`TauCeti.exists_closedBall_pairwiseDisjoint_locallyFinite`). An open subset of `X × ℝ` containing
+a vertical line contains a tube around it, whose radius is locally bounded below by positive
+constants (`IsOpen.exists_tube_subset`).
 -/
 
 public section
@@ -68,6 +79,25 @@ theorem compl_cthickening_eq_setOf_lt_infDist {X : Type*} [PseudoMetricSpace X] 
   simp [mem_cthickening_iff_infDist_le hs hδ]
 
 end TauCeti
+
+/-- A closed set `K` in a pseudometric space contained in the interior of a set `L` is the
+intersection of an antitone sequence of open sets `W n` with `K ⊆ W n ⊆ L`. -/
+theorem IsClosed.exists_antitone_isOpen_iInter_eq {X : Type*} [PseudoMetricSpace X]
+    {K L : Set X} (hK : IsClosed K) (hKL : K ⊆ interior L) :
+    ∃ W : ℕ → Set X, (∀ n, IsOpen (W n)) ∧ (∀ n, W n ⊆ L) ∧ (∀ n, K ⊆ W n) ∧ Antitone W ∧
+      ⋂ n, W n = K := by
+  set W : ℕ → Set X := fun n => interior L ∩ thickening (1 / ((n : ℝ) + 1)) K
+  have hKW (n : ℕ) : K ⊆ W n := subset_inter hKL (self_subset_thickening (by positivity) K)
+  refine ⟨W, fun n => isOpen_interior.inter isOpen_thickening,
+    fun n => inter_subset_left.trans interior_subset, hKW, fun m n hmn =>
+    inter_subset_inter_right _ (thickening_mono (one_div_le_one_div_of_le (by positivity)
+      (by exact_mod_cast Nat.add_le_add_right hmn 1)) K), ?_⟩
+  refine Subset.antisymm (fun x hx => ?_) (subset_iInter hKW)
+  rw [← hK.closure_eq, Metric.mem_closure_iff]
+  intro ε hε
+  obtain ⟨n, hn⟩ := exists_nat_one_div_lt hε
+  obtain ⟨y, hy, hxy⟩ := mem_thickening_iff.1 (mem_iInter.1 hx n).2
+  exact ⟨y, hy, hxy.trans hn⟩
 
 namespace LocallyFinite
 
@@ -111,3 +141,62 @@ protected theorem cthickening [PseudoMetricSpace X] [ProperSpace X] {f : ι → 
   linarith [dist_triangle z y x, dist_comm z y, mem_ball.1 hyx]
 
 end LocallyFinite
+
+section
+
+open Filter
+
+namespace TauCeti
+
+/-- Around the terms of an injective two-sided sequence of reals tending to `-∞` and to `+∞` at
+its two ends, there are closed intervals of positive radii at most `1` which are pairwise disjoint
+and form a locally finite family. -/
+theorem exists_closedBall_pairwiseDisjoint_locallyFinite (x : ℤ → ℝ) (hx : Injective x)
+    (htop : Tendsto x atTop atTop) (hbot : Tendsto x atBot atBot) :
+    ∃ ε : ℤ → ℝ, (∀ ν, 0 < ε ν ∧ ε ν ≤ 1) ∧
+      Pairwise (Disjoint on fun ν ↦ closedBall (x ν) (ε ν)) ∧
+      LocallyFinite fun ν ↦ closedBall (x ν) (ε ν) := by
+  have hlf : LocallyFinite fun ν ↦ ({x ν} : Set ℝ) := by
+    simpa only [Icc_self] using locallyFinite_Icc_of_tendsto htop hbot
+  obtain ⟨δ, hδ, hdisj⟩ := hlf.exists_cthickenings_pairwiseDisjoint (fun _ ↦ isCompact_singleton)
+    fun ν μ h ↦ disjoint_singleton.2 (hx.ne h)
+  refine ⟨fun ν ↦ min (δ ν) 1, fun ν ↦ ⟨lt_min (hδ ν) one_pos, min_le_right _ _⟩,
+    fun ν μ h ↦ Disjoint.mono ?_ ?_ (hdisj h), ?_⟩
+  · exact (closedBall_subset_closedBall (min_le_left _ _)).trans
+      (cthickening_singleton _ (hδ ν).le).ge
+  · exact (closedBall_subset_closedBall (min_le_left _ _)).trans
+      (cthickening_singleton _ (hδ μ).le).ge
+  · have := hlf.cthickening (δ := fun ν ↦ min (δ ν) 1) (R := 1) fun ν ↦ min_le_right _ _
+    simpa only [cthickening_singleton _ (lt_min (hδ _) one_pos).le] using this
+
+end TauCeti
+
+/-- **Tubes around a vertical line.** An open subset `W` of `X × ℝ` containing the vertical line
+through `c` contains a tube `{(u, t) | dist u c ≤ γ t}` around that line, whose radius `γ` is
+locally bounded below by positive constants. -/
+theorem IsOpen.exists_tube_subset {X : Type*} [PseudoMetricSpace X] {c : X}
+    {W : Set (X × ℝ)} (hW : IsOpen W) (hcW : ∀ t, (c, t) ∈ W) :
+    ∃ γ : ℝ → ℝ, (∀ x, ∃ r > 0, ∀ᶠ y in 𝓝 x, r ≤ γ y) ∧
+      ∀ u t, dist u c ≤ γ t → (u, t) ∈ W := by
+  -- Over each interval `[n, n + 1]`, the compact segment of the line has a thickening in `W`.
+  have hK (n : ℤ) : IsCompact ({c} ×ˢ Icc (n : ℝ) (n + 1)) := isCompact_singleton.prod isCompact_Icc
+  choose δ hδ hδW using fun n : ℤ ↦ (hK n).exists_thickening_subset_open hW
+    (by rintro ⟨u, t⟩ ⟨hu : u = c, -⟩; exact hu ▸ hcW t)
+  refine ⟨fun t ↦ δ ⌊t⌋ / 2, fun x ↦ ⟨min (δ ⌊x⌋) (δ (⌊x⌋ - 1)) / 2,
+    half_pos (lt_min (hδ _) (hδ _)), ?_⟩, fun u t hut ↦ hδW ⌊t⌋ ?_⟩
+  · have hx : Ioo ((⌊x⌋ : ℝ) - 1) (⌊x⌋ + 1) ∈ 𝓝 x :=
+      Ioo_mem_nhds (by linarith [Int.floor_le x]) (Int.lt_floor_add_one x)
+    filter_upwards [hx] with y hy
+    have h₁ : ⌊x⌋ - 1 ≤ ⌊y⌋ := Int.le_floor.2 (by push_cast; exact hy.1.le)
+    have h₂ : ⌊y⌋ < ⌊x⌋ + 1 := Int.floor_lt.2 (by push_cast; exact hy.2)
+    obtain h | h : ⌊y⌋ = ⌊x⌋ ∨ ⌊y⌋ = ⌊x⌋ - 1 := by omega
+    · rw [h]
+      exact div_le_div_of_nonneg_right (min_le_left _ _) zero_le_two
+    · rw [h]
+      exact div_le_div_of_nonneg_right (min_le_right _ _) zero_le_two
+  · refine mem_thickening_iff.2 ⟨(c, t), ⟨mem_singleton c, Int.floor_le t,
+      (Int.lt_floor_add_one t).le⟩, ?_⟩
+    rw [Prod.dist_eq, dist_self, max_eq_left dist_nonneg]
+    exact hut.trans_lt (half_lt_self (hδ _))
+
+end

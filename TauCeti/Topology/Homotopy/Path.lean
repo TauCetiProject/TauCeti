@@ -53,11 +53,18 @@ compare paths inside a closed half-plane.
 
 `Path.trans_apply_of_le` and `Path.trans_apply_of_ge` express a value of a concatenation as a
 value of one of its two halves, and `Path.subpath_apply_mem` bounds the values of a subpath by the
-values of the path on an interval containing its endpoints. They are used by the gluing
+values of the path on an interval containing its endpoints. `Path.coe_subpath` and
+`Path.subpath_subpath_apply` evaluate a subpath and a subpath of a subpath, and
+`Path.cast_subpath_eq_codRestrict` identifies a subpath of a path in a subset, cast to the
+endpoints of a corestricted subpath, with that corestriction. The last two are used by the gluing
 construction in `AlgebraicTopology/FundamentalGroupoid/Glue.lean`.
 
-The path-homotopy quotient API also records that reversing twice is the identity and that the
-reverse of the constant class is constant.
+The path-homotopy quotient API also records that reversing twice is the identity, that the
+reverse of the constant class is constant, and that mapping a composite class and casting its
+endpoints composes the cast images of the factors (`Path.Homotopic.Quotient.map_trans_cast`).
+`Path.refl_trans_eq_reparam`, the left counterpart of Mathlib's
+`Path.Homotopy.trans_refl_reparam`, and `map_trans_cast` are used by the gluing of caps along a
+pair of pants in `Geometry/Symplectic/Floer/Cap/Loop.lean`.
 -/
 
 public section
@@ -123,6 +130,38 @@ theorem subpath_apply_mem {x y : X} {γ : Path x y} {V : Set X} {lo hi : I}
   obtain ⟨s, hs, hst⟩ : γ.subpath a b t ∈ γ '' uIcc a b :=
     range_subpath γ a b ▸ mem_range_self t
   exact hst ▸ hγ s (uIcc_subset_Icc ha hb hs)
+
+/-- The function underlying a subpath is composition with the affine parameter map. -/
+@[simp]
+theorem coe_subpath {x y : X} (γ : Path x y) (s t : I) :
+    ⇑(γ.subpath s t) = γ ∘ Icc.convexComb s t := (rfl)
+
+/-- A subpath of a subpath of `γ` between parameters `r`, `s` of the inner interval `[lo, hi]` is
+the subpath of `γ` between their images in `[lo, hi]`, evaluated at the combined parameter. -/
+theorem subpath_subpath_apply {x y : X} (γ : Path x y) (lo hi r s t : I) :
+    γ.subpath (Icc.convexComb lo hi r) (Icc.convexComb lo hi s) t =
+      γ (Icc.convexComb lo hi (Icc.convexComb r s t)) := by
+  refine congrArg γ (Subtype.ext ?_)
+  simp only [Icc.coe_convexComb]
+  ring
+
+/-- Casting the subpath `r → s` of a path `p` in `S` that parametrises `γ` on `[lo, hi]` agrees with
+the corestriction to `S` of the corresponding subpath of `γ`. -/
+theorem cast_subpath_eq_codRestrict {x y : X} {S : Set X} (γ : Path x y) {lo hi : I}
+    {u v : S} (p : Path u v) (hp : ∀ t, (p t : X) = γ (Icc.convexComb lo hi t)) (r s : I) :
+    (p.subpath r s).cast
+        (Subtype.ext (hp r).symm : (⟨_, hp r ▸ (p r).2⟩ : S) = p r)
+        (Subtype.ext (hp s).symm : (⟨_, hp s ▸ (p s).2⟩ : S) = p s) =
+      (γ.subpath (Icc.convexComb lo hi r) (Icc.convexComb lo hi s)).codRestrict
+        fun t ↦ by
+          rw [subpath_subpath_apply, ← hp]
+          exact (p _).2 := by
+  apply Path.ext
+  funext t
+  apply Subtype.ext
+  simp only [Path.cast_coe, Path.codRestrict_coe, coe_subpath, Function.comp_apply]
+  rw [hp]
+  exact (subpath_subpath_apply γ lo hi r s t).symm
 
 /-- If the extended path stays inside `U` throughout `[t₀, t₁]`, then the truncated subpath has
 range in `U`. -/
@@ -291,6 +330,19 @@ theorem unitInterval.exists_vertex_family {X : Type*} [TopologicalSpace X]
 namespace Path
 variable {X : Type*} [TopologicalSpace X] {x y : X}
 
+/-- The constant path followed by `p` is a reparametrization of `p`, the counterpart of
+`Path.Homotopy.trans_refl_reparam`. -/
+theorem refl_trans_eq_reparam {y z : X} (p : Path y z) :
+    (Path.refl y).trans p =
+      p.reparam (fun t => Set.projIcc 0 1 zero_le_one (2 * (t : ℝ) - 1)) (by fun_prop)
+        (Subtype.ext (by norm_num)) (Subtype.ext (by norm_num)) := by
+  ext t
+  rw [Path.trans_apply, Path.coe_reparam, Function.comp_apply]
+  split_ifs with h
+  · rw [Path.refl_apply, Set.projIcc_of_le_left _ (by linarith)]
+    exact p.source.symm
+  · exact congrArg p (Set.projIcc_of_mem _ ⟨by linarith, by linarith [t.2.2]⟩).symm
+
 namespace Homotopic.Quotient
 
 /-- Reversing a path-homotopy class twice recovers the original class. -/
@@ -427,6 +479,17 @@ theorem refl_cast {x y : X} (h : y = x) : (refl x).cast h h = refl y := by
   -- After `cases h` the cast is along `rfl`, and `Quotient.cast` on a literal `refl` class
   -- reduces definitionally, so `rfl` closes the goal.
   cases h; rfl
+
+/-- The image under `f` of a composite of path classes, with endpoints cast along `h₀` and `h₂`,
+is the composite of the cast images of the two factors. -/
+theorem map_trans_cast {Y : Type*} [TopologicalSpace Y] {a b c : X} {f : C(X, Y)}
+    (A : Homotopic.Quotient a b) (B : Homotopic.Quotient b c) {y₀ y₁ y₂ : Y}
+    (h₀ : y₀ = f a) (h₁ : y₁ = f b) (h₂ : y₂ = f c) :
+    ((A.trans B).map f).cast h₀ h₂ = ((A.map f).cast h₀ h₁).trans ((B.map f).cast h₁ h₂) := by
+  subst h₀ h₁ h₂
+  simp only [cast_rfl_rfl]
+  induction A, B using Quotient.ind₂ with
+  | mk A B => simp only [← mk_trans, ← mk_map, Path.map_trans]
 
 /-- If `trans γ (symm γ') = refl`, then `γ = γ'`.
 This is the quotient analogue of `eq_of_div_eq_one : a / b = 1 → a = b`. -/

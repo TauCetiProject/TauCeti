@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.LocalRing.Module
+import Mathlib.LinearAlgebra.Dimension.Localization
 import Mathlib.LinearAlgebra.Projection
 
 /-!
@@ -43,6 +44,8 @@ A complement in a finite flat module over a local ring is finite free
 * `IsCompl.prod`: a product of complementary pairs is complementary.
 * `Submodule.finite_free_of_isCompl`: a direct summand of a finite flat module over a local ring
   is finite free.
+* `Submodule.finrank_lt_of_isCompl_of_ne_bot`: over a commutative domain, a nonzero summand of a
+  finite torsion-free module has a complement of strictly smaller rank.
 -/
 
 public section
@@ -109,5 +112,19 @@ theorem finite_free_of_isCompl {R M : Type*} [CommRing R] [IsLocalRing R]
   have : Module.Flat R S := Module.Flat.of_retract S.subtype
     (S.projectionOnto T h) (by ext; simp)
   exact ⟨inferInstance, Module.free_of_flat_of_isLocalRing⟩
+
+/-- Over a commutative domain, a nonzero summand of a finite torsion-free module has a complement
+of strictly smaller rank. -/
+theorem finrank_lt_of_isCompl_of_ne_bot {R M : Type*} [CommRing R] [IsDomain R]
+    [AddCommGroup M] [Module R M] [Module.IsTorsionFree R M] [Module.Finite R M]
+    {S T : Submodule R M} (h : IsCompl S T) (hS : S ≠ ⊥) :
+    Module.finrank R T < Module.finrank R M := by
+  have : Nontrivial S := Submodule.nontrivial_iff_ne_bot.mpr hS
+  have : Module.Finite R S := .equiv (Submodule.quotientEquivOfIsCompl _ _ h.symm)
+  have : Module.Finite R T := .equiv (Submodule.quotientEquivOfIsCompl _ _ h)
+  have hr := S.finrank_quotient_add_finrank
+  rw [(Submodule.quotientEquivOfIsCompl _ _ h).finrank_eq] at hr
+  have hs : 0 < Module.finrank R S := Module.finrank_pos
+  omega
 
 end Submodule
