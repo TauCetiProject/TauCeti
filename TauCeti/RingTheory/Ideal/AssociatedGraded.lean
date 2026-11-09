@@ -401,12 +401,8 @@ instance : IsScalarTower R (R ⧸ I) I.AssociatedGraded :=
 
 /-- The degree-zero part of `gr_I R` is a copy of `R ⧸ I`. -/
 theorem algebraMap_quotient_injective :
-    Function.Injective (algebraMap (R ⧸ I) I.AssociatedGraded) := by
-  rw [injective_iff_map_eq_zero]
-  intro q hq
-  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective q
-  rw [algebraMap_quotient_mk, algebraMap_eq_zero_iff] at hq
-  exact Ideal.Quotient.eq_zero_iff_mem.mpr hq
+    Function.Injective (algebraMap (R ⧸ I) I.AssociatedGraded) :=
+  RingHom.lift_injective_of_ker_le_ideal I _ ker_algebraMap.le
 
 end AssociatedGraded
 
