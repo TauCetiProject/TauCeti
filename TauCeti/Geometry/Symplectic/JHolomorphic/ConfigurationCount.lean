@@ -398,7 +398,7 @@ end Configuration
 
 section Intersection
 
-variable [AddCommGroup H] (B : LinearMap.BilinForm ℤ H) {r : ι → ι → Prop} {cls : ι → H}
+variable [AddCommGroup H] {B : LinearMap.BilinForm ℤ H} {r : ι → ι → Prop} {cls : ι → H}
   {s : Set ι} {A : H} {l : ι →₀ ℕ}
 
 /-- The intersection number of the class of a configuration with a class `x` is the sum of the
@@ -414,7 +414,7 @@ intersection numbers of `x` with its components, counted with multiplicity. -/
 theorem apply_eq_sum_of_mem_compatibleConfigurations_right
     (hl : l ∈ compatibleConfigurations r cls s A) (x : H) :
     B x A = ∑ c ∈ l.support, (l c : ℤ) * B x (cls c) :=
-  apply_eq_sum_of_mem_compatibleConfigurations B.flip hl x
+  apply_eq_sum_of_mem_compatibleConfigurations (B := B.flip) hl x
 
 /-- **Positivity at a candidate.** If every candidate other than `S` meets `S` nonnegatively, as
 positivity of intersections gives for distinct pseudoholomorphic images, then the class of a
@@ -424,7 +424,7 @@ theorem mul_apply_self_le_apply_of_mem_compatibleConfigurations
     (hpos : ∀ c ∈ s, c ≠ S → 0 ≤ B (cls c) (cls S)) :
     (l S : ℤ) * B (cls S) (cls S) ≤ B A (cls S) := by
   classical
-  rw [apply_eq_sum_of_mem_compatibleConfigurations B hl]
+  rw [apply_eq_sum_of_mem_compatibleConfigurations hl]
   calc (l S : ℤ) * B (cls S) (cls S)
       = ∑ c ∈ l.support, if c = S then (l c : ℤ) * B (cls c) (cls S) else 0 := by
         rw [Finset.sum_ite_eq']
@@ -444,7 +444,7 @@ theorem neg_one_le_apply_of_mem_compatibleConfigurations
     (hl : l ∈ compatibleConfigurations r cls s A) {S : ι}
     (hpos : ∀ c ∈ s, c ≠ S → 0 ≤ B (cls c) (cls S)) (hS : -1 ≤ B (cls S) (cls S))
     (hlS : l S ≤ 1) : -1 ≤ B A (cls S) := by
-  refine le_trans ?_ (mul_apply_self_le_apply_of_mem_compatibleConfigurations B hl hpos)
+  refine le_trans ?_ (mul_apply_self_le_apply_of_mem_compatibleConfigurations hl hpos)
   interval_cases l S
   · simp
   · simpa using hS
@@ -461,11 +461,11 @@ theorem apply_self_sub_apply_canonical_eq_sum_of_mem_compatibleConfigurations
       (l c : ℤ) * (l c - 1) * B (cls c) (cls c)) := by
   -- Each component meets the class `A` only through its own multiple.
   have hcA : ∀ c ∈ l.support, B (cls c) A = l c * B (cls c) (cls c) := fun c hc ↦ by
-    rw [apply_eq_sum_of_mem_compatibleConfigurations_right B hl,
+    rw [apply_eq_sum_of_mem_compatibleConfigurations_right hl,
       Finset.sum_eq_single_of_mem c hc fun b hb hbc ↦ by
         rw [horth c (hl.1 hc) b (hl.1 hb) hbc.symm (hl.2.1 hc hb hbc.symm), mul_zero]]
-  rw [apply_eq_sum_of_mem_compatibleConfigurations B hl A,
-    apply_eq_sum_of_mem_compatibleConfigurations_right B hl κ, ← Finset.sum_sub_distrib]
+  rw [apply_eq_sum_of_mem_compatibleConfigurations hl A,
+    apply_eq_sum_of_mem_compatibleConfigurations_right hl κ, ← Finset.sum_sub_distrib]
   refine Finset.sum_congr rfl fun c hc ↦ ?_
   rw [hcA c hc]
   ring
@@ -478,7 +478,7 @@ theorem apply_self_sub_apply_canonical_eq_sum_filter_of_mem_compatibleConfigurat
     (horth : ∀ a ∈ s, ∀ b ∈ s, a ≠ b → r a b → B (cls a) (cls b) = 0) {κ : H}
     (hrep : ∀ c, 1 < l c → B (cls c) (cls c) = 0 ∧ B κ (cls c) = 0) :
     B A A - B κ A = ∑ c ∈ l.support with l c = 1, (B (cls c) (cls c) - B κ (cls c)) := by
-  rw [apply_self_sub_apply_canonical_eq_sum_of_mem_compatibleConfigurations B hl horth κ,
+  rw [apply_self_sub_apply_canonical_eq_sum_of_mem_compatibleConfigurations hl horth κ,
     Finset.sum_filter]
   refine Finset.sum_congr rfl fun c hc ↦ ?_
   split_ifs with h
@@ -494,7 +494,7 @@ theorem apply_self_sub_apply_canonical_nonneg_of_mem_compatibleConfigurations
     (horth : ∀ a ∈ s, ∀ b ∈ s, a ≠ b → r a b → B (cls a) (cls b) = 0) {κ : H}
     (hind : ∀ c ∈ s, 0 ≤ B (cls c) (cls c) - B κ (cls c))
     (hmult : ∀ c, B (cls c) (cls c) < 0 → l c ≤ 1) : 0 ≤ B A A - B κ A := by
-  rw [apply_self_sub_apply_canonical_eq_sum_of_mem_compatibleConfigurations B hl horth κ]
+  rw [apply_self_sub_apply_canonical_eq_sum_of_mem_compatibleConfigurations hl horth κ]
   refine Finset.sum_nonneg fun c hc ↦
     add_nonneg (mul_nonneg (Nat.cast_nonneg _) (hind c (hl.1 hc))) ?_
   have h₁ : 1 ≤ l c := Nat.one_le_iff_ne_zero.2 (Finsupp.mem_support_iff.1 hc)
@@ -515,7 +515,7 @@ theorem configurationCount_eq_zero_of_apply_lt_neg_one {S : ι}
   rw [configurationCount_def]
   refine finsum_mem_eq_zero_of_forall_eq_zero fun l hl ↦ ?_
   have hlS : 1 < l S := not_le.1 fun h ↦
-    hA.not_ge (neg_one_le_apply_of_mem_compatibleConfigurations B hl hpos hS h)
+    hA.not_ge (neg_one_le_apply_of_mem_compatibleConfigurations hl hpos hS h)
   rw [Finsupp.prod]
   exact Finset.prod_eq_zero (Finsupp.mem_support_iff.2 (by omega)) (hw _ hlS)
 
@@ -532,7 +532,7 @@ theorem configurationCount_eq_zero_of_apply_self_sub_apply_canonical_neg
   refine finsum_mem_eq_zero_of_forall_eq_zero fun l hl ↦ ?_
   by_cases h : ∀ c, B (cls c) (cls c) < 0 → l c ≤ 1
   · exact absurd
-      (apply_self_sub_apply_canonical_nonneg_of_mem_compatibleConfigurations B hl horth hind h)
+      (apply_self_sub_apply_canonical_nonneg_of_mem_compatibleConfigurations hl horth hind h)
       hA.not_ge
   · push Not at h
     obtain ⟨c, hc, hlc⟩ := h
