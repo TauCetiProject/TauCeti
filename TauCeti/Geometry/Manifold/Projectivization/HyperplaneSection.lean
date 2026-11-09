@@ -91,8 +91,7 @@ theorem exists_mem_connectedComponentIn_notMem_affineOpen {E G : Type*} [NormedA
   -- It is compact, being a connected component of the compact space `X`.
   have hCc : IsCompact (connectedComponentIn X L) := hX.isCompact.connectedComponentIn L
   -- Transport the component of `⟨L, hLY⟩` in `Y` to `Z` through the affine chart.
-  let e : Y ≃ₜ Z := (Projectivization.affineOpenPartialHomeomorph i).homeomorphOfImageSubsetSource
-    (by simp [Y]) (by simpa using hZ)
+  let e : Y ≃ₜ Z := Projectivization.interAffineOpenHomeomorph hZ
   have : LocallyConnectedSpace G := I.toHomeomorph.locallyConnectedSpace
   have : LocallyConnectedSpace Z := ChartedSpace.locallyConnectedSpace G Z
   have : LocallyConnectedSpace Y := e.locallyConnectedSpace

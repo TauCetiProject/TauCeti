@@ -15,7 +15,7 @@ In an additive monoid with one of exponential characteristic `p`, the natural-nu
 additive monoid with one in which `1 ≠ 0` some prime, `2` or `3`, has a nonzero cast; this is how
 one picks a prime `ℓ` different from the characteristic of a field. In a nontrivial ring only the
 characteristic can vanish among the primes, so there are arbitrarily large primes with nonzero
-cast.
+cast. Without zero divisors, `4` is nonzero whenever `2` is.
 
 In a ring of exponential characteristic `p`, raising to the power `q = p ^ n` commutes with
 negation. Mathlib records the special case `(-1) ^ q = -1` (`neg_one_pow_expChar_pow`) and the
@@ -31,6 +31,7 @@ law.
 * `TauCeti.exists_prime_natCast_ne_zero`: if `1 ≠ 0`, some prime has nonzero cast.
 * `TauCeti.exists_prime_lt_natCast_ne_zero`: in a nontrivial ring, arbitrarily large primes have
   nonzero cast.
+* `TauCeti.four_ne_zero_of_two_ne_zero`: without zero divisors, `2 ≠ 0` implies `4 ≠ 0`.
 * `TauCeti.neg_pow_expChar_pow`: `(-x) ^ p ^ n = -x ^ p ^ n`.
 -/
 
@@ -72,6 +73,12 @@ theorem exists_prime_lt_natCast_ne_zero (R : Type*) [NonAssocSemiring R] [Nontri
   rcases hℓ.eq_one_or_self_of_dvd _ ((ringChar.spec R ℓ).mp h) with h1 | h1
   · exact CharP.ringChar_ne_one h1
   · omega
+
+/-- In a semiring without zero divisors, such as a field, `4 = 2 * 2` is nonzero when `2` is. -/
+theorem four_ne_zero_of_two_ne_zero {R : Type*} [NonAssocSemiring R] [NoZeroDivisors R]
+    (h2 : (2 : R) ≠ 0) : (4 : R) ≠ 0 := by
+  rw [← two_add_two_eq_four, ← two_mul]
+  exact mul_ne_zero h2 h2
 
 variable {R : Type*} [Ring R] (p n : ℕ) [ExpChar R p]
 

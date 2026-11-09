@@ -313,9 +313,6 @@ theorem nonempty_homeomorph_unitAddTorus_keplerBoundPhaseSpace [FiniteDimensiona
     obtain ⟨hE, hℓ⟩ := (centralForceEnergyMomentum_eq_iff b).1 hFy
     exact (isRegularPoint_centralForceEnergyMomentum_kepler b hm.ne' y.2.1 (hℓ ▸ x.2.2.2)
       (by rwa [hE, hℓ])).comp (isRegularPoint_subtype_val y)
-      ((contDiffAt_centralForceEnergyMomentum_kepler b (n := 1) y.2.1).differentiableAt
-        (by simp)).mdifferentiableAt
-      (contMDiff_subtype_val.mdifferentiableAt one_ne_zero)
   · rw [Module.finrank_prod, Module.finrank_eq_card_basis b.toBasis]
     simp
 

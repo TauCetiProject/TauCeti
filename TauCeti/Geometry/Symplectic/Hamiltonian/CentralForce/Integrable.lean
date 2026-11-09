@@ -403,9 +403,6 @@ theorem isIntegrableSystem_centralForceEnergyMomentum [FiniteDimensional ℝ V] 
       (centralForceEnergyMomentum b m U ∘ Subtype.val) := by
   have hF (x : puncturedPhaseSpace V) := contDiffAt_centralForceEnergyMomentum b (m := m)
     (hU.contDiffAt (Ioi_mem_nhds (norm_pos_iff.2 x.2))) x.2
-  have hFd (x : puncturedPhaseSpace V) :
-      MDifferentiableAt 𝓘(ℝ, V × V) 𝓘(ℝ, Fin 2 → ℝ) (centralForceEnergyMomentum b m U) x :=
-    ((hF x).differentiableAt (by simp)).mdifferentiableAt
   refine ⟨fun x ↦ (hF x).contMDiffAt.comp x (contMDiff_subtype_val x),
     poissonBracket_centralForceEnergyMomentum_comp_subtypeVal b (hU.differentiableOn (by simp))
       (fun _ hx ↦ hx), ?_, ?_⟩
@@ -416,7 +413,7 @@ theorem isIntegrableSystem_centralForceEnergyMomentum [FiniteDimensional ℝ V] 
       have hU' : HasDerivAt U (deriv U ‖(x : V × V).1‖) ‖(x : V × V).1‖ :=
         ((hU.differentiableOn (by simp)).differentiableAt (Ioi_mem_nhds hr)).hasDerivAt
       refine (isRegularPoint_centralForceEnergyMomentum_iff b hm hU' x.2).2 ?_ |>.comp
-        (isRegularPoint_subtype_val x) (hFd x) (contMDiff_subtype_val.mdifferentiableAt one_ne_zero)
+        (isRegularPoint_subtype_val x)
       exact fun h ↦ hx h.1
     · exact dense_setOf_inner_ne_zero
   · rw [Module.finrank_prod, Module.finrank_eq_card_basis b.toBasis]
