@@ -716,6 +716,7 @@ theorem two_pow_div_factorial_mul_covolume_le_prod_mul_measure (L : Submodule �
       gcongr
       exact hK.weighted_crosspolytope_subset h0 hKs b ha hbK
 
+omit [FiniteDimensional ℝ E] in
 /-- **Minkowski's second theorem**, lower bound, in terms of the successive minima. For a full
 lattice `L` in a real normed space `E` of dimension `n`, a Haar measure `μ` on `E`, and a convex
 body `K` symmetric about `0` with `0` in its interior, the successive minima
