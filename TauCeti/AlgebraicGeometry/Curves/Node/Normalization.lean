@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.Node.Blowup
+public import TauCeti.AlgebraicGeometry.Curves.SingularLocus.Blowup
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 import TauCeti.AlgebraicGeometry.Blowup.ExceptionalDivisor
-import TauCeti.AlgebraicGeometry.Blowup.Restriction
 import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Regular
-import TauCeti.AlgebraicGeometry.Curves.SingularLocus.Smooth
 
 /-!
 # Separating the branches of a nodal curve
@@ -40,16 +39,6 @@ open CategoryTheory Limits AlgebraicGeometry TauCeti.AlgebraicGeometry
 universe u
 
 namespace AlgebraicGeometry.Scheme
-
-/-- Blowing up the singular subscheme of a syntomic relative curve changes nothing over its
-smooth locus. -/
-theorem isIso_blowupToBase_singularLocus_restrict_smoothLocus
-    {R : Type u} [CommRing R] (X : Scheme.{u}) [X.Over (Spec (.of R))]
-    [SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R))] :
-    IsIso ((X.singularLocus R).blowupToBase ∣_ (X ↘ Spec (.of R)).smoothLocus) := by
-  apply IdealSheafData.isIso_blowupToBase_restrict_of_disjoint_support
-  rw [X.support_singularLocus_eq_compl_smoothLocus]
-  exact disjoint_compl_right
 
 variable {K : Type u} [Field K] (X : Scheme.{u}) [X.Over (Spec (.of K))]
 
