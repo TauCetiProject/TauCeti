@@ -40,7 +40,7 @@ variable {K : Type*} [Field K] [NumberField K]
 `ℚ` by square roots of the radicands attached to a finite family of integers `D`. For an odd
 prime `p` dividing none of the `D i`, `p` splits completely in `K` exactly when every `D i` is
 a quadratic residue modulo `p`. -/
-theorem ncard_primesOver_primeDiscriminantRadicands_iff {ι : Type*} [Finite ι]
+theorem ncard_primesOver_primeDiscriminantRadicands_iff {ι : Type*}
     (D : ι → ℤ) (r : ι → K) (hr : ∀ i, r i ^ 2 =
       algebraMap ℤ K (TauCeti.Multiquadratic.primeDiscriminantRadicand (D i)))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤)
@@ -61,7 +61,7 @@ discriminants `D`. For an odd prime `p` dividing none of the `D i`, `p` splits c
 `K` exactly when each even prime discriminant satisfies the corresponding supplementary
 congruence condition, and each odd prime discriminant satisfies the reciprocal Legendre-symbol
 condition. -/
-theorem ncard_primesOver_primeDiscriminantRadicands_iff_congruences {ι : Type*} [Finite ι]
+theorem ncard_primesOver_primeDiscriminantRadicands_iff_congruences {ι : Type*}
     (D : ι → ℤ) (hD : ∀ i, TauCeti.Multiquadratic.IsPrimeDiscriminant (D i)) (r : ι → K)
     (hr : ∀ i, r i ^ 2 =
       algebraMap ℤ K (TauCeti.Multiquadratic.primeDiscriminantRadicand (D i)))

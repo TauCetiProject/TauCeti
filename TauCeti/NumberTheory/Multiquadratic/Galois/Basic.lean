@@ -194,12 +194,29 @@ theorem finiteDimensional_adjoin_range (hroot : ∀ i, root i ^ 2 = algebraMap K
   haveI := isSplittingField hroot
   IsSplittingField.finiteDimensional _ (definingPolynomial d)
 
-/-- A multiquadratic field over a field in which `2 ≠ 0` is Galois: it is the splitting field of
-`∏ᵢ (X² - dᵢ)` (hence normal), and each generator satisfies a separable quadratic. -/
+omit [Finite ι] in
+/-- The multiquadratic field `K(rootᵢ : i)` is normal over `K`, for any index type: it is the
+compositum of the normal extensions `K(rootᵢ)`, each the splitting field of `X² - dᵢ`. -/
+theorem normal_adjoin_range (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) :
+    Normal K (adjoin K (Set.range root)) := by
+  have hnormal (i : ι) : Normal K (adjoin K (Set.range fun _ : Unit => root i)) :=
+    have := isSplittingField (d := fun _ : Unit => d i) (root := fun _ => root i) fun _ => hroot i
+    Normal.of_isSplittingField (definingPolynomial fun _ : Unit => d i)
+  have heq : adjoin K (Set.range root) = ⨆ i, adjoin K (Set.range fun _ : Unit => root i) := by
+    rw [← adjoin_iUnion]
+    congr 1
+    ext x
+    simp
+  rw [heq]
+  have := hnormal
+  exact normal_iSup (F := K) L _
+
+omit [Finite ι] in
+/-- A multiquadratic field over a field in which `2 ≠ 0` is Galois: it is normal
+(`normal_adjoin_range`), and each generator satisfies a separable quadratic. -/
 theorem isGalois [NeZero (2 : K)] (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) :
     IsGalois K (adjoin K (Set.range root)) := by
-  have := isSplittingField hroot
-  have : Normal K (adjoin K (Set.range root)) := Normal.of_isSplittingField (definingPolynomial d)
+  have := normal_adjoin_range hroot
   have : Algebra.IsSeparable K (adjoin K (Set.range root)) := by
     rw [IntermediateField.isSeparable_adjoin_iff_isSeparable]
     rintro _ ⟨i, rfl⟩
@@ -218,8 +235,8 @@ theorem isGalois [NeZero (2 : K)] (hroot : ∀ i, root i ^ 2 = algebraMap K L (d
 
 end SplittingField
 
-/-- A field generated over `K` by finitely many square roots is Galois over `K`. -/
-theorem isGalois_of_adjoin_eq_top [Finite ι] [NeZero (2 : K)]
+/-- A field generated over `K` by square roots is Galois over `K`. -/
+theorem isGalois_of_adjoin_eq_top [NeZero (2 : K)]
     (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (htop : IntermediateField.adjoin K (Set.range root) = ⊤) : IsGalois K L := by
   have hg := isGalois hroot
@@ -271,8 +288,8 @@ theorem aut_commute (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
   Commute.of_orderOf_dvd_two
     (fun σ => orderOf_dvd_of_pow_eq_one (by rw [pow_two]; exact aut_mul_self_eq_one hroot σ)) a b
 
-/-- A finite multiquadratic extension in characteristic different from two is abelian Galois. -/
-theorem isAbelianGalois [Finite ι] [NeZero (2 : K)]
+/-- A multiquadratic extension in characteristic different from two is abelian Galois. -/
+theorem isAbelianGalois [NeZero (2 : K)]
     (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) :
     IsAbelianGalois K (IntermediateField.adjoin K (Set.range root)) where
   toIsGalois := isGalois hroot
