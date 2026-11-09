@@ -54,7 +54,7 @@ noncomputable section
 
 namespace TauCeti
 
-open Filter MeasureTheory Metric Module Set TopologicalSpace
+open Filter _root_.MeasureTheory Metric Module Set TopologicalSpace
 open scoped Distributions ENNReal Gradient InnerProductSpace NNReal Topology
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
