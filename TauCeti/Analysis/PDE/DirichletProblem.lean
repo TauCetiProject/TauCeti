@@ -214,6 +214,13 @@ def IsWeakSolutionDirichlet (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
           = ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
   simp only [IsWeakSolutionDirichlet, dirichletForcing_apply_eq_setIntegral]
 
+/-- A weak solution satisfies its weak equation against every `v ∈ H¹₀(Ω)`, with the right-hand
+side read as the forcing functional. -/
+theorem IsWeakSolutionDirichlet.energyFormH1_eq_dirichletForcing {f : Lp ℝ 2 (mu.restrict Omega)}
+    {u : W1p0 mu Omega 2} (hu : IsWeakSolutionDirichlet a b c f u) (v : W1p0 mu Omega 2) :
+    energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) = dirichletForcing f v :=
+  hu v
+
 /-- **Testing against test functions suffices.** When the energy density is essentially bounded,
 so that the energy form is continuous on `H¹(Ω)`, a function `u ∈ H¹(Ω)` satisfies the weak
 equation `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)` as soon as it does for every test function
