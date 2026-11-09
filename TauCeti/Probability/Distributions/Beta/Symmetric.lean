@@ -6,7 +6,9 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.Beta.Square
+import TauCeti.Analysis.SpecialFunctions.Beta
 import TauCeti.Probability.Distributions.Beta.Reflection
+import TauCeti.Probability.Distributions.Affine
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 import Mathlib.MeasureTheory.Integral.Pi
 
@@ -43,6 +45,61 @@ open MeasureTheory ProbabilityTheory Real
 namespace TauCeti.Probability
 
 variable {a q r : ℝ}
+
+private theorem half_mul_betaPDFReal_symmetric (ha : 0 < a) {z : ℝ}
+    (hz : z ∈ Set.Ioo (-1 : ℝ) 1) :
+    (1 / 2 : ℝ) * betaPDFReal a a ((z + 1) / 2) =
+      (1 - z ^ 2) ^ (a - 1) / beta (1 / 2) a := by
+  have hu : 0 < (z + 1) / 2 := by linarith [hz.1]
+  have hv : 0 < (1 - z) / 2 := by linarith [hz.2]
+  have hw : 0 < 1 - z ^ 2 := by
+    nlinarith [mul_pos (show 0 < z + 1 by linarith) (show 0 < 1 - z by linarith)]
+  rw [betaPDFReal, ite_eq_left ⟨hu, by linarith [hz.2]⟩,
+    show 1 - (z + 1) / 2 = (1 - z) / 2 by ring,
+    mul_assoc, ← Real.mul_rpow hu.le hv.le]
+  have huv : (z + 1) / 2 * ((1 - z) / 2) = (1 - z ^ 2) / 4 := by ring
+  rw [huv, Real.div_rpow hw.le (by norm_num : (0 : ℝ) ≤ 4),
+    ProbabilityTheory.beta_one_half_left_eq_two_rpow_mul_beta_self ha]
+  have hfour : (4 : ℝ) ^ (a - 1) = 2 ^ (2 * (a - 1)) := by
+    rw [show (4 : ℝ) = 2 ^ (2 : ℕ) by norm_num, ← Real.rpow_natCast,
+      ← Real.rpow_mul (by norm_num : (0 : ℝ) ≤ 2)]
+    norm_num
+  rw [hfour]
+  have hbeta : beta a a ≠ 0 := (beta_pos ha ha).ne'
+  have htwo : (2 : ℝ) ^ (2 * a - 1) ≠ 0 := (Real.rpow_pos_of_pos (by norm_num) _).ne'
+  field_simp
+  calc
+    (2 : ℝ) ^ (2 * a - 1) = 2 ^ (1 + 2 * (a - 1)) := by congr 1; ring
+    _ = 2 ^ (1 : ℝ) * 2 ^ (2 * (a - 1)) :=
+      Real.rpow_add (by norm_num : (0 : ℝ) < 2) 1 (2 * (a - 1))
+    _ = 2 * 2 ^ (2 * (a - 1)) := by rw [Real.rpow_one]
+
+/-- The density of a centered symmetric Beta law on `(-1, 1)`.
+
+For positive shape `a`, the affine image of `Beta(a, a)` under `x ↦ -1 + 2x` has density
+`(1 - z²) ^ (a - 1) / B(1/2, a)` with respect to Lebesgue measure on the open interval. -/
+theorem map_centered_betaMeasure_eq_withDensity (ha : 0 < a) :
+    (betaMeasure a a).map (fun x ↦ -1 + 2 * x) =
+      (volume.restrict (Set.Ioo (-1 : ℝ) 1)).withDensity
+        (fun z ↦ ENNReal.ofReal ((1 - z ^ 2) ^ (a - 1) / beta (1 / 2) a)) := by
+  rw [betaMeasure, map_affine_withDensity_volume (a := -1) (b := 2) _ (by norm_num),
+    ← withDensity_indicator measurableSet_Ioo]
+  apply withDensity_congr_ae
+  filter_upwards with z
+  by_cases hz : z ∈ Set.Ioo (-1 : ℝ) 1
+  · rw [Set.indicator_of_mem hz, affineDensity_apply]
+    norm_num [abs_of_nonneg]
+    rw [betaPDF, ← ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 1 / 2),
+      half_mul_betaPDFReal_symmetric ha hz]
+  · rw [Set.indicator_of_notMem hz, affineDensity_apply]
+    norm_num [abs_of_nonneg]
+    by_cases hzlo : z ≤ -1
+    · rw [betaPDF_eq_zero_of_nonpos (by linarith)]
+    · have hzhi : 1 ≤ z := by
+        apply le_of_not_gt
+        intro h
+        exact hz ⟨lt_of_not_ge hzlo, h⟩
+      rw [betaPDF_eq_zero_of_one_le (by linarith)]
 
 /-- The sharp integrability criterion for mixed absolute and residual powers of a centered
 symmetric Beta variable. Both endpoint equalities belong to the divergent side. -/

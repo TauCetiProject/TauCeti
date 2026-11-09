@@ -122,7 +122,8 @@ theorem integrableOn_lkjPartialCorrelationKernel {p : ℕ} {η : ℝ} (hη : 0 <
   exact Integrable.fintype_prod fun ij ↦
     integrableOn_Ioo_one_sub_sq_rpow (lkjPartialCorrelationShape_pos hη ij)
 
-private theorem prod_beta_lkjPartialCorrelationShape (p : ℕ) (η : ℝ) :
+/-- The product of the one-dimensional centered-Beta normalizers is the LKJ normalizer. -/
+theorem prod_beta_lkjPartialCorrelationShape (p : ℕ) (η : ℝ) :
     (∏ ij : strictLowerTriangle p, beta (1 / 2) (lkjPartialCorrelationShape p η ij)) =
       lkjNormalizer p η := by
   unfold lkjPartialCorrelationShape
@@ -169,7 +170,7 @@ variable {p : ℕ} {η : ℝ}
 /-- On the open cube the Jacobian-weighted power of the determinant is the LKJ
 partial-correlation kernel: both factor into one-dimensional powers of the residual variances
 `1 - z ij ^ 2`. -/
-private theorem jacobian_mul_det_rpow {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1) :
+theorem jacobian_mul_det_rpow {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1) :
     (∏ ij : strictLowerTriangle p, Real.sqrt (1 - z ij ^ 2) ^ (p - ij.1.2.1 - 2)) •
         (correlationMatrix p (correlationCoordinatesOfPartialCorrelation z) :
           Matrix (Fin p) (Fin p) ℝ).det ^ (η - 1) =
