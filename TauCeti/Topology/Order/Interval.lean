@@ -266,7 +266,8 @@ theorem _root_.ContinuousOn.apply_ne_apply_of_injOn_Ico {α δ : Type*}
 
 /-- A continuous function on `Ioi p` that is above `v`, tends to `v` at `+∞` and to `+∞` at `p⁺`
 has image `Ioi v`. -/
-theorem image_Ioi_eq_Ioi_of_tendsto {α β : Type*} [ConditionallyCompleteLinearOrder α]
+theorem _root_.ContinuousOn.image_Ioi_eq_Ioi_of_tendsto {α β : Type*}
+    [ConditionallyCompleteLinearOrder α]
     [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] [NoMaxOrder α]
     [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β] {d : α → β} {p : α} {v : β}
     (hcont : ContinuousOn d (Ioi p)) (hpos : ∀ x ∈ Ioi p, v < d x)
@@ -277,11 +278,12 @@ theorem image_Ioi_eq_Ioi_of_tendsto {α β : Type*} [ConditionallyCompleteLinear
 
 /-- A continuous function on `Iio p` that is above `v`, tends to `v` at `-∞` and to `+∞` at `p⁻`
 has image `Ioi v`. -/
-theorem image_Iio_eq_Ioi_of_tendsto {α β : Type*} [ConditionallyCompleteLinearOrder α]
+theorem _root_.ContinuousOn.image_Iio_eq_Ioi_of_tendsto {α β : Type*}
+    [ConditionallyCompleteLinearOrder α]
     [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] [NoMinOrder α]
     [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β] {d : α → β} {p : α} {v : β}
     (hcont : ContinuousOn d (Iio p)) (hpos : ∀ x ∈ Iio p, v < d x)
     (hbot : Tendsto d atBot (𝓝 v)) (hp : Tendsto d (𝓝[<] p) atTop) : d '' Iio p = Ioi v :=
-  image_Ioi_eq_Ioi_of_tendsto (α := αᵒᵈ) hcont hpos hbot hp
+  ContinuousOn.image_Ioi_eq_Ioi_of_tendsto (α := αᵒᵈ) hcont hpos hbot hp
 
 end TauCeti
