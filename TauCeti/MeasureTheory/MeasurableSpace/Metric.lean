@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 public import Mathlib.MeasureTheory.Function.SimpleFuncDense
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import Mathlib.Topology.UniformSpace.Cauchy
+import Mathlib.Topology.UniformSpace.HeineCantor
+import TauCeti.Algebra.BigOperators.Group.Finset.Indicator
 
 /-!
 # Measurable discretization of pseudometric spaces
@@ -16,7 +18,9 @@ public import Mathlib.Topology.UniformSpace.Cauchy
 This file provides measurable maps onto finitely many points of a pseudometric space whose open
 sets are measurable: a nearest-point projection onto any nonempty finite set, a finite
 measurable approximation of a totally bounded space, and a measurable partition of a measurable
-totally bounded set into finitely many small cells.
+totally bounded set into finitely many small cells. Such a partition of a compact set
+approximates a function continuous on a compact product uniformly by functions that are piecewise
+constant in the first variable.
 
 ## Main statements
 
@@ -27,13 +31,19 @@ totally bounded set into finitely many small cells.
 * `TotallyBounded.exists_measurable_dist_lt` — a measurable totally bounded set is the union of
   finitely many measurable cells of small diameter, labelled by a measurable map that gives its
   complement a label of its own.
+* `TotallyBounded.exists_measurable_partition_ball` — a measurable totally bounded set is the
+  disjoint union of finitely many measurable pieces, each inside a small ball centred in the set.
+* `IsCompact.exists_enorm_sub_sum_indicator_le` — a function continuous on a product of compact
+  sets and zero outside it is uniformly close to a function that is piecewise constant in the
+  first variable on a finite measurable partition, with values the slices at the centres.
 -/
 
 public section
 
 noncomputable section
 
-open Metric Set
+open Metric Set Function
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -141,5 +151,67 @@ theorem _root_.TotallyBounded.exists_measurable_dist_lt {X : Type u} [PseudoMetr
     rw [hxy] at hx'
     rw [Subtype.dist_eq] at hx' hy'
     linarith [dist_triangle_right x y (v (r ⟨y, hy⟩) : X)]
+
+/-- **A measurable partition of a totally bounded set into pieces of small balls.** In a
+pseudometric space whose open sets are measurable, a measurable totally bounded set `s` is, for
+every `δ > 0`, the union of finitely many pairwise disjoint measurable pieces
+`P i ⊆ s ∩ ball (c i) δ` with centres `c i ∈ s`. -/
+theorem _root_.TotallyBounded.exists_measurable_partition_ball {X : Type u} [PseudoMetricSpace X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] {s : Set X} (hs : TotallyBounded s)
+    (hsm : MeasurableSet s) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ (n : ℕ) (c : Fin n → X) (P : Fin n → Set X), (∀ i, c i ∈ s) ∧
+      (∀ i, MeasurableSet (P i)) ∧ (∀ i, P i ⊆ s ∩ ball (c i) δ) ∧
+      Pairwise (Disjoint on P) ∧ ⋃ i, P i = s := by
+  obtain ⟨T, hTs, hT, hcover⟩ := finite_approx_of_totallyBounded hs δ hδ
+  have := hT.to_subtype
+  obtain ⟨n, ⟨e⟩⟩ := Finite.exists_equiv_fin T
+  set c : Fin n → X := fun i ↦ e.symm i
+  set f : Fin n → Set X := fun i ↦ s ∩ ball (c i) δ
+  have hf : ∀ i, MeasurableSet (f i) := fun i ↦ hsm.inter isOpen_ball.measurableSet
+  refine ⟨n, c, disjointed f, fun i ↦ hTs (e.symm i).2, fun i ↦ ?_,
+    fun i ↦ disjointed_subset f i, disjoint_disjointed f, ?_⟩
+  · rw [disjointed_eq_inter_compl]
+    exact (hf i).inter (.iInter fun j ↦ .iInter fun _ ↦ (hf j).compl)
+  · rw [iUnion_disjointed]
+    refine Subset.antisymm (iUnion_subset fun i ↦ inter_subset_left) fun x hx ↦ ?_
+    obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.1 (hcover hx)
+    exact mem_iUnion.2 ⟨e ⟨y, hy⟩, hx, by simpa [c] using hxy⟩
+
+/-- **Uniform approximation by functions piecewise constant in the first variable.** A function
+`K` continuous on a product `s ×ˢ t` of compact sets and zero outside it is within `ε` of a
+function that is piecewise constant in the first variable on a finite measurable partition of
+`s`, equal on the piece `P i` to the slice `K (c i)` at a point `c i ∈ s`: the difference is at
+most `ε` on `s ×ˢ t` and vanishes outside it. -/
+theorem _root_.IsCompact.exists_enorm_sub_sum_indicator_le {α β E : Type*} [MetricSpace α]
+    [MeasurableSpace α] [OpensMeasurableSpace α] [PseudoMetricSpace β]
+    [SeminormedAddCommGroup E] {K : α → β → E} {s : Set α} {t : Set β} (hs : IsCompact s)
+    (ht : IsCompact t) (hKc : ContinuousOn (uncurry K) (s ×ˢ t))
+    (hK0 : ∀ x y, (x, y) ∉ s ×ˢ t → K x y = 0) {ε : ℝ≥0} (hε : 0 < ε) :
+    ∃ (n : ℕ) (c : Fin n → α) (P : Fin n → Set α), (∀ i, c i ∈ s) ∧
+      (∀ i, MeasurableSet (P i)) ∧ (∀ i, P i ⊆ s) ∧ Pairwise (Disjoint on P) ∧
+      ∀ x y, ‖K x y - ∑ i, (P i).indicator (fun _ ↦ K (c i) y) x‖ₑ ≤
+        s.indicator (fun _ ↦ t.indicator (fun _ ↦ (ε : ℝ≥0∞)) y) x := by
+  obtain ⟨δ, hδ, hunif⟩ := Metric.uniformContinuousOn_iff.1
+    ((hs.prod ht).uniformContinuousOn_of_continuous hKc) ε (by exact_mod_cast hε)
+  obtain ⟨n, c, P, hcs, hPm, hPs, hPd, hPU⟩ :=
+    hs.totallyBounded.exists_measurable_partition_ball hs.isClosed.measurableSet hδ
+  refine ⟨n, c, P, hcs, hPm, fun i x hx ↦ (hPs i hx).1, hPd, fun x y ↦ ?_⟩
+  by_cases hx : x ∈ s
+  · obtain ⟨i, hi⟩ := mem_iUnion.1 (hPU.symm ▸ hx)
+    rw [Finset.sum_indicator_apply_of_mem (hPd.set_pairwise _) (Finset.mem_univ i) hi,
+      indicator_of_mem hx]
+    by_cases hy : y ∈ t
+    · rw [indicator_of_mem hy, ← ofReal_norm, ← dist_eq_norm]
+      refine ENNReal.ofReal_le_of_le_toReal ?_
+      have h := hunif (x, y) ⟨hx, hy⟩ (c i, y) ⟨hcs i, hy⟩ (by
+        rw [Prod.dist_eq, dist_self, max_eq_left dist_nonneg]
+        exact (hPs i hi).2)
+      simpa using h.le
+    · rw [hK0 x y fun h ↦ hy h.2, hK0 (c i) y fun h ↦ hy h.2, sub_zero, ← ofReal_norm,
+        norm_zero, ENNReal.ofReal_zero]
+      exact zero_le
+  · rw [Finset.sum_eq_zero fun i _ ↦ indicator_of_notMem (fun h ↦ hx (hPs i h).1) _,
+      hK0 x y fun h ↦ hx h.1, sub_zero, ← ofReal_norm, norm_zero, ENNReal.ofReal_zero]
+    exact zero_le
 
 end TauCeti

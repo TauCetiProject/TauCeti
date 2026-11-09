@@ -35,6 +35,9 @@ of translations.
   measurability.
 - `MeasureTheory.AEStronglyMeasurable.comp_prod_sub`: a measurable family of translations
   preserves a.e. strong measurability for the product measure.
+- `MeasureTheory.aestronglyMeasurable_uncurry_sum_indicator`: a function of two variables that is
+  piecewise in the first variable on a finite measurable family, with a.e. strongly measurable
+  slices, is a.e. strongly measurable for the product measure.
 
 The antitone σ-algebra results hold for a codomain in any second-countable conditionally complete
 linear order with the order topology and Borel σ-algebra (`ℝ` qualifies). The witness σ-algebras
@@ -206,5 +209,22 @@ theorem AEStronglyMeasurable.comp_prod_sub
   filter_upwards [Measure.quasiMeasurePreserving_fst.ae_eq_comp hc.ae_eq_mk] with p hp
   simp only [Function.comp_def] at hp ⊢
   rw [hp]
+
+/-- A function of two variables that is piecewise in the first variable, equal to `L i y` on the
+measurable set `P i` of a finite family, is almost everywhere strongly measurable for the product
+measure when every slice `L i` is. -/
+theorem aestronglyMeasurable_uncurry_sum_indicator {ι M : Type*} [Fintype ι]
+    [TopologicalSpace M] [AddCommMonoid M] [ContinuousAdd M] {P : ι → Set α}
+    (hP : ∀ i, MeasurableSet (P i)) {L : ι → β → M} (hL : ∀ i, AEStronglyMeasurable (L i) ν) :
+    AEStronglyMeasurable (Function.uncurry fun x y ↦ ∑ i, (P i).indicator (fun _ ↦ L i y) x)
+      (μ.prod ν) := by
+  refine Finset.aestronglyMeasurable_fun_sum _ fun i _ ↦ ?_
+  have : (fun z : α × β ↦ (P i).indicator (fun _ ↦ L i z.2) z.1) =
+      (P i ×ˢ Set.univ).indicator fun z ↦ L i z.2 := by
+    ext1 z
+    by_cases hz : z.1 ∈ P i <;> simp [hz, Set.indicator]
+  simpa only [Function.uncurry_def, this, Function.comp_def] using
+    ((hL i).comp_quasiMeasurePreserving (Measure.quasiMeasurePreserving_snd (μ := μ))).indicator
+      ((hP i).prod .univ)
 
 end MeasureTheory

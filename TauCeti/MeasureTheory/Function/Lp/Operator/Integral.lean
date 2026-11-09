@@ -39,6 +39,11 @@ variable, and matrix-valued kernels acting on sections of a trivial finite-rank 
 * `TauCeti.integralOperatorLp`: the integral operator as a bounded operator on `Lᵖ`.
 * `TauCeti.norm_integralOperatorLp_le`, `TauCeti.norm_integralOperatorLp_le_max`: its norm
   bounds.
+* `TauCeti.integralOperatorLp_sub`: the integral operator of `K₁ - K₂` is the difference of the
+  integral operators of `K₁` and `K₂`.
+* `TauCeti.lintegral_enorm_row_le_of_le_indicator`,
+  `TauCeti.lintegral_enorm_column_le_of_le_indicator`: the row and column bounds `c * ν t` and
+  `c * μ s` for a kernel bounded by `c` on `s ×ˢ t` and zero outside it.
 
 ## References
 
@@ -96,6 +101,27 @@ theorem ae_integrable_apply_of_memLp (hK : AEStronglyMeasurable (uncurry K) (μ.
     (isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable₂ hK
       hu.aestronglyMeasurable.comp_snd).prodMk_left] with x hx hx'
   exact ⟨hx', (lintegral_mono fun y ↦ (K x y).le_opENorm (u y)).trans_lt hx⟩
+
+omit [MeasurableSpace α] [SFinite ν] in
+/-- A kernel bounded by `c` on `s ×ˢ t` and zero outside it has row integrals at most `c * ν t`. -/
+theorem lintegral_enorm_row_le_of_le_indicator {s : Set α} {t : Set β} (ht : MeasurableSet t)
+    {c : ℝ≥0∞} (hK : ∀ x y, ‖K x y‖ₑ ≤ s.indicator (fun _ ↦ t.indicator (fun _ ↦ c) y) x)
+    (x : α) : ∫⁻ y, ‖K x y‖ₑ ∂ν ≤ c * ν t := by
+  calc ∫⁻ y, ‖K x y‖ₑ ∂ν ≤ ∫⁻ y, t.indicator (fun _ ↦ c) y ∂ν := by
+        refine lintegral_mono fun y ↦ (hK x y).trans ?_
+        by_cases hx : x ∈ s <;> simp [hx]
+    _ = c * ν t := lintegral_indicator_const ht c
+
+omit [MeasurableSpace β] [SFinite μ] in
+/-- A kernel bounded by `c` on `s ×ˢ t` and zero outside it has column integrals at most
+`c * μ s`. -/
+theorem lintegral_enorm_column_le_of_le_indicator {s : Set α} {t : Set β} (hs : MeasurableSet s)
+    {c : ℝ≥0∞} (hK : ∀ x y, ‖K x y‖ₑ ≤ s.indicator (fun _ ↦ t.indicator (fun _ ↦ c) y) x)
+    (y : β) : ∫⁻ x, ‖K x y‖ₑ ∂μ ≤ c * μ s := by
+  calc ∫⁻ x, ‖K x y‖ₑ ∂μ ≤ ∫⁻ x, s.indicator (fun _ ↦ c) x ∂μ := by
+        refine lintegral_mono fun x ↦ (hK x y).trans ?_
+        by_cases hx : x ∈ s <;> by_cases hy : y ∈ t <;> simp [hx, hy]
+    _ = c * μ s := lintegral_indicator_const hs c
 
 variable [NormedSpace ℝ G]
 
@@ -204,6 +230,28 @@ theorem norm_integralOperatorLp_le_max : ‖integralOperatorLp K p hK hA hB‖ �
         exacts [le_max_left A B, le_max_right A B]
     _ = max A B := by
         rw [← NNReal.rpow_add' (by simp), sub_add_cancel, NNReal.rpow_one]
+
+/-- The integral operator of the difference of two kernels is the difference of their integral
+operators. -/
+theorem integralOperatorLp_sub {K₁ K₂ : α → β → F →L[𝕜] G}
+    {hK₁ : AEStronglyMeasurable (uncurry K₁) (μ.prod ν)} {A₁ B₁ : ℝ≥0}
+    {hA₁ : ∀ᵐ x ∂μ, ∫⁻ y, ‖K₁ x y‖ₑ ∂ν ≤ A₁} {hB₁ : ∀ᵐ y ∂ν, ∫⁻ x, ‖K₁ x y‖ₑ ∂μ ≤ B₁}
+    {hK₂ : AEStronglyMeasurable (uncurry K₂) (μ.prod ν)} {A₂ B₂ : ℝ≥0}
+    {hA₂ : ∀ᵐ x ∂μ, ∫⁻ y, ‖K₂ x y‖ₑ ∂ν ≤ A₂} {hB₂ : ∀ᵐ y ∂ν, ∫⁻ x, ‖K₂ x y‖ₑ ∂μ ≤ B₂}
+    {hK : AEStronglyMeasurable (uncurry fun x y ↦ K₁ x y - K₂ x y) (μ.prod ν)} {A B : ℝ≥0}
+    {hA : ∀ᵐ x ∂μ, ∫⁻ y, ‖K₁ x y - K₂ x y‖ₑ ∂ν ≤ A}
+    {hB : ∀ᵐ y ∂ν, ∫⁻ x, ‖K₁ x y - K₂ x y‖ₑ ∂μ ≤ B} :
+    integralOperatorLp K₁ p hK₁ hA₁ hB₁ - integralOperatorLp K₂ p hK₂ hA₂ hB₂ =
+      integralOperatorLp (fun x y ↦ K₁ x y - K₂ x y) p hK hA hB := by
+  refine ContinuousLinearMap.ext fun u ↦ (integralOperatorLp_eq_iff.2 ?_).symm
+  filter_upwards [ae_integrable_apply_of_memLp hK₁ (Lp.memLp u) Fact.out hA₁ hB₁,
+    ae_integrable_apply_of_memLp hK₂ (Lp.memLp u) Fact.out hA₂ hB₂,
+    coeFn_integralOperatorLp (hK := hK₁) (hA := hA₁) (hB := hB₁) u,
+    coeFn_integralOperatorLp (hK := hK₂) (hA := hA₂) (hB := hB₂) u,
+    Lp.coeFn_sub (integralOperatorLp K₁ p hK₁ hA₁ hB₁ u)
+      (integralOperatorLp K₂ p hK₂ hA₂ hB₂ u)] with x h₁ h₂ e₁ e₂ e
+  rw [sub_apply, e, Pi.sub_apply, e₁, e₂, ← integral_sub h₁ h₂]
+  simp only [sub_apply]
 
 end integralOperatorLp
 
