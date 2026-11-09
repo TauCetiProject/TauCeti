@@ -155,6 +155,7 @@ theorem restrictedEval₂OfBound_restrictedMap (θ : T →+* R) {D E : ℝ}
 
 variable [CompleteSpace T]
 
+omit [∀ i, Fact (0 < c i)] in
 /-- Applying a continuous target homomorphism to an evaluated series agrees with evaluating
 its images, whenever the composite coefficient map is bounded and the image arguments still
 lie in the prescribed polydisc. -/
@@ -163,11 +164,13 @@ theorem map_restrictedEval₂OfBound (θ : S →+* T) (hθ : Continuous θ) {D :
     (f : IsRestricted.subring (R := R) c) :
     θ (restrictedEval₂OfBound φ a hφ ha f) =
       restrictedEval₂OfBound (θ.comp φ) (θ ∘ a) hθφ hθa f := by
-  have h := eq_restrictedEval₂OfBound (θ.comp φ) (θ ∘ a) hθφ hθa
-    (θ.comp (restrictedEval₂OfBound φ a hφ ha))
-    (hθ.comp (continuous_restrictedEval₂OfBound φ a hφ ha))
-    (fun r ↦ by simp) (fun i ↦ by simp)
-  exact DFunLike.congr_fun h f
+  have ht : θ ∘ weightedEvalTerm φ a (f : MvPowerSeries (Fin k) R) =
+      weightedEvalTerm (θ.comp φ) (θ ∘ a) f := by
+    funext t
+    simp only [Function.comp_apply, weightedEvalTerm_def, map_mul, map_prod, map_pow,
+      RingHom.comp_apply]
+  exact (ht ▸ (hasSum_restrictedEval₂OfBound φ a hφ ha f).map θ hθ).unique
+    (hasSum_restrictedEval₂OfBound (θ.comp φ) (θ ∘ a) hθφ hθa f)
 
 end Naturality
 
