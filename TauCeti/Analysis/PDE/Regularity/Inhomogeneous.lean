@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.PDE.DirichletProblem
 public import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness
 public import TauCeti.Analysis.PDE.Regularity.HolderContinuity
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecificLimits.DecayIteration
 import TauCeti.MeasureTheory.Function.EssSup
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -571,11 +573,7 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp [Nonempty ι] {lam La
   · -- Oscillation: `u` lies in an interval of length `L ≤ 2 C s^α` on `B(x, s)`.
     rw [hρ] at hsR
     obtain ⟨m', hm'⟩ := hosc h ha (hfx x hx) hu hs hsR (hball x hx)
-    have hL : C₀ * (s / R) ^ (α : ℝ) * (R ^ (-(Fintype.card ι : ℝ) / 2) *
-        √(∫ y in ball x R, W1p.value u y ^ 2 ∂mu) + R ^ (2 - (Fintype.card ι : ℝ) / r) *
-          (eLpNorm f r (mu.restrict (ball x R))).toReal / lam) ≤ 2 * (C * s ^ (α : ℝ)) :=
-      calc _ ≤ C₀ * (s / R) ^ (α : ℝ) * N := by gcongr; exact hN x hx
-        _ = 2 * (C * s ^ (α : ℝ)) := by rw [hC, Real.div_rpow hs.le hR.le]; field_simp
+    have hL := Real.mul_rpow_div_mul_le_two_mul (α := (α : ℝ)) hC₀.le hs.le hR (hN x hx) hC
     refine ⟨m' + C * s ^ (α : ℝ), ?_⟩
     filter_upwards [hm'] with y hy
     rw [mem_closedBall, Real.dist_eq, abs_le]
@@ -586,21 +584,8 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp [Nonempty ι] {lam La
     rw [Real.norm_eq_abs, hM]
     exact hy.trans (mul_le_mul_of_nonneg_left (hN x hx) hD.le)
   · -- The constant: `2 C = C₀ N R^(-α)` and `2 M / ρ^α = 2^(1+α) D N R^(-α) ≤ 4 D N R^(-α)`.
-    have h2α : (2 : ℝ) ^ (α : ℝ) ≤ 2 := by
-      simpa using Real.rpow_le_rpow_of_exponent_le one_le_two hα1
-    rw [← hNdef, Real.le_toNNReal_iff_coe_le (by positivity)]
-    push_cast
-    rw [hC, hM, hρ, Real.div_rpow hR.le zero_le_two, Real.rpow_neg hR.le]
-    refine max_le ?_ ?_
-    · calc 2 * (C₀ * N / R ^ (α : ℝ) / 2) = C₀ * (R ^ (α : ℝ))⁻¹ * N := by field_simp
-        _ ≤ _ := by gcongr; exact le_max_left _ _
-    · calc 2 * (D * N) / (R ^ (α : ℝ) / 2 ^ (α : ℝ))
-          = 2 * 2 ^ (α : ℝ) * D * (R ^ (α : ℝ))⁻¹ * N := by field_simp
-        _ ≤ 2 * 2 * D * (R ^ (α : ℝ))⁻¹ * N := by gcongr
-        _ ≤ _ := by
-          rw [show (2 : ℝ) * 2 * D = 4 * D by ring]
-          gcongr
-          exact le_max_right _ _
+    rw [← hNdef]
+    exact NNReal.max_two_mul_le_toNNReal hα1 hR hC₀.le (by positivity) (by positivity) hC hM hρ
 
 end PDE
 
