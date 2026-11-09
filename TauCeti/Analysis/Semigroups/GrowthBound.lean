@@ -202,17 +202,12 @@ theorem StronglyContinuousSemigroup.tendsto_realOperator_apply {ι : Type*} {l :
   -- of `u ↦ S.realOperator u` alone: combine strong continuity at `r` with the uniform operator
   -- bound supplied by a growth bound, applied to the nonnegative parts `max (f i) 0` of the times.
   obtain ⟨omega, M, hb⟩ := S.existsGrowthBound
-  -- Negative times act as time `0`.
-  have hclamp (t : ℝ) : S.realOperator t = S.realOperator (max t 0) := by
-    rw [S.realOperator_def, S.realOperator_def]
-    congr 1
-    simp [Real.toNNReal]
   -- A single operator-norm bound valid for all times eventually visited by `f`.
   have hbound : ∀ᶠ i in l, ‖S.realOperator (f i)‖ ≤ M * Real.exp (max omega 0 * (max r 0 + 1)) := by
     filter_upwards [hf.eventually_lt_const (lt_of_le_of_lt (le_max_left r 0) (lt_add_one _))]
       with i hi1
     have hi2 : max (f i) 0 < max r 0 + 1 := max_lt hi1 (by linarith [le_max_right r 0])
-    rw [hclamp]
+    rw [← S.realOperator_max_zero]
     exact hb.norm_le_mul_exp_max_zero_mul_of_le (le_max_right _ _) hi2.le
   -- The time moves: this is strong continuity of the orbit of the fixed vector `z`.
   have h2 : Filter.Tendsto (fun i => S.realOperator (f i) z) l (𝓝 (S.realOperator r z)) :=

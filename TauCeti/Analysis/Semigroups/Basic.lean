@@ -171,6 +171,13 @@ theorem realOperator_of_nonpos (S : StronglyContinuousSemigroup X) {t : ℝ} (ht
     S.realOperator t = ContinuousLinearMap.id ℝ X := by
   rw [realOperator, Real.toNNReal_of_nonpos ht, S.map_zero]
 
+/-- The real-time operator at `t` is the one at the nonnegative part `max t 0`. -/
+theorem realOperator_max_zero (S : StronglyContinuousSemigroup X) (t : ℝ) :
+    S.realOperator (max t 0) = S.realOperator t := by
+  rcases le_total t 0 with ht | ht
+  · rw [max_eq_right ht, S.realOperator_zero, S.realOperator_of_nonpos ht]
+  · rw [max_eq_left ht]
+
 /-- At a nonpositive real time the real-time operator fixes every vector. -/
 theorem realOperator_of_nonpos_apply (S : StronglyContinuousSemigroup X) {t : ℝ} (ht : t ≤ 0)
     (x : X) : S.realOperator t x = x := by
