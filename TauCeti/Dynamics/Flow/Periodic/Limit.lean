@@ -163,7 +163,8 @@ theorem exists_nullhomotopic_of_tendsto [LocallyPathConnectedSpace X]
   -- Join the base points by a path `α` in `W`; it lies in the vertex sets at both ends.
   obtain ⟨α, hα⟩ := hW.joinedIn _ (mem_of_mem_nhds hWx) _ hxi
   have key := hγ₀.trans_homotopic_trans (γ := γ) hi α
-    (range_subset_iff.2 fun t ↦ (hWV (hα t)).1) (range_subset_iff.2 fun t ↦ (hWV (hα t)).2)
+    (range_subset_iff.2 fun t ↦ (hWV (hα t)).1) α
+    (range_subset_iff.2 fun t ↦ (hWV (hα t)).2)
   -- So `γ₀ · α ≃ α · γ ≃ α ≃ refl · α`, and `γ₀` is null-homotopic.
   exact Path.Homotopic.trans_right_cancel <| key.trans <|
     (Path.Homotopic.trans_right_of_nullhomotopic hγ).trans (Path.Homotopic.refl_trans _).symm
