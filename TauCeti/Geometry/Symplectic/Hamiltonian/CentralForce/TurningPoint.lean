@@ -128,15 +128,6 @@ theorem intervalIntegrable_div_sq_mul_absRadialMomentum {V₁ V₂ : ℝ} (hm : 
 
 variable {r p θ : ℝ → ℝ} {t₁ t₂ t₃ : ℝ}
 
-/-- While a radial motion moves outwards, `r' = p_r / m` with `p_r > 0`, its radius is strictly
-increasing. -/
-private theorem strictMonoOn_of_hasDerivAt_div_pos (hm : 0 < m) (hr : ContinuousOn r (Icc t₁ t₂))
-    (hr' : ∀ t ∈ Ioo t₁ t₂, HasDerivAt r (p t / m) t) (hp : ∀ t ∈ Ioo t₁ t₂, 0 < p t) :
-    StrictMonoOn r (Icc t₁ t₂) :=
-  strictMonoOn_of_hasDerivWithinAt_pos (convex_Icc _ _) hr
-    (by simpa only [interior_Icc] using fun t ht ↦ (hr' t ht).hasDerivWithinAt)
-    (by simpa only [interior_Icc] using fun t ht ↦ div_pos (hp t ht) hm)
-
 /-- **Time integrals as radial quadratures.** Let `t ↦ (r(t), p_r(t))` be a radial motion of
 energy `E` on `[t₁, t₂]`: `r` is continuous, `r' = p_r / m` and `p_r² / (2m) + U_ℓ(r) = E` on
 `(t₁, t₂)`, and let it move outwards, `p_r > 0`. Then for every function `h`,
@@ -147,12 +138,12 @@ theorem integral_comp_eq_integral_mul_div_absRadialMomentum (hm : 0 < m) (ht : t
     (hE : ∀ t ∈ Ioo t₁ t₂, p t ^ 2 / (2 * m) + effectivePotential m ℓ U (r t) = E)
     (h : ℝ → ℝ) :
     ∫ t in t₁..t₂, h (r t) = ∫ x in r t₁..r t₂, m * h x / absRadialMomentum m U ℓ E x := by
-  have hmono := strictMonoOn_of_hasDerivAt_div_pos hm hr hr' hp
-  have himage : r '' Ioo t₁ t₂ = Ioo (r t₁) (r t₂) := by
-    refine Subset.antisymm ?_ (intermediate_value_Ioo ht hr)
-    rintro _ ⟨t, htt, rfl⟩
-    exact ⟨hmono (left_mem_Icc.2 ht) (Ioo_subset_Icc_self htt) htt.1,
-      hmono (Ioo_subset_Icc_self htt) (right_mem_Icc.2 ht) htt.2⟩
+  -- The radius is strictly increasing, since `r' = p_r / m > 0`.
+  have hmono : StrictMonoOn r (Icc t₁ t₂) :=
+    strictMonoOn_of_hasDerivWithinAt_pos (convex_Icc _ _) hr
+      (by simpa only [interior_Icc] using fun t ht ↦ (hr' t ht).hasDerivWithinAt)
+      (by simpa only [interior_Icc] using fun t ht ↦ div_pos (hp t ht) hm)
+  have himage : r '' Ioo t₁ t₂ = Ioo (r t₁) (r t₂) := hr.image_Ioo_of_strictMonoOn ht hmono
   have hle : r t₁ ≤ r t₂ := hmono.monotoneOn (left_mem_Icc.2 ht) (right_mem_Icc.2 ht) ht
   rw [integral_of_le ht, integral_of_le hle, integral_Ioc_eq_integral_Ioo,
     integral_Ioc_eq_integral_Ioo, ← himage, integral_image_eq_integral_abs_deriv_smul
@@ -237,7 +228,11 @@ theorem sub_eq_apsidalAngle (hm : 0 < m) (ht : t₁ ≤ t₂) (hr₁ : 0 < r t�
     (hE : ∀ t ∈ Ioo t₁ t₂, p t ^ 2 / (2 * m) + effectivePotential m ℓ U (r t) = E)
     (hθ : ContinuousOn θ (Icc t₁ t₂)) (hθ' : ∀ t ∈ Ioo t₁ t₂, HasDerivAt θ (ℓ / (m * r t ^ 2)) t) :
     θ t₂ - θ t₁ = apsidalAngle m U ℓ E (r t₁) (r t₂) := by
-  have hmono := strictMonoOn_of_hasDerivAt_div_pos hm hr hr' hp
+  -- The radius is strictly increasing, since `r' = p_r / m > 0`.
+  have hmono : StrictMonoOn r (Icc t₁ t₂) :=
+    strictMonoOn_of_hasDerivWithinAt_pos (convex_Icc _ _) hr
+      (by simpa only [interior_Icc] using fun t ht ↦ (hr' t ht).hasDerivWithinAt)
+      (by simpa only [interior_Icc] using fun t ht ↦ div_pos (hp t ht) hm)
   have hpos : ∀ t ∈ Icc t₁ t₂, r t ≠ 0 := fun t htt ↦
     (hr₁.trans_le (hmono.monotoneOn (left_mem_Icc.2 ht) htt htt.1)).ne'
   have hint : IntervalIntegrable (fun t ↦ ℓ / (m * r t ^ 2)) volume t₁ t₂ :=
