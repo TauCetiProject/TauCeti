@@ -51,6 +51,13 @@ Mathlib's `IsModuleTopology.continuous_of_linearMap`.
 * `TauCeti.Huber.IsTateRing.isModuleTopology`: a finitely generated Hausdorff Baire topological
   module over a Tate ring with complete additive uniformity carries the module topology.
 
+* `TauCeti.Huber.IsTateRing.isClosedEmbedding_of_isClosed_range`: a continuous injective ring
+  homomorphism with closed range, agreeing with the structure map of a completely metrisable
+  topological `A`-algebra, is a closed embedding.
+* `TauCeti.Huber.IsTateRing.isOpenQuotientMap_sub_of_surjective`: the difference of two continuous
+  `A`-algebra maps out of the factors of a product of complete nonarchimedean algebras is an open
+  quotient map when surjective.
+
 ## References
 
 * [Wedhorn, *Adic Spaces*][wedhorn_adic], Theorem 6.16 and Proposition 6.18(2). The proposition
@@ -230,6 +237,63 @@ theorem IsTateRing.isModuleTopology : IsModuleTopology A M := by
       (span_range_eq_top_iff_surjective_fintypeLinearCombination A g |>.mp hspan)).symm⟩
 
 end ModuleFinite
+
+section Algebra
+
+variable {A : Type*} [CommRing A]
+
+section ClosedRange
+
+variable [UniformSpace A] [IsUniformAddGroup A] [CompleteSpace A] [IsTopologicalRing A]
+  [IsTateRing A]
+
+/-- A ring homomorphism out of `A` that agrees with the structure map of a completely metrisable
+topological `A`-algebra, and is continuous, injective and has closed range, is a closed embedding:
+Henkel's open mapping theorem over the Tate ring `A` makes the corestriction onto the closed range
+a homeomorphism. -/
+theorem IsTateRing.isClosedEmbedding_of_isClosed_range {N : Type*} [CommRing N] [Algebra A N]
+    [UniformSpace N] [IsTopologicalRing N] [ContinuousConstSMul A N]
+    [TopologicalSpace.IsCompletelyMetrizableSpace N] (ρ : A →+* N)
+    (hρ : ∀ a, ρ a = algebraMap A N a) (hc : Continuous ρ) (hinj : Function.Injective ρ)
+    (hr : IsClosed (Set.range ρ)) : IsClosedEmbedding ρ := by
+  have hρeq : ⇑ρ = ⇑(Algebra.linearMap A N) := funext hρ
+  rw [hρeq] at hc hinj hr ⊢
+  exact ⟨isEmbedding_iff_isStrictMap_injective.mpr
+    ⟨(Algebra.linearMap A N).isStrictMap_of_isClosed_range_of_isTateRing hc.continuousAt hr, hinj⟩,
+    hr⟩
+
+end ClosedRange
+
+section OpenQuotient
+
+variable [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
+
+/-- The difference of two continuous `A`-algebra maps out of the factors of a product of complete
+first-countable nonarchimedean topological `A`-algebras, when surjective, is an open quotient map,
+by Henkel's open mapping theorem over the Tate ring `A`. -/
+theorem IsTateRing.isOpenQuotientMap_sub_of_surjective {M₁ M₂ N : Type*}
+    [CommRing M₁] [Algebra A M₁] [UniformSpace M₁] [IsUniformAddGroup M₁] [CompleteSpace M₁]
+    [(𝓝 (0 : M₁)).IsCountablyGenerated] [NonarchimedeanAddGroup M₁] [ContinuousSMul A M₁]
+    [CommRing M₂] [Algebra A M₂] [UniformSpace M₂] [IsUniformAddGroup M₂] [CompleteSpace M₂]
+    [(𝓝 (0 : M₂)).IsCountablyGenerated] [NonarchimedeanAddGroup M₂] [ContinuousSMul A M₂]
+    [CommRing N] [Algebra A N] [TopologicalSpace N] [IsTopologicalRing N] [ContinuousConstSMul A N]
+    [T0Space N] [BaireSpace N] (r₁ : M₁ →ₐ[A] N) (r₂ : M₂ →ₐ[A] N) (h₁ : Continuous r₁)
+    (h₂ : Continuous r₂)
+    (hsurj : Function.Surjective ((r₁ : M₁ →+* N).toAddMonoidHom.comp (AddMonoidHom.fst M₁ M₂) -
+      (r₂ : M₂ →+* N).toAddMonoidHom.comp (AddMonoidHom.snd M₁ M₂))) :
+    IsOpenQuotientMap ((r₁ : M₁ →+* N).toAddMonoidHom.comp (AddMonoidHom.fst M₁ M₂) -
+      (r₂ : M₂ →+* N).toAddMonoidHom.comp (AddMonoidHom.snd M₁ M₂)) := by
+  let d := r₁.toLinearMap.comp (LinearMap.fst A M₁ M₂) - r₂.toLinearMap.comp (LinearMap.snd A M₁ M₂)
+  have hdiff : ⇑((r₁ : M₁ →+* N).toAddMonoidHom.comp (AddMonoidHom.fst M₁ M₂) -
+      (r₂ : M₂ →+* N).toAddMonoidHom.comp (AddMonoidHom.snd M₁ M₂)) = d :=
+    funext fun _ ↦ rfl
+  have hd : Continuous d := (h₁.comp continuous_fst).sub (h₂.comp continuous_snd)
+  rw [hdiff] at hsurj ⊢
+  exact ⟨hsurj, hd, d.isOpenMap_of_isTateRing hsurj hd.continuousAt⟩
+
+end OpenQuotient
+
+end Algebra
 
 end TauCeti.Huber
 

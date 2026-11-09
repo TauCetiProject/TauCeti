@@ -44,46 +44,6 @@ variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopo
   [CompleteSpace A] [T0Space A] [IsTateRing A] [IsStronglyNoetherian A]
   (P : PairOfDefinition A) (f : A)
 
-omit [T0Space A] [IsStronglyNoetherian A] in
-/-- A ring homomorphism out of `A` that agrees with the structure map of a completely metrisable
-topological `A`-algebra, and is continuous, injective and has closed range, is a closed embedding:
-Henkel's open mapping theorem over the Tate ring `A` makes the corestriction onto the closed range
-a homeomorphism. -/
-private theorem isClosedEmbedding_of_isClosed_range {N : Type*} [CommRing N] [Algebra A N]
-    [UniformSpace N] [IsTopologicalRing N] [ContinuousConstSMul A N]
-    [TopologicalSpace.IsCompletelyMetrizableSpace N] (ρ : A →+* N)
-    (hρ : ∀ a, ρ a = algebraMap A N a) (hc : Continuous ρ) (hinj : Function.Injective ρ)
-    (hr : IsClosed (Set.range ρ)) : IsClosedEmbedding ρ := by
-  have hρeq : ⇑ρ = ⇑(Algebra.linearMap A N) := funext hρ
-  rw [hρeq] at hc hinj hr ⊢
-  exact ⟨isEmbedding_iff_isStrictMap_injective.mpr
-    ⟨(Algebra.linearMap A N).isStrictMap_of_isClosed_range_of_isTateRing hc.continuousAt hr, hinj⟩,
-    hr⟩
-
-omit [IsUniformAddGroup A] [CompleteSpace A] [T0Space A] [IsStronglyNoetherian A] in
-/-- The difference of two continuous `A`-algebra maps out of the factors of a product of complete
-first-countable nonarchimedean topological `A`-algebras, when surjective, is an open quotient map,
-by Henkel's open mapping theorem over the Tate ring `A`. -/
-private theorem isOpenQuotientMap_sub_of_surjective {M₁ M₂ N : Type*}
-    [CommRing M₁] [Algebra A M₁] [UniformSpace M₁] [IsUniformAddGroup M₁] [CompleteSpace M₁]
-    [(𝓝 (0 : M₁)).IsCountablyGenerated] [NonarchimedeanAddGroup M₁] [ContinuousSMul A M₁]
-    [CommRing M₂] [Algebra A M₂] [UniformSpace M₂] [IsUniformAddGroup M₂] [CompleteSpace M₂]
-    [(𝓝 (0 : M₂)).IsCountablyGenerated] [NonarchimedeanAddGroup M₂] [ContinuousSMul A M₂]
-    [CommRing N] [Algebra A N] [TopologicalSpace N] [IsTopologicalRing N] [ContinuousConstSMul A N]
-    [T0Space N] [BaireSpace N] (r₁ : M₁ →ₐ[A] N) (r₂ : M₂ →ₐ[A] N) (h₁ : Continuous r₁)
-    (h₂ : Continuous r₂)
-    (hsurj : Function.Surjective ((r₁ : M₁ →+* N).toAddMonoidHom.comp (AddMonoidHom.fst M₁ M₂) -
-      (r₂ : M₂ →+* N).toAddMonoidHom.comp (AddMonoidHom.snd M₁ M₂))) :
-    IsOpenQuotientMap ((r₁ : M₁ →+* N).toAddMonoidHom.comp (AddMonoidHom.fst M₁ M₂) -
-      (r₂ : M₂ →+* N).toAddMonoidHom.comp (AddMonoidHom.snd M₁ M₂)) := by
-  let d := r₁.toLinearMap.comp (LinearMap.fst A M₁ M₂) - r₂.toLinearMap.comp (LinearMap.snd A M₁ M₂)
-  have hdiff : ⇑((r₁ : M₁ →+* N).toAddMonoidHom.comp (AddMonoidHom.fst M₁ M₂) -
-      (r₂ : M₂ →+* N).toAddMonoidHom.comp (AddMonoidHom.snd M₁ M₂)) = d :=
-    funext fun _ ↦ rfl
-  have hd : Continuous d := (h₁.comp continuous_fst).sub (h₂.comp continuous_snd)
-  rw [hdiff] at hsurj ⊢
-  exact ⟨hsurj, hd, d.isOpenMap_of_isTateRing hsurj hd.continuousAt⟩
-
 section Augmentation
 
 variable (S₁ S₂ : Type*) [CommRing S₁] [Algebra A S₁] [IsLocalization.Away (1 : A) S₁]
@@ -144,7 +104,8 @@ theorem isClosedEmbedding_laurentCover :
     ext x
     exact (he x).symm.trans sub_eq_zero
   -- Henkel makes the bijection onto this closed range a homeomorphism.
-  exact isClosedEmbedding_of_isClosed_range ρ (fun a ↦ by simp [ρ, Completion.algebraMap_def])
+  exact IsTateRing.isClosedEmbedding_of_isClosed_range ρ
+    (fun a ↦ by simp [ρ, Completion.algebraMap_def])
     ((continuous_toCompletionLoc P ({f, 1} : Finset A) 1 S₁ hden₁).prodMk
       (continuous_toCompletionLoc P ({1} : Finset A) f S₂ hden₂))
     (laurentCover_injective P f S₁ S₂ hden₂) hrange
@@ -217,7 +178,7 @@ theorem isOpenQuotientMap_laurentCover
   have _ : (uniformity (Completion S₁₂)).IsCountablyGenerated :=
     IsUniformAddGroup.uniformity_countably_generated
   -- The restriction maps are `A`-algebra maps; open mapping applies to their surjective difference.
-  exact isOpenQuotientMap_sub_of_surjective
+  have key := IsTateRing.isOpenQuotientMap_sub_of_surjective
     (restrictionAlgHom P ({f, 1} : Finset A) 1 S₁ hden₁ ({f * f, f, 1} : Finset A) (1 * f) S₁₂
       hden₁₂ f rfl (by simp))
     (restrictionAlgHom P ({1} : Finset A) f S₂ hden₂ ({f * f, f, 1} : Finset A) (1 * f) S₁₂
@@ -226,7 +187,9 @@ theorem isOpenQuotientMap_laurentCover
       (1 * f) S₁₂ hden₁₂ f rfl (by simp))
     (continuous_restrictionAlgHom P ({1} : Finset A) f S₂ hden₂ ({f * f, f, 1} : Finset A)
       (1 * f) S₁₂ hden₁₂ 1 (mul_comm 1 f) (by simp))
-    (laurentCover_surjective P f S₁ S₂ S₁₂ hden₂)
+    (by simpa only [AlgHom.toRingHom_eq_coe, restrictionAlgHom_toRingHom] using
+      laurentCover_surjective P f S₁ S₂ S₁₂ hden₂)
+  simpa only [AlgHom.toRingHom_eq_coe, restrictionAlgHom_toRingHom] using key
 
 end Differential
 

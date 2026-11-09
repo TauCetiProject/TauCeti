@@ -322,7 +322,7 @@ theorem eq_restrictionRingHom :
 commutes with the structure maps from `A` by `restrictionRingHom_comp_toCompletionLoc`; the
 `A`-algebra structures on the completions are the ones induced by the continuous actions
 `continuousSMul_locUniformSpace`. -/
-@[expose] noncomputable def restrictionAlgHom :
+noncomputable def restrictionAlgHom :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
@@ -351,6 +351,7 @@ commutes with the structure maps from `A` by `restrictionRingHom_comp_toCompleti
       exact RingHom.congr_fun
         (restrictionRingHom_comp_toCompletionLoc P T s S hden T'' s'' S'' hden'' r hs'' hT) a }
 
+/-- The underlying function of `restrictionAlgHom` is that of `restrictionRingHom`. -/
 @[simp]
 theorem coe_restrictionAlgHom :
     letI := locUniformSpace P T s S hden
@@ -364,8 +365,27 @@ theorem coe_restrictionAlgHom :
     letI := continuousSMul_locUniformSpace P T'' s'' S'' hden''
     letI := uniformContinuousConstSMul_of_continuousConstSMul A S''
     ⇑(restrictionAlgHom P T s S hden T'' s'' S'' hden'' r hs'' hT) =
-      restrictionRingHom P T s S hden T'' s'' S'' hden'' r hs'' hT :=
-  rfl
+      restrictionRingHom P T s S hden T'' s'' S'' hden'' r hs'' hT := by
+  simp [restrictionAlgHom]
+
+/-- The underlying ring homomorphism of `restrictionAlgHom` is `restrictionRingHom`. -/
+@[simp]
+theorem restrictionAlgHom_toRingHom :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := continuousSMul_locUniformSpace P T s S hden
+    letI := uniformContinuousConstSMul_of_continuousConstSMul A S
+    letI := locUniformSpace P T'' s'' S'' hden''
+    letI := isUniformAddGroup_locUniformSpace P T'' s'' S'' hden''
+    letI := isTopologicalRing_locUniformSpace P T'' s'' S'' hden''
+    letI := continuousSMul_locUniformSpace P T'' s'' S'' hden''
+    letI := uniformContinuousConstSMul_of_continuousConstSMul A S''
+    ((restrictionAlgHom P T s S hden T'' s'' S'' hden'' r hs'' hT :
+        UniformSpace.Completion S →ₐ[A] UniformSpace.Completion S'') :
+        UniformSpace.Completion S →+* UniformSpace.Completion S'') =
+      restrictionRingHom P T s S hden T'' s'' S'' hden'' r hs'' hT := by
+  simp [restrictionAlgHom]
 
 /-- The restriction map of `A`-algebras is continuous. -/
 theorem continuous_restrictionAlgHom :
