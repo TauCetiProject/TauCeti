@@ -53,7 +53,8 @@ are those of its summands, so its tangent coordinate changes are those of the su
   `TauCeti.Manifold.symmL_trivializationAt_self`: the canonical trivialization at `x` and its
   inverse act as the identity on the fibre over `x`.
 * `TauCeti.Manifold.inTangentCoordinates_eq_self_of_eq`: a field of linear maps read in the tangent
-  coordinates of a point with the same base points is unchanged.
+  coordinates of a point with the same base points is unchanged, and
+  `TauCeti.Manifold.inCoordinates_tangentSpace_self` is the same statement for a single map.
 * `TauCeti.Manifold.localFrame_trivializationAt_self`: consequently its local frame at `x` is the
   chosen basis of the model space.
 * `TauCeti.Manifold.inverse_mfderiv_extChartAt`: the inverse of the differential of an extended
@@ -270,6 +271,19 @@ theorem inTangentCoordinates_eq_self_of_eq {E' H' M' N : Type*} [NormedAddCommGr
   -- `TangentSpace I (f x)` rather than `E`; it is applied by definition.
   exact congrArg (ϕ x) ((tangentBundleCore I M).coordChange_self (achart H (f x)) (f x)
     (mem_chart_source H (f x)) v)
+
+/-- A linear map between tangent spaces, read in the canonical trivializations at its own base
+points, is unchanged. -/
+@[simp]
+theorem inCoordinates_tangentSpace_self {E' H' M' : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 1 M'] (x : M) (y : M')
+    (ϕ : TangentSpace I x →L[𝕜] TangentSpace I' y) :
+    ContinuousLinearMap.inCoordinates E (TangentSpace I) E' (TangentSpace I') x x y y ϕ = ϕ := by
+  ext v
+  simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
+    symmL_trivializationAt_self]
+  exact continuousLinearMapAt_trivializationAt_self y (ϕ v)
 
 /-- The differential of the extended chart at `x₀`, at a point `x` of its source, is inverted by
 the inverse of the canonical tangent-bundle trivialization at `x₀`.  This is the inverse form of

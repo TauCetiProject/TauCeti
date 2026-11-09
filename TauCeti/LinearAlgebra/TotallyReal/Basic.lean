@@ -130,6 +130,18 @@ theorem prod (hL : IsMaximalTotallyReal J L) (hM : IsMaximalTotallyReal K M) :
 
 end IsMaximalTotallyReal
 
+/-- A linear equivalence intertwining `J` and `K` identifies the maximal totally real submodules
+for `J` with those for `K`. This is how maximal total reality is read in a change of frame. -/
+theorem isMaximalTotallyReal_map_linearEquiv_iff {J : E →ₗ[R] E} {K : F →ₗ[R] F}
+    {L : Submodule R E} (e : E ≃ₗ[R] F) (he : K ∘ₗ e.toLinearMap = e.toLinearMap ∘ₗ J) :
+    IsMaximalTotallyReal K (L.map e.toLinearMap) ↔ IsMaximalTotallyReal J L := by
+  rw [isMaximalTotallyReal_iff, isMaximalTotallyReal_iff, ← Submodule.map_comp, he,
+    Submodule.map_comp]
+  refine ⟨fun h => ?_, Submodule.isCompl_map e⟩
+  simpa only [← Submodule.map_comp, ← LinearMap.comp_assoc, LinearEquiv.symm_comp,
+    LinearMap.id_comp, Submodule.map_id] using
+    Submodule.isCompl_map e.symm h
+
 end Basic
 
 section AddCommGroup
