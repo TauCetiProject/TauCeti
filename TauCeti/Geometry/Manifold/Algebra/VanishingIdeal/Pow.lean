@@ -90,16 +90,15 @@ theorem iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_smoothVanishingIdeal_
         iteratedFDeriv ℝ k ((r : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) = 0)
       hf (fun u hu v hv k hk ↦ ?_) (fun u v hu hv k hk ↦ ?_) k hk
     · -- Orders of vanishing add: `u` vanishes to order `m + 1` and `v` to order `1`.
+      rw [ContMDiffMap.coe_mul, Pi.mul_comp]
       refine iteratedFDeriv_mul_eq_zero_of_lt_add (hs u) (hs v) (m := m + 1) (n := 1)
         (fun i hi ↦ ih hu (by omega)) (fun i hi ↦ ?_) (by omega) (by exact_mod_cast le_top)
       obtain rfl : i = 0 := by omega
       rw [← norm_eq_zero, norm_iteratedFDeriv_zero, Function.comp_apply, extChartAt_to_inv,
         mem_smoothVanishingIdeal_iff.1 hv, norm_zero]
-    · have huv : ((u + v : C^∞⟮I, M; ℝ⟯) : M → ℝ) ∘ (extChartAt I x).symm =
-          ((u : M → ℝ) ∘ (extChartAt I x).symm) + ((v : M → ℝ) ∘ (extChartAt I x).symm) :=
-        rfl
-      rw [huv, iteratedFDeriv_add_apply ((hs u).of_le (by simp)) ((hs v).of_le (by simp)),
-        hu k hk, hv k hk, add_zero]
+    · rw [ContMDiffMap.coe_add, Pi.add_comp,
+        iteratedFDeriv_add_apply ((hs u).of_le (by simp)) ((hs v).of_le (by simp)), hu k hk,
+        hv k hk, add_zero]
 
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
 
