@@ -272,8 +272,8 @@ instance hasTrivialRadical_quotient_radical [IsNoetherian R L] :
 
 variable {R L}
 
-/-- **The radical is the smallest ideal whose quotient has trivial radical.**  Its image in such a
-quotient is a solvable ideal, hence trivial. -/
+/-- **The radical is the smallest ideal whose quotient has trivial radical.** Every ideal `I`
+whose quotient `L ⧸ I` has trivial radical contains the radical of `L`. -/
 theorem radical_le_of_hasTrivialRadical_quotient (I : LieIdeal R L)
     [HasTrivialRadical R (L ⧸ I)] : radical R L ≤ I :=
   sSup_le fun J (hJ : IsSolvable J) => by
