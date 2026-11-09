@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.Topology.Connected.Basic
-import Mathlib.RingTheory.Ideal.IdempotentFG
 import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 
 /-!
@@ -36,19 +35,10 @@ theorem eq_bot_of_isIdempotentElem [ConnectedSpace (PrimeSpectrum H)] (I : HopfI
   have hI_aug : I.toIdeal ≤ RingHom.ker (Bialgebra.counitAlgHom k H) :=
     (toIdeal_le_toIdeal.mpr (HopfIdeal.le_augmentation k H I)).trans_eq
       (augmentation_toIdeal k H)
-  obtain ⟨e, he, hspan⟩ :=
-    (Ideal.isIdempotentElem_iff_of_fg I.toIdeal hfg).mp hI
-  rcases he.eq_zero_or_eq_one_of_preconnectedSpace with rfl | rfl
-  · apply HopfIdeal.ext
-    intro x
-    rw [← mem_toIdeal, ← mem_toIdeal, bot_toIdeal]
-    simpa using SetLike.ext_iff.mp hspan x
-  · exfalso
-    apply RingHom.ker_ne_top (Bialgebra.counitAlgHom k H).toRingHom
-    apply top_unique
-    intro x _
-    apply hI_aug
-    rw [hspan]
-    simp
+  have hne : I.toIdeal ≠ ⊤ := ne_top_of_le_ne_top (RingHom.ker_ne_top _) hI_aug
+  have h := Ideal.eq_bot_of_isIdempotentElem_of_ne_top hfg hI hne
+  apply HopfIdeal.ext
+  intro x
+  rw [← mem_toIdeal, ← mem_toIdeal, bot_toIdeal, h]
 
 end TauCeti.HopfIdeal
