@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Spectral.Inertia
 public import TauCeti.Analysis.InnerProductSpace.Spectral.Projection
 public import TauCeti.Geometry.Manifold.Morse.Bott.Coordinates
+import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
 import TauCeti.Analysis.InnerProductSpace.Dual
 
 /-!
@@ -161,7 +162,7 @@ theorem finrank_pointSpectralSubspace_Iio_continuousLinearMapOfBilin
       manifoldMorseIndex I f (i s) := by
   have hA := (h.isSelfAdjoint_continuousLinearMapOfBilin hn L hQ).isSymmetric
   rw [← h.sigNeg_normalHessian hn s, ← (h.equivalent_toQuadraticMap hn L hQ).sigNeg_eq,
-    hA.sigNeg_eq_finrank_pointSpectralSubspace_Iio fun u ↦ by
+    hA.sigNeg_eq_finrank_pointSpectralSubspace fun u ↦ by
       simp [continuousLinearMapOfBilin_apply]]
 
 /-- **The positive normal subspace has the dimension of the coindex.** If a bilinear form `Q` on
@@ -175,7 +176,7 @@ theorem finrank_pointSpectralSubspace_Ioi_continuousLinearMapOfBilin
       manifoldMorseIndex I (-f) (i s) := by
   have hA := (h.isSelfAdjoint_continuousLinearMapOfBilin hn L hQ).isSymmetric
   rw [← h.sigPos_normalHessian hn s, ← (h.equivalent_toQuadraticMap hn L hQ).sigPos_eq,
-    hA.sigPos_eq_finrank_pointSpectralSubspace_Ioi fun u ↦ by
+    hA.sigPos_eq_finrank_pointSpectralSubspace fun u ↦ by
       simp [continuousLinearMapOfBilin_apply]]
 
 end IsNondegenerateCriticalSubmanifold

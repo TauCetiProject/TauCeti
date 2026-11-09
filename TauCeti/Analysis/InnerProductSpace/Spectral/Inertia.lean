@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.QuadraticForm.Signature
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 
 /-!
-# Spectral subspaces of a symmetric operator and the inertia of its form
+# Definiteness of the form of a symmetric operator on its spectral subspaces
 
 Let `A` be a symmetric operator on a finite-dimensional inner product space. Its quadratic form
 `x ↦ re ⟪A x, x⟫` is negative definite on the negative spectral subspace
@@ -17,10 +16,10 @@ Let `A` be a symmetric operator on a finite-dimensional inner product space. Its
 `A.pointSpectralSubspace (Ioi 0)`, positive semidefinite on `A.pointSpectralSubspace (Ici 0)`,
 the orthogonal complement of the negative spectral subspace, and negative semidefinite on
 `A.pointSpectralSubspace (Iic 0)`. When `A` is injective the negative and positive spectral
-subspaces are complementary. Over `ℝ` this identifies the
-indices of inertia of the form with the dimensions of the spectral subspaces: the negative index
-`sigNeg` is the dimension of the negative spectral subspace, and the positive index `sigPos` is
-the dimension of the positive one. For the Riesz operator `B♯` of a real bilinear form `B`, with
+subspaces are complementary. Over `ℝ`, the dimensions of these subspaces are the indices of
+inertia of the form (`LinearMap.IsSymmetric.sigNeg_eq_finrank_pointSpectralSubspace` and
+`LinearMap.IsSymmetric.sigPos_eq_finrank_pointSpectralSubspace` in
+`TauCeti.Analysis.InnerProductSpace.Symmetric.Signature`). For the Riesz operator `B♯` of a real bilinear form `B`, with
 `⟪B♯ u, v⟫ = B u v`, the form `B` itself is negative definite on the negative spectral subspace
 of `B♯` and positive definite on the positive one.
 
@@ -40,10 +39,6 @@ subspaces of the dimensions prescribed by Sylvester's law of inertia.
   semidefinite on that of the nonpositive eigenvalues.
 * `LinearMap.IsSymmetric.isCompl_pointSpectralSubspace_Iio_Ioi`: for an injective symmetric
   operator the negative and positive spectral subspaces are complementary.
-* `LinearMap.IsSymmetric.sigNeg_eq_finrank_pointSpectralSubspace_Iio`,
-  `LinearMap.IsSymmetric.sigPos_eq_finrank_pointSpectralSubspace_Ioi`: the negative and positive
-  indices of inertia of the form are the dimensions of the negative and positive spectral
-  subspaces.
 * `InnerProductSpace.apply_self_neg_of_mem_pointSpectralSubspace_Iio`,
   `InnerProductSpace.apply_self_pos_of_mem_pointSpectralSubspace_Ioi`: a real bilinear form with a
   self-adjoint Riesz operator is negative definite on the negative spectral subspace of that
@@ -113,43 +108,6 @@ theorem isCompl_pointSpectralSubspace_Iio_Ioi (hA : A.IsSymmetric) (hker : Linea
     codisjoint_iff.mpr ?_⟩
   rw [← Module.End.pointSpectralSubspace_insert_zero (Ω := Ioi 0) hker, Ioi_insert, ← compl_Iio]
   exact hA.pointSpectralSubspace_sup_compl_eq_top _
-
-end LinearMap.IsSymmetric
-
-namespace LinearMap.IsSymmetric
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {A : Module.End ℝ E} {Q : QuadraticForm ℝ E}
-
-/-- **The negative index of inertia is the dimension of the negative spectral subspace.** If `Q`
-is the quadratic form `x ↦ ⟪A x, x⟫` of a symmetric operator `A`, then `sigNeg Q` is the
-dimension of `A.pointSpectralSubspace (Iio 0)`. -/
-theorem sigNeg_eq_finrank_pointSpectralSubspace_Iio (hA : A.IsSymmetric)
-    (hQ : ∀ x, Q x = ⟪A x, x⟫_ℝ) :
-    sigNeg Q = Module.finrank ℝ (A.pointSpectralSubspace (Iio 0)) := by
-  set U := A.pointSpectralSubspace (Iio 0)
-  refine le_antisymm ?_ (le_sigNeg_of_negDef Q fun x hx0 ↦ ?_)
-  · -- `Q` is positive semidefinite on `Uᗮ`, so a negative definite subspace meets it trivially.
-    have hle := QuadraticForm.sigPos_add_finrank_le_of_nonpos (Q := -Q) (V := Uᗮ) fun x hx ↦ by
-      rw [hA.orthogonal_pointSpectralSubspace, compl_Iio] at hx
-      simpa [hQ] using hA.re_inner_apply_self_nonneg_of_mem_pointSpectralSubspace_Ici hx
-    rw [sigPos_neg] at hle
-    have := U.finrank_add_finrank_orthogonal
-    omega
-  · have h := hA.re_inner_apply_self_neg_of_mem_pointSpectralSubspace_Iio x.2
-      (by simpa using hx0)
-    simpa [hQ] using h
-
-/-- **The positive index of inertia is the dimension of the positive spectral subspace.** If `Q`
-is the quadratic form `x ↦ ⟪A x, x⟫` of a symmetric operator `A`, then `sigPos Q` is the
-dimension of `A.pointSpectralSubspace (Ioi 0)`. -/
-theorem sigPos_eq_finrank_pointSpectralSubspace_Ioi (hA : A.IsSymmetric)
-    (hQ : ∀ x, Q x = ⟪A x, x⟫_ℝ) :
-    sigPos Q = Module.finrank ℝ (A.pointSpectralSubspace (Ioi 0)) := by
-  have hA' : (-A).IsSymmetric := fun y z ↦ by simp [hA y z]
-  have h := hA'.sigNeg_eq_finrank_pointSpectralSubspace_Iio (Q := -Q) fun x ↦ by
-    simp [hQ]
-  rwa [sigNeg_neg, Module.End.pointSpectralSubspace_neg, neg_Iio, neg_zero] at h
 
 end LinearMap.IsSymmetric
 
