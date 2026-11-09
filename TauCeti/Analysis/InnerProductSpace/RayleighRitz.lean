@@ -204,21 +204,21 @@ singular vector is the sine times the gap between the two Rayleigh quotients. -/
 theorem IsSymmetric.re_inner_leftSingularVector_ritzResidual
     {A : E →ₗ[𝕜] E} (hA : A.IsSymmetric)
     {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] (hU : U ∈ Module.End.invtSubmodule A)
-    (X : F →ₗᵢ[𝕜] E) (i : Fin (finrank 𝕜 F)) :
-    RCLike.re ⟪LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i,
-        (A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap))
-          (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i)⟫_𝕜 =
-      (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i *
+    (X : F →ₗ[𝕜] E) (i : Fin (finrank 𝕜 F)) :
+    RCLike.re ⟪LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X) i,
+        (A ∘ₗ X - X ∘ₗ (X.adjoint ∘ₗ A ∘ₗ X))
+          (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X) i)⟫_𝕜 =
+      (Uᗮ.starProjection.toLinearMap ∘ₗ X).singularValues i *
         (RCLike.re ⟪A (LinearMap.leftSingularVector
-            (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i),
-          LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i⟫_𝕜 -
-          RCLike.re ⟪(X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap)
-            (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i),
+            (Uᗮ.starProjection.toLinearMap ∘ₗ X) i),
+          LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X) i⟫_𝕜 -
+          RCLike.re ⟪(X.adjoint ∘ₗ A ∘ₗ X)
+            (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X) i),
             LinearMap.rightSingularBasis
-              (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i⟫_𝕜) := by
-  let S := (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)
-  let M := (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap)
-  let R := (A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap))
+              (Uᗮ.starProjection.toLinearMap ∘ₗ X) i⟫_𝕜) := by
+  let S := (Uᗮ.starProjection.toLinearMap ∘ₗ X)
+  let M := (X.adjoint ∘ₗ A ∘ₗ X)
+  let R := (A ∘ₗ X - X ∘ₗ (X.adjoint ∘ₗ A ∘ₗ X))
   let σ := S.singularValues i
   let v := LinearMap.rightSingularBasis S i
   let y := LinearMap.leftSingularVector S i
@@ -231,7 +231,7 @@ theorem IsSymmetric.re_inner_leftSingularVector_ritzResidual
     rw [LinearMap.leftSingularVector_def]
     exact Uᗮ.smul_mem _ (Uᗮ.starProjection_apply_mem (X v))
   have hSyl := LinearMap.congr_fun
-    (hA.sylvester_starProjection_orthogonal_comp hU X.toLinearMap M) v
+    (hA.sylvester_starProjection_orthogonal_comp hU X M) v
   have hright :
       ⟪y, Uᗮ.starProjection.toLinearMap (R v)⟫_𝕜 = ⟪y, R v⟫_𝕜 := by
     -- Expand composition so the projection can move across the inner product.

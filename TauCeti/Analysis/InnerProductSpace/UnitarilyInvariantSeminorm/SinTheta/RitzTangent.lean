@@ -226,7 +226,7 @@ private theorem tanThetaResidualWitness_scalar
     have hAlower := hA.le_re_inner_of_pointSpectrumIn_orthogonal hU hgap.2 hy
     rw [hvnorm] at hMupper
     rw [hynorm] at hAlower
-    have hpair := hA.re_inner_leftSingularVector_ritzResidual hU X i
+    have hpair := hA.re_inner_leftSingularVector_ritzResidual hU X.toLinearMap i
     rw [re_inner_tanThetaResidualWitness_ritzResidual A U X hσzero]
     calc
       _ = (Real.sqrt
