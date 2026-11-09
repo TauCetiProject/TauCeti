@@ -27,8 +27,8 @@ fibre bundle continuous.
   space lies over a finite union of preferred trivializing base sets.
 * `Bundle.Trivialization.continuousOn_coordChange`: coordinate changes are jointly continuous over
   the overlap of the base sets.
-* `Bundle.Trivialization.isOpen_sheet`: for a trivialization with discrete fibre of a continuous
-  map, the sheet of a given index over an open subset of the base set is open.
+* `Bundle.Trivialization.isOpen_sheet`: for a trivialization with discrete fibre of a map,
+  the sheet of a given index over an open subset of the base set is open.
 * `Bundle.Trivialization.map_mem_sheet_iff`, `Bundle.Trivialization.map_symm_eq_of_mem_sheet`:
   a continuous map `g` over the base, between two trivialized maps with discrete target fibre,
   carries the sheets of `p` over a preconnected set onto sheets of `q`.
@@ -203,16 +203,18 @@ over an open set `V` inside the base set, the set of points lying over `V` with 
 `j`, is open. -/
 theorem isOpen_sheet {Z B J : Type*} [TopologicalSpace Z] [TopologicalSpace B]
     [TopologicalSpace J] [DiscreteTopology J] {q : Z → B} (tq : Trivialization J q)
-    (hq : Continuous q) {V : Set B} (hVopen : IsOpen V) (hVsub : V ⊆ tq.baseSet) (j : J) :
+    {V : Set B} (hVopen : IsOpen V) (hVsub : V ⊆ tq.baseSet) (j : J) :
     IsOpen {f : Z | q f ∈ V ∧ (tq f).2 = j} := by
-  have hW : {f : Z | q f ∈ V ∧ (tq f).2 = j} =
-      q ⁻¹' V ∩ (tq.source ∩ (fun f => (tq f).2) ⁻¹' {j}) := by
+  have hW : {f : Z | q f ∈ V ∧ (tq f).2 = j} = tq.source ∩ tq ⁻¹' (V ×ˢ {j}) := by
     ext f
-    exact ⟨fun h => ⟨h.1, tq.mem_source.mpr (hVsub h.1), h.2⟩, fun h => ⟨h.1, h.2.2⟩⟩
+    refine ⟨fun h => ⟨tq.mem_source.mpr (hVsub h.1), ?_⟩, fun h => ?_⟩
+    · simpa [tq.coe_fst (tq.mem_source.mpr (hVsub h.1))] using And.intro h.1 h.2
+    · have := h.2
+      simp only [Set.mem_preimage, Set.mem_prod, Set.mem_singleton_iff] at this
+      exact ⟨by simpa [tq.coe_fst h.1] using this.1, this.2⟩
   rw [hW]
-  exact (hVopen.preimage hq).inter
-    ((continuous_snd.comp_continuousOn tq.continuousOn_toFun).isOpen_inter_preimage
-      tq.open_source (isOpen_discrete {j}))
+  exact tq.continuousOn_toFun.isOpen_inter_preimage tq.open_source
+    (hVopen.prod (isOpen_discrete {j}))
 
 section SheetComparison
 

@@ -63,7 +63,7 @@ private theorem isEvenlyCovered_of_trivialization (hq : Continuous q) (hg : Cont
     (I := {i : I // (tq (g (tp.toOpenPartialHomeomorph.symm (q f₀, i)))).2 = (tq f₀).2}) ?_
   set j₀ : J := (tq f₀).2 with _₀
   set W : Set F := {f | q f ∈ V ∧ (tq f).2 = j₀}
-  have hWopen : IsOpen W := tq.isOpen_sheet hq hVopen (fun v hv => (hVsub hv).2) j₀
+  have hWopen : IsOpen W := tq.isOpen_sheet hVopen (fun v hv => (hVsub hv).2) j₀
   have hgW := tp.map_mem_sheet_iff hg hqg tq hVconn hVsub hf₀V j₀
   refine ⟨inferInstance, W, ⟨hf₀V, rfl⟩, hWopen, hWopen.preimage hg,
     { toFun := fun e => (⟨g e.1, e.2⟩, ⟨(tp e.1).2, (hgW e.1).mp e.2 |>.2⟩)
