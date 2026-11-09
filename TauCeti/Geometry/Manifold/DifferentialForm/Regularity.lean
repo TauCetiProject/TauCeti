@@ -102,21 +102,13 @@ theorem differentiableWithinAt_inChartAt [IsManifold I 1 M]
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) s x) :
     DifferentiableWithinAt ℝ (φ.inChartAt x) ((extChartAt I x).symm ⁻¹' s ∩ range I)
       (extChartAt I x x) := by
+  have heq := φ.trivializationAt_snd_eventuallyEq_inChartAt x
   have hc := (mdifferentiableWithinAt_section I φ).mp hφ
   have hflat := hc.differentiableWithinAt_writtenInExtChartAt
   simp only [writtenInExtChartAt, extChartAt_model_space_eq_id,
-    PartialEquiv.refl_coe, Function.comp_def, id_eq,
-    FiberBundle.trivializationAt_continuousAlternatingMap_apply] at hflat
-  have heq : (fun z ↦ ContinuousAlternatingMap.inCoordinates E F x
-      ((extChartAt I x).symm z) x ((extChartAt I x).symm z)
-        (φ ((extChartAt I x).symm z))) =ᶠ[𝓝[range I] (extChartAt I x x)] φ.inChartAt x := by
-    filter_upwards [extChartAt_target_mem_nhdsWithin x] with z hz
-    rw [φ.inCoordinates_eq_inChartAt ((extChartAt I x).map_target hz),
-      (extChartAt I x).right_inv hz]
+    PartialEquiv.refl_coe, Function.comp_def, id_eq] at hflat
   exact hflat.congr_of_eventuallyEq (heq.symm.filter_mono (nhdsWithin_mono _ inter_subset_right))
-    (by
-      rw [extChartAt_to_inv]
-      exact (φ.inCoordinates_eq_inChartAt (mem_extChartAt_source x)).symm)
+    (heq.self_of_nhdsWithin (extChartAt_target_subset_range x (mem_extChartAt_target x))).symm
 
 /-- On a boundaryless manifold, a section differentiable at `x` has a coordinate expression in the
 chart centred at `x` that is differentiable at the chart image of `x`. -/
@@ -136,23 +128,11 @@ theorem contDiffWithinAt_inChartAt [IsManifold I 1 M] {n : WithTop ℕ∞}
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) s x) :
     ContDiffWithinAt ℝ n (φ.inChartAt x) ((extChartAt I x).symm ⁻¹' s ∩ range I)
       (extChartAt I x x) := by
-  have hc := contMDiffWithinAt_section.mp hφ
-  rw [contMDiffWithinAt_iff] at hc
-  have hflat := hc.2
-  simp only [extChartAt_model_space_eq_id,
-    PartialEquiv.refl_coe, Function.comp_def, id_eq,
-    FiberBundle.trivializationAt_continuousAlternatingMap_apply]
-    at hflat
-  have heq : (fun z ↦ ContinuousAlternatingMap.inCoordinates E F x
-      ((extChartAt I x).symm z) x ((extChartAt I x).symm z)
-        (φ ((extChartAt I x).symm z))) =ᶠ[𝓝[range I] (extChartAt I x x)] φ.inChartAt x := by
-    filter_upwards [extChartAt_target_mem_nhdsWithin x] with z hz
-    rw [φ.inCoordinates_eq_inChartAt ((extChartAt I x).map_target hz),
-      (extChartAt I x).right_inv hz]
-  exact hflat.congr_of_eventuallyEq (heq.symm.filter_mono (nhdsWithin_mono _ inter_subset_right))
-    (by
-      rw [extChartAt_to_inv]
-      exact (φ.inCoordinates_eq_inChartAt (mem_extChartAt_source x)).symm)
+  have heq := φ.trivializationAt_snd_eventuallyEq_inChartAt x
+  rw [contMDiffWithinAt_section, contMDiffWithinAt_iff_source,
+    contMDiffWithinAt_iff_contDiffWithinAt] at hφ
+  exact hφ.congr_of_eventuallyEq (heq.symm.filter_mono (nhdsWithin_mono _ inter_subset_right))
+    (heq.self_of_nhdsWithin (extChartAt_target_subset_range x (mem_extChartAt_target x))).symm
 
 /-- Near the chart point, the coordinate expression of `mextDerivWithin φ s` in the chart centred
 at `x` is the flat exterior derivative of the coordinate expression of `φ` within the coordinate
@@ -561,6 +541,16 @@ theorem mextDerivₗ_zero_apply [IsManifold I 2 M] (f : SmoothForm I M F 0) (x :
           Matrix.cons_val_zero]
 
 namespace SmoothForm
+
+/-- The `0`-form of a smooth function, as a smooth form. -/
+def ofFunction [IsManifold I 1 M] (f : C^∞⟮I, M; 𝓘(ℝ, F), F⟯) : SmoothForm I M F 0 :=
+  ⟨RoughForm.ofFunction I f, (isSmoothForm_ofFunction_iff.mpr f.contMDiff).mem_smoothBundleForms⟩
+
+/-- The rough form underlying the smooth `0`-form of a function is its rough `0`-form. -/
+@[simp]
+theorem coe_ofFunction [IsManifold I 1 M] (f : C^∞⟮I, M; 𝓘(ℝ, F), F⟯) :
+    (ofFunction f : RoughForm I M F 0) = RoughForm.ofFunction I f :=
+  (rfl)
 
 /-- The exterior derivative commutes with transport across an equality of degrees. -/
 theorem mextDerivₗ_cast [IsManifold I 2 M]

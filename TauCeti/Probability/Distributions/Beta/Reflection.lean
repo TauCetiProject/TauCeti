@@ -56,6 +56,22 @@ theorem betaMeasure_map_one_sub (a b : ℝ) :
   simpa [MeasurableEquiv.subLeft, Equiv.subLeft, betaMeasure,
     Measure.map_sub_left_eq_self, neg_add_eq_sub] using h
 
+/-- Centering a symmetric Beta law at zero gives a law invariant under negation, even for
+the totalized nonpositive shape parameters. -/
+instance isNegInvariant_map_centered_betaMeasure (a : ℝ) :
+    ((betaMeasure a a).map (fun x ↦ -1 + 2 * x)).IsNegInvariant where
+  neg_eq_self := by
+    rw [Measure.neg]
+    calc
+      _ = ((betaMeasure a a).map (fun x ↦ 1 - x)).map (fun x ↦ -1 + 2 * x) := by
+        rw [Measure.map_map (by fun_prop) (by fun_prop),
+          Measure.map_map (by fun_prop) (by fun_prop)]
+        congr 1
+        funext x
+        dsimp
+        ring
+      _ = _ := by rw [betaMeasure_map_one_sub]
+
 end TauCeti.Probability
 
 namespace ProbabilityTheory

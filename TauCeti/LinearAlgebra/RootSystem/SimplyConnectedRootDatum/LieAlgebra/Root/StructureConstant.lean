@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Vector
 import TauCeti.LinearAlgebra.RootSystem.InvariantForm.RootString
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
+import Mathlib.Algebra.Ring.Parity
 
 /-!
 # The structure constants of the pinned Chevalley system
@@ -52,6 +54,8 @@ to the Chevalley commutator formula for the root subgroups `x_α(u) = Σₙ uⁿ
   `N_{-α,-β} = -N_{α,β}`.
 * `TauCeti.DynkinType.lie_chevalleySystem_eq_zero`: `⁅e_α, e_β⁆ = 0` when `α + β` is neither a
   root nor zero.
+* `TauCeti.DynkinType.lie_chevalleySystem_eq_zero_of_add_eq`: if `γ = α + β` is a root and
+  `α + γ` is not a root, then `⁅e_α, e_γ⁆ = 0`, with no separate nonzero hypothesis.
 
 ## References
 
@@ -152,13 +156,6 @@ theorem structureConstant_eq_natCast_or_eq_neg_natCast {α β : Fin t.numRoots}
     _ _ _ (LieSubalgebra.isNonZero_coe_root _) (LieSubalgebra.isNonZero_coe_root _)
     (LieSubalgebra.isNonZero_coe_root _) (coe_rootEquiv_eq_add_iff.2 hγ)
 
-/-- The structure constant of a genuine root sum is nonzero. -/
-theorem structureConstant_ne_zero {α β : Fin t.numRoots}
-    (h : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β ∈
-      Set.range (t.simplyConnectedRootDatum ht).root) :
-    t.structureConstant ht α β ≠ 0 := by
-  rcases structureConstant_eq_natCast_or_eq_neg_natCast h with h | h <;> rw [h] <;> omega
-
 /-- The structure constant vanishes when `α + β` is not a root. -/
 theorem structureConstant_eq_zero {α β : Fin t.numRoots}
     (h : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β ∉
@@ -178,6 +175,36 @@ theorem chainBotCoeff_add_one_dvd_structureConstant {α β : Fin t.numRoots} :
       simp only [h, dvd_neg, dvd_refl]
   · rw [structureConstant_eq_zero h]
     exact dvd_zero _
+
+/-- The product of consecutive structure constants in a root string is even. Thus the
+coefficient of `e_{2α+β}` in `(ad e_α)² e_β / 2` is an integer. -/
+theorem two_dvd_structureConstant_mul_structureConstant {α β γ : Fin t.numRoots}
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β) :
+    2 ∣ t.structureConstant ht α β * t.structureConstant ht α γ := by
+  have := t.isReduced_simplyConnectedRootDatum ht
+  by_cases hδ : (t.simplyConnectedRootDatum ht).root α +
+      (t.simplyConnectedRootDatum ht).root γ ∈ Set.range (t.simplyConnectedRootDatum ht).root
+  · have hlin := (t.simplyConnectedRootDatum ht).linearIndependent_of_add_mem_range_root'
+      (i := α) (j := β) ⟨γ, hγ⟩
+    have hchain := (t.simplyConnectedRootDatum ht).chainBotCoeff_of_add hlin
+      (hγ.trans (add_comm _ _))
+    have heven : 2 ∣ (((t.simplyConnectedRootDatum ht).chainBotCoeff α β : ℤ) + 1) *
+        (((t.simplyConnectedRootDatum ht).chainBotCoeff α β : ℤ) + 2) := by
+      exact_mod_cast Nat.two_dvd_mul_add_one
+        ((t.simplyConnectedRootDatum ht).chainBotCoeff α β + 1)
+    rcases structureConstant_eq_natCast_or_eq_neg_natCast ⟨γ, hγ⟩ with h | h <;>
+      rcases structureConstant_eq_natCast_or_eq_neg_natCast hδ with h' | h' <;>
+      simp only [h, h', hchain, Nat.cast_add, Nat.cast_one, neg_mul, mul_neg, neg_neg,
+        dvd_neg] <;> convert heven using 1 <;> ring
+  · simp [structureConstant_eq_zero hδ]
+
+/-- The structure constant of a genuine root sum is nonzero. -/
+theorem structureConstant_ne_zero {α β : Fin t.numRoots}
+    (h : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β ∈
+      Set.range (t.simplyConnectedRootDatum ht).root) :
+    t.structureConstant ht α β ≠ 0 := by
+  rcases structureConstant_eq_natCast_or_eq_neg_natCast h with h | h <;> rw [h] <;> omega
 
 /-- **Skew-symmetry of the structure constants**: `N_{β,α} = -N_{α,β}`. -/
 theorem structureConstant_skew (α β : Fin t.numRoots) :
@@ -251,6 +278,23 @@ theorem lie_chevalleySystem_eq_zero {α β : Fin t.numRoots}
   simpa only [extendRootFamily_rootEquiv] using
     (t.isChevalleySystem_chevalleySystem ht).toIsSl2System.lie_eq_zero_of_rootSpace_add_eq_bot
       _ _ hbot
+
+/-- If `γ = α + β` is a root but `α + γ` is not, then `e_α` commutes with `e_γ`.
+Reducedness makes the summands linearly independent, so `α + γ` cannot be zero. -/
+theorem lie_chevalleySystem_eq_zero_of_add_eq {α β γ : Fin t.numRoots}
+    (hadd : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
+    (h : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ ∉
+      Set.range (t.simplyConnectedRootDatum ht).root) :
+    ⁅t.chevalleySystem ht α, t.chevalleySystem ht γ⁆ = 0 := by
+  let := t.isReduced_simplyConnectedRootDatum ht
+  apply lie_chevalleySystem_eq_zero h
+  intro hz
+  have hli := (t.simplyConnectedRootDatum ht).linearIndependent_of_add_mem_range_root'
+    ⟨γ, hadd⟩
+  have hcoeff := (LinearIndependent.pair_iff.mp hli) (2 : ℤ) 1
+    (by simpa only [hadd, two_smul, one_smul, add_assoc] using hz)
+  norm_num at hcoeff
 
 end
 

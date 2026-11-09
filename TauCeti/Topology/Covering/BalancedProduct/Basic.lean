@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Covering.Quotient
+import TauCeti.Topology.Covering.Quotient
 
 /-!
 # The balanced product of a quotient covering map with a discrete set
@@ -255,6 +256,44 @@ theorem isQuotientCoveringMap_mk [ContinuousConstSMul G A]
 
 variable [DiscreteTopology A]
 
+omit [TopologicalSpace E] [TopologicalSpace A] [DiscreteTopology A] in
+/-- Two points of a set `U` whose `G`-translates are pairwise disjoint have the same class in the
+balanced product only when they, and their labels, agree. -/
+private theorem eq_and_eq_of_mk_eq {U : Set E}
+    (hdisj : ∀ g : G, ((g • ·) '' U ∩ U).Nonempty → g = 1) {u u' : E} {a a' : A} (hu : u ∈ U)
+    (hu' : u' ∈ U) (hEq : mk G u a = mk G u' a') : u = u' ∧ a = a' := by
+  obtain ⟨g, hg⟩ := Quotient.eq''.mp hEq
+  have hg1 : g • (u', a') = (u, a) := hg
+  have hgu : g • u' = u := congrArg Prod.fst hg1
+  rw [hdisj g ⟨u, ⟨u', hu', hgu⟩, hu⟩, one_smul] at hg1
+  exact ⟨(Prod.ext_iff.mp hg1).1.symm, (Prod.ext_iff.mp hg1).2.symm⟩
+
+omit [DiscreteTopology A] in
+/-- Openness inside the base set `q '' U` is detected on any single sheet `U ×ˢ {a}`. -/
+private theorem isOpen_of_isOpen_preimage_inter_sheet (hqc : IsQuotientCoveringMap q G)
+    {U : Set E} (hUo : IsOpen U) (a : A) {W : Set X} (hWV : W ⊆ q '' U)
+    (hW : IsOpen (proj A hq ⁻¹' W ∩ Quotient.mk (MulAction.orbitRel G (E × A)) '' (U ×ˢ {a}))) :
+    IsOpen W := by
+  have hcsG : ContinuousConstSMul G E := hqc.toContinuousConstSMul
+  -- The slice at `a` of the preimage of that open set, cut down to `U`, is `q ⁻¹' W ∩ U`.
+  have hslice : IsOpen (q ⁻¹' W ∩ U) := by
+    have hopen : IsOpen (Quotient.mk (MulAction.orbitRel G (E × A)) ⁻¹'
+        (proj A hq ⁻¹' W ∩ Quotient.mk (MulAction.orbitRel G (E × A)) '' (U ×ˢ {a}))) :=
+      hW.preimage continuous_quotient_mk'
+    have hcont : Continuous fun u : E => (u, a) := continuous_id.prodMk continuous_const
+    have heq : q ⁻¹' W ∩ U = ((fun u : E => (u, a)) ⁻¹'
+        (Quotient.mk (MulAction.orbitRel G (E × A)) ⁻¹'
+          (proj A hq ⁻¹' W ∩ Quotient.mk (MulAction.orbitRel G (E × A)) '' (U ×ˢ {a})))) ∩ U := by
+      ext u
+      constructor
+      · rintro ⟨hqu, hu⟩
+        exact ⟨⟨hqu, (u, a), ⟨hu, rfl⟩, rfl⟩, hu⟩
+      · rintro ⟨⟨hw, -⟩, hu⟩
+        exact ⟨hw, hu⟩
+    rw [heq]
+    exact (hopen.preimage hcont).inter hUo
+  exact hqc.isOpen_of_isOpen_preimage_inter hWV hslice
+
 variable (A) in
 /-- The evenly covered neighbourhood of `q e` cut out by a set `U` around `e` whose `G`-translates
 are pairwise disjoint. Its sheets are the classes of `U ×ˢ {a}`, indexed by `a : A`. -/
@@ -268,64 +307,21 @@ private theorem isEvenlyCovered_of_smul_disjoint [Nonempty A] (hqc : IsQuotientC
   have hrc : Continuous (proj A hq) := continuous_proj A hq hqc.continuous
   have hVo : IsOpen (q '' U) := hqc.isOpenQuotientMap.isOpenMap _ hUo
   set S : A → Set (BalancedProduct G E A) :=
-    fun a => Quotient.mk (MulAction.orbitRel G (E × A)) '' (U ×ˢ {a}) with hS
+    fun a => Quotient.mk (MulAction.orbitRel G (E × A)) '' (U ×ˢ {a})
   have hSo : ∀ a, IsOpen (S a) := fun a =>
     ht.isOpenQuotientMap.isOpenMap _ (hUo.prod (isOpen_discrete _))
-  -- A point of the sheet indexed by `a` is the class of `(u, a)` for a unique `u ∈ U`.
-  have hmemS : ∀ (a : A) (z : BalancedProduct G E A), z ∈ S a ↔ ∃ u ∈ U, mk G u a = z := by
-    intro a z
-    simp only [hS]
-    constructor
-    · rintro ⟨⟨u, a'⟩, ⟨hu, ha'⟩, rfl⟩
-      obtain rfl : a' = a := ha'
-      exact ⟨u, hu, rfl⟩
-    · rintro ⟨u, hu, rfl⟩
-      exact ⟨(u, a), ⟨hu, rfl⟩, rfl⟩
-  -- Two points of `U` with the same class agree, together with their labels.
+  have hmemS : ∀ (a : A) (z : BalancedProduct G E A), z ∈ S a ↔ ∃ u ∈ U, mk G u a = z :=
+    fun a z => by simp only [S, Set.prod_singleton, Set.image_image, Set.mem_image, mk]
   have hkey : ∀ {u u' : E} {a a' : A}, u ∈ U → u' ∈ U → mk G u a = mk G u' a' →
-      u = u' ∧ a = a' := by
-    intro u u' a a' hu hu' hEq
-    obtain ⟨g, hg⟩ := Quotient.eq''.mp hEq
-    have hg1 : g • (u', a') = (u, a) := hg
-    have hgu : g • u' = u := congrArg Prod.fst hg1
-    rw [hdisj g ⟨u, ⟨u', hu', hgu⟩, hu⟩, one_smul] at hg1
-    exact ⟨(Prod.ext_iff.mp hg1).1.symm, (Prod.ext_iff.mp hg1).2.symm⟩
+      u = u' ∧ a = a' := eq_and_eq_of_mk_eq hdisj
   have : Nonempty (X → BalancedProduct G E A) := ⟨fun _ => mk G e (Classical.arbitrary A)⟩
   refine IsEvenlyCovered.to_isEvenlyCovered_preimage
     (IsEvenlyCovered.of_trivialization (f := proj A hq)
       (t := hVo.trivializationDiscrete S (q '' U) ?_ ?_ ?_ ?_ ?_) ⟨e, heU, rfl⟩)
   · -- Openness inside the base set is detected on any single sheet.
     intro a W hWV
-    refine ⟨fun hW => (hW.preimage hrc).inter (hSo a), fun hW => ?_⟩
-    -- The slice at `a` of the preimage of that open set, cut down to `U`, is `q ⁻¹' W ∩ U`.
-    have hslice : IsOpen (q ⁻¹' W ∩ U) := by
-      have hopen : IsOpen (Quotient.mk (MulAction.orbitRel G (E × A)) ⁻¹'
-          (proj A hq ⁻¹' W ∩ S a)) := hW.preimage continuous_quotient_mk'
-      have hcont : Continuous fun u : E => (u, a) := continuous_id.prodMk continuous_const
-      have heq : q ⁻¹' W ∩ U = ((fun u : E => (u, a)) ⁻¹'
-          (Quotient.mk (MulAction.orbitRel G (E × A)) ⁻¹' (proj A hq ⁻¹' W ∩ S a))) ∩ U := by
-        ext u
-        constructor
-        · rintro ⟨hqu, hu⟩
-          exact ⟨⟨hqu, (hmemS a _).mpr ⟨u, hu, rfl⟩⟩, hu⟩
-        · rintro ⟨⟨hw, -⟩, hu⟩
-          exact ⟨hw, hu⟩
-      rw [heq]
-      exact (hopen.preimage hcont).inter hUo
-    rw [← hqc.toIsQuotientMap.isOpen_preimage]
-    -- The preimage of `W` is covered by the translates of that slice, because `W ⊆ q '' U`.
-    have hcover : q ⁻¹' W = ⋃ k : G, k • (q ⁻¹' W ∩ U) := by
-      refine Set.Subset.antisymm (fun w hw => ?_) (Set.iUnion_subset fun k w hw => ?_)
-      · obtain ⟨u, hu, hqu⟩ := hWV hw
-        obtain ⟨m, hm⟩ := hqc.apply_eq_iff_mem_orbit.mp hqu.symm
-        refine Set.mem_iUnion.mpr ⟨m, Set.mem_smul_set.mpr ⟨u, ⟨?_, hu⟩, hm⟩⟩
-        rw [Set.mem_preimage, hqu]
-        exact hw
-      · obtain ⟨w', ⟨hw', -⟩, rfl⟩ := Set.mem_smul_set.mp hw
-        rw [Set.mem_preimage, hqc.map_smul]
-        exact hw'
-    rw [hcover]
-    exact isOpen_iUnion fun k => hslice.smul k
+    exact ⟨fun hW => (hW.preimage hrc).inter (hSo a),
+      isOpen_of_isOpen_preimage_inter_sheet hq hqc hUo a hWV⟩
   · -- The projection is injective on each sheet.
     intro a z hz z' hz' hzz'
     obtain ⟨u, hu, rfl⟩ := (hmemS a z).mp hz

@@ -106,6 +106,95 @@ end RadiusLocalization
 
 namespace IntervalLocalization
 
+/-- The coefficient bound in Kedlaya's estimate: the coefficient `t i / [ϖ] ^ m` of the expansion
+of `y / s`, where `s = (p [ϖ]) ^ m`, satisfies `‖t i / [ϖ] ^ m‖ ρ₁⁻¹ ^ (m - i) ≤ ‖y / s‖`. -/
+private theorem norm_mk'_mul_inv_pow_le
+    (y : 𝕎 O) (s : Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)) {m : ℕ}
+    (hm : ((p : 𝕎 O) * teichmuller p ϖ) ^ m = s) {b : 𝕎 O}
+    (hb : y = ∑ i ∈ Finset.range m, teichmuller p (y.teichmullerCoeff i) * (p : 𝕎 O) ^ i +
+      (p : 𝕎 O) ^ m * b)
+    (w : Submonoid.powers (teichmuller p ϖ)) (hw : (w : 𝕎 O) = teichmuller p ϖ ^ m)
+    (t : ℕ → 𝕎 O) (ht₁ : ∀ i < m, t i = teichmuller p (y.teichmullerCoeff i)) (ht₂ : t m = b)
+    {i : ℕ} (hi : i ≤ m) :
+    ‖IsLocalization.mk' A₀ (t i) w‖ * (ρ₁ : ℝ)⁻¹ ^ (m - i) ≤
+      ‖(IsLocalization.mk' B₀ y s : B₀)‖ := by
+  set V := v (algebraMap O K ϖ)
+  have hs {ρ : ℝ≥0} (hρ : ρ ∈ Set.Ioo 0 1) :
+      gaussValuation p hv ρ hρ.2 (s : 𝕎 O) = (ρ * V) ^ m := by
+    rw [← hm]
+    simp [V]
+  have hw' : gaussValuation p hv ρ₂ hρ₂.2 (w : 𝕎 O) = V ^ m := by
+    rw [hw]
+    simp [V]
+  rw [RadiusLocalization.norm_mk', norm_def, gaussValuationAway_mk', gaussValuationAway_mk',
+    hs hρ₁, hs hρ₂, hw']
+  -- the bound holds in `ℝ≥0`
+  suffices h : gaussValuation p hv ρ₂ hρ₂.2 (t i) * (V ^ m)⁻¹ * ρ₁⁻¹ ^ (m - i) ≤
+      max (gaussValuation p hv ρ₁ hρ₁.2 y * ((ρ₁ * V) ^ m)⁻¹)
+        (gaussValuation p hv ρ₂ hρ₂.2 y * ((ρ₂ * V) ^ m)⁻¹) by
+    exact_mod_cast h
+  rcases hi.lt_or_eq with hi | rfl
+  · -- a coefficient `[yᵢ] / [ϖ] ^ m` with `i < m`
+    rw [ht₁ i hi, gaussValuation_teichmuller]
+    refine le_max_of_le_left ?_
+    calc v (algebraMap O K (y.teichmullerCoeff i)) * (V ^ m)⁻¹ * ρ₁⁻¹ ^ (m - i)
+        = v (algebraMap O K (y.teichmullerCoeff i)) * ρ₁ ^ i * ((ρ₁ * V) ^ m)⁻¹ := by
+          have : ρ₁ ^ i ≠ 0 := pow_ne_zero _ hρ₁.1.ne'
+          rw [inv_pow, mul_pow, ← pow_mul_pow_sub ρ₁ hi.le]
+          field_simp
+      _ ≤ _ := by gcongr; exact le_gaussValuation hv hρ₁.2 y i
+  · -- the tail coefficient `b / [ϖ] ^ m`, using `λ_{ρ₂}(b) ρ₂ᵐ ≤ λ_{ρ₂}(y)`
+    rw [ht₂]
+    simp only [Nat.sub_self, pow_zero, mul_one]
+    refine le_max_of_le_right ?_
+    rw [mul_pow, mul_inv, ← mul_assoc]
+    gcongr
+    exact (le_mul_inv_iff₀ (pow_pos hρ₂.1 i)).mpr
+      (gaussValuation_mul_pow_le_of_eq_sum_add_pow_mul hv hρ₂.2 hb)
+
+
+/-- The expansion in Kedlaya's estimate: with `s = (p [ϖ]) ^ m`, the quotient `y / s` equals
+`∑ i ≤ m, (t i / [ϖ] ^ m) p⁻¹ ^ (m - i)`. -/
+private theorem mk'_eq_sum_mul_inv_pow
+    (y : 𝕎 O) (s : Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)) {m : ℕ}
+    (hm : ((p : 𝕎 O) * teichmuller p ϖ) ^ m = s) {b : 𝕎 O}
+    (hb : y = ∑ i ∈ Finset.range m, teichmuller p (y.teichmullerCoeff i) * (p : 𝕎 O) ^ i +
+      (p : 𝕎 O) ^ m * b)
+    (w : Submonoid.powers (teichmuller p ϖ)) (hw : (w : 𝕎 O) = teichmuller p ϖ ^ m)
+    (t : ℕ → 𝕎 O) (ht₁ : ∀ i < m, t i = teichmuller p (y.teichmullerCoeff i)) (ht₂ : t m = b) :
+    (IsLocalization.mk' B₀ y s : B₀) = ∑ i ∈ Finset.range (m + 1),
+      RadiusLocalization.toIntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂
+        (IsLocalization.mk' A₀ (t i) w) *
+          ((isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂).unit⁻¹ : B₀ˣ) ^ (m - i) := by
+  set g := RadiusLocalization.toIntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂
+  set u := (isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂).unit
+  have hgw (x : 𝕎 O) : g (IsLocalization.mk' A₀ x w) *
+      algebraMap (𝕎 O) B₀ (teichmuller p ϖ) ^ m = algebraMap (𝕎 O) B₀ x := by
+    simpa only [hw, map_mul, map_pow, AlgHom.commutes] using
+      congrArg g (IsLocalization.mk'_spec A₀ x w)
+  have hpu : (p : B₀) * (u⁻¹ : B₀ˣ) = 1 := by
+    simp [u]
+  have hpow (i : ℕ) (hi : i ≤ m) :
+      (p : B₀) ^ m * ((u⁻¹ : B₀ˣ) : B₀) ^ (m - i) = (p : B₀) ^ i := by
+    rw [← pow_mul_pow_sub (p : B₀) hi, mul_assoc, ← mul_pow, hpu, one_pow, mul_one]
+  have hterm (i : ℕ) (hi : i ≤ m) :
+      g (IsLocalization.mk' A₀ (t i) w) * ((u⁻¹ : B₀ˣ) : B₀) ^ (m - i) *
+          algebraMap (𝕎 O) B₀ (s : 𝕎 O) =
+        algebraMap (𝕎 O) B₀ (t i * (p : 𝕎 O) ^ i) := by
+    rw [← hm]
+    simp only [map_mul, map_pow, map_natCast]
+    linear_combination ((u⁻¹ : B₀ˣ) : B₀) ^ (m - i) * (p : B₀) ^ m * hgw (t i) +
+      algebraMap (𝕎 O) B₀ (t i) * hpow i hi
+  apply (IsLocalization.map_units B₀ s).mul_right_cancel
+  rw [IsLocalization.mk'_spec, Finset.sum_mul,
+    Finset.sum_congr rfl fun i hi ↦ hterm i (Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)),
+    ← map_sum, Finset.sum_range_succ]
+  conv_lhs => rw [hb]
+  congr 2
+  · exact Finset.sum_congr rfl fun i hi ↦ by simp [ht₁ i (Finset.mem_range.mp hi)]
+  · simp [ht₂, mul_comm]
+
+
 /-- **Kedlaya's estimate (4.9.1)** in the normalisation `λ_ρ(p) = ρ`. Every
 `d ∈ 𝕎 O[1/(p [ϖ])]` is a polynomial `∑_{i ≤ m} zᵢ p^(-(m - i))` in `p⁻¹` whose coefficients `zᵢ`
 lie in `𝕎 O[1/[ϖ]]` and satisfy `λ_{ρ₂}(zᵢ) ρ₁^(-(m - i)) ≤ λ_{[ρ₁, ρ₂]}(d)`. Writing
@@ -123,66 +212,11 @@ theorem exists_sum_eq_mul_inv_pow (d : B₀) :
   obtain ⟨b, hb⟩ := exists_eq_sum_teichmullerCoeff_add_pow_mul y m
   set t : ℕ → 𝕎 O := fun i ↦ if i < m then teichmuller p (y.teichmullerCoeff i) else b
   let w : Submonoid.powers (teichmuller p ϖ) := ⟨teichmuller p ϖ ^ m, m, rfl⟩
-  refine ⟨m, fun i ↦ IsLocalization.mk' A₀ (t i) w, fun i hi ↦ ?_, ?_⟩
-  · set V := v (algebraMap O K ϖ)
-    have hs {ρ : ℝ≥0} (hρ : ρ ∈ Set.Ioo 0 1) :
-        gaussValuation p hv ρ hρ.2 (s : 𝕎 O) = (ρ * V) ^ m := by
-      rw [← hm]
-      simp [V]
-    have hw : gaussValuation p hv ρ₂ hρ₂.2 (w : 𝕎 O) = V ^ m := by
-      simp [w, V]
-    rw [RadiusLocalization.norm_mk', norm_def, gaussValuationAway_mk', gaussValuationAway_mk',
-      hs hρ₁, hs hρ₂, hw]
-    -- the bound holds in `ℝ≥0`
-    suffices h : gaussValuation p hv ρ₂ hρ₂.2 (t i) * (V ^ m)⁻¹ * ρ₁⁻¹ ^ (m - i) ≤
-        max (gaussValuation p hv ρ₁ hρ₁.2 y * ((ρ₁ * V) ^ m)⁻¹)
-          (gaussValuation p hv ρ₂ hρ₂.2 y * ((ρ₂ * V) ^ m)⁻¹) by
-      exact_mod_cast h
-    rcases hi.lt_or_eq with hi | rfl
-    · -- a coefficient `[yᵢ] / [ϖ] ^ m` with `i < m`
-      simp only [t, hi, ite_true, gaussValuation_teichmuller]
-      refine le_max_of_le_left ?_
-      calc v (algebraMap O K (y.teichmullerCoeff i)) * (V ^ m)⁻¹ * ρ₁⁻¹ ^ (m - i)
-          = v (algebraMap O K (y.teichmullerCoeff i)) * ρ₁ ^ i * ((ρ₁ * V) ^ m)⁻¹ := by
-            have : ρ₁ ^ i ≠ 0 := pow_ne_zero _ hρ₁.1.ne'
-            rw [inv_pow, mul_pow, ← pow_mul_pow_sub ρ₁ hi.le]
-            field_simp
-        _ ≤ _ := by gcongr; exact le_gaussValuation hv hρ₁.2 y i
-    · -- the tail coefficient `b / [ϖ] ^ m`, using `λ_{ρ₂}(b) ρ₂ᵐ ≤ λ_{ρ₂}(y)`
-      simp only [t, lt_self_iff_false, ite_false, Nat.sub_self, pow_zero, mul_one]
-      refine le_max_of_le_right ?_
-      rw [mul_pow, mul_inv, ← mul_assoc]
-      gcongr
-      exact (le_mul_inv_iff₀ (pow_pos hρ₂.1 i)).mpr
-        (gaussValuation_mul_pow_le_of_eq_sum_add_pow_mul hv hρ₂.2 hb)
-  · -- multiply by the unit `s = (p [ϖ]) ^ m`: both sides become `y`
-    set g := RadiusLocalization.toIntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂
-    set u := (isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂).unit
-    have hgw (x : 𝕎 O) : g (IsLocalization.mk' A₀ x w) *
-        algebraMap (𝕎 O) B₀ (teichmuller p ϖ) ^ m = algebraMap (𝕎 O) B₀ x := by
-      simpa only [w, map_mul, map_pow, AlgHom.commutes] using
-        congrArg g (IsLocalization.mk'_spec A₀ x w)
-    have hpu : (p : B₀) * (u⁻¹ : B₀ˣ) = 1 := by
-      simp [u]
-    have hpow (i : ℕ) (hi : i ≤ m) :
-        (p : B₀) ^ m * ((u⁻¹ : B₀ˣ) : B₀) ^ (m - i) = (p : B₀) ^ i := by
-      rw [← pow_mul_pow_sub (p : B₀) hi, mul_assoc, ← mul_pow, hpu, one_pow, mul_one]
-    have hterm (i : ℕ) (hi : i ≤ m) :
-        g (IsLocalization.mk' A₀ (t i) w) * ((u⁻¹ : B₀ˣ) : B₀) ^ (m - i) *
-            algebraMap (𝕎 O) B₀ (s : 𝕎 O) =
-          algebraMap (𝕎 O) B₀ (t i * (p : 𝕎 O) ^ i) := by
-      rw [← hm]
-      simp only [map_mul, map_pow, map_natCast]
-      linear_combination ((u⁻¹ : B₀ˣ) : B₀) ^ (m - i) * (p : B₀) ^ m * hgw (t i) +
-        algebraMap (𝕎 O) B₀ (t i) * hpow i hi
-    apply (IsLocalization.map_units B₀ s).mul_right_cancel
-    rw [IsLocalization.mk'_spec, Finset.sum_mul,
-      Finset.sum_congr rfl fun i hi ↦ hterm i (Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)),
-      ← map_sum, Finset.sum_range_succ]
-    conv_lhs => rw [hb]
-    congr 2
-    · exact Finset.sum_congr rfl fun i hi ↦ by simp [t, Finset.mem_range.mp hi]
-    · simp [t, mul_comm]
+  have ht₁ : ∀ i < m, t i = teichmuller p (y.teichmullerCoeff i) := fun i hi ↦ by simp [t, hi]
+  have ht₂ : t m = b := by simp [t]
+  exact ⟨m, fun i ↦ IsLocalization.mk' A₀ (t i) w,
+    fun i hi ↦ norm_mk'_mul_inv_pow_le p hv hϖ hϖ' hρ₁ hρ₂ y s hm hb w rfl t ht₁ ht₂ hi,
+    mk'_eq_sum_mul_inv_pow p hv hϖ hϖ' hρ₁ hρ₂ y s hm hb w rfl t ht₁ ht₂⟩
 
 end IntervalLocalization
 

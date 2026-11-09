@@ -13,6 +13,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 public import TauCeti.RingTheory.Node.TangentCone
 
 import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.Blowup.Pullback
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 import TauCeti.RingTheory.LocalRing.Localization
 
@@ -61,6 +62,8 @@ identification is not used here.
   subscheme.
 * `AlgebraicGeometry.Scheme.finrank_branchSchemeToSingularLocus`: it has rank two over every point
   of the singular subscheme.
+* `AlgebraicGeometry.Scheme.exists_isPullback_branchSchemeToSingularLocus`: the branch scheme
+  commutes with flat base change of the base ring.
 
 ## References
 
@@ -249,6 +252,47 @@ theorem isPullback_branchScheme :
   IsPullback.of_hasPullback _ _
 
 end BranchScheme
+
+section BaseChange
+
+variable {R R' : Type u} [CommRing R] [CommRing R'] [Algebra R R'] [Module.Flat R R']
+  {X X' : Scheme.{u}} [X.Over (Spec (.of R))] [X'.Over (Spec (.of R'))] {g : X' ⟶ X}
+  [Flat (X ↘ Spec (.of R))] [LocallyOfFinitePresentation (X ↘ Spec (.of R))]
+  [PureRelativeDimension 1 (X ↘ Spec (.of R))]
+  [Flat (X' ↘ Spec (.of R'))] [LocallyOfFinitePresentation (X' ↘ Spec (.of R'))]
+  [PureRelativeDimension 1 (X' ↘ Spec (.of R'))]
+
+/-- **The branch scheme commutes with flat base change.** If `X'` is the base change of `X` along
+a flat morphism `Spec R' → Spec R`, then the branch scheme of `X'` over its singular subscheme is
+the base change of the branch scheme of `X` along the morphism `Sing(X'/R') ⟶ Sing(X/R)` of
+singular subschemes (`AlgebraicGeometry.Scheme.isPullback_singularLocus_subschemeι`). -/
+theorem exists_isPullback_branchSchemeToSingularLocus
+    (H : IsPullback g (X' ↘ Spec (.of R')) (X ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R R')))) :
+    ∃ f : X'.branchScheme R' ⟶ X.branchScheme R,
+      IsPullback f (X'.branchSchemeToSingularLocus R') (X.branchSchemeToSingularLocus R)
+        ((X'.singularLocus R').subschemeMap (X.singularLocus R) g
+          (Scheme.IdealSheafData.le_map_iff_comap_le.mpr
+            (Scheme.singularLocus_eq_comap_of_isPullback H).ge)) := by
+  have : Flat (Spec.map (CommRingCat.ofHom (algebraMap R R'))) := by
+    rw [Flat.SpecMap_iff, CommRingCat.hom_ofHom, RingHom.flat_algebraMap_iff]
+    infer_instance
+  have : Flat g := MorphismProperty.of_isPullback H.flip ‹_›
+  -- The singular locus `J` of `X'` is the inverse image of that of `X`, and blowing up commutes
+  -- with the flat base change `g`, so the inverse image of `V(J)` in the blowup of `X'` along `J`
+  -- is the base change of the inverse image of `Sing(X/R)` in the blowup of `X`.
+  suffices key : ∀ (J : X'.IdealSheafData) (_ : J = (X.singularLocus R).comap g) {P : Scheme.{u}}
+      (a : P ⟶ J.subscheme) (b : P ⟶ J.blowup) (_ : IsPullback a b J.subschemeι J.blowupToBase)
+      (hle : X.singularLocus R ≤ J.map g), ∃ f : P ⟶ X.branchScheme R,
+        IsPullback f a (X.branchSchemeToSingularLocus R)
+          (J.subschemeMap (X.singularLocus R) g hle) from
+    key _ (Scheme.singularLocus_eq_comap_of_isPullback H) _ _ (X'.isPullback_branchScheme R') _
+  rintro J rfl P a b hP hle
+  have h := hP.flip.paste_horiz ((X.singularLocus R).isPullback_blowupMap_of_flat g).flip
+  rw [← Scheme.IdealSheafData.subschemeMap_subschemeι _ _ _ hle] at h
+  exact ⟨_, .of_right' h (X.isPullback_branchScheme R).flip⟩
+
+end BaseChange
 
 variable {K : Type u} [Field K] (X : Scheme.{u}) [X.Over (Spec (.of K))]
 

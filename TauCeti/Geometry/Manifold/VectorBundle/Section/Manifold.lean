@@ -109,7 +109,7 @@ theorem contMDiffOn_coe_sectionZeroChartAt_symm (z : ↥{y | s y = 0}) :
   rw [hround] at hcoord
   have hinner : ContDiffAt 𝕜 m Φ.symm (0, K.symm k) :=
     (hf z).contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_mem _ _
-      ht.1 ht.2.1 (hcoord.differentiableAt hm).hasFDerivAt hcoord
+      ht.1 ht.2.1 hcoord
   have hslice : ContDiffAt 𝕜 m (fun j ↦ Φ.symm (0, K.symm j)) k :=
     hinner.comp k (contDiffAt_const.prodMk K.symm.contDiff.contDiffAt)
   have hc := (contMDiffAt_symm_of_mem_maximalAtlas

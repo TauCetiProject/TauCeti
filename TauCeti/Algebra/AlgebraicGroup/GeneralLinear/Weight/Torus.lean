@@ -72,6 +72,8 @@ No faithfulness is asserted: an arbitrary weight family may have a common kernel
   algebra-valued points.
 * `TauCeti.GeneralLinear.diagonalTorusCoordinates_pointsMap_weightCharacterMap`: the diagonal
   coordinates of that point map are the prescribed characters.
+* `TauCeti.GeneralLinear.diagonalTorusCoordinates_pointsMap_weightCharacterMap_id`: for the
+  identity point of the group algebra, the coordinates are the monomials of the weights.
 * `TauCeti.GeneralLinear.weightTorusCoordinateMap_reindex`: composing every weight with a
   permutation of the torus index relabels the weight-torus coordinate map.
 * `TauCeti.GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap`: the diagonal
@@ -569,6 +571,28 @@ theorem diagonalTorusCoordinates_pointsMap_weightCharacterMap [Fintype κ]
     simp
   rw [hweight, SplitTorus.apply_weightCharacter,
     ← SplitTorus.pointsMulEquiv_eq_freeAbelianCharEquiv]
+
+/-- The diagonal coordinate of the weight torus point of the identity point of the group algebra
+of the character lattice is the group-algebra monomial of the corresponding weight. -/
+theorem diagonalTorusCoordinates_pointsMap_weightCharacterMap_id [Fintype κ]
+    (wt : Fin N → κ → ℤ) (i : Fin N) :
+    (diagonalTorusCoordinates
+        (SplitTorus.pointsMulEquiv
+          (DiagonalizableGroup.pointsMap (weightCharacterMap wt)
+            (toConv (AlgHom.id R (MonoidAlgebra R (SplitTorus.characterGroup κ)))))) i :
+        MonoidAlgebra R (SplitTorus.characterGroup κ)) =
+      MonoidAlgebra.single (SplitTorus.weightCharacter (wt i)) 1 := by
+  let H := MonoidAlgebra R (SplitTorus.characterGroup κ)
+  let p : WithConv (H →ₐ[R] H) := toConv (AlgHom.id R H)
+  have hweight : (DiagonalizableGroup.charOfPoint p.ofConv
+      (SplitTorus.weightCharacter (wt i)) : H) =
+      MonoidAlgebra.single (SplitTorus.weightCharacter (wt i)) 1 := by
+    have hp : p.ofConv = AlgHom.id R H := WithConv.ofConv_toConv _
+    rw [DiagonalizableGroup.charOfPoint_apply_coe, hp, AlgHom.id_apply]
+  have hcoordUnits :=
+    diagonalTorusCoordinates_pointsMap_weightCharacterMap wt (CommAlgCat.of R H) p i
+  rw [← SplitTorus.charOfPoint_weightCharacter] at hcoordUnits
+  exact (congrArg Units.val hcoordUnits).trans hweight
 
 /-- On algebra-valued points, the weight-torus coordinate morphism is the diagonal matrix whose
 `i`-th entry is the value of the character `wt i`. -/

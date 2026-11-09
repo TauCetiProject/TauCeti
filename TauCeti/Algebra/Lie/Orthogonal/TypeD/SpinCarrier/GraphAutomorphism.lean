@@ -59,8 +59,8 @@ the spin group scheme or the pinned simply connected Chevalley--Demazure group s
 What this feeds is the graph-twisted family `²Dₙ(q)`, whose Steinberg endomorphism is `γ ∘ Frob_q`
 for the `γ` built here and the `q`-power Frobenius of
 `TauCeti/Algebra/Lie/Orthogonal/TypeD/SpinCarrier/Frobenius.lean`, on the very carrier
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeD.lean` attaches to the three families on a type-`D`
-diagram. The type-`A` counterpart of this construction is
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeD/Basic.lean` attaches to the three families on a
+type-`D` diagram. The type-`A` counterpart of this construction is
 `TauCeti/Algebra/Lie/SpecialLinear/StandardCarrier/GraphAutomorphism.lean`, and the counterpart on
 the Geck carrier is
 `TauCeti/LinearAlgebra/RootSystem/SimplyConnectedRootDatum/GeckLattice/GraphAutomorphism.lean`.

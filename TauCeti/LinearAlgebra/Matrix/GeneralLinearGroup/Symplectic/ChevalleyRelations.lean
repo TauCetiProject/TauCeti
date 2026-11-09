@@ -176,24 +176,13 @@ theorem commutatorElement_differenceShortRootUnit_positiveLongRootTransvectionUn
     congr 1
     ring
   rw [commutatorElement_mul_left_eq_conj_mul, hBC, hAC]
-  calc
-    transvectionUnit hIJ a * transvectionUnit hJI' (a * b) *
-          (transvectionUnit hIJ a)⁻¹ * transvectionUnit hIJ' (a * b) =
-        ⁅transvectionUnit hIJ a, transvectionUnit hJI' (a * b)⁆ *
-          transvectionUnit hJI' (a * b) * transvectionUnit hIJ' (a * b) := by
-      rw [← MulAut.conj_apply, conj_eq_commutatorElement_mul]
-    _ = transvectionUnit hII' (a ^ 2 * b) * transvectionUnit hJI' (a * b) *
-          transvectionUnit hIJ' (a * b) := by rw [hAE]
-    _ = transvectionUnit hIJ' (a * b) * transvectionUnit hJI' (a * b) *
-          transvectionUnit hII' (a ^ 2 * b) := by
-      rw [(commute_transvectionUnit hII' hJI' (finSumFinEquiv_inr_ne_inl i j)
-          (finSumFinEquiv_inr_ne_inl i i) _ _).eq,
-        mul_assoc,
-        (commute_transvectionUnit hII' hIJ' (finSumFinEquiv_inr_ne_inl i i)
-          (finSumFinEquiv_inr_ne_inl j i) _ _).eq,
-        ← mul_assoc,
-        (commute_transvectionUnit hJI' hIJ' (finSumFinEquiv_inr_ne_inl i i)
-          (finSumFinEquiv_inr_ne_inl j j) _ _).eq]
+  exact mul_mul_inv_mul_eq_of_commutatorElement_eq hAE
+    (commute_transvectionUnit hII' hJI' (finSumFinEquiv_inr_ne_inl i j)
+      (finSumFinEquiv_inr_ne_inl i i) _ _)
+    (commute_transvectionUnit hII' hIJ' (finSumFinEquiv_inr_ne_inl i i)
+      (finSumFinEquiv_inr_ne_inl j i) _ _)
+    (commute_transvectionUnit hJI' hIJ' (finSumFinEquiv_inr_ne_inl i i)
+      (finSumFinEquiv_inr_ne_inl j j) _ _)
 
 /-- **The structure-constant-two Chevalley relation in the standard symplectic group.** The
 commutator of `x_{eᵢ-eⱼ}(a)` and `x_{eᵢ+eⱼ}(b)` is `x_{2eᵢ}(2ab)`. -/
@@ -293,21 +282,10 @@ theorem commutatorElement_differenceShortRootUnit_negativeLongRootTransvectionUn
     congr 1
     ring
   rw [commutatorElement_mul_left_eq_conj_mul, hBC, hAC]
-  calc
-    transvectionUnit hIJ a * transvectionUnit hJ'I (-(a * b)) *
-          (transvectionUnit hIJ a)⁻¹ * transvectionUnit hI'J (-(a * b)) =
-        ⁅transvectionUnit hIJ a, transvectionUnit hJ'I (-(a * b))⁆ *
-          transvectionUnit hJ'I (-(a * b)) * transvectionUnit hI'J (-(a * b)) := by
-      rw [← MulAut.conj_apply, conj_eq_commutatorElement_mul]
-    _ = transvectionUnit hJ'J (a ^ 2 * b) * transvectionUnit hJ'I (-(a * b)) *
-          transvectionUnit hI'J (-(a * b)) := by rw [hAE]
-    _ = transvectionUnit hI'J (-(a * b)) * transvectionUnit hJ'I (-(a * b)) *
-          transvectionUnit hJ'J (a ^ 2 * b) := by
-      rw [(commute_transvectionUnit hJ'J hJ'I hJ'J.symm hJ'I.symm _ _).eq,
-        mul_assoc,
-        (commute_transvectionUnit hJ'J hI'J hI'J.symm hJ'J.symm _ _).eq,
-        ← mul_assoc,
-        (commute_transvectionUnit hJ'I hI'J hI'I.symm hJ'J.symm _ _).eq]
+  exact mul_mul_inv_mul_eq_of_commutatorElement_eq hAE
+    (commute_transvectionUnit hJ'J hJ'I hJ'J.symm hJ'I.symm _ _)
+    (commute_transvectionUnit hJ'J hI'J hI'J.symm hJ'J.symm _ _)
+    (commute_transvectionUnit hJ'I hI'J hI'I.symm hJ'J.symm _ _)
 
 /-- **The negative structure-constant-two Chevalley relation in the standard symplectic
 group.** The commutator of `x_{eᵢ-eⱼ}(a)` and `x_{-eᵢ-eⱼ}(b)` is `x_{-2eⱼ}(-2ab)`. -/
@@ -386,20 +364,10 @@ private theorem commutatorElement_transvectionUnit_pair_chain
     congr 1
     ring
   rw [commutatorElement_mul_left_eq_conj_mul, hBC, hAC]
-  calc
-    transvectionUnit hpr a * transvectionUnit hrt (-(a * b)) *
-          (transvectionUnit hpr a)⁻¹ * transvectionUnit hpq (a * b) =
-        ⁅transvectionUnit hpr a, transvectionUnit hrt (-(a * b))⁆ *
-          transvectionUnit hrt (-(a * b)) * transvectionUnit hpq (a * b) := by
-      rw [← MulAut.conj_apply, conj_eq_commutatorElement_mul]
-    _ = transvectionUnit hpt (-(a ^ 2 * b)) * transvectionUnit hrt (-(a * b)) *
-          transvectionUnit hpq (a * b) := by
-      rw [hAE]
-    _ = transvectionUnit hpq (a * b) * transvectionUnit hrt (-(a * b)) *
-          transvectionUnit hpt (-(a ^ 2 * b)) := by
-      rw [(commute_transvectionUnit hpt hrt hrt.symm hpt.symm _ _).eq, mul_assoc,
-        (commute_transvectionUnit hpt hpq hpt.symm hpq.symm _ _).eq, ← mul_assoc,
-        (commute_transvectionUnit hrt hpq hpt.symm hrq.symm _ _).eq]
+  exact mul_mul_inv_mul_eq_of_commutatorElement_eq hAE
+    (commute_transvectionUnit hpt hrt hrt.symm hpt.symm _ _)
+    (commute_transvectionUnit hpt hpq hpt.symm hpq.symm _ _)
+    (commute_transvectionUnit hrt hpq hpt.symm hrq.symm _ _)
 
 /-- **The complementary positive-sum multiply-laced Chevalley relation.** The commutator of
 `x_{eᵢ+eⱼ}(a)` and `x_{-2eⱼ}(b)` is the product of the root subgroups for `eᵢ-eⱼ`
