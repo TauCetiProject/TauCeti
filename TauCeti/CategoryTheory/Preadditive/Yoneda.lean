@@ -27,9 +27,10 @@ it, and its restriction to a full subcategory.
 * The embedding is itself additive: `preadditiveYoneda.map (f + g)` is the sum of the images.
 * A natural transformation out of `(-, Y)` is determined by its value on `𝟙 Y`, by the Yoneda
   lemma. No additivity of the target functor is needed.
-* A morphism `(-, Y) ⟶ F` lifts along every epimorphism `(-, Y') ⟶ F` to the image of a morphism
-  `Y ⟶ Y'`. This is the form in which representable functors are projective that is used to
-  build presentations of finitely presented functors.
+* A morphism `(-, Y) ⟶ G` lifts along every epimorphism `F ⟶ G` out of an additive functor `F`.
+  So representable functors are projective among additive functors. In particular a morphism
+  `(-, Y) ⟶ F` lifts along every epimorphism `(-, Y') ⟶ F` to the image of a morphism `Y ⟶ Y'`,
+  which is the form used to build presentations of finitely presented functors.
 * A sequence `(-, W) ⟶ (-, Z) ⟶ F` whose first map is `(-, w)` is exact exactly when every
   morphism `z : V ⟶ Z` killed by the second map factors through `w`. So exactness at a
   representable functor is a factorization property in `C`.
@@ -60,6 +61,8 @@ which is moreover additive.
 * `CategoryTheory.preadditiveYoneda_additive`: the preadditive Yoneda embedding is additive.
 * `CategoryTheory.preadditiveYoneda_obj_hom_ext`: morphisms out of `(-, Y)` agreeing on `𝟙 Y`
   are equal.
+* `CategoryTheory.exists_comp_eq_preadditiveYoneda_obj_of_epi`: lifting along an epimorphism out of
+  an additive functor.
 * `CategoryTheory.exists_preadditiveYoneda_map_comp_eq`: lifting along an epimorphism out of a
   representable functor.
 * `CategoryTheory.preadditiveCoyonedaObj_map_bijective_self`: `Hom(M, -)` is bijective on the
@@ -121,16 +124,36 @@ instance preadditiveYoneda_additive :
     ext Z (h : Z.unop ⟶ _)
     exact Preadditive.comp_add _ _ _ h f g
 
+/-- A morphism from a representable functor `(-, Y)` to `G` lifts along any epimorphism
+`F ⟶ G` out of an additive functor `F`. -/
+theorem exists_comp_eq_preadditiveYoneda_obj_of_epi {Y : C} {F G : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
+    [F.Additive] (π : F ⟶ G) [Epi π] (α : preadditiveYoneda.obj Y ⟶ G) :
+    ∃ s : preadditiveYoneda.obj Y ⟶ F, s ≫ π = α := by
+  obtain ⟨x, hx⟩ :=
+    (AddCommGrpCat.epi_iff_surjective (π.app (op Y))).1 inferInstance (α.app (op Y) (𝟙 Y))
+  -- The Yoneda morphism of `x` sends `h : Z ⟶ Y` to `F(h) x`; it respects addition because `F`
+  -- is additive. Elements of `(-, Y)` at `Z` are morphisms `Z ⟶ Y`, but only up to unfolding
+  -- `preadditiveYoneda`, so the components are given on `Z.unop ⟶ Y` and naturality is
+  -- `F.map_comp` applied to `x`.
+  let s : preadditiveYoneda.obj Y ⟶ F :=
+    { app Z := AddCommGrpCat.ofHom (
+        { toFun h := F.map h.op x
+          map_zero' := by simp
+          map_add' a b := by simp } : (Z.unop ⟶ Y) →+ F.obj Z)
+      naturality Z Z' h := by
+        ext (a : Z.unop ⟶ Y)
+        exact ConcreteCategory.congr_hom (F.map_comp a.op h) x }
+  refine ⟨s, preadditiveYoneda_obj_hom_ext ?_⟩
+  exact (congrArg (π.app (op Y)) (by simp : F.map (𝟙 Y).op x = x)).trans hx
+
 /-- A morphism from a representable functor `(-, Y)` to `F` lifts along any epimorphism
 `(-, Y') ⟶ F`, and the lift is the image of a morphism `Y ⟶ Y'`. -/
 theorem exists_preadditiveYoneda_map_comp_eq {Y Y' : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
     (p : preadditiveYoneda.obj Y' ⟶ F) [Epi p] (α : preadditiveYoneda.obj Y ⟶ F) :
     ∃ u : Y ⟶ Y', preadditiveYoneda.map u ≫ p = α := by
-  obtain ⟨u, hu⟩ :=
-    (AddCommGrpCat.epi_iff_surjective (p.app (op Y))).1 inferInstance (α.app (op Y) (𝟙 Y))
-  refine ⟨u, preadditiveYoneda_obj_hom_ext ?_⟩
-  exact (congrArg (p.app (op Y))
-    ((preadditiveYoneda_map_app_apply u (op Y) (𝟙 Y)).trans (Category.id_comp u))).trans hu
+  obtain ⟨s, hs⟩ := exists_comp_eq_preadditiveYoneda_obj_of_epi p α
+  obtain ⟨u, rfl⟩ := preadditiveYoneda.map_surjective s
+  exact ⟨u, hs⟩
 
 /-- **Yoneda for `Hom(M, -)` as a `Γᵐᵒᵖ`-module, `Γ = End M`.** Composition identifies the
 morphisms `M ⟶ Y` with the `Γᵐᵒᵖ`-linear maps `Hom(M, M) → Hom(M, Y)`: a linear map `φ` is
