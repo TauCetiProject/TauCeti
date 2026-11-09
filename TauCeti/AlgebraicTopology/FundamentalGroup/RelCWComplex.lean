@@ -16,7 +16,7 @@ import TauCeti.AlgebraicTopology.FundamentalGroup.HomotopyEquiv
 Let `C` be a relative CW complex over a base `D` in a Hausdorff space. If `C` has no `1`-cells
 and every loop in `D` is nullhomotopic, then every loop in `C` is nullhomotopic
 (`TauCeti.subsingleton_fundamentalGroup_of_isEmpty_cell_one`). The `0`-cells are isolated points
-of `C`, while cells of dimension at least `2` cannot carry new loops.
+of the `0`-skeleton, while cells of dimension at least `2` cannot carry new loops.
 
 This is the form in which the cell attachment theorem of Morse theory controls the fundamental
 group of a sublevel set: crossing a critical level attaches one cell along the lower sublevel for
