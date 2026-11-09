@@ -28,6 +28,8 @@ not additive, and its signature uses `→` between the underlying types.
 
 * `OpenSubgroup.evensNorm_cochainClass`: the norm of the class of a homogeneous cocycle is its
   tensor norm, computed with any transversal.
+* `OpenSubgroup.evensNorm_gradedCohomologyClass`: the norm of the class of a cocycle of the total
+  coinduced resolution is the class of its diagonal tensor, computed with any transversal.
 * `OpenSubgroup.evensNorm_zero`: the norm of zero is zero, in every degree.
 
 ## References
@@ -67,6 +69,45 @@ theorem evensNorm_cochainClass (t : U.toSubgroup.LeftTransversal) {n : ℕ}
   rw [evensNorm, tensorNormCocycleClass_changeTransversal U default t]
   exact tensorNormCocycleClass_eq_of_cochainClass_eq U t _ _ _ _
     (TopRep.exists_cochainClass_eq _).choose_spec.choose_spec
+
+/-- **The Evens norm of a cocycle of the total resolution.** For a homogeneous cocycle `w` of degree
+`n` of the total coinduced resolution of `𝔽₂`, fixed by `U`, the norm of its class is the class of
+its diagonal tensor `w ⊗ ⋯ ⊗ w`, computed with any transversal `t`. -/
+theorem evensNorm_gradedCohomologyClass (t : U.toSubgroup.LeftTransversal) {n : ℕ}
+    {w : (trivialF2 U.toSubgroup).gradedResolutionModule}
+    (hw : w ∈ (trivialF2 U.toSubgroup).gradedResolutionPiece n)
+    (hinv : ∀ u, (trivialF2 U.toSubgroup).gradedResolutionTopRep.ρ u w = w)
+    (hdw : (trivialF2 U.toSubgroup).gradedResolutionDifferential w = 0) :
+    U.evensNorm ((TopRep.gradedResolutionContraction
+        (isSmoothDiscrete_trivialF2 U.toSubgroup)).gradedCohomologyClass w hw hinv
+        ((TopRep.gradedResolutionTopRepDifferential_apply _ w).trans hdw)) =
+      ContinuousCohomology.coeffMap
+        (smoothTensorInducedTrivialF2Iso G U.toSubgroup U.isOpen' t).hom.hom
+        (Fintype.card (G ⧸ U.toSubgroup) * n)
+        (smoothTensorInducedDiagonalClass.{0, u, u} U.toSubgroup U.isOpen' t
+          ⟨trivialF2 U.toSubgroup, isSmoothDiscrete_trivialF2 U.toSubgroup⟩
+          (trivialF2_add_self U.toSubgroup) w hw hinv hdw) := by
+  classical
+  -- A homogeneous invariant cocycle of the total resolution is an included homogeneous cocycle.
+  obtain ⟨z, rfl⟩ : ∃ z : (TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).X n,
+      (trivialF2 U.toSubgroup).cochainToGradedResolution n z = w := by
+    obtain ⟨F, rfl⟩ := (SetLike.ext_iff.1
+      ((trivialF2 U.toSubgroup).gradedResolutionPiece_natCast n) w).1 hw
+    exact ⟨⟨F, fun g ↦ DirectSum.of_injective (β := fun n ↦
+      (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).V) n
+        ((TopRep.gradedResolutionTopRep_ρ_lof _ n g F).symm.trans (hinv g))⟩,
+      TopRep.cochainToGradedResolution_apply _ n _⟩
+  have hz : ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).d n (n + 1)).hom z = 0 :=
+    Subtype.ext <| DirectSum.of_injective (β := fun n ↦
+      (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).V) (n + 1) <|
+        (TopRep.cochainToGradedResolution_apply _ (n + 1) _).symm.trans <|
+          ((TopRep.gradedResolutionDifferential_cochainToGradedResolution _ n z).symm.trans
+            hdw).trans (map_zero _).symm
+  refine (congrArg U.evensNorm (TopRep.gradedCohomologyClass_eq_degreeCast_cochainClass _ rfl z hz
+    _ rfl _ _ _)).trans ?_
+  rw [ContinuousCohomology.degreeCast_rfl, CategoryTheory.Iso.refl_hom,
+    CategoryTheory.ConcreteCategory.id_apply, evensNorm_cochainClass U t,
+    tensorNormCocycleClass_def]
 
 /-- The Evens norm of zero is zero, in every degree. -/
 @[simp]
