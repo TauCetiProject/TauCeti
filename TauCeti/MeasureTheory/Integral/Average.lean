@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Average
+public import Mathlib.Topology.MetricSpace.Holder
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -98,6 +99,8 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   oscillation from `t` to `s ⊆ t` passes from a comparison function `H` to `f`.
 * `TauCeti.setIntegral_norm_sub_toLp_fst_setAverage_sq_le`: for a function with values in the
   Euclidean product `ℝ × E`, the best constant of the form `(c, 0)`.
+* `TauCeti.setAverage_norm_sub_setAverage_le_of_holderOnWith`: the mean oscillation of an
+  `α`-Hölder function on a set inside a ball of radius `r` is at most a multiple of `r^α`.
 * `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality
   `(⨍_s ‖g‖)² ≤ ⨍_s ‖g‖²`, bounding the mean oscillation by the square mean oscillation.
 * `TauCeti.rpow_laverage_le_laverage_rpow`: Jensen's inequality `(⨍ u) ^ r ≤ ⨍ u ^ r` for a
@@ -829,5 +832,40 @@ theorem tendsto_average_add_rpow {α : Type*} [MeasurableSpace α]
   exact hlim.const_mul _
 
 end Rpow
+
+section Holder
+
+variable {X F : Type*} [MetricSpace X] [MeasurableSpace X] {μ : Measure X}
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {f : X → F} {x : X}
+
+open Metric Set
+open scoped NNReal
+
+/-- **The mean oscillation of a Hölder function.** If `f` is integrable on a null-measurable set
+`s` of positive finite measure inside `closedBall x r`, and is `α`-Hölder continuous on `s` with
+constant `K`, then the mean oscillation of `f` on `s` is at most `K (2 r)^α`. -/
+theorem setAverage_norm_sub_setAverage_le_of_holderOnWith {K α : ℝ≥0} {r : ℝ} {s : Set X}
+    (hsm : NullMeasurableSet s μ) (hs : s ⊆ closedBall x r) (hμ : μ s ≠ 0) (hμ' : μ s ≠ ⊤)
+    (hf : HolderOnWith K α f s) (hint : IntegrableOn f s μ) :
+    ⨍ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ ∂μ ≤ K * (2 * r) ^ (α : ℝ) := by
+  -- Every value of `f` on `s` lies within `K (2 r)^α` of every other one, hence of their
+  -- average.
+  have hpt : ∀ y ∈ s, ‖f y - ⨍ z in s, f z ∂μ‖ ≤ K * (2 * r) ^ (α : ℝ) := by
+    intro y hy
+    have hmem : ⨍ z in s, f z ∂μ ∈ closedBall (f y) (K * (2 * r) ^ (α : ℝ)) := by
+      refine (convex_closedBall _ _).set_average_mem isClosed_closedBall hμ hμ' ?_ hint
+      filter_upwards [ae_restrict_mem₀ hsm] with z hz
+      rw [mem_closedBall]
+      refine (hf.dist_le hz hy).trans ?_
+      gcongr
+      calc dist z y ≤ dist z x + dist y x := dist_triangle_right _ _ _
+        _ ≤ 2 * r := by linarith [mem_closedBall.1 (hs hz), mem_closedBall.1 (hs hy)]
+    rw [← dist_eq_norm, dist_comm]
+    exact mem_closedBall.1 hmem
+  refine (convex_Iic ((K : ℝ) * (2 * r) ^ (α : ℝ))).set_average_mem isClosed_Iic hμ hμ' ?_ ?_
+  · filter_upwards [ae_restrict_mem₀ hsm] with y hy using hpt y hy
+  · exact (hint.sub (integrableOn_const hμ')).norm
+
+end Holder
 
 end TauCeti

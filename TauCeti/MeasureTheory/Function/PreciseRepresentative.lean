@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Covering.Besicovitch
 public import Mathlib.MeasureTheory.Covering.DensityTheorem
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Analysis.Convex.Integral
+import TauCeti.MeasureTheory.Covering.Besicovitch
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -17,7 +19,8 @@ For a function `f` on a metric measure space, the *precise representative* is th
 averages of `f` over the closed balls `closedBall x r` as `r → 0⁺`, taken at every point where
 this limit exists (and a junk value elsewhere). It depends only on the almost-everywhere class of
 `f`, and by the Lebesgue differentiation theorem it agrees almost everywhere with `f` when `f` is
-locally integrable and the measure is doubling. It is therefore a canonical pointwise choice of
+locally integrable and the measure is doubling, or is any locally finite measure on a space with
+the Besicovitch covering property. It is therefore a canonical pointwise choice of
 representative of an `L¹_loc` class, and the natural candidate for a continuous representative.
 
 The second half of the file turns bounds on the essential oscillation of `f` on small balls into
@@ -43,6 +46,8 @@ representative.
   on the almost-everywhere class.
 * `TauCeti.MeasureTheory.ae_eq_restrict_preciseRepresentative`: a function locally integrable on
   an open set agrees almost everywhere there with its precise representative.
+* `TauCeti.MeasureTheory.ae_eq_preciseRepresentative_of_hasBesicovitchCovering`: the same for an
+  arbitrary locally finite measure on a space with the Besicovitch covering property.
 * `TauCeti.MeasureTheory.preciseRepresentative_eq_of_continuousAt`: the precise representative at
   `x` of a function equal almost everywhere near `x` to a function `g` continuous at `x` is `g x`.
 * `TauCeti.MeasureTheory.tendsto_setAverage_closedBall_preciseRepresentative`: the averages
@@ -140,6 +145,17 @@ theorem ae_eq_preciseRepresentative [SecondCountableTopology X] [BorelSpace X]
     [IsUnifLocDoublingMeasure μ] [IsLocallyFiniteMeasure μ] [CompleteSpace E]
     (hf : LocallyIntegrable f μ) : f =ᵐ[μ] preciseRepresentative μ f := by
   simpa using ae_eq_restrict_preciseRepresentative isOpen_univ (hf.locallyIntegrableOn univ)
+
+/-- **Lebesgue differentiation for the precise representative.** For a locally finite measure on a
+space with the Besicovitch covering property, such as the restriction of an additive Haar measure
+of a finite-dimensional real normed space to an arbitrary set, a locally integrable function
+agrees almost everywhere with its precise representative. No doubling is required. -/
+theorem ae_eq_preciseRepresentative_of_hasBesicovitchCovering {X : Type*} [MetricSpace X]
+    [MeasurableSpace X] [BorelSpace X] [SecondCountableTopology X] [HasBesicovitchCovering X]
+    {μ : Measure X} [IsLocallyFiniteMeasure μ] [CompleteSpace E] {f : X → E}
+    (hf : LocallyIntegrable f μ) : f =ᵐ[μ] preciseRepresentative μ f := by
+  filter_upwards [Besicovitch.ae_tendsto_average_closedBall μ hf] with x hx
+  exact (preciseRepresentative_eq_of_tendsto hx).symm
 
 section Oscillation
 
