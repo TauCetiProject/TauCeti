@@ -221,15 +221,27 @@ theorem Lp.integral_norm_le_mul_norm {alpha F : Type*} [MeasurableSpace alpha]
 theorem Lp.norm_integral_le_of_ae_norm_le_mul {alpha F G : Type*} [MeasurableSpace alpha]
     {m : Measure alpha} [IsFiniteMeasure m] [NormedAddCommGroup F] [NormedAddCommGroup G]
     [NormedSpace ℝ G] {p : ℝ≥0∞} [Fact (1 ≤ p)] (f : Lp F p m) {g : alpha → G} {K : ℝ}
-    (hK : 0 ≤ K) (hg : ∀ᵐ x ∂m, ‖g x‖ ≤ K * ‖f x‖) :
+    (hg : ∀ᵐ x ∂m, ‖g x‖ ≤ K * ‖f x‖) :
     ‖∫ x, g x ∂m‖ ≤ K * (m Set.univ ^ (1 - 1 / p.toReal)).toReal * ‖f‖ := by
-  calc ‖∫ x, g x ∂m‖ ≤ ∫ x, K * ‖f x‖ ∂m :=
-        norm_integral_le_of_norm_le (((Lp.memLp f).integrable Fact.out).norm.const_mul K) hg
-    _ = K * ∫ x, ‖f x‖ ∂m := integral_const_mul _ _
-    _ ≤ K * ((m Set.univ ^ (1 - 1 / p.toReal)).toReal * ‖f‖) := by
-        gcongr
-        exact Lp.integral_norm_le_mul_norm f
-    _ = K * (m Set.univ ^ (1 - 1 / p.toReal)).toReal * ‖f‖ := (mul_assoc _ _ _).symm
+  rcases le_or_gt 0 K with hK | hK
+  · calc ‖∫ x, g x ∂m‖ ≤ ∫ x, K * ‖f x‖ ∂m :=
+          norm_integral_le_of_norm_le (((Lp.memLp f).integrable Fact.out).norm.const_mul K) hg
+      _ = K * ∫ x, ‖f x‖ ∂m := integral_const_mul _ _
+      _ ≤ K * ((m Set.univ ^ (1 - 1 / p.toReal)).toReal * ‖f‖) := by
+          gcongr
+          exact Lp.integral_norm_le_mul_norm f
+      _ = K * (m Set.univ ^ (1 - 1 / p.toReal)).toReal * ‖f‖ := (mul_assoc _ _ _).symm
+  · -- a negative constant forces `f` and `g` to vanish almost everywhere
+    have hf : ∀ᵐ x ∂m, ‖f x‖ = 0 := hg.mono fun x hx ↦ by
+      nlinarith [norm_nonneg (g x), norm_nonneg (f x)]
+    have hf0 : ‖f‖ = 0 := by
+      rw [norm_eq_zero, Lp.eq_zero_iff_ae_eq_zero]
+      exact hf.mono fun x hx ↦ norm_eq_zero.1 hx
+    have hg0 : ∀ᵐ x ∂m, g x = 0 := hg.mp (hf.mono fun x hx hgx ↦ by
+      rw [hx, mul_zero] at hgx
+      exact norm_le_zero_iff.1 hgx)
+    rw [hf0, mul_zero, integral_eq_zero_of_ae hg0]
+    simp
 
 /-- For an `L²` function `f` on `t`, the integral of `‖f‖²` over a subset `s ⊆ t` is at most the
 squared `L²` norm of `f`. -/
