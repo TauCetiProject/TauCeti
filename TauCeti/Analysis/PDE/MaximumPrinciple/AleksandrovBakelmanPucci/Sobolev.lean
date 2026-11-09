@@ -63,8 +63,6 @@ and is at most `m + 2ε` on `frontier V`. The almost-everywhere estimate on `V` 
 
 ## Main declarations
 
-* `TauCeti.PDE.le_add_mul_eLpNorm_negPart_div_det_rpow_of_ae`: the Aleksandrov–Bakelman–Pucci
-  estimate for `C²` functions satisfying the differential inequality almost everywhere.
 * `TauCeti.PDE.le_add_mul_eLpNorm_negPart_div_det_rpow_of_wkp`: **the Aleksandrov–Bakelman–Pucci
   estimate for strong solutions** in `W^{2,n}_loc(Ω) ∩ C(closure Ω)`.
 
@@ -88,35 +86,6 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {Ω : Set (EuclideanSpace ℝ ι)}
   {u v f : EuclideanSpace ℝ ι → ℝ} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {m lam Lam : ℝ}
   {x : EuclideanSpace ℝ ι}
-
-/-- **The Aleksandrov–Bakelman–Pucci estimate with an almost-everywhere inequality.** Let `Ω` be
-bounded and open, let `u` be continuous on `closure Ω` and `C²` in `Ω`, and let `m` bound `u` on
-`frontier Ω`. Suppose that on the upper contact set `Γ⁺` the matrices `a y` are positive
-definite and `f y ≤ ∑ᵢⱼ aⁱʲ(y) ∂ᵢ∂ⱼu(y)` for almost every `y`, and that `f⁻ / D*`, with
-`D* = (det a)^{1/n}`, lies in `Lⁿ(Γ⁺)`. Then on `Ω`,
-`u ≤ m + diam Ω / (n ωₙ^{1/n}) ‖f⁻ / D*‖_{Lⁿ(Γ⁺)}`. -/
-theorem le_add_mul_eLpNorm_negPart_div_det_rpow_of_ae [Nonempty ι]
-    (hΩb : Bornology.IsBounded Ω) (hΩ : IsOpen Ω) (hcont : ContinuousOn u (closure Ω))
-    (hu : ContDiffOn ℝ 2 u Ω) (ha : ∀ y ∈ upperContactSet u Ω, (a y).PosDef)
-    (hf : ∀ᵐ y ∂volume.restrict (upperContactSet u Ω), f y ≤ ∑ i, ∑ j, a y i j *
-      fderiv ℝ (fderiv ℝ u) y (EuclideanSpace.single i 1) (EuclideanSpace.single j 1))
-    (hg : MemLp (fun y => (f y)⁻ / (a y).det ^ (Fintype.card ι : ℝ)⁻¹) (Fintype.card ι)
-      (volume.restrict (upperContactSet u Ω)))
-    (hm : ∀ z ∈ frontier Ω, u z ≤ m) (hx : x ∈ Ω) :
-    u x ≤ m + diam Ω / (Fintype.card ι *
-        (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal ^ (Fintype.card ι : ℝ)⁻¹) *
-      (eLpNorm (fun y => (f y)⁻ / (a y).det ^ (Fintype.card ι : ℝ)⁻¹) (Fintype.card ι)
-        (volume.restrict (upperContactSet u Ω))).toReal := by
-  -- Replacing `f` by its minimum with the principal part changes it only on a null set.
-  have hae : (fun y => (min (f y) (∑ i, ∑ j, a y i j * fderiv ℝ (fderiv ℝ u) y
-      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)))⁻ /
-        (a y).det ^ (Fintype.card ι : ℝ)⁻¹) =ᵐ[volume.restrict (upperContactSet u Ω)]
-      fun y => (f y)⁻ / (a y).det ^ (Fintype.card ι : ℝ)⁻¹ := by
-    filter_upwards [hf] with y hy
-    rw [min_eq_left hy]
-  have h := le_add_mul_eLpNorm_negPart_div_det_rpow hΩb hΩ hcont hu ha
-    (fun y _ => min_le_right _ _) (MemLp.ae_eq hae.symm hg) hm hx
-  rwa [eLpNorm_congr_ae hae] at h
 
 /-- The pointwise comparison between the principal parts of two Hessians `H₁` and `H₂`: if
 `t ≤ ∑ᵢⱼ Aᵢⱼ ⟪H₂ eᵢ, eⱼ⟫`, the entries of `A` are bounded by `Λ` and `λ ≤ D`, then
