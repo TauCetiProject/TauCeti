@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization
+public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Basic
 public import TauCeti.Geometry.Lie.EnvelopingAlgebra.Basic
 public import TauCeti.Geometry.Lie.Exponential.LocalInverse
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Evaluation
@@ -70,7 +70,7 @@ noncomputable section
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
-  [IsManifold I 1 G] [T2Space G] [BoundarylessManifold I G]
+  [T2Space G] [BoundarylessManifold I G]
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import TauCeti.Topology.Compactness.Compact
 public import TauCeti.Topology.Compactness.Normed
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 
@@ -37,7 +38,7 @@ integrable weight `g` on `α` preserves integrability and continuity of the inte
 topological parameter space `E`. No countability assumption on these spaces is needed.
 
 When `E` and `P` are normed spaces and `F` is `C^n` on an open set `W ⊆ E × P`, the integral
-`x ↦ ∫ y, g y • F (x, ι y) ∂μ` is `C^n` on every open set `U` with `U × ι(α) ⊆ W`
+`x ↦ ∫ y, g y • F (x, ι y) ∂μ` is `C^n` on every set `U` with `U × ι(α) ⊆ W`
 (`TauCeti.contDiffOn_integral_smul_of_contDiffOn`), with derivative the integral of the partial
 derivatives of `F` in `x` (`TauCeti.hasFDerivAt_integral_smul_of_contDiffOn`).  The weight need
 not be continuous; this is the regularity of kernel integrals such as the Poisson integral of
@@ -53,8 +54,8 @@ subset of `E × P`, for a normed space `P`, has jointly continuous partial deriv
 (`ContDiffOn.continuousOn_iteratedFDeriv_partial`, in
 `TauCeti.Analysis.Calculus.IteratedFDeriv.Prod`).
 
-The parameter may also range over a convex set `s` with unique derivatives that need not be open:
-if `F` is `C^n` on a set `W ⊇ s × ι(α)` with unique derivatives, the integral is `C^n` on `s`
+If `F` is only `C^n` on a set `W ⊇ s × ι(α)` with unique derivatives, not necessarily open, for a
+convex set `s` with unique derivatives, the integral is `C^n` on `s`
 (`Convex.contDiffOn_integral_smul_of_contDiffOn`), with derivative within `s` the integral of the
 partial derivatives within `s` (`Convex.hasFDerivWithinAt_integral_smul_of_contDiffOn`). This
 is the regularity of the Poincaré homotopy operator on a closed half-ball.
@@ -272,19 +273,13 @@ theorem continuousAt_integral_smul_of_continuousOn {G : Type*} [NormedAddCommGro
     [NormedSpace ℝ G] {F : E × P → G} (hg : Integrable g μ) (hι : Continuous ι) (hW : IsOpen W)
     (hF : ContinuousOn F W) {x₀ : E} (hx₀ : ∀ y, (x₀, ι y) ∈ W) :
     ContinuousAt (fun x ↦ ∫ y, g y • F (x, ι y) ∂μ) x₀ := by
-  have hmem : {x₀} ×ˢ range ι ⊆ W := by
-    rintro ⟨x, p⟩ ⟨hx, y, rfl⟩
-    rcases mem_singleton_iff.mp hx with rfl
-    exact hx₀ y
-  obtain ⟨u, v, hu, _, hxu, hv, huv⟩ :=
-    generalized_tube_lemma isCompact_singleton (isCompact_range hι) hW hmem
-  have hc : ContinuousOn (fun p : E × α ↦ F (p.1, ι p.2)) (u ×ˢ univ) :=
-    hF.comp (continuous_fst.prodMk (hι.comp continuous_snd)).continuousOn
-      fun p hp ↦ huv ⟨hp.1, hv (mem_range_self p.2)⟩
+  have hc : ContinuousOn (fun p : E × α ↦ F (p.1, ι p.2))
+      ({x : E | ∀ y, (x, ι y) ∈ W} ×ˢ univ) :=
+    hF.comp (continuous_fst.prodMk (hι.comp continuous_snd)).continuousOn fun p hp ↦ hp.1 p.2
   have hi := continuousOn_integral_bilinear_of_locally_integrable_of_compact_support
     (ContinuousLinearMap.lsmul ℝ ℝ) isCompact_univ (f := fun x y ↦ F (x, ι y)) hc
     (fun _ _ _ h ↦ absurd (mem_univ _) h) hg.integrableOn
-  exact hi.continuousAt (hu.mem_nhds (hxu (mem_singleton x₀)))
+  exact hi.continuousAt ((isOpen_forall_prodMk_mem hι hW).mem_nhds hx₀)
 
 end Topological
 
@@ -414,9 +409,7 @@ theorem hasFDerivAt_integral_smul_of_contDiffOn {G : Type*} [NormedAddCommGroup 
   let U : Set E := {x | ∀ y, (x, ι y) ∈ W}
   have hc : Continuous fun p : E × α ↦ (p.1, ι p.2) :=
     continuous_fst.prodMk (hι.comp continuous_snd)
-  have hU : IsOpen U := isOpen_iff_mem_nhds.2 fun x hx ↦
-    (isCompact_univ.eventually_forall_of_forall_eventually (P := fun x y ↦ (x, ι y) ∈ W)
-      fun y _ ↦ (hW.preimage hc).mem_nhds (hx y)).mono fun _ h y ↦ h y (mem_univ y)
+  have hU : IsOpen U := isOpen_forall_prodMk_mem hι hW
   have hUW : ∀ p ∈ U ×ˢ (univ : Set α), (p.1, ι p.2) ∈ W := fun p hp ↦ hp.1 p.2
   have hFy (y : α) : ContDiffOn ℝ 1 (fun x ↦ F (x, ι y)) U :=
     hF.comp (contDiffOn_id.prodMk contDiffOn_const) fun x hx ↦ hx y
@@ -426,18 +419,21 @@ theorem hasFDerivAt_integral_smul_of_contDiffOn {G : Type*} [NormedAddCommGroup 
       hc.continuousOn hUW) hx₀
 
 /-- **Smoothness of integrals over a compact parameter space.** If `F` is `C^n` on an open set
-`W ⊆ E × P` and `{x} × ι(α) ⊆ W` for every `x` in an open set `U`, then integrating `F (x, ι y)`
+`W ⊆ E × P` and `{x} × ι(α) ⊆ W` for every `x` in a set `U`, then integrating `F (x, ι y)`
 against an integrable weight `g` is `C^n` in `x` on `U`. -/
 theorem contDiffOn_integral_smul_of_contDiffOn {G : Type v} [NormedAddCommGroup G]
     [NormedSpace ℝ G] {n : ℕ∞} {F : E × P → G} (hg : Integrable g μ)
-    (hι : Continuous ι) (hW : IsOpen W) (hF : ContDiffOn ℝ n F W) {U : Set E} (hU : IsOpen U)
+    (hι : Continuous ι) (hW : IsOpen W) (hF : ContDiffOn ℝ n F W) {U : Set E}
     (hUW : ∀ x ∈ U, ∀ y, (x, ι y) ∈ W) :
     ContDiffOn ℝ n (fun x ↦ ∫ y, g y • F (x, ι y) ∂μ) U := by
-  have hFy (y : α) : ContDiffOn ℝ n (fun x ↦ F (x, ι y)) U :=
-    hF.comp (contDiffOn_id.prodMk contDiffOn_const) fun x hx ↦ hUW x hx y
+  set U' : Set E := {x : E | ∀ y, (x, ι y) ∈ W}
+  refine ContDiffOn.mono (s := U') ?_ hUW
+  have hFy (y : α) : ContDiffOn ℝ n (fun x ↦ F (x, ι y)) U' :=
+    hF.comp (contDiffOn_id.prodMk contDiffOn_const) fun x hx ↦ hx y
   exact contDiffOn_integral_smul_of_continuousOn_iteratedFDeriv (F := fun p ↦ F (p.1, ι p.2)) hg
-    hU hFy fun k hk ↦ (hF.continuousOn_iteratedFDeriv_partial hW (by exact_mod_cast hk)).comp
-      (continuous_fst.prodMk (hι.comp continuous_snd)).continuousOn fun p hp ↦ hUW p.1 hp.1 p.2
+    (isOpen_forall_prodMk_mem hι hW) hFy fun k hk ↦
+      (hF.continuousOn_iteratedFDeriv_partial hW (by exact_mod_cast hk)).comp
+        (continuous_fst.prodMk (hι.comp continuous_snd)).continuousOn fun p hp ↦ hp.1 p.2
 
 /-- The first-order remainder of an integral against a weight over a compact parameter space is
 the integral of the pointwise remainder: if `F` and a candidate partial derivative `D` are

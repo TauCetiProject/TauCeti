@@ -12,6 +12,7 @@ import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.Mul
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
 # Additional lemmas for the Bochner integral
@@ -47,6 +48,8 @@ for set and probability integrals.
   integrands sum, almost everywhere, to at most a third integrable function.
 * `integral_min_le_left` and `integral_le_integral_max` compare the integral of an integrable
   function with that of its pointwise minimum or maximum with another integrable function.
+* `ofReal_setIntegral_norm_sq_eq` reads the set integral of `‖f‖²` in `ℝ≥0∞` as the lower
+  integral of `‖f‖ₑ ^ 2`.
 * `toReal_lintegral_coe_eq_integral` identifies `(∫⁻ ω, (f ω : ℝ≥0∞) ∂μ).toReal` with
   `∫ ω, (f ω : ℝ) ∂μ` for any almost-everywhere measurable `f : Ω → ℝ≥0`.
 
@@ -79,6 +82,8 @@ for set and probability integrals.
   function on a probability space.
 * `integral_max_sub_sq_le_mul_measureReal` bounds the integral of the squared truncation
   `((f - l)⁺)²` of a function `f ≤ M` by `(M - l)²` times the measure of `{l ≤ f}`.
+* `exists_mem_sub_div_lt_of_sub_lt_integral`: if `f ≤ M` on a probability space has integral
+  within `δ` of `M`, then `f` comes within `δ / μ B` of `M` on every set `B` of positive mass.
 
 ## `L¹` convergence
 
@@ -103,7 +108,7 @@ measure cannot be integrable there.
 * `not_integrableOn_Ioi_of_eventually_le_norm` is the half-line form, and
   `not_integrable_of_eventually_le_atTop` is its real-valued Lebesgue-integrability consequence.
 * `not_memLp_of_tendsto_norm_atTop` and `not_memLp_of_tendsto_norm_atBot`: a function whose norm
-  tends to infinity at one end of the line lies in no `Lᵖ` with `0 < p < ∞`.
+  tends to infinity at one end of the line lies in no `Lᵖ` with `0 < p ≤ ∞`.
 
 ## Reflection across the origin
 
@@ -231,22 +236,31 @@ theorem not_integrable_of_eventually_le_atTop {f : ℝ → ℝ} {ε : ℝ} (hε 
     hint.integrableOn
 
 /-- A function on the real line whose norm tends to infinity at `+∞` lies in no `Lᵖ` with
-`0 < p < ∞`: the integrand `‖f‖ ^ p` is eventually at least `1`. -/
+`0 < p ≤ ∞`: for `p < ∞` the integrand `‖f‖ ^ p` is eventually at least `1`, and for `p = ∞`
+the function would be essentially bounded. -/
 theorem not_memLp_of_tendsto_norm_atTop {E : Type*} [NormedAddCommGroup E] {f : ℝ → E}
-    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) (hf : Tendsto (fun x => ‖f x‖) atTop atTop) :
-    ¬ MemLp f p volume := fun hmem =>
-  not_integrableOn_Ioi_of_eventually_le_norm one_pos 0
-    ((hf.eventually_ge_atTop 1).mono fun x hx => by
-      rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
-      exact Real.one_le_rpow hx ENNReal.toReal_nonneg)
-    (hmem.integrable_norm_rpow hp0 hp).integrableOn
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hf : Tendsto (fun x => ‖f x‖) atTop atTop) :
+    ¬ MemLp f p volume := fun hmem => by
+  by_cases hp : p = ∞
+  · subst hp
+    obtain ⟨a, ha⟩ := eventually_atTop.mp (hf.eventually_gt_atTop (lpNorm f ∞ volume))
+    have hnull : volume {x | ¬ ‖f x‖ ≤ lpNorm f ∞ volume} = 0 :=
+      ae_iff.mp (ae_le_lpNorm_exponent_top hmem)
+    have hsub : Set.Ici a ⊆ {x | ¬ ‖f x‖ ≤ lpNorm f ∞ volume} := fun x hx => not_le.mpr (ha x hx)
+    have := measure_mono_null hsub hnull
+    simp at this
+  · exact not_integrableOn_Ioi_of_eventually_le_norm one_pos 0
+      ((hf.eventually_ge_atTop 1).mono fun x hx => by
+        rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+        exact Real.one_le_rpow hx ENNReal.toReal_nonneg)
+      (hmem.integrable_norm_rpow hp0 hp).integrableOn
 
 /-- A function on the real line whose norm tends to infinity at `-∞` lies in no `Lᵖ` with
-`0 < p < ∞`. -/
+`0 < p ≤ ∞`. -/
 theorem not_memLp_of_tendsto_norm_atBot {E : Type*} [NormedAddCommGroup E] {f : ℝ → E}
-    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) (hf : Tendsto (fun x => ‖f x‖) atBot atTop) :
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hf : Tendsto (fun x => ‖f x‖) atBot atTop) :
     ¬ MemLp f p volume := fun hmem =>
-  not_memLp_of_tendsto_norm_atTop hp0 hp (hf.comp tendsto_neg_atTop_atBot)
+  not_memLp_of_tendsto_norm_atTop hp0 (hf.comp tendsto_neg_atTop_atBot)
     (hmem.comp_measurePreserving (Measure.measurePreserving_neg volume))
 
 /-- Integrating `‖g + h‖² ≤ 2 ‖g‖² + 2 ‖h‖²` over a set: if `‖g‖²` and `‖h‖²` are integrable on
@@ -301,8 +315,12 @@ theorem setIntegral_norm_sub_sq_le_add_of_le {X F : Type*} [MeasurableSpace X] {
 /-- Cauchy--Schwarz for a real-valued set integral over a set of finite measure, in squared form. -/
 theorem sq_setIntegral_le_measureReal_mul_setIntegral_sq {Ω : Type*} [MeasurableSpace Ω]
     {μ : Measure Ω} (f : Ω → ℝ) (S : Set Ω) (hS_top : μ S ≠ ⊤)
-    (hf : IntegrableOn f S μ) (hf_sq : IntegrableOn (fun x => f x ^ 2) S μ) :
+    (hf_sq : IntegrableOn (fun x => f x ^ 2) S μ) :
     (∫ x in S, f x ∂μ) ^ 2 ≤ μ.real S * ∫ x in S, f x ^ 2 ∂μ := by
+  by_cases hf : IntegrableOn f S μ
+  swap
+  · rw [integral_undef hf]
+    simpa using mul_nonneg measureReal_nonneg (integral_nonneg fun x => sq_nonneg (f x))
   by_cases hS : μ S = 0
   · rw [Measure.restrict_eq_zero.mpr hS]
     simp
@@ -358,6 +376,25 @@ theorem integral_max_sub_sq_le_mul_measureReal {Ω : Type*} [MeasurableSpace Ω]
     _ = (M - l) ^ 2 * μ.real {x | l ≤ f x} := by
         rw [integral_indicator_const _ hS, smul_eq_mul, mul_comm]
 
+/-- On a probability space, let `f ≤ M` almost everywhere have integral within `δ` of `M`. Then on
+every measurable set `B` of positive mass, `f` comes within `δ / μ B` of `M` somewhere. -/
+theorem exists_mem_sub_div_lt_of_sub_lt_integral {Ω : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} [IsProbabilityMeasure μ] {f : Ω → ℝ} {M δ : ℝ} (hf : Integrable f μ)
+    (hfM : ∀ᵐ x ∂μ, f x ≤ M) (hδ : M - δ < ∫ x, f x ∂μ) {B : Set Ω} (hB : MeasurableSet B)
+    (hpB : 0 < μ.real B) : ∃ x ∈ B, M - δ / μ.real B < f x := by
+  by_contra! hcon
+  have hle : ∫ x, f x ∂μ ≤ ∫ x, (M - B.indicator (fun _ ↦ δ / μ.real B) x) ∂μ := by
+    refine integral_mono_ae hf ((integrable_const M).sub
+      ((integrable_const _).indicator hB)) ?_
+    filter_upwards [hfM] with x hx
+    by_cases hxB : x ∈ B
+    · simpa [hxB, sub_div' hpB.ne'] using hcon x hxB
+    · simpa [hxB] using hx
+  rw [integral_sub (integrable_const M) ((integrable_const _).indicator hB), integral_const,
+    integral_indicator_const _ hB, smul_eq_mul, smul_eq_mul, probReal_univ, one_mul,
+    mul_div_cancel₀ _ hpB.ne'] at hle
+  linarith
+
 /-- The positive part of the integral of a real-valued function is at most the integral of its
 pointwise positive part. No integrability or pointwise sign assumption on `f` is needed. -/
 theorem ofReal_integral_le_lintegral_ofReal {Ω : Type*} [MeasurableSpace Ω]
@@ -394,20 +431,39 @@ theorem lintegral_ofReal_eq_one {α : Type*} [MeasurableSpace α] {μ : Measure 
   rw [← ofReal_integral_eq_lintegral_ofReal (integrable_of_integral_eq_one hρ1) hρ0, hρ1,
     ENNReal.ofReal_one]
 
-/-- Positive parts of integrals add up under an almost-everywhere bound: for integrable `F`, `G`,
-`N` with `0 ≤ F ≤ N` and `F + G ≤ N` almost everywhere, the positive parts of `∫ F` and `∫ G` sum
-to at most the positive part of `∫ N`. The function `G` may take negative values, in which case
-`∫ G` may be negative and its positive part is `0`. -/
+/-- Positive parts of integrals add up under an almost-everywhere bound: for `N` integrable and
+`F`, `G` with `0 ≤ F ≤ N` and `F + G ≤ N` almost everywhere, the positive parts of `∫ F` and `∫ G`
+sum to at most the positive part of `∫ N`. The function `G` may take negative values, in which
+case `∫ G` may be negative and its positive part is `0`. -/
 theorem ofReal_integral_add_ofReal_integral_le {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
-    {F G N : Ω → ℝ} (hF : Integrable F μ) (hG : Integrable G μ) (hN : Integrable N μ)
+    {F G N : Ω → ℝ} (hN : Integrable N μ)
     (hF0 : 0 ≤ᵐ[μ] F) (hFN : F ≤ᵐ[μ] N) (hFG : ∀ᵐ x ∂μ, F x + G x ≤ N x) :
     ENNReal.ofReal (∫ x, F x ∂μ) + ENNReal.ofReal (∫ x, G x ∂μ) ≤
       ENNReal.ofReal (∫ x, N x ∂μ) := by
-  rcases le_total 0 (∫ x, G x ∂μ) with hG0 | hG0
-  · rw [← ENNReal.ofReal_add (integral_nonneg_of_ae hF0) hG0, ← integral_add hF hG]
-    exact ENNReal.ofReal_le_ofReal (integral_mono_ae (hF.add hG) hN hFG)
-  · rw [ENNReal.ofReal_of_nonpos hG0, add_zero]
-    exact ENNReal.ofReal_le_ofReal (integral_mono_ae hF hN hFN)
+  by_cases hF : Integrable F μ
+  · by_cases hG : Integrable G μ
+    · rcases le_total 0 (∫ x, G x ∂μ) with hG0 | hG0
+      · rw [← ENNReal.ofReal_add (integral_nonneg_of_ae hF0) hG0, ← integral_add hF hG]
+        exact ENNReal.ofReal_le_ofReal (integral_mono_ae (hF.add hG) hN hFG)
+      · rw [ENNReal.ofReal_of_nonpos hG0, add_zero]
+        exact ENNReal.ofReal_le_ofReal (integral_mono_ae hF hN hFN)
+    · rw [integral_undef hG]
+      simpa using ENNReal.ofReal_le_ofReal (integral_mono_ae hF hN hFN)
+  · rw [integral_undef hF, ENNReal.ofReal_zero, zero_add]
+    by_cases hG : Integrable G μ
+    · refine ENNReal.ofReal_le_ofReal (integral_mono_ae hG hN ?_)
+      filter_upwards [hF0, hFG] with x h0 h1 using by simp only [Pi.zero_apply] at h0; linarith
+    · rw [integral_undef hG]
+      simp
+
+/-- The set integral of `‖f‖²`, read in `ℝ≥0∞`, is the lower integral of `‖f‖ₑ ^ 2`. -/
+theorem ofReal_setIntegral_norm_sq_eq {X V : Type*} [MeasurableSpace X] {μ : Measure X}
+    [NormedAddCommGroup V] {f : X → V} {S : Set X}
+    (hf : IntegrableOn (fun x => ‖f x‖ ^ 2) S μ) :
+    ENNReal.ofReal (∫ x in S, ‖f x‖ ^ 2 ∂μ) = ∫⁻ x in S, ‖f x‖ₑ ^ (2 : ℝ) ∂μ := by
+  rw [ofReal_integral_eq_lintegral_ofReal hf (ae_of_all _ fun _ => sq_nonneg _)]
+  refine lintegral_congr fun x => ?_
+  rw [ENNReal.rpow_two, ← ofReal_norm, ENNReal.ofReal_pow (norm_nonneg _)]
 
 /-- The real value of the extended Lebesgue integral of an almost-everywhere measurable
 `ℝ≥0`-valued function equals its Bochner integral. Neither finiteness of the measure nor
@@ -620,6 +676,15 @@ theorem nonpos_nonneg_of_mem_Icc_of_integral_eq_zero {Ω : Type*} [mΩ : Measura
   constructor
   · simpa [hmean] using integral_mono_ae (integrable_const a) hX (hbound.mono fun ω h => h.1)
   · simpa [hmean] using integral_mono_ae hX (integrable_const b) (hbound.mono fun ω h => h.2)
+
+/-- A measure against which an integrable, almost everywhere positive function has integral zero
+is zero. -/
+theorem measure_eq_zero_of_integral_eq_zero_of_ae_pos {α : Type*} [MeasurableSpace α]
+    {ν : Measure α} {g : α → ℝ} (hg : ∀ᵐ x ∂ν, 0 < g x) (hgi : Integrable g ν)
+    (h0 : ∫ x, g x ∂ν = 0) : ν = 0 := by
+  have h1 := (integral_eq_zero_iff_of_nonneg_ae (hg.mono fun x hx => hx.le) hgi).1 h0
+  rw [← ae_eq_bot]
+  exact Filter.eventually_false_iff_eq_bot.1 ((h1.and hg).mono fun x hx => hx.2.ne' hx.1)
 
 end MeasureTheory
 

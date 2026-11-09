@@ -421,7 +421,7 @@ theorem unramifiedCoordinate_artinMap (x : Kˣ) :
   let _ := finiteIntermediateFieldTopology K (AlgebraicClosure K) L
   have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K) L
   have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K) L
-  have : IsUnramified K L := isUnramified_unramifiedExtension hf
+  have : IsUnramified K L := isUnramified_unramifiedExtension
   let hLsep : L ≤ separableClosure K (AlgebraicClosure K) := le_separableClosure K _ L
   let ι : L →ₐ[K] SeparableClosure K := IntermediateField.inclusion hLsep
   let _ : CommGroup Gal(L/K) := IsCyclic.commGroup
