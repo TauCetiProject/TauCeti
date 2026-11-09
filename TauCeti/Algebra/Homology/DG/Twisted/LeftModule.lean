@@ -106,17 +106,13 @@ theorem twistedDifferential_smul (hM : IsDGBimodule hA hB ℳ dM) {p : ℤ} {a :
     twistedDifferential m ℳ dM (a • f) =
       dA a • f + p.negOnePow • (a • twistedDifferential m ℳ dM f) := by
   classical
-  -- Both sides are additive in `f`; reduce to the homogeneous elementary tensors `α ⊗ x`.
-  rw [← Finset.univ_sum_single f, Finset.smul_sum, map_sum, Finset.smul_sum, map_sum,
-    Finset.smul_sum, Finset.smul_sum, ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun x _ ↦ ?_
-  generalize f x = α
-  induction α using DirectSum.Decomposition.inductionOn ℳ with
-  | zero => simp
-  | @homogeneous i α => exact twistedDifferential_smul_single m dM hM ha x α.2
-  | add α β hα hβ =>
-    rw [Pi.single_add, smul_add, map_add, hα, hβ, smul_add, map_add, smul_add, smul_add]
-    abel
+  -- Both sides are linear in `f`; reduce to the homogeneous elementary tensors `α ⊗ x`.
+  have hlin : twistedDifferential m ℳ dM ∘ₗ DistribSMul.toLinearMap R (P → M) a =
+      DistribSMul.toLinearMap R (P → M) (dA a) +
+        p.negOnePow • (DistribSMul.toLinearMap R (P → M) a ∘ₗ twistedDifferential m ℳ dM) :=
+    ext_of_apply_single_of_mem ℳ fun x q α hα ↦ by
+      simpa using twistedDifferential_smul_single m dM hM ha x hα
+  simpa using LinearMap.congr_fun hlin f
 
 /-- **The twisted complex of a differential graded bimodule is a differential graded left
 module**, for the pointwise action of the left algebra. -/

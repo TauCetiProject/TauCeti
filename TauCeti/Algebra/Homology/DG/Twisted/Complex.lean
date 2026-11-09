@@ -151,6 +151,24 @@ theorem iSup_twistedTotalGrading_eq_top : (⨆ n, twistedTotalGrading ℳ ind n)
 
 end Decomposition
 
+section Ext
+
+variable {R : Type uR} {M : Type uM} [Semiring R] [AddCommMonoid M] [Module R M]
+  {P : Type uP} [Finite P] [DecidableEq P] (ℳ : ℤ → Submodule R M) [DirectSum.Decomposition ℳ]
+  {N : Type*} [AddCommMonoid N] [Module R N]
+
+/-- Two linear maps out of `P → M` agree if they agree on the homogeneous elementary tensors
+`Pi.single x α`, with `α` in a piece `ℳ q`. -/
+theorem ext_of_apply_single_of_mem {φ ψ : (P → M) →ₗ[R] N}
+    (h : ∀ (x : P) {q : ℤ} {α : M}, α ∈ ℳ q → φ (Pi.single x α) = ψ (Pi.single x α)) :
+    φ = ψ := by
+  refine LinearMap.pi_ext' fun x ↦ ?_
+  refine DirectSum.decompose_lhom_ext ℳ fun i ↦ ?_
+  refine LinearMap.ext fun α ↦ ?_
+  simpa using h x α.2
+
+end Ext
+
 end TotalGrading
 
 section TotalGradingDecomposition
@@ -297,13 +315,9 @@ theorem twistedDifferential_sq_zero (hm : ∀ x y, m x y ∈ 𝒜 (ind y - ind x
   -- Reduce to a homogeneous elementary tensor `α ⊗ x`.
   suffices key : ∀ (x : P) {q : ℤ} {α : M}, α ∈ ℳ q →
       twistedDifferential m ℳ dM (twistedDifferential m ℳ dM (Pi.single x α)) = 0 by
-    rw [← Finset.univ_sum_single f, map_sum, map_sum]
-    refine Finset.sum_eq_zero fun x _ ↦ ?_
-    generalize f x = α
-    induction α using DirectSum.Decomposition.inductionOn ℳ with
-    | zero => simp
-    | @homogeneous i α => exact key x α.2
-    | add a b ha hb => rw [Pi.single_add, map_add, map_add, ha, hb, add_zero]
+    have hlin : twistedDifferential m ℳ dM ∘ₗ twistedDifferential m ℳ dM = 0 :=
+      ext_of_apply_single_of_mem ℳ fun x q α hα ↦ key x hα
+    simpa using LinearMap.congr_fun hlin f
   intro x q α hα
   funext z
   -- The `z`-component of `D (D (α ⊗ x))`, through `twistedDifferential_single_apply` twice.
@@ -321,14 +335,8 @@ theorem twistedDifferential_sq_zero (hm : ∀ x y, m x y ∈ 𝒜 (ind y - ind x
   -- What remains is the twisting equation for `m x z`, acting on `α`.
   rw [htw x z, Finset.op_sum, Finset.sum_smul, ← Finset.sum_add_distrib]
   refine Finset.sum_eq_zero fun y _ ↦ ?_
-  -- The sign of the `y`-term: the exponent is rearranged to isolate an even part.
-  have hexp : q + (ind y - ind x + 1) + q = (ind x - ind y + 1) + 2 * (q + ind y - ind x) := by
-    ring
-  have hsign : (q + (ind y - ind x + 1)).negOnePow * q.negOnePow = -(ind x - ind y).negOnePow := by
-    rw [← Int.negOnePow_add, ← Int.negOnePow_succ, hexp, Int.negOnePow_add,
-      Int.negOnePow_two_mul, mul_one]
-  rw [op_smul, smul_assoc, smul_comm (op (m y z)) q.negOnePow, smul_smul, smul_smul,
-    ← op_mul, hsign, Units.neg_smul, add_neg_cancel]
+  rw [op_smul, smul_assoc, negOnePow_smul_op_smul_negOnePow_smul_op_smul
+    (n := ind y - ind x + 1) (m := ind x - ind y) ⟨0, by ring⟩, add_neg_cancel]
 
 variable {m dM} (hm : ∀ x y, m x y ∈ 𝒜 (ind y - ind x + 1))
   (htw : ∀ x y, d (m x y) = ∑ z, (ind x - ind z).negOnePow • (m x z * m z y))
