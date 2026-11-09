@@ -15,6 +15,7 @@ import TauCeti.Algebra.CharP.Invertible
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 import TauCeti.LinearAlgebra.CliffordAlgebra.Monomials
+import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.AlgebraMapInv
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalBasis
@@ -264,11 +265,14 @@ theorem scalarTrace_eq_inv_two_pow_mul_trace_mulLeft (x : CliffordAlgebra Q) :
 
 /-- **The scalar part is invariant under algebra isomorphisms** between Clifford algebras of
 finite-dimensional spaces: `scalarTrace Q' (e x) = scalarTrace Q x`. Both sides are normalized
-regular traces, and the two spaces have the same dimension since their Clifford algebras do. -/
+regular traces, and the two spaces have the same dimension since their Clifford algebras do.
+The target space is automatically finite-dimensional, since it embeds in its Clifford algebra. -/
 theorem scalarTrace_eq_of_algEquiv {V' : Type*} [AddCommGroup V'] [Module K V']
-    [FiniteDimensional K V'] {Q' : QuadraticForm K V'}
+    {Q' : QuadraticForm K V'}
     (e : CliffordAlgebra Q ≃ₐ[K] CliffordAlgebra Q') (x : CliffordAlgebra Q) :
     scalarTrace Q' (e x) = scalarTrace Q x := by
+  have : FiniteDimensional K (CliffordAlgebra Q') := Module.Finite.equiv e.toLinearEquiv
+  have : FiniteDimensional K V' := Module.Finite.of_injective (ι Q') (ι_injective Q')
   have hdim : finrank K V' = finrank K V := by
     have h := e.toLinearEquiv.finrank_eq
     rw [finrank_eq_two_pow, finrank_eq_two_pow] at h
