@@ -167,9 +167,14 @@ theorem tendsto_iteratedFDerivWithin_of_restrict [IsManifold I n M] [LocallyComp
   have hgl := hg.prodMap hτ
   have hjg := fun k hk ↦
     tendsto_ftaylorSeriesWithin_restrict_extChartAt U hg x y hv hτ m hm k hk
-  have hjp := fun k hk ↦
-    tendsto_ftaylorSeriesWithin_extChartAt_comp_symm (P := P) (l := l) x y hz hys (k := k)
-      ((Nat.cast_le.mpr hk).trans hm)
+  have hjp (k : ℕ) (hk : k ≤ m) :
+      Tendsto (fun q : P × E ↦ ftaylorSeriesWithin 𝕜
+        (extChartAt I (y : M) ∘ (extChartAt I x).symm) (extChartAt I x).target q.2 k)
+        (l ×ˢ 𝓝[(extChartAt I x).target] z)
+        (𝓝 (ftaylorSeriesWithin 𝕜 (extChartAt I (y : M) ∘ (extChartAt I x).symm)
+          (extChartAt I x).target z k)) :=
+    (continuousWithinAt_ftaylorSeriesWithin_extChartAt_comp_symm x y hz hys (k := k)
+      ((Nat.cast_le.mpr hk).trans hm)).tendsto.comp tendsto_snd
   have hφ := continuousOn_extChartAt_symm (I := I) x z hz
   have hU : ∀ᶠ q : P × E in l ×ˢ 𝓝[(extChartAt I x).target] z,
       (extChartAt I x).symm q.2 ∈ U :=
