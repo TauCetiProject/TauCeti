@@ -38,25 +38,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
-omit [I.Boundaryless] [T2Space M] in
-/-- The exponential map precomposed with a linear isomorphism that maps an open set into a normal
-domain is a partial diffeomorphism with that open set as source. -/
-private theorem exists_partialDiffeomorph_riemannianExp_comp {p : M}
-    {U : Set (TangentSpace I p)} (hn : IsNormalDomain I M p U) (A : F ≃L[ℝ] TangentSpace I p)
-    {s : Set F} (hs : IsOpen s) (hmap : MapsTo A s U) :
-    ∃ Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M ∞,
-      Φ.source = s ∧ ⇑Φ = riemannianExp I M p ∘ A := by
-  have hlocal : IsLocalDiffeomorphOn 𝓘(ℝ, F) I ∞ (riemannianExp I M p ∘ A) s := by
-    intro x
-    have hA := A.toDiffeomorph.isLocalDiffeomorph x.val
-    rw [ContinuousLinearEquiv.coe_toDiffeomorph] at hA
-    exact IsLocalDiffeomorphAt.comp I M hA (hn.isLocalDiffeomorphOn ⟨A x, hmap x.property⟩)
-  have hinj : InjOn (riemannianExp I M p ∘ A) s := fun x hx y hy hxy ↦
-    A.injective (hn.injOn (hmap hx) (hmap hy) hxy)
-  exact ⟨hlocal.partialDiffeomorphOfInjOn hs hinj,
-    hlocal.partialDiffeomorphOfInjOn_source hs hinj,
-    hlocal.coe_partialDiffeomorphOfInjOn hs hinj⟩
-
 /-- **Rescaled normal charts.** For scales `λ_j → ∞` and every radius `R`, the rescaled
 exponential maps `x ↦ exp_p (λ_j⁻¹ • e x)` are eventually partial diffeomorphisms with source the
 Euclidean ball of radius `R`, simultaneously for all centres `p` of a compact set and all
@@ -81,7 +62,7 @@ theorem _root_.IsCompact.eventually_exists_partialDiffeomorph_riemannianExp_inv_
       ← div_eq_inv_mul, div_lt_iff₀ hj]
     exact (mem_ball_zero_iff.1 hx).trans ((div_lt_iff₀' hr).1 hjR)
   obtain ⟨Φ, hsource, hΦ⟩ :=
-    exists_partialDiffeomorph_riemannianExp_comp (hnormal p hp) A isOpen_ball hmap
+    (hnormal p hp).exists_partialDiffeomorph_riemannianExp_comp A isOpen_ball hmap
   exact ⟨Φ, hsource, hΦ.trans (funext fun x ↦ congrArg (riemannianExp I M p) (hA x))⟩
 
 end TauCeti.Manifold
