@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Symplectic.Duality
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
@@ -20,9 +22,15 @@ Hamilton equations `q' = ∂H/∂p`, `p' = -∂H/∂q`.
 
 The characteristic contraction equation determines the field uniquely. Since `dH(X_H) = 0`, a
 differentiable Hamiltonian is constant along every integral curve of `X_H`
-(`TauCeti.SymplecticForm.apply_eq_of_hasDerivAt_hamiltonianVectorField`). The linearization of
+(`TauCeti.SymplecticForm.apply_eq_of_hasDerivWithinAt_hamiltonianVectorField`). The linearization of
 `X_H` is infinitesimally symplectic when `H` is twice continuously differentiable; this is the
 identity used to show that Hamiltonian flows preserve the symplectic form.
+A Lipschitz bound `‖X_G(z) - X_G(y₀)‖ ≤ L ‖z - y₀‖` on a ball gives the second-order Taylor bound
+`|G(y) - G(y₀) - dG(y₀)(y - y₀)| ≤ ‖ω‖ L ‖y - y₀‖²` there
+(`TauCeti.SymplecticForm.abs_sub_sub_fderiv_le_of_norm_hamiltonianVectorField_sub_le`).
+A compactly supported `C²` Hamiltonian has a globally Lipschitz Hamiltonian vector field
+(`TauCeti.SymplecticForm.exists_lipschitzWith_hamiltonianVectorField`), so its flow is defined
+for all times.
 
 For an almost complex structure `J` preserving `ω`, the field `J X_H` is the gradient of `H` for
 the bilinear form `g = ω(·, J ·)`
@@ -107,18 +115,19 @@ theorem fderiv_apply_hamiltonianVectorField (ω : SymplecticForm V) (H : V → �
   rw [← ω.apply_hamiltonianVectorField H x, ω.self_eq_zero]
 
 /-- **Conservation of energy.** A Hamiltonian is constant along every integral curve of its
-Hamiltonian vector field on a preconnected open set of times, provided it is differentiable at
-every point of the curve. -/
-theorem apply_eq_of_hasDerivAt_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
-    {γ : ℝ → V} {s : Set ℝ} (hs : IsOpen s) (hs' : IsPreconnected s)
-    (hγ : ∀ t ∈ s, HasDerivAt γ (ω.hamiltonianVectorField H (γ t)) t)
+Hamiltonian vector field on a preconnected set of times, provided it is differentiable at
+every point of the curve; the curve need only have its derivative within the set of times. -/
+theorem apply_eq_of_hasDerivWithinAt_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
+    {γ : ℝ → V} {s : Set ℝ} (hs' : IsPreconnected s)
+    (hγ : ∀ t ∈ s, HasDerivWithinAt γ (ω.hamiltonianVectorField H (γ t)) s t)
     (hH : ∀ t ∈ s, DifferentiableAt ℝ H (γ t)) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     H (γ t) = H (γ t₀) := by
-  have hd (t : ℝ) (ht : t ∈ s) : HasDerivAt (H ∘ γ) 0 t := by
-    simpa using (hH t ht).hasFDerivAt.comp_hasDerivAt t (hγ t ht)
-  exact hs.is_const_of_deriv_eq_zero hs'
-    (fun t ht ↦ (hd t ht).differentiableAt.differentiableWithinAt) (fun t ht ↦ (hd t ht).deriv)
-    ht ht₀
+  have hd (t : ℝ) (ht : t ∈ s) : HasDerivWithinAt (H ∘ γ) 0 s t := by
+    simpa using (hH t ht).hasFDerivAt.comp_hasDerivWithinAt t (hγ t ht)
+  have h := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le (f := H ∘ γ) (f' := fun _ ↦ 0)
+    (C := 0) (fun x hx ↦ hd x hx) (fun _ _ ↦ by simp)
+    (isPreconnected_iff_ordConnected.1 hs').convex ht₀ ht
+  simpa [sub_eq_zero] using h
 
 /-- For a `J`-invariant symplectic form, `J X_H(x)` is the gradient of `H` at `x` for the
 bilinear form `g = ω(·, J ·)`: `g(J X_H(x), w) = dH(x) w`. -/
@@ -133,6 +142,19 @@ theorem contDiff_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
     ContDiff ℝ n (ω.hamiltonianVectorField H) :=
   ω.toBilinForm.toContinuousBilinearMap.inverse.contDiff.comp
     (hH.fderiv_right le_rfl)
+
+/-- A `C²` Hamiltonian with compact support has a globally Lipschitz Hamiltonian vector field, so
+its flow `TauCeti.SymplecticForm.hamiltonianFlow` is defined for all times. -/
+theorem exists_lipschitzWith_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
+    (hH : ContDiff ℝ 2 H) (hc : HasCompactSupport H) :
+    ∃ K, LipschitzWith K (ω.hamiltonianVectorField H) := by
+  refine (ω.contDiff_hamiltonianVectorField (n := 1)
+    (by simpa only [one_add_one_eq_two] using hH)).lipschitzWith_of_hasCompactSupport ?_
+    one_ne_zero
+  have h : ω.hamiltonianVectorField H =
+      ω.toBilinForm.toContinuousBilinearMap.inverse ∘ fderiv ℝ H :=
+    funext (ω.hamiltonianVectorField_def H)
+  exact h ▸ (hc.fderiv ℝ).comp_left (map_zero _)
 
 /-- Contracting the linearization of the Hamiltonian vector field gives the Hessian. -/
 theorem apply_fderiv_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
@@ -177,6 +199,14 @@ theorem hamiltonianVectorField_apply_left (ω : SymplecticForm V) (a x : V) :
   intro v
   exact (LinearMap.toContinuousBilinearMap_apply _ a v).symm
 
+/-- Adding a constant to a Hamiltonian does not change its Hamiltonian vector field. No
+differentiability is needed: `H` and `H + c` are differentiable at the same points. -/
+@[simp]
+theorem hamiltonianVectorField_add_const (ω : SymplecticForm V) (H : V → ℝ) (c : ℝ) :
+    ω.hamiltonianVectorField (fun x ↦ H x + c) = ω.hamiltonianVectorField H := by
+  funext x
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, fderiv_add_const]
+
 /-- The Hamiltonian vector field is linear in Hamiltonians differentiable at the point:
 `X_{aF + bG} = a X_F + b X_G`. -/
 theorem hamiltonianVectorField_const_mul_add_const_mul (ω : SymplecticForm V) {F G : V → ℝ}
@@ -218,6 +248,40 @@ theorem hamiltonianVectorField_sub (ω : SymplecticForm V) {F G : V → ℝ} {x 
   rw [fderiv_sub hF hG]
   simp [map_sub]
 
+open Metric in
+/-- **Second-order Taylor bound for a Hamiltonian.** If the Hamiltonian vector field of a
+differentiable function `G` satisfies `‖X_G(z) - X_G(y₀)‖ ≤ L ‖z - y₀‖` on the closed ball of
+radius `r` about `y₀`, then `|G(y) - G(y₀) - dG(y₀)(y - y₀)| ≤ ‖ω‖ L ‖y - y₀‖²` for
+`‖y - y₀‖ ≤ r`, where `‖ω‖` is the operator norm of the form. -/
+theorem abs_sub_sub_fderiv_le_of_norm_hamiltonianVectorField_sub_le (ω : SymplecticForm V)
+    {G : V → ℝ} (hG : Differentiable ℝ G) {y₀ y : V} {L r : ℝ} (hL : 0 ≤ L)
+    (hX : ∀ z ∈ closedBall y₀ r,
+      ‖ω.hamiltonianVectorField G z - ω.hamiltonianVectorField G y₀‖ ≤ L * ‖z - y₀‖)
+    (hy : ‖y - y₀‖ ≤ r) :
+    |G y - G y₀ - fderiv ℝ G y₀ (y - y₀)| ≤
+      ‖ω.toBilinForm.toContinuousBilinearMap‖ * L * ‖y - y₀‖ ^ 2 := by
+  set B := ‖ω.toBilinForm.toContinuousBilinearMap‖
+  -- On the ball of radius `‖y - y₀‖`, `dG(z) - dG(y₀) = ω(X_G(z) - X_G(y₀), ·)` is small.
+  have hball (z : V) (hz : z ∈ closedBall y₀ ‖y - y₀‖) :
+      ‖fderiv ℝ G z - fderiv ℝ G y₀‖ ≤ B * L * ‖y - y₀‖ := by
+    have hz' : ‖z - y₀‖ ≤ ‖y - y₀‖ := by simpa [dist_eq_norm] using hz
+    have hXz := (hX z (mem_closedBall.2 (by rw [dist_eq_norm]; exact hz'.trans hy))).trans
+      (mul_le_mul_of_nonneg_left hz' hL)
+    refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
+    rw [sub_apply, ← ω.apply_hamiltonianVectorField, ← ω.apply_hamiltonianVectorField,
+      Real.norm_eq_abs]
+    have h := ω.abs_apply_le_opNorm_mul_norm_mul_norm
+      (ω.hamiltonianVectorField G z - ω.hamiltonianVectorField G y₀) v
+    simp only [map_sub, LinearMap.sub_apply] at h
+    calc _ ≤ B * ‖ω.hamiltonianVectorField G z - ω.hamiltonianVectorField G y₀‖ * ‖v‖ := h
+      _ ≤ B * (L * ‖y - y₀‖) * ‖v‖ := by gcongr
+      _ = _ := by ring
+  have hyb : y ∈ closedBall y₀ ‖y - y₀‖ := by simp [dist_eq_norm]
+  have hmv := (convex_closedBall y₀ ‖y - y₀‖).norm_image_sub_le_of_norm_fderiv_le'
+    (fun z _ ↦ hG z) hball (mem_closedBall_self (norm_nonneg _)) hyb
+  rw [Real.norm_eq_abs] at hmv
+  exact hmv.trans_eq (by ring)
+
 section Continuity
 
 variable {X : Type*} [TopologicalSpace X] {K : X → V → ℝ} {u : X → V} {s : Set X}
@@ -238,39 +302,25 @@ theorem continuous_hamiltonianVectorField_comp (ω : SymplecticForm V)
 
 end Continuity
 
-/-- For a family of Hamiltonians `K z` that is jointly `C¹` over an open set `U` of the parameter
-space, the Hamiltonian vector fields `X_{K z}` evaluated along a map continuous on `U` vary
-continuously on `U`. -/
-theorem continuousOn_hamiltonianVectorField_comp_of_contDiffOn {W : Type*} [NormedAddCommGroup W]
-    [NormedSpace ℝ W] (ω : SymplecticForm V) {K : W → V → ℝ} {u : W → V} {U : Set W}
-    (hU : IsOpen U) (hu : ContinuousOn u U)
-    (hK : ContDiffOn ℝ 1 (Function.uncurry K) (U ×ˢ Set.univ)) :
-    ContinuousOn (fun z ↦ ω.hamiltonianVectorField (K z) (u z)) U := by
-  have hmem {z : W} (hz : z ∈ U) : (z, u z) ∈ U ×ˢ (Set.univ : Set V) := ⟨hz, Set.mem_univ _⟩
-  have hD : ContinuousOn (fun z ↦ fderiv ℝ (Function.uncurry K) (z, u z)) U :=
-    (hK.continuousOn_fderiv_of_isOpen (hU.prod isOpen_univ) le_rfl).comp
-      (continuousOn_id.prodMk hu) fun _ hz ↦ hmem hz
-  -- The target derivative of `K` along `u` is a restriction of its joint derivative.
-  exact ω.continuousOn_hamiltonianVectorField_comp <|
-    (hD.clm_comp (continuousOn_const (c := ContinuousLinearMap.inr ℝ W V))).congr
-      fun _ hz ↦ fderiv_slice_right (f := Function.uncurry K) <|
-        (hK.differentiableOn one_ne_zero _ (hmem hz)).differentiableAt
-          ((hU.prod isOpen_univ).mem_nhds (hmem hz))
-
-/-- For a family of Hamiltonians `K z` that is jointly `C¹` over an open set `U` of the parameter
-space, the Hamiltonian vector field `X_{K z}(x)` is continuous jointly in the parameter `z ∈ U` and
-the point `x`. -/
+/-- For a family of Hamiltonians `K z` that is jointly `C¹` over a set `U` of the parameter space,
+the Hamiltonian vector field `X_{K z}(x)` is continuous jointly in the parameter `z ∈ U` and the
+point `x`. -/
 theorem continuousOn_uncurry_hamiltonianVectorField {W : Type*} [NormedAddCommGroup W]
-    [NormedSpace ℝ W] (ω : SymplecticForm V) {K : W → V → ℝ} {U : Set W} (hU : IsOpen U)
+    [NormedSpace ℝ W] (ω : SymplecticForm V) {K : W → V → ℝ} {U : Set W}
     (hK : ContDiffOn ℝ 1 (Function.uncurry K) (U ×ˢ Set.univ)) :
     ContinuousOn (Function.uncurry fun z ↦ ω.hamiltonianVectorField (K z)) (U ×ˢ Set.univ) := by
-  -- View `(z, x) ↦ K z` as a family over the parameter space `W × V`, evaluated at `x`.
-  have hK' : ContDiffOn ℝ 1 (Function.uncurry fun p : W × V ↦ K p.1)
-      ((U ×ˢ Set.univ) ×ˢ Set.univ) :=
-    hK.comp (contDiff_fst.fst.prodMk contDiff_snd).contDiffOn
-      fun _ hq ↦ ⟨hq.1.1, Set.mem_univ _⟩
-  exact ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn (hU.prod isOpen_univ)
-    continuousOn_snd hK'
+  refine ω.toBilinForm.toContinuousBilinearMap.inverse.continuous.comp_continuousOn ?_
+  exact (hK.fderiv_right (n := 0) isOpen_univ).continuousOn
+
+/-- For a family of Hamiltonians `K z` that is jointly `C¹` over a set `U` of the parameter space,
+the Hamiltonian vector fields `X_{K z}` evaluated along a map continuous on `U` vary continuously
+on `U`. -/
+theorem continuousOn_hamiltonianVectorField_comp_of_contDiffOn {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℝ W] (ω : SymplecticForm V) {K : W → V → ℝ} {u : W → V} {U : Set W}
+    (hu : ContinuousOn u U) (hK : ContDiffOn ℝ 1 (Function.uncurry K) (U ×ˢ Set.univ)) :
+    ContinuousOn (fun z ↦ ω.hamiltonianVectorField (K z) (u z)) U :=
+  (ω.continuousOn_uncurry_hamiltonianVectorField hK).comp (continuousOn_id.prodMk hu)
+    fun _ hz ↦ ⟨hz, Set.mem_univ _⟩
 
 /-- For a jointly `C¹` family of Hamiltonians `K z`, the Hamiltonian vector field `X_{K z}(x)` is
 continuous jointly in the parameter `z` and the point `x`. -/
@@ -278,7 +328,7 @@ theorem continuous_uncurry_hamiltonianVectorField {W : Type*} [NormedAddCommGrou
     [NormedSpace ℝ W] (ω : SymplecticForm V) {K : W → V → ℝ}
     (hK : ContDiff ℝ 1 (Function.uncurry K)) :
     Continuous (Function.uncurry fun z ↦ ω.hamiltonianVectorField (K z)) := by
-  have h := ω.continuousOn_uncurry_hamiltonianVectorField isOpen_univ hK.contDiffOn
+  have h := ω.continuousOn_uncurry_hamiltonianVectorField (U := Set.univ) hK.contDiffOn
   rw [Set.univ_prod_univ] at h
   exact continuousOn_univ.1 h
 
@@ -322,6 +372,18 @@ theorem poissonBracket_const_left (ω : SymplecticForm V) (c : ℝ) (G : V → �
 @[simp]
 theorem poissonBracket_const_right (ω : SymplecticForm V) (F : V → ℝ) (c : ℝ) (x : V) :
     ω.poissonBracket F (fun _ ↦ c) x = 0 := by
+  simp [poissonBracket_def]
+
+/-- Adding a constant to the first Hamiltonian does not change the Poisson bracket. -/
+@[simp]
+theorem poissonBracket_add_const_left (ω : SymplecticForm V) (F : V → ℝ) (c : ℝ) (G : V → ℝ)
+    (x : V) : ω.poissonBracket (fun y ↦ F y + c) G x = ω.poissonBracket F G x := by
+  simp [poissonBracket_def]
+
+/-- Adding a constant to the second Hamiltonian does not change the Poisson bracket. -/
+@[simp]
+theorem poissonBracket_add_const_right (ω : SymplecticForm V) (F G : V → ℝ) (c : ℝ) (x : V) :
+    ω.poissonBracket F (fun y ↦ G y + c) x = ω.poissonBracket F G x := by
   simp [poissonBracket_def]
 
 /-- The Poisson bracket is homogeneous in its first argument: `{c F, G} = c {F, G}`. -/

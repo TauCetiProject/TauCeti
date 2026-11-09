@@ -24,9 +24,9 @@ of the subgroup, for use both in exponential charts and in subgroup atlases.
   characterisation `f y = x` to the translated form `g * f y = x` near `g ∈ K`.
 * `AddSubgroup.eventually_mem_iff_exists_add_eq_of_mem` is the additive counterpart.
 
-The only regularity required is continuity of the constant action: inversion is used algebraically
-to identify the translated neighbourhood, while Mathlib's action homeomorphism
-`Homeomorph.smul` (and its additive `Homeomorph.vadd` analogue) supplies the topological transport.
+The only regularity required is continuity of left translations (`ContinuousConstSMul G G`, or
+`ContinuousConstVAdd G G` additively); in a group this already makes every left translation a
+homeomorphism.
 -/
 
 public section
@@ -78,22 +78,11 @@ theorem eventually_mem_iff_exists_mul_eq_of_mem
     (K : Subgroup G) {ι : Type*} {s : Set ι} {f : ι → G} {g : G} (hg : g ∈ K)
     (h : ∀ᶠ x in 𝓝 (1 : G), x ∈ K ↔ ∃ y ∈ s, f y = x) :
     ∀ᶠ x in 𝓝 g, x ∈ K ↔ ∃ y ∈ s, g * f y = x := by
-  have hmap : Tendsto (fun x : G => g⁻¹ * x) (𝓝 g) (𝓝 (1 : G)) := by
-    have hcont : ContinuousAt (fun x : G => g⁻¹ • x) g := by
-      -- Expose the bundled homeomorphism's action coercion before applying its continuity.
-      convert ((Homeomorph.smul (α := G) g⁻¹).continuous.continuousAt :
-        ContinuousAt (Homeomorph.smul (α := G) g⁻¹) g) using 1
-      rfl
-    simpa only [ContinuousAt, smul_eq_mul, inv_mul_cancel] using hcont
+  have hmap : Tendsto (g⁻¹ * ·) (𝓝 g) (𝓝 (1 : G)) := by
+    simpa only [smul_eq_mul, inv_mul_cancel] using (continuous_const_smul g⁻¹).tendsto g
   filter_upwards [hmap.eventually h] with x hx
-  constructor
-  · intro hKx
-    obtain ⟨y, hy, hfy⟩ := hx.mp ((K.mul_mem_cancel_left (K.inv_mem hg)).mpr hKx)
-    refine ⟨y, hy, ?_⟩
-    exact (eq_inv_mul_iff_mul_eq.mp hfy)
-  · rintro ⟨y, hy, hfy⟩
-    apply (K.mul_mem_cancel_left (K.inv_mem hg)).mp
-    exact hx.mpr ⟨y, hy, eq_inv_mul_iff_mul_eq.mpr hfy⟩
+  rw [← K.mul_mem_cancel_left (K.inv_mem hg), hx]
+  simp_rw [eq_inv_mul_iff_mul_eq]
 
 end Subgroup
 

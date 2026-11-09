@@ -117,7 +117,7 @@ omit [DecidableEq ι] in
 with gradient `u⁻¹ ∇u`: the mean oscillation of `log u` is controlled by `‖∇u‖ / u`. -/
 private lemma setIntegral_log_sub_setAverage_sq_le {u w : W1p mu Omega 2} {ε : ℝ} (hε : 0 < ε)
     (hεu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) {x₀ : EuclideanSpace ℝ ι} {r : ℝ}
-    (hr : 0 < r) (hBsub : Metric.ball x₀ r ⊆ (Omega : Set (EuclideanSpace ℝ ι)))
+    (hBsub : Metric.ball x₀ r ⊆ (Omega : Set (EuclideanSpace ℝ ι)))
     (hwv : W1p.value w =ᵐ[mu.restrict Omega] fun x => Real.log (W1p.value u x))
     (hwg : W1p.gradient w =ᵐ[mu.restrict Omega] fun x => (W1p.value u x)⁻¹ • W1p.gradient u x) :
     ∫ x in Metric.ball x₀ r, (Real.log (W1p.value u x) -
@@ -126,7 +126,7 @@ private lemma setIntegral_log_sub_setAverage_sq_le {u w : W1p mu Omega 2} {ε : 
         ∫ x in Metric.ball x₀ r, (‖W1p.gradient u x‖ / W1p.value u x) ^ 2 ∂mu := by
   have hwvB : W1p.value w =ᵐ[mu.restrict (Metric.ball x₀ r)] fun x => Real.log (W1p.value u x) :=
     ae_restrict_of_ae_restrict_of_subset hBsub hwv
-  have hP := W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset hr hBsub w
+  have hP := W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset hBsub w
   rw [average_congr hwvB, finrank_euclideanSpace] at hP
   calc _ = ∫ x in Metric.ball x₀ r, (W1p.value w x -
           ⨍ y in Metric.ball x₀ r, Real.log (W1p.value u y) ∂mu) ^ 2 ∂mu :=
@@ -255,7 +255,7 @@ theorem exists_setAverage_abs_log_sub_setAverage_le :
     (((Lp.memLp (W1p.value w)).ae_eq hwv).mono_measure
       (Measure.restrict_mono hBsub le_rfl)).sub (memLp_const m)
   -- The Poincaré–Wirtinger inequality on the ball, for `log u`.
-  have hP := setIntegral_log_sub_setAverage_sq_le hε hεu hr hBsub hwv hwg
+  have hP := setIntegral_log_sub_setAverage_sq_le hε hεu hBsub hwv hwg
   -- Jensen's inequality bounds the `L¹` mean oscillation by the `L²` one.
   have hgi : Integrable (fun x => |f x - m| ^ 2) (mu.restrict (Metric.ball x₀ r)) := by
     simpa only [sq_abs] using hmem.integrable_sq
