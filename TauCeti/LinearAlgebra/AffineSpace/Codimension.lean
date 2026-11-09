@@ -33,6 +33,8 @@ different directions meet in codimension at least two, so a generic path can avo
   subspaces with different directions lowers the direction dimension.
 * `AffineSubspace.comap_ne_top_of_finrank_lt`: an affine subspace of smaller dimension cannot
   contain the image of an affine map.
+* `AffineSubspace.affineSpan_insert_ne_top_of_finrank_direction_add_one_lt`: adjoining a point to
+  an affine subspace of codimension at least two gives a proper affine subspace.
 * `AffineMap.direction_affineSpan_eq_ker_linear`: a nonconstant affine functional vanishing on a
   codimension-one set has the direction of its affine span as linear kernel.
 
@@ -42,6 +44,9 @@ Adapted from `Mei/Geometry/Affine/Codimension.lean` in Mei at commit
 `68536122a97fed8e87bc6870b9427151971b9ab2`. Original copyright and author credit are retained.
 
 Source: https://github.com/yuma-mizuno-lean/Mei/blob/68536122a97fed8e87bc6870b9427151971b9ab2/Mei/Geometry/Affine/Codimension.lean
+
+`affineSpan_insert_ne_top_of_finrank_direction_add_one_lt` is adapted from
+`Mei/Geometry/Affine/Generic.lean` in Mei at commit `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca`.
 -/
 
 public section
@@ -149,5 +154,15 @@ theorem finrank_direction_inf_add_one_lt [FiniteDimensional K V] (A B : AffineSu
     Nat.add_right_cancel (hA.trans hB.symm)
   rw [← hA]
   exact Nat.add_lt_add_right (A.finrank_direction_inf_lt_of_eq_of_ne B heq hne) 1
+
+/-- Adjoining one point to an affine subspace of codimension at least two still gives a
+proper affine subspace. -/
+theorem affineSpan_insert_ne_top_of_finrank_direction_add_one_lt (S : AffineSubspace K Q)
+    (hS : Module.finrank K S.direction + 1 < Module.finrank K V) (x : Q) :
+    affineSpan K (insert x (S : Set Q)) ≠ ⊤ := by
+  intro htop
+  have hle := finrank_vectorSpan_insert_le S x
+  rw [← direction_affineSpan, htop, direction_top, finrank_top] at hle
+  exact (not_le_of_gt hS) hle
 
 end AffineSubspace

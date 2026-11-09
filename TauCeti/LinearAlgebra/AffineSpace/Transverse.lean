@@ -29,6 +29,9 @@ contact parameter is the height difference divided by the normal velocity.
   of `S` meets `S` for at most one parameter.
 * `AffineSubspace.subsingleton_affineSpan_range_inter`: the affine span of finitely many points
   whose edge vectors are independent modulo the direction of `S` meets `S` at most once.
+* `AffineSubspace.lineMap_notMem_of_notMem_affineSpan_insert_of_ne_zero`: a point outside the
+  affine span of an obstacle and a base point gives a line missing the obstacle away from the
+  base point.
 * `LinearMap.eq_div_of_apply_add_smul_eq`: the contact parameter of a transverse line with a
   level hyperplane.
 
@@ -41,6 +44,9 @@ Adapted from `Mei/Geometry/Affine/Transverse.lean` in Mei at commit
 `68536122a97fed8e87bc6870b9427151971b9ab2`. Original copyright and author credit are retained.
 
 Source: https://github.com/yuma-mizuno-lean/Mei/blob/68536122a97fed8e87bc6870b9427151971b9ab2/Mei/Geometry/Affine/Transverse.lean
+
+`lineMap_notMem_of_notMem_affineSpan_insert_of_ne_zero` is adapted from
+`Mei/Geometry/Affine/Generic.lean` in Mei at commit `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca`.
 -/
 
 public section
@@ -133,5 +139,19 @@ theorem subsingleton_preimage_lineMap (S : AffineSubspace k P) {x y : P}
   rw [AffineMap.lineMap_apply, AffineMap.lineMap_apply,
     vadd_vsub_vadd_cancel_right, ← sub_smul] at hd
   exact h ((S.direction.smul_mem_iff (sub_ne_zero.mpr hst)).mp hd)
+
+/-- Outside the span of an affine obstacle and a base point `x`, every nonzero parameter on the
+line from `x` to `z` avoids the obstacle. The base point itself need not avoid the obstacle. -/
+theorem lineMap_notMem_of_notMem_affineSpan_insert_of_ne_zero (S : AffineSubspace k P)
+    {x z : P} (hz : z ∉ affineSpan k (insert x (S : Set P))) {t : k} (ht : t ≠ 0) :
+    AffineMap.lineMap x z t ∉ S := by
+  intro htS
+  apply hz
+  have hxspan : x ∈ affineSpan k (insert x (S : Set P)) :=
+    subset_affineSpan k _ (Set.mem_insert x _)
+  have htspan : AffineMap.lineMap x z t ∈ affineSpan k (insert x (S : Set P)) :=
+    subset_affineSpan k _ (Set.mem_insert_of_mem x htS)
+  simpa only [AffineMap.lineMap_lineMap_right, inv_mul_cancel₀ ht,
+    AffineMap.lineMap_apply_one] using AffineMap.lineMap_mem t⁻¹ hxspan htspan
 
 end AffineSubspace
