@@ -16,6 +16,7 @@ import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
+import TauCeti.Analysis.Normed.Module.RCLike.Basic
 
 /-!
 # The complex-linear part of a real-linear operator
@@ -31,11 +32,11 @@ complex structures given by multiplication by `i`
 (`ContinuousLinearMap.coe_complexLinearPart`). Likewise the **complex-antilinear part**
 `Ψ.complexAntilinearPart z = ½ (Ψ z + i Ψ (i z))` is a continuous complex-antilinear operator
 (`ContinuousLinearMap.complexAntilinearPart`), and `Ψ` is the sum of its two parts. A
-complex-linear operator is its own complex-linear part, and taking the complex-linear part
-commutes with composition by complex-linear operators on either side. The complex-linear part
-depends continuously on `Ψ`
-(`ContinuousLinearMap.continuous_complexLinearPart`), so a continuous family of real-linear
-operators has a continuous family of complex-linear parts.
+complex-linear operator is its own complex-linear part and has zero complex-antilinear part, and
+taking either part commutes with composition by complex-linear operators on either side. Both
+parts depend continuously on `Ψ` (`ContinuousLinearMap.continuous_complexLinearPart`,
+`ContinuousLinearMap.continuous_complexAntilinearPart`), so a continuous family of real-linear
+operators has continuous families of complex-linear and complex-antilinear parts.
 
 For a real-linear map `Ψ` between complex inner product spaces preserving the standard
 symplectic form `Im ⟪·, ·⟫`, the complex-linear part `P` and the complex-antilinear part `A`
@@ -62,6 +63,12 @@ symplectic map is moved into place by complex-linear automorphisms in
 * `ContinuousLinearMap.restrictScalars_complexLinearPart`: the underlying real-linear operator
   `½ (Ψ - i ∘ Ψ ∘ i)`.
 * `ContinuousLinearMap.continuous_complexLinearPart`: continuity in the operator.
+* `ContinuousLinearMap.complexAntilinearPart_add`, `ContinuousLinearMap.complexAntilinearPart_smul`,
+  `ContinuousLinearMap.complexAntilinearPart_restrictScalars`,
+  `ContinuousLinearMap.complexAntilinearPart_restrictScalars_comp`,
+  `ContinuousLinearMap.complexAntilinearPart_comp_restrictScalars`,
+  `ContinuousLinearMap.continuous_complexAntilinearPart`: the same API for the complex-antilinear
+  part.
 * `ContinuousLinearMap.norm_sq_complexLinearPart_apply`: the norm identity for a linear map
   preserving `Im ⟪·, ·⟫`.
 * `ContinuousLinearMap.complexLinearPartEquiv`: the complex-linear part of such a map, as a
@@ -110,8 +117,8 @@ theorem complexLinearPart_apply (Ψ : E →L[ℝ] F) (v : E) :
 `TauCeti.complexLinearPart` for the complex structures given by multiplication by `i`. -/
 theorem coe_complexLinearPart (Ψ : E →L[ℝ] F) :
     ⇑Ψ.complexLinearPart =
-      TauCeti.complexLinearPart ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ)
-        ((LinearMap.lsmul ℂ F Complex.I).restrictScalars ℝ) (Ψ : E →ₗ[ℝ] F) := by
+      TauCeti.complexLinearPart (DistribSMul.toLinearMap ℝ E Complex.I)
+        (DistribSMul.toLinearMap ℝ F Complex.I) (Ψ : E →ₗ[ℝ] F) := by
   ext v
   simp
 
@@ -138,8 +145,8 @@ theorem complexAntilinearPart_apply (Ψ : E →L[ℝ] F) (v : E) :
 `TauCeti.complexAntilinearPart` for the complex structures given by multiplication by `i`. -/
 theorem coe_complexAntilinearPart (Ψ : E →L[ℝ] F) :
     ⇑Ψ.complexAntilinearPart =
-      TauCeti.complexAntilinearPart ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ)
-        ((LinearMap.lsmul ℂ F Complex.I).restrictScalars ℝ) (Ψ : E →ₗ[ℝ] F) := by
+      TauCeti.complexAntilinearPart (DistribSMul.toLinearMap ℝ E Complex.I)
+        (DistribSMul.toLinearMap ℝ F Complex.I) (Ψ : E →ₗ[ℝ] F) := by
   ext v
   simp
 
@@ -230,6 +237,78 @@ theorem continuous_complexLinearPart :
   have hJF : Continuous fun _ : E →L[ℝ] F => (Complex.smulIEquiv F : F →L[ℝ] F) :=
     continuous_const
   exact (continuous_id.sub (hJF.clm_comp (continuous_id.clm_comp hJE))).const_smul (2⁻¹ : ℝ)
+
+/-- The complex-antilinear part of `0` is `0`. -/
+@[simp]
+theorem complexAntilinearPart_zero : (0 : E →L[ℝ] F).complexAntilinearPart = 0 := by
+  ext v
+  simp
+
+/-- The complex-antilinear part is additive. -/
+@[simp]
+theorem complexAntilinearPart_add (Ψ Φ : E →L[ℝ] F) :
+    (Ψ + Φ).complexAntilinearPart = Ψ.complexAntilinearPart + Φ.complexAntilinearPart := by
+  ext v
+  simp only [complexAntilinearPart_apply, add_apply]
+  module
+
+/-- The complex-antilinear part commutes with negation. -/
+@[simp]
+theorem complexAntilinearPart_neg (Ψ : E →L[ℝ] F) :
+    (-Ψ).complexAntilinearPart = -Ψ.complexAntilinearPart := by
+  ext v
+  simp only [complexAntilinearPart_apply, neg_apply]
+  module
+
+/-- The complex-antilinear part commutes with subtraction. -/
+@[simp]
+theorem complexAntilinearPart_sub (Ψ Φ : E →L[ℝ] F) :
+    (Ψ - Φ).complexAntilinearPart = Ψ.complexAntilinearPart - Φ.complexAntilinearPart := by
+  ext v
+  simp only [complexAntilinearPart_apply, sub_apply]
+  module
+
+/-- The complex-antilinear part commutes with real scalar multiplication. -/
+@[simp]
+theorem complexAntilinearPart_smul (c : ℝ) (Ψ : E →L[ℝ] F) :
+    (c • Ψ).complexAntilinearPart = c • Ψ.complexAntilinearPart := by
+  ext v
+  simp only [complexAntilinearPart_apply, smul_apply]
+  rw [smul_comm Complex.I c]
+  module
+
+/-- A complex-linear operator has zero complex-antilinear part. -/
+@[simp]
+theorem complexAntilinearPart_restrictScalars (f : E →L[ℂ] F) :
+    (f.restrictScalars ℝ).complexAntilinearPart = 0 := by
+  ext v
+  simp only [complexAntilinearPart_apply, coe_restrictScalars', map_smul, smul_smul,
+    Complex.I_mul_I, neg_one_smul, add_neg_cancel, smul_zero, zero_apply]
+
+/-- Postcomposing with a complex-linear operator commutes with taking complex-antilinear parts. -/
+@[simp]
+theorem complexAntilinearPart_restrictScalars_comp (f : F →L[ℂ] G) (Ψ : E →L[ℝ] F) :
+    ((f.restrictScalars ℝ).comp Ψ).complexAntilinearPart = f.comp Ψ.complexAntilinearPart := by
+  ext v
+  simp [map_smul, map_add]
+
+/-- Precomposing with a complex-linear operator commutes with taking complex-antilinear parts. -/
+@[simp]
+theorem complexAntilinearPart_comp_restrictScalars (Ψ : F →L[ℝ] G) (f : E →L[ℂ] F) :
+    (Ψ.comp (f.restrictScalars ℝ)).complexAntilinearPart = Ψ.complexAntilinearPart.comp f := by
+  ext v
+  simp [map_smul]
+
+/-- **The complex-antilinear part depends continuously on the operator.** -/
+theorem continuous_complexAntilinearPart :
+    Continuous (complexAntilinearPart : (E →L[ℝ] F) → E →L⋆[ℂ] F) := by
+  -- The complex-antilinear part is additive in the operator and bounded by its norm.
+  refine AddMonoidHomClass.continuous_of_bound
+    (AddMonoidHom.mk' complexAntilinearPart complexAntilinearPart_add) 1 fun Ψ => ?_
+  rw [one_mul]
+  refine opNorm_le_bound _ (norm_nonneg Ψ) fun v => ?_
+  have h := Ψ.le_opNorm_of_le (x := Complex.I • v) (c := ‖v‖) (by simp [norm_smul])
+  exact TauCeti.norm_two_inv_smul_add_le (𝕜 := ℝ) (Ψ.le_opNorm v) (by simpa [norm_smul] using h)
 
 /-! ### The complex-linear part of a linear symplectic map -/
 

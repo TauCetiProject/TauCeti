@@ -165,11 +165,8 @@ derivative, for the complex structures given by multiplication by `I`. -/
 theorem coe_wirtingerDeriv_eq_complexLinearPart :
     ⇑(wirtingerDeriv g x) =
       complexLinearPart (DistribSMul.toLinearMap ℝ V I) (DistribSMul.toLinearMap ℝ W I)
-        (fderiv ℝ g x : V →ₗ[ℝ] W) := by
-  ext v
-  simp only [wirtingerDeriv_apply, complexLinearPart_apply, ContinuousLinearMap.coe_coe,
-    DistribSMul.toLinearMap_apply]
-  module
+        (fderiv ℝ g x : V →ₗ[ℝ] W) :=
+  (fderiv ℝ g x).coe_complexLinearPart
 
 /-- The conjugate Wirtinger derivative is the complex-antilinear part
 `TauCeti.complexAntilinearPart` of the real derivative, for the complex structures given by
@@ -177,11 +174,8 @@ multiplication by `I`. -/
 theorem coe_conjWirtingerDeriv_eq_complexAntilinearPart :
     ⇑(conjWirtingerDeriv g x) =
       complexAntilinearPart (DistribSMul.toLinearMap ℝ V I)
-        (DistribSMul.toLinearMap ℝ W I) (fderiv ℝ g x : V →ₗ[ℝ] W) := by
-  ext v
-  simp only [conjWirtingerDeriv_apply, complexAntilinearPart_apply, ContinuousLinearMap.coe_coe,
-    DistribSMul.toLinearMap_apply]
-  module
+        (DistribSMul.toLinearMap ℝ W I) (fderiv ℝ g x : V →ₗ[ℝ] W) :=
+  (fderiv ℝ g x).coe_complexAntilinearPart
 
 /-- The Wirtinger derivative only depends on the germ of the function. -/
 theorem _root_.Filter.EventuallyEq.wirtingerDeriv_eq {g₁ g : V → W} {x : V}
