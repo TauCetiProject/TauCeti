@@ -13,36 +13,33 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.MeasureTheory.Function.LpSeminorm.SMul
 
 /-!
-# Checks for interior regularity with Sobolev coefficients
+# Examples for interior regularity with Sobolev coefficients
 
 Write `z = s + i t` on `ℂ` and `D ξ = ∂_s ξ + J ∂_t ξ + S ξ` for coefficient fields
-`J, S : ℂ → (V →L[ℝ] V)`, where `∂_s ξ z = Dξ(z) 1` and `∂_t ξ z = Dξ(z) I`. This file proves
-the worked checks attached to the interior regularity theorem with Sobolev coefficients in the
-PseudoholomorphicCurveAnalysis roadmap (McDuff–Salamon, §B.4).
+`J, S : ℂ → (V →L[ℝ] V)`, where `∂_s ξ z = Dξ(z) 1` and `∂_t ξ z = Dξ(z) I`. Interior regularity
+for `D` is proved by differentiating the equation: the first derivatives of a solution solve a
+system of the same shape whose coefficients involve the derivatives of `J` and `S`. This file
+computes that differentiated system, shows that its coupling term cannot be dropped, and shows
+that the constant in an interior estimate for `D` must depend on a bound for `S`.
 
 ## Main results
 
-* `TauCeti.sobolevExponentLadder_four`: for `p = 4` the ladder `q₀ = 3`, `q₁ = 12` crosses the
-  critical exponent `2p/(p-2) = 4` in one step, with product exponents `r₀ = 12/7` and `r₁ = 3`.
-  It satisfies every clause of `TauCeti.exists_finite_sobolev_exponent_ladder` with `N = 1`.
-* `TauCeti.productExponent_four_four`: stopping at the critical exponent `q = 4` gives the
-  product exponent `r = 2`, which is not above two.
-* `TauCeti.productExponent_conjugate`: at `q = p/(p-1)` the product exponent is `r = 1`, so the
-  lower bound `p/(p-1) < q` cannot be relaxed to `≤`.
 * `TauCeti.crOperator_differentiated_system`: for `C²` `ξ`, `C¹` `J, S` and
   `η = ∂_s ξ + J ∂_t ξ + S ξ`, the pair `Ξ = (∂_s ξ, ∂_t ξ)` solves
   `∂_s Ξ + J₂ ∂_t Ξ + S₂ Ξ = (∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)` with `J₂ = diag(J, J)` and
   `S₂ = [[S, ∂_s J], [0, S + ∂_t J]]`.
-* `TauCeti.prodMap_mul_self_eq_neg_one`: `J₂² = -1` whenever `J² = -1`.
 * `TauCeti.crOperator_differentiated_system_diag_ne`: for a non-constant complex structure `J`
   on `ℝ²`, the plausible wrong coefficient `S₂ = diag(S, S)` gives a false equation.
-* `TauCeti.eLpNorm_partialS_expNegRe`: for `J = i` and `S = m`, the function `ξ = e^{-m s}`
-  solves `D ξ = 0` and `‖∂_s ξ‖_{L^q} = m ‖ξ‖_{L^q}` for every measure, in particular on every
-  box `K`.
+* `TauCeti.eLpNorm_partialS_expNegRe`: for `J = i`, `S = m` and `m ≥ 0`, the function
+  `ξ = e^{-m s}` solves `D ξ = 0` and `‖∂_s ξ‖_{L^q} = m ‖ξ‖_{L^q}` for every measure, in
+  particular on every box `K`.
 * `TauCeti.exists_lt_eLpNorm_partialT_expIIm`: for `J = i` and `S = m`, the solutions
   `ξ = e^{i m t}` of `D ξ = 0` show that no constant independent of `m` bounds
-  `‖∂_t ξ‖_{L^q(K)}` by `‖ξ‖_{L^q(Ω')}` for `K ⊆ Ω'`, so the uniformity clause needs the bound
-  on `‖S‖`.
+  `‖∂_t ξ‖_{L^q(K)}` by `‖ξ‖_{L^q(Ω')}` for `K ⊆ Ω'`, so the constant of an interior estimate
+  needs a bound on `‖S‖`.
+
+The exponent arithmetic of the bootstrap is checked in `TauCeti.sobolevExponentLadder_four`, and
+`J₂² = -1` whenever `J² = -1` is `TauCeti.prodMap_mul_self_eq_neg_one`.
 
 ## References
 
@@ -57,60 +54,11 @@ open scoped ENNReal
 
 namespace TauCeti
 
-/-! ### The exponent ladder -/
-
-/-- The `p = 4` exponent ladder `q₀ = 3`, `q₁ = 12`: it satisfies every clause of
-`TauCeti.exists_finite_sobolev_exponent_ladder` with `N = 1`. The product exponents are
-`r₀ = 4 · 3 / (4 + 3) = 12/7` and `r₁ = 4 · 12 / (4 + 12) = 3`. -/
-theorem sobolevExponentLadder_four :
-    ∃ q : ℕ → ℝ, q 0 = 3 ∧ q 1 = 12 ∧
-      (4 : ℝ) / (4 - 1) < q 0 ∧ q 0 ≤ 4 ∧ StrictMonoOn q (Set.Iic 1) ∧
-      (∀ j ≤ 1, 0 < q j ∧ 1 < 4 * q j / (4 + q j)) ∧
-      (∀ j < 1, 4 * q j / (4 + q j) < 2 ∧
-        q (j + 1) = 2 * (4 * q j / (4 + q j)) / (2 - 4 * q j / (4 + q j)) ∧
-        1 / q (j + 1) = 1 / q j + 1 / 4 - 1 / 2) ∧
-      q (1 - 1) < 2 * 4 / (4 - 2) ∧ 2 * 4 / (4 - 2) < q 1 ∧ 2 < 4 * q 1 / (4 + q 1) ∧
-      4 * q 0 / (4 + q 0) = 12 / 7 ∧ 4 * q 1 / (4 + q 1) = 3 := by
-  let q : ℕ → ℝ := fun j => if j = 0 then 3 else 12
-  have hmono : StrictMonoOn q (Set.Iic 1) := by
-    intro i hi j hj hij
-    simp only [Set.mem_Iic] at hi hj
-    obtain rfl : i = 0 := by omega
-    obtain rfl : j = 1 := by omega
-    norm_num [q]
-  refine ⟨q, rfl, rfl, by norm_num [q], by norm_num [q], hmono, ?_, ?_, by norm_num [q],
-    by norm_num [q], by norm_num [q], by norm_num [q], by norm_num [q]⟩
-  · intro j hj
-    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hj with rfl | rfl <;> norm_num [q]
-  · intro j hj
-    obtain rfl : j = 0 := by omega
-    norm_num [q]
-
-/-- A ladder that stopped at the critical exponent `q = 2p/(p-2) = 4` for `p = 4` would have
-product exponent `r = 2`, and `W^{1,2}` does not embed in `L^∞`. -/
-theorem productExponent_four_four : (4 : ℝ) * 4 / (4 + 4) = 2 ∧ 2 * 4 / (4 - 2) = (4 : ℝ) := by
-  norm_num
-
-/-- At the endpoint `q = p/(p-1)` the product exponent `r = p q / (p + q)` equals `1`, where the
-Beurling transform is unbounded. -/
-theorem productExponent_conjugate {p : ℝ} (hp : 1 < p) :
-    p * (p / (p - 1)) / (p + p / (p - 1)) = 1 := by
-  have h1 : p - 1 ≠ 0 := by linarith
-  have h2 : p * (p - 1) + p ≠ 0 := by nlinarith
-  field_simp
-  ring
-
 /-! ### The differentiated system -/
 
 section Differentiated
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-/-- If `J² = -1`, then `J₂ = diag(J, J)` satisfies `J₂² = -1`. -/
-theorem prodMap_mul_self_eq_neg_one {A : V →L[ℝ] V} (hA : A * A = -1) :
-    A.prodMap A * A.prodMap A = -1 := by
-  have h (v : V) : A (A v) = -v := by simpa using congr($hA v)
-  refine ContinuousLinearMap.ext fun x => Prod.ext ?_ ?_ <;> simp [h]
 
 /-- **The differentiated system.** For a `C²` map `ξ`, `C¹` coefficients `J, S` and
 `η = ∂_s ξ + J ∂_t ξ + S ξ`, the pair `Ξ = (∂_s ξ, ∂_t ξ)` solves
@@ -152,6 +100,7 @@ noncomputable def shearComplexStructure (z : ℂ) : ℝ × ℝ →L[ℝ] ℝ × 
     z.re ^ 2 • (-ContinuousLinearMap.snd ℝ ℝ ℝ).prod (0 : ℝ × ℝ →L[ℝ] ℝ)
 
 /-- `J (s + i t) (x, y) = (s x - (1 + s²) y, x - s y)`. -/
+@[simp]
 theorem shearComplexStructure_apply (z : ℂ) (x : ℝ × ℝ) :
     shearComplexStructure z x = (z.re * x.1 - (1 + z.re ^ 2) * x.2, x.1 - z.re * x.2) := by
   ext <;> simp [shearComplexStructure] <;> ring
@@ -160,7 +109,7 @@ theorem shearComplexStructure_apply (z : ℂ) (x : ℝ × ℝ) :
 theorem shearComplexStructure_mul_self (z : ℂ) :
     shearComplexStructure z * shearComplexStructure z = -1 := by
   refine ContinuousLinearMap.ext fun x => Prod.ext ?_ ?_ <;>
-    simp [shearComplexStructure_apply] <;> ring
+    simp <;> ring
 
 /-- The plausible wrong coefficient `S₂ = diag(S, S)` fails. Take the non-constant complex
 structure `J = TauCeti.shearComplexStructure`, `S = 0` and `ξ (s + i t) = (t, 0)`, so that
@@ -180,7 +129,7 @@ theorem crOperator_differentiated_system_diag_ne {η : ℂ → ℝ × ℝ} {Ξ :
     simp [hΞ, hξ]
   have hη' : η = fun w => (w.re, 1) := by
     funext w
-    simp [hη, hξ, shearComplexStructure_apply]
+    simp [hη, hξ]
   have hηd : fderiv ℝ η 0 = reCLM.prod 0 := by
     rw [hη']
     simpa using (reCLM.hasFDerivAt (x := 0)).prodMk (hasFDerivAt_const (1 : ℝ) 0) |>.fderiv
@@ -197,8 +146,8 @@ theorem fderiv_expNegRe_apply (m : ℝ) (z v : ℂ) :
     fderiv ℝ (fun w : ℂ => (Real.exp (-m * w.re) : ℂ)) z v =
       (-m * v.re : ℂ) * (Real.exp (-m * z.re) : ℂ) := by
   have h := ofRealCLM.hasFDerivAt.comp z ((reCLM.hasFDerivAt (x := z)).const_mul (-m)).exp
-  rw [show (fun w : ℂ => (Real.exp (-m * w.re) : ℂ)) =
-    ofRealCLM ∘ fun w => Real.exp (-m * reCLM w) from rfl, h.fderiv]
+  simp only [Function.comp_def, ofRealCLM_apply, reCLM_apply] at h
+  rw [h.fderiv]
   simp only [ContinuousLinearMap.coe_comp, Function.comp_apply, smul_apply,
     reCLM_apply, ofRealCLM_apply, smul_eq_mul, ofReal_mul, ofReal_neg]
   ring
@@ -213,8 +162,9 @@ theorem crOperator_expNegRe_eq_zero (m : ℝ) (z : ℂ) :
 
 /-- For `ξ = e^{-m s}` with `m ≥ 0`, `‖∂_s ξ‖_{L^q(μ)} = m ‖ξ‖_{L^q(μ)}` for every exponent
 `q` and every measure `μ`, for instance Lebesgue measure restricted to a box `K`. Since `ξ`
-solves `D ξ = 0` for `J = i` and `S = m`, the ratio `‖ξ‖_{W^{1,q}(K)} / ‖ξ‖_{L^q(K)}` grows like
-`m`. -/
+solves `D ξ = 0` for `J = i` and `S = m`, on a bounded box `K` of positive Lebesgue measure and
+for `1 ≤ q < ∞`, where `0 < ‖ξ‖_{L^q(K)} < ∞`, the ratio `‖ξ‖_{W^{1,q}(K)} / ‖ξ‖_{L^q(K)}` is at
+least `m`. -/
 theorem eLpNorm_partialS_expNegRe {m : ℝ} (hm : 0 ≤ m) (q : ℝ≥0∞) (μ : Measure ℂ) :
     eLpNorm (fun z => fderiv ℝ (fun w : ℂ => (Real.exp (-m * w.re) : ℂ)) z 1) q μ =
       ENNReal.ofReal m * eLpNorm (fun w : ℂ => (Real.exp (-m * w.re) : ℂ)) q μ := by
@@ -224,17 +174,16 @@ theorem eLpNorm_partialS_expNegRe {m : ℝ} (hm : 0 ≤ m) (q : ℝ≥0∞) (μ 
     rw [fderiv_expNegRe_apply]
     simp
   rw [h, eLpNorm_const_smul]
-  congr 1
-  rw [← ofReal_neg, enorm_eq_nnnorm, nnnorm_real, nnnorm_neg, ← enorm_eq_nnnorm,
-    Real.enorm_of_nonneg hm]
+  simp [← ofReal_norm, abs_of_nonneg hm]
 
 /-- The derivative of `ξ = e^{i m t}`: `Dξ(z) v = i m (Im v) ξ(z)`. -/
 theorem fderiv_expIIm_apply (m : ℝ) (z v : ℂ) :
     fderiv ℝ (fun w : ℂ => cexp ((m * w.im : ℝ) * I)) z v =
       (m * v.im : ℂ) * I * cexp ((m * z.im : ℝ) * I) := by
   have h := (((ofRealCLM ∘L (m • imCLM)).hasFDerivAt (x := z)).mul_const I).cexp
-  rw [show (fun w : ℂ => cexp ((m * w.im : ℝ) * I)) =
-    fun w => cexp ((ofRealCLM ∘L (m • imCLM)) w * I) by funext w; simp, h.fderiv]
+  simp only [ContinuousLinearMap.comp_apply, smul_apply, imCLM_apply, ofRealCLM_apply,
+    smul_eq_mul] at h
+  rw [h.fderiv]
   simp
   ring
 
@@ -281,11 +230,8 @@ theorem exists_lt_eLpNorm_partialT_expIIm {q : ℝ≥0∞} (hq : q ≠ 0) {μ : 
     funext z
     rw [fderiv_expIIm_apply]
     simp
-  rw [hD, eLpNorm_const_smul, hξ _ (by simpa using hΩ0), hξ _ (by simpa using hK)]
-  rw [show ‖(n : ℂ) * I‖ₑ = n by
-    rw [← ofReal_natCast, enorm_mul, enorm_eq_nnnorm, enorm_eq_nnnorm, nnnorm_I, nnnorm_real,
-      ← enorm_eq_nnnorm]
-    simp]
+  have hnI : ‖(n : ℂ) * I‖ₑ = n := by simp [← ofReal_norm]
+  rw [hD, eLpNorm_const_smul, hξ _ (by simpa using hΩ0), hξ _ (by simpa using hK), hnI]
   simp only [Measure.restrict_apply_univ]
   exact (ENNReal.div_lt_iff (.inl hB0) (.inl hB)).mp hn
 
