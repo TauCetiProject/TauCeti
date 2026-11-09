@@ -54,6 +54,23 @@ def SmoothAlmostComplexStructure.cayleySum (J₀ : SmoothAlmostComplexStructure 
     TangentSpace I x →L[ℝ] TangentSpace I x :=
   ∑ i, c i • cayleyFormula (J₀.toEndomorphism x) ((K i).toEndomorphism x)
 
+omit [FiniteDimensional ℝ E] in
+/-- The weighted Cayley sum unfolds to the weighted sum of `cayleyFormula` terms, for arbitrary
+structures. -/
+theorem SmoothAlmostComplexStructure.cayleySum_def (J₀ : SmoothAlmostComplexStructure I M)
+    (c : ι → ℝ) (K : ι → SmoothAlmostComplexStructure I M) (x : M) :
+    J₀.cayleySum c K x =
+      ∑ i, c i • cayleyFormula (J₀.toEndomorphism x) ((K i).toEndomorphism x) :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] in
+/-- With zero weights the weighted Cayley sum vanishes. -/
+@[simp]
+theorem SmoothAlmostComplexStructure.cayleySum_zero (J₀ : SmoothAlmostComplexStructure I M)
+    (K : ι → SmoothAlmostComplexStructure I M) (x : M) :
+    J₀.cayleySum 0 K x = 0 := by
+  simp [SmoothAlmostComplexStructure.cayleySum_def]
+
 namespace SmoothTwoForm.Compatible
 
 variable {σ : SmoothTwoForm I M} {J₀ : SmoothAlmostComplexStructure I M}
