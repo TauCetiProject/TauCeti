@@ -587,7 +587,8 @@ theorem center_eq_bot_of_isCompl_center {R L : Type*} [CommRing R] [LieRing L]
     rw [add_lie, hcbr, zero_add]
     have hdbr := (LieModule.mem_maxTrivSubmodule R J J x).mp hx (⟨d, hd⟩ : J)
     simpa only [LieHom.map_lie, map_zero, LieIdeal.incl_apply] using congrArg J.incl hdbr
-  have hzero : (x : L) ∈ (⊥ : LieIdeal R L) := hcompl.disjoint.le_bot ⟨hcx, x.property⟩
+  have hzero : (x : L) ∈ (⊥ : LieIdeal R L) := hcompl.disjoint.le_bot
+    ((LieSubmodule.mem_inf _ _ _).mpr ⟨hcx, x.property⟩)
   exact Subtype.ext ((LieSubmodule.mem_bot _).mp hzero)
 
 end LieIdeal

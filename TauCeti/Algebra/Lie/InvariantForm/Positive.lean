@@ -28,8 +28,6 @@ algebra.
 
 ## Main results
 
-* `LinearMap.BilinForm.orthogonal_derivedSeries_one_eq_center`: the orthogonal complement of the
-  derived ideal for a right-separating invariant form is the centre.
 * `LinearMap.BilinForm.le_center_of_isLieAbelian_of_anisotropic`: every abelian ideal is central
   when an invariant form has anisotropic diagonal.
 * `LinearMap.BilinForm.isCompl_center_derivedSeries_one_of_anisotropic`: the centre and derived
@@ -61,28 +59,11 @@ open LieAlgebra
 
 variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L]
 
-/-- The orthogonal complement of the derived ideal for a right-separating invariant form
-is the centre. -/
-theorem orthogonal_derivedSeries_one_eq_center (B : LinearMap.BilinForm K L)
-    (hB : B.SeparatingRight) (hinv : B.lieInvariant L) :
-    LieAlgebra.InvariantForm.orthogonal B hinv (derivedSeries K L 1) = center K L := by
-  ext z
-  rw [LieAlgebra.InvariantForm.mem_orthogonal, LieModule.mem_maxTrivSubmodule]
-  constructor
-  · intro hz x
-    apply hB
-    intro y
-    have hxy : ⁅x, y⁆ ∈ derivedSeries K L 1 :=
-      LieSubmodule.lie_mem_lie (LieSubmodule.mem_top x) (LieSubmodule.mem_top y)
-    exact neg_eq_zero.mp ((hinv x y z).symm.trans (hz _ hxy))
-  · intro hz d hd
-    have hker : (derivedSeries K L 1).toSubmodule ≤ LinearMap.ker (B.flip z) := by
-      rw [← LieIdeal.toLieSubalgebra_toSubmodule, coe_derivedSeries_one_eq]
-      refine Submodule.span_le.mpr ?_
-      rintro _ ⟨x, y, rfl⟩
-      rw [SetLike.mem_coe, LinearMap.mem_ker, LinearMap.BilinForm.flip_apply, hinv, hz x,
-        map_zero, neg_zero]
-    exact hker hd
+/-- The linear map underlying an ideal inclusion is injective. -/
+private theorem injective_incl_toLinearMap (I : LieIdeal K L) :
+    Function.Injective I.incl.toLinearMap := by
+  rw [LieIdeal.incl_coe]
+  exact Subtype.val_injective
 
 /-- Every abelian ideal is central in a Lie algebra with an invariant form with anisotropic
 diagonal. -/
@@ -111,13 +92,10 @@ theorem isCompl_center_derivedSeries_one_of_anisotropic (B : LinearMap.BilinForm
     (hinv : B.lieInvariant L) :
     IsCompl (center F L) (derivedSeries F L 1) := by
   have hnd := nondegenerate_of_anisotropic B hani
-  have hrestrict : (B.restrict (derivedSeries F L 1).toSubmodule).Nondegenerate := by
-    apply nondegenerate_of_anisotropic
-    rw [anisotropic_toQuadraticMap_iff]
-    intro x hx
-    apply Subtype.ext
-    apply (B.anisotropic_toQuadraticMap_iff.mp hani) (x : L)
-    simpa only [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply] using hx
+  have hrestrict : (B.restrict (derivedSeries F L 1).toSubmodule).Nondegenerate :=
+    nondegenerate_of_anisotropic _
+      (B.anisotropic_toQuadraticMap_compl₁₂ hani
+        (derivedSeries F L 1).toSubmodule.subtype Subtype.val_injective)
   have hcompl : IsCompl (derivedSeries F L 1)
       (LieAlgebra.InvariantForm.orthogonal B hinv (derivedSeries F L 1)) := by
     rw [← LieSubmodule.isCompl_toSubmodule, LieAlgebra.InvariantForm.orthogonal_toSubmodule]
@@ -135,7 +113,7 @@ theorem isSemisimple_derivedSeries_one_of_anisotropic (B : LinearMap.BilinForm F
   let BD : LinearMap.BilinForm F D := B.compl₁₂ D.incl.toLinearMap D.incl.toLinearMap
   have hreflD : BD.IsRefl := hrefl.compl₁₂ D.incl.toLinearMap
   have haniD : BD.toQuadraticMap.Anisotropic :=
-    B.anisotropic_toQuadraticMap_compl₁₂ hani D.incl.toLinearMap Subtype.val_injective
+    B.anisotropic_toQuadraticMap_compl₁₂ hani D.incl.toLinearMap (injective_incl_toLinearMap D)
   have hinvD := hinv.compl₁₂ D.incl
   apply LieAlgebra.InvariantForm.isSemisimple_of_nondegenerate BD
     (nondegenerate_of_anisotropic BD haniD) hinvD hreflD
@@ -209,7 +187,7 @@ theorem killingForm_derivedSeries_one_self_neg_of_posDef_of_ne_zero (B : LinearM
   let BD : LinearMap.BilinForm F D := B.compl₁₂ D.incl.toLinearMap D.incl.toLinearMap
   have hsymmD := hsymm.compl₁₂ D.incl.toLinearMap
   have hposD : BD.toQuadraticMap.PosDef :=
-    B.posDef_toQuadraticMap_compl₁₂ hpos D.incl.toLinearMap Subtype.val_injective
+    B.posDef_toQuadraticMap_compl₁₂ hpos D.incl.toLinearMap (injective_incl_toLinearMap D)
   have hinvD := hinv.compl₁₂ D.incl
   apply killingForm_self_neg_of_posDef_of_notMem_center BD hsymmD hposD hinvD x
   intro hcenter

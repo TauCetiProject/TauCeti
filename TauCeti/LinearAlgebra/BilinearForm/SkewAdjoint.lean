@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.LinearAlgebra.Trace
+import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
 
 /-!
@@ -55,13 +56,13 @@ private theorem exists_positive_basis_skew (B : LinearMap.BilinForm F V)
   let M := LinearMap.toMatrix b b A
   have hd (i) : 0 < d i := by
     simpa only [d, LinearMap.BilinMap.toQuadraticMap_apply] using hpos (b i) (b.ne_zero i)
-  have hJ : B.toMatrix b = Matrix.diagonal d := by
+  have hJ : LinearMap.toMatrix₂ b b B = Matrix.diagonal d := by
     ext i j
     by_cases hij : i = j
     · subst j
-      simp only [LinearMap.BilinForm.toMatrix_apply, Matrix.diagonal_apply_eq, d]
-    · simp only [LinearMap.BilinForm.toMatrix_apply, Matrix.diagonal_apply_ne _ hij]
-      exact hb hij
+      simp only [LinearMap.toMatrix₂_apply, Matrix.diagonal_apply_eq, d]
+    · simp only [LinearMap.toMatrix₂_apply, Matrix.diagonal_apply_ne _ hij]
+      exact (LinearMap.BilinForm.iIsOrtho_def.mp hb) i j hij
   have hB : Matrix.toLinearMap₂ b b (Matrix.diagonal d) = B := by
     rw [← hJ]
     exact Matrix.toLinearMap₂_toMatrix₂ b b B
