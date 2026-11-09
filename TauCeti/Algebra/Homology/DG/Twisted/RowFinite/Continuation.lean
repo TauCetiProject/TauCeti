@@ -106,13 +106,16 @@ theorem ν_eq_zero_of_lt_of_nonpos (h𝒜 : ∀ n, 0 < n → 𝒜 n = ⊥) {x : 
   rw [h𝒜 _ (by omega)] at hν
   exact (Submodule.mem_bot R).1 hν
 
+/-- The row of a source generator `x` lies in the total degree `-indP x` of `x`. -/
+theorem ν_mem_rowFiniteTotalGrading (x : P) : ν.ν x ∈ rowFiniteTotalGrading 𝒜 indQ (-indP x) :=
+  (mem_rowFiniteTotalGrading_iff _ _).mpr fun y ↦ by
+    simpa only [neg_add_eq_sub] using ν.mem_graded x y
+
 /-- Substitution of finite continuation rows preserves total degree. -/
 theorem linearCombination_mem_totalGrading {n : ℤ} {f : P →₀ A}
     (hf : f ∈ rowFiniteTotalGrading 𝒜 indP n) :
     Finsupp.linearCombination A ν.ν f ∈ rowFiniteTotalGrading 𝒜 indQ n :=
-  linearCombination_mem_of_mem_rowFiniteTotalGrading
-    (fun x ↦ (mem_rowFiniteTotalGrading_iff _ _).mpr fun y ↦ by
-      simpa only [neg_add_eq_sub] using ν.mem_graded x y) hf
+  linearCombination_mem_of_mem_rowFiniteTotalGrading ν.ν_mem_rowFiniteTotalGrading hf
 
 /-- The generator equation extends to the entire free left module by the DG Leibniz rule. -/
 theorem linearCombination_differential (hA : IsDGAlgebra 𝒜 d) (f : P →₀ A) :
@@ -129,11 +132,8 @@ def refl (m : RowFiniteTwistingCocycle 𝒜 d P indP) (hA : IsDGAlgebra 𝒜 d) 
     RowFiniteContinuationCocycle m m where
   ν x := Finsupp.single x 1
   mem_graded x y := by
-    classical
-    by_cases hxy : x = y
-    · subst y
-      simpa using SetLike.one_mem_graded 𝒜
-    · simp [Finsupp.single_eq_of_ne (Ne.symm hxy)]
+    simpa only [neg_add_eq_sub] using
+      (mem_rowFiniteTotalGrading_iff _ _).mp (single_one_mem_rowFiniteTotalGrading 𝒜 indP x) y
   continuation x := by
     rw [m.differential_single_one hA]
     simp [Finsupp.linearCombination_apply]
@@ -147,11 +147,7 @@ def comp (μ : RowFiniteContinuationCocycle mQ mS) (hA : IsDGAlgebra 𝒜 d) :
     RowFiniteContinuationCocycle mP mS where
   ν x := Finsupp.linearCombination A μ.ν (ν.ν x)
   mem_graded x y := by
-    have hrow : ν.ν x ∈ rowFiniteTotalGrading 𝒜 indQ (-indP x) := by
-      rw [mem_rowFiniteTotalGrading_iff]
-      intro z
-      simpa only [neg_add_eq_sub] using ν.mem_graded x z
-    have hmem := μ.linearCombination_mem_totalGrading hrow
+    have hmem := μ.linearCombination_mem_totalGrading (ν.ν_mem_rowFiniteTotalGrading x)
     rw [mem_rowFiniteTotalGrading_iff] at hmem
     have := hmem y
     simpa only [neg_add_eq_sub] using this

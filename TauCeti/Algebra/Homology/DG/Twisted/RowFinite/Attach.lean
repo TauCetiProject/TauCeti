@@ -143,7 +143,7 @@ substitution of the attaching cycles, which lies in the old free module. -/
 theorem attach_differential_mapDomain_inr (g : Q →₀ A) :
     rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (m.attach a ha hca).m (mapDomain Sum.inr g) =
       mapDomain Sum.inr (mapRange.linearMap d g) +
-        mapDomain Sum.inl (rowFiniteSignedMap (𝒜 := 𝒜) a g) := by
+        mapDomain Sum.inl (rowFiniteSignedMap 𝒜 1 a g) := by
   induction g using Finsupp.induction_linear with
   | zero => simp
   | add g₁ g₂ hg₁ hg₂ =>
@@ -161,7 +161,7 @@ coefficient differential of `g` on the new ones. -/
 theorem attach_differential_sumElim (f : P →₀ A) (g : Q →₀ A) :
     rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (m.attach a ha hca).m (sumElim f g) =
       sumElim (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m.m f +
-        rowFiniteSignedMap (𝒜 := 𝒜) a g) (mapRange.linearMap d g) := by
+        rowFiniteSignedMap 𝒜 1 a g) (mapRange.linearMap d g) := by
   rw [sumElim_eq_add, map_add, attach_differential_mapDomain_inl,
     attach_differential_mapDomain_inr, sumElim_eq_add, mapDomain_add]
   abel

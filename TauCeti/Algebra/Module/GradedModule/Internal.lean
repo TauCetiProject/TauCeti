@@ -544,6 +544,14 @@ theorem InternalGrading.koszulTwist_ofDecomposition_apply_of_mem (ℳ : ℤ → 
     koszulTwist (InternalGrading.ofDecomposition ℳ) q x = (((q * e).negOnePow : ℤ) : R) • x :=
   koszulTwist_apply_of_mem _ (by rwa [InternalGrading.ofDecomposition_piece]) q
 
+/-- On an element of degree `e` of a decomposition `ℳ` of an additive group, the Koszul twist of
+parameter `q` acts by the sign `(-1)^(q * e)`, as a unit of `ℤ`. -/
+theorem InternalGrading.koszulTwist_ofDecomposition_eq_negOnePow_smul {M' : Type*}
+    [AddCommGroup M'] [Module R M'] {ℳ : ℤ → Submodule R M'} [DirectSum.Decomposition ℳ]
+    (q : ℤ) {e : ℤ} {x : M'} (hx : x ∈ ℳ e) :
+    koszulTwist (InternalGrading.ofDecomposition ℳ) q x = (q * e).negOnePow • x := by
+  rw [koszulTwist_ofDecomposition_apply_of_mem ℳ hx q, Units.smul_def, Int.cast_smul_eq_zsmul]
+
 /-- The Koszul twist of parameter zero is the identity. -/
 @[simp]
 theorem InternalGrading.koszulTwist_zero (G : InternalGrading R M) :

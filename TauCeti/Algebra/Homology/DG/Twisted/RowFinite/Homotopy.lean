@@ -62,7 +62,7 @@ structure RowFiniteParametrizedCocycle
   /-- The boundary equation on source generators. -/
   parametrized : ∀ x,
     rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m (h x) +
-      rowFiniteSignedMap (𝒜 := 𝒜) h (mP.m x) = ν₁.ν x - ν₀.ν x
+      rowFiniteSignedMap 𝒜 1 h (mP.m x) = ν₁.ν x - ν₀.ν x
 
 namespace RowFiniteParametrizedCocycle
 
@@ -84,7 +84,7 @@ variable (η : RowFiniteParametrizedCocycle ν₀ ν₁)
 /-- The signed map of a parametrized cocycle lowers total degree by one. -/
 theorem rowFiniteSignedMap_mem_totalGrading {n : ℤ} {f : P →₀ A}
     (hf : f ∈ rowFiniteTotalGrading 𝒜 indP n) :
-    rowFiniteSignedMap (𝒜 := 𝒜) η.h f ∈ rowFiniteTotalGrading 𝒜 indQ (n - 1) := by
+    rowFiniteSignedMap 𝒜 1 η.h f ∈ rowFiniteTotalGrading 𝒜 indQ (n - 1) := by
   simpa only [sub_eq_add_neg] using
     TauCeti.rowFiniteSignedMap_mem_totalGrading η.h (k := -1)
       (fun x y ↦ by simpa only [sub_eq_add_neg] using η.mem_graded x y) hf
@@ -93,8 +93,8 @@ theorem rowFiniteSignedMap_mem_totalGrading {n : ℤ} {f : P →₀ A}
 chain homotopy between the two continuation substitutions. -/
 theorem rowFiniteSignedMap_differential (hA : IsDGAlgebra 𝒜 d) (f : P →₀ A) :
     rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m
-        (rowFiniteSignedMap (𝒜 := 𝒜) η.h f) +
-      rowFiniteSignedMap (𝒜 := 𝒜) η.h
+        (rowFiniteSignedMap 𝒜 1 η.h f) +
+      rowFiniteSignedMap 𝒜 1 η.h
         (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mP.m f) =
       Finsupp.linearCombination A ν₁.ν f - Finsupp.linearCombination A ν₀.ν f := by
   have key := linearCombination_eq_add_rowFiniteSignedMap
@@ -120,7 +120,7 @@ private theorem signedRow_sum_eq_neg {X : Type*} (f : X →₀ A) (g : X → Q �
 theorem parametrized_iff (h : P → Q →₀ A)
     (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - indP x - 1)) (x : P) :
     (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m (h x) +
-        rowFiniteSignedMap (𝒜 := 𝒜) h (mP.m x) = ν₁.ν x - ν₀.ν x) ↔
+        rowFiniteSignedMap 𝒜 1 h (mP.m x) = ν₁.ν x - ν₀.ν x) ↔
       Finsupp.mapRange.linearMap d (h x) = ν₁.ν x - ν₀.ν x +
         (mP.m x).sum (fun z a ↦ (indP x - indP z).negOnePow • (a • h z)) +
         (h x).sum (fun z a ↦ (indP x - indQ z).negOnePow • (a • mQ.m z)) := by
@@ -151,9 +151,9 @@ variable {M : Type uM} [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M]
 balanced: both factors are graded linear of odd degree, and their two signs agree. -/
 private theorem koszulTwist_tmul_rowFiniteSignedMap_balanced (a : A) (α : M) (g : P →₀ A) :
     tmul R A ((InternalGrading.ofDecomposition ℳ).koszulTwist 1 (op a • α))
-        (rowFiniteSignedMap (𝒜 := 𝒜) η.h g) =
+        (rowFiniteSignedMap 𝒜 1 η.h g) =
       tmul R A ((InternalGrading.ofDecomposition ℳ).koszulTwist 1 α)
-        (rowFiniteSignedMap (𝒜 := 𝒜) η.h (a • g)) := by
+        (rowFiniteSignedMap 𝒜 1 η.h (a • g)) := by
   induction a using DirectSum.Decomposition.inductionOn 𝒜 with
   | zero => simp
   | add a b ha hb => simp only [op_add, add_smul, map_add, add_tmul, tmul_add, ha, hb]
@@ -163,7 +163,8 @@ private theorem koszulTwist_tmul_rowFiniteSignedMap_balanced (a : A) (α : M) (g
     | add α β hα hβ => simp only [smul_add, map_add, add_tmul, hα, hβ]
     | @homogeneous q α =>
       rw [koszulTwist_one_eq_negOnePow_smul (R := R) (op_smul_mem_of_mem_graded a.2 α.2),
-        koszulTwist_one_eq_negOnePow_smul (R := R) α.2, rowFiniteSignedMap_smul η.h a.2,
+        koszulTwist_one_eq_negOnePow_smul (R := R) α.2, rowFiniteSignedMap_smul_of_mem 1 η.h a.2,
+        one_mul,
         Int.negOnePow_add, mul_smul]
       simp only [negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast,
         smul_tmul, tmul_smul, balance]
@@ -176,7 +177,7 @@ def tensorHomotopy : BalancedTensorProduct R A M (P →₀ A) →ₗ[R]
     BalancedTensorProduct R A M (Q →₀ A) :=
   lift (((BalancedTensorProduct.mk R A).comp
       ((InternalGrading.ofDecomposition ℳ).koszulTwist 1)).compl₂
-      (rowFiniteSignedMap (𝒜 := 𝒜) η.h))
+      (rowFiniteSignedMap 𝒜 1 η.h))
     (fun a α g ↦ by
       simpa only [LinearMap.compl₂_apply, LinearMap.comp_apply, mk_apply] using
         η.koszulTwist_tmul_rowFiniteSignedMap_balanced a α g)
@@ -187,13 +188,13 @@ homotopy row. -/
 theorem tensorHomotopy_tmul (α : M) (g : P →₀ A) :
     η.tensorHomotopy ℳ (tmul R A α g) =
       tmul R A ((InternalGrading.ofDecomposition ℳ).koszulTwist 1 α)
-        (rowFiniteSignedMap (𝒜 := 𝒜) η.h g) := by
+        (rowFiniteSignedMap 𝒜 1 η.h g) := by
   simp [tensorHomotopy]
 
 /-- On a homogeneous coefficient of degree `q`, the Koszul twist is the sign `(-1)^q`. -/
 theorem tensorHomotopy_tmul_of_mem {q : ℤ} {α : M} (hα : α ∈ ℳ q) (g : P →₀ A) :
     η.tensorHomotopy ℳ (tmul R A α g) =
-      ((q.negOnePow : ℤ) : R) • tmul R A α (rowFiniteSignedMap (𝒜 := 𝒜) η.h g) := by
+      ((q.negOnePow : ℤ) : R) • tmul R A α (rowFiniteSignedMap 𝒜 1 η.h g) := by
   rw [tensorHomotopy_tmul, koszulTwist_one_eq_negOnePow_smul (R := R) hα,
     negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast, smul_tmul]
 
@@ -311,7 +312,7 @@ end RowFiniteParametrizedCocycle
 regular algebra coefficients, through the actual finite-support/function equivalence. -/
 theorem linearEquivFunOnFinite_rowFiniteSignedMap [Fintype P] [Finite Q]
     (h : P → Q →₀ A) (f : P →₀ A) :
-    Finsupp.linearEquivFunOnFinite R A Q (rowFiniteSignedMap (𝒜 := 𝒜) h f) =
+    Finsupp.linearEquivFunOnFinite R A Q (rowFiniteSignedMap 𝒜 1 h f) =
       homotopyMap (fun x y ↦ h x y) 𝒜 (Finsupp.linearEquivFunOnFinite R A P f) := by
   classical
   induction f using Finsupp.induction_linear with
@@ -321,7 +322,7 @@ theorem linearEquivFunOnFinite_rowFiniteSignedMap [Fintype P] [Finite Q]
     induction a using DirectSum.Decomposition.inductionOn 𝒜 with
     | zero => simp
     | @homogeneous q a =>
-      rw [rowFiniteSignedMap_single h x a.2, Finsupp.linearEquivFunOnFinite_single]
+      rw [rowFiniteSignedMap_single 1 h x a.2, one_mul, Finsupp.linearEquivFunOnFinite_single]
       ext y
       simp [homotopyMap_single_apply _ x a.2, MulOpposite.smul_eq_mul_unop]
     | add a b ha hb => simp only [Finsupp.single_add, map_add, ha, hb]

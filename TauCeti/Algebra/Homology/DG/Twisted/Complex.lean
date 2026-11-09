@@ -169,21 +169,6 @@ noncomputable instance instDecompositionTwistedTotalGrading :
 
 end TotalGradingDecomposition
 
-section KoszulTwist
-
-variable {R : Type uR} {M : Type uM} [Ring R] [AddCommGroup M] [Module R M]
-  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
-
-/-- The Koszul twist of parameter `j` acts on a homogeneous element of degree `q` by the sign
-`(-1) ^ (j q)`. -/
-theorem koszulTwist_eq_negOnePow_smul (j : ℤ) {q : ℤ} {α : M} (hα : α ∈ ℳ q) :
-    (InternalGrading.ofDecomposition ℳ).koszulTwist j α = (j * q).negOnePow • α := by
-  have hα' : α ∈ (InternalGrading.ofDecomposition ℳ).piece q := by
-    rwa [InternalGrading.ofDecomposition_piece]
-  rw [InternalGrading.koszulTwist_apply_of_mem _ hα', Units.smul_def, Int.cast_smul_eq_zsmul]
-
-end KoszulTwist
-
 section Differential
 
 variable {R : Type uR} {A : Type uA} {M : Type uM} [CommRing R] [Semiring A]
@@ -228,7 +213,7 @@ variable [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R A�
 `(-1) ^ q`. -/
 theorem koszulTwist_one_eq_negOnePow_smul {q : ℤ} {α : M} (hα : α ∈ ℳ q) :
     (InternalGrading.ofDecomposition ℳ).koszulTwist 1 α = q.negOnePow • α := by
-  rw [koszulTwist_eq_negOnePow_smul 1 hα, one_mul]
+  rw [InternalGrading.koszulTwist_ofDecomposition_eq_negOnePow_smul 1 hα, one_mul]
 
 /-- Evaluation on a homogeneous elementary tensor `α ⊗ x`, with `α` of degree `q`. -/
 theorem twistedDifferential_single [DecidableEq P] (x : P) {q : ℤ} {α : M} (hα : α ∈ ℳ q) :

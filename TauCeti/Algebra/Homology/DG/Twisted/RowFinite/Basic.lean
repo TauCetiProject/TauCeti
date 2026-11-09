@@ -27,9 +27,10 @@ the regular-bimodule twisted differential.
 An `A`-linear map out of the free module to a differential graded left module is determined by
 the images of the generators, and it commutes with the differentials exactly when it does so on
 each generator, that is, when it carries each row `m x` to the differential of the image of `x`.
-Likewise a map of degree `-1` out of the free module is the signed extension
-`rowFiniteSignedMap` of the images of the generators, and the homotopy law `e = dM ∘ H + H ∘ D`
-holds exactly when it holds on each generator. Both laws hold on a vector as soon as they hold on
+Likewise a graded map of degree `j` out of the free module is the signed map
+`rowFiniteSignedMap 𝒜 j` of the images of the generators, which carries the Koszul sign of the
+coefficients, and for a map `H` of degree `-1` the homotopy law `e = dM ∘ H + H ∘ D` holds exactly
+when it holds on each generator. Both laws hold on a vector as soon as they hold on
 the generators in its support, which is what allows maps out of the free module to be built one
 generator at a time. Dually, a single vector is a valid row for a new generator exactly when it
 is a cycle.
@@ -50,10 +51,10 @@ is a cycle.
 * `linearCombination_rowFiniteTwistedDifferential` and
   `forall_linearCombination_rowFiniteTwistedDifferential_iff`: maps out of the free module
   commute with the differentials exactly when they do so on generators.
-* `rowFiniteSignedMap`: the Koszul-signed extension of images of the generators out of the
-  free module, with `rowFiniteSignedMap_congr`, `LinearMap.map_rowFiniteSignedMap` and
-  `rowFiniteSignedMap_mem_of_mem_rowFiniteTotalGrading`, which gives it degree `-1` when each
-  generator `x` is sent into degree `-ind x - 1`.
+* `rowFiniteSignedMap`: the graded map of degree `j` out of the free module with given images of
+  the generators, with the Koszul rule `rowFiniteSignedMap_smul`, `rowFiniteSignedMap_congr`,
+  `LinearMap.map_rowFiniteSignedMap` and `rowFiniteSignedMap_mem_of_mem_rowFiniteTotalGrading`,
+  which gives it degree `j` when each generator `x` is sent into degree `j - ind x`.
 * `linearCombination_eq_add_rowFiniteSignedMap` and
   `forall_linearCombination_eq_add_rowFiniteSignedMap_iff`: homotopies out of the free module
   are determined on generators.
@@ -89,6 +90,16 @@ def rowFiniteTotalGrading (n : ℤ) : Submodule R (P →₀ A) :=
 theorem mem_rowFiniteTotalGrading_iff {n : ℤ} {f : P →₀ A} :
     f ∈ rowFiniteTotalGrading 𝒜 ind n ↔ ∀ x, f x ∈ 𝒜 (n + ind x) :=
   (Iff.rfl)
+
+/-- A generator lies in the total degree opposite to its index. -/
+theorem single_one_mem_rowFiniteTotalGrading [One A] [SetLike.GradedOne 𝒜] (x : P) :
+    Finsupp.single x (1 : A) ∈ rowFiniteTotalGrading 𝒜 ind (-ind x) := by
+  classical
+  intro y
+  by_cases hxy : x = y
+  · subst y
+    simpa using SetLike.one_mem_graded 𝒜
+  · simp [Finsupp.single_eq_of_ne (Ne.symm hxy)]
 
 /-- The actual finite direct-sum/function equivalence preserves total degrees. -/
 theorem mem_rowFiniteTotalGrading_iff_twistedTotalGrading [Finite P] (n : ℤ) (f : P →₀ A) :
@@ -207,73 +218,155 @@ section SignedMap
 
 variable {M : Type uM} [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
 
-/-- The Koszul-signed extension of the images `h x` of the generators to an `R`-linear map out of
-the free module. On a coefficient of degree `q`, it sends `single x a` to `(-1)^q • (a • h x)`.
-With values in a free module it supplies the twisting terms. With values in a graded module and
-each `h x` of degree `-ind x - 1`, it is the map of degree `-1` determined by the images of the
-generators (`rowFiniteSignedMap_mem_of_mem_rowFiniteTotalGrading`), the form of a homotopy out of
-the free module. -/
-noncomputable def rowFiniteSignedMap (h : P → M) : (P →₀ A) →ₗ[R] M :=
+variable (𝒜) in
+/-- The graded `A`-linear map of degree `j` out of the free module with images `h x` of the
+generators. On a homogeneous coefficient `a`, it sends `single x a` to `(-1)^(j |a|) a • h x`,
+the Koszul sign of a map of degree `j` passing `a`. For `j = 0` it is the linear combination
+`Finsupp.linearCombination A h` (`rowFiniteSignedMap_zero_left`). For `j = 1` with values in a
+free module it supplies the twisting terms, and with each `h x` of degree `-ind x - 1` it is the
+map of degree `-1` determined by the images of the generators
+(`rowFiniteSignedMap_mem_of_mem_rowFiniteTotalGrading`), the form of a homotopy out of the free
+module. -/
+noncomputable def rowFiniteSignedMap (j : ℤ) (h : P → M) : (P →₀ A) →ₗ[R] M :=
   Finsupp.lsum R fun x ↦
     ((LinearMap.toSpanSingleton A M (h x)).restrictScalars R).comp
-      ((InternalGrading.ofDecomposition 𝒜).koszulTwist 1)
+      ((InternalGrading.ofDecomposition 𝒜).koszulTwist j)
 
-/-- Signed row substitution is a finite sum over the support of the input vector. -/
-theorem rowFiniteSignedMap_apply (h : P → M) (f : P →₀ A) :
-    rowFiniteSignedMap (𝒜 := 𝒜) h f =
-      f.sum (fun x a ↦ (InternalGrading.ofDecomposition 𝒜).koszulTwist 1 a • h x) := by
+/-- The signed map is a finite sum over the support of the input vector. -/
+theorem rowFiniteSignedMap_apply (j : ℤ) (h : P → M) (f : P →₀ A) :
+    rowFiniteSignedMap 𝒜 j h f =
+      f.sum (fun x a ↦ (InternalGrading.ofDecomposition 𝒜).koszulTwist j a • h x) := by
   classical
   simp [rowFiniteSignedMap, Finsupp.lsum_apply, LinearMap.toSpanSingleton_apply,
     Function.comp_def]
 
-/-- The signed extension evaluated on a homogeneous elementary vector. -/
-theorem rowFiniteSignedMap_single (h : P → M) (x : P)
-    {q : ℤ} {a : A} (ha : a ∈ 𝒜 q) :
-    rowFiniteSignedMap (𝒜 := 𝒜) h (Finsupp.single x a) = q.negOnePow • (a • h x) := by
-  classical
-  simp [rowFiniteSignedMap, Finsupp.lsum_single,
-    koszulTwist_one_eq_negOnePow_smul (R := R) ha]
+/-- The signed map on a single, not necessarily homogeneous, coefficient. -/
+theorem rowFiniteSignedMap_single_koszulTwist (j : ℤ) (h : P → M) (x : P) (a : A) :
+    rowFiniteSignedMap 𝒜 j h (Finsupp.single x a) =
+      (InternalGrading.ofDecomposition 𝒜).koszulTwist j a • h x := by
+  simp [rowFiniteSignedMap, Finsupp.lsum_single, LinearMap.toSpanSingleton_apply]
+
+/-- The signed map on a single homogeneous coefficient of degree `q`. -/
+theorem rowFiniteSignedMap_single (j : ℤ) (h : P → M) (x : P) {q : ℤ} {a : A} (ha : a ∈ 𝒜 q) :
+    rowFiniteSignedMap 𝒜 j h (Finsupp.single x a) = (j * q).negOnePow • (a • h x) := by
+  rw [rowFiniteSignedMap_single_koszulTwist,
+    InternalGrading.koszulTwist_ofDecomposition_eq_negOnePow_smul j ha, smul_assoc]
 
 /-- A generator maps to its specified image. -/
 @[simp]
-theorem rowFiniteSignedMap_single_one (h : P → M) (x : P) :
-    rowFiniteSignedMap (𝒜 := 𝒜) h (Finsupp.single x 1) = h x := by
-  rw [rowFiniteSignedMap_single h x (SetLike.one_mem_graded 𝒜)]
+theorem rowFiniteSignedMap_single_one (j : ℤ) (h : P → M) (x : P) :
+    rowFiniteSignedMap 𝒜 j h (Finsupp.single x 1) = h x := by
+  rw [rowFiniteSignedMap_single j h x (SetLike.one_mem_graded 𝒜)]
   simp
 
-/-- Signed row extension is graded left-linear of odd degree. -/
-theorem rowFiniteSignedMap_smul (h : P → M) {q : ℤ} {a : A}
-    (ha : a ∈ 𝒜 q) (f : P →₀ A) :
-    rowFiniteSignedMap (𝒜 := 𝒜) h (a • f) =
-      q.negOnePow • (a • rowFiniteSignedMap (𝒜 := 𝒜) h f) := by
-  classical
-  induction f using Finsupp.induction_linear with
+/-- **The signed map of degree `j` satisfies the Koszul rule**:
+`H (a • f) = (-1)^(j |a|) a • H f`, written with the Koszul twist so that `a` need not be
+homogeneous. -/
+theorem rowFiniteSignedMap_smul (j : ℤ) (h : P → M) (a : A) (f : P →₀ A) :
+    rowFiniteSignedMap 𝒜 j h (a • f) =
+      (InternalGrading.ofDecomposition 𝒜).koszulTwist j a • rowFiniteSignedMap 𝒜 j h f := by
+  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
   | zero => simp
-  | add f g hf hg => simp only [smul_add, map_add, hf, hg]
-  | single x b =>
-    induction b using DirectSum.Decomposition.inductionOn 𝒜 with
+  | add a b ha hb => simp only [add_smul, map_add, ha, hb]
+  | @homogeneous q a =>
+    induction f using Finsupp.induction_linear with
     | zero => simp
-    | @homogeneous p b =>
-      rw [Finsupp.smul_single, smul_eq_mul,
-        rowFiniteSignedMap_single h x (SetLike.GradedMul.mul_mem ha b.2),
-        rowFiniteSignedMap_single h x b.2]
-      simp [Int.negOnePow_add, mul_smul, smul_comm a p.negOnePow]
-    | add b c hb hc => simp only [Finsupp.single_add, smul_add, map_add, hb, hc]
+    | add f g hf hg => simp only [smul_add, map_add, hf, hg]
+    | single x b =>
+      rw [Finsupp.smul_single, smul_eq_mul, rowFiniteSignedMap_single_koszulTwist,
+        rowFiniteSignedMap_single_koszulTwist,
+        InternalGrading.koszulTwist_ofDecomposition_eq_negOnePow_smul j a.2]
+      induction b using DirectSum.Decomposition.inductionOn 𝒜 with
+      | zero => simp
+      | add b c hb hc => simp only [mul_add, map_add, add_smul, smul_add, hb, hc]
+      | @homogeneous p b =>
+        rw [InternalGrading.koszulTwist_ofDecomposition_eq_negOnePow_smul j
+            (SetLike.GradedMul.mul_mem a.2 b.2),
+          InternalGrading.koszulTwist_ofDecomposition_eq_negOnePow_smul j b.2, mul_add,
+          Int.negOnePow_add]
+        simp only [Units.smul_def, smul_assoc, mul_smul]
+        rw [smul_comm (a : A) ((j * p).negOnePow : ℤ)]
 
-/-- The signed extension on a vector only depends on the images of the generators in its
-support. -/
-theorem rowFiniteSignedMap_congr {h h' : P → M} {f : P →₀ A}
+/-- The Koszul rule for a homogeneous coefficient of degree `q`. -/
+theorem rowFiniteSignedMap_smul_of_mem (j : ℤ) (h : P → M) {q : ℤ} {a : A} (ha : a ∈ 𝒜 q)
+    (f : P →₀ A) :
+    rowFiniteSignedMap 𝒜 j h (a • f) = (j * q).negOnePow • (a • rowFiniteSignedMap 𝒜 j h f) := by
+  rw [rowFiniteSignedMap_smul, InternalGrading.koszulTwist_ofDecomposition_eq_negOnePow_smul j ha,
+    smul_assoc]
+
+/-- With degree zero, the signed map is the linear combination of the images of the
+generators. -/
+theorem rowFiniteSignedMap_zero_left (h : P → M) :
+    rowFiniteSignedMap 𝒜 0 h = (Finsupp.linearCombination A h).restrictScalars R := by
+  refine Finsupp.lhom_ext fun x a ↦ ?_
+  rw [rowFiniteSignedMap_single_koszulTwist, LinearMap.restrictScalars_apply,
+    Finsupp.linearCombination_single]
+  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
+  | zero => simp
+  | add a b ha hb => simp only [map_add, add_smul, ha, hb]
+  | @homogeneous q a =>
+    rw [InternalGrading.koszulTwist_ofDecomposition_eq_negOnePow_smul 0 a.2, zero_mul,
+      Int.negOnePow_zero, one_smul]
+
+/-- The signed maps of degrees `-1` and `1` with the same images agree: the Koszul sign only
+depends on the parity of the degree. -/
+theorem rowFiniteSignedMap_neg_one (h : P → M) :
+    rowFiniteSignedMap 𝒜 (-1) h = rowFiniteSignedMap 𝒜 1 h := by
+  refine Finsupp.lhom_ext fun x a ↦ ?_
+  rw [rowFiniteSignedMap_single_koszulTwist, rowFiniteSignedMap_single_koszulTwist]
+  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
+  | zero => simp
+  | add a b ha hb => simp only [map_add, add_smul, ha, hb]
+  | @homogeneous q a =>
+    rw [InternalGrading.koszulTwist_ofDecomposition_eq_negOnePow_smul (-1) a.2,
+      InternalGrading.koszulTwist_ofDecomposition_eq_negOnePow_smul 1 a.2, neg_mul,
+      Int.negOnePow_neg]
+
+/-- The signed map on a vector only depends on the images of the generators in its support. -/
+theorem rowFiniteSignedMap_congr (j : ℤ) {h h' : P → M} {f : P →₀ A}
     (hh : ∀ x ∈ f.support, h x = h' x) :
-    rowFiniteSignedMap (𝒜 := 𝒜) h f = rowFiniteSignedMap (𝒜 := 𝒜) h' f := by
+    rowFiniteSignedMap 𝒜 j h f = rowFiniteSignedMap 𝒜 j h' f := by
   simp only [rowFiniteSignedMap_apply]
   exact Finsupp.sum_congr fun x hx ↦ by rw [hh x hx]
 
-/-- An `A`-linear map commutes with the signed extension: applying it after the signed extension
-of `h` is the signed extension of its composite with `h`. -/
+/-- The signed map with zero images is zero. -/
+@[simp]
+theorem rowFiniteSignedMap_zero_right (j : ℤ) : rowFiniteSignedMap 𝒜 j (0 : P → M) = 0 :=
+  LinearMap.ext fun f ↦ by simp [rowFiniteSignedMap_apply]
+
+/-- The signed map is additive in the images of the generators. -/
+theorem rowFiniteSignedMap_add (j : ℤ) (h h' : P → M) (f : P →₀ A) :
+    rowFiniteSignedMap 𝒜 j (h + h') f =
+      rowFiniteSignedMap 𝒜 j h f + rowFiniteSignedMap 𝒜 j h' f := by
+  simp only [rowFiniteSignedMap_apply, Pi.add_apply, smul_add, Finsupp.sum_add]
+
+/-- The signed map is subtractive in the images of the generators. -/
+theorem rowFiniteSignedMap_sub (j : ℤ) (h h' : P → M) (f : P →₀ A) :
+    rowFiniteSignedMap 𝒜 j (h - h') f =
+      rowFiniteSignedMap 𝒜 j h f - rowFiniteSignedMap 𝒜 j h' f := by
+  simp only [rowFiniteSignedMap_apply, Pi.sub_apply, smul_sub, Finsupp.sum_sub]
+
+/-- The signed map is negated with the images of the generators. -/
+theorem rowFiniteSignedMap_neg (j : ℤ) (h : P → M) (f : P →₀ A) :
+    rowFiniteSignedMap 𝒜 j (-h) f = -rowFiniteSignedMap 𝒜 j h f := by
+  simp only [rowFiniteSignedMap_apply, Pi.neg_apply, smul_neg, Finsupp.sum_neg]
+
+/-- An `A`-linear map commutes with the signed map: applying it after the signed map of `h` is
+the signed map of its composite with `h`. -/
 theorem _root_.LinearMap.map_rowFiniteSignedMap {M' : Type*} [AddCommGroup M'] [Module R M']
-    [Module A M'] [IsScalarTower R A M'] (φ : M →ₗ[A] M') (h : P → M) (f : P →₀ A) :
-    φ (rowFiniteSignedMap (𝒜 := 𝒜) h f) = rowFiniteSignedMap (𝒜 := 𝒜) (φ ∘ h) f := by
+    [Module A M'] [IsScalarTower R A M'] (φ : M →ₗ[A] M') (j : ℤ) (h : P → M) (f : P →₀ A) :
+    φ (rowFiniteSignedMap 𝒜 j h f) = rowFiniteSignedMap 𝒜 j (φ ∘ h) f := by
   simp [rowFiniteSignedMap_apply, Finsupp.sum, map_sum]
+
+/-- **Precomposition with a substitution of rows**: the signed map with images `h`, applied to
+the linear combination of rows `ν`, is the signed map with images `x ↦ H (ν x)`. -/
+theorem rowFiniteSignedMap_linearCombination {Q : Type uQ} (j : ℤ) (h : Q → M)
+    (ν : P → Q →₀ A) (f : P →₀ A) :
+    rowFiniteSignedMap 𝒜 j h (Finsupp.linearCombination A ν f) =
+      rowFiniteSignedMap 𝒜 j (fun x ↦ rowFiniteSignedMap 𝒜 j h (ν x)) f := by
+  rw [Finsupp.linearCombination_apply, Finsupp.sum, map_sum, rowFiniteSignedMap_apply,
+    Finsupp.sum]
+  exact Finset.sum_congr rfl fun x _ ↦ rowFiniteSignedMap_smul j h _ _
 
 end SignedMap
 
@@ -281,7 +374,7 @@ end SignedMap
 the sign to each coefficient before multiplication into the finite row. -/
 noncomputable def rowFiniteTwistedDifferential (m : P → P →₀ A) :
     (P →₀ A) →ₗ[R] (P →₀ A) :=
-  Finsupp.mapRange.linearMap d + rowFiniteSignedMap (𝒜 := 𝒜) m
+  Finsupp.mapRange.linearMap d + rowFiniteSignedMap 𝒜 1 m
 
 /-- The differential on a finite-support vector is the coefficient differential plus the
 finite sum of its Koszul-twisted coefficients acting on the twisting rows. -/
@@ -305,7 +398,7 @@ theorem rowFiniteTwistedDifferential_single (m : P → P →₀ A) (x : P)
     rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (Finsupp.single x a) =
       Finsupp.single x (d a) + q.negOnePow • (a • m x) := by
   classical
-  simp [rowFiniteTwistedDifferential, rowFiniteSignedMap_single m x ha]
+  simp [rowFiniteTwistedDifferential, rowFiniteSignedMap_single 1 m x ha]
 
 /-- The differential evaluated on a single, not necessarily homogeneous, coefficient. -/
 theorem rowFiniteTwistedDifferential_single_koszulTwist (m : P → P →₀ A) (x : P) (c : A) :
@@ -381,17 +474,18 @@ theorem linearCombination_mem_of_mem_rowFiniteTotalGrading {g : P → M}
   have := SetLike.GradedSMul.smul_mem (hf x) (hg x)
   simpa only [vadd_eq_add, add_neg_cancel_right] using this
 
-/-- The signed extension of images of degree `j - ind x` raises total degree by `j`. -/
-theorem rowFiniteSignedMap_mem_of_mem_rowFiniteTotalGrading {h : P → M} {j : ℤ}
-    (hh : ∀ x, h x ∈ ℳ (j - ind x)) {n : ℤ} {f : P →₀ A}
-    (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n) : rowFiniteSignedMap (𝒜 := 𝒜) h f ∈ ℳ (n + j) := by
-  classical
-  rw [← Finsupp.sum_single f, Finsupp.sum, map_sum]
-  refine Submodule.sum_mem _ fun x _ ↦ ?_
-  rw [rowFiniteSignedMap_single h x (hf x)]
-  apply Submodule.smul_of_tower_mem
-  have := SetLike.GradedSMul.smul_mem (hf x) (hh x)
-  convert this using 2
+/-- The signed map sends a vector of total degree `n` to degree `n + j` as soon as each
+generator `x` in its support is sent to degree `j - ind x`. The Koszul sign parameter `i` does not
+affect degrees. -/
+theorem rowFiniteSignedMap_mem_of_mem_rowFiniteTotalGrading {i j n : ℤ} {h : P → M}
+    {f : P →₀ A} (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n)
+    (hh : ∀ x ∈ f.support, h x ∈ ℳ (j - ind x)) :
+    rowFiniteSignedMap 𝒜 i h f ∈ ℳ (n + j) := by
+  rw [rowFiniteSignedMap_apply, Finsupp.sum]
+  refine Submodule.sum_mem _ fun x hx ↦ ?_
+  rw [InternalGrading.koszulTwist_ofDecomposition_eq_negOnePow_smul i (hf x), smul_assoc]
+  refine Submodule.smul_of_tower_mem _ _ ?_
+  convert SetLike.GradedSMul.smul_mem (hf x) (hh x hx) using 2
   simp only [vadd_eq_add]
   ring
 
@@ -453,20 +547,19 @@ theorem forall_linearCombination_rowFiniteTwistedDifferential_iff (hM : IsDGLeft
 that generator. -/
 private theorem linearCombination_single_eq_add_rowFiniteSignedMap
     (hM : IsDGLeftModule h ℳ dM) (m : P → P →₀ A) {e k : P → M} {x : P}
-    (hx : e x = dM (k x) + rowFiniteSignedMap (𝒜 := 𝒜) k (m x)) (a : A) :
+    (hx : e x = dM (k x) + rowFiniteSignedMap 𝒜 1 k (m x)) (a : A) :
     Finsupp.linearCombination A e (Finsupp.single x a) =
-      dM (rowFiniteSignedMap (𝒜 := 𝒜) k (Finsupp.single x a)) +
-        rowFiniteSignedMap (𝒜 := 𝒜) k
+      dM (rowFiniteSignedMap 𝒜 1 k (Finsupp.single x a)) +
+        rowFiniteSignedMap 𝒜 1 k
           (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (Finsupp.single x a)) := by
   induction a using DirectSum.Decomposition.inductionOn 𝒜 with
   | zero => simp
   | @homogeneous q a =>
     rw [rowFiniteTwistedDifferential_single m x a.2, map_add,
-      rowFiniteSignedMap_single k x a.2, rowFiniteSignedMap_single k x (h.map_mem a.2),
-      LinearMap.map_smul_of_tower dM,
-      LinearMap.map_smul_of_tower (rowFiniteSignedMap (𝒜 := 𝒜) k), rowFiniteSignedMap_smul k a.2,
-      hM.leibniz a.2, Finsupp.linearCombination_single, hx]
-    simp only [smul_add, smul_smul, Int.units_mul_self, one_smul, Int.negOnePow_succ,
+      rowFiniteSignedMap_single 1 k x a.2, rowFiniteSignedMap_single 1 k x (h.map_mem a.2),
+      LinearMap.map_smul_of_tower dM, LinearMap.map_smul_of_tower (rowFiniteSignedMap 𝒜 1 k),
+      rowFiniteSignedMap_smul_of_mem 1 k a.2, hM.leibniz a.2, Finsupp.linearCombination_single, hx]
+    simp only [one_mul, smul_add, smul_smul, Int.units_mul_self, one_smul, Int.negOnePow_succ,
       Units.neg_smul]
     abel
   | add a b ha hb =>
@@ -480,9 +573,9 @@ vector `f`, then the map `e` out of the free module agrees on `f` with `dM ∘ H
 theorem linearCombination_eq_add_rowFiniteSignedMap_of_forall_mem_support
     (hM : IsDGLeftModule h ℳ dM) (m : P → P →₀ A) {e k : P → M}
     {f : P →₀ A}
-    (hk : ∀ x ∈ f.support, e x = dM (k x) + rowFiniteSignedMap (𝒜 := 𝒜) k (m x)) :
-    Finsupp.linearCombination A e f = dM (rowFiniteSignedMap (𝒜 := 𝒜) k f) +
-      rowFiniteSignedMap (𝒜 := 𝒜) k (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f) := by
+    (hk : ∀ x ∈ f.support, e x = dM (k x) + rowFiniteSignedMap 𝒜 1 k (m x)) :
+    Finsupp.linearCombination A e f = dM (rowFiniteSignedMap 𝒜 1 k f) +
+      rowFiniteSignedMap 𝒜 1 k (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f) := by
   classical
   rw [← Finsupp.sum_single f, Finsupp.sum, map_sum, map_sum, map_sum, map_sum, map_sum,
     ← Finset.sum_add_distrib]
@@ -494,18 +587,18 @@ theorem linearCombination_eq_add_rowFiniteSignedMap_of_forall_mem_support
 `e = dM ∘ H + H ∘ D` on the whole free module. -/
 theorem linearCombination_eq_add_rowFiniteSignedMap (hM : IsDGLeftModule h ℳ dM)
     (m : P → P →₀ A) {e k : P → M}
-    (hk : ∀ x, e x = dM (k x) + rowFiniteSignedMap (𝒜 := 𝒜) k (m x)) (f : P →₀ A) :
-    Finsupp.linearCombination A e f = dM (rowFiniteSignedMap (𝒜 := 𝒜) k f) +
-      rowFiniteSignedMap (𝒜 := 𝒜) k (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f) :=
+    (hk : ∀ x, e x = dM (k x) + rowFiniteSignedMap 𝒜 1 k (m x)) (f : P →₀ A) :
+    Finsupp.linearCombination A e f = dM (rowFiniteSignedMap 𝒜 1 k f) +
+      rowFiniteSignedMap 𝒜 1 k (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f) :=
   linearCombination_eq_add_rowFiniteSignedMap_of_forall_mem_support hM m fun x _ ↦ hk x
 
 /-- A map `e` out of the free module is `dM ∘ H + H ∘ D`, for the signed extension `H` of `k`,
 exactly when this holds on the generators. -/
 theorem forall_linearCombination_eq_add_rowFiniteSignedMap_iff (hM : IsDGLeftModule h ℳ dM)
     (m : P → P →₀ A) (e k : P → M) :
-    (∀ f, Finsupp.linearCombination A e f = dM (rowFiniteSignedMap (𝒜 := 𝒜) k f) +
-        rowFiniteSignedMap (𝒜 := 𝒜) k (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f)) ↔
-      ∀ x, e x = dM (k x) + rowFiniteSignedMap (𝒜 := 𝒜) k (m x) := by
+    (∀ f, Finsupp.linearCombination A e f = dM (rowFiniteSignedMap 𝒜 1 k f) +
+        rowFiniteSignedMap 𝒜 1 k (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f)) ↔
+      ∀ x, e x = dM (k x) + rowFiniteSignedMap 𝒜 1 k (m x) := by
   refine ⟨fun H x ↦ ?_, linearCombination_eq_add_rowFiniteSignedMap hM m⟩
   simpa [rowFiniteTwistedDifferential_single m x (SetLike.one_mem_graded 𝒜),
     h.map_one_eq_zero] using H (Finsupp.single x 1)
@@ -513,13 +606,13 @@ theorem forall_linearCombination_eq_add_rowFiniteSignedMap_iff (hM : IsDGLeftMod
 end Maps
 
 /-- Rows with shifted degree `k` give a signed map of total degree `k`. -/
-theorem rowFiniteSignedMap_mem_totalGrading {Q : Type uQ} {indQ : Q → ℤ} (h : P → Q →₀ A)
-    {k : ℤ} (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - ind x + k)) {n : ℤ} {f : P →₀ A}
-    (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n) :
-    rowFiniteSignedMap (𝒜 := 𝒜) h f ∈ rowFiniteTotalGrading 𝒜 indQ (n + k) :=
-  rowFiniteSignedMap_mem_of_mem_rowFiniteTotalGrading (fun x y ↦ by
+theorem rowFiniteSignedMap_mem_totalGrading {Q : Type uQ} {indQ : Q → ℤ} {i : ℤ}
+    (h : P → Q →₀ A) {k : ℤ} (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - ind x + k)) {n : ℤ}
+    {f : P →₀ A} (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n) :
+    rowFiniteSignedMap 𝒜 i h f ∈ rowFiniteTotalGrading 𝒜 indQ (n + k) :=
+  rowFiniteSignedMap_mem_of_mem_rowFiniteTotalGrading hf fun x _ y ↦ by
     convert hh x y using 2
-    ring) hf
+    ring
 
 section DifferentialLaws
 
@@ -539,7 +632,7 @@ theorem rowFiniteTwistedDifferential_smul {p : ℤ} {a : A} (ha : a ∈ 𝒜 p) 
     simpa only [Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_apply,
       Finsupp.add_apply, Finsupp.smul_apply, smul_eq_mul] using h.leibniz ha (f x)
   simp only [rowFiniteTwistedDifferential, LinearMap.add_apply, hd,
-    rowFiniteSignedMap_smul m ha, smul_add, add_assoc]
+    rowFiniteSignedMap_smul_of_mem 1 m ha, one_mul, smul_add, add_assoc]
 
 /-- The differential increases total degree by one. -/
 theorem rowFiniteTwistedDifferential_mem_totalGrading
