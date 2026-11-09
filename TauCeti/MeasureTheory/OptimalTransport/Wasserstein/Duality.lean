@@ -85,7 +85,8 @@ theorem ofReal_integral_add_integral_le_wassersteinEDist_add_rpow (hp1 : 1 ≤ p
         = eLpNorm (fun y ↦ edist y (Q₂ y)) p B :=
       eLpNorm_comp_measurePreserving hd₂.aestronglyMeasurable hγ.measurePreserving_snd
     refine hle.trans ?_
-    exact (eLpNorm_edist_comp_prod_le hp1 γ hmeas.aestronglyMeasurable).trans_eq
+    exact (eLpNorm_edist_le_add (f := Prod.fst) (g := Prod.snd) (f' := fun z ↦ Q₁ z.1)
+      (g' := fun z ↦ Q₂ z.2) hp1 hmeas.aestronglyMeasurable).trans_eq
       (by rw [hmarg₁, hmarg₂])
   have hroot : D ^ p.toReal⁻¹ ≤ wassersteinEDist p A B + e :=
     tsub_le_iff_right.1 (le_wassersteinEDist fun γ hγ ↦ tsub_le_iff_right.2 (key γ hγ))

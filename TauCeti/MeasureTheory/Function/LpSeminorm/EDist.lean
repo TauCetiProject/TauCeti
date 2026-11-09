@@ -18,9 +18,9 @@ the ground distance `(x, y) ↦ edist x y` have the same `Lᵖ` seminorm
 in optimal transport, into the `Lᵖ` seminorm of an `E`-valued function, to which the linear
 structure of `E` applies (for instance, scaling by a constant).
 
-The Minkowski estimate `MeasureTheory.eLpNorm_edist_comp_prod_le` bounds the `Lᵖ` seminorm of
-the distance between the images of the two coordinates under maps `Q₁`, `Q₂` by the seminorm of
-the distance plus the two displacements `edist z.1 (Q₁ z.1)` and `edist z.2 (Q₂ z.2)`.
+The Minkowski estimate `MeasureTheory.eLpNorm_edist_le_add` bounds the `Lᵖ` seminorm of
+`x ↦ edist (f' x) (g' x)` by that of `x ↦ edist (f x) (g x)` plus the seminorms of the two
+displacements `x ↦ edist (f x) (f' x)` and `x ↦ edist (g x) (g' x)`.
 
 The measurability assumptions on `E` make both functions almost everywhere strongly measurable,
 which `MeasureTheory.eLpNorm_congr_enorm_ae` needs.
@@ -40,30 +40,29 @@ theorem eLpNorm_sub_eq_eLpNorm_edist {E : Type*} [SeminormedAddCommGroup E] [Mea
   eLpNorm_congr_enorm_ae (by fun_prop) measurable_edist.aestronglyMeasurable
     (.of_forall fun z ↦ by simp [edist_eq_enorm_sub])
 
-/-- **Minkowski bound for quantized distances.** The `L^p (γ)` norm of the distance between the
-quantized points `Q₁ z.1` and `Q₂ z.2` is at most the `L^p (γ)` norm of the distance `d (z.1, z.2)`
-plus the two displacement norms `d (z.1, Q₁ z.1)` and `d (z.2, Q₂ z.2)`. -/
-theorem eLpNorm_edist_comp_prod_le {Y : Type*} [MeasurableSpace Y] [PseudoEMetricSpace Y]
-    {p : ℝ≥0∞} {Q₁ Q₂ : Y → Y} (hp1 : 1 ≤ p) (γ : Measure (Y × Y))
-    (hmeas : AEStronglyMeasurable (fun z : Y × Y ↦ edist (Q₁ z.1) (Q₂ z.2)) γ) :
-    eLpNorm (fun z : Y × Y ↦ edist (Q₁ z.1) (Q₂ z.2)) p γ ≤
-      eLpNorm (fun z : Y × Y ↦ edist z.1 z.2) p γ +
-        (eLpNorm (fun z : Y × Y ↦ edist z.1 (Q₁ z.1)) p γ +
-          eLpNorm (fun z : Y × Y ↦ edist z.2 (Q₂ z.2)) p γ) := by
-  calc eLpNorm (fun z : Y × Y ↦ edist (Q₁ z.1) (Q₂ z.2)) p γ
-      ≤ eLpNorm ((fun z : Y × Y ↦ edist z.1 z.2) +
-          ((fun z : Y × Y ↦ edist z.1 (Q₁ z.1)) + fun z ↦ edist z.2 (Q₂ z.2))) p γ := by
-        refine eLpNorm_mono_enorm hmeas fun z ↦ ?_
+/-- **Minkowski bound for distances.** For maps `f g f' g' : α → Y` into a pseudo-emetric space
+and `1 ≤ p`, the `Lᵖ(μ)` seminorm of `x ↦ edist (f' x) (g' x)` is at most that of
+`x ↦ edist (f x) (g x)` plus those of the two displacements `x ↦ edist (f x) (f' x)` and
+`x ↦ edist (g x) (g' x)`. -/
+theorem eLpNorm_edist_le_add {α Y : Type*} {m : MeasurableSpace α} [PseudoEMetricSpace Y]
+    {p : ℝ≥0∞} {μ : Measure α} {f g f' g' : α → Y} (hp1 : 1 ≤ p)
+    (hmeas : AEStronglyMeasurable (fun x ↦ edist (f' x) (g' x)) μ) :
+    eLpNorm (fun x ↦ edist (f' x) (g' x)) p μ ≤
+      eLpNorm (fun x ↦ edist (f x) (g x)) p μ +
+        (eLpNorm (fun x ↦ edist (f x) (f' x)) p μ + eLpNorm (fun x ↦ edist (g x) (g' x)) p μ) := by
+  calc eLpNorm (fun x ↦ edist (f' x) (g' x)) p μ
+      ≤ eLpNorm ((fun x ↦ edist (f x) (g x)) +
+          ((fun x ↦ edist (f x) (f' x)) + fun x ↦ edist (g x) (g' x))) p μ := by
+        refine eLpNorm_mono_enorm hmeas fun x ↦ ?_
         simp only [enorm_eq_self, Pi.add_apply]
-        calc edist (Q₁ z.1) (Q₂ z.2)
-            ≤ edist (Q₁ z.1) z.1 + edist z.1 z.2 + edist z.2 (Q₂ z.2) :=
+        calc edist (f' x) (g' x)
+            ≤ edist (f' x) (f x) + edist (f x) (g x) + edist (g x) (g' x) :=
               edist_triangle4 _ _ _ _
-          _ = edist z.1 z.2 + (edist z.1 (Q₁ z.1) + edist z.2 (Q₂ z.2)) := by
-              rw [edist_comm (Q₁ z.1)]
+          _ = edist (f x) (g x) + (edist (f x) (f' x) + edist (g x) (g' x)) := by
+              rw [edist_comm (f' x)]
               ring
-    _ ≤ eLpNorm (fun z : Y × Y ↦ edist z.1 z.2) p γ +
-          (eLpNorm (fun z : Y × Y ↦ edist z.1 (Q₁ z.1)) p γ +
-            eLpNorm (fun z : Y × Y ↦ edist z.2 (Q₂ z.2)) p γ) :=
+    _ ≤ eLpNorm (fun x ↦ edist (f x) (g x)) p μ +
+          (eLpNorm (fun x ↦ edist (f x) (f' x)) p μ + eLpNorm (fun x ↦ edist (g x) (g' x)) p μ) :=
         (eLpNorm_add_le hp1).trans (add_le_add le_rfl (eLpNorm_add_le hp1))
 
 end MeasureTheory
