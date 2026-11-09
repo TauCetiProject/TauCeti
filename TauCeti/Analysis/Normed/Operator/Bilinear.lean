@@ -37,9 +37,7 @@ An invertible bilinear map `B₀ : V →L V →L G` determines adjoints of opera
 adjoint `ContinuousLinearMap.pairingAdjoint B₀ X` is characterized by
 `B₀ (adj X w) w' = B₀ w (X w')` (`ContinuousLinearMap.IsInvertible.pairingAdjoint_apply`). It
 reverses products, fixes the identity, and tends to the identity as `B₀` stays near an
-invertible map and `X` tends to the identity. On Banach spaces the comparison operator
-`B₀⁻¹ ∘ B` also tends to the identity as both maps tend to the same invertible map
-(`ContinuousLinearMap.IsInvertible.tendsto_inverse_comp`).
+invertible map and `X` tends to the identity.
 -/
 
 public section
@@ -95,16 +93,10 @@ invertible. -/
 theorem IsInvertible.bilinearComp {B₀ : V →L[𝕜] V' →L[𝕜] G} (hB₀ : B₀.IsInvertible)
     (e₁ : W ≃L[𝕜] V) (e₂ : W' ≃L[𝕜] V') :
     (B₀.bilinearComp (e₁ : W →L[𝕜] V) (e₂ : W' →L[𝕜] V')).IsInvertible := by
-  refine .of_inverse (g := (e₁.symm : V →L[𝕜] W) ∘L B₀.inverse ∘L
-    (compL 𝕜 V' W' G).flip (e₂.symm : V' →L[𝕜] W')) ?_ ?_
-  · ext φ x
-    simp [hB₀.self_apply_inverse]
-  · ext x
-    have h : (B₀.bilinearComp (e₁ : W →L[𝕜] V) (e₂ : W' →L[𝕜] V') x).comp
-        (e₂.symm : V' →L[𝕜] W') = B₀ (e₁ x) := by
-      ext y
-      simp
-    simp [h, hB₀.inverse_apply_self]
+  obtain ⟨b, rfl⟩ := hB₀
+  refine ⟨e₁.trans (b.trans (e₂.symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 G))), ?_⟩
+  ext x y
+  simp
 
 /-- Pulling two bilinear maps back along continuous linear equivalences conjugates their
 comparison operator `B₀⁻¹ ∘ B` by the equivalence `e₁` in the first argument. -/
@@ -165,18 +157,8 @@ section Tendsto
 
 open Filter Topology
 
-variable {E F H : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup H] [NormedSpace 𝕜 H]
-
-/-- The comparison operator `e₀⁻¹ ∘ e` tends to the identity as both maps tend to the same
-invertible map. -/
-theorem IsInvertible.tendsto_inverse_comp {e : E →L[𝕜] F} (he : e.IsInvertible) :
-    Tendsto (fun p : (E →L[𝕜] F) × (E →L[𝕜] F) ↦ p.1.inverse ∘L p.2) (𝓝 (e, e)) (𝓝 1) := by
-  have h₁ : ContinuousAt (fun p : (E →L[𝕜] F) × (E →L[𝕜] F) ↦ p.1.inverse) (e, e) :=
-    ContinuousAt.comp (f := Prod.fst) (x := (e, e))
-      (he.contDiffAt_map_inverse (n := 0)).continuousAt continuousAt_fst
-  have h := h₁.clm_comp continuousAt_snd
-  simpa only [he.inverse_comp_self, ← one_def] using h.tendsto
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup H] [NormedSpace 𝕜 H]
 
 /-- The adjoint of `X` for the pairing `B₀` tends to the identity as `B₀` tends to an
 invertible pairing and `X` tends to the identity. -/

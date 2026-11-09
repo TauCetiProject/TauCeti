@@ -39,6 +39,8 @@ with the constant `C`; the latter involves no inversion.
 * `HasDerivAt.clm_inverse_of_completeSpace`: the Banach-space specialization for an inverse family.
 * `HasDerivAt.clm_inverse_apply_of_completeSpace`: the Banach-space specialization acting on a
   vector curve.
+* `ContinuousLinearMap.IsInvertible.tendsto_inverse_comp`: on Banach spaces the comparison
+  operator `e₀⁻¹ ∘ e` tends to the identity as both maps tend to the same invertible map.
 * `ContDiffAt.inverse` and `ContDiff.inverse`: the ring inverse of a `C^n` family of units
   is `C^n`.
 * `DifferentiableAt.deriv_eq_mul_sub_mul_of_mul_eq_mul`: a family `K` with `K t * P t = P t * C`
@@ -198,6 +200,18 @@ theorem HasDerivAt.clm_inverse_apply_of_completeSpace [CompleteSpace E]
       ((A t₀).inverse w' - (A t₀).inverse (A' ((A t₀).inverse (w t₀)))) t₀ := by
   exact hA.clm_inverse_apply hA0Inv
     (DifferentiableAt.clm_inverse_of_completeSpace hA.differentiableAt hA0Inv) hw
+
+/-- The comparison operator `e₀⁻¹ ∘ e` tends to the identity as both maps tend to the same
+invertible map. -/
+theorem ContinuousLinearMap.IsInvertible.tendsto_inverse_comp [CompleteSpace E] {e : E →L[𝕜] F}
+    (he : e.IsInvertible) :
+    Filter.Tendsto (fun p : (E →L[𝕜] F) × (E →L[𝕜] F) ↦ p.1.inverse ∘L p.2) (𝓝 (e, e))
+      (𝓝 1) := by
+  have h₁ : ContinuousAt (fun p : (E →L[𝕜] F) × (E →L[𝕜] F) ↦ p.1.inverse) (e, e) :=
+    ContinuousAt.comp (f := Prod.fst) (x := (e, e))
+      (he.contDiffAt_map_inverse (n := 0)).continuousAt continuousAt_fst
+  have h := h₁.clm_comp continuousAt_snd
+  simpa only [he.inverse_comp_self, ← one_def] using h.tendsto
 
 section RingInverse
 
