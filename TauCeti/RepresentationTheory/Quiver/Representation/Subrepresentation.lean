@@ -48,6 +48,10 @@ concentrated at one vertex.
   `TauCeti.QuiverSubrep.pathSpan_one_self_of_forall_map_eq_zero`: if the closed paths at the base
   vertex carry `x` into the line through `x`, respectively kill `x`, the two spans there are that
   line and `⊥`.
+* `TauCeti.QuiverSubrep.toSubmodule_pathSpan_zero_eq_top_of_simple` and
+  `TauCeti.QuiverSubrep.toSubmodule_pathSpan_one_eq_bot_of_simple`: in a simple representation a
+  nonzero vector generates everything, and the paths of positive length out of `i` span nothing as
+  soon as the closed ones kill `x`.
 
 ## Implementation notes
 
@@ -296,6 +300,18 @@ theorem pathSpan_zero_eq_pathSpan_one_of_ne (x : M.obj i) {a : Q} (h : a ≠ i) 
 theorem mem_pathSpan_zero (x : M.obj i) : x ∈ (pathSpan x 0).toSubmodule i :=
   Submodule.subset_span ⟨Quiver.Path.nil, Nat.le_refl 0, QuiverRep.map_nil_apply M i x⟩
 
+/-- **A nonzero vector of a simple representation generates it**: the subrepresentation attached to
+a nonzero vector `x ∈ Mᵢ` by the paths of length at least `0` is everything. -/
+theorem toSubmodule_pathSpan_zero_eq_top_of_simple [Simple M]
+    {x : M.obj ((Paths.of Q).obj i)} (hx : x ≠ 0) (a : Q) :
+    (pathSpan (i := i) x 0).toSubmodule a = ⊤ := by
+  rcases (pathSpan (i := i) x 0).eq_bot_or_eq_top with h | h
+  · refine absurd ?_ hx
+    have hmem := mem_pathSpan_zero (i := i) x
+    rw [h, toSubmodule_bot] at hmem
+    exact (Submodule.mem_bot k).1 hmem
+  · rw [h, toSubmodule_top]
+
 /-- If every closed path at `i` carries `x` into the line through `x`, the span at `i` along all
 paths is that line. -/
 theorem pathSpan_zero_self_of_forall_map_mem_span (x : M.obj i)
@@ -316,6 +332,21 @@ theorem pathSpan_one_self_of_forall_map_eq_zero (x : M.obj i)
   refine Submodule.span_eq_bot.2 ?_
   rintro y ⟨p, hp, rfl⟩
   exact hx p (by omega)
+
+/-- In a simple representation, if no path of positive length out of `i` acts nontrivially on `x`
+at `i` itself (as over an acyclic quiver), the paths of positive length out of `i` span nothing. -/
+theorem toSubmodule_pathSpan_one_eq_bot_of_simple [Simple M]
+    {x : M.obj ((Paths.of Q).obj i)} (hx : x ≠ 0)
+    (hxi : ∀ p : Quiver.Path i i, p.length ≠ 0 → M.map p x = 0) (a : Q) :
+    (pathSpan (i := i) x 1).toSubmodule a = ⊥ := by
+  rcases (pathSpan (i := i) x 1).eq_bot_or_eq_top with h | h
+  · rw [h, toSubmodule_bot]
+  · refine absurd ?_ hx
+    have hmem : x ∈ (pathSpan (i := i) x 1).toSubmodule i := by
+      rw [h, toSubmodule_top]
+      trivial
+    rw [pathSpan_one_self_of_forall_map_eq_zero (i := i) x hxi] at hmem
+    exact (Submodule.mem_bot k).1 hmem
 
 end QuiverSubrep
 

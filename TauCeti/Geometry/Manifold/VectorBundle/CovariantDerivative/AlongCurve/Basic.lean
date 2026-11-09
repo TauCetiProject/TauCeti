@@ -138,6 +138,24 @@ theorem alongCurveWithin_apply (s : Set 𝕜) (t : 𝕜) :
         (alongCurveInChartWithin cov γ V s (γ t) t) :=
   (rfl)
 
+variable {γ} in
+/-- In the trivialization `C` at `γ t`, the covariant derivative along `γ` of `Q` is the ordinary
+derivative of its coordinate reading plus the Christoffel term. -/
+theorem continuousLinearMapAt_alongCurveWithin
+    {s : Set 𝕜} {t : 𝕜} {C : TangentSpace I (γ t) →L[𝕜] E}
+    (hC : C = (trivializationAt E (TangentSpace I) (γ t)).continuousLinearMapAt 𝕜 (γ t))
+    (Q : ∀ r, TangentSpace I (γ r)) :
+    C (alongCurveWithin cov γ Q s t) =
+      derivWithin (sectionCoord (F := E) γ Q (γ t)) s t +
+        christoffelMap (Module.finBasis 𝕜 E)
+          (cov.isCovariantDerivativeOn
+            (s := (trivializationAt E (TangentSpace I) (γ t)).baseSet)) (γ t)
+          (C (Q t)) (derivWithin (extChartAt I (γ t) ∘ γ) s t) := by
+  subst hC
+  rw [alongCurveWithin_apply, Trivialization.continuousLinearMapAt_symmL
+      _ (mem_baseSet_trivializationAt E (TangentSpace I) (γ t)),
+    alongCurveInChartWithin_apply, sectionCoord_apply]
+
 /-- At a zero of a field, its covariant derivative is its ordinary coordinate derivative
 in the canonical tangent trivialization at that point. -/
 theorem alongCurveWithin_eq_derivWithin_sectionCoord_of_eq_zero {s : Set 𝕜} {t : 𝕜}

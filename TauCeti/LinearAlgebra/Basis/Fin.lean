@@ -22,6 +22,11 @@ Over any commutative ring, if a basis `c` of `V` is `v` followed by a basis `b` 
 (`Module.Basis.det_finCons_eq_det`). In particular, `v` followed by a basis of `W` has nonzero
 determinant with respect to every basis of `V` (`Module.Basis.det_finCons_ne_zero`).
 
+Reindexing a basis along `finCongr` and then precomposing with a `Fin.cast` is the original basis
+precomposed with the composite cast (`Module.Basis.reindex_finCongr_comp_cast`). This identifies
+the families on which top-degree forms are evaluated when the dimension is written in different
+but equal ways.
+
 ## Main definitions
 
 * `Module.Basis.mkFinConsOfNotMem`: the basis `v, b 0, …, b (k - 1)` of `V`.
@@ -34,6 +39,8 @@ determinant with respect to every basis of `V` (`Module.Basis.det_finCons_ne_zer
 * `Module.Basis.det_finCons_ne_zero`: `v` followed by a basis of `W` has nonzero determinant.
 * `Module.Basis.exists_basis_finCons_of_apply_eq_one`: if a linear functional takes the value one
   on `v`, then `v` followed by a basis of its kernel is a basis.
+* `Module.Basis.reindex_finCongr_comp_cast`: a basis reindexed along `finCongr` and precomposed
+  with a `Fin.cast` is the original basis precomposed with a `Fin.cast`.
 -/
 
 public section
@@ -41,6 +48,14 @@ public section
 noncomputable section
 
 namespace Module.Basis
+
+/-- A basis reindexed along `finCongr h` and precomposed with `Fin.cast h'` is the original basis
+precomposed with the composite cast. -/
+theorem reindex_finCongr_comp_cast {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    {k m m' : ℕ} (b : Basis (Fin m) R M) (h : m = m') (h' : k = m') :
+    ⇑(b.reindex (finCongr h)) ∘ Fin.cast h' = ⇑b ∘ Fin.cast (h'.trans h.symm) := by
+  funext i
+  simp
 
 section CommRing
 
