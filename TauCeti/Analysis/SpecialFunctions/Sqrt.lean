@@ -148,11 +148,8 @@ theorem sqrt_one_add_sq_sub_one_le_abs (t : ℝ) : √(1 + t ^ 2) - 1 ≤ |t| :=
 
 /-- If `a² ≤ c b²` with `0 ≤ b`, then `a ≤ √c * b`. -/
 theorem le_sqrt_mul_of_sq_le_mul {a b c : ℝ} (hb : 0 ≤ b) (h : a ^ 2 ≤ c * b ^ 2) :
-    a ≤ √c * b :=
-  calc a ≤ |a| := le_abs_self a
-    _ = √(a ^ 2) := (sqrt_sq_eq_abs a).symm
-    _ ≤ √(c * b ^ 2) := sqrt_le_sqrt h
-    _ = √c * b := by rw [sqrt_mul' _ (sq_nonneg b), sqrt_sq hb]
+    a ≤ √c * b := by
+  simpa only [sqrt_mul' _ (sq_nonneg b), sqrt_sq hb] using le_sqrt_of_sq_le h
 
 /-- **A square factor cancels against its absolute value.** For `d ≠ 0` and `0 ≤ c`,
 `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`. This is the cancellation of the Jacobian `|d|` of a change
