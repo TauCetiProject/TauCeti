@@ -46,7 +46,9 @@ linear maps used by the semigroup development.
   graph-norm lower bounds `abs_im_mul_norm_le_norm_smul_sub` (equivalently the resolvent bound
   `norm_le_inv_abs_im_mul_norm_smul_sub`) and `norm_apply_le_mul_norm_smul_sub`.
 * `LinearPMap.IsFormalAdjoint.eq_zero_of_apply_eq_smul`: a formally self-adjoint map has no
-  eigenvector for a nonreal eigenvalue.
+  eigenvector for a nonreal eigenvalue, and
+  `LinearPMap.IsFormalAdjoint.inner_eq_zero_of_apply_eq_smul`: its eigenvectors for distinct
+  eigenvalues are orthogonal.
 * `LinearPMap.exists_adjoint_apply_eq_of_inner_smul_sub_eq_zero`: a vector orthogonal to the range
   of the shift `c • x - A x` is an eigenvector of the adjoint `A†` for the eigenvalue `conj c`.
 * `IsSelfAdjoint.denseRange_smul_sub_of_norm_le` and
@@ -227,6 +229,15 @@ theorem IsFormalAdjoint.eq_zero_of_apply_eq_smul {A : E →ₗ.[𝕜] E} (hA : A
   simp only [RCLike.mul_im, inner_self_im, inner_self_eq_norm_sq, mul_zero,
     zero_add] at him
   exact norm_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp ((mul_eq_zero.mp him).resolve_left hc))
+
+/-- **Eigenvectors of a symmetric operator for distinct eigenvalues are orthogonal.** -/
+theorem IsFormalAdjoint.inner_eq_zero_of_apply_eq_smul {A : E →ₗ.[𝕜] E}
+    (hA : A.IsFormalAdjoint A) {x y : A.domain} {c d : ℝ} (hx : A x = (c : 𝕜) • (x : E))
+    (hy : A y = (d : 𝕜) • (y : E)) (hcd : c ≠ d) : inner 𝕜 (x : E) (y : E) = 0 := by
+  have h := hA x y
+  rw [hx, hy, inner_smul_left, inner_smul_right, RCLike.conj_ofReal, ← sub_eq_zero, ← sub_mul,
+    ← RCLike.ofReal_sub] at h
+  exact (mul_eq_zero.mp h).resolve_left (RCLike.ofReal_ne_zero.mpr (sub_ne_zero.mpr hcd))
 
 /-- **The range of a shift bounded below is dense.** If a shift `x ↦ c • x - A x` of a
 self-adjoint partial linear map dominates `K * ‖x‖` for some `K > 0`, its range is dense: a vector
