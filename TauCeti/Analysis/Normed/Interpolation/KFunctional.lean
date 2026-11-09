@@ -28,7 +28,8 @@ We prove the basic properties of `K` from Bergh–Löfström, §3.1:
 * elements of `X₀`, `X₁` and the intersection satisfy `K(t, x₀) ≤ ‖x₀‖`, `K(t, x₁) ≤ t ‖x₁‖`
   and `K(t, x) ≤ min 1 t * ‖x‖`;
 * a linear map of sum spaces restricting to maps `X₀ → Y₀`, `X₁ → Y₁` bounded by `M₀ > 0`
-  and `M₁` satisfies `K(t, T u) ≤ M₀ K(t M₁ / M₀, u)` (`kFunctional_map_le`);
+  and `M₁` satisfies `K(t, T u) ≤ M₀ K(t M₁ / M₀, u)` (`kFunctional_map_le`); at `t = 1` this
+  bounds `T` on the sum spaces (`norm_map_sumSpace_le`);
 * for the couple `(X, X)`, `K(t, u) = min 1 t * ‖u‖` (`kFunctional_refl`).
 
 ## References
@@ -265,6 +266,16 @@ theorem kFunctional_map_le (T : C.SumSpace →ₗ[𝕜] D.SumSpace) {T₀ : X₀
           · exact h₀ x₀
           · exact h₁ x₁
       _ = M₀ * (‖x₀‖ + t * M₁ / M₀ * ‖x₁‖) := by field_simp
+
+/-- A linear map `T` between the sum spaces of two couples that restricts to maps
+`T₀ : X₀ → Y₀` and `T₁ : X₁ → Y₁` with `‖T₀ x‖ ≤ M ‖x‖` and `‖T₁ x‖ ≤ M ‖x‖`, where `M > 0`,
+satisfies `‖T u‖ ≤ M ‖u‖` for the sum norms; in particular it is continuous. -/
+theorem norm_map_sumSpace_le (T : C.SumSpace →ₗ[𝕜] D.SumSpace) {T₀ : X₀ → Y₀} {T₁ : X₁ → Y₁}
+    (hT₀ : ∀ x, T (C.fstToSum x) = D.fstToSum (T₀ x))
+    (hT₁ : ∀ x, T (C.sndToSum x) = D.sndToSum (T₁ x)) {M : ℝ} (hM : 0 < M)
+    (h₀ : ∀ x, ‖T₀ x‖ ≤ M * ‖x‖) (h₁ : ∀ x, ‖T₁ x‖ ≤ M * ‖x‖) (u : C.SumSpace) :
+    ‖T u‖ ≤ M * ‖u‖ := by
+  simpa [hM.ne'] using kFunctional_map_le T hT₀ hT₁ hM h₀ h₁ zero_le_one u
 
 end Map
 
