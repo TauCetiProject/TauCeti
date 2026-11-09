@@ -58,6 +58,10 @@ actions of `Sp(n + 1)`.
 
 * N. Steenrod, *The Topology of Fibre Bundles*, Princeton University Press, 1951, §7 (coset
   spaces of the classical groups).
+* The structure of this file follows Tau Ceti's comparison of complex projective space with
+  `U(n + 1) / (U(1) × U(n))` in
+  [TauCeti#33580](https://github.com/TauCetiProject/TauCeti/pull/33580), adapted to right
+  quaternionic scalars.
 -/
 
 public section

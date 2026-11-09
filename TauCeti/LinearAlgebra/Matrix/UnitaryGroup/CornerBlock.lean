@@ -41,6 +41,12 @@ is invertible on both sides.
 * `Matrix.unitaryProdBlockSucc_injective`: the embedding is injective.
 * `Matrix.mem_range_unitaryProdBlockSucc_iff`: over a division ring, its image is the subgroup of
   unitary matrices whose column `0` vanishes below the corner.
+
+## References
+
+* The embedding generalizes `Matrix.UnitaryGroup.prodBlockSucc` of
+  [TauCeti#33580](https://github.com/TauCetiProject/TauCeti/pull/33580), stated over commutative
+  star rings, to noncommutative star semirings.
 -/
 
 public section
