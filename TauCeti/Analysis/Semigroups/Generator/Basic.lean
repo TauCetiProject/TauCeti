@@ -329,22 +329,31 @@ private theorem StronglyContinuousSemigroup.tendsto_quot_integral_orbit
   simpa [y, intervalIntegral.integral_of_le ht.le] using h_interval
 
 /-- The local orbit integral `∫₀ᵗ S(u)x du` lies in the generator domain `D(A)`
-([EN] Lemma II.1.3). -/
+([EN] Lemma II.1.3). For `t ≤ 0` the integral is over an empty interval, hence `0`. -/
 theorem StronglyContinuousSemigroup.integral_orbit_mem_domain
-    (S : StronglyContinuousSemigroup X) (x : X) {t : ℝ} (ht : 0 < t) :
-    (∫ u in Set.Ioc 0 t, S.realOperator u x) ∈ S.domain :=
-  (S.mem_domain_iff_tendsto _).mpr ⟨_, S.tendsto_quot_integral_orbit x ht⟩
+    (S : StronglyContinuousSemigroup X) (x : X) (t : ℝ) :
+    (∫ u in Set.Ioc 0 t, S.realOperator u x) ∈ S.domain := by
+  rcases le_or_gt t 0 with ht | ht
+  · simp [Set.Ioc_eq_empty (not_lt.2 ht)]
+  · exact (S.mem_domain_iff_tendsto _).mpr ⟨_, S.tendsto_quot_integral_orbit x ht⟩
 
 /-- The generator value on the local orbit integral: `A (∫₀ᵗ S(u)x du) = S t x - x`
-([EN] Lemma II.1.3). -/
+([EN] Lemma II.1.3). For `t ≤ 0` both sides are `0`. -/
 theorem StronglyContinuousSemigroup.generator_integral_orbit
-    (S : StronglyContinuousSemigroup X) (x : X) {t : ℝ} (ht : 0 < t) :
+    (S : StronglyContinuousSemigroup X) (x : X) (t : ℝ) :
     S.generator ⟨∫ u in Set.Ioc 0 t, S.realOperator u x, by
       rw [S.generator_domain]
-      exact S.integral_orbit_mem_domain x ht⟩
-      = S.realOperator t x - x :=
-  S.generator_eq_of_tendsto (S.integral_orbit_mem_domain x ht)
-    (S.tendsto_quot_integral_orbit x ht)
+      exact S.integral_orbit_mem_domain x t⟩
+      = S.realOperator t x - x := by
+  rcases le_or_gt t 0 with ht | ht
+  · have h0 : (∫ u in Set.Ioc 0 t, S.realOperator u x) = 0 := by
+      simp [Set.Ioc_eq_empty (not_lt.2 ht)]
+    have h : (⟨∫ u in Set.Ioc 0 t, S.realOperator u x, by
+        rw [S.generator_domain]
+        exact S.integral_orbit_mem_domain x t⟩ : S.generator.domain) = 0 := Subtype.ext h0
+    rw [h, LinearPMap.map_zero, S.realOperator_of_nonpos_apply ht, sub_self]
+  · exact S.generator_eq_of_tendsto (S.integral_orbit_mem_domain x t)
+      (S.tendsto_quot_integral_orbit x ht)
 
 /-- The generator domain of a strongly continuous semigroup is dense
 ([EN] Lemma II.1.3 and its density corollary). -/
@@ -356,7 +365,7 @@ theorem StronglyContinuousSemigroup.dense_domain
     (b := nhdsWithin 0 (Set.Ioi (0 : ℝ))) ?_ ?_
   · simpa using S.tendsto_average_orbit_zero x
   · filter_upwards [self_mem_nhdsWithin] with t ht
-    exact S.domain.smul_mem (1 / t) (S.integral_orbit_mem_domain x ht)
+    exact S.domain.smul_mem (1 / t) (S.integral_orbit_mem_domain x t)
 
 /-- Two continuous linear maps that agree on the (dense) generator domain are equal. -/
 theorem StronglyContinuousSemigroup.continuousLinearMap_ext_of_eqOn_domain

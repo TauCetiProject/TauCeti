@@ -165,9 +165,9 @@ theorem isMildSolution_realOperator (S : StronglyContinuousSemigroup X) (x : X) 
       simp
   · let hut : (∫ s in Set.Ioc 0 t, S.realOperator s x) ∈ S.generator.domain := by
       rw [S.generator_domain]
-      exact S.integral_orbit_mem_domain x ht
+      exact S.integral_orbit_mem_domain x t
     refine ⟨hut, ?_⟩
-    simpa only [Submodule.coe_mk] using S.generator_integral_orbit x ht
+    simpa only [Submodule.coe_mk] using S.generator_integral_orbit x t
 
 end StronglyContinuousSemigroup
 
