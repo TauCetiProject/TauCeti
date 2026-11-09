@@ -32,9 +32,9 @@ The zero-energy theorem is a separate consequence requiring no sign condition on
 
 Morgan–Tian, *Ricci Flow and the Poincaré Conjecture* (2007), Theorem 4.40, supplies the
 geometric context. These scalar estimates do not establish the geometric Harnack inequality.
-The energy comparison also draws on an earlier formalization by Mapher.
 
-Formalization reference: https://github.com/frenzymath/lean-eval-submissions.
+Formalization references: https://github.com/frenzymath/lean-eval-submissions and
+https://github.com/frenzymath/PoincareConjecture.
 -/
 
 public section

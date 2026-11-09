@@ -23,7 +23,8 @@ condition on the rate or error. Continuity transports the interior comparison to
 
 These estimates apply to spatial coefficient bounds for ancient flows and their pointed limits.
 
-Formalization reference: https://github.com/frenzymath/lean-eval-submissions.
+Formalization references: https://github.com/frenzymath/lean-eval-submissions and
+https://github.com/frenzymath/PoincareConjecture.
 -/
 
 public section

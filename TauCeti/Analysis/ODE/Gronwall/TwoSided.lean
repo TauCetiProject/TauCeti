@@ -21,7 +21,8 @@ extension beyond its endpoints is required. There are no completeness or sign as
 * `TauCeti.norm_sub_le_gronwallBound_of_linearODE`: comparison of two linear trajectories.
 * `TauCeti.gronwallBound_zero_le_mul_exp`: an explicit zero-initial-value estimate.
 
-Formalization reference: https://github.com/frenzymath/lean-eval-submissions.
+Formalization references: https://github.com/frenzymath/lean-eval-submissions and
+https://github.com/frenzymath/PoincareConjecture.
 -/
 
 public section
