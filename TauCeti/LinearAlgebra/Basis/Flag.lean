@@ -177,9 +177,8 @@ theorem finrank_flag [StrongRankCondition R] (b : Basis (Fin n) R M) (k : Fin (n
   simp [Fintype.card_subtype, Fin.lt_def, Fin.card_filter_val_lt]
   omega
 
-/-- A vector in the span of the first `k` coordinates of a basis indexed by `Fin n`, listed by an
-embedding `e : Fin k → Fin n` into the indices below `k`, has nonzero coordinates only at indices
-below `k`. -/
+/-- If `x` lies in the span of basis vectors `b (e j)` whose indices `e j` are all below `k`, then
+every index in the support of `b.repr x` is below `k`. -/
 theorem lt_of_mem_support_repr_of_mem_span_range {k : ℕ} (b : Basis (Fin n) R M)
     (e : Fin k → Fin n) (he : ∀ j, (e j).val < k) {x : M}
     (hx : x ∈ Submodule.span R (Set.range fun j ↦ b (e j))) {i : Fin n}
