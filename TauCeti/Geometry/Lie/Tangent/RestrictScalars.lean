@@ -53,7 +53,7 @@ The canonical `TauCeti.AlmostComplexStructure.ofRestrictScalars` transports mult
   the derivation comparison and evaluation at the identity.
 * `TauCeti.Lie.leftInvariantDerivationLieEquivGroupLieAlgebra_transport_ofRestrictScalars`:
   evaluation intertwines the transported tangent and derivation complex structures.
-* `TauCeti.Lie.groupLieAlgebraMap_transport_ofRestrictScalars` and
+* `MonoidHom.groupLieAlgebraMap_transport_ofRestrictScalars` and
   `TauCeti.Lie.tangentAd_transport_ofRestrictScalars`: holomorphic differentials
   and tangent adjoint actions commute with the transported complex structures.
 * `TauCeti.Lie.lieMap_transport_ofRestrictScalars` and
@@ -159,20 +159,15 @@ def restrictScalarsLieEquiv :
 theorem restrictScalarsLieEquiv_apply
     (x : RestrictScalars R A (GroupLieAlgebra 𝓘(A, E) G)) :
     restrictScalarsLieEquiv R (E := E) (G := G) x =
-      (tangentSpaceCastModel 𝓘(R, E) (1 : G)).symm
-        (tangentSpaceCastModel 𝓘(A, E) (1 : G) (RestrictScalars.addEquiv R A _ x)) := by
-  exact TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv_apply R (1 : G) x
+      TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv R (A := A) (1 : G) x := by
+  rfl
 
 /-- The inverse tangent comparison is the inverse public fibre equivalence. -/
 @[simp]
 theorem restrictScalarsLieEquiv_symm_apply (x : GroupLieAlgebra 𝓘(R, E) G) :
     (restrictScalarsLieEquiv R (E := E) (G := G)).symm x =
-      (RestrictScalars.addEquiv R A _).symm
-        ((tangentSpaceCastModel 𝓘(A, E) (1 : G)).symm
-          (tangentSpaceCastModel 𝓘(R, E) (1 : G) x)) := by
-  rw [LieEquiv.symm_apply_eq, restrictScalarsLieEquiv_apply]
-  simp only [AddEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply,
-    ContinuousLinearEquiv.symm_apply_apply]
+      (TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv R (A := A) (1 : G)).symm x := by
+  rfl
 
 /-- The scalar-restriction equivalence intertwines tangent adjoint actions. -/
 theorem restrictScalarsLieEquiv_tangentAd (g : G) (x : GroupLieAlgebra 𝓘(A, E) G) :
@@ -196,9 +191,6 @@ theorem restrictScalarsLieEquiv_tangentAd (g : G) (x : GroupLieAlgebra 𝓘(A, E
       ((RestrictScalars.addEquiv R A _).symm x))
   simp only [TauCeti.Lie.tangentAd_apply, TauCeti.Lie.adjointContinuousLinearMap_apply]
   rw [restrictScalarsLieEquiv_apply, restrictScalarsLieEquiv_apply]
-  rw [TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv_apply] at hR
-  rw [TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv_apply,
-    TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv_apply] at h
   exact h.trans hR.symm
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace A F] [NormedSpace R F]
@@ -223,8 +215,6 @@ theorem restrictScalarsLieEquiv_groupLieAlgebraMap (φ : G →* K)
   simp only [AddEquiv.apply_symm_apply] at h
   rw [MonoidHom.groupLieAlgebraMap_apply, MonoidHom.groupLieAlgebraMap_apply,
     restrictScalarsLieEquiv_apply, restrictScalarsLieEquiv_apply]
-  rw [TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv_apply,
-    TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv_apply] at h
   exact h
 
 end TangentRestriction
@@ -262,7 +252,7 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F
 
 /-- The differential of a holomorphic homomorphism commutes with the transported complex
 structures on its source and target. -/
-theorem groupLieAlgebraMap_transport_ofRestrictScalars (φ : G →* K)
+theorem _root_.MonoidHom.groupLieAlgebraMap_transport_ofRestrictScalars (φ : G →* K)
     (hφ : MDifferentiableAt 𝓘(ℂ, E) 𝓘(ℂ, F) φ 1) (X : GroupLieAlgebra 𝓘(ℝ, E) G) :
     φ.groupLieAlgebraMap 𝓘(ℝ, E) 𝓘(ℝ, F)
         ((AlmostComplexStructure.ofRestrictScalars (GroupLieAlgebra 𝓘(ℂ, E) G)).transport
@@ -391,7 +381,7 @@ theorem lieMap_transport_ofRestrictScalars
   simp only [LieEquiv.coe_toLinearEquiv,
     leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap,
     leftInvariantDerivationLieEquivGroupLieAlgebra_transport_ofRestrictScalars]
-  have h := groupLieAlgebraMap_transport_ofRestrictScalars (MonoidHom.ofClass φ) hφ
+  have h := (MonoidHom.ofClass φ).groupLieAlgebraMap_transport_ofRestrictScalars hφ
     (leftInvariantDerivationLieEquivGroupLieAlgebra (I := 𝓘(ℝ, E)) (G := G)
       (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, E)) (n := ∞) (by simp) (1 : G)) D)
   simpa only [MonoidHom.groupLieAlgebraMap_apply, MonoidHom.coe_ofClass] using h
