@@ -195,22 +195,19 @@ theorem equivFunctionFieldDivisor_symm_le_iff
 
 /-- Reindexing along the point-to-place equivalence preserves effectivity. -/
 @[simp]
-theorem isEffective_equivFunctionFieldDivisor_iff
+theorem equivFunctionFieldDivisor_nonneg_iff
     (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
     (hdim : ∀ x : X, coheight x ≤ 1) {D : SchemeWeilDivisor X} :
-    WeilDivisor.IsEffective (equivFunctionFieldDivisor hex hdim D) ↔
-      WeilDivisor.IsEffective D := by
-  rw [WeilDivisor.isEffective_iff_zero_le, WeilDivisor.isEffective_iff_zero_le,
-    ← map_zero (equivFunctionFieldDivisor hex hdim), equivFunctionFieldDivisor_le_iff]
+    0 ≤ equivFunctionFieldDivisor hex hdim D ↔ 0 ≤ D := by
+  rw [← map_zero (equivFunctionFieldDivisor hex hdim), equivFunctionFieldDivisor_le_iff]
 
 /-- Pulling a function-field divisor back to the curve preserves effectivity. -/
 @[simp]
-theorem isEffective_equivFunctionFieldDivisor_symm_iff
+theorem equivFunctionFieldDivisor_symm_nonneg_iff
     (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
     (hdim : ∀ x : X, coheight x ≤ 1) {D : Divisor k X.functionField} :
-    WeilDivisor.IsEffective ((equivFunctionFieldDivisor hex hdim).symm D) ↔
-      WeilDivisor.IsEffective D := by
-  rw [← isEffective_equivFunctionFieldDivisor_iff (hex := hex) (hdim := hdim)
+    0 ≤ (equivFunctionFieldDivisor hex hdim).symm D ↔ 0 ≤ D := by
+  rw [← equivFunctionFieldDivisor_nonneg_iff (hex := hex) (hdim := hdim)
     (D := (equivFunctionFieldDivisor hex hdim).symm D),
     (equivFunctionFieldDivisor hex hdim).apply_symm_apply]
 

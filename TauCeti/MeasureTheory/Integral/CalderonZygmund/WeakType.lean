@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
+import Mathlib.MeasureTheory.Function.LpSeminorm.Count
 import TauCeti.MeasureTheory.Function.Lp.InfiniteSum
 
 /-!
@@ -204,6 +205,37 @@ variable {ι : Type*} [Fintype ι] {E F : Type*} [NormedAddCommGroup E] [NormedS
   [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 omit [CompleteSpace E] in
+/-- **The weak-type bound on a one-point space.** For empty `ι`, the space `ι → ℝ` is a single
+point carrying the Dirac measure, so `t |{‖T f‖ > t}| ≤ ‖T‖ ‖f‖₁` for any bounded operator on
+`L²`. -/
+theorem mul_volume_lt_enorm_le_of_isEmpty [IsEmpty ι]
+    (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 (volume : Measure (ι → ℝ)))
+    (f : Lp E 2 (volume : Measure (ι → ℝ))) (t : ℝ≥0∞) :
+    t * volume {x | t < ‖T f x‖ₑ} ≤ ‖T‖ₑ * ∫⁻ x, ‖f x‖ₑ := by
+  classical
+  let x0 : ι → ℝ := fun i => isEmptyElim i
+  have hvol : (volume : Measure (ι → ℝ)) = Measure.dirac x0 := by
+    rw [volume_pi, Measure.pi_of_empty]
+  have hnormF : ‖T f‖ₑ = ‖T f x0‖ₑ := by
+    rw [Lp.enorm_def]
+    have := eLpNorm_dirac ((T f : Lp F 2 volume) : (ι → ℝ) → F) x0 (p := 2) (by norm_num)
+    rwa [← hvol] at this
+  have hnormE : ‖f‖ₑ = ‖f x0‖ₑ := by
+    rw [Lp.enorm_def]
+    have := eLpNorm_dirac ((f : Lp E 2 volume) : (ι → ℝ) → E) x0 (p := 2) (by norm_num)
+    rwa [← hvol] at this
+  have hint (g : (ι → ℝ) → ℝ≥0∞) : ∫⁻ x, g x = g x0 := by
+    have := lintegral_dirac x0 g
+    rwa [← hvol] at this
+  calc t * volume {x | t < ‖T f x‖ₑ} ≤ t * volume {x | t ≤ ‖T f x‖ₑ} :=
+        mul_le_mul' le_rfl (measure_mono (Set.ofPred_subset_ofPred.2 fun x hx => hx.le))
+    _ ≤ ∫⁻ x, ‖T f x‖ₑ :=
+        mul_meas_ge_le_lintegral₀ (Lp.aestronglyMeasurable (T f)).enorm t
+    _ = ‖T f‖ₑ := by rw [hint, hnormF]
+    _ ≤ ‖T‖ₑ * ‖f‖ₑ := T.le_opENorm f
+    _ = ‖T‖ₑ * ∫⁻ x, ‖f x‖ₑ := by rw [hint, hnormE]
+
+omit [CompleteSpace E] in
 /-- Chebyshev's inequality for the image of the good part under an operator bounded on `L²`. -/
 private theorem mul_volume_lt_enorm_calderonZygmundGood_le [Nonempty ι]
     (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 (volume : Measure (ι → ℝ)))
@@ -289,6 +321,39 @@ private theorem setLIntegral_compl_enorm_calderonZygmundBad_le [Nonempty ι]
         exact tsum_congr fun q => by ring
     _ ≤ 2 * B * ∫⁻ x, ‖f x‖ₑ := mul_le_mul_right (setLIntegral_le_lintegral _ _) _
 
+/-- Chebyshev's inequality for the image of the sum of the bad parts, off the balls `c B_Q` around
+the Calderón–Zygmund cubes `Q`: the set where it exceeds `t / 2` has measure at most
+`4 B ‖f‖₁ / t` there. -/
+private theorem mul_volume_lt_enorm_inter_compl_calderonZygmundBad_le [Nonempty ι]
+    (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 (volume : Measure (ι → ℝ)))
+    {B : ℝ≥0∞} {c : ℝ}
+    (hT : ∀ (b : Lp E 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (r : ℝ),
+      (∀ᵐ x, x ∉ closedBall y r → b x = 0) → ∫ x, b x = 0 →
+        ∫⁻ x in (closedBall y (c * r))ᶜ, ‖T b x‖ₑ ≤ B * ∫⁻ x, ‖b x‖ₑ)
+    (f : Lp E 2 (volume : Measure (ι → ℝ))) (hf : Integrable f) {t : ℝ≥0∞} (ht : t ≠ 0)
+    (ht' : t ≠ ∞) :
+    t * volume ({x | t / 2 <
+        ‖T (((Lp.memLp f).sub (memLp_two_calderonZygmundGood hf ht ht')).toLp _) x‖ₑ} ∩
+      (⋃ q ∈ calderonZygmundCubes (‖f ·‖ₑ) t,
+        closedBall (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (c * (2 ^ q.1 / 2)))ᶜ) ≤
+      4 * B * ∫⁻ x, ‖f x‖ₑ := by
+  set b := ((Lp.memLp f).sub (memLp_two_calderonZygmundGood hf ht ht')).toLp _
+  set Ω := ⋃ q ∈ calderonZygmundCubes (‖f ·‖ₑ) t,
+    closedBall (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (c * (2 ^ q.1 / 2))
+  have hΩ : MeasurableSet Ω :=
+    .biUnion (to_countable _) fun q _ => isClosed_closedBall.measurableSet
+  have ht2 : t = 2 * (t / 2) := (ENNReal.mul_div_cancel two_ne_zero ENNReal.ofNat_ne_top).symm
+  rw [← Measure.restrict_apply' hΩ.compl]
+  nth_rewrite 1 [ht2]
+  rw [mul_assoc]
+  calc 2 * (t / 2 * volume.restrict Ωᶜ {x | t / 2 < ‖T b x‖ₑ})
+      ≤ 2 * ∫⁻ x in Ωᶜ, ‖T b x‖ₑ := mul_le_mul_right ((mul_le_mul_right
+        (measure_mono (ofPred_subset_ofPred.2 fun _ hx => hx.le)) _).trans
+          (mul_meas_ge_le_lintegral₀ (Lp.aestronglyMeasurable _).enorm.restrict _)) _
+    _ ≤ 2 * (2 * B * ∫⁻ x, ‖f x‖ₑ) := mul_le_mul_right
+        (setLIntegral_compl_enorm_calderonZygmundBad_le T hT f hf ht ht') _
+    _ = 4 * B * ∫⁻ x, ‖f x‖ₑ := by ring
+
 /-- **The Calderón–Zygmund theorem**, weak type `(1, 1)`. Let `T` be a bounded linear operator on
 `L²(ℝⁿ)` satisfying the cancellation condition with dilation factor `c`: for every `b ∈ L²`
 vanishing off a closed ball `closedBall y r` with integral zero,
@@ -326,8 +391,6 @@ theorem mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le [Nonempty ι]
   set b := ((Lp.memLp f).sub hg).toLp _
   set Ω := ⋃ q ∈ calderonZygmundCubes (‖f ·‖ₑ) t,
     closedBall (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (c * (2 ^ q.1 / 2))
-  have hΩ : MeasurableSet Ω :=
-    .biUnion (to_countable _) fun q _ => isClosed_closedBall.measurableSet
   -- `T f = T g + T b`, so where `‖T f‖ > t` either `‖T g‖ > t / 2`, or `‖T b‖ > t / 2`, the latter
   -- either in `Ω` or off it.
   have hfgb : f = g + b := by
@@ -345,19 +408,6 @@ theorem mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le [Nonempty ι]
     refine (hxt.trans_le ?_).false
     rw [hfgb, map_add, hx, Pi.add_apply, ← ENNReal.add_halves t]
     exact (enorm_add_le _ _).trans (add_le_add hgx (not_lt.1 fun h => hxΩ (hbx h)))
-  -- The part of `{‖T b‖ > t / 2}` off `Ω`, by Chebyshev's inequality.
-  have hbad : t * volume ({x | t / 2 < ‖T b x‖ₑ} ∩ Ωᶜ) ≤ 4 * B * ∫⁻ x, ‖f x‖ₑ := by
-    have ht2 : t = 2 * (t / 2) := (ENNReal.mul_div_cancel two_ne_zero ENNReal.ofNat_ne_top).symm
-    rw [← Measure.restrict_apply' hΩ.compl]
-    nth_rewrite 1 [ht2]
-    rw [mul_assoc]
-    calc 2 * (t / 2 * volume.restrict Ωᶜ {x | t / 2 < ‖T b x‖ₑ})
-        ≤ 2 * ∫⁻ x in Ωᶜ, ‖T b x‖ₑ := mul_le_mul_right ((mul_le_mul_right
-          (measure_mono (ofPred_subset_ofPred.2 fun _ hx => hx.le)) _).trans
-            (mul_meas_ge_le_lintegral₀ (Lp.aestronglyMeasurable _).enorm.restrict _)) _
-      _ ≤ 2 * (2 * B * ∫⁻ x, ‖f x‖ₑ) := mul_le_mul_right
-          (setLIntegral_compl_enorm_calderonZygmundBad_le T hT f hf ht ht') _
-      _ = 4 * B * ∫⁻ x, ‖f x‖ₑ := by ring
   calc t * volume {x | t < ‖T f x‖ₑ}
       ≤ t * volume {x | t / 2 < ‖T g x‖ₑ} + t * volume Ω +
           t * volume ({x | t / 2 < ‖T b x‖ₑ} ∩ Ωᶜ) := by
@@ -367,7 +417,8 @@ theorem mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le [Nonempty ι]
     _ ≤ 4 * 2 ^ Fintype.card ι * ‖T‖ₑ ^ 2 * (∫⁻ x, ‖f x‖ₑ) +
           ENNReal.ofReal c ^ Fintype.card ι * (∫⁻ x, ‖f x‖ₑ) + 4 * B * ∫⁻ x, ‖f x‖ₑ := by
         exact add_le_add (add_le_add (mul_volume_lt_enorm_calderonZygmundGood_le T hf ht ht')
-          (mul_volume_biUnion_closedBall_le c (fun x => ‖f x‖ₑ) t)) hbad
+          (mul_volume_biUnion_closedBall_le c (fun x => ‖f x‖ₑ) t))
+          (mul_volume_lt_enorm_inter_compl_calderonZygmundBad_le T hT f hf ht ht')
     _ = (2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2) + ENNReal.ofReal c ^ Fintype.card ι + 4 * B) *
           ∫⁻ x, ‖f x‖ₑ := by ring
 

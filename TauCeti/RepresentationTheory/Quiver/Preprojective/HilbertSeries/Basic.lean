@@ -457,9 +457,7 @@ theorem eq_zero_of_forall_mem_preprojectiveCorner {v : Q}
       DirectSum.zero_apply, ZeroMemClass.coe_zero, zero_mul]
   rw [← DirectSum.sum_support_decompose (preprojectiveGrade k Q) y]
   refine Finset.sum_eq_zero fun m _ => ?_
-  rw [← mul_one (DirectSum.decompose (preprojectiveGrade k Q) y m : preprojectiveAlgebra k Q),
-    ← map_one (preprojectiveMk k Q), one_def, map_sum, Finset.mul_sum]
-  exact Finset.sum_eq_zero fun u _ => hm m u
+  exact eq_zero_of_forall_mul_preprojectiveMk_vertexIdempotent_eq_zero k (hm m)
 
 variable (k Q)
 

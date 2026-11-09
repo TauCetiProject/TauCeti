@@ -193,6 +193,74 @@ private theorem rightLeftSelfRecut_toRectangleDecomposition
     simp [rightLeftSelfRecut, GridRectanglePentagonDecomposition.pentagon,
       (D.rightLeftSelfRecut_geometry hcommon hother hrectangle hpentagon hturn).2.1]
 
+/-- The common-terminal-side recut of a terminal self-pair source ends its rectangle where its
+pentagon starts, on the source's initial rectangle side. -/
+private theorem right_eq_left_of_isRecut_of_right_eq_right
+    {D₀ D : GridRectanglePentagonDecomposition a s x z}
+    (hcommon₀ : D₀.rectangle.right = D₀.pentagon.right)
+    (hcol₀ : D₀.rectangle.left ∈ Grid.cIoo D₀.pentagon.left D₀.pentagon.right)
+    (hrecut : D₀.toRectangleDecomposition.IsRecut D.toRectangleDecomposition) :
+    D.rectangle.right = D.pentagon.left := by
+  rcases hrecut.orientation with h | h | h | h
+  · have hside := h.side_eq
+    simp only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_left,
+      GridRectanglePentagonDecomposition.toRectangleDecomposition_second_left] at hside
+    exact absurd hside (Grid.ne_left_of_mem_cIoo hcol₀)
+  · obtain ⟨-, hleft⟩ := h.recut_sides
+    rcases h.recut_branch with ⟨-, -, hright, -⟩ | ⟨hcol, -⟩
+    · simpa only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_left,
+        GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right,
+        GridRectanglePentagonDecomposition.toRectangleDecomposition_second_left] using
+        hright.trans hleft.symm
+    · simp only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_left,
+        GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right,
+        GridRectanglePentagonDecomposition.toRectangleDecomposition_second_left,
+        hcommon₀] at hcol
+      exact absurd (Grid.mem_cIoo_cyclic_right hcol)
+        (Finset.disjoint_left.mp (Grid.disjoint_cIoo_swap _ _) hcol₀)
+  · have hside := h.side_eq
+    simp only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_left,
+      GridRectanglePentagonDecomposition.toRectangleDecomposition_second_right,
+      ← hcommon₀] at hside
+    exact absurd hside D₀.rectangle.left_ne_right
+  · have hside := h.side_eq
+    simp only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right,
+      GridRectanglePentagonDecomposition.toRectangleDecomposition_second_left,
+      hcommon₀] at hside
+    exact absurd hside.symm D₀.pentagon.left_ne_right
+
+/-- If the turn row of a mixed `right = left` overlap lay in the rows from its rectangle's top to
+its pentagon's top, its recut would be a pentagon followed by a rectangle; so it cannot be the
+recut partner of a terminal self-pair source, whose turn row avoids its rectangle's rows. -/
+private theorem turn_notMem_cIco_of_isRecut_of_right_eq_right
+    {D₀ D : GridRectanglePentagonDecomposition a s x z}
+    (hcommon₀ : D₀.rectangle.right = D₀.pentagon.right)
+    (hcol₀ : D₀.rectangle.left ∈ Grid.cIoo D₀.pentagon.left D₀.pentagon.right)
+    (hpentagon₀ : D₀.pentagon.IsEmpty)
+    (hsymm : D.toRectangleDecomposition.IsRecut D₀.toRectangleDecomposition)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hcommon : D.rectangle.right = D.pentagon.left)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
+    s ∉ Grid.cIco D.rectangle.top D.pentagon.top := by
+  intro hturn
+  have heq := (D.toRectangleDecomposition.existsUnique_isRecut hone
+    (by simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+      D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+    (by simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+      D.toRectangleDecomposition_middle, D.toRectangleDecomposition_second_toGridRectangle]
+      using hpentagon)).unique
+    (D.isRecut_recutRightEqLeft hcommon hrectangle hpentagon hturn) hsymm
+  have hleft := congrArg (fun E : GridRectangleDecomposition x z => E.first.left) heq
+  have hright := congrArg (fun E : GridRectangleDecomposition x z => E.first.right) heq
+  simp only [GridPentagonRectangleDecomposition.toRectangleDecomposition_first_left,
+    GridPentagonRectangleDecomposition.toRectangleDecomposition_first_right,
+    GridRectanglePentagonDecomposition.toRectangleDecomposition_first_left,
+    GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right] at hleft hright
+  have hs := (D.recutRightEqLeft hcommon hrectangle hpentagon hturn).pentagon.turn_mem
+  rw [hleft, hright] at hs
+  exact D₀.turn_notMem_cIco_rectangle_of_right_eq_right hcommon₀ hcol₀ hpentagon₀
+    (by rwa [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def])
+
 end TauCeti.GridRectanglePentagonDecomposition
 
 namespace TauCeti.GridDiagram
@@ -229,9 +297,8 @@ theorem mem_terminalSelfPairs_of_right_eq_left
     simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
       D.toRectangleDecomposition_middle, D.toRectangleDecomposition_second_toGridRectangle]
       using hpentagon
-  have hback := hrecut.symm hone hfirst hsecond
+  have hback := hrecut.symm hfirst hsecond
   have hEone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-    (D.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
   rw [← hErect] at hfirstRight hsecondRight hbottom
   have hEright : E.rectangle.right = finRotate n C.column := by
     simpa only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right]
@@ -287,7 +354,7 @@ theorem mem_terminalSelfPairs_iff_sides
     obtain ⟨hr₀, hP₀⟩ := (G.mem_rectanglePentagonDecompositions C D₀).1 hcounted₀
     have hpentagon₀ := ((G.mem_pentagons _).1 hP₀).1
     have hone₀ := D₀.hasOneCommonSide_of_right_eq_right hcommon₀ (Grid.ne_left_of_mem_cIoo hcol₀)
-    have hsymm := hrecut.symm hone₀
+    have hsymm := hrecut.symm
       (by simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D₀.toRectangleDecomposition_first_toGridRectangle] using
           ((G.mem_unblockedRectangles _).1 hr₀).1)
@@ -295,37 +362,8 @@ theorem mem_terminalSelfPairs_iff_sides
         D₀.toRectangleDecomposition_middle, D₀.toRectangleDecomposition_second_toGridRectangle]
         using hpentagon₀)
     have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hsymm
-      (D₀.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone₀)
-    -- The common-terminal-side recut of the source ends the new rectangle where the new pentagon
-    -- starts, on the source's initial rectangle side.
-    have hcommon : D.rectangle.right = D.pentagon.left := by
-      rcases hrecut.orientation with h | h | h | h
-      · have hside := h.side_eq
-        simp only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_left,
-          GridRectanglePentagonDecomposition.toRectangleDecomposition_second_left] at hside
-        exact absurd hside (Grid.ne_left_of_mem_cIoo hcol₀)
-      · obtain ⟨-, hleft⟩ := h.recut_sides
-        rcases h.recut_branch with ⟨-, -, hright, -⟩ | ⟨hcol, -⟩
-        · simpa only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_left,
-            GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right,
-            GridRectanglePentagonDecomposition.toRectangleDecomposition_second_left] using
-            hright.trans hleft.symm
-        · simp only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_left,
-            GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right,
-            GridRectanglePentagonDecomposition.toRectangleDecomposition_second_left,
-            hcommon₀] at hcol
-          exact absurd (Grid.mem_cIoo_cyclic_right hcol)
-            (Finset.disjoint_left.mp (Grid.disjoint_cIoo_swap _ _) hcol₀)
-      · have hside := h.side_eq
-        simp only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_left,
-          GridRectanglePentagonDecomposition.toRectangleDecomposition_second_right,
-          ← hcommon₀] at hside
-        exact absurd hside D₀.rectangle.left_ne_right
-      · have hside := h.side_eq
-        simp only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right,
-          GridRectanglePentagonDecomposition.toRectangleDecomposition_second_left,
-          hcommon₀] at hside
-        exact absurd hside.symm D₀.pentagon.left_ne_right
+    have hcommon : D.rectangle.right = D.pentagon.left :=
+      D₀.right_eq_left_of_isRecut_of_right_eq_right hcommon₀ hcol₀ hrecut
     have hother : D.rectangle.left ≠ D.pentagon.right := fun h =>
       D.toRectangleDecomposition.sideColumns_ne_of_hasOneCommonSide hone (by
         simp only [GridRectangleBetween.sideColumns,
@@ -338,26 +376,8 @@ theorem mem_terminalSelfPairs_iff_sides
       (G.terminalSelfPairs_subset_rectanglePentagonDecompositions C hpair)
     have hrectangle := ((G.mem_unblockedRectangles _).1 hr).1
     have hpentagon := ((G.mem_pentagons _).1 hP).1
-    refine ⟨hcommon, hother, fun hturn => ?_⟩
-    -- Otherwise the source would also be the pentagon--rectangle recut of `D`, whose pentagon
-    -- contains the turn row, and the turn row would lie in the source's rectangle.
-    have heq := (D.toRectangleDecomposition.existsUnique_isRecut hone
-      (by simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-        D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
-      (by simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-        D.toRectangleDecomposition_middle, D.toRectangleDecomposition_second_toGridRectangle]
-        using hpentagon)).unique
-      (D.isRecut_recutRightEqLeft hcommon hrectangle hpentagon hturn) hsymm
-    have hleft := congrArg (fun E : GridRectangleDecomposition x z => E.first.left) heq
-    have hright := congrArg (fun E : GridRectangleDecomposition x z => E.first.right) heq
-    simp only [GridPentagonRectangleDecomposition.toRectangleDecomposition_first_left,
-      GridPentagonRectangleDecomposition.toRectangleDecomposition_first_right,
-      GridRectanglePentagonDecomposition.toRectangleDecomposition_first_left,
-      GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right] at hleft hright
-    have hs := (D.recutRightEqLeft hcommon hrectangle hpentagon hturn).pentagon.turn_mem
-    rw [hleft, hright] at hs
-    exact D₀.turn_notMem_cIco_rectangle_of_right_eq_right hcommon₀ hcol₀ hpentagon₀
-      (by rwa [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def])
+    exact ⟨hcommon, hother, D₀.turn_notMem_cIco_of_isRecut_of_right_eq_right hcommon₀ hcol₀
+      hpentagon₀ hsymm hone hcommon hrectangle hpentagon⟩
   · rintro ⟨hD, hsource | ⟨hcommon, hother, hturn⟩⟩
     · exact (G.mem_terminalSelfPairs C D).2 (Or.inl
         ((G.mem_terminalSelfPairSources C D).2 ⟨hD, hsource⟩))

@@ -107,8 +107,9 @@ lemma cyclesOfDimension_eq_finiteCodimensionOneCycles (hn : topologicalKrullDim 
   ext α
   rw [mem_cyclesOfDimension_iff, SchemeWeilDivisor.mem_finiteCodimensionOneCycles_iff]
   exact ⟨fun h ↦ ⟨Function.locallyFinsupp.finite_support α,
-      fun x hx ↦ (coheight_eq_one_iff_mem_pointsOfDimension κ hn).mpr (h hx)⟩,
-    fun h x hx ↦ (coheight_eq_one_iff_mem_pointsOfDimension κ hn).mp (h.2 x hx)⟩
+      AlgebraicCycle.isWeilDivisor_iff.mpr fun x hx ↦
+        (coheight_eq_one_iff_mem_pointsOfDimension κ hn).mpr (h hx)⟩,
+    fun h x hx ↦ (coheight_eq_one_iff_mem_pointsOfDimension κ hn).mp (h.2.coheight_eq_one hx)⟩
 
 /-- On a quasi-compact irreducible scheme of dimension `n` locally of finite type over a field `κ`,
 the Weil divisors are additively equivalent to the `(n - 1)`-cycles, by extension by zero away from

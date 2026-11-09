@@ -89,14 +89,8 @@ namespace IsWeakHomotopyEquivalence
 /-- A weak homotopy equivalence induces a bijection on the homotopy groups indexed by any finite
 type of cube directions, not only on the groups `π_n` indexed by `Fin n`. -/
 theorem map_bijective (hf : f.IsWeakHomotopyEquivalence) (N : Type*) [Finite N] (x : X) :
-    Function.Bijective (HomotopyGroup.map (N := N) f (rfl : f x = f x)) := by
-  let e := Finite.equivFin N
-  have h : HomotopyGroup.map (N := N) f (rfl : f x = f x) =
-      (HomotopyGroup.congrEquiv e).symm ∘ HomotopyGroup.map f rfl ∘ HomotopyGroup.congrEquiv e := by
-    funext a
-    simp
-  rw [h]
-  exact (Equiv.bijective _).comp ((hf.bijective _ x).comp (Equiv.bijective _))
+    Function.Bijective (HomotopyGroup.map (N := N) f (rfl : f x = f x)) :=
+  (HomotopyGroup.bijective_map_iff_of_equiv f rfl (Finite.equivFin N)).2 (hf.bijective _ x)
 
 /-- A weak homotopy equivalence is injective on path components: two points of `X` are joined by
 a path exactly when their images are. -/
@@ -111,13 +105,10 @@ theorem joined_iff (hf : f.IsWeakHomotopyEquivalence) {a b : X} :
   let φX := homotopyGroupEquivZerothHomotopyOfIsEmpty (X := X) (Fin 0) a
   let φY := homotopyGroupEquivZerothHomotopyOfIsEmpty (X := Y) (Fin 0) (f a)
   let pt (c : X) : π_ 0 X a := ⟦(genLoopHomeoOfIsEmpty (Fin 0) a).symm c⟧
-  have hpt (c : X) : ((genLoopHomeoOfIsEmpty (Fin 0) a).symm c) 0 = c := by
-    rw [← genLoopHomeoOfIsEmpty_apply, Homeomorph.apply_symm_apply]
   have hφX (c : X) : φX (pt c) = ZerothHomotopy.mk c := by
-    rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, hpt]
+    rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, genLoopHomeoOfIsEmpty_symm_apply]
   have hmap (c : X) : φY (HomotopyGroup.map f rfl (pt c)) = ZerothHomotopy.mk (f c) := by
-    rw [HomotopyGroup.map_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply,
-      hpt]
+    rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk, genLoopHomeoOfIsEmpty_symm_apply]
   have hab : HomotopyGroup.map f rfl (pt a) = HomotopyGroup.map f rfl (pt b) :=
     φY.injective <| by rw [hmap, hmap]; exact ZerothHomotopy.sound h.somePath
   have := congrArg φX ((hf.bijective 0 a).injective hab)
@@ -131,14 +122,7 @@ theorem of_homotopic {f₀ f₁ : C(X, Y)} (hf : f₀.IsWeakHomotopyEquivalence)
     obtain ⟨x, hx⟩ := hf.exists_joined y
     exact ⟨x, (Joined.symm ⟨h.some.evalAt x⟩).trans hx⟩
   bijective n x := by
-    -- The two induced maps differ by transport along the trace of the homotopy at `x`.
-    have hfun : HomotopyGroup.map (N := Fin n) f₁ (rfl : f₁ x = f₁ x) =
-        TauCeti.homotopyGroupEquivOfPath ((h.some.evalAt x).cast rfl rfl) ∘
-          HomotopyGroup.map f₀ rfl := by
-      funext a
-      rw [Function.comp_apply, TauCeti.homotopyGroupEquivOfPath_apply]
-      exact (TauCeti.homotopyGroupTransport_map h.some rfl rfl a).symm
-    rw [hfun]
+    rw [HomotopyGroup.map_eq_homotopyGroupEquivOfPath_comp_of_homotopy h.some]
     exact (Equiv.bijective _).comp (hf.bijective n x)
 
 /-- The identity map is a weak homotopy equivalence. -/
@@ -349,8 +333,8 @@ theorem isWeakHomotopyEquivalence_iff_forall_bijective [PathConnectedSpace X] (x
     induction a using Quotient.inductionOn with
     | h p =>
     refine ⟨p 0, Quotient.exact (?_ : ZerothHomotopy.mk (f (p 0)) = ZerothHomotopy.mk y)⟩
-    rw [← φY.apply_symm_apply (ZerothHomotopy.mk y), ← ha, HomotopyGroup.map_mk,
-      homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply]
+    rw [← φY.apply_symm_apply (ZerothHomotopy.mk y), ← ha,
+      homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk]
   · exact (f.bijective_map_iff_of_path (PathConnectedSpace.somePath x x')).1 (h n)
 
 /-- **Weak homotopy equivalences through path components.** A map is a weak homotopy equivalence
@@ -371,8 +355,8 @@ theorem isWeakHomotopyEquivalence_iff_joined :
     let φX := homotopyGroupEquivZerothHomotopyOfIsEmpty (X := X) (Fin 0) x
     let φY := homotopyGroupEquivZerothHomotopyOfIsEmpty (X := Y) (Fin 0) (f x)
     have hmap (p : Ω^ (Fin 0) X x) :
-        φY (HomotopyGroup.map f rfl ⟦p⟧) = ZerothHomotopy.mk (f (p 0)) := by
-      rw [HomotopyGroup.map_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply]
+        φY (HomotopyGroup.map f rfl ⟦p⟧) = ZerothHomotopy.mk (f (p 0)) :=
+      homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk f rfl p
     refine ⟨fun a b hab ↦ ?_, fun b ↦ ?_⟩
     · induction a using Quotient.inductionOn with | h p =>
       induction b using Quotient.inductionOn with | h q =>
@@ -385,7 +369,7 @@ theorem isWeakHomotopyEquivalence_iff_joined :
     · obtain ⟨y, hy⟩ := ZerothHomotopy.mk_surjective (φY b)
       obtain ⟨x', hx'⟩ := hsurj y
       refine ⟨⟦(genLoopHomeoOfIsEmpty (Fin 0) x).symm x'⟧, φY.injective ?_⟩
-      rw [hmap, ← genLoopHomeoOfIsEmpty_apply, Homeomorph.apply_symm_apply, ← hy]
+      rw [hmap, genLoopHomeoOfIsEmpty_symm_apply, ← hy]
       exact ZerothHomotopy.sound hx'.somePath
 
 /-- **A homotopy equivalence is a weak homotopy equivalence.** -/

@@ -230,10 +230,7 @@ theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value [Nonempty ι] :
         ⨍ y in ball x₀ (2 * r), (W1p.value u y + δ) ^ p₀ ∂mu :=
       average_congr (hwv2.mono fun y hy => congrArg (· ^ p₀) hy)
     rw [e] at hH
-    -- `0 ≤ u^{p₀} ≤ (u + δ)^{p₀}`, and `(u + δ)^{p₀}` is integrable on `B(x₀, 2r)` as `p₀ ≤ 2`.
-    have hle : ∀ᵐ y ∂mu.restrict (ball x₀ (2 * r)),
-        W1p.value u y ^ p₀ ≤ (W1p.value u y + δ) ^ p₀ :=
-      hu02.mono fun y hy => Real.rpow_le_rpow hy (by linarith) hp₀.le
+    -- `(u + δ)^{p₀}` is integrable on `B(x₀, 2r)` as `p₀ ≤ 2`.
     have hint' : IntegrableOn (fun y => (W1p.value u y + δ) ^ p₀) (ball x₀ (2 * r)) mu := by
       have hmem : MemLp (fun y => W1p.value u y + δ) (ENNReal.ofReal p₀)
           (mu.restrict (ball x₀ (2 * r))) :=
@@ -243,16 +240,9 @@ theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value [Nonempty ι] :
         ENNReal.ofReal_ne_top).congr ?_
       filter_upwards [hu02] with y hy
       rw [ENNReal.toReal_ofReal hp₀.le, Real.norm_of_nonneg (by linarith)]
-    have hint : IntegrableOn (fun y => W1p.value u y ^ p₀) (ball x₀ (2 * r)) mu := by
-      refine hint'.mono' (hmem2.aestronglyMeasurable.aemeasurable.pow_const p₀).aestronglyMeasurable
-        ?_
-      filter_upwards [hu02, hle] with y hy hyle
-      rwa [Real.norm_of_nonneg (Real.rpow_nonneg hy _)]
     -- The average of `u^{p₀}` is at most that of `(u + δ)^{p₀}`.
-    have hmono : ⨍ y in ball x₀ (2 * r), W1p.value u y ^ p₀ ∂mu ≤
-        ⨍ y in ball x₀ (2 * r), (W1p.value u y + δ) ^ p₀ ∂mu := by
-      rw [setAverage_eq, setAverage_eq]
-      exact smul_le_smul_of_nonneg_left (integral_mono_ae hint hint' hle) (by positivity)
+    obtain ⟨hint, hmono⟩ := integrable_and_average_rpow_le hp₀ hδ0.le hmem2.aestronglyMeasurable
+      hu02 hint'
     filter_upwards [hH, ae_restrict_of_ae_restrict_of_subset hrU hwv] with x hx hwx
     rw [hwx] at hx
     exact (Real.rpow_le_rpow (average_nonneg_of_ae (hu02.mono fun y hy => Real.rpow_nonneg hy _))

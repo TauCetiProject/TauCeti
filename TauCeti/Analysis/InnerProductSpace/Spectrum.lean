@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.StrictPositivity
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
@@ -74,6 +75,8 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
   nonnegative determinant, the product of its eigenvalues.
 * `LinearMap.IsPositive.det_pos`: an injective positive operator on a finite-dimensional space has
   positive determinant.
+* `IsStrictlyPositive.det_pos`: a strictly positive continuous linear operator on a
+  finite-dimensional inner product space has positive determinant.
 * `LinearMap.IsPositive.exists_pos_mul_norm_sq_le_re_inner`: an injective positive operator on a
   finite-dimensional space is coercive.
 * `ContinuousLinearMap.IsPositive.det_one_sub_smul_id_add_smul_pos`: interpolating the identity
@@ -517,6 +520,20 @@ theorem exists_pos_mul_norm_sq_le_re_inner (hT : T.IsPositive) (hker : LinearMap
   rwa [le_div_iff₀ (pow_pos (norm_pos_iff.2 hw) 2)] at hle
 
 end LinearMap.IsPositive
+
+namespace IsStrictlyPositive
+
+open scoped ComplexOrder
+
+/-- A strictly positive operator on a finite-dimensional inner product space has positive
+determinant. -/
+theorem det_pos [FiniteDimensional 𝕜 E] {T : E →L[𝕜] E} (hT : IsStrictlyPositive T) :
+    0 < T.det :=
+  (ContinuousLinearMap.nonneg_iff_isPositive.mp hT.nonneg).toLinearMap.det_pos
+    ((T : E →ₗ[𝕜] E).isUnit_iff_ker_eq_bot.mp
+      (hT.isUnit.map ContinuousLinearMap.toLinearMapRingHom))
+
+end IsStrictlyPositive
 
 namespace ContinuousLinearMap.IsPositive
 

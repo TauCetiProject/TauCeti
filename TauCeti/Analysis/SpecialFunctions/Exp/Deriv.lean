@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
+import Mathlib.Analysis.Calculus.ContDiff.Basic
 
 /-!
-# Real iterated derivatives of the complex exponential
+# Derivatives of exponential functions
 
 Viewed as a function of a real vector variable, `Complex.exp` has the same iterated derivatives
 as it has over `ℂ`, restricted to real scalars. Since every complex derivative of `exp` is `exp`,
@@ -20,9 +21,26 @@ Faà di Bruno bound needs for compositions `Complex.exp ∘ f` with a real-diffe
 
 * `TauCeti.norm_iteratedFDeriv_real_cexp`: every real iterated derivative of `Complex.exp` at `z`
   has norm `‖exp z‖`.
+* `ContinuousLinearMap.norm_iteratedFDeriv_cexp_comp_le`: for a real-linear map `ℓ` to `ℂ`, the
+  `n`-th derivative of `x ↦ exp (ℓ x)` has norm at most `‖exp (ℓ x)‖ ‖ℓ‖ ^ n`.
 -/
 
 public section
+
+namespace Real
+
+/-- The derivative of an exponential with linear exponent. -/
+@[simp] theorem deriv_exp_mul (a x : ℝ) :
+    deriv (fun y : ℝ => exp (a * y)) x = a * exp (a * x) := by
+  simpa [mul_comm] using (((hasDerivAt_id x).const_mul a).exp).deriv
+
+/-- The norm of the Fréchet derivative of an exponential with linear exponent. -/
+@[simp] theorem norm_fderiv_exp_mul (a x : ℝ) :
+    ‖fderiv ℝ (fun y : ℝ => exp (a * y)) x‖ = |a| * exp (a * x) := by
+  rw [← norm_deriv_eq_norm_fderiv, deriv_exp_mul, Real.norm_eq_abs, abs_mul,
+    abs_of_pos (exp_pos _)]
+
+end Real
 
 namespace TauCeti
 
@@ -35,3 +53,20 @@ theorem norm_iteratedFDeriv_real_cexp (n : ℕ) (z : ℂ) :
     norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_eq_iterate, Complex.iter_deriv_exp]
 
 end TauCeti
+
+namespace ContinuousLinearMap
+
+/-- For a real-linear map `ℓ : E →L[ℝ] ℂ`, the `n`-th derivative of `x ↦ exp (ℓ x)` has norm at
+most `‖exp (ℓ x)‖ ‖ℓ‖ ^ n`. For a purely imaginary `ℓ`, such as the phase `x ↦ 2πi ⟪x, w⟫` of a
+character, this is `‖ℓ‖ ^ n`. -/
+theorem norm_iteratedFDeriv_cexp_comp_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (ℓ : E →L[ℝ] ℂ) (n : ℕ) (x : E) :
+    ‖iteratedFDeriv ℝ n (fun y ↦ Complex.exp (ℓ y)) x‖ ≤ ‖Complex.exp (ℓ x)‖ * ‖ℓ‖ ^ n := by
+  have h := ℓ.iteratedFDeriv_comp_right ((Complex.contDiff_exp (𝕜 := ℂ)).restrict_scalars ℝ) x
+    (i := n) (mod_cast le_top)
+  rw [Function.comp_def] at h
+  rw [h, ← TauCeti.norm_iteratedFDeriv_real_cexp n (ℓ x)]
+  refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans_eq ?_
+  simp
+
+end ContinuousLinearMap

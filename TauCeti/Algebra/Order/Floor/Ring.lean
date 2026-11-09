@@ -6,13 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Floor.Ring
+public import Mathlib.Algebra.Ring.Periodic
 
 /-!
 # Floors and decompositions into intervals
 
 A point of `[0, n)` in an ordered ring with a floor operation is the sum of an index in
 `Fin n` and a remainder in `[0, 1)`. This describes, for example, time along one of the
-finitely many edges in a polygonal boundary parametrization.
+finitely many edges in a polygonal boundary parametrization. In the same way, a `1`-periodic
+function is determined by its values on `[0, 1)`: it takes the same value at `t` and at the
+fractional part of `t`.
 
 For a step `δ > 0` in a linearly ordered field with an integer floor, the multiples of `δ` cut
 the line into the closed intervals `[δ m, δ (m + 1)]` with `m ∈ ℤ`. Every point `x` lies in the
@@ -23,9 +26,13 @@ interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its in
 
 * `TauCeti.exists_eq_natCast_add_of_mem_Ico`: a point of `[0, n)` is an index in `Fin n` plus
   a remainder in `[0, 1)`.
+* `Function.Periodic.apply_fract`: a `1`-periodic function takes the same value at `t` and at
+  its fractional part `Int.fract t`.
 * `TauCeti.mem_Icc_mul_floor_div`: `x ∈ [δ ⌊x / δ⌋, δ (⌊x / δ⌋ + 1)]`.
 * `TauCeti.mem_Icc_ceil_floor_of_mem_Icc`: if `x ∈ [δ m, δ (m + 1)]` and `|x| ≤ R`, then
   `m ∈ [⌈-R / δ⌉ - 1, ⌊R / δ⌋]`.
+* `TauCeti.abs_sub_lt_one_div_of_natFloor_mul_eq`: for `t > 0`, nonnegative elements `a`, `b`
+  with `⌊a * t⌋₊ = ⌊b * t⌋₊` differ by less than `1 / t`.
 -/
 
 public section
@@ -39,6 +46,11 @@ theorem exists_eq_natCast_add_of_mem_Ico {R : Type*} [Ring R] [LinearOrder R]
   ⟨⟨⌊t⌋₊, (Nat.floor_lt ht.1).2 ht.2⟩, t - ⌊t⌋₊,
     ⟨sub_nonneg.2 (Nat.floor_le ht.1),
       (sub_lt_iff_lt_add).2 (by simpa only [add_comm] using Nat.lt_floor_add_one t)⟩, by simp⟩
+
+/-- A `1`-periodic function takes the same value at `t` and at its fractional part. -/
+theorem _root_.Function.Periodic.apply_fract {R β : Type*} [Ring R] [LinearOrder R]
+    [FloorRing R] {f : R → β} (hf : Function.Periodic f 1) (t : R) : f (Int.fract t) = f t := by
+  simpa [Int.self_sub_floor] using hf.sub_int_mul_eq (x := t) ⌊t⌋
 
 variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [FloorRing K] {δ : K}
 
@@ -67,5 +79,17 @@ theorem mem_Icc_ceil_floor_of_mem_Icc (hδ : 0 < δ) {R x : K} {m : ℤ}
   · refine Int.le_floor.2 ?_
     rw [le_div_iff₀ hδ]
     linarith [hx.1]
+
+/-- For `t > 0`, two nonnegative elements `a`, `b` of an ordered field with the same natural
+floor of `x * t` differ by less than `1 / t`: on the nonnegative half-line the cells of the grid of
+scale `t` have side `1 / t`. -/
+theorem abs_sub_lt_one_div_of_natFloor_mul_eq {a b t : K} (ht : 0 < t) (ha : 0 ≤ a) (hb : 0 ≤ b)
+    (h : ⌊a * t⌋₊ = ⌊b * t⌋₊) : |a - b| < 1 / t := by
+  have hcell := Int.abs_sub_lt_one_of_floor_eq_floor (a := a * t) (b := b * t) <| by
+    rw [← Int.natCast_floor_eq_floor (by positivity), ← Int.natCast_floor_eq_floor (by positivity),
+      h]
+  rw [← sub_mul, abs_mul, abs_of_pos ht] at hcell
+  rw [lt_div_iff₀ ht]
+  exact hcell
 
 end TauCeti

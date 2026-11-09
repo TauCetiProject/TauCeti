@@ -86,8 +86,9 @@ include e hM in
 source. The order hypothesis says precisely that a nonzero positive root shift of weights must
 move from `s` to an index `r < s`.
 
-This statement includes both the entries below the diagonal and the diagonal entries of every
-positive-degree divided power. -/
+Through `LinearMap.toMatrix_apply`, this is strict upper triangularity of the matrix of every
+positive-degree divided power: it covers both the entries below the diagonal and the diagonal
+entries. -/
 theorem repr_integralDividedPower_eq_zero_of_not_lt
     (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
     (hα : ∀ j, ⁅h j, e i⁆ = (α j : ℚ) • e i)
@@ -100,24 +101,6 @@ theorem repr_integralDividedPower_eq_zero_of_not_lt
             e h ρ hM i n hv) (b s)) r = 0 := by
   exact repr_integralDividedPower_eq_zero_of_weight_ne e h ρ M hM b wt hwt hα
     (fun heq ↦ hrs (horder hn heq))
-
-include e hM in
-/-- Every positive divided power of a positive root operator is upper triangular in an
-ordered weight basis. -/
-theorem isUpperTriangular_toMatrix_integralDividedPower
-    (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
-    (hα : ∀ j, ⁅h j, e i⁆ = (α j : ℚ) • e i)
-    (horder : ∀ {r s : η} {n : ℕ}, 0 < n → wt r = wt s + n • α → r < s)
-    {n : ℕ} (hn : 0 < n) :
-    (LinearMap.toMatrix b b
-        (integralDividedPower
-          (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M n
-          (fun _ hv ↦ dividedPower_apply_mem_of_kostantForm_apply_mem
-            e h ρ hM i n hv))).IsUpperTriangular := by
-  intro r s hsr
-  rw [LinearMap.toMatrix_apply]
-  exact repr_integralDividedPower_eq_zero_of_not_lt e h ρ M hM b wt hwt hα horder
-    (not_lt_of_ge hsr.le) hn
 
 /-! ## Positive root-subgroup matrices -/
 

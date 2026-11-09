@@ -58,6 +58,8 @@ it, and `Matrix.mulVec_cramer` identifies its root pairings with determinant tim
 ## Main results
 
 * `Matrix.IsSymm.add_mem_normTwoShell_iff`: for `a, b ∈ Φ`, `a + b ∈ Φ ↔ ⟪a, b⟫ = -1`.
+* `Matrix.IsSymm.dotProduct_mulVec_add_add_of_mem_normTwoShell`: the norm of `a + b + c` for
+  `a, b, c ∈ Φ` in terms of their pairings.
 * `Matrix.PosDef.dotProduct_mulVec_eq_two_iff` and
   `Matrix.PosDef.dotProduct_mulVec_eq_neg_two_iff`: for `a, b ∈ Φ`, `⟪a, b⟫ = 2 ↔ a = b` and
   `⟪a, b⟫ = -2 ↔ a = -b`.
@@ -153,6 +155,15 @@ theorem sub_mem_normTwoShell_iff (hB : B.IsSymm) (ha : a ∈ B.normTwoShell)
     (hb : b ∈ B.normTwoShell) : a - b ∈ B.normTwoShell ↔ a ⬝ᵥ B *ᵥ b = 1 := by
   rw [mem_normTwoShell, hB.sub_dotProduct_mulVec_sub, ha.out, hb.out]
   omega
+
+/-- The norm of the sum of three vectors of the norm-two shell, in terms of their pairings. -/
+theorem dotProduct_mulVec_add_add_of_mem_normTwoShell (hB : B.IsSymm) {c : I → ℤ}
+    (ha : a ∈ B.normTwoShell) (hb : b ∈ B.normTwoShell) (hc : c ∈ B.normTwoShell) :
+    (a + b + c) ⬝ᵥ B *ᵥ (a + b + c) = 6 + 2 * (a ⬝ᵥ B *ᵥ b + b ⬝ᵥ B *ᵥ c + c ⬝ᵥ B *ᵥ a) := by
+  rw [hB.add_dotProduct_mulVec_add, hB.add_dotProduct_mulVec_add, add_dotProduct,
+    mem_normTwoShell.mp ha, mem_normTwoShell.mp hb, mem_normTwoShell.mp hc,
+    hB.dotProduct_mulVec_comm (x := a) (y := c)]
+  ring
 
 /-- The reflection in a vector of the norm-two shell maps the shell to itself. -/
 theorem sub_smul_mem_normTwoShell (hB : B.IsSymm) (ha : a ∈ B.normTwoShell)

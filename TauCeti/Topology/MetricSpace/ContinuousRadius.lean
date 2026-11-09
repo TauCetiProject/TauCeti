@@ -55,39 +55,23 @@ theorem exists_continuous_radius_subordinate (hf : IsInducing f)
   -- At each point the admissible radii form an interval: shrinking preserves admissibility.
   let T : X → Set ℝ := fun x => {r | 0 < r ∧ ∃ i, x ∈ U i ∧ r < ε i ∧
     ∀ y, dist (f x) (f y) < 2 * r → y ∈ U i}
-  have hT : ∀ x, Convex ℝ (T x) := by
-    intro x
-    apply Set.OrdConnected.convex
-    constructor
+  have hT (x : X) : Convex ℝ (T x) := by
+    refine OrdConnected.convex ⟨?_⟩
     rintro a ⟨ha, -⟩ b ⟨-, i, hxi, hb, hball⟩ c ⟨hac, hcb⟩
-    exact ⟨ha.trans_le hac, i, hxi, hcb.trans_lt hb,
-      fun y hy => hball y (hy.trans_le (mul_le_mul_of_nonneg_left hcb (by norm_num)))⟩
-  have hlocal : ∀ x, ∃ c : ℝ, ∀ᶠ y in 𝓝 x, c ∈ T y := by
-    intro x
+    exact ⟨ha.trans_le hac, i, hxi, hcb.trans_lt hb, fun y hy ↦ hball y (by linarith)⟩
+  have hlocal (x : X) : ∃ c : ℝ, ∀ᶠ y in 𝓝 x, c ∈ T y := by
     obtain ⟨i, hxi⟩ := hcov x
     obtain ⟨O, hO, hpre⟩ := hf.isOpen_iff.mp (hU i)
-    have hxO : f x ∈ O := by simpa only [← hpre, mem_preimage] using hxi
-    obtain ⟨d, hd, hball⟩ := Metric.mem_nhds_iff.mp (hO.mem_nhds hxO)
-    let c := min (d / 4) (ε i / 2)
-    have hc : 0 < c := lt_min (by positivity) (half_pos (hε i))
-    have hcd : c ≤ d / 4 := min_le_left _ _
-    have hcε : c < ε i := (min_le_right _ _).trans_lt (half_lt_self (hε i))
-    refine ⟨c, ?_⟩
-    filter_upwards [hf.continuous.continuousAt.preimage_mem_nhds
-      (Metric.ball_mem_nhds (f x) hc)] with y hy
-    have hyx : dist (f y) (f x) < c := hy
-    have hyU : y ∈ U i := by
-      rw [← hpre]
-      apply hball
-      exact hyx.trans_le (by linarith)
-    refine ⟨hc, i, hyU, hcε, fun z hz => ?_⟩
-    rw [← hpre]
-    apply hball
-    have hzy : dist (f z) (f y) < 2 * c := by simpa [dist_comm] using hz
-    have := dist_triangle (f z) (f y) (f x)
-    have := add_lt_add hzy hyx
-    simp only [Metric.mem_ball]
-    linarith
+    obtain ⟨d, hd, hball⟩ := Metric.isOpen_iff.mp hO (f x) (by rwa [← hpre] at hxi)
+    have hsub : ∀ z, dist (f z) (f x) < d → z ∈ U i := fun z hz ↦ hpre ▸ hball hz
+    have hc : 0 < min (d / 3) (ε i / 2) := lt_min (by positivity) (half_pos (hε i))
+    have hcd := min_le_left (d / 3) (ε i / 2)
+    refine ⟨min (d / 3) (ε i / 2), ?_⟩
+    filter_upwards [(hf.continuous.tendsto x).eventually (Metric.ball_mem_nhds _ hc)]
+      with y (hy : dist (f y) (f x) < _)
+    refine ⟨hc, i, hsub y (by linarith), (min_le_right _ _).trans_lt (half_lt_self (hε i)),
+      fun z hz ↦ hsub z ?_⟩
+    linarith [dist_triangle (f z) (f y) (f x), dist_comm (f z) (f y)]
   obtain ⟨r, hr⟩ := exists_continuous_forall_mem_convex_of_local_const hT hlocal
   exact ⟨r, fun x => (hr x).1, fun x => (hr x).2⟩
 
@@ -125,26 +109,17 @@ theorem exists_continuous_pos_forall_dist_le [NormalSpace X] [ParacompactSpace X
     (hW : IsOpen W) (hdiag : ∀ (x : X) (s : K), (x, s, s) ∈ W) :
     ∃ δ : C(X, ℝ), (∀ x, δ x ∈ Ioo 0 1) ∧
       ∀ (x : X) (s t : K), dist s t ≤ δ x → (x, s, t) ∈ W := by
-  let R (x : X) : Set ℝ := Ioo 0 1 ∩
-    ⋂ s : K, ⋂ t : K, ⋂ (_ : (x, s, t) ∉ W), Iio (dist s t)
-  have hconv (x : X) : Convex ℝ (R x) :=
-    (convex_Ioo 0 1).inter (convex_iInter fun s ↦
-      convex_iInter fun t ↦ convex_iInter fun _ ↦ convex_Iio (dist s t))
+  let R (x : X) : Set ℝ := {r | r ∈ Ioo 0 1 ∧ ∀ s t : K, dist s t ≤ r → (x, s, t) ∈ W}
+  have hconv (x : X) : Convex ℝ (R x) := OrdConnected.convex
+    ⟨fun _ ha _ hb _ hc ↦ ⟨⟨ha.1.1.trans_le hc.1, hc.2.trans_lt hb.1.2⟩,
+      fun s t hst ↦ hb.2 s t (hst.trans hc.2)⟩⟩
   have hlocal (x : X) : ∃ c : ℝ, ∀ᶠ y in 𝓝 x, c ∈ R y := by
     obtain ⟨ε, hε, hnear⟩ := hW.exists_pos_forall_dist_le x (hdiag x)
-    refine ⟨min ε 1 / 2, ?_⟩
-    filter_upwards [hnear] with y hy
-    refine ⟨⟨by positivity, by have := min_le_right ε (1 : ℝ); linarith⟩, ?_⟩
-    simp only [mem_iInter, mem_Iio]
-    intro s t hbad
-    have hdist : ε < dist s t := lt_of_not_ge fun h ↦ hbad (hy s t h)
-    have := min_le_left ε (1 : ℝ)
-    linarith [lt_min hε zero_lt_one]
+    have := min_le_left ε 1
+    have := min_le_right ε 1
+    exact ⟨min ε 1 / 2, hnear.mono fun y hy ↦ ⟨⟨by positivity, by linarith⟩,
+      fun s t hst ↦ hy s t (by linarith [lt_min hε one_pos])⟩⟩
   obtain ⟨δ, hδ⟩ := exists_continuous_forall_mem_convex_of_local_const hconv hlocal
-  refine ⟨δ, fun x ↦ (hδ x).1, fun x s t hst ↦ ?_⟩
-  by_contra hbad
-  have hlt : δ x < dist s t :=
-    mem_iInter.mp (mem_iInter.mp (mem_iInter.mp (hδ x).2 s) t) hbad
-  exact (not_lt_of_ge hst) hlt
+  exact ⟨δ, fun x ↦ (hδ x).1, fun x ↦ (hδ x).2⟩
 
 end IsOpen
