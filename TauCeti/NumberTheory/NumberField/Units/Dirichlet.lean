@@ -30,6 +30,10 @@ consume — for instance the exact number of unit square classes in
 * `NumberField.rank_add_nrComplexPlaces_add_one`: the unit rank plus the number of complex
   places plus one is the degree.
 * `NumberField.Units.fundSystem_not_mem_torsion`: fundamental units are nontorsion.
+* `NumberField.Units.prod_fundSystem_zpow_mem_torsion_iff`: a product of integral powers of the
+  fundamental units is torsion only when all the exponents vanish.
+* `NumberField.Units.not_summable_absNorm_of_rank_pos`: in positive unit rank, the sum of
+  `N((a))^(-s)` over the nonzero elements `a` of a nonzero ideal diverges for every `s`.
 -/
 
 public section
@@ -143,6 +147,57 @@ theorem fundSystem_not_mem_torsion (i : Fin (rank K)) : fundSystem K i ∉ torsi
   have hzero := dirichletUnitTheorem.logEmbedding_eq_zero_iff.mpr hi
   rw [logEmbedding_fundSystem] at hzero
   exact (basisUnitLattice K).ne_zero i (Subtype.ext hzero)
+
+/-- A product of integral powers of the fundamental system is a torsion unit only when all the
+exponents vanish: the uniqueness half of `NumberField.Units.exist_unique_eq_mul_prod`. -/
+theorem prod_fundSystem_zpow_mem_torsion_iff {e : Fin (rank K) → ℤ} :
+    ∏ i, fundSystem K i ^ e i ∈ torsion K ↔ e = 0 := by
+  refine ⟨fun he ↦ ?_, fun he ↦ by simp [he, one_mem]⟩
+  obtain ⟨_, -, huniq⟩ := exist_unique_eq_mul_prod K (∏ i, fundSystem K i ^ e i)
+  exact (congrArg Prod.snd ((huniq (⟨_, he⟩, 0) (by simp)).trans
+    (huniq (1, e) (by simp)).symm)).symm
+
+/-- **In positive unit rank, the sum over the nonzero elements of an ideal diverges.** If the unit
+group of `𝓞 K` is infinite, every nonzero element `a` of an ideal has infinitely many distinct unit
+multiples `u a` in that ideal, all generating the principal ideal `(a)`. So the family
+`a ↦ N((a))^(-s)` over the nonzero elements of a nonzero ideal takes the nonzero value
+`N((a))^(-s)` infinitely often, and is not summable for any `s`: a sum over the principal ideals
+of a lattice has to be taken over a fundamental domain for the units, not over all of its
+points. -/
+theorem not_summable_absNorm_of_rank_pos (h : 0 < rank K) {𝔞 : Ideal (𝓞 K)} (h𝔞 : 𝔞 ≠ ⊥)
+    (s : ℂ) :
+    ¬ Summable fun a : {a : 𝔞 // a ≠ 0} ↦
+      (Ideal.absNorm (Ideal.span {((a : 𝔞) : 𝓞 K)}) : ℂ) ^ (-s) := by
+  -- a fundamental unit has infinite order
+  set u := fundSystem K ⟨0, h⟩
+  have hu : ¬ IsOfFinOrder u := by
+    simpa [u, torsion, CommGroup.mem_torsion] using fundSystem_not_mem_torsion (K := K) ⟨0, h⟩
+  obtain ⟨a, ha𝔞, ha⟩ := Submodule.exists_mem_ne_zero_of_ne_bot h𝔞
+  -- the elements `u ^ n * a` are pairwise distinct nonzero elements of `𝔞` generating `(a)`
+  let g : ℕ → {a : 𝔞 // a ≠ 0} := fun n ↦
+    ⟨⟨(u ^ n : (𝓞 K)ˣ) * a, 𝔞.mul_mem_left _ ha𝔞⟩, fun h0 ↦
+      mul_ne_zero (Units.ne_zero _) ha congr(($h0 : 𝓞 K))⟩
+  have hg : Function.Injective g := fun n m hnm ↦
+    injective_pow_iff_not_isOfFinOrder.mpr hu <| Units.ext <|
+      mul_right_cancel₀ ha congr((($hnm).1 : 𝓞 K))
+  have hN : (Ideal.absNorm (Ideal.span {a}) : ℂ) ^ (-s) ≠ 0 := by
+    rw [Ne, Complex.cpow_eq_zero_iff, Nat.cast_eq_zero, Ideal.absNorm_eq_zero_iff,
+      Ideal.span_singleton_eq_bot]
+    exact fun h0 ↦ ha h0.1
+  intro hsum
+  refine hN ((summable_const_iff _).mp ((hsum.comp_injective hg).congr fun n ↦ ?_))
+  simp only [g, Function.comp_apply]
+  rw [Ideal.span_singleton_mul_left_unit (u ^ n).isUnit]
+
+/-- In a number field of unit rank one, some unit generates all units modulo torsion. -/
+theorem exists_closure_sup_torsion_eq_top_of_rank_eq_one (hr : rank K = 1) :
+    ∃ g : (𝓞 K)ˣ, Subgroup.closure {g} ⊔ torsion K = ⊤ := by
+  let i : Fin (rank K) := ⟨0, by omega⟩
+  have : Nonempty (Fin (rank K)) := ⟨i⟩
+  refine ⟨fundSystem K i, ?_⟩
+  have hrange : Set.range (fundSystem K) = {fundSystem K i} :=
+    Set.range_eq_singleton (fun j => congrArg (fundSystem K) (Fin.ext (by omega)))
+  simpa only [hrange] using closure_fundSystem_sup_torsion_eq_top (K := K)
 
 end Units
 

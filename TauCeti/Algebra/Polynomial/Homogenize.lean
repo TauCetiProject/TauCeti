@@ -76,7 +76,7 @@ roots of `F(X, 1)` multiplied by `a`.
   algebra and `natDegree p ≤ n`, as `p(a / b) b ^ n`.
 * `MvPolynomial.aeval_X_one_map`: the dehomogenization `F(X, 1)` commutes with mapping the
   coefficients along a ring homomorphism.
-* `MvPolynomial.IsHomogeneous.exists_linear_factors`: a nonzero binary form of degree `d` with no
+* `MvPolynomial.IsHomogeneous.exists_linear_factors`: a binary form of degree `d` with no
   squared linear factor, whose dehomogenization splits, is `a ∏_{ℓ ∈ T} (ℓ.1 X₀ + ℓ.2 X₁)` for `d`
   pairwise non-proportional linear forms.
 * `MvPolynomial.IsHomogeneous.mem_span_X_one_pow_of_aeval_eq_smul`: over a domain, a binary form
@@ -312,13 +312,13 @@ theorem aeval_X_one_map {R S : Type*} [CommSemiring R] [CommSemiring S] (φ : R 
   · funext i
     fin_cases i <;> simp
 
-/-- **Splitting of binary forms.** Let `F ≠ 0` be a binary form of degree `d` over a domain, with
-no squared linear factor, whose dehomogenization `F(X, 1)` has as many roots as its degree (for
-instance, over an algebraically closed field). Then `F = a ∏_{ℓ ∈ T} (ℓ.1 X₀ + ℓ.2 X₁)` with
-`a ≠ 0` and `d` pairwise non-proportional linear forms, each either `X₁` or `X₀ - α X₁` with `α`
-a root of `F(X, 1)`. -/
+/-- **Splitting of binary forms.** Let `F` be a binary form of degree `d` over a domain, with no
+squared linear factor (so `F ≠ 0`), whose dehomogenization `F(X, 1)` has as many roots as its
+degree (for instance, over an algebraically closed field). Then
+`F = a ∏_{ℓ ∈ T} (ℓ.1 X₀ + ℓ.2 X₁)` with `a ≠ 0` and `d` pairwise non-proportional linear forms,
+each either `X₁` or `X₀ - α X₁` with `α` a root of `F(X, 1)`. -/
 theorem IsHomogeneous.exists_linear_factors {R : Type*} [CommRing R] [IsDomain R]
-    {F : MvPolynomial (Fin 2) R} {d : ℕ} (hF : F.IsHomogeneous d) (hF₀ : F ≠ 0)
+    {F : MvPolynomial (Fin 2) R} {d : ℕ} (hF : F.IsHomogeneous d)
     (hroots : Multiset.card (MvPolynomial.aeval ![Polynomial.X, 1] F : Polynomial R).roots =
       (MvPolynomial.aeval ![Polynomial.X, 1] F : Polynomial R).natDegree)
     (hsq : ∀ a b : R, (a, b) ≠ (0, 0) → ¬(C a * X 0 + C b * X 1) ^ 2 ∣ F) :
@@ -332,6 +332,7 @@ theorem IsHomogeneous.exists_linear_factors {R : Type*} [CommRing R] [IsDomain R
   set g : Polynomial R := MvPolynomial.aeval ![Polynomial.X, 1] F
   have hgd : g.natDegree ≤ d := hF.natDegree_aeval_le fun i ↦ by fin_cases i <;> simp
   have hG : g.homogenize d = F := Polynomial.homogenize_eq_of_isHomogeneous hF rfl
+  have hF₀ : F ≠ 0 := fun h ↦ hsq 0 1 (by simp) (by simp [h])
   have hg₀ : g ≠ 0 := fun hg ↦ hF₀ (by rw [← hG, hg, Polynomial.homogenize_zero])
   -- No squared linear factor: `X₁ ^ 2 ∤ F` gives `k ≤ 1`, and `(X₀ - α X₁) ^ 2 ∤ F` gives
   -- simple roots.
