@@ -25,6 +25,8 @@ consecutive terms.
   their sum.
 * `TauCeti.tsum_int_eq_sum_fin_tsum`: a summable family on `ℤ` sums to the sum over the residues
   `r < M` of its sums over the classes `qM + r`.
+* `HasProd.prod_fiberwise_of_fintype`: a family on `β × γ` for a finite type `γ` has the same
+  product as the products of its finite fibers, with no hypothesis on the topology of the target.
 * `HasSum.sum_fin_mul_add`: a family on `ℤ` has the same sum as its sums over the blocks
   `qM + r`, `r < M`.
 * `HasSum.sum_zmod_val_sub`: the same, with the blocks `a - N y` indexed by the least
@@ -86,29 +88,46 @@ theorem tsum_int_eq_sum_fin_tsum {E : Type*} [AddCommGroup E] [UniformSpace E]
 
 end TauCeti
 
+/-- **Summing over the finite fibers of a product**: if a family `f` on `β × γ`, for a finite type
+`γ`, has product `a`, then so does the family of products `b ↦ ∏_c f (b, c)` over the fibers. No
+continuity of the multiplication and no separation axiom is needed, since the fibers are finite. -/
+@[to_additive /-- **Summing over the finite fibers of a product**: if a family `f` on `β × γ`, for
+a finite type `γ`, has sum `a`, then so does the family of sums `b ↦ ∑_c f (b, c)` over the fibers.
+No continuity of the addition and no separation axiom is needed, since the fibers are finite. -/]
+theorem HasProd.prod_fiberwise_of_fintype {β γ E : Type*} [CommMonoid E] [TopologicalSpace E]
+    [Fintype γ] {f : β × γ → E} {a : E} (hf : HasProd f a) :
+    HasProd (fun b ↦ ∏ c, f (b, c)) a := by
+  classical
+  have h : Filter.Tendsto (fun T : Finset β ↦ T ×ˢ (Finset.univ : Finset γ)) Filter.atTop
+      Filter.atTop := by
+    refine Filter.tendsto_atTop_atTop.2 fun S ↦ ⟨S.image Prod.fst, fun T hT x hx ↦ ?_⟩
+    exact Finset.mem_product.2 ⟨hT (Finset.mem_image_of_mem _ hx), Finset.mem_univ _⟩
+  rw [HasProd, SummationFilter.unconditional_filter] at hf ⊢
+  exact (hf.comp h).congr fun T ↦ by simp [Finset.prod_product]
+
 /-- **A sum over the integers grouped into blocks of `M` consecutive terms**: if `f` has sum `s`,
 then so does the family of block sums `q ↦ ∑_{r < M} f (q * M + r)`. -/
 theorem HasSum.sum_fin_mul_add {E : Type*} [AddCommMonoid E] [TopologicalSpace E]
-    [ContinuousAdd E] [RegularSpace E] {f : ℤ → E} {s : E} (hf : HasSum f s) (M : ℕ)
+    {f : ℤ → E} {s : E} (hf : HasSum f s) (M : ℕ)
     [NeZero M] : HasSum (fun q : ℤ ↦ ∑ r : Fin M, f (q * M + r)) s := by
-  refine ((Int.divModEquiv M).symm.hasSum_iff.mpr hf).prod_fiberwise fun q ↦ ?_
-  simpa [Function.comp_def] using hasSum_fintype fun r : Fin M ↦ f (q * M + r)
+  simpa [Function.comp_def] using
+    ((Int.divModEquiv M).symm.hasSum_iff.mpr hf).sum_fiberwise_of_fintype
 
 /-- **A product over the natural numbers grouped into blocks of `M` consecutive factors**: if `f`
 has product `a`, then so does the family of block products `n ↦ ∏_{r < M} f (n * M + r)`. -/
 @[to_additive /-- **A sum over the natural numbers grouped into blocks of `M` consecutive terms**:
 if `f` has sum `s`, then so does the family of block sums `n ↦ ∑_{r < M} f (n * M + r)`. -/]
 theorem HasProd.prod_fin_mul_add_nat {E : Type*} [CommMonoid E] [TopologicalSpace E]
-    [ContinuousMul E] [RegularSpace E] {f : ℕ → E} {a : E} (hf : HasProd f a) (M : ℕ)
+    {f : ℕ → E} {a : E} (hf : HasProd f a) (M : ℕ)
     [NeZero M] : HasProd (fun n : ℕ ↦ ∏ r : Fin M, f (n * M + r)) a := by
-  refine ((Nat.divModEquiv M).symm.hasProd_iff.mpr hf).prod_fiberwise fun n ↦ ?_
-  simpa [Function.comp_def] using hasProd_fintype fun r : Fin M ↦ f (n * M + r)
+  simpa [Function.comp_def] using
+    ((Nat.divModEquiv M).symm.hasProd_iff.mpr hf).prod_fiberwise_of_fintype
 
 /-- **A sum over the integers grouped into blocks of `N` consecutive terms**: if `f` has sum `s`,
 then so does the family of block sums `y ↦ ∑_a f (a - N y)`, where `a` runs over the least
 nonnegative representatives of the residues modulo `N`. -/
 theorem HasSum.sum_zmod_val_sub {E : Type*} [AddCommMonoid E] [TopologicalSpace E]
-    [ContinuousAdd E] [RegularSpace E] {f : ℤ → E} {s : E} (hf : HasSum f s) (N : ℕ)
+    {f : ℤ → E} {s : E} (hf : HasSum f s) (N : ℕ)
     [NeZero N] : HasSum (fun y : ℤ ↦ ∑ a : ZMod N, f ((a.val : ℤ) - N * y)) s := by
   have hbij : Function.Bijective fun r : Fin N ↦ ((r : ℕ) : ZMod N) :=
     (Fintype.bijective_iff_surjective_and_card _).mpr
