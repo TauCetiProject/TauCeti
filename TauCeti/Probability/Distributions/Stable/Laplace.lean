@@ -126,7 +126,7 @@ theorem mgf_id_stableMeasure_eq_exp_integral
   have hst : β * (s * t) ≤ 0 := by
     rw [mul_left_comm]
     exact mul_nonpos_of_nonneg_of_nonpos s.2 ht
-  rw [← stableMeasure_one_zero_map_affine hs, mgf_id_map_affine,
+  rw [← stableMeasure_one_zero_map_affine, mgf_id_map_affine,
     mgf_id_stableMeasure_one_zero_eq_exp_integral hα hβ hst,
     ← exp_add]
 

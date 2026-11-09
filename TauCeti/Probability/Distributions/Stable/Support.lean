@@ -76,7 +76,7 @@ support is the affine image of the standardized support. -/
 private theorem support_stableMeasure_eq_image (hs : 0 < s) (m : ℝ) :
     (stableMeasure α β s m).support =
       (fun x ↦ m + (s : ℝ) * x) '' (stableMeasure α β 1 0).support := by
-  rw [← stableMeasure_one_zero_map_affine hs, support_map_affine (NNReal.coe_pos.2 hs).ne']
+  rw [← stableMeasure_one_zero_map_affine, support_map_affine (NNReal.coe_pos.2 hs).ne']
 
 /-- Full support of the standardized non-Gaussian law gives full support at every positive
 scale and location, and the Gaussian shape always has full support. -/
