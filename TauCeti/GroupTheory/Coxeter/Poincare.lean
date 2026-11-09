@@ -168,9 +168,8 @@ theorem eval_neg_one_poincarePolynomial [Finite W] [Nonempty B] :
   have : Fintype W := Fintype.ofFinite W
   rw [eval_poincarePolynomial]
   refine Finset.sum_ninvolution (fun w => cs.simple i * w)
-    (fun w => by rw [neg_one_pow_length_simple_mul]; ring) (fun w _ hw => cs.simple_ne_one i ?_)
+    (fun w => by rw [neg_one_pow_length_simple_mul]; ring) (fun w _ hw => by simp at hw)
     (fun w => Finset.mem_univ _) fun w => cs.simple_mul_simple_cancel_left i
-  simpa using hw
 
 /-! ### Degree -/
 

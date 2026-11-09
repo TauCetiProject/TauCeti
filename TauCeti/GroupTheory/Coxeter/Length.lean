@@ -66,10 +66,12 @@ variable {B W : Type*} [Group W] {M : CoxeterMatrix B} (cs : CoxeterSystem M W)
 /-! ### Simple reflections are involutions -/
 
 /-- **A simple reflection is not the identity**: it has length one. -/
+@[simp]
 theorem simple_ne_one (i : B) : cs.simple i ≠ 1 := fun h => by
   simpa [h] using cs.length_simple i
 
 /-- **Each simple reflection has order exactly two.** -/
+@[simp]
 theorem orderOf_simple (i : B) : orderOf (cs.simple i) = 2 :=
   orderOf_eq_prime (cs.simple_sq i) (cs.simple_ne_one i)
 
