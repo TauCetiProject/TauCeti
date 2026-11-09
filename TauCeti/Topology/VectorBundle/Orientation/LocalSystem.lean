@@ -66,7 +66,7 @@ namespace TauCeti
 
 namespace VectorBundleOrientationCover
 
-variable [FiniteDimensional ℝ F] [Fintype ι] (R : Type u) [Ring R]
+variable [Fintype ι] (R : Type u) [Ring R]
 
 variable (F E) in
 /-- The orientation local system `o(E)` of a real vector bundle of rank `card ι`: the sign local
@@ -99,6 +99,8 @@ theorem signLocalSystemObjEquiv_map_apply {x y : FundamentalGroupoid (TopCat.of 
         (proj ⁻¹' {x.as} : Set (VectorBundleOrientationCover F E ι)) → R)
         ((isCoveringMap_proj hι).monodromy (inv γ) e) :=
   (isCoveringMap_proj hι).signLocalSystemObjEquiv_map_apply _ proj_comp_deck γ f e
+
+variable [FiniteDimensional ℝ F]
 
 /-- Evaluation at an orientation `o` of the fibre `E_b` identifies the fibre of the orientation
 local system over `b` with `R`. -/
