@@ -60,9 +60,9 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
   commute.
 * `TauCeti.mixedDeriv`: the mixed position-frequency derivative `∂_x^α ∂_ξ^β`.
 * `TauCeti.mixedDeriv_eq_iteratedFDerivAlong`, `TauCeti.iteratedFDerivAlong_map_mixedDirection`:
-  for smooth functions, mixed derivatives are the iterated directional derivatives
-  `TauCeti.iteratedFDerivAlong` along words of position and frequency directions
-  (`TauCeti.mixedDirection`), in any interleaving.
+  mixed derivatives are the iterated directional derivatives `TauCeti.iteratedFDerivAlong` along
+  words of position and frequency directions (`TauCeti.mixedDirection`), in any interleaving for
+  smooth functions.
 * `TauCeti.mixedDeriv_eq_iteratedFDeriv`, `TauCeti.mixedDeriv_eq_iteratedFDeriv_append`: its
   comparison with `iteratedFDeriv` on the directions `TauCeti.mixedDirections`.
 * `ContinuousLinearMap.coordinateDeriv_of_bilinear`, `ContinuousLinearMap.mixedDeriv_of_bilinear`:
@@ -430,16 +430,28 @@ theorem mixedDeriv_nil_comp_fst (f : CoordinateSpace n → A) (α : List (Fin n)
     mixedDeriv α [] (fun p => f p.1) x ξ = coordinateDeriv α f x := by
   simp only [mixedDeriv_def, coordinateDeriv_nil]
 
+/-- The coordinate direction of `ℝⁿ × ℝⁿ` named by a letter: `Sum.inl j` is the `j`-th position
+direction `(eⱼ, 0)` and `Sum.inr j` the `j`-th frequency direction `(0, eⱼ)`. -/
+def mixedDirection : Fin n ⊕ Fin n → CoordinateSpace n × CoordinateSpace n :=
+  Sum.elim (fun j => (EuclideanSpace.single j 1, 0)) fun j => (0, EuclideanSpace.single j 1)
+
+@[simp]
+theorem mixedDirection_inl (j : Fin n) :
+    mixedDirection (Sum.inl j) = (EuclideanSpace.single j 1, 0) := (rfl)
+
+@[simp]
+theorem mixedDirection_inr (j : Fin n) :
+    mixedDirection (Sum.inr j) = (0, EuclideanSpace.single j 1) := (rfl)
+
 /-- The directions of the mixed derivative `∂_x^α ∂_ξ^β` in `ℝⁿ × ℝⁿ`: the standard basis vectors
 of the position space named by `α`, followed by those of the frequency space named by `β`. -/
 def mixedDirections (α β : List (Fin n)) : List (CoordinateSpace n × CoordinateSpace n) :=
-  α.map (fun j => (EuclideanSpace.single j 1, 0)) ++
-    β.map (fun j => (0, EuclideanSpace.single j 1))
+  (α.map Sum.inl ++ β.map Sum.inr).map mixedDirection
 
 theorem mixedDirections_def (α β : List (Fin n)) :
     mixedDirections α β = α.map (fun j => (EuclideanSpace.single j 1, 0)) ++
-      β.map (fun j => (0, EuclideanSpace.single j 1)) :=
-  (rfl)
+      β.map (fun j => (0, EuclideanSpace.single j 1)) := by
+  simp [mixedDirections, Function.comp_def]
 
 @[simp]
 theorem mixedDirections_cons (j : Fin n) (α β : List (Fin n)) :
@@ -565,44 +577,15 @@ theorem coordinateDeriv_eq_iteratedFDerivAlong (α : List (Fin n)) (f : Coordina
     funext x
     rw [coordinateDeriv_cons, ih, List.map_cons, iteratedFDerivAlong_cons_apply]
 
-/-- The coordinate direction of `ℝⁿ × ℝⁿ` named by a letter: `Sum.inl j` is the `j`-th position
-direction `(eⱼ, 0)` and `Sum.inr j` the `j`-th frequency direction `(0, eⱼ)`. -/
-def mixedDirection : Fin n ⊕ Fin n → CoordinateSpace n × CoordinateSpace n :=
-  Sum.elim (fun j => (EuclideanSpace.single j 1, 0)) fun j => (0, EuclideanSpace.single j 1)
-
-@[simp]
-theorem mixedDirection_inl (j : Fin n) :
-    mixedDirection (Sum.inl j) = (EuclideanSpace.single j 1, 0) := (rfl)
-
-@[simp]
-theorem mixedDirection_inr (j : Fin n) :
-    mixedDirection (Sum.inr j) = (0, EuclideanSpace.single j 1) := (rfl)
-
-/-- The directions `TauCeti.mixedDirections α β` of `∂_x^α ∂_ξ^β` are those named by the word of
-the position letters `α` followed by the frequency letters `β`. -/
-theorem map_mixedDirection_append (α β : List (Fin n)) :
-    (α.map Sum.inl ++ β.map Sum.inr).map mixedDirection = mixedDirections α β := by
-  simp [mixedDirections_def, Function.comp_def]
-
 variable {a : CoordinateSpace n × CoordinateSpace n → A}
 
-/-- A mixed derivative of a smooth function is the iterated directional derivative along its
-position directions and its frequency directions, the latter being taken first. -/
-theorem mixedDeriv_eq_iteratedFDerivAlong (ha : ContDiff ℝ ∞ a) (α β : List (Fin n))
-    (x ξ : CoordinateSpace n) :
-    mixedDeriv α β a x ξ =
-      iteratedFDerivAlong ℝ ((α.map Sum.inl ++ β.map Sum.inr).map mixedDirection) a (x, ξ) := by
-  have hβ : ∀ y, coordinateDeriv β (fun η => a (y, η)) ξ =
-      iteratedFDerivAlong ℝ (β.map fun j => (0, EuclideanSpace.single j 1)) a (y, ξ) := by
-    intro y
-    rw [coordinateDeriv_eq_iteratedFDerivAlong, iteratedFDerivAlong_comp_of_hasFDerivAt
-      (fun η => hasFDerivAt_prodMk_right (𝕜 := ℝ) y η) ha _ (by exact_mod_cast le_top)]
-    simp [Function.comp_def]
-  rw [mixedDeriv_def, funext hβ, coordinateDeriv_eq_iteratedFDerivAlong,
-    iteratedFDerivAlong_comp_of_hasFDerivAt (fun y => hasFDerivAt_prodMk_left (𝕜 := ℝ) y ξ)
-      (ha.iteratedFDerivAlong (m := ∞) _ (by simp)) _ (by exact_mod_cast le_top),
-    ← iteratedFDerivAlong_append]
-  simp [Function.comp_def]
+/-- The mixed derivative `∂_x^α ∂_ξ^β` of a `C^(|α| + |β|)` function is the iterated directional
+derivative along its directions `TauCeti.mixedDirections α β`. -/
+theorem mixedDeriv_eq_iteratedFDerivAlong (α β : List (Fin n))
+    (ha : ContDiff ℝ (α.length + β.length) a) (x ξ : CoordinateSpace n) :
+    mixedDeriv α β a x ξ = iteratedFDerivAlong ℝ (mixedDirections α β) a (x, ξ) := by
+  rw [mixedDeriv_eq_iteratedFDeriv α β ha, ← iteratedFDerivAlong_ofFn_eq_iteratedFDeriv
+    (by simpa using ha), List.ofFn_get]
 
 /-- The iterated directional derivative of a smooth function along any word of position and
 frequency directions is the mixed derivative along its position letters and its frequency
@@ -619,7 +602,7 @@ theorem iteratedFDerivAlong_map_mixedDirection (ha : ContDiff ℝ ∞ a) (w : Li
       cases l with
       | inl j => simpa [List.filterMap_cons] using ih
       | inr j => simpa [List.filterMap_cons] using (ih.cons (Sum.inr j)).trans List.perm_middle.symm
-  rw [mixedDeriv_eq_iteratedFDerivAlong ha,
+  rw [mixedDeriv_eq_iteratedFDerivAlong _ _ (ha.of_le (by exact_mod_cast le_top)), mixedDirections,
     (hperm.map mixedDirection).iteratedFDerivAlong_eq ha (by exact_mod_cast le_top)]
 
 end IteratedFDerivAlong

@@ -35,10 +35,10 @@ the symbol calculus needs:
   `‖ξ‖ ≥ 2 t`, satisfy the order-zero symbol estimates `‖D^k (χ (t⁻¹ • ·)) ξ‖ ≤ C ⟨ξ⟩^(-k)`
   uniformly in `t` (`FrequencyCutoff.exists_norm_iteratedFDeriv_comp_inv_smul_le`); cutoffs at
   growing radii are how asymptotic sums of symbols are built.
-* on `ℝⁿ`, the rescaled cutoff `(x, ξ) ↦ χ(ξ / R)` on phase space is smooth
+* the rescaled cutoff `(x, ξ) ↦ χ(ξ / R)` on a product `X × E` is smooth
   (`FrequencyCutoff.contDiff_comp_inv_smul_snd`), multiplying by it gives a function vanishing
-  near `‖ξ / R‖ < 1` (`FrequencyCutoff.comp_inv_smul_snd_smul_eventuallyEq_zero`), and it
-  satisfies the symbol estimates of order `0`
+  near `‖ξ / R‖ < 1` (`FrequencyCutoff.comp_inv_smul_snd_smul_eventuallyEq_zero`), and on `ℝⁿ`
+  it satisfies the symbol estimates of order `0`
   (`FrequencyCutoff.exists_bound_mixedDeriv_comp_inv_smul_snd`), for every radius `R`.
 
 ## References
@@ -273,25 +273,24 @@ noncomputable instance [HasContDiffBump E] : Inhabited (FrequencyCutoff E) :=
 
 section Rescaled
 
-variable {n : ℕ} (χ : FrequencyCutoff (CoordinateSpace n)) (R : ℝ)
-
 /-- The rescaled cutoff `(x, ξ) ↦ χ(ξ / R)` on phase space is smooth. -/
-theorem contDiff_comp_inv_smul_snd :
-    ContDiff ℝ ∞ fun p : CoordinateSpace n × CoordinateSpace n => χ (R⁻¹ • p.2) :=
+theorem contDiff_comp_inv_smul_snd {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+    (R : ℝ) : ContDiff ℝ ∞ fun p : X × E => χ (R⁻¹ • p.2) :=
   χ.contDiff.comp (contDiff_snd.const_smul R⁻¹)
 
 /-- A function on phase space multiplied by the rescaled cutoff `χ(ξ / R)` vanishes near every
 point with `‖ξ / R‖ < 1`. -/
-theorem comp_inv_smul_snd_smul_eventuallyEq_zero {A : Type*} [NormedAddCommGroup A]
-    [NormedSpace ℝ A] (f : CoordinateSpace n × CoordinateSpace n → A)
-    {p : CoordinateSpace n × CoordinateSpace n} (hp : ‖R⁻¹ • p.2‖ < 1) :
+theorem comp_inv_smul_snd_smul_eventuallyEq_zero {X : Type*} [TopologicalSpace X] (R : ℝ)
+    {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A] (f : X × E → A) {p : X × E}
+    (hp : ‖R⁻¹ • p.2‖ < 1) :
     (fun q => χ (R⁻¹ • q.2) • f q) =ᶠ[𝓝 p] 0 := by
-  have hc : Continuous fun q : CoordinateSpace n × CoordinateSpace n => R⁻¹ • q.2 :=
-    continuous_snd.const_smul R⁻¹
+  have hc : Continuous fun q : X × E => R⁻¹ • q.2 := continuous_snd.const_smul R⁻¹
   filter_upwards [(χ.eventuallyEq_zero_of_norm_lt_one hp).comp_tendsto hc.continuousAt]
     with q hq
   simp only [Function.comp_apply, Pi.zero_apply] at hq
   simp [hq]
+
+variable {n : ℕ} (χ : FrequencyCutoff (CoordinateSpace n)) (R : ℝ)
 
 /-- If `k = 0` or `‖ξ / R‖ < 2`, then `|R⁻¹|^k ≤ |R⁻¹|^k ⟨2R⟩^k ⟨ξ⟩^(-k)`: below the radius
 `2 |R|` the weight `⟨ξ⟩^(-k)` is bounded below by `⟨2R⟩^(-k)`, and for `R = 0` both sides vanish. -/

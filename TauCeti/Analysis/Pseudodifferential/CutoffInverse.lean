@@ -368,14 +368,16 @@ private theorem exists_bound_cutoffInverse (a : Symbol n V W m)
     (wordBounds_inverse a ha (fun x _ ξ hξ => hinv x ξ hξ) hC _)
   obtain ⟨C, hC⟩ := hb _ le_rfl
   refine ⟨max C 0, le_max_right _ _, fun x hx ξ => ?_⟩
-  rw [mixedDeriv_eq_iteratedFDerivAlong (contDiff_cutoffInverse a χ R hinv)]
+  rw [mixedDeriv_eq_iteratedFDerivAlong α β
+    ((contDiff_cutoffInverse a χ R hinv).of_le (by exact_mod_cast le_top))]
   by_cases hξ : ‖R⁻¹ • ξ‖ < 1
   · rw [iteratedFDerivAlong_eq_zero_of_eventuallyEq_zero
       (χ.comp_inv_smul_snd_smul_eventuallyEq_zero R (fun p => (a.coefficient p).inverse)
         (p := (x, ξ)) hξ), norm_zero]
     positivity
   · have h := hC (x, ξ) ⟨hx, le_norm_of_one_le_norm_inv_smul (not_lt.1 hξ)⟩
-    simp only [ContinuousLinearMap.lsmul_apply, zero_add] at h
+    simp only [ContinuousLinearMap.lsmul_apply, zero_add, List.map_append, List.map_map,
+      Function.comp_def, mixedDirection_inl, mixedDirection_inr, ← mixedDirections_def] at h
     have hβ : freqLetters (α.map Sum.inl ++ β.map Sum.inr) = β := by
       simp [freqLetters, Function.comp_def]
     rw [hβ] at h
