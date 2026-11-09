@@ -115,6 +115,7 @@ theorem reindexLimitMap_eq_of_common {u' : K ⥤ J}
 
 /-- Precomposing a comparison with a natural transformation of index functors leaves its
 map of limits unchanged. -/
+@[simp]
 theorem reindexLimitMap_whiskerRight {u' : K ⥤ J} (σ : u' ⟶ u)
     (α : u ⋙ F ⟶ G) [HasLimit F] [HasLimit G] :
     (whiskerRight σ F ≫ α).reindexLimitMap = α.reindexLimitMap := by
@@ -129,7 +130,6 @@ variable {w : J ⥤ K} (α : u ⋙ F ⟶ G) (β : w ⋙ G ⟶ F)
 
 /-- A composite comparison agreeing with the identity after common restrictions induces the
 identity on the limit. -/
-@[simp]
 theorem reindexLimitMap_comp_eq_id
     (h : ∀ j, ∃ (i : J) (f : i ⟶ u.obj (w.obj j)) (g : i ⟶ j),
       F.map f ≫ α.app (w.obj j) ≫ β.app j = F.map g) :
