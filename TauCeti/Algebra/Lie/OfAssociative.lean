@@ -7,9 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Bilinear
 public import Mathlib.Algebra.Lie.OfAssociative
-public import Mathlib.Algebra.Lie.EngelSubalgebra
 import Mathlib.RingTheory.Nilpotent.Lemmas
-import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.NoncommRing
 
@@ -40,12 +38,7 @@ such products are often computable, which is how the Killing form of the commuta
 of an associative algebra, such as `gl n`, is evaluated.
 
 If `x * x = c • 1` is a scalar, then `ad x` satisfies the cubic `(ad x)³ = 4 c • ad x`
-(`LieAlgebra.ad_pow_three_eq_smul_ad`). For commuting elements `x`, `y` of a Lie subalgebra with
-`x * x = 1` and `y * y = -1`, the two cubics force every element of the generalized kernel of
-`ad (x + y)` to commute with `x` and with `y`
-(`LieSubalgebra.lie_eq_zero_and_lie_eq_zero_of_mem_engel_add`). In a symplectic Lie algebra this
-shows that the Hamiltonian endomorphisms of the focus-focus block `q₁p₁ + q₂p₂`, `q₁p₂ - q₂p₁`
-give a regular element.
+(`LieAlgebra.ad_pow_three_eq_smul_ad`).
 
 ## Main definitions
 
@@ -66,9 +59,6 @@ give a regular element.
 * `LieAlgebra.ad_pow_three_eq_smul_ad`: `(ad x)³ = 4 c • ad x` when `x * x = c • 1`.
 * `LieSubalgebra.commute_coe_iff`: two elements of a Lie subalgebra of `A` commute in `A` exactly
   when their bracket vanishes.
-* `LieSubalgebra.lie_eq_zero_and_lie_eq_zero_of_mem_engel_add`: for commuting `x`, `y` with
-  `x * x = 1` and `y * y = -1`, every element of the Engel subalgebra of `x + y` commutes with `x`
-  and `y`.
 
 ## References
 
@@ -197,91 +187,5 @@ variable {R : Type u} {A : Type w} [CommRing R] [Ring A] [Algebra R A]
 their bracket vanishes. -/
 theorem commute_coe_iff {K : LieSubalgebra R A} {x y : K} : Commute (x : A) y ↔ ⁅x, y⁆ = 0 := by
   rw [commute_iff_lie_eq, ← coe_bracket, ZeroMemClass.coe_eq_zero]
-
-end LieSubalgebra
-
-namespace LieSubalgebra
-
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-variable {R : Type u} {A : Type w} [Field R] [NeZero (2 : R)] [Ring A] [Algebra R A]
-
-/-- For commuting endomorphisms `N`, `P` with `N³ = 4 N` and `P³ = -4 P`, if `N` and `P` both kill
-`u = N w + P w`, then they both kill `w`. -/
-private theorem eq_zero_of_apply_add_apply_eq_zero {M : Type*} [AddCommGroup M] [Module R M]
-    {N P : Module.End R M} (hN : N ^ 3 = (4 : R) • N) (hP : P ^ 3 = -((4 : R) • P))
-    (hNP : Commute N P) {w : M} (h₁ : N (N w + P w) = 0) (h₂ : P (N w + P w) = 0) :
-    N w = 0 ∧ P w = 0 := by
-  have comm : ∀ u, N (P u) = P (N u) := fun u ↦ by
-    simpa only [mul_apply_eq_comp] using LinearMap.congr_fun hNP.eq u
-  have hN3 : ∀ u, N (N (N u)) = (4 : R) • N u := fun u ↦ by
-    simpa only [pow_succ, pow_zero, one_mul, mul_apply_eq_comp, LinearMap.smul_apply] using
-      LinearMap.congr_fun hN u
-  have hP3 : ∀ u, P (P (P u)) = -((4 : R) • P u) := fun u ↦ by
-    simpa only [pow_succ, pow_zero, one_mul, mul_apply_eq_comp, LinearMap.smul_apply,
-      LinearMap.neg_apply] using LinearMap.congr_fun hP u
-  have h4 : (4 : R) ≠ 0 := by
-    rw [show (4 : R) = 2 * 2 by norm_num]
-    exact mul_ne_zero two_ne_zero two_ne_zero
-  rw [map_add] at h₁ h₂
-  have e₁ := congrArg N h₁
-  rw [map_add, map_zero] at e₁
-  -- `P (P w) = -N (P w)`, so `P³ w = N (N (P w)) = -N³ w`; with the two cubics, `P w = N w`.
-  have hPP : P (P w) = -N (P w) := by
-    rw [← comm] at h₂
-    linear_combination (norm := module) h₂
-  have hP3' : P (P (P w)) = -N (N (N w)) := by
-    rw [hPP, map_neg, ← comm, hPP, map_neg, neg_neg]
-    linear_combination (norm := module) e₁
-  have hPN : (4 : R) • (P w - N w) = 0 := by
-    linear_combination (norm := module) hP3 w - hP3' + hN3 w
-  have hPN' : P w = N w := sub_eq_zero.1 ((smul_eq_zero.1 hPN).resolve_left h4)
-  -- Then `N (N w) = 0`, so `4 N w = N³ w = 0`.
-  have hNN : (2 : R) • N (N w) = 0 := by
-    rw [hPN'] at h₁
-    linear_combination (norm := module) h₁
-  have hNN' : N (N w) = 0 := (smul_eq_zero.1 hNN).resolve_left two_ne_zero
-  have hNw : (4 : R) • N w = 0 := by rw [← hN3, hNN', map_zero]
-  have hNw' : N w = 0 := (smul_eq_zero.1 hNw).resolve_left h4
-  exact ⟨hNw', hPN'.trans hNw'⟩
-
-/-- For commuting endomorphisms `N`, `P` with `N³ = 4 N` and `P³ = -4 P`, every vector killed by a
-power of `N + P` is killed by `N` and by `P`. -/
-private theorem eq_zero_of_pow_add_apply_eq_zero {M : Type*} [AddCommGroup M] [Module R M]
-    {N P : Module.End R M} (hN : N ^ 3 = (4 : R) • N) (hP : P ^ 3 = -((4 : R) • P))
-    (hNP : Commute N P) (n : ℕ) {w : M} (hw : ((N + P) ^ n) w = 0) : N w = 0 ∧ P w = 0 := by
-  induction n generalizing w with
-  | zero =>
-    rw [pow_zero, one_apply_eq_self] at hw
-    simp [hw]
-  | succ n ih =>
-    rw [pow_succ, mul_apply_eq_comp] at hw
-    obtain ⟨h₁, h₂⟩ := ih hw
-    rw [LinearMap.add_apply] at h₁ h₂
-    exact eq_zero_of_apply_add_apply_eq_zero hN hP hNP h₁ h₂
-
-/-- **The Engel subalgebra of `x + y` for commuting square roots of `1` and `-1`.** Let `x`, `y` be
-commuting elements of a Lie subalgebra `K` of an associative algebra with `x * x = 1` and
-`y * y = -1`. Then every element of `K` killed by a power of `ad (x + y)` commutes with `x` and
-with `y`. -/
-theorem lie_eq_zero_and_lie_eq_zero_of_mem_engel_add {K : LieSubalgebra R A} {x y z : K}
-    (hx : (x : A) * x = 1) (hy : (y : A) * y = -1) (hxy : ⁅x, y⁆ = 0)
-    (hz : z ∈ LieSubalgebra.engel R (x + y)) :
-    ⁅x, z⁆ = 0 ∧ ⁅y, z⁆ = 0 := by
-  have hcube : ∀ {u : K} {c : R}, (u : A) * u = c • 1 →
-      LieAlgebra.ad R K u ^ 3 = (4 * c) • LieAlgebra.ad R K u := fun {u c} hu ↦ by
-    ext1 v
-    apply Subtype.ext
-    rw [coe_ad_pow, LinearMap.smul_apply, SetLike.val_smul, coe_ad,
-      LieAlgebra.ad_pow_three_eq_smul_ad hu, LinearMap.smul_apply]
-  have hN := hcube (c := 1) (by rw [hx, one_smul])
-  have hP := hcube (c := -1) (by rw [hy, neg_smul, one_smul])
-  rw [mul_one] at hN
-  rw [mul_neg_one, neg_smul] at hP
-  have hNP : Commute (LieAlgebra.ad R K x) (LieAlgebra.ad R K y) := by
-    rw [commute_iff_lie_eq, ← LieHom.map_lie, hxy, map_zero]
-  obtain ⟨n, hn⟩ := (mem_engel_iff R (x + y) z).1 hz
-  rw [map_add] at hn
-  simpa only [LieAlgebra.ad_apply] using eq_zero_of_pow_add_apply_eq_zero hN hP hNP n hn
 
 end LieSubalgebra

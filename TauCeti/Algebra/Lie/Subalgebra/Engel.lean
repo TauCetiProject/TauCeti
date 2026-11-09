@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Lie.EngelSubalgebra
 import Mathlib.Algebra.Lie.Weights.Cartan
+import TauCeti.Algebra.Lie.OfAssociative
+import TauCeti.LinearAlgebra.End.CommutingCubic
 
 /-!
 # Nilpotent subalgebras and Engel subalgebras
@@ -15,10 +17,19 @@ A nilpotent Lie subalgebra lies in the Engel subalgebra of each of its elements.
 converse of Mathlib's `LieSubalgebra.isNilpotent_of_forall_le_engel`, and it holds over any
 commutative ring.
 
+For commuting elements `x`, `y` of a Lie subalgebra of an associative algebra with `x * x = 1` and
+`y * y = -1`, the operators `ad x` and `ad y` satisfy the cubics `(ad x)³ = 4 ad x` and
+`(ad y)³ = -4 ad y` (`LieAlgebra.ad_pow_three_eq_smul_ad`). These force every element of the
+Engel subalgebra of `x + y` to commute with `x` and with `y`
+(`Module.End.apply_eq_zero_and_apply_eq_zero_of_pow_add_apply_eq_zero`).
+
 ## Main results
 
 * `LieSubalgebra.le_engel_of_isNilpotent`: a nilpotent subalgebra lies in the Engel subalgebra of
   each of its elements.
+* `LieSubalgebra.lie_eq_zero_and_lie_eq_zero_of_mem_engel_add`: for commuting `x`, `y` with
+  `x * x = 1` and `y * y = -1`, every element of the Engel subalgebra of `x + y` commutes with `x`
+  and `y`.
 -/
 
 public section
@@ -38,5 +49,38 @@ theorem le_engel_of_isNilpotent (U : LieSubalgebra R L) [LieRing.IsNilpotent U] 
   rw [LieModule.mem_genWeightSpaceOf] at this
   simpa only [mem_engel_iff, zero_smul, sub_zero, LieAlgebra.ad, LieSubalgebra.toEnd_eq,
     Pi.zero_apply] using this
+
+end LieSubalgebra
+
+namespace LieSubalgebra
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+variable {R A : Type*} [Field R] [NeZero (2 : R)] [Ring A] [Algebra R A]
+
+/-- **The Engel subalgebra of `x + y` for commuting square roots of `1` and `-1`.** Let `x`, `y` be
+commuting elements of a Lie subalgebra `K` of an associative algebra with `x * x = 1` and
+`y * y = -1`. Then every element of `K` killed by a power of `ad (x + y)` commutes with `x` and
+with `y`. -/
+theorem lie_eq_zero_and_lie_eq_zero_of_mem_engel_add {K : LieSubalgebra R A} {x y z : K}
+    (hx : (x : A) * x = 1) (hy : (y : A) * y = -1) (hxy : ⁅x, y⁆ = 0)
+    (hz : z ∈ LieSubalgebra.engel R (x + y)) :
+    ⁅x, z⁆ = 0 ∧ ⁅y, z⁆ = 0 := by
+  have hcube : ∀ {u : K} {c : R}, (u : A) * u = c • 1 →
+      LieAlgebra.ad R K u ^ 3 = (4 * c) • LieAlgebra.ad R K u := fun {u c} hu ↦ by
+    ext1 v
+    apply Subtype.ext
+    rw [coe_ad_pow, LinearMap.smul_apply, SetLike.val_smul, coe_ad,
+      LieAlgebra.ad_pow_three_eq_smul_ad hu, LinearMap.smul_apply]
+  have hN := hcube (c := 1) (by rw [hx, one_smul])
+  have hP := hcube (c := -1) (by rw [hy, neg_smul, one_smul])
+  rw [mul_one] at hN
+  rw [mul_neg_one, neg_smul] at hP
+  have hNP : Commute (LieAlgebra.ad R K x) (LieAlgebra.ad R K y) := by
+    rw [commute_iff_lie_eq, ← LieHom.map_lie, hxy, map_zero]
+  obtain ⟨n, hn⟩ := (mem_engel_iff R (x + y) z).1 hz
+  rw [map_add] at hn
+  simpa only [LieAlgebra.ad_apply] using
+    Module.End.apply_eq_zero_and_apply_eq_zero_of_pow_add_apply_eq_zero hN hP hNP n hn
 
 end LieSubalgebra
