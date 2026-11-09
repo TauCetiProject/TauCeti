@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import Mathlib.MeasureTheory.Measure.FiniteMeasure
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 
 /-!
 # The arctan center of a finite measure on the line
@@ -35,8 +36,9 @@ of objects carrying finite nonzero measures on `ℝ`, which translate along with
 trivialized by recentering each measure at `0`. Floer cylinders, which translate along the strip,
 are recentered in this way by the distribution of their energy.
 
-Any strictly increasing bounded continuous score function would serve; `arctan` is a fixed choice,
-so that the center is a well-defined function of the measure.
+Any strictly increasing bounded continuous score function, negative near `-∞` and positive near
+`+∞`, would serve; `arctan` is a fixed choice, so that the center is a well-defined function of
+the measure.
 
 ## Main definitions
 
@@ -75,30 +77,27 @@ def arctanBalance (m : ℝ) : ℝ :=
 
 theorem arctanBalance_def (m : ℝ) : μ.arctanBalance m = ∫ s, arctan (s - m) ∂μ := (rfl)
 
-/-- The functions `s ↦ arctan (s - m)` are bounded by `π / 2`. -/
-private theorem norm_arctan_sub_le (s m : ℝ) : ‖arctan (s - m)‖ ≤ π / 2 :=
-  abs_le.2 ⟨(arctan_mem_Ioo _).1.le, (arctan_mem_Ioo _).2.le⟩
-
-private theorem integrable_arctan_sub [IsFiniteMeasure μ] (m : ℝ) :
-    Integrable (fun s ↦ arctan (s - m)) μ :=
-  Integrable.of_bound (continuous_arctan.comp (continuous_sub_right m)).aestronglyMeasurable
-    (π / 2) (ae_of_all _ fun s ↦ norm_arctan_sub_le s m)
+/-- The arctan balance of the zero measure vanishes identically. -/
+@[simp]
+theorem arctanBalance_zero : (0 : Measure ℝ).arctanBalance = 0 :=
+  funext fun _ ↦ integral_zero_measure _
 
 /-- The arctan balance of a finite measure is continuous. -/
 theorem continuous_arctanBalance [IsFiniteMeasure μ] : Continuous μ.arctanBalance :=
   continuous_of_dominated
     (fun m ↦ (continuous_arctan.comp (continuous_sub_right m)).aestronglyMeasurable)
-    (fun m ↦ ae_of_all _ fun s ↦ norm_arctan_sub_le s m) (integrable_const (π / 2))
+    (fun m ↦ ae_of_all _ fun s ↦ (abs_arctan_lt_pi_div_two (s - m)).le) (integrable_const (π / 2))
     (ae_of_all _ fun s ↦ continuous_arctan.comp (continuous_sub_left s))
 
 /-- The arctan balance of a finite nonzero measure is strictly decreasing. -/
 theorem strictAnti_arctanBalance [IsFiniteMeasure μ] [NeZero μ] : StrictAnti μ.arctanBalance := by
+  have hint (m : ℝ) : Integrable (fun s ↦ arctan (s - m)) μ :=
+    Integrable.of_bound (continuous_arctan.comp (continuous_sub_right m)).aestronglyMeasurable
+      (π / 2) (ae_of_all _ fun s ↦ (abs_arctan_lt_pi_div_two (s - m)).le)
   intro m m' hmm'
-  rw [← sub_pos, arctanBalance_def, arctanBalance_def,
-    ← integral_sub (integrable_arctan_sub μ m) (integrable_arctan_sub μ m'),
+  rw [← sub_pos, arctanBalance_def, arctanBalance_def, ← integral_sub (hint m) (hint m'),
     integral_pos_iff_support_of_nonneg
-      (fun s ↦ sub_nonneg.2 (arctan_mono (by linarith)))
-      ((integrable_arctan_sub μ m).sub (integrable_arctan_sub μ m'))]
+      (fun s ↦ sub_nonneg.2 (arctan_mono (by linarith))) ((hint m).sub (hint m'))]
   have hsupp : Function.support (fun s ↦ arctan (s - m) - arctan (s - m')) = univ :=
     Function.support_eq_univ fun s ↦
       (sub_pos.2 (arctan_strictMono (by linarith))).ne'
@@ -112,12 +111,12 @@ theorem tendsto_arctanBalance_atBot [IsFiniteMeasure μ] :
     (F := fun m s ↦ arctan (s - m)) (f := fun _ ↦ π / 2) (fun _ ↦ π / 2)
     (Eventually.of_forall fun m ↦
       (continuous_arctan.comp (continuous_sub_right m)).aestronglyMeasurable)
-    (Eventually.of_forall fun m ↦ ae_of_all _ fun s ↦ norm_arctan_sub_le s m)
+    (Eventually.of_forall fun m ↦ ae_of_all _ fun s ↦ (abs_arctan_lt_pi_div_two (s - m)).le)
     (integrable_const _)
     (ae_of_all _ fun s ↦ tendsto_nhds_of_tendsto_nhdsWithin
       (tendsto_arctan_atTop.comp ((tendsto_atTop_add_const_left atBot s
         tendsto_neg_atBot_atTop).congr fun m ↦ (sub_eq_add_neg s m).symm)))
-  rw [show μ.arctanBalance = fun m ↦ ∫ s, arctan (s - m) ∂μ from funext (arctanBalance_def μ)]
+  rw [tendsto_congr (arctanBalance_def μ)]
   simpa [integral_const, smul_eq_mul, mul_comm] using h
 
 /-- As `m → +∞` the arctan balance of a finite measure tends to `-π / 2` times its total mass. -/
@@ -127,12 +126,12 @@ theorem tendsto_arctanBalance_atTop [IsFiniteMeasure μ] :
     (F := fun m s ↦ arctan (s - m)) (f := fun _ ↦ -(π / 2)) (fun _ ↦ π / 2)
     (Eventually.of_forall fun m ↦
       (continuous_arctan.comp (continuous_sub_right m)).aestronglyMeasurable)
-    (Eventually.of_forall fun m ↦ ae_of_all _ fun s ↦ norm_arctan_sub_le s m)
+    (Eventually.of_forall fun m ↦ ae_of_all _ fun s ↦ (abs_arctan_lt_pi_div_two (s - m)).le)
     (integrable_const _)
     (ae_of_all _ fun s ↦ tendsto_nhds_of_tendsto_nhdsWithin
       (tendsto_arctan_atBot.comp ((tendsto_atBot_add_const_left atTop s
         tendsto_neg_atTop_atBot).congr fun m ↦ (sub_eq_add_neg s m).symm)))
-  rw [show μ.arctanBalance = fun m ↦ ∫ s, arctan (s - m) ∂μ from funext (arctanBalance_def μ)]
+  rw [tendsto_congr (arctanBalance_def μ)]
   simpa [integral_const, smul_eq_mul, mul_comm] using h
 
 /-- The arctan balance of a finite nonzero measure has exactly one zero. -/
@@ -140,8 +139,8 @@ theorem existsUnique_arctanBalance_eq_zero [IsFiniteMeasure μ] [NeZero μ] :
     ∃! m, μ.arctanBalance m = 0 := by
   have hpos : 0 < π / 2 * μ.real univ := mul_pos (by positivity) measureReal_univ_pos
   obtain ⟨a, ha⟩ := ((tendsto_arctanBalance_atBot μ).eventually (lt_mem_nhds hpos)).exists
-  obtain ⟨b, hb⟩ := ((tendsto_arctanBalance_atTop μ).eventually
-    (gt_mem_nhds (show -(π / 2) * μ.real univ < 0 by linarith))).exists
+  have hneg : -(π / 2) * μ.real univ < 0 := by linarith
+  obtain ⟨b, hb⟩ := ((tendsto_arctanBalance_atTop μ).eventually (gt_mem_nhds hneg)).exists
   have hab : a ≤ b := by
     by_contra! h
     exact absurd ((strictAnti_arctanBalance μ).antitone h.le) (by linarith)
@@ -164,6 +163,16 @@ theorem arctanBalance_arctanCenter [IsFiniteMeasure μ] [NeZero μ] :
   unfold arctanCenter
   split_ifs
   exact h.exists.choose_spec
+
+/-- The arctan center of the zero measure is `0`: its balance vanishes identically, so it does not
+have exactly one zero. -/
+@[simp]
+theorem arctanCenter_zero : (0 : Measure ℝ).arctanCenter = 0 := by
+  unfold arctanCenter
+  split_ifs with h
+  · obtain ⟨m, -, hm⟩ := h
+    exact absurd ((hm 1 (by simp)).trans (hm 0 (by simp)).symm) one_ne_zero
+  · rfl
 
 variable {μ}
 
@@ -221,28 +230,21 @@ end Measure
 
 namespace FiniteMeasure
 
-/-- The bounded continuous function `s ↦ arctan (s - m)`. -/
-private def arctanSub (m : ℝ) : ℝ →ᵇ ℝ :=
-  .mkOfBound ⟨fun s ↦ arctan (s - m), continuous_arctan.comp (continuous_sub_right m)⟩ π
-    fun s s' ↦ by
-      rw [ContinuousMap.coe_mk, Real.dist_eq, abs_le]
-      constructor <;> linarith [neg_pi_div_two_lt_arctan (s - m), arctan_lt_pi_div_two (s - m),
-        neg_pi_div_two_lt_arctan (s' - m), arctan_lt_pi_div_two (s' - m)]
-
-private theorem arctanSub_apply (m s : ℝ) : arctanSub m s = arctan (s - m) := (rfl)
-
 /-- **Continuity of the arctan center.** If finite measures `μᵢ` converge weakly to a nonzero
 finite measure `μ`, their arctan centers converge to the arctan center of `μ`. -/
 theorem tendsto_arctanCenter {γ : Type*} {F : Filter γ} {μs : γ → FiniteMeasure ℝ}
     {μ : FiniteMeasure ℝ} (hμ : μ ≠ 0) (h : Tendsto μs F (𝓝 μ)) :
     Tendsto (fun i ↦ (μs i : Measure ℝ).arctanCenter) F (𝓝 (μ : Measure ℝ).arctanCenter) := by
   have : NeZero (μ : Measure ℝ) := ⟨fun h0 ↦ hμ (toMeasure_injective (h0.trans toMeasure_zero))⟩
-  -- The balances converge pointwise, by weak convergence.
+  -- The balances converge pointwise, by weak convergence: `s ↦ arctan (s - m)` is bounded and
+  -- continuous.
   have hbal (m : ℝ) :
       Tendsto (fun i ↦ (μs i : Measure ℝ).arctanBalance m) F
         (𝓝 ((μ : Measure ℝ).arctanBalance m)) :=
-    by simpa only [arctanSub_apply, Measure.arctanBalance_def] using
-      tendsto_iff_forall_integral_tendsto.1 h (arctanSub m)
+    by simpa only [coe_ofNormedAddCommGroup, Measure.arctanBalance_def] using
+      tendsto_iff_forall_integral_tendsto.1 h (.ofNormedAddCommGroup (fun s ↦ arctan (s - m))
+        (continuous_arctan.comp (continuous_sub_right m)) (π / 2)
+        fun s ↦ (abs_arctan_lt_pi_div_two (s - m)).le)
   -- Eventually the balance of `μs i` is positive at `m - ε / 2` and negative at `m + ε / 2`,
   -- so `μs i ≠ 0` and its center lies strictly between these two points.
   rw [Metric.tendsto_nhds]

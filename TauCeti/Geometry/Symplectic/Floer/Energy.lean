@@ -59,6 +59,8 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   `X_K = ds ⊗ X_{K_s} + dt ⊗ X_{K_t}`.
 * `TauCeti.SymplecticForm.perturbedFDeriv`: the perturbed derivative `du - X_K`.
 * `TauCeti.SymplecticForm.floerEnergyDensity`: the Floer energy density.
+* `TauCeti.SymplecticForm.stripEnergyMeasure`: the measure on `ℝ` giving each set `A` of
+  `s`-values the energy over `A × [0, 1]`.
 
 ## Main results
 
@@ -93,7 +95,8 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   (`SymplecticForm.floerEnergyDensity_congr_of_eventuallyEq`,
   `SymplecticForm.floerEnergyDensity_comp_add_right`); hence translations preserve the energy
   (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`) and the integrated curvature
-  (`SymplecticForm.lintegral_enorm_hamiltonianCurvature_comp_add_right`).
+  (`SymplecticForm.lintegral_enorm_hamiltonianCurvature_comp_add_right`), and translate the strip
+  energy measure (`SymplecticForm.stripEnergyMeasure_comp_add_right`).
 
 ## References
 
@@ -706,5 +709,71 @@ theorem setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le (ω : SymplecticForm
     (hJM z hz) (h z hz)
 
 end Integral
+
+section Measure
+
+variable (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V)
+
+/-- The *strip energy measure* of a map `u` of the strip `ℝ × [0, 1]`: the measure on `ℝ` giving
+each set `A` of `s`-values the Floer energy of `u` over `A × [0, 1]` for the perturbation data
+`Ks`, `Kt` (`TauCeti.SymplecticForm.stripEnergyMeasure_apply`). It is the pushforward to the
+`s`-axis of the energy density on the strip. -/
+noncomputable def stripEnergyMeasure : Measure ℝ :=
+  ((volume.restrict ((univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1)).withDensity fun z ↦
+    ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z)).map Prod.fst
+
+/-- The strip energy measure of a measurable set `A` is the energy over `A × [0, 1]`. -/
+theorem stripEnergyMeasure_apply {A : Set ℝ} (hA : MeasurableSet A) :
+    ω.stripEnergyMeasure Ks Kt u A =
+      ∫⁻ z in A ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) := by
+  rw [stripEnergyMeasure, Measure.map_apply measurable_fst hA,
+    withDensity_apply _ (measurable_fst hA), Measure.restrict_restrict (measurable_fst hA),
+    ← prod_univ, prod_inter_prod, inter_univ, univ_inter]
+
+/-- The total mass of the strip energy measure is the energy over the strip. -/
+theorem stripEnergyMeasure_univ :
+    ω.stripEnergyMeasure Ks Kt u univ =
+      ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) :=
+  ω.stripEnergyMeasure_apply Ks Kt u MeasurableSet.univ
+
+variable {ω Ks Kt u}
+
+/-- The strip energy measure of a map of finite energy is finite. -/
+theorem isFiniteMeasure_stripEnergyMeasure
+    (hfin : ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) ≠ ⊤) :
+    IsFiniteMeasure (ω.stripEnergyMeasure Ks Kt u) :=
+  ⟨by rw [stripEnergyMeasure_univ]; exact hfin.lt_top⟩
+
+/-- The strip energy measure vanishes exactly when the energy over the strip does. -/
+theorem stripEnergyMeasure_eq_zero_iff :
+    ω.stripEnergyMeasure Ks Kt u = 0 ↔
+      ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) = 0 := by
+  rw [← Measure.measure_univ_eq_zero, stripEnergyMeasure_univ]
+
+variable (ω Ks Kt u)
+
+/-- **Translations translate the strip energy measure.** Translating a map and its perturbation
+data by `(c, 0)` translates its strip energy measure by `-c`. -/
+theorem stripEnergyMeasure_comp_add_right (c : ℝ) :
+    ω.stripEnergyMeasure (fun w ↦ Ks (w + (c, 0))) (fun w ↦ Kt (w + (c, 0)))
+        (fun w ↦ u (w + (c, 0))) =
+      (ω.stripEnergyMeasure Ks Kt u).map (· - c) := by
+  ext A hA
+  have hpre : A ×ˢ Icc (0 : ℝ) 1 = (· + (c, 0)) ⁻¹' (((· - c) ⁻¹' A) ×ˢ Icc 0 1) := by
+    ext z
+    simp
+  rw [Measure.map_apply (measurable_sub_const c) hA, stripEnergyMeasure_apply _ _ _ _ hA,
+    stripEnergyMeasure_apply _ _ _ _ (measurable_sub_const c hA), hpre,
+    lintegral_floerEnergyDensity_comp_add_right]
+
+/-- For the cylindrical perturbation `K = H_t dt`, translating the map by `(c, 0)` translates its
+strip energy measure by `-c`. -/
+theorem stripEnergyMeasure_cylindrical_comp_add_right (H : ℝ → V → ℝ) (c : ℝ) :
+    ω.stripEnergyMeasure (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ u (w + (c, 0))) =
+      (ω.stripEnergyMeasure (fun _ _ ↦ 0) (fun w ↦ H w.2) u).map (· - c) := by
+  simpa using ω.stripEnergyMeasure_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u c
+
+end Measure
 
 end TauCeti.SymplecticForm
