@@ -50,8 +50,8 @@ to an idempotent lifting `x`.
   semiperfect ring, `1` is a sum of orthogonal idempotents with local corners.**
 * `IsIdempotentElem.isSimpleModule_span_singleton_mk_jacobson`: a local idempotent generates a
   simple left ideal modulo the radical.
-* `TauCeti.isSemisimpleRing_quotient_jacobson_of_isLocalRing_corner`: if `1` is a sum of orthogonal
-  idempotents with local corners, the radical quotient is semisimple.
+* `CompleteOrthogonalIdempotents.isSemisimpleRing_quotient_jacobson`: if `1` is a sum of
+  orthogonal idempotents with local corners, the radical quotient is semisimple.
 * `TauCeti.IsSemiperfectRing.of_isLocalRing_corner`: **such a ring is semiperfect.**
 * `TauCeti.isSemiperfectRing_iff_exists_completeOrthogonalIdempotents_isLocalRing_corner`: Lam's
   characterization.
@@ -227,7 +227,7 @@ variable {ι : Type*} [Fintype ι] {e : ι → A}
 /-- **The radical quotient is semisimple** when `1` is a sum of orthogonal idempotents with local
 corners: it is the sum of the simple left ideals of the images `ēᵢ`
 (`IsIdempotentElem.isSimpleModule_span_singleton_mk_jacobson`). -/
-theorem isSemisimpleRing_quotient_jacobson_of_isLocalRing_corner
+theorem _root_.CompleteOrthogonalIdempotents.isSemisimpleRing_quotient_jacobson
     (he : CompleteOrthogonalIdempotents e) (hloc : ∀ i, IsLocalRing (he.idem i).Corner) :
     IsSemisimpleRing (A ⧸ Ring.jacobson A) := by
   have hē := he.map (Ideal.Quotient.mk (Ring.jacobson A))
@@ -246,14 +246,14 @@ theorem isSemisimpleRing_quotient_jacobson_of_isLocalRing_corner
 
 /-- **A ring in which `1` is a sum of orthogonal idempotents with local corners is
 semiperfect** (Lam (23.6), the "if" direction). The radical quotient is semisimple
-(`TauCeti.isSemisimpleRing_quotient_jacobson_of_isLocalRing_corner`). An idempotent `x` of it is
+(`CompleteOrthogonalIdempotents.isSemisimpleRing_quotient_jacobson`). An idempotent `x` of it is
 conjugate to a partial sum `∑ i ∈ t, ēᵢ` by a unit
 (`CompleteOrthogonalIdempotents.exists_units_mul_mul_eq_sum`); lifting that unit to a unit `w` of
 `A` (`TauCeti.Ring.isLocalHom_mk_jacobson`) gives the idempotent `w⁻¹ (∑ i ∈ t, eᵢ) w` lifting
 `x`. -/
 theorem IsSemiperfectRing.of_isLocalRing_corner (he : CompleteOrthogonalIdempotents e)
     (hloc : ∀ i, IsLocalRing (he.idem i).Corner) : IsSemiperfectRing A where
-  isSemisimpleRing := isSemisimpleRing_quotient_jacobson_of_isLocalRing_corner he hloc
+  isSemisimpleRing := he.isSemisimpleRing_quotient_jacobson hloc
   exists_isIdempotentElem_eq x hx := by
     set π := Ideal.Quotient.mk (Ring.jacobson A)
     have hē := he.map π

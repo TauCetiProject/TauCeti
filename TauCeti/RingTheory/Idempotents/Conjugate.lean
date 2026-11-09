@@ -107,6 +107,7 @@ theorem exists_units_mul_mul_eq_of_linearEquiv (he : IsIdempotentElem e) (hf : I
   -- `e u = a`, and `u⁻¹ a = b a = f`.
   have heu : e * (a + a') = a := by
     rw [mul_add, hea, ← hea', ← mul_assoc, he.mul_one_sub_self, zero_mul, add_zero]
+  -- Unfold the unit `u` to its underlying elements `a + a'` and `b + b'`.
   change (b + b') * e * (a + a') = f
   rw [mul_assoc, heu, add_mul, hba, h₄, add_zero]
 

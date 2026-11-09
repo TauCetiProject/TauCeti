@@ -39,7 +39,9 @@ public section
 
 namespace Module.Projective
 
-variable {R P : Type*} [Ring R] [AddCommGroup P] [Module R P] [Module.Projective R P]
+section Semiring
+
+variable {R P : Type*} [Semiring R] [AddCommMonoid P] [Module R P] [Module.Projective R P]
   [IsLocalRing (Module.End R P)]
 
 /-- **In a projective module with local endomorphism ring, the sum of two proper submodules is
@@ -67,7 +69,10 @@ theorem sup_ne_top_of_isLocalRing_end {N N' : Submodule R P} (hN : N ≠ ⊤) (h
     obtain ⟨y, rfl⟩ := ((Module.End.isUnit_iff b).1 hb).2 x
     exact (s y).2.2
 
-variable [Module.Finite R P]
+end Semiring
+
+variable {R P : Type*} [Ring R] [AddCommGroup P] [Module R P] [Module.Projective R P]
+  [IsLocalRing (Module.End R P)] [Module.Finite R P]
 
 /-- In a finitely generated projective module with local endomorphism ring, every proper
 submodule lies in the radical. -/

@@ -50,15 +50,8 @@ theorem isLocalRing_corner_of_isLocalRing_end (he : IsIdempotentElem e)
 /-- The endomorphism ring of the left ideal `Ae` is local when the corner `eAe` is. -/
 theorem isLocalRing_end_of_isLocalRing_corner (he : IsIdempotentElem e) [IsLocalRing he.Corner] :
     IsLocalRing (Module.End A (Ideal.span {e} : Ideal A)) :=
-  have : Nontrivial (Module.End A (Ideal.span {e} : Ideal A))ᵐᵒᵖ :=
-    he.endSpanSingletonRingEquiv.symm.injective.nontrivial
-  have : IsLocalRing (Module.End A (Ideal.span {e} : Ideal A))ᵐᵒᵖ :=
-    IsLocalRing.of_surjective' he.endSpanSingletonRingEquiv.symm.toRingHom
-      he.endSpanSingletonRingEquiv.symm.surjective
-  have : Nontrivial (Module.End A (Ideal.span {e} : Ideal A)) :=
-    MulOpposite.unop_injective.nontrivial
-  let σ := (RingEquiv.opOp (Module.End A (Ideal.span {e} : Ideal A))).symm
-  IsLocalRing.of_surjective' σ.toRingHom σ.surjective
+  have := he.endSpanSingletonRingEquiv.symm.isLocalRing
+  (RingEquiv.opOp (Module.End A (Ideal.span {e} : Ideal A))).symm.isLocalRing
 
 end IsIdempotentElem
 
