@@ -43,6 +43,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] {f : M → ℝ} {x : M}
 
 /-- The inner product of the unit gradient with a tangent vector `v` is `df_x v / ‖grad f x‖`. -/
+@[simp]
 theorem inner_normalize_mgradient (v : TangentSpace I x) :
     ⟪NormedSpace.normalize (mgradient I f x), v⟫_ℝ = ‖mgradient I f x‖⁻¹ * mvfderiv I f x v := by
   rw [NormedSpace.normalize, real_inner_smul_left, inner_mgradient]

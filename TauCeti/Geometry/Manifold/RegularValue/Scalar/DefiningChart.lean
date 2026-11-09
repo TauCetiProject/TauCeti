@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Submersion
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 /-!
 # Half-space charts from local defining functions
@@ -77,24 +76,42 @@ theorem IsRegularPoint.exists_partialDiffeomorph_normalForm (hreg : IsRegularPoi
   have hqΦ : q ∈ Φ.source := by
     rw [OpenPartialHomeomorph.toPartialDiffeomorphOfMemMaximalAtlas_source]
     exact mem_scalarSubmersionChartAt_source hf1 hregf
-  refine ⟨Ψ.trans Φ, ⟨hi.localInverse_mem_source, show Ψ p ∈ Φ.source from hΨp ▸ hqΦ⟩,
-    fun x hx ↦ ?_, ?_, fderiv ℝ (f ∘ (extChartAt I q).symm) (extChartAt I q q), fun h ↦ ?_,
-    fun z hz ↦ ?_⟩
-  · rw [← hi.localInverse_right_inv hx.1]
+  have hsource : (Ψ.trans Φ).source = Ψ.source ∩ Ψ ⁻¹' Φ.source := by
+    rw [PartialDiffeomorph.trans_toPartialEquiv, OpenPartialHomeomorph.trans_source]
+    simp only [PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
+      PartialDiffeomorph.toFun'_toOpenPartialHomeomorph]
+  have htarget : (Ψ.trans Φ).target = Φ.target ∩ Φ.symm ⁻¹' Ψ.target := by
+    rw [PartialDiffeomorph.trans_toPartialEquiv, OpenPartialHomeomorph.trans_target,
+      ← OpenPartialHomeomorph.coe_toPartialEquiv_symm,
+      PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
+      PartialDiffeomorph.symm_toPartialEquiv,
+      PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv]
+  refine ⟨Ψ.trans Φ, ?_, fun x hx ↦ ?_, ?_, fderiv ℝ (f ∘ (extChartAt I q).symm) (extChartAt I q q),
+    fun h ↦ ?_, fun z hz ↦ ?_⟩
+  · rw [hsource, mem_inter_iff, mem_preimage, hΨp]
+    exact ⟨hi.localInverse_mem_source, hqΦ⟩
+  · rw [hsource] at hx
+    rw [← hi.localInverse_right_inv hx.1]
     exact (Ψ x).2
-  · change Φ (Ψ p) = 0
+  · simp only [PartialDiffeomorph.trans_toPartialEquiv, OpenPartialHomeomorph.trans_toPartialEquiv,
+      PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
+      PartialEquiv.coe_trans, comp_apply]
     rw [hΨp, OpenPartialHomeomorph.toPartialDiffeomorphOfMemMaximalAtlas_apply]
     exact scalarSubmersionChartAt_extend_self hf1 hregf
   · obtain ⟨v, hv⟩ := hregf.surjective_fderiv_comp_extChartAt_symm 1
     rw [h, zero_apply] at hv
     exact zero_ne_one hv
-  · have hw : Φ.symm z ∈ Ψ.target := hz.2
+  · rw [htarget, mem_inter_iff, mem_preimage] at hz
     have hzΦ : z ∈ ((scalarSubmersionChartAt hf1 hregf).extend I).target := by
-      have h : z ∈ Φ.target := hz.1
+      have h := hz.1
       rw [OpenPartialHomeomorph.toPartialDiffeomorphOfMemMaximalAtlas_target] at h
       rwa [OpenPartialHomeomorph.extend_target, I.range_eq_univ, inter_univ]
-    change ρ (Ψ.symm (Φ.symm z)) = _
-    rw [hval hw, PartialDiffeomorph.symm_toPartialEquiv,
+    simp only [PartialDiffeomorph.symm_toPartialEquiv, PartialDiffeomorph.trans_toPartialEquiv,
+      OpenPartialHomeomorph.trans_toPartialEquiv,
+      PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
+      PartialEquiv.coe_trans_symm, comp_apply]
+    rw [← PartialDiffeomorph.symm_toPartialEquiv Ψ, ← PartialDiffeomorph.symm_toPartialEquiv Φ,
+      hval hz.2, PartialDiffeomorph.symm_toPartialEquiv,
       OpenPartialHomeomorph.toPartialDiffeomorphOfMemMaximalAtlas_symm_apply,
       ← comp_apply (f := (scalarSubmersionChartAt hf1 hregf).symm),
       ← OpenPartialHomeomorph.extend_coe_symm]
