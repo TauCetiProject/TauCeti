@@ -474,7 +474,7 @@ theorem baseChangePointsMulEquiv_mapPointsFunctor_rootSubgroupToBaseChangeCoordi
     (TauCeti.serreRootGenerator weightTable.cartanMatrix)
     (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
-    d4TripledWeight A definingIdeal_def k B q
+    d4TripledWeight A k B q
   rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   unfold baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
   exact h

@@ -323,7 +323,7 @@ theorem integral_Ioi_rpow_one_add_rpow_eq_interval_tail {a b u0 : ℝ}
   have h21 : ∫ u in Ioo u0 1, |((1 - u) ^ 2)⁻¹| • k0 (u / (1 - u)) =
       ∫ w in Ioi (u0 / (1 - u0)), k0 w := by
     rw [← integral_image_eq_integral_abs_deriv_smul measurableSet_Ioo hderiv
-        (injOn_div_one_sub_Ioo (u0 := u0)) k0, himg]
+        (strictMonoOn_div_one_sub.injOn.mono Ioo_subset_Iio_self) k0, himg]
   have h2 : ∫ w in Ioi (u0 / (1 - u0)), k0 w = ∫ u in Ioo u0 1, k u := by
     rw [← h21, setIntegral_congr_fun measurableSet_Ioo hcov]
   simpa [k0, k] using h2

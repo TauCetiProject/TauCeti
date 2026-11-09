@@ -47,6 +47,11 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   modulus. Its consumers are the descent arguments of
   `TauCeti/NumberTheory/ModularForms/Newforms/Descent/`, which carry a nebentypus lowered modulo
   `M / p` along a chain of divisibilities.
+* `ZMod.unitsMap_eq_inv_unitOfCoprime_of_intCast_mul_eq` and `ZMod.unitsMap_eq_one_of_intCast_eq` —
+  a unit that is the class of an integer `c` with `c n ≡ 1`, respectively `c ≡ 1`, modulo a divisor
+  `Q` of the modulus reduces to `ZMod.unitOfCoprime n` inverted, respectively to `1`, modulo `Q`.
+  Their consumer is the diamond label of the Atkin-Lehner matrices in
+  `TauCeti/NumberTheory/ModularForms/AtkinLehner/Hecke.lean`.
 * `ZMod.zmultiples_coe_unit_eq_top` — a unit of `ZMod d` generates `ZMod d` additively, so that
   translation by it is a single cycle; its consumer is the genus-one Heegaard diagram of a lens
   space in `TauCeti/LowDimTopology/Heegaard/LensSpace/Diagram.lean`.
@@ -213,6 +218,29 @@ theorem ZMod.unitsMap_unitOfCoprime {m n : ℕ} (hmn : m ∣ n) {a : ℕ} (ha : 
       ZMod.unitOfCoprime a (ha.coprime_dvd_right hmn) :=
   Units.ext (by rw [ZMod.unitsMap_val, ZMod.coe_unitOfCoprime, ZMod.coe_unitOfCoprime,
     ZMod.cast_natCast hmn])
+
+/-- **A unit with an integer lift `c`, `c n ≡ 1` modulo a divisor `Q`, reduces to `n⁻¹`.** If the
+unit `u` of `ZMod N` is the class of an integer `c` with `c n = 1 + Q t`, where `Q ∣ N` and `n` is
+coprime to `Q`, then `u` reduces modulo `Q` to the inverse of `ZMod.unitOfCoprime n`. -/
+theorem ZMod.unitsMap_eq_inv_unitOfCoprime_of_intCast_mul_eq {N Q n : ℕ} (hQN : Q ∣ N)
+    (hn : n.Coprime Q) {u : (ZMod N)ˣ} {c t : ℤ} (hu : (u : ZMod N) = c)
+    (hc : c * n = 1 + Q * t) : ZMod.unitsMap hQN u = (ZMod.unitOfCoprime n hn)⁻¹ := by
+  refine eq_inv_of_mul_eq_one_left (Units.ext ?_)
+  rw [Units.val_mul, ZMod.unitsMap_val, hu, ZMod.cast_intCast hQN, ZMod.coe_unitOfCoprime,
+    Units.val_one]
+  have := congrArg (Int.cast : ℤ → ZMod Q) hc
+  push_cast [ZMod.natCast_self] at this
+  simpa using this
+
+/-- **A unit with an integer lift `c ≡ 1` modulo a divisor `d` reduces to `1`.** If the unit `u`
+of `ZMod N` is the class of an integer `c` with `c = 1 + d t` and `d ∣ N`, then `u` reduces to
+the trivial unit modulo `d`. -/
+theorem ZMod.unitsMap_eq_one_of_intCast_eq {N d : ℕ} (hdN : d ∣ N) {u : (ZMod N)ˣ} {c t : ℤ}
+    (hu : (u : ZMod N) = c) (hc : c = 1 + (d : ℤ) * t) : ZMod.unitsMap hdN u = 1 := by
+  refine Units.ext ?_
+  rw [ZMod.unitsMap_val, hu, ZMod.cast_intCast hdN, Units.val_one, hc]
+  simp only [Int.cast_add, Int.cast_mul, Int.cast_natCast, ZMod.natCast_self, zero_mul, add_zero,
+    Int.cast_one]
 
 /-- A unit of `ZMod d` generates `ZMod d` as an additive group. -/
 theorem ZMod.zmultiples_coe_unit_eq_top (u : (ZMod d)ˣ) :
