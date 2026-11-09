@@ -48,6 +48,10 @@ rotation of the end at `∞` under `σ`. The main results are:
   `TauCeti.Floer.exchangePerturbation_add_cylindricalEndLift_inf`: for `0 ≤ c ≤ 1` every member
   is `H_q(t) dt` far out on the input end `q`, in the end lift `φ_q`, and `H_∞(t) dt` far out on
   the output end, in the end lift `c + φ_∞`.
+* `TauCeti.Floer.exchangePerturbation_of_norm_le`, `TauCeti.Floer.exchangePerturbation_eq_zero`
+  and `TauCeti.Floer.exchangePerturbation_add`: for `0 ≤ c ≤ 1` every member is the pair-of-pants
+  datum on the disc `|w| ≤ 3`, vanishes on the annulus `2 ≤ |w - c| ≤ 10`, and off the disc
+  `|w - c| < 3/2` is the pair-of-pants datum translated by `c`.
 * `TauCeti.Floer.contMDiffAt_exchangePerturbation`: the family is jointly smooth in the parameter
   `c`, the domain point of `S` and the target point.
 * `TauCeti.Floer.contDiffAt_uncurry_exchangePerturbation`: for `C¹` Hamiltonians on a normed
@@ -221,7 +225,7 @@ private theorem pairOfPantsPerturbation_update_inf_eq_zero {w : ℂ} (h₀ : 1 /
 
 /-- The input part of the pair-of-pants datum vanishes at distance at least `3/2` from a point
 `c ∈ [0, 1]`. -/
-theorem pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub {c : ℝ} (hc₀ : 0 ≤ c)
+private theorem pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub {c : ℝ} (hc₀ : 0 ≤ c)
     (hc₁ : c ≤ 1) {w : ℂ} (hw : 3 / 2 ≤ ‖w - c‖) (x : M) :
     pairOfPantsPerturbation (update H inf 0) w x = 0 := by
   refine pairOfPantsPerturbation_update_inf_eq_zero ?_ ?_ x
@@ -231,6 +235,41 @@ theorem pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub {c : ℝ} (hc�
   · have := norm_sub_le (w - 1) ((c : ℂ) - 1)
     rw [sub_sub_sub_cancel_right] at this
     linarith [norm_ofReal_sub_one_le hc₀ hc₁]
+
+/-- **The family near the inputs.** For `0 ≤ c ≤ 1`, on the disc `|w| ≤ 3` every member of the
+family is the pair-of-pants datum. -/
+theorem exchangePerturbation_of_norm_le {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {w : ℂ}
+    (hw : ‖w‖ ≤ 3) (x : M) : exchangePerturbation H c w x = pairOfPantsPerturbation H w x := by
+  have hwc : ‖w - c‖ ≤ 4 := by
+    have := norm_sub_le w (c : ℂ)
+    rw [Complex.norm_real, Real.norm_of_nonneg hc₀] at this
+    linarith
+  rw [exchangePerturbation_def,
+    pairOfPantsPerturbation_eq_update_inf_add_negativePlanePerturbation H w x,
+    negativePlanePerturbation_eq_zero_of_norm_le
+      (hwc.trans (by linarith [Real.add_one_le_exp (2 * π), Real.two_le_pi])),
+    negativePlanePerturbation_eq_zero_of_norm_le
+      (hw.trans (by linarith [Real.add_one_le_exp (2 * π), Real.two_le_pi]))]
+
+/-- **The family vanishes between its ends.** For `0 ≤ c ≤ 1`, on the annulus
+`2 ≤ |w - c| ≤ 10` the member `c` of the family vanishes. -/
+theorem exchangePerturbation_eq_zero {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {w : ℂ}
+    (hw₁ : 2 ≤ ‖w - c‖) (hw₂ : ‖w - c‖ ≤ 10) (x : M) : exchangePerturbation H c w x = 0 := by
+  rw [exchangePerturbation_def,
+    pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub hc₀ hc₁ (by linarith),
+    negativePlanePerturbation_eq_zero_of_norm_le
+      (hw₂.trans (by linarith [Real.add_one_le_exp (2 * π), Real.two_le_pi])), add_zero]
+
+/-- **The family near the output is a translate.** For `0 ≤ c ≤ 1`, off the disc `|w| < 3/2`,
+the member `c` of the family at `w + c` is the pair-of-pants datum at `w`: only the translated
+output part remains. -/
+theorem exchangePerturbation_add {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {w : ℂ} (hw : 3 / 2 ≤ ‖w‖)
+    (x : M) : exchangePerturbation H c (w + c) x = pairOfPantsPerturbation H w x := by
+  rw [exchangePerturbation_def, add_sub_cancel_right,
+    pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub hc₀ hc₁ (by simpa using hw),
+    pairOfPantsPerturbation_eq_update_inf_add_negativePlanePerturbation H w x,
+    pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub le_rfl zero_le_one
+      (by simpa using hw)]
 
 /-- **The family on an input end.** For `0 ≤ c ≤ 1`, on the part `s > 0` of an input end `q`, the
 pullback of every member of the family along the end lift `φ_q` is the continuation datum

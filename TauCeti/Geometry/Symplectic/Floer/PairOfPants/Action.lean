@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 import TauCeti.Geometry.Symplectic.Area.ThricePuncturedSphere
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
-import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # The energy of a pair of pants in terms of the actions of its ends
@@ -312,11 +311,7 @@ theorem abs_integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_sub_s
         (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))))| ≤ ∑ q, B q := by
   rw [integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction
     ω hH hHs hu hR, sub_sub_cancel_left, abs_neg]
-  have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 0)
-  rw [← Real.norm_eq_abs]
-  exact MeasureTheory.norm_setIntegral_le_of_lintegral_enorm_le
-    (Finset.sum_nonneg fun q _ ↦ hB₀ q) (ENNReal.ofReal_sum_of_nonneg (fun q _ ↦ hB₀ q) ▸
-      lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB u) _
+  exact abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB u _
 
 /-! ### One-sided action bounds -/
 

@@ -293,38 +293,6 @@ variable {M : Type*} {H : Puncture → ℝ → M → ℝ}
 private theorem fourteen_le_two_mul_exp_two_pi : 14 ≤ 2 * Real.exp (2 * π) := by
   nlinarith [Real.quadratic_le_exp_of_nonneg (by positivity : 0 ≤ 2 * π), Real.two_le_pi]
 
-/-- On the disc `|w| ≤ 3` every member of the family is the pair-of-pants datum. -/
-private theorem exchangePerturbation_of_norm_le (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {w : ℂ}
-    (hw : ‖w‖ ≤ 3) (x : M) : exchangePerturbation H c w x = pairOfPantsPerturbation H w x := by
-  have hwc : ‖w - c‖ ≤ 4 := by
-    have := norm_sub_le w (c : ℂ)
-    rw [Complex.norm_real, Real.norm_of_nonneg hc₀] at this
-    linarith
-  rw [exchangePerturbation_def,
-    pairOfPantsPerturbation_eq_update_inf_add_negativePlanePerturbation H w x,
-    negativePlanePerturbation_eq_zero_of_norm_le
-      (hwc.trans (by linarith [fourteen_le_two_mul_exp_two_pi])),
-    negativePlanePerturbation_eq_zero_of_norm_le
-      (hw.trans (by linarith [fourteen_le_two_mul_exp_two_pi]))]
-
-/-- On the annulus `2 ≤ |w - c| ≤ 10` the member `c` of the family vanishes. -/
-private theorem exchangePerturbation_eq_zero (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {w : ℂ}
-    (hw₁ : 2 ≤ ‖w - c‖) (hw₂ : ‖w - c‖ ≤ 10) (x : M) : exchangePerturbation H c w x = 0 := by
-  rw [exchangePerturbation_def,
-    pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub hc₀ hc₁ (by linarith),
-    negativePlanePerturbation_eq_zero_of_norm_le
-      (hw₂.trans (by linarith [fourteen_le_two_mul_exp_two_pi])), add_zero]
-
-/-- Off the disc `|w| < 3/2`, the member `c` of the family at `w + c` is the pair-of-pants datum
-at `w`: only the translated output part remains. -/
-private theorem exchangePerturbation_add (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {w : ℂ} (hw : 3 / 2 ≤ ‖w‖)
-    (x : M) : exchangePerturbation H c (w + c) x = pairOfPantsPerturbation H w x := by
-  rw [exchangePerturbation_def, add_sub_cancel_right,
-    pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub hc₀ hc₁ (by simpa using hw),
-    pairOfPantsPerturbation_eq_update_inf_add_negativePlanePerturbation H w x,
-    pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub le_rfl zero_le_one
-      (by simpa using hw)]
-
 /-- **The member `c` of the family is the pullback of the pair-of-pants datum along `Φ_c`.** -/
 private theorem perturbationPullback_exchangeMap (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) (v y : ℝ × ℝ)
     (x : M) :
