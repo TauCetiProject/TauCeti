@@ -23,9 +23,9 @@ no finiteness or quasi-coherence assumptions on the modules.
 
 public section
 
-open CategoryTheory MonoidalCategory AlgebraicGeometry
+open CategoryTheory MonoidalCategory AlgebraicGeometry TauCeti
 
-namespace TauCeti
+namespace AlgebraicGeometry.Scheme.Modules
 
 universe u
 
@@ -34,7 +34,7 @@ noncomputable section
 /-- The canonical tensor comparison for pullback along the identity scheme morphism respects
 Mathlib's identity isomorphism of module pullback. -/
 @[reassoc (attr := simp)]
-theorem _root_.AlgebraicGeometry.Scheme.Modules.pullback_id_δ
+theorem pullback_id_δ
     (X : Scheme.{u}) (M N : X.Modules) :
     Functor.OplaxMonoidal.δ (Scheme.Modules.pullback (𝟙 X)) M N ≫
       ((Scheme.Modules.pullbackId X).hom.app M ⊗ₘ (Scheme.Modules.pullbackId X).hom.app N) =
@@ -43,4 +43,4 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.pullback_id_δ
 
 end
 
-end TauCeti
+end AlgebraicGeometry.Scheme.Modules
