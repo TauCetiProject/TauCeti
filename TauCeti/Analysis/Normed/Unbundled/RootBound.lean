@@ -175,10 +175,24 @@ variable [Ring R] [RingSeminormClass F R ℝ]
 /-- **Coefficient bounds multiply.** If `f (p.coeff i) ≤ M ^ (d - i)` for a polynomial `p` of
 degree at most `d`, and `f (q.coeff i) ≤ M ^ (e - i)` for `q` of degree at most `e`, then
 `f ((p * q).coeff k) ≤ M ^ (d + e - k)`, for every nonarchimedean ring seminorm `f`. -/
-theorem apply_coeff_mul_le_pow (hf_na : IsNonarchimedean f) (hM : 0 ≤ M) {p q : R[X]}
+theorem apply_coeff_mul_le_pow (hf_na : IsNonarchimedean f) {p q : R[X]}
     {d e : ℕ} (hpd : p.natDegree ≤ d) (hqe : q.natDegree ≤ e)
     (hp : ∀ i, f (p.coeff i) ≤ M ^ (d - i)) (hq : ∀ i, f (q.coeff i) ≤ M ^ (e - i)) (k : ℕ) :
     f ((p * q).coeff k) ≤ M ^ (d + e - k) := by
+  -- Every exponent below is at most `d + e`, and powers of `M` up to `d + e` are nonnegative:
+  -- a positive bound `d` or `e` forces `0 ≤ M` through `hp` or `hq` at the top coefficient.
+  have hnn : ∀ n ≤ d + e, 0 ≤ M ^ n := by
+    intro n hn
+    rcases Nat.eq_zero_or_pos (d + e) with h0 | h0
+    · simp [show n = 0 by omega]
+    · have hM : 0 ≤ M := by
+        rcases Nat.eq_zero_or_pos d with hd | hd
+        · have he : 0 < e := by omega
+          simpa [Nat.sub_sub_self he] using
+            (apply_nonneg f _).trans (hq (e - 1))
+        · simpa [Nat.sub_sub_self hd] using
+            (apply_nonneg f _).trans (hp (d - 1))
+      exact pow_nonneg hM _
   -- The coefficient is a sum over `i + j = k`, dominated by one of its terms.
   rw [coeff_mul]
   obtain ⟨⟨i, j⟩, hij, hle⟩ := hf_na.finset_image_add_of_nonempty
@@ -189,16 +203,16 @@ theorem apply_coeff_mul_le_pow (hf_na : IsNonarchimedean f) (hM : 0 ≤ M) {p q 
   rcases le_or_gt i d with hi | hi
   · rcases le_or_gt j e with hj | hj
     · calc f (p.coeff i) * f (q.coeff j) ≤ M ^ (d - i) * M ^ (e - j) :=
-            mul_le_mul (hp i) (hq j) (apply_nonneg f _) (pow_nonneg hM _)
+            mul_le_mul (hp i) (hq j) (apply_nonneg f _) (hnn _ (by omega))
         _ = M ^ (d + e - k) := by rw [← pow_add]; congr 1; omega
     · rw [coeff_eq_zero_of_natDegree_lt (hqe.trans_lt hj), map_zero, mul_zero]
-      exact pow_nonneg hM _
+      exact hnn _ (by omega)
   · rw [coeff_eq_zero_of_natDegree_lt (hpd.trans_lt hi), map_zero, zero_mul]
-    exact pow_nonneg hM _
+    exact hnn _ (by omega)
 
 /-- Coefficient bounds `f (p.coeff i) ≤ M ^ (p.natDegree - i)` pass to powers, for every
 nonarchimedean ring seminorm `f` with `f 1 ≤ 1`. -/
-theorem apply_coeff_pow_le_pow (hf1 : f 1 ≤ 1) (hf_na : IsNonarchimedean f) (hM : 0 ≤ M)
+theorem apply_coeff_pow_le_pow (hf1 : f 1 ≤ 1) (hf_na : IsNonarchimedean f)
     {p : R[X]} (hp : ∀ i, f (p.coeff i) ≤ M ^ (p.natDegree - i)) (n k : ℕ) :
     f ((p ^ n).coeff k) ≤ M ^ (n * p.natDegree - k) := by
   induction n generalizing k with
@@ -209,7 +223,7 @@ theorem apply_coeff_pow_le_pow (hf1 : f 1 ≤ 1) (hf_na : IsNonarchimedean f) (h
     · simp
   | succ n ih =>
     rw [pow_succ, Nat.succ_mul]
-    exact apply_coeff_mul_le_pow hf_na hM natDegree_pow_le le_rfl ih hp k
+    exact apply_coeff_mul_le_pow hf_na natDegree_pow_le le_rfl ih hp k
 
 end Ring
 
@@ -217,7 +231,7 @@ variable [CommRing R] [RingSeminormClass F R ℝ]
 
 /-- Coefficient bounds `f (p.coeff i) ≤ M ^ (p.natDegree - i)` pass to finite products, for
 every nonarchimedean ring seminorm `f` with `f 1 ≤ 1`. -/
-theorem apply_coeff_prod_le_pow (hf1 : f 1 ≤ 1) (hf_na : IsNonarchimedean f) (hM : 0 ≤ M)
+theorem apply_coeff_prod_le_pow (hf1 : f 1 ≤ 1) (hf_na : IsNonarchimedean f)
     {ι : Type*} (s : Finset ι) (p : ι → R[X])
     (hp : ∀ a ∈ s, ∀ i, f ((p a).coeff i) ≤ M ^ ((p a).natDegree - i)) (k : ℕ) :
     f ((∏ a ∈ s, p a).coeff k) ≤ M ^ (∑ a ∈ s, (p a).natDegree - k) := by
@@ -230,7 +244,7 @@ theorem apply_coeff_prod_le_pow (hf1 : f 1 ≤ 1) (hf_na : IsNonarchimedean f) (
     · simp
   | insert a s ha ih =>
     rw [Finset.prod_insert ha, Finset.sum_insert ha]
-    exact apply_coeff_mul_le_pow hf_na hM le_rfl (natDegree_prod_le _ _)
+    exact apply_coeff_mul_le_pow hf_na le_rfl (natDegree_prod_le _ _)
       (hp a (Finset.mem_insert_self a s))
       (ih fun b hb ↦ hp b (Finset.mem_insert_of_mem hb)) k
 

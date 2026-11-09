@@ -149,9 +149,8 @@ theorem mem_leftRightOverlapPartners_of_left_eq_left
     rw [hDrect]
     exact E.toRectangleDecomposition.isRecut_recut hone
       (E.underlying_first_isEmpty hp) (E.underlying_second_isEmpty hr)
-  have hback := hrecut.symm hone (E.underlying_first_isEmpty hp) (E.underlying_second_isEmpty hr)
+  have hback := hrecut.symm (E.underlying_first_isEmpty hp) (E.underlying_second_isEmpty hr)
   have hDone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-    (E.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
   have hDr := D.isEmpty_rectangle_of_isRecut hrecut
   have hDp := D.isEmpty_pentagon_of_isRecut hrecut
   obtain ⟨hfl, hsr, -, -, hfb, hft⟩ := E.leftRightInverse_geometry hcommon hcol hp hr
@@ -224,15 +223,14 @@ theorem mem_leftRightOverlapPartners_iff_sides
     rw [hEq] at hpl hrl
     have hEcommon := hpl.trans hrl.symm
     refine ⟨hEcommon, ?_⟩
-    have hback := hrecut.symm hone
+    have hback := hrecut.symm
       (by simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_first_toGridRectangle] using hr)
       (by simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_middle, D.toRectangleDecomposition_second_toGridRectangle]
         using hp)
     have hEone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-      (D.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
-    have hdata := hback.isRecutOfLeftEqLeft hEone (by simpa using hEcommon)
+    have hdata := hback.isRecutOfLeftEqLeft (by simpa using hEcommon)
     rcases hdata.recut_branch with ⟨hcol, -⟩ | ⟨-, -, hleft, -⟩
     · simpa only [GridPentagonRectangleDecomposition.toRectangleDecomposition_first_left,
         GridPentagonRectangleDecomposition.toRectangleDecomposition_first_right,

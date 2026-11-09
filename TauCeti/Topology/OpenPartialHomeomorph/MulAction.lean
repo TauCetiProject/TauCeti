@@ -22,7 +22,8 @@ behind the chain-rule computation of the derivative representation at a fixed po
 
 `OpenPartialHomeomorph.restrInvariant` restricts a chart to the largest invariant open subset
 of its source for a finite monoid action. An equivariant chart with invariant source also has
-invariant target and equivariant inverse (`OpenPartialHomeomorph.symm_map_smul_of_map_smul`).
+invariant target and equivariant inverse (`OpenPartialHomeomorph.symm_map_smul_of_map_smul`), and
+invariant restriction preserves equivariance (`OpenPartialHomeomorph.restrInvariant_map_smul`).
 -/
 
 public section
@@ -147,6 +148,15 @@ theorem smul_mem_restrInvariant_source [Finite G] [ContinuousConstSMul G X]
   rw [mem_restrInvariant_source_iff] at hx ⊢
   intro h
   simpa [mul_smul] using hx (h * g)
+
+/-- A chart that is equivariant on its source stays equivariant after invariant restriction, whose
+source is invariant. -/
+theorem restrInvariant_map_smul [Finite G] [ContinuousConstSMul G X] [SMul G Y]
+    {e : OpenPartialHomeomorph X Y}
+    (hf : ∀ (g : G) (x : X), x ∈ e.source → e (g • x) = g • e x) {x : X}
+    (hx : x ∈ (e.restrInvariant G).source) (g : G) :
+    g • x ∈ (e.restrInvariant G).source ∧ e.restrInvariant G (g • x) = g • e.restrInvariant G x :=
+  ⟨smul_mem_restrInvariant_source e hx g, hf g x (restrInvariant_source_subset e hx)⟩
 
 end InvariantRestriction
 

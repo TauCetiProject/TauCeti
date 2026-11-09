@@ -49,8 +49,10 @@ On the sphere `Sⁿ` the height function has a minimum and a maximum and no othe
 Hence every Morse function on `Sⁿ` has an even number of critical points
 (`TauCeti.IsMorse.even_toNat_totalCriticalCount_sphere`).
 
-When `M` has finite CW type, the signed count is the cellular Euler characteristic
-`TauCeti.eulerChar M`
+The homology of `M` vanishes above its dimension, so the alternating sum `∑ᶠ i, (-1)ⁱ dim Hᵢ(M; V)`
+is a finite sum, equal to `dim V · ∑ᵢ (-1)ⁱ cᵢ(f)`
+(`TauCeti.IsMorse.finsum_neg_one_pow_mul_finrank_singularHomology`). When `M` has finite CW type,
+the signed count is therefore the cellular Euler characteristic `TauCeti.eulerChar M`
 (`TauCeti.IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_eulerChar`), so the number of
 critical points has the parity of `eulerChar M`
 (`TauCeti.IsMorse.toNat_totalCriticalCount_modEq_eulerChar`), and `eulerChar M` vanishes in odd
@@ -177,6 +179,25 @@ theorem IsMorse.even_toNat_totalCriticalCount_of_odd_finrank (hf : IsMorse I f)
   rw [hf.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_zero hE] at h
   exact even_iff_two_dvd.2 (by exact_mod_cast Int.modEq_zero_iff_dvd.1 h)
 
+/-- **Euler's equality as a finite sum.** For a Morse function `f` on a compact boundaryless
+manifold `M` of dimension `m`, the singular homology `Hᵢ(M; V)` vanishes for `i > m`, and
+`∑ᶠ i, (-1)ⁱ dim Hᵢ(M; V) = dim V · ∑ᵢ₌₀ᵐ (-1)ⁱ cᵢ`, where `cᵢ` is the number of critical points of
+index `i`. -/
+theorem IsMorse.finsum_neg_one_pow_mul_finrank_singularHomology (hf : IsMorse I f) :
+    ∑ᶠ i : ℕ, (-1 : ℤ) ^ i *
+        finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) i).obj V).obj
+          (TopCat.of M)) =
+      finrank k V *
+        ∑ i ∈ Finset.range (finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat := by
+  rw [finsum_eq_sum_of_support_subset _ (s := Finset.range (finrank ℝ E + 1)) fun i hi ↦ ?_]
+  · exact hf.sum_range_neg_one_pow_mul_finrank_singularHomology_eq V le_rfl
+  -- Above the dimension there are no critical points, so the weak inequality kills homology.
+  by_contra hlt
+  have hle := hf.finrank_singularHomology_le V i
+  rw [criticalCount_eq_zero_of_finrank_lt (by simpa using hlt), ENat.toNat_zero, zero_mul,
+    Nat.le_zero] at hle
+  simp [hle] at hi
+
 /-- **The signed critical count is the Euler characteristic.** For a Morse function on a compact
 boundaryless manifold `M` of finite CW type, `∑ᵢ (-1)ⁱ cᵢ = χ(M)`, where `cᵢ` is the number of
 critical points of index `i`. -/
@@ -184,18 +205,11 @@ theorem IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_eulerChar [Fini
     (hf : IsMorse I f) :
     ∑ i ∈ Finset.range (finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat =
       eulerChar M := by
-  rw [eulerChar_eq_finsum_finrank_singularHomology M (ULift.{u} ℚ),
-    finsum_eq_sum_of_support_subset (s := Finset.range (finrank ℝ E + 1)) _ ?_,
-    hf.sum_range_neg_one_pow_mul_finrank_singularHomology_self_eq le_rfl]
-  -- Above the dimension there are no critical points, so homology vanishes by the weak Morse
-  -- inequalities.
-  intro i hi
-  rw [Finset.coe_range, mem_Iio, Nat.lt_succ_iff]
-  by_contra hlt
-  have h := hf.finrank_singularHomology_le (ModuleCat.of (ULift.{u} ℚ) (ULift.{u} ℚ)) i
-  rw [criticalCount_eq_zero_of_finrank_lt (not_le.1 hlt), ENat.toNat_zero, zero_mul,
-    Nat.le_zero] at h
-  simp [h] at hi
+  let K := ULift.{u} ℚ
+  have hK : finrank K (ModuleCat.of K K) = 1 := finrank_self K
+  rw [eulerChar_eq_finsum_finrank_singularHomology M K,
+    hf.finsum_neg_one_pow_mul_finrank_singularHomology (ModuleCat.of K K), hK, Nat.cast_one,
+    one_mul]
 
 /-- **Parity of the number of critical points.** Every Morse function on a compact boundaryless
 manifold `M` of finite CW type has a number of critical points congruent to the Euler
