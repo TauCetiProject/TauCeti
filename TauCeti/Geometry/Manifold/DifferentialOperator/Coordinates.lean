@@ -68,7 +68,7 @@ theorem eq_coordinateOperator_coordinateCoeff {D : C^∞⟮𝓘(ℝ, E), E; ℝ�
       (fun i j ↦ TauCeti.commute_lineDerivation (b i) (b j)) m
       (TauCeti.coordinateCoeff b.smoothCoord D) :=
   TauCeti.eq_coordinateOperator_coordinateCoeff _ _ b.lineDerivation_smoothCoord
-    (fun x : E ↦ ContMDiffMap.evalAlgHom x) b.ker_evalAlgHom_le_span
+    (fun x : E ↦ ContMDiffMap.evalAlgHom x) (fun x ↦ (b.ker_evalAlgHom_eq_span x).le)
     ContMDiffMap.eq_zero_of_forall_mem_ker_evalAlgHom_smul_top hD
 
 /-- **Differential operators in coordinates.** A linear endomorphism of `C^∞(E)` is a
@@ -83,7 +83,8 @@ theorem mem_differentialOperators_iff_exists_eq_coordinateOperator
       ∃ c, D = TauCeti.coordinateOperator (fun i ↦ TauCeti.lineDerivation ℝ (b i))
         (fun i j ↦ TauCeti.commute_lineDerivation (b i) (b j)) m c :=
   TauCeti.mem_differentialOperators_iff_exists_eq_coordinateOperator _ _
-    b.lineDerivation_smoothCoord (fun x : E ↦ ContMDiffMap.evalAlgHom x) b.ker_evalAlgHom_le_span
+    b.lineDerivation_smoothCoord (fun x : E ↦ ContMDiffMap.evalAlgHom x)
+    (fun x ↦ (b.ker_evalAlgHom_eq_span x).le)
     ContMDiffMap.eq_zero_of_forall_mem_ker_evalAlgHom_smul_top
 
 /-- **Uniqueness of coordinate expressions.** A coordinate expression of order `m` on `C^∞(E)`

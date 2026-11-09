@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Ideal.IsAugmentation
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Ideal.Operations
 
+import Mathlib.RingTheory.MvPolynomial.Homogeneous
 import TauCeti.RingTheory.Ideal.Extended
 
 /-!
@@ -29,8 +30,9 @@ has, with no flatness, freeness or finiteness hypothesis:
   `A₊ ^ n / A₊ ^ (n + 1)` are spanned over `R` by the monomials of degree `n` in the `tⱼ`, and
   `A` acts on `N / A₊ • N` through `ε` for every `A`-module `N`.
 
-The last identity is the compatibility condition between the divided powers of an augmentation
-ideal and the base ideal `I`, used for divided-power algebras and divided-power envelopes.
+The identity `IA ⊓ A₊ = IA * A₊` is the compatibility condition between the divided powers of an
+augmentation ideal and the base ideal `I`, used for divided-power algebras and divided-power
+envelopes.
 
 ## Main declarations
 
@@ -152,44 +154,21 @@ theorem exists_sub_mem_pow_succ {ι : Type*} [Fintype ι] {t : ι → A} (ht : �
   classical
   set I := RingHom.ker χ
   have htI (j : ι) : t j ∈ I := ht j
-  induction n generalizing g with
-  | zero =>
-    refine ⟨χ g • ∏ j, t j ^ (0 : ι → ℕ) j,
-      Submodule.smul_mem _ _ (Submodule.subset_span ⟨0, by simp, rfl⟩), ?_⟩
-    simpa [Algebra.smul_def] using show g - _ ∈ I from χ.sub_algebraMap_apply_mem_ker g
-  | succ n ih =>
-    rw [pow_succ] at hg
-    refine Submodule.mul_induction_on hg (fun a ha b hb ↦ ?_) fun x y ⟨q, hq, hxq⟩ ⟨q', hq', hyq⟩ ↦
-      ⟨q + q', add_mem hq hq', by simpa [sub_add_sub_comm] using add_mem hxq hyq⟩
-    obtain ⟨q, hq, haq⟩ := ih ha
-    obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun A).1 (hI hb)
-    have hqI : q ∈ I ^ n := by
-      refine (Submodule.span_le (p := (I ^ n).restrictScalars R)).2 ?_ hq
-      rintro _ ⟨β, hβ, rfl⟩
-      simpa [hβ, Finset.prod_pow_eq_pow_sum] using Ideal.prod_mem_prod (s := Finset.univ)
-        (I := fun j ↦ I ^ β j) fun j _ ↦ Ideal.pow_mem_pow (htI j) _
-    refine ⟨∑ j, χ (c j) • (q * t j), sum_mem fun j _ ↦ Submodule.smul_mem _ _ ?_, ?_⟩
-    · refine Submodule.span_induction (p := fun q _ ↦ q * t j ∈ Submodule.span R
-        {a | ∃ β : ι → ℕ, ∑ j, β j = n + 1 ∧ ∏ j, t j ^ β j = a}) ?_ (by simp)
-        (fun x y _ _ hx hy ↦ by simpa [add_mul] using add_mem hx hy)
-        (fun r x _ hx ↦ by simpa [smul_mul_assoc] using Submodule.smul_mem _ r hx) hq
-      rintro _ ⟨β, hβ, rfl⟩
-      refine Submodule.subset_span ⟨β + Pi.single j 1, by simp [Finset.sum_add_distrib, hβ], ?_⟩
-      simp only [Pi.add_apply, pow_add, Finset.prod_mul_distrib]
-      congr 1
-      rw [Finset.prod_eq_single j (fun k _ hk ↦ by simp [hk]) (by simp)]
-      simp
-    · have key : a * ∑ j, c j • t j - ∑ j, χ (c j) • (q * t j) =
-          ∑ j, ((a - q) * c j * t j + q * (c j - algebraMap R A (χ (c j))) * t j) := by
-        rw [Finset.mul_sum, ← Finset.sum_sub_distrib]
-        refine Finset.sum_congr rfl fun j _ ↦ ?_
-        rw [smul_eq_mul, Algebra.smul_def]
-        ring
-      rw [key, pow_succ]
-      refine sum_mem fun j _ ↦ add_mem (Ideal.mul_mem_mul (Ideal.mul_mem_right _ _ haq) (htI j))
-        (Ideal.mul_mem_mul ?_ (htI j))
-      rw [pow_succ]
-      exact Ideal.mul_mem_mul hqI (χ.sub_algebraMap_apply_mem_ker (c j))
+  -- Mathlib writes `g` as a homogeneous polynomial of degree `n` in the `tⱼ`; replacing each
+  -- coefficient by its value under `χ` changes it by an element of `I * I ^ n`.
+  rw [le_antisymm hI (Ideal.span_le.2 (Set.range_subset_iff.2 htI)),
+    Ideal.mem_span_pow_iff_exists_isHomogeneous] at hg
+  obtain ⟨p, hp, rfl⟩ := hg
+  refine ⟨∑ β ∈ p.support, χ (p.coeff β) • ∏ j, t j ^ β j,
+    sum_mem fun β hβ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨β, ?_, rfl⟩), ?_⟩
+  · rw [← Finsupp.degree_eq_sum, Finsupp.degree_apply, ← hp.degree_eq_sum_deg_support hβ]
+  rw [MvPolynomial.eval_eq', ← Finset.sum_sub_distrib, pow_succ']
+  refine sum_mem fun β hβ ↦ ?_
+  rw [Algebra.smul_def, ← sub_mul]
+  refine Ideal.mul_mem_mul (χ.sub_algebraMap_apply_mem_ker _) ?_
+  simpa [← hp.degree_eq_sum_deg_support hβ, Finsupp.degree_apply, Finset.prod_pow_eq_pow_sum,
+    ← Finsupp.degree_eq_sum] using Ideal.prod_mem_prod (s := Finset.univ)
+      (I := fun j ↦ I ^ β j) fun j _ ↦ Ideal.pow_mem_pow (htI j) _
 
 /-- Modulo `ker χ • N`, the action of `a` on `N` agrees with that of its value `χ a`. -/
 theorem smul_sub_smul_mem_smul_top {N : Type*} [AddCommGroup N] [Module A N] [Module R N]

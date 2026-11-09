@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Order.Antidiag.Pi
 public import Mathlib.Data.Finset.NoncommProd
 public import TauCeti.RingTheory.Derivation.DifferentialOperator
+import Mathlib.Algebra.Order.Pi
+import Mathlib.Algebra.Order.Sub.Prod
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Nat.Factorial.BigOperators
 import TauCeti.RingTheory.Derivation.Basic
@@ -159,14 +161,14 @@ theorem apply_multiIndexDeriv_prod_pow [DecidableEq ι] (χ : A →ₐ[R] R) {t 
     obtain ⟨i, hi⟩ : ∃ i, α i ≠ 0 := by
       by_contra! hc
       simp [hc] at h
+    -- Removing `eᵢ` from a multi-index is truncated subtraction, inverse to adding `eᵢ` as
+    -- soon as the `i`-th entry is nonzero.
+    have hle {γ : ι → ℕ} (hγ : γ i ≠ 0) : Pi.single i 1 ≤ γ := fun j ↦ by
+      rcases eq_or_ne j i with rfl | hj
+      · simpa [Nat.one_le_iff_ne_zero] using hγ
+      · simp [hj]
     set α' := α - Pi.single i 1
-    have hα : α = α' + Pi.single i 1 := by
-      ext j
-      by_cases hj : j = i
-      · subst hj
-        simp [α']
-        omega
-      · simp [α', hj]
+    have hα : α = α' + Pi.single i 1 := (tsub_add_cancel_of_le (hle hi)).symm
     have hα' : ∑ j, α' j = n := by
       simp only [hα, Pi.add_apply, sum_add_distrib, Fintype.sum_pi_single'] at h
       omega
@@ -177,21 +179,7 @@ theorem apply_multiIndexDeriv_prod_pow [DecidableEq ι] (χ : A →ₐ[R] R) {t 
       intro h
       have := congrFun h i
       simp [hβ] at this
-    have hiff : α' = β - Pi.single i 1 ↔ α' + Pi.single i 1 = β := by
-      constructor
-      · intro h
-        rw [h]
-        ext j
-        by_cases hj : j = i
-        · subst hj
-          simp
-          omega
-        · simp [hj]
-      · intro h
-        rw [← h]
-        ext j
-        simp
-    simp only [hiff]
+    simp only [eq_tsub_iff_add_eq_of_le (hle hβ)]
     -- It remains to check `βᵢ (β - eᵢ)! = β!`.
     split_ifs
     · rw [nsmul_eq_mul, ← Nat.cast_mul, ← mul_prod_erase univ _ (mem_univ i),
