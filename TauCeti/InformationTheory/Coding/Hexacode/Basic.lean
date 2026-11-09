@@ -65,12 +65,12 @@ theorem code_def (ω : F) : code ω = (generatorMatrix ω).generatedBy := (rfl)
 
 /-- A chosen root of `X² + X + 1` in the hexacode alphabet `GaloisField 2 2`. -/
 noncomputable def omega : GaloisField 2 2 := by
-  exact Classical.choose (exists_sq_add_self_add_one_eq_zero_of_card_eq_four
+  exact Classical.choose (exists_sq_add_self_add_one_eq_zero_of_natCard_eq_four
     (GaloisField.card 2 2 (by decide)))
 
 /-- The chosen hexacode alphabet root satisfies its defining equation. -/
 theorem omega_sq_add_omega_add_one : omega ^ 2 + omega + 1 = 0 := by
-  exact Classical.choose_spec (exists_sq_add_self_add_one_eq_zero_of_card_eq_four
+  exact Classical.choose_spec (exists_sq_add_self_add_one_eq_zero_of_natCard_eq_four
     (GaloisField.card 2 2 (by decide)))
 
 /-- The hexacode over `GaloisField 2 2`, with the fixed root `omega`. -/

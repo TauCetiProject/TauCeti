@@ -260,7 +260,8 @@ theorem lintegral_floerEnergyDensity_eq_zero_iff (ω : SymplecticForm V)
 /-- **Translation-invariant Floer cylinders have zero energy.** Under the hypotheses of
 `TauCeti.SymplecticForm.lintegral_floerEnergyDensity_eq_zero_iff`, suppose that `u` has finite
 energy over the strip `ℝ × [0, 1]` and is invariant there under the translation
-`(s, t) ↦ (s + c, t)` for some `c ≠ 0`. Then the energy of `u` vanishes, so `u` is stationary. -/
+`(s, t) ↦ (s + c, t)` for some `c ≠ 0`. Then the energy of `u` vanishes; by
+`TauCeti.SymplecticForm.lintegral_floerEnergyDensity_eq_zero_iff` this means `u` is stationary. -/
 theorem lintegral_floerEnergyDensity_eq_zero_of_periodic (ω : SymplecticForm V)
     {J : ℝ × ℝ → AlmostComplexStructure V} (hH : ContDiff ℝ 1 (uncurry H)) (hU : IsOpen U)
     (hu : ContDiffOn ℝ 1 u U) (hRU : (univ : Set ℝ) ×ˢ Icc 0 1 ⊆ U)

@@ -125,6 +125,25 @@ theorem ramificationIdx_eq_one_of_exists_sub_pow_sub_self_mem_integers
     at hle
   exact le_antisymm hle (ramificationIdx_pos F P')
 
+/-- If the different exponent is the sum of `P'.ord (z - σ z)` over the nontrivial automorphisms
+`σ`, each term is `m + 1`, and there are `p` automorphisms, then the different exponent is
+`(p - 1) * (m + 1)`. -/
+private theorem differentExponent_eq_of_sum_ord_sub_aut_eq (p m : ℕ) {z : F'}
+    [DecidableEq (F' ≃ₐ[F] F')] [Fintype (F' ≃ₐ[F] F')]
+    (hd : (differentExponent k F P' : ℤ) =
+      ∑ σ ∈ (Finset.univ : Finset (F' ≃ₐ[F] F')).erase 1, P'.ord (z - σ z))
+    (hterm : ∀ σ ∈ (Finset.univ : Finset (F' ≃ₐ[F] F')).erase 1,
+      P'.ord (z - σ z) = (m : ℤ) + 1)
+    (hcard : Fintype.card (F' ≃ₐ[F] F') = p) :
+    differentExponent k F P' = (p - 1) * (m + 1) := by
+  have herase : ((Finset.univ : Finset (F' ≃ₐ[F] F')).erase 1).card = p - 1 := by
+    rw [Finset.card_erase_of_mem (Finset.mem_univ 1), Finset.card_univ, hcard]
+  have hd' : (differentExponent k F P' : ℤ) = (((p - 1) * (m + 1) : ℕ) : ℤ) := by
+    rw [hd, Finset.sum_congr rfl hterm, Finset.sum_const, nsmul_eq_mul, herase]
+    push_cast
+    ring
+  exact_mod_cast hd'
+
 /-- At an Artin--Schreier pole of order `m` prime to `p`, the different exponent is
 `(p - 1) * (m + 1)`. No perfection hypothesis on the residue field is needed. -/
 theorem differentExponent_eq_of_pow_sub_self_eq_of_ord_eq_neg
@@ -168,29 +187,15 @@ theorem differentExponent_eq_of_pow_sub_self_eq_of_ord_eq_neg
   have hxcoe : algebraMap (integralClosure (P'.restrict k F).integers F') F' x = z := rfl
   rw [hxcoe] at hd
   have hterm : ∀ σ ∈ (Finset.univ : Finset (F' ≃ₐ[F] F')).erase 1,
-      P'.ord (z - σ z) = 1 - (P'.restrict k F).ord u := by
+      P'.ord (z - σ z) = (m : ℤ) + 1 := by
     intro σ hσ
-    rw [← P'.ord_neg, neg_sub]
-    exact hdisp σ (Finset.ne_of_mem_erase hσ)
+    rw [← P'.ord_neg, neg_sub, hdisp σ (Finset.ne_of_mem_erase hσ), hu]
+    ring
   have hcard : Fintype.card (F' ≃ₐ[F] F') = p := by
     rw [Fintype.card_eq_nat_card, IsGalois.card_aut_eq_finrank,
       finrank_eq_of_pow_sub_self_eq_of_gcd_ord_eq_one k F
         (Fact.out : p.Prime).one_lt hgen hy huneg hcop]
-  have herase : ((Finset.univ : Finset (F' ≃ₐ[F] F')).erase 1).card = p - 1 := by
-    rw [Finset.card_erase_of_mem (Finset.mem_univ 1), Finset.card_univ, hcard]
-  have hd' : (differentExponent k F P' : ℤ) =
-      (((p - 1) * (m + 1) : ℕ) : ℤ) := by
-    calc
-      (differentExponent k F P' : ℤ) =
-          ∑ σ ∈ (Finset.univ : Finset (F' ≃ₐ[F] F')).erase 1, P'.ord (z - σ z) := by
-            exact hd
-      _ = ∑ _σ ∈ (Finset.univ : Finset (F' ≃ₐ[F] F')).erase 1,
-          (1 - (P'.restrict k F).ord u) := Finset.sum_congr rfl hterm
-      _ = (((p - 1) * (m + 1) : ℕ) : ℤ) := by
-        rw [Finset.sum_const, nsmul_eq_mul, herase, hu]
-        push_cast
-        ring
-  exact_mod_cast hd'
+  exact differentExponent_eq_of_sum_ord_sub_aut_eq k F p m hd hterm hcard
 
 /-- The exact different formula for a supplied reduced representative of an Artin--Schreier
 class. Translating the generator does not change the extension. -/

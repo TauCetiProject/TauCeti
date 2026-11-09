@@ -63,7 +63,7 @@ vanishes. This is the projective counterpart of the basis of graded heads.
   algebra is spanned by orthogonal idempotents, its diagonal corners are `k eᵢ` in degree zero
   and its off-diagonal corners live in positive degrees.
 * `TauCeti.coe_decompose_mem_cornerSubmodule`: the homogeneous components of an element of a
-  corner `aAb` cut out by idempotents of degree zero lie in that corner.
+  corner `aAb` cut out by elements of degree zero lie in that corner.
 * `TauCeti.isPrimitiveIdempotent_of_gradeZero_le_span`: each `eᵢ` is a primitive idempotent of
   `A`.
 * `TauCeti.isEmpty_linearEquiv_span_singleton_of_gradeZero_le_span`: the ungraded modules `A eᵢ`
@@ -94,15 +94,17 @@ section CornerComponents
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
 
-/-- The homogeneous components of an element of the corner `aAb` cut out by two idempotents of
+/-- The homogeneous components of an element of the corner `aAb` cut out by two elements of
 degree zero lie in the same corner. -/
-theorem coe_decompose_mem_cornerSubmodule {a b x : A} (ha : IsIdempotentElem a)
-    (hb : IsIdempotentElem b) (ha₀ : a ∈ 𝒜 0) (hb₀ : b ∈ 𝒜 0)
+theorem coe_decompose_mem_cornerSubmodule {a b x : A} (ha₀ : a ∈ 𝒜 0) (hb₀ : b ∈ 𝒜 0)
     (hx : x ∈ cornerSubmodule k a b) (p : ℤ) :
     (DirectSum.decompose 𝒜 x p : A) ∈ cornerSubmodule k a b := by
-  rw [mem_cornerSubmodule_iff k ha hb] at hx ⊢
-  rw [← DirectSum.coe_decompose_mul_of_left_mem_zero 𝒜 ha₀,
-    ← DirectSum.coe_decompose_mul_of_right_mem_zero 𝒜 hb₀, hx]
+  rw [cornerSubmodule_def, LinearMap.mem_range] at hx
+  obtain ⟨y, rfl⟩ := hx
+  simp only [LinearMap.mulLeftRight_apply]
+  rw [DirectSum.coe_decompose_mul_of_right_mem_zero 𝒜 hb₀,
+    DirectSum.coe_decompose_mul_of_left_mem_zero 𝒜 ha₀]
+  exact mul_mul_mem_cornerSubmodule k a b _
 
 end CornerComponents
 
@@ -239,7 +241,7 @@ theorem isPrimitiveIdempotent_of_gradeZero_le_span (i : I) (hne : e i ≠ 0) :
   -- The degree-zero component of `f` is an idempotent of `eᵢ A eᵢ ∩ 𝒜 0 = k eᵢ`, hence `0` or
   -- `eᵢ`; accordingly `f` or `eᵢ - f` is an idempotent without degree-zero component.
   have hmem : (decompose 𝒜 f 0 : A) ∈ cornerSubmodule k (e i) (e i) ⊓ 𝒜 0 :=
-    ⟨coe_decompose_mem_cornerSubmodule hei hei (he₀ i) (he₀ i)
+    ⟨coe_decompose_mem_cornerSubmodule (he₀ i) (he₀ i)
       ((mem_cornerSubmodule_iff k hei hei).2 (by rw [hef, hfe])) 0, (decompose 𝒜 f 0).2⟩
   rw [cornerSubmodule_inf_zero_eq_span_singleton he₀ ho hspan i,
     Submodule.mem_span_singleton] at hmem
@@ -278,7 +280,7 @@ theorem isEmpty_linearEquiv_span_singleton_of_gradeZero_le_span {i j : I} (hij :
   have hx₀ : (decompose 𝒜 x 0 : A) = 0 := by
     by_contra h
     exact lt_irrefl 0 (pos_of_mem_cornerSubmodule_inf ho hneg hspan hij
-      ⟨coe_decompose_mem_cornerSubmodule (ho.idem i) (ho.idem j) (he₀ i) (he₀ j) hx 0,
+      ⟨coe_decompose_mem_cornerSubmodule (he₀ i) (he₀ j) hx 0,
         (decompose 𝒜 x 0).2⟩ h)
   rw [← decompose_of_mem_same 𝒜 (he₀ i), hxy, GradedAlgebra.coe_decompose_mul_zero_of_nonneg hneg,
     hx₀, zero_mul]

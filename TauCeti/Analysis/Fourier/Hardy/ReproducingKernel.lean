@@ -45,8 +45,7 @@ def diskEvaluation : HardySpace →L[ℂ] ℂ :=
     { toFun := fun x => x.diskFunction w
       map_add' := fun x y => x.diskFunction_add y
         (by simpa only [Metric.mem_ball, dist_zero_right] using w.property)
-      map_smul' := fun c x => x.diskFunction_smul c
-        (by simpa only [Metric.mem_ball, dist_zero_right] using w.property) }
+      map_smul' := fun c x => x.diskFunction_smul c }
     (√(1 - ‖(w : ℂ)‖ ^ 2))⁻¹ fun x => by
       simpa only [LinearMap.coe_mk, AddHom.coe_mk, div_eq_mul_inv, mul_comm] using
         x.norm_diskFunction_le (by simpa only [Metric.mem_ball, dist_zero_right] using w.property)
@@ -164,7 +163,7 @@ theorem norm_normalize_reproducingKernel :
 theorem diskFunction_normalize_reproducingKernel {z : ℂ} (hz : ‖z‖ < 1) :
     (NormedSpace.normalize (reproducingKernel w)).diskFunction z =
       (√(1 - ‖(w : ℂ)‖ ^ 2) : ℂ) * (1 - starRingEnd ℂ (w : ℂ) * z)⁻¹ := by
-  rw [normalize_reproducingKernel, diskFunction_smul _ _ hz,
+  rw [normalize_reproducingKernel, diskFunction_smul _ _,
     diskFunction_reproducingKernel w hz]
 
 end TauCeti.HardySpace

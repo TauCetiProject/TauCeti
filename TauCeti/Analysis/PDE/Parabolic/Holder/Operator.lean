@@ -135,25 +135,29 @@ theorem parabolicOperatorL_sub_parabolicOperatorL :
   rw [spatialOperatorL_sub, parabolicOperatorL_def, parabolicOperatorL_def]
   abel
 
+/-- **The pointwise bound for the spatial operator.**
+`‖L u‖ ≤ ‖A‖ ‖D²u‖ + ‖B‖ ‖Du‖ + ‖C‖ ‖u‖`, where `‖u‖` is the Hölder norm of the value. -/
+theorem norm_spatialOperatorL_apply_le (u : ParabolicC2HolderSpace α E F ht) :
+    ‖spatialOperatorL hα A B C u‖ ≤
+      ‖A‖ * ‖spatialSecondFDerivL u‖ + ‖B‖ * ‖spatialFDerivHolderL hα u‖ +
+        ‖C‖ * ‖valueHolderL hα u‖ := by
+  have hA := ContinuousLinearMap.norm_id_compHolder₂_apply_le A (spatialSecondFDerivL u)
+  have hB := ContinuousLinearMap.norm_id_compHolder₂_apply_le B (spatialFDerivHolderL hα u)
+  have hC := ContinuousLinearMap.norm_id_compHolder₂_apply_le C (valueHolderL hα u)
+  exact (norm_add_le _ _).trans (add_le_add ((norm_add_le _ _).trans (add_le_add hA hB)) hC)
+
 /-- **The operator bound for the spatial operator.**
 `‖L‖ ≤ ‖A‖ + 24 (‖B‖ + ‖C‖)`, uniformly over the spaces and the slab. -/
 theorem norm_spatialOperatorL_le :
     ‖spatialOperatorL (ht := ht) hα A B C‖ ≤ ‖A‖ + 24 * (‖B‖ + ‖C‖) := by
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
-  -- Pointwise application of a coefficient field does not increase norms.
-  have hA := ContinuousLinearMap.norm_id_compHolder₂_apply_le A (spatialSecondFDerivL u)
-  have hB := ContinuousLinearMap.norm_id_compHolder₂_apply_le B (spatialFDerivHolderL hα u)
-  have hC := ContinuousLinearMap.norm_id_compHolder₂_apply_le C (valueHolderL hα u)
   have h₂ := norm_spatialSecondFDerivL_le u
   have h₁ := norm_valueHolderL_add_norm_spatialFDerivHolderL_le hα u one_pos le_rfl
   simp only [Real.one_rpow, mul_one] at h₁
   have hv := norm_valueL_le u
   have hDu := norm_nonneg (spatialFDerivHolderL hα u)
   have hu := norm_nonneg (valueHolderL hα u)
-  have hL : ‖spatialOperatorL (ht := ht) hα A B C u‖ ≤
-      ‖A‖ * ‖spatialSecondFDerivL u‖ + ‖B‖ * ‖spatialFDerivHolderL hα u‖ +
-        ‖C‖ * ‖valueHolderL hα u‖ :=
-    (norm_add_le _ _).trans (add_le_add ((norm_add_le _ _).trans (add_le_add hA hB)) hC)
+  have hL := norm_spatialOperatorL_apply_le (A := A) (B := B) (C := C) hα u
   nlinarith [mul_le_mul_of_nonneg_left h₂ (norm_nonneg A),
     mul_le_mul_of_nonneg_left (show ‖spatialFDerivHolderL hα u‖ ≤ 24 * ‖u‖ by linarith)
       (norm_nonneg B),

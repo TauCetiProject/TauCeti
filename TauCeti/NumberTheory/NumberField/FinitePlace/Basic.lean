@@ -38,9 +38,9 @@ each such argument has to rebuild the existence proof inline.
 
 Two finite places are equal exactly when their absolute values are equivalent,
 `NumberField.FinitePlace.eq_iff_isEquiv`, as Mathlib has for infinite places. For a prime `w` of a
-finite extension over a prime `v`, `NumberField.FinitePlace.mk_apply_algebraMap` restates Mathlib's
-`equivHeightOneSpectrum_symm_apply_algebraMap` with `FinitePlace.mk`: on the base, the finite place
-of `w` is the `e * f`-th power of that of `v`.
+finite extension over a prime `v`, Mathlib's
+`equivHeightOneSpectrum_symm_apply_algebraMap` shows that on the base, the finite place of `w` is
+the `e * f`-th power of that of `v`.
 
 `NumberField.HeightOneSpectrum.log_adicAbv` reads the logarithm of the `v`-adic absolute value
 as minus the `v`-adic order times `log N(v)`, the form in which valuations enter height estimates.
@@ -93,6 +93,15 @@ theorem apply_eq_absNorm_zpow (v : FinitePlace K) {x : K} (hx : x ≠ 0) :
     WithZeroMulInt.toNNReal_neg_apply _ ((v.maximalIdeal.valuation K).ne_zero_iff.mpr hx),
     NNReal.coe_zpow, NNReal.coe_natCast]
 
+/-- The norm of a nonzero element of the `v`-adic completion is the norm of `v` raised to the
+logarithm of its valuation. In particular a uniformizer, of valuation `exp (-1)`, has norm
+`N(v)⁻¹`. -/
+theorem norm_adicCompletion_eq_absNorm_zpow (v : HeightOneSpectrum (𝓞 K))
+    {x : v.adicCompletion K} (hx : x ≠ 0) :
+    ‖x‖ = (v.asIdeal.absNorm : ℝ) ^ WithZero.log (Valued.v x) := by
+  rw [norm_def, WithZeroMulInt.toNNReal_neg_apply _ ((Valued.v).ne_zero_iff.mpr hx),
+    NNReal.coe_zpow, NNReal.coe_natCast]
+
 /-- Every integer power of the prime norm occurs as a nonzero finite-place value. -/
 theorem exists_ne_zero_apply_eq_absNorm_zpow (v : FinitePlace K) (n : ℤ) :
     ∃ x : K, x ≠ 0 ∧ v x = (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ n := by
@@ -134,18 +143,6 @@ theorem eq_iff_isEquiv {w v : FinitePlace K} : w = v ↔ w.1.IsEquiv v.1 := by
   rw [← norm_lt_one_iff_mem K, ← norm_lt_one_iff_mem K, ← mk_apply, ← mk_apply,
     mk_maximalIdeal, mk_maximalIdeal]
   exact h.lt_one_iff
-
-/-- For a prime `w` of `𝓞 L` over the prime `v` of `𝓞 K`, the finite place of `w` restricts on
-`K` to the `e * f`-th power of the finite place of `v`, where `e` and `f` are the ramification
-index and the inertia degree of `w` over `v`. This is Mathlib's
-`equivHeightOneSpectrum_symm_apply_algebraMap` stated with `FinitePlace.mk`. -/
-theorem mk_apply_algebraMap {L : Type*} [Field L] [NumberField L] [Algebra K L]
-    (v : HeightOneSpectrum (𝓞 K)) (w : HeightOneSpectrum (𝓞 L)) [w.asIdeal.LiesOver v.asIdeal]
-    (x : K) :
-    mk w (algebraMap K L x) =
-      mk v x ^ (w.asIdeal.ramificationIdx (𝓞 K) * w.asIdeal.inertiaDeg (𝓞 K)) := by
-  simpa only [equivHeightOneSpectrum_symm_apply, ← mk_apply] using
-    equivHeightOneSpectrum_symm_apply_algebraMap v w x
 
 /-- A product over the finite places of a number field, reindexed by the height one primes of its
 ring of integers. -/
