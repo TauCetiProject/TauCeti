@@ -14,8 +14,9 @@ public import TauCeti.Analysis.InnerProductSpace.Polar.Bounded
 Let `ι : 𝕜ᵏ → 𝕜ⁿ` be the zero extension onto the first `k` coordinates. For an operator `A` of
 `𝕜ⁿ`, the block `ι† A ι` is the first diagonal block of `A` in the splitting
 `𝕜ⁿ ≃ 𝕜ᵏ × 𝕜ⁿ⁻ᵏ` along `j < k` (`EuclideanSpace.sumComplEquivProd`), read on `𝕜ᵏ` through
-`EuclideanSpace.finCastLEEquiv`. By naturality of polar factors under linear isometric
-equivalences (`ContinuousLinearMap.polarFactor_conj`), the same holds for its polar factor.
+`EuclideanSpace.finCastLEEquiv`. By naturality of polar factors under linear isometries
+(`ContinuousLinearMap.polarFactor_linearIsometry_comp_comp_linearIsometryEquiv_symm`), the same
+holds for its polar factor.
 
 ## Main declarations
 
@@ -47,7 +48,8 @@ theorem polarFactor_adjoint_comp_comp_piLpExtendByZero (hk : k ≤ n)
           ContinuousLinearMap.inl 𝕜 _ _).polarFactor ∘L
         ((finCastLEEquiv 𝕜 hk).symm.symm :
           EuclideanSpace 𝕜 (Fin k) →L[𝕜] EuclideanSpace 𝕜 {j : Fin n // j.val < k}) := by
-  rw [← ContinuousLinearMap.polarFactor_conj]
+  rw [← (finCastLEEquiv 𝕜 hk).symm.toContinuousLinearMap_toLinearIsometry,
+    ← ContinuousLinearMap.polarFactor_linearIsometry_comp_comp_linearIsometryEquiv_symm]
   congr 1
   ext1 w
   simp [← finCastLEEquiv_symm_fst_sumComplEquivProd]

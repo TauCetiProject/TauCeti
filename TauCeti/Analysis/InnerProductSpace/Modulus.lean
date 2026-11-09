@@ -154,21 +154,24 @@ theorem modulus_zero : (0 : E →L[𝕜] F).modulus = 0 :=
 theorem modulus_neg (T : E →L[𝕜] F) : (-T).modulus = T.modulus :=
   (eq_modulus_iff.2 ⟨T.isPositive_modulus, by simp⟩).symm
 
-/-- The modulus is natural under linear isometric equivalences of the source and target:
-`|e₁ T e₂⁻¹| = e₂ |T| e₂⁻¹`. In particular the modulus commutes with conjugation by a linear
-isometric equivalence. -/
-theorem modulus_conj {E' F' : Type*} [NormedAddCommGroup E'] [InnerProductSpace 𝕜 E']
-    [CompleteSpace E'] [NormedAddCommGroup F'] [InnerProductSpace 𝕜 F'] [CompleteSpace F']
-    (e₁ : F ≃ₗᵢ[𝕜] F') (e₂ : E ≃ₗᵢ[𝕜] E') (T : E →L[𝕜] F) :
-    ((e₁ : F →L[𝕜] F') ∘L T ∘L (e₂.symm : E' →L[𝕜] E)).modulus =
+/-- The modulus is natural under a linear isometry of the target and a linear isometric
+equivalence of the source: `|e₁ T e₂⁻¹| = e₂ |T| e₂⁻¹`. In particular the modulus commutes with
+conjugation by a linear isometric equivalence. -/
+theorem modulus_linearIsometry_comp_comp_linearIsometryEquiv_symm {E' F' : Type*}
+    [NormedAddCommGroup E'] [InnerProductSpace 𝕜 E'] [CompleteSpace E'] [NormedAddCommGroup F']
+    [InnerProductSpace 𝕜 F'] [CompleteSpace F'] (e₁ : F →ₗᵢ[𝕜] F') (e₂ : E ≃ₗᵢ[𝕜] E')
+    (T : E →L[𝕜] F) :
+    (e₁.toContinuousLinearMap ∘L T ∘L (e₂.symm : E' →L[𝕜] E)).modulus =
       (e₂ : E →L[𝕜] E') ∘L T.modulus ∘L (e₂.symm : E' →L[𝕜] E) := by
   refine (eq_modulus_iff.2 ⟨?_, ?_⟩).symm
   · simpa only [LinearIsometryEquiv.adjoint_eq_symm] using
       T.isPositive_modulus.conj_adjoint (e₂ : E →L[𝕜] E')
   · rw [adjoint_comp, adjoint_comp, LinearIsometryEquiv.adjoint_eq_symm,
-      LinearIsometryEquiv.adjoint_eq_symm, LinearIsometryEquiv.symm_symm]
+      LinearIsometryEquiv.symm_symm]
     ext x
-    simp [modulus_modulus_apply]
+    simp [modulus_modulus_apply,
+      show ∀ y, e₁.toContinuousLinearMap.adjoint (e₁ y) = y from
+        DFunLike.congr_fun e₁.adjoint_comp_self]
 
 /-- The modulus is the square root `CFC.sqrt (T† T)` of the continuous functional calculus, for
 every real algebra structure on `E →L[𝕜] E` compatible with the `𝕜`-action. -/
