@@ -531,8 +531,8 @@ theorem natCard_orbitQuotient :
   rcases eq_or_ne p 0 with rfl | hp
   · have := Polynomial.Factors.infinite_zero (K := F)
     rw [Nat.card_eq_zero_of_infinite (α := (0 : F[X]).Factors)]
-    refine Nat.card_eq_zero.mpr (Or.inl ⟨fun q ↦ ?_⟩)
-    exact Quotient.inductionOn q (motive := fun _ ↦ False) fun x ↦ by simpa using x.2
+    have : IsEmpty ((0 : F[X]).rootSet E) := by rw [rootSet_zero]; infer_instance
+    rw [Nat.card_of_isEmpty]
   · exact Nat.card_congr (orbitQuotientEquivFactors p E hp)
 
 /-! ## Transitivity without separability
