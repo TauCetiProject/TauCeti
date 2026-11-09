@@ -10,6 +10,7 @@ public import Mathlib.Combinatorics.Quiver.Subquiver
 public import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
 public import Mathlib.Topology.IsLocalHomeomorph
 public import TauCeti.Topology.Maps.Proper.Basic
+public import TauCeti.Combinatorics.Quiver.Prefunctor
 
 /-!
 # Full restrictions of topological groupoids
@@ -114,6 +115,13 @@ theorem isEmbedding_total_fullSubcategory :
   obtain ⟨rfl, rfl, h⟩ := h
   cases ObjectProperty.hom_ext _ (f := f) (g := f') (eq_of_heq h)
   rfl
+
+/-- The native inclusion functor of a full subcategory is continuous on total arrows,
+with the induced arrow topology. -/
+@[fun_prop]
+theorem _root_.CategoryTheory.ObjectProperty.continuous_mapTotal_ι (P : ObjectProperty C) :
+    Continuous P.ι.toPrefunctor.mapTotal :=
+  isEmbedding_total_fullSubcategory.continuous
 
 /-- The total arrows of a full subcategory of a category with Hausdorff total arrows are
 Hausdorff. -/

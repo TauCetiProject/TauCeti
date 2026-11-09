@@ -5,17 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+public import Mathlib.RingTheory.RootsOfUnity.Basic
 public import Mathlib.GroupTheory.Torsion
-public import Mathlib.GroupTheory.PGroup
-public import Mathlib.RingTheory.IntegralDomain
 
 /-!
 # Roots of unity of `p`-power order
 
 For a commutative monoid, the `p`-power roots of unity form the primary component of its unit
-group. In a reduced ring of exponential characteristic `p` this subgroup is trivial, and in a
-domain it is cyclic when finite.
+group. In a reduced ring of exponential characteristic `p` this subgroup is trivial. When finite
+in a domain, it is cyclic by Mathlib's instance `isCyclic_subgroup_units`.
 -/
 
 public section
@@ -36,12 +34,8 @@ theorem mem_pPowerRootsOfUnity_iff (x : Kˣ) :
 theorem pPowerRootsOfUnity_eq_iSup_rootsOfUnity :
     pPowerRootsOfUnity p K = ⨆ n : ℕ, rootsOfUnity (p ^ n) K := by
   ext x
-  have hdir : Directed (· ≤ ·) (fun n : ℕ ↦ rootsOfUnity (p ^ n) K) := by
-    intro m n
-    refine ⟨max m n, rootsOfUnity_le_of_dvd (pow_dvd_pow p (le_max_left m n)),
-      rootsOfUnity_le_of_dvd (pow_dvd_pow p (le_max_right m n))⟩
-  simp only [mem_pPowerRootsOfUnity_iff, Subgroup.mem_iSup_of_directed hdir,
-    mem_rootsOfUnity]
+  simp only [mem_pPowerRootsOfUnity_iff, mem_rootsOfUnity, Subgroup.mem_iSup_of_directed
+    (Monotone.directed_le fun _ _ h ↦ rootsOfUnity_le_of_dvd (pow_dvd_pow p h))]
 
 /-- In a reduced ring of exponential characteristic `p`, the only root of unity of `p`-power
 order is `1`, since the Frobenius is injective. -/
@@ -50,19 +44,6 @@ theorem pPowerRootsOfUnity_eq_bot (R : Type*) [CommRing R] [IsReduced R] [ExpCha
     pPowerRootsOfUnity p R = ⊥ := by
   refine (Subgroup.eq_bot_iff_forall _).2 fun x hx ↦ ?_
   obtain ⟨n, hn⟩ := (mem_pPowerRootsOfUnity_iff p R x).1 hx
-  have hx : x ∈ rootsOfUnity (p ^ n * 1) R := by rwa [mul_one, mem_rootsOfUnity]
-  rwa [mem_rootsOfUnity_prime_pow_mul_iff, rootsOfUnity_one, Subgroup.mem_bot] at hx
-
-end TauCeti
-
-namespace TauCeti
-
-variable (p : ℕ) (K : Type*) [CommRing K] [IsDomain K]
-
-/-- A finite group of `p`-power roots of unity in a domain is cyclic. -/
-theorem isCyclic_pPowerRootsOfUnity (h : Finite (pPowerRootsOfUnity p K)) :
-    IsCyclic (pPowerRootsOfUnity p K) := by
-  let _ := h
-  exact isCyclic_subgroup_units (pPowerRootsOfUnity p K)
+  simpa using (mem_rootsOfUnity_prime_pow_mul_iff' R p n 1).1 (by rwa [mul_one])
 
 end TauCeti

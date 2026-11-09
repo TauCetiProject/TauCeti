@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 public import TauCeti.Analysis.PDE.Schrodinger.Basic
+import TauCeti.MeasureTheory.Integral.RieszThorin
 
 /-!
 # The kernel of the Schrödinger propagator and the dispersive estimate
@@ -25,7 +26,10 @@ integrable, `S(t) f = K_t ⋆ f` almost everywhere
 `‖S(t) f‖_∞ ≤ (4π|t|)^(-n/2) ‖f‖₁`
 
 (`TauCeti.eLpNorm_schrodingerPropagator_le`), the decay in time with exponent `n/2` that drives the
-Strichartz estimates.
+Strichartz estimates. Interpolating it with conservation of the `L²` norm by the Riesz–Thorin
+theorem gives `‖S(t) f‖_q ≤ (4π|t|)^(-n (1/2 - 1/q)) ‖f‖_p` for conjugate exponents `p, q` with
+`2 ≤ q ≤ ∞` (`TauCeti.eLpNorm_schrodingerPropagator_le_of_memLp`), the form in which the decay
+enters the `TT*` proof of the Strichartz estimates.
 
 ## The argument
 
@@ -51,6 +55,8 @@ dominated convergence.
 * `TauCeti.schrodingerPropagator_ae_eq_integral`: `S(t) f = K_t ⋆ f` for integrable `f ∈ L²`.
 * `TauCeti.norm_schrodingerPropagator_apply_le`, `TauCeti.eLpNorm_schrodingerPropagator_le`: the
   dispersive estimate.
+* `TauCeti.eLpNorm_schrodingerPropagator_le_of_memLp`: the dispersive estimate from `Lᵖ` to `L^q`,
+  `‖S(t) f‖_q ≤ (4π|t|)^(-n (1/2 - 1/q)) ‖f‖_p` for conjugate exponents with `2 ≤ q ≤ ∞`.
 * `TauCeti.coeFn_schrodingerPropagator_toLp_gaussian`: the evolution of the Gaussian
   `g(x) = exp(-π ‖x‖²)`, `S(t) g (x) = (1 + 4πit)^(-n/2) exp(-π ‖x‖² / (1 + 4πit))`.
 
@@ -193,7 +199,7 @@ theorem schrodingerPropagator_ae_eq_integral {t : ℝ} (ht : t ≠ 0)
   -- The regularized multipliers converge strongly to `S(t)`.
   have hL2 : Tendsto (fun k ↦ Lp.fourierMultiplierCLM F ((σ k).toLp ∞) f) atTop
       (𝓝 (schrodingerPropagator F t f)) := by
-    rw [schrodingerPropagator_def]
+    rw [schrodingerPropagator_def, phasePropagator_def]
     refine Lp.tendsto_fourierMultiplierCLM_apply (C := 1) (Eventually.of_forall fun k ↦
       SchwartzMap.norm_toLp_top_le.trans (SchwartzMap.seminorm_le_bound ℝ 0 0 _ zero_le_one
         fun ξ ↦ ?_)) ?_ f
@@ -201,10 +207,10 @@ theorem schrodingerPropagator_ae_eq_integral {t : ℝ} (ht : t ≠ 0)
       rw [norm_cexp_neg_mul_sq, Real.exp_le_one_iff]
       exact mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 (hbre k).le) (sq_nonneg _)
     · filter_upwards [ae_all_iff.2 fun k ↦ (σ k).coeFn_toLp ∞ volume,
-        (memLp_schrodingerSymbol (E := E) t).coeFn_toLp] with ξ h₁ h₂
+        (memLp_phaseSymbol (E := E) laplacianSymbol t).coeFn_toLp] with ξ h₁ h₂
       simp only [h₁, h₂, σ, SchwartzMap.gaussian_apply]
-      have hval : cexp (-b₀ * (‖ξ‖ : ℂ) ^ 2) = schrodingerSymbol t ξ := by
-        rw [schrodingerSymbol_apply]
+      have hval : cexp (-b₀ * (‖ξ‖ : ℂ) ^ 2) = phaseSymbol laplacianSymbol t ξ := by
+        rw [phaseSymbol_apply, laplacianSymbol_apply]
         congr 1
         simp only [b₀]
         push_cast
@@ -260,6 +266,30 @@ theorem eLpNorm_schrodingerPropagator_le {t : ℝ} (ht : t ≠ 0)
   · exact eLpNormEssSup_le_of_ae_bound (norm_schrodingerPropagator_apply_le ht f hf)
   all_goals exact Lp.aestronglyMeasurable _
 
+/-- **The dispersive estimate in `L^q`.** For `t ≠ 0` and conjugate exponents `p` and `q` with
+`2 ≤ q ≤ ∞`,
+
+`‖S(t) f‖_q ≤ (4π|t|)^(-n (1/2 - 1/q)) ‖f‖_p`
+
+for every `f ∈ L² ∩ Lᵖ`. This interpolates, by the Riesz–Thorin theorem, between the dispersive
+estimate `‖S(t) f‖_∞ ≤ (4π|t|)^(-n/2) ‖f‖₁` at `q = ∞` and conservation of the `L²` norm at
+`q = 2`. -/
+theorem eLpNorm_schrodingerPropagator_le_of_memLp {t : ℝ} (ht : t ≠ 0) {p q : ℝ≥0∞}
+    [p.HolderConjugate q] (hq : 2 ≤ q) (f : Lp ℂ 2 (volume : Measure E))
+    (hf : MemLp f p volume) :
+    eLpNorm (schrodingerPropagator ℂ t f) q volume ≤
+      ENNReal.ofReal ((4 * π * |t|) ^ (-(Module.finrank ℝ E : ℝ) * (1 / 2 - (q⁻¹).toReal))) *
+        eLpNorm f p volume := by
+  set c : ℝ := (4 * π * |t|) ^ (-(Module.finrank ℝ E : ℝ) / 2) with hc
+  refine ((schrodingerPropagator ℂ t).eLpNorm_apply_le_rpow_mul_rpow_mul_eLpNorm
+    (M₀ := c.toNNReal) (M₁ := 1) (fun g hg ↦ eLpNorm_schrodingerPropagator_le ht g hg)
+    (by simpa using norm_phasePropagator_le (E := E) (F := ℂ) laplacianSymbol t) hq f hf).trans_eq
+    ?_
+  rw [NNReal.one_rpow, mul_one, ← Real.toNNReal_rpow_of_nonneg (by positivity),
+    ENNReal.ofNNReal_toNNReal, hc, ← Real.rpow_mul (by positivity)]
+  congr 3
+  ring
+
 /-! ### The evolution of a Gaussian -/
 
 /-- **The Schrödinger evolution of a Gaussian.** The Gaussian `g(x) = exp(-π ‖x‖²)`, which is its
@@ -280,13 +310,13 @@ theorem coeFn_schrodingerPropagator_toLp_gaussian (t : ℝ) :
     rw [this]
     exact pi_pos
   have hfourier : ∀ ξ : E, 𝓕 (𝓕⁻ (SchwartzMap.gaussian hb : 𝓢(E, ℂ))) ξ =
-      schrodingerSymbol t ξ • 𝓕 (SchwartzMap.gaussian hπ : 𝓢(E, ℂ)) ξ := fun ξ ↦ by
+      phaseSymbol laplacianSymbol t ξ • 𝓕 (SchwartzMap.gaussian hπ : 𝓢(E, ℂ)) ξ := fun ξ ↦ by
     rw [FourierTransform.fourier_fourierInv_eq, SchwartzMap.fourier_coe]
     have : ⇑(SchwartzMap.gaussian hπ : 𝓢(E, ℂ)) = fun ξ ↦ cexp (-π * ‖ξ‖ ^ 2) :=
       funext (SchwartzMap.gaussian_apply hπ)
     rw [this, fourier_gaussian_innerProductSpace hπ]
     simp only [div_self (ofReal_ne_zero.2 pi_ne_zero), one_cpow, one_mul,
-      SchwartzMap.gaussian_apply, schrodingerSymbol_apply, smul_eq_mul]
+      SchwartzMap.gaussian_apply, phaseSymbol_apply, laplacianSymbol_apply, smul_eq_mul]
     rw [← Complex.exp_add]
     congr 1
     simp only [b]
@@ -294,8 +324,8 @@ theorem coeFn_schrodingerPropagator_toLp_gaussian (t : ℝ) :
     field_simp
     ring
   have h := SchwartzMap.toLp_eq_fourierMultiplierCLM_of_fourier_eq_smul _
-    (memLp_schrodingerSymbol (E := E) t).coeFn_toLp hfourier
-  rw [schrodingerPropagator_def, ← h]
+    (memLp_phaseSymbol (E := E) laplacianSymbol t).coeFn_toLp hfourier
+  rw [schrodingerPropagator_def, phasePropagator_def, ← h]
   filter_upwards [(𝓕⁻ (SchwartzMap.gaussian hb : 𝓢(E, ℂ))).coeFn_toLp 2] with x hx
   have h1 : (1 + 4 * π * t * I : ℂ).arg ≠ π :=
     (mem_slitPlane_iff_arg.1 (mem_slitPlane_iff.2 (Or.inl (by simp)))).1

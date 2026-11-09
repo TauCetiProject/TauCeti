@@ -182,7 +182,7 @@ private theorem lineSchwarzReflection_conj_eq (hb : b ≠ 0)
         b / (starRingEnd ℂ) b * (starRingEnd ℂ) (lineSchwarzReflection 0 1 q b f z) := by
   have hbc : (starRingEnd ℂ) b ≠ 0 := by simpa using hb
   have h := lineSchwarzReflection_sourceReflection (p := 0) (a := 1) (q := q) (b := b) (f := f)
-    one_ne_zero hb (fun w hw hw0 => hline w hw (by simpa using hw0)) hz
+    one_ne_zero (fun w hw hw0 => hline w hw (by simpa using hw0)) hz
   simp only [zero_add, one_mul, sub_zero, div_one] at h
   rw [h, map_div₀, map_sub]
   field_simp
