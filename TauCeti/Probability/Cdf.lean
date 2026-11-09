@@ -306,11 +306,16 @@ theorem measure_Ioo_eq_zero_of_cdf_eq (ν : Measure ℝ) [IsProbabilityMeasure �
       (Filter.eventually_of_mem (Ioo_mem_nhdsLT hyb) fun z hz ↦ (h z hz).symm)
   rw [← measure_cdf ν, StieltjesFunction.measure_Ioo, hlim, sub_self, ENNReal.ofReal_zero]
 
-/-- The part of the plateau of `cdf ν` that lies strictly to the right of a point `y` whose level
-`cdf ν y` is still below `1` is null: the atom of a real law sits at the *left* end of its plateau
-and never strictly inside one. -/
-theorem measure_plateau_eq_zero {ν : Measure ℝ} [IsProbabilityMeasure ν] {y : ℝ}
-    (hy : cdf ν y < 1) : ν {z | y < z ∧ cdf ν y = cdf ν z} = 0 := by
+/-- The part of the plateau of `cdf ν` that lies strictly to the right of a point `y` is null: the
+atom of a real law sits at the *left* end of its plateau and never strictly inside one. -/
+theorem measure_plateau_eq_zero {ν : Measure ℝ} [IsProbabilityMeasure ν] {y : ℝ} :
+    ν {z | y < z ∧ cdf ν y = cdf ν z} = 0 := by
+  rcases (cdf_le_one ν y).lt_or_eq with hy | hy
+  swap
+  · -- A point of level `1` has no mass above it.
+    refine measure_mono_null (t := Ioi y) (fun z hz ↦ hz.1) ?_
+    rw [← compl_Iic, prob_compl_eq_zero_iff measurableSet_Iic, ← ofReal_cdf ν y, hy]
+    simp
   -- `S` is the plateau of `cdf ν` at the level `cdf ν y`, cut off at `y`.
   set S : Set ℝ := {z | y < z ∧ cdf ν y = cdf ν z} with hSdef
   -- `cdf ν` rises to `1 > cdf ν y`, so it eventually leaves the level `cdf ν y` for good, and no
@@ -345,14 +350,8 @@ theorem measure_plateau_eq_zero {ν : Measure ℝ} [IsProbabilityMeasure ν] {y 
 
 /-- Above any point `y`, almost no mass lies on the plateau of `cdf ν` at the level `cdf ν y`. -/
 theorem ae_not_of_lt_of_cdf_eq (ν : Measure ℝ) [IsProbabilityMeasure ν] (y : ℝ) :
-    ∀ᶠ x in ae ν, ¬ (y < x ∧ cdf ν y = cdf ν x) := by
-  refine ae_iff.mpr ?_
-  rcases (cdf_le_one ν y).lt_or_eq with hy | hy
-  · simpa using measure_plateau_eq_zero hy
-  · -- A point of level `1` has no mass above it.
-    refine measure_mono_null (t := Ioi y) (fun z hz ↦ (not_not.mp hz).1) ?_
-    rw [← compl_Iic, prob_compl_eq_zero_iff measurableSet_Iic, ← ofReal_cdf ν y, hy]
-    simp
+    ∀ᶠ x in ae ν, ¬ (y < x ∧ cdf ν y = cdf ν x) :=
+  ae_iff.mpr <| by simpa using measure_plateau_eq_zero (ν := ν) (y := y)
 
 /-- The left limit of the cumulative distribution function of a real probability law at a point is
 the mass of the open ray to the left of that point. -/
