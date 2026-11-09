@@ -29,6 +29,9 @@ In particular, on a σ-compact Hausdorff topological group, the scalar function
 `(x, y) ↦ f (y⁻¹ * x)` is product-measurable for continuous real `f`. This supplies the
 continuous-generator step in measurable convolution arguments, without asserting that group
 multiplication itself is measurable for the product Borel σ-algebra.
+
+We also record `OpensMeasurableSpace.of_prod_left`: if the product `X × Y` with a nonempty second
+factor is an `OpensMeasurableSpace` for the product σ-algebra, then so is `X`.
 -/
 
 public section

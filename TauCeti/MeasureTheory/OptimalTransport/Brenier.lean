@@ -390,7 +390,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 /-- **A plan on a subdifferential graph is the graph plan of the gradient.** Let `π` be a plan
 with first marginal `μ` on a finite-dimensional real inner product space, with `μ` absolutely
 continuous with respect to an additive Haar measure, and let `u : E → EReal` be convex, lower
-semicontinuous and never `⊥`. If `y ∈ ∂u(x)` for `π`-almost every `(x, y)`, then `u` is finite
+semicontinuous. If `y ∈ ∂u(x)` for `π`-almost every `(x, y)`, then `u` is finite
 near `μ`-almost every point with differentiable real representative there, and `π` is the graph
 plan of the gradient of that real representative. -/
 theorem eq_graphPlan_gradient_of_ae_mem_subdifferential (hπ : π.fst = μ) (hμ : μ ≪ ρ)
@@ -402,7 +402,7 @@ theorem eq_graphPlan_gradient_of_ae_mem_subdifferential (hπ : π.fst = μ) (hμ
   -- The empty plan is trivial; otherwise a subgradient exists somewhere, so `u` is never `⊥`.
   rcases eq_zero_or_neZero π with rfl | hne
   · obtain rfl : μ = 0 := hπ.symm.trans Measure.fst_zero
-    simp [graphPlan_def]
+    simp
   have := ae_neBot.2 hne.out
   obtain ⟨z, hz⟩ := hsub.exists
   have hbot : ∀ x, u x ≠ ⊥ := apply_ne_bot_of_mem_subdifferential (innerₗ E) hz
@@ -578,8 +578,7 @@ theorem exists_isKantorovichOptimalTransportMap_gradient [IsProbabilityMeasure �
         IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
           μ ν S → S =ᵐ[μ] ∇ fun x => (u x).toReal := by
   -- Finite cost gives a coupling, so the target of `μ` is a probability measure as well.
-  have : IsProbabilityMeasure ν :=
-    (exists_isCoupling_of_transportCost_ne_top hfin).choose_spec.isProbabilityMeasure_right
+  have := isProbabilityMeasure_right_of_transportCost_ne_top hfin
   have hc : Continuous fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) :=
     continuous_ofReal_norm_sub_sq_div_two
   obtain ⟨π, hπ⟩ := exists_isOptimalCoupling μ ν hc.lowerSemicontinuous
@@ -599,12 +598,13 @@ theorem exists_isKantorovichOptimalTransportMap_gradient [IsProbabilityMeasure �
   exact (graphPlan_eq_graphPlan_iff hS.toHasLaw.aemeasurable hT.aemeasurable).1
     ((((hiff S hS.toHasLaw).1 hS).unique hμ hπ hfin).trans hgraph)
 
-/-- **Brenier's theorem with the inverse map.** Let `μ` and `ν` be probability measures on a
-finite-dimensional real inner product space `E`, both absolutely continuous with respect to an
-additive Haar measure, and suppose the optimal cost for `‖x - y‖ ^ 2 / 2` is finite. Then there is
-a convex, lower semicontinuous `u : E → EReal` that never takes the value `⊥` such that `u` is
-finite near `μ`-almost every point and its Legendre–Fenchel conjugate `u⋆` is finite near
-`ν`-almost every point, both with differentiable real representatives there, and:
+/-- **Brenier's theorem with the inverse map.** Let `μ` be a probability measure and `ν` a measure
+on a finite-dimensional real inner product space `E`, both absolutely continuous with respect to an
+additive Haar measure, and suppose the optimal cost for `‖x - y‖ ^ 2 / 2` is finite (so `ν` is a
+probability measure too). Then there is a convex, lower semicontinuous `u : E → EReal` that never
+takes the value `⊥` such that `u` is finite near `μ`-almost every point and its Legendre–Fenchel
+conjugate `u⋆` is finite near `ν`-almost every point, both with differentiable real
+representatives there, and:
 
 * the gradient `∇ u` is an optimal transport map from `μ` to `ν`;
 * the gradient `∇ u⋆` is an optimal transport map from `ν` to `μ`;
@@ -615,7 +615,7 @@ The almost everywhere uniqueness of the optimal maps and plans in each direction
 separately, in `TauCeti.exists_isKantorovichOptimalTransportMap_gradient` and
 `TauCeti.IsOptimalCoupling.unique`. -/
 theorem exists_isKantorovichOptimalTransportMap_gradient_and_gradient_fenchelConjugate
-    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (hμ : μ ≪ ρ) (hν : ν ≪ ρ)
+    [IsProbabilityMeasure μ] (hμ : μ ≪ ρ) (hν : ν ≪ ρ)
     (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
     ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
       (∀ x, u x ≠ ⊥) ∧
@@ -630,6 +630,7 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_gradient_fenchelCon
         =ᵐ[μ] id ∧
       (∇ fun x => (u x).toReal) ∘ (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal)
         =ᵐ[ν] id := by
+  have := isProbabilityMeasure_right_of_transportCost_ne_top hfin
   have hc : Continuous fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) :=
     continuous_ofReal_norm_sub_sq_div_two
   obtain ⟨π, hπ⟩ := exists_isOptimalCoupling μ ν hc.lowerSemicontinuous
@@ -681,8 +682,7 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_
         μ ν (∇ fun x => (u x).toReal) ∧
       mongeAmpereMeasure ν u = μ ∧
       ∀ᵐ y ∂ν, y ∈ subgradientImage (innerₗ E) u (interior {x | u x ≠ ⊤}) := by
-  have : IsProbabilityMeasure ν :=
-    (exists_isCoupling_of_transportCost_ne_top hfin).choose_spec.isProbabilityMeasure_right
+  have := isProbabilityMeasure_right_of_transportCost_ne_top hfin
   obtain ⟨u, hconv, hlsc, hbot, hdiff, hT, -⟩ :=
     exists_isKantorovichOptimalTransportMap_gradient hμ hfin
   refine ⟨u, hconv, hlsc, hbot, hT,
@@ -690,10 +690,10 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_
       hconv hbot hμ hν).1 ⟨hT.toHasLaw, ?_⟩⟩
   filter_upwards [hdiff] with x hx using hx.1.self_of_nhds
 
-/-- **Brenier solutions with a convex target are Aleksandrov solutions.** Let `μ` and `ν` be
-probability measures on a finite-dimensional real inner product space `E`, with `μ` absolutely
-continuous with respect to an additive Haar measure `ρ` and `ν = g ρ`, and suppose the optimal
-cost for `‖x - y‖ ^ 2 / 2` is finite. Let `K` be a closed convex set carrying `ν` on which `g` is
+/-- **Brenier solutions with a convex target are Aleksandrov solutions.** Let `μ` be a probability
+measure and `ν` a measure on a finite-dimensional real inner product space `E`, with `μ` absolutely
+continuous with respect to an additive Haar measure `ρ` and `ν = g ρ`, and suppose the optimal cost
+for `‖x - y‖ ^ 2 / 2` is finite. Let `K` be a closed convex set carrying `ν` on which `g` is
 `ρ`-almost everywhere positive. Then there is a convex, lower semicontinuous `u : E → EReal` that
 never takes the value `⊥` such that:
 
@@ -706,7 +706,7 @@ For a general transporting potential, `TauCeti.mongeAmpereMeasure_eq_withDensity
 identifies the obstruction: the zero-density remainder, the subgradient mass falling where `g`
 vanishes, which the weighted transport equation `MA_{u, g ρ} = μ` does not see. -/
 theorem exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_eq_withDensity
-    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (hμ : μ ≪ ρ) {g : E → ℝ≥0∞}
+    [IsProbabilityMeasure μ] (hμ : μ ≪ ρ) {g : E → ℝ≥0∞}
     (hg : Measurable g) (hνg : ν = ρ.withDensity g) {K : Set E} (hKc : Convex ℝ K)
     (hKcl : IsClosed K) (hνK : ν Kᶜ = 0) (hgK : ∀ᵐ y ∂ρ, y ∈ K → g y ≠ 0)
     (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
@@ -743,6 +743,7 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_
   have hsub' : ∀ᵐ x ∂μ, (∇ fun x => (v x).toReal) x ∈ subdifferential (innerₗ E) v x := by
     filter_upwards [hsub, hgrad] with x hx hx'
     rwa [hx']
+  have := isProbabilityMeasure_right_of_transportCost_ne_top hfin
   have hgtop : ∀ᵐ y ∂ρ, g y ≠ ⊤ := by
     refine (ae_lt_top hg ?_).mono fun y hy => hy.ne
     rw [← setLIntegral_univ, ← withDensity_apply _ MeasurableSet.univ, ← hνg]
@@ -774,9 +775,9 @@ theorem IsOptimalCoupling.exists_eq_graphPlan_of_absolutelyContinuous {μ ν : M
   obtain ⟨u, -, -, -, -, hgraph⟩ := hopt.exists_eq_graphPlan_gradient hμ hfin'
   exact ⟨_, measurable_gradient _, hgraph⟩
 
-/-- **The Brenier potential solves the Monge–Ampère equation almost everywhere.** Let `μ` and `ν`
-be probability measures on a finite-dimensional real inner product space `E`, both absolutely
-continuous with respect to an additive Haar measure `ρ`, with densities `g₀ = dμ/dρ` and
+/-- **The Brenier potential solves the Monge–Ampère equation almost everywhere.** Let `μ` be a
+probability measure and `ν` a measure on a finite-dimensional real inner product space `E`, both
+absolutely continuous with respect to an additive Haar measure `ρ`, with densities `g₀ = dμ/dρ` and
 `g₁ = dν/dρ`, and suppose the optimal cost for `‖x - y‖ ^ 2 / 2` is finite. Then there is a
 convex, lower semicontinuous `u : E → EReal` that never takes the value `⊥`, with `D` the interior
 of its effective domain, such that:
@@ -788,7 +789,7 @@ of its effective domain, such that:
 * the **Jacobian equation** `g₀ x = g₁ (∇ u x) det (H x)` holds for `ρ`-almost every `x ∈ D`,
   and `g₀ = 0` almost everywhere off `D`. -/
 theorem exists_isKantorovichOptimalTransportMap_gradient_and_rnDeriv_ae_eq
-    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (hμ : μ ≪ ρ) (hν : ν ≪ ρ)
+    [IsProbabilityMeasure μ] (hμ : μ ≪ ρ) (hν : ν ≪ ρ)
     (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
     ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
       (∀ x, u x ≠ ⊥) ∧
@@ -799,6 +800,7 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_rnDeriv_ae_eq
             ‖y' - (∇ fun x => (u x).toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖) ∧
         μ.rnDeriv ρ =ᵐ[ρ] (interior {x | u x ≠ ⊤}).indicator fun x =>
           ENNReal.ofReal (H x).det * ν.rnDeriv ρ ((∇ fun x => (u x).toReal) x) := by
+  have := isProbabilityMeasure_right_of_transportCost_ne_top hfin
   obtain ⟨u, hconv, hlsc, hbot, hT, hMA, -⟩ :=
     exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_eq hμ hν hfin
   obtain ⟨H, hH, -⟩ := exists_mongeAmpereMeasure_eq_singularPart_add_withDensity ρ hconv hbot
@@ -841,8 +843,7 @@ theorem
             ENNReal.ofReal ((1 - t) • ContinuousLinearMap.id ℝ E + t • H x).det *
               (μ.map fun x => (1 - t) • x + t • (∇ fun x' => (u x').toReal) x).rnDeriv ρ
                 ((1 - t) • x + t • (∇ fun x' => (u x').toReal) x) := by
-  have : IsProbabilityMeasure ν :=
-    (exists_isCoupling_of_transportCost_ne_top hfin).choose_spec.isProbabilityMeasure_right
+  have := isProbabilityMeasure_right_of_transportCost_ne_top hfin
   obtain ⟨u, hconv, hlsc, hbot, hdiff, hT, -⟩ :=
     exists_isKantorovichOptimalTransportMap_gradient hμ hfin
   obtain ⟨H, hH, -⟩ := exists_mongeAmpereMeasure_eq_singularPart_add_withDensity ρ hconv hbot
