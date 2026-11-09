@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Isogeny
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Isogeny.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RealPeriod
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Real
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Separability
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.AlmostEverywhere
@@ -27,8 +29,8 @@ isogeny, the ratio of the orders of `Sel_φ(E₁)` and `Sel_φ̂(E₂)` is the g
 where `H¹_φ(K_v) ⊆ H¹(G_{K_v}, E₁[φ])` is the image of the local Kummer map.
 
 This file identifies the local conditions with these indices, computes them where the residue
-characteristic does not divide `deg φ`, and computes their product with the indices of the dual
-isogeny `φ̂` at every finite place:
+characteristic does not divide `deg φ` and at the real places, and computes their product with
+the indices of the dual isogeny `φ̂` at every finite place and at the real places:
 
 * over every field, the image of the Kummer map has order `[E₂(K) : φ(E₁(K))]`
   (`TauCeti.Isogeny.natCard_range_kummerMap`), and so does the local condition at `L i` of the
@@ -45,10 +47,15 @@ isogeny `φ̂` at every finite place:
   nonzero in `K`, the local factor is `1` at all but finitely many finite places: there both
   curves have good reduction and the place is prime to `deg φ`, so that
   `TauCeti.Isogeny.Hom.index_range_eq_card_ker_of_isElliptic_integralModel` applies. This is the
-  finite support of the product of the local factors at the finite places.
+  finite support of the product of the local factors at the finite places;
+* over `ℝ`, if `φ^*ω₂ = c ω₁`, the local factor is `Ω(E₂) / (|c| Ω(E₁))`, the ratio of the real
+  periods (`TauCeti.Isogeny.abs_mul_realPeriod_mul_index_eq_card_ker_mul`), and the local factors
+  of `φ` and `φ̂` multiply to `1 / deg φ`, from `n · #(E(ℝ) ⧸ n E(ℝ)) = #E(ℝ)[n]`
+  (`WeierstrassCurve.mul_index_range_nsmul_eq_natCard_torsionBy`). Over `ℂ` the Kummer image is
+  trivial (`TauCeti.Isogeny.natCard_range_kummerMap_of_isSepClosed`).
 
-The individual local factors at the places dividing `deg φ`, which involve the formal group, and
-the local factors at the archimedean places, which involve the real period, are not computed here.
+The individual local factors at the places dividing `deg φ`, which involve the formal group, are
+not computed here.
 
 ## Main results
 
@@ -60,6 +67,11 @@ the local factors at the archimedean places, which involve the real period, are 
   every finite place, the local factors of `φ` and `φ̂` multiply to `#(O_v ⧸ deg φ · O_v)`.
 * `TauCeti.Isogeny.eventually_natCard_localCondition_selmerStructure_eq`: for almost every finite
   place `v`, `#H¹_φ(K_v) = #E₁(K_v)[φ]`.
+* `TauCeti.Isogeny.natCard_range_kummerMap` together with
+  `TauCeti.Isogeny.abs_mul_realPeriod_mul_index_eq_card_ker_mul`: over `ℝ`,
+  `|c| Ω(E₁) · #H¹_φ(ℝ) = #E₁(ℝ)[φ] · Ω(E₂)`.
+* `TauCeti.Isogeny.degree_mul_natCard_range_kummerMap_mul_natCard_range_kummerMap_dual`: over `ℝ`,
+  `deg φ · #H¹_φ(ℝ) · #H¹_φ̂(ℝ) = #E₁(ℝ)[φ] · #E₂(ℝ)[φ̂]`.
 
 ## References
 
@@ -123,6 +135,29 @@ theorem finite_range_kummerMap_of_degree_ne_zero
     Hom.finiteIndex_range_pointMapHom_of_degree_ne_zero u (by rwa [Hom.degree_ofIsogeny])
 
 end Local
+
+/-! ### Real places -/
+
+section Real
+
+variable {W₁ W₂ : WeierstrassCurve ℝ} [W₁.IsElliptic] [W₂.IsElliptic]
+  (ψ : Isogeny W₁.toAffine W₂.toAffine)
+
+/-- **The local Kummer images of `ψ` and `ψ̂` at a real place**: for an isogeny `ψ` over `ℝ`,
+
+`deg ψ · #H¹_ψ(ℝ) · #H¹_ψ̂(ℝ) = #E₁(ℝ)[ψ] · #E₂(ℝ)[ψ̂]`.
+
+So the product of the local factors `#H¹_ψ(ℝ) / #E₁(ℝ)[ψ]` of `ψ` and of its dual is the inverse
+of the absolute value of `deg ψ`. -/
+theorem degree_mul_natCard_range_kummerMap_mul_natCard_range_kummerMap_dual :
+    ψ.degree * (Nat.card ψ.kummerMap.range * Nat.card ψ.dual.kummerMap.range) =
+      Nat.card (ofIsogeny ψ).pointMapHom.ker * Nat.card (ofIsogeny ψ.dual).pointMapHom.ker := by
+  rw [natCard_range_kummerMap, natCard_range_kummerMap, ← Hom.dual_ofIsogeny,
+    ← Hom.degree_ofIsogeny]
+  exact (ofIsogeny ψ).degree_mul_index_range_mul_index_range_dual_eq_card_ker_mul_card_ker_dual
+    (Hom.ofIsogeny_ne_zero ψ)
+
+end Real
 
 /-! ### Almost every place -/
 

@@ -55,12 +55,9 @@ instance finite_tateCohomology_negOne_augmentationSubrepresentation :
     infer_instance
   · have hS := permutationAugmentationSequence_shortExact ℤ G X
     rw [permutationAugmentationSequence_def] at hS
-    have hzero : IsZero (tateCohomology (Rep.ofMulAction ℤ G X) (-1)) :=
-      ModuleCat.isZero_of_subsingleton _
     have : Finite (tateCohomology (Rep.trivial ℤ G ℤ) (-2)) :=
       Finite.of_equiv _ HNegTwoAddEquivAbelianization.toEquiv.symm
-    apply finite_tateCohomology_X₁_of_shortExact_of_isZero_X₂ hS (-2)
-    simpa only [Int.reduceNeg, Int.reduceAdd] using hzero
+    exact finite_tateCohomology_X₁_of_shortExact hS (-2) (-1) rfl
 
 /-- For a finite cyclic group acting on a nonempty set, the integral sum-zero permutation module's
 Herbrand quotient is that of the integral permutation module divided by the order of the group. -/

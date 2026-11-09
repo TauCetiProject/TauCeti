@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.LocallyConvex.Separation
-public import Mathlib.Topology.Algebra.Affine
-import Mathlib.Tactic.Positivity
+public import Mathlib.Analysis.LocallyConvex.SeparatingDual
+import TauCeti.Analysis.Convex.Topology
 
 /-!
 # Separating two directions by a functional
@@ -17,7 +16,7 @@ both nonzero and not on a common ray from `0`, are separated by a continuous fun
 `ℓ d₁ < 0 < ℓ d₂`. This is the geometric Hahn--Banach theorem
 `geometric_hahn_banach_point_closed` applied to the point `0` and the segment `[-d₁, d₂]`. Both
 strict inequalities are open conditions, so `ℓ` can moreover be perturbed to be nonzero at any
-prescribed vector on which some functional does not vanish.
+prescribed nonzero vector, along a functional not vanishing there.
 
 ## Main results
 
@@ -27,7 +26,7 @@ prescribed vector on which some functional does not vanish.
 
 public section
 
-open Set
+open Set Topology
 
 namespace TauCeti
 
@@ -36,29 +35,24 @@ variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [IsTop
 
 /-- Two vectors with `0 ∉ [-d₁, d₂]`, that is nonzero and not on a common ray from `0`, are
 separated by a continuous functional which is negative on `d₁` and positive on `d₂`; it can be
-chosen nonzero at any vector `u` on which some functional `ℓ₀` takes the value `1`. -/
+chosen nonzero at any prescribed nonzero vector `u`. -/
 theorem exists_strongDual_neg_pos_ne_zero {d₁ d₂ : E} (h : (0 : E) ∉ segment ℝ (-d₁) d₂)
-    (ℓ₀ : StrongDual ℝ E) {u : E} (hu : ℓ₀ u = 1) :
+    {u : E} (hu : u ≠ 0) :
     ∃ ℓ : StrongDual ℝ E, ℓ d₁ < 0 ∧ 0 < ℓ d₂ ∧ ℓ u ≠ 0 := by
-  have hclosed : IsClosed (segment ℝ (-d₁) d₂) := by
-    rw [segment_eq_image_lineMap]
-    exact (isCompact_Icc.image AffineMap.lineMap_continuous).isClosed
-  obtain ⟨f, c, hf0, hfc⟩ := geometric_hahn_banach_point_closed (convex_segment _ _) hclosed h
-  have h₁ : c < -f d₁ := by simpa using hfc _ (left_mem_segment ℝ _ _)
-  have h₂ : c < f d₂ := hfc _ (right_mem_segment ℝ _ _)
-  rw [map_zero] at hf0
+  obtain ⟨f, c, hf0, hfc⟩ := geometric_hahn_banach_point_closed (convex_segment _ _)
+    (isCompact_segment ℝ _ _).isClosed h
+  have h₁ : f d₁ < 0 := by linarith [map_zero f, map_neg f d₁, hfc _ (left_mem_segment ℝ _ _)]
+  have h₂ : 0 < f d₂ := by linarith [map_zero f, hfc _ (right_mem_segment ℝ _ _)]
   by_cases hfu : f u = 0
-  · -- Perturb `f` by a small multiple of `ℓ₀`, small enough to keep both signs.
-    set ε := c / (|ℓ₀ d₁| + |ℓ₀ d₂| + 1) with _
-    have hpos : 0 < |ℓ₀ d₁| + |ℓ₀ d₂| + 1 := by positivity
-    have hεpos : 0 < ε := div_pos hf0 hpos
-    have hεc : ε * (|ℓ₀ d₁| + |ℓ₀ d₂| + 1) = c := div_mul_cancel₀ _ hpos.ne'
-    refine ⟨f + ε • ℓ₀, ?_, ?_, ?_⟩
-    · simp only [add_apply, smul_apply, smul_eq_mul]
-      nlinarith [le_abs_self (ℓ₀ d₁), abs_nonneg (ℓ₀ d₂)]
-    · simp only [add_apply, smul_apply, smul_eq_mul]
-      nlinarith [neg_abs_le (ℓ₀ d₂), abs_nonneg (ℓ₀ d₁)]
-    · simp [hfu, hu, hεpos.ne']
-  · exact ⟨f, by linarith, by linarith, hfu⟩
+  · -- Perturb `f` by a small nonzero multiple of a functional `ℓ₀` with `ℓ₀ u ≠ 0`.
+    obtain ⟨ℓ₀, hℓ₀⟩ := SeparatingDual.exists_ne_zero (R := ℝ) hu
+    have hc (x : E) : ContinuousAt (fun ε : ℝ => (f + ε • ℓ₀) x) 0 := by fun_prop
+    have hev : ∀ᶠ ε : ℝ in 𝓝 0, (f + ε • ℓ₀) d₁ < 0 ∧ 0 < (f + ε • ℓ₀) d₂ :=
+      ((hc d₁).eventually_lt continuousAt_const (by simpa using h₁)).and
+        (continuousAt_const.eventually_lt (hc d₂) (by simpa using h₂))
+    obtain ⟨ε, ⟨hε₁, hε₂⟩, hε⟩ :=
+      ((hev.filter_mono nhdsWithin_le_nhds).and self_mem_nhdsWithin).exists (f := 𝓝[≠] 0)
+    exact ⟨f + ε • ℓ₀, hε₁, hε₂, by simpa [hfu, hℓ₀] using hε⟩
+  · exact ⟨f, h₁, h₂, hfu⟩
 
 end TauCeti

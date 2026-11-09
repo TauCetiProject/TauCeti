@@ -67,7 +67,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   (`TauCeti.MulAction.eq_orbitRelQuotientRec_iff`), and every section of `V` is the descent of its
   pullback (`TauCeti.MulAction.orbitRelQuotientRec_apply_mk`).
 * `MulActionHom.orbitRelQuotientMap`: an equivariant map induces a map of orbit spaces,
-  functorially, and descent is natural along it
+  functorially. An injection induces an injection when the acting-group map is surjective;
+  its image consists of the orbits meeting the image upstairs. Descent is natural along it
   (`MulActionHom.orbitRelQuotientLift_comp_orbitRelQuotientMap`).
 * `SubMulAction.orbitRelQuotientMap`: for an `H`-invariant subset `S` of `X`, the map
   `S / H → X / G` sending an `H`-orbit to its `G`-orbit; it is injective when `S` is a slice for
@@ -1001,6 +1002,21 @@ theorem orbitRelQuotientMap_comp_mk (φ : X →ₑ[σ] Y) :
     orbitRelQuotientMap φ ∘ Quotient.mk (MulAction.orbitRel G X) =
       Quotient.mk (MulAction.orbitRel H Y) ∘ φ :=
   (rfl)
+
+/-- An injective equivariant map induces an injection of orbit spaces if the map of acting
+groups is surjective. -/
+theorem orbitRelQuotientMap_injective (φ : X →ₑ[σ] Y) (hφ : Function.Injective φ)
+    (hσ : Function.Surjective σ) : Function.Injective φ.orbitRelQuotientMap := by
+  rintro ⟨x⟩ ⟨y⟩ h
+  obtain ⟨g, hg⟩ := MulAction.orbitRel_apply.1 (Quotient.exact h)
+  obtain ⟨g, rfl⟩ := hσ g
+  exact Quotient.sound (MulAction.orbitRel_apply.2 ⟨g, hφ (by rwa [map_smulₛₗ])⟩)
+
+/-- The image of the induced map consists of the orbits meeting the image upstairs. -/
+theorem range_orbitRelQuotientMap (φ : X →ₑ[σ] Y) :
+    Set.range φ.orbitRelQuotientMap =
+      Quotient.mk (MulAction.orbitRel H Y) '' Set.range φ := by
+  rw [← Quotient.mk_surjective.range_comp, orbitRelQuotientMap_comp_mk, Set.range_comp]
 
 /-- The identity map induces the identity of the orbit space. -/
 @[simp]
