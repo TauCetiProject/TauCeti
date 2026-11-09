@@ -57,17 +57,9 @@ theorem _root_.IsCovariantDerivativeOn.isRealCauchyRiemannOperator_zeroOnePart
     (hcov : IsCovariantDerivativeOn F cov) :
     IsRealCauchyRiemannOperator F j fun σ x ↦ j.zeroOnePart (cov σ x) where
   isZeroOneForm σ x := isZeroOneForm_zeroOnePart (cov σ x)
-  add hσ hσ' := by
-    rw [hcov.add hσ hσ']
-    ext v
-    simp only [zeroOnePart_apply, add_apply, smul_add]
-    abel
-  leibniz {σ g x} hσ hg := by
-    rw [hcov.leibniz hσ hg, ← zeroOnePart_smulRight]
-    ext v
-    simp only [zeroOnePart_apply, add_apply, smul_apply,
-      smul_add, smul_comm Complex.I (g x), smul_comm (2⁻¹ : ℝ) (g x)]
-    abel
+  add hσ hσ' := by rw [hcov.add hσ hσ', zeroOnePart_add]
+  leibniz hσ hg := by
+    rw [hcov.leibniz hσ hg, zeroOnePart_add, zeroOnePart_smul, zeroOnePart_smulRight]
 
 /-- The `(0,1)`-part of a complex covariant derivative, one which commutes with multiplication by
 `i`, is a complex linear real Cauchy–Riemann operator. -/
@@ -79,9 +71,6 @@ theorem _root_.IsCovariantDerivativeOn.isComplexLinearOperator_zeroOnePart
     IsComplexLinearOperator F fun σ x ↦ j.zeroOnePart (cov σ x) := by
   refine (hcov.isRealCauchyRiemannOperator_zeroOnePart j).isComplexLinearOperator ?_
   intro σ x hσ
-  rw [hI hσ]
-  ext v
-  simp only [zeroOnePart_apply, smul_apply, smul_add,
-    smul_comm Complex.I (2⁻¹ : ℝ)]
+  rw [hI hσ, zeroOnePart_complex_smul]
 
 end TauCeti

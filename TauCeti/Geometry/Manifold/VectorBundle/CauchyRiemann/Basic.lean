@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.LinearAlgebra.Complex.LinearPart
 import Mathlib.Geometry.Manifold.Notation
 import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # Real Cauchy–Riemann operators
@@ -183,12 +184,6 @@ private theorem toEndomorphism_comp_toEndomorphism (x : M) :
     (j.toEndomorphism x).toLinearMap ∘ₗ (j.toEndomorphism x).toLinearMap = -LinearMap.id :=
   LinearMap.ext fun v ↦ by simp
 
-private theorem complex_I_comp_complex_I {W : Type*} [AddCommGroup W] [Module ℂ W] [Module ℝ W]
-    [IsScalarTower ℝ ℂ W] :
-    DistribSMul.toLinearMap ℝ W Complex.I ∘ₗ DistribSMul.toLinearMap ℝ W Complex.I =
-      -LinearMap.id :=
-  LinearMap.ext fun v ↦ by simp [smul_smul]
-
 /-- The term `(∂bar g) ⊗ ξ` is a `(0,1)`-form: it is the complex antilinear part of `dg ⊗ ξ`. -/
 theorem isZeroOneForm_dbarSMulRight (g : M → ℝ) (σ : Π x : M, V x) (x : M) :
     j.IsZeroOneForm (j.dbarSMulRight g σ x) := by
@@ -199,7 +194,7 @@ theorem isZeroOneForm_dbarSMulRight (g : M → ℝ) (σ : Π x : M, V x) (x : M)
     simp [dbarSMulRight_apply, complexAntilinearPart_apply]
   rw [isZeroOneForm_iff_isComplexAntilinear, h]
   exact complexAntilinearPart_isComplexAntilinear (toEndomorphism_comp_toEndomorphism x)
-    complex_I_comp_complex_I _
+    Complex.toLinearMap_I_comp_toLinearMap_I _
 
 variable [∀ x, ContinuousSMul ℂ (V x)]
 
@@ -236,7 +231,7 @@ theorem isZeroOneForm_zeroOnePart {x : M} (η : TangentSpace I x →L[ℝ] V x) 
     j.IsZeroOneForm (j.zeroOnePart η) := by
   rw [isZeroOneForm_iff_isComplexAntilinear, toLinearMap_zeroOnePart]
   exact complexAntilinearPart_isComplexAntilinear (toEndomorphism_comp_toEndomorphism x)
-    complex_I_comp_complex_I _
+    Complex.toLinearMap_I_comp_toLinearMap_I _
 
 /-- A one-form is a `(0,1)`-form exactly when it is fixed by the `(0,1)`-projection. -/
 theorem zeroOnePart_eq_self_iff {x : M} {η : TangentSpace I x →L[ℝ] V x} :
@@ -244,7 +239,7 @@ theorem zeroOnePart_eq_self_iff {x : M} {η : TangentSpace I x →L[ℝ] V x} :
   refine ⟨fun h ↦ h ▸ isZeroOneForm_zeroOnePart η, fun h ↦ ContinuousLinearMap.coe_injective ?_⟩
   rw [toLinearMap_zeroOnePart]
   exact ((isZeroOneForm_iff_isComplexAntilinear η).1 h).complexAntilinearPart_eq
-    complex_I_comp_complex_I
+    Complex.toLinearMap_I_comp_toLinearMap_I
 
 /-- The `(0,1)`-projection fixes `(0,1)`-forms. -/
 @[simp]
