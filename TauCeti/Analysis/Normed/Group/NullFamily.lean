@@ -41,13 +41,14 @@ variable [SeminormedAddGroup E]
 /-- A function to a linearly ordered topological space that tends to `b` along `cofinite` and
 is at least `b` somewhere attains its supremum. -/
 theorem Filter.Tendsto.exists_forall_le_of_le {α β : Type*} [LinearOrder β] [TopologicalSpace β]
-    [OrderTopology β] {v : α → β} {b : β} (hv : Tendsto v cofinite (𝓝 b)) {a : α}
+    [ClosedIciTopology β] {v : α → β} {b : β} (hv : Tendsto v cofinite (𝓝 b)) {a : α}
     (ha : b ≤ v a) : ∃ t, ∀ s, v s ≤ v t := by
   by_cases h : ∀ s, v s ≤ v a
   · exact ⟨a, h⟩
   obtain ⟨s₁, hs₁⟩ := not_forall.mp h
   have hfin : {s | v s₁ ≤ v s}.Finite := by
-    simpa [eventually_cofinite] using hv.eventually (gt_mem_nhds (ha.trans_lt (not_le.mp hs₁)))
+    simpa [eventually_cofinite] using
+      hv.eventually (eventually_lt_nhds (ha.trans_lt (not_le.mp hs₁)))
   obtain ⟨t, ht, htmax⟩ := hfin.toFinset.exists_max_image v ⟨s₁, by simp⟩
   refine ⟨t, fun s ↦ ?_⟩
   by_cases hs : v s₁ ≤ v s
