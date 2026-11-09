@@ -21,6 +21,8 @@ the orthogonal projector onto a line of `ℂ²`.
 * `Matrix.trace_add_mul_add_mul`: the expansion of `trace ((M + N) * S * (M + N) * S)` into the
   two pure terms and twice the mixed term.
 * `Matrix.trace_two_mul_sub_one`: `trace (2 P - 1) = 2 trace P - n` for an `n × n` matrix `P`.
+* `Matrix.map_trace_mul_comm`: a trace `τ` on a possibly noncommutative ring of entries gives the
+  trace `τ ∘ Tr` on matrices.
 -/
 
 public section
@@ -43,5 +45,13 @@ theorem trace_add_mul_add_mul (M N : Matrix m n R) (S : Matrix n m R) :
 theorem trace_two_mul_sub_one {R : Type*} [Ring R] [DecidableEq n] (P : Matrix n n R) :
     (2 * P - 1).trace = 2 * P.trace - Fintype.card n := by
   rw [two_mul, two_mul, trace_sub, trace_add, trace_one]
+
+/-- A trace `τ` on a possibly noncommutative ring of entries, `τ (x * y) = τ (y * x)`, gives a trace
+`τ ∘ Tr` on matrices: `τ (Tr (M N)) = τ (Tr (N M))`. The matrices may be rectangular. -/
+theorem map_trace_mul_comm {α β F : Type*} [NonUnitalNonAssocSemiring α] [AddCommMonoid β]
+    [FunLike F α β] [AddMonoidHomClass F α β] (τ : F) (hτ : ∀ x y, τ (x * y) = τ (y * x))
+    (A : Matrix m n α) (B : Matrix n m α) : τ (A * B).trace = τ (B * A).trace := by
+  simp only [trace, diag_apply, Matrix.mul_apply, map_sum, hτ (A _ _)]
+  exact Finset.sum_comm
 
 end Matrix

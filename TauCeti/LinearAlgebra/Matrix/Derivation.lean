@@ -22,6 +22,13 @@ characteristic, and identifies the infinitesimal algebra automorphisms of a matr
 chosen diagonal entry. Its coordinates normalize that entry to zero by subtracting a
 scalar matrix, giving a free coordinate model without dividing by the matrix size.
 
+Over a possibly noncommutative algebra `A`, a derivation `δ` of `A` applied to every entry is a
+derivation `TauCeti.derivationLieAlgebra.mapMatrix δ` of the square matrices over `A`, and it
+satisfies the Leibniz rule `δ(M v) = δ(M) v + M δ(v)` for matrices acting on column vectors. These
+entrywise derivations appear when a cyclic cocycle built from a trace and derivations is extended
+to matrices, and in the Grassmann connection of a projective module presented by an idempotent
+matrix.
+
 ## References
 
 * N. Jacobson, *Basic Algebra II*, the innerness of derivations of matrix algebras.
@@ -237,3 +244,31 @@ theorem finrank_adRange [Nontrivial R] :
 end
 
 end Matrix
+
+namespace TauCeti.derivationLieAlgebra
+
+variable {k A : Type*} [CommRing k] [NonUnitalRing A] [Module k A] [SMulCommClass k A A]
+  [IsScalarTower k A A] {ι κ : Type*} [Fintype ι]
+
+/-- **The Leibniz rule for matrices acting on vectors**: applying a derivation `δ` to the
+coordinates of `M v` gives `δ(M) v + M δ(v)`. -/
+theorem comp_mulVec (δ : derivationLieAlgebra k A) (M : Matrix κ ι A) (v : ι → A) :
+    (δ : Module.End k A) ∘ (M *ᵥ v) =
+      M.map (δ : Module.End k A) *ᵥ v + M *ᵥ ((δ : Module.End k A) ∘ v) := by
+  ext i
+  simp [Matrix.mulVec, dotProduct, map_sum, Finset.sum_add_distrib]
+
+/-- A derivation `δ` of `A`, applied to every entry, is a derivation `M ↦ M.map δ` of the square
+matrices over `A`. -/
+def mapMatrix (δ : derivationLieAlgebra k A) : derivationLieAlgebra k (Matrix ι ι A) :=
+  ⟨(δ : Module.End k A).mapMatrix, mem_derivationLieAlgebra.2 fun M N ↦ by
+    ext i j
+    simp [Matrix.mul_apply, map_sum, Finset.sum_add_distrib]⟩
+
+@[simp]
+theorem mapMatrix_apply (δ : derivationLieAlgebra k A) (M : Matrix ι ι A) :
+    ((mapMatrix δ : derivationLieAlgebra k (Matrix ι ι A)) : Module.End k (Matrix ι ι A)) M =
+      M.map (δ : Module.End k A) :=
+  (rfl)
+
+end TauCeti.derivationLieAlgebra
