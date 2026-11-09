@@ -8,6 +8,9 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Tor
 public import TauCeti.CategoryTheory.Abelian.LeftDerived
 import Mathlib.CategoryTheory.Abelian.Exact
+import TauCeti.CategoryTheory.Monoidal.Preadditive
+import TauCeti.CategoryTheory.ObjectProperty.Homology
+import TauCeti.CategoryTheory.ObjectProperty.KilledBy
 
 /-!
 # `Tor` from a projective presentation of length one
@@ -30,6 +33,11 @@ kernels of `Hᵢ(K) ⊗ Bⱼ(L) ⟶ Hᵢ(K) ⊗ Zⱼ(L)`.
 
 These are the specializations to `X ⊗ -` of the computation of left derived functors in
 `TauCeti.CategoryTheory.Abelian.LeftDerived`.
+
+If `e • 𝟙 X = 0` for a natural number `e`, then `e` kills every `Torₙ(X, Y)`
+(`CategoryTheory.nsmul_id_Tor_eq_zero`): the objects killed by `e`
+(`CategoryTheory.ObjectProperty.isKilledBy`) are closed under subobjects and quotients and contain
+every `X ⊗ P`.
 
 For Mathlib's `CategoryTheory.Tor' C n`, which derives the first variable instead,
 `((Tor' C n).obj X).obj Y` is `Lₙ(- ⊗ Y)(X)`. The file records two facts about it in the
@@ -102,6 +110,15 @@ lemma Tor_obj_map_comp_torOneIsoKernel_hom (X : C) (φ : S ⟶ S') :
   leftDerived_map_comp_leftDerivedOneIsoKernel_hom _ hS' φ
 
 end ShortComplex.ShortExact
+
+/-- If a natural number `e` kills `X`, in the sense that `e • 𝟙 X = 0`, then it kills every
+`Torₙ(X, Y)`. -/
+lemma nsmul_id_Tor_eq_zero {X : C} {e : ℕ} (hX : e • 𝟙 X = 0) (Y : C) (n : ℕ) :
+    e • 𝟙 (((Tor C n).obj X).obj Y) = 0 :=
+  (ObjectProperty.prop_isKilledBy_iff e _).1 <|
+    (ObjectProperty.isKilledBy C e).prop_leftDerived_obj ((tensoringLeft C).obj X)
+      (fun Z _ ↦ (ObjectProperty.prop_isKilledBy_iff e _).2 (nsmul_id_tensor_eq_zero_of_left hX Z))
+      Y n
 
 /-- `Tor'` is additive in its second variable, the one that is not derived. -/
 instance (X : C) (n : ℕ) : ((Tor' C n).obj X).Additive where

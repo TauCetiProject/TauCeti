@@ -151,8 +151,6 @@ private theorem exists_forall_integrable_and_abs_integral_le (ι : V →L[ℝ] H
     hφ'.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioo
       Ioo_subset_Icc_self
   set K := |Λ| * C₁ + ‖ι‖ * ‖ι‖ * C₂
-  have hK : 0 ≤ K := add_nonneg (mul_nonneg (abs_nonneg _) lpNorm_nonneg)
-    (mul_nonneg (mul_self_nonneg _) lpNorm_nonneg)
   -- The integrand is dominated by `K ‖u‖`.
   have hdom : ∀ u : Lp V 2 μ,
       ∀ᵐ t ∂μ, ‖A t (u t) (φ t) - ⟪ι (u t), ι (deriv φ t)⟫_ℝ‖ ≤ K * ‖u t‖ := by
@@ -175,7 +173,7 @@ private theorem exists_forall_integrable_and_abs_integral_le (ι : V →L[ℝ] H
         (fun p => hA p.1 p.2) (ae_of_all _ fun t => (A t).continuous₂.continuousAt)).sub
       ((ι.continuous.comp_aestronglyMeasurable (Lp.aestronglyMeasurable u)).inner
         (ι.continuous.comp hφ').aestronglyMeasurable)
-  · simpa only [Real.norm_eq_abs] using Lp.norm_integral_le_of_ae_norm_le_mul u hK (hdom u)
+  · simpa only [Real.norm_eq_abs] using Lp.norm_integral_le_of_ae_norm_le_mul u (hdom u)
 
 /-- **The energy inequality behind coercivity.** For a `C¹` function `φ` with `φ(b) = 0`,
 integrating `d/dt ‖ι φ‖² = 2 ⟪ι φ, ι φ'⟫` by parts and using coercivity of `A` gives
