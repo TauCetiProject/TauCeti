@@ -22,16 +22,16 @@ the parameter sign when transporting a simple root subgroup across a single bond
 
 public section
 
-namespace TauCeti
+namespace IsSl2Triple
 
-open LieAlgebra
+open TauCeti LieAlgebra
 
 variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ L]
   {h e f : L}
 
 /-- The pinned Weyl automorphism sends a lowest-weight vector of weight minus one on a
 length-two raising string to its raising bracket. -/
-theorem _root_.IsSl2Triple.weylAut_apply_of_lie_h_eq_neg (t : IsSl2Triple h e f)
+theorem weylAut_apply_of_lie_h_eq_neg (t : IsSl2Triple h e f)
     (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f)) {y : L}
     (hhy : ⁅h, y⁆ = -y) (hfy : ⁅f, y⁆ = 0) (heey : ⁅e, ⁅e, y⁆⁆ = 0) :
     weylAut t he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero y = ⁅e, y⁆ := by
@@ -62,7 +62,7 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-- Conjugation by the pinned Weyl unit sends a lowest-weight element of weight minus one
 on a length-two raising string to its raising commutator. -/
-theorem _root_.IsSl2Triple.weylUnit_conj_of_lie_h_eq_neg (t : IsSl2Triple H E F)
+theorem weylUnit_conj_of_lie_h_eq_neg (t : IsSl2Triple H E F)
     (hE : IsNilpotent E) (hF : IsNilpotent F)
     (hHY : ⁅H, Y⁆ = -Y) (hFY : ⁅F, Y⁆ = 0) (hEEY : ⁅E, ⁅E, Y⁆⁆ = 0) :
     (weylUnit hE hF : A) * Y * (((weylUnit hE hF)⁻¹ : Aˣ) : A) = ⁅E, Y⁆ := by
@@ -72,4 +72,4 @@ theorem _root_.IsSl2Triple.weylUnit_conj_of_lie_h_eq_neg (t : IsSl2Triple H E F)
 
 end Associative
 
-end TauCeti
+end IsSl2Triple
