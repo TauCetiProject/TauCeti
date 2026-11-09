@@ -47,8 +47,6 @@ is the special case that matters downstream.
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf–Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 0, "Distance compatibility and finiteness".
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 7 §2, Def. 2.4.
 * `Mathlib/Geometry/Manifold/Riemannian/Basic.lean` (S. Gouëzel):
   `PseudoEMetricSpace.ofRiemannianMetric`, `EMetricSpace.ofRiemannianMetric`, and their

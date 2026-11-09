@@ -44,8 +44,6 @@ fixes `0`, keeps the initial point and multiplies the initial velocity by `a`.
   [`frenzymath/Poincare-Conjecture`](https://github.com/frenzymath/Poincare-Conjecture)
   repository, revision `24f32e4d600878bfaac6bc2f2f9324175571c321`, adapted to Tau Ceti's
   interval-aware geodesic and along-curve APIs.
-* [The Hopf--Rinow roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "Maximal interval and homogeneity".
 -/
 
 public section

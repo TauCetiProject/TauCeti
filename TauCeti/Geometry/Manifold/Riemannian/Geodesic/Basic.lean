@@ -67,8 +67,6 @@ with the rest of the acceleration API in
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf--Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "`IsGeodesicCurveOn γ s`" and "Initial data".
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 3, §2.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, GTM 176, 2018, Ch. 4.
 -/
