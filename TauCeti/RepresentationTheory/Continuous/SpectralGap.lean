@@ -48,6 +48,13 @@ theorem hasSpectralGap_def (ρ : ContRepresentation 𝕜 G V) :
       ∀ v ∈ ρ.invariantsᗮ, ‖v‖ ^ 2 ≤ C * ∑ g ∈ F, ‖ρ g v - v‖ ^ 2 :=
   Iff.rfl
 
+/-- If every vector is fixed, the representation has spectral gap, including when its space
+is nonzero. -/
+theorem hasSpectralGap_of_invariants_eq_top (ρ : ContRepresentation 𝕜 G V)
+    (hρ : ρ.invariants = ⊤) : ρ.HasSpectralGap := by
+  refine ⟨∅, 1, zero_lt_one, fun v hv ↦ ?_⟩
+  simpa [hρ] using hv
+
 /-- Spectral gap means that the representation on the orthogonal complement of the invariant
 vectors has no almost invariant vectors. Equivalently, the trivial representation is not weakly
 contained in that complement. -/
@@ -112,11 +119,9 @@ variable [Monoid G]
 @[simp]
 theorem hasSpectralGap_trivial :
     (trivial 𝕜 G V).HasSpectralGap := by
-  refine ⟨∅, 1, zero_lt_one, fun v hv ↦ ?_⟩
-  have hfixed : v ∈ (trivial 𝕜 G V).invariants := by simp
-  have hzero : v = 0 :=
-    (Submodule.disjoint_def.mp (trivial 𝕜 G V).invariants.orthogonal_disjoint) v hfixed hv
-  simp [hzero]
+  apply hasSpectralGap_of_invariants_eq_top
+  ext v
+  simp [mem_invariants]
 
 end Monoid
 
