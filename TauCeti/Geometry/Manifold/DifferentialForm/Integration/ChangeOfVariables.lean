@@ -40,6 +40,8 @@ of `M`, assembles these pieces into the integrals over `N` and `M`.
 
 ## Main results
 
+* `TauCeti.RoughForm.setLIntegral_ofReal_abs_inChartAt_mpullback`: on a chart piece, the lower
+  integral of the absolute coefficient of `f^*φ` is that of `φ` over the image piece.
 * `OpenPartialHomeomorph.integrableTopForm_of_eq_mpullback`: such a form is integrable when `φ`
   is.
 * `OpenPartialHomeomorph.integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt`,
@@ -142,6 +144,26 @@ theorem RoughForm.integrableOn_signedInChartAt_one_mpullback_iff (φ : RoughForm
   rw [integrableOn_congr_fun hc hm]
   simpa only [IntegrableOn, smul_eq_mul] using
     MeasureTheory.integrable_smul_iff_abs_smul (F := ℝ) hd
+
+/-- On a Borel piece `s` of a chart overlap on which `f` is injective and differentiable, the
+lower integral of the absolute coefficient of `f^*φ` over the chart image of `s` equals the lower
+integral of the absolute coefficient of `φ` over the chart image of `f '' s`. No orientation, and
+no measurability or integrability of the coefficients, is needed. -/
+theorem RoughForm.setLIntegral_ofReal_abs_inChartAt_mpullback (φ : RoughForm J N ℝ k)
+    (b : Module.Basis (Fin k) ℝ E) {f : M → N} {s : Set M} (hinj : InjOn f s)
+    (hf : ∀ x ∈ s, MDifferentiableAt I J f x) {β : M} {α : N} (hs : IsChartMeasurable I s)
+    (hsub : s ⊆ (extChartAt I β).source ∩ f ⁻¹' (extChartAt J α).source)
+    (μ : Measure E) [μ.IsAddHaarMeasure] :
+    ∫⁻ z in (extChartAt I β) '' s, ENNReal.ofReal |(mpullback I J f φ).inChartAt β z b| ∂μ =
+      ∫⁻ w in (extChartAt J α) '' (f '' s), ENNReal.ofReal |φ.inChartAt α w b| ∂μ := by
+  obtain ⟨hm, himage, hinjT, hD⟩ := coordinate_jacobian_data hinj hf hs hsub
+  rw [← himage, lintegral_image_eq_lintegral_abs_det_fderiv_mul μ hm hD hinjT]
+  refine setLIntegral_congr_fun hm ?_
+  rintro _ ⟨x, hx, rfl⟩
+  beta_reduce
+  rw [φ.inChartAt_mpullback_apply_basis_eq_det_mul b (hsub hx).1 (hsub hx).2 (hf x hx), abs_mul,
+    ENNReal.ofReal_mul (abs_nonneg _), Function.comp_apply, Function.comp_apply,
+    (extChartAt I β).left_inv (hsub hx).1]
 
 /-- On a Borel piece `s` of a chart overlap on which `f` is injective and orientation
 preserving, the signed chart integral of `f^*φ` over the chart image of `s` equals the signed

@@ -30,6 +30,44 @@ open Filter Function Set Topology
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
 
+/-- Local step of `AnalyticOnNhd.exists_eq_pow_smul_of_analyticOrderAt`: near each point of the
+hyperplane `y = c` over `U`, the function `G` is `(y - c)^m` times an analytic function `u` that is
+nonzero on the hyperplane, and the glued quotient `v` (the punctured slice limit on the hyperplane,
+`q` elsewhere) agrees with `u`. -/
+private theorem exists_local_quotient {G : E × 𝕜 → F} {U : Set E} {s : Set 𝕜} {c : 𝕜} {m : ℕ}
+    (hG : AnalyticOnNhd 𝕜 G (U ×ˢ s)) (hU : IsOpen U) (hc : c ∈ s)
+    (hm : ∀ x ∈ U, analyticOrderAt (fun y ↦ G (x, y)) c = m)
+    {q v : E × 𝕜 → F} (hq : ∀ p, q p = ((p.2 - c) ^ m)⁻¹ • G p)
+    (hvq : ∀ {p : E × 𝕜}, p.2 ≠ c → v p = q p)
+    (hvc : ∀ x, v (x, c) = limUnder (𝓝[≠] c) fun y ↦ q (x, y)) {x : E} (hx : x ∈ U) :
+    ∃ u : E × 𝕜 → F, AnalyticAt 𝕜 u (x, c) ∧ u (x, c) ≠ 0 ∧
+      v =ᶠ[𝓝 (x, c)] u ∧ G =ᶠ[𝓝 (x, c)] (fun p ↦ (p.2 - c) ^ m • u p) := by
+  have horder : ∀ᶠ w in 𝓝 x, analyticOrderAt (fun y ↦ G (w, y)) c = m :=
+    eventually_of_mem (hU.mem_nhds hx) fun w hw ↦ hm w hw
+  obtain ⟨u, hu, hu0, heq⟩ :=
+    (hG (x, c) ⟨hx, hc⟩).eventually_analyticOrderAt_eq_natCast_iff.1 horder
+  have heq' : G =ᶠ[𝓝 (x, c)] (fun p ↦ (p.2 - c) ^ m • u p) := heq
+  have hcurry := heq'
+  rw [nhds_prod_eq] at hcurry
+  have hslice : ∀ᶠ w in 𝓝 x, ContinuousAt (fun y ↦ u (w, y)) c :=
+    hu.eventually_analyticAt_curry_right.mono fun w hw ↦ hw.continuousAt
+  have hlim : ∀ᶠ w in 𝓝 x,
+      limUnder (𝓝[≠] c) (fun y ↦ q (w, y)) = u (w, c) := by
+    filter_upwards [hcurry.curry, hslice] with w hw hcont
+    apply Filter.Tendsto.limUnder_eq
+    refine (hcont.tendsto.mono_left nhdsWithin_le_nhds).congr' ?_
+    filter_upwards [hw.filter_mono nhdsWithin_le_nhds, self_mem_nhdsWithin] with y hy hne
+    simp only [mem_compl_iff, mem_singleton_iff] at hne
+    simp [hq, hy, smul_smul, pow_ne_zero m (sub_ne_zero.mpr hne)]
+  refine ⟨u, hu, hu0, ?_, heq'⟩
+  filter_upwards [heq', (continuous_fst.tendsto (x, c)).eventually hlim] with ⟨w, y⟩ hp hplim
+  by_cases hyc : y = c
+  · subst y
+    rw [hvc]
+    exact hplim
+  · rw [hvq hyc]
+    simp [hq, hp, smul_smul, pow_ne_zero m (sub_ne_zero.mpr hyc)]
+
 /-- An analytic function with constant finite slice order along `y = c` on a product domain
 open in its parameter coordinate admits division by `(y - c)^m` on the whole domain. The analytic
 quotient is nonzero on the hyperplane; it can still vanish elsewhere if the original function
@@ -49,31 +87,9 @@ theorem AnalyticOnNhd.exists_eq_pow_smul_of_analyticOrderAt
   -- Local analytic quotients identify these limits, and agree with the global quotient.
   have hlocal (x : E) (hx : x ∈ U) :
       ∃ u : E × 𝕜 → F, AnalyticAt 𝕜 u (x, c) ∧ u (x, c) ≠ 0 ∧
-        v =ᶠ[𝓝 (x, c)] u ∧ G =ᶠ[𝓝 (x, c)] (fun p ↦ (p.2 - c) ^ m • u p) := by
-    have horder : ∀ᶠ w in 𝓝 x, analyticOrderAt (fun y ↦ G (w, y)) c = m :=
-      eventually_of_mem (hU.mem_nhds hx) fun w hw ↦ hm w hw
-    obtain ⟨u, hu, hu0, heq⟩ :=
-      (hG (x, c) ⟨hx, hc⟩).eventually_analyticOrderAt_eq_natCast_iff.1 horder
-    have heq' : G =ᶠ[𝓝 (x, c)] (fun p ↦ (p.2 - c) ^ m • u p) := heq
-    have hcurry := heq'
-    rw [nhds_prod_eq] at hcurry
-    have hslice : ∀ᶠ w in 𝓝 x, ContinuousAt (fun y ↦ u (w, y)) c :=
-      hu.eventually_analyticAt_curry_right.mono fun w hw ↦ hw.continuousAt
-    have hlim : ∀ᶠ w in 𝓝 x,
-        limUnder (𝓝[≠] c) (fun y ↦ q (w, y)) = u (w, c) := by
-      filter_upwards [hcurry.curry, hslice] with w hw hcont
-      apply Filter.Tendsto.limUnder_eq
-      refine (hcont.tendsto.mono_left nhdsWithin_le_nhds).congr' ?_
-      filter_upwards [hw.filter_mono nhdsWithin_le_nhds, self_mem_nhdsWithin] with y hy hne
-      simp only [mem_compl_iff, mem_singleton_iff] at hne
-      simp [q, hy, smul_smul, pow_ne_zero m (sub_ne_zero.mpr hne)]
-    refine ⟨u, hu, hu0, ?_, heq'⟩
-    filter_upwards [heq', (continuous_fst.tendsto (x, c)).eventually hlim] with ⟨w, y⟩ hp hplim
-    by_cases hyc : y = c
-    · subst y
-      simpa only [v, update_self] using hplim
-    · rw [hvq hyc]
-      simp [q, hp, smul_smul, pow_ne_zero m (sub_ne_zero.mpr hyc)]
+        v =ᶠ[𝓝 (x, c)] u ∧ G =ᶠ[𝓝 (x, c)] (fun p ↦ (p.2 - c) ^ m • u p) :=
+    exists_local_quotient hG hU hc hm (q := q) (v := v) (fun _ ↦ rfl) hvq
+      (fun x ↦ by simp [v]) hx
   refine ⟨v, ?_, ?_, ?_⟩
   · rintro ⟨x, y⟩ hp
     by_cases hpc : y = c

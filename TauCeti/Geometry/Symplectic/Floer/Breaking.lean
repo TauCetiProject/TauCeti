@@ -321,6 +321,79 @@ theorem eq_of_tendstoLocallyUniformlyOn_comp_add
   · exact (key hr t ht).symm
   · exact key hr t ht
 
+omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
+/-- If the translates of `u` converge uniformly on the window `[0, 1] × [0, 1]` to a continuous
+`v`, then the values of a continuous vector field `Φ`, evaluated at the translates together with
+the `t`-coordinate, converge uniformly there too. -/
+private theorem tendstoUniformlyOn_comp_snd_prodMk {Φ : ℝ × V → V} (hΦ : Continuous Φ)
+    (hUC : TendstoUniformlyOn (fun k z ↦ u (z + (s k, 0))) v atTop (Icc 0 1 ×ˢ Icc 0 1))
+    (hvK : ContinuousOn v (Icc 0 1 ×ˢ Icc 0 1)) :
+    TendstoUniformlyOn (fun k z ↦ Φ (z.2, u (z + (s k, 0)))) (fun z ↦ Φ (z.2, v z))
+      atTop (Icc 0 1 ×ˢ Icc 0 1) := by
+  have hpair : TendstoUniformlyOn (fun k z ↦ (z.2, u (z + (s k, 0)))) (fun z ↦ (z.2, v z))
+      atTop (Icc 0 1 ×ˢ Icc 0 1) := by
+    rw [Metric.tendstoUniformlyOn_iff] at hUC ⊢
+    intro ε hε
+    filter_upwards [hUC ε hε] with k hk z hz
+    simpa [Prod.dist_eq] using hk z hz
+  exact ((isCompact_Icc.prod isCompact_Icc).image_of_continuousOn
+    (continuousOn_snd.prodMk hvK)).comp_tendstoUniformlyOn (fun _ _ ↦ hΦ.continuousAt) hpair
+
+omit [FiniteDimensional ℝ V] in
+/-- The defect of the integral equation of the Hamiltonian flow along the limit path `v (0, ·)` is
+eventually, for almost every `r ∈ [0, 1]`, at most `ε` more than the defect of the translate of
+`u` along the segment `{r + s k} × [t₁, t₂]`, by the uniform convergence of the translates and of
+the vector field along them. -/
+private theorem eventually_ae_enorm_sub_sub_integral_le_add {Φ : ℝ × V → V} (hΦ : Continuous Φ)
+    {t₁ t₂ : ℝ} (ht₁ : 0 ≤ t₁) (ht : t₁ ≤ t₂) (ht₂ : t₂ ≤ 1)
+    (hUC : TendstoUniformlyOn (fun k z ↦ u (z + (s k, 0))) v atTop (Icc 0 1 ×ˢ Icc 0 1))
+    (hΦUC : TendstoUniformlyOn (fun k z ↦ Φ (z.2, u (z + (s k, 0)))) (fun z ↦ Φ (z.2, v z))
+      atTop (Icc 0 1 ×ˢ Icc 0 1))
+    (hFc : ∀ᶠ k in atTop, ContinuousOn (fun z ↦ u (z + (s k, 0))) (Icc 0 1 ×ˢ Icc 0 1))
+    (hvK : ContinuousOn v (Icc 0 1 ×ˢ Icc 0 1))
+    (hstat : ∀ r, ∀ t ∈ Icc (0 : ℝ) 1, v (r, t) = v (0, t)) (ε : ℝ≥0) (hε : 0 < ε) :
+    ∀ᶠ k in atTop, ∀ᵐ r ∂(volume.restrict (Icc (0 : ℝ) 1)),
+      ‖v (0, t₂) - v (0, t₁) - ∫ t in t₁..t₂, Φ (t, v (0, t))‖ₑ ≤
+        ‖u (r + s k, t₂) - u (r + s k, t₁) - ∫ t in t₁..t₂, Φ (t, u (r + s k, t))‖ₑ + ε := by
+  have hsub : uIcc t₁ t₂ ⊆ Icc 0 1 := uIcc_subset_Icc ⟨ht₁, ht.trans ht₂⟩ ⟨ht₁.trans ht, ht₂⟩
+  set δ : ℝ := ε / 3 with hδε
+  have hδ : 0 < δ := by positivity
+  filter_upwards [Metric.tendstoUniformlyOn_iff.1 hUC δ hδ,
+    Metric.tendstoUniformlyOn_iff.1 hΦUC δ hδ, hFc] with k hk hkΦ hkc
+  refine ae_restrict_of_forall_mem measurableSet_Icc fun r hr ↦ ?_
+  have hmem {t : ℝ} (htm : t ∈ uIcc t₁ t₂) : (r, t) ∈ Icc (0 : ℝ) 1 ×ˢ Icc 0 1 :=
+    ⟨hr, hsub htm⟩
+  have hF (t : ℝ) : u ((r, t) + (s k, 0)) = u (r + s k, t) := by simp
+  -- Along the segment the limit is `v(0, ·)`, and the translates are uniformly close to it.
+  have hxv : ∫ t in t₁..t₂, Φ (t, v (0, t)) = ∫ t in t₁..t₂, Φ (t, v (r, t)) :=
+    intervalIntegral.integral_congr fun t htm ↦ by
+      simp only [hstat r t (hsub htm)]
+  have hcv : ContinuousOn (fun t ↦ Φ (t, v (r, t))) (uIcc t₁ t₂) :=
+    hΦ.comp_continuousOn (continuousOn_id.prodMk
+      (hvK.comp (continuousOn_const.prodMk continuousOn_id) fun t htm ↦ hmem htm))
+  have hcu : ContinuousOn (fun t ↦ Φ (t, u (r + s k, t))) (uIcc t₁ t₂) := by
+    refine hΦ.comp_continuousOn (continuousOn_id.prodMk ?_)
+    simp_rw [← hF]
+    exact hkc.comp (continuousOn_const.prodMk continuousOn_id) fun t htm ↦ hmem htm
+  have hend {t : ℝ} (htm : t ∈ uIcc t₁ t₂) : ‖v (0, t) - u (r + s k, t)‖ ≤ δ := by
+    have h := hk (r, t) (hmem htm)
+    rw [dist_eq_norm, hF, hstat r t (hsub htm)] at h
+    exact h.le
+  have hA := intervalIntegral.norm_sub_sub_integral_le (a₁ := v (0, t₁)) (a₂ := v (0, t₂))
+    (b₁ := u (r + s k, t₁)) (b₂ := u (r + s k, t₂)) hcv.intervalIntegrable
+    hcu.intervalIntegrable fun t htm ↦ by
+      have h := hkΦ (r, t) (hmem (uIoc_subset_uIcc htm))
+      rw [dist_eq_norm, hF] at h
+      exact h.le
+  rw [← hxv] at hA
+  have hlen : δ * |t₂ - t₁| ≤ δ :=
+    mul_le_of_le_one_right hδ.le (by rw [abs_of_nonneg (sub_nonneg.2 ht)]; linarith)
+  replace hA := hA.trans (by linarith [hend left_mem_uIcc, hend right_mem_uIcc] :
+    _ ≤ ‖u (r + s k, t₂) - u (r + s k, t₁) - ∫ t in t₁..t₂, Φ (t, u (r + s k, t))‖ + ε)
+  rw [← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_coe_nnreal,
+    ← ENNReal.ofReal_add (norm_nonneg _) ε.coe_nonneg]
+  exact ENNReal.ofReal_le_ofReal hA
+
 /-- Under the hypotheses of `TauCeti.SymplecticForm.eq_of_tendstoLocallyUniformlyOn_comp_add`, and
 for a jointly `C¹` Hamiltonian `H`, the path `x(t) = v(0, t)` satisfies the integral equation
 `x(t₂) - x(t₁) = ∫_{t₁}^{t₂} X_{H_t}(x(t)) dt` of the Hamiltonian flow for `0 ≤ t₁ ≤ t₂ ≤ 1`. -/
@@ -344,17 +417,7 @@ private theorem sub_sub_integral_eq_zero_of_tendstoLocallyUniformlyOn_comp_add
     (hu.continuousOn.mono hEU) (hW 0 1) hv
   -- The vector field along the translates converges uniformly on `[0, 1] × [0, 1]`, since `Φ` is
   -- continuous on the compact set of values of the limit.
-  have hΦUC : TendstoUniformlyOn (fun k z ↦ Φ (z.2, u (z + (s k, 0)))) (fun z ↦ Φ (z.2, v z))
-      atTop (Icc 0 1 ×ˢ Icc 0 1) := by
-    have hpair : TendstoUniformlyOn (fun k z ↦ (z.2, u (z + (s k, 0)))) (fun z ↦ (z.2, v z))
-        atTop (Icc 0 1 ×ˢ Icc 0 1) := by
-      rw [Metric.tendstoUniformlyOn_iff] at hUC ⊢
-      intro ε hε
-      filter_upwards [hUC ε hε] with k hk z hz
-      simpa [Prod.dist_eq] using hk z hz
-    exact ((isCompact_Icc.prod isCompact_Icc).image_of_continuousOn
-      (continuousOn_snd.prodMk hvK)).comp_tendstoUniformlyOn (fun _ _ ↦ hΦ.continuousAt) hpair
-  have hsub : uIcc t₁ t₂ ⊆ Icc 0 1 := uIcc_subset_Icc ⟨ht₁, ht.trans ht₂⟩ ⟨ht₁.trans ht, ht₂⟩
+  have hΦUC := tendstoUniformlyOn_comp_snd_prodMk hΦ hUC hvK
   set A := v (0, t₂) - v (0, t₁) - ∫ t in t₁..t₂, Φ (t, v (0, t))
   -- The defects of the translates along the segments `{r} × [t₁, t₂]` tend to zero in `L¹`, and
   -- they converge uniformly in `r ∈ [0, 1]` to the defect `A` of the limit.
@@ -376,43 +439,7 @@ private theorem sub_sub_integral_eq_zero_of_tendstoLocallyUniformlyOn_comp_add
         (fun r ↦ ‖u (r, t₂) - u (r, t₁) - ∫ t in t₁..t₂, Φ (t, u (r, t))‖ₑ)
         (Icc (0 + s k) (1 + s k))
       rwa [preimage_add_const_Icc, add_sub_cancel_right, add_sub_cancel_right] at hT
-    · set δ : ℝ := ε / 3 with hδε
-      have hδ : 0 < δ := by positivity
-      filter_upwards [Metric.tendstoUniformlyOn_iff.1 hUC δ hδ,
-        Metric.tendstoUniformlyOn_iff.1 hΦUC δ hδ, hFc] with k hk hkΦ hkc
-      refine ae_restrict_of_forall_mem measurableSet_Icc fun r hr ↦ ?_
-      have hmem {t : ℝ} (htm : t ∈ uIcc t₁ t₂) : (r, t) ∈ Icc (0 : ℝ) 1 ×ˢ Icc 0 1 :=
-        ⟨hr, hsub htm⟩
-      have hF (t : ℝ) : u ((r, t) + (s k, 0)) = u (r + s k, t) := by simp
-      -- Along the segment the limit is `v(0, ·)`, and the translates are uniformly close to it.
-      have hxv : ∫ t in t₁..t₂, Φ (t, v (0, t)) = ∫ t in t₁..t₂, Φ (t, v (r, t)) :=
-        intervalIntegral.integral_congr fun t htm ↦ by
-          simp only [hstat r t (hsub htm)]
-      have hcv : ContinuousOn (fun t ↦ Φ (t, v (r, t))) (uIcc t₁ t₂) :=
-        hΦ.comp_continuousOn (continuousOn_id.prodMk
-          (hvK.comp (continuousOn_const.prodMk continuousOn_id) fun t htm ↦ hmem htm))
-      have hcu : ContinuousOn (fun t ↦ Φ (t, u (r + s k, t))) (uIcc t₁ t₂) := by
-        refine hΦ.comp_continuousOn (continuousOn_id.prodMk ?_)
-        simp_rw [← hF]
-        exact hkc.comp (continuousOn_const.prodMk continuousOn_id) fun t htm ↦ hmem htm
-      have hend {t : ℝ} (htm : t ∈ uIcc t₁ t₂) : ‖v (0, t) - u (r + s k, t)‖ ≤ δ := by
-        have h := hk (r, t) (hmem htm)
-        rw [dist_eq_norm, hF, hstat r t (hsub htm)] at h
-        exact h.le
-      have hA := intervalIntegral.norm_sub_sub_integral_le (a₁ := v (0, t₁)) (a₂ := v (0, t₂))
-        (b₁ := u (r + s k, t₁)) (b₂ := u (r + s k, t₂)) hcv.intervalIntegrable
-        hcu.intervalIntegrable fun t htm ↦ by
-          have h := hkΦ (r, t) (hmem (uIoc_subset_uIcc htm))
-          rw [dist_eq_norm, hF] at h
-          exact h.le
-      rw [← hxv] at hA
-      have hlen : δ * |t₂ - t₁| ≤ δ :=
-        mul_le_of_le_one_right hδ.le (by rw [abs_of_nonneg (sub_nonneg.2 ht)]; linarith)
-      replace hA := hA.trans (by linarith [hend left_mem_uIcc, hend right_mem_uIcc] :
-        _ ≤ ‖u (r + s k, t₂) - u (r + s k, t₁) - ∫ t in t₁..t₂, Φ (t, u (r + s k, t))‖ + ε)
-      rw [← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_coe_nnreal,
-        ← ENNReal.ofReal_add (norm_nonneg _) ε.coe_nonneg]
-      exact ENNReal.ofReal_le_ofReal hA
+    · exact eventually_ae_enorm_sub_sub_integral_le_add hΦ ht₁ ht ht₂ hUC hΦUC hFc hvK hstat ε hε
   rw [setLIntegral_const, Real.volume_Icc, sub_zero, ENNReal.ofReal_one, mul_one] at hzero
   exact enorm_eq_zero.1 hzero
 

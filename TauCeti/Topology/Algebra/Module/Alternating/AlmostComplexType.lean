@@ -278,6 +278,35 @@ theorem isOfType_zero_one_iff (α : V [⋀^Fin 1]→L[ℝ] F) :
     obtain ⟨v, rfl⟩ : ∃ v, w = ![v] := ⟨w 0, by ext i; fin_cases i; rfl⟩
     rw [J.alternatingDerivation_apply_vecCons_fin_one, h, smul_apply]
 
+/-- On a complex vector space, a one-form of type `(1,0)` for multiplication by `i` is
+complex-linear. -/
+theorem IsOfType.map_smul_complex {U : Type*} [AddCommGroup U] [Module ℂ U] [Module ℝ U]
+    [IsScalarTower ℝ ℂ U] [TopologicalSpace U] [ContinuousConstSMul ℂ U] {α : U [⋀^Fin 1]→L[ℝ] F}
+    (h : α.IsOfType (I • ContinuousLinearMap.id ℝ U) 1 0) (c : ℂ) (v : U) :
+    α ![c • v] = c • α ![v] := by
+  have hI : α ![I • v] = I • α ![v] := (isOfType_one_zero_iff α).1 h v
+  have hU : c • v = c.re • v + c.im • I • v := by
+    conv_lhs => rw [← re_add_im c]
+    rw [add_smul, mul_smul, ← coe_algebraMap, algebraMap_smul, algebraMap_smul]
+  have hF : c • α ![v] = c.re • α ![v] + c.im • I • α ![v] := by
+    conv_lhs => rw [← re_add_im c]
+    rw [add_smul, mul_smul, ← coe_algebraMap, algebraMap_smul, algebraMap_smul]
+  rw [hU, hF, ← hI]
+  rw [← ContinuousAlternatingMap.vecCons_smul, ← ContinuousAlternatingMap.vecCons_smul,
+    ← ContinuousAlternatingMap.vecCons_add]
+
+/-- On a one-dimensional complex vector space, a one-form of type `(1,0)` for multiplication by
+`i` which vanishes on a nonzero vector is zero. -/
+theorem IsOfType.eq_zero_of_apply_eq_zero {U : Type*} [AddCommGroup U] [Module ℂ U] [Module ℝ U]
+    [IsScalarTower ℝ ℂ U] [TopologicalSpace U] [ContinuousConstSMul ℂ U] {α : U [⋀^Fin 1]→L[ℝ] F}
+    (h : α.IsOfType (I • ContinuousLinearMap.id ℝ U) 1 0) (hU : Module.finrank ℂ U = 1) {w : U}
+    (hw : w ≠ 0) (hα : α ![w] = 0) : α = 0 := by
+  ext v
+  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero' w hw).1 hU (v 0)
+  have hv : v = ![c • w] := by ext i; fin_cases i; exact hc.symm
+  rw [hv, h.map_smul_complex, hα, smul_zero]
+  rfl
+
 /-- Pullback along a map intertwining the endomorphisms preserves type. -/
 theorem IsOfType.compContinuousLinearMap {K : W →L[ℝ] W} {f : W →L[ℝ] V}
     (hf : ∀ w, J (f w) = f (K w)) (h : ω.IsOfType J p q) :
