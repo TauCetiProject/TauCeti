@@ -38,6 +38,9 @@ comparison we obtain:
 * simultaneous diagonalization of `heckeTCuspLevelOne k n` on `levelOneNewformBasis k`, with
   eigenvalue the `n`-th Fourier coefficient `(qExpansion 1 f.toCuspForm).coeff n`, and the trace
   formula `Tr(Tₙ | S_k) = ∑_{f ∈ Newform 1 k} aₙ(f)`;
+* the identities `T₁ = 1` and `T_{p^{r+2}} = Tₚ T_{p^{r+1}} - p^{k-1} T_{p^r}` between the operators
+  `heckeTCuspLevelOne`, read off on this basis from the normalization `a₁ = 1` and the prime-power
+  recurrence of the coefficients of a newform;
 * separation of coordinates in any subspace of `CuspForm 𝒮ℒ k` stable under `Tₚ` for every prime
   `p` (`levelOneNewformBasis_mem_of_forall_prime`), combining multiplicity one at level one with
   `Module.Basis.self_mem_of_repr_ne_zero_of_forall`, and the resulting prime-Hecke injectivity
@@ -67,6 +70,8 @@ comparison we obtain:
   `TauCeti.injective_of_heckeTCuspLevelOne_mem_ker`: the weight bound `12 ≤ k` on level-one
   newforms, eigenbasis action, trace, prime-Hecke invariant-subspace coordinate extraction, and
   injectivity criterion on `CuspForm 𝒮ℒ k`.
+* `TauCeti.heckeTCuspLevelOne_one`, `TauCeti.heckeTCuspLevelOne_prime_pow_add_two`: `T₁ = 1` and
+  the recurrence `T_{p^{r+2}} = Tₚ T_{p^{r+1}} - p^{k-1} T_{p^r}` on `CuspForm 𝒮ℒ k`.
 * `TauCeti.heckeTLevelOne_E`, `TauCeti.isCompl_cuspFormSubmodule_span_E`,
   `TauCeti.trace_heckeTLevelOne`: the Eisenstein Hecke eigenvalue, the cusp/Eisenstein complement,
   and the trace of `Tₙ` on `ModularForm 𝒮ℒ k`.
@@ -297,6 +302,30 @@ theorem heckeTCuspLevelOne_levelOneNewformBasis (k : ℤ) (n : ℕ) [NeZero n] (
     rw [hval]
     exact congrArg Subtype.val (f.isEigen ⟨n, Nat.pos_of_neZero n⟩ (Nat.coprime_one_right n))
   rw [key _ _, map_smul]
+
+/-- **`T₁` is the identity on `S_k(SL(2, ℤ))`**: it fixes each newform, whose first Fourier
+coefficient is `1`. -/
+@[simp]
+theorem heckeTCuspLevelOne_one (k : ℤ) : heckeTCuspLevelOne k 1 = 1 :=
+  (levelOneNewformBasis k).ext fun f ↦ by
+    simp [heckeTCuspLevelOne_levelOneNewformBasis, f.isNorm]
+
+/-- **The prime-power recurrence of the level-one Hecke operators**:
+`T_{p^{r+2}} = Tₚ T_{p^{r+1}} - p^{k-1} T_{p^r}` on `S_k(SL(2, ℤ))` for a prime `p`
+(Diamond–Shurman Proposition 5.3.1). Both sides act on each newform by the corresponding
+combination of its Fourier coefficients, which satisfy this recurrence. -/
+theorem heckeTCuspLevelOne_prime_pow_add_two (k : ℤ) (p : ℕ) [Fact p.Prime] (r : ℕ) :
+    heckeTCuspLevelOne k (p ^ (r + 2)) =
+      heckeTCuspLevelOne k p * heckeTCuspLevelOne k (p ^ (r + 1)) -
+        (p : ℂ) ^ (k - 1) • heckeTCuspLevelOne k (p ^ r) :=
+  (levelOneNewformBasis k).ext fun f ↦ by
+    have hp : ((⟨p, (Fact.out : p.Prime).pos⟩ : ℕ+) : ℕ).Prime := Fact.out
+    have h := f.toEigenformAwayFromLevel.qExpansion_coeff_prime_pow_add_two f.isNorm hp
+      (Nat.coprime_one_right _) r
+    -- the nebentypus of a level-one form is trivial
+    simp only [PNat.mk_coe, Subsingleton.elim (ZMod.unitOfCoprime _ _) 1, map_one, Units.val_one,
+      one_mul] at h
+    simp [heckeTCuspLevelOne_levelOneNewformBasis, h, smul_smul, sub_smul, mul_comm]
 
 /-- **The trace of `Tₙ` on `S_k(SL(2, ℤ))` is the sum of the `n`-th Fourier coefficients of the
 level-one newforms.** -/
