@@ -437,8 +437,9 @@ theorem isForest_banana_singleton (huw : u ≠ w) (e : β) : (banana u w {e}).Is
     exact hf ▸ isBridge_banana_singleton huw e
 
 /-- No edge of a graph on two vertices with several edges is a bridge. -/
-theorem not_isBridge_banana {F : Set β} (he : e ∈ F) (hf : f ∈ F) (hfe : f ≠ e) :
-    ¬ (banana u w F).IsBridge e :=
-  IsLink.not_isBridge_of_isLink_of_ne (x := u) (y := w) (by simp [he]) (by simp [hf]) hfe
+theorem not_isBridge_banana {F : Set β} (hf : f ∈ F) (hfe : f ≠ e) :
+    ¬ (banana u w F).IsBridge e := fun h ↦ by
+  have he : e ∈ F := by simpa using h.mem_edgeSet
+  exact IsLink.not_isBridge_of_isLink_of_ne (x := u) (y := w) (by simp [he]) (by simp [hf]) hfe h
 
 end Graph
