@@ -9,8 +9,11 @@ public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.ModelTransport.Boundaryless
 
 /-!
@@ -32,6 +35,13 @@ When the model space `F` is itself a real inner product space, no change of coor
 every point of a boundaryless `C^n` manifold modelled on `F` is the centre of a coordinate ball, an
 open embedding `F → N` which is a `C^n` local diffeomorphism
 (`TauCeti.exists_isOpenEmbedding_isLocalDiffeomorph`).
+For arbitrary models with corners, each interior point has an open domain diffeomorphic to the
+entire model vector space (`TauCeti.exists_opens_diffeomorph_normedSpace`), including dimension
+zero.
+
+## References
+
+* John M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 1, coordinate balls.
 -/
 
 public noncomputable section
@@ -143,6 +153,79 @@ theorem exists_isOpenEmbedding_isLocalDiffeomorph (x : N) :
         rw [hΦ, OpenPartialHomeomorph.coe_toPartialEquiv]
     exact hbv.comp (hg := c.isLocalDiffeomorphAt_symm_of_mem_maximalAtlas
       (IsManifold.chart_mem_maximalAtlas x) (hb v))
+
+section InteriorPoint
+
+variable {H P : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace P] [ChartedSpace H P] [IsManifold I n P]
+
+/-- An interior point has an open coordinate domain diffeomorphic to the entire model space,
+including when the model has dimension zero. -/
+theorem exists_opens_diffeomorph_normedSpace (x : P) (hx : I.IsInteriorPoint x) :
+    ∃ U : TopologicalSpace.Opens P, x ∈ U ∧ Nonempty (E ≃ₘ^n⟮𝓘(ℝ, E), I⟯ U) := by
+  let L := toEuclidean (E := E)
+  have hLs : (L.toPartialDiffeomorph (n := n)).source = univ := by
+    simp only [ContinuousLinearEquiv.toPartialDiffeomorph_toPartialEquiv,
+      Equiv.toPartialEquiv_source]
+  have hLt : (L.toPartialDiffeomorph (n := n)).target = univ := by
+    simp only [ContinuousLinearEquiv.toPartialDiffeomorph_toPartialEquiv,
+      Equiv.toPartialEquiv_target]
+  let c := (extChartPartialDiffeomorph I n x).trans L.toPartialDiffeomorph
+  have hxc : x ∈ c.source := by
+    simp only [c, PartialDiffeomorph.trans_toPartialEquiv,
+      OpenPartialHomeomorph.trans_toPartialEquiv,
+      PartialDiffeomorph.toOpenPartialHomeomorph, PartialEquiv.trans_source,
+      hLs, preimage_univ, inter_univ]
+    exact (mem_extChartPartialDiffeomorph_source (I := I) (n := n) x).mpr hx
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.mp c.open_target (c x)
+    (c.toPartialEquiv.map_source hxc)
+  let b₀ := OpenPartialHomeomorph.univBall (c x) r
+  let b := PartialDiffeomorph.ofOpenPartialHomeomorph (n := n) b₀
+    OpenPartialHomeomorph.contDiff_univBall.contDiffOn
+    (by rw [OpenPartialHomeomorph.univBall_target _ hr]
+        exact OpenPartialHomeomorph.contDiffOn_univBall_symm)
+  have hbs : b.source = univ := by
+    rw [PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv]
+    exact OpenPartialHomeomorph.univBall_source _ _
+  have hbt : b.target = Metric.ball (c x) r := by
+    rw [PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv]
+    exact OpenPartialHomeomorph.univBall_target _ hr
+  have hb (v) : b v ∈ c.target :=
+    hball (hbt ▸ b.toPartialEquiv.map_source (hbs ▸ mem_univ v))
+  let Q := L.toPartialDiffeomorph.trans (b.trans c.symm)
+  -- The linear map and ball parametrization are total, and the ball lies in the chart target.
+  have hs : Q.source = univ := by
+    simp only [Q, PartialDiffeomorph.trans_toPartialEquiv,
+      OpenPartialHomeomorph.trans_toPartialEquiv,
+      PartialDiffeomorph.toOpenPartialHomeomorph, PartialEquiv.trans_source,
+      PartialDiffeomorph.symm_toPartialEquiv, PartialEquiv.symm_source, hLs, hbs, univ_inter]
+    exact eq_univ_of_forall fun v ↦ hb _
+  -- The chart sends x to the centre of the ball; the outer linear map has full target.
+  have ht : x ∈ Q.target := by
+    simp only [Q, PartialDiffeomorph.trans_toPartialEquiv,
+      OpenPartialHomeomorph.trans_toPartialEquiv,
+      PartialDiffeomorph.toOpenPartialHomeomorph, PartialEquiv.trans_target,
+      PartialDiffeomorph.symm_toPartialEquiv, PartialEquiv.symm_target,
+      PartialEquiv.symm_symm, hLt, preimage_univ, inter_univ, hbt, mem_inter_iff,
+      mem_preimage]
+    exact ⟨hxc, Metric.mem_ball_self hr⟩
+  let U : TopologicalSpace.Opens P := ⟨Q.target, Q.open_target⟩
+  refine ⟨U, ht, ⟨{
+    toFun := fun v ↦ ⟨Q v, Q.toPartialEquiv.map_source (hs ▸ mem_univ v)⟩
+    invFun := fun y ↦ Q.toPartialEquiv.symm y
+    left_inv := fun v ↦ Q.toPartialEquiv.left_inv (hs ▸ mem_univ v)
+    right_inv := fun y ↦ Subtype.ext (Q.toPartialEquiv.right_inv y.property)
+    contMDiff_toFun := ?_
+    contMDiff_invFun := ?_ }⟩⟩
+  · apply (ContMDiff.subtypeVal_comp_iff U _).mp
+    have hf := Q.contMDiffOn_toFun
+    rw [hs, contMDiffOn_univ] at hf
+    exact hf.congr (fun _ ↦ rfl)
+  · intro y
+    exact ((Q.contMDiffOn_invFun y y.property).contMDiffAt
+      (Q.open_target.mem_nhds y.property)).comp y contMDiff_subtype_val.contMDiffAt
+
+end InteriorPoint
 
 end CoordinateBall
 

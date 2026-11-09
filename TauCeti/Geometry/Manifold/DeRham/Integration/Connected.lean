@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.Integration.Localization
 import TauCeti.Geometry.Manifold.DeRham.Integration.Surjective
 import Mathlib.Topology.LocallyConstant.Basic
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.CoordinateDomain
+import TauCeti.Geometry.Manifold.ContMDiff.Parametrization
 
 /-!
 # Top compactly supported cohomology of connected oriented manifolds
@@ -145,12 +145,11 @@ theorem injective_integral (o : Manifold.Orientation I M (Fin n)) :
       BoundarylessManifold.isInteriorPoint
   let Φ (x : M) : E ≃ₘ⟮𝓘(ℝ, E), I⟯ U x := Classical.choice (hΦ x)
   have (x : M) : SigmaCompactSpace (U x) :=
-    ⟨(Φ x).toHomeomorph.surjective.range_eq ▸ isSigmaCompact_range (Φ x).continuous⟩
+    (Φ x).toHomeomorph.symm.isClosedEmbedding.sigmaCompactSpace
   let T : Opens M := ⊤
   let F : T ≃ₘ⟮I, I⟯ M := Diffeomorph.ofTop T rfl
   have hF : ⇑F = Subtype.val := funext fun x ↦ Diffeomorph.ofTop_apply x
-  have : SigmaCompactSpace T :=
-    ⟨F.symm.toHomeomorph.surjective.range_eq ▸ isSigmaCompact_range F.symm.continuous⟩
+  have : SigmaCompactSpace T := isClosed_univ.sigmaCompactSpace
   have : PreconnectedSpace T := F.symm.surjective.denseRange.preconnectedSpace F.symm.continuous
   have hcover : T ≤ iSup U := fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hx x⟩
   have hi := injective_integral_of_cover o U (fun _ ↦ le_top) hcover Φ
