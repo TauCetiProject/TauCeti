@@ -16,6 +16,12 @@ Mathlib's `Circle.exp` parametrizes the circle by angles. This file reads a *clo
 closed preconnected proper subset of the circle is such an arc, and the complement of a closed arc
 is the open arc `Circle.exp '' Set.Ioo b (a + 2 * π)` spanning the complementary angles.
 
+It also describes how two distinct points `x` and `y` cut the circle, using Mathlib's arcs
+`Circle.path x y`: the complement of `{x, y}` has exactly the two open arcs as its connected
+components, each with frontier `{x, y}` and with closure a closed arc, homeomorphic to the unit
+interval with `x` and `y` at its endpoints. This is the one-dimensional case of the generalized
+Schoenflies theorem.
+
 Nothing here is specific to any curve theory; as with `TauCeti/Topology/Circle/Metric.lean`, these
 are facts about the model circle, and the transport of them to a Jordan curve — where a compact
 connected subset of the curve is thereby classified — is
@@ -53,6 +59,17 @@ open arc.
   where the argument is at most `a` in absolute value.
 * `TauCeti.exists_centeredArc_subset_of_mem_nhds` — every neighbourhood of `1` contains an arc
   about `1` of half-width at most `π`.
+* `Circle.isPathConnected_path_image_Ioo` — an open arc `Circle.path x y '' Set.Ioo 0 1` is path
+  connected.
+* `Circle.isOpen_path_image_Ioo`, `Circle.closure_path_image_Ioo` and
+  `Circle.frontier_path_image_Ioo` — an open arc between two distinct points is open, with closure
+  the closed arc and frontier its two endpoints.
+* `Circle.connectedComponentIn_compl_pair` — the two open arcs between `x` and `y` are the
+  connected components of `{x, y}ᶜ`.
+* `Circle.frontier_connectedComponentIn_compl_pair` and
+  `Circle.exists_homeomorph_closure_connectedComponentIn_compl_pair` — each component of `{x, y}ᶜ`
+  has frontier `{x, y}`, and its closure is homeomorphic to the unit interval with `x` and `y` at
+  the endpoints.
 -/
 
 public section
@@ -165,3 +182,126 @@ theorem exists_centeredArc_subset_of_mem_nhds {V : Set Circle} (hV : V ∈ 𝓝 
   exact hball (hmem ht)
 
 end TauCeti
+
+/-! ### The two arcs between two points
+
+Two distinct points `x` and `y` cut the circle into the open arcs `Circle.path x y '' Ioo 0 1` and
+`Circle.path y x '' Ioo 0 1`, running counterclockwise from `x` to `y` and from `y` to `x`. Each is
+the complement of the opposite closed arc `range (Circle.path _ _)`
+(`Circle.compl_range_path`), so it is open, and its closure is its own closed arc. Being
+connected, the two open arcs are the connected components of `{x, y}ᶜ`, and each component has
+the two points as its frontier and a closed interval as its closure. -/
+
+namespace Circle
+
+open Set
+
+variable {x y z : Circle}
+
+/-- An open arc between two distinct points of the circle is open: it is the complement of the
+opposite closed arc. -/
+theorem isOpen_path_image_Ioo (h : x ≠ y) : IsOpen (x.path y '' Ioo 0 1) := by
+  rw [← compl_range_path h.symm]
+  exact (isCompact_range (y.path x).continuous).isClosed.isOpen_compl
+
+/-- An open arc of the circle is path connected: it is the image of the real interval `Ioo 0 1`
+under `Path.extend`, which reparametrizes `Circle.path x y` by all of `ℝ` and so lets the
+path-connectedness be read off the convexity of `Ioo 0 1`. -/
+theorem isPathConnected_path_image_Ioo (x y : Circle) :
+    IsPathConnected (x.path y '' Ioo 0 1) := by
+  have hproj : Set.projIcc (0 : ℝ) 1 zero_le_one '' Ioo 0 1 = Ioo 0 1 := by
+    ext t
+    simp only [mem_image, mem_Ioo]
+    refine ⟨?_, fun ht => ⟨t, ⟨unitInterval.coe_pos.2 ht.1, unitInterval.coe_lt_one.2 ht.2⟩,
+      Set.projIcc_val _ t⟩⟩
+    rintro ⟨s, hs, rfl⟩
+    rw [Set.projIcc_of_mem _ (Ioo_subset_Icc_self hs)]
+    exact ⟨by simpa [← unitInterval.coe_pos] using hs.1,
+      by simpa [← unitInterval.coe_lt_one] using hs.2⟩
+  have himg : (x.path y).extend '' Ioo (0 : ℝ) 1 = x.path y '' Ioo 0 1 := by
+    rw [← hproj, ← image_comp]
+    refine image_congr fun t ht => ?_
+    rw [Function.comp_apply, ← (x.path y).extend_extends' (Set.projIcc 0 1 zero_le_one t),
+      Set.projIcc_of_mem _ (Ioo_subset_Icc_self ht)]
+  exact himg ▸ ((convex_Ioo (0 : ℝ) 1).isPathConnected (by simp)).image'
+    (Path.continuous_extend _).continuousOn
+
+/-- The two open arcs between two distinct points cover the rest of the circle. -/
+theorem path_image_Ioo_union_path_image_Ioo (h : x ≠ y) :
+    x.path y '' Ioo 0 1 ∪ y.path x '' Ioo 0 1 = {x, y}ᶜ := by
+  rw [← compl_range_path h.symm, ← compl_range_path h, ← compl_inter,
+    range_path_inter_range_path h.symm, pair_comm]
+
+/-- The two open arcs between two distinct points are disjoint. -/
+theorem disjoint_path_image_Ioo (h : x ≠ y) :
+    Disjoint (x.path y '' Ioo 0 1) (y.path x '' Ioo 0 1) := by
+  rw [← compl_range_path h]
+  exact disjoint_compl_right_iff_subset.mpr (image_subset_range _ _)
+
+/-- The closure of an open arc is the closed arc. -/
+theorem closure_path_image_Ioo (x y : Circle) :
+    closure (x.path y '' Ioo 0 1) = range (x.path y) := by
+  refine (closure_minimal (image_subset_range _ _)
+    (isCompact_range (x.path y).continuous).isClosed).antisymm ?_
+  have hcl : closure (Ioo (0 : unitInterval) 1) = univ := by
+    rw [closure_Ioo zero_ne_one, unitInterval.univ_eq_Icc]
+  rw [← image_univ, ← hcl]
+  exact image_closure_subset_closure_image (x.path y).continuous
+
+/-- The frontier of an open arc between two distinct points is the pair of its endpoints. -/
+theorem frontier_path_image_Ioo (h : x ≠ y) :
+    frontier (x.path y '' Ioo 0 1) = {x, y} := by
+  rw [frontier, closure_path_image_Ioo, (isOpen_path_image_Ioo h).interior_eq,
+    ← compl_range_path h.symm, sdiff_compl, range_path_inter_range_path h]
+
+/-- **An open arc is a connected component of the complement of its endpoints.** -/
+theorem connectedComponentIn_compl_pair (h : x ≠ y) (hz : z ∈ x.path y '' Ioo 0 1) :
+    connectedComponentIn {x, y}ᶜ z = x.path y '' Ioo 0 1 := by
+  have hU := (isPathConnected_path_image_Ioo x y).isConnected.isPreconnected
+  have hsub := path_image_Ioo_union_path_image_Ioo h
+  refine subset_antisymm ?_ (hU.subset_connectedComponentIn hz (hsub ▸ subset_union_left))
+  rcases isPreconnected_connectedComponentIn.subset_or_subset (isOpen_path_image_Ioo h)
+    (isOpen_path_image_Ioo h.symm) (disjoint_path_image_Ioo h)
+    ((connectedComponentIn_subset _ _).trans hsub.symm.subset) with hc | hc
+  · exact hc
+  · exact absurd (hc (mem_connectedComponentIn (hsub.subset (Or.inl hz))))
+      (disjoint_left.mp (disjoint_path_image_Ioo h) hz)
+
+/-- **Two points are the frontier of each component of their complement.** -/
+theorem frontier_connectedComponentIn_compl_pair (h : x ≠ y) (hz : z ∉ ({x, y} : Set Circle)) :
+    frontier (connectedComponentIn {x, y}ᶜ z) = {x, y} := by
+  rcases (path_image_Ioo_union_path_image_Ioo h).symm.subset hz with hz | hz
+  · rw [connectedComponentIn_compl_pair h hz, frontier_path_image_Ioo h]
+  · rw [pair_comm, connectedComponentIn_compl_pair h.symm hz, frontier_path_image_Ioo h.symm]
+
+/-- The closure of the component of the open arc from `x` to `y` is a closed interval with
+endpoints `x` and `y`. -/
+private theorem exists_homeomorph_closure_connectedComponentIn_compl_pair_of_mem (h : x ≠ y)
+    (hz : z ∈ x.path y '' Ioo 0 1) :
+    ∃ φ : closure (connectedComponentIn {x, y}ᶜ z) ≃ₜ unitInterval,
+      ∀ w : closure (connectedComponentIn {x, y}ᶜ z),
+        (w : Circle) ∈ ({x, y} : Set Circle) ↔ φ w = 0 ∨ φ w = 1 := by
+  have hc : closure (connectedComponentIn {x, y}ᶜ z) = range (x.path y) := by
+    rw [connectedComponentIn_compl_pair h hz, closure_path_image_Ioo]
+  -- The arc is parametrized by `Circle.path x y`, a closed embedding of the unit interval.
+  let ψ : unitInterval ≃ₜ range (x.path y) :=
+    ((x.path y).continuous.isClosedEmbedding (path_injective_of_ne h)).isEmbedding.toHomeomorph
+  refine ⟨(Homeomorph.setCongr hc).trans ψ.symm, fun w => ?_⟩
+  have hw : x.path y ((Homeomorph.setCongr hc).trans ψ.symm w) = w :=
+    congrArg Subtype.val (ψ.apply_symm_apply (Homeomorph.setCongr hc w))
+  rw [← hw, mem_insert_iff, mem_singleton_iff, (path_injective_of_ne h).eq_iff' (x.path y).source,
+    (path_injective_of_ne h).eq_iff' (x.path y).target]
+
+/-- **The closure of each component of the complement of two points is an arc.** It is homeomorphic
+to the unit interval by a homeomorphism carrying the two points onto the endpoints `0` and `1`. -/
+theorem exists_homeomorph_closure_connectedComponentIn_compl_pair (h : x ≠ y)
+    (hz : z ∉ ({x, y} : Set Circle)) :
+    ∃ φ : closure (connectedComponentIn {x, y}ᶜ z) ≃ₜ unitInterval,
+      ∀ w : closure (connectedComponentIn {x, y}ᶜ z),
+        (w : Circle) ∈ ({x, y} : Set Circle) ↔ φ w = 0 ∨ φ w = 1 := by
+  rcases (path_image_Ioo_union_path_image_Ioo h).symm.subset hz with hz | hz
+  · exact exists_homeomorph_closure_connectedComponentIn_compl_pair_of_mem h hz
+  · rw [pair_comm]
+    exact exists_homeomorph_closure_connectedComponentIn_compl_pair_of_mem h.symm hz
+
+end Circle

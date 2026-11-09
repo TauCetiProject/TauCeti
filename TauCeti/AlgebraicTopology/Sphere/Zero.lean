@@ -27,6 +27,8 @@ the base case of the induction on dimension through the suspension isomorphism.
 * `TauCeti.discreteTopology_sphere_of_finrank_eq_one`: every sphere is discrete.
 * `TauCeti.zerothHomotopySphereUnique`: the path component of `-p` is the unique path component
   other than that of `p`.
+* `TauCeti.range_eq_pair_of_finrank_eq_one`: a map out of the unit sphere takes its values at a
+  point and at the antipode, and no others.
 * `TauCeti.exists_continuous_injective_range_sphere_eq_pair`: two distinct points of a topological
   space are the image of a continuous injection of the `0`-sphere of `ℝ`.
 -/
@@ -101,6 +103,17 @@ lemma zerothHomotopySphereUnique_default (h : finrank ℝ E = 1) (p : sphere (0 
       ⟨ZerothHomotopy.mk (-p), zerothHomotopy_mk_neg_ne h p⟩ := by
   rfl
 
+
+/-- A map out of the unit sphere of a one-dimensional real normed space takes only the values
+`f p` and `f (-p)`, for any point `p` of the sphere. -/
+theorem range_eq_pair_of_finrank_eq_one {Y : Type*} (h : finrank ℝ E = 1)
+    (f : sphere (0 : E) 1 → Y) (p : sphere (0 : E) 1) : Set.range f = {f p, f (-p)} := by
+  refine Set.Subset.antisymm ?_ (Set.pair_subset (Set.mem_range_self _) (Set.mem_range_self _))
+  rintro _ ⟨x, rfl⟩
+  have hx : (x : E) ∈ ({(p : E), -(p : E)} : Set E) := sphere_eq_pair_of_finrank_eq_one h p.2 ▸ x.2
+  rcases hx with hx | hx
+  · exact Or.inl (congrArg f (Subtype.ext hx))
+  · exact Or.inr (congrArg f (Subtype.ext (hx.trans (coe_neg_sphere p).symm)))
 
 /-- Two distinct points of a topological space are the image of a continuous injection of the
 `0`-sphere of `ℝ`. -/
