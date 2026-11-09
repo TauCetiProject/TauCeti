@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Analysis.PDE.MaximumPrinciple.ContactSet
 import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.Matrix.Contraction
 import TauCeti.Analysis.Matrix.PosSemidef.Determinant
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
 
@@ -52,6 +53,13 @@ determinant–trace inequality `det a det M ≤ (tr (a M) / n)ⁿ` and `tr (a M)
   `|B(0, (u x - m) / diam Ω)| ≤ ∫_{Γ⁺} (f⁻ / n)ⁿ / det a`.
 * `TauCeti.PDE.setLIntegral_ofReal_negPart_div_card_pow_div_det_eq`: the right-hand side of the
   measure form is `n⁻ⁿ ‖f⁻ / (det a)^{1/n}‖ⁿ_{Lⁿ(Γ)}`.
+* `TauCeti.PDE.aestronglyMeasurable_sum_mul_apply_single`,
+  `TauCeti.PDE.aestronglyMeasurable_negPart_div_det_rpow`: for measurable coefficients, the
+  principal part `∑ᵢⱼ aⁱʲ (T eⱼ)ᵢ` of a measurable operator field and the quotient
+  `F⁻ / (det a)^{1/n}` are measurable.
+* `TauCeti.PDE.negPart_div_det_rpow_le`: under `∑ᵢⱼ |aⁱʲ| ≤ K (det a)^{1/n}`, perturbing the
+  Hessian by `T - S` changes `(∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu)⁻ / (det a)^{1/n}` by at most `K ‖T - S‖`; this is
+  how the right-hand side passes to a limit of approximate Hessians.
 * `TauCeti.PDE.le_add_mul_eLpNorm_negPart_div_det_rpow_of_volume_ball_le`: the `Lⁿ` form follows
   from the measure form; it is shared with the estimate for strong solutions in
   `TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Sobolev`.
@@ -180,6 +188,56 @@ theorem setLIntegral_ofReal_negPart_div_card_pow_div_det_eq [Nonempty ι]
   congr 1
   simp only [g, div_pow, Real.rpow_inv_natCast_pow hdet.le hn]
   field_simp
+
+/-- For a measurable coefficient field `a` and a measurable field `T` of operators, the principal
+part `y ↦ ∑ᵢⱼ aⁱʲ(y) (T(y) eⱼ)ᵢ` is measurable. -/
+theorem aestronglyMeasurable_sum_mul_apply_single {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {a : X → Matrix ι ι ℝ}
+    {T : X → EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι}
+    (ha : AEStronglyMeasurable a μ) (hT : AEStronglyMeasurable T μ) :
+    AEStronglyMeasurable (fun y => ∑ i, ∑ j, a y i j * T y (EuclideanSpace.single j 1) i) μ := by
+  refine Finset.aestronglyMeasurable_fun_sum _ fun i _ =>
+    Finset.aestronglyMeasurable_fun_sum _ fun j _ => ?_
+  refine ((continuous_apply j).comp_aestronglyMeasurable
+    ((continuous_apply i).comp_aestronglyMeasurable ha)).mul ?_
+  exact ((EuclideanSpace.proj i : EuclideanSpace ℝ ι →L[ℝ] ℝ).continuous.comp
+    (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ ι)
+      (EuclideanSpace.single j (1 : ℝ))).continuous).comp_aestronglyMeasurable hT
+
+/-- For measurable `a` and `F`, the quotient `F⁻ / (det a)^{1/n}` is measurable. -/
+theorem aestronglyMeasurable_negPart_div_det_rpow {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {a : X → Matrix ι ι ℝ} {F : X → ℝ}
+    (ha : AEStronglyMeasurable a μ) (hF : AEStronglyMeasurable F μ) :
+    AEStronglyMeasurable (fun y => (F y)⁻ / (a y).det ^ (Fintype.card ι : ℝ)⁻¹) μ := by
+  refine (continuous_negPart.comp_aestronglyMeasurable hF).aemeasurable.div ?_
+    |>.aestronglyMeasurable
+  exact ((Real.continuous_rpow_const (by positivity)).comp
+    (continuous_id.matrix_det)).comp_aestronglyMeasurable ha |>.aemeasurable
+
+/-- **The principal part under perturbation of the Hessian.** If `A` is positive definite with
+`∑ᵢⱼ |Aᵢⱼ| ≤ K D*`, `D* = (det A)^{1/n}`, then replacing the operator `S` by `T` in the principal
+part `P(S) = ∑ᵢⱼ Aᵢⱼ (S eⱼ)ᵢ` changes `P⁻ / D*` by at most `K ‖T - S‖`. -/
+theorem negPart_div_det_rpow_le {A : Matrix ι ι ℝ} (hA : A.PosDef) {K : ℝ}
+    (hK : ∑ i, ∑ j, |A i j| ≤ K * A.det ^ (Fintype.card ι : ℝ)⁻¹)
+    (T S : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) :
+    (∑ i, ∑ j, A i j * T (EuclideanSpace.single j 1) i)⁻ / A.det ^ (Fintype.card ι : ℝ)⁻¹ ≤
+      (∑ i, ∑ j, A i j * S (EuclideanSpace.single j 1) i)⁻ / A.det ^ (Fintype.card ι : ℝ)⁻¹ +
+        K * ‖T - S‖ := by
+  set PT := ∑ i, ∑ j, A i j * T (EuclideanSpace.single j 1) i
+  set PS := ∑ i, ∑ j, A i j * S (EuclideanSpace.single j 1) i
+  set D := A.det ^ (Fintype.card ι : ℝ)⁻¹
+  have hD : 0 < D := Real.rpow_pos_of_pos hA.det_pos _
+  have hsub : PT - PS = ∑ i, ∑ j, A i j * (T - S) (EuclideanSpace.single j 1) i := by
+    simp [PT, PS, ← Finset.sum_sub_distrib, mul_sub]
+  have habs : |PT - PS| ≤ K * D * ‖T - S‖ :=
+    hsub ▸ (Matrix.abs_sum_sum_mul_apply_single_le A (T - S)).trans
+      (mul_le_mul_of_nonneg_right hK (norm_nonneg _))
+  have hneg : PT⁻ ≤ PS⁻ + K * D * ‖T - S‖ := by
+    rw [negPart_def, negPart_def]
+    exact max_le (by linarith [le_max_left (-PS) 0, neg_le_abs (PT - PS)])
+      (by linarith [le_max_right (-PS) 0, abs_nonneg (PT - PS)])
+  calc PT⁻ / D ≤ (PS⁻ + K * D * ‖T - S‖) / D := div_le_div_of_nonneg_right hneg hD.le
+    _ = PS⁻ / D + K * ‖T - S‖ := by field_simp
 
 /-- **From the measure form to the `Lⁿ` form.** Let `Ω` be bounded and open, `x ∈ Ω`, and let
 `a` be almost everywhere positive definite on a set `Γ` with `f⁻ / D* ∈ Lⁿ(Γ)`,
