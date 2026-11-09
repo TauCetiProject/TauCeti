@@ -296,8 +296,9 @@ theorem normAbs_pow_finrank (v : Place K) (x : K) :
   rw [normAbs_apply, one_div,
     Real.rpow_inv_natCast_pow (normalizedAbsValue_nonneg v x) Module.finrank_pos.ne']
 
-/-- The `[K : ℚ]`-th power of the largest degree-normalized absolute value of a tuple is
-its largest normalized absolute value. -/
+/-- The `[K : ℚ]`-th power of the supremum of the degree-normalized absolute values of a family is
+the supremum of its normalized absolute values (both sides use the `ℝ` junk value `0` for empty or
+unbounded families). -/
 theorem iSup_normAbs_pow_finrank {ι : Type*} (v : Place K) (y : ι → K) :
     (⨆ i, normAbs v (y i)) ^ Module.finrank ℚ K = ⨆ i, normalizedAbsValue v (y i) := by
   rw [Real.iSup_pow_of_ne_zero (fun i ↦ normAbs_nonneg v (y i)) Module.finrank_pos.ne']
