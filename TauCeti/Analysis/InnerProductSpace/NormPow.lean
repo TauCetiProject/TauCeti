@@ -14,7 +14,6 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Real powers of the norm

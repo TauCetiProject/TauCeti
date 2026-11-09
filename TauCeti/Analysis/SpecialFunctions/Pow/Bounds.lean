@@ -59,9 +59,6 @@ If `2 ≤ q ≤ q'` and `q ^ p < q (q + q')`, then `q ^ (p - 1) < 2 q'`, so
 This reads off the growth of consecutive continued-fraction denominators from the lower error
 bound `1 / (q (q + q')) < |ξ - p / q|`.
 
-For `s ≤ 0`, `0 < k`, `0 < c` and `c / k ≤ z`, `z ^ s ≤ k ^ (-s) * c ^ s`. This bounds a negative
-power along a segment on which the base stays at least a fixed fraction of its starting value.
-
 For `s ≥ 0` the weight `(1 + ‖x‖) ^ s` on a seminormed group is subadditive up to the constant
 `2 ^ s`. This is the weight inequality behind product estimates in weighted sequence spaces. The
 weight `1 + ‖x‖` itself is submultiplicative: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
