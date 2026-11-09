@@ -429,6 +429,13 @@ theorem term_inclusion (j : ℕ) :
 theorem term_inclusion_of_lt {j : ℕ} (hj : j < k) : (inclusion k hk b).term j = 0 := by
   simp [term_inclusion, show ¬k ≤ j by omega]
 
+@[simp]
+theorem term_inclusion_add (j : ℕ) :
+    (inclusion k hk b).term (k + j) = (b.term j).castDegree (by rw [hk]; push_cast; ring) := by
+  ext1
+  simp only [term_inclusion, Nat.le_add_right, ↓reduceDIte, coefficient_castDegree]
+  rw [coefficient_congr_index b.term (Nat.add_sub_cancel_left k j)]
+
 theorem inclusion_injective :
     Function.Injective (inclusion (n := n) (V := V) (W := W) k hk) := fun _ _ h =>
   ext (Symbol.inclusion_injective _ (congrArg toSymbol h))
@@ -642,6 +649,30 @@ theorem toSymbol_comp : (b.comp a).toSymbol = b.toSymbol.comp a.toSymbol :=
 @[simp]
 theorem term_comp (k : ℕ) : (b.comp a).term k = compTerms b.term a.term k :=
   (rfl)
+
+theorem comp_add (b : ClassicalSymbol n W U m') (a₁ a₂ : ClassicalSymbol n V W m) :
+    b.comp (a₁ + a₂) = b.comp a₁ + b.comp a₂ :=
+  ext (Symbol.comp_add _ _ _)
+
+theorem add_comp (b₁ b₂ : ClassicalSymbol n W U m') (a : ClassicalSymbol n V W m) :
+    (b₁ + b₂).comp a = b₁.comp a + b₂.comp a :=
+  ext (Symbol.add_comp _ _ _)
+
+@[simp]
+theorem comp_smul (c : ℂ) : b.comp (c • a) = c • b.comp a :=
+  ext (Symbol.comp_smul _ _ _)
+
+@[simp]
+theorem smul_comp (c : ℂ) : (c • b).comp a = c • b.comp a :=
+  ext (Symbol.smul_comp _ _ _)
+
+@[simp]
+theorem comp_zero : b.comp (0 : ClassicalSymbol n V W m) = 0 :=
+  ext (Symbol.comp_zero _)
+
+@[simp]
+theorem zero_comp : (0 : ClassicalSymbol n W U m').comp a = 0 :=
+  ext (Symbol.zero_comp _)
 
 /-- **The principal symbol is multiplicative** for the pointwise composition. -/
 @[simp]
