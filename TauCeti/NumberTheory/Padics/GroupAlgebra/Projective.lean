@@ -13,7 +13,6 @@ public import Mathlib.RingTheory.Jacobson.Radical
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.RepresentationTheory.Maschke
 import Mathlib.RingTheory.Finiteness.Cardinality
-import TauCeti.Algebra.Module.LinearMap.Finite
 import TauCeti.Algebra.Module.Projective.Lift
 import TauCeti.Algebra.Module.Projective.Reduction
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Reduction
@@ -22,6 +21,7 @@ import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Jacobson.Basic
 import TauCeti.RingTheory.Huber.Matrix
 import TauCeti.RingTheory.Huber.Padic.Basic
+import TauCeti.RingTheory.Noetherian.LinearMap
 
 /-!
 # Projective modules over finite `p`-adic group algebras
@@ -206,8 +206,6 @@ theorem exists_projective_reduction_linearEquiv (N : Type v) [AddCommGroup N] [M
   have : IsAdicComplete (Ideal.span {(p : ℤ_[p])}) ℤ_[p] := by
     rw [← PadicInt.maximalIdeal_eq_span_p]
     infer_instance
-  have : Module.Finite ℤ_[p] (Module.End (MonoidAlgebra ℤ_[p] G) N) :=
-    .linearMap_of_isNoetherian
   have : IsAdicComplete (Ideal.span {(p : ℤ_[p])}) (Module.End (MonoidAlgebra ℤ_[p] G) N) :=
     .of_finite _ _
   have : IsNoetherian (MonoidAlgebra ℤ_[p] G) N := isNoetherian_of_tower ℤ_[p] inferInstance

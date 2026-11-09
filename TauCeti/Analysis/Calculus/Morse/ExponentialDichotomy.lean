@@ -91,22 +91,22 @@ theorem exists_stableProjection_exponential_bounds (hf : ContDiffAt ℝ 2 f x)
   obtain ⟨alpha, halpha, hs, hu⟩ := hf.exists_linearized_flow_exponential_bounds
   have hs' : ∀ (t : ℝ), 0 ≤ t → ∀ w ∈ (hf.stableProjection hker).range,
       ‖NormedSpace.exp (t • (-hessianOperator f x)) w‖ ≤
-        Real.exp (-alpha * t) * ‖w‖ := by
+        1 * Real.exp (-alpha * t) * ‖w‖ := by
     intro t ht w hw
     have hw' : w ∈ hf.stableLinearSubspace := by
       simpa only [hf.range_stableProjection hker] using hw
-    rw [smul_neg, ← neg_smul]
+    rw [smul_neg, ← neg_smul, one_mul]
     simpa only [linearizedNegativeGradientFlow_apply] using hs t ht w hw'
   have hu' : ∀ (t : ℝ), t ≤ 0 → ∀ w ∈ (hf.stableProjection hker).ker,
       ‖NormedSpace.exp (t • (-hessianOperator f x)) w‖ ≤
-        Real.exp (alpha * t) * ‖w‖ := by
+        1 * Real.exp (alpha * t) * ‖w‖ := by
     intro t ht w hw
     have hw' : w ∈ hf.unstableLinearSubspace := by
       simpa only [hf.ker_stableProjection hker] using hw
-    rw [smul_neg, ← neg_smul]
+    rw [smul_neg, ← neg_smul, one_mul]
     simpa only [linearizedNegativeGradientFlow_apply] using hu t ht w hw'
   exact ContinuousLinearMap.IsIdempotentElem.exists_projection_exponential_bounds
-    (hf.isIdempotentElem_stableProjection hker) halpha hs' hu'
+    (hf.isIdempotentElem_stableProjection hker) one_pos halpha hs' hu'
 
 end ContDiffAt
 
