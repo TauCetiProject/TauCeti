@@ -56,7 +56,11 @@ rotation of the end at `∞` under `σ`. The main results are:
 
 The input part is supported in two small discs about `0` and `1`, and the translated plane datum
 vanishes on the disc of radius `2 exp (2π)` about `c`, so for `0 ≤ c ≤ 1` the two parts have
-disjoint supports and the curvature splits into the curvatures of the two parts.
+disjoint supports and the curvature splits into the curvatures of the two parts. The smoothness of
+the translated plane datum (`TauCeti.Floer.contMDiffAt_negativePlanePerturbation_sub`) and this
+splitting for any datum vanishing away from `c`
+(`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_add_negativePlanePerturbation_sub_le`)
+are stated separately, for reuse by other data with a translated output end.
 
 ## References
 
@@ -329,6 +333,21 @@ private theorem forall_update_inf {P : (ℝ → M → ℝ) → Prop} (h₀ : P 0
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
 
+/-- **The translated plane datum is smooth.** For a period-one Hamiltonian of class `C^n` on
+`ℝ × M`, the negative plane datum translated by the parameter, `(c, w, x) ↦ K(w - c)(x)`, is `C^n`
+jointly in the parameter `c ∈ ℝ`, the domain point `w ∈ ℂ` and the target point. -/
+theorem contMDiffAt_negativePlanePerturbation_sub {n : ℕ∞} {Hp : ℝ → M → ℝ} (hH : Periodic Hp 1)
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry Hp)) (p₀ : ℝ × (ℂ × M)) :
+    ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
+      (fun p : ℝ × (ℂ × M) => negativePlanePerturbation Hp (p.2.1 - p.1) p.2.2) p₀ := by
+  have hsub : ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ) n
+      (fun p : ℝ × (ℂ × M) => p.2.1 - (p.1 : ℂ)) p₀ :=
+    (contMDiffAt_fst.comp _ contMDiffAt_snd).sub
+      (Complex.ofRealCLM.contDiff.contMDiff.contMDiffAt.comp _ contMDiffAt_fst)
+  exact (contMDiff_negativePlanePerturbation hH hHs).contMDiffAt.comp
+    (f := fun p : ℝ × (ℂ × M) => (p.2.1 - (p.1 : ℂ), p.2.2)) _
+    (hsub.prodMk (contMDiffAt_snd.comp _ contMDiffAt_snd))
+
 /-- **The family is smooth.** For period-one Hamiltonians of class `C^n` on `ℝ × M`, the family
 is `C^n` jointly in the parameter `c ∈ ℝ`, the domain point of the thrice-punctured sphere
 `S = ℂ ∖ {0, 1}` and the target point. -/
@@ -345,18 +364,7 @@ theorem contMDiffAt_exchangePerturbation {n : ℕ∞} (hH : ∀ q, Periodic (H q
       (fun _ => rfl) hH) (forall_update_inf
         (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)) contMDiff_const hHs)
       w x).comp (c, ((w : ℂ), x)) contMDiffAt_snd
-  -- The plane part is the smooth plane datum composed with the translation by the parameter.
-  have hsub : ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ) n
-      (fun p : ℝ × (ℂ × M) => p.2.1 - (p.1 : ℂ)) (c, ((w : ℂ), x)) :=
-    (contMDiffAt_fst.comp _ contMDiffAt_snd).sub
-      (Complex.ofRealCLM.contDiff.contMDiff.contMDiffAt.comp _ contMDiffAt_fst)
-  have hpl : ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
-      (fun p : ℝ × (ℂ × M) => negativePlanePerturbation (H inf) (p.2.1 - p.1) p.2.2)
-      (c, ((w : ℂ), x)) :=
-    (contMDiff_negativePlanePerturbation (hH inf) (hHs inf)).contMDiffAt.comp
-      (f := fun p : ℝ × (ℂ × M) => (p.2.1 - (p.1 : ℂ), p.2.2)) _
-      (hsub.prodMk (contMDiffAt_snd.comp _ contMDiffAt_snd))
-  exact hin.add hpl
+  exact hin.add (contMDiffAt_negativePlanePerturbation_sub (hH inf) (hHs inf) _)
 
 end TauCeti.Floer
 
@@ -366,6 +374,95 @@ open Floer MeasureTheory
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {H : Puncture → ℝ → V → ℝ}
+
+/-- **Curvature of a datum plus a far-away translated plane datum.** Let `K` be a perturbation
+datum on `ℂ` vanishing at distance at least `3` from `c ∈ ℝ`, and let `P` be the negative plane
+datum of a period-one `C¹` Hamiltonian `H_p` with `|H_p| ≤ B_p`. The plane datum translated by `c`
+vanishes on the disc of radius `2 exp (2π)` about `c`, so the two data have disjoint supports, and
+for every map `u` into the target the integrated curvature of `K + P(· - c)` over the plane is at
+most that of `K` plus `B_p`. -/
+theorem lintegral_enorm_hamiltonianCurvature_add_negativePlanePerturbation_sub_le
+    (ω : SymplecticForm V) {K : ℂ → V → ℂ →L[ℝ] ℝ} {Hp : ℝ → V → ℝ} (hH : Periodic Hp 1)
+    (hHs : ContDiff ℝ 1 (uncurry Hp)) {Bp : ℝ} (hB : ∀ t x, |Hp t x| ≤ Bp) {c : ℝ}
+    (hK : ∀ w : ℂ, 3 ≤ ‖w - c‖ → ∀ x, K w x = 0) (u : ℝ × ℝ → V) :
+    ∫⁻ z, ‖ω.hamiltonianCurvature
+        (fun z x ↦ (K (Complex.equivRealProdCLM.symm z) x +
+          negativePlanePerturbation Hp (Complex.equivRealProdCLM.symm z - c) x) 1)
+        (fun z x ↦ (K (Complex.equivRealProdCLM.symm z) x +
+          negativePlanePerturbation Hp (Complex.equivRealProdCLM.symm z - c) x) Complex.I)
+        z (u z)‖ₑ ≤
+      (∫⁻ z, ‖ω.hamiltonianCurvature (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)‖ₑ) +
+        ENNReal.ofReal Bp := by
+  set e := Complex.equivRealProdCLM.symm
+  -- The two parts of the datum, as components in real coordinates.
+  set Ki : ℂ → ℝ × ℝ → V → ℝ := fun v z x ↦ K (e z) x v
+  set Kp : ℂ → ℝ × ℝ → V → ℝ := fun v z x ↦ negativePlanePerturbation Hp (e z) x v
+  set a : ℝ × ℝ := ((c : ℝ), (0 : ℝ))
+  have he (z : ℝ × ℝ) : e z - c = e (z + -a) := by
+    simp only [e, a, map_add, map_neg]
+    apply Complex.ext <;> simp [sub_eq_add_neg]
+  -- Near the disc `‖w - c‖ < 2 exp (2π)` the datum is `K`; outside the disc it is the
+  -- translated plane datum.
+  set A : Set (ℝ × ℝ) := {z | ‖e z - c‖ < 2 * Real.exp (2 * π)}
+  have hcont : Continuous fun z : ℝ × ℝ => ‖e z - c‖ := (e.continuous.sub continuous_const).norm
+  have hA : IsOpen A := isOpen_lt hcont continuous_const
+  have hexp : 3 < 2 * Real.exp (2 * π) := by
+    nlinarith [Real.add_one_le_exp (2 * π), Real.two_le_pi]
+  have hin (v : ℂ) {z : ℝ × ℝ} (hz : z ∈ A) :
+      (fun z x ↦ (K (e z) x + negativePlanePerturbation Hp (e z - c) x) v) =ᶠ[𝓝 z] Ki v := by
+    filter_upwards [hA.mem_nhds hz] with z' hz'
+    funext x
+    rw [negativePlanePerturbation_eq_zero_of_norm_le hz'.le, add_zero]
+  have hout (v : ℂ) {z : ℝ × ℝ} (hz : z ∉ A) :
+      (fun z x ↦ (K (e z) x + negativePlanePerturbation Hp (e z - c) x) v) =ᶠ[𝓝 z]
+        fun z ↦ Kp v (z + -a) := by
+    have h3 : 3 < ‖e z - c‖ := hexp.trans_le (not_lt.1 hz)
+    filter_upwards [(isOpen_lt continuous_const hcont).mem_nhds h3] with z' hz'
+    funext x
+    simp only [Kp, hK _ hz'.le, zero_add, he]
+  -- Hence the curvature is that of one of the two parts at every point.
+  have hRin {z : ℝ × ℝ} (hz : z ∈ A) :
+      ω.hamiltonianCurvature
+        (fun z x ↦ (K (e z) x + negativePlanePerturbation Hp (e z - c) x) 1)
+        (fun z x ↦ (K (e z) x + negativePlanePerturbation Hp (e z - c) x) Complex.I) z =
+      ω.hamiltonianCurvature (Ki 1) (Ki Complex.I) z :=
+    ω.hamiltonianCurvature_congr_of_eventuallyEq (hin 1 hz) (hin Complex.I hz)
+  have hRout {z : ℝ × ℝ} (hz : z ∈ Aᶜ) :
+      ω.hamiltonianCurvature
+        (fun z x ↦ (K (e z) x + negativePlanePerturbation Hp (e z - c) x) 1)
+        (fun z x ↦ (K (e z) x + negativePlanePerturbation Hp (e z - c) x) Complex.I) z =
+      ω.hamiltonianCurvature (fun w ↦ Kp 1 (w + -a)) (fun w ↦ Kp Complex.I (w + -a)) z :=
+    ω.hamiltonianCurvature_congr_of_eventuallyEq (hout 1 hz) (hout Complex.I hz)
+  -- The bound for the translated plane datum.
+  have hBpl : ∫⁻ z, ‖ω.hamiltonianCurvature (fun w ↦ Kp 1 (w + -a))
+      (fun w ↦ Kp Complex.I (w + -a)) z (u z)‖ₑ ≤ ENNReal.ofReal Bp := by
+    have h := ω.lintegral_enorm_hamiltonianCurvature_comp_add_right (Kp 1) (Kp Complex.I)
+      (fun z ↦ u (z - -a)) (-a)
+    simp only [add_sub_cancel_right] at h
+    rw [h]
+    exact ω.lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le hH hHs hB
+      (fun z ↦ u (z - -a))
+  calc _ = (∫⁻ z in A, ‖ω.hamiltonianCurvature
+            (fun z x ↦ (K (e z) x + negativePlanePerturbation Hp (e z - c) x) 1)
+            (fun z x ↦ (K (e z) x + negativePlanePerturbation Hp (e z - c) x) Complex.I) z
+            (u z)‖ₑ) +
+          ∫⁻ z in Aᶜ, ‖ω.hamiltonianCurvature
+            (fun z x ↦ (K (e z) x + negativePlanePerturbation Hp (e z - c) x) 1)
+            (fun z x ↦ (K (e z) x + negativePlanePerturbation Hp (e z - c) x) Complex.I) z
+            (u z)‖ₑ :=
+        (lintegral_add_compl _ hA.measurableSet).symm
+    _ = (∫⁻ z in A, ‖ω.hamiltonianCurvature (Ki 1) (Ki Complex.I) z (u z)‖ₑ) +
+          ∫⁻ z in Aᶜ, ‖ω.hamiltonianCurvature (fun w ↦ Kp 1 (w + -a))
+            (fun w ↦ Kp Complex.I (w + -a)) z (u z)‖ₑ := by
+        congr 1
+        · exact setLIntegral_congr_fun hA.measurableSet fun z hz => by rw [hRin hz]
+        · exact setLIntegral_congr_fun hA.measurableSet.compl fun z hz => by rw [hRout hz]
+    _ ≤ (∫⁻ z, ‖ω.hamiltonianCurvature (Ki 1) (Ki Complex.I) z (u z)‖ₑ) +
+          ∫⁻ z, ‖ω.hamiltonianCurvature (fun w ↦ Kp 1 (w + -a))
+            (fun w ↦ Kp Complex.I (w + -a)) z (u z)‖ₑ :=
+        add_le_add (setLIntegral_le_lintegral _ _) (setLIntegral_le_lintegral _ _)
+    _ ≤ _ := add_le_add le_rfl hBpl
 
 /-- **The integrated curvature of the input-exchange family is bounded uniformly.** Let `K` be the
 member `c ∈ [0, 1]` of the input-exchange family of period-one `C¹` Hamiltonians `H_q` with
@@ -379,47 +476,7 @@ theorem lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le (ω : Sympl
         (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ∑ q, ENNReal.ofReal (B q) := by
-  set e := Complex.equivRealProdCLM.symm
-  -- The two parts of the datum, as components in real coordinates.
-  set Ki : ℂ → ℝ × ℝ → V → ℝ := fun v z x ↦ pairOfPantsPerturbation (update H inf 0) (e z) x v
-  set Kp : ℂ → ℝ × ℝ → V → ℝ := fun v z x ↦ negativePlanePerturbation (H inf) (e z) x v
-  set a : ℝ × ℝ := ((c : ℝ), (0 : ℝ))
-  have he (z : ℝ × ℝ) : e z - c = e (z + -a) := by
-    simp only [e, a, map_add, map_neg]
-    apply Complex.ext <;> simp [sub_eq_add_neg]
-  -- Near the disc `‖w - c‖ < 2 exp (2π)` the datum is its input part; outside the disc it is the
-  -- translated plane datum.
-  set A : Set (ℝ × ℝ) := {z | ‖e z - c‖ < 2 * Real.exp (2 * π)}
-  have hcont : Continuous fun z : ℝ × ℝ => ‖e z - c‖ := (e.continuous.sub continuous_const).norm
-  have hA : IsOpen A := isOpen_lt hcont continuous_const
-  have hexp : 3 < 2 * Real.exp (2 * π) := by
-    nlinarith [Real.add_one_le_exp (2 * π), Real.two_le_pi]
-  have hin (v : ℂ) {z : ℝ × ℝ} (hz : z ∈ A) :
-      (fun z x ↦ exchangePerturbation H c (e z) x v) =ᶠ[𝓝 z] Ki v := by
-    filter_upwards [hA.mem_nhds hz] with z' hz'
-    funext x
-    rw [exchangePerturbation_def, add_apply,
-      negativePlanePerturbation_eq_zero_of_norm_le hz'.le, zero_apply, add_zero]
-  have hout (v : ℂ) {z : ℝ × ℝ} (hz : z ∉ A) :
-      (fun z x ↦ exchangePerturbation H c (e z) x v) =ᶠ[𝓝 z] fun z ↦ Kp v (z + -a) := by
-    have h3 : 3 < ‖e z - c‖ := hexp.trans_le (not_lt.1 hz)
-    filter_upwards [(isOpen_lt continuous_const hcont).mem_nhds h3] with z' hz'
-    funext x
-    have hw : 3 / 2 ≤ ‖e z' - c‖ := by linarith
-    simp only [Kp, exchangePerturbation_def,
-      pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub hc₀ hc₁ hw, zero_add, he]
-  -- Hence the curvature is that of one of the two parts at every point.
-  have hRin {z : ℝ × ℝ} (hz : z ∈ A) :
-      ω.hamiltonianCurvature (fun z x ↦ exchangePerturbation H c (e z) x 1)
-        (fun z x ↦ exchangePerturbation H c (e z) x Complex.I) z =
-      ω.hamiltonianCurvature (Ki 1) (Ki Complex.I) z :=
-    ω.hamiltonianCurvature_congr_of_eventuallyEq (hin 1 hz) (hin Complex.I hz)
-  have hRout {z : ℝ × ℝ} (hz : z ∈ Aᶜ) :
-      ω.hamiltonianCurvature (fun z x ↦ exchangePerturbation H c (e z) x 1)
-        (fun z x ↦ exchangePerturbation H c (e z) x Complex.I) z =
-      ω.hamiltonianCurvature (fun w ↦ Kp 1 (w + -a)) (fun w ↦ Kp Complex.I (w + -a)) z :=
-    ω.hamiltonianCurvature_congr_of_eventuallyEq (hout 1 hz) (hout Complex.I hz)
-  -- The two bounds: the input part with bounds `B₀`, `B₁`, `0` and the plane part with `B_∞`.
+  -- The input part, with bounds `B₀`, `B₁`, `0`, vanishes away from `c`; the plane part has `B_∞`.
   have hBin := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
     (forall_update_inf (P := fun f => Periodic f 1) (fun _ => rfl) hH)
     (forall_update_inf (P := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
@@ -427,30 +484,13 @@ theorem lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le (ω : Sympl
       rcases eq_or_ne q inf with rfl | hq
       · simp
       · simpa [update_of_ne hq] using hB q t x) u
-  have hBpl : ∫⁻ z, ‖ω.hamiltonianCurvature (fun w ↦ Kp 1 (w + -a))
-      (fun w ↦ Kp Complex.I (w + -a)) z (u z)‖ₑ ≤ ENNReal.ofReal (B inf) := by
-    have h := ω.lintegral_enorm_hamiltonianCurvature_comp_add_right (Kp 1) (Kp Complex.I)
-      (fun z ↦ u (z - -a)) (-a)
-    simp only [add_sub_cancel_right] at h
-    rw [h]
-    exact ω.lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le (hH inf) (hHs inf)
-      (hB inf) (fun z ↦ u (z - -a))
-  calc _ = (∫⁻ z in A, ‖ω.hamiltonianCurvature (fun z x ↦ exchangePerturbation H c (e z) x 1)
-            (fun z x ↦ exchangePerturbation H c (e z) x Complex.I) z (u z)‖ₑ) +
-          ∫⁻ z in Aᶜ, ‖ω.hamiltonianCurvature (fun z x ↦ exchangePerturbation H c (e z) x 1)
-            (fun z x ↦ exchangePerturbation H c (e z) x Complex.I) z (u z)‖ₑ :=
-        (lintegral_add_compl _ hA.measurableSet).symm
-    _ = (∫⁻ z in A, ‖ω.hamiltonianCurvature (Ki 1) (Ki Complex.I) z (u z)‖ₑ) +
-          ∫⁻ z in Aᶜ, ‖ω.hamiltonianCurvature (fun w ↦ Kp 1 (w + -a))
-            (fun w ↦ Kp Complex.I (w + -a)) z (u z)‖ₑ := by
-        congr 1
-        · exact setLIntegral_congr_fun hA.measurableSet fun z hz => by rw [hRin hz]
-        · exact setLIntegral_congr_fun hA.measurableSet.compl fun z hz => by rw [hRout hz]
-    _ ≤ (∫⁻ z, ‖ω.hamiltonianCurvature (Ki 1) (Ki Complex.I) z (u z)‖ₑ) +
-          ∫⁻ z, ‖ω.hamiltonianCurvature (fun w ↦ Kp 1 (w + -a))
-            (fun w ↦ Kp Complex.I (w + -a)) z (u z)‖ₑ :=
-        add_le_add (setLIntegral_le_lintegral _ _) (setLIntegral_le_lintegral _ _)
-    _ ≤ (∑ q, ENNReal.ofReal (update B inf 0 q)) + ENNReal.ofReal (B inf) := add_le_add hBin hBpl
+  simp only [exchangePerturbation_def]
+  refine (ω.lintegral_enorm_hamiltonianCurvature_add_negativePlanePerturbation_sub_le
+    (K := pairOfPantsPerturbation (update H inf 0)) (hH inf) (hHs inf) (hB inf)
+    (fun _ hw x => pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub hc₀ hc₁
+      (by linarith) x) u).trans ?_
+  calc _ ≤ (∑ q, ENNReal.ofReal (update B inf 0 q)) + ENNReal.ofReal (B inf) :=
+        add_le_add hBin le_rfl
     _ = ∑ q, ENNReal.ofReal (B q) := by
         simp [Puncture.sum_univ]
 

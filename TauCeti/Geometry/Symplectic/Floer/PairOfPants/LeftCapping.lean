@@ -66,7 +66,7 @@ the standard cylinder, and the energy identity and action bounds of
 
 public noncomputable section
 
-open Set Real Manifold Topology Function MeasureTheory Filter
+open Set Real Manifold Function MeasureTheory
 open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
 
 namespace TauCeti.Floer
@@ -273,23 +273,9 @@ theorem contMDiffAt_cappedExchangePerturbation {n : ℕ∞} (hH : ∀ q, Periodi
     ((forall_update_iff H fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)).2
       ⟨contMDiff_const, fun q _ => hHs q⟩) hL hw' x
   rw [update_inf_zero] at hcap
-  have hin : ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
-      (fun p : ℝ × (ℂ × M) =>
-        plumbedPerturbation (Pi.single inf (H zero)) (update H inf 0) zero L p.2.1 p.2.2)
-      (c, (w, x)) :=
-    hcap.comp (c, (w, x)) contMDiffAt_snd
   -- The plane part is the smooth plane datum composed with the translation by the parameter.
-  have hsub : ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ) n
-      (fun p : ℝ × (ℂ × M) => p.2.1 - (p.1 : ℂ)) (c, (w, x)) :=
-    (contMDiffAt_fst.comp _ contMDiffAt_snd).sub
-      (Complex.ofRealCLM.contDiff.contMDiff.contMDiffAt.comp _ contMDiffAt_fst)
-  have hpl : ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
-      (fun p : ℝ × (ℂ × M) => negativePlanePerturbation (H inf) (p.2.1 - p.1) p.2.2)
-      (c, (w, x)) :=
-    (contMDiff_negativePlanePerturbation (hH inf) (hHs inf)).contMDiffAt.comp
-      (f := fun p : ℝ × (ℂ × M) => (p.2.1 - (p.1 : ℂ), p.2.2)) _
-      (hsub.prodMk (contMDiffAt_snd.comp _ contMDiffAt_snd))
-  exact hin.add hpl
+  exact (hcap.comp (c, (w, x)) contMDiffAt_snd).add
+    (contMDiffAt_negativePlanePerturbation_sub (hH inf) (hHs inf) _)
 
 end TauCeti.Floer
 
@@ -315,84 +301,28 @@ theorem lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le (ω :
         (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x
           Complex.I)
         z (u z)‖ₑ ≤ ENNReal.ofReal (B zero) + ∑ q, ENNReal.ofReal (B q) := by
-  set e := Complex.equivRealProdCLM.symm
-  -- The two parts of the datum, as components in real coordinates.
-  set Ki : ℂ → ℝ × ℝ → V → ℝ := fun v z x ↦
-    plumbedPerturbation (Pi.single inf (H zero)) (update H inf 0) zero L (e z) x v
-  set Kp : ℂ → ℝ × ℝ → V → ℝ := fun v z x ↦ negativePlanePerturbation (H inf) (e z) x v
-  set a : ℝ × ℝ := ((c : ℝ), (0 : ℝ))
-  have he (z : ℝ × ℝ) : e z - c = e (z + -a) := by
-    simp only [e, a, map_add, map_neg]
-    apply Complex.ext <;> simp [sub_eq_add_neg]
-  -- Near the disc `‖w - c‖ < 2 exp (2π)` the datum is its capped part; outside the disc it is the
-  -- translated plane datum.
-  set A : Set (ℝ × ℝ) := {z | ‖e z - c‖ < 2 * Real.exp (2 * π)}
-  have hcont : Continuous fun z : ℝ × ℝ => ‖e z - c‖ := (e.continuous.sub continuous_const).norm
-  have hA : IsOpen A := isOpen_lt hcont continuous_const
-  have hexp : 3 < 2 * Real.exp (2 * π) := by
-    nlinarith [Real.add_one_le_exp (2 * π), Real.two_le_pi]
-  have hin (v : ℂ) {z : ℝ × ℝ} (hz : z ∈ A) :
-      (fun z x ↦ cappedExchangePerturbation H L c (e z) x v) =ᶠ[𝓝 z] Ki v := by
-    filter_upwards [hA.mem_nhds hz] with z' hz'
-    funext x
-    rw [cappedExchangePerturbation_of_norm_sub_le hz'.le]
-  have hout (v : ℂ) {z : ℝ × ℝ} (hz : z ∉ A) :
-      (fun z x ↦ cappedExchangePerturbation H L c (e z) x v) =ᶠ[𝓝 z] fun z ↦ Kp v (z + -a) := by
-    have h3 : 3 < ‖e z - c‖ := hexp.trans_le (not_lt.1 hz)
-    filter_upwards [(isOpen_lt continuous_const hcont).mem_nhds h3] with z' hz'
-    funext x
-    rw [cappedExchangePerturbation_of_le_norm_sub (by linarith) hc₀ hc₁ (by linarith), he]
-  -- Hence the curvature is that of one of the two parts at every point.
-  have hRin {z : ℝ × ℝ} (hz : z ∈ A) :
-      ω.hamiltonianCurvature (fun z x ↦ cappedExchangePerturbation H L c (e z) x 1)
-        (fun z x ↦ cappedExchangePerturbation H L c (e z) x Complex.I) z =
-      ω.hamiltonianCurvature (Ki 1) (Ki Complex.I) z :=
-    ω.hamiltonianCurvature_congr_of_eventuallyEq (hin 1 hz) (hin Complex.I hz)
-  have hRout {z : ℝ × ℝ} (hz : z ∈ Aᶜ) :
-      ω.hamiltonianCurvature (fun z x ↦ cappedExchangePerturbation H L c (e z) x 1)
-        (fun z x ↦ cappedExchangePerturbation H L c (e z) x Complex.I) z =
-      ω.hamiltonianCurvature (fun w ↦ Kp 1 (w + -a)) (fun w ↦ Kp Complex.I (w + -a)) z :=
-    ω.hamiltonianCurvature_congr_of_eventuallyEq (hout 1 hz) (hout Complex.I hz)
-  -- The two bounds: the capped part with bounds `B₀`, `B₁`, `0` and the plane part with `B_∞`.
-  have hBin : ∫⁻ z, ‖ω.hamiltonianCurvature (Ki 1) (Ki Complex.I) z (u z)‖ₑ ≤
-      ENNReal.ofReal (B zero) + ∑ q, ENNReal.ofReal (update B inf 0 q) := by
-    have h := ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_inf_le
-      (q := zero) (Hb := update H inf 0) (by decide)
-      ((forall_update_iff H fun _ f => Periodic f 1).2 ⟨fun _ => rfl, fun q _ => hH q⟩)
-      ((forall_update_iff H fun _ f => ContDiff ℝ 1 (uncurry f)).2
-        ⟨contDiff_const, fun q _ => hHs q⟩) hL
-      (Bb := update B inf 0) (fun q t x => by
-        rcases eq_or_ne q inf with rfl | hq
-        · simp
-        · simpa [update_of_ne hq] using hB q t x) u
-    simpa only [update_inf_zero, update_of_ne (show zero ≠ inf by decide)] using h
-  have hBpl : ∫⁻ z, ‖ω.hamiltonianCurvature (fun w ↦ Kp 1 (w + -a))
-      (fun w ↦ Kp Complex.I (w + -a)) z (u z)‖ₑ ≤ ENNReal.ofReal (B inf) := by
-    have h := ω.lintegral_enorm_hamiltonianCurvature_comp_add_right (Kp 1) (Kp Complex.I)
-      (fun z ↦ u (z - -a)) (-a)
-    simp only [add_sub_cancel_right] at h
-    rw [h]
-    exact ω.lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le (hH inf) (hHs inf)
-      (hB inf) (fun z ↦ u (z - -a))
-  calc _ = (∫⁻ z in A, ‖ω.hamiltonianCurvature
-            (fun z x ↦ cappedExchangePerturbation H L c (e z) x 1)
-            (fun z x ↦ cappedExchangePerturbation H L c (e z) x Complex.I) z (u z)‖ₑ) +
-          ∫⁻ z in Aᶜ, ‖ω.hamiltonianCurvature
-            (fun z x ↦ cappedExchangePerturbation H L c (e z) x 1)
-            (fun z x ↦ cappedExchangePerturbation H L c (e z) x Complex.I) z (u z)‖ₑ :=
-        (lintegral_add_compl _ hA.measurableSet).symm
-    _ = (∫⁻ z in A, ‖ω.hamiltonianCurvature (Ki 1) (Ki Complex.I) z (u z)‖ₑ) +
-          ∫⁻ z in Aᶜ, ‖ω.hamiltonianCurvature (fun w ↦ Kp 1 (w + -a))
-            (fun w ↦ Kp Complex.I (w + -a)) z (u z)‖ₑ := by
-        congr 1
-        · exact setLIntegral_congr_fun hA.measurableSet fun z hz => by rw [hRin hz]
-        · exact setLIntegral_congr_fun hA.measurableSet.compl fun z hz => by rw [hRout hz]
-    _ ≤ (∫⁻ z, ‖ω.hamiltonianCurvature (Ki 1) (Ki Complex.I) z (u z)‖ₑ) +
-          ∫⁻ z, ‖ω.hamiltonianCurvature (fun w ↦ Kp 1 (w + -a))
-            (fun w ↦ Kp Complex.I (w + -a)) z (u z)‖ₑ :=
-        add_le_add (setLIntegral_le_lintegral _ _) (setLIntegral_le_lintegral _ _)
-    _ ≤ (ENNReal.ofReal (B zero) + ∑ q, ENNReal.ofReal (update B inf 0 q)) +
-          ENNReal.ofReal (B inf) := add_le_add hBin hBpl
+  -- The capped part, with bounds `B₀`, `B₁`, `0`, vanishes away from `c`; the plane part has `B_∞`.
+  have hBin := ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_inf_le
+    (q := zero) (Hb := update H inf 0) (by decide)
+    ((forall_update_iff H fun _ f => Periodic f 1).2 ⟨fun _ => rfl, fun q _ => hH q⟩)
+    ((forall_update_iff H fun _ f => ContDiff ℝ 1 (uncurry f)).2
+      ⟨contDiff_const, fun q _ => hHs q⟩) hL
+    (Bb := update B inf 0) (fun q t x => by
+      rcases eq_or_ne q inf with rfl | hq
+      · simp
+      · simpa [update_of_ne hq] using hB q t x) u
+  have hK (w : ℂ) (hw : 3 ≤ ‖w - c‖) (x : V) :
+      plumbedPerturbation (Pi.single inf (H zero)) (update H inf 0) zero L w x = 0 := by
+    have h := cappedExchangePerturbation_of_le_norm_sub (H := H) (L := L) (by linarith) hc₀ hc₁
+      (by linarith : 3 / 2 ≤ ‖w - c‖) x
+    rwa [cappedExchangePerturbation_def, add_eq_right] at h
+  simp only [cappedExchangePerturbation_def]
+  refine (ω.lintegral_enorm_hamiltonianCurvature_add_negativePlanePerturbation_sub_le
+    (hH inf) (hHs inf) (hB inf) hK u).trans ?_
+  calc _ ≤ (ENNReal.ofReal (B zero) + ∑ q, ENNReal.ofReal (update B inf 0 q)) +
+          ENNReal.ofReal (B inf) := by
+        gcongr
+        simpa only [update_inf_zero, update_of_ne (show zero ≠ inf by decide)] using hBin
     _ = ENNReal.ofReal (B zero) + ∑ q, ENNReal.ofReal (B q) := by
         simp [Puncture.sum_univ, add_assoc]
 
