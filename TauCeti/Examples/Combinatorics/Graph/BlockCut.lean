@@ -67,9 +67,6 @@ theorem toSimpleGraph_adj {x y : V(graph)} :
   exact ⟨fun ⟨hxy, h⟩ ↦ h.resolve_right fun ⟨hx, hy⟩ ↦ hxy (Subtype.ext (hx.trans hy.symm)),
     fun h ↦ ⟨fun hxy ↦ h.ne (congrArg Subtype.val hxy), Or.inl h⟩⟩
 
-private instance : DecidableRel trianglesSharingVertex.Adj := fun _ _ ↦
-  decidable_of_iff' _ (trianglesSharingVertex_adj _ _)
-
 /-- The first triangle `0 — 1 — 2`, as a set of actual vertices of `graph`. -/
 def firstTriangle : Set V(graph) := Subtype.val ⁻¹' {0, 1, 2}
 
@@ -113,7 +110,8 @@ private theorem isBlock_preimage {S : Set (Fin 5)} {a : Fin 5} (ha : a ∈ S) (h
   refine hBC.antisymm fun y hyC ↦ by_contra fun hyB ↦ ?_
   -- A walk inside `C` from `a` to `y` avoiding `0` would leave the triangle away from `0`.
   obtain ⟨p, hp⟩ := exists_walk_forall_mem_support_mem_and_ne (x := vertex 0) hconn hcut
-    (hBC (show vertex a ∈ Subtype.val ⁻¹' S from ha)) hyC (fun h ↦ ha0 (congrArg Subtype.val h))
+    (hBC (Set.mem_preimage.mpr ha : vertex a ∈ Subtype.val ⁻¹' S)) hyC
+    (fun h ↦ ha0 (congrArg Subtype.val h))
     (fun hy ↦ hyB (hy ▸ h0))
   obtain ⟨d, hd, hdB, hdB'⟩ := p.exists_boundary_dart _ ha hyB
   have hd0 : d.fst ≠ vertex 0 := (hp _ (p.dart_fst_mem_support_of_mem_darts hd)).2
@@ -243,6 +241,7 @@ theorem isLoopAt_induce_of_isBlock {B : Set V(graph)} (hB : graph.IsBlock B) :
     (graph.induce (Subtype.val '' B)).IsLoopAt s(0, 0) 0 := by
   have h0 : vertex 0 ∈ B := by
     rcases isBlock_iff.mp hB with rfl | rfl <;> simp
+  rw [← Graph.isLink_self_iff, Graph.induce_isLink]
   exact ⟨isLoopAt, ⟨_, h0, rfl⟩, ⟨_, h0, rfl⟩⟩
 
 end TauCeti.Examples.TrianglesSharingVertexBlockCut
