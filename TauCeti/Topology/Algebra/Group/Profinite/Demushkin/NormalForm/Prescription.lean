@@ -900,21 +900,6 @@ theorem hasPrescriptionProperty_presentedProP_demushkinWordTwoEvenPadic_of_apply
     refine (Units.mul_right_eq_zero (χ (presentedProPGen 2 n _ 1))).1 ?_
     linear_combination hc01 + F (freeProPGen 2 n 0) * h₁
 
-/-- The relator `x₁^{2+α} (x₁, x₂) x₃^q (x₃, x₄) ⋯ (x_{n-1}, x_n)` lies in the Frattini subgroup
-for `α` even and `q` even whenever the factor `x₃^q` is present (`2 < n`). At `n = 2` the
-generator `x₃` is `1`, so the relator is the one with `q = 0`. -/
-theorem demushkinWordTwoEvenPadic_singleton_subset_proPFrattini (hα : 2 ∣ α)
-    (hq : 2 < n → 2 ∣ q) (hn : 1 < n) :
-    ({demushkinWordTwoEvenPadic (isProP_freeProP 2 (Fin n)) α q n (freeProPGen 2 n)} :
-      Set (freeProP 2 (Fin n))) ⊆ proPFrattini 2 (freeProP 2 (Fin n)) := by
-  refine Set.singleton_subset_iff.2 ?_
-  rcases lt_or_ge 2 n with hn₂ | hn₂
-  · exact demushkinWordTwoEvenPadic_mem_proPFrattini _ α q n _ hα (hq hn₂)
-  · obtain rfl : n = 2 := by omega
-    have h2 : freeProPGen 2 2 2 = 1 := freeProPGen_eq_one_of_le 2 le_rfl
-    rw [demushkinWordTwoEvenPadic_two _ _ _ _ h2, ← demushkinWordTwoEvenPadic_two _ α 0 _ h2]
-    exact demushkinWordTwoEvenPadic_mem_proPFrattini _ α 0 2 _ hα (dvd_zero 2)
-
 /-- **The prescription property forces `χ(x₁) = 1`** (Labute, Theorem 4, the forced computation on
 a derivation) for `x₁^{2+α} (x₁, x₂) x₃^q (x₃, x₄) ⋯ (x_{n-1}, x_n)`, `n ≥ 2`. -/
 theorem apply_presentedProPGen_zero_eq_one_of_hasPrescriptionProperty_demushkinWordTwoEvenPadic
