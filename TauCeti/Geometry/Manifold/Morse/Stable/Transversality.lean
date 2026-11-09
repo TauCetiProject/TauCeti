@@ -107,7 +107,7 @@ theorem finrank_span_mtangentConeAt_unstableSet (hf : IsMorse 𝓘(ℝ, E) f)
     (hy : y ∈ hX.flow.unstableSet a) :
     Module.finrank ℝ (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a) y)) =
       manifoldMorseIndex 𝓘(ℝ, E) f a := by
-  have ha := hX.mfderiv_eq_zero_of_mem_unstableSet (hf.contMDiff.mdifferentiable (by simp) a) hy
+  have ha := hX.mfderiv_eq_zero_of_mem_unstableSet hy
   obtain ⟨L, q, hL, hyq, hq, hs⟩ := hX.exists_isSliceChart_unstableSet hf ha hy
   rwa [hs.finrank_span_mtangentConeAt (by simp) hq L.closed_of_finiteDimensional hyq hy]
 
@@ -202,8 +202,8 @@ theorem finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMors
         (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y)) +
       manifoldMorseIndex 𝓘(ℝ, E) f b = manifoldMorseIndex 𝓘(ℝ, E) f a := by
   have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
-  have ha := hX.mfderiv_eq_zero_of_mem_unstableSet (hdf a) hy.1
-  have hb := hX.mfderiv_eq_zero_of_mem_stableSet (hdf b) hy.2
+  have ha := hX.mfderiv_eq_zero_of_mem_unstableSet hy.1
+  have hb := hX.mfderiv_eq_zero_of_mem_stableSet hy.2
   have hdim := Submodule.finrank_sup_add_finrank_inf_eq
     (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a) y))
     (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y))
@@ -327,9 +327,8 @@ theorem IsMorseSmale.exists_unstableSet_inter_stableSet_isManifold
         ContMDiff 𝓘(ℝ, L) 𝓘(ℝ, E) ∞
           (Subtype.val : ↥(hX.flow.unstableSet a ∩ hX.flow.stableSet b) → M) := by
   obtain ⟨y₀, hy₀⟩ := hne
-  have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
-  have ha := hX.mfderiv_eq_zero_of_mem_unstableSet (hdf a) hy₀.1
-  have hb := hX.mfderiv_eq_zero_of_mem_stableSet (hdf b) hy₀.2
+  have ha := hX.mfderiv_eq_zero_of_mem_unstableSet hy₀.1
+  have hb := hX.mfderiv_eq_zero_of_mem_stableSet hy₀.2
   -- Every tangent space of the intersection has dimension `ind a - ind b`; model it on one of them.
   refine ⟨Submodule.span ℝ
       (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y₀),
@@ -353,10 +352,9 @@ theorem IsMorseSmale.manifoldMorseIndex_lt {hX : IsAdaptedPseudoGradient f X}
     (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) (hab : a ≠ b)
     (hne : (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty) :
     manifoldMorseIndex 𝓘(ℝ, E) f b < manifoldMorseIndex 𝓘(ℝ, E) f a :=
-  have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
   hX.manifoldMorseIndex_lt_of_mem_unstableSet_inter_stableSet hf hab hne.some_mem
-    (h (hX.mfderiv_eq_zero_of_mem_unstableSet (hdf a) hne.some_mem.1)
-      (hX.mfderiv_eq_zero_of_mem_stableSet (hdf b) hne.some_mem.2) hne.some_mem)
+    (h (hX.mfderiv_eq_zero_of_mem_unstableSet hne.some_mem.1)
+      (hX.mfderiv_eq_zero_of_mem_stableSet hne.some_mem.2) hne.some_mem)
 
 end IsAdaptedPseudoGradient
 
