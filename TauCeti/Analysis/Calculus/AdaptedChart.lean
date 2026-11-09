@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Operator.Banach
-public import TauCeti.Analysis.Calculus.FDeriv.Equiv
+public import TauCeti.Analysis.Calculus.FDeriv.PullbackEnd
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Analysis.Calculus.NormalExtension
 public import TauCeti.LinearAlgebra.TotallyReal.Frame
@@ -15,10 +15,10 @@ public import TauCeti.LinearAlgebra.TotallyReal.Frame
 /-!
 # Charts adapted to a totally real parametrization
 
-Let `γ : V → W` parametrize a submanifold of a real normed space `W` and let `J` be a field of
+Let `γ : V → W` parametrize a submanifold of a normed space `W` and let `J` be a field of
 endomorphisms of `W` with `J² = -1` along `γ`. The adapted normal extension
 `Φ (x, y) = γ x + J (γ x) (Dγ x y)` of `TauCeti.adaptedNormalExtension` has derivative
-`(v, w) ↦ Dγ x v + J (γ x) (Dγ x w)` along the zero section. This file shows that this
+`(v, w) ↦ Dγ x v + J (γ x) (Dγ x w)` along the zero section. Over `ℝ`, this file shows that this
 derivative is invertible exactly when `Dγ x` is injective with maximal totally real image, and
 inverts `Φ` near such a point. The inverse `ψ = Φ⁻¹` is the chart of McDuff–Salamon
 Exercise B.4.10 in the model case `M = W`, `L = γ (V)`.
@@ -27,22 +27,20 @@ The chart is packaged as an `OpenPartialHomeomorph (V × V) W` whose underlying 
 coordinates on `V × V` are the model coordinates, with the zero section `V × {0}` playing the
 role of `ℝⁿ ⊆ ℂⁿ` and `(v, w) ↦ (-w, v)` the role of multiplication by `i`. Every property
 below is stated for an arbitrary such partial homeomorphism, so a consumer may shrink the chart
-freely.
+freely, and over an arbitrary nontrivially normed field.
 
 * Flattening: the chart sends the zero section of its source onto the parametrized
   submanifold, and nothing else in its source onto it.
 * Intertwining: along the submanifold, the derivative of `ψ` turns `J` into the standard
   structure.
 * Pushforward: the field `e.pullbackEnd J p = Dψ (e p) ∘ J (e p) ∘ De p`, the structure
-  `ψ_* J` in model coordinates, is `C^n` whenever the chart is `C^(n+1)` and `J` is `C^n`;
-  so for a `C^ℓ` structure and a `C^(ℓ+1)` parametrization it is `C^(ℓ-1)`. It equals the
-  standard structure on the zero section.
+  `ψ_* J` in model coordinates, is `C^n` whenever the chart is `C^(n+1)` and `J` is `C^n`
+  (`OpenPartialHomeomorph.contDiffOn_pullbackEnd`); so for a `C^ℓ` structure and a
+  `C^(ℓ+1)` parametrization it is `C^(ℓ-1)`. It equals the standard structure on the zero
+  section.
 
 ## Main declarations
 
-* `OpenPartialHomeomorph.pullbackEnd`: the pullback of an endomorphism field along a partial
-  homeomorphism, as a field on its source.
-* `OpenPartialHomeomorph.contDiffOn_pullbackEnd`: the pullback costs one derivative.
 * `TauCeti.isInvertible_fderiv_adaptedNormalExtension_zero_iff`: the derivative of the adapted
   extension on the zero section is invertible exactly for maximal totally real tangent spaces.
 * `TauCeti.exists_adaptedChart`: the inverse function theorem for the adapted extension, with a
@@ -56,8 +54,6 @@ freely.
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
   Exercise B.4.10.
-* [The PseudoholomorphicCurveAnalysis roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/PseudoholomorphicCurveAnalysis/README.md),
-  PH2.3.
 -/
 
 public noncomputable section
@@ -65,59 +61,15 @@ public noncomputable section
 open Set Filter
 open scoped Topology ContDiff
 
-section PartialHomeomorph
-
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-namespace OpenPartialHomeomorph
-
-variable {e : OpenPartialHomeomorph E F}
-
-/-- The pullback `(e^* J) p = (De_p)⁻¹ ∘ J (e p) ∘ De_p` of an endomorphism field along a
-partial homeomorphism, as a field on its source. The inverse of `De_p` is written as the
-derivative of `e.symm`, so no inversion of operators is involved. -/
-def pullbackEnd (e : OpenPartialHomeomorph E F) (J : F → F →L[ℝ] F) (p : E) : E →L[ℝ] E :=
-  (fderiv ℝ e.symm (e p)).comp ((J (e p)).comp (fderiv ℝ e p))
-
-/-- Evaluate a pulled-back endomorphism field. -/
-theorem pullbackEnd_apply (J : F → F →L[ℝ] F) (p v : E) :
-    e.pullbackEnd J p v = fderiv ℝ e.symm (e p) (J (e p) (fderiv ℝ e p v)) := by
-  simp only [pullbackEnd, ContinuousLinearMap.comp_apply]
-
-/-- **Pulling back costs one derivative.** If a partial homeomorphism and its inverse are
-`C^ℓ` and the field `J` is `C^n` on the target with `n + 1 ≤ ℓ`, the pulled-back field is
-`C^n` on the source. -/
-theorem contDiffOn_pullbackEnd {J : F → F →L[ℝ] F} {ℓ n : ℕ∞ω}
-    (he : ContDiffOn ℝ ℓ e e.source) (hes : ContDiffOn ℝ ℓ e.symm e.target)
-    (hJ : ContDiffOn ℝ n J e.target) (hn : n + 1 ≤ ℓ) :
-    ContDiffOn ℝ n (e.pullbackEnd J) e.source := by
-  have he' := he.of_le (le_self_add.trans hn)
-  exact ((hes.fderiv_of_isOpen e.open_target hn).comp he' e.mapsTo).clm_comp
-    ((hJ.comp he' e.mapsTo).clm_comp (he.fderiv_of_isOpen e.open_source hn))
-
-/-- The derivative of `e` is complex linear from the pulled-back structure to `J`. -/
-theorem fderiv_comp_pullbackEnd (J : F → F →L[ℝ] F) {p : E} (hp : p ∈ e.source)
-    (he : DifferentiableAt ℝ e p) (hs : DifferentiableAt ℝ e.symm (e p)) :
-    (fderiv ℝ e p).comp (e.pullbackEnd J p) = (J (e p)).comp (fderiv ℝ e p) := by
-  have h := e.fderiv_comp_fderiv_symm (e.map_source hp)
-    (by rwa [e.left_inv hp]) hs
-  rw [e.left_inv hp] at h
-  rw [pullbackEnd, ← ContinuousLinearMap.comp_assoc, h, ContinuousLinearMap.id_comp]
-
-end OpenPartialHomeomorph
-
-end PartialHomeomorph
-
 namespace TauCeti
 
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup W] [NormedSpace ℝ W] {γ : V → W} {J : W → W →L[ℝ] W}
 
-/-- **The adapted extension is a local diffeomorphism exactly at maximal totally real points.**
-For an injective tangent map `Dγ x` and `J² = -1` at `γ x`, the derivative of the adapted
-extension at `(x, 0)` is invertible if and only if the image of `Dγ x` is maximal totally real
-for `J (γ x)`. -/
+/-- **The derivative of the adapted extension on the zero section is invertible exactly at
+maximal totally real points.** For an injective tangent map `Dγ x` and `J² = -1` at `γ x`,
+the derivative of the adapted extension at `(x, 0)` is invertible if and only if the image of
+`Dγ x` is maximal totally real for `J (γ x)`. -/
 theorem isInvertible_fderiv_adaptedNormalExtension_zero_iff [CompleteSpace V] [CompleteSpace W]
     {x : V} (hγ : ContDiffAt ℝ 1 γ x) (hJ : ContinuousAt J (γ x))
     (hsq : ∀ v, J (γ x) (J (γ x) v) = -v) (hinj : Function.Injective (fderiv ℝ γ x)) :
@@ -125,10 +77,14 @@ theorem isInvertible_fderiv_adaptedNormalExtension_zero_iff [CompleteSpace V] [C
       IsMaximalTotallyReal (J (γ x)).toLinearMap (fderiv ℝ γ x).range := by
   have hJinj : Function.Injective (J (γ x)) := fun a b h ↦ by
     simpa [hsq] using congrArg (J (γ x)) h
-  rw [← bijective_coprod_iff_isMaximalTotallyReal_range hinj (hJinj.comp hinj),
-    fderiv_adaptedNormalExtension_zero hγ hJ]
   set D := (fderiv ℝ γ x).coprod ((J (γ x)).comp (fderiv ℝ γ x))
-  change D.IsInvertible ↔ Function.Bijective D
+  -- The continuous and the algebraic doubled frames have the same underlying function.
+  have hD : ⇑((fderiv ℝ γ x).toLinearMap.coprod ((J (γ x)).toLinearMap.comp
+      (fderiv ℝ γ x).toLinearMap)) = ⇑D := by
+    funext p
+    simp [D, ContinuousLinearMap.coprod_apply]
+  rw [← bijective_coprod_iff_isMaximalTotallyReal_range hinj (hJinj.comp hinj), hD,
+    fderiv_adaptedNormalExtension_zero hγ hJ]
   refine ⟨ContinuousLinearMap.IsInvertible.bijective, fun h ↦ ?_⟩
   exact ⟨ContinuousLinearEquiv.ofBijective D (LinearMap.ker_eq_bot.mpr h.1)
     (LinearMap.range_eq_top.mpr h.2), ContinuousLinearEquiv.coe_ofBijective _ _ _⟩
@@ -168,14 +124,21 @@ end TauCeti
 
 namespace OpenPartialHomeomorph
 
-variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-  [NormedAddCommGroup W] [NormedSpace ℝ W] {γ : V → W} {J : W → W →L[ℝ] W}
+variable {𝕜 V W : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [NormedAddCommGroup W] [NormedSpace 𝕜 W] {γ : V → W} {J : W → W →L[𝕜] W}
   {e : OpenPartialHomeomorph (V × V) W}
 
 /-- An adapted chart inverts the parametrization on the zero section of its source. -/
 theorem symm_apply_of_coe_eq_adaptedNormalExtension (he : ⇑e = TauCeti.adaptedNormalExtension γ J)
     {x : V} (hx : (x, 0) ∈ e.source) : e.symm (γ x) = (x, 0) := by
   rw [← TauCeti.adaptedNormalExtension_zero γ J x, ← he, e.left_inv hx]
+
+/-- An adapted chart sends the zero section of its source into its target along `γ`. -/
+theorem mem_target_of_coe_eq_adaptedNormalExtension
+    (he : ⇑e = TauCeti.adaptedNormalExtension γ J) {x : V} (hx : (x, 0) ∈ e.source) :
+    γ x ∈ e.target := by
+  rw [← TauCeti.adaptedNormalExtension_zero γ J x, ← he]
+  exact e.map_source hx
 
 /-- **Flattening.** A point of the source of an adapted chart is sent into the parametrized
 submanifold `γ {x | (x, 0) ∈ e.source}` exactly when it lies on the zero section. -/
@@ -189,83 +152,70 @@ theorem isImage_of_coe_eq_adaptedNormalExtension (he : ⇑e = TauCeti.adaptedNor
   · intro h0
     have hp' : p = (p.1, 0) := Prod.ext rfl h0
     refine ⟨p.1, ?_, ?_⟩
-    · change (p.1, (0 : V)) ∈ e.source
-      rwa [← hp']
+    · rw [mem_ofPred_eq, ← hp']
+      exact hp
     · rw [hp', he, TauCeti.adaptedNormalExtension_zero]
 
 /-- **Intertwining.** Along the parametrized submanifold, the derivative of an adapted chart
 turns `J` into the standard structure `(v, w) ↦ (-w, v)`, provided `J² = -1` there. -/
 theorem fderiv_symm_apply_of_coe_eq_adaptedNormalExtension
     (he : ⇑e = TauCeti.adaptedNormalExtension γ J) {x : V} (hx : (x, 0) ∈ e.source)
-    (hγ : ContDiffAt ℝ 1 γ x) (hJ : ContinuousAt J (γ x))
-    (hsq : ∀ v, J (γ x) (J (γ x) v) = -v) (hs : DifferentiableAt ℝ e.symm (γ x)) (w : W) :
-    fderiv ℝ e.symm (γ x) (J (γ x) w) =
-      (-(fderiv ℝ e.symm (γ x) w).2, (fderiv ℝ e.symm (γ x) w).1) := by
+    (hγ : ContDiffAt 𝕜 1 γ x) (hJ : ContinuousAt J (γ x))
+    (hsq : ∀ v, J (γ x) (J (γ x) v) = -v) (hs : DifferentiableAt 𝕜 e.symm (γ x)) (w : W) :
+    fderiv 𝕜 e.symm (γ x) (J (γ x) w) =
+      (-(fderiv 𝕜 e.symm (γ x) w).2, (fderiv 𝕜 e.symm (γ x) w).1) := by
   have hsymm := e.symm_apply_of_coe_eq_adaptedNormalExtension he hx
+  have hγt := e.mem_target_of_coe_eq_adaptedNormalExtension he hx
   have hD := TauCeti.hasFDerivAt_adaptedNormalExtension_zero hγ hJ
   rw [← he] at hD
-  have hγt : γ x ∈ e.target := by
-    rw [← TauCeti.adaptedNormalExtension_zero γ J x, ← he]
-    exact e.map_source hx
-  have hright := e.fderiv_comp_fderiv_symm hγt (by rw [hsymm]; exact hD.differentiableAt) hs
-  have hleft := e.fderiv_symm_comp_fderiv hγt (by rw [hsymm]; exact hD.differentiableAt) hs
+  have hd : DifferentiableAt 𝕜 e (e.symm (γ x)) := by rw [hsymm]; exact hD.differentiableAt
+  have hright := e.fderiv_apply_fderiv_symm_apply hγt hd hs w
+  have hleft := e.fderiv_symm_apply_fderiv_apply hγt hd hs
   rw [hsymm] at hright hleft
-  set D := fderiv ℝ e (x, 0)
-  set D' := fderiv ℝ e.symm (γ x)
-  have hw : D (D' w) = w := by
-    simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] using
-      congrArg (fun L : W →L[ℝ] W ↦ L w) hright
-  have hint := TauCeti.fderiv_adaptedNormalExtension_intertwines hγ hJ hsq (D' w).1 (D' w).2
-  rw [← he] at hint
-  change D (-(D' w).2, (D' w).1) = J (γ x) (D ((D' w).1, (D' w).2)) at hint
-  calc D' (J (γ x) w) = D' (J (γ x) (D ((D' w).1, (D' w).2))) := by rw [Prod.mk.eta, hw]
-    _ = D' (D (-(D' w).2, (D' w).1)) := by rw [hint]
-    _ = (-(D' w).2, (D' w).1) := by
-      simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] using
-        congrArg (fun L : V × V →L[ℝ] V × V ↦ L (-(D' w).2, (D' w).1)) hleft
+  have hint := TauCeti.fderiv_adaptedNormalExtension_intertwines hγ hJ hsq
+    (fderiv 𝕜 e.symm (γ x) w).1 (fderiv 𝕜 e.symm (γ x) w).2
+  rw [← he, Prod.mk.eta, hright] at hint
+  rw [← hint, hleft]
 
 /-- **The pushed-forward structure is standard on the zero section.** At a point `(x, 0)` of
 the source of an adapted chart where `J² = -1`, the pulled-back structure is
 `(v, w) ↦ (-w, v)`. -/
 theorem pullbackEnd_of_coe_eq_adaptedNormalExtension
     (he : ⇑e = TauCeti.adaptedNormalExtension γ J) {x : V} (hx : (x, 0) ∈ e.source)
-    (hγ : ContDiffAt ℝ 1 γ x) (hJ : ContinuousAt J (γ x))
-    (hsq : ∀ v, J (γ x) (J (γ x) v) = -v) (hs : DifferentiableAt ℝ e.symm (γ x)) :
+    (hγ : ContDiffAt 𝕜 1 γ x) (hJ : ContinuousAt J (γ x))
+    (hsq : ∀ v, J (γ x) (J (γ x) v) = -v) (hs : DifferentiableAt 𝕜 e.symm (γ x)) :
     e.pullbackEnd J (x, 0) =
-      (-ContinuousLinearMap.snd ℝ V V).prod (ContinuousLinearMap.fst ℝ V V) := by
+      (-ContinuousLinearMap.snd 𝕜 V V).prod (ContinuousLinearMap.fst 𝕜 V V) := by
+  have hsymm := e.symm_apply_of_coe_eq_adaptedNormalExtension he hx
+  have hγt := e.mem_target_of_coe_eq_adaptedNormalExtension he hx
   have hD := TauCeti.hasFDerivAt_adaptedNormalExtension_zero hγ hJ
   rw [← he] at hD
+  have hd : DifferentiableAt 𝕜 e (e.symm (γ x)) := by rw [hsymm]; exact hD.differentiableAt
+  have hleft := e.fderiv_symm_apply_fderiv_apply hγt hd hs
+  rw [hsymm] at hleft
   have hex : e (x, 0) = γ x := by rw [he, TauCeti.adaptedNormalExtension_zero]
-  have hγt : γ x ∈ e.target := hex ▸ e.map_source hx
-  have hleft := e.fderiv_symm_comp_fderiv hγt
-    (by rw [← hex, e.left_inv hx]; exact hD.differentiableAt) hs
-  rw [← hex, e.left_inv hx, hex] at hleft
   refine ContinuousLinearMap.ext fun v ↦ ?_
-  have hv : fderiv ℝ e.symm (γ x) (fderiv ℝ e (x, 0) v) = v := by
-    simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] using
-      congrArg (fun L : V × V →L[ℝ] V × V ↦ L v) hleft
   rw [pullbackEnd_apply, hex,
-    e.fderiv_symm_apply_of_coe_eq_adaptedNormalExtension he hx hγ hJ hsq hs, hv]
+    e.fderiv_symm_apply_of_coe_eq_adaptedNormalExtension he hx hγ hJ hsq hs, hleft]
   simp
 
 end OpenPartialHomeomorph
 
 namespace TauCeti
 
-/-! ### Checks -/
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+/-! ### Examples: the flat case and the complex line -/
 
 /-- **No loss of regularity in the flat case.** For the real locus `V × {0}` of `V × V` with
 the standard structure, every adapted chart is the identity and pulls the standard structure
 back to itself on its whole source. -/
-theorem pullbackEnd_of_coe_eq_adaptedNormalExtension_inl
+theorem pullbackEnd_of_coe_eq_adaptedNormalExtension_inl {𝕜 V : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
     {e : OpenPartialHomeomorph (V × V) (V × V)}
-    (he : ⇑e = adaptedNormalExtension (ContinuousLinearMap.inl ℝ V V)
-      (fun _ ↦ (-ContinuousLinearMap.snd ℝ V V).prod (ContinuousLinearMap.fst ℝ V V)))
+    (he : ⇑e = adaptedNormalExtension (ContinuousLinearMap.inl 𝕜 V V)
+      (fun _ ↦ (-ContinuousLinearMap.snd 𝕜 V V).prod (ContinuousLinearMap.fst 𝕜 V V)))
     {p : V × V} (hp : p ∈ e.source) :
-    e.pullbackEnd (fun _ ↦ (-ContinuousLinearMap.snd ℝ V V).prod (ContinuousLinearMap.fst ℝ V V))
-      p = (-ContinuousLinearMap.snd ℝ V V).prod (ContinuousLinearMap.fst ℝ V V) := by
+    e.pullbackEnd (fun _ ↦ (-ContinuousLinearMap.snd 𝕜 V V).prod (ContinuousLinearMap.fst 𝕜 V V))
+      p = (-ContinuousLinearMap.snd 𝕜 V V).prod (ContinuousLinearMap.fst 𝕜 V V) := by
   rw [adaptedNormalExtension_inl] at he
   have hep : e p = p := by rw [he, id]
   have hsymm : e.symm =ᶠ[𝓝 p] id := by

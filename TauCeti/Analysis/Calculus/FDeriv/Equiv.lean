@@ -25,6 +25,9 @@ to the identity.
   of the derivative.
 * `OpenPartialHomeomorph.fderiv_comp_fderiv_symm`: the derivative of the inverse is a right
   inverse of the derivative.
+* `OpenPartialHomeomorph.fderiv_symm_apply_fderiv_apply`,
+  `OpenPartialHomeomorph.fderiv_apply_fderiv_symm_apply`: the same identities evaluated at a
+  vector.
 -/
 
 public section
@@ -55,5 +58,21 @@ theorem fderiv_comp_fderiv_symm (e : OpenPartialHomeomorph E F) {p : F} (hp : p 
   (hd.hasFDerivAt.comp p hds.hasFDerivAt).unique
     ((hasFDerivAt_id p).congr_of_eventuallyEq
       (eventually_of_mem (e.open_target.mem_nhds hp) fun _ hr ↦ e.right_inv hr))
+
+/-- Pointwise form of `OpenPartialHomeomorph.fderiv_symm_comp_fderiv`. -/
+theorem fderiv_symm_apply_fderiv_apply (e : OpenPartialHomeomorph E F) {p : F}
+    (hp : p ∈ e.target) (hd : DifferentiableAt 𝕜 e (e.symm p))
+    (hds : DifferentiableAt 𝕜 e.symm p) (v : E) :
+    fderiv 𝕜 e.symm p (fderiv 𝕜 e (e.symm p) v) = v := by
+  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] using
+    DFunLike.congr_fun (e.fderiv_symm_comp_fderiv hp hd hds) v
+
+/-- Pointwise form of `OpenPartialHomeomorph.fderiv_comp_fderiv_symm`. -/
+theorem fderiv_apply_fderiv_symm_apply (e : OpenPartialHomeomorph E F) {p : F}
+    (hp : p ∈ e.target) (hd : DifferentiableAt 𝕜 e (e.symm p))
+    (hds : DifferentiableAt 𝕜 e.symm p) (w : F) :
+    fderiv 𝕜 e (e.symm p) (fderiv 𝕜 e.symm p w) = w := by
+  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] using
+    DFunLike.congr_fun (e.fderiv_comp_fderiv_symm hp hd hds) w
 
 end OpenPartialHomeomorph
