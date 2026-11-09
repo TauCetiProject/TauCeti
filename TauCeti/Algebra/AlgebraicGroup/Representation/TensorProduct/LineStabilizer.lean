@@ -107,7 +107,7 @@ theorem stabilizerHopfIdeal_span_singleton_tensorFinVector {d : ℕ}
       exact (Comodule.trivial_coact_apply w).symm
   | succ d ih =>
       rw [tensorFinVector_succ]
-      -- Identify the recursively bundled carrier and coaction with the binary tensor instance.
+      -- Rewriting the carrier depends on the vector, so re-elaborate its binary tensor instances.
       change (k ∙ (m 0 ⊗ₜ[k] tensorFinVector k H (fun i : Fin d ↦ M i.succ)
         (fun i ↦ m i.succ))).stabilizerHopfIdeal H = _
       rw [Comodule.stabilizerHopfIdeal_span_singleton_tmul _ _ (hm 0)

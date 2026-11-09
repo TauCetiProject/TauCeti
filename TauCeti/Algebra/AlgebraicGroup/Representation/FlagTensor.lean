@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.TensorProduct.LineSt
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Coordinate
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Basic
 public import Mathlib.LinearAlgebra.Basis.Flag
+import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer.Finite
 import TauCeti.Algebra.Coalgebra.Comodule.Flag.Basic
 import TauCeti.LinearAlgebra.Basis.Flag
 
@@ -132,13 +133,12 @@ theorem iSup_stabilizerHopfIdeal_flag (b : Module.Basis (Fin n) k V) :
       apply Ideal.Quotient.eq_zero_iff_mem.mpr
       have hx := h ((GeneralLinear.UpperTriangular.mem_definingRelationSet_iff k n _).mpr
         ⟨i, j, hji, rfl⟩)
-      change coordinateBialgHom (H := H) b _ ∈ J.toIdeal at hx
-      rwa [coordinateBialgHom_X] at hx
+      rw [SetLike.mem_coe, Ideal.mem_comap, RingHom.coe_coe, coordinateBialgHom_X] at hx
+      exact hx
     · intro h x hx
       obtain ⟨i, j, hji, rfl⟩ :=
         (GeneralLinear.UpperTriangular.mem_definingRelationSet_iff k n x).mp hx
-      change coordinateBialgHom (H := H) b _ ∈ J.toIdeal
-      rw [coordinateBialgHom_X]
+      rw [SetLike.mem_coe, Ideal.mem_comap, RingHom.coe_coe, coordinateBialgHom_X]
       exact Ideal.Quotient.eq_zero_iff_mem.mp (h hji)
   exact hflags.trans hupper.symm
 
@@ -151,27 +151,13 @@ theorem stabilizerHopfIdeal_span_singleton_flagTensorVector (b : Module.Basis (F
   have ht := FGComoduleCat.stabilizerHopfIdeal_span_singleton_tensorFinVector
     (flagExteriorPowers (H := H) V n) (fun i ↦ prefixExteriorVector b i)
     (isUnimodular_prefixExteriorVector b)
-  change (k ∙ FGComoduleCat.tensorFinVector k H (flagExteriorPowers (H := H) V n)
-    (fun i ↦ prefixExteriorVector b i)).stabilizerHopfIdeal H = _
+  unfold flagTensorVector
   rw [ht]
   calc
     _ = ⨆ i : Fin n, (k ∙ prefixExteriorVector b i).stabilizerHopfIdeal H := by
       apply iSup_congr
       intro i
-      -- The finite-comodule wrapper reconstructs additive inverses from scalar multiplication.
-      -- Its point action agrees with the original exterior-power point action.
-      apply HopfIdeal.eq_of_forall_quotientPointsSubgroup_eq
-        (H := _root_.CommHopfAlgCat.of k H)
-      intro A
-      ext g
-      let E := flagExteriorPowers (k := k) (H := H) V n i
-      have hleft := @Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint
-        k H E
-        inferInstance inferInstance inferInstance (FGComoduleCat.instAddCommGroupCarrier E)
-        inferInstance inferInstance (k ∙ prefixExteriorVector b i) A inferInstance inferInstance g
-      exact hleft.trans
-        (Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint
-          (k ∙ prefixExteriorVector b i) g).symm
+      exact FGComoduleCat.stabilizerHopfIdeal_of (H := H) (k ∙ prefixExteriorVector b i)
     _ = _ :=
       (iSup_congr fun i ↦
         b.stabilizerHopfIdeal_span_singleton_prefixExteriorVector (H := H) i).trans

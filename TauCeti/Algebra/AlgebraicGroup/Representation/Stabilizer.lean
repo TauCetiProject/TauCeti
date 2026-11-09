@@ -253,8 +253,8 @@ theorem stabilizerHopfIdeal_le_iff_exists_subcomodule
   have hc (ψ : Module.Dual k (M ⧸ W)) (w : M) :
       Comodule.matrixCoefficient (C := H ⧸ J.toIdeal) (ψ ∘ₗ W.mkQ) w = 0 ↔
         Comodule.matrixCoefficient (C := H) (ψ ∘ₗ W.mkQ) w ∈ J := by
-    rw [CoalgHom.matrixCoefficient_corestrict]
-    change Ideal.Quotient.mk J.toIdeal _ = 0 ↔ _
+    rw [CoalgHom.matrixCoefficient_corestrict, BialgHom.toCoalgHom_apply,
+      Bialgebra.Quotient.mkBialgHom_apply]
     exact Ideal.Quotient.eq_zero_iff_mem.trans HopfIdeal.mem_toIdeal
   rw [Submodule.stabilizerHopfIdeal_le_iff]
   constructor
