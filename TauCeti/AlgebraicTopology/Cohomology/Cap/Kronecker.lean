@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Monoidal.CapKronecker
+public import TauCeti.Algebra.Homology.Monoidal.Cap.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
@@ -29,8 +29,9 @@ the module `k` and `u` the inverse left unitor, this is the identity
 `⟨ψ, x ⌢ φ⟩ = ⟨φ ⌣ ψ, x⟩` of Hatcher, Section 3.3, which makes the cap product the adjoint of
 the cup product under the Kronecker pairing.
 
-The key chain-level input is `SSet.chainComplexPairing_leftUnitor_hom_f`: the action of the tensor
-unit on singular chains is the left unitor.
+The key chain-level input is `SSet.chainComplexPairing_leftUnitor_hom_f`, from
+`TauCeti.AlgebraicTopology.SimplicialSet.Homology.Pairing`: the action of the tensor unit on
+singular chains is the left unitor.
 
 ## References
 
@@ -45,22 +46,6 @@ noncomputable section
 open CategoryTheory Limits MonoidalCategory AlgebraicTopology HomologicalComplex
 
 universe w v u
-
-namespace SSet
-
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
-  [MonoidalCategory C] [MonoidalPreadditive C]
-
-/-- The chain map `𝟙 ⊗ C(X; S) ⟶ C(X; S)` induced by the left unitor of `S` is, in each degree,
-the left unitor of the object of chains. -/
-lemma chainComplexPairing_leftUnitor_hom_f (X : SSet.{w}) (S : C) (n : ℕ) :
-    (X.chainComplexPairing (λ_ S).hom).f n = (λ_ ((X.chainComplex S).X n)).hom := by
-  rw [← cancel_epi (λ_ ((X.chainComplex S).X n)).inv, Iso.inv_hom_id]
-  ext x
-  rw [leftUnitor_inv_naturality_assoc, whiskerLeft_ιChainComplex_chainComplexPairing_f,
-    Iso.inv_hom_id_assoc, Category.comp_id]
-
-end SSet
 
 namespace TopCat
 

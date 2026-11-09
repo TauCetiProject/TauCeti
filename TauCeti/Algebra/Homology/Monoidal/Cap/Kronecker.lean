@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Kronecker
-public import TauCeti.Algebra.Homology.Monoidal.Cap
+public import TauCeti.Algebra.Homology.Monoidal.Cap.Basic
 public import TauCeti.Algebra.Homology.Monoidal.Cup
 
 /-!
@@ -26,8 +26,9 @@ with no sign, since both sides take the component of `D` and project to the summ
 followed by the Kronecker map of the class of `ψ` is the Kronecker map of the cup product of the
 classes of `φ` and `ψ'`.
 
-The basic example is `B' = B`, `M = N = N'` the tensor unit, `a` the left unitor and `ν` the left
-unitor, with `ψ' = ψ`; for singular chains this is `TopCat.singularCap_comp_singularKronecker`.
+For singular chains, `TopCat.singularCap_comp_singularKronecker` is the case `M = 𝟙_ C`,
+`N' = N` arbitrary and `ν = (λ_ N).hom`, with `B' = B = C(X; S)`, `a` the chain map induced by the
+left unitor of `S` (in each degree the left unitor of the object of chains) and `ψ' = ψ`.
 
 ## Main results
 
@@ -37,7 +38,7 @@ unitor, with `ψ' = ψ`; for singular chains this is `TopCat.singularCap_comp_si
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 3.3, the identity `ψ(σ ⌢ φ) = (φ ⌣ ψ)(σ)` defining the cap product.
+  Section 3.3, the identity `ψ(σ ⌢ φ) = (φ ⌣ ψ)(σ)` relating the cap and cup products.
 -/
 
 public section
