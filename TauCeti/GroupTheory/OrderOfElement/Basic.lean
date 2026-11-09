@@ -36,6 +36,9 @@ prime to the order of `t`, since conjugation preserves orders, and so `s` normal
 subgroup `⟨t⟩`. This is the finite shadow of a relation `s t s⁻¹ = t ^ q`, such as the one between
 Frobenius and tame inertia.
 
+If the power map `x ↦ x ^ m` is injective, then `m` is prime to the order of every element of
+finite order: a common prime factor `p` would give an element of order `p` sent to `1`.
+
 A homomorphism into a commutative monoid has finite order exactly when its values have a common
 positive exponent equal to one; the source only needs a multiplication and identity.
 
@@ -69,6 +72,8 @@ the least positive power of `g` lying in `K`; otherwise `d = 0` and `g ^ d = 1`.
 * `TauCeti.coprime_orderOf_of_mul_mul_inv_eq_pow`,
   `TauCeti.mem_normalizer_zpowers_of_mul_mul_inv_eq_pow`: if `s * t * s⁻¹ = t ^ q` with `t` of
   finite order, then `q` is prime to the order of `t` and `s` normalizes `⟨t⟩`.
+* `TauCeti.coprime_orderOf_of_injective_zpow`, `TauCeti.coprime_addOrderOf_of_injective_zsmul`:
+  if `x ↦ x ^ m` is injective, then `m` is prime to the order of every element of finite order.
 -/
 
 public section
@@ -253,5 +258,21 @@ theorem mem_normalizer_zpowers_of_mul_mul_inv_eq_pow (ht : IsOfFinOrder t)
     rw [hx', ← conj_zpow, inv_inv, hinv, zpow_mul, zpow_natCast]
 
 end Conj
+
+/-- **An injective power map has exponent prime to the orders.** If `x ↦ x ^ m` is injective on a
+group, then `m` is prime to the order of every element `g` of finite order: for a common prime
+factor `p`, the element `g ^ (orderOf g / p)` is not `1` but its `m`-th power is. -/
+@[to_additive /-- **An injective multiplication map has factor prime to the orders.** If
+`x ↦ m • x` is injective on an additive group, then `m` is prime to the order of every element `g`
+of finite order. -/]
+theorem coprime_orderOf_of_injective_zpow {G : Type*} [Group G] {m : ℤ} {g : G}
+    (hg : IsOfFinOrder g) (h : Function.Injective fun x : G ↦ x ^ m) :
+    (orderOf g).Coprime m.natAbs := by
+  refine Nat.coprime_of_dvd fun p hp ⟨c, hc⟩ hpm ↦ ?_
+  have hc0 : 0 < c := Nat.pos_of_mul_pos_left (hc ▸ hg.orderOf_pos)
+  refine pow_ne_one_of_lt_orderOf hc0.ne' (hc ▸ lt_mul_left hc0 hp.one_lt) (h ?_)
+  obtain ⟨e, rfl⟩ := Int.ofNat_dvd_left.2 hpm
+  simp only [one_zpow]
+  rw [zpow_mul, zpow_natCast, ← pow_mul, mul_comm c p, ← hc, pow_orderOf_eq_one, one_zpow]
 
 end TauCeti
