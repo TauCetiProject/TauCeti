@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Cone.Basic
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
-public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Hermitian
+public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Hermitian
 
 /-!
 # The cone of positive `(1,1)`-forms and the distance to it
@@ -38,7 +38,7 @@ anti-self-dual part of `F`. The anti-self-dual forms are of type `(1,1)`, and th
 `(1,1)`-forms are the multiples of `ω`. So `F` is of type `(1,1)` exactly when its
 *anti-`J`-invariant part* `F - F⁻ - c ω` vanishes, and positive exactly when moreover
 `‖F⁻‖ ≤ √2 c`, that is when the least eigenvalue `λ₋ = c - ‖F⁻‖ / √2` of the Hermitian form of
-`F` (`TauCeti.AlmostComplexStructure.isLeast_inner_ιMulti_image_sphere`) is nonnegative. In
+`F` (`TauCeti.AlmostComplexStructure.isLeast_hermitianForm_apply_self`) is nonnegative. In
 these coordinates the positive cone is a circular cone of half-angle `π / 4` around `ω` in
 `ℝ ω ⊕ Λ⁻`, and positive forms pair nonnegatively with each other. The distance of an
 arbitrary `F` to it is
@@ -157,6 +157,16 @@ private theorem two_mul_sub_sq_add_sub_sq (c d r s : ℝ) : 2 * (c - d) ^ 2 + (r
     rw [div_pow, Real.sq_sqrt zero_le_two]; ring
   rw [← h]; ring
 
+/-- The anti-self-dual part `μ` of `F`, given by `⋆μ = -μ` and `⋆(F - μ) = F - μ`, is
+`(F - ⋆F) / 2`. -/
+private theorem smul_sub_hodgeStar_eq [Fact (finrank ℝ V = 4)] {o : Orientation ℝ V (Fin 4)}
+    {hkl : 2 + 2 = finrank ℝ V} {F μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = -μ)
+    (hF : o.hodgeStar hkl (F - μ) = F - μ) :
+    (2⁻¹ : ℝ) • (F - o.hodgeStar hkl F) = μ := by
+  rw [map_sub, hμ, sub_neg_eq_add] at hF
+  rw [eq_sub_of_add_eq hF]
+  module
+
 section Frame
 
 variable [Fact (finrank ℝ V = 4)] {o : Orientation ℝ V (Fin 4)} (hkl : 2 + 2 = finrank ℝ V)
@@ -176,7 +186,7 @@ theorem lieMap_eq_zero_iff {F μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = -μ
     lieMap 2 J.toLinearMap F = 0 ↔ F - μ = (⟪J.kahlerForm, F⟫ / 2) • J.kahlerForm := by
   have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
   have hDμ := lieMap_of_hodgeStar_eq_neg h₀ h₂ hkl he hμ
-  have hωμ := inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg hkl he h₀ h₂ hμ
+  have hωμ := inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg h₀ h₂ hkl he hμ
   constructor
   · intro hDF
     -- `D_J² η = 2 ⟪ω, η⟫ ω - 4 η` on the self-dual part `η = F - μ`, and `D_J η = 0`.
@@ -196,8 +206,9 @@ theorem mem_positiveCone_iff {F μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = -
     (hF : o.hodgeStar hkl (F - μ) = F - μ) :
     F ∈ J.positiveCone ↔ F - μ = (⟪J.kahlerForm, F⟫ / 2) • J.kahlerForm ∧
       ‖μ‖ ≤ √2 * (⟪J.kahlerForm, F⟫ / 2) := by
-  have h := forall_le_inner_ιMulti_iff hkl he h₀ h₂ hμ hF (K := 0)
-  simp only [neg_zero, zero_mul, add_zero] at h
+  have h := forall_le_hermitianForm_apply_self_iff h₀ h₂ hkl he F (C := 0)
+  simp only [neg_zero, zero_mul, add_zero, hermitianForm_apply_self,
+    smul_sub_hodgeStar_eq hμ hF] at h
   rw [mem_positiveCone,
     forall_inner_ιMulti_apply_eq_iff (inner_apply_apply_of_orthonormalBasis h₀ h₂),
     lieMap_eq_zero_iff hkl he h₀ h₂ hμ hF, h]
@@ -215,7 +226,7 @@ private theorem smul_kahlerForm_add_mem_positiveCone {ν : ⋀[ℝ]^2 V}
   have hinner : ⟪J.kahlerForm, c • J.kahlerForm + ν⟫ / 2 = c := by
     rw [inner_add_right, real_inner_smul_right,
       inner_kahlerForm_self_eq_two (inner_apply_apply_of_orthonormalBasis h₀ h₂),
-      inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg hkl he h₀ h₂ hν]
+      inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg h₀ h₂ hkl he hν]
     ring
   refine (mem_positiveCone_iff hkl he h₀ h₂ hν ?_).2 ⟨?_, ?_⟩
   · rw [add_sub_cancel_right, map_smul, hodgeStar_kahlerForm h₀ h₂ hkl he]
@@ -231,7 +242,7 @@ private theorem norm_add_smul_kahlerForm_add_sq {A μ : ⋀[ℝ]^2 V} (hA : o.ho
     rw [← real_inner_self_eq_norm_sq,
       inner_kahlerForm_self_eq_two (inner_apply_apply_of_orthonormalBasis h₀ h₂)]
   have hAμ := o.inner_eq_zero_of_hodgeStar_eq_self_of_hodgeStar_eq_neg even_two hkl hA hμ
-  have hωμ := inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg hkl he h₀ h₂ hμ
+  have hωμ := inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg h₀ h₂ hkl he hμ
   rw [norm_add_sq_real, norm_add_sq_real, inner_add_left, real_inner_smul_left,
     real_inner_smul_right, real_inner_comm, hAω, hAμ, hωμ, norm_smul, mul_pow, hω,
     Real.norm_eq_abs, sq_abs]
@@ -247,7 +258,7 @@ private theorem hodgeStar_antiInvariantPart {F μ : ⋀[ℝ]^2 V} (hμ : o.hodge
   refine ⟨by rw [map_sub, hF, map_smul, hodgeStar_kahlerForm h₀ h₂ hkl he], ?_⟩
   rw [inner_sub_right, inner_sub_right, real_inner_smul_right,
     inner_kahlerForm_self_eq_two (inner_apply_apply_of_orthonormalBasis h₀ h₂),
-    inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg hkl he h₀ h₂ hμ]
+    inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg h₀ h₂ hkl he hμ]
   ring
 
 omit hkl he in
@@ -286,8 +297,8 @@ theorem inner_nonneg_of_mem_positiveCone {F G : ⋀[ℝ]^2 V} (hF : F ∈ J.posi
   obtain ⟨ν, hν, hGν⟩ := o.exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq even_two hkl G
   have hF2 := ((mem_positiveCone_iff hkl he h₀ h₂ hμ hFμ).1 hF).2
   have hG2 := ((mem_positiveCone_iff hkl he h₀ h₂ hν hGν).1 hG).2
-  have hωμ := inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg hkl he h₀ h₂ hμ
-  have hων := inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg hkl he h₀ h₂ hν
+  have hωμ := inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg h₀ h₂ hkl he hμ
+  have hων := inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg h₀ h₂ hkl he hν
   have hFG : ⟪F, G⟫ =
       2 * (⟪J.kahlerForm, F⟫ / 2) * (⟪J.kahlerForm, G⟫ / 2) + ⟪μ, ν⟫ := by
     conv_lhs => rw [eq_smul_kahlerForm_add_of_mem_positiveCone hkl he h₀ h₂ hμ hFμ hF,
@@ -326,7 +337,8 @@ theorem mul_inner_kahlerForm_le_inner_of_mem_positiveCone {Ω F : ⋀[ℝ]^2 V} 
       rw [map_add, map_smul, lieMap_of_hodgeStar_eq_neg h₀ h₂ hkl he hν,
         lieMap_kahlerForm hJ, smul_zero, add_zero]), fun v ↦ ?_⟩
     have h := hΩ v
-    rw [inner_ιMulti_eq_mul_add_inner_ιMulti hkl he h₀ h₂ hν hΩν, ← hc] at h
+    rw [← hermitianForm_apply_self, hermitianForm_apply_eq h₀ h₂ hkl he,
+      smul_sub_hodgeStar_eq hν hΩν, real_inner_self_eq_norm_sq, ← hc] at h
     rw [inner_add_left, real_inner_smul_left, inner_kahlerForm_ιMulti hJ,
       inner_apply_apply_of_orthonormalBasis h₀ h₂, real_inner_self_eq_norm_sq]
     linarith
@@ -484,7 +496,9 @@ theorem infDist_positiveCone_le {F μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ 
   set a := ‖F - μ - c • J.kahlerForm‖
   -- The least eigenvalue `c - ‖μ‖ / √2` is at least `-K`, hence so is the largest.
   have hs : (0 : ℝ) < √2 := by positivity
-  have hle := norm_le_of_forall_le_inner_ιMulti hkl he h₀ h₂ hμ hF hK
+  have hle := norm_smul_sub_hodgeStar_le_of_forall_le_hermitianForm_apply_self h₀ h₂ hkl he F
+    (C := K) (by simpa only [hermitianForm_apply_self] using hK)
+  rw [smul_sub_hodgeStar_eq hμ hF] at hle
   rw [← hc] at hle
   have h₁ : -K ≤ c - ‖μ‖ / √2 := by
     have : ‖μ‖ / √2 ≤ c + K := by rw [div_le_iff₀ hs]; linarith [mul_comm (√2) (c + K)]
