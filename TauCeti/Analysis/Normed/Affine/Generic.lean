@@ -19,7 +19,7 @@ public import Mathlib.Topology.Baire.CompleteMetrizable
 Adapted from `Mei/Geometry/Affine/Generic.lean` at commit `7f1e4c7`.
 
 The common complement of countably many proper affine subspaces of a
-finite-dimensional real normed space is dense and is a Gδ set. For a finite
+real normed affine space with finite-dimensional direction is dense and is a Gδ set. For a finite
 family the complement is open. These statements allow arbitrarily small
 perturbations avoiding all the prescribed affine exceptions. Countably many affine
 subspaces not containing `A` can also be avoided in any nonempty relatively open subset
@@ -46,30 +46,31 @@ namespace AffineSubspace
 
 section Topology
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {V P : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [MetricSpace P] [NormedAddTorsor V P]
 
 /-- A proper real affine subspace has empty interior, even without a
 finite-dimensionality assumption. -/
-theorem interior_eq_empty_of_ne_top (S : AffineSubspace ℝ V) (hS : S ≠ ⊤) :
-    interior (S : Set V) = ∅ := by
+theorem interior_eq_empty_of_ne_top (S : AffineSubspace ℝ P) (hS : S ≠ ⊤) :
+    interior (S : Set P) = ∅ := by
   apply Set.eq_empty_iff_forall_notMem.mpr
   intro x hx
   have hspan := isOpen_interior.affineSpan_eq_top ⟨x, hx⟩
-  have hle : affineSpan ℝ (interior (S : Set V)) ≤ S :=
+  have hle : affineSpan ℝ (interior (S : Set P)) ≤ S :=
     affineSpan_le.mpr interior_subset
   exact hS (top_le_iff.mp (hspan ▸ hle))
 
 /-- The complement of a proper affine subspace is dense. -/
-theorem dense_compl_of_ne_top (S : AffineSubspace ℝ V) (hS : S ≠ ⊤) :
-    Dense (S : Set V)ᶜ :=
+theorem dense_compl_of_ne_top (S : AffineSubspace ℝ P) (hS : S ≠ ⊤) :
+    Dense (S : Set P)ᶜ :=
   interior_eq_empty_iff_dense_compl.mp (S.interior_eq_empty_of_ne_top hS)
 
 /-- If finitely many affine subspaces cover all points of `A` near a point of `A`, then
 the direction of one of them contains the direction of `A`. In particular, finitely many
 affine subspaces of smaller dimension never cover a relative neighbourhood in `A`. -/
 theorem exists_direction_le_of_forall_mem {ι : Type*} [Finite ι]
-    (A : AffineSubspace ℝ V) (E : ι → AffineSubspace ℝ V) {x : V} (hx : x ∈ A)
-    {U : Set V} (hU : U ∈ nhds x) (hcover : ∀ y ∈ A, y ∈ U → ∃ j, y ∈ E j) :
+    (A : AffineSubspace ℝ P) (E : ι → AffineSubspace ℝ P) {x : P} (hx : x ∈ A)
+    {U : Set P} (hU : U ∈ nhds x) (hcover : ∀ y ∈ A, y ∈ U → ∃ j, y ∈ E j) :
     ∃ j, A.direction ≤ (E j).direction := by
   -- Every direction of `A` is the direction of two points of one `E j` on its line.
   have hcov (v : V) (hv : v ∈ A.direction) : ∃ j, v ∈ (E j).direction := by
@@ -94,29 +95,31 @@ theorem exists_direction_le_of_forall_mem {ι : Type*} [Finite ι]
 variable [FiniteDimensional ℝ V]
 
 /-- Countably many proper affine subspaces have dense common complement. -/
-theorem dense_genericLocus {ι : Sort*} [Countable ι] (A : ι → AffineSubspace ℝ V)
+theorem dense_genericLocus {ι : Sort*} [Countable ι] (A : ι → AffineSubspace ℝ P)
     (hA : ∀ i, A i ≠ ⊤) : Dense (genericLocus A) := by
+  let : CompleteSpace P :=
+    (AffineIsometryEquiv.constVSub ℝ (Classical.arbitrary P)).toIsometryEquiv.completeSpace
   rw [genericLocus_eq_iInter]
   exact dense_iInter_of_isOpen
     (fun i => (A i).closed_of_finiteDimensional.isOpen_compl)
     (fun i => (A i).dense_compl_of_ne_top (hA i))
 
 /-- The common complement is a countable intersection of open sets. -/
-theorem isGδ_genericLocus {ι : Sort*} [Countable ι] (A : ι → AffineSubspace ℝ V) :
+theorem isGδ_genericLocus {ι : Sort*} [Countable ι] (A : ι → AffineSubspace ℝ P) :
     IsGδ (genericLocus A) := by
   rw [genericLocus_eq_iInter]
   exact IsGδ.iInter_of_isOpen (fun i => (A i).closed_of_finiteDimensional.isOpen_compl)
 
 /-- For a finite family, the common complement is open. -/
-theorem isOpen_genericLocus {ι : Sort*} [Finite ι] (A : ι → AffineSubspace ℝ V) :
+theorem isOpen_genericLocus {ι : Sort*} [Finite ι] (A : ι → AffineSubspace ℝ P) :
     IsOpen (genericLocus A) := by
   rw [genericLocus_eq_iInter]
   exact isOpen_iInter_of_finite (fun i => (A i).closed_of_finiteDimensional.isOpen_compl)
 
 /-- A generic point can be chosen in any prescribed nonempty open set. -/
 theorem exists_mem_open_genericLocus {ι : Sort*} [Countable ι]
-    (A : ι → AffineSubspace ℝ V) (hA : ∀ i, A i ≠ ⊤)
-    {U : Set V} (hU : IsOpen U) (hne : U.Nonempty) :
+    (A : ι → AffineSubspace ℝ P) (hA : ∀ i, A i ≠ ⊤)
+    {U : Set P} (hU : IsOpen U) (hne : U.Nonempty) :
     ∃ x ∈ U, ∀ i, x ∉ A i := by
   obtain ⟨x, hxU, hxA⟩ := (dense_genericLocus A hA).inter_open_nonempty U hU hne
   exact ⟨x, hxU, mem_genericLocus.mp hxA⟩
@@ -124,11 +127,11 @@ theorem exists_mem_open_genericLocus {ι : Sort*} [Countable ι]
 /-- A nonempty relatively open set in an affine subspace contains a point
 outside any countable family of affine subspaces none of which contains it. -/
 theorem exists_mem_open_avoid_of_not_le {ι : Sort*} [Countable ι]
-    (A : AffineSubspace ℝ V)
-    (E : ι → AffineSubspace ℝ V)
+    (A : AffineSubspace ℝ P)
+    (E : ι → AffineSubspace ℝ P)
     (hE : ∀ j, ¬ A ≤ E j)
     {U : Set A} (hU : IsOpen U) (hne : U.Nonempty) :
-    ∃ x ∈ U, ∀ j, (x : V) ∉ E j := by
+    ∃ x ∈ U, ∀ j, (x : P) ∉ E j := by
   obtain ⟨p, hp⟩ := hne
   let : Nonempty A := ⟨p⟩
   let e := (AffineIsometryEquiv.constVSub ℝ p).symm
@@ -150,17 +153,17 @@ theorem exists_mem_open_avoid_of_not_le {ι : Sort*} [Countable ι]
 /-- A nonempty relatively open set in an affine subspace contains a point
 outside any countable family of affine subspaces of smaller dimension. -/
 theorem exists_mem_open_avoid_of_finrank_lt {ι : Sort*} [Countable ι]
-    (A : AffineSubspace ℝ V) (E : ι → AffineSubspace ℝ V)
+    (A : AffineSubspace ℝ P) (E : ι → AffineSubspace ℝ P)
     (hE : ∀ j, Module.finrank ℝ (E j).direction < Module.finrank ℝ A.direction)
     {U : Set A} (hU : IsOpen U) (hne : U.Nonempty) :
-    ∃ x ∈ U, ∀ j, (x : V) ∉ E j :=
+    ∃ x ∈ U, ∀ j, (x : P) ∉ E j :=
   A.exists_mem_open_avoid_of_not_le E
     (fun j hle => (not_le_of_gt (hE j)) (Submodule.finrank_mono (direction_le hle))) hU hne
 
 /-- Generic points can be chosen arbitrarily close to any point. -/
 theorem exists_dist_lt_genericLocus {ι : Sort*} [Countable ι]
-    (A : ι → AffineSubspace ℝ V) (hA : ∀ i, A i ≠ ⊤)
-    (x : V) {ε : ℝ} (hε : 0 < ε) :
+    (A : ι → AffineSubspace ℝ P) (hA : ∀ i, A i ≠ ⊤)
+    (x : P) {ε : ℝ} (hε : 0 < ε) :
     ∃ y, dist y x < ε ∧ ∀ i, y ∉ A i := by
   obtain ⟨y, hy, hA⟩ := exists_mem_open_genericLocus A hA
     Metric.isOpen_ball (Metric.nonempty_ball.mpr hε)
@@ -171,7 +174,8 @@ end Topology
 
 section Topology
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+variable {V P : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [MetricSpace P] [NormedAddTorsor V P] [FiniteDimensional ℝ V]
 
 /-- A set covered by countably many affine subspaces of codimension at least
 two can be avoided by both full lines from two fixed allowed endpoints to a
@@ -181,17 +185,17 @@ additional countable family of proper affine subspaces.
 The endpoints are required to avoid the actual set only; they may lie in its
 affine cover. The prescribed open set constrains the vertex, not the lines. -/
 theorem exists_mem_open_two_lineMaps_avoid_set {ι κ : Type*} [Countable ι] [Countable κ]
-    (S : κ → AffineSubspace ℝ V)
+    (S : κ → AffineSubspace ℝ P)
     (hS : ∀ k, Module.finrank ℝ (S k).direction + 1 < Module.finrank ℝ V)
-    (A : ι → AffineSubspace ℝ V) (hA : ∀ i, A i ≠ ⊤)
-    {E : Set V} (hE : E ⊆ ⋃ k, (S k : Set V))
-    {x y : V} (hx : x ∉ E) (hy : y ∉ E)
-    {U : Set V} (hU : IsOpen U) (hne : U.Nonempty) :
+    (A : ι → AffineSubspace ℝ P) (hA : ∀ i, A i ≠ ⊤)
+    {E : Set P} (hE : E ⊆ ⋃ k, (S k : Set P))
+    {x y : P} (hx : x ∉ E) (hy : y ∉ E)
+    {U : Set P} (hU : IsOpen U) (hne : U.Nonempty) :
     ∃ z ∈ U, (∀ i, z ∉ A i) ∧ ∀ t : ℝ,
       AffineMap.lineMap x z t ∉ E ∧ AffineMap.lineMap y z t ∉ E := by
-  let B : (κ ⊕ κ) ⊕ ι → AffineSubspace ℝ V := Sum.elim
-    (Sum.elim (fun k => affineSpan ℝ (insert x (S k : Set V)))
-      (fun k => affineSpan ℝ (insert y (S k : Set V)))) A
+  let B : (κ ⊕ κ) ⊕ ι → AffineSubspace ℝ P := Sum.elim
+    (Sum.elim (fun k => affineSpan ℝ (insert x (S k : Set P)))
+      (fun k => affineSpan ℝ (insert y (S k : Set P)))) A
   have hB : ∀ i, B i ≠ ⊤ := by
     intro i
     rcases i with k | i
@@ -200,8 +204,8 @@ theorem exists_mem_open_two_lineMaps_avoid_set {ι κ : Type*} [Countable ι] [C
       · exact (S k).affineSpan_insert_ne_top_of_finrank (hS k) y
     · exact hA i
   obtain ⟨z, hzU, hz⟩ := exists_mem_open_genericLocus B hB hU hne
-  have havoid (p : V) (hp : p ∉ E)
-      (hzp : ∀ k, z ∉ affineSpan ℝ (insert p (S k : Set V))) (t : ℝ) :
+  have havoid (p : P) (hp : p ∉ E)
+      (hzp : ∀ k, z ∉ affineSpan ℝ (insert p (S k : Set P))) (t : ℝ) :
       AffineMap.lineMap p z t ∉ E := by
     by_cases ht : t = 0
     · simpa [ht] using hp
@@ -218,14 +222,14 @@ that both full lines, and hence both segments, avoid every obstacle.
 
 Only the vertex is varied: both endpoints remain fixed. -/
 theorem exists_mem_open_two_lineMaps_avoid {ι : Type*} [Countable ι]
-    (S : ι → AffineSubspace ℝ V)
+    (S : ι → AffineSubspace ℝ P)
     (hS : ∀ i, Module.finrank ℝ (S i).direction + 1 < Module.finrank ℝ V)
-    {x y : V} (hx : ∀ i, x ∉ S i) (hy : ∀ i, y ∉ S i)
-    {U : Set V} (hU : IsOpen U) (hne : U.Nonempty) :
+    {x y : P} (hx : ∀ i, x ∉ S i) (hy : ∀ i, y ∉ S i)
+    {U : Set P} (hU : IsOpen U) (hne : U.Nonempty) :
     ∃ z ∈ U, ∀ i (t : ℝ),
       AffineMap.lineMap x z t ∉ S i ∧ AffineMap.lineMap y z t ∉ S i := by
   obtain ⟨z, hzU, _, hz⟩ := exists_mem_open_two_lineMaps_avoid_set S hS
-    (fun i : Empty => nomatch i) (fun i => nomatch i) (E := ⋃ i, (S i : Set V))
+    (fun i : Empty => nomatch i) (fun i => nomatch i) (E := ⋃ i, (S i : Set P))
     Subset.rfl (by simpa using hx) (by simpa using hy) hU hne
   exact ⟨z, hzU, fun i t =>
     ⟨fun h => (hz t).1 (mem_iUnion.mpr ⟨i, h⟩),
@@ -276,17 +280,18 @@ namespace ExceptionalArrangement
 
 section Topology
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+variable {V P : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [MetricSpace P] [NormedAddTorsor V P] [FiniteDimensional ℝ V]
 
 /-- Generic points of a finite exceptional arrangement form an open set. -/
-theorem isOpen_isGeneric (E : ExceptionalArrangement ℝ V) : IsOpen {x | E.IsGeneric x} := by
+theorem isOpen_isGeneric (E : ExceptionalArrangement ℝ P) : IsOpen {x | E.IsGeneric x} := by
   convert
     AffineSubspace.isOpen_genericLocus (fun S : E.exceptions => S.1) using 1
   ext x
   simp [isGeneric_iff]
 
 /-- Generic points of a finite exceptional arrangement form a dense set. -/
-theorem dense_isGeneric (E : ExceptionalArrangement ℝ V) : Dense {x | E.IsGeneric x} := by
+theorem dense_isGeneric (E : ExceptionalArrangement ℝ P) : Dense {x | E.IsGeneric x} := by
   convert
     AffineSubspace.dense_genericLocus (fun S : E.exceptions => S.1)
       (fun S => E.proper S.1 S.2) using 1
@@ -295,7 +300,7 @@ theorem dense_isGeneric (E : ExceptionalArrangement ℝ V) : Dense {x | E.IsGene
 
 /-- A countable family of finite arrangements has dense common generic locus. -/
 theorem dense_iInter_isGeneric {ι : Type*} [Countable ι]
-    (E : ι → ExceptionalArrangement ℝ V) : Dense {x | ∀ i, (E i).IsGeneric x} := by
+    (E : ι → ExceptionalArrangement ℝ P) : Dense {x | ∀ i, (E i).IsGeneric x} := by
   convert
     AffineSubspace.dense_genericLocus
       (fun p : Σ i, (E i).exceptions => p.2.1)
@@ -305,7 +310,7 @@ theorem dense_iInter_isGeneric {ι : Type*} [Countable ι]
 
 /-- The common generic locus of countably many finite arrangements is a Gδ set. -/
 theorem isGδ_iInter_isGeneric {ι : Type*} [Countable ι]
-    (E : ι → ExceptionalArrangement ℝ V) : IsGδ {x | ∀ i, (E i).IsGeneric x} := by
+    (E : ι → ExceptionalArrangement ℝ P) : IsGδ {x | ∀ i, (E i).IsGeneric x} := by
   convert
     AffineSubspace.isGδ_genericLocus (fun p : Σ i, (E i).exceptions => p.2.1) using 1
   ext x
