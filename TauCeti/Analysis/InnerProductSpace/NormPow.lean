@@ -355,7 +355,7 @@ theorem norm_iteratedFDeriv_two_norm_rpow_sub_le {p : ℝ} (hp : p ≤ 3) {a b :
   have hpow (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) :
       ‖b + t • d‖ ^ (p - 3) ≤ 2 ^ (3 - p) * ‖b‖ ^ (p - 3) := by
     simpa only [neg_sub] using
-      Real.rpow_le_two_rpow_neg_mul_of_half_le (sub_nonpos.2 hp) hbN (hseg t ht)
+      Real.rpow_le_rpow_neg_mul_of_div_le (sub_nonpos.2 hp) two_pos hbN (hseg t ht)
   have ha : a ≠ 0 := by
     have := hseg 1 ⟨zero_le_one, le_rfl⟩
     rw [one_smul, hd, add_sub_cancel] at this
