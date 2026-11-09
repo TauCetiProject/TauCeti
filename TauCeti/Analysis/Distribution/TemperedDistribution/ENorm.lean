@@ -38,13 +38,35 @@ noncomputable section
 open MeasureTheory (Lp Measure)
 open scoped ENNReal SchwartzMap
 
+namespace MeasureTheory.Lp
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
+  [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] {μ : Measure E}
+  [μ.HasTemperateGrowth] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- The tempered distribution of the zero `Lᵖ` function is `0`. -/
+@[simp]
+theorem toTemperedDistribution_zero : ((0 : Lp F p μ) : 𝓢'(E, F)) = 0 :=
+  map_zero (toTemperedDistributionCLM F μ p)
+
+/-- Passing from `Lᵖ` functions to tempered distributions is additive. -/
+@[simp]
+theorem toTemperedDistribution_add (f g : Lp F p μ) :
+    ((f + g : Lp F p μ) : 𝓢'(E, F)) = (f : 𝓢'(E, F)) + (g : 𝓢'(E, F)) :=
+  map_add (toTemperedDistributionCLM F μ p) f g
+
+/-- Passing from `Lᵖ` functions to tempered distributions commutes with scalar multiplication. -/
+@[simp]
+theorem toTemperedDistribution_smul (c : ℂ) (f : Lp F p μ) :
+    ((c • f : Lp F p μ) : 𝓢'(E, F)) = c • (f : 𝓢'(E, F)) :=
+  map_smul (toTemperedDistributionCLM F μ p) c f
+
 /-- An `Lᵖ` function is determined by its tempered distribution. -/
-theorem MeasureTheory.Lp.toTemperedDistribution_injective {E F : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-    [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] {μ : Measure E}
-    [μ.HasTemperateGrowth] [MeasureTheory.IsLocallyFiniteMeasure μ] {p : ℝ≥0∞} [Fact (1 ≤ p)] :
+theorem toTemperedDistribution_injective [FiniteDimensional ℝ E] [IsLocallyFiniteMeasure μ] :
     Function.Injective (fun f : Lp F p μ ↦ (f : 𝓢'(E, F))) :=
-  LinearMap.ker_eq_bot.mp MeasureTheory.Lp.ker_toTemperedDistributionCLM_eq_bot
+  LinearMap.ker_eq_bot.mp ker_toTemperedDistributionCLM_eq_bot
+
+end MeasureTheory.Lp
 
 namespace TemperedDistribution
 
@@ -80,7 +102,7 @@ theorem eLpNorm_lt_top_iff {u : 𝓢'(E, F)} :
 
 @[simp]
 theorem eLpNorm_zero : eLpNorm p (0 : 𝓢'(E, F)) = 0 := by
-  simpa [← MeasureTheory.Lp.toTemperedDistributionCLM_apply] using
+  simpa using
     eLpNorm_toTemperedDistribution (p := p) (0 : Lp F p (MeasureTheory.volume : Measure E))
 
 @[simp]
@@ -88,7 +110,7 @@ theorem eLpNorm_eq_zero_iff {u : 𝓢'(E, F)} : eLpNorm p u = 0 ↔ u = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ eLpNorm_zero⟩
   obtain ⟨f, rfl⟩ := eLpNorm_lt_top_iff.1 (h ▸ ENNReal.zero_lt_top)
   rw [eLpNorm_toTemperedDistribution, enorm_eq_zero] at h
-  simp [h, ← MeasureTheory.Lp.toTemperedDistributionCLM_apply]
+  simp [h]
 
 /-- The triangle inequality for the `Lᵖ` norm of tempered distributions. -/
 theorem eLpNorm_add_le (u v : 𝓢'(E, F)) : eLpNorm p (u + v) ≤ eLpNorm p u + eLpNorm p v := by
@@ -98,9 +120,7 @@ theorem eLpNorm_add_le (u v : 𝓢'(E, F)) : eLpNorm p (u + v) ≤ eLpNorm p u +
   · simp [hv]
   obtain ⟨f, rfl⟩ := eLpNorm_lt_top_iff.1 hu.lt_top
   obtain ⟨g, rfl⟩ := eLpNorm_lt_top_iff.1 hv.lt_top
-  have h := map_add (MeasureTheory.Lp.toTemperedDistributionCLM F MeasureTheory.volume p) f g
-  simp only [MeasureTheory.Lp.toTemperedDistributionCLM_apply] at h
-  simpa [← h] using enorm_add_le f g
+  simpa [← MeasureTheory.Lp.toTemperedDistribution_add] using enorm_add_le f g
 
 /-- The `Lᵖ` norm of tempered distributions is homogeneous. -/
 theorem eLpNorm_smul (c : ℂ) (u : 𝓢'(E, F)) : eLpNorm p (c • u) = ‖c‖ₑ * eLpNorm p u := by
@@ -108,16 +128,12 @@ theorem eLpNorm_smul (c : ℂ) (u : 𝓢'(E, F)) : eLpNorm p (c • u) = ‖c‖
   · simp
   by_cases hu : ∃ f : Lp F p (MeasureTheory.volume : Measure E), (f : 𝓢'(E, F)) = u
   · obtain ⟨f, rfl⟩ := hu
-    have h := map_smul (MeasureTheory.Lp.toTemperedDistributionCLM F MeasureTheory.volume p) c f
-    simp only [MeasureTheory.Lp.toTemperedDistributionCLM_apply] at h
-    simpa [← h] using enorm_smul c f
+    simpa [← MeasureTheory.Lp.toTemperedDistribution_smul] using enorm_smul c f
   · push Not at hu
     rw [eLpNorm_eq_top hu, ENNReal.mul_top (by simpa using hc), eLpNorm_eq_top]
     intro f hf
     refine hu (c⁻¹ • f) ?_
-    rw [← MeasureTheory.Lp.toTemperedDistributionCLM_apply, map_smul,
-      MeasureTheory.Lp.toTemperedDistributionCLM_apply, hf, smul_smul, inv_mul_cancel₀ hc,
-      one_smul]
+    rw [MeasureTheory.Lp.toTemperedDistribution_smul, hf, smul_smul, inv_mul_cancel₀ hc, one_smul]
 
 @[simp]
 theorem eLpNorm_neg (u : 𝓢'(E, F)) : eLpNorm p (-u) = eLpNorm p u := by
