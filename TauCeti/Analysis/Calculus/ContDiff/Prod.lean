@@ -96,8 +96,7 @@ theorem ContDiff.exists_derivative_fields_of_hasCompactSupport {f : E × ℝ →
   · simpa [fxx, S, ι, Function.comp_def] using
       (hfx.differentiable (by norm_num) p).hasFDerivAt_slice_fst
   · simpa [ft, Function.comp_def] using
-      ((hf.differentiable (by simp) _).hasFDerivAt.comp p.2
-        ((hasFDerivAt_const p.1 p.2).prodMk (hasFDerivAt_id p.2))).hasDerivAt
+      TauCeti.hasDerivAt_slice_right (hf.differentiable (by simp) p)
 
 end DerivativeFields
 
