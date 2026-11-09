@@ -72,6 +72,21 @@ theorem not_mapsTo_I_mul_setOf_im_eq_zero :
     ¬ Set.MapsTo (fun z : ℂ => Complex.I * z) {z | z.im = 0} {z | z.im = 0} := fun h => by
   simpa using h (show (1 : ℂ) ∈ {z : ℂ | z.im = 0} by simp)
 
+variable {E : Type*} [TopologicalSpace E] {τ : E → E} {U : Set E} {ρ : ℝ}
+
+/-- The parameter map `τ` composed with conjugation of the disc coordinate is continuous on the
+product of `U` with a disc centred at zero, and maps this product and its punctured version to
+themselves. -/
+theorem continuousOn_mapsTo_prodMap_conj (hτ : ContinuousOn τ U) (hτU : Set.MapsTo τ U U) :
+    ContinuousOn (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ ball 0 ρ) ∧
+      Set.MapsTo (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ ball 0 ρ) (U ×ˢ ball 0 ρ) ∧
+      Set.MapsTo (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ (ball 0 ρ \ {0}))
+        (U ×ˢ (ball 0 ρ \ {0})) := by
+  have hconjBall : Set.MapsTo conj (ball (0 : ℂ) ρ) (ball 0 ρ) := fun _ hz ↦
+    conj_mem_ball_of_im_eq_zero (by simp) hz
+  exact ⟨hτ.prodMap Complex.continuous_conj.continuousOn, hτU.prodMap hconjBall,
+    hτU.prodMap fun z hz ↦ ⟨hconjBall hz.1, by simpa using hz.2⟩⟩
+
 end TauCeti
 
 namespace Complex

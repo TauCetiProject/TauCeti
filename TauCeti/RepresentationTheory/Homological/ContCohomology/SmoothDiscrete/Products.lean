@@ -33,9 +33,8 @@ variable {G : Type v} [Monoid G] [TopologicalSpace G]
 lemma _root_.TauCeti.IsSmoothDiscrete.pi {ι : Type w} [Finite ι]
     (X : ι → TopRep R G) (h : ∀ i, IsSmoothDiscrete R (X i)) :
     IsSmoothDiscrete R (TopRep.pi X) := by
-  have hdisc : ∀ i, DiscreteTopology (X i).V := fun i => (h i).discreteTopology
-  refine ⟨?_, fun x => ?_⟩
-  · exact TopRep.pi_discreteTopology X hdisc
+  have (i : ι) : DiscreteTopology (X i).V := (h i).discreteTopology
+  refine ⟨inferInstance, fun x => ?_⟩
   rw [TopRep.pi_stabilizer_eq_iInter X x]
   exact isOpen_iInter_of_finite (fun i => (h i).stabilizer_isOpen (x i))
 
