@@ -28,7 +28,7 @@ the classical setting of the pair-of-pants product before Novikov coefficients w
   `q^A ↦ e^(-q A)` sends it to the total count `∑_A N_A`
   (`TauCeti.Floer.coeff_zero_coefficientComparison_of_subsingleton`).
 * With finitely many orbits every coefficient function on capped generators is a completed
-  combination (`TauCeti.Floer.novikovModule_eq_top_of_subsingleton`): the capped complex is the
+  combination (`TauCeti.NovikovModule.eq_top_of_subsingleton`): the capped complex is the
   free `R`-module on the orbits, with no completion.
 * The kernel of the counts on capped generators is the total count, whatever the caps
   (`TauCeti.Floer.kernelOfMatrix_coefficientComparison_apply_of_subsingleton`), and the product
@@ -62,37 +62,10 @@ variable {R S : Type*} [AddCommGroup S] {ω : S →+ ℝ} {c : S →+ ℤ}
   {G : Type*} [AddMonoid G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
   (hq : ∀ A, area ω c (q A) = ωG A)
 
-section Coefficients
-
-/-- **On a trivial period group the coefficient comparison is the total count.** The Floer
-Novikov ring is then `R` (`NovikovSeries.coeffZeroRingEquiv`), and the comparison
-`q^A ↦ e^(-q A)` sends a generating series `∑_A N_A q^A` to `∑_A N_A`. This is a finite sum by
-`TauCeti.NovikovSeries.finite_support_of_bddAbove_image`, since every class has zero area:
-`ωG A = area ω c (q A) = 0`. -/
-theorem coeff_zero_coefficientComparison_of_subsingleton [Semiring R] (Q : NovikovSeries R G ωG) :
-    (coefficientComparison q hq Q).coeff 0 = ∑ᶠ A, Q.coeff A := by
-  have h : (-q) ⁻¹' {0} = Set.univ := Set.eq_univ_of_forall fun A => Subsingleton.elim _ _
-  rw [coefficientComparison_apply, coeff_map, h, finsum_mem_univ]
-  simp only [AddMonoidHom.coe_ofClass, RingHom.id_apply]
-
-end Coefficients
-
 variable {ι₁ ι₂ ι₀ : Type*} {P₁ : ι₁ → Type*} {P₂ : ι₂ → Type*} {P₀ : ι₀ → Type*}
   [∀ i, AddTorsor (PeriodGroup ω c) (P₁ i)] [∀ j, AddTorsor (PeriodGroup ω c) (P₂ j)]
   [∀ k, AddTorsor (PeriodGroup ω c) (P₀ k)]
   (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ : ∀ k, P₀ k)
-
-variable (ω c) in
-include ω c in
-/-- **No completion is needed on a trivial period group.** With finitely many orbits, each of which
-has a single capped generator, every coefficient function on capped generators is a completed
-combination, whatever the action functional `F`. -/
-theorem novikovModule_eq_top_of_subsingleton [Semiring R] [Finite ι₀] (F : (Σ k, P₀ k) → ℝ) :
-    NovikovModule R F = ⊤ :=
-  have (k : ι₀) : Finite (P₀ k) :=
-    have := (AddTorsor.subsingleton_iff (PeriodGroup ω c) (P₀ k)).1 inferInstance
-    Finite.of_subsingleton
-  NovikovModule.eq_top_of_finite
 
 /-- **On a trivial period group the product kernel is the total count.** At any capped generators
 of the orbits `i`, `j` and `k`, the kernel of class-indexed counts is the total count

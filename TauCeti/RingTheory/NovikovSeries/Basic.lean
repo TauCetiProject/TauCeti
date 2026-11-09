@@ -506,6 +506,13 @@ instance [Nontrivial R] : Nontrivial (NovikovSeries R H N) := by
   obtain ⟨r, hr⟩ := exists_ne (0 : R)
   exact ⟨⟨single 0 r, 0, single_eq_zero_iff.not.2 hr⟩⟩
 
+/-- Over a trivial exponent group every Novikov series is the constant monomial of its
+coefficient at `0`. -/
+@[simp]
+theorem single_zero_coeff_zero [Subsingleton H] (a : NovikovSeries R H N) :
+    single 0 (a.coeff 0) = a :=
+  ext fun h => by rw [Subsingleton.elim h 0, coeff_single_same]
+
 end Zero
 
 @[simp]

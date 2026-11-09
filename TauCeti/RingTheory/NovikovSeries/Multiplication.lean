@@ -563,12 +563,6 @@ section Subsingleton
 
 variable [AddZeroClass H] [Subsingleton H] {N : H →+ ℝ}
 
-/-- Over a trivial exponent group every Novikov series is the constant monomial of its
-coefficient at `0`. -/
-@[simp]
-theorem single_zero_coeff_zero [Zero R] (a : NovikovSeries R H N) : single 0 (a.coeff 0) = a :=
-  ext fun h => by rw [Subsingleton.elim h 0, coeff_single_same]
-
 /-- **Novikov series over a trivial exponent group are their constant coefficients.** Taking the
 coefficient at `0` is a ring isomorphism onto `R`, with inverse `r ↦ single 0 r`. -/
 def coeffZeroRingEquiv [NonUnitalNonAssocSemiring R] : NovikovSeries R H N ≃+* R where
