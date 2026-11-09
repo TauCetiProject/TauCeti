@@ -164,12 +164,9 @@ end Group
 at most one. -/
 lemma le_one_of_root_monic {p : L[X]} (hp : p.Monic)
     (hcoeff : ∀ i < p.natDegree, ν (p.coeff i) ≤ 1) (heq : p.eval t = 0) :
-    ν t ≤ 1 := by
-  nontriviality Γ
-  by_contra! ht
-  have h := ν.map_eval_eq_of_one_lt hp hcoeff ht
-  rw [heq, map_zero] at h
-  exact (pow_ne_zero _ (zero_lt_one.trans ht).ne') h.symm
+    ν t ≤ 1 :=
+  le_of_not_gt fun ht ↦ pow_ne_zero _ (zero_le.trans_lt ht).ne' <| by
+    rw [← ν.map_eval_eq_of_one_lt hp hcoeff ht, heq, map_zero]
 
 section Quadratic
 
@@ -194,15 +191,11 @@ lemma map_quadratic_eq_of_one_lt (ha : ν a ≤ 1) (hc : ν c ≤ 1) (ht : 1 < �
 lemma one_lt_map_sq_add_mul_sub_iff (ha : ν a ≤ 1) (hc : ν c ≤ 1) :
     1 < ν (t ^ 2 + a * t - c) ↔ 1 < ν t := by
   refine ⟨fun h ↦ ?_, fun ht ↦ ?_⟩
-  · by_contra ht
-    push Not at ht
-    refine h.not_ge (ν.map_sub_le (ν.map_add_le ?_ ?_) hc)
-    · rw [map_pow]
-      exact pow_le_one₀ zero_le ht
-    · rw [map_mul]
-      exact mul_le_one' ha ht
+  · contrapose! h
+    exact ν.map_sub_le (ν.map_add_le (by simpa using pow_le_one₀ zero_le h)
+      (by simpa using mul_le_one' ha h)) hc
   · rw [sub_eq_add_neg, map_quadratic_eq_of_one_lt ν ha (by rwa [Valuation.map_neg]) ht]
-    exact lt_of_lt_of_le ht (by simpa using pow_le_pow_right₀ ht.le one_le_two)
+    exact ht.trans_le (le_self_pow₀ ht.le two_ne_zero)
 
 end Quadratic
 
@@ -213,19 +206,6 @@ variable {c : L}
 -- After the subsingleton value-monoid case is discharged, `ν` supplies the nontriviality
 -- of `L` needed to compute the degree and monicity of the cubic.
 
-/-- The non-leading coefficients of `X³ + aX² + bX + c` are `a`, `b`, `c` (and zeros), so they
-are integral as soon as `a`, `b`, `c` are. This is the coefficient hypothesis that the general
-lemmas above take. -/
-private lemma cubic_coeff_le_one (ha : ν a ≤ 1) (hb : ν b ≤ 1) (hc : ν c ≤ 1) :
-    ∀ i < (X ^ 3 + C a * X ^ 2 + C b * X + C c).natDegree,
-      ν ((X ^ 3 + C a * X ^ 2 + C b * X + C c).coeff i) ≤ 1 := by
-  nontriviality Γ
-  have := domain_nontrivial ν ν.map_zero ν.map_one
-  have hdeg : (X ^ 3 + C a * X ^ 2 + C b * X + C c).natDegree = 3 := by compute_degree!
-  intro i hi
-  rw [hdeg] at hi
-  interval_cases i <;> simp [ha, hb, hc]
-
 /-- A monic cubic with integral coefficients, evaluated at an element of value `> 1`, is
 dominated by its leading term. -/
 lemma map_cubic_eq_of_one_lt (ha : ν a ≤ 1) (hb : ν b ≤ 1) (hc : ν c ≤ 1) (ht : 1 < ν t) :
@@ -234,19 +214,18 @@ lemma map_cubic_eq_of_one_lt (ha : ν a ≤ 1) (hb : ν b ≤ 1) (hc : ν c ≤ 
   have := domain_nontrivial ν ν.map_zero ν.map_one
   have hp : (X ^ 3 + C a * X ^ 2 + C b * X + C c).Monic := by monicity!
   have hdeg : (X ^ 3 + C a * X ^ 2 + C b * X + C c).natDegree = 3 := by compute_degree!
-  have h := ν.map_eval_eq_of_one_lt hp (cubic_coeff_le_one ν ha hb hc) ht
+  have h := ν.map_eval_eq_of_one_lt hp (fun i hi ↦ by
+    rw [hdeg] at hi
+    interval_cases i <;> simp [ha, hb, hc]) ht
   rw [hdeg] at h
   simpa [eval_X_pow] using h
 
 /-- A root of a monic cubic with integral coefficients is integral. -/
 lemma le_one_of_root_cubic (ha : ν a ≤ 1) (hb : ν b ≤ 1) (hc : ν c ≤ 1)
     (heq : t ^ 3 + a * t ^ 2 + b * t + c = 0) :
-    ν t ≤ 1 := by
-  nontriviality Γ
-  have := domain_nontrivial ν ν.map_zero ν.map_one
-  have hp : (X ^ 3 + C a * X ^ 2 + C b * X + C c).Monic := by monicity!
-  refine ν.le_one_of_root_monic hp (cubic_coeff_le_one ν ha hb hc) ?_
-  simpa [eval_X_pow] using heq
+    ν t ≤ 1 :=
+  le_of_not_gt fun ht ↦ pow_ne_zero 3 (zero_le.trans_lt ht).ne' <| by
+    rw [← ν.map_cubic_eq_of_one_lt ha hb hc ht, heq, map_zero]
 
 end Cubic
 
@@ -264,22 +243,15 @@ lemma map_cubic_deriv_eq_one (ha : ν a ≤ 1) (hb : ν b ≤ 1) (hc : ν c ≤ 
     (heq : t ^ 3 + a * t ^ 2 + b * t + c = 0)
     (hd : ν (a ^ 2 * b ^ 2 - 4 * b ^ 3 - 4 * a ^ 3 * c - 27 * c ^ 2 + 18 * a * b * c) = 1) :
     ν (3 * t ^ 2 + 2 * a * t + b) = 1 := by
-  have ht : t ∈ ν.integer := ν.le_one_of_root_cubic ha hb hc heq
-  have ha' : a ∈ ν.integer := ha
-  have hb' : b ∈ ν.integer := hb
-  have hc' : c ∈ ν.integer := hc
+  have ht := ν.le_one_of_root_cubic ha hb hc heq
+  rw [← mem_integer_iff] at ha hb hc ht
+  -- Both factors are polynomial expressions in `t`, `a`, `b`, `c`, so they lie in the subring
+  -- `ν.integer`; `aesop` closes such membership goals with its `SetLike` rules.
   refine ν.eq_one_of_mul_eq_one (b := (2 * a ^ 2 - 6 * b) * t ^ 2
       + (2 * a ^ 3 - 7 * a * b + 9 * c) * t + (a ^ 2 * b - 4 * b ^ 2 + 3 * a * c))
-    (add_mem (add_mem (mul_mem (ofNat_mem _ 3) (pow_mem ht 2))
-      (mul_mem (mul_mem (ofNat_mem _ 2) ha') ht)) hb') ?_ ?_
-  · refine add_mem (add_mem (mul_mem ?_ (pow_mem ht 2)) (mul_mem ?_ ht)) ?_
-    · exact sub_mem (mul_mem (ofNat_mem _ 2) (pow_mem ha' 2)) (mul_mem (ofNat_mem _ 6) hb')
-    · exact add_mem (sub_mem (mul_mem (ofNat_mem _ 2) (pow_mem ha' 3))
-        (mul_mem (mul_mem (ofNat_mem _ 7) ha') hb')) (mul_mem (ofNat_mem _ 9) hc')
-    · exact add_mem (sub_mem (mul_mem (pow_mem ha' 2) hb')
-        (mul_mem (ofNat_mem _ 4) (pow_mem hb' 2))) (mul_mem (mul_mem (ofNat_mem _ 3) ha') hc')
-  · convert hd using 2
-    linear_combination (-(18 * b - 6 * a ^ 2) * t - (15 * a * b - 4 * a ^ 3 - 27 * c)) * heq
+    ((mem_integer_iff _ _).1 (by aesop)) ((mem_integer_iff _ _).1 (by aesop)) ?_
+  convert hd using 2
+  linear_combination (-(18 * b - 6 * a ^ 2) * t - (15 * a * b - 4 * a ^ 3 - 27 * c)) * heq
 
 end CubicDerivative
 
