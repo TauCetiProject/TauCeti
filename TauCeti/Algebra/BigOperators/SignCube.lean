@@ -29,7 +29,8 @@ noncommutative ring, such as a C⋆-algebra, so products are kept in order throu
 * `TauCeti.signAverage f`: the average `2⁻ⁿ ∑_ε f ε` of a function on the sign cube with values
   in a real vector space. It is linear, fixes constants, commutes with multiplication by a fixed
   element and with `star`, is monotone, and is bounded in norm by any bound of `f`.
-* `TauCeti.rademacherSum x ε`: the Rademacher sum `∑ᵢ εᵢ • xᵢ`.
+* `TauCeti.rademacherSum x ε`: the Rademacher sum `∑ᵢ εᵢ • xᵢ`. It is additive and equivariant
+  in the coefficient family `x`.
 * `TauCeti.signAverage_units_smul`, `TauCeti.signAverage_units_mul_units_smul`: the first and
   second sign moments, `𝔼 εᵢ = 0` and `𝔼 εᵢ εⱼ = δᵢⱼ`.
 * `TauCeti.signAverage_rademacherSum`, `TauCeti.signAverage_rademacherSum_mul_self`: a
@@ -66,6 +67,35 @@ def rademacherSum [AddCommGroup E] (x : ι → E) (ε : ι → ℤˣ) : E :=
 /-- Unfolding lemma for `TauCeti.rademacherSum`. -/
 theorem rademacherSum_def [AddCommGroup E] (x : ι → E) (ε : ι → ℤˣ) :
     rademacherSum x ε = ∑ i, (ε i : ℤ) • x i := (rfl)
+
+/-- The Rademacher sum of the zero family vanishes. -/
+@[simp]
+theorem rademacherSum_zero [AddCommGroup E] (ε : ι → ℤˣ) : rademacherSum (0 : ι → E) ε = 0 := by
+  simp [rademacherSum_def]
+
+/-- The Rademacher sum is additive in the coefficient family. -/
+@[simp]
+theorem rademacherSum_add [AddCommGroup E] (x y : ι → E) (ε : ι → ℤˣ) :
+    rademacherSum (x + y) ε = rademacherSum x ε + rademacherSum y ε := by
+  simp only [rademacherSum_def, Pi.add_apply, smul_add, sum_add_distrib]
+
+/-- The Rademacher sum commutes with negating the coefficient family. -/
+@[simp]
+theorem rademacherSum_neg [AddCommGroup E] (x : ι → E) (ε : ι → ℤˣ) :
+    rademacherSum (-x) ε = -rademacherSum x ε := by
+  simp only [rademacherSum_def, Pi.neg_apply, smul_neg, sum_neg_distrib]
+
+/-- The Rademacher sum commutes with subtracting coefficient families. -/
+@[simp]
+theorem rademacherSum_sub [AddCommGroup E] (x y : ι → E) (ε : ι → ℤˣ) :
+    rademacherSum (x - y) ε = rademacherSum x ε - rademacherSum y ε := by
+  simp only [rademacherSum_def, Pi.sub_apply, smul_sub, sum_sub_distrib]
+
+/-- The Rademacher sum commutes with scaling the coefficient family. -/
+@[simp]
+theorem rademacherSum_smul {M : Type*} [Monoid M] [AddCommGroup E] [DistribMulAction M E]
+    (c : M) (x : ι → E) (ε : ι → ℤˣ) : rademacherSum (c • x) ε = c • rademacherSum x ε := by
+  simp only [rademacherSum_def, Pi.smul_apply, smul_sum, smul_comm c]
 
 /-- The adjoint of a Rademacher sum is the Rademacher sum of the adjoints. -/
 theorem star_rademacherSum [AddCommGroup E] [StarAddMonoid E] (x : ι → E) (ε : ι → ℤˣ) :
