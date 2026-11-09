@@ -6,7 +6,8 @@ Authors: Codex
 module
 
 public import Mathlib.Analysis.Normed.Affine.AddTorsorBases
-public import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
+public import TauCeti.LinearAlgebra.AffineSpace.FiniteDimensional
+public import TauCeti.LinearAlgebra.AffineSpace.AffineMap
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.GroupTheory.CosetCover
 public import Mathlib.Topology.Baire.CompleteMetrizable
@@ -183,89 +184,10 @@ theorem exists_dist_lt_genericLocus {ι : Sort*} [Countable ι]
 
 end Topology
 
-section Algebra
-
-open scoped Affine
-
-variable {k V P : Type*} [DivisionRing k] [AddCommGroup V] [Module k V] [AffineSpace V P]
-
-/-- Adding one point to a subspace of codimension at least two still gives a
-proper affine subspace. -/
-theorem affineSpan_insert_ne_top_of_finrank (S : AffineSubspace k P)
-    (hS : Module.finrank k S.direction + 1 < Module.finrank k V) (x : P) :
-    affineSpan k (insert x (S : Set P)) ≠ ⊤ := by
-  intro htop
-  have hle := finrank_vectorSpan_insert_le S x
-  rw [← direction_affineSpan, htop, direction_top, finrank_top] at hle
-  exact (not_le_of_gt hS) hle
-
-/-- Adjoining two points to a subspace of codimension at least three leaves
-a proper affine subspace. The two points need not be distinct. -/
-theorem affineSpan_pair_union_ne_top_of_finrank (S : AffineSubspace k P)
-    (hS : Module.finrank k S.direction + 2 < Module.finrank k V) (x y : P) :
-    affineSpan k ({x, y} ∪ (S : Set P)) ≠ ⊤ := by
-  have hfirst := finrank_vectorSpan_insert_le S y
-  have hsecond := finrank_vectorSpan_insert_le_set k (insert y (S : Set P)) x
-  intro he
-  have he' : affineSpan k (insert x (insert y (S : Set P))) = ⊤ := by
-    simpa only [insert_union, singleton_union] using he
-  rw [← direction_affineSpan, he', direction_top, finrank_top] at hsecond
-  omega
-
-/-- Outside the span of an affine obstacle and an endpoint, every nonzero
-parameter on the line from that endpoint avoids the obstacle. The endpoint
-itself need not avoid the obstacle. -/
-theorem lineMap_not_mem_of_not_mem_affineSpan_insert_of_ne_zero (S : AffineSubspace k P)
-    {x z : P} (hz : z ∉ affineSpan k (insert x (S : Set P)))
-    {t : k} (ht : t ≠ 0) : AffineMap.lineMap x z t ∉ S := by
-  intro htS
-  apply hz
-  have hxspan : x ∈ affineSpan k (insert x (S : Set P)) :=
-    subset_affineSpan k _ (mem_insert x _)
-  have htspan : AffineMap.lineMap x z t ∈ affineSpan k (insert x (S : Set P)) :=
-    subset_affineSpan k _ (mem_insert_of_mem x htS)
-  simpa only [AffineMap.lineMap_lineMap_right, inv_mul_cancel₀ ht,
-    AffineMap.lineMap_apply_one] using AffineMap.lineMap_mem t⁻¹ hxspan htspan
-
-/-- A vertex outside the affine span of an obstacle and an allowed endpoint
-determines a full line avoiding the obstacle. -/
-theorem lineMap_not_mem_of_not_mem_affineSpan_insert (S : AffineSubspace k P)
-    {x z : P} (hx : x ∉ S) (hz : z ∉ affineSpan k (insert x (S : Set P)))
-    (t : k) : AffineMap.lineMap x z t ∉ S := by
-  by_cases ht : t = 0
-  · simpa [ht] using hx
-  · exact S.lineMap_not_mem_of_not_mem_affineSpan_insert_of_ne_zero hz ht
-
-end Algebra
 
 section Topology
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-
-/-- Between endpoints outside countably many affine obstacles of codimension at
-least two, an intermediate vertex can be chosen in any nonempty open set so
-that both full lines, and hence both segments, avoid every obstacle.
-
-Only the vertex is varied: both endpoints remain fixed. -/
-theorem exists_mem_open_two_lineMaps_avoid {ι : Type*} [Countable ι]
-    (S : ι → AffineSubspace ℝ V)
-    (hS : ∀ i, Module.finrank ℝ (S i).direction + 1 < Module.finrank ℝ V)
-    {x y : V} (hx : ∀ i, x ∉ S i) (hy : ∀ i, y ∉ S i)
-    {U : Set V} (hU : IsOpen U) (hne : U.Nonempty) :
-    ∃ z ∈ U, ∀ i (t : ℝ),
-      AffineMap.lineMap x z t ∉ S i ∧ AffineMap.lineMap y z t ∉ S i := by
-  let A : ι ⊕ ι → AffineSubspace ℝ V := Sum.elim
-    (fun i => affineSpan ℝ (insert x (S i : Set V)))
-    (fun i => affineSpan ℝ (insert y (S i : Set V)))
-  have hA : ∀ i, A i ≠ ⊤ := by
-    intro i
-    cases i with
-    | inl i => exact (S i).affineSpan_insert_ne_top_of_finrank (hS i) x
-    | inr i => exact (S i).affineSpan_insert_ne_top_of_finrank (hS i) y
-  obtain ⟨z, hzU, hz⟩ := exists_mem_open_genericLocus A hA hU hne
-  exact ⟨z, hzU, fun i t =>
-    ⟨(S i).lineMap_not_mem_of_not_mem_affineSpan_insert (hx i) (hz (.inl i)) t,
-      (S i).lineMap_not_mem_of_not_mem_affineSpan_insert (hy i) (hz (.inr i)) t⟩⟩
 
 /-- A set covered by countably many affine subspaces of codimension at least
 two can be avoided by both full lines from two fixed allowed endpoints to a
@@ -306,6 +228,25 @@ theorem exists_mem_open_two_lineMaps_avoid_set {ι κ : Type*} [Countable ι] [C
     ⟨havoid x hx (fun k => hz (.inl (.inl k))) t,
       havoid y hy (fun k => hz (.inl (.inr k))) t⟩⟩
 
+/-- Between endpoints outside countably many affine obstacles of codimension at
+least two, an intermediate vertex can be chosen in any nonempty open set so
+that both full lines, and hence both segments, avoid every obstacle.
+
+Only the vertex is varied: both endpoints remain fixed. -/
+theorem exists_mem_open_two_lineMaps_avoid {ι : Type*} [Countable ι]
+    (S : ι → AffineSubspace ℝ V)
+    (hS : ∀ i, Module.finrank ℝ (S i).direction + 1 < Module.finrank ℝ V)
+    {x y : V} (hx : ∀ i, x ∉ S i) (hy : ∀ i, y ∉ S i)
+    {U : Set V} (hU : IsOpen U) (hne : U.Nonempty) :
+    ∃ z ∈ U, ∀ i (t : ℝ),
+      AffineMap.lineMap x z t ∉ S i ∧ AffineMap.lineMap y z t ∉ S i := by
+  obtain ⟨z, hzU, _, hz⟩ := exists_mem_open_two_lineMaps_avoid_set S hS
+    (fun i : Empty => nomatch i) (fun i => nomatch i) (E := ⋃ i, (S i : Set V))
+    Subset.rfl (by simpa using hx) (by simpa using hy) hU hne
+  exact ⟨z, hzU, fun i t =>
+    ⟨fun h => (hz t).1 (mem_iUnion.mpr ⟨i, h⟩),
+      fun h => (hz t).2 (mem_iUnion.mpr ⟨i, h⟩)⟩⟩
+
 end Topology
 
 end AffineSubspace
@@ -319,14 +260,14 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 /-- A set covered by countably many affine subspaces of ambient codimension at least two
 has dense complement in a hyperplane: every point of the hyperplane is a limit of points
 of the hyperplane outside the set. -/
-theorem face_subset_closure_sdiff_of_finrank {ι : Sort*} [Countable ι]
+theorem hyperplane_subset_closure_sdiff_of_finrank {ι : Sort*} [Countable ι]
     {ν : V →L[ℝ] ℝ} {b : ℝ} {Z : Set V} (hν : ν ≠ 0)
     (E : ι → AffineSubspace ℝ V) (hZE : Z ⊆ ⋃ i, (E i : Set V))
     (hE : ∀ i, Module.finrank ℝ (E i).direction + 1 < Module.finrank ℝ V) :
     {x | ν x = b} ⊆ closure ({x | ν x = b} \ Z) := by
   intro x hx
   have hx' : ν x = b := hx
-  -- The face is the affine subspace through `x` with direction `ker ν`.
+  -- The hyperplane is the affine subspace through `x` with direction `ker ν`.
   let A : AffineSubspace ℝ V := .mk' x (LinearMap.ker ν.toLinearMap)
   have hA : ∀ y ∈ A, ν y = b := fun y hy => by
     have := AffineSubspace.mem_mk'.mp hy
