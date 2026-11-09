@@ -155,6 +155,7 @@ noncomputable def realBoundaryHolomorphic (r₁ r₂ : ℝ) : Submodule ℝ (ℂ
       rw [im_ofReal_mul, hf.2.2 z hz, mul_zero]⟩
 
 /-- Membership in `realBoundaryHolomorphic` unfolds to its three defining conditions. -/
+@[simp]
 theorem mem_realBoundaryHolomorphic {r₁ r₂ : ℝ} {f : ℂ → ℂ} :
     f ∈ realBoundaryHolomorphic r₁ r₂ ↔
       DifferentiableOn ℂ f (ball 0 r₂ \ closedBall 0 r₁) ∧
@@ -182,6 +183,7 @@ noncomputable def realBoundaryAdjointHolomorphic (r₁ r₂ : ℝ) : Submodule �
       rw [mul_left_comm, im_ofReal_mul, hf.2.2 z hz, mul_zero]⟩
 
 /-- Membership in `realBoundaryAdjointHolomorphic` unfolds to its three defining conditions. -/
+@[simp]
 theorem mem_realBoundaryAdjointHolomorphic {r₁ r₂ : ℝ} {g : ℂ → ℂ} :
     g ∈ realBoundaryAdjointHolomorphic r₁ r₂ ↔
       DifferentiableOn ℂ g (ball 0 r₂ \ closedBall 0 r₁) ∧
