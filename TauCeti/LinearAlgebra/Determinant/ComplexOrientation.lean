@@ -68,6 +68,10 @@ fibres.
 * `TauCeti.IsComplexPositive.exists_pos_smul_eq`, `TauCeti.IsComplexPositive.not_neg`,
   `TauCeti.isComplexPositive_or_isComplexPositive_neg`: complex positivity is an orientation of
   the line `det E`; similarly for `(det E)^*` and `det E ⊗ (det F)^*`.
+* `TauCeti.isComplexPositive_detLineCongr_iff`,
+  `TauCeti.isComplexPositiveDual_comp_detLineCongr_iff`,
+  `TauCeti.isComplexPositiveTMulDual_congr_detLineCongr_iff`: complex positivity is invariant under
+  the isomorphisms of determinant lines induced by complex-linear isomorphisms.
 * `TauCeti.isComplexPositive_detLineShortExactEquiv_tmul`: compatibility with short exact
   sequences.
 * `TauCeti.isComplexPositiveTMulDual_detLineFourTermEquiv`: compatibility with four-term exact
@@ -128,6 +132,39 @@ theorem ιMulti_append_comp_complexToRealFamily {a b : ℕ} (f : E →ₗ[ℂ] F
   simp
 
 end Family
+
+/-! ### Half-lines of a real line -/
+
+section Line
+
+variable {M : Type*} [AddCommGroup M] [Module ℝ M] {P : M → Prop}
+
+/-- If a predicate `P` holds only for nonzero vectors, and any two vectors satisfying it differ by a
+positive factor, then `P x` and `P (-x)` do not both hold. The three complex orientations of this
+file are derived from this. -/
+private theorem not_neg_of_exists_pos_smul_eq (hne : ∀ x, P x → x ≠ 0)
+    (hpos : ∀ x y, P x → P y → ∃ c : ℝ, 0 < c ∧ y = c • x) {x : M} (hx : P x) : ¬ P (-x) :=
+  fun hnx ↦ by
+    obtain ⟨c, hc, h⟩ := hpos x (-x) hx hnx
+    exact hne x hx
+      (eq_zero_of_sameRay_self_neg (R := ℝ) (h ▸ SameRay.sameRay_nonneg_smul_right x hc.le))
+
+/-- In a real module of finrank one, if a predicate `P` is closed under positive scaling and holds
+for some nonzero vector, then for every nonzero `x`, `P x` or `P (-x)` holds. -/
+private theorem or_neg_of_finrank_eq_one (hM : finrank ℝ M = 1)
+    (hsmul : ∀ x, P x → ∀ c : ℝ, 0 < c → P (c • x)) {x₀ : M} (hx₀ : P x₀) (h₀ : x₀ ≠ 0) {x : M}
+    (hx : x ≠ 0) : P x ∨ P (-x) := by
+  have : Module.Finite ℝ M := Module.finite_of_finrank_eq_succ hM
+  -- Two vectors of a line are linearly dependent.
+  have hdep : ¬ LinearIndependent ℝ ![x₀, x] := fun h ↦ by
+    simpa [hM] using h.fintype_card_le_finrank
+  rcases sameRay_or_sameRay_neg_iff_not_linearIndependent.2 hdep with h | h
+  · obtain ⟨c, hc, rfl⟩ := h.exists_pos_left h₀ hx
+    exact Or.inl (hsmul x₀ hx₀ c hc)
+  · obtain ⟨c, hc, h⟩ := h.exists_pos_left h₀ (neg_ne_zero.2 hx)
+    exact Or.inr (h ▸ hsmul x₀ hx₀ c hc)
+
+end Line
 
 /-! ### The complex orientation of a determinant line -/
 
@@ -193,6 +230,21 @@ theorem isComplexPositive_of_coe_eq_smul [FiniteDimensional ℂ E] {v : Fin n �
   ⟨n, basisOfLinearIndependentOfCardEqFinrank' v hv (by simp [hn]), c, hc, by
     rwa [coe_basisOfLinearIndependentOfCardEqFinrank']⟩
 
+/-- An element of `det F` whose image in the exterior algebra is a positive multiple of the exterior
+product of the image under a complex-linear map `f` of the real family underlying `u`, followed by
+the real family underlying `v`, is complex positive when `(f ∘ u, v)` is a complex basis, given as
+a linearly independent family of the right length. This is the complex positive element of the
+determinant line of the middle term of an exact sequence. -/
+theorem isComplexPositive_of_coe_eq_smul_ιMulti_append [FiniteDimensional ℂ F] {m a b : ℕ}
+    (f : E →ₗ[ℂ] F) {u : Fin m → E} {v : Fin n → F}
+    (hli : LinearIndependent ℂ (Fin.append (f ∘ u) v))
+    (hmn : m + n = finrank ℂ F) (ha : a = 2 * m) (hb : b = 2 * n) {x : detLine ℝ F} {c : ℝ}
+    (hc : 0 < c) (hx : (x : ExteriorAlgebra ℝ F) = c • ExteriorAlgebra.ιMulti ℝ (a + b)
+      (Fin.append ((f.restrictScalars ℝ) ∘ complexToRealFamily u ∘ Fin.cast ha)
+        (complexToRealFamily v ∘ Fin.cast hb))) :
+    IsComplexPositive x :=
+  isComplexPositive_of_coe_eq_smul hli hmn hc (by rw [hx, ιMulti_append_comp_complexToRealFamily])
+
 omit [IsScalarTower ℝ ℂ E] in
 /-- Complex positive elements form a cone: a positive multiple of a complex positive element is
 complex positive. -/
@@ -230,11 +282,8 @@ theorem IsComplexPositive.exists_pos_smul_eq (hx : IsComplexPositive x) (hy : Is
 
 /-- The negative of a complex positive element is not complex positive: complex positivity is an
 orientation of `det E`, not a vacuous condition. -/
-theorem IsComplexPositive.not_neg (hx : IsComplexPositive x) : ¬ IsComplexPositive (-x) := by
-  intro hnx
-  obtain ⟨c, hc, h⟩ := hx.exists_pos_smul_eq hnx
-  have : (1 + c) • x = 0 := by rw [add_smul, one_smul, ← h, add_neg_cancel]
-  exact hx.ne_zero ((smul_eq_zero.1 this).resolve_left (by positivity))
+theorem IsComplexPositive.not_neg (hx : IsComplexPositive x) : ¬ IsComplexPositive (-x) :=
+  not_neg_of_exists_pos_smul_eq (fun _ ↦ ne_zero) (fun _ _ ↦ exists_pos_smul_eq) hx
 
 /-- Exactly one of `x` and `-x` is complex positive for each nonzero element `x` of the line
 `det E`; that at most one is follows from `TauCeti.IsComplexPositive.not_neg`. -/
@@ -242,11 +291,7 @@ theorem isComplexPositive_or_isComplexPositive_neg [FiniteDimensional ℂ E] (hx
     IsComplexPositive x ∨ IsComplexPositive (-x) := by
   have : Module.Finite ℝ E := Module.Finite.trans ℂ E
   obtain ⟨x₀, hx₀⟩ := exists_isComplexPositive (E := E)
-  obtain ⟨t, rfl⟩ := (finrank_eq_one_iff_of_ne_zero' x₀ hx₀.ne_zero).1 (finrank_detLine ℝ E) x
-  rcases lt_trichotomy t 0 with ht | rfl | ht
-  · exact Or.inr (by rw [← neg_smul]; exact hx₀.smul (neg_pos.2 ht))
-  · exact absurd (zero_smul ℝ x₀) hx
-  · exact Or.inl (hx₀.smul ht)
+  exact or_neg_of_finrank_eq_one (finrank_detLine ℝ E) (fun _ h _ ↦ h.smul) hx₀ hx₀.ne_zero hx
 
 end Positive
 
@@ -298,28 +343,6 @@ theorem IsComplexPositiveDual.ne_zero [FiniteDimensional ℂ E] (hφ : IsComplex
   rintro rfl
   exact (hφ x hx).ne' rfl
 
-/-- The negative of a complex positive functional is not complex positive. -/
-theorem IsComplexPositiveDual.not_neg [FiniteDimensional ℂ E] (hφ : IsComplexPositiveDual φ) :
-    ¬ IsComplexPositiveDual (-φ) := fun hnφ ↦ by
-  obtain ⟨x, hx⟩ := exists_isComplexPositive (E := E)
-  have h := hnφ x hx
-  rw [LinearMap.neg_apply, neg_pos] at h
-  exact (hφ x hx).not_gt h
-
-/-- Exactly one of `φ` and `-φ` is complex positive for each nonzero functional `φ` on `det E`;
-that at most one is follows from `TauCeti.IsComplexPositiveDual.not_neg`. -/
-theorem isComplexPositiveDual_or_isComplexPositiveDual_neg [FiniteDimensional ℂ E] (hφ : φ ≠ 0) :
-    IsComplexPositiveDual φ ∨ IsComplexPositiveDual (-φ) := by
-  have : Module.Finite ℝ E := Module.Finite.trans ℂ E
-  obtain ⟨x, hx⟩ := exists_isComplexPositive (E := E)
-  -- A functional on the line `det E` vanishing at the nonzero `x` vanishes.
-  have hφx : φ x ≠ 0 := fun h ↦ hφ <| LinearMap.ext fun y ↦ by
-    obtain ⟨t, rfl⟩ := (finrank_eq_one_iff_of_ne_zero' x hx.ne_zero).1 (finrank_detLine ℝ E) y
-    simp [h]
-  rcases hφx.lt_or_gt with h | h
-  · exact Or.inr (hx.isComplexPositiveDual_iff.2 (by simpa using h))
-  · exact Or.inl (hx.isComplexPositiveDual_iff.2 h)
-
 /-- Two complex positive functionals on `det E` differ by a positive factor. -/
 theorem IsComplexPositiveDual.exists_pos_smul_eq [FiniteDimensional ℂ E]
     (hφ : IsComplexPositiveDual φ) (hψ : IsComplexPositiveDual ψ) :
@@ -331,6 +354,20 @@ theorem IsComplexPositiveDual.exists_pos_smul_eq [FiniteDimensional ℂ E]
   obtain ⟨t, rfl⟩ := (finrank_eq_one_iff_of_ne_zero' x hx.ne_zero).1 (finrank_detLine ℝ E) y
   simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
   field_simp
+
+/-- The negative of a complex positive functional is not complex positive. -/
+theorem IsComplexPositiveDual.not_neg [FiniteDimensional ℂ E] (hφ : IsComplexPositiveDual φ) :
+    ¬ IsComplexPositiveDual (-φ) :=
+  not_neg_of_exists_pos_smul_eq (fun _ ↦ ne_zero) (fun _ _ ↦ exists_pos_smul_eq) hφ
+
+/-- Exactly one of `φ` and `-φ` is complex positive for each nonzero functional `φ` on `det E`;
+that at most one is follows from `TauCeti.IsComplexPositiveDual.not_neg`. -/
+theorem isComplexPositiveDual_or_isComplexPositiveDual_neg [FiniteDimensional ℂ E] (hφ : φ ≠ 0) :
+    IsComplexPositiveDual φ ∨ IsComplexPositiveDual (-φ) := by
+  have : Module.Finite ℝ E := Module.Finite.trans ℂ E
+  obtain ⟨φ₀, hφ₀⟩ := exists_isComplexPositiveDual (E := E)
+  exact or_neg_of_finrank_eq_one (by rw [Subspace.dual_finrank_eq, finrank_detLine])
+    (fun _ h _ ↦ h.smul) hφ₀ hφ₀.ne_zero hφ
 
 end Dual
 
@@ -394,13 +431,8 @@ theorem IsComplexPositiveTMulDual.ne_zero [FiniteDimensional ℂ F]
 
 /-- The negative of a complex positive element of `det E ⊗ (det F)^*` is not complex positive. -/
 theorem IsComplexPositiveTMulDual.not_neg [FiniteDimensional ℂ F]
-    (ht : IsComplexPositiveTMulDual t) : ¬ IsComplexPositiveTMulDual (-t) := by
-  intro hnt
-  obtain ⟨c, hc, h⟩ := ht.exists_pos_smul_eq hnt
-  have : (1 + c) • t = 0 := by
-    rw [add_smul, one_smul, ← h]
-    exact add_neg_cancel t
-  exact ht.ne_zero ((smul_eq_zero.1 this).resolve_left (by positivity))
+    (ht : IsComplexPositiveTMulDual t) : ¬ IsComplexPositiveTMulDual (-t) :=
+  not_neg_of_exists_pos_smul_eq (fun _ ↦ ne_zero) (fun _ _ ↦ exists_pos_smul_eq) ht
 
 /-- Exactly one of `t` and `-t` is complex positive for each nonzero element `t` of the line
 `det E ⊗ (det F)^*`; that at most one is follows from
@@ -413,13 +445,87 @@ theorem isComplexPositiveTMulDual_or_isComplexPositiveTMulDual_neg [FiniteDimens
   obtain ⟨t₀, ht₀⟩ := exists_isComplexPositiveTMulDual (E := E) (F := F)
   have hrank : finrank ℝ (detLine ℝ E ⊗[ℝ] Dual ℝ (detLine ℝ F)) = 1 := by
     simp [finrank_tensorProduct]
-  obtain ⟨s, rfl⟩ := (finrank_eq_one_iff_of_ne_zero' t₀ ht₀.ne_zero).1 hrank t
-  rcases lt_trichotomy s 0 with hs | rfl | hs
-  · exact Or.inr (by rw [← neg_smul]; exact ht₀.smul (neg_pos.2 hs))
-  · exact absurd (zero_smul ℝ t₀) ht
-  · exact Or.inl (ht₀.smul hs)
+  exact or_neg_of_finrank_eq_one hrank (fun _ h _ ↦ h.smul) ht₀ ht₀.ne_zero ht
 
 end TMulDual
+
+/-! ### Transport along complex-linear isomorphisms -/
+
+section Congr
+
+variable {E' F' : Type*} [AddCommGroup E'] [Module ℂ E'] [Module ℝ E'] [IsScalarTower ℝ ℂ E']
+  [AddCommGroup F'] [Module ℂ F'] [Module ℝ F'] [IsScalarTower ℝ ℂ F']
+
+/-- The isomorphism of real determinant lines induced by a complex-linear isomorphism maps complex
+positive elements to complex positive elements. -/
+theorem IsComplexPositive.detLineCongr {x : detLine ℝ E} (hx : IsComplexPositive x)
+    (e : E ≃ₗ[ℂ] F) : IsComplexPositive (LinearEquiv.detLineCongr (e.restrictScalars ℝ) x) := by
+  obtain ⟨n, b, c, hc, hx⟩ := hx
+  refine ⟨n, b.map e, c, hc, ?_⟩
+  rw [LinearEquiv.coe_detLineCongr, hx, map_smul, ExteriorAlgebra.map_apply_ιMulti, Basis.coe_map,
+    ← LinearEquiv.coe_toLinearMap, complexToRealFamily_comp]
+  rfl
+
+/-- **Complex positivity is invariant under complex-linear isomorphisms**: the isomorphism of real
+determinant lines induced by a complex-linear isomorphism `e` maps an element to a complex positive
+element exactly when the element is complex positive. -/
+@[simp]
+theorem isComplexPositive_detLineCongr_iff (e : E ≃ₗ[ℂ] F) {x : detLine ℝ E} :
+    IsComplexPositive (LinearEquiv.detLineCongr (e.restrictScalars ℝ) x) ↔ IsComplexPositive x := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.detLineCongr e⟩
+  have he : e.symm.restrictScalars ℝ = (e.restrictScalars ℝ).symm := rfl
+  simpa only [he, ← LinearEquiv.detLineCongr_symm, LinearEquiv.symm_apply_apply] using
+    h.detLineCongr e.symm
+
+/-- Pulling a functional back along the isomorphism of real determinant lines induced by a
+complex-linear isomorphism preserves and reflects complex positivity. -/
+@[simp]
+theorem isComplexPositiveDual_comp_detLineCongr_iff (e : E ≃ₗ[ℂ] F)
+    {φ : Dual ℝ (detLine ℝ F)} :
+    IsComplexPositiveDual (φ ∘ₗ (LinearEquiv.detLineCongr (e.restrictScalars ℝ)).toLinearMap) ↔
+      IsComplexPositiveDual φ := by
+  refine ⟨fun hφ y hy ↦ ?_, fun hφ x hx ↦ hφ _ (hx.detLineCongr e)⟩
+  obtain ⟨x, rfl⟩ := (LinearEquiv.detLineCongr (e.restrictScalars ℝ)).surjective y
+  exact hφ x ((isComplexPositive_detLineCongr_iff e).1 hy)
+
+/-- The isomorphism `det E ⊗ (det F)^* ≃ det E' ⊗ (det F')^*` induced by complex-linear
+isomorphisms `e₁ : E ≃ E'` and `e₂ : F ≃ F'`, the shape of `LinearMap.detLineCongr`, maps complex
+positive elements to complex positive elements. -/
+theorem IsComplexPositiveTMulDual.congr_detLineCongr {t : detLine ℝ E ⊗[ℝ] Dual ℝ (detLine ℝ F)}
+    (ht : IsComplexPositiveTMulDual t) (e₁ : E ≃ₗ[ℂ] E') (e₂ : F ≃ₗ[ℂ] F') :
+    IsComplexPositiveTMulDual (TensorProduct.congr
+      (LinearEquiv.detLineCongr (e₁.restrictScalars ℝ))
+      (LinearEquiv.detLineCongr (e₂.restrictScalars ℝ)).symm.dualMap t) := by
+  obtain ⟨x, φ, hx, hφ, rfl⟩ := ht
+  refine ⟨_, _, hx.detLineCongr e₁, ?_, TensorProduct.congr_tmul _ _ _ _⟩
+  -- The second factor is `φ` pulled back along the isomorphism induced by `e₂.symm`.
+  have hφ' : (LinearEquiv.detLineCongr (e₂.restrictScalars ℝ)).symm.dualMap φ =
+      φ ∘ₗ (LinearEquiv.detLineCongr (e₂.symm.restrictScalars ℝ)).toLinearMap := by
+    rw [LinearEquiv.detLineCongr_symm]
+    rfl
+  rw [hφ']
+  exact (isComplexPositiveDual_comp_detLineCongr_iff e₂.symm).2 hφ
+
+/-- **Complex positivity of `det E ⊗ (det F)^*` is invariant under complex-linear isomorphisms**:
+the isomorphism `det E ⊗ (det F)^* ≃ det E' ⊗ (det F')^*` induced by complex-linear isomorphisms
+`e₁ : E ≃ E'` and `e₂ : F ≃ F'` maps an element to a complex positive element exactly when the
+element is complex positive. -/
+theorem isComplexPositiveTMulDual_congr_detLineCongr_iff (e₁ : E ≃ₗ[ℂ] E') (e₂ : F ≃ₗ[ℂ] F')
+    {t : detLine ℝ E ⊗[ℝ] Dual ℝ (detLine ℝ F)} :
+    IsComplexPositiveTMulDual (TensorProduct.congr
+        (LinearEquiv.detLineCongr (e₁.restrictScalars ℝ))
+        (LinearEquiv.detLineCongr (e₂.restrictScalars ℝ)).symm.dualMap t) ↔
+      IsComplexPositiveTMulDual t := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.congr_detLineCongr e₁ e₂⟩
+  have he₁ : e₁.symm.restrictScalars ℝ = (e₁.restrictScalars ℝ).symm := rfl
+  have he₂ : e₂.symm.restrictScalars ℝ = (e₂.restrictScalars ℝ).symm := rfl
+  have := h.congr_detLineCongr e₁.symm e₂.symm
+  convert this using 1
+  rw [he₁, he₂, ← LinearEquiv.detLineCongr_symm, ← LinearEquiv.detLineCongr_symm]
+  exact ((TensorProduct.congr (LinearEquiv.detLineCongr (e₁.restrictScalars ℝ))
+    (LinearEquiv.detLineCongr (e₂.restrictScalars ℝ)).symm.dualMap).symm_apply_apply t).symm
+
+end Congr
 
 /-! ### Exact sequences of complex vector spaces -/
 
@@ -467,9 +573,9 @@ theorem isComplexPositive_detLineShortExactEquiv_tmul
   have hy' : y = d • exteriorPower.ιMulti ℝ _
       ((g.restrictScalars ℝ) ∘ complexToRealFamily v ∘ Fin.cast hW) :=
     Subtype.ext (by simp [hyd, ← Function.comp_assoc, ← complexToRealFamily_comp, hv])
-  refine isComplexPositive_of_coe_eq_smul hli (hfgC.finrank_eq_add hfC hgC).symm (mul_pos hc hd) ?_
-  rw [hx', hy', smul_tmul_smul, map_smul, Submodule.coe_smul, coe_detLineShortExactEquiv_tmul,
-    ιMulti_append_comp_complexToRealFamily]
+  refine isComplexPositive_of_coe_eq_smul_ιMulti_append f hli (hfgC.finrank_eq_add hfC hgC).symm hU
+    hW (mul_pos hc hd) ?_
+  rw [hx', hy', smul_tmul_smul, map_smul, Submodule.coe_smul, coe_detLineShortExactEquiv_tmul]
 
 end ShortExact
 
@@ -532,8 +638,9 @@ theorem isComplexPositiveTMulDual_detLineFourTermEquiv
   -- Real dimensions are twice the complex ones.
   have hA₂ := finrank_real_eq_two_mul_finrank_complex (V := A)
   have hR₂ : finrank ℝ (LinearMap.range (g.restrictScalars ℝ)) =
-      2 * finrank ℂ (LinearMap.range g) :=
-    finrank_real_eq_two_mul_finrank_complex (V := (LinearMap.range g).restrictScalars ℝ)
+      2 * finrank ℂ (LinearMap.range g) := by
+    rw [LinearMap.range_restrictScalars]
+    exact finrank_real_eq_two_mul_finrank_complex (V := (LinearMap.range g).restrictScalars ℝ)
   have hB₂ := finrank_real_eq_two_mul_finrank_complex (V := B)
   have hC₂ := finrank_real_eq_two_mul_finrank_complex (V := C)
   have hD₂ := finrank_real_eq_two_mul_finrank_complex (V := D)
@@ -552,14 +659,12 @@ theorem isComplexPositiveTMulDual_detLineFourTermEquiv
       ExteriorAlgebra.ιMulti ℝ _ (Fin.append ((g.restrictScalars ℝ) ∘ vR) zR) := by
     simp [γ]
   -- `β`, `γ` and the exterior product of the images of `zR` in `D` are complex positive.
-  have hβpos : IsComplexPositive β := by
-    refine isComplexPositive_of_coe_eq_smul hliB hB.symm one_pos ?_
-    rw [hβ, one_smul]
-    exact ιMulti_append_comp_complexToRealFamily f _ _ hA₂ hR₂
-  have hγpos : IsComplexPositive γ := by
-    refine isComplexPositive_of_coe_eq_smul hliC hC.symm one_pos ?_
-    rw [hγ, one_smul]
-    exact ιMulti_append_comp_complexToRealFamily g _ _ hR₂ hD₂
+  have hβpos : IsComplexPositive β :=
+    isComplexPositive_of_coe_eq_smul_ιMulti_append f hliB hB.symm hA₂ hR₂ one_pos
+      (by rw [hβ, one_smul])
+  have hγpos : IsComplexPositive γ :=
+    isComplexPositive_of_coe_eq_smul_ιMulti_append g hliC hC.symm hR₂ hD₂ one_pos
+      (by rw [hγ, one_smul])
   have hδpos : IsComplexPositive
       (exteriorPower.ιMulti ℝ (finrank ℝ D) ((h.restrictScalars ℝ) ∘ zR)) :=
     ⟨finrank ℂ D, bD, 1, one_pos, by

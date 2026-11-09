@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.LinearAlgebra.Prod
+import TauCeti.LinearAlgebra.LinearIndependent.Fin
 
 /-!
 # Exact sequences of linear maps
@@ -127,8 +128,8 @@ theorem _root_.Function.Exact.linearIndependent_append {R M N P : Type*} [Ring R
     ((Submodule.range_ker_disjoint hv).mono_right (by
       rw [h.linearMap_ker_eq, Set.range_comp, Submodule.span_image]
       exact LinearMap.map_le_range)).symm
-  refine (linearIndependent_equiv' finSumFinEquiv Fin.append_comp_sumElim).1 ?_
-  exact (hu.map' f (LinearMap.ker_eq_bot.2 hf)).sum_type (hv.of_comp g) hdisj
+  exact TauCeti.linearIndependent_fin_append.2 ⟨hu.map' f (LinearMap.ker_eq_bot.2 hf),
+    hv.of_comp g, hdisj⟩
 
 section FiniteDimensionalExact
 
