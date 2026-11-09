@@ -31,7 +31,12 @@ Symmetrically, the *partial trace over the first factor* is the `n × n` matrix
 forgets the first subsystem. It has the mirror-image properties: it preserves the trace and
 positive semidefiniteness, sends `A ⊗ₖ B` to `Tr A • B`, and is a bimodule map over the second
 factor, `Tr₁ ((1 ⊗ₖ A) * Y * (1 ⊗ₖ B)) = A * Tr₁ Y * B`. Together, `Tr₂ ρ` and `Tr₁ ρ` are the two
-reduced density matrices of a state `ρ` of a bipartite system.
+reduced density matrices of a state `ρ` of a bipartite system. Over a nonempty traced factor both
+partial traces also preserve positive definiteness.
+
+On a tripartite system indexed by `(m × n) × o`, regrouped to `m × (n × o)` by
+`Equiv.prodAssoc`, the partial traces over the first and third factors commute, and tracing out
+the third factor of `A ⊗ₖ Y` traces out the second factor of `Y`.
 -/
 
 public section
@@ -137,6 +142,20 @@ theorem PosSemidef.partialTraceRight [Ring R] [PartialOrder R] [StarRing R]
     simp [blockDiag_apply]
   exact posSemidef_sum _ fun k _ => hblock k ▸ hY.submatrix _
 
+/-- The partial trace over a nonempty second factor of a positive definite matrix is positive
+definite. -/
+theorem PosDef.partialTraceRight [Ring R] [PartialOrder R] [StarRing R] [AddLeftMono R]
+    [Nonempty n] {Y : Matrix (m × n) (m × n) R} (hY : Y.PosDef) :
+    Y.partialTraceRight.PosDef := by
+  classical
+  obtain ⟨k⟩ := ‹Nonempty n›
+  have hsum : Y.partialTraceRight = ∑ k, Y.submatrix (·, k) (·, k) := by
+    ext
+    simp [Matrix.sum_apply]
+  rw [hsum, ← Finset.add_sum_erase _ _ (Finset.mem_univ k)]
+  exact (hY.submatrix fun _ _ h ↦ (Prod.ext_iff.1 h).1).add_posSemidef
+    (posSemidef_sum _ fun _ _ ↦ hY.posSemidef.submatrix _)
+
 section Left
 
 omit [Fintype n]
@@ -234,6 +253,46 @@ theorem PosSemidef.partialTraceLeft [Ring R] [PartialOrder R] [StarRing R]
     Y.partialTraceLeft.PosSemidef :=
   posSemidef_sum _ fun _ _ => hY.submatrix _
 
+/-- The partial trace over a nonempty first factor of a positive definite matrix is positive
+definite. -/
+theorem PosDef.partialTraceLeft [Ring R] [PartialOrder R] [StarRing R] [AddLeftMono R]
+    [Nonempty m] {Y : Matrix (m × n) (m × n) R} (hY : Y.PosDef) :
+    Y.partialTraceLeft.PosDef := by
+  classical
+  obtain ⟨k⟩ := ‹Nonempty m›
+  rw [Matrix.partialTraceLeft, ← Finset.add_sum_erase _ _ (Finset.mem_univ k)]
+  exact (hY.submatrix fun _ _ h ↦ (Prod.ext_iff.1 h).2).add_posSemidef
+    (posSemidef_sum _ fun _ _ ↦ hY.posSemidef.submatrix _)
+
 end Left
+
+section Assoc
+
+variable {o : Type*} [Fintype m] [Fintype o]
+
+omit [Fintype n] [Fintype m] in
+/-- On a tripartite system, tracing out the third factor of `A ⊗ₖ Y`, regrouped from
+`m × (n × o)` to `(m × n) × o`, traces out the second factor of `Y`. -/
+theorem partialTraceRight_reindex_prodAssoc_symm_kronecker [NonUnitalNonAssocSemiring R]
+    (A : Matrix m m R) (Y : Matrix (n × o) (n × o) R) :
+    partialTraceRight
+        (reindex (Equiv.prodAssoc m n o).symm (Equiv.prodAssoc m n o).symm (A ⊗ₖ Y)) =
+      A ⊗ₖ Y.partialTraceRight := by
+  ext ⟨i, j⟩ ⟨i', j'⟩
+  simp [Finset.mul_sum]
+
+omit [Fintype n] in
+/-- On a tripartite system indexed by `(m × n) × o`, tracing out the third and then the first
+factor gives the same reduced matrix of the middle factor as tracing out the first factor, after
+regrouping to `m × (n × o)`, and then the third. -/
+theorem partialTraceRight_partialTraceLeft_reindex_prodAssoc [AddCommMonoid R]
+    (Y : Matrix ((m × n) × o) ((m × n) × o) R) :
+    partialTraceRight
+        (reindex (Equiv.prodAssoc m n o) (Equiv.prodAssoc m n o) Y).partialTraceLeft =
+      Y.partialTraceRight.partialTraceLeft := by
+  ext j j'
+  simpa using Finset.sum_comm
+
+end Assoc
 
 end Matrix

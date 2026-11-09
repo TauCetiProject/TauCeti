@@ -58,6 +58,7 @@ spin systems.
 
 ## Main results
 
+* `Matrix.continuousOn_vonNeumannEntropy` — the entropy is continuous on the Hermitian matrices;
 * `Matrix.PosSemidef.re_trace_sub_trace_le_relativeEntropy` — Klein's inequality: for positive
   semidefinite `ρ` and `σ`, `Tr ρ - Tr σ ≤ D(ρ ‖ σ)`;
 * `Matrix.PosSemidef.relativeEntropy_nonneg` — positivity of the relative entropy of two positive
@@ -117,6 +118,13 @@ theorem vonNeumannEntropy_zero : (0 : Matrix n n 𝕜).vonNeumannEntropy = 0 := 
 @[simp]
 theorem vonNeumannEntropy_one : (1 : Matrix n n 𝕜).vonNeumannEntropy = 0 := by
   simp [vonNeumannEntropy_def, cfc_apply_one]
+
+/-- The von Neumann entropy is continuous on the Hermitian matrices. -/
+theorem continuousOn_vonNeumannEntropy :
+    ContinuousOn (vonNeumannEntropy : Matrix n n 𝕜 → ℝ) {A | A.IsHermitian} := by
+  simp_rw [funext vonNeumannEntropy_def]
+  exact (RCLike.continuous_re.comp (continuous_id.matrix_trace)).comp_continuousOn
+    (TauCeti.continuousOn_matrix_cfc Real.continuous_negMulLog)
 
 variable {ρ σ : Matrix n n 𝕜}
 
