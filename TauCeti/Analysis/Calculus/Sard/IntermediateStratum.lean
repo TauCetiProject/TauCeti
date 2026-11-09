@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.RCLike.Basic
-public import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
 
 /-!
 # The intermediate strata in Sard's theorem
@@ -106,7 +106,7 @@ theorem exists_parametrization_iteratedFDeriv_eq_zero
   have hzero : ∀ x, iteratedFDeriv 𝕜 i f x = 0 → g x = 0 := fun x hx ↦ by simp [g, hx]
   have := FiniteDimensional.complete 𝕜 E
   obtain ⟨θ, hθa, hθ, hθg, hcover⟩ := hg.exists_parametrization_of_hasStrictFDerivAt hstrict hsurj
-    hr (hzero a hi)
+    g'.ker_closedComplemented_of_finiteDimensional_range (hzero a hi)
   refine ⟨g, g', θ, hg, hstrict, hsurj, hzero, hθa, hθ, hθg, fun V hV ↦ ?_,
     Module.Dual.finrank_ker_add_one_of_ne_zero hg'⟩
   filter_upwards [hcover V hV] with x hx hxi using hx (hzero x hxi)
