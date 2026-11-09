@@ -276,7 +276,7 @@ theorem Lp.exists_ae_eq_norm_le_sum_of_subset_iUnion {ι : Type*} [Fintype ι] {
     (hf : ∀ i, f i =ᵐ[μ.restrict (u i)] g) :
     ∃ G : Lp F p (μ.restrict s), G =ᵐ[μ.restrict s] g ∧ ‖G‖ ≤ ∑ i, ‖f i‖ := by
   have hg : ∀ i, MemLp g p (μ.restrict (u i)) := fun i => (Lp.memLp (f i)).ae_eq (hf i)
-  have hgs := MemLp.restrict_of_subset_iUnion Fact.out hs hg
+  have hgs := MemLp.restrict_of_subset_iUnion hs hg
   refine ⟨hgs.toLp g, hgs.coeFn_toLp, ?_⟩
   have hfi : ∀ i, ‖f i‖ = (eLpNorm g p (μ.restrict (u i))).toReal :=
     fun i => by rw [Lp.norm_def, eLpNorm_congr_ae (hf i)]

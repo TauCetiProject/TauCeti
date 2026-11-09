@@ -107,13 +107,25 @@ theorem eLpNorm_restrict_le_sum_of_subset_iUnion {ι : Type*} [Fintype ι] (f : 
   simpa only [Finset.mem_univ, Set.iUnion_true] using
     eLpNorm_restrict_biUnion_finset_le (μ := μ) f hp Finset.univ t
 
-/-- For `1 ≤ p`, a function in `Lᵖ` on each of finitely many sets is in `Lᵖ` on every set they
-cover. -/
-theorem MemLp.restrict_of_subset_iUnion {ι : Type*} [Finite ι] {f : α → ε} (hp : 1 ≤ p)
-    {s : Set α} {t : ι → Set α} (hs : s ⊆ ⋃ i, t i) (hf : ∀ i, MemLp f p (μ.restrict (t i))) :
-    MemLp f p (μ.restrict s) :=
+/-- A function in `Lᵖ` on each of finitely many sets is in `Lᵖ` on every set they cover. -/
+theorem MemLp.restrict_of_subset_iUnion {ι : Type*} [Finite ι] {f : α → ε} {s : Set α}
+    {t : ι → Set α} (hs : s ⊆ ⋃ i, t i) (hf : ∀ i, MemLp f p (μ.restrict (t i))) :
+    MemLp f p (μ.restrict s) := by
   have := Fintype.ofFinite ι
-  memLp_iff.2 ((eLpNorm_restrict_le_sum_of_subset_iUnion f hp hs).trans_lt
-    (ENNReal.sum_lt_top.2 fun i _ => (hf i).eLpNorm_lt_top))
+  refine MemLp.mono_measure (Measure.restrict_mono_set μ hs) ?_
+  -- For `1 ≤ p` this is subadditivity of `eLpNorm`; below `1`, that of `∫⁻ ‖f‖ₑ ^ p`.
+  rcases le_or_gt 1 p with hp | hp
+  · exact memLp_iff.2 ((eLpNorm_restrict_le_sum_of_subset_iUnion f hp subset_rfl).trans_lt
+      (ENNReal.sum_lt_top.2 fun i _ => (hf i).eLpNorm_lt_top))
+  have hm : AEStronglyMeasurable f (μ.restrict (⋃ i, t i)) :=
+    aestronglyMeasurable_iUnion_iff.2 fun i => (hf i).aestronglyMeasurable
+  rcases eq_or_ne p 0 with rfl | hp0
+  · exact memLp_zero_iff_aestronglyMeasurable.2 hm
+  have hint := fun {ν : Measure α} (hν : AEStronglyMeasurable f ν) =>
+    eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp.ne_top hν
+  refine (hint hm).2 ((lintegral_iUnion_le t _).trans_lt ?_)
+  rw [tsum_fintype]
+  exact ENNReal.sum_lt_top.2 fun i _ =>
+    (hint (hf i).aestronglyMeasurable).1 (hf i).eLpNorm_lt_top
 
 end MeasureTheory
