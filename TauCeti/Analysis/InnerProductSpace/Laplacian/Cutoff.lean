@@ -31,7 +31,7 @@ public section
 
 namespace TauCeti
 
-open ContinuousLinearMap Filter Metric MeasureTheory Topology
+open ContinuousLinearMap Filter InnerProductSpace Metric MeasureTheory Topology
 open scoped ContDiff Laplacian
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -80,6 +80,28 @@ theorem exists_forall_contDiff_cutoff_ball_norm_laplacian_le :
   · rw [laplacian_comp_smul_right, norm_smul, Real.norm_eq_abs, div_eq_mul_inv, ← inv_pow,
       abs_pow, abs_inv, abs_of_pos hR, mul_comm]
     exact mul_le_mul_of_nonneg_right ((hC₂ _).trans (le_max_right _ _)) (by positivity)
+
+/-- Off the annulus `R ≤ ‖x‖ ≤ 2R`, the truncation `χ u` of a function with `Δu = -φ`
+satisfies `Δ(χ u) + φ = 0`: it equals `u` inside `ball 0 R`, and it and `φ` vanish off
+`closedBall 0 (2R)`. -/
+theorem laplacian_smul_add_eq_zero_of_norm_lt_or_lt_norm {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {u φ : E → F} {χ : E → ℝ} {R₀ R : ℝ} (hΔu : Δ u = -φ)
+    (hφx : ∀ y : E, R₀ < ‖y‖ → φ y = 0) (hR₀R : R₀ ≤ 2 * R)
+    (hχ1 : ∀ x, ‖x‖ < R → χ =ᶠ[𝓝 x] fun _ => 1) (hχ0 : ∀ x, 2 * R < ‖x‖ → χ =ᶠ[𝓝 x] fun _ => 0)
+    {x : E} (hx : ‖x‖ < R ∨ 2 * R < ‖x‖) :
+    Δ (fun y => χ y • u y) x + φ x = 0 := by
+  rcases hx with hxR | hx2R
+  · -- Inside `ball 0 R` the truncation is `u` itself, and `Δu = -φ`.
+    have h : (fun y => χ y • u y) =ᶠ[𝓝 x] u := by
+      filter_upwards [hχ1 x hxR] with y hy
+      rw [hy, one_smul]
+    rw [(laplacian_congr_nhds h).eq_of_nhds, hΔu, Pi.neg_apply, neg_add_cancel]
+  · -- Off `closedBall 0 (2R)` the truncation vanishes identically, and so does `φ`.
+    have h : (fun y => χ y • u y) =ᶠ[𝓝 x] fun _ => (0 : F) := by
+      filter_upwards [hχ0 x hx2R] with y hy
+      rw [hy, zero_smul]
+    rw [(laplacian_congr_nhds h).eq_of_nhds, laplacian_const, hφx x (by linarith), add_zero,
+      Pi.zero_apply]
 
 section Limits
 

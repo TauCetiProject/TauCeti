@@ -12,6 +12,7 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Cutoff
 import TauCeti.Analysis.Normed.Lp.SmoothApprox
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Hessian
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.MeasureTheory.Function.Lp.IntegralBoundedSmul
 
 /-!
@@ -85,40 +86,6 @@ open scoped Convolution ContDiff
 variable {n : ℕ} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {φ : EuclideanSpace ℝ (Fin n) → F}
 
-open scoped Laplacian in
-/-- Off the annulus `R ≤ ‖x‖ ≤ 2R`, the truncation `χ u` of a function with `Δu = -φ` satisfies
-`Δ(χ u) + φ = 0`: it equals `u` inside `ball 0 R`, and it and `φ` vanish off `closedBall 0 (2R)`. -/
-private theorem laplacian_smul_add_eq_zero_of_norm_lt_or_lt_norm {u : EuclideanSpace ℝ (Fin n) → F}
-    {χ : EuclideanSpace ℝ (Fin n) → ℝ} {R₀ R : ℝ} (hΔu : Δ u = -φ)
-    (hφx : ∀ y : EuclideanSpace ℝ (Fin n), R₀ < ‖y‖ → φ y = 0) (hR₀R : R₀ ≤ 2 * R)
-    (hχ1 : ∀ x, ‖x‖ < R → χ =ᶠ[𝓝 x] fun _ => 1) (hχ0 : ∀ x, 2 * R < ‖x‖ → χ =ᶠ[𝓝 x] fun _ => 0)
-    {x : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ < R ∨ 2 * R < ‖x‖) :
-    Δ (fun y => χ y • u y) x + φ x = 0 := by
-  rcases hx with hxR | hx2R
-  · -- Inside `ball 0 R` the truncation is `u` itself, and `Δu = -φ`.
-    have h : (fun y => χ y • u y) =ᶠ[𝓝 x] u := by
-      filter_upwards [hχ1 x hxR] with y hy
-      rw [hy, one_smul]
-    rw [(laplacian_congr_nhds h).eq_of_nhds, hΔu, Pi.neg_apply, neg_add_cancel]
-  · -- Off `closedBall 0 (2R)` the truncation vanishes identically, and so does `φ`.
-    have h : (fun y => χ y • u y) =ᶠ[𝓝 x] fun _ => (0 : F) := by
-      filter_upwards [hχ0 x hx2R] with y hy
-      rw [hy, zero_smul]
-    rw [(laplacian_congr_nhds h).eq_of_nhds, laplacian_const, hφx x (by linarith), add_zero,
-      Pi.zero_apply]
-
-/-- For `n ≥ 3` and `R / 2 ≤ t`, the faster decay `t ^ (1 - n)` is at most
-`2 (R / 2) ^ (2 - n)` once `1 ≤ R`. -/
-private theorem rpow_one_sub_le_two_mul_rpow_two_sub {R t : ℝ} (hn : 3 ≤ n) (hR : 1 ≤ R)
-    (ht : R / 2 ≤ t) : t ^ (1 - (n : ℝ)) ≤ 2 * (R / 2) ^ (2 - (n : ℝ)) := by
-  have hnℝ : (3 : ℝ) ≤ n := by exact_mod_cast hn
-  have hR0 : 0 < R := zero_lt_one.trans_le hR
-  have hexp : 1 - (n : ℝ) = 2 - n - 1 := by ring
-  refine (Real.rpow_le_rpow_of_nonpos (by positivity) ht (by linarith)).trans ?_
-  rw [hexp, Real.rpow_sub_one (by positivity), div_le_iff₀ (by positivity)]
-  have : 0 ≤ (R / 2) ^ (2 - (n : ℝ)) := by positivity
-  nlinarith
-
 open scoped Laplacian Gradient in
 /-- **The truncation error of the Newtonian potential.** Let `φ` be smooth with support in
 `closedBall 0 R₀`, let `u = Gₙ ⋆ φ`, and let `χ` be a cutoff equal to `1` on `ball 0 R` and to `0`
@@ -154,7 +121,7 @@ private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le [Complete
     image_eq_zero_of_notMem_tsupport fun h => (mem_closedBall_zero_iff.1 (hR₀ h)).not_gt hy
   have hA₀ := integral_nonneg (μ := volume) (f := fun y => ‖φ y‖) fun y => norm_nonneg _
   by_cases hann : ‖x‖ < R ∨ 2 * R < ‖x‖
-  · rw [laplacian_smul_add_eq_zero_of_norm_lt_or_lt_norm hΔu hφx (by linarith) hχ1 hχ0 hann,
+  · rw [TauCeti.laplacian_smul_add_eq_zero_of_norm_lt_or_lt_norm hΔu hφx (by linarith) hχ1 hχ0 hann,
       norm_zero]
     exact indicator_nonneg (fun _ _ => by positivity) x
   push Not at hann
@@ -164,7 +131,7 @@ private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le [Complete
   have hpow : (‖x‖ - R₀) ^ (2 - (n : ℝ)) ≤ (R / 2) ^ (2 - (n : ℝ)) :=
     Real.rpow_le_rpow_of_nonpos (by positivity) hxR₀ (by linarith)
   -- Since `1 ≤ R`, the faster decay `(R / 2) ^ (1 - n)` of `Du` is at most `2 (R / 2) ^ (2 - n)`.
-  have hpow₁ := rpow_one_sub_le_two_mul_rpow_two_sub hn hR hxR₀
+  have hpow₁ := Real.rpow_one_sub_le_two_mul_rpow_two_sub hnℝ hR hxR₀
   have hgrad : ‖∇ χ x‖ ≤ C / R := by
     simpa only [gradient, LinearIsometryEquiv.norm_map] using hχ' x
   rw [indicator_of_mem (mem_closedBall_zero_iff.2 hx2R),
