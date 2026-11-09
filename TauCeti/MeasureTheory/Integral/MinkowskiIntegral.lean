@@ -34,9 +34,16 @@ finite almost everywhere when `R` is finite; testing against `G ^ (p - 1)` on th
 bounded and `μ` is finite bounds the truncated integrals of `G ^ p`, and monotone convergence
 removes the truncation.
 
+A typical consequence bounds a weighted `Lʳ` norm, over a parameter `t`, of the integrals of `g`
+over a family of sets `{x | R t x}`: pulling the power inside makes it an integral of `g` against
+the `Lʳ` norms in `t` of the truncated weights (`TauCeti.lintegral_mul_setLIntegral_rpow_le`).
+Off-diagonal Marcinkiewicz interpolation uses it with the sets cut out by a height `c * t ^ γ`.
+
 ## Main declarations
 
 * `TauCeti.lintegral_Lp_lintegral_le`: Minkowski's integral inequality.
+* `TauCeti.lintegral_mul_setLIntegral_rpow_le`: Minkowski's integral inequality for weighted
+  truncations.
 
 ## References
 
@@ -216,5 +223,54 @@ theorem lintegral_Lp_lintegral_le [SigmaFinite μ] [SFinite ν] {f : α → β �
   rw [lintegral_congr_ae (hL.mono fun x hx ↦ by rw [hx]),
     lintegral_congr_ae (hR.mono fun y hy ↦ by rw [hy])]
   exact lintegral_Lp_lintegral_le_of_measurable hg hp
+
+/-- **Minkowski's integral inequality for weighted truncations.** For `1 ≤ r`, a weight `w` and a
+measurable relation `R`, the weighted `Lʳ(ν)` norm in `t` of the truncated integrals
+`∫⁻ x in {x | R t x}, g x ∂μ` is at most the integral of `g` against the `Lʳ(ν)` norms in `t` of
+the truncations of the weight:
+
+`∫⁻ t, w t * (∫⁻ x in {R t ·}, g ∂μ) ^ r ∂ν ≤
+  (∫⁻ x, g x * (∫⁻ t in {R · x}, w ∂ν) ^ r⁻¹ ∂μ) ^ r`. -/
+theorem lintegral_mul_setLIntegral_rpow_le [SigmaFinite ν] [SFinite μ] {R : β → α → Prop}
+    (hR : MeasurableSet {z : β × α | R z.1 z.2}) {w : β → ℝ≥0∞} (hw : Measurable w)
+    {g : α → ℝ≥0∞} (hg : Measurable g) {r : ℝ} (hr : 1 ≤ r) :
+    ∫⁻ t, w t * (∫⁻ x in {x | R t x}, g x ∂μ) ^ r ∂ν ≤
+      (∫⁻ x, g x * (∫⁻ t, {t | R t x}.indicator w t ∂ν) ^ r⁻¹ ∂μ) ^ r := by
+  have hr0 : 0 < r := zero_lt_one.trans_le hr
+  -- The integrand `F t x = w t ^ r⁻¹ * g x` on the relation, and `0` off it.
+  set F : β → α → ℝ≥0∞ := fun t x =>
+    {z : β × α | R z.1 z.2}.indicator (fun z => w z.1 ^ r⁻¹ * g z.2) (t, x) with hFdef
+  have hF : Measurable (uncurry F) :=
+    (((hw.pow_const _).comp measurable_fst).mul (hg.comp measurable_snd)).indicator hR
+  have hRx : ∀ t, MeasurableSet {x | R t x} := fun t => measurable_prodMk_left hR
+  have hRt : ∀ x, MeasurableSet {t | R t x} := fun x => measurable_prodMk_right hR
+  have hFR : ∀ t x, F t x = {x | R t x}.indicator (fun x => w t ^ r⁻¹ * g x) x :=
+    fun _ _ => rfl
+  have hFR' : ∀ t x, F t x = {t | R t x}.indicator (fun t => w t ^ r⁻¹ * g x) t :=
+    fun _ _ => rfl
+  -- The integral of `F` over the space at a fixed parameter.
+  have hslice : ∀ t, ∫⁻ x, F t x ∂μ = w t ^ r⁻¹ * ∫⁻ x in {x | R t x}, g x ∂μ := fun t => by
+    simp_rw [hFR, lintegral_indicator (hRx t), lintegral_const_mul _ hg]
+  -- The integral of `F ^ r` over the parameters at a fixed point.
+  have hsec : ∀ x, ∫⁻ t, F t x ^ r ∂ν = g x ^ r * ∫⁻ t, {t | R t x}.indicator w t ∂ν :=
+    fun x => by
+      rw [← lintegral_const_mul _ (hw.indicator (hRt x))]
+      refine lintegral_congr fun t => ?_
+      by_cases h : R t x
+      · rw [hFR', indicator_of_mem (s := {t | R t x}) h, indicator_of_mem (s := {t | R t x}) h,
+          ENNReal.mul_rpow_of_nonneg _ _ hr0.le, ENNReal.rpow_inv_rpow hr0.ne', mul_comm]
+      · rw [hFR', indicator_of_notMem (s := {t | R t x}) h,
+          indicator_of_notMem (s := {t | R t x}) h, mul_zero, ENNReal.zero_rpow_of_pos hr0]
+  have hmink := lintegral_Lp_lintegral_le (μ := ν) (ν := μ) (f := F) hF.aemeasurable hr
+  rw [one_div, ENNReal.rpow_inv_le_iff hr0] at hmink
+  calc ∫⁻ t, w t * (∫⁻ x in {x | R t x}, g x ∂μ) ^ r ∂ν = ∫⁻ t, (∫⁻ x, F t x ∂μ) ^ r ∂ν := by
+        refine lintegral_congr fun t => ?_
+        rw [hslice, ENNReal.mul_rpow_of_nonneg _ _ hr0.le, ENNReal.rpow_inv_rpow hr0.ne']
+    _ ≤ _ := hmink
+    _ = _ := by
+        congr 1
+        refine lintegral_congr fun x => ?_
+        rw [hsec, ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hr0.le), ← ENNReal.rpow_mul,
+          mul_inv_cancel₀ hr0.ne', ENNReal.rpow_one]
 
 end TauCeti

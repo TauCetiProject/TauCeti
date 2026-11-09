@@ -19,9 +19,9 @@ pairing with the extremal function. In the same way, `m ≤ K * m ^ p` for a fin
 exponent `p < 1` gives `m ^ (1 - p) ≤ K`, which turns an estimate `μ(A) ≤ K μ(A) ^ (1/n)` into the
 isoperimetric form `μ(A) ^ (1 - 1/n) ≤ K`.
 
-For a positive exponent `y` the product `x ^ y * x ^ z` is at most `x ^ (y + z)` for every real
-`z`, with no hypothesis on `x`; this combines the powers of a function at two exponents when one
-of them may be negative.
+The product `x ^ y * x ^ z` is at most `x ^ (y + z)` for all real exponents `y` and `z`, with no
+hypothesis on `x`; this combines the powers of a function at two exponents when one of them may be
+negative.
 
 For an exponent `p ∈ [0, 1]` the powers `x ^ p` and `x ^ (1 - p)` multiply back to `x`, with no
 finiteness or positivity hypothesis on `x`. This is the case `s = t` of geometric interpolations
@@ -63,7 +63,7 @@ closed intervals for a reciprocal radius parameter `α / r`.
 * `ENNReal.rpow_one_sub_le_of_le_mul_rpow`: `m ≤ K * m ^ p` gives `m ^ (1 - p) ≤ K` for a finite
   `m` and `p < 1`.
 * `ENNReal.rpow_mul_rpow_one_sub`: `x ^ p * x ^ (1 - p) = x` for `p ∈ [0, 1]`.
-* `ENNReal.le_rpow_add`: `x ^ y * x ^ z ≤ x ^ (y + z)` for `0 < y`.
+* `ENNReal.le_rpow_add`: `x ^ y * x ^ z ≤ x ^ (y + z)` for all real `y` and `z`.
 * `ENNReal.inv_mul_rpow_mul_inv_mul_rpow`:
   `(F⁻¹ * a) ^ p * (G⁻¹ * b) ^ q = (F ^ p * G ^ q)⁻¹ * (a ^ p * b ^ q)` for finite `F`, `G`.
 * `ENNReal.sq_rpow_one_half`: `(x ^ 2) ^ (1 / 2) = x`, with no hypothesis on `x`.
@@ -81,8 +81,6 @@ closed intervals for a reciprocal radius parameter `α / r`.
   the `‖z - eᵢ‖ₑ ^ (-1/2)` is at most a constant times their sum.
 * `ENNReal.le_two_rpow_mul_inv_rpow_mul`: a bound `(s / 2) ^ q * a ≤ B` gives
   `a ≤ 2 ^ q * (s ^ q)⁻¹ * B` for `s ≠ 0, ∞`.
-* `ENNReal.le_rpow_neg_mul_of_rpow_mul_le`: `r ^ q * a ≤ B` gives `a ≤ r ^ (-q) * B` for
-  `r ≠ 0, ∞`.
 * `NNReal.rpow_neg_mem_Icc_iff`: an interval of negative powers is equivalent to an interval
   for the reciprocal parameter `α / r`.
 -/
@@ -120,16 +118,31 @@ theorem rpow_mul_rpow_one_sub (x : ℝ≥0∞) {p : ℝ} (hp₀ : 0 ≤ p) (hp�
     x ^ p * x ^ (1 - p) = x := by
   rw [← rpow_add_of_nonneg _ _ hp₀ (sub_nonneg.2 hp₁), add_sub_cancel, rpow_one]
 
-/-- For a positive exponent `y`, the product `x ^ y * x ^ z` is at most `x ^ (y + z)`, for every
-`x` and every real `z`; this is the `ℝ≥0∞` form of `Real.le_rpow_add`. Away from `0` and `∞` it
-is an equality; at `0` the left side vanishes, and at `∞` it vanishes when `z < 0`. -/
-theorem le_rpow_add (x : ℝ≥0∞) {y : ℝ} (hy : 0 < y) (z : ℝ) : x ^ y * x ^ z ≤ x ^ (y + z) := by
-  rcases le_or_gt 0 z with hz | hz
-  · exact (rpow_add_of_nonneg _ _ hy.le hz).ge
+/-- The product `x ^ y * x ^ z` is at most `x ^ (y + z)`, for every `x` and all real `y` and `z`;
+this is the `ℝ≥0∞` form of `Real.le_rpow_add`. Away from `0` and `∞` it is an equality. At `0` and
+at `∞` either the right side is `∞`, or one of the two factors on the left vanishes, or both
+exponents vanish. -/
+theorem le_rpow_add (x : ℝ≥0∞) (y z : ℝ) : x ^ y * x ^ z ≤ x ^ (y + z) := by
   rcases eq_or_ne x 0 with rfl | hx0
-  · simp [zero_rpow_of_pos hy]
+  · rcases lt_or_ge (y + z) 0 with hyz | hyz
+    · simp [zero_rpow_of_neg hyz]
+    rcases lt_or_ge 0 y with hy | hy
+    · simp [zero_rpow_of_pos hy]
+    rcases lt_or_ge 0 z with hz | hz
+    · simp [zero_rpow_of_pos hz]
+    obtain rfl : y = 0 := by linarith
+    obtain rfl : z = 0 := by linarith
+    simp
   rcases eq_or_ne x ∞ with rfl | hxtop
-  · simp [top_rpow_of_neg hz]
+  · rcases lt_or_ge 0 (y + z) with hyz | hyz
+    · simp [top_rpow_of_pos hyz]
+    rcases lt_or_ge y 0 with hy | hy
+    · simp [top_rpow_of_neg hy]
+    rcases lt_or_ge z 0 with hz | hz
+    · simp [top_rpow_of_neg hz]
+    obtain rfl : y = 0 := by linarith
+    obtain rfl : z = 0 := by linarith
+    simp
   exact (rpow_add _ _ hx0 hxtop).ge
 
 /-- Scaling the factors of `a ^ p * b ^ q` by `F⁻¹` and `G⁻¹` scales it by `(F ^ p * G ^ q)⁻¹`,
@@ -281,14 +294,6 @@ theorem le_two_rpow_mul_inv_rpow_mul {q : ℝ} {s a B : ℝ≥0∞} (hs : s ≠ 
   rw [ENNReal.mul_inv
     (Or.inr (ENNReal.inv_ne_top.2 (ENNReal.rpow_pos two_pos ENNReal.ofNat_ne_top).ne'))
     (Or.inl (ENNReal.rpow_ne_top_of_ne_zero hs hs')), inv_inv, mul_comm]
-
-/-- A bound `r ^ q * a ≤ B` at a height `r ≠ 0, ∞` gives `a ≤ r ^ (-q) * B`. This turns a weak-type
-bound at the height `r` into a bound for the measure of the superlevel set. -/
-theorem le_rpow_neg_mul_of_rpow_mul_le {q : ℝ} {r a B : ℝ≥0∞} (hr : r ≠ 0) (hr' : r ≠ ∞)
-    (h : r ^ q * a ≤ B) : a ≤ r ^ (-q) * B := by
-  rw [rpow_neg]
-  exact (ENNReal.mul_le_iff_le_inv (rpow_pos (pos_iff_ne_zero.2 hr) hr').ne'
-    (rpow_ne_top_of_ne_zero hr hr')).1 h
 
 end ENNReal
 

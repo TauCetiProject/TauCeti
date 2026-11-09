@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Integral.Marcinkiewicz.General
+public import TauCeti.Analysis.SpecialFunctions.Pow.Integral
+public import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+public import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
+public import TauCeti.MeasureTheory.Integral.Marcinkiewicz.Superlevel
 public import TauCeti.MeasureTheory.Integral.MinkowskiIntegral
+public import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # The off-diagonal Marcinkiewicz interpolation theorem
@@ -42,8 +46,9 @@ lies in `L^{p₁}`, and the two weak-type bounds give, for every `t > 0`,
 
 (`TauCeti.meas_ofReal_lt_le_add_setLIntegral_rpow`). Integrating against `q t ^ (q - 1)` with the
 layer cake formula leaves the two integrals `∫ t ^ (q - qᵢ - 1) (∫⁻_{…} ‖v‖ ^ pᵢ) ^ (qᵢ / pᵢ) dt`.
-Since `qᵢ / pᵢ ≥ 1`, Minkowski's integral inequality `TauCeti.lintegral_Lp_lintegral_le` moves the
-power `qᵢ / pᵢ` inside the integral over the space, and for a fixed point the integral in `t` is
+Since `qᵢ / pᵢ ≥ 1`, Minkowski's integral inequality, in the form
+`TauCeti.lintegral_mul_setLIntegral_rpow_le` for weighted truncations, moves the power `qᵢ / pᵢ`
+inside the integral over the space, and for a fixed point the integral in `t` is
 elementary (`TauCeti.lintegral_indicator_ofReal_mul_rpow_lt_le` and
 `TauCeti.lintegral_indicator_le_ofReal_mul_rpow_le`). The choice of `γ` makes both terms
 integrals of `‖v‖ ^ p`, and the result is the distributional estimate
@@ -56,6 +61,10 @@ where `A₀' = A₀ d ^ (-q₀)` and `A₁' = A₁ e ^ (-q₁)`.
 
 Both terms become multiples of `(∫⁻ ‖v‖ ^ p) ^ (q / p)` for `c = (∫⁻ ‖v‖ ^ p) ^ ((1 - γ) / p)`.
 The case `p₁ < p₀` follows by exchanging the endpoints.
+
+With `qᵢ = pᵢ` and `γ = 1` the distributional estimate and the truncation argument specialise to
+their diagonal forms, and `TauCeti.MeasureTheory.Integral.Marcinkiewicz.General` derives the
+diagonal theorem from them.
 
 ## Main declarations
 
@@ -82,66 +91,6 @@ open scoped ENNReal
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : Measure α} {ν : Measure β}
   {f : α → ℝ≥0∞} {u : β → ℝ≥0∞} {p p₀ p₁ q q₀ q₁ γ c : ℝ} {A₀ A₁ : ℝ≥0∞}
-
-/-- **Minkowski's integral inequality for weighted truncations.** For `r ≥ 1`, a weighted
-`L^r` norm in `t` of the truncated integrals `∫⁻ x in {R t ·}, g x` is at most the integral of `g`
-against the `L^r` norms in `t` of the truncations of the weight. -/
-private theorem lintegral_mul_setLIntegral_rpow_le [SFinite μ] {R : ℝ → α → Prop}
-    (hR : MeasurableSet {z : ℝ × α | R z.1 z.2}) {g : α → ℝ≥0∞} (hg : Measurable g) {r s : ℝ}
-    (hr : 1 ≤ r) :
-    ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) * (∫⁻ x in {x | R t x}, g x ∂μ) ^ r ≤
-      (∫⁻ x, g x * (∫⁻ t in Ioi (0 : ℝ),
-        {t : ℝ | R t x}.indicator (fun t => ENNReal.ofReal (t ^ s)) t) ^ r⁻¹ ∂μ) ^ r := by
-  have hr0 : 0 < r := zero_lt_one.trans_le hr
-  set w : ℝ → ℝ≥0∞ := fun t => ENNReal.ofReal (t ^ (s / r)) with hwdef
-  have hw : Measurable w := (measurable_id.pow_const _).ennreal_ofReal
-  have hws : Measurable fun t : ℝ => ENNReal.ofReal (t ^ s) :=
-    (measurable_id.pow_const _).ennreal_ofReal
-  set F : ℝ → α → ℝ≥0∞ := fun t x =>
-    {z : ℝ × α | R z.1 z.2}.indicator (fun z => w z.1 * g z.2) (t, x) with hFdef
-  have hF : Measurable (Function.uncurry F) :=
-    ((hw.comp measurable_fst).mul (hg.comp measurable_snd)).indicator hR
-  have hRx : ∀ t, MeasurableSet {x | R t x} := fun t => measurable_prodMk_left hR
-  have hRt : ∀ x, MeasurableSet {t : ℝ | R t x} := fun x => measurable_prodMk_right hR
-  have hFmem : ∀ {t x}, R t x → F t x = w t * g x := fun h =>
-    indicator_of_mem (show (_, _) ∈ {z : ℝ × α | R z.1 z.2} from h) _
-  have hFnot : ∀ {t x}, ¬R t x → F t x = 0 := fun h =>
-    indicator_of_notMem (show (_, _) ∉ {z : ℝ × α | R z.1 z.2} from h) _
-  -- The weight raised to the power `r` is `t ^ s` at every positive `t`.
-  have hwr : ∀ t : ℝ, 0 < t → w t ^ r = ENNReal.ofReal (t ^ s) := fun t ht => by
-    rw [hwdef, ENNReal.ofReal_rpow_of_nonneg (Real.rpow_nonneg ht.le _) hr0.le,
-      ← Real.rpow_mul ht.le, div_mul_cancel₀ s hr0.ne']
-  -- The integral of `F` over the space at a fixed height.
-  have hslice : ∀ t, ∫⁻ x, F t x ∂μ = w t * ∫⁻ x in {x | R t x}, g x ∂μ := fun t => by
-    rw [← lintegral_indicator (hRx t), ← lintegral_const_mul _ (hg.indicator (hRx t))]
-    refine lintegral_congr fun x => ?_
-    by_cases h : R t x
-    · rw [hFmem h, indicator_of_mem (show x ∈ {x | R t x} from h)]
-    · rw [hFnot h, indicator_of_notMem (show x ∉ {x | R t x} from h), mul_zero]
-  -- The integral of `F ^ r` over the heights at a fixed point.
-  have hsec : ∀ x, ∫⁻ t in Ioi (0 : ℝ), F t x ^ r =
-      g x ^ r * ∫⁻ t in Ioi (0 : ℝ),
-        {t : ℝ | R t x}.indicator (fun t => ENNReal.ofReal (t ^ s)) t := fun x => by
-    rw [← lintegral_const_mul _ (hws.indicator (hRt x))]
-    refine setLIntegral_congr_fun measurableSet_Ioi fun t ht => ?_
-    by_cases h : R t x
-    · rw [hFmem h, indicator_of_mem (show t ∈ {t | R t x} from h),
-        ENNReal.mul_rpow_of_nonneg _ _ hr0.le, hwr t ht, mul_comm]
-    · rw [hFnot h, indicator_of_notMem (show t ∉ {t | R t x} from h), mul_zero,
-        ENNReal.zero_rpow_of_pos hr0]
-  have hmink := lintegral_Lp_lintegral_le (μ := volume.restrict (Ioi (0 : ℝ))) (ν := μ) (f := F)
-    hF.aemeasurable hr
-  have hL : ∫⁻ t in Ioi (0 : ℝ), (∫⁻ x, F t x ∂μ) ^ r =
-      ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) * (∫⁻ x in {x | R t x}, g x ∂μ) ^ r :=
-    setLIntegral_congr_fun measurableSet_Ioi fun t ht => by
-      rw [hslice, ENNReal.mul_rpow_of_nonneg _ _ hr0.le, hwr t ht]
-  have hR' : ∀ x, (∫⁻ t in Ioi (0 : ℝ), F t x ^ r) ^ (1 / r) =
-      g x * (∫⁻ t in Ioi (0 : ℝ),
-        {t : ℝ | R t x}.indicator (fun t => ENNReal.ofReal (t ^ s)) t) ^ r⁻¹ := fun x => by
-    rw [hsec, ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← ENNReal.rpow_mul,
-      mul_one_div_cancel hr0.ne', ENNReal.rpow_one, one_div]
-  rw [hL, lintegral_congr hR', one_div, ENNReal.rpow_inv_le_iff hr0] at hmink
-  exact hmink
 
 /-- A truncated weighted integral, for one endpoint of the interpolation. If the truncation of the
 weight `t ^ s` at each point `x` is at most `K f(x) ^ (qᵢ (p - pᵢ) / pᵢ)`, then the weighted
@@ -172,8 +121,9 @@ private theorem lintegral_mul_setLIntegral_rpow_le_of_le [SFinite μ] {R : ℝ �
           ring
       _ ≤ ENNReal.ofReal K ^ (qᵢ / pᵢ)⁻¹ * f x ^ p := by
           gcongr
-          simpa using ENNReal.le_rpow_add (f x) hpᵢ (p - pᵢ)
-  calc _ ≤ _ := lintegral_mul_setLIntegral_rpow_le hR (hf.pow_const pᵢ) hr
+          simpa using ENNReal.le_rpow_add (f x) pᵢ (p - pᵢ)
+  calc _ ≤ _ := lintegral_mul_setLIntegral_rpow_le hR (measurable_id.pow_const s).ennreal_ofReal
+        (hf.pow_const pᵢ) hr
     _ ≤ (∫⁻ x, ENNReal.ofReal K ^ (qᵢ / pᵢ)⁻¹ * f x ^ p ∂μ) ^ (qᵢ / pᵢ) :=
         ENNReal.rpow_le_rpow (lintegral_mono hpt) hr0.le
     _ = ENNReal.ofReal K * (∫⁻ x, f x ^ p ∂μ) ^ (qᵢ / pᵢ) := by
@@ -389,28 +339,19 @@ theorem lintegral_rpow_le_of_meas_ofReal_lt_le_rpow
         ENNReal.ofReal (q * c ^ (q₁ * (p₁ - p) / p₁) / |q - q₁|) * A₁ *
           (∫⁻ x, f x ^ p ∂μ) ^ (q₁ / p₁) := by
   have hae := hf.ae_eq_mk
+  -- Replacing `f` by its measurable modification changes no truncated integral of a power of `f`.
   have hpow : ∀ r : ℝ, (fun x => f x ^ r) =ᵐ[μ] fun x => hf.mk f x ^ r := fun r =>
-    hae.mono fun x hx => congrArg (fun z : ℝ≥0∞ => z ^ r) hx
-  have hset₀ : ∀ a : ℝ≥0∞, ∫⁻ x in {x | a < f x}, f x ^ p₀ ∂μ =
-      ∫⁻ x in {x | a < hf.mk f x}, hf.mk f x ^ p₀ ∂μ := by
-    intro a
-    have hsets : {x | a < f x} =ᵐ[μ] {x | a < hf.mk f x} := by
-      filter_upwards [hae] with x hx
-      exact congrArg (fun z : ℝ≥0∞ => a < z) hx
+    hae.mono fun x hx => congrArg (· ^ r) hx
+  have hset : ∀ (P : ℝ≥0∞ → Prop) (r : ℝ), ∫⁻ x in {x | P (f x)}, f x ^ r ∂μ =
+      ∫⁻ x in {x | P (hf.mk f x)}, hf.mk f x ^ r ∂μ := fun P r => by
+    have hsets : {x | P (f x)} =ᵐ[μ] {x | P (hf.mk f x)} :=
+      hae.mono fun x hx => congrArg P hx
     rw [Measure.restrict_congr_set hsets]
-    exact lintegral_congr_ae (ae_restrict_of_ae (hpow p₀))
-  have hset₁ : ∀ a : ℝ≥0∞, ∫⁻ x in {x | f x ≤ a}, f x ^ p₁ ∂μ =
-      ∫⁻ x in {x | hf.mk f x ≤ a}, hf.mk f x ^ p₁ ∂μ := by
-    intro a
-    have hsets : {x | f x ≤ a} =ᵐ[μ] {x | hf.mk f x ≤ a} := by
-      filter_upwards [hae] with x hx
-      exact congrArg (fun z : ℝ≥0∞ => z ≤ a) hx
-    rw [Measure.restrict_congr_set hsets]
-    exact lintegral_congr_ae (ae_restrict_of_ae (hpow p₁))
+    exact lintegral_congr_ae (ae_restrict_of_ae (hpow r))
   rw [lintegral_congr_ae (hpow p)]
   refine lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_of_measurable hf.measurable_mk hu hp₀ hlt₀
     hlt₁ hpq₀ hpq₁ hγ₀ hγ₁ hc fun t ht => ?_
-  rw [← hset₀, ← hset₁]
+  rw [← hset (ENNReal.ofReal (c * t ^ γ) < ·), ← hset (· ≤ ENNReal.ofReal (c * t ^ γ))]
   exact h t ht
 
 section Operator
@@ -464,12 +405,6 @@ theorem meas_ofReal_lt_le_add_setLIntegral_rpow (hv : AEMeasurable v μ) (ht : 0
       simp [hSdef]
     rw [lintegral_enorm_rpow_eq_setLIntegral hSmeas.compl Filter.EventuallyEq.rfl hp₁, hSc]
     exact setLIntegral_congr (hv.ae_eq_mk.fun_comp fun z => ‖z‖ₑ ≤ a).symm
-  -- A weak-type bound at a positive height `r` bounds the measure of the superlevel set.
-  have hweak' : ∀ {r q : ℝ} {m B : ℝ≥0∞}, ENNReal.ofReal r ^ q * m ≤ B → 0 < r →
-      m ≤ ENNReal.ofReal (r ^ (-q)) * B := fun h hr => by
-    rw [← ENNReal.ofReal_rpow_of_pos hr]
-    exact ENNReal.le_rpow_neg_mul_of_rpow_mul_le (ENNReal.ofReal_pos.2 hr).ne'
-      ENNReal.ofReal_ne_top h
   have hsplit : ∀ (k r : ℝ), 0 < k → ENNReal.ofReal ((k * t) ^ (-r)) =
       ENNReal.ofReal (k ^ (-r)) * ENNReal.ofReal (t ^ (-r)) := fun k r hk => by
     rw [Real.mul_rpow hk.le ht.le, ENNReal.ofReal_mul (Real.rpow_nonneg hk.le _)]
@@ -480,8 +415,8 @@ theorem meas_ofReal_lt_le_add_setLIntegral_rpow (hv : AEMeasurable v μ) (ht : 0
         measure_union_le _ _
     _ ≤ ENNReal.ofReal ((d * t) ^ (-q₀)) * (A₀ * (∫⁻ x, ‖g₁ x‖ₑ ^ p₀ ∂μ) ^ (q₀ / p₀)) +
           ENNReal.ofReal ((e * t) ^ (-q₁)) * (A₁ * (∫⁻ x, ‖g₂ x‖ₑ ^ p₁ ∂μ) ^ (q₁ / p₁)) :=
-        add_le_add (hweak' (hweak₀ g₁ hg₁meas _) (mul_pos hd ht))
-          (hweak' (hweak₁ g₂ hg₂meas _) (mul_pos he ht))
+        add_le_add (meas_ofReal_lt_le_of_weak (mul_pos hd ht) (hweak₀ g₁ hg₁meas _))
+          (meas_ofReal_lt_le_of_weak (mul_pos he ht) (hweak₁ g₂ hg₂meas _))
     _ = _ := by
         rw [hS₀, hS₁, hsplit d q₀ hd, hsplit e q₁ he]
         ring
@@ -507,7 +442,8 @@ private theorem interpolation_exponents (hp₀ : 0 < p₀) (hp₁ : 0 < p₁) (h
   have hlt₀ : p₀ < p := (inv_lt_inv₀ hp0 hp₀).1 h₂
   have hqq₀ : q - q₀ ≠ 0 := by
     intro h
-    rw [show q = q₀ by linarith] at hq'
+    have hqq₀' : q = q₀ := by linarith
+    rw [hqq₀'] at hq'
     have : θ * (q₁⁻¹ - q₀⁻¹) = 0 := by linarith
     rcases mul_eq_zero.1 this with h | h
     · linarith
