@@ -13,6 +13,7 @@ public import TauCeti.NumberTheory.NewtonPolygon.Mul
 import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.NumberTheory.NewtonPolygon.Weierstrass
 import TauCeti.RingTheory.PowerSeries.RootBound
+import TauCeti.RingTheory.Valuation.NormNormalization
 
 /-!
 # Newton slopes, root valuations, and root norms
@@ -231,7 +232,7 @@ include hb hv
 `K`, satisfies `‖x‖ ≤ b ^ m`. -/
 theorem norm_le_rpow_of_forall_mem_newtonSlopes_eq {f : K[X]} (hf : f ≠ 0) {m : ℝ}
     (hm : ∀ s ∈ f.newtonSlopes v, s = m) {x : L} (hx : aeval x f = 0) : ‖x‖ ≤ b ^ m := by
-  have : IsUltrametricDist K := .of_addValuation v hb hv
+  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
   have : IsUltrametricDist L := .of_normedAlgebra K
   have hc : 0 < b ^ m := Real.rpow_pos_of_pos (zero_lt_one.trans hb) m
   have hlc : f.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hf
@@ -257,7 +258,7 @@ theorem norm_le_rpow_of_forall_mem_newtonSlopes_eq {f : K[X]} (hf : f ≠ 0) {m 
 theorem norm_eq_rpow_of_forall_mem_newtonSlopes_eq {f : K[X]} (hf : f ≠ 0) {m : ℝ}
     (hm : ∀ s ∈ f.newtonSlopes v, s = m) {x : L} (hx0 : x ≠ 0) (hx : aeval x f = 0) :
     ‖x‖ = b ^ m := by
-  have : IsUltrametricDist K := .of_addValuation v hb hv
+  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
   refine le_antisymm (norm_le_rpow_of_forall_mem_newtonSlopes_eq v hb hv hf hm hx) ?_
   have hrev0 : f.reverse ≠ 0 := reverse_eq_zero.not.mpr hf
   have hrev_slopes : ∀ s ∈ f.reverse.newtonSlopes v, s = -m := by

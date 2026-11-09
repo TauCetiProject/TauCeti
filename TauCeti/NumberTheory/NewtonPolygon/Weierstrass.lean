@@ -153,29 +153,6 @@ end NormedDivisionRing
 
 end Polynomial
 
-/-- A norm that is given by an additive valuation, `‖x‖ = b ^ (-v x)` for `x ≠ 0` with `1 < b`, is
-ultrametric. -/
-theorem _root_.IsUltrametricDist.of_addValuation {K : Type*} [NormedDivisionRing K]
-    (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
-    (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) : IsUltrametricDist K := by
-  refine IsUltrametricDist.isUltrametricDist_of_isNonarchimedean_norm fun x y => ?_
-  by_cases hx : x = 0
-  · simp [hx]
-  by_cases hy : y = 0
-  · simp [hy]
-  by_cases hxy : x + y = 0
-  · simp [hxy]
-  have hvxy := v.ne_top_iff.mpr hxy
-  have hmin := v.map_add x y
-  rw [hv _ hx, hv _ hy, hv _ hxy]
-  rcases le_total (v x) (v y) with h | h
-  · rw [min_eq_left h] at hmin
-    exact le_max_of_le_left (Real.rpow_le_rpow_of_exponent_le hb.le
-      (neg_le_neg (WithTop.untop₀_le_untop₀ hvxy hmin)))
-  · rw [min_eq_right h] at hmin
-    exact le_max_of_le_right (Real.rpow_le_rpow_of_exponent_le hb.le
-      (neg_le_neg (WithTop.untop₀_le_untop₀ hvxy hmin)))
-
 namespace PowerSeries
 
 section NormedDivisionRing
