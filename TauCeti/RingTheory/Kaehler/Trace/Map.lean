@@ -6,6 +6,7 @@ Authors: Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import TauCeti.RingTheory.Kaehler.Trace.Basic
+public import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
 # Functoriality of the trace of differentials
@@ -22,7 +23,7 @@ accepted release `baef7723da528551b7d2f93bd9a9a53303b04dbc`.
 Only the functoriality lemmas and their matrix prerequisite are included here.
 -/
 
-@[expose] public section
+public section
 
 open Algebra
 
@@ -32,22 +33,6 @@ variable {k R B M R' B' M' : Type*} [CommRing k] [CommRing R] [CommRing B] [Alge
   [Algebra R B] [AddCommGroup M] [Module R M] [Module k M] (D : Derivation k R M)
   [CommRing R'] [CommRing B'] [Algebra k R'] [Algebra R' B'] [AddCommGroup M'] [Module R' M']
   [Module k M'] (D' : Derivation k R' M')
-
-/-- The matrix of multiplication by `ψ x` in the image of a basis is the image of the matrix of
-multiplication by `x`. -/
-lemma leftMulMatrix_map {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι R B)
-    (b' : Module.Basis ι R' B') (σ : R →+* R') (ψ : B →+* B')
-    (hψ : ∀ r, ψ (algebraMap R B r) = algebraMap R' B' (σ r)) (hb : ∀ i, b' i = ψ (b i))
-    (x : B) : leftMulMatrix b' (ψ x) = (leftMulMatrix b x).map σ := by
-  have hrepr (y : B) : b'.repr (ψ y) = Finsupp.mapRange σ σ.map_zero (b.repr y) := by
-    conv_lhs => rw [← b.sum_repr y]
-    rw [map_sum]
-    simp_rw [Algebra.smul_def, map_mul, hψ, ← hb, ← Algebra.smul_def]
-    ext i
-    rw [b'.repr_sum_self, Finsupp.mapRange_apply]
-  ext i j
-  rw [Matrix.map_apply, leftMulMatrix_eq_repr_mul, leftMulMatrix_eq_repr_mul, hb, ← map_mul,
-    hrepr, Finsupp.mapRange_apply]
 
 variable [Module.Free R B] [Module.Finite R B] [Module.Free R' B'] [Module.Finite R' B']
 
@@ -62,9 +47,9 @@ lemma traceDeriv_map {ι : Type*} [Finite ι] (b : Module.Basis ι R B)
     traceDeriv D' (ψ a) (ψ c) = μ (traceDeriv D a c) := by
   classical
   have := Fintype.ofFinite ι
-  rw [traceDeriv_eq D' b', traceDeriv_eq D b, traceDerivAux, traceDerivAux,
+  rw [traceDeriv_eq D' b', traceDeriv_eq D b, traceDerivOfBasis_def, traceDerivOfBasis_def,
     leftMulMatrix_map b b' σ ψ hψ hb, leftMulMatrix_map b b' σ ψ hψ hb]
-  simp only [Matrix.traceDerivForm, Matrix.map_apply, map_sum, hμ, hD]
+  simp only [Matrix.traceDerivForm_def, Matrix.map_apply, map_sum, hμ, hD]
 
 end Algebra
 
