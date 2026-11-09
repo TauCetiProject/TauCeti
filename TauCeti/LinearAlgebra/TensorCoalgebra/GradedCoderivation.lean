@@ -336,7 +336,6 @@ theorem ReducedTensorWords.gradedPiece_induction {G : InternalGrading R M} {D : 
     (mem : ∀ (n : ℕ) (hn : 0 < n) (𝒟 : Fin n → ℤ) (x : Fin n → M),
       (∀ i, x i ∈ G.piece (𝒟 i)) → (∑ i, 𝒟 i) = D →
         motive (of R M ⟨n, hn⟩ (PiTensorProduct.tprod R x)))
-    (zero : motive 0)
     (add : ∀ u v, u ∈ gradedPiece G D → v ∈ gradedPiece G D → motive u → motive v →
       motive (u + v))
     (smul : ∀ (a : R) u, u ∈ gradedPiece G D → motive u → motive (a • u)) :
@@ -345,7 +344,12 @@ theorem ReducedTensorWords.gradedPiece_induction {G : InternalGrading R M} {D : 
   | mem _ hw =>
     obtain ⟨n, hn, 𝒟, x, hx, hD, rfl⟩ := hw
     exact mem n hn 𝒟 x hx hD
-  | zero => exact zero
+  | zero =>
+    have h := mem 1 one_pos (fun _ ↦ D) (fun _ ↦ 0) (fun _ ↦ zero_mem _) (by simp)
+    -- the singleton word on the letter `0` is the zero tensor, since `tprod` is multilinear
+    have htprod : PiTensorProduct.tprod R (fun _ : Fin 1 ↦ (0 : M)) = 0 :=
+      MultilinearMap.map_coord_zero _ (0 : Fin 1) rfl
+    rwa [htprod, map_zero] at h
   | add u v hu hv ihu ihv => exact add u v hu hv ihu ihv
   | smul a u hu ih => exact smul a u hu ih
 
@@ -370,15 +374,13 @@ theorem ReducedTensorWords.prepend_mem_gradedPiece {N : Type uN} [AddCommMonoid 
     {w : ReducedTensorWords R N} (hw : w ∈ gradedPiece H D) :
     prepend R N a w ∈ gradedPiece H (p + D) := by
   refine gradedPiece_induction (motive := fun w ↦ prepend R N a w ∈ gradedPiece H (p + D)) hw
-    ?_ ?_ ?_ ?_
+    ?_ ?_ ?_
   · intro k hk 𝒟 y hy hD
     rw [prepend_of_tprod, ← hD, ← Fin.sum_cons p 𝒟]
     refine mem_gradedPiece_of_tprod H _ _ _ fun i ↦ ?_
     induction i using Fin.cases with
     | zero => simpa only [Fin.cons_zero] using ha
     | succ j => simpa only [Fin.cons_succ] using hy j
-  · rw [map_zero]
-    exact zero_mem _
   · intro u v _ _ hu hv
     rw [map_add]
     exact add_mem hu hv
@@ -390,8 +392,11 @@ theorem ReducedTensorWords.prepend_mem_gradedPiece {N : Type uN} [AddCommMonoid 
 the degrees of its letters. The degree family is indexed by absolute positions. -/
 theorem ReducedTensorWords.subword_mem_gradedPiece {G : InternalGrading R M} {n : ℕ}
     (x : Fin n → M) (𝒟 : ℕ → ℤ) (h𝒟 : ∀ i : Fin n, x i ∈ G.piece (𝒟 i))
-    (a b : ℕ) (hab : a + b ≤ n) :
+    (a b : ℕ) :
     subword R x a b ∈ gradedPiece G (∑ j ∈ Finset.range b, 𝒟 (a + j)) := by
+  rcases lt_or_ge n (a + b) with hab | hab
+  · rw [subword_eq_zero_of_lt_add R x hab]
+    exact zero_mem _
   rcases Nat.eq_zero_or_pos b with rfl | hb
   · rw [subword_length_zero]
     exact zero_mem _
@@ -404,7 +409,7 @@ theorem ReducedTensorWords.isHomogeneous_letter (G : InternalGrading R M) :
   rw [LinearMap.isHomogeneous_def]
   intro D z hz
   rw [add_zero]
-  refine gradedPiece_induction (motive := fun w ↦ letter R M w ∈ G.piece D) hz ?_ ?_ ?_ ?_
+  refine gradedPiece_induction (motive := fun w ↦ letter R M w ∈ G.piece D) hz ?_ ?_ ?_
   · intro n hn 𝒟 x hx hD
     by_cases h1 : n = 1
     · subst h1
@@ -414,8 +419,6 @@ theorem ReducedTensorWords.isHomogeneous_letter (G : InternalGrading R M) :
     · have hne : (⟨n, hn⟩ : {n : ℕ // 0 < n}) ≠ 1 := fun h ↦ h1 (congrArg Subtype.val h)
       rw [letter_apply, component_of_of_ne R M hne, map_zero]
       exact zero_mem _
-  · rw [map_zero]
-    exact zero_mem _
   · intro u v _ _ hu hv
     rw [map_add]
     exact add_mem hu hv
@@ -434,13 +437,11 @@ theorem ReducedTensorWords.isHomogeneous_map {N : Type uN} [AddCommMonoid N] [Mo
   rw [LinearMap.isHomogeneous_def]
   intro D z hz
   refine gradedPiece_induction
-    (motive := fun w ↦ ReducedTensorWords.map (R := R) f w ∈ gradedPiece H (D + 0)) hz ?_ ?_ ?_ ?_
+    (motive := fun w ↦ ReducedTensorWords.map (R := R) f w ∈ gradedPiece H (D + 0)) hz ?_ ?_ ?_
   · intro n hn 𝒟 x hx hD
     rw [map_of_tprod]
     simpa only [hD, add_zero] using mem_gradedPiece_of_tprod H hn (fun i ↦ f (x i)) 𝒟
       fun i ↦ by simpa only [add_zero] using hf.map_mem (hx i)
-  · rw [map_zero]
-    exact Submodule.zero_mem _
   · intro u v _ _ hu hv
     rw [map_add]
     exact Submodule.add_mem _ hu hv
@@ -453,10 +454,13 @@ piece: the total degree is that of the untouched prefix and suffix plus the degr
 letter.  The degree family is indexed by absolute positions, since splicing shifts them. -/
 theorem ReducedTensorWords.splice_mem_gradedPiece (G : InternalGrading R M) {n : ℕ}
     (x : Fin n → M) (𝒟 : ℕ → ℤ) (h𝒟 : ∀ i : Fin n, x i ∈ G.piece (𝒟 i))
-    (p d : ℕ) {E : ℤ} {e : M} (he : e ∈ G.piece E) (hpd : p + d ≤ n) :
+    (p d : ℕ) {E : ℤ} {e : M} (he : e ∈ G.piece E) :
     splice R x 0 n p d e ∈ gradedPiece G
       ((∑ j ∈ Finset.range p, 𝒟 j) + E +
         ∑ j ∈ Finset.range (n - p - d), 𝒟 (p + d + j)) := by
+  rcases lt_or_ge n (p + d) with hpd | hpd
+  · rw [splice_eq_zero_of_block_lt_add R x e hpd]
+    exact Submodule.zero_mem _
   rcases Nat.eq_zero_or_pos d with rfl | hd
   · rw [splice_zero_length]
     exact Submodule.zero_mem _
@@ -547,7 +551,7 @@ theorem ReducedTensorWords.map_koszulTwist_apply_of_mem (G : InternalGrading R M
       (((q * D).negOnePow : ℤ) : R) • z := by
   refine gradedPiece_induction
     (motive := fun z ↦ ReducedTensorWords.map (R := R) (G.koszulTwist q) z =
-      (((q * D).negOnePow : ℤ) : R) • z) hz ?_ (by simp) ?_ ?_
+      (((q * D).negOnePow : ℤ) : R) • z) hz ?_ ?_ ?_
   · intro n hn degree x hx hD
     rw [map_of_tprod]
     have htuple : (fun i ↦ G.koszulTwist q (x i)) =
@@ -639,7 +643,7 @@ theorem ReducedTensorWords.isHomogeneous_gradedCoderiv (G : InternalGrading R M)
           exact Finset.sum_congr rfl fun i _ => (hg i).symm
         rw [hgsum, sum_range_add_add g hfit.2]
         abel
-      have step := splice_mem_gradedPiece G (twistedTuple G q x 0 p) g ht p d hFe hfit.2
+      have step := splice_mem_gradedPiece G (twistedTuple G q x 0 p) g ht p d hFe
       rwa [idx] at step
     · rw [splice_eq_zero R (twistedTuple G q x 0 p) _ (by tauto)]
       exact Submodule.zero_mem _
