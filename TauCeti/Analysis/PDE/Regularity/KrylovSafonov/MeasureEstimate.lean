@@ -142,6 +142,11 @@ end Profile
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {σ ε β lam T : ℝ} {c x : EuclideanSpace ℝ ι}
 
+/-- The exponent shift `s^(-β-1) = s s^(-β-2)` used to factor the barrier's second derivative. -/
+private theorem rpow_neg_sub_one_eq_mul_rpow_neg_sub_two {s : ℝ} (hs : 0 < s) (β : ℝ) :
+    s ^ (-β - 1) = s * s ^ (-β - 2) := by
+  rw [show -β - 1 = 1 + (-β - 2) by ring, Real.rpow_add hs, Real.rpow_one]
+
 /-- **The operator applied to the Krylov–Safonov barrier.** For `σ ≥ 0` and `ε > 0`, with
 `s = σ ‖x - c‖² + ε`,
 `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ (σ ‖· - c‖² + ε)^(-β) (x) = 2 σ β s^(-β-2) (2 σ (β + 1) (x - c)ᵀ A (x - c) - s tr A)`.
@@ -153,9 +158,7 @@ theorem sum_mul_fderiv_fderiv_rpow_mul_norm_sq_sub_add {A : Matrix ι ι ℝ} (h
       2 * σ * β * (σ * ‖x - c‖ ^ 2 + ε) ^ (-β - 2) *
         (2 * σ * (β + 1) * A.toQuadraticForm' (x - c) - (σ * ‖x - c‖ ^ 2 + ε) * A.trace) := by
   have hs : 0 < σ * ‖x - c‖ ^ 2 + ε := by positivity
-  have hpow : (σ * ‖x - c‖ ^ 2 + ε) ^ (-β - 1) =
-      (σ * ‖x - c‖ ^ 2 + ε) * (σ * ‖x - c‖ ^ 2 + ε) ^ (-β - 2) := by
-    rw [show -β - 1 = 1 + (-β - 2) by ring, Real.rpow_add hs, Real.rpow_one]
+  have hpow := rpow_neg_sub_one_eq_mul_rpow_neg_sub_two hs β
   simp only [fderiv_fderiv_rpow_mul_norm_sq_sub_add_apply hσ hε]
   set s := σ * ‖x - c‖ ^ 2 + ε
   set y := x - c
@@ -216,8 +219,7 @@ theorem neg_mul_le_sum_mul_fderiv_fderiv_rpow_mul_norm_sq_sub_add {A : Matrix ι
   rw [sum_mul_fderiv_fderiv_rpow_mul_norm_sq_sub_add hσ hε]
   set s := σ * ‖x - c‖ ^ 2 + ε
   have hs : ε ≤ s := le_add_of_nonneg_left (by positivity)
-  have hpow : s ^ (-β - 1) = s * s ^ (-β - 2) := by
-    rw [show -β - 1 = 1 + (-β - 2) by ring, Real.rpow_add (hε.trans_le hs), Real.rpow_one]
+  have hpow := rpow_neg_sub_one_eq_mul_rpow_neg_sub_two (hε.trans_le hs) β
   have hmono : s ^ (-β - 1) ≤ ε ^ (-β - 1) := Real.rpow_le_rpow_of_nonpos hε hs (by linarith)
   have hP : 0 ≤ 2 * σ * β * s ^ (-β - 2) := by positivity
   have hQ : 0 ≤ 2 * σ * (β + 1) * A.toQuadraticForm' (x - c) :=
@@ -301,8 +303,8 @@ private theorem barrier_comparison {R A g₁ : ℝ} {c x₀ : EuclideanSpace ℝ
     (closure_mono inter_subset_left).trans closure_ball_subset_closedBall
   have hv₀ : 1 ≤ v x₀ := by linarith
   refine ⟨hΩ', hvc.mono hcl, ((contDiff_const.mul hg).contDiffOn.sub
-    (hu.mono inter_subset_left)).sub contDiffOn_const, ⟨hx₀, show (0 : ℝ) < v x₀ by linarith⟩,
-    hv₀, fun z hz ↦ ?_⟩
+    (hu.mono inter_subset_left)).sub contDiffOn_const,
+    ⟨hx₀, mem_preimage.2 (mem_Ioi.2 (zero_lt_one.trans_le hv₀))⟩, hv₀, fun z hz ↦ ?_⟩
   -- On the frontier of `Ω'`, either `v = 0` inside the ball, or `v = -u ≤ 0` on the sphere.
   rw [frontier, hΩ'.interior_eq] at hz
   by_cases hzb : z ∈ ball c R
