@@ -109,7 +109,7 @@ theorem integral_id_betaPrimeMeasure (ha : 0 < a) (hb : 1 < b) :
     (μ := fisherSnedecorMeasure (2 * a) (2 * b)) (a := 0) (b := a / b)
     ((integrable_id_fisherSnedecorMeasure_iff (by positivity) (by linarith)).2 (by linarith))
   simp only [zero_add] at h
-  rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure ha (by linarith),
+  rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure,
     h, integral_id_fisherSnedecorMeasure (by positivity) (by linarith)]
   field_simp
 
@@ -117,7 +117,7 @@ theorem integral_id_betaPrimeMeasure (ha : 0 < a) (hb : 1 < b) :
 @[simp high]
 theorem integral_sq_betaPrimeMeasure (ha : 0 < a) (hb : 2 < b) :
     ∫ x, x ^ 2 ∂betaPrimeMeasure a b = a * (a + 1) / ((b - 1) * (b - 2)) := by
-  rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure ha (by linarith),
+  rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure,
     integral_map (by fun_prop) (by fun_prop)]
   simp_rw [mul_pow]
   rw [integral_const_mul, integral_sq_fisherSnedecorMeasure (by positivity) (by linarith)]
@@ -136,7 +136,7 @@ theorem variance_id_betaPrimeMeasure (ha : 0 < a) (hb : 2 < b) :
   have h := variance_id_map_affine
     (μ := fisherSnedecorMeasure (2 * a) (2 * b)) (a := 0) (b := a / b)
   simp only [zero_add] at h
-  rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure ha (by linarith),
+  rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure,
     h, variance_id_fisherSnedecorMeasure (by positivity) (by linarith)]
   have hb₁ : 2 * b - 2 = 2 * (b - 1) := by ring
   have hb₂ : 2 * b - 4 = 2 * (b - 2) := by ring
@@ -147,7 +147,7 @@ theorem variance_id_betaPrimeMeasure (ha : 0 < a) (hb : 2 < b) :
 @[simp]
 theorem integrable_exp_mul_id_betaPrimeMeasure_iff (ha : 0 < a) (hb : 0 < b) (t : ℝ) :
     Integrable (fun x : ℝ ↦ exp (t * x)) (betaPrimeMeasure a b) ↔ t ≤ 0 := by
-  rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure ha hb,
+  rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure,
     integrable_map_measure (by fun_prop) (by fun_prop)]
   simp only [Function.comp_def, ← mul_assoc]
   rw [integrable_exp_mul_id_fisherSnedecorMeasure_iff (by positivity) (by positivity),
