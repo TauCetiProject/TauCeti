@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.Killing
 -- Non-public: these appear only inside proofs, never in the type of an exported declaration.
 import Mathlib.LinearAlgebra.BilinearForm.Properties
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Algebra.Lie.Killing.Basic
 
 /-!
 # A Lie algebra with nondegenerate Killing form is perfect
@@ -49,16 +50,17 @@ open LieAlgebra LieModule Module
 
 section Killing
 
-variable (K L : Type*) [Field K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
-  [LieAlgebra.IsKilling K L]
+variable (K L : Type*) [Field K] [LieRing L] [LieAlgebra K L] [LieAlgebra.IsKilling K L]
 
 /-- **A Lie algebra with nondegenerate Killing form is perfect**: `⁅L, L⁆ = L`.
 
 A linear form killing the derived ideal is `κ x` for some `x`, by nondegeneracy of the Killing
-form on a finite-dimensional space. Invariance turns `κ x ⁅y, z⁆ = 0` into `κ ⁅x, y⁆ z = 0` for
-all `z`, so `⁅x, y⁆ = 0` for every `y`; then `ad x = 0`, so `κ x` vanishes identically and `x = 0`.
+form on a finite-dimensional space (`TauCeti.finite_of_isKilling`). Invariance turns
+`κ x ⁅y, z⁆ = 0` into `κ ⁅x, y⁆ z = 0` for all `z`, so `⁅x, y⁆ = 0` for every `y`; then `ad x = 0`,
+so `κ x` vanishes identically and `x = 0`.
 The linear form was therefore zero, which contradicts the properness of the derived ideal. -/
 theorem derivedSeries_one_eq_top_of_isKilling : derivedSeries K L 1 = ⊤ := by
+  have := finite_of_isKilling (R := K) (L := L)
   by_contra hne
   have hlt : (derivedSeries K L 1).toSubmodule < ⊤ := by
     refine lt_of_le_of_ne le_top fun hcon ↦ hne ?_
