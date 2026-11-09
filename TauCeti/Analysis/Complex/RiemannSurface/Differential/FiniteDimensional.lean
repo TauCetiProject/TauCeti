@@ -9,7 +9,9 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Canonical
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.IdentityTheorem
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Sheaf
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
+import TauCeti.Analysis.Complex.RiemannSurface.Differential.Twist
 import TauCeti.Analysis.Complex.RiemannSurface.Divisor.FiniteDimensional
+import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
 /-!
 # Finite-dimensionality of holomorphic differentials
@@ -23,6 +25,12 @@ meromorphic functions with poles bounded by `div ω`. These are precisely the im
 finite-dimensional divisor-section space `𝒪_(div ω)(X)`. Unique continuation ensures that
 `ω` has finite order everywhere. If there is no nonzero differential, the conclusion is
 immediate. No existence of a nonzero differential or meromorphic map is assumed.
+
+More generally, the global sections of the sheaf `Ω_D` of meromorphic differentials with divisor
+at least `-D` form a finite-dimensional space for every divisor `D`
+(`TauCeti.RiemannSurface.finiteDimensional_differentialSheaf_globalSections`). A nonzero global
+section `θ` has finite order everywhere by unique continuation, and `Ω_D ≅ 𝒪_(D + div θ)`
+(`TauCeti.RiemannSurface.differentialSheafIsoDivisorSheafAdd`) reduces to divisor sections.
 
 ## References
 
@@ -125,5 +133,36 @@ instance finiteDimensional_differentialSheaf_zero_globalSections [CompactSpace X
   Module.Finite.equiv
     ((differentialSheafSectionsEquiv (0 : AlgebraicGeometry.WeilDivisor X) ⊤).trans
       (differentialSectionsZeroEquiv (X := X))).symm
+
+/-- **Finite-dimensionality of `H⁰(X, Ω_D)`.** On a compact connected Riemann surface the global
+sections of `Ω_D` form a finite-dimensional complex vector space, for every divisor `D`. No
+nonzero meromorphic `1`-form is assumed to exist: if there is a nonzero section `θ`, it serves as
+the `1`-form in `Ω_D ≅ 𝒪_(D + div θ)`. -/
+instance finiteDimensional_differentialSheaf_globalSections [CompactSpace X]
+    (D : AlgebraicGeometry.WeilDivisor X) :
+    FiniteDimensional ℂ ((differentialSheaf D).obj.obj (Opposite.op ⊤)) := by
+  rcases subsingleton_or_nontrivial (differentialSections D ⊤) with h | h
+  · exact Module.Finite.equiv (differentialSheafSectionsEquiv D ⊤).symm
+  obtain ⟨s, hs⟩ := exists_ne (0 : differentialSections D ⊤)
+  let θ : OneForm X := fun y ↦ s.1 ⟨y, trivial⟩
+  have hθ (x : X) : θ.MeromorphicAt x := by
+    obtain ⟨η, hη, e⟩ := mem_differentialSections_iff.1 s.2 ⟨x, trivial⟩
+    refine (hη.congr ?_).meromorphicAt
+    rw [← (⊤ : TopologicalSpace.Opens X).isOpenEmbedding'.map_nhds_eq ⟨x, trivial⟩,
+      eventually_map]
+    exact e.mono fun y hy ↦ hy.symm
+  have hθ₀ (x : X) : θ.order x ≠ ⊤ := by
+    intro hx
+    have hu := (OneForm.isClopen_setOfPred_order_eq_top hθ).eq_univ ⟨x, hx⟩
+    refine hs (Subtype.ext (eq_of_eventually_codiscrete s.2 (zero_mem _)
+      (eventually_codiscrete_iff_forall_eventually_nhdsNE.2 fun y ↦ ?_)))
+    have ht := continuous_subtype_val.continuousAt.tendsto_nhdsNE (x := y) Subtype.val_injective
+    exact ht.eventually
+      (OneForm.eventually_apply_eq_zero_of_order_eq_top (eq_univ_iff_forall.1 hu y))
+  let e : (differentialSheaf D).obj.obj (Opposite.op ⊤) ≅
+      (divisorSheaf (D + θ.divisor)).obj.obj (Opposite.op ⊤) :=
+    ((CategoryTheory.sheafToPresheaf _ _).mapIso
+      (differentialSheafIsoDivisorSheafAdd θ hθ hθ₀ D)).app (Opposite.op ⊤)
+  exact Module.Finite.equiv e.toLinearEquiv.symm
 
 end TauCeti.RiemannSurface

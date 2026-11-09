@@ -22,6 +22,8 @@ homomorphism `TauCeti.holomorphicStructureSheaf.toFilterGerm I X x l hl` and pro
 * `toFilterGerm_germ`: the germ of a section is the germ of any function agreeing with it on
   the domain of the section;
 * `toFilterGerm_nhds_injective`: a holomorphic germ is determined by its germ along `𝓝 x`;
+* `toFilterGerm_ringEquivCast`: transporting a germ along an equality of points with
+  `RingEquiv.cast` keeps its representative;
 * `toFilterGerm_nhdsNE_injective`: when `x` is not isolated, it is even determined by its
   germ along the punctured neighbourhoods `𝓝[≠] x`, by continuity;
 * `exists_toFilterGerm_nhds_eq_iff`: the image of the comparison along `𝓝 x` consists of the
@@ -33,7 +35,7 @@ homomorphism `TauCeti.holomorphicStructureSheaf.toFilterGerm I X x l hl` and pro
 * `toFilterGerm_stalkPrecomp`: pulling a holomorphic germ back along a complex analytic map `f`
   is composition of germs with `f`;
 * `quotientMk_comp_stalkPrecomp_bijective`: if an ideal of germs at `p` on a normed space consists
-  of the germs vanishing along a local holomorphic section `σ` through `p` of a holomorphic map
+  of the germs vanishing along a local holomorphic section `σ` of a holomorphic map
   `π`, then pulling back along `π` identifies the germs at `π p` with the quotient by that ideal.
   This computes local rings of analytic subsets that are locally graphs.
   The inverse is composition with `σ` (`toFilterGerm_eq_comp_of_quotientMk_stalkPrecomp_eq`).
@@ -193,6 +195,17 @@ theorem toFilterGerm_nhds_injective (x : X) :
   exact (Subtype.val_injective.extend_apply _ (0 : X → ℂ) (Opens.inclusion hWU y)).symm.trans
     (ht y y.2).1
 
+/-- Transporting a holomorphic germ along an equality of points `x = y` with `RingEquiv.cast`
+keeps its representative. This lets coordinate changes that fix a point only propositionally
+compare germs at the two descriptions of the point. -/
+theorem toFilterGerm_ringEquivCast {x y : X} (h : x = y)
+    {s : (holomorphicStructureSheaf I X).presheaf.stalk x} {f : X → ℂ}
+    (hs : toFilterGerm I X x (𝓝 x) le_rfl s = f) :
+    toFilterGerm I X y (𝓝 y) le_rfl
+      (RingEquiv.cast (R := fun z ↦ (holomorphicStructureSheaf I X).presheaf.stalk z) h s) = f := by
+  subst h
+  exact hs
+
 /-- At a point which is not isolated, a holomorphic germ is determined by its germ on the
 punctured neighbourhoods of the point, by continuity. -/
 theorem toFilterGerm_nhdsNE_injective (x : X) [(𝓝[≠] x).NeBot] :
@@ -325,17 +338,31 @@ theorem toFilterGerm_eq_comp_of_quotientMk_stalkPrecomp_eq {π : V → W}
   rwa [Pi.sub_apply, Function.comp_apply, hπw, sub_eq_zero] at hw
 
 /-- **Germs on the image of a holomorphic section.** Let `π : V → W` be holomorphic and `σ` a
-local holomorphic section of `π` near `π p` through `p`. If an ideal `J` of the holomorphic germs
+local holomorphic section of `π` near `π p`. If an ideal `J` of the holomorphic germs
 at `p` consists exactly of the germs vanishing along `σ`, then pulling back along `π` identifies
 the holomorphic germs at `π p` with the germs at `p` modulo `J`. -/
 theorem quotientMk_comp_stalkPrecomp_bijective {π : V → W} (hπ : ContMDiff 𝓘(ℂ, V) 𝓘(ℂ, W) ω π)
-    {σ : W → V} {p : V} (hσ : ContDiffAt ℂ ω σ (π p)) (hσp : σ (π p) = p)
+    {σ : W → V} {p : V} (hσ : ContDiffAt ℂ ω σ (π p))
     (hπσ : ∀ᶠ w in 𝓝 (π p), π (σ w) = w)
     (J : Ideal ((holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk p))
     (hJ : ∀ (g : (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk p) (G : V → ℂ),
       toFilterGerm 𝓘(ℂ, V) V p (𝓝 p) le_rfl g = G →
         (g ∈ J ↔ ∀ᶠ w in 𝓝 (π p), G (σ w) = 0)) :
     Bijective ((Ideal.Quotient.mk J).comp (stalkPrecomp 𝓘(ℂ, V) V π hπ p)) := by
+  -- The section passes through `p`: otherwise the indicator of a neighbourhood of `σ (π p)`
+  -- away from `p` is a germ at `p` vanishing along `σ`, yet equal to `1` along `σ` near `π p`.
+  have hσp : σ (π p) = p := by
+    by_contra hne
+    obtain ⟨U, U', hU, hU', hpU, hqU', hdisj⟩ := t2_separation (Ne.symm hne)
+    classical
+    have h0 := (hJ 0 (U'.indicator fun _ ↦ 1) (by
+      rw [map_zero, ← Germ.coe_zero]
+      refine Germ.coe_eq.2 ?_
+      filter_upwards [hU.mem_nhds hpU] with x hx
+      exact (Set.indicator_of_notMem (fun h ↦ hdisj.le_bot ⟨hx, h⟩) _).symm)).1 (zero_mem J)
+    have h1 : ∀ᶠ w in 𝓝 (π p), σ w ∈ U' := hσ.continuousAt.eventually (hU'.mem_nhds hqU')
+    obtain ⟨w, hw0, hw1⟩ := (h0.and h1).exists
+    simp [hw1] at hw0
   constructor
   · -- A germ at `π p` whose pullback vanishes along `σ` vanishes, since `π ∘ σ = id`.
     rw [injective_iff_map_eq_zero]
