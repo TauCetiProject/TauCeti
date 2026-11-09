@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.RamificationInertia.HilbertTheory
 public import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
+import TauCeti.NumberTheory.RamificationInertia.Galois
 
 /-!
 # Hilbert theory over arbitrary residue fields
@@ -50,6 +51,7 @@ variable (A K L : Type*) {B : Type*} [CommRing A] [CommRing B] [Field K] [Field 
 
 variable (D : Type*) [Field D] [Algebra D L] [IsDecompositionField K L P D]
 
+omit [FiniteDimensional K L] in
 include K P in
 /-- The degree above the decomposition field is `e * f`, also for inseparable residue
 extensions. -/

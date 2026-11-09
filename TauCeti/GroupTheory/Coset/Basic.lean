@@ -49,6 +49,7 @@ element `m` of an additive commutative monoid on which `G` acts, fixed by `H`, t
 `q.out • m` over the cosets of `K` is `[H : K]` times the sum over the cosets of `H`.
 `Subgroup.finite_image_mk_of_inv_mul_mem` passes finiteness of the image of a set in `G ⧸ K` to
 `G ⧸ L` when congruence modulo `K` on the set implies congruence modulo `L`.
+`Subgroup.card_fiber_quotientMapOfLE` counts every fibre of `G / H → G / K` as `[K : H]`.
 -/
 
 public section
@@ -145,6 +146,24 @@ expand to quotient maps. -/
     congrArg Prod.snd ((quotientEquivProdOfLE' hVU f hf).apply_symm_apply (a, b))
 
 end QuotientTower
+
+/-- Each fibre of the map `G / H → G / K`, for `H ≤ K`, has cardinality `[K : H]`.
+No finiteness or normality assumption on either subgroup is needed. -/
+@[to_additive /-- Each fibre of the map `G / H → G / K`, for `H ≤ K`, has cardinality
+`[K : H]`. No finiteness assumption on either additive subgroup is needed. -/]
+theorem card_fiber_quotientMapOfLE {G : Type*} [Group G] {H K : Subgroup G}
+    (hHK : H ≤ K) (q : G ⧸ K) :
+    Nat.card {p : G ⧸ H // quotientMapOfLE hHK p = q} = H.relIndex K := by
+  let e := (quotientEquivProdOfLE hHK).subtypeEquiv
+    (p := fun p ↦ quotientMapOfLE hHK p = q) (q := fun p ↦ p.1 = q)
+    -- The first coordinate of the tower equivalence is the quotient map itself.
+    (fun p ↦ Iff.rfl)
+  rw [Nat.card_congr e,
+    Nat.card_congr (Equiv.prodSubtypeFstEquivSubtypeProd
+      (β := K ⧸ H.subgroupOf K) (p := fun a ↦ a = q)),
+    Nat.card_prod, Nat.card_unique, one_mul]
+  -- Relative index is the cardinality of the quotient by the subgroup inside `K`.
+  rfl
 
 /-- **Transversals multiply along a tower.** For subgroups `K ≤ H` of `G`, the products
 `p.out * k.out` of the chosen representatives of the cosets `p ∈ G ⧸ H` and
