@@ -285,7 +285,7 @@ theorem inverseGammaMeasure_map_const_mul {b : ℝ} (hb : 0 < b) (a r : ℝ) :
     rw [inverseGammaMeasure_of_pos h.1 h.2, inverseGammaMeasure_of_pos h.1 (mul_pos hb h.2),
       Measure.map_map (measurable_const_mul b) measurable_inv, Function.comp_def, hinv,
       ← Measure.map_map measurable_inv (measurable_const_mul _),
-      gammaMeasure_map_const_mul h.1 h.2 (inv_pos.mpr hb), div_inv_eq_mul, mul_comm]
+      gammaMeasure_map_const_mul (inv_pos.mpr hb), div_inv_eq_mul, mul_comm]
   · have h' : ¬ (0 < a ∧ 0 < b * r) := fun h' ↦ h ⟨h'.1, pos_of_mul_pos_right h'.2 hb.le⟩
     rw [inverseGammaMeasure_of_not_pos h, inverseGammaMeasure_of_not_pos h', Measure.map_zero]
 

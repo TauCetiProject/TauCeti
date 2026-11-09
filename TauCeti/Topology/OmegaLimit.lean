@@ -111,7 +111,7 @@ theorem exists_tendsto_atTop_of_setOf_mapClusterPt_subset [T2Space X] (hK : IsCo
     filter_upwards [eventually_ge_atTop a] with t ht using hmaps ht
   obtain ⟨p, -, hp⟩ := hK.exists_mapClusterPt (tendsto_principal.mpr hev)
   have hone : ∀ x ∈ K, MapClusterPt x atTop u → x = p := fun x _ hx ↦
-    (hC.subset hsub).isTotallyDisconnected _ subset_rfl
+    (hC.subset hsub).isDiscrete.isTotallyDisconnected _ subset_rfl
       (isPreconnected_setOf_mapClusterPt_atTop hK hu hmaps) hx hp
   exact ⟨p, hsub hp, hK.tendsto_nhds_of_unique_mapClusterPt hev hone⟩
 
