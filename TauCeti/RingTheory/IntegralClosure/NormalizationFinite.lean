@@ -214,7 +214,7 @@ private theorem length_quotient_lsmul_le_mul_ord_of_finrank_le [IsNoetherianRing
         rintro _ ⟨y, hy, rfl⟩
         exact ⟨by simp [heAdef, hφx], by simpa [heAdef] using U.sub_mem (hM hy) (U.smul_mem _ hxU)⟩
       have hterm2 : Module.length A (↥M ⧸ (P ⊔ N)) ≤ n * Ring.ord A a := by
-        have h := length_quotient_sup_comap_ker eA M a
+        have h := eA.length_quotient_sup_comap_ker M a
         rw [hkereA] at h
         exact h.trans_le (ih (LinearMap.ker φ ⊓ U) hrkU' M' hM'U (hfg.map eA))
       rw [length_quotient_eq_length_map_add_length_quotient_sup N P]
