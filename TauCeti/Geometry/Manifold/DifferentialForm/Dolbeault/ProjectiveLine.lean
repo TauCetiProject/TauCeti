@@ -26,6 +26,10 @@ near `0`. By Liouville's theorem `f = 0`, and likewise `g = 0`. Every point of `
 image of one of the two coordinates, where the differential of the coordinate is nonzero, and a
 `(1,0)`-form on the one-dimensional complex tangent space vanishing on a nonzero vector is zero.
 
+The two affine coordinates are `TauCeti.ProjectiveLine.affineParam`, related on their overlap by
+`TauCeti.ProjectiveLine.affineParam_inv`; pulled-back forms are related by
+`TauCeti.ProjectiveLine.coe_mpullback_affineParam_apply_of_ne_zero`.
+
 ## References
 
 * P. Griffiths and J. Harris, *Principles of Algebraic Geometry*, Wiley, 1978, Chapter 0,
@@ -43,18 +47,22 @@ namespace TauCeti
 
 open SmoothAlmostComplexStructure
 
+namespace ProjectiveLine
+
 /-- The affine coordinate of the projective line on the open set where the `i`-th homogeneous
 coordinate does not vanish: `t ↦ [t : 1]` for `i = 1` and `s ↦ [1 : s]` for `i = 0`. -/
-private noncomputable def affineParam (i : Fin 2) (t : ℂ) : ℙ ℂ (Fin 2 → ℂ) :=
+noncomputable def affineParam (i : Fin 2) (t : ℂ) : ℙ ℂ (Fin 2 → ℂ) :=
   (affineChart (K := ℂ) (n := 1) i).symm fun _ ↦ t
 
-private theorem affineParam_eq (i : Fin 2) (t : ℂ) :
+/-- The affine coordinate `i` in homogeneous coordinates: `[t : 1]` for `i = 1` and `[1 : t]` for
+`i = 0`. -/
+theorem affineParam_eq (i : Fin 2) (t : ℂ) :
     affineParam i t = mk ℂ (Fin.insertNth (α := fun _ ↦ ℂ) i 1 fun _ ↦ t)
       (Fin.insertNth_one_ne_zero i _) :=
   affineChart_symm_apply i _
 
 /-- The two affine coordinates are related by `s = 1 / t` on their overlap. -/
-private theorem affineParam_inv {i j : Fin 2} (hij : i ≠ j) {t : ℂ} (ht : t ≠ 0) :
+theorem affineParam_inv {i j : Fin 2} (hij : i ≠ j) {t : ℂ} (ht : t ≠ 0) :
     affineParam i t = affineParam j t⁻¹ := by
   rw [affineParam_eq, affineParam_eq, mk_eq_mk_iff]
   have h₁ (x : ℂ) : Fin.insertNth (α := fun _ ↦ ℂ) (1 : Fin 2) 1 (fun _ ↦ x) 0 = x := rfl
@@ -62,35 +70,59 @@ private theorem affineParam_inv {i j : Fin 2} (hij : i ≠ j) {t : ℂ} (ht : t 
   ext k
   fin_cases i <;> fin_cases j <;> fin_cases k <;> simp_all
 
-private theorem contMDiff_affineParam (i : Fin 2) :
+/-- The affine coordinate `i` takes values in the affine open where the `i`-th homogeneous
+coordinate does not vanish. -/
+theorem affineParam_mem_affineOpen (i : Fin 2) (t : ℂ) :
+    affineParam i t ∈ affineOpen (K := ℂ) i := by
+  rw [← affineChart_source]
+  exact (affineChart i).map_target (by simp [affineChart_target])
+
+/-- The affine chart is a left inverse of the affine coordinate. -/
+theorem affineChart_affineParam (i : Fin 2) (t : ℂ) :
+    affineChart (K := ℂ) (n := 1) i (affineParam i t) = fun _ ↦ t :=
+  (affineChart i).right_inv (by simp [affineChart_target])
+
+/-- On its affine open, the affine coordinate is a left inverse of the affine chart. -/
+theorem affineParam_affineChart {i : Fin 2} {x : ℙ ℂ (Fin 2 → ℂ)}
+    (hx : x ∈ affineOpen (K := ℂ) i) :
+    affineParam i (affineChart (K := ℂ) (n := 1) i x 0) = x := by
+  have h' : (fun _ : Fin 1 ↦ affineChart (K := ℂ) (n := 1) i x 0) =
+      affineChart (K := ℂ) (n := 1) i x :=
+    funext fun k ↦ by fin_cases k; rfl
+  rw [affineParam, h']
+  exact (affineChart i).left_inv (by rwa [affineChart_source])
+
+/-- The affine coordinates of the projective line are holomorphic. -/
+theorem contMDiff_affineParam (i : Fin 2) :
     ContMDiff 𝓘(ℂ, ℂ) 𝓘(ℂ, Fin 1 → ℂ) ∞ (affineParam i) :=
   (contMDiff_affineChart_symm i ∞).comp (contDiff_pi.2 fun _ ↦ contDiff_id).contMDiff
 
-private theorem contMDiff_affineParam_real (i : Fin 2) :
+/-- The affine coordinates of the projective line are smooth maps of the underlying real
+manifolds. -/
+theorem contMDiff_affineParam_real (i : Fin 2) :
     ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, Fin 1 → ℂ) ∞ (affineParam i) := by
   simpa only [modelWithCornersSelf_restrictScalars] using
     (contMDiff_affineParam i).restrictScalars ℝ
 
-private theorem isPseudoholomorphic_affineParam (i : Fin 2) :
+/-- The affine coordinates of the projective line are pseudoholomorphic for the complex structures
+of `ℂ` and of the projective line. -/
+theorem isPseudoholomorphic_affineParam (i : Fin 2) :
     IsPseudoholomorphic (ofComplexManifold ℂ ℂ)
       (ofComplexManifold (Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ))) (affineParam i) :=
   isPseudoholomorphic_ofComplexManifold_iff.2 ((contMDiff_affineParam i).mdifferentiable (by simp))
 
 /-- The derivative of an affine coordinate of the projective line is injective: the affine chart
 is a left inverse of the coordinate. -/
-private theorem injective_mfderiv_affineParam (i : Fin 2) (t : ℂ) :
+theorem injective_mfderiv_affineParam (i : Fin 2) (t : ℂ) :
     Injective (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, Fin 1 → ℂ) (affineParam i) t) := by
   let e : ℂ →L[ℝ] Fin 1 → ℂ := ContinuousLinearMap.pi fun _ ↦ ContinuousLinearMap.id ℝ ℂ
   have he : Injective e := fun a b hab ↦ by simpa [e] using congrFun hab 0
   have hcomp : affineChart (K := ℂ) (n := 1) i ∘ affineParam i = e :=
-    funext fun s ↦ (affineChart i).right_inv (by simp [affineChart_target])
-  have hmem : affineParam i t ∈ affineOpen (K := ℂ) i := by
-    rw [← affineChart_source]
-    exact (affineChart i).map_target (by simp [affineChart_target])
+    funext (affineChart_affineParam i)
   have hchart : MDifferentiableAt 𝓘(ℝ, Fin 1 → ℂ) 𝓘(ℝ, Fin 1 → ℂ)
       (affineChart (K := ℂ) (n := 1) i) (affineParam i t) := by
     have := (((contMDiffOn_affineChart (𝕜 := ℂ) (n := 1) i ∞).contMDiffAt
-      ((isOpen_affineOpen i).mem_nhds hmem)).restrictScalars ℝ)
+      ((isOpen_affineOpen i).mem_nhds (affineParam_mem_affineOpen i t))).restrictScalars ℝ)
     simpa only [modelWithCornersSelf_restrictScalars] using this.mdifferentiableAt (by simp)
   have key := mfderiv_comp t hchart ((contMDiff_affineParam_real i t).mdifferentiableAt (by simp))
   rw [hcomp, mfderiv_eq_fderiv, e.fderiv] at key
@@ -100,6 +132,26 @@ private theorem injective_mfderiv_affineParam (i : Fin 2) (t : ℂ) :
   -- The derivative of `e` read through the model spaces is `e` itself.
   exact (NormedSpace.fromTangentSpace _).symm.injective.comp
     (he.comp (NormedSpace.fromTangentSpace t).injective)
+
+/-- Near a nonzero point `s`, the affine coordinate `i` is the affine coordinate `j` composed with
+`y ↦ 1 / y`, so a form pulled back along the coordinate `i` is, at `s`, the pullback along
+`y ↦ 1 / y` of the form pulled back along the coordinate `j`. -/
+theorem coe_mpullback_affineParam_apply_of_ne_zero {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℂ F] {k : ℕ} (α : SmoothForm 𝓘(ℝ, Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ)) F k)
+    {i j : Fin 2} (hij : i ≠ j) {s : ℂ} (hs : s ≠ 0) :
+    (SmoothForm.mpullback (affineParam i) (contMDiff_affineParam_real i) α).1 s =
+      TauCeti.mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (fun y : ℂ ↦ y⁻¹)
+        (SmoothForm.mpullback (affineParam j) (contMDiff_affineParam_real j) α).1 s := by
+  have heq : affineParam i =ᶠ[𝓝 s] affineParam j ∘ fun y ↦ y⁻¹ := by
+    filter_upwards [eventually_ne_nhds hs] with y hy using affineParam_inv hij hy
+  have hinv := (hasDerivAt_inv hs).hasFDerivAt.restrictScalars ℝ
+  rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback, heq.mpullback_eq,
+    mpullback_comp_at hinv.differentiableAt.mdifferentiableAt
+      ((contMDiff_affineParam_real j _).mdifferentiableAt (by simp))]
+
+end ProjectiveLine
+
+open ProjectiveLine
 
 namespace SmoothForm
 
@@ -115,21 +167,13 @@ private theorem IsOfType.mpullback_affineParam_apply_inv
     (SmoothForm.mpullback (affineParam i) (contMDiff_affineParam_real i) α).1 s ![(1 : ℂ)] =
       -(s ^ 2)⁻¹ • (SmoothForm.mpullback (affineParam j) (contMDiff_affineParam_real j) α).1 s⁻¹
         ![(1 : ℂ)] := by
-  have heq : affineParam i =ᶠ[𝓝 s] affineParam j ∘ fun y ↦ y⁻¹ := by
-    filter_upwards [eventually_ne_nhds hs] with y hy using affineParam_inv hij hy
   have hinv := (hasDerivAt_inv hs).hasFDerivAt.restrictScalars ℝ
   have hD : mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (fun y : ℂ ↦ y⁻¹) s (1 : ℂ) = (-(s ^ 2)⁻¹ : ℂ) := by
     rw [mfderiv_eq_fderiv, hinv.fderiv]
     -- The tangent-space identifications of `ℂ` are the identity.
     exact one_smul ℂ (-(s ^ 2)⁻¹)
-  -- Near `s`, the coordinate `i` is the coordinate `j` composed with `y ↦ 1 / y`.
-  have hpull : (SmoothForm.mpullback (affineParam i) (contMDiff_affineParam_real i) α).1 s =
-      TauCeti.mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (fun y : ℂ ↦ y⁻¹)
-        (SmoothForm.mpullback (affineParam j) (contMDiff_affineParam_real j) α).1 s := by
-    rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback, heq.mpullback_eq,
-      mpullback_comp_at hinv.differentiableAt.mdifferentiableAt
-        ((contMDiff_affineParam_real j _).mdifferentiableAt (by simp))]
-  rw [← (hα.mpullback _ (isPseudoholomorphic_affineParam j)).apply_eq_smul, hpull,
+  rw [← (hα.mpullback _ (isPseudoholomorphic_affineParam j)).apply_eq_smul,
+    coe_mpullback_affineParam_apply_of_ne_zero α hij hs,
     TauCeti.mpullback_apply]
   congr 1
   ext k
@@ -158,13 +202,7 @@ theorem IsOfType.eq_zero_of_delBar_eq_zero_projectivization
   refine Subtype.ext (funext fun x ↦ ?_)
   obtain ⟨i, hi⟩ := exists_mem_affineOpen x
   obtain ⟨j, hij⟩ : ∃ j, i ≠ j := by fin_cases i <;> simp
-  obtain ⟨t, rfl⟩ : ∃ t, affineParam i t = x := by
-    refine ⟨affineChart (K := ℂ) (n := 1) i x 0, ?_⟩
-    have h' : (fun _ : Fin 1 ↦ affineChart (K := ℂ) (n := 1) i x 0) =
-        affineChart (K := ℂ) (n := 1) i x :=
-      funext fun k ↦ by fin_cases k; rfl
-    rw [affineParam, h']
-    exact (affineChart i).left_inv (by rwa [affineChart_source])
+  obtain ⟨t, rfl⟩ : ∃ t, affineParam i t = x := ⟨_, affineParam_affineChart hi⟩
   have hβ := hα.apply (affineParam i t)
   rw [toEndomorphism_ofComplexManifold] at hβ
   refine ContinuousAlternatingMap.IsOfType.eq_zero_of_apply_eq_zero (U := Fin 1 → ℂ) hβ
