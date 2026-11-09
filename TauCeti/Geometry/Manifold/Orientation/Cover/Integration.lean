@@ -57,6 +57,7 @@ theorem integralTopForm_eq_zero_of_mpullback_deck_eq
 
 /-- The pullback of every top form on `M` to the orientation double cover has integral zero for
 the canonical orientation. -/
+@[simp]
 theorem integralTopForm_mpullback_proj_eq_zero (φ : RoughForm I M ℝ (Module.finrank ℝ E)) :
     integralTopForm canonicalOrientation (mpullback I I VectorBundleOrientationCover.proj φ) = 0 :=
   integralTopForm_eq_zero_of_mpullback_deck_eq (exists_mpullback_proj_eq_iff.mp ⟨φ, rfl⟩)

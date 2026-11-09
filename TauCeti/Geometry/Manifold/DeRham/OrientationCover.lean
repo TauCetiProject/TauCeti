@@ -123,6 +123,7 @@ section Integral
 
 /-- Integration on top compactly supported cohomology of the orientation double cover, for its
 canonical orientation, vanishes on every class pulled back from `M`. -/
+@[simp]
 theorem integral_map_proj_eq_zero [IsManifold I ∞ M] [BoundarylessManifold I M] [T2Space M]
     [SigmaCompactSpace M] (c : compactlySupportedDeRhamCohomology I M (Module.finrank ℝ E)) :
     compactlySupportedDeRhamCohomology.integral canonicalOrientation
