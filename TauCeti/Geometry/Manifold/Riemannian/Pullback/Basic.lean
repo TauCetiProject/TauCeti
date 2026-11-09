@@ -96,6 +96,7 @@ theorem trivializationAt_bilinearForm_apply {x₀ x : M} (hx : x ∈ (chartAt H 
   rfl
 
 /-- Read in the trivialization at `x` itself, a bilinear form on `T_x M` is unchanged. -/
+@[simp]
 theorem trivializationAt_self_bilinearForm_apply (x : M)
     (B : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (v w : E) :
     (trivializationAt (E →L[ℝ] E →L[ℝ] ℝ)
