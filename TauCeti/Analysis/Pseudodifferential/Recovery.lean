@@ -188,10 +188,6 @@ theorem tendsto_quantizeSchwartzValue_cutoffExponential
     Tendsto (fun ε ↦ Complex.exp (-(⟪x, ξ⟫ * Complex.I)) •
         quantizeSchwartzValue a (φ.cutoffExponential ε ξ v) x) (𝓝[≠] 0)
       (𝓝 (φ 0 • a (x, ξ) v)) := by
-  have hint : ∫ η, 𝓕 φ η = φ 0 := by
-    calc ∫ η, 𝓕 φ η = ∫ η, 𝐞 ⟪η, (0 : E)⟫ • 𝓕 φ η := by simp
-      _ = φ 0 := by
-        rw [← Real.fourierInv_eq, ← SchwartzMap.fourierInv_coe, fourierInv_fourier_eq]
   have hlim : Complex.exp (-(⟪x, ξ⟫ * Complex.I)) •
       ∫ η, 𝐞 ⟪(2 * π)⁻¹ • ξ, x⟫ • a (x, ξ) (𝓕 φ η • v) = φ 0 • a (x, ξ) v := by
     have hv : Integrable fun η ↦ 𝓕 φ η • v := (𝓕 φ).integrable.smul_const v
@@ -199,7 +195,8 @@ theorem tendsto_quantizeSchwartzValue_cutoffExponential
     have hpull : ∫ η, 𝐞 ⟪(2 * π)⁻¹ • ξ, x⟫ • a (x, ξ) (𝓕 φ η • v) =
         𝐞 ⟪(2 * π)⁻¹ • ξ, x⟫ • a (x, ξ) (φ 0 • v) := by
       simp_rw [Circle.smul_def]
-      rw [integral_smul, (a (x, ξ)).integral_comp_comm hv, integral_smul_const, hint]
+      rw [integral_smul, (a (x, ξ)).integral_comp_comm hv, integral_smul_const,
+        φ.integral_fourier_eq_apply_zero]
     -- The phase `exp(i ⟪x, ξ⟫)` cancels against `exp(-i ⟪x, ξ⟫)`.
     have hphase : Complex.exp (-(⟪x, ξ⟫ * Complex.I)) * 𝐞 ⟪(2 * π)⁻¹ • ξ, x⟫ = 1 := by
       rw [real_inner_comm x, ← exp_inner_mul_I_eq_fourierChar, ← Complex.exp_add]

@@ -52,6 +52,7 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
   iterated directional derivative, `𝓕⁻ (∂_m^N σ) x = (-2πi ⟪x, m⟫) ^ N 𝓕⁻ σ x`.
 * `SchwartzMap.norm_fourierInv_iterate_lineDerivOp_sq`: its consequence for squared norms,
   `‖𝓕⁻ (∂_m^N σ) x‖² = (2π) ^ (2N) ⟪x, m⟫ ^ (2N) ‖𝓕⁻ σ x‖²`.
+* `SchwartzMap.integral_fourier_eq_apply_zero`: Fourier inversion at the origin, `∫ 𝓕 f = f 0`.
 * `SchwartzMap.norm_fourierInv_toL2_eq`: Plancherel's theorem for the inverse Fourier transform.
 * `SchwartzMap.norm_toLp_fourierMultiplierCLM_eq`: Plancherel's theorem for Fourier multipliers,
   `‖𝓕⁻ (w • 𝓕 f)‖_{L²} = ‖w • 𝓕 f‖_{L²}`.
@@ -164,6 +165,12 @@ theorem norm_fourierInv_iterate_lineDerivOp_sq (σ : 𝓢(E, F)) (m : E) (N : �
     Complex.norm_real, Real.norm_eq_abs, Real.norm_eq_abs, abs_of_pos Real.pi_pos,
     ← (even_two_mul N).pow_abs ⟪x, m⟫]
   ring
+
+/-- By Fourier inversion at `0`, the integral of the Fourier transform of a Schwartz function is
+its value at the origin: `∫ 𝓕 f = f 0`. -/
+theorem integral_fourier_eq_apply_zero [CompleteSpace F] (f : 𝓢(E, F)) : ∫ ξ, 𝓕 f ξ = f 0 := by
+  calc ∫ ξ, 𝓕 f ξ = ∫ ξ, 𝐞 ⟪ξ, (0 : E)⟫ • 𝓕 f ξ := by simp
+    _ = f 0 := by rw [← Real.fourierInv_eq, ← fourierInv_coe, fourierInv_fourier_eq]
 
 end normed
 
