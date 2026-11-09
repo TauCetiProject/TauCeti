@@ -18,12 +18,11 @@ unique, and how cells account for points in consecutive skeleta, so that a map s
 `skeletonLT C (n + 1)` into a set exactly when it does so on `skeletonLT C n` and on the closed
 `n`-cells (`TauCeti.mapsTo_skeletonLT_succ_iff`).  Every point of the complex lies in some
 skeleton above any given level.  With a single `0`-cell, the `0`-skeleton is the base together
-with that point (`TauCeti.skeletonLT_one_eq_insert`).  When every cell is attached directly along
-the base, a subset of the `0`-skeleton is closed as soon as its trace on the base is
-(`TauCeti.isClosed_of_subset_skeletonLT_one`), so a map from a preconnected space into the
-`0`-skeleton cannot leave such a subset whose complement there is also closed
-(`TauCeti.forall_mem_of_subset_skeletonLT_one`).  The preimages of the skeleta under a map
-into the ambient space form an increasing filtration (`TauCeti.preimageSkeleton`).
+with that point (`TauCeti.skeletonLT_one_eq_insert`).  A subset of the `0`-skeleton is closed as
+soon as its trace on the base is (`TauCeti.isClosed_of_subset_skeletonLT_one`), so a map from a
+preconnected space into the `0`-skeleton cannot leave such a subset whose complement there is
+also closed (`TauCeti.forall_mem_of_subset_skeletonLT_one`).  The preimages of the skeleta under
+a map into the ambient space form an increasing filtration (`TauCeti.preimageSkeleton`).
 
 The mathematical source is Hatcher, *Algebraic Topology*, Section 2.2.
 -/
@@ -159,43 +158,26 @@ lemma exists_mem_skeletonLT_add (k : ℕ) {x : X} (hx : x ∈ C) :
   obtain ⟨j, hj⟩ := hx
   exact ⟨j, skeletonLT_mono (by exact_mod_cast Nat.le_add_left j k) hj⟩
 
-/-- **Closed subsets of the `0`-skeleton of a complex attached along its base.** If the frontier of
-every cell of `C` lies in the base `D`, then a subset `A` of the `0`-skeleton `skeletonLT C 1`,
-which consists of `D` and the `0`-cells, is closed as soon as `A ∩ D` is closed. -/
-lemma isClosed_of_subset_skeletonLT_one (hfr : ∀ n (j : cell C n), cellFrontier n j ⊆ D)
-    {A : Set X} (hA : A ⊆ skeletonLT C 1) (hAD : IsClosed (A ∩ D)) : IsClosed A := by
-  refine (RelCWComplex.closed C A (hA.trans (skeletonLT C 1).subset_complex)).2
-    ⟨fun n j ↦ ?_, hAD⟩
-  cases n with
-  | zero =>
-    -- A `0`-cell is a single point.
-    rw [closedCell_zero_eq_singleton]
-    exact (subsingleton_singleton.anti inter_subset_right).isClosed
-  | succ n =>
-    -- A point of the `0`-skeleton in a cell of positive dimension lies on its frontier.
-    have hsub : A ∩ closedCell (n + 1) j ⊆ D := by
-      rintro x ⟨hxA, hx⟩
-      rw [← cellFrontier_union_openCell_eq_closedCell] at hx
-      refine hx.elim (fun hx ↦ hfr _ j hx) fun hx ↦ absurd hx ?_
-      exact disjoint_left.1 (disjoint_skeletonLT_openCell (by norm_cast; omega)) (hA hxA)
-    have : A ∩ closedCell (n + 1) j = (A ∩ D) ∩ closedCell (n + 1) j := by
-      ext x
-      exact ⟨fun hx ↦ ⟨⟨hx.1, hsub hx⟩, hx.2⟩, fun hx ↦ ⟨hx.1.1, hx.2⟩⟩
-    rw [this]
-    exact hAD.inter isClosed_closedCell
+/-- **Closed subsets of the `0`-skeleton.** A subset `A` of the `0`-skeleton `skeletonLT C 1`,
+which consists of the base `D` and the `0`-cells, is closed as soon as `A ∩ D` is closed. -/
+lemma isClosed_of_subset_skeletonLT_one {A : Set X} (hA : A ⊆ skeletonLT C 1)
+    (hAD : IsClosed (A ∩ D)) : IsClosed A :=
+  -- `A` misses every open cell of positive dimension.
+  isClosed_of_disjoint_openCell_or_isClosed_inter_closedCell
+    (hA.trans (skeletonLT C 1).subset_complex) hAD fun n hn _ ↦
+    .inl ((disjoint_skeletonLT_openCell (by norm_cast)).mono_left hA)
 
-/-- **Maps into the `0`-skeleton of a complex attached along its base.** If the frontier of every
-cell of `C` lies in the base `D`, a continuous map from a preconnected space into the `0`-skeleton
-stays in any part `B` of the `0`-skeleton which, like its complement there, meets the base in a
-closed set, as soon as it meets `B` at one point. -/
-lemma forall_mem_of_subset_skeletonLT_one (hfr : ∀ n (j : cell C n), cellFrontier n j ⊆ D)
-    {B : Set X} (hB : B ⊆ skeletonLT C 1) (hBD : IsClosed (B ∩ D))
+/-- **Maps into the `0`-skeleton.** A continuous map from a preconnected space into the
+`0`-skeleton stays in any part `B` of the `0`-skeleton which, like its complement there, meets the
+base in a closed set, as soon as it meets `B` at one point. -/
+lemma forall_mem_of_subset_skeletonLT_one {B : Set X} (hB : B ⊆ skeletonLT C 1)
+    (hBD : IsClosed (B ∩ D))
     (hBD' : IsClosed (((skeletonLT C 1 : Set X) \ B) ∩ D)) {Y : Type*} [TopologicalSpace Y]
     [PreconnectedSpace Y] (γ : C(Y, X)) (hγ : ∀ y, γ y ∈ skeletonLT C 1) {y₀ : Y}
     (h₀ : γ y₀ ∈ B) : ∀ y, γ y ∈ B := by
-  have hclosed := (isClosed_of_subset_skeletonLT_one hfr hB hBD).preimage γ.continuous
+  have hclosed := (isClosed_of_subset_skeletonLT_one hB hBD).preimage γ.continuous
   have hopen : IsOpen (γ ⁻¹' B) := by
-    have h := (isClosed_of_subset_skeletonLT_one hfr sdiff_subset hBD').preimage γ.continuous
+    have h := (isClosed_of_subset_skeletonLT_one sdiff_subset hBD').preimage γ.continuous
     rw [← isClosed_compl_iff]
     convert h using 1
     ext s

@@ -13,8 +13,7 @@ import TauCeti.AlgebraicTopology.FundamentalGroup.HomotopyEquiv
 /-!
 # Attaching cells of dimension other than one creates no loops
 
-Let `C` be a relative CW complex over a base `D` in a Hausdorff space, all of whose cells are
-attached directly along the base: the frontier of every cell lies in `D`. If `C` has no `1`-cells
+Let `C` be a relative CW complex over a base `D` in a Hausdorff space. If `C` has no `1`-cells
 and every loop in `D` is nullhomotopic, then every loop in `C` is nullhomotopic
 (`TauCeti.subsingleton_fundamentalGroup_of_isEmpty_cell_one`). The `0`-cells are isolated points
 of `C`, while cells of dimension at least `2` cannot carry new loops.
@@ -28,8 +27,8 @@ The proof compresses loops into the `1`-skeleton. Every point of `C` is joined b
 `1`-skeleton (`TauCeti.exists_joined_skeletonLT`), and a loop based in the `1`-skeleton is
 homotopic, relative to its basepoint, to a loop in the `1`-skeleton
 (`TauCeti.exists_path_homotopic_skeletonLT`). Without `1`-cells the `1`-skeleton equals the
-`0`-skeleton `skeletonLT C 1`, the union of `D` with the `0`-cells. Since the cells are attached
-along `D`, every subset of the `0`-skeleton meeting `D` in a closed set is closed
+`0`-skeleton `skeletonLT C 1`, the union of `D` with the `0`-cells. Every subset of the
+`0`-skeleton meeting `D` in a closed set is closed
 (`TauCeti.isClosed_of_subset_skeletonLT_one`), so a loop in the `0`-skeleton cannot leave such a
 subset whose complement there is also closed (`TauCeti.forall_mem_of_subset_skeletonLT_one`). So
 a loop in the `1`-skeleton stays in `D` when its basepoint lies in `D`, where it is nullhomotopic,
@@ -57,25 +56,17 @@ namespace TauCeti
 variable {X : Type u} [TopologicalSpace X] [T2Space X] {C D : Set X} [RelCWComplex C D]
 
 /-- **Attaching cells of dimension other than one creates no loops.** Let `C` be a relative CW
-complex over `D` in a Hausdorff space, with no `1`-cells, all of whose cells are attached along
-the base, in that the frontier of every cell lies in `D`. If the fundamental group of `D` is
+complex over `D` in a Hausdorff space, with no `1`-cells. If the fundamental group of `D` is
 trivial at every basepoint, then so is the fundamental group of `C`. -/
 theorem subsingleton_fundamentalGroup_of_isEmpty_cell_one (h₁ : IsEmpty (cell C 1))
-    (hfr : ∀ n (j : cell C n), cellFrontier n j ⊆ D)
     (hD : ∀ x : D, Subsingleton (FundamentalGroup D x)) (x : C) :
     Subsingleton (FundamentalGroup C x) := by
   set A : Set X := (skeletonLT C (((1 : ℕ) : ℕ∞) + 1) : Set X) with hA
   have hAC : A ⊆ C := (skeletonLT C _).subset_complex
   -- Without `1`-cells, the `1`-skeleton is the `0`-skeleton `skeletonLT C 1`.
   have hA₁ : A ⊆ skeletonLT C 1 := by
-    intro y hy
-    rw [hA, SetLike.mem_coe, mem_skeletonLT_iff] at hy
-    rw [SetLike.mem_coe, mem_skeletonLT_iff]
-    obtain hy | ⟨m, hm, j, hy⟩ := hy
-    · exact .inl hy
-    obtain rfl | rfl : m = 0 ∨ m = 1 := by norm_cast at hm; omega
-    · exact .inr ⟨0, by norm_num, j, hy⟩
-    · exact h₁.elim j
+    rw [hA, ← skeletonLT_union_iUnion_closedCell_eq_skeletonLT_succ (C := C) 1, iUnion_of_empty,
+      union_empty, Nat.cast_one]
   have hD₁ : D ⊆ skeletonLT C 1 := fun y hy ↦ mem_skeletonLT_iff.2 (.inl hy)
   have hDC : D ⊆ C := base_subset_complex
   -- Move the basepoint to a point `a` of the `1`-skeleton.
@@ -89,7 +80,7 @@ theorem subsingleton_fundamentalGroup_of_isEmpty_cell_one (h₁ : IsEmpty (cell 
   let γ'X : C(I, X) := ⟨fun t ↦ γ' t, by fun_prop⟩
   by_cases haD : (a : X) ∈ D
   · -- The compressed loop stays in `D`, where it is nullhomotopic.
-    have hmem := forall_mem_of_subset_skeletonLT_one hfr hD₁ (by simpa using isClosedBase C)
+    have hmem := forall_mem_of_subset_skeletonLT_one hD₁ (by simpa using isClosedBase C)
       (by simp) γ'X hγ'₁ (y₀ := 0) (by simpa [γ'X] using haD)
     -- Inside `C`, the base `D` is homeomorphic to `D` itself, so its loops are nullhomotopic.
     let e := (IsEmbedding.inclusion hDC).toHomeomorph
@@ -102,7 +93,7 @@ theorem subsingleton_fundamentalGroup_of_isEmpty_cell_one (h₁ : IsEmpty (cell 
   · -- The basepoint is a `0`-cell, an isolated point of the `1`-skeleton.
     have hD' : ((skeletonLT C 1 : Set X) \ {↑a}) ∩ D = D :=
       inter_eq_right.2 fun y hy ↦ ⟨hD₁ hy, fun h ↦ haD (h ▸ hy)⟩
-    have hmem := forall_mem_of_subset_skeletonLT_one (B := {↑a}) hfr
+    have hmem := forall_mem_of_subset_skeletonLT_one (B := {↑a})
       (singleton_subset_iff.2 (hA₁ a.2)) (by simp [haD]) (by rw [hD']; exact isClosedBase C)
       γ'X hγ'₁ (y₀ := 0) (by simp [γ'X])
     have hconst : γ'.map (continuous_inclusion hAC) = Path.refl _ := by

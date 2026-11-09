@@ -94,14 +94,14 @@ theorem IsMorse.subsingleton_fundamentalGroup_sublevel_of_subsingleton (hf : IsM
   · -- Across the level `f p`, the upper sublevel deformation retracts onto the lower sublevel
     -- with cells attached along it, one for each critical point of the level, of dimension its
     -- index. None of them has dimension one.
-    obtain ⟨ε, hε, hεδ, C, _, -, hC, hcells, hfr, r, hr, ⟨G⟩⟩ :=
+    obtain ⟨ε, hε, hεδ, C, _, -, hC, hcells, -, r, hr, ⟨G⟩⟩ :=
       hf.exists_relCWComplex_sublevel_deformation hδ hcompact
     refine ⟨ε, hε, hεδ, fun hs y ↦ ?_⟩
     have : IsEmpty (RelCWComplex.cell C 1) := (hcells 1).some.isEmpty_congr.2
       ⟨fun q ↦ hd q.1 ⟨q.1.2.1, by
         have : f q.1 = f p := q.1.2.2
         constructor <;> linarith⟩ q.2⟩
-    have hCsub := subsingleton_fundamentalGroup_of_isEmpty_cell_one this hfr hs
+    have hCsub := subsingleton_fundamentalGroup_of_isEmpty_cell_one this hs
     -- The complex is a strong deformation retract of the upper sublevel.
     let e := ContinuousMap.HomotopyEquiv.ofRetraction hC r hr G.toHomotopy
     have := hCsub (e.symm.toFun y)
