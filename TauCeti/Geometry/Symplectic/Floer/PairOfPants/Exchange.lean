@@ -219,7 +219,7 @@ private theorem norm_cylindricalEndLift_sub_le {q : Puncture} (hq : q ≠ inf) {
     _ = 2 := by norm_num
 
 /-- The translated plane datum vanishes within distance `2` of `c`. -/
-private theorem negativePlanePerturbation_sub_eq_zero {H : ℝ → M → ℝ} {c : ℝ} {w : ℂ}
+theorem negativePlanePerturbation_sub_eq_zero {H : ℝ → M → ℝ} {c : ℝ} {w : ℂ}
     (hw : ‖w - c‖ ≤ 2) (x : M) : negativePlanePerturbation H (w - c) x = 0 :=
   negativePlanePerturbation_eq_zero_of_norm_le
     (hw.trans (by nlinarith [Real.one_le_exp (by positivity : 0 ≤ 2 * π)])) x
@@ -245,7 +245,7 @@ private theorem pairOfPantsPerturbation_update_inf_eq_zero {w : ℂ} (h₀ : 1 /
 
 /-- The input part of the pair-of-pants datum vanishes at distance at least `3/2` from a point
 `c ∈ [0, 1]`. -/
-private theorem pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub {c : ℝ} (hc₀ : 0 ≤ c)
+theorem pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub {c : ℝ} (hc₀ : 0 ≤ c)
     (hc₁ : c ≤ 1) {w : ℂ} (hw : 3 / 2 ≤ ‖w - c‖) (x : M) :
     pairOfPantsPerturbation (update H inf 0) w x = 0 := by
   refine pairOfPantsPerturbation_update_inf_eq_zero ?_ ?_ x

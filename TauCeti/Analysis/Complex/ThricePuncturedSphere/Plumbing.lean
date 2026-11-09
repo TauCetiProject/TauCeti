@@ -82,6 +82,11 @@ theorem plumbingMap_apply (q : Puncture) (L : ℝ) (w : ℂ) :
 theorem plumbingFactor_ne_zero (q : Puncture) (L : ℝ) : q.plumbingFactor L ≠ 0 :=
   div_ne_zero (mul_ne_zero q.endScale_ne_zero (Complex.exp_ne_zero _)) two_ne_zero
 
+/-- The plumbing factors of the two input ends differ by a sign, as their end scales do. -/
+theorem plumbingFactor_one (L : ℝ) : one.plumbingFactor L = -zero.plumbingFactor L := by
+  simp only [plumbingFactor_def, endScale_one, endScale_zero]
+  ring
+
 /-- The plumbing factor is the end scale times the positive real number `e^{-2πL} / 2`. -/
 theorem plumbingFactor_eq_mul_ofReal (q : Puncture) (L : ℝ) :
     q.plumbingFactor L = q.endScale * ((Real.exp (-(2 * π * L)) / 2 : ℝ) : ℂ) := by
