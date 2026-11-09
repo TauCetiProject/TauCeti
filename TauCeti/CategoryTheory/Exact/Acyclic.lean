@@ -329,20 +329,35 @@ theorem acyclic_mappingCone_of_isPushout {K L : CochainComplex C ℤ} (φ : K �
     fac m := ?_ }⟩
   · refine E.conflation_of_iso ?_
       (E.conflation_shortComplex_of_isPushout_of_isInflation (hj m) (sq m))
-    -- The middle isomorphism is given as an anonymous structure, so its endpoints are stated.
-    exact ShortComplex.isoMk (Iso.refl _)
-      (show L.X m ⊞ K.X (m + 1) ≅ (CochainComplex.mappingCone φ).X m from
-      { hom := biprod.desc ((inr φ).f m) ((inl φ).v (m + 1) m (by lia))
-        inv := biprod.lift ((snd φ).v m m (add_zero m)) ((fst φ).1.v m (m + 1) rfl)
-        hom_inv_id := by apply biprod.hom_ext' <;> apply biprod.hom_ext <;> simp
-        inv_hom_id := by simp [biprod.lift_desc, id_X φ m (m + 1) rfl, add_comm] })
-      (Iso.refl _)
-      (by
-        dsimp only [CommSq.shortComplex]
-        apply ext_to φ m (m + 1) rfl <;> simp [sub_eq_add_neg])
-      (by
-        dsimp only [CommSq.shortComplex]
-        apply biprod.hom_ext' <;> simp)
+    let e := biprod.braiding _ _ ≪≫
+      (HomologicalComplex.homotopyCofiber.XIsoBiprod φ m (m + 1) rfl).symm
+    -- The isomorphism `Lᵐ ⊞ Kᵐ⁺¹ ≅ cone` is the decomposition of the cone into its two summands.
+    -- Mathlib's simp lemmas for `XIsoBiprod` carry their own biproduct instance, so they are
+    -- applied by unification rather than by `simp`.
+    have h₁ : biprod.inr ≫ (HomologicalComplex.homotopyCofiber.XIsoBiprod φ m (m + 1) rfl).inv =
+        (inr φ).f m :=
+      HomologicalComplex.homotopyCofiber.inr_XIsoBiprod_inv φ (m + 1) m rfl
+    have h₂ : biprod.inl ≫ (HomologicalComplex.homotopyCofiber.XIsoBiprod φ m (m + 1) rfl).inv =
+        (inl φ).v (m + 1) m (by lia) :=
+      HomologicalComplex.homotopyCofiber.inl_XIsoBiprod_inv φ (m + 1) m rfl
+    -- The last step of each case closes by unification, for the same reason.
+    have he : e.hom = biprod.desc ((inr φ).f m) ((inl φ).v (m + 1) m (by lia)) := by
+      apply biprod.hom_ext'
+      · simp only [e, Iso.trans_hom, Iso.symm_hom, biprod.braiding_hom, biprod.lift_eq,
+          Preadditive.add_comp, Category.assoc, h₁, Preadditive.comp_add,
+          BinaryBicone.inl_snd_assoc, zero_comp, zero_add]
+        exact (biprod.inl_fst_assoc _).trans (biprod.inl_desc _ _).symm
+      · simp only [e, Iso.trans_hom, Iso.symm_hom, biprod.braiding_hom, biprod.lift_eq,
+          Preadditive.add_comp, Category.assoc, h₂, Preadditive.comp_add,
+          BinaryBicone.inr_fst_assoc, zero_comp, add_zero]
+        exact (biprod.inr_snd_assoc _).trans (biprod.inr_desc _ _).symm
+    refine ShortComplex.isoMk (Iso.refl _) e (Iso.refl _) ?_ ?_
+    · dsimp only [CommSq.shortComplex]
+      rw [he]
+      apply ext_to φ m (m + 1) rfl <;> simp [sub_eq_add_neg]
+    · dsimp only [CommSq.shortComplex]
+      rw [he]
+      apply biprod.hom_ext' <;> simp
   · apply ext_from φ (m + 1) m rfl <;> apply ext_to φ (m + 1) (m + 1 + 1) rfl
     · simp [d_fst_v φ m (m + 1) (m + 1 + 1) rfl rfl, reassoc_of% (hq (m + 1))]
     · simp [d_snd_v φ m (m + 1) rfl, hφ]
