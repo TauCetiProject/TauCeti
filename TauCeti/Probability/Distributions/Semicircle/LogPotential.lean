@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Semicircle.ResolventTransform
-import TauCeti.Analysis.Complex.UpperHalfPlane.LogKernel
+import TauCeti.Analysis.Complex.UpperHalfPlane.Log.Kernel
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
@@ -111,7 +111,9 @@ private theorem tendsto_log_norm_sub_integral (x : ℝ) :
     let := nullSingletonClass_semicircleReal 0 one_pos
     filter_upwards [ae_mem_Icc_semicircleReal_zero_one,
       (semicircleReal 0 1).ae_ne x] with y hy hxy
-    simpa only [bound] using TauCeti.log_norm_sub_bound x y ε hεpos hεle hy hxy
+    have hy' : |y| ≤ 2 := abs_le.mpr ⟨hy.1, hy.2⟩
+    simpa only [bound, show (|x| + 2 + 1 : ℝ) = |x| + 3 by ring] using
+      TauCeti.log_norm_sub_bound x y ε 2 hεpos hεle hy' hxy
   · let := nullSingletonClass_semicircleReal 0 one_pos
     filter_upwards [(semicircleReal 0 1).ae_ne x] with y hxy
     have harg : ContinuousAt

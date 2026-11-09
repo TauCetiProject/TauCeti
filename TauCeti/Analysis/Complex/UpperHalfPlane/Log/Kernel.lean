@@ -63,11 +63,11 @@ theorem continuous_log_sub {w : ℂ} (hw : 0 < w.im) :
   continuous_iff_continuousAt.2 fun y ↦
     ((by fun_prop : Continuous fun y : ℝ ↦ (w - y : ℂ)).continuousAt).clog (mem_slitPlane_sub hw y)
 
-/-- A bound for the logarithmic kernel near the real axis on the interval `[-2, 2]`. -/
-theorem log_norm_sub_bound (x y ε : ℝ) (hεpos : 0 < ε) (hεle : ε ≤ 1)
-    (hy : y ∈ Icc (-2 : ℝ) 2) (hxy : y ≠ x) :
+/-- A bound for the logarithmic kernel near the real axis on a bounded set. -/
+theorem log_norm_sub_bound (x y ε R : ℝ) (hεpos : 0 < ε) (hεle : ε ≤ 1)
+    (hy : |y| ≤ R) (hxy : y ≠ x) :
     ‖Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖‖ ≤
-      ‖Real.log |x - y|‖ + Real.log (|x| + 3) := by
+      ‖Real.log |x - y|‖ + Real.log (|x| + R + 1) := by
   have hdiff : 0 < |x - y| := abs_pos.mpr (sub_ne_zero.mpr (Ne.symm hxy))
   have hlow :
       |x - y| ≤ ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ := by
@@ -87,42 +87,35 @@ theorem log_norm_sub_bound (x y ε : ℝ) (hεpos : 0 < ε) (hεle : ε ≤ 1)
         rw [Complex.norm_real, Real.norm_eq_abs]
         simp [abs_of_pos hεpos]
       _ ≤ |x - y| + 1 := by linarith
-  have hdiff_le : |x - y| ≤ |x| + 2 := by
-    rw [abs_le]
-    constructor
-    · have hx := neg_abs_le x
-      have hy' := hy.2
-      linarith
-    · have hx := le_abs_self x
-      have hy' := hy.1
-      linarith
+  have hdiff_le : |x - y| ≤ |x| + R := by
+    linarith [abs_sub x y]
   have hlog_low := Real.log_le_log hdiff hlow
   have hnormpos : 0 < ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ :=
     lt_of_lt_of_le hdiff hlow
   have hlog_high : Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ ≤
-      Real.log (|x| + 3) :=
+      Real.log (|x| + R + 1) :=
     Real.log_le_log hnormpos (by linarith [hhigh, hdiff_le])
   have hlog_bound :
       |Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖| ≤
-        ‖Real.log |x - y|‖ + Real.log (|x| + 3) := by
+        ‖Real.log |x - y|‖ + Real.log (|x| + R + 1) := by
     apply abs_le.mpr
     constructor
     · calc
-        -(‖Real.log |x - y|‖ + Real.log (|x| + 3)) ≤ Real.log |x - y| := by
-          have hconst : 0 ≤ Real.log (|x| + 3) :=
+        -(‖Real.log |x - y|‖ + Real.log (|x| + R + 1)) ≤ Real.log |x - y| := by
+          have hconst : 0 ≤ Real.log (|x| + R + 1) :=
             Real.log_nonneg (by have := abs_nonneg x; linarith)
           have hneg : -‖Real.log |x - y|‖ ≤ Real.log |x - y| := by
             rw [Real.norm_eq_abs]
             exact neg_abs_le _
           calc
-            -(‖Real.log |x - y|‖ + Real.log (|x| + 3))
+            -(‖Real.log |x - y|‖ + Real.log (|x| + R + 1))
                 ≤ -‖Real.log |x - y|‖ := by linarith
             _ ≤ Real.log |x - y| := hneg
         _ ≤ Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ := hlog_low
     · calc
-        Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ ≤ Real.log (|x| + 3) :=
+        Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ ≤ Real.log (|x| + R + 1) :=
           hlog_high
-        _ ≤ ‖Real.log |x - y|‖ + Real.log (|x| + 3) :=
+        _ ≤ ‖Real.log |x - y|‖ + Real.log (|x| + R + 1) :=
           le_add_of_nonneg_left (norm_nonneg _)
   simpa only [Real.norm_eq_abs] using hlog_bound
 

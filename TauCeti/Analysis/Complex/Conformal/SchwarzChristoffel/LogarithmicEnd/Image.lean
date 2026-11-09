@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.LogarithmicEnd.Coordinate
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Log
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Log.Basic
 import TauCeti.Analysis.Complex.Conformal.Reflection.LocalImage
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
