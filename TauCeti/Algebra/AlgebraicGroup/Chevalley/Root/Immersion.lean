@@ -74,14 +74,7 @@ instance isClosedImmersion_kostantRootSubgroupToToral_scChevalleyDatum
 immersion over `ℤ`. -/
 instance isClosedImmersion_rootSubgroup_simpleIndex_scChevalleyDatum (i : Fin t.rank) :
     IsClosedImmersion ((D).rootSubgroup (t.simpleIndex ht i)).hom.hom.left := by
-  have h : (D).rootSubgroup (t.simpleIndex ht i) =
-      kostantRootSubgroupToToral (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-        (D).representation (D).lattice (D).representation_mem_lattice
-        (D).isNilpotent_representation_rootGenerator (D).basis (D).coordinateWeight (.inl i) := by
-    apply (cancel_mono (D).groupSchemeι).1
-    rw [ChevalleyDatum.rootSubgroup_simpleIndex_comp_groupSchemeι,
-      ChevalleyDatum.groupSchemeι_def, kostantRootSubgroupToToral_comp_ι]
-  rw [h]
+  rw [ChevalleyDatum.rootSubgroup_simpleIndex_eq_kostantRootSubgroupToToral]
   infer_instance
 
 /-- The canonical negative simple-root morphism of the full-weight datum is a closed
@@ -91,15 +84,7 @@ instance isClosedImmersion_rootSubgroup_reflectionPerm_simpleIndex_scChevalleyDa
     IsClosedImmersion ((D).rootSubgroup
       ((t.simplyConnectedRootDatum ht).reflectionPerm
         (t.simpleIndex ht i) (t.simpleIndex ht i))).hom.hom.left := by
-  have h : (D).rootSubgroup
-        ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) (t.simpleIndex ht i)) =
-      kostantRootSubgroupToToral (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-        (D).representation (D).lattice (D).representation_mem_lattice
-        (D).isNilpotent_representation_rootGenerator (D).basis (D).coordinateWeight (.inr i) := by
-    apply (cancel_mono (D).groupSchemeι).1
-    rw [ChevalleyDatum.rootSubgroup_reflectionPerm_simpleIndex_comp_groupSchemeι,
-      ChevalleyDatum.groupSchemeι_def, kostantRootSubgroupToToral_comp_ι]
-  rw [h]
+  rw [ChevalleyDatum.rootSubgroup_reflectionPerm_simpleIndex_eq_kostantRootSubgroupToToral]
   infer_instance
 
 end
