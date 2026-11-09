@@ -93,7 +93,6 @@ private theorem tendsto_integral_testFunction_smul_fderiv_apply [FiniteDimension
   have hvw := hasWeakFDerivOn_iff.1 (hv.hasWeakFDerivOn_fderiv (μ := μ) (Ω := ⟨Ω, hΩ⟩)) w
   have huw : ∀ i, HasWeakLineDerivOn μ ⟨Ω, hΩ⟩ (u i) (fun x ↦ fderiv ℝ (u i) x w) w := fun i ↦
     hasWeakFDerivOn_iff.1 (hasWeakFDerivOn_of_differentiableOn
-      ((hu i).continuousOn.locallyIntegrableOn hΩ.measurableSet)
       (((hu i).continuousOn_fderiv_of_isOpen hΩ le_rfl).locallyIntegrableOn hΩ.measurableSet)
       fun x hx ↦ ((hu i).differentiableOn one_ne_zero).differentiableAt (hΩ.mem_nhds hx)) w
   set ψ : 𝓓(⟨Ω, hΩ⟩, ℝ) := TestFunction.lineDerivCLM ℝ w φ

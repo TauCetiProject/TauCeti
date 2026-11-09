@@ -522,7 +522,7 @@ theorem integrable_smul_left_of_hasCompactSupport {f : X → E} {g : X → 𝕜}
       simp [image_eq_zero_of_notMem_tsupport hx]
   rw [← this, indicator_smul]
   refine Integrable.smul_of_top_right ?_ (hg.memLp_top_of_hasCompactSupport h'g μ)
-  rw [integrable_indicator_iff h'g.isCompact.measurableSet]
+  rw [integrable_indicator_iff (isClosed_tsupport g).measurableSet]
   exact hf.integrableOn_compact_subset hgs h'g
 
 end MeasureTheory.LocallyIntegrableOn
