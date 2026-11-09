@@ -228,15 +228,15 @@ theorem prod_eq_one_or_prod_eq_natAbs_of_isPrincipal_prod
   · -- `disc K = d`: every ramified prime divides the odd number `d`.
     have hmdvd : ((∏ p ∈ s, p : ℕ) : ℤ) ∣ -d := by
       rw [← hnabs]
-      exact_mod_cast NumberField.prod_dvd_natAbs_of_mod_four_eq_one hmin hgen hsf hd4 hpprime
-        hdvddiscr
+      exact_mod_cast TauCeti.NumberField.prod_dvd_natAbs_of_mod_four_eq_one hmin hgen hsf hd4
+        hpprime hdvddiscr
     exact eq_one_or_eq_of_four_mul_eq_sq_add (A := A₀) (B := B₀) hn1 (by omega) hmpos hmsf hmdvd
       (by linear_combination hAB₀ + 4 * hnormeq)
   · -- `disc K = 4d`: a ramified prime divides `2|d|`, and the norm form has no denominator.
     have hmdvd : ((∏ p ∈ s, p : ℕ) : ℤ) ∣ 2 * -d := by
       rw [← hnabs]
-      exact_mod_cast NumberField.prod_dvd_two_mul_natAbs_of_mod_four_ne_one hmin hgen hsf hd4
-        hpprime hdvddiscr
+      exact_mod_cast TauCeti.NumberField.prod_dvd_two_mul_natAbs_of_mod_four_ne_one hmin hgen hsf
+        hd4 hpprime hdvddiscr
     obtain ⟨A, B, hAB⟩ :=
       NumberField.exists_sq_sub_mul_sq_eq_norm_of_mod_four_ne_one hmin hgen hsf hd4 z
     exact eq_one_or_eq_of_eq_sq_add (A := A) (B := B) hn1 hnsf hmpos hmsf hmdvd

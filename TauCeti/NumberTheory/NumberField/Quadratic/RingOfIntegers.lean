@@ -47,9 +47,10 @@ some prime `p ≡ 3 (mod 4)` divides `d`.
 * `NumberField.minpoly_halfGen`: the minimal polynomial of `(1+θ)/2` is `X² - X + (1-d)/4`.
 * `NumberField.adjoin_rat_halfGen_eq_top`: `(1+θ)/2` generates `K` over `ℚ`.
 * `NumberField.discr_eq_of_squarefree_of_mod_four_eq_one`: `discr K = d` for `d ≡ 1`.
-* `NumberField.prod_dvd_natAbs_of_mod_four_eq_one` and
-  `NumberField.prod_dvd_two_mul_natAbs_of_mod_four_ne_one`: a finite set of primes dividing the
-  discriminant of `ℚ(√d)` has product dividing `|d|` (for `d ≡ 1`) or `2 |d|` (otherwise).
+* `TauCeti.NumberField.prod_dvd_natAbs_of_mod_four_eq_one` and
+  `TauCeti.NumberField.prod_dvd_two_mul_natAbs_of_mod_four_ne_one`: a finite set of primes
+  dividing the discriminant of `ℚ(√d)` has product dividing `|d|` (for `d ≡ 1`) or `2 |d|`
+  (otherwise).
 * `NumberField.exists_sq_sub_mul_sq_eq_four_mul_norm`: the norm form `4·N(z) = A² - d·B²`, and
   `NumberField.exists_sq_sub_mul_sq_eq_norm_of_mod_four_ne_one`: `N(z) = A² - d·B²` for `d ≢ 1`.
 * `TauCeti.NumberField.isSquare_neg_one_of_norm_eq_neg_one`: an algebraic integer of norm `-1`
@@ -460,7 +461,7 @@ theorem discr_eq_four_mul_of_mod_four_ne_one : NumberField.discr K = 4 * d := by
 
 end NumberField
 
-namespace NumberField
+namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
 
@@ -494,12 +495,6 @@ theorem prod_dvd_two_mul_natAbs_of_mod_four_ne_one
         have h22 : p ∣ 2 ^ 2 := by simpa using h'
         exact ((hpprime p hp).dvd_of_dvd_pow h22).mul_right _
       · exact h'.mul_left 2
-
-end NumberField
-
-namespace TauCeti.NumberField
-
-variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
 
 /-- **An algebraic integer of norm `-1` makes `-1` a square modulo every prime dividing the
 radicand.** For `p ∣ d`, the norm `(A² - d B²) / 4` of an algebraic integer is congruent to the
