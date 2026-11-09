@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Frobenius
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.CharacterMap
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.NumberedSymmetry
 
 /-!
@@ -71,6 +71,16 @@ noncomputable def kostantToralSteinberg :
     (map_kostantToralPointsSubgroup_conj_numberedSymmetryMatrix
       e h ρ M hM hnil b wt σ θ hθM hθe hσ τ hwt A)).toMonoidHom.comp
     (kostantToralFrobenius e h ρ M hM hnil b wt p k A)
+
+/-- The character pullback of twisted Frobenius is the scaled inverse-permutation action.
+The character maps of the graph and field factors compose contravariantly. -/
+theorem isCharacterMap_kostantToralSteinberg [Fintype κ] [DecidableEq κ] :
+    IsCharacterMap (kostantToralWeightTorusPoints e h ρ M hM hnil b wt A)
+      (kostantToralSteinberg e h ρ M hM hnil b wt σ θ hθM hθe hσ τ hwt p k A)
+      ((p ^ k : ℕ) • LinearMap.funLeft ℤ ℤ τ) := by
+  rw [kostantToralSteinberg]
+  exact isCharacterMap_kostantNumberedSymmetryPoints_comp_frobenius
+    e h ρ M hM hnil b wt σ θ hθM hθe hσ τ hwt p k A
 
 /-- On matrices the twisted Frobenius is integral conjugation after entrywise Frobenius. -/
 @[simp]
