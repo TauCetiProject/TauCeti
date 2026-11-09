@@ -23,7 +23,8 @@ Here `ℤ/nℤ` and the power-class group use Mathlib's `QuotSMulTop`.
 The exponent map sends the point represented by `u`, with `u^n = q^a`, to the class of `a`.
 Its kernel is precisely the image of the roots of unity. It is surjective when `q` has an
 `n`-th root in `L`; no closure or characteristic hypothesis is needed for these statements.
-The map is natural in complete normed extensions, so its target has trivial Galois action.
+The exponent map is compatible with continuous `K`-algebra maps between complete normed
+extensions, so continuous `K`-automorphisms of such extensions preserve exponent classes.
 This is the finite-level description used to compute the Tate-module action at multiplicative
 reduction.
 
@@ -42,9 +43,17 @@ section Algebraic
 
 variable {K : Type*} [CommRing K] (L : Type*) [CommRing L] [Algebra K L] (q : Kˣ)
 
-private def tatePeriodHom : ℤ →ₗ[ℤ] Additive Lˣ :=
+/-- The period homomorphism sends an integer exponent `a` to the unit `q^a`. -/
+def tatePeriodHom : ℤ →ₗ[ℤ] Additive Lˣ :=
   (zmultiplesHom (Additive Lˣ)
     (Additive.ofMul (Units.map (algebraMap K L : K →* L) q))).toIntLinearMap
+
+/-- Evaluation of the period homomorphism. -/
+@[simp]
+theorem tatePeriodHom_apply (a : ℤ) :
+    tatePeriodHom L q a =
+      Additive.ofMul (Units.map (algebraMap K L : K →* L) q ^ a) := by
+  simp [tatePeriodHom, ← ofMul_zpow]
 
 /-- The map from exponent classes to power classes sends `[a]` to `[q^a]`. -/
 noncomputable def tatePeriodClass (n : ℕ) : QuotSMulTop (n : ℤ) ℤ →ₗ[ℤ]
@@ -53,10 +62,12 @@ noncomputable def tatePeriodClass (n : ℕ) : QuotSMulTop (n : ℤ) ℤ →ₗ[�
 
 /-- The characteristic formula for the period power class. -/
 @[simp]
-theorem tatePeriodClass_mk (n : ℕ) (a : ℤ) :
+theorem tatePeriodClass_intCast (n : ℕ) (a : ℤ) :
     tatePeriodClass L q n (a : QuotSMulTop (n : ℤ) ℤ) =
-      Submodule.Quotient.mk (Additive.ofMul (Units.map (algebraMap K L : K →* L) q ^ a)) :=
-  (rfl)
+      Submodule.Quotient.mk (Additive.ofMul (Units.map (algebraMap K L : K →* L) q ^ a)) := by
+  -- Keep the cast in simp normal form; the map API evaluates on the quotient projection.
+  change tatePeriodClass L q n (Submodule.Quotient.mk a) = _
+  rw [tatePeriodClass, QuotSMulTop.map_apply_mk, tatePeriodHom_apply]
 
 end Algebraic
 
@@ -80,7 +91,8 @@ theorem tateUnitHom_ofMul (u : Lˣ) :
 omit [CompleteSpace K] [IsUltrametricDist K] [CompleteSpace L] [IsUltrametricDist L]
   [DecidableEq L] in
 include hq in
-private theorem tatePeriodHom_injective : Injective (tatePeriodHom L q) := by
+/-- The period has infinite order, so its integer-power homomorphism is injective. -/
+theorem tatePeriodHom_injective : Injective (tatePeriodHom L q) := by
   have hq' : ¬ IsOfFinOrder (Units.map (algebraMap K L : K →* L) q) := by
     intro h
     have hnorm := ((Units.coeHom L).isOfFinOrder h).norm_eq_one
@@ -96,7 +108,8 @@ theorem tateUnitHom_eq_zero_iff (u : Additive Lˣ) :
   obtain ⟨u, rfl⟩ := Additive.ofMul.surjective u
   simp
 
-private theorem tatePeriodHom_exact :
+/-- The period homomorphism and Tate uniformization on units form an exact sequence. -/
+theorem tatePeriodHom_exact :
     Exact (tatePeriodHom L q) (tateUnitHom L q hq).toIntLinearMap := by
   intro u
   obtain ⟨u, rfl⟩ := Additive.ofMul.surjective u
@@ -124,7 +137,7 @@ theorem tateTorsionExponent_eq
     (P : Submodule.torsionBy ℤ (((tateCurveAt q hq)⁄L).toAffine.Point) (n : ℤ))
     (u : Lˣ) (hu : tateUnitHom L q hq (.ofMul u) = P) (a : ℤ)
     (ha : u ^ n = Units.map (algebraMap K L : K →* L) q ^ a) :
-    tateTorsionExponent L q hq n P = Submodule.Quotient.mk a := by
+    tateTorsionExponent L q hq n P = (a : QuotSMulTop (n : ℤ) ℤ) := by
   rw [tateTorsionExponent]
   apply torsionByδ_eq _ _ _ P hu
   exact Additive.toMul.injective (by simpa [tatePeriodHom] using ha.symm)
@@ -147,17 +160,12 @@ theorem tateRootsOfUnityHom_injective (hn : n ≠ 0) :
     Injective (tateRootsOfUnityHom L q hq n) := by
   apply (injective_iff_map_eq_zero _).mpr
   intro ζ hζ
-  have hzero : tateUnitHom L q hq
-      ((torsionByUnitsEquivRootsOfUnity n).symm ζ : Additive Lˣ) = 0 := by
-    simpa using congrArg Subtype.val hζ
-  obtain ⟨a, ha⟩ := (tatePeriodHom_exact L q hq _).mp hzero
-  have han : (n : ℤ) • a = 0 := tatePeriodHom_injective L q hq <| by
-    rw [map_smul, ha, map_zero]
-    exact (Submodule.mem_torsionBy_iff _ _).mp
-      ((torsionByUnitsEquivRootsOfUnity n).symm ζ).2
-  have ha0 : a = 0 := (mul_eq_zero.mp han).resolve_left (Int.natCast_ne_zero.mpr hn)
+  obtain ⟨a, ha⟩ := (exact_torsionByMap (r := (n : ℤ))
+    (tatePeriodHom_exact L q hq) (tatePeriodHom_injective L q hq) _).mp hζ
+  have ha0 : a = 0 := Subtype.ext <|
+    (mul_eq_zero.mp ((Submodule.mem_torsionBy_iff _ _).mp a.2)).resolve_left
+      (Int.natCast_ne_zero.mpr hn)
   apply (torsionByUnitsEquivRootsOfUnity n).symm.injective
-  apply Subtype.ext
   simpa [ha0] using ha.symm
 
 /-- The kernel of the Tate exponent map is exactly the roots-of-unity image. -/
@@ -196,12 +204,11 @@ theorem tateTorsionExponent_surjective
   obtain ⟨a, rfl⟩ := Submodule.Quotient.mk_surjective _ x
   have ha : (u ^ a) ^ n = Units.map (algebraMap K L : K →* L) q ^ a := by
     rw [← zpow_natCast, ← zpow_mul, mul_comm, zpow_mul, zpow_natCast, hu]
-  have hP : (n : ℤ) • tateUnitHom L q hq (.ofMul (u ^ a)) = 0 := by
-    rw [← map_zsmul]
-    apply (tatePeriodHom_exact L q hq _).mpr
-    exact ⟨a, Additive.toMul.injective (by simpa [tatePeriodHom] using ha.symm)⟩
-  exact ⟨⟨_, (Submodule.mem_torsionBy_iff _ _).mpr hP⟩,
-    tateTorsionExponent_eq L q hq n _ (u ^ a) rfl a ha⟩
+  apply (exact_tateTorsionExponent_tatePeriodClass L q hq n _).mp
+  rw [tatePeriodClass, QuotSMulTop.map_apply_mk, tatePeriodHom_apply,
+    Submodule.Quotient.mk_eq_zero, ← ha]
+  simpa using Submodule.smul_mem_pointwise_smul
+    (Additive.ofMul (u ^ a)) (n : ℤ) (⊤ : Submodule ℤ (Additive Lˣ)) trivial
 
 /-- The exponent map is onto exactly when the period has an `n`-th root in the extension. -/
 theorem tateTorsionExponent_surjective_iff :
@@ -211,8 +218,8 @@ theorem tateTorsionExponent_surjective_iff :
   · intro h
     obtain ⟨P, hP⟩ := h (Submodule.Quotient.mk (1 : ℤ))
     have hz := (exact_tateTorsionExponent_tatePeriodClass L q hq n).apply_apply_eq_zero P
-    simp only [hP, Ideal.Quotient.mk_eq_mk, eq_intCast, tatePeriodClass_mk,
-      zpow_one, Submodule.Quotient.mk_eq_zero] at hz
+    rw [hP, tatePeriodClass, QuotSMulTop.map_apply_mk] at hz
+    simp only [tatePeriodHom_apply, zpow_one, Submodule.Quotient.mk_eq_zero] at hz
     obtain ⟨u, -, hu⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hz
     exact ⟨u.toMul, by simpa using congrArg Additive.toMul hu⟩
   · rintro ⟨u, hu⟩
@@ -232,7 +239,8 @@ theorem map_tateUnitHom (u : Lˣ) :
   simp [map_tateUniformizationBaseChange q hq ι hι]
 
 /-- The exponent class is unchanged by a continuous map of complete normed extensions.
-In particular, automorphisms of an algebraic extension act trivially on the exponent quotient. -/
+In particular, continuous `K`-automorphisms of a complete normed extension preserve exponent
+classes. -/
 theorem tateTorsionExponent_map
     (P : Submodule.torsionBy ℤ (((tateCurveAt q hq)⁄L).toAffine.Point) (n : ℤ)) :
     tateTorsionExponent M q hq n (torsionByMap (n : ℤ) (Point.map ι).toIntLinearMap P) =
