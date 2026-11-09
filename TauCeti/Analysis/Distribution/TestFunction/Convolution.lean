@@ -126,9 +126,11 @@ private theorem tendsto_mollify_of_support_subset {ι : Type*} {l : Filter ι}
       (μ := μ) φ.contDiff hρ (by simp : (n : ℕ∞) ≤ ⊤)
     convert ht using 1
     · funext i x
+      have hψcoe : (ψ i : E → F) = mollify φ μ (ρ i) ((hK i).trans hKΩ) := by
+        funext y
+        simp only [ψ, ContDiffMapSupportedIn.coe_of_support_subset]
       simp only [Function.comp_apply, ContinuousLinearMap.pi_apply,
-        ContDiffMapSupportedIn.structureMapCLM_top_apply]
-      rfl
+        ContDiffMapSupportedIn.structureMapCLM_top_apply, hψcoe, coe_mollify]
     · funext x
       simp only [ContinuousLinearMap.pi_apply,
         ContDiffMapSupportedIn.structureMapCLM_top_apply, hφKcoe]
