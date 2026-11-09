@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.Geometry.Symplectic.Hamiltonian.NondegenerateRankZero
 public import TauCeti.Geometry.Symplectic.LinearReduction
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
@@ -50,9 +49,6 @@ hyperbolic and focus-focus blocks is thereby the classification of nondegenerate
 
 ## Main definitions
 
-* `TauCeti.SymplecticForm.reducedQuadraticForm ω U Q hQ`: the quadratic form `[u] ↦ Q u` on the
-  reduced space `U ⧸ (U ∩ U^ω)`, for a quadratic form `Q` whose polar form vanishes on
-  `(U ∩ U^ω) × U`.
 * `TauCeti.SymplecticForm.IsNondegeneratePoint ω F x`: the transversal Hessians of `F` at `x`
   form a nondegenerate family on the transversal space.
 
@@ -66,6 +62,8 @@ hyperbolic and focus-focus blocks is thereby the classification of nondegenerate
   `dim E - 2 rank dF_x`.
 * `TauCeti.SymplecticForm.polar_hessianQuadraticForm_eq_zero_of_mem_orthogonal`: the Hessians of
   critical functions `ℓ ∘ F` vanish on `(ker dF_x)^ω` for Poisson-commuting components.
+* `TauCeti.SymplecticForm.isNondegenerateQuadraticFamily_reduction_iff_of_eq_top`: over the whole
+  space, nondegeneracy of reduced quadratic forms is nondegeneracy of the original forms.
 * `TauCeti.SymplecticForm.isNondegeneratePoint_iff_isNondegenerateRankZeroPoint`: at a critical
   point, nondegeneracy is rank-zero nondegeneracy.
 * `TauCeti.SymplecticForm.isNondegeneratePoint_of_two_mul_finrank_range`: regular points of
@@ -86,57 +84,6 @@ noncomputable section
 open Module Filter Topology
 
 namespace TauCeti.SymplecticForm
-
-/-! ### Quadratic forms on a reduced space -/
-
-section Reduced
-
-variable {V : Type*} [AddCommGroup V] [Module ℝ V] (ω : SymplecticForm V) (U : Submodule ℝ V)
-
-/-- The polar form of `Q` restricted to `U`, as a bilinear form on `U`, kills the kernel of the
-restriction of `ω` to `U` on either side when the polar form of `Q` vanishes on
-`(U ∩ U^ω) × U`. -/
-private theorem polar_comp_subtype_eq_zero {Q : QuadraticForm ℝ V}
-    (hQ : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar Q w u = 0) {w : U}
-    (hw : w ∈ LinearMap.ker (ω.toBilinForm.restrict U)) (u : U) :
-    QuadraticMap.polar (Q.comp U.subtype) w u = 0 := by
-  rw [mem_ker_restrict_iff] at hw
-  simpa [QuadraticMap.polar] using hQ w ⟨w.2, hw⟩ u u.2
-
-/-- The **quadratic form induced on the reduced space** `U ⧸ (U ∩ U^ω)` by a quadratic form `Q` on
-`V` whose polar form vanishes on `(U ∩ U^ω) × U`: the form `[u] ↦ Q u`. -/
-def reducedQuadraticForm (Q : QuadraticForm ℝ V)
-    (hQ : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar Q w u = 0) :
-    QuadraticForm ℝ (ω.ReducedSpace U) :=
-  (Q.comp U.subtype).lift _ fun _ hw ↦ by
-    rw [QuadraticMap.radical_eq_ker_polarBilin]
-    exact LinearMap.ext fun u ↦ polar_comp_subtype_eq_zero ω U hQ hw u
-
-/-- The defining formula `Q_red [u] = Q u` of the induced quadratic form on the reduced space. -/
-@[simp]
-theorem reducedQuadraticForm_mk (Q : QuadraticForm ℝ V)
-    (hQ : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar Q w u = 0) (u : U) :
-    ω.reducedQuadraticForm U Q hQ (Submodule.Quotient.mk u) = Q u :=
-  QuadraticMap.lift_mk _ u
-
-/-- The reduced space of the whole space is identified with `V` by a linear symplectomorphism. -/
-private def reducedSpaceTopEquiv : V ≃ₗ[ℝ] ω.ReducedSpace (⊤ : Submodule ℝ V) :=
-  Submodule.topEquiv.symm.trans (Submodule.quotEquivOfEqBot _ (by
-    refine eq_bot_iff.2 fun u hu ↦ ?_
-    rw [mem_ker_restrict_iff, orthogonal_top] at hu
-    simpa [Submodule.mem_bot] using hu)).symm
-
-private theorem reducedSpaceTopEquiv_apply (v : V) :
-    reducedSpaceTopEquiv ω v = Submodule.Quotient.mk ⟨v, Submodule.mem_top⟩ :=
-  (rfl)
-
-private theorem isSymplectomorphism_reducedSpaceTopEquiv :
-    IsSymplectomorphism ω (ω.reduction ⊤) (reducedSpaceTopEquiv ω) := by
-  rw [isSymplectomorphism_iff]
-  intro v w
-  rw [reducedSpaceTopEquiv_apply, reducedSpaceTopEquiv_apply, reduction_mk]
-
-end Reduced
 
 /-! ### The symplectic complement of `ker dF_x` -/
 
@@ -163,11 +110,10 @@ theorem orthogonal_span_hamiltonianVectorField_comp (hF : DifferentiableAt ℝ F
         (Set.range fun ℓ : G →L[ℝ] ℝ ↦ ω.hamiltonianVectorField (ℓ ∘ F) x)) =
       (fderiv ℝ F x).ker := by
   ext v
-  rw [mem_orthogonal_iff, LinearMap.mem_ker]
+  rw [mem_orthogonal_iff, LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
   constructor
   · intro h
     refine SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ) fun ℓ ↦ ?_
-    change ℓ (fderiv ℝ F x v) = 0
     rw [← apply_hamiltonianVectorField_comp ω ℓ hF]
     exact h _ (Submodule.subset_span ⟨ℓ, rfl⟩)
   · intro h y hy
@@ -360,15 +306,17 @@ theorem isNondegeneratePoint_of_two_mul_finrank_range (hF : ContDiffAt ℝ 2 F x
 
 /-- Over the whole space, nondegeneracy of a family of reduced quadratic forms is nondegeneracy of
 the original family. -/
-private theorem isNondegenerateQuadraticFamily_reduction_iff_of_eq_top {ι : Type*}
+theorem isNondegenerateQuadraticFamily_reduction_iff_of_eq_top {ι : Type*}
     {U : Submodule ℝ E} (hU : U = ⊤) (Q : ι → QuadraticForm ℝ E)
     (hQ : ∀ i, ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar (Q i) w u = 0) :
     (ω.reduction U).IsNondegenerateQuadraticFamily
         (fun i ↦ ω.reducedQuadraticForm U (Q i) (hQ i)) ↔
       ω.IsNondegenerateQuadraticFamily Q := by
   subst hU
-  rw [← isNondegenerateQuadraticFamily_comp_iff (isSymplectomorphism_reducedSpaceTopEquiv ω)]
-  congr!
+  rw [← isNondegenerateQuadraticFamily_comp_iff ω.isSymplectomorphism_reducedSpaceTopEquiv]
+  congr! with i
+  ext v
+  simp
 
 /-- **Comparison with rank zero.** At a critical point of `F`, the transversal space is the whole
 space and `x` is a nondegenerate point exactly when it is a nondegenerate rank-zero point. -/
