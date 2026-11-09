@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Separable.Adjoin
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
+import TauCeti.Algebra.Algebra.Subalgebra.Lattice
 import TauCeti.Algebra.Algebra.Subalgebra.MaximalCommutative
 
 /-!
@@ -55,10 +56,14 @@ variable {K A : Type*} [Field K] [Ring A] [IsDomain A] [Algebra K A]
   [FiniteDimensional K A]
 
 /-- A separable commutative subalgebra of maximal dimension consists exactly of the separable
-elements of its centralizer. -/
+elements of its centralizer.
+
+Maximality enters as the hypothesis `hmax`: no separable commutative subalgebra of `A` containing
+`L` has larger dimension over `K`. The bound over all separable commutative subalgebras that
+`TauCeti.exists_isMulCommutative_isSeparable_forall_finrank_le` produces implies it. -/
 theorem mem_iff_isSeparable_and_mem_centralizer (L : Subalgebra K A)
     [IsMulCommutative L] [Algebra.IsSeparable K L]
-    (hmax : ∀ M : Subalgebra K A, IsMulCommutative M → Algebra.IsSeparable K M →
+    (hmax : ∀ M : Subalgebra K A, L ≤ M → IsMulCommutative M → Algebra.IsSeparable K M →
       Module.finrank K M ≤ Module.finrank K L) (x : A) :
     x ∈ L ↔ IsSeparable K x ∧ x ∈ centralizer K (L : Set A) := by
   refine ⟨fun hx ↦ ⟨isSeparable_iff.mp inferInstance x hx,
@@ -70,6 +75,8 @@ theorem mem_iff_isSeparable_and_mem_centralizer (L : Subalgebra K A)
     rintro y (rfl | hy)
     · exact hsep
     · exact isSeparable_iff.mp inferInstance y hy
-  exact mem_of_finrank_adjoin_insert_le (hmax _ (Algebra.isMulCommutative_adjoin K hcomm) hMsep)
+  exact mem_of_finrank_adjoin_insert_le <| hmax _
+    (fun _ ha ↦ Algebra.subset_adjoin (Set.mem_insert_of_mem _ ha))
+    (Algebra.isMulCommutative_adjoin K hcomm) hMsep
 
 end Subalgebra

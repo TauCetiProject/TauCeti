@@ -14,6 +14,9 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 -- dimension into an equality, and `Submodule.finrank_le` bounds the dimension of a subalgebra by
 -- that of the ambient algebra.
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
+-- `Subalgebra.isMulCommutative_bot` supplies the commutative subalgebra `⊥` that starts the search
+-- for one of maximal dimension.
+import TauCeti.Algebra.Algebra.Subalgebra.Lattice
 
 /-!
 # Commutative subalgebras of maximal dimension
@@ -63,10 +66,6 @@ open Module
 namespace Subalgebra
 
 variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-
-/-- The bottom subalgebra, the image of the scalars, is commutative. -/
-instance isMulCommutative_bot : IsMulCommutative (⊥ : Subalgebra R A) :=
-  Algebra.adjoin_empty R A ▸ Algebra.isMulCommutative_adjoin R (by simp)
 
 /-- Adjoining to a commutative subalgebra an element of its centralizer gives a set of pairwise
 commuting elements. -/
