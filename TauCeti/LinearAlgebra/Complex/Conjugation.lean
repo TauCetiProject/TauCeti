@@ -78,6 +78,8 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
   tensor conjugation with `K`.
 * `TauCeti.tmulConj_baseChange`: that conjugation commutes with every base-changed map, which is
   what makes it equivariant for a base-changed action.
+* `LinearEquiv.conjugationOfComplexification_apply_tmul`: the transported conjugation sends
+  `e (c ⊗ₜ w)` to `e (star c ⊗ₜ w)`.
 * `LinearEquiv.conjugationOfComplexification_eq_self_iff`,
   `LinearEquiv.conjugationOfComplexification_unique` and
   `LinearEquiv.conjugationOfComplexification_natural`: the transported conjugation fixes exactly
@@ -572,6 +574,13 @@ theorem conjugationOfComplexification_apply {W : Type*} [AddCommGroup W] [Module
     conjugationOfComplexification e v = e (tmulConj W (e.symm v)) := by
   simp only [conjugationOfComplexification, LinearMap.coe_comp, Function.comp_apply,
     LinearEquiv.coe_coe]
+
+/-- The transported conjugation conjugates the scalar of the image of a pure tensor. -/
+@[simp]
+theorem conjugationOfComplexification_apply_tmul {W : Type*} [AddCommGroup W] [Module ℝ W]
+    (e : (ℂ ⊗[ℝ] W) ≃ₗ[ℂ] V) (c : ℂ) (w : W) :
+    conjugationOfComplexification e (e (c ⊗ₜ[ℝ] w)) = e (star c ⊗ₜ[ℝ] w) := by
+  rw [conjugationOfComplexification_apply, e.symm_apply_apply, tmulConj_tmul, starRingEnd_apply]
 
 /-- Applying the transported tensor conjugation twice gives back the input. -/
 @[simp]

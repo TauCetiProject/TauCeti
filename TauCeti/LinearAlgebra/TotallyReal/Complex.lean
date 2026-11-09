@@ -39,7 +39,8 @@ that subspace is exactly the fixed locus of a unique conjugate-linear involution
 * `LinearMap.isBaseChange_complex_of_isMaximalTotallyReal`: an injective real-linear map onto a
   maximal totally real subspace is a complexification.
 * `LinearMap.conjugationOfMaximalTotallyReal`: the conjugate-linear involution whose fixed locus
-  is exactly that subspace, with `LinearMap.conjugationOfMaximalTotallyReal_eq_self_iff`,
+  is exactly that subspace, with `LinearMap.conjugationOfMaximalTotallyReal_apply_self`,
+  `LinearMap.conjugationOfMaximalTotallyReal_eq_self_iff`,
   `LinearMap.conjugationOfMaximalTotallyReal_unique`,
   `LinearMap.conjugationOfMaximalTotallyReal_congr_range` and
   `LinearMap.conjugationOfMaximalTotallyReal_natural`.
@@ -181,6 +182,15 @@ theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_eq_self_iff
   rw [LinearMap.conjugationOfMaximalTotallyReal,
     LinearEquiv.conjugationOfComplexification_eq_self_iff]
   simp only [IsBaseChange.equiv_tmul, one_smul, LinearMap.mem_range]
+
+/-- The conjugation fixes every vector of the given real inclusion. -/
+@[simp]
+theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_apply_self
+    {W : Type*} [AddCommGroup W] [Module ℝ W] (f : W →ₗ[ℝ] E)
+    (hf : Function.Injective f)
+    (hmax : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) f.range)
+    (w : W) : f.conjugationOfMaximalTotallyReal hf hmax (f w) = f w :=
+  (f.conjugationOfMaximalTotallyReal_eq_self_iff hf hmax (f w)).mpr ⟨w, rfl⟩
 
 /-- Any conjugate-linear map fixing the given real inclusion is this conjugation. In particular
 the construction is independent of frames or auxiliary complexification presentations. -/
