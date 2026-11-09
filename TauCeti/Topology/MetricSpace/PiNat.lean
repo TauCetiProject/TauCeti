@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Order.Lattice.Nat
 public import Mathlib.Order.PiLex
 public import Mathlib.Topology.MetricSpace.PiNat
 
