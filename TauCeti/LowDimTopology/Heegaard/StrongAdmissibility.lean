@@ -130,18 +130,6 @@ private theorem mem_selfDomainsIndexZero :
     E ∈ H.selfDomainsIndexZero χ y ↔ H.IsDomainBetween y y E ∧ H.maslovIndex χ y y E = 0 :=
   Iff.rfl
 
-omit [Fintype Point] [Fintype Region] [DecidableEq Region] in
-/-- In a diagram with at most one basepoint, a nonnegative domain `E` from `x` to itself is a
-periodic domain plus a nonnegative number of copies of the whole surface: with a basepoint `z`,
-that number is `n_z(E)`, and without one `E` is itself periodic. -/
-private theorem IsDomainBetween.exists_nonneg_sub_smul_one_mem_periodicDomains
-    [Subsingleton Basepoint] (hE : H.IsDomainBetween x x E) (hE₀ : 0 ≤ E) :
-    ∃ m : ℤ, 0 ≤ m ∧ E - m • 1 ∈ H.periodicDomains := by
-  rcases isEmpty_or_nonempty Basepoint with hB | ⟨⟨z⟩⟩
-  · exact ⟨0, le_rfl, by simpa using isDomainBetween_self_iff.mp ⟨hE, isEmptyElim⟩⟩
-  · exact ⟨E (H.basepoint z), hE₀ _,
-      (isDomainBetween_self_iff_sub_smul_one_mem_periodicDomains z).mp hE⟩
-
 variable [Subsingleton Basepoint] (hχ : ∑ r, χ r - Fintype.card Point = 2 - 2 * (n : ℤ))
 include hχ
 
