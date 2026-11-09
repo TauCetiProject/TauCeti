@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.AddCircle
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.AlmostComplex
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus.ClosedOrbit
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.AddCircle
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
@@ -24,7 +25,10 @@ periodic orbit does not change this image.
 The pullback of `Ω = ds ∧ dt + σ_v` is `ds ∧ dt`, while the pullback of the fiber form is zero.
 These identities hold for every invariant two-form `σ`; neither its nondegeneracy nor
 compactness of the fiber manifold is needed. The area integral over the fundamental
-parameter rectangle `[0, 1] × [0, d]` is `d`, with the order `ds ∧ dt` fixing the sign.
+parameter rectangle `[0, 1] × [0, d]` is `d`, with the order `ds ∧ dt` fixing the sign. As an
+integral of a top form over the parameter torus, oriented by the positive orientations of its two
+circles with the `s`-direction first, the `Ω`-area of the periodic torus is `d` and its
+`σ_v`-area is zero.
 
 Give the parameter torus `(ℝ / ℤ) × (ℝ / dℤ)` its standard almost complex structure
 `TauCeti.SmoothAlmostComplexStructure.addCircleProd 1 d`, which sends `∂_s` to `∂_t`. The
@@ -42,6 +46,9 @@ almost complex structure on the fiber is needed.
 * `TauCeti.SmoothMappingTorus.mpullback_periodicTorus_suspensionForm`,
   `TauCeti.SmoothMappingTorus.mpullback_periodicTorus_fiberForm`: it pulls `Ω` back to `ds ∧ dt`
   and the fiber form back to zero.
+* `TauCeti.SmoothMappingTorus.integralTopForm_mpullback_periodicTorus_suspensionForm`,
+  `TauCeti.SmoothMappingTorus.integralTopForm_mpullback_periodicTorus_fiberForm`: its `Ω`-area
+  is `d` and its `σ_v`-area is zero.
 * `TauCeti.SmoothMappingTorus.isPseudoholomorphic_periodicTorus_iff`: it is pseudoholomorphic
   exactly when `J ∂_s = T` at every point of its image.
 * `TauCeti.SmoothMappingTorus.isPseudoholomorphic_periodicTorus_suspensionAlmostComplexStructure`:
@@ -237,6 +244,25 @@ theorem integral_periodicTorus_suspensionForm :
         (suspensionForm φ σ hσ)).eval₂ ((s : UnitAddCircle), (t : AddCircle (d : ℝ)))
           ((1 : ℝ), (0 : ℝ)) ((0 : ℝ), (1 : ℝ))) = d := by
   simp [eval₂_mpullback_periodicTorus_suspensionForm]
+
+/-- **The `Ω`-area of a periodic torus.** Orient the parameter torus `(ℝ / ℤ) × (ℝ / dℤ)` as the
+product of the positive orientations of its two circles, the `s`-direction first. Then the
+suspension form `Ω = ds ∧ dt + σ_v` integrates to the period `d` over the periodic torus. For a
+multiple `d = k d₀` of the least period `d₀`, the periodic torus is the `k`-fold cover of the
+embedded one, and its area is `k d₀`. -/
+theorem integralTopForm_mpullback_periodicTorus_suspensionForm :
+    integralTopForm ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ)))
+      (SmoothForm.mpullback (periodicTorus φ hx) (contMDiff_periodicTorus hx)
+        (suspensionForm φ σ hσ)).1 = d := by
+  rw [mpullback_periodicTorus_suspensionForm, AddCircle.integralTopForm_wedge_timeForm, one_mul]
+
+/-- The fiber form `σ_v` has zero area on the periodic torus, for either orientation. -/
+theorem integralTopForm_mpullback_periodicTorus_fiberForm
+    (o : Manifold.Orientation (𝓘(ℝ).prod 𝓘(ℝ)) (UnitAddCircle × AddCircle (d : ℝ)) (Fin 2)) :
+    integralTopForm o (SmoothForm.mpullback (periodicTorus φ hx) (contMDiff_periodicTorus hx)
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0 := by
+  rw [mpullback_periodicTorus_fiberForm]
+  exact integralTopForm_zero o
 
 /-! ### Pseudoholomorphicity -/
 

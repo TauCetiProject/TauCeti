@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import TauCeti.Analysis.Fredholm.Parametric
 public import TauCeti.LinearAlgebra.Determinant.Exact
+import TauCeti.LinearAlgebra.Exact
 
 /-!
 # The determinant line of a Fredholm operator
@@ -28,6 +29,17 @@ no cokernel, and it stays onto, with kernel of the same dimension, under small p
 fibrewise comparison through which the determinant lines of a continuous family of Fredholm
 operators form a line bundle.
 
+Different stabilizations must give compatible identifications, since nearby operators may need
+different ones. If `ι : Λ → Λ'` is injective with `D₂' ∘ ι = D₂`, the stabilized kernels and the
+stabilizing spaces both grow by `Λ' ⧸ range ι`, and cancelling this common quotient gives an
+isomorphism `det (ker (D₁.coprod D₂')) ⊗ (det Λ')^* ≃ det (ker (D₁.coprod D₂)) ⊗ (det Λ)^*`
+(`ContinuousLinearMap.detLineCoprodMapEquiv`) built from the stabilized operators alone. Through
+the identifications with the determinant line of `D₁` it is multiplication by
+`(-1) ^ (dim (F ⧸ range D₁) * (dim Λ' - dim Λ))`
+(`ContinuousLinearMap.detLineCoprodEquiv_detLineCoprodMapEquiv`). The map `ι` covers enlarging
+a stabilizer, including a stabilizer `Λ` to `Λ × Λ''`, and changing it by an isomorphism, so any
+two stabilizations are compared through their product.
+
 ## Main results
 
 * `ContinuousLinearMap.IsFredholm.finrank_detLine`: the determinant line of a Fredholm operator is
@@ -36,6 +48,10 @@ operators form a line bundle.
   finite-dimensional space `Λ`, the isomorphism
   `det (ker (D₁.coprod D₂)) ⊗ (det Λ)^* ≃ det (ker D₁) ⊗ (det (F ⧸ range D₁))^*`.
 * `ContinuousLinearMap.detLineCoprodEquiv_tmul`: its value on exterior products.
+* `ContinuousLinearMap.detLineCoprodMapEquiv`: the change-of-stabilizer isomorphism for an
+  injective map `ι : Λ → Λ'` of stabilizers.
+* `ContinuousLinearMap.detLineCoprodEquiv_detLineCoprodMapEquiv`: through
+  `ContinuousLinearMap.detLineCoprodEquiv`, the change of stabilizer is a sign.
 
 ## References
 
@@ -106,5 +122,65 @@ theorem detLineCoprodEquiv_tmul (h : Function.Surjective (D₁.coprod D₂))
   TauCeti.detLineFourTermEquiv_tmul _ _ _ _ u v z hβ hγ φ
 
 end Stabilization
+
+section ChangeOfStabilizer
+
+/-! ### Changing the stabilizer -/
+
+variable {𝕜 E Λ Λ' F : Type*} [Field 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+  [AddCommGroup Λ] [Module 𝕜 Λ] [TopologicalSpace Λ] [AddCommGroup Λ'] [Module 𝕜 Λ']
+  [TopologicalSpace Λ'] [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F]
+  {D₁ : E →L[𝕜] F} {D₂ : Λ →L[𝕜] F} {D₂' : Λ' →L[𝕜] F} {ι : Λ →ₗ[𝕜] Λ'}
+  [FiniteDimensional 𝕜 D₁.ker] [FiniteDimensional 𝕜 Λ] [FiniteDimensional 𝕜 Λ']
+
+variable (D₁) in
+/-- **Changing the stabilizer.** Let `ι : Λ → Λ'` be an injective linear map with
+`D₂' ∘ ι = D₂`, and let `D₁.coprod D₂` be onto. Then the kernel of `D₁.coprod D₂'` contains that
+of `D₁.coprod D₂` through `(x, l) ↦ (x, ι l)` (`ContinuousLinearMap.kerCoprodMap`), both `Λ'`
+and that kernel have quotient `Λ' ⧸ range ι`, and cancelling this common quotient
+(`TauCeti.detLineShortExactCancelEquiv`) gives the isomorphism
+`det (ker (D₁.coprod D₂')) ⊗ (det Λ')^* ≃ det (ker (D₁.coprod D₂)) ⊗ (det Λ)^*`. It is built
+from the two stabilized operators and `ι` alone, without reference to `ker D₁` or
+`F ⧸ range D₁`. Through `ContinuousLinearMap.detLineCoprodEquiv` it is the identity of the
+determinant line of `D₁` up to sign
+(`ContinuousLinearMap.detLineCoprodEquiv_detLineCoprodMapEquiv`). -/
+noncomputable def detLineCoprodMapEquiv (hι : ∀ l, D₂' (ι l) = D₂ l)
+    (hι' : Function.Injective ι) (h : Function.Surjective (D₁.coprod D₂)) :
+    TauCeti.detLine 𝕜 (D₁.coprod D₂').ker ⊗[𝕜] Dual 𝕜 (TauCeti.detLine 𝕜 Λ') ≃ₗ[𝕜]
+      TauCeti.detLine 𝕜 (D₁.coprod D₂).ker ⊗[𝕜] Dual 𝕜 (TauCeti.detLine 𝕜 Λ) :=
+  have := finiteDimensional_ker_coprod D₁ D₂
+  TauCeti.detLineShortExactCancelEquiv (kerCoprodMap_injective hι hι') (exact_kerCoprodMap hι)
+    (surjective_mkQ_comp_parameterProj hι h) hι' (LinearMap.exact_map_mkQ_range ι)
+    (Submodule.mkQ_surjective _)
+
+/-- **Independence of the stabilizer.** Under `ContinuousLinearMap.detLineCoprodEquiv`, the
+change-of-stabilizer isomorphism `ContinuousLinearMap.detLineCoprodMapEquiv` for an injective
+`ι : Λ → Λ'` with `D₂' ∘ ι = D₂` becomes multiplication by
+`(-1) ^ (dim (F ⧸ range D₁) * (dim Λ' - dim Λ))` on the determinant line of `D₁`. This is
+`TauCeti.detLineFourTermEquiv_detLineShortExactCancelEquiv` for the two exact sequences
+`0 → ker D₁ → ker (D₁.coprod D₂) → Λ → F ⧸ range D₁ → 0` and
+`0 → ker D₁ → ker (D₁.coprod D₂') → Λ' → F ⧸ range D₁ → 0`. -/
+theorem detLineCoprodEquiv_detLineCoprodMapEquiv (hι : ∀ l, D₂' (ι l) = D₂ l)
+    (hι' : Function.Injective ι) (h : Function.Surjective (D₁.coprod D₂))
+    (x : TauCeti.detLine 𝕜 (D₁.coprod D₂').ker ⊗[𝕜] Dual 𝕜 (TauCeti.detLine 𝕜 Λ')) :
+    detLineCoprodEquiv D₁ D₂ h (detLineCoprodMapEquiv D₁ hι hι' h x) =
+      (-1 : 𝕜) ^ (finrank 𝕜 (F ⧸ D₁.range) * (finrank 𝕜 Λ' - finrank 𝕜 Λ)) •
+        detLineCoprodEquiv D₁ D₂' (surjective_coprod_of_comp hι h) x := by
+  have := finiteDimensional_ker_coprod D₁ D₂
+  have hm : finrank 𝕜 Λ' - finrank 𝕜 Λ = finrank 𝕜 (Λ' ⧸ LinearMap.range ι) := by
+    have := (LinearMap.exact_map_mkQ_range ι).finrank_eq_add hι' (Submodule.mkQ_surjective _)
+    omega
+  rw [hm]
+  -- Both `detLineCoprodEquiv`s are `TauCeti.detLineFourTermEquiv`s of parametric exact sequences,
+  -- whose exactness data the eight placeholders recover by unfolding.
+  refine TauCeti.detLineFourTermEquiv_detLineShortExactCancelEquiv _ _ _ _ _ _ _ _
+    (kerCoprodMap_injective hι hι') (exact_kerCoprodMap hι)
+    (surjective_mkQ_comp_parameterProj hι h) hι' (LinearMap.exact_map_mkQ_range ι)
+    (Submodule.mkQ_surjective _) ?_ ?_ ?_ x
+  · exact LinearMap.ext fun x ↦ Subtype.ext (by simp [coe_kerCoprodMap])
+  · exact LinearMap.ext fun v ↦ by simp [coe_kerCoprodMap]
+  · exact LinearMap.ext fun l ↦ by simp [hι]
+
+end ChangeOfStabilizer
 
 end ContinuousLinearMap

@@ -5,20 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Real.ENatENNReal
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
-public import Mathlib.Topology.MetricSpace.CoveringNumbers
-import Mathlib.Algebra.Order.Floor.Extended
+public import TauCeti.MeasureTheory.Covering.PackingNumber
 
 /-!
 # Volumetric bounds on covering and packing numbers
 
 In a real normed space `E` of finite dimension `n`, a set of points of a closed ball of radius `r`
-any two of which are more than `ε > 0` apart has at most `(1 + 2 r / ε) ^ n` elements. Indeed, the
-open balls of radius `ε / 2` around these points are pairwise disjoint and lie in the ball of
-radius `r + ε / 2` around the centre, and a Haar measure scales the volume of a ball of radius
-`ρ` by `ρ ^ n`. Hence the packing number, and with it the covering number, of a subset of a ball
-is at most `(1 + 2 r / ε) ^ n`.
+any two of which are more than `ε > 0` apart has at most `(1 + 2 r / ε) ^ n` elements. Indeed,
+the closed balls of radius `ε / 2` around these points are pairwise disjoint and lie in the closed
+ball of radius `r + ε / 2` around the centre
+(`Metric.IsSeparated.card_mul_le_measure_cthickening`), and a Haar measure scales the volume of a
+ball of radius `ρ` by `ρ ^ n`. Hence the packing number, and with it the covering number, of a
+subset of a ball is at most `(1 + 2 r / ε) ^ n`.
 
 In particular the unit sphere of `E` has an `η`-net of at most `(1 + 2 / η) ^ n` points, for every
 `η > 0`. Nets of this size on the Euclidean sphere `Sⁿ⁻¹` drive the passage from concentration of
@@ -27,8 +26,6 @@ theorem on almost Euclidean sections of finite-dimensional normed spaces.
 
 ## Main results
 
-* `TauCeti.packingNumber_le_of_forall_finset_card_le`: a finite bound on the sizes of the finite
-  `ε`-separated subsets of a set bounds its packing number.
 * `TauCeti.card_le_of_isSeparated_of_subset_closedBall`: an `ε`-separated finite subset of a closed
   ball of radius `r` has at most `(1 + 2 r / ε) ^ n` elements.
 * `TauCeti.packingNumber_le_of_subset_closedBall`,
@@ -53,29 +50,6 @@ open scoped ENNReal NNReal
 
 namespace TauCeti
 
-section PseudoEMetricSpace
-
-variable {X : Type*} [PseudoEMetricSpace X]
-
-/-- If every finite `ε`-separated subset of `A` has at most `B ≠ ∞` elements, then the packing
-number of `A` at scale `ε` is at most `B`. -/
-theorem packingNumber_le_of_forall_finset_card_le {ε : ℝ≥0} {A : Set X} {B : ℝ≥0∞} (hB : B ≠ ∞)
-    (h : ∀ s : Finset X, (s : Set X) ⊆ A → IsSeparated ε (s : Set X) → (s.card : ℝ≥0∞) ≤ B) :
-    (packingNumber ε A : ℝ≥0∞) ≤ B := by
-  rw [packingNumber]
-  simp only [ENat.toENNReal_iSup]
-  refine iSup₂_le fun C hCA ↦ iSup_le fun hC ↦ ?_
-  rcases C.finite_or_infinite with hCf | hCi
-  · rw [hCf.encard_eq_coe_toFinset_card, ENat.toENNReal_coe]
-    exact h hCf.toFinset (by simpa using hCA) (by simpa using hC)
-  · -- An infinite separated subset would contain finite separated subsets of every size.
-    exfalso
-    obtain ⟨n, hn⟩ := ENNReal.exists_nat_gt hB
-    obtain ⟨s, hsC, rfl⟩ := hCi.exists_subset_card_eq n
-    exact (h s (hsC.trans hCA) (hC.subset hsC)).not_gt hn
-
-end PseudoEMetricSpace
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {A : Set E} {x : E} {r ε : ℝ≥0}
 
@@ -90,25 +64,21 @@ theorem card_le_of_isSeparated_of_subset_closedBall {s : Finset E} (hε : ε ≠
   set δ : ℝ := ε / 2 with hδ_def
   have hδ : 0 < δ := by positivity
   have hρ : 0 < r + δ := by positivity
-  -- The balls of radius `δ = ε / 2` around the points of `s` are pairwise disjoint ...
-  have hdisj : (s : Set E).PairwiseDisjoint fun y ↦ ball y δ := by
-    intro y hy z hz hyz
-    refine ball_disjoint_ball ?_
-    have hyz' : (ε : ℝ≥0∞) < edist y z := hs hy hz hyz
-    rw [edist_nndist, ENNReal.coe_lt_coe, ← NNReal.coe_lt_coe, coe_nndist] at hyz'
-    linarith
-  -- ... and lie in the ball of radius `r + δ` around `x`.
-  have hsub : (⋃ y ∈ s, ball y δ) ⊆ ball x (r + δ) := by
-    refine iUnion₂_subset fun y hy ↦ ball_subset_ball' ?_
-    linarith [mem_closedBall.1 (hsx hy)]
+  -- The closed balls of radius `δ = ε / 2` around the points of `s` are disjoint and lie in the
+  -- closed ball of radius `r + δ` around `x`.
+  have hsub : cthickening δ (s : Set E) ⊆ closedBall x (r + δ) := by
+    rw [add_comm]
+    exact (cthickening_subset_of_subset δ hsx).trans (cthickening_closedBall hδ.le r.2 x).le
   have key : (s.card : ℝ≥0∞) * ENNReal.ofReal (δ ^ finrank ℝ E) * μ (ball 0 1) ≤
       ENNReal.ofReal ((r + δ) ^ finrank ℝ E) * μ (ball 0 1) :=
     calc (s.card : ℝ≥0∞) * ENNReal.ofReal (δ ^ finrank ℝ E) * μ (ball 0 1)
-        = μ (⋃ y ∈ s, ball y δ) := by
-          rw [measure_biUnion_finset hdisj fun _ _ ↦ measurableSet_ball]
-          simp [μ.addHaar_ball_of_pos _ hδ, mul_assoc]
-      _ ≤ μ (ball x (r + δ)) := measure_mono hsub
-      _ = ENNReal.ofReal ((r + δ) ^ finrank ℝ E) * μ (ball 0 1) := μ.addHaar_ball_of_pos _ hρ
+        ≤ μ (cthickening δ (s : Set E)) := by
+          rw [mul_assoc]
+          exact hs.card_mul_le_measure_cthickening subset_rfl fun _ _ ↦
+            (μ.addHaar_closedBall _ hδ.le).ge
+      _ ≤ μ (closedBall x (r + δ)) := measure_mono hsub
+      _ = ENNReal.ofReal ((r + δ) ^ finrank ℝ E) * μ (ball 0 1) :=
+          μ.addHaar_closedBall _ hρ.le
   have hcard : (s.card : ℝ) * δ ^ finrank ℝ E ≤ (r + δ) ^ finrank ℝ E := by
     have h := ENNReal.toReal_le_of_le_ofReal (by positivity)
       ((ENNReal.mul_le_mul_iff_left (measure_ball_pos μ (0 : E) zero_lt_one).ne'

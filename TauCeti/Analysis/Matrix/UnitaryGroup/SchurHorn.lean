@@ -170,7 +170,8 @@ theorem exists_mem_unitaryGroup_re_diag_mul_diagonal_mul_star_eq {w d : ι → �
     simp
   have hsub : convexHull ℝ (Set.range fun σ : Equiv.Perm (Fin _) ↦ (w ∘ eqv.symm) ∘ σ) ⊆
       convexHull ℝ (Set.range fun σ : Equiv.Perm (Fin _) ↦ ev ∘ σ) :=
-    convexHull_min (Set.range_subset_iff.2 fun σ ↦ comp_perm_mem_convexHull_range_comp_perm hw σ)
+    convexHull_min
+      (Set.range_subset_iff.2 fun σ ↦ σ.comp_perm_mem_convexHull_range_comp_perm_iff.2 hw)
       (convex_convexHull ℝ _)
   -- Reindexing by `eqv` carries the permutohedron of `w` onto that of `w ∘ eqv.symm`.
   have hd' : d ∘ eqv.symm ∈

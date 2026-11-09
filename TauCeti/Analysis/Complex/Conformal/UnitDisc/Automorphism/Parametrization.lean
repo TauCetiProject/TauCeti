@@ -105,7 +105,7 @@ theorem unitDiscStandardAutomorphismEquiv_eq_iff :
   have hval := congrArg
     (fun e : Complex.UnitDisc ≃ Complex.UnitDisc => e ((unitDiscMoebiusEquiv a).symm w)) h
   simp only [unitDiscStandardAutomorphismEquiv_apply, hmoe] at hval
-  exact ⟨circle_smul_left_injective hw hval, rfl⟩
+  exact ⟨Complex.UnitDisc.circle_smul_left_injective hw hval, rfl⟩
 
 /-- **The standard parametrisation of `Aut(𝔻)` is injective**: distinct pairs `(u, a)` name
 distinct automorphisms.  With `TauCeti.coe_unitDiscAut`, which says the parametrisation has
@@ -210,7 +210,7 @@ theorem eq_one_of_mem_unitDiscAut_of_isFixedPt {e : Equiv.Perm Complex.UnitDisc}
   have hu : u = 1 := by
     rw [hua] at hfMw
     simp only [unitDiscStandardAutomorphismEquiv_apply, unitDiscMoebius_zero] at hfMw
-    exact circle_smul_left_injective hMw (by simpa only [one_smul] using hfMw)
+    exact Complex.UnitDisc.circle_smul_left_injective hMw (by simpa only [one_smul] using hfMw)
   have hone : M * e * M⁻¹ = 1 := by
     rw [hua]
     exact unitDiscStandardAutomorphismEquiv_eq_one_iff.2 ⟨hu, rfl⟩

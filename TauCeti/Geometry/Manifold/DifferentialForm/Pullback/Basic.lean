@@ -249,6 +249,15 @@ theorem mpullback_apply (f : M → M') (ω : RoughForm I' M' F k)
     mpullback I I' f ω x v = ω (f x) (fun i ↦ mfderiv I I' f x (v i)) :=
   bundleMpullback_apply f ω x v
 
+/-- Evaluation of the pullback of a two-form on a pair of tangent vectors. -/
+theorem mpullback_apply_pair (f : M → M') (ω : RoughForm I' M' F 2) (x : M)
+    (a b : TangentSpace I x) :
+    mpullback I I' f ω x ![a, b] = ω (f x) ![mfderiv I I' f x a, mfderiv I I' f x b] := by
+  rw [mpullback_apply]
+  congr 1
+  funext i
+  fin_cases i <;> rfl
+
 /-- Pullback within the whole manifold is ordinary pullback. -/
 @[simp]
 theorem mpullbackWithin_univ (f : M → M') (ω : RoughForm I' M' F k) :
@@ -500,4 +509,23 @@ theorem mpullback_comp_clm_apply_eq_zero (ω : RoughForm I M F k) (γ : E' → M
     rfl
 
 end FixedCoefficients
+
+section NormedCoefficients
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The pullback of a form at `x` is the form at `f x` composed with the differential of `f`,
+read as an operator on alternating maps of the model spaces. The two sides agree up to unfolding
+the tangent spaces to the model spaces; this is the form in which pullbacks are differentiated. -/
+theorem mpullback_apply_eq_compContinuousLinearMapCLM (f : M → M') (η : RoughForm I' M' F k)
+    (x : M) :
+    mpullback I I' f η x =
+      ContinuousAlternatingMap.compContinuousLinearMapCLM (ι := Fin k) (F := F)
+        (mfderiv I I' f x : E →L[ℝ] E') (η (f x)) := by
+  ext v
+  rw [mpullback_apply]
+  -- The right side is `η (f x)` evaluated on the vectors `mfderiv I I' f x (v i)`, up to unfolding.
+  rfl
+
+end NormedCoefficients
 end TauCeti

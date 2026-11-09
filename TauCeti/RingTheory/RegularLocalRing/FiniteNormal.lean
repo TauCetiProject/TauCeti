@@ -92,7 +92,7 @@ theorem isRegular_pair_of_finite_normal (hinj : Function.Injective (algebraMap A
     refine IsWeaklyRegular.cons (IsSMulRegular.of_ne_zero hxB) ?_
     rw [e.isWeaklyRegular_congr, isWeaklyRegular_singleton_iff]
     exact TauCeti.IsIntegrallyClosed.isSMulRegular_quotient_span_singleton_of_radical_span_pair
-      hmB hxB hrad
+      hmB hrad
   apply IsRegular.of_isWeaklyRegular_of_mem_maximalIdeal _ hmem
   exact (isWeaklyRegular_map_algebraMap_iff B B [x, y]).mp (by simpa using hregB)
 

@@ -271,7 +271,7 @@ private noncomputable def gaussianSndMatrix : Matrix κ (ι ⊕ κ) ℝ :=
   Matrix.fromCols 0 1
 
 omit [Fintype ι] [DecidableEq ι] in
-private theorem gaussianRegressionMatrix_mul_block22 [Finite ι]
+private theorem gaussianRegressionMatrix_mul_block22
     {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS : S.PosSemidef) :
     gaussianRegressionMatrix S * S.submatrix Sum.inr Sum.inr = S.submatrix Sum.inl Sum.inr := by
   simpa only [gaussianRegressionMatrix, Matrix.toBlocks₁₂_eq_submatrix,

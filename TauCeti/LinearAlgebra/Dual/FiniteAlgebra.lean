@@ -23,7 +23,7 @@ reverses products, so this convention extends generator equivariance to the free
 without any commutativity assumption on the operators.
 
 The pairing need only be bilinear over the base ring, even when the first family is linear
-over a scalar algebra.
+over a scalar algebra, and it may take values in any module over the base ring.
 -/
 
 public section
@@ -34,14 +34,14 @@ namespace LinearMap
 
 section Semiring
 
-variable {R K M V ι : Type*} [CommSemiring R] [Semiring K] [Algebra R K]
-  [AddCommMonoid M] [Module R M] [AddCommMonoid V] [Module K V]
+variable {R K M N V ι : Type*} [CommSemiring R] [Semiring K] [Algebra R K]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] [AddCommMonoid V] [Module K V]
   [Module R V] [IsScalarTower R K V]
 
 /-- An adjointness identity on generators extends to the free algebra, with the adjoint
 operators evaluated in the opposite endomorphism ring. -/
 theorem pairing_freeAlgebra_lift
-    (P : V →ₗ[R] M →ₗ[R] K) (t : ι → Module.End K V) (u : ι → Module.End R M)
+    (P : V →ₗ[R] M →ₗ[R] N) (t : ι → Module.End K V) (u : ι → Module.End R M)
     (h : ∀ i v x, P (t i v) x = P v (u i x)) (a : FreeAlgebra R ι) (v : V) (x : M) :
     P (FreeAlgebra.lift R t a v) x =
       P v ((FreeAlgebra.lift R (fun i ↦ op (u i)) a).unop x) := by
@@ -56,43 +56,33 @@ theorem pairing_freeAlgebra_lift
 
 end Semiring
 
-variable {R K M V ι : Type*} [CommRing R] [Semiring K] [Algebra R K]
-  [AddCommGroup M] [Module R M] [AddCommGroup V] [Module K V]
+variable {R K M N V ι : Type*} [CommRing R] [Semiring K] [Algebra R K]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [AddCommGroup V] [Module K V]
   [Module R V] [IsScalarTower R K V]
 
 /-- If an injective pairing detects a family of operators by adjoint operators on a Noetherian
 module, its generated algebra is finite over the base ring. The operators need not commute,
 and the module carrying the first family need not be finite. -/
 theorem finite_adjoin_of_injective_pairing [IsNoetherian R M]
-    (P : V →ₗ[R] M →ₗ[R] K) (hP : Function.Injective P)
+    (P : V →ₗ[R] M →ₗ[R] N) (hP : Function.Injective P)
     (t : ι → Module.End K V) (u : ι → Module.End R M)
     (h : ∀ i v x, P (t i v) x = P v (u i x)) :
     Module.Finite R (Algebra.adjoin R (Set.range t)) := by
   let s := FreeAlgebra.lift R t
-  let m := (FreeAlgebra.lift R (fun i ↦ op (u i))).toLinearMap
+  let m := (opLinearEquiv R).symm.toLinearMap ∘ₗ
+    (FreeAlgebra.lift R (fun i ↦ op (u i))).toLinearMap
   -- The pairing makes the first evaluation factor through the quotient by the adjoint kernel.
-  have hker : m.ker ≤ s.rangeRestrict.toLinearMap.ker := by
-    intro a ha
-    have hm : m a = 0 := mem_ker.mp ha
-    apply Subtype.ext
-    simp only [AlgHom.toLinearMap_apply, AlgHom.coe_codRestrict, ZeroMemClass.coe_zero]
+  have hker : m.ker ≤ s.rangeRestrict.toLinearMap.ker := fun a ha ↦ Subtype.ext <| by
     ext v
     apply hP
     ext x
-    simpa only [s, m, AlgHom.toLinearMap_apply, pairing_freeAlgebra_lift P t u h,
-      unop_zero, LinearMap.zero_apply, map_zero] using
-      congrArg (fun z : (Module.End R M)ᵐᵒᵖ ↦ P v (z.unop x)) hm
-  let : IsNoetherian R (Module.End R M)ᵐᵒᵖ :=
-    isNoetherian_of_linearEquiv (opLinearEquiv R (M := Module.End R M))
-  have : Module.Finite R (FreeAlgebra R ι ⧸ m.ker) :=
-    Module.Finite.equiv m.quotKerEquivRange.symm
-  let f := m.ker.liftQ s.rangeRestrict.toLinearMap hker
-  have hf : Function.Surjective f := by
-    intro y
-    obtain ⟨a, ha⟩ := s.rangeRestrict_surjective y
-    refine ⟨Submodule.Quotient.mk a, ?_⟩
-    simpa only [f, Submodule.liftQ_apply, AlgHom.toLinearMap_apply] using ha
+    simpa [s, m, pairing_freeAlgebra_lift P t u h] using
+      congrArg (P v) (LinearMap.congr_fun (mem_ker.mp ha) x)
+  have : Module.Finite R (FreeAlgebra R ι ⧸ m.ker) := .equiv m.quotKerEquivRange.symm
+  have hf : Function.Surjective (m.ker.liftQ s.rangeRestrict.toLinearMap hker) := by
+    rw [← range_eq_top, Submodule.range_liftQ, range_eq_top]
+    exact s.rangeRestrict_surjective
   rw [Algebra.adjoin_range_eq_range_freeAlgebra_lift]
-  exact Module.Finite.of_surjective f hf
+  exact .of_surjective _ hf
 
 end LinearMap

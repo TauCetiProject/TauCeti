@@ -48,10 +48,10 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   {Omega : Opens E} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- **Superlevel sets stay away from the boundary.** Let `g` be continuous on the closure of a
-bounded open set `U` of a proper metric space and zero on its frontier. For every `k > 0` the
+bounded set `U` of a proper metric space and zero on its frontier. For every `k > 0` the
 points of `U` where `k ≤ g` lie in a compact subset of `U`, namely `closure U ∩ g ⁻¹' Ici k`. -/
 theorem exists_isCompact_inter_preimage_Ici_subset_subset {X : Type*} [MetricSpace X]
-    [ProperSpace X] {U : Set X} (hU : IsOpen U) (hb : Bornology.IsBounded U) {g : X → ℝ}
+    [ProperSpace X] {U : Set X} (hb : Bornology.IsBounded U) {g : X → ℝ}
     (hg : ContinuousOn g (closure U)) (hg0 : ∀ x ∈ frontier U, g x = 0) {k : ℝ} (hk : 0 < k) :
     ∃ K, IsCompact K ∧ U ∩ g ⁻¹' Ici k ⊆ K ∧ K ⊆ U := by
   refine ⟨closure U ∩ g ⁻¹' Ici k, hb.isCompact_closure.of_isClosed_subset
@@ -59,7 +59,7 @@ theorem exists_isCompact_inter_preimage_Ici_subset_subset {X : Type*} [MetricSpa
     inter_subset_inter_left _ subset_closure, fun x ⟨hxc, hxk⟩ => ?_⟩
   -- `g ≥ k > 0` there, so the point is not on the frontier, where `g` vanishes.
   by_contra hxU
-  have hx0 := hg0 x (hU.frontier_eq ▸ ⟨hxc, hxU⟩)
+  have hx0 := hg0 x ⟨hxc, fun hxi => hxU (interior_subset hxi)⟩
   simp only [mem_preimage, mem_Ici, hx0] at hxk
   linarith
 
@@ -72,7 +72,7 @@ private theorem posPartAbove_mem_w1p0Submodule_of_continuousOn_closure (hp : p �
     (hu : W1p.value u =ᵐ[mu.restrict Omega] g) {k : ℝ} (hk : 0 < k) :
     W1p.posPartAbove hp hk.le u ∈ w1p0Submodule mu Omega p := by
   obtain ⟨K, hK, hUK, hKO⟩ :=
-    exists_isCompact_inter_preimage_Ici_subset_subset Omega.isOpen hb hg hg0 hk
+    exists_isCompact_inter_preimage_Ici_subset_subset hb hg hg0 hk
   refine W1p.mem_w1p0Submodule_of_isCompact hp hK hKO ?_
   filter_upwards [W1p.value_posPartAbove_ae hp hk.le u, hu,
     ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxg hxO hxK

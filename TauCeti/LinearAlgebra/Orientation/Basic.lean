@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.LinearAlgebra.Orientation
+import TauCeti.LinearAlgebra.Ray
 
 /-!
 # Transporting orientations along linear equivalences
@@ -21,10 +22,14 @@ compatibility under linear equivalences.
 * `Orientation.map_reindex`: transport along a linear equivalence commutes with reindexing.
 * `Orientation.map_eq_map_iff_det_mul_pos`: `f` and `g` transport `x` to the same orientation
   if and only if `0 < det f * det g`.
+* `Orientation.map_eq_map_of_det_pos`: two linear equivalences whose relative map has positive
+  determinant transport an orientation to the same orientation.
 * `Orientation.intCast_units_smul_eq_ite`: an integer unit acts by retention or reversal.
 * `Orientation.intCast_units_smul_injective`: the two signs give distinct orientations.
 * `Orientation.reindex_perm`: reindexing along a permutation multiplies by its sign.
 * `Orientation.map_units_smul_eq_iff_det_mul_pos`: the signed-Jacobian compatibility criterion.
+* `Orientation.map_units_smul_eq_units_smul_map_iff_det_mul_pos`: the same criterion between two
+  spaces, relative to a reference linear equivalence.
 * `Orientation.intCast_units_smul_ite_eq`: the relative sign reconstructs an orientation.
 -/
 
@@ -111,6 +116,15 @@ theorem Orientation.map_eq_map_iff_det_mul_pos [FiniteDimensional R M] (x : Orie
   rw [htransport, map_eq_iff_det_pos _ _ h, hdet]
   exact div_pos_iff.trans mul_pos_iff.symm
 
+/-- Two linear equivalences `S` and `T` such that `S.trans T.symm` has positive determinant
+transport an orientation to the same orientation. -/
+theorem Orientation.map_eq_map_of_det_pos [FiniteDimensional R M] {N : Type*} [AddCommGroup N]
+    [Module R N] (x : Orientation R M ι) (S T : M ≃ₗ[R] N) (h : Fintype.card ι = finrank R M)
+    (hdet : 0 < LinearMap.det ((S.trans T.symm : M ≃ₗ[R] M) : M →ₗ[R] M)) :
+    Orientation.map ι S x = Orientation.map ι T x := by
+  have hfix := (map_eq_iff_det_pos x _ h).mpr hdet
+  rwa [map_trans, ← map_symm, Equiv.symm_apply_eq] at hfix
+
 /-- The signed Jacobian criterion for transporting orientations with arbitrary unit scalars. -/
 theorem Orientation.map_units_smul_eq_iff_det_mul_pos [FiniteDimensional R M]
     (o : Orientation R M ι) (A : M ≃ₗ[R] M) (u v : Rˣ)
@@ -124,6 +138,19 @@ theorem Orientation.map_units_smul_eq_iff_det_mul_pos [FiniteDimensional R M]
     0 < (u : R) / ((v : R) * LinearMap.det A.toLinearMap) ↔
       0 < (u : R) * ((v : R) * LinearMap.det A.toLinearMap))
   simpa only [div_eq_mul_inv, mul_inv_rev, mul_comm, mul_left_comm, mul_assoc] using h
+
+/-- The signed Jacobian criterion for transporting orientations between two spaces: a linear
+equivalence `A : M ≃ N` carries `u • o` to `v • C o`, where `C : M ≃ N` is a reference
+equivalence, exactly when `u v det (C⁻¹ ∘ A)` is positive. -/
+theorem Orientation.map_units_smul_eq_units_smul_map_iff_det_mul_pos [FiniteDimensional R M]
+    {N : Type*} [AddCommGroup N] [Module R N] (o : Orientation R M ι) (A C : M ≃ₗ[R] N)
+    (u v : Rˣ) (hι : Fintype.card ι = finrank R M) :
+    Orientation.map ι A (u • o) = v • Orientation.map ι C o ↔
+      0 < (u : R) * (v : R) * LinearMap.det (A.trans C.symm).toLinearMap := by
+  have hC : v • Orientation.map ι C o = Orientation.map ι C (v • o) := by
+    rw [Orientation.map, Module.Ray.map_units_smul]
+  rw [← map_units_smul_eq_iff_det_mul_pos o _ u v hι, hC, map_trans, ← map_symm,
+    Equiv.symm_apply_eq]
 
 open Classical in
 /-- The sign distinguishing two orientations reconstructs the second from the first when

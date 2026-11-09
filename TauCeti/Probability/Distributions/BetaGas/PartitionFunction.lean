@@ -17,8 +17,13 @@ import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 This file evaluates the partition function of the two-particle beta gas in the quadratic
 potential `V x = x ^ 2 / 2`.
 
+The substitution `d = x₁ - x₂`, `z = (x₁ + x₂) / 2` preserves Lebesgue measure.
+It separates the weight into a two-sided Gamma integrand in `d` and a Gaussian in `z`.
+
 ## Main results
 
+* `twoParticleGaussianBetaGasPartitionFunction_def` identifies the partition function with
+  the integral of the unnormalized density.
 * `integrable_twoParticleGaussianBetaGasWeight` proves finiteness of the density integral.
 * `integral_twoParticleGaussianBetaGasWeight` evaluates it for every positive `β`.
 * `integral_twoParticleGaussianBetaGasWeight_pos` proves that integral is positive.
@@ -41,6 +46,18 @@ theorem twoParticleGaussianBetaGasWeight_def (β : ℝ) (p : ℝ × ℝ) :
     twoParticleGaussianBetaGasWeight β p =
       exp (-β / 2 * (p.1 ^ 2 + p.2 ^ 2)) * |p.1 - p.2| ^ β := by
   rw [twoParticleGaussianBetaGasWeight]
+
+/-- The two-particle Gaussian beta-gas partition function. -/
+def twoParticleGaussianBetaGasPartitionFunction (β : ℝ) : ℝ :=
+  ∫ p : ℝ × ℝ, exp (-β / 2 * (p.1 ^ 2 + p.2 ^ 2)) * |p.1 - p.2| ^ β
+    ∂(volume.prod volume)
+
+/-- The partition function is the integral of the unnormalized density. -/
+theorem twoParticleGaussianBetaGasPartitionFunction_def (β : ℝ) :
+    twoParticleGaussianBetaGasPartitionFunction β =
+      ∫ p : ℝ × ℝ, exp (-β / 2 * (p.1 ^ 2 + p.2 ^ 2)) * |p.1 - p.2| ^ β
+        ∂(volume.prod volume) := by
+  simp [twoParticleGaussianBetaGasPartitionFunction]
 
 private def betaGasCenter (p : ℝ × ℝ) : ℝ × ℝ :=
   (p.1 - p.2, p.2 + (p.1 - p.2) / 2)
@@ -123,6 +140,22 @@ private lemma betaGas_integral_algebra {β : ℝ} (hβ : 0 < β) :
         (β ^ (-((β + 1) / 2)) * β ^ (-(1 : ℝ) / 2)) * Gamma ((β + 1) / 2) := by ring
     _ = _ := by rw [hβpow]; rw [show -((β + 2) / 2) = -(β + 2) / 2 by ring]
 
+private lemma betaGas_difference_integral {β : ℝ} (hβ : 0 < β) :
+    (∫ d : ℝ, |d| ^ β * exp (-(β / 4 * d ^ 2))) =
+      (β / 4) ^ (-((β + 1) / 2)) * Gamma ((β + 1) / 2) := by
+  have h := integral_abs_rpow_mul_exp_neg_mul_sq (q := β) (b := β / 4)
+    (by linarith) (by positivity)
+  rw [show -(β + 1) / 2 = -((β + 1) / 2) by ring] at h
+  simpa only [neg_mul] using h
+
+private lemma betaGas_center_integral {β : ℝ} (hβ : 0 < β) :
+    (∫ z : ℝ, exp (-(β * z ^ 2))) = β ^ (-(1 : ℝ) / 2) * sqrt π := by
+  have hGaussian : (∫ z : ℝ, exp (-(β * z ^ 2))) = sqrt (π / β) := by
+    simpa only [neg_mul] using integral_gaussian β
+  rw [hGaussian, Real.sqrt_div Real.pi_pos.le, Real.sqrt_eq_rpow β,
+    show -(1 : ℝ) / 2 = -(1 / 2 : ℝ) by ring, Real.rpow_neg hβ.le]
+  ring
+
 /-- The two-particle Gaussian beta-gas weight is integrable for positive inverse temperature. -/
 theorem integrable_twoParticleGaussianBetaGasWeight {β : ℝ} (hβ : 0 < β) :
     Integrable (twoParticleGaussianBetaGasWeight β) (volume.prod volume) := by
@@ -162,19 +195,9 @@ theorem integral_twoParticleGaussianBetaGasWeight {β : ℝ} (hβ : 0 < β) :
     exact integral_congr_ae (Filter.Eventually.of_forall hpoint)
   have hg : ∫ d : ℝ, g d =
       (β / 4) ^ (-((β + 1) / 2)) * Gamma ((β + 1) / 2) := by
-    have h := integral_abs_rpow_mul_exp_neg_mul_sq (q := β) (b := β / 4)
-      (by linarith) (by positivity)
-    -- Normalize the negative exponent to the form used by `rpow_neg`.
-    rw [show -(β + 1) / 2 = -((β + 1) / 2) by ring] at h
-    simpa [g] using h
+    exact betaGas_difference_integral hβ
   have hh : ∫ z : ℝ, h z = β ^ (-(1 : ℝ) / 2) * sqrt π := by
-    have hGaussian : (∫ z : ℝ, exp (-(β * z ^ 2))) = sqrt (π / β) := by
-      simpa only [neg_mul] using integral_gaussian β
-    dsimp only [h]
-    -- Express the denominator square root as a negative real power.
-    rw [hGaussian, Real.sqrt_div Real.pi_pos.le, Real.sqrt_eq_rpow β,
-      show -(1 : ℝ) / 2 = -(1 / 2 : ℝ) by ring, Real.rpow_neg hβ.le]
-    ring
+    exact betaGas_center_integral hβ
   dsimp only [f] at hchange
   rw [hchange, integral_prod_mul, hg, hh]
   exact betaGas_integral_algebra hβ

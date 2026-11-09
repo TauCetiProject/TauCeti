@@ -210,6 +210,13 @@ def mayerVietorisCochainδ (n m : ℕ) (h : n + 1 = m := by lia) :
       ((P₄.chainComplex R).linearYonedaObj k M).homology m :=
   (shortExact_mayerVietorisCochainShortComplex R k M sqL sqR).δ n m (by simpa)
 
+/-- The relative cochain Mayer–Vietoris connecting morphism is the connecting morphism of the
+relative cochain Mayer–Vietoris short exact sequence. -/
+lemma mayerVietorisCochainδ_def (n m : ℕ) (h : n + 1 = m := by lia) :
+    mayerVietorisCochainδ R k M sqL sqR n m h =
+      (shortExact_mayerVietorisCochainShortComplex R k M sqL sqR).δ n m (by simpa) :=
+  (rfl)
+
 @[reassoc (attr := simp)]
 lemma mayerVietorisCochainδ_toBiprod (n m : ℕ) (h : n + 1 = m := by lia) :
     mayerVietorisCochainδ R k M sqL sqR n m h ≫ mayerVietorisCochainToBiprod R k M r b m = 0 :=
@@ -255,7 +262,7 @@ lemma mono_mayerVietorisCochainToBiprod_zero :
     HomologicalComplex.mono_homologyMap_of_mono_of_not_rel _ 0 fun i h ↦ by
       rw [ComplexShape.up_Rel] at h
       omega
-  exact HomologicalComplex.mono_biprod_lift_homologyMap 0
+  exact (HomologicalComplex.mono_biprod_lift_homologyMap_iff 0).2 inferInstance
 
 end SSetPair
 
