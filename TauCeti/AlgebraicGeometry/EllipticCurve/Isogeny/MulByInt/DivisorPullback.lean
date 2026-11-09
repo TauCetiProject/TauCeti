@@ -118,6 +118,13 @@ theorem weilPairingDivisor_def {n : ℤ} (hn : psiFunctionField W n ≠ 0) (T : 
           (WeilDivisor.ofPoint (Place.infinity W.toAffine)) :=
   (rfl)
 
+omit [DecidableEq F] in
+/-- **The divisor `[n]^* (O) - [n]^* (O)` is zero.** -/
+@[simp]
+theorem weilPairingDivisor_zero {n : ℤ} (hn : psiFunctionField W n ≠ 0) :
+    weilPairingDivisor W hn 0 = 0 := by
+  rw [weilPairingDivisor_def, Point.zero_def, coe_pointEquivDegreeOnePlace_zero, sub_self]
+
 section SepClosed
 
 variable [IsSepClosed F]
