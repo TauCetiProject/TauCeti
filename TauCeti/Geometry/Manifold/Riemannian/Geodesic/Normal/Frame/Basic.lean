@@ -59,8 +59,6 @@ theorem normalOrthonormalFrame_def (b : OrthonormalBasis ι ℝ (TangentSpace I 
     normalOrthonormalFrame I M p U b i q =
       gramSchmidtNormed ℝ (fun j ↦ normalCoordinateField I M p U (b j) q) i := (rfl)
 
-variable [I.Boundaryless] [T2Space M]
-
 namespace IsNormalDomain
 
 /-- The normal orthonormal frame is orthonormal at every point of the normal neighbourhood. -/
@@ -103,6 +101,8 @@ theorem isLocalFrameOn_normalOrthonormalFrame (h : IsNormalDomain I M p U)
     exact (TauCeti.finrank_tangentSpace (I := I) p).trans
       (TauCeti.finrank_tangentSpace (I := I) x).symm
   contMDiffOn := h.contMDiffOn_normalOrthonormalFrame b
+
+variable [I.Boundaryless] [T2Space M]
 
 /-- At its centre, the normal orthonormal frame recovers the prescribed orthonormal basis. -/
 @[simp]
