@@ -530,7 +530,7 @@ theorem exists_eLpNorm_le_mul_rpow_mul_eLpNorm [Nonempty ι] {p s : ℝ} (hp : 0
   set n : ℝ := (Fintype.card ι : ℝ)
   -- Choose the number `M ≥ 1` of steps so that `p₀ = s / χ^M ≤ p`, and the exponents
   -- `pₖ = p₀ χ^k`, which reach `p_M = s` and stay below `1` for `k < M`.
-  obtain ⟨M, hM, hp₀p, hpk1⟩ := exists_div_pow_le_and_forall_mul_pow_lt_one hχ hs hsχ hp
+  obtain ⟨M, hM, hp₀p, hpk1⟩ := exists_div_pow_lt_and_forall_mul_pow_lt_one hχ hsχ hp
   set p₀ := s / χ ^ M
   set pk : ℕ → ℝ := fun k => p₀ * χ ^ k
   have hpk0 : ∀ k, 0 < pk k := fun k => by positivity
@@ -555,7 +555,7 @@ theorem exists_eLpNorm_le_mul_rpow_mul_eLpNorm [Nonempty ι] {p s : ℝ} (hp : 0
     ring
   rw [hrM, hpkM, show pk 0 = p₀ by simp [pk]] at hfinal
   have hholder := Measure.eLpNorm_ball_le_mul_rpow mu hR
-    (div_pos hs (pow_pos hχ0 M)) hp₀p
+    (div_pos hs (pow_pos hχ0 M)) hp₀p.le
     ((Lp.aestronglyMeasurable (W1p.value u)).mono_measure
       (Measure.restrict_mono hball le_rfl))
   rw [finrank_euclideanSpace, ← Real.rpow_natCast R (Fintype.card ι)] at hholder
