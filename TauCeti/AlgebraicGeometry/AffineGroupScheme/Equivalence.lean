@@ -77,6 +77,19 @@ noncomputable def commHopfAlgCatOpEquivAffineGroupSchemeCat.functorObjIso
     ((commHopfAlgCatOpEquivAffineGroupSchemeCat.functorCompιIso
       (CommRingCat.of R)).app H)
 
+/-- The forward functor of `commHopfAlgCatOpEquivAffineGroupSchemeCat` sends a Hopf algebra to the
+bundled Hopf spectrum. This holds by `rfl`: the equivalence is `toEssImage.asEquivalence` composed
+with `fullSubcategoryCongr`, whose forward functor acts on objects as `toEssImage` followed by the
+inclusion of the full subcategory, and neither step changes the underlying scheme. This is the one
+place where that reduction is relied on; use `functorObjIso` to transport along it instead. -/
+theorem commHopfAlgCatOpEquivAffineGroupSchemeCat.functor_obj
+    (R : Type u) [CommRing R] (H : (CommHopfAlgCat.{u} R)ᵒᵖ) :
+    (commHopfAlgCatOpEquivAffineGroupSchemeCat (CommRingCat.of R)).functor.obj H =
+      ⟨(hopfSpec (CommRingCat.of R)).obj H, by
+        rw [affineGroupSchemeProperty_iff, hopfSpec_obj_X_left]
+        infer_instance⟩ := by
+  rfl
+
 /-- An affine group scheme is the Hopf spectrum of its coordinate Hopf algebra. -/
 noncomputable def AffineGroupSchemeCat.hopfSpecCoordinateHopfAlgebraIso
     (R : Type u) [CommRing R] (G : AffineGroupSchemeCat (CommRingCat.of R)) :
@@ -87,7 +100,7 @@ noncomputable def AffineGroupSchemeCat.hopfSpecCoordinateHopfAlgebraIso
     (affineGroupSchemeProperty (CommRingCat.of R)).ι.mapIso
       ((commHopfAlgCatOpEquivAffineGroupSchemeCat (CommRingCat.of R)).counitIso.app G)
 
-/-- To identify the inverse image of an isomorphism-invariant property of affine group schemes
+/-- To identify the inverse image of a property of affine group schemes
 under the Hopf-algebra/group-scheme anti-equivalence, it suffices to identify that property on
 Hopf spectra. -/
 theorem objectProperty_inverseImage_commHopfAlgCatOpEquiv
@@ -100,7 +113,8 @@ theorem objectProperty_inverseImage_commHopfAlgCatOpEquiv
     P.inverseImage
         (commHopfAlgCatOpEquivAffineGroupSchemeCat (CommRingCat.of R)).functor = Q.op := by
   ext H
-  rw [ObjectProperty.prop_inverseImage_iff, ObjectProperty.op_iff]
+  rw [ObjectProperty.prop_inverseImage_iff, ObjectProperty.op_iff,
+    commHopfAlgCatOpEquivAffineGroupSchemeCat.functor_obj]
   exact h H.unop
 
 end TauCeti
