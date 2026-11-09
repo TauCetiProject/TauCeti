@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 /-!
 # The determinant along a scalar shift
 
-The determinant of a continuous endomorphism `A + t • id` of a real normed space depends
+The determinant of a continuous endomorphism `A + t • id` of a normed space depends
 continuously on `t`.
 
 ## Main results
@@ -25,12 +25,13 @@ open Filter Topology
 
 namespace ContinuousLinearMap
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E]
 
 /-- `det (A + t • id) → det A` as `t → 0`. -/
-theorem tendsto_det_add_smul_id (A : E →L[ℝ] E) :
-    Tendsto (fun t : ℝ => (A + t • ContinuousLinearMap.id ℝ E).det) (𝓝 0) (𝓝 A.det) := by
-  have : Continuous fun t : ℝ => (A + t • ContinuousLinearMap.id ℝ E).det :=
+theorem tendsto_det_add_smul_id (A : E →L[𝕜] E) :
+    Tendsto (fun t : 𝕜 => (A + t • ContinuousLinearMap.id 𝕜 E).det) (𝓝 0) (𝓝 A.det) := by
+  have : Continuous fun t : 𝕜 => (A + t • ContinuousLinearMap.id 𝕜 E).det :=
     ContinuousLinearMap.continuous_det.comp
       (continuous_const.add (continuous_id.smul continuous_const))
   simpa using this.tendsto 0
