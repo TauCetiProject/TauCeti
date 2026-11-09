@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Flow
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Flow.Basic
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
@@ -57,9 +57,8 @@ theorem measurableSet_setOfPred_Icc_subset_geodesicInterval_and_mapsTo
       Continuous fun p : A ↦ maximalGeodesic I M (Z p.val).proj (Z p.val).2 s.val :=
     contMDiffOn_maximalGeodesic.continuousOn.comp_continuous
       ((hZ.comp continuous_subtype_val).prodMk continuous_const) fun p ↦ htime p s.property
-  let B : Set A := ⋂ s : Icc (0 : ℝ) u,
-    (fun p : A ↦ maximalGeodesic I M (Z p.val).proj (Z p.val).2 s.val) ⁻¹' D
-  have hB : IsClosed B := isClosed_iInter fun s ↦ hD.preimage (hflow s)
+  let B : Set A := {p | MapsTo (maximalGeodesic I M (Z p.val).proj (Z p.val).2) (Icc 0 u) D}
+  have hB : IsClosed B := hD.setOfPred_mapsTo fun t ht ↦ hflow ⟨t, ht⟩
   obtain ⟨C, hC, hBC⟩ :=
     (IsEmbedding.subtypeVal (p := (· ∈ A))).isInducing.image_eq_isClosed_inter_range hB
   have heq : {p | Icc 0 u ⊆ geodesicInterval I M (Z p).proj (Z p).2 ∧
@@ -68,9 +67,9 @@ theorem measurableSet_setOfPred_Icc_subset_geodesicInterval_and_mapsTo
     ext p
     constructor
     · rintro ⟨hp, hpD⟩
-      exact ⟨⟨p, hp (right_mem_Icc.mpr hu)⟩, mem_iInter.2 fun s ↦ hpD s.property, rfl⟩
+      exact ⟨⟨p, hp (right_mem_Icc.mpr hu)⟩, hpD, rfl⟩
     · rintro ⟨p, hpB, rfl⟩
-      exact ⟨htime p, fun t ht ↦ mem_iInter.1 hpB ⟨t, ht⟩⟩
+      exact ⟨htime p, hpB⟩
   rw [heq, hBC]
   exact hC.measurableSet.inter (by simpa only [Subtype.range_val] using hA.measurableSet)
 
