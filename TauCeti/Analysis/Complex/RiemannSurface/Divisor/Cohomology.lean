@@ -66,10 +66,8 @@ open Classical in
 private def skyscraperSectionsIso :
     (skyscraperSheaf (X := TopCat.of X) x (ModuleCat.of ℂ (ULift ℂ))).obj.obj (op ⊤) ≅
       ModuleCat.of ℂ ℂ :=
-  eqToIso ((skyscraperSheaf_obj_obj (X := TopCat.of X) x
-    (ModuleCat.of ℂ (ULift ℂ)) (op ⊤)).trans
-    (ite_eq_left (show x ∈ (⊤ : Opens X) from trivial))) ≪≫
-      (ULift.moduleEquiv : ULift ℂ ≃ₗ[ℂ] ℂ).toModuleIso
+  skyscraperSheafGlobalSectionsIso (X := TopCat.of X) x (ModuleCat.of ℂ (ULift ℂ)) ≪≫
+    (ULift.moduleEquiv : ULift ℂ ≃ₗ[ℂ] ℂ).toModuleIso
 
 open Classical in
 private theorem coefficient_comp_skyscraperSectionsIso :
@@ -77,7 +75,7 @@ private theorem coefficient_comp_skyscraperSectionsIso :
       (pointTwistMap D x).hom.app (op ⊤) := by
   apply (cancel_mono (skyscraperSectionsIso x).hom).mp
   simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
-  simp only [skyscraperSectionsIso, Iso.trans_hom, eqToIso.hom]
+  simp only [skyscraperSectionsIso, Iso.trans_hom, skyscraperSheafGlobalSectionsIso_hom]
   ext f
   simpa [pointTwistGlobalCoefficient] using
     congrArg ULift.down (pointTwistMap_app_apply_of_mem D x (U := ⊤) trivial f).symm
@@ -113,34 +111,61 @@ theorem exact_pointTwist_globalSections_coefficient :
     (sheafToPresheaf _ _ ⋙ (evaluation _ (ModuleCat ℂ)).obj (op ⊤))
     inferInstance inferInstance
   have he := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp h
-  intro f
-  have hz : (pointTwistMap D x).hom.app (op ⊤) f = 0 ↔ pointTwistGlobalCoefficient D x f = 0 := by
-    rw [← coefficient_comp_skyscraperSectionsIso, ConcreteCategory.comp_apply]
-    have hi := (ModuleCat.mono_iff_injective (skyscraperSectionsIso x).inv).mp inferInstance
-    simpa using hi.eq_iff (a := pointTwistGlobalCoefficient D x f) (b := 0)
-  exact hz.symm.trans (he f)
-
-variable [CompactSpace X] [T2Space X]
+  -- Expose the evaluated short-complex maps so the coefficient comparison can rewrite them.
+  change Function.Exact
+    ((divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x)).hom.app (op ⊤)).hom
+    ((pointTwistMap D x).hom.app (op ⊤)).hom at he
+  rw [← coefficient_comp_skyscraperSectionsIso] at he
+  exact ((ModuleCat.mono_iff_injective (skyscraperSectionsIso x).inv).mp
+    inferInstance).comp_exact_iff_exact.mp he
 
 open Classical in
-private def coefficientCechIso : ModuleCat.of ℂ ℂ ≅
+/-- Scalar coefficients identify with the degree-zero cohomology of the point skyscraper. -/
+def pointTwistCoefficientCechIso : ModuleCat.of ℂ ℂ ≅
     (cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 0).obj
       (skyscraperSheaf (X := TopCat.of X) x (ModuleCat.of ℂ (ULift ℂ))).obj :=
-  (skyscraperSectionsIso x).symm ≪≫ cechCohomologyZeroIso
-    (skyscraperSheaf (X := TopCat.of X) x (ModuleCat.of ℂ (ULift ℂ)))
+  (ULift.moduleEquiv : ULift ℂ ≃ₗ[ℂ] ℂ).toModuleIso.symm ≪≫
+    (cechCohomologyZeroSkyscraperPresheafIso (X := TopCat.of X)
+      (A := ModuleCat.{0} ℂ) x (ModuleCat.of ℂ (ULift ℂ))).symm
+
+omit [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X] in
+open Classical in
+/-- The coefficient identification is the inverse skyscraper cohomology identification,
+after lifting the scalar to the coefficient universe. -/
+theorem pointTwistCoefficientCechIso_def :
+    pointTwistCoefficientCechIso x =
+      (ULift.moduleEquiv : ULift ℂ ≃ₗ[ℂ] ℂ).toModuleIso.symm ≪≫
+        (cechCohomologyZeroSkyscraperPresheafIso (X := TopCat.of X)
+          (A := ModuleCat.{0} ℂ) x (ModuleCat.of ℂ (ULift ℂ))).symm := by rfl
+
+variable [CompactSpace X] [T2Space X]
 
 /-- The point-twist connecting map sends a prescribed new coefficient to its obstruction to
 being realized by a global section of `O(D+x)`. -/
 def pointTwistConnecting : ℂ →ₗ[ℂ] divisorCechCohomology D 1 :=
-  ((coefficientCechIso x).hom ≫ (displayedPointTwist_shortExact D x).cechCohomologyδ 0).hom
+  ((pointTwistCoefficientCechIso x).hom ≫
+    (displayedPointTwist_shortExact D x).cechCohomologyδ 0).hom
+
+open Classical in
+/-- The point-twist obstruction is the Čech boundary of the scalar coefficient, using the
+public skyscraper identification and the point-twist short exact sequence. -/
+theorem pointTwistConnecting_def :
+    pointTwistConnecting D x =
+      ((pointTwistCoefficientCechIso x).hom ≫
+        (ShortComplex.shortExact_of_iso (pointTwistSequenceIso D x)
+          (pointTwistSequence_shortExact D x)).cechCohomologyδ 0).hom := by rfl
 
 omit [IsManifold 𝓘(ℂ) 1 X] [CompactSpace X] [T2Space X] in
 open Classical in
 private theorem coefficient_augmentation :
-    ModuleCat.ofHom (pointTwistGlobalCoefficient D x) ≫ (coefficientCechIso x).hom =
+    ModuleCat.ofHom (pointTwistGlobalCoefficient D x) ≫ (pointTwistCoefficientCechIso x).hom =
       (cechCohomologyZeroIso (divisorSheaf (D + WeilDivisor.ofPoint x))).hom ≫
         (cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 0).map (pointTwistMap D x).hom := by
-  rw [coefficientCechIso, Iso.trans_hom, Iso.symm_hom, ← Category.assoc,
+  rw [pointTwistCoefficientCechIso, cechCohomologyZeroSkyscraperPresheafIso_eq]
+  -- Reassociate the isomorphisms to use the global-section coefficient comparison.
+  change ModuleCat.ofHom (pointTwistGlobalCoefficient D x) ≫
+    ((skyscraperSectionsIso x).symm ≪≫ cechCohomologyZeroIso _).hom = _
+  rw [Iso.trans_hom, Iso.symm_hom, ← Category.assoc,
     coefficient_comp_skyscraperSectionsIso, cechCohomologyZeroIso_hom_naturality]
 
 /-- A scalar is realized as the new coefficient of a global section if and only if its
@@ -150,20 +175,13 @@ theorem exact_pointTwist_coefficient_connecting :
   classical
   have he := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp
     ((displayedPointTwist_shortExact D x).cechCohomology_exact₃ 0)
-  intro a
-  constructor
-  · intro ha
-    obtain ⟨b, hb⟩ := (he ((coefficientCechIso x).hom a)).mp ha
-    refine ⟨(cechCohomologyZeroIso (divisorSheaf (D + WeilDivisor.ofPoint x))).inv b, ?_⟩
-    apply (ModuleCat.mono_iff_injective (coefficientCechIso x).hom).mp inferInstance
-    have hc := ConcreteCategory.congr_hom (coefficient_augmentation D x)
-      ((cechCohomologyZeroIso (divisorSheaf (D + WeilDivisor.ofPoint x))).inv b)
-    simp only [ConcreteCategory.comp_apply, Iso.inv_hom_id_apply] at hc
-    exact hc.trans hb
-  · rintro ⟨b, rfl⟩
-    apply (he _).mpr
-    refine ⟨(cechCohomologyZeroIso (divisorSheaf (D + WeilDivisor.ofPoint x))).hom b, ?_⟩
-    exact (ConcreteCategory.congr_hom (coefficient_augmentation D x) b).symm
+  exact (Function.Exact.iff_of_ladder_linearEquiv
+    (e₁ := (cechCohomologyZeroIso
+      (divisorSheaf (D + WeilDivisor.ofPoint x))).toLinearEquiv)
+    (e₂ := (pointTwistCoefficientCechIso x).toLinearEquiv)
+    (e₃ := LinearEquiv.refl ℂ _)
+    (congrArg ModuleCat.Hom.hom (coefficient_augmentation D x)).symm
+    (by rfl)).mp he
 
 /-- The kernel of `H¹(O(D)) → H¹(O(D+x))` consists exactly of the coefficient obstructions. -/
 theorem exact_pointTwist_connecting_cohomologyMap :
@@ -171,11 +189,8 @@ theorem exact_pointTwist_connecting_cohomologyMap :
   classical
   have he := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp
     ((displayedPointTwist_shortExact D x).cechCohomology_exact₁ 0)
-  intro c
-  exact (he c).trans ⟨fun ⟨a, ha⟩ ↦ ⟨(coefficientCechIso x).inv a, by
-    simpa only [pointTwistConnecting, ModuleCat.hom_comp, LinearMap.comp_apply,
-      ModuleCat.Hom.hom, Iso.inv_hom_id_apply] using ha⟩,
-    fun ⟨a, ha⟩ ↦ ⟨(coefficientCechIso x).hom a, ha⟩⟩
+  exact (LinearEquiv.precomp_exact_iff_exact
+    (e := (pointTwistCoefficientCechIso x).toLinearEquiv)).mpr he
 
 /-- The point-twist sequence ends at `H¹(O(D+x))`: the coefficient skyscraper has vanishing
 positive Čech cohomology. -/
