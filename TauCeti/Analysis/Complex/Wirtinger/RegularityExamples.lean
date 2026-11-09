@@ -34,8 +34,6 @@ checks the two pieces of bookkeeping in that argument on explicit data.
 
 ## Main results
 
-* `HasCompactSupport.contDiff_cauchyTransform`: the Cauchy transform keeps the smoothness of
-  compactly supported data.
 * `HasCompactSupport.laplacian_cauchyTransform`: `Δ (T h) = 4 ∂h` for compactly supported `C²`
   data.
 * `laplacian_half_re_cauchyTransform`: the divergence-form solution formula.
@@ -66,7 +64,7 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F
 
 omit [CompleteSpace F] in
 /-- The Cauchy transform of a compactly supported `Cⁿ` map is `Cⁿ`. -/
-theorem _root_.HasCompactSupport.contDiff_cauchyTransform {n : ℕ∞} {h : ℂ → F}
+private lemma contDiff_cauchyTransform_of_compact {n : ℕ∞} {h : ℂ → F}
     (hc : HasCompactSupport h) (hh : ContDiff ℝ n h) : ContDiff ℝ n (cauchyTransform h) := by
   rw [cauchyTransform_eq_convolution]
   exact (hc.contDiff_convolution_right (L := ContinuousLinearMap.lsmul ℝ ℂ)
@@ -75,7 +73,7 @@ theorem _root_.HasCompactSupport.contDiff_cauchyTransform {n : ℕ∞} {h : ℂ 
 omit [CompleteSpace F] in
 /-- The directional derivative of the Cauchy transform of compactly supported `C¹` data is the
 Cauchy transform of the directional derivative. -/
-theorem _root_.HasCompactSupport.fderiv_cauchyTransform_apply {h : ℂ → F}
+private lemma fderiv_cauchyTransform_apply_of_compact {h : ℂ → F}
     (hc : HasCompactSupport h) (hh : ContDiff ℝ 1 h) (w v : ℂ) :
     fderiv ℝ (cauchyTransform h) w v = cauchyTransform (fun z ↦ fderiv ℝ h z v) w := by
   have hint : Integrable fun z ↦ (w - z)⁻¹ • fderiv ℝ h z :=
@@ -92,10 +90,10 @@ theorem _root_.HasCompactSupport.laplacian_cauchyTransform {h : ℂ → F}
     Δ (cauchyTransform h) w = (2 : ℂ) • (fderiv ℝ h w 1 - I • fderiv ℝ h w I) := by
   set u := cauchyTransform h
   have hh1 : ContDiff ℝ 1 h := hh.of_le (by norm_num)
-  have hu : ContDiff ℝ 2 u := hc.contDiff_cauchyTransform hh
+  have hu : ContDiff ℝ 2 u := contDiff_cauchyTransform_of_compact hc hh
   have hu1 : ContDiff ℝ 1 (fderiv ℝ u) := hu.fderiv_right (by norm_num)
   have hdu (v : ℂ) : (fun y ↦ fderiv ℝ u y v) = cauchyTransform fun z ↦ fderiv ℝ h z v :=
-    funext fun y ↦ hc.fderiv_cauchyTransform_apply hh1 y v
+    funext fun y ↦ fderiv_cauchyTransform_apply_of_compact hc hh1 y v
   -- Each directional derivative of `u` is a Cauchy transform, so `\bar∂` inverts it.
   have hdbar (v : ℂ) :
       fderiv ℝ (fun y ↦ fderiv ℝ u y v) w 1 + I • fderiv ℝ (fun y ↦ fderiv ℝ u y v) w I =
@@ -155,7 +153,7 @@ private lemma contDiff_re_cauchyTransform (hf : ContDiff ℝ 2 f) (hg : ContDiff
     (hfc : HasCompactSupport f) (hgc : HasCompactSupport g) :
     ContDiff ℝ 2 fun w ↦ (cauchyTransform (fun z ↦ (f z : ℂ) + (g z : ℂ) * I) w).re :=
   reCLM.contDiff.comp <|
-    (hasCompactSupport_ofReal_add_ofReal_mul_I hfc hgc).contDiff_cauchyTransform
+    contDiff_cauchyTransform_of_compact (hasCompactSupport_ofReal_add_ofReal_mul_I hfc hgc)
       (contDiff_ofReal_add_ofReal_mul_I hf hg)
 
 /-- The real part of the Cauchy transform of `f + i g` has Laplacian `2 (∂ₛf + ∂ₜg)`, twice the
@@ -167,7 +165,7 @@ theorem laplacian_re_cauchyTransform (hf : ContDiff ℝ 2 f) (hg : ContDiff ℝ 
   set h : ℂ → ℂ := fun z ↦ (f z : ℂ) + (g z : ℂ) * I
   have hh : ContDiff ℝ 2 h := contDiff_ofReal_add_ofReal_mul_I hf hg
   have hhc : HasCompactSupport h := hasCompactSupport_ofReal_add_ofReal_mul_I hfc hgc
-  have hu : ContDiff ℝ 2 (cauchyTransform h) := hhc.contDiff_cauchyTransform hh
+  have hu : ContDiff ℝ 2 (cauchyTransform h) := contDiff_cauchyTransform_of_compact hhc hh
   have hre : (fun w ↦ (cauchyTransform h w).re) = reCLM ∘ cauchyTransform h := rfl
   rw [hre, hu.contDiffAt.laplacian_CLM_comp_left, Function.comp_apply,
     hhc.laplacian_cauchyTransform hh w,
