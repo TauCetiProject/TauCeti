@@ -64,7 +64,7 @@ theorem finite_setOf_le_norm_of_apply_eq_smul (hT : IsCompactOperator T) (hv : �
   by_contra hinf
   let e := Set.Infinite.natEmbedding _ hinf
   obtain ⟨m, n, hmn, hlt⟩ := hT.exists_dist_lt_of_norm_le (u := fun k ↦ v (e k)) (fun _ ↦ hv _) hδ
-  have hne : (e m : ι) ≠ e n := fun h ↦ hmn (e.injective (Subtype.ext h))
+  have hne : (e m : ι) ≠ e n := fun h ↦ hmn.ne (e.injective (Subtype.ext h))
   refine hlt.not_ge ?_
   calc δ ≤ ‖μ (e m)‖ := (e m).2
     _ = ‖⟪w (e m), T (v (e m)) - T (v (e n))⟫_𝕜‖ := by

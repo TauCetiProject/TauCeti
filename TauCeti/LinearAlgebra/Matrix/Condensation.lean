@@ -47,24 +47,14 @@ theorem mul_det_condensation_eq_pow_mul_det {n : ℕ} (A : Matrix (Fin (n + 1)) 
     A 0 0 * (of fun i j : Fin n ↦ A 0 0 * A i.succ j.succ - A i.succ 0 * A 0 j.succ).det =
       A 0 0 ^ n * A.det := by
   -- Scale the rows below the corner by `A 0 0`, then clear the first column below the corner.
-  set s : Fin (n + 1) → R := Fin.cons 1 fun _ ↦ A 0 0
-  set c : Fin (n + 1) → R := Fin.cons 0 fun i ↦ A i.succ 0
-  set A₁ : Matrix (Fin (n + 1)) (Fin (n + 1)) R := of fun i j ↦ s i * A i j
-  set A₂ : Matrix (Fin (n + 1)) (Fin (n + 1)) R := of fun i j ↦ A₁ i j - c i * A₁ 0 j
-  have h₁ : A₁.det = A 0 0 ^ n * A.det := by
-    rw [det_mul_column, Fin.prod_univ_succ]
-    simp [s]
-  have h₂ : A₁.det = A₂.det :=
-    det_eq_of_forall_row_eq_smul_add_const c 0 rfl fun i j ↦ by simp [A₂, c]
-  have h₃ : A₂.det = A 0 0 *
-      (of fun i j : Fin n ↦ A 0 0 * A i.succ j.succ - A i.succ 0 * A 0 j.succ).det := by
-    rw [det_succ_column_zero, Fin.sum_univ_succ, Finset.sum_eq_zero fun i _ ↦ by
-      simp [A₂, A₁, s, c, mul_comm]]
-    simp only [Fin.val_zero, pow_zero, one_mul, Fin.succAbove_zero, add_zero]
-    congr 2
-    · simp [A₂, A₁, s, c]
-    · ext i j
-      simp [A₂, A₁, s, c]
-  rw [← h₃, ← h₂, h₁]
+  let s : Fin (n + 1) → R := Fin.cons 1 fun _ ↦ A 0 0
+  let c : Fin (n + 1) → R := Fin.cons 0 fun i ↦ A i.succ 0
+  have h : (of fun i j ↦ s i * A i j).det = A 0 0 ^ n * A.det := by
+    simp [det_mul_column, Fin.prod_univ_succ, s]
+  rw [← h, det_eq_of_forall_row_eq_smul_add_const c 0 rfl
+    (B := of fun i j ↦ s i * A i j - c i * (s 0 * A 0 j)) fun i j ↦ by simp [c],
+    det_succ_column_zero, Fin.sum_univ_succ, Finset.sum_eq_zero fun i _ ↦ by
+      simp [s, c, mul_comm]]
+  simp [s, c, submatrix]
 
 end Matrix
