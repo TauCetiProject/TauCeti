@@ -308,7 +308,7 @@ private theorem halfPairing_eq_zero (h : HasWeakConjWirtingerDerivRealBoundaryOn
   simp
 variable [ContinuousStar F]
 
-private theorem star_integral [CompleteSpace F] {μ : Measure ℂ} (f : ℂ → F) :
+private theorem star_integral {μ : Measure ℂ} (f : ℂ → F) :
     ∫ z, star (f z) ∂μ = star (∫ z, f z ∂μ) :=
   (starL' ℝ : F ≃L[ℝ] F).integral_comp_comm f
 
