@@ -32,10 +32,10 @@ Without completeness the same identities hold wherever the maximal flow `φ` of 
 `TauCeti.mpullback_flowOf_apply_eq_exp_smul_of_interior_eq`). These describe the Liouville flow
 near a hypersurface of contact type when the Liouville field is not complete.
 
-All of these identities integrate infinitesimal ones along the flow
-(`TauCeti.mpullback_globalFlow_eq_exp_smul`,
-`TauCeti.mpullback_flowOf_apply_eq_exp_integral_smul`): `L_Z σ = σ` by definition, and
-`L_Z α = α` by Cartan's formula (`TauCeti.mlieDerivForm_eq_self_of_interior_eq`).
+The local identities integrate infinitesimal ones along the flow
+(`TauCeti.mpullback_flowOf_apply_eq_exp_integral_smul`): `L_Z σ = σ` by definition, and
+`L_Z α = α` by Cartan's formula (`TauCeti.mlieDerivForm_eq_self_of_interior_eq`). The identities
+for a complete field are the case where the maximal flow is defined everywhere.
 
 ## Main results
 
@@ -117,10 +117,9 @@ theorem IsLiouvilleVectorField.mpullback_globalFlow_eq_exp_smul {σ : RoughForm 
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] ℝ) y (σ y)))
     (hZσ : IsLiouvilleVectorField σ Z) (t : ℝ) :
     mpullback I I (globalFlow Z (hZ.of_le one_le_two) hc t) σ = Real.exp t • σ := by
-  have hL : mlieDerivForm Z σ = (1 : ℝ) • σ := by
-    rw [one_smul]
-    exact isLiouvilleVectorField_iff.mp hZσ
-  simpa only [one_mul] using TauCeti.mpullback_globalFlow_eq_exp_smul hc hZ hσ hL t
+  rw [← flowOf_eq_globalFlow]
+  exact funext fun x ↦ IsLiouvilleVectorField.mpullback_flowOf_apply_eq_exp_smul hZ hσ hZσ
+    (hc.mem_flowDomain t x)
 
 /-- **The Liouville flow rescales the primitive.** If `α` is a differentiable primitive of the
 two-form `σ`, and the complete `C²` vector field `Z` is its Liouville field, `ι_Z σ = α`, then the
@@ -132,10 +131,8 @@ theorem mpullback_globalFlow_eq_exp_smul_of_interior_eq {α : RoughForm I M ℝ 
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)))
     (hdα : mextDeriv α = σ) (hZα : σ.interior Z = α) (t : ℝ) :
     mpullback I I (globalFlow Z (hZ.of_le one_le_two) hc t) α = Real.exp t • α := by
-  have hL : mlieDerivForm Z α = (1 : ℝ) • α := by
-    rw [one_smul]
-    exact mlieDerivForm_eq_self_of_interior_eq hα (hZ.mdifferentiable (by norm_num))
-      (by rw [hdα, hZα])
-  simpa only [one_mul] using mpullback_globalFlow_eq_exp_smul hc hZ hα hL t
+  rw [← flowOf_eq_globalFlow]
+  exact funext fun x ↦ mpullback_flowOf_apply_eq_exp_smul_of_interior_eq hZ hα hdα hZα
+    (hc.mem_flowDomain t x)
 
 end TauCeti
