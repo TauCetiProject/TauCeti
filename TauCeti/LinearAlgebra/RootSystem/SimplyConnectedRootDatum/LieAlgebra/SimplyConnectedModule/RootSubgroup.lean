@@ -89,22 +89,18 @@ private theorem primitive_lowered (i : Fin t.rank) : IsPrimitive (lowered t ht i
   rw [e_lowered]
   exact primitive_highest t ht i
 
-private theorem exists_primitive_step (i : Fin t.rank ⊕ Fin t.rank) : ∃ v w : M,
-    ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (v : t.scModule ht) = (w : t.scModule ht) ∧
-    ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (w : t.scModule ht) = 0 ∧
-    IsPrimitive w := by
+/-- Every signed simple-root operator on the full-weight lattice admits a vector whose image
+is primitive and whose second image vanishes. This detects the integral root parameter without
+requiring either vector to belong to the chosen weight basis. -/
+theorem exists_isPrimitive_scLattice_rootOperator (i : Fin t.rank ⊕ Fin t.rank) :
+    ∃ v : M, rootOp i (rootOp i v) = 0 ∧ IsPrimitive (rootOp i v) := by
   cases i with
   | inl j =>
-    refine ⟨lowered t ht j, highest t ht j, ?_, ?_, primitive_highest t ht j⟩
-    · simpa only [coe_kostantRootOperator_apply] using congrArg Subtype.val (e_lowered t ht j)
-    · simpa only [coe_kostantRootOperator_apply, ZeroMemClass.coe_zero] using
-        congrArg Subtype.val (e_highest t ht j)
+    refine ⟨lowered t ht j, ?_, ?_⟩
+    · exact (congrArg (rootOp (.inl j)) (e_lowered t ht j)).trans (e_highest t ht j)
+    · exact (congrArg IsPrimitive (e_lowered t ht j)).mpr (primitive_highest t ht j)
   | inr j =>
-    refine ⟨highest t ht j, lowered t ht j, ?_, ?_, primitive_lowered t ht j⟩
-    · exact (coe_kostantRootOperator_apply e h ρ M
-        (t.kostantForm_apply_mem_scLattice ht) (.inr j) (highest t ht j)).symm
-    · simpa only [coe_kostantRootOperator_apply, ZeroMemClass.coe_zero] using
-        congrArg Subtype.val (f_lowered t ht j)
+    exact ⟨highest t ht j, f_lowered t ht j, primitive_lowered t ht j⟩
 
 /-- Every numbered positive or negative simple-root subgroup on the full-weight lattice
 has injective parameter map over every commutative ring. -/
@@ -114,12 +110,17 @@ theorem kostantRootSubgroupParam_scLattice_injective (A : Type*) [CommRing A]
       (t.kostantForm_apply_mem_scLattice ht) i
       (t.isNilpotent_representation_scModule_rootGenerator ht i) (CommAlgCat.of ℤ A)) := by
   -- Term elimination avoids reverting the large represented-module signature during cases.
-  exact (exists_primitive_step t ht i).elim fun v hv => hv.elim fun w hw =>
+  exact (t.exists_isPrimitive_scLattice_rootOperator ht i).elim fun v hv =>
     kostantRootSubgroupParam_injective_of_isPrimitive
-    (L := t.lieAlgebra ht) (V := t.scModule ht)
-    (I := Fin t.rank ⊕ Fin t.rank) (κ := Fin t.rank) e h ρ M
-    (t.kostantForm_apply_mem_scLattice ht) i
-    (t.isNilpotent_representation_scModule_rootGenerator ht i) v w hw.1 hw.2.1 hw.2.2 A
+      (L := t.lieAlgebra ht) (V := t.scModule ht)
+      (I := Fin t.rank ⊕ Fin t.rank) (κ := Fin t.rank) e h ρ M
+      (t.kostantForm_apply_mem_scLattice ht) i
+      (t.isNilpotent_representation_scModule_rootGenerator ht i) v (rootOp i v)
+      (coe_kostantRootOperator_apply e h ρ M
+        (t.kostantForm_apply_mem_scLattice ht) i v).symm
+      ((coe_kostantRootOperator_apply e h ρ M
+        (t.kostantForm_apply_mem_scLattice ht) i (rootOp i v)).symm.trans
+          (congrArg Subtype.val hv.1)) hv.2 A
 
 end
 
