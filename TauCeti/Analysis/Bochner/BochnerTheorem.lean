@@ -220,21 +220,27 @@ theorem exists_isFiniteMeasure_integral_fourierAtom_eq
     rw [integral_smul_measure, ENNReal.toReal_ofReal hpos.le, hμ_rep v, hG_def,
       Complex.real_smul, ← mul_assoc, mul_inv_cancel₀ hcne, one_mul]
 
-omit [FiniteDimensional ℝ V] in
+section Converse
+
+variable {W : Type*} [SeminormedAddCommGroup W] [InnerProductSpace ℝ W]
+  [MeasurableSpace W] [OpensMeasurableSpace W]
+
 /-- **Converse half of Bochner's theorem.** The Fourier-convention transform of a finite Borel
 measure is continuous and positive definite. -/
-theorem continuous_and_isPositiveDefiniteSub_of_integral_fourierAtom_eq {F : V → ℂ}
-    (μ : Measure V) [IsFiniteMeasure μ] (hrep : ∀ v, F v = ∫ q, fourierAtom v q ∂μ) :
+theorem continuous_and_isPositiveDefiniteSub_of_integral_fourierAtom_eq {F : W → ℂ}
+    (μ : Measure W) [IsFiniteMeasure μ] (hrep : ∀ v : W, F v = ∫ q, fourierAtom v q ∂μ) :
     Continuous F ∧ IsPositiveDefiniteSub F := by
   refine ⟨?_, IsPositiveDefiniteSub.of_posSemidef ?_⟩
   · rw [funext hrep]
     exact continuous_fourierConventionCharFun
-  · have hfun : (fun a b : V => F (a - b)) =
-        fun a b : V => ∫ q, fourierAtom (a - b) q ∂μ := by
+  · have hfun : (fun a b : W => F (a - b)) =
+        fun a b : W => ∫ q, fourierAtom (a - b) q ∂μ := by
       funext a b
       exact hrep (a - b)
     rw [hfun]
     exact posSemidef_fourierConventionCharFun_sub
+
+end Converse
 
 /-- **Bochner's theorem.** A function `F` on a finite-dimensional real inner-product space is
 continuous and positive definite if and only if it is the Fourier-convention transform
