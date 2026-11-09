@@ -11,7 +11,6 @@ public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.Gram.Factor
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.RealAlgebra
 import Mathlib.Analysis.InnerProductSpace.Completion
-import Mathlib.Analysis.Normed.Module.Completion
 
 /-!
 # The modulus of a bounded operator
