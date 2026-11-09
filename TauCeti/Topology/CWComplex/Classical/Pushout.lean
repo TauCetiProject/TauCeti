@@ -60,10 +60,11 @@ space along maps of their boundary spheres keeps the cells and their characteris
 
 ## References
 
-* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Chapter 0 and the Appendix;
-  Proposition 0.18 for the change of base.
+* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Chapter 0 and the Appendix.
 * R. Fritsch and R. Piccinini, *Cellular Structures in Topology*, Cambridge University Press,
   1990, Chapter 2.
+* R. Brown, *Topology and Groupoids*, 2006, Section 7.5, the gluing theorem for homotopy
+  equivalences, for the change of base.
 -/
 
 public section
