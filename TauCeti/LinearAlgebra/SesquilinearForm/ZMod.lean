@@ -31,21 +31,33 @@ and `Submodule.dualQuotEquivDualAnnihilator`, together with the finite `ℤ/n`-d
 
 public section
 
+namespace LinearMap
+
+variable {n : ℕ} [NeZero n] {M N : Type*} [AddCommGroup M] [AddCommGroup N]
+  [Module (ZMod n) M] [Module (ZMod n) N] [Finite M]
+  (B : M →ₗ[ZMod n] N →ₗ[ZMod n] ZMod n)
+
+/-- A pairing over `ℤ/n` with bijective right adjoint has left and right modules of
+equal order, assuming only that the left module is finite. -/
+theorem natCard_eq_of_bijective_flip_zmod (hB : Function.Bijective B.flip) :
+    Nat.card N = Nat.card M :=
+  (Nat.card_congr (LinearEquiv.ofBijective B.flip hB).toEquiv).trans
+    (AddEquiv.refl (ZMod n)).natCard_linearMap_zmod
+
+/-- The right module of a pairing over `ℤ/n` with bijective right adjoint is finite
+if the left module is finite. -/
+theorem finite_of_bijective_flip_zmod (hB : Function.Bijective B.flip) : Finite N := by
+  apply Nat.finite_of_card_ne_zero
+  rw [natCard_eq_of_bijective_flip_zmod B hB]
+  exact (Nat.card_pos (α := M)).ne'
+
+end LinearMap
+
 namespace Submodule
 
 variable {n : ℕ} [NeZero n] {M N : Type*} [AddCommGroup M] [AddCommGroup N]
   [Module (ZMod n) M] [Module (ZMod n) N] [Finite M]
   (S : Submodule (ZMod n) M) (B : M →ₗ[ZMod n] N →ₗ[ZMod n] ZMod n)
-
-private theorem natCard_eq_of_bijective_flip_zmod (hB : Function.Bijective B.flip) :
-    Nat.card N = Nat.card M :=
-  (Nat.card_congr (LinearEquiv.ofBijective B.flip hB).toEquiv).trans
-    (AddEquiv.refl (ZMod n)).natCard_linearMap_zmod
-
-private theorem finite_of_bijective_flip (hB : Function.Bijective B.flip) : Finite N := by
-  apply Nat.finite_of_card_ne_zero
-  rw [natCard_eq_of_bijective_flip_zmod B hB]
-  exact (Nat.card_pos (α := M)).ne'
 
 /-- The orthogonal complement has the order of the quotient if the right adjoint of
 the pairing is bijective. Only the left module is assumed finite. -/
@@ -71,7 +83,7 @@ its order with that of the left submodule is the ambient order. -/
 theorem eq_orthogonalBilin_iff_natCard_mul_eq_zmod (hB : Function.Bijective B.flip)
     (T : Submodule (ZMod n) N) (hT : T ≤ S.orthogonalBilin B) :
     T = S.orthogonalBilin B ↔ Nat.card S * Nat.card T = Nat.card M := by
-  have : Finite N := finite_of_bijective_flip B hB
+  have : Finite N := B.finite_of_bijective_flip_zmod hB
   constructor
   · rintro rfl
     exact S.natCard_mul_natCard_orthogonalBilin_zmod B hB
@@ -88,11 +100,11 @@ is the original submodule. The pairing is flipped on the second step. -/
 theorem orthogonalBilin_flip_orthogonalBilin_zmod [B.IsPerfPair] :
     (S.orthogonalBilin B).orthogonalBilin B.flip = S := by
   have hB := LinearMap.IsPerfPair.bijective_right B
-  have : Finite N := finite_of_bijective_flip B hB
+  have : Finite N := B.finite_of_bijective_flip_zmod hB
   symm
   apply ((S.orthogonalBilin B).eq_orthogonalBilin_iff_natCard_mul_eq_zmod B.flip
     (LinearMap.IsPerfPair.bijective_right B.flip) S le_orthogonalBilin_flip_orthogonalBilin).2
   rw [mul_comm, S.natCard_mul_natCard_orthogonalBilin_zmod B hB,
-    natCard_eq_of_bijective_flip_zmod B hB]
+    B.natCard_eq_of_bijective_flip_zmod hB]
 
 end Submodule
