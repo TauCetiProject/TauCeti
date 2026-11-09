@@ -271,6 +271,16 @@ theorem coordinateDeriv_const (c : A) {α : List (Fin n)} (hα : α ≠ []) :
     iteratedFDeriv_const_of_ne (n := (j :: js).length) (List.length_pos_of_ne_nil hα).ne',
     Pi.zero_apply, Pi.zero_apply, zero_apply]
 
+/-- Differentiating a continuous linear map `L` in the direction `e_k` gives the constant
+`L e_k`. -/
+theorem _root_.ContinuousLinearMap.coordinateDeriv_append_singleton
+    (L : CoordinateSpace n →L[ℝ] A) (β : List (Fin n)) (k : Fin n) :
+    coordinateDeriv (β ++ [k]) L = coordinateDeriv β fun _ ↦ L (EuclideanSpace.single k 1) := by
+  rw [coordinateDeriv_append]
+  congr 1
+  funext ξ
+  rw [coordinateDeriv_cons, coordinateDeriv_nil, L.fderiv]
+
 /-- Partial coordinate derivatives in the second variable, along a word of length `k`, of a `C^N`
 function of two variables are jointly `C^m` whenever `m + k ≤ N`. -/
 theorem _root_.ContDiff.coordinateDeriv_snd_of_le {P : Type*} [NormedAddCommGroup P]

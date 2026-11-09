@@ -48,6 +48,8 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
   Japanese bracket, `⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)`.
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
+* `TauCeti.integrable_one_add_norm_smul_sq_rpow`: the bracket of a rescaled variable
+  `x ↦ (1 + ‖c • x‖ ^ 2) ^ (m / 2)`, `c ≠ 0`, is integrable for `m < -dim V`.
 * `TauCeti.integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq`,
   `TauCeti.integral_norm_rpow_mul_rpow_neg_one_add_norm_sq`: integrability and value of the
   radial moments of the Japanese bracket, for every additive Haar measure.
@@ -95,6 +97,15 @@ theorem integrable_rpow_neg_sq_add_norm_sq (μ : Measure V) [μ.IsAddHaarMeasure
   beta_reduce
   rw [← Real.mul_rpow (by positivity) (by positivity), norm_smul, mul_pow, norm_inv,
     Real.norm_eq_abs, inv_pow, sq_abs, mul_add, mul_one, mul_inv_cancel_left₀ hc2]
+
+/-- The Japanese bracket of a rescaled variable, `x ↦ (1 + ‖c • x‖ ^ 2) ^ (m / 2)` with `c ≠ 0`, is
+integrable on a finite-dimensional real normed space of dimension `d` when `m < -d`, for every
+additive Haar measure. -/
+theorem integrable_one_add_norm_smul_sq_rpow (μ : Measure V) [μ.IsAddHaarMeasure] {c m : ℝ}
+    (hc : c ≠ 0) (hm : m < -(finrank ℝ V : ℝ)) :
+    Integrable (fun x : V ↦ (1 + ‖c • x‖ ^ 2) ^ (m / 2)) μ := by
+  simpa only [neg_neg] using
+    (integrable_rpow_neg_one_add_norm_sq (μ := μ) (r := -m) (by linarith)).comp_smul hc
 
 /-- The radial moment `x ↦ ‖x‖ ^ p (1 + ‖x‖ ^ 2) ^ (-r / 2)` of order `p ≥ 0` of the Japanese
 bracket is integrable for every additive Haar measure when its decay exponent exceeds

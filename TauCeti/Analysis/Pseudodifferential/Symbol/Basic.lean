@@ -28,10 +28,15 @@ space, and develop the first operations of the symbol calculus:
 
 * `TauCeti.Symbol.inclusion`: a symbol of order `m` is a symbol of every order `m' ≥ m`;
 * `TauCeti.Symbol.frequencyDeriv`: a frequency derivative `∂_{ξ_j}` lowers the order by one;
+* `TauCeti.Symbol.frequencyLaplacian`: the frequency Laplacian `Δ_ξ = ∑ⱼ ∂²_{ξⱼ}` lowers the
+  order by two, and `TauCeti.Symbol.negFrequencyLaplacianPow N` is its power `(-Δ_ξ)^N`, which
+  lowers it by `2N`;
 * `TauCeti.Symbol.spatialDeriv`: a spatial derivative `∂_{x_j}` preserves the order;
 * `TauCeti.Symbol.ofSpatial`: a smooth coefficient `f(x)` independent of the frequency, the symbol
   of multiplication by `f`, has order `0`; in particular so does a constant
   (`TauCeti.Symbol.const`);
+* `TauCeti.Symbol.ofFrequencyCLM`: a real-linear function `L ξ` of the frequency, such as the
+  symbol `⟪ξ, w⟫` of `-i ∂_w`, has order `1`;
 * `TauCeti.Symbol.comp`: the pointwise composition `b(x, ξ) ∘ a(x, ξ)` (for matrices, the matrix
   product) of symbols of orders `m'` and `m` has order `m' + m`. By the Leibniz rule
   `ContinuousLinearMap.mixedDeriv_of_bilinear`, `∂_x^α ∂_ξ^β (b ∘ a)` is a sum of terms
@@ -264,6 +269,14 @@ instance : Module ℂ (Symbol n V W m) :=
   coefficient_injective.module ℂ ⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩
     coefficient_smul
 
+@[simp]
+theorem coefficient_sum {ι : Type*} (s : Finset ι) (f : ι → Symbol n V W m) :
+    (∑ i ∈ s, f i).coefficient = ∑ i ∈ s, (f i).coefficient := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => simp [Finset.sum_insert hi, ih]
+
 theorem IsUniform.add {a b : Symbol n V W m} (ha : a.IsUniform) (hb : b.IsUniform) :
     (a + b).IsUniform := by
   intro α β
@@ -380,6 +393,42 @@ theorem mixedDeriv_frequencyDeriv (j : Fin n) (a : Symbol n V W m) (α β : List
       fun p => coordinateDeriv [j] (fun η => a.coefficient (p.1, η)) p.2 :=
     funext fun p => coefficient_frequencyDeriv j a p.1 p.2
   rw [h, mixedDeriv_coordinateDeriv_snd]
+
+/-- The frequency Laplacian `Δ_ξ a = ∑ⱼ ∂²_{ξⱼ} a` of a symbol of order `m`, a symbol of order
+`m - 2`. -/
+def frequencyLaplacian : Symbol n V W m →ₗ[ℂ] Symbol n V W (m - 2) :=
+  ∑ j, inclusion (le_of_eq (by ring) : m - 1 - 1 ≤ m - 2) ∘ₗ frequencyDeriv j ∘ₗ frequencyDeriv j
+
+theorem frequencyLaplacian_apply (a : Symbol n V W m) :
+    frequencyLaplacian a = ∑ j, inclusion (le_of_eq (by ring) : m - 1 - 1 ≤ m - 2)
+      (frequencyDeriv j (frequencyDeriv j a)) := by
+  simp [frequencyLaplacian]
+
+@[simp]
+theorem coefficient_frequencyLaplacian (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
+    (frequencyLaplacian a).coefficient (x, ξ) =
+      ∑ j, coordinateDeriv [j, j] (fun η ↦ a.coefficient (x, η)) ξ := by
+  rw [frequencyLaplacian_apply, coefficient_sum, Finset.sum_apply]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [show [j, j] = [j] ++ [j] from rfl, coordinateDeriv_append]
+  simp only [coefficient_inclusion, coefficient_frequencyDeriv]
+
+/-- The `N`-th power `(-Δ_ξ)^N a` of the negative frequency Laplacian of a symbol of order `m`,
+a symbol of order `m - 2N`. -/
+def negFrequencyLaplacianPow : (N : ℕ) → Symbol n V W m →ₗ[ℂ] Symbol n V W (m - 2 * N)
+  | 0 => inclusion (le_of_eq (by simp))
+  | N + 1 => inclusion (le_of_eq (by push_cast; ring)) ∘ₗ (-frequencyLaplacian) ∘ₗ
+      negFrequencyLaplacianPow N
+
+@[simp]
+theorem coefficient_negFrequencyLaplacianPow_zero (a : Symbol n V W m) :
+    (negFrequencyLaplacianPow 0 a).coefficient = a.coefficient := by
+  simp [negFrequencyLaplacianPow]
+
+theorem coefficient_negFrequencyLaplacianPow_succ (N : ℕ) (a : Symbol n V W m) :
+    (negFrequencyLaplacianPow (N + 1) a).coefficient =
+      (-frequencyLaplacian (negFrequencyLaplacianPow N a)).coefficient := by
+  simp [negFrequencyLaplacianPow]
 
 /-- The spatial derivative `∂_{x_j} a` of a symbol of order `m`, again a symbol of order `m`. -/
 def spatialDeriv (j : Fin n) : Symbol n V W m →ₗ[ℂ] Symbol n V W m where
@@ -550,6 +599,59 @@ theorem isUniform_const (T : V →L[ℂ] W) : (const T : Symbol n V W 0).IsUnifo
   · simp [coordinateDeriv_const T hα]
 
 end Spatial
+
+section Frequency
+
+/-- The symbol `(x, ξ) ↦ L ξ` of order `1` defined by a real-linear map `L` of the frequency. For
+`L ξ = ⟪ξ, w⟫ • 1` this is the symbol of the operator `-i ∂_w`. -/
+def ofFrequencyCLM (L : CoordinateSpace n →L[ℝ] (V →L[ℂ] W)) : Symbol n V W 1 where
+  coefficient p := L p.2
+  contDiff_coefficient := L.contDiff.comp contDiff_snd
+  exists_bound K _ α β := by
+    refine ⟨‖L‖, L.opNorm_nonneg, fun x _ ξ ↦ ?_⟩
+    have hw : 0 < (1 + ‖ξ‖ ^ 2) ^ ((1 - (β.length : ℝ)) / 2) := rpow_weight_pos ξ _
+    rw [mixedDeriv_def]
+    dsimp only
+    rcases eq_or_ne α [] with rfl | hα
+    swap
+    · rw [coordinateDeriv_const _ hα, Pi.zero_apply, norm_zero]
+      positivity
+    rw [coordinateDeriv_nil]
+    rcases List.eq_nil_or_concat β with rfl | ⟨β', k, rfl⟩
+    · have : ‖ξ‖ ≤ (1 + ‖ξ‖ ^ 2) ^ ((1 : ℝ) / 2) := by
+        rw [← Real.sqrt_eq_rpow]
+        exact Real.le_sqrt_of_sq_le (by linarith)
+      simp only [coordinateDeriv_nil, List.length_nil, CharP.cast_eq_zero, sub_zero]
+      exact (L.le_opNorm ξ).trans (by gcongr)
+    rw [List.concat_eq_append, L.coordinateDeriv_append_singleton]
+    rcases eq_or_ne β' [] with rfl | hβ'
+    · simp only [coordinateDeriv_nil, List.nil_append, List.length_singleton, Nat.cast_one,
+        sub_self, zero_div, Real.rpow_zero, mul_one]
+      exact (L.le_opNorm _).trans (by simp)
+    · rw [coordinateDeriv_const _ hβ', Pi.zero_apply, norm_zero]
+      positivity
+
+@[simp]
+theorem coefficient_ofFrequencyCLM (L : CoordinateSpace n →L[ℝ] (V →L[ℂ] W))
+    (p : CoordinateSpace n × CoordinateSpace n) : (ofFrequencyCLM L).coefficient p = L p.2 :=
+  (rfl)
+
+/-- Every positive power of `-Δ_ξ` kills a constant symbol. -/
+theorem negFrequencyLaplacianPow_succ_const (T : V →L[ℂ] W) (N : ℕ) :
+    negFrequencyLaplacianPow (N + 1) (const T : Symbol n V W 0) = 0 := by
+  induction N with
+  | zero =>
+    ext1
+    funext p
+    rw [coefficient_negFrequencyLaplacianPow_succ, coefficient_neg, Pi.neg_apply,
+      coefficient_frequencyLaplacian]
+    simp [coordinateDeriv_const]
+  | succ N ih =>
+    ext1
+    rw [coefficient_negFrequencyLaplacianPow_succ, ih, map_zero, neg_zero, coefficient_zero,
+      coefficient_zero]
+
+end Frequency
 
 section Comp
 
