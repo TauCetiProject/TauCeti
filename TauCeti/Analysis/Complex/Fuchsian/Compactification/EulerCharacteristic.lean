@@ -87,10 +87,8 @@ private theorem exists_compactConvexPolygon_sidePairing :
         (interior P.toConvexPolygon.carrier) := by
   obtain ⟨p, hp⟩ := freeLocus_nonempty Γ
   obtain ⟨n, _, P, σ, hσ, hP⟩ := Γ.exists_sidePairing_of_compactSpace hp
-  have hP' : P.toConvexPolygon.carrier = dirichletDomain Γ p := by
-    rw [CompactConvexPolygon.carrier_toConvexPolygon, hP]
-  exact ⟨n, ‹_›, P, σ, hσ, hP' ▸ locallyFinite_smul_dirichletDomain p,
-    ConvexPolygon.disjoint_smul_interior_carrier_of_carrier_eq_dirichletDomain hP' hp⟩
+  exact ⟨n, ‹_›, P, σ, hσ, hP ▸ locallyFinite_smul_dirichletDomain p,
+    ConvexPolygon.disjoint_smul_interior_carrier_of_carrier_eq_dirichletDomain hP hp⟩
 
 /-- **The quotient of a cocompact Fuchsian group has finite CW type**, through the cell structure
 induced by a compact Dirichlet polygon. -/
@@ -149,10 +147,9 @@ theorem eulerChar_sub_finsum_mem_ellipticOrbits_eq_index_mul {Δ : Subgroup PSL(
         ∑ᶠ e ∈ Γ.ellipticOrbits, (1 - (cardStabilizerOnOrbit e : ℝ)⁻¹)) := by
   let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   have := compactSpace_orbitRel_quotient_of_le h
-  have hcov := covolume_eq_card_mul_covolume (α := ℍ) (μ := volume) h
-  rw [ENat.card_eq_coe_natCard, ENat.toENNReal_coe, ← index, ← ENNReal.ofReal_natCast,
-    covolume_eq_two_pi_mul_neg_eulerChar_add, covolume_eq_two_pi_mul_neg_eulerChar_add,
-    ← ENNReal.ofReal_mul (Nat.cast_nonneg _)] at hcov
+  have hcov := covolume_eq_index_mul_covolume (α := ℍ) (μ := volume) h
+  rw [covolume_eq_two_pi_mul_neg_eulerChar_add, covolume_eq_two_pi_mul_neg_eulerChar_add,
+    ← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (Nat.cast_nonneg _)] at hcov
   have hΔ := eulerChar_compactifiedQuotient_lt_finsum_mem_ellipticOrbits (Γ := Δ)
   have hΓ := eulerChar_compactifiedQuotient_lt_finsum_mem_ellipticOrbits (Γ := Γ)
   have hπ := Real.pi_pos
