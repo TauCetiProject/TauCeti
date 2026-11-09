@@ -39,7 +39,10 @@ solution.
 These polynomials form a real vector space of dimension `k + 1` for `k ≥ -1` and `0` for `k < 0`
 (`TauCeti.finrank_conjReciprocalPolynomials`), so the space of solutions, as functions on the
 closed disc, has real dimension `max (k + 1) 0` (`TauCeti.finrank_unitDiscCauchyRiemannKernel`).
-For `k ≥ -1` this is `1 + k`, rank plus Maslov index, as the Riemann–Roch formula predicts once
+An explicit real basis is `zʲ + z^(k-j)` for `2j < k`, `zʲ` for `2j = k` and
+`I (z^(k-j) - zʲ)` for `2j > k`, where `0 ≤ j ≤ k` (`TauCeti.unitDiscCauchyRiemannKernelBasis`);
+for `k = 0`, real boundary values, the solutions are the real constants. For `k ≥ -1` the
+dimension is `1 + k`, rank plus Maslov index, as the Riemann–Roch formula predicts once
 the cokernel is known to vanish; the cokernel, which needs Sobolev completions, is not treated
 here.
 
@@ -62,6 +65,8 @@ coefficients with Fourier coefficients of boundary values in
 * `TauCeti.unitDiscCauchyRiemannKernel k`: the real subspace of functions on the closed unit disc
   that are restrictions of functions holomorphic on the open unit disc and continuous on its
   closure, satisfying `u w = w ^ k * conj (u w)` on the unit circle.
+* `TauCeti.unitDiscCauchyRiemannKernelBasis k`: for a natural number `k`, the explicit real basis
+  of the solutions (`TauCeti.unitDiscCauchyRiemannKernelBasis_apply`).
 * `TauCeti.unitDiscCauchyRiemannKernelJetEquiv m`: for `k = 2 * m + 1`, the real-linear
   isomorphism from the solutions to `ℂ^(m+1)` given by the Taylor coefficients of order at most
   `m` at the centre.
@@ -79,6 +84,8 @@ coefficients with Fourier coefficients of boundary values in
   finite-dimensional real vector space.
 * `TauCeti.finrank_unitDiscCauchyRiemannKernel`: the solutions form a real vector space of
   dimension `(k + 1).toNat`.
+* `TauCeti.mem_unitDiscCauchyRiemannKernel_zero_iff`: for Maslov index `0` the solutions are the
+  real constants.
 * `DiffContOnCl.eqOn_sum_iteratedDeriv_div_factorial_of_eq_zpow_mul_conj`: for
   `k = 2 * m + 1`, a solution is `∑_{j ≤ m} (aⱼ zʲ + conj aⱼ z^(k-j))` with `aⱼ = u⁽ʲ⁾(0) / j!`.
 * `DiffContOnCl.eqOn_zero_of_eq_zpow_mul_conj_of_iteratedDeriv_eq_zero`: for `k = 2 * m + 1`, a
@@ -279,6 +286,53 @@ theorem finrank_unitDiscCauchyRiemannKernel (k : ℤ) :
     finrank ℝ (unitDiscCauchyRiemannKernel k) = (k + 1).toNat := by
   rw [unitDiscCauchyRiemannKernel_eq_map, ← finrank_conjReciprocalPolynomials k]
   exact (Submodule.equivMapOfInjective _ evalOn_closedBall_injective _).finrank_eq.symm
+
+
+/-- The real-linear isomorphism from the conjugate-reciprocal polynomials of degree at most `k` to
+the solutions, by evaluation on the closed disc. -/
+private noncomputable def conjReciprocalPolynomialsEquivKernel (k : ℤ) :
+    conjReciprocalPolynomials k ≃ₗ[ℝ] unitDiscCauchyRiemannKernel k :=
+  (Submodule.equivMapOfInjective _ evalOn_closedBall_injective _).trans
+    (LinearEquiv.ofEq _ _ unitDiscCauchyRiemannKernel_eq_map.symm)
+
+/-- **An explicit real basis of the solutions.** For a natural number `k`, the solutions of the
+Cauchy–Riemann equation on the unit disc with boundary values on the line `w ^ (k / 2) ℝ` have
+the real basis, indexed by `0 ≤ j ≤ k`, given by `zʲ + z^(k-j)` for `2j < k`, `zʲ` for `2j = k`,
+and `I (z^(k-j) - zʲ)` for `2j > k` (`TauCeti.unitDiscCauchyRiemannKernelBasis_apply`). -/
+noncomputable def unitDiscCauchyRiemannKernelBasis (k : ℕ) :
+    Basis (Fin (k + 1)) ℝ (unitDiscCauchyRiemannKernel k) :=
+  (conjReciprocalBasis k).map (conjReciprocalPolynomialsEquivKernel k)
+
+/-- The `j`-th element of the explicit basis is `zʲ + z^(k-j)` for `2j < k`, `zʲ` for `2j = k`,
+and `I (z^(k-j) - zʲ)` for `2j > k`. -/
+theorem unitDiscCauchyRiemannKernelBasis_apply (k : ℕ) (j : Fin (k + 1))
+    (z : closedBall (0 : ℂ) 1) :
+    (unitDiscCauchyRiemannKernelBasis k j : closedBall (0 : ℂ) 1 → ℂ) z =
+      if 2 * (j : ℕ) < k then (z : ℂ) ^ (j : ℕ) + (z : ℂ) ^ (k - j)
+      else if 2 * (j : ℕ) = k then (z : ℂ) ^ (j : ℕ)
+      else I * ((z : ℂ) ^ (k - j) - (z : ℂ) ^ (j : ℕ)) := by
+  simp only [unitDiscCauchyRiemannKernelBasis, conjReciprocalPolynomialsEquivKernel,
+    Basis.map_apply, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply,
+    Submodule.coe_equivMapOfInjective_apply, LinearMap.coe_restrictScalars, evalOn_apply,
+    coe_conjReciprocalBasis, eval_conjReciprocalBasisPoly]
+
+/-- **Maslov index zero.** For the boundary condition `u w = conj (u w)` on the unit circle, that
+is, real boundary values, the solutions are exactly the real constants. -/
+theorem mem_unitDiscCauchyRiemannKernel_zero_iff :
+    g ∈ unitDiscCauchyRiemannKernel 0 ↔ ∃ r : ℝ, g = fun _ => (r : ℂ) := by
+  refine ⟨fun hg => ?_, ?_⟩
+  · obtain ⟨p, hp, rfl⟩ := mem_unitDiscCauchyRiemannKernel_iff_exists_eval.mp hg
+    obtain ⟨hp₀, hp₁⟩ := mem_conjReciprocalPolynomials_iff.mp hp
+    have hc : p = C (p.coeff 0) := by
+      ext n
+      rcases n with _ | n
+      · simp
+      · rw [hp₀ (n + 1) (by omega), coeff_C_of_ne_zero n.succ_ne_zero]
+    refine ⟨(p.coeff 0).re, funext fun z => ?_⟩
+    rw [hc, eval_C, coeff_C_zero]
+    exact (conj_eq_iff_re.mp (hp₁ 0 0 (by simp)).symm).symm
+  · rintro ⟨r, rfl⟩
+    exact ⟨fun _ => r, diffContOnCl_const, fun w _ => by simp, rfl⟩
 
 
 /-! ### Odd Maslov index: the jets at the centre -/
