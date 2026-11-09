@@ -12,6 +12,7 @@ import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.Head
 import TauCeti.CategoryTheory.Preadditive.Indecomposable
 import TauCeti.CategoryTheory.ObjectProperty.Retract
 import TauCeti.RingTheory.GradedAlgebra.Basic
+import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Ideal
 import TauCeti.RingTheory.Idempotents.Hom
 import Mathlib.RingTheory.LocalRing.Basic
 
@@ -285,40 +286,6 @@ theorem isEmpty_linearEquiv_span_singleton_of_gradeZero_le_span {i j : I} (hij :
 
 end Corner
 
-include he hI in
-/-- **A complete family of orthogonal idempotents with homogeneous left ideals is homogeneous of
-degree zero.** The nonzero-degree components of `eⱼ` lie in `A eⱼ`, they sum to the nonzero-degree
-components of `1`, which vanish, and the ideals `A eⱼ` are independent. -/
-theorem mem_zero_of_completeOrthogonalIdempotents_of_isHomogeneous (i : I) : e i ∈ 𝒜 0 := by
-  classical
-  have hfix : ∀ j p, (DirectSum.decompose 𝒜 (e j) p : A) * e j = DirectSum.decompose 𝒜 (e j) p :=
-    fun j p => (mem_span_singleton_iff_mul_eq_self (he.idem j)).1
-      (hI j p (Ideal.mem_span_singleton_self _))
-  have hvanish : ∀ p, p ≠ 0 → (DirectSum.decompose 𝒜 (e i) p : A) = 0 := by
-    intro p hp
-    have hsum : ∑ j, (DirectSum.decompose 𝒜 (e j) p : A) = 0 := by
-      have h : (DirectSum.decompose 𝒜 (∑ j, e j) p : A) =
-          ∑ j, (DirectSum.decompose 𝒜 (e j) p : A) := by
-        rw [DirectSum.decompose_sum, DirectSum.sum_apply, Submodule.coe_sum]
-      rw [← h, he.complete]
-      exact DirectSum.decompose_of_mem_ne 𝒜 (SetLike.one_mem_graded 𝒜) hp.symm
-    calc (DirectSum.decompose 𝒜 (e i) p : A)
-        = (DirectSum.decompose 𝒜 (e i) p : A) * e i := (hfix i p).symm
-      _ = (∑ j, (DirectSum.decompose 𝒜 (e j) p : A)) * e i := by
-        rw [Finset.sum_mul, Finset.sum_eq_single i _ (by simp)]
-        intro j _ hji
-        calc (DirectSum.decompose 𝒜 (e j) p : A) * e i
-            = ((DirectSum.decompose 𝒜 (e j) p : A) * e j) * e i := by rw [hfix j p]
-          _ = 0 := by rw [mul_assoc, he.ortho hji, mul_zero]
-      _ = 0 := by rw [hsum, zero_mul]
-  rw [← DirectSum.sum_support_decompose 𝒜 (e i)]
-  refine Submodule.sum_mem _ fun p _ => ?_
-  by_cases hp : p = 0
-  · subst hp
-    exact (DirectSum.decompose 𝒜 (e i) 0).2
-  · rw [hvanish p hp]
-    exact zero_mem _
-
 variable [Module.Finite k A]
 
 /-- A complete family of orthogonal idempotents whose left ideals are homogeneous and
@@ -332,7 +299,7 @@ theorem isExhaustiveGradedIndecomposableProjectiveFamily_of_completeOrthogonalId
       ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i}) (hI i),
         gradedFiniteProjectiveModules_ofIdeal_span_singleton (he.idem i) (hI i)⟩) := by
   classical
-  have he₀ := mem_zero_of_completeOrthogonalIdempotents_of_isHomogeneous he hI
+  have he₀ := he.mem_zero_of_isHomogeneous_span 𝒜 hI
   rw [isExhaustiveGradedIndecomposableProjectiveFamily_iff]
   intro M hM
   -- Split a finite homogeneous free cover using projectivity of the underlying module.
@@ -461,10 +428,10 @@ def gradedIdempotentProjectiveBasis :
       (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)) :=
   gradedIdempotentProjectiveBasisOfPrimitive he hI
     (fun i => isPrimitiveIdempotent_of_gradeZero_le_span
-      (mem_zero_of_completeOrthogonalIdempotents_of_isHomogeneous he hI)
+      (he.mem_zero_of_isHomogeneous_span 𝒜 hI)
       he.toOrthogonalIdempotents hneg hspan i (hne i))
     (fun i _ hij => isEmpty_linearEquiv_span_singleton_of_gradeZero_le_span
-      (mem_zero_of_completeOrthogonalIdempotents_of_isHomogeneous he hI)
+      (he.mem_zero_of_isHomogeneous_span 𝒜 hI)
       he.toOrthogonalIdempotents hneg hspan hij (hne i))
 
 /-- The basis vector of `TauCeti.gradedIdempotentProjectiveBasis` at `i` is the class `[A eᵢ]`. -/
