@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Calculus.LineDeriv.Measurable
 import TauCeti.Analysis.Calculus.Rademacher
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.Mollification.Lipschitz
+import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -344,6 +346,44 @@ theorem HasWeakLineDerivOn.lipschitzOnWith_smul (h : HasWeakLineDerivOn μ Ω u 
       simp only [← hgψ hx]
   · exact (ae_restrict_mem Ω.isOpen.measurableSet).mono fun x hx => by
       simp only [← hgψ hx, (hnear x hx).lineDeriv_eq]
+
+/-- **The Leibniz rule for weak directional derivatives with a `C¹` factor.** If `u'` is a weak
+derivative of `u` in the direction `v` on `Ω` and `ψ` is `C^n` on `Ω` for some `n ≠ 0`, then `ψ u`
+is weakly differentiable in the direction `v` on `Ω`, with derivative `ψ u' + (∂_v ψ) u`.
+
+This is `TauCeti.HasWeakLineDerivOn.contDiffOn_smul` at finite regularity, for an additive Haar
+measure. On each relatively compact open `V` with closure in `Ω`, the factor is Lipschitz, so
+`TauCeti.HasWeakLineDerivOn.lipschitzOnWith_smul` applies there, and its almost-everywhere
+directional derivative is the classical one. -/
+theorem HasWeakLineDerivOn.contDiffOn_smul_of_ne_zero {n : WithTop ℕ∞}
+    (h : HasWeakLineDerivOn μ Ω u u' v) (hψ : ContDiffOn ℝ n ψ Ω) (hn : n ≠ 0) :
+    HasWeakLineDerivOn μ Ω (fun x => ψ x • u x)
+      (fun x => ψ x • u' x + fderiv ℝ ψ x v • u x) v := by
+  have hψ1 : ContDiffOn ℝ 1 ψ Ω := hψ.of_le (ENat.one_le_iff_ne_zero_withTop.2 hn)
+  have hll : LocallyLipschitzOn (Ω : Set E) ψ := fun x hx => by
+    obtain ⟨K, t, ht, hK⟩ :=
+      ((hψ1 x hx).contDiffAt (Ω.isOpen.mem_nhds hx)).exists_lipschitzOnWith
+    exact ⟨K, t, nhdsWithin_le_nhds ht, hK⟩
+  refine hasWeakLineDerivOn_iff_forall_isCompact_closure.2 fun V hVc hVΩ => ?_
+  obtain ⟨K, hK⟩ := (hll.mono hVΩ).exists_lipschitzOnWith_of_compact hVc
+  refine ((h.mono (subset_closure.trans hVΩ)).lipschitzOnWith_smul
+    (hK.mono subset_closure)).congr_ae_deriv ?_
+  filter_upwards [ae_restrict_mem V.isOpen.measurableSet] with x hx
+  have hxΩ : x ∈ (Ω : Set E) := hVΩ (subset_closure hx)
+  rw [((hψ1.differentiableOn one_ne_zero x hxΩ).differentiableAt
+    (Ω.isOpen.mem_nhds hxΩ)).lineDeriv_eq_fderiv]
+
+/-- **The Leibniz rule for weak Fréchet derivatives with a `C¹` factor**: `D(ψ u) = ψ Du + u ⊗ Dψ`
+on `Ω` for `ψ` that is `C^n` on `Ω` with `n ≠ 0`, for an additive Haar measure. -/
+theorem HasWeakFDerivOn.contDiffOn_smul_of_ne_zero {n : WithTop ℕ∞} {U : E → E →L[ℝ] F}
+    (h : HasWeakFDerivOn μ Ω u U) (hψ : ContDiffOn ℝ n ψ Ω) (hn : n ≠ 0) :
+    HasWeakFDerivOn μ Ω (fun x => ψ x • u x)
+      (fun x => ψ x • U x + (fderiv ℝ ψ x).smulRight (u x)) := by
+  rw [hasWeakFDerivOn_iff]
+  intro v
+  have hv := (h.hasWeakLineDerivOn v).contDiffOn_smul_of_ne_zero hψ hn
+  convert hv using 2 with x
+  simp
 
 /-- **A bounded Lipschitz factor keeps an `Lᵖ` weak derivative.** If `u ∈ Lᵖ(Ω)` has a weak
 derivative `u' ∈ Lᵖ(Ω)` in the direction `v` and `ψ` is bounded and Lipschitz on `Ω`, then `ψ u`
