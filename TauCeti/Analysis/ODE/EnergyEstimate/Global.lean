@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LyapunovForm
+public import TauCeti.Analysis.InnerProductSpace.LyapunovForm.Basic
 public import TauCeti.Analysis.ODE.EnergyEstimate.Basic
 import TauCeti.Analysis.InnerProductSpace.Coercive
 import TauCeti.Analysis.InnerProductSpace.Symmetric.Interpolation
