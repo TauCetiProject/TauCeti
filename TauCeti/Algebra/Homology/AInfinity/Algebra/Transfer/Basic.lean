@@ -265,7 +265,6 @@ theorem transferBarDifferential_comp_self :
       0 :=
   LinearSpecialContraction.perturbedDifferential_comp_perturbedDifferential_eq_zero _ _
     (𝒜.gradedCoderiv_differential_add_higherBarDifferential_comp_self)
-    (𝒜.isUnit_one_add_higherBarDifferential_mul_barTensorTrick_homotopy c hh hincl hproj)
     (by rw [← unaryBarDifferential_eq_gradedCoderiv, unaryBarDifferential_comp_self])
 
 /-- The transferred bar differential has degree one for the suspended grading. -/
