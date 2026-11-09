@@ -138,6 +138,8 @@ omit [Fintype κ] [DecidableEq κ] in
 space. -/
 theorem rank_eq_finrank_range_toEuclideanLin (A : Matrix κ ι 𝕜) :
     A.rank = Module.finrank 𝕜 (LinearMap.range (toEuclideanLin A)) := by
+  -- `toEuclideanLin` is by definition the `arrowCongr` of `toLin'` with the `WithLp` equivalences,
+  -- and `toLin'` is `mulVecLin`
   have h : toEuclideanLin A = (WithLp.linearEquiv 2 𝕜 (κ → 𝕜)).symm.toLinearMap ∘ₗ
       A.mulVecLin ∘ₗ (WithLp.linearEquiv 2 𝕜 (ι → 𝕜)).toLinearMap := rfl
   rw [h, LinearMap.range_comp, LinearEquiv.range_comp, LinearEquiv.finrank_map_eq]
