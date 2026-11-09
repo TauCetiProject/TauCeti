@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.Normed.Ring.Lemmas
 public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
+public import TauCeti.Analysis.Convex.StdSimplex
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import TauCeti.Algebra.Order.Field.Basic
-import TauCeti.Analysis.Convex.StdSimplex
 
 /-!
 # Rational extension of boundary data into the standard simplex
@@ -71,61 +71,6 @@ open Set Finset Filter Topology Convexity
 namespace TauCeti
 
 variable {ι : Type*}
-
-/-! ### The relative boundary -/
-
-section Boundary
-
-variable (ι) in
-/-- The relative boundary of the standard simplex: its points with some vanishing coordinate. -/
-def stdSimplexBoundary : Set (ι → ℝ) :=
-  {y ∈ (range fun s : StdSimplex ℝ ι => ⇑s.weights) | ∃ i, y i = 0}
-
-/-- Membership in the relative boundary of the standard simplex. -/
-@[simp]
-theorem mem_stdSimplexBoundary {x : ι → ℝ} :
-    x ∈ stdSimplexBoundary ι ↔ x ∈ (range fun s : StdSimplex ℝ ι => ⇑s.weights) ∧ ∃ i, x i = 0 :=
-  Iff.rfl
-
-/-- The relative boundary lies in the standard simplex. -/
-theorem stdSimplexBoundary_subset :
-    stdSimplexBoundary ι ⊆ range fun s : StdSimplex ℝ ι => ⇑s.weights :=
-  fun _ hx => hx.1
-
-variable [Finite ι]
-
-/-- The relative boundary of the standard simplex is compact. -/
-theorem isCompact_stdSimplexBoundary : IsCompact (stdSimplexBoundary ι) := by
-  have hZ : IsClosed {y : ι → ℝ | ∃ i, y i = 0} := by
-    simpa only [ofPred_exists] using
-      isClosed_iUnion_of_finite fun i => isClosed_eq (continuous_apply i) continuous_const
-  exact (isCompact_range (StdSimplex.isEmbedding_toFun_comp_weights ℝ ι).continuous).inter_right
-    hZ
-
-/-- A point of the standard simplex lies on its relative boundary or in its open part. -/
-private theorem mem_stdSimplexBoundary_or_forall_pos {x : ι → ℝ}
-    (hx : x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights) :
-    x ∈ stdSimplexBoundary ι ∨ ∀ i, 0 < x i := by
-  have := Fintype.ofFinite ι
-  by_cases h : ∀ i, 0 < x i
-  · exact Or.inr h
-  · obtain ⟨i, hi⟩ := not_forall.1 h
-    exact Or.inl ⟨hx, i,
-      le_antisymm (not_lt.1 hi) ((StdSimplex.mem_range_toFun_comp_weights_iff.1 hx).1 i)⟩
-
-/-- A coordinate of a point of the standard simplex is less than one if some other coordinate
-is positive. -/
-theorem apply_lt_one_of_mem_range_weights {x : ι → ℝ}
-    (hx : x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights) {i j : ι} (hij : j ≠ i)
-    (hxj : 0 < x j) : x i < 1 := by
-  classical
-  have := Fintype.ofFinite ι
-  obtain ⟨hx0, hx1⟩ := StdSimplex.mem_range_toFun_comp_weights_iff.1 hx
-  have := sum_le_sum_of_subset_of_nonneg (subset_univ {i, j}) fun k _ _ => hx0 k
-  rw [sum_pair hij.symm, hx1] at this
-  linarith
-
-end Boundary
 
 /-! ### Facet projections -/
 
@@ -199,7 +144,8 @@ theorem stdSimplexFacetProjection_mem_stdSimplexBoundary [Nontrivial ι] {x : ι
     stdSimplexFacetProjection i x ∈ stdSimplexBoundary ι := by
   obtain ⟨j, hj⟩ := exists_ne i
   exact mem_stdSimplexBoundary.2 ⟨stdSimplexFacetProjection_mem_range_weights hx
-    (apply_lt_one_of_mem_range_weights hx hj (h j)), i, stdSimplexFacetProjection_apply_self i x⟩
+    (StdSimplex.apply_lt_one_of_mem_range_weights hx hj (h j)), i,
+    stdSimplexFacetProjection_apply_self i x⟩
 
 end FacetProjection
 
@@ -242,10 +188,15 @@ theorem stdSimplexExtension_of_forall_pos (h : ∀ i, 0 < x i) :
       (α + ∑ i, (x i)⁻¹ * g (stdSimplexFacetProjection i x)) / (1 + ∑ i, (x i)⁻¹) :=
   ite_eq_left h
 
+/-- Off the open simplex the extension is the prescribed function. -/
+theorem stdSimplexExtension_of_not_forall_pos (h : ¬∀ i, 0 < x i) :
+    stdSimplexExtension α g x = g x :=
+  ite_eq_right h
+
 /-- On the relative boundary the extension is the prescribed function. -/
 theorem stdSimplexExtension_of_apply_eq_zero {i : ι} (h : x i = 0) :
     stdSimplexExtension α g x = g x :=
-  ite_eq_right fun h' => (h' i).ne' h
+  stdSimplexExtension_of_not_forall_pos fun h' => (h' i).ne' h
 
 /-- The interior formula with the product weights `∏ j ≠ i, x j` of the facets and `∏ j, x j`
 of the constant. -/
@@ -266,7 +217,7 @@ theorem stdSimplexExtension_const (c : ℝ) (x : ι → ℝ) :
   by_cases h : ∀ i, 0 < x i
   · rw [stdSimplexExtension_of_forall_pos h, div_eq_iff (one_add_sum_inv_pos h).ne', ← sum_mul]
     ring
-  · exact ite_eq_right h
+  · exact stdSimplexExtension_of_not_forall_pos h
 
 /-- The extension is monotone in the constant and in the boundary data. -/
 theorem stdSimplexExtension_le_stdSimplexExtension [Nontrivial ι] {α₁ α₂ : ℝ}
@@ -424,7 +375,7 @@ theorem continuousWithinAt_stdSimplexExtension_of_forall_pos [Nontrivial ι]
       ((range fun s : StdSimplex ℝ ι => ⇑s.weights) ∩ {y | ∀ i, 0 < y i}) x := by
     obtain ⟨j, hj⟩ := exists_ne i
     exact (hg i).comp (continuousAt_stdSimplexFacetProjection
-      (apply_lt_one_of_mem_range_weights hx hj (h j)).ne).continuousWithinAt
+      (StdSimplex.apply_lt_one_of_mem_range_weights hx hj (h j)).ne).continuousWithinAt
       fun y hy => stdSimplexFacetProjection_mem_stdSimplexBoundary hy.1 hy.2 i
   exact (continuousWithinAt_const.add (tendsto_finsetSum univ fun i _ => (hinv i).mul (hgp i))).div
     (continuousWithinAt_const.add (tendsto_finsetSum univ fun i _ => hinv i))
@@ -571,6 +522,6 @@ theorem continuousOn_stdSimplexGapExtension [Nontrivial ι]
       · exact ⟨j, hji, hj⟩
     obtain ⟨m, hm⟩ := exists_ne i
     exact (stdSimplexFacetProjection_apply_pos hl (h l)
-      (apply_lt_one_of_mem_range_weights hx hm (h m))).ne' hl0
+      (StdSimplex.apply_lt_one_of_mem_range_weights hx hm (h m))).ne' hl0
 
 end TauCeti
