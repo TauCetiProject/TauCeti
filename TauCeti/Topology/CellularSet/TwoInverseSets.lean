@@ -96,13 +96,13 @@ private theorem exists_cell (hEF : finrank ℝ F = finrank ℝ E + 1) {z : spher
     rw [hsrc] at this
     exact this hx
 
+omit [InnerProductSpace ℝ F] in
 /-- **Unfolding one of two inverse sets.** Let `f` be continuous on a compact set `Q` of `Sⁿ`, and
 injective on `Q` off the fibres over two points `a ≠ b`. Let `k` be a map of the sphere, continuous
 and injective off a point `p ∉ f(Q)`, which is the identity near `a` and maps `f(Q)` into
 `f(Q) \ {b}`. Then `f⁻¹ ∘ k ∘ f` off the fibre over `a`, extended by the identity on that fibre,
 maps `Q` continuously into itself, is injective off the fibre over `b`, and collapses that fibre to
 one point. -/
-omit [InnerProductSpace ℝ F] in
 private theorem exists_continuousOn_mapsTo_injOn {Q : Set (sphere (0 : F) 1)} (hQ : IsCompact Q)
     {f : sphere (0 : F) 1 → sphere (0 : F) 1} (hf : ContinuousOn f Q) {a b : sphere (0 : F) 1}
     (hab : a ≠ b) (hinj : InjOn f (Q \ f ⁻¹' {a, b})) {p : sphere (0 : F) 1} (hp : p ∉ f '' Q)
