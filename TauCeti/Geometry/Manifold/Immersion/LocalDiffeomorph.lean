@@ -387,11 +387,25 @@ theorem _root_.Manifold.IsImmersionAt.adaptedChart_source :
     h.adaptedChart.source = h.codChart.source := by
   simp [IsImmersionAt.adaptedChart, PartialDiffeomorph.trans_toPartialEquiv]
 
+/-- The target of the adapted chart is the codomain chart target, read through the inverse model
+and the splitting. -/
+@[simp]
+theorem _root_.Manifold.IsImmersionAt.adaptedChart_target :
+    h.adaptedChart.target = h.equiv ⁻¹' (J.symm ⁻¹' h.codChart.target) := by
+  simp [IsImmersionAt.adaptedChart, PartialDiffeomorph.trans_toPartialEquiv]
+
 /-- The adapted chart is the extended codomain chart followed by the inverse splitting. -/
 @[simp]
 theorem _root_.Manifold.IsImmersionAt.adaptedChart_apply (y : N) :
     h.adaptedChart y = h.equiv.symm (h.codChart.extend J y) := by
   simp [IsImmersionAt.adaptedChart]
+
+/-- The inverse of the adapted chart is the splitting followed by the inverse extended codomain
+chart. -/
+@[simp]
+theorem _root_.Manifold.IsImmersionAt.adaptedChart_symm_apply (z : E × h.complement) :
+    h.adaptedChart.toPartialEquiv.symm z = h.codChart.symm (J.symm (h.equiv z)) := by
+  simp [IsImmersionAt.adaptedChart, PartialDiffeomorph.trans_toPartialEquiv]
 
 /-- The domain chart source is mapped into the source of the adapted chart. -/
 theorem _root_.Manifold.IsImmersionAt.mem_adaptedChart_source {y : M}
