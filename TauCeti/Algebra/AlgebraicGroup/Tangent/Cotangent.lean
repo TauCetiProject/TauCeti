@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.DerivationMap
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Naturality
 public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.RingTheory.Ideal.Cotangent
+public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 
 /-!
 # The cotangent space at the identity
@@ -168,6 +169,26 @@ end Map
 end Bialgebra
 
 end TauCeti
+
+namespace BialgHom
+
+/-- Over the residue field at the augmentation ideal of `K`, a bialgebra map `f : H → K` has
+kernel the augmentation ideal of `H`. -/
+theorem ker_algebraMap_residueField_eq_augmentationIdeal {k H K : Type*} [CommRing k]
+    [CommRing H] [CommRing K] [Bialgebra k H] [Bialgebra k K] [Algebra H K]
+    [(TauCeti.Bialgebra.AugmentationIdeal k K).IsMaximal] (f : H →ₐc[k] K)
+    (hf : algebraMap H K = f.toAlgHom.toRingHom) :
+    RingHom.ker (algebraMap H (TauCeti.Bialgebra.AugmentationIdeal k K).ResidueField) =
+      TauCeti.Bialgebra.AugmentationIdeal k H := by
+  ext x
+  rw [RingHom.mem_ker, IsScalarTower.algebraMap_apply H K, Ideal.algebraMap_residueField_eq_zero,
+    hf]
+  simp only [TauCeti.Bialgebra.AugmentationIdeal, RingHom.mem_ker]
+  constructor
+  · exact fun hx ↦ (CoalgHomClass.counit_comp_apply f x).symm.trans hx
+  · exact fun hx ↦ (CoalgHomClass.counit_comp_apply f x).trans hx
+
+end BialgHom
 
 namespace Derivation
 

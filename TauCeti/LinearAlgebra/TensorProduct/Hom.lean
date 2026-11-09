@@ -108,8 +108,8 @@ theorem isBaseChange_baseChangeHom (R A M N : Type*) [CommSemiring R] [CommSemir
 
 /-- A module that splits off the target of a map whose base change to `κ` is zero has zero base
 change to `κ`. -/
-theorem subsingleton_tensor_of_lTensor_eq_zero {R M N κ : Type*} [CommRing R]
-    [CommRing κ] [Algebra R κ] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+theorem subsingleton_tensor_of_lTensor_eq_zero {R M N κ : Type*} [CommSemiring R]
+    [CommSemiring κ] [Algebra R κ] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
     (c : M →ₗ[R] N) (l : N →ₗ[R] M) (hl : l ∘ₗ c = LinearMap.id) (h : c.lTensor κ = 0) :
     Subsingleton (κ ⊗[R] M) := by
   have hinjective : Function.Injective (c.lTensor κ) := by

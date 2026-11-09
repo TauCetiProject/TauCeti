@@ -114,7 +114,7 @@ theorem ker_eq_bot_of_smooth_of_connected_of_conormalSubspace_eq_bot
     rw [← hPker]
     exact P.isIdempotentElem_ker_of_subsingleton_cotangent hcotangent
   let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
-  exact eq_bot_of_isIdempotentElem _ hI_idempotent
+  exact eq_bot_of_isIdempotentElem _ (HopfIdeal.ker f).toIdeal.fg_of_isNoetherianRing hI_idempotent
 
 end HopfIdeal
 
