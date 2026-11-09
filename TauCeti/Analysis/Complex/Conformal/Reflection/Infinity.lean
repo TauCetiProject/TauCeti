@@ -264,15 +264,12 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_div_neg_inv
     have hgw : h w ^ (β : ℂ) = g w := hpow (hsH w hw)
     simp only [zero_add, cpow_neg]
     rw [hgw, hgf hw, inv_div]
-  have hne : (𝓝[s] (0 : ℂ)).NeBot := by
-    rw [hs_def, nhdsWithin_inter_of_mem (mem_nhdsWithin_of_mem_nhds (Metric.ball_mem_nhds 0 hr))]
-    simpa using Real.nhdsWithin_upperHalfPlaneSet_neBot 0
   have hcorner := tendsto_sub_mul_logDeriv_deriv_of_eqOn_add_cpow Metric.isOpen_ball
-    (Metric.mem_ball_self hr) hh hh0 hdh hs hne inter_subset_left
+    (Metric.mem_ball_self hr) hh hh0 hdh hs inter_subset_left
     (fun w hw => mem_slitPlane_iff.mpr (Or.inl (hre w hw.1 hw.2)))
     (neg_ne_zero.mpr (ofReal_ne_zero.mpr hβ.1.ne')) hpowF
   -- Pass back to the original coordinate by the pre-Schwarzian chain rule.
-  have hlim := tendsto_mul_logDeriv_deriv_of_tendsto_mul_logDeriv_deriv_neg_inv hr hb hf hfn
+  have hlim := tendsto_mul_logDeriv_deriv_of_tendsto_mul_logDeriv_deriv_neg_inv hr hb hfn
     (by simpa only [sub_zero] using hcorner)
   rwa [show -(-(β : ℂ) - 1) - 2 = (β : ℂ) - 1 by ring] at hlim
 
@@ -328,7 +325,7 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_exp_neg_inv
     rw [schwarzReflection_of_im_nonneg (le_of_lt hw.2), hgf hw]
   have hlog := tendsto_sub_mul_logDeriv_deriv_of_eqOn_exp
     (hG.analyticAt (Metric.isOpen_ball.mem_nhds hzero)) hG0 hdG hs hF hexp
-  have hlim := tendsto_mul_logDeriv_deriv_of_tendsto_mul_logDeriv_deriv_neg_inv hr hb hf hfn
+  have hlim := tendsto_mul_logDeriv_deriv_of_tendsto_mul_logDeriv_deriv_neg_inv hr hb hfn
     (by simpa only [sub_zero] using hlog)
   rwa [show -(-1 : ℂ) - 2 = -1 by ring] at hlim
 
@@ -339,7 +336,7 @@ then on `T` the residue term `w * F''(w) / F'(w)` is computed from that of `q` a
 `ζ = -1 / H w` and from `H`. -/
 private theorem mul_logDeriv_deriv_eq_of_eqOn_comp_neg_inv {F q H : ℂ → ℂ} {T : Set ℂ}
     (hq : DifferentiableOn ℂ q upperHalfPlaneSet) (hqn : ∀ z ∈ upperHalfPlaneSet, deriv q z ≠ 0)
-    (hT : IsOpen T) (hHd : DifferentiableOn ℂ H T) (hdH : ∀ w ∈ T, deriv H w ≠ 0)
+    (hT : IsOpen T) (hHd : DifferentiableOn ℂ H T)
     (hHT : ∀ w ∈ T, H w ∈ upperHalfPlaneSet)
     (hFq : EqOn F (fun w => q (-(H w)⁻¹)) T) {w : ℂ} (hw : w ∈ T) :
     w * logDeriv (deriv F) w =
@@ -368,7 +365,7 @@ private theorem mul_logDeriv_deriv_eq_of_eqOn_comp_neg_inv {F q H : ℂ → ℂ}
   have heq : deriv F =ᶠ[𝓝 w] deriv (Q ∘ H) :=
     (hFq.eventuallyEq_of_mem (hT.mem_nhds hw)).deriv
   rw [(logDeriv_congr_nhds heq).eq_of_nhds,
-    logDeriv_deriv_comp hQw (hHd.analyticAt (hT.mem_nhds hw)) hdQ (hdH w hw),
+    logDeriv_deriv_comp hQw (hHd.analyticAt (hT.mem_nhds hw)) hdQ,
     logDeriv_deriv_comp_neg_inv hqζ (hqn _ hζ) hs0, logDeriv_apply H w]
   field_simp
 
@@ -489,7 +486,7 @@ theorem tendsto_mul_logDeriv_deriv_nhdsWithin_of_eqOn_comp
   refine Tendsto.congr' ?_ (by simpa using (hfirst.mul hsimple).add hrest)
   filter_upwards [self_mem_nhdsWithin] with w hw
   simpa using (mul_logDeriv_deriv_eq_of_eqOn_comp_neg_inv hq hqn (hV.inter isOpen_upperHalfPlaneSet)
-    (hHd.mono inter_subset_left) (fun w hw => hdH w hw.1) (fun w hw => (hHT w hw.1 hw.2).1.2) hFq
+    (hHd.mono inter_subset_left) (fun w hw => (hHT w hw.1 hw.2).1.2) hFq
     (hST hw)).symm
 
 /-- **The pre-Schwarzian asymptotic at infinity is invariant under maps conformal across
@@ -504,7 +501,6 @@ This compares a far end of a domain with an explicit model map `q` whose asympto
 directly. -/
 theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_neg_inv
     {f q : ℂ → ℂ} {r : ℝ} {L : ℂ} (hr : 0 < r)
-    (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
     (hfn : ∀ z ∈ upperHalfPlaneSet, deriv f z ≠ 0)
     (hq : DifferentiableOn ℂ q upperHalfPlaneSet)
     (hqn : ∀ z ∈ upperHalfPlaneSet, deriv q z ≠ 0)
@@ -526,6 +522,6 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_neg_inv
       (𝓝[Metric.ball 0 1 ∩ upperHalfPlaneSet] 0) (𝓝 (-L - 2)) := by
     simpa using hlim.mono_left (nhdsWithin_mono _ inter_subset_right)
   simpa using tendsto_mul_logDeriv_deriv_of_tendsto_mul_logDeriv_deriv_neg_inv one_pos one_ne_zero
-    hf hfn hlim'
+    hfn hlim'
 
 end TauCeti

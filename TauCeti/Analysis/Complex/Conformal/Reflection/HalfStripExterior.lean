@@ -632,7 +632,7 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_halfStripExterior {ρ : 
   obtain ⟨r, hr, g, hgq, hg0, hcont, hholo, hreal, hupper, hinj⟩ :=
     exists_comparison_of_halfStripExterior le_rfl hb (by rwa [hT]) (by rwa [hA]) (by rwa [hA])
       (by rwa [hA]) (fun z hz => by rw [hT, hfU]; exact hU z hz)
-  exact tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_neg_inv hr hf
+  exact tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_neg_inv hr
     (fun z hz => deriv_ne_zero_of_injOn hf isOpen_upperHalfPlaneSet (hfi.mono hH0) hz)
     (differentiableOn_const_add_mul_model c b) (fun ζ hζ => deriv_const_add_mul_model_ne_zero hb hζ)
     (tendsto_mul_logDeriv_deriv_const_add_mul_model hb) hgq hg0 hcont hholo hreal hupper hinj

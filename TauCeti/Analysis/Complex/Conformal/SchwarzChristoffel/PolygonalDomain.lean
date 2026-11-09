@@ -454,7 +454,7 @@ private theorem exponent_sum_eq_of_polygonal_domain_of_tendsto
   have hform := eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain_of_tendsto a e ha
     he UpperHalfPlane.I hf hfc hfi hfU hfv hside hcorner hinfty
   have hpre := (exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_iff a e UpperHalfPlane.I
-    hf hfn).mp ⟨_, div_ne_zero (hfn _ UpperHalfPlane.I.im_pos)
+    hfn).mp ⟨_, div_ne_zero (hfn _ UpperHalfPlane.I.im_pos)
       (schwarzChristoffelIntegrand_ne_zero a e UpperHalfPlane.I.im_pos), _, hform⟩
   exact exponent_sum_eq_of_logDeriv_deriv_eqOn (fun i => (a i : ℂ)) (fun i => (e i : ℂ)) hpre
     hinfty
