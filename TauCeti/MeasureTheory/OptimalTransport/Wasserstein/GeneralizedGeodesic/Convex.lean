@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.GradientFlow.MoreauYosida.Basic
+public import TauCeti.Analysis.GradientFlow.MoreauYosida.Convex
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeodesic.Basic
 import TauCeti.Data.EReal.Operations
 
@@ -39,6 +39,11 @@ The integral is the quadratic cost of the coupling of `ν₀` and `ν₁` carrie
 (`TauCeti.GeneralizedGeodesicallyConvex.add_edist_sq_div`), so the JKO step is unique as soon as
 `1 + m τ > 0` (`TauCeti.GeneralizedGeodesicallyConvex.subsingleton_moreauYosidaResolvent`): the
 midpoint of the generalized geodesic joining two minimizers would otherwise do strictly better.
+Since `W₂ (ν₀, ν₁) ^ 2` is at most the plan cost, the same convexity holds with `W₂ (ν₀, ν₁) ^ 2`
+when `1 + m τ ≥ 0`. If `φ` is convex along generalized geodesics based at every law, it therefore
+satisfies the convexity hypothesis `TauCeti.PenalizedConvex` of the metric theory of gradient flows
+(`TauCeti.penalizedConvex_of_generalizedGeodesicallyConvex`), and JKO steps satisfy the discrete
+variational inequality of `TauCeti.Analysis.GradientFlow.MoreauYosida.Convex`.
 
 ## Main definitions
 
@@ -57,6 +62,9 @@ midpoint of the generalized geodesic joining two minimizers would otherwise do s
 * `TauCeti.GeneralizedGeodesicallyConvex.eq_of_mem_moreauYosidaResolvent` and
   `TauCeti.GeneralizedGeodesicallyConvex.subsingleton_moreauYosidaResolvent`: uniqueness of the
   JKO step when `1 + m τ > 0`.
+* `TauCeti.penalizedConvex_of_generalizedGeodesicallyConvex`: convexity along generalized geodesics
+  based at every law is the convexity hypothesis `TauCeti.PenalizedConvex` of the metric theory,
+  so JKO steps satisfy its discrete variational inequality.
 
 ## Implementation notes
 
@@ -288,6 +296,42 @@ theorem GeneralizedGeodesicallyConvex.subsingleton_moreauYosidaResolvent
   refine ne_top_of_le_ne_top ?_ (moreauYosida_le φ τ (edist_ne_top μ ν'))
   rw [coe_edist_sq_div_eq_coe_dist_sq_div hτ]
   exact EReal.add_ne_top hν' (EReal.coe_ne_top _)
+
+/-- **Convexity along generalized geodesics gives penalized convexity.** If `φ` is `m`-convex along
+generalized geodesics based at every law of `P₂(E)`, then for every time step `τ > 0` with
+`1 + m τ ≥ 0` it is penalized convex with parameter `m`: the penalized functional
+`ν ↦ φ ν + W₂ (μ, ν) ^ 2 / (2τ)` is `(m + 1 / τ)`-convex along a generalized geodesic based at `μ`.
+So JKO steps satisfy the discrete variational inequality
+`TauCeti.PenalizedConvex.apply_add_le_of_mem_moreauYosidaResolvent` and the estimates for
+minimizing movements that follow from it. -/
+theorem penalizedConvex_of_generalizedGeodesicallyConvex
+    (h : ∀ μ, GeneralizedGeodesicallyConvex m φ μ) (hτ : 0 < τ) (hmτ : 0 ≤ 1 + m * τ) :
+    PenalizedConvex m τ φ := by
+  refine penalizedConvex_def.2 fun μ ν₀ ν₁ h₀ h₁ ↦ ?_
+  have hΦ {ν : WassersteinSpace 2 E} (hν : φ ν ≠ ⊤) :
+      φ ν + ((edist μ ν ^ 2 / (2 * τ) : ℝ≥0∞) : EReal) ≠ ⊤ := by
+    rw [coe_edist_sq_div_eq_coe_dist_sq_div hτ]
+    exact EReal.add_ne_top hν (EReal.coe_ne_top _)
+  obtain ⟨γ, hγ, hconv⟩ := (h μ).add_edist_sq_div hτ (hΦ h₀) (hΦ h₁)
+  have hπ := hγ.isCoupling_snd
+  -- Select the laws along the generalized geodesic; its endpoints are `ν₀` and `ν₁`.
+  choose c hc using exists_coe_eq_generalizedGeodesic hπ
+  have hc₀ : c 0 = ν₀ := WassersteinSpace.ext <| ProbabilityMeasure.toMeasure_injective <| by
+    rw [hc, generalizedGeodesic_zero, hπ.fst_eq]
+  have hc₁ : c 1 = ν₁ := WassersteinSpace.ext <| ProbabilityMeasure.toMeasure_injective <| by
+    rw [hc, generalizedGeodesic_one, hπ.snd_eq]
+  refine ⟨c, hc₀, hc₁, convexAlong_def.2 fun t ht ↦ ?_⟩
+  have hle := hconv t ht (c t) (hc t)
+  simp only [coe_edist_sq_div_eq_coe_dist_sq_div hτ] at hle
+  rw [hc₀, hc₁]
+  refine hle.trans (EReal.sub_le_sub le_rfl (EReal.coe_le_coe_iff.2 ?_))
+  -- The plan cost bounds `W₂ (ν₀, ν₁) ^ 2`, and the convexity parameter is nonnegative.
+  have hk : 0 ≤ (m + (τ : ℝ)⁻¹) / 2 * t * (1 - t) := by
+    have hτ' : (0 : ℝ) < τ := hτ
+    have hm : m + (τ : ℝ)⁻¹ = (1 + m * τ) / τ := by field_simp; ring
+    exact mul_nonneg (mul_nonneg (div_nonneg (hm ▸ div_nonneg hmτ hτ'.le) zero_le_two) ht.1)
+      (sub_nonneg.2 ht.2)
+  exact mul_le_mul_of_nonneg_left (WassersteinSpace.dist_sq_le_integral hπ) hk
 
 end Hilbert
 

@@ -49,11 +49,9 @@ variable {A : Type} [CommRing A] [TopologicalSpace A] [DiscreteTopology A] [IsTo
 `Spa(A, A⁺)` is an open affinoid of noetherian type, the prime subring being a noetherian ring of
 definition. -/
 example :
-    ⊤ ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).noetherianAffinoidOpens := by
-  have h : spaBasicOpen Aplus ({1} : Finset A) 1 = ⊤ := by
-    ext y
-    simp [mem_spaBasicOpen, rationalSubset_singleton_one]
-  exact h ▸ spaBasicOpen_mem_noetherianAffinoidOpens P Aplus hAplus hP (isOpen_discrete _)
+    ⊤ ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).noetherianAffinoidOpens :=
+  spaBasicOpen_singleton_one Aplus ▸
+    spaBasicOpen_mem_noetherianAffinoidOpens P Aplus hAplus hP (isOpen_discrete _)
 
 /-- *locallyNoetherian_test_discrete*: over a discrete ring the open affinoids of noetherian type
 form a basis of `Spa(A, A⁺)`. -/

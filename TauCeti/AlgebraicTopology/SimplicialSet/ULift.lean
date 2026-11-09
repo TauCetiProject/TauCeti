@@ -68,6 +68,14 @@ theorem uliftFunctorHomEquiv_symm_apply {n : SimplexCategory} (f : stdSimplex.{u
     (uliftFunctorHomEquiv.{u, v} X n).symm f = yonedaEquiv.symm (ULift.up (yonedaEquiv f)) :=
   (rfl)
 
+/-- Lowering a constant map gives the constant map at the lowered vertex. -/
+@[simp]
+theorem uliftFunctorHomEquiv_const {n : ℕ} (x : (uliftFunctor.{v}.obj X) _⦋0⦌) :
+    uliftFunctorHomEquiv X ⦋n⦌ (const x) = const x.down := by
+  apply yonedaEquiv.injective
+  rw [yonedaEquiv_uliftFunctorHomEquiv]
+  rfl
+
 /-- The bijection `SSet.uliftFunctorHomEquiv` is compatible with the simplicial operators. -/
 theorem uliftFunctorHomEquiv_map_comp {m n : SimplexCategory} (g : m ⟶ n)
     (f : stdSimplex.{max u v}.obj n ⟶ uliftFunctor.{v}.obj X) :

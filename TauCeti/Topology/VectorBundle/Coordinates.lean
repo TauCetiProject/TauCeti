@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.VectorBundle.Basic
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 
 /-!
 # Changing the coordinates of a bundle homomorphism
@@ -24,7 +25,11 @@ to smoothness of inversion of continuous linear maps.
 off its coordinate expression, `ContinuousLinearMap.inCoordinates_comp` reads a composite
 of fibre maps as the composite of their coordinate expressions, and
 `ContinuousLinearMap.inCoordinates_id` and `ContinuousLinearMap.inCoordinates_smul` read the
-identity map and scalar multiples in a compatible target vector-bundle structure.
+identity map and scalar multiples in a compatible target vector-bundle structure, and
+`ContinuousLinearMap.inCoordinates_finset_sum` reads finite sums of fibre maps.
+`ContinuousLinearMap.mem_ker_inCoordinates_iff`, `ContinuousLinearMap.mem_range_inCoordinates_iff`
+and `ContinuousLinearMap.finrank_range_inCoordinates` read the kernel, the range and the rank of
+a fibre map off its coordinate expression.
 
 `VectorBundleCore.localTriv_coordChangeL` and
 `VectorBundleCore.trivializationAt_coordChangeL` identify transitions between actual
@@ -100,6 +105,12 @@ def inChartCoordinates (Z : VectorBundleCore 𝕜 B F ι) (W : VectorBundleCore 
 
 variable (Z : VectorBundleCore 𝕜 B F ι) (W : VectorBundleCore 𝕜 B G κ)
   (V : VectorBundleCore 𝕜 B H ν)
+
+/-- The chart expression of a fibre map is its composite with the transitions from the source
+chart and to the target chart. -/
+theorem inChartCoordinates_def (i : ι) (j : κ) (x : B) (ϕ : F →L[𝕜] G) :
+    Z.inChartCoordinates W i j x ϕ =
+      (W.coordChange (W.indexAt x) j x).comp (ϕ.comp (Z.coordChange i (Z.indexAt x) x)) := (rfl)
 
 @[simp] theorem inChartCoordinates_apply (i : ι) (j : κ) (x : B) (ϕ : F →L[𝕜] G) (v : F) :
     Z.inChartCoordinates W i j x ϕ v =
@@ -209,14 +220,20 @@ theorem inCoordinates_id {x₀ x : B} (hx : x ∈ (trivializationAt F V x₀).ba
   ext v
   simp [inCoordinates_eq hx hx]
 
-/-- In a target trivialization whose base set contains `y`, `inCoordinates` commutes with scalar
-multiplication by any `c : 𝕜''` from a compatible `VectorBundle 𝕜'' F' W` structure. -/
+/-- `inCoordinates` commutes with scalar multiplication by any `c : 𝕜''` from a compatible
+`VectorBundle 𝕜'' F' W` structure. Both sides vanish when `y` is outside the base set of the
+target trivialization. -/
 theorem inCoordinates_smul {𝕜'' : Type*} [NontriviallyNormedField 𝕜'']
     [NormedSpace 𝕜'' F'] [∀ y, Module 𝕜'' (W y)] [VectorBundle 𝕜'' F' W]
     [SMulCommClass 𝕜' 𝕜'' F'] {x₀ x : B} {y₀ y : B'}
     [SMulCommClass 𝕜' 𝕜'' (W y)] [ContinuousConstSMul 𝕜'' (W y)]
-    (c : 𝕜'') (ϕ : V x →SL[σ] W y) (hy : y ∈ (trivializationAt F' W y₀).baseSet) :
+    (c : 𝕜'') (ϕ : V x →SL[σ] W y) :
     inCoordinates F V F' W x₀ x y₀ y (c • ϕ) = c • inCoordinates F V F' W x₀ x y₀ y ϕ := by
+  by_cases hy : y ∈ (trivializationAt F' W y₀).baseSet
+  swap
+  · ext v
+    simp [inCoordinates, Trivialization.continuousLinearMapAt_apply,
+      Trivialization.linearMapAt_def_of_notMem _ hy]
   ext v
   simp only [inCoordinates, comp_apply, smul_apply,
     Trivialization.continuousLinearMapAt_apply_of_mem 𝕜' _ hy,
@@ -237,14 +254,32 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace F' W)]
   [FiberBundle F' W] [VectorBundle 𝕜 F' W]
 
-/-- In trivializations whose base sets contain the two fibre base points, the inverse of a
-continuous linear map between fibres reads as the inverse of its coordinate expression. No
-invertibility is assumed: both sides vanish when the map is not invertible. -/
-theorem inCoordinates_inverse {x₀ x : B} {y₀ y : B'} (ϕ : V x →L[𝕜] W y)
-    (hx : x ∈ (trivializationAt F V x₀).baseSet)
-    (hy : y ∈ (trivializationAt F' W y₀).baseSet) :
+/-- The inverse of a continuous linear map between fibres reads as the inverse of its coordinate
+expression. No invertibility is assumed: both sides vanish when the map is not invertible, and
+also when `x` or `y` lies outside the base set of the respective trivialization. -/
+theorem inCoordinates_inverse {x₀ x : B} {y₀ y : B'} (ϕ : V x →L[𝕜] W y) :
     inCoordinates F' W F V y₀ y x₀ x ϕ.inverse =
       (inCoordinates F V F' W x₀ x y₀ y ϕ).inverse := by
+  by_cases hx : x ∈ (trivializationAt F V x₀).baseSet
+  swap
+  · have h : inCoordinates F V F' W x₀ x y₀ y ϕ = 0 := by
+      ext v
+      simp [inCoordinates, hx]
+    have h' : inCoordinates F' W F V y₀ y x₀ x ϕ.inverse = 0 := by
+      ext v
+      simp [inCoordinates, Trivialization.continuousLinearMapAt_apply,
+        Trivialization.linearMapAt_def_of_notMem _ hx]
+    rw [h, h', ContinuousLinearMap.inverse_zero]
+  by_cases hy : y ∈ (trivializationAt F' W y₀).baseSet
+  swap
+  · have h : inCoordinates F V F' W x₀ x y₀ y ϕ = 0 := by
+      ext v
+      simp [inCoordinates, Trivialization.continuousLinearMapAt_apply,
+        Trivialization.linearMapAt_def_of_notMem _ hy]
+    have h' : inCoordinates F' W F V y₀ y x₀ x ϕ.inverse = 0 := by
+      ext v
+      simp [inCoordinates, hy]
+    rw [h, h', ContinuousLinearMap.inverse_zero]
   rw [inCoordinates_eq hy hx, inCoordinates_eq hx hy, inverse_equiv_comp, inverse_comp_equiv,
     ContinuousLinearEquiv.symm_symm, comp_assoc]
 
@@ -257,6 +292,59 @@ theorem isInvertible_inCoordinates_iff {x₀ x : B} {y₀ y : B'} {ϕ : V x →L
   rw [inCoordinates_eq hx hy, isInvertible_equiv_comp, isInvertible_comp_equiv]
 
 end Inverse
+
+section KerRange
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {B : Type*} [TopologicalSpace B] {B' : Type*} [TopologicalSpace B']
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  {V : B → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+  {W : B' → Type*} [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)]
+  [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace F' W)]
+  [FiberBundle F' W] [VectorBundle 𝕜 F' W]
+  {x₀ x : B} {y₀ y : B'} {ϕ : V x →L[𝕜] W y}
+
+/-- In trivializations whose base sets contain the two fibre base points, a model vector lies in
+the kernel of the coordinate expression of a fibre map exactly when the corresponding fibre
+vector lies in the kernel of the map. -/
+theorem mem_ker_inCoordinates_iff (hx : x ∈ (trivializationAt F V x₀).baseSet)
+    (hy : y ∈ (trivializationAt F' W y₀).baseSet) (v : F) :
+    v ∈ (inCoordinates F V F' W x₀ x y₀ y ϕ).ker ↔ (trivializationAt F V x₀).symm x v ∈ ϕ.ker := by
+  rw [inCoordinates_eq hx hy]
+  simp [Trivialization.continuousLinearEquivAt_symm_apply]
+
+/-- In trivializations whose base sets contain the two fibre base points, a model vector lies in
+the range of the coordinate expression of a fibre map exactly when the corresponding fibre vector
+lies in the range of the map. -/
+theorem mem_range_inCoordinates_iff (hx : x ∈ (trivializationAt F V x₀).baseSet)
+    (hy : y ∈ (trivializationAt F' W y₀).baseSet) (w : F') :
+    w ∈ (inCoordinates F V F' W x₀ x y₀ y ϕ).range ↔
+      (trivializationAt F' W y₀).symm y w ∈ ϕ.range := by
+  rw [inCoordinates_eq hx hy, ← Trivialization.continuousLinearEquivAt_symm_apply (R := 𝕜) _ _ hy]
+  simp only [LinearMap.mem_range, coe_coe, comp_apply, ContinuousLinearEquiv.coe_coe,
+    ← ContinuousLinearEquiv.eq_symm_apply]
+  -- Reindex the witness through the invertible map from the model fibre to the fibre of `V`.
+  exact (((trivializationAt F V x₀).continuousLinearEquivAt 𝕜 x hx).symm.surjective.exists
+    (p := fun u ↦ ϕ u = ((trivializationAt F' W y₀).continuousLinearEquivAt 𝕜 y hy).symm w)).symm
+
+/-- In trivializations whose base sets contain the two fibre base points, the coordinate
+expression of a fibre map has the rank of the map. -/
+theorem finrank_range_inCoordinates (hx : x ∈ (trivializationAt F V x₀).baseSet)
+    (hy : y ∈ (trivializationAt F' W y₀).baseSet) :
+    Module.finrank 𝕜 (inCoordinates F V F' W x₀ x y₀ y ϕ).range = Module.finrank 𝕜 ϕ.range := by
+  let Ly := (trivializationAt F' W y₀).continuousLinearEquivAt 𝕜 y hy
+  -- The coordinate range is the image of `range ϕ` under the trivialization of `W` at `y`.
+  have h : (inCoordinates F V F' W x₀ x y₀ y ϕ).range =
+      ϕ.range.map (Ly.toLinearEquiv : W y →ₗ[𝕜] F') := by
+    ext w
+    rw [mem_range_inCoordinates_iff hx hy, Submodule.mem_map_equiv]
+    simp [Ly, Trivialization.continuousLinearEquivAt_symm_apply]
+  rw [h, LinearEquiv.finrank_map_eq]
+
+end KerRange
 
 section Comp
 
@@ -286,5 +374,29 @@ theorem inCoordinates_comp {x₀ x : B} {y₀ y : B'} {z₀ z : B''}
   simp only [inCoordinates, comp_apply, Trivialization.symmL_continuousLinearMapAt _ hy]
 
 end Comp
+
+section Sum
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {B : Type*} [TopologicalSpace B] {B' : Type*} [TopologicalSpace B']
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  {V : B → Type*} [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+  {W : B' → Type*} [∀ x, AddCommMonoid (W x)] [∀ x, Module 𝕜 (W x)]
+  [∀ x, TopologicalSpace (W x)] [∀ x, ContinuousAdd (W x)] [TopologicalSpace (TotalSpace F' W)]
+  [FiberBundle F' W] [VectorBundle 𝕜 F' W]
+
+/-- The coordinate expression of a finite sum of fibre maps is the sum of their coordinate
+expressions. -/
+theorem inCoordinates_finset_sum {ι : Type*} (s : Finset ι) {x₀ x : B} {y₀ y : B'}
+    (ϕ : ι → V x →L[𝕜] W y) :
+    inCoordinates F V F' W x₀ x y₀ y (∑ i ∈ s, ϕ i) =
+      ∑ i ∈ s, inCoordinates F V F' W x₀ x y₀ y (ϕ i) := by
+  ext v
+  simp [inCoordinates]
+
+end Sum
 
 end ContinuousLinearMap

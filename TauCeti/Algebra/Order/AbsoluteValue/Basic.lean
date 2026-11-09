@@ -12,6 +12,8 @@ import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Fintype.Lattice
 
 /-!
 # Sums under a weakened triangle inequality
@@ -23,7 +25,8 @@ it is nonarchimedean. Iterating this inequality bounds a sum of `n` terms of siz
 
 The same inequality bounds one step of elimination with partial pivoting: subtracting from `a` the
 multiple `p / q * b` of a pivot column, whose pivot `q` dominates `b` relative to the row weights,
-costs only the factor `c` (`AbsoluteValue.apply_sub_div_mul_le`).
+costs only the factor `c` (`AbsoluteValue.apply_sub_div_mul_le`), and a maximizing pivot exists
+(`AbsoluteValue.exists_pos_forall_apply_div_le`).
 -/
 
 public section
@@ -76,5 +79,24 @@ theorem apply_sub_div_mul_le {K F : Type*} [DivisionRing K] [Field F] [LinearOrd
     _ ≤ c * (s * M) := by
         rw [map_neg_eq_map]
         exact mul_le_mul_of_nonneg_left (max_le ha hsub) hc
+
+/-- **The growth factor of one addition**: `v (a + b) ≤ 2 * max (v a) (v b)`. At a nonarchimedean
+absolute value the factor `2` can be replaced by `1` (`IsNonarchimedean`). -/
+theorem apply_add_le_two_mul_max (v : AbsoluteValue R S) (a b : R) :
+    v (a + b) ≤ 2 * max (v a) (v b) := by
+  rw [two_mul]
+  exact (v.add_le a b).trans (add_le_add (le_max_left _ _) (le_max_right _ _))
+
+/-- **Partial pivoting at one place**: a nonzero family of elements of a semiring has an index `r₀`
+maximizing `v (f r) / ν r` for positive weights `ν`, and the value there is positive. -/
+theorem exists_pos_forall_apply_div_le {ρ T : Type*} [Finite ρ]
+    [Semifield T] [LinearOrder T] [IsStrictOrderedRing T] (v : AbsoluteValue R T)
+    {f : ρ → R} (hf : ∃ r, f r ≠ 0) {ν : ρ → T} (hν : ∀ r, 0 < ν r) :
+    ∃ r₀, 0 < v (f r₀) ∧ ∀ r, v (f r) / ν r ≤ v (f r₀) / ν r₀ := by
+  obtain ⟨r₁, hr₁⟩ := hf
+  have : Nonempty ρ := ⟨r₁⟩
+  obtain ⟨r₀, hr₀⟩ := Finite.exists_max fun r ↦ v (f r) / ν r
+  exact ⟨r₀, (div_pos_iff_of_pos_right (hν r₀)).mp
+    ((div_pos (v.pos hr₁) (hν r₁)).trans_le (hr₀ r₁)), hr₀⟩
 
 end AbsoluteValue

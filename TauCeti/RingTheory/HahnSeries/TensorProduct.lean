@@ -6,8 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
+public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.RingTheory.HahnSeries.Multiplication
+
+-- Proof-only: integer support bounds and independent families.
+import Mathlib.Data.Int.Interval
+import Mathlib.LinearAlgebra.Dimension.Finite
+import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 
 /-!
 # Scalar extension and module-valued Hahn series
@@ -22,6 +29,19 @@ In particular, for a finite-dimensional vector space `V` over a field `K`, this 
 `K((t)) ⊗[K] V` with `V((t))` on Mathlib's `HahnModule ℤ K V` carrier, with its convolution
 action of scalar Laurent series. This supplies the scalar-extension interpretation of
 module-valued Laurent series used in residue duality.
+
+In arbitrary dimension the comparison is injective for free coefficients. Over a field its
+image consists exactly of series whose coefficients lie in a single finite-dimensional
+subspace. For integer exponents and free coefficients over a nontrivial commutative ring, it
+is surjective if and only if the coefficient module is finitely generated (equivalently,
+finite-dimensional over a field): a series with an independent sequence of coefficients cannot
+be a finite sum of scalar series times vectors. This distinguishes tensor currents from their
+coefficientwise completion.
+
+## References
+
+* E. Frenkel, *Langlands Correspondence for Loop Groups*, §1.3.1, for tensor currents and
+  the finite-dimensional comparison.
 -/
 
 public section
@@ -166,5 +186,127 @@ theorem _root_.TauCeti.HahnModule.linearMap_ext_smul_single_zero
   induction z using TensorProduct.inductionOn with
   | tmul a v => simpa using h a v
   | add z w hz hw => simp only [map_add, hz, hw]
+
+/-- In any basis of the coefficient module, scalar-series coordinates agree with the
+coordinates of the coefficients of the scalar-extension comparison. -/
+theorem coeff_equivFinsuppOfBasisRight {ι : Type*} [DecidableEq ι]
+    (b : Module.Basis ι R V) (z : HahnSeries Γ R ⊗[R] V) (i : ι) (g : Γ) :
+    (TensorProduct.equivFinsuppOfBasisRight b z i).coeff g =
+      b.repr (((of R).symm (tensorProductToHahnModule Γ R V z)).coeff g) i := by
+  induction z using TensorProduct.inductionOn with
+  | tmul f v => simp [mul_comm]
+  | add z w hz hw => simp [hz, hw]
+
+/-- The scalar-extension comparison is injective for free coefficient modules, without any
+finiteness assumption on a basis. -/
+theorem tensorProductToHahnModule_injective [Module.Free R V] :
+    Function.Injective (tensorProductToHahnModule Γ R V) := by
+  classical
+  let b := Module.Free.chooseBasis R V
+  intro z w h
+  apply (TensorProduct.equivFinsuppOfBasisRight b).injective
+  ext i g
+  simp only [coeff_equivFinsuppOfBasisRight, h]
+
+/-- All coefficients of a tensor current lie in one finitely generated submodule. This is the
+finite-rank obstruction to representing arbitrary vector-valued series by tensor currents. -/
+theorem exists_fg_coeff_tensorProductToHahnModule (z : HahnSeries Γ R ⊗[R] V) :
+    ∃ S : Submodule R V, S.FG ∧
+      ∀ g, ((of R).symm (tensorProductToHahnModule Γ R V z)).coeff g ∈ S := by
+  induction z using TensorProduct.inductionOn with
+  | tmul f v =>
+    refine ⟨R ∙ v, Submodule.fg_span_singleton v, fun g ↦ ?_⟩
+    simpa using Submodule.smul_mem (R ∙ v) (f.coeff g) (Submodule.mem_span_singleton_self v)
+  | add z w hz hw =>
+    obtain ⟨S, hS, hz⟩ := hz
+    obtain ⟨T, hT, hw⟩ := hw
+    refine ⟨S ⊔ T, hS.sup hT, fun g ↦ ?_⟩
+    simpa using Submodule.add_mem_sup (hz g) (hw g)
+
+end HahnModule
+
+namespace HahnModule
+
+section Field
+
+variable {Γ K V : Type*} [AddCommMonoid Γ] [PartialOrder Γ]
+  [IsOrderedCancelAddMonoid Γ] [Field K] [AddCommGroup V] [Module K V]
+
+/-- A vector-valued Hahn series comes from scalar extension exactly when all its coefficients
+lie in a single finite-dimensional subspace. -/
+theorem mem_range_tensorProductToHahnModule_iff (x : HahnModule Γ K V) :
+    x ∈ Set.range (tensorProductToHahnModule Γ K V) ↔
+      ∃ S : Submodule K V, FiniteDimensional K S ∧
+        ∀ g, ((of K).symm x).coeff g ∈ S := by
+  constructor
+  · rintro ⟨z, rfl⟩
+    obtain ⟨S, hS, hz⟩ := exists_fg_coeff_tensorProductToHahnModule z
+    exact ⟨S, (Submodule.fg_iff_finiteDimensional S).mp hS, hz⟩
+  · rintro ⟨S, hS, hx⟩
+    let := hS
+    let y : HahnSeries Γ S :=
+      { coeff := fun g ↦ ⟨((of K).symm x).coeff g, hx g⟩
+        isPWO_support' := ((of K).symm x).isPWO_support.mono (by
+          intro g hg
+          simpa only [Function.mem_support, HahnSeries.mem_support, ne_eq, Subtype.ext_iff,
+            ZeroMemClass.coe_zero]
+            using hg) }
+    obtain ⟨z, hz⟩ := (tensorProductEquiv Γ K S).surjective (of K y)
+    refine ⟨TensorProduct.map (.id : HahnSeries Γ K →ₗ[K] _) S.subtype z, ?_⟩
+    apply HahnModule.ext
+    funext g
+    rw [coeff_tensorProductToHahnModule_map, ← tensorProductEquiv_apply, hz]
+    simp [y]
+
+end Field
+
+section Ring
+
+variable {Γ R V : Type*} [AddCommMonoid Γ] [PartialOrder Γ]
+  [IsOrderedCancelAddMonoid Γ] [CommRing R] [Nontrivial R] [AddCommGroup V] [Module R V]
+
+/-- A series with an infinite independent family of coefficients is not a tensor current. -/
+theorem notMem_range_tensorProductToHahnModule_of_linearIndependent
+    {ι : Type*} [Infinite ι] (x : HahnModule Γ R V) (e : ι → Γ)
+    (h : LinearIndependent R (fun i ↦ ((of R).symm x).coeff (e i))) :
+    x ∉ Set.range (tensorProductToHahnModule Γ R V) := by
+  rintro ⟨z, rfl⟩
+  obtain ⟨S, hS, hz⟩ := exists_fg_coeff_tensorProductToHahnModule z
+  let := Module.Finite.iff_fg.mpr hS
+  exact Module.Finite.not_linearIndependent_of_infinite _ (h.codRestrict S fun i ↦ hz (e i))
+
+/-- For free coefficients over a nontrivial commutative ring, scalar extension to Laurent series
+is surjective exactly when the coefficient module is finitely generated. Over a field this is
+finite-dimensionality, with no characteristic-zero hypothesis. -/
+theorem tensorProductToHahnModule_int_surjective_iff [Module.Free R V] :
+    Function.Surjective (tensorProductToHahnModule ℤ R V) ↔ Module.Finite R V := by
+  classical
+  constructor
+  · intro hsurj
+    by_contra hfinite
+    let b := Module.Free.chooseBasis R V
+    have : Infinite (Module.Free.ChooseBasisIndex R V) := by
+      apply not_finite_iff_infinite.mp
+      intro h
+      let := h
+      exact hfinite (Module.Finite.of_basis b)
+    let e := Infinite.natEmbedding (Module.Free.ChooseBasisIndex R V)
+    let c : ℤ → V := fun n ↦ if 0 ≤ n then b (e n.toNat) else 0
+    have hc : BddBelow (Function.support c) := by
+      refine ⟨0, fun n hn ↦ ?_⟩
+      by_contra h
+      exact hn (by simp [c, h])
+    let x : HahnModule ℤ R V := of R (HahnSeries.ofSuppBddBelow c hc)
+    have hx (n : ℕ) : ((of R).symm x).coeff (n : ℤ) = b (e n) := by
+      simp [x, c]
+    have hli : LinearIndependent R (fun n : ℕ ↦ ((of R).symm x).coeff (n : ℤ)) := by
+      simpa only [hx, Function.comp_def] using b.linearIndependent.comp e e.injective
+    exact notMem_range_tensorProductToHahnModule_of_linearIndependent x
+      (fun n : ℕ ↦ (n : ℤ)) hli (hsurj x)
+  · intro h
+    let := h
+    exact (tensorProductToHahnModule_bijective_of_basis (Module.Free.chooseBasis R V)).surjective
+
+end Ring
 
 end HahnModule

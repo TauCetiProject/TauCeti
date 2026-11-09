@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Gluing
+import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
 public import Mathlib.Topology.ContinuousMap.LocallyConvex
 public import Mathlib.Topology.UniformSpace.CompactConvergence
 
@@ -22,12 +23,13 @@ For a cover, the coefficient map `TauCeti.Manifold.sectionFrameCoordinates` is a
 embedding into the product of weak Whitney coefficient spaces. Its image consists exactly
 of tuples satisfying the actual bundle transition law, as proved in `Section.Gluing`.
 Thus this topology retains the gluing equations when taking coefficient limits.
-Point evaluation is continuous, and the section space is Hausdorff.
+Point evaluation is continuous, and the section space is Hausdorff. When the source model is
+locally compact, evaluation is jointly continuous in the section and base point.
 
 The topology is supplied explicitly, rather than installed globally, since the frame domains
-are parameters. The results here concern a specified family of frame domains; no comparison
-between different covers or completeness assertion is made. Neither compactness nor finite
-dimensionality is needed, and the chart derivatives allow manifolds with corners.
+are parameters. The results here concern a specified family of frame domains. Cover comparison
+and continuity of open restriction are proved in `Section.FrameCover`; completeness is separate.
+Neither compactness nor finite dimensionality is needed, and chart derivatives allow corners.
 
 ## References
 
@@ -86,6 +88,12 @@ specified frame domains. For smooth sections, all finite derivative orders are i
 @[instance_reducible]
 def frameTopology : TopologicalSpace Cₛ^n⟮I; F, V⟯ :=
   .induced (frameJet (I := I) e U hU) inferInstance
+
+/-- The frame topology is the topology induced by the existing native frame jet. -/
+theorem frameTopology_eq_induced_frameJet :
+    frameTopology (I := I) (n := n) e U hU =
+      TopologicalSpace.induced (frameJet (I := I) (n := n) e U hU) inferInstance := by
+  rfl
 
 /-- A section family is continuous exactly when all its frame-coordinate chart jets are
 continuous in the compact-open topology. -/
@@ -227,6 +235,37 @@ theorem continuous_eval_const (hcover : ∀ x, ∃ i, x ∈ U i) (x : M) :
   let _ := frameTopology (I := I) (n := n) e U hU
   obtain ⟨i, hi⟩ := hcover x
   exact continuous_eval_const_of_mem e U hU i hi
+
+section Evaluation
+
+variable [LocallyCompactSpace E]
+
+/-- Evaluation of a section is continuous jointly in the section and the base point, for a
+covering frame system and the compact derivative topology. -/
+theorem continuous_totalSpace_eval (hcover : ∀ x, ∃ i, x ∈ U i) :
+    let _ := frameTopology (I := I) (n := n) e U hU
+    Continuous (fun p : Cₛ^n⟮I; F, V⟯ × M ↦ TotalSpace.mk' F p.2 (p.1 p.2)) := by
+  let _ := frameTopology (I := I) (n := n) e U hU
+  have hlocal (i : ι) : Continuous (fun p : Cₛ^n⟮I; F, V⟯ × U i ↦
+      TotalSpace.mk' F (p.2 : M) (p.1 p.2)) := by
+    have hc : Continuous (fun p : Cₛ^n⟮I; F, V⟯ × U i ↦
+        ((e i).frameCoordinates (hU i) p.1) p.2) :=
+      ContMDiffMap.continuous_eval_manifoldWeakWhitney.comp
+        (((continuous_frameCoordinates e U hU i).comp continuous_fst).prodMk continuous_snd)
+    have ht := (e i).continuousOn_symm.comp_continuous
+      ((continuous_subtype_val.comp continuous_snd).prodMk hc)
+      (fun p ↦ ⟨hU i p.2.property, Set.mem_univ _⟩)
+    exact ht.congr fun p ↦ by
+      simp only [Function.comp_apply, Trivialization.frameCoordinates_apply,
+        Trivialization.symm_apply_apply_mk _ (hU i p.2.property)]
+  refine continuous_iff_continuousAt.mpr fun ⟨s, x⟩ ↦ ?_
+  obtain ⟨i, hi⟩ := hcover x
+  apply ((IsOpenEmbedding.id.prodMap (U i).isOpen.isOpenEmbedding_subtypeVal).continuousAt_iff
+    (g := fun p : Cₛ^n⟮I; F, V⟯ × M ↦ TotalSpace.mk' F p.2 (p.1 p.2))
+    (x := (s, ⟨x, hi⟩))).mp
+  exact (hlocal i).continuousAt
+
+end Evaluation
 
 end Coefficients
 

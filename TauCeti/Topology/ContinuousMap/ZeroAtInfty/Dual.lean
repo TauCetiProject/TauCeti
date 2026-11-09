@@ -74,16 +74,16 @@ end LpInfty
 
 variable {𝕜 ι : Type*} [TopologicalSpace ι] [DiscreteTopology ι]
 
-section NormedField
+section SeminormedCommRing
 
-variable [NormedField 𝕜] [DecidableEq ι]
+variable [SeminormedCommRing 𝕜] [DecidableEq ι]
 
 /-- Every continuous linear functional on `C₀(ι, 𝕜)` is given by its coordinate series. -/
 theorem hasSum_apply_single_one_mul (Λ : StrongDual 𝕜 C₀(ι, 𝕜)) (f : C₀(ι, 𝕜)) :
     HasSum (fun i ↦ Λ (single i 1) * f i) (Λ f) := by
   simpa [mul_comm] using (hasSum_smul_single_one f).mapL Λ
 
-end NormedField
+end SeminormedCommRing
 
 section RCLike
 

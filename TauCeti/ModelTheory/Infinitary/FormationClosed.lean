@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.Infinitary.Fragment
+public import TauCeti.ModelTheory.Infinitary.NegationClosed
 public import TauCeti.ModelTheory.Infinitary.Symbols
 import Mathlib.ModelTheory.Encoding
 import TauCeti.ModelTheory.Basic
@@ -30,8 +30,12 @@ give a member), and it is not imposed because nothing built on formation-closed 
 uses it.
 
 Unlike a fragment, a formation-closed fragment determines the size of the language: every function
-and relation symbol occurs in an atomic member. So the formation closure of a countable set is
-countable exactly over languages with countably many function and relation symbols.
+and relation symbol occurs in an atomic member. So a formation-closed fragment has at least as many
+members as there are function symbols, and at least as many as there are relation symbols, and the
+formation closure of a countable set is countable exactly over languages with countably many
+function and relation symbols. A formation-closed fragment is also infinite, whatever the
+language: formulas are tagged with their arity, so the members `⊥` at different arities are
+distinct.
 
 ## Main definitions
 
@@ -46,9 +50,17 @@ countable exactly over languages with countably many function and relation symbo
   `FirstOrder.Language.Fragment.FormationClosed.ex_mem`,
   `FirstOrder.Language.Fragment.FormationClosed.alls_mem` and their companions: the derived
   connectives and quantifier closures of members are members.
+* `FirstOrder.Language.Fragment.FormationClosed.negationClosed` and
+  `FirstOrder.Language.Fragment.negationClosure_le_formationClosure`: a formation-closed fragment
+  is negation-closed, so the negation closure lies below the formation closure.
 * `FirstOrder.Language.Fragment.formationClosure_le_iff`: leastness of the formation closure.
 * `FirstOrder.Language.Fragment.formationClosure_countable`: over a language with countably many
   function and relation symbols, a countable set has a countable formation closure.
+* `FirstOrder.Language.Fragment.FormationClosed.aleph0_le_mk`: a formation-closed fragment is
+  infinite.
+* `FirstOrder.Language.Fragment.FormationClosed.lift_mk_functions_le` and
+  `FirstOrder.Language.Fragment.FormationClosed.lift_mk_relations_le`: a formation-closed fragment
+  has at least as many members as there are function symbols, and as there are relation symbols.
 * `FirstOrder.Language.Fragment.FormationClosed.countable_functions` and
   `FirstOrder.Language.Fragment.FormationClosed.countable_relations`: conversely, a countable
   formation-closed fragment forces countably many function and relation symbols.
@@ -142,6 +154,10 @@ theorem not_mem_iff {φ : L.BoundedFormulaω Empty n} :
       (⟨n, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A :=
   hA.imp_mem_iff.trans (and_iff_left (hA.bot_mem n))
 
+/-- A formation-closed fragment is negation-closed. -/
+theorem negationClosed : A.NegationClosed :=
+  ⟨hA.not_mem_iff.2⟩
+
 /-- `⊤` is a member of a formation-closed fragment at every arity. -/
 @[simp]
 theorem top_mem (n : ℕ) : (⟨n, ⊤⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A := by
@@ -162,6 +178,14 @@ theorem inf_mem {φ ψ : L.BoundedFormulaω Empty n}
     (hψ : (⟨n, ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) :
     (⟨n, φ ⊓ ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A :=
   hA.inf_mem_iff.2 ⟨hφ, hψ⟩
+
+/-- A finite conjunction of members of a formation-closed fragment is a member. -/
+theorem foldr_inf_mem (l : List (L.BoundedFormulaω Empty n))
+    (h : ∀ φ ∈ l, (⟨n, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) :
+    (⟨n, l.foldr (· ⊓ ·) ⊤⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A := by
+  induction l with
+  | nil => exact hA.top_mem n
+  | cons φ l ih => exact hA.inf_mem (h φ (by simp)) (ih fun ψ hψ => h ψ (by simp [hψ]))
 
 /-- A disjunction belongs to a formation-closed fragment exactly when both disjuncts do. -/
 @[simp]
@@ -224,6 +248,14 @@ theorem exs_mem {φ : L.BoundedFormulaω Empty n}
   | zero => rwa [exs_zero]
   | succ n ih => rw [exs_succ]; exact ih (hA.ex_mem h)
 
+/-- Existentially quantifying the last positions of a member leaves a member. -/
+theorem exsLast_mem {k : ℕ} {φ : L.BoundedFormulaω Empty (n + k)}
+    (h : (⟨n + k, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) :
+    (⟨n, φ.exsLast⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A := by
+  induction k with
+  | zero => simpa only [exsLast_zero, Nat.add_zero] using h
+  | succ k ih => simpa only [exsLast_succ] using ih (hA.ex_mem h)
+
 /-- Weakening a member of a formation-closed fragment to more bound positions gives a member. -/
 theorem castLE_mem {m : ℕ} {φ : L.BoundedFormulaω Empty m} (hmn : m ≤ n)
     (h : (⟨m, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) :
@@ -231,29 +263,58 @@ theorem castLE_mem {m : ℕ} {φ : L.BoundedFormulaω Empty m} (hmn : m ≤ n)
   rw [castLE_def]
   exact hA.mapBound_mem _ h
 
+open Cardinal in
+/-- **A formation-closed fragment is infinite.** It contains `⊥` at every arity, and these
+members are distinct because each formula is tagged with its arity. -/
+theorem aleph0_le_mk : ℵ₀ ≤ #A := by
+  have h : Function.Injective fun n : ℕ => (⟨⟨n, ⊥⟩, hA.bot_mem n⟩ : A) := fun m n h => by
+    simpa using congrArg (fun p : A => p.1.1) h
+  simpa using lift_mk_le_lift_mk_of_injective h
+
+open Cardinal in
+/-- **The function symbols are absorbed by a formation-closed fragment.** There are at most as many
+function symbols as members: a symbol `f` of arity `l` is recovered from the atomic member
+`f(x₀, …, xₗ₋₁) = f(x₀, …, xₗ₋₁)`. -/
+theorem lift_mk_functions_le : lift.{v} #(Σ l, L.Functions l) ≤ #A := by
+  -- the term applying a function symbol to its bound positions
+  let t : (Σ l, L.Functions l) → Σ l, L.Term (Empty ⊕ Fin l) :=
+    fun f => ⟨f.1, .func f.2 fun i => .var (.inr i)⟩
+  have h : Function.Injective fun f : Σ l, L.Functions l =>
+      (⟨⟨f.1, equal (t f).2 (t f).2⟩, hA.atomic_mem (.equal _ _)⟩ : A) := by
+    rintro ⟨l, f⟩ ⟨l', f'⟩ h
+    simp only [t, Subtype.mk.injEq, Sigma.mk.inj_iff] at h
+    obtain ⟨rfl, h⟩ := h
+    simp_all
+  have h' := lift_mk_le_lift_mk_of_injective h
+  rwa [lift_umax.{u, v}, lift_id'.{u, v}] at h'
+
+open Cardinal in
 /-- A countable formation-closed fragment forces countably many function symbols: each occurs in
 an atomic member. -/
 theorem countable_functions (hc : (A : Set (Σ n, L.BoundedFormulaω Empty n)).Countable) :
-    Countable (Σ l, L.Functions l) := by
-  have h : (Set.univ : Set (Σ l, L.Functions l)) ⊆
-      ⋃ p ∈ (A : Set (Σ n, L.BoundedFormulaω Empty n)), p.2.functionsIn := by
-    rintro ⟨l, f⟩ -
-    let t : L.Term (Empty ⊕ Fin l) := .func f fun i => .var (.inr i)
-    refine Set.mem_iUnion₂.2 ⟨⟨l, equal t t⟩, hA.atomic_mem (.equal t t), ?_⟩
-    simp [t, Term.functionsIn_func]
-  exact Set.countable_univ_iff.1 ((hc.biUnion fun p _ => p.2.functionsIn_countable).mono h)
+    Countable (Σ l, L.Functions l) :=
+  mk_le_aleph0_iff.1 (lift_le_aleph0.1 (hA.lift_mk_functions_le.trans hc.le_aleph0))
 
+open Cardinal in
+/-- **The relation symbols are absorbed by a formation-closed fragment.** There are at most as many
+relation symbols as members: a symbol `R` of arity `l` is recovered from the atomic member
+`R(x₀, …, xₗ₋₁)`. -/
+theorem lift_mk_relations_le : lift.{u} #(Σ l, L.Relations l) ≤ #A := by
+  have h : Function.Injective fun R : Σ l, L.Relations l =>
+      (⟨⟨R.1, rel R.2 fun i => .var (.inr i)⟩, hA.atomic_mem (.rel _ _)⟩ : A) := by
+    rintro ⟨l, R⟩ ⟨l', R'⟩ h
+    simp only [Subtype.mk.injEq, Sigma.mk.inj_iff] at h
+    obtain ⟨rfl, h⟩ := h
+    simp_all
+  have h' := lift_mk_le_lift_mk_of_injective h
+  rwa [lift_umax.{v, u}, lift_id'.{v, u}] at h'
+
+open Cardinal in
 /-- A countable formation-closed fragment forces countably many relation symbols: each occurs in
 an atomic member. -/
 theorem countable_relations (hc : (A : Set (Σ n, L.BoundedFormulaω Empty n)).Countable) :
-    Countable (Σ l, L.Relations l) := by
-  have h : (Set.univ : Set (Σ l, L.Relations l)) ⊆
-      ⋃ p ∈ (A : Set (Σ n, L.BoundedFormulaω Empty n)), p.2.relationsIn := by
-    rintro ⟨l, R⟩ -
-    refine Set.mem_iUnion₂.2
-      ⟨⟨l, rel R fun i => .var (.inr i)⟩, hA.atomic_mem (.rel R _), ?_⟩
-    simp
-  exact Set.countable_univ_iff.1 ((hc.biUnion fun p _ => p.2.relationsIn_countable).mono h)
+    Countable (Σ l, L.Relations l) :=
+  mk_le_aleph0_iff.1 (lift_le_aleph0.1 (hA.lift_mk_relations_le.trans hc.le_aleph0))
 
 end FormationClosed
 
@@ -321,6 +382,12 @@ theorem formationClosure_mono {S T : Set (Σ n, L.BoundedFormulaω Empty n)} (h 
 theorem generated_le_formationClosure (S : Set (Σ n, L.BoundedFormulaω Empty n)) :
     generated S ≤ formationClosure S :=
   generated_le_iff.2 (subset_formationClosure S)
+
+/-- The negation closure of `S` lies below its formation closure. -/
+theorem negationClosure_le_formationClosure (S : Set (Σ n, L.BoundedFormulaω Empty n)) :
+    negationClosure S ≤ formationClosure S :=
+  (negationClosure_le_iff (formationClosed_formationClosure S).negationClosed).2
+    (subset_formationClosure S)
 
 /-- A formation-closed fragment is its own formation closure. -/
 theorem FormationClosed.formationClosure_eq {A : Fragment L} (hA : A.FormationClosed) :

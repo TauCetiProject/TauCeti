@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+public import Mathlib.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Topology.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
 /-!
@@ -48,6 +50,11 @@ makes `f *ᵖ E` when `E` is one.
 
 * D. Husemoller, *Fibre Bundles*, 3rd ed., Graduate Texts in Mathematics 20, Springer, 1994,
   Chapter 2 (induced bundles).
+
+The native Hom section between two pullbacks by the same map is `Cⁿ` exactly when its original
+Hom field along that map is `Cⁿ` (`Bundle.Pullback.contMDiff_hom_section_iff`). This dictionary
+requires neither finite rank nor a smooth bundle structure on the fibres.
+
 -/
 
 public section
@@ -215,3 +222,54 @@ theorem _root_.IsLocalDiffeomorph.contMDiff_section_iff_pullback {f : K}
   exact ((hf x).contMDiffAt_section_iff_pullback hm).2 (h x)
 
 end Bundle.Pullback
+
+section HomSection
+
+open Bundle
+
+variable {𝕜 B X F G K EB HB EX HX : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [TopologicalSpace HB]
+  {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B] [ChartedSpace HB B]
+  [NormedAddCommGroup EX] [NormedSpace 𝕜 EX] [TopologicalSpace HX]
+  {IX : ModelWithCorners 𝕜 EX HX} [TopologicalSpace X] [ChartedSpace HX X]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {V W : B → Type*}
+  [∀ b, AddCommGroup (V b)] [∀ b, Module 𝕜 (V b)] [∀ b, TopologicalSpace (V b)]
+  [∀ b, AddCommGroup (W b)] [∀ b, Module 𝕜 (W b)] [∀ b, TopologicalSpace (W b)]
+  [∀ b, IsTopologicalAddGroup (W b)] [∀ b, ContinuousSMul 𝕜 (W b)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+  [TopologicalSpace (TotalSpace G W)] [FiberBundle G W] [VectorBundle 𝕜 G W]
+  [FunLike K X B] [ContinuousMapClass K X B] {n : WithTop ℕ∞}
+
+/-- A section of Hom between two pullbacks is `Cⁿ` exactly when its field of maps along the
+base map is `Cⁿ` in the original hom bundle. No rank or smooth-bundle assumption is needed. -/
+theorem Bundle.Pullback.contMDiff_hom_section_iff (f : K) (hf : ContMDiff IX IB n f)
+    (A : ∀ x, V (f x) →L[𝕜] W (f x)) :
+    ContMDiff IX (IX.prod 𝓘(𝕜, F →L[𝕜] G)) n
+        (fun x ↦ TotalSpace.mk' (F →L[𝕜] G)
+          (E := fun x ↦ ((f : X → B) *ᵖ V) x →L[𝕜] ((f : X → B) *ᵖ W) x) x (A x)) ↔
+      ContMDiff IX (IB.prod 𝓘(𝕜, F →L[𝕜] G)) n
+        (fun x ↦ TotalSpace.mk' (F →L[𝕜] G)
+          (E := fun b ↦ V b →L[𝕜] W b) (f x) (A x)) := by
+  have heq (x : X) :
+      (fun y ↦ ContinuousLinearMap.inCoordinates F ((f : X → B) *ᵖ V)
+        G ((f : X → B) *ᵖ W) x y x y (A y)) =ᶠ[nhds x]
+      (fun y ↦ ContinuousLinearMap.inCoordinates F V G W (f x) (f y) (f x) (f y) (A y)) := by
+    filter_upwards [hf.continuous.continuousAt.preimage_mem_nhds
+      ((trivializationAt F V (f x)).open_baseSet.mem_nhds
+        (FiberBundle.mem_baseSet_trivializationAt F V (f x))),
+      hf.continuous.continuousAt.preimage_mem_nhds
+      ((trivializationAt G W (f x)).open_baseSet.mem_nhds
+        (FiberBundle.mem_baseSet_trivializationAt G W (f x)))] with y hyV hyW
+    exact ContinuousLinearMap.inCoordinates_pullback_of_mem f f x y (A y) hyV hyW
+  constructor
+  · intro h x
+    have hx := (contMDiffAt_hom_bundle _).mp (h x)
+    rw [contMDiffAt_hom_bundle]
+    exact ⟨hf x, hx.2.congr_of_eventuallyEq (heq x).symm⟩
+  · intro h x
+    have hx := (contMDiffAt_hom_bundle _).mp (h x)
+    rw [contMDiffAt_hom_bundle]
+    exact ⟨contMDiffAt_id, hx.2.congr_of_eventuallyEq (heq x)⟩
+
+end HomSection

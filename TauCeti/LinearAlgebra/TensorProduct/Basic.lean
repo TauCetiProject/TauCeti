@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Associator
+public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.LinearAlgebra.TensorProduct.Lift
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import Mathlib.RingTheory.TensorProduct.Basic
@@ -18,7 +19,8 @@ contraction against a linear functional on the right factor, bundled as a linear
 functional, and records its behavior on pure tensors and under tensor-product maps.
 Such contractions extract coordinates and test tensor identities, supporting componentwise
 arguments about coactions and weight spaces. The file also proves the tensor identity that makes
-the Casimir element of a trace commute with multiplication.
+the Casimir element of a trace commute with multiplication, and writes every tensor as a sum of
+pure tensors over a finite spanning family of the right factor.
 
 ## Main declarations
 
@@ -39,6 +41,8 @@ the Casimir element of a trace commute with multiplication.
 * `LinearMap.rid_rTensor_apply`: naturality of the right tensor unitor.
 * `LinearMap.sum_mul_tmul_eq_sum_tmul_mul`: the Casimir element of a trace commutes with
   multiplication.
+* `TensorProduct.exists_eq_sum_tmul_of_span_eq_top`: over a finite spanning family of the right
+  factor, every tensor is a sum of pure tensors with those right factors.
 
 ## References
 
@@ -274,3 +278,50 @@ theorem sum_mul_tmul_eq_sum_tmul_mul {ι : Type*} [Fintype ι] (φ : A →ₗ[k]
 end Casimir
 
 end LinearMap
+
+namespace TensorProduct
+
+variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module R N]
+
+/-- If a finite family `n` spans `N`, then every element of `M ⊗[R] N` is `∑ j, mⱼ ⊗ nⱼ` for some
+family `m` of elements of `M`. -/
+theorem exists_eq_sum_tmul_of_span_eq_top {κ : Type*} [Fintype κ] {n : κ → N}
+    (hn : Submodule.span R (Set.range n) = ⊤) (x : M ⊗[R] N) :
+    ∃ m : κ → M, x = ∑ j, m j ⊗ₜ[R] n j := by
+  induction x with
+  | tmul a y =>
+    obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun R).1
+      (hn ▸ Submodule.mem_top : y ∈ Submodule.span R (Set.range n))
+    exact ⟨fun j ↦ c j • a, by simp [tmul_sum, smul_tmul]⟩
+  | add x y hx hy =>
+    obtain ⟨m, rfl⟩ := hx
+    obtain ⟨m', rfl⟩ := hy
+    exact ⟨m + m', by simp [add_tmul, Finset.sum_add_distrib]⟩
+
+/-- Splitting `F ⊗ F - id - (D ⊗ id + id ⊗ D)` into the terms in which one factor is the defect
+`F - id - D` and the term `(F - id) ⊗ (F - id)` in which both factors move. -/
+theorem map_sub_sub_add_eq {R : Type*} [CommSemiring R] {P : Type*} [AddCommGroup P] [Module R P]
+    (F D : P →ₗ[R] P) (w : P ⊗[R] P) :
+    TensorProduct.map F F w - w - (LinearMap.rTensor _ D w + LinearMap.lTensor _ D w) =
+      TensorProduct.map (F - LinearMap.id - D) LinearMap.id w +
+        TensorProduct.map LinearMap.id (F - LinearMap.id - D) w +
+        TensorProduct.map (F - LinearMap.id) (F - LinearMap.id) w := by
+  have hr : TensorProduct.map (F - LinearMap.id) (LinearMap.id (M := P)) =
+      TensorProduct.map (F - LinearMap.id - D) LinearMap.id + TensorProduct.map D LinearMap.id := by
+    rw [← TensorProduct.map_add_left]
+    congr 1
+    abel
+  have hl : TensorProduct.map (LinearMap.id (M := P)) (F - LinearMap.id) =
+      TensorProduct.map LinearMap.id (F - LinearMap.id - D) + TensorProduct.map LinearMap.id D := by
+    rw [← TensorProduct.map_add_right]
+    congr 1
+    abel
+  conv_lhs => rw [← add_sub_cancel LinearMap.id F]
+  rw [TensorProduct.map_add_left, TensorProduct.map_add_right, TensorProduct.map_add_right,
+    TensorProduct.map_id, hr, hl]
+  simp only [LinearMap.add_apply, LinearMap.id_apply, LinearMap.rTensor_def,
+    LinearMap.lTensor_def]
+  abel
+
+end TensorProduct

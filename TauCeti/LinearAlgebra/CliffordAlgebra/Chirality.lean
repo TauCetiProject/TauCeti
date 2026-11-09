@@ -62,7 +62,11 @@ Finally, `Γ` is natural: an isometry of the quadratic forms that carries `o` to
 chirality element of `o` to that of `o'`. Hence a map of Clifford modules that intertwines the
 generators along an orientation-preserving isometry intertwines the chirality elements, and an
 equivalence doing so restricts to the positive half-spinors. These are the frame changes and
-`Spinᶜ` transformations under which the Seiberg–Witten equations are invariant.
+`Spinᶜ` transformations under which the Seiberg–Witten equations are invariant. The same holds for
+a semilinear map commuting with the generators whose twist fixes the real scalars, such as a
+conjugate-linear map of complex Clifford modules; a conjugate-linear isometric equivalence of
+Hermitian Clifford modules thus restricts to the positive half-spinors, as charge conjugation of
+spinors does.
 
 ## Main definitions
 
@@ -71,6 +75,9 @@ equivalence doing so restricts to the positive half-spinors. These are the frame
   of `Γ` acting on a Clifford module `ρ : CliffordAlgebra Q → End_K W`.
 * `CliffordAlgebra.positiveHalfSpinorsEquiv o ρ o' ρ' U hU`: the restriction `W⁺ ≃ W'⁺` of an
   equivalence of Clifford modules `U` that intertwines the chirality elements.
+* `CliffordAlgebra.positiveHalfSpinorsConjEquiv o ρ ρ' j hj`: the restriction `W⁺ ≃ W'⁺` of a
+  conjugate-linear isometric equivalence `j` of Hermitian Clifford modules commuting with the
+  generators.
 
 ## Main results
 
@@ -113,6 +120,8 @@ equivalence doing so restricts to the positive half-spinors. These are the frame
   forms sends the chirality element of `o` to that of the transported orientation.
 * `CliffordAlgebra.comp_chirality_eq_chirality_comp`: a map of Clifford modules intertwining the
   generators along an orientation-preserving linear isometry intertwines the chirality elements.
+* `CliffordAlgebra.map_mem_positiveHalfSpinors`: a semilinear map of Clifford modules commuting
+  with the generators, whose twist fixes the real scalars, preserves the positive half-spinors.
 
 ## References
 
@@ -228,11 +237,8 @@ omit hQ in
 even elements and anticommutes with odd ones. -/
 theorem chirality_mul (x : CliffordAlgebra Q) :
     chirality Q o * x = involute x * chirality Q o := by
-  induction x using CliffordAlgebra.induction with
-  | algebraMap r => rw [AlgHom.commutes, Algebra.commutes]
-  | ι v => rw [chirality_mul_ι o, involute_ι, neg_mul]
-  | mul a b ha hb => rw [← mul_assoc, ha, mul_assoc, hb, ← mul_assoc, map_mul]
-  | add a b ha hb => rw [mul_add, ha, hb, map_add, add_mul]
+  rw [chirality_eq_neg_volumeElement, neg_mul, mul_neg,
+    volumeElement_mul_eq_involute_mul o (by decide)]
 
 omit hQ in
 /-- **Even Clifford elements commute with the chirality element.** -/
@@ -324,6 +330,57 @@ theorem bivectorExterior_mul_chirality_of_hodgeStar_eq_self (hkl : 2 + 2 = finra
 
 /-! ### The anticommutator of two two-forms -/
 
+/-- `e_s` anticommutes with the generators `c(e_i)` it contains. -/
+private theorem basis_frame_mul_ι_of_mem (s : powersetCard (Fin 4) 2) {i : Fin 4}
+    (hi : i ∈ s.val) : basis Q (frame o).toBasis s * ι Q (frame o i) =
+      -(ι Q (frame o i) * basis Q (frame o).toBasis s) := by
+  rw [← OrthonormalBasis.coe_toBasis, basis_mul_ι_of_mem ((frame o).isOrthoᵢ_associated hQ) hi,
+    powersetCard.mem_iff.1 s.2]
+  simp
+
+/-- `e_s` commutes with the generators `c(e_i)` it does not contain. -/
+private theorem basis_frame_mul_ι_of_notMem (s : powersetCard (Fin 4) 2) {i : Fin 4}
+    (hi : i ∉ s.val) : basis Q (frame o).toBasis s * ι Q (frame o i) =
+      ι Q (frame o i) * basis Q (frame o).toBasis s := by
+  rw [← OrthonormalBasis.coe_toBasis, basis_mul_ι_of_notMem ((frame o).isOrthoᵢ_associated hQ) hi,
+    powersetCard.mem_iff.1 s.2]
+  simp
+
+/-- `e_t` commutes with `e_s` when `s` and `t` are disjoint, since each generator of `e_t` is
+absent from `s`. -/
+private theorem basis_frame_mul_comm_of_disjoint {s t : powersetCard (Fin 4) 2}
+    (hdisj : Disjoint s.val t.val) :
+    basis Q (frame o).toBasis t * basis Q (frame o).toBasis s =
+      basis Q (frame o).toBasis s * basis Q (frame o).toBasis t := by
+  obtain ⟨k, l, hmem, ht⟩ := exists_basis_eq_ι_mul ((frame o).isOrthoᵢ_associated hQ) t
+  rw [OrthonormalBasis.coe_toBasis] at ht
+  have hk : k ∉ s.val := Finset.disjoint_right.1 hdisj ((hmem k).2 (Or.inl rfl))
+  have hl : l ∉ s.val := Finset.disjoint_right.1 hdisj ((hmem l).2 (Or.inr rfl))
+  rw [ht, mul_assoc, ← basis_frame_mul_ι_of_notMem o hQ s hl, ← mul_assoc,
+    ← basis_frame_mul_ι_of_notMem o hQ s hk, mul_assoc]
+
+/-- `e_s` anticommutes with `e_t` when `t` shares exactly one index with `s`. -/
+private theorem basis_frame_mul_anticomm_of_one_shared {s t : powersetCard (Fin 4) 2}
+    (hts : ¬ t.val ⊆ s.val) (hdisj : ¬ Disjoint s.val t.val) :
+    basis Q (frame o).toBasis s * basis Q (frame o).toBasis t =
+      -(basis Q (frame o).toBasis t * basis Q (frame o).toBasis s) := by
+  obtain ⟨k, l, hmem, ht⟩ := exists_basis_eq_ι_mul ((frame o).isOrthoᵢ_associated hQ) t
+  rw [OrthonormalBasis.coe_toBasis] at ht
+  -- `t` shares exactly one index `i` with `s`; let `j` be the other one. Then `e_s` anticommutes
+  -- with `c(e_i)` and commutes with `c(e_j)`, so it anticommutes with `e_t`.
+  obtain ⟨j, hjt, hjs⟩ := Finset.not_subset.1 hts
+  obtain ⟨i, his, hit⟩ := Finset.not_disjoint_iff.1 hdisj
+  have hi : SemiconjBy (basis Q (frame o).toBasis s) (ι Q (frame o i)) (-ι Q (frame o i)) := by
+    rw [SemiconjBy, basis_frame_mul_ι_of_mem o hQ s his, neg_mul]
+  have hj : SemiconjBy (basis Q (frame o).toBasis s) (ι Q (frame o j)) (ι Q (frame o j)) :=
+    basis_frame_mul_ι_of_notMem o hQ s hjs
+  rw [ht]
+  rcases (hmem i).1 hit with rfl | rfl <;> rcases (hmem j).1 hjt with rfl | rfl
+  · exact absurd his hjs
+  · rw [(hi.mul_right hj).eq, neg_mul, neg_mul]
+  · rw [(hj.mul_right hi).eq, mul_neg, neg_mul]
+  · exact absurd his hjs
+
 /-- The anticommutator formula on the orthonormal basis `e_s` of `⋀² V` induced by the frame. -/
 private theorem bivectorExterior_basis_mul_add_swap (hkl : 2 + 2 = finrank ℝ V)
     (s t : powersetCard (Fin 4) 2) :
@@ -337,81 +394,43 @@ private theorem bivectorExterior_basis_mul_add_swap (hkl : 2 + 2 = finrank ℝ V
           (frame o).toBasis.exteriorPower 2 t⟫) • chirality Q o := by
   have hcard : 2 + 2 = Fintype.card (Fin 4) := rfl
   -- The basis `e_s` is orthonormal, and `⋆ e_s = ε e_{sᶜ}`.
-  have hinner : ∀ u v : powersetCard (Fin 4) 2,
-      ⟪(frame o).toBasis.exteriorPower 2 u, (frame o).toBasis.exteriorPower 2 v⟫ =
-        if u = v then 1 else 0 := fun u v ↦ by
-    rw [← OrthonormalBasis.toBasis_exteriorPower, OrthonormalBasis.coe_toBasis,
-      OrthonormalBasis.inner_eq_ite]
   rw [o.hodgeStar_basis (frame o) (frame_orientation o) hkl s, Units.smul_def,
-    ← Int.cast_smul_eq_zsmul ℝ, real_inner_smul_left, hinner, hinner,
-    bivectorExterior_exteriorPower_basis, bivectorExterior_exteriorPower_basis]
-  -- Write `e_t = c(e_k) c(e_l)`, where `t = {k, l}`.
-  obtain ⟨k, l, hsort⟩ := List.length_eq_two.1
-    (by rw [Finset.length_sort, powersetCard.mem_iff.1 t.2] :
-      ((t : Finset (Fin 4)).sort (· ≤ ·)).length = 2)
-  have hmem : ∀ i, i ∈ t.val ↔ i = k ∨ i = l := fun i ↦ by
-    rw [← Finset.mem_sort (· ≤ ·), hsort]
-    simp
-  have ht : basis Q (frame o).toBasis t = ι Q (frame o k) * ι Q (frame o l) := by
-    rw [basis_eq_prod_map_sort ((frame o).isOrthoᵢ_associated hQ), hsort]
-    simp
-  -- `e_s` anticommutes with the generators it contains and commutes with the others.
-  have hb := (frame o).isOrthoᵢ_associated hQ
-  have hmem_s : ∀ {i}, i ∈ s.val → basis Q (frame o).toBasis s * ι Q (frame o i) =
-      -(ι Q (frame o i) * basis Q (frame o).toBasis s) := fun hi ↦ by
-    rw [← OrthonormalBasis.coe_toBasis, basis_mul_ι_of_mem hb hi, powersetCard.mem_iff.1 s.2]
-    simp
-  have hnotMem_s : ∀ {i}, i ∉ s.val → basis Q (frame o).toBasis s * ι Q (frame o i) =
-      ι Q (frame o i) * basis Q (frame o).toBasis s := fun hi ↦ by
-    rw [← OrthonormalBasis.coe_toBasis, basis_mul_ι_of_notMem hb hi, powersetCard.mem_iff.1 s.2]
-    simp
-  set A := basis Q (frame o).toBasis s
+    ← Int.cast_smul_eq_zsmul ℝ, real_inner_smul_left, (frame o).inner_toBasis_exteriorPower,
+    (frame o).inner_toBasis_exteriorPower, bivectorExterior_exteriorPower_basis,
+    bivectorExterior_exteriorPower_basis]
   by_cases hts : t.val ⊆ s.val
   · -- `t ⊆ s`, so `t = s` and `e_s² = -1`.
     have hts : t = s := Subtype.ext <| Finset.eq_of_subset_of_card_le hts
       (by rw [powersetCard.mem_iff.1 s.2, powersetCard.mem_iff.1 t.2])
     subst hts
+    obtain ⟨k, l, hmem, -⟩ := exists_basis_eq_ι_mul ((frame o).isOrthoᵢ_associated hQ) t
     have hk : k ∈ t.val := (hmem k).2 (Or.inl rfl)
     have hne : powersetCard.compl hcard t ≠ t := fun h ↦ by
       have hk' : k ∈ powersetCard.compl hcard t := by rw [h]; exact hk
       exact powersetCard.mem_compl.1 hk' hk
-    have hAA : A * A = -1 := by
+    have hAA : basis Q (frame o).toBasis t * basis Q (frame o).toBasis t = -1 := by
       rw [basis_mul_self_of_orthonormal hQ, powersetCard.mem_iff.1 t.2]
       norm_num
     rw [ite_eq_left rfl, ite_eq_right hne, hAA, Algebra.algebraMap_eq_smul_one]
     module
   by_cases hdisj : Disjoint s.val t.val
   · -- `t` is disjoint from `s`, so `t = sᶜ`, and `e_s` commutes with `e_t`.
+    obtain ⟨k, l, hmem, -⟩ := exists_basis_eq_ι_mul ((frame o).isOrthoᵢ_associated hQ) t
     have hk : k ∉ s.val := Finset.disjoint_right.1 hdisj ((hmem k).2 (Or.inl rfl))
-    have hl : l ∉ s.val := Finset.disjoint_right.1 hdisj ((hmem l).2 (Or.inr rfl))
     have hst : s ≠ t := fun h ↦ hk (h ▸ (hmem k).2 (Or.inl rfl))
     have hct : t = powersetCard.compl hcard s :=
       (powersetCard.disjoint_iff_eq_compl hcard).1 hdisj.symm
-    have h : basis Q (frame o).toBasis t * A = A * basis Q (frame o).toBasis t := by
-      rw [ht, mul_assoc, ← hnotMem_s hl, ← mul_assoc,
-        ← hnotMem_s hk, mul_assoc]
-    rw [ite_eq_right hst, ite_eq_left hct.symm, h, hct, basis_mul_basis_compl o hQ hcard s,
-      Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ]
+    rw [ite_eq_right hst, ite_eq_left hct.symm, basis_frame_mul_comm_of_disjoint o hQ hdisj, hct,
+      basis_mul_basis_compl o hQ hcard s, Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ]
     simp only [mul_zero, map_zero, zero_sub, mul_one, smul_neg]
     module
-  -- `t` shares exactly one index `i` with `s`; let `j` be the other one. Then `e_s` anticommutes
-  -- with `c(e_i)` and commutes with `c(e_j)`, so it anticommutes with `e_t`.
+  -- `t` shares exactly one index with `s`, so `e_s` anticommutes with `e_t`.
   obtain ⟨j, hjt, hjs⟩ := Finset.not_subset.1 hts
   obtain ⟨i, his, hit⟩ := Finset.not_disjoint_iff.1 hdisj
   have hst : s ≠ t := fun h ↦ hjs (h ▸ hjt)
   have hct : powersetCard.compl hcard s ≠ t := fun h ↦
     powersetCard.mem_compl.1 (h ▸ hit : i ∈ powersetCard.compl hcard s) his
-  have hi : SemiconjBy A (ι Q (frame o i)) (-ι Q (frame o i)) := by
-    rw [SemiconjBy, hmem_s his, neg_mul]
-  have hj : SemiconjBy A (ι Q (frame o j)) (ι Q (frame o j)) := hnotMem_s hjs
-  have h : A * basis Q (frame o).toBasis t = -(basis Q (frame o).toBasis t * A) := by
-    rw [ht]
-    rcases (hmem i).1 hit with rfl | rfl <;> rcases (hmem j).1 hjt with rfl | rfl
-    · exact absurd his hjs
-    · rw [(hi.mul_right hj).eq, neg_mul, neg_mul]
-    · rw [(hj.mul_right hi).eq, mul_neg, neg_mul]
-    · exact absurd his hjs
-  rw [ite_eq_right hst, ite_eq_right hct, h]
+  rw [ite_eq_right hst, ite_eq_right hct, basis_frame_mul_anticomm_of_one_shared o hQ hts hdisj]
   simp
 
 /-- **The anticommutator of two two-forms** in the Clifford algebra of an oriented four-space:
@@ -674,5 +693,69 @@ theorem coe_positiveHalfSpinorsEquiv_symm_apply (U : W ≃ₗ[K] W')
   (rfl)
 
 end Naturality
+
+/-! ### Semilinear intertwiners -/
+
+section Semilinear
+
+variable {K W W' : Type*} [CommRing K] [Algebra ℝ K] [AddCommGroup W] [Module K W] [Module ℝ W]
+  [IsScalarTower ℝ K W] [AddCommGroup W'] [Module K W'] [Module ℝ W'] [IsScalarTower ℝ K W']
+  {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End K W} {ρ' : CliffordAlgebra Q →ₐ[ℝ] Module.End K W'}
+  {σ : K →+* K}
+
+variable {o} in
+/-- A semilinear map `U` of Clifford modules over the same quadratic space, whose twist `σ` fixes
+the real scalars and which commutes with the generators, `U (c(v) w) = c(v) (U w)`, maps positive
+half-spinors to positive half-spinors. For complex modules `U` can be conjugate-linear, as for
+charge conjugation of spinors. -/
+theorem map_mem_positiveHalfSpinors (hσ : ∀ r : ℝ, σ (algebraMap ℝ K r) = algebraMap ℝ K r)
+    {U : W →ₛₗ[σ] W'} (hU : ∀ v w, U (ρ (ι Q v) w) = ρ' (ι Q v) (U w)) {w : W}
+    (hw : w ∈ positiveHalfSpinors o ρ) : U w ∈ positiveHalfSpinors o ρ' := by
+  have h := comp_eq_map_comp_of_forall_ιₛₗ (f := QuadraticMap.Isometry.id Q) hσ
+    (fun v ↦ LinearMap.ext (hU v)) (chirality Q o)
+  have hw' : U (ρ (chirality Q o) w) = ρ' (chirality Q o) (U w) := by
+    simpa [map_id] using LinearMap.congr_fun h w
+  rw [mem_positiveHalfSpinors] at hw ⊢
+  rw [← hw', hw]
+
+end Semilinear
+
+section Conjugate
+
+variable {W W' : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [NormedAddCommGroup W']
+  [InnerProductSpace ℂ W'] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W)
+  (ρ' : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W') (j : W ≃ₗᵢ⋆[ℂ] W')
+  (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w))
+
+/-- **Charge conjugation of positive half-spinors**: a conjugate-linear isometric equivalence `j`
+of Hermitian Clifford modules commuting with Clifford multiplication restricts to a
+conjugate-linear isometric equivalence `W⁺ ≃ W'⁺` of the positive half-spinors. -/
+def positiveHalfSpinorsConjEquiv :
+    positiveHalfSpinors o ρ ≃ₗᵢ⋆[ℂ] positiveHalfSpinors o ρ' where
+  toFun ψ := ⟨j ψ, map_mem_positiveHalfSpinors (fun r ↦ Complex.conj_ofReal r)
+    (U := j.toLinearEquiv.toLinearMap) hj ψ.2⟩
+  invFun ψ := ⟨j.symm ψ, map_mem_positiveHalfSpinors (fun r ↦ Complex.conj_ofReal r)
+    (U := j.symm.toLinearEquiv.toLinearMap)
+    (fun v w ↦ by rw [LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv, j.symm_apply_eq,
+      hj, j.apply_symm_apply]) ψ.2⟩
+  map_add' ψ φ := Subtype.ext <| by simp
+  map_smul' c ψ := Subtype.ext <| by simp [map_smulₛₗ]
+  left_inv ψ := Subtype.ext (j.symm_apply_apply ψ)
+  right_inv ψ := Subtype.ext (j.apply_symm_apply ψ)
+  norm_map' ψ := j.norm_map (ψ : W)
+
+/-- The restriction of `j` to the positive half-spinors is `j`. -/
+@[simp]
+theorem coe_positiveHalfSpinorsConjEquiv_apply (ψ : positiveHalfSpinors o ρ) :
+    (positiveHalfSpinorsConjEquiv o ρ ρ' j hj ψ : W') = j ψ :=
+  (rfl)
+
+/-- The inverse of the restriction of `j` to the positive half-spinors is `j⁻¹`. -/
+@[simp]
+theorem coe_positiveHalfSpinorsConjEquiv_symm_apply (ψ : positiveHalfSpinors o ρ') :
+    ((positiveHalfSpinorsConjEquiv o ρ ρ' j hj).symm ψ : W) = j.symm ψ :=
+  (rfl)
+
+end Conjugate
 
 end CliffordAlgebra

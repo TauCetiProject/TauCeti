@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.CommutingFlow
 import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
 import TauCeti.Geometry.Manifold.RegularValue.Section
 import TauCeti.Geometry.Symplectic.Hamiltonian.Involutive
+import TauCeti.LinearAlgebra.LinearIndependent.Coprod
 
 /-!
 # The Hamiltonian flow action on a regular level: the topological Liouville–Arnold theorem
@@ -28,6 +29,8 @@ component of a level is compact, and every `X_{Fᵢ}` is complete when `F` is an
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.IsSymplectic.isLocalDiffeomorphAt_hamiltonianFlowAction_section`: sweeping
+  a local section of `F` through a regular point by the action is a local diffeomorphism.
 * `TauCeti.SmoothTwoForm.IsSymplectic.eventually_exists_hamiltonianFlowAction_apply_eq`: small
   elements of the action reach every nearby point of a regular level.
 * `TauCeti.SmoothTwoForm.IsSymplectic.range_hamiltonianFlowAction_apply`: the orbit of `x` is
@@ -39,6 +42,9 @@ component of a level is compact, and every `X_{Fᵢ}` is complete when `F` is an
   of a regular point is discrete.
 * `TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowAction_apply_eq_iff`: two vectors act alike
   on `x` exactly when they differ by an element of its stabilizer.
+* `eval₂_mfderiv_hamiltonianFlowAction_of_mem_hamiltonianFlowStabilizer`, in the namespace
+  `TauCeti.SmoothTwoForm.IsSymplectic`: the derivative of the action of an element of the
+  stabilizer of `y` at `y` is a linear symplectic map of `T_y M`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.quotientHamiltonianFlowStabilizerHomeomorph`: the regular
   component is homeomorphic to `(ι → ℝ) ⧸ Λ`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.compactSpace_quotient_hamiltonianFlowStabilizer`: the
@@ -86,14 +92,16 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 
 include hσ hF hcomm hc
 
-/-- Sweeping a local section `s` of `F` through a regular point `x` by the Hamiltonian flow action,
-`(v, c) ↦ v • s c`, is a local diffeomorphism at `(0, F x)` when `dim M = 2 · |ι|`. -/
-private theorem isLocalDiffeomorphAt_hamiltonianFlowAction_section
+/-- **Sweeping a section through a regular point is a local diffeomorphism.** Let `s` be a smooth
+local section of `F` through a regular point `x`, defined on an open set `t`. Sweeping it by the
+Hamiltonian flow action, `(v, c) ↦ v • s c`, is a smooth local diffeomorphism at `(0, F x)` when
+`dim M = 2 · |ι|`. -/
+theorem isLocalDiffeomorphAt_hamiltonianFlowAction_section
     (hdim : 2 * Fintype.card ι = finrank ℝ E) {x : M}
     (hx : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F x) {t : Set (ι → ℝ)} (ht : IsOpen t) (hxt : F x ∈ t)
     {s : (ι → ℝ) → M} (hsx : s (F x) = x) (hs : ContMDiffOn 𝓘(ℝ, ι → ℝ) I ∞ s t)
     (hFs : ∀ c ∈ t, F (s c) = c) :
-    IsLocalDiffeomorphAt (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I 1
+    IsLocalDiffeomorphAt (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I ∞
       (fun p : (ι → ℝ) × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc p.1).toMul (s p.2))
       (0, F x) := by
   classical
@@ -128,9 +136,6 @@ private theorem isLocalDiffeomorphAt_hamiltonianFlowAction_section
     rw [mfderiv_comp_apply_of_eq (F x) hFd hsd (hsx.trans hx'x.symm) b, mfderiv_id] at this
     exact this
   let X : ι → E := fun i ↦ σ.hamiltonianVectorField (F · i) x'
-  -- `dF` kills the Hamiltonian vectors of the Poisson-commuting `Fᵢ`.
-  have hdFX (i : ι) : dF (X i) = 0 :=
-    (hσ.isNondegenerate.hamiltonianVectorField_mem_ker_mfderiv_iff hFd i).2 fun j ↦ hcomm j i x'
   -- The derivative of the sweep, read as a map between the model spaces. It is injective: `dF`
   -- kills the `X_{Fᵢ}` and inverts `ds`, and the `X_{Fᵢ}(x)` are independent at the regular
   -- point `x`.
@@ -145,23 +150,23 @@ private theorem isLocalDiffeomorphAt_hamiltonianFlowAction_section
         (funext fun z ↦ hσ.hamiltonianFlowAction_zero_apply hF hcomm hc (s z))
     rw [← hA, ← hB]
     exact mfderiv_prod_eq_add_apply (v := ((a, b) : (ι → ℝ) × (ι → ℝ))) hPd
-  -- `L` is injective: `dF` recovers `b` from `L (a, b)`, and then `a = 0` by independence.
+  -- `L` is injective: `dF` recovers `b` from `L (a, b)`, kills the Hamiltonian vectors of the
+  -- Poisson-commuting `Fᵢ`, and then `a = 0` by independence.
   have hinj : Injective L := by
-    refine (injective_iff_map_eq_zero L).2 fun ⟨a, b⟩ h ↦ ?_
-    rw [hL] at h
-    have hb : b = 0 := by
-      have := congrArg dF h
-      simpa only [map_add, map_sum, map_smul, hdFX, smul_zero, Finset.sum_const_zero, zero_add,
-        hdFs, map_zero] using this
-    subst hb
-    rw [map_zero, add_zero] at h
-    have ha := Fintype.linearIndependent_iff.1
-      (hσ.isNondegenerate.linearIndependent_hamiltonianVectorField hreg) a h
-    exact Prod.ext (funext ha) rfl
+    have hLeq : L.toLinearMap = (Fintype.linearCombination ℝ X).coprod S.toLinearMap :=
+      LinearMap.ext fun ⟨a, b⟩ ↦ by
+        simp only [ContinuousLinearMap.coe_coe, hL, LinearMap.coprod_apply,
+          Fintype.linearCombination_apply]
+    have := LinearMap.injective_coprod_linearCombination
+      (hσ.isNondegenerate.linearIndependent_hamiltonianVectorField hreg) dF.toLinearMap
+      (fun i ↦ (hσ.isNondegenerate.hamiltonianVectorField_mem_ker_mfderiv_iff hFd i).2
+        fun j ↦ hcomm j i x') hdFs (S := S.toLinearMap)
+    have h2 : Injective L.toLinearMap := by rw [hLeq]; exact this
+    exact h2
   have hfin : finrank ℝ ((ι → ℝ) × (ι → ℝ)) = finrank ℝ E := by
     rw [Module.finrank_prod, Module.finrank_fintype_fun_eq_card, ← hdim, two_mul]
-  exact isLocalDiffeomorphAt_of_mfderiv_eq (hPs.of_le (by simp)) hopen hmem
-    BoundarylessManifold.isInteriorPoint le_rfl
+  exact isLocalDiffeomorphAt_of_mfderiv_eq hPs hopen hmem
+    BoundarylessManifold.isInteriorPoint (by simp)
     (e := (LinearMap.linearEquivOfInjective L.toLinearMap hinj hfin).toContinuousLinearEquiv)
     (ContinuousLinearMap.ext fun w ↦ LinearMap.linearEquivOfInjective_apply hinj hfin w)
 
@@ -294,6 +299,25 @@ theorem hamiltonianFlowAction_apply_eq_iff {x : M} {v w : ι → ℝ} :
   letI := hσ.hamiltonianFlowAddAction hF hcomm hc
   (AddAction.injective_ofQuotientStabilizer (ι → ℝ) x).eq_iff
     (a := (v : (ι → ℝ) ⧸ AddAction.stabilizer (ι → ℝ) x)) (b := w) |>.trans QuotientAddGroup.eq
+
+/-- **The linearized return map of a period is symplectic.** If `v` is a period of `y`, the action
+of `v` fixes `y`, and its derivative at `y` is a linear symplectic map of `T_y M`. -/
+theorem eval₂_mfderiv_hamiltonianFlowAction_of_mem_hamiltonianFlowStabilizer {y : M}
+    {v : ι → ℝ} (hv : v ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc y) (a b : TangentSpace I y) :
+    SmoothBundleForm.eval₂ σ y
+        (mfderiv I I (hσ.hamiltonianFlowAction hF hcomm hc v).toMul y a)
+        (mfderiv I I (hσ.hamiltonianFlowAction hF hcomm hc v).toMul y b) =
+      SmoothBundleForm.eval₂ σ y a b := by
+  have hφ := SmoothForm.eval₂_mpullback _ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul.contMDiff
+    σ y a b
+  rw [hσ.mpullback_hamiltonianFlowAction] at hφ
+  rw [hφ]
+  -- The derivative lands in `T_{v • y} M`, which is `T_y M` since `v • y = y`.
+  have key : ∀ z, z = y → ∀ a' b' : E,
+      SmoothBundleForm.eval₂ σ z a' b' = SmoothBundleForm.eval₂ σ y a' b' := by
+    rintro _ rfl _ _
+    rfl
+  exact (key _ ((hσ.mem_hamiltonianFlowStabilizer hF hcomm hc).1 hv) _ _).symm
 
 /-- **The orbit map has injective derivative at regular points.** If `v • x` is a regular point of
 `F`, the derivative `w ↦ ∑ i, wᵢ X_{Fᵢ}(v • x)` of the orbit map `v ↦ v • x` at `v` is injective,

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
+import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 
 /-!
 # Morse–Bott critical submanifolds and the normal Hessian
@@ -40,6 +41,8 @@ conversely a nondegenerate critical point lies on no critical submanifold of pos
 
 * `TauCeti.SmoothEmbedding.IsCriticalSubmanifold`: a smooth embedding into the critical set of a
   function which is `C²` along it.
+* `TauCeti.SmoothEmbedding.IsCriticalSubmanifold.isLocallyConstant_comp`: a function is locally
+  constant along each of its critical submanifolds.
 * `TauCeti.SmoothEmbedding.IsCriticalSubmanifold.normalHessian`: the normal Hessian.
 * `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`: Morse–Bott critical submanifolds.
 * `TauCeti.SmoothEmbedding.IsCriticalSubmanifold.isNondegenerateCriticalSubmanifold_iff`:
@@ -103,6 +106,21 @@ structure IsNondegenerateCriticalSubmanifold (i : SmoothEmbedding J I n S M) (f 
     (criticalHessian I f (i s)).ker ≤ (mfderiv J I i s).toLinearMap.range
 
 variable {i : SmoothEmbedding J I n S M} (hn : n ≠ 0)
+
+include hn in
+/-- **A function is locally constant along a critical submanifold.** The differential of `f ∘ i`
+is `df ∘ di`, which vanishes because every point of the submanifold is critical. In particular `f`
+takes a single value, the critical value, on each connected component of `S`. -/
+theorem IsCriticalSubmanifold.isLocallyConstant_comp [IsManifold J 1 S]
+    (h : i.IsCriticalSubmanifold f) : IsLocallyConstant (f ∘ i) := by
+  have hf (s : S) : MDifferentiableAt I 𝓘(ℝ) f (i s) :=
+    (h.contMDiffAt s).mdifferentiableAt two_ne_zero
+  have hi (s : S) : MDifferentiableAt J I i s := (i.contMDiff s).mdifferentiableAt hn
+  refine MDifferentiable.isLocallyConstant_of_mfderiv_eq_zero (fun s ↦ (hf s).comp s (hi s))
+    fun s ↦ ?_
+  rw [mfderiv_comp s (hf s) (hi s),
+    mem_criticalPoints_iff_mfderiv_eq_zero.1 (h.mem_criticalPoints s),
+    ContinuousLinearMap.zero_comp]
 
 namespace IsCriticalSubmanifold
 
@@ -353,7 +371,7 @@ private theorem snd_eq_zero_of_criticalHessian_comp_snd_apply_eq_zero {q : V →
     (hv : criticalHessian (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) (x, 0) v = 0) : v.2 = 0 := by
   have hD₂ : fderiv ℝ (fderiv ℝ q) 0 v.2 = 0 := ContinuousLinearMap.ext fun w ↦ by
     have hw := congrArg (fun L ↦ L ((0 : E), w)) hv
-    exact (criticalHessian_comp_snd_apply hq.contDiffAt hq.fderiv_eq_zero x v (0, w)).symm.trans
+    exact (criticalHessian_comp_snd_apply hq.contDiffAt x v (0, w)).symm.trans
       hw
   exact hq.isInvertible.injective (hD₂.trans (map_zero _).symm)
 

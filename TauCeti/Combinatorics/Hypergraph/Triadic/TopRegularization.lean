@@ -81,7 +81,7 @@ independently of `V`, and whose polyad energy exceeds that of `S` by at least `�
 proportion of injective triples lying in polyads over `S` at which `H` is not
 `(η, r)`-top-regular. -/
 theorem exists_refinement_polyadEnergy_add_le [Fintype κ] [Fintype κ₂] (S : PairSkeleton3 κ₂ V)
-    {η : ℝ} (hη : 0 ≤ η) (r : ℕ) :
+    {η : ℝ} (r : ℕ) :
     ∃ (m : ℕ) (T : PairSkeleton3 (Fin m) V) (π : Fin m → κ₂),
       m ≤ Fintype.card κ₂ * 2 ^ (6 * r * (#S.vertexPart.parts ^ 3 * Fintype.card κ₂ ^ 3)) ∧
       T.vertexPart = S.vertexPart ∧
@@ -89,16 +89,7 @@ theorem exists_refinement_polyadEnergy_add_le [Fintype κ] [Fintype κ₂] (S : 
       (∀ c, π (T.pairColors.rev c) = S.pairColors.rev (π c)) ∧
       η ^ 3 * ((∑ P : Polyad3 S with ¬H.IsTopRegularOverPolyad P η r, (#P.support : ℝ)) /
           (Fintype.card V).descFactorial 3) + H.polyadEnergy S ≤ H.polyadEnergy T := by
-  -- Choose `r` subpolyads witnessing the irregularity of each irregular polyad.
-  have hw (P : Polyad3 S) : ∃ Q : Fin r → Subpolyad3 P, ¬H.IsTopRegularOverPolyad P η r →
-      ∃ c, η * #P.support ≤ #(Subpolyad3.unionSupport Q) ∧
-        η < |(H.relDensityOn c (Subpolyad3.unionSupport Q) : ℝ) - H.relativeDensity c P| := by
-    by_cases hP : H.IsTopRegularOverPolyad P η r
-    · exact ⟨fun _ ↦ Subpolyad3.ofSubcells P ∅ ∅ ∅, fun h ↦ (h hP).elim⟩
-    · simp only [isTopRegularOverPolyad_iff, not_forall, not_le] at hP
-      obtain ⟨c, Q, hQ, hdev⟩ := hP
-      exact ⟨Q, fun _ ↦ ⟨c, hQ, hdev⟩⟩
-  choose Q hQ using hw
+  obtain ⟨Q, hQ⟩ := H.exists_subpolyads_witnessing_irregularity r S
   -- Resolve all witnesses by one bounded refinement, then rename its palette to `Fin m`.
   obtain ⟨κ', _, T, π, hcard, hV, hπ, hrev, hA⟩ :=
     S.exists_bounded_refinement_subpolyads (fun i : Polyad3 S × Fin r ↦ i.1) fun i ↦ Q i.1 i.2
@@ -131,12 +122,12 @@ theorem exists_refinement_polyadEnergy_add_le [Fintype κ] [Fintype κ₂] (S : 
         η ≤ |(H.relDensityOn c (Subpolyad3.unionSupport (Q P)) : ℝ) - H.relativeDensity c P| := by
     by_cases hP : H.IsTopRegularOverPolyad P η r
     · exact ⟨Classical.arbitrary κ, fun h ↦ (h hP).elim⟩
-    · obtain ⟨c, hsize, hdev⟩ := hQ P hP
-      exact ⟨c, fun _ ↦ ⟨hsize, hdev.le⟩⟩
+    · obtain ⟨c, h⟩ := hQ P hP
+      exact ⟨c, fun _ ↦ h⟩
   choose c hc using hc
   have hgain := H.polyadEnergy_increment_of_witnesses hT'S
     (univ.filter fun P ↦ ¬H.IsTopRegularOverPolyad P η r) c
-    (fun P ↦ Subpolyad3.unionSupport (Q P)) hη (fun P _ ↦ Subpolyad3.unionSupport_subset _)
+    (fun P ↦ Subpolyad3.unionSupport (Q P)) (fun P _ ↦ Subpolyad3.unionSupport_subset _)
     (fun P _ x y hxy ↦ by
       -- Each witness support is a union of polyads over `T`, hence over `T'`.
       simp only [Subpolyad3.mem_unionSupport]
@@ -181,7 +172,7 @@ private theorem exists_refinement_iterate [Fintype κ] [Fintype κ₂] (S : Pair
         (#P.support : ℝ)) / (Fintype.card V).descFactorial 3 ≤ ε
     · exact ⟨m, T, π, hm.trans (Function.monotone_iterate_of_id_le hid j.le_succ _), hV, hπ,
         hrev, Or.inl hgood⟩
-    obtain ⟨m', T', π', hm', hV', hπ', hrev', hE⟩ := H.exists_refinement_polyadEnergy_add_le T hη r
+    obtain ⟨m', T', π', hm', hV', hπ', hrev', hE⟩ := H.exists_refinement_polyadEnergy_add_le T r
     refine ⟨m', T', π ∘ π', ?_, hV'.trans hV, fun p ↦ by simp [hπ', hπ],
       fun c ↦ by simp [hrev', hrev], Or.inr ?_⟩
     · rw [Function.iterate_succ_apply']

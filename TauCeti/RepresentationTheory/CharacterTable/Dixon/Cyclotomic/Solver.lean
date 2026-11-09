@@ -8,7 +8,6 @@ module
 -- Lean requires this public import to compile the executable solver through its private helpers.
 public import Mathlib.Data.FinEnum
 import Mathlib.Data.List.NodupEquivFin
-import TauCeti.Data.Array.OfFn
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.CentralCharacterCount
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Rows
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.PowerMap

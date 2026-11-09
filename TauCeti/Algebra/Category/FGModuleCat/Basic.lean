@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.FGModuleCat.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.RingTheory.Finiteness.Prod
+public import TauCeti.CategoryTheory.ObjectProperty
 
 /-!
 # Finitely generated modules
@@ -193,6 +194,26 @@ theorem homLinearEquivOfIsScalarTower_symm_apply (N : FGModuleCat.{v} R)
     (homLinearEquivOfIsScalarTower k N).symm f = FGModuleCat.ofHom f := (rfl)
 
 end FGModuleCat
+
+/-! ### Closure properties of `ModuleCat.isFG` -/
+
+variable (R : Type u) [Ring R]
+
+instance : (ModuleCat.isFG.{v} R).IsClosedUnderIsomorphisms where
+  of_iso {M N} e h := by
+    have : Module.Finite R M := (ModuleCat.isFG_iff M).mp h
+    exact (ModuleCat.isFG_iff N).mpr (Module.Finite.equiv e.toLinearEquiv)
+
+instance : (ModuleCat.isFG.{v} R).ContainsZero where
+  exists_zero := ⟨ModuleCat.of R PUnit, ModuleCat.isZero_of_subsingleton _,
+    (ModuleCat.isFG_iff _).mpr inferInstance⟩
+
+instance : (ModuleCat.isFG.{v} R).IsClosedUnderBinaryProducts :=
+  ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun M N hM hN ↦ by
+    have : Module.Finite R M := (ModuleCat.isFG_iff M).mp hM
+    have : Module.Finite R N := (ModuleCat.isFG_iff N).mp hN
+    exact (ModuleCat.isFG_iff _).mpr
+      (Module.Finite.equiv (ModuleCat.biprodIsoProd M N).toLinearEquiv.symm)
 
 end TauCeti
 

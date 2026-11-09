@@ -99,7 +99,7 @@ simple `αᵢ`, whose Tits norm is one because a sink carries no loop. -/
 theorem titsForm_dimVector_eq_one_of_isZero_reflectionFunctorList :
     ∀ (l : List V) (q : _root_.Quiver.{w} V)
       (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
-      (hl : Quiver.IsSinkAdmissible q l) (M : @QuiverRep.{u, v, w, max v w x} k V fld q),
+      (hl : Quiver.IsSinkAdmissible q l) (M : @QuiverRep.{u, v, w, max v w x} k V _ q),
       Indecomposable M → @IsFinDim.{u, v, w, max v w x} k V fld q M →
       Limits.IsZero ((reflectionFunctorList k l q hq hl).obj M) →
       @titsForm V q fV hq (fun j : V ↦ (@dimVector k V fld q M j : ℤ)) = 1
@@ -156,7 +156,7 @@ successive Coxeter transforms of `dim M`; those are nonnegative, which
 theorem exists_isZero_coxeterFunctor_iterate (q : _root_.Quiver.{w} V)
     (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b)) {l : List V} (hnd : l.Nodup)
     (hall : ∀ v : V, v ∈ l) (hl : Quiver.IsSinkAdmissible q l)
-    (hpd : (@titsForm V q fV hq).PosDef) (M : @QuiverRep.{u, v, w, max v w x} k V fld q)
+    (hpd : (@titsForm V q fV hq).PosDef) (M : @QuiverRep.{u, v, w, max v w x} k V _ q)
     (hM : Indecomposable M) (hfd : @IsFinDim.{u, v, w, max v w x} k V fld q M) :
     ∃ N : ℕ,
       Limits.IsZero (((coxeterFunctor.{u, v, w, x} k q hq hnd hall hl).obj)^[N] M) := by
@@ -212,7 +212,7 @@ reads off. -/
 private theorem titsForm_dimVector_eq_one_of_isZero_iterate (q : _root_.Quiver.{w} V)
     (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
     {l : List V} (hnd : l.Nodup) (hall : ∀ v : V, v ∈ l) (hl : Quiver.IsSinkAdmissible q l) :
-    ∀ (N : ℕ) (M : @QuiverRep.{u, v, w, max v w x} k V fld q), Indecomposable M →
+    ∀ (N : ℕ) (M : @QuiverRep.{u, v, w, max v w x} k V _ q), Indecomposable M →
       @IsFinDim.{u, v, w, max v w x} k V fld q M →
       Limits.IsZero (((coxeterFunctor.{u, v, w, x} k q hq hnd hall hl).obj)^[N] M) →
       @titsForm V q fV hq (fun j : V ↦ (@dimVector k V fld q M j : ℤ)) = 1 := by
@@ -247,7 +247,7 @@ indecomposable; the nonvanishing half is `TauCeti.dimVector_ne_zero_of_indecompo
 theorem titsForm_dimVector_eq_one_of_indecomposable (q : _root_.Quiver.{w} V)
     (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b)) {l : List V} (hnd : l.Nodup)
     (hall : ∀ v : V, v ∈ l) (hl : Quiver.IsSinkAdmissible q l)
-    (hpd : (@titsForm V q fV hq).PosDef) (M : @QuiverRep.{u, v, w, max v w x} k V fld q)
+    (hpd : (@titsForm V q fV hq).PosDef) (M : @QuiverRep.{u, v, w, max v w x} k V _ q)
     (hM : Indecomposable M) (hfd : @IsFinDim.{u, v, w, max v w x} k V fld q M) :
     @titsForm V q fV hq (fun j : V ↦ (@dimVector k V fld q M j : ℤ)) = 1 := by
   obtain ⟨N, hN⟩ := exists_isZero_coxeterFunctor_iterate q hq hnd hall hl hpd M hM hfd

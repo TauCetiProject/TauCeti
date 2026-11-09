@@ -99,20 +99,14 @@ theorem isTamelyRamified_of_adjoin_eq_top_of_pow_eq {n : ℕ} (hn : ¬ ringChar 
   have := finiteIntermediateField_valuativeExtension K L E
   have hEK : IsUnramified K E :=
     isUnramified_of_adjoin_eq_top_of_pow_eq (fun h ↦ hn (hne ▸ h.mul_left e'))
-      (AdjoinSimple.adjoin_gen_eq_top (β ^ e')) (a := a)
+      (adjoin_adjoinSimple_gen_eq_top (β ^ e')) (a := a)
       (Subtype.ext (by simp [← pow_mul, ← hne, ha])) ⟨m', hm.trans (mul_comm _ _)⟩
   -- So `e(L/K) = e(L/E)`, which is at most `[L : E] ≤ n'`, as `β` is a root of `X^{n'} − β^{n'}`.
   have hLE : ramificationIndex K L = ramificationIndex E L :=
     (IsUnramified.ramificationIndex_tower_eq K E L).symm
-  have hβE : E⟮β⟯ = ⊤ := by
-    refine restrictScalars_eq_top_iff.1 (top_le_iff.1 (hβ ▸ adjoin_simple_le_iff.2 ?_))
-    exact mem_adjoin_simple_self E β
-  have hfin : Module.finrank E L ≤ e' := by
-    have hroot : aeval β (X ^ e' - C (AdjoinSimple.gen K (β ^ e')) : E[X]) = 0 := by simp
-    rw [← finrank_top', ← hβE, adjoin.finrank (.of_finite E β)]
-    refine (natDegree_le_of_dvd (minpoly.dvd E β hroot)
-      (X_pow_sub_C_ne_zero (Nat.pos_of_ne_zero fun h ↦ hn0 (by simp [hne, h])) _)).trans ?_
-    exact (natDegree_X_pow_sub_C _).le
+  have hfin : Module.finrank E L ≤ e' :=
+    TauCeti.IntermediateField.finrank_le_of_adjoin_simple_eq_top_of_pow_mem hβ
+      (Nat.pos_of_ne_zero fun h ↦ hn0 (by simp [hne, h])) (mem_adjoin_simple_self K _)
   have hle : ramificationIndex E L ≤ e' :=
     (Nat.le_of_dvd Module.finrank_pos
       (Dvd.intro _ (ramificationIndex_mul_inertiaDegree E L))).trans hfin
@@ -180,7 +174,7 @@ theorem IsTamelyRamified.of_adjoin_range_eq_top (hL : IsTamelyRamified K L) (ι 
   have hcharF : ringChar 𝓀[F] = ringChar 𝓀[K] := (Algebra.ringChar_eq 𝓀[K] 𝓀[F]).symm
   have hF₁ : IsTamelyRamified F F₁ := by
     refine isTamelyRamified_of_adjoin_eq_top_of_pow_eq
-      (n := Nat.card 𝓀[K] ^ inertiaDegree K L - 1) ?_ (AdjoinSimple.adjoin_gen_eq_top (ι ζ))
+      (n := Nat.card 𝓀[K] ^ inertiaDegree K L - 1) ?_ (adjoin_adjoinSimple_gen_eq_top (ι ζ))
       (a := 1) (Subtype.ext (by simp [← map_pow, hζ.pow_eq_one]))
     rw [hcharF, ← IsLocalRing.isUnit_natCast_iff_not_dvd (R := 𝒪[K])]
     exact isUnit_natCast_natCard_pow_sub_one K inertiaDegree_pos.ne'

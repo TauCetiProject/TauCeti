@@ -154,7 +154,8 @@ theorem continuousOn_legendreF_integrand {φ k : ℝ} (hφ0 : 0 ≤ φ) (hφ : �
     ContinuousOn (fun θ ↦ (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ)) (uIcc 0 φ) := by
   rw [uIcc_of_le hφ0]
   exact (continuous_const.sub (continuous_const.mul (continuous_sin.pow 2))).continuousOn.rpow_const
-    fun θ ⟨h0, hθ⟩ ↦ Or.inl (sub_pos.mpr (mul_sin_sq_lt_one_of_le hk h0 hθ hφ)).ne'
+    fun θ ⟨h0, hθ⟩ ↦ Or.inl
+      (sub_pos.mpr (mul_sin_sq_lt_one_of_abs_le hk ((abs_of_nonneg h0).trans_le hθ) hφ)).ne'
 
 /-! #### The second kind -/
 
@@ -361,6 +362,11 @@ theorem legendreK_le_pi_div_two_div_sqrt {k : ℝ} (hk : k ^ 2 < 1) :
 @[simp]
 theorem legendreK_neg (k : ℝ) : legendreK (-k) = legendreK k := legendreF_neg_modulus _ k
 
+/-- Taking the absolute value of the modulus leaves the complete first kind unchanged. -/
+@[simp]
+theorem legendreK_abs (k : ℝ) : legendreK |k| = legendreK k := by
+  rcases abs_choice k with h | h <;> simp only [h, legendreK_neg]
+
 @[simp]
 theorem legendreK_zero : legendreK 0 = π / 2 := legendreF_zero_modulus _
 
@@ -449,7 +455,8 @@ theorem legendreE_eq_legendreF_sub {φ k : ℝ} (hφ0 : 0 ≤ φ) (hφ : φ ≤ 
     ← intervalIntegral.integral_sub hX.intervalIntegrable (hX2.intervalIntegrable.const_mul _)]
   refine intervalIntegral.integral_congr fun θ hθ ↦ ?_
   rw [uIcc_of_le hφ0] at hθ
-  have hD : 0 < 1 - k ^ 2 * sin θ ^ 2 := sub_pos.mpr (mul_sin_sq_lt_one_of_le hk hθ.1 hθ.2 hφ)
+  have hD : 0 < 1 - k ^ 2 * sin θ ^ 2 :=
+    sub_pos.mpr (mul_sin_sq_lt_one_of_abs_le hk ((abs_of_nonneg hθ.1).trans_le hθ.2) hφ)
   -- The square root is the inverse square root times its argument.
   have hhalf : (1 - k ^ 2 * sin θ ^ 2) ^ (1 / 2 : ℝ) =
       (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) * (1 - k ^ 2 * sin θ ^ 2) := by
@@ -464,6 +471,11 @@ theorem legendreEc_pos (k : ℝ) : 0 < legendreEc k :=
 
 @[simp]
 theorem legendreEc_neg (k : ℝ) : legendreEc (-k) = legendreEc k := legendreE_neg_modulus _ k
+
+/-- Taking the absolute value of the modulus leaves the complete second kind unchanged. -/
+@[simp]
+theorem legendreEc_abs (k : ℝ) : legendreEc |k| = legendreEc k := by
+  rcases abs_choice k with h | h <;> simp only [h, legendreEc_neg]
 
 @[simp]
 theorem legendreEc_zero : legendreEc 0 = π / 2 := legendreE_zero_modulus _
@@ -536,7 +548,7 @@ theorem legendrePi_eq_legendreF_add {φ k α2 : ℝ} (hφ0 : 0 ≤ φ) (hφ : φ
       (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) * (sin θ ^ 2 / (1 - α2 * sin θ ^ 2)) := by
   have hαθ {θ : ℝ} (hθ : θ ∈ uIcc 0 φ) : 0 < 1 - α2 * sin θ ^ 2 := by
     rw [uIcc_of_le hφ0] at hθ
-    exact sub_pos.mpr (mul_sin_sq_lt_one_of_le hα hθ.1 hθ.2 hφ)
+    exact sub_pos.mpr (mul_sin_sq_lt_one_of_abs_le hα ((abs_of_nonneg hθ.1).trans_le hθ.2) hφ)
   have hX := continuousOn_legendreF_integrand hφ0 hφ hk
   have hX2 : ContinuousOn (fun θ ↦ (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) *
       (sin θ ^ 2 / (1 - α2 * sin θ ^ 2))) (uIcc 0 φ) :=

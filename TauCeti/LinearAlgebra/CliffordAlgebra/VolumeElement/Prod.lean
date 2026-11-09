@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Prod
@@ -23,7 +23,8 @@ algebras of `Q₁` and `Q₂`, given by algebra maps `ρ₁` and `ρ₂`.
 
 When `n` is even and `Q₁ v = -‖v‖²`, the normalized complex volume element `Γ_V`
 (`CliffordAlgebra.complexVolume`) is an involution anticommuting with every vector of `V`, so it
-grades `E`. The graded tensor product of `TauCeti/LinearAlgebra/CliffordAlgebra/Prod.lean` then
+grades `E`. The graded tensor product from
+`TauCeti/LinearAlgebra/CliffordAlgebra/Prod/Basic.lean` then
 makes `E ⊗ F` a module over the complexified Clifford algebra of `V ⊕ W`
 (`CliffordAlgebra.complexProdTensor`), on which
 

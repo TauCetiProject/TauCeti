@@ -81,7 +81,7 @@ instance _root_.SheafOfModules.isIso_dualTensorIhom_of_isLocallyFree
   intro Z
   -- Check invertibility on the finite free charts, where restriction carries the comparison to
   -- the local one through its invertible internal Hom comparison.
-  refine isIso_of_coversTop q.coversTop _ fun i ↦ ?_
+  refine isIso_of_coversTop q.coversTop fun i ↦ ?_
   have : IsIso ((overFunctor (ringCatSheaf R) (q.X i)).ihomComparison M) := by
     rw [← overIhomComparison_def]
     infer_instance

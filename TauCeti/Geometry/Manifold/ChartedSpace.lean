@@ -33,6 +33,7 @@ charted space in its preferred charts and to check that it is well behaved.
   representative of `k` composed with the representative of `φ`.
 * `ChartedSpace.perfectSpace`: a charted space over a space without isolated points has no
   isolated points.
+* `ChartedSpace.nontrivial`: a nonempty such charted space has two distinct points.
 -/
 
 public section
@@ -88,6 +89,25 @@ theorem comp_comp_chartAt_symm_eventuallyEq {α : Type*} (k : Y → α) {φ : X 
     ((chartAt H' (φ x)).open_source.mem_nhds (mem_chart_source H' (φ x)))] with z hz
   simp [(chartAt H' (φ x)).left_inv hz]
 
+section T2
+
+variable [T2Space X]
+
+/-- In a Hausdorff charted space, finitely many distinct points `p i` have pairwise disjoint open
+neighbourhoods `V i` inside the domains of the charts at them. -/
+theorem exists_pairwise_disjoint_isOpen_subset_chartAt_source {ι : Type*} [Finite ι]
+    {p : ι → X} (hinj : Function.Injective p) :
+    ∃ V : ι → Set X, (∀ i, IsOpen (V i)) ∧ (∀ i, V i ⊆ (chartAt H (p i)).source) ∧
+      (∀ i, p i ∈ V i) ∧ Pairwise (Function.onFun Disjoint V) := by
+  obtain ⟨U, hU, hUdisj⟩ := (Set.finite_range p).t2_separation
+  refine ⟨fun i => U (p i) ∩ (chartAt H (p i)).source,
+    fun i => (hU (p i)).2.inter (chartAt H (p i)).open_source, fun i => Set.inter_subset_right,
+    fun i => ⟨(hU (p i)).1, mem_chart_source H (p i)⟩, fun i j hij => ?_⟩
+  exact (hUdisj (Set.mem_range_self i) (Set.mem_range_self j) (hinj.ne hij)).mono
+    Set.inter_subset_left Set.inter_subset_left
+
+end T2
+
 end TauCeti
 
 /-- A charted space over a space without isolated points has no isolated points: the inverse
@@ -96,3 +116,12 @@ theorem ChartedSpace.perfectSpace {H X : Type*} [TopologicalSpace H] [PerfectSpa
     [TopologicalSpace X] [ChartedSpace H X] : PerfectSpace X :=
   perfectSpace_iff_forall_not_isolated.2 fun x ↦
     (TauCeti.tendsto_chartAt_symm_nhdsNE (H := H) x).neBot
+
+/-- A nonempty charted space over a space without isolated points is nontrivial: its points are
+not isolated, so the punctured neighbourhoods of any point contain a second point. -/
+theorem ChartedSpace.nontrivial {H X : Type*} [TopologicalSpace H] [PerfectSpace H]
+    [TopologicalSpace X] [ChartedSpace H X] [Nonempty X] : Nontrivial X := by
+  have := ChartedSpace.perfectSpace (H := H) (X := X)
+  obtain ⟨x⟩ := ‹Nonempty X›
+  obtain ⟨y, hy⟩ := Filter.nonempty_of_mem (self_mem_nhdsWithin : {x}ᶜ ∈ 𝓝[≠] x)
+  exact ⟨⟨y, x, hy⟩⟩

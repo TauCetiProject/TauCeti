@@ -28,11 +28,15 @@ derivative applies.
 
 ## Main declarations
 
+* `TauCeti.mdifferentiableAt_ofSubsingleton_iff`: a family of linear maps is differentiable
+  at a point as a section of the linear-map bundle exactly when its degree-one form is.
 * `TauCeti.contMDiffAt_ofSubsingleton_iff`, `TauCeti.isSmoothBundleForm_ofSubsingleton_iff`: a
   family of linear maps has `C^n` graph in the linear-map bundle, at a point or everywhere, exactly
   when the corresponding degree-one form does.
 * `TauCeti.SmoothBundleForm.degreeOneEquiv`: the linear equivalence between smooth degree-one
   forms and smooth sections of the bundle of fibrewise linear maps.
+* `TauCeti.SmoothBundleForm.tangentIdentity`: the tangent-valued one-form sending a tangent
+  vector to itself.
 * `TauCeti.isSmoothForm_ofSubsingleton_iff`, `TauCeti.SmoothForm.degreeOneEquiv`: the same
   statements for fixed-coefficient forms. For `F = ℝ` the bundle of fibrewise linear maps is
   `TauCeti.CotangentBundle I M`, so these identify smooth real one-forms with smooth sections of
@@ -59,6 +63,25 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle ℝ F V]
   [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+
+/-- A bundle-valued one-form is differentiable exactly when the corresponding section
+of the bundle of continuous linear maps is differentiable. -/
+theorem mdifferentiableAt_ofSubsingleton_iff
+    {α : (x : M) → TangentSpace I x →L[ℝ] V x} {x₀ : M} :
+    MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F)) (fun x ↦
+        TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) x
+          (ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) (V x) (0 : Fin 1) (α x)))
+        x₀ ↔
+      MDifferentiableAt I (I.prod 𝓘(ℝ, E →L[ℝ] F))
+        (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) x (α x)) x₀ := by
+  let L := (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := F)
+    (ι := Fin 1) 0).toContinuousLinearEquiv
+  rw [mdifferentiableAt_totalSpace, mdifferentiableAt_hom_bundle]
+  simp only [FiberBundle.trivializationAt_continuousAlternatingMap_apply,
+    ContinuousAlternatingMap.inCoordinates_ofSubsingleton]
+  refine and_congr Iff.rfl ⟨fun h ↦ ?_, fun h ↦ L.mdifferentiableAt.comp x₀ h⟩
+  exact (L.symm.mdifferentiableAt.comp x₀ h).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun x ↦ by simp [L])
 
 /-- A family of fibrewise linear maps is `C^n` at `x₀` as a section of the bundle of linear maps
 `TangentSpace I x →L[ℝ] V x` exactly when the degree-one form it defines is `C^n` at `x₀`. -/
@@ -131,6 +154,28 @@ theorem degreeOneEquiv_symm_apply_apply
     (v : Fin 1 → TangentSpace I x) :
     (degreeOneEquiv.symm s).1 x v = s x (v 0) :=
   (rfl)
+
+/-- The canonical tangent-valued one-form: the identity on every tangent fibre. -/
+def tangentIdentity : SmoothBundleForm I E (TangentSpace I : M → Type _) 1 :=
+  degreeOneEquiv.symm ⟨fun x ↦ ContinuousLinearMap.id ℝ (TangentSpace I x), by
+    intro x
+    rw [contMDiffAt_hom_bundle]
+    refine ⟨contMDiffAt_id, (contMDiffAt_const (c := ContinuousLinearMap.id ℝ E)
+      (n := ∞)).congr_of_eventuallyEq ?_⟩
+    let e := FiberBundle.trivializationAt E (TangentSpace I : M → Type _) x
+    filter_upwards [e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt E
+      (TangentSpace I : M → Type _) x)] with y hy
+    ext v
+    simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.id_apply]
+    exact e.continuousLinearMapAt_symmL hy v⟩
+
+/-- The tangent identity one-form evaluates to its sole tangent-vector argument. -/
+@[simp]
+theorem tangentIdentity_apply (x : M) (v : Fin 1 → TangentSpace I x) :
+    (tangentIdentity (I := I)).val x v = v 0 := by
+  simp only [tangentIdentity, degreeOneEquiv_symm_apply_apply]
+  rfl
 
 end SmoothBundleForm
 

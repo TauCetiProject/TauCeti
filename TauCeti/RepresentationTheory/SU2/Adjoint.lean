@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Covering.Basic
+import Mathlib.Topology.Covering.Quotient
+
 public import TauCeti.LinearAlgebra.Matrix.Pauli
 public import TauCeti.RepresentationTheory.SU2.Basic
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
@@ -49,6 +52,7 @@ therefore surjective (`TauCeti.SU2.toSO3_surjective`). Its kernel is `{1, -1}`
 (`TauCeti.SU2.toSO3_eq_one_iff`), the center of `SU(2)` (`TauCeti.SU2.ker_toSO3`), and since
 `SU(2)` is compact and `SO(3)` is Hausdorff, it induces an isomorphism of topological groups
 `SU(2) ⧸ {±1} ≃ₜ* SO(3)` (`TauCeti.SU2.quotientKerToSO3`).
+The Pauli map is a covering map (`TauCeti.SU2.isCoveringMap_toSO3`).
 
 ## Main definitions
 
@@ -72,8 +76,12 @@ therefore surjective (`TauCeti.SU2.toSO3_surjective`). Its kernel is `{1, -1}`
 * `TauCeti.SU2.coe_toSO3_torusHom`: the maximal torus `diag (z, z⁻¹)` maps to the rotations about
   the axis `(0, 0, 1)`.
 * `TauCeti.SU2.toSO3_surjective`: `SU(2) → SO(3)` is surjective.
+* `TauCeti.SU2.isCoveringMap_toSO3`: the Pauli map is a covering map.
 
 ## References
+
+* A. Kirillov Jr., *An Introduction to Lie Groups and Lie Algebras*, Cambridge Studies in
+  Advanced Mathematics 113 (2008), Example 2.5(5) and Exercises 2.8–2.11.
 
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, Graduate Texts in Mathematics
   129, Springer, 1991, §7.3 and §10.1.
@@ -179,9 +187,11 @@ theorem pauliRotation_mulVec_cross (x y : Fin 3 → ℝ) :
 theorem pauliRotation_mem_orthogonalGroup : pauliRotation U ∈ orthogonalGroup (Fin 3) ℝ :=
   mem_orthogonalGroup_iff_dotProduct_mulVec.mpr (dotProduct_pauliRotation_mulVec U)
 
-/-- `pauliRotation U` has determinant one, since it preserves the cross product. -/
+/-- `pauliRotation U` has determinant one, since it is orthogonal and preserves the cross
+product. -/
 theorem det_pauliRotation : (pauliRotation U).det = 1 :=
-  Matrix.det_eq_one_of_mulVec_cross (dotProduct_pauliRotation_mulVec U)
+  Matrix.det_eq_one_of_mulVec_cross
+    (UnitaryGroup.det_isUnit ⟨_, pauliRotation_mem_orthogonalGroup U⟩)
     (pauliRotation_mulVec_cross U)
 
 /-- `pauliRotation U` is a rotation. -/
@@ -442,6 +452,18 @@ noncomputable def quotientKerToSO3 : SU2 ⧸ toSO3.ker ≃ₜ* specialOrthogonal
 theorem quotientKerToSO3_mk (g : SU2) : quotientKerToSO3 (g : SU2 ⧸ toSO3.ker) = toSO3 g :=
   ContinuousMonoidHom.quotientKerEquivOfSurjective_apply_mk ⟨toSO3, continuous_toSO3⟩
     toSO3_surjective g
+
+/-- The Pauli-map homomorphism from `SU(2)` onto `SO(3)` is a covering map. -/
+theorem isCoveringMap_toSO3 : IsCoveringMap toSO3 := by
+  have hfinite : (toSO3.ker : Set SU2).Finite := by
+    have h := (Set.toFinite ({1, -1} : Set (Matrix (Fin 2) (Fin 2) ℂ))).preimage
+      (f := fun g : SU2 ↦ (g : Matrix (Fin 2) (Fin 2) ℂ)) Subtype.val_injective.injOn
+    refine h.subset fun g hg ↦ ?_
+    simpa only [Set.mem_preimage, Set.mem_insert_iff, Set.mem_singleton_iff] using
+      (toSO3_eq_one_iff g).mp (MonoidHom.mem_ker.mp hg)
+  have hquot : Topology.IsQuotientMap toSO3 :=
+    Topology.IsQuotientMap.of_surjective_continuous toSO3_surjective continuous_toSO3
+  exact (hquot.isQuotientCoveringMap_of_isDiscrete_ker_monoidHom hfinite.isDiscrete).isCoveringMap
 
 end SU2
 
