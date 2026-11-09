@@ -585,16 +585,24 @@ open Module
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] {B : LinearMap.BilinForm K V}
 
-/-- For a nondegenerate reflexive form in finite dimension, the orthogonal complement
+/-- For a nondegenerate form in finite dimension, the orthogonal complement
 of an intersection is the sum of the orthogonal complements. -/
 theorem orthogonal_inf (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate)
-    (hRefl : B.IsRefl) (S T : Submodule K V) :
+    (S T : Submodule K V) :
     B.orthogonal (S ⊓ T) = B.orthogonal S ⊔ B.orthogonal T := by
-  have hsup : B.orthogonal (B.orthogonal S ⊔ B.orthogonal T) = S ⊓ T := by
-    rw [orthogonal, Submodule.orthogonalBilin_sup]
-    exact congrArg₂ (· ⊓ ·) (B.orthogonal_orthogonal hB hRefl S)
-      (B.orthogonal_orthogonal hB hRefl T)
-  rw [← hsup, B.orthogonal_orthogonal hB hRefl]
+  refine ((Submodule.eq_of_le_of_finrank_le
+    (sup_le (orthogonal_le inf_le_left) (orthogonal_le inf_le_right)) ?_).symm)
+  have hsup : B.orthogonal S ⊓ B.orthogonal T = B.orthogonal (S ⊔ T) :=
+    (Submodule.orthogonalBilin_sup (B := B) S T).symm
+  have h1 := Submodule.finrank_sup_add_finrank_inf_eq (B.orthogonal S) (B.orthogonal T)
+  have h2 := Submodule.finrank_sup_add_finrank_inf_eq S T
+  rw [hsup] at h1
+  simp only [finrank_orthogonal hB] at h1 ⊢
+  have := Submodule.finrank_le S
+  have := Submodule.finrank_le T
+  have := Submodule.finrank_le (S ⊔ T)
+  have := Submodule.finrank_le (S ⊓ T)
+  omega
 
 /-- The orthogonal complement of a vector with nonzero self-pairing has codimension one,
 without any symmetry or characteristic assumption on the bilinear form. -/
@@ -630,11 +638,13 @@ theorem two_mul_finrank_le_finrank_of_le_orthogonal (hB : B.Nondegenerate) {W : 
 
 variable [Invertible (2 : K)]
 
+omit [FiniteDimensional K V] in
 /-- A vector with nonzero self-pairing extends to an orthogonal basis of a symmetric bilinear
 space, with that vector in the first position. -/
 theorem IsSymm.exists_orthogonal_basis_apply_zero_eq (hB : B.IsSymm) {x : V}
     (hx : B x x ≠ 0) {n : ℕ} (hdim : finrank K V = n + 1) :
     ∃ b : Basis (Fin (n + 1)) K V, B.IsOrthoᵢ b ∧ b 0 = x := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   have hN : finrank K (B.orthogonal (K ∙ x)) = n := by
     have h := B.finrank_orthogonal_span_singleton_add_one hx
     omega
@@ -648,12 +658,14 @@ theorem IsSymm.exists_orthogonal_basis_apply_zero_eq (hB : B.IsSymm) {x : V}
     (mem_nonZeroDivisors_of_ne_zero hx) (fun _ ↦ hx.isUnit.dvd) hv'
   exact ⟨b, hb, hzero⟩
 
+omit [FiniteDimensional K V] in
 /-- An orthogonal pair with nonzero self-pairings extends to an orthogonal basis of a symmetric
 bilinear space, with the pair in the first two positions. -/
 theorem IsSymm.exists_orthogonal_basis_apply_zero_one_eq (hB : B.IsSymm) {x y : V}
     (hx : B x x ≠ 0) (hy : B y y ≠ 0) (hxy : B x y = 0) {n : ℕ}
     (hdim : finrank K V = n + 2) :
     ∃ b : Basis (Fin (n + 2)) K V, B.IsOrthoᵢ b ∧ b 0 = x ∧ b 1 = y := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   let N := B.orthogonal (K ∙ x)
   let y' : N := ⟨y, by simpa [N, orthogonal] using hxy⟩
   have hN : finrank K N = n + 1 := by
