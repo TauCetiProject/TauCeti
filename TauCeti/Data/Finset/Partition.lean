@@ -10,9 +10,11 @@ public import Mathlib.Data.Finset.Sum
 /-!
 # Tagging a partition of a finite set
 
-Tagging vertices according to a predicate embeds a type into its disjoint sum with itself.
-The finite-set image formula compares constructions on a single vertex type with constructions
-on disjoint vertex types.
+Tagging the elements of a type according to a decidable predicate embeds the type into its
+disjoint sum with itself: elements satisfying the predicate go to the left summand, the others to
+the right. The image of a finite set under this embedding is the disjoint sum of the two parts
+into which the predicate splits it. This lets constructions on a single type be relabelled as
+constructions on a disjoint sum, as for joins of simplicial complexes.
 -/
 
 public section
@@ -41,6 +43,6 @@ theorem image_partitionEmbedding {α : Type*} [DecidableEq α] (s : Finset α)
     (p : α → Prop) [DecidablePred p] :
     s.image (TauCeti.partitionEmbedding p) =
       (s.filter p).disjSum (s.filter fun x => ¬ p x) := by
-  ext (x | x) <;> simp [mem_image, apply_ite] <;> grind
+  ext (x | x) <;> simp <;> grind
 
 end Finset

@@ -28,11 +28,13 @@ Finally, the file records that a cylinder `X × [a, b]` is homotopy equivalent t
 through any of its slices `X × {t}`: the interval deforms linearly onto the point `t`. This is how
 the two ends of a cylinder are seen to induce isomorphisms on homology.
 
-It also records that a left homotopy inverse of a homotopy equivalence is automatically a right
-homotopy inverse.
+It also records that inverting a homotopy equivalence twice gives it back, and that a left and
+a right homotopy inverse of the same map are homotopic, so that a left homotopy inverse of a
+homotopy equivalence is automatically a right homotopy inverse.
 
 ## Main declarations
 
+* `ContinuousMap.HomotopyEquiv.symm_symm`: the double inverse of a homotopy equivalence is itself.
 * `ContinuousMap.HomotopyEquiv.pathConnectedSpace`: a space homotopy equivalent to a path
   connected space is path connected.
 * `ContinuousMap.HomotopyEquiv.prodCongr_apply`: the product of two homotopy equivalences acts
@@ -41,6 +43,8 @@ homotopy inverse.
   the projection, for `Y` contractible.
 * `ContinuousMap.HomotopyEquiv.prodIcc`: the slice `x ↦ (x, t)` is a homotopy equivalence
   `X ≃ₕ X × [a, b]`, with homotopy inverse the projection.
+* `ContinuousMap.Homotopic.homotopic_of_comp_homotopic_id`: a left and a right homotopy inverse
+  of the same map are homotopic.
 * `ContinuousMap.HomotopyEquiv.toFun_comp_homotopic_id_of_comp_toFun_homotopic_id`: a left
   homotopy inverse of a homotopy equivalence is a right homotopy inverse.
 -/
@@ -53,6 +57,11 @@ open scoped ContinuousMap
 
 variable {X Y Z Z' : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
   [TopologicalSpace Z']
+
+/-- Inverting a homotopy equivalence twice gives it back. -/
+@[simp]
+theorem _root_.ContinuousMap.HomotopyEquiv.symm_symm (e : X ≃ₕ Y) : e.symm.symm = e :=
+  rfl
 
 /-- **Path connectedness is a homotopy invariant.** A space homotopy equivalent to a path
 connected space is path connected. -/
@@ -131,17 +140,25 @@ theorem _root_.ContinuousMap.HomotopyEquiv.prodIcc_symm_apply {a b : ℝ} (t : S
     (p : X × Set.Icc a b) : (ContinuousMap.HomotopyEquiv.prodIcc t).symm p = p.1 :=
   (rfl)
 
+/-- **Left and right homotopy inverses are homotopic.** If `l ∘ f ≃ id` and `f ∘ r ≃ id`, then
+`l ≃ l f r ≃ r`. In particular `f` is then a homotopy equivalence, with `l` and `r` both two-sided
+homotopy inverses. -/
+theorem _root_.ContinuousMap.Homotopic.homotopic_of_comp_homotopic_id {f : C(X, Y)}
+    {l r : C(Y, X)} (hl : (l.comp f).Homotopic (ContinuousMap.id X))
+    (hr : (f.comp r).Homotopic (ContinuousMap.id Y)) : l.Homotopic r := by
+  have h₁ := (ContinuousMap.Homotopic.refl l).comp hr.symm
+  have h₂ := hl.comp (ContinuousMap.Homotopic.refl r)
+  simp only [ContinuousMap.comp_id, ContinuousMap.id_comp, ContinuousMap.comp_assoc] at h₁ h₂
+  exact h₁.trans h₂
+
 /-- **A left homotopy inverse of a homotopy equivalence is a right homotopy inverse.** If
-`e : X ≃ₕ Y` and `g : Y → X` satisfy `g ∘ e ≃ id`, then also `e ∘ g ≃ id`, since
-`e g ≃ e g e e⁻¹ ≃ e e⁻¹ ≃ id`. -/
+`e : X ≃ₕ Y` and `g : Y → X` satisfy `g ∘ e ≃ id`, then also `e ∘ g ≃ id`, since `g` is
+homotopic to the right homotopy inverse `e⁻¹`. -/
 theorem _root_.ContinuousMap.HomotopyEquiv.toFun_comp_homotopic_id_of_comp_toFun_homotopic_id
     (e : X ≃ₕ Y) {g : C(Y, X)}
     (hg : (g.comp e.toFun).Homotopic (ContinuousMap.id X)) :
-    (e.toFun.comp g).Homotopic (ContinuousMap.id Y) := by
-  have h₁ := (ContinuousMap.Homotopic.refl (e.toFun.comp g)).comp e.right_inv.symm
-  have h₂ := (ContinuousMap.Homotopic.refl e.toFun).comp
-    (hg.comp (ContinuousMap.Homotopic.refl e.invFun))
-  simp only [ContinuousMap.comp_id, ContinuousMap.id_comp, ContinuousMap.comp_assoc] at h₁ h₂
-  exact (h₁.trans h₂).trans e.right_inv
+    (e.toFun.comp g).Homotopic (ContinuousMap.id Y) :=
+  ((ContinuousMap.Homotopic.refl e.toFun).comp
+    (hg.homotopic_of_comp_homotopic_id e.right_inv)).trans e.right_inv
 
 end TauCeti

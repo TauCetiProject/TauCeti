@@ -82,8 +82,7 @@ theorem ncard_ramifiedPrimes_eq_two_of_minpoly_eq_X_sq_sub_three
     (hmin : minpoly ℤ θ = X ^ 2 - C (3 : ℤ)) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
     (ramifiedPrimes K).ncard = 2 := by
   rw [ncard_ramifiedPrimes_eq_card hmin hgen Int.prime_three.squarefree
-      isPrimeDiscriminant_of_mem_neg_four_neg_three eq_of_mem_neg_four_neg_three_of_even
-      prod_neg_four_neg_three,
+      isPrimeDiscriminant_of_mem_neg_four_neg_three prod_neg_four_neg_three,
     Finset.card_pair (by decide : (-4 : ℤ) ≠ -3)]
 
 /-- **`ℚ(√3)` has class-group `2`-rank `0`.** Its discriminant `12 = (-4) · (-3)` has two negative

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Topology.MetricSpace.ProperSpace
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 
 /-!
@@ -40,6 +41,8 @@ agrees with such a homogeneous map outside a ball has bounded derivatives of eve
 ## Main results
 
 * `TauCeti.iteratedFDeriv_smul_snd_of_smul_snd_eq`: homogeneity of the derivatives.
+* `TauCeti.norm_iteratedFDeriv_smul_of_homogeneous`: operator-norm scaling for a homogeneous
+  map on an arbitrary normed source, without a parameter or properness assumption.
 * `TauCeti.exists_norm_iteratedFDeriv_le_of_smul_snd_eq`: for `x` in a compact set and `ξ ≠ 0`,
   the derivative of order `k` in directions `v` is bounded by
   `C ‖ξ‖ ^ m ∏ ‖((v i).1, ‖ξ‖⁻¹ • (v i).2)‖`, that is by `C ‖ξ‖ ^ m` once the `ξ`-components of
@@ -69,6 +72,37 @@ namespace TauCeti
 variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G] {f : E × F → G} {m : ℝ}
   {n : WithTop ℕ∞}
+
+/-- The norm of the `j`-th derivative of a positively homogeneous map of degree `p` scales
+by `t^(p-j)`. The map need only be `Cʲ` away from zero; the normed source and target need
+neither finite dimensionality nor completeness. -/
+theorem norm_iteratedFDeriv_smul_of_homogeneous {f : E → G} {p : ℝ} {j : ℕ}
+    (hf : ContDiffOn ℝ j f {0}ᶜ)
+    (hhom : ∀ t : ℝ, 0 < t → ∀ x, f (t • x) = t ^ p • f x)
+    {t : ℝ} (ht : 0 < t) {x : E} (hx : x ≠ 0) :
+    ‖iteratedFDeriv ℝ j f (t • x)‖ = t ^ (p - j) * ‖iteratedFDeriv ℝ j f x‖ := by
+  let S : E →L[ℝ] E := t • ContinuousLinearMap.id ℝ E
+  have hS : S ⁻¹' ({0}ᶜ : Set E) = {0}ᶜ := by
+    ext y
+    simp [S, ht.ne']
+  have htx : S x ∈ ({0}ᶜ : Set E) := smul_ne_zero ht.ne' hx
+  have hcomp : f ∘ S = t ^ p • f := funext (hhom t ht)
+  have hkey := S.iteratedFDerivWithin_comp_right hf isOpen_compl_singleton.uniqueDiffOn
+    (by rw [hS]; exact isOpen_compl_singleton.uniqueDiffOn) htx le_rfl
+  rw [hS, iteratedFDerivWithin_of_isOpen j isOpen_compl_singleton hx,
+    iteratedFDerivWithin_of_isOpen j isOpen_compl_singleton htx, hcomp,
+    iteratedFDeriv_const_smul_apply (hf.contDiffAt (isOpen_compl_singleton.mem_nhds hx))] at hkey
+  have heq : (t ^ j) • iteratedFDeriv ℝ j f (t • x) = t ^ p • iteratedFDeriv ℝ j f x := by
+    ext v
+    have h := congrArg (fun A ↦ A v) hkey
+    simpa [ContinuousMultilinearMap.compContinuousLinearMap_apply, S,
+      ContinuousMultilinearMap.map_smul_univ] using h.symm
+  have hn := congrArg norm heq
+  simp only [norm_smul, Real.norm_of_nonneg (pow_nonneg ht.le _),
+    Real.norm_of_nonneg (Real.rpow_nonneg ht.le _)] at hn
+  rw [Real.rpow_sub ht, Real.rpow_natCast]
+  field_simp
+  nlinarith [hn]
 
 /-- The derivatives of a map `f (x, ξ)` that is positively homogeneous of degree `m` in `ξ` are
 homogeneous: rescaling `ξ` by `t > 0`, together with the `ξ`-components of the directions,
@@ -290,20 +324,12 @@ theorem exists_norm_iteratedFDeriv_le_of_eq_of_smul_eq {W G : Type*} [NormedAddC
     ∀ k ≤ N, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k f ξ‖ ≤ C := by
   obtain ⟨A, hA⟩ := exists_norm_iteratedFDeriv_le_mul_zpow_of_smul_eq hm hhom
   intro k hk
-  -- On the compact ball of radius `max R 1` the derivative is continuous, hence bounded.
-  obtain ⟨C, hC⟩ := (isCompact_closedBall (0 : W) (max R 1)).exists_bound_of_continuousOn
-    ((hf.continuous_iteratedFDeriv (mod_cast hk)).continuousOn (s := closedBall 0 (max R 1)))
-  refine ⟨max C A, fun ξ ↦ ?_⟩
-  by_cases hξ : ‖ξ‖ ≤ max R 1
-  · exact (hC ξ (mem_closedBall_zero_iff.2 hξ)).trans (le_max_left _ _)
-  -- Outside it `f = m` near `ξ`, and `‖ξ‖ ^ (d - k) ≤ 1` because `‖ξ‖ ≥ 1`.
-  rw [not_le] at hξ
-  have hfm' : f =ᶠ[𝓝 ξ] m := by
-    filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds
-      ((le_max_left R 1).trans_lt hξ)] with x hx using hfm x hx
+  -- Outside the ball of radius `max R 1`, `f = m` and `‖ξ‖ ^ (d - k) ≤ 1` because `‖ξ‖ ≥ 1`.
+  refine (hf.of_le (mod_cast hk)).exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm (R := max R 1)
+    (C := A)
+    (fun ξ hξ ↦ hfm ξ ((le_max_left R 1).trans_lt hξ)) (fun ξ hξ ↦ ?_)
   have hξ0 : ξ ≠ 0 := norm_pos_iff.1 (zero_lt_one.trans ((le_max_right R 1).trans_lt hξ))
-  rw [hfm'.iteratedFDeriv ℝ k |>.eq_of_nhds]
-  refine (hA k hk ξ hξ0).trans ((mul_le_of_le_one_right A.2 ?_).trans (le_max_right _ _))
+  refine (hA k hk ξ hξ0).trans (mul_le_of_le_one_right A.2 ?_)
   exact zpow_le_one_of_nonpos₀ ((le_max_right R 1).trans hξ.le) (by omega)
 
 end TauCeti

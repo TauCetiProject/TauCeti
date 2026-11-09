@@ -38,6 +38,51 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {μ : Measure E} [μ.IsAddHaarMeasure]
 
+/-- In coordinates `Fin (n + 1) → ℝ`, the integral of a directional derivative of a continuous
+compactly supported map is zero, even if the derivative fails to exist on a countable set. This is
+the divergence theorem for the vector field `w • g` on a box strictly containing the support. -/
+private theorem integral_apply_eq_zero_of_hasFDerivAt_off_countable_pi {n : ℕ}
+    {g : (Fin (n + 1) → ℝ) → F} {G : (Fin (n + 1) → ℝ) → (Fin (n + 1) → ℝ) →L[ℝ] F}
+    {s : Set (Fin (n + 1) → ℝ)} (hs : s.Countable) (hg : Continuous g)
+    (hgc : HasCompactSupport g) (hgd : ∀ x ∉ s, HasFDerivAt g (G x) x) (w : Fin (n + 1) → ℝ)
+    (hGvol : Integrable (fun x ↦ G x w) volume) : (∫ x, G x w) = 0 := by
+  obtain ⟨R, hR, hbound⟩ := hgc.isBounded.exists_pos_norm_lt
+  let a : Fin (n + 1) → ℝ := fun _ ↦ -R
+  let b : Fin (n + 1) → ℝ := fun _ ↦ R
+  have hab : a ≤ b := fun _ ↦ neg_le_self hR.le
+  have hout {x : Fin (n + 1) → ℝ} (hx : x ∉ Icc a b) : x ∉ tsupport g := by
+    intro hxs
+    apply hx
+    have hn := hbound x hxs
+    exact ⟨fun i ↦ (abs_lt.mp ((norm_le_pi_norm x i).trans_lt hn)).1.le,
+      fun i ↦ (abs_lt.mp ((norm_le_pi_norm x i).trans_lt hn)).2.le⟩
+  have hface (i : Fin (n + 1)) (t : ℝ) (ht : |t| = R) (y : Fin n → ℝ) :
+      g (i.insertNth t y) = 0 := by
+    apply image_eq_zero_of_notMem_tsupport
+    intro hx
+    have hn := (norm_le_pi_norm (i.insertNth (α := fun _ ↦ ℝ) t y) i).trans_lt
+      (hbound _ hx)
+    simp [ht] at hn
+  have hsum (x : Fin (n + 1) → ℝ) : (∑ i : Fin (n + 1), w i • G x (Pi.single i 1)) = G x w := by
+    simp_rw [← map_smul]
+    rw [← map_sum, ← pi_eq_sum_univ' w]
+  have hdiv := integral_divergence_of_hasFDerivAt_off_countable' a b hab
+    (fun i x ↦ w i • g x) (fun i x ↦ w i • G x) s
+    hs (fun i ↦ (hg.const_smul (w i)).continuousOn)
+    (fun x hx i ↦ (hgd x hx.2).const_smul (w i))
+    (by simpa only [smul_apply, hsum] using hGvol.integrableOn)
+  have hGoutside : ∀ᵐ x, x ∉ Icc a b → G x w = 0 := by
+    have hae : ∀ᵐ x ∂(volume : Measure (Fin (n + 1) → ℝ)), x ∉ s := by
+      simpa using (measure_eq_zero_iff_ae_notMem.mp
+        (hs.measure_zero volume))
+    filter_upwards [hae] with x hx hxbox
+    have hder := (hgd x hx).fderiv
+    rw [← hder, fderiv_of_notMem_tsupport ℝ (hout hxbox), zero_apply]
+  rw [← setIntegral_eq_integral_of_ae_compl_eq_zero hGoutside]
+  simpa only [smul_apply, hsum, a, b, hface _ R (abs_of_pos hR),
+    hface _ (-R) (by rw [abs_neg, abs_of_pos hR]), smul_zero, integral_zero,
+    sub_self, Finset.sum_const_zero] using hdiv
+
 /-- The integral of a directional derivative of a continuous compactly supported map is zero,
 even if the derivative fails to exist on a countable set. Only the derivative in the chosen
 direction must be integrable. -/
@@ -71,44 +116,9 @@ theorem integral_apply_eq_zero_of_hasFDerivAt_off_countable
     rw [isAddLeftInvariant_eq_smul (volume : Measure X) ν]
     exact hGν.smul_measure_nnreal
   -- In coordinates the derivative in direction `w` is the divergence of `w • g`.
-  -- A box strictly containing the support has zero flux on every face.
-  have hzero : (∫ x, G x w) = 0 := by
-    obtain ⟨R, hR, hbound⟩ := hgc.isBounded.exists_pos_norm_lt
-    let a : X := fun _ ↦ -R
-    let b : X := fun _ ↦ R
-    have hab : a ≤ b := fun _ ↦ neg_le_self hR.le
-    have hout {x : X} (hx : x ∉ Icc a b) : x ∉ tsupport g := by
-      intro hxs
-      apply hx
-      have hn := hbound x hxs
-      exact ⟨fun i ↦ (abs_lt.mp ((norm_le_pi_norm x i).trans_lt hn)).1.le,
-        fun i ↦ (abs_lt.mp ((norm_le_pi_norm x i).trans_lt hn)).2.le⟩
-    have hface (i : Fin (n + 1)) (t : ℝ) (ht : |t| = R) (y : Fin n → ℝ) :
-        g (i.insertNth t y) = 0 := by
-      apply image_eq_zero_of_notMem_tsupport
-      intro hx
-      have hn := (norm_le_pi_norm (i.insertNth (α := fun _ ↦ ℝ) t y) i).trans_lt
-        (hbound _ hx)
-      simp [ht] at hn
-    have hsum (x : X) : (∑ i : Fin (n + 1), w i • G x (Pi.single i 1)) = G x w := by
-      simp_rw [← map_smul]
-      rw [← map_sum, ← pi_eq_sum_univ' w]
-    have hdiv := integral_divergence_of_hasFDerivAt_off_countable' a b hab
-      (fun i x ↦ w i • g x) (fun i x ↦ w i • G x) (e.symm ⁻¹' s)
-      (hs.preimage e.symm.injective) (fun i ↦ (hg.const_smul (w i)).continuousOn)
-      (fun x hx i ↦ (hgd x hx.2).const_smul (w i))
-      (by simpa only [smul_apply, hsum] using hGvol.integrableOn)
-    have hGoutside : ∀ᵐ x, x ∉ Icc a b → G x w = 0 := by
-      have hae : ∀ᵐ x ∂(volume : Measure X), x ∉ e.symm ⁻¹' s := by
-        simpa using (measure_eq_zero_iff_ae_notMem.mp
-          ((hs.preimage e.symm.injective).measure_zero volume))
-      filter_upwards [hae] with x hx hxbox
-      have hder := (hgd x hx).fderiv
-      rw [← hder, fderiv_of_notMem_tsupport ℝ (hout hxbox), zero_apply]
-    rw [← setIntegral_eq_integral_of_ae_compl_eq_zero hGoutside]
-    simpa only [smul_apply, hsum, a, b, hface _ R (abs_of_pos hR),
-      hface _ (-R) (by rw [abs_neg, abs_of_pos hR]), smul_zero, integral_zero,
-      sub_self, Finset.sum_const_zero] using hdiv
+  have hzero : (∫ x, G x w) = 0 :=
+    integral_apply_eq_zero_of_hasFDerivAt_off_countable_pi (hs.preimage e.symm.injective) hg hgc
+      hgd w hGvol
   -- Haar uniqueness transfers the zero integral back to the caller's measure.
   have hzeroν : (∫ x, G x w ∂ν) = 0 := by
     rw [isAddLeftInvariant_eq_smul ν (volume : Measure X), integral_smul_nnreal_measure]
