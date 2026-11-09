@@ -107,7 +107,7 @@ theorem IsHodgeBigrading.prod
     IsHodgeBigrading (IsBaseChange.prodMap ιℚ ι'ℚ hℚ h'ℚ)
       (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ) (fun k ↦ (W k).prod (W' k))
       (fun p ↦ (F p).prod (F' p)) (fun pq ↦ (I pq).prod (I' pq)) where
-  iSupIndep := TauCeti.iSupIndep.prod h.iSupIndep h'.iSupIndep
+  iSupIndep := h.iSupIndep.prod h'.iSupIndep
   rationalToComplexSubmodule_eq_iSup k := by
     simp only [rationalToComplexSubmodule_prod hℚ hℂ h'ℚ h'ℂ, TauCeti.iSup_prod_submodule,
       h.rationalToComplexSubmodule_eq_iSup, h'.rationalToComplexSubmodule_eq_iSup]

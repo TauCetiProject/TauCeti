@@ -86,7 +86,8 @@ theorem exists_two_mul_abs_sub_mul_le_and_prime_dvd_gcd_cross (hpn : p ∣ n) (h
         (S.map (ZMod.castHom hpn (ZMod p))).cross
           (coordinates A B (|(q : ℤ) - i * w| • (M • P))) = 0 →
         p ∣ Nat.gcd (R.cross S).val n := by
-  obtain ⟨i, hi⟩ := Int.exists_two_mul_abs_sub_mul_le (q : ℤ) hw
+  obtain ⟨i, hi⟩ := Int.exists_two_mul_abs_sub_mul_le (q : ℤ) hw.ne'
+  rw [abs_of_pos hw] at hi
   refine ⟨i, hi, fun R S hR hS ↦
     prime_dvd_gcd_cross_of_addOrderOf_dvd_mul hpn hB P R S horder ?_ hR hS⟩
   rcases abs_choice ((q : ℤ) - i * w) with h | h <;> rw [h]
