@@ -198,4 +198,23 @@ end Adjoin
 
 end IsIntegralClosure
 
+section FiniteType
+
+open scoped _root_.IntermediateField
+open _root_.IntermediateField.algebraAdjoinAdjoin
+
+/-- **The integral closure of `k[x]` is a finitely generated `k`-algebra**: for `F` finite over
+`k(x)`, for instance an algebraic function field and `x` transcendental over `k`, the integral
+closure of `k[x]` in `F` is a finite `k[x]`-module. No separability of `F / k(x)` is assumed. -/
+theorem finiteType_integralClosure_adjoin {k F : Type*} [Field k] [Field F] [Algebra k F] {x : F}
+    [FiniteDimensional k⟮x⟯ F] :
+    Algebra.FiniteType k (integralClosure (Algebra.adjoin k {x}) F) := by
+  have : Module.Finite (Algebra.adjoin k {x}) (integralClosure (Algebra.adjoin k {x}) F) :=
+    IsIntegralClosure.finite_adjoin k x F _
+  have : Algebra.FiniteType k (Algebra.adjoin k {x}) :=
+    .adjoin_of_finite (Set.finite_singleton x)
+  exact .trans (S := Algebra.adjoin k {x}) inferInstance inferInstance
+
+end FiniteType
+
 end TauCeti

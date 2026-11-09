@@ -39,7 +39,6 @@ The places missing from the finite chart are the poles of `x`, of which there ar
 * `TauCeti.isDedekindDomain_integralClosure_adjoin` and
   `TauCeti.isFractionRing_integralClosure_adjoin`: `R_x` is a Dedekind domain with fraction field
   `F`.
-* `TauCeti.finiteType_integralClosure_adjoin`: `R_x` is a finitely generated `k`-algebra.
 * `TauCeti.isDedekindDomain_holomorphyRing_setOf_mem` and
   `TauCeti.finiteType_holomorphyRing_setOf_mem`: the same two properties for `R_x` presented as
   the holomorphy ring of the places at which `x` is regular, the form in which it is a chart of
@@ -182,17 +181,6 @@ theorem isFractionRing_integralClosure_adjoin (hF : IsFunctionField k F)
     (hx : Transcendental k x) : IsFractionRing (integralClosure (Algebra.adjoin k {x}) F) F := by
   have : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
   exact integralClosure.isFractionRing_of_finite_extension k⟮x⟯ F
-
-/-- **`R_x` is a finitely generated `k`-algebra**: for `F` finite over `k(x)`, for instance an
-algebraic function field and `x` transcendental over `k`, the integral closure of `k[x]` in `F` is a
-finite `k[x]`-module. No separability of `F / k(x)` is assumed. -/
-theorem finiteType_integralClosure_adjoin [FiniteDimensional k⟮x⟯ F] :
-    Algebra.FiniteType k (integralClosure (Algebra.adjoin k {x}) F) := by
-  have : Module.Finite (Algebra.adjoin k {x}) (integralClosure (Algebra.adjoin k {x}) F) :=
-    IsIntegralClosure.finite_adjoin k x F _
-  have : Algebra.FiniteType k (Algebra.adjoin k {x}) :=
-    .adjoin_of_finite (Set.finite_singleton x)
-  exact .trans (S := Algebra.adjoin k {x}) inferInstance inferInstance
 
 /-- **The functions regular wherever `x` is form a Dedekind domain**, for `x` transcendental over
 `k`: this holomorphy ring is `R_x`. -/
