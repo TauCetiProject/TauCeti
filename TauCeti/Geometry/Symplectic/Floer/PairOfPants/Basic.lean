@@ -115,6 +115,14 @@ theorem pairOfPantsPerturbation_eq_zero_of_forall_le {w : ℂ}
   refine Finset.sum_eq_zero fun q _ => ?_
   rw [smoothTransition.zero_of_nonpos (by linarith [h q]), zero_mul, zero_smul]
 
+/-- The pair-of-pants datum of a single end is the summand of that end. -/
+theorem pairOfPantsPerturbation_single (q : Puncture) (G : ℝ → M → ℝ) (w : ℂ) (x : M) :
+    pairOfPantsPerturbation (Pi.single q G) w x =
+      (smoothTransition (q.endSign * (q.endCoord w).re - 1) * G (q.endCoord w).im x) •
+        q.endAngularForm w := by
+  rw [pairOfPantsPerturbation_def, Fintype.sum_eq_single q fun r hr => by
+    simp [Pi.single_eq_of_ne hr], Pi.single_eq_same]
+
 /-- The perturbation vanishes at the center of every end. The centers are the punctures `0` and
 `1`, where every signed longitudinal coordinate is at most `0`. -/
 theorem pairOfPantsPerturbation_endCenter (q : Puncture) (x : M) :

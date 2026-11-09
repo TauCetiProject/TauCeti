@@ -11,6 +11,7 @@ public import Mathlib.Order.Monotone.Monovary
 
 import Mathlib.Algebra.Order.Rearrangement
 import Mathlib.Analysis.Convex.Birkhoff
+import TauCeti.LinearAlgebra.Matrix.Permutation
 
 /-!
 # Inequalities under doubly stochastic averaging
@@ -31,6 +32,8 @@ combinatorial core of the von Neumann trace inequality.
 
 ## Main results
 
+* `Matrix.sum_smul_permMatrix_mem_doublyStochastic`: a convex combination of permutation matrices
+  is doubly stochastic.
 * `ConvexOn.sum_map_mulVec_le_of_mem_doublyStochastic`: for a doubly stochastic `M` and a convex
   `φ`, `∑ i, φ ((M *ᵥ x) i) ≤ ∑ i, φ (x i)`.
 * `Monovary.dotProduct_mulVec_le_of_mem_doublyStochastic`: for a doubly stochastic `M` and
@@ -46,6 +49,27 @@ combinatorial core of the von Neumann trace inequality.
 public section
 
 open Finset Matrix
+
+namespace Matrix
+
+/-- A convex combination of permutation matrices is doubly stochastic. -/
+theorem sum_smul_permMatrix_mem_doublyStochastic {R n : Type*} [Fintype n] [DecidableEq n]
+    [Semiring R] [PartialOrder R] [IsOrderedRing R] {s : Finset (Equiv.Perm n)}
+    {w : Equiv.Perm n → R} (hw₀ : ∀ σ ∈ s, 0 ≤ w σ) (hw₁ : ∑ σ ∈ s, w σ = 1) :
+    ∑ σ ∈ s, w σ • σ.permMatrix R ∈ doublyStochastic R n := by
+  -- Check the marginal sums directly: `Convex.sum_mem` requires a field.
+  apply mem_doublyStochastic_iff_sum.2
+  simp only [Matrix.sum_apply, Matrix.smul_apply, smul_eq_mul]
+  refine ⟨fun i j ↦ Finset.sum_nonneg fun σ hσ ↦ mul_nonneg (hw₀ σ hσ) (σ.permMatrix_nonneg i j),
+    fun i ↦ ?_, fun j ↦ ?_⟩
+  · rw [Finset.sum_comm]
+    simp_rw [← Finset.mul_sum, sum_row_of_mem_doublyStochastic
+      (permMatrix_mem_doublyStochastic (R := R)), mul_one, hw₁]
+  · rw [Finset.sum_comm]
+    simp_rw [← Finset.mul_sum, sum_col_of_mem_doublyStochastic
+      (permMatrix_mem_doublyStochastic (R := R)), mul_one, hw₁]
+
+end Matrix
 
 variable {𝕜 β n : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup β]
   [PartialOrder β] [IsOrderedAddMonoid β] [Module 𝕜 β] [IsStrictOrderedModule 𝕜 β]

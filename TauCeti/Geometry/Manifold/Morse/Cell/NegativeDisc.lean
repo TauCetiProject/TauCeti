@@ -19,10 +19,10 @@ deforming this disc to the negative disc of `ψ₀`, without raising its boundar
 `c - δ²`.
 
 When the transition `T = ψ₀ ∘ ψ₁⁻¹` is differentiable at the origin, with derivative `A`, the
-negative block `N u = (A (u, 0)).1` of `A` is invertible and has a polar decomposition `N = h P`
-with `h` a linear isometry equivalence (`ContinuousLinearMap.polarFactor`). For every sufficiently
-small `δ > 0` there is a homotopy `G` from `w ↦ ψ₁⁻¹ (w, 0)` to `w ↦ ψ₀⁻¹ (h w, 0)` on the disc
-`‖w‖ ≤ δ` with `f (G (t, w)) ≤ c - ‖w‖²` throughout
+negative block `N u = (A (u, 0)).1` of `A` is injective and has a polar decomposition `N = h P`
+with `h` a linear isometry (`ContinuousLinearMap.polarFactor`), orthogonal in finite dimension.
+For every sufficiently small `δ > 0` there is a homotopy `G` from `w ↦ ψ₁⁻¹ (w, 0)` to
+`w ↦ ψ₀⁻¹ (h w, 0)` on the disc `‖w‖ ≤ δ` with `f (G (t, w)) ≤ c - ‖w‖²` throughout
 (`OpenPartialHomeomorph.exists_negativeDisc_homotopy`). In particular the boundary sphere stays
 in the sublevel `{f ≤ c - δ²}`. The homotopy is the coordinate deformation
 `HasFDerivAt.exists_negativeDisc_homotopy` read through `ψ₀⁻¹`; only a neighbourhood of the
@@ -41,7 +41,7 @@ open Set Metric Topology unitInterval
 namespace OpenPartialHomeomorph
 
 variable {M E F : Type*} [TopologicalSpace M]
-  [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
 /-- **The small negative discs of two Morse charts are homotopic below the critical level.** Let
@@ -55,7 +55,7 @@ theorem exists_negativeDisc_homotopy (ψ₀ ψ₁ : OpenPartialHomeomorph M (E �
     (hf₁ : ∀ y ∈ ψ₁.source, f y = c - ‖(ψ₁ y).1‖ ^ 2 + ‖(ψ₁ y).2‖ ^ 2)
     (h₀ : (0 : E × F) ∈ ψ₀.target) (h₁ : (0 : E × F) ∈ ψ₁.target)
     (hp : ψ₀.symm 0 = ψ₁.symm 0) (hT : DifferentiableAt ℝ (fun z ↦ ψ₀ (ψ₁.symm z)) 0) :
-    ∃ h : E ≃ₗᵢ[ℝ] E, ⇑h = ((ContinuousLinearMap.fst ℝ E F).comp
+    ∃ h : E →ₗᵢ[ℝ] E, ⇑h = ((ContinuousLinearMap.fst ℝ E F).comp
         ((fderiv ℝ (fun z ↦ ψ₀ (ψ₁.symm z)) 0).comp (ContinuousLinearMap.inl ℝ E F))).polarFactor ∧
       ∃ δ₀ > 0, ∀ δ ∈ Ioc 0 δ₀, ∃ G : C(I × closedBall (0 : E) δ, M),
         (∀ w, G (0, w) = ψ₁.symm ((w : E), 0)) ∧ (∀ w, G (1, w) = ψ₀.symm (h w, 0)) ∧
