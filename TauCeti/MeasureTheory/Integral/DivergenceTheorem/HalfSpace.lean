@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.DivergenceTheorem
+import TauCeti.MeasureTheory.Integral.DivergenceTheorem.CompactSupport
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import TauCeti.Analysis.Calculus.TangentCone.Basic
 public import Mathlib.Analysis.Normed.Group.Bounded
@@ -27,40 +28,6 @@ open Set Filter MeasureTheory
 open scoped Topology
 
 namespace MeasureTheory
-
-/-- The divergence integrand of a field supported in a box `Icc a b` inside the half-space is
-integrable on the box and on the half-space, and its integrals over both agree. -/
-private lemma integrableOn_and_integral_divergence_halfSpace {n : ℕ}
-    {f : (Fin (n + 1) → ℝ) → (Fin (n + 1) → ℝ)} (hf : ContDiffOn ℝ 1 f {x | 0 ≤ x 0})
-    {a b : Fin (n + 1) → ℝ} {R : ℝ} (hKH : Icc a b ⊆ {x | 0 ≤ x 0})
-    (hmem : ∀ x : Fin (n + 1) → ℝ, 0 ≤ x 0 → ‖x‖ < R → x ∈ Icc a b)
-    (hbound : ∀ x ∈ tsupport f, ‖x‖ < R) :
-    IntegrableOn (fun x ↦ ∑ i : Fin (n + 1),
-      fderivWithin ℝ f {y | 0 ≤ y 0} x (Pi.single i 1) i) (Icc a b) ∧
-    IntegrableOn (fun x ↦ ∑ i : Fin (n + 1),
-      fderivWithin ℝ f {y | 0 ≤ y 0} x (Pi.single i 1) i) {x | 0 ≤ x 0} ∧
-    (∫ x in {x | 0 ≤ x 0}, ∑ i : Fin (n + 1),
-        fderivWithin ℝ f {y | 0 ≤ y 0} x (Pi.single i 1) i) =
-      ∫ x in Icc a b, ∑ i : Fin (n + 1),
-        fderivWithin ℝ f {y | 0 ≤ y 0} x (Pi.single i 1) i := by
-  let H : Set (Fin (n + 1) → ℝ) := {x | 0 ≤ x 0}
-  let D (x : Fin (n + 1) → ℝ) :=
-    ∑ i : Fin (n + 1), fderivWithin ℝ f H x (Pi.single i 1) i
-  have hH : MeasurableSet H := isClosed_le continuous_const (continuous_apply 0) |>.measurableSet
-  have huniq : UniqueDiffOn ℝ H := TauCeti.uniqueDiffOn_pi_halfSpace 0 0
-  have hDzero {x : Fin (n + 1) → ℝ} (hx : x ∈ H) (hk : x ∉ Icc a b) : D x = 0 := by
-    have hn : x ∉ tsupport f := fun hx' ↦ hk (hmem x hx (hbound x hx'))
-    have hd := (HasFDerivWithinAt.of_notMem_tsupport ℝ (s := H) hn).fderivWithin (huniq x hx)
-    simp [D, hd]
-  have hDc : ContinuousOn D H := by
-    apply continuousOn_finsetSum
-    intro i _
-    exact (continuous_apply i).comp_continuousOn
-      ((hf.continuousOn_fderivWithin huniq (by simp)).clm_apply continuousOn_const)
-  have hDi : IntegrableOn D (Icc a b) :=
-    (hDc.mono hKH).integrableOn_compact isCompact_Icc
-  exact ⟨hDi, hDi.of_forall_sdiff_eq_zero hH fun x hx ↦ hDzero hx.1 hx.2,
-    setIntegral_eq_of_subset_of_forall_sdiff_eq_zero hH hKH fun x hx ↦ hDzero hx.1 hx.2⟩
 
 /-- The coordinate trace of a field on the hyperplane is integrable, and its integral is the
 integral over a box containing its support. -/
@@ -110,7 +77,9 @@ theorem _root_.ContDiffOn.integral_divergence_coordinate_halfSpace {n : ℕ}
   have hzero {x : Fin (n + 1) → ℝ} (hn : R ≤ ‖x‖) : f x = 0 := by
     apply image_eq_zero_of_notMem_tsupport
     exact fun hx ↦ (hbound x hx).not_ge hn
-  obtain ⟨hDi, hDI, hDiEq⟩ := integrableOn_and_integral_divergence_halfSpace hf hKH hmem hbound
+  have hH : MeasurableSet H := isClosed_le continuous_const (continuous_apply 0) |>.measurableSet
+  obtain ⟨hDi, hDI, hDiEq⟩ := hf.integrableOn_divergence_and_setIntegral_eq_Icc
+    (TauCeti.uniqueDiffOn_pi_halfSpace 0 0) hH hKH fun x hx hx' ↦ hmem x hx (hbound x hx')
   have hbzero (y : Fin n → ℝ) (hy : y ∉ Icc (fun _ ↦ -R) (fun _ ↦ R)) :
       f (Fin.cons 0 y) 0 = 0 := by
     have hk : Fin.cons 0 y ∉ Icc a b := by
