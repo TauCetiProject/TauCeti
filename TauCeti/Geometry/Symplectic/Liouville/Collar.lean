@@ -158,12 +158,12 @@ theorem isLocalDiffeomorphAt_flowOf_comp [FiniteDimensional ℝ E'] [J.Boundaryl
     -- The tangent spaces are the model spaces `ℝ × E'` and `E`.
     change finrank ℝ (ℝ × E') = finrank ℝ E
     rw [← hdim, Module.finrank_prod, Module.finrank_self, add_comm]
-  let e := (LinearMap.linearEquivOfInjective _
-    (injective_mfderiv_flowOf_comp hZ hι hZα hα hp) hdim').toContinuousLinearEquiv
+  have hinj := injective_mfderiv_flowOf_comp hZ hι hZα hα hp
   exact isLocalDiffeomorphAt_of_mfderiv_eq
     (fun q hq ↦ (contMDiffAt_flowOf_comp_uncurry hZ hι hq).contMDiffWithinAt)
     (isOpen_setOf_mem_flowDomain_comp hZ hι) hp BoundarylessManifold.isInteriorPoint (by simp)
-    (e := e) rfl
+    (e := (LinearMap.linearEquivOfInjective _ hinj hdim').toContinuousLinearEquiv)
+    (ContinuousLinearMap.ext fun w ↦ LinearMap.linearEquivOfInjective_apply hinj hdim' w)
 
 /-- **The Liouville collar of a compact hypersurface.** Let the smooth vector field `Z` be the
 Liouville field of the one-form `α`, `ι_Z dα = α`, and let `ι : S → M` be a smooth injective map
@@ -182,27 +182,17 @@ theorem exists_isOpen_injOn_flowOf_comp [FiniteDimensional ℝ E'] [J.Boundaryle
   have hD : ({0} : Set ℝ) ×ˢ (univ : Set S) ⊆ D := by
     rintro ⟨t, y⟩ ⟨rfl, -⟩
     exact mem_flowDomain_zero hZ1 (ι y)
-  have hloc (p : ℝ × S) (hp : p ∈ D) :=
-    isLocalDiffeomorphAt_flowOf_comp hZ hι hdim hZα hα hp
-  -- On `{0} × S` the flow map is `ι`, so it is injective there; near each point it has a left
-  -- inverse, so it is injective there too.
-  obtain ⟨t, ht, hinj⟩ := Set.InjOn.exists_mem_nhdsSet
-    (s := ({0} : Set ℝ) ×ˢ (univ : Set S)) (f := fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2))
+  -- On `{0} × S` the flow map is `ι`, so it is injective there.
+  obtain ⟨U, hUo, hsU, hinj, hloc⟩ := Set.InjOn.exists_isOpen_superset_isLocalDiffeomorphOn
+    (f := fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2))
     (by
       rintro ⟨_, a⟩ ⟨rfl, -⟩ ⟨_, b⟩ ⟨rfl, -⟩ hab
       simp only [flowOf_zero hZ1] at hab
       rw [hιi hab])
     (isCompact_singleton.prod isCompact_univ)
-    (fun p hp ↦ (contMDiffAt_flowOf_comp_uncurry hZ hι (hD hp)).continuousAt)
-    fun p hp ↦ by
-      have hf := hloc p (hD hp)
-      exact ⟨_, hf.localInverse_eventuallyEq_left, fun a ha b hb hab ↦
-        ha.symm.trans ((congrArg hf.localInverse hab).trans hb)⟩
-  have hDn : D ∈ 𝓝ˢ (({0} : Set ℝ) ×ˢ (univ : Set S)) :=
-    (isOpen_setOf_mem_flowDomain_comp hZ hι).mem_nhdsSet.2 hD
-  obtain ⟨U, hUo, hsU, hU⟩ := mem_nhdsSet_iff_exists.mp (inter_mem ht hDn)
-  exact ⟨U, hUo, hsU, fun p hp ↦ (hU hp).2, hinj.mono fun p hp ↦ (hU hp).1,
-    fun p ↦ hloc p (hU p.2).2⟩
+    fun p hp ↦ isLocalDiffeomorphAt_flowOf_comp hZ hι hdim hZα hα (hD hp)
+  exact ⟨U ∩ D, hUo.inter (isOpen_setOf_mem_flowDomain_comp hZ hι), subset_inter hsU hD,
+    inter_subset_right, hinj.mono inter_subset_left, fun p ↦ hloc ⟨p, p.2.1⟩⟩
 
 /-- **The Liouville collar of a transverse hypersurface is locally diffeomorphic.** Let the smooth
 vector field `Z` be the Liouville field of the one-form `α`, `ι_Z dα = α`, with `dα`

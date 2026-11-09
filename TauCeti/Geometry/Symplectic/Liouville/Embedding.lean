@@ -156,17 +156,9 @@ embedding of a compact domain `W` into a Hausdorff manifold is injective, and a 
 diffeomorphism, on an open neighbourhood of `W`. -/
 theorem exists_isOpen_injOn [T2Space M'] (hφ : IsExactLiouvilleEmbedding α W α' W' φ h)
     (hW : IsCompact W) :
-    ∃ U, IsOpen U ∧ W ⊆ U ∧ InjOn φ U ∧ IsLocalDiffeomorphOn I I' (⊤ : ℕ∞) φ U := by
-  -- Near each point of `W`, `φ` has a left inverse, so it is injective there.
-  obtain ⟨t, ht, hinj⟩ := hφ.injOn.exists_mem_nhdsSet hW
-    (fun x _ ↦ hφ.contMDiff.continuous.continuousAt) fun x hx ↦ by
-      have hf := hφ.isLocalDiffeomorphOn ⟨x, hx⟩
-      exact ⟨_, hf.localInverse_eventuallyEq_left, fun a ha b hb hab ↦
-        ha.symm.trans ((congrArg hf.localInverse hab).trans hb)⟩
-  have hloc : ∀ᶠ y in 𝓝ˢ W, IsLocalDiffeomorphAt I I' (⊤ : ℕ∞) φ y :=
-    eventually_nhdsSet_iff_forall.mpr fun x hx ↦ (hφ.isLocalDiffeomorphOn ⟨x, hx⟩).eventually
-  obtain ⟨U, hUo, hWU, hU⟩ := mem_nhdsSet_iff_exists.mp (inter_mem ht hloc)
-  exact ⟨U, hUo, hWU, hinj.mono fun y hy ↦ (hU hy).1, fun y ↦ (hU y.2).2⟩
+    ∃ U, IsOpen U ∧ W ⊆ U ∧ InjOn φ U ∧ IsLocalDiffeomorphOn I I' (⊤ : ℕ∞) φ U :=
+  hφ.injOn.exists_isOpen_superset_isLocalDiffeomorphOn hW fun x hx ↦
+    hφ.isLocalDiffeomorphOn ⟨x, hx⟩
 
 /-- **Composition of exact embeddings.** If `φ` is an exact codimension-zero embedding of `W`
 into `W'` with primitive `h`, and `φ'` one of `W'` into `W''` with primitive `h'`, then `φ' ∘ φ`

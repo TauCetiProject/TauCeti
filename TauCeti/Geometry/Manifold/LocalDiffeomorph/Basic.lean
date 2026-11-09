@@ -75,6 +75,9 @@ serve as partial diffeomorphisms in constructions of local submanifolds.
   be chosen so that coordinate expressions of `g ∘ f` agree with those of `g`.
 * `IsLocalDiffeomorphAt.eventually`: being a local diffeomorphism at a point is an open
   condition.
+* `IsLocalDiffeomorphAt.exists_mem_nhds_injOn`: a local diffeomorphism is locally injective.
+* `Set.InjOn.exists_isOpen_superset_isLocalDiffeomorphOn`: a local diffeomorphism injective on a
+  compact set is injective, and a local diffeomorphism, on an open neighbourhood of it.
 * `IsLocalDiffeomorphAt.of_comp_right`: a map whose composite with a local diffeomorphism is a local
   diffeomorphism is itself one.
 * `IsLocalDiffeomorphAt.isLocalDiffeomorphAt_comp_iff`: the resulting characterisation of local
@@ -457,6 +460,27 @@ theorem _root_.IsLocalDiffeomorphAt.eventually {f : M → N} {x : M}
   obtain ⟨Φ, hxΦ, hfΦ⟩ := hf
   filter_upwards [Φ.open_source.mem_nhds hxΦ] with y hy
   exact isLocalDiffeomorphAt_of_eqOn hy hfΦ
+
+/-- **A local diffeomorphism is locally injective.** A `C^n` local diffeomorphism at `x` is
+injective on a neighbourhood of `x`, where its local inverse is a left inverse. -/
+theorem _root_.IsLocalDiffeomorphAt.exists_mem_nhds_injOn {f : M → N} {x : M}
+    (hf : IsLocalDiffeomorphAt I J n f x) : ∃ t ∈ 𝓝 x, InjOn f t :=
+  ⟨_, hf.localInverse_eventuallyEq_left, fun _ ha _ hb hab ↦
+    ha.symm.trans ((congrArg hf.localInverse hab).trans hb)⟩
+
+/-- **A local diffeomorphism injective on a compact set is injective near it.** A map into a
+Hausdorff manifold which is injective on a compact set `K` and a `C^n` local diffeomorphism at every
+point of `K` is injective, and a `C^n` local diffeomorphism, on an open neighbourhood of `K`. -/
+theorem _root_.Set.InjOn.exists_isOpen_superset_isLocalDiffeomorphOn [T2Space N] {f : M → N}
+    {K : Set M} (hinj : InjOn f K) (hK : IsCompact K)
+    (hf : ∀ x ∈ K, IsLocalDiffeomorphAt I J n f x) :
+    ∃ U, IsOpen U ∧ K ⊆ U ∧ InjOn f U ∧ IsLocalDiffeomorphOn I J n f U := by
+  obtain ⟨t, ht, hinj⟩ := hinj.exists_mem_nhdsSet hK
+    (fun x hx ↦ (hf x hx).contMDiffAt.continuousAt) fun x hx ↦ (hf x hx).exists_mem_nhds_injOn
+  have hloc : ∀ᶠ y in 𝓝ˢ K, IsLocalDiffeomorphAt I J n f y :=
+    eventually_nhdsSet_iff_forall.mpr fun x hx ↦ (hf x hx).eventually
+  obtain ⟨U, hUo, hKU, hU⟩ := mem_nhdsSet_iff_exists.mp (Filter.inter_mem ht hloc)
+  exact ⟨U, hUo, hKU, hinj.mono fun y hy ↦ (hU hy).1, fun y ↦ (hU y.2).2⟩
 
 /-- **Cancelling a local diffeomorphism on the right.** If `e` is a `C^n` local diffeomorphism at
 `x` and `f ∘ e` is a `C^n` local diffeomorphism at `x`, then `f` is a `C^n` local diffeomorphism at
