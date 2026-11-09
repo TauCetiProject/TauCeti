@@ -189,8 +189,9 @@ theorem IsDarbouxBasis.map {ω' : SymplecticForm W} {e : V ≃ₗ[ℝ] W}
   refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩ <;> simp only [Basis.map_apply, he.apply]
   exacts [hb.apply_fst_fst i j, hb.apply_snd_snd i j, hb.apply_fst_snd i j]
 
-/-- **Linear symplectomorphisms have determinant one.** -/
-theorem IsSymplectomorphism.det_eq_one [FiniteDimensional ℝ V] {e : V ≃ₗ[ℝ] V}
+/-- **Linear symplectomorphisms have determinant one.** On an infinite-dimensional space the
+determinant is `1` by convention. -/
+theorem IsSymplectomorphism.det_eq_one {e : V ≃ₗ[ℝ] V}
     (he : IsSymplectomorphism ω ω e) : LinearMap.det (e : V →ₗ[ℝ] V) = 1 :=
   BilinForm.IsIsometry.det_eq_one_of_isAlt ω.isAlt ω.nondegenerate
     (BilinForm.isIsometry_iff.2 he.apply)
