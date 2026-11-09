@@ -246,4 +246,16 @@ theorem sub_one_mul_sum_pow_mul_mod_eq_mul_sum_digits_div_mul {b f m t : ℕ}
     mul_left_comm _ d, mul_assoc d m] at h
   exact Nat.eq_of_mul_eq_mul_left hd0 h
 
+-- The endpoint has a redundant most-significant-first representation [4, 0].
+example : ofDigits 2 (([4, 0] : List ℕ).reverse) = 2 * 2 ^ 2 := by decide
+
+-- Positive length matters, even though leading zero digits are allowed.
+example : ¬ ∃ w : List (Fin 5), w.length = 0 ∧ ofDigits 2 (w.map Fin.val) = 2 := by
+  simp
+
+-- Zero has a representation at every positive prescribed length.
+example {n : ℕ} (hn : 0 < n) :
+    ∃ w : List (Fin 5), w.length = n ∧ ofDigits 2 (w.map Fin.val) = 0 :=
+  exists_length_eq_ofDigits_eq_of_le_two_mul_pow (b := 2) hn (Nat.zero_le _)
+
 end Nat

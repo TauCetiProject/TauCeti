@@ -47,7 +47,7 @@ stable and unstable sets are exactly the coordinate planes, and the remaining an
 * `TauCeti.MorseChart.coord_mfderiv_neg`: in the negated Morse chart, `-X` is the linear field.
 * `TauCeti.IsAdaptedPseudoGradient.neg`: `-X` is a pseudo-gradient adapted to `-f`.
 * `TauCeti.IsAdaptedPseudoGradient.strictAnti_comp`: `f` is strictly antitone along an integral
-  curve along which it is differentiable and that never meets a critical point.
+  curve that never meets a critical point.
 
 ## References
 
@@ -138,12 +138,14 @@ theorem antitone_comp (hX : IsAdaptedPseudoGradient f X)
     Antitone (f ∘ γ) :=
   hγ.antitone_comp hf fun t ↦ hX.mvfderiv_apply_nonpos (γ t)
 
-/-- **`f` is strictly antitone along an integral curve of an adapted pseudo-gradient** along which
-`f` is differentiable and that never meets a critical point. -/
-theorem strictAnti_comp (hX : IsAdaptedPseudoGradient f X)
-    (hf : ∀ t, MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f (γ t)) (hγ : IsMIntegralCurve γ X)
+/-- **`f` is strictly antitone along an integral curve of an adapted pseudo-gradient** that never
+meets a critical point. Differentiability of `f` along the curve is automatic, since `mfderiv`
+vanishes where `f` is not differentiable. -/
+theorem strictAnti_comp (hX : IsAdaptedPseudoGradient f X) (hγ : IsMIntegralCurve γ X)
     (hcrit : ∀ t, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (γ t) ≠ 0) : StrictAnti (f ∘ γ) :=
-  strictAnti_of_hasDerivAt_neg (fun t ↦ Manifold.hasDerivAt_comp_curve (hf t) (hγ t))
+  strictAnti_of_hasDerivAt_neg
+    (fun t ↦ Manifold.hasDerivAt_comp_curve
+      (by_contra fun h ↦ hcrit t (mfderiv_zero_of_not_mdifferentiableAt h)) (hγ t))
     fun t ↦ hX.mvfderiv_apply_lt_zero _ (hcrit t)
 
 variable [FiniteDimensional ℝ E]
