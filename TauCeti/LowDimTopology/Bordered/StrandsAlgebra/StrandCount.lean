@@ -232,19 +232,6 @@ theorem differential_eq_zero_of_mem_strandCountPart {k : ℕ} (hk : k ≤ 1) {x 
   | add x x' _ _ hx hx' => rw [map_add, hx, hx', add_zero]
   | smul r x _ hx => rw [map_smul, hx, smul_zero]
 
-/-! ### Products of single strands -/
-
-/-- Two single strands meeting at `j` multiply to their concatenation. -/
-theorem of_single_mul_of_single {i j k : α} (h : i ≤ j) (h' : j ≤ k) :
-    (of (single i j h) * of (single j k h') : StrandsAlgebra R α) =
-      of (single i k (h.trans h')) := by
-  rw [of_mul_of_of_composable (composable_single_single_iff.2 rfl), single_trans_single]
-
-/-- Two single strands multiply to zero unless the first ends where the second starts. -/
-theorem of_single_mul_of_single_of_ne {i j j' k : α} (h : i ≤ j) (h' : j' ≤ k) (hj : j ≠ j') :
-    (of (single i j h) * of (single j' k h') : StrandsAlgebra R α) = 0 :=
-  of_mul_of_of_not_composable (composable_single_single_iff.not.2 hj)
-
 /-! ### The one-strand part of the matched subalgebra -/
 
 section OneStrand
@@ -268,15 +255,6 @@ theorem oneStrandFamily_inr (p : {p : α × α // p.1 < p.2}) :
     oneStrandFamily R M (.inr p) = of (single p.1.1 p.1.2 p.2.le) :=
   (rfl)
 
-private theorem repr_of_apply (ψ φ : StrandDiagram α) :
-    (basis R α).repr (of ψ) φ = if ψ = φ then 1 else 0 := by
-  rw [← basis_apply, Module.Basis.repr_self, Finsupp.single_apply]
-
-private theorem repr_sum_smul_apply {ι : Type*} [Fintype ι] (c : ι → R)
-    (v : ι → StrandsAlgebra R α) (φ : StrandDiagram α) :
-    (basis R α).repr (∑ i, c i • v i) φ = ∑ i, c i * (basis R α).repr (v i) φ := by
-  simp [Finsupp.coe_finsetSum, Finset.sum_apply]
-
 /-- The coefficient of the identity diagram on `{a}` in a combination of the family is the
 coefficient of the idempotent of the pair of `a`. -/
 private theorem repr_sum_smul_oneStrandFamily_idOn
@@ -286,7 +264,7 @@ private theorem repr_sum_smul_oneStrandFamily_idOn
     Finset.sum_eq_zero ?_, add_zero]
   · simp [repr_matchedIdem_apply]
   · intro p _
-    simp [repr_of_apply, single_ne_idOn p.2]
+    simp [single_ne_idOn p.2]
   · intro b hb
     have hb' : M a ≠ b.1 := fun h ↦ hb (Subtype.ext h.symm)
     simp [repr_matchedIdem_apply, hb']
@@ -299,10 +277,10 @@ private theorem repr_sum_smul_oneStrandFamily_single
       c (.inr ⟨(i, j), h⟩) := by
   rw [repr_sum_smul_apply, Fintype.sum_sum_type, Finset.sum_eq_zero ?_, zero_add,
     Fintype.sum_eq_single ⟨(i, j), h⟩ ?_]
-  · simp [repr_of_apply]
+  · simp
   · intro p hp
     have hp' : ¬(p.1.1 = i ∧ p.1.2 = j) := fun h' ↦ hp (Subtype.ext (Prod.ext h'.1 h'.2))
-    simp [repr_of_apply, hp']
+    simp [hp']
   · intro b _
     simp [repr_matchedIdem_apply, single_ne_idOn h]
 
