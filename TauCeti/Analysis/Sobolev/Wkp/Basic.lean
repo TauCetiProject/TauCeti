@@ -513,9 +513,9 @@ theorem norm_le_norm_lowerOrder_add_norm_iteratedGradient (k : ℕ)
       rw [lowerOrder_zero, iteratedGradient_zero]
       exact W1p.norm_le_norm_value_add_norm_gradient u
   | succ k =>
-      have h := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u
-      nlinarith [norm_nonneg u, norm_nonneg (lowerOrder (k + 1) u),
-        norm_nonneg (iteratedGradient (k + 1) u)]
+      rw [lowerOrder_succ, iteratedGradient_succ]
+      exact WeakDerivStep.norm_le_norm_prev_add_norm_weakFDeriv
+        (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
 
 /-- At exponent two, the squared graph norm at every positive order is the sum of the squared
 norm of the lower-order component and the squared norm of the highest weak derivative.  The
