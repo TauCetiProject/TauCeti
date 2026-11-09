@@ -135,7 +135,7 @@ private theorem renewalMeasure_map_Icc_add_le (hT : ∀ n, Measurable (T n))
   have hA : MeasurableSet (Icc t (t + h)) := measurableSet_Icc
   calc F.renewalMeasure (Icc t (t + h))
       = ∑' n, P (arrival T n ⁻¹' Icc t (t + h)) := by
-        rw [Measure.renewalMeasure_apply _ hA]
+        rw [Measure.renewalMeasure_apply _]
         exact tsum_congr fun n ↦ by simpa using (hlaw 0 n hA).symm
     -- split according to the first index `m` with `t ≤ arrival T m`
     _ = ∑' n, ∑' m, P (arrival T n ⁻¹' Icc t (t + h) ∩ E m) := by
@@ -157,7 +157,7 @@ private theorem renewalMeasure_map_Icc_add_le (hT : ∀ n, Measurable (T n))
           measure_mono (preimage_arrival_Icc_inter_firstArrivalGE_subset m k)
     _ = ∑' m, P (E m) * F.renewalMeasure (Iic h) := by
         refine tsum_congr fun m ↦ ?_
-        simp_rw [hindep_E, ENNReal.tsum_mul_left, Measure.renewalMeasure_apply _ measurableSet_Iic]
+        simp_rw [hindep_E, ENNReal.tsum_mul_left, Measure.renewalMeasure_apply]
     _ = P (⋃ m, E m) * F.renewalMeasure (Iic h) := by
         rw [ENNReal.tsum_mul_right, measure_iUnion pairwise_disjoint_firstArrivalGE hEm]
     _ ≤ F.renewalMeasure (Iic h) := mul_le_of_le_one_left' prob_le_one
