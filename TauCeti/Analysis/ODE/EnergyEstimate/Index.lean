@@ -87,11 +87,11 @@ computing the index with the forms `S` and `S'` at the two ends shows `n⁻(S) =
   the index is the number of negative eigenvalues of `A⁻` minus that of `A⁺`.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_of_forall_hasLyapunovForm`: the index is
   constant along an affine deformation whose limits keep Lyapunov forms.
-* `index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of_lyapunov`, in
+* `index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of_forall_le_inner`, in
   `TauCeti.WeakDerivStep`: for limits with symmetric Lyapunov forms `S±`, the index is
   `n⁻(S⁻) - n⁻(S⁺)`.
-* `ContinuousLinearMap.finrank_pointSpectralSubspace_Iio_eq_of_lyapunov`: two symmetric Lyapunov
-  forms of one operator have the same number of negative eigenvalues.
+* `ContinuousLinearMap.finrank_pointSpectralSubspace_Iio_eq_of_forall_le_inner`: two symmetric
+  Lyapunov forms of one operator have the same number of negative eigenvalues.
 
 ## References
 
@@ -636,7 +636,7 @@ real inner product space whose limits `A±` at `±∞` have symmetric Lyapunov f
 minus the number of negative eigenvalues of `S⁺`, counted with multiplicity. Neither `A` nor its
 limits need to be symmetric; for invertible symmetric limits one may take `S± = A±`, which gives
 `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank`. -/
-theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of_lyapunov
+theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of_forall_le_inner
     (hA : Continuous A) {Aminus Aplus Sminus Splus : E →L[ℝ] E}
     (hSminus : (Sminus : E →ₗ[ℝ] E).IsSymmetric) (hSplus : (Splus : E →ₗ[ℝ] E).IsSymmetric)
     {cminus cplus : ℝ} (hcminus : 0 < cminus) (hcplus : 0 < cplus)
@@ -688,21 +688,22 @@ symmetric Lyapunov forms of the same operator `A` on a finite-dimensional real i
 `c ‖v‖² ≤ ⟪S (A v), v⟫` and `c' ‖v‖² ≤ ⟪S' (A v), v⟫` with `c, c' > 0`, then `S` and `S'` have the
 same number of negative eigenvalues, counted with multiplicity. By the inertia theorem of Ostrowski
 and Schneider, which is not formalized here, this number is the dimension of the sum of the
-generalized eigenspaces of `A` at eigenvalues of negative real part. Here it is the index of the
-trajectory operator `d/ds + A` of the constant family `A`, computed with the forms `S` at both ends
-and with `S` at `-∞` and `S'` at `+∞`. -/
-theorem finrank_pointSpectralSubspace_Iio_eq_of_lyapunov {A S S' : E →L[ℝ] E}
+generalized eigenspaces of `A` at eigenvalues of negative real part. -/
+theorem finrank_pointSpectralSubspace_Iio_eq_of_forall_le_inner {A S S' : E →L[ℝ] E}
     (hS : (S : E →ₗ[ℝ] E).IsSymmetric) (hS' : (S' : E →ₗ[ℝ] E).IsSymmetric) {c c' : ℝ}
     (hc : 0 < c) (hc' : 0 < c') (h : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (A v), v⟫_ℝ)
     (h' : ∀ v, c' * ‖v‖ ^ 2 ≤ ⟪S' (A v), v⟫_ℝ) :
     Module.finrank ℝ (Module.End.pointSpectralSubspace (S : E →ₗ[ℝ] E) (Iio 0)) =
       Module.finrank ℝ (Module.End.pointSpectralSubspace (S' : E →ₗ[ℝ] E) (Iio 0)) := by
+  -- The index of the constant family `A` is `n⁻(S) - n⁻(S)` and also `n⁻(S) - n⁻(S')`.
   let AL := (memLp_top_const (μ := volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) A).toLp
   have hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun _ ↦ A := MemLp.coeFn_toLp _
-  have h₁ := index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of_lyapunov
-    continuous_const hS hS hc hc h h tendsto_const_nhds tendsto_const_nhds AL hAL
-  have h₂ := index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of_lyapunov
-    continuous_const hS hS' hc hc' h h' tendsto_const_nhds tendsto_const_nhds AL hAL
+  have h₁ :=
+    index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of_forall_le_inner
+      continuous_const hS hS hc hc h h tendsto_const_nhds tendsto_const_nhds AL hAL
+  have h₂ :=
+    index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of_forall_le_inner
+      continuous_const hS hS' hc hc' h h' tendsto_const_nhds tendsto_const_nhds AL hAL
   omega
 
 end ContinuousLinearMap

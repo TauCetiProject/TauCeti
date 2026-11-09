@@ -44,7 +44,7 @@ which needs the spectral splitting of `A`, is not proved here.
   (`ContinuousLinearMap.exists_pos_forall_mul_norm_le_norm_apply_of_forall_le_inner`).
 * `ContinuousLinearMap.hasLyapunovForm_one_sub_smul_add_smul`: a symmetric Lyapunov form `S` of
   `A` is a Lyapunov form of every `(1 - t) A + t S` with `0 ≤ t ≤ 1`, which joins `A` to the
-  invertible symmetric operator `S` through operators with Lyapunov forms.
+  bounded-below symmetric operator `S` through operators with Lyapunov forms.
 * `ContinuousLinearMap.HasLyapunovForm.eq_zero_of_apply_eq_neg_smul_of_apply_eq_smul`: `A` has no
   purely imaginary eigenvalue, and in particular is injective.
 * `ContinuousLinearMap.HasLyapunovForm.neg_adjoint`: in finite dimensions, `-A†` has a Lyapunov
@@ -165,8 +165,8 @@ theorem exists_pos_forall_mul_norm_le_norm_apply_of_forall_le_inner {S : E →L[
 /-- **A Lyapunov form is a Lyapunov form along the segment to itself.** If `S` is a symmetric
 Lyapunov form of `A`, with `c ‖v‖² ≤ ⟪S (A v), v⟫` and `c > 0`, then for `0 ≤ t ≤ 1` the operator
 `(1 - t) A + t S` has the Lyapunov form `S`, since `⟪S (S v), v⟫ = ‖S v‖²`. So every operator with
-a Lyapunov form is joined to an invertible symmetric operator through operators with Lyapunov
-forms. -/
+a symmetric Lyapunov form is joined to a bounded-below symmetric operator through operators with
+Lyapunov forms. -/
 theorem hasLyapunovForm_one_sub_smul_add_smul {S : E →L[ℝ] E}
     (hS : (S : E →ₗ[ℝ] E).IsSymmetric) {c : ℝ} (hc : 0 < c)
     (h : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (A v), v⟫_ℝ) {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) :
@@ -175,8 +175,8 @@ theorem hasLyapunovForm_one_sub_smul_add_smul {S : E →L[ℝ] E}
   refine ⟨S, hS, min c (α ^ 2), lt_min hc (by positivity), fun v ↦ ?_⟩
   have hform : ⟪S (((1 - t) • A + t • S) v), v⟫_ℝ =
       (1 - t) * ⟪S (A v), v⟫_ℝ + t * ‖S v‖ ^ 2 := by
-    rw [add_apply, smul_apply, smul_apply, map_add, map_smul, map_smul, inner_add_left,
-      real_inner_smul_left, real_inner_smul_left, hS.apply_clm (S v), real_inner_self_eq_norm_sq]
+    simp only [add_apply, smul_apply, map_add, map_smul, inner_add_left, real_inner_smul_left,
+      hS.apply_clm (S v), real_inner_self_eq_norm_sq]
   have hSv : α ^ 2 * ‖v‖ ^ 2 ≤ ‖S v‖ ^ 2 := by
     rw [← mul_pow]
     exact pow_le_pow_left₀ (by positivity) (hgap v) 2
