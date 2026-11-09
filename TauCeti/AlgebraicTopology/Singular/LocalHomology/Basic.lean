@@ -386,6 +386,22 @@ section StarConvex
 
 variable {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] {K : Set E} {y : E}
 
+/-- The sphere inclusion `sphere y r → E ∖ K` of `StarConvex.complSphereHomotopyEquiv`, followed by
+the inclusion `E ∖ K ⊆ E ∖ {y}`, is the sphere inclusion `sphere y r → E ∖ {y}`. This identifies
+the subspace map of `(E, E ∖ K) ⟶ (E, E ∖ {y})` up to two homotopy equivalences. -/
+theorem _root_.StarConvex.ofHom_complSphereHomotopyEquiv_comp_snd (hK : StarConvex ℝ y K)
+    (hy : y ∈ K) {r : ℝ} (hKr : K ⊆ ball y r) :
+    (TopCat.ofHom (hK.complSphereHomotopyEquiv hy hKr).toFun :
+        TopCat.of (sphere y r) ⟶ (TopPair.ofSubset (Kᶜ : Set (TopCat.of E))).snd) ≫
+      TopPair.Hom.snd (TopPair.ofSubsetMap (𝟙 (TopCat.of E)) (B := Kᶜ) (B' := {y}ᶜ)
+        (Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 hy))) =
+      TopCat.ofHom ((starConvex_singleton y).complSphereHomotopyEquiv rfl
+        (Set.singleton_subset_iff.2 (hKr hy))).toFun := by
+  ext z
+  exact Subtype.ext <| (TopPair.ofSubsetMap_snd_apply _ _ _).trans <|
+    (hK.coe_complSphereHomotopyEquiv_apply hy hKr z).trans
+      ((starConvex_singleton y).coe_complSphereHomotopyEquiv_apply rfl _ z).symm
+
 /-- **Removing a bounded star-convex set does not change homology.** If `K` contains `y`, is
 star-convex about `y` and is bounded, then the inclusion `(E, E ∖ K) ⟶ (E, E ∖ {y})` induces
 isomorphisms on relative singular homology. Both `E ∖ K` and `E ∖ {y}` deformation retract onto a
@@ -415,12 +431,7 @@ theorem isIso_singularHomologyMap_compl_of_starConvex (hK : StarConvex ℝ y K) 
       TopCat.ofHom e₁.toFun
     let g₂ : TopCat.of (sphere y r) ⟶ (TopPair.ofSubset ({y}ᶜ : Set (TopCat.of E))).snd :=
       TopCat.ofHom e₂.toFun
-    have hfac : g₁ ≫ TopPair.Hom.snd f = g₂ := by
-      ext z
-      rw [ConcreteCategory.comp_apply]
-      exact Subtype.ext <| (TopPair.ofSubsetMap_snd_apply _ _ _).trans <|
-        (hK.coe_complSphereHomotopyEquiv_apply hy hKr z).trans
-          ((starConvex_singleton y).coe_complSphereHomotopyEquiv_apply rfl _ z).symm
+    have hfac : g₁ ≫ TopPair.Hom.snd f = g₂ := hK.ofHom_complSphereHomotopyEquiv_comp_snd hy hKr
     -- `((singularHomologyFunctor A n).obj R).map g` is `SSet.homologyMap (TopCat.toSSet.map g) R n`
     -- by definition of `singularChainComplexFunctor`, so the homotopy equivalences give
     -- isomorphisms in the latter form.
