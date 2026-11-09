@@ -109,7 +109,7 @@ theorem tateUnitHom_eq_zero_iff (u : Additive Lˣ) :
   simp
 
 /-- The period homomorphism and Tate uniformization on units form an exact sequence. -/
-theorem tatePeriodHom_exact :
+theorem exact_tatePeriodHom_tateUnitHom :
     Exact (tatePeriodHom L q) (tateUnitHom L q hq).toIntLinearMap := by
   intro u
   obtain ⟨u, rfl⟩ := Additive.ofMul.surjective u
@@ -129,7 +129,7 @@ represented by `u` maps to `[a] ∈ ℤ/nℤ`. -/
 noncomputable def tateTorsionExponent :
     Submodule.torsionBy ℤ (((tateCurveAt q hq)⁄L).toAffine.Point) (n : ℤ) →ₗ[ℤ]
       QuotSMulTop (n : ℤ) ℤ :=
-  torsionByδ (n : ℤ) (tatePeriodHom_exact L q hq)
+  torsionByδ (n : ℤ) (exact_tatePeriodHom_tateUnitHom L q hq)
     (tatePeriodHom_injective L q hq) (tateUnitHom_surjective L q hq)
 
 /-- The exponent map evaluated on a unit representative. -/
@@ -161,7 +161,7 @@ theorem tateRootsOfUnityHom_injective (hn : n ≠ 0) :
   apply (injective_iff_map_eq_zero _).mpr
   intro ζ hζ
   obtain ⟨a, ha⟩ := (exact_torsionByMap (r := (n : ℤ))
-    (tatePeriodHom_exact L q hq) (tatePeriodHom_injective L q hq) _).mp hζ
+    (exact_tatePeriodHom_tateUnitHom L q hq) (tatePeriodHom_injective L q hq) _).mp hζ
   have ha0 : a = 0 := Subtype.ext <|
     (mul_eq_zero.mp ((Submodule.mem_torsionBy_iff _ _).mp a.2)).resolve_left
       (Int.natCast_ne_zero.mpr hn)
@@ -176,11 +176,11 @@ theorem exact_tateRootsOfUnityHom_tateTorsionExponent :
   constructor
   · intro hP
     obtain ⟨u, hu⟩ := (exact_torsionByMap_torsionByδ
-      (tatePeriodHom_exact L q hq) (tatePeriodHom_injective L q hq)
+      (exact_tatePeriodHom_tateUnitHom L q hq) (tatePeriodHom_injective L q hq)
       (tateUnitHom_surjective L q hq) P).mp hP
     exact ⟨torsionByUnitsEquivRootsOfUnity n u, by simpa [tateRootsOfUnityHom] using hu⟩
   · rintro ⟨ζ, rfl⟩
-    exact (exact_torsionByMap_torsionByδ (tatePeriodHom_exact L q hq)
+    exact (exact_torsionByMap_torsionByδ (exact_tatePeriodHom_tateUnitHom L q hq)
       (tatePeriodHom_injective L q hq) (tateUnitHom_surjective L q hq)).apply_apply_eq_zero _
 
 /-- Roots of unity have zero exponent class. -/
@@ -193,7 +193,7 @@ theorem tateTorsionExponent_tateRootsOfUnityHom (ζ : Additive (rootsOfUnity n L
 `n`-th power. This retains the rational obstruction when the field lacks a root of `q`. -/
 theorem exact_tateTorsionExponent_tatePeriodClass :
     Exact (tateTorsionExponent L q hq n) (tatePeriodClass L q n) :=
-  exact_torsionByδ_quotSMulTop_map (tatePeriodHom_exact L q hq)
+  exact_torsionByδ_quotSMulTop_map (exact_tatePeriodHom_tateUnitHom L q hq)
     (tatePeriodHom_injective L q hq) (tateUnitHom_surjective L q hq)
 
 /-- If `q` has an `n`-th root in the extension, every exponent class occurs. -/
@@ -241,7 +241,7 @@ theorem map_tateUnitHom (u : Lˣ) :
 /-- The exponent class is unchanged by a continuous map of complete normed extensions.
 In particular, continuous `K`-automorphisms of a complete normed extension preserve exponent
 classes. -/
-theorem tateTorsionExponent_map
+theorem tateTorsionExponent_torsionByMap
     (P : Submodule.torsionBy ℤ (((tateCurveAt q hq)⁄L).toAffine.Point) (n : ℤ)) :
     tateTorsionExponent M q hq n (torsionByMap (n : ℤ) (Point.map ι).toIntLinearMap P) =
       tateTorsionExponent L q hq n P := by
@@ -256,8 +256,8 @@ theorem tateTorsionExponent_map
     obtain ⟨u, rfl⟩ := Additive.ofMul.surjective u
     exact map_tateUnitHom q hq ι hι u
   have h := torsionByδ_comp_torsionByMap (r := (n : ℤ))
-    (tatePeriodHom_exact L q hq) (tatePeriodHom_injective L q hq)
-    (tateUnitHom_surjective L q hq) (tatePeriodHom_exact M q hq)
+    (exact_tatePeriodHom_tateUnitHom L q hq) (tatePeriodHom_injective L q hq)
+    (tateUnitHom_surjective L q hq) (exact_tatePeriodHom_tateUnitHom M q hq)
     (tatePeriodHom_injective M q hq) (tateUnitHom_surjective M q hq) hαβ hβγ
   simpa [tateTorsionExponent] using LinearMap.congr_fun h P
 
