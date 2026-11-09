@@ -33,7 +33,9 @@ that use them.  It follows Mathlib's total `sigNeg`, whose value is defined to b
 finite dimensions; all results interpreting the value as a Morse-theoretic index assume finite
 dimension.  At a nondegenerate critical point the Hessian quadratic form is nondegenerate, so its
 positive and negative indices add to the dimension.  Consequently index zero is equivalent to a
-positive-definite Hessian and full index is equivalent to a negative-definite Hessian.
+positive-definite Hessian.  In finite dimensions, full index is equivalent to a negative-definite
+Hessian at every point, with no nondegeneracy hypothesis, and a positive-definite Hessian forces
+index zero at every point.
 
 The index depends only on the germ of the function and is invariant under a twice continuously
 differentiable change of coordinates with invertible derivative.  Finally, Sylvester's law of
@@ -59,6 +61,9 @@ by the Morse complex in Lane M of the analytic Heegaard Floer roadmap.
   dimensions, the converse.
 * `TauCeti.IsNondegenerateCriticalPoint.hessianQuadraticForm_posDef_iff_morseIndex_eq_zero`:
   index zero characterizes a positive-definite Hessian at a nondegenerate critical point.
+* `TauCeti.morseIndex_eq_zero_of_posDef`: a positive-definite Hessian forces index zero.
+* `TauCeti.neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank`: in finite dimensions, full
+  index characterizes a negative-definite Hessian at every point.
 * `TauCeti.IsNondegenerateCriticalPoint.exists_hessianQuadraticForm_equivalent_weightedSumSquares`:
   the Hessian has a diagonal `±1` normal form.
 
@@ -356,15 +361,18 @@ theorem IsNondegenerateCriticalPoint.hessianQuadraticForm_posDef_iff_morseIndex_
     h.hessianQuadraticForm_nondegenerate.radical_eq_bot, morseIndex_def]
   simp only [eq_self, and_true]
 
-/-- At a nondegenerate critical point, the Hessian is negative-definite exactly when the Morse
-index is the dimension of the ambient space. -/
-theorem IsNondegenerateCriticalPoint.neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank
-    [FiniteDimensional ℝ E] (h : IsNondegenerateCriticalPoint f x) :
+/-- A positive-definite Hessian forces the Morse index to be zero; no nondegeneracy is needed. -/
+theorem morseIndex_eq_zero_of_posDef [FiniteDimensional ℝ E]
+    (h : (hessianQuadraticForm f x).PosDef) : morseIndex f x = 0 :=
+  ((QuadraticForm.posDef_iff_sigNeg_eq_zero_and_radical_eq_bot _).1 h).1
+
+/-- The negated Hessian is positive-definite exactly when the Morse index is the dimension of the
+ambient space. -/
+theorem neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank [FiniteDimensional ℝ E] :
     (-hessianQuadraticForm f x).PosDef ↔ morseIndex f x = Module.finrank ℝ E := by
-  rw [QuadraticForm.posDef_iff_sigNeg_eq_zero_and_radical_eq_bot,
-    QuadraticMap.radical_neg, h.hessianQuadraticForm_nondegenerate.radical_eq_bot, sigNeg_neg]
-  simp only [eq_self, and_true]
-  have hsum := h.sigPos_hessianQuadraticForm_add_morseIndex_eq_finrank
+  have hsum := QuadraticForm.sigPos_add_sigNeg_add_radical (Q := hessianQuadraticForm f x)
+  rw [QuadraticForm.posDef_iff_sigNeg_eq_zero_and_radical_eq_bot, QuadraticMap.radical_neg,
+    sigNeg_neg, ← Submodule.finrank_eq_zero (R := ℝ), morseIndex_def]
   omega
 
 /-- At a nondegenerate critical point, the Hessian quadratic form has a diagonal normal form with
