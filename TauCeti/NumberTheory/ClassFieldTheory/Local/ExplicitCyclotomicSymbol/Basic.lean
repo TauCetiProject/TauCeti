@@ -241,25 +241,26 @@ theorem cyclotomicSymbol_of_coprime (m : ℕ) [NeZero m] (p : ℕ) [Fact p.Prime
   simpa [ZMod.unitsMap_self] using
     unitsMap_cyclotomicSymbol_of_coprime m p dvd_rfl hcop x _ w hw
 
-/-- If a unit of `ℤ/(pⁿ N)ℤ` reduces modulo `pⁿ` to the inverse of `u` and modulo `N` to `p`, where
-`N` is coprime to `p`, then it is the explicit symbol of any `x = p u`. -/
-theorem eq_cyclotomicSymbol_of_cast_eq (p : ℕ) [Fact p.Prime] {u : ℤ_[p]ˣ} {x : ℚ_[p]ˣ}
-    (hx : (x : ℚ_[p]) = p * (u : ℤ_[p])) {n N : ℕ} (hpN : p.Coprime N) [NeZero (p ^ n * N)]
-    {r : (ZMod (p ^ n * N))ˣ}
-    (hrP : (r : ZMod (p ^ n * N)).cast = PadicInt.toZModPow n ((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]))
-    (hrN : (r : ZMod (p ^ n * N)).cast = (p : ZMod N)) :
-    (r : ZMod (p ^ n * N)) = cyclotomicSymbol (p ^ n * N) p x := by
+/-- If an element of `ℤ/(pⁿ N)ℤ` reduces modulo `pⁿ` to the inverse of `u` and modulo `N` to
+`p ^ k`, where `N` is coprime to `p`, then it is the explicit symbol of any `x = p ^ k u`. -/
+theorem eq_cyclotomicSymbol_of_cast_eq (p : ℕ) [Fact p.Prime] {k : ℤ} {u : ℤ_[p]ˣ}
+    {x : ℚ_[p]ˣ} (hx : (x : ℚ_[p]) = (p : ℚ_[p]) ^ k * ((u : ℤ_[p]) : ℚ_[p])) {n N : ℕ}
+    (hpN : p.Coprime N) [NeZero (p ^ n * N)] {r : ZMod (p ^ n * N)}
+    (hrP : r.cast = PadicInt.toZModPow n ((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]))
+    (hrN : r.cast = ((ZMod.unitOfCoprime p hpN ^ k : (ZMod N)ˣ) : ZMod N)) :
+    r = cyclotomicSymbol (p ^ n * N) p x := by
   have hdN : N ∣ p ^ n * N := dvd_mul_left N _
   have hdP : p ^ n ∣ p ^ n * N := dvd_mul_right _ N
   have hsP : ZMod.unitsMap hdP (cyclotomicSymbol (p ^ n * N) p x) =
       (Units.map (PadicInt.toZModPow n : ℤ_[p] →+* ZMod (p ^ n)).toMonoidHom u)⁻¹ :=
-    unitsMap_cyclotomicSymbol_primePow _ p hdP x 1 u (by simp [hx])
-  have hsN : ZMod.unitsMap hdN (cyclotomicSymbol (p ^ n * N) p x) = ZMod.unitOfCoprime p hpN := by
-    simpa using unitsMap_cyclotomicSymbol_of_coprime _ p hdN hpN x 1 u (by simp [hx])
+    unitsMap_cyclotomicSymbol_primePow _ p hdP x k u hx
+  have hsN : ZMod.unitsMap hdN (cyclotomicSymbol (p ^ n * N) p x) =
+      ZMod.unitOfCoprime p hpN ^ k :=
+    unitsMap_cyclotomicSymbol_of_coprime _ p hdN hpN x k u hx
   refine ZMod.eq_of_cast_eq_of_coprime (hpN.pow_left n) ?_ ?_
   · rw [hrP, ← ZMod.unitsMap_val hdP, hsP]
     simp
-  · rw [hrN, ← ZMod.unitsMap_val hdN, hsN, ZMod.coe_unitOfCoprime]
+  · rw [hrN, ← ZMod.unitsMap_val hdN, hsN]
 
 /-- **The explicit local cyclotomic symbol is trivial near `1`**: it kills every unit `x` with
 `‖x - 1‖ < ‖m‖`, that is, every unit congruent to `1` modulo a higher power of `p` than the one

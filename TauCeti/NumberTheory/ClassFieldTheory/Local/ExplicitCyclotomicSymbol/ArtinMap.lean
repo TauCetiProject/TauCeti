@@ -237,7 +237,8 @@ private theorem toZModPow_localCyclotomicCharacter_of_mk_eq_artinMap {u : ℤ_[p
   -- `ρ` acts on the `m`-th roots of unity through the explicit symbol of `p u`.
   set r := hζ'.autToPow ℚ_[p] ρE
   have hrs : (r : ZMod m) = cyclotomicSymbol m p x :=
-    eq_cyclotomicSymbol_of_cast_eq p hx hpN hρP hρN'
+    eq_cyclotomicSymbol_of_cast_eq p (k := 1) (by rw [hx, zpow_one]) hpN hρP
+      (by rw [hρN', zpow_one, ZMod.coe_unitOfCoprime])
   have hρm (z : AlgebraicClosure ℚ_[p]) (hz : z ^ m = 1) :
       ρ.toRingEquiv z = z ^ ((cyclotomicSymbol m p x : ZMod m).val) := by
     have hρζ :
