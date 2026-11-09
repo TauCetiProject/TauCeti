@@ -157,16 +157,6 @@ private theorem coordCLM_apply (A B : Fin n → E) (w : CoordinateSpace n × Coo
     coordCLM A B w = ∑ j, w.1 j • A j + ∑ j, w.2 j • B j := by
   simp [coordCLM]
 
-private theorem norm_coordCLM_le (A B : Fin n → E) :
-    ‖coordCLM A B‖ ≤ ∑ j, ‖A j‖ + ∑ j, ‖B j‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun w ↦ ?_
-  rw [coordCLM_apply, add_mul, Finset.sum_mul, Finset.sum_mul]
-  refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;>
-    refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_) <;>
-    rw [norm_smul, mul_comm] <;> gcongr
-  · exact (PiLp.norm_apply_le w.1 j).trans (norm_fst_le w)
-  · exact (PiLp.norm_apply_le w.2 j).trans (norm_snd_le w)
-
 /-- The derivative of `p ↦ exp(2πi ⟪θ, p.1⟫) S(θ, p.2 - 2πθ)` for a function `S(θ, ζ)` that is
 differentiable in `ζ`, with partial derivatives `B j θ ζ`, and whose products with `2πi θ_j` are
 `A j θ ζ`. -/
@@ -252,7 +242,7 @@ private theorem hasFDerivAt_integral_fourierChar_smul_shift
     intro θ p hp
     have hp2 : p.2 ∈ Metric.ball p₀.2 1 :=
       lt_of_le_of_lt (by rw [Prod.dist_eq]; exact le_max_right _ _) (Metric.mem_ball.1 hp)
-    refine (norm_coordCLM_le _ _).trans ?_
+    refine ((coordCLM _ _).opNorm_le_of_apply_eq_sum _ _ (coordCLM_apply _ _)).trans ?_
     simp only [norm_smul, Circle.norm_coe, one_mul]
     calc ∑ j, ‖A j θ (p.2 - (2 * π) • θ)‖ + ∑ j, ‖B j θ (p.2 - (2 * π) • θ)‖
         ≤ ∑ _j : Fin n, g θ + ∑ _j : Fin n, g θ :=
@@ -433,9 +423,8 @@ private theorem HasCompactSpatialSupport.coordinateDeriv_leftCoeff_fst
     (ha : a.HasCompactSpatialSupport) (j : Fin n) (y ξ : CoordinateSpace n) :
     coordinateDeriv [j] (fun y ↦ leftCoeff a (y, ξ)) y =
       leftCoeff (Symbol.spatialDeriv j a) (y, ξ) := by
-  have h := (ha.hasFDerivAt_leftCoeff (y, ξ)).comp y (hasFDerivAt_prodMk_left (𝕜 := ℝ) y ξ)
-  simp only [Function.comp_def] at h
-  rw [coordinateDeriv_cons, coordinateDeriv_nil, h.fderiv]
+  rw [coordinateDeriv_fst_eq_fderiv (p := (y, ξ)) (ha.hasFDerivAt_leftCoeff _).differentiableAt,
+    (ha.hasFDerivAt_leftCoeff _).fderiv]
   simp [coordCLM_apply]
 
 /-- The coordinate derivative `∂_{ξ_j} A` is the coefficient of `∂_{ξ_j} a`. -/
@@ -443,9 +432,8 @@ private theorem HasCompactSpatialSupport.coordinateDeriv_leftCoeff_snd
     (ha : a.HasCompactSpatialSupport) (j : Fin n) (y ξ : CoordinateSpace n) :
     coordinateDeriv [j] (fun η ↦ leftCoeff a (y, η)) ξ =
       leftCoeff (Symbol.frequencyDeriv j a) (y, ξ) := by
-  have h := (ha.hasFDerivAt_leftCoeff (y, ξ)).comp ξ (hasFDerivAt_prodMk_right (𝕜 := ℝ) y ξ)
-  simp only [Function.comp_def] at h
-  rw [coordinateDeriv_cons, coordinateDeriv_nil, h.fderiv]
+  rw [coordinateDeriv_snd_eq_fderiv (p := (y, ξ)) (ha.hasFDerivAt_leftCoeff _).differentiableAt,
+    (ha.hasFDerivAt_leftCoeff _).fderiv]
   simp [coordCLM_apply]
 
 /-- The coefficient `A(y, ξ)` grows at most like `⟨ξ⟩ ^ m`, uniformly in `y`. -/
