@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Independence.DisjointBlocks
 public import TauCeti.Probability.Renewal.Excess.Basic
-public import TauCeti.Probability.Renewal.Exponential
+public import TauCeti.Probability.Renewal.Exponential.Basic
 
 /-!
 # Memorylessness at a deterministic time in an exponential renewal process

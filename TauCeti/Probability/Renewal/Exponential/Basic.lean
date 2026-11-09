@@ -63,13 +63,15 @@ namespace TauCeti.Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {T : ℕ → Ω → ℝ≥0} {r : ℝ≥0}
 
-private lemma identDistrib_of_hasLaw_expMeasure
+/-- Nonnegative increments with the same exponential law are identically distributed. -/
+lemma identDistrib_of_hasLaw_expMeasure
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) (n : ℕ) :
     IdentDistrib (T n) (T 0) P P := by
   simpa only [Function.comp_def, Real.toNNReal_coe] using
     ((hlaw n).identDistrib (hlaw 0)).comp measurable_real_toNNReal
 
-private lemma measure_eq_zero_lt_one_of_hasLaw_expMeasure
+/-- An exponential increment has probability strictly less than one of being zero. -/
+lemma measure_eq_zero_lt_one_of_hasLaw_expMeasure
     {X : Ω → ℝ≥0} (hlaw : HasLaw (fun ω ↦ (X ω : ℝ)) (expMeasure r) P) :
     P {ω | X ω = 0} < 1 := by
   refine (measure_mono_null (fun ω hω ↦ ?_)

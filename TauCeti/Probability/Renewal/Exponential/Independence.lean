@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Renewal.UnusedTail
 public import TauCeti.Probability.Renewal.Excess.Memoryless
+import TauCeti.MeasureTheory.Measure.Restrict
 import TauCeti.Probability.Renewal.History
 import TauCeti.Probability.Renewal.Restart
 
@@ -39,19 +40,23 @@ namespace TauCeti.Probability
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {T : ℕ → Ω → ℝ≥0} {r : ℝ≥0}
 
-private theorem map_excess_unusedTail_restrict_prefix_count
+/-- On each completed-prefix count slice, the residual waiting time and the unused increments
+have the product of the exponential law and the original increment-sequence law, scaled by
+the probability of the slice. This identity also applies to null slices. -/
+theorem map_renewalExcess_renewalUnusedTail_restrict_prefix_count_of_expMeasure
     (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P)
-    (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (hzero : P {ω | T 0 ω = 0} < 1)
-    (t : ℝ≥0) (n : ℕ) {B : Set (Fin n → ℝ≥0)} (hB : MeasurableSet B) :
-    (P.restrict {ω | renewalCountNat T t ω = n ∧ (fun i : Fin n ↦ T i ω) ∈ B}).map
+    (n : ℕ) {B : Set (Fin n → ℝ≥0)} (hB : MeasurableSet B) (t : ℝ≥0) :
+    (P.restrict {ω | (fun i : Fin n ↦ T i ω) ∈ B ∧ renewalCountNat T t ω = n}).map
         (fun ω ↦ ((renewalExcess T t ω : ℝ), renewalUnusedTail T t ω)) =
-      P {ω | renewalCountNat T t ω = n ∧ (fun i : Fin n ↦ T i ω) ∈ B} •
+      P {ω | (fun i : Fin n ↦ T i ω) ∈ B ∧ renewalCountNat T t ω = n} •
         (expMeasure r).prod (Measure.infinitePi (fun _ : ℕ ↦ P.map (T 0))) := by
   have := hindep.isProbabilityMeasure
   have hr : 0 < (r : ℝ) := by exact_mod_cast pos_of_hasLaw_expMeasure (hlaw 0)
   have := isProbabilityMeasure_expMeasure hr
-  let H := {ω | renewalCountNat T t ω = n ∧ (fun i : Fin n ↦ T i ω) ∈ B}
+  have hid := identDistrib_of_hasLaw_expMeasure hlaw
+  have hzero := measure_eq_zero_lt_one_of_hasLaw_expMeasure (hlaw 0)
+  let H := {ω | (fun i : Fin n ↦ T i ω) ∈ B ∧ renewalCountNat T t ω = n}
   have hE := (measurable_renewalExcess hT t).coe_nnreal_real
   have hU := measurable_renewalUnusedTail hT t
   apply Measure.ext_prod
@@ -72,18 +77,12 @@ private theorem map_excess_unusedTail_restrict_prefix_count
     ext ω
     by_cases hn : renewalCountNat T t ω = n <;>
       simp [A, H, renewalExcess_def, hn, and_comm]
-  have htail := congrArg (fun μ : Measure (ℕ → ℝ≥0) ↦ μ D)
+  have htail := measure_preimage_inter_eq_of_map_restrict_eq_smul hU hD
     (map_renewalUnusedTail_restrict_renewalCountNat hT hindep hid hzero t n hA)
-  rw [Measure.map_apply hU hD, Measure.restrict_apply (hU hD), smul_apply,
-    smul_eq_mul, heq] at htail
-  have hexcess := congrArg (fun μ : Measure ℝ ↦ μ C)
+  rw [heq] at htail
+  have hexcess := measure_preimage_inter_eq_of_map_restrict_eq_smul hE hC
     (map_renewalExcess_restrict_prefix_count_of_expMeasure hT hindep hlaw n hB t)
-  have hH : {ω | (fun i : Fin n ↦ T i ω) ∈ B ∧ renewalCountNat T t ω = n} = H := by
-    ext ω
-    simp [H, and_comm]
-  rw [hH, Measure.map_apply hE hC, Measure.restrict_apply (hE hC),
-    smul_apply, smul_eq_mul] at hexcess
-  rw [Measure.map_apply (hE.prodMk hU) (hC.prod hD),
+  simp only [Measure.map_apply (hE.prodMk hU) (hC.prod hD),
     Measure.restrict_apply ((hE.prodMk hU) (hC.prod hD)),
     smul_apply, smul_eq_mul, Measure.prod_prod]
   have hset : (fun ω ↦ ((renewalExcess T t ω : ℝ), renewalUnusedTail T t ω)) ⁻¹' (C ×ˢ D) ∩ H =
@@ -95,7 +94,7 @@ private theorem map_excess_unusedTail_restrict_prefix_count
 
 /-- The residual waiting time together with all untouched increments is independent of the
 entire natural count history in an exponential renewal process. -/
-theorem indepFun_renewalExcess_unusedTail_history_of_expMeasure
+theorem indepFun_renewalExcess_renewalUnusedTail_history_of_expMeasure
     (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) (t : ℝ≥0) :
     IndepFun (fun ω ↦ ((renewalExcess T t ω : ℝ), renewalUnusedTail T t ω))
@@ -103,13 +102,6 @@ theorem indepFun_renewalExcess_unusedTail_history_of_expMeasure
   have := hindep.isProbabilityMeasure
   have hr : 0 < (r : ℝ) := by exact_mod_cast pos_of_hasLaw_expMeasure (hlaw 0)
   have := isProbabilityMeasure_expMeasure hr
-  have hid (n : ℕ) : IdentDistrib (T n) (T 0) P P := by
-    simpa only [Function.comp_def, Real.toNNReal_coe] using
-      ((hlaw n).identDistrib (hlaw 0)).comp measurable_real_toNNReal
-  have hzero : P {ω | T 0 ω = 0} < 1 := by
-    refine (measure_mono_null (fun ω hω ↦ ?_)
-      (ae_iff.1 (ae_pos_of_hasLaw_expMeasure (hlaw 0)))).trans_lt zero_lt_one
-    simp_all
   let Y := fun ω ↦ ((renewalExcess T t ω : ℝ), renewalUnusedTail T t ω)
   let L := (expMeasure r).prod (Measure.infinitePi (fun _ : ℕ ↦ P.map (T 0)))
   have hY : Measurable Y :=
@@ -121,11 +113,10 @@ theorem indepFun_renewalExcess_unusedTail_history_of_expMeasure
       P (A ∩ Y ⁻¹' C) = P A * L C := by
     apply measure_inter_eq_mul_of_renewal_prefix_slices hT t (hY hC) _ ?_ hA
     intro n B hB
-    have heval := congrArg (fun μ : Measure (ℝ × (ℕ → ℝ≥0)) ↦ μ C)
-      (map_excess_unusedTail_restrict_prefix_count hT hindep hlaw hid hzero t n hB)
-    rw [Measure.map_apply hY hC, Measure.restrict_apply (hY hC), smul_apply,
-      smul_eq_mul, inter_comm] at heval
-    exact heval
+    simpa only [inter_comm, and_comm] using
+      measure_preimage_inter_eq_of_map_restrict_eq_smul hY hC
+        (map_renewalExcess_renewalUnusedTail_restrict_prefix_count_of_expMeasure
+          hT hindep hlaw n hB t)
   have hmarg {C : Set (ℝ × (ℕ → ℝ≥0))} (hC : MeasurableSet C) :
       P (Y ⁻¹' C) = L C := by simpa using hfactor MeasurableSet.univ hC
   rw [indepFun_iff_measure_inter_preimage_eq_mul]
@@ -150,7 +141,8 @@ theorem indepFun_renewalCountNat_future_history_of_expMeasure
     refine Measurable.of_eval fun s ↦ measurable_renewalCountNat ?_ s
     intro n
     cases n <;> dsimp only [R] <;> fun_prop
-  have hi := (indepFun_renewalExcess_unusedTail_history_of_expMeasure hT hindep hlaw t).comp
+  have hi := (indepFun_renewalExcess_renewalUnusedTail_history_of_expMeasure
+    hT hindep hlaw t).comp
     hcount measurable_id
   have heq : (fun ω ↦ count ((renewalExcess T t ω : ℝ), renewalUnusedTail T t ω)) =ᵐ[P]
       (fun ω (s : ℝ≥0) ↦ renewalCountNat T (t + s) ω - renewalCountNat T t ω) := by
