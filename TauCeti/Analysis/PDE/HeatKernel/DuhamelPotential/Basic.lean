@@ -10,6 +10,7 @@ import TauCeti.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 import TauCeti.Analysis.PDE.HeatKernel.Derivatives
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.PowerBounds
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -665,7 +666,7 @@ private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α :
     simpa only [mul_assoc, ← hh_def, show 2 * t' - t = t' - h by rw [hh_def]; ring] using
       norm_integral_le_of_ae_norm_le_mul_sub_rpow (A := K * H)
         (by positivity) hh hbig hα₂' (hK hf hfM hH htt' |>.mono fun s hs hsI => hs hsI x)
-  have hb := norm_intervalIntegral_sub_le_of_sub_lt (c := C₁ * H) (β := (α : ℝ) / 2)
+  have hb := norm_intervalIntegral_sub_le_of_sub_le (c := C₁ * H) (β := (α : ℝ) / 2)
     (mul_nonneg hC₁₀ H.coe_nonneg) (by positivity) (by linarith) hs₀ htt'.le (hint ht le_rfl)
     (hint (by linarith) htt'.le) hfar
     (by simpa only [show t - (2 * t' - t) = 2 * (t - t') by ring] using
