@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.Algebra.Structures
+public import TauCeti.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Geometry.Manifold.ContMDiff.RPow
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 
@@ -207,15 +208,7 @@ theorem rescale_const_mul_rpow {p c : ℝ} (hc : 0 < c) {u : B → ℝ}
       (g.rescale (fun b ↦ u b ^ p) hu hu_pos).rescale (fun _ ↦ c ^ p) contMDiff_const
         (fun _ ↦ Real.rpow_pos_of_pos hc p) := by
   ext b v w
-  -- The power of a product with a positive constant splits for every sign of `u b`.
-  have hmul : (c * u b) ^ p = c ^ p * u b ^ p := by
-    rcases lt_trichotomy (u b) 0 with h | h | h
-    · rw [Real.rpow_def_of_neg (mul_neg_of_pos_of_neg hc h), Real.rpow_def_of_neg h,
-        Real.rpow_def_of_pos hc, Real.log_mul hc.ne' h.ne, add_mul, Real.exp_add]
-      ring
-    · rcases eq_or_ne p 0 with rfl | hp <;> simp [*]
-    · exact Real.mul_rpow hc.le h.le
-  simp [hmul, mul_assoc]
+  simp [Real.mul_rpow_of_pos_left hc, mul_assoc]
 
 /-! ### The conformal class -/
 
