@@ -22,6 +22,7 @@ elements: an even element plus a unit is a unit, and an even element is never a 
 
 ## Main results
 
+* `ZMod.natCast_gcd_two`: `gcd(2, n)` and `n` agree modulo two.
 * `ZMod.val_eq_ite_mod_two`: `a.val = if a ≠ 0 then 1 else 0` for `a : ZMod 2`.
 * `ZMod.isNilpotent_two`: `2` is nilpotent in `ℤ/2^n`.
 * `ZMod.isUnit_two_mul_add`: `2c + u` is a unit in `ℤ/2^{k+1}` when `u` is.
@@ -32,6 +33,11 @@ elements: an even element plus a unit is a unit, and an even element is never a 
 public section
 
 namespace ZMod
+
+/-- `gcd(2, n)` and `n` have the same parity. -/
+theorem natCast_gcd_two (n : ℕ) : ((Nat.gcd 2 n : ℕ) : ZMod 2) = n := by
+  rw [Nat.gcd_rec, ← ZMod.natCast_mod n 2]
+  rcases Nat.mod_two_eq_zero_or_one n with h | h <;> rw [h] <;> decide
 
 /-- **The representative of a residue modulo two is the indicator of being nonzero.** -/
 theorem val_eq_ite_mod_two (a : ZMod 2) : a.val = if a ≠ 0 then 1 else 0 := by

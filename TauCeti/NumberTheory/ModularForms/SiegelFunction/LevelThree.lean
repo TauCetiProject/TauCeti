@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.ModularForms.DedekindEta
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.Basic
 import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 
 /-!
 # The Siegel functions of level three
@@ -377,14 +378,12 @@ theorem siegelFunction_zero_third_mul_third_zero_mul_third_third_mul_third_two_t
     siegelFunction ![0, 1 / 3] ↑(γ • τ) * siegelFunction ![1 / 3, 0] ↑(γ • τ) *
         siegelFunction ![1 / 3, 1 / 3] ↑(γ • τ) * siegelFunction ![1 / 3, 2 / 3] ↑(γ • τ) =
       siegelFunction ![0, 1 / 3] τ * siegelFunction ![1 / 3, 0] τ *
-        siegelFunction ![1 / 3, 1 / 3] τ * siegelFunction ![1 / 3, 2 / 3] τ := by
-  have hγ : γ ∈ Subgroup.closure {ModularGroup.S, ModularGroup.T} := by
-    simp [SpecialLinearGroup.SL2Z_generators]
-  induction hγ using Subgroup.closure_induction generalizing τ with
-  | one => rw [one_smul]
-  | mem g hg =>
-    rcases hg with rfl | rfl
-    · -- Under `S` the factors pick up `-i`, `i`, `e^{π i / 6}` and `e^{-π i / 6}`.
+        siegelFunction ![1 / 3, 1 / 3] τ * siegelFunction ![1 / 3, 2 / 3] τ :=
+  TauCeti.Matrix.SpecialLinearGroup.apply_smul_eq_of_S_smul_of_T_smul
+    (f := fun τ : ℍ ↦ siegelFunction ![0, 1 / 3] τ * siegelFunction ![1 / 3, 0] τ *
+      siegelFunction ![1 / 3, 1 / 3] τ * siegelFunction ![1 / 3, 2 / 3] τ)
+    (fun τ ↦ by
+      -- Under `S` the factors pick up `-i`, `i`, `e^{π i / 6}` and `e^{-π i / 6}`.
       have hS : ((ModularGroup.S • τ : ℍ) : ℂ) = -1 / τ := by
         rw [modular_S_smul, coe_mk, neg_div, one_div, inv_neg]
       have he : cexp (π * I / 6) * cexp (-(π * I / 6)) = 1 := by
@@ -396,8 +395,9 @@ theorem siegelFunction_zero_third_mul_third_zero_mul_third_third_mul_third_two_t
       linear_combination (-I ^ 2 * (siegelFunction ![0, 1 / 3] τ * siegelFunction ![1 / 3, 0] τ *
           siegelFunction ![1 / 3, 1 / 3] τ * siegelFunction ![1 / 3, 2 / 3] τ)) * he -
         (siegelFunction ![0, 1 / 3] τ * siegelFunction ![1 / 3, 0] τ *
-          siegelFunction ![1 / 3, 1 / 3] τ * siegelFunction ![1 / 3, 2 / 3] τ) * I_sq
-    · -- Under `T` the factors pick up `e^{π i / 6}` three times and `-i` once.
+          siegelFunction ![1 / 3, 1 / 3] τ * siegelFunction ![1 / 3, 2 / 3] τ) * I_sq)
+    (fun τ ↦ by
+      -- Under `T` the factors pick up `e^{π i / 6}` three times and `-i` once.
       have hT : ((ModularGroup.T • τ : ℍ) : ℂ) = τ + 1 := by
         rw [modular_T_smul, coe_vadd, add_comm, ofReal_one]
       have he : cexp (π * I / 6) ^ 3 = I := by
@@ -409,8 +409,7 @@ theorem siegelFunction_zero_third_mul_third_zero_mul_third_third_mul_third_two_t
       linear_combination (-I * (siegelFunction ![0, 1 / 3] τ * siegelFunction ![1 / 3, 0] τ *
           siegelFunction ![1 / 3, 1 / 3] τ * siegelFunction ![1 / 3, 2 / 3] τ)) * he -
         (siegelFunction ![0, 1 / 3] τ * siegelFunction ![1 / 3, 0] τ *
-          siegelFunction ![1 / 3, 1 / 3] τ * siegelFunction ![1 / 3, 2 / 3] τ) * I_sq
-  | mul g h _ _ hg hh => rw [mul_smul, hg, hh]
-  | inv g _ hg => rw [← hg, smul_inv_smul]
+          siegelFunction ![1 / 3, 1 / 3] τ * siegelFunction ![1 / 3, 2 / 3] τ) * I_sq)
+    γ τ
 
 end TauCeti.ModularForm

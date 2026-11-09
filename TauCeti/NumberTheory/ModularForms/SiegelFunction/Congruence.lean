@@ -8,8 +8,8 @@ module
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.Transform
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 import TauCeti.Algebra.BigOperators.ZPow
+import TauCeti.Data.ZMod.Two
 import TauCeti.LinearAlgebra.Matrix.RationalVector
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 import TauCeti.NumberTheory.ModularForms.SiegelFunction.LevelThree
 
@@ -99,13 +99,6 @@ theorem siegelFunction_add_intCast_pow_twelve_mul (r : Fin 2 → ℝ) (s : Fin 2
     exact Even.neg_one_zpow ⟨z * (6 * k), by push_cast; ring⟩
   rw [siegelFunction_add_intCast r s hτ, mul_pow, mul_pow, hsign, hexp, one_mul, one_mul]
 
-/-- A matrix of `Γ(N)` reduces to the identity modulo `N`. -/
-private theorem map_eq_one_of_mem_Gamma {N : ℕ} {γ : SL(2, ℤ)}
-    (hγ : γ ∈ CongruenceSubgroup.Gamma N) :
-    (γ : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom (ZMod N)) = 1 := by
-  simpa only [Matrix.SpecialLinearGroup.map_apply_coe, Matrix.SpecialLinearGroup.coe_one,
-    RingHom.mapMatrix_apply] using congrArg Subtype.val (CongruenceSubgroup.Gamma_mem'.mp hγ)
-
 /-- For an integral numerator `a`, the power `g_(a/N)^(12k)` is invariant under
 `Γ(N)` as soon as `N` divides `6k`. -/
 theorem siegelFunction_div_pow_twelve_mul_smul_of_mem_Gamma {N : ℕ}
@@ -115,7 +108,7 @@ theorem siegelFunction_div_pow_twelve_mul_smul_of_mem_Gamma {N : ℕ}
       siegelFunction (fun i ↦ (a i : ℝ) / N) τ ^ (12 * k) := by
   rw [siegelFunction_pow_twelve_mul_smul]
   obtain ⟨s, hs⟩ := (γ : Matrix (Fin 2) (Fin 2) ℤ).exists_vecMul_div_eq_add_intCast
-    (K := ℝ) (map_eq_one_of_mem_Gamma hγ) a
+    (K := ℝ) (CongruenceSubgroup.map_eq_one_of_mem_Gamma hγ) a
   rw [hs]
   refine siegelFunction_add_intCast_pow_twelve_mul _ s k ?_ τ.im_pos
   intro i
@@ -219,11 +212,6 @@ private theorem translationPhase_parity :
         (n * (b₀₀ * b₁₁ + b₁₀ * b₀₁) - b₀₀ + b₁₁) * w = 0 := by
   decide
 
-/-- `gcd(2, N)` and `N` have the same parity. -/
-private theorem natCast_gcd_two (N : ℕ) : ((Nat.gcd 2 N : ℕ) : ZMod 2) = N := by
-  rw [Nat.gcd_rec, ← ZMod.natCast_mod N 2]
-  rcases Nat.mod_two_eq_zero_or_one N with h | h <;> rw [h] <;> decide
-
 /-- **The quadratic relations make the phases cancel.** If `γ = 1 + N B ∈ SL₂(ℤ)` and the
 family `(a_i, m_i)` satisfies the quadratic relations of level `N`, then the weighted sum of the
 phase exponents is divisible by `2N`. -/
@@ -266,7 +254,7 @@ private theorem two_mul_dvd_sum_mul_translationPhase {N : ℕ} (hN : N ≠ 0)
       (N * (B 0 0 * B 1 1 + B 1 0 * B 0 1) - B 0 0 + B 1 1) * w := by
     refine (ZMod.intCast_zmod_eq_zero_iff_dvd _ 2).mp ?_
     push_cast
-    rw [natCast_gcd_two]
+    rw [ZMod.natCast_gcd_two]
     exact translationPhase_parity _ _ _ _ _ _ _ _
       (by exact_mod_cast congrArg (Int.cast : ℤ → ZMod 2) htr)
       (by exact_mod_cast congrArg (Int.cast : ℤ → ZMod 2) hdet)
@@ -293,7 +281,8 @@ theorem prod_siegelFunction_div_zpow_smul_eq_zpow_mul {N : ℕ} {γ : SL(2, ℤ)
     subst hγ
     have hε₁ : ε = 1 := eq_of_siegelFunction_smul_eq_mul hε fun r τ ↦ by simp
     simp [hε₁]
-  obtain ⟨B, hB⟩ := Matrix.exists_eq_one_add_smul_of_map_eq_one _ (map_eq_one_of_mem_Gamma hγ)
+  obtain ⟨B, hB⟩ := Matrix.exists_eq_one_add_smul_of_map_eq_one _
+    (CongruenceSubgroup.map_eq_one_of_mem_Gamma hγ)
   have hdet : (1 + N * B 0 0) * (1 + N * B 1 1) - N * B 0 1 * (N * B 1 0) = 1 := by
     have hentry (i j : Fin 2) :
         (γ : Matrix (Fin 2) (Fin 2) ℤ) i j = (1 : Matrix (Fin 2) (Fin 2) ℤ) i j + N * B i j := by
@@ -320,12 +309,6 @@ theorem prod_siegelFunction_div_zpow_smul_eq_zpow_mul {N : ℕ} {γ : SL(2, ℤ)
 
 /-! ### The multiplier on `Γ(N)` -/
 
-/-- Integral numerators `![x, y]` divided by `c`, as a vector. -/
-private theorem intCast_vecCons_div (x y : ℤ) (c : ℝ) :
-    (fun j ↦ ((![x, y] j : ℤ) : ℝ) / c) = ![(x : ℝ) / c, (y : ℝ) / c] := by
-  ext j
-  fin_cases j <;> rfl
-
 /-- On `Γ(2)` the multiplier is a sixth root of unity: `(g₀ g₁ g₂)²` is the constant `(2 ζ₈)²`,
 and its family `2 · {(0, 1), (1, 0), (1, 1)} / 2` satisfies the quadratic relations of level `2`. -/
 private theorem pow_six_eq_one_of_mem_Gamma_two {γ : SL(2, ℤ)}
@@ -338,9 +321,9 @@ private theorem pow_six_eq_one_of_mem_Gamma_two {γ : SL(2, ℤ)}
       (2 * cexp (2 * π * I / 8)) ^ 2 := by
     rw [← siegelFunction_zero_half_mul_half_zero_mul_half_half τ.im_pos]
     simp only [Fin.prod_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, intCast_vecCons_div]
-    norm_num
-    ring
+      Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons]
+    norm_num [mul_pow]
+    congr! <;> rename_i j <;> fin_cases j <;> norm_num
   have h := prod_siegelFunction_div_zpow_smul_eq_zpow_mul hγ hε Finset.univ
     ![![0, 1], ![1, 0], ![1, 1]] (fun _ ↦ 2) (by decide) (by decide) (by decide)
     UpperHalfPlane.I
@@ -364,8 +347,9 @@ private theorem pow_three_eq_one_of_mem_Gamma_four {γ : SL(2, ℤ)}
       2 * cexp (2 * π * I / 8) := by
     rw [← siegelFunction_zero_half_mul_half_zero_mul_half_half τ.im_pos]
     simp only [Fin.prod_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, intCast_vecCons_div]
+      Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons]
     norm_num
+    congr! <;> rename_i j <;> fin_cases j <;> norm_num
   have h := prod_siegelFunction_div_zpow_smul_eq_zpow_mul hγ hε Finset.univ
     ![![0, 2], ![2, 0], ![2, 2]] (fun _ ↦ 1) (by decide) (by decide) (by decide)
     UpperHalfPlane.I
@@ -389,9 +373,9 @@ private theorem pow_four_eq_one_of_mem_Gamma_three {γ : SL(2, ℤ)}
       siegelFunction ![0, 1 / 3] τ * siegelFunction ![1 / 3, 0] τ *
         siegelFunction ![1 / 3, 1 / 3] τ * siegelFunction ![1 / 3, 2 / 3] τ := by
     simp only [Fin.prod_univ_four, Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons,
-      intCast_vecCons_div]
+      Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
     norm_num
+    congr! <;> rename_i j <;> fin_cases j <;> norm_num
   have h := prod_siegelFunction_div_zpow_smul_eq_zpow_mul hγ hε Finset.univ
     ![![0, 1], ![1, 0], ![1, 1], ![1, 2]] (fun _ ↦ 1) (by decide) (by decide) (by decide)
     UpperHalfPlane.I
