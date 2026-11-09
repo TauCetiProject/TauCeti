@@ -126,20 +126,26 @@ private lemma abs_sum_patternWeight_sub_le (e₀₁ e₀₂ e₁₂ : Prop) [Dec
     (abs_sum_le_card_nsmul fun z _ ↦
       h₀₁.abs_sum_sum_mul_patternWeight_sub_le e₀₁ (fun x _ ↦ hb₀ x z) (fun x _ ↦ hb₁ x z)
         (fun y _ ↦ hc₀ y z) (fun y _ ↦ hc₁ y z)).trans_eq (by rw [nsmul_eq_mul]; ring)
-  have h₂ : |p * ∑ y ∈ s₁, ∑ x ∈ s₀, ∑ z ∈ s₂, 1 * c y z * (b x z - q)| ≤
+  have h₂ : |p * ∑ y ∈ s₁, ∑ x ∈ s₀, ∑ z ∈ s₂, c y z * (b x z - q)| ≤
       ε * (#s₀ * #s₁ * #s₂) := by
     rw [abs_mul, abs_of_nonneg hp₀]
-    refine (mul_le_of_le_one_left (abs_nonneg _) hp₁).trans <|
-      (abs_sum_le_card_nsmul fun y _ ↦
+    have hy : ∀ y ∈ s₁, |∑ x ∈ s₀, ∑ z ∈ s₂, c y z * (b x z - q)| ≤ ε * #s₀ * #s₂ := fun y _ ↦ by
+      simpa only [one_mul] using
         h₀₂.abs_sum_sum_mul_patternWeight_sub_le e₀₂ (fun _ _ ↦ zero_le_one) (fun _ _ ↦ le_rfl)
-          (fun z _ ↦ hc₀ y z) (fun z _ ↦ hc₁ y z)).trans_eq (by rw [nsmul_eq_mul]; ring)
-  have h₃ : |p * q * ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, 1 * 1 * (c y z - r)| ≤
+          (fun z _ ↦ hc₀ y z) (fun z _ ↦ hc₁ y z)
+    exact (mul_le_of_le_one_left (abs_nonneg _) hp₁).trans <|
+      (abs_sum_le_card_nsmul hy).trans_eq (by rw [nsmul_eq_mul]; ring)
+  have h₃ : |p * q * (#s₀ * ∑ y ∈ s₁, ∑ z ∈ s₂, (c y z - r))| ≤
       ε * (#s₀ * #s₁ * #s₂) := by
-    rw [abs_mul, abs_of_nonneg hpq₀]
-    refine (mul_le_of_le_one_left (abs_nonneg _) hpq₁).trans <|
-      (abs_sum_le_card_nsmul fun x _ ↦
+    have hS : |∑ y ∈ s₁, ∑ z ∈ s₂, (c y z - r)| ≤ ε * #s₁ * #s₂ := by
+      simpa only [one_mul] using
         h₁₂.abs_sum_sum_mul_patternWeight_sub_le e₁₂ (fun _ _ ↦ zero_le_one) (fun _ _ ↦ le_rfl)
-          (fun _ _ ↦ zero_le_one) (fun _ _ ↦ le_rfl)).trans_eq (by rw [nsmul_eq_mul]; ring)
+          (fun _ _ ↦ zero_le_one) (fun _ _ ↦ le_rfl)
+    rw [abs_mul, abs_of_nonneg hpq₀, abs_mul, Nat.abs_cast]
+    calc p * q * (#s₀ * |∑ y ∈ s₁, ∑ z ∈ s₂, (c y z - r)|)
+        ≤ 1 * (#s₀ * (ε * #s₁ * #s₂)) := by
+          gcongr
+      _ = ε * (#s₀ * #s₁ * #s₂) := by ring
   rw [hsplit]
   refine ((abs_add_le _ _).trans (add_le_add (abs_add_le _ _) le_rfl)).trans ?_
   linarith

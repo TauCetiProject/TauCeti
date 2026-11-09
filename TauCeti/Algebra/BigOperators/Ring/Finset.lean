@@ -23,8 +23,8 @@ inequalities with coefficients in a `d`-dimensional space, into inequalities for
 ## Replacing the factors of a triple product by constants
 
 `TauCeti.sum_sum_sum_mul_sub_eq` writes the difference between a triple sum
-`∑ x, ∑ y, ∑ z, a x y * b x z * c y z` and the corresponding product of three constants as a sum
-of three one-factor discrepancies.
+`∑ x, ∑ y, ∑ z, a x y * b x z * c y z` and the sum of the constant product of the three constants
+over all triples, `(#s₀ * #s₁ * #s₂) * (p * q * r)`, as a sum of three one-factor discrepancies.
 -/
 
 public section
@@ -45,14 +45,15 @@ theorem natCast_mul_sum_mul_natCast {ι R : Type*} [CommSemiring R] (d : ℕ) (s
 
 open Finset in
 /-- Replacing the three factors of a triple product by constants one at a time: the difference of
-`∑ a b c` and the product of the three constants is a sum of three one-factor discrepancies. -/
+`∑ a b c` and the triple sum `(#s₀ * #s₁ * #s₂) * (p * q * r)` of the constant product is a sum of
+three one-factor discrepancies. -/
 theorem sum_sum_sum_mul_sub_eq {α β γ R : Type*} [CommRing R] (a : α → β → R) (b : α → γ → R)
     (c : β → γ → R) (p q r : R) (s₀ : Finset α) (s₁ : Finset β) (s₂ : Finset γ) :
     ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, a x y * b x z * c y z -
       (#s₀ * #s₁ * #s₂ : R) * (p * q * r) =
       ∑ z ∈ s₂, ∑ x ∈ s₀, ∑ y ∈ s₁, b x z * c y z * (a x y - p) +
-        p * ∑ y ∈ s₁, ∑ x ∈ s₀, ∑ z ∈ s₂, 1 * c y z * (b x z - q) +
-        p * q * ∑ _x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, 1 * 1 * (c y z - r) := by
+        p * ∑ y ∈ s₁, ∑ x ∈ s₀, ∑ z ∈ s₂, c y z * (b x z - q) +
+        p * q * (#s₀ * ∑ y ∈ s₁, ∑ z ∈ s₂, (c y z - r)) := by
   have e₁ : ∑ z ∈ s₂, ∑ x ∈ s₀, ∑ y ∈ s₁, b x z * c y z * (a x y - p) =
       ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, b x z * c y z * (a x y - p) := by
     rw [sum_comm]
@@ -61,7 +62,10 @@ theorem sum_sum_sum_mul_sub_eq {α β γ R : Type*} [CommRing R] (a : α → β 
       ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, p * q * r := by
     simp only [sum_const, nsmul_eq_mul]
     ring
-  rw [e₁, sum_comm (s := s₁), e₃]
+  have e₄ : (#s₀ : R) * ∑ y ∈ s₁, ∑ z ∈ s₂, (c y z - r) =
+      ∑ _x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, (c y z - r) := by
+    rw [sum_const, nsmul_eq_mul]
+  rw [e₁, sum_comm (s := s₁), e₃, e₄]
   simp only [mul_sum, ← sum_add_distrib, ← sum_sub_distrib]
   refine sum_congr rfl fun x _ ↦ sum_congr rfl fun y _ ↦ sum_congr rfl fun z _ ↦ ?_
   ring
