@@ -59,7 +59,7 @@ Morse index is the negative index of inertia of the critical Hessian.
 * `TauCeti.isMorseOn_iff_of_mem_maximalAtlas`: being Morse on a subset of a chart source, read in
   that chart.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_eq_zero_iff` and
-  `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_eq_finrank_iff`: definiteness
+  `TauCeti.manifoldMorseIndex_eq_finrank_iff`: definiteness
   tests for the extreme indices.
 * `Module.Basis.criticalHessianMatrix`: the Gram matrix of the critical Hessian in a
   tangent-space basis, with determinant, inertia, and definiteness comparisons
@@ -355,13 +355,10 @@ theorem IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_eq_zero_iff
   -- The two sides differ only in reading the model space `E` as `TangentSpace I x`.
   rfl
 
-/-- At a nondegenerate critical point the Morse index is the dimension exactly when the critical
-Hessian is negative definite. -/
-theorem IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_eq_finrank_iff
-    (h : IsManifoldNondegenerateCriticalPoint I f x) :
+/-- The Morse index is the dimension exactly when the critical Hessian is negative definite. -/
+theorem manifoldMorseIndex_eq_finrank_iff :
     manifoldMorseIndex I f x = Module.finrank ℝ E ↔ ∀ v ≠ 0, criticalHessian I f x v v < 0 := by
-  rw [manifoldMorseIndex_def, ← ((isManifoldNondegenerateCriticalPoint_iff I).mp
-    h).neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank]
+  rw [manifoldMorseIndex_def, ← neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank]
   simp only [QuadraticMap.PosDef, neg_apply, hessianQuadraticForm_apply, neg_pos]
   -- The two sides differ only in reading the model space `E` as `TangentSpace I x`.
   rfl
