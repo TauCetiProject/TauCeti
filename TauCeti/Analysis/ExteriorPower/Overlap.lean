@@ -51,6 +51,28 @@ theorem iSup_plucker_append_mul_left [CommRing K] (v : AbsoluteValue K ℝ)
   simp_rw [Matrix.plucker_append_mul, map_mul,
     ← Real.mul_iSup_of_nonneg (mul_nonneg (v.nonneg _) (v.nonneg _))]
 
+/-- Changing coordinates by an integral invertible matrix `Q` preserves the exterior maximum norm
+of a concatenation, and normalizing the first block by the inverse of a square matrix `P`
+multiplies it by `v P⁻¹.det`. -/
+theorem iSup_plucker_append_inv_mul_mul_eq [CommRing K] [Nontrivial K] [Fintype ι] {n : ℕ}
+    (v : AbsoluteValue K ℝ)
+    (hv : IsNonarchimedean v) (P : Matrix (Fin p) (Fin p) K) (x : Matrix (Fin p) ι K)
+    (t : Matrix (Fin n) ι K) {Q Q' : Matrix ι ι K}
+    (hQ : ∀ i j, v (Q i j) ≤ 1) (hQ' : ∀ i j, v (Q' i j) ≤ 1) (hQQ' : Q * Q' = 1) :
+    (⨆ s, v (plucker (Fin.append (P⁻¹ * (x * Q)).row (t * Q).row) s)) =
+      v P⁻¹.det * ⨆ s, v (plucker (Fin.append x.row t.row) s) := by
+  have hleft := v.iSup_plucker_append_mul_left P⁻¹ 1 (x * Q) (t * Q)
+  simp only [Matrix.one_mul, Matrix.det_one, map_one, mul_one] at hleft
+  rw [hleft]
+  congr 1
+  have hfun : Fin.append (x * Q).row (t * Q).row =
+      (Matrix.of (Fin.append x.row t.row) * Q).row := by
+    ext i j
+    obtain ⟨i, rfl⟩ := finSumFinEquiv.surjective i
+    rcases i with i | i <;> simp [Matrix.mul_apply]
+  rw [hfun, v.iSup_plucker_mul_eq hv _ hQ hQ' hQQ']
+  simp only [Matrix.row_eq_self, Equiv.symm_apply_apply]
+
 variable [Field K] [Finite ι]
 
 /-- Concatenation is submultiplicative for the nonarchimedean exterior maximum
@@ -191,28 +213,6 @@ private theorem iSup_plucker_single_overlap_le {r : ℕ} (v : AbsoluteValue K �
   rw [hfun]
   exact v.iSup_plucker_append_le hv _ _
 
-omit [Finite ι] in
-/-- Changing coordinates by an integral invertible matrix `Q` preserves the exterior maximum norm
-of a concatenation, and normalizing the first block by the inverse of a square matrix `P`
-multiplies it by `v P⁻¹.det`. -/
-theorem iSup_plucker_append_inv_mul_mul_eq [Fintype ι] {n : ℕ} (v : AbsoluteValue K ℝ)
-    (hv : IsNonarchimedean v) (P : Matrix (Fin p) (Fin p) K) (x : Matrix (Fin p) ι K)
-    (t : Matrix (Fin n) ι K) {Q Q' : Matrix ι ι K}
-    (hQ : ∀ i j, v (Q i j) ≤ 1) (hQ' : ∀ i j, v (Q' i j) ≤ 1) (hQQ' : Q * Q' = 1) :
-    (⨆ s, v (plucker (Fin.append (P⁻¹ * (x * Q)).row (t * Q).row) s)) =
-      v P⁻¹.det * ⨆ s, v (plucker (Fin.append x.row t.row) s) := by
-  have hleft := v.iSup_plucker_append_mul_left P⁻¹ 1 (x * Q) (t * Q)
-  simp only [Matrix.one_mul, Matrix.det_one, map_one, mul_one] at hleft
-  rw [hleft]
-  congr 1
-  have hfun : Fin.append (x * Q).row (t * Q).row =
-      (Matrix.of (Fin.append x.row t.row) * Q).row := by
-    ext i j
-    obtain ⟨i, rfl⟩ := finSumFinEquiv.surjective i
-    rcases i with i | i <;> simp [Matrix.mul_apply]
-  rw [hfun, v.iSup_plucker_mul_eq hv _ hQ hQ' hQQ']
-  simp only [Matrix.row_eq_self, Equiv.symm_apply_apply]
-
 /-- **The nonarchimedean overlapping-family inequality.** The exterior maximum
 norm of a common family times that of the union is at most the product of the
 exterior maximum norms of the two extensions. No independence, discreteness or
@@ -245,7 +245,7 @@ theorem iSup_plucker_overlap_le {r : ℕ} (v : AbsoluteValue K ℝ)
     -- Integral column reduction supports the common rows on the pivot columns;
     -- normalizing their pivot matrix then makes them coordinate vectors.
     have hX : X.row = fun i ↦ Pi.single (e i) 1 :=
-      Matrix.inv_submatrix_mul_row_eq_single (x := Matrix.of x) he hred
+      Matrix.inv_submatrix_mul_row_eq_single (x := Matrix.of x) (isUnit_iff_ne_zero.mpr he) hred
     -- The same column change preserves every exterior norm; the row operation
     -- on the common block multiplies each extended exterior norm by a.
     have hright {n : ℕ} (t : Fin n → ι → K) :

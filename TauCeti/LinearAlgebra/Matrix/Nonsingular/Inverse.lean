@@ -55,8 +55,9 @@ theorem map_nonsing_inv (f : F) [IsLocalHom f] (A : Matrix n n R) :
 
 /-- If the column change `Q` kills `x` off the pivot columns `e`, then normalizing by the inverse of
 the pivot matrix turns the rows of `x * Q` into coordinate vectors. -/
-theorem inv_submatrix_mul_row_eq_single {K ι : Type*} [Field K] [Fintype ι] [DecidableEq ι] {p : ℕ}
-    {x : Matrix (Fin p) ι K} {e : Fin p ↪ ι} {Q : Matrix ι ι K} (he : (x.submatrix id e).det ≠ 0)
+theorem inv_submatrix_mul_row_eq_single {K ι : Type*} [CommRing K] [Fintype ι] [DecidableEq ι]
+    {p : ℕ} {x : Matrix (Fin p) ι K} {e : Fin p ↪ ι} {Q : Matrix ι ι K}
+    (he : IsUnit (x.submatrix id e).det)
     (hred : ∀ i j, (x * Q) i j = if j ∈ Set.range e then x i j else 0) :
     ((x.submatrix id e)⁻¹ * (x * Q)).row = fun i ↦ Pi.single (e i) 1 := by
   set P := x.submatrix id e
@@ -64,7 +65,7 @@ theorem inv_submatrix_mul_row_eq_single {K ι : Type*} [Field K] [Fintype ι] [D
   by_cases hj : j ∈ Set.range e
   · obtain ⟨b, rfl⟩ := hj
     have h := congrArg (fun M : Matrix (Fin p) (Fin p) K ↦ M i b)
-      (Matrix.nonsing_inv_mul P (isUnit_iff_ne_zero.mpr he))
+      (Matrix.nonsing_inv_mul P he)
     simpa [P, Matrix.mul_apply, hred, Pi.single_apply,
       e.injective.eq_iff, Matrix.one_apply, eq_comm] using h
   · have hz : ∀ b, e b ≠ j := fun b h ↦ hj ⟨b, h⟩
