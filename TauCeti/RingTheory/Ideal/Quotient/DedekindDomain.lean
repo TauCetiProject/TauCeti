@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Group.Pi.Units
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 
+import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
+
 /-!
 # Lifting units between ideal quotients of a Dedekind domain
 
@@ -40,9 +42,8 @@ theorem units_map_quotient_factor_surjective {I J : Ideal R} (h : J ≤ I) (hJ :
   let s := (UniqueFactorizationMonoid.factors J).toFinset.filter fun P => ¬I ≤ P
   let B : Ideal R := ∏ P ∈ s, P
   have hmax (P : Ideal R) (hP : P ∈ UniqueFactorizationMonoid.factors J) : P.IsMaximal :=
-    Ideal.IsPrime.isMaximal
-      (Ideal.isPrime_of_prime (UniqueFactorizationMonoid.prime_of_factor P hP))
-      (UniqueFactorizationMonoid.prime_of_factor P hP).ne_zero
+    Ideal.isMaximal_of_mem_normalizedFactors
+      (by simpa only [UniqueFactorizationMonoid.factors_eq_normalizedFactors] using hP)
   have hIB : I ⊔ B = ⊤ := by
     apply Ideal.sup_prod_eq_top
     intro P hP
