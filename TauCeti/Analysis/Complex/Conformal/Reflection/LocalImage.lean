@@ -42,45 +42,28 @@ the upper-half-plane condition near a real point, including tangential approache
 theorem eventually_im_pos_iff_of_conj (hf : HasStrictDerivAt f (d : ℂ) (x : ℂ))
     (hd : 0 < d) (hsym : ∀ᶠ z in 𝓝 (x : ℂ), f (conj z) = conj (f z)) :
     ∀ᶠ z in 𝓝 (x : ℂ), 0 < (f z).im ↔ 0 < z.im := by
-  let c : ℝ≥0 := .mk (d / 2) (by positivity)
   obtain ⟨s, hs, happrox⟩ := hf.hasStrictFDerivAt.approximates_deriv_on_nhds
-    (c := c) (Or.inr (by exact div_pos hd (by norm_num)))
+    (c := (d / 2).toNNReal) (Or.inr (Real.toNNReal_pos.mpr (half_pos hd)))
   have hconj : Tendsto conj (𝓝 (x : ℂ)) (𝓝 (x : ℂ)) := by
     simpa using continuous_conj.tendsto (x : ℂ)
   filter_upwards [hs, hconj.eventually hs, hsym] with z hz hzc hsymz
   have hbound := (abs_im_le_norm _).trans (happrox z hz (conj z) hzc)
-  have hnorm : ‖z - conj z‖ = 2 * |z.im| := by
-    rw [← dist_eq_norm, dist_self_conj]
   simp only [ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul, sub_im, mul_im,
-    ofReal_re, ofReal_im, hsymz, conj_im, hnorm] at hbound
-  have hbound' : |2 * ((f z).im - d * z.im)| ≤ d * |z.im| := by
-    convert hbound using 1
-    · congr 1
-      ring
-    · simp only [c, NNReal.coe_mk]
-      ring
-  rcases abs_le.mp hbound' with ⟨hl, hu⟩
-  by_cases hzpos : 0 < z.im
-  · rw [abs_of_pos hzpos] at hl hu
-    constructor
-    · exact fun _ => hzpos
-    · intro _
-      nlinarith [mul_pos hd hzpos]
-  · have hznonpos : z.im ≤ 0 := le_of_not_gt hzpos
-    rw [abs_of_nonpos hznonpos] at hl hu
-    constructor
-    · intro hfpos
-      nlinarith [mul_nonpos_of_nonneg_of_nonpos hd.le hznonpos]
-    · exact fun h => (hzpos h).elim
+    ofReal_re, ofReal_im, hsymz, conj_im, ← dist_eq_norm, dist_self_conj, mul_zero, zero_add,
+    Real.coe_toNNReal _ (half_pos hd).le] at hbound
+  rcases abs_le.mp hbound with ⟨hl, hu⟩
+  cases abs_cases z.im <;> constructor <;> intro <;> nlinarith
 
 /-- A real-symmetric complex map with positive real strict derivative is injective on a
-disc of radius less than any prescribed `R > 0`. Inside a sufficiently small target disc, its
-image of the source upper half-disc is exactly the target upper half-disc. The discs are
-centred at `x` and `f x`; no image or half-plane preservation hypothesis is required. -/
+disc of radius less than any prescribed `R > 0`, and on that disc it preserves the sign of the
+upper-half-plane condition. Inside a sufficiently small target disc, its image of the source
+upper half-disc is exactly the target upper half-disc. The discs are centred at `x` and `f x`;
+no image or half-plane preservation hypothesis is required. -/
 theorem exists_ball_image_inter_upperHalfPlane_of_conj
     (hf : HasStrictDerivAt f (d : ℂ) (x : ℂ)) (hd : 0 < d)
     (hsym : ∀ᶠ z in 𝓝 (x : ℂ), f (conj z) = conj (f z)) {R : ℝ} (hR : 0 < R) :
     ∃ r ∈ Ioo 0 R, InjOn f (ball (x : ℂ) r) ∧
+      (∀ z ∈ ball (x : ℂ) r, 0 < (f z).im ↔ 0 < z.im) ∧
       ∃ δ : ℝ, 0 < δ ∧
         (f '' (ball (x : ℂ) r ∩ upperHalfPlaneSet)) ∩ ball (f x) δ =
           ball (f x) δ ∩ upperHalfPlaneSet := by
@@ -90,7 +73,7 @@ theorem exists_ball_image_inter_upperHalfPlane_of_conj
     (hleft.and (hf.eventually_im_pos_iff_of_conj hd hsym))
   let r := min r₀ (R / 2)
   have hr : 0 < r := lt_min hr₀ (by positivity)
-  have hrR : r < R := (min_le_right _ _).trans_lt (by linarith)
+  have hrR : r < R := (min_le_right _ _).trans_lt (half_lt_self hR)
   have hball : ∀ z ∈ ball (x : ℂ) r,
       hf.localInverse f (d : ℂ) (x : ℂ) hdC (f z) = z ∧
         (0 < (f z).im ↔ 0 < z.im) :=
@@ -102,7 +85,7 @@ theorem exists_ball_image_inter_upperHalfPlane_of_conj
     rw [← hf.map_nhds_eq hdC]
     exact Filter.image_mem_map (ball_mem_nhds _ hr)
   obtain ⟨δ, hδ, htarget⟩ := Metric.mem_nhds_iff.mp himage
-  refine ⟨r, ⟨hr, hrR⟩, hinj, δ, hδ, ?_⟩
+  refine ⟨r, ⟨hr, hrR⟩, hinj, fun z hz => (hball z hz).2, δ, hδ, ?_⟩
   ext w
   constructor
   · rintro ⟨⟨z, ⟨hz, hzim⟩, rfl⟩, hw⟩

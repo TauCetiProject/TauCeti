@@ -137,7 +137,7 @@ private theorem dualityMap_devissage (M : Type u) [AddCommGroup M] [TopologicalS
   hG.isProP.dualityMap0_surjective_dualityMap1_bijective_dualityMap2_injective (ZMod p)
     (Module.Baer.zmod_self p) (Module.Baer.of_isSemisimpleRing (ZMod p) (H2 G (ZMod p)))
     (fun A _ _ _ _ _ _ hA htrivA _ ↦ hG.dualityMap_of_natCard_eq htriv A hA htrivA) M
-    (isPPrimaryTorsion_iff.2 fun m ↦ ⟨1, by rw [pow_one, hM]⟩) hM
+    (fun m ↦ ⟨1, by rw [pow_one, hM]⟩) hM
 
 variable (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [ContinuousSMul G M] [Finite M] (hM : ∀ x : M, p • x = 0)
@@ -184,7 +184,7 @@ theorem dualityMap0_injective : Function.Injective (dualityMap0 G M (ZMod p)) :=
     (fun A _ _ _ _ _ _ hA htrivA _ ↦
       have hd := hG.dualityMap_of_natCard_eq htriv A hA htrivA
       ⟨hd.1, hd.2.1.1⟩) M
-    (isPPrimaryTorsion_iff.2 fun m ↦ ⟨1, by rw [pow_one, hM]⟩) hM
+    (fun m ↦ ⟨1, by rw [pow_one, hM]⟩) hM
 
 /-- **Tate's duality map `α₀` of an infinite Demushkin group is bijective** on every finite
 discrete `G`-module `M` killed by `p`: `H⁰(G, M) × H²(G, M') → H²(G, 𝔽_p)` is a perfect pairing. -/

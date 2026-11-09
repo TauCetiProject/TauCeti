@@ -118,12 +118,8 @@ theorem flowOf_eq_of_isMIntegralCurve [IsManifold I 1 M]
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     {γ : ℝ → M} (hγ : IsMIntegralCurve γ v) (t : ℝ) :
     flowOf v t (γ 0) = γ t := by
-  have h := (hγ.isMIntegralCurveOn (Ioo (-(|t| + 1)) (|t| + 1))).eqOn_maximalIntegralCurve hv
-    (by constructor <;> linarith [abs_nonneg t]) rfl
-  have ht : t ∈ Ioo (-(|t| + 1)) (|t| + 1) :=
-    ⟨by linarith [neg_abs_le t], by linarith [le_abs_self t]⟩
   rw [flowOf_apply]
-  exact h ht
+  exact hγ.maximalIntegralCurve_eq hv t
 
 omit [CompleteSpace E] in
 /-- The velocity of a maximal-flow trajectory is the vector field at the current point,
@@ -139,6 +135,17 @@ theorem curveVelocity_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace I 
   simpa only [Manifold.curveVelocityWithin_univ] using
     Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt
       hc.hasMFDerivAt.hasMFDerivWithinAt uniqueDiffWithinAt_univ
+
+omit [CompleteSpace E] in
+/-- A maximal-flow trajectory is differentiable at every time in its domain. -/
+theorem mdifferentiableAt_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) :
+    MDifferentiableAt 𝓘(ℝ) I (fun s ↦ flowOf v s x) t := by
+  have hdom : {s | (s, x) ∈ flowDomain v} ∈ 𝓝 t := by
+    simpa only [mem_flowDomain, ofPred_mem_eq] using
+      isOpen_maximalIntegralCurveInterval.mem_nhds (mem_flowDomain.mp ht)
+  exact ((isMIntegralCurveOn_flowOf hv x).isMIntegralCurveAt hdom).hasMFDerivAt.mdifferentiableAt
 
 /-- On a complete normed model space, the domain of the maximal flow is jointly open in time
 and initial point. -/

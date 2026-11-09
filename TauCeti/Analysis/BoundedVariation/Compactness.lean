@@ -138,7 +138,7 @@ theorem totallyBounded_of_setLIntegral_le_of_totalVariationOn_le (hK : IsCompact
     (hbdd : ∀ u ∈ S, ∫⁻ x in Ω, ‖u x‖ₑ ∂μ ≤ M) (hvar : ∀ u ∈ S, totalVariationOn μ Ω u ≤ M) :
     TotallyBounded {f : Lp ℝ 1 (μ.restrict K) | ∃ u ∈ S, f =ᵐ[μ.restrict K] u} := by
   -- Multiply by a smooth cutoff `χ` equal to one near `K` and supported in `Ω`.
-  obtain ⟨χ, hχ, hχ01, hχK, hχc, hχΩ⟩ := hK.exists_contDiff_cutoff Ω.isOpen hKΩ
+  obtain ⟨χ, hχ, hχ01, hχK, hχc, hχΩ⟩ := hK.exists_contDiff_cutoff_eventuallyEq_one Ω.isOpen hKΩ
   obtain ⟨C, hC⟩ := (hχ.continuous_fderiv (by simp)).norm.bddAbove_range_of_hasCompactSupport
     (hχc.fderiv ℝ).norm
   have hχ1 (x : E) : |χ x| ≤ 1 := by
@@ -167,8 +167,7 @@ theorem totallyBounded_of_setLIntegral_le_of_totalVariationOn_le (hK : IsCompact
   exact totallyBounded_restrict_of_forall_eqOn (g := (χ * ·)) hK.measurableSet
     (fun u hu => memLp_one_iff_integrable.2 (hint u hu))
     (fun u _ x hx => by
-      have hχx : χ x = 1 := interior_subset (hχK hx)
-      rw [Pi.mul_apply, hχx, one_mul]) hT
+      rw [Pi.mul_apply, (hχK x hx).self_of_nhds, one_mul]) hT
 
 /-- **Compactness of families of bounded variation**, in the form of a compact embedding: under
 the hypotheses of `TauCeti.totallyBounded_of_setLIntegral_le_of_totalVariationOn_le`, the closure in

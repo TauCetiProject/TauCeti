@@ -59,9 +59,9 @@ public section
 
 noncomputable section
 
-namespace TauCeti.Lie
-
 open scoped ContDiff Manifold
+
+namespace TauCeti.Lie
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
