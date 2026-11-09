@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Geometry.Toric.Algebraic.Lattice
+public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 
 /-!
 # The integral dual lattice
@@ -35,14 +35,11 @@ variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] {i : N �
 theorem dual (h : IsIntegralLattice i) : IsIntegralLattice h.realCharacter := by
   let _ := h.free
   let _ := h.finite
-  have hbase : IsBaseChange ℝ h.realCharacter.toIntLinearMap ↔
-      IsBaseChange ℝ h.isBaseChange.toDual :=
-    IsBaseChange.iff_of_equiv_comm (addMonoidHomLequivInt ℤ) (LinearEquiv.refl ℝ (Module.Dual ℝ V))
-      (LinearMap.ext fun m => h.eq_realCharacter fun n => by
-        simpa using h.isBaseChange.toDual_comp_apply (addMonoidHomLequivInt ℤ m) n)
-  exact ⟨(Module.Free.iff_of_equiv (addMonoidHomLequivInt ℤ)).mpr inferInstance,
-    (Module.Finite.equiv_iff (addMonoidHomLequivInt ℤ)).mpr inferInstance,
-    hbase.mpr h.isBaseChange.dual⟩
+  have hd : IsIntegralLattice h.isBaseChange.toDual.toAddMonoidHom :=
+    ⟨inferInstance, inferInstance, h.isBaseChange.dual⟩
+  exact (isIntegralLattice_congr (addMonoidHomLequivInt ℤ).symm.toAddEquiv
+    (LinearEquiv.refl ℝ _) fun φ => h.eq_realCharacter fun n => by
+      simpa using h.isBaseChange.toDual_comp_apply φ n).mp hd
 
 /-- Under the dual lattice, integral evaluation at `n` extends to real evaluation at `i n`. -/
 @[simp]

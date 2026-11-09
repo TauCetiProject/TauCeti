@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Convex.Cone.Dual
-public import TauCeti.Geometry.Toric.Algebraic.Lattice
+public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 
 /-!
 # Dual semigroups of toric cones

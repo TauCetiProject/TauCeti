@@ -66,8 +66,7 @@ theorem IsLatticeRational.inf_dual_singleton_realCharacter (hC : IsLatticeRation
     simp only [map_add, map_zsmul, LinearMap.boundaryCombination_def,
       h.realCharacter_apply, ← Int.cast_neg, Int.cast_smul_eq_zsmul]
 
-/-- The whole space is generated as a cone by the images of a finite integral basis and its
-negatives. -/
+/-- For an integral lattice, the whole space is a lattice-rational cone. -/
 theorem IsIntegralLattice.isLatticeRational_top (h : IsIntegralLattice i) :
     IsLatticeRational i (⊤ : PointedCone ℝ V) := by
   classical
@@ -143,8 +142,7 @@ theorem IsIntegralLattice.isLatticeRational_dual_image (h : IsIntegralLattice i)
     obtain ⟨m, -, rfl⟩ := Finset.mem_image.mp hf
     exact IsRationalFunctional.realCharacter h m.toIntLinearMap
 
-/-- The algebraic dual of a lattice-rational cone is lattice rational for the dual lattice. Its
-defining cuts are evaluations at lattice generators. -/
+/-- The algebraic dual of a lattice-rational cone is lattice rational for the dual lattice. -/
 theorem IsLatticeRational.dual (hC : IsLatticeRational i C) (h : IsIntegralLattice i) :
     IsLatticeRational h.realCharacter (PointedCone.dual (Module.Dual.eval ℝ V) C) := by
   classical

@@ -85,6 +85,8 @@ theorem exists_inequality_ofFinite {ι : Type*} [Finite ι] {g : ι → (V →�
     (hg : ∀ j, Toric.IsRationalFunctional h (g j).toAffineMap.linear)
     (j : Fin (ofFinite g hg).numConstraints) : ∃ k, (ofFinite g hg).inequality j = g k := by
   let := Fintype.ofFinite ι
+  dsimp only [ofFinite]
+  -- `j : Fin (ofFinite g hg).numConstraints` is definitionally `Fin (Fintype.card ι)`.
   exact ⟨(Fintype.equivFin ι).symm j, rfl⟩
 
 /-- Reindexing preserves the exact simultaneous-inequality carrier. -/

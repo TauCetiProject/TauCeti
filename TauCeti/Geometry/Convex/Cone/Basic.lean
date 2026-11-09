@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Convex.Cone.Pointed
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.LinearAlgebra.Prod
+public import TauCeti.LinearAlgebra.AffineSpace.AffineMap
 
 /-!
 # Salience of images and products of cones, and the line spanned by a ray
@@ -17,8 +18,10 @@ two closure properties of salience that concern standard cone constructions, the
 injective linear map and the product of two pointed cones, together with the salience of the cone
 hull of a single vector. It also computes the dimension of the linear span of the cone hull of a
 single nonzero vector, which is the one-dimensionality making such a cone a ray, and the invariance
-of that dimension under multiplying a cone by the zero cone. None of these statements involves a
-lattice, so they belong to the generic convex-cone API rather than to any consumer of it.
+of that dimension under multiplying a cone by the zero cone. It also shows that a cone over an
+ordered field cut out by affine inequalities is already cut out by their linear parts. None of
+these statements involves a lattice, so they belong to the generic convex-cone API rather than to
+any consumer of it.
 
 ## Main declarations
 
@@ -30,6 +33,8 @@ lattice, so they belong to the generic convex-cone API rather than to any consum
 * `PointedCone.finrank_span_coe_prod_bot` and `PointedCone.finrank_span_coe_bot_prod`:
   multiplying a pointed cone by the zero cone leaves the dimension of the span of the cone
   unchanged.
+* `PointedCone.mem_iff_forall_linear_nonpos`: a cone cut out by affine inequalities is cut out by
+  their linear parts.
 -/
 
 public section
@@ -117,6 +122,36 @@ theorem finrank_span_coe_bot_prod (q : PointedCone R V') :
     (Submodule.span R (q : Set V'))).finrank_eq.symm
 
 end Prod
+
+section AffineInequalities
+
+variable {R V : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup V]
+  [Module R V] {C : PointedCone R V}
+
+/-- A pointed cone over an ordered field cut out by affine inequalities is already cut out by
+their linear parts. -/
+theorem mem_iff_forall_linear_nonpos {ι : Type*} (g : ι → (V →ᵃ[R] R))
+    (hC : (C : Set V) = {x | ∀ j, g j x ≤ 0}) (x : V) : x ∈ C ↔ ∀ j, (g j).linear x ≤ 0 := by
+  have hc (j) : g j 0 ≤ 0 := by
+    have : (0 : V) ∈ (C : Set V) := C.zero_mem
+    rw [hC] at this
+    exact this j
+  refine ⟨fun hx j => ?_, fun hx => ?_⟩
+  · -- Otherwise the inequality fails on a large multiple of `x`.
+    by_contra hle
+    have hpos := not_le.mp hle
+    have hmem : ((1 - g j 0) / (g j).linear x) • x ∈ (C : Set V) :=
+      C.smul_mem (div_nonneg (by linarith [hc j]) hpos.le) hx
+    rw [hC] at hmem
+    have := hmem j
+    rw [(g j).apply_eq_linear_add_apply_zero, map_smul, smul_eq_mul,
+      div_mul_cancel₀ _ hpos.ne'] at this
+    linarith
+  · rw [← SetLike.mem_coe, hC]
+    intro j
+    linarith [(g j).apply_eq_linear_add_apply_zero x, hx j, hc j]
+
+end AffineInequalities
 
 end PointedCone
 
