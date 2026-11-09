@@ -19,7 +19,7 @@ pseudoholomorphic curves, a solution at parameter `r` has normalized spinor `χ 
 
 `T_r(ζ) = (2π)⁻¹ ∫ i F_a ∧ ζ`
 
-(`TauCeti.SeibergWitten.curvatureCurrent`). This file shows that the coarse large-parameter
+(`Orientation.curvatureCurrent`). This file shows that the coarse large-parameter
 estimates bound the mass of `T_r` independently of `r`, and hence that the curvature currents have
 closed weak limits as `r → ∞`.
 
@@ -38,11 +38,11 @@ and so the `L¹` bound `r ∫ w₊ ≤ 2L + 2C vol / r` on the vacuum defect
 (`TauCeti.SeibergWitten.mul_setIntegral_max_one_sub_le`). Integrating the curvature bound
 `|F_a| ≤ A r w₊ + B` then bounds `∫ |F_a|` independently of `r`
 (`TauCeti.SeibergWitten.setLIntegral_enorm_le_of_norm_le`), and with it the mass of `T_r`
-(`TauCeti.SeibergWitten.exists_mass_curvatureCurrent_le`). Because `F_a` is exact, `T_r` has zero
-boundary (`TauCeti.SeibergWitten.curvatureCurrent_comp_extDerivCLM`). The weak compactness of
+(`Orientation.exists_mass_curvatureCurrent_le`). Because `F_a` is exact, `T_r` has zero
+boundary (`Orientation.curvatureCurrent_comp_extDerivCLM`). The weak compactness of
 mass-bounded currents then provides, for any family of solutions with `r ≥ r₀`, a weak cluster
 point which is a closed current of bounded mass
-(`TauCeti.SeibergWitten.exists_mapClusterPt_curvatureCurrent`).
+(`Orientation.exists_mapClusterPt_curvatureCurrent`).
 
 The setting is a coordinate chart: an oriented finite-dimensional real vector space with an open
 set `Ω` of finite Haar measure, on which the fields and estimates are given. The pointwise norms
@@ -64,8 +64,6 @@ open MeasureTheory TopologicalSpace TestFunction Distribution Filter Set Real
 open scoped Distributions ENNReal NNReal
 
 namespace TauCeti.SeibergWitten
-
-universe u
 
 /-- **The vacuum defect is controlled by the spinor defect.** Let `s = |α|²` and `t = |β|²`, and
 suppose `t ≤ (C / r) w₊ + C / r²` for the vacuum defect `w₊ = max (1 - s) 0`. If `0 ≤ C` and
@@ -167,7 +165,11 @@ theorem setLIntegral_enorm_le_of_norm_le {V : Type*} [NormedAddCommGroup V] {F :
 
 end Integral
 
-section Current
+end TauCeti.SeibergWitten
+
+namespace Orientation
+
+universe u
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {l : ℕ} {n : ℕ∞}
@@ -186,15 +188,17 @@ theorem curvatureCurrent_def (o : Orientation ℝ E (Fin (1 + 1 + l))) (Ω : Ope
       -(2 * π)⁻¹ • o.formCurrent Ω (extDeriv b) :=
   (rfl)
 
-/-- For a `C¹` form `b`, the curvature current is `ζ ↦ (2π)⁻¹ ∫ (-db) ∧ ζ`, computed in any
-basis `e` of the given orientation with its Haar measure. -/
+/-- For a form `b` that is `C¹` on `Ω`, the curvature current is `ζ ↦ (2π)⁻¹ ∫ (-db) ∧ ζ`,
+computed in any basis `e` of the given orientation with its Haar measure. -/
 theorem curvatureCurrent_apply (o : Orientation ℝ E (Fin (1 + 1 + l))) (Ω : Opens E)
     (e : Module.Basis (Fin (1 + 1 + l)) ℝ E) (he : e.orientation = o)
-    {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} (hb : ContDiff ℝ 1 b) (ζ : 𝓓^{n}(Ω, E [⋀^Fin l]→L[ℝ] ℝ)) :
+    {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} (hb : ContDiffOn ℝ 1 b Ω) (ζ : 𝓓^{n}(Ω, E [⋀^Fin l]→L[ℝ] ℝ)) :
     curvatureCurrent o Ω b ζ =
       (2 * π)⁻¹ * ∫ x, ContinuousAlternatingMap.wedge (-extDeriv b x) (ζ x) e ∂e.addHaar := by
   have hloc : LocallyIntegrableOn (extDeriv b) Ω e.addHaar :=
-    (contDiff_extDeriv (r := 0) hb (by simp)).continuous.locallyIntegrable.locallyIntegrableOn _
+    ContinuousOn.locallyIntegrableOn (fun x hx ↦ (TauCeti.contDiffAt_extDeriv (r := 0)
+      (hb.contDiffAt (Ω.isOpen.mem_nhds hx)) (by simp)).continuousAt.continuousWithinAt)
+      Ω.isOpen.measurableSet
   rw [curvatureCurrent_def, smul_apply, o.formCurrent_apply Ω e he hloc, smul_eq_mul,
     ← integral_const_mul, ← integral_const_mul]
   congr 1 with x
@@ -202,21 +206,23 @@ theorem curvatureCurrent_apply (o : Orientation ℝ E (Fin (1 + 1 + l))) (Ω : O
     ContinuousAlternatingMap.smul_apply, smul_eq_mul]
   ring
 
-/-- **The curvature current has zero boundary**: for a `C²` form `b`, `T (dη) = 0` for every test
-form `η`, because `i F_a = -db` is closed. -/
+/-- **The curvature current has zero boundary**: for a form `b` that is `C²` on `Ω`, `T (dη) = 0`
+for every test form `η`, because `i F_a = -db` is closed on `Ω`. -/
 theorem curvatureCurrent_comp_extDerivCLM {k : ℕ} (o : Orientation ℝ E (Fin (1 + 1 + (k + 1))))
-    (Ω : Opens E) {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} (hb : ContDiff ℝ 2 b) :
+    (Ω : Opens E) {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} (hb : ContDiffOn ℝ 2 b Ω) :
     curvatureCurrent o Ω b ∘L (extDerivCLM : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] _) = 0 := by
+  have hb' (x : E) (hx : x ∈ Ω) : ContDiffAt ℝ 2 b x := hb.contDiffAt (Ω.isOpen.mem_nhds hx)
   rw [curvatureCurrent_def, ContinuousLinearMap.smul_comp,
-    o.formCurrent_comp_extDerivCLM_of_extDeriv_eq_zero Ω (contDiff_extDeriv hb (by norm_num))
-      (extDeriv_extDeriv hb (by simp)), smul_zero]
+    o.formCurrent_comp_extDerivCLM_of_extDeriv_eq_zero Ω
+      (fun x hx ↦ (TauCeti.contDiffAt_extDeriv (hb' x hx) (by norm_num)).contDiffWithinAt)
+      (fun x hx ↦ extDeriv_extDeriv_apply (hb' x hx) (by simp)), smul_zero]
 
 variable {H G : Type*} [NormedAddCommGroup H] [NormedAddCommGroup G]
 
 /-- **The mass of the curvature current is bounded independently of `r`.** Fix an open set `Ω` of
 finite Haar measure and constants `C, A ≥ 0`, `L` and `B`. There is `M` such that the following
-holds for every `r ≥ max 1 (2 C)` and all fields: a connection `a = i b` with `b` of class `C¹`, a
-section `α` and a component `β`, such that on `Ω`, with the vacuum defect
+holds for every `r ≥ max 1 (2 C)` and all fields: a connection `a = i b`, a section `α` and a
+component `β`, such that on `Ω`, with the vacuum defect
 `w₊ = max (1 - |α|²) 0`,
 
 * `|β|² ≤ (C / r) w₊ + C / r²`,
@@ -239,7 +245,8 @@ theorem exists_mass_curvatureCurrent_le (o : Orientation ℝ E (Fin (1 + 1 + l))
   refine ⟨‖(2 * π)⁻¹‖₊ * K * N.toNNReal, fun r b α β hr hβ hd hL hF ↦ ?_⟩
   have hr₁ : 1 ≤ r := le_of_max_le_left hr
   have hrC : 2 * C ≤ r := le_of_max_le_right hr
-  have hint := setLIntegral_enorm_le_of_norm_le Ω.isOpen.measurableSet hΩ hC hrC hd hβ hL hA hF
+  have hint := TauCeti.SeibergWitten.setLIntegral_enorm_le_of_norm_le Ω.isOpen.measurableSet hΩ
+    hC hrC hd hβ hL hA hF
   -- `C / r ≤ C` and `B ≤ max B 0` remove the dependence on `r`.
   have hN : 2 * A * L + (2 * A * (C / r) + B) * μ.real Ω ≤ N := by
     have : C / r ≤ C := div_le_self hC hr₁
@@ -261,8 +268,8 @@ theorem exists_mass_curvatureCurrent_le (o : Orientation ℝ E (Fin (1 + 1 + l))
 /-- **Closed weak limits of the curvature currents.** Fix an open set `Ω` of finite Haar measure,
 a constant `C ≥ 0` and a constant `L`. There is `M`, depending only on these data and the
 orientation, with the following property. Consider a family, indexed by `i` along a nontrivial
-filter, of parameters `rᵢ ≥ max 1 (2 C)` and fields `(bᵢ, αᵢ, βᵢ)` with `bᵢ` of class `C²`
-satisfying Taubes's coarse estimates on `Ω`: with `w₊ = max (1 - |αᵢ|²) 0`,
+filter, of parameters `rᵢ ≥ max 1 (2 C)` and fields `(bᵢ, αᵢ, βᵢ)` with `bᵢ` of class `C²` on
+`Ω` satisfying Taubes's coarse estimates there: with `w₊ = max (1 - |αᵢ|²) 0`,
 
 * `|βᵢ|² ≤ (C / rᵢ) w₊ + C / rᵢ²`,
 * `rᵢ ∫_Ω |1 - |αᵢ|² - |βᵢ|²| ≤ L`, the spinor defect being integrable,
@@ -279,7 +286,7 @@ theorem exists_mapClusterPt_curvatureCurrent {k : ℕ}
     ∃ M : ℝ≥0, ∀ {ι : Type u} (f : Filter ι) [f.NeBot] {r : ι → ℝ}
       {b : ι → E → E [⋀^Fin 1]→L[ℝ] ℝ} {α : ι → E → H} {β : ι → E → G}
       {Fp Fm : ι → E → E [⋀^Fin (1 + 1)]→L[ℝ] ℝ}, (∀ i, max 1 (2 * C) ≤ r i) →
-      (∀ i, ContDiff ℝ 2 (b i)) →
+      (∀ i, ContDiffOn ℝ 2 (b i) Ω) →
       (∀ i, ∀ x ∈ Ω, ‖β i x‖ ^ 2 ≤ C / r i * max (1 - ‖α i x‖ ^ 2) 0 + C / r i ^ 2) →
       (∀ i, IntegrableOn (fun x ↦ 1 - ‖α i x‖ ^ 2 - ‖β i x‖ ^ 2) Ω μ) →
       (∀ i, r i * ∫ x in Ω, |1 - ‖α i x‖ ^ 2 - ‖β i x‖ ^ 2| ∂μ ≤ L) →
@@ -329,6 +336,4 @@ theorem exists_mapClusterPt_curvatureCurrent {k : ℕ}
     le_antisymm (by simpa using hTd) zero_le
   exact DFunLike.coe_injective ((mass_eq_zero_iff _).1 h0)
 
-end Current
-
-end TauCeti.SeibergWitten
+end Orientation

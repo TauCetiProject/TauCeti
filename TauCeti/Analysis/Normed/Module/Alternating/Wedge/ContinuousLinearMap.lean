@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge
+public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 
 /-!
 # The paired wedge as a continuous trilinear map
@@ -13,7 +14,9 @@ public import TauCeti.Analysis.Normed.Module.Alternating.Wedge
 The paired wedge depends continuously and linearly on each of its three inputs: the bilinear
 pairing and the two alternating maps. `pairedWedgeCLM` bundles this dependence, with the binomial
 operator-norm bound. This permits applying the usual calculus of continuous linear maps to
-families of forms, including pairings that vary with the base point.
+families of forms, including pairings that vary with the base point. For real-valued forms,
+`wedgeApplyCLM v` bundles the evaluation `(ψ, φ) ↦ (φ ∧ ψ) v` of the wedge on a fixed family of
+vectors as a continuous bilinear map, the form used to integrate wedges against test forms.
 
 The construction uses `ContinuousAlternatingMap.pairedWedge` and its norm bound, together with
 Mathlib's `LinearMap.mkContinuous₂`. The normalization follows John M. Lee, *Introduction to Smooth
@@ -125,5 +128,17 @@ theorem norm_pairedWedgeCLM_le :
   apply ContinuousLinearMap.opNorm_le_bound₂ _ (by positivity)
   intro φ ψ
   simpa only [pairedWedgeCLM_apply] using norm_pairedWedge_le μ φ ψ
+
+/-- The real wedge evaluated on a family `v` of `k + l` vectors, as the continuous bilinear map
+`(ψ, φ) ↦ (φ ∧ ψ) v` of an `l`-form `ψ` and a `k`-form `φ`. -/
+def wedgeApplyCLM (v : Fin (k + l) → E) :
+    (E [⋀^Fin l]→L[ℝ] ℝ) →L[ℝ] (E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ :=
+  ContinuousLinearMap.compL ℝ _ _ ℝ (ContinuousAlternatingMap.apply ℝ E ℝ v) ∘L
+    (pairedWedgeCLM (ContinuousLinearMap.mul ℝ ℝ)).flip
+
+/-- Evaluation of `wedgeApplyCLM v` is the wedge evaluated on `v`. -/
+@[simp] theorem wedgeApplyCLM_apply (v : Fin (k + l) → E) (ψ : E [⋀^Fin l]→L[ℝ] ℝ)
+    (φ : E [⋀^Fin k]→L[ℝ] ℝ) : wedgeApplyCLM v ψ φ = wedge φ ψ v := by
+  simp [wedgeApplyCLM, wedge_def]
 
 end ContinuousAlternatingMap
