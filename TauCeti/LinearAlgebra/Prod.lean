@@ -46,6 +46,7 @@ quadratic forms with the subgroup preserving both summands.
   and `α`, and transversality, the surjectivity of `(ξ, η) ↦ α ξ - β η`, is symmetric.
 * `LinearEquiv.nonempty_linearEquiv_of_isUnit_snd_comp_inr`: a linear equivalence `M × P ≃ N × P`
   whose lower-right block is invertible gives `M ≃ N`.
+* `LinearMap.finrank_graph`: the graph of a linear map `M → M₂` has the dimension of `M`.
 * `TauCeti.LinearMap.lsmul_restrictScalars_prodMap`: multiplication by a scalar on a product of
   complex modules is the product map of the two multiplications.
 -/
@@ -227,6 +228,13 @@ theorem surjective_coprod_neg_comm :
     ← coe_comp, coprod_neg_comp_prodComm, ← range_eq_top, ← range_eq_top, range_neg]
 
 end Ring
+
+/-- The graph of a linear map `f : M → M₂` has the dimension of `M`. -/
+theorem finrank_graph {R M M₂ : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup M₂]
+    [Module R M₂] (f : M →ₗ[R] M₂) : Module.finrank R (graph f) = Module.finrank R M := by
+  rw [graph_eq_range_prod, finrank_range_of_inj]
+  intro x y h
+  exact congr(($h).1)
 
 end LinearMap
 

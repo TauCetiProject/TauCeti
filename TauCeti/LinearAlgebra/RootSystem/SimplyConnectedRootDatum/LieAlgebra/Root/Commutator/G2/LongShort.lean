@@ -227,11 +227,7 @@ theorem chevalleyRootSubgroup_mul_of_g2_long_short
     zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ hscaled3'
   -- All-root divided-power stability also gives stability for the four scaled operators.
   have hstable := dividedPower_chevalleySystem_smul_mem ρ M hM hnil
-  have hscaled (z : ℤ) (i : Fin G2.numRoots) (n : ℕ) :
-      ∀ w ∈ M, Associative.dividedPower n (z • E i) • w ∈ M := by
-    intro w hw
-    rw [Associative.dividedPower_zsmul, smul_assoc]
-    exact M.zsmul_mem (hstable i n w hw) _
+  have hscaled := dividedPower_zsmul_chevalleySystem_smul_mem ρ M hM hnil
   have hn := isNilpotent_apply_ι_chevalleySystem ρ hnil
   -- Use the value API, then absorb the integer coefficients into the exponentials.
   apply Units.ext
