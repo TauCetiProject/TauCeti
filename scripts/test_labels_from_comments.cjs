@@ -1,11 +1,11 @@
 // Exercise the actual inline workflow scripts with a mocked GitHub API.
-// Run: node --test .github/scripts/test-labels-from-comments.cjs
+// Run: node --test scripts/test_labels_from_comments.cjs
 const assert = require('node:assert/strict');
 const { readFileSync } = require('node:fs');
 const { resolve } = require('node:path');
 const { test } = require('node:test');
 
-const workflow = readFileSync(resolve(__dirname, '../workflows/labels-from-comments.yml'), 'utf8');
+const workflow = readFileSync(resolve(__dirname, '../.github/workflows/labels-from-comments.yml'), 'utf8');
 const scripts = [...workflow.matchAll(/^          script: \|\n((?:            .*\n|\n)+)/gm)]
   .map(match => match[1].replace(/^            /gm, ''));
 assert.equal(scripts.length, 2);
@@ -13,6 +13,13 @@ const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
 const parse = new AsyncFunction('context', 'core', scripts[0]);
 const apply = new AsyncFunction('context', 'github', 'process', scripts[1]);
 const issue = { owner: 'TauCetiProject', repo: 'test-repo', number: 123 };
+// Evaluate the actual job condition with Actions' case-insensitive contains semantics.
+const jobCondition = workflow.match(/^    if: >-\n((?:      .*\n)+)/m)[1];
+const admit = new Function('github', 'contains', `return (${jobCondition});`);
+const repository = workflow.match(/github.repository == '([^']+)'/)[1];
+const needsRunner = (body, repo = repository) => admit({
+  repository: repo, event: { comment: { body } },
+}, (value, search) => value.toLowerCase().includes(search.toLowerCase()));
 
 async function commands(body) {
   let output;
@@ -62,6 +69,7 @@ test('last instruction wins independently for each label', async () => {
 
 test('prose, quoted labels, case differences, and code remain inert', async () => {
   assert.deepEqual(await commands([
+    // Mathlib's regression case: a bot directive ending in a label is not a command.
     'please add enhancement', '!downstream-check enhancement', '> enhancement', '`enhancement`', 'ENHANCEMENT',
     '- enhancement', 'help  wanted', 'enhancement, documentation', '$(touch /tmp/label-injection)',
     '${{ secrets.APP_PRIVATE_KEY }}', 'process.exit(1)',
@@ -108,4 +116,34 @@ test('absent removals are harmless; unexpected API failures are visible', async 
 test('unrecognized comments make no API calls', async () => {
   const { calls } = await execute('Thanks!');
   assert.deepEqual(calls, []);
+});
+
+test('ordinary conversation and queue merge notifications never request a runner', () => {
+  for (const body of [
+    'Thanks!', 'bors merge', '/review', '',
+    'Pull request successfully merged into main.\n\nBuild succeeded:\n' +
+      '  * [build](https://github.com/TauCetiProject/TauCeti/actions/runs/42531937757)\n\n' +
+      'Merged revision: `1d5dafa62c122f5cce5cd8f1257ade2825f1ee87`.\n\n' +
+      '<!-- tauceti-queue landed:TauCetiProject/TauCeti#29193:389:313801c5491a5bb896cc9a421071385ff92e7e7a -->',
+  ]) assert.equal(needsRunner(body), false, body);
+  assert.equal(needsRunner('dont-repair-in-queue', 'someone/fork'), false);
+});
+
+test('every allowlisted command passes admission with whitespace and CRLF', async () => {
+  const allowed = [...scripts[0].match(/new Set\(\[([\s\S]*?)\]\)/)[1].matchAll(/'([^']+)'/g)]
+    .map(match => match[1]);
+  for (const label of allowed) {
+    for (const prefix of ['', '-']) {
+      const body = `Some context\r\n\t ${prefix}${label} \r\nThanks!`;
+      assert.equal(needsRunner(body), true, body);
+      assert.deepEqual(await commands(body), [[label, prefix === '']]);
+    }
+  }
+});
+
+test('broad admission never relaxes the exact command parser', async () => {
+  for (const body of ['Please add documentation.', 'DONT-REPAIR-IN-QUEUE', '> enhancement']) {
+    assert.equal(needsRunner(body), true);
+    assert.deepEqual(await commands(body), []);
+  }
 });
