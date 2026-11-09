@@ -277,7 +277,8 @@ theorem exists_sub_mem_pow_succ (ht : ∀ j, χ (t j) = 0)
 
 variable {N : Type*} [AddCommGroup N] [Module A N] [Module R N] [IsScalarTower R A N]
 
-theorem smul_sub_smul_mem_smul_top (χ : A →ₐ[R] R) (a : A) (x : N) :
+/-- Modulo `ker χ • N`, the action of `a` on `N` agrees with that of its value `χ a`. -/
+theorem _root_.AlgHom.smul_sub_smul_mem_smul_top (χ : A →ₐ[R] R) (a : A) (x : N) :
     a • x - χ a • x ∈ RingHom.ker χ • (⊤ : Submodule A N) := by
   rw [← algebraMap_smul A (χ a) x, ← sub_smul]
   exact Submodule.smul_mem_smul (by simp) Submodule.mem_top
@@ -362,7 +363,7 @@ theorem coordinateOperator_apply_prod_pow_sub_mem {χ : A →ₐ[R] R} {t : ι �
   rw [coordinateOperator_apply, ← hcollapse, ← sum_sub_distrib]
   exact sum_mem fun k _ ↦ by
     rw [← sum_sub_distrib]
-    exact sum_mem fun α _ ↦ smul_sub_smul_mem_smul_top χ _ _
+    exact sum_mem fun α _ ↦ χ.smul_sub_smul_mem_smul_top _ _
 
 variable [Algebra ℚ R]
 
@@ -373,6 +374,14 @@ variable [Algebra ℚ R]
 def coordinateCoeff (u : ι → A) (D : A →ₗ[R] N) (α : ι → ℕ) : N :=
   algebraMap ℚ R ((∏ i, (α i)! : ℕ) : ℚ)⁻¹ • ∑ γ ∈ Fintype.piFinset fun i ↦ range (α i + 1),
     (∏ i, ((α i).choose (γ i) : A) * (-u i) ^ (α i - γ i)) • D (∏ i, u i ^ γ i)
+
+omit [IsScalarTower R A N] in
+/-- The defining formula of `TauCeti.coordinateCoeff`. -/
+theorem coordinateCoeff_def (u : ι → A) (D : A →ₗ[R] N) (α : ι → ℕ) :
+    coordinateCoeff u D α =
+      algebraMap ℚ R ((∏ i, (α i)! : ℕ) : ℚ)⁻¹ • ∑ γ ∈ Fintype.piFinset fun i ↦ range (α i + 1),
+        (∏ i, ((α i).choose (γ i) : A) * (-u i) ^ (α i - γ i)) • D (∏ i, u i ^ γ i) :=
+  (rfl)
 
 /-- At a point `χ`, `α! • c α` agrees with `D` applied to the monomial `(u - χ u) ^ α` modulo
 `ker χ • N`. -/
@@ -391,10 +400,10 @@ theorem factorial_smul_coordinateCoeff_sub_apply_mem (χ : A →ₐ[R] R) (u : �
     exact prod_congr rfl fun i _ ↦ by ring
   have hfac : ((∏ i, (α i)! : ℕ) : R) * algebraMap ℚ R ((∏ i, (α i)! : ℕ) : ℚ)⁻¹ = 1 := by
     rw [← map_natCast (algebraMap ℚ R), ← map_mul, mul_inv_cancel₀ (by positivity), map_one]
-  rw [coordinateCoeff, smul_smul, hfac, one_smul, hbin, map_sum, ← sum_sub_distrib]
+  rw [coordinateCoeff_def, smul_smul, hfac, one_smul, hbin, map_sum, ← sum_sub_distrib]
   exact sum_mem fun γ _ ↦ by
     rw [map_smul]
-    exact smul_sub_smul_mem_smul_top χ _ _
+    exact χ.smul_sub_smul_mem_smul_top _ _
 
 /-! ### The characterization -/
 

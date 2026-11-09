@@ -22,6 +22,8 @@ algebra of smooth functions.
   homomorphism `C^n⟮I, M; 𝓘(𝕜, A), A⟯ →ₐ[𝕜] C^n⟮J, N; 𝓘(𝕜, A), A⟯`.
 * `ContMDiffMap.evalAlgHom`: evaluation at a point, as an algebra homomorphism
   `C^n⟮I, M; 𝓘(𝕜, A), A⟯ →ₐ[𝕜] A`.
+* `ContMDiffMap.eq_zero_of_forall_mem_ker_evalAlgHom_smul_top`: the points of `M` separate the
+  scalar `C^n` functions.
 * `TauCeti.sub_algebraMap_eq_sum_mul_sub_algebraMap`: the bundled form of a pointwise
   factorization of `g - g x` in the algebra of smooth functions.
 -/
@@ -103,6 +105,20 @@ theorem evalAlgHom_apply (x : M) (f : C^n⟮I, M; 𝓘(𝕜, A), A⟯) : evalAlg
   (rfl)
 
 end AlgHom
+
+/-- The points of `M` separate the scalar `C^n` functions: a function lying in
+`ker (ev x) • C^n(M, 𝕜)` for every point `x` is zero. -/
+theorem eq_zero_of_forall_mem_ker_evalAlgHom_smul_top {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω} (f : C^n⟮I, M; 𝕜⟯)
+    (hf : ∀ x, f ∈ RingHom.ker (evalAlgHom x : C^n⟮I, M; 𝕜⟯ →ₐ[𝕜] 𝕜) •
+      (⊤ : Submodule C^n⟮I, M; 𝕜⟯ C^n⟮I, M; 𝕜⟯)) :
+    f = 0 := by
+  ext x
+  have := hf x
+  rw [Ideal.smul_eq_mul, Ideal.mul_top] at this
+  simpa using this
 
 end ContMDiffMap
 

@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
+public import TauCeti.Geometry.Manifold.VectorField.Derivation
 public import TauCeti.RingTheory.Derivation.Coordinates
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Geometry.Manifold.ContMDiffMap.Hadamard
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # Differential operators on a finite-dimensional space in coordinates
@@ -67,37 +69,16 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCom
 
 variable (𝕜) in
 /-- Differentiation of smooth functions on `E` in the direction `v`, `f ↦ (x ↦ df_x v)`, as a
-derivation of `C^∞(E)`. -/
+derivation of `C^∞(E)`: the derivation `TauCeti.vectorFieldDerivation` of the constant vector
+field `v`. -/
 def lineDerivation (v : E) : Derivation 𝕜 C^∞⟮𝓘(𝕜, E), E; 𝕜⟯ C^∞⟮𝓘(𝕜, E), E; 𝕜⟯ :=
-  Derivation.mk'
-    { toFun := fun f ↦ ⟨fun x ↦ fderiv 𝕜 f x v,
-        ((f.contMDiff.contDiff.fderiv_right (m := ∞) (by simp)).clm_apply
-          contDiff_const).contMDiff⟩
-      map_add' := fun f g ↦ by
-        ext x
-        -- Unfold the smooth-function wrappers to use linearity of `fderiv`.
-        change fderiv 𝕜 (⇑f + ⇑g) x v = fderiv 𝕜 f x v + fderiv 𝕜 g x v
-        rw [fderiv_add ((f.contMDiff.contDiff.differentiable (by simp)) x)
-          ((g.contMDiff.contDiff.differentiable (by simp)) x)]
-        rfl
-      map_smul' := fun c f ↦ by
-        ext x
-        -- Unfold the smooth-function wrappers to use homogeneity of `fderiv`.
-        change fderiv 𝕜 (c • ⇑f) x v = c • fderiv 𝕜 f x v
-        rw [fderiv_const_smul ((f.contMDiff.contDiff.differentiable (by simp)) x)]
-        rfl }
-    fun f g ↦ by
-      ext x
-      -- Unfold the smooth-function wrappers to use the product rule for `fderiv`.
-      change fderiv 𝕜 (⇑f * ⇑g) x v = f x * fderiv 𝕜 g x v + g x * fderiv 𝕜 f x v
-      rw [fderiv_mul ((f.contMDiff.contDiff.differentiable (by simp)) x)
-        ((g.contMDiff.contDiff.differentiable (by simp)) x)]
-      simp
+  vectorFieldDerivation
+    ⟨fun _ ↦ v, contMDiff_tangentBundleModelSpaceHomeomorph_symm_prodMk_const 𝓘(𝕜, E) v ∞⟩
 
 @[simp]
 theorem lineDerivation_apply_apply (v : E) (f : C^∞⟮𝓘(𝕜, E), E; 𝕜⟯) (x : E) :
     lineDerivation 𝕜 v f x = fderiv 𝕜 f x v :=
-  (rfl)
+  (ContMDiffSection.vectorFieldDerivation_apply_apply _ f x).trans (mvfderiv_eq_fderiv_apply f x v)
 
 /-- Directional derivatives of smooth functions commute, by the symmetry of second
 derivatives. -/
@@ -109,38 +90,26 @@ theorem commute_lineDerivation {𝕜 : Type*} [RCLike 𝕜] {E : Type*} [NormedA
   have hdf : DifferentiableAt 𝕜 (fderiv 𝕜 f) x :=
     (hf.fderiv_right (m := ∞) (by simp)).differentiable (by simp) x
   simp only [mul_apply_eq_comp, Derivation.coeFn_coe, lineDerivation_apply_apply]
-  -- Unfold the smooth-function wrappers to the iterated directional derivatives.
-  change fderiv 𝕜 (fun y ↦ fderiv 𝕜 f y w) x v = fderiv 𝕜 (fun y ↦ fderiv 𝕜 f y v) x w
-  rw [fderiv_clm_apply hdf (differentiableAt_const w),
+  rw [funext (lineDerivation_apply_apply w f), funext (lineDerivation_apply_apply v f),
+    fderiv_clm_apply hdf (differentiableAt_const w),
     fderiv_clm_apply hdf (differentiableAt_const v)]
   simp [(hf.contDiffAt.isSymmSndFDerivAt (by simp)).eq v w]
 
 end LineDerivation
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- A smooth function on `E` lying in `ker (ev x) • C^∞(E)` for every point `x` is zero. -/
-theorem _root_.ContMDiffMap.eq_zero_of_forall_mem_ker_evalAlgHom_smul_top
-    (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯)
-    (hf : ∀ x, f ∈ RingHom.ker (ContMDiffMap.evalAlgHom x : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₐ[ℝ] ℝ) •
-      (⊤ : Submodule C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯)) :
-    f = 0 := by
-  ext x
-  have := hf x
-  rw [Ideal.smul_eq_mul, Ideal.mul_top] at this
-  simpa using this
-
 end TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 namespace Module.Basis
 
-variable [FiniteDimensional ℝ E] {ι : Type*} (b : Module.Basis ι ℝ E)
+section Field
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {E : Type*}
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] {ι : Type*}
+  (b : Module.Basis ι 𝕜 E)
 
 /-- The `i`-th coordinate function of a basis `b` of a finite-dimensional space, as a smooth
 function. -/
-def smoothCoord (i : ι) : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ :=
+def smoothCoord (i : ι) : C^∞⟮𝓘(𝕜, E), E; 𝕜⟯ :=
   ⟨b.coord i, (LinearMap.toContinuousLinearMap (b.coord i)).contDiff.contMDiff⟩
 
 @[simp]
@@ -149,15 +118,20 @@ theorem smoothCoord_apply (i : ι) (x : E) : b.smoothCoord i x = b.coord i x :=
 
 /-- The partial derivatives along a basis are dual to its coordinate functions. -/
 theorem lineDerivation_smoothCoord [DecidableEq ι] (i j : ι) :
-    TauCeti.lineDerivation ℝ (b i) (b.smoothCoord j) = if j = i then 1 else 0 := by
+    TauCeti.lineDerivation 𝕜 (b i) (b.smoothCoord j) = if j = i then 1 else 0 := by
   ext x
-  have : fderiv ℝ (b.coord j) x = LinearMap.toContinuousLinearMap (b.coord j) :=
+  have : fderiv 𝕜 (b.coord j) x = LinearMap.toContinuousLinearMap (b.coord j) :=
     (LinearMap.toContinuousLinearMap (b.coord j)).fderiv
   rw [TauCeti.lineDerivation_apply_apply]
   -- Unfold the smooth coordinate function to the linear coordinate functional.
-  change fderiv ℝ (b.coord j) x (b i) = _
+  change fderiv 𝕜 (b.coord j) x (b i) = _
   rw [this, LinearMap.coe_toContinuousLinearMap', coord_apply, repr_self]
   split_ifs with h <;> simp [h]
+
+end Field
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {ι : Type*} (b : Module.Basis ι ℝ E)
 
 /-- **Hadamard's lemma.** The smooth functions vanishing at `x` form the ideal generated by the
 coordinate functions of `b`, each taken relative to its value at `x`. -/
