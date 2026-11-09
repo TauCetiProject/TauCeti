@@ -100,7 +100,11 @@ measurable `A` with `0 < m(A) < ∞`, some dynamic plan `η` concentrated on geo
 `m[|A] = m(A)⁻¹ m|_A` at time `0` and law `δ_o` at time `1`, and for every time `t` the law at
 time `t` of `η` weighted by `τ_{K,N}^{(1-t)}(d(γ₀, γ₁))^N` is at most `m(A)⁻¹ m`.
 
-Such a plan is automatically optimal, since `m[|A]` and `δ_o` have only one coupling. -/
+Such a plan is automatically optimal, since `m[|A]` and `δ_o` have only one coupling.
+
+The property is meaningful for `N ≥ 1`: for `0 < N ≤ 1` and `K > 0` the distortion coefficient
+`distortionTau` is `⊤` at positive distances, so `MCP(K, N)` then only says that the support of the
+reference measure has at most one point. -/
 def MeasureContraction (M : MetricMeasureSpace X) (K N : ℝ) : Prop :=
   ∀ o ∈ M.support, ∀ A : Set X, MeasurableSet A → 0 < M.reference A → M.reference A < ∞ →
     ∃ η : Measure C(I, X), (∀ᵐ γ ∂η, γ ∈ geodesicPaths X) ∧
@@ -132,7 +136,8 @@ theorem MeasureContraction.mono (h : M.MeasureContraction K N) (hK : K' ≤ K) (
 
 /-- **The Bonnet–Myers diameter bound under `MCP(K, N)`.** If `M` satisfies `MCP(K, N)` with
 `K > 0` and `N > 0`, any two points of the support of the reference measure are at distance at
-most `π √((N - 1) / K)`. -/
+most `π √((N - 1) / K)`. For `N ≤ 1` this bound is `0` (as `√` of a nonpositive number is `0`), so
+the lemma then says that the support has at most one point. -/
 theorem MeasureContraction.dist_le (h : M.MeasureContraction K N) (hK : 0 < K) (hN : 0 < N)
     {x y : X} (hx : x ∈ M.support) (hy : y ∈ M.support) : dist x y ≤ π * √((N - 1) / K) := by
   by_contra! hlt

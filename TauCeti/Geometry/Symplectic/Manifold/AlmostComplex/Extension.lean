@@ -118,7 +118,8 @@ private theorem contMDiffAt_cutoffField_of_mem (hU : IsOpen U)
       (J₀.almostComplexStructureAt_toLinearMap x₀).symm
       (LinearMap.coe_toContinuousLinearMap _))
     (SymplecticForm.Compatible.isUnit_one_sub_smul_cayleyFormula (V := E)
-      (h₀.compatibleAt x₀) (hK x₀ hx).tames (hρ x₀)
+      (h₀.compatibleAt x₀) (hK x₀ hx).tames
+      (by simpa only [abs_of_nonneg (hρ x₀).1] using (hρ x₀).2)
       (J₀.almostComplexStructureAt_toLinearMap x₀).symm
       (LinearMap.coe_toContinuousLinearMap _))
   refine hs'.congr_of_eventuallyEq ?_

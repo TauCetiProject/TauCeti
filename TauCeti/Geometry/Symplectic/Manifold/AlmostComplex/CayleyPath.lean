@@ -192,7 +192,7 @@ private theorem contMDiff_cayleyPathEnd_family {K₀ K₁ : P → SmoothAlmostCo
       ((K₁ q₀.1).almostComplexStructureAt_toLinearMap q₀.2).symm)
     (SymplecticForm.Compatible.isUnit_one_sub_smul_cayleyFormula (V := E)
       ((hc₀ q₀.1).compatibleAt q₀.2) ((hc₁ q₀.1).compatibleAt q₀.2).tames
-      ⟨smoothTransition.nonneg _, smoothTransition.le_one _⟩
+      (smoothTransition.abs_le_one _)
       ((K₀ q₀.1).almostComplexStructureAt_toLinearMap q₀.2).symm
       ((K₁ q₀.1).almostComplexStructureAt_toLinearMap q₀.2).symm)
 

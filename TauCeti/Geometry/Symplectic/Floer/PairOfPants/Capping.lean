@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Basic
+import TauCeti.Analysis.Complex.ThricePuncturedSphere.Exchange
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 
 /-!
@@ -61,6 +63,10 @@ negative planes and the output by a positive plane.
 
 ## Main results
 
+* `TauCeti.Floer.pairOfPantsPerturbation_eq_update_inf_add_negativePlanePerturbation`: the
+  pair-of-pants datum is its input part plus the plane datum of its output Hamiltonian.
+* `TauCeti.Floer.negativePlanePerturbation_neg`: the half turn `w ↦ -w` pulls the plane datum of
+  the half-period rotation of `H` back to the plane datum of `H`.
 * `TauCeti.Floer.negativePlanePerturbation_eq_zero_of_norm_le`: the plane datum vanishes on the
   pole disc `‖w‖ ≤ 2 exp (2π)`.
 * `TauCeti.Floer.negativePlanePerturbation_cylindricalEndLift`: far out on the end it is
@@ -77,6 +83,8 @@ negative planes and the output by a positive plane.
   radius `exp (-2π(L - 1)) / 2` about the capped puncture.
 * `TauCeti.Floer.contMDiffAt_plumbedPerturbation_single_inf`: for `L > 4` the capped datum is of
   class `C^n` on the cylinder obtained by capping.
+* `TauCeti.Floer.contDiffAt_uncurry_plumbedPerturbation_single_inf`: the same for a vector space
+  target, in real coordinates on the domain.
 * `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_inf_le`:
   the integrated curvature of the capping family is bounded uniformly in the neck length.
 * `TauCeti.Floer.positivePlanePerturbation_eq_zero_of_le_norm`: the positive plane datum vanishes
@@ -140,6 +148,36 @@ theorem pairOfPantsPerturbation_single_inf (H : ℝ → M → ℝ) :
   rw [pairOfPantsPerturbation_def, Fintype.sum_eq_single inf fun q hq => by
     simp [Pi.single_eq_of_ne hq]]
   simp [negativePlanePerturbation_def]
+
+/-- **The pair-of-pants datum splits into its input part and a plane datum.** The pair-of-pants
+datum of `H` is the datum of its input Hamiltonians, with the output Hamiltonian replaced by zero,
+plus the negative plane datum of the output Hamiltonian `H_∞`. -/
+theorem pairOfPantsPerturbation_eq_update_inf_add_negativePlanePerturbation
+    (H : Puncture → ℝ → M → ℝ) (w : ℂ) (x : M) :
+    pairOfPantsPerturbation H w x =
+      pairOfPantsPerturbation (update H inf 0) w x + negativePlanePerturbation (H inf) w x := by
+  simp [pairOfPantsPerturbation_def, negativePlanePerturbation_def, Puncture.sum_univ]
+
+/-- **The half turn of the negative plane.** The half turn `ρ(w) = -w` rotates the end at `∞` by
+half a period, so it pulls the negative plane datum of the rotated Hamiltonian
+`t ↦ H(t + 1/2)` back to the negative plane datum of `H`: since `dρ = -1`, this is the identity
+`K_{H(· + 1/2)}(-w) = -K_H(w)`. -/
+theorem negativePlanePerturbation_neg (hH : Periodic H 1) (w : ℂ) (x : M) :
+    negativePlanePerturbation (fun t => H (t + 1 / 2)) (-w) x =
+      -negativePlanePerturbation H w x := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · -- At the pole both sides vanish.
+    have h : (inf.endCoord 0).re = 0 := by simpa using re_endCoord_endCenter inf
+    simp [negativePlanePerturbation_def, h, smoothTransition.zero_of_nonpos]
+  · obtain ⟨k, hk⟩ := exists_endCoord_inf_neg hw
+    have hcast : (1 / 2 + k : ℂ) = ((1 / 2 + k : ℝ) : ℂ) := by push_cast; ring
+    have him : (inf.endCoord (-w)).im + 1 / 2 = (inf.endCoord w).im + (k + 1) := by
+      rw [hk, Complex.add_im, Complex.mul_I_im, hcast, Complex.ofReal_re]
+      ring
+    have hp : H ((inf.endCoord w).im + (k + 1)) = H (inf.endCoord w).im := by
+      simpa using hH.int_mul (k + 1) (inf.endCoord w).im
+    simp only [negativePlanePerturbation_def, re_endCoord_inf_neg, endAngularForm_inf_neg, him, hp,
+      smul_neg]
 
 /-- Families indexed by the ends that are `H` at the end `p` and zero at the other two ends
 inherit any property shared by `H` and `0`. -/
@@ -383,6 +421,34 @@ theorem contMDiffAt_plumbedPerturbation_single_inf {n : ℕ∞} (hq : q ≠ inf)
       (forall_single inf (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f))
         contMDiff_const (hHbs q)) hHbs (by simp) hL ⟨hw.resolve_left hc, h₁⟩ x
 
+section VectorSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {Hb : Puncture → ℝ → V → ℝ}
+
+/-- **The capped datum is smooth**, for a vector space target, in real coordinates. For period-one
+Hamiltonians `Hb` of class `C^n` on `ℝ × V` and neck length `L > 4`, every component of the
+perturbation obtained by plumbing the negative plane with Hamiltonian `Hb q` into the input end
+`q` of the pair of pants with Hamiltonians `Hb` is `C^n` at every point whose domain point is the
+capped puncture `c_q` or a point of `ℂ ∖ {0, 1}`. -/
+theorem contDiffAt_uncurry_plumbedPerturbation_single_inf {n : ℕ∞} (hq : q ≠ inf)
+    (hHb : ∀ r, Periodic (Hb r) 1) (hHbs : ∀ r, ContDiff ℝ n (uncurry (Hb r))) (hL : 4 < L)
+    {y : ℝ × ℝ} (hw : Complex.equivRealProdCLM.symm y = q.endCenter ∨
+      Complex.equivRealProdCLM.symm y ≠ 0 ∧ Complex.equivRealProdCLM.symm y ≠ 1)
+    (x : V) (v : ℂ) :
+    ContDiffAt ℝ n (uncurry fun y x => plumbedPerturbation (Pi.single inf (Hb q)) Hb q L
+      (Complex.equivRealProdCLM.symm y) x v) (y, x) := by
+  have hK : ContMDiffAt 𝓘(ℝ, ℂ × V) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
+      (fun p : ℂ × V => plumbedPerturbation (Pi.single inf (Hb q)) Hb q L p.1 p.2)
+      (Complex.equivRealProdCLM.symm y, x) := by
+    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+    exact contMDiffAt_plumbedPerturbation_single_inf hq hHb
+      (fun r => contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hL hw x
+  exact (hK.contDiffAt.comp (f := fun p : (ℝ × ℝ) × V => (Complex.equivRealProdCLM.symm p.1, p.2))
+    (y, x) ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
+      contDiff_snd).contDiffAt).clm_apply contDiffAt_const
+
+end VectorSpace
+
 /-! ### Capping the output of the pair of pants -/
 
 variable {Ha : Puncture → ℝ → M → ℝ}
@@ -462,7 +528,7 @@ theorem lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le (ω : 
 omit [FiniteDimensional ℝ V] in
 /-- The components of the negative plane perturbation in real coordinates are `C¹` jointly in the
 domain point and the target point, on the whole plane. -/
-private theorem contDiff_negativePlanePerturbation_apply (hH : Periodic H 1)
+theorem contDiff_negativePlanePerturbation_apply (hH : Periodic H 1)
     (hHs : ContDiff ℝ 1 (uncurry H)) (v : ℂ) :
     ContDiff ℝ 1
       (uncurry fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x v) := by
@@ -536,8 +602,7 @@ theorem integral_floerEnergyDensity_negativePlanePerturbation_closedBall (ω : S
     exact (contDiff_negativePlanePerturbation_apply hH hHs v).contDiffOn
   have h := ω.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero (D := D) (T := T)
     isOpen_univ hu.contDiffOn (hK 1) (hK Complex.I) hD (subset_univ D)
-    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-      (isCompact_truncation R)).isClosed.measurableSet hTD (hK₀ 1) (hK₀ Complex.I)
+    hTD (hK₀ 1) (hK₀ Complex.I)
   beta_reduce at h
   linarith
 
@@ -741,10 +806,10 @@ theorem integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_b
     lt_norm_of_mem_truncation_of_notMem_annulus hρ (hz.1.resolve_left hz.2) hz.2
   have hP : IsOpen P := isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const
   have h₁ := ω.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero (D := D ∪ T) (T := T)
-    hP hu (hK 1) (hK Complex.I) (hDc.union hTc) hDP hTc.isClosed.measurableSet
+    hP hu (hK 1) (hK Complex.I) (hDc.union hTc) hDP
     subset_union_right (fun z hz => hK₀ 1 (hDT hz)) (fun z hz => hK₀ Complex.I (hDT hz))
   have h₂ := ω.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero (D := D ∪ T) (T := D)
-    hP hu (hK 1) (hK Complex.I) (hDc.union hTc) hDP hDc.isClosed.measurableSet
+    hP hu (hK 1) (hK Complex.I) (hDc.union hTc) hDP
     subset_union_left (fun z hz => hK₀ 1 (hTD hz)) (fun z hz => hK₀ Complex.I (hTD hz))
   beta_reduce at h₁ h₂
   linarith

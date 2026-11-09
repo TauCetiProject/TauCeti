@@ -211,7 +211,7 @@ theorem exists_eLpNorm_rpow_le_mul_eLpNorm_rpow :
   have hI : ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu ≤
       G ^ 2 * ∫ x in Metric.ball x₀ ρ, W1p.value w x ^ 2 ∂mu := by
     have hbound := W1p.setIntegral_norm_gradient_sq_mul_value_sq_le w hψ hψg
-      measurableSet_ball (hψts.trans hρ'B) (W1p.integrable_value_sq w)
+      measurableSet_ball (hψts.trans hρ'B) (Lp.memLp (W1p.value w)).integrable_sq
       (Filter.Eventually.of_forall fun x => le_rfl)
     rwa [inter_eq_right.2 hball] at hbound
   set I := ∫ x in Metric.ball x₀ ρ, W1p.value w x ^ 2 ∂mu
