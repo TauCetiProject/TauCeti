@@ -16,7 +16,7 @@ import Mathlib.Algebra.BigOperators.ModEq
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
 
@@ -37,7 +37,8 @@ The critical set of a `C¹` function is closed, and a nondegenerate critical poi
 it, so a Morse function has finitely many critical points in every compact set; for a proper
 function bounded below, this applies to every sublevel set. A compact band between regular
 values therefore holds finitely many critical levels, along which properties of the band can be
-proved one level at a time.
+proved one level at a time. Above a regular value, the critical points in a compact band stay a
+positive distance away in value, so the band begins with a collar free of critical points.
 
 Restricting `f` to an open subset `U` keeps exactly the critical points lying in `U`, so the total
 critical count is additive over a finite partition of `M` into open sets, such as its connected
@@ -64,6 +65,8 @@ polynomial in the Morse inequalities.
 * `TauCeti.isClosed_criticalPoints` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.eventually_notMem_criticalPoints`: the critical
   set of a `C¹` function is closed, and nondegenerate critical points are isolated in it.
+* `TauCeti.exists_mem_Ioc_forall_notMem_criticalPoints`: a compact band starting at a regular
+  value begins with a collar free of critical points.
 * `TauCeti.IsMorse.eventually_eq_of_mem_criticalPoints`: the critical points of a Morse function
   are isolated.
 * `TauCeti.finite_criticalPoints_inter_of_forall_isManifoldNondegenerateCriticalPoint`: a `C¹`
@@ -367,6 +370,24 @@ theorem isClosed_criticalPoints (hf : ContMDiff I 𝓘(ℝ) 1 f) : IsClosed (cri
   · exact ⟨mem_extChartAt_source x, mem_extChartAt_target x,
       fun h0 ↦ hx ((hcrit x (mem_extChartAt_source x)).2 h0)⟩
 
+/-- **A regular value has a collar without critical points above it.** If `f` is `C¹`, `a < b`,
+the band `f⁻¹[a, b]` is compact and `a` is a regular value of `f`, then for some `a' ∈ (a, b]` the
+band `f⁻¹[a, a']` contains no critical point of `f`. -/
+theorem exists_mem_Ioc_forall_notMem_criticalPoints (hf : ContMDiff I 𝓘(ℝ) 1 f) {a b : ℝ}
+    (hab : a < b) (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a) :
+    ∃ a' ∈ Ioc a b, ∀ x ∈ criticalPoints I f, f x ∉ Icc a a' := by
+  rw [isRegularValue_iff_notMem_image_criticalPoints] at ha
+  have hS : IsCompact (criticalPoints I f ∩ f ⁻¹' Icc a b) :=
+    hcompact.inter_left (isClosed_criticalPoints hf)
+  rcases (criticalPoints I f ∩ f ⁻¹' Icc a b).eq_empty_or_nonempty with hS₀ | hSne
+  · exact ⟨b, ⟨hab, le_rfl⟩, fun x hx hxab ↦ hS₀.subset ⟨hx, hxab⟩⟩
+  -- Stop halfway to the lowest critical value of the band, which lies strictly above `a`.
+  obtain ⟨p, ⟨hp, hpab⟩, hpmin⟩ := hS.exists_isMinOn hSne hf.continuous.continuousOn
+  have hap : a < f p := hpab.1.lt_of_ne fun h ↦ ha ⟨p, hp, h.symm⟩
+  refine ⟨(a + f p) / 2, ⟨by linarith, by linarith [hpab.2]⟩, fun x hx hxa ↦ ?_⟩
+  have hpx := isMinOn_iff.1 hpmin x ⟨hx, hxa.1, by linarith [hxa.2, hpab.2]⟩
+  linarith [hxa.2]
+
 /-- **Nondegenerate critical points in a compact set are finite in number.** If every critical
 point of a `C¹` function `f` in a compact set `K` is nondegenerate, then `K` contains only finitely
 many critical points of `f`. Nothing is assumed about the critical points outside `K`. -/
@@ -405,6 +426,36 @@ theorem IsMorse.eventually_eq_of_mem_criticalPoints (hf : IsMorse I f) (x : M) :
 theorem IsMorse.finite_criticalPoints [CompactSpace M] (hf : IsMorse I f) :
     (criticalPoints I f).Finite := by
   simpa using hf.finite_criticalPoints_inter isCompact_univ
+
+/-- **Levels separating the critical values.** For a Morse function on a compact manifold and
+`a < b`, there are levels `a < c₂ < c₁ < b` such that every critical value strictly between `a`
+and `b` lies strictly between `c₂` and `c₁`. -/
+theorem IsMorse.exists_lt_lt_forall_mem_Ioo [CompactSpace M] (hf : IsMorse I f) {a b : ℝ}
+    (hab : a < b) :
+    ∃ c₁ c₂, a < c₂ ∧ c₂ < c₁ ∧ c₁ < b ∧
+      ∀ x ∈ criticalPoints I f, f x ∈ Ioo a b → f x ∈ Ioo c₂ c₁ := by
+  -- The critical values in `(a, b)`, together with the midpoint, form a nonempty finite set.
+  have hfin : (insert ((a + b) / 2) (f '' (criticalPoints I f ∩ f ⁻¹' Ioo a b))).Finite :=
+    ((hf.finite_criticalPoints.inter_of_left _).image f).insert _
+  set T := hfin.toFinset
+  have hT : T.Nonempty := ⟨(a + b) / 2, by simp [T]⟩
+  have hTab : ∀ v ∈ T, v ∈ Ioo a b := by
+    intro v hv
+    simp only [T, Finite.mem_toFinset, mem_insert_iff, mem_image] at hv
+    rcases hv with rfl | ⟨x, ⟨-, hx⟩, rfl⟩
+    · constructor <;> linarith
+    · exact hx
+  have hmem {x : M} (hx : x ∈ criticalPoints I f) (hxab : f x ∈ Ioo a b) : f x ∈ T := by
+    simp only [T, Finite.mem_toFinset]
+    exact mem_insert_of_mem _ ⟨x, ⟨hx, hxab⟩, rfl⟩
+  have hmin := hTab _ (T.min'_mem hT)
+  have hmax := hTab _ (T.max'_mem hT)
+  have hle := T.min'_le _ (T.max'_mem hT)
+  refine ⟨(T.max' hT + b) / 2, (a + T.min' hT) / 2, by linarith [hmin.1], by linarith,
+    by linarith [hmax.2], fun x hx hxab ↦ ?_⟩
+  have h₁ := T.min'_le _ (hmem hx hxab)
+  have h₂ := T.le_max' _ (hmem hx hxab)
+  constructor <;> linarith [hmin.1, hmax.2]
 
 /-- A proper Morse function bounded below has finitely many critical points in each sublevel
 set. -/

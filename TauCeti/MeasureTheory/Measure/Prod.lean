@@ -18,6 +18,8 @@ over `x`, when `β` is finite, and symmetrically for the second marginal. Mathli
 the extended masses (`MeasureTheory.measure_preimage_fst_singleton_eq_sum`); this file states it
 for the real masses `Measure.real`. A set of zero first-marginal mass carries no mass in any
 rectangle over it (`MeasureTheory.Measure.measure_prod_eq_zero_of_fst_eq_zero`).
+For a probability measure `μ`, the pairs with a coordinate in a set `s` have `μ.prod μ`-measure
+at most `2 * μ s` (`MeasureTheory.Measure.prod_self_union_le_two_mul`).
 
 It also records that almost every section of an almost-everywhere measurable function on a
 product `μ.prod ν` is almost-everywhere measurable (`AEMeasurable.prodMk_left`), the counterpart of
@@ -26,6 +28,12 @@ Mathlib's `MeasureTheory.AEStronglyMeasurable.prodMk_left`.
 Finally, for a measurable map `f` into an additive group, the law of `f z.1 - f z.2` under
 `μ.prod μ` is symmetric (`MeasureTheory.Measure.map_neg_map_sub_prod_self`): swapping the two
 identical factors negates the difference.
+
+For real-valued coordinates, if one factor has a reflection-invariant law, reflecting the other
+coordinate according to the sign of the first preserves the product measure
+(`MeasureTheory.Measure.measurePreserving_prod_skew_neg`), and the quotient `z.1 / z.2` has the
+same law as `z.1 / |z.2|` when the numerator's law is reflection invariant
+(`MeasureTheory.Measure.map_div_prod_eq_map_div_abs`).
 -/
 
 public section
@@ -41,6 +49,17 @@ theorem measure_prod_eq_zero_of_fst_eq_zero {α β : Type*} [MeasurableSpace α]
     σ (t ×ˢ s) = 0 :=
   measure_mono_null (Set.prod_subset_preimage_fst t s)
     (preimage_null_of_map_null measurable_fst.aemeasurable ht)
+
+/-- For a probability measure `μ` and any set `s`, the pairs having a first or a second coordinate
+in `s` have `μ.prod μ`-measure at most twice `μ s`. No measurability is needed. -/
+theorem prod_self_union_le_two_mul {α : Type*} [MeasurableSpace α] (μ : Measure α)
+    [IsProbabilityMeasure μ] (s : Set α) :
+    (μ.prod μ) ((s ×ˢ (Set.univ : Set α)) ∪ ((Set.univ : Set α) ×ˢ s)) ≤ 2 * μ s := by
+  calc _ ≤ (μ.prod μ) (s ×ˢ (Set.univ : Set α)) + (μ.prod μ) ((Set.univ : Set α) ×ˢ s) :=
+        measure_union_le _ _
+    _ = μ s + μ s := by
+        rw [Measure.prod_prod, Measure.prod_prod, measure_univ, mul_one, one_mul]
+    _ = 2 * μ s := (two_mul _).symm
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [MeasurableSpace β]
   [MeasurableSingletonClass β] {π : Measure (α × β)}
@@ -76,6 +95,58 @@ theorem map_neg_map_sub_prod_self {γ G : Type*} [MeasurableSpace γ] [Measurabl
   congr 1
   funext z
   simp
+
+/-- Reflecting the second coordinate according to the sign of the first preserves the product of
+a measure with a reflection-invariant measure, because every fibre transformation preserves the
+second measure. -/
+theorem measurePreserving_prod_skew_neg {μ ν : Measure ℝ} [SFinite μ] [SFinite ν]
+    (hν : ν.map (fun x : ℝ ↦ -x) = ν) :
+    MeasurePreserving (fun z : ℝ × ℝ ↦ (z.1, if z.1 < 0 then -z.2 else z.2))
+      (μ.prod ν) (μ.prod ν) := by
+  refine (MeasurePreserving.id μ).skew_product
+    (g := fun y x : ℝ ↦ if y < 0 then -x else x) ?_ ?_
+  · exact Measurable.ite (measurableSet_lt measurable_fst measurable_const)
+      measurable_snd.neg measurable_snd
+  · refine ae_of_all _ fun y ↦ ?_
+    by_cases hy : y < 0
+    · simpa only [hy, ↓reduceIte] using hν
+    · simpa only [hy, ↓reduceIte] using (Measure.map_id' (μ := ν))
+
+/-- The quotient of independent coordinates, the numerator having a reflection-invariant law, has
+the same law as the quotient by the absolute value of the denominator. -/
+theorem map_div_prod_eq_map_div_abs {μ ν : Measure ℝ} [SFinite μ] [SFinite ν]
+    (hμ : μ.map (fun x : ℝ ↦ -x) = μ) :
+    ((μ.prod ν).map fun z : ℝ × ℝ ↦ z.1 / z.2) =
+      (μ.prod ν).map fun z : ℝ × ℝ ↦ z.1 / |z.2| := by
+  let skew : ℝ × ℝ → ℝ × ℝ := fun z ↦ (z.1, if z.1 < 0 then -z.2 else z.2)
+  let twist : ℝ × ℝ → ℝ × ℝ := fun z ↦ (if z.2 < 0 then -z.1 else z.1, z.2)
+  have hskew : MeasurePreserving skew (ν.prod μ) (ν.prod μ) :=
+    measurePreserving_prod_skew_neg hμ
+  -- Conjugating the skew map by coordinate swaps reflects the numerator exactly when the
+  -- denominator is negative.
+  have htwist : MeasurePreserving twist (μ.prod ν) (μ.prod ν) := by
+    have hswap : MeasurePreserving (Prod.swap : ℝ × ℝ → ℝ × ℝ) (μ.prod ν) (ν.prod μ) :=
+      Measure.measurePreserving_swap
+    have hswap' : MeasurePreserving (Prod.swap : ℝ × ℝ → ℝ × ℝ) (ν.prod μ) (μ.prod ν) :=
+      Measure.measurePreserving_swap
+    have htwist_eq : twist = (Prod.swap : ℝ × ℝ → ℝ × ℝ) ∘ skew ∘ Prod.swap := by
+      funext z
+      rfl
+    rw [htwist_eq]
+    exact hswap'.comp (hskew.comp hswap)
+  calc
+    (μ.prod ν).map (fun z : ℝ × ℝ ↦ z.1 / z.2)
+        = ((μ.prod ν).map twist).map (fun z : ℝ × ℝ ↦ z.1 / z.2) := by rw [htwist.map_eq]
+    _ = (μ.prod ν).map ((fun z : ℝ × ℝ ↦ z.1 / z.2) ∘ twist) := by
+      rw [Measure.map_map (by fun_prop) htwist.measurable]
+    _ = (μ.prod ν).map fun z : ℝ × ℝ ↦ z.1 / |z.2| := by
+      apply Measure.map_congr
+      refine ae_of_all _ fun z ↦ ?_
+      by_cases hz : z.2 < 0
+      · simp only [twist, hz, ↓reduceIte, Function.comp_apply, abs_of_neg hz]
+        ring
+      · simp only [twist, hz, ↓reduceIte, Function.comp_apply,
+          abs_of_nonneg (le_of_not_gt hz)]
 
 end MeasureTheory.Measure
 

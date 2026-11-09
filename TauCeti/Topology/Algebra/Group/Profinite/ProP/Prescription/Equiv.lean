@@ -174,6 +174,22 @@ private theorem explicitH1CompEquiv_toAddMonoidHom (e : H ≃ₜ* G)
   apply AddMonoidHom.ext
   exact explicitH1CompEquiv_apply e χ i
 
+private theorem reduce_toAddMonoidHom_smul_id (χ : G →ₜ* ℤ_[p]ˣ) {i j : ℕ} (h : j ≤ i)
+    (g : G) (m : ZModTwist χ i) :
+    (reduce χ h).toAddMonoidHom ((ContinuousMonoidHom.id G) g • m) =
+      g • (reduce χ h).toAddMonoidHom m := by
+  simpa only [ContinuousMonoidHom.coe_id, id_eq] using reduce_toAddMonoidHom_smul χ h g m
+
+/-- The reduction map between levels of the twisted coefficient system, as a map on explicit `H¹`,
+is the functorial map for the identity of `G` and the reduction on coefficients. -/
+private theorem explicitCoeff1_reduce_eq_explicitMap1 (χ : G →ₜ* ℤ_[p]ˣ) {i j : ℕ} (h : j ≤ i) :
+    explicitCoeff1 G (ZModTwist χ i) (reduce χ h) continuous_of_discreteTopology =
+      explicitMap1 G (ZModTwist χ i) G (ZModTwist χ j) (ContinuousMonoidHom.id G)
+        (reduce χ h).toAddMonoidHom continuous_of_discreteTopology
+        (reduce_toAddMonoidHom_smul_id χ h) := by
+  rw [explicitCoeff1_eq_explicitMap1]
+  apply explicitMap1_congr_of_eq <;> rfl
+
 /-- The equivalences on explicit continuous `H¹` commute with reduction between the levels of
 the twisted coefficient system. -/
 theorem explicitH1CompEquiv_reduce (e : H ≃ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ) {i j : ℕ}
@@ -183,35 +199,10 @@ theorem explicitH1CompEquiv_reduce (e : H ≃ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ) 
       explicitCoeff1 H (ZModTwist (χ.comp (e : H →ₜ* G)) i)
         (reduce (χ.comp (e : H →ₜ* G)) h) continuous_of_discreteTopology
         (explicitH1CompEquiv e χ i x) := by
+  have hcoeffG := explicitCoeff1_reduce_eq_explicitMap1 χ h
+  have hcoeffH := explicitCoeff1_reduce_eq_explicitMap1 (χ.comp (e : H →ₜ* G)) h
   have hrG' := reduce_toAddMonoidHom_smul χ h
-  have hrH' (g : H) (m : ZModTwist (χ.comp (e : H →ₜ* G)) i) :
-      (reduce (χ.comp (e : H →ₜ* G)) h).toAddMonoidHom (g • m) =
-        g • (reduce (χ.comp (e : H →ₜ* G)) h).toAddMonoidHom m :=
-    reduce_toAddMonoidHom_smul (χ.comp (e : H →ₜ* G)) h g m
-  have hrG (g : G) (m : ZModTwist χ i) :
-      (reduce χ h).toAddMonoidHom ((ContinuousMonoidHom.id G) g • m) =
-        g • (reduce χ h).toAddMonoidHom m := by
-    simpa only [ContinuousMonoidHom.coe_id, id_eq] using hrG' g m
-  have hrH (g : H) (m : ZModTwist (χ.comp (e : H →ₜ* G)) i) :
-      (reduce (χ.comp (e : H →ₜ* G)) h).toAddMonoidHom
-          ((ContinuousMonoidHom.id H) g • m) =
-        g • (reduce (χ.comp (e : H →ₜ* G)) h).toAddMonoidHom m := by
-    simpa only [ContinuousMonoidHom.coe_id, id_eq] using hrH' g m
-  have hcoeffG :
-      explicitCoeff1 G (ZModTwist χ i) (reduce χ h) continuous_of_discreteTopology =
-        explicitMap1 G (ZModTwist χ i) G (ZModTwist χ j) (ContinuousMonoidHom.id G)
-          (reduce χ h).toAddMonoidHom continuous_of_discreteTopology hrG := by
-    rw [explicitCoeff1_eq_explicitMap1]
-    apply explicitMap1_congr_of_eq <;> rfl
-  have hcoeffH :
-      explicitCoeff1 H (ZModTwist (χ.comp (e : H →ₜ* G)) i)
-          (reduce (χ.comp (e : H →ₜ* G)) h) continuous_of_discreteTopology =
-        explicitMap1 H (ZModTwist (χ.comp (e : H →ₜ* G)) i) H
-          (ZModTwist (χ.comp (e : H →ₜ* G)) j) (ContinuousMonoidHom.id H)
-          (reduce (χ.comp (e : H →ₜ* G)) h).toAddMonoidHom continuous_of_discreteTopology
-          hrH := by
-    rw [explicitCoeff1_eq_explicitMap1]
-    apply explicitMap1_congr_of_eq <;> rfl
+  have hrH' := reduce_toAddMonoidHom_smul (χ.comp (e : H →ₜ* G)) h
   have hnat :
       (explicitH1CompEquiv e χ j).toAddMonoidHom.comp
           (explicitCoeff1 G (ZModTwist χ i) (reduce χ h) continuous_of_discreteTopology) =

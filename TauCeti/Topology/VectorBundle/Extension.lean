@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Complex.Tietze
 public import Mathlib.Topology.PartitionOfUnity
 public import TauCeti.Topology.VectorBundle.Hom
 
+import TauCeti.Topology.FiberBundle.Extension
+
 /-!
 # Extending sections and bundle maps from closed subsets
 
@@ -66,13 +68,9 @@ theorem exists_continuous_section_extension {s : Set B} (hs : IsClosed s) {σ : 
     (fun i ↦ (e i).baseSet) (fun i ↦ (e i).open_baseSet)
     fun x _ ↦ mem_iUnion.2 ⟨x, mem_baseSet_trivializationAt F E x⟩
   -- In the chart `e i`, extend the coordinates of `σ` from `s ∩ tsupport (ρ i)` to `B`.
-  have hext (i : B) : ∃ g : C(B, F), ∀ x ∈ s ∩ tsupport (ρ i), g x = (e i ⟨x, σ x⟩).2 := by
-    have hc : ContinuousOn (fun x ↦ (e i ⟨x, σ x⟩).2) (s ∩ tsupport (ρ i)) :=
-      continuous_snd.comp_continuousOn <| (e i).continuousOn.comp (hσ.mono inter_subset_left)
-        fun x hx ↦ (e i).mem_source.2 (hρ i hx.2)
-    obtain ⟨g, hg⟩ := ContinuousMap.exists_restrict_eq (hs.inter (isClosed_tsupport _))
-      ⟨_, hc.domRestrict⟩
-    exact ⟨g, fun x hx ↦ congr($hg ⟨x, hx⟩)⟩
+  have hext (i : B) : ∃ g : C(B, F), ∀ x ∈ s ∩ tsupport (ρ i), g x = (e i ⟨x, σ x⟩).2 :=
+    exists_continuousMap_eq_trivialization_of_continuousOn hs hσ (e i) (isClosed_tsupport _)
+      (hρ i)
   choose g hg using hext
   -- Glue the local extensions with the partition of unity.
   let w : B → B → 𝕜 := fun i x ↦ algebraMap ℝ 𝕜 (ρ i x)

@@ -119,7 +119,7 @@ theorem exitCapWindow_lower_lt {γ : ℝ → ℂ} {s : ℂ} {t₀ δ ε : ℝ} {
     (hγ : ContinuousOn γ (Icc (t₀ - δ) t₀)) (hεL : ε ≤ ‖γ (t₀ - δ) - s‖) :
     (exitCapWindow γ s t₀ δ ε L_R L_L).lower < t₀ := by
   rw [exitCapWindow_lower]
-  exact firstExitTimeLeft_lt hδ hγ h_at hε hεL
+  exact firstExitTimeLeft_lt hδ hγ (by simpa [h_at] using hε) hεL
 
 /-- **The right exit time is strictly right of the crossing.**  The mirror image of
 `exitCapWindow_lower_lt` on the right half of the ambient window. -/
@@ -128,7 +128,7 @@ theorem lt_exitCapWindow_upper {γ : ℝ → ℂ} {s : ℂ} {t₀ δ ε : ℝ} {
     (hγ : ContinuousOn γ (Icc t₀ (t₀ + δ))) (hεR : ε ≤ ‖γ (t₀ + δ) - s‖) :
     t₀ < (exitCapWindow γ s t₀ δ ε L_R L_L).upper := by
   rw [exitCapWindow_upper]
-  exact lt_firstExitTimeRight hδ hγ h_at hε hεR
+  exact lt_firstExitTimeRight hδ hγ (by simpa [h_at] using hε) hεR
 
 /-- **The left endpoint chord has the prescribed norm.**  At the left first-exit time the curve
 sits exactly on the circle of radius `ε ≥ 0` about `s`. -/
@@ -137,7 +137,7 @@ theorem norm_sub_exitCapWindow_lower_eq {γ : ℝ → ℂ} {s : ℂ} {t₀ δ ε
     (hγ : ContinuousOn γ (Icc (t₀ - δ) t₀)) (hεL : ε ≤ ‖γ (t₀ - δ) - s‖) :
     ‖γ (exitCapWindow γ s t₀ δ ε L_R L_L).lower - s‖ = ε := by
   rw [exitCapWindow_lower]
-  exact norm_at_firstExitTimeLeft_eq hδ hγ h_at hε hεL
+  exact norm_sub_firstExitTimeLeft_eq hδ hγ (by simpa [h_at] using hε) hεL
 
 /-- **The right endpoint chord has the prescribed norm.**  The mirror image of
 `norm_sub_exitCapWindow_lower_eq`; together they put both endpoints on one circle about `s`. -/
@@ -146,7 +146,7 @@ theorem norm_sub_exitCapWindow_upper_eq {γ : ℝ → ℂ} {s : ℂ} {t₀ δ ε
     (hγ : ContinuousOn γ (Icc t₀ (t₀ + δ))) (hεR : ε ≤ ‖γ (t₀ + δ) - s‖) :
     ‖γ (exitCapWindow γ s t₀ δ ε L_R L_L).upper - s‖ = ε := by
   rw [exitCapWindow_upper]
-  exact norm_at_firstExitTimeRight_eq hδ hγ h_at hε hεR
+  exact norm_sub_firstExitTimeRight_eq hδ hγ (by simpa [h_at] using hε) hεR
 
 /-- The bundled cap of an exit-time window, spelled through the window's own endpoints: once the
 left endpoint chord has norm `ε`, it is the circular cap of that chord's radius sweeping from the
