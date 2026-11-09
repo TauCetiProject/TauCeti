@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Yamabe.Quotient
 import TauCeti.MeasureTheory.Integral.AbsRpow
-import TauCeti.Geometry.Manifold.Riemannian.Sobolev
+import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 
 /-!
