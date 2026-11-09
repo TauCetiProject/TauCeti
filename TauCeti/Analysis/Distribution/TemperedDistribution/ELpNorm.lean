@@ -16,8 +16,9 @@ distribution `u` is
 
 `‖u‖_p = ⨅ {f ∈ Lᵖ | f = u in 𝓢'}, ‖f‖_p`,
 
-which is `‖f‖_p` when `u` is the distribution of `f ∈ Lᵖ` (the embedding of `Lᵖ` into `𝓢'` is
-injective) and `∞` when `u` is not given by an `Lᵖ` function. It is the analogue for tempered
+which is at most `‖f‖_p` when `u` is the distribution of `f ∈ Lᵖ`, with equality when `E` is
+finite-dimensional and `μ` is locally finite (where the embedding of `Lᵖ` into `𝓢'` is injective),
+and `∞` when `u` is not given by an `Lᵖ` function. It is the analogue for tempered
 distributions of `MeasureTheory.eLpNorm`: an `ℝ≥0∞`-valued seminorm, defined for every `u`, which is
 finite exactly on the image of `Lᵖ`. It measures the size of frequency-localized pieces of a
 distribution, such as its Littlewood–Paley blocks, without first choosing a representative.
@@ -25,7 +26,8 @@ distribution, such as its Littlewood–Paley blocks, without first choosing a re
 ## Main declarations
 
 * `TemperedDistribution.eLpNorm`: the extended `Lᵖ` norm of a tempered distribution.
-* `TemperedDistribution.eLpNorm_toTemperedDistribution`: `‖f‖_p` for `f ∈ Lᵖ`.
+* `TemperedDistribution.eLpNorm_toTemperedDistribution`: `‖f‖_p` for `f ∈ Lᵖ`, when `E` is
+  finite-dimensional and `μ` is locally finite.
 * `TemperedDistribution.eLpNorm_lt_top_iff`: the norm is finite exactly on the image of `Lᵖ`.
 * `TemperedDistribution.eLpNorm_add_le`, `TemperedDistribution.eLpNorm_smul`: the seminorm laws.
 -/
@@ -43,9 +45,10 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpa
   [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
 
 /-- The **extended `Lᵖ` norm** of a tempered distribution: the infimum of `‖f‖_p` over the
-`f ∈ Lᵖ(μ)` whose tempered distribution is `u`. It is `‖f‖_p` on the distribution of
-`f ∈ Lᵖ(μ)` (`TemperedDistribution.eLpNorm_toTemperedDistribution`) and `∞` on a distribution
-that is not given by an `Lᵖ` function (`TemperedDistribution.eLpNorm_lt_top_iff`). -/
+`f ∈ Lᵖ(μ)` whose tempered distribution is `u`. On the distribution of `f ∈ Lᵖ(μ)` it is at most
+`‖f‖_p` (`TemperedDistribution.eLpNorm_le_enorm`), with equality when `E` is finite-dimensional and
+`μ` is locally finite (`TemperedDistribution.eLpNorm_toTemperedDistribution`). It is `∞` on a
+distribution that is not given by an `Lᵖ` function (`TemperedDistribution.eLpNorm_lt_top_iff`). -/
 def eLpNorm (u : 𝓢'(E, F)) (p : ℝ≥0∞) [Fact (1 ≤ p)] (μ : Measure E := by volume_tac)
     [μ.HasTemperateGrowth] : ℝ≥0∞ :=
   ⨅ (f : Lp F p μ) (_ : (f : 𝓢'(E, F)) = u), ‖f‖ₑ

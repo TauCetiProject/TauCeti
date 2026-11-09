@@ -20,13 +20,16 @@ opposite of the inclusion `L^q ⊆ Lᵖ` on a probability space. Every value `�
 
 A geometric sequence `(rⁿ)` with `r < 1` lies in every `ℓ^q`. This is the summation behind the
 embeddings of sequence spaces with polynomial or exponential weights, where a gain `2^{-εj}` in the
-weight pays for any change of the summability exponent.
+weight pays for any change of the summability exponent. A finitely supported function with finite
+values also lies in every `ℓ^q`.
 
 ## Main declarations
 
 * `MeasureTheory.eLpNorm_count_le_of_exponent_le`: `‖f‖_q ≤ ‖f‖_p` on `count` for `0 < p ≤ q`.
 * `MeasureTheory.eLpNorm_count_lt_top_of_exponent_le`: the inclusion `ℓᵖ ⊆ ℓ^q`.
 * `MeasureTheory.eLpNorm_count_pow_lt_top`: geometric sequences with ratio `r < 1` lie in `ℓ^q`.
+* `MeasureTheory.eLpNorm_count_lt_top_of_finite_support`: finitely supported functions with
+  finite values lie in `ℓ^q`.
 -/
 
 public section
@@ -96,5 +99,24 @@ theorem eLpNorm_count_pow_lt_top {r : ℝ≥0∞} (hr : r < 1) (q : ℝ≥0∞) 
       ← ENNReal.rpow_mul, mul_comm]
   simp_rw [hpow, ENNReal.tsum_geometric]
   exact ENNReal.inv_lt_top.2 (tsub_pos_of_lt (ENNReal.rpow_lt_one hr hq'))
+
+/-- **Finitely supported functions are in every `ℓ^q`.** If `f` is a.e. strongly measurable and
+`‖f i‖ₑ` is finite on a finite set `s` and vanishes off `s`, then `f` has finite `ℓ^q` norm for
+every exponent `q`. -/
+theorem eLpNorm_count_lt_top_of_finite_support (hfm : AEStronglyMeasurable f count)
+    (s : Finset α) (hf : ∀ i ∈ s, ‖f i‖ₑ < ∞) (h0 : ∀ i ∉ s, ‖f i‖ₑ = 0) :
+    eLpNorm f q count < ∞ := by
+  -- `‖f‖ₑ` is bounded by the sum `K` of its values on `s` and vanishes off `s`.
+  set K := ∑ i ∈ s, ‖f i‖ₑ
+  have hle i : ‖f i‖ₑ ≤ ‖(s : Set α).indicator (fun _ ↦ K) i‖ₑ := by
+    rw [enorm_eq_self]
+    by_cases hi : i ∈ s
+    · rw [Set.indicator_of_mem (Finset.mem_coe.2 hi)]
+      exact Finset.single_le_sum (f := (‖f ·‖ₑ)) (fun i _ ↦ zero_le) hi
+    · simp [h0 i hi]
+  refine (eLpNorm_mono_enorm hfm hle).trans_lt <|
+    (eLpNorm_indicator_const_le K q s.measurableSet.nullMeasurableSet).trans_lt ?_
+  refine ENNReal.mul_lt_top (enorm_eq_self K ▸ ENNReal.sum_lt_top.2 hf) ?_
+  exact ENNReal.rpow_lt_top_of_nonneg (by positivity) (by simp)
 
 end MeasureTheory

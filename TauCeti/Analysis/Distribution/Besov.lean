@@ -293,9 +293,9 @@ theorem exists_besovENorm_toTemperedDistribution_le :
   calc (2 ^ s : ℝ≥0∞) ^ j * (littlewoodPaleyBlock F φ j (f : 𝓢'(E, F))).eLpNorm p
       ≤ 1 * ‖g‖ₑ := mul_le_mul' h2 (eLpNorm_le_enorm g hg.symm)
     _ ≤ C.toNNReal * ‖f‖ₑ := by
-      rw [one_mul, ← ofReal_norm, ← ofReal_norm, ENNReal.ofNNReal_toNNReal,
-        ← ENNReal.ofReal_mul' (norm_nonneg f)]
-      exact ENNReal.ofReal_le_ofReal hgf
+      have : ‖g‖ ≤ C.toNNReal * ‖f‖ := hgf.trans (by gcongr; exact C.le_coe_toNNReal)
+      rw [one_mul, enorm_eq_nnnorm, enorm_eq_nnnorm]
+      exact_mod_cast this
 
 /-- Every `f ∈ Lᵖ` lies in `B^s_{p,∞}` for `s ≤ 0`. -/
 theorem memBesov_toTemperedDistribution (hs : s ≤ 0) (f : Lp F p (volume : Measure E)) :
@@ -328,25 +328,11 @@ theorem memBesov_littlewoodPaleyBlock {j : ℕ} (hu : (littlewoodPaleyBlock F φ
       littlewoodPaleyBlock F φ k (littlewoodPaleyBlock F φ j u) = 0 := by
     rw [Finset.mem_range, not_lt] at hk
     rw [← ContinuousLinearMap.comp_apply, (hL j k hk).2, zero_apply]
-  set a : ℕ → ℝ≥0∞ := fun k ↦
-    (2 ^ s : ℝ≥0∞) ^ k * (littlewoodPaleyBlock F φ k (littlewoodPaleyBlock F φ j u)).eLpNorm p
-  have ha (k : ℕ) : a k < ∞ :=
-    ENNReal.mul_lt_top (ENNReal.pow_lt_top (ENNReal.rpow_ne_top_of_ne_zero two_ne_zero
-      ENNReal.ofNat_ne_top).lt_top) (hblock k)
-  refine ⟨hblock, ?_⟩
-  -- The weighted block sizes are bounded by a constant on a finite set and vanish off it.
-  set K := ∑ k ∈ Finset.range (j + L), a k
-  have hle (k : ℕ) :
-      ‖a k‖ₑ ≤ ‖(Finset.range (j + L) : Set ℕ).indicator (fun _ ↦ K) k‖ₑ := by
-    simp only [enorm_eq_self]
-    by_cases hk : k ∈ Finset.range (j + L)
-    · rw [Set.indicator_of_mem (Finset.mem_coe.2 hk)]
-      exact Finset.single_le_sum (fun i _ ↦ zero_le) hk
-    · simp [a, hzero k hk]
-  refine (eLpNorm_mono_enorm .of_discrete hle).trans_lt <|
-    (eLpNorm_indicator_const_le K q (Finset.measurableSet _).nullMeasurableSet).trans_lt ?_
-  refine ENNReal.mul_lt_top (enorm_eq_self K ▸ ENNReal.sum_lt_top.2 fun k _ ↦ ha k) ?_
-  exact ENNReal.rpow_lt_top_of_nonneg (by positivity) (by simp)
+  refine ⟨hblock, eLpNorm_count_lt_top_of_finite_support .of_discrete (Finset.range (j + L))
+    (fun k _ ↦ ?_) fun k hk ↦ by simp [hzero k hk]⟩
+  rw [enorm_eq_self]
+  exact ENNReal.mul_lt_top (ENNReal.pow_lt_top (ENNReal.rpow_ne_top_of_ne_zero two_ne_zero
+    ENNReal.ofNat_ne_top).lt_top) (hblock k)
 
 end Examples
 
