@@ -48,7 +48,8 @@ coupling of `s` with the distribution `(1 - t, t)` on `Fin 2`, which is natural 
 * `SSet.prodStdSimplex.toTopObjMk_eq_of_map_eq`: points of `|Δ[p] ⊗ Δ[q]|` are determined by their
   coordinates on the vertices.
 * `SSet.prodStdSimplex₁.prism`: the triangulation `Δᵖ × I → |Δ[p] ⊗ Δ[1]|` of the prism, natural
-  in `Δ[p]` (`SSet.prodStdSimplex₁.prism_naturality`), with ends `ι₀` and `ι₁`.
+  in `Δ[p]` (`SSet.prodStdSimplex₁.prism_naturality`), with ends `ι₀` and `ι₁`, and with values
+  given by their barycentric coordinates (`SSet.prodStdSimplex₁.prism_eq_toTopObjMk`).
 * `SSet.toTopCylinder X`: the triangulation `|X| × I → |X ⊗ Δ[1]|` of the realized cylinder.
 * `SSet.Homotopy.toTop`: the realization of a simplicial homotopy.
 * `SSet.toTopHomotopyEquiv`: the realization of a simplicial homotopy equivalence.
@@ -359,6 +360,24 @@ private lemma prism_eq {s : StdSimplex ℝ (Fin (p + 1))} {t : I} {n : ℕ}
     (h : StdSimplex.map (prodStdSimplex.objEquiv x) w = prismMeasure s t) :
     prism p (s, t) = toTopObjMk x w :=
   prismFun_eq x w h
+
+/-- The value of the triangulation of the prism at `(s, t)`: it is the point of any simplex of
+`Δ[p] ⊗ Δ[1]` whose barycentric coordinates put the weight `min (s₀ + ⋯ + s_i) (1 - t) -
+min (s₀ + ⋯ + s_(i-1)) (1 - t)` on the vertex `(i, 0)` and the weight
+`max (s₀ + ⋯ + s_i) (1 - t) - max (s₀ + ⋯ + s_(i-1)) (1 - t)` on the vertex `(i, 1)`. -/
+theorem prism_eq_toTopObjMk {s : StdSimplex ℝ (Fin (p + 1))} {t : I} {n : ℕ}
+    (x : (Δ[p] ⊗ Δ[1] : SSet.{u}) _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1)))
+    (h₀ : ∀ i : Fin (p + 1), (StdSimplex.map (prodStdSimplex.objEquiv x) w).weights (i, 0) =
+      min (prefixSum (i.val + 1) s.weights) (1 - t) - min (prefixSum i.val s.weights) (1 - t))
+    (h₁ : ∀ i : Fin (p + 1), (StdSimplex.map (prodStdSimplex.objEquiv x) w).weights (i, 1) =
+      max (prefixSum (i.val + 1) s.weights) (1 - t) - max (prefixSum i.val s.weights) (1 - t)) :
+    prism p (s, t) = toTopObjMk x w := by
+  refine prism_eq x w ?_
+  rw [← StdSimplex.weights_inj]
+  ext ⟨i, b⟩
+  rw [prismMeasure_weights, prismWeights]
+  revert b
+  exact Fin.forall_fin_two.2 ⟨h₀ i, h₁ i⟩
 
 /-- The vertex coordinates of the prism are natural in the simplex. -/
 private lemma map_prismMeasure {m n : ℕ} (f : Fin (m + 1) →o Fin (n + 1))
