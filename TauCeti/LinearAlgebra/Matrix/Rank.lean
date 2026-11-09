@@ -44,8 +44,6 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   matrix-vector multiplication.
 * `Matrix.rank_left_factor_eq` and `Matrix.range_left_factor_eq`: an exact-rank
   factorization gives a full-column-rank left factor with the same column range.
-* `Matrix.rank_add_rank_le_rank_mul_add_card`: Sylvester's rank inequality
-  `rank A + rank B ≤ rank (A * B) + n` for an `m × n` matrix `A` and an `n × o` matrix `B`.
 * `Matrix.rank_mul_eq_right_of_rank_eq_card`: left multiplication by a full-column-rank matrix
   preserves rank.
 * `LinearMap.rank_toMatrix`: the rank of the matrix of a linear map is the dimension of its range.
@@ -267,6 +265,17 @@ theorem rank_neg {m n R : Type*} [Fintype n] [CommRing R] (A : Matrix m n R) :
     (-A).rank = A.rank := by
   simpa using rank_smul_of_mem_nonZeroDivisors A (isUnit_one (M := R)).neg.mem_nonZeroDivisors
 
+/-- Inverting two invertible matrices preserves the rank of their difference. -/
+theorem rank_inv_sub_inv {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    {P Q : Matrix n n R} (hP : IsUnit P) (hQ : IsUnit Q) :
+    (P⁻¹ - Q⁻¹).rank = (P - Q).rank := by
+  have hdetP := (isUnit_iff_isUnit_det _).mp hP
+  have hdetQ := (isUnit_iff_isUnit_det _).mp hQ
+  rw [inv_sub_inv (iff_of_true hP hQ),
+    rank_mul_eq_left_of_isUnit_det _ _ (isUnit_nonsing_inv_det _ hdetQ),
+    rank_mul_eq_right_of_isUnit_det _ _ (isUnit_nonsing_inv_det _ hdetP),
+    ← neg_sub P Q, rank_neg]
+
 end Conjugation
 
 variable {K : Type*} [Field K] {m n : Type*} [Fintype n]
@@ -333,28 +342,6 @@ theorem rank_le_iff_exists_eq_mul (A : Matrix m n K) (r : ℕ) :
   refine ⟨A.exists_eq_mul_of_rank_le, ?_⟩
   rintro ⟨L, R, rfl⟩
   exact (rank_mul_le_left L R).trans (by simpa using L.rank_le_card_width)
-
-/-- **Sylvester's rank inequality**: for an `m × n` matrix `A` and an `n × o` matrix `B` over a
-field, `rank A + rank B ≤ rank (A * B) + n`. Equivalently, multiplying by `A` lowers the rank of
-`B` by at most the nullity of `A`. -/
-theorem rank_add_rank_le_rank_mul_add_card {o : Type*} [Fintype o] (A : Matrix m n K)
-    (B : Matrix n o K) : A.rank + B.rank ≤ (A * B).rank + Fintype.card n := by
-  classical
-  set S := LinearMap.range B.mulVecLin
-  set g := A.mulVecLin.domRestrict S
-  have hrange : (A * B).rank = Module.finrank K (LinearMap.range g) := by
-    rw [rank, mulVecLin_mul, LinearMap.range_comp, LinearMap.range_domRestrict]
-  have hker : Module.finrank K (LinearMap.ker g) ≤ Module.finrank K (LinearMap.ker A.mulVecLin) :=
-    LinearMap.finrank_le_finrank_of_injective
-      (f := S.subtype.restrict (p := LinearMap.ker g) (q := LinearMap.ker A.mulVecLin)
-        fun x hx ↦ by simpa [g] using hx)
-      fun x y h ↦ Subtype.ext (Subtype.ext (by simpa using congrArg Subtype.val h))
-  have hg := g.finrank_range_add_finrank_ker
-  have hA := A.mulVecLin.finrank_range_add_finrank_ker
-  rw [Module.finrank_fintype_fun_eq_card] at hA
-  have hB : B.rank = Module.finrank K S := rfl
-  rw [rank, hB, hrange]
-  omega
 
 section StarOrderedField
 

@@ -64,6 +64,8 @@ a smooth one. And a bounded `u` has a mollification with bounded derivative.
   compactly supported `C^N` `g` and `n ≤ N`.
 * `HasCompactSupport.fderiv_convolution_right_apply`: for `g` compactly supported, the
   directional derivative `∂ᵥ (f ⋆ g) = f ⋆ ∂ᵥ g`.
+* `HasCompactSupport.fderiv_fderiv_convolution_right_apply`: the same for two directional
+  derivatives, `∂ᵥ ∂ᵥ' (f ⋆ g) = f ⋆ ∂ᵥ ∂ᵥ' g`.
 * `HasCompactSupport.fderiv_convolution_left_apply_le`: mollifying by a nonnegative kernel of
   integral `1` turns a one-sided bound `u (y + s • d) ≤ u y + s * c` on forward differences into
   the bound `∂_d (ρ ⋆ u) ≤ c` on the directional derivative.
@@ -294,6 +296,22 @@ theorem _root_.HasCompactSupport.fderiv_convolution_right_apply (hcg : HasCompac
     fderiv ℝ (f ⋆[L, μ] g) x v = (f ⋆[L, μ] fun y => fderiv ℝ g y v) x := by
   rw [(hcg.hasFDerivAt_convolution_right L hf hg x).fderiv,
     convolution_precompR_apply L hf (hcg.fderiv (𝕜 := ℝ)) (hg.continuous_fderiv one_ne_zero) x v]
+
+/-- **Iterated directional derivatives of a convolution fall on the compactly supported
+factor.** If `f` is locally integrable and `g` is `C²` with compact support, then the derivative
+in the direction `v` of the derivative of `f ⋆ g` in the direction `w` is the convolution of `f`
+with the corresponding second derivative of `g`. -/
+theorem _root_.HasCompactSupport.fderiv_fderiv_convolution_right_apply (hcg : HasCompactSupport g)
+    (hf : LocallyIntegrable f μ) (hg : ContDiff ℝ 2 g) (x v w : G) :
+    fderiv ℝ (fun y => fderiv ℝ (f ⋆[L, μ] g) y w) x v =
+      (f ⋆[L, μ] fun y => fderiv ℝ (fun z => fderiv ℝ g z w) y v) x := by
+  have hfw : ContDiff ℝ 1 fun y => fderiv ℝ g y w :=
+    (hg.fderiv_right (m := 1) (by norm_num)).clm_apply contDiff_const
+  have hcw : HasCompactSupport fun y => fderiv ℝ g y w :=
+    (hcg.fderiv (𝕜 := ℝ)).comp_left (g := fun A : G →L[ℝ] E' => A w) (zero_apply w)
+  have h₁ : (fun y => fderiv ℝ (f ⋆[L, μ] g) y w) = f ⋆[L, μ] fun y => fderiv ℝ g y w :=
+    funext fun y => hcg.fderiv_convolution_right_apply L hf (hg.of_le (by norm_num)) y w
+  rw [h₁, hcw.fderiv_convolution_right_apply L hf hfw x v]
 
 section Mollifier
 

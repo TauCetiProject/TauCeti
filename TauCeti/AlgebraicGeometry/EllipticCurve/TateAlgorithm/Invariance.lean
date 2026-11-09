@@ -478,15 +478,68 @@ private theorem tateContext_nine_of_pow_dvd (hϖ : Irreducible ϖ) (h₁ : ϖ �
   · interval_cases k
     exacts [ht'.1, ht'.2, tateTest_seven_of_stepNine h₃ h₆, h₄]
 
+/-- The context and failed test at which Tate's algorithm stops with `Iₙ₊₁*`. -/
+private theorem tateContext_IStar_add_one {n : ℕ} (hϖ : Irreducible ϖ)
+    (h : W.IsTateTerminal ϖ (.IStar (n + 1))) :
+    TateContext ϖ (chainIndex (.IStar (n + 1))) W ∧
+      ¬ tateTest ϖ W (chainIndex (.IStar (n + 1))) := by
+  rcases isTateTerminal_IStar_add_one.1 h with ⟨k, -, hk, -⟩ | ⟨k, -, hk, -⟩
+  · obtain ⟨h₁, h₂, h₂', h₃, h₄, h₆⟩ := isTateOddStage_iff.1 hk
+    exact tateContext_six_of_doubleRoot hϖ h₁ h₂ h₂' ((pow_dvd_pow ϖ (by omega)).trans h₃)
+      ((pow_dvd_pow ϖ (by omega)).trans h₄)
+      ((pow_dvd_pow ϖ (by omega)).trans h₆)
+  · obtain ⟨h₁, h₂, h₂', h₃, h₄, h₆⟩ := isTateEvenStage_iff.1 hk
+    exact tateContext_six_of_doubleRoot hϖ h₁ h₂ h₂' ((pow_dvd_pow ϖ (by omega)).trans h₃)
+      ((pow_dvd_pow ϖ (by omega)).trans h₄)
+      ((pow_dvd_pow ϖ (by omega)).trans h₆)
+
+/-- The context and failed test at which Tate's algorithm stops with `IV*`. -/
+private theorem tateContext_IVStar (hϖ : Irreducible ϖ) (h : W.IsTateTerminal ϖ .IVStar) :
+    TateContext ϖ (chainIndex .IVStar) W ∧ ¬ tateTest ϖ W (chainIndex .IVStar) := by
+  obtain ⟨h₁, h₂, h₃, h₄, h₆, hb₆⟩ := isTateTerminal_IVStar.1 h
+  have ht := tateTest_of_stepSix h₁ ((dvd_pow_self ϖ (by omega)).trans h₂) h₃
+    ((pow_dvd_pow ϖ (by omega)).trans h₄) ((pow_dvd_pow ϖ (by omega)).trans h₆)
+  have ht' := tateTest_five_six_of_stepEight hϖ h₂ h₄ h₆
+  refine ⟨⟨fun k hk ↦ ?_,
+    fun _ ↦ ⟨(dvd_pow_self ϖ (by omega)).trans h₃, (dvd_pow_self ϖ (by omega)).trans h₄,
+      (dvd_pow_self ϖ (by omega)).trans h₆⟩,
+    fun _ ↦ ⟨h₁, (dvd_pow_self ϖ (by omega)).trans h₂, h₃, ((pow_dvd_pow ϖ (by omega)).trans h₄),
+      ((pow_dvd_pow ϖ (by omega)).trans h₆)⟩,
+    fun _ ↦ ⟨h₂, h₄, h₆⟩,
+    by simp [chainIndex]⟩, hb₆⟩
+  simp only [chainIndex] at hk
+  rcases lt_or_ge k 5 with hk5 | hk5
+  · exact ht k hk5
+  · interval_cases k
+    exacts [ht'.1, ht'.2]
+
+/-- The context and failed test at which Tate's algorithm stops with `III*`. -/
+private theorem tateContext_IIIStar (hϖ : Irreducible ϖ) (h : W.IsTateTerminal ϖ .IIIStar) :
+    TateContext ϖ (chainIndex .IIIStar) W ∧ ¬ tateTest ϖ W (chainIndex .IIIStar) := by
+  obtain ⟨h₁, h₂, h₃, h₄, h₆, h₄'⟩ := isTateTerminal_IIIStar.1 h
+  have ht := tateTest_of_stepSix h₁ ((dvd_pow_self ϖ (by omega)).trans h₂)
+    ((pow_dvd_pow ϖ (by omega)).trans h₃) ((pow_dvd_pow ϖ (by omega)).trans h₄)
+    ((pow_dvd_pow ϖ (by omega)).trans h₆)
+  have ht' := tateTest_five_six_of_stepEight hϖ h₂ h₄ ((pow_dvd_pow ϖ (by omega)).trans h₆)
+  refine ⟨⟨fun k hk ↦ ?_,
+    fun _ ↦ ⟨(dvd_pow_self ϖ (by omega)).trans h₃, (dvd_pow_self ϖ (by omega)).trans h₄,
+      (dvd_pow_self ϖ (by omega)).trans h₆⟩,
+    fun _ ↦ ⟨h₁, (dvd_pow_self ϖ (by omega)).trans h₂, ((pow_dvd_pow ϖ (by omega)).trans h₃),
+      ((pow_dvd_pow ϖ (by omega)).trans h₄), ((pow_dvd_pow ϖ (by omega)).trans h₆)⟩,
+    fun _ ↦ ⟨h₂, h₄, ((pow_dvd_pow ϖ (by omega)).trans h₆)⟩, fun _ ↦ ⟨h₃, h₆⟩⟩, h₄'⟩
+  simp only [chainIndex] at hk
+  rcases lt_or_ge k 5 with hk5 | hk5
+  · exact ht k hk5
+  · interval_cases k
+    exacts [ht'.1, ht'.2, tateTest_seven_of_stepNine h₃ h₆]
+
 /-- **The test at which Tate's algorithm stops.** On an equation on which the algorithm stops with
 symbol `s`, it reaches the test `chainIndex s` and fails it. -/
 private theorem IsTateTerminal.tateContext (hϖ : Irreducible ϖ) {s : ReductionSymbol}
     (h : W.IsTateTerminal ϖ s) :
     TateContext ϖ (chainIndex s) W ∧ ¬ tateTest ϖ W (chainIndex s) := by
-  have hp (n : ℕ) {x : R} (h : ϖ ^ (n + 1) ∣ x) : ϖ ∣ x := (dvd_pow_self ϖ n.succ_ne_zero).trans h
-  have hle {m n : ℕ} (hmn : m ≤ n) {x : R} (h : ϖ ^ n ∣ x) : ϖ ^ m ∣ x :=
-    (pow_dvd_pow ϖ hmn).trans h
-  have hΔ (hs : ∀ n, s ≠ .I n) : ϖ ∣ W.Δ := hp _ (h.pow_componentCount_add_one_dvd_Δ hϖ.prime hs)
+  have hΔ (hs : ∀ n, s ≠ .I n) : ϖ ∣ W.Δ :=
+    (dvd_pow_self ϖ (by omega)).trans (h.pow_componentCount_add_one_dvd_Δ hϖ.prime hs)
   match s, h with
   | .I 0, h =>
     exact ⟨⟨by simp [chainIndex], by simp [chainIndex], by simp [chainIndex], by simp [chainIndex],
@@ -496,7 +549,7 @@ private theorem IsTateTerminal.tateContext (hϖ : Irreducible ϖ) {s : Reduction
     refine ⟨⟨fun k hk ↦ ?_, fun _ ↦ ⟨h₃, h₄, h₆⟩, by simp [chainIndex], by simp [chainIndex],
       by simp [chainIndex]⟩, hb₂⟩
     obtain rfl : k = 0 := by simpa [chainIndex] using hk
-    exact hp n hΔ'
+    exact (dvd_pow_self ϖ (by omega)).trans hΔ'
   | .II, h =>
     obtain ⟨hb₂, h₃, h₄, h₆, h₆'⟩ := isTateTerminal_II.1 h
     refine ⟨⟨fun k hk ↦ ?_, fun _ ↦ ⟨h₃, h₄, h₆⟩, by simp [chainIndex], by simp [chainIndex],
@@ -506,142 +559,124 @@ private theorem IsTateTerminal.tateContext (hϖ : Irreducible ϖ) {s : Reduction
     exacts [hΔ (by simp), hb₂]
   | .III, h =>
     obtain ⟨hb₂, h₃, h₄, h₆, hb₈⟩ := isTateTerminal_III.1 h
-    refine ⟨⟨fun k hk ↦ ?_, fun _ ↦ ⟨h₃, h₄, hp 1 h₆⟩, by simp [chainIndex],
-      by simp [chainIndex], by simp [chainIndex]⟩, hb₈⟩
+    refine ⟨⟨fun k hk ↦ ?_, fun _ ↦ ⟨h₃, h₄, (dvd_pow_self ϖ (by omega)).trans h₆⟩,
+      by simp [chainIndex], by simp [chainIndex], by simp [chainIndex]⟩, hb₈⟩
     simp only [chainIndex] at hk
     interval_cases k
     exacts [hΔ (by simp), hb₂, h₆]
   | .IV, h =>
     obtain ⟨hb₂, h₃, h₄, h₆, hb₈, hb₆⟩ := isTateTerminal_IV.1 h
-    refine ⟨⟨fun k hk ↦ ?_, fun _ ↦ ⟨h₃, h₄, hp 1 h₆⟩, by simp [chainIndex],
-      by simp [chainIndex], by simp [chainIndex]⟩, hb₆⟩
+    refine ⟨⟨fun k hk ↦ ?_, fun _ ↦ ⟨h₃, h₄, (dvd_pow_self ϖ (by omega)).trans h₆⟩,
+      by simp [chainIndex], by simp [chainIndex], by simp [chainIndex]⟩, hb₆⟩
     simp only [chainIndex] at hk
     interval_cases k
     exacts [hΔ (by simp), hb₂, h₆, hb₈]
   | .IStar 0, h =>
     obtain ⟨h₁, h₂, h₃, h₄, h₆, hd⟩ := isTateTerminal_IStar_zero.1 h
-    exact ⟨⟨tateTest_of_stepSix h₁ h₂ h₃ h₄ h₆, fun _ ↦ ⟨hp 1 h₃, hp 1 h₄, hp 2 h₆⟩,
+    exact ⟨⟨tateTest_of_stepSix h₁ h₂ h₃ h₄ h₆,
+      fun _ ↦ ⟨(dvd_pow_self ϖ (by omega)).trans h₃, (dvd_pow_self ϖ (by omega)).trans h₄,
+      (dvd_pow_self ϖ (by omega)).trans h₆⟩,
       fun _ ↦ ⟨h₁, h₂, h₃, h₄, h₆⟩, by simp [chainIndex], by simp [chainIndex]⟩, hd⟩
-  | .IStar (n + 1), h =>
-    rcases isTateTerminal_IStar_add_one.1 h with ⟨k, -, hk, -⟩ | ⟨k, -, hk, -⟩
-    · obtain ⟨h₁, h₂, h₂', h₃, h₄, h₆⟩ := isTateOddStage_iff.1 hk
-      exact tateContext_six_of_doubleRoot hϖ h₁ h₂ h₂' (hle (by omega) h₃) (hle (by omega) h₄)
-        (hle (by omega) h₆)
-    · obtain ⟨h₁, h₂, h₂', h₃, h₄, h₆⟩ := isTateEvenStage_iff.1 hk
-      exact tateContext_six_of_doubleRoot hϖ h₁ h₂ h₂' (hle (by omega) h₃) (hle (by omega) h₄)
-        (hle (by omega) h₆)
-  | .IVStar, h =>
-    obtain ⟨h₁, h₂, h₃, h₄, h₆, hb₆⟩ := isTateTerminal_IVStar.1 h
-    have ht := tateTest_of_stepSix h₁ (hp 1 h₂) h₃ (hle (by omega) h₄) (hle (by omega) h₆)
-    have ht' := tateTest_five_six_of_stepEight hϖ h₂ h₄ h₆
-    refine ⟨⟨fun k hk ↦ ?_, fun _ ↦ ⟨hp 1 h₃, hp 2 h₄, hp 3 h₆⟩,
-      fun _ ↦ ⟨h₁, hp 1 h₂, h₃, hle (by omega) h₄, hle (by omega) h₆⟩, fun _ ↦ ⟨h₂, h₄, h₆⟩,
-      by simp [chainIndex]⟩, hb₆⟩
-    simp only [chainIndex] at hk
-    rcases lt_or_ge k 5 with hk5 | hk5
-    · exact ht k hk5
-    · interval_cases k
-      exacts [ht'.1, ht'.2]
-  | .IIIStar, h =>
-    obtain ⟨h₁, h₂, h₃, h₄, h₆, h₄'⟩ := isTateTerminal_IIIStar.1 h
-    have ht := tateTest_of_stepSix h₁ (hp 1 h₂) (hle (by omega) h₃) (hle (by omega) h₄)
-      (hle (by omega) h₆)
-    have ht' := tateTest_five_six_of_stepEight hϖ h₂ h₄ (hle (by omega) h₆)
-    refine ⟨⟨fun k hk ↦ ?_, fun _ ↦ ⟨hp 2 h₃, hp 2 h₄, hp 4 h₆⟩,
-      fun _ ↦ ⟨h₁, hp 1 h₂, hle (by omega) h₃, hle (by omega) h₄, hle (by omega) h₆⟩,
-      fun _ ↦ ⟨h₂, h₄, hle (by omega) h₆⟩, fun _ ↦ ⟨h₃, h₆⟩⟩, h₄'⟩
-    simp only [chainIndex] at hk
-    rcases lt_or_ge k 5 with hk5 | hk5
-    · exact ht k hk5
-    · interval_cases k
-      exacts [ht'.1, ht'.2, tateTest_seven_of_stepNine h₃ h₆]
+  | .IStar (n + 1), h => exact tateContext_IStar_add_one hϖ h
+  | .IVStar, h => exact tateContext_IVStar hϖ h
+  | .IIIStar, h => exact tateContext_IIIStar hϖ h
   | .IIStar, h =>
     obtain ⟨h₁, h₂, h₃, h₄, h₆, h₆'⟩ := isTateTerminal_IIStar.1 h
     exact ⟨tateContext_nine_of_pow_dvd hϖ h₁ h₂ h₃ h₄ h₆, h₆'⟩
 
-/-- **Each test of Tate's algorithm is invariant under changes of variables over `R`** between
-equations on which the algorithm reaches it. -/
-private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i : ℕ}
-    (h : TateContext ϖ i W) (h' : TateContext ϖ i (C • W)) (ht : tateTest ϖ W i) :
-    tateTest ϖ (C • W) i := by
-  have hv (n : ℕ) : IsUnit ((↑C.u⁻¹ : R) ^ n) := C.u⁻¹.isUnit.pow n
-  -- From the test of Step 2 on, both equations reduce to curves singular at the origin.
-  have hrt (hi : 1 ≤ i) : ϖ ∣ C.r ∧ ϖ ∣ C.t := by
-    obtain ⟨h₃, h₄, h₆⟩ := h.2.1 hi
-    obtain ⟨h₃', h₄', h₆'⟩ := h'.2.1 hi
-    exact dvd_r_and_dvd_t_of_dvd_a₃_a₄_a₆ hϖ.prime h₃ h₄ h₆ h₃' h₄' h₆'
-  -- From the test of `I₀*` on, both equations are in the normal form of Step 6.
-  have hstep (hi : 5 ≤ i) : ∃ r₁ x₁ x₃ A₂ A₄ A₆ B₂ B₄ B₆ : R, C.r = ϖ * r₁ ∧ ϖ ∣ C.s ∧
+/-- From the test of Step 2 on, both equations reduce to curves singular at the origin, so
+`ϖ ∣ r` and `ϖ ∣ t`. -/
+private theorem TateContext.dvd_r_and_dvd_t (hϖ : Irreducible ϖ) {C : VariableChange R} {i : ℕ}
+    (h : TateContext ϖ i W) (h' : TateContext ϖ i (C • W)) (hi : 1 ≤ i) :
+    ϖ ∣ C.r ∧ ϖ ∣ C.t := by
+  obtain ⟨h₃, h₄, h₆⟩ := h.2.1 hi
+  obtain ⟨h₃', h₄', h₆'⟩ := h'.2.1 hi
+  exact dvd_r_and_dvd_t_of_dvd_a₃_a₄_a₆ hϖ.prime h₃ h₄ h₆ h₃' h₄' h₆'
+
+/-- From the test of `I₀*` on, both equations are in the normal form of Step 6, with `ϖ² ∣ t`,
+`ϖ ∣ s` and `ϖ ∣ r`, and the coefficients written out. -/
+private theorem TateContext.exists_stepSix_form (hϖ : Irreducible ϖ) {C : VariableChange R}
+    {i : ℕ} (h : TateContext ϖ i W) (h' : TateContext ϖ i (C • W)) (hi : 5 ≤ i) :
+    ∃ r₁ x₁ x₃ A₂ A₄ A₆ B₂ B₄ B₆ : R, C.r = ϖ * r₁ ∧ ϖ ∣ C.s ∧
       ϖ ^ 2 ∣ C.t ∧ W.a₁ = ϖ * x₁ ∧ W.a₃ = ϖ ^ 2 * x₃ ∧ W.a₂ = ϖ * A₂ ∧ W.a₄ = ϖ ^ 2 * A₄ ∧
       W.a₆ = ϖ ^ 3 * A₆ ∧ (C • W).a₂ = ϖ * B₂ ∧ (C • W).a₄ = ϖ ^ 2 * B₄ ∧
       (C • W).a₆ = ϖ ^ 3 * B₆ := by
-    obtain ⟨h₁, h₂, h₃, h₄, h₆⟩ := h.2.2.1 hi
-    obtain ⟨-, h₂', h₃', h₄', h₆'⟩ := h'.2.2.1 hi
-    obtain ⟨⟨r₁, hr₁⟩, hs, ht⟩ := dvd_r_s_t_of_stepSix hϖ h₁ h₂ h₃ h₄ h₆ h₂' h₃' h₄' h₆'
-    obtain ⟨x₁, hx₁⟩ := h₁
-    obtain ⟨x₃, hx₃⟩ := h₃
-    obtain ⟨A₂, hA₂⟩ := h₂
-    obtain ⟨A₄, hA₄⟩ := h₄
-    obtain ⟨A₆, hA₆⟩ := h₆
-    obtain ⟨B₂, hB₂⟩ := h₂'
-    obtain ⟨B₄, hB₄⟩ := h₄'
-    obtain ⟨B₆, hB₆⟩ := h₆'
-    exact ⟨r₁, x₁, x₃, A₂, A₄, A₆, B₂, B₄, B₆, hr₁, hs, ht, hx₁, hx₃, hA₂, hA₄, hA₆, hB₂, hB₄, hB₆⟩
-  have hst (hi : 5 ≤ i) : ϖ ∣ C.r ∧ ϖ ∣ C.s ∧ ϖ ^ 2 ∣ C.t := by
-    obtain ⟨r₁, -, -, -, -, -, -, -, -, hr₁, hs, ht, -⟩ := hstep hi
-    exact ⟨⟨r₁, hr₁⟩, hs, ht⟩
-  -- From the test of `IV*` on, both residue cubics are `T³`, so `ρ = 0` and `ϖ² ∣ r`.
-  have hr (hi : 7 ≤ i) : ϖ ^ 2 ∣ C.r := by
-    obtain ⟨r₁, x₁, x₃, A₂, A₄, A₆, B₂, B₄, B₆, hr, hs, ht', hx₁, hx₃, hA₂, hA₄, hA₆, hB₂, hB₄,
-      hB₆⟩ := hstep (by omega)
-    obtain ⟨-, -, e₆⟩ := residue_stepSix_smul hϖ hx₁ hx₃ hA₂ hA₄ hA₆ hB₂ hB₄ hB₆ hr hs ht'
-    obtain ⟨⟨y₂, hy₂⟩, ⟨y₄, hy₄⟩, ⟨y₆, hy₆⟩⟩ := h.2.2.2.1 hi
-    obtain ⟨-, -, ⟨y₆', hy₆'⟩⟩ := h'.2.2.2.1 hi
-    have hϖ0 := hϖ.ne_zero
-    have hres : residue R ϖ = 0 := (hϖ.residue_eq_zero_iff_dvd ϖ).2 dvd_rfl
-    have hA (n : ℕ) (A y : R) (hA : ϖ ^ (n + 1) * A = ϖ ^ (n + 2) * y) : residue R A = 0 := by
-      rw [mul_left_cancel₀ (pow_ne_zero (n + 1) hϖ0) (hA.trans (by ring) :
-        _ = ϖ ^ (n + 1) * (ϖ * y))]
-      simp [hres]
-    rw [hA 0 A₂ y₂ (by linear_combination hA₂.symm.trans hy₂),
-      hA 1 A₄ y₄ (by linear_combination hA₄.symm.trans hy₄),
-      hA 2 A₆ y₆ (by linear_combination hA₆.symm.trans hy₆),
-      hA 2 B₆ y₆' (by linear_combination hB₆.symm.trans hy₆')] at e₆
-    obtain ⟨r₂, rfl⟩ : ϖ ∣ r₁ := by
-      rw [← hϖ.residue_eq_zero_iff_dvd]
-      simpa [(C.u⁻¹.isUnit.map (residue R)).ne_zero] using e₆.symm
-    exact ⟨r₂, by rw [hr]; ring⟩
-  -- From the test of `III*` on, both equations are in the normal form of Step 9, so `ϖ³ ∣ t`.
-  have ht₃ (hi : 8 ≤ i) : ϖ ^ 3 ∣ C.t := by
-    obtain ⟨r₂, hr₂⟩ := hr (by omega)
-    obtain ⟨-, -, ⟨t₁, ht₁⟩⟩ := hst (by omega)
-    obtain ⟨⟨x₁, hx₁⟩, -, -, -, -⟩ := h.2.2.1 (by omega)
-    obtain ⟨⟨y₂, hy₂⟩, ⟨y₄, hy₄⟩, -⟩ := h.2.2.2.1 (by omega)
-    obtain ⟨⟨z₃, hz₃⟩, ⟨z₆, hz₆⟩⟩ := h.2.2.2.2 hi
-    obtain ⟨-, h₆'⟩ := h'.2.2.2.2 hi
-    rw [variableChange_a₆, (hv 6).dvd_mul_left] at h₆'
-    obtain ⟨e₆, he₆⟩ := h₆'
-    refine hϖ.prime.pow_succ_dvd_of_pow_mul_add_one_dvd_pow (n := 2) (k := 2)
-      ⟨z₆ + r₂ * y₄ + ϖ * r₂ ^ 2 * y₂ + ϖ * r₂ ^ 3 - t₁ * z₃ - r₂ * t₁ * x₁ - e₆, ?_⟩
-    rw [hr₂, hx₁, hy₂, hy₄, hz₃, hz₆, ht₁] at he₆
-    rw [ht₁]
-    linear_combination -he₆
-  match i, h, h', ht with
-  | 0, _, _, ht =>
+  obtain ⟨h₁, h₂, h₃, h₄, h₆⟩ := h.2.2.1 hi
+  obtain ⟨-, h₂', h₃', h₄', h₆'⟩ := h'.2.2.1 hi
+  obtain ⟨⟨r₁, hr₁⟩, hs, ht⟩ := dvd_r_s_t_of_stepSix hϖ h₁ h₂ h₃ h₄ h₆ h₂' h₃' h₄' h₆'
+  obtain ⟨x₁, hx₁⟩ := h₁
+  obtain ⟨x₃, hx₃⟩ := h₃
+  obtain ⟨A₂, hA₂⟩ := h₂
+  obtain ⟨A₄, hA₄⟩ := h₄
+  obtain ⟨A₆, hA₆⟩ := h₆
+  obtain ⟨B₂, hB₂⟩ := h₂'
+  obtain ⟨B₄, hB₄⟩ := h₄'
+  obtain ⟨B₆, hB₆⟩ := h₆'
+  exact ⟨r₁, x₁, x₃, A₂, A₄, A₆, B₂, B₄, B₆, hr₁, hs, ht, hx₁, hx₃, hA₂, hA₄, hA₆, hB₂, hB₄, hB₆⟩
+
+/-- From the test of `IV*` on, both residue cubics are `T³`, so `ρ = 0` and `ϖ² ∣ r`. -/
+private theorem TateContext.sq_dvd_r (hϖ : Irreducible ϖ) {C : VariableChange R} {i : ℕ}
+    (h : TateContext ϖ i W) (h' : TateContext ϖ i (C • W)) (hi : 7 ≤ i) : ϖ ^ 2 ∣ C.r := by
+  obtain ⟨r₁, x₁, x₃, A₂, A₄, A₆, B₂, B₄, B₆, hr, hs, ht', hx₁, hx₃, hA₂, hA₄, hA₆, hB₂, hB₄,
+    hB₆⟩ := h.exists_stepSix_form hϖ h' (by omega)
+  obtain ⟨-, -, e₆⟩ := residue_stepSix_smul hϖ hx₁ hx₃ hA₂ hA₄ hA₆ hB₂ hB₄ hB₆ hr hs ht'
+  obtain ⟨⟨y₂, hy₂⟩, ⟨y₄, hy₄⟩, ⟨y₆, hy₆⟩⟩ := h.2.2.2.1 hi
+  obtain ⟨-, -, ⟨y₆', hy₆'⟩⟩ := h'.2.2.2.1 hi
+  have hϖ0 := hϖ.ne_zero
+  have hres : residue R ϖ = 0 := (hϖ.residue_eq_zero_iff_dvd ϖ).2 dvd_rfl
+  have hA (n : ℕ) (A y : R) (hA : ϖ ^ (n + 1) * A = ϖ ^ (n + 2) * y) : residue R A = 0 := by
+    rw [mul_left_cancel₀ (pow_ne_zero (n + 1) hϖ0) (hA.trans (by ring) :
+      _ = ϖ ^ (n + 1) * (ϖ * y))]
+    simp [hres]
+  rw [hA 0 A₂ y₂ (by linear_combination hA₂.symm.trans hy₂),
+    hA 1 A₄ y₄ (by linear_combination hA₄.symm.trans hy₄),
+    hA 2 A₆ y₆ (by linear_combination hA₆.symm.trans hy₆),
+    hA 2 B₆ y₆' (by linear_combination hB₆.symm.trans hy₆')] at e₆
+  obtain ⟨r₂, rfl⟩ : ϖ ∣ r₁ := by
+    rw [← hϖ.residue_eq_zero_iff_dvd]
+    simpa [(C.u⁻¹.isUnit.map (residue R)).ne_zero] using e₆.symm
+  exact ⟨r₂, by rw [hr]; ring⟩
+
+/-- From the test of `III*` on, both equations are in the normal form of Step 9, so `ϖ³ ∣ t`. -/
+private theorem TateContext.pow_three_dvd_t (hϖ : Irreducible ϖ) {C : VariableChange R} {i : ℕ}
+    (h : TateContext ϖ i W) (h' : TateContext ϖ i (C • W)) (hi : 8 ≤ i) : ϖ ^ 3 ∣ C.t := by
+  have hv (n : ℕ) : IsUnit ((↑C.u⁻¹ : R) ^ n) := C.u⁻¹.isUnit.pow n
+  obtain ⟨r₂, hr₂⟩ := h.sq_dvd_r hϖ h' (by omega)
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, ⟨t₁, ht₁⟩, -⟩ := h.exists_stepSix_form hϖ h' (by omega)
+  obtain ⟨⟨x₁, hx₁⟩, -, -, -, -⟩ := h.2.2.1 (by omega)
+  obtain ⟨⟨y₂, hy₂⟩, ⟨y₄, hy₄⟩, -⟩ := h.2.2.2.1 (by omega)
+  obtain ⟨⟨z₃, hz₃⟩, ⟨z₆, hz₆⟩⟩ := h.2.2.2.2 hi
+  obtain ⟨-, h₆'⟩ := h'.2.2.2.2 hi
+  rw [variableChange_a₆, (hv 6).dvd_mul_left] at h₆'
+  obtain ⟨e₆, he₆⟩ := h₆'
+  refine hϖ.prime.pow_succ_dvd_of_pow_mul_add_one_dvd_pow (n := 2) (k := 2)
+    ⟨z₆ + r₂ * y₄ + ϖ * r₂ ^ 2 * y₂ + ϖ * r₂ ^ 3 - t₁ * z₃ - r₂ * t₁ * x₁ - e₆, ?_⟩
+  rw [hr₂, hx₁, hy₂, hy₄, hz₃, hz₆, ht₁] at he₆
+  rw [ht₁]
+  linear_combination -he₆
+
+/-- Invariance of the tests `0` to `4` of Tate's algorithm under changes of variables. -/
+private theorem tateTest_smul_of_lt_five (hϖ : Irreducible ϖ) {C : VariableChange R} {i : ℕ}
+    (h : TateContext ϖ i W) (h' : TateContext ϖ i (C • W)) (ht : tateTest ϖ W i)
+    (hi : i < 5) : tateTest ϖ (C • W) i := by
+  have hv (n : ℕ) : IsUnit ((↑C.u⁻¹ : R) ^ n) := C.u⁻¹.isUnit.pow n
+  have hrt (hi : 1 ≤ i) : ϖ ∣ C.r ∧ ϖ ∣ C.t := h.dvd_r_and_dvd_t hϖ h' hi
+  match i, h, h', ht, hi with
+  | 0, _, _, ht, _ =>
     simp only [tateTest] at ht ⊢
     rw [variableChange_Δ]
     exact dvd_mul_of_dvd_right ht _
-  | 1, _, _, ht =>
+  | 1, _, _, ht, _ =>
     obtain ⟨⟨r₁, hr₁⟩, -⟩ := hrt le_rfl
     exact ((hv 2).dvd_iff_of_eq_mul_add (12 * r₁) (by rw [variableChange_b₂, hr₁]; ring)).2 ht
-  | 2, h, _, ht =>
+  | 2, h, _, ht, _ =>
     obtain ⟨⟨r₁, hr₁⟩, ⟨t₁, ht₁⟩⟩ := hrt (by norm_num)
     obtain ⟨⟨x₃, hx₃⟩, ⟨x₄, hx₄⟩, -⟩ := h.2.1 (by norm_num)
     refine ((hv 6).dvd_iff_of_eq_mul_add (r₁ * x₄ + r₁ ^ 2 * W.a₂ + ϖ * r₁ ^ 3 - t₁ * x₃ -
       t₁ ^ 2 - r₁ * t₁ * W.a₁) ?_).2 ht
     rw [variableChange_a₆, hr₁, ht₁, hx₃, hx₄]
     ring
-  | 3, h, _, ht =>
+  | 3, h, _, ht, _ =>
     obtain ⟨⟨r₁, hr₁⟩, -⟩ := hrt (by norm_num)
     obtain ⟨⟨x₃, hx₃⟩, ⟨x₄, hx₄⟩, -⟩ := h.2.1 (by norm_num)
     obtain ⟨β₂, hβ₂⟩ : ϖ ∣ W.b₂ := h.1 1 (by norm_num)
@@ -650,7 +685,7 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
       3 * r₁ ^ 2 * (W.a₁ * x₃ + 2 * x₄) + ϖ * r₁ ^ 3 * β₂ + 3 * ϖ * r₁ ^ 4) ?_).2 ht
     rw [variableChange_b₈, hr₁, hβ₂, b₆, b₄, hx₃, hx₄, hy₆]
     ring
-  | 4, h, _, ht =>
+  | 4, h, _, ht, _ =>
     obtain ⟨⟨r₁, hr₁⟩, -⟩ := hrt (by norm_num)
     obtain ⟨⟨x₃, hx₃⟩, -, -⟩ := h.2.1 (by norm_num)
     obtain ⟨β₂, hβ₂⟩ : ϖ ∣ W.b₂ := h.1 1 (by norm_num)
@@ -666,9 +701,16 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
     refine ((hv 6).dvd_iff_of_eq_mul_add (2 * r₁ * β₄ + r₁ ^ 2 * β₂ + 4 * r₁ ^ 3) ?_).2 ht
     rw [variableChange_b₆, hr₁, hβ₂, hβ₄]
     ring
-  | 5, _, _, ht =>
+  | i + 5, _, _, _, hi => omega
+
+/-- Invariance of the tests `5` and `6` of Tate's algorithm under changes of variables. -/
+private theorem tateTest_smul_of_five_six (hϖ : Irreducible ϖ) {C : VariableChange R} {i : ℕ}
+    (h : TateContext ϖ i W) (h' : TateContext ϖ i (C • W)) (ht : tateTest ϖ W i)
+    (h5 : 5 ≤ i) (h7 : i < 7) : tateTest ϖ (C • W) i := by
+  match i, h, h', ht, h5, h7 with
+  | 5, h, h', ht, _, _ =>
     obtain ⟨r₁, x₁, x₃, A₂, A₄, A₆, B₂, B₄, B₆, hr, hs, ht', hx₁, hx₃, hA₂, hA₄, hA₆, hB₂, hB₄,
-      hB₆⟩ := hstep (by norm_num)
+      hB₆⟩ := h.exists_stepSix_form hϖ h' (by norm_num)
     obtain ⟨e₂, e₄, e₆⟩ := residue_stepSix_smul hϖ hx₁ hx₃ hA₂ hA₄ hA₆ hB₂ hB₄ hB₆ hr hs ht'
     have hd := (pow_seven_dvd_discr_iff hϖ hA₂ hA₄ hA₆).1 ht
     refine (pow_seven_dvd_discr_iff hϖ hB₂ hB₄ hB₆).2 ?_
@@ -676,15 +718,28 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
     simp only [Cubic.discr] at hd ⊢
     rw [e₂, e₄, e₆]
     linear_combination residue R ↑C.u⁻¹ ^ 12 * hd
-  | 6, _, _, ht =>
+  | 6, h, h', ht, _, _ =>
     obtain ⟨r₁, x₁, x₃, A₂, A₄, A₆, B₂, B₄, B₆, hr, hs, ht', hx₁, hx₃, hA₂, hA₄, hA₆, hB₂, hB₄,
-      hB₆⟩ := hstep (by norm_num)
+      hB₆⟩ := h.exists_stepSix_form hϖ h' (by norm_num)
     obtain ⟨e₂, e₄, -⟩ := residue_stepSix_smul hϖ hx₁ hx₃ hA₂ hA₄ hA₆ hB₂ hB₄ hB₆ hr hs ht'
     have hd := (pow_three_dvd_sq_sub_iff hϖ hA₂ hA₄).1 ht
     refine (pow_three_dvd_sq_sub_iff hϖ hB₂ hB₄).2 ?_
     rw [e₂, e₄]
     linear_combination residue R ↑C.u⁻¹ ^ 4 * hd
-  | 7, h, _, ht =>
+  | i + 7, _, _, _, _, h7 => omega
+
+/-- Invariance of the tests `7` to `9` of Tate's algorithm under changes of variables. -/
+private theorem tateTest_smul_of_seven_to_nine (hϖ : Irreducible ϖ) {C : VariableChange R} {i : ℕ}
+    (h : TateContext ϖ i W) (h' : TateContext ϖ i (C • W)) (ht : tateTest ϖ W i)
+    (h7 : 7 ≤ i) (h10 : i < 10) : tateTest ϖ (C • W) i := by
+  have hv (n : ℕ) : IsUnit ((↑C.u⁻¹ : R) ^ n) := C.u⁻¹.isUnit.pow n
+  have hr (hi : 7 ≤ i) : ϖ ^ 2 ∣ C.r := h.sq_dvd_r hϖ h' hi
+  have ht₃ (hi : 8 ≤ i) : ϖ ^ 3 ∣ C.t := h.pow_three_dvd_t hϖ h' hi
+  have hst (hi : 5 ≤ i) : ϖ ∣ C.r ∧ ϖ ∣ C.s ∧ ϖ ^ 2 ∣ C.t := by
+    obtain ⟨r₁, -, -, -, -, -, -, -, -, hr₁, hs, ht, -⟩ := h.exists_stepSix_form hϖ h' hi
+    exact ⟨⟨r₁, hr₁⟩, hs, ht⟩
+  match i, h, h', ht, h7, h10 with
+  | 7, h, h', ht, _, _ =>
     obtain ⟨r₂, hr₂⟩ := hr (by norm_num)
     obtain ⟨⟨x₁, hx₁⟩, -, ⟨x₃, hx₃⟩, -, -⟩ := h.2.2.1 (by norm_num)
     obtain ⟨⟨y₂, hy₂⟩, ⟨y₄, hy₄⟩, -⟩ := h.2.2.2.1 le_rfl
@@ -692,7 +747,7 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
       ϖ * r₂ ^ 2 * (x₁ ^ 2 + 4 * y₂) + 4 * ϖ * r₂ ^ 3) ?_).2 ht
     rw [variableChange_b₆, hr₂, b₄, b₂, hx₁, hx₃, hy₂, hy₄]
     ring
-  | 8, h, _, ht =>
+  | 8, h, h', ht, _, _ =>
     obtain ⟨r₂, hr₂⟩ := hr (by norm_num)
     obtain ⟨-, ⟨s₁, hs₁⟩, -⟩ := hst (by norm_num)
     obtain ⟨t₃, ht₃⟩ := ht₃ le_rfl
@@ -703,7 +758,7 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
       3 * r₂ ^ 2 - 2 * s₁ * t₃) ?_).2 ht
     rw [variableChange_a₄, hr₂, hs₁, ht₃, hx₁, hy₂, hz₃]
     ring
-  | 9, h, _, ht =>
+  | 9, h, h', ht, _, _ =>
     obtain ⟨r₂, hr₂⟩ := hr (by norm_num)
     obtain ⟨t₃, ht₃⟩ := ht₃ (by norm_num)
     obtain ⟨⟨x₁, hx₁⟩, -, -, -, -⟩ := h.2.2.1 (by norm_num)
@@ -714,7 +769,21 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
       r₂ * t₃ * x₁) ?_).2 ht
     rw [variableChange_a₆, hr₂, ht₃, hx₁, hy₂, hy₄, hz₃]
     ring
-  | i + 10, _, _, ht => exact ht.elim
+  | i + 10, _, _, _, _, h10 => omega
+
+/-- **Each test of Tate's algorithm is invariant under changes of variables over `R`** between
+equations on which the algorithm reaches it. -/
+private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i : ℕ}
+    (h : TateContext ϖ i W) (h' : TateContext ϖ i (C • W)) (ht : tateTest ϖ W i) :
+    tateTest ϖ (C • W) i := by
+  rcases lt_or_ge i 5 with h5 | h5
+  · exact tateTest_smul_of_lt_five hϖ h h' ht h5
+  rcases lt_or_ge i 7 with h7 | h7
+  · exact tateTest_smul_of_five_six hϖ h h' ht h5 h7
+  rcases lt_or_ge i 10 with h10 | h10
+  · exact tateTest_smul_of_seven_to_nine hϖ h h' ht h7 h10
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' h10
+  exact ht.elim
 
 /-- Tate's algorithm stops on `W` and on `C • W` at the same test: if it stopped on one at an
 earlier test, that equation would fail a test which the other passes. -/

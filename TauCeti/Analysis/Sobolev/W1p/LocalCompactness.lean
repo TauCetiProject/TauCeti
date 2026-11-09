@@ -55,25 +55,9 @@ private theorem W1p.isCompactOperator_valueL_restrictL_of_isBounded (hp : p ≠ 
     SetLike.coe_subset_coe.mp (Subset.trans subset_closure hVO)
   obtain ⟨psi, M, hpsi, _, hpsiOne, hcpt, hts, hM, hpsiM, hgradM⟩ :=
     hVc.exists_contDiff_cutoff_with_bounds Omega.isOpen hVO
-  let cutoff : W1p mu Omega p →L[ℝ] W1p0 mu Omega p :=
-    ContinuousLinearMap.codRestrict
-      (W1p.contDiffSMulL psi hpsi hM (fun x _ => hpsiM x) (fun x _ => hgradM x))
-      (w1p0Submodule mu Omega p).toSubmodule
-      (fun u => by
-        rw [W1p.contDiffSMulL_apply]
-        exact W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport hp hpsi hM
-          (fun x _ => hpsiM x) (fun x _ => hgradM x) hcpt hts u)
-  have cutoff_apply (u : W1p mu Omega p) : (cutoff u : W1p mu Omega p) =
-      W1p.contDiffSMul psi hpsi hM (fun x _ => hpsiM x)
-        (fun x _ => hgradM x) u := by
-    calc
-      (cutoff u : W1p mu Omega p) =
-          W1p.contDiffSMulL psi hpsi hM (fun x _ => hpsiM x)
-            (fun x _ => hgradM x) u := by
-              simp only [cutoff, ContinuousLinearMap.coe_codRestrict_apply]
-      _ = _ := W1p.contDiffSMulL_apply hpsi hM (fun x _ => hpsiM x)
-        (fun x _ => hgradM x) u
-  let hmeasure : mu.restrict (V : Set E) ≤ (1 : ENNReal) • mu.restrict (Omega : Set E) := by
+  obtain ⟨cutoff, cutoff_apply⟩ := W1p.exists_clm_w1p0_apply_eq_contDiffSMul (mu := mu)
+    (Omega := Omega) (p := p) hp hpsi hM (fun x _ => hpsiM x) (fun x _ => hgradM x) hcpt hts
+  have hmeasure : mu.restrict (V : Set E) ≤ (1 : ENNReal) • mu.restrict (Omega : Set E) := by
     simpa only [one_smul] using Measure.restrict_mono_set mu
       (SetLike.coe_subset_coe.mpr hV)
   let res : Lp ℝ p (mu.restrict (Omega : Set E)) →L[ℝ] Lp ℝ p (mu.restrict (V : Set E)) :=
@@ -81,28 +65,11 @@ private theorem W1p.isCompactOperator_valueL_restrictL_of_isBounded (hp : p ≠ 
   have hcompact : IsCompactOperator
       ((res.comp (W1p0.valueL (mu := mu) (Omega := Omega) (p := p))).comp cutoff) :=
     ((W1p0.isCompactOperator_valueL hp hOmega).clm_comp res).comp_clm cutoff
-  have heq : (W1p.valueL (mu := mu) (Omega := V) (p := p)).comp (W1p.restrictL hV) =
-      (res.comp (W1p0.valueL (mu := mu) (Omega := Omega) (p := p))).comp cutoff := by
-    ext u
-    have hOne : ∀ x ∈ (V : Set E), psi x = 1 := by
-      intro x hx
-      have hxcl : x ∈ closure (V : Set E) := subset_closure hx
-      exact interior_subset (s := psi ⁻¹' {1}) (hpsiOne hxcl)
-    filter_upwards [W1p.value_restrictL_ae hV u,
-      Lp.coeFn_LpToLpOfMeasureLeSMul (by simp) hmeasure
-        (W1p0.valueL (cutoff u)),
-      (W1p.value_contDiffSMul_ae hpsi hM (fun x _ => hpsiM x)
-        (fun x _ => hgradM x) u).filter_mono
-          (ae_mono (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hV))),
-      ae_restrict_mem V.isOpen.measurableSet] with x hleft hres hmul hx
-    have hres' : (res (W1p.value (cutoff u : W1p mu Omega p)) : E → ℝ) x =
-        (W1p.value (cutoff u : W1p mu Omega p) : E → ℝ) x := by
-      simpa only [res, W1p0.valueL_apply] using hres
-    rw [ContinuousLinearMap.comp_apply, W1p.valueL_apply, hleft,
-      ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-      W1p0.valueL_apply, hres']
-    rw [cutoff_apply u, hmul, hOne x hx, one_smul]
-  rw [heq]
+  have hOne : ∀ x ∈ (V : Set E), psi x = 1 := fun x hx =>
+    interior_subset (s := psi ⁻¹' {1}) (hpsiOne (subset_closure hx))
+  rw [W1p.valueL_comp_restrictL_eq_comp_cutoff hV hpsi hM (fun x _ => hpsiM x)
+    (fun x _ => hgradM x) hOne cutoff cutoff_apply res
+    (fun f => Lp.coeFn_LpToLpOfMeasureLeSMul (by simp) hmeasure f)]
   exact hcompact
 
 /-- **Local Rellich--Kondrachov compactness.** If `V` has compact closure contained in `Ω` and

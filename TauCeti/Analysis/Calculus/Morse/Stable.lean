@@ -47,6 +47,8 @@ embedded submanifold (`TauCeti.Analysis.Calculus.Morse.GlobalChart`).
   strict for distinct endpoints.
 * `Flow.IsNegativeGradient.eq_of_mem_unstableSet_inter_stableSet`: there are no
   nonconstant homoclinic trajectories.
+* `Flow.IsNegativeGradient.mem_unstableSet_inter_stableSet_self_iff`: the unstable and stable sets
+  of a rest point meet only in that point.
 * `Flow.IsNegativeGradient.reverse`: the reversed flow is a negative gradient flow of `-f`.
 * `Flow.IsNegativeGradient.dist_le_of_mem_stableSet` and
   `Flow.IsNegativeGradient.dist_le_of_mem_unstableSet`: the energy barrier confining stable and
@@ -170,14 +172,22 @@ theorem IsNegativeGradient.eq_of_mem_unstableSet_inter_stableSet
     x = p :=
   (hφ.eq_of_mem_unstableSet_inter_stableSet_of_value_eq hf hfp hfp hx rfl).1
 
+/-- The unstable and stable sets of a rest point of a negative gradient flow meet exactly in that
+point. -/
+theorem IsNegativeGradient.mem_unstableSet_inter_stableSet_self_iff (hφ : IsNegativeGradient φ f)
+    (hf : Differentiable ℝ f) (hp : ∀ t, φ t p = p) :
+    x ∈ unstableSet φ p ∩ stableSet φ p ↔ x = p := by
+  refine ⟨hφ.eq_of_mem_unstableSet_inter_stableSet (fun _ ↦ hf _) (hf p).continuousAt, ?_⟩
+  rintro rfl
+  exact ⟨self_mem_unstableSet_iff.2 hp, self_mem_stableSet_iff.2 hp⟩
+
 variable {z : E}
 
 /-- Reversing time turns a negative gradient flow of `f` into a negative gradient flow of `-f`. -/
 theorem IsNegativeGradient.reverse (hφ : IsNegativeGradient φ f) :
     IsNegativeGradient φ.reverse (-f) := by
   refine isNegativeGradient_iff.2 fun z t ↦ ?_
-  have hgrad : ∇ (-f) (φ (-t) z) = -∇ f (φ (-t) z) := by
-    simpa using TauCeti.gradient_const_smul (-1 : ℝ) (f := f) (x := φ (-t) z)
+  have hgrad : ∇ (-f) (φ (-t) z) = -∇ f (φ (-t) z) := TauCeti.gradient_neg
   have hd := (hφ.isIntegralCurve z (-t)).scomp t (hasDerivAt_neg t)
   simpa [Function.comp_def, hgrad] using hd
 
@@ -278,8 +288,7 @@ theorem IsNegativeGradient.dist_le_of_mem_unstableSet (hφ : IsNegativeGradient 
     {s r c : ℝ} (hc : 0 ≤ c) (hgrad : ∀ w, s < dist w x → dist w x < r → c ≤ ‖∇ f w‖)
     (hzs : dist z x ≤ s) (hfz : f x - c * (r - s) < f z) {t : ℝ} (ht : t ≤ 0) :
     dist (φ t z) x ≤ r := by
-  have hneg (w : E) : ∇ (-f) w = -∇ f w := by
-    simpa using TauCeti.gradient_const_smul (-1 : ℝ) (f := f) (x := w)
+  have hneg (w : E) : ∇ (-f) w = -∇ f w := TauCeti.gradient_neg
   simpa only [_root_.Flow.reverse_apply, neg_neg] using
     hφ.reverse.dist_le_of_mem_stableSet (by rwa [stableSet_reverse])
       (fun t ↦ by simpa only [_root_.Flow.reverse_apply] using (hf (-t)).neg) hfx.neg hc

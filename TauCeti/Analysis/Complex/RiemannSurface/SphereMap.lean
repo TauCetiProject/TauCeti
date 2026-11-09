@@ -61,6 +61,20 @@ open Filter Function OnePoint Set Topology
 
 open scoped Manifold
 
+namespace OnePoint
+
+/-- The affine coordinate has a simple pole at infinity. -/
+@[simp]
+theorem meromorphicOrderAt_affineChart_infty :
+    TauCeti.RiemannSurface.meromorphicOrderAt (affineChart : OnePoint ℂ → ℂ) ∞ = (-1 : ℤ) := by
+  rw [TauCeti.RiemannSurface.meromorphicOrderAt_def, chartAt_infty, invChart_infty,
+    affineChart_comp_invChart_symm]
+  have h := _root_.meromorphicOrderAt_inv (f := (id : ℂ → ℂ)) (x := 0)
+  rw [_root_.meromorphicOrderAt_id] at h
+  convert h using 1 <;> simp [Pi.inv_def, Function.id_def]
+
+end OnePoint
+
 namespace TauCeti.RiemannSurface
 
 variable {X : Type*} [TopologicalSpace X] {f : X → ℂ} {x : X}

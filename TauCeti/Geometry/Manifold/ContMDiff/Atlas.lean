@@ -9,6 +9,8 @@ public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import TauCeti.Geometry.Manifold.ExtChartAt
+public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+public import Mathlib.Geometry.Manifold.Diffeomorph
 import Mathlib.Geometry.Manifold.ContMDiff.Basic
 
 /-!
@@ -40,6 +42,8 @@ inverse is `C^n` on its target when `Ψ.symm` is `C^n`.
   where the extended chart lands in the domain of `c`, and in the model vector space it reads as
   `c ∘ extChartAt I x`.
 
+* `OpenPartialHomeomorph.toDiffeomorphSourceTarget`: a maximal-atlas chart as a native C^n
+  diffeomorphism between its intrinsic open source and target, including models with corners.
 * `OpenPartialHomeomorph.contMDiffOn_extendTrans` and
   `OpenPartialHomeomorph.contMDiffOn_extendTrans_symm`: `C^n` regularity of a maximal-atlas chart
   transported by `OpenPartialHomeomorph.extendTrans` and of its inverse.
@@ -156,5 +160,47 @@ theorem contMDiffOn_extendTrans_symm (c : OpenPartialHomeomorph M H)
     I.contMDiffOn_symm.comp hΨ.contMDiff.contMDiffOn fun _ _ ↦ by simp [I.range_eq_univ]
   exact ((contMDiffOn_symm_of_mem_maximalAtlas hc).comp h1 fun _ hv ↦ by
     simpa [extendTrans_target] using hv).congr fun _ _ ↦ by simp
+
+end OpenPartialHomeomorph
+
+namespace OpenPartialHomeomorph
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
+
+/-- A chart in the maximal atlas is a native diffeomorphism between its intrinsic open source
+and open target. The target is open in H; no boundaryless hypothesis is needed. -/
+def toDiffeomorphSourceTarget (c : OpenPartialHomeomorph M H)
+    (hc : c ∈ IsManifold.maximalAtlas I n M) :
+    (⟨c.source, c.open_source⟩ : TopologicalSpace.Opens M) ≃ₘ^n⟮I, I⟯
+      (⟨c.target, c.open_target⟩ : TopologicalSpace.Opens H) where
+  toEquiv := c.toHomeomorphSourceTarget.toEquiv
+  contMDiff_toFun := by
+    apply (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1
+    intro x
+    exact ((contMDiffOn_of_mem_maximalAtlas hc x.val x.property).contMDiffAt
+      (c.open_source.mem_nhds x.property)).comp x contMDiff_subtype_val.contMDiffAt
+  contMDiff_invFun := by
+    apply (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1
+    intro x
+    exact ((contMDiffOn_symm_of_mem_maximalAtlas hc x.val x.property).contMDiffAt
+      (c.open_target.mem_nhds x.property)).comp x contMDiff_subtype_val.contMDiffAt
+
+@[simp]
+theorem toDiffeomorphSourceTarget_apply_coe (c : OpenPartialHomeomorph M H)
+    (hc : c ∈ IsManifold.maximalAtlas I n M)
+    (x : (⟨c.source, c.open_source⟩ : TopologicalSpace.Opens M)) :
+    (c.toDiffeomorphSourceTarget hc x : H) = c x := by
+  unfold toDiffeomorphSourceTarget
+  rfl
+
+@[simp]
+theorem toDiffeomorphSourceTarget_symm_apply_coe (c : OpenPartialHomeomorph M H)
+    (hc : c ∈ IsManifold.maximalAtlas I n M)
+    (x : (⟨c.target, c.open_target⟩ : TopologicalSpace.Opens H)) :
+    ((c.toDiffeomorphSourceTarget hc).symm x : M) = c.symm x := by
+  unfold toDiffeomorphSourceTarget
+  rfl
 
 end OpenPartialHomeomorph

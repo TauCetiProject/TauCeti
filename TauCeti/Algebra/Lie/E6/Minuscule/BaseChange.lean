@@ -319,7 +319,7 @@ theorem pointToGeneralLinear_mapDomain_rootSubgroupToBaseChangeCoordinateMap_eq_
       (TauCeti.serreRootGenerator weightTable.cartanMatrix)
       (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
       weightTable.rep_kostantForm_mem_lattice weightTable.isNilpotent_rep_serreRootGenerator 𝓑
-      weightTable.weight A definingIdeal_def i B q using 1
+      weightTable.weight A i B q using 1
   congr 1
   erw [BialgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply,
     CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]

@@ -10,7 +10,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import TauCeti.Geometry.Manifold.ChartedSpace
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -465,6 +465,11 @@ def _root_.TauCeti.RiemannSurface.holomorphicOneForms : Submodule ℂ (OneForm X
 theorem _root_.TauCeti.RiemannSurface.mem_holomorphicOneForms :
     ω ∈ holomorphicOneForms X ↔ ∀ x, ω.HolomorphicAt x :=
   Iff.rfl
+
+/-- A holomorphic global `1`-form is meromorphic at every point. -/
+theorem meromorphicAt_of_mem_holomorphicOneForms
+    (hω : ω ∈ holomorphicOneForms X) (x : X) : ω.MeromorphicAt x :=
+  (mem_holomorphicOneForms.1 hω x).meromorphicAt
 
 end Algebra
 

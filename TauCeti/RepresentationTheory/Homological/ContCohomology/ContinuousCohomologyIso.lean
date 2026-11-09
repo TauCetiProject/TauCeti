@@ -294,12 +294,12 @@ theorem explicitH0Iso_coeffMap (N : Type u) [AddCommGroup N] [TopologicalSpace N
         (ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap fun g m => map_smul f g m) 0
         ((explicitH0IsoContinuousCohomology G M).hom x) =
       (explicitH0IsoContinuousCohomology G N).hom (explicitCoeff0 G M f x) := by
-  -- At the identity homomorphism the compatible pair is the coefficient morphism itself; this is
-  -- `TauCeti.ofDiscreteModulePair_id`, restated at the coerced identity `ContinuousMonoidHom`.
+  -- At the identity homomorphism the compatible pair is the coefficient morphism itself; the
+  -- coerced identity `ContinuousMonoidHom` unfolds to `MonoidHom.id` for unification.
   have hpair : ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G)
       f.toAddMonoidHom.toIntLinearMap (fun g m => map_smul f g m) =
       ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap fun g m => map_smul f g m :=
-    ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun _ => rfl
+    ofDiscreteModulePair_id _ _
   rw [TauCeti.ContinuousCohomology.coeffMap_def, explicitCoeff0_eq_explicitMap0, ← hpair]
   exact explicitH0Iso_map G M G N (ContinuousMonoidHom.id G) f.toAddMonoidHom
     (fun g m => map_smul f g m) x

@@ -284,7 +284,7 @@ theorem W1p.norm_gradient_contDiffSMul_sq_le (hpsi : ContDiff ℝ ∞ psi) (hM :
         rw [Real.norm_eq_abs, abs_pow]
         exact pow_le_pow_left₀ (abs_nonneg _) (hpsiM x hx) 2)
   have hI2 : Integrable (fun x => ‖∇ psi x‖ ^ 2 * W1p.value u x ^ 2) (mu.restrict Omega) :=
-    (W1p.integrable_value_sq u).bdd_mul
+    (Lp.memLp (W1p.value u)).integrable_sq.bdd_mul
       ((ContDiff.continuous_gradient hpsi).norm.pow 2).aestronglyMeasurable (c := M ^ 2)
       (hmem.mono fun x hx => by
         rw [Real.norm_eq_abs, abs_pow, abs_norm]
