@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Positivity
 
@@ -21,15 +22,6 @@ and this derivative are bounded in norm (`TauCeti.norm_smul_sub_le_of_eq_zero_of
 -/
 
 public section
-
-namespace TauCeti
-
-/-- The Fréchet derivative of `y ↦ ‖y - x₀‖ ^ 2` at `x` is `2 • innerSL ℝ (x - x₀)`. -/
-theorem hasFDerivAt_norm_sq_sub {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    (x₀ x : E) : HasFDerivAt (fun y => ‖y - x₀‖ ^ 2) (2 • innerSL ℝ (x - x₀)) x := by
-  simpa using ((hasFDerivAt_id x).sub_const x₀).norm_sq
-
-end TauCeti
 
 /-- The Fréchet derivative of the radial field `y ↦ c (‖y - x₀‖ ^ 2) • (y - x₀)`, for `c` with
 derivative `c'` at `‖x - x₀‖ ^ 2`. -/
