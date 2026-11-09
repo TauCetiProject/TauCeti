@@ -140,8 +140,8 @@ theorem finiteMixtureMeasure_def (p : StdSimplex NNReal I) (K : I → Measure B)
   (rfl)
 
 /-- A finite mixture of probability measures is a probability measure. -/
-theorem isProbabilityMeasure_finiteMixtureMeasure
-    (hK : ∀ i, IsProbabilityMeasure (K i)) : IsProbabilityMeasure (finiteMixtureMeasure p K) := by
+instance isProbabilityMeasure_finiteMixtureMeasure
+    [hK : ∀ i, IsProbabilityMeasure (K i)] : IsProbabilityMeasure (finiteMixtureMeasure p K) := by
   constructor
   simp only [finiteMixtureMeasure_def, _root_.sum_apply, _root_.smul_apply, smul_eq_mul]
   simp_rw [@measure_univ _ _ _ (hK _), mul_one]

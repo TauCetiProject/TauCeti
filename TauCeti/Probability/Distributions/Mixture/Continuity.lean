@@ -36,9 +36,8 @@ measures associated to its components. -/
 @[simp]
 theorem toFiniteMeasure_finiteMixtureMeasure (p : StdSimplex ℝ≥0 I)
     (K : I → ProbabilityMeasure B) :
-    (@Measure.toProbabilityMeasure B _ (finiteMixtureMeasure p (fun i ↦ (K i : Measure B)))
-      (isProbabilityMeasure_finiteMixtureMeasure (fun _ ↦ inferInstance))).toFiniteMeasure =
-        ∑ i, p.weights i • (K i).toFiniteMeasure := by
+    (finiteMixtureMeasure p (fun i ↦ (K i : Measure B))).toProbabilityMeasure.toFiniteMeasure =
+      ∑ i, p.weights i • (K i).toFiniteMeasure := by
   apply FiniteMeasure.toMeasure_injective
   simp [finiteMixtureMeasure_def, ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
     ← ENNReal.smul_def]
@@ -52,12 +51,9 @@ theorem tendsto_finiteMixtureMeasure {F : Filter D} {p : D → StdSimplex ℝ≥
     {p₀ : StdSimplex ℝ≥0 I} {K : D → I → ProbabilityMeasure B}
     {K₀ : I → ProbabilityMeasure B} (hp : Tendsto p F (𝓝 p₀))
     (hK : ∀ i, 0 < p₀.weights i → Tendsto (fun d ↦ K d i) F (𝓝 (K₀ i))) :
-    Tendsto (fun d ↦ @Measure.toProbabilityMeasure B _
-      (finiteMixtureMeasure (p d) (fun i ↦ (K d i : Measure B)))
-      (isProbabilityMeasure_finiteMixtureMeasure (fun _ ↦ inferInstance)))
-      F (𝓝 (@Measure.toProbabilityMeasure B _
-        (finiteMixtureMeasure p₀ (fun i ↦ (K₀ i : Measure B)))
-        (isProbabilityMeasure_finiteMixtureMeasure (fun _ ↦ inferInstance)))) := by
+    Tendsto (fun d ↦
+      (finiteMixtureMeasure (p d) (fun i ↦ (K d i : Measure B))).toProbabilityMeasure)
+      F (𝓝 (finiteMixtureMeasure p₀ (fun i ↦ (K₀ i : Measure B))).toProbabilityMeasure) := by
   rw [ProbabilityMeasure.tendsto_nhds_iff_toFiniteMeasure_tendsto_nhds]
   simp only [Function.comp_def, toFiniteMeasure_finiteMixtureMeasure]
   apply tendsto_finsetSum
@@ -77,9 +73,8 @@ finite mixture, also where some weights vanish. -/
 theorem continuous_finiteMixtureMeasure {p : D → StdSimplex ℝ≥0 I}
     {K : D → I → ProbabilityMeasure B} (hp : Continuous p)
     (hK : ∀ i, Continuous fun d ↦ K d i) :
-    Continuous (fun d ↦ @Measure.toProbabilityMeasure B _
-      (finiteMixtureMeasure (p d) (fun i ↦ (K d i : Measure B)))
-      (isProbabilityMeasure_finiteMixtureMeasure (fun _ ↦ inferInstance))) := by
+    Continuous (fun d ↦
+      (finiteMixtureMeasure (p d) (fun i ↦ (K d i : Measure B))).toProbabilityMeasure) := by
   rw [continuous_iff_continuousAt]
   intro d
   exact tendsto_finiteMixtureMeasure hp.continuousAt fun i _ ↦ (hK i).continuousAt
