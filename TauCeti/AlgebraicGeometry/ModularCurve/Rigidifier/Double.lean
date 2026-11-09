@@ -17,6 +17,10 @@ two forgetful maps to `V`, identifies the structures they classify, and transfer
 of `δ` to both maps. For a finite étale rigidifier the two maps are finite étale; if `𝒫` is
 rigid, they jointly define a monomorphism into `V.base ×_B V.base`.
 
+An arrow `X ⟶ V_{δ_V}` is the same as a pair of arrows `f g : X ⟶ V` classifying the same
+`𝒫`-structure: such a pair lifts to `RelRepData.doubleLift f g`, and every arrow into `V_{δ_V}` is
+the lift of its two projections (`RelRepData.eq_doubleLift`).
+
 This is the geometric relation used to recover a moduli scheme from a rigidified one. The
 construction does not require a group acting on the rigidifier, so it also applies to
 rigidifying covers which are not Galois.
@@ -111,5 +115,66 @@ theorem mono_pullback_lift_baseChangeFunctorHom_doubleSnd (hP : P.IsRigid) :
       (V.baseChangeFunctor.obj (D.rep V)).base ⟶ pullback V.structureMap V.structureMap) :=
   hP.mono_pullback_lift (R := D.doubleRepresentableBy R)
     (D.homEquiv_baseChangeFunctorHom R) (D.homEquiv_doubleSnd R)
+
+/-! ### Two rigidifications of one `𝒫`-structure -/
+
+/-- The arrow into the scheme of two rigidifications classifying the triple `(p, d₁, d₂)`, for
+arrows `f g : X ⟶ V` classifying pairs `(p, d₁)` and `(p', d₂)`. It lifts `f` along the first
+projection (`doubleLift_comp_baseChangeFunctorHom`) and, when `p = p'`, lifts `g` along the second
+(`doubleLift_comp_doubleSnd`). Every arrow into the scheme of two rigidifications is of this form
+(`eq_doubleLift`). -/
+noncomputable def doubleLift {X : EllObj B} (f g : X ⟶ V) :
+    X ⟶ V.baseChangeFunctor.obj (D.rep V) :=
+  (D.doubleRepresentableBy R).homEquiv.symm
+    ((R.homEquiv f).1, ((R.homEquiv f).2, (R.homEquiv g).2))
+
+/-- The arrow `doubleLift f g` classifies the `𝒫`- and `δ`-structures classified by `f`, followed
+by the `δ`-structure classified by `g`. -/
+theorem doubleRepresentableBy_homEquiv_doubleLift {X : EllObj B} (f g : X ⟶ V) :
+    (D.doubleRepresentableBy R).homEquiv (D.doubleLift R f g) =
+      ((R.homEquiv f).1, ((R.homEquiv f).2, (R.homEquiv g).2)) :=
+  (D.doubleRepresentableBy R).homEquiv.apply_symm_apply _
+
+/-- The arrow `doubleLift f g` lifts `f` along the first projection. -/
+@[reassoc (attr := simp)]
+theorem doubleLift_comp_baseChangeFunctorHom {X : EllObj B} (f g : X ⟶ V) :
+    D.doubleLift R f g ≫ V.baseChangeFunctorHom (D.rep V) = f :=
+  R.homEquiv.injective (by
+    rw [homEquiv_comp_baseChangeFunctorHom, doubleRepresentableBy_homEquiv_doubleLift]
+    -- whiskering keeps the `𝒫`-structure and projects the pair of `δ`-structures to its first
+    -- component; the argument is a literal tuple, so this is computed componentwise
+    exact Prod.ext (Functor.Monoidal.whiskerLeft_app_apply_fst _ _)
+      ((Functor.Monoidal.whiskerLeft_app_apply_snd _ _).trans (Functor.Monoidal.fst_app_apply _)))
+
+/-- If `f` and `g` classify the same `𝒫`-structure, the arrow `doubleLift f g` lifts `g` along
+the second projection. -/
+@[reassoc]
+theorem doubleLift_comp_doubleSnd {X : EllObj B} {f g : X ⟶ V}
+    (h : (R.homEquiv f).1 = (R.homEquiv g).1) : D.doubleLift R f g ≫ D.doubleSnd R = g :=
+  R.homEquiv.injective (by
+    rw [homEquiv_comp_doubleSnd, doubleRepresentableBy_homEquiv_doubleLift]
+    -- as above, with the second component of the pair of `δ`-structures
+    exact Prod.ext ((Functor.Monoidal.whiskerLeft_app_apply_fst _ _).trans h)
+      ((Functor.Monoidal.whiskerLeft_app_apply_snd _ _).trans (Functor.Monoidal.snd_app_apply _)))
+
+/-- The two projections of an arrow into the scheme of two rigidifications classify the same
+`𝒫`-structure. -/
+theorem fst_homEquiv_comp_doubleSnd {X : EllObj B} (k : X ⟶ V.baseChangeFunctor.obj (D.rep V)) :
+    (R.homEquiv (k ≫ D.doubleSnd R)).1 = (R.homEquiv (k ≫ V.baseChangeFunctorHom (D.rep V))).1 := by
+  rw [homEquiv_comp_doubleSnd, homEquiv_comp_baseChangeFunctorHom,
+    Functor.Monoidal.whiskerLeft_app_apply_fst, Functor.Monoidal.whiskerLeft_app_apply_fst]
+
+/-- Every arrow into the scheme of two rigidifications is the lift of its two projections. -/
+theorem eq_doubleLift {X : EllObj B} (k : X ⟶ V.baseChangeFunctor.obj (D.rep V)) :
+    k = D.doubleLift R (k ≫ V.baseChangeFunctorHom (D.rep V)) (k ≫ D.doubleSnd R) := by
+  refine (D.doubleRepresentableBy R).homEquiv.injective ?_
+  rw [doubleRepresentableBy_homEquiv_doubleLift, homEquiv_comp_baseChangeFunctorHom,
+    homEquiv_comp_doubleSnd]
+  -- both sides are the triple classified by `k`, read componentwise
+  exact Prod.ext (Functor.Monoidal.whiskerLeft_app_apply_fst _ _).symm
+    (Prod.ext ((Functor.Monoidal.whiskerLeft_app_apply_snd _ _).trans
+        (Functor.Monoidal.fst_app_apply _)).symm
+      ((Functor.Monoidal.whiskerLeft_app_apply_snd _ _).trans
+        (Functor.Monoidal.snd_app_apply _)).symm)
 
 end TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData

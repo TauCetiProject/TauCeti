@@ -231,4 +231,14 @@ theorem linearPoints_smul_iff_exists_linearMap
   · rintro ⟨f, rfl⟩ S c g
     exact linearPointsMap_app_smul R f S c g
 
+/-- Scalar equivariance of a natural transformation of linear point functors forces
+additivity on every test algebra. -/
+theorem linearPoints_add_of_smul (τ : linearPoints R M ⟶ linearPoints R N)
+    (hτ : ∀ (S : CommAlgCat.{max u v} R) (c : S) (g : M →ₗ[R] S),
+      τ.app S (c • g) = c • (τ.app S g : N →ₗ[R] S))
+    (S : CommAlgCat.{max u v} R) (p q : M →ₗ[R] S) :
+    τ.app S (p + q) = τ.app S p + τ.app S q := by
+  obtain ⟨f, rfl⟩ := (linearPoints_smul_iff_exists_linearMap R τ).mp hτ
+  simp only [linearPointsMap_app_apply R f, LinearMap.add_comp]
+
 end TauCeti.SymmetricAlgebra

@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
 
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
+import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 
 /-!
 # Differentiating along a curve in a manifold
@@ -73,9 +74,17 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   family `f : 𝕜 → 𝕜 → M` are the differential of the uncurried family in the coordinate
   directions, and `TauCeti.Manifold.hasMFDerivAt_apply_fst` gives the corresponding derivative
   of the curve `q ↦ w (q, t)` of a map `w : 𝕜 × 𝕜 → M`.
+* `TauCeti.Manifold.mfderiv_comp_snd_apply_one_zero` and
+  `TauCeti.Manifold.mfderiv_comp_snd_apply_zero_one`: the coordinate derivatives of a map
+  `(a, b) ↦ x b` are `0` and the velocity of `x`.
+* `TauCeti.Manifold.mfderiv_apply_one_zero_eq_zero_of_apply_eq` and
+  `TauCeti.Manifold.apply_eq_of_mfderiv_apply_one_zero_eq_zero`: a map of the plane is constant
+  along a horizontal line exactly when its derivative in the first coordinate direction vanishes
+  there.
 * `HasMFDerivAt.fst_curve` and `HasMFDerivAt.snd_curve`:
   the components of a curve in a product move with the components of its velocity.
-* `HasMFDerivAt.hasDerivAt_extChartAt_comp`: a curve read in any fixed extended chart containing
+* `HasMFDerivWithinAt.hasDerivWithinAt_extChartAt_comp` and
+  `HasMFDerivAt.hasDerivAt_extChartAt_comp`: a curve read in any fixed extended chart containing
   its value has the coordinate expression of its velocity as velocity.
 * `TauCeti.Manifold.variationField`: the variation field `V(t) = ∂F/∂s (0, t)` of a two-parameter
   family `F : 𝕜 → 𝕜 → M`, the transverse velocity at `s = 0`; it vanishes where the curves near
@@ -381,6 +390,49 @@ theorem curveVelocityWithin_eq_derivWithin {γ : 𝕜 → F} :
 @[simp]
 theorem curveVelocity_eq_deriv {γ : 𝕜 → F} : curveVelocity 𝓘(𝕜, F) γ t = deriv γ t := by
   rw [← curveVelocityWithin_univ, curveVelocityWithin_eq_derivWithin, derivWithin_univ]
+
+/-- A map `(a, b) ↦ x b` of the plane, which depends only on the second coordinate, has zero
+differential in the direction of the first coordinate. -/
+@[simp]
+theorem mfderiv_comp_snd_apply_one_zero {x : 𝕜 → M} {p : 𝕜 × 𝕜}
+    (hx : MDifferentiableAt 𝓘(𝕜, 𝕜) I x p.2) :
+    mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ x z.2) p (1, 0) = 0 := by
+  have h := curveVelocity_eq_mfderiv_fst (I := I) (f := fun _ b ↦ x b) (u := p.1) (t := p.2)
+    (hx.comp p differentiableAt_snd.mdifferentiableAt)
+  rw [curveVelocity_const] at h
+  exact h.symm
+
+/-- The differential of a map `(a, b) ↦ x b` of the plane in the direction of the second
+coordinate is the velocity of `x`. -/
+@[simp]
+theorem mfderiv_comp_snd_apply_zero_one {x : 𝕜 → M} {p : 𝕜 × 𝕜}
+    (hx : MDifferentiableAt 𝓘(𝕜, 𝕜) I x p.2) :
+    mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ x z.2) p (0, 1) = curveVelocity I x p.2 :=
+  (curveVelocity_eq_mfderiv_snd (I := I) (f := fun _ b ↦ x b) (u := p.1) (t := p.2)
+    (hx.comp p differentiableAt_snd.mdifferentiableAt)).symm
+
+/-- A map `w` of the plane that is constant along the line at height `t` has zero differential
+at `(u, t)` in the direction of the first coordinate. -/
+theorem mfderiv_apply_one_zero_eq_zero_of_apply_eq {w : 𝕜 × 𝕜 → M} {u : 𝕜} {p : M}
+    (hw : MDifferentiableAt 𝓘(𝕜, 𝕜 × 𝕜) I w (u, t)) (h : ∀ q, w (q, t) = p) :
+    mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I w (u, t) (1, 0) = 0 := by
+  have h1 := curveVelocity_eq_mfderiv_fst (f := fun a b ↦ w (a, b)) hw
+  rw [funext h, curveVelocity_const] at h1
+  exact h1.symm
+
+/-- A map `w` of the real plane, differentiable along the line at height `t`, whose differential
+in the direction of the first coordinate vanishes along that line, is constant along that line. -/
+theorem apply_eq_of_mfderiv_apply_one_zero_eq_zero {E H M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
+    [ChartedSpace H M] [IsManifold I 1 M] {w : ℝ × ℝ → M} {t : ℝ}
+    (hw : ∀ s, MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I w (s, t))
+    (h : ∀ s, mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s, t) (1, 0) = 0) (s s' : ℝ) :
+    w (s, t) = w (s', t) := by
+  have hline (r : ℝ) : HasMFDerivAt 𝓘(ℝ, ℝ) I (fun q ↦ w (q, t)) r 0 := by
+    have hr := hasMFDerivAt_apply_fst (hw r)
+    rwa [h r, ContinuousLinearMap.smulRight_zero] at hr
+  exact MDifferentiable.apply_eq_of_mfderiv_eq_zero (fun r ↦ (hline r).mdifferentiableAt)
+    (fun r ↦ (hline r).mfderiv) s s'
 
 /-! ### The variation field of a two-parameter family -/
 
@@ -697,6 +749,34 @@ end TauCeti.Manifold
 
 end
 
+namespace HasMFDerivWithinAt
+
+open TauCeti.Manifold
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {γ : 𝕜 → M} {s : Set 𝕜} {t : 𝕜} {x : M} {w : TangentSpace I (γ t)}
+
+/-- Reading a curve in a fixed extended chart converts its within-set velocity to its
+coordinate expression. This includes derivatives at interval endpoints. -/
+theorem hasDerivWithinAt_extChartAt_comp
+    (hγ : HasMFDerivWithinAt 𝓘(𝕜, 𝕜) I γ s t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w))
+    (hsrc : γ t ∈ (extChartAt I x).source) :
+    HasDerivWithinAt ((extChartAt I x) ∘ γ)
+      (tangentCoordChange I (γ t) x (γ t) w) s t := by
+  replace hsrc := extChartAt_source I x ▸ hsrc
+  have hderiv := TauCeti.Manifold.hasDerivWithinAt_comp_curve
+    (mdifferentiableAt_extChartAt (I := I) hsrc) hγ
+  convert hderiv using 1
+  simp only [mvfderiv]
+  rw [(hasMFDerivAt_extChartAt (I := I) hsrc).mfderiv,
+    mfderiv_chartAt_eq_tangentCoordChange hsrc]
+  rfl
+
+end HasMFDerivWithinAt
+
 namespace HasMFDerivAt
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -735,15 +815,8 @@ that, read in the chart, it solves the coordinate equation of the field. -/
 theorem hasDerivAt_extChartAt_comp [IsManifold I 1 M] {γ : 𝕜 → M} {x : M}
     {w : TangentSpace I (γ t)} (hγ : HasMFDerivAt 𝓘(𝕜, 𝕜) I γ t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w))
     (hsrc : γ t ∈ (extChartAt I x).source) :
-    HasDerivAt ((extChartAt I x) ∘ γ) (tangentCoordChange I (γ t) x (γ t) w) t := by
-  replace hsrc := extChartAt_source I x ▸ hsrc
-  have hderiv := TauCeti.Manifold.hasDerivAt_comp_curve
-    (mdifferentiableAt_extChartAt (I := I) hsrc) hγ
-  convert hderiv using 1
-  simp only [mvfderiv]
-  rw [(hasMFDerivAt_extChartAt (I := I) hsrc).mfderiv,
-    mfderiv_chartAt_eq_tangentCoordChange hsrc]
-  rfl
+    HasDerivAt ((extChartAt I x) ∘ γ) (tangentCoordChange I (γ t) x (γ t) w) t :=
+  (hγ.hasMFDerivWithinAt.hasDerivWithinAt_extChartAt_comp hsrc).hasDerivAt Filter.univ_mem
 
 end HasMFDerivAt
 

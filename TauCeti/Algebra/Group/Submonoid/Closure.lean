@@ -42,12 +42,12 @@ open Set
 
 /-- A family `v`, viewed in the additive submonoid `AddSubmonoid.closure (range v)` it generates,
 generates that submonoid. This is the family form of `AddSubmonoid.closure_closure_coe_preimage`. -/
-theorem closure_range_mk_eq_top {ι M : Type*} [AddMonoid M] (v : ι → M) :
+theorem closure_range_mk_eq_top {ι M : Type*} [AddZeroClass M] (v : ι → M) :
     AddSubmonoid.closure (range fun i ↦ (⟨v i, AddSubmonoid.subset_closure (mem_range_self i)⟩ :
       AddSubmonoid.closure (range v))) = ⊤ := by
   rw [← AddSubmonoid.closure_closure_coe_preimage (s := range v)]
   congr 1
-  ext ⟨m, hm⟩
+  ext
   simp [Subtype.ext_iff]
 
 /-- For finitely many generators `a i` of positive degree in `ℕ`, only finitely many elements of
@@ -86,19 +86,16 @@ variable {κ M : Type*} [Fintype κ] [SubtractionCommMonoid M] (v : κ → M)
 closure of the family. -/
 theorem sum_smul_mem_closure (c : κ → ℤ) (hc : ∀ i, 0 ≤ c i) :
     (∑ i, c i • v i) ∈ AddSubmonoid.closure (range v) := by
-  refine AddSubmonoid.sum_mem _ fun i _ => ?_
-  lift c i to ℕ using hc i with m
-  rw [natCast_zsmul]
-  exact AddSubmonoid.nsmul_mem _ (AddSubmonoid.subset_closure (mem_range_self i)) m
+  refine sum_mem fun i _ ↦ ?_
+  rw [← Int.toNat_of_nonneg (hc i), natCast_zsmul]
+  exact nsmul_mem (AddSubmonoid.subset_closure (mem_range_self i)) _
 
 /-- A combination of a finite family whose integer coefficients all have the same sign lies in the
 additive closure of the family, or its negative does. -/
 theorem sum_smul_mem_or_neg_mem_closure (c : κ → ℤ) (hc : (∀ i, 0 ≤ c i) ∨ (∀ i, c i ≤ 0)) :
     (∑ i, c i • v i) ∈ AddSubmonoid.closure (range v) ∨
       -(∑ i, c i • v i) ∈ AddSubmonoid.closure (range v) := by
-  refine hc.imp (sum_smul_mem_closure v c) fun h => ?_
-  rw [← Finset.sum_neg_distrib]
-  simp only [← neg_zsmul]
-  exact sum_smul_mem_closure v (-c) fun i => Int.neg_nonneg_of_nonpos (h i)
+  refine hc.imp (sum_smul_mem_closure v c) fun h ↦ ?_
+  simpa using sum_smul_mem_closure v (-c) fun i ↦ neg_nonneg.2 (h i)
 
 end TauCeti
