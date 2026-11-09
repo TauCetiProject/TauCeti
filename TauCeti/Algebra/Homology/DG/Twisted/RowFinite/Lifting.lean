@@ -52,8 +52,10 @@ relative boundary bounding it gives the next choice
 (`TauCeti.IsDGLeftModule.exists_mem_of_forall_exists`).
 
 Applied to two semi-free resolutions `ε : K_{mP} → N` and `ε' : K_{mQ} → N` of the same module,
-the lifting properties give continuation cocycles in both directions, with homotopies joining both
-composites to the identity: the cocycles are homologous (`TauCeti.nonempty_rowFiniteHomologous`).
+the lifting properties give continuation cocycles in both directions
+(`TauCeti.exists_rowFiniteContinuationCocycle_homotopy`), with homotopies joining both composites
+to the identity: the cocycles are homologous, compatibly with `ε` and `ε'`
+(`TauCeti.exists_rowFiniteHomologous_homotopy`).
 So for every DG right module `M` the twisted complexes `M ⊗_A K_{mP}` and `M ⊗_A K_{mQ}` are
 homotopy equivalent (`TauCeti.RowFiniteHomologous.homotopyEquiv`), which is the independence of
 the derived tensor product `M ⊗^L_A N` from the semi-free resolution used to compute it. In
@@ -331,10 +333,12 @@ section Homologous
 variable {P Q : Type uP} {indP : P → ℤ} {indQ : Q → ℤ}
   {mP : RowFiniteTwistingCocycle 𝒜 d P indP} {mQ : RowFiniteTwistingCocycle 𝒜 d Q indQ}
 
-/-- The lift up to homotopy of a chain map `ε : K_{mP} → N` along a chain map `ε' : K_{mQ} → N`
-whose relative cycles are relative boundaries, as a continuation cocycle `ν` from `mP` to `mQ`
-and a homotopy `k` from `ε' ∘ ν` to `ε` given on the generators. -/
-private theorem exists_rowFiniteContinuationCocycle_homotopy
+/-- **Lifting between semi-free resolutions.** Let `mP` be semi-free, with well-founded row
+relation, and let `ε : K_{mP} → N` and `ε' : K_{mQ} → N` be chain maps to a DG left module, where
+the relative cycles of `ε'` are relative boundaries. Then `ε` lifts up to homotopy along `ε'`: there
+are a continuation cocycle `ν` from `mP` to `mQ` and a homotopy `k`, of degree `-1` and given on
+the generators, from `ε' ∘ ν` to `ε`. -/
+theorem exists_rowFiniteContinuationCocycle_homotopy
     (hmP : WellFounded fun y x ↦ y ∈ (mP.m x).support)
     (hN : IsDGLeftModule hA 𝒩 dN) {ε : P → N} {ε' : Q → N}
     (hε : ∀ x, ε x ∈ 𝒩 (-indP x)) (hε' : ∀ y, ε' y ∈ 𝒩 (-indQ y))
@@ -418,8 +422,10 @@ private theorem nonempty_rowFiniteParametrizedCocycle_refl_comp
 `ε' : K_{mQ} → N` be chain maps from two semi-free row-finite twisted modules, with well-founded
 row relations, to the same DG left module, whose relative cycles are relative
 boundaries. Then `mP` and `mQ` are homologous, so their twisted complexes with coefficients in
-any DG right module are homotopy equivalent (`TauCeti.RowFiniteHomologous.homotopyEquiv`). -/
-theorem nonempty_rowFiniteHomologous
+any DG right module are homotopy equivalent (`TauCeti.RowFiniteHomologous.homotopyEquiv`).
+The equivalence is compatible with the resolutions: a homotopy `k`, of degree `-1` and given on
+the generators, joins `ε' ∘ ν` to `ε`, where `ν` is the continuation cocycle from `mP` to `mQ`. -/
+theorem exists_rowFiniteHomologous_homotopy
     (hmP : WellFounded fun y x ↦ y ∈ (mP.m x).support)
     (hmQ : WellFounded fun y x ↦ y ∈ (mQ.m x).support)
     (hN : IsDGLeftModule hA 𝒩 dN) {ε : P → N} {ε' : Q → N}
@@ -434,7 +440,9 @@ theorem nonempty_rowFiniteHomologous
       linearCombination A ε' c = dN w →
         ∃ u v, rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m u = c ∧
           linearCombination A ε' u + dN v = w) :
-    Nonempty (RowFiniteHomologous hA mP mQ) := by
+    ∃ (H : RowFiniteHomologous hA mP mQ) (k : P → N), (∀ x, k x ∈ 𝒩 (-indP x - 1)) ∧
+      ∀ x, dN (k x) + rowFiniteSignedMap (𝒜 := 𝒜) k (mP.m x) =
+        ε x - linearCombination A ε' (H.ν.ν x) := by
   obtain ⟨c, k, hk, hkd⟩ :=
     exists_rowFiniteContinuationCocycle_homotopy hmP hN hε hε' hεd hε'rel
   obtain ⟨c', k', hk', hk'd⟩ :=
@@ -443,7 +451,7 @@ theorem nonempty_rowFiniteHomologous
     hk hkd hk' hk'd
   obtain ⟨homP⟩ := nonempty_rowFiniteParametrizedCocycle_refl_comp hmP hN hε hεrel c' c
     hk' hk'd hk hkd
-  exact ⟨⟨c, c', homP, homQ⟩⟩
+  exact ⟨⟨c, c', homP, homQ⟩, k, hk, hkd⟩
 
 /-- **A quasi-isomorphism of semi-free twisted modules is a homotopy equivalence.** Let `mP` and
 `mQ` be semi-free, with well-founded row relations, and let `ν` be a continuation cocycle
