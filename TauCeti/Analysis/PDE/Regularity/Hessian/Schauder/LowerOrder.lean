@@ -255,7 +255,7 @@ theorem
   have hHle : (H : ℝ) ≤ C₀ * (K₀ + N) := by exact_mod_cast hH₀.nnholderNorm_le
   have habs : 2 * C₀ * β * e * H ≤ 1 / 2 * H := mul_le_mul_of_nonneg_right hεC H.coe_nonneg
   have hbound : (C₀ : ℝ) * (K₀ + N) ≤ 2 * C₀ * (1 + γ) * (K + N) :=
-    mul_le_two_mul_one_add_mul_of_absorb C₀.coe_nonneg K.coe_nonneg N.coe_nonneg hγ hK₀
+    mul_add_le_two_mul_one_add_mul_add C₀.coe_nonneg K.coe_nonneg N.coe_nonneg hγ hK₀
       hHle habs
   have hC : (2 * C₀ * (1 + γ)) * (K + N) ≤ (((2 * C₀ * (1 + γ)).toNNReal : ℝ≥0) : ℝ) * (K + N) :=
     mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal _) (by positivity)
