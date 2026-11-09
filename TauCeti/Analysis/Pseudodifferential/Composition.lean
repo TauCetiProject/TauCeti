@@ -47,7 +47,8 @@ composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic ex
 * `TauCeti.Symbol.sharpSubComp`, `TauCeti.Symbol.sharp_eq_comp_add_inclusion_sharpSubComp`:
   **the leading term**. For complete `W` and `U`, `a # b - a ∘ b` is a symbol of order
   `m' + m - 1`, so `a # b = a ∘ b` modulo symbols of one order lower.
-* `TauCeti.Symbol.exists_coefficient_eq_sharp_sub_sharp`: if the values of `a` and `b` commute
+* `TauCeti.Symbol.exists_coefficient_eq_sharp_sub_sharp`: if `a` and `b` both have compact
+  spatial support, take values in operators on the same complete space, and their values commute
   pointwise, for instance for scalar symbols, the commutator symbol `a # b - b # a` has order
   `m' + m - 1`.
 
@@ -504,20 +505,40 @@ private theorem contDiff_compCoeff (hb : b.HasCompactSpatialSupport) :
       (ContDiff.sum fun j _ ↦ ((ih (a := Symbol.frequencyDeriv j a) hb).add
         (ih (a := a) (hb.frequencyDeriv j))).const_smul _)
 
-/-- The symbol estimates of order `m' + m` for the composition coefficient, by induction on the
-number of derivatives: each derivative falls on one of the two symbols by the Leibniz rules, and a
-frequency derivative lowers the order of that symbol by one. -/
-private theorem exists_bound_compCoeff (N : ℕ) :
-    ∀ {m m' : ℝ} (a : Symbol n W U m') (b : Symbol n V W m), b.HasCompactSpatialSupport →
+/-- The symbol estimates of order `m' + m + k` for a family `F a b hb` of smooth coefficients
+that obeys the Leibniz rules of the composition coefficient, by induction on the number of
+derivatives: each derivative falls on one of the two symbols, and a frequency derivative lowers the
+order of that symbol by one. -/
+private theorem exists_bound_of_leibniz (k : ℝ)
+    (F : ∀ {m m' : ℝ}, Symbol n W U m' → (b : Symbol n V W m) → b.HasCompactSpatialSupport →
+      CoordinateSpace n × CoordinateSpace n → V →L[ℂ] U)
+    (hF : ∀ {m m' : ℝ} (a : Symbol n W U m') (b : Symbol n V W m)
+      (hb : b.HasCompactSpatialSupport), ContDiff ℝ ∞ (F a b hb))
+    (h₀ : ∀ {m m' : ℝ} (a : Symbol n W U m') (b : Symbol n V W m)
+      (hb : b.HasCompactSpatialSupport) {K : Set (CoordinateSpace n)}, IsCompact K →
+        ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖F a b hb (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m + k) / 2))
+    (hspatial : ∀ {m m' : ℝ} (a : Symbol n W U m') (b : Symbol n V W m)
+      (hb : b.HasCompactSpatialSupport) (j : Fin n),
+        (fun q : CoordinateSpace n × CoordinateSpace n ↦
+          coordinateDeriv [j] (fun y ↦ F a b hb (y, q.2)) q.1) =
+            F (Symbol.spatialDeriv j a) b hb + F a (Symbol.spatialDeriv j b) (hb.spatialDeriv j))
+    (hfreq : ∀ {m m' : ℝ} (a : Symbol n W U m') (b : Symbol n V W m)
+      (hb : b.HasCompactSpatialSupport) (j : Fin n),
+        (fun q : CoordinateSpace n × CoordinateSpace n ↦
+          coordinateDeriv [j] (fun η ↦ F a b hb (q.1, η)) q.2) =
+            F (Symbol.frequencyDeriv j a) b hb +
+              F a (Symbol.frequencyDeriv j b) (hb.frequencyDeriv j))
+    (N : ℕ) :
+    ∀ {m m' : ℝ} (a : Symbol n W U m') (b : Symbol n V W m) (hb : b.HasCompactSpatialSupport),
       ∀ α β : List (Fin n), α.length + β.length = N → ∀ K : Set (CoordinateSpace n),
         IsCompact K → ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
-          ‖mixedDeriv α β (compCoeff a b) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
+          ‖mixedDeriv α β (F a b hb) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m + k - β.length) / 2) := by
   induction N with
   | zero =>
     intro m m' a b hb α β hN K hK
     obtain ⟨rfl, rfl⟩ : α = [] ∧ β = [] := by
       simpa [List.length_eq_zero_iff] using hN
-    obtain ⟨C, hC0, hC⟩ := exists_norm_compCoeff_le (a := a) hb hK
+    obtain ⟨C, hC0, hC⟩ := h₀ a b hb hK
     exact ⟨C, hC0, fun x hx ξ ↦ by simpa using hC x hx ξ⟩
   | succ N ih =>
     intro m m' a b hb α β hN K hK
@@ -531,13 +552,9 @@ private theorem exists_bound_compCoeff (N : ℕ) :
         obtain ⟨C₂, hC₂0, hC₂⟩ :=
           ih a (Symbol.spatialDeriv j b) (hb.spatialDeriv j) α' [] hlen K hK
         refine ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun x hx ξ ↦ ?_⟩
-        have hfun : (fun q : CoordinateSpace n × CoordinateSpace n ↦
-            coordinateDeriv [j] (fun y ↦ compCoeff a b (y, q.2)) q.1) =
-              compCoeff (Symbol.spatialDeriv j a) b + compCoeff a (Symbol.spatialDeriv j b) :=
-          funext fun q ↦ coordinateDeriv_fst_compCoeff hb j q.1 q.2
-        rw [← mixedDeriv_coordinateDeriv_fst (contDiff_compCoeff hb), hfun]
-        exact norm_mixedDeriv_add_le (contDiff_compCoeff hb)
-          (contDiff_compCoeff (hb.spatialDeriv j)) (hC₁ x hx ξ) (hC₂ x hx ξ)
+        rw [← mixedDeriv_coordinateDeriv_fst (hF a b hb), hspatial a b hb j]
+        exact norm_mixedDeriv_add_le (hF _ b hb) (hF a _ (hb.spatialDeriv j))
+          (hC₁ x hx ξ) (hC₂ x hx ξ)
     · have hlen : α.length + β'.length = N := by
         simp only [List.length_append, List.length_singleton] at hN
         omega
@@ -545,23 +562,29 @@ private theorem exists_bound_compCoeff (N : ℕ) :
       obtain ⟨C₂, hC₂0, hC₂⟩ :=
         ih a (Symbol.frequencyDeriv j b) (hb.frequencyDeriv j) α β' hlen K hK
       refine ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun x hx ξ ↦ ?_⟩
-      have hfun : (fun q : CoordinateSpace n × CoordinateSpace n ↦
-          coordinateDeriv [j] (fun η ↦ compCoeff a b (q.1, η)) q.2) =
-            compCoeff (Symbol.frequencyDeriv j a) b + compCoeff a (Symbol.frequencyDeriv j b) :=
-        funext fun q ↦ coordinateDeriv_snd_compCoeff hb j q.1 q.2
-      have e₁ : (m' - 1 + m - β'.length) / 2 = (m' + m - (β' ++ [j]).length) / 2 := by
+      have e₁ : (m' - 1 + m + k - β'.length) / 2 = (m' + m + k - (β' ++ [j]).length) / 2 := by
         simp only [List.length_append, List.length_singleton, Nat.cast_add, Nat.cast_one]
         ring
-      have e₂ : (m' + (m - 1) - β'.length) / 2 = (m' + m - (β' ++ [j]).length) / 2 := by
+      have e₂ : (m' + (m - 1) + k - β'.length) / 2 = (m' + m + k - (β' ++ [j]).length) / 2 := by
         simp only [List.length_append, List.length_singleton, Nat.cast_add, Nat.cast_one]
         ring
       have h₁ := hC₁ x hx ξ
       have h₂ := hC₂ x hx ξ
       rw [e₁] at h₁
       rw [e₂] at h₂
-      rw [← mixedDeriv_coordinateDeriv_snd, hfun]
-      exact norm_mixedDeriv_add_le (contDiff_compCoeff hb)
-        (contDiff_compCoeff (hb.frequencyDeriv j)) h₁ h₂
+      rw [← mixedDeriv_coordinateDeriv_snd, hfreq a b hb j]
+      exact norm_mixedDeriv_add_le (hF _ b hb) (hF a _ (hb.frequencyDeriv j)) h₁ h₂
+
+/-- The symbol estimates of order `m' + m` for the composition coefficient. -/
+private theorem exists_bound_compCoeff (hb : b.HasCompactSpatialSupport) (α β : List (Fin n))
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (compCoeff a b) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
+  simpa only [add_zero] using exists_bound_of_leibniz 0 (fun a b _ ↦ compCoeff a b)
+    (fun _ _ hb ↦ contDiff_compCoeff hb)
+    (fun a _ hb _ hK ↦ by simpa only [add_zero] using exists_norm_compCoeff_le (a := a) hb hK)
+    (fun _ _ hb j ↦ funext fun q ↦ coordinateDeriv_fst_compCoeff hb j q.1 q.2)
+    (fun _ _ hb j ↦ funext fun q ↦ coordinateDeriv_snd_compCoeff hb j q.1 q.2)
+    _ a b hb α β rfl K hK
 
 end Integrand
 
@@ -584,7 +607,7 @@ is only its leading term. -/
 def sharp (hb : b.HasCompactSpatialSupport) : Symbol n V U (m' + m) where
   coefficient := compCoeff a b
   contDiff_coefficient := contDiff_compCoeff hb
-  exists_bound K hK α β := exists_bound_compCoeff _ a b hb α β rfl K hK
+  exists_bound _ hK α β := exists_bound_compCoeff hb α β hK
 
 @[simp]
 theorem coefficient_sharp (hb : b.HasCompactSpatialSupport) (x ξ : CoordinateSpace n) :
@@ -868,63 +891,71 @@ theorem coefficient_sharp_sub_comp (hb : b.HasCompactSpatialSupport) (x ξ : Coo
   simp only [compIntegrand, ContinuousLinearMap.compL_apply, ContinuousLinearMap.comp_smul,
     ContinuousLinearMap.sub_comp, smul_sub]
 
+omit [CompleteSpace W] [CompleteSpace U] in
+/-- The integrand of `coefficient_sharp_sub_comp` is at most `A ⟨ξ⟩ ^ (m' + m - 1) ⟨η⟩ ^ (-(n + 1))`
+for positions in a compact set. -/
+private theorem exists_norm_sharp_sub_comp_integrand_le (hb : b.HasCompactSpatialSupport)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+    ∃ A, 0 ≤ A ∧ ∀ x ∈ K, ∀ ξ η, ‖(𝐞 ⟪η, x⟫ : ℂ) •
+      (a.coefficient (x, ξ + (2 * π) • η) - a.coefficient (x, ξ)).comp
+        (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)‖ ≤
+      A * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - 1) / 2) * (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
+  obtain ⟨Ca, hCa0, hCa⟩ := a.exists_norm_coefficient_add_sub_le hK
+  set s := |m' - 1| with hs
+  have hs0 : 0 ≤ s := abs_nonneg _
+  -- `b̂` decays fast enough to absorb the factor `‖η‖ ⟨η⟩ ^ s` coming from the increment of `a`.
+  obtain ⟨Cb, hCb0, hCb⟩ := hb.exists_norm_fourier_slice_le ((n : ℝ) + 1 + s + 1)
+  have h2π : (1 : ℝ) ≤ 2 * π := by linarith [Real.two_le_pi]
+  set A := Ca * (2 * π) * (2 * π) ^ s * Cb
+  refine ⟨A, by positivity, fun x hx ξ η ↦ ?_⟩
+  have hξ : (1 + ‖ξ‖ ^ 2) ^ ((m' - 1) / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) =
+      (1 + ‖ξ‖ ^ 2) ^ ((m' + m - 1) / 2) := by
+    rw [← Real.rpow_add (by positivity)]
+    ring_nf
+  have hη : (1 + ‖η‖ ^ 2) ^ (s / 2) *
+      (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1 + s + 1) / 2) * ‖η‖ ≤
+        (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
+    have h := one_add_norm_sq_rpow_mul_norm_le η (-((n : ℝ) + 2))
+    rw [← Real.rpow_add (by positivity)]
+    convert h using 3 <;> ring
+  have hnorm : ‖(2 * π) • η‖ = 2 * π * ‖η‖ := by
+    rw [norm_smul, Real.norm_of_nonneg Real.two_pi_pos.le]
+  -- Since `1 ≤ 2π`, the scaled bracket satisfies `⟨2πη⟩ ^ s ≤ (2π) ^ s ⟨η⟩ ^ s`.
+  have hscale := one_add_norm_sq_rpow_le_of_norm_eq_mul h2π s hnorm
+  rw [hs, abs_abs, ← hs, hnorm] at hscale
+  -- Bound the increment of `a` and `b̂` separately, then collect the powers of `⟨ξ⟩` and `⟨η⟩`.
+  calc _ ≤ ‖a.coefficient (x, ξ + (2 * π) • η) - a.coefficient (x, ξ)‖ *
+        ‖𝓕 (fun y ↦ b.coefficient (y, ξ)) η‖ := by
+        rw [norm_smul, Circle.norm_coe, one_mul]
+        exact ContinuousLinearMap.opNorm_comp_le _ _
+    _ ≤ (Ca * (2 * π * ‖η‖) * (1 + ‖ξ‖ ^ 2) ^ ((m' - 1) / 2) *
+          ((2 * π) ^ s * (1 + ‖η‖ ^ 2) ^ (s / 2))) *
+        (Cb * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1 + s + 1) / 2)) := by
+        gcongr
+        · refine (hCa x hx ξ ((2 * π) • η)).trans ?_
+          rw [hnorm]
+          gcongr
+        · exact hCb η ξ
+    _ = A * ((1 + ‖ξ‖ ^ 2) ^ ((m' - 1) / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) *
+        ((1 + ‖η‖ ^ 2) ^ (s / 2) * (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1 + s + 1) / 2) * ‖η‖) := by
+        ring
+    _ ≤ _ := by
+        rw [hξ]
+        gcongr
+
 /-- The base case of the estimates of `a # b - a ∘ b`: `‖(a # b - a ∘ b)(x, ξ)‖` is at most
 `C ⟨ξ⟩ ^ (m' + m - 1)` for positions in a compact set. -/
 private theorem exists_norm_coefficient_sharp_sub_comp_le (hb : b.HasCompactSpatialSupport)
     {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖(a.sharp b hb - a.comp b).coefficient (x, ξ)‖ ≤
       C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - 1) / 2) := by
-  obtain ⟨Ca, hCa0, hCa⟩ := a.exists_norm_coefficient_add_sub_le hK
-  set s := |m' - 1| with hs
-  have hs0 : 0 ≤ s := abs_nonneg _
-  obtain ⟨Cb, hCb0, hCb⟩ := hb.exists_norm_fourier_slice_le ((n : ℝ) + 1 + s + 1)
+  obtain ⟨A, hA, hpt⟩ := exists_norm_sharp_sub_comp_integrand_le (a := a) hb hK
   set I := ∫ η : CoordinateSpace n, (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2)
   have hI : 0 ≤ I := integral_nonneg fun η ↦ by positivity
-  have h2π : (1 : ℝ) ≤ 2 * π := by linarith [Real.two_le_pi]
-  set A := Ca * (2 * π) * (2 * π) ^ s * Cb
-  have hA : 0 ≤ A := by positivity
   refine ⟨A * I, mul_nonneg hA hI, fun x hx ξ ↦ ?_⟩
-  have hξ : (1 + ‖ξ‖ ^ 2) ^ ((m' - 1) / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) =
-      (1 + ‖ξ‖ ^ 2) ^ ((m' + m - 1) / 2) := by
-    rw [← Real.rpow_add (by positivity)]
-    ring_nf
-  have hη (η : CoordinateSpace n) : (1 + ‖η‖ ^ 2) ^ (s / 2) *
-      (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1 + s + 1) / 2) * ‖η‖ ≤
-        (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
-    have h := one_add_norm_sq_rpow_mul_norm_le η (-((n : ℝ) + 2))
-    rw [← Real.rpow_add (by positivity)]
-    convert h using 3 <;> ring
-  have hpt (η : CoordinateSpace n) : ‖(𝐞 ⟪η, x⟫ : ℂ) •
-      (a.coefficient (x, ξ + (2 * π) • η) - a.coefficient (x, ξ)).comp
-        (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)‖ ≤
-      A * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - 1) / 2) * (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
-    have hscale := one_add_norm_sq_rpow_le_of_norm_eq_mul h2π s (x := (2 * π) • η) (y := η)
-      (by rw [norm_smul, Real.norm_of_nonneg Real.two_pi_pos.le])
-    rw [hs, abs_abs, ← hs] at hscale
-    have hnorm : ‖(2 * π) • η‖ = 2 * π * ‖η‖ := by
-      rw [norm_smul, Real.norm_of_nonneg Real.two_pi_pos.le]
-    calc _ ≤ ‖a.coefficient (x, ξ + (2 * π) • η) - a.coefficient (x, ξ)‖ *
-          ‖𝓕 (fun y ↦ b.coefficient (y, ξ)) η‖ := by
-          rw [norm_smul, Circle.norm_coe, one_mul]
-          exact ContinuousLinearMap.opNorm_comp_le _ _
-      _ ≤ (Ca * (2 * π * ‖η‖) * (1 + ‖ξ‖ ^ 2) ^ ((m' - 1) / 2) *
-            ((2 * π) ^ s * (1 + ‖η‖ ^ 2) ^ (s / 2))) *
-          (Cb * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1 + s + 1) / 2)) := by
-          gcongr
-          · refine (hCa x hx ξ ((2 * π) • η)).trans ?_
-            rw [hnorm] at hscale ⊢
-            gcongr
-          · exact hCb η ξ
-      _ = A * ((1 + ‖ξ‖ ^ 2) ^ ((m' - 1) / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) *
-          ((1 + ‖η‖ ^ 2) ^ (s / 2) * (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1 + s + 1) / 2) * ‖η‖) := by
-          ring
-      _ ≤ _ := by
-          rw [hξ]
-          gcongr
-          exact hη η
   rw [coefficient_sharp_sub_comp]
   refine (norm_integral_le_of_norm_le (integrable_weight.const_mul
-    (A * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - 1) / 2))) (.of_forall hpt)).trans_eq ?_
+    (A * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - 1) / 2))) (.of_forall (hpt x hx ξ))).trans_eq ?_
   rw [integral_const_mul]
   ring
 
@@ -950,53 +981,22 @@ private theorem coefficient_frequencyDeriv_sharp_sub_comp (hb : b.HasCompactSpat
   simp only [coefficient_add, coefficient_sub, coefficient_inclusion, Pi.add_apply, Pi.sub_apply]
   abel
 
-/-- The symbol estimates of order `m' + m - 1` for `a # b - a ∘ b`, by induction on the number of
-derivatives as in `exists_bound_compCoeff`. -/
-private theorem exists_bound_sharp_sub_comp (N : ℕ) :
-    ∀ {m m' : ℝ} (a : Symbol n W U m') (b : Symbol n V W m) (hb : b.HasCompactSpatialSupport),
-      ∀ α β : List (Fin n), α.length + β.length = N → ∀ K : Set (CoordinateSpace n),
-        IsCompact K → ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
-          ‖mixedDeriv α β (a.sharp b hb - a.comp b).coefficient x ξ‖ ≤
-            C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - 1 - β.length) / 2) := by
-  induction N with
-  | zero =>
-    intro m m' a b hb α β hN K hK
-    obtain ⟨rfl, rfl⟩ : α = [] ∧ β = [] := by
-      simpa [List.length_eq_zero_iff] using hN
-    obtain ⟨C, hC0, hC⟩ := exists_norm_coefficient_sharp_sub_comp_le (a := a) hb hK
-    exact ⟨C, hC0, fun x hx ξ ↦ by simpa using hC x hx ξ⟩
-  | succ N ih =>
-    intro m m' a b hb α β hN K hK
-    rcases List.eq_nil_or_concat' β with rfl | ⟨β', j, rfl⟩
-    · rcases List.eq_nil_or_concat' α with rfl | ⟨α', j, rfl⟩
-      · simp at hN
-      · have hlen : α'.length + ([] : List (Fin n)).length = N := by
-          simp only [List.length_append, List.length_singleton, List.length_nil] at hN ⊢
-          omega
-        obtain ⟨C₁, hC₁0, hC₁⟩ := ih (spatialDeriv j a) b hb α' [] hlen K hK
-        obtain ⟨C₂, hC₂0, hC₂⟩ := ih a (spatialDeriv j b) (hb.spatialDeriv j) α' [] hlen K hK
-        refine ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun x hx ξ ↦ ?_⟩
-        rw [← mixedDeriv_spatialDeriv, spatialDeriv_sharp_sub_comp hb j, coefficient_add]
-        exact norm_mixedDeriv_add_le (contDiff_coefficient _) (contDiff_coefficient _)
-          (hC₁ x hx ξ) (hC₂ x hx ξ)
-    · have hlen : α.length + β'.length = N := by
-        simp only [List.length_append, List.length_singleton] at hN
-        omega
-      obtain ⟨C₁, hC₁0, hC₁⟩ := ih (frequencyDeriv j a) b hb α β' hlen K hK
-      obtain ⟨C₂, hC₂0, hC₂⟩ := ih a (frequencyDeriv j b) (hb.frequencyDeriv j) α β' hlen K hK
-      refine ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun x hx ξ ↦ ?_⟩
-      have e₁ : (m' - 1 + m - 1 - β'.length) / 2 = (m' + m - 1 - (β' ++ [j]).length) / 2 := by
-        simp only [List.length_append, List.length_singleton, Nat.cast_add, Nat.cast_one]
-        ring
-      have e₂ : (m' + (m - 1) - 1 - β'.length) / 2 = (m' + m - 1 - (β' ++ [j]).length) / 2 := by
-        simp only [List.length_append, List.length_singleton, Nat.cast_add, Nat.cast_one]
-        ring
-      have h₁ := hC₁ x hx ξ
-      have h₂ := hC₂ x hx ξ
-      rw [e₁] at h₁
-      rw [e₂] at h₂
-      rw [← mixedDeriv_frequencyDeriv, coefficient_frequencyDeriv_sharp_sub_comp hb j]
-      exact norm_mixedDeriv_add_le (contDiff_coefficient _) (contDiff_coefficient _) h₁ h₂
+/-- The symbol estimates of order `m' + m - 1` for `a # b - a ∘ b`. -/
+private theorem exists_bound_sharp_sub_comp (hb : b.HasCompactSpatialSupport) (α β : List (Fin n))
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (a.sharp b hb - a.comp b).coefficient x ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - 1 - β.length) / 2) := by
+  simpa only [← sub_eq_add_neg] using
+    exists_bound_of_leibniz (-1) (fun a b hb ↦ (a.sharp b hb - a.comp b).coefficient)
+      (fun a b hb ↦ (a.sharp b hb - a.comp b).contDiff_coefficient)
+      (fun a _ hb _ hK ↦ by
+        simpa only [← sub_eq_add_neg] using
+          exists_norm_coefficient_sharp_sub_comp_le (a := a) hb hK)
+      (fun _ _ hb j ↦ funext fun q ↦ (coefficient_spatialDeriv j _ q.1 q.2).symm.trans
+        (congrFun ((congrArg coefficient (spatialDeriv_sharp_sub_comp hb j)).trans
+          (coefficient_add _ _)) q))
+      (fun _ _ hb j ↦ funext fun q ↦ (coefficient_frequencyDeriv j _ q.1 q.2).symm.trans
+        (congrFun (coefficient_frequencyDeriv_sharp_sub_comp hb j) q)) _ a b hb α β rfl K hK
 
 variable (a b) in
 /-- The difference `a # b - a ∘ b` between the composition symbol and the pointwise composition,
@@ -1005,7 +1005,7 @@ composition symbol. -/
 def sharpSubComp (hb : b.HasCompactSpatialSupport) : Symbol n V U (m' + m - 1) where
   coefficient := (a.sharp b hb - a.comp b).coefficient
   contDiff_coefficient := (a.sharp b hb - a.comp b).contDiff_coefficient
-  exists_bound K hK α β := exists_bound_sharp_sub_comp _ a b hb α β rfl K hK
+  exists_bound _ hK α β := exists_bound_sharp_sub_comp hb α β hK
 
 @[simp]
 theorem coefficient_sharpSubComp (hb : b.HasCompactSpatialSupport)
