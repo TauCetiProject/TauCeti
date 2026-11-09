@@ -195,7 +195,7 @@ variations. -/
 does not change permanences minus variations, provided the first entry of the tail is nonzero and,
 when the gap has even length, `h` and `c` have together the sign of `h'`. -/
 theorem _root_.List.permanencesMinusVariations_cons_replicate_zero_append_map_mul_left
-    {K : Type*} [CommRing K] [LinearOrder K] [IsStrictOrderedRing K] {h h' c a : K}
+    {K : Type*} [Ring K] [LinearOrder K] [IsStrictOrderedRing K] {h h' c a : K}
     (hc : c ≠ 0) (ha : a ≠ 0) (k : ℕ) (l : List K)
     (hsign : Even k → (SignType.sign h : ℤ) * SignType.sign c = SignType.sign h') :
     (h :: (List.replicate k 0 ++ (a :: l).map (c * ·))).permanencesMinusVariations =
