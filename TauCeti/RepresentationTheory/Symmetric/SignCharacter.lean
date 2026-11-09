@@ -87,9 +87,11 @@ theorem signLinearCharacter_mul_self {k : Type u} [CommRing k] :
 
 /-- **The sign character is invariant under relabelling**: pulling it back along the identification
 of the symmetric groups of two types gives the sign character of the first. -/
+@[simp]
 theorem signLinearCharacter_comp_permCongrHom {β : Type*} [DecidableEq β] [Fintype β]
     (e : α ≃ β) :
-    (signLinearCharacter k β).comp e.permCongrHom.toMonoidHom = signLinearCharacter k α := by
+    (signLinearCharacter k β).comp (e.permCongrHom : Equiv.Perm α →* Equiv.Perm β) =
+      signLinearCharacter k α := by
   ext σ
   simp [Equiv.Perm.sign_permCongr]
 

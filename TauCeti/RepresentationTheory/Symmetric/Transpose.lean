@@ -153,6 +153,7 @@ theorem signTransposeAlgEquiv_youngSymmetrizer (t : YoungTableau μ) :
 
 /-- **Applying the sign-transpose isomorphism twice cancels the signs**, leaving the identification
 of the labels of `μ` with those of `μᵗᵗ`. -/
+@[simp]
 theorem signTransposeAlgEquiv_transpose_apply (x : MonoidAlgebra R (Equiv.Perm (Fin μ.card))) :
     signTransposeAlgEquiv R μ.transpose (signTransposeAlgEquiv R μ x) =
       MonoidAlgebra.domCongr R R

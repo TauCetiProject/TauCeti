@@ -256,6 +256,7 @@ def spechtSubrepresentationTensorSignEquiv (t : YoungTableau μ) :
 
 /-- On a pure tensor, the equivalence `S^μ ⊗ sgn ≃ S^(μᵗ)` chosen by `t` is `F_t` read through the
 comparisons of the two Specht modules with their Young-symmetrizer ideals. -/
+@[simp]
 theorem spechtSubrepresentationTensorSignEquiv_tmul (t : YoungTableau μ)
     (v : (spechtSubrepresentation (R := ℚ) μ).toSubmodule) (r : ℚ) :
     spechtSubrepresentationTensorSignEquiv t (v ⊗ₜ[ℚ] r) =
