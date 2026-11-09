@@ -39,7 +39,7 @@ This isomorphism turns multiplication of deep units into addition on `𝓂[K] ^ 
 * `TauCeti.deepUnitExpLogEquiv`: the isomorphism of topological groups
   `U(K,i) ≃ₜ* Multiplicative (𝓂[K] ^ i)` given by the logarithm, with the exponential as inverse.
 * `TauCeti.exists_mem_unitFiltration_log_eq_smul`: every element of `K` has a nonzero
-  `ℚ_p`-multiple which is the logarithm of a deep unit.
+  `ℚ_p`-multiple which is the logarithm of a unit in `U(K,i)`, a deep unit for large `i`.
 
 ## References
 
@@ -151,16 +151,22 @@ theorem coe_deepUnitExpLogEquiv_symm_apply (hi : absoluteRamificationIndex K p <
   coe_deepUnitExp hi x.toAdd
 
 /-- **Deep logarithms in every direction.** Every element `z` of `K` has a nonzero `ℚ_p`-multiple
-which is the logarithm of a deep unit in `U(K,i)`: a nonzero element of `𝒪[ℚ_p]` carries `z` into
-`𝒪[K]`, a further factor `p ^ i` carries it into `𝓂[K] ^ i`, and every element of `𝓂[K] ^ i` is
-the logarithm of a deep unit. -/
-theorem exists_mem_unitFiltration_log_eq_smul (hi : absoluteRamificationIndex K p < (p - 1) * i)
-    (z : K) : ∃ u ∈ unitFiltration K i, ∃ c : ℚ_[p], c ≠ 0 ∧ log (u : K) = c • z := by
+which is the logarithm of a unit in `U(K,i)`. For `i` beyond the ramification bound this is a deep
+unit: a nonzero element of `𝒪[ℚ_p]` carries `z` into `𝒪[K]`, a further factor `p ^ j` carries it
+into `𝓂[K] ^ j`, and every element of `𝓂[K] ^ j` is the logarithm of a deep unit. For smaller `i`
+it follows by passing to the deeper level `j = max i (e + 1)` and using that `U(K,j) ≤ U(K,i)`. -/
+theorem exists_mem_unitFiltration_log_eq_smul (z : K) :
+    ∃ u ∈ unitFiltration K i, ∃ c : ℚ_[p], c ≠ 0 ∧ log (u : K) = c • z := by
+  set j := max i (absoluteRamificationIndex K p + 1)
+  have hi : absoluteRamificationIndex K p < (p - 1) * j :=
+    (Nat.lt_succ_self _).trans_le <| (le_max_right _ _).trans <|
+      Nat.le_mul_of_pos_left _ (Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt)
   obtain ⟨a, ha, haz⟩ := exists_algebraMap_mul_mem_integerRing ℚ_[p] K z
-  set w : (𝓂[K] ^ i : Ideal 𝒪[K]) := ⟨(p : 𝒪[K]) ^ i * ⟨_, haz⟩,
-    Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow (residuePrime_mem_maximalIdeal K p) i)⟩
-  refine ⟨(deepUnitExpLogEquiv K hi).symm (Multiplicative.ofAdd w), SetLike.coe_mem _,
-    (p : ℚ_[p]) ^ i * a, mul_ne_zero (pow_ne_zero _ (Nat.cast_ne_zero.mpr
+  set w : (𝓂[K] ^ j : Ideal 𝒪[K]) := ⟨(p : 𝒪[K]) ^ j * ⟨_, haz⟩,
+    Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow (residuePrime_mem_maximalIdeal K p) j)⟩
+  refine ⟨(deepUnitExpLogEquiv K hi).symm (Multiplicative.ofAdd w),
+    unitFiltration_antitone (le_max_left _ _) (SetLike.coe_mem _),
+    (p : ℚ_[p]) ^ j * a, mul_ne_zero (pow_ne_zero _ (Nat.cast_ne_zero.mpr
       (Fact.out : p.Prime).ne_zero)) (by simpa using ha), ?_⟩
   rw [← coe_deepUnitExpLogEquiv_apply hi, ContinuousMulEquiv.apply_symm_apply]
   simp [w, Algebra.smul_def, mul_assoc]

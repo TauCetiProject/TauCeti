@@ -125,7 +125,8 @@ private theorem exists_linearIndependent_padicCompletionUnitsOf_conj :
   set nb := IsGalois.normalBasis K L
   -- Deep units `u k` whose logarithms are nonzero multiples of `b k • α` for the normal basis
   -- generator `α = nb 1`, and their conjugates `v (k, σ) = σ (u k)`.
-  choose u hu c hc hlog using fun k ↦ exists_mem_unitFiltration_log_eq_smul hi (b k • nb 1)
+  choose u hu c hc hlog using fun k ↦ exists_mem_unitFiltration_log_eq_smul (p := p)
+    (i := absoluteRamificationIndex L p + 1) (b k • nb 1)
   set v : Fin (Module.finrank ℚ_[p] K) × (L ≃ₐ[K] L) → Lˣ :=
     fun j ↦ Units.map j.2.toRingEquiv.toMonoidHom (u j.1)
   have hv (j) : v j ∈ unitFiltration L (absoluteRamificationIndex L p + 1) :=
