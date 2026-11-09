@@ -33,6 +33,8 @@ such as cells or handles, without passing through a quotient.
   compatible maps out of `I × Y` and `I × Z`.
 * `CategoryTheory.IsPushout.homotopyDesc`: the homotopy between maps out of `P` glued from
   compatible homotopies of their restrictions to `Y` and to `Z`.
+* `TopCat.exists_glue_of_isClosedEmbedding`: maps out of the pieces of a finite closed cover which
+  agree on the overlaps glue to a map out of the whole space.
 * `CategoryTheory.IsPushout.of_isClosedEmbedding`: a cover by a closed subspace and finitely many
   closed pieces meeting it along prescribed subspaces is a pushout square.
 -/
@@ -126,20 +128,23 @@ theorem homotopyDesc_apply_inr {f g : C(P, W)} (HY : (f.comp j.hom).Homotopy (g.
     (t : I) (z : Z) : h.homotopyDesc HY HZ hYZ (t, k z) = HZ (t, z) :=
   h.cylinderDesc_inr _ _ hYZ t z
 
-section ClosedCover
+end CategoryTheory.IsPushout
 
-open Set Topology Limits
+namespace TopCat
 
-variable {ι : Type u} [Finite ι] {S B : ι → TopCat.{u}} {A X : TopCat.{u}} {g : ∀ k, S k ⟶ A}
-  {m : ∀ k, S k ⟶ B k} {i : A ⟶ X} {j : ∀ k, B k ⟶ X}
+open CategoryTheory Set Topology
 
-/-- Maps out of the pieces of a finite closed cover which agree on the overlaps glue to a map out
-of the whole space. -/
-private theorem exists_desc_of_isClosedEmbedding (hi : IsClosedEmbedding i)
+universe u
+
+/-- **Gluing along a finite closed cover.** Let `X` be covered by the ranges of a closed embedding
+`i : A ⟶ X` and of finitely many closed embeddings `j k : B k ⟶ X`, any two of which meet only
+inside the range of `i`. Maps `a : A ⟶ Y` and `b k : B k ⟶ Y` which agree wherever `i` meets
+`j k` glue to a map `X ⟶ Y` restricting to `a` along `i` and to `b k` along `j k`. -/
+theorem exists_glue_of_isClosedEmbedding {ι : Type*} [Finite ι] {A X Y : TopCat.{u}}
+    {B : ι → TopCat.{u}} {i : A ⟶ X} {j : ∀ k, B k ⟶ X} (hi : IsClosedEmbedding i)
     (hj : ∀ k, IsClosedEmbedding (j k)) (hcover : range i ∪ ⋃ k, range (j k) = univ)
-    (hjj : Pairwise fun k l ↦ range (j k) ∩ range (j l) ⊆ range i)
-    (hij : ∀ k a b, i a = j k b → ∃ s, g k s = a ∧ m k s = b) {Y : TopCat.{u}} (a : A ⟶ Y)
-    (b : ∀ k, B k ⟶ Y) (hab : ∀ k, g k ≫ a = m k ≫ b k) :
+    (hjj : Pairwise fun k l ↦ range (j k) ∩ range (j l) ⊆ range i) (a : A ⟶ Y)
+    (b : ∀ k, B k ⟶ Y) (hab : ∀ k x y, i x = j k y → a x = b k y) :
     ∃ d : X ⟶ Y, i ≫ d = a ∧ ∀ k, j k ≫ d = b k := by
   classical
   have hc (x : X) (hx : x ∉ range i) : ∃ p : Σ k, B k, j p.1 p.2 = x := by
@@ -154,12 +159,10 @@ private theorem exists_desc_of_isClosedEmbedding (hi : IsClosedEmbedding i)
     have h : i x ∈ range i := mem_range_self x
     simp only [F, h, ↓reduceDIte]
     exact congrArg a (hi.injective h.choose_spec)
-  have hab' (k : ι) (s : S k) : a (g k s) = b k (m k s) := ConcreteCategory.congr_hom (hab k) s
   have hFj (k : ι) (y : B k) : F (j k y) = b k y := by
     by_cases h : j k y ∈ range i
-    · obtain ⟨s, hs, rfl⟩ := hij k _ y h.choose_spec
-      simp only [F, h, ↓reduceDIte]
-      rw [← hab', hs]
+    · simp only [F, h, ↓reduceDIte]
+      exact hab k _ y h.choose_spec
     · simp only [F, h, ↓reduceDIte]
       have hspec := (hc _ h).choose_spec
       generalize (hc _ h).choose = p at hspec ⊢
@@ -181,6 +184,19 @@ private theorem exists_desc_of_isClosedEmbedding (hi : IsClosedEmbedding i)
       (isClosed_iUnion_of_finite fun k ↦ (hj k).isClosed_range)
   exact ⟨TopCat.ofHom ⟨F, hF⟩, by ext x; exact hFi x, fun k ↦ by ext y; exact hFj k y⟩
 
+end TopCat
+
+namespace CategoryTheory.IsPushout
+
+section ClosedCover
+
+open Set Topology Limits
+
+universe u
+
+variable {ι : Type u} [Finite ι] {S B : ι → TopCat.{u}} {A X : TopCat.{u}} {g : ∀ k, S k ⟶ A}
+  {m : ∀ k, S k ⟶ B k} {i : A ⟶ X} {j : ∀ k, B k ⟶ X}
+
 /-- **A finite closed cover is a pushout.** Let `X` be covered by the ranges of a closed embedding
 `i : A ⟶ X` and of finitely many closed embeddings `j k : B k ⟶ X`, any two of which meet only
 inside the range of `i`. Suppose that `i` meets each `j k` exactly along `S k`: the squares
@@ -201,7 +217,11 @@ theorem of_isClosedEmbedding (w : ∀ k, g k ≫ i = m k ≫ j k) (hi : IsClosed
   have hs (s : PushoutCocone (Sigma.desc g) (Limits.Sigma.map m)) (k : ι) :
       g k ≫ s.inl = m k ≫ Sigma.ι B k ≫ s.inr := by
     simpa using Sigma.ι S k ≫= s.condition
-  let desc s := exists_desc_of_isClosedEmbedding hi hj hcover hjj hij s.inl _ (hs s)
+  let desc (s : PushoutCocone (Sigma.desc g) (Limits.Sigma.map m)) :=
+    TopCat.exists_glue_of_isClosedEmbedding hi hj hcover hjj s.inl (fun k ↦ Sigma.ι B k ≫ s.inr)
+      fun k x y h ↦ by
+        obtain ⟨t, rfl, rfl⟩ := hij k x y h
+        exact ConcreteCategory.congr_hom (hs s k) t
   refine IsPushout.of_isColimit' ⟨w'⟩ (PushoutCocone.IsColimit.mk w' (fun s ↦ (desc s).choose)
     (fun s ↦ (desc s).choose_spec.1) (fun s ↦ Sigma.hom_ext _ _ fun k ↦ ?_) fun s d h₁ h₂ ↦ ?_)
   · rw [Sigma.ι_comp_desc_assoc]
