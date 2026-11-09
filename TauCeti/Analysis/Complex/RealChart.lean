@@ -20,7 +20,8 @@ A map `f : ℂ → ℂ` of the plane, read in the real coordinates `ℝ × ℝ �
 `Complex.equivRealProdCLM`, is `TauCeti.Complex.realChart f`. When `f` has complex derivative
 `f'`, the real derivative of its real chart is multiplication by `f'`
 (`TauCeti.Complex.hasFDerivAt_realChart`, `TauCeti.Complex.fderiv_realChart_apply`), whose real
-determinant is `|f'|²`, so the real chart preserves orientation
+determinant is `|f'|²`. So the Jacobian determinant of the real chart is nonnegative, and the real
+chart preserves orientation where `f' ≠ 0`
 (`TauCeti.Complex.det_fderiv_realChart`, `TauCeti.Complex.det_fderiv_realChart_nonneg`), and a map
 that is `C^n` over `ℂ` is `C^n` over `ℝ` in real coordinates (`TauCeti.Complex.contDiff_realChart`).
 -/
@@ -74,7 +75,9 @@ theorem det_fderiv_realChart {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ}
   rw [(hasFDerivAt_realChart hf).fderiv]
   simp [ContinuousLinearMap.det, LinearMap.det_restrictScalars, Algebra.norm_complex_apply]
 
-/-- A map with a complex derivative preserves orientation in real coordinates. -/
+/-- In real coordinates, the Jacobian determinant of a map with a complex derivative is
+nonnegative; it is positive, so the map preserves orientation, where the complex derivative is
+nonzero. -/
 theorem det_fderiv_realChart_nonneg {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ}
     (hf : HasDerivAt f f' (Complex.equivRealProdCLM.symm w)) :
     0 ≤ (fderiv ℝ (realChart f) w).det := by

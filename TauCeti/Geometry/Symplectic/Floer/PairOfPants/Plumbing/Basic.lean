@@ -72,8 +72,8 @@ does not depend on `L`. The curvature of the neck itself vanishes, as the datum 
   case of a symplectic vector space.
 * `TauCeti.Floer.contDiffAt_plumbedPerturbation_prod`,
   `TauCeti.Floer.contDiffAt_uncurry_plumbedPerturbation`: for a vector space target, `L > 4` and
-  period-one `C¹` Hamiltonians, the glued datum is `C¹` jointly in the domain and target points,
-  also in the real coordinates.
+  period-one Hamiltonians of class `C^n`, the glued datum is `C^n` jointly in the domain and
+  target points, also in the real coordinates.
 
 ## References
 
@@ -415,27 +415,27 @@ namespace TauCeti.Floer
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {Ha Hb : Puncture → ℝ → V → ℝ}
   {q : Puncture} {L : ℝ}
 
-/-- At points other than the four punctures, the plumbed perturbation of `C¹` Hamiltonians is
-`C¹` jointly in the domain and target points. -/
-theorem contDiffAt_plumbedPerturbation_prod (hq : q ≠ inf)
+/-- At points other than the four punctures, the plumbed perturbation of Hamiltonians of class
+`C^n` is `C^n` jointly in the domain and target points. -/
+theorem contDiffAt_plumbedPerturbation_prod {n : ℕ∞} (hq : q ≠ inf)
     (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
+    (hHas : ∀ r, ContDiff ℝ n (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ n (uncurry (Hb r)))
     (hab : Hb q = Ha inf) (hL : 4 < L) {w : ℂ} (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1)
     (x : V) :
-    ContDiffAt ℝ 1 (fun p : ℂ × V ↦ plumbedPerturbation Ha Hb q L p.1 p.2) (w, x) :=
-  (contMDiffAt_prod_modelWithCornersSelf_iff.1 (contMDiffAt_plumbedPerturbation (n := 1) hq hHa
+    ContDiffAt ℝ n (fun p : ℂ × V ↦ plumbedPerturbation Ha Hb q L p.1 p.2) (w, x) :=
+  (contMDiffAt_prod_modelWithCornersSelf_iff.1 (contMDiffAt_plumbedPerturbation (n := n) hq hHa
     hHb (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHas r).contMDiff)
     (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hab hL hw x)).contDiffAt
 
-/-- In the real coordinates, the plumbed perturbation of `C¹` Hamiltonians is `C¹` at the points
-of the four-punctured sphere. -/
-theorem contDiffAt_uncurry_plumbedPerturbation (hq : q ≠ inf)
+/-- In the real coordinates, the plumbed perturbation of Hamiltonians of class `C^n` is `C^n` at
+the points of the four-punctured sphere. -/
+theorem contDiffAt_uncurry_plumbedPerturbation {n : ℕ∞} (hq : q ≠ inf)
     (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
+    (hHas : ∀ r, ContDiff ℝ n (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ n (uncurry (Hb r)))
     (hab : Hb q = Ha inf) (hL : 4 < L) {z : ℝ × ℝ}
     (hz : (Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) ∧
       Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1) (x : V) (v : ℂ) :
-    ContDiffAt ℝ 1
+    ContDiffAt ℝ n
       (uncurry fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v)
       (z, x) :=
   ((contDiffAt_plumbedPerturbation_prod hq hHa hHb hHas hHbs hab hL hz x).comp

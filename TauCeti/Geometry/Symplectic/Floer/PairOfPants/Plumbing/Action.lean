@@ -38,11 +38,6 @@ input loops plus that constant.
 
 ## Main results
 
-* `TauCeti.Floer.preimage_plumbedTruncation`: in the real coordinates, the truncation `Σ_R` is
-  the union of its receiving part and the image of its inserted part under the plumbing chart.
-* `TauCeti.Floer.isCompact_preimage_plumbedTruncation`,
-  `TauCeti.Floer.measurableSet_preimage_plumbedTruncation`: in the real coordinates, the
-  truncation `Σ_R` is compact and measurable.
 * `TauCeti.SymplecticForm.integral_floerEnergyDensity_plumbedPerturbation_eq_sum_hamiltonianAction`:
   the energy identity on the truncation `Σ_R` of the plumbed sphere, for a symplectic vector space
   target.
@@ -80,41 +75,6 @@ private theorem isOpen_plumbedSphereReal (q : Puncture) (L : ℝ) :
       Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} :=
   isOpen_thricePuncturedSphereReal.inter
     (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
-
-/-- The truncated plumbed sphere, in the real coordinates, is the part of the truncation of the
-receiving pair of pants inside the circle `Re z = L/2` of the end `q`, together with the image
-under the plumbing chart of the part of the truncation of the inserted pair of pants outside the
-circle `Re z = -L/2` of its end at `∞`. -/
-theorem preimage_plumbedTruncation (hq : q ≠ inf) (L R : ℝ) :
-    Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R =
-      (Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
-        {z | q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2}) ∪
-      realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
-        {z | inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2}) := by
-  ext z
-  simp only [plumbedTruncation_def, mem_preimage, mem_union, mem_inter_iff, mem_ofPred_eq,
-    mem_image, endSign_eq_one hq, one_mul, endSign_inf, neg_one_mul, neg_le]
-  constructor
-  · rintro (h | ⟨w, hw, hwz⟩)
-    · exact Or.inl h
-    · refine Or.inr ⟨Complex.equivRealProdCLM w, by
-        rw [ContinuousLinearEquiv.symm_apply_apply]; exact hw, ?_⟩
-      rw [realChart_equivRealProdCLM, hwz, ContinuousLinearEquiv.apply_symm_apply]
-  · rintro (h | ⟨w, hw, rfl⟩)
-    · exact Or.inl h
-    · refine Or.inr ⟨Complex.equivRealProdCLM.symm w, hw, ?_⟩
-      rw [equivRealProdCLM_symm_realChart]
-
-/-- The truncation `Σ_R` of the plumbed sphere is compact in the real coordinates. -/
-theorem isCompact_preimage_plumbedTruncation (q : Puncture) (L R : ℝ) :
-    IsCompact (Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R) :=
-  Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-    (isCompact_plumbedTruncation q L R)
-
-/-- The truncation `Σ_R` of the plumbed sphere is measurable in the real coordinates. -/
-theorem measurableSet_preimage_plumbedTruncation (q : Puncture) (L R : ℝ) :
-    MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R) :=
-  (isCompact_preimage_plumbedTruncation q L R).isClosed.measurableSet
 
 end TauCeti.Floer
 
