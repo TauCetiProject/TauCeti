@@ -20,7 +20,7 @@ public section
 
 namespace LinearMap
 
-variable {R M₁ M₂ M : Type*} [Ring R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂]
+variable {R M₁ M₂ M : Type*} [Semiring R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂]
   [Module R M₂] [AddCommGroup M] [Module R M]
 
 /-- The map `(a, b) ↦ f a + g b` is bijective exactly when `f` and `g` are injective and the
@@ -34,12 +34,16 @@ theorem bijective_coprod_iff {f : M₁ →ₗ[R] M} {g : M₂ →ₗ[R] M} :
   · -- A common value `f a = g b` gives `f.coprod g (a, -b) = 0`, so `a = 0`.
     rw [Submodule.disjoint_def]
     rintro _ ⟨a, rfl⟩ ⟨b, hb⟩
-    have := congrArg Prod.fst (h.1 (a₁ := (a, -b)) (a₂ := 0) (by simp [hb]))
-    simp [show a = 0 from this]
+    have ha : a = 0 := congrArg Prod.fst (h.1 (a₁ := (a, -b)) (a₂ := 0) (by simp [hb]))
+    simp [ha]
   · rw [codisjoint_iff, ← range_coprod, range_eq_top]
     exact h.2
-  · rw [← ker_eq_bot, ker_coprod_of_disjoint_range f g hc.disjoint, ker_eq_bot.2 hf,
-      ker_eq_bot.2 hg, Submodule.prod_bot]
+  · rw [injective_iff_map_eq_zero]
+    rintro ⟨a, b⟩ hab
+    have hk : (a, b) ∈ ker (f.coprod g) := hab
+    rw [ker_coprod_of_disjoint_range f g hc.disjoint] at hk
+    exact Prod.ext ((injective_iff_map_eq_zero f).1 hf a hk.1)
+      ((injective_iff_map_eq_zero g).1 hg b hk.2)
   · rw [← range_eq_top, range_coprod, hc.sup_eq_top]
 
 end LinearMap

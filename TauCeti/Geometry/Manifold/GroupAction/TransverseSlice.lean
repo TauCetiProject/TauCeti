@@ -82,7 +82,10 @@ theorem mfderiv_smul_slice_apply [ContMDiffSMul I I' 1 G M] (hσ : MDifferentiab
       one_ne_zero).comp _ (mdifferentiableAt_fst.prodMk (hσ.comp _ mdifferentiableAt_snd))
   rw [fundamentalVectorField_apply]
   refine (mfderiv_prod_eq_add_apply (v := ((ξ, v) : E × F)) hf).trans ?_
-  rw [show (fun z : S ↦ (1 : G) • σ z) = σ from funext fun z ↦ one_smul G (σ z)]
+  -- `simp only [one_smul]` cannot rewrite under `mfderiv`, whose codomain `TangentSpace I' (f s₀)`
+  -- depends on the function `f`, so the identity action is rewritten as a function equality.
+  have hone : (fun z : S ↦ (1 : G) • σ z) = σ := funext fun z ↦ one_smul G (σ z)
+  rw [hone]
   -- The two sides now agree up to projections of the explicit pairs `(ξ, v)` and `(1, s₀)`.
   rfl
 
@@ -132,8 +135,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
 `(g, s) ↦ g • σ s` is a smooth local diffeomorphism at `(1, s₀)` exactly when the action is
 locally free at `σ s₀`, the differential of `σ` at `s₀` is injective, and its range is a
 complement of the orbit tangent space `𝔤 · σ s₀`. -/
-theorem isLocalDiffeomorphAt_smul_slice_iff [FiniteDimensional ℝ E]
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+theorem isLocalDiffeomorphAt_smul_slice_iff
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
     {K : Type*} [TopologicalSpace K] {J : ModelWithCorners ℝ F K}
     {S : Type*} [TopologicalSpace S] [ChartedSpace K S] [IsManifold J ∞ S]
     [BoundarylessManifold J S] {σ : S → M} {s₀ : S} {t : Set S} (hσ : ContMDiffOn J I' ∞ σ t)
@@ -146,7 +149,6 @@ theorem isLocalDiffeomorphAt_smul_slice_iff [FiniteDimensional ℝ E]
   have hf : ContMDiffOn (I.prod J) I' ∞ (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ t) :=
     (ContMDiffSMul.contMDiff_smul (I := I) (I' := I') (n := ∞)).comp_contMDiffOn
       (contMDiffOn_fst.prodMk (hσ.comp (s := univ ×ˢ t) contMDiffOn_snd fun _ hp ↦ hp.2))
-  have : CompleteSpace F := FiniteDimensional.complete ℝ F
   have hdσ : MDifferentiableAt J I' σ s₀ :=
     (hσ.contMDiffAt (ht.mem_nhds hs₀)).mdifferentiableAt (by simp)
   -- The differential at `(1, s₀)` is `(ξ, v) ↦ ξ_M(σ s₀) + dσ v`.
@@ -164,19 +166,20 @@ theorem isLocalDiffeomorphAt_smul_slice_iff [FiniteDimensional ℝ E]
     BoundarylessManifold.isInteriorPoint (by simp), InfinitesimalAction.isotropy_eq_bot_iff,
     InfinitesimalAction.orbitTangent_eq_range, ← ContinuousLinearMap.coe_coe (mfderiv J I' σ s₀),
     ← LinearMap.bijective_coprod_iff, ← hL]
-  -- A bijective linear map out of a finite-dimensional space is a continuous linear equivalence.
-  exact ⟨fun ⟨e, he⟩ ↦ he ▸ e.bijective, fun hb ↦
-    ⟨(LinearEquiv.ofBijective (mfderiv (I.prod J) I' (fun p : G × S ↦ p.1 • σ p.2) (1, s₀) :
-      TangentSpace (I.prod J) ((1 : G), s₀) →ₗ[ℝ] TangentSpace I' ((1 : G) • σ s₀))
-        hb).toContinuousLinearEquiv,
-      ContinuousLinearMap.ext fun _ ↦ rfl⟩⟩
+  -- By the open mapping theorem, a bijective continuous linear map between Banach spaces is a
+  -- continuous linear equivalence.
+  refine ⟨fun ⟨e, he⟩ ↦ he ▸ e.bijective, fun hb ↦ ?_⟩
+  let L : E × F →L[ℝ] E' := mfderiv (I.prod J) I' (fun p : G × S ↦ p.1 • σ p.2) (1, s₀)
+  have hLb : Bijective L := hb
+  let e := ContinuousLinearEquiv.ofBijective L (LinearMap.ker_eq_bot_of_injective hLb.1)
+    (LinearMap.range_eq_top_of_surjective _ hLb.2)
+  exact ⟨e, ContinuousLinearMap.ext fun _ ↦ rfl⟩
 
 /-- **Chart slices at locally free points.** Let `x` be a point where the action is locally free,
 let `φ` be the extended chart at `x`, and let `W` be a complement of the orbit tangent space
 `𝔤 · x` in `T_x M`, which is the model space `E'`. Then the slice map
 `(g, w) ↦ g • φ.symm (φ x + w)` on `G × W` is a smooth local diffeomorphism at `(1, 0)`. -/
-theorem isLocalDiffeomorphAt_smul_extChartAt_symm [FiniteDimensional ℝ E]
-    [FiniteDimensional ℝ E'] [I'.Boundaryless] {x : M}
+theorem isLocalDiffeomorphAt_smul_extChartAt_symm [FiniteDimensional ℝ E'] [I'.Boundaryless] {x : M}
     (hx : (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥) {W : Submodule ℝ E'}
     (hW : IsCompl ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) W) :
     IsLocalDiffeomorphAt (I.prod 𝓘(ℝ, W)) I' ∞
@@ -214,9 +217,8 @@ theorem isLocalDiffeomorphAt_smul_extChartAt_symm [FiniteDimensional ℝ E]
   · rw [hd]
     exact W.injective_subtype
   · have hrange : LinearMap.range (mfderiv 𝓘(ℝ, W) I' (φ.symm ∘ τ) 0).toLinearMap = W := by
-      ext v
-      simp only [LinearMap.mem_range, ContinuousLinearMap.coe_coe, hd, Submodule.coe_subtype]
-      exact ⟨fun ⟨w, hw⟩ ↦ hw ▸ w.2, fun hv ↦ ⟨⟨v, hv⟩, rfl⟩⟩
+      rw [LinearMap.ext (congrFun hd)]
+      exact W.range_subtype
     rw [hrange, hx0]
     exact hW
 
