@@ -39,7 +39,8 @@ the case where its `Ext¹`-term vanishes.
   every coefficient object.
 * `TopPair.singularKronecker`: the Kronecker map `Hⁿ(X, A; R, M) →ₗ[k] (Hₙ(X, A; R) ⟶ M)` of
   relative singular cohomology, the Kronecker map of the relative singular chain complex, with
-  `TopPair.singularKronecker_homologyπ` and `TopPair.singularKronecker_naturality`.
+  `TopPair.singularKronecker_homologyπ` and `TopPair.singularKronecker_naturality`;
+  `TopPair.singularKronecker_singularCohomologyπ` compares it with the absolute Kronecker map.
 
 ## References
 
@@ -91,6 +92,16 @@ lemma singularKronecker_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (k : Type*) 
     X.singularKronecker k n (TopCat.singularCohomologyMap f n α) =
       ((singularHomologyFunctor C n).obj R).map f ≫ Y.singularKronecker k n α :=
   TauCeti.ChainComplex.kronecker_naturality (SSet.chainComplexMap (toSSet.map f) R) n α
+
+/-- Evaluation of singular cohomology on homology commutes with changing the coefficient
+object by postcomposition on singular cochains. -/
+lemma singularKronecker_coefficient_naturality (X : TopCat.{w}) (k : Type*) [Ring k]
+    [Linear k C] {N : C} (g : M ⟶ N) (n : ℕ) (α : X.singularCohomology R k M n) :
+    X.singularKronecker k n
+        (HomologicalComplex.homologyMap
+          (((toSSet.obj X).chainComplex R).linearYonedaObjMap k g) n α) =
+      X.singularKronecker k n α ≫ g :=
+  TauCeti.ChainComplex.kronecker_coefficient_naturality g n α
 
 /-- **The universal coefficient theorem for injective coefficients**: for an injective object
 `M`, the Kronecker map of singular cohomology is a `k`-linear equivalence
@@ -153,5 +164,13 @@ lemma singularKronecker_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (k : Type
     P.singularKronecker k n (TopPair.singularCohomologyMap f n α) =
       P.singularHomologyMap f R n ≫ P'.singularKronecker k n α :=
   TauCeti.ChainComplex.kronecker_naturality (singularChainComplexMap f R) n α
+
+/-- Evaluating the image in `Hⁿ(X; R, M)` of a relative class `α ∈ Hⁿ(X, A; R, M)` is evaluating
+`α` after the map `Hₙ(X; R) ⟶ Hₙ(X, A; R)`. -/
+lemma singularKronecker_singularCohomologyπ (P : TopPair.{w}) (k : Type*) [Ring k] [Linear k C]
+    (n : ℕ) (α : P.singularCohomology R k M n) :
+    P.fst.singularKronecker k n (P.singularCohomologyπ R k M n α) =
+      P.singularHomologyπ R n ≫ P.singularKronecker k n α :=
+  TauCeti.ChainComplex.kronecker_naturality (P.singularChainComplexπ R) n α
 
 end TopPair

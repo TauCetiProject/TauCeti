@@ -133,18 +133,6 @@ theorem rectangleIntegral_eq (φ : RoughForm I M F 2) (u : ℝ × ℝ → M) (a 
   funext i
   fin_cases i <;> rfl
 
-/-- For a continuous form `φ` and a `C¹` map `u` of the plane, the integrand
-`φ_{u(z)}(∂_s u, ∂_t u)` of the integral over `u` is continuous. -/
-theorem IsSmoothForm.continuous_apply_mfderiv [IsManifold I 1 M] {φ : RoughForm I M F 2}
-    (hφ : IsSmoothForm I 0 φ) {u : ℝ × ℝ → M} (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) :
-    Continuous fun z ↦ φ (u z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (1, 0),
-      mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (0, 1)] := by
-  refine (hφ.continuous_mpullback_apply hu ![(1, 0), (0, 1)]).congr fun z ↦
-    (mpullback_apply u φ z _).trans ?_
-  congr 1
-  funext i
-  fin_cases i <;> rfl
-
 /-- For a continuous form `φ` and a `C¹` map `u`, the integral over `u` on a rectangle is, by
 Fubini, the integral of `φ_{u(z)}(∂_s u, ∂_t u)` over the rectangle. -/
 theorem IsSmoothForm.setIntegral_eq_rectangleIntegral [IsManifold I 1 M] {φ : RoughForm I M F 2}
@@ -152,7 +140,7 @@ theorem IsSmoothForm.setIntegral_eq_rectangleIntegral [IsManifold I 1 M] {φ : R
     (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) {a b : ℝ × ℝ} (hab : a ≤ b) :
     ∫ z in Icc a b, φ (u z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (1, 0),
       mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (0, 1)] = rectangleIntegral φ u a b := by
-  have hint := (hφ.continuous_apply_mfderiv hu).continuousOn.integrableOn_compact
+  have hint := (hφ.continuous_apply_mfderiv hu (1, 0) (0, 1)).continuousOn.integrableOn_compact
     (μ := volume) (isCompact_Icc (a := a) (b := b))
   -- Fubini, on the rectangle written as a product of intervals.
   rw [Icc_prod_eq, Measure.volume_eq_prod] at hint ⊢
@@ -274,8 +262,7 @@ theorem rectangleIntegral_comp_snd (φ : RoughForm I M F 2) (γ : ℝ → M) (a 
     rectangleIntegral φ (γ ∘ Prod.snd) a b = 0 := by
   have h (z : ℝ × ℝ) :
       mpullback 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Prod.snd) φ z ![(1, 0), (0, 1)] = 0 :=
-    mpullback_comp_clm_apply_eq_zero φ γ (.snd ℝ ℝ ℝ) (j := fun t ↦ (z.1, t)) (by fun_prop)
-      (fun _ ↦ rfl) rfl (i := 0) rfl
+    mpullback_comp_clm_apply_eq_zero φ γ (.snd ℝ ℝ ℝ) (i := 0) rfl
   simp [rectangleIntegral_def, h]
 
 /-- The integral of a two-form over a map that only depends on the first coordinate vanishes. -/
@@ -284,8 +271,7 @@ theorem rectangleIntegral_comp_fst (φ : RoughForm I M F 2) (γ : ℝ → M) (a 
     rectangleIntegral φ (γ ∘ Prod.fst) a b = 0 := by
   have h (z : ℝ × ℝ) :
       mpullback 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Prod.fst) φ z ![(1, 0), (0, 1)] = 0 :=
-    mpullback_comp_clm_apply_eq_zero φ γ (.fst ℝ ℝ ℝ) (j := fun s ↦ (s, z.2)) (by fun_prop)
-      (fun _ ↦ rfl) rfl (i := 1) rfl
+    mpullback_comp_clm_apply_eq_zero φ γ (.fst ℝ ℝ ℝ) (i := 1) rfl
   simp [rectangleIntegral_def, h]
 
 section Continuous

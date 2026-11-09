@@ -15,7 +15,7 @@ import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.Distribution.OrderZero
 import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Integral
-import TauCeti.MeasureTheory.Function.AEEqOfLIntegral
+import TauCeti.MeasureTheory.Function.AEEqOfLIntegral.Basic
 
 /-!
 # The polar decomposition of a current of locally finite mass
@@ -101,7 +101,6 @@ private theorem exists_measurable_dual_density (hT : HasLocallyFiniteMass T) :
       |S i ψ| ≤ C * ‖(ψ : E →ᵇ ℝ)‖ := by
     have hL : HasLocallyFiniteMass (S i) :=
       hT.comp_of_norm_apply_le (L := postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (b i)))
-        (fun ψ => by simpa only [postcompCLM_apply] using tsupport_comp_subset (map_zero _) _)
         continuous_const (b := fun _ => ‖b i‖) fun ψ x => by simp [norm_smul, mul_comm]
     intro K hK hKΩ
     obtain ⟨C, -, hC⟩ := hasLocallyFiniteMass_def.1 hL K hK hKΩ
@@ -154,25 +153,12 @@ private theorem exists_le_one (hT : HasLocallyFiniteMass T) :
     rw [Measure.setLIntegral_rnDeriv hlam, ← hrep, massMeasure_preimage_coe hT U.isOpen]
     exact enorm_le_localMass hφU hφ
   -- Normalize `g` by `k`.
-  refine ⟨fun x => (k x).toReal⁻¹ • g x,
-    ((Measure.measurable_rnDeriv _ _).ennreal_toReal.inv).smul hgm, hlam.ae_le ?_, fun φ => ?_⟩
-  · filter_upwards [hbound, Measure.rnDeriv_lt_top lam ρ] with x hx hk
-    have hle : ‖g x‖ ≤ (k x).toReal := by
-      rwa [← ofReal_norm, ENNReal.ofReal_le_iff_le_toReal hk.ne] at hx
-    rw [norm_smul, norm_inv, Real.norm_of_nonneg ENNReal.toReal_nonneg, inv_mul_eq_div]
-    exact div_le_one_of_le₀ hle ENNReal.toReal_nonneg
-  · rw [hrep, ← integral_toReal_rnDeriv_mul hlam]
-    refine integral_congr_ae ?_
-    filter_upwards [hbound, Measure.rnDeriv_lt_top lam ρ] with x hx hk
-    rw [smul_apply, smul_eq_mul, ← mul_assoc]
-    rcases eq_or_ne (k x).toReal 0 with h0 | h0
-    · have : g x = 0 := by
-        rw [ENNReal.toReal_eq_zero_iff] at h0
-        rcases h0 with h0 | h0
-        · simpa [h0, enorm_eq_nnnorm] using hx
-        · exact absurd h0 hk.ne
-      simp [this]
-    · rw [mul_inv_cancel₀ h0, one_mul]
+  obtain ⟨σ, hσm, hσ1, hσg⟩ := Measure.exists_norm_le_one_toReal_rnDeriv_smul_eq hlam hgm hbound
+  refine ⟨σ, hσm, hσ1, fun φ => ?_⟩
+  rw [hrep, ← integral_toReal_rnDeriv_mul hlam]
+  refine integral_congr_ae ?_
+  filter_upwards [hσg] with x hx
+  rw [← hx, smul_apply, smul_eq_mul]
 
 omit [FiniteDimensional ℝ F] in
 /-- A density of dual norm at most one representing `T` against `‖T‖` has norm one almost

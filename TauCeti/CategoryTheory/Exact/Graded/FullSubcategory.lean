@@ -378,7 +378,7 @@ noncomputable def congrFullSubcategory (e : GradedExactEquiv E E')
     exact E.toExactStructure.isConflationExact_congrFullSubcategory_inverse
       hP hQ e.equiv e.inverse_isConflationExact h
   commShift := by
-    rw [e.equiv.congrFullSubcategory_functor_eq_lift h]
+    rw [e.equiv.congrFullSubcategory_functor h]
     exact (e.toGradedConflationExact.lift E P hP hQ hPshift hQshift
       (fun ⟨X, hX⟩ ↦ by rwa [← h] at hX)).commShift
 

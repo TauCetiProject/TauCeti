@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TestFunction
+public import TauCeti.Analysis.Complex.ZeroMultiplicity
 public import TauCeti.Analysis.PDE.Vortex.Decay
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.Zeros
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Algebra.Module.Cardinality
+import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.Analysis.Calculus.ContDiff.Removable
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Cutoff
@@ -50,8 +52,12 @@ Testing this identity against dilated cutoffs `χ_R`, the left side tends to zer
 `(2π)⁻¹ ∫ iF_a` is the number of zeros of `α`, counted with multiplicity
 (`TauCeti.Vortex.integral_curvature_eq_neg_mul_finsum`).
 
-If the section has the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`, its zeros form an
-effective divisor of degree `m` (`TauCeti.Vortex.exists_sym_sectionValue_eq_pow_count_mul`). Hence
+In terms of a zero divisor `D` of the section, whose multiplicities form a zero multiplicity
+function (`TauCeti.IsZeroMultiplicity (sectionValue x) (Multiset.count · D)`), the total
+multiplicity is the degree of `D`, so `(2π)⁻¹ ∫ iF_a = deg D`
+(`TauCeti.Vortex.integral_curvature_eq_neg_mul_card`). If the section has the degree-`m` end
+framing `α(z) (z / |z|)⁻ᵐ → 1`, its zeros form an effective divisor of degree `m`
+(`TauCeti.Vortex.exists_sym_sectionValue_eq_pow_count_mul`). Hence
 `∫ (1 - |α|²) = 16π m` and the flux `(2π)⁻¹ ∫ iF_a` equals the framing degree `m`
 (`TauCeti.Vortex.integral_curvature_eq_of_tendsto_sectionValue_mul_inv_pow`). For `s > 1` every
 continuous field of the affine Sobolev space `A_m^s` has this end framing, so every `C²` vortex in
@@ -151,12 +157,11 @@ private theorem exists_contDiff_laplacian_eq_log_normSq_add
   set L : ℂ → ℝ := fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))
   set K : ℂ → ℝ := fun w ↦ ∑ z ∈ hfin.toFinset, (n z : ℝ) * planarNewtonianKernel (w - z)
   have hs : ContDiff ℝ 2 (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) := contDiff_normSq hp hq
-  have hsne : ∀ {w}, sectionValue x w ≠ 0 → 4 * (x w 2 ^ 2 + x w 3 ^ 2) ≠ 0 := fun hw ↦ by
-    rw [← sq_norm_sectionValue]
-    exact pow_ne_zero 2 (norm_ne_zero_iff.mpr hw)
+  have hsne : ∀ {w}, sectionValue x w ≠ 0 → 4 * (x w 2 ^ 2 + x w 3 ^ 2) ≠ 0 := fun hw ↦
+    mul_ne_zero four_ne_zero (mt (sectionValue_eq_zero_iff x _).mpr hw)
   -- Off the zeros every kernel term is harmonic.
   have hKh : ∀ w, sectionValue x w ≠ 0 → HarmonicAt (fun y ↦ 4 * π * K y) w := fun w hw ↦
-    (HarmonicAt.sum _ (f := fun z y ↦ (n z : ℝ) * planarNewtonianKernel (y - z))
+    (HarmonicAt.sum (f := fun z y ↦ (n z : ℝ) * planarNewtonianKernel (y - z))
       fun z hz ↦ (harmonicAt_planarNewtonianKernel_sub fun h ↦ hw <| by
         rw [h]; exact (Set.Finite.mem_toFinset hfin).mp hz).const_smul
           (c := (n z : ℝ))).const_smul (c := 4 * π)
@@ -246,6 +251,29 @@ theorem integral_laplacian_mul_log_normSq
     hKint, hsum]
   ring
 
+/-- The distributional identity for `Δ log |α|²`, tested against a smooth compactly supported
+cutoff `χ` that equals `1` at every zero of `α`:
+`∫ Δχ log |α|² = ∫ χ (|α|² - 1) / 4 + 4π ∑ᶠ z, n z`. -/
+theorem integral_laplacian_mul_log_normSq_of_eq_one
+    (hb₁ : ContDiff ℝ 2 (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ 2 (fun w ↦ x w 1))
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0) (hfin : {z | sectionValue x z = 0}.Finite) {n : ℂ → ℕ}
+    (hn : ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
+      ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ n z * v w)
+    {χ : ℂ → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
+    (hχ1 : ∀ z, sectionValue x z = 0 → χ z = 1) :
+    ∫ z, Δ χ z * Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2)) =
+      (∫ z, χ z * ((4 * (x z 2 ^ 2 + x z 3 ^ 2) - 1) / 4)) + 4 * π * ∑ᶠ z, (n z : ℝ) := by
+  have h := integral_laplacian_mul_log_normSq hb₁ hb₂ hp hq hsol hfin hn
+    ⟨χ, hχ, hχc, subset_univ _⟩
+  simp only [TestFunction.coe_mk] at h
+  rw [h]
+  congr 2
+  refine finsum_congr fun z ↦ ?_
+  by_cases hz : sectionValue x z = 0
+  · rw [hχ1 z hz, mul_one]
+  · simp [eq_zero_of_sectionValue_ne_zero hn hz]
+
 /-- **The flux identity for a plane vortex.** Let `x` be a `C²` vortex on the whole plane whose
 section satisfies `|α| → 1` at infinity, and let `n z` be the multiplicity of the zero `z` of
 `α`, in the sense that `α(w) = (w - z) ^ n z * v(w)` near `z` with `v` continuous and nonzero at
@@ -280,21 +308,12 @@ theorem integral_one_sub_normSq_eq_mul_finsum
   have hRpos : ∀ m, 0 < R m := fun m ↦ by positivity
   have hRm : ∀ m : ℕ, (m : ℝ) ≤ R m := fun m ↦ by simp only [hR]; linarith [le_max_right R₀ 0]
   choose χ hχ hχc hχ1 hχ0 _ hχΔ hχI using fun m ↦ hC (R m) (hRpos m)
-  have hid : ∀ m, ∫ z, Δ (χ m) z * Real.log (s z) = (∫ z, χ m z * F z) + 4 * π * N := by
-    intro m
-    have h := integral_laplacian_mul_log_normSq hb₁ hb₂ hp hq hsol hfin hn
-      ⟨χ m, hχ m, hχc m, subset_univ _⟩
-    simp only [TestFunction.coe_mk] at h
-    rw [h]
-    congr 2
-    refine finsum_congr fun z ↦ ?_
-    by_cases hz : sectionValue x z = 0
-    · have hzR : ‖z‖ < R m := by
+  have hid : ∀ m, ∫ z, Δ (χ m) z * Real.log (s z) = (∫ z, χ m z * F z) + 4 * π * N :=
+    fun m ↦ integral_laplacian_mul_log_normSq_of_eq_one hb₁ hb₂ hp hq hsol hfin hn (hχ m) (hχc m)
+      fun z hz ↦ (hχ1 m z (by
         have := mem_closedBall_zero_iff.mp (hR₀ hz)
         simp only [hR]
-        linarith [le_max_left R₀ 0, (Nat.cast_nonneg m : (0 : ℝ) ≤ m)]
-      rw [(hχ1 m z hzR).self_of_nhds, mul_one]
-    · simp [eq_zero_of_sectionValue_ne_zero hn hz]
+        linarith [le_max_left R₀ 0, (Nat.cast_nonneg m : (0 : ℝ) ≤ m)])).self_of_nhds
   have hRt : Tendsto R atTop atTop := tendsto_atTop_mono hRm tendsto_natCast_atTop_atTop
   -- The cutoff integrals of the right side converge to `∫ F`.
   have hB : Tendsto (fun m ↦ ∫ z, χ m z * F z) atTop (𝓝 (∫ z, F z)) :=
@@ -303,8 +322,7 @@ theorem integral_one_sub_normSq_eq_mul_finsum
   -- The left side tends to zero, because `log |α|² → 0` while `∫ |Δ χ_m|` stays bounded.
   have hL : Tendsto (fun z ↦ Real.log (s z)) (cocompact ℂ) (𝓝 0) := by
     have h := (Real.continuousAt_log one_ne_zero).tendsto.comp hlim
-    rw [Real.log_one] at h
-    exact h
+    rwa [Real.log_one] at h
   have hA : Tendsto (fun m ↦ ∫ z, Δ (χ m) z * Real.log (s z)) atTop (𝓝 0) :=
     tendsto_integral_laplacian_smul_of_tendsto_cocompact volume Complex.finrank_real_complex hRt
       hχ1 hχ0 hχΔ hL
@@ -338,6 +356,33 @@ theorem integral_curvature_eq_neg_mul_finsum
     integral_one_sub_normSq_eq_mul_finsum hb₁ hb₂ hp hq hsol hlim hn]
   ring
 
+/-! ### The flux of a framed vortex -/
+
+/-- **The flux identity in terms of the zero divisor.** For a `C²` vortex on the whole plane with
+`|α| → 1` at infinity and zero divisor `D`, `∫ (1 - |α|²) = 16π deg D`. -/
+theorem integral_one_sub_normSq_eq_mul_card
+    (hb₁ : ContDiff ℝ 2 (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ 2 (fun w ↦ x w 1))
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {D : Multiset ℂ}
+    (hD : IsZeroMultiplicity (sectionValue x) (Multiset.count · D)) :
+    ∫ z, (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) = 16 * π * Multiset.card D := by
+  rw [integral_one_sub_normSq_eq_mul_finsum hb₁ hb₂ hp hq hsol hlim
+    (isZeroMultiplicity_iff.1 hD), Multiset.finsum_count_eq_card]
+
+/-- **The flux is the degree of the zero divisor.** For a `C²` vortex on the whole plane with
+`|α| → 1` at infinity and zero divisor `D`, the curvature coefficient `∂₁ b₂ - ∂₂ b₁` integrates
+to `-2π deg D`; equivalently `(2π)⁻¹ ∫ iF_a = deg D`. -/
+theorem integral_curvature_eq_neg_mul_card
+    (hb₁ : ContDiff ℝ 2 (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ 2 (fun w ↦ x w 1))
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {D : Multiset ℂ}
+    (hD : IsZeroMultiplicity (sectionValue x) (Multiset.count · D)) :
+    ∫ z, curvature x z = -(2 * π * Multiset.card D) := by
+  rw [integral_curvature_eq_neg_mul_finsum hb₁ hb₂ hp hq hsol hlim
+    (isZeroMultiplicity_iff.1 hD), Multiset.finsum_count_eq_card]
+
 /-- **The flux identity for a framed plane vortex, modulus form.** Let `x` be a `C²` vortex on the
 whole plane whose section has the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`. Then
 `∫ (1 - |α|²) = 16π m`. -/
@@ -351,11 +396,10 @@ theorem integral_one_sub_normSq_eq_of_tendsto_sectionValue_mul_inv_pow
   obtain ⟨D, hD⟩ := exists_sym_sectionValue_eq_pow_count_mul (k := 2) (by norm_num) hb₁ hb₂
     (hp.differentiable (by norm_num)) (hq.differentiable (by norm_num))
     (fun w ↦ ⟨by simp [hsol w], by simp [hsol w]⟩) hframe
-  rw [integral_one_sub_normSq_eq_mul_finsum hb₁ hb₂ hp hq hsol
-      (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe)
-      (fun z ↦ (hD z).imp fun _ hv ↦ ⟨hv.1.continuousAt, hv.2⟩),
-    finsum_eq_sum_of_support_subset _ (s := (D : Multiset ℂ).toFinset) (by intro z; simp),
-    ← Nat.cast_sum, Multiset.toFinset_sum_count_eq, Sym.card_coe]
+  rw [integral_one_sub_normSq_eq_mul_card hb₁ hb₂ hp hq hsol
+    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe)
+    (isZeroMultiplicity_iff.2 fun z ↦ (hD z).imp fun _ hv ↦ ⟨hv.1.continuousAt, hv.2⟩),
+    Sym.card_coe]
 
 /-- **The flux of a framed plane vortex is its degree.** Let `x` be a `C²` vortex on the whole
 plane whose section has the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`. Then the curvature

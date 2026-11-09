@@ -97,6 +97,50 @@ variable [Algebra k F₁] [Algebra k F₂] [Algebra k F] [Algebra F₁ F] [Algeb
 variable [IsScalarTower k F₁ F] [IsScalarTower k F₂ F]
 variable [FiniteDimensional F₁ F] [FiniteDimensional F₂ F]
 
+/-- The functions `1` at a distinguished place `P₀` over `P₁`, and `w` of the restriction at the
+other places `P` over `P₁`, are linearly independent over `F₁` inside `F`, when the `w Q` have a
+pole at `Q` and lie in `L(B + Q)` for a divisor `B` supported on a set `T` containing none of the
+restrictions of the places over `P₁`, which are pairwise distinct. -/
+private theorem linearIndependent_algebraMap_ite_of_ord_neg [DecidableEq (Place k F)]
+    {P₁ : Place k F₁} {S : Finset (Place k F)} (hS : ∀ P, P ∈ S ↔ P.restrict k F₁ = P₁)
+    {P₀ : Place k F} (hP₀ : P₀ ∈ S)
+    (hinj : Set.InjOn (fun P : Place k F ↦ P.restrict k F₂) {P | P.restrict k F₁ = P₁})
+    (hdeg : ∀ P : Place k F, P.restrict k F₁ = P₁ → (P.restrict k F₂).degree = 1)
+    {T : Set (Place k F₂)} {B : Divisor k F₂} (hBQ : ∀ Q, Q ∉ T → B.coeff Q = 0)
+    (hdisj : ∀ P : Place k F, P.restrict k F₁ = P₁ → P.restrict k F₂ ∉ T)
+    {w : Place k F₂ → F₂}
+    (hwL : ∀ Q : Place k F₂, Q.degree = 1 → w Q ∈ riemannRochSpace (B + WeilDivisor.ofPoint Q))
+    (hwpole : ∀ Q : Place k F₂, Q.degree = 1 → Q.ord (w Q) < 0) :
+    LinearIndependent F₁ fun P : S ↦
+      algebraMap F₂ F (if (P : Place k F) = P₀ then 1 else w ((P : Place k F).restrict k F₂)) := by
+  refine Place.linearIndependent_of_ord_neg_of_restrict_eq (P := Subtype.val)
+    (fun P ↦ (hS P).mp P.2) (i₀ := ⟨P₀, hP₀⟩) (by simp) (by simp) ?_ ?_
+  · intro P hP
+    have hP' : (P : Place k F) ≠ P₀ := fun h ↦ hP (Subtype.ext h)
+    simp only [hP', ↓reduceIte]
+    rw [Place.ord_algebraMap_restrict k F₂]
+    have hpole := hwpole _ (hdeg P ((hS P).mp P.2))
+    have he : (0 : ℤ) < Place.ramificationIdx F₂ (P : Place k F) := by
+      exact_mod_cast Place.ramificationIdx_pos F₂ _
+    exact mul_neg_of_pos_of_neg he hpole
+  · intro P P' hPP'
+    by_cases h' : (P' : Place k F) = P₀
+    · simp [h']
+    simp only [h', ↓reduceIte]
+    rw [Place.ord_algebraMap_restrict k F₂]
+    have hQQ' : (P : Place k F).restrict k F₂ ≠ (P' : Place k F).restrict k F₂ := fun h ↦
+      hPP' (Subtype.ext (hinj ((hS _).mp P.2) ((hS _).mp P'.2) h))
+    have hord :
+        0 ≤ ((P : Place k F).restrict k F₂).ord (w ((P' : Place k F).restrict k F₂)) := by
+      rcases eq_or_ne (w ((P' : Place k F).restrict k F₂)) 0 with h0 | h0
+      · rw [h0, Place.ord_zero]
+      have := (mem_riemannRochSpace_iff_neg_le_ord h0).mp
+        (hwL _ (hdeg P' ((hS P').mp P'.2))) ((P : Place k F).restrict k F₂)
+      rw [WeilDivisor.coeff_add, WeilDivisor.coeff_ofPoint_of_ne hQQ',
+        hBQ _ (hdisj P ((hS P).mp P.2))] at this
+      omega
+    positivity
+
 /-- **Castelnuovo's inequality** (Stichtenoth, Theorem 3.11.3), from a split place. Let `F / k`
 have exact constants and let `F₁`, `F₂` be subfields of `F` containing `k` over which `F` is
 finite. Suppose a place `P₁` of `F₁` splits completely in `F`, the places of `F` over it restrict
@@ -127,6 +171,9 @@ theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add_of_isSplitCompletel
   have hBQ : ∀ Q, Q ∉ T → B.coeff Q = 0 := fun Q hQ ↦ by
     by_contra h
     exact hQ (hBT (WeilDivisor.mem_support_iff.mpr h))
+  -- At every rational place `Q` of `F₂`, a function `w Q ∈ L(B + Q)` with a pole at `Q`.
+  choose! w hwL hwpole using fun (Q : Place k F₂) (hQ : Q.degree = 1) ↦
+    Divisor.exists_mem_riemannRochSpace_add_ofPoint_ord_neg hF₂ hB0 hBdeg hBdim hQ
   -- The places of `F` over `P₁`, one of which is singled out.
   set S := (Place.finite_setOf_restrict_eq (k' := k) (F' := F) k F₁ P₁).toFinset with hSdef
   have hS : ∀ P, P ∈ S ↔ P.restrict k F₁ = P₁ := fun P ↦ Set.Finite.mem_toFinset _
@@ -134,39 +181,10 @@ theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add_of_isSplitCompletel
     rw [hSdef, ← Set.ncard_eq_toFinset_card _ _]
     exact (Place.isSplitCompletely_def P₁).mp hsplit
   obtain ⟨P₀, hP₀⟩ : S.Nonempty := Finset.card_pos.mp (hScard ▸ Module.finrank_pos)
-  -- At every rational place `Q` of `F₂`, a function `w Q ∈ L(B + Q)` with a pole at `Q`.
-  choose! w hwL hwpole using fun (Q : Place k F₂) (hQ : Q.degree = 1) ↦
-    Divisor.exists_mem_riemannRochSpace_add_ofPoint_ord_neg hF₂ hB0 hBdeg hBdim hQ
   -- The basis: `1` at `P₀`, and `w` of the restriction at the other places over `P₁`.
   let u : S → F₂ := fun P ↦ if (P : Place k F) = P₀ then 1 else w ((P : Place k F).restrict k F₂)
-  have hli : LinearIndependent F₁ fun P : S ↦ algebraMap F₂ F (u P) := by
-    refine Place.linearIndependent_of_ord_neg_of_restrict_eq (P := Subtype.val)
-      (fun P ↦ (hS P).mp P.2) (i₀ := ⟨P₀, hP₀⟩) (by simp [u]) (by simp [u]) ?_ ?_
-    · intro P hP
-      have hP' : (P : Place k F) ≠ P₀ := fun h ↦ hP (Subtype.ext h)
-      simp only [u, hP', ↓reduceIte]
-      rw [Place.ord_algebraMap_restrict k F₂]
-      have hpole := hwpole _ (hdeg P ((hS P).mp P.2))
-      have he : (0 : ℤ) < Place.ramificationIdx F₂ (P : Place k F) := by
-        exact_mod_cast Place.ramificationIdx_pos F₂ _
-      exact mul_neg_of_pos_of_neg he hpole
-    · intro P P' hPP'
-      by_cases h' : (P' : Place k F) = P₀
-      · simp [u, h']
-      simp only [u, h', ↓reduceIte]
-      rw [Place.ord_algebraMap_restrict k F₂]
-      have hQQ' : (P : Place k F).restrict k F₂ ≠ (P' : Place k F).restrict k F₂ := fun h ↦
-        hPP' (Subtype.ext (hinj ((hS _).mp P.2) ((hS _).mp P'.2) h))
-      have hord :
-          0 ≤ ((P : Place k F).restrict k F₂).ord (w ((P' : Place k F).restrict k F₂)) := by
-        rcases eq_or_ne (w ((P' : Place k F).restrict k F₂)) 0 with h0 | h0
-        · rw [h0, Place.ord_zero]
-        have := (mem_riemannRochSpace_iff_neg_le_ord h0).mp
-          (hwL _ (hdeg P' ((hS P').mp P'.2))) ((P : Place k F).restrict k F₂)
-        rw [WeilDivisor.coeff_add, WeilDivisor.coeff_ofPoint_of_ne hQQ',
-          hBQ _ (hdisj P ((hS P).mp P.2))] at this
-        omega
-      positivity
+  have hli : LinearIndependent F₁ fun P : S ↦ algebraMap F₂ F (u P) :=
+    linearIndependent_algebraMap_ite_of_ord_neg hS hP₀ hinj hdeg hBQ hdisj hwL hwpole
   -- All of it lies in `L(A)` for `A = B + ∑_{P ≠ P₀} P|_{F₂}`, of degree `g(F₂) + [F : F₁] - 1`.
   set A : Divisor k F₂ := B + ∑ P ∈ S.erase P₀, WeilDivisor.ofPoint (P.restrict k F₂) with hAdef
   have hu : ∀ P, u P ∈ riemannRochSpace A := by
@@ -261,10 +279,10 @@ private theorem genus_le_of_forall_degree_eq_one (hF : IsFunctionField k F)
       {Q : Place k F₂ | Q.degree = 1}.encard) :
     genus k F ≤ Module.finrank F₁ F * genus k F₁ + Module.finrank F₂ F * genus k F₂ +
       (Module.finrank F₁ F - 1) * (Module.finrank F₂ F - 1) := by
-  /- Kummer's theorem turns the separable reduction into `[F : F₁]` places `R a` over `P₁`, one for
-  each root `a ∈ k` of the reduction, with `y ≡ a` at `R a`. Read through the restrictions of `R a`
-  to `F₁` and `F₂`, the presentation of `y` computes `a`, so distinct roots give places with
-  distinct restrictions to `F₂`, and the split-place form of the inequality applies. -/
+  -- Kummer's theorem turns the separable reduction into `[F : F₁]` places `R a` over `P₁`, one
+  -- for each root `a ∈ k` of the reduction, with `y ≡ a` at `R a`. Read through the restrictions
+  -- of `R a` to `F₁` and `F₂`, the presentation of `y` computes `a`, so distinct roots give
+  -- places with distinct restrictions to `F₂`, and the split-place form of the inequality applies.
   classical
   have : Algebra.IsAlgebraic F₁ F := Algebra.IsAlgebraic.of_finite F₁ F
   have : Algebra.IsAlgebraic F₂ F := Algebra.IsAlgebraic.of_finite F₂ F
@@ -301,10 +319,8 @@ private theorem genus_le_of_forall_degree_eq_one (hF : IsFunctionField k F)
   set S := {P : Place k F | P.restrict k F₁ = P₁}
   have hSfin : S.Finite := Place.finite_setOf_restrict_eq (k' := k) (F' := F) k F₁ P₁
   have hRinj : Set.InjOn R s := fun a ha a' ha' h ↦ hdist a ha a' ha' (by rw [h])
-  have himg : R '' s = S := by
-    refine Set.eq_of_subset_of_ncard_le (by rintro _ ⟨a, ha, rfl⟩; exact hR a ha) ?_ hSfin
-    rw [hRinj.ncard_image, Set.ncard_coe_finset, hsdeg]
-    exact Place.ncard_setOf_restrict_eq_le_finrank (k' := k) (F' := F) k F₁ P₁
+  have himg : R '' s = S :=
+    Place.image_eq_setOf_restrict_eq (k' := k) (F' := F) k F₁ R hR hRinj hsdeg
   have hScard : S.ncard = Module.finrank F₁ F := by
     rw [← himg, hRinj.ncard_image, Set.ncard_coe_finset, hsdeg]
   have hsplitc : P₁.IsSplitCompletely (k' := k) (F' := F) :=
@@ -414,20 +430,13 @@ private theorem genus_le_of_constantCompositum_eq_top {k' F' : Type*} [Field k']
     (hembQ : ∀ Q ∈ TQ, Nonempty (Q.ResidueField →ₐ[k] k')) :
     genus k F ≤ Module.finrank F₁ F * genus k F₁ + Module.finrank F₂ F * genus k F₂ +
       (Module.finrank F₁ F - 1) * (Module.finrank F₂ F - 1) := by
-  /- Over `k'`, the composita `F₁ · k'` and `F₂ · k'` have the genera of `F₁` and `F₂`, and `F'` is
-  finite over them of the same degrees. The places of `F'` over a place `P₁'` of `F₁ · k'` above
-  `P₁` are rational, `y` keeps its minimal polynomial and its presentation, and some places of
-  `F₂ · k'` over the chosen places of `F₂` are rational. So the inequality over `k'` from
-  `genus_le_of_forall_degree_eq_one` is the inequality for `F`. -/
+  -- Over `k'`, the composita `F₁ · k'` and `F₂ · k'` have the genera of `F₁` and `F₂`, and `F'`
+  -- is finite over them of the same degrees. The places of `F'` over a place `P₁'` of `F₁ · k'`
+  -- above `P₁` are rational, `y` keeps its minimal polynomial and its presentation, and some
+  -- places of `F₂ · k'` over the chosen places of `F₂` are rational. So the inequality over `k'`
+  -- from `genus_le_of_forall_degree_eq_one` is the inequality for `F`.
   have : Algebra.IsAlgebraic F₁ F := Algebra.IsAlgebraic.of_finite F₁ F
-  have : Algebra.IsAlgebraic F₂ F := Algebra.IsAlgebraic.of_finite F₂ F
-  have hF₁ : IsFunctionField k F₁ := hF.of_isAlgebraic_top
-  have hF₂ : IsFunctionField k F₂ := hF.of_isAlgebraic_top
-  have hex₂ : IsIntegrallyClosedIn k F₂ :=
-    (IsScalarTower.toAlgHom k F₂ F).isIntegrallyClosedIn (algebraMap F₂ F).injective hex
   have : FiniteDimensional F F' := finiteDimensional_of_constantCompositum_eq_top (k := k) h
-  have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
-  have hex' : IsIntegrallyClosedIn k' F' := hex.of_constantCompositum_eq_top h
   -- The algebra structures making `F₁ ⊆ F₁ · k' ⊆ F'` and `F₂ ⊆ F₂ · k' ⊆ F'` towers over `k`.
   let : Algebra F₁ F' := ((algebraMap F F').comp (algebraMap F₁ F)).toAlgebra
   let : Algebra F₂ F' := ((algebraMap F F').comp (algebraMap F₂ F)).toAlgebra
@@ -449,51 +458,36 @@ private theorem genus_le_of_constantCompositum_eq_top {k' F' : Type*} [Field k']
   have : IsScalarTower k k' F₂' := isScalarTower_base_constantCompositum k F₂ k' F'
   -- The composita `F₁ · k'` and `F₂ · k'` inside `F'` have the genera and degrees of `F₁`, `F₂`.
   obtain ⟨-, hF₁', _, _, hn₁, hg₁⟩ := constantCompositum_subfield (F₁ := F₁) hF hex h
-  obtain ⟨hcc₂, hF₂', _, _, hn₂, hg₂⟩ := constantCompositum_subfield (F₁ := F₂) hF hex h
-  have hg := genus_eq_genus_of_constantCompositum_eq_top hF hex h
+  obtain ⟨hcc₂, -, _, _, hn₂, hg₂⟩ := constantCompositum_subfield (F₁ := F₂) hF hex h
   -- A place `P₁'` of `F₁ · k'` over `P₁`; every place of `F'` above it is rational.
   obtain ⟨P₁', rfl⟩ :=
-    Place.restrict_surjective_of_finiteDimensional (k' := k') (F' := F₁') hF₁ hF₁' P₁
+    Place.restrict_surjective_of_finiteDimensional (F' := F₁') hF.of_isAlgebraic_top hF₁' P₁
   have hover (R' : Place k' F') (hR' : R'.restrict k' F₁' = P₁') :
       (R'.restrict k F).restrict k F₁ = P₁'.restrict k F₁ := by
     rw [Place.restrict_restrict, ← hR', Place.restrict_restrict]
-  have hdeg' (R' : Place k' F') (hR' : R'.restrict k' F₁' = P₁') : R'.degree = 1 := by
-    obtain ⟨φR⟩ := hembR _ (hover R' hR')
-    exact Place.degree_eq_one_of_constantCompositum_eq_top hF hex h R' φR
-  -- `y` stays a primitive element over `F₁ · k'`, with the same minimal polynomial.
-  have hmin' : (φ.map (algebraMap (P₁'.restrict k F₁).integers P₁'.integers)).map
-      (algebraMap P₁'.integers F₁') = minpoly F₁' (algebraMap F F' y) := by
-    have hcomp : (algebraMap P₁'.integers F₁').comp
-        (algebraMap (P₁'.restrict k F₁).integers P₁'.integers) =
-        (algebraMap F₁ F₁').comp (algebraMap (P₁'.restrict k F₁).integers F₁) :=
-      RingHom.ext fun x ↦ Subtype.ext (by simp [IsScalarTower.algebraMap_apply F₁ F F'])
-    rw [Polynomial.map_map, hcomp, ← Polynomial.map_map, hmin,
-      minpoly_algebraMap_eq_map_of_constantCompositum_eq_top hex h hy]
+  have hdeg' (R' : Place k' F') (hR' : R'.restrict k' F₁' = P₁') : R'.degree = 1 :=
+    (hembR _ (hover R' hR')).elim fun φR ↦
+      Place.degree_eq_one_of_constantCompositum_eq_top hF hex h R' φR
+  -- `y` stays a primitive element over `F₁ · k'`, with the same minimal polynomial, and its
+  -- reduction at `P₁'` stays separable.
+  have hmin' :=
+    Place.map_map_algebraMap_integers_eq_minpoly_of_constantCompositum_eq_top hex h hy hmin
   have hsep' : ((φ.map (algebraMap (P₁'.restrict k F₁).integers P₁'.integers)).map
       (IsLocalRing.residue P₁'.integers)).Separable := by
-    have hcomp : (IsLocalRing.residue P₁'.integers).comp
-        (algebraMap (P₁'.restrict k F₁).integers P₁'.integers) =
-        (algebraMap (P₁'.restrict k F₁).ResidueField P₁'.ResidueField).comp
-          (IsLocalRing.residue (P₁'.restrict k F₁).integers) :=
-      RingHom.ext fun x ↦ (IsLocalRing.ResidueField.algebraMap_residue x).symm
-    rw [Polynomial.map_map, hcomp, ← Polynomial.map_map]
+    rw [Polynomial.map_map, ← IsLocalRing.ResidueField.map_comp_residue, ← Polynomial.map_map]
     exact hsep.map
   -- The places of `F₂ · k'` over the chosen places of `F₂` are rational.
+  have : Algebra.IsAlgebraic F₂ F := Algebra.IsAlgebraic.of_finite F₂ F
+  have hF₂ : IsFunctionField k F₂ := hF.of_isAlgebraic_top
+  have hex₂ : IsIntegrallyClosedIn k F₂ :=
+    (IsScalarTower.toAlgHom k F₂ F).isIntegrallyClosedIn (algebraMap F₂ F).injective hex
   have hrat : ((genus k' F₂' + Module.finrank F₁' F' : ℕ) : ℕ∞) ≤
       {Q' : Place k' F₂' | Q'.degree = 1}.encard := by
     rw [hg₂, hn₁, ← hTQ]
-    have hsurj := Place.restrict_surjective_of_finiteDimensional (k' := k') (F' := F₂') hF₂ hF₂'
-    choose Q' hQ' using fun Q : Place k F₂ ↦ hsurj Q
-    simp only at hQ'
-    have hdegQ (Q₀ : Place k' F₂') (hQ₀ : Q₀.restrict k F₂ ∈ TQ) : Q₀.degree = 1 := by
-      obtain ⟨φQ⟩ := hembQ _ hQ₀
-      exact Place.degree_eq_one_of_constantCompositum_eq_top hF₂ hex₂ hcc₂ Q₀ φQ
-    have hinj : Set.InjOn Q' TQ := fun Q _ Q₂ _ hQ ↦ by rw [← hQ' Q, ← hQ' Q₂, hQ]
-    rw [← Set.encard_coe_eq_coe_finsetCard, ← hinj.encard_image]
-    refine Set.encard_le_encard ?_
-    rintro _ ⟨Q, hQ, rfl⟩
-    exact hdegQ (Q' Q) (by rw [hQ' Q]; exact hQ)
-  have key := genus_le_of_forall_degree_eq_one hF' hex' hdeg'
+    exact
+      Place.card_le_encard_setOf_degree_eq_one_of_constantCompositum_eq_top hF₂ hex₂ hcc₂ hembQ
+  have key := genus_le_of_forall_degree_eq_one (hF.of_constantCompositum_eq_top h)
+    (hex.of_constantCompositum_eq_top h) hdeg'
     (adjoin_simple_eq_top_of_constantCompositum_eq_top h hy) hmin' hsep'
     (fun i ↦ algebraMap F₁ F₁' (c i)) (fun i ↦ algebraMap F₂ F₂' (z i))
     (by
@@ -507,7 +501,7 @@ private theorem genus_le_of_constantCompositum_eq_top {k' F' : Type*} [Field k']
       rw [← IsScalarTower.algebraMap_apply F₂ F₂' F', IsScalarTower.algebraMap_apply F₂ F F']
       exact (Place.mem_integers_restrict_iff k F R' _).mp (hz i _ (hover R' hR')))
     hrat
-  rwa [hg, hg₁, hg₂, hn₁, hn₂] at key
+  rwa [genus_eq_genus_of_constantCompositum_eq_top hF hex h, hg₁, hg₂, hn₁, hn₂] at key
 
 /-- Castelnuovo's inequality when `F / F₁` is separable. Let `F / k` have exact constants and a
 separating element, and let `F₁`, `F₂` be subfields of `F` containing `k` with `F = F₁ F₂`, `F`

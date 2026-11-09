@@ -51,7 +51,7 @@ nonzero vector space this is the ring-level
 `TauCeti.isNilpotent_sub_one_of_pow_expChar_pow_eq_one` read in the endomorphism algebra, whose
 exponential characteristic is that of `k` because `k` acts faithfully on it; over a zero vector
 space every endomorphism is `0`. -/
-theorem _root_.Module.End.isNilpotent_sub_one_of_pow_expChar_pow_eq_one (p n : ℕ) [ExpChar k p]
+theorem _root_.Module.End.isNilpotent_sub_one_of_pow_expChar_pow_eq_one {p n : ℕ} [ExpChar k p]
     {f : Module.End k V} (h : f ^ p ^ n = 1) : IsNilpotent (f - 1) := by
   rcases subsingleton_or_nontrivial V with _ | _
   · exact ⟨0, LinearMap.ext fun x => Subsingleton.elim _ _⟩

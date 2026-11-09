@@ -466,11 +466,10 @@ theorem hasSum_toLp_calderonZygmundBad {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p
     (summable_of_hasFiniteSupport (hpt x).finite).hasSum
   simp only [HasSum, SummationFilter.unconditional_filter]
   rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm']
-  refine (tendsto_eLpNorm_sub_of_ae_tendsto (f := F) (C := 1)
-    (zero_lt_one.trans_le Fact.out).ne' hp
-    (.of_forall fun s => Finset.aestronglyMeasurable_fun_sum s fun q _ =>
+  refine (tendsto_eLpNorm_sub_of_ae_tendsto (f := F) (g := f - calderonZygmundGood f t)
+    (C := 1) hp (.of_forall fun s => Finset.aestronglyMeasurable_fun_sum s fun q _ =>
       (memLp_calderonZygmundBad hf q.1).aestronglyMeasurable)
-    (hf.sub hg).aestronglyMeasurable (hf.sub hg)
+    (hf.sub hg)
     (.of_forall fun s => .of_forall fun x => by
       simpa [F, hsum x] using (hpt x).enorm_sum_sub_tsum_le s)
     (.of_forall fun x => by
