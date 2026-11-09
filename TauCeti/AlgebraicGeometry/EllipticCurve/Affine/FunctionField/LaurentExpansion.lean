@@ -10,12 +10,13 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Infin
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint.Basic
 import TauCeti.RingTheory.LaurentSeries.Basic
 import TauCeti.RingTheory.Valuation.IsTrivialOn
+import TauCeti.RingTheory.Valuation.Discrete.Order
 
 /-!
 # Laurent expansions of Weierstrass rational functions
 
 The coordinate-ring expansion at infinity extends to the function field. Its parameter
-`z = -x/y` expands to `X`, and its valuation is equivalent to the place at infinity.
+`z = -x/y` expands to `X`, and its valuation equals the place at infinity.
 Consequently a rational function is regular at infinity exactly when its expansion is a
 power series. This lets local expansions of morphisms be constructed from their actual
 function-field pullbacks.
@@ -79,24 +80,20 @@ theorem functionFieldLaurentExpansion_neg_inv_genericY :
 theorem functionFieldLaurentExpansion_neg_genericX_div_genericY :
     W.functionFieldLaurentExpansion (-W.toAffine.genericX / W.toAffine.genericY) =
       (PowerSeries.X : K⟦X⟧) := by
-  have hy : W.laurentExpansion (AdjoinRoot.root W.toAffine.polynomial) ≠ 0 :=
-    fun h ↦ by
-      have := W.laurentExpansion_root_mul_formalW
-      rw [h, zero_mul] at this
-      exact one_ne_zero (neg_eq_zero.mp this.symm)
-  rw [map_div₀, map_neg, Affine.genericX_def, Affine.genericY_def,
-    Affine.CoordinateRing.mk_C_eq_algebraMap, AdjoinRoot.mk_X,
-    functionFieldLaurentExpansion_algebraMap, functionFieldLaurentExpansion_algebraMap]
-  have hx : W.laurentExpansion (algebraMap K[X] W.toAffine.CoordinateRing X) =
-      -((PowerSeries.X : K⟦X⟧) *
-        W.laurentExpansion (AdjoinRoot.root W.toAffine.polynomial)) :=
-    W.laurentExpansion_of_X_eq_neg_X_mul_laurentExpansion_root
-  rw [hx, neg_neg, mul_div_cancel_right₀ _ hy]
+  have hy := (map_ne_zero_iff W.functionFieldLaurentExpansion
+    W.functionFieldLaurentExpansion.injective).mpr W.toAffine.genericY_ne_zero
+  have hx : W.functionFieldLaurentExpansion W.toAffine.genericX =
+      -((PowerSeries.X : K⟦X⟧) * W.functionFieldLaurentExpansion W.toAffine.genericY) := by
+    rw [Affine.genericX_def, Affine.genericY_def,
+      Affine.CoordinateRing.mk_C_eq_algebraMap, AdjoinRoot.mk_X,
+      functionFieldLaurentExpansion_algebraMap, functionFieldLaurentExpansion_algebraMap]
+    exact W.laurentExpansion_of_X_eq_neg_X_mul_laurentExpansion_root
+  rw [map_div₀, map_neg, hx, neg_neg, mul_div_cancel_right₀ _ hy]
 
-/-- The valuation of the Laurent expansion represents the same place as infinity. -/
-theorem isEquiv_comap_functionFieldLaurentExpansion :
-    ((Valued.v : Valuation K⸨X⸩ ℤᵐ⁰).comap
-      W.functionFieldLaurentExpansion.toRingHom).IsEquiv W.toAffine.infinityPlace := by
+/-- Laurent expansion in `z = -x/y` preserves the normalized valuation at infinity. -/
+@[simp]
+theorem valuation_functionFieldLaurentExpansion (f : W.toAffine.FunctionField) :
+    Valued.v (W.functionFieldLaurentExpansion f) = W.toAffine.infinityPlace f := by
   let v := (Valued.v : Valuation K⸨X⸩ ℤᵐ⁰).comap
     W.functionFieldLaurentExpansion.toRingHom
   have : v.IsTrivialOn K := ⟨fun c hc ↦ by
@@ -109,18 +106,38 @@ theorem isEquiv_comap_functionFieldLaurentExpansion :
     apply TauCeti.LaurentSeries.valuation_coe_of_isUnit
     rw [PowerSeries.isUnit_iff_constantCoeff, PowerSeries.constantCoeff_invOfUnit]
     simp
-  apply Affine.isEquiv_infinityPlace_of_one_lt
-  rw [← Affine.genericX_eq_algebraMap, Valuation.comap_apply]
-  simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
-  rw [functionFieldLaurentExpansion_genericX, map_mul, hu,
-    mul_one, LaurentSeries.valuation_single_zpow, ← WithZero.exp_zero]
-  exact WithZero.exp_lt_exp.mpr (by norm_num)
+  have hequiv : v.IsEquiv W.toAffine.infinityPlace := by
+    apply Affine.isEquiv_infinityPlace_of_one_lt
+    rw [← Affine.genericX_eq_algebraMap, Valuation.comap_apply]
+    simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+    rw [functionFieldLaurentExpansion_genericX, map_mul, hu,
+      mul_one, LaurentSeries.valuation_single_zpow, ← WithZero.exp_zero]
+    exact WithZero.exp_lt_exp.mpr (by norm_num)
+  have hv : v (-W.toAffine.genericX / W.toAffine.genericY) = WithZero.exp (-1) := by
+    simp only [v, Valuation.comap_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+    rw [functionFieldLaurentExpansion_neg_genericX_div_genericY, ofPowerSeries_X,
+      LaurentSeries.valuation_single_zpow]
+  have hw : W.toAffine.infinityPlace (-W.toAffine.genericX / W.toAffine.genericY) =
+      WithZero.exp (-1) := by
+    rw [neg_div, Valuation.map_neg, Affine.genericX_def, Affine.genericY_def,
+      Affine.CoordinateRing.mk_C_eq_algebraMap, Affine.infinityPlace.X_div_mk_Y]
+  exact DFunLike.congr_fun (Valuation.eq_of_isEquiv_of_surjective
+    (Valuation.surjective_of_map_eq_exp_neg_one v hv)
+    (Valuation.surjective_of_map_eq_exp_neg_one W.toAffine.infinityPlace hw) hequiv) f
+
+/-- The valuation of the Laurent expansion represents the same place as infinity. -/
+theorem isEquiv_comap_functionFieldLaurentExpansion :
+    ((Valued.v : Valuation K⸨X⸩ ℤᵐ⁰).comap
+      W.functionFieldLaurentExpansion.toRingHom).IsEquiv W.toAffine.infinityPlace := by
+  apply Valuation.IsEquiv.of_eq
+  ext f
+  exact W.valuation_functionFieldLaurentExpansion f
 
 /-- A rational function is regular at infinity exactly when its expansion has no negative powers. -/
 theorem exists_powerSeries_functionFieldLaurentExpansion_iff (f : W.toAffine.FunctionField) :
     (∃ g : K⟦X⟧, (g : K⸨X⸩) = W.functionFieldLaurentExpansion f) ↔
       W.toAffine.infinityPlace f ≤ 1 := by
   rw [← LaurentSeries.val_le_one_iff_eq_coe]
-  exact Valuation.isEquiv_iff_val_le_one.mp W.isEquiv_comap_functionFieldLaurentExpansion
+  rw [valuation_functionFieldLaurentExpansion]
 
 end WeierstrassCurve

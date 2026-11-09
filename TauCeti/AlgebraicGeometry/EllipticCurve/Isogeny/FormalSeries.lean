@@ -45,10 +45,20 @@ private theorem isEquiv_comap_expansion :
   (W₁.isEquiv_comap_functionFieldLaurentExpansion.comap
     φ.fieldPullback.toRingHom).trans φ.isEquiv_comap_infinityPlace
 
-private theorem valuation_expansion_parameter_lt_one :
-    Valued.v (W₁.functionFieldLaurentExpansion
-      (φ.fieldPullback (-W₂.toAffine.genericX / W₂.toAffine.genericY))) < (1 : ℤᵐ⁰) := by
-  apply Valuation.isEquiv_iff_val_lt_one.mp φ.isEquiv_comap_expansion |>.mpr
+private theorem exists_powerSeries_constantCoeff_zero_of_infinityPlace_lt_one
+    (f : W₂.toAffine.FunctionField) (hf : W₂.toAffine.infinityPlace f < 1) :
+    ∃ g : K⟦X⟧, PowerSeries.constantCoeff g = 0 ∧
+      (g : K⸨X⸩) = W₁.functionFieldLaurentExpansion (φ.fieldPullback f) := by
+  have hv : Valued.v (W₁.functionFieldLaurentExpansion (φ.fieldPullback f)) < (1 : ℤᵐ⁰) :=
+    (Valuation.isEquiv_iff_val_lt_one.mp φ.isEquiv_comap_expansion).mpr hf
+  obtain ⟨g, hg⟩ := (LaurentSeries.val_le_one_iff_eq_coe K _).mp hv.le
+  exact ⟨g, LaurentSeries.constantCoeff_eq_zero_of_valuation_coe_lt_one (hg.symm ▸ hv), hg⟩
+
+private theorem exists_powerSeries_parameter :
+    ∃ g : K⟦X⟧, PowerSeries.constantCoeff g = 0 ∧
+      (g : K⸨X⸩) = W₁.functionFieldLaurentExpansion
+        (φ.fieldPullback (-W₂.toAffine.genericX / W₂.toAffine.genericY)) := by
+  apply φ.exists_powerSeries_constantCoeff_zero_of_infinityPlace_lt_one
   rw [neg_div, Valuation.map_neg, Affine.genericX_def, Affine.genericY_def,
     Affine.CoordinateRing.mk_C_eq_algebraMap, Affine.infinityPlace.X_div_mk_Y,
     ← WithZero.exp_zero]
@@ -64,8 +74,7 @@ noncomputable def formalSeries : K⟦X⟧ :=
 theorem coe_formalSeries :
     (φ.formalSeries : K⸨X⸩) = W₁.functionFieldLaurentExpansion
       (φ.fieldPullback (-W₂.toAffine.genericX / W₂.toAffine.genericY)) := by
-  obtain ⟨g, hg⟩ := (LaurentSeries.val_le_one_iff_eq_coe K _).mp
-    φ.valuation_expansion_parameter_lt_one.le
+  obtain ⟨g, _, hg⟩ := φ.exists_powerSeries_parameter
   rw [formalSeries, ← hg]
   congr 1
   ext n
@@ -76,9 +85,9 @@ infinity. -/
 -- Handle composites before `formalSeries_comp` rewrites them to substitutions.
 @[simp↓]
 theorem constantCoeff_formalSeries : PowerSeries.constantCoeff φ.formalSeries = 0 := by
-  apply LaurentSeries.constantCoeff_eq_zero_of_valuation_coe_lt_one
-  rw [coe_formalSeries]
-  exact φ.valuation_expansion_parameter_lt_one
+  obtain ⟨g, hg₀, hg⟩ := φ.exists_powerSeries_parameter
+  have h : φ.formalSeries = g := ofPowerSeries_injective (φ.coe_formalSeries.trans hg.symm)
+  simpa only [h] using hg₀
 
 /-- An isogeny's formal series is not the zero series, even in positive characteristic. -/
 theorem formalSeries_ne_zero : φ.formalSeries ≠ 0 := by
@@ -114,16 +123,12 @@ theorem coe_subst_formalW_formalSeries :
     ((PowerSeries.subst φ.formalSeries (formalW W₂) : K⟦X⟧) : K⸨X⸩) =
       W₁.functionFieldLaurentExpansion (φ.fieldPullback (-W₂.toAffine.genericY⁻¹)) := by
   let A := W₁.functionFieldLaurentExpansion.comp φ.fieldPullback
-  have hv : Valued.v (A (-W₂.toAffine.genericY⁻¹)) < (1 : ℤᵐ⁰) := by
-    have hlt : W₂.toAffine.infinityPlace (-W₂.toAffine.genericY⁻¹) < 1 := by
-      rw [Valuation.map_neg, map_inv₀, Affine.infinityPlace_genericY,
-        ← WithZero.exp_neg, ← WithZero.exp_zero]
-      exact WithZero.exp_lt_exp.mpr (by norm_num)
-    exact (Valuation.isEquiv_iff_val_lt_one.mp φ.isEquiv_comap_expansion
-      (x := -W₂.toAffine.genericY⁻¹)).mpr hlt
-  obtain ⟨w, hw⟩ := (LaurentSeries.val_le_one_iff_eq_coe K _).mp hv.le
-  have hw₀ : PowerSeries.constantCoeff w = 0 :=
-    LaurentSeries.constantCoeff_eq_zero_of_valuation_coe_lt_one (hw.symm ▸ hv)
+  have hlt : W₂.toAffine.infinityPlace (-W₂.toAffine.genericY⁻¹) < 1 := by
+    rw [Valuation.map_neg, map_inv₀, Affine.infinityPlace_genericY,
+      ← WithZero.exp_neg, ← WithZero.exp_zero]
+    exact WithZero.exp_lt_exp.mpr (by norm_num)
+  obtain ⟨w, hw₀, hw⟩ :=
+    φ.exists_powerSeries_constantCoeff_zero_of_infinityPlace_lt_one _ hlt
   have heq : w = wEquationRHS W₂ φ.formalSeries w := by
     apply ofPowerSeries_injective (R := K) (Γ := ℤ)
     rw [← LaurentSeries.coe_algebraMap, algebraMap_wEquationRHS,
