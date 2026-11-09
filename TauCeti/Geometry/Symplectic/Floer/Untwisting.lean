@@ -124,6 +124,7 @@ theorem isComplexLinearMap_perturbedMFDeriv_timeDependentFlowOf_iff (s : ℝ) {v
   exact (DFunLike.congr_fun (perturbedMFDeriv_timeDependentFlowOf hX hc s hv) a).trans
     (timeDependentFlowMFDerivEquiv_apply hc le_rfl hX s z.2 (v z) _).symm
 
+omit [FiniteDimensional ℝ E] in
 /-- **The seam condition.** If `H` is `1`-periodic in time, the map `w(s', t) = φ_t (v(s', t))`,
 with `φ_t = φ_{s, t}`, is `1`-periodic in `t` exactly when `v` satisfies the seam condition
 `v(s', t + 1) = ψ⁻¹ (v(s', t))` for the return map `ψ = φ_{s, s + 1}`, whose inverse is the flow
