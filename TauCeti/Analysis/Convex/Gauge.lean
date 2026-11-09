@@ -15,8 +15,9 @@ For a convex neighbourhood `s` of `0` in a real topological vector space, Mathli
 `gauge_le_one_iff_mem_closure` identifies the sublevel set `{x | gauge s x ≤ 1}` with the closure
 of `s`. This file records the dilated form: for `0 < t`, the sublevel set `{x | gauge s x ≤ t}` is
 `t • closure s`, which is also the closure of the dilate `t • s`
-(`TauCeti.setOfPred_gauge_le_eq_closure_smul_of_pos`); for a bounded `s` in a `T1` space the
-identity extends to `t = 0` (`TauCeti.setOfPred_gauge_le_eq_closure_smul`). For a convex body,
+(`TauCeti.setOfPred_gauge_le_eq_closure_smul_of_pos`); for a bounded `s` the identity extends to
+`t = 0` (`TauCeti.setOfPred_gauge_le_eq_closure_smul`), via the zero-gauge characterization
+`TauCeti.gauge_le_zero_iff_mem_closure_zero`. For a convex body,
 which is closed, this turns bounds on the gauge into membership in a dilate of the body
 (`ConvexBody.gauge_le_iff_mem_smul`), which is how successive minima are stated. For such a
 body, the gauge is also positive away from `0` (`ConvexBody.gauge_pos_iff`). The gauge of the
@@ -58,18 +59,36 @@ theorem setOfPred_gauge_le_eq_closure_smul_of_pos (hc : Convex ℝ s) (hs₀ : s
   ext x
   rw [Set.mem_ofPred_eq, closure_smul₀' ht.ne', gauge_le_iff_mem_smul_closure hc hs₀ ht]
 
-/-- For a bounded convex neighbourhood `s` of `0` in a `T1` space and `0 ≤ t`, the sublevel set
-`{x | gauge s x ≤ t}` is the closure of the dilate `t • s`. At `t = 0` both sides are `{0}`. See
-`TauCeti.setOfPred_gauge_le_eq_closure_smul_of_pos` for `0 < t`, which needs neither
-boundedness nor the separation axiom. -/
-theorem setOfPred_gauge_le_eq_closure_smul [T1Space E] (hc : Convex ℝ s)
+/-- For a bounded convex neighbourhood `s` of `0`, the gauge of `x` is at most `0` exactly when
+`x` lies in `closure {0}`. No separation axiom is needed. -/
+theorem gauge_le_zero_iff_mem_closure_zero (hc : Convex ℝ s) (hb : Bornology.IsVonNBounded ℝ s)
+    (hs₀ : s ∈ 𝓝 0) : gauge s x ≤ 0 ↔ x ∈ closure ({0} : Set E) := by
+  constructor
+  · intro hx
+    have hx0 : gauge s x = 0 := le_antisymm hx (gauge_nonneg x)
+    have hle : pure x ≤ Filter.comap (gauge s) (𝓝 0) := by
+      rw [← Filter.map_le_iff_le_comap, Filter.map_pure, hx0]
+      exact pure_le_nhds 0
+    exact specializes_iff_mem_closure.1 (specializes_iff_pure.2 (hle.trans
+      (comap_gauge_nhds_zero_le (absorbent_nhds_zero hs₀) hb))).symm
+  · intro h
+    refine le_of_forall_pos_le_add fun r hr => ?_
+    rw [zero_add, gauge_le_iff_mem_smul_closure hc hs₀ hr, ← closure_smul₀' hr.ne']
+    exact closure_mono (Set.singleton_subset_iff.2
+      (Set.zero_mem_smul_set (mem_of_mem_nhds hs₀))) h
+
+/-- For a bounded convex neighbourhood `s` of `0` and `0 ≤ t`, the sublevel set
+`{x | gauge s x ≤ t}` is the closure of the dilate `t • s`. At `t = 0` both sides are
+`closure {0}`, which is `{0}` in a `T1` space. See
+`TauCeti.setOfPred_gauge_le_eq_closure_smul_of_pos` for `0 < t`, which needs no boundedness. -/
+theorem setOfPred_gauge_le_eq_closure_smul (hc : Convex ℝ s)
     (hb : Bornology.IsVonNBounded ℝ s) (hs₀ : s ∈ 𝓝 0) (ht : 0 ≤ t) :
     {x | gauge s x ≤ t} = closure (t • s) := by
   rcases ht.eq_or_lt with rfl | ht
   · ext x
     rw [Set.zero_smul_set (Set.nonempty_of_mem (mem_of_mem_nhds hs₀)), ← Set.singleton_zero,
-      closure_singleton, Set.mem_ofPred_eq, Set.mem_singleton_iff,
-      ← gauge_eq_zero (absorbent_nhds_zero hs₀) hb, (gauge_nonneg x).ge_iff_eq']
+      Set.mem_ofPred_eq]
+    exact gauge_le_zero_iff_mem_closure_zero hc hb hs₀
   · exact setOfPred_gauge_le_eq_closure_smul_of_pos hc hs₀ ht
 
 end TauCeti
