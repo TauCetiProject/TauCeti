@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
+import Mathlib.Analysis.Calculus.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 
@@ -55,11 +56,9 @@ theorem ae_hasDerivAt_log_div {f g : ℝ → ℂ} {a b : ℝ}
     hf.boundedVariationOn.ae_differentiableAt_of_mem_uIcc,
     hg.boundedVariationOn.ae_differentiableAt_of_mem_uIcc] with t hlog ht₀ ht₁ ht
   have ht' := uIoc_subset_uIcc ht
-  have hd : HasDerivAt (fun t ↦ f t / g t)
-      ((deriv f t * g t - f t * deriv g t) / g t ^ 2) t :=
-    ((ht₀ ht').hasDerivAt).div ((ht₁ ht').hasDerivAt) (hg0 t ht')
-  convert hlog ht using 1
-  rw [hd.deriv]
-  field_simp [hf0 t ht', hg0 t ht']
+  have hdiv := logDeriv_fun_div t (hf0 t ht') (hg0 t ht') (ht₀ ht') (ht₁ ht')
+  simp only [logDeriv_apply] at hdiv
+  rw [← hdiv]
+  exact hlog ht
 
 end AbsolutelyContinuousOnInterval
