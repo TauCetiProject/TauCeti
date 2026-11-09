@@ -391,8 +391,8 @@ theorem exists_fourierMultiplierCLM_eq_and_norm_le_of_norm_iteratedFDeriv_le [No
   refine (TemperedDistribution.fourierMultiplierCLM F m ∘L
     Lp.toTemperedDistributionCLM F volume p).exists_apply_eq_toTemperedDistribution_and_norm_le
       hp_top T (fun φ ↦ ?_) hS f
-  simp only [T, ContinuousLinearMap.comp_apply, Lp.toTemperedDistributionCLM_apply,
-    Lp.toTemperedDistribution_toLp_eq,
+  simp only [T, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_coe,
+    Lp.toTemperedDistributionCLM_apply, Lp.toTemperedDistribution_toLp_eq,
     TemperedDistribution.fourierMultiplierCLM_toTemperedDistributionCLM_eq hm]
 
 end TauCeti
