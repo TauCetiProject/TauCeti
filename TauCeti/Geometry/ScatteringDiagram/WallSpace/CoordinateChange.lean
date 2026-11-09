@@ -258,38 +258,6 @@ theorem degreeMap_modulus_le_of_degree_comp (E : CoordinateChange d e H H')
 
 end CoordinateChange
 
-/-- Relabel the tangent directions of a directed wall space along an additive homomorphism,
-leaving the degrees and the Lie algebra untouched. The geometric direction becomes
-`T ∘ ρ` and the wall space with normal `m` is that of the original with normal `m ∘ T`. -/
-def mapTangent (H : DirectedWallSpaces ρ ℒ) (T : Λ →+ Λ') :
-    DirectedWallSpaces (T.comp ρ) ℒ where
-  wall n m := H.wall n (m.comp T)
-  wall_le_piece n m := H.wall_le_piece n _
-  zero_normal n := H.zero_normal n
-  nontangent n m hm := H.nontangent n _ hm
-  rescale n m c hc := by
-    simpa only [AddMonoidHom.smul_comp] using H.rescale n (m.comp T) c hc
-  bracket_mem {n n' m m' x y} hx hy := by
-    have hn : wallBracketNormal ρ n n' (m.comp T) (m'.comp T) =
-        (wallBracketNormal (T.comp ρ) n n' m m').comp T := by
-      ext v
-      simp
-    exact hn ▸ H.bracket_mem hx hy
-
-@[simp]
-theorem mapTangent_wall (H : DirectedWallSpaces ρ ℒ) (T : Λ →+ Λ') (n : Γ) (m : Λ' →+ ℤ) :
-    (H.mapTangent T).wall n m = H.wall n (m.comp T) := (rfl)
-
-/-- Transporting a normal along `T` and pulling it back along `T⁻¹` returns the original
-wall space. -/
-theorem mapTangent_wall_comp_symm (H : DirectedWallSpaces ρ ℒ) (T : Λ ≃+ Λ') (n : Γ)
-    (m : Λ →+ ℤ) :
-    (H.mapTangent (T : Λ →+ Λ')).wall n (m.comp (T.symm : Λ' →+ Λ)) = H.wall n m := by
-  rw [mapTangent_wall]
-  congr 1
-  ext v
-  simp
-
 namespace CoordinateChange
 
 /-- Relabelling tangent directions along `T` is a coordinate change with identity degree
