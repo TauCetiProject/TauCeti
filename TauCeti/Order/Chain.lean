@@ -26,7 +26,7 @@ both instances. The `Finset` lemma is stated for a `Preorder`.
 
 * `IsChain.exists_isGreatest`: a nonempty finite chain has a greatest element.
 * `IsChain.exists_isLeast`: a nonempty finite chain has a least element.
-* `Finset.exists_forall_le_of_forall_comparable`: a nonempty finite set on which a function to a
+* `Finset.exists_max_image_of_forall_comparable`: a nonempty finite set on which a function to a
   preorder takes pairwise comparable values has a point where the value is greatest.
 -/
 
@@ -54,7 +54,7 @@ namespace Finset
 
 /-- On a nonempty finite set on which the values of `C` are pairwise comparable, some point has the
 greatest value. -/
-theorem exists_forall_le_of_forall_comparable {α γ : Type*} [Preorder γ] (C : α → γ) {B : Finset α}
+theorem exists_max_image_of_forall_comparable {α γ : Type*} [Preorder γ] (B : Finset α) (C : α → γ)
     (hC : ∀ a ∈ B, ∀ b ∈ B, C a ≤ C b ∨ C b ≤ C a) (hB : B.Nonempty) :
     ∃ t ∈ B, ∀ a ∈ B, C a ≤ C t := by
   have hchain : IsChain (· ≤ ·) (C '' (B : Set α)) := by

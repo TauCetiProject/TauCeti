@@ -20,7 +20,8 @@ is excluded from both sums.
 
 ## Main results
 
-* `Finset.sum_abs_erase_le`: `∑_{a ≠ t} |v a| ≤ ∑_{a ≠ t} |v a + [a = t'] v t| + |v t|`.
+* `Finset.sum_abs_erase_le_sum_abs_erase_merge_add_abs`:
+  `∑_{a ≠ t} |v a| ≤ ∑_{a ≠ t} |v a + [a = t'] v t| + |v t|`.
 -/
 
 public section
@@ -29,8 +30,9 @@ namespace Finset
 
 /-- Merging the value at `t` into the value at another index `t'` costs `|v t|` once: the sum of
 absolute values over the remaining indices is at most that of the merged values plus `|v t|`. -/
-theorem sum_abs_erase_le {ι R : Type*} [AddCommGroup R] [LinearOrder R] [IsOrderedAddMonoid R]
-    [DecidableEq ι] {A : Finset ι} {t t' : ι} (ht'A' : t' ∈ A.erase t) (v : ι → R) :
+theorem sum_abs_erase_le_sum_abs_erase_merge_add_abs {ι R : Type*} [AddCommGroup R]
+    [LinearOrder R] [IsOrderedAddMonoid R] [DecidableEq ι] {A : Finset ι} {t t' : ι}
+    (ht'A' : t' ∈ A.erase t) (v : ι → R) :
     ∑ a ∈ A.erase t, |v a| ≤
       ∑ a ∈ A.erase t, |v a + if a = t' then v t else 0| + |v t| := by
   have hpt (a : ι) : |v a| ≤ |v a + if a = t' then v t else 0| + if a = t' then |v t| else 0 := by

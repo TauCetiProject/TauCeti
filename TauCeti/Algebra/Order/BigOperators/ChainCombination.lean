@@ -81,7 +81,9 @@ private theorem abs_sum_mul_eq {α β : Type*} [DecidableEq α] {C : α → β �
       rw [← sum_erase_merge_mul ht'A' v fun a => (C a i : ℝ),
         sum_congr rfl fun a ha => by rw [hagree a ha], ← Finset.sum_mul,
         (sum_erase_merge ht'A' htA v).trans hv, zero_mul]
-    rw [h, Nat.cast_add, Nat.cast_one, add_sub_cancel_left, mul_one, hrest, abs_zero, zero_add]
+    rw [h, hrest]
+    push_cast
+    simp
     congr 1
     linarith
 
@@ -103,7 +105,7 @@ theorem sum_abs_le_two_mul_sum_abs_sum_mul {α β : Type*} [Fintype β]
   · simp
   -- Every nonempty part of `A` has a vector dominating all the others in it.
   have hmax : ∀ B ⊆ A, B.Nonempty → ∃ t ∈ B, ∀ a ∈ B, C a ≤ C t := fun B hBA hB =>
-    Finset.exists_forall_le_of_forall_comparable C
+    Finset.exists_max_image_of_forall_comparable B C
       (fun a ha b hb => (hC a (hBA ha) b (hBA hb)).imp And.left And.left) hB
   obtain ⟨t, htA, ht⟩ := hmax A subset_rfl hne
   rcases (A.erase t).eq_empty_or_nonempty with hA' | hA'
@@ -118,7 +120,7 @@ theorem sum_abs_le_two_mul_sum_abs_sum_mul {α β : Type*} [Fintype β]
     (fun a ha b hb => hinj a (mem_of_mem_erase ha) b (mem_of_mem_erase hb))
     (fun a => v a + if a = t' then v t else 0) ((sum_erase_merge ht'A' htA v).trans hv)
   -- The vectors of `t` and `t'` differ somewhere, so `t` exceeds `t'` by at least `1` in total.
-  have hgap := Finset.one_le_sum_sub_of_lt (R := ℝ) <|
+  have hgap := one_le_sum_sub_of_lt (R := ℝ) <|
     lt_of_le_of_ne (ht t' (mem_of_mem_erase ht'A'))
     fun h => (ne_of_mem_erase ht'A') (hinj t' (mem_of_mem_erase ht'A') t htA h)
   -- Removing `t` costs `|v t|` once on the left and at least `|v t|` on the right.
@@ -126,7 +128,7 @@ theorem sum_abs_le_two_mul_sum_abs_sum_mul {α β : Type*} [Fintype β]
       ∑ i, |∑ a ∈ A.erase t, (v a + if a = t' then v t else 0) * C a i| +
         |v t| * ∑ i, ((C t i : ℝ) - C t' i) := by
     simp only [abs_sum_mul_eq hC htA ht'A' ht ht' hv, Finset.sum_add_distrib, Finset.mul_sum]
-  have hleft := sum_abs_erase_le ht'A' v
+  have hleft := sum_abs_erase_le_sum_abs_erase_merge_add_abs ht'A' v
   rw [← add_sum_erase A _ htA, hright]
   nlinarith [abs_nonneg (v t)]
 
