@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.Jacobian
 public import TauCeti.Analysis.Calculus.Morse.Linearization
+import Mathlib.Topology.MetricSpace.Sequences
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.SecondDerivative
@@ -34,11 +35,16 @@ change-of-variables inequality bounds the measure of the gradient image, and
 for every additive Haar measure `μ`. On the upper contact set the Hessian is negative
 semidefinite, which is what turns this measure estimate into a bound on `u` in terms of an
 elliptic operator applied to it, in
-`TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci`.
+`TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Basic`.
 
 ## Main declarations
 
 * `TauCeti.PDE.upperContactSet`: the upper contact set of `u` on `Ω`.
+* `TauCeti.PDE.norm_le_of_forall_le_add_inner`: supporting slopes of a bounded function at a
+  point with a ball around it are bounded.
+* `TauCeti.PDE.mem_upperContactSet_of_frequently`: upper contact sets are upper semicontinuous
+  along pointwise convergent, locally uniformly bounded sequences of functions on growing sets,
+  which is how the estimate passes from smooth approximations to their limit.
 * `TauCeti.PDE.mem_upperContactSet_iff_gradient`: on an open set where `u` is differentiable,
   the supporting slope at a contact point is the gradient.
 * `TauCeti.PDE.measurableSet_upperContactSet`: for `u` of class `C¹` on an open set, the upper
@@ -83,6 +89,54 @@ theorem mem_upperContactSet :
   Iff.rfl
 
 theorem upperContactSet_subset : upperContactSet u Ω ⊆ Ω := fun _ hy => hy.1
+
+/-- **Supporting slopes are bounded.** If an affine function with slope `p` touches `u` from above
+at `x` on a set `Ω` containing `ball x r`, and `|u| ≤ M` on `Ω`, then `‖p‖ ≤ 4 M / r`. -/
+theorem norm_le_of_forall_le_add_inner {r M : ℝ} (hr : 0 < r) (hball : ball x r ⊆ Ω)
+    (hM : ∀ y ∈ Ω, |u y| ≤ M) (hp : ∀ y ∈ Ω, u y ≤ u x + ⟪p, y - x⟫) : ‖p‖ ≤ 4 * M / r := by
+  rw [le_div_iff₀ hr]
+  rcases eq_or_ne p 0 with rfl | hp0
+  · simpa using (abs_nonneg _).trans (hM x (hball (mem_ball_self hr)))
+  -- Test the supporting inequality at the point at distance `r / 2` from `x` against `p`.
+  have hnp : 0 < ‖p‖ := norm_pos_iff.2 hp0
+  set y := x - (r / 2 / ‖p‖) • p
+  have hy : y ∈ Ω := hball <| by
+    rw [mem_ball, dist_eq_norm, sub_sub_cancel_left, norm_neg, norm_smul, Real.norm_eq_abs,
+      abs_of_pos (by positivity), div_mul_cancel₀ _ hnp.ne']
+    linarith
+  have h := hp y hy
+  rw [show y - x = -((r / 2 / ‖p‖) • p) by simp [y], inner_neg_right, real_inner_smul_right,
+    real_inner_self_eq_norm_sq, div_mul_eq_mul_div, sq, ← mul_assoc,
+    mul_div_assoc, div_self hnp.ne', mul_one] at h
+  have h1 := le_abs_self (u x) |>.trans (hM x (hball (mem_ball_self hr)))
+  have h2 := neg_abs_le (u y) |>.trans' (neg_le_neg (hM y hy))
+  nlinarith
+
+/-- **Upper semicontinuity of upper contact sets.** Let `uₖ` converge pointwise to `u` on `Ω`, and
+let `Vₖ` be sets such that every point of `Ω` lies in `Vₖ` for all large `k`, a fixed ball around
+`x ∈ Ω` lies in `Vₖ` for all large `k`, and the `uₖ` are eventually bounded on `Vₖ` uniformly in
+`k`. If `x` lies in the upper contact set of `uₖ` on `Vₖ` for infinitely many `k`, then `x` lies in
+the upper contact set of `u` on `Ω`. -/
+theorem mem_upperContactSet_of_frequently [ProperSpace E] {us : ℕ → E → ℝ} {V : ℕ → Set E}
+    {r M : ℝ} (hr : 0 < r) (hball : ∀ᶠ k in atTop, ball x r ⊆ V k)
+    (hmem : ∀ y ∈ Ω, ∀ᶠ k in atTop, y ∈ V k) (hM : ∀ᶠ k in atTop, ∀ y ∈ V k, |us k y| ≤ M)
+    (hconv : ∀ y ∈ Ω, Tendsto (fun k => us k y) atTop (𝓝 (u y))) (hx : x ∈ Ω)
+    (hfreq : ∃ᶠ k in atTop, x ∈ upperContactSet (us k) (V k)) :
+    x ∈ upperContactSet u Ω := by
+  obtain ⟨φ, hφ, hφx⟩ := extraction_of_frequently_atTop hfreq
+  choose P hP using fun j => (hφx j).2
+  -- Along the extracted subsequence the slopes are eventually bounded, so a further
+  -- subsequence of them converges.
+  have hPb : ∀ᶠ j in atTop, P j ∈ closedBall (0 : E) (4 * M / r) := by
+    filter_upwards [hφ.tendsto_atTop.eventually (hball.and hM)] with j ⟨hb, hMj⟩
+    exact mem_closedBall_zero_iff.2 (norm_le_of_forall_le_add_inner hr hb hMj (hP j))
+  obtain ⟨p, -, ψ, hψ, hPψ⟩ :=
+    tendsto_subseq_of_frequently_bounded isBounded_closedBall hPb.frequently
+  have hk : Tendsto (φ ∘ ψ) atTop atTop := hφ.tendsto_atTop.comp hψ.tendsto_atTop
+  refine ⟨hx, p, fun y hy => le_of_tendsto_of_tendsto ((hconv y hy).comp hk)
+    (((hconv x hx).comp hk).add (hPψ.inner tendsto_const_nhds)) ?_⟩
+  filter_upwards [hk.eventually (hmem y hy)] with j hj
+  exact hP (ψ j) y hj
 
 /-- **The Hessian on the upper contact set.** At a point of the upper contact set of a function
 that is `C²` on an open set, the second derivative is nonpositive on the diagonal:
