@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Topology.UnitInterval
-public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Angle
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Angle
+public import TauCeti.Topology.Instances.AddCircle.UnitInterval
 
 /-!
 # Trigonometric functions on the unit interval
@@ -80,22 +81,11 @@ theorem eq_zero_or_eq_one_of_cos_two_pi_mul_eq_one {t : I} (h : cos (2 * π * t)
 end points. -/
 theorem eq_or_of_cos_sin_two_pi_mul_eq {s t : I} (hc : cos (2 * π * s) = cos (2 * π * t))
     (hs : sin (2 * π * s) = sin (2 * π * t)) : s = t ∨ s = 0 ∧ t = 1 ∨ s = 1 ∧ t = 0 := by
-  obtain ⟨n, hn⟩ := Real.exists_int_eq_add_of_cos_sin_eq hc hs
-  have hs0 := s.2.1
-  have hs1 := s.2.2
-  have ht0 := t.2.1
-  have ht1 := t.2.2
-  have hlo : (-1 : ℝ) ≤ n := by linarith
-  have hhi : (n : ℝ) ≤ 1 := by linarith
-  have hlo' : -1 ≤ n := by exact_mod_cast hlo
-  have hhi' : n ≤ 1 := by exact_mod_cast hhi
-  obtain rfl | rfl | rfl : n = -1 ∨ n = 0 ∨ n = 1 := by omega
-  · push_cast at hn
-    exact Or.inr (Or.inl ⟨Subtype.ext (by rw [Set.Icc.coe_zero]; linarith),
-      Subtype.ext (by rw [Set.Icc.coe_one]; linarith)⟩)
-  · exact Or.inl (Subtype.ext (by simpa using hn))
-  · push_cast at hn
-    exact Or.inr (Or.inr ⟨Subtype.ext (by rw [Set.Icc.coe_one]; linarith),
-      Subtype.ext (by rw [Set.Icc.coe_zero]; linarith)⟩)
+  have : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
+  refine (AddCircle.ofUnitInterval_eq_ofUnitInterval_iff (p := 2 * π)).1 ?_
+  rw [AddCircle.ofUnitInterval_apply, AddCircle.ofUnitInterval_apply, mul_comm (s : ℝ),
+    mul_comm (t : ℝ)]
+  -- `Real.Angle` is by definition `AddCircle (2 * π)`, with the same quotient map from `ℝ`.
+  exact Real.Angle.cos_sin_inj hc hs
 
 end TauCeti
