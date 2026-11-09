@@ -10,17 +10,16 @@ public import TauCeti.Topology.Covering.PowerSubstitution
 import Mathlib.Analysis.Complex.Polynomial.Basic
 
 /-!
-# Analytic roots after a power substitution
+# Continuous roots after a power substitution
 
-A monic polynomial family of degree `d` with analytic coefficients and simple roots on
-`U × (ball 0 R \ {0})` admits single-valued analytic root functions after the substitution
-`(w, t) ↦ (w, t ^ n)`, provided `d ! ∣ n` and the substituted disc fits inside the original disc.
-Here `U` is open and simply connected. The root functions are pointwise distinct and give a
-complete linear factorization. The degree-zero case gives the empty factorization.
+A continuous monic family of degree `d` over a simply connected, locally path connected parameter
+space and a punctured disc, separable at every point, splits into `d` pointwise distinct continuous
+linear factors after the substitution `(w, t) ↦ (w, t ^ n)`, provided `d ! ∣ n` and the
+substituted disc fits inside the original disc.
 
-The continuous and analytic splitting theorems give the single-valued root functions needed for
-Puiseux factorization with parameters. These functions are defined on the punctured domain only;
-extension across the missing hyperplane requires a separate removable-singularity argument.
+The analytic version, with ambient root functions on an open simply connected domain, is
+`TauCeti.Polynomial.exists_analyticOnNhd_eq_prod_X_sub_C_powerSubstitution` in
+`TauCeti.Analysis.Polynomial.Puiseux.Branches`.
 
 ## References
 
@@ -90,93 +89,5 @@ theorem exists_continuousMap_prod_X_sub_C_powerSubstitution
   obtain ⟨r, hr⟩ := exists_continuousMap_isRoot_powerSubstitution hF hdeg hsep hn hR hdvd
   exact ⟨r, fun b => ⟨(hr b).1, (Sym.toMonic_ofFn_eq_of_forall_isRoot (hmonic _) (hdeg _)
     (hr b).1 (hr b).2).symm.trans (Sym.toMonic_ofFn _)⟩⟩
-
-/-- A continuous function on an open set that is a root of an analytic family of simple roots,
-after the substitution `(w, t) ↦ (w, t ^ n)`, is analytic. -/
-theorem analyticOnNhd_of_continuousOn_isRoot_powerSubstitution
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
-    {Ω S : Set (E × ℂ)} (hΩ : IsOpen Ω)
-    {F : E × ℂ → ℂ[X]} {d : ℕ} {r : E × ℂ → ℂ}
-    (hF : ∀ i ≤ d, AnalyticOnNhd ℂ (fun b => (F b).coeff i) S)
-    (hdeg : ∀ b ∈ S, (F b).natDegree = d) (hsep : ∀ b ∈ S, (F b).Separable) (n : ℕ)
-    (hqmem : ∀ b ∈ Ω, (b.1, b.2 ^ n) ∈ S) (hrc : ContinuousOn r Ω)
-    (hroot : ∀ b ∈ Ω, (F (b.1, b.2 ^ n)).IsRoot (r b)) :
-    AnalyticOnNhd ℂ r Ω := by
-  intro b hb
-  have hqa : AnalyticAt ℂ (fun b : E × ℂ => (b.1, b.2 ^ n)) b :=
-    analyticAt_fst.prod (analyticAt_snd.pow n)
-  apply analyticAt_of_eventually_isRoot (d := d)
-  · intro k hk
-    exact (hF k hk _ (hqmem b hb)).comp_of_eq hqa rfl
-  · filter_upwards [hΩ.mem_nhds hb] with x hx
-    exact (hdeg _ (hqmem x hx)).le
-  · exact hrc.continuousAt (hΩ.mem_nhds hb)
-  · filter_upwards [hΩ.mem_nhds hb] with x hx
-    exact hroot x hx
-  · exact (hsep _ (hqmem b hb)).eval₂_derivative_ne_zero (RingHom.id ℂ) (hroot b hb)
-
-/-- A monic family with analytic coefficients and simple roots on an open simply connected
-parameter domain times a punctured disc splits into pointwise distinct analytic linear factors
-there after `t ↦ t ^ n`, for any nonzero `n` divisible by `d !`. The functions in the conclusion
-are ambient functions, analytic on the punctured product; nothing is asserted at `t = 0`. -/
-theorem exists_analyticOnNhd_prod_X_sub_C_powerSubstitution
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
-    {U : Set E} (hU : IsOpen U) [SimplyConnectedSpace U]
-    {F : E × ℂ → ℂ[X]} {d n : ℕ} {R R' : ℝ}
-    (hF : ∀ i ≤ d, AnalyticOnNhd ℂ (fun b => (F b).coeff i)
-      (U ×ˢ (ball (0 : ℂ) R \ {0})))
-    (hmonic : ∀ b ∈ U ×ˢ (ball (0 : ℂ) R \ {0}), (F b).Monic)
-    (hdeg : ∀ b ∈ U ×ˢ (ball (0 : ℂ) R \ {0}), (F b).natDegree = d)
-    (hsep : ∀ b ∈ U ×ˢ (ball (0 : ℂ) R \ {0}), (F b).Separable)
-    (hn : n ≠ 0) (hR : R' ^ n ≤ R) (hdvd : d.factorial ∣ n) :
-    ∃ r : Fin d → E × ℂ → ℂ,
-      (∀ i, AnalyticOnNhd ℂ (r i) (U ×ˢ (ball (0 : ℂ) R' \ {0}))) ∧
-      ∀ b ∈ U ×ˢ (ball (0 : ℂ) R' \ {0}), Injective (fun i => r i b) ∧
-        F (b.1, b.2 ^ n) = ∏ i, (X - C (r i b)) := by
-  classical
-  let D := ball (0 : ℂ) R \ {0}
-  let D' := ball (0 : ℂ) R' \ {0}
-  let Ω := U ×ˢ D'
-  let f : U × D → ℂ[X] := fun b => F (b.1, b.2)
-  let q : E × ℂ → E × ℂ := fun b => (b.1, b.2 ^ n)
-  have hΩ : IsOpen Ω := hU.prod (isOpen_ball.sdiff isClosed_singleton)
-  let : LocallyPathConnectedSpace U := hU.locallyPathConnectedSpace
-  -- First split the family continuously on the product of subtypes.
-  have hf : ∀ i ≤ d, Continuous fun b => (f b).coeff i := by
-    intro i hi
-    exact (hF i hi).continuousOn.comp_continuous (by fun_prop) (fun b => ⟨b.1.2, b.2.2⟩)
-  obtain ⟨s, hs⟩ := exists_continuousMap_prod_X_sub_C_powerSubstitution hf
-    (fun b => hmonic _ ⟨b.1.2, b.2.2⟩) (fun b => hdeg _ ⟨b.1.2, b.2.2⟩)
-    (fun b => hsep _ ⟨b.1.2, b.2.2⟩) hn hR hdvd
-  -- Ambient representatives let us state analyticity without an analytic structure on a subtype.
-  let r : Fin d → E × ℂ → ℂ := fun i =>
-    extend Subtype.val (fun b : Ω => s i (Homeomorph.Set.prod U D' b)) (fun _ => 0)
-  have hr : ∀ i (b : Ω), r i b = s i (Homeomorph.Set.prod U D' b) := fun i b =>
-    Subtype.val_injective.extend_apply _ _ b
-  have hrc : ∀ i, ContinuousOn (r i) Ω := by
-    intro i
-    apply continuousOn_iff_continuous_domRestrict.2
-    exact ((s i).continuous.comp (Homeomorph.Set.prod U D').continuous).congr fun b => (hr i b).symm
-  have hqmem : ∀ b ∈ Ω, q b ∈ U ×ˢ D := by
-    intro b hb
-    refine ⟨hb.1, ?_⟩
-    simpa only [q, coe_powerSubstitution_apply_snd] using
-      (powerSubstitution U hn hR (⟨b.1, hb.1⟩, ⟨b.2, hb.2⟩)).2.2
-  have hprod : ∀ b ∈ Ω, Injective (fun i => r i b) ∧
-      F (q b) = ∏ i, (X - C (r i b)) := by
-    intro b hb
-    have hbprod : Homeomorph.Set.prod U D' ⟨b, hb⟩ =
-        (⟨b.1, hb.1⟩, ⟨b.2, hb.2⟩) := Homeomorph.Set.prod_apply U D' ⟨b, hb⟩
-    have hri : ∀ i, r i b = s i (⟨b.1, hb.1⟩, ⟨b.2, hb.2⟩) := fun i =>
-      (hr i ⟨b, hb⟩).trans (congrArg (s i) hbprod)
-    simpa only [hri, f, q, powerSubstitution_apply_fst, coe_powerSubstitution_apply_snd] using
-      hs (⟨b.1, hb.1⟩, ⟨b.2, hb.2⟩)
-  have hroot : ∀ i b, b ∈ Ω → (F (q b)).IsRoot (r i b) := by
-    intro i b hb
-    rw [(hprod b hb).2, isRoot_prod]
-    exact ⟨i, Finset.mem_univ i, by simp⟩
-  -- Every continuous branch agrees locally with the analytic implicit root at its simple root.
-  exact ⟨r, fun i => analyticOnNhd_of_continuousOn_isRoot_powerSubstitution hΩ hF hdeg hsep n
-    hqmem (hrc i) (hroot i), hprod⟩
 
 end TauCeti.Polynomial

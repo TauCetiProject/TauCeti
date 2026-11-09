@@ -138,17 +138,10 @@ theorem exists_analyticOnNhd_eq_prod_X_sub_C_powerSubstitution [CompleteSpace E]
   have hQa : ∀ b, AnalyticAt ℂ Q b := fun b =>
     analyticAt_fst.prod (analyticAt_snd.fun_pow n)
   refine ⟨r, fun i b hb => ?_, fun b hb => ⟨(hr b hb).1, ?_⟩⟩
-  · have hcoeff : ∀ j ≤ d, AnalyticAt ℂ (fun b => (F (Q b)).coeff j) b :=
-      fun j hj => (hFa j hj _ (hQ b hb)).comp (hQa b)
-    have hdegree : ∀ᶠ v in 𝓝 b, (F (Q v)).natDegree ≤ d :=
-      Filter.mem_of_superset (hW.mem_nhds hb) fun v hv => (hdeg _ (hQ v hv)).le
-    have hroot : ∀ᶠ v in 𝓝 b, (F (Q v)).IsRoot (r i v) :=
-      Filter.mem_of_superset (hW.mem_nhds hb) fun v hv => (hr v hv).2 i
-    have hsimple : (derivative (F (Q b))).eval (r i b) ≠ 0 := by
-      simpa only [eval₂_id] using
-        (hsep _ (hQ b hb)).eval₂_derivative_ne_zero (RingHom.id ℂ) ((hr b hb).2 i)
-    exact analyticAt_of_eventually_isRoot hcoeff hdegree
-      ((hrc i b hb).continuousAt (hW.mem_nhds hb)) hroot hsimple
+  · exact analyticOnNhd_of_continuousOn_isRoot hW
+      (fun j hj b hb => (hFa j hj _ (hQ b hb)).comp (hQa b))
+      (fun b hb => (hdeg _ (hQ b hb)).le) (fun b hb => hsep _ (hQ b hb)) (hrc i)
+      (fun b hb => (hr b hb).2 i) b hb
   · exact (Sym.toMonic_ofFn_eq_of_forall_isRoot (hmonic _ (hQ b hb))
       (hdeg _ (hQ b hb)) (hr b hb).1 (hr b hb).2).symm.trans (Sym.toMonic_ofFn _)
 

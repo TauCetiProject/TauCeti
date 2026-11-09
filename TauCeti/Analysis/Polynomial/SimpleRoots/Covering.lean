@@ -113,6 +113,22 @@ theorem analyticAt_of_eventually_isRoot [CompleteSpace 𝕜] [CompleteSpace E]
   filter_upwards [(tendsto_id.prodMk_nhds hr).eventually hg, hroot] with x hx hxr
   exact hx.1 hxr
 
+/-- **A continuous root of an analytic family of separable polynomials is analytic.** Let `Ω` be
+open and let `F` be a family with coefficients analytic on `Ω` and degree at most `d` on `Ω`, whose
+members over `Ω` are separable. A function `r` that is continuous on `Ω` and picks a root of `F x`
+for every `x ∈ Ω` is analytic on `Ω`. -/
+theorem analyticOnNhd_of_continuousOn_isRoot [CompleteSpace 𝕜] [CompleteSpace E] {Ω : Set E}
+    (hΩ : IsOpen Ω) (hF : ∀ i ≤ d, AnalyticOnNhd 𝕜 (fun x => (F x).coeff i) Ω)
+    (hdeg : ∀ x ∈ Ω, (F x).natDegree ≤ d) (hsep : ∀ x ∈ Ω, (F x).Separable)
+    {r : E → 𝕜} (hrc : ContinuousOn r Ω) (hroot : ∀ x ∈ Ω, (F x).IsRoot (r x)) :
+    AnalyticOnNhd 𝕜 r Ω := fun x hx =>
+  analyticAt_of_eventually_isRoot (fun i hi => hF i hi x hx)
+    (Filter.mem_of_superset (hΩ.mem_nhds hx) hdeg) (hrc.continuousAt (hΩ.mem_nhds hx))
+    (Filter.mem_of_superset (hΩ.mem_nhds hx) hroot)
+    (by
+      simpa only [eval₂_id] using
+        (hsep x hx).eval₂_derivative_ne_zero (RingHom.id 𝕜) (hroot x hx))
+
 end Analytic
 
 /-! ### The root space of a separable family is a covering space -/
