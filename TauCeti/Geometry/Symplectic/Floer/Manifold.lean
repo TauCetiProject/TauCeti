@@ -529,6 +529,28 @@ theorem IsNondegenerate.integral_floerEnergyDensity [FiniteDimensional ℝ E]
     integral_add harea hderiv, stdComplexLineReal_eq, stdComplexLineImag_eq,
     integral_fderiv_sub_fderiv_Icc hU hg hf hab habU]
 
+/-- For a compactly supported `C¹` function `f` on the plane, the derivative `z ↦ f'(z) v` is
+integrable. -/
+private theorem integrable_fderiv_apply_of_hasCompactSupport {f : ℝ × ℝ → ℝ}
+    (hf : ContDiff ℝ 1 f) (hfc : HasCompactSupport f) (v : ℝ × ℝ) :
+    Integrable fun z ↦ fderiv ℝ f z v :=
+  ((hf.continuous_fderiv one_ne_zero).clm_apply continuous_const).integrable_of_hasCompactSupport
+    (hfc.fderiv_apply (𝕜 := ℝ) v)
+
+/-- For compactly supported `C¹` functions `f` and `g` on the plane with supports in `D`, the
+integral over `D` of `z ↦ f'(z) v - g'(z) w` vanishes. -/
+private theorem setIntegral_fderiv_apply_sub_fderiv_apply_eq_zero {f g : ℝ × ℝ → ℝ}
+    {D : Set (ℝ × ℝ)} (hf : ContDiff ℝ 1 f) (hfc : HasCompactSupport f) (hfD : tsupport f ⊆ D)
+    (hg : ContDiff ℝ 1 g) (hgc : HasCompactSupport g) (hgD : tsupport g ⊆ D) (v w : ℝ × ℝ) :
+    ∫ z in D, (fderiv ℝ f z v - fderiv ℝ g z w) = 0 := by
+  rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ ?_,
+    integral_sub (integrable_fderiv_apply_of_hasCompactSupport hf hfc v)
+      (integrable_fderiv_apply_of_hasCompactSupport hg hgc w),
+    integral_fderiv_apply_eq_zero_of_hasCompactSupport hf hfc,
+    integral_fderiv_apply_eq_zero_of_hasCompactSupport hg hgc, sub_zero]
+  rw [fderiv_of_notMem_tsupport ℝ fun h ↦ hz (hfD h),
+    fderiv_of_notMem_tsupport ℝ fun h ↦ hz (hgD h), zero_apply, zero_apply, sub_zero]
+
 /-- **The energy identity on the plane, for a compactly supported perturbation.** Let `u` and the
 perturbation data `K = K_s ds + K_t dt` be `C¹` on the whole plane, for a nondegenerate two-form
 on a finite-dimensional manifold, and suppose that the pulled-back one-form
@@ -554,18 +576,14 @@ theorem IsNondegenerate.integral_floerEnergyDensity_of_hasCompactSupport
     contMDiff_id.prodMk hu
   have hf : ContDiff ℝ 1 (fun w ↦ Kt w (u w)) := contMDiff_iff_contDiff.mp (hKt.comp hgraph)
   have hg : ContDiff ℝ 1 (fun w ↦ Ks w (u w)) := contMDiff_iff_contDiff.mp (hKs.comp hgraph)
-  have hf' : Integrable fun z ↦ fderiv ℝ (fun w ↦ Kt w (u w)) z stdComplexLineReal :=
-    ((hf.continuous_fderiv one_ne_zero).clm_apply continuous_const).integrable_of_hasCompactSupport
-      (hKt₀.fderiv_apply (𝕜 := ℝ) _)
-  have hg' : Integrable fun z ↦ fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag :=
-    ((hg.continuous_fderiv one_ne_zero).clm_apply continuous_const).integrable_of_hasCompactSupport
-      (hKs₀.fderiv_apply (𝕜 := ℝ) _)
   have hdK : Integrable fun z ↦ fderiv ℝ (fun w ↦ Kt w (u w)) z stdComplexLineReal -
-      fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag := hf'.sub hg'
+      fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag :=
+    (integrable_fderiv_apply_of_hasCompactSupport hf hKt₀ _).sub
+      (integrable_fderiv_apply_of_hasCompactSupport hg hKs₀ _)
   have hderiv : ∫ z, (fderiv ℝ (fun w ↦ Kt w (u w)) z stdComplexLineReal -
       fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag) = 0 := by
-    rw [integral_sub hf' hg', integral_fderiv_apply_eq_zero_of_hasCompactSupport hf hKt₀,
-      integral_fderiv_apply_eq_zero_of_hasCompactSupport hg hKs₀, sub_zero]
+    simpa using setIntegral_fderiv_apply_sub_fderiv_apply_eq_zero hf hKt₀ (subset_univ _) hg hKs₀
+      (subset_univ _) stdComplexLineReal stdComplexLineImag
   -- The pointwise energy identity.
   have hpt (z : ℝ × ℝ) : ω.floerEnergyDensity Ks Kt u z =
       (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
@@ -648,7 +666,6 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero
           (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
           (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) -
         ∫ z in D, ω.hamiltonianCurvature Ks Kt z (u z) := by
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
   -- Each pulled-back component `K(u)` is `C¹` on the whole domain, with support in `C`.
   have hcomp {K : ℝ × ℝ → M → ℝ}
       (hK : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ univ))
@@ -673,19 +690,11 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero
   -- The exterior derivative `d(K(u))` is integrable, vanishes off `C`, and has integral zero.
   set d : ℝ × ℝ → ℝ := fun z ↦ fderiv ℝ (fun w ↦ Kt w (u w)) z stdComplexLineReal -
     fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag with hd
-  have hint {f : ℝ × ℝ → ℝ} (hf : ContDiff ℝ 1 f) (hfc : HasCompactSupport f) (v : ℝ × ℝ) :
-      Integrable fun z ↦ fderiv ℝ f z v :=
-    ((hf.continuous_fderiv one_ne_zero).clm_apply continuous_const).integrable_of_hasCompactSupport
-      (hfc.fderiv_apply (𝕜 := ℝ) v)
-  have hdi : Integrable d := (hint ht htc _).sub (hint hs hsc _)
-  have hdD : ∫ z in D, d z = 0 := by
-    rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ ?_, hd,
-      integral_sub (hint ht htc _) (hint hs hsc _),
-      integral_fderiv_apply_eq_zero_of_hasCompactSupport ht htc,
-      integral_fderiv_apply_eq_zero_of_hasCompactSupport hs hsc, sub_zero]
-    have hzC : z ∉ C := fun h ↦ hz (hCD h)
-    simp only [hd, fderiv_of_notMem_tsupport ℝ fun h ↦ hzC (hss h),
-      fderiv_of_notMem_tsupport ℝ fun h ↦ hzC (hts h), zero_apply, sub_zero]
+  have hdi : Integrable d := (integrable_fderiv_apply_of_hasCompactSupport ht htc _).sub
+    (integrable_fderiv_apply_of_hasCompactSupport hs hsc _)
+  have hdD : ∫ z in D, d z = 0 :=
+    setIntegral_fderiv_apply_sub_fderiv_apply_eq_zero ht htc (hts.trans hCD) hs hsc
+      (hss.trans hCD) _ _
   -- The area density is integrable, as a combination of integrable functions.
   have harea : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
@@ -728,7 +737,6 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_add_hamiltonianCurvature_
         ∫ z in D, ω.hamiltonianCurvature Ks Kt z (u z) =
       (∫ z in D, ω.floerEnergyDensity Ks' Kt' u z) +
         ∫ z in D, ω.hamiltonianCurvature Ks' Kt' z (u z) := by
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
   have hmem : MapsTo (fun w ↦ (w, u w)) U (U ×ˢ univ) := fun _ hz ↦ ⟨hz, mem_univ _⟩
   have hpull {K : ℝ × ℝ → M → ℝ}
       (hK : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ univ)) :
@@ -763,21 +771,13 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_add_hamiltonianCurvature_
   obtain ⟨hfs, hfsc, hfss, hfsl⟩ := hdiff hKs hKs' hs
   obtain ⟨hft, hftc, hfts, hftl⟩ := hdiff hKt hKt' ht
   -- The exterior derivative of the cut-off difference integrates to zero over `D`.
-  have hint {f : ℝ × ℝ → ℝ} (hf : ContDiff ℝ 1 f) (hfc : HasCompactSupport f) (v : ℝ × ℝ) :
-      Integrable fun z ↦ fderiv ℝ f z v :=
-    ((hf.continuous_fderiv one_ne_zero).clm_apply continuous_const).integrable_of_hasCompactSupport
-      (hfc.fderiv_apply (𝕜 := ℝ) v)
   set d : ℝ × ℝ → ℝ := fun z ↦
     fderiv ℝ (D.indicator fun w ↦ Kt w (u w) - Kt' w (u w)) z stdComplexLineReal -
       fderiv ℝ (D.indicator fun w ↦ Ks w (u w) - Ks' w (u w)) z stdComplexLineImag with hd
-  have hdi : Integrable d := (hint hft hftc _).sub (hint hfs hfsc _)
-  have hdD : ∫ z in D, d z = 0 := by
-    rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ ?_, hd,
-      integral_sub (hint hft hftc _) (hint hfs hfsc _),
-      integral_fderiv_apply_eq_zero_of_hasCompactSupport hft hftc,
-      integral_fderiv_apply_eq_zero_of_hasCompactSupport hfs hfsc, sub_zero]
-    simp only [hd, fderiv_of_notMem_tsupport ℝ fun h ↦ hz (hfss h),
-      fderiv_of_notMem_tsupport ℝ fun h ↦ hz (hfts h), zero_apply, sub_zero]
+  have hdi : Integrable d := (integrable_fderiv_apply_of_hasCompactSupport hft hftc _).sub
+    (integrable_fderiv_apply_of_hasCompactSupport hfs hfsc _)
+  have hdD : ∫ z in D, d z = 0 :=
+    setIntegral_fderiv_apply_sub_fderiv_apply_eq_zero hft hftc hfts hfs hfsc hfss _ _
   -- On `D`, by the pointwise energy identity for both data, the energy plus the curvature
   -- changes by this exterior derivative.
   have hpt : ∀ z ∈ D, ω.floerEnergyDensity Ks Kt u z + ω.hamiltonianCurvature Ks Kt z (u z) =
@@ -802,8 +802,7 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_add_hamiltonianCurvature_
           fun w ↦ K w (u w) - K' w (u w)) (v : ℝ × ℝ) :
         fderiv ℝ (D.indicator fun w ↦ K w (u w) - K' w (u w)) z v =
           fderiv ℝ (fun w ↦ K w (u w)) z v - fderiv ℝ (fun w ↦ K' w (u w)) z v := by
-      rw [hloc.fderiv_eq, fderiv_fun_sub (hda hK) (hda hK')]
-      rfl
+      rw [hloc.fderiv_eq, fderiv_fun_sub (hda hK) (hda hK'), sub_apply]
     rw [hω.floerEnergyDensity_eq hud (hmd hKs) (hmd hKt),
       hω.floerEnergyDensity_eq hud (hmd hKs') (hmd hKt'), hd]
     beta_reduce
@@ -857,6 +856,16 @@ theorem floerEnergyDensity_constSmooth (ω : SymplecticForm V)
     fromTangentSpace_constSmooth_apply, fromTangentSpace_perturbedMFDeriv_constSmooth_apply,
     fromTangentSpace_perturbedMFDeriv_constSmooth_apply]
 
+omit [FiniteDimensional ℝ V] in
+/-- A `C¹` function on `(ℝ × ℝ) × V` is `C¹` for the product of the model spaces of `ℝ × ℝ` and
+`V`. -/
+private theorem contMDiffOn_uncurry_of_contDiffOn {K : ℝ × ℝ → V → ℝ} {U : Set (ℝ × ℝ)}
+    (hK : ContDiffOn ℝ 1 (uncurry K) (U ×ˢ Set.univ)) :
+    ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ Set.univ) := by
+  have h := contMDiffOn_iff_contDiffOn.mpr hK
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
+  exact h
+
 open MeasureTheory Set Filter Topology in
 /-- **The energy identity for compactly supported perturbation data.** Let the perturbation data
 `K = K_s ds + K_t dt` vanish outside a compact set `C` of the domain, and let `u` and `K` be `C¹`
@@ -883,11 +892,6 @@ theorem setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero (ω : Symplectic
     rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (hev hKsC) (hev hKtC),
       hamiltonianCurvature_zero_left]
     simp
-  have hK' {K : ℝ × ℝ → V → ℝ} (hK : ContDiffOn ℝ 1 (uncurry K) (U ×ˢ univ)) :
-      ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ univ) := by
-    have h := contMDiffOn_iff_contDiffOn.mpr hK
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-    exact h
   have hE' : ω.constSmooth.floerEnergyDensity Ks Kt u = ω.floerEnergyDensity Ks Kt u :=
     funext (floerEnergyDensity_constSmooth ω Ks Kt u)
   have hR' : (fun z ↦ ω.constSmooth.hamiltonianCurvature Ks Kt z (u z)) =
@@ -895,7 +899,8 @@ theorem setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero (ω : Symplectic
     funext fun z ↦ hamiltonianCurvature_constSmooth ω Ks Kt z (u z)
   have h :=
     (isNondegenerate_constSmooth ω).setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero hU
-    (contMDiffOn_iff_contDiffOn.mpr hu) (hK' hKs) (hK' hKt) hC hCU hKsC hKtC hD hCD
+    (contMDiffOn_iff_contDiffOn.mpr hu) (contMDiffOn_uncurry_of_contDiffOn hKs)
+    (contMDiffOn_uncurry_of_contDiffOn hKt) hC hCU hKsC hKtC hD hCD
     (hE' ▸ hE) (hR' ▸ hR)
   have harea (z : ℝ × ℝ) :
       SmoothBundleForm.eval₂ ω.constSmooth (u z)
@@ -931,17 +936,13 @@ theorem setIntegral_floerEnergyDensity_add_hamiltonianCurvature_eq_of_eqOn (ω :
         ∫ z in D, ω.hamiltonianCurvature Ks Kt z (u z) =
       (∫ z in D, ω.floerEnergyDensity Ks' Kt' u z) +
         ∫ z in D, ω.hamiltonianCurvature Ks' Kt' z (u z) := by
-  have hK' {K : ℝ × ℝ → V → ℝ} (hK : ContDiffOn ℝ 1 (uncurry K) (U ×ˢ univ)) :
-      ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ univ) := by
-    have h := contMDiffOn_iff_contDiffOn.mpr hK
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-    exact h
   -- The energy densities and the curvatures are continuous on `U`, hence integrable over `D`.
   have hint {f : ℝ × ℝ → ℝ} (hf : ContinuousOn f U) : IntegrableOn f D :=
     (hf.mono hDU).integrableOn_compact hD
   have h := IsNondegenerate.setIntegral_floerEnergyDensity_add_hamiltonianCurvature_eq_of_eqOn
-    (isNondegenerate_constSmooth ω) hU (contMDiffOn_iff_contDiffOn.mpr hu) (hK' hKs) (hK' hKt)
-    (hK' hKs') (hK' hKt') hD hDU hs ht
+    (isNondegenerate_constSmooth ω) hU (contMDiffOn_iff_contDiffOn.mpr hu)
+    (contMDiffOn_uncurry_of_contDiffOn hKs) (contMDiffOn_uncurry_of_contDiffOn hKt)
+    (contMDiffOn_uncurry_of_contDiffOn hKs') (contMDiffOn_uncurry_of_contDiffOn hKt') hD hDU hs ht
     (funext (floerEnergyDensity_constSmooth ω Ks Kt u) ▸
       hint (ω.continuousOn_floerEnergyDensity hU hu hKs hKt))
     (by simpa only [hamiltonianCurvature_constSmooth] using
