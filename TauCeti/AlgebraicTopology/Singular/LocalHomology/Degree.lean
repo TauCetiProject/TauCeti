@@ -368,25 +368,6 @@ section CompactSpace
 
 variable [CompactSpace M] [CompactSpace N]
 
-omit [T2Space N] [CompactSpace N] in
-/-- The image of the fundamental class of `M` in `Hₙ(N, N ∖ N; ℤ)` is the image of the
-fundamental class of `M` along the whole of `M` under the map of pairs `f`. -/
-private theorem singularHomologyπ_mapFundamentalClass (f : C(M, N)) :
-    ((TopPair.ofSubset ((univ : Set (TopCat.of N))ᶜ)).singularHomologyπ
-      (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) n).hom (o.mapFundamentalClass hE f) =
-      localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) f (subset_univ _) n
-        (o.fundamentalClassOn hE isCompact_univ) := by
-  have h := congrArg (fun φ ↦ φ.hom (o.fundamentalClass hE))
-    (TopPair.singularHomologyπ_naturality (TopPair.ofSubsetMap (X := TopCat.of M)
-      (Y := TopCat.of N) (B := (univ : Set M)ᶜ) (B' := (univ : Set N)ᶜ) (TopCat.ofHom f)
-      fun _ hx ↦ (hx (mem_univ _)).elim) (ModuleCat.of ℤ (ULift.{0} ℤ)) n)
-  -- The ambient map of `ofSubsetMap` is `f` itself; its source is read as `(ofSubset _).fst`,
-  -- which `rw` does not identify with `TopCat.of M`.
-  erw [TopPair.ofSubsetMap_fst] at h
-  rw [← o.singularHomologyπ_fundamentalClass hE, localHomologyMap_def, mapFundamentalClass_def,
-    singularHomologyFunctor_obj_map]
-  exact h
-
 variable [PreconnectedSpace N]
 
 include hF in

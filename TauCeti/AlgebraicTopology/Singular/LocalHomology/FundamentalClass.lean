@@ -63,6 +63,8 @@ homology isomorphism directly, without requiring Poincaré duality.
   orientation is the negated fundamental class.
 * `TauCeti.HomologicalOrientation.mapFundamentalClass_eq_of_homotopic`: homotopic maps carry the
   fundamental class to the same class.
+* `TauCeti.HomologicalOrientation.singularHomologyπ_mapFundamentalClass`: the image of `f_*[M]`
+  in `Hₙ(X, X ∖ X; ℤ)` is the image of the fundamental class along `M` under the map of pairs `f`.
 * `TauCeti.HomologicalOrientation.exists_eq_zsmul_fundamentalClass`: on a compact connected
   oriented manifold, every top-dimensional class is a multiple of the fundamental class.
 
@@ -327,6 +329,24 @@ theorem mapFundamentalClass_neg (f : C(M, X)) :
     (-o).mapFundamentalClass hn f = -o.mapFundamentalClass hn f := by
   rw [mapFundamentalClass_def, mapFundamentalClass_def, fundamentalClass_neg]
   exact map_neg _ _
+
+/-- The image of `f_*[M]` in `Hₙ(X, X ∖ X; ℤ)` is the image of the fundamental class along the
+whole of `M` under the map of pairs `f : (M, M ∖ M) → (X, X ∖ X)`. -/
+theorem singularHomologyπ_mapFundamentalClass (f : C(M, X)) :
+    ((TopPair.ofSubset ((univ : Set (TopCat.of X))ᶜ)).singularHomologyπ
+      (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) n).hom (o.mapFundamentalClass hn f) =
+      localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) f (subset_univ _) n
+        (o.fundamentalClassOn hn isCompact_univ) := by
+  have h := congrArg (fun φ ↦ φ.hom (o.fundamentalClass hn))
+    (TopPair.singularHomologyπ_naturality (TopPair.ofSubsetMap (X := TopCat.of M)
+      (Y := TopCat.of X) (B := (univ : Set M)ᶜ) (B' := (univ : Set X)ᶜ) (TopCat.ofHom f)
+      fun _ hx ↦ (hx (mem_univ _)).elim) (ModuleCat.of ℤ (ULift.{0} ℤ)) n)
+  -- The ambient map of `ofSubsetMap` is `f` itself; its source is read as `(ofSubset _).fst`,
+  -- which `rw` does not identify with `TopCat.of M`.
+  erw [TopPair.ofSubsetMap_fst] at h
+  rw [← o.singularHomologyπ_fundamentalClass hn, localHomologyMap_def, mapFundamentalClass_def,
+    TauCeti.singularHomologyFunctor_obj_map]
+  exact h
 
 end Map
 
