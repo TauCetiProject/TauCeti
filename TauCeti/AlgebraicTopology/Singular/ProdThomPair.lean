@@ -163,7 +163,7 @@ private lemma isZero_singularHomology_halfCompl (W : Submodule ℝ F) (φ : F �
     IsZero ((TopPair.ofSubset (halfCompl B W φ)).singularHomology R n) := by
   let P := TopPair.ofSubset (halfCompl B W φ)
   have hmem : ∀ p : B × F, (p.1, v) ∈ halfCompl B W φ := fun p h ↦
-    (show ¬ φ v ≤ 0 by norm_num [hφv]) h.2
+    (hφv ▸ one_pos : 0 < φ v).not_ge h.2
   let c : TopCat.of (B × F) ⟶ TopCat.of (B × F) :=
     TopCat.ofHom ⟨fun p ↦ (p.1, v), by fun_prop⟩
   let H : (TopCat.Hom.hom (𝟙 (TopCat.of (B × F)))).Homotopy c.hom :=
