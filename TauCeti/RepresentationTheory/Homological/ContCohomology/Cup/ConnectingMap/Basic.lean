@@ -108,15 +108,14 @@ variable {G : Type*} [Group G] [TopologicalSpace G]
   {A : Type*} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
     [DistribMulAction G A] [ContinuousSMul G A]
   {A'' : Type*} [AddCommGroup A''] [TopologicalSpace A''] [DiscreteTopology A'']
-    [DistribMulAction G A''] [ContinuousSMul G A'']
-  {B : Type*} [AddCommGroup B] [TopologicalSpace B] [IsTopologicalAddGroup B]
-    [DistribMulAction G B] [ContinuousSMul G B]
+    [DistribMulAction G A'']
+  {B : Type*} [AddCommGroup B] [TopologicalSpace B] [DistribMulAction G B]
   {C' : Type*} [AddCommGroup C'] [TopologicalSpace C'] [DiscreteTopology C']
     [DistribMulAction G C'] [ContinuousSMul G C']
   {C : Type*} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C]
     [DistribMulAction G C] [ContinuousSMul G C]
   {C'' : Type*} [AddCommGroup C''] [TopologicalSpace C''] [DiscreteTopology C'']
-    [DistribMulAction G C''] [ContinuousSMul G C'']
+    [DistribMulAction G C'']
   (SA : DiscreteShortExact G A' A A'') (SC : DiscreteShortExact G C' C C'')
   (μ : A →+ B →+ C) (μ' : A' →+ B →+ C') (μ'' : A'' →+ B →+ C'')
   (hμ : Continuous fun p : A × B => μ p.1 p.2)
@@ -128,9 +127,8 @@ variable {G : Type*} [Group G] [TopologicalSpace G]
   (hincl : ∀ (a : A') (b : B), μ (SA.incl a) b = SC.incl (μ' a b))
   (hproj : ∀ (a : A) (b : B), μ'' (SA.proj a) b = SC.proj (μ a b))
 
-include hequiv hincl hproj in
-omit [ContinuousSMul G A''] [IsTopologicalAddGroup B] [ContinuousSMul G B]
-  [ContinuousSMul G C''] in
+include hequiv hincl hproj
+
 /-- **`δ⁰` passes through the `(0,0)` cup in the first variable.** For an invariant `x` of `A''`
 and an invariant `y` of `B`, the class `δ⁰ (x ⌣ y) ∈ H¹(G, C')` is `δ⁰ x ⌣ y`, the `(1,0)` cup
 against the pairing `μ'` of the sub-objects. -/
@@ -145,11 +143,26 @@ theorem explicitDelta0_explicitCup00_left (x : H0 G A'') (y : H0 G B) :
   exact congrArg SC.explicitDelta0
     (Subtype.ext (by simp only [coe_explicitCup00, coe_explicitCoeff0, pairingRight_apply]))
 
-include hμ hequiv hincl hproj in
-omit [ContinuousSMul G A''] in
+variable [ContinuousMul G] [ContinuousSMul G C'']
+
+/-- **`δ¹` passes through the `(1,0)` cup in the first variable.** For a class `x ∈ H¹(G, A'')`
+and an invariant `y` of `B`, the class `δ¹ (x ⌣ y) ∈ H²(G, C')` is the `(2,0)` cup
+`δ¹ x ⌣ y`. -/
+theorem explicitDelta1_explicitCup10_left [ContinuousSMul G A''] (x : H1 G A'') (y : H0 G B) :
+    SC.explicitDelta1 (explicitCup10 G A'' B C'' μ'' hμ'' hequiv'' x y) =
+      explicitCup20 G A' B C' μ' hμ' hequiv' (SA.explicitDelta1 x) y := by
+  rw [explicitCup10_apply, explicitCup20_apply,
+    SA.explicitDelta1_coeffMap SC (pairingRight μ' hequiv' y) (pairingRight μ hequiv y)
+      (pairingRight μ'' hequiv'' y)
+      (fun a => by simp only [pairingRight_apply]; exact hincl a (y : B))
+      (fun a => by simp only [pairingRight_apply]; exact hproj a (y : B)) x]
+
+include hμ
+
 /-- **`δ¹` passes through the `(0,1)` cup in the first variable.** For an invariant `x` of `A''`
 and a class `y ∈ H¹(G, B)`, the class `δ¹ (x ⌣ y) ∈ H²(G, C')` is the `(1,1)` cup `δ⁰ x ⌣ y`. -/
-theorem explicitDelta1_explicitCup01_left [ContinuousMul G] (x : H0 G A'') (y : H1 G B) :
+theorem explicitDelta1_explicitCup01_left [IsTopologicalAddGroup B] [ContinuousSMul G B]
+    (x : H0 G A'') (y : H1 G B) :
     SC.explicitDelta1 (explicitCup01 G A'' B C'' μ'' hμ'' hequiv'' x y) =
       explicitCup11 G A' B C' μ' hμ' hequiv' (SA.explicitDelta0 x) y := by
   induction y using QuotientAddGroup.induction_on with
@@ -180,20 +193,6 @@ theorem explicitDelta1_explicitCup01_left [ContinuousMul G] (x : H0 G A'') (y : 
     simp only [QuotientAddGroup.mk'_apply] at hleft hright
     rw [explicitCup01_mk, hleft, hright, explicitCup11_mk]
 
-include hequiv hincl hproj in
-omit [IsTopologicalAddGroup B] [ContinuousSMul G B] in
-/-- **`δ¹` passes through the `(1,0)` cup in the first variable.** For a class `x ∈ H¹(G, A'')`
-and an invariant `y` of `B`, the class `δ¹ (x ⌣ y) ∈ H²(G, C')` is the `(2,0)` cup
-`δ¹ x ⌣ y`. -/
-theorem explicitDelta1_explicitCup10_left [ContinuousMul G] (x : H1 G A'') (y : H0 G B) :
-    SC.explicitDelta1 (explicitCup10 G A'' B C'' μ'' hμ'' hequiv'' x y) =
-      explicitCup20 G A' B C' μ' hμ' hequiv' (SA.explicitDelta1 x) y := by
-  rw [explicitCup10_apply, explicitCup20_apply,
-    SA.explicitDelta1_coeffMap SC (pairingRight μ' hequiv' y) (pairingRight μ hequiv y)
-      (pairingRight μ'' hequiv'' y)
-      (fun a => by simp only [pairingRight_apply]; exact hincl a (y : B))
-      (fun a => by simp only [pairingRight_apply]; exact hproj a (y : B)) x]
-
 end FirstVariable
 
 section SecondVariable
@@ -201,20 +200,19 @@ section SecondVariable
 -- As above, the left-hand sides do not determine the sequence and pairings needed on the right.
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
-  {A : Type*} [AddCommGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
-    [DistribMulAction G A] [ContinuousSMul G A]
+  {A : Type*} [AddCommGroup A] [TopologicalSpace A] [DistribMulAction G A]
   {B' : Type*} [AddCommGroup B'] [TopologicalSpace B'] [DiscreteTopology B']
     [DistribMulAction G B'] [ContinuousSMul G B']
   {B : Type*} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B]
     [DistribMulAction G B] [ContinuousSMul G B]
   {B'' : Type*} [AddCommGroup B''] [TopologicalSpace B''] [DiscreteTopology B'']
-    [DistribMulAction G B''] [ContinuousSMul G B'']
+    [DistribMulAction G B'']
   {C' : Type*} [AddCommGroup C'] [TopologicalSpace C'] [DiscreteTopology C']
     [DistribMulAction G C'] [ContinuousSMul G C']
   {C : Type*} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C]
     [DistribMulAction G C] [ContinuousSMul G C]
   {C'' : Type*} [AddCommGroup C''] [TopologicalSpace C''] [DiscreteTopology C'']
-    [DistribMulAction G C''] [ContinuousSMul G C'']
+    [DistribMulAction G C'']
   (SB : DiscreteShortExact G B' B B'') (SC : DiscreteShortExact G C' C C'')
   (μ : A →+ B →+ C) (μ' : A →+ B' →+ C') (μ'' : A →+ B'' →+ C'')
   (hμ : Continuous fun p : A × B => μ p.1 p.2)
@@ -226,9 +224,8 @@ variable {G : Type*} [Group G] [TopologicalSpace G]
   (hincl : ∀ (a : A) (b : B'), μ a (SB.incl b) = SC.incl (μ' a b))
   (hproj : ∀ (a : A) (b : B), μ'' a (SB.proj b) = SC.proj (μ a b))
 
-include hequiv hincl hproj in
-omit [IsTopologicalAddGroup A] [ContinuousSMul G A] [ContinuousSMul G B'']
-  [ContinuousSMul G C''] in
+include hequiv hincl hproj
+
 /-- **`δ⁰` passes through the `(0,0)` cup in the second variable.** For an invariant `x` of `A`
 and an invariant `y` of `B''`, the class `δ⁰ (x ⌣ y) ∈ H¹(G, C')` is the `(0,1)` cup
 `x ⌣ δ⁰ y`; the sign `(-1)^p` is `1` because `x` has degree `0`. -/
@@ -243,12 +240,12 @@ theorem explicitDelta0_explicitCup00_right (x : H0 G A) (y : H0 G B'') :
   exact congrArg SC.explicitDelta0
     (Subtype.ext (by simp only [coe_explicitCup00, coe_explicitCoeff0, pairingLeft_apply]))
 
-include hequiv hincl hproj in
-omit [IsTopologicalAddGroup A] [ContinuousSMul G A] in
+variable [ContinuousMul G] [ContinuousSMul G C'']
+
 /-- **`δ¹` passes through the `(0,1)` cup in the second variable.** For an invariant `x` of `A`
 and a class `y ∈ H¹(G, B'')`, the class `δ¹ (x ⌣ y) ∈ H²(G, C')` is the `(0,2)` cup
 `x ⌣ δ¹ y`. -/
-theorem explicitDelta1_explicitCup01_right [ContinuousMul G] (x : H0 G A) (y : H1 G B'') :
+theorem explicitDelta1_explicitCup01_right [ContinuousSMul G B''] (x : H0 G A) (y : H1 G B'') :
     SC.explicitDelta1 (explicitCup01 G A B'' C'' μ'' hμ'' hequiv'' x y) =
       explicitCup02 G A B' C' μ' hμ' hequiv' x (SB.explicitDelta1 y) := by
   rw [explicitCup01_apply, explicitCup02_apply,
@@ -257,12 +254,13 @@ theorem explicitDelta1_explicitCup01_right [ContinuousMul G] (x : H0 G A) (y : H
       (fun b => by simp only [pairingLeft_apply]; exact hincl (x : A) b)
       (fun b => by simp only [pairingLeft_apply]; exact hproj (x : A) b) y]
 
-include hμ hequiv hincl hproj in
-omit [ContinuousSMul G B''] in
+include hμ
+
 /-- **`δ¹` passes through the `(1,0)` cup in the second variable, with a sign.** For a class
 `x ∈ H¹(G, A)` and an invariant `y` of `B''`, the class `δ¹ (x ⌣ y) ∈ H²(G, C')` is
 `-(x ⌣ δ⁰ y)`, the sign `(-1)^p` at `p = 1`. -/
-theorem explicitDelta1_explicitCup10_right [ContinuousMul G] (x : H1 G A) (y : H0 G B'') :
+theorem explicitDelta1_explicitCup10_right [IsTopologicalAddGroup A] [ContinuousSMul G A]
+    (x : H1 G A) (y : H0 G B'') :
     SC.explicitDelta1 (explicitCup10 G A B'' C'' μ'' hμ'' hequiv'' x y) =
       -explicitCup11 G A B' C' μ' hμ' hequiv' x (SB.explicitDelta0 y) := by
   -- A double flip is definitionally the original pairing; only its proof witnesses differ.
@@ -314,42 +312,52 @@ variable {G : Type*} [Group G]
   (hincl : ∀ (a : A₁) (b : B), μ (SA.incl a) b = μ₁ a (SB.proj b))
   (hproj : ∀ (a : A) (b : B₂), μ a (SB.incl b) = μ₂ (SA.proj a) b)
 
-include hincl in
+section Incl
+
+include hincl
+
 /-- The pairing of the sub-object `A₁` with the quotient `B₁`, read on a preimage in `B`. -/
 private theorem pairing_incl_smul {a : A₁} {b : B} {y : B₁} (hb : SB.proj b = y) (g : G) :
     μ₁ a (g • y) = μ (SA.incl a) (g • b) := by
   rw [hincl, SB.proj_equivariant, hb]
 
-include hproj in
+/-- **The pairing of the sub-object `A₁` with the quotient `B₁` is equivariant.** Lift `b` to
+`B` and read `μ₁` through `μ` on `SA.incl a`. -/
+theorem equivariant_of_incl [DistribMulAction G C]
+    (hequiv : ∀ (g : G) (a : A) (b : B), μ (g • a) (g • b) = g • μ a b)
+    (g : G) (a : A₁) (b : B₁) : μ₁ (g • a) (g • b) = g • μ₁ a b := by
+  obtain ⟨b, rfl⟩ := SB.proj_surjective b
+  rw [← SB.proj_equivariant, ← hincl, ← hincl, SA.incl_equivariant, hequiv]
+
+end Incl
+
+section Proj
+
+include hproj
+
 /-- The pairing of the quotient `A₂` with the sub-object `B₂`, read on a preimage in `A`. -/
 private theorem pairing_proj_incl {a : A} {x : A₂} (ha : SA.proj a = x) (b : B₂) :
     μ₂ x b = μ a (SB.incl b) := by
   rw [hproj, ha]
 
-variable [DistribMulAction G C]
-  (hequiv : ∀ (g : G) (a : A) (b : B), μ (g • a) (g • b) = g • μ a b)
-
-include hequiv hincl in
-/-- **The pairing of the sub-object `A₁` with the quotient `B₁` is equivariant.** Lift `b` to
-`B` and read `μ₁` through `μ` on `SA.incl a`. -/
-theorem equivariant_of_incl (g : G) (a : A₁) (b : B₁) : μ₁ (g • a) (g • b) = g • μ₁ a b := by
-  obtain ⟨b, rfl⟩ := SB.proj_surjective b
-  rw [← SB.proj_equivariant, ← hincl, ← hincl, SA.incl_equivariant, hequiv]
-
-include hequiv hproj in
 /-- **The pairing of the quotient `A₂` with the sub-object `B₂` is equivariant.** Lift `a` to
 `A` and read `μ₂` through `μ` on `SB.incl b`. -/
-theorem equivariant_of_proj (g : G) (a : A₂) (b : B₂) : μ₂ (g • a) (g • b) = g • μ₂ a b := by
+theorem equivariant_of_proj [DistribMulAction G C]
+    (hequiv : ∀ (g : G) (a : A) (b : B), μ (g • a) (g • b) = g • μ a b)
+    (g : G) (a : A₂) (b : B₂) : μ₂ (g • a) (g • b) = g • μ₂ a b := by
   obtain ⟨a, rfl⟩ := SA.proj_surjective a
   rw [← SA.proj_equivariant, ← hproj, ← hproj, SB.incl_equivariant, hequiv]
 
-variable [TopologicalSpace G] [ContinuousSMul G A₁] [ContinuousSMul G A] [ContinuousSMul G A₂]
-  [ContinuousSMul G B₂] [ContinuousSMul G B] [ContinuousSMul G B₁]
+end Proj
+
+variable [DistribMulAction G C]
+  (hequiv : ∀ (g : G) (a : A) (b : B), μ (g • a) (g • b) = g • μ a b)
+  [TopologicalSpace G] [ContinuousSMul G A₁] [ContinuousSMul G A]
+  [ContinuousSMul G B₂] [ContinuousSMul G B]
   [TopologicalSpace C] [IsTopologicalAddGroup C] [ContinuousSMul G C]
 
 include hequiv hincl hproj
 
-omit [ContinuousSMul G A₂] [ContinuousSMul G B₁] in
 /-- **The two `δ⁰` are anti-adjoint under the `(1,0)` and `(0,1)` cups.** For invariants `x` of `A₂`
 and `y` of `B₁`, the class `δ⁰ x ⌣ y ∈ H¹(G, C)` is `-(x ⌣ δ⁰ y)`. -/
 theorem explicitCup10_explicitDelta0_eq_neg_explicitCup01_explicitDelta0
@@ -380,10 +388,11 @@ theorem explicitCup10_explicitDelta0_eq_neg_explicitCup01_explicitDelta0
     map_sub, AddMonoidHom.sub_apply, ← hequiv]
   abel
 
-omit [ContinuousSMul G A₂] in
+variable [ContinuousMul G]
+
 /-- **`δ⁰` and `δ¹` are anti-adjoint under the `(1,1)` and `(0,2)` cups.** For an invariant `x`
 of `A₂` and a class `y ∈ H¹(G, B₁)`, the class `δ⁰ x ⌣ y ∈ H²(G, C)` is `-(x ⌣ δ¹ y)`. -/
-theorem explicitCup11_explicitDelta0_eq_neg_explicitCup02_explicitDelta1 [ContinuousMul G]
+theorem explicitCup11_explicitDelta0_eq_neg_explicitCup02_explicitDelta1 [ContinuousSMul G B₁]
     (x : H0 G A₂) (y : H1 G B₁) :
     explicitCup11 G A₁ B₁ C μ₁ continuous_of_discreteTopology
         (equivariant_of_incl SA SB μ μ₁ hincl hequiv) (SA.explicitDelta0 x) y =
@@ -415,11 +424,10 @@ theorem explicitCup11_explicitDelta0_eq_neg_explicitCup02_explicitDelta1 [Contin
       hbi', map_sub, map_add, AddMonoidHom.sub_apply, ← hequiv]
     abel
 
-omit [ContinuousSMul G B₁] in
 /-- **`δ¹` and `δ⁰` are adjoint under the `(2,0)` and `(1,1)` cups.** For a class
 `x ∈ H¹(G, A₂)` and an invariant `y` of `B₁`, the class `δ¹ x ⌣ y ∈ H²(G, C)` is `x ⌣ δ⁰ y`;
 the sign `(-1)^(p+1)` is `1` because `x` has degree `1`. -/
-theorem explicitCup20_explicitDelta1_eq_explicitCup11_explicitDelta0 [ContinuousMul G]
+theorem explicitCup20_explicitDelta1_eq_explicitCup11_explicitDelta0 [ContinuousSMul G A₂]
     (x : H1 G A₂) (y : H0 G B₁) :
     explicitCup20 G A₁ B₁ C μ₁ continuous_of_discreteTopology
         (equivariant_of_incl SA SB μ μ₁ hincl hequiv) (SA.explicitDelta1 x) y =

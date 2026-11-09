@@ -58,8 +58,15 @@ lemma transitionUnit_spec (D : CartierDivisor X) {U V : X.Opens}
     (g : Additive (((rationalFunctionsRing X).presheaf.obj (op V))ˣ))
     (hf : ((toCartierDivisorSheaf X).hom.app (op U)).hom f = D |_ U)
     (hg : ((toCartierDivisorSheaf X).hom.app (op V)).hom g = D |_ V) :
-    ((toRationalUnitSheaf X).hom.app (op (U ⊓ V))).hom
-        (transitionUnit D f g hf hg) = f |_ (U ⊓ V) - g |_ (U ⊓ V) :=
+    (@AddCommGrpCat.Hom.hom
+      (AddCommGrpCat.of (Additive ((X.sheaf.obj.obj (op (U ⊓ V)))ˣ)))
+      (AddCommGrpCat.of (Additive (((rationalFunctionsRing X).obj.obj (op (U ⊓ V)))ˣ)))
+      ((toRationalUnitSheaf X).hom.app (op (U ⊓ V))))
+        (transitionUnit D f g hf hg) =
+      TopCat.Presheaf.restrictOpen (F := (rationalUnitSheaf X).presheaf)
+          (V := U) f (U ⊓ V) inf_le_left -
+        TopCat.Presheaf.restrictOpen (F := (rationalUnitSheaf X).presheaf)
+          (V := V) g (U ⊓ V) inf_le_right :=
   (existsUnique_transitionUnit X D f g hf hg).choose_spec.1
 
 /-- The transition unit is uniquely determined by its defining equation. -/
@@ -83,14 +90,21 @@ lemma transitionUnit_restrict_spec (D : CartierDivisor X) {U V W : X.Opens}
     (hf : ((toCartierDivisorSheaf X).hom.app (op U)).hom f = D |_ U)
     (hg : ((toCartierDivisorSheaf X).hom.app (op V)).hom g = D |_ V)
     (hW : W ≤ U ⊓ V) :
-    ((toRationalUnitSheaf X).hom.app (op W)).hom
+    (@AddCommGrpCat.Hom.hom
+      (AddCommGrpCat.of (Additive ((X.sheaf.obj.obj (op W))ˣ)))
+      (AddCommGrpCat.of (Additive (((rationalFunctionsRing X).obj.obj (op W))ˣ)))
+      ((toRationalUnitSheaf X).hom.app (op W)))
         (TopCat.Presheaf.restrictOpen (F := (regularUnitSheaf X).presheaf)
-          (transitionUnit D f g hf hg) W hW) = f |_ W - g |_ W := by
+          (transitionUnit D f g hf hg) W hW) =
+      TopCat.Presheaf.restrictOpen (F := (rationalUnitSheaf X).presheaf)
+          (V := U) f W (hW.trans inf_le_left) -
+        TopCat.Presheaf.restrictOpen (F := (rationalUnitSheaf X).presheaf)
+          (V := V) g W (hW.trans inf_le_right) := by
   calc
     _ = (((toRationalUnitSheaf X).hom.app (op (U ⊓ V))).hom
         (transitionUnit D f g hf hg)) |_ W :=
       TopCat.Presheaf.map_restrict (toRationalUnitSheaf X).hom hW _
-    _ = (f |_ (U ⊓ V) - g |_ (U ⊓ V)) |_ W := by rw [transitionUnit_spec]
+    _ = (f |_ (U ⊓ V) - g |_ (U ⊓ V)) |_ W := by erw [transitionUnit_spec]
     _ = f |_ W - g |_ W := by
       have hfres := TopCat.Presheaf.restrict_restrict
         (F := (rationalUnitSheaf X).presheaf) hW inf_le_left f
@@ -123,9 +137,10 @@ lemma transitionUnit_symm_restrict (D : CartierDivisor X) {U V W : X.Opens}
         (transitionUnit D f g hf hg) W hW) := by
   have hW' : W ≤ V ⊓ U := by simpa [inf_comm] using hW
   apply toRationalUnitSheaf_app_injective X W
-  rw [transitionUnit_restrict_spec D g f hg hf hW']
-  rw [map_neg, transitionUnit_restrict_spec D f g hf hg hW]
-  simp
+  erw [transitionUnit_restrict_spec D g f hg hf hW']
+  rw [map_neg]
+  erw [transitionUnit_restrict_spec D f g hf hg hW]
+  exact (neg_sub _ _).symm
 
 /-- Transition units satisfy the cocycle identity on every triple overlap. -/
 lemma transitionUnit_cocycle (D : CartierDivisor X) {U V W T : X.Opens}
@@ -158,9 +173,10 @@ lemma transitionUnit_cocycle (D : CartierDivisor X) {U V W T : X.Opens}
       (le_trans (le_trans hT inf_le_left) inf_le_right)
       (le_trans hT inf_le_right)
   apply toRationalUnitSheaf_app_injective X T
-  rw [transitionUnit_restrict_spec D f h hf hh hT_uh]
-  rw [map_add, transitionUnit_restrict_spec D f g hf hg hT_uv,
-    transitionUnit_restrict_spec D g h hg hh hT_vw]
+  erw [transitionUnit_restrict_spec D f h hf hh hT_uh]
+  rw [map_add]
+  erw [transitionUnit_restrict_spec D f g hf hg hT_uv]
+  erw [transitionUnit_restrict_spec D g h hg hh hT_vw]
   abel
 
 end CartierDivisor

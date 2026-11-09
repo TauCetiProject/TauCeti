@@ -130,7 +130,7 @@ theorem constantTermAt_levelRaise (f : ModularForm Γ k)
   -- The normalization of `V_t` cancels the determinant power in the arithmetic slash.
   push_cast
   rw [div_zpow, div_zpow]
-  simp only [zpow_neg, div_eq_mul_inv, inv_inv]
+  simp only [_root_.zpow_neg, div_eq_mul_inv, inv_inv]
   have hp : (t : ℂ) ^ (1 - k) * (t : ℂ) ^ (k - 1) = 1 := by
     rw [← zpow_add₀ ht]
     simp

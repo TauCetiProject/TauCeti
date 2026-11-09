@@ -190,7 +190,7 @@ private theorem map_eq_sum (u : SimpleFunc γ ℂ) (ψ : ℂ → ℂ) :
 private theorem map_apply_eq_sum (u : SimpleFunc γ ℂ) (ψ : ℂ → ℂ) (x : γ) :
     u.map ψ x = ∑ c ∈ u.range, ψ c * fiberInd u c x := by
   rw [u.map_apply_eq_sum_restrict_const]
-  simp_rw [← smul_fiberInd, SimpleFunc.smul_apply, smul_eq_mul]
+  simp_rw [← smul_fiberInd, _root_.smul_apply, smul_eq_mul]
 
 private theorem integral_map_powSign_eq_sum (T : SimpleFunc α ℂ →ₗ[ℂ] (β →ₘ[ν] ℂ))
     (f : SimpleFunc α ℂ) (g : SimpleFunc β ℂ) (w w' : ℂ)
@@ -319,6 +319,31 @@ private theorem norm_integral_mul_le_of_eLpNorm_le_one (T : SimpleFunc α ℂ �
       _ = M := by simp
   exact_mod_cast enorm_le_coe.1 h
 
+/-- The pairing of the image of a fibre indicator of `f` with a fibre indicator of `g` is
+integrable, when `f` and `g` have norm at most one in the interpolation spaces. -/
+private theorem integrable_mul_fiberInd (T : SimpleFunc α ℂ →ₗ[ℂ] (β →ₘ[ν] ℂ))
+    {p₀ p₁ p q₀ q₀' q₁' q' : ℝ≥0∞} [q₀.HolderConjugate q₀'] (hp₀ : p₀ ≠ 0) (hp₁ : p₁ ≠ 0)
+    {θ : ℝ} (hθ : θ ∈ Set.Ioo (0 : ℝ) 1)
+    (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹) (hq₀' : q₀' ≠ 0)
+    (hq₁' : q₁' ≠ 0)
+    (hq' : q'⁻¹ = ENNReal.ofReal (1 - θ) * q₀'⁻¹ + ENNReal.ofReal θ * q₁'⁻¹) {M₀ : ℝ≥0}
+    (h₀ : ∀ f, eLpNorm (T f) q₀ ν ≤ M₀ * eLpNorm f p₀ μ) {f : SimpleFunc α ℂ}
+    {g : SimpleFunc β ℂ} (hf : eLpNorm f p μ ≤ 1) (hg : eLpNorm g q' ν ≤ 1) :
+    ∀ c ∈ f.range, c ≠ 0 → ∀ d ∈ g.range, d ≠ 0 →
+      Integrable (fun y => T (fiberInd f c) y * fiberInd g d y) ν := by
+  intro c _ hc d _ hd
+  have hχ : MemLp (fiberInd f c) p₀ μ :=
+    memLp_fiberInd f (w := expo (p₀⁻¹).toReal (p₁⁻¹).toReal θ 0) hc <| memLp_iff.2 <|
+      (eLpNorm_map_powSign_expo_le_one_of_re_eq_zero f hp₀ hp₁ hθ hp hf (by simp)).trans_lt
+        ENNReal.one_lt_top
+  have hTχ : MemLp (T (fiberInd f c)) q₀ ν :=
+    memLp_iff.2 ((h₀ _).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hχ.eLpNorm_lt_top))
+  have hχ' : MemLp (fiberInd g d) q₀' ν :=
+    memLp_fiberInd g (w := expo (q₀'⁻¹).toReal (q₁'⁻¹).toReal θ 0) hd <| memLp_iff.2 <|
+      (eLpNorm_map_powSign_expo_le_one_of_re_eq_zero g hq₀' hq₁' hθ hq' hg (by simp)).trans_lt
+        ENNReal.one_lt_top
+  exact hTχ.integrable_mul hχ'
+
 /-- **The three-lines estimate.** For simple `f`, `g` of norm at most one in `Lᵖ` and in the dual
 exponent `L^{q'}`, the pairing `∫ T f · g` is at most `M₀ ^ (1 - θ) M₁ ^ θ`. -/
 private theorem norm_integral_mul_le_of_le_one (T : SimpleFunc α ℂ →ₗ[ℂ] (β →ₘ[ν] ℂ))
@@ -337,18 +362,7 @@ private theorem norm_integral_mul_le_of_le_one (T : SimpleFunc α ℂ →ₗ[ℂ
   set Q := expo (q₀'⁻¹).toReal (q₁'⁻¹).toReal θ with hQ
   -- The fibre indicators of `f` and `g` lie in the endpoint spaces, so the pairing of the two
   -- analytic families expands into a finite exponential sum `Φ`.
-  have hint : ∀ c ∈ f.range, c ≠ 0 → ∀ d ∈ g.range, d ≠ 0 →
-      Integrable (fun y => T (fiberInd f c) y * fiberInd g d y) ν := by
-    intro c _ hc d _ hd
-    have hχ : MemLp (fiberInd f c) p₀ μ := memLp_fiberInd f (w := P 0) hc <| memLp_iff.2 <|
-      (eLpNorm_map_powSign_expo_le_one_of_re_eq_zero f hp₀ hp₁ hθ hp hf (by simp)).trans_lt
-        ENNReal.one_lt_top
-    have hTχ : MemLp (T (fiberInd f c)) q₀ ν :=
-      memLp_iff.2 ((h₀ _).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hχ.eLpNorm_lt_top))
-    have hχ' : MemLp (fiberInd g d) q₀' ν := memLp_fiberInd g (w := Q 0) hd <| memLp_iff.2 <|
-      (eLpNorm_map_powSign_expo_le_one_of_re_eq_zero g hq₀' hq₁' hθ hq' hg (by simp)).trans_lt
-        ENNReal.one_lt_top
-    exact hTχ.integrable_mul hχ'
+  have hint := integrable_mul_fiberInd T hp₀ hp₁ hθ hp hq₀' hq₁' hq' h₀ hf hg
   set I : ℂ → ℂ → ℂ := fun c d => ∫ y, T (fiberInd f c) y * fiberInd g d y ∂ν
   set Φ : ℂ → ℂ := fun z =>
     ∑ c ∈ f.range, ∑ d ∈ g.range, powSign (P z) c * powSign (Q z) d * I c d with hΦ_def
@@ -418,11 +432,11 @@ private theorem enorm_integral_mul_le_mul (T : SimpleFunc α ℂ →ₗ[ℂ] (β
   have ha : 0 < a := ENNReal.toReal_pos hf0 hf
   have hb : 0 < b := ENNReal.toReal_pos hg0 hg
   have hfa : eLpNorm (((a⁻¹ : ℝ) : ℂ) • f) p μ ≤ 1 := by
-    rw [SimpleFunc.coe_smul, eLpNorm_const_smul, ← ofReal_norm, norm_real,
+    rw [FunLike.coe_smul, eLpNorm_const_smul, ← ofReal_norm, norm_real,
       Real.norm_of_nonneg (inv_nonneg.2 ha.le), ENNReal.ofReal_inv_of_pos ha,
       ENNReal.ofReal_toReal hf, ENNReal.inv_mul_cancel hf0 hf]
   have hgb : eLpNorm (((b⁻¹ : ℝ) : ℂ) • g) q' ν ≤ 1 := by
-    rw [SimpleFunc.coe_smul, eLpNorm_const_smul, ← ofReal_norm, norm_real,
+    rw [FunLike.coe_smul, eLpNorm_const_smul, ← ofReal_norm, norm_real,
       Real.norm_of_nonneg (inv_nonneg.2 hb.le), ENNReal.ofReal_inv_of_pos hb,
       ENNReal.ofReal_toReal hg, ENNReal.inv_mul_cancel hg0 hg]
   have key := norm_integral_mul_le_of_le_one T hp₀ hp₁ hθ hpθ hq' h₀ h₁ hfa hgb
@@ -432,7 +446,7 @@ private theorem enorm_integral_mul_le_mul (T : SimpleFunc α ℂ →ₗ[ℂ] (β
     refine integral_congr_ae ?_
     filter_upwards [show ⇑(T (((a⁻¹ : ℝ) : ℂ) • f)) =ᵐ[ν] ((a⁻¹ : ℝ) : ℂ) • ⇑(T f) by
       rw [map_smul]; exact AEEqFun.coeFn_smul _ _] with y hy
-    rw [hy, SimpleFunc.smul_apply, Pi.smul_apply, smul_eq_mul, smul_eq_mul]
+    rw [hy, _root_.smul_apply, Pi.smul_apply, smul_eq_mul, smul_eq_mul]
     push_cast
     ring
   rw [hscale, norm_mul, norm_real, Real.norm_of_nonneg (by positivity)] at key
@@ -508,7 +522,7 @@ private theorem eLpNorm_le_of_ne_top_or_sigmaFinite
   have hT₁ : MemLp (T f) q₁ ν :=
     memLp_iff.2 ((h₁ f).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hf₁.eLpNorm_lt_top))
   have hTq : MemLp (T f) q ν := by
-    rcases Set.mem_uIcc.1 (mem_uIcc_of_inv_eq hq₀0 hq₁0 hθ' hq) with ⟨h₁', h₂'⟩ | ⟨h₁', h₂'⟩
+    rcases Set.mem_uIcc.1 (mem_uIcc_of_inv_eq hθ' hq) with ⟨h₁', h₂'⟩ | ⟨h₁', h₂'⟩
     · exact hT₀.of_le_of_le hT₁ hq₀0 h₁' h₂'
     · exact hT₁.of_le_of_le hT₀ hq₁0 h₁' h₂'
   -- Duality reduces the bound to the bilinear estimate.

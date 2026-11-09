@@ -31,6 +31,8 @@ equal `F^p`.
   derivation is exactly `F^p`.
 * `TauCeti.IsFunctionField.isSeparable_adjoin_iff_notMem_fieldRange_frobenius`: `x` is separating
   exactly when it lies outside `F^p`.
+* `TauCeti.IsFunctionField.transcendental_and_isSeparable_adjoin_of_notMem_fieldRange_frobenius`:
+  an element outside `F^p` is transcendental and separating.
 * `TauCeti.IsFunctionField.exists_pow_eq_and_adjoin_eq_top_of_finrank_prime_of_not_isSeparable`:
   an inseparable subextension `F / k(x)` of prime degree has `x = y ^ p` with `F = k(y)`.
 * `TauCeti.IsFunctionField.transcendental_and_isSeparable_adjoin_of_not_dvd_ord`: the
@@ -69,37 +71,21 @@ theorem finrank_fieldRange_frobenius [PerfectField k] (hF : TauCeti.IsFunctionFi
   let _ : ExpChar k p := (algebraMap k F).expChar (algebraMap k F).injective p
   obtain ⟨y, hy⟩ := hF.exists_transcendental
   have hA : k⟮y⟯.toSubfield.map (frobenius F p) = k⟮y ^ p⟯.toSubfield := by
-    apply le_antisymm
-    · rintro _ ⟨z, hz, rfl⟩
-      rw [IntermediateField.mem_toSubfield, frobenius_def]
-      induction hz using IntermediateField.adjoin_induction with
-      | mem z hz =>
-        rw [Set.mem_singleton_iff.mp hz]
-        exact IntermediateField.mem_adjoin_simple_self k (y ^ p)
-      | algebraMap c =>
-        rw [← map_pow]
-        exact IntermediateField.algebraMap_mem _ _
-      | add a b _ _ ha hb =>
-        rw [add_pow_expChar]
-        exact IntermediateField.add_mem _ ha hb
-      | inv a _ ha =>
-        rw [inv_pow]
-        exact IntermediateField.inv_mem _ ha
-      | mul a b _ _ ha hb =>
-        rw [mul_pow]
-        exact IntermediateField.mul_mem _ ha hb
-    · intro z hz
-      induction hz using IntermediateField.adjoin_induction with
-      | mem z hz =>
-        rw [Set.mem_singleton_iff.mp hz]
-        exact ⟨y, IntermediateField.mem_adjoin_simple_self k y, rfl⟩
-      | algebraMap c =>
-        obtain ⟨d, hd⟩ := surjective_frobenius k p c
-        exact ⟨algebraMap k F d, IntermediateField.algebraMap_mem _ _, by
-          rw [← RingHom.map_frobenius, hd]⟩
-      | add a b _ _ ha hb => exact Subfield.add_mem _ ha hb
-      | inv a _ ha => exact Subfield.inv_mem _ ha
-      | mul a b _ _ ha hb => exact Subfield.mul_mem _ ha hb
+    -- Both inclusions use `adjoin_simple_le_iff` for subfields containing the scalars.
+    -- Passing between subfield and intermediate-field membership is definitional.
+    -- Comap membership is definitionally membership of the Frobenius image, and
+    -- `frobenius F p y = y ^ p` holds by `rfl`, also giving the map witness below.
+    have hk (c : k) : algebraMap k F c ∈ k⟮y⟯.toSubfield.map (frobenius F p) := by
+      obtain ⟨d, rfl⟩ := surjective_frobenius k p c
+      exact ⟨algebraMap k F d, k⟮y⟯.algebraMap_mem d, (RingHom.map_frobenius _ _ _).symm⟩
+    have hk' (c : k) : algebraMap k F c ∈ k⟮y ^ p⟯.toSubfield.comap (frobenius F p) := by
+      rw [Subfield.mem_comap, ← RingHom.map_frobenius]
+      exact k⟮y ^ p⟯.algebraMap_mem _
+    refine le_antisymm (Subfield.map_le_iff_le_comap.mpr fun z hz ↦ ?_) fun z hz ↦ ?_
+    · exact (IntermediateField.adjoin_simple_le_iff (K := Subfield.toIntermediateField _ hk')).mpr
+        (IntermediateField.mem_adjoin_simple_self k (y ^ p)) hz
+    · exact (IntermediateField.adjoin_simple_le_iff (K := Subfield.toIntermediateField _ hk)).mpr
+        ⟨y, IntermediateField.mem_adjoin_simple_self k y, rfl⟩ hz
   have hAB : k⟮y⟯.toSubfield.map (frobenius F p) ≤ k⟮y⟯.toSubfield := by
     rintro _ ⟨z, hz, rfl⟩
     simpa [frobenius_def] using k⟮y⟯.toSubfield.pow_mem hz p
@@ -109,7 +95,7 @@ theorem finrank_fieldRange_frobenius [PerfectField k] (hF : TauCeti.IsFunctionFi
     exact ⟨z, trivial, rfl⟩
   have hrelAB : Subfield.relfinrank (k⟮y⟯.toSubfield.map (frobenius F p)) k⟮y⟯.toSubfield = p := by
     rw [hA]
-    exact relfinrank_adjoin_pow_adjoin hy p
+    exact hy.relfinrank_adjoin_pow_adjoin p
   have hrelAC : Subfield.relfinrank (k⟮y⟯.toSubfield.map (frobenius F p))
       (frobenius F p).fieldRange = Subfield.relfinrank k⟮y⟯.toSubfield ⊤ := by
     rw [RingHom.fieldRange_eq_map]
@@ -151,20 +137,10 @@ theorem D_eq_zero_iff_mem_fieldRange_frobenius [PerfectField k]
     { carrier := {z | D k F z = 0}
       zero_mem' := by simp
       one_mem' := by simp
-      add_mem' := by
-        intro a b ha hb
-        simpa using congrArg₂ (· + ·) ha hb
-      neg_mem' := by
-        intro a ha
-        simpa using congrArg Neg.neg ha
-      mul_mem' := by
-        intro a b ha hb
-        simp only [Set.mem_ofPred_eq] at ha hb ⊢
-        rw [Derivation.leibniz, ha, hb, smul_zero, smul_zero, add_zero]
-      inv_mem' := by
-        intro a ha
-        simp only [Set.mem_ofPred_eq] at ha ⊢
-        rw [Derivation.leibniz_inv, ha, smul_zero] }
+      add_mem' := fun ha hb ↦ by simp_all
+      neg_mem' := fun ha ↦ by simp_all
+      mul_mem' := fun ha hb ↦ by simp_all [Derivation.leibniz]
+      inv_mem' := fun a ha ↦ by simp_all [Derivation.leibniz_inv] }
   have hkZ : ∀ c : k, algebraMap k F c ∈ Z := fun c ↦ by simp [Z]
   let K : IntermediateField k F := Z.toIntermediateField hkZ
   have hmemK (z : F) : z ∈ K ↔ D k F z = 0 := Iff.rfl
@@ -184,16 +160,11 @@ theorem D_eq_zero_iff_mem_fieldRange_frobenius [PerfectField k]
     rw [← hdeg]
     exact IntermediateField.relfinrank_dvd_finrank_top_of_le hCK
   have hrel : IntermediateField.relfinrank C K = 1 := by
-    rcases (Fact.out : p.Prime).eq_one_or_self_of_dvd _ hdiv with h | h
-    · exact h
-    · exfalso
-      have htower := IntermediateField.relfinrank_mul_finrank_top hCK
-      rw [h, hdeg] at htower
-      have hp0 : p ≠ 0 := (Fact.out : p.Prime).ne_zero
-      have hfin : Module.finrank K F = 1 := by
-        apply Nat.eq_of_mul_eq_mul_left (Nat.pos_of_ne_zero hp0)
-        simpa using htower
-      exact hK_ne_top (IntermediateField.finrank_eq_one_iff_eq_top.mp hfin)
+    refine ((Fact.out : p.Prime).eq_one_or_self_of_dvd _ hdiv).resolve_right fun h ↦ hK_ne_top ?_
+    have htower := IntermediateField.relfinrank_mul_finrank_top hCK
+    rw [h, hdeg] at htower
+    exact IntermediateField.finrank_eq_one_iff_eq_top.mp
+      (Nat.eq_of_mul_eq_mul_left (Fact.out : p.Prime).pos (by simpa using htower))
   have hKC : K ≤ C := IntermediateField.relfinrank_eq_one_iff.mp hrel
   exact ⟨fun h ↦ (hmemC x).mp (hKC ((hmemK x).mpr h)), fun h ↦ (hmemK x).mp (hCK ((hmemC x).mpr h))⟩
 
@@ -204,6 +175,16 @@ theorem isSeparable_adjoin_iff_notMem_fieldRange_frobenius [PerfectField k]
     (hF : TauCeti.IsFunctionField k F) (p : ℕ) [ExpChar F p] [Fact p.Prime] (x : F) :
     Algebra.IsSeparable k⟮x⟯ F ↔ x ∉ (frobenius F p).fieldRange := by
   rw [hF.isSeparable_adjoin_iff_D_ne_zero, ne_eq, hF.D_eq_zero_iff_mem_fieldRange_frobenius p x]
+
+/-- **An element outside `F^p` is separating** (Stichtenoth, Proposition 3.10.2(a)): in a
+one-variable function field over a perfect field of characteristic `p`, an element that is not a
+`p`-th power in `F` is transcendental over `k`, and `F / k(x)` is separable. -/
+theorem transcendental_and_isSeparable_adjoin_of_notMem_fieldRange_frobenius [PerfectField k]
+    (hF : TauCeti.IsFunctionField k F) (p : ℕ) [ExpChar F p] [Fact p.Prime] {x : F}
+    (hx : x ∉ (frobenius F p).fieldRange) :
+    Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
+  have hDx : D k F x ≠ 0 := fun h ↦ hx ((hF.D_eq_zero_iff_mem_fieldRange_frobenius p x).mp h)
+  exact ⟨transcendental_of_D_ne_zero hDx, hF.isSeparable_adjoin_iff_D_ne_zero.mpr hDx⟩
 
 /-- **An inseparable subextension of prime degree comes from a `p`-th root.** Over a perfect
 field of exponential characteristic `p`, if `x` is transcendental, `[F : k(x)]` is prime and
@@ -227,7 +208,7 @@ theorem exists_pow_eq_and_adjoin_eq_top_of_finrank_prime_of_not_isSeparable [Per
     have hy : Transcendental k y := fun h ↦ hx (h.isIntegral.pow p).isAlgebraic
     have hle : k⟮y ^ p⟯ ≤ k⟮y⟯ := IntermediateField.adjoin_simple_le_iff.mpr
       (pow_mem (IntermediateField.mem_adjoin_simple_self k y) p)
-    rw [← IntermediateField.relfinrank_mul_finrank_top hle, relfinrank_adjoin_pow_adjoin hy p,
+    rw [← IntermediateField.relfinrank_mul_finrank_top hle, hy.relfinrank_adjoin_pow_adjoin p,
       Nat.prime_mul_iff] at hprime
     refine ⟨y, rfl, IntermediateField.finrank_eq_one_iff_eq_top.mp ?_⟩
     rcases hprime with ⟨-, h⟩ | ⟨-, h⟩
@@ -249,9 +230,7 @@ theorem transcendental_and_isSeparable_adjoin_of_not_dvd_ord [PerfectField k]
       rw [← iterateFrobenius_one (R := F) p]
       apply v.not_mem_fieldRange_iterateFrobenius_of_not_natCast_pow_dvd_ord p 1
       simpa using hx
-    have hDx : D k F x ≠ 0 := fun h ↦
-      hnotmem ((hF.D_eq_zero_iff_mem_fieldRange_frobenius p x).mp h)
-    exact ⟨transcendental_of_D_ne_zero hDx, hF.isSeparable_adjoin_iff_D_ne_zero.mpr hDx⟩
+    exact hF.transcendental_and_isSeparable_adjoin_of_notMem_fieldRange_frobenius p hnotmem
 
 end IsFunctionField
 

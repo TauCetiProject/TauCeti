@@ -143,7 +143,7 @@ theorem relIndex_inf_span_eq_natCard_range (b c : Basis ι ℚ V) {p : ℕ} [NeZ
     rw [← Basis.toMatrix_mulVec_repr (b' := b) (b := c)]
     simp only [Matrix.mulVec, dotProduct, Finset.mul_sum, Int.cast_sum, Int.cast_mul]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [Rat.coe_int_num_of_den_eq_one (hp i j), Basis.equivFun_apply,
+    rw [Rat.intCast_num_of_den_eq_one (hp i j), Basis.equivFun_apply,
       ← c.restrictScalars_repr_apply ℤ x j, algebraMap_int_eq, eq_intCast]
     ring
   -- The reduction map `span c → (ι → ZMod p)`, `x ↦ R (c-coordinates of x mod p)`.

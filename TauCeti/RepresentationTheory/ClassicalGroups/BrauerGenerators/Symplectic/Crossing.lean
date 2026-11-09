@@ -161,7 +161,7 @@ theorem symplecticPermTensorAction_mul_symplecticCupCapAt (σ : Equiv.Perm (Fin 
       symplecticCupCapAt k n d (σ i) (σ j) * symplecticPermTensorAction k n d σ := by
   refine PiTensorProduct.ext (MultilinearMap.ext fun v => ?_)
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
-    Module.End.mul_apply, Module.End.mul_apply, symplecticPermTensorAction_tprod,
+    mul_apply_eq_comp, mul_apply_eq_comp, symplecticPermTensorAction_tprod,
     map_smul]
   -- only the evaluation of the arc differs between coincident and distinct strands
   rcases eq_or_ne i j with rfl | hij <;>
@@ -194,7 +194,7 @@ theorem symplecticPermTensorAction_swap_mul_symplecticCupCapAt (i j : Fin d) :
     rcases eq_or_ne t j with rfl | htj
     · simp [hij]
     · simp [Equiv.swap_apply_of_ne_of_ne hti htj, hti, htj]
-  rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply, Module.End.mul_apply,
+  rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply, mul_apply_eq_comp,
     symplecticCupCapAt_tprod hij, map_smul, map_neg]
   refine congrArg _ (congrArg Neg.neg ?_)
   simp only [map_sum, map_smul, symplecticPermTensorAction_swap_tprod hij, hswap,
@@ -285,7 +285,7 @@ theorem symplecticCupCapAt_mul_symplecticCupCapAt {i j l : Fin d} (hij : i ≠ j
   have hright := symplecticCupCapAt_tprod_single (k := k) hil fun t => f (Equiv.swap j l t)
   rw [Equiv.swap_apply_of_ne_of_ne hij hil, Equiv.swap_apply_right] at hright
   simp only [hcross] at hright
-  rw [hb, Module.End.mul_apply, Module.End.mul_apply, symplecticCupCapAt_tprod_single hij,
+  rw [hb, mul_apply_eq_comp, mul_apply_eq_comp, symplecticCupCapAt_tprod_single hij,
     symplecticPermTensorAction_swap_tprod hjl, map_neg, map_neg, hright, neg_neg]
   simp only [map_sum, map_smul, hstep, smul_neg, Finset.sum_neg_distrib, neg_neg, smul_smul]
   refine congrArg _ ?_

@@ -53,29 +53,29 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 private def curvatureValue (x : M) (u v : TangentSpace I x) (w : V x) : V x :=
   cov.curvatureOperator
-    (Classical.choose (exists_contMDiff_section_eq I E u))
-    (Classical.choose (exists_contMDiff_section_eq I E v))
-    (Classical.choose (exists_contMDiff_section_eq I F w)) x
+    (Classical.choose (exists_contMDiff_section_eq I E ∞ u))
+    (Classical.choose (exists_contMDiff_section_eq I E ∞ v))
+    (Classical.choose (exists_contMDiff_section_eq I F ∞ w)) x
 
 private theorem curvatureValue_eq (x : M)
     {X Y : Π y : M, TangentSpace I y} {σ : Π y : M, V y}
     (hX : CMDiff ∞ (T% X)) (hY : CMDiff ∞ (T% Y)) (hσ : CMDiff ∞ (T% σ)) :
     curvatureValue cov x (X x) (Y x) (σ x) = cov.curvatureOperator X Y σ x := by
   exact curvatureOperator_congr
-    (Classical.choose_spec (exists_contMDiff_section_eq I E (X x))).1 hX
-    (Classical.choose_spec (exists_contMDiff_section_eq I E (Y x))).1 hY
-    (Classical.choose_spec (exists_contMDiff_section_eq I F (σ x))).1 hσ
-    (Classical.choose_spec (exists_contMDiff_section_eq I E (X x))).2
-    (Classical.choose_spec (exists_contMDiff_section_eq I E (Y x))).2
-    (Classical.choose_spec (exists_contMDiff_section_eq I F (σ x))).2
+    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (X x))).1 hX
+    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (Y x))).1 hY
+    (Classical.choose_spec (exists_contMDiff_section_eq I F ∞ (σ x))).1 hσ
+    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (X x))).2
+    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (Y x))).2
+    (Classical.choose_spec (exists_contMDiff_section_eq I F ∞ (σ x))).2
 
 private theorem curvatureValue_add_first (x : M) (u u' v : TangentSpace I x) (w : V x) :
     curvatureValue cov x (u + u') v w =
       curvatureValue cov x u v w + curvatureValue cov x u' v w := by
-  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨X', hX', rfl⟩ := exists_contMDiff_section_eq I E u'
-  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E v
-  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F w
+  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨X', hX', rfl⟩ := exists_contMDiff_section_eq I E ∞ u'
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F ∞ w
   have h := congrFun (curvatureOperator_add_first (cov := cov) hX hX' hσ (Y := Y)) x
   simp only [Pi.add_apply] at h
   rw [← curvatureValue_eq cov x (hX.add_section hX') hY hσ,
@@ -85,9 +85,9 @@ private theorem curvatureValue_add_first (x : M) (u u' v : TangentSpace I x) (w 
 private theorem curvatureValue_smul_first (x : M) (c : ℝ) (u v : TangentSpace I x)
     (w : V x) :
     curvatureValue cov x (c • u) v w = c • curvatureValue cov x u v w := by
-  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E v
-  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F w
+  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F ∞ w
   have h := congrFun (curvatureOperator_smul_first (cov := cov)
     (f := fun _ ↦ c) contMDiff_const hX hσ (Y := Y)) x
   simp only [Pi.smul_apply'] at h
@@ -98,10 +98,10 @@ private theorem curvatureValue_smul_first (x : M) (c : ℝ) (u v : TangentSpace 
 private theorem curvatureValue_add_second (x : M) (u v v' : TangentSpace I x) (w : V x) :
     curvatureValue cov x u (v + v') w =
       curvatureValue cov x u v w + curvatureValue cov x u v' w := by
-  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E v
-  obtain ⟨Y', hY', rfl⟩ := exists_contMDiff_section_eq I E v'
-  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F w
+  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨Y', hY', rfl⟩ := exists_contMDiff_section_eq I E ∞ v'
+  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F ∞ w
   have h := congrFun (curvatureOperator_add_second (cov := cov) hY hY' hσ (X := X)) x
   simp only [Pi.add_apply] at h
   rw [← curvatureValue_eq cov x hX (hY.add_section hY') hσ,
@@ -111,9 +111,9 @@ private theorem curvatureValue_add_second (x : M) (u v v' : TangentSpace I x) (w
 private theorem curvatureValue_smul_second (x : M) (c : ℝ) (u v : TangentSpace I x)
     (w : V x) :
     curvatureValue cov x u (c • v) w = c • curvatureValue cov x u v w := by
-  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E v
-  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F w
+  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F ∞ w
   have h := congrFun (curvatureOperator_smul_second (cov := cov)
     (f := fun _ ↦ c) contMDiff_const hY hσ (X := X)) x
   simp only [Pi.smul_apply'] at h
@@ -124,10 +124,10 @@ private theorem curvatureValue_smul_second (x : M) (c : ℝ) (u v : TangentSpace
 private theorem curvatureValue_add_section (x : M) (u v : TangentSpace I x) (w w' : V x) :
     curvatureValue cov x u v (w + w') =
       curvatureValue cov x u v w + curvatureValue cov x u v w' := by
-  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E v
-  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F w
-  obtain ⟨τ, hτ, rfl⟩ := exists_contMDiff_section_eq I F w'
+  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F ∞ w
+  obtain ⟨τ, hτ, rfl⟩ := exists_contMDiff_section_eq I F ∞ w'
   have h := congrFun (curvatureOperator_add_section (cov := cov) hX hY hσ hτ) x
   simp only [Pi.add_apply] at h
   rw [← curvatureValue_eq cov x hX hY (hσ.add_section hτ),
@@ -137,9 +137,9 @@ private theorem curvatureValue_add_section (x : M) (u v : TangentSpace I x) (w w
 private theorem curvatureValue_smul_section (x : M) (c : ℝ) (u v : TangentSpace I x)
     (w : V x) :
     curvatureValue cov x u v (c • w) = c • curvatureValue cov x u v w := by
-  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E v
-  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F w
+  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F ∞ w
   have h := congrFun (curvatureOperator_smul_section (cov := cov)
     (f := fun _ ↦ c) contMDiff_const hX hY hσ) x
   simp only [Pi.smul_apply'] at h
@@ -208,9 +208,9 @@ theorem eq_curvatureTensor_iff (x : M)
     exact curvatureTensor_apply cov x hX hY hσ
   · intro h
     ext u v w
-    obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E u
-    obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E v
-    obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F w
+    obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+    obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
+    obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F ∞ w
     rw [curvatureTensor_apply cov x hX hY hσ]
     exact h X Y σ hX hY hσ
 
@@ -234,9 +234,9 @@ theorem curvatureTensor_congr {cov' : CovariantDerivative I F V}
 theorem curvatureTensor_antisymm (x : M) (u v : TangentSpace I x) :
     cov.curvatureTensor x u v = -cov.curvatureTensor x v u := by
   ext w
-  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E v
-  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F w
+  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F ∞ w
   simp only [LinearMap.neg_apply, curvatureTensor_apply cov x hX hY hσ,
     curvatureTensor_apply cov x hY hX hσ]
   exact congrFun (curvatureOperator_antisymm cov X Y σ) x
@@ -246,8 +246,8 @@ theorem curvatureTensor_antisymm (x : M) (u v : TangentSpace I x) :
 theorem curvatureTensor_self (x : M) (u : TangentSpace I x) :
     cov.curvatureTensor x u u = 0 := by
   ext w
-  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F w
+  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F ∞ w
   simp [curvatureTensor_apply cov x hX hX hσ]
 
 /-- On a base of tangent dimension at most one, every smooth connection has zero

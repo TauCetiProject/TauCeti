@@ -51,6 +51,7 @@ local models for the test functions of the Yamabe problem.
 * `TauCeti.Yamabe.bubble_rpow_criticalExponent`,
   `TauCeti.Yamabe.bubble_rpow_criticalExponent_eq_mul_rpow_neg_one_add_norm_sq`: the critical
   power of a bubble, and its form as a rescaled translate of a Japanese bracket power.
+* `TauCeti.Yamabe.bubble_sq`: the square of a bubble as a power of its profile.
 * `TauCeti.Yamabe.bubble_rpow_four_div_finrank_sub_two`: the conformal factor
   `U_{t,b} ^ (4 / (n - 2))` of a bubble.
 * `TauCeti.Yamabe.hasFDerivAt_bubble`: the differential of a bubble without completeness.
@@ -76,7 +77,7 @@ noncomputable section
 namespace TauCeti.Yamabe
 
 open InnerProductSpace Laplacian Module
-open scoped Gradient
+open scoped ENNReal Gradient
 
 /-- The exponent `pₙ = 2 n / (n - 2)`; for `n > 2` it is the critical Sobolev exponent of `H¹` in
 dimension `n`. At `n = 2` it is `0` by the convention for division by zero. -/
@@ -84,6 +85,45 @@ def criticalExponent (n : ℕ) : ℝ := 2 * n / (n - 2)
 
 /-- Unfolding lemma for `TauCeti.Yamabe.criticalExponent`. -/
 theorem criticalExponent_def (n : ℕ) : criticalExponent n = 2 * n / (n - 2) := (rfl)
+
+/-- The critical exponent is positive in every dimension `n > 2`. -/
+theorem criticalExponent_pos {n : ℕ} (hn : 2 < n) : 0 < criticalExponent n := by
+  have h : (2 : ℝ) < n := by exact_mod_cast hn
+  rw [criticalExponent_def]
+  exact div_pos (by linarith) (by linarith)
+
+/-- The critical exponent exceeds `2` in every dimension `n > 2`. -/
+theorem two_lt_criticalExponent {n : ℕ} (hn : 2 < n) : 2 < criticalExponent n := by
+  have h : (2 : ℝ) < n := by exact_mod_cast hn
+  rw [criticalExponent_def, lt_div_iff₀ (by linarith)]
+  linarith
+
+/-- The exponent `2 / pₙ` of the critical norm is `(n - 2) / n`; at `n = 0` and `n = 2` both sides
+vanish by the convention for division by zero. -/
+theorem two_div_criticalExponent (n : ℕ) : 2 / criticalExponent n = ((n : ℝ) - 2) / n := by
+  rcases eq_or_ne n 0 with rfl | h₀
+  · simp [criticalExponent_def]
+  rcases eq_or_ne n 2 with rfl | h₂
+  · norm_num [criticalExponent_def]
+  have h₀' : (n : ℝ) ≠ 0 := by exact_mod_cast h₀
+  have h₂' : (n : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast h₂)
+  rw [criticalExponent_def]
+  field_simp
+
+/-- The critical exponent, viewed in `ℝ≥0∞`, is Sobolev conjugate to `2`. -/
+theorem inv_ofReal_criticalExponent_add_inv_eq_inv {n : ℕ} (hn : 2 < n) :
+    (ENNReal.ofReal (criticalExponent n))⁻¹ + (n : ℝ≥0∞)⁻¹ = (2 : ℝ≥0∞)⁻¹ := by
+  have hn0 : n ≠ 0 := by omega
+  have hp0 : ENNReal.ofReal (criticalExponent n) ≠ 0 :=
+    (ENNReal.ofReal_pos.mpr (criticalExponent_pos hn)).ne'
+  apply (ENNReal.toReal_eq_toReal_iff' (by finiteness) (by finiteness)).mp
+  rw [ENNReal.toReal_add (by finiteness) (by finiteness)]
+  simp only [ENNReal.toReal_inv, ENNReal.toReal_ofReal (criticalExponent_pos hn).le,
+    ENNReal.toReal_natCast, ENNReal.toReal_ofNat]
+  rw [criticalExponent_def]
+  have hnr : (n : ℝ) ≠ 0 := by exact_mod_cast hn0
+  field_simp
+  ring
 
 /-- The coefficient `aₙ = 4 (n - 1) / (n - 2)`; for `n > 2` it is the coefficient of the
 nonnegative Laplacian in the conformal Laplacian `aₙ Δ⁺ + Scal` in dimension `n`. At `n = 2` it is
@@ -142,6 +182,18 @@ theorem bubble_zero_smul {t : ℝ} (ht : 0 < t) (x : E) :
   rw [bubble_apply, bubble_apply, hbase, Real.mul_rpow (inv_nonneg.mpr ht.le) (by positivity),
     Real.inv_rpow ht.le, Real.rpow_neg ht.le]
 
+/-- The square of a bubble under translation and dilation:
+`U_{t,b}(b + t x)² = t ^ (-(n - 2)) U_{1,0}(x)²`. -/
+theorem bubble_sq_add_smul {t : ℝ} (ht : 0 < t) (b x : E) :
+    bubble t b (b + t • x) ^ 2 =
+      t ^ (-((finrank ℝ E : ℝ) - 2)) * bubble 1 0 x ^ 2 := by
+  have hb : bubble t b (b + t • x) =
+      t ^ (-(((finrank ℝ E : ℝ) - 2) / 2)) * bubble 1 0 x := by
+    rw [← bubble_zero_sub, add_sub_cancel_left, bubble_zero_smul ht]
+  have hexp : -(((finrank ℝ E : ℝ) - 2) / 2) * (2 : ℕ) =
+      -((finrank ℝ E : ℝ) - 2) := by push_cast; ring
+  rw [hb, mul_pow, ← Real.rpow_mul_natCast ht.le, hexp]
+
 /-- In dimension `n ≠ 2`, the critical power of a bubble is
 `U_{t,b} ^ pₙ = (2 t / (t² + ‖x - b‖²)) ^ n`. -/
 theorem bubble_rpow_criticalExponent (hn : finrank ℝ E ≠ 2) {t : ℝ} (ht : 0 < t) (b x : E) :
@@ -152,6 +204,15 @@ theorem bubble_rpow_criticalExponent (hn : finrank ℝ E ≠ 2) {t : ℝ} (ht : 
     ← Real.rpow_natCast _ (finrank ℝ E)]
   congr 1
   field_simp
+
+/-- In dimension `n ≥ 2`, the square of a bubble is a power of its profile:
+`U_{t,b} ^ 2 = (2 t / (t² + ‖x - b‖²)) ^ (n - 2)`. -/
+theorem bubble_sq (hn : 2 ≤ finrank ℝ E) {t : ℝ} (ht : 0 ≤ t) (b x : E) :
+    bubble t b x ^ 2 = (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ (finrank ℝ E - 2) := by
+  rw [bubble_apply, ← Real.rpow_mul_natCast (by positivity), ← Real.rpow_natCast _ (_ - 2)]
+  congr 1
+  push_cast [Nat.cast_sub hn]
+  ring
 
 /-- In dimension `n ≠ 2`, the critical power of a bubble is a rescaled translate of a power of the
 Japanese bracket: `U_{t,b}(x) ^ pₙ = (2 / t) ^ n (1 + ‖t⁻¹ (x - b)‖²) ^ (-n)`. -/

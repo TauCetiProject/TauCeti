@@ -72,6 +72,8 @@ elementary matrices against the diagonal torus.
 * `TauCeti.commutatorElement_transvectionUnit` and
   `TauCeti.commutatorElement_transvectionUnit_reverse`: the commutators of two chaining
   transvections in either orientation.
+* `Equiv.reindexGL_transvectionUnit`: relabelling the indices sends a transvection to the
+  transvection at the relabelled pair of indices.
 * `TauCeti.det_transvectionUnit` and `TauCeti.transvectionUnit_injective`: a transvection has
   determinant `1`, and distinct parameters give distinct transvections.
 * `TauCeti.diagGL_mul_transvectionUnit_mul_inv`: conjugation by an invertible diagonal matrix.
@@ -374,12 +376,6 @@ private theorem transpose_coe_transvectionWeylElement_symm (hij : i ≠ j) :
     by_cases hbi : b = i <;> by_cases hbj : b = j <;>
       simp_all [Matrix.one_apply, eq_comm]
 
-omit [Fintype n] in
-private theorem transpose_transvection (a b : n) (c : A) :
-    (Matrix.transvection a b c).transpose = Matrix.transvection b a c := by
-  simp [Matrix.transvection, Matrix.transpose_add, Matrix.transpose_one,
-    Matrix.transpose_single]
-
 private theorem coe_mul_transvectionWeylElement_symm_apply (hij : i ≠ j) (M : Matrix n n A)
     (a b : n) :
     (M * ((transvectionWeylElement (A := A) hij.symm : GL n A) : Matrix n n A)) a b =
@@ -448,7 +444,8 @@ theorem transvectionWeylElement_mul_transvectionUnit_mul_inv_symm (hij : i ≠ j
     (transvectionWeylElement_mul_transvectionUnit_mul_inv_self (A := A) hij c))
   apply Units.ext
   simpa only [Units.val_mul, coe_transvectionUnit, Matrix.transpose_mul, mul_assoc,
-    transpose_transvection, transpose_coe_transvectionWeylElement_symm (A := A) hij, hT] using h
+    Matrix.transpose_transvection, transpose_coe_transvectionWeylElement_symm (A := A) hij,
+    hT] using h
 
 /-- Conjugation by the Weyl representative exchanging `i` and `j` replaces the left index `j`
 of `xⱼₖ(c)` by `i`. -/
@@ -622,3 +619,20 @@ theorem transvectionWeylElement_mul_diagGL_mul_inv (hij : i ≠ j) (t : Fin N �
 end Torus
 
 end TauCeti
+
+namespace Equiv
+
+open TauCeti
+
+variable {n m : Type*} [DecidableEq n] [Fintype n] [DecidableEq m] [Fintype m] {A : Type*} [Ring A]
+  {i j : n}
+
+/-- Relabelling the indices sends an elementary matrix to the elementary matrix with the same
+parameter at the relabelled pair of indices. -/
+theorem reindexGL_transvectionUnit (e : n ≃ m) (hij : i ≠ j) (a : A) :
+    e.reindexGL A (transvectionUnit hij a) = transvectionUnit (e.injective.ne hij) a := by
+  ext : 1
+  simp [coe_transvectionUnit_eq_one_add_single, submatrix_add, submatrix_single_equiv,
+    submatrix_one_equiv]
+
+end Equiv

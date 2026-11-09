@@ -29,8 +29,9 @@ matrix `A` with linearly independent rows, the quotient `√det (A * Aᵀ) / min
 covolume of the lattice of integer solutions of `A *ᵥ x = 0`, which enters the sharp form of
 Siegel's lemma due to Bombieri and Vaaler; that quotient and its invariance under `A ↦ B * A`
 are treated in `TauCeti.NumberTheory.Height.Arakelov.IntMatrix`. The examples at the end of the
-file compute the minor gcd and Gram determinant of the row `[2, 2]` and of a matrix before and
-after a unimodular shear.
+file compute the minor gcd and Gram determinant of the row `[2, 2]` and of a matrix after a
+unimodular shear; the matrix before the shear is treated in
+`TauCeti.Examples.NumberTheory.Height.Arakelov.BombieriVaaler`.
 
 The Gram determinant `det (A * Aᵀ)` is mostly treated elsewhere: its behaviour under
 `A ↦ B * A` and its independence criterion are in `TauCeti.LinearAlgebra.Matrix.Gram`, and its
@@ -186,17 +187,9 @@ example : (!![(2 : ℤ), 2] * !![(2 : ℤ), 2]ᵀ).det = 8 := by
   simp [det_unique, vecMul, dotProduct, Fin.sum_univ_two]
 
 -- The shear `!![1, 1; 0, 1]` moves `!![1, 0, -1; 0, 1, -1]` to `!![1, 1, -2; 0, 1, -1]`. Both
--- have minor gcd `1` and Gram determinant `3`, while the largest entry grows from `1` to `2`.
-example : minorGcd !![(1 : ℤ), 0, -1; 0, 1, -1] = 1 := by
-  exact Int.eq_one_of_dvd_one (minorGcd_nonneg _)
-    (by simpa [det_fin_two] using minorGcd_dvd !![(1 : ℤ), 0, -1; 0, 1, -1] ⟨![0, 1], by decide⟩)
-
-example : (!![(1 : ℤ), 0, -1; 0, 1, -1] * !![(1 : ℤ), 0, -1; 0, 1, -1]ᵀ).det = 3 := by
-  simp [det_fin_two, vecMul, dotProduct, Fin.sum_univ_three]
-
-example : !![(1 : ℤ), 1; 0, 1] * !![(1 : ℤ), 0, -1; 0, 1, -1] = !![1, 1, -2; 0, 1, -1] := by
-  simp
-
+-- have minor gcd `1` and Gram determinant `3`, while the largest entry grows from `1` to `2`. The
+-- matrix before the shear is treated in
+-- `TauCeti.Examples.NumberTheory.Height.Arakelov.BombieriVaaler`.
 example : minorGcd !![(1 : ℤ), 1, -2; 0, 1, -1] = 1 := by
   exact Int.eq_one_of_dvd_one (minorGcd_nonneg _)
     (by simpa [det_fin_two] using minorGcd_dvd !![(1 : ℤ), 1, -2; 0, 1, -1] ⟨![0, 1], by decide⟩)

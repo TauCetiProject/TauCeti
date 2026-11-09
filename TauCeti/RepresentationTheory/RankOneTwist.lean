@@ -77,7 +77,7 @@ def rankOneCharacter (rho : Representation k G V) (e : V ≃ₗ[k] k) : G →* k
   map_one' := by simp
   map_mul' g h := by
     have hv : rho h (e.symm 1) = e (rho h (e.symm 1)) • e.symm 1 := e.injective (by simp)
-    rw [map_mul, Module.End.mul_apply]
+    rw [map_mul, mul_apply_eq_comp]
     nth_rw 1 [hv]
     rw [map_smul, map_smul, smul_eq_mul, mul_comm]
 

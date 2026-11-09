@@ -66,7 +66,7 @@ theorem connectedSpace_primeSpectrum_monoidAlgebra_of_isPGroup
   have heq := eq_of_isNilpotent_sub_of_isIdempotentElem
     he (hc.map (algebraMap R R[G]))
     (isNilpotent_sub_algebraMap_counit_of_isPGroup R p hG e)
-  rcases eq_zero_or_eq_one_of_isIdempotentElem hc with h | h
+  rcases hc.eq_zero_or_eq_one_of_preconnectedSpace with h | h
   · exact Or.inl (by simpa only [h, map_zero] using heq)
   · exact Or.inr (by simpa only [h, map_one] using heq)
 
@@ -104,7 +104,7 @@ theorem connectedSpace_primeSpectrum_monoidAlgebra_iff_isPGroup :
   have hφ : Function.Injective φ :=
     MonoidAlgebra.map_injective _ (ZMod.castHom_injective R)
   have hidem := (isIdempotentElem_groupAlgebraSubgroupAverage (ZMod p) P hnz).map φ
-  rcases eq_zero_or_eq_one_of_isIdempotentElem hidem with hzero | hone
+  rcases hidem.eq_zero_or_eq_one_of_preconnectedSpace with hzero | hone
   · exact groupAlgebraSubgroupAverage_ne_zero (ZMod p) P hnz
       (hφ (hzero.trans (map_zero φ).symm))
   · exact groupAlgebraSubgroupAverage_ne_one (ZMod p) P ⟨g, Subgroup.mem_zpowers g⟩

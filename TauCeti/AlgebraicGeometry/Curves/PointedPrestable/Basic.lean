@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.Prestable
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Section
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.PureRelativeDimension
+import TauCeti.AlgebraicGeometry.Morphisms.Separated
 
 /-!
 # Pointed prestable families of curves
@@ -88,6 +89,26 @@ attribute [reassoc (attr := simp)] PointedPrestableFamily.marking_comp_toBase
 namespace PointedPrestableFamily
 
 variable {S T : Scheme.{u}} {m n : ℕ} (P : PointedPrestableFamily S n)
+
+/-- The total space of a pointed prestable family is a scheme over the base, through its structure
+morphism. -/
+instance instOverTotal : P.total.Over S :=
+  ⟨P.toBase⟩
+
+/-- The structure morphism of the total space as a scheme over the base is `toBase`. -/
+@[simp]
+theorem over_eq_toBase : P.total ↘ S = P.toBase :=
+  (rfl)
+
+/-- The total space of a pointed prestable family over a quasi-compact base is quasi-compact,
+the structure morphism being proper. -/
+instance compactSpace_total [CompactSpace S] : CompactSpace P.total :=
+  QuasiCompact.compactSpace_of_compactSpace P.toBase
+
+/-- The total space of a pointed prestable family over a separated base is separated, the
+structure morphism being proper. -/
+instance isSeparated_total [S.IsSeparated] : P.total.IsSeparated :=
+  .of_isSeparated P.toBase
 
 /-- Distinct markings take distinct values at every point of the base. -/
 theorem marking_apply_ne {i j : Fin n} (hij : i ≠ j) (s : S) : P.marking i s ≠ P.marking j s :=

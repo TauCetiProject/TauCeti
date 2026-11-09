@@ -203,7 +203,7 @@ theorem fg_sections_add_ofPoint [IsNoetherianRing Γ(X, ⊤)] (hy : (X.Γevaluat
   rw [top_inf_eq, hker]
   refine Submodule.fg_of_fg_map_injective (sections _ ⊤).subtype Subtype.val_injective ?_
   rwa [Submodule.map_comap_subtype, inf_eq_right.mpr (sections_mono (le_add_of_nonneg_right
-    ((WeilDivisor.isEffective_iff _).mp (WeilDivisor.isEffective_ofPoint y))) ⊤)]
+    (WeilDivisor.ofPoint_nonneg y)) ⊤)]
 
 end Step
 
@@ -249,7 +249,7 @@ theorem fg_sections_top [IsNoetherianRing Γ(X, ⊤)] (hX : ∀ y : X, coheight 
     · refine fg_sections_of_le (add_le_of_nonpos_right fun z ↦ ?_) hE
       simp only [Finsupp.coe_smul, Pi.smul_apply, Finsupp.coe_zero, Pi.zero_apply, smul_eq_mul]
       exact mul_nonpos_of_nonpos_of_nonneg hn.le
-        ((WeilDivisor.isEffective_iff _).mp (WeilDivisor.isEffective_ofPoint y) z)
+        (WeilDivisor.coeff_nonneg (WeilDivisor.ofPoint_nonneg y) z)
   induction D using Finsupp.induction with
   | zero => rw [sections_zero_top_eq_span hX]; exact Submodule.fg_span_singleton _
   | single_add a b f _ _ ih =>
@@ -330,7 +330,7 @@ theorem nonempty_completeLinearSystem_iff_nontrivial_globalSections_sheaf
         -WeilDivisor.coeff D x ≤
           X.ord ((Additive.toMul γ : X.functionFieldˣ) : X.functionField) x := by
       intro x _
-      exact (isEffective_add_principalDivisor_iff D γ).mp hEeff x
+      exact (add_principalDivisor_nonneg_iff D γ).mp hEeff x
     refine nontrivial_of_ne
       (sectionMk _ (rationalFunctionsEquiv_symm_mem_sections hbound)) 0 fun h ↦ ?_
     have h' := congrArg (Scheme.Modules.Hom.app (sheafι D) ⊤) h
@@ -348,7 +348,7 @@ theorem nonempty_completeLinearSystem_iff_nontrivial_globalSections_sheaf
     refine ⟨D + (WeilDivisor.OrderSystem.ofScheme X).principalDivisor
       (Additive.ofMul (Units.mk0 c hc)), ?_⟩
     refine (WeilDivisor.OrderSystem.mem_completeLinearSystem_iff_exists_principalDivisor _).mpr
-      ⟨(isEffective_add_principalDivisor_iff D _).mpr fun x ↦ ?_, _, rfl⟩
+      ⟨(add_principalDivisor_nonneg_iff D _).mpr fun x ↦ ?_, _, rfl⟩
     have h := hbound x trivial
     rw [← hc'] at h
     simpa only [toMul_ofMul, Units.val_mk0] using h

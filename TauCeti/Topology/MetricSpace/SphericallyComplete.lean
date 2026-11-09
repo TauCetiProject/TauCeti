@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.MetricSpace.ProperSpace
+public import Mathlib.Topology.Order.MonotoneConvergence
+public import Mathlib.Topology.MetricSpace.Cauchy
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
 
 /-!
@@ -18,7 +20,9 @@ Bhatt and Scholze use it to show that bounded lattices saturated with respect to
 ideal are finite free.
 
 Every proper space, for instance every locally compact nonarchimedean field such as `ℚ_p`, is
-spherically complete. The field `ℂ_p` is complete but not spherically complete.
+spherically complete. So is every complete ultrapseudometric space whose nonzero distances are
+powers of a fixed real number greater than one, even without local compactness. The field `ℂ_p`
+is complete but not spherically complete.
 
 ## Main definitions
 
@@ -27,6 +31,8 @@ spherically complete. The field `ℂ_p` is complete but not spherically complete
 
 ## Main results
 
+* `TauCeti.sphericallyCompleteSpace_of_dist_eq_zpow`: completeness implies spherical
+  completeness when nonzero distances lie in a discrete geometric progression.
 * `TauCeti.SphericallyCompleteSpace.exists_forall_mem_of_dist_le`: in a spherically complete
   ultrametric space `X`, let `A n` be sets of families `ι → X` and `r` an antitone sequence of
   nonnegative radii. Suppose that each `A n` contains the closed polydisc of radius `r n` about
@@ -88,5 +94,54 @@ theorem SphericallyCompleteSpace.exists_forall_mem_of_dist_le {X ι : Type*} [Ps
     exact closedBall_subset_closedBall (hr n.le_succ)
   choose t ht using hball'
   exact ⟨t, fun n ↦ hball n (c n) (hcA n) t fun i ↦ Set.mem_iInter.1 (ht i) n⟩
+
+/-- A complete ultrapseudometric space whose nonzero distances are integer powers of a fixed
+real number greater than one is spherically complete. No local compactness is required. -/
+theorem sphericallyCompleteSpace_of_dist_eq_zpow {X : Type*} [PseudoMetricSpace X]
+    [IsUltrametricDist X] [CompleteSpace X] {b : ℝ} (hb : 1 < b)
+    (hdiscrete : ∀ x y : X, dist x y ≠ 0 → ∃ k : ℤ, dist x y = b ^ k) :
+    SphericallyCompleteSpace X := by
+  refine ⟨fun {c r} hr hballs ↦ ?_⟩
+  -- Replace the radii by their running minima without changing the intersection.
+  let s : ℕ → ℝ := fun n ↦ (Finset.range (n + 1)).inf' (by simp) r
+  have hs0 (n : ℕ) : 0 ≤ s n := Finset.le_inf' (by simp) r fun i _ ↦ hr i
+  have hsle (n : ℕ) : s n ≤ r n := Finset.inf'_le _ (by simp)
+  have hsanti : Antitone s := by
+    intro m n hmn
+    exact Finset.le_inf' (by simp) r fun i hi ↦ Finset.inf'_le r
+      (Finset.range_mono (by omega) hi)
+  have hcs (m n : ℕ) (hmn : m ≤ n) : dist (c n) (c m) ≤ s m := by
+    refine Finset.le_inf' (by simp) r fun i hi ↦ ?_
+    have him : i ≤ m := by simpa using hi
+    exact (IsUltrametricDist.dist_triangle_max (c n) (c i) (c m)).trans
+      (max_le (hballs (him.trans hmn) (mem_closedBall_self (hr n)))
+        (by simpa [dist_comm] using hballs him (mem_closedBall_self (hr m))))
+  have hbounded : BddBelow (Set.range s) := ⟨0, by rintro _ ⟨n, rfl⟩; exact hs0 n⟩
+  have hs_lim := tendsto_atTop_ciInf hsanti hbounded
+  have hinf0 : 0 ≤ ⨅ n, s n := le_ciInf hs0
+  by_cases hz : (⨅ n, s n) = 0
+  · have hcauchy : CauchySeq c := cauchySeq_of_le_tendsto_0' s (fun m n hmn ↦ by
+      simpa [dist_comm] using hcs m n hmn) (hz ▸ hs_lim)
+    obtain ⟨x, hx⟩ := cauchySeq_tendsto_of_complete hcauchy
+    refine ⟨x, Set.mem_iInter.2 fun n ↦ ?_⟩
+    exact isClosed_closedBall.mem_of_tendsto hx (Filter.eventually_atTop.2
+      ⟨n, fun m hm ↦ hballs hm (mem_closedBall_self (hr m))⟩)
+  · have hpos : 0 < ⨅ n, s n := lt_of_le_of_ne hinf0 (Ne.symm hz)
+    obtain ⟨k, hklo, hkhi⟩ := exists_mem_Ico_zpow hpos hb
+    obtain ⟨N, hN⟩ := Filter.eventually_atTop.1 (hs_lim.eventually_lt_const hkhi)
+    refine ⟨c N, Set.mem_iInter.2 fun n ↦ ?_⟩
+    rcases le_total n N with hn | hn
+    · exact hballs hn (mem_closedBall_self (hr N))
+    · by_cases hcn : dist (c N) (c n) = 0
+      · simpa only [mem_closedBall, hcn] using hr n
+      obtain ⟨j, hj⟩ := hdiscrete (c N) (c n) hcn
+      have hjlt : b ^ j < b ^ (k + 1) := by
+        rw [← hj, dist_comm]
+        exact (hcs N n hn).trans_lt (hN N le_rfl)
+      have hjk : j ≤ k := by
+        have := (zpow_lt_zpow_iff_right₀ hb).1 hjlt
+        omega
+      exact (hj.trans_le (zpow_le_zpow_right₀ hb.le hjk)).trans
+        (hklo.trans ((ciInf_le hbounded n).trans (hsle n)))
 
 end TauCeti

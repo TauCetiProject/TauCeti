@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Projective
+public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RepresentationTheory.Irreducible
 import Mathlib.Algebra.Category.ModuleCat.Free
@@ -77,6 +78,8 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
 * `Representation.averageMap_apply`: the same identity evaluated at a vector.
 * `Representation.averageMap_comp_ρ`: the averaging projection does not see the action.
 * `Representation.IntertwiningMap.map_averageMap`: intertwining maps commute with averaging.
+* `Convex.averageMap_mem`: an invariant convex set contains the average of the orbit of each of
+  its points, which is a fixed point.
 * `Representation.range_norm_eq_invariants`: the group sum `Representation.norm ρ` has the
   invariants as its range.
 * `Representation.range_norm_eq_invariants_of_projective`: the same conclusion without
@@ -89,9 +92,15 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
   equivariant additive map, possibly between representations over different coefficient rings,
   lifts invariant vectors when its target is projective over the target group algebra.
 * `Representation.Equiv.invariantsLinearEquiv`: equivalent representations have isomorphic
-  invariants.
+  invariants, and `Representation.Equiv.apply_mem_invariants_iff`: an equivalence detects
+  invariance of a vector.
+* `Representation.Equiv.quotientToInvariants`: for a normal subgroup `S`, an equivalence of
+  representations of `G` is an equivalence of the representations of `G ⧸ S` on the
+  `S`-invariants.
 * `Representation.invariants_comp_of_surjective`: restriction along a surjective homomorphism
   does not change the invariants.
+* `Representation.map_subtype_invariants_subrepresentation`: the invariants of the restriction to
+  a `G`-stable submodule `W` are `ρ.invariants ⊓ W`.
 * `Representation.tmul_mem_invariants_tprod`: the tensor product of invariant vectors is
   invariant.
 * `Representation.finrank_invariants_tprod_of_comp`: invariant dimensions of tensor products may
@@ -169,6 +178,23 @@ theorem range_norm_eq_invariants : LinearMap.range ρ.norm = ρ.invariants := by
 
 end Representation
 
+namespace Convex
+
+/-- **The orbit average lies in an invariant convex set.** If a finite group `G`, whose order is
+invertible in the linearly ordered field `𝕜`, acts linearly on `V` preserving a convex set `s`,
+then `s` contains the average `|G|⁻¹ ∑ g, ρ g v` of the orbit of each of its points `v`. This
+average is fixed by `G` (`Representation.averageMap_invariant`), so a nonempty invariant convex set
+contains a fixed point. -/
+theorem averageMap_mem {𝕜 G V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [Group G]
+    [Fintype G] [Invertible (Fintype.card G : 𝕜)] [AddCommGroup V] [Module 𝕜 V]
+    {ρ : Representation 𝕜 G V} {s : Set V} (hs : Convex 𝕜 s)
+    (hρs : ∀ g, Set.MapsTo (ρ g) s s) {v : V} (hv : v ∈ s) : ρ.averageMap v ∈ s := by
+  rw [Representation.averageMap_apply, Finset.smul_sum]
+  refine hs.sum_mem (fun _ _ ↦ invOf_nonneg.2 (Nat.cast_nonneg _)) ?_ fun g _ ↦ hρs g hv
+  rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_invOf_self]
+
+end Convex
+
 namespace Representation
 
 -- Stated over `Representation.trivial k H k`, the form to which `simp` reduces
@@ -209,10 +235,34 @@ theorem mem_invariants_iff_of_closure_eq_top {k G V : Type*} [CommRing k] [Group
   induction hs.ge (Subgroup.mem_top g) using Subgroup.closure_induction with
   | mem g hg => exact h g hg
   | one => simp
-  | mul g g' _ _ hg hg' => rw [map_mul, Module.End.mul_apply, hg', hg]
+  | mul g g' _ _ hg hg' => rw [map_mul, mul_apply_eq_comp, hg', hg]
   | inv g _ hg =>
     conv_lhs => rw [← hg]
-    rw [← Module.End.mul_apply, ← map_mul, inv_mul_cancel, map_one, Module.End.one_apply]
+    rw [← mul_apply_eq_comp, ← map_mul, inv_mul_cancel, map_one, one_apply_eq_self]
+
+section Subrepresentation
+
+variable {k G V : Type*} [CommRing k] [Group G] [AddCommGroup V] [Module k V]
+  (ρ : Representation k G V) {W : Submodule k V} (hW : ∀ g, W ≤ W.comap (ρ g))
+
+-- Not `@[simp]`: Mathlib's `@[simp] Representation.mem_invariants` already rewrites the left-hand
+-- side, so the attribute would be a `simpNF` violation. This is the `rw`-usable form.
+/-- A vector of a `G`-stable submodule `W` is invariant for the restriction of `ρ` to `W` exactly
+when it is invariant for `ρ`: the restricted action is the ambient action. -/
+theorem mem_invariants_subrepresentation {x : W} :
+    x ∈ (ρ.subrepresentation W hW).invariants ↔ (x : V) ∈ ρ.invariants := by
+  simp [Subtype.ext_iff]
+
+/-- The invariants of the restriction of `ρ` to a `G`-stable submodule `W` are, as a subspace of
+`V`, the invariant vectors of `ρ` lying in `W`. -/
+theorem map_subtype_invariants_subrepresentation :
+    (ρ.subrepresentation W hW).invariants.map W.subtype = ρ.invariants ⊓ W := by
+  ext v
+  refine ⟨?_, fun hv ↦ ⟨⟨v, hv.2⟩, (ρ.mem_invariants_subrepresentation hW).2 hv.1, rfl⟩⟩
+  rintro ⟨x, hx, rfl⟩
+  exact ⟨(ρ.mem_invariants_subrepresentation hW).1 hx, x.2⟩
+
+end Subrepresentation
 
 end Representation
 
@@ -363,6 +413,38 @@ def invariantsLinearEquiv (φ : ρ.Equiv σ) : ρ.invariants ≃ₗ[k] σ.invari
 theorem coe_invariantsLinearEquiv_apply (φ : ρ.Equiv σ) (x : ρ.invariants) :
     (φ.invariantsLinearEquiv x : W) = φ (x : V) :=
   (rfl)
+
+/-- **Equivalent representations have equivalent quotient representations on invariants.** For a
+normal subgroup `S` of `G`, an equivalence `ρ ≃ σ` restricts to the `S`-invariants and there
+intertwines the representations `ρ.quotientToInvariants S` and `σ.quotientToInvariants S` of
+`G ⧸ S`. -/
+noncomputable def quotientToInvariants (φ : ρ.Equiv σ) (S : Subgroup G) [S.Normal] :
+    (ρ.quotientToInvariants S).Equiv (σ.quotientToInvariants S) :=
+  .mk (φ.res S.subtype).invariantsLinearEquiv fun g ↦ by
+    induction g using QuotientGroup.induction_on with | H g => ?_
+    ext x
+    simpa [ofQuotient_coe_apply] using
+      IntertwiningMap.isIntertwining ρ σ φ.toIntertwiningMap g x
+
+@[simp]
+theorem coe_quotientToInvariants_apply (φ : ρ.Equiv σ) (S : Subgroup G) [S.Normal]
+    (x : invariants (ρ.comp S.subtype)) : (φ.quotientToInvariants S x : W) = φ (x : V) := by
+  simp [quotientToInvariants]
+
+@[simp]
+theorem symm_quotientToInvariants (φ : ρ.Equiv σ) (S : Subgroup G) [S.Normal] :
+    (φ.quotientToInvariants S).symm = φ.symm.quotientToInvariants S := by
+  ext x
+  obtain ⟨y, rfl⟩ := (φ.quotientToInvariants S).surjective x
+  simp
+
+/-- An equivalence of representations maps a vector to an invariant vector exactly when the
+vector itself is invariant. -/
+theorem apply_mem_invariants_iff (φ : ρ.Equiv σ) {x : V} :
+    φ x ∈ σ.invariants ↔ x ∈ ρ.invariants :=
+  ⟨fun hx g ↦ φ.toLinearEquiv.injective <|
+      (IntertwiningMap.isIntertwining ρ σ φ.toIntertwiningMap g x).trans (hx g),
+    fun hx ↦ (φ.invariantsLinearEquiv ⟨x, hx⟩).property⟩
 
 end Representation.Equiv
 
@@ -538,12 +620,14 @@ open scoped MonoidAlgebra
 
 universe u v w
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [NeZero (Nat.card G : k)]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [NeZero (Nat.card G : k)]
 
 /-- Under Maschke's hypothesis, taking invariants preserves short exact sequences of
 representations. -/
 theorem Rep.shortExact_map_invariantsFunctor {S : ShortComplex (Rep.{w} k G)} (hS : S.ShortExact) :
     (S.map (Rep.invariantsFunctor k G)).ShortExact := by
+  -- A nonzero cardinality in `k` forces `G` to be finite (`Maschke` needs `Finite G`).
+  have : Finite G := Nat.finite_of_card_ne_zero fun h ↦ NeZero.ne (Nat.card G : k) (by simp [h])
   have : (Rep.invariantsFunctor k G).PreservesEpimorphisms := ⟨fun {X Y} f hf ↦ by
       have : Module.Projective k[G] Y.ρ.asModule :=
         Module.projective_of_isSemisimpleRing k[G] Y.ρ.asModule

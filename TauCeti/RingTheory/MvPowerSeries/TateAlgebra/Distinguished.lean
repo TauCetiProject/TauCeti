@@ -41,19 +41,25 @@ for an enumeration `k : σ ≃ Fin n` and a base `b` exceeding every exponent ap
 of maximal coefficient norm. It sends the monomial `X ^ ν` to a polynomial which, as a polynomial in
 `Y`, is monic of degree `ν none + ∑ᵢ b ^ (k i + 1) * ν (some i)`. These degrees are base-`b`
 expansions, so they differ for the finitely many dominant monomials, and the dominant monomial of
-largest degree gives the distinguished coefficient.
+largest degree gives the distinguished coefficient. Any larger base works as well, so a base
+exceeding the exponents of the dominant monomials of finitely many nonzero series gives one
+automorphism distinguishing all of them at once.
 
 ## Main results
 
 * `TauCeti.MvPowerSeries.restrictedTriangularEquiv`: the triangular automorphism, an isometry
   (`TauCeti.MvPowerSeries.norm_restrictedTriangularEquiv`) given by the formal substitution of
   `TauCeti.MvPowerSeries.triangularFamily`.
-* `TauCeti.MvPowerSeries.exists_restrictedTriangularEquiv_isDistinguished`: over an ultrametric
-  normed commutative ring, a triangular automorphism makes a nonzero series distinguished in `Y`,
-  with dominant coefficient close to a constant of the same norm.
-* `TauCeti.MvPowerSeries.exists_restrictedTriangularEquiv_isDistinguished_isUnit` and
+* `TauCeti.MvPowerSeries.exists_restrictedTriangularEquiv_forall_isDistinguished`: over an
+  ultrametric normed commutative ring, one triangular automorphism makes every member of a finite
+  family of nonzero series distinguished in `Y`, with dominant coefficient close to a constant of
+  the same norm; `TauCeti.MvPowerSeries.exists_restrictedTriangularEquiv_isDistinguished` is the
+  case of a single series.
+* `TauCeti.MvPowerSeries.exists_restrictedTriangularEquiv_forall_isDistinguished_isUnit` and
+  `TauCeti.MvPowerSeries.exists_algEquiv_forall_isDistinguished_isUnit`, with their single-series
+  cases `TauCeti.MvPowerSeries.exists_restrictedTriangularEquiv_isDistinguished_isUnit` and
   `TauCeti.MvPowerSeries.exists_algEquiv_isDistinguished_isUnit`: over a complete nonarchimedean
-  field, the dominant coefficient is moreover a unit.
+  field, the dominant coefficients are moreover units.
 * `TauCeti.MvPowerSeries.isDistinguished_isUnit_of_norm_coeff_lt`: at any radii, a series over
   restricted series is distinguished with a unit coefficient when the constant term of that
   coefficient strictly dominates all other weighted coefficients.
@@ -263,66 +269,53 @@ private theorem triangularDegree_injective {n : ℕ} (k : σ ≃ Fin n) {b : ℕ
   simpa using congrFun hv (E x)
 
 omit [NormOneClass R] in
-/-- **Choice of the triangular exponents.** For a nonzero restricted series `f` there are
-exponents `α` and an exponent `ν` with `‖coeff ν f‖ = ‖f‖` such that every other exponent of
-triangular degree at least that of `ν` carries a coefficient of norm at most some `ε < ‖f‖`. -/
-private theorem exists_triangularDegree_dominant [Finite σ] (f : ExtraTate) (hf : f ≠ 0) :
-    ∃ (α : σ → ℕ) (_ : ∀ i, α i ≠ 0) (ν : Option σ →₀ ℕ) (ε : ℝ), 0 ≤ ε ∧ ε < ‖f‖ ∧
+/-- **Choice of the triangular exponents.** Let `f` be a nonzero restricted series, `S` the finite
+set of its exponents of maximal coefficient norm, and `b > 1` a base exceeding every entry of each
+exponent in `S`. For the exponents `α i = b ^ (k i + 1)` there are an exponent `ν` with
+`‖coeff ν f‖ = ‖f‖` and some `ε < ‖f‖` such that every other exponent of triangular degree at
+least that of `ν` carries a coefficient of norm at most `ε`. -/
+private theorem exists_triangularDegree_dominant (f : ExtraTate) (hf : f ≠ 0)
+    (S : Finset (Option σ →₀ ℕ))
+    (hS : ∀ d, d ∈ S ↔ ‖f‖ ≤ ‖coeff d (f : MvPowerSeries (Option σ) R)‖)
+    {n : ℕ} (k : σ ≃ Fin n) {b : ℕ} (hb : 1 < b) (hbS : ∀ d ∈ S, ∀ x, d x < b) :
+    ∃ (ν : Option σ →₀ ℕ) (ε : ℝ), 0 ≤ ε ∧ ε < ‖f‖ ∧
       ‖coeff ν (f : MvPowerSeries (Option σ) R)‖ = ‖f‖ ∧
-      ∀ d ≠ ν, triangularDegree α ν ≤ triangularDegree α d →
+      ∀ d ≠ ν, triangularDegree (fun i ↦ b ^ ((k i : ℕ) + 1)) ν ≤
+          triangularDegree (fun i ↦ b ^ ((k i : ℕ) + 1)) d →
         ‖coeff d (f : MvPowerSeries (Option σ) R)‖ ≤ ε := by
   classical
-  have : Fintype σ := Fintype.ofFinite σ
   obtain ⟨d₀, hd₀⟩ := exists_achievesGaussNorm f
   obtain ⟨ε, hε0, hεM, hε⟩ := exists_norm_coeff_mul_prod_gap f hf
   simp only [AchievesGaussNorm, ← norm_eq_gaussNorm, one_pow, Finsupp.prod_fun_one,
     mul_one] at hd₀ hε
-  have hM : 0 < ‖f‖ := norm_pos_iff.mpr hf
   have hle (d) : ‖coeff d (f : MvPowerSeries (Option σ) R)‖ ≤ ‖f‖ := by
     simpa using norm_coeff_mul_prod_le f d
-  -- The exponents of the monomials of maximal coefficient norm form a finite nonempty set `S`.
-  have hSfin : {d | ‖f‖ ≤ ‖coeff d (f : MvPowerSeries (Option σ) R)‖}.Finite := by
-    have := (isRestricted_one_iff.mp f.2).eventually (gt_mem_nhds (half_pos hM))
-    exact (by simpa [eventually_cofinite, not_lt] using this :
-      {d | ‖f‖ / 2 ≤ ‖coeff d (f : MvPowerSeries (Option σ) R)‖}.Finite).subset
-        fun d hd ↦ (half_le_self hM.le).trans hd
-  set S := hSfin.toFinset
-  have hS : S.Nonempty := ⟨d₀, hSfin.mem_toFinset.mpr hd₀.ge⟩
-  -- A base `b` exceeding every entry of an exponent in `S`, and the exponents `b ^ (k i + 1)`.
-  set b := S.sup (fun d ↦ Finset.univ.sup d) + 2
-  have hb : 1 < b := by omega
-  have hbound (d) (hd : d ∈ S) (x : Option σ) : d x < b := by
-    have := (Finset.le_sup (Finset.mem_univ x)).trans
-      (Finset.le_sup (f := fun d : Option σ →₀ ℕ ↦ Finset.univ.sup d) hd)
-    omega
-  set k := Fintype.equivFin σ
-  set α : σ → ℕ := fun i ↦ b ^ ((k i : ℕ) + 1)
   -- The dominant exponent of largest triangular degree.
-  obtain ⟨ν, hνS, hνmax⟩ := S.exists_max_image (triangularDegree α) hS
-  refine ⟨α, fun i ↦ pow_ne_zero _ (by omega), ν, ε, hε0, hεM,
-    le_antisymm (hle ν) (hSfin.mem_toFinset.mp hνS), fun d hd hdeg ↦ ?_⟩
+  obtain ⟨ν, hνS, hνmax⟩ := S.exists_max_image
+    (triangularDegree fun i ↦ b ^ ((k i : ℕ) + 1)) ⟨d₀, (hS d₀).mpr hd₀.ge⟩
+  refine ⟨ν, ε, hε0, hεM, le_antisymm (hle ν) ((hS ν).mp hνS), fun d hd hdeg ↦ ?_⟩
   by_cases hdS : d ∈ S
-  · exact absurd (triangularDegree_injective k hb (hbound d hdS) (hbound ν hνS)
+  · exact absurd (triangularDegree_injective k hb (hbS d hdS) (hbS ν hνS)
       (le_antisymm (hνmax d hdS) hdeg)) hd
-  · exact hε d (lt_of_not_ge fun h ↦ hdS (hSfin.mem_toFinset.mpr h))
+  · exact hε d (lt_of_not_ge fun h ↦ hdS ((hS d).mpr h))
 
-/-- **Distinguishing automorphisms of Tate algebras.** Over an ultrametric normed commutative
-ring with `‖1‖ = 1`, every nonzero unit-radius restricted series `f` in the variables `Option σ`,
-for finite `σ`, is carried by a triangular automorphism `Y ↦ Y`, `Xᵢ ↦ Xᵢ + Y ^ α i` to a series
-distinguished in the variable `Y = none`: written as a restricted series in `Y` over the Tate
-algebra in the variables `σ`, its image is distinguished of some degree `s`. Moreover its
-coefficient in degree `s` is within less than `‖f‖` of a constant `a` with `‖a‖ = ‖f‖`. -/
-theorem exists_restrictedTriangularEquiv_isDistinguished [Finite σ] (f : ExtraTate) (hf : f ≠ 0) :
-    ∃ (α : σ → ℕ) (hα : ∀ i, α i ≠ 0) (s : ℕ) (a : R), ‖a‖ = ‖f‖ ∧
+/-- If a coefficient `a = coeff ν f` of norm `‖f‖` dominates, up to `ε < ‖f‖`, every coefficient
+of triangular degree at least that of `ν`, then the triangular automorphism makes `f`
+distinguished in `Y`, with dominant coefficient within less than `‖f‖` of the constant `a`. -/
+private theorem exists_isDistinguished_of_triangularDegree_dominant [Finite σ] {α : σ → ℕ}
+    (hα : ∀ i, α i ≠ 0) (f : ExtraTate) (ν : Option σ →₀ ℕ) {ε : ℝ}
+    (hε0 : 0 ≤ ε) (hεM : ε < ‖f‖) (hνM : ‖coeff ν (f : MvPowerSeries (Option σ) R)‖ = ‖f‖)
+    (hν : ∀ d ≠ ν, triangularDegree α ν ≤ triangularDegree α d →
+      ‖coeff d (f : MvPowerSeries (Option σ) R)‖ ≤ ε) :
+    ∃ (s : ℕ) (a : R), ‖a‖ = ‖f‖ ∧
       PowerSeries.IsDistinguished 1 s
         (restrictedOptionEquiv (restrictedTriangularEquiv α hα f) : PowerSeries Tate) ∧
       ‖PowerSeries.coeff s
           (restrictedOptionEquiv (restrictedTriangularEquiv α hα f) : PowerSeries Tate) -
         algebraMap R Tate a‖ < ‖f‖ := by
   classical
-  obtain ⟨α, hα, ν, ε, hε0, hεM, hνM, hν⟩ := exists_triangularDegree_dominant f hf
   have : Nontrivial R := nontrivial_of_ne (coeff ν (f : MvPowerSeries (Option σ) R)) 0
-    fun h ↦ (norm_pos_iff.mpr hf).ne' (by rw [← hνM, h, norm_zero])
+    fun h ↦ (hε0.trans_lt hεM).ne' (by rw [← hνM, h, norm_zero])
   set a := coeff ν (f : MvPowerSeries (Option σ) R)
   set s := triangularDegree α ν
   set G := restrictedOptionEquiv (restrictedTriangularEquiv α hα f)
@@ -352,12 +345,99 @@ theorem exists_restrictedTriangularEquiv_isDistinguished [Finite σ] (f : ExtraT
     have h : algebraMap R Tate a = ⟨C a, isRestricted_C _ _⟩ :=
       Subtype.ext (coe_algebraMap_isRestrictedSubring _)
     rw [h, norm_C, hνM]
-  refine ⟨α, hα, s, a, hνM,
+  refine ⟨s, a, hνM,
     PowerSeries.isDistinguished_of_norm_coeff_sub_lt zero_le_one
       (by rw [one_pow, mul_one, hGn, hCa])
       (by rw [one_pow, mul_one, hGn]; exact hat.trans_lt hεM)
       (fun m hm ↦ by rw [one_pow, mul_one, hGn]; exact (hbeyond m hm).trans_lt hεM),
     hat.trans_lt hεM⟩
+
+/-- **Distinguishing automorphisms of Tate algebras, for finitely many series at once.** Over an
+ultrametric normed commutative ring with `‖1‖ = 1`, for finite `σ` and a finite family `f` of
+nonzero unit-radius restricted series in the variables `Option σ`, a single triangular
+automorphism `Y ↦ Y`, `Xᵢ ↦ Xᵢ + Y ^ α i` carries every member of the family to a series
+distinguished in the variable `Y = none`: written as a restricted series in `Y` over the Tate
+algebra in the variables `σ`, the image of `f j` is distinguished of some degree `s`, and its
+coefficient in degree `s` is within less than `‖f j‖` of a constant `a` with `‖a‖ = ‖f j‖`. -/
+theorem exists_restrictedTriangularEquiv_forall_isDistinguished [Finite σ] {ι : Type*} [Finite ι]
+    (f : ι → ExtraTate) (hf : ∀ j, f j ≠ 0) :
+    ∃ (α : σ → ℕ) (hα : ∀ i, α i ≠ 0), ∀ j, ∃ (s : ℕ) (a : R), ‖a‖ = ‖f j‖ ∧
+      PowerSeries.IsDistinguished 1 s
+        (restrictedOptionEquiv (restrictedTriangularEquiv α hα (f j)) : PowerSeries Tate) ∧
+      ‖PowerSeries.coeff s
+          (restrictedOptionEquiv (restrictedTriangularEquiv α hα (f j)) : PowerSeries Tate) -
+        algebraMap R Tate a‖ < ‖f j‖ := by
+  classical
+  have : Fintype σ := Fintype.ofFinite σ
+  have : Fintype ι := Fintype.ofFinite ι
+  -- The exponents of maximal coefficient norm of each member form a finite set `S j`.
+  have hSfin (j : ι) : {d | ‖f j‖ ≤ ‖coeff d (f j : MvPowerSeries (Option σ) R)‖}.Finite := by
+    have hM : 0 < ‖f j‖ := norm_pos_iff.mpr (hf j)
+    have := (isRestricted_one_iff.mp (f j).2).eventually (gt_mem_nhds (half_pos hM))
+    exact (by simpa [eventually_cofinite, not_lt] using this :
+      {d | ‖f j‖ / 2 ≤ ‖coeff d (f j : MvPowerSeries (Option σ) R)‖}.Finite).subset
+        fun d hd ↦ (half_le_self hM.le).trans hd
+  set S := fun j ↦ (hSfin j).toFinset
+  -- One base `b` exceeding every entry of every exponent in every `S j` serves the whole family.
+  set b := Finset.univ.sup (fun j ↦ (S j).sup fun d ↦ Finset.univ.sup d) + 2
+  have hb : 1 < b := by omega
+  have hbS (j : ι) (d) (hd : d ∈ S j) (x : Option σ) : d x < b := by
+    have := ((Finset.le_sup (Finset.mem_univ x)).trans
+      (Finset.le_sup (f := fun d : Option σ →₀ ℕ ↦ Finset.univ.sup d) hd)).trans
+        (Finset.le_sup (f := fun j ↦ (S j).sup fun d ↦ Finset.univ.sup d) (Finset.mem_univ j))
+    omega
+  set k := Fintype.equivFin σ
+  have hα (i : σ) : b ^ ((k i : ℕ) + 1) ≠ 0 := pow_ne_zero _ (by omega)
+  refine ⟨fun i ↦ b ^ ((k i : ℕ) + 1), hα, fun j ↦ ?_⟩
+  obtain ⟨ν, ε, hε0, hεM, hνM, hν⟩ := exists_triangularDegree_dominant (f j) (hf j) (S j)
+    (fun d ↦ (hSfin j).mem_toFinset) k hb (hbS j)
+  exact exists_isDistinguished_of_triangularDegree_dominant hα (f j) ν hε0 hεM hνM hν
+
+/-- **Distinguishing automorphisms of Tate algebras.** Over an ultrametric normed commutative
+ring with `‖1‖ = 1`, every nonzero unit-radius restricted series `f` in the variables `Option σ`,
+for finite `σ`, is carried by a triangular automorphism `Y ↦ Y`, `Xᵢ ↦ Xᵢ + Y ^ α i` to a series
+distinguished in the variable `Y = none`: written as a restricted series in `Y` over the Tate
+algebra in the variables `σ`, its image is distinguished of some degree `s`. Moreover its
+coefficient in degree `s` is within less than `‖f‖` of a constant `a` with `‖a‖ = ‖f‖`. -/
+theorem exists_restrictedTriangularEquiv_isDistinguished [Finite σ] (f : ExtraTate) (hf : f ≠ 0) :
+    ∃ (α : σ → ℕ) (hα : ∀ i, α i ≠ 0) (s : ℕ) (a : R), ‖a‖ = ‖f‖ ∧
+      PowerSeries.IsDistinguished 1 s
+        (restrictedOptionEquiv (restrictedTriangularEquiv α hα f) : PowerSeries Tate) ∧
+      ‖PowerSeries.coeff s
+          (restrictedOptionEquiv (restrictedTriangularEquiv α hα f) : PowerSeries Tate) -
+        algebraMap R Tate a‖ < ‖f‖ := by
+  obtain ⟨α, hα, h⟩ :=
+    exists_restrictedTriangularEquiv_forall_isDistinguished (fun _ : Unit ↦ f) fun _ ↦ hf
+  exact ⟨α, hα, h ()⟩
+
+/-- **Distinguishing automorphisms of Tate algebras over a field, for finitely many series at
+once.** Over a complete nonarchimedean field `K`, for finite `σ` and a finite family `f` of
+nonzero elements of the Tate algebra in the variables `Option σ`, a single triangular
+automorphism `Y ↦ Y`, `Xᵢ ↦ Xᵢ + Y ^ α i` carries every `f j` to a series which, as a restricted
+series in the variable `Y = none` over the Tate algebra in the variables `σ`, is distinguished of
+some degree `s` with a unit coefficient in degree `s`. -/
+theorem exists_restrictedTriangularEquiv_forall_isDistinguished_isUnit {K : Type*}
+    [NormedField K] [IsUltrametricDist K] [CompleteSpace K] [Finite σ] {ι : Type*} [Finite ι]
+    (f : ι → IsRestricted.subring (R := K) (fun _ : Option σ ↦ 1)) (hf : ∀ j, f j ≠ 0) :
+    ∃ (α : σ → ℕ) (hα : ∀ i, α i ≠ 0), ∀ j, ∃ s : ℕ,
+      PowerSeries.IsDistinguished 1 s (restrictedOptionEquiv
+        (restrictedTriangularEquiv α hα (f j)) :
+          PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ 1))) ∧
+      IsUnit (PowerSeries.coeff s (restrictedOptionEquiv
+        (restrictedTriangularEquiv α hα (f j)) :
+          PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ 1)))) := by
+  obtain ⟨α, hα, h⟩ := exists_restrictedTriangularEquiv_forall_isDistinguished f hf
+  refine ⟨α, hα, fun j ↦ ?_⟩
+  obtain ⟨s, a, ha, hd, hclose⟩ := h j
+  have ha0 : a ≠ 0 := by
+    rintro rfl
+    exact hf j (norm_eq_zero.mp (by simpa using ha.symm))
+  let u : (IsRestricted.subring (R := K) (fun _ : σ ↦ 1))ˣ :=
+    Units.map (algebraMap K _).toMonoidHom (Units.mk0 a ha0)
+  have hu : ‖((u⁻¹ : (IsRestricted.subring (R := K) (fun _ : σ ↦ 1))ˣ) :
+      IsRestricted.subring (R := K) (fun _ : σ ↦ 1))‖⁻¹ = ‖f j‖ := by
+    simp [u, norm_algebraMap', ha]
+  exact ⟨s, hd, (Units.ofNearby u _ (hu ▸ hclose)).isUnit⟩
 
 /-- **Distinguishing automorphisms of Tate algebras over a field.** Over a complete
 nonarchimedean field `K`, every nonzero element `f` of the Tate algebra in the variables
@@ -376,16 +456,25 @@ theorem exists_restrictedTriangularEquiv_isDistinguished_isUnit {K : Type*} [Nor
       IsUnit (PowerSeries.coeff s (restrictedOptionEquiv
         (restrictedTriangularEquiv α hα f) :
           PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ 1)))) := by
-  obtain ⟨α, hα, s, a, ha, hd, hclose⟩ := exists_restrictedTriangularEquiv_isDistinguished f hf
-  have ha0 : a ≠ 0 := by
-    rintro rfl
-    exact hf (norm_eq_zero.mp (by simpa using ha.symm))
-  let u : (IsRestricted.subring (R := K) (fun _ : σ ↦ 1))ˣ :=
-    Units.map (algebraMap K _).toMonoidHom (Units.mk0 a ha0)
-  have hu : ‖((u⁻¹ : (IsRestricted.subring (R := K) (fun _ : σ ↦ 1))ˣ) :
-      IsRestricted.subring (R := K) (fun _ : σ ↦ 1))‖⁻¹ = ‖f‖ := by
-    simp [u, norm_algebraMap', ha]
-  exact ⟨α, hα, s, hd, (Units.ofNearby u _ (hu ▸ hclose)).isUnit⟩
+  obtain ⟨α, hα, h⟩ :=
+    exists_restrictedTriangularEquiv_forall_isDistinguished_isUnit (fun _ : Unit ↦ f) fun _ ↦ hf
+  exact ⟨α, hα, h ()⟩
+
+/-- **Distinguishing automorphisms of Tate algebras over a field, for finitely many series at
+once**, in the form consumed by Weierstrass division: some `K`-algebra automorphism makes every
+member of a finite family of nonzero elements distinguished in the variable `none`, each with a
+unit coefficient in its distinguished degree. -/
+theorem exists_algEquiv_forall_isDistinguished_isUnit {K : Type*} [NormedField K]
+    [IsUltrametricDist K] [CompleteSpace K] [Finite σ] {ι : Type*} [Finite ι]
+    (f : ι → IsRestricted.subring (R := K) (fun _ : Option σ ↦ 1)) (hf : ∀ j, f j ≠ 0) :
+    ∃ e : IsRestricted.subring (R := K) (fun _ : Option σ ↦ 1) ≃ₐ[K]
+        IsRestricted.subring (R := K) (fun _ : Option σ ↦ 1), ∀ j, ∃ s : ℕ,
+      PowerSeries.IsDistinguished 1 s (restrictedOptionEquiv (e (f j)) :
+        PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ 1))) ∧
+      IsUnit (PowerSeries.coeff s (restrictedOptionEquiv (e (f j)) :
+        PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ 1)))) := by
+  obtain ⟨α, hα, h⟩ := exists_restrictedTriangularEquiv_forall_isDistinguished_isUnit f hf
+  exact ⟨restrictedTriangularEquiv α hα, h⟩
 
 /-- **Distinguishing automorphisms of Tate algebras over a field**, in the form consumed by
 Weierstrass division: some `K`-algebra automorphism makes a nonzero element distinguished in the
@@ -399,8 +488,8 @@ theorem exists_algEquiv_isDistinguished_isUnit {K : Type*} [NormedField K] [IsUl
         PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ 1))) ∧
       IsUnit (PowerSeries.coeff s (restrictedOptionEquiv (e f) :
         PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ 1)))) := by
-  obtain ⟨α, hα, s, hd, hu⟩ := exists_restrictedTriangularEquiv_isDistinguished_isUnit f hf
-  exact ⟨restrictedTriangularEquiv α hα, s, hd, hu⟩
+  obtain ⟨e, h⟩ := exists_algEquiv_forall_isDistinguished_isUnit (fun _ : Unit ↦ f) fun _ ↦ hf
+  exact ⟨e, h ()⟩
 
 section Field
 

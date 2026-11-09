@@ -89,12 +89,14 @@ to torsion modules and do not require the coefficient algebra to be flat.
   commutative base-field algebra preserves the dimension of an intertwiner space.
 * `Representation.IntertwiningMap.baseChange`: base change transports an intertwining map.
 * `Representation.Equiv.baseChange`: base change transports an equivalence of representations.
+* `LinearMap.isIntertwiningMap_liftBaseChange_iff`: the `A`-linear extension of an `R`-linear map
+  intertwines the base-changed representation exactly when the map intertwines on `V`.
 * `Representation.baseChangeQuotSMulTopEquiv`: if `r` maps to `0` in `A`, the base change of `ρ`
   is the base change of its reduction `ρ.quotSMulTop r` modulo `r`.
 * `TauCeti.baseChangeOfMulActionEquiv`: the base change of `R[X]` is `A[X]`.
 * `TauCeti.baseChangeComapEquiv`: the base change of the permutation module `X →₀ R` is `A[X]`.
 * `Representation.baseChangeRestrictScalarsIntEquiv`: a `ZMod n`-representation is its own
-  reduction, `ZMod n ⊗_ℤ ρ.restrictScalarsInt ≅ ρ`.
+  reduction, `ZMod n ⊗_ℤ ρ.restrictScalars ℤ ≅ ρ`.
 * `TauCeti.baseChangeFDRepHom` and `TauCeti.baseChangeFDRep`: scalar extension of an equivariant
   map, and scalar extension as an additive functor `FDRep k G ⥤ FDRep k' G`.
 * `TauCeti.baseChangeFDRepUnitIso` and `TauCeti.baseChangeFDRepTensorIso`: the comparison
@@ -309,6 +311,7 @@ open TensorProduct
 variable {K : Type*} {L : Type*} [Field K] [Field L] [Algebra K L]
 variable {V : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
+omit [FiniteDimensional K V] in
 /-- **The character is unchanged by base change**, read through the structure map: the character of
 `L ⊗[K] V` at `g` is the image in `L` of the character of `V` at `g`, because the trace of a
 base-changed endomorphism is the image of its trace. -/
@@ -316,8 +319,19 @@ base-changed endomorphism is the image of its trace. -/
 theorem _root_.Representation.character_baseChange {G : Type*} [Monoid G]
     (ρ : _root_.Representation K G V) (g : G) :
     (_root_.Representation.baseChange L ρ).character g = algebraMap K L (ρ.character g) := by
-  simp [_root_.Representation.character, _root_.Representation.baseChange_apply,
-    LinearMap.trace_baseChange]
+  by_cases hV : FiniteDimensional K V
+  · simp [_root_.Representation.character, _root_.Representation.baseChange_apply,
+      LinearMap.trace_baseChange]
+  · -- Both traces are `0`: `L ⊗[K] V` is finite-dimensional over `L` only if `V` is over `K`.
+    have hL : ¬ FiniteDimensional L (L ⊗[K] V) := fun h => hV (by
+      have h' := Module.rank_lt_aleph0_iff.2 h
+      rw [Module.rank_baseChange, Cardinal.lift_lt_aleph0] at h'
+      exact Module.rank_lt_aleph0_iff.1 h')
+    have hK : ¬ ∃ s : Finset V, Nonempty (Module.Basis s K V) :=
+      fun ⟨_, ⟨b⟩⟩ => hV (Module.Finite.of_basis b)
+    have hL' : ¬ ∃ s : Finset (L ⊗[K] V), Nonempty (Module.Basis s L (L ⊗[K] V)) :=
+      fun ⟨_, ⟨b⟩⟩ => hL (Module.Finite.of_basis b)
+    simp [_root_.Representation.character, LinearMap.trace, hK, hL']
 
 /-- **The character of a scalar extension in `FDRep`** is the character of the original
 representation read in the larger field: `χ_{L ⊗[K] V} = algebraMap K L ∘ χ_V`.
@@ -466,6 +480,19 @@ theorem _root_.Representation.Equiv.baseChange_symm_tmul (φ : ρ.Equiv σ) (A :
     rw [_root_.Representation.Equiv.baseChange_tmul,
       _root_.Representation.Equiv.apply_symm_apply]
   rw [← h, _root_.Representation.Equiv.symm_apply_apply]
+
+/-- **The `A`-linear extension of an `R`-linear map intertwines exactly when the map does**: for
+a representation `σ` on an `A`-module `U`, the extension `A ⊗[R] V → U` of `c : V → U` intertwines
+the base change of `ρ` with `σ` if and only if `c (ρ g v) = σ g (c v)` for all `g` and `v`. -/
+theorem _root_.LinearMap.isIntertwiningMap_liftBaseChange_iff {A : Type*} [CommSemiring A]
+    [Algebra R A] {U : Type*} [AddCommMonoid U] [Module R U] [Module A U] [IsScalarTower R A U]
+    (ρ : _root_.Representation R G V) (σ : _root_.Representation A G U) (c : V →ₗ[R] U) :
+    (_root_.Representation.baseChange A ρ).IsIntertwiningMap σ (c.liftBaseChange A) ↔
+      ∀ g v, c (ρ g v) = σ g (c v) := by
+  refine ⟨fun h g v ↦ by simpa using h.isIntertwining g (1 ⊗ₜ v), fun h ↦ ⟨fun g x ↦ ?_⟩⟩
+  induction x using TensorProduct.inductionOn with
+  | tmul a v => simp [h]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 end Transport
 
@@ -754,8 +781,8 @@ theorem baseChangeComapEquiv_tmul_single (a : A) (x : X) (r : R) :
     baseChangeComapEquiv R A G X (a ⊗ₜ[R] Finsupp.single x r)
       = MonoidAlgebra.single x (r • a) := by
   simp only [baseChangeComapEquiv, _root_.Representation.Equiv.trans_apply,
-    _root_.Representation.Equiv.baseChange_tmul, ofDistribMulActionComapEquiv_single,
-    baseChangeOfMulActionEquiv_tmul_single]
+    _root_.Representation.Equiv.baseChange_tmul, ofDistribMulActionComapEquiv_apply,
+    MonoidAlgebra.ofCoeff_single, baseChangeOfMulActionEquiv_tmul_single]
 
 /-- `TauCeti.baseChangeComapEquiv` carries the element of `A[X]` supported at `x` with coefficient
 `a` back to the pure tensor `a ⊗ₜ single x 1`. -/
@@ -894,7 +921,7 @@ variable {n : ℕ} {G : Type*} [Monoid G] {W : Type*} [AddCommGroup W] [Module (
 `ZMod n`. It is Mathlib's `TensorProduct.lidOfCompatibleSMul`, which applies because every element
 of `ZMod n` is the image of an integer. -/
 noncomputable def baseChangeRestrictScalarsIntEquiv (ρ : Representation (ZMod n) G W) :
-    (Representation.baseChange (ZMod n) ρ.restrictScalarsInt).Equiv ρ :=
+    (Representation.baseChange (ZMod n) (ρ.restrictScalars ℤ)).Equiv ρ :=
   haveI : CompatibleSMul ℤ (ZMod n) (ZMod n) W :=
     .of_algebraMap_surjective _ _ ZMod.intCast_surjective
   .mk (TensorProduct.lidOfCompatibleSMul ℤ (ZMod n) W) fun g ↦ by

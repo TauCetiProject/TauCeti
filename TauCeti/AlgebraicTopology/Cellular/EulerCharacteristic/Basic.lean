@@ -122,15 +122,16 @@ end Ring
 
 variable {k : Type w} [DivisionRing k] (M : ModuleCat.{w} k) [Module.Finite k M]
 
-/-- The terms of the cellular chain complex of a complex of finite type are finite-dimensional. -/
-private theorem finite_cellularChainComplex_X [FiniteType C] (i : ℕ) :
+/-- The degree-`i` term of the cellular chain complex is finite-dimensional when there are finitely
+many `i`-cells. -/
+theorem finite_cellularChainComplex_X (i : ℕ) [Finite (cell C i)] :
     Module.Finite k ((cellularChainComplex C M).X i) := by
-  have := FiniteType.finite_cell (C := C) (D := D) i
   rw [cellularChainComplex_X]
   infer_instance
 
-/-- The dimension of the degree-`i` term of the cellular chain complex. -/
-private theorem finrank_cellularChainComplex_X (i : ℕ) [Finite (cell C i)] :
+/-- The degree-`i` term of the cellular chain complex has dimension the number of `i`-cells times
+`dim M`. -/
+theorem finrank_cellularChainComplex_X (i : ℕ) [Finite (cell C i)] :
     finrank k ((cellularChainComplex C M).X i) = Nat.card (cell C i) * finrank k M := by
   rw [cellularChainComplex_X, finrank_cellularChainGroup]
 
@@ -188,7 +189,9 @@ finite-dimensional module `M`, is `dim M` times the alternating count of its cel
 theorem homologyEulerChar_cellularChainComplex [RelCWComplex.Finite C] :
     (cellularChainComplex C M).homologyEulerChar =
       finrank k M * cwEulerChar C := by
-  have := finite_cellularChainComplex_X C M
+  have (i : ℕ) :=
+    have := FiniteType.finite_cell (C := C) (D := D) i
+    finite_cellularChainComplex_X C M i
   rw [← ChainComplex.eulerChar_eq_homologyEulerChar _
       (by simpa only [cellularChainComplex_X] using eventually_isZero_cellularChainGroup C M),
     eulerChar_cellularChainComplex]

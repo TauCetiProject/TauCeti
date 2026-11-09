@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Swap
-public import Mathlib.LinearAlgebra.UnitaryGroup
+public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 
 /-!
 # Coordinate rotations in the special orthogonal group
@@ -32,10 +32,8 @@ open Matrix
 
 namespace TauCeti.Matrix.SpecialOrthogonalGroup
 
-universe u
-
 variable {n : Type*} [Fintype n] [DecidableEq n]
-variable {R : Type u} [CommRing R]
+variable {R : Type*} [CommRing R]
 
 attribute [local instance] starRingOfComm
 
@@ -44,23 +42,11 @@ vector, sends the `j`-th basis vector to the negative of the `i`-th basis vector
 remaining basis vectors. -/
 def coordinateRotation (i j : n) (hij : i ≠ j) : Matrix.specialOrthogonalGroup n R :=
   ⟨Matrix.swap R i j * Matrix.diagonal (Function.update 1 j (-1)), by
-    rw [Matrix.mem_specialOrthogonalGroup_iff]
-    constructor
-    · rw [Matrix.mem_orthogonalGroup_iff]
-      have hdiag : Matrix.diagonal (Function.update 1 j (-1 : R)) *
-          Matrix.diagonal (Function.update 1 j (-1 : R)) = 1 := by
-        ext a b
-        by_cases hab : a = b
-        · subst b
-          by_cases haj : a = j <;> simp [haj]
-        · simp [hab]
-      rw [Matrix.transpose_mul, Matrix.diagonal_transpose, Matrix.transpose_swap]
-      simp only [Matrix.mul_assoc]
-      rw [← Matrix.mul_assoc (Matrix.diagonal _) (Matrix.diagonal _), hdiag,
-        Matrix.one_mul, Matrix.swap_mul_self]
-    · rw [Matrix.det_mul, Matrix.swap, Matrix.det_permutation, Matrix.det_diagonal]
-      rw [Finset.prod_update_of_mem (Finset.mem_univ j)]
-      simp [hij]⟩
+    rw [← coe_orthogonalDiagonalReflection, mem_specialOrthogonalGroup_iff, det_mul,
+      det_orthogonalDiagonalReflection]
+    refine ⟨Submonoid.mul_mem _ ?_ (orthogonalDiagonalReflection R j).2, ?_⟩
+    · rw [mem_orthogonalGroup_iff', transpose_swap, swap_mul_self]
+    · simp [swap, det_permutation, hij]⟩
 
 /-- The underlying matrix of a coordinate rotation is the signed swap matrix used in its
 definition. -/
@@ -75,39 +61,26 @@ theorem coordinateRotation_mulVec (i j : n) (hij : i ≠ j) (w : n → R) (a : n
     ((coordinateRotation (R := R) i j hij : Matrix n n R) *ᵥ w) a =
       if a = i then -w j else if a = j then w i else w a := by
   rw [coe_coordinateRotation, ← Matrix.mulVec_mulVec, Matrix.swap_mulVec]
-  simp only [Function.comp_apply, Matrix.mulVec_diagonal, Function.update_apply]
-  by_cases hai : a = i
-  · subst a
-    simp
-  · by_cases haj : a = j
-    · subst a
-      simp [hij, hij.symm]
-    · simp [hai, haj, Equiv.swap_apply_of_ne_of_ne]
+  simp only [Function.comp_apply, Matrix.mulVec_diagonal, Function.update_apply,
+    Equiv.swap_apply_def, Pi.one_apply]
+  grind
 
 /-- A coordinate rotation sends the `i`-th basis vector to the `j`-th basis vector. -/
 @[simp]
 theorem coordinateRotation_col_left (i j : n) (hij : i ≠ j) :
     (coordinateRotation (R := R) i j hij : Matrix n n R).col i = Pi.single j 1 := by
-  rw [← Matrix.mulVec_single_one]
   ext a
-  rw [coordinateRotation_mulVec]
-  by_cases hai : a = i
-  · subst a
-    simp [hij]
-  · by_cases haj : a = j <;> simp [hai, haj, hij.symm]
+  rw [← Matrix.mulVec_single_one, coordinateRotation_mulVec]
+  grind
 
 /-- A coordinate rotation sends the `j`-th basis vector to the negative of the `i`-th basis
 vector. -/
 @[simp]
 theorem coordinateRotation_col_right (i j : n) (hij : i ≠ j) :
     (coordinateRotation (R := R) i j hij : Matrix n n R).col j = -Pi.single i 1 := by
-  rw [← Matrix.mulVec_single_one]
   ext a
-  rw [coordinateRotation_mulVec]
-  by_cases hai : a = i
-  · subst a
-    simp
-  · by_cases haj : a = j <;> simp [hai, haj, hij.symm]
+  rw [← Matrix.mulVec_single_one, coordinateRotation_mulVec]
+  grind [Pi.neg_apply]
 
 /-- Squaring a coordinate rotation gives the half-turn which negates the two selected
 coordinates. -/
@@ -121,12 +94,6 @@ theorem coordinateHalfTurn_mulVec (i j : n) (hij : i ≠ j) (w : n → R) (a : n
       if a = i ∨ a = j then -w a else w a := by
   rw [coordinateHalfTurn, pow_two, Submonoid.coe_mul, ← Matrix.mulVec_mulVec]
   simp only [coordinateRotation_mulVec]
-  by_cases hai : a = i
-  · subst a
-    simp [hij, hij.symm]
-  · by_cases haj : a = j
-    · subst a
-      simp [hij.symm]
-    · simp [hai, haj]
+  grind
 
 end TauCeti.Matrix.SpecialOrthogonalGroup

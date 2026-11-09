@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
+import Mathlib.LinearAlgebra.Basis.VectorSpace
 
 /-!
 # The dominant chamber of a base
@@ -56,6 +57,11 @@ Weyl-invariant.
 * `RootPairing.mem_dominantChamber_iff_forall_mem_posRoots` and
   `RootPairing.mem_openDominantChamber_iff_forall_mem_posRoots`: both chambers are cut out by
   all of the positive coroot functionals, not just the simple ones.
+* `RootPairing.root'_pos_of_isPos` and `RootPairing.root'_neg_of_not_isPos`: on the coweight
+  space, where the simple roots are positive, so are the positive roots, and the negative roots
+  are negative.
+* `RootPairing.Base.exists_forall_root'_eq`: over a field the simple roots take arbitrary
+  prescribed values at some point of the coweight space.
 
 ## Implementation notes
 
@@ -377,5 +383,52 @@ theorem mem_openDominantChamber_iff_forall_mem_posRoots :
   exact (mem_openDominantChamber P b x).mpr fun i hi ↦ h i (support_subset_posRoots P b hi)
 
 end PosRoots
+
+/-! ### Root functionals on the coweight space -/
+
+section RootValues
+
+variable [CharZero R] [PartialOrder R] [IsOrderedAddMonoid R] {P b} {x : N}
+
+/-- **A positive root is positive wherever the simple roots are.** This is the root-side
+counterpart of `RootPairing.coroot'_pos_of_mem_posRoots`; it needs no reducedness, as a positive
+root is a nonnegative combination of the simple roots. -/
+theorem root'_pos_of_isPos (hx : ∀ i ∈ b.support, 0 < P.root' i x) {j : ι} (hj : b.IsPos j) :
+    0 < P.root' j x := by
+  obtain ⟨f, -, hf⟩ := exists_root_eq_sum_nat_of_mem_posRoots P b ((mem_posRoots P b j).mpr hj)
+  -- some simple root occurs in the expansion, because a root is never zero
+  obtain ⟨k, hk, hfk⟩ : ∃ k ∈ b.support, f k ≠ 0 := by
+    by_contra! H
+    exact P.ne_zero j (hf.trans (Finset.sum_eq_zero fun k hk ↦ by simp [H k hk]))
+  simp only [root', hf, map_sum, map_nsmul, LinearMap.sum_apply, LinearMap.smul_apply]
+  exact Finset.sum_pos' (fun i hi ↦ nsmul_nonneg (hx i hi).le _)
+    ⟨k, hk, nsmul_pos (hx k hk) hfk⟩
+
+/-- **A negative root is negative wherever the simple roots are positive.** -/
+theorem root'_neg_of_not_isPos (hx : ∀ i ∈ b.support, 0 < P.root' i x) {j : ι}
+    (hj : ¬ b.IsPos j) : P.root' j x < 0 := by
+  let := P.indexNeg
+  simpa [root', root_neg_index] using root'_pos_of_isPos hx ((Base.IsPos.neg_iff_not b j).mpr hj)
+
+end RootValues
+
+end RootPairing
+
+namespace RootPairing
+
+variable {ι R M N : Type*} [Field R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {P : RootPairing ι R M N} (b : P.Base)
+
+/-- **The simple roots take arbitrary prescribed values** at some point of the coweight space:
+they are linearly independent and the pairing is perfect. -/
+theorem Base.exists_forall_root'_eq (c : ι → R) : ∃ x : N, ∀ i ∈ b.support, P.root' i x = c i := by
+  have hli := b.linearIndepOn_root.linearIndependent
+  obtain ⟨φ, hφ⟩ := LinearMap.exists_extend ((Module.Basis.span hli).constr R fun i ↦ c i)
+  refine ⟨P.flip.toPerfPair.symm φ, fun i hi ↦ ?_⟩
+  have h := LinearMap.congr_fun hφ (Module.Basis.span hli ⟨i, hi⟩)
+  rw [Module.Basis.constr_basis, LinearMap.comp_apply, Submodule.subtype_apply,
+    Module.Basis.span_apply] at h
+  rw [← h, ← LinearMap.flip_apply (m := P.root i), ← flip_toLinearMap,
+    ← LinearMap.toPerfPair_apply, LinearEquiv.apply_symm_apply]
 
 end RootPairing

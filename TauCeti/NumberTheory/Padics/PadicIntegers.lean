@@ -28,8 +28,9 @@ that makes `1 + p^f ℤ_p` a subgroup of `ℤ_pˣ`.
 
 The unit group `ℤ_pˣ` is a profinite group: it is the closed unit sphere of the compact
 totally disconnected space `ℤ_p`, and the topology of the units is the subspace topology because
-`ℤ_p` is a complete normed ring. The instances `CompactSpace ℤ_[p]ˣ` and
-`TotallyDisconnectedSpace ℤ_[p]ˣ` are recorded here.
+`ℤ_p` is a complete normed ring. Compactness is Mathlib's instance for the units of a compact `T₁`
+topological monoid, recorded here as a shortcut instance; the instance
+`TotallyDisconnectedSpace ℤ_[p]ˣ` is proved here.
 
 Two consequences of the ultrametric divisibility in `ℤ_p` are recorded as well: an element
 divides every element of no larger norm, so that a finite family of `p`-adic integers is a common
@@ -43,7 +44,9 @@ calculation for first continuous cohomology with trivial integer coefficients.
 ## Main results
 
 * `PadicInt.norm_p_lt_one`: the uniformizer `p` of `ℤ_p` has norm less than `1`, so that every
-  series `∑ₙ pⁿ aₙ` converges in `ℤ_p` (`PadicInt.summable_pow_mul`).
+  series `∑ₙ pⁿ aₙ` converges in `ℤ_p` (`PadicInt.summable_pow_mul`) and the powers `‖p‖ ^ n`
+  tend to zero along the cofinite filter (`PadicInt.tendsto_norm_p_pow_cofinite`,
+  `PadicInt.tendsto_norm_p_pow_mul_cofinite`).
 * `PadicInt.isUnit_one_add_of_dvd`: `1 + x` is a unit of `ℤ_[p]` whenever `p ∣ x`.
 * `PadicInt.isUnit_of_dvd_one_sub_sq`: `d` is a unit of `ℤ_[p]` whenever `p ∣ 1 - d ^ 2`.
 * `PadicInt.isUnit_two`: `2` is a unit of `ℤ_[p]` for odd `p`.
@@ -54,15 +57,20 @@ calculation for first continuous cohomology with trivial integer coefficients.
   `w i₀ = 1` at some index `i₀`.
 * `PadicInt.units_neg_one_ne_one`: `-1 ≠ 1` in `ℤ_[p]ˣ`.
 * `PadicInt.range_units_val`: the units of `ℤ_[p]` are the elements of norm `1`.
+* `PadicInt.norm_smul_of_isUnit`: a unit of `ℤ_[p]` acts isometrically on every module with
+  contractive scalar action.
 * `PadicInt.not_isUnit_iff_dvd`: the nonunits of `ℤ_[p]` are the multiples of `p`; in
   particular an integer is a unit of `ℤ_[p]` exactly when `p` does not divide it
-  (`PadicInt.isUnit_intCast_iff`), and `2` is not a unit of `ℤ_[2]` (`PadicInt.not_isUnit_two`).
+  (`PadicInt.isUnit_intCast_iff`, and `PadicInt.isUnit_natCast_iff` for natural numbers), and `2`
+  is not a unit of `ℤ_[2]` (`PadicInt.not_isUnit_two`).
 * `PadicInt.intCast_not_surjective`: not every `p`-adic integer is an integer.
 * `PadicInt.inv_eq_inverse`, `PadicInt.continuous_inverse`: Mathlib's `PadicInt.inv` is
   `Ring.inverse`, the inverse on units extended by `0`, and it is continuous because the nonunits
   `pℤ_p` form an open set.
 * `Int.associated_iff_forall_associated_padicInt`: two integers have equal absolute values
   exactly when they are associated in every `ℤ_[p]`.
+* `Int.ideal_eq_iff_forall_map_padicInt_eq`: two ideals of `ℤ` are equal exactly when their
+  extensions to every `ℤ_[p]` agree.
 * `Padic.exists_eq_zpow_valuation_mul`: every nonzero `x : ℚ_[p]` is `p ^ v(x)` times a unit of
   `ℤ_[p]`.
 * `Padic.valuation_p_zpow_mul`: multiplying a nonzero `x : ℚ_[p]` by `p ^ α` adds `α` to its
@@ -74,6 +82,11 @@ calculation for first continuous cohomology with trivial integer coefficients.
 * `Padic.norm_natCast_eq_zpow`: the `p`-adic norm of a positive integer `m` is `p ^ (-v_p(m))`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
   profinite group.
+
+## Main definitions
+
+* `PadicInt.unitsPowCharacter p k`: the continuous character `u ↦ u ^ k` of `ℤ_[p]ˣ`.
+  It is nontrivial for `k > 0` (`PadicInt.unitsPowCharacter_ne_one`).
 -/
 
 public section
@@ -91,6 +104,22 @@ theorem summable_pow_mul (a : ℕ → ℤ_[p]) : Summable fun n ↦ (p : ℤ_[p]
   .of_norm_bounded (summable_geometric_of_lt_one (norm_nonneg _) norm_p_lt_one) fun n ↦ by
     rw [norm_mul, norm_pow]
     exact mul_le_of_le_one_right (by positivity) (norm_le_one _)
+
+/-- The powers `‖p‖ ^ n` of the norm of the uniformizer tend to zero along the cofinite filter. -/
+theorem tendsto_norm_p_pow_cofinite :
+    Filter.Tendsto (fun n : ℕ ↦ ‖(p : ℤ_[p])‖ ^ n) Filter.cofinite (nhds 0) := by
+  rw [Nat.cofinite_eq_atTop]
+  exact tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _) norm_p_lt_one
+
+/-- On `ι × ℕ` with `ι` finite, the weights `‖p‖ ^ j * C` tend to zero along the cofinite
+filter. -/
+theorem tendsto_norm_p_pow_mul_cofinite {ι : Type*} [Finite ι] (C : ℝ) :
+    Filter.Tendsto (fun i : ι × ℕ ↦ ‖(p : ℤ_[p])‖ ^ i.2 * C) Filter.cofinite (nhds 0) := by
+  have hpow : Filter.Tendsto (fun n : ℕ ↦ ‖(p : ℤ_[p])‖ ^ n * C) Filter.cofinite (nhds 0) := by
+    simpa using (tendsto_norm_p_pow_cofinite (p := p)).mul_const C
+  refine hpow.comp <| Filter.Tendsto.cofinite_of_finite_preimage_singleton fun n ↦ ?_
+  rw [Set.preimage_snd_singleton_eq_range]
+  exact Set.finite_range _
 
 /-- In `ℤ_p`, `1 + x` is a unit whenever `p ∣ x`. -/
 theorem isUnit_one_add_of_dvd {x : ℤ_[p]} (hx : (p : ℤ_[p]) ∣ x) : IsUnit (1 + x) :=
@@ -141,6 +170,16 @@ theorem range_units_val : Set.range (Units.val : ℤ_[p]ˣ → ℤ_[p]) = {x | �
   -- `IsUnit x` is by definition `∃ u : ℤ_[p]ˣ, ↑u = x`, that is `x ∈ Set.range Units.val`.
   Set.ext fun _ ↦ isUnit_iff
 
+/-- A unit of `ℤ_p` acts isometrically on every module with contractive scalar action. -/
+theorem norm_smul_of_isUnit {E : Type*} [SeminormedAddGroup E] [MulActionWithZero ℤ_[p] E]
+    [IsBoundedSMul ℤ_[p] E] {u : ℤ_[p]} (hu : IsUnit u) (e : E) : ‖u • e‖ = ‖e‖ := by
+  obtain ⟨u, rfl⟩ := hu
+  have h1 (v : ℤ_[p]ˣ) : ‖(v : ℤ_[p])‖ = 1 := isUnit_iff.1 v.isUnit
+  refine le_antisymm ((norm_smul_le _ _).trans_eq (by rw [h1, one_mul])) ?_
+  calc ‖e‖ = ‖((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) • (u : ℤ_[p]) • e‖ := by
+        rw [smul_smul, Units.inv_mul, one_smul]
+    _ ≤ ‖(u : ℤ_[p]) • e‖ := (norm_smul_le _ _).trans_eq (by rw [h1, one_mul])
+
 /-- Mathlib's `PadicInt.inv` is the ring inverse: the inverse on units and `0` on nonunits. -/
 theorem inv_eq_inverse (z : ℤ_[p]) : z.inv = Ring.inverse z := by
   by_cases hz : IsUnit z
@@ -157,6 +196,13 @@ theorem not_isUnit_iff_dvd {z : ℤ_[p]} : ¬IsUnit z ↔ (p : ℤ_[p]) ∣ z :=
 theorem isUnit_intCast_iff {z : ℤ} : IsUnit (z : ℤ_[p]) ↔ ¬(p : ℤ) ∣ z := by
   rw [← not_iff_not, not_not, not_isUnit_iff_dvd, ← pow_one (p : ℤ_[p]), pow_p_dvd_int_iff,
     pow_one]
+
+/-- A natural number is a unit in `ℤ_p` exactly when `p` does not divide it.
+
+Not a `simp` lemma: `simp` rewrites the left-hand side by the general
+`IsLocalRing.isUnit_natCast_iff_not_dvd` first. -/
+theorem isUnit_natCast_iff {n : ℕ} : IsUnit (n : ℤ_[p]) ↔ ¬p ∣ n := by
+  rw [← Int.cast_natCast, isUnit_intCast_iff, Int.natCast_dvd_natCast]
 
 /-- Not every `p`-adic integer is an integer: the inverse in `ℤ_p` of the unit `1 + p` is not the
 image of an integer. -/
@@ -179,19 +225,39 @@ theorem not_isUnit_two : ¬IsUnit (2 : ℤ_[2]) := by
 theorem continuous_inverse : Continuous (Ring.inverse : ℤ_[p] → ℤ_[p]) :=
   NormedRing.continuous_inverse_of_isOpen_nonunits (IsLocalRing.isOpen_maximalIdeal ℤ_[p])
 
-/-- `ℤ_pˣ` is compact: it is the closed unit sphere of the compact space `ℤ_p`, and the topology
-on the units of the complete normed ring `ℤ_p` is the subspace topology. -/
-instance compactSpace_units : CompactSpace ℤ_[p]ˣ := by
-  have h : IsCompact (Set.range (Units.val : ℤ_[p]ˣ → ℤ_[p])) := by
-    rw [range_units_val]
-    exact (isClosed_eq continuous_norm continuous_const).isCompact
-  rw [← Set.image_univ] at h
-  exact isCompact_univ_iff.mp (Units.isOpenEmbedding_val.isInducing.isCompact_iff.mpr h)
+/-- `ℤ_pˣ` is compact: Mathlib's `Units.instCompactSpaceOfT1SpaceOfContinuousMul` for the units
+of the compact `T₁` topological monoid `ℤ_p`. It is recorded as a shortcut instance because the
+instance term matters for unification: elaborating continuous linear maps on `C(ℤ_[p]ˣ, ℤ_[p])`
+(`TauCeti.NumberTheory.Padics.Measure.UnitCoordinates`) identifies the sup-norm topology with the
+compact-open topology, which times out at `whnf` with Mathlib's applied instance term. -/
+instance compactSpace_units : CompactSpace ℤ_[p]ˣ := inferInstance
 
 /-- `ℤ_pˣ` is totally disconnected, as a subspace of the ultrametric space `ℤ_p`. -/
 instance totallyDisconnectedSpace_units : TotallyDisconnectedSpace ℤ_[p]ˣ :=
   ⟨Units.isOpenEmbedding_val.isEmbedding.isTotallyDisconnected
     (isTotallyDisconnected_of_totallyDisconnectedSpace _)⟩
+
+variable (p) in
+/-- The power character `u ↦ u ^ k` of the unit group `ℤ_pˣ`, as a continuous homomorphism to
+`ℤ_p`. -/
+noncomputable def unitsPowCharacter (k : ℕ) : ℤ_[p]ˣ →ₜ* ℤ_[p] where
+  toMonoidHom := (powMonoidHom k).comp (Units.coeHom ℤ_[p])
+  continuous_toFun := Units.continuous_val.pow k
+
+@[simp]
+theorem unitsPowCharacter_apply (k : ℕ) (u : ℤ_[p]ˣ) :
+    unitsPowCharacter p k u = (u : ℤ_[p]) ^ k :=
+  (rfl)
+
+/-- For `k > 0` the power character `u ↦ u ^ k` of `ℤ_pˣ` is nontrivial: it does not send the
+unit `1 + p` to `1`. -/
+theorem unitsPowCharacter_ne_one {k : ℕ} (hk : 0 < k) : unitsPowCharacter p k ≠ 1 := by
+  intro h
+  obtain ⟨a, ha⟩ := isUnit_one_add_of_dvd (dvd_refl (p : ℤ_[p]))
+  have hpow := congrArg (fun κ : ℤ_[p]ˣ →ₜ* ℤ_[p] => κ a) h
+  simp only [unitsPowCharacter_apply, ha, ContinuousMonoidHom.coe_one, Pi.one_apply] at hpow
+  have h1 : (1 + p) ^ k = 1 := by exact_mod_cast hpow
+  exact (Nat.one_lt_pow hk.ne' (by have := (Fact.out : p.Prime).pos; omega)).ne' h1
 
 /-- **Divisibility from the norm**: in `ℤ_p`, `y` divides every `x` with `‖x‖ ≤ ‖y‖`, because `x`
 then lies in the ideal `p^{v_p(y)} ℤ_p = y ℤ_p` when `y ≠ 0`, and vanishes when `y = 0`. -/
@@ -236,6 +302,21 @@ theorem Int.associated_iff_forall_associated_padicInt {a b : ℤ} :
     ((Nat.dvd_iff_prime_pow_dvd_dvd _ _).mpr fun p k hp ↦ (key p k hp).mp)
     ((Nat.dvd_iff_prime_pow_dvd_dvd _ _).mpr fun p k hp ↦ (key p k hp).mpr)
 
+/-- Two ideals of `ℤ` are equal exactly when their extensions to `ℤ_[p]` agree for every prime
+`p`. -/
+theorem Int.ideal_eq_iff_forall_map_padicInt_eq {I J : Ideal ℤ} :
+    I = J ↔ ∀ (p : ℕ) [Fact p.Prime],
+      I.map (algebraMap ℤ ℤ_[p]) = J.map (algebraMap ℤ ℤ_[p]) := by
+  refine ⟨fun h p _ ↦ h ▸ rfl, fun h ↦ ?_⟩
+  rw [← Submodule.IsPrincipal.span_singleton_generator I,
+    ← Submodule.IsPrincipal.span_singleton_generator J] at h ⊢
+  refine Ideal.span_singleton_eq_span_singleton.mpr
+    (Int.associated_iff_forall_associated_padicInt.mpr fun p _ ↦ ?_)
+  have hp := h p
+  rw [Ideal.map_span, Ideal.map_span, Set.image_singleton, Set.image_singleton,
+    Ideal.span_singleton_eq_span_singleton] at hp
+  simpa only [algebraMap_int_eq, eq_intCast] using hp
+
 namespace Padic
 
 variable {p : ℕ} [Fact p.Prime]
@@ -247,9 +328,9 @@ theorem exists_eq_zpow_valuation_mul {x : ℚ_[p]} (hx : x ≠ 0) :
   have hy : ‖x * (p : ℚ_[p]) ^ (-x.valuation)‖ = 1 := by
     have hp' : (p : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
     rw [norm_mul, norm_zpow, Padic.norm_p, Padic.norm_eq_zpow_neg_valuation hx, inv_zpow',
-      neg_neg, ← zpow_add₀ hp', neg_add_cancel, zpow_zero]
+      neg_neg, ← zpow_add₀ hp', neg_add_cancel, _root_.zpow_zero]
   refine ⟨PadicInt.mkUnits hy, ?_⟩
-  rw [PadicInt.mkUnits_eq, mul_left_comm, ← zpow_add₀ hp, add_neg_cancel, zpow_zero, mul_one]
+  rw [PadicInt.mkUnits_eq, mul_left_comm, ← zpow_add₀ hp, add_neg_cancel, _root_.zpow_zero, mul_one]
 
 /-- Multiplying a nonzero `x : ℚ_[p]` by `p ^ α` adds `α` to its valuation. -/
 theorem valuation_p_zpow_mul (α : ℤ) {x : ℚ_[p]} (hx : x ≠ 0) :
@@ -269,15 +350,16 @@ theorem valuation_p_pow_mul_intCast (n : ℕ) {m : ℤ} (hm : ¬(p : ℤ) ∣ m)
 /-- The `p`-adic norm of a positive integer `m` is at least `1 / m`. -/
 theorem inv_natCast_le_norm_natCast (m : ℕ) [NeZero m] : (m : ℝ)⁻¹ ≤ ‖(m : ℚ_[p])‖ := by
   rw [Padic.norm_eq_zpow_neg_valuation (Nat.cast_ne_zero.mpr (NeZero.ne m)),
-    Padic.valuation_natCast, zpow_neg, zpow_natCast]
+    Padic.valuation_natCast, _root_.zpow_neg, zpow_natCast]
   gcongr
   · exact pow_pos (by exact_mod_cast (Fact.out : p.Prime).pos) _
-  · exact_mod_cast Nat.le_of_dvd (Nat.pos_of_ne_zero (NeZero.ne m)) pow_padicValNat_dvd
+  · exact_mod_cast Nat.le_of_dvd (Nat.pos_of_ne_zero (NeZero.ne m)) (pow_multiplicity_dvd p m)
 
 /-- The `p`-adic norm of a nonzero natural number `m` is `p ^ (-v_p(m))`. -/
 theorem norm_natCast_eq_zpow {m : ℕ} (hm : m ≠ 0) :
     ‖(m : ℚ_[p])‖ = (p : ℝ) ^ (-(padicValNat p m : ℤ)) := by
-  rw [Padic.norm_eq_zpow_neg_valuation (by exact_mod_cast hm), Padic.valuation_natCast]
+  rw [Nat.padicValNat_def, Padic.norm_eq_zpow_neg_valuation (by exact_mod_cast hm),
+    Padic.valuation_natCast]
 
 end Padic
 

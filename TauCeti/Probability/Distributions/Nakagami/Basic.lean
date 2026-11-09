@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Chi.Basic
 public import Mathlib.MeasureTheory.Measure.Support
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Probability.Density
 
 /-!
@@ -68,7 +69,8 @@ theorem isProbabilityMeasure_nakagamiMeasure_iff :
   constructor
   · intro hp
     by_contra h
-    exact IsProbabilityMeasure.ne_zero _ (nakagamiMeasure_of_not_pos h)
+    rw [nakagamiMeasure_of_not_pos h] at hp
+    exact not_isProbabilityMeasure_zero hp
   · rintro ⟨hm, hΩ⟩
     exact isProbabilityMeasure_nakagamiMeasure hm hΩ
 
@@ -296,8 +298,7 @@ theorem cdf_nakagamiMeasure_eq (hm : 0 < m) (hΩ : 0 < Ω) (x : ℝ) :
       if x < 0 then 0 else regularizedGamma m (m / Ω * x ^ 2) := by
   let _ := isProbabilityMeasure_nakagamiMeasure hm hΩ
   let _ := isProbabilityMeasure_gammaMeasure hm (div_pos hm hΩ)
-  rw [cdf_eq_real, nakagamiMeasure_of_pos hm hΩ,
-    map_measureReal_apply (by fun_prop) measurableSet_Iic]
+  rw [nakagamiMeasure_of_pos hm hΩ, Measure.cdf_map _ _ (by fun_prop)]
   by_cases hx : x < 0
   · have he : Real.sqrt ⁻¹' Iic x = ∅ := by
       ext y

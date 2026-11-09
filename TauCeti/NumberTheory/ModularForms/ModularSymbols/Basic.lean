@@ -258,14 +258,14 @@ theorem binaryFormSLRep_apply (γ : SL(2, ℤ)) (P : homogeneousSubmodule (Fin 2
 theorem binaryFormSLRep_binaryFormRep (γ : SL(2, ℤ)) (P : homogeneousSubmodule (Fin 2) R w) :
     binaryFormSLRep R w γ (binaryFormRep R w (op (γ : Matrix (Fin 2) (Fin 2) ℤ)) P) = P := by
   rw [binaryFormSLRep_apply, ← binaryFormRep_op_mul_apply, ← Matrix.SpecialLinearGroup.coe_mul,
-    mul_inv_cancel, Matrix.SpecialLinearGroup.coe_one, op_one, map_one, Module.End.one_apply]
+    mul_inv_cancel, Matrix.SpecialLinearGroup.coe_one, op_one, map_one, one_apply_eq_self]
 
 /-- The right action undoes the left action: `(P ∣ γ⁻¹) ∣ γ = P`. Not `@[simp]`: simp first
 rewrites the inner `binaryFormSLRep R w γ P` to the adjugate action. -/
 theorem binaryFormRep_binaryFormSLRep (γ : SL(2, ℤ)) (P : homogeneousSubmodule (Fin 2) R w) :
     binaryFormRep R w (op (γ : Matrix (Fin 2) (Fin 2) ℤ)) (binaryFormSLRep R w γ P) = P := by
   rw [binaryFormSLRep_apply, ← binaryFormRep_op_mul_apply, ← Matrix.SpecialLinearGroup.coe_mul,
-    inv_mul_cancel, Matrix.SpecialLinearGroup.coe_one, op_one, map_one, Module.End.one_apply]
+    inv_mul_cancel, Matrix.SpecialLinearGroup.coe_one, op_one, map_one, one_apply_eq_self]
 
 /-- On `SL(2, ℤ)` the adjugate action `TauCeti.binaryFormAdjugateRep` on binary forms is the
 action `P ↦ P ∣ γ⁻¹` defining the modular symbols: the adjugate of a determinant-one matrix is its
@@ -450,7 +450,7 @@ instance instModuleFinite [Γ.FiniteIndex] : Module.Finite R (ModularSymbols R �
     exact h.2
   dsimp only
   rw [← mul_inv_cancel_right g (QuotientGroup.mk g⁻¹ : SL(2, ℤ) ⧸ Γ).out, map_mul,
-    Module.End.mul_apply, mk_degreeZeroRep_tmul Γ hgr]
+    mul_apply_eq_comp, mk_degreeZeroRep_tmul Γ hgr]
   -- The remaining class is linear in the binary form, which lies in the span of the `bᵢ`.
   let ψ : homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R Γ w :=
     Coinvariants.mk _ ∘ₗ TensorProduct.mk R _ _

@@ -10,15 +10,17 @@ public import Mathlib.RingTheory.Localization.LocalizationLocalization
 /-!
 # The localization of a domain away from a nonzero element, inside a fraction field
 
-Let `R` be a domain with fraction field `K` and let `f` be a nonzero element of `R`. The
-localization `Localization.Away f` embeds in `K`, and `K` is again its fraction field. This is the
+Let `R` be a domain with fraction field `K` (any commutative ring with `IsFractionRing R K`, as in
+Mathlib's `IsFractionRing` API) and let `f` be a nonzero element of `R`. The localization
+`Localization.Away f` embeds in `K`, and `K` is again its fraction field. This is the
 analogue for `Localization.Away` of `TauCeti/RingTheory/Localization/AtPrime.lean`, built the same
 way from `IsLocalization.localizationAlgebraOfSubmonoidLe`, here for the inequality
 `powers_le_nonZeroDivisors_of_noZeroDivisors`.
 
 Unlike the prime case, the construction needs the hypothesis `f ≠ 0` (for `f = 0` the
-localization is the zero ring, which has no map to a field), so the declarations below are a
-`def` and theorems about it rather than global instances. A consumer installs them locally.
+localization is the zero ring, which has no map to the nonzero ring `K`), so the declarations
+below are a `def` and theorems about it rather than global instances. A consumer installs them
+locally.
 
 ## Main declarations
 
@@ -33,7 +35,7 @@ public section
 
 namespace Localization.Away
 
-variable {R : Type*} [CommRing R] [IsDomain R] (K : Type*) [Field K] [Algebra R K]
+variable {R : Type*} [CommRing R] [IsDomain R] (K : Type*) [CommRing K] [Algebra R K]
   [IsFractionRing R K] {f : R}
 
 /-- For a nonzero `f` in a domain `R`, the localization `R_f` maps to any fraction field `K` of

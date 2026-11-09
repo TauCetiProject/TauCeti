@@ -34,8 +34,7 @@ variable {n} in
 /-- An action by monoid endomorphisms preserves the `n`-th roots of unity. -/
 theorem smul_mem_rootsOfUnity (g : G) {ζ : Mˣ} (hζ : ζ ∈ rootsOfUnity n M) :
     g • ζ ∈ rootsOfUnity n M := by
-  rw [mem_rootsOfUnity] at hζ ⊢
-  rw [← smul_pow', hζ, smul_one]
+  simp_all [mem_rootsOfUnity, ← smul_pow']
 
 /-- The action of `G` on `rootsOfUnity n M` inherited from its action on `Mˣ`. -/
 instance rootsOfUnity.mulDistribMulAction : MulDistribMulAction G (rootsOfUnity n M) where
@@ -45,7 +44,7 @@ instance rootsOfUnity.mulDistribMulAction : MulDistribMulAction G (rootsOfUnity 
   smul_mul _ _ _ := Subtype.ext (smul_mul' _ _ _)
   smul_one _ := Subtype.ext (smul_one _)
 
-@[simp]
+@[simp, norm_cast]
 theorem rootsOfUnity.coe_smul (g : G) (ζ : rootsOfUnity n M) :
     ((g • ζ : rootsOfUnity n M) : Mˣ) = g • (ζ : Mˣ) :=
   rfl

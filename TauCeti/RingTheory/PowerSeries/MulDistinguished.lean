@@ -25,8 +25,9 @@ a `g` on the left loses no norm, `‖g * q‖ = ‖g‖ * ‖q‖`, and if `q` i
 assumed. When the norm of `R` is multiplicative, the extra condition says only that the
 distinguished coefficient is a unit.
 
-Norm-preserving coefficient homomorphisms preserve distinguishedness and multiplicative
-distinguishedness, so these divisor hypotheses survive isometric coefficient extension.
+Norm-preserving coefficient homomorphisms preserve distinguishedness, lowest dominant degrees
+and multiplicative distinguishedness, so these divisor hypotheses survive isometric coefficient
+extension.
 
 ## Main definitions
 
@@ -35,6 +36,8 @@ distinguishedness, so these divisor hypotheses survive isometric coefficient ext
 
 ## Main results
 
+* `PowerSeries.gaussNorm_map_of_norm_eq`: a norm-preserving coefficient homomorphism
+  preserves the Gauss norm.
 * `TauCeti.PowerSeries.isMulDistinguished_iff_isUnit`: over a ring with multiplicative norm, a
   series is multiplicatively distinguished exactly when it is distinguished with invertible
   distinguished coefficient.
@@ -43,6 +46,8 @@ distinguishedness, so these divisor hypotheses survive isometric coefficient ext
 * `TauCeti.PowerSeries.IsMulDistinguished.gaussNorm_mul`: left multiplication by a
   multiplicatively distinguished series multiplies the Gauss norm of a restricted series by the
   Gauss norm of the divisor.
+* `TauCeti.PowerSeries.gaussNorm_X_sub_C_mul`: in particular `‖(X - a) * q‖ = c * ‖q‖` at the
+  radius `c` when `‖a‖ ≤ c`.
 * `TauCeti.PowerSeries.isMulDistinguished_monomial` and
   `TauCeti.PowerSeries.isMulDistinguished_X_sub_C`: monomials with multiplicative-unit
   coefficient, and `X - b` for `b` in the closed disc of radius `c`.
@@ -64,13 +69,29 @@ section SeminormedRing
 variable {R : Type*} [SeminormedRing R] {c : ℝ} {s k : ℕ} {g q : PowerSeries R}
 
 variable {S : Type*} [SeminormedRing S] in
+/-- A norm-preserving coefficient homomorphism preserves the Gauss norm at every radius. -/
+theorem _root_.PowerSeries.gaussNorm_map_of_norm_eq (φ : R →+* S) (hφ : ∀ a, ‖φ a‖ = ‖a‖)
+    (g : PowerSeries R) (c : ℝ) : (PowerSeries.map φ g).gaussNorm norm c = g.gaussNorm norm c := by
+  simp only [PowerSeries.gaussNorm_eq, PowerSeries.coeff_map, hφ]
+
+variable {S : Type*} [SeminormedRing S] in
 /-- A norm-preserving coefficient homomorphism preserves distinguishedness, with the same
 radius and degree. Neither completeness nor surjectivity is required. -/
 theorem IsDistinguished.map (hf : IsDistinguished c s g) (φ : R →+* S)
     (hφ : ∀ a, ‖φ a‖ = ‖a‖) : IsDistinguished c s (PowerSeries.map φ g) := by
-  have hn : (PowerSeries.map φ g).gaussNorm norm c = g.gaussNorm norm c := by
-    simp only [PowerSeries.gaussNorm_eq, PowerSeries.coeff_map, hφ]
+  have hn := g.gaussNorm_map_of_norm_eq φ hφ c
   exact ⟨by simpa only [PowerSeries.coeff_map, hφ, hn] using hf.norm_coeff_mul_pow_eq,
+    fun n hn' ↦ by simpa only [PowerSeries.coeff_map, hφ, hn] using
+      hf.norm_coeff_mul_pow_lt n hn'⟩
+
+variable {S : Type*} [SeminormedRing S] in
+/-- A norm-preserving coefficient homomorphism preserves the lowest dominant degree, at the same
+radius. Neither completeness nor surjectivity is required. -/
+theorem IsLowestDominant.map (hf : IsLowestDominant c s g) (φ : R →+* S)
+    (hφ : ∀ a, ‖φ a‖ = ‖a‖) : IsLowestDominant c s (PowerSeries.map φ g) := by
+  have hn := g.gaussNorm_map_of_norm_eq φ hφ c
+  exact ⟨hn ▸ hf.gaussNorm_pos,
+    by simpa only [PowerSeries.coeff_map, hφ, hn] using hf.norm_coeff_mul_pow_eq,
     fun n hn' ↦ by simpa only [PowerSeries.coeff_map, hφ, hn] using
       hf.norm_coeff_mul_pow_lt n hn'⟩
 
@@ -199,6 +220,15 @@ theorem IsMulDistinguished.gaussNorm_mul (hg : IsMulDistinguished c s g) (hc : 0
   · simp [PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0)]
   obtain ⟨k, hk⟩ := exists_isDistinguished hc hq hq0
   exact hg.toIsDistinguished.gaussNorm_mul hk hc (hg.isNormMulUnit_coeff.norm_mul _)
+
+/-- Multiplying a restricted series by `X - a`, for `a` in the closed disc of radius `c > 0`,
+multiplies its Gauss norm at `c` by `c`. -/
+theorem gaussNorm_X_sub_C_mul [NormOneClass R] (hc : 0 < c) {a : R} (ha : ‖a‖ ≤ c)
+    (hq : q.IsRestricted c) :
+    ((PowerSeries.X - PowerSeries.C a) * q).gaussNorm norm c = c * q.gaussNorm norm c := by
+  have hd := isMulDistinguished_X_sub_C hc ha
+  rw [hd.gaussNorm_mul hc hq, ← hd.norm_coeff_mul_pow_eq]
+  simp
 
 end NormedRing
 

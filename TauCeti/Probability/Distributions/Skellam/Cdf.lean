@@ -42,7 +42,7 @@ theorem hasSum_skellamMeasure_real_Iic_mass (r₁ r₂ : ℝ≥0) (k : ℤ) :
       else 0) ((skellamMeasure r₁ r₂).real (Iic k)) := by
   have hmass := (skellamMeasure r₁ r₂).tsum_indicator_apply_singleton (Iic k)
     measurableSet_Iic
-  have hsum := (ENNReal.summable.hasSum_iff.mpr hmass).toReal (measure_ne_top _ _)
+  have hsum := (CompleteLattice.summable.hasSum_iff.mpr hmass).toReal (measure_ne_top _ _)
   rw [← measureReal_def] at hsum
   convert hsum using 1
   funext n
@@ -72,7 +72,7 @@ theorem hasSum_skellamMeasure_real_Iic (r₁ r₂ : ℝ≥0) (k : ℤ) :
     refine tsum_congr fun j ↦ ?_
     rw [hpre]
     split_ifs <;> simp
-  have hsum := (ENNReal.summable.hasSum_iff.mpr hmass.symm).toReal (measure_ne_top _ _)
+  have hsum := (CompleteLattice.summable.hasSum_iff.mpr hmass.symm).toReal (measure_ne_top _ _)
   rw [← measureReal_def] at hsum
   convert hsum using 1
   funext j

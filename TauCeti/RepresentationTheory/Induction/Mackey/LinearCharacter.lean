@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Index.Two
-public import TauCeti.RepresentationTheory.Induction.Mackey.Irreducible
+public import TauCeti.RepresentationTheory.Induction.Mackey.Split
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 import Mathlib.GroupTheory.IndexNormal
 
@@ -103,7 +103,7 @@ end Conjugation
 section Criterion
 
 variable {k G : Type u} [Field k] [Group G] {N : Subgroup G} [N.Normal] [Finite G] [IsAlgClosed k]
-  [CharZero k]
+  [NeZero (Nat.card G : k)]
 
 /-- **The Mackey irreducibility criterion for an induced linear character.**  For a normal
 subgroup `N ◁ G` and a linear character `χ : N →* kˣ`, the induced representation `Ind_N^G χ` is

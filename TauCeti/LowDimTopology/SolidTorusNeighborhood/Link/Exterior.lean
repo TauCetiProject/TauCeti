@@ -30,6 +30,8 @@ many components are needed for the exterior to be open away from the boundary to
 ## Main definitions
 
 * `TauCeti.linkExterior Φ`: the complement of the open solid tori of a family `Φ`.
+* `TauCeti.IsSolidTorusLinkNeighborhood.exteriorBoundaryInclusion`: the boundary torus of each
+  component, parametrized by `S¹ × S¹`, as a map into the link exterior.
 * `TauCeti.IsSolidTorusLinkNeighborhood.exteriorChartedSpace`: the exterior of the half-radius
   neighbourhoods of a finite link in a Hausdorff topological `3`-manifold, charted on the
   Euclidean half-space.
@@ -129,6 +131,38 @@ theorem frontier_linkExterior [T2Space X] [Finite ι] (h : IsSolidTorusLinkNeigh
   · exact hx
   · exact fun hj => (h.pairwiseDisjoint_range hij).ne_of_mem (image_subset_range _ _ hj)
       (hcl i hi) rfl
+
+/-- The boundary torus of each component lies in the link exterior. -/
+theorem apply_boundaryInclusion_mem_linkExterior (h : IsSolidTorusLinkNeighborhood f Φ) (i : ι)
+    (q : Circle × Circle) : Φ i (SolidTorus.boundaryInclusion q) ∈ linkExterior Φ := by
+  refine mem_iInter.2 fun j => ?_
+  obtain rfl | hij := eq_or_ne j i
+  · exact (h.neighborhood j).apply_boundaryInclusion_mem_knotExterior q
+  · exact mem_knotExterior.2 fun hj => (h.pairwiseDisjoint_range hij).ne_of_mem
+      (image_subset_range _ _ hj) (mem_range_self _) rfl
+
+/-- The boundary torus of the `i`-th component of the link exterior, parametrized by `S¹ × S¹`
+through the solid torus neighbourhood: `q ↦ Φ i (q.1, q.2)`. -/
+def exteriorBoundaryInclusion (h : IsSolidTorusLinkNeighborhood f Φ) (i : ι)
+    (q : Circle × Circle) : linkExterior Φ :=
+  ⟨Φ i (SolidTorus.boundaryInclusion q), h.apply_boundaryInclusion_mem_linkExterior i q⟩
+
+/-- The parametrized `i`-th boundary torus of the link exterior is `q ↦ Φ i (q.1, q.2)`. -/
+@[simp]
+theorem coe_exteriorBoundaryInclusion_apply (h : IsSolidTorusLinkNeighborhood f Φ) (i : ι)
+    (q : Circle × Circle) :
+    (h.exteriorBoundaryInclusion i q : X) = Φ i (SolidTorus.boundaryInclusion q) :=
+  (rfl)
+
+/-- The parametrization of each boundary torus of the link exterior is injective. -/
+theorem exteriorBoundaryInclusion_injective (h : IsSolidTorusLinkNeighborhood f Φ) (i : ι) :
+    Injective (h.exteriorBoundaryInclusion i) := fun _ _ hq =>
+  (h.neighborhood i).isEmbedding_comp_boundaryInclusion.injective (congrArg Subtype.val hq)
+
+/-- The parametrization of each boundary torus of the link exterior is an embedding. -/
+theorem isEmbedding_exteriorBoundaryInclusion (h : IsSolidTorusLinkNeighborhood f Φ) (i : ι) :
+    IsEmbedding (h.exteriorBoundaryInclusion i) :=
+  IsEmbedding.subtypeVal.of_comp_iff.1 (h.neighborhood i).isEmbedding_comp_boundaryInclusion
 
 /-- Shrinking every solid torus to half its radius gives disjoint solid-torus neighbourhoods
 again. -/

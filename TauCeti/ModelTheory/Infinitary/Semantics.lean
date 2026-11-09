@@ -38,6 +38,8 @@ finitary formulas.
 
 ## References
 
+* The finite conjunction lemma `BoundedFormulaInf.realize_foldr_inf` follows Mathlib's
+  `BoundedFormula.realize_foldr_inf` in `Mathlib/ModelTheory/Semantics.lean` (Aaron Anderson).
 * Ported from `cameronfreer/infinitary-logic` at commit
   `9f82bd572af2d79a043c6bc3f1b745f14e0bcaa4`, whose infinitary semantics is
   `Mathlib/ModelTheory/Infinitary/Semantics.lean` in `leanprover-community/mathlib4#42758`
@@ -143,6 +145,14 @@ theorem realize_inf {φ ψ : L.BoundedFormulaInf ι α n} :
     (φ ⊓ ψ).Realize v xs ↔ φ.Realize v xs ∧ ψ.Realize v xs := by
   simp only [inf_def, realize_not, realize_imp, not_imp, not_not]
 
+/-- A finite conjunction holds exactly when every formula in the list holds. -/
+@[simp]
+theorem realize_foldr_inf (l : List (L.BoundedFormulaInf ι α n)) :
+    (l.foldr (· ⊓ ·) ⊤).Realize v xs ↔ ∀ φ ∈ l, φ.Realize v xs := by
+  induction l with
+  | nil => simp
+  | cons φ l ih => simp [ih]
+
 @[simp]
 theorem realize_sup {φ ψ : L.BoundedFormulaInf ι α n} :
     (φ ⊔ ψ).Realize v xs ↔ φ.Realize v xs ∨ ψ.Realize v xs := by
@@ -226,6 +236,22 @@ theorem BoundedFormulaInf.realize_exs {φ : L.BoundedFormulaInf ι α n} {v : α
     · rintro ⟨xs, h⟩
       exact ⟨Fin.init xs, xs (Fin.last n), by rwa [Fin.snoc_init_self]⟩
 
+/-- Quantifying the last `k` slots existentially realizes as existential quantification over the
+valuations `ys` of those slots, appended to the valuation of the remaining slots. -/
+@[simp]
+theorem BoundedFormulaInf.realize_exsLast {k : ℕ} {φ : L.BoundedFormulaInf ι α (n + k)}
+    {v : α → M} {xs : Fin n → M} :
+    (BoundedFormulaInf.exsLast φ).Realize v xs ↔
+      ∃ ys : Fin k → M, φ.Realize v (Fin.append xs ys) := by
+  induction k with
+  | zero => simp [Fin.append_right_nil xs _ rfl, Unique.exists_iff]
+  | succ k ih =>
+    simp only [BoundedFormulaInf.exsLast_succ, ih, BoundedFormulaInf.realize_ex, ← Fin.append_snoc]
+    constructor
+    · rintro ⟨ys, y, h⟩; exact ⟨_, h⟩
+    · rintro ⟨ys, h⟩
+      exact ⟨Fin.init ys, ys (Fin.last k), by rwa [Fin.snoc_init_self]⟩
+
 end AllsExs
 
 /-- Realization of an `L_{∞ω}` sentence in a structure. -/
@@ -246,6 +272,12 @@ theorem SentenceInf.realize_inf {M : Type w} [L.Structure M] {φ ψ : L.Sentence
     SentenceInf.Realize (φ ⊓ ψ) M ↔ φ.Realize M ∧ ψ.Realize M := by
   simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_inf]
 
+/-- A disjunction of sentences holds exactly when one of the sentences holds. -/
+@[simp]
+theorem SentenceInf.realize_sup {M : Type w} [L.Structure M] {φ ψ : L.SentenceInf ι} :
+    SentenceInf.Realize (φ ⊔ ψ) M ↔ φ.Realize M ∨ ψ.Realize M := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_sup]
+
 /-- An infinitary conjunction of sentences holds exactly when every sentence holds. -/
 @[simp]
 theorem SentenceInf.realize_iInf {M : Type w} [L.Structure M] {φs : ι → L.SentenceInf ι} :
@@ -257,6 +289,19 @@ theorem SentenceInf.realize_iInf {M : Type w} [L.Structure M] {φs : ι → L.Se
 theorem SentenceInf.realize_not {M : Type w} [L.Structure M] {φ : L.SentenceInf ι} :
     SentenceInf.Realize φ.not M ↔ ¬φ.Realize M := by
   simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_not]
+
+/-- An implication of sentences holds exactly when its conclusion holds whenever its hypothesis
+does. -/
+@[simp]
+theorem SentenceInf.realize_imp {M : Type w} [L.Structure M] {φ ψ : L.SentenceInf ι} :
+    SentenceInf.Realize (φ.imp ψ) M ↔ (φ.Realize M → ψ.Realize M) := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_imp]
+
+/-- Every closed term equals itself in every structure. -/
+@[simp]
+theorem SentenceInf.realize_equal_self {M : Type w} [L.Structure M] (t : L.Term (Empty ⊕ Fin 0)) :
+    SentenceInf.Realize (BoundedFormulaInf.equal t t : L.SentenceInf ι) M := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_equal]
 
 /-- The false sentence holds in no structure. -/
 @[simp]

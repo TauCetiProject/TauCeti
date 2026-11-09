@@ -40,6 +40,8 @@ these statements the vertices are indexed by natural numbers `k`, cast to `Fin n
   finite, equal to the angular defect.
 * `ConvexPolygon.sum_interiorAngle_le`, `ConvexPolygon.sum_interiorAngle_lt`: the angular defect
   is nonnegative, and in fact positive.
+* `ConvexPolygon.exists_interiorAngle_rotate_lt_pi_div_two`: after relabelling the vertices
+  cyclically, every triangle has acute angles at the ends of side `0`.
 * `ConvexPolygon.volume_carrier_of_forall_eq_inr`: an ideal polygon has area `(n - 2) π`;
   `ConvexPolygon.volume_carrier_three_of_forall_eq_inr`: an ideal triangle has area `π`.
 * `ConvexPolygon.volume_carrier_three_of_vertex_one_of_vertex_two`: a triangle with two ideal
@@ -71,9 +73,9 @@ theorem volume_rightHalfPlane (g : PSL(2, ℝ)) : volume (rightHalfPlane g) = �
   rw [rightHalfPlane_def, measure_smul]
   refine ENNReal.eq_top_of_forall_nnreal_le fun r ↦ ?_
   -- the half-plane `{Re z > 0}` contains regions above height `1` of every width
-  calc (r : ENNReal) = ENNReal.ofReal (((r : ℝ) + 1 - 1) / 1) := by simp
+  calc (r : ENNReal) = volume (Set.Ico 1 ((r : ℝ) + 1)) * ENNReal.ofReal 1⁻¹ := by simp
     _ = volume {z : ℍ | z.re ∈ Set.Ico 1 ((r : ℝ) + 1) ∧ 1 < z.im} :=
-      (volume_setOf_re_mem_Ico_and_lt_im 1 ((r : ℝ) + 1) one_pos).symm
+      (volume_setOf_re_mem_and_lt_im _ one_pos).symm
     _ ≤ volume {z : ℍ | 0 < z.re} := measure_mono fun z hz ↦ one_pos.trans_le hz.1.1
 
 /-- The open left half-plane of a geodesic line has infinite area. -/
@@ -259,6 +261,23 @@ theorem sum_interiorAngle_lt : ∑ i, P.interiorAngle i < (n - 2) * π := by
 most `(n - 2) π`. -/
 theorem sum_interiorAngle_le : ∑ i, P.interiorAngle i ≤ (n - 2) * π :=
   P.sum_interiorAngle_lt.le
+
+/-- **Some side of a triangle has acute angles at both ends.** The angles of a hyperbolic triangle
+add up to less than `π`, so at most one of them is at least `π / 2`. Relabelling the vertices so
+that this side is side `0`, the triangle can be doubled across it. -/
+theorem exists_interiorAngle_rotate_lt_pi_div_two (P : ConvexPolygon 3) :
+    ∃ k : Fin 3, (P.rotate k).interiorAngle 0 < π / 2 ∧ (P.rotate k).interiorAngle 1 < π / 2 := by
+  have hsum := P.sum_interiorAngle_lt
+  rw [Fin.sum_univ_three] at hsum
+  norm_num at hsum
+  have h₀ := P.interiorAngle_nonneg 0
+  have h₁ := P.interiorAngle_nonneg 1
+  have h₂ := P.interiorAngle_nonneg 2
+  by_cases ha : P.interiorAngle 0 < π / 2
+  · by_cases hb : P.interiorAngle 1 < π / 2
+    · exact ⟨0, by simpa using ha, by simpa using hb⟩
+    · exact ⟨2, by simp; linarith, by simpa using ha⟩
+  · exact ⟨1, by simp; linarith, by simp; linarith⟩
 
 /-- A convex polygon has finite area. -/
 theorem volume_carrier_ne_top : volume P.carrier ≠ ⊤ := by

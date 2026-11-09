@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import Mathlib.RingTheory.Derivation.Lie
 public import Mathlib.RingTheory.Nilpotent.Lemmas
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Algebra.AlgebraicGroup.Representation.ComoduleAlgebra
 import TauCeti.RingTheory.Derivation.Nilpotent
 import TauCeti.RingTheory.Derivation.Basic
 
@@ -72,25 +73,6 @@ namespace TauCeti.Bialgebra
 
 variable {R H : Type*} [CommRing R] [CommRing H] [_root_.Bialgebra R H]
 
-/-- Contracting the right tensor factor against a tangent vector satisfies the Leibniz rule
-with respect to contraction against the counit. -/
-private theorem tensorComponent_mul (d : Derivation R H (CounitAlgebra R H R)) (X Y : H ⊗[R] H) :
-    tensorComponent ((CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap) (X * Y) =
-      tensorComponent (Coalgebra.counit (R := R)) X *
-          tensorComponent ((CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap) Y +
-        tensorComponent (Coalgebra.counit (R := R)) Y *
-          tensorComponent ((CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap) X := by
-  induction X using TensorProduct.inductionOn with
-  | add X X' hX hX' => simp only [add_mul, map_add, hX, hX']; ring
-  | tmul a b =>
-    induction Y using TensorProduct.inductionOn with
-    | add Y Y' hY hY' => simp only [mul_add, map_add, hY, hY']; ring
-    | tmul a' b' =>
-      simp only [Algebra.TensorProduct.tmul_mul_tmul, tensorComponent_tmul, LinearMap.comp_apply,
-        AlgEquiv.toLinearMap_apply, Derivation.coeFn_coe, CounitAlgebra.algEquivSelf_apply_mul,
-        Algebra.algebraMap_self, RingHom.id_apply, Algebra.smul_def, map_add, map_mul]
-      ring
-
 /-- **The left-invariant derivation extending a tangent vector at the identity**:
 `h ↦ ∑ h₍₁₎ d(h₍₂₎)`. This Lie algebra homomorphism is the differentiated regular
 representation with its values regarded as derivations. -/
@@ -98,9 +80,8 @@ noncomputable def leftInvariantDerivation :
     Derivation R H (CounitAlgebra R H R) →ₗ⁅R⁆ Derivation R H H where
   toFun d :=
     Derivation.mk' (Comodule.differential (R := R) (H := H) (M := H) d) fun a b ↦ by
-      simp only [Comodule.differential_apply, Comodule.instSelf_coact,
-        _root_.Bialgebra.comul_mul, tensorComponent_mul, smul_eq_mul]
-      simp [LinearMap.tensorComponent_def]
+      rw [ComoduleAlgebra.differential_mul, smul_eq_mul, smul_eq_mul]
+      ring
   map_add' d e := by
     ext h
     exact LinearMap.congr_fun (map_add (Comodule.differential (M := H)) d e) h
@@ -162,7 +143,7 @@ theorem comul_iterate_leftInvariantDerivation (d : Derivation R H (CounitAlgebra
   | zero => simp [Module.End.one_eq_id]
   | succ n ih =>
     rw [Function.iterate_succ_apply', comul_leftInvariantDerivation, ih, pow_succ',
-      LinearMap.lTensor_mul, Module.End.mul_apply]
+      LinearMap.lTensor_mul, mul_apply_eq_comp]
 
 /-- **Iterated invariant vector fields.** Applying `n` times the left-invariant derivation of a
 tangent vector contracts the comultiplication against `ε ∘ Dⁿ`: `Dⁿ h = ∑ h₍₁₎ ε(Dⁿ h₍₂₎)`. -/
@@ -189,7 +170,7 @@ theorem counit_iterate_add_leftInvariantDerivation
           Coalgebra.counit (R := R) ((leftInvariantDerivation d)^[j] (𝓡.right k)) := by
   rw [Function.iterate_add_apply, iterate_leftInvariantDerivation_apply d j h,
     ← 𝓡.eq, map_sum]
-  simp only [tensorComponent_tmul, LinearMap.comp_apply, Module.End.coe_pow,
+  simp only [tensorComponent_tmul, LinearMap.comp_apply, FunLike.coe_pow_eq_iterate,
     Derivation.coeFn_coe]
   rw [Derivation.iterate_sum_smul, map_sum]
   simp only [map_smul, smul_eq_mul, mul_comm]

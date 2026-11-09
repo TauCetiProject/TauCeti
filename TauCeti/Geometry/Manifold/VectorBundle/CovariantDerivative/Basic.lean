@@ -8,11 +8,13 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 
 /-!
-# Covariant derivatives of negatives, differences and finite sums of sections
+# Covariant derivatives of sections and evaluation of connection operations
 
 Mathlib's `IsCovariantDerivativeOn` is additive on pairs of sections differentiable at a point of
 the set it is a covariant derivative on. This file derives the corresponding statements for
-negatives and differences, and iterates additivity to finite sums of sections.
+negatives and differences, and iterates additivity to finite sums of sections. It also evaluates
+Mathlib's `CovariantDerivative.addOneForm` on sections and `CovariantDerivative.difference` on
+section values and fibre vectors.
 
 ## Main results
 
@@ -20,6 +22,14 @@ negatives and differences, and iterates additivity to finite sums of sections.
   `u` commutes with negation and subtraction of sections differentiable at a point of `u`.
 * `TauCeti.Manifold.covariantDerivative_sum`: a covariant derivative over `u` commutes with finite
   sums of sections differentiable at a point of `u`.
+* `CovariantDerivative.covariantDerivative_smul_section_vectorField`: the Leibniz rule for the
+  covariant derivative of a function multiple of a section along a vector field.
+* `CovariantDerivative.addOneForm_apply`: evaluate a connection perturbed by an
+  endomorphism-valued one-form on a section.
+* `CovariantDerivative.difference_apply`: evaluate the difference of two connections on the value
+  of a section differentiable at the base point.
+* `CovariantDerivative.difference_apply_eq_extend`: evaluate the difference of two connections on
+  a fibre vector using a local extension.
 -/
 
 public section
@@ -94,3 +104,59 @@ theorem sub (hcov : IsCovariantDerivativeOn F cov u) (hσ : MDiffAt (T% σ) x)
     ← sub_eq_add_neg]
 
 end IsCovariantDerivativeOn
+
+namespace CovariantDerivative
+
+variable
+  {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+
+omit [VectorBundle 𝕜 F V] in
+/-- Adding an endomorphism-valued one-form, evaluated on a section. -/
+@[simp]
+theorem addOneForm_apply (cov : CovariantDerivative I F V)
+    (A : Π x : M, V x →L[𝕜] TangentSpace I x →L[𝕜] V x)
+    (σ : Π x : M, V x) (x : M) :
+    cov.addOneForm A σ x = cov σ x + A x (σ x) := (rfl)
+
+omit [VectorBundle 𝕜 F V] in
+/-- **Leibniz rule along a vector field.** The covariant derivative of `f • σ` along a vector
+field `Z` is `f` times the covariant derivative of `σ` along `Z`, plus the derivative of `f` along
+`Z` times `σ`, for a differentiable function `f` and a differentiable section `σ`. -/
+theorem covariantDerivative_smul_section_vectorField (cov : CovariantDerivative I F V)
+    {f : M → 𝕜} {σ : Π x : M, V x} {Z : Π x : M, TangentSpace I x}
+    (hf : MDiff f) (hσ : MDiff (T% σ)) :
+    (fun y ↦ cov (f • σ) y (Z y)) =
+      f • (fun y ↦ cov σ y (Z y)) + (fun y ↦ d% f y (Z y)) • σ := by
+  funext y
+  have h := cov.isCovariantDerivativeOnUniv.leibniz (hσ y) (hf y)
+  -- `h` is an equality of continuous linear maps; expose its value at `Z y` through the
+  -- pointwise `Pi` operations before rewriting by it.
+  change cov (f • σ) y (Z y) = f y • cov σ y (Z y) + d% f y (Z y) • σ y
+  rw [h]
+  simp [add_apply, ContinuousLinearMap.smulRight_apply]
+
+variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] [ContMDiffVectorBundle 1 F V I]
+
+/-- The difference of two connections evaluated on a section differentiable at the base point. -/
+theorem difference_apply (cov cov' : CovariantDerivative I F V)
+    {σ : Π x : M, V x} {x : M} (hσ : MDiffAt (T% σ) x) :
+    cov.difference cov' x (σ x) = cov σ x - cov' σ x :=
+  IsCovariantDerivativeOn.difference_apply cov.isCovariantDerivativeOnUniv
+    cov'.isCovariantDerivativeOnUniv (hσ := hσ)
+
+/-- Evaluate the difference of two connections through a local extension of a fibre vector. -/
+theorem difference_apply_eq_extend (cov cov' : CovariantDerivative I F V)
+    (x : M) (w : V x) :
+    cov.difference cov' x w = cov (FiberBundle.extend F w) x - cov' (FiberBundle.extend F w) x := by
+  simpa only [FiberBundle.extend_apply_self] using
+    cov.difference_apply cov' (FiberBundle.mdifferentiableAt_extend I F w)
+
+end CovariantDerivative

@@ -148,7 +148,7 @@ theorem algebraicExtension_valuativeExtension :
     letI := algebraicExtensionValuativeRel K M
     ValuativeExtension K M := by
   let _ := algebraicExtensionValuativeRel K M
-  refine ⟨fun a b => ?_⟩
+  refine ⟨fun {a b} => ?_⟩
   rw [algebraicExtensionValuativeRel_vle_iff, algebraicExtensionNormedField_norm_algebraMap,
     algebraicExtensionNormedField_norm_algebraMap, NNRat.cast_le,
     normalizedAbsoluteValue_le_normalizedAbsoluteValue_iff, (valuation K).vle_iff_le]
@@ -322,7 +322,7 @@ theorem _root_.AlgHom.valuativeExtension {N : Type*} [CommRing N] [ValuativeRel 
   rw [← ι.comp_algebraMap, Valuation.comap_comp] at hN
   have h := algebraicExtensionValuation_isEquiv hN
     (ValuativeRel.isEquiv ((valuation M).comap (algebraMap K M)) (valuation K))
-  exact ⟨fun a b ↦ (valuation N).vle_iff_le.trans ((h a b).trans (valuation M).vle_iff_le.symm)⟩
+  exact ⟨fun {a b} ↦ (valuation N).vle_iff_le.trans ((h a b).trans (valuation M).vle_iff_le.symm)⟩
 
 end Uniqueness
 

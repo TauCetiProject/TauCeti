@@ -10,6 +10,7 @@ public import Mathlib.Order.Fin.Basic
 public import Mathlib.Topology.Algebra.Ring.Basic
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import TauCeti.Topology.Connected.Prod
+import Mathlib.Topology.Algebra.Module.Equiv.Pi
 
 /-!
 # Sections and sectors of a stack
@@ -53,6 +54,8 @@ cells `TauCeti.stackCells` of the stack in the ambient space.
 * `TauCeti.stackCells`: the ambient sections and sectors of a stack over a subset of `α ^ n`.
 * `TauCeti.image_cylinder_sectionSet_comp`, `TauCeti.image_cylinder_sectorSet_comp`,
   `TauCeti.stackCells_comp`: ambient stack cells pull back along arbitrary base maps.
+* `TauCeti.stackCells_inclusion`: restricting a stack to a subset of its base cuts each ambient
+  cell down to the part lying over that subset.
 * `TauCeti.sUnion_stackCells`, `TauCeti.pairwiseDisjoint_stackCells`,
   `TauCeti.isConnected_of_mem_stackCells`: the ambient cells of a stack partition the cylinder
   over its base, and over a connected base they are connected.
@@ -338,6 +341,11 @@ theorem isOpen_sectorSet [TopologicalSpace α] [LinearOrder α] [OrderClosedTopo
   · exact isOpen_lt ((hc i).comp continuous_fst) continuous_snd
   · exact isOpen_lt continuous_snd ((hc i).comp continuous_fst)
 
+/-- The section of a continuous function is closed in the cylinder. -/
+theorem isClosed_sectionSet [TopologicalSpace α] [T2Space α] {i : Fin k}
+    (hθ : Continuous (θ i)) : IsClosed (sectionSet θ i) :=
+  hθ.isClosed_graph
+
 /-- Over a preconnected base, the section of a continuous function is preconnected. -/
 theorem isPreconnected_sectionSet [TopologicalSpace α] [PreconnectedSpace X] {i : Fin k}
     (hθ : Continuous (θ i)) : IsPreconnected (sectionSet θ i) := by
@@ -384,7 +392,7 @@ theorem isPreconnected_sectorSet [PreconnectedSpace X] (hc : ∀ i, Continuous (
     (hθ : ∀ x, StrictMono fun i ↦ θ i x) (j : Fin (k + 1)) :
     IsPreconnected (sectorSet θ j) := by
   obtain ⟨σ, hσ, hσj⟩ := exists_continuous_forall_mem_sectorSet hc hθ j
-  exact isPreconnected_of_isPreconnected_preimage_prodMk hσ hσj fun x ↦
+  exact isPreconnected_of_isPreconnected_preimage_prodMk_of_continuous hσ hσj fun x ↦
     (ordConnected_preimage_mk_sectorSet θ j x).isPreconnected
 
 /-- Over a connected base, each sector of a stack of continuous, pointwise strictly ordered real
@@ -466,6 +474,49 @@ theorem isEmbedding_cylinder : IsEmbedding (cylinder S) := by
   refine .of_comp continuous_cylinder (g := fun y ↦ (Fin.tail y, y 0)) (by fun_prop) ?_
   exact IsEmbedding.subtypeVal.prodMap .id
 
+/-- Forgetting the height identifies an ambient continuous section with its base by an
+open embedding. -/
+theorem isOpenEmbedding_tail_image_cylinder_sectionSet {θ : Fin k → S → α} (i : Fin k)
+    (hc : Continuous (θ i)) :
+    IsOpenEmbedding fun y : cylinder S '' sectionSet θ i ↦
+      (⟨Fin.tail y.1, (mem_image_cylinder.mp y.2).1⟩ : S) := by
+  let e : S ≃ₜ cylinder S '' sectionSet θ i :=
+    (isEmbedding_graph hc).toHomeomorph.trans <|
+      (Homeomorph.setCongr (sectionSet_eq_range _ _).symm).trans <|
+        isEmbedding_cylinder.homeomorphImage _
+  convert e.symm.isOpenEmbedding using 1
+  funext y
+  obtain ⟨x, rfl⟩ := e.surjective y
+  -- Here `rfl` unfolds the forward maps of `toHomeomorph` and `homeomorphImage`;
+  -- `trans` composes them and `setCongr` changes only the membership proof.
+  have hx : (e x : Fin (n + 1) → α) = cylinder S (x, θ i x) := rfl
+  apply Subtype.ext
+  simp [hx]
+
+/-- An open embedding of the base extends over an ambient sector, retaining the height as the
+first coordinate. -/
+theorem isOpenEmbedding_cons_image_cylinder_sectorSet {S : Set (Fin n → ℝ)} {d : ℕ}
+    {θ : Fin k → S → ℝ} {f : S → Fin d → ℝ} (hf : IsOpenEmbedding f)
+    (hc : ∀ i, Continuous (θ i)) (j : Fin (k + 1)) :
+    IsOpenEmbedding fun y : cylinder S '' sectorSet θ j ↦
+      (Fin.cons (y.1 0) (f ⟨Fin.tail y.1, (mem_image_cylinder.mp y.2).1⟩) : Fin (d + 1) → ℝ) := by
+  let e := isEmbedding_cylinder (S := S).homeomorphImage (sectorSet θ j)
+  let g : S × ℝ → Fin (d + 1) → ℝ :=
+    (Fin.consEquivL ℝ fun _ ↦ ℝ).toHomeomorph ∘ Prod.swap ∘ Prod.map f id
+  have hg : IsOpenEmbedding g :=
+    (Fin.consEquivL ℝ fun _ ↦ ℝ).toHomeomorph.isOpenEmbedding.comp <|
+      (Homeomorph.prodComm _ _).isOpenEmbedding.comp (hf.prodMap .id)
+  convert hg.comp ((isOpen_sectorSet hc j).isOpenEmbedding_subtypeVal.comp
+    e.symm.isOpenEmbedding) using 1
+  funext y
+  obtain ⟨z, rfl⟩ := e.surjective y
+  simp only [comp_apply, Homeomorph.symm_apply_apply]
+  -- Here `rfl` unfolds the forward map of `homeomorphImage`, whose `toHomeomorph`
+  -- applies the cylinder map; its final `setCongr` changes only the membership proof.
+  have hz : (e z : Fin (n + 1) → ℝ) = cylinder S z := rfl
+  funext l
+  cases l using Fin.cases <;> simp [hz, g]
+
 end Cylinder
 
 /-! ### Stacks in the ambient space -/
@@ -537,6 +588,53 @@ theorem stackCells_comp :
     · exact Or.inr ⟨j, image_cylinder_sectorSet_comp θ f j⟩
 
 end Map
+
+section Restrict
+
+variable {D : Set (Fin n → α)} (h : D ⊆ C)
+
+omit [LinearOrder α] in
+/-- Restricting the base of the cylinder from `C` to a subset `D` cuts the image of a subset of
+the cylinder over `C` down to the points lying over `D`. -/
+theorem image_cylinder_preimage_inclusion (A : Set (C × α)) :
+    cylinder D '' (Prod.map (inclusion h) id ⁻¹' A) = cylinder C '' A ∩ Fin.tail ⁻¹' D := by
+  ext y
+  simp only [mem_image_cylinder, mem_inter_iff, mem_preimage, Prod.map_apply, inclusion_mk,
+    id_eq]
+  exact ⟨fun ⟨hD, hA⟩ ↦ ⟨⟨h hD, hA⟩, hD⟩, fun ⟨⟨_, hA⟩, hD⟩ ↦ ⟨hD, hA⟩⟩
+
+variable (θ : Fin k → C → α)
+
+omit [LinearOrder α] in
+/-- A section of a stack restricted to a smaller base `D` is the part of the original section
+lying over `D`. -/
+theorem image_cylinder_sectionSet_inclusion (i : Fin k) :
+    cylinder D '' sectionSet (fun i ↦ θ i ∘ inclusion h) i =
+      cylinder C '' sectionSet θ i ∩ Fin.tail ⁻¹' D := by
+  rw [sectionSet_comp, image_cylinder_preimage_inclusion]
+
+/-- A sector of a stack restricted to a smaller base `D` is the part of the original sector lying
+over `D`, including either unbounded sector. -/
+theorem image_cylinder_sectorSet_inclusion (j : Fin (k + 1)) :
+    cylinder D '' sectorSet (fun i ↦ θ i ∘ inclusion h) j =
+      cylinder C '' sectorSet θ j ∩ Fin.tail ⁻¹' D := by
+  rw [sectorSet_comp, image_cylinder_preimage_inclusion]
+
+/-- The cells of a stack restricted to a smaller base `D` are the parts of the original cells
+lying over `D`. -/
+theorem stackCells_inclusion :
+    stackCells D (fun i ↦ θ i ∘ inclusion h) = (· ∩ Fin.tail ⁻¹' D) '' stackCells C θ := by
+  ext E
+  simp only [mem_stackCells, mem_image]
+  constructor
+  · rintro (⟨i, rfl⟩ | ⟨j, rfl⟩)
+    · exact ⟨_, Or.inl ⟨i, rfl⟩, (image_cylinder_sectionSet_inclusion h θ i).symm⟩
+    · exact ⟨_, Or.inr ⟨j, rfl⟩, (image_cylinder_sectorSet_inclusion h θ j).symm⟩
+  · rintro ⟨E, (⟨i, rfl⟩ | ⟨j, rfl⟩), rfl⟩
+    · exact Or.inl ⟨i, image_cylinder_sectionSet_inclusion h θ i⟩
+    · exact Or.inr ⟨j, image_cylinder_sectorSet_inclusion h θ j⟩
+
+end Restrict
 
 /-- For pointwise strictly monotone `θ` with values in a densely ordered type without endpoints,
 every cell of the stack over `C` lies over the whole of `C`. -/
@@ -613,6 +711,37 @@ theorem ordConnected_setOf_cons_mem_of_mem_stackCells {E : Set (Fin (n + 1) → 
     ext t
     simp [mem_sectionSet, eq_comm]
   · exact key (ordConnected_preimage_mk_sectorSet θ j)
+
+omit [LinearOrder α] in
+/-- A set whose projection lies in the base `C` is recovered from its preimage under the cylinder
+over `C`. -/
+theorem image_cylinder_preimage_eq {E : Set (Fin (n + 1) → α)}
+    (hEC : Fin.tail '' E ⊆ C) : cylinder C '' (cylinder C ⁻¹' E) = E := by
+  refine image_preimage_eq_of_subset fun y hy ↦ ?_
+  rw [range_cylinder, mem_ofPred_eq]
+  exact hEC (mem_image_of_mem _ hy)
+
+/-- If the preimages under the cylinder over `C` of the cells of `𝒞` lying over `C` are exactly the
+section and sector sets of a stack `θ`, then these cells are the cells of the stack. -/
+theorem eq_stackCells_of_image_cylinder_preimage {𝒞 : Set (Set (Fin (n + 1) → α))}
+    (hθ𝒜 : (cylinder C ⁻¹' ·) '' {E ∈ 𝒞 | Fin.tail '' E = C} =
+      range (sectionSet θ) ∪ range (sectorSet θ)) :
+    {E ∈ 𝒞 | Fin.tail '' E = C} = stackCells C θ := by
+  ext E
+  refine ⟨fun hE ↦ ?_, fun hE ↦ ?_⟩
+  · have hA : cylinder C ⁻¹' E ∈ (cylinder C ⁻¹' ·) '' {E ∈ 𝒞 | Fin.tail '' E = C} :=
+      mem_image_of_mem _ hE
+    rw [hθ𝒜] at hA
+    rw [← image_cylinder_preimage_eq hE.2.subset]
+    rcases hA with ⟨i, hi⟩ | ⟨j, hj⟩
+    · exact hi ▸ image_cylinder_sectionSet_mem_stackCells i
+    · exact hj ▸ image_cylinder_sectorSet_mem_stackCells j
+  · have hA : ∃ A ∈ (cylinder C ⁻¹' ·) '' {E ∈ 𝒞 | Fin.tail '' E = C}, cylinder C '' A = E := by
+      rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩
+      · exact ⟨_, hθ𝒜 ▸ Or.inl (mem_range_self i), rfl⟩
+      · exact ⟨_, hθ𝒜 ▸ Or.inr (mem_range_self j), rfl⟩
+    obtain ⟨_, ⟨E', hE', rfl⟩, rfl⟩ := hA
+    rwa [image_cylinder_preimage_eq hE'.2.subset]
 
 end Order
 

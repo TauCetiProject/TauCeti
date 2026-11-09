@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.RingTheory.Finiteness.Basic
+public import TauCeti.Algebra.Module.Projective.Trans
 
 /-!
 # Finite generation and projectivity under restriction of scalars
@@ -23,6 +24,8 @@ finiteness properties defining `K₀(proj R)` and `G₀(mod R)` survive it.
 * Along a ring homomorphism making `S` a **finitely generated** `R`-module, finite generation is
   preserved, so restriction of scalars is a functor between the categories of finitely generated
   modules.
+* Along a ring homomorphism making `S` a **projective** `R`-module, projectivity is preserved: a
+  projective `S`-module is a direct summand of a free `S`-module, which is projective over `R`.
 * Along a ring **isomorphism**, projectivity is preserved and reflected: the identity of the
   module is then a semilinear equivalence between the two module structures.
 
@@ -39,6 +42,8 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   `RingHom.finiteModulesRestrictScalars` is the restriction of scalars, naturally in the module.
 * `ModuleCat.restrictScalarsAlgebraMapIso`: restricting the scalars of an `S`-module along
   `algebraMap R S` gives back its compatible `R`-module structure.
+* `ModuleCat.restrictScalarsOpOpIso`: restricting scalars along `A ≃+* Aᵐᵒᵖᵐᵒᵖ` carries the
+  `Aᵐᵒᵖᵐᵒᵖ`-module `Aᵐᵒᵖ` to the regular module `A`.
 
 ## Main results
 
@@ -46,8 +51,12 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   is invariant under restriction of scalars along a surjective ring homomorphism.
 * `RingHom.isFG_restrictScalars_of_finite`: finite generation is preserved by restriction of
   scalars along a ring homomorphism `f : R →+* S` making `S` a finitely generated `R`-module.
+* `RingHom.projective_restrictScalars_of_projective`: projectivity is preserved by restriction of
+  scalars along a ring homomorphism `f : R →+* S` making `S` a projective `R`-module.
 * `RingEquiv.projective_restrictScalars_iff`: projectivity is invariant under restriction of
   scalars along a ring isomorphism.
+* `Function.Exact.smul_mem_range`: if `P → Q → M` is exact with `M` a module with scalars
+  restricted along `φ`, then every scalar killed by `φ` multiplies `Q` into the image of `P`.
 -/
 
 public section
@@ -106,6 +115,23 @@ theorem isFG_restrictScalars_of_finite (f : R →+* S)
   have hRM : Module.Finite R M := Module.Finite.trans S M
   exact (ModuleCat.isFG_iff _).mpr hRM
 
+/-- **Projectivity along a projective ring homomorphism.** If `S` is a projective `R`-module
+through `f : R →+* S`, then restriction of scalars along `f` sends every projective `S`-module to
+a projective `R`-module. -/
+theorem projective_restrictScalars_of_projective (f : R →+* S)
+    (hf : letI := f.toModule; Module.Projective R S)
+    (M : ModuleCat.{v} S) [Module.Projective S M] :
+    Module.Projective R ((ModuleCat.restrictScalars f).obj M) := by
+  let : Module R S := f.toModule
+  let : Module R M := Module.compHom M f
+  have : Module.Projective R S := hf
+  have : IsScalarTower R S S := ⟨fun r s s' ↦ mul_assoc (f r) s s'⟩
+  have : IsScalarTower R S M := ⟨fun r s m ↦ mul_smul (f r) s m⟩
+  -- Elaborated before being matched against the goal, so that the `R`-module structure of `M`
+  -- is the local one carrying the scalar tower; the goal's is defeq but not syntactically equal.
+  have hRM : Module.Projective R M := Module.Projective.trans S M
+  exact hRM
+
 /-- **Restriction of scalars on finitely generated modules.** A ring homomorphism
 `f : R →+* S` making `S` a finitely generated `R`-module induces a functor from the finitely
 generated `S`-modules to the finitely generated `R`-modules, sending a module to the same module
@@ -157,6 +183,22 @@ theorem projective_restrictScalars_iff (e : R ≃+* S) (M : ModuleCat.{v} S) :
 
 end RingEquiv
 
+namespace Function.Exact
+
+/-- If `P --f--> Q --g--> M` is exact and `M` is an `S`-module with scalars restricted along
+`φ : R →+* S`, then every scalar `r` with `φ r = 0` kills the cokernel of `f`. -/
+theorem smul_mem_range {P Q : Type*} [AddCommGroup P] [Module R P] [AddCommGroup Q] [Module R Q]
+    {φ : R →+* S} {M : ModuleCat.{v} S} {f : P →ₗ[R] Q}
+    {g : Q →ₗ[R] (ModuleCat.restrictScalars φ).obj M} (hfg : Function.Exact f g) {r : R}
+    (hr : φ r = 0) (y : Q) : r • y ∈ LinearMap.range f := by
+  refine (hfg _).1 ?_
+  rw [map_smul, ModuleCat.restrictScalars.smul_def, hr, zero_smul]
+  -- The left side is the zero of `M` and the right side the zero of its restriction of scalars:
+  -- restriction of scalars keeps the additive group of `M` by definition, as in `smul_def`.
+  rfl
+
+end Function.Exact
+
 namespace ModuleCat
 
 variable {R : Type u₁} {S : Type u₂} [CommRing R] [Ring S] [Algebra R S]
@@ -194,5 +236,26 @@ theorem restrictScalarsAlgebraMapIso_inv_apply (M : Type v) [AddCommGroup M] [Mo
     [Module S M] [IsScalarTower R S M] (m : M) :
     (restrictScalarsAlgebraMapIso (R := R) (S := S) M).inv m = m :=
   (rfl)
+
+section OpOp
+
+variable (A : Type u) [Ring A]
+
+/-- Restricting scalars along `A ≃+* Aᵐᵒᵖᵐᵒᵖ` carries `Aᵐᵒᵖ`, the regular right module of `Aᵐᵒᵖ`, to
+the regular module `A`, through `MulOpposite.unop`. -/
+noncomputable def restrictScalarsOpOpIso :
+    (restrictScalars.{u} (RingEquiv.opOp A).toRingHom).obj (of Aᵐᵒᵖᵐᵒᵖ Aᵐᵒᵖ) ≅ of A A :=
+  let X := (restrictScalars.{u} (RingEquiv.opOp A).toRingHom).obj (of Aᵐᵒᵖᵐᵒᵖ Aᵐᵒᵖ)
+  let e : X ≃ₗ[A] A :=
+    { (MulOpposite.opAddEquiv : A ≃+ Aᵐᵒᵖ).symm with
+      map_smul' := fun a x ↦ by
+        rw [restrictScalars.smul_def]
+        -- The element `x` of the restricted module is an element of `Aᵐᵒᵖ`, on which `op (op a)`
+        -- acts by right multiplication by `op a`.
+        exact (congrArg MulOpposite.unop (op_smul_eq_mul (MulOpposite.op a) (x : Aᵐᵒᵖ))).trans
+          (MulOpposite.unop_mul (x : Aᵐᵒᵖ) (MulOpposite.op a)) }
+  e.toModuleIso
+
+end OpOp
 
 end ModuleCat

@@ -8,9 +8,10 @@ module
 public import Mathlib.Analysis.Convex.PartitionOfUnity
 public import Mathlib.Topology.EMetricSpace.Paracompact
 public import Mathlib.Topology.Metrizable.Uniformity
+public import Mathlib.Topology.UniformSpace.Compact
 
 /-!
-# Continuous radii subordinate to a cover
+# Continuous radii for covers and diagonal neighbourhoods
 
 A map inducing the topology from a pseudometric space admits a positive continuous radius.
 For each source point `x`, the preimage of the ball around `f x` with twice the chosen
@@ -22,6 +23,12 @@ This combines Mathlib's convex-valued partition-of-unity selection theorem
 `exists_continuous_forall_mem_convex_of_local_const` with metric balls. In tubular
 neighbourhood arguments, comparing the larger of two radii puts both base points
 in a single local injectivity neighbourhood.
+
+An open family of diagonal neighbourhoods on a compact pseudometric space also admits a
+positive continuous radius over a normal paracompact parameter space, without compactness
+of that parameter space. This uses Mathlib's generalized tube lemma, its compact-space
+diagonal/uniformity comparison, and the same convex selection theorem. The radii control
+individual steps of local transports, without averaging invertible operators.
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition,
 Theorem 6.24, the variable-radius shrinking argument.
@@ -48,40 +55,71 @@ theorem exists_continuous_radius_subordinate (hf : IsInducing f)
   -- At each point the admissible radii form an interval: shrinking preserves admissibility.
   let T : X → Set ℝ := fun x => {r | 0 < r ∧ ∃ i, x ∈ U i ∧ r < ε i ∧
     ∀ y, dist (f x) (f y) < 2 * r → y ∈ U i}
-  have hT : ∀ x, Convex ℝ (T x) := by
-    intro x
-    apply Set.OrdConnected.convex
-    constructor
+  have hT (x : X) : Convex ℝ (T x) := by
+    refine OrdConnected.convex ⟨?_⟩
     rintro a ⟨ha, -⟩ b ⟨-, i, hxi, hb, hball⟩ c ⟨hac, hcb⟩
-    exact ⟨ha.trans_le hac, i, hxi, hcb.trans_lt hb,
-      fun y hy => hball y (hy.trans_le (mul_le_mul_of_nonneg_left hcb (by norm_num)))⟩
-  have hlocal : ∀ x, ∃ c : ℝ, ∀ᶠ y in 𝓝 x, c ∈ T y := by
-    intro x
+    exact ⟨ha.trans_le hac, i, hxi, hcb.trans_lt hb, fun y hy ↦ hball y (by linarith)⟩
+  have hlocal (x : X) : ∃ c : ℝ, ∀ᶠ y in 𝓝 x, c ∈ T y := by
     obtain ⟨i, hxi⟩ := hcov x
     obtain ⟨O, hO, hpre⟩ := hf.isOpen_iff.mp (hU i)
-    have hxO : f x ∈ O := by simpa only [← hpre, mem_preimage] using hxi
-    obtain ⟨d, hd, hball⟩ := Metric.mem_nhds_iff.mp (hO.mem_nhds hxO)
-    let c := min (d / 4) (ε i / 2)
-    have hc : 0 < c := lt_min (by positivity) (half_pos (hε i))
-    have hcd : c ≤ d / 4 := min_le_left _ _
-    have hcε : c < ε i := (min_le_right _ _).trans_lt (half_lt_self (hε i))
-    refine ⟨c, ?_⟩
-    filter_upwards [hf.continuous.continuousAt.preimage_mem_nhds
-      (Metric.ball_mem_nhds (f x) hc)] with y hy
-    have hyx : dist (f y) (f x) < c := hy
-    have hyU : y ∈ U i := by
-      rw [← hpre]
-      apply hball
-      exact hyx.trans_le (by linarith)
-    refine ⟨hc, i, hyU, hcε, fun z hz => ?_⟩
-    rw [← hpre]
-    apply hball
-    have hzy : dist (f z) (f y) < 2 * c := by simpa [dist_comm] using hz
-    have := dist_triangle (f z) (f y) (f x)
-    have := add_lt_add hzy hyx
-    simp only [Metric.mem_ball]
-    linarith
+    obtain ⟨d, hd, hball⟩ := Metric.isOpen_iff.mp hO (f x) (by rwa [← hpre] at hxi)
+    have hsub : ∀ z, dist (f z) (f x) < d → z ∈ U i := fun z hz ↦ hpre ▸ hball hz
+    have hc : 0 < min (d / 3) (ε i / 2) := lt_min (by positivity) (half_pos (hε i))
+    have hcd := min_le_left (d / 3) (ε i / 2)
+    refine ⟨min (d / 3) (ε i / 2), ?_⟩
+    filter_upwards [(hf.continuous.tendsto x).eventually (Metric.ball_mem_nhds _ hc)]
+      with y (hy : dist (f y) (f x) < _)
+    refine ⟨hc, i, hsub y (by linarith), (min_le_right _ _).trans_lt (half_lt_self (hε i)),
+      fun z hz ↦ hsub z ?_⟩
+    linarith [dist_triangle (f z) (f y) (f x), dist_comm (f z) (f y)]
   obtain ⟨r, hr⟩ := exists_continuous_forall_mem_convex_of_local_const hT hlocal
   exact ⟨r, fun x => (hr x).1, fun x => (hr x).2⟩
 
 end Topology.IsInducing
+
+open Metric
+open scoped Uniformity
+
+namespace IsOpen
+
+variable {X K : Type*} [TopologicalSpace X] [PseudoMetricSpace K] [CompactSpace K]
+  {W : Set (X × K × K)}
+
+/-- Near a parameter whose whole diagonal lies in an open set, one positive radius works
+uniformly for all pairs of sufficiently close points of the compact pseudometric space. -/
+theorem exists_pos_forall_dist_le (hW : IsOpen W) (x : X)
+    (hdiag : ∀ s : K, (x, s, s) ∈ W) :
+    ∃ ε > 0, ∀ᶠ y in 𝓝 x, ∀ s t : K, dist s t ≤ ε → (y, s, t) ∈ W := by
+  obtain ⟨U, V, hU, hV, hxU, hdiagV, hUV⟩ :=
+    generalized_tube_lemma isCompact_singleton isCompact_diagonal hW (by
+      rintro ⟨y, s, t⟩ ⟨rfl, hst⟩
+      have : s = t := hst
+      subst t
+      exact hdiag s)
+  have hVuniform : V ∈ 𝓤 K := by
+    rw [← nhdsSet_diagonal_eq_uniformity]
+    exact hV.mem_nhdsSet.mpr hdiagV
+  obtain ⟨ε, hε, hεV⟩ := uniformity_basis_dist_le.mem_iff.mp hVuniform
+  exact ⟨ε, hε, Filter.mem_of_superset (hU.mem_nhds (hxU (mem_singleton x)))
+    fun y hy s t hst ↦ hUV ⟨hy, hεV hst⟩⟩
+
+/-- An open family of diagonal neighbourhoods on a compact pseudometric space admits a continuous
+positive radius, bounded by one. No compactness assumption on the parameter space is needed. -/
+theorem exists_continuous_pos_forall_dist_le [NormalSpace X] [ParacompactSpace X]
+    (hW : IsOpen W) (hdiag : ∀ (x : X) (s : K), (x, s, s) ∈ W) :
+    ∃ δ : C(X, ℝ), (∀ x, δ x ∈ Ioo 0 1) ∧
+      ∀ (x : X) (s t : K), dist s t ≤ δ x → (x, s, t) ∈ W := by
+  let R (x : X) : Set ℝ := {r | r ∈ Ioo 0 1 ∧ ∀ s t : K, dist s t ≤ r → (x, s, t) ∈ W}
+  have hconv (x : X) : Convex ℝ (R x) := OrdConnected.convex
+    ⟨fun _ ha _ hb _ hc ↦ ⟨⟨ha.1.1.trans_le hc.1, hc.2.trans_lt hb.1.2⟩,
+      fun s t hst ↦ hb.2 s t (hst.trans hc.2)⟩⟩
+  have hlocal (x : X) : ∃ c : ℝ, ∀ᶠ y in 𝓝 x, c ∈ R y := by
+    obtain ⟨ε, hε, hnear⟩ := hW.exists_pos_forall_dist_le x (hdiag x)
+    have := min_le_left ε 1
+    have := min_le_right ε 1
+    exact ⟨min ε 1 / 2, hnear.mono fun y hy ↦ ⟨⟨by positivity, by linarith⟩,
+      fun s t hst ↦ hy s t (by linarith [lt_min hε one_pos])⟩⟩
+  obtain ⟨δ, hδ⟩ := exists_continuous_forall_mem_convex_of_local_const hconv hlocal
+  exact ⟨δ, fun x ↦ (hδ x).1, fun x ↦ (hδ x).2⟩
+
+end IsOpen

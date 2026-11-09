@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.Height.FiniteOrder
 public import TauCeti.NumberTheory.Height.SInteger
 public import TauCeti.NumberTheory.NumberField.Global.Places.Height
 public import TauCeti.NumberTheory.NumberField.SUnits.LogEmbedding
+import TauCeti.Analysis.AbsoluteValue.FiniteOrder
 
 /-!
 # Heights of S-units and the kernel of the S-logarithmic embedding
@@ -43,6 +44,9 @@ of height zero is a root of unity. This is the `S`-analogue of Mathlib's
 * `TauCeti.NumberField.SUnit.logEmbedding_eq_zero_iff` and
   `TauCeti.NumberField.SUnit.logEmbedding_ker`: the kernel of the `S`-logarithmic embedding is
   the torsion subgroup of the `S`-units.
+* `TauCeti.NumberField.SUnit.mul_prod_zpow_ne_zero_and_adicAbv_eq_one`: a root of unity times a
+  product of integer powers of elements with absolute value `1` outside `S` is nonzero and has
+  absolute value `1` outside `S`.
 
 ## References
 
@@ -84,6 +88,20 @@ theorem logHeight₁_eq_zero_iff (x : S.unit K) :
   exact Submonoid.isOfFinOrder_coe
 
 end Torsion
+
+/-! ### Closure under torsion and integer powers -/
+
+/-- A root of unity times a product of integer powers of nonzero elements `γ i` that have absolute
+value `1` at every finite place outside `S` is nonzero and has absolute value `1` at every finite
+place outside `S`. -/
+theorem mul_prod_zpow_ne_zero_and_adicAbv_eq_one {ι : Type*} [Fintype ι]
+    {S : Finset (HeightOneSpectrum (𝓞 K))} {γ : ι → K} (hγ0 : ∀ j, γ j ≠ 0)
+    (hγS : ∀ j, ∀ v ∉ S, HeightOneSpectrum.adicAbv K v (γ j) = 1) {ζ : K}
+    (hζ : IsOfFinOrder ζ) (z : ι → ℤ) :
+    ζ * ∏ i, γ i ^ z i ≠ 0 ∧ ∀ v ∉ S, HeightOneSpectrum.adicAbv K v (ζ * ∏ i, γ i ^ z i) = 1 := by
+  refine ⟨mul_ne_zero hζ.isUnit.ne_zero
+    (prod_ne_zero_iff.mpr fun i _ ↦ zpow_ne_zero _ (hγ0 i)), fun v hv ↦ ?_⟩
+  simp [map_zpow₀, hγS _ v hv, AbsoluteValue.map_eq_one_of_isOfFinOrder _ hζ]
 
 /-! ### The height in `S`-logarithmic coordinates -/
 
@@ -183,6 +201,18 @@ theorem logEmbedding_eq_zero_iff {x : (S : Set (HeightOneSpectrum (𝓞 K))).uni
     logEmbedding S (Additive.ofMul x) = 0 ↔
       x ∈ CommGroup.torsion ((S : Set (HeightOneSpectrum (𝓞 K))).unit K) := by
   rw [← logHeight₁_eq_zero_iff_logEmbedding_eq_zero, logHeight₁_eq_zero_iff]
+
+variable {S} in
+/-- The `S`-logarithmic image of `ζ * ∏ j, γ j ^ z j`, for `ζ` torsion, is
+`∑ j, z j • ℓ(γ j)`. -/
+theorem logEmbedding_mul_prod_zpow {ι : Type*} [Fintype ι]
+    {γ : ι → (S : Set (HeightOneSpectrum (𝓞 K))).unit K}
+    {ζ : (S : Set (HeightOneSpectrum (𝓞 K))).unit K}
+    (hζ : ζ ∈ CommGroup.torsion ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)) (z : ι → ℤ) :
+    logEmbedding S (Additive.ofMul (ζ * ∏ j, γ j ^ z j)) =
+      ∑ j, z j • logEmbedding S (Additive.ofMul (γ j)) := by
+  rw [ofMul_mul, map_add, (logEmbedding_eq_zero_iff S).mpr hζ, zero_add, ofMul_prod, map_sum]
+  simp only [ofMul_zpow, map_zsmul]
 
 /-- The kernel of the `S`-logarithmic embedding is the torsion subgroup of the `S`-units. This is
 the `S`-analogue of `NumberField.Units.dirichletUnitTheorem.logEmbedding_ker`. -/

@@ -207,7 +207,7 @@ theorem heckeSum_comp_of_mem_normalizer {g : G} (hg : g ∈ Δ')
   refine Finset.sum_congr rfl fun v _ ↦ ?_
   have hu' (y : V) : u (q y) = q (ρ ⟨g, hg⟩ y) := LinearMap.congr_fun hu y
   rw [hu']
-  simp only [← Module.End.mul_apply, ← map_mul]
+  simp only [← mul_apply_eq_comp, ← map_mul]
   congr 3
   apply Subtype.ext
   simp [mul_assoc]

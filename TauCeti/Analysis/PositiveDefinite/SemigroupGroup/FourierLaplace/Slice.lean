@@ -16,7 +16,7 @@ public import TauCeti.Analysis.PositiveDefinite.SemigroupGroup.FourierLaplace.Tr
 import Mathlib.MeasureTheory.MeasurableSpace.Prod
 import TauCeti.Analysis.Bochner.Fourier.Convention
 import TauCeti.Analysis.CompletelyMonotone.Laplace.Kernel
-import TauCeti.Probability.Moments.LaplaceDeterminacy
+import TauCeti.Probability.Moments.LaplaceDeterminacy.Basic
 
 /-!
 # Spatial slices of a measure on `ℝ≥0 × V`
@@ -179,7 +179,7 @@ theorem spatialSlice_antitone (μ : Measure (ℝ≥0 × V)) : Antitone (spatialS
   rw [spatialSlice_apply μ t hB, spatialSlice_apply μ u hB]
   refine lintegral_mono fun y => ?_
   rw [ENNReal.coe_le_coe]
-  exact Real.toNNReal_le_toNNReal (antitone_exp_neg_mul y.1 htu)
+  exact Real.toNNReal_le_toNNReal (y.1.exp_neg_mul_antitone (mod_cast htu))
 
 /-- Every spatial slice is dominated by the spatial marginal. -/
 theorem spatialSlice_le_snd (μ : Measure (ℝ≥0 × V)) (t : ℝ≥0) : spatialSlice μ t ≤ μ.snd :=

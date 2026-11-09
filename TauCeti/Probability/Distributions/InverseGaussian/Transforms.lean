@@ -46,7 +46,7 @@ theorem inverseGaussianPDFReal_mul_exp_eq_levyPDFReal_mul_exp
       exp (lam / μ) * (levyPDFReal 0 lam x *
         exp ((t - lam / (2 * μ ^ 2)) * x)) := by
   by_cases hx : 0 < x
-  · rw [inverseGaussianPDFReal_of_pos hμ hlam hx, levyPDFReal_of_lt hlam hx,
+  · rw [inverseGaussianPDFReal_of_pos hμ hlam hx, levyPDFReal_of_lt hx,
       sub_zero]
     have hfactor : √(lam / (2 * π * x ^ 3)) =
         √(lam / (2 * π)) * x ^ (-(3 / 2 : ℝ)) := by
@@ -128,17 +128,10 @@ theorem mgf_id_inverseGaussianMeasure (hμ : 0 < μ) (hlam : 0 < lam)
     mgf id (inverseGaussianMeasure μ lam) t =
       exp (lam / μ * (1 - √(1 - 2 * μ ^ 2 * t / lam))) := by
   rcases ht.eq_or_lt with ht | ht
-  · have hlevy : ∫ x, levyPDFReal 0 lam x = 1 := by
-      have := isProbabilityMeasure_levyMeasure hlam 0
-      have h : ∫ x, (1 : ℝ) ∂levyMeasure 0 lam = 1 := by simp
-      rw [levyMeasure_eq_withDensity, funext (levyPDF_eq_ofReal 0 lam),
-        integral_withDensity_ofReal (measurable_levyPDFReal 0 lam).aemeasurable
-          (ae_of_all _ (levyPDFReal_nonneg 0 lam))] at h
-      simpa using h
-    rw [ht, mgf, integral_inverseGaussianMeasure_eq]
+  · rw [ht, mgf, integral_inverseGaussianMeasure_eq]
     simp only [id_eq, smul_eq_mul,
       inverseGaussianPDFReal_mul_exp_eq_levyPDFReal_mul_exp hμ hlam, sub_self, zero_mul,
-      exp_zero, mul_one, integral_const_mul, hlevy, mul_one]
+      exp_zero, mul_one, integral_const_mul, integral_levyPDFReal_eq_one hlam, mul_one]
     congr 1
     have : 1 - 2 * μ ^ 2 * (lam / (2 * μ ^ 2)) / lam = 0 := by
       field_simp

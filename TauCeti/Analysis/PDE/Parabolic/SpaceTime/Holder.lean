@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Basic
 public import TauCeti.Analysis.Holder.Interpolation
+public import TauCeti.Analysis.Holder.Normed
 
 /-!
 # Parabolic Hölder seminorms on time slabs
@@ -32,12 +33,26 @@ the temporal `(1 + α) / 2` seminorm of the spatial gradient `D_x u` on a slab i
 the parabolic `α` seminorms of the Hessian `D_x² u` and of the time derivative `∂ₜ u`. Thus this
 seminorm, which enters the norm of `C^{2+α, 1+α/2}`, is controlled by the other top-order terms.
 
+Bounded Lipschitz maps on ordinary space-time also give uniformly parabolic Hölder maps
+under translations of space and time.
+
+Finally, a bounded `α`-Hölder field on space is a time-independent bounded parabolically
+`α`-Hölder field on any slab, since the spatial position is `1`-Lipschitz for the parabolic
+distance.
+
 ## Main declarations
 
+* `TauCeti.ParabolicSpaceTime.exists_holderWith_comp_coords`: the bounded Lipschitz bridge
+  from ordinary space-time to parabolic Hölder maps, uniformly under translation.
 * `TauCeti.ParabolicSpaceTime.eHolderNorm_eq_iSup_dist_add_sqrt`: the parabolic seminorm is the
   supremum of `dist (v p) (v q) / (dist x y + √|t - s|) ^ α`.
 * `TauCeti.ParabolicSpaceTime.spaceEHolderNorm`, `TauCeti.ParabolicSpaceTime.timeEHolderNorm`:
   the separate spatial and temporal seminorms.
+* `TauCeti.ParabolicSpaceTime.holderWith_of_holderOnWith_slab`: the time slices of a
+  parabolically Hölder function on a slab are Hölder in space with the same constant.
+* `TauCeti.ParabolicSpaceTime.eHolderNorm_le_timeEHolderNorm`,
+  `TauCeti.ParabolicSpaceTime.memHolder_timeSlice_of_timeEHolderNorm_lt_top`: each time slice is
+  controlled by the temporal seminorm.
 * `TauCeti.ParabolicSpaceTime.spaceEHolderNorm_le_eHolderNorm`,
   `TauCeti.ParabolicSpaceTime.timeEHolderNorm_div_two_le_eHolderNorm`,
   `TauCeti.ParabolicSpaceTime.eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm`: the
@@ -47,6 +62,8 @@ seminorm, which enters the norm of `C^{2+α, 1+α/2}`, is controlled by the othe
 * `TauCeti.ParabolicSpaceTime.timeEHolderNorm_le_timeEHolderNorm_add_spaceEHolderNorm`,
   `TauCeti.ParabolicSpaceTime.timeEHolderNorm_le_eHolderNorm_add_eHolderNorm`: control of the
   temporal seminorm of the spatial gradient.
+* `TauCeti.HolderSpace.compSlabSpaceL`: a Hölder field on space as a time-independent parabolic
+  Hölder field on a slab.
 
 ## References
 
@@ -63,6 +80,50 @@ open scoped ENNReal NNReal
 namespace TauCeti.ParabolicSpaceTime
 
 variable {E F : Type*} {a b : ℝ}
+
+/-- Bounded Lipschitz maps on ordinary space-time are uniformly Hölder for the
+parabolic distance, even when time ranges over the whole real line. -/
+theorem exists_holderWith_comp_coords [NormedAddCommGroup E] [NormedAddCommGroup F]
+    {α : ℝ≥0} (hα : α ≤ 1) {f : E × ℝ → F}
+    {K : ℝ≥0} (hf : LipschitzWith K f) {M : ℝ}
+    (hbound : ∀ x, ‖f x‖ ≤ M) :
+    ∃ C : ℝ≥0, ∀ z : E × ℝ,
+      HolderWith C α (fun p : ParabolicSpaceTime E ↦ f (p.space - z.1, p.time - z.2)) := by
+  let C : ℝ≥0 := ⟨max (K : ℝ) (2 * M), le_max_of_le_left K.coe_nonneg⟩
+  have hbig (p q : E × ℝ) : dist (f p) (f q) ≤ 2 * M := by
+    calc
+      _ ≤ ‖f p‖ + ‖f q‖ := dist_le_norm_add_norm _ _
+      _ ≤ 2 * M := by linarith [hbound p, hbound q]
+  refine ⟨C, fun z ↦ ?_⟩
+  have hdist (p q : ParabolicSpaceTime E) :
+      dist (f (p.space - z.1, p.time - z.2)) (f (q.space - z.1, q.time - z.2)) ≤
+        C * dist p q := by
+    by_cases hd : dist p q ≤ 1
+    · have ht := abs_time_sub_le_dist_of_dist_le_one p q hd
+      calc
+        _ ≤ K * dist (p.space - z.1, p.time - z.2) (q.space - z.1, q.time - z.2) :=
+          hf.dist_le_mul _ _
+        _ ≤ K * dist p q := by
+          gcongr
+          simpa [Prod.dist_eq, dist_sub_right, Real.dist_eq] using
+            max_le (dist_space_le p q) ht
+        _ ≤ C * dist p q := by gcongr; exact le_max_left _ _
+    · calc
+        _ ≤ 2 * M := hbig _ _
+        _ ≤ C * dist p q := by
+          have hc : 2 * M ≤ (C : ℝ) := le_max_right _ _
+          nlinarith [C.coe_nonneg]
+  have hlip : LipschitzWith C
+      (fun p : ParabolicSpaceTime E ↦ f (p.space - z.1, p.time - z.2)) :=
+    LipschitzWith.of_dist_le_mul hdist
+  have hzero : HolderWith C 0
+      (fun p : ParabolicSpaceTime E ↦ f (p.space - z.1, p.time - z.2)) := by
+    intro p q
+    simp only [NNReal.coe_zero, ENNReal.rpow_zero, mul_one]
+    rw [edist_dist, ← ENNReal.ofReal_coe_nnreal]
+    apply ENNReal.ofReal_le_ofReal
+    exact (hbig _ _).trans (le_max_right _ _)
+  simpa using hzero.of_le_of_le hlip.holderWith (by positivity : 0 ≤ α) hα
 
 /-- The parabolic Hölder seminorm of a function on a set of parabolic space-time is the supremum
 of the parabolic difference quotients `dist (v p) (v q) / (dist x y + √|t - s|) ^ α` over distinct
@@ -94,12 +155,31 @@ theorem spaceEHolderNorm_le_iff [MetricSpace E] {α : ℝ≥0} {v : slab (E := E
       edist (v (slabMk x t)) (v (slabMk y t)) ≤ C * edist x y ^ (α : ℝ) := by
   simp only [spaceEHolderNorm, iSup_le_iff, eHolderNorm_le_iff]
 
+/-- A function of the coordinates that is parabolically `α`-Hölder on the slab `E × [a, b]` is
+`α`-Hölder in space, with the same constant, on every time slice of the slab. -/
+theorem holderWith_of_holderOnWith_slab [PseudoEMetricSpace E] {f : ℝ → E → F} {H α : ℝ≥0}
+    {s : ℝ} (hpar : HolderOnWith H α (fun p : ParabolicSpaceTime E => f p.time p.space)
+      (slab a b)) (hs : s ∈ Icc a b) : HolderWith H α (f s) := by
+  intro y z
+  simpa [edist_ofCoords] using hpar (ofCoords y s) (by simpa using hs) (ofCoords z s)
+    (by simpa using hs)
+
 /-- The temporal seminorm is bounded by `C` exactly when every spatial position satisfies the
 `γ`-Hölder inequality in time with constant `C`. -/
 theorem timeEHolderNorm_le_iff {γ : ℝ≥0} {v : slab (E := E) a b → F} {C : ℝ≥0∞} :
     timeEHolderNorm γ v ≤ C ↔ ∀ (x : E) (t s : Icc a b),
       edist (v (slabMk x t)) (v (slabMk x s)) ≤ C * edist t s ^ (γ : ℝ) := by
   simp only [timeEHolderNorm, iSup_le_iff, eHolderNorm_le_iff]
+
+/-- The Hölder seminorm of each time slice is bounded by the temporal seminorm. -/
+theorem eHolderNorm_le_timeEHolderNorm (γ : ℝ≥0) (v : slab (E := E) a b → F) (x : E) :
+    eHolderNorm γ (fun t : Icc a b => v (slabMk x t)) ≤ timeEHolderNorm γ v :=
+  le_iSup (fun x => eHolderNorm γ fun t : Icc a b => v (slabMk x t)) x
+
+/-- If the temporal `γ`-seminorm is finite, then every time slice is `γ`-Hölder. -/
+theorem memHolder_timeSlice_of_timeEHolderNorm_lt_top {γ : ℝ≥0} {v : slab (E := E) a b → F}
+    (h : timeEHolderNorm γ v < ∞) (x : E) : MemHolder γ fun t : Icc a b => v (slabMk x t) :=
+  eHolderNorm_lt_top.1 ((eHolderNorm_le_timeEHolderNorm γ v x).trans_lt h)
 
 variable [MetricSpace E]
 
@@ -217,3 +297,25 @@ theorem timeEHolderNorm_le_eHolderNorm_add_eHolderNorm (α : ℝ≥0)
     (add_le_add (timeEHolderNorm_div_two_le_eHolderNorm α _) (spaceEHolderNorm_le_eHolderNorm α _))
 
 end TauCeti.ParabolicSpaceTime
+
+namespace TauCeti.HolderSpace
+
+/-! ### Time-independent Hölder fields on a slab -/
+
+variable {α : ℝ≥0} {E Y : Type*} [MetricSpace E] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+  {a b : ℝ}
+
+open ParabolicSpaceTime
+
+/-- A bounded `α`-Hölder field on space, viewed as a time-independent bounded parabolically
+`α`-Hölder field on the slab `E × [a, b]`: precomposition with the spatial position, which is
+`1`-Lipschitz for the parabolic distance. -/
+def compSlabSpaceL : HolderSpace α E Y →L[ℝ] HolderSpace α (slab (E := E) a b) Y :=
+  compLipschitzL _ lipschitzWith_slabSpace
+
+@[simp]
+theorem compSlabSpaceL_apply (f : HolderSpace α E Y) (p : slab (E := E) a b) :
+    compSlabSpaceL f p = f (p : ParabolicSpaceTime E).space :=
+  compLipschitzL_apply _ _ _
+
+end TauCeti.HolderSpace

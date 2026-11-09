@@ -100,7 +100,11 @@ measurable `A` with `0 < m(A) < ∞`, some dynamic plan `η` concentrated on geo
 `m[|A] = m(A)⁻¹ m|_A` at time `0` and law `δ_o` at time `1`, and for every time `t` the law at
 time `t` of `η` weighted by `τ_{K,N}^{(1-t)}(d(γ₀, γ₁))^N` is at most `m(A)⁻¹ m`.
 
-Such a plan is automatically optimal, since `m[|A]` and `δ_o` have only one coupling. -/
+Such a plan is automatically optimal, since `m[|A]` and `δ_o` have only one coupling.
+
+The property is meaningful for `N ≥ 1`: for `0 < N ≤ 1` and `K > 0` the distortion coefficient
+`distortionTau` is `⊤` at positive distances, so `MCP(K, N)` then only says that the support of the
+reference measure has at most one point. -/
 def MeasureContraction (M : MetricMeasureSpace X) (K N : ℝ) : Prop :=
   ∀ o ∈ M.support, ∀ A : Set X, MeasurableSet A → 0 < M.reference A → M.reference A < ∞ →
     ∃ η : Measure C(I, X), (∀ᵐ γ ∂η, γ ∈ geodesicPaths X) ∧
@@ -132,7 +136,8 @@ theorem MeasureContraction.mono (h : M.MeasureContraction K N) (hK : K' ≤ K) (
 
 /-- **The Bonnet–Myers diameter bound under `MCP(K, N)`.** If `M` satisfies `MCP(K, N)` with
 `K > 0` and `N > 0`, any two points of the support of the reference measure are at distance at
-most `π √((N - 1) / K)`. -/
+most `π √((N - 1) / K)`. For `N ≤ 1` this bound is `0` (as `√` of a nonpositive number is `0`), so
+the lemma then says that the support has at most one point. -/
 theorem MeasureContraction.dist_le (h : M.MeasureContraction K N) (hK : 0 < K) (hN : 0 < N)
     {x y : X} (hx : x ∈ M.support) (hy : y ∈ M.support) : dist x y ≤ π * √((N - 1) / K) := by
   by_contra! hlt
@@ -154,7 +159,7 @@ theorem MeasureContraction.dist_le (h : M.MeasureContraction K N) (hK : 0 < K) (
     rw [← Measure.timeMarginal_apply η 0 hA, h₀, cond_apply_self hpos.ne' hfin.ne]
   -- At time `0`, the weighted law gives infinite mass to the ball, which has mass `1` on the right.
   have hball := Measure.le_iff'.1 (hle 0) (ball y r)
-  rw [Measure.timeMarginal_withDensity_apply_of_ae_eq hA hτ, hηS, mul_one, Measure.smul_apply,
+  rw [Measure.timeMarginal_withDensity_apply_of_ae_eq hA hτ, hηS, mul_one, _root_.smul_apply,
     smul_eq_mul, ENNReal.inv_mul_cancel hpos.ne' hfin.ne] at hball
   exact ENNReal.one_ne_top (top_le_iff.1 hball)
 
@@ -194,19 +199,19 @@ private theorem rpow_smul_map_cond_homothety_le {s : ℝ} (hs₀ : 0 < s) (hs₁
   calc (ENNReal.ofReal s ^ N • M.reference[|A].map (AffineMap.homothety o s)) S
       = ENNReal.ofReal s ^ N * ((M.reference A)⁻¹ *
           (M.reference.restrict A).map (AffineMap.homothety o s) S) := by
-        rw [ProbabilityTheory.cond, Measure.map_smul _ hmeas.aemeasurable, Measure.smul_apply,
-          Measure.smul_apply, smul_eq_mul, smul_eq_mul]
+        rw [ProbabilityTheory.cond, Measure.map_smul _ hmeas.aemeasurable, _root_.smul_apply,
+          _root_.smul_apply, smul_eq_mul, smul_eq_mul]
     _ ≤ ENNReal.ofReal s ^ N * ((M.reference A)⁻¹ *
           M.reference.map (AffineMap.homothety o s) S) := by
         gcongr
         exact Measure.restrict_le_self
     _ = (M.reference A)⁻¹ *
           ((ENNReal.ofReal s ^ N * ENNReal.ofReal |(s ^ finrank ℝ E)⁻¹|) * M.reference S) := by
-        rw [Measure.map_addHaar_homothety _ _ hs₀.ne', Measure.smul_apply, smul_eq_mul]
+        rw [Measure.map_addHaar_homothety _ _ hs₀.ne', _root_.smul_apply, smul_eq_mul]
         ring
     _ ≤ (M.reference A)⁻¹ * (1 * M.reference S) := by gcongr
     _ = ((M.reference A)⁻¹ • M.reference) S := by
-        rw [one_mul, Measure.smul_apply, smul_eq_mul]
+        rw [one_mul, _root_.smul_apply, smul_eq_mul]
 
 /-- **Haar measure satisfies `MCP(K, N)` for `K ≤ 0` and `N ≥ n`.** On a real vector space of
 finite dimension `n ≥ 1`, an additive Haar reference measure satisfies `MCP(K, N)` for every
@@ -287,7 +292,7 @@ theorem finrank_le_of_measureContraction_zero (h : M.MeasureContraction 0 N) :
   have hball := Measure.le_iff'.1 (hle t) (closedBall 0 (1 / 2))
   simp only [distortionTau_zero_left] at hball
   rw [Measure.timeMarginal_withDensity_apply_of_ae_eq measurableSet_closedBall
-      (ae_of_all _ fun _ _ ↦ rfl), hηS, mul_one, Measure.smul_apply, smul_eq_mul,
+      (ae_of_all _ fun _ _ ↦ rfl), hηS, mul_one, _root_.smul_apply, smul_eq_mul,
     Measure.addHaar_closedBall' _ _ (r := 1 / 2) (by norm_num), mul_left_comm,
     ENNReal.inv_mul_cancel hpos.ne' hfin.ne, mul_one] at hball
   rw [show 1 - ((t : ℝ)) = 1 / 2 by norm_num [t], ENNReal.ofReal_rpow_of_pos (by norm_num),

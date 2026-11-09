@@ -24,6 +24,8 @@ regularity then gives the Borel-set inequality. Measurable subsets with the same
 extend it to Lebesgue-measurable sets. The weighted form uses Mathlib's `Measure.addHaar_smul`.
 
 This is the one-dimensional set inequality used in the Prékopa–Leindler argument.
+Adding an open interval shows that the open `ρ`-neighbourhood of any nonempty set of reals is
+longer than the set by at least `2 ρ` (`TauCeti.Real.volume_add_le_volume_thickening`).
 
 ## References
 
@@ -153,5 +155,20 @@ theorem mul_volume_real_add_mul_volume_real_le {A B : Set ℝ} (hAn : A.Nonempty
     ne_top_of_le_ne_top hfin (le_add_self.trans h)
   simpa [measureReal_def, ENNReal.toReal_add hA hB, ENNReal.toReal_mul,
     ENNReal.toReal_ofReal hc, ENNReal.toReal_ofReal hd] using ENNReal.toReal_mono hfin h
+
+/-- The open `ρ`-neighbourhood of a nonempty subset of the real line has volume at least that
+of the set plus `2 ρ`. No measurability of the set is required: the volume on the left is its
+outer volume. -/
+theorem volume_add_le_volume_thickening {A : Set ℝ} (hA : A.Nonempty) {ρ : ℝ} (hρ : 0 < ρ) :
+    volume A + ENNReal.ofReal (2 * ρ) ≤ volume (Metric.thickening ρ A) :=
+  calc volume A + ENNReal.ofReal (2 * ρ)
+      ≤ volume (closure A) + volume (Metric.ball (0 : ℝ) ρ) := by
+        rw [Real.volume_ball]
+        gcongr
+        exact subset_closure
+    _ ≤ volume (closure A + Metric.ball (0 : ℝ) ρ) :=
+        volume_add_volume_le hA.closure isClosed_closure.measurableSet
+          ⟨0, Metric.mem_ball_self hρ⟩ measurableSet_ball
+    _ = volume (Metric.thickening ρ A) := by rw [add_ball_zero, Metric.thickening_closure]
 
 end TauCeti.Real

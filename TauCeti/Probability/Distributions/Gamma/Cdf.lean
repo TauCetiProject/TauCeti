@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma
 public import TauCeti.Probability.Distributions.Gamma.Basic
+import TauCeti.Probability.Distributions.Gamma.PDF
 import TauCeti.Probability.Cdf
 
 /-!
@@ -66,14 +67,6 @@ namespace TauCeti.Probability
 variable {a r x : ℝ}
 
 /-! ### Reduction of the cdf integral to the positive half-line -/
-
-/-- The gamma density is integrable: it is a nonnegative function whose Lebesgue integral is `1`. -/
-private lemma integrable_gammaPDFReal (ha : 0 < a) (hr : 0 < r) :
-    Integrable (gammaPDFReal a r) := by
-  refine ⟨(measurable_gammaPDFReal a r).aestronglyMeasurable, ?_⟩
-  have h : ∫⁻ y, ENNReal.ofReal (gammaPDFReal a r y) = 1 := lintegral_gammaPDF_eq_one ha hr
-  rw [hasFiniteIntegral_iff_ofReal (ae_of_all _ (gammaPDFReal_nonneg ha hr)), h]
-  exact ENNReal.one_lt_top
 
 /-- Below the origin the gamma density integrates to `0`. -/
 private lemma setIntegral_gammaPDFReal_Iic_of_nonpos (a r : ℝ) (hx : x ≤ 0) :
@@ -158,8 +151,7 @@ theorem measureReal_Ioc_gammaMeasure (ha : 0 < a) (hr : 0 < r) {y : ℝ} (hyx : 
 theorem measureReal_Ioi_gammaMeasure (ha : 0 < a) (hr : 0 < r) (x : ℝ) :
     (gammaMeasure a r).real (Ioi x) = 1 - regularizedGamma a (r * x) := by
   have hp : IsProbabilityMeasure (gammaMeasure a r) := isProbabilityMeasure_gammaMeasure ha hr
-  rw [← compl_Iic, measureReal_compl measurableSet_Iic, measureReal_Iic_gammaMeasure ha hr]
-  simp
+  rw [Measure.measureReal_Ioi_eq_one_sub_cdf, cdf_gammaMeasure_eq ha hr]
 
 /-- The cumulative distribution function of a gamma law is continuous: `P(a, ·)` is continuous even
 at the origin, where for `a < 1` Euler's integrand blows up. -/

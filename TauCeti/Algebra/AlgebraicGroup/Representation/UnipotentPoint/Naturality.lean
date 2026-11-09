@@ -79,7 +79,7 @@ private theorem rTensor_iterate_endOfPoint_sub_one (g : H →ₐ[R] A) (φ : A �
   induction n generalizing z with
   | zero => simp
   | succ n ih =>
-      rw [pow_succ, pow_succ, Module.End.mul_apply, Module.End.mul_apply, ih, hcomm]
+      rw [pow_succ, pow_succ, mul_apply_eq_comp, mul_apply_eq_comp, ih, hcomm]
 
 /-- Nilpotence of a point action after subtracting the identity is preserved by postcomposition
 with a morphism of value algebras. -/

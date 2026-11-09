@@ -256,6 +256,18 @@ theorem generatorCoordinateMap_baseChange (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
   · rw [Category.assoc, generatorCoordinateMap_inr, generatorCoordinateMap_inr]
     exact GeneralLinear.weightTorusBaseChangeCoordinateMap_baseChange ℤ k K _
 
+/-- The common kernel of the base-changed generator maps, transported to `O(GL₂₇)` over
+`K`, is the defining ideal of the subgroup generated over `K`. -/
+theorem map_commonKernelHopfIdeal_baseChangeMap_generatorCoordinateMap :
+    (CommHopfAlgCat.commonKernelHopfIdeal fun j ↦
+      CommHopfAlgCat.baseChangeMap (K := K) (generatorCoordinateMap k j)).map
+        (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 27).hom.hom =
+      generatedDefiningIdeal K := by
+  rw [generatedDefiningIdeal_def, CommHopfAlgCat.map_commonKernelHopfIdeal,
+    ← funext (generatorCoordinateMap_baseChange k K),
+    CommHopfAlgCat.commonKernelHopfIdeal_comp_of_injective _ _ fun j ↦
+      (ConcreteCategory.bijective_of_isIso (generatorCoordinateAlgebraBaseChangeIso k K j).hom).1]
+
 /-- **Generation commutes with free base change.** For `K` free over `k`, for instance a field
 extension, the base change of the defining ideal of the subgroup generated over `k`, transported
 into the coordinate Hopf algebra of `GL₂₇` over `K`, is the defining ideal of the subgroup
@@ -264,11 +276,8 @@ theorem map_baseChangeHopfIdeal_generatedDefiningIdeal [Module.Free k K] :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (generatedDefiningIdeal k)).map
         (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 27).hom.hom =
       generatedDefiningIdeal K := by
-  rw [generatedDefiningIdeal_def, generatedDefiningIdeal_def,
-    CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal,
-    CommHopfAlgCat.map_commonKernelHopfIdeal, ← funext (generatorCoordinateMap_baseChange k K),
-    CommHopfAlgCat.commonKernelHopfIdeal_comp_of_injective _ _ fun j ↦
-      (ConcreteCategory.bijective_of_isIso (generatorCoordinateAlgebraBaseChangeIso k K j).hom).1]
+  rw [generatedDefiningIdeal_def, CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal]
+  exact map_commonKernelHopfIdeal_baseChangeMap_generatorCoordinateMap k K
 
 -- Within this module `generatedCoordinateHopfAlgebra` and `generatedCoordinateMap` unfold to the
 -- quotient by `generatedDefiningIdeal` and its quotient map, so the generic quotient base-change

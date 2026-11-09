@@ -70,6 +70,44 @@ theorem finite_smul_add_inter {d : ℕ} {S : Set E}
       ((isCompact_Icc.image_of_continuousOn (hf i).continuousOn).isBounded)).subset hcov).smul₀ c
   · exact hB
 
+omit [ProperSpace E] in
+/-- Dilating a set `T` of diameter at most `C / m` by `c` with `c * C / m ≤ 1` and adding a set of
+points within `r` of the origin gives a set of diameter at most `1 + 2 * r`. -/
+private theorem dist_smul_add_le {T B : Set E} {c C r : ℝ} {m : ℕ} (hc : 0 ≤ c)
+    (hcm : c * C / m ≤ 1) (hT : ∀ w ∈ T, ∀ w' ∈ T, dist w w' ≤ C / m)
+    (hrB : ∀ x ∈ B, dist x 0 ≤ r) :
+    ∀ u ∈ c • T + B, ∀ v ∈ c • T + B, dist u v ≤ 1 + 2 * r := by
+  intro u hu v hv
+  rw [Set.mem_add] at hu hv
+  obtain ⟨a, ⟨w, hw, rfl⟩, b, hb, rfl⟩ := hu
+  obtain ⟨a', ⟨w', hw', rfl⟩, b', hb', rfl⟩ := hv
+  have hchart : dist (c • w) (c • w') ≤ 1 := by
+    rw [dist_smul₀, Real.norm_of_nonneg hc]
+    calc c * dist w w' ≤ c * (C / m) := by gcongr; exact hT w hw w' hw'
+      _ = c * C / m := by ring
+      _ ≤ 1 := hcm
+  calc dist (c • w + b) (c • w' + b')
+      ≤ dist (c • w) (c • w') + dist b b' := dist_add_add_le _ _ _ _
+    _ ≤ 1 + (dist b 0 + dist 0 b') := by gcongr; exact dist_triangle _ _ _
+    _ ≤ 1 + (r + r) := by
+        gcongr
+        exacts [hrB b hb, dist_comm (0 : E) b' ▸ hrB b' hb']
+    _ = 1 + 2 * r := by ring
+
+/-- There is a number `m` of pieces, positive, with `c * C / m ≤ 1` and `m ≤ c * (C + 2)` when
+`1 ≤ c`. -/
+private theorem exists_nat_pieces {c C : ℝ} (hc : 1 ≤ c) (hC : 0 ≤ C) :
+    ∃ m : ℕ, 0 < m ∧ c * C / m ≤ 1 ∧ (m : ℝ) ≤ c * (C + 2) := by
+  have h₀ := Nat.le_ceil (c * C)
+  have h₁ : ((⌈c * C⌉₊ : ℕ) : ℝ) < c * C + 1 :=
+    Nat.ceil_lt_add_one (by positivity)
+  refine ⟨⌈c * C⌉₊ + 1, Nat.succ_pos _, ?_, ?_⟩
+  · refine (div_le_one (by positivity)).2 ?_
+    push_cast
+    linarith
+  · push_cast
+    nlinarith
+
 /-- **The boundary count.**  If `S` is Lipschitz parametrizable in dimension `d` and `B` is
 bounded, then for `c ≥ 1` the thickened dilate `c • S + B` contains at most `A * c ^ d` points of
 a discrete subgroup `L`, with the constant `A` independent of `c`.
@@ -85,25 +123,14 @@ theorem exists_ncard_smul_add_inter_le {d : ℕ} {S : Set E}
   obtain ⟨n, C, f, hf, hcov⟩ := isLipschitzParametrizable_iff.1 hS
   obtain ⟨r, hr⟩ := hB.subset_closedBall 0
   have hrB : ∀ x ∈ B, dist x 0 ≤ r := fun x hx ↦ mem_closedBall.1 (hr hx)
-  set ρ : ℝ := 1 + 2 * r with hρ
-  set N : ℕ := (closedBall (0 : E) ρ ∩ (L : Set E)).ncard
+  set N : ℕ := (closedBall (0 : E) (1 + 2 * r) ∩ (L : Set E)).ncard
   refine ⟨n * ((C : ℝ) + 2) ^ d * N, by positivity, fun c hc ↦ ?_⟩
-  have hc0 : (0 : ℝ) < c := lt_of_lt_of_le one_pos hc
   -- Cut each edge of the unit cube into `m` pieces, so that each of the `m ^ d` subcubes has
   -- image of diameter at most `c * C / m ≤ 1` after dilating by `c`.
-  set m : ℕ := ⌈c * (C : ℝ)⌉₊ + 1 with hm
-  have hm0 : 0 < m := Nat.succ_pos _
-  have hmR : (0 : ℝ) < m := by exact_mod_cast hm0
-  have hcm : c * (C : ℝ) / m ≤ 1 := by
-    refine (div_le_one hmR).2 ?_
-    have := Nat.le_ceil (c * (C : ℝ))
-    rw [hm]
-    push_cast
-    linarith
+  obtain ⟨m, hm0, hcm, hmc⟩ := exists_nat_pieces hc C.2
   choose T hTcov hTdist using fun i ↦ (hf i).exists_cover_image_unitCube hm0
-  -- The thickened dilates of the pieces cover `c • S + B`, and each has diameter at most `ρ`.
-  set P : Fin n × (Fin d → Fin m) → Set E := fun p ↦ c • T p.1 p.2 + B with hP
-  have hPcov : c • S + B ⊆ ⋃ p, P p := by
+  -- The thickened dilates of the pieces cover `c • S + B`.
+  have hPcov : c • S + B ⊆ ⋃ p : Fin n × (Fin d → Fin m), c • T p.1 p.2 + B := by
     rintro u hu
     rw [Set.mem_add] at hu
     obtain ⟨a, ha, b, hb, rfl⟩ := hu
@@ -112,50 +139,14 @@ theorem exists_ncard_smul_add_inter_le {d : ℕ} {S : Set E}
     obtain ⟨k, hk⟩ := mem_iUnion.1 (hTcov i hi)
     exact mem_iUnion.2 ⟨(i, k), Set.mem_add.2
       ⟨c • s, Set.smul_mem_smul_set hk, b, hb, rfl⟩⟩
-  have hPdist : ∀ p, ∀ u ∈ P p, ∀ v ∈ P p, dist u v ≤ ρ := by
-    rintro ⟨i, k⟩ u hu v hv
-    rw [hP, Set.mem_add] at hu hv
-    obtain ⟨a, ⟨w, hw, rfl⟩, b, hb, rfl⟩ := hu
-    obtain ⟨a', ⟨w', hw', rfl⟩, b', hb', rfl⟩ := hv
-    have hchart : dist (c • w) (c • w') ≤ 1 := by
-      rw [dist_smul₀, Real.norm_of_nonneg hc0.le]
-      calc c * dist w w' ≤ c * ((C : ℝ) / m) := by gcongr; exact hTdist i k w hw w' hw'
-        _ = c * (C : ℝ) / m := by ring
-        _ ≤ 1 := hcm
-    calc dist (c • w + b) (c • w' + b')
-        ≤ dist (c • w) (c • w') + dist b b' := dist_add_add_le _ _ _ _
-      _ ≤ 1 + (dist b 0 + dist 0 b') := by gcongr; exact dist_triangle _ _ _
-      _ ≤ 1 + (r + r) := by
-          gcongr
-          exacts [hrB b hb, dist_comm (0 : E) b' ▸ hrB b' hb']
-      _ = ρ := by rw [hρ]; ring
-  -- Count: cover, then bound the points of `L` in each of the `n * m ^ d` pieces by `N`.
-  have hfinite := hS.finite_smul_add_inter L hB c
-  have hcount : hfinite.toFinset.card ≤ n * m ^ d * N := by
-    rw [← Set.ncard_eq_toFinset_card _ hfinite]
-    calc ((c • S + B) ∩ (L : Set E)).ncard
-        ≤ (⋃ p, P p ∩ (L : Set E)).ncard := by
-          refine Set.ncard_le_ncard ?_ (Set.finite_iUnion fun p ↦
-            L.finite_inter (Metric.isBounded_iff.2 ⟨ρ, fun _ hu _ hv ↦ hPdist p _ hu _ hv⟩))
-          rw [← Set.iUnion_inter]
-          exact Set.inter_subset_inter_left _ hPcov
-      _ ≤ ∑ p, (P p ∩ (L : Set E)).ncard := Set.ncard_iUnion_le_of_fintype _
-      _ ≤ ∑ _p : Fin n × (Fin d → Fin m), N :=
-          Finset.sum_le_sum fun p _ ↦
-            AddSubgroup.ncard_inter_le_ncard_closedBall_inter L (hPdist p)
-      _ = n * m ^ d * N := by simp
-  -- The number `m ^ d` of subcubes is at most `(C + 2) ^ d * c ^ d`.
-  have hmc : (m : ℝ) ≤ c * ((C : ℝ) + 2) := by
-    have h₁ : ((⌈c * (C : ℝ)⌉₊ : ℕ) : ℝ) < c * (C : ℝ) + 1 :=
-      Nat.ceil_lt_add_one (by positivity)
-    rw [hm]
-    push_cast
-    nlinarith
+  have hcount := L.ncard_inter_le_card_mul_ncard_closedBall_inter _ hPcov fun p ↦
+    dist_smul_add_le (one_pos.trans_le hc).le hcm (hTdist p.1 p.2) hrB
+  simp only [Fintype.card_prod, Fintype.card_fin, Fintype.card_pi, Finset.prod_const,
+    Finset.card_univ] at hcount
   calc (((c • S + B) ∩ (L : Set E)).ncard : ℝ)
-        = (hfinite.toFinset.card : ℝ) := by rw [Set.ncard_eq_toFinset_card _ hfinite]
-    _ ≤ ((n * m ^ d * N : ℕ) : ℝ) := by exact_mod_cast hcount
+      ≤ ((n * m ^ d * N : ℕ) : ℝ) := by exact_mod_cast hcount
     _ = (n : ℝ) * (m : ℝ) ^ d * N := by push_cast; ring
-    _ ≤ (n : ℝ) * (c * ((C : ℝ) + 2)) ^ d * N := by gcongr
+    _ ≤ (n : ℝ) * (c * ((C : ℝ) + 2)) ^ d * N := by gcongr; exact hmc
     _ = (n * ((C : ℝ) + 2) ^ d * N) * c ^ d := by rw [mul_pow]; ring
 
 /-- The boundary count as an asymptotic statement: if `S` is Lipschitz parametrizable in

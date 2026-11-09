@@ -15,7 +15,8 @@ Over a complete ultrametric normed field `K`, the Monsky–Washnitzer algebra `K
 many variables is a Jacobson ring: every prime ideal is an intersection of maximal ideals.
 Together with the finiteness of residue fields,
 `TauCeti.Dagger.washnitzerAlgebra.finite_quotient_of_isMaximal`, this lets the maximal ideals
-detect every radical ideal of `K⟨X⟩†` and of its quotients.
+detect every radical ideal of `K⟨X⟩†` and of its quotients. In particular every dagger algebra,
+being such a quotient, is a Jacobson ring.
 
 The proof is by induction on the number of variables, applying
 `TauCeti.isJacobsonRing_of_quotient_span_singleton` to `K⟨X, Y⟩†` with `Y = X none`.
@@ -33,6 +34,7 @@ The proof is by induction on the number of variables, applying
 
 * `TauCeti.Dagger.washnitzerAlgebra.isJacobsonRing`: `K⟨X⟩†` is a Jacobson ring for finitely
   many variables.
+* `TauCeti.Dagger.IsDaggerAlgebra.isJacobsonRing`: dagger algebras are Jacobson rings.
 
 ## References
 
@@ -70,7 +72,8 @@ private theorem jacobson_bot_option {σ : Type*} :
   have hy : (y : MvPowerSeries (Option σ) K) = monomial (Finsupp.single none 1) b⁻¹ := by
     simp [y, coe_X, X_def, ← Algebra.smul_def, ← map_smul]
   classical
-  have hu := (isUnit_washnitzerAlgebra_iff _).mp (Ideal.mem_jacobson_bot.mp hf y)
+  have hu := (isUnit_washnitzerAlgebra_iff _).mp
+    (Ring.mem_jacobson_iff.mp ((Ideal.jacobson_bot (R := W (Option σ))) ▸ hf) y)
   -- The constant coefficient of `1 + f * y` is `1`, and its coefficient at `t + single none 1` is
   -- `b * b⁻¹ = 1`.
   have h0 : constantCoeff ((f * y + 1 : W (Option σ)) : MvPowerSeries (Option σ) K) = 1 := by
@@ -117,3 +120,17 @@ instance isJacobsonRing {σ : Type*} [Finite σ] : IsJacobsonRing (W σ) :=
       isJacobsonRing_option) σ
 
 end TauCeti.Dagger.washnitzerAlgebra
+
+namespace TauCeti.Dagger.IsDaggerAlgebra
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  {A : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
+
+include K in
+/-- **Dagger algebras are Jacobson rings.** Over a complete ultrametric normed field `K`, every
+prime ideal of a `K`-dagger algebra is the intersection of the maximal ideals containing it. -/
+theorem isJacobsonRing : IsJacobsonRing A := by
+  obtain ⟨n, π, hπ⟩ := exists_surjective (K := K) (A := A)
+  exact isJacobsonRing_of_surjective ⟨π.toRingHom, hπ⟩
+
+end TauCeti.Dagger.IsDaggerAlgebra

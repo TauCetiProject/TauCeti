@@ -53,9 +53,9 @@ blob hash, so the citations hold at either.
 
 The source's intermediate `x_isInteger_of_nsmul_x_isInteger` (`:73`) is **not ported**: it is the
 composition of the coordinate identity above with the integral-root argument, and this repository
-already carries the latter as `Integral.lean`'s `isInteger_of_mul_eval_ΨSq_eq_eval_Φ` — whose own
-docstring notes that "no point, and no multiple, occurs in this statement", i.e. it is exactly the
-point-free half. The composition is inlined here rather than given a name.
+already carries the latter as `Integral.lean`'s `isInteger_of_mul_eval_ΨSq_eq_eval_Φ`, a statement
+in which no point and no multiple occurs, i.e. exactly the point-free half. The composition is
+inlined here rather than given a name.
 
 Three adaptations. `curveK R K W` is `W.map (algebraMap R K)`, which is `rfl`-equal to Mathlib's
 `W.baseChange K`; this file uses `baseChange`, matching `Integral.lean` and `Integrality.lean`.

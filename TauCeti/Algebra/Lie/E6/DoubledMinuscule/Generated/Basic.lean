@@ -90,6 +90,15 @@ noncomputable def generatedCoordinateMap :
     GeneralLinear.coordinateHopfAlgebra A 54 ⟶ generatedCoordinateHopfAlgebra A :=
   CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 54) (generatedDefiningIdeal A)
 
+/-- The named coordinate morphism is the quotient map under the quotient presentation. -/
+@[reassoc (attr := simp)]
+theorem generatedCoordinateMap_comp_eqToHom :
+    generatedCoordinateMap A ≫ eqToHom (generatedCoordinateHopfAlgebra_def A) =
+      CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 54)
+        (generatedDefiningIdeal A) := by
+  -- The named algebra and coordinate map are defined by this quotient and its projection.
+  rfl
+
 /-- The generated subgroup coordinate morphism is surjective. -/
 theorem generatedCoordinateMap_surjective : Function.Surjective (generatedCoordinateMap A).hom :=
   CommHopfAlgCat.mkQuotient_surjective
@@ -159,7 +168,7 @@ variable (k : Type u) (K : Type max u v) [CommRing k] [CommRing K] [Algebra k K]
 
 /-- Scalar extension of a generator's coordinate Hopf algebra is the corresponding generator over
 the extended coefficient ring. -/
-private noncomputable def generatorCoordinateAlgebraBaseChangeIso
+noncomputable def generatorCoordinateAlgebraBaseChangeIso
     (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
     CommHopfAlgCat.baseChange (K := K) (generatorCoordinateAlgebra k j) ≅
       generatorCoordinateAlgebra K j :=
@@ -171,7 +180,7 @@ private noncomputable def generatorCoordinateAlgebraBaseChangeIso
 
 /-- Each numbered root or torus generator over `K` is the scalar extension of the corresponding
 generator over `k`, under the canonical coordinate identifications. -/
-private theorem generatorCoordinateMap_baseChange (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
+theorem generatorCoordinateMap_baseChange (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
     ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 54).inv ≫
         CommHopfAlgCat.baseChangeMap (generatorCoordinateMap k j)) ≫
         (generatorCoordinateAlgebraBaseChangeIso k K j).hom =
@@ -221,6 +230,18 @@ theorem baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebra
         generatedCoordinateMap K :=
   CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom _ _ _
     (map_baseChangeHopfIdeal_generatedDefiningIdeal k K)
+
+/-- The generated-carrier base-change comparison intertwines each numbered root or torus lift. -/
+@[reassoc (attr := simp)]
+theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom
+    [Module.Free k K] (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
+    CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateLift k j) ≫
+        (generatorCoordinateAlgebraBaseChangeIso k K j).hom =
+      (generatedCoordinateHopfAlgebraBaseChangeIso k K).hom ≫
+        generatedCoordinateLift K j :=
+  CommHopfAlgCat.baseChangeMap_liftQuotient_comp_quotientBaseChangeIsoOfMapEq_hom
+    _ _ _ (map_baseChangeHopfIdeal_generatedDefiningIdeal k K)
+    _ _ _ _ _ (generatorCoordinateMap_baseChange k K j)
 
 end BaseChange
 

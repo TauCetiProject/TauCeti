@@ -10,7 +10,6 @@ public import Mathlib.Topology.Instances.AddCircle.Real
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
-import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 public import TauCeti.AlgebraicTopology.UniversalCover.AddCircle
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.Basic
@@ -60,8 +59,8 @@ transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
 * `AddCircle.fundamentalGroupMulEquiv_eq_windingNumberIso`: for positive periods the
   chosen-lift computation agrees with Mathlib, including the sign of the generator.
 * `Circle.fundamentalGroupMulEquiv`: `π₁(Circle, x) ≃* Multiplicative ℤ`.
-* `Circle.expLoop` and `Circle.fundamentalGroupMulEquiv_expLoop`: the loop `t ↦ exp(2πit)`,
-  going once counterclockwise around the circle, is sent to the generator `ofAdd 1`.
+* `Circle.fundamentalGroupMulEquiv_expLoop`: the loop `Circle.expLoop`, `t ↦ exp(2πit)`, going
+  once counterclockwise around the circle, is sent to the generator `ofAdd 1`.
 * `Circle.mapOfEq_toCircle_expLoop`: a loop `γ`, read as a map from the circle, sends the class
   of `Circle.expLoop` to the class of `γ`.
 * `Circle.fundamentalGroupMulEquiv_fromPath`: the class of a loop is sent to its degree
@@ -334,7 +333,7 @@ local instance : Fact (0 < 2 * Real.pi) := ⟨Real.two_pi_pos⟩
 `AddCircle.homeomorphCircle : AddCircle (2 * π) ≃ₜ Circle`. -/
 def fundamentalGroupMulEquiv (x : Circle) : FundamentalGroup Circle x ≃* Multiplicative ℤ :=
   (FundamentalGroup.fundamentalGroupMulEquivOfPathConnected x 1).trans
-    ((TauCeti.FundamentalGroup.homeomorphMulEquivOfEq
+    ((FundamentalGroup.homeomorphMulEquivOfEq
           (AddCircle.homeomorphCircle (T := 2 * Real.pi) Real.two_pi_pos.ne').symm
           (AddCircle.homeomorphCircle_symm_one Real.two_pi_pos.ne')).trans
       (AddCircle.windingNumberIso (p := 2 * Real.pi) 0))
@@ -345,7 +344,7 @@ computation transported from `AddCircle (2 * π)` along `AddCircle.homeomorphCir
 theorem fundamentalGroupMulEquiv_def (x : Circle) :
     fundamentalGroupMulEquiv x =
       (FundamentalGroup.fundamentalGroupMulEquivOfPathConnected x 1).trans
-        ((TauCeti.FundamentalGroup.homeomorphMulEquivOfEq
+        ((FundamentalGroup.homeomorphMulEquivOfEq
           (AddCircle.homeomorphCircle (T := 2 * Real.pi) Real.two_pi_pos.ne').symm
             (AddCircle.homeomorphCircle_symm_one Real.two_pi_pos.ne')).trans
           (AddCircle.windingNumberIso (p := 2 * Real.pi) 0)) :=
@@ -357,7 +356,7 @@ basepoint to the endpoint of any continuous angle lift `θ` of `γ` starting at 
 private theorem monodromy_homeomorphMulEquivOfEq_fromPath (γ : Path (1 : Circle) 1) {a : ℝ}
     (θ : Path (0 : ℝ) a) (hθ : ∀ t, exp (θ t) = γ t) :
     ((AddCircle.isCoveringMap_coe (2 * Real.pi)).monodromy
-      ((TauCeti.FundamentalGroup.homeomorphMulEquivOfEq
+      ((FundamentalGroup.homeomorphMulEquivOfEq
         (AddCircle.homeomorphCircle (T := 2 * Real.pi) Real.two_pi_pos.ne').symm
           (AddCircle.homeomorphCircle_symm_one Real.two_pi_pos.ne'))
         (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ))).toPath
@@ -373,7 +372,7 @@ private theorem monodromy_homeomorphMulEquivOfEq_fromPath (γ : Path (1 : Circle
       AddCircle.homeomorphCircle_symm_one]
   refine congrArg Subtype.val ((AddCircle.isCoveringMap_coe (2 * Real.pi)).monodromy_eq_of_map_eq
     (ey := ⟨a, ha⟩) (Path.Homotopic.Quotient.mk θ) ?_)
-  rw [TauCeti.FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.mapOfEq_apply,
+  rw [FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.mapOfEq_apply,
     ← Path.Homotopic.Quotient.mk_map]
   -- Casting a path class casts its representative, and `Path.cast` does not change the
   -- underlying function. Both are unfolded definitionally rather than by `mk_cast` and
@@ -389,7 +388,7 @@ private theorem monodromy_homeomorphMulEquivOfEq_fromPath (γ : Path (1 : Circle
 along `AddCircle.homeomorphCircle`, sends the class of a loop at `1` to its degree. -/
 private theorem homeomorphMulEquivOfEq_trans_windingNumberIso_fromPath
     (γ : Path (1 : Circle) 1) :
-    ((TauCeti.FundamentalGroup.homeomorphMulEquivOfEq
+    ((FundamentalGroup.homeomorphMulEquivOfEq
           (AddCircle.homeomorphCircle (T := 2 * Real.pi) Real.two_pi_pos.ne').symm
           (AddCircle.homeomorphCircle_symm_one Real.two_pi_pos.ne')).trans
       (AddCircle.windingNumberIso (p := 2 * Real.pi) 0))
@@ -415,17 +414,6 @@ theorem fundamentalGroupMulEquiv_fromPath {x : Circle} (γ : Path x x) :
   exact (homeomorphMulEquivOfEq_trans_windingNumberIso_fromPath _).trans
     (congrArg Multiplicative.ofAdd (degree_symm_trans_trans γ _))
 
-/-- The loop `t ↦ exp(2πit)` at `1`, going once counterclockwise around the unit circle. -/
-def expLoop : Path (1 : Circle) 1 where
-  toFun t := Circle.exp (2 * Real.pi * t)
-  continuous_toFun := by fun_prop
-  source' := by simp
-  target' := by simp
-
-@[simp]
-theorem expLoop_apply (t : unitInterval) : expLoop t = Circle.exp (2 * Real.pi * t) :=
-  (rfl)
-
 /-- **The counterclockwise loop generates `π₁(S¹)` positively.** The isomorphism
 `π₁(Circle, 1) ≃* Multiplicative ℤ` sends the class of `t ↦ exp(2πit)` to `ofAdd 1`. -/
 @[simp]
@@ -433,9 +421,7 @@ theorem fundamentalGroupMulEquiv_expLoop :
     fundamentalGroupMulEquiv 1
       (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk expLoop)) =
       Multiplicative.ofAdd 1 := by
-  rw [fundamentalGroupMulEquiv_fromPath,
-    degree_eq_of_sub_eq expLoop (θ := fun t => 2 * Real.pi * t) (by fun_prop) (fun _ => rfl)
-      (n := 1) (by simp)]
+  rw [fundamentalGroupMulEquiv_fromPath, degree_expLoop]
 
 /-- A loop `γ`, read as a map from the circle by `Path.toCircle`, sends the class of the
 counterclockwise loop `expLoop` to the class of `γ`. So every element of a fundamental group is
@@ -447,7 +433,7 @@ theorem mapOfEq_toCircle_expLoop {X : Type*} [TopologicalSpace X] {x : X} (γ : 
   have h : (expLoop.map γ.toCircle.continuous).cast γ.toCircle_one.symm γ.toCircle_one.symm =
       γ := by
     ext t
-    exact γ.toCircle_exp t
+    simpa using γ.toCircle_exp t
   conv_rhs => rw [← h, Path.Homotopic.Quotient.mk_cast, Path.Homotopic.Quotient.mk_map]
   exact FundamentalGroup.mapOfEq_apply _ _ _
 

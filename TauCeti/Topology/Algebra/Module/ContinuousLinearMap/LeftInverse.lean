@@ -16,6 +16,9 @@ algebra of the differential of a parameter-preserving family of immersions.
 
 The construction uses Mathlib's `ContinuousLinearMap.HasLeftInverse`: subtract the
 contribution of the first coordinate, then apply a left inverse on the second factor.
+
+If a compression `P ∘L A` is invertible, the left inverse `(P ∘L A).inverse ∘L P` also gives a
+projection off the range of `A`. Composing a linear map with this projection annihilates `A`.
 -/
 
 public section
@@ -33,16 +36,18 @@ theorem hasLeftInverse_fst_prod_iff (A : E × F →L[R] G) :
     ((fst R E F).prod A).HasLeftInverse ↔ (A.comp (inr R E F)).HasLeftInverse := by
   constructor
   · rintro ⟨L, hL⟩
-    refine ⟨(snd R E F).comp (L.comp (inr R E G)), fun y => ?_⟩
-    have hy := congrArg Prod.snd (hL (0, y))
-    simpa using hy
+    exact ⟨snd R E F ∘L L ∘L inr R E G, fun y => by simpa using congrArg Prod.snd (hL (0, y))⟩
   · rintro ⟨L, hL⟩
-    refine ⟨(fst R E G).prod
-      (L.comp ((snd R E G) - (A.comp (inl R E F)).comp (fst R E G))), ?_⟩
+    refine ⟨(fst R E G).prod (L ∘L (snd R E G - A ∘L inl R E F ∘L fst R E G)), ?_⟩
     rintro ⟨x, y⟩
-    have hA : A (x, y) - A (x, 0) = A (0, y) := by
-      rw [← map_sub]
-      simp
-    simpa [hA] using congrArg (Prod.mk x) (hL y)
+    have hA : A (x, y) = A (x, 0) + A (0, y) := by rw [← map_add]; simp
+    simpa [hA] using hL y
+
+/-- Projecting a continuous linear map off the range of an operator with invertible compression
+annihilates that operator. -/
+theorem sub_comp_inverse_comp_comp_eq_zero (a : E →L[R] G) (A : F →L[R] E)
+    (P : E →L[R] F) (hQ : (P ∘L A).IsInvertible) :
+    (a - a ∘L A ∘L (P ∘L A).inverse ∘L P) ∘L A = 0 := by
+  simp [comp_assoc, hQ.inverse_comp_self]
 
 end ContinuousLinearMap

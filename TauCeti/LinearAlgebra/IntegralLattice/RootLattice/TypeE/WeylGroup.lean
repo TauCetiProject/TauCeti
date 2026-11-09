@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Reflection
+import TauCeti.LinearAlgebra.IntegralLattice.Isometry.NormShell
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeE.Roots
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E8.Datum
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E8.Automorphism
@@ -130,17 +131,16 @@ private theorem dotProduct_typeE₈WeightEquiv (x y : typeE₈RootLattice) :
 /-- The permutation of the 240 root indices induced by an isometry of the E₈ lattice. -/
 private noncomputable def typeE₈RootPerm (g : Isometry typeE₈RootLattice typeE₈RootLattice) :
     Equiv.Perm (Fin 240) :=
-  typeE₈RootEquiv.trans <| (g.carrierEquiv.toEquiv.subtypeEquiv fun x ↦
-    (g.carrierEquiv_mem_vectorsOfNorm_iff x 2).symm).trans typeE₈RootEquiv.symm
+  typeE₈RootEquiv.trans <|
+    (Isometry.normShellHom typeE₈RootLattice 2 g).trans typeE₈RootEquiv.symm
 
 private theorem typeE₈RootVector_typeE₈RootPerm
     (g : Isometry typeE₈RootLattice typeE₈RootLattice) (i : Fin 240) :
     typeE₈RootVector (typeE₈RootPerm g i) = g.carrierEquiv (typeE₈RootVector i) := by
-  have h : (typeE₈RootEquiv (typeE₈RootPerm g i) : typeE₈RootLattice) =
-      g.carrierEquiv (typeE₈RootEquiv i) := by
-    simp only [typeE₈RootPerm, Equiv.trans_apply, Equiv.apply_symm_apply,
-      Equiv.subtypeEquiv_apply, LinearEquiv.coe_toEquiv]
-  simpa only [typeE₈RootEquiv_apply] using h
+  apply Subtype.ext
+  simpa only [← typeE₈RootEquiv_apply, typeE₈RootPerm, Equiv.trans_apply,
+    Equiv.apply_symm_apply, Isometry.coe_carrierEquiv_apply] using
+    Isometry.coe_normShellHom_apply g 2 (typeE₈RootEquiv i)
 
 /-- The automorphism of the pinned E₈ datum induced by an isometry of the E₈ lattice: its weight
 map is the isometry, transported along the weight identification. -/
@@ -191,25 +191,16 @@ private theorem typeE₈IsometryToAut_rootReflection (i : Fin 240) :
     RootPairing.reflection_apply, dotProduct_typeE₈WeightEquiv_e8Coroot,
     typeE₈RootLattice.isSymm_integralForm.eq]
 
-/-- Every root reflection of the E₈ lattice is the reflection in an enumerated root. -/
-private theorem exists_rootReflection_eq (x : typeE₈RootLattice)
-    (hx : typeE₈RootLattice.integralNorm x = 2) :
-    ∃ i, rootReflection _ (integralNorm_typeE₈RootVector i) = rootReflection x hx := by
-  obtain ⟨i, rfl⟩ := (norm_typeE₈RootLattice_eq_two_iff x).mp (by
-    rw [← integralNorm_cast, hx]
-    norm_num)
-  exact ⟨i, rfl⟩
+/-- `typeE₈IsometryToAut`, bundled as a monoid homomorphism. -/
+private noncomputable def typeE₈IsometryToAutHom :
+    Isometry typeE₈RootLattice typeE₈RootLattice →* e8SimplyConnectedRootDatum.Aut :=
+  MonoidHom.mk' typeE₈IsometryToAut typeE₈IsometryToAut_mul
 
 /-- The induced automorphisms of the datum make up its Weyl group, which is everything. -/
-private theorem range_typeE₈IsometryToAut :
-    Set.range typeE₈IsometryToAut = Set.univ := by
-  have hweyl : e8SimplyConnectedRootDatum.weylGroup = ⊤ :=
-    weylGroup_eq_top_of_hasCartanType_E8 hasCartanType_e8SimplyConnectedRootDatum
-  refine Set.eq_univ_of_forall fun u ↦ ?_
-  have hu : u ∈ e8SimplyConnectedRootDatum.weylGroup := hweyl ▸ Subgroup.mem_top u
-  let f : Isometry typeE₈RootLattice typeE₈RootLattice →* e8SimplyConnectedRootDatum.Aut :=
-    MonoidHom.mk' typeE₈IsometryToAut typeE₈IsometryToAut_mul
-  refine Subgroup.closure_le (K := f.range) |>.mpr ?_ hu
+private theorem typeE₈IsometryToAutHom_surjective : Function.Surjective typeE₈IsometryToAutHom := by
+  rw [← MonoidHom.range_eq_top, eq_top_iff,
+    ← weylGroup_eq_top_of_hasCartanType_E8 hasCartanType_e8SimplyConnectedRootDatum,
+    RootPairing.weylGroup, Subgroup.closure_le]
   rintro _ ⟨i, rfl⟩
   exact ⟨_, typeE₈IsometryToAut_rootReflection i⟩
 
@@ -218,8 +209,8 @@ datum.** An isometry acts on the weight lattice of the datum through the identif
 lattice with the weight lattice by pairing with the simple roots. -/
 noncomputable def typeE₈IsometryEquivAut :
     Isometry typeE₈RootLattice typeE₈RootLattice ≃* e8SimplyConnectedRootDatum.Aut :=
-  MulEquiv.ofBijective (MonoidHom.mk' typeE₈IsometryToAut typeE₈IsometryToAut_mul)
-    ⟨typeE₈IsometryToAut_injective, Set.range_eq_univ.mp range_typeE₈IsometryToAut⟩
+  MulEquiv.ofBijective typeE₈IsometryToAutHom
+    ⟨typeE₈IsometryToAut_injective, typeE₈IsometryToAutHom_surjective⟩
 
 private theorem typeE₈IsometryEquivAut_apply (g : Isometry typeE₈RootLattice typeE₈RootLattice) :
     typeE₈IsometryEquivAut g = typeE₈IsometryToAut g :=
@@ -250,23 +241,16 @@ theorem typeE₈IsometryEquivAut_rootReflection (i : Fin 240) :
 group is the whole of `O(E₈)`. -/
 @[simp]
 theorem weylGroup_typeE₈RootLattice_eq_top : typeE₈RootLattice.weylGroup = ⊤ := by
-  -- The isomorphism carries the root reflections of the lattice onto those of the datum.
-  have hmap : typeE₈RootLattice.weylGroup.map typeE₈IsometryEquivAut.toMonoidHom =
-      e8SimplyConnectedRootDatum.weylGroup := by
-    rw [weylGroup_def, MonoidHom.map_closure, RootPairing.weylGroup]
-    congr 1
-    ext u
-    constructor
-    · rintro ⟨_, ⟨x, hx, rfl⟩, rfl⟩
-      obtain ⟨i, hi⟩ := exists_rootReflection_eq x hx
-      exact ⟨i, by simp [← hi]⟩
-    · rintro ⟨i, rfl⟩
-      exact ⟨_, ⟨_, _, rfl⟩, typeE₈IsometryEquivAut_rootReflection i⟩
+  -- The isomorphism carries the root reflections of the lattice onto the generators of the Weyl
+  -- group of the datum, which is everything.
   apply Subgroup.map_injective (f := typeE₈IsometryEquivAut.toMonoidHom)
     typeE₈IsometryEquivAut.injective
-  rw [hmap, Subgroup.map_top_of_surjective typeE₈IsometryEquivAut.toMonoidHom
-      typeE₈IsometryEquivAut.surjective,
-    weylGroup_eq_top_of_hasCartanType_E8 hasCartanType_e8SimplyConnectedRootDatum]
+  rw [Subgroup.map_top_of_surjective typeE₈IsometryEquivAut.toMonoidHom
+      typeE₈IsometryEquivAut.surjective, eq_top_iff,
+    ← weylGroup_eq_top_of_hasCartanType_E8 hasCartanType_e8SimplyConnectedRootDatum,
+    RootPairing.weylGroup, Subgroup.closure_le]
+  rintro _ ⟨i, rfl⟩
+  exact ⟨_, rootReflection_mem_weylGroup _ _, typeE₈IsometryEquivAut_rootReflection i⟩
 
 /-- **`-1` is a product of reflections in roots of the E₈ lattice.** -/
 theorem neg_mem_weylGroup_typeE₈RootLattice :

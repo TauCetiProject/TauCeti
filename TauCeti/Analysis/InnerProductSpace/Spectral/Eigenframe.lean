@@ -312,4 +312,41 @@ theorem correspondingEigenblocks_eigenvectorBasis (hT : T.IsSymmetric)
   · exact (span_range_eigenvectorBasis_apply_eq_eigenvectorSpan hT hn e).symm
   · exact (span_range_eigenvectorBasis_apply_eq_eigenvectorSpan hS hn e).symm
 
+/-- A gap-separated ordered eigenframe spans the canonical coordinate block.
+The frame may vary inside repeated eigenspaces, but the separating gap forces
+all indices for any selected eigenvalue to remain within the selected block.
+
+Adapted from `ForTauCeti/Analysis/InnerProductSpace/Spectral/EigenFrame.lean`
+in the Kitware DKPS formalization (Jon Crall, Claude Opus 5, GPT-6; Apache-2.0). -/
+theorem IsOrderedEigenframe.span_eq_spanIndices {hT : T.IsSymmetric}
+    {hn : finrank 𝕜 E = n} {e : ι ↪ Fin n} {w : ι → E}
+    (hw : IsOrderedEigenframe hT hn e w) {Δ : ℝ} (hΔ : 0 < Δ)
+    (hgap : ∀ (i : ι) (k : Fin n), k ∉ Set.range e →
+      Δ ≤ |hT.eigenvalues hn (e i) - hT.eigenvalues hn k|) :
+    Submodule.span 𝕜 (Set.range w) = (hT.eigenvectorBasis hn).spanIndices (Set.range e) := by
+  classical
+  let : Fintype ι := Fintype.ofInjective e e.injective
+  have hf := isOrderedEigenframe_iff.mp hw
+  have hle : Submodule.span 𝕜 (Set.range w) ≤
+      (hT.eigenvectorBasis hn).spanIndices (Set.range e) := by
+    refine Submodule.span_le.mpr ?_
+    rintro _ ⟨i, rfl⟩
+    apply (OrthonormalBasis.mem_spanIndices_iff (hT.eigenvectorBasis hn)).mpr
+    intro k hk
+    rw [OrthonormalBasis.repr_apply_apply]
+    have hne : (hT.eigenvalues hn k : 𝕜) ≠ (hT.eigenvalues hn (e i) : 𝕜) := by
+      intro heq
+      have heq' : hT.eigenvalues hn k = hT.eigenvalues hn (e i) := by exact_mod_cast heq
+      have hg := hgap i k hk
+      rw [heq', sub_self, abs_zero] at hg
+      exact hΔ.not_ge hg
+    exact hT.orthogonalFamily_eigenspaces hne
+      ⟨hT.eigenvectorBasis hn k, (hT.hasEigenvector_eigenvectorBasis hn k).1⟩
+      ⟨w i, hf.mem_eigenspace i⟩
+  apply Submodule.eq_of_le_of_finrank_eq hle
+  rw [hw.finrank_span]
+  have hrange : Set.range e = ↑(Finset.univ.map e) := by ext k; simp
+  rw [hrange, OrthonormalBasis.finrank_spanIndices]
+  simp
+
 end LinearMap.IsSymmetric

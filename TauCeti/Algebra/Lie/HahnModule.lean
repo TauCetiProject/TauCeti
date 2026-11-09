@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Basic
-public import TauCeti.RingTheory.HahnSeries.Multiplication
+public import TauCeti.RingTheory.HahnSeries.Bilinear
 -- Proof-only: reindexing double sums over antidiagonals.
 import TauCeti.Data.Finset.MulAntidiagonal
 
@@ -25,9 +25,17 @@ coefficientwise action of `R`, and also for the convolution action of the Hahn s
 `HahnSeries Γ R`, so `HahnModule Γ R L` is a Lie algebra over both. On monomials,
 `⁅single a x, single b y⁆ = single (a + b) ⁅x, y⁆`.
 
+The construction is functorial in `L`: a morphism `f : L → L'` of Lie algebras over `R`, applied
+to every coefficient, is a morphism of Lie algebras `HahnModule Γ R L → HahnModule Γ R L'` over
+`HahnSeries Γ R`, and isomorphisms of Lie algebras induce isomorphisms. This rests on the
+naturality of the coefficientwise extension of biadditive maps
+(`HahnModule.convolutionAddMonoidHom_map_map`, `HahnModule.map_convolutionAddMonoidHom`).
+
 ## Main definitions and results
 
-* `HahnModule.instBracket`: the coefficient convolution bracket.
+* `HahnModule.instBracket`: the coefficient convolution bracket, the coefficientwise extension
+  `HahnModule.convolutionAddMonoidHom` of the bracket of `L`.
+* `HahnModule.of_symm_lie`: the bracket is the coefficientwise extension of the bracket of `L`.
 * `HahnModule.coeff_lie`: the coefficient formula for the bracket.
 * `HahnModule.support_lie_subset`: the support of a bracket lies in the sum of the supports.
 * `HahnModule.orderTop_add_le_lie`: over a linearly ordered `Γ`, the order of a bracket is at
@@ -36,6 +44,12 @@ coefficientwise action of `R`, and also for the convolution action of the Hahn s
 * `HahnModule.instLieAlgebra`, `HahnModule.instLieAlgebraHahnSeries`: the Lie algebra structures
   over `R` and over `HahnSeries Γ R`.
 * `HahnModule.single_lie_single`: the bracket of two monomials.
+* `LieHom.hahnModuleMap Γ f`: the morphism of Lie algebras of Hahn series induced by `f`, with
+  coefficients `LieHom.coeff_hahnModuleMap`, compatible with identities and composition
+  (`LieHom.hahnModuleMap_id`, `LieHom.hahnModuleMap_comp`) and injective when `f` is
+  (`LieHom.hahnModuleMap_injective`).
+* `LieEquiv.hahnModuleCongr Γ e`: the isomorphism of Lie algebras of Hahn series induced by an
+  isomorphism `e`.
 
 ## References
 
@@ -60,24 +74,24 @@ section LieRing
 variable [SMul R L] [LieRing L]
 
 /-- The coefficient convolution bracket `⁅x, y⁆_c = ∑_{a + b = c} ⁅x_a, y_b⁆` of Hahn series
-with coefficients in a Lie ring. -/
+with coefficients in a Lie ring: the coefficientwise extension `convolutionAddMonoidHom` of the
+biadditive bracket of `L`. -/
 instance instBracket : Bracket (HahnModule Γ R L) (HahnModule Γ R L) where
-  bracket x y := of R
-    { coeff c := ∑ ij ∈ antidiagonal ((of R).symm x).isPWO_support
-          ((of R).symm y).isPWO_support c,
-        ⁅((of R).symm x).coeff ij.1, ((of R).symm y).coeff ij.2⁆
-      isPWO_support' := (((of R).symm x).isPWO_support.add
-          ((of R).symm y).isPWO_support).mono fun c hc ↦ by
-        obtain ⟨ij, hij, -⟩ := Finset.exists_ne_zero_of_sum_ne_zero hc
-        rw [mem_antidiagonal] at hij
-        exact ⟨ij.1, hij.1, ij.2, hij.2.1, hij.2.2⟩ }
+  bracket x y := of R (convolutionAddMonoidHom Γ R (LieRingModule.toEnd L L) x y)
+
+/-- Read through `HahnModule.of`, the bracket is the coefficientwise extension
+`convolutionAddMonoidHom` of the bracket of `L`. -/
+theorem of_symm_lie (x y : HahnModule Γ R L) :
+    (of R).symm ⁅x, y⁆ = convolutionAddMonoidHom Γ R (LieRingModule.toEnd L L) x y :=
+  rfl
 
 /-- The coefficient formula `⁅x, y⁆_c = ∑_{a + b = c} ⁅x_a, y_b⁆`. -/
 theorem coeff_lie (x y : HahnModule Γ R L) (c : Γ) :
     ((of R).symm ⁅x, y⁆).coeff c =
       ∑ ij ∈ antidiagonal ((of R).symm x).isPWO_support ((of R).symm y).isPWO_support c,
-        ⁅((of R).symm x).coeff ij.1, ((of R).symm y).coeff ij.2⁆ :=
-  rfl
+        ⁅((of R).symm x).coeff ij.1, ((of R).symm y).coeff ij.2⁆ := by
+  rw [of_symm_lie, coeff_convolutionAddMonoidHom]
+  simp only [LieRingModule.toEnd_apply_apply]
 
 /-- The coefficients of a bracket may be computed over any partially well-ordered set containing
 the support of the first argument. -/
@@ -86,12 +100,8 @@ theorem coeff_lie_left' {x y : HahnModule Γ R L} {c : Γ} {s : Set Γ} (hs : s.
     ((of R).symm ⁅x, y⁆).coeff c =
       ∑ ij ∈ antidiagonal hs ((of R).symm y).isPWO_support c,
         ⁅((of R).symm x).coeff ij.1, ((of R).symm y).coeff ij.2⁆ := by
-  rw [coeff_lie]
-  refine sum_subset (antidiagonal_mono_left hxs) fun ij hij hij' ↦ ?_
-  rw [mem_antidiagonal] at hij
-  by_cases h : ((of R).symm x).coeff ij.1 = 0
-  · rw [h, zero_lie]
-  · exact (hij' (mem_antidiagonal.2 ⟨h, hij.2⟩)).elim
+  rw [of_symm_lie, coeff_convolutionAddMonoidHom_left' hs hxs]
+  simp only [LieRingModule.toEnd_apply_apply]
 
 /-- The coefficients of a bracket may be computed over any partially well-ordered set containing
 the support of the second argument. -/
@@ -100,45 +110,23 @@ theorem coeff_lie_right' {x y : HahnModule Γ R L} {c : Γ} {s : Set Γ} (hs : s
     ((of R).symm ⁅x, y⁆).coeff c =
       ∑ ij ∈ antidiagonal ((of R).symm x).isPWO_support hs c,
         ⁅((of R).symm x).coeff ij.1, ((of R).symm y).coeff ij.2⁆ := by
-  rw [coeff_lie]
-  refine sum_subset (antidiagonal_mono_right hys) fun ij hij hij' ↦ ?_
-  rw [mem_antidiagonal] at hij
-  by_cases h : ((of R).symm y).coeff ij.2 = 0
-  · rw [h, lie_zero]
-  · exact (hij' (mem_antidiagonal.2 ⟨hij.1, h, hij.2.2⟩)).elim
+  rw [of_symm_lie, coeff_convolutionAddMonoidHom_right' hs hys]
+  simp only [LieRingModule.toEnd_apply_apply]
 
 /-- The support of a bracket lies in the sum of the supports. -/
 theorem support_lie_subset (x y : HahnModule Γ R L) :
     ((of R).symm ⁅x, y⁆).support ⊆
-      ((of R).symm x).support + ((of R).symm y).support := fun c hc ↦ by
-  obtain ⟨ij, hij, -⟩ := Finset.exists_ne_zero_of_sum_ne_zero hc
-  rw [mem_antidiagonal] at hij
-  exact ⟨ij.1, hij.1, ij.2, hij.2.1, hij.2.2⟩
+      ((of R).symm x).support + ((of R).symm y).support := by
+  rw [of_symm_lie]
+  exact support_convolutionAddMonoidHom_subset _ x y
 
 /-- The bracket of two monomials: `⁅x t ^ a, y t ^ b⁆ = ⁅x, y⁆ t ^ (a + b)`. -/
 @[simp]
 theorem single_lie_single (a b : Γ) (x y : L) :
     ⁅of R (HahnSeries.single a x), of R (HahnSeries.single b y)⁆ =
       of R (HahnSeries.single (a + b) ⁅x, y⁆) := by
-  ext c
-  simp only [coeff_lie, Equiv.symm_apply_apply]
-  by_cases hc : c = a + b
-  · subst hc
-    rw [HahnSeries.coeff_single_same, sum_eq_single (a, b)]
-    · simp only [HahnSeries.coeff_single_same]
-    · rintro ⟨i, j⟩ hij hne
-      rw [mem_antidiagonal] at hij
-      exact (hne (Prod.ext (HahnSeries.eq_of_mem_support_single hij.1)
-        (HahnSeries.eq_of_mem_support_single hij.2.1))).elim
-    · intro h
-      simp only [mem_antidiagonal, HahnSeries.mem_support, HahnSeries.coeff_single_same,
-        and_true, not_and_or, not_not] at h
-      obtain h | h := h <;> simp [h]
-  · rw [HahnSeries.coeff_single_of_ne hc, sum_eq_zero]
-    rintro ⟨i, j⟩ hij
-    obtain ⟨hi, hj, rfl⟩ := mem_antidiagonal.1 hij
-    rw [HahnSeries.eq_of_mem_support_single hi, HahnSeries.eq_of_mem_support_single hj] at hc
-    exact (hc rfl).elim
+  rw [← (of R).symm_apply_eq, of_symm_lie, convolutionAddMonoidHom_single_single,
+    LieRingModule.toEnd_apply_apply]
 
 /-- The coefficients of a right-nested bracket, as a sum over pairs of antidiagonals. -/
 private theorem coeff_lie_lie (x y z : HahnModule Γ R L) (d : Γ) :
@@ -155,22 +143,10 @@ private theorem coeff_lie_lie (x y z : HahnModule Γ R L) (d : Γ) :
 
 /-- Hahn series with coefficients in a Lie ring form a Lie ring under the convolution bracket. -/
 instance instLieRing : LieRing (HahnModule Γ R L) where
-  add_lie x y z := by
-    ext c
-    have hs := ((of R).symm x).isPWO_support.union ((of R).symm y).isPWO_support
-    rw [of_symm_add, HahnSeries.coeff_add,
-      coeff_lie_left' hs (by rw [of_symm_add]; exact HahnSeries.support_add_subset _ _),
-      coeff_lie_left' hs Set.subset_union_left, coeff_lie_left' hs Set.subset_union_right,
-      ← sum_add_distrib]
-    simp only [of_symm_add, HahnSeries.coeff_add, add_lie]
-  lie_add x y z := by
-    ext c
-    have hs := ((of R).symm y).isPWO_support.union ((of R).symm z).isPWO_support
-    rw [of_symm_add, HahnSeries.coeff_add,
-      coeff_lie_right' hs (by rw [of_symm_add]; exact HahnSeries.support_add_subset _ _),
-      coeff_lie_right' hs Set.subset_union_left, coeff_lie_right' hs Set.subset_union_right,
-      ← sum_add_distrib]
-    simp only [of_symm_add, HahnSeries.coeff_add, lie_add]
+  add_lie x y z := (of R).symm.injective <| by
+    simp only [of_symm_add, of_symm_lie, map_add, AddMonoidHom.add_apply]
+  lie_add x y z := (of R).symm.injective <| by
+    simp only [of_symm_add, of_symm_lie, map_add]
   lie_self x := by
     ext c
     rw [coeff_lie, of_symm_zero, HahnSeries.coeff_zero]
@@ -249,3 +225,141 @@ instance instLieAlgebraHahnSeries : LieAlgebra (HahnSeries Γ R) (HahnModule Γ 
 end LieAlgebra
 
 end HahnModule
+
+/-! ### Functoriality in the coefficient Lie algebra -/
+
+namespace LieHom
+
+open HahnModule
+
+variable {Γ R L L' L'' : Type*} [AddCommMonoid Γ] [PartialOrder Γ] [IsOrderedCancelAddMonoid Γ]
+  [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L'] [LieRing L'']
+  [LieAlgebra R L'']
+
+variable (Γ) in
+/-- A morphism `f : L → L'` of Lie algebras over `R` induces, coefficient by coefficient, a
+morphism of Lie algebras `HahnModule Γ R L → HahnModule Γ R L'` over `HahnSeries Γ R`, sending
+`∑ xₐ tᵃ` to `∑ f (xₐ) tᵃ`. For `Γ = ℤ` this is the functoriality of the formal loop algebra
+`L((t))` in `L`. -/
+def hahnModuleMap (f : L →ₗ⁅R⁆ L') : HahnModule Γ R L →ₗ⁅HahnSeries Γ R⁆ HahnModule Γ R L' where
+  toFun x := of R (((of R).symm x).map f)
+  map_add' x y := by
+    ext a
+    simp
+  map_smul' c x := by
+    have hs : ((of R).symm (of R (((of R).symm x).map f))).support ⊆ ((of R).symm x).support :=
+      HahnSeries.support_map_subset _ (f : ZeroHom L L')
+    ext a
+    rw [RingHom.id_apply, coeff_smul_right ((of R).symm x).isPWO_support hs]
+    simp [coeff_smul, map_sum]
+  map_lie' {x y} := by
+    apply (of R).symm.injective
+    simp only [Equiv.symm_apply_apply, of_symm_lie, map_convolutionAddMonoidHom,
+      convolutionAddMonoidHom_map_map]
+    -- Both sides extend the biadditive map `(u, v) ↦ f ⁅u, v⁆ = ⁅f u, f v⁆`.
+    refine congrArg (fun Φ ↦ convolutionAddMonoidHom Γ R Φ x y) ?_
+    ext u v
+    simp
+
+/-- Reading `f.hahnModuleMap Γ x` through `HahnModule.of` applies `f` to every coefficient. -/
+@[simp]
+theorem of_symm_hahnModuleMap (f : L →ₗ⁅R⁆ L') (x : HahnModule Γ R L) :
+    (of R).symm (f.hahnModuleMap Γ x) = ((of R).symm x).map f :=
+  (rfl)
+
+/-- The coefficients of `f.hahnModuleMap Γ x` are the images under `f` of those of `x`. -/
+theorem coeff_hahnModuleMap (f : L →ₗ⁅R⁆ L') (x : HahnModule Γ R L) (a : Γ) :
+    ((of R).symm (f.hahnModuleMap Γ x)).coeff a = f (((of R).symm x).coeff a) :=
+  (rfl)
+
+/-- On the series attached to `x`, the induced map applies `f` to every coefficient. -/
+theorem hahnModuleMap_of (f : L →ₗ⁅R⁆ L') (x : HahnSeries Γ L) :
+    f.hahnModuleMap Γ (of R x) = of R (x.map f) :=
+  (rfl)
+
+/-- The monomial `x tᵃ` goes to the monomial `f (x) tᵃ`. -/
+@[simp]
+theorem hahnModuleMap_single (f : L →ₗ⁅R⁆ L') (a : Γ) (x : L) :
+    f.hahnModuleMap Γ (of R (HahnSeries.single a x)) = of R (HahnSeries.single a (f x)) := by
+  ext b
+  by_cases h : b = a <;> simp [h]
+
+variable (Γ R L) in
+/-- The identity of `L` induces the identity of `HahnModule Γ R L`. -/
+@[simp]
+theorem hahnModuleMap_id :
+    (LieHom.id : L →ₗ⁅R⁆ L).hahnModuleMap Γ = LieHom.id := by
+  ext x a
+  simp
+
+/-- The construction is compatible with composition of morphisms. -/
+@[simp]
+theorem hahnModuleMap_comp (g : L' →ₗ⁅R⁆ L'') (f : L →ₗ⁅R⁆ L') :
+    (g.comp f).hahnModuleMap Γ = (g.hahnModuleMap Γ).comp (f.hahnModuleMap Γ) := by
+  ext x a
+  simp
+
+/-- An injective morphism of Lie algebras induces an injective morphism of Hahn series. -/
+theorem hahnModuleMap_injective {f : L →ₗ⁅R⁆ L'} (hf : Function.Injective f) :
+    Function.Injective (f.hahnModuleMap Γ) := fun x y h ↦ by
+  ext a
+  exact hf (by rw [← coeff_hahnModuleMap, ← coeff_hahnModuleMap, h])
+
+end LieHom
+
+namespace LieEquiv
+
+open HahnModule
+
+variable {Γ R L L' L'' : Type*} [AddCommMonoid Γ] [PartialOrder Γ] [IsOrderedCancelAddMonoid Γ]
+  [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L'] [LieRing L'']
+  [LieAlgebra R L'']
+
+variable (Γ) in
+/-- An isomorphism `e : L ≃ L'` of Lie algebras over `R` induces, coefficient by coefficient, an
+isomorphism of Lie algebras `HahnModule Γ R L ≃ HahnModule Γ R L'` over `HahnSeries Γ R`. -/
+def hahnModuleCongr (e : L ≃ₗ⁅R⁆ L') :
+    HahnModule Γ R L ≃ₗ⁅HahnSeries Γ R⁆ HahnModule Γ R L' where
+  __ := (e : L →ₗ⁅R⁆ L').hahnModuleMap Γ
+  invFun := (e.symm : L' →ₗ⁅R⁆ L).hahnModuleMap Γ
+  left_inv x := by
+    ext a
+    simp
+  right_inv x := by
+    ext a
+    simp
+
+/-- The isomorphism of Hahn series is the morphism induced by the underlying morphism. -/
+@[simp]
+theorem coe_hahnModuleCongr (e : L ≃ₗ⁅R⁆ L') :
+    (e.hahnModuleCongr Γ : HahnModule Γ R L →ₗ⁅HahnSeries Γ R⁆ HahnModule Γ R L') =
+      (e : L →ₗ⁅R⁆ L').hahnModuleMap Γ :=
+  (rfl)
+
+/-- Reading `e.hahnModuleCongr Γ x` through `HahnModule.of` applies `e` to every coefficient. -/
+@[simp]
+theorem of_symm_hahnModuleCongr (e : L ≃ₗ⁅R⁆ L') (x : HahnModule Γ R L) :
+    (of R).symm (e.hahnModuleCongr Γ x) = ((of R).symm x).map e :=
+  (rfl)
+
+/-- The inverse of the induced isomorphism is induced by the inverse isomorphism. -/
+@[simp]
+theorem hahnModuleCongr_symm (e : L ≃ₗ⁅R⁆ L') :
+    (e.hahnModuleCongr Γ).symm = e.symm.hahnModuleCongr Γ :=
+  (rfl)
+
+variable (Γ R L) in
+/-- The identity isomorphism of `L` induces the identity isomorphism of `HahnModule Γ R L`. -/
+@[simp]
+theorem hahnModuleCongr_refl : (LieEquiv.refl : L ≃ₗ⁅R⁆ L).hahnModuleCongr Γ = LieEquiv.refl := by
+  ext x a
+  simp
+
+/-- The construction is compatible with composition of isomorphisms. -/
+@[simp]
+theorem hahnModuleCongr_trans (e : L ≃ₗ⁅R⁆ L') (e' : L' ≃ₗ⁅R⁆ L'') :
+    (e.trans e').hahnModuleCongr Γ = (e.hahnModuleCongr Γ).trans (e'.hahnModuleCongr Γ) := by
+  ext x a
+  simp
+
+end LieEquiv

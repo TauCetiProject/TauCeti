@@ -46,10 +46,16 @@ for a filtration, this is the cohomology `H^{p+q}(F_{q+1}/F_q)` of a graded piec
 
 * `CochainComplex.cokernelFiltrationFunctorMapIso`: the cokernel of a transition map of the
   functor of a filtration is the cokernel of the inclusion of subcomplexes.
+* `CochainComplex.cokernelFiltrationFunctorMapIsoOfIsColimit`: when the pieces of a filtration
+  are represented by monomorphisms `X p ⟶ K`, that cokernel is any cokernel of `X p ⟶ X (p + 1)`.
 * `CochainComplex.spectralObjectHIso`: `H^n(f)` is the cohomology of the mapping cone of
   `F.map f`.
 * `CochainComplex.spectralObjectHIsoCokernel`: for a monomorphism `F.map f`, `H^n(f)` is the
   cohomology of the cokernel of `F.map f`.
+* `CochainComplex.spectralObject_H_map_comp_spectralObjectHIso_hom` and
+  `CochainComplex.spectralObject_H_map_comp_spectralObjectHIsoCokernel_hom`: the maps
+  `H^n(f) ⟶ H^n(g)` induced by morphisms of arrows are the maps in cohomology of the induced
+  morphisms of mapping cones, respectively cokernels.
 * `CochainComplex.spectralSequenceFirstPageXIso`: the first page is the cohomology of the mapping
   cones of `F_q ⟶ F_{q+1}`.
 * `CochainComplex.spectralSequenceFirstPageXIsoCokernel`: when `F_q ⟶ F_{q+1}` is a monomorphism,
@@ -168,6 +174,18 @@ lemma spectralObject_δ {i j k : ι} (f : i ⟶ j) (g : j ⟶ k) (n₀ n₁ : �
     exact precomp_spectralObjectMappingCone_δ F f g
   · exact homologySequenceδ_quotient_mapTriangle_obj _ n₀ n₁ h
 
+/-- The maps `H^n(f) ⟶ H^n(g)` of the spectral object of `F` induced by morphisms of arrows
+`φ : f ⟶ g`, read through `spectralObjectHIso`, are the maps in cohomology of the induced
+morphisms of mapping cones. -/
+@[reassoc]
+lemma spectralObject_H_map_comp_spectralObjectHIso_hom {i j i' j' : ι} {f : i ⟶ j}
+    {g : i' ⟶ j'} (φ : mk₁ f ⟶ mk₁ g) (n : ℤ) :
+    ((spectralObject F).H n).map φ ≫ (spectralObjectHIso F g n).hom =
+      (spectralObjectHIso F f n).hom ≫ HomologicalComplex.homologyMap
+        (mappingCone.map (F.map f) (F.map g) (F.map (φ.app 0)) (F.map (φ.app 1))
+          (naturality' ((F.mapComposableArrows 1).map φ) 0 1)) n :=
+  (homologyFunctorFactors C (ComplexShape.up ℤ) n).hom.naturality _
+
 variable {F} {G H : ι ⥤ CochainComplex C ℤ}
 
 /-- The morphism of spectral objects `spectralObject F ⟶ spectralObject G` induced by a natural
@@ -217,6 +235,35 @@ lemma spectralObjectHIsoCokernel_hom {i j : ι} (f : i ⟶ j) [Mono (F.map f)] (
       (spectralObjectHIso F f n).hom ≫ HomologicalComplex.homologyMap
         (mappingCone.descShortComplex (ShortComplex.cokernelSequence (F.map f))) n :=
   (rfl)
+
+/-- The maps `H^n(f) ⟶ H^n(g)` of the spectral object of `F` induced by morphisms of arrows
+`φ : f ⟶ g` such that `F.map f` and `F.map g` are monomorphisms, read through
+`spectralObjectHIsoCokernel`, are the maps in cohomology of the induced morphisms of cokernels. -/
+@[reassoc]
+lemma spectralObject_H_map_comp_spectralObjectHIsoCokernel_hom {i j i' j' : ι} {f : i ⟶ j}
+    {g : i' ⟶ j'} [Mono (F.map f)] [Mono (F.map g)] (φ : mk₁ f ⟶ mk₁ g) (n : ℤ) :
+    ((spectralObject F).H n).map φ ≫ (spectralObjectHIsoCokernel F g n).hom =
+      (spectralObjectHIsoCokernel F f n).hom ≫ HomologicalComplex.homologyMap
+        (cokernel.map (F.map f) (F.map g) (F.map (φ.app 0)) (F.map (φ.app 1))
+          (naturality' ((F.mapComposableArrows 1).map φ) 0 1)) n := by
+  have w : F.map f ≫ F.map (φ.app 1) = F.map (φ.app 0) ≫ F.map g :=
+    naturality' ((F.mapComposableArrows 1).map φ) 0 1
+  -- The morphism of cokernel sequences induced by `φ`.
+  let ψ : ShortComplex.cokernelSequence (F.map f) ⟶ ShortComplex.cokernelSequence (F.map g) :=
+    { τ₁ := F.map (φ.app 0)
+      τ₂ := F.map (φ.app 1)
+      τ₃ := cokernel.map _ _ _ _ w
+      comm₁₂ := w.symm
+      comm₂₃ := (cokernel.π_desc _ _ _).symm }
+  have e := congrArg (fun u ↦ HomologicalComplex.homologyMap u n)
+    (mappingCone.map_descShortComplex _ _ ψ)
+  simp only [HomologicalComplex.homologyMap_comp] at e
+  rw [spectralObjectHIsoCokernel_hom, spectralObjectHIsoCokernel_hom]
+  -- The two sides differ by the identification of `mappingCone (cokernelSequence _).f` with
+  -- `mappingCone _`, which only holds up to unfolding, so the associativity steps are terms.
+  exact (Category.assoc _ _ _).symm.trans
+    ((spectralObject_H_map_comp_spectralObjectHIso_hom F φ n =≫ _).trans
+      ((Category.assoc _ _ _).trans ((_ ≫= e).trans (Category.assoc _ _ _).symm)))
 
 end SpectralObject
 
@@ -283,9 +330,9 @@ lemma filtrationFunctor_map_comp_objIso_hom {a b : EInt} (f : a ⟶ b) :
   simp only [Category.comp_id, Category.id_comp]
   rfl
 
-/-- The map `F_⊥ ⟶ F_⊤` of the functor of a filtration vanishes, its source being zero. -/
-lemma filtrationFunctor_map_bot_top :
-    (filtrationFunctor F hF).map (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤)) = 0 := by
+/-- The maps `F_⊥ ⟶ F_a` of the functor of a filtration vanish, their source being zero. -/
+lemma filtrationFunctor_map_bot (a : EInt) :
+    (filtrationFunctor F hF).map (homOfLE (bot_le : (⊥ : EInt) ≤ a)) = 0 := by
   refine IsZero.eq_of_src ?_ _ _
   rw [filtrationFunctor_obj, filtrationEInt_bot]
   exact IsZero.of_iso (isZero_zero _) Subobject.botCoeIsoZero
@@ -322,6 +369,15 @@ lemma filtrationFunctor_map_comp_arrow {a b : EInt} (f : a ⟶ b) :
       filtrationFunctorArrow F hF a := by
   rw [← Category.assoc, filtrationFunctor_map_comp_objIso_hom, Category.assoc,
     Subobject.ofLE_arrow]
+
+/-- At an integer `q`, the inclusion `filtrationFunctorArrow F hF q` is the inclusion of the
+subcomplex `F_q`. -/
+@[simp]
+lemma eqToHom_comp_filtrationFunctorArrow (q : ℤ) :
+    eqToHom (filtrationFunctor_obj_coe F hF q).symm ≫ filtrationFunctorArrow F hF q =
+      (F q).arrow :=
+  -- Both the comparison `eqToHom` and `filtrationFunctorObjIso` are identities by definition.
+  (Category.id_comp _).trans (Category.id_comp _)
 
 /-- A morphism of complexes sending each piece of a filtration into the corresponding piece of
 another one does so for the extensions of the filtrations to `EInt`. -/
@@ -385,5 +441,70 @@ lemma spectralSequenceFirstPageXIsoCokernel_eq (pq : ℤ × ℤ) (i₁ i₂ : �
   (rfl)
 
 end SpectralSequence
+
+section Stages
+
+variable {K : CochainComplex C ℤ} (F : ℤ → Subobject K) (hF : Monotone F)
+  {X : ℤ → CochainComplex C ℤ} (ι : ∀ p, X p ⟶ K) [∀ p, Mono (ι p)]
+  (hFι : ∀ p, F p = Subobject.mk (ι p))
+
+/-- When each piece `F p` of a filtration is represented by a monomorphism `ι p : X p ⟶ K`, the
+object of the functor of the filtration at `p` is `X p`. -/
+noncomputable def filtrationFunctorObjIsoOfEqMk (p : ℤ) :
+    (filtrationFunctor F hF).obj p ≅ X p :=
+  filtrationFunctorObjIso F hF p ≪≫
+    eqToIso (congrArg (fun S : Subobject K ↦ (S : CochainComplex C ℤ))
+      ((filtrationEInt_coe F p).trans (hFι p))) ≪≫
+    Subobject.underlyingIso (ι p)
+
+/-- The identification `CochainComplex.filtrationFunctorObjIsoOfEqMk` is compatible with the
+inclusions into the filtered complex. -/
+@[reassoc (attr := simp)]
+lemma filtrationFunctorObjIsoOfEqMk_hom_comp (p : ℤ) :
+    (filtrationFunctorObjIsoOfEqMk F hF ι hFι p).hom ≫ ι p = filtrationFunctorArrow F hF p := by
+  simp only [filtrationFunctorObjIsoOfEqMk, Iso.trans_hom, eqToIso.hom, Category.assoc,
+    Subobject.underlyingIso_hom_comp_eq_mk]
+  exact congrArg _ (Subobject.arrow_congr _ _ ((filtrationEInt_coe F p).trans (hFι p)))
+
+/-- Under `CochainComplex.filtrationFunctorObjIsoOfEqMk`, the transition map `F_p ⟶ F_{p+1}` of
+the functor of the filtration is any map `X p ⟶ X (p + 1)` compatible with the inclusions. -/
+@[reassoc]
+lemma filtrationFunctor_map_comp_objIsoOfEqMk_hom (p : ℤ) (f : X p ⟶ X (p + 1))
+    (hf : f ≫ ι (p + 1) = ι p) :
+    (filtrationFunctor F hF).map (homOfLE (coe_le_coe_of_eq_add_one (rfl : p = p) rfl)) ≫
+        (filtrationFunctorObjIsoOfEqMk F hF ι hFι (p + 1)).hom =
+      (filtrationFunctorObjIsoOfEqMk F hF ι hFι p).hom ≫ f := by
+  rw [← cancel_mono (ι (p + 1))]
+  simp only [Category.assoc, filtrationFunctorObjIsoOfEqMk_hom_comp, hf,
+    filtrationFunctor_map_comp_arrow]
+
+/-- When each piece `F p` of a filtration is represented by a monomorphism `ι p : X p ⟶ K`, the
+graded piece `F_{p+1}/F_p`, the cokernel of the transition map of the functor of the filtration,
+is the target of any cokernel `g` of a map `X p ⟶ X (p + 1)` compatible with the inclusions. -/
+noncomputable def cokernelFiltrationFunctorMapIsoOfIsColimit (p : ℤ) (f : X p ⟶ X (p + 1))
+    (hf : f ≫ ι (p + 1) = ι p) {Q : CochainComplex C ℤ} (g : X (p + 1) ⟶ Q) (hfg : f ≫ g = 0)
+    (hg : IsColimit (CokernelCofork.ofπ g hfg)) :
+    cokernel ((filtrationFunctor F hF).map
+      (homOfLE (coe_le_coe_of_eq_add_one (rfl : p = p) rfl))) ≅ Q :=
+  cokernel.mapIso _ f (filtrationFunctorObjIsoOfEqMk F hF ι hFι p)
+      (filtrationFunctorObjIsoOfEqMk F hF ι hFι (p + 1))
+      (filtrationFunctor_map_comp_objIsoOfEqMk_hom F hF ι hFι p f hf) ≪≫
+    (colimit.isColimit _).coconePointUniqueUpToIso hg
+
+/-- The isomorphism `CochainComplex.cokernelFiltrationFunctorMapIsoOfIsColimit` identifies the
+cokernel projection with `g`. -/
+@[reassoc (attr := simp)]
+lemma π_cokernelFiltrationFunctorMapIsoOfIsColimit_hom (p : ℤ) (f : X p ⟶ X (p + 1))
+    (hf : f ≫ ι (p + 1) = ι p) {Q : CochainComplex C ℤ} (g : X (p + 1) ⟶ Q) (hfg : f ≫ g = 0)
+    (hg : IsColimit (CokernelCofork.ofπ g hfg)) :
+    cokernel.π _ ≫ (cokernelFiltrationFunctorMapIsoOfIsColimit F hF ι hFι p f hf g hfg hg).hom =
+      (filtrationFunctorObjIsoOfEqMk F hF ι hFι (p + 1)).hom ≫ g := by
+  rw [cokernelFiltrationFunctorMapIsoOfIsColimit, Iso.trans_hom, ← Category.assoc,
+    cokernel.mapIso_hom, cokernel.π_desc, Category.assoc]
+  congr 1
+  exact IsColimit.comp_coconePointUniqueUpToIso_hom (colimit.isColimit _) hg
+    WalkingParallelPair.one
+
+end Stages
 
 end CochainComplex

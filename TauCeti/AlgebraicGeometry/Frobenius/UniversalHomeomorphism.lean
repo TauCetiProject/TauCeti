@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Frobenius.Twist
-public import TauCeti.AlgebraicGeometry.Morphisms.UniversalHomeomorphism.Basic
+public import TauCeti.AlgebraicGeometry.Morphisms.UniversalHomeomorphism
 
 /-!
 # Frobenius morphisms are integral universal homeomorphisms
@@ -18,11 +18,11 @@ underlying spaces. The same holds for the relative Frobenius `F_{X/S} : X ⟶ X^
 `X` over `S`, for their iterates, and so for every morphism `f` admitting a morphism `g` in the
 other direction such that both `f ≫ g` and `g ≫ f` are iterated absolute Frobenii.
 
-A universal homeomorphism is proved here in Mathlib's form
-`(topologically @IsHomeomorph).universally f` and recorded as an instance of
-`TauCeti.AlgebraicGeometry.IsUniversalHomeomorphism`. It follows that the absolute and relative
-Frobenius and their iterates are surjective, universally injective (radicial), universally closed
-and integral.
+Universal homeomorphisms are expressed both in Mathlib's form
+`(topologically @IsHomeomorph).universally f` and as instances of
+`TauCeti.AlgebraicGeometry.IsUniversalHomeomorphism`. The generic instances for this class imply
+that the absolute and relative Frobenius and their iterates are surjective, universally injective
+(radicial), universally closed and integral.
 
 The key input is `AlgebraicGeometry.Scheme.universally_isHomeomorph_of_comp_eq_iterateFrobenius`:
 if `f ≫ g` and `g ≫ f` are the `n`-fold absolute Frobenius of `X` and of `Y`, then on every base
@@ -40,8 +40,14 @@ inverse continuous maps of underlying spaces.
 * `AlgebraicGeometry.Scheme.Hom.universally_isHomeomorph_relativeFrobenius` and
   `AlgebraicGeometry.Scheme.Hom.universally_isHomeomorph_iterateRelativeFrobenius`: the relative
   Frobenius and its iterates are universal homeomorphisms.
-* Instances: these morphisms are instances of `TauCeti.AlgebraicGeometry.IsUniversalHomeomorphism`,
-  hence `Surjective`, `UniversallyInjective`, `UniversallyClosed` and `IsIntegralHom`.
+* `AlgebraicGeometry.Scheme.isUniversalHomeomorphism_of_comp_eq_iterateFrobenius`: the
+  class-valued criterion for morphisms invertible up to Frobenius.
+* `AlgebraicGeometry.Scheme.isUniversalHomeomorphism_frobenius` and
+  `AlgebraicGeometry.Scheme.isUniversalHomeomorphism_iterateFrobenius`: class instances for
+  absolute Frobenius and its iterates.
+* `AlgebraicGeometry.Scheme.Hom.isUniversalHomeomorphism_relativeFrobenius` and
+  `AlgebraicGeometry.Scheme.Hom.isUniversalHomeomorphism_iterateRelativeFrobenius`: class
+  instances for relative Frobenius and its iterates.
 
 ## References
 
@@ -100,12 +106,19 @@ theorem universally_isHomeomorph_frobenius (hX : (p : Γ(X, ⊤)) = 0) :
     (topologically @IsHomeomorph).universally (X.frobenius p hX) := by
   simpa using universally_isHomeomorph_iterateFrobenius hX 1
 
-/-- The iterated absolute Frobenius is a universal homeomorphism. -/
+/-- A morphism invertible up to iterated absolute Frobenius is a universal homeomorphism. -/
+theorem isUniversalHomeomorphism_of_comp_eq_iterateFrobenius {f : X ⟶ Y} (g : Y ⟶ X)
+    (hY : (p : Γ(Y, ⊤)) = 0) (n : ℕ)
+    (hfg : f ≫ g = X.iterateFrobenius p (natCast_eq_zero_of_hom f hY) n)
+    (hgf : g ≫ f = Y.iterateFrobenius p hY n) : IsUniversalHomeomorphism f :=
+  ⟨universally_isHomeomorph_of_comp_eq_iterateFrobenius g hY n hfg hgf⟩
+
+/-- Iterated absolute Frobenius remains a homeomorphism after every base change. -/
 instance isUniversalHomeomorphism_iterateFrobenius (hX : (p : Γ(X, ⊤)) = 0) (n : ℕ) :
     IsUniversalHomeomorphism (X.iterateFrobenius p hX n) :=
   ⟨universally_isHomeomorph_iterateFrobenius hX n⟩
 
-/-- The absolute Frobenius is a universal homeomorphism. -/
+/-- Absolute Frobenius remains a homeomorphism after every base change. -/
 instance isUniversalHomeomorphism_frobenius (hX : (p : Γ(X, ⊤)) = 0) :
     IsUniversalHomeomorphism (X.frobenius p hX) :=
   ⟨universally_isHomeomorph_frobenius hX⟩
@@ -131,12 +144,13 @@ theorem universally_isHomeomorph_relativeFrobenius :
     (natCast_eq_zero_of_hom (pullback.snd _ _) hS) 1
     (by simp) (by simp)
 
-/-- The iterated relative Frobenius is a universal homeomorphism. -/
+/-- Iterated relative Frobenius remains a homeomorphism after every base change. -/
 instance isUniversalHomeomorphism_iterateRelativeFrobenius (n : ℕ) :
     IsUniversalHomeomorphism (π.iterateRelativeFrobenius p hS n) :=
   ⟨universally_isHomeomorph_iterateRelativeFrobenius π p hS n⟩
 
-/-- The relative Frobenius is a universal homeomorphism. -/
+/-- Relative Frobenius remains a homeomorphism after every base change, with no flatness or
+perfectness hypothesis on the base. -/
 instance isUniversalHomeomorphism_relativeFrobenius :
     IsUniversalHomeomorphism (π.relativeFrobenius p hS) :=
   ⟨universally_isHomeomorph_relativeFrobenius π p hS⟩

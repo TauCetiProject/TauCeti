@@ -8,10 +8,10 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Generator
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Monoidal
 public import Mathlib.CategoryTheory.Localization.Monoidal.Basic
-public import Mathlib.CategoryTheory.MorphismProperty.Limits
 public import Mathlib.CategoryTheory.Sites.LocallyBijective
 public import Mathlib.CategoryTheory.Sites.Localization
 public import Mathlib.LinearAlgebra.DirectSum.Finsupp
+public import TauCeti.CategoryTheory.MorphismProperty.Colimits
 
 import TauCeti.LinearAlgebra.DirectSum.Finsupp
 
@@ -126,21 +126,12 @@ private lemma isStableUnderColimitsOfShape_inverseImage_W_toPresheaf (K : Type*)
     [PreservesColimitsOfShape K (PresheafOfModules.toPresheaf.{u} (R ⋙ forget₂ _ _))]
     [PreservesColimitsOfShape K (presheafToSheaf J AddCommGrpCat.{u})] :
     MorphismProperty.IsStableUnderColimitsOfShape ((J.W (A := AddCommGrpCat.{u})).inverseImage
-      (PresheafOfModules.toPresheaf (R ⋙ forget₂ _ _))) K where
-  condition X₁ X₂ c₁ c₂ h₁ h₂ f hf φ hφ := by
-    let G := PresheafOfModules.toPresheaf (R ⋙ forget₂ _ _) ⋙
-      presheafToSheaf J AddCommGrpCat.{u}
-    have : PreservesColimitsOfShape K G := comp_preservesColimitsOfShape _ _
-    have hW : ∀ {M M' : PresheafOfModules.{u} (R ⋙ forget₂ _ _)} (g : M ⟶ M'),
-        (J.W (A := AddCommGrpCat.{u})).inverseImage
-          (PresheafOfModules.toPresheaf (R ⋙ forget₂ _ _)) g ↔ IsIso (G.map g) := fun g ↦ by
-      rw [MorphismProperty.inverseImage_iff, J.W_eq_inverseImage_isomorphisms]
-      rfl
-    rw [hW]
-    exact MorphismProperty.IsStableUnderColimitsOfShape.condition (W := .isomorphisms _)
-      (X₁ ⋙ G) (X₂ ⋙ G) (G.mapCocone c₁) (G.mapCocone c₂) (isColimitOfPreserves G h₁)
-      (isColimitOfPreserves G h₂) (Functor.whiskerRight f G) (fun k ↦ (hW _).1 (hf k))
-      (G.map φ) (fun k ↦ by simp [G, ← Functor.map_comp, hφ])
+      (PresheafOfModules.toPresheaf (R ⋙ forget₂ _ _))) K := by
+  let G := PresheafOfModules.toPresheaf (R ⋙ forget₂ _ _) ⋙
+    presheafToSheaf J AddCommGrpCat.{u}
+  have : PreservesColimitsOfShape K G := comp_preservesColimitsOfShape _ _
+  rw [J.W_eq_inverseImage_isomorphisms, MorphismProperty.inverseImage_inverseImage]
+  infer_instance
 
 /-- If tensoring with each term of a diagram preserves a local isomorphism `f`, then so does
 tensoring with the colimit of the diagram. -/

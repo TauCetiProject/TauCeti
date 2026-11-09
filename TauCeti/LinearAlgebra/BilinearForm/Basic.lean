@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.OrderOfElement
+public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
+import TauCeti.LinearAlgebra.Determinant.Prod
 
 /-!
 # Basic identities for bilinear forms
@@ -19,6 +22,12 @@ and cancelling the `2` leaves `B x y = 0`.
 That cancellation is all the hypothesis on the ring there is: `2` has to be regular, and nothing
 is asked of any other element, so the statement covers rings with zero divisors elsewhere.  Over a
 field, or over any domain, `IsRegular.of_ne_zero` supplies the hypothesis from `(2 : R) ≠ 0`.
+
+A bilinear map with additively torsion-free values, such as an integral intersection form,
+vanishes on elements of finite additive order, so its values depend on each argument only modulo
+torsion. In particular, for a hyperbolic pair `v, t` of a `ℤ`-valued form (`v · v = t · t = 0`,
+`v · t = t · v = 1`), every class `a v + c t` modulo torsion has square `2ac`, so the form is even
+when `v, t` span modulo torsion.
 
 For a left-separating alternating bilinear map on a module with a two-element basis, its value
 on that basis has trivial scalar annihilator. This holds over any commutative semiring and for
@@ -32,9 +41,22 @@ maps valued in an arbitrary module.
   preserves nondegeneracy.
 * `TauCeti.BilinForm.nondegenerate_neg_iff`: negating a bilinear form preserves nondegeneracy.
 * `Module.Basis.dualBasis_smul_apply`: the dual basis of a scalar multiple of a form.
+* `LinearMap.BilinForm.IsSymm.of_smul`: cancel a non-zero-divisor from a symmetric scalar
+  multiple of a bilinear form.
 * `LinearMap.BilinForm.IsSymm.apply_add_self`: polarization of a symmetric bilinear form.
+* `LinearMap.apply_eq_apply_of_isOfFinAddOrder_sub_left`,
+  `LinearMap.apply_eq_apply_of_isOfFinAddOrder_sub_right`: a bilinear map with additively
+  torsion-free values sees each argument only modulo elements of finite additive order.
+* `LinearMap.BilinForm.apply_self_eq_two_mul_mul_of_isOfFinAddOrder_sub`: `x · x = 2ac` for
+  `x = a v + c t` modulo torsion, where `v, t` is a hyperbolic pair of a `ℤ`-valued form.
+* `LinearMap.BilinForm.even_apply_self_of_isOfFinAddOrder_span`: a `ℤ`-valued form spanned modulo
+  torsion by a hyperbolic pair is even.
 * `LinearMap.IsAlt.eq_zero_of_smul_apply_basis_eq_zero`: the value of a left-separating
   alternating bilinear map on a two-element basis has trivial scalar annihilator.
+* `LinearMap.IsAlt.apply_smul_add_smul`: an alternating bilinear map on two combinations of a
+  pair of vectors is the determinant of the coefficient matrix times its value on the pair, and
+  `LinearMap.IsAlt.apply_smul_add_smul_det` its form with coefficients the columns of an
+  endomorphism of `R × R`.
 -/
 
 public section
@@ -49,13 +71,50 @@ theorem eq_zero_of_smul_apply_basis_eq_zero {R M N : Type*} [CommSemiring R]
     (hω : ω.SeparatingLeft) {r : R} (hr : r • ω (b 0) (b 1) = 0) : r = 0 := by
   have hb : r • b 0 = 0 := hω _ fun y ↦ by
     conv_lhs => rw [← b.sum_repr y]
-    simp only [Fin.sum_univ_two, map_add, map_smul, smul_apply, halt (b 0), hr, smul_zero,
+    simp only [Fin.sum_univ_two, map_add, map_smul, LinearMap.smul_apply, halt (b 0), hr, smul_zero,
       add_zero]
   simpa using congr(b.repr $hb 0)
 
+/-- An alternating bilinear map on two combinations `a v + b w` and `c v + d w` of a pair of
+vectors is the determinant `a d - b c` of the coefficient matrix times its value on the pair. -/
+theorem apply_smul_add_smul {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] {ω : M →ₗ[R] M →ₗ[R] N} (halt : ω.IsAlt) (v w : M)
+    (a b c d : R) :
+    ω (a • v + b • w) (c • v + d • w) = (a * d - b * c) • ω v w := by
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, halt.self_eq_zero,
+    smul_zero, zero_add, add_zero, ← halt.neg v w, smul_neg, sub_smul, mul_smul]
+  rw [smul_comm d a, smul_comm c b, add_comm, ← sub_eq_add_neg]
+
+/-- `LinearMap.IsAlt.apply_smul_add_smul` with coefficients the images of the coordinate
+directions under an endomorphism `B` of `R × R`: the coefficient is `det B`. -/
+theorem apply_smul_add_smul_det {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] {ω : M →ₗ[R] M →ₗ[R] N} (halt : ω.IsAlt)
+    (B : (R × R) →ₗ[R] R × R) (v w : M) :
+    ω ((B (1, 0)).1 • v + (B (1, 0)).2 • w) ((B (0, 1)).1 • v + (B (0, 1)).2 • w) =
+      LinearMap.det B • ω v w := by
+  rw [halt.apply_smul_add_smul, LinearMap.det_finTwoProd]
+
 end LinearMap.IsAlt
 
+namespace LinearMap.BilinForm
+
+/-- Restriction to a submodule commutes with scalar multiplication of a bilinear form. -/
+@[simp]
+theorem restrict_smul {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    (r : R) (B : LinearMap.BilinForm R M) (N : Submodule R M) :
+    (r • B).restrict N = r • B.restrict N := by
+  ext x y
+  simp
+
+end LinearMap.BilinForm
+
 namespace LinearMap.BilinForm.IsSymm
+
+/-- A form `C` is symmetric when `a • C` is, for a non-zero-divisor `a`. -/
+theorem of_smul {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    {a : R} (ha : a ∈ nonZeroDivisors R) {C : LinearMap.BilinForm R M}
+    (hC : (a • C).IsSymm) : C.IsSymm :=
+  ⟨fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp (by simpa using hC.eq x y)⟩
 
 /-- Polarization of a symmetric bilinear form over a commutative semiring. -/
 theorem apply_add_self {R M : Type*} [CommSemiring R] [AddCommMonoid M]
@@ -65,6 +124,57 @@ theorem apply_add_self {R M : Type*} [CommSemiring R] [AddCommMonoid M]
   ring
 
 end LinearMap.BilinForm.IsSymm
+
+namespace LinearMap
+
+variable {R M N P : Type*} [CommSemiring R] [AddCommGroup P] [IsAddTorsionFree P] [Module R P]
+
+/-- A bilinear map with additively torsion-free values sees its left argument only modulo
+elements of finite additive order. -/
+theorem apply_eq_apply_of_isOfFinAddOrder_sub_left [AddCommGroup M] [Module R M]
+    [AddCommMonoid N] [Module R N]
+    (B : M →ₗ[R] N →ₗ[R] P) {x x' : M} (h : IsOfFinAddOrder (x - x')) (y : N) :
+    B x y = B x' y := by
+  have := ((B.flip y).toAddMonoidHom.isOfFinAddOrder h).eq_zero'
+  simpa [sub_eq_zero] using this
+
+/-- A bilinear map with additively torsion-free values sees its right argument only modulo
+elements of finite additive order. -/
+theorem apply_eq_apply_of_isOfFinAddOrder_sub_right [AddCommMonoid M] [Module R M]
+    [AddCommGroup N] [Module R N]
+    (B : M →ₗ[R] N →ₗ[R] P) {y y' : N} (h : IsOfFinAddOrder (y - y')) (x : M) :
+    B x y = B x y' := by
+  have := ((B x).toAddMonoidHom.isOfFinAddOrder h).eq_zero'
+  simpa [sub_eq_zero] using this
+
+end LinearMap
+
+namespace LinearMap.BilinForm
+
+variable {H : Type*} [AddCommGroup H] {B : LinearMap.BilinForm ℤ H} {v t x : H} {a c : ℤ}
+
+/-- A class `x = a v + c t` modulo torsion, for a hyperbolic pair `v, t` of a `ℤ`-valued form,
+has square `2ac`. -/
+theorem apply_self_eq_two_mul_mul_of_isOfFinAddOrder_sub (hv : B v v = 0) (ht : B t t = 0)
+    (hvt : B v t = 1) (htv : B t v = 1) (hx : IsOfFinAddOrder (x - (a • v + c • t))) :
+    B x x = 2 * a * c := by
+  rw [B.apply_eq_apply_of_isOfFinAddOrder_sub_left hx,
+    B.apply_eq_apply_of_isOfFinAddOrder_sub_right hx]
+  simp only [map_add, map_zsmul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hv, ht,
+    hvt, htv]
+  ring
+
+/-- If every class is an integral combination of a hyperbolic pair `v, t` modulo torsion, the
+`ℤ`-valued form is even. -/
+theorem even_apply_self_of_isOfFinAddOrder_span (hv : B v v = 0) (ht : B t t = 0)
+    (hvt : B v t = 1) (htv : B t v = 1)
+    (hspan : ∀ x : H, ∃ a c : ℤ, IsOfFinAddOrder (x - (a • v + c • t))) (x : H) :
+    Even (B x x) := by
+  obtain ⟨a, c, hx⟩ := hspan x
+  rw [apply_self_eq_two_mul_mul_of_isOfFinAddOrder_sub hv ht hvt htv hx, mul_assoc]
+  exact even_two_mul _
+
+end LinearMap.BilinForm
 
 namespace TauCeti
 
@@ -107,7 +217,7 @@ theorem nondegenerate_smul_iff {R M : Type*} [CommSemiring R] [AddCommMonoid M]
 
 /-- Negating a bilinear form preserves nondegeneracy. -/
 @[simp]
-theorem nondegenerate_neg_iff {R M : Type*} [CommRing R] [AddCommGroup M]
+theorem nondegenerate_neg_iff {R M : Type*} [CommRing R] [AddCommMonoid M]
     [Module R M] {B : BilinForm R M} :
     (-B).Nondegenerate ↔ B.Nondegenerate := by
   rw [← neg_one_smul R B]

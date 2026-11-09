@@ -158,3 +158,18 @@ theorem autMulEquiv_symm_hom_app (s : Aut Y) {X : C} (x : F.obj (op X)) :
   R.postcompIso_hom_app s x
 
 end CategoryTheory.Functor.RepresentableBy
+
+namespace TauCeti
+
+open CategoryTheory
+
+universe w v u
+
+/-- Transporting a representation along a presheaf isomorphism applies that isomorphism to
+its classifying element. -/
+theorem homEquiv_ofIso {C : Type u} [CategoryTheory.Category.{v} C]
+    {F G : Cᵒᵖ ⥤ Type w} {Y X : C} {R : F.RepresentableBy Y} {e : F ≅ G} {f : X ⟶ Y} :
+    (R.ofIso e).homEquiv f = e.hom.app (Opposite.op X) (R.homEquiv f) :=
+  (rfl)
+
+end TauCeti

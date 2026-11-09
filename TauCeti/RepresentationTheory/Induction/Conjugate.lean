@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Skeletal
+public import TauCeti.Algebra.Group.Action.End
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.RepresentationTheory.Induction.Restriction
 
@@ -22,9 +23,9 @@ This is the representation occurring in the summands of the Mackey decomposition
 
 The conjugation convention itself, that `MulAut.conj s • H` is `sHs⁻¹` and so that the membership
 proof `conjRep` needs is `s⁻¹xs ∈ H`, is pinned in `TauCeti.Algebra.Group.Subgroup.Pointwise` as
-`TauCeti.mem_conj_smul`, together with the laws `TauCeti.conj_one_smul` and
-`TauCeti.conj_mul_smul` making conjugation an action of `G` on the subgroups of `G`; the coherence
-below transports the representations along them.
+`TauCeti.mem_conj_smul`.  The laws `TauCeti.conj_one_smul` and `TauCeti.conj_mul_smul` of
+`TauCeti.Algebra.Group.Action.End` make conjugation an action of `G` on the subgroups of `G`; the
+coherence below transports the representations along them.
 
 The file also records the coherence making `s ↦ {}^s(-)` an action: conjugating by `1` does
 nothing and `{}^{st} A = {}^s({}^t A)`.  Neither statement is literally an equation between
@@ -521,7 +522,7 @@ theorem _root_.Representation.apply_conjNormal_inv (g : G) (n : N) (v : V) :
   have hg : g * (MulAut.conjNormal g⁻¹ n : G) = (n : G) * g := by
     rw [MulAut.conjNormal_apply]
     group
-  rw [← Module.End.mul_apply, ← Module.End.mul_apply, ← map_mul, ← map_mul, hg]
+  rw [← mul_apply_eq_comp, ← mul_apply_eq_comp, ← map_mul, ← map_mul, hg]
 
 end Representation
 
@@ -890,4 +891,4 @@ theorem Representation.apply_conjNormal_coe {k : Type u} {G : Type v} {V : Type 
     (σ : Representation k N V) (m n : N) (v : V) :
     σ m (σ n v) = σ (MulAut.conjNormal (m : G) n) (σ m v) := by
   have hm : m * n = MulAut.conjNormal (m : G) n * m := Subtype.ext (by simp [mul_assoc])
-  rw [← Module.End.mul_apply, ← Module.End.mul_apply, ← map_mul, ← map_mul, hm]
+  rw [← mul_apply_eq_comp, ← mul_apply_eq_comp, ← map_mul, ← map_mul, hm]

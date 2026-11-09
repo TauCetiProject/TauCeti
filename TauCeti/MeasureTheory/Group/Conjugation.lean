@@ -234,7 +234,7 @@ theorem conjLpₗᵢ_symm (h : G) :
       conjLpₗᵢ (E := E) (p := p) (μ := μ) 𝕜 h⁻¹ := by
   refine LinearIsometryEquiv.ext fun f ↦ ?_
   rw [LinearIsometryEquiv.symm_apply_eq, conjLpₗᵢ_apply, conjLpₗᵢ_apply]
-  exact (Lp.compMeasurePreserving_comp_apply_of_ae_id (E := E) (p := p)
+  exact (Lp.leftInverse_compMeasurePreserving (E := E) (p := p)
     (measurePreserving_conj μ h⁻¹) (measurePreserving_conj μ h)
     (.of_eq (funext fun g ↦ by simp [mul_assoc])) f).symm
 

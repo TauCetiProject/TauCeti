@@ -100,7 +100,8 @@ theorem infiniteAdeleSemilocalHom_algebraMap (x : L) :
     infiniteAdeleSemilocalHom L v (algebraMap L _ x) = 1 ⊗ₜ[K] x := by
   rw [infiniteAdeleSemilocalHom_apply, ← infiniteSemilocalEquiv_symm_algebraMap L v x]
   exact congrArg (infiniteSemilocalEquiv L v).symm
-    (funext fun w ↦ InfiniteAdeleRing.algebraMap_apply L x w.1)
+    (funext fun w ↦ by
+      rw [InfiniteAdeleRing.algebraMap_apply, InfinitePlace.Completion.algebraMap_apply])
 
 /-! ### The product over all infinite places -/
 

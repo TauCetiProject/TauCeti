@@ -69,13 +69,13 @@ private theorem polar_single_single_eq_zero [DecidableEq n] (i j k l : n)
 idempotent off the diagonal. For `i = j` it is the scalar `1/2`. -/
 noncomputable def carOccupationElement (i j : n) :
     CliffordAlgebra (traceQuadraticForm K n) :=
-  (2 : K)⁻¹ • (carGenerator (K := K) i j * carGenerator j i)
+  (2 : K)⁻¹ • (carGenerator (R := K) i j * carGenerator j i)
 
 /-- The occupation element written in terms of the canonical matrix-unit generators. -/
 theorem carOccupationElement_def (i j : n) :
     carOccupationElement (K := K) i j =
       (2 : K)⁻¹ •
-        (carGenerator (K := K) i j * carGenerator j i) := by
+        (carGenerator (R := K) i j * carGenerator j i) := by
   rfl
 
 /-- The diagonal occupation element is the scalar `1/2`. -/
@@ -90,9 +90,9 @@ theorem carOccupationElement_self (i : n) :
 theorem carOccupationElement_mul_swap {i j : n} (hij : i ≠ j) :
     carOccupationElement (K := K) i j * carOccupationElement (K := K) j i = 0 := by
   rw [carOccupationElement, carOccupationElement, smul_mul_assoc, mul_smul_comm, smul_smul]
-  rw [mul_assoc (carGenerator (K := K) i j) (carGenerator j i)
+  rw [mul_assoc (carGenerator (R := K) i j) (carGenerator j i)
       (carGenerator j i * carGenerator i j),
-    ← mul_assoc (carGenerator (K := K) j i) (carGenerator j i)
+    ← mul_assoc (carGenerator (R := K) j i) (carGenerator j i)
       (carGenerator i j)]
   simp [carGenerator_mul_self, hij]
 
@@ -106,7 +106,7 @@ diagonal, where both terms are the scalar `1/2`. -/
 theorem carOccupationElement_add_swap (i j : n) :
     carOccupationElement (K := K) i j + carOccupationElement (K := K) j i = 1 := by
   rw [carOccupationElement, carOccupationElement, ← smul_add]
-  have hcar := carGenerator_mul_add_swap (K := K) i j j i
+  have hcar := carGenerator_mul_add_swap (R := K) i j j i
   rw [hcar, Algebra.smul_def, ← map_mul]
   simp
 

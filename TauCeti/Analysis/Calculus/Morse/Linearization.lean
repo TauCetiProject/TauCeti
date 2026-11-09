@@ -7,13 +7,17 @@ module
 
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import TauCeti.Analysis.Calculus.IteratedGradient
 public import TauCeti.Analysis.Calculus.Morse.Basic
 -- Private: symmetry of the second derivative, strict differentiability, and the
 -- gradient/Fréchet-derivative norm comparison are used only in proofs below.
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Calculus.SecondDerivative
 
 /-!
 # Linearization of the negative-gradient field at a Morse critical point
@@ -40,12 +44,20 @@ results that identify the operator as the derivative of the gradient and prove s
 
 * `TauCeti.hessianOperator`: the Riesz-represented Hessian as an endomorphism of the Hilbert space.
 * `TauCeti.hessianOperator_eq_continuousLinearMapOfBilin`: its Riesz formula.
+* `OrthonormalBasis.toMatrix_hessianOperator_apply` and `OrthonormalBasis.det_hessianOperator`:
+  its entries and its determinant in an orthonormal basis.
+* `ContDiffAt.contDiffAt_hessianOperator`: pointwise regularity of the Hessian field.
+* `ContDiffAt.fderiv_hessianOperator_apply`: its directional derivative is the Hessian of the
+  directional derivative of the function.
 * `TauCeti.hessianOperator_congr_of_eventuallyEq`: the operator depends only on the germ of the
   function at the point.
+* `ContDiff.contDiff_hessianOperator`: the Hessian operator of a `C^{m+2}` function is `Cᵐ`.
 * `ContDiffAt.isSelfAdjoint_hessianOperator`: symmetry of the second derivative becomes
   self-adjointness of the Hessian operator.
 * `ContDiffAt.hasFDerivAt_neg_gradient`: the derivative of `-∇ f` is the negative Hessian
   operator.
+* `ContDiffAt.hasDerivAt_gradient_comp`: the derivative of the gradient along a curve is the
+  Hessian operator applied to the velocity.
 * `TauCeti.negativeGradientRemainder`: the nonlinear part of the negative-gradient field after
   subtracting its linearization at a chosen point.
 * `ContDiffAt.exists_lipschitzOnWith_negativeGradientRemainder`: on a sufficiently small ball,
@@ -112,6 +124,27 @@ theorem inner_hessianOperator_left (f : E → ℝ) (x v w : E) :
   rw [hessianOperator_eq_continuousLinearMapOfBilin]
   exact continuousLinearMapOfBilin_apply _ _ _
 
+/-- In an orthonormal basis, the entry of the Hessian operator in row `i` and column `j`
+is the second derivative with the input directions `b j` and `b i`. -/
+theorem _root_.OrthonormalBasis.toMatrix_hessianOperator_apply {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (b : OrthonormalBasis ι ℝ E) (f : E → ℝ) (x : E) (i j : ι) :
+    LinearMap.toMatrix b.toBasis b.toBasis (hessianOperator f x).toLinearMap i j =
+      fderiv ℝ (fderiv ℝ f) x (b j) (b i) := by
+  simp only [LinearMap.toMatrix_apply, b.coe_toBasis, b.coe_toBasis_repr_apply,
+    ContinuousLinearMap.coe_coe, b.repr_apply_apply]
+  rw [real_inner_comm, inner_hessianOperator_left]
+
+/-- In an orthonormal basis, the determinant of the Hessian operator is the determinant of the
+matrix whose entry in row `i` and column `j` is the second derivative with the input directions
+`b j` and `b i`. -/
+theorem _root_.OrthonormalBasis.det_hessianOperator {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : OrthonormalBasis ι ℝ E) (f : E → ℝ) (x : E) :
+    (hessianOperator f x).det = (Matrix.of fun i j => fderiv ℝ (fderiv ℝ f) x (b j) (b i)).det := by
+  rw [ContinuousLinearMap.det, ← LinearMap.det_toMatrix b.toBasis]
+  congr 1
+  ext i j
+  exact b.toMatrix_hessianOperator_apply f x i j
+
 /-- Applying the Riesz map to the Hessian operator recovers the dual-valued second derivative. -/
 @[simp]
 theorem toDual_hessianOperator (f : E → ℝ) (x : E) :
@@ -134,6 +167,41 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
   {f : E → ℝ} {x : E}
 
 open TauCeti
+
+/-- The Hessian operator field of a `C^{m+2}` function at `x` is `Cᵐ` at `x`. -/
+theorem contDiffAt_hessianOperator {m n : WithTop ℕ∞} (hf : ContDiffAt ℝ n f x)
+    (hmn : m + 2 ≤ n) : ContDiffAt ℝ m (hessianOperator f) x := by
+  rw [← funext (fderiv_gradient f)]
+  exact (hf.gradient_right (m := m + 1) (by rwa [add_assoc, one_add_one_eq_two])).fderiv_right
+    le_rfl
+
+/-- For a `C³` function, differentiating the Hessian operator field in direction `v` gives the
+Hessian operator of the directional derivative in direction `v`.
+
+The use of third-derivative symmetry is adapted from the
+[KLS formalization](https://github.com/human-ai-mathematics/kls-lean/blob/9cde7938fc09cd017519c7c8a498bee99c12f717/formalization/FunctionalInequalities/Analysis/BakryEmery/LinearizedEquation.lean). -/
+theorem fderiv_hessianOperator_apply (hf : ContDiffAt ℝ 3 f x) (v : E) :
+    fderiv ℝ (hessianOperator f) x v = hessianOperator (fun y ↦ fderiv ℝ f y v) x := by
+  have hDf : ContDiffAt ℝ 2 (fderiv ℝ f) x := hf.fderiv_right (by norm_num)
+  have hD2 : DifferentiableAt ℝ (fderiv ℝ (fderiv ℝ f)) x :=
+    (hDf.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
+  have hH := (hf.contDiffAt_hessianOperator (m := 1) (by norm_num)).differentiableAt one_ne_zero
+  apply ContinuousLinearMap.ext
+  intro a
+  apply ext_inner_right ℝ
+  intro w
+  rw [inner_hessianOperator_left, fderiv_fderiv_fderiv_apply hf]
+  calc
+    _ = fderiv ℝ (fun y ↦ ⟪hessianOperator f y a, w⟫_ℝ) x v := by
+      rw [fderiv_inner_apply ℝ (hH.clm_apply (differentiableAt_const a)) (differentiableAt_const w)]
+      simp only [fderiv_const_apply, zero_apply, inner_zero_right, zero_add,
+        fderiv_clm_apply_const_apply hH]
+    _ = fderiv ℝ (fderiv ℝ (fderiv ℝ f)) x v a w := by
+      simp only [inner_hessianOperator_left, fderiv_clm_apply_const_apply₂ hD2]
+    -- Schwarz symmetry moves `v` from the first slot of the third derivative to the last.
+    _ = fderiv ℝ (fderiv ℝ (fderiv ℝ f)) x a v w :=
+      congrArg (fun A : E →L[ℝ] ℝ ↦ A w) (hDf.isSymmSndFDerivAt (by norm_num) v a)
+    _ = _ := fderiv_fderiv_fderiv_apply_comm hf (by norm_num) a v w
 
 /-- Twice continuous differentiability makes the Hessian operator self-adjoint. This is the
 operator form of symmetry of the second Fréchet derivative. -/
@@ -171,7 +239,28 @@ theorem hasFDerivAt_neg_gradient (hf : ContDiffAt ℝ 2 f x) :
     HasFDerivAt (-∇ f) (-hessianOperator f x) x :=
   (hasFDerivAt_gradient hf).neg
 
+/-- **Chain rule for the gradient along a curve.** If `f` is `C²` at `γ s` and the curve `γ` has
+velocity `v` at `s`, then `t ↦ ∇f(γ t)` has derivative `Hess f(γ s) v` at `s`. -/
+theorem hasDerivAt_gradient_comp {γ : ℝ → E} {s : ℝ} {v : E} (hf : ContDiffAt ℝ 2 f (γ s))
+    (hγ : HasDerivAt γ v s) :
+    HasDerivAt (fun t ↦ ∇ f (γ t)) (hessianOperator f (γ s) v) s :=
+  hf.hasFDerivAt_gradient.comp_hasDerivAt s hγ
+
 end ContDiffAt
+
+namespace ContDiff
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {f : E → ℝ}
+
+open TauCeti
+
+/-- The Hessian operator field of a `C^{m+2}` function is `Cᵐ`. -/
+theorem contDiff_hessianOperator {m n : WithTop ℕ∞} (hf : ContDiff ℝ n f) (hmn : m + 2 ≤ n) :
+    ContDiff ℝ m (hessianOperator f) :=
+  contDiff_iff_contDiffAt.2 fun x ↦ (hf.contDiffAt (x := x)).contDiffAt_hessianOperator hmn
+
+end ContDiff
 
 namespace TauCeti
 
@@ -217,15 +306,14 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 
 open TauCeti
 
-/-- The negative-gradient remainder is continuously differentiable at its base point when the
-function is twice continuously differentiable there. -/
-theorem contDiffAt_negativeGradientRemainder (hf : ContDiffAt ℝ 2 f x) :
-    ContDiffAt ℝ 1 (negativeGradientRemainder f x) x := by
-  have hgrad : ContDiffAt ℝ 1 (∇ f) x :=
-    (InnerProductSpace.toDual ℝ E).symm.contDiff.contDiffAt.comp x
-      (hf.fderiv_right (by norm_num))
-  exact hgrad.neg.add <|
-    (hessianOperator f x).contDiff.contDiffAt.comp x (contDiffAt_id.sub contDiffAt_const)
+/-- The negative-gradient remainder `negativeGradientRemainder f x` is `C^m` at any point `y` where
+`f` is `C^n`, provided `m + 1 ≤ n`. -/
+theorem contDiffAt_negativeGradientRemainder {m n : WithTop ℕ∞} {y : E}
+    (hf : ContDiffAt ℝ n f y) (hmn : m + 1 ≤ n) :
+    ContDiffAt ℝ m (negativeGradientRemainder f x) y := by
+  rw [funext (negativeGradientRemainder_apply f x)]
+  exact (hf.gradient_right hmn).neg.add <|
+    (hessianOperator f x).contDiff.contDiffAt.comp y (contDiffAt_id.sub contDiffAt_const)
 
 /-- At a twice continuously differentiable point, the derivative of the nonlinear
 negative-gradient remainder at its base point is zero. -/
@@ -246,7 +334,7 @@ strictly differentiable with zero derivative. This is the two-point estimate nee
 contraction argument for the local stable-manifold theorem. -/
 theorem hasStrictFDerivAt_negativeGradientRemainder (hf : ContDiffAt ℝ 2 f x) :
     HasStrictFDerivAt (negativeGradientRemainder f x) (0 : E →L[ℝ] E) x :=
-  hf.contDiffAt_negativeGradientRemainder.hasStrictFDerivAt'
+  (hf.contDiffAt_negativeGradientRemainder (m := 1) (by norm_num)).hasStrictFDerivAt
     hf.hasFDerivAt_negativeGradientRemainder one_ne_zero
 
 /-- On a sufficiently small closed ball about a twice continuously differentiable point, the
@@ -271,7 +359,7 @@ theorem neg_gradient_sub_linearization_isLittleO (hf : ContDiffAt ℝ 2 f x) (hg
       (fun y ↦ y - x) := by
   have hrem := hf.hasFDerivAt_negativeGradientRemainder.isLittleO
   rw [negativeGradientRemainder_self hgrad] at hrem
-  simpa only [negativeGradientRemainder_apply, sub_zero, zero_apply] using hrem
+  simpa only [negativeGradientRemainder_apply, sub_zero, _root_.zero_apply] using hrem
 
 /-- Near a critical point of a twice continuously differentiable function the gradient is bounded
 above by a multiple of the distance to that point: it vanishes at the point and is differentiable

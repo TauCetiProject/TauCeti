@@ -43,7 +43,8 @@ therefore lands in `S(H)^W`, and the central character is its value at the `ρ`-
 These two equations fix the sign of the shift. The linear normalization is the one in which the
 Harish-Chandra isomorphism `Z(U(L)) ≃ S(H)^W` is compared with the Chevalley restriction theorem
 for `S(L)^L`: there the Weyl group acts linearly, so this is the form in which the two are matched.
-That the projection is onto, and so an isomorphism onto the invariants, is not proved here.
+Over an algebraically closed field the projection is onto the Weyl invariants
+(`TauCeti.range_hcProjectionLinear`).
 
 ## Main definitions
 
@@ -58,6 +59,8 @@ That the projection is onto, and so an isomorphism onto the invariants, is not p
 
 * `TauCeti.linearInvariants_eq_symmetricAlgebraInvariants`: the Weyl invariants are the invariants
   of the coroot representation `RootPairing.weylGroupCorootRep` on `H`.
+* `TauCeti.isHomogeneous_linearInvariants`: every homogeneous component of a Weyl invariant is a
+  Weyl invariant.
 * `TauCeti.translation_neg_weylVector_mem_linearInvariants_iff`: translation by `-ρ` takes an
   element of `S(H)` to a Weyl invariant exactly when the element is dot-invariant.
 * `TauCeti.lift_hcProjectionLinear` and `TauCeti.lift_add_weylVector_hcProjectionLinear`: the
@@ -148,6 +151,13 @@ theorem linearInvariants_eq_symmetricAlgebraInvariants :
   · obtain ⟨g, hg⟩ := g
     exact eq_of_forall_lift_apply_eq fun lam ↦ (key ⟨g.unop, hg⟩ lam p).trans (hp _ lam)
   · rw [← key, hp]
+
+/-- **The Weyl invariants are homogeneous**: every homogeneous component of a Weyl invariant is a
+Weyl invariant, since the Weyl group acts on `S(H)` by graded automorphisms. -/
+theorem isHomogeneous_linearInvariants :
+    DirectSum.SetLike.IsHomogeneous (homogeneousSubmodule K H) (linearInvariants H) :=
+  linearInvariants_eq_symmetricAlgebraInvariants (H := H) ▸
+    Representation.isHomogeneous_symmetricAlgebraInvariants _
 
 /-! ### From dot-invariants to Weyl invariants -/
 

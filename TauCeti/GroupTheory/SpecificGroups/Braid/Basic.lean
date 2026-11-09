@@ -49,6 +49,8 @@ cause.
 * `TauCeti.BraidGroup.transposition i`: the transposition of those two strands.
 * `TauCeti.BraidGroup.strandIncl`: the homomorphism adding one uncrossed strand,
   `BraidGroup (n + 1) →* BraidGroup (n + 2)`.
+* `TauCeti.BraidGroup.castAdd` and `TauCeti.BraidGroup.natAdd`: the homomorphisms placing a braid
+  on the bottom or the top strands of a larger braid group, the other strands uncrossed.
 * `TauCeti.BraidGroup.permHom n`: the underlying-permutation homomorphism.
 * `TauCeti.BraidGroup.pureSubgroup n`: the pure braid group, its kernel.
 
@@ -267,6 +269,53 @@ theorem transposition_eq_swap (i : Fin (n - 1)) :
     transposition i = Equiv.swap (strand i) (strandSucc i) :=
   (rfl)
 
+/-- An adjacent transposition sends the lower strand it crosses to the upper one. -/
+@[simp]
+theorem transposition_apply_strand (i : Fin (n - 1)) : transposition i (strand i) = strandSucc i :=
+  Equiv.swap_apply_left _ _
+
+/-- An adjacent transposition sends the upper strand it crosses to the lower one. -/
+@[simp]
+theorem transposition_apply_strandSucc (i : Fin (n - 1)) :
+    transposition i (strandSucc i) = strand i :=
+  Equiv.swap_apply_right _ _
+
+/-- The value of an adjacent transposition, on the underlying natural numbers. -/
+theorem val_transposition_apply (i : Fin (n - 1)) (x : Fin n) :
+    (transposition i x : ℕ) =
+      if (x : ℕ) = i then (i : ℕ) + 1 else if (x : ℕ) = (i : ℕ) + 1 then (i : ℕ) else (x : ℕ) := by
+  rw [transposition_eq_swap, Equiv.swap_apply_def]
+  split_ifs <;> simp_all [Fin.ext_iff]
+
+/-- An adjacent transposition is an involution. -/
+@[simp]
+theorem transposition_mul_self (i : Fin (n - 1)) :
+    transposition i * transposition i = 1 :=
+  Equiv.swap_mul_self _ _
+
+/-- Right multiplication by an adjacent transposition is an involution. -/
+@[simp]
+theorem mul_transposition_mul_self (σ : Equiv.Perm (Fin n)) (i : Fin (n - 1)) :
+    σ * transposition i * transposition i = σ :=
+  Equiv.mul_swap_mul_self _ _ _
+
+/-- Distinct braid indices have distinct adjacent transpositions. -/
+theorem transposition_injective : Function.Injective (transposition (n := n)) := by
+  intro i j hij
+  have := congrArg (fun σ : Equiv.Perm (Fin n) ↦ (σ (strand i) : ℕ)) hij
+  simp only [val_transposition_apply, val_strand] at this
+  ext
+  split_ifs at this <;> omega
+
+/-- An adjacent transposition preserves the relative order of every pair of strands except the
+two strands it swaps. -/
+theorem eq_strand_of_transposition_lt {i : Fin (n - 1)} {x y : Fin n} (hxy : x < y)
+    (h : transposition i y < transposition i x) : x = strand i ∧ y = strandSucc i := by
+  rw [Fin.lt_def] at hxy h
+  simp only [val_transposition_apply] at h
+  simp only [Fin.ext_iff, val_strand, val_strandSucc]
+  split_ifs at h <;> omega
+
 /-- The transposition underlying an elementary braid is Mathlib's adjacent-swap generator. -/
 theorem transposition_eq_swap_castSucc_succ {m : ℕ} (i : Fin m) :
     transposition (n := m + 1) i = Equiv.swap i.castSucc i.succ :=
@@ -422,6 +471,35 @@ theorem commute_sigma_last_strandIncl_strandIncl {n : ℕ} (d : BraidGroup (n + 
   | mul d d' hd hd' => rw [map_mul, map_mul]; exact hd.mul_right hd'
   | inv d hd => rw [map_inv, map_inv]; exact hd.inv_right
 
+/-- The homomorphism from `BraidGroup (n + 1)` to `BraidGroup (n + m + 1)` that places a braid on
+the bottom `n + 1` strands and adds `m` uncrossed strands above it: each elementary braid keeps its
+index. For `m = 1` this is `TauCeti.BraidGroup.strandIncl` (`TauCeti.BraidGroup.castAdd_one`). -/
+def castAdd {n : ℕ} (m : ℕ) : BraidGroup (n + 1) →* BraidGroup (n + m + 1) :=
+  lift (fun i : Fin n ↦ sigma (Fin.castAdd m i)) (fun h ↦ sigma_mul_sigma_comm (by simpa using h))
+    (fun h ↦ sigma_braid (by simpa using h))
+
+@[simp]
+theorem castAdd_sigma {n : ℕ} (m : ℕ) (i : Fin n) :
+    castAdd m (sigma i) = sigma (Fin.castAdd m i) := by
+  rw [castAdd, lift_sigma]
+
+/-- Adding one uncrossed strand on top is `TauCeti.BraidGroup.strandIncl`. -/
+@[simp]
+theorem castAdd_one {n : ℕ} : castAdd (n := n) 1 = strandIncl :=
+  hom_ext fun i ↦ by rw [castAdd_sigma, strandIncl_sigma]; rfl
+
+/-- The homomorphism from `BraidGroup (m + 1)` to `BraidGroup (n + m + 1)` that places a braid on
+the top `m + 1` strands and adds `n` uncrossed strands below it: each elementary braid is moved up
+by `n`. -/
+def natAdd (n : ℕ) {m : ℕ} : BraidGroup (m + 1) →* BraidGroup (n + m + 1) :=
+  lift (fun i : Fin m ↦ sigma (Fin.natAdd n i)) (fun h ↦ sigma_mul_sigma_comm (by simp; omega))
+    (fun h ↦ sigma_braid (by simp; omega))
+
+@[simp]
+theorem natAdd_sigma (n : ℕ) {m : ℕ} (i : Fin m) :
+    natAdd n (sigma i) = sigma (Fin.natAdd n i) := by
+  rw [natAdd, lift_sigma]
+
 /-- The pure braid group: the braids that return every strand to its own position. -/
 def pureSubgroup (n : ℕ) : Subgroup (BraidGroup n) := (permHom n).ker
 
@@ -442,7 +520,7 @@ theorem sigma_zpow_mem_pureSubgroup_iff (i : Fin (n - 1)) (k : ℤ) :
 /-- A natural-number power of an elementary braid is pure exactly when its exponent is even. -/
 theorem sigma_pow_mem_pureSubgroup_iff (i : Fin (n - 1)) (k : ℕ) :
     sigma i ^ k ∈ pureSubgroup n ↔ Even k := by
-  simpa only [zpow_natCast, Int.even_coe_nat] using
+  simpa only [zpow_natCast, Int.even_natCast] using
     sigma_zpow_mem_pureSubgroup_iff i (k : ℤ)
 
 /-- The square of an elementary braid is a pure braid: the two strands cross twice and end where

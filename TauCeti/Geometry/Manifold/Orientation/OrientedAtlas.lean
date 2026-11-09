@@ -19,6 +19,7 @@ the interval is orientable although its half-line charts have opposite transitio
 ## Main declarations
 
 * `orientationPreservingGroupoid` and `IsOrientedAtlas`: positive transitions and oriented atlases.
+* `isOrientedAtlas_atlas`: an atlas with orientation-preserving coordinate changes is oriented.
 * `IsOrientedAtlas.det_fderivWithin_pos` and `IsOrientedAtlas.prod`: determinants and products.
 * `not_contDiffGroupoid_le_orientationPreservingGroupoid`: smooth changes can reverse orientation.
 
@@ -287,6 +288,15 @@ structure IsOrientedAtlas [NeZero n] (A : Set (OpenPartialHomeomorph M H)) : Pro
   /-- The coordinate changes of an oriented atlas preserve orientation. -/
   symm_trans_mem {e e' : OpenPartialHomeomorph M H} :
     e ∈ A → e' ∈ A → e.symm ≫ₕ e' ∈ orientationPreservingGroupoid I
+
+variable (M) in
+/-- The atlas of a manifold whose coordinate changes all preserve orientation is an oriented
+atlas. -/
+theorem isOrientedAtlas_atlas [IsManifold I n M] [HasGroupoid M (orientationPreservingGroupoid I)] :
+    IsOrientedAtlas I n (atlas H M) where
+  subset_maximalAtlas := IsManifold.subset_maximalAtlas
+  exists_mem_source x := ⟨chartAt H x, chart_mem_atlas H x, mem_chart_source H x⟩
+  symm_trans_mem he he' := HasGroupoid.compatible he he'
 
 variable {I n}
 

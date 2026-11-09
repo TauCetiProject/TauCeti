@@ -25,7 +25,9 @@ Fourier monomials themselves (`TauCeti.fourierCoeffOn_fourier`), the interval co
 Mathlib's `fourierCoeff_fourier`, in particular for a circle `c + w e^{2πimt/(b-a)}`
 (`TauCeti.fourierCoeffOn_const_add_mul_fourier`). Conversely, a function continuous on `[a, b]` is
 determined there by its Fourier coefficients (`TauCeti.eqOn_Icc_of_fourierCoeffOn_eq`); the
-endpoint `a`, which the coefficients do not see, is recovered by continuity.
+endpoint `a`, which the coefficients do not see, is recovered by continuity. In particular, it is
+a circle `c + w e^{2πist/(b-a)}` on `[a, b]` exactly when its coefficients vanish outside the
+frequencies `0` and `s` (`TauCeti.exists_eqOn_const_add_mul_fourier_iff`).
 
 For a function on `AddCircle T`, the Fourier coefficients are those of its lift on any period
 interval (`TauCeti.fourierCoeff_eq_fourierCoeffOn`). On such an interval, each derivative of a
@@ -126,6 +128,40 @@ theorem eqOn_Icc_of_fourierCoeffOn_eq (hab : a < b) {f g : ℝ → ℂ} (hf : Co
   exact sub_eq_zero.1 (Measure.eqOn_Icc_of_ae_eq volume hab.ne
     (by rwa [Measure.restrict_congr_set Ioc_ae_eq_Icc] at hae) hfg continuousOn_const ht)
 
+/-- A complex function continuous on `[a, b]` agrees there with the circle
+`c + w e^{2πist/(b-a)}` for some `c` and `w` exactly when its Fourier coefficients on `[a, b]`
+vanish outside the frequencies `0` and `s`; `c` and `w` are then its coefficients at `0` and
+`s` when `s ≠ 0`. -/
+theorem exists_eqOn_const_add_mul_fourier_iff (hab : a < b) {f : ℝ → ℂ}
+    (hf : ContinuousOn f [[a, b]]) {s : ℤ} :
+    (∃ c w : ℂ, ∀ t ∈ Icc a b, f t = c + w * fourier s (t : AddCircle (b - a))) ↔
+      ∀ n, n ≠ 0 → n ≠ s → fourierCoeffOn hab f n = 0 := by
+  constructor
+  · rintro ⟨c, w, hcw⟩ n h0 hs'
+    rw [fourierCoeffOn_congr_ae hab ((ae_restrict_mem measurableSet_Ioc).mono
+      fun t ht ↦ hcw t (Ioc_subset_Icc_self ht)), fourierCoeffOn_const_add_mul_fourier]
+    simp [h0, hs']
+  · intro h
+    by_cases hs : s = 0
+    · subst s
+      refine ⟨fourierCoeffOn hab f 0, 0,
+        eqOn_Icc_of_fourierCoeffOn_eq hab hf
+          (continuous_const.add (continuous_const.mul
+            ((fourier 0).continuous.comp (AddCircle.continuous_mk' _)))).continuousOn fun n ↦ ?_⟩
+      rw [fourierCoeffOn_const_add_mul_fourier]
+      by_cases h0 : n = 0
+      · simp [h0]
+      · simp [h n h0 h0, h0]
+    refine ⟨fourierCoeffOn hab f 0, fourierCoeffOn hab f s,
+      eqOn_Icc_of_fourierCoeffOn_eq hab hf (continuous_const.add (continuous_const.mul
+        ((fourier s).continuous.comp (AddCircle.continuous_mk' _)))).continuousOn fun n ↦ ?_⟩
+    rw [fourierCoeffOn_const_add_mul_fourier]
+    by_cases h0 : n = 0
+    · simp [h0, hs]
+    by_cases hs' : n = s
+    · simp [hs', hs]
+    · simp [h n h0 hs', h0, hs']
+
 
 section Circle
 
@@ -142,6 +178,19 @@ theorem fourierCoeff_eq_fourierCoeffOn (a : ℝ) (f : AddCircle T → ℂ) (n : 
   congr 1
   funext x
   simp [AddCircle.liftIoc, AddCircle.coe_equivIoc]
+
+/-- A square-integrable function on `(a, b]` is the restriction of an `L²` class on the circle of
+length `b - a` with the same Fourier coefficients. -/
+theorem exists_Lp_fourierCoeff_eq_fourierCoeffOn [Fact (0 < b - a)] (hab : a < b) {g : ℝ → ℂ}
+    (hgL2 : MemLp g 2 (volume.restrict (Ioc a b))) :
+    ∃ G : Lp ℂ 2 (AddCircle.haarAddCircle (T := b - a)),
+      ∀ n : ℤ, fourierCoeff G n = fourierCoeffOn hab g n := by
+  have hG₀ : MemLp (AddCircle.liftIoc (b - a) a g) 2 AddCircle.haarAddCircle := by
+    have hgL2' : MemLp g 2 (volume.restrict (Ioc a (a + (b - a)))) := by
+      rwa [add_sub_cancel]
+    exact hgL2'.memLp_liftIoc.haarAddCircle
+  exact ⟨hG₀.toLp, fun n => by
+    simp [fourierCoeff_congr_ae hG₀.coeFn_toLp, fourierCoeff_liftIoc_eq]⟩
 
 /-- Each derivative of a `C^k` function of period `T` multiplies its Fourier coefficients on a
 period interval by `2πin / T`. At frequency `0` this says that the derivatives have mean zero. -/

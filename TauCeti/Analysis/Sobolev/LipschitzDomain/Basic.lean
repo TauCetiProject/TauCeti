@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Affine.Isometry
+public import TauCeti.Analysis.Normed.Affine.Isometry.Basic
 public import TauCeti.Analysis.Normed.Lp.GraphDomain
 public import Mathlib.Topology.MetricSpace.Lipschitz
 public import Mathlib.Analysis.Normed.Module.FiniteDimension

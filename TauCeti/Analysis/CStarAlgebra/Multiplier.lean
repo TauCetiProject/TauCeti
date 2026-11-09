@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.UnitaryStarAlgAut
 public import Mathlib.Analysis.CStarAlgebra.Multiplier
+public import Mathlib.Analysis.Calculus.Deriv.Mul
+public import Mathlib.Analysis.Calculus.Deriv.Star
 public import TauCeti.Analysis.CStarAlgebra.Hom
 
 /-!
@@ -18,12 +21,28 @@ products of a multiplier with an element of `A` are again elements of `A`, and t
 map `A → 𝓜(𝕜, A)` is injective. For regular normed algebras (`RegularNormedAlgebra`), including
 real and complex C⋆-algebras, this map is isometric.
 
+With a proper involution a multiplier is determined by its left centralizer,
+`DoubleCentralizer.ext_fst`. Conversely, a bounded operator `L` with an adjoint `L'` for the
+pairing `(x, y) ↦ star x * y` is the left centralizer of the multiplier
+`DoubleCentralizer.ofAdjoint L L'`, whose right centralizer is `star ∘ L' ∘ star`. This is how
+multipliers are built from left actions on a dense subalgebra, such as the canonical multipliers
+of a crossed product.
+
 A star-algebra equivalence `e : A ≃⋆ₐ[ℂ] B` of complex C⋆-algebras extends to a star-algebra
 equivalence `DoubleCentralizer.congr e : 𝓜(ℂ, A) ≃⋆ₐ[ℂ] 𝓜(ℂ, B)`, sending `(L, R)` to
 `(e ∘ L ∘ e⁻¹, e ∘ R ∘ e⁻¹)`. It is compatible with the inclusions of `A` and `B`, and it is
 the only multiplicative map with this property. Applied to the automorphisms of a C⋆-dynamical
 system, this gives the induced action on the multiplier algebra; `DoubleCentralizer.congrAut`
 records that `e ↦ congr e` is a monoid homomorphism of automorphism groups.
+
+Since `A` is an ideal of `𝓜(ℂ, A)`, conjugation `a ↦ u * a * u⋆` by a unitary multiplier `u`
+maps `A` to itself; `DoubleCentralizer.conjStarAlgAut` records it as a monoid homomorphism from
+the unitary multipliers to the automorphisms of `A`. As the inclusion of `A` is a linear isometry,
+a real path in `A` has derivative `v` exactly when its image in `𝓜(ℂ, A)` has derivative `↑v`,
+`DoubleCentralizer.hasDerivAt_coe_iff`, so derivatives may be computed in the multiplier algebra.
+Consequently, conjugating a path in `A` by a path of multipliers `U` with `U 0 = 1` and
+`U' 0 = i Q`, for self-adjoint `Q ∈ A`, adds `i[Q, ·]` to its derivative at `0`,
+`DoubleCentralizer.hasDerivAt_conj_zero`.
 
 ## References
 
@@ -52,7 +71,54 @@ theorem ext_fst_snd {m n : 𝓜(𝕜, A)} (h₁ : ∀ a, m.fst a = n.fst a)
   DoubleCentralizer.ext _ _ _ _ <|
     Prod.ext (ContinuousLinearMap.ext h₁) (ContinuousLinearMap.ext h₂)
 
+/-- The inclusion of `A` into its multiplier algebra sends `0` to `0`. -/
+@[simp, norm_cast]
+theorem coe_zero : ((0 : A) : 𝓜(𝕜, A)) = 0 :=
+  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
+
+/-- The inclusion of `A` into its multiplier algebra commutes with addition. -/
+@[simp, norm_cast]
+theorem coe_add (a b : A) : ((a + b : A) : 𝓜(𝕜, A)) = (a : 𝓜(𝕜, A)) + b :=
+  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
+
+/-- The inclusion of `A` into its multiplier algebra commutes with multiplication. -/
+@[simp, norm_cast]
+theorem coe_mul (a b : A) : ((a * b : A) : 𝓜(𝕜, A)) = (a : 𝓜(𝕜, A)) * b :=
+  ext_fst_snd (fun _ => by simp [mul_assoc]) (fun _ => by simp [mul_assoc])
+
+/-- The inclusion of `A` into its multiplier algebra commutes with negation. -/
+@[simp, norm_cast]
+theorem coe_neg (a : A) : ((-a : A) : 𝓜(𝕜, A)) = -(a : 𝓜(𝕜, A)) :=
+  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
+
+/-- The inclusion of `A` into its multiplier algebra commutes with subtraction. -/
+@[simp, norm_cast]
+theorem coe_sub (a b : A) : ((a - b : A) : 𝓜(𝕜, A)) = (a : 𝓜(𝕜, A)) - b :=
+  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
+
+/-- The inclusion of `A` into its multiplier algebra commutes with scalar multiplication. -/
+@[simp, norm_cast]
+theorem coe_smul (c : 𝕜) (a : A) : ((c • a : A) : 𝓜(𝕜, A)) = c • (a : 𝓜(𝕜, A)) :=
+  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
+
+/-- The inclusion of `A` into its multiplier algebra commutes with the star operation. -/
+@[simp, norm_cast]
+theorem coe_star [StarRing 𝕜] [StarRing A] [StarModule 𝕜 A] [NormedStarGroup A] (a : A) :
+    ((star a : A) : 𝓜(𝕜, A)) = star (a : 𝓜(𝕜, A)) :=
+  map_star (coeHom (𝕜 := 𝕜)) a
+
 end NontriviallyNormed
+
+section Unital
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A]
+
+/-- The inclusion of a unital algebra into its multiplier algebra sends `1` to `1`. -/
+@[simp, norm_cast]
+theorem coe_one : ((1 : A) : 𝓜(𝕜, A)) = 1 :=
+  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
+
+end Unital
 
 section ProperStar
 
@@ -102,7 +168,50 @@ theorem snd_mul (m : 𝓜(𝕜, A)) (a b : A) : m.snd (a * b) = a * m.snd b := b
 theorem coe_mul_eq_coe_snd (a : A) (m : 𝓜(𝕜, A)) : (a : 𝓜(𝕜, A)) * m = (m.snd a : 𝓜(𝕜, A)) :=
   ext_fst_snd (fun _ => by simp [m.central]) (fun _ => by simp [snd_mul])
 
+/-- A multiplier is determined by its left centralizer. -/
+theorem ext_fst {m n : 𝓜(𝕜, A)} (h : ∀ a, m.fst a = n.fst a) : m = n := by
+  refine ext_fst_snd h fun a => ?_
+  have hz : ∀ y : A, (m.snd a - n.snd a) * y = 0 := fun y => by
+    simp [sub_mul, m.central, n.central, h]
+  have hs : star (m.snd a - n.snd a) = 0 :=
+    star_mul_self_eq_zero.mp (by simpa only [star_star] using hz (star _))
+  exact sub_eq_zero.mp (star_mul_self_eq_zero.mp (by rw [hs, zero_mul]))
+
 end InvolutiveStar
+
+section Adjoint
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [StarRing 𝕜] [NonUnitalNormedRing A]
+  [StarRing A] [NormedStarGroup A] [NormedSpace 𝕜 A] [SMulCommClass 𝕜 A A]
+  [IsScalarTower 𝕜 A A] [StarModule 𝕜 A]
+
+/-- A bounded operator `L` on `A` with an adjoint `L'` for the pairing `(x, y) ↦ star x * y`,
+that is `star (L' x) * y = star x * L y`, is the left centralizer of the multiplier
+`(L, star ∘ L' ∘ star)`. -/
+def ofAdjoint (L L' : A →L[𝕜] A) (h : ∀ x y, star (L' x) * y = star x * L y) : 𝓜(𝕜, A) where
+  fst := L
+  snd := (((starₗᵢ 𝕜 : A ≃ₗᵢ⋆[𝕜] A) : A →L⋆[𝕜] A).comp L').comp
+    ((starₗᵢ 𝕜 : A ≃ₗᵢ⋆[𝕜] A) : A →L⋆[𝕜] A)
+  central x y := by simpa using h (star x) y
+
+variable {L L' : A →L[𝕜] A} {h : ∀ x y, star (L' x) * y = star x * L y}
+
+@[simp]
+theorem ofAdjoint_fst : (ofAdjoint L L' h).fst = L :=
+  (rfl)
+
+@[simp]
+theorem ofAdjoint_snd_apply (x : A) : (ofAdjoint L L' h).snd x = star (L' (star x)) :=
+  (rfl)
+
+/-- The adjoint of the multiplier with left centralizer `L` has left centralizer `L'`. -/
+@[simp]
+theorem star_ofAdjoint :
+    star (ofAdjoint L L' h) =
+      ofAdjoint L' L fun x y => by simpa using congr(star $(h y x)).symm :=
+  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
+
+end Adjoint
 
 section RegularNormedAlgebra
 
@@ -120,9 +229,7 @@ theorem norm_coe (a : A) : ‖(a : 𝓜(𝕜, A))‖ = ‖a‖ := by
 /-- The inclusion of a regular normed algebra into its multiplier algebra is isometric. -/
 theorem isometry_coe : Isometry (DoubleCentralizer.coe 𝕜 : A → 𝓜(𝕜, A)) := by
   intro a b
-  have h : ((a - b : A) : 𝓜(𝕜, A)) = (a : 𝓜(𝕜, A)) - b :=
-    ext_fst_snd (fun _ => by simp) (fun _ => by simp)
-  simp only [edist_dist, dist_eq_norm, ← h, norm_coe]
+  simp only [edist_dist, dist_eq_norm, ← coe_sub, norm_coe]
 
 end RegularNormedAlgebra
 
@@ -222,6 +329,92 @@ theorem eq_congr_of_apply_coe {F : Type*} [FunLike F 𝓜(ℂ, A) 𝓜(ℂ, B)]
     calc ((φ m).snd b : 𝓜(ℂ, B)) = φ (e.symm b : 𝓜(ℂ, A)) * φ m := by
           rw [hφ, e.apply_symm_apply, coe_mul_eq_coe_snd]
       _ = (e (m.snd (e.symm b)) : 𝓜(ℂ, B)) := by rw [← map_mul, coe_mul_eq_coe_snd, hφ]
+
+section Conj
+
+variable {A : Type*} [NonUnitalCStarAlgebra A]
+
+/-- The element `u * a * u⋆` of `A`, for a multiplier `u`. -/
+private def conj' (u : 𝓜(ℂ, A)) (a : A) : A :=
+  (star u).snd (u.fst a)
+
+private theorem coeHom_conj' (u : unitary 𝓜(ℂ, A)) (a : A) :
+    coeHom (𝕜 := ℂ) (conj' (u : 𝓜(ℂ, A)) a) =
+      Unitary.conjStarAlgAut ℂ 𝓜(ℂ, A) u (coeHom (𝕜 := ℂ) a) := by
+  rw [coeHom_apply, coeHom_apply, conj', Unitary.conjStarAlgAut_apply, mul_coe_eq_coe_fst,
+    coe_mul_eq_coe_snd]
+
+/-- Conjugation by a unitary multiplier, as a star-algebra automorphism of `A`. -/
+private def conjAux (u : unitary 𝓜(ℂ, A)) : A ≃⋆ₐ[ℂ] A where
+  toFun := conj' (u : 𝓜(ℂ, A))
+  invFun := conj' ((star u : unitary 𝓜(ℂ, A)) : 𝓜(ℂ, A))
+  left_inv a := coe_injective (𝕜 := ℂ) <| by
+    simp only [← coeHom_apply (𝕜 := ℂ), coeHom_conj', ← Unitary.conjStarAlgAut_symm,
+      StarAlgEquiv.symm_apply_apply]
+  right_inv a := coe_injective (𝕜 := ℂ) <| by
+    simp only [← coeHom_apply (𝕜 := ℂ), coeHom_conj', ← Unitary.conjStarAlgAut_symm,
+      StarAlgEquiv.apply_symm_apply]
+  map_mul' a b := coe_injective (𝕜 := ℂ) <| by
+    simp only [← coeHom_apply (𝕜 := ℂ), coeHom_conj', map_mul]
+  map_add' a b := coe_injective (𝕜 := ℂ) <| by
+    simp only [← coeHom_apply (𝕜 := ℂ), coeHom_conj', map_add]
+  map_smul' c a := coe_injective (𝕜 := ℂ) <| by
+    simp only [← coeHom_apply (𝕜 := ℂ), coeHom_conj', map_smul]
+  map_star' a := coe_injective (𝕜 := ℂ) <| by
+    simp only [← coeHom_apply (𝕜 := ℂ), coeHom_conj', map_star]
+
+private theorem coeHom_conjAux_apply (u : unitary 𝓜(ℂ, A)) (a : A) :
+    coeHom (𝕜 := ℂ) (conjAux u a) = Unitary.conjStarAlgAut ℂ 𝓜(ℂ, A) u (coeHom (𝕜 := ℂ) a) :=
+  coeHom_conj' u a
+
+/-- Conjugation `a ↦ u * a * u⋆` of `A` by a unitary multiplier `u`, as a star-algebra
+automorphism of `A`. Since `A` is an ideal of `𝓜(ℂ, A)`, this is the restriction to `A` of the
+inner automorphism `Unitary.conjStarAlgAut ℂ 𝓜(ℂ, A) u` of the multiplier algebra. -/
+def conjStarAlgAut : unitary 𝓜(ℂ, A) →* (A ≃⋆ₐ[ℂ] A) where
+  toFun := conjAux
+  map_one' := by
+    ext a
+    exact coe_injective (𝕜 := ℂ) <| by
+      simp only [← coeHom_apply (𝕜 := ℂ), coeHom_conjAux_apply, map_one, StarAlgEquiv.one_apply]
+  map_mul' u v := by
+    ext a
+    exact coe_injective (𝕜 := ℂ) <| by
+      simp only [← coeHom_apply (𝕜 := ℂ), StarAlgEquiv.mul_apply, coeHom_conjAux_apply, map_mul]
+
+/-- Conjugation by a unitary multiplier `u` sends `a` to `u * a * u⋆`, computed in the multiplier
+algebra. -/
+@[simp]
+theorem coe_conjStarAlgAut_apply (u : unitary 𝓜(ℂ, A)) (a : A) :
+    ((conjStarAlgAut u a : A) : 𝓜(ℂ, A)) = u * a * star (u : 𝓜(ℂ, A)) :=
+  (coeHom_conjAux_apply u a).trans (Unitary.conjStarAlgAut_apply u _)
+
+end Conj
+
+/-- A real path in `A` has derivative `v` exactly when its image in the multiplier algebra has
+derivative `v`: the inclusion `A → 𝓜(ℂ, A)` is a linear isometry. -/
+theorem hasDerivAt_coe_iff {A : Type*} [NonUnitalCStarAlgebra A] {f : ℝ → A} {v : A} {x : ℝ} :
+    HasDerivAt (fun t => (f t : 𝓜(ℂ, A))) (v : 𝓜(ℂ, A)) x ↔ HasDerivAt f v x := by
+  have key (h : ℝ) : (f (x + h) : 𝓜(ℂ, A)) - f x - h • (v : 𝓜(ℂ, A)) =
+      ((f (x + h) - f x - h • v : A) : 𝓜(ℂ, A)) := by
+    simp only [← Complex.coe_smul, coe_sub, coe_smul]
+  rw [hasDerivAt_iff_isLittleO_nhds_zero, hasDerivAt_iff_isLittleO_nhds_zero,
+    ← Asymptotics.isLittleO_norm_left, ← Asymptotics.isLittleO_norm_left (f' := fun h => _ - _)]
+  simp only [key, norm_coe]
+
+/-- Conjugating a differentiable path in `A` by a path of multipliers `U` with `U 0 = 1` and
+`U' 0 = i Q`, for self-adjoint `Q ∈ A`, adds the commutator `i[Q, ·]` to its derivative at
+`0`. -/
+theorem hasDerivAt_conj_zero {A : Type*} [NonUnitalCStarAlgebra A] {Q : A}
+    (hQ : IsSelfAdjoint Q) {U : ℝ → 𝓜(ℂ, A)} (hU₀ : U 0 = 1)
+    (hU : HasDerivAt U (Complex.I • (Q : 𝓜(ℂ, A))) 0) {f g : ℝ → A}
+    (hfg : ∀ t, (g t : 𝓜(ℂ, A)) = U t * f t * star (U t)) {v : A} (hf : HasDerivAt f v 0) :
+    HasDerivAt g (v + Complex.I • (Q * f 0 - f 0 * Q)) 0 := by
+  rw [← hasDerivAt_coe_iff, funext hfg]
+  convert (hU.mul (hasDerivAt_coe_iff.2 hf)).mul hU.star using 1
+  simp only [Pi.mul_apply, hU₀, star_one, mul_one, one_mul, star_smul, Complex.star_def,
+    Complex.conj_I, ← coe_star, hQ.star_eq, coe_add, coe_smul, coe_sub, coe_mul,
+    smul_mul_assoc, mul_smul_comm, neg_smul, mul_neg, smul_sub]
+  abel
 
 end CStarAlgebra
 

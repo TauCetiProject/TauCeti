@@ -26,6 +26,9 @@ half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the 
   absolute value into the two half-lines;
 * `MeasureTheory.Measure.map_abs_apply_zero` — the image under absolute value preserves the atom
   at zero;
+* `MeasureTheory.Measure.ae_eq_preimage_Ioc`,
+  `MeasureTheory.Measure.measureReal_eq_sub_of_preimage_Ioo_subset` — for a law without atoms,
+  endpoint conventions of an interval with extended bounds do not matter;
 * `MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self` — two symmetric finite real
   measures with the same pushforward after squaring are equal.
 * `MeasureTheory.Measure.map_sqrt_map_sq` — on the nonnegative half-line, taking square roots
@@ -53,8 +56,8 @@ theorem map_abs_eq_restrict_add_restrict (μ : Measure ℝ) :
   have hdisj : Disjoint (s ∩ Ici 0) (-s ∩ Iio 0) :=
     disjoint_left.2 fun x hx hx' => not_le.2 hx'.2 hx.2
   rw [Measure.map_apply measurable_abs hs, hpre,
-    measure_union hdisj (hs.neg.inter measurableSet_Iio), Measure.add_apply,
-    Measure.restrict_apply hs, Measure.restrict_apply hs, Measure.neg_apply,
+    measure_union hdisj (hs.neg.inter measurableSet_Iio), _root_.add_apply,
+    Measure.restrict_apply hs, Measure.restrict_apply hs, MeasureTheory.Measure.neg_apply,
     (by ext x; simp : -(s ∩ Ioi (0 : ℝ)) = -s ∩ Iio 0)]
 
 /-- The atom of the folded law at `0` is the atom of `μ` at `0`. -/
@@ -64,6 +67,41 @@ theorem map_abs_apply_zero (μ : Measure ℝ) : μ.map (|·|) {0} = μ {0} := by
   congr 1
   ext x
   simp
+
+section NullSingleton
+
+variable {μ : Measure ℝ} [NullSingletonClass μ] {s : Set ℝ} {l r : EReal}
+
+/-- For a law without atoms, a set between the open and the closed interval with extended bounds
+`l, r` agrees with the half-open interval `(l, r]` off a null set: the two candidate endpoints
+carry no mass. -/
+theorem ae_eq_preimage_Ioc (hs₁ : Real.toEReal ⁻¹' Ioo l r ⊆ s)
+    (hs₂ : s ⊆ Real.toEReal ⁻¹' Icc l r) :
+    s =ᵐ[μ] Real.toEReal ⁻¹' Ioc l r := by
+  have hnull : μ (Real.toEReal ⁻¹' Icc l r \ Real.toEReal ⁻¹' Ioo l r) = 0 := by
+    refine measure_mono_null (t := {l.toReal, r.toReal}) ?_ ((toFinite _).measure_zero _)
+    rintro x ⟨⟨hlx, hxr⟩, hx⟩
+    by_contra hne
+    simp only [mem_insert_iff, mem_singleton_iff, not_or] at hne
+    exact hx ⟨hlx.lt_of_ne fun h => hne.1 (by rw [h, EReal.toReal_coe]),
+      hxr.lt_of_ne fun h => hne.2 (by rw [← h, EReal.toReal_coe])⟩
+  have hopen {t : Set ℝ} (h₁ : Real.toEReal ⁻¹' Ioo l r ⊆ t)
+      (h₂ : t ⊆ Real.toEReal ⁻¹' Icc l r) :
+      t =ᵐ[μ] Real.toEReal ⁻¹' Ioo l r :=
+    (ae_le_set.2 (measure_mono_null (sdiff_subset_sdiff_left h₂) hnull)).antisymm h₁.eventuallyLE
+  exact (hopen hs₁ hs₂).trans (hopen (preimage_mono Ioo_subset_Ioc_self)
+    (preimage_mono Ioc_subset_Icc_self)).symm
+
+/-- For a finite law without atoms, the mass of a set between the open and the closed interval
+with extended bounds `l ≤ r` is the difference of the masses up to the two bounds. -/
+theorem measureReal_eq_sub_of_preimage_Ioo_subset [IsFiniteMeasure μ] (hlr : l ≤ r)
+    (hs₁ : Real.toEReal ⁻¹' Ioo l r ⊆ s) (hs₂ : s ⊆ Real.toEReal ⁻¹' Icc l r) :
+    μ.real s = μ.real (Real.toEReal ⁻¹' Iic r) - μ.real (Real.toEReal ⁻¹' Iic l) := by
+  rw [measureReal_congr (μ.ae_eq_preimage_Ioc hs₁ hs₂), ← Iic_sdiff_Iic, preimage_sdiff,
+    measureReal_sdiff (preimage_mono (Iic_subset_Iic.2 hlr))
+      (measurableSet_Iic.preimage measurable_coe_real_ereal)]
+
+end NullSingleton
 
 end MeasureTheory.Measure
 
@@ -97,119 +135,41 @@ theorem _root_.MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self (μ ν :
   apply Measure.ext_of_Iic
   intro x
   rw [← measureReal_eq_measureReal_iff]
-  have htotal : μ.real univ = ν.real univ := by
-    have h := congrArg (fun ρ : Measure ℝ ↦ ρ.real univ) hsq
-    simpa only [map_measureReal_apply (μ := μ) (f := fun y : ℝ ↦ y ^ 2) (by fun_prop)
-        MeasurableSet.univ,
-      map_measureReal_apply (μ := ν) (f := fun y : ℝ ↦ y ^ 2) (by fun_prop)
-        MeasurableSet.univ,
-      preimage_univ] using h
-  by_cases hx : 0 ≤ x
-  -- On the nonnegative half-line, the squared law fixes the central interval `[-x, x]`.
-  -- Symmetry equates its two open complementary tails, hence fixes `Iic x`.
-  · have hsq_preimage : (fun y : ℝ ↦ y ^ 2) ⁻¹' Iic (x ^ 2) = Icc (-x) x := by
-      ext y
-      simp only [mem_preimage, mem_Iic, mem_Icc]
-      constructor
-      · exact fun hy ↦ abs_le_of_sq_le_sq' hy hx
-      · exact fun hy ↦ sq_le_sq' hy.1 hy.2
-    have hcentral : μ.real (Icc (-x) x) = ν.real (Icc (-x) x) := by
-      have h := congrArg (fun ρ : Measure ℝ ↦ ρ.real (Iic (x ^ 2))) hsq
-      rw [map_measureReal_apply (μ := μ) (f := fun y : ℝ ↦ y ^ 2) (by fun_prop)
-          measurableSet_Iic,
-        map_measureReal_apply (μ := ν) (f := fun y : ℝ ↦ y ^ 2) (by fun_prop)
-          measurableSet_Iic,
-        hsq_preimage] at h
-      exact h
-    have hneg_preimage : (fun y : ℝ ↦ -y) ⁻¹' Ioi x = Iio (-x) := by
-      ext y
-      simp only [mem_preimage, mem_Ioi, mem_Iio]
-      constructor <;> intro h <;> linarith
-    have hμtails : μ.real (Iio (-x)) = μ.real (Ioi x) := by
-      have h := congrArg (fun ρ : Measure ℝ ↦ ρ.real (Ioi x)) hμneg
-      rw [map_measureReal_apply (μ := μ) (f := fun y : ℝ ↦ -y) (by fun_prop)
-        measurableSet_Ioi, hneg_preimage] at h
-      exact h
-    have hνtails : ν.real (Iio (-x)) = ν.real (Ioi x) := by
-      have h := congrArg (fun ρ : Measure ℝ ↦ ρ.real (Ioi x)) hνneg
-      rw [map_measureReal_apply (μ := ν) (f := fun y : ℝ ↦ -y) (by fun_prop)
-        measurableSet_Ioi, hneg_preimage] at h
-      exact h
-    have hbounds : -x ≤ x := by linarith
-    have hdisj_inner : Disjoint (Icc (-x) x) (Ioi x) :=
-      (Iic_disjoint_Ioi le_rfl).mono Icc_subset_Iic_self Subset.rfl
-    have hμtotal :
-        μ.real univ = μ.real (Iio (-x)) + (μ.real (Icc (-x) x) + μ.real (Ioi x)) := by
-      rw [← Iio_union_Ici (a := -x),
-        measureReal_union (Iio_disjoint_Ici le_rfl) measurableSet_Ici,
-        ← Icc_union_Ioi_eq_Ici hbounds,
-        measureReal_union hdisj_inner measurableSet_Ioi]
-    have hνtotal :
-        ν.real univ = ν.real (Iio (-x)) + (ν.real (Icc (-x) x) + ν.real (Ioi x)) := by
-      rw [← Iio_union_Ici (a := -x),
-        measureReal_union (Iio_disjoint_Ici le_rfl) measurableSet_Ici,
-        ← Icc_union_Ioi_eq_Ici hbounds,
-        measureReal_union hdisj_inner measurableSet_Ioi]
-    have hμcdf : μ.real (Iic x) = μ.real (Iio (-x)) + μ.real (Icc (-x) x) := by
-      rw [← Iio_union_Icc_eq_Iic hbounds,
-        measureReal_union ((Iio_disjoint_Ici le_rfl).mono_right Icc_subset_Ici_self)
-          measurableSet_Icc]
-    have hνcdf : ν.real (Iic x) = ν.real (Iio (-x)) + ν.real (Icc (-x) x) := by
-      rw [← Iio_union_Icc_eq_Iic hbounds,
-        measureReal_union ((Iio_disjoint_Ici le_rfl).mono_right Icc_subset_Ici_self)
-          measurableSet_Icc]
-    rw [hμcdf, hνcdf]
+  -- For a reflection-invariant finite measure `ρ`, twice the mass of `Iic x` is read off the
+  -- squared law: through the central interval `[-x, x]` when `0 ≤ x`, and through `(x, -x)` when
+  -- `x < 0`, the two complementary tails being equal by symmetry.
+  suffices h : ∀ ρ : Measure ℝ, IsFiniteMeasure ρ → ρ.map (fun y : ℝ ↦ -y) = ρ →
+      2 * ρ.real (Iic x) = if 0 ≤ x then
+        (ρ.map (· ^ 2)).real univ + (ρ.map (· ^ 2)).real (Iic (x ^ 2))
+      else (ρ.map (· ^ 2)).real univ - (ρ.map (· ^ 2)).real (Iio (x ^ 2)) by
+    have h' := h μ inferInstance hμneg
+    rw [hsq, ← h ν inferInstance hνneg] at h'
     linarith
-  -- For negative `x`, the squared law fixes `(x, -x)`.  Symmetry equates the two closed
-  -- complementary tails, of which `Iic x` is one.
-  · have _ : x < 0 := lt_of_not_ge hx
-    have hsq_preimage : (fun y : ℝ ↦ y ^ 2) ⁻¹' Iio (x ^ 2) = Ioo x (-x) := by
-      ext y
-      simp only [mem_preimage, mem_Iio, mem_Ioo]
-      constructor
-      · intro hy
-        have h : y ^ 2 < (-x) ^ 2 := by simpa only [neg_sq] using hy
-        simpa only [neg_neg] using abs_lt_of_sq_lt_sq' h (by linarith)
-      · intro hy
-        have h : -(-x) < y := by linarith [hy.1]
-        simpa only [neg_sq] using sq_lt_sq' h hy.2
-    have hmiddle : μ.real (Ioo x (-x)) = ν.real (Ioo x (-x)) := by
-      have h := congrArg (fun ρ : Measure ℝ ↦ ρ.real (Iio (x ^ 2))) hsq
-      rw [map_measureReal_apply (μ := μ) (f := fun y : ℝ ↦ y ^ 2) (by fun_prop)
-          measurableSet_Iio,
-        map_measureReal_apply (μ := ν) (f := fun y : ℝ ↦ y ^ 2) (by fun_prop)
-          measurableSet_Iio,
-        hsq_preimage] at h
-      exact h
-    have hneg_preimage : (fun y : ℝ ↦ -y) ⁻¹' Ici (-x) = Iic x := by
-      ext y
-      simp only [mem_preimage, mem_Ici, mem_Iic]
-      constructor <;> intro h <;> linarith
-    have hμtails : μ.real (Iic x) = μ.real (Ici (-x)) := by
-      have h := congrArg (fun ρ : Measure ℝ ↦ ρ.real (Ici (-x))) hμneg
-      rw [map_measureReal_apply (μ := μ) (f := fun y : ℝ ↦ -y) (by fun_prop)
-        measurableSet_Ici, hneg_preimage] at h
-      exact h
-    have hνtails : ν.real (Iic x) = ν.real (Ici (-x)) := by
-      have h := congrArg (fun ρ : Measure ℝ ↦ ρ.real (Ici (-x))) hνneg
-      rw [map_measureReal_apply (μ := ν) (f := fun y : ℝ ↦ -y) (by fun_prop)
-        measurableSet_Ici, hneg_preimage] at h
-      exact h
-    have hbounds : x < -x := by linarith
-    have hdisj_inner : Disjoint (Ioo x (-x)) (Ici (-x)) :=
-      (Iio_disjoint_Ici le_rfl).mono Ioo_subset_Iio_self Subset.rfl
-    have hμtotal :
-        μ.real univ = μ.real (Iic x) + (μ.real (Ioo x (-x)) + μ.real (Ici (-x))) := by
-      rw [← Iic_union_Ioi (a := x),
-        measureReal_union (Iic_disjoint_Ioi le_rfl) measurableSet_Ioi,
-        ← Ioo_union_Ici_eq_Ioi hbounds,
-        measureReal_union hdisj_inner measurableSet_Ici]
-    have hνtotal :
-        ν.real univ = ν.real (Iic x) + (ν.real (Ioo x (-x)) + ν.real (Ici (-x))) := by
-      rw [← Iic_union_Ioi (a := x),
-        measureReal_union (Iic_disjoint_Ioi le_rfl) measurableSet_Ioi,
-        ← Ioo_union_Ici_eq_Ioi hbounds,
-        measureReal_union hdisj_inner measurableSet_Ici]
+  intro ρ _ hρ
+  have : ρ.IsNegInvariant := ⟨hρ⟩
+  rw [map_measureReal_apply (by fun_prop) MeasurableSet.univ, preimage_univ]
+  split_ifs with hx
+  · rw [map_measureReal_apply (by fun_prop) measurableSet_Iic,
+      show (fun y : ℝ ↦ y ^ 2) ⁻¹' Iic (x ^ 2) = Icc (-x) x by
+        ext y; simp [sq_le_sq, abs_of_nonneg hx, abs_le]]
+    have htail : ρ.real (-Ioi x) = ρ.real (Ioi x) := by
+      rw [measureReal_def, Measure.measure_neg, ← measureReal_def]
+    have htot := measureReal_add_measureReal_compl (μ := ρ) (measurableSet_Iic (a := x))
+    rw [Set.neg_Ioi] at htail
+    rw [compl_Iic] at htot
+    rw [← Iio_union_Icc_eq_Iic (by linarith : -x ≤ x), measureReal_union
+      ((Iio_disjoint_Ici le_rfl).mono_right Icc_subset_Ici_self) measurableSet_Icc] at htot ⊢
+    linarith
+  · rw [map_measureReal_apply (by fun_prop) measurableSet_Iio,
+      show (fun y : ℝ ↦ y ^ 2) ⁻¹' Iio (x ^ 2) = Ioo x (-x) by
+        ext y; simp [sq_lt_sq, abs_of_neg (not_le.1 hx), abs_lt]]
+    have htail : ρ.real (-Ici (-x)) = ρ.real (Ici (-x)) := by
+      rw [measureReal_def, Measure.measure_neg, ← measureReal_def]
+    have htot := measureReal_add_measureReal_compl (μ := ρ) (measurableSet_Ici (a := -x))
+    rw [Set.neg_Ici, neg_neg] at htail
+    rw [compl_Ici, ← Iic_union_Ioo_eq_Iio (by linarith : x < -x),
+      measureReal_union ((Iic_disjoint_Ioi le_rfl).mono_right Ioo_subset_Ioi_self)
+        measurableSet_Ioo] at htot
     linarith
 
 /-- **Square roots undo squaring** for a measure carried by the nonnegative half-line: the

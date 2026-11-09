@@ -61,12 +61,12 @@ theorem liftBialgHom_apply_val (f : GroupLike R A →* GroupLike R B)
 
 /-- Restricting the extension to group-like elements recovers the given homomorphism. -/
 @[simp]
-theorem groupLikeMap_liftBialgHom (f : GroupLike R A →* GroupLike R B)
+theorem mapGroupLike_liftBialgHom (f : GroupLike R A →* GroupLike R B)
     (hlinear : LinearIndependent R (GroupLike.val (R := R) (A := A)))
     (hA : Submodule.span R (Set.range (GroupLike.val (R := R) (A := A))) = ⊤) :
-    TauCeti.GroupLike.map (f.liftBialgHom hlinear hA) = f := by
+    (f.liftBialgHom hlinear hA).mapGroupLike = f := by
   ext x
-  simp only [TauCeti.GroupLike.val_map, liftBialgHom_apply_val]
+  simp only [BialgHom.val_mapGroupLike, liftBialgHom_apply_val]
 
 /-- A bialgebra morphism extending the prescribed group-like homomorphism is unique. -/
 theorem liftBialgHom_unique (f : GroupLike R A →* GroupLike R B)

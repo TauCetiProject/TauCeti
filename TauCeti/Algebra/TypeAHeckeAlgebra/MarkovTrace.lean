@@ -22,7 +22,8 @@ Since the infinite algebra is the union of its stages, such a functional is the 
 of compatible normalized traces on the stages. Ocneanu's theorem (Jones, Theorem 5.1) asserts
 that there is exactly one Markov trace for every `z`, the Ocneanu trace. This file proves the
 uniqueness half, and the multiplicativity of every Markov trace on disjoint blocks of strands;
-existence needs the basis theorem for the stages and is not proved here. Both results follow
+existence is proved in `TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace` from the coset basis of
+the stages. Both results follow
 from the decomposition `Hₙ₊₂ = Hₙ₊₁ + Hₙ₊₁ Tₙ Hₙ₊₁` of the stages
 (`TauCeti.InfiniteTypeAHeckeAlgebra.toSubmodule_stage_add_two`), along which the Markov rule
 computes `τ (a * T n * b) = z * τ (b * a)`.
@@ -88,6 +89,31 @@ theorem map_mul_T_mul (hτ : IsMarkovTrace z τ) {n : ℕ} {a b : InfiniteTypeAH
     (ha : a ∈ stage R q (n + 1)) (hb : b ∈ stage R q (n + 1)) :
     τ (a * T q n * b) = z * τ (b * a) := by
   rw [hτ.map_mul_comm, ← mul_assoc, hτ.map_mul_T (mul_mem hb ha)]
+
+/-- The Markov rule for the inverse of the generator adding a new last strand: since
+`(T n)⁻¹ = T n - (q - q⁻¹)`, it multiplies the trace by `z - (q - q⁻¹)`. -/
+theorem map_mul_val_inv_unitT (hτ : IsMarkovTrace z τ) {n : ℕ}
+    {x : InfiniteTypeAHeckeAlgebra R q} (hx : x ∈ stage R q (n + 1)) :
+    τ (x * ↑(unitT q n)⁻¹) = (z - ((q : R) - ↑q⁻¹)) * τ x := by
+  rw [val_inv_unitT, mul_sub, ← Algebra.commutes, ← Algebra.smul_def, map_sub, map_smul,
+    hτ.map_mul_T hx, smul_eq_mul]
+  ring
+
+/-- Positive stabilization has constant `z`, independently of the strand count. -/
+theorem map_braidHom_stabilize (hτ : IsMarkovTrace z τ) {n : ℕ} (b : BraidGroup (n + 1)) :
+    τ (braidHom R q (n + 2) (BraidGroup.strandIncl b * BraidGroup.sigma (Fin.last n))) =
+      z * τ (braidHom R q (n + 1) b) := by
+  simp only [map_mul, braidHom_strandIncl, braidHom_sigma, Units.val_mul, val_unitT,
+    Fin.val_last]
+  exact hτ.map_mul_T (braidHom_mem_stage b)
+
+/-- Negative stabilization has constant `z - (q - q⁻¹)`, dictated by the Hecke relation. -/
+theorem map_braidHom_stabilizeInv (hτ : IsMarkovTrace z τ) {n : ℕ} (b : BraidGroup (n + 1)) :
+    τ (braidHom R q (n + 2) (BraidGroup.strandIncl b * (BraidGroup.sigma (Fin.last n))⁻¹)) =
+      (z - ((q : R) - ↑q⁻¹)) * τ (braidHom R q (n + 1) b) := by
+  simp only [map_mul, map_inv, braidHom_strandIncl, braidHom_sigma, Units.val_mul,
+    Fin.val_last]
+  exact hτ.map_mul_val_inv_unitT (braidHom_mem_stage b)
 
 /-- **Uniqueness of the Ocneanu trace.** Two Markov traces with the same parameter are equal. -/
 theorem unique {τ' : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R} (hτ : IsMarkovTrace z τ)

@@ -38,10 +38,8 @@ the base is disconnected.
 
 ## References
 
-This is the connected/transitive restriction in Stage 2, item 8 of
-`TauCetiRoadmap/UniversalCovers/README.md`. It uses Mathlib's local-homeomorphism charts and Tau
-Ceti's existing monodromy transitivity and full-faithfulness results. No Mathlib proof is
-vendored.
+This file uses Mathlib's local-homeomorphism charts and Tau Ceti's existing monodromy
+transitivity and full-faithfulness results. No Mathlib proof is vendored.
 -/
 
 public section

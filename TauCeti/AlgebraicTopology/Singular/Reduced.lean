@@ -35,6 +35,10 @@ In degree zero, a chosen point identifies reduced homology with the coproduct of
 coefficient object indexed by the path components other than that of the point
 (`TauCeti.reducedSingularHomology₀Iso`); the generator at the component of `y` is the class
 `[y] - [x]`. This is the kernel of the codiagonal of Mathlib's `TopCat.singularHomology₀Iso`.
+An identification of the path components with a type `ι` reindexes this coproduct by the elements
+of `ι` other than the one of the point (`TauCeti.reducedSingularHomology₀IsoOfEquiv`).
+A morphism out of zeroth homology is determined by its values on the classes of points
+(`TauCeti.singularHomology₀_hom_ext`).
 With coefficients in a ring with the strong rank condition, such as a field, its rank is therefore
 the number of path components other than that of the point
 (`TauCeti.rank_reducedSingularHomologyFunctor_zero`). With coefficients in any nontrivial ring, a
@@ -85,6 +89,20 @@ lemma singularHomology₀Section_singularHomology₀ε {X : TopCat.{w}} (x : X) 
     singularHomology₀Section R x ≫ X.singularHomology₀ε R = 𝟙 R :=
   SSet.ιHomology₀_homology₀ε R _
 
+/-- On a path-connected space the class of any point is also a left inverse to the augmentation,
+so it is the inverse of the augmentation isomorphism. -/
+@[reassoc (attr := simp)]
+lemma singularHomology₀ε_singularHomology₀Section {X : TopCat.{w}} [PathConnectedSpace X] (x : X) :
+    X.singularHomology₀ε R ≫ singularHomology₀Section R x = 𝟙 _ := by
+  rw [← IsIso.inv_eq_of_inv_hom_id (singularHomology₀Section_singularHomology₀ε R x),
+    IsIso.hom_inv_id]
+
+/-- On a path-connected space every self-map induces the identity on zeroth homology. -/
+lemma singularHomology₀_map_eq_id_of_pathConnectedSpace {X : TopCat.{w}} [PathConnectedSpace X]
+    (c : X ⟶ X) : ((singularHomologyFunctor C 0).obj R).map c = 𝟙 _ := by
+  rw [← cancel_mono (X.singularHomology₀ε R), singularHomologyMap_singularHomology₀ε,
+    Category.id_comp]
+
 /-- The section is natural in the chosen point under continuous maps. -/
 @[reassoc (attr := simp)]
 lemma singularHomology₀Section_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (x : X) :
@@ -107,6 +125,17 @@ lemma singularHomology₀Section_singularHomology₀Iso_hom {X : TopCat.{w}} (x 
     ((TopCat.toSSet.obj X).homology₀Iso R ≪≫
       (sigmaConst.obj R).mapIso TopCat.zerothHomotopyEquiv.toIso.symm).hom = _
   simp [sigmaConst]
+
+/-- Morphisms out of zeroth singular homology are determined by their values on the classes of
+points: the singular counterpart of `TauCeti.SSet.homology₀_hom_ext`. -/
+lemma singularHomology₀_hom_ext {X : TopCat.{w}} {Y : C}
+    {f g : ((singularHomologyFunctor C 0).obj R).obj X ⟶ Y}
+    (h : ∀ x : X, singularHomology₀Section R x ≫ f = singularHomology₀Section R x ≫ g) :
+    f = g :=
+  SSet.homology₀_hom_ext R fun x ↦ by
+    have hx := h (TopCat.toSSetObj₀Equiv x)
+    rw [singularHomology₀Section_def, Equiv.symm_apply_apply] at hx
+    exact hx
 
 variable [HasKernels C]
 
@@ -265,6 +294,39 @@ lemma ι_reducedSingularHomology₀Iso_inv_ι {X : TopCat.{w}} (x y : X)
       singularHomology₀Section R y - singularHomology₀Section R x := by
   simp [reducedSingularHomology₀Iso, ← singularHomology₀Section_singularHomology₀Iso_hom]
 
+/-- An identification `e` of the path components of `Y` with `ι`, restricted to the components
+other than that of `y`. -/
+private def componentsNeEquiv {Y : TopCat.{w}} (y : Y) {ι : Type w} (e : ZerothHomotopy Y ≃ ι)
+    {i₀ : ι} (he : e (.mk y) = i₀) :
+    {c : ZerothHomotopy Y // c ≠ .mk y} ≃ {i : ι // i ≠ i₀} :=
+  e.subtypeEquiv fun _ ↦ by subst he; exact e.injective.ne_iff.symm
+
+/-- Reindex the reduced zeroth homology of a space along an identification `e` of its path
+components with a type `ι` sending the component of the basepoint to `i₀`. -/
+def reducedSingularHomology₀IsoOfEquiv {Y : TopCat.{w}} (y : Y) {ι : Type w}
+    (e : ZerothHomotopy Y ≃ ι) {i₀ : ι} (he : e (.mk y) = i₀) :
+    (reducedSingularHomologyFunctor R 0).obj Y ≅ ∐ fun _ : {i : ι // i ≠ i₀} ↦ R :=
+  reducedSingularHomology₀Iso R y ≪≫
+    (Sigma.reindex (componentsNeEquiv y e he).symm
+      (fun _ : {c : ZerothHomotopy Y // c ≠ .mk y} ↦ R)).symm
+
+/-- The generator of `TauCeti.reducedSingularHomology₀IsoOfEquiv` at the index of the component
+of `z` is the class `[z] - [y]`. -/
+@[reassoc]
+theorem ι_reducedSingularHomology₀IsoOfEquiv_inv_ι {Y : TopCat.{w}} (y z : Y) {ι : Type w}
+    (e : ZerothHomotopy Y ≃ ι) {i₀ : ι} (he : e (.mk y) = i₀) (h : e (.mk z) ≠ i₀) :
+    Sigma.ι (fun _ : {i : ι // i ≠ i₀} ↦ R) ⟨e (.mk z), h⟩ ≫
+        (reducedSingularHomology₀IsoOfEquiv R y e he).inv ≫
+          (reducedSingularHomologyι R 0).app Y =
+      singularHomology₀Section R z - singularHomology₀Section R y := by
+  have hz : ZerothHomotopy.mk z ≠ ZerothHomotopy.mk y := fun hzy ↦ h (hzy ▸ he)
+  rw [← ι_reducedSingularHomology₀Iso_inv_ι R y z hz, reducedSingularHomology₀IsoOfEquiv,
+    Iso.trans_inv, Iso.symm_inv, Category.assoc]
+  refine (Sigma.ι_reindex_hom_assoc (componentsNeEquiv y e he).symm
+    (fun _ : {c : ZerothHomotopy Y // c ≠ .mk y} ↦ R) ⟨e (.mk z), h⟩ _).trans ?_
+  congr 2
+  exact Subtype.ext (e.symm_apply_apply _)
+
 /-- The augmentation sequence split by the class of a chosen point. -/
 private def singularHomology₀Splitting {X : TopCat.{w}} (x : X) :
     (ShortComplex.mk (kernel.ι (X.singularHomology₀ε R)) (X.singularHomology₀ε R)
@@ -368,7 +430,7 @@ open TauCeti
 
 section Free
 
-variable {k : Type w} [Ring k] (M : ModuleCat.{w} k) {X : TopCat.{w}}
+variable {k : Type v} [Ring k] (M : ModuleCat.{w} k) {X : TopCat.{w}}
 
 /-- A point of `X` splits the zeroth singular homology with coefficients in a module as the
 product of the reduced zeroth homology and the coefficient module. -/

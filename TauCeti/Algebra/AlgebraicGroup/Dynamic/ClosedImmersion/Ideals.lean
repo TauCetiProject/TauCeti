@@ -16,6 +16,8 @@ A closed immersion identifies the dynamic parabolic and unipotent subgroup with 
 scheme-theoretic inverse images of the corresponding ambient subgroups. This file expresses
 that compatibility as equality of defining Hopf ideals. In particular, differentiating these
 equalities allows a faithful matrix representation to compute dynamic tangent spaces.
+Read in the ambient group, the dynamic parabolic and unipotent subgroups of a closed subgroup `Z`
+are the intersections `Z ∩ P_G(λ)` and `Z ∩ U_G(λ)`.
 
 The comparison retains the infinitesimal structure; no reducedness or smoothness
 assumption is required.
@@ -73,5 +75,25 @@ theorem unipotentDefiningHopfIdeal_eq_map_of_surjective
     CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
   simp only [HopfIdeal.mem_map_iff_of_surjective hφ, BialgHom.mapDomain_apply_apply,
     forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+
+/-- Pulling back the defining ideal of the dynamic parabolic of a closed subgroup `Z` along
+`H → O(Z)` gives the ideal of `Z ∩ P_G(λ)`: the image of that parabolic under `Z ↪ G` is the
+intersection of `Z` with the ambient dynamic parabolic. -/
+theorem comapOfSurjective_parabolicDefiningHopfIdeal
+    (φ : H →ₐc[R] K) (hφ : Function.Surjective φ)
+    (l : K →ₐc[R] LaurentPolynomial R) :
+    (parabolicDefiningHopfIdeal l).comapOfSurjective φ hφ =
+      parabolicDefiningHopfIdeal (l.comp φ) ⊔ HopfIdeal.kerOfSurjective φ hφ := by
+  rw [parabolicDefiningHopfIdeal_eq_map_of_surjective φ hφ l, HopfIdeal.comapOfSurjective_map]
+
+/-- Pulling back the defining ideal of the dynamic unipotent subgroup of a closed subgroup `Z`
+along `H → O(Z)` gives the ideal of `Z ∩ U_G(λ)`: the image of that subgroup under `Z ↪ G` is the
+intersection of `Z` with the ambient dynamic unipotent subgroup. -/
+theorem comapOfSurjective_unipotentDefiningHopfIdeal
+    (φ : H →ₐc[R] K) (hφ : Function.Surjective φ)
+    (l : K →ₐc[R] LaurentPolynomial R) :
+    l.unipotentDefiningHopfIdeal.comapOfSurjective φ hφ =
+      (l.comp φ).unipotentDefiningHopfIdeal ⊔ HopfIdeal.kerOfSurjective φ hφ := by
+  rw [unipotentDefiningHopfIdeal_eq_map_of_surjective φ hφ l, HopfIdeal.comapOfSurjective_map]
 
 end BialgHom

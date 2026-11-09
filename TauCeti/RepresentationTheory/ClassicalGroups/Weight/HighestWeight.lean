@@ -9,6 +9,8 @@ public import TauCeti.LinearAlgebra.PolynomialFamily
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Decomposition
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Weyl
+import TauCeti.Algebra.Lie.GeneralLinear.Uniqueness
+import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Differential
 
 /-!
 # Highest weight vectors of a rational representation of `GL n`
@@ -59,8 +61,18 @@ height while permutations of a weight are again weights
   subgroup is polynomial in the parameter.
 * `TauCeti.IsRationalRep.apply_transvectionUnit_eq_self`: a weight vector all of whose raised
   weight spaces vanish is fixed by the root subgroup.
+* `TauCeti.IsRationalRep.apply_transvectionUnit_eq_self_of_forall_sum_le`: a vector of a weight
+  dominating every weight of the representation is fixed by every positive root subgroup.
 * `TauCeti.IsRationalRep.exists_highestWeightVector`: **a nonzero rational representation has a
   highest weight vector**, of a dominant weight.
+* `TauCeti.IsRationalRep.nonempty_equiv_of_highestWeightVector`: **an irreducible rational
+  representation is determined by its highest weight.** Differentiating, both highest weight
+  vectors become highest weight vectors for `𝔤𝔩ₙ`
+  (`TauCeti.IsRationalRep.isGlHighestWeightVector_differential`) of irreducible `𝔤𝔩ₙ`-modules
+  (`TauCeti.IsRationalRep.isIrreducible_differential`), which are therefore isomorphic
+  (`TauCeti.lieModuleEquivOfIsGlHighestWeightVector`); a `𝔤𝔩ₙ`-intertwiner of rational
+  representations intertwines the group actions
+  (`TauCeti.IsRationalRep.isIntertwiningMap_iff_forall_map_differential`).
 
 ## References
 
@@ -71,6 +83,8 @@ height while permutations of a weight are again weights
 public section
 
 open Matrix
+
+attribute [local instance 100] LieRing.ofAssociativeRing
 
 universe u v
 
@@ -118,7 +132,7 @@ theorem apply_mem_weightSpace_of_forall_transvectionUnit_eq_sum_smul
     intro e
     rw [hA e, LinearMap.sum_apply]
     exact Finset.sum_congr rfl fun m' _ ↦ rfl
-  refine eq_of_forall_sum_range_pow_smul_eq (K := K)
+  refine eq_of_forall_sum_range_pow_smul_eq (R := K)
     (u := fun m' ↦ ρ (diagGL t) (A m' w))
     (v := fun m' ↦ ((weightChar K (l + m' • (Pi.single i 1 - Pi.single j 1)) t : Kˣ) : K) •
       A m' w) (fun c ↦ ?_) hm
@@ -135,8 +149,8 @@ theorem apply_mem_weightSpace_of_forall_transvectionUnit_eq_sum_smul
   have hlhs : ∑ m' ∈ Finset.range d, c ^ m' • ρ (diagGL t) (A m' w)
       = ((weightChar K l t : Kˣ) : K) •
         ∑ m' ∈ Finset.range d, (((t i * (t j)⁻¹ : Kˣ) : K) * c) ^ m' • A m' w := by
-    rw [← hexpand, ← map_smul, ← apply_of_mem_weightSpace hw t, ← Module.End.mul_apply,
-      ← map_mul, ← hconj, map_mul, Module.End.mul_apply, hexpand, map_sum]
+    rw [← hexpand, ← map_smul, ← apply_of_mem_weightSpace hw t, ← mul_apply_eq_comp,
+      ← map_mul, ← hconj, map_mul, mul_apply_eq_comp, hexpand, map_sum]
     exact Finset.sum_congr rfl fun m' _ ↦ (map_smul _ _ _).symm
   have hrhs : ∑ m' ∈ Finset.range d,
       c ^ m' • (((weightChar K (l + m' • (Pi.single i 1 - Pi.single j 1)) t : Kˣ) : K) • A m' w)
@@ -175,7 +189,7 @@ theorem IsRationalRep.exists_forall_transvectionUnit_eq_sum_smul (h : IsRational
     simp only [Matrix.transvection, Matrix.single, Matrix.add_apply, Matrix.of_apply,
       Matrix.one_apply, Polynomial.eval_add, apply_ite (Polynomial.eval c),
       Polynomial.eval_one, Polynomial.eval_zero, Polynomial.eval_X]
-  refine b.exists_forall_eq_sum_pow_smul_of_toMatrix_eq_eval
+  refine b.exists_forall_eq_sum_pow_smul_of_toMatrix_eq_eval b
     (fun c ↦ ρ (transvectionUnit hij c)) (fun a a' ↦ MvPolynomial.aeval E (P a a'))
     (fun c a a' ↦ ?_)
   have hdet : ((transvectionUnit hij c : GL (Fin n) ℂ) :
@@ -204,7 +218,7 @@ theorem IsRationalRep.apply_transvectionUnit_eq_self (h : IsRationalRep ρ) {i j
   rcases Nat.eq_zero_or_pos d with rfl | hd
   · have hw0 : w = 0 := by
       have h1 := hexpand 0
-      rw [transvectionUnit_zero, map_one, Module.End.one_apply, Finset.range_zero,
+      rw [transvectionUnit_zero, map_one, one_apply_eq_self, Finset.range_zero,
         Finset.sum_empty] at h1
       exact h1
     rw [hw0, map_zero]
@@ -215,12 +229,40 @@ theorem IsRationalRep.apply_transvectionUnit_eq_self (h : IsRationalRep ρ) {i j
           (Finset.mem_range.mp hm)), smul_zero]
     have hA0 : A 0 w = w := by
       have h1 := hexpand 0
-      rw [transvectionUnit_zero, map_one, Module.End.one_apply,
+      rw [transvectionUnit_zero, map_one, one_apply_eq_self,
         Finset.sum_eq_single_of_mem 0 (Finset.mem_range.mpr hd)
           (fun m _ hm ↦ by rw [zero_pow hm, zero_smul]), pow_zero, one_smul] at h1
       exact h1.symm
     rw [hexpand c, Finset.sum_eq_single_of_mem 0 (Finset.mem_range.mpr hd) hzero, pow_zero,
       one_smul, hA0]
+
+/-- **A vector of a weight dominating every weight is fixed by the positive root subgroups.** If
+every weight `a` of `ρ` is dominated by `l`, in the sense that each initial partial sum of `a` is
+at most the corresponding partial sum of `l`, then every transvection `xᵢⱼ(c)` with `i < j` fixes
+each vector of weight `l`: the raised weights `l + m (εᵢ - εⱼ)`, `m > 0`, violate the dominance
+bound at the partial sum through `i`. -/
+theorem IsRationalRep.apply_transvectionUnit_eq_self_of_forall_sum_le (h : IsRationalRep ρ)
+    {l : Fin n → ℤ}
+    (hl : ∀ a : Fin n → ℤ, weightSpace ρ a ≠ ⊥ → ∀ m : ℕ,
+      ∑ k ∈ Finset.univ.filter fun k : Fin n ↦ (k : ℕ) < m, a k ≤
+        ∑ k ∈ Finset.univ.filter fun k : Fin n ↦ (k : ℕ) < m, l k)
+    {i j : Fin n} (hij : i < j) {w : W} (hw : w ∈ weightSpace ρ l) (c : ℂ) :
+    ρ (transvectionUnit hij.ne c) w = w := by
+  classical
+  refine h.apply_transvectionUnit_eq_self hij.ne hw (fun m hm ↦ ?_) c
+  by_contra hne
+  have hsum := hl _ hne ((i : ℕ) + 1)
+  have hsingle (a : Fin n) :
+      ∑ k ∈ Finset.univ.filter fun k : Fin n ↦ (k : ℕ) < (i : ℕ) + 1,
+        (Pi.single a (1 : ℤ) : Fin n → ℤ) k = if (a : ℕ) < (i : ℕ) + 1 then 1 else 0 := by
+    rw [Finset.sum_pi_single']
+    simp
+  have hj : ¬ (j : ℕ) < (i : ℕ) + 1 := by have := Fin.lt_def.mp hij; omega
+  simp only [Pi.add_apply, Pi.smul_apply, Pi.sub_apply, smul_sub, Finset.sum_add_distrib,
+    Finset.sum_sub_distrib, ← Finset.smul_sum, hsingle, Nat.lt_succ_self, ite_true, hj,
+    ite_false] at hsum
+  rw [nsmul_zero, sub_zero, Int.nsmul_eq_mul, mul_one] at hsum
+  omega
 
 /-! ## The highest weight -/
 
@@ -322,5 +364,35 @@ theorem IsRationalRep.exists_highestWeightVector [Nontrivial W] (h : IsRationalR
       exact_mod_cast Fin.lt_def.mp hij
     nlinarith [sub_pos.mpr hij']
   exact absurd (hmax _ hbot) (not_le.mpr hgt)
+
+/-! ## An irreducible rational representation is determined by its highest weight -/
+
+/-- **An irreducible rational representation is determined by its highest weight**: two
+irreducible rational representations of `GL n ℂ`, each with a nonzero vector of weight `l` fixed
+by every transvection `xᵢⱼ(c)` with `i < j`, are equivalent. -/
+theorem IsRationalRep.nonempty_equiv_of_highestWeightVector {V : Type*} [AddCommGroup V]
+    [Module ℂ V] {σ : Representation ℂ (GL (Fin n) ℂ) V} (hρ : IsRationalRep ρ)
+    (hσ : IsRationalRep σ) [ρ.IsIrreducible] [σ.IsIrreducible] {l : Fin n → ℤ} {w : W} {v : V}
+    (hw0 : w ≠ 0) (hwl : w ∈ weightSpace ρ l)
+    (hw : ∀ (i j : Fin n) (hij : i < j) (c : ℂ), ρ (transvectionUnit hij.ne c) w = w)
+    (hv0 : v ≠ 0) (hvl : v ∈ weightSpace σ l)
+    (hv : ∀ (i j : Fin n) (hij : i < j) (c : ℂ), σ (transvectionUnit hij.ne c) v = v) :
+    Nonempty (ρ.Equiv σ) := by
+  let _ := LieRingModule.compLieHom W hρ.differential
+  let _ := LieModule.compLieHom W hρ.differential
+  let _ := LieRingModule.compLieHom V hσ.differential
+  let _ := LieModule.compLieHom V hσ.differential
+  have _ := hρ.isIrreducible_differential
+  have _ := hσ.isIrreducible_differential
+  let e := lieModuleEquivOfIsGlHighestWeightVector
+    (hρ.isGlHighestWeightVector_differential hw0 hwl hw)
+    (hσ.isGlHighestWeightVector_differential hv0 hvl hv)
+  refine ⟨.mk e.toLinearEquiv fun g ↦ LinearMap.ext fun x ↦ ?_⟩
+  have hint := (hρ.isIntertwiningMap_iff_forall_map_differential hσ
+    e.toLinearEquiv.toLinearMap).mpr fun X x ↦ by
+      simpa only [LieRingModule.compLieHom_apply, Module.End.lie_apply,
+        LieModuleEquiv.coe_toLieModuleHom, LieModuleEquiv.coe_toLinearEquiv,
+        LinearEquiv.coe_coe] using e.toLieModuleHom.map_lie X x
+  exact (Representation.isIntertwiningMap_iff _ _ _).mp hint g x
 
 end TauCeti

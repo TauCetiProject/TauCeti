@@ -29,10 +29,10 @@ exactly the cocycle identity. The cocycle is not assumed normalized: the identit
 
 An element is a wrapper around a finitely supported function `Aut_K(L) →₀ L`, its coordinates
 `(CrossedProduct.basis c).repr` in the `L`-basis `u_σ`, and the
-crossed product is a `K`-algebra. Over fields its `Module.finrank` is
-`Module.finrank K L * Nat.card (Aut_K(L))`; when `L/K` is finite Galois, this is the actual
-dimension `[L : K]²`. It is **not** an `L`-algebra: `L` acts on the left by multiplication, but is
-not central unless the automorphism group is trivial.
+crossed product is a `K`-algebra. When `L` is free over `K` (for instance over fields), its
+`Module.finrank` is `Module.finrank K L * Nat.card (Aut_K(L))`; when `L/K` is finite Galois, this
+is the actual dimension `[L : K]²`. It is **not** an `L`-algebra: `L` acts on the left by
+multiplication, but is not central unless the automorphism group is trivial.
 
 Central simplicity of the crossed product of a finite Galois extension of fields is proved in
 `TauCeti.Algebra.CrossedProduct.CentralSimple`.
@@ -42,7 +42,7 @@ Central simplicity of the crossed product of a finite Galois extension of fields
 * `TauCeti.TwoCocycle K L`: the `2`-cocycles of `L ≃ₐ[K] L` with values in `Lˣ`, a commutative
   group under pointwise multiplication (`TauCeti.TwoCocycle.instCommGroup`).
 * `TauCeti.TwoCocycle.comap f ι hf c`: the inflation of `c` along a homomorphism
-  `f : Aut_K(M) → Aut_K(L)` and an embedding `ι : L →ₐ[K] M` intertwining it.
+  `f : Aut_R(M) → Aut_K(L)` and a ring homomorphism `ι : L →+* M` intertwining it.
 * `TauCeti.CrossedProduct c`: the crossed-product ring of a cocycle `c`, with its `K`-algebra and
   left `L`-module structures.
 * `TauCeti.CrossedProduct.basis c`: the `L`-basis `u_σ` of the crossed product.
@@ -58,8 +58,8 @@ Central simplicity of the crossed product of a finite Galois extension of fields
 * `TauCeti.CrossedProduct.basis_mul_basis`: `u_σ · u_τ = c(σ, τ) · u_{στ}`.
 * `TauCeti.CrossedProduct.algHom_ext`, `TauCeti.CrossedProduct.lift_unique`: a `K`-algebra
   homomorphism out of the crossed product is determined by its values on `L` and on the `u_σ`.
-* `TauCeti.CrossedProduct.finrank_eq_finrank_mul_card`: over fields, the `Module.finrank` of the
-  crossed product is `Module.finrank K L * Nat.card (Aut_K(L))`; and
+* `TauCeti.CrossedProduct.finrank_eq_finrank_mul_card`: for `L` free over `K`, the
+  `Module.finrank` of the crossed product is `Module.finrank K L * Nat.card (Aut_K(L))`; and
   `TauCeti.CrossedProduct.finrank_eq_finrank_sq`: for a finite Galois extension its dimension is
   `[L : K]²`.
 
@@ -188,14 +188,18 @@ instance : CommGroup (TwoCocycle K L) :=
 
 section Comap
 
-variable {M : Type w} [CommRing M] [Algebra K M]
+-- Keeping the coefficient homomorphism in its original bundled presentation preserves the
+-- compatibility proof's type when callers supply an algebra homomorphism.
+variable {R : Type*} [CommSemiring R] {M : Type w} [CommRing M] [Algebra R M]
+  {H : Type*} [FunLike H L M] [RingHomClass H L M]
 
 /-- The **inflation** of a `2`-cocycle `c` of `Aut_K(L)` along a compatible pair: a homomorphism
-`f : Aut_K(M) → Aut_K(L)` and an embedding `ι : L → M` intertwining it, `ι (f g x) = g (ι x)`.
+`f : Aut_R(M) → Aut_K(L)` and a ring homomorphism `ι : L →+* M` intertwining it,
+`ι (f g x) = g (ι x)`.
 Its values are `(g, g') ↦ ι (c (f g, f g'))`; the intertwining hypothesis is what makes this a
 cocycle. -/
-def comap (f : (M ≃ₐ[K] M) →* (L ≃ₐ[K] L)) (ι : L →ₐ[K] M) (hf : ∀ g x, ι (f g x) = g (ι x))
-    (c : TwoCocycle K L) : TwoCocycle K M where
+def comap (f : (M ≃ₐ[R] M) →* (L ≃ₐ[K] L)) (ι : H) (hf : ∀ g x, ι (f g x) = g (ι x))
+    (c : TwoCocycle K L) : TwoCocycle R M where
   toFun g g' := Units.map (ι : L →* M) (c.toFun (f g) (f g'))
   isMulCocycle₂ g g' g'' := by
     have hsmul (x : Lˣ) : g • Units.map (ι : L →* M) x = Units.map (ι : L →* M) (f g • x) :=
@@ -205,12 +209,12 @@ def comap (f : (M ≃ₐ[K] M) →* (L ≃ₐ[K] L)) (ι : L →ₐ[K] M) (hf : 
     rw [← map_mul f, ← map_mul f] at h
     rw [hsmul, ← map_mul, ← map_mul, h]
 
-variable (f : (M ≃ₐ[K] M) →* (L ≃ₐ[K] L)) (ι : L →ₐ[K] M) (hf : ∀ g x, ι (f g x) = g (ι x))
+variable (f : (M ≃ₐ[R] M) →* (L ≃ₐ[K] L)) (ι : H) (hf : ∀ g x, ι (f g x) = g (ι x))
 
 /-- The defining equation of the inflated cocycle, `(c.comap f ι hf)(g, g') = ι (c (f g, f g'))`,
 as units. -/
 @[simp]
-theorem comap_toFun (g g' : M ≃ₐ[K] M) :
+theorem comap_toFun (g g' : M ≃ₐ[R] M) :
     (c.comap f ι hf).toFun g g' = Units.map (ι : L →* M) (c.toFun (f g) (f g')) :=
   (rfl)
 
@@ -371,11 +375,7 @@ noncomputable instance : NonAssocRing (CrossedProduct c) where
     | smul_basis σ x =>
       simp only [one_def, smul_basis_mul_smul_basis, c.toFun_one_left, AlgEquiv.one_apply,
         one_mul]
-      congr 1
-      calc
-        (↑(c.toFun 1 1)⁻¹ : L) * x * c.toFun 1 1 =
-            x * (↑(c.toFun 1 1)⁻¹ : L) * c.toFun 1 1 := by rw [mul_comm (↑_ : L) x]
-        _ = x := by rw [mul_assoc, Units.inv_mul, mul_one]
+      rw [mul_right_comm, Units.inv_mul, one_mul]
   mul_one a := by
     induction a using induction_on with
     | zero => simp only [zero_mul]
@@ -383,11 +383,7 @@ noncomputable instance : NonAssocRing (CrossedProduct c) where
     | smul_basis σ x =>
       rw [one_def, smul_basis_mul_smul_basis, c.toFun_one_right]
       congr 1
-      calc
-        x * σ (↑(c.toFun 1 1)⁻¹ : L) * σ (c.toFun 1 1 : L) =
-            x * σ ((↑(c.toFun 1 1)⁻¹ : L) * c.toFun 1 1) := by
-              rw [mul_assoc, map_mul]
-        _ = x := by rw [Units.inv_mul, map_one, mul_one]
+      rw [mul_assoc, ← map_mul, Units.inv_mul, map_one, mul_one]
 
 noncomputable instance : Ring (CrossedProduct c) where
   __ := (inferInstance : NonUnitalRing (CrossedProduct c))
@@ -468,14 +464,8 @@ theorem basis_one : basis c 1 = inc c (c.toFun 1 1) := by
 @[simp]
 theorem basis_mul_inc (σ : L ≃ₐ[K] L) (x : L) :
     basis c σ * inc c x = inc c (σ x) * basis c σ := by
-  rw [← smul_def, inc_apply, ← one_smul L (basis c σ), smul_basis_mul_smul_basis]
-  rw [one_smul, c.toFun_one_right, one_mul]
-  congr 1
-  calc
-    σ (x * (↑(c.toFun 1 1)⁻¹ : L)) * σ (c.toFun 1 1 : L) =
-        σ x * σ ((↑(c.toFun 1 1)⁻¹ : L) * c.toFun 1 1) := by
-          rw [map_mul, mul_assoc, map_mul]
-    _ = σ x := by rw [Units.inv_mul, map_one, mul_one]
+  rw [← smul_def, inc_apply, ← one_smul L (basis c σ), smul_basis_mul_smul_basis, one_smul,
+    c.toFun_one_right, one_mul, ← map_mul, Units.inv_mul_cancel_right, mul_one]
 
 /-- **The cocycle rule** `u_σ · u_τ = c(σ, τ) · u_{στ}`. -/
 @[simp]
@@ -579,26 +569,39 @@ end Lift
 instance [Nontrivial L] : Nontrivial (CrossedProduct c) :=
   nontrivial_of_ne _ _ ((basis c).ne_zero 1)
 
+/-- The crossed product is a free left `L`-module, with basis the `u_σ`. -/
+instance : Module.Free L (CrossedProduct c) :=
+  .of_basis (basis c)
+
+/-- The crossed product is a finite left `L`-module when `L` has finitely many
+`K`-automorphisms. -/
+instance [Finite (L ≃ₐ[K] L)] : Module.Finite L (CrossedProduct c) :=
+  .of_basis (basis c)
+
+variable (c) in
+/-- The crossed product of a `K`-free algebra `L` satisfies the natural-number identity
+`Module.finrank K (CrossedProduct c) = Module.finrank K L * Nat.card (Aut_K(L))`.
+Without finiteness, these are truncated invariants rather than cardinal dimensions. -/
+theorem finrank_eq_finrank_mul_card [StrongRankCondition K] [Module.Free K L] :
+    Module.finrank K (CrossedProduct c) = Module.finrank K L * Nat.card (L ≃ₐ[K] L) := by
+  rcases subsingleton_or_nontrivial L with _ | _
+  · have : Subsingleton (CrossedProduct c) := (equivFinsupp c).toEquiv.subsingleton
+    simp [Module.finrank_zero_of_subsingleton]
+  rw [← Module.finrank_mul_finrank K L, Module.finrank_eq_nat_card_basis (basis c)]
+
+/-- The crossed product of a finite algebra with finitely many automorphisms is finite. -/
+instance [Module.Finite K L] [Finite (L ≃ₐ[K] L)] : Module.Finite K (CrossedProduct c) :=
+  .trans L (CrossedProduct c)
+
 section Field
 
 variable {K : Type u} [Field K] {L : Type v} [Field L] [Algebra K L] (c : TwoCocycle K L)
-
-/-- The crossed product satisfies the natural-number identity
-`Module.finrank K (CrossedProduct c) = Module.finrank K L * Nat.card (Aut_K(L))`.
-Without finite-dimensionality, these are truncated invariants rather than cardinal dimensions. -/
-theorem finrank_eq_finrank_mul_card :
-    Module.finrank K (CrossedProduct c) = Module.finrank K L * Nat.card (L ≃ₐ[K] L) := by
-  rw [← Module.finrank_mul_finrank K L, Module.finrank_eq_nat_card_basis (basis c)]
 
 /-- **The crossed product of a finite Galois extension has dimension `[L : K]²`**, so it has degree
 `[L : K]` as a central simple algebra. -/
 theorem finrank_eq_finrank_sq [FiniteDimensional K L] [IsGalois K L] :
     Module.finrank K (CrossedProduct c) = Module.finrank K L ^ 2 := by
   rw [finrank_eq_finrank_mul_card, IsGalois.card_aut_eq_finrank, sq]
-
-instance [FiniteDimensional K L] : FiniteDimensional K (CrossedProduct c) :=
-  have : Module.Finite L (CrossedProduct c) := .of_basis (basis c)
-  Module.Finite.trans L (CrossedProduct c)
 
 end Field
 

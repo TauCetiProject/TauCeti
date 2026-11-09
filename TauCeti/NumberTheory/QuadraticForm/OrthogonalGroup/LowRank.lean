@@ -121,9 +121,9 @@ theorem localSpinorNormImage_ne_unitSquareClasses_of_finrank_le_one
   intro h
   have hc := card_unitSquareClasses ℚ_[p] two_ne_zero
   have hcard := congrArg
-    (fun H : Subgroup (Multiplicative (SquareClassGroup ℚ_[p])) ↦ Nat.card H) h
+    (fun H : Subgroup ((ℚ_[p]ˣ ⧸ Subgroup.square ℚ_[p]ˣ)) ↦ Nat.card H) h
   have hbot : Nat.card
-      (⊥ : Subgroup (Multiplicative (SquareClassGroup ℚ_[p]))) = 1 := Subgroup.card_bot
+      (⊥ : Subgroup ((ℚ_[p]ˣ ⧸ Subgroup.square ℚ_[p]ˣ))) = 1 := Subgroup.card_bot
   have hone := hbot.symm.trans (hcard.trans hc)
   omega
 

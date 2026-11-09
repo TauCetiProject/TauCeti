@@ -49,8 +49,9 @@ conditions agree for homeomorphisms, and we use the simplexwise one, which is Wh
 
 ## Main results
 
-* `TauCeti.IsSimplexImmersion.comp`: post-composing with a `Cⁿ` map with injective
-  differentials preserves immersions of simplices.
+* `TauCeti.IsSimplexImmersion.comp_of_contMDiffOn`, `TauCeti.IsSimplexImmersion.comp`:
+  post-composing with a map that is `Cⁿ` within a set containing the image, with injective
+  differentials within that set, preserves immersions of simplices.
 * `TauCeti.IsSimplexImmersion.comp_linear`: precomposing with a map of simplices that is linear
   and injective in barycentric coordinates preserves immersions of simplices.
 * `TauCeti.IsSmoothTriangulation.trans_diffeomorph`: a smooth triangulation can be pushed forward
@@ -60,8 +61,8 @@ conditions agree for homeomorphisms, and we use the simplexwise one, which is Wh
 * `TauCeti.isSmoothTriangulation_realizationOneSimplexHomeomorphUnitInterval`: the standard
   one-simplex is a smooth triangulation of the unit interval, for every smoothness exponent.
 * `TauCeti.exists_contMDiff_not_isSmoothTriangulation_trans`: following that triangulation by the
-  smooth homeomorphism `t ↦ t ^ 2` of the interval does not give a smooth triangulation, so the
-  injectivity of the differential is a genuine condition.
+  analytic homeomorphism `t ↦ t ^ 2` of the interval does not give a `Cⁿ` triangulation for any
+  `n`, so the injectivity of the differential is a genuine condition.
 
 ## References
 
@@ -122,19 +123,44 @@ theorem of_le (h : IsSimplexImmersion I n g) (hmn : m ≤ n) : IsSimplexImmersio
   obtain ⟨F, hFg, hF, hF'⟩ := h
   exact ⟨F, hFg, hF.of_le hmn, hF'⟩
 
+/-- An immersion of a simplex is continuous. -/
+theorem continuous (h : IsSimplexImmersion I n g) : Continuous g := by
+  obtain ⟨F, hFg, hF, -⟩ := h
+  exact Finset.continuous_of_continuousOn_coordinates hFg hF.continuousOn
+
+/-- Post-composing an immersion of a simplex with a map that is `Cⁿ` within a set containing its
+image, and has an injective derivative within that set at every point of the image, gives an
+immersion of the simplex. -/
+theorem comp_of_contMDiffOn (h : IsSimplexImmersion I n g) {φ : M → N} {s : Set M}
+    (hgs : range g ⊆ s) (hφ : ContMDiffOn I J n φ s)
+    (hφ' : ∀ y ∈ range g, ∃ φ' : TangentSpace I y →L[ℝ] TangentSpace J (φ y),
+      HasMFDerivWithinAt I J φ s y φ' ∧ Injective φ') :
+    IsSimplexImmersion J n (φ ∘ g) := by
+  obtain ⟨F, hFg, hF, hF'⟩ := h
+  -- `F` maps the simplex onto the image of `g`.
+  have hFrange (t : Convexity.StdSimplex ℝ σ) : F t.weights ∈ range g := by
+    let x := (Finset.standardSimplexHomeomorph σ).symm t
+    have ht : (⇑t.weights : σ → ℝ) = fun a : σ => x.1 a := by
+      conv_lhs => rw [← (Finset.standardSimplexHomeomorph σ).apply_symm_apply t]
+      exact funext fun a => Finset.standardSimplexHomeomorph_weights σ x a
+    rw [ht, hFg]
+    exact mem_range_self x
+  have hmaps : MapsTo F (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) s := by
+    rintro _ ⟨t, rfl⟩
+    exact hgs (hFrange t)
+  refine ⟨φ ∘ F, fun x => by simp [hFg], hφ.comp hF hmaps, fun t => ?_⟩
+  obtain ⟨F', hFt, hinj⟩ := hF' t
+  obtain ⟨φ', hφt, hφinj⟩ := hφ' _ (hFrange t)
+  exact ⟨φ'.comp F', hφt.comp (⇑t.weights) hFt hmaps.subset_preimage,
+    fun v hv hv0 => hinj v hv (hφinj (hv0.trans (map_zero _).symm))⟩
+
 /-- Post-composing an immersion of a simplex with a `Cⁿ` map whose differential is injective at
 every point gives an immersion of the simplex. -/
 theorem comp (h : IsSimplexImmersion I n g) {φ : M → N} (hφ : ContMDiff I J n φ)
     (hφ' : ∀ x, Injective (mfderiv I J φ x)) :
-    IsSimplexImmersion J n (φ ∘ g) := by
-  obtain ⟨F, hFg, hF, hF'⟩ := h
-  refine ⟨φ ∘ F, fun x => by simp [hFg], hφ.comp_contMDiffOn hF, fun t => ?_⟩
-  obtain ⟨F', hFt, hinj⟩ := hF' t
-  have hφt : MDifferentiableAt I J φ (F t.weights) :=
-    mdifferentiableAt_of_mfderiv_injective (hφ' (F t.weights))
-  refine ⟨(mfderiv I J φ (F t.weights)).comp F', hφt.hasMFDerivAt.comp_hasMFDerivWithinAt _ hFt,
-    fun v hv hv0 => hinj v hv (hφ' (F t.weights) ?_)⟩
-  exact hv0.trans (map_zero _).symm
+    IsSimplexImmersion J n (φ ∘ g) :=
+  h.comp_of_contMDiffOn (subset_univ _) hφ.contMDiffOn fun y _ =>
+    ⟨_, (mdifferentiableAt_of_mfderiv_injective (hφ' y)).hasMFDerivAt.hasMFDerivWithinAt, hφ' y⟩
 
 /-- Precomposing an immersion of a simplex with a map of simplices that is linear in barycentric
 coordinates, and injective on the directions of its domain, gives an immersion of the simplex. -/
@@ -205,13 +231,13 @@ theorem of_le (h : IsSmoothTriangulation I n f) (hmn : m ≤ n) : IsSmoothTriang
   fun σ => (h σ).of_le hmn
 
 /-- A smooth triangulation of `M` followed by a diffeomorphism `M ≃ N` is a smooth triangulation
-of `N`. -/
-theorem trans_diffeomorph (h : IsSmoothTriangulation I n f) (Φ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) :
-    IsSmoothTriangulation J n (f.trans Φ.toHomeomorph) := fun σ =>
+of `N`. The diffeomorphism may be of any class `Cᵐ` with `n ≤ m` and `m ≠ 0`. -/
+theorem trans_diffeomorph (h : IsSmoothTriangulation I n f) (Φ : M ≃ₘ^m⟮I, J⟯ N) (hnm : n ≤ m)
+    (hm : m ≠ 0) : IsSmoothTriangulation J n (f.trans Φ.toHomeomorph) := fun σ =>
   -- `(f.trans Φ.toHomeomorph) ∘ faceInclusion K σ` is `Φ ∘ (f ∘ faceInclusion K σ)` by definition.
-  (h σ).comp (φ := Φ) Φ.contMDiff (fun x => by
-    rw [← Φ.mfderivToContinuousLinearEquiv_coe hn]
-    exact (Φ.mfderivToContinuousLinearEquiv hn x).injective)
+  (h σ).comp (φ := Φ) (Φ.contMDiff.of_le hnm) (fun x => by
+    rw [← Φ.mfderivToContinuousLinearEquiv_coe hm]
+    exact (Φ.mfderivToContinuousLinearEquiv hm x).injective)
 
 /-- Relabelling the complex of a smooth triangulation by a simplicial isomorphism gives a smooth
 triangulation: precomposing with the homeomorphism of realizations induced by mutually inverse
@@ -288,7 +314,6 @@ private theorem eq_zero_of_coordOne_eq_zero {σ : Finset (Fin 2)} {v : σ → �
   · rwa [Finset.sum_eq_single a (fun b _ hba => h1 b (key a b ha fun h => hba (Subtype.ext h)))
       (by simp)] at hv
 
-variable [Fact ((0 : ℝ) < 1)]
 
 /-- The standard one-simplex, realized as the unit interval through its second barycentric
 coordinate, is a `Cⁿ` triangulation of the unit interval for every `n`. -/
@@ -336,12 +361,11 @@ private def sqHomeomorph : unitInterval ≃ₜ unitInterval where
   continuous_toFun := by fun_prop
   continuous_invFun := by fun_prop
 
-private theorem contMDiff_sqHomeomorph : ContMDiff (𝓡∂ 1) (𝓡∂ 1) ∞ sqHomeomorph :=
+private theorem contMDiff_sqHomeomorph : ContMDiff (𝓡∂ 1) (𝓡∂ 1) n sqHomeomorph :=
   contMDiff_iff_comp_subtypeVal_Icc.mpr
     ⟨sqHomeomorph.continuous,
       (contDiff_id.pow 2).contMDiff.comp (contMDiff_subtypeVal_Icc (x := 0) (y := 1))⟩
 
-omit [Fact ((0 : ℝ) < 1)] in
 /-- If `F` extends the standard triangulation of the unit interval followed by squaring on a face
 `σ`, then, read in `ℝ`, `F` is the square of the barycentric coordinate at the vertex `1` on the
 standard simplex. -/
@@ -360,14 +384,15 @@ private theorem eqOn_sq_of_trans_sqHomeomorph {σ : Face (⊤ : AbstractSimplici
   simp [sqHomeomorph, ← hi₁, Finsupp.mapDomain_apply_of_injective Subtype.val_injective t.weights]
 
 /-- Smoothness of a triangulating homeomorphism on every simplex does not make it a smooth
-triangulation: following the standard triangulation of the unit interval by the smooth
+triangulation: following the standard triangulation of the unit interval by the analytic
 homeomorphism `t ↦ t ^ 2`, whose derivative vanishes at `0`, gives a homeomorphism that is not a
 `Cⁿ` triangulation for any `n`. In particular, `IsSmoothTriangulation.trans_diffeomorph` fails for
 smooth homeomorphisms. -/
 theorem exists_contMDiff_not_isSmoothTriangulation_trans :
-    ∃ h : unitInterval ≃ₜ unitInterval, ContMDiff (𝓡∂ 1) (𝓡∂ 1) ∞ h ∧
-      ¬IsSmoothTriangulation (𝓡∂ 1) n (realizationOneSimplexHomeomorphUnitInterval.trans h) := by
-  refine ⟨sqHomeomorph, contMDiff_sqHomeomorph, fun hT => ?_⟩
+    ∃ h : unitInterval ≃ₜ unitInterval, ContMDiff (𝓡∂ 1) (𝓡∂ 1) ω h ∧
+      ∀ n, ¬IsSmoothTriangulation (𝓡∂ 1) n
+        (realizationOneSimplexHomeomorphUnitInterval.trans h) := by
+  refine ⟨sqHomeomorph, contMDiff_sqHomeomorph, fun n hT => ?_⟩
   let σ : Face (⊤ : AbstractSimplicialComplex (Fin 2)) := ⟨Finset.univ, Finset.univ_nonempty⟩
   let S := range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights
   let i₀ : σ.1 := ⟨0, Finset.mem_univ _⟩

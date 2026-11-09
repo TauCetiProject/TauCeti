@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Group.Subgroup.Finite
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
+public import TauCeti.Algebra.Group.Action.End
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.GroupTheory.DoubleCoset.Finite
 public import TauCeti.GroupTheory.DoubleCoset.Orbits
@@ -191,6 +192,13 @@ theorem coe_mackeySubgroupSelfEquiv_apply (hs : s ∈ H)
     (y : (mackeySubgroup s H H).subgroupOf H) :
     (mackeySubgroupSelfEquiv hs y : H) = (y : H) :=
   (rfl)
+
+/-- For a representative in `H`, the canonical Mackey-subgroup inclusion covers all of `H`. -/
+theorem mackeySubgroup_subgroupOf_subtype_surjective (hs : s ∈ H) :
+    Function.Surjective ((mackeySubgroup s H H).subgroupOf H).subtype := by
+  intro h
+  obtain ⟨y, hy⟩ := (mackeySubgroupSelfEquiv hs).surjective h
+  exact ⟨y, (coe_mackeySubgroupSelfEquiv_apply hs y).symm.trans hy⟩
 
 /-- For a normal `H` the Mackey subgroup does not depend on the representative at all: it is
 `K ⊓ H` for every `s`.  This is why Clifford theory over a normal subgroup only ever sees the one

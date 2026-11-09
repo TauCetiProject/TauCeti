@@ -46,7 +46,7 @@ theorem finrank_adjoin_range_of_linearIndependent {ι : Type*} [Finite ι] {d : 
   let := Fintype.ofFinite ι
   refine finrank_adjoin_range (d := fun i => (d i : K)) hroot (fun S hS => ?_)
   have hne := (linearIndependent_squareClass_iff d).mp hli S hS
-  rw [← Units.coe_prod, isSquare_units_val_iff]
+  rw [← Units.coe_prod, Units.isSquare_coe_iff]
   exact hne
 
 end TauCeti.Multiquadratic

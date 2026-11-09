@@ -40,6 +40,12 @@ noncomputable def prodEquiv [Finite ι] :
   (sigmaEquiv (κ := fun _ : ι ↦ κ) (M := fun _ _ ↦ M)).trans
     (reindex R (fun _ ↦ M) (Equiv.sigmaEquivProd ι κ))
 
+/-- Product regrouping is dependent-sum regrouping followed by reindexing. -/
+theorem prodEquiv_def [Finite ι] :
+    prodEquiv (R := R) (M := M) (ι := ι) (κ := κ) =
+      (sigmaEquiv (κ := fun _ : ι ↦ κ) (M := fun _ _ ↦ M)).trans
+        (reindex R (fun _ ↦ M) (Equiv.sigmaEquivProd ι κ)) := (rfl)
+
 /-- Flattening a tensor of pure tensors concatenates the two index coordinates. -/
 @[simp] theorem prodEquiv_tprod [Finite ι] (m : ι → κ → M) :
     prodEquiv (R := R) (tprod R fun i ↦ tprod R (m i)) =

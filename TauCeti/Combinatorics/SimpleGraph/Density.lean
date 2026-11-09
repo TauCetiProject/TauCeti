@@ -78,7 +78,7 @@ theorem card_interedges_eq_sum_parts [DecidableEq α] [DecidableEq β] {s A : Fi
     P.sum_restrict hA (fun X ↦ ∑ Y ∈ (Q.restrict hB).parts, #(Rel.interedges r X Y)) (by simp)]
   refine sum_congr rfl fun C _ ↦ ?_
   rw [Q.sum_restrict hB (fun Y ↦ #(Rel.interedges r (C ⊓ A) Y)) (by simp [Rel.interedges])]
-  simp_rw [Finset.inf_eq_inter, inter_comm]
+  simp_rw [inter_comm]
 
 /-- The related-pair count between two coarse parts is the sum of the counts between the fine
 parts with those coarse parents. -/

@@ -252,6 +252,12 @@ theorem ProperIsometryQuotient.toIsometryQuotient_surjective :
   obtain ⟨L, rfl⟩ := isometryClass_surjective c
   exact ⟨L.properIsometryClass, rfl⟩
 
+/-- The representative of a proper class is isometric to the representative of its class. -/
+theorem ProperIsometryQuotient.nonempty_isometry_out (d : ProperIsometryQuotient V) :
+    Nonempty (Isometry d.out d.toIsometryQuotient.out) := by
+  rw [← isometryClass_eq_isometryClass_iff, isometryClass_out, ← properIsometryClass_out d,
+    toIsometryQuotient_properIsometryClass, properIsometryClass_out]
+
 open ProperIsometryQuotient
 
 /-- **A class with an improper automorphism is a single proper class.** If `L` has an improper
@@ -442,6 +448,14 @@ theorem toIsometryQuotient_properIsometryQuotientEquiv (f : V ≃ₗ[ℚ] W)
       isometryQuotientEquiv f c.toIsometryQuotient := by
   obtain ⟨M, rfl⟩ := properIsometryClass_surjective c
   simp
+
+/-- The transport along `f` of the representative of a proper class is properly isometric to the
+representative of the transported proper class. -/
+theorem ProperIsometryQuotient.exists_isProper_transport_out (d : ProperIsometryQuotient V)
+    (f : V ≃ₗ[ℚ] W) :
+    ∃ e : Isometry (d.out.transport f) (properIsometryQuotientEquiv f d).out, e.IsProper := by
+  rw [← properIsometryClass_eq_properIsometryClass_iff, properIsometryClass_out,
+    ← properIsometryQuotientEquiv_properIsometryClass, properIsometryClass_out]
 
 end ProperIsometryQuotient
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Sites.Coverage
+public import Mathlib.CategoryTheory.Sites.CoverPreserving
 public import Mathlib.CategoryTheory.Sites.Spaces
 
 /-!
@@ -19,11 +20,22 @@ same construction applies to bundled admissible opens as well as subtypes of set
 `GTopology.grothendieckTopology` constructs the site on the inclusion preorder of admissible
 opens. `GTopology.isSheaf_iff` identifies its sheaves with presheaves satisfying unique gluing
 on admissible covers, using Mathlib's matching families and sheaf categories throughout.
+A monotone map of admissible opens that sends admissible covers to admissible covers gives a
+cover-preserving functor of sites (`GTopology.coverPreserving_functor`).
 `GTopology.topological` recovers ordinary open covers, and its site is the usual open-set site.
+
+A G-topology is *saturated* (`GTopology.Saturated`) if it satisfies the conditions (G0)–(G2) of
+[BGR, §9.1.2]: the empty set is admissible, admissibility of a subset can be checked on the
+members of an admissible cover, and a covering by admissible opens is admissible as soon as it is
+refined by an admissible cover. The G-topology of ordinary open covers is saturated
+(`GTopology.saturated_topological`). Admissibility of a covering family is local on an admissible
+cover (`GTopology.Saturated.covers_iff_restriction`), and a family containing an admissible cover
+is admissible (`GTopology.Saturated.covers_of_superset`). The admissible opens of any G-topology
+form a basis of the topology they generate (`GTopology.isTopologicalBasis_range`).
 
 ## References
 
-* Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §9.1.1.
+* Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §§9.1.1 and 9.1.2.
 -/
 
 public section
@@ -76,6 +88,97 @@ end Presieve
 
 variable {X : Type u} {B : Type v} [SemilatticeInf B] [OrderTop B] {ι : B ↪o Set X}
   (G : GTopology ι)
+
+/-- A G-topology is saturated if it satisfies the conditions (G0)–(G2) of [BGR, §9.1.2]. The
+whole space is always admissible, so (G0) only asks for the empty set. -/
+structure Saturated : Prop where
+  /-- (G0) The empty set is admissible. -/
+  empty_mem_range : ∅ ∈ Set.range ι
+  /-- (G1) A subset of an admissible open whose intersections with the members of an admissible
+  cover are admissible is itself admissible. -/
+  mem_range_of_covers : ∀ {U S}, G.Covers U S → ∀ V : Set X, V ⊆ ι U →
+    (∀ W ∈ S, V ∩ ι W ∈ Set.range ι) → V ∈ Set.range ι
+  /-- (G2) A covering of an admissible open by admissible opens is admissible if some admissible
+  cover refines it. -/
+  covers_of_refinement : ∀ {U : B} {S R : Set B}, ⋃₀ (ι '' S) = ι U → G.Covers U R →
+    (∀ W ∈ R, ∃ W' ∈ S, W ≤ W') → G.Covers U S
+
+variable {G} in
+/-- In a saturated G-topology, a family of admissible opens contained in `U` is an admissible
+cover of `U` as soon as it contains one. -/
+theorem Saturated.covers_of_superset (hG : G.Saturated) {U : B} {R S : Set B} (hR : G.Covers U R)
+    (hRS : R ⊆ S) (hS : ∀ W ∈ S, W ≤ U) : G.Covers U S := by
+  refine hG.covers_of_refinement (Set.Subset.antisymm ?_ ?_) hR fun W hW ↦ ⟨W, hRS hW, le_rfl⟩
+  · rintro x ⟨_, ⟨W, hW, rfl⟩, hx⟩
+    exact ι.monotone (hS W hW) hx
+  · rw [← G.union_eq hR]
+    exact Set.sUnion_mono (Set.image_mono hRS)
+
+variable {G} in
+/-- In a saturated G-topology, a family of admissible opens contained in `V` covers `V`
+admissibly if and only if it does so after intersection with each member of an admissible
+cover of an ambient open `U`. -/
+theorem Saturated.covers_iff_restriction (hG : G.Saturated) {U V : B} {C S : Set B}
+    (hC : G.Covers U C) (hVU : V ≤ U) :
+    G.Covers V S ↔ (∀ W ∈ S, W ≤ V) ∧
+      ∀ W ∈ C, G.Covers (V ⊓ W) ((fun Z ↦ Z ⊓ W) '' S) := by
+  constructor
+  · intro hS
+    refine ⟨G.subset hS, fun W _ ↦ ?_⟩
+    have h := G.restriction hS (V ⊓ W) inf_le_left
+    convert h using 1
+    apply Set.image_congr
+    intro Z hZ
+    simp [← inf_assoc, inf_eq_left.mpr (G.subset hS Z hZ)]
+  · rintro ⟨hSV, hlocal⟩
+    have hCV := G.restriction hC V hVU
+    let T (W : B) : Set B := (fun Z ↦ Z ⊓ W) '' S
+    have hT : ∀ W ∈ (fun Z ↦ Z ⊓ V) '' C, G.Covers W (T W) := by
+      rintro _ ⟨W, hW, rfl⟩
+      have h := hlocal W hW
+      rw [inf_comm V W] at h
+      convert h using 1
+      apply Set.image_congr
+      intro Z hZ
+      dsimp [T]
+      rw [← inf_assoc, inf_eq_left.mpr (inf_le_left.trans (hSV Z hZ))]
+    have hR := G.transitive hCV hT
+    have hRS : ∀ W ∈ ⋃ Z ∈ (fun Z ↦ Z ⊓ V) '' C, T Z,
+        ∃ W' ∈ S, W ≤ W' := by
+      intro W hW
+      simp only [Set.mem_iUnion] at hW
+      obtain ⟨Z, _, W', hW', rfl⟩ := hW
+      exact ⟨W', hW', inf_le_left⟩
+    apply hG.covers_of_refinement (R := ⋃ Z ∈ (fun Z ↦ Z ⊓ V) '' C, T Z) ?_ hR hRS
+    apply Set.Subset.antisymm
+    · exact Set.sUnion_subset fun _ ⟨W, hW, hWset⟩ ↦ hWset ▸ ι.monotone (hSV W hW)
+    · rw [← G.union_eq hR]
+      apply Set.sUnion_subset
+      rintro _ ⟨W, hW, rfl⟩
+      obtain ⟨W', hW', hWW'⟩ := hRS W hW
+      exact (ι.monotone hWW').trans (Set.subset_sUnion_of_mem ⟨W', hW', rfl⟩)
+
+section GeneratedTopology
+
+open TopologicalSpace Topology
+
+include G in
+/-- The admissible opens of `G` form a basis of the topology they generate. -/
+theorem isTopologicalBasis_range :
+    @IsTopologicalBasis X (generateFrom (Set.range ι)) (Set.range ι) :=
+  @isTopologicalBasis_of_subbasis_of_finiteInter X (generateFrom _) _ rfl
+    ⟨⟨⊤, G.map_top⟩, by rintro _ ⟨U, rfl⟩ _ ⟨V, rfl⟩; exact ⟨U ⊓ V, G.map_inf U V⟩⟩
+
+include G in
+/-- The open sets of the topology generated by the admissible opens are the unions of admissible
+opens. -/
+theorem isOpen_generateFrom_range_iff {V : Set X} :
+    IsOpen[generateFrom (Set.range ι)] V ↔ ∀ x ∈ V, ∃ U, x ∈ ι U ∧ ι U ⊆ V := by
+  let _ : TopologicalSpace X := generateFrom (Set.range ι)
+  rw [G.isTopologicalBasis_range.isOpen_iff]
+  simp only [Set.exists_range_iff]
+
+end GeneratedTopology
 
 /-- Admissible covers give a coverage on the preorder of admissible opens. -/
 def coverage : Coverage B where
@@ -144,6 +247,26 @@ theorem isSheaf_iff (P : Bᵒᵖ ⥤ Type w) :
   · rintro h U R ⟨S, hS, rfl⟩
     exact h U S hS
 
+section CoverPreserving
+
+variable {G} {Y : Type*} {B' : Type*} [SemilatticeInf B'] [OrderTop B'] {ι' : B' ↪o Set Y}
+  {G' : GTopology ι'}
+
+/-- A monotone map of admissible opens sending admissible covers to admissible covers induces a
+cover-preserving functor of the associated sites. -/
+theorem coverPreserving_functor {φ : B' → B} (hφ : Monotone φ)
+    (h : ∀ {V S}, G'.Covers V S → G.Covers (φ V) (φ '' S)) :
+    CoverPreserving G'.grothendieckTopology G.grothendieckTopology hφ.functor where
+  cover_preserve {V R} hR := by
+    obtain ⟨S, hS, hSR⟩ := (mem_grothendieckTopology_iff G').mp hR
+    refine (mem_grothendieckTopology_iff G).mpr ⟨_, h hS, ?_⟩
+    intro _ g hg
+    obtain ⟨W, hW, rfl⟩ := (coverPresieve_apply _ g).mp hg
+    exact ⟨W, homOfLE (G'.subset hS W hW), 𝟙 _, hSR _ _ ((coverPresieve_apply _ _).mpr hW),
+      Subsingleton.elim _ _⟩
+
+end CoverPreserving
+
 section Topological
 
 open TopologicalSpace
@@ -189,6 +312,22 @@ def topological : GTopology (opensEmbedding Y) where
 theorem topological_covers_iff {U : Opens Y} {S : Set (Opens Y)} :
     (topological Y).Covers U S ↔
       ⋃₀ ((fun V : Opens Y ↦ (V : Set Y)) '' S) = (U : Set Y) := Iff.rfl
+
+/-- The G-topology of ordinary open covers satisfies (G0)–(G2). -/
+theorem saturated_topological : (topological Y).Saturated where
+  empty_mem_range := ⟨⊥, by simp⟩
+  mem_range_of_covers := by
+    rintro U S hS V hVU hVS
+    choose! W hW using hVS
+    rw [topological_covers_iff, Set.sUnion_image] at hS
+    simp only [opensEmbedding_apply] at hW hVU
+    have hV : V = ⋃ Z ∈ S, (W Z : Set Y) := by
+      rw [Set.iUnion₂_congr fun Z hZ ↦ hW Z hZ, ← Set.inter_iUnion₂, hS,
+        Set.inter_eq_left.mpr hVU]
+    have hVo : IsOpen V := hV ▸ isOpen_biUnion fun Z _ ↦ (W Z).isOpen
+    exact ⟨⟨V, hVo⟩, by simp⟩
+  covers_of_refinement hS _ _ := (topological_covers_iff Y).mpr <| by
+    simpa only [Set.image_congr fun V _ ↦ opensEmbedding_apply Y V, opensEmbedding_apply] using hS
 
 /-- The ordinary topological G-site is Mathlib's open-set site, not a new sheaf category. -/
 theorem topological_grothendieckTopology :

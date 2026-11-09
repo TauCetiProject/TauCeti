@@ -9,6 +9,8 @@ public import TauCeti.NumberTheory.ModularForms.Cusps.ConstantTerm
 public import TauCeti.NumberTheory.ModularForms.SturmBound
 public import Mathlib.LinearAlgebra.FreeModule.PID
 
+import TauCeti.NumberTheory.ModularForms.Cusps.Basic
+
 /-!
 # Modular forms with integral `q`-expansions at every cusp
 
@@ -32,6 +34,13 @@ into the expansion at another, and so preserves the submodule; in Deligne–Serr
 
 ## Main results
 
+* `TauCeti.ModularForm.mem_integralAtCusps_SL2Z_iff`,
+  `TauCeti.ModularForm.mem_integralAtCusps_intCast_SL2Z_iff`: at level one (`𝒮ℒ`), cusp
+  integrality reduces to `qExpansion 1` having coefficients in `R` (for `ℤ`, lying in the image of
+  `ℤ⟦X⟧`).
+* `TauCeti.ModularForm.mem_integralAtCusps_iff_qExpansion_coeff_mem`: on a group containing
+  `Γ(N)`, integrality can be tested on the expansions of all the translates `f ∣ γ` at the
+  single common period `N`.
 * `TauCeti.ModularForm.smul_mem_integralAtCusps`: the submodule is stable under scaling by `R`.
 * `TauCeti.ModularForm.mul_mem_integralAtCusps`: products of integral forms are integral.
 * `TauCeti.ModularForm.instFiniteIntegralAtCusps`, `TauCeti.ModularForm.instFreeIntegralAtCusps`:
@@ -82,6 +91,44 @@ theorem qExpansion_coeff_mem_of_mem_integralAtCusps {f : ModularForm Γ k}
     (hf : f ∈ integralAtCusps R Γ k) (n : ℕ) :
     (qExpansion Γ.strictWidthInfty f).coeff n ∈ R := by
   simpa only [qExpansionAt_one] using hf 1 n
+
+/-- At level one (`Γ = 𝒮ℒ`), `SL₂(ℤ)` has a single cusp `∞` of width `1`, so a form lies in
+`integralAtCusps R 𝒮ℒ k` if and only if every coefficient of `qExpansion 1 f` lies in `R`. -/
+theorem mem_integralAtCusps_SL2Z_iff {f : ModularForm 𝒮ℒ k} :
+    f ∈ integralAtCusps R 𝒮ℒ k ↔ ∀ n : ℕ, (qExpansion 1 f).coeff n ∈ R := by
+  simp
+
+/-- A level-one modular form is `ℤ`-integral at the cusp (`(Int.castRingHom ℂ).range`) if and only
+if its `q`-expansion is the image of a formal power series in `ℤ⟦X⟧`. -/
+theorem mem_integralAtCusps_intCast_SL2Z_iff {f : ModularForm 𝒮ℒ k} :
+    f ∈ integralAtCusps (Int.castRingHom ℂ).range 𝒮ℒ k ↔
+      ∃ P : PowerSeries ℤ, qExpansion 1 f = P.map (Int.castRingHom ℂ) := by
+  rw [mem_integralAtCusps_SL2Z_iff]
+  refine ⟨fun hf ↦ ⟨PowerSeries.mk fun n ↦ (hf n).choose, ?_⟩, ?_⟩
+  · ext n
+    simpa only [PowerSeries.coeff_map, PowerSeries.coeff_mk, Int.coe_castRingHom] using
+      (hf n).choose_spec.symm
+  · rintro ⟨P, hP⟩ n
+    rw [hP, PowerSeries.coeff_map]
+    exact ⟨P.coeff n, rfl⟩
+
+/-- **Integrality at a common period.** If `Γ` contains `Γ(N)`, a form is integral at every
+cusp exactly when every translate `f ∣ γ` has its expansion at period `N` in `R`: at each cusp
+that expansion is `qExpansionAt γ f` in a power of `q`. -/
+theorem mem_integralAtCusps_iff_qExpansion_coeff_mem {N : ℕ} [NeZero N]
+    (hΓ : (Γ(N) : Subgroup (GL (Fin 2) ℝ)) ≤ Γ) {f : ModularForm Γ k} :
+    f ∈ integralAtCusps R Γ k ↔
+      ∀ (γ : SL(2, ℤ)) (n : ℕ), (qExpansion N (translate f (mapGL ℝ γ))).coeff n ∈ R := by
+  refine forall_congr' fun γ ↦ ?_
+  obtain ⟨m, hm, he⟩ := exists_qExpansion_translate_eq_expand_qExpansionAt
+    (Nat.pos_of_ne_zero (NeZero.ne N)) (natCast_mem_strictPeriods_conjAct_of_Gamma_le hΓ γ) f
+  rw [he]
+  refine ⟨fun h n ↦ ?_, fun h n ↦ ?_⟩
+  · rw [PowerSeries.coeff_expand]
+    split_ifs
+    · exact h _
+    · exact R.zero_mem
+  · simpa [PowerSeries.coeff_expand_mul] using h (m * n)
 
 /-- The integral forms are stable under scaling by elements of `R`. -/
 theorem smul_mem_integralAtCusps {r : ℂ} (hr : r ∈ R) {f : ModularForm Γ k}

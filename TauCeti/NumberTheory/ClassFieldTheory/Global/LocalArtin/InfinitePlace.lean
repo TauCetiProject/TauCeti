@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.DecompositionRestri
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Archimedean.ArtinMap
 public import TauCeti.NumberTheory.NumberField.ComplexConjugation.Basic
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.DecompositionGroup
+import TauCeti.GroupTheory.Abelianization.Basic
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Norm
 import TauCeti.RingTheory.Norm.Equiv
 
@@ -293,10 +294,8 @@ theorem infiniteLocalArtinAt_eq_one_iff_mem_normGroup [IsMulCommutative Gal(L/K)
     (not_lt.1 hx).lt_of_ne ((map_ne_zero _).2 x.ne_zero)
   rw [infiniteLocalArtinAt_eq_complexConjugationAt v w h hneg] at h1
   -- `Gal(L/K)` is commutative, so it embeds in its abelianization
-  have hker : (Abelianization.of (G := Gal(L/K))).ker = ⊥ := by
-    rw [Abelianization.ker_of, commutator_eq_bot]
   exact NumberField.complexConjugationAt_ne_one K w h
-    ((Subgroup.mem_bot).1 (hker ▸ (MonoidHom.mem_ker.2 h1)))
+    (Abelianization.of_injective (h1.trans (map_one _).symm))
 
 end IsGalois
 

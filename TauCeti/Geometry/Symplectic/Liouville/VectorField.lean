@@ -42,6 +42,7 @@ form `-dλ`, the radial field `p ∂_p` is the Liouville field of the primitive 
   Liouville vector field exactly when `d (ι_Z ω) = ω`.
 * `TauCeti.isLiouvilleVectorField_mextDeriv_of_interior_eq`: `ι_Z dλ = λ` implies
   `L_Z dλ = dλ`.
+* `TauCeti.mlieDerivForm_eq_self_of_interior_eq`: `ι_Z dλ = λ` implies `L_Z λ = λ`.
 * `TauCeti.isLiouvilleVectorField_extDeriv_iff`: the characterization on a normed space.
 * `TauCeti.isLiouvilleVectorField_cotangentLiouvilleField`: the radial field of the linear
   cotangent space.
@@ -111,6 +112,21 @@ theorem isLiouvilleVectorField_mextDeriv_of_interior_eq [IsManifold I 2 M]
     (h : (mextDeriv α).interior Z = α) :
     IsLiouvilleVectorField (mextDeriv α) Z := by
   rw [isLiouvilleVectorField_mextDeriv_iff hα hZ, h]
+
+/-- **A primitive has Lie derivative equal to itself along its Liouville field.** If the
+differentiable vector field `Z` satisfies `ι_Z dλ = λ` for a differentiable one-form `λ`, then
+`L_Z λ = λ`: by Cartan's formula `L_Z λ = ι_Z dλ + d (ι_Z λ)`, and `ι_Z λ = dλ (Z, Z) = 0`. -/
+theorem mlieDerivForm_eq_self_of_interior_eq [IsManifold I 1 M] {α : RoughForm I M ℝ 1}
+    {Z : (x : M) → TangentSpace I x}
+    (hα : MDifferentiable I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)))
+    (hZ : MDifferentiable I I.tangent (fun y ↦ (Z y : TangentBundle I M)))
+    (h : (mextDeriv α).interior Z = α) :
+    mlieDerivForm Z α = α := by
+  have h0 : α.interior Z = 0 := by
+    rw [← h]
+    exact RoughForm.interior_self Z (mextDeriv α)
+  rw [mlieDerivForm_eq_interior_mextDeriv_add hα hZ, h0, mextDeriv_zero, add_zero, h]
 
 /-! ### Normed spaces -/
 

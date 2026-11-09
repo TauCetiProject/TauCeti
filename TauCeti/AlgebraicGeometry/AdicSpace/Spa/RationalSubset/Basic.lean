@@ -63,6 +63,8 @@ layer deferred above.
   are the exported interface, as for `spa_def`/`mem_spa_iff`.
 * `TauCeti.ValuationSpectrum.rationalSubset_subset_spa` : every rational subset is contained
   in the adic spectrum.
+* `TauCeti.ValuationSpectrum.trivialSection_mem_rationalSubset_iff` : the trivial valuation of a
+  prime `𝔭` lies in `R(T/s)` exactly when `𝔭` is open and `s ∉ 𝔭`.
 * `TauCeti.ValuationSpectrum.rationalSubset_subset_rationalSubset_of_subset` : the rational
   subset is antitone in its numerator set.
 * `TauCeti.ValuationSpectrum.rationalSubset_mul_subset_rationalSubset` : refining a
@@ -77,7 +79,8 @@ layer deferred above.
   among the numerators.
 * `TauCeti.ValuationSpectrum.rationalSubset_image_mul_right` : multiplying every numerator and
   the denominator by the same unit does not change the rational subset.
-* `TauCeti.ValuationSpectrum.rationalSubset_singleton_one` : the whole spectrum is the
+* `TauCeti.ValuationSpectrum.rationalSubset_singleton_one` and
+  `TauCeti.ValuationSpectrum.spaBasicOpen_singleton_one` : the whole spectrum is the
   rational subset `R({1}/1)` — Wedhorn's "`Spa (A, A⁺)` itself is rational".
 * `TauCeti.ValuationSpectrum.mem_rationalSubset_singleton_one_iff` : `R({1}/s)` is the locus
   `v(s) ≥ 1`.
@@ -163,6 +166,18 @@ theorem mem_rationalSubset_iff (Aplus : Subring A) (T : Finset A) (s : A) (v : S
 theorem rationalSubset_subset_spa (Aplus : Subring A) (T : Finset A) (s : A) :
     rationalSubset Aplus T s ⊆ spa Aplus :=
   rationalSubset_def Aplus T s ▸ Set.inter_subset_left
+
+/-- The trivial valuation of a prime `𝔭` lies in the rational subset `R(T/s)` exactly when `𝔭` is
+open and `s ∉ 𝔭`. Its values are `0` and `1`, so the numerator conditions `v(t) ≤ v(s)` hold as
+soon as `v(s) = 1`. High priority so that `simp` uses this rather than unfolding membership with
+`mem_rationalSubset_iff`. -/
+@[simp high]
+theorem trivialSection_mem_rationalSubset_iff (Aplus : Subring A) (T : Finset A) (s : A)
+    (p : PrimeSpectrum A) :
+    trivialSection p ∈ rationalSubset Aplus T s ↔ IsOpen (p.asIdeal : Set A) ∧ s ∉ p.asIdeal := by
+  simp only [mem_rationalSubset_iff, trivialSection_mem_spa_iff, trivialSection_vle_iff,
+    p.asIdeal.zero_mem, not_true_eq_false, or_false]
+  tauto
 
 /-- **The containment criterion for rational subsets.** One rational subset is contained in
 another exactly when, at every point of the smaller, the larger one's numerators are dominated
@@ -311,6 +326,13 @@ def spaBasicOpen (Aplus : Subring A) (T : Finset A) (s : A) :
 theorem mem_spaBasicOpen {Aplus : Subring A} {T : Finset A} {s : A} {v : ↥(spa Aplus)} :
     v ∈ spaBasicOpen Aplus T s ↔ (v : Spv A) ∈ rationalSubset Aplus T s :=
   Iff.rfl
+
+/-- The basic open `R({1}/1)` is the whole adic spectrum `⊤`. -/
+@[simp]
+theorem spaBasicOpen_singleton_one (Aplus : Subring A) :
+    spaBasicOpen Aplus {1} 1 = ⊤ := by
+  ext x
+  simp [mem_spaBasicOpen, rationalSubset_singleton_one]
 
 /-- **Containment of basic opens** is containment of the underlying rational subsets, since every
 rational subset already lies in `spa A⁺`. -/

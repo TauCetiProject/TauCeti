@@ -84,7 +84,7 @@ theorem subsingleton_frechetBarycenters_two_sum_smul_dirac {ι : Type*} [Fintype
     _ ≤ ∑ i, (w i • Measure.dirac (μ i)) S :=
         Finset.single_le_sum (f := fun i ↦ (w i • Measure.dirac (μ i)) S)
           (fun _ _ ↦ bot_le) (Finset.mem_univ j)
-    _ = (∑ i, w i • Measure.dirac (μ i)) S := by rw [Measure.coe_finsetSum, Finset.sum_apply]
+    _ = (∑ i, w i • Measure.dirac (μ i)) S := by rw [FunLike.coe_sum, Finset.sum_apply]
 
 end WassersteinSpace
 

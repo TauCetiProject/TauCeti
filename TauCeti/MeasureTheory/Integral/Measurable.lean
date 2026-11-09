@@ -45,7 +45,7 @@ kernel. It lets the measurability results for finite kernels apply to `μ`. -/
 private noncomputable def normalizedKernel (hμ : Measurable μ) : ProbabilityTheory.Kernel α β where
   toFun t := (1 + μ t univ)⁻¹ • μ t
   measurable' := Measure.measurable_of_measurable_coe _ fun s hs ↦ by
-    simp only [Measure.smul_apply, smul_eq_mul]
+    simp only [_root_.smul_apply, smul_eq_mul]
     exact ((measurable_const.add ((Measure.measurable_coe .univ).comp hμ)).inv).mul
       ((Measure.measurable_coe hs).comp hμ)
 
@@ -54,7 +54,7 @@ private lemma normalizedKernel_apply (hμ : Measurable μ) (t : α) :
 
 private instance (hμ : Measurable μ) : ProbabilityTheory.IsFiniteKernel (normalizedKernel hμ) := by
   refine ⟨⟨1, ENNReal.one_lt_top, fun t ↦ ?_⟩⟩
-  rw [normalizedKernel_apply, Measure.smul_apply, smul_eq_mul]
+  rw [normalizedKernel_apply, _root_.smul_apply, smul_eq_mul]
   rcases eq_or_ne (μ t univ) ∞ with h | h
   · simp [h]
   rw [ENNReal.inv_mul_le_iff (by simp) (by simp [h]), mul_one]

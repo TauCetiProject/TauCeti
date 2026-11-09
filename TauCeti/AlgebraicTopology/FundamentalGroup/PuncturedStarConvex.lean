@@ -14,7 +14,7 @@ public import TauCeti.Topology.JordanCurve.Basic
 
 import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.AlgebraicTopology.FundamentalGroup.Product
-import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
+import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 
 /-!
@@ -36,6 +36,9 @@ puncture.
 
 * `StarConvex.sphereFundamentalGroupMulEquiv`: the isomorphism
   `π₁(sphere p r, x) ≃* π₁(V \ {p}, x)` induced by the inclusion.
+* `StarConvex.isSimplyConnected_sdiff_singleton` and
+  `TauCeti.isSimplyConnected_ball_sdiff_singleton`: in dimension greater than two the sphere is
+  simply connected, so `V \ {p}`, and in particular a punctured ball, is simply connected.
 * `StarConvex.fundamentalGroupMulEquivInt`: for `V ⊆ ℂ`, `π₁(V \ {p}, x) ≃* ℤ` at a point `x` of
   the circle `sphere p r`.
 * `Complex.sphereLoop` and `StarConvex.fundamentalGroupMulEquivInt_sphereLoop`: the loop going once
@@ -46,6 +49,9 @@ puncture.
   fundamental groups at every point of `V \ {p}`, on the circle or off it. Composed with
   `Circle.fundamentalGroupMulEquiv`, it identifies `π₁(V \ {p}, z)` with `ℤ` by the degree of the
   direction of a loop.
+* `StarConvex.not_simplyConnectedSpace_diff_singleton` and
+  `Complex.not_simplyConnectedSpace_units`: so `V \ {p}`, and in particular `ℂˣ`, is not simply
+  connected.
 * `StarConvex.isCyclic_fundamentalGroup_diff_singleton`: consequently `π₁(V \ {p}, z)` is cyclic
   at every point `z`.
 * `StarConvex.fundamentalGroup_map_directionFrom_comp_snd_bijective`: for simply connected `U`,
@@ -94,6 +100,21 @@ theorem _root_.StarConvex.sphereFundamentalGroupMulEquiv_apply (hV : StarConvex 
     hV.sphereFundamentalGroupMulEquiv hr hS x γ =
       FundamentalGroup.map (hV.sphereHomotopyEquiv hr hS).toFun x γ :=
   (rfl)
+
+/-- **A punctured star-convex set is simply connected in dimension at least three.** If `V` is
+star-convex about `p` and contains `sphere p r` with `r > 0`, and `E` has dimension greater than
+two, then `V \ {p}` is simply connected, being homotopy equivalent to that sphere. -/
+theorem _root_.StarConvex.isSimplyConnected_sdiff_singleton (h : 2 < Module.rank ℝ E)
+    (hV : StarConvex ℝ p V) (hr : 0 < r) (hS : sphere p r ⊆ V) :
+    IsSimplyConnected (V \ {p}) :=
+  have := simplyConnectedSpace_sphere h p hr.le
+  (hV.sphereHomotopyEquiv hr hS).symm.simplyConnectedSpace
+
+/-- **A punctured ball is simply connected in dimension at least three.** -/
+theorem isSimplyConnected_ball_sdiff_singleton (h : 2 < Module.rank ℝ E) (p : E) (hr : 0 < r) :
+    IsSimplyConnected (ball p r \ {p}) :=
+  ((convex_ball p r).starConvex (mem_ball_self hr)).isSimplyConnected_sdiff_singleton h
+    (half_pos hr) (sphere_subset_ball (half_lt_self hr))
 
 end NormedSpace
 
@@ -145,7 +166,7 @@ theorem _root_.StarConvex.fundamentalGroupMulEquivInt_sphereLoop (hV : StarConve
       Multiplicative.ofAdd 1 := by
   rw [StarConvex.fundamentalGroupMulEquivInt_def, MulEquiv.trans_apply,
     ← StarConvex.sphereFundamentalGroupMulEquiv_apply, MulEquiv.symm_apply_apply,
-    MulEquiv.trans_apply, TauCeti.FundamentalGroup.homeomorphMulEquiv_apply,
+    MulEquiv.trans_apply, FundamentalGroup.homeomorphMulEquiv_apply,
     FundamentalGroup.mapOfEq_apply, ← Path.Homotopic.Quotient.mk_map,
     ← Path.Homotopic.Quotient.mk_cast]
   -- Transported to `Circle`, the loop is `Circle.expLoop`, up to the basepoint equation
@@ -166,6 +187,15 @@ theorem _root_.StarConvex.not_simplyConnectedSpace_diff_singleton (hV : StarConv
   let x : sphere p r := (sphereCircleHomeomorph p hr).symm 1
   haveI := (hV.fundamentalGroupMulEquivInt hr hS x).toEquiv.nontrivial
   not_simplyConnectedSpace_of_nontrivial_fundamentalGroup (hV.sphereHomotopyEquiv hr hS x)
+
+/-- **The punctured complex plane is not simply connected**, in its guise as the unit group
+`ℂˣ`. -/
+theorem _root_.Complex.not_simplyConnectedSpace_units : ¬ SimplyConnectedSpace ℂˣ := fun _ ↦
+  -- `{z : ℂ // z ≠ 0}`, the codomain of `unitsHomeomorphNeZero`, is the subtype of `{0}ᶜ`.
+  let e : ℂˣ ≃ₜ ↥((univ : Set ℂ) \ {0}) :=
+    unitsHomeomorphNeZero.trans (Homeomorph.setCongr (compl_eq_univ_sdiff ({0} : Set ℂ)))
+  (starConvex_univ 0).not_simplyConnectedSpace_diff_singleton one_pos (subset_univ _)
+    e.symm.toHomotopyEquiv.simplyConnectedSpace
 
 /-- **The direction map of a punctured star-convex set is bijective on fundamental groups.** If
 `V` is star-convex about `p` and contains a circle about `p`, then `z ↦ (z - p) / ‖z - p‖` induces

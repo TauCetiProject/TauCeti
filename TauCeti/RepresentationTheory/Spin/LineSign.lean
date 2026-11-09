@@ -132,7 +132,7 @@ theorem spinAction_negLineCoordinate_apply (x : CliffordAlgebra Q) (s : Exterior
     rw [spinAction_negLineCoordinate_ι_apply]
     simp only [involute_ι, map_neg, LinearMap.neg_apply]
   | mul a b ha hb =>
-    simp only [map_mul, Module.End.mul_apply, ha, hb, involute_involute]
+    simp only [map_mul, mul_apply_eq_comp, ha, hb, involute_involute]
   | add a b ha hb =>
     simp only [map_add, LinearMap.add_apply, ha, hb]
 

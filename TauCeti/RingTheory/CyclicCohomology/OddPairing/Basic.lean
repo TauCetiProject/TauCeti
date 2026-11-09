@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 public import TauCeti.RingTheory.CyclicCohomology.Matrix
 
 import TauCeti.Data.Fin.Basic
@@ -44,6 +45,8 @@ cochain `ψ` the alternating sum of these terms telescopes, so `(bψ)(x₀, …,
   additive on direct sums, `⟨[u ⊕ v], [φ]⟩ = ⟨[u], [φ]⟩ + ⟨[v], [φ]⟩`.
 * `TauCeti.cyclicCohomology.oddPairing_matrixExtension_of_val_eq_fromBlocks_one`: the pairing is
   unchanged by stabilization `u ↦ u ⊕ 1`.
+* `Equiv.oddPairing_reindexGL`: the pairing is unchanged by relabelling the matrix indices.
+* `TauCeti.cyclicCohomology.oddPairing_map`: naturality of the pairing for algebra homomorphisms.
 
 ## References
 
@@ -131,6 +134,22 @@ theorem oddPairing_one (m : ℕ) :
   ext φ
   simp [← Pi.zero_def]
 
+/-- **Naturality of the odd pairing**: the image of an invertible `u` under an algebra
+homomorphism `f : A →ₐ[ℂ] B` pairs with a class of `B` as `u` pairs with the pullback of the class
+along `f`. -/
+theorem oddPairing_map {B : Type _} [Ring B] [Algebra ℂ B] (f : A →ₐ[ℂ] B) (u : Aˣ) (m : ℕ)
+    (c : cyclicCohomology ℂ B M (2 * m + 1)) :
+    oddPairing (Units.map (f : A →* B) u) m c =
+      oddPairing u m (map M (f : A →ₙₐ[ℂ] B) (2 * m + 1) c) := by
+  obtain ⟨φ, rfl⟩ := mk_surjective ℂ B M (2 * m + 1) c
+  simp only [map_mk, oddPairing_mk, coe_cyclicCochainsMap_apply,
+    MultilinearMap.compLinearMap_apply]
+  -- The pulled-back cochain applies `f` through its underlying linear map.
+  have hf (x : A) : ((f : A →ₙₐ[ℂ] B) : A →ₗ[ℂ] B) x = f x := (rfl)
+  congr 2
+  funext k
+  split_ifs <;> simp [hf]
+
 /-- **Connes' odd pairing** of an invertible matrix `u` with cyclic cohomology: on the class of a
 cyclic cocycle `φ` of degree `n = 2m + 1`, it is
 `(1 + i)⁻¹ 2⁻ⁿ Γ(n/2 + 1)⁻¹ (φ#Tr)(u⁻¹ - 1, u - 1, …, u⁻¹ - 1, u - 1)`. -/
@@ -184,3 +203,30 @@ theorem oddPairing_matrixExtension_of_val_eq_fromBlocks_one {ι κ : Type*} [Fin
 end cyclicCohomology
 
 end TauCeti
+
+namespace Equiv
+
+open TauCeti TauCeti.cyclicCohomology
+
+variable {A M : Type*} [Ring A] [Algebra ℂ A] [AddCommGroup M] [Module ℂ M]
+
+/-- **Relabelling invariance of the odd pairing**: reindexing the rows and columns of an invertible
+matrix along an equivalence of index types does not change its odd pairing. -/
+theorem oddPairing_reindexGL {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
+    [DecidableEq κ] (e : ι ≃ κ) (u : GL ι A) (m : ℕ) (c : cyclicCohomology ℂ A M (2 * m + 1)) :
+    cyclicCohomology.oddPairing (e.reindexGL A u) m (matrixExtension M κ (2 * m + 1) c) =
+      cyclicCohomology.oddPairing u m (matrixExtension M ι (2 * m + 1) c) := by
+  obtain ⟨φ, rfl⟩ := cyclicCohomology.mk_surjective ℂ A M (2 * m + 1) c
+  have hinv : (↑(e.reindexGL A u)⁻¹ : Matrix κ κ A) =
+      (↑u⁻¹ : Matrix ι ι A).submatrix e.symm e.symm := by
+    rw [← map_inv, coe_reindexGL]
+  have hx : (fun k : Fin (2 * m + 2) ↦ if Even (k : ℕ) then
+        (↑(e.reindexGL A u)⁻¹ - 1 : Matrix κ κ A) else ↑(e.reindexGL A u) - 1) =
+      fun k : Fin (2 * m + 2) ↦
+        (if Even (k : ℕ) then (↑u⁻¹ - 1 : Matrix ι ι A) else ↑u - 1).submatrix e.symm e.symm := by
+    funext k
+    split_ifs <;> simp [hinv, Matrix.submatrix_sub, Matrix.submatrix_one_equiv]
+  simp only [oddPairing_matrixExtension_mk, hx,
+    matrixCochainExtension_submatrix_equiv κ ι e.symm]
+
+end Equiv

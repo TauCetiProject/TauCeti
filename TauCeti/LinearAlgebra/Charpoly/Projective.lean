@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
+public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.Algebra.Polynomial.AlgebraMap
 public import TauCeti.LinearAlgebra.Determinant.Projective
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
+import Mathlib.RingTheory.LocalProperties.Basic
 
 /-!
 # The reversed characteristic polynomial on a finite projective module
@@ -31,6 +33,11 @@ If `π : R ^ n → M` and `σ : M → R ^ n` split `M` off a free module, then
 
 * its value at `1` is the determinant of `1 - f` (`LinearMap.eval_one_projectiveCharpolyRev`);
 * it commutes with base change (`LinearMap.projectiveCharpolyRev_baseChange`);
+* its degree is at most any bound for the ranks of `M` at the points of `Spec R`
+  (`LinearMap.natDegree_projectiveCharpolyRev_le`); on a free module its coefficient in degree
+  `finrank R M` is `(-1) ^ finrank R M * det f`, so the degree is the rank exactly when
+  `det f ≠ 0`, in particular when `f` is invertible
+  (`LinearMap.natDegree_projectiveCharpolyRev_eq_finrank_iff`);
 * it is transported along semilinear isomorphisms
   (`LinearMap.projectiveCharpolyRev_eq_map_of_comp_eq`);
 * **Cayley–Hamilton**: for some `n` bounding its degree, the reflection `X ^ n · Q(1/X)` of
@@ -142,6 +149,63 @@ theorem projectiveCharpolyRev_baseChange (A : Type*) [CommRing A] [Algebra R A]
       (Algebra.TensorProduct.basis A (Pi.basisFun R (Fin n))) _ _ hA,
     projectiveCharpolyRev_eq_charpolyRev_toMatrix (Pi.basisFun R (Fin n)) π σ h,
     ← Matrix.charpolyRev_map, ← toMatrix_baseChange, baseChange_comp, baseChange_comp]
+
+open scoped TensorProduct in
+/-- The degree of the reversed characteristic polynomial is at most any bound for the ranks of
+`M` at the points of `Spec R`. -/
+theorem natDegree_projectiveCharpolyRev_le {n : ℕ} (hn : ∀ p, rankAtStalk (R := R) M p ≤ n)
+    (f : Module.End R M) : (projectiveCharpolyRev f).natDegree ≤ n := by
+  -- a coefficient of degree above `n` vanishes at every localisation `A` at a maximal ideal,
+  -- where `A ⊗[R] M` is free of rank at most `n`
+  refine natDegree_le_iff_coeff_eq_zero.2 fun k hk ↦ eq_zero_of_localization _ fun J hJ ↦ ?_
+  let A := Localization.AtPrime J
+  have : Module.Free A (A ⊗[R] M) := free_of_flat_of_isLocalRing
+  have hdeg : (projectiveCharpolyRev (f.baseChange A)).natDegree ≤ finrank A (A ⊗[R] M) := by
+    rw [projectiveCharpolyRev_eq_reverse_charpoly]
+    exact (reverse_natDegree_le _).trans (charpoly_natDegree _).le
+  have hr := hn ⟨J, hJ.isPrime⟩
+  rw [rankAtStalk_eq_finrank_tensorProduct] at hr
+  rw [projectiveCharpolyRev_baseChange] at hdeg
+  rw [← coeff_map]
+  exact coeff_eq_zero_of_natDegree_lt (hdeg.trans_lt (hr.trans_lt hk))
+
+/-- On a free module, the coefficient of `det (1 - X f)` in degree `finrank R M` is
+`(-1) ^ finrank R M` times the determinant of `f`. -/
+theorem coeff_projectiveCharpolyRev_finrank [Module.Free R M] (f : Module.End R M) :
+    (projectiveCharpolyRev f).coeff (finrank R M) = (-1) ^ finrank R M * LinearMap.det f := by
+  nontriviality R
+  rw [projectiveCharpolyRev_eq_charpolyRev (Module.Free.chooseBasis R M),
+    Module.finrank_eq_card_chooseBasisIndex, Matrix.coeff_charpolyRev_card, det_toMatrix]
+
+/-- On a free module, the degree of `det (1 - X f)` is at most the rank. -/
+theorem natDegree_projectiveCharpolyRev_le_finrank [Module.Free R M] (f : Module.End R M) :
+    (projectiveCharpolyRev f).natDegree ≤ finrank R M := by
+  nontriviality R
+  rw [projectiveCharpolyRev_eq_charpolyRev (Module.Free.chooseBasis R M),
+    Module.finrank_eq_card_chooseBasisIndex]
+  exact Matrix.natDegree_charpolyRev_le _
+
+/-- On a free module over a nontrivial ring, the degree of `det (1 - X f)` equals the rank
+exactly when the determinant of `f` is nonzero. -/
+theorem natDegree_projectiveCharpolyRev_eq_finrank_iff [Nontrivial R] [Module.Free R M]
+    (f : Module.End R M) :
+    (projectiveCharpolyRev f).natDegree = finrank R M ↔ LinearMap.det f ≠ 0 := by
+  have hc := coeff_projectiveCharpolyRev_finrank f
+  have hunit : IsUnit ((-1 : R) ^ finrank R M) := isUnit_neg_one.pow _
+  refine ⟨fun h hdet ↦ ?_, fun hdet ↦ (natDegree_projectiveCharpolyRev_le_finrank f).antisymm
+    (le_natDegree_of_ne_zero ?_)⟩
+  · -- a vanishing leading coefficient would make the polynomial zero, but its constant term is `1`
+    have hlead : (projectiveCharpolyRev f).leadingCoeff = 0 := by
+      rw [leadingCoeff, h, hc, hdet, mul_zero]
+    simpa [leadingCoeff_eq_zero.1 hlead] using coeff_projectiveCharpolyRev_zero f
+  · rwa [hc, Ne, hunit.mul_right_eq_zero]
+
+/-- On a free module over a nontrivial ring, the degree of `det (1 - X f)` is the rank when `f`
+is invertible. -/
+theorem natDegree_projectiveCharpolyRev_eq_finrank_of_isUnit [Nontrivial R] [Module.Free R M]
+    {f : Module.End R M} (hf : IsUnit f) :
+    (projectiveCharpolyRev f).natDegree = finrank R M :=
+  (natDegree_projectiveCharpolyRev_eq_finrank_iff f).2 ((isUnit_iff_isUnit_det f).1 hf).ne_zero
 
 /-- **Transport along a semilinear isomorphism.** If a `θ`-semilinear isomorphism `e : M ≃ M'`
 over a ring isomorphism `θ : R ≃ R'` carries `f` to `g`, that is `g ∘ e = e ∘ f`, then the

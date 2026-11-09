@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Basic
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import TauCeti.RingTheory.PowerSeries.SelfConvolution
 
@@ -39,6 +39,10 @@ equation at the substituted parameter rather than at `z`.
 
 * `WeierstrassCurve.formalW_wEquation`: **Silverman AEC IV.1.1(a), existence** — `w(z)`
   satisfies the displayed equation, as an identity of power series.
+* `WeierstrassCurve.Projective.equation_neg_one_iff_wEquation`: the projective Weierstrass
+  equation at `[q : -1 : v]` is the `w`-equation at the parameter `q`.
+* `WeierstrassCurve.equation_formalW_point`: over a commutative ring, the `w`-expansion
+  gives the projective point `[z : -1 : w(z)]` on the Weierstrass equation.
 * `WeierstrassCurve.eq_formalW_of_wEquation`: **Silverman AEC IV.1.1(a), uniqueness** — any
   power series with vanishing constant coefficient satisfying that equation equals `w(z)`. The
   two together are the full statement, that `w(z)` is *the* such series.
@@ -91,7 +95,7 @@ The statement of uniqueness at an arbitrary parameter is adapted from Michael St
 proof is not Stoll's: that argues by contraction for the `z`-adic filtration, which needs
 subtraction, whereas the coefficient induction used for `eq_of_wEquation` works at the
 `CommSemiring` generality of everything in this file except the substitution lemmas, which are
-`CommRing` only because Mathlib's `PowerSeries.subst` is.
+`CommRing` for the projective-point identity and because Mathlib's `PowerSeries.subst` is.
 
 The multivariate uniqueness statement `eq_of_wEquation_mvPowerSeries` does take Stoll's
 contraction route, adapted from the same project's
@@ -112,8 +116,9 @@ their attribution.
 
 The AINTLIB source works over a commutative ring. Nothing there needs additive inverses — the
 equation, the recursion and both halves of IV.1.1(a) use only sums and products — so everything
-here is stated over a `CommSemiring`, with the single exception of the substitution lemmas, which
-need Mathlib's `PowerSeries.subst` and so a `CommRing`.
+here is stated over a `CommSemiring`, except the projective-point identity (which uses `-1`)
+and the substitution lemmas (which need Mathlib's `PowerSeries.subst`), which require a
+`CommRing`.
 
 The AINTLIB source does **not** prove uniqueness: its closing note records that the factoring
 step is blocked by a `PowerSeries` typeclass gap (`RightDistribClass` and `IsRightCancelAdd`
@@ -556,6 +561,27 @@ everything above needs no such hypothesis and keeps the `CommSemiring` of the re
 section CommRing
 
 variable {R : Type*} [CommRing R] (W : WeierstrassCurve R)
+
+/-- For `q` and `v` in a commutative `R`-algebra, the projective Weierstrass equation at
+`[q : -1 : v]` is equivalent to the `w`-equation
+`v = q ^ 3 + a₁ q v + a₂ q ^ 2 v + a₃ v ^ 2 + a₄ q v ^ 2 + a₆ v ^ 3` (`wEquationRHS`).
+`wEquation_of_equation` is the implication from left to right for a solution `(x, y)` of the
+affine Weierstrass equation over a field with `y ≠ 0`, where
+`[x : y : 1] = [-x / y : -1 : -1 / y]`. -/
+theorem Projective.equation_neg_one_iff_wEquation (W' : Projective R) {S : Type*} [CommRing S]
+    [Algebra R S] (q v : S) :
+    (W'.map (algebraMap R S)).Equation ![q, -1, v] ↔ v = wEquationRHS W' q v := by
+  rw [Projective.equation_iff, wEquationRHS_def]
+  simp only [Matrix.cons_val, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;> linear_combination h
+
+/-- The `w`-expansion gives a point of the projective Weierstrass equation
+in the chart with second coordinate `-1`. -/
+theorem equation_formalW_point :
+    (W.map (PowerSeries.C : R →+* PowerSeries R)).toProjective.Equation
+      ![PowerSeries.X, -1, formalW W] :=
+  (W.toProjective.equation_neg_one_iff_wEquation PowerSeries.X (formalW W)).mpr
+    (formalW_wEquation W)
 
 /-- Substitution passes through the `w`-equation, carrying both the parameter and the unknown with
 it. Both sides are read in the target algebra, which is why `wEquationRHS` is stated for an

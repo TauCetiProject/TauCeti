@@ -61,7 +61,7 @@ private noncomputable abbrev carAlgebra (K : Type*) [Field K] (N : ℕ) :=
 private theorem commute_carOccupationElement_carGenerator
     {K : Type*} [Field K] {N : ℕ} {i j k l : Fin N}
     (hforward : (k, l) ≠ (i, j)) (hreverse : (k, l) ≠ (j, i)) :
-    Commute (carOccupationElement (K := K) i j) (carGenerator (K := K) k l) := by
+    Commute (carOccupationElement (K := K) i j) (carGenerator (R := K) k l) := by
   classical
   have hfirst : ¬(j = k ∧ l = i) := by
     rintro ⟨rfl, rfl⟩
@@ -73,7 +73,7 @@ private theorem commute_carOccupationElement_carGenerator
   apply Commute.smul_left
   rw [Commute]
   calc
-    (carGenerator (K := K) i j * carGenerator j i) * carGenerator k l =
+    (carGenerator (R := K) i j * carGenerator j i) * carGenerator k l =
         carGenerator i j * (carGenerator j i * carGenerator k l) := mul_assoc _ _ _
     _ = carGenerator i j * (-(carGenerator k l * carGenerator j i)) := by
       rw [carGenerator_mul_comm_of_not_paired j i k l hsecond]
@@ -93,16 +93,16 @@ private noncomputable def carOccupationEnd
 private noncomputable def carLoweringEnd
     {K : Type*} [Field K] {N : ℕ}
     (a : ↥(carPositiveRootPairs (Fin N))) : Module.End K (carAlgebra K N) :=
-  Module.toModuleEnd K (carAlgebra K N) (carGenerator (K := K) a.1.2 a.1.1)
+  Module.toModuleEnd K (carAlgebra K N) (carGenerator (R := K) a.1.2 a.1.1)
 
 private noncomputable def carScaledRaisingEnd
     {K : Type*} [Field K] {N : ℕ}
     (a : ↥(carPositiveRootPairs (Fin N))) : Module.End K (carAlgebra K N) :=
-  Module.toModuleEnd K (carAlgebra K N) ((2 : K)⁻¹ • carGenerator (K := K) a.1.1 a.1.2)
+  Module.toModuleEnd K (carAlgebra K N) ((2 : K)⁻¹ • carGenerator (R := K) a.1.1 a.1.2)
 
 private theorem carOccupationElement_mul_carGenerator_snd
     {K : Type*} [Field K] {N : ℕ} {i j : Fin N} (hij : i ≠ j) :
-    carOccupationElement (K := K) i j * carGenerator (K := K) j i = 0 := by
+    carOccupationElement (K := K) i j * carGenerator (R := K) j i = 0 := by
   classical
   rw [carOccupationElement_def (K := K) (n := Fin N), smul_mul_assoc, mul_assoc]
   rw [carGenerator_mul_self]
@@ -110,7 +110,7 @@ private theorem carOccupationElement_mul_carGenerator_snd
 
 private theorem carOccupationElement_mul_carGenerator_fst
     {K : Type*} [Field K] [Invertible (2 : K)] {N : ℕ} {i j : Fin N} (hij : i ≠ j) :
-    carOccupationElement (K := K) i j * carGenerator (K := K) i j = carGenerator (K := K) i j := by
+    carOccupationElement (K := K) i j * carGenerator (R := K) i j = carGenerator (R := K) i j := by
   rw [carOccupationElement_swap (K := K) j i, sub_mul, one_mul,
     carOccupationElement_mul_carGenerator_snd hij.symm, sub_zero]
 
@@ -124,6 +124,83 @@ private theorem carPositiveRootPair_ne_reverse {N : ℕ}
   have hsnd := congrArg Prod.snd h
   exact lt_asymm ha (hfst ▸ hsnd ▸ hb)
 
+/-- The occupation operator of one positive root pair commutes with the lowering operator of
+another. -/
+private theorem commute_carOccupationEnd_carLoweringEnd
+    {K : Type*} [Field K] {N : ℕ} {i a : ↥(carPositiveRootPairs (Fin N))} (hia : i ≠ a) :
+    Commute (carOccupationEnd (K := K) i) (carLoweringEnd a) := by
+  apply (commute_carOccupationElement_carGenerator (K := K)
+    (i := i.1.1) (j := i.1.2) (k := a.1.2) (l := a.1.1) ?_ ?_).map
+      (Module.toModuleEnd K (carAlgebra K N))
+  · exact (carPositiveRootPair_ne_reverse i a).symm
+  · intro h
+    apply hia
+    apply Subtype.ext
+    exact (Prod.ext (congrArg Prod.snd h) (congrArg Prod.fst h)).symm
+
+/-- The occupation operator of one positive root pair commutes with the scaled raising operator
+of another. -/
+private theorem commute_carOccupationEnd_carScaledRaisingEnd
+    {K : Type*} [Field K] {N : ℕ} {i a : ↥(carPositiveRootPairs (Fin N))} (hia : i ≠ a) :
+    Commute (carOccupationEnd (K := K) i) (carScaledRaisingEnd a) := by
+  have hcomm := ((commute_carOccupationElement_carGenerator (K := K)
+    (i := i.1.1) (j := i.1.2) (k := a.1.1) (l := a.1.2) ?_ ?_).smul_right
+      (2 : K)⁻¹).map (Module.toModuleEnd K (carAlgebra K N))
+  · exact hcomm
+  · intro h
+    apply hia
+    exact Subtype.ext h.symm
+  · exact carPositiveRootPair_ne_reverse a i
+
+/-- The lowering operator of a positive root pair lands in the kernel of its occupation operator. -/
+private theorem carOccupationEnd_carLoweringEnd_apply
+    {K : Type*} [Field K] {N : ℕ} (a : ↥(carPositiveRootPairs (Fin N)))
+    (x : carAlgebra K N) :
+    carOccupationEnd (K := K) a (carLoweringEnd a x) = 0 := by
+  dsimp only [carOccupationEnd, carLoweringEnd]
+  simp only [Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply, smul_eq_mul]
+  rw [← mul_assoc, carOccupationElement_mul_carGenerator_snd
+    (ne_of_lt (mem_carPositiveRootPairs.mp a.2)), zero_mul]
+
+/-- The scaled raising operator of a positive root pair lands in the fixed space of its
+occupation operator. -/
+private theorem carOccupationEnd_carScaledRaisingEnd_apply
+    {K : Type*} [Field K] [Invertible (2 : K)] {N : ℕ} (a : ↥(carPositiveRootPairs (Fin N)))
+    (x : carAlgebra K N) :
+    carOccupationEnd (K := K) a (carScaledRaisingEnd a x) = carScaledRaisingEnd a x := by
+  dsimp only [carOccupationEnd, carScaledRaisingEnd]
+  simp only [Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply, smul_eq_mul]
+  rw [← mul_assoc, mul_smul_comm,
+    carOccupationElement_mul_carGenerator_fst
+      (ne_of_lt (mem_carPositiveRootPairs.mp a.2))]
+
+/-- Lowering then scaled raising is the identity on the fixed space of the occupation operator. -/
+private theorem carScaledRaisingEnd_carLoweringEnd_of_fixed
+    {K : Type*} [Field K] {N : ℕ} (a : ↥(carPositiveRootPairs (Fin N)))
+    (x : carAlgebra K N) (hx : carOccupationEnd (K := K) a x = x) :
+    carScaledRaisingEnd a (carLoweringEnd a x) = x := by
+  dsimp only [carOccupationEnd, carLoweringEnd, carScaledRaisingEnd] at hx ⊢
+  simp only [Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply, smul_eq_mul] at hx ⊢
+  rw [smul_mul_assoc, ← mul_assoc, ← smul_mul_assoc]
+  rw [carOccupationElement_def (K := K) (n := Fin N)] at hx
+  simpa only [← mul_assoc] using hx
+
+/-- Scaled raising then lowering is the identity on the kernel of the occupation operator. -/
+private theorem carLoweringEnd_carScaledRaisingEnd_of_zero
+    {K : Type*} [Field K] [Invertible (2 : K)] {N : ℕ} (a : ↥(carPositiveRootPairs (Fin N)))
+    (x : carAlgebra K N) (hx : carOccupationEnd (K := K) a x = 0) :
+    carLoweringEnd a (carScaledRaisingEnd a x) = x := by
+  dsimp only [carOccupationEnd, carLoweringEnd, carScaledRaisingEnd] at hx ⊢
+  simp only [Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply, smul_eq_mul] at hx ⊢
+  rw [← mul_assoc, mul_smul_comm]
+  rw [smul_mul_assoc, ← smul_mul_assoc]
+  rw [carOccupationElement_def (K := K) (n := Fin N)] at hx
+  have hswap := carOccupationElement_swap (K := K) (n := Fin N) a.1.1 a.1.2
+  rw [carOccupationElement_def (K := K) (n := Fin N),
+    carOccupationElement_def (K := K) (n := Fin N)] at hswap
+  have hswap' := congrArg (fun z => z * x) hswap
+  simpa [sub_mul, hx] using hswap'
+
 private theorem pow_card_mul_finrank_carOccupationFixed
     {K : Type*} [Field K] [Invertible (2 : K)] (N : ℕ) :
     2 ^ (carPositiveRootPairs (Fin N)).card *
@@ -131,72 +208,23 @@ private theorem pow_card_mul_finrank_carOccupationFixed
           (carOccupationEnd (K := K) (N := N) a).fixedSubmodule) :
             Submodule K (carAlgebra K N)) =
       finrank K (carAlgebra K N) := by
-  let P := ↥(carPositiveRootPairs (Fin N))
-  let p : P → Module.End K (carAlgebra K N) := carOccupationEnd
-  let u : P → Module.End K (carAlgebra K N) := carLoweringEnd
-  let v : P → Module.End K (carAlgebra K N) := carScaledRaisingEnd
   -- Apply the generic fixed-submodule halving theorem to every positive root pair.
-  have hcard : (carPositiveRootPairs (Fin N)).card = Fintype.card P := by simp [P]
+  have hcard : (carPositiveRootPairs (Fin N)).card =
+      (Finset.univ : Finset ↥(carPositiveRootPairs (Fin N))).card := by simp
   rw [hcard]
-  suffices 2 ^ Fintype.card P * finrank K
-      ((⨅ a ∈ Finset.univ, (p a).fixedSubmodule) : Submodule K (carAlgebra K N)) =
-      finrank K (carAlgebra K N) by
-    simpa only [P, p] using this
-  rw [← Finset.card_univ]
-  apply pow_card_mul_finrank_iInf_fixedSubmodule p Finset.univ (u := u) (v := v)
-  · intro a _
-    exact (isIdempotentElem_carOccupationElement (K := K)
+  refine pow_card_mul_finrank_iInf_fixedSubmodule (carOccupationEnd (K := K) (N := N))
+    Finset.univ (fun a _ => ?_) (fun a _ b _ _ => ?_) carLoweringEnd carScaledRaisingEnd
+    (fun a _ i _ hia => commute_carOccupationEnd_carLoweringEnd hia)
+    (fun a _ i _ hia => commute_carOccupationEnd_carScaledRaisingEnd hia)
+    (fun a _ x _ => carOccupationEnd_carLoweringEnd_apply a x)
+    (fun a _ x _ => carOccupationEnd_carScaledRaisingEnd_apply a x)
+    (fun a _ x hx => carScaledRaisingEnd_carLoweringEnd_of_fixed a x hx)
+    (fun a _ x hx => carLoweringEnd_carScaledRaisingEnd_of_zero a x hx)
+  · exact (isIdempotentElem_carOccupationElement (K := K)
       (ne_of_lt (mem_carPositiveRootPairs.mp a.2))).map
         (Module.toModuleEnd K (carAlgebra K N))
-  · intro a _ b _ _
-    exact (commute_carOccupationElement (K := K)).map
+  · exact (commute_carOccupationElement (K := K)).map
       (Module.toModuleEnd K (carAlgebra K N))
-  · intro a _ i _ hia
-    apply (commute_carOccupationElement_carGenerator (K := K)
-      (i := i.1.1) (j := i.1.2) (k := a.1.2) (l := a.1.1) ?_ ?_).map
-        (Module.toModuleEnd K (carAlgebra K N))
-    · exact (carPositiveRootPair_ne_reverse i a).symm
-    · intro h
-      apply hia
-      apply Subtype.ext
-      exact (Prod.ext (congrArg Prod.snd h) (congrArg Prod.fst h)).symm
-  · intro a _ i _ hia
-    have hcomm := ((commute_carOccupationElement_carGenerator (K := K)
-      (i := i.1.1) (j := i.1.2) (k := a.1.1) (l := a.1.2) ?_ ?_).smul_right
-        (2 : K)⁻¹).map (Module.toModuleEnd K (carAlgebra K N))
-    · exact hcomm
-    · intro h
-      apply hia
-      exact Subtype.ext h.symm
-    · exact carPositiveRootPair_ne_reverse a i
-  · intro a _ x hx
-    dsimp only [p, u, carOccupationEnd, carLoweringEnd] at hx ⊢
-    simp only [Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply, smul_eq_mul] at hx ⊢
-    rw [← mul_assoc, carOccupationElement_mul_carGenerator_snd
-      (ne_of_lt (mem_carPositiveRootPairs.mp a.2)), zero_mul]
-  · intro a _ x hx
-    dsimp only [p, v, carOccupationEnd, carScaledRaisingEnd] at hx ⊢
-    simp only [Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply, smul_eq_mul] at hx ⊢
-    rw [← mul_assoc, mul_smul_comm,
-      carOccupationElement_mul_carGenerator_fst
-        (ne_of_lt (mem_carPositiveRootPairs.mp a.2))]
-  · intro a _ x hx
-    dsimp only [p, u, v, carOccupationEnd, carLoweringEnd, carScaledRaisingEnd] at hx ⊢
-    simp only [Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply, smul_eq_mul] at hx ⊢
-    rw [smul_mul_assoc, ← mul_assoc, ← smul_mul_assoc]
-    rw [carOccupationElement_def (K := K) (n := Fin N)] at hx
-    simpa only [← mul_assoc] using hx
-  · intro a _ x hx
-    dsimp only [p, u, v, carOccupationEnd, carLoweringEnd, carScaledRaisingEnd] at hx ⊢
-    simp only [Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply, smul_eq_mul] at hx ⊢
-    rw [← mul_assoc, mul_smul_comm]
-    rw [smul_mul_assoc, ← smul_mul_assoc]
-    rw [carOccupationElement_def (K := K) (n := Fin N)] at hx
-    have hswap := carOccupationElement_swap (K := K) (n := Fin N) a.1.1 a.1.2
-    rw [carOccupationElement_def (K := K) (n := Fin N),
-      carOccupationElement_def (K := K) (n := Fin N)] at hswap
-    have hswap' := congrArg (fun z => z * x) hswap
-    simpa [sub_mul, hx] using hswap'
 
 private theorem finrank_carOccupationFixed
     {K : Type*} [Field K] [Invertible (2 : K)] (N : ℕ) :
@@ -357,7 +385,7 @@ private theorem glHalfStaircase_weightSpace_le_commonFixed
       ∀ j : Fin N, i < j → carOccupationElement (K := K) i j * x = x := by
     intro m
     induction m using Nat.strong_induction_on with
-    | h m ih =>
+    | ind m ih =>
         intro _ i him j hij
         have hlower {k : Fin N} (hki : k < i) :
             carOccupationElement (K := K) k i * x = x := by
@@ -376,7 +404,7 @@ private theorem glHalfStaircase_weightSpace_le_commonFixed
         have heigen : (∑ k ∈ t, p k) • x = (t.card : K) • x := by
           simpa [t, p] using hsum
         have hj : j ∈ t := by simpa [t] using hij
-        have := t.smul_eq_self_of_sum_smul_eq_card_smul p hp hcomm heigen hj
+        have := (t.sum_smul_eq_card_smul_iff p hp hcomm).1 heigen j hj
         simpa [p, smul_eq_mul] using this
   simp only [Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff]
   intro a ha

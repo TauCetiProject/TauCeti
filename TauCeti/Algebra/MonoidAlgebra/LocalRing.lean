@@ -67,7 +67,7 @@ theorem bijective_of_forall_exists_mapRingHom_residue_eq
       (LinearMap.single R (fun _ ↦ MonoidAlgebra R G) i) ?_
     rw [← ker_residue, ← mapRingHom_eq_zero_iff, Pi.sub_apply, map_sub, hx, sub_self]
   have hsurj : Function.Surjective θ := LinearMap.range_eq_top.mp (top_unique
-    (Submodule.le_of_le_smul_of_le_jacobson_bot Module.Finite.fg_top (maximalIdeal_le_jacobson ⊥)
+    (Submodule.le_of_le_smul_of_le_jacobson Module.Finite.fg_top (ringJacobson_eq_maximalIdeal R).ge
       hle))
   exact ⟨OrzechProperty.injective_of_surjective_endomorphism (θ.restrictScalars R) hsurj, hsurj⟩
 

@@ -26,15 +26,14 @@ descent instead goes through the monoid congruence `Con.ker` and
 ## Main definitions
 
 * `Ideal.relNorm0 : (Ideal S)⁰ →* (Ideal R)⁰`: the relative ideal norm on nonzero ideals.
-* `ClassGroup.relNorm : ClassGroup S →* ClassGroup R`.
-
+* `ClassGroup.relNorm R : ClassGroup S →* ClassGroup R`.
 
 ## Main results
 
-* `ClassGroup.relNorm_mk0`: `relNorm (mk0 I) = mk0 (relNorm0 I)`, the defining computation on an
-  integral representative.
+* `ClassGroup.relNorm_mk0`: `relNorm R (mk0 I) = mk0 (relNorm0 R I)`, the defining computation on
+  an integral representative.
 * `ClassGroup.relNorm_extendedHom`: **extend then norm is the `finrank`-th power**,
-  `relNorm (extendedHom R S c) = c ^ Module.finrank R S`, with
+  `relNorm R (extendedHom R S c) = c ^ Module.finrank R S`, with
   `ClassGroup.relNorm_comp_extendedHom` the same statement as an identity of monoid homomorphisms.
   The extension direction is Mathlib's `ClassGroup.extendedHom`; the composite itself is the
   source's `ClassGroup.relNorm_comp_map`, respelt against it.
@@ -58,12 +57,10 @@ the membership proof spelled out inline, is not ported.
 **The source's extension direction is not ported at all.** Its `map0`, `mk0CompMap0`,
 `ClassGroup.map`, `ClassGroup.map_mk0`, `ClassGroup.map_one` and `ClassGroup.map_mul` are Mathlib's
 `ClassGroup.extendedIdeal`, `ClassGroup.extendedHom` and `ClassGroup.extendedHom_mk0`
-(`Mathlib/RingTheory/ClassGroup/ExtendedHom.lean`), which the pinned Mathlib already carries; the
-first version of this file duplicated them under the source's names and `reuse` blocked it. Its
-`Ideal.relNorm_map_algebraMap` is likewise not ported: it converts `Ideal.relNorm_algebraMap`'s
-exponent from `Module.finrank (FractionRing R) (FractionRing S)` to `Module.finrank R S`, and the
-pinned `Ideal.relNorm_algebraMap` already concludes in the latter form, with the converting lemma
-`finrank_of_isFractionRing` now deprecated.
+(`Mathlib/RingTheory/ClassGroup/ExtendedHom.lean`). Its `Ideal.relNorm_map_algebraMap` is likewise
+not ported: it converts `Ideal.relNorm_algebraMap`'s exponent from
+`Module.finrank (FractionRing R) (FractionRing S)` to `Module.finrank R S`, and Mathlib's
+`Ideal.relNorm_algebraMap` already concludes in the latter form.
 
 **The composite is ported, not original.** `relNorm_extendedHom` and `relNorm_comp_extendedHom` are
 the source's `ClassGroup.relNorm_comp_map` and `ClassGroup.relNorm_comp_map_eq`, respelt so that the
@@ -101,10 +98,8 @@ theorem Ideal.coe_relNorm0 (I : (Ideal S)⁰) :
 `ClassGroup.extendedIdeal`. -/
 @[simp]
 theorem Ideal.relNorm0_extendedIdeal (I : (Ideal R)⁰) :
-    Ideal.relNorm0 R (ClassGroup.extendedIdeal R S I) = I ^ Module.finrank R S := by
-  refine Subtype.ext ?_
-  rw [Ideal.coe_relNorm0, SubmonoidClass.coe_pow]
-  exact Ideal.relNorm_algebraMap S (I : Ideal R)
+    Ideal.relNorm0 R (ClassGroup.extendedIdeal R S I) = I ^ Module.finrank R S :=
+  Subtype.ext <| by simpa using Ideal.relNorm_algebraMap S (I : Ideal R)
 
 namespace ClassGroup
 
@@ -113,28 +108,20 @@ relative norms with the same class.
 
 By `ClassGroup.mk0_eq_mk0_iff` the hypothesis says `span {x} * I = span {y} * J` for nonzero
 `x y : S`; applying `Ideal.relNorm` and using `Ideal.relNorm_singleton` turns this into the same
-relation between the norms, with the nonzero elements `Algebra.intNorm R S x` and
-`Algebra.intNorm R S y`. -/
+relation between the norms, with the elements `Algebra.intNorm R S x` and
+`Algebra.intNorm R S y`, which are nonzero because `Ideal.relNorm` reflects `⊥`. -/
 private theorem mk0_relNorm0_eq_of_mk0_eq {I J : (Ideal S)⁰}
     (h : ClassGroup.mk0 I = ClassGroup.mk0 J) :
     ClassGroup.mk0 (Ideal.relNorm0 R I) = ClassGroup.mk0 (Ideal.relNorm0 R J) := by
-  -- `Algebra.intNorm_ne_zero` needs the fraction fields to form a finite extension; the lifted
-  -- algebra is deliberately not an instance, so it is supplied here.
-  let _ : Algebra (FractionRing R) (FractionRing S) := FractionRing.liftAlgebra R (FractionRing S)
-  have : IsScalarTower R (FractionRing R) (FractionRing S) :=
-    FractionRing.isScalarTower_liftAlgebra R (FractionRing S)
-  have : IsLocalization (Algebra.algebraMapSubmonoid S R⁰) (FractionRing S) :=
-    IsIntegralClosure.isLocalization R (FractionRing R) (FractionRing S) S
-  have : IsScalarTower R S (FractionRing S) := IsScalarTower.of_algebraMap_eq fun _ => rfl
-  have : FiniteDimensional (FractionRing R) (FractionRing S) :=
-    Module.Finite.of_isLocalization R S R⁰
-  rw [ClassGroup.mk0_eq_mk0_iff] at h
-  obtain ⟨x, y, hx, hy, hxy⟩ := h
-  refine ClassGroup.mk0_eq_mk0_iff.mpr ⟨Algebra.intNorm R S x, Algebra.intNorm R S y,
-    Algebra.intNorm_ne_zero.mpr hx, Algebra.intNorm_ne_zero.mpr hy, ?_⟩
-  rw [Ideal.coe_relNorm0, Ideal.coe_relNorm0, ← Ideal.relNorm_singleton (R := R) x,
-    ← Ideal.relNorm_singleton (R := R) y, ← map_mul, ← map_mul, hxy]
+  have hn {x : S} (hx : x ≠ 0) : Algebra.intNorm R S x ≠ 0 := by
+    simpa only [Ideal.relNorm_singleton, Ideal.span_singleton_eq_bot] using
+      Ideal.relNorm_eq_bot_iff (R := R).not.mpr (Ideal.span_singleton_eq_bot.not.mpr hx)
+  obtain ⟨x, y, hx, hy, hxy⟩ := ClassGroup.mk0_eq_mk0_iff.mp h
+  refine ClassGroup.mk0_eq_mk0_iff.mpr ⟨_, _, hn hx, hn hy, ?_⟩
+  rw [Ideal.coe_relNorm0, Ideal.coe_relNorm0, ← Ideal.relNorm_singleton, ← Ideal.relNorm_singleton,
+    ← map_mul, ← map_mul, hxy]
 
+variable (R) in
 /-- The **relative norm on class groups**, induced by `Ideal.relNorm`.
 
 Every class has an integral representative, since `ClassGroup.mk0` is surjective, and the class of
@@ -142,19 +129,20 @@ the norm does not depend on the representative; `ClassGroup.relNorm_mk0` is the 
 computation. -/
 noncomputable def relNorm : ClassGroup S →* ClassGroup R :=
   ((Con.ker (ClassGroup.mk0 (R := S))).lift ((ClassGroup.mk0 (R := R)).comp (Ideal.relNorm0 R))
-      fun _ _ h => mk0_relNorm0_eq_of_mk0_eq h).comp
+      fun _ _ h => Con.ker_apply.mpr <| mk0_relNorm0_eq_of_mk0_eq <| Con.ker_apply.mp h).comp
     (Con.quotientKerEquivOfSurjective _ ClassGroup.mk0_surjective).symm.toMonoidHom
 
 /-- The relative norm of the class represented by a nonzero ideal `I` is the class represented by
 `I`'s relative norm. This is the computation rule for `ClassGroup.relNorm`. -/
 @[simp]
 theorem relNorm_mk0 (I : (Ideal S)⁰) :
-    relNorm (R := R) (ClassGroup.mk0 I) = ClassGroup.mk0 (Ideal.relNorm0 R I) := by
+    relNorm R (ClassGroup.mk0 I) = ClassGroup.mk0 (Ideal.relNorm0 R I) := by
+  -- `Con.quotientKerEquivOfSurjective` acts on classes by `Con.kerLift`, so this is `kerLift_mk`
   have h : (Con.quotientKerEquivOfSurjective _ ClassGroup.mk0_surjective).symm
       (ClassGroup.mk0 (R := S) I) = (I : (Con.ker (ClassGroup.mk0 (R := S))).Quotient) :=
-    (MulEquiv.symm_apply_eq _).mpr rfl
-  rw [relNorm, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, h]
-  rfl
+    (MulEquiv.symm_apply_eq _).mpr (Con.kerLift_mk (f := ClassGroup.mk0) I).symm
+  rw [relNorm, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, h, Con.lift_coe,
+    MonoidHom.comp_apply]
 
 /-- **Extending a class and taking its relative norm raises it to the `finrank`-th power.**
 
@@ -164,17 +152,15 @@ neither does this. The composite is the source's `ClassGroup.relNorm_comp_map`; 
 module's Provenance. -/
 @[simp]
 theorem relNorm_extendedHom (c : ClassGroup R) :
-    relNorm (ClassGroup.extendedHom R S c) = c ^ Module.finrank R S := by
+    relNorm R (ClassGroup.extendedHom R S c) = c ^ Module.finrank R S := by
   obtain ⟨I, rfl⟩ := ClassGroup.mk0_surjective c
-  rw [ClassGroup.extendedHom_mk0, relNorm_mk0, Ideal.relNorm0_extendedIdeal]
-  exact map_pow ClassGroup.mk0 I (Module.finrank R S)
+  rw [ClassGroup.extendedHom_mk0, relNorm_mk0, Ideal.relNorm0_extendedIdeal, map_pow]
 
 /-- `ClassGroup.relNorm_extendedHom` as an identity of monoid homomorphisms: the composite
 `relNorm ∘ extendedHom` is the `finrank`-th power map on `ClassGroup R`. -/
 theorem relNorm_comp_extendedHom :
-    (relNorm (R := R)).comp (ClassGroup.extendedHom R S) = powMonoidHom (Module.finrank R S) := by
+    (relNorm R).comp (ClassGroup.extendedHom R S) = powMonoidHom (Module.finrank R S) := by
   ext c
   rw [MonoidHom.comp_apply, powMonoidHom_apply, relNorm_extendedHom]
-
 
 end ClassGroup

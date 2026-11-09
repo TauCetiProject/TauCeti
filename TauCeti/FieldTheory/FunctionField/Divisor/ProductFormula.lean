@@ -12,6 +12,7 @@ public import TauCeti.FieldTheory.FunctionField.AffineModel.Place
 public import TauCeti.AlgebraicGeometry.WeilDivisor.PicZeroQuotient
 public import TauCeti.FieldTheory.FunctionField.Divisor.Principal
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Principal
+import TauCeti.Data.Nat.MulSucc
 
 /-!
 # The product formula for algebraic function fields
@@ -29,13 +30,13 @@ strictly stronger than nonconstancy.
 
 * `TauCeti.Divisor.degree_zeros` and `TauCeti.Divisor.degree_poles` compute the two effective
   parts of the principal divisor of a function transcendental over `k`.
+  Consequently `TauCeti.Divisor.finrank_adjoin_le_degree_of_mem_riemannRochSpace` bounds
+  `[F : k(x)]` by `deg W` for a transcendental `x` in `L(W)` with `W` effective.
 * `TauCeti.Divisor.degree_principal` is the product formula, and
   `TauCeti.Divisor.degree_zeros_eq_degree_poles` restates it as equality of the degrees of the
   zero and pole divisors.
 * `TauCeti.Place.finrank_adjoin_eq_mul_degree_of_ord_eq_neg`: `[F : k(z)] = n * deg P` for a
   function `z` whose only pole is `P`, of order `n`.
-* `TauCeti.Divisor.succ_le_dim_nsmul_poles` is the growth estimate for the powers of one
-  transcendental function, `ℓ(l (x)_∞) ≥ l + 1`.
 * `TauCeti.Divisor.degreeClass` descends degree to the divisor class group, with
   `TauCeti.Divisor.ker_degreeClass_eq_picZero` identifying its kernel `Cl⁰(F)` with the abstract
   `Pic⁰`, and `TauCeti.Divisor.degree_eq_of_linearlyEquivalent` records invariance under linear
@@ -117,12 +118,10 @@ theorem Divisor.card_mul_succ_le_dim_nsmul_poles_add (hF : IsFunctionField k F) 
         Divisor.principal hF (c i * x ^ (j : ℕ)) + (l • Divisor.poles hF x + C) := by
       rw [hkey]
       refine add_nonneg (add_nonneg (add_nonneg ?_ ?_) ?_) ?_
-      · exact WeilDivisor.isEffective_iff_zero_le.mp (Divisor.isEffective_zeros hF (c i))
+      · exact Divisor.zeros_nonneg hF (c i)
       · exact sub_nonneg.mpr (hC i)
-      · exact nsmul_nonneg
-          (WeilDivisor.isEffective_iff_zero_le.mp (Divisor.isEffective_zeros hF x)) _
-      · exact nsmul_nonneg
-          (WeilDivisor.isEffective_iff_zero_le.mp (Divisor.isEffective_poles hF x)) _
+      · exact nsmul_nonneg (Divisor.zeros_nonneg hF x) _
+      · exact nsmul_nonneg (Divisor.poles_nonneg hF x) _
     have hval : ((c i * x ^ (j : ℕ) : Fˣ) : F) = (c i : F) * (x : F) ^ (j : ℕ) := by
       rw [Units.val_mul, Units.val_pow_eq_pow_val]
     rw [← hval]
@@ -138,20 +137,21 @@ theorem Divisor.card_mul_succ_le_dim_nsmul_poles_add (hF : IsFunctionField k F) 
   rw [Divisor.dim_def]
   simpa using hcard
 
-/-- **`ℓ(l (x)_∞) ≥ l + 1`** for a function `x` transcendental over `k`: the Riemann--Roch
-space of `l` times the pole divisor of `x` has dimension at least `l + 1`.  Compared against
-Riemann--Roch in large degree, this is the lower bound behind the product formula and behind
-the vanishing of the genus of a rational function field. -/
-theorem Divisor.succ_le_dim_nsmul_poles (hF : IsFunctionField k F) (x : Fˣ)
-    (hx : Transcendental k (x : F)) (l : ℕ) :
-    l + 1 ≤ Divisor.dim (l • Divisor.poles hF x) := by
-  -- The powers `1, x, …, xˡ` are `k`-linearly independent and have no poles outside those of
-  -- `x`: this is the growth estimate above for the single function `1`.
-  have hone : Divisor.poles hF (1 : Fˣ) = 0 := WeilDivisor.ext fun P ↦ by simp
-  have hc : LinearIndependent k⟮(x : F)⟯ fun _ : Unit ↦ ((1 : Fˣ) : F) :=
-    linearIndependent_unique_iff.mpr (by simp)
-  simpa using Divisor.card_mul_succ_le_dim_nsmul_poles_add hF x hx (fun _ : Unit ↦ (1 : Fˣ)) hc
-    (C := 0) (fun _ ↦ hone.le) l
+/-- The pole divisor of a nonzero transcendental function has degree at most the degree of the
+resulting rational subfield. It is the zero divisor of the inverse function. -/
+private theorem degree_poles_le_finrank_adjoin (hF : IsFunctionField k F) {x : F}
+    (hx : Transcendental k x) (hx0 : x ≠ 0) :
+    Divisor.degree (Divisor.poles hF (Units.mk0 x hx0)) ≤ (Module.finrank k⟮x⟯ F : ℤ) := by
+  let _ : FiniteDimensional k⟮x⁻¹⟯ F := by
+    rw [IntermediateField.adjoin_simple_inv]
+    exact hF.finiteDimensional_adjoin hx
+  have hdegree_le := degree_zeros_le_finrank_adjoin hF (inv_ne_zero hx0)
+  have hunit : Units.mk0 x⁻¹ (inv_ne_zero hx0) = (Units.mk0 x hx0)⁻¹ := by
+    ext
+    simp only [Units.val_mk0, Units.val_inv_eq_inv_val]
+  rw [hunit, ← Divisor.poles_eq_zeros_inv hF (Units.mk0 x hx0),
+    IntermediateField.adjoin_simple_inv] at hdegree_le
+  exact hdegree_le
 
 /-- The pole divisor of a transcendental function has degree equal to the degree of the resulting
 rational subfield.  This is the growth argument in Stichtenoth's proof of Theorem 1.4.11. -/
@@ -167,19 +167,15 @@ private theorem degree_poles_eq_finrank_adjoin (hF : IsFunctionField k F) {x : F
     simpa only [c, Units.val_mk0] using b.linearIndependent
   let B : Divisor k F := Divisor.poles hF (Units.mk0 x hx0)
   let C : Divisor k F := ∑ i, Divisor.poles hF (c i)
-  have hC : 0 ≤ C := Finset.sum_nonneg fun i _ ↦
-    WeilDivisor.isEffective_iff_zero_le.mp (Divisor.isEffective_poles hF (c i))
+  have hC : 0 ≤ C := Finset.sum_nonneg fun i _ ↦ Divisor.poles_nonneg hF (c i)
   have hCi (i) : Divisor.poles hF (c i) ≤ C :=
-    Finset.single_le_sum
-      (fun j _ ↦ WeilDivisor.isEffective_iff_zero_le.mp (Divisor.isEffective_poles hF (c j)))
-      (Finset.mem_univ i)
+    Finset.single_le_sum (fun j _ ↦ Divisor.poles_nonneg hF (c j)) (Finset.mem_univ i)
   have hlower (n : ℕ) :
       Module.finrank k⟮x⟯ F * (n + 1) ≤
         Divisor.dim (n • B + C) := by
     simpa only [B, Fintype.card_fin] using
       Divisor.card_mul_succ_le_dim_nsmul_poles_add hF (Units.mk0 x hx0) hx c hcLI hCi n
-  have hB : 0 ≤ B :=
-    WeilDivisor.isEffective_iff_zero_le.mp (Divisor.isEffective_poles hF _)
+  have hB : 0 ≤ B := Divisor.poles_nonneg hF _
   have hBdeg : 0 ≤ Divisor.degree B := Divisor.degree_nonneg hB
   let d := (Divisor.degree B).toNat
   have hd : (d : ℤ) = Divisor.degree B := by
@@ -194,8 +190,7 @@ private theorem degree_poles_eq_finrank_adjoin (hF : IsFunctionField k F) {x : F
   have hlow : Module.finrank k⟮x⟯ F * (n + 1) ≤ Divisor.dim E := by
     simpa only [E] using hlower n
   have hupp := Divisor.dim_le_degree_posPart_add_finrank hF E
-  rw [WeilDivisor.posPart_eq_self_iff_isEffective.mpr
-    (WeilDivisor.isEffective_iff_zero_le.mpr hE), Divisor.degree_add, map_nsmul] at hupp
+  rw [posPart_eq_self.mpr hE, Divisor.degree_add, map_nsmul] at hupp
   have hineq : ((Module.finrank k⟮x⟯ F * (n + 1) : ℕ) : ℤ) ≤
       (n : ℤ) * d + e + q := by
     calc
@@ -205,27 +200,13 @@ private theorem degree_poles_eq_finrank_adjoin (hF : IsFunctionField k F) {x : F
         simpa only [E, q, nsmul_eq_mul] using hupp
       _ = (n : ℤ) * d + e + q := by rw [← hd, ← he]
   have hle : Module.finrank k⟮x⟯ F ≤ d := by
-    by_contra hnot
-    have hgt : d < Module.finrank k⟮x⟯ F := Nat.lt_of_not_ge hnot
-    have hgtZ : (d : ℤ) + 1 ≤ Module.finrank k⟮x⟯ F := by exact_mod_cast hgt
-    dsimp only [n] at hineq
-    push_cast at hineq
-    have hfactor : 0 ≤ (e : ℤ) + q + 1 := by positivity
-    have hmul := mul_le_mul_of_nonneg_right hgtZ hfactor
-    nlinarith
+    refine Nat.le_of_mul_succ_le_mul_add (n := e + q) ?_
+    rw [← add_assoc]
+    exact_mod_cast hineq
   have hdegree_ge : (Module.finrank k⟮x⟯ F : ℤ) ≤ Divisor.degree B := by
     rw [← hd]
     exact_mod_cast hle
-  let _ : FiniteDimensional k⟮x⁻¹⟯ F := by
-    rw [IntermediateField.adjoin_simple_inv]
-    exact hF.finiteDimensional_adjoin hx
-  have hdegree_le := degree_zeros_le_finrank_adjoin hF (inv_ne_zero hx0)
-  have hunit : Units.mk0 x⁻¹ (inv_ne_zero hx0) = (Units.mk0 x hx0)⁻¹ := by
-    ext
-    simp only [Units.val_mk0, Units.val_inv_eq_inv_val]
-  rw [hunit, ← Divisor.poles_eq_zeros_inv hF (Units.mk0 x hx0),
-    IntermediateField.adjoin_simple_inv] at hdegree_le
-  exact le_antisymm (by simpa only [B] using hdegree_le) hdegree_ge
+  exact le_antisymm (degree_poles_le_finrank_adjoin hF hx hx0) hdegree_ge
 
 namespace Divisor
 
@@ -253,6 +234,16 @@ theorem degree_zeros (hF : IsFunctionField k F) (z : Fˣ)
   rw [poles_eq_zeros_inv, inv_inv, Units.val_inv_eq_inv_val,
     IntermediateField.adjoin_simple_inv] at h
   exact h
+
+/-- A function `x` transcendental over `k` in the Riemann–Roch space `L(W)` of an effective
+divisor `W` has degree `[F : k(x)] ≤ deg W`: its pole divisor lies below `W`. -/
+theorem finrank_adjoin_le_degree_of_mem_riemannRochSpace (hF : IsFunctionField k F)
+    {W : Divisor k F} (hW : 0 ≤ W) {x : F} (hxW : x ∈ riemannRochSpace W)
+    (hxt : Transcendental k x) :
+    (Module.finrank k⟮x⟯ F : ℤ) ≤ degree W := by
+  have hdeg := degree_le_of_le
+    ((poles_le_iff_mem_riemannRochSpace hF hW (Units.mk0 x hxt.ne_zero)).mpr hxW)
+  rwa [degree_poles hF (Units.mk0 x hxt.ne_zero) hxt, Units.val_mk0] at hdeg
 
 /-- **The product formula for an algebraic function field** (Stichtenoth, Theorem 1.4.11):
 every principal divisor has degree zero. -/
@@ -375,8 +366,7 @@ theorem riemannRochSpace_eq_bot_of_degree_neg (hF : IsFunctionField k F) {D : Di
   rw [riemannRochSpace_ne_bot_iff hF]
   rintro ⟨D', hD', hlin⟩
   have hmem : D' ∈ (Place.orderSystem hF).completeLinearSystem D :=
-    (Place.orderSystem hF).mem_completeLinearSystem.mpr
-      ⟨WeilDivisor.isEffective_iff_zero_le.mpr hD', hlin⟩
+    (Place.orderSystem hF).mem_completeLinearSystem.mpr ⟨hD', hlin⟩
   have hempty := (Place.orderSystem hF).completeLinearSystem_eq_empty_of_weightedDegree_neg
     (fun P ↦ by positivity) (Place.isWeightedDegreeZero_orderSystem hF)
     (by simpa only [Divisor.weightedDegree_placeDegree_eq_degree] using hD)
@@ -414,8 +404,7 @@ theorem Divisor.exists_mem_dim_sub_ofPoint_lt (hF : IsFunctionField k F) {D : Di
   have heq : riemannRochSpace (D - WeilDivisor.ofFinset T) = riemannRochSpace D :=
     riemannRochSpace_sub_ofFinset_eq fun P hP ↦
       Submodule.eq_of_le_of_finrank_le
-        (riemannRochSpace_mono (sub_le_self _ (WeilDivisor.isEffective_iff_zero_le.mp
-          (WeilDivisor.isEffective_ofPoint P))))
+        (riemannRochSpace_mono (sub_le_self _ (WeilDivisor.ofPoint_nonneg P)))
         (by rw [← Divisor.dim_def, ← Divisor.dim_def]; exact h P hP)
   have hne : riemannRochSpace (D - WeilDivisor.ofFinset T) ≠ ⊥ := by
     rw [heq, ← Divisor.one_le_dim_iff_riemannRochSpace_ne_bot hF]

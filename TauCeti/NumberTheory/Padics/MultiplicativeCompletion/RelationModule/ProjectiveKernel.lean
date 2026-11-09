@@ -112,7 +112,7 @@ private theorem bijective_tateCohomology_two_res_of_surjective {ι : Type} [Fint
         Nat.card S := by
     rw [TateCohomology.natCard_tateCohomology_two_res_relationModule ℤ_[p] hg S,
       PadicInt.natCard_quotient_span (Nat.cast_ne_zero.mpr Nat.card_pos.ne'),
-      PadicInt.valuation_natCast, hn, padicValNat.prime_pow]
+      PadicInt.valuation_natCast, hn, Nat.padicValNat_def, Nat.multiplicity_prime_pow]
   have hcardA : Nat.card (tateCohomology
       (res S.subtype (Rep.of (padicCompletionUnitsRepresentation p L K))) 2) = Nat.card S :=
     (Nat.card_congr (e.app _).toLinearEquiv.toEquiv).trans

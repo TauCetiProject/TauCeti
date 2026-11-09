@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import Mathlib.LinearAlgebra.Eigenspace.Pi
 public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
+import TauCeti.RepresentationTheory.GroupAlgebra.CharIdempotent
 
 /-!
 # Joint eigenvectors of commuting semisimple families
@@ -50,6 +51,9 @@ components of `M_k(Γ₁(N))`.
   independent (with no further hypotheses), exhaust the space when semisimple, and
   decompose every invariant submodule — with the character-indexed forms (`…_unitHom…`)
   for group representations.
+* `iInf_eigenspace_eq_of_iSup_eq_top`, `iInf_eigenspace_eq_bot_of_iSup_eq_top`: if spanning
+  summands carry pairwise distinct joint scalars of any family of endomorphisms, every summand is
+  a joint eigenspace, and every other joint eigenspace is zero.
 * `MonoidHom.finite_nonzeroJointWeights`, `MonoidHom.natCard_nonzeroJointWeights_le_finrank`:
   a representation on a finite module over a domain has finitely many nonzero joint weights,
   with their number bounded by its rank.
@@ -129,7 +133,7 @@ identity is `1`. -/
 lemma _root_.MonoidHom.eigenvalue_one_of_jointEigenvector (ρ : G →* Module.End K V) (χ : G → K)
     (v : V) (hv : v ≠ 0) (hv_mem : ∀ g, v ∈ (ρ g).eigenspace (χ g)) : χ 1 = 1 := by
   have h1 := hv_mem 1
-  rw [Module.End.mem_eigenspace_iff, map_one, Module.End.one_apply] at h1
+  rw [Module.End.mem_eigenspace_iff, map_one, one_apply_eq_self] at h1
   exact (smul_left_inj hv).mp (by rw [← h1, one_smul])
 
 /-- If `v ≠ 0` is a joint eigenvector of a monoid-hom representation
@@ -141,7 +145,7 @@ lemma _root_.MonoidHom.eigenvalue_mul_of_jointEigenvector (ρ : G →* Module.En
   have h := hv_mem (g₁ * g₂)
   rw [Module.End.mem_eigenspace_iff, map_mul] at h
   refine (smul_left_inj hv).mp ?_
-  rw [← h, Module.End.mul_apply, Module.End.mem_eigenspace_iff.mp (hv_mem g₂), map_smul,
+  rw [← h, mul_apply_eq_comp, Module.End.mem_eigenspace_iff.mp (hv_mem g₂), map_smul,
     Module.End.mem_eigenspace_iff.mp (hv_mem g₁), smul_smul, mul_comm (χ g₂) (χ g₁)]
 
 end MulOne
@@ -233,6 +237,30 @@ functions, are supremum-independent — no commutation and no semisimplicity. -/
 lemma iSupIndep_iInf_eigenspace {ι : Type*} (f : ι → Module.End K V) :
     iSupIndep fun χ : ι → K ↦ ⨅ i, (f i).eigenspace (χ i) :=
   iSupIndep.iInf (fun i ↦ (f i).eigenspace) fun i ↦ (f i).eigenspaces_iSupIndep
+
+/-- **Summands of a spanning family with distinct joint scalars are joint eigenspaces.** If the
+`W j` span `V`, every `W j` consists of joint eigenvectors of the family `f` with eigenvalues
+`g j`, and `g` is injective, then the joint eigenspace of `f` for `g k` is exactly `W k`. This is
+the joint form of `Module.End.eigenspace_eq_of_iSup_eq_top`: the scalars of a single operator
+need not separate the summands, only those of the whole family. -/
+theorem iInf_eigenspace_eq_of_iSup_eq_top {ι κ : Type*} (f : ι → Module.End K V)
+    {W : κ → Submodule K V} {g : κ → ι → K} (hW : ∀ j, W j ≤ ⨅ i, (f i).eigenspace (g j i))
+    (htop : ⨆ j, W j = ⊤) (hg : Function.Injective g) (k : κ) :
+    ⨅ i, (f i).eigenspace (g k i) = W k :=
+  (congrFun (((iSupIndep_iInf_eigenspace f).comp hg).le_iff_eq_of_iSup_eq_top htop |>.mp hW)
+    k).symm
+
+/-- **Joint eigenvalues outside a spanning family of joint eigenspaces do not occur.** If the
+`W j` span `V` and every `W j` consists of joint eigenvectors of the family `f` with eigenvalues
+`g j`, then the joint eigenspace of `f` for any eigenvalue function `χ` that is not some `g j`
+is zero. -/
+theorem iInf_eigenspace_eq_bot_of_iSup_eq_top {ι κ : Type*} (f : ι → Module.End K V)
+    {W : κ → Submodule K V} {g : κ → ι → K} (hW : ∀ j, W j ≤ ⨅ i, (f i).eigenspace (g j i))
+    (htop : ⨆ j, W j = ⊤) {χ : ι → K} (hχ : χ ∉ Set.range g) :
+    ⨅ i, (f i).eigenspace (χ i) = ⊥ := by
+  have hle : ⊤ ≤ ⨆ (c) (_ : c ≠ χ), ⨅ i, (f i).eigenspace (c i) :=
+    htop ▸ iSup_le fun j ↦ (hW j).trans (le_iSup₂_of_le (g j) (fun h ↦ hχ ⟨j, h⟩) le_rfl)
+  exact disjoint_top.mp ((iSupIndep_iInf_eigenspace f χ).mono_right hle)
 
 variable [MulOne G] {ρ : G →* Module.End K V}
 
@@ -340,23 +368,20 @@ variable [CommRing K] [Module K V] [Group G] [Finite G]
 -- is not used, and so perturbs instance resolution and `simp` normal forms library-wide.
 attribute [local instance] Fintype.ofFinite
 
-open Finset
-
 variable {ρ : G →* Module.End K V}
 
-/-- The Fourier projector for `χ₀`, applied to a vector. -/
+/-- The Fourier projector for `χ₀`, applied to a vector: the character idempotent
+`TauCeti.charIdempotent χ₀` acting through `ρ`. -/
 private def fourierComponent (χ₀ : G →* Kˣ) (v : V) : V :=
-  Ring.inverse (Nat.card G : K) • ∑ d : G, (((χ₀ d)⁻¹ : Kˣ) : K) • ρ d v
+  MonoidAlgebra.lift K (Module.End K V) G ρ (charIdempotent χ₀) v
 
 variable (ρ) in
 private lemma fourierComponent_mem (χ₀ : G →* Kˣ) (v : V) (g : G) :
     fourierComponent (ρ := ρ) χ₀ v ∈ (ρ g).eigenspace (χ₀ g) := by
-  rw [Module.End.mem_eigenspace_iff, fourierComponent, map_smul,
-    smul_comm ((χ₀ g : Kˣ) : K) (Ring.inverse (Nat.card G : K))]
-  congr 1
-  rw [map_sum, smul_sum]
-  exact Fintype.sum_equiv (Equiv.mulLeft g) _ _ fun d ↦ by
-    simp [smul_smul, mul_comm]
+  rw [Module.End.mem_eigenspace_iff, fourierComponent]
+  simpa only [map_mul, MonoidAlgebra.lift_single, one_smul, map_smul, mul_apply_eq_comp,
+    LinearMap.smul_apply] using
+    congr(MonoidAlgebra.lift K (Module.End K V) G ρ $(single_mul_charIdempotent χ₀ g) v)
 
 end FourierProjector
 
@@ -366,18 +391,12 @@ variable [CommRing K] [IsDomain K] [Module K V] [CommGroup G] [Finite G]
 
 attribute [local instance] Fintype.ofFinite
 
-open Finset
-
 variable {ρ : G →* Module.End K V} [HasEnoughRootsOfUnity K (Monoid.exponent G)]
 
 private lemma sum_fourierComponent (hunit : IsUnit (Nat.card G : K)) (v : V) :
     ∑ χ₀ : G →* Kˣ, fourierComponent (ρ := ρ) χ₀ v = v := by
-  classical
-  simp_rw [fourierComponent, ← smul_sum]
-  rw [sum_comm]
-  simp_rw [← sum_smul, ← map_inv, CommGroup.sum_monoidHom_apply_eq_ite, inv_eq_one, ite_smul,
-    zero_smul, sum_ite_eq', mem_univ, ite_true, map_one, Module.End.one_apply, smul_smul,
-    Ring.inverse_mul_cancel _ hunit, one_smul]
+  simp_rw [fourierComponent, ← LinearMap.sum_apply, ← map_sum, sum_charIdempotent hunit, map_one,
+    one_apply_eq_self]
 
 /-- **Unconditional decomposition of an invariant submodule**: the character projectors
 preserve every `ρ`-invariant submodule, so it is the supremum of its intersections with
@@ -391,6 +410,9 @@ theorem iSup_inf_iInf_eigenspace_unitHom_of_invariant_of_commGroup
   refine Submodule.sum_mem _ fun χ₀ _ ↦ Submodule.mem_iSup_of_mem χ₀ ?_
   refine Submodule.mem_inf.mpr ⟨?_, Submodule.mem_iInf _ |>.mpr fun g ↦
     fourierComponent_mem ρ χ₀ v g⟩
+  rw [fourierComponent, charIdempotent_eq_sum]
+  simp only [map_smul, map_sum, MonoidAlgebra.lift_of, LinearMap.smul_apply,
+    LinearMap.sum_apply]
   exact Submodule.smul_mem _ _ (Submodule.sum_mem _ fun d _ ↦
     Submodule.smul_mem _ _ (hp d v hv))
 

@@ -6,14 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Reverse
+public import Mathlib.Algebra.Polynomial.Laurent
+import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.Tactic.ComputeDegree
+import TauCeti.Algebra.Polynomial.AlgebraMap
 import TauCeti.Algebra.Polynomial.BigOperators
 import TauCeti.Algebra.Polynomial.Reverse
 
 /-!
-# The top coefficient and the reflection of a determinant of polynomials
+# Coefficients and determinants of polynomial matrices
 
 Let `A` be a square matrix with polynomial entries whose `j`-th column has degree at most `e j`.
 Every term of the Leibniz expansion of `det A` then has degree at most `∑ j, e j`, so `det A` does
@@ -26,6 +30,15 @@ reciprocal variable `X ^ (∑ j, e j) * det A (1 / X)`, gives the determinant of
 `j`-th column is reflected at `e j` (`Matrix.reflect_det_sum_eq_of_natDegree_le`). For instance,
 when all entries have degree at most one, `det (X • Bᵀ + B)` is its own reflection at the
 dimension, being the determinant of the transpose (`Matrix.reflect_det_X_smul_transpose_add`).
+
+Taking entrywise coefficients commutes with multiplication by constant matrices on either side.
+In particular, linear coefficients of matrix-valued curves commute with constant conjugation.
+
+Evaluating a polynomial in a matrix commutes with applying a ring homomorphism to the coefficients
+and to the entries (`Matrix.aeval_map`), and a rectangular matrix intertwining two square matrices
+intertwines every polynomial in them (`Matrix.aeval_mul_eq_mul_aeval`). Natural matrix identities
+valid at unit parameters extend to all parameters by polynomial specialization
+(`Matrix.identity_of_units`).
 -/
 
 public section
@@ -34,7 +47,79 @@ namespace Matrix
 
 open Polynomial
 
-variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+/-- A matrix identity natural under coefficient homomorphisms holds at every parameter if
+it holds at every unit of the Laurent polynomial ring. Embed the indeterminate into Laurent
+polynomials, where it is a unit, then use injectivity and evaluate back in the original ring. -/
+theorem identity_of_units {R : Type u} [CommRing R] {m n : Type*}
+    (F G : (S : Type u) → [CommRing S] → S → Matrix m n S)
+    (hF : ∀ {S : Type u} [CommRing S] (f : Polynomial R →+* S),
+      (F (Polynomial R) X).map f = F S (f X))
+    (hG : ∀ {S : Type u} [CommRing S] (f : Polynomial R →+* S),
+      (G (Polynomial R) X).map f = G S (f X))
+    (hunit : ∀ q : (LaurentPolynomial R)ˣ,
+      F _ (q : LaurentPolynomial R) = G _ (q : LaurentPolynomial R))
+    (s : R) : F R s = G R s := by
+  have hpoly : F (Polynomial R) X = G (Polynomial R) X := by
+    apply Matrix.map_injective Polynomial.toLaurent_injective
+    obtain ⟨q, hq⟩ := LaurentPolynomial.isUnit_T (R := R) 1
+    simpa only [hF Polynomial.toLaurent, hG Polynomial.toLaurent,
+      Polynomial.toLaurent_X, ← hq] using hunit q
+  have h := congrArg (fun A ↦ A.map (Polynomial.evalRingHom s)) hpoly
+  have hX : (Polynomial.evalRingHom s) X = s := Polynomial.eval_X
+  rw [hF (Polynomial.evalRingHom s), hG (Polynomial.evalRingHom s), hX] at h
+  exact h
+
+variable {n R : Type*} [Fintype n] [DecidableEq n]
+
+/-- Evaluating a polynomial in a matrix commutes with applying a ring homomorphism to the
+coefficients of the polynomial and to the entries of the matrix. -/
+@[simp]
+theorem aeval_map {R S : Type*} [CommSemiring R] [CommSemiring S] (A : Matrix n n R)
+    (φ : R →+* S) (f : R[X]) :
+    aeval (A.map φ) (f.map φ) = (aeval A f).map φ := by
+  refine (map_aeval_eq_aeval_map (S := Matrix n n R) (U := Matrix n n S) (φ := φ)
+    (ψ := φ.mapMatrix) (RingHom.ext fun r ↦ ?_) f A).symm
+  ext i j
+  by_cases h : i = j <;> simp [algebraMap_matrix_apply, h]
+
+/-- **Polynomials preserve intertwiners.** If a rectangular matrix `V` intertwines the square
+matrices `A` and `B`, that is `A * V = V * B`, then it intertwines every polynomial in them. -/
+theorem aeval_mul_eq_mul_aeval {m : Type*} [Fintype m] [DecidableEq m] [CommSemiring R]
+    {A : Matrix n n R} {B : Matrix m m R} {V : Matrix n m R} (h : A * V = V * B) (q : R[X]) :
+    aeval A q * V = V * aeval B q := by
+  have hA (C : Matrix n n R) : toLin' C = toLinAlgEquiv' C :=
+    LinearMap.ext fun v ↦ by rw [toLin'_apply, toLinAlgEquiv'_apply]
+  have hB (C : Matrix m m R) : toLin' C = toLinAlgEquiv' C :=
+    LinearMap.ext fun v ↦ by rw [toLin'_apply, toLinAlgEquiv'_apply]
+  have hAV := congr(toLin' $h)
+  rw [toLin'_mul, toLin'_mul, hA, hB] at hAV
+  apply toLin'.injective
+  rw [toLin'_mul, toLin'_mul, hA, hB, ← aeval_algHom_apply, ← aeval_algHom_apply]
+  exact aeval_comp_eq_comp_aeval hAV q
+
+omit [DecidableEq n] in
+/-- Taking an entrywise polynomial coefficient commutes with multiplication on the left by a
+constant matrix. -/
+@[simp]
+theorem map_coeff_map_C_mul [Semiring R] {m p : Type*}
+    (A : Matrix m n R) (P : Matrix n p R[X])
+    (d : ℕ) :
+    (A.map C * P).map (fun p ↦ p.coeff d) = A * P.map (fun p ↦ p.coeff d) := by
+  ext i j
+  simp [Matrix.mul_apply, finsetSum_coeff, coeff_C_mul]
+
+omit [DecidableEq n] in
+/-- Taking an entrywise polynomial coefficient commutes with multiplication on the right by a
+constant matrix. -/
+@[simp]
+theorem map_coeff_mul_map_C [Semiring R] {m p : Type*}
+    (P : Matrix m n R[X]) (A : Matrix n p R)
+    (d : ℕ) :
+    (P * A.map C).map (fun p ↦ p.coeff d) = P.map (fun p ↦ p.coeff d) * A := by
+  ext i j
+  simp [Matrix.mul_apply, finsetSum_coeff, coeff_mul_C]
+
+variable [CommRing R]
 
 /-- If the `j`-th column of a polynomial matrix `A` has degree at most `e j`, then the coefficient
 of `det A` in degree `∑ j, e j` is the determinant of the matrix of coefficients of the entries
@@ -78,7 +163,7 @@ theorem reflect_det_X_smul_transpose_add (S : Matrix n n R) :
     reflect (Fintype.card n) (det ((X : R[X]) • Sᵀ.map C + S.map C)) =
       det ((X : R[X]) • Sᵀ.map C + S.map C) := by
   have hP (i j : n) : ((X : R[X]) • Sᵀ.map C + S.map C) i j = C (S j i) * X + C (S i j) := by
-    simp only [add_apply, smul_apply, transpose_apply, map_apply, smul_eq_mul]
+    simp only [Matrix.add_apply, Matrix.smul_apply, transpose_apply, map_apply, smul_eq_mul]
     ring
   have h := reflect_det_sum_eq_of_natDegree_le ((X : R[X]) • Sᵀ.map C + S.map C) (fun _ ↦ 1)
     fun i j ↦ by rw [hP]; compute_degree

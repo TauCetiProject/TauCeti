@@ -134,13 +134,13 @@ def irreducibleMorphismPostcompHom :
   toFun := irreducibleMorphismPostcomp k X Y
   map_one' := by
     ext f
-    simp only [irreducibleMorphismPostcomp_irreducibleMorphismMk, Module.End.one_apply]
+    simp only [irreducibleMorphismPostcomp_irreducibleMorphismMk, one_apply_eq_self]
     congr 1
     ext
     simp [End.one_asHom]
   map_mul' g₁ g₂ := by
     ext f
-    simp only [irreducibleMorphismPostcomp_irreducibleMorphismMk, Module.End.mul_apply]
+    simp only [irreducibleMorphismPostcomp_irreducibleMorphismMk, mul_apply_eq_comp]
     congr 1
     ext
     simp [End.mul_asHom]
@@ -208,13 +208,13 @@ def irreducibleMorphismPrecompHom :
   toFun a := irreducibleMorphismPrecomp k X Y a.unop
   map_one' := by
     ext f
-    simp only [irreducibleMorphismPrecomp_irreducibleMorphismMk, Module.End.one_apply]
+    simp only [irreducibleMorphismPrecomp_irreducibleMorphismMk, one_apply_eq_self]
     congr 1
     ext
     simp [End.one_asHom]
   map_mul' a₁ a₂ := by
     ext f
-    simp only [irreducibleMorphismPrecomp_irreducibleMorphismMk, Module.End.mul_apply]
+    simp only [irreducibleMorphismPrecomp_irreducibleMorphismMk, mul_apply_eq_comp]
     congr 1
     ext
     simp [End.mul_asHom]

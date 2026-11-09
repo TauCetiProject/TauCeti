@@ -208,14 +208,23 @@ namespace OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n) {x y : GridState n}
 
+/-- The integer Alexander grading change across an arbitrary rectangle: once its weight
+`V^{O(r)}` is charged `-1` per variable, a rectangle lowers the Alexander grading by the number of
+`X`-markings it covers. -/
+theorem alexanderℤ_sub_card_OColumns_eq_sub_card (r : GridRectangleBetween x y) :
+    G.alexanderℤ y - ((G.1.OColumns r.toGridRectangle).card : ℤ) =
+      G.alexanderℤ x - ((G.1.XSet ∩ r.toGridRectangle.coveredSquares).card : ℤ) := by
+  have h := G.1.alexanderTwoℤ_eq_add_two_mul_card_sub_card r
+  rw [← G.two_mul_alexanderℤ, ← G.two_mul_alexanderℤ] at h
+  omega
+
 /-- The integer Alexander grading is unchanged across a rectangle counted by `∂⁻`, once its weight
 `V^{O(r)}` is charged `-1` per variable. -/
 theorem alexanderℤ_sub_card_OColumns {r : GridRectangleBetween x y}
     (hr : Disjoint r.toGridRectangle.coveredSquares G.1.XSet) :
     G.alexanderℤ y - ((G.1.OColumns r.toGridRectangle).card : ℤ) = G.alexanderℤ x := by
-  have h := G.1.alexanderTwoℤ_sub_two_mul_card_OColumns hr
-  rw [← G.two_mul_alexanderℤ, ← G.two_mul_alexanderℤ] at h
-  omega
+  rw [G.alexanderℤ_sub_card_OColumns_eq_sub_card r,
+    Finset.disjoint_iff_inter_eq_empty.mp hr.symm, Finset.card_empty, Nat.cast_zero, sub_zero]
 
 /-! ### The bidegree of a monomial generator -/
 
@@ -611,6 +620,38 @@ def alexanderChainMinusGrading (R : Type*) [CommRing R] :
 theorem alexanderChainMinusGrading_piece (R : Type*) [CommRing R] (a : ℤ) :
     (G.alexanderChainMinusGrading R).piece a = G.alexanderChainMinusPiece R a :=
   (rfl)
+
+/-- The degree-`a` component of the Alexander grading retains exactly the monomials of
+Alexander degree `a`. -/
+@[simp]
+theorem coeff_decompose_alexanderChainMinusGrading (R : Type*) [CommRing R]
+    (a : ℤ) (c : GridChainMinus R n) (x : GridState n) (e : Fin n →₀ ℕ) :
+    ((DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a :
+      GridChainMinus R n) x).coeff e =
+        if G.alexanderℤ x - (e.degree : ℤ) = a then (c x).coeff e else 0 := by
+  classical
+  induction c using Finsupp.induction_linear with
+  | zero => simp
+  | add c d hc hd =>
+    simp only [DirectSum.decompose_add, DirectSum.add_apply, Submodule.coe_add,
+      Finsupp.add_apply, AddMonoidAlgebra.coeff_add, hc, hd]
+    split_ifs <;> simp
+  | single y p =>
+    induction p using MvPolynomial.induction_on' with
+    | add p q hp hq =>
+      simp only [Finsupp.single_add, DirectSum.decompose_add, DirectSum.add_apply,
+        Submodule.coe_add, Finsupp.add_apply, AddMonoidAlgebra.coeff_add, hp, hq]
+      split_ifs <;> simp
+    | monomial d r =>
+      have hm : Finsupp.single y (monomial d r) ∈
+          (G.alexanderChainMinusGrading R).piece (G.alexanderℤ y - (d.degree : ℤ)) := by
+        simpa only [alexanderChainMinusGrading_piece, monomialBidegree_snd, bidegree_snd] using
+          G.bigradedChainMinusPiece_le_alexanderChainMinusPiece R _ _
+            (G.single_monomial_mem_bigradedChainMinusPiece R y d r)
+      by_cases ha : G.alexanderℤ y - (d.degree : ℤ) = a <;>
+        [rw [DirectSum.decompose_of_mem_same _ (ha ▸ hm)];
+          rw [DirectSum.decompose_of_mem_ne _ hm ha]] <;>
+        by_cases hy : y = x <;> by_cases he : d = e <;> simp_all
 
 /-- The unblocked grid differential is homogeneous of degree zero for the Alexander grading. -/
 theorem isHomogeneous_unblockedDifferential_alexanderChainMinusGrading (R : Type*) [CommRing R] :

@@ -44,15 +44,15 @@ off `TensorProduct.toMatrix_map`, which Mathlib states over a commutative ring.
 
 ## Main results
 
-* `TauCeti.Representation.toMatrix_mem_of_toMatrix_mem_of_surjective`: the matrix coefficients of a
+* `Representation.toMatrix_mem_of_toMatrix_mem_of_surjective`: the matrix coefficients of a
   quotient representation stay inside any subalgebra containing those of the source.
-* `TauCeti.Representation.toMatrix_mem_of_toMatrix_mem`: changing basis keeps the matrix
+* `Representation.toMatrix_mem_of_toMatrix_mem`: changing basis keeps the matrix
   coefficients inside any subalgebra.
-* `TauCeti.Representation.toMatrix_tensorPower` and
-  `TauCeti.Representation.toMatrix_tensorPower_mem`: the matrix coefficients of a tensor power are
+* `Representation.toMatrix_tensorPower` and
+  `Representation.toMatrix_tensorPower_mem`: the matrix coefficients of a tensor power are
   products of matrix coefficients, hence stay inside any subalgebra containing those of the
   representation.
-* `TauCeti.Representation.toMatrix_tprod` and `TauCeti.Representation.toMatrix_tprod_mem`: the
+* `Representation.toMatrix_tprod` and `Representation.toMatrix_tprod_mem`: the
   matrix coefficients of a tensor product are products of matrix coefficients, hence stay inside
   any subalgebra containing those of the two factors.
 -/
@@ -60,8 +60,6 @@ off `TensorProduct.toMatrix_map`, which Mathlib states over a commutative ring.
 public section
 
 universe u v w x y z
-
-namespace TauCeti
 
 namespace Representation
 
@@ -185,5 +183,3 @@ theorem toMatrix_tprod_mem (A : Subalgebra k (G → k))
 end CommRing
 
 end Representation
-
-end TauCeti

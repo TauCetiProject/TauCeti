@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Components
 public import TauCeti.Algebra.Homology.GradedCochainComplex
+public import TauCeti.Algebra.Homology.SquareZero
 
 /-!
 # Cohomology of a right A-infinity module
@@ -27,6 +28,8 @@ arity-two identity will subsequently equip it with a right action of the cohomol
   and range.
 * `TauCeti.AInfinityRightModule.Cohomology`: unary cycles modulo unary boundaries.
 * `TauCeti.AInfinityRightModule.cohomologyClass`: the class represented by a cycle.
+* `TauCeti.AInfinityRightModule.cohomologyEquivHomology`: the cohomology is the homology
+  `ker m₁ ⧸ im m₁` of the unary operation as a square-zero endomorphism.
 
 ## References
 
@@ -220,6 +223,39 @@ theorem cohomologyClass_eq_zero_iff (MM : AInfinityRightModule AA M) {x : M}
 theorem cohomologyClass_m_one_eq_zero (MM : AInfinityRightModule AA M) (x : M) :
     MM.cohomologyClass (MM.m_one_mem_cycles x) = 0 :=
   (MM.cohomologyClass_eq_zero_iff _).2 (MM.m_one_mem_boundaries x)
+
+/-! ### Comparison with the homology of the unary operation -/
+
+/-- The cohomology of a right `A∞` module is the homology `ker m₁ ⧸ im m₁` of its unary operation,
+viewed as a square-zero linear endomorphism (`LinearMap.homology`). -/
+def cohomologyEquivHomology (MM : AInfinityRightModule AA M) :
+    MM.Cohomology ≃ₗ[R] MM.differential.homology MM.differential_comp_self_eq_zero :=
+  Submodule.Quotient.equiv _ _ (LinearEquiv.ofEq _ _ MM.cycles_def) <| by
+    ext z
+    simp only [Submodule.mem_map, LinearMap.mem_boundariesInKer, mem_boundariesInCycles,
+      boundaries_def]
+    refine ⟨fun ⟨w, hw, hwz⟩ ↦ ?_, fun hz ↦ ⟨⟨z, by rw [cycles_def]; exact z.2⟩, hz, ?_⟩⟩
+    · rw [← hwz]
+      simpa only [LinearEquiv.coe_coe, LinearEquiv.coe_ofEq_apply] using hw
+    · exact Subtype.ext (LinearEquiv.coe_ofEq_apply _ _)
+
+/-- The comparison sends the cohomology class of a cycle to its homology class. -/
+@[simp]
+theorem cohomologyEquivHomology_cohomologyClass (MM : AInfinityRightModule AA M) {x : M}
+    (hx : x ∈ MM.cycles) :
+    MM.cohomologyEquivHomology (MM.cohomologyClass hx) =
+      MM.differential.homologyπ MM.differential_comp_self_eq_zero ⟨x, by rwa [← cycles_def]⟩ := by
+  simp only [cohomologyEquivHomology, cohomologyClass_eq_mk, Submodule.Quotient.equiv_apply,
+    Submodule.mapQ_apply, LinearMap.homologyπ_apply]
+  exact congrArg _ (Subtype.ext (LinearEquiv.coe_ofEq_apply _ _))
+
+/-- The inverse comparison sends the homology class of a cycle of `m₁` to its cohomology class. -/
+theorem cohomologyEquivHomology_symm_homologyπ (MM : AInfinityRightModule AA M)
+    (z : LinearMap.ker MM.differential) :
+    MM.cohomologyEquivHomology.symm
+        (MM.differential.homologyπ MM.differential_comp_self_eq_zero z) =
+      MM.cohomologyClass (show (z : M) ∈ MM.cycles by rw [cycles_def]; exact z.2) := by
+  rw [LinearEquiv.symm_apply_eq, cohomologyEquivHomology_cohomologyClass]
 
 end AInfinityRightModule
 

@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.MeasureTheory.Measure.Stieltjes
 public import Mathlib.Probability.CDF
 public import Mathlib.Topology.Order.LeftRightLim
+import TauCeti.MeasureTheory.Group.Measure
 
 /-!
 # Cumulative distribution functions
@@ -27,6 +28,12 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 ## Main results
 
 * `MeasureTheory.Measure.cdf_conv` computes the cdf of a convolution;
+* `MeasureTheory.Measure.cdf_map` computes the cdf of a measurable pushforward;
+* `MeasureTheory.Measure.memLp_cdf_comp` proves `Lᵖ` membership of a cdf composed with an
+  a.e. measurable function on a finite measure space;
+* `MeasureTheory.Measure.cdf_map` computes the cdf of an almost-everywhere measurable pushforward;
+* `MeasureTheory.Measure.continuousAt_cdf_iff` characterizes continuity of a real probability
+  law's cdf at a point by vanishing singleton mass;
 * `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
 * `MeasureTheory.Measure.cdf_eq_zero_of_measure_Iio_eq_zero` shows that an atomless law with no
   mass below a point has cdf zero there;
@@ -39,12 +46,17 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
   has full topological support;
 * `MeasureTheory.Measure.strictMonoOn_cdf_of_subset_support` proves strict increase on any
   interval contained in the support;
+* `MeasureTheory.Measure.cdf_pos_of_mem_support_of_lt` and
+  `MeasureTheory.Measure.cdf_lt_one_of_mem_support_of_lt` derive strict cdf bounds from a
+  support point on the appropriate side of the cutoff;
 * `MeasureTheory.Measure.cdf_lt_one_of_strictMonoOn_Ici` gives a strict upper bound for cdfs
   that increase strictly on a right half-line;
 * `MeasureTheory.Measure.cdf_sublevel_measure` evaluates the measure of a CDF sublevel set for
   an atomless real law;
 * `MeasureTheory.Measure.measureReal_Iio_neg` relates the lower tail of a symmetric real law to
   its cdf;
+* `MeasureTheory.Measure.cdf_neg_of_measure_singleton_eq_zero` computes the cdf of a reflected
+  law away from atoms;
 * `MeasureTheory.Measure.cdf_map_abs_of_nonneg` and `MeasureTheory.Measure.cdf_map_abs_of_neg`
   evaluate the cdf of the image of a real law under absolute value, and
   `MeasureTheory.Measure.cdf_map_abs_of_isNegInvariant` specializes it to symmetric laws;
@@ -80,8 +92,54 @@ atomless standard-Borel space with the unit interval proved as Theorem A.7 in S.
 public section
 
 open Filter Function MeasureTheory ProbabilityTheory Set Topology
+open scoped ENNReal
+
+namespace ProbabilityTheory
+
+/-- The cdf of the zero measure is the default step cdf at zero. -/
+@[simp]
+theorem cdf_zero (x : ℝ) : cdf (0 : Measure ℝ) x = if 0 ≤ x then 1 else 0 := by
+  have hdirac (y : ℝ) : cdf (Measure.dirac 0) y = if 0 ≤ y then 1 else 0 := by
+    rw [cdf_eq_real, measureReal_def]
+    by_cases h : (0 : ℝ) ≤ y <;> simp [Measure.dirac_apply' _ measurableSet_Iic, h]
+  have hstep : cdf (0 : Measure ℝ) x = cdf (Measure.dirac 0) x := by
+    set f : Unit → ℚ → ℝ := fun a r ↦ (preCDF (0 : Measure (Unit × ℝ)) r a).toReal
+    have hf : f () = fun _ ↦ f () 0 := funext fun r ↦ by simp [f, preCDF, Measure.IicSnd]
+    have hnot : ¬IsRatStieltjesPoint f () := fun h ↦ by
+      have h1 := h.tendsto_atTop_one
+      have h0 := h.tendsto_atBot_zero
+      rw [hf, tendsto_const_nhds_iff] at h1 h0
+      exact one_ne_zero (h1.symm.trans h0)
+    rw [← StieltjesFunction.iInf_rat_gt_eq, ← StieltjesFunction.iInf_rat_gt_eq]
+    congr! 2 with q
+    rw [cdf, Measure.prod_zero, condCDF, stieltjesOfMeasurableRat_eq, hdirac]
+    -- The rewrites spell out the function `fun a r ↦ (preCDF 0 r a).toReal` of `condCDF`, which
+    -- is `f` by definition: `set` folds only the occurrences present when it ran. Restate the
+    -- goal through `f` so that `hnot` applies.
+    change toRatCDF f () q = _
+    simp only [toRatCDF, hnot, ↓reduceIte, defaultRatCDF, ← not_lt, ite_not, Rat.cast_lt_zero]
+  exact hstep.trans (hdirac x)
+
+end ProbabilityTheory
 
 namespace MeasureTheory.Measure
+
+/-- A cdf composed with an a.e. measurable function belongs to every `Lᵖ` on a finite measure
+space, since its values lie in `[0, 1]`. -/
+theorem memLp_cdf_comp (ν : Measure ℝ) {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} [IsFiniteMeasure μ] {f : α → ℝ} (hf : AEMeasurable f μ) (p : ℝ≥0∞) :
+    MemLp (cdf ν ∘ f) p μ := by
+  refine MemLp.of_bound ((monotone_cdf ν).measurable.comp_aemeasurable hf).aestronglyMeasurable
+    1 (ae_of_all _ fun x => ?_)
+  rw [Function.comp_apply, Real.norm_of_nonneg (cdf_nonneg _ _)]
+  exact cdf_le_one _ _
+
+/-- The cdf of an almost-everywhere measurable pushforward is the real mass of the preimage of the
+corresponding closed ray. -/
+theorem cdf_map {I : Type*} [MeasurableSpace I] (μ : Measure I) [IsProbabilityMeasure μ]
+    (label : I → ℝ) (hlabel : AEMeasurable label μ) (x : ℝ) :
+    cdf (μ.map label) x = μ.real (label ⁻¹' Iic x) := by
+  rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hlabel measurableSet_Iic]
 
 /-- The cdf of a convolution is the average of the translated cdfs of its second factor. -/
 theorem cdf_conv (μ ν : Measure ℝ) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
@@ -102,12 +160,29 @@ theorem nonempty_setOf_le_cdf (μ : Measure ℝ) {t : ℝ} (ht : t < 1) :
     {x : ℝ | t ≤ cdf μ x}.Nonempty :=
   ((tendsto_cdf_atTop μ).eventually (eventually_gt_nhds ht)).exists.imp fun _ h ↦ h.le
 
+/-- The upper tail of a probability measure on the reals is one minus its cumulative distribution
+function. -/
+theorem measureReal_Ioi_eq_one_sub_cdf (ν : Measure ℝ) [IsProbabilityMeasure ν] (x : ℝ) :
+    ν.real (Ioi x) = 1 - cdf ν x := by
+  rw [← compl_Iic, probReal_compl_eq_one_sub measurableSet_Iic, cdf_eq_real]
+
 /-- For a symmetric real law, the mass below `-x` is the mass above `x`, which is
 `1 - cdf μ x`. -/
 theorem measureReal_Iio_neg (μ : Measure ℝ) [IsProbabilityMeasure μ] [μ.IsNegInvariant]
     (x : ℝ) : μ.real (Iio (-x)) = 1 - cdf μ x := by
-  rw [← Set.neg_Ioi, measureReal_def, Measure.measure_neg, ← measureReal_def, ← compl_Iic,
-    measureReal_compl measurableSet_Iic, probReal_univ, cdf_eq_real]
+  rw [← Set.neg_Ioi, measureReal_def, Measure.measure_neg, ← measureReal_def,
+    measureReal_Ioi_eq_one_sub_cdf]
+
+/-- **The cumulative distribution function of the reflected law.** If `μ` has no atom at `-x`,
+the law of `-X` puts mass `1 - cdf μ (-x)` on `Iic x`. -/
+theorem cdf_neg_of_measure_singleton_eq_zero {μ : Measure ℝ} [IsProbabilityMeasure μ] {x : ℝ}
+    (hx : μ {-x} = 0) : cdf μ.neg x = 1 - cdf μ (-x) := by
+  have hpre : (Neg.neg ⁻¹' Iic x : Set ℝ) = (Iio (-x))ᶜ := by
+    ext y
+    simp
+  rw [cdf_eq_real, neg_def, map_measureReal_apply measurable_neg measurableSet_Iic, hpre,
+    measureReal_compl measurableSet_Iio, probReal_univ, measureReal_congr (Iio_ae_eq_Iic' hx),
+    cdf_eq_real]
 
 /-- The cdf of the image of `μ` under absolute value at a nonnegative point `x` is the mass of
 `[-x, x]`, that is, the cdf of `μ` at `x` minus its left limit at `-x`. -/
@@ -116,7 +191,7 @@ theorem cdf_map_abs_of_nonneg (μ : Measure ℝ) [IsProbabilityMeasure μ] {x : 
   have hpre : (|·|) ⁻¹' Iic x = Iic x \ Iio (-x) := by
     ext y
     simp [abs_le, and_comm]
-  rw [cdf_eq_real, map_measureReal_apply continuous_abs.measurable measurableSet_Iic, hpre,
+  rw [cdf_map _ _ continuous_abs.measurable.aemeasurable, hpre,
     measureReal_sdiff (Iio_subset_Iic_self.trans (Iic_subset_Iic.2 (by linarith)))
       measurableSet_Iio, cdf_eq_real]
 
@@ -125,7 +200,7 @@ theorem cdf_map_abs_of_neg (μ : Measure ℝ) [IsProbabilityMeasure μ] {x : ℝ
     cdf (μ.map (|·|)) x = 0 := by
   have hpre : (|·|) ⁻¹' Iic x = ∅ :=
     eq_empty_of_forall_notMem fun y hy => not_le.2 hx ((abs_nonneg y).trans hy)
-  rw [cdf_eq_real, map_measureReal_apply continuous_abs.measurable measurableSet_Iic, hpre,
+  rw [cdf_map _ _ continuous_abs.measurable.aemeasurable, hpre,
     measureReal_empty]
 
 /-- The cdf of the image of a symmetric law under absolute value at `x ≥ 0` is
@@ -140,7 +215,7 @@ half-line, and at `x ≥ 0` its cdf is the cdf of `μ` at `(x / s) ^ 2`. -/
 theorem cdf_map_const_mul_sqrt (μ : Measure ℝ) [IsProbabilityMeasure μ] {s : ℝ} (hs : 0 < s)
     (x : ℝ) :
     cdf (μ.map fun y ↦ s * √y) x = if x < 0 then 0 else cdf μ ((x / s) ^ 2) := by
-  rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic]
+  rw [cdf_map _ _ (by fun_prop)]
   by_cases hx : x < 0
   · have hpre : (fun y ↦ s * √y) ⁻¹' Iic x = ∅ :=
       eq_empty_of_forall_notMem fun y hy ↦
@@ -156,7 +231,7 @@ theorem cdf_map_const_mul_sqrt (μ : Measure ℝ) [IsProbabilityMeasure μ] {s :
 floor of the argument. Unlike natural floor, integer floor also accounts for negative values. -/
 theorem cdf_map_intCast (μ : Measure ℤ) [IsProbabilityMeasure μ] (x : ℝ) :
     cdf (μ.map (Int.cast : ℤ → ℝ)) x = μ.real (Iic ⌊x⌋) := by
-  rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic, Int.preimage_Iic]
+  rw [cdf_map _ _ (by fun_prop), Int.preimage_Iic]
 
 variable (μ : Measure ℕ) [IsProbabilityMeasure μ]
 
@@ -168,7 +243,7 @@ theorem cdf_map_natCast {x : ℝ} (hx : 0 ≤ x) :
     ext k
     simp only [mem_preimage, mem_Iic]
     exact (Nat.le_floor_iff hx).symm
-  rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic, hpre]
+  rw [cdf_map _ _ (by fun_prop), hpre]
 
 /-- Below the origin, the cdf of a natural-valued law cast to the reals vanishes: the law is
 carried by the natural numbers. -/
@@ -178,7 +253,7 @@ theorem cdf_map_natCast_of_neg {x : ℝ} (hx : x < 0) :
     ext k
     simp only [mem_preimage, mem_Iic, mem_empty_iff_false, iff_false, not_le]
     exact lt_of_lt_of_le hx (Nat.cast_nonneg k)
-  rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic, hpre,
+  rw [cdf_map _ _ (by fun_prop), hpre,
     measureReal_empty]
 
 /-- Every level below one is reached by a finite cumulative mass of a natural-valued probability
@@ -189,21 +264,30 @@ theorem exists_nat_le_measureReal_Iic {u : ℝ} (hu : u < 1) : ∃ k : ℕ, u �
   have h := hx.trans (monotone_cdf (μ.map (Nat.cast : ℕ → ℝ)) (Nat.le_ceil x))
   simpa only [cdf_map_natCast μ (Nat.cast_nonneg _), Nat.floor_natCast] using h
 
+/-- Every level below one is strictly below some cumulative mass of a natural-valued law. -/
+theorem exists_nat_lt_measureReal_Iic {u : ℝ} (hu : u < 1) :
+    ∃ n : ℕ, u < μ.real (Iic n) := by
+  obtain ⟨n, hn⟩ := μ.exists_nat_le_measureReal_Iic (u := (u + 1) / 2) (by linarith)
+  exact ⟨n, lt_of_lt_of_le (by linarith) hn⟩
+
+/-- The cumulative distribution function of a real probability measure `ν` is continuous at `x`
+if and only if `ν` assigns mass zero to `{x}`. -/
+theorem continuousAt_cdf_iff (ν : Measure ℝ) [IsProbabilityMeasure ν] (x : ℝ) :
+    ContinuousAt (cdf ν) x ↔ ν {x} = 0 := by
+  have hsing : ν {x} = ENNReal.ofReal (cdf ν x - leftLim (cdf ν) x) :=
+    calc
+      ν {x} = (cdf ν).measure {x} := by rw [measure_cdf]
+      _ = ENNReal.ofReal (cdf ν x - leftLim (cdf ν) x) := StieltjesFunction.measure_singleton _ _
+  have hle : leftLim (cdf ν) x ≤ cdf ν x := (cdf ν).mono.leftLim_le le_rfl
+  rw [(cdf ν).mono.continuousAt_iff_leftLim_eq_rightLim, ((cdf ν).right_continuous x).rightLim_eq,
+    hsing, ENNReal.ofReal_eq_zero, sub_nonpos]
+  exact ⟨fun h ↦ h.symm.le, le_antisymm hle⟩
+
 /-- **CDF continuity from null singletons.** The cumulative distribution function of a
 probability measure on `ℝ` is continuous when every singleton has measure zero. -/
 theorem continuous_cdf_of_noAtoms (ν : Measure ℝ) [IsProbabilityMeasure ν]
-    [NullSingletonClass ν] : Continuous (cdf ν) := by
-  have hleft : ∀ x, leftLim (cdf ν) x = cdf ν x := by
-    intro x
-    have hsing : (cdf ν).measure {x} = 0 := by rw [measure_cdf]; exact measure_singleton x
-    rw [StieltjesFunction.measure_singleton] at hsing
-    have hle : leftLim (cdf ν) x ≤ cdf ν x := (cdf ν).mono.leftLim_le le_rfl
-    have hz : cdf ν x - leftLim (cdf ν) x ≤ 0 := ENNReal.ofReal_eq_zero.mp hsing
-    exact le_antisymm hle (by linarith)
-  rw [continuous_iff_continuousAt]
-  intro x
-  rw [(cdf ν).mono.continuousAt_iff_leftLim_eq_rightLim, hleft x,
-    ((cdf ν).right_continuous x).rightLim_eq]
+    [NullSingletonClass ν] : Continuous (cdf ν) :=
+  continuous_iff_continuousAt.2 fun x ↦ (continuousAt_cdf_iff ν x).2 (measure_singleton x)
 
 /-- The left limit of the cumulative distribution function of a real probability law at a point is
 the mass of the open ray to the left of that point. -/
@@ -243,6 +327,18 @@ theorem cdf_eq_zero_of_measure_Iio_eq_zero (ν : Measure ℝ) [IsProbabilityMeas
   have h : ν (Iic c) = 0 := (measure_congr Iio_ae_eq_Iic).symm.trans hc
   rw [cdf_eq_real, measureReal_def, h, ENNReal.toReal_zero]
 
+/-- The cdf is zero at a point strictly below almost every sample. -/
+theorem cdf_eq_zero_of_ae_lt (ν : Measure ℝ) [IsProbabilityMeasure ν] {x : ℝ}
+    (hν : ∀ᵐ y ∂ν, x < y) : cdf ν x = 0 := by
+  rw [cdf_eq_real, measureReal_eq_zero_iff]
+  exact measure_eq_zero_iff_ae_notMem.2 (hν.mono fun _ hy ↦ not_le_of_gt hy)
+
+/-- The cdf is one at a point bounding almost every sample from above. -/
+theorem cdf_eq_one_of_ae_le (ν : Measure ℝ) [IsProbabilityMeasure ν] {x : ℝ}
+    (hν : ∀ᵐ y ∂ν, y ≤ x) : cdf ν x = 1 := by
+  have heq : Iic x =ᵐ[ν] univ := Filter.eventuallyEqSet_univ.2 hν
+  rw [cdf_eq_real, measureReal_congr heq, probReal_univ]
+
 /-- A half-open interval has positive mass exactly when the cdf strictly increases across its
 endpoints. -/
 theorem measure_Ioc_pos_iff_cdf_lt (ν : Measure ℝ) [IsProbabilityMeasure ν] {a b : ℝ} :
@@ -271,6 +367,60 @@ theorem strictMonoOn_cdf_of_subset_support (ν : Measure ℝ) [IsProbabilityMeas
   obtain ⟨c, hac, hcb⟩ := exists_between hab
   exact ((mem_support_iff_forall _).mp (hν (hs.out ha hb ⟨hac.le, hcb.le⟩)) (Ioo a b)
     (Ioo_mem_nhds hac hcb)).trans_le (measure_mono Ioo_subset_Ioc_self)
+
+/-- A support point strictly below a cutoff forces the cdf at the cutoff to be positive. -/
+theorem cdf_pos_of_mem_support_of_lt (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {x y : ℝ} (hy : y ∈ μ.support) (hyx : y < x) : 0 < cdf μ x := by
+  rw [cdf_eq_real, measureReal_def]
+  apply ENNReal.toReal_pos
+  · exact ((mem_support_iff_forall y).mp hy (Iic x)
+      (mem_of_superset (Iio_mem_nhds hyx) Iio_subset_Iic_self)).ne'
+  · finiteness
+
+/-- A support point strictly above a cutoff forces the cdf at the cutoff to be less than one. -/
+theorem cdf_lt_one_of_mem_support_of_lt (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {x y : ℝ} (hy : y ∈ μ.support) (hxy : x < y) : cdf μ x < 1 := by
+  have htail : 0 < μ.real (Ioi x) := by
+    rw [measureReal_def]
+    apply ENNReal.toReal_pos
+    · exact ((mem_support_iff_forall y).mp hy (Ioi x) (Ioi_mem_nhds hxy)).ne'
+    · finiteness
+  rw [measureReal_Ioi_eq_one_sub_cdf] at htail
+  linarith
+
+/-- A law carried by an open interval with full closed-interval support has positive cdf
+exactly above the lower endpoint. -/
+theorem cdf_pos_iff_of_support_eq_Icc (ν : Measure ℝ) [IsProbabilityMeasure ν] {a b x : ℝ}
+    (hν : ∀ᵐ y ∂ν, y ∈ Ioo a b) (hsupport : ν.support = Icc a b) :
+    0 < cdf ν x ↔ a < x := by
+  obtain ⟨y, hy⟩ := hν.exists
+  have hab : a ≤ b := (hy.1.trans hy.2).le
+  have hmono := strictMonoOn_cdf_of_subset_support ν ordConnected_Icc
+    (by rw [hsupport])
+  constructor
+  · contrapose!
+    intro hx
+    simp [cdf_eq_zero_of_ae_lt ν (hν.mono fun _ hz ↦ hx.trans_lt hz.1)]
+  · intro hx
+    by_cases h : b ≤ x
+    · simp [cdf_eq_one_of_ae_le ν (hν.mono fun _ hz ↦ hz.2.le.trans h)]
+    · exact (cdf_nonneg ν a).trans_lt
+        (hmono ⟨le_rfl, hab⟩ ⟨hx.le, (not_le.mp h).le⟩ hx)
+
+/-- A law with full closed-interval support has cdf below one exactly below the upper endpoint.
+Unlike `cdf_pos_iff_of_support_eq_Icc`, this needs no assumption on the endpoint masses, since
+the cdf at `x` does not count an atom above `x`. -/
+theorem cdf_lt_one_iff_of_support_eq_Icc (ν : Measure ℝ) [IsProbabilityMeasure ν] {a b x : ℝ}
+    (hsupport : ν.support = Icc a b) : cdf ν x < 1 ↔ x < b := by
+  have hae : ∀ᵐ y ∂ν, y ∈ Icc a b := hsupport ▸ Measure.support_mem_ae
+  constructor
+  · contrapose!
+    intro hx
+    simp [cdf_eq_one_of_ae_le ν (hae.mono fun _ hz ↦ hz.2.trans hx)]
+  · intro hx
+    obtain ⟨y, hy⟩ := hae.exists
+    have hb : b ∈ ν.support := by rw [hsupport]; exact ⟨hy.1.trans hy.2, le_rfl⟩
+    exact cdf_lt_one_of_mem_support_of_lt ν hb hx
 
 /-- A cdf that increases strictly on a right half-line is below one at every finite cutoff. -/
 theorem cdf_lt_one_of_strictMonoOn_Ici (ν : Measure ℝ) {c : ℝ}

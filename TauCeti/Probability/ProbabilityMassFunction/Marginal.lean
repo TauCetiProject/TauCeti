@@ -53,7 +53,7 @@ theorem real_prod_toMeasure_singleton [MeasurableSpace ι] [MeasurableSingletonC
 masses. -/
 theorem map_fst_apply (i : ι) : π.map Prod.fst i = ∑' j, π (i, j) := by
   classical
-  rw [PMF.map_apply, ENNReal.tsum_prod']
+  rw [PMF.map_apply, _root_.tsum_prod']
   rw [tsum_eq_single i]
   · simp
   · intro i' hi
@@ -69,7 +69,7 @@ theorem map_fst_eq_iff (μ : PMF ι) :
 masses. -/
 theorem map_snd_apply (j : κ) : π.map Prod.snd j = ∑' i, π (i, j) := by
   classical
-  rw [PMF.map_apply, ENNReal.tsum_prod']
+  rw [PMF.map_apply, _root_.tsum_prod']
   simp
 
 /-- A product PMF has second marginal `ν` exactly when its infinite column sums are `ν`. -/

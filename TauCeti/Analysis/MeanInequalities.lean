@@ -37,6 +37,10 @@ same way, extending `ENNReal.inner_le_Lp_mul_Lq` and `NNReal.inner_le_Lp_mul_Lq_
 norm of such a family is antitone in the exponent, which gives the inclusions between Schatten
 classes of operators.
 
+Mathlib states the two-point weighted AM-GM inequality in `ℝ≥0∞` with `ℝ≥0` weights
+(`ENNReal.geom_mean_le_arith_mean2_weighted`); it is restated here for the real weights `1 - θ`
+and `θ`, as they appear in interpolation inequalities such as Prékopa–Leindler.
+
 Finally, the two-point weighted AM-GM inequality is restated after normalizing by positive scalars
 `a` and `b`: `A ^ (1 - θ) * B ^ θ ≤ ((1 - θ) * (A / a) + θ * (B / b)) * (a ^ (1 - θ) * b ^ θ)`,
 strictly when `0 < θ < 1` and `A / a ≠ B / b`. This is the form used to compare volumes of
@@ -48,6 +52,8 @@ hyperplane sections in the Kneser–Süss equality argument for Brunn–Minkowsk
 * `Real.geom_mean_le_arith_mean2_weighted_div_mul`,
   `Real.geom_mean_lt_arith_mean2_weighted_div_mul`: two-point weighted AM-GM after normalizing
   by positive scalars, with the strict form.
+* `ENNReal.geom_mean_le_arith_mean2_weighted_ofReal`: two-point weighted AM-GM in `ℝ≥0∞` with
+  the real weights `1 - θ` and `θ`.
 * `ENNReal.Lp_add_le_tsum`: Minkowski's inequality for unconditional sums in `ℝ≥0∞`.
 * `ENNReal.inner_le_Lp_mul_Lq_tsum`: Hölder's inequality for unconditional sums in `ℝ≥0∞`.
 * `ENNReal.Lq_le_Lp_tsum`: the `ℓᵖ` norm of an `ℝ≥0∞`-valued family is antitone in `p`.
@@ -130,6 +136,14 @@ namespace ENNReal
 
 open scoped ENNReal
 
+/-- The weighted AM-GM inequality in `ℝ≥0∞` for the real weights `1 - θ` and `θ`:
+`a ^ (1 - θ) * b ^ θ ≤ ofReal (1 - θ) * a + ofReal θ * b` for `0 ≤ θ ≤ 1`. -/
+theorem geom_mean_le_arith_mean2_weighted_ofReal {θ : ℝ} (hθ₀ : 0 ≤ θ) (hθ₁ : θ ≤ 1)
+    (a b : ℝ≥0∞) : a ^ (1 - θ) * b ^ θ ≤ ENNReal.ofReal (1 - θ) * a + ENNReal.ofReal θ * b := by
+  have h := geom_mean_le_arith_mean2_weighted (1 - θ).toNNReal θ.toNNReal a b <| by
+    rw [← Real.toNNReal_add (sub_nonneg.2 hθ₁) hθ₀, sub_add_cancel, Real.toNNReal_one]
+  rwa [Real.coe_toNNReal _ (sub_nonneg.2 hθ₁), Real.coe_toNNReal _ hθ₀] at h
+
 /-- **Minkowski's inequality** for unconditional sums in `ℝ≥0∞`: for `1 ≤ p`,
 `(∑' i, (f i + g i) ^ p) ^ (1 / p) ≤ (∑' i, f i ^ p) ^ (1 / p) + (∑' i, g i ^ p) ^ (1 / p)`.
 No summability hypotheses are needed; both sides may be infinite. -/
@@ -138,10 +152,10 @@ theorem Lp_add_le_tsum {ι : Type*} (f g : ι → ℝ≥0∞) {p : ℝ} (hp : 1 
       (∑' i, f i ^ p) ^ (1 / p) + (∑' i, g i ^ p) ^ (1 / p) := by
   have hp0 : 0 < p := zero_lt_one.trans_le hp
   -- Bound each finite partial sum by the finite Minkowski inequality.
-  rw [one_div, rpow_inv_le_iff hp0, ENNReal.tsum_eq_iSup_sum]
+  rw [one_div, rpow_inv_le_iff hp0, _root_.tsum_eq_iSup_sum]
   refine iSup_le fun s ↦ ?_
   rw [← rpow_inv_le_iff hp0, ← one_div]
-  grw [Lp_add_le s f g hp, ENNReal.sum_le_tsum s, ENNReal.sum_le_tsum (f := fun i ↦ g i ^ p) s]
+  grw [Lp_add_le s f g hp, _root_.sum_le_tsum s, _root_.sum_le_tsum (f := fun i ↦ g i ^ p) s]
 
 /-- **Hölder's inequality** for unconditional sums in `ℝ≥0∞`: for conjugate exponents `p` and `q`,
 `∑' i, f i * g i ≤ (∑' i, f i ^ p) ^ (1 / p) * (∑' i, g i ^ q) ^ (1 / q)`.
@@ -150,13 +164,13 @@ theorem inner_le_Lp_mul_Lq_tsum {ι : Type*} (f g : ι → ℝ≥0∞) {p q : �
     (hpq : p.HolderConjugate q) :
     ∑' i, f i * g i ≤ (∑' i, f i ^ p) ^ (1 / p) * (∑' i, g i ^ q) ^ (1 / q) := by
   -- Bound each finite partial sum by the finite Hölder inequality.
-  rw [ENNReal.tsum_eq_iSup_sum]
+  rw [_root_.tsum_eq_iSup_sum]
   refine iSup_le fun s ↦ (inner_le_Lp_mul_Lq s f g hpq).trans ?_
   gcongr
   · exact one_div_nonneg.2 hpq.nonneg
-  · exact ENNReal.sum_le_tsum s
+  · exact _root_.sum_le_tsum s
   · exact one_div_nonneg.2 hpq.symm.nonneg
-  · exact ENNReal.sum_le_tsum s
+  · exact _root_.sum_le_tsum s
 
 /-- The `ℓᵖ` norms of an `ℝ≥0∞`-valued family decrease as the exponent grows: for `0 < p ≤ q`,
 `(∑' i, f i ^ q) ^ (1 / q) ≤ (∑' i, f i ^ p) ^ (1 / p)`. No summability hypotheses are needed;
@@ -168,7 +182,7 @@ theorem Lq_le_Lp_tsum {ι : Type*} (f : ι → ℝ≥0∞) {p q : ℝ} (hp : 0 <
   -- Each term is at most the `ℓᵖ` norm `S`, so `f i ^ q ≤ f i ^ p * S ^ (q - p)`.
   have hfS (i : ι) : f i ≤ S := by
     rw [hS, one_div, le_rpow_inv_iff hp]
-    exact ENNReal.le_tsum (f := fun i ↦ f i ^ p) i
+    exact _root_.le_tsum (f := fun i ↦ f i ^ p) i
   have hSp : S ^ p = ∑' i, f i ^ p := by rw [hS, one_div, rpow_inv_rpow hp.ne']
   rw [one_div, rpow_inv_le_iff (hp.trans_le hpq)]
   calc ∑' i, f i ^ q = ∑' i, f i ^ p * f i ^ (q - p) := by

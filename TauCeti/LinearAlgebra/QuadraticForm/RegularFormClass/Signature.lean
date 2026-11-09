@@ -160,7 +160,7 @@ variable [IsRealClosed K]
 theorem mk_rankOne_eq_one_of_pos {a : Kˣ} (ha : 0 < (a : K)) :
     Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ = 1 :=
   eq_one_of_rank_eq_one_of_discr_eq_zero (rank_mk _) (by
-    rw [discr_mk, Fin.prod_univ_one, squareClass_eq_zero_iff, ← isSquare_units_val_iff]
+    rw [discr_mk, Fin.prod_univ_one, squareClass_eq_zero_iff, ← Units.isSquare_coe_iff]
     exact IsSquare.of_nonneg ha.le)
 
 /-- A negative line over a real closed field is isometric to the line with coefficient `-1`. -/

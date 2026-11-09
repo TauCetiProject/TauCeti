@@ -26,6 +26,10 @@ completed group algebra `ℤ_p[[Γ]]` of a procyclic pro-`p` group `Γ`: at a le
 `p ^ m`, the class of the topological generator satisfies `σ ^ (p ^ m) = 1`, so
 `(1 + X) ^ (p ^ m) - 1` vanishes at `X = σ - 1`.
 
+For a general polynomial `F` distinguished at an ideal `I` with `I ^ e ⊆ (p)`, every root `t` of
+`F` in an `O`-algebra satisfies `t ^ deg F ∈ I`, hence `p ∣ t ^ (deg F * e)`. Distinguished
+polynomials at `I` are closed under finite products, including the empty product `1`.
+
 ## Main results
 
 * `TauCeti.Polynomial.monic_one_add_X_pow_sub_one`: `(1 + X) ^ n - 1` is monic for `n ≠ 0`.
@@ -33,6 +37,11 @@ completed group algebra `ℤ_p[[Γ]]` of a procyclic pro-`p` group `Γ`: at a le
   to `n` (at `n = 0` the polynomial is `0`, whose `natDegree` is `0` by convention).
 * `TauCeti.Polynomial.isDistinguishedAt_one_add_X_pow_sub_one`: `(1 + X) ^ (p ^ m) - 1` is
   distinguished at every ideal containing `p`.
+* `Polynomial.IsDistinguishedAt.natCast_dvd_pow_of_aeval_eq_zero`: a root `t` of a polynomial `F`
+  distinguished at `I`, with `I ^ e ⊆ (p)`, satisfies `p ∣ t ^ (deg F * e)`.
+* `Polynomial.isDistinguishedAt_one`, `Polynomial.IsDistinguishedAt.pow`,
+  `Polynomial.isDistinguishedAt_prod`: `1`, powers and finite products of distinguished
+  polynomials are distinguished.
 -/
 
 public section
@@ -85,3 +94,44 @@ theorem isDistinguishedAt_one_add_X_pow_sub_one {p : ℕ} (hp : p.Prime) {I : Id
 end Polynomial
 
 end TauCeti
+
+namespace Polynomial
+
+variable {R : Type*} [CommRing R] {I : Ideal R}
+
+/-- The constant polynomial `1` is distinguished at every ideal. -/
+theorem isDistinguishedAt_one : (1 : R[X]).IsDistinguishedAt I :=
+  ⟨⟨fun hn ↦ by simp at hn⟩, monic_one⟩
+
+/-- A power of a distinguished polynomial is distinguished. -/
+theorem IsDistinguishedAt.pow {f : R[X]} (hf : f.IsDistinguishedAt I) (n : ℕ) :
+    (f ^ n).IsDistinguishedAt I := by
+  induction n with
+  | zero => exact pow_zero f ▸ isDistinguishedAt_one
+  | succ n ih => exact pow_succ f n ▸ ih.mul hf
+
+/-- A finite product of distinguished polynomials is distinguished. -/
+theorem isDistinguishedAt_prod {ι : Type*} {s : Finset ι} {f : ι → R[X]}
+    (hf : ∀ i ∈ s, (f i).IsDistinguishedAt I) : (∏ i ∈ s, f i).IsDistinguishedAt I :=
+  Finset.prod_induction f (·.IsDistinguishedAt I) (fun _ _ ↦ IsDistinguishedAt.mul)
+    isDistinguishedAt_one hf
+
+end Polynomial
+
+namespace Polynomial.IsDistinguishedAt
+
+variable {O : Type*} [CommRing O] {I : Ideal O} {F : O[X]} {p e : ℕ}
+
+/-- If `F` is distinguished at `I` and `I ^ e ⊆ (p)`, then every root `t` of `F` in an `O`-algebra
+satisfies `p ∣ t ^ (deg F * e)`. -/
+theorem natCast_dvd_pow_of_aeval_eq_zero (hF : F.IsDistinguishedAt I)
+    (hI : I ^ e ≤ Ideal.span {(p : O)}) {S : Type*} [CommRing S] [Algebra O S] {t : S}
+    (ht : aeval t F = 0) : (p : S) ∣ t ^ (F.natDegree * e) := by
+  have h := hF.toIsWeaklyEisensteinAt.pow_natDegree_le_of_aeval_zero_of_monic_mem_map ht
+    hF.monic F.natDegree natDegree_map_le
+  have h' : t ^ (F.natDegree * e) ∈ (Ideal.span {(p : O)}).map (algebraMap O S) := by
+    rw [pow_mul]
+    exact Ideal.map_mono hI (Ideal.map_pow (algebraMap O S) I e ▸ Ideal.pow_mem_pow h e)
+  rwa [Ideal.map_span, Set.image_singleton, map_natCast, Ideal.mem_span_singleton] at h'
+
+end Polynomial.IsDistinguishedAt

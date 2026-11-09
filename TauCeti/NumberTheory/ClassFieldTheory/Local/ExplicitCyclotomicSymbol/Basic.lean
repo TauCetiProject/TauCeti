@@ -114,7 +114,7 @@ private def cyclotomicSymbolComponents (m p : ℕ) [NeZero m] [Fact p.Prime] :
       (ZMod (p ^ padicValNat p m))ˣ × (ZMod (m / p ^ padicValNat p m))ˣ :=
   ((padicUnitReduction p (padicValNat p m))⁻¹.comp (MonoidHom.snd _ _)).prod
     ((zpowersHom _ (ZMod.unitOfCoprime p (by
-      simpa [Nat.factorization_def m (Fact.out : p.Prime)] using
+      simpa [Nat.padicValNat_def, Nat.factorization_def m (Fact.out : p.Prime)] using
         Nat.coprime_ordCompl (Fact.out : p.Prime) (NeZero.ne m)))).comp
       (MonoidHom.fst _ _))
 
@@ -127,7 +127,7 @@ The two components are recorded by `unitsMap_cyclotomicSymbol_primePow` and
 def cyclotomicSymbol (m : ℕ) [NeZero m] (p : ℕ) [Fact p.Prime] :
     ℚ_[p]ˣ →* (ZMod m)ˣ :=
   have hprimary : p ^ padicValNat p m ∥ m := by
-    simpa [Nat.factorization_def m (Fact.out : p.Prime)] using
+    simpa [Nat.padicValNat_def, Nat.factorization_def m (Fact.out : p.Prime)] using
       (Nat.isExactDivisor_primePow (N := m) (p := p))
   hprimary.unitsEquivProd.symm.toMonoidHom.comp <|
     (cyclotomicSymbolComponents m p).comp <|
@@ -142,10 +142,11 @@ theorem unitsMap_cyclotomicSymbol_primePow (m : ℕ) [NeZero m] (p : ℕ) [Fact 
     ZMod.unitsMap hj (cyclotomicSymbol m p x) =
       (Units.map (PadicInt.toZModPow j : ℤ_[p] →+* ZMod (p ^ j)).toMonoidHom w)⁻¹ := by
   have hprimary : p ^ padicValNat p m ∥ m := by
-    simpa [Nat.factorization_def m (Fact.out : p.Prime)] using
+    simpa [Nat.padicValNat_def, Nat.factorization_def m (Fact.out : p.Prime)] using
       (Nat.isExactDivisor_primePow (N := m) (p := p))
-  have hjle : j ≤ padicValNat p m :=
-    (padicValNat_dvd_iff_le (p := p) (NeZero.ne m)).mp hj
+  have hjle : j ≤ padicValNat p m := by
+    simpa only [Nat.padicValNat_def] using
+      (multiplicity_dvd_iff_le (p := p) (NeZero.ne m)).mp hj
   have hjprimary : p ^ j ∣ p ^ padicValNat p m := pow_dvd_pow p hjle
   have hsplit :
       (unitsEquivIntProd ℚ_[p] (padicPrimeUnit p)
@@ -174,7 +175,7 @@ theorem unitsMap_cyclotomicSymbol_of_coprime (m : ℕ) [NeZero m] (p : ℕ) [Fac
     (hx : (x : ℚ_[p]) = (p : ℚ_[p]) ^ k * ((w : ℤ_[p]) : ℚ_[p])) :
     ZMod.unitsMap hd (cyclotomicSymbol m p x) = ZMod.unitOfCoprime p hcop ^ k := by
   have hprimary : p ^ padicValNat p m ∥ m := by
-    simpa [Nat.factorization_def m (Fact.out : p.Prime)] using
+    simpa [Nat.padicValNat_def, Nat.factorization_def m (Fact.out : p.Prime)] using
       (Nat.isExactDivisor_primePow (N := m) (p := p))
   have hcop' : Nat.Coprime (p ^ padicValNat p m) d := hcop.pow_left _
   have hdcomp : d ∣ m / p ^ padicValNat p m :=
@@ -247,7 +248,7 @@ theorem cyclotomicSymbol_eq_one_of_norm_sub_one_lt (m : ℕ) [NeZero m] (p : ℕ
     cyclotomicSymbol m p x = 1 := by
   have hm : ‖(m : ℚ_[p])‖ = (p : ℝ) ^ (-(padicValNat p m : ℤ)) := by
     rw [Padic.norm_eq_zpow_neg_valuation (Nat.cast_ne_zero.mpr (NeZero.ne m)),
-      Padic.valuation_natCast]
+      Padic.valuation_natCast, Nat.padicValNat_def]
   have hx1 : ‖(x : ℚ_[p])‖ = 1 := by
     have := Padic.norm_eq_of_norm_sub_lt_right (z1 := (x : ℚ_[p])) (z2 := 1)
       (hx.trans_le ((IsUltrametricDist.norm_natCast_le_one ℚ_[p] m).trans_eq norm_one.symm))
@@ -255,10 +256,10 @@ theorem cyclotomicSymbol_eq_one_of_norm_sub_one_lt (m : ℕ) [NeZero m] (p : ℕ
   have hw : (x : ℚ_[p]) = (p : ℚ_[p]) ^ (0 : ℤ) * ((PadicInt.mkUnits hx1 : ℤ_[p]) : ℚ_[p]) := by
     rw [zpow_zero, one_mul, PadicInt.mkUnits_eq]
   have hprimary : p ^ padicValNat p m ∥ m := by
-    simpa [Nat.factorization_def m (Fact.out : p.Prime)] using
+    simpa [Nat.padicValNat_def, Nat.factorization_def m (Fact.out : p.Prime)] using
       (Nat.isExactDivisor_primePow (N := m) (p := p))
   have hcop : Nat.Coprime p (m / p ^ padicValNat p m) := by
-    simpa [Nat.factorization_def m (Fact.out : p.Prime)] using
+    simpa [Nat.padicValNat_def, Nat.factorization_def m (Fact.out : p.Prime)] using
       Nat.coprime_ordCompl (Fact.out : p.Prime) (NeZero.ne m)
   apply hprimary.unitsEquivProd.injective
   rw [map_one]

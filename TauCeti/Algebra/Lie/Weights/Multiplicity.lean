@@ -79,9 +79,9 @@ theorem finrank_weightSpace_eq_sum [Fintype ι] {dec_ι : DecidableEq ι}
         ∈ (weightSpace M χ).toSubmodule := fun m hm i ↦
     LieModule.map_weightSpace_le ((h.lieModuleProjection i).restrictLie H) χ
       ⟨m, hm, h.lieModuleProjection_apply i m⟩
-  rw [← TauCeti.finrank_toSubmodule,
+  rw [← LieSubmodule.finrank_toSubmodule,
     ← h.iSup_inf_eq_of_component_mem (weightSpace M χ).toSubmodule hcomponent,
-    @TauCeti.finrank_iSup_eq_sum_finrank_of_iSupIndep K M ι _ _ _ _ _ hfinite hindep]
+    TauCeti.finrank_iSup_eq_sum_finrank_of_iSupIndep hindep]
   exact Finset.sum_congr rfl fun i _ ↦ (N i).finrank_inf_weightSpace χ
 
 end DirectSum.IsInternal

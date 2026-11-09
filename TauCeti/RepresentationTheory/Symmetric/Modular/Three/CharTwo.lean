@@ -64,7 +64,7 @@ private theorem exists_nonzero_permutation_intertwiner [Nontrivial V]
     have he : g * Equiv.swap 0 i = Equiv.swap 0 (g i) * h := by simp [h, mul_assoc]
     calc
       w (g i) = ρ (Equiv.swap 0 (g i)) (ρ h v) := by rw [hf]
-      _ = ρ g (w i) := by simp only [w, ← Module.End.mul_apply, ← map_mul, ← he]
+      _ = ρ g (w i) := by simp only [w, ← mul_apply_eq_comp, ← map_mul, ← he]
   let L := (MonoidAlgebra.basis (Fin 3) k).constr k w
   have hL (i : Fin 3) (c : k) : L (MonoidAlgebra.single i c) = c • w i := by
     have he : MonoidAlgebra.single i c = c • MonoidAlgebra.basis (Fin 3) k i := by

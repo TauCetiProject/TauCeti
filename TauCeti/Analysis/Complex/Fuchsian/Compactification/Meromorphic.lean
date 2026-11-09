@@ -130,7 +130,7 @@ theorem comp_cuspChart_symm_eventuallyEq (D : Γ.CuspDatum) {A : ℝ} (hA : D.wi
     self_mem_nhdsWithin] with q hq hq0
   rw [Function.comp_apply, cuspChart_symm_of_ne_zero D hA (by rwa [cuspChart_target]) hq0, hF,
     cuspExtension_def, UpperHalfPlane.cuspFunction,
-    Function.Periodic.cuspFunction_eq_of_nonzero _ _ hq0, Function.comp_apply]
+    Function.Periodic.cuspFunction_eq_of_ne_zero _ _ hq0, Function.comp_apply]
 
 /-- **Meromorphy at a cusp.** A function on the compactified quotient is meromorphic at the cusp
 orbit of a cusp datum `D` exactly when the cusp extension at `D` of its pullback `f` to the upper

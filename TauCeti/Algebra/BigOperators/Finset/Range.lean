@@ -21,7 +21,9 @@ import Mathlib.Tactic.Ring
 Generic identities for sums indexed by `Finset.range` and `Finset.Ioo`. These are used by
 coderivation/Taylor expansions, which reindex a cut-and-collapse double sum over a triangle to a
 square and enlarge a vanishing-off-the-block range, and by divided-power exponential calculations,
-which reindex a sum over antidiagonals to a rectangle. Reindexing a sum over a finite subset of a
+which reindex a sum over antidiagonals to a rectangle. The same reindexing multiplies sums
+`∑_{i < k} eⁱ uᵢ` in a parameter with `eᵏ = 0` like truncated power series, as needed for
+`e`-adic expansions. Reindexing a sum over a finite subset of a
 linear order by the rank of each element turns the recurrences of Catalan-type enumerations, such
 as those of noncrossing partitions, into sums over `Finset.range`.
 
@@ -37,8 +39,12 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   `range K × range K` when the family vanishes off the triangle.
 * `sum_range_add_antidiagonal_of_support`: a sum over antidiagonals below `k + l` equals
   the rectangle `range k × range l` when the summand vanishes outside that rectangle.
+* `sum_range_pow_mul_mul_sum_range_pow_mul_of_pow_eq_zero`: the product of two sums truncated
+  at a vanishing power `eᵏ = 0` is the truncation of their Cauchy product.
 * `sum_sum_range_eq_of_eq_zero_right`: enlarging both ranges of a double sum that vanishes outside
   a rectangle.
+* `sum_range_ite_pair_of_eq_add_one`, `sum_range_ite_pair_of_eq`,
+  `sum_range_ite_pair_of_lt`: evaluate an alternating-pair sum at either partner or below all pairs.
 * `sum_range_eq_of_eq_zero_off_pair` and `sum_range_eq_of_eq_zero_off_triple`: convenient
   specializations to supports of size two and three.
 * `sum_range_add_add`: splitting a `range n` sum into a prefix, a block, and a suffix.
@@ -56,6 +62,8 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   adjacent contributions, retaining the final boundary term.
 * `Finset.prod_range_two_mul_add_one`, `Finset.sum_range_two_mul_add_one`: split a product or sum
   over `range (2 * k + 1)` into its even and odd indices.
+* `Finset.prod_range_ite_lt`, `Finset.sum_range_ite_lt`: a product or sum over `range n` whose
+  factors past `x ≤ n` are replaced by `1` or `0` is the product or sum over `range x`.
 * `Finset.four_dvd_sum_range_two_mul_add_one`: a sum over `range (2 * k + 1)` of even terms,
   symmetric under `i ↦ 2 * k - i` and vanishing at the middle index `k`, is divisible by `4`.
 * `Finset.prod_card_filter_lt_card_filter_gt`, `Finset.sum_card_filter_lt_card_filter_gt`: reindex
@@ -65,6 +73,10 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   sum over `range (n * q)` into `q` consecutive blocks of `n` terms.
 * `Finset.sum_range_two_mul_succ`: the sum `∑_{i=1}^{m} 2i` of the first `m` positive even
   numbers is `m (m + 1)`.
+* `Finset.sum_range_add_two_mul`: the sum `∑_{j<J} (D + 2j + 1)` of an arithmetic progression
+  with common difference `2` is `J (D + J)`.
+* `Finset.sum_range_min_add_one_sub_two_mul`: the Clebsch–Gordan dimension count
+  `∑_{k ≤ min m n} (m + n - 2k + 1) = (m + 1)(n + 1)`.
 -/
 
 public section
@@ -96,12 +108,24 @@ theorem prod_range_two_mul_add_one {M : Type*} [CommMonoid M] (g : ℕ → M) (k
       show 2 * k + 1 + 1 = 2 * (k + 1) by ring]
     ac_rfl
 
+/-- Restricting a product over `range n` to the indices below `x ≤ n`, by replacing the other
+factors with `1`, gives the product over `range x`. -/
+@[to_additive /-- Restricting a sum over `range n` to the indices below `x ≤ n`, by replacing the
+other terms with `0`, gives the sum over `range x`. -/]
+theorem prod_range_ite_lt {M : Type*} [CommMonoid M] (f : ℕ → M) {x n : ℕ} (h : x ≤ n) :
+    ∏ r ∈ range n, (if r < x then f r else 1) = ∏ r ∈ range x, f r := by
+  rw [← prod_filter]
+  congr 1
+  ext r
+  simp only [mem_filter, mem_range]
+  omega
+
 
 /-- A sum over `range (2 * k + 1)` of a family that is symmetric under `i ↦ 2 * k - i`, vanishes
-at the middle index `k` and takes even values, is divisible by `4`: it is twice the sum over
-`i < k`. -/
+at the middle index `k` and takes even values on `0, …, 2 * k`, is divisible by `4`: it is twice
+the sum over `i < k`. -/
 theorem four_dvd_sum_range_two_mul_add_one {R : Type*} [Semiring R] (k : ℕ) (h : ℕ → R)
-    (hsym : ∀ i ≤ 2 * k, h (2 * k - i) = h i) (hk : h k = 0) (h2 : ∀ i, 2 ∣ h i) :
+    (hsym : ∀ i ≤ 2 * k, h (2 * k - i) = h i) (hk : h k = 0) (h2 : ∀ i ≤ 2 * k, 2 ∣ h i) :
     4 ∣ ∑ i ∈ range (2 * k + 1), h i := by
   rw [show 2 * k + 1 = (k + 1) + k by ring, sum_range_add, sum_range_succ, hk, add_zero]
   have : ∑ x ∈ range k, h (k + 1 + x) = ∑ x ∈ range k, h x := by
@@ -112,7 +136,7 @@ theorem four_dvd_sum_range_two_mul_add_one {R : Type*} [Semiring R] (k : ℕ) (h
     congr 1
     omega
   rw [this, ← two_mul, ← two_add_two_eq_four, ← two_mul]
-  exact mul_dvd_mul_left 2 (dvd_sum fun i _ ↦ h2 i)
+  exact mul_dvd_mul_left 2 (dvd_sum fun i hi ↦ h2 i (by rw [mem_range] at hi; omega))
 
 /-- Reindexing a product over a finite subset `s` of a linear order by the number `i` of elements
 of `s` before each element; there are then `#s - 1 - i` elements of `s` after it. -/
@@ -160,6 +184,30 @@ theorem sum_range_two_mul_succ (m : ℕ) : ∑ i ∈ range m, 2 * (i + 1) = m * 
   induction m with
   | zero => rfl
   | succ m ih => rw [sum_range_succ, ih]; ring
+
+/-- The sum of the arithmetic progression `D + 1, D + 3, …, D + 2J - 1` of `J` terms with
+common difference `2` is `J (D + J)`. -/
+theorem sum_range_add_two_mul (D J : ℕ) :
+    ∑ j ∈ range J, (D + 2 * j + 1) = J * (D + J) := by
+  induction J with
+  | zero => simp
+  | succ J ih => rw [sum_range_succ, ih]; ring
+
+/-- The Clebsch–Gordan dimension count: the numbers `m + n - 2k + 1` for `k ≤ min m n` add up to
+`(m + 1)(n + 1)`. Reflecting the sum turns the descending terms into the ascending arithmetic
+progression starting at `|m - n| + 1`. -/
+theorem sum_range_min_add_one_sub_two_mul (m n : ℕ) :
+    ∑ k ∈ range (min m n + 1), (m + n - 2 * k + 1) = (m + 1) * (n + 1) := by
+  rw [← sum_range_reflect]
+  have hrw : ∀ j ∈ range (min m n + 1),
+      m + n - 2 * (min m n + 1 - 1 - j) + 1 = (m + n - 2 * min m n) + 2 * j + 1 := by
+    intro j hj
+    have hj' : j ≤ min m n := by simpa [Nat.lt_succ_iff] using hj
+    omega
+  rw [sum_congr rfl hrw, sum_range_add_two_mul]
+  rcases Nat.le_total m n with h | h
+  · rw [Nat.min_eq_left h, show m + n - 2 * m + (m + 1) = n + 1 by omega]
+  · rw [Nat.min_eq_right h, show m + n - 2 * n + (n + 1) = m + 1 by omega, mul_comm]
 
 /-- Summing over the truncated triangle `{(m, n, k) | m, n < N, k ≤ min m n}` is the same as summing
 over the slice `{(p, k, q) | p + k < N, q + k < N}` of the cube, the summand transported along
@@ -333,6 +381,38 @@ theorem sum_range_add_antidiagonal_of_support
   · intro q _
     rfl
 
+/-- Multiplying two sums `∑_{i < k} eⁱ uᵢ` and `∑_{j < k} eʲ vⱼ` truncated at a power `eᵏ = 0`
+gives the truncation of their Cauchy product, since the terms of total degree at least `k`
+vanish. -/
+theorem sum_range_pow_mul_mul_sum_range_pow_mul_of_pow_eq_zero {R : Type*} [CommSemiring R]
+    {e : R} {k : ℕ} (he : e ^ k = 0) (u v : ℕ → R) :
+    (∑ i ∈ range k, e ^ i * u i) * ∑ j ∈ range k, e ^ j * v j =
+      ∑ n ∈ range k, e ^ n * ∑ ij ∈ antidiagonal n, u ij.1 * v ij.2 := by
+  classical
+  let f : ℕ × ℕ → R := fun ij ↦
+    if ij.1 < k ∧ ij.2 < k then e ^ (ij.1 + ij.2) * (u ij.1 * v ij.2) else 0
+  have hsq : ∑ i ∈ range k, ∑ j ∈ range k, e ^ i * u i * (e ^ j * v j) =
+      ∑ i ∈ range k, ∑ j ∈ range k, f (i, j) := by
+    refine sum_congr rfl fun i hi ↦ sum_congr rfl fun j hj ↦ ?_
+    rw [mem_range] at hi hj
+    simp only [f, hi, hj, and_self, ↓reduceIte, pow_add]
+    ring
+  rw [sum_mul_sum, hsq, ← sum_range_add_antidiagonal_of_support k k f
+    (fun i j h ↦ ite_eq_right_iff.mpr fun hc ↦ absurd hc (by omega)), sum_range_add]
+  have hhigh : ∑ n ∈ range k, ∑ ij ∈ antidiagonal (k + n), f ij = 0 := by
+    refine sum_eq_zero fun n _ ↦ sum_eq_zero fun ij hij ↦ ?_
+    have he' : e ^ (ij.1 + ij.2) = 0 := by
+      rw [mem_antidiagonal.mp hij, pow_add, he, zero_mul]
+    simp [f, he']
+  rw [hhigh, add_zero]
+  refine sum_congr rfl fun n hn ↦ ?_
+  rw [mul_sum]
+  refine sum_congr rfl fun ij hij ↦ ?_
+  rw [mem_range] at hn
+  rw [mem_antidiagonal] at hij
+  have hk : ij.1 < k ∧ ij.2 < k := by omega
+  simp only [f, hij, hk, and_self, ↓reduceIte]
+
 /-- Enlarging both ranges of a double sum that vanishes for `b ≤ p` or `b < d`. -/
 theorem sum_sum_range_eq_of_eq_zero_right {N : Type*} [AddCommMonoid N] {b K : ℕ} (hK : b ≤ K)
     (g : ℕ → ℕ → N) (hg : ∀ p d, b ≤ p ∨ b < d → g p d = 0) :
@@ -348,6 +428,40 @@ theorem sum_sum_range_eq_of_eq_zero_right {N : Type*} [AddCommMonoid N] {b K : �
       simp only [mem_range, not_lt] at hp
       exact sum_eq_zero fun d _ ↦ hg p d (Or.inl hp)
   rw [← outer, ← sum_congr rfl fun p _ ↦ inner p]
+
+/-- A sum of alternating pairs, evaluated at an index `j = 2a + s + 1` of the first kind: only the
+`a`-th term contributes, and it equals `f (2a + s)`. -/
+theorem sum_range_ite_pair_of_eq_add_one {M : Type*} [AddCommGroup M] (f : ℕ → M)
+    {s a m j : ℕ} (hj : j = 2 * a + s + 1) (ha : a < m) :
+    ∑ b ∈ Finset.range m,
+      ((if j = 2 * b + s + 1 then f (2 * b + s) else 0) -
+        if j = 2 * b + s then f (2 * b + s + 1) else 0) =
+      f (2 * a + s) := by
+  subst hj
+  rw [Finset.sum_eq_single a (fun b _ hb ↦ by
+      rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero])
+    (fun h ↦ absurd (Finset.mem_range.2 ha) h), ite_eq_left rfl, ite_eq_right (by omega), sub_zero]
+
+/-- A sum of alternating pairs, evaluated at an index `j = 2a + s` of the second kind: only the
+`a`-th term contributes, and it equals `-f (2a + s + 1)`. -/
+theorem sum_range_ite_pair_of_eq {M : Type*} [AddCommGroup M] (f : ℕ → M)
+    {s a m j : ℕ} (hj : j = 2 * a + s) (ha : a < m) :
+    ∑ b ∈ Finset.range m,
+      ((if j = 2 * b + s + 1 then f (2 * b + s) else 0) -
+        if j = 2 * b + s then f (2 * b + s + 1) else 0) =
+      -f (2 * a + s + 1) := by
+  subst hj
+  rw [Finset.sum_eq_single a (fun b _ hb ↦ by
+      rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero])
+    (fun h ↦ absurd (Finset.mem_range.2 ha) h), ite_eq_left rfl, ite_eq_right (by omega), zero_sub]
+
+/-- A sum of alternating pairs vanishes at an index `j < s`, below all the pairs. -/
+theorem sum_range_ite_pair_of_lt {M : Type*} [AddCommGroup M] (f : ℕ → M) {s m j : ℕ}
+    (hj : j < s) :
+    ∑ b ∈ Finset.range m,
+      ((if j = 2 * b + s + 1 then f (2 * b + s) else 0) -
+        if j = 2 * b + s then f (2 * b + s + 1) else 0) = 0 :=
+  Finset.sum_eq_zero fun b _ ↦ by rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero]
 
 /-- A sum over `Finset.range t` whose terms vanish outside two distinct positions is the sum of
 the terms at those positions. -/

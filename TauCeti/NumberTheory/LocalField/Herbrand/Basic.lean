@@ -86,6 +86,8 @@ classical `φ_{L/K}` is instead defined through a Galois closure.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroup_herbrand`: `G^{φ(u)} = G_u`.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroup_antitone`: the upper filtration
   decreases, and each `G^v` is normal.
+* `TauCeti.LocalFieldsRamification.exists_forall_upperRamificationGroup_natCast_eq_bot`:
+  `G^n = 1` for every large enough natural number `n`.
 
 ## References
 
@@ -373,6 +375,17 @@ theorem inverseHerbrand_of_coe_le_zero {v : RamificationIndexDomain} (hv : (v : 
     inverseHerbrand K L v = v :=
   (herbrandOrderIso K L).symm_apply_eq.2 (herbrand_of_coe_le_zero K L hv).symm
 
+variable {K L} in
+/-- If the inverse Herbrand function sends `u` to `-1`, then `u = -1`. -/
+theorem coe_eq_neg_one_of_inverseHerbrand_eq_neg_one {u : RamificationIndexDomain}
+    (hinverse : inverseHerbrand K L u = ⟨(-1 : ℝ), le_rfl⟩) : (u : ℝ) = -1 := by
+  have hinverse_neg_one :
+      inverseHerbrand K L ⟨(-1 : ℝ), le_rfl⟩ = ⟨(-1 : ℝ), le_rfl⟩ :=
+    inverseHerbrand_of_coe_le_zero K L (by norm_num)
+  have hu_eq : u = ⟨(-1 : ℝ), le_rfl⟩ :=
+    (inverseHerbrand_strictMono K L).injective <| hinverse.trans hinverse_neg_one.symm
+  exact congrArg Subtype.val hu_eq
+
 omit [IsGalois K L] in
 private theorem herbrandReal_of_mem_Icc (n : ℕ) {u : ℝ} (h₁ : (n : ℝ) ≤ u) (h₂ : u ≤ n + 1) :
     herbrandReal K L u =
@@ -652,5 +665,15 @@ theorem upperRamificationGroup_natCast (n : ℕ) :
       lowerRamificationGroup K L (psiNat K L n) := by
   rw [upperRamificationGroup_def, ← coe_psiNat, ← Int.cast_natCast,
     lowerRamificationGroupReal_intCast]
+
+/-- The upper ramification filtration of a finite Galois extension of local fields is trivial at
+every large enough natural index. -/
+theorem exists_forall_upperRamificationGroup_natCast_eq_bot :
+    ∃ N : ℕ, ∀ n : ℕ, N ≤ n →
+      upperRamificationGroup K L ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩ = ⊥ := by
+  obtain ⟨N, hN⟩ := exists_forall_lowerRamificationGroup_natCast_eq_bot K L
+  refine ⟨N, fun n hn ↦ ?_⟩
+  rw [upperRamificationGroup_natCast]
+  exact hN _ (hn.trans (self_le_psiNat K L n))
 
 end TauCeti.LocalFieldsRamification

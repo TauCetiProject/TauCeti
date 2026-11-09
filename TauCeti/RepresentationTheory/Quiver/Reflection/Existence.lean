@@ -124,7 +124,7 @@ theorem exists_isSinkAdmissible_vertexPreReflectionList_eq_single_and_nonneg
     Quiver.isSinkAdmissible_append.mpr ⟨(hflat N).1, ?_⟩, ?_, ?_⟩
   · rw [(hflat N).2]
     exact htake
-  · rw [vertexPreReflectionList_append, Module.End.mul_apply,
+  · rw [vertexPreReflectionList_append, mul_apply_eq_comp,
       vertexPreReflectionList_flatten_replicate]
     exact heq
   · refine nonneg_vertexPreReflectionList_take_append Q
@@ -231,8 +231,8 @@ theorem exists_indecomposable_dimVector_eq [q : _root_.Quiver.{w} Q]
       (Quiver.reflectList q l) (Quiver.fintypeHomReflectList l q hq) l.reverse j
       hl.isSourceAdmissible_reverse hnn'
   refine ⟨M, hind, hfd, ?_⟩
-  rw [hdim, vertexPreReflectionList_reflectList Q l q hq, ← hld, ← Module.End.mul_apply,
-    vertexPreReflectionList_reverse_mul Q fun i _ ↦ hloop i, Module.End.one_apply]
+  rw [hdim, vertexPreReflectionList_reflectList Q l q hq, ← hld, ← mul_apply_eq_comp,
+    vertexPreReflectionList_reverse_mul Q fun i _ ↦ hloop i, one_apply_eq_self]
 
 omit [DecidableEq Q] in
 /-- **A vector is a nonnegative root exactly when it is realized by an indecomposable

@@ -83,7 +83,7 @@ theorem fullyBlockedComplex_d :
         ModuleCat.ofHom G.fullyBlockedDifferential ≫
           eqToHom (G.fullyBlockedComplex_X ()).symm := by
   unfold fullyBlockedComplex
-  exact oneObjectHomologicalComplex_d _ _ _
+  exact oneObjectHomologicalComplex_d _ _ _ _ _
 
 /-! ### Unblocked complex -/
 
@@ -116,7 +116,7 @@ theorem unblockedComplex_d :
         ModuleCat.ofHom (G.unblockedDifferential R) ≫
           eqToHom (G.unblockedComplex_X R ()).symm := by
   unfold unblockedComplex
-  exact oneObjectHomologicalComplex_d _ _ _
+  exact oneObjectHomologicalComplex_d _ _ _ _ _
 
 /-! ### One-variable specialization -/
 
@@ -151,7 +151,7 @@ theorem simplyBlockedComplex_d (i : Fin n) :
         ModuleCat.ofHom (G.simplyBlockedDifferential R i) ≫
           eqToHom (G.simplyBlockedComplex_X R i ()).symm := by
   unfold simplyBlockedComplex
-  exact oneObjectHomologicalComplex_d _ _ _
+  exact oneObjectHomologicalComplex_d _ _ _ _ _
 
 /-- Identify the object of the specialized complex with its explicit chain module. -/
 noncomputable def simplyBlockedChainEquiv (i : Fin n) :

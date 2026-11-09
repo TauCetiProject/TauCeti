@@ -115,7 +115,7 @@ private theorem exists_pos_le_degree (hF : IsFunctionField k F) (c : ℤ) :
   have hpos : (1 : ℤ) ≤ Divisor.degree (n • WeilDivisor.ofPoint P) :=
     hdeg ▸ le_trans (by exact_mod_cast le_max_left 1 c.toNat) hle
   have hnonneg : (0 : Divisor k F) ≤ n • WeilDivisor.ofPoint P :=
-    nsmul_nonneg (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P)) n
+    nsmul_nonneg (WeilDivisor.ofPoint_nonneg P) n
   refine ⟨n • WeilDivisor.ofPoint P, lt_of_le_of_ne hnonneg fun h ↦ ?_, hdeg ▸ hcn.trans hle⟩
   rw [← h, Divisor.degree_zero] at hpos
   omega
@@ -248,7 +248,7 @@ theorem finrank_weilDifferentialSpace (hF : IsFunctionField k F)
     Module.finrank F ↥(weilDifferentialSpace k F) = 1 := by
   let := weilDifferentialSpaceModule hF
   obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
-  refine (finrank_eq_one_iff_of_nonzero' (V := ↥(weilDifferentialSpace k F)) ⟨ω, hωmem⟩
+  refine (_root_.finrank_eq_one_iff_of_ne_zero' (V := ↥(weilDifferentialSpace k F)) ⟨ω, hωmem⟩
     (fun h ↦ hω0 (congrArg Subtype.val h))).mpr fun w ↦ ?_
   obtain ⟨c, hc⟩ := exists_repartitionDualMul_eq hF hex hωmem hω0 w.2
   exact ⟨c, Subtype.ext ((coe_weilDifferentialSpaceModule_smul hF c _).trans hc)⟩

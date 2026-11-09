@@ -55,8 +55,8 @@ private theorem cdf_generalizedNormalMeasure_centered (hs : 0 < s) (hp : 0 < p) 
       ← compl_Iio, measureReal_compl measurableSet_Iio, probReal_univ,
       measureReal_congr Iio_ae_eq_Iic, ← cdf_eq_real]
   rw [cdf_eq_real, generalizedNormalMeasure_eq_add_map_neg,
-    measureReal_add_apply (by simp only [Measure.smul_apply, smul_eq_mul]; finiteness)
-      (by simp only [Measure.smul_apply, smul_eq_mul]; finiteness),
+    measureReal_add_apply (by simp only [_root_.smul_apply, smul_eq_mul]; finiteness)
+      (by simp only [_root_.smul_apply, smul_eq_mul]; finiteness),
     measureReal_ennreal_smul_apply, measureReal_ennreal_smul_apply, hneg, ← cdf_eq_real]
   simp only [ENNReal.toReal_div, ENNReal.toReal_one, ENNReal.toReal_ofNat]
   ring

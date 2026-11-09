@@ -81,8 +81,8 @@ private theorem apply_pow_apply_sub_smul_mem_range_pow_succ (hEZ : E * Z - Z * E
   have h₂ : H * E ^ k = E ^ k * (H + ((2 * k : ℕ) : Module.End K V)) := by
     rw [h_mul_e_pow hHE, Nat.cast_mul, Nat.cast_ofNat]
   have h₂ := congr($h₂ y)
-  simp only [Module.End.mul_apply, hy, map_zero, LinearMap.sub_apply, LinearMap.smul_apply,
-    map_add, LinearMap.add_apply, Module.End.natCast_apply, ← Nat.cast_smul_eq_nsmul K,
+  simp only [mul_apply_eq_comp, hy, map_zero, LinearMap.sub_apply, LinearMap.smul_apply,
+    map_add, LinearMap.add_apply, natCast_apply_eq_smul, ← Nat.cast_smul_eq_nsmul K,
     map_smul] at h₁ h₂
   have hinv : ((k : K) + 1)⁻¹ * ((k : K) + 1) = 1 := by
     simpa using inv_mul_cancel₀ (NeZero.ne ((k + 1 : ℕ) : K))
@@ -100,10 +100,10 @@ theorem apply_sub_smul_mem_ker_inf_range_pow_succ (hEZ : E * Z - Z * E = H)
   replace hcE := LinearMap.mem_ker.mp hcE
   refine ⟨?_, apply_pow_apply_sub_smul_mem_range_pow_succ hEZ hHE ?_⟩
   · have := congr($hHE ((E ^ k) y))
-    simp only [LinearMap.sub_apply, Module.End.mul_apply, hcE, map_zero, LinearMap.smul_apply,
+    simp only [LinearMap.sub_apply, mul_apply_eq_comp, hcE, map_zero, LinearMap.smul_apply,
       smul_zero, zero_sub, neg_eq_zero] at this
     simp [this, hcE]
-  · rw [pow_succ', Module.End.mul_apply, hcE]
+  · rw [pow_succ', mul_apply_eq_comp, hcE]
 
 variable [CharZero K]
 

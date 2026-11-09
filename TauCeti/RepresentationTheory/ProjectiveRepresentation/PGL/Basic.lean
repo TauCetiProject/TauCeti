@@ -69,7 +69,7 @@ noncomputable def IsProjectiveRep.toPGL (h : IsProjectiveRep ρ α)
     rw [← Module.Basis.toGL_smulOfUnit b (α g₁ g₂), ← map_mul, ← map_mul]
     congr 1
     ext x
-    simpa only [LinearEquiv.mul_apply, LinearEquiv.smulOfUnit_apply, map_smul, Units.smul_def]
+    simpa only [mul_apply_eq_comp, LinearEquiv.smulOfUnit_apply, map_smul, Units.smul_def]
       using (h.mul_apply g₁ g₂ x).symm
 
 /-- The homomorphism to `PGL` is represented by the matrix of the chosen lift. -/

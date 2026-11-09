@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Tensor.Induction.Discrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Graded.Basic
 
 /-!
 # Tensor induction of smooth discrete representations
@@ -17,6 +18,8 @@ power has the discrete topology and continuity of the induced action is availabl
 ## Main definitions
 
 * `TauCeti.smoothTensorInductionFunctor`: tensor induction on smooth discrete coefficients.
+* `TauCeti.TopPairing.smoothTensorInduced`: the tensor induction of a coefficient pairing, which
+  applies it in every coset factor.
 
 ## Main results
 
@@ -85,5 +88,41 @@ theorem smoothTensorInductionFunctor_map_hom_hom_apply {A B : SmoothDiscreteTopR
   -- The dictionary functors around discrete tensor induction keep the underlying maps.
   LinearMap.congr_fun (Representation.IntertwiningMap.tensorInduced_toLinearMap
     ((ofSmoothDiscrete R U).map f) s) x
+
+section Pairing
+
+variable {R G} {A B C : SmoothDiscreteTopRep.{u, v, max v w} R U}
+  (P : TopPairing A.obj B.obj C.obj)
+
+/-- **The tensor induction of a coefficient pairing**: applying a pairing of smooth discrete
+`U`-representations in every coset factor gives a coefficient pairing of their tensor inductions
+to `G`. -/
+noncomputable def TopPairing.smoothTensorInduced :
+    TopPairing
+      ((toSmoothDiscrete R G).obj
+        (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj A))).obj
+      ((toSmoothDiscrete R G).obj
+        (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj B))).obj
+      ((toSmoothDiscrete R G).obj
+        (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj C))).obj where
+  bil := PiTensorProduct.map₂ fun _ ↦ P.bil
+  cont := by
+    have := ((toSmoothDiscrete R G).obj
+      (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj A))).property.discreteTopology
+    have := ((toSmoothDiscrete R G).obj
+      (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj B))).property.discreteTopology
+    exact continuous_of_discreteTopology
+  equivariant g a b := U.map₂_tensorInducedRepresentation s P.bil
+    (fun u m n ↦ (congrArg₂ (fun a b ↦ P.bil a b) (ofSmoothDiscrete_obj_ρ_apply R U A u m)
+      (ofSmoothDiscrete_obj_ρ_apply R U B u n)).trans
+        ((P.equivariant u m n).trans (ofSmoothDiscrete_obj_ρ_apply R U C u _).symm)) g a b
+
+/-- The tensor induction of a coefficient pairing applies it in every coset factor. -/
+@[simp]
+theorem TopPairing.smoothTensorInduced_bil :
+    (P.smoothTensorInduced U hU s).bil = PiTensorProduct.map₂ fun _ ↦ P.bil :=
+  (rfl)
+
+end Pairing
 
 end TauCeti

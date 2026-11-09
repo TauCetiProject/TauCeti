@@ -257,10 +257,14 @@ private theorem isUnit_Δ_of_iso [W.IsElliptic] {a b : R}
   rw [← hC]
   exact (C • W).isUnit_Δ
 
+variable (hP : P ≫ W.projModelOver = 𝟙 _)
+
+include hP
+
 -- A classifying pair of `(W, P)` over `Spec φ` is the base change morphism along `φ`, composed
 -- with a pointed isomorphism from `projModel W` to the Tate normal form with the images of `A` and
 -- `B` as coefficients, carrying `P` to `(0, 0)`.
-private theorem exists_iso_of_isTate (hP : P ≫ W.projModelOver = 𝟙 _)
+private theorem exists_iso_of_isTate
     {φ : ULift.{u} UniversalTate.Ring →+* R} {g : W.projModel ⟶ curveULift.projModel}
     (hg : IsTate W.projModelOver W.projModelZero P (Spec.map (CommRingCat.ofHom φ)) g) :
     ∃ e : (tateNormalForm (φ curveULift.a₁) (φ curveULift.a₃)).projModel ≅ W.projModel,
@@ -287,11 +291,24 @@ private theorem exists_iso_of_isTate (hP : P ≫ W.projModelOver = 𝟙 _)
     · rw [Category.assoc, he, hg.2.2, hT.2.2]
     · simp [he', hP]
 
-variable [W.IsElliptic] (hP : P ≫ W.projModelOver = 𝟙 _)
-  (h₁ : ∀ s, P s ≠ W.projModelZero s) (h₂ : ∀ s, (P ≫ W.projModelMulBy 2) s ≠ W.projModelZero s)
+variable [W.IsElliptic]
+
+-- Over an affine base, a classifying pair is determined by its base.
+private theorem IsTate.total_eq {f : Spec (.of R) ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))}
+    {g g' : W.projModel ⟶ curveULift.projModel}
+    (hg : IsTate W.projModelOver W.projModelZero P f g)
+    (hg' : IsTate W.projModelOver W.projModelZero P f g') : g = g' := by
+  obtain ⟨⟨φ⟩, rfl⟩ := Spec.map_surjective f
+  obtain ⟨e, he, he₀, heP, rfl⟩ := exists_iso_of_isTate hP hg
+  obtain ⟨e', he', he₀', heP', rfl⟩ := exists_iso_of_isTate hP hg'
+  rw [tateNormalForm_iso_ext he he₀ he' he₀' (heP.trans heP'.symm)]
+
+variable (h₁ : ∀ s, P s ≠ W.projModelZero s)
+  (h₂ : ∀ s, (P ≫ W.projModelMulBy 2) s ≠ W.projModelZero s)
   (h₃ : ∀ s, (P ≫ W.projModelMulBy 3) s ≠ W.projModelZero s)
 
-include hP h₁ h₂ h₃ in
+include h₁ h₂ h₃
+
 -- Over an affine base, a section `P` satisfying the conditions of the Tate normal form has a
 -- classifying pair.
 private theorem exists_isTate :
@@ -309,7 +326,6 @@ private theorem exists_isTate :
   exact ⟨_, _, by simpa using hsq.paste_horiz hT.1, by rw [reassoc_of% he₀', hT.2.1],
     by rw [reassoc_of% heP', hT.2.2]⟩
 
-include hP h₁ h₂ h₃ in
 -- Over an affine base, the base of a classifying pair is unique.
 private theorem IsTate.base_eq {f f' : Spec (.of R) ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))}
     {g g' : W.projModel ⟶ curveULift.projModel}
@@ -326,17 +342,6 @@ private theorem IsTate.base_eq {f f' : Spec (.of R) ⟶ Spec (.of (ULift.{u} Uni
   obtain ⟨hΔ, hφ⟩ := eq_liftULift φ
   obtain ⟨hΔ', hφ'⟩ := eq_liftULift φ'
   rw [hφ, hφ', liftULift_congr hΔ hΔ' (congrArg Prod.fst hab) (congrArg Prod.snd hab)]
-
-include hP in
--- Over an affine base, a classifying pair is determined by its base.
-private theorem IsTate.total_eq {f : Spec (.of R) ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))}
-    {g g' : W.projModel ⟶ curveULift.projModel}
-    (hg : IsTate W.projModelOver W.projModelZero P f g)
-    (hg' : IsTate W.projModelOver W.projModelZero P f g') : g = g' := by
-  obtain ⟨⟨φ⟩, rfl⟩ := Spec.map_surjective f
-  obtain ⟨e, he, he₀, heP, rfl⟩ := exists_iso_of_isTate hP hg
-  obtain ⟨e', he', he₀', heP', rfl⟩ := exists_iso_of_isTate hP hg'
-  rw [tateNormalForm_iso_ext he he₀ he' he₀' (heP.trans heP'.symm)]
 
 end Affine
 
@@ -378,230 +383,6 @@ private theorem isTate_chart {f : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring)
 
 end Chart
 
--- Morphisms out of `S` are determined on the bases of the charts of an atlas.
-private theorem hom_ext_baseMap (A : PointedWeierstrassAtlas E.structureMap E.zero)
-    {Z : Scheme.{u}} {x y : S ⟶ Z} (h : ∀ i, (A.chart i).baseMap ≫ x = (A.chart i).baseMap ≫ y) :
-    x = y :=
-  A.hom_ext (𝟙 S) x y fun i ↦ by
-    have hc : pullback.fst (𝟙 S) (A.chart i).baseMap = pullback.snd _ _ ≫ (A.chart i).baseMap := by
-      simpa using pullback.condition (f := 𝟙 S) (g := (A.chart i).baseMap)
-    rw [hc, Category.assoc, Category.assoc, h]
-
-variable (h₁ : ∀ s, P s ≠ E.zero s) (h₂ : ∀ s, (P ≫ (E.mulBy 2).left) s ≠ E.zero s)
-  (h₃ : ∀ s, (P ≫ (E.mulBy 3).left) s ≠ E.zero s)
-
-include hP h₁ h₂ h₃ in
--- A classifying pair of `(E, P)` is unique: by the affine case, on the charts of an atlas.
-private theorem IsTate.unique {f f' : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))}
-    {g g' : E.carrier ⟶ curveULift.projModel} (hg : IsTate E.structureMap E.zero P f g)
-    (hg' : IsTate E.structureMap E.zero P f' g') : f = f' ∧ g = g' := by
-  obtain ⟨A⟩ := E.localModel
-  obtain rfl : f = f' := hom_ext_baseMap A fun i ↦ by
-    have := IsTate.base_eq ((A.chart i).modelPoint_projModelOver hP)
-      ((A.chart i).modelPoint_apply_ne hP h₁) (modelPoint_mulBy_ne hP _ h₂)
-      (modelPoint_mulBy_ne hP _ h₃) (isTate_chart hP (A.chart i) hg)
-      (isTate_chart hP (A.chart i) hg')
-    rw [← cancel_epi (A.chart i).baseIso.inv]
-    simpa using this
-  refine ⟨rfl, A.hom_ext_of_toTotal g g' fun i ↦ ?_⟩
-  have := IsTate.total_eq ((A.chart i).modelPoint_projModelOver hP)
-    (isTate_chart hP (A.chart i) hg)
-    (isTate_chart hP (A.chart i) hg')
-  rw [← cancel_epi (A.chart i).modelIso.inv]
-  simpa using this
-
-section Glue
-
-variable (c : PointedWeierstrassChart E.structureMap E.zero)
-
-include h₁ h₂ h₃ in
-private theorem exists_isTate_chart :
-    ∃ f g, IsTate c.equation.projModelOver c.equation.projModelZero (c.modelPoint hP) f g :=
-  exists_isTate (c.modelPoint_projModelOver hP) (c.modelPoint_apply_ne hP h₁)
-    (modelPoint_mulBy_ne hP c h₂) (modelPoint_mulBy_ne hP c h₃)
-
--- The base of a chosen classifying pair of the model of `c`.
-private noncomputable def chartBase : Spec c.ring ⟶ Spec (.of (ULift.{u} UniversalTate.Ring)) :=
-  (exists_isTate_chart hP h₁ h₂ h₃ c).choose
-
--- The total morphism of a chosen classifying pair of the model of `c`.
-private noncomputable def chartTotal : c.equation.projModel ⟶ curveULift.projModel :=
-  (exists_isTate_chart hP h₁ h₂ h₃ c).choose_spec.choose
-
-private theorem isTate_chartBase :
-    IsTate c.equation.projModelOver c.equation.projModelZero (c.modelPoint hP)
-      (chartBase hP h₁ h₂ h₃ c) (chartTotal hP h₁ h₂ h₃ c) :=
-  (exists_isTate_chart hP h₁ h₂ h₃ c).choose_spec.choose_spec
-
-variable {c} {k : PointedWeierstrassChart E.structureMap E.zero} {h : k.base ⟶ c.base}
-  (hh : h ≫ c.baseMap = k.baseMap)
-
--- The chosen classifying pair of `c` restricts along a morphism of chart bases to the chosen
--- classifying pair of `k`, by uniqueness over an affine base.
-private theorem isTate_projModelMap :
-    IsTate k.equation.projModelOver k.equation.projModelZero (k.modelPoint hP)
-      ((k.baseIso.inv ≫ h ≫ c.baseIso.hom) ≫ chartBase hP h₁ h₂ h₃ c)
-      (PointedWeierstrassChart.projModelMap hh ≫ chartTotal hP h₁ h₂ h₃ c) :=
-  (isTate_chartBase hP h₁ h₂ h₃ c).comp (PointedWeierstrassChart.isPullback_projModelMap hh)
-    (PointedWeierstrassChart.projModelZero_projModelMap hh)
-    (PointedWeierstrassChart.modelPoint_projModelMap hP hh)
-
-include hh in
-private theorem chartBase_comp :
-    (k.baseIso.inv ≫ h ≫ c.baseIso.hom) ≫ chartBase hP h₁ h₂ h₃ c = chartBase hP h₁ h₂ h₃ k :=
-  IsTate.base_eq (k.modelPoint_projModelOver hP) (k.modelPoint_apply_ne hP h₁)
-    (modelPoint_mulBy_ne hP k h₂) (modelPoint_mulBy_ne hP k h₃)
-    (isTate_projModelMap hP h₁ h₂ h₃ hh) (isTate_chartBase hP h₁ h₂ h₃ k)
-
-private theorem chartTotal_comp :
-    PointedWeierstrassChart.projModelMap hh ≫ chartTotal hP h₁ h₂ h₃ c =
-      chartTotal hP h₁ h₂ h₃ k :=
-  IsTate.total_eq (k.modelPoint_projModelOver hP)
-    (chartBase_comp hP h₁ h₂ h₃ hh ▸ isTate_projModelMap hP h₁ h₂ h₃ hh)
-    (isTate_chartBase hP h₁ h₂ h₃ k)
-
-variable (c) in
--- The classifying morphism of the chosen classifying pair of `c`, on the part of `S` over its base.
-private noncomputable def pieceBase :
-    pullback (𝟙 S) c.baseMap ⟶ Spec (.of (ULift.{u} UniversalTate.Ring)) :=
-  pullback.snd (𝟙 S) c.baseMap ≫ c.baseIso.hom ≫ chartBase hP h₁ h₂ h₃ c
-
-private theorem map_pieceBase :
-    pullback.map (𝟙 S) k.baseMap (𝟙 S) c.baseMap (𝟙 _) h (𝟙 _) (by simp) (by simp [hh]) ≫
-      pieceBase hP h₁ h₂ h₃ c = pieceBase hP h₁ h₂ h₃ k := by
-  simp [pieceBase, ← chartBase_comp hP h₁ h₂ h₃ hh]
-
-variable (c) in
--- The total morphism of the chosen classifying pair of `c`, on the part of `E` over its base.
-private noncomputable def pieceTotal : pullback E.structureMap c.baseMap ⟶ curveULift.projModel :=
-  c.isPullback.isoPullback.inv ≫ c.modelIso.hom ≫ chartTotal hP h₁ h₂ h₃ c
-
-private theorem map_pieceTotal :
-    pullback.map E.structureMap k.baseMap E.structureMap c.baseMap (𝟙 _) h (𝟙 _) (by simp)
-      (by simp [hh]) ≫ pieceTotal hP h₁ h₂ h₃ c = pieceTotal hP h₁ h₂ h₃ k := by
-  have key : pullback.map E.structureMap k.baseMap E.structureMap c.baseMap (𝟙 _) h (𝟙 _)
-      (by simp) (by simp [hh]) ≫ c.isPullback.isoPullback.inv =
-      k.isPullback.isoPullback.inv ≫ PointedWeierstrassChart.pullbackCarrierMap hh :=
-    c.isPullback.hom_ext (by simp) (by simp)
-  rw [pieceTotal, pieceTotal, reassoc_of% key, ← chartTotal_comp hP h₁ h₂ h₃ hh]
-  simp
-
--- The classifying morphism of `(E, P)`, glued from the chosen classifying pairs of the charts.
-private noncomputable def tateBase : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring)) :=
-  glueMorphisms (pieceBase hP h₁ h₂ h₃) (map_pieceBase hP h₁ h₂ h₃)
-
--- The morphism to the universal Tate normal form, glued from the chosen classifying pairs of the
--- charts.
-private noncomputable def tateTotal : E.carrier ⟶ curveULift.projModel :=
-  glueMorphisms (pieceTotal hP h₁ h₂ h₃) (map_pieceTotal hP h₁ h₂ h₃)
-
-variable (c) in
-@[reassoc]
-private theorem baseMap_tateBase :
-    c.baseMap ≫ tateBase hP h₁ h₂ h₃ = c.baseIso.hom ≫ chartBase hP h₁ h₂ h₃ c := by
-  simpa [tateBase, pieceBase, -fst_glueMorphisms, -fst_glueMorphisms_assoc] using
-    pullback.lift c.baseMap (𝟙 c.base) (by simp) ≫=
-      fst_glueMorphisms (pieceBase hP h₁ h₂ h₃) (map_pieceBase hP h₁ h₂ h₃) c
-
-variable (c) in
-private theorem toTotal_tateTotal :
-    c.toTotal ≫ tateTotal hP h₁ h₂ h₃ = c.modelIso.hom ≫ chartTotal hP h₁ h₂ h₃ c := by
-  simpa [tateTotal, pieceTotal, -fst_glueMorphisms, -fst_glueMorphisms_assoc] using
-    c.isPullback.isoPullback.hom ≫=
-      fst_glueMorphisms (pieceTotal hP h₁ h₂ h₃) (map_pieceTotal hP h₁ h₂ h₃) c
-
--- The glued pair classifies `(E, P)`: this is checked over the charts of an atlas.
-private theorem isTate_tate :
-    IsTate E.structureMap E.zero P (tateBase hP h₁ h₂ h₃) (tateTotal hP h₁ h₂ h₃) := by
-  obtain ⟨A⟩ := E.localModel
-  refine ⟨?_, hom_ext_baseMap A fun i ↦ ?_, hom_ext_baseMap A fun i ↦ ?_⟩
-  · -- cartesian, checked over the cover of `S` by the chart bases of `A`
-    let 𝒰 : S.OpenCover := Scheme.Cover.mkOfCovers A.index (fun i ↦ (A.chart i).base)
-      (fun i ↦ (A.chart i).baseMap) A.covers
-    refine (Scheme.isPullback_of_openCover _ _ _ _ 𝒰 fun i ↦ ?_).flip
-    -- the maps of `𝒰` are the chart base maps, and those of its pullback along `E.structureMap`
-    -- are the projections; `simp` does not see through `Scheme.Cover.mkOfCovers` here
-    change IsPullback (pullback.snd E.structureMap (A.chart i).baseMap)
-      (pullback.fst E.structureMap (A.chart i).baseMap ≫ tateTotal hP h₁ h₂ h₃)
-      ((A.chart i).baseMap ≫ tateBase hP h₁ h₂ h₃) curveULift.projModelOver
-    -- over the base of a chart, this is the cartesian square of the chosen classifying pair
-    rw [baseMap_tateBase, ← (A.chart i).isPullback.isoPullback_inv_fst, Category.assoc,
-      toTotal_tateTotal]
-    exact (isTate_chartBase hP h₁ h₂ h₃ (A.chart i)).1.flip.of_iso
-      ((A.chart i).modelIso.symm ≪≫ (A.chart i).isPullback.isoPullback) (A.chart i).baseIso.symm
-      (.refl _) (.refl _)
-      (by simp [Iso.eq_inv_comp]) (by simp) (by simp)
-      (by simp)
-  · rw [← (A.chart i).pulledZero_toTotal_assoc, toTotal_tateTotal,
-      (A.chart i).modelIso_zero_assoc, (isTate_chartBase hP h₁ h₂ h₃ _).2.1,
-      baseMap_tateBase_assoc]
-  · rw [← PointedWeierstrassChart.chartPoint_toTotal_assoc _ hP, toTotal_tateTotal,
-      reassoc_of% PointedWeierstrassChart.chartPoint_modelIso_hom _ hP,
-      (isTate_chartBase hP h₁ h₂ h₃ _).2.2, baseMap_tateBase_assoc]
-
-end Glue
-
-/-! ### The universal property -/
-
-include hP h₁ h₂ h₃ in
-variable (E) in
-/-- **The universal Tate normal form.** Let `E` be an elliptic curve over a scheme `S` and `P` a
-section of `E` such that none of `P`, `2P` and `3P` meets the zero section over any point of `S`.
-Then there is a unique pair of a morphism `f : S ⟶ Spec ℤ[A, B][Δ⁻¹]` and a morphism `g` from `E`
-to the projective model of the universal Tate normal form `Y² + AXY + BY = X³ + BX²` such that `g`
-exhibits `E` as the base change of the universal Tate normal form along `f`, carrying the zero
-section of `E` to the zero section and `P` to the point `(0, 0)`. Conversely, such a pair exists
-only if `P`, `2P` and `3P` miss the zero section everywhere (`exists_tateNormalForm_iff`). -/
-theorem existsUnique_tateNormalForm :
-    ∃! fg : (S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))) × (E.carrier ⟶ curveULift.projModel),
-      IsPullback fg.2 E.structureMap curveULift.projModelOver fg.1 ∧
-        E.zero ≫ fg.2 = fg.1 ≫ curveULift.projModelZero ∧ P ≫ fg.2 = fg.1 ≫ point :=
-  ⟨(tateBase hP h₁ h₂ h₃, tateTotal hP h₁ h₂ h₃), isTate_tate hP h₁ h₂ h₃, fun _ hfg ↦
-    have h := IsTate.unique hP h₁ h₂ h₃ hfg (isTate_tate hP h₁ h₂ h₃)
-    Prod.ext h.1 h.2⟩
-
-include hP in
-variable (E) in
-/-- **The conditions of the Tate normal form are necessary.** A section `P` of an elliptic curve `E`
-over `S` is the pullback of the point `(0, 0)` of the universal Tate normal form along a cartesian
-morphism from `E` carrying the zero section to the zero section exactly when none of `P`, `2P` and
-`3P` meets the zero section over any point of `S`. -/
-theorem exists_tateNormalForm_iff :
-    (∃ (f : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))) (g : E.carrier ⟶ curveULift.projModel),
-      IsPullback g E.structureMap curveULift.projModelOver f ∧
-        E.zero ≫ g = f ≫ curveULift.projModelZero ∧ P ≫ g = f ≫ point) ↔
-      (∀ s, P s ≠ E.zero s) ∧ (∀ s, (P ≫ (E.mulBy 2).left) s ≠ E.zero s) ∧
-        ∀ s, (P ≫ (E.mulBy 3).left) s ≠ E.zero s := by
-  refine ⟨fun ⟨f, g, hg, h₀, hgP⟩ ↦ ?_, fun ⟨h₁, h₂, h₃⟩ ↦
-    let ⟨⟨f, g⟩, h, _⟩ := E.existsUnique_tateNormalForm hP h₁ h₂ h₃; ⟨f, g, h⟩⟩
-  -- `g` carries `P`, `2P` and `3P` to the corresponding multiples of `(0, 0)`, which satisfy the
-  -- conditions, and multiplication by `n` commutes with `g`
-  have hn (n : ℤ) (s : S) (hs : (P ≫ (E.mulBy n).left) s = E.zero s) :
-      (point ≫ curveULift.projModelMulBy n) (f s) = curveULift.projModelZero (f s) := by
-    simpa only [← Scheme.Hom.comp_apply, Category.assoc,
-      ← curveULift.comp_projModelMulBy_of_isPullback hg h₀, reassoc_of% hgP, h₀] using
-      congrArg g hs
-  exact ⟨fun s hs ↦ point_ne_projModelZero (f s) (by
-      simpa only [← Scheme.Hom.comp_apply, hgP, h₀] using congrArg g hs),
-    fun s hs ↦ point_projModelMulBy_two_ne_projModelZero (f s) (hn 2 s hs),
-    fun s hs ↦ point_projModelMulBy_three_ne_projModelZero (f s) (hn 3 s hs)⟩
-
-include hP h₁ h₂ h₃ in
-/-- **Automorphisms fixing a point of order at least four are trivial.** Let `P` be a section of
-`E` such that none of `P`, `2P` and `3P` meets the zero section over any point of `S`. An
-automorphism `τ` of `E` over `S`, given as a cartesian square over the identity of `S`, which fixes
-the zero section and `P` is the identity. The cartesian hypothesis cannot be dropped: if `P` is
-killed by `N`, multiplication by `N + 1` fixes the zero section and `P`. -/
-theorem eq_id_of_isPullback_of_comp_eq {τ : E.carrier ⟶ E.carrier}
-    (hτ : IsPullback τ E.structureMap E.structureMap (𝟙 S)) (h0 : E.zero ≫ τ = E.zero)
-    (hPτ : P ≫ τ = P) : τ = 𝟙 _ := by
-  -- composing the classifying morphism of `(E, P)` with `τ` gives a second classifying morphism
-  obtain ⟨⟨f, g⟩, ⟨hg, hg0, hgP⟩, huniq⟩ := E.existsUnique_tateNormalForm hP h₁ h₂ h₃
-  have hτg : τ ≫ g = g := congrArg Prod.snd <| huniq (f, τ ≫ g)
-    ⟨by simpa using hτ.paste_horiz hg, by simp [reassoc_of% h0, hg0],
-      by simp [reassoc_of% hPτ, hgP]⟩
-  exact hg.hom_ext (by simpa using hτg) (by simpa using hτ.w)
-
 /-! ### The universal Tate normal form as an elliptic curve -/
 
 -- Reading the universal Tate normal form on its projective model through `toEllipticCurveGeomIso`
@@ -626,8 +407,187 @@ private theorem isTate_curveGeom_iff {f : S ⟶ Spec (.of (ULift.{u} UniversalTa
     · rw [← cancel_mono (toEllipticCurveGeomIso curveULift).hom]
       simp
 
-include hP h₁ h₂ h₃ in
-variable (E) in
+/-! ### The classifying pair -/
+
+section Classifying
+
+variable (h₁ : ∀ s, P s ≠ E.zero s) (h₂ : ∀ s, (P ≫ (E.mulBy 2).left) s ≠ E.zero s)
+  (h₃ : ∀ s, (P ≫ (E.mulBy 3).left) s ≠ E.zero s)
+
+include hP h₁ h₂ h₃
+
+-- A classifying pair of `(E, P)` is unique: by the affine case, on the charts of an atlas.
+private theorem IsTate.unique {f f' : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))}
+    {g g' : E.carrier ⟶ curveULift.projModel} (hg : IsTate E.structureMap E.zero P f g)
+    (hg' : IsTate E.structureMap E.zero P f' g') : f = f' ∧ g = g' := by
+  obtain ⟨A⟩ := E.localModel
+  obtain rfl : f = f' := A.openCover.hom_ext _ _ fun i ↦ by
+    dsimp only [PointedWeierstrassAtlas.openCover_X, PointedWeierstrassAtlas.openCover_f]
+    have := IsTate.base_eq ((A.chart i).modelPoint_projModelOver hP)
+      ((A.chart i).modelPoint_apply_ne hP h₁) (modelPoint_mulBy_ne hP _ h₂)
+      (modelPoint_mulBy_ne hP _ h₃) (isTate_chart hP (A.chart i) hg)
+      (isTate_chart hP (A.chart i) hg')
+    rw [← cancel_epi (A.chart i).baseIso.inv]
+    simpa using this
+  refine ⟨rfl, A.hom_ext_of_toTotal g g' fun i ↦ ?_⟩
+  have := IsTate.total_eq ((A.chart i).modelPoint_projModelOver hP)
+    (isTate_chart hP (A.chart i) hg)
+    (isTate_chart hP (A.chart i) hg')
+  rw [← cancel_epi (A.chart i).modelIso.inv]
+  simpa using this
+
+section Glue
+
+variable (c : PointedWeierstrassChart E.structureMap E.zero)
+
+private theorem exists_isTate_chart :
+    ∃ f g, IsTate c.equation.projModelOver c.equation.projModelZero (c.modelPoint hP) f g :=
+  exists_isTate (c.modelPoint_projModelOver hP) (c.modelPoint_apply_ne hP h₁)
+    (modelPoint_mulBy_ne hP c h₂) (modelPoint_mulBy_ne hP c h₃)
+
+-- The base of a chosen classifying pair of the model of `c`.
+private noncomputable def chartBase : Spec c.ring ⟶ Spec (.of (ULift.{u} UniversalTate.Ring)) :=
+  (exists_isTate_chart hP h₁ h₂ h₃ c).choose
+
+-- The total morphism of a chosen classifying pair of the model of `c`.
+private noncomputable def chartTotal : c.equation.projModel ⟶ curveULift.projModel :=
+  (exists_isTate_chart hP h₁ h₂ h₃ c).choose_spec.choose
+
+private theorem isTate_chartBase :
+    IsTate c.equation.projModelOver c.equation.projModelZero (c.modelPoint hP)
+      (chartBase hP h₁ h₂ h₃ c) (chartTotal hP h₁ h₂ h₃ c) :=
+  (exists_isTate_chart hP h₁ h₂ h₃ c).choose_spec.choose_spec
+
+-- The classifying morphism of the chosen classifying pair of `c`, on the part of `S` over its base.
+private noncomputable def pieceBase :
+    pullback (𝟙 S) c.baseMap ⟶ Spec (.of (ULift.{u} UniversalTate.Ring)) :=
+  pullback.snd (𝟙 S) c.baseMap ≫ c.baseIso.hom ≫ chartBase hP h₁ h₂ h₃ c
+
+-- The total morphism of the chosen classifying pair of `c`, on the part of `E` over its base.
+private noncomputable def pieceTotal : pullback E.structureMap c.baseMap ⟶ curveULift.projModel :=
+  c.isPullback.isoPullback.inv ≫ c.modelIso.hom ≫ chartTotal hP h₁ h₂ h₃ c
+
+section Compat
+
+variable {c} {k : PointedWeierstrassChart E.structureMap E.zero} {h : k.base ⟶ c.base}
+  (hh : h ≫ c.baseMap = k.baseMap)
+
+include hh
+
+-- The chosen classifying pair of `c` restricts along a morphism of chart bases to the chosen
+-- classifying pair of `k`, by uniqueness over an affine base.
+private theorem isTate_projModelMap :
+    IsTate k.equation.projModelOver k.equation.projModelZero (k.modelPoint hP)
+      ((k.baseIso.inv ≫ h ≫ c.baseIso.hom) ≫ chartBase hP h₁ h₂ h₃ c)
+      (PointedWeierstrassChart.projModelMap hh ≫ chartTotal hP h₁ h₂ h₃ c) :=
+  (isTate_chartBase hP h₁ h₂ h₃ c).comp (PointedWeierstrassChart.isPullback_projModelMap hh)
+    (PointedWeierstrassChart.projModelZero_projModelMap hh)
+    (PointedWeierstrassChart.modelPoint_projModelMap hP hh)
+
+private theorem chartBase_comp :
+    (k.baseIso.inv ≫ h ≫ c.baseIso.hom) ≫ chartBase hP h₁ h₂ h₃ c = chartBase hP h₁ h₂ h₃ k :=
+  IsTate.base_eq (k.modelPoint_projModelOver hP) (k.modelPoint_apply_ne hP h₁)
+    (modelPoint_mulBy_ne hP k h₂) (modelPoint_mulBy_ne hP k h₃)
+    (isTate_projModelMap hP h₁ h₂ h₃ hh) (isTate_chartBase hP h₁ h₂ h₃ k)
+
+private theorem chartTotal_comp :
+    PointedWeierstrassChart.projModelMap hh ≫ chartTotal hP h₁ h₂ h₃ c =
+      chartTotal hP h₁ h₂ h₃ k :=
+  IsTate.total_eq (k.modelPoint_projModelOver hP)
+    (chartBase_comp hP h₁ h₂ h₃ hh ▸ isTate_projModelMap hP h₁ h₂ h₃ hh)
+    (isTate_chartBase hP h₁ h₂ h₃ k)
+
+private theorem map_pieceBase :
+    pullback.map (𝟙 S) k.baseMap (𝟙 S) c.baseMap (𝟙 _) h (𝟙 _) (by simp) (by simp [hh]) ≫
+      pieceBase hP h₁ h₂ h₃ c = pieceBase hP h₁ h₂ h₃ k := by
+  simp [pieceBase, ← chartBase_comp hP h₁ h₂ h₃ hh]
+
+private theorem map_pieceTotal :
+    pullback.map E.structureMap k.baseMap E.structureMap c.baseMap (𝟙 _) h (𝟙 _) (by simp)
+      (by simp [hh]) ≫ pieceTotal hP h₁ h₂ h₃ c = pieceTotal hP h₁ h₂ h₃ k := by
+  have key : pullback.map E.structureMap k.baseMap E.structureMap c.baseMap (𝟙 _) h (𝟙 _)
+      (by simp) (by simp [hh]) ≫ c.isPullback.isoPullback.inv =
+      k.isPullback.isoPullback.inv ≫ PointedWeierstrassChart.pullbackCarrierMap hh :=
+    c.isPullback.hom_ext (by simp) (by simp)
+  rw [pieceTotal, pieceTotal, reassoc_of% key, ← chartTotal_comp hP h₁ h₂ h₃ hh]
+  simp
+
+end Compat
+
+-- The classifying morphism of `(E, P)`, glued from the chosen classifying pairs of the charts.
+private noncomputable def tateBase : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring)) :=
+  glueMorphisms (pieceBase hP h₁ h₂ h₃) (map_pieceBase hP h₁ h₂ h₃)
+
+-- The morphism to the universal Tate normal form, glued from the chosen classifying pairs of the
+-- charts.
+private noncomputable def tateTotal : E.carrier ⟶ curveULift.projModel :=
+  glueMorphisms (pieceTotal hP h₁ h₂ h₃) (map_pieceTotal hP h₁ h₂ h₃)
+
+@[reassoc]
+private theorem baseMap_tateBase :
+    c.baseMap ≫ tateBase hP h₁ h₂ h₃ = c.baseIso.hom ≫ chartBase hP h₁ h₂ h₃ c := by
+  simpa [tateBase, pieceBase, -fst_glueMorphisms, -fst_glueMorphisms_assoc] using
+    pullback.lift c.baseMap (𝟙 c.base) (by simp) ≫=
+      fst_glueMorphisms (pieceBase hP h₁ h₂ h₃) (map_pieceBase hP h₁ h₂ h₃) c
+
+private theorem toTotal_tateTotal :
+    c.toTotal ≫ tateTotal hP h₁ h₂ h₃ = c.modelIso.hom ≫ chartTotal hP h₁ h₂ h₃ c := by
+  simpa [tateTotal, pieceTotal, -fst_glueMorphisms, -fst_glueMorphisms_assoc] using
+    c.isPullback.isoPullback.hom ≫=
+      fst_glueMorphisms (pieceTotal hP h₁ h₂ h₃) (map_pieceTotal hP h₁ h₂ h₃) c
+
+-- The glued pair classifies `(E, P)`: this is checked over the charts of an atlas.
+private theorem isTate_tate :
+    IsTate E.structureMap E.zero P (tateBase hP h₁ h₂ h₃) (tateTotal hP h₁ h₂ h₃) := by
+  obtain ⟨A⟩ := E.localModel
+  refine ⟨?_, A.openCover.hom_ext _ _ fun i ↦ ?_, A.openCover.hom_ext _ _ fun i ↦ ?_⟩
+  · -- cartesian, checked over the cover of `S` by the chart bases of `A`
+    refine (Scheme.isPullback_of_openCover _ _ _ _ A.openCover fun i ↦ ?_).flip
+    -- the maps of `A.openCover` are the chart base maps, and those of its pullback along
+    -- `E.structureMap` are the projections; `simp` does not see through the pullback cover here
+    change IsPullback (pullback.snd E.structureMap (A.chart i).baseMap)
+      (pullback.fst E.structureMap (A.chart i).baseMap ≫ tateTotal hP h₁ h₂ h₃)
+      ((A.chart i).baseMap ≫ tateBase hP h₁ h₂ h₃) curveULift.projModelOver
+    -- over the base of a chart, this is the cartesian square of the chosen classifying pair
+    rw [baseMap_tateBase, ← (A.chart i).isPullback.isoPullback_inv_fst, Category.assoc,
+      toTotal_tateTotal]
+    exact (isTate_chartBase hP h₁ h₂ h₃ (A.chart i)).1.flip.of_iso
+      ((A.chart i).modelIso.symm ≪≫ (A.chart i).isPullback.isoPullback) (A.chart i).baseIso.symm
+      (.refl _) (.refl _)
+      (by simp [Iso.eq_inv_comp]) (by simp) (by simp)
+      (by simp)
+  · dsimp only [PointedWeierstrassAtlas.openCover_X, PointedWeierstrassAtlas.openCover_f]
+    rw [← (A.chart i).pulledZero_toTotal_assoc, toTotal_tateTotal,
+      (A.chart i).modelIso_zero_assoc, (isTate_chartBase hP h₁ h₂ h₃ _).2.1,
+      baseMap_tateBase_assoc]
+  · dsimp only [PointedWeierstrassAtlas.openCover_X, PointedWeierstrassAtlas.openCover_f]
+    rw [← PointedWeierstrassChart.chartPoint_toTotal_assoc _ hP, toTotal_tateTotal,
+      reassoc_of% PointedWeierstrassChart.chartPoint_modelIso_hom _ hP,
+      (isTate_chartBase hP h₁ h₂ h₃ _).2.2, baseMap_tateBase_assoc]
+
+end Glue
+
+/-! ### The universal property -/
+
+section Explicit
+
+variable (E)
+
+/-- **The universal Tate normal form.** Let `E` be an elliptic curve over a scheme `S` and `P` a
+section of `E` such that none of `P`, `2P` and `3P` meets the zero section over any point of `S`.
+Then there is a unique pair of a morphism `f : S ⟶ Spec ℤ[A, B][Δ⁻¹]` and a morphism `g` from `E`
+to the projective model of the universal Tate normal form `Y² + AXY + BY = X³ + BX²` such that `g`
+exhibits `E` as the base change of the universal Tate normal form along `f`, carrying the zero
+section of `E` to the zero section and `P` to the point `(0, 0)`. Conversely, such a pair exists
+only if `P`, `2P` and `3P` miss the zero section everywhere (`exists_tateNormalForm_iff`). -/
+theorem existsUnique_tateNormalForm :
+    ∃! fg : (S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))) × (E.carrier ⟶ curveULift.projModel),
+      IsPullback fg.2 E.structureMap curveULift.projModelOver fg.1 ∧
+        E.zero ≫ fg.2 = fg.1 ≫ curveULift.projModelZero ∧ P ≫ fg.2 = fg.1 ≫ point :=
+  ⟨(tateBase hP h₁ h₂ h₃, tateTotal hP h₁ h₂ h₃), isTate_tate hP h₁ h₂ h₃, fun _ hfg ↦
+    have h := IsTate.unique hP h₁ h₂ h₃ hfg (isTate_tate hP h₁ h₂ h₃)
+    Prod.ext h.1 h.2⟩
+
 /-- **The universal Tate normal form as an elliptic curve.** The universal property
 `existsUnique_tateNormalForm`, with the universal Tate normal form read as the elliptic curve
 `curveGeom` and its point `(0, 0)` as `pointHom`: there is a unique pair of a morphism
@@ -644,6 +604,57 @@ theorem existsUnique_tateNormalForm_curveGeom :
   have := huniq (f', g' ≫ (toEllipticCurveGeomIso curveULift).hom) (isTate_curveGeom_iff.mp hfg')
   simp only [Prod.mk.injEq] at this
   exact Prod.ext this.1 (by simp [← this.2])
+
+end Explicit
+
+/-- **Automorphisms fixing a point of order at least four are trivial.** Let `P` be a section of
+`E` such that none of `P`, `2P` and `3P` meets the zero section over any point of `S`. An
+automorphism `τ` of `E` over `S`, given as a cartesian square over the identity of `S`, which fixes
+the zero section and `P` is the identity. The cartesian hypothesis cannot be dropped: if `P` is
+killed by `N`, multiplication by `N + 1` fixes the zero section and `P`. -/
+theorem eq_id_of_isPullback_of_comp_eq {τ : E.carrier ⟶ E.carrier}
+    (hτ : IsPullback τ E.structureMap E.structureMap (𝟙 S)) (h0 : E.zero ≫ τ = E.zero)
+    (hPτ : P ≫ τ = P) : τ = 𝟙 _ := by
+  -- composing the classifying morphism of `(E, P)` with `τ` gives a second classifying morphism
+  obtain ⟨⟨f, g⟩, ⟨hg, hg0, hgP⟩, huniq⟩ := E.existsUnique_tateNormalForm hP h₁ h₂ h₃
+  have hτg : τ ≫ g = g := congrArg Prod.snd <| huniq (f, τ ≫ g)
+    ⟨by simpa using hτ.paste_horiz hg, by simp [reassoc_of% h0, hg0],
+      by simp [reassoc_of% hPτ, hgP]⟩
+  exact hg.hom_ext (by simpa using hτg) (by simpa using hτ.w)
+
+end Classifying
+
+section
+
+variable (E)
+
+include hP
+
+/-- **The conditions of the Tate normal form are necessary.** A section `P` of an elliptic curve `E`
+over `S` is the pullback of the point `(0, 0)` of the universal Tate normal form along a cartesian
+morphism from `E` carrying the zero section to the zero section exactly when none of `P`, `2P` and
+`3P` meets the zero section over any point of `S`. -/
+theorem exists_tateNormalForm_iff :
+    (∃ (f : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))) (g : E.carrier ⟶ curveULift.projModel),
+      IsPullback g E.structureMap curveULift.projModelOver f ∧
+        E.zero ≫ g = f ≫ curveULift.projModelZero ∧ P ≫ g = f ≫ point) ↔
+      (∀ s, P s ≠ E.zero s) ∧ (∀ s, (P ≫ (E.mulBy 2).left) s ≠ E.zero s) ∧
+        ∀ s, (P ≫ (E.mulBy 3).left) s ≠ E.zero s := by
+  refine ⟨fun ⟨f, g, hg, h₀, hgP⟩ ↦ ?_, fun ⟨h₁, h₂, h₃⟩ ↦
+    let ⟨⟨f, g⟩, h, _⟩ := E.existsUnique_tateNormalForm hP h₁ h₂ h₃; ⟨f, g, h⟩⟩
+  -- `g` carries `P`, `2P` and `3P` to the corresponding multiples of `(0, 0)`, which satisfy the
+  -- conditions, and multiplication by `n` commutes with `g`
+  have hn (n : ℤ) (s : S) (hs : (P ≫ (E.mulBy n).left) s = E.zero s) :
+      (point ≫ curveULift.projModelMulBy n) (f s) = curveULift.projModelZero (f s) := by
+    simpa only [← Scheme.Hom.comp_apply, Category.assoc,
+      ← curveULift.comp_projModelMulBy_of_isPullback hg h₀, reassoc_of% hgP, h₀] using
+      congrArg g hs
+  exact ⟨fun s hs ↦ point_ne_projModelZero (f s) (by
+      simpa only [← Scheme.Hom.comp_apply, hgP, h₀] using congrArg g hs),
+    fun s hs ↦ point_projModelMulBy_two_ne_projModelZero (f s) (hn 2 s hs),
+    fun s hs ↦ point_projModelMulBy_three_ne_projModelZero (f s) (hn 3 s hs)⟩
+
+end
 
 end EllipticCurveGeom
 

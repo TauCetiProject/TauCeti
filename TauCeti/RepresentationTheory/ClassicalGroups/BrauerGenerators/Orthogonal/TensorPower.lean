@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 -- `TauCeti.sum_sum_smul_tprod_update_pair_mulVec`, congruence at two slots of the cup.
-public import TauCeti.LinearAlgebra.PiTensorProduct.BasisExpansion
+public import TauCeti.LinearAlgebra.PiTensorProduct.Basis.Expansion
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Basic
 
 /-!
@@ -69,7 +69,7 @@ The pure-tensor calculations use the tuple obtained from `v` by setting the
 two slots `i` and `j` to the `c`-th standard basis vector of `kⁿ`, spelled as a pair of nested
 `Function.update`s. Mathlib's update lemmas evaluate and compose these replacements. The
 invariance of the cup uses the congruence formula at two slots from
-`TauCeti/LinearAlgebra/PiTensorProduct/BasisExpansion.lean`, specialized to the identity weight
+`TauCeti/LinearAlgebra/PiTensorProduct/Basis/Expansion.lean`, specialized to the identity weight
 matrix.
 
 Each summand of the generator is a `PiTensorProduct.map`, so the relations that do not read the arc
@@ -333,7 +333,7 @@ theorem orthogonalCupCapAt_mul_self {i j : Fin d} (hij : i ≠ j) :
     exact Finset.sum_congr rfl fun e _ => congrArg _ (by
       rw [Function.update_comm hij.symm, Function.update_idem, Function.update_idem])
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
-    Module.End.mul_apply, LinearMap.smul_apply, orthogonalCupCapAt_tprod hij, map_smul, map_sum,
+    mul_apply_eq_comp, LinearMap.smul_apply, orthogonalCupCapAt_tprod hij, map_smul, map_sum,
     Finset.sum_congr rfl fun c _ => hone c, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
     ← Nat.cast_smul_eq_nsmul k, smul_comm]
 
@@ -364,7 +364,7 @@ theorem permTensorAction_swap_mul_orthogonalCupCapAt (i j : Fin d) :
         simp [hij]
       · rw [Equiv.swap_apply_of_ne_of_ne hi hj]
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
-    Module.End.mul_apply, orthogonalCupCapAt_tprod hij, map_smul, map_sum]
+    mul_apply_eq_comp, orthogonalCupCapAt_tprod hij, map_smul, map_sum]
   refine congrArg _ (Finset.sum_congr rfl fun c _ => ?_)
   rw [permTensorAction_apply, LinearEquiv.coe_coe, PiTensorProduct.reindex_tprod, hfix c]
 
@@ -380,7 +380,7 @@ theorem orthogonalCupCapAt_mul_permTensorAction_swap (i j : Fin d) :
   refine PiTensorProduct.ext ?_
   ext v
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
-    Module.End.mul_apply, permTensorAction_apply, LinearEquiv.coe_coe,
+    mul_apply_eq_comp, permTensorAction_apply, LinearEquiv.coe_coe,
     PiTensorProduct.reindex_tprod, orthogonalCupCapAt_tprod hij, orthogonalCupCapAt_tprod hij]
   rw [Equiv.symm_swap, Equiv.swap_apply_left, Equiv.swap_apply_right,
     dotProduct_comm (v j) (v i)]
@@ -414,7 +414,7 @@ theorem permTensorAction_mul_orthogonalCupCapAt (σ : Equiv.Perm (Fin d)) (i j :
       orthogonalCupCapAt k n d (σ i) (σ j) * permTensorAction k n d σ := by
   refine PiTensorProduct.ext ?_
   ext v
-  simp only [LinearMap.compMultilinearMap_apply, Module.End.mul_apply, orthogonalCupCapAt,
+  simp only [LinearMap.compMultilinearMap_apply, mul_apply_eq_comp, orthogonalCupCapAt,
     LinearMap.sum_apply, map_sum, permTensorAction_apply, LinearEquiv.coe_coe,
     PiTensorProduct.reindex_tprod, PiTensorProduct.map_tprod]
   refine Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun c _ => congrArg _ (funext ?_)
@@ -479,82 +479,18 @@ theorem orthogonalCupCapAt_mul_mul_self {i j l : Fin d} (hij : i ≠ j) (hjl : j
     (hil : i ≠ l) :
     orthogonalCupCapAt k n d i j * orthogonalCupCapAt k n d j l * orthogonalCupCapAt k n d i j =
       orthogonalCupCapAt k n d i j := by
-  refine PiTensorProduct.ext ?_
-  ext v
-  -- The middle generator replaces the slots `j` and `l` by the `e`-th basis vector, at the cost of
-  -- the `c`-th coordinate of `v l`.
-  have hmid : ∀ c : Fin n, orthogonalCupCapAt k n d j l (PiTensorProduct.tprod k
-        (Function.update (Function.update v i (Pi.single c (1 : k))) j (Pi.single c 1))) =
-      v l c • ∑ e : Fin n, PiTensorProduct.tprod k (Function.update (Function.update
-        (Function.update (Function.update v i (Pi.single c (1 : k))) j (Pi.single c 1))
-        j (Pi.single e (1 : k))) l (Pi.single e 1)) := by
-    intro c
-    rw [orthogonalCupCapAt_tprod hjl]
-    simp only [Function.update_self, Function.update_of_ne (Ne.symm hil),
-      Function.update_of_ne (Ne.symm hjl), single_dotProduct, one_mul]
-  -- The outer generator then contracts the `c`-th against the `e`-th basis vector, so only the
-  -- diagonal term `e = c` survives, and it restores the slots `i` and `j` to the variable `f`.
-  have hout : ∀ c e : Fin n, orthogonalCupCapAt k n d i j (PiTensorProduct.tprod k
-        (Function.update (Function.update
-          (Function.update (Function.update v i (Pi.single c (1 : k))) j (Pi.single c 1))
-          j (Pi.single e (1 : k))) l (Pi.single e 1))) =
-      (if c = e then (1 : k) else 0) • ∑ f : Fin n, PiTensorProduct.tprod k (Function.update
-        (Function.update (Function.update v i (Pi.single f (1 : k))) j (Pi.single f 1))
-        l (Pi.single e 1)) := by
-    intro c e
-    have hi' : Function.update (Function.update
-        (Function.update (Function.update v i (Pi.single c (1 : k))) j (Pi.single c 1))
-        j (Pi.single e (1 : k))) l (Pi.single e 1) i = Pi.single c (1 : k) := by
-      simp [hij, hil]
-    have hj' : Function.update (Function.update
-        (Function.update (Function.update v i (Pi.single c (1 : k))) j (Pi.single c 1))
-        j (Pi.single e (1 : k))) l (Pi.single e 1) j = Pi.single e (1 : k) := by
-      rw [Function.update_of_ne hjl, Function.update_self]
-    have hplug : ∀ f : Fin n, Function.update (Function.update (Function.update
-          (Function.update (Function.update (Function.update v i (Pi.single c (1 : k))) j
-            (Pi.single c 1)) j (Pi.single e (1 : k))) l (Pi.single e 1))
-          i (Pi.single f (1 : k))) j (Pi.single f 1) =
-        Function.update (Function.update (Function.update v i (Pi.single f (1 : k))) j
-          (Pi.single f 1)) l (Pi.single e 1) := by
-      intro f
-      funext t
-      by_cases h1 : t = i <;> by_cases h2 : t = j <;> by_cases h3 : t = l <;> simp_all
-    rw [orthogonalCupCapAt_tprod hij, hi', hj', single_dotProduct, one_mul, Pi.single_apply,
-      Finset.sum_congr rfl fun f _ => congrArg _ (hplug f)]
-  -- Summing the surviving diagonal over `c` rebuilds the slot `l`.
-  have hrestore : ∀ f : Fin n, ∑ c : Fin n, v l c • PiTensorProduct.tprod k (Function.update
-        (Function.update (Function.update v i (Pi.single f (1 : k))) j (Pi.single f 1))
-        l (Pi.single c (1 : k))) =
-      PiTensorProduct.tprod k
-        (Function.update (Function.update v i (Pi.single f (1 : k))) j (Pi.single f 1)) := by
-    intro f
-    -- The slot `l` is untouched by the plug at `i` and `j`, so rewriting `v l` backwards along
-    -- this identity turns the reassembled sum into a plug of the tuple's own `l`-th entry.
-    have hplugged : Function.update (Function.update v i (Pi.single f (1 : k))) j
-        (Pi.single f 1) l = v l := by simp [Ne.symm hil, Ne.symm hjl]
-    rw [Finset.sum_congr rfl fun c _ => ((PiTensorProduct.tprod k).map_update_smul
-        (Function.update (Function.update v i (Pi.single f (1 : k))) j (Pi.single f 1)) l (v l c)
-        (Pi.single c (1 : k))).symm,
-      ← (PiTensorProduct.tprod k).map_update_sum, ← pi_eq_sum_univ' (v l), ← hplugged,
-      Function.update_eq_self]
-  have hfull : ∀ c : Fin n, orthogonalCupCapAt k n d i j (orthogonalCupCapAt k n d j l
-        (PiTensorProduct.tprod k
-          (Function.update (Function.update v i (Pi.single c (1 : k))) j (Pi.single c 1)))) =
-      ∑ f : Fin n, v l c • PiTensorProduct.tprod k (Function.update
-        (Function.update (Function.update v i (Pi.single f (1 : k))) j (Pi.single f 1))
-        l (Pi.single c (1 : k))) := by
-    intro c
-    rw [hmid c, map_smul, map_sum, Finset.sum_congr rfl fun e _ => hout c e]
-    simp only [ite_smul, one_smul, zero_smul]
-    rw [Finset.sum_ite_eq]
-    simp only [Finset.mem_univ, reduceIte]
-    rw [Finset.smul_sum]
-  rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
-    Module.End.mul_apply, Module.End.mul_apply, orthogonalCupCapAt_tprod hij]
-  simp only [map_smul, map_sum]
-  refine congrArg _ ?_
-  rw [Finset.sum_congr rfl fun c _ => hfull c, Finset.sum_comm]
-  exact Finset.sum_congr rfl fun f _ => hrestore f
+  refine (tensorPowerBasis k n d).ext fun f => ?_
+  simp only [mul_apply_eq_comp, orthogonalCupCapAt_tensorPowerBasis hij]
+  by_cases hf : f i = f j
+  · -- The arc on `j, l` keeps only the label `f l` of the first cup, the outer arc only the label
+    -- `f l` of the second, and the result is the first cup again.
+    simp only [hf, ite_true, map_sum, orthogonalCupCapAt_tensorPowerBasis hjl,
+      orthogonalCupCapAt_tensorPowerBasis hij, Function.update_self, Function.update_of_ne hil,
+      Function.update_of_ne hjl, Function.update_of_ne hij, Function.update_of_ne hil.symm,
+      Function.update_of_ne hjl.symm, Finset.mem_univ, Finset.sum_ite_eq, Finset.sum_ite_eq']
+    refine Finset.sum_congr rfl fun c _ => congrArg _ (funext fun t => ?_)
+    by_cases hti : t = i <;> by_cases htj : t = j <;> by_cases htl : t = l <;> simp_all
+  · simp [hf]
 
 /-! ### The arc as an intertwiner -/
 
@@ -572,7 +508,7 @@ theorem commute_orthogonalCupCapAt_piTensorProductMap {A : Matrix (Fin n) (Fin n
   have hcap : (A *ᵥ v i) ⬝ᵥ (A *ᵥ v j) = v i ⬝ᵥ v j := by
     rw [Matrix.dotProduct_mulVec, Matrix.vecMul_mulVec, hA, Matrix.vecMul_one]
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
-    Module.End.mul_apply, Module.End.mul_apply, PiTensorProduct.map_tprod,
+    mul_apply_eq_comp, mul_apply_eq_comp, PiTensorProduct.map_tprod,
     orthogonalCupCapAt_tprod hij, orthogonalCupCapAt_tprod hij, map_smul, map_sum]
   simp only [Matrix.mulVecLin_apply]
   rw [hcap]

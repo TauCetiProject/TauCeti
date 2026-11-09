@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+public import Mathlib.MeasureTheory.Function.LpOrder
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
-import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
@@ -22,8 +24,21 @@ bounds.
 
 * `TauCeti.Lp.norm_le_add_of_ae_norm_le`: an `Lᵖ` norm bound from pointwise domination by a
   two-term linear combination.
+* `MeasureTheory.L1.norm_eq_integral_of_nonneg`: the norm of a nonnegative real `L¹` function is
+  its integral.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
+* `MeasureTheory.lpNorm_congr_ae`: the `Lᵖ` norm of a function depends only on its almost
+  everywhere class.
+* `MeasureTheory.Lp.norm_eq_lpNorm_of_ae_eq`: the norm of an element of `Lᵖ(ν)` is the `Lᵖ` norm of
+  any representative.
+* `MeasureTheory.lpNorm_le_norm_of_ae_eq_of_le`: for `ν ≤ ν'`, the `Lᵖ(ν)` norm of a
+  representative of an element of `Lᵖ(ν')` is at most its norm.
+* `MeasureTheory.Lp.ae_norm_le_norm_top` and `MeasureTheory.Lp.norm_top_le_of_ae_bound`: an `L∞`
+  function is bounded almost everywhere by its norm, and an almost everywhere bound bounds the
+  norm, for any measure.
+* `MeasureTheory.Lp.ae_eq_max_min_norm_top`: a representative of a real `L∞` class agrees almost
+  everywhere with its truncation to `[-‖f‖, ‖f‖]`.
 * `MeasureTheory.Lp.measure_lt_norm_ne_zero`: every level strictly below the `L∞` norm is
   exceeded on a set of nonzero measure.
 * `MeasureTheory.Lp.integral_norm_le_mul_norm`: on a finite measure space, the `L¹` norm of an
@@ -81,6 +96,48 @@ namespace MeasureTheory
 
 open scoped ENNReal
 
+/-- The `Lᵖ` norm of a function depends only on its almost everywhere class. -/
+theorem lpNorm_congr_ae {alpha F : Type*} [MeasurableSpace alpha] [NormedAddCommGroup F]
+    {ν : Measure alpha} {p : ℝ≥0∞} {f g : alpha → F} (h : f =ᵐ[ν] g) :
+    lpNorm f p ν = lpNorm g p ν := by
+  rw [← toReal_eLpNorm, ← toReal_eLpNorm, eLpNorm_congr_ae h]
+
+/-- The norm of an element of `Lᵖ(ν)` is the `Lᵖ` norm of any of its representatives. -/
+theorem Lp.norm_eq_lpNorm_of_ae_eq {alpha F : Type*} [MeasurableSpace alpha]
+    [NormedAddCommGroup F] {ν : Measure alpha} {p : ℝ≥0∞} {f : Lp F p ν} {g : alpha → F}
+    (h : f =ᵐ[ν] g) : ‖f‖ = lpNorm g p ν := by
+  rw [← lpNorm_congr_ae h, Lp.norm_def, toReal_eLpNorm]
+
+/-- The `Lᵖ(ν)` norm of a function agreeing `ν`-almost everywhere with an element of `Lᵖ(ν')`, for
+`ν ≤ ν'`, is at most the norm of that element. -/
+theorem lpNorm_le_norm_of_ae_eq_of_le {alpha F : Type*} [MeasurableSpace alpha]
+    [NormedAddCommGroup F] {ν ν' : Measure alpha} {p : ℝ≥0∞} {f : alpha → F} {g : Lp F p ν'}
+    (hν : ν ≤ ν') (h : f =ᵐ[ν] g) : lpNorm f p ν ≤ ‖g‖ := by
+  rw [lpNorm_congr_ae h, ← toReal_eLpNorm, Lp.norm_def]
+  exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top _) (eLpNorm_mono_measure _ hν)
+
+/-- An `L∞` function is bounded almost everywhere by its norm. -/
+theorem Lp.ae_norm_le_norm_top {alpha F : Type*} [MeasurableSpace alpha] [NormedAddCommGroup F]
+    {m : Measure alpha} (f : Lp F ∞ m) : ∀ᵐ x ∂m, ‖f x‖ ≤ ‖f‖ := by
+  simpa [Lp.norm_def, toReal_eLpNorm] using ae_le_lpNorm_exponent_top (Lp.memLp f)
+
+/-- An almost everywhere bound on an `L∞` function bounds its norm, whatever the measure. Compare
+`MeasureTheory.Lp.norm_le_of_ae_bound`, which needs a finite measure. -/
+theorem Lp.norm_top_le_of_ae_bound {alpha F : Type*} [MeasurableSpace alpha]
+    [NormedAddCommGroup F] {m : Measure alpha} {f : Lp F ∞ m} {c : ℝ} (hc : 0 ≤ c)
+    (h : ∀ᵐ x ∂m, ‖f x‖ ≤ c) : ‖f‖ ≤ c := by
+  rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable f)]
+  exact ENNReal.toReal_le_of_le_ofReal hc (eLpNormEssSup_le_of_ae_bound h)
+
+/-- A representative `g` of a real `L∞` class `f` agrees almost everywhere with its truncation to
+`[-‖f‖, ‖f‖]`. The truncation is bounded everywhere by `‖f‖` (`TauCeti.abs_max_min_le`). -/
+theorem Lp.ae_eq_max_min_norm_top {alpha : Type*} [MeasurableSpace alpha] {m : Measure alpha}
+    {f : Lp ℝ ∞ m} {g : alpha → ℝ} (hg : f =ᵐ[m] g) :
+    g =ᵐ[m] fun x => max (-‖f‖) (min ‖f‖ (g x)) := by
+  filter_upwards [hg, Lp.ae_norm_le_norm_top f] with x h hx
+  rw [h, Real.norm_eq_abs, abs_le] at hx
+  rw [min_eq_right hx.2, max_eq_right hx.1]
+
 /-- Every nonnegative level strictly below the `L∞` norm of `f` is exceeded by `‖f‖` on a set
 of nonzero measure. -/
 theorem Lp.measure_lt_norm_ne_zero {alpha F : Type*} [MeasurableSpace alpha]
@@ -89,10 +146,13 @@ theorem Lp.measure_lt_norm_ne_zero {alpha F : Type*} [MeasurableSpace alpha]
   intro hms
   have hae : ∀ᵐ x ∂m, ‖f x‖ ≤ c :=
     (measure_eq_zero_iff_ae_notMem.mp hms).mono fun x hx ↦ le_of_not_gt hx
-  have hf_le : ‖f‖ ≤ c := by
-    rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable f)]
-    exact ENNReal.toReal_le_of_le_ofReal hc_nonneg (eLpNormEssSup_le_of_ae_bound hae)
-  exact (not_lt_of_ge hf_le) hc
+  exact (not_lt_of_ge (Lp.norm_top_le_of_ae_bound hc_nonneg hae)) hc
+
+/-- The norm of a nonnegative real `L¹` function is its integral. -/
+theorem L1.norm_eq_integral_of_nonneg {alpha : Type*} [MeasurableSpace alpha] {m : Measure alpha}
+    {f : Lp ℝ 1 m} (hf : 0 ≤ f) : ‖f‖ = ∫ x, f x ∂m := by
+  rw [L1.norm_eq_integral_norm]
+  exact integral_congr_ae (((Lp.coeFn_nonneg f).2 hf).mono fun x hx => Real.norm_of_nonneg hx)
 
 /-- For `0 < p < ∞`, the integral of the `p`-th power of the pointwise norm of an `Lᵖ` function
 is the `p`-th power of its `Lᵖ` norm. -/

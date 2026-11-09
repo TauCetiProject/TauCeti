@@ -52,7 +52,7 @@ theorem apply_mem_orbitOfRep {a : A} (ha : a ∈ S) {x : V} (hx : x ∈ X) :
 /-- The generators themselves belong to their integral orbit. -/
 theorem subset_orbitOfRep : X ⊆ (orbitOfRep S ρ X : Set V) := by
   intro x hx
-  simpa only [SetLike.mem_coe, map_one, Module.End.one_apply] using
+  simpa only [SetLike.mem_coe, map_one, one_apply_eq_self] using
     apply_mem_orbitOfRep S ρ X S.one_mem hx
 
 /-- The elimination principle for a represented integral orbit. -/
@@ -71,7 +71,7 @@ theorem apply_mem_orbitOfRep_of_mem {a : A} (ha : a ∈ S) {v : V}
   induction hv using Submodule.span_induction with
   | mem w hw =>
       obtain ⟨b, hb, x, hx, rfl⟩ := hw
-      simpa only [map_mul, Module.End.mul_apply] using
+      simpa only [map_mul, mul_apply_eq_comp] using
         apply_mem_orbitOfRep S ρ X (S.mul_mem ha hb) hx
   | zero => rw [map_zero]; exact zero_mem _
   | add a b _ _ ha hb => rw [map_add]; exact add_mem ha hb

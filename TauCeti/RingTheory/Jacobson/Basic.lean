@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Jacobson.Ideal
 public import TauCeti.Algebra.Ring.Units
+import Mathlib.RingTheory.Nilpotent.Basic
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -16,7 +17,7 @@ import Mathlib.Tactic.NoncommRing
 elementwise description of that ideal over a ring that is not assumed commutative: `x` lies in the
 radical exactly when `1 + y * x` is a unit for every `y`, equivalently when `1 + x * y` is a unit
 for every `y`. Mathlib proves the statement only over a commutative ring
-(`Ideal.mem_jacobson_bot`); the content of the noncommutative version is that membership in the
+(`Ring.mem_jacobson_iff`); the content of the noncommutative version is that membership in the
 radical only supplies a *left* inverse for `1 + y * x`, so the argument has to promote that left
 inverse to a two-sided one.
 
@@ -29,8 +30,13 @@ mechanism behind the left-right symmetry of the radical, proved in
 * `TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_left` and
   `TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_right`: the two elementwise descriptions of
   the Jacobson radical of a ring.
+* `TauCeti.Ring.mem_jacobson_of_forall_isNilpotent_mul`: an element all of whose left multiples
+  are nilpotent lies in the radical.
+* `TauCeti.Ring.isLocalHom_mk_jacobson`: units lift modulo the Jacobson radical.
 * `TauCeti.Ring.instNontrivialQuotientJacobson`: the quotient of a nontrivial ring by its Jacobson
   radical is nontrivial.
+* `Ideal.subsingleton_of_le_jacobson`: a commutative ring is trivial if its quotient by some
+  ideal in the Jacobson radical is.
 
 ## References
 
@@ -60,7 +66,7 @@ private theorem mem_jacobson_iff_forall_exists_mul_one_add_mul_eq_one {x : R} :
 
 /-- The Jacobson radical of a ring is `{x | ∀ y, IsUnit (1 + y * x)}`.
 
-Mathlib's `Ideal.mem_jacobson_bot` is this statement over a commutative ring. -/
+Mathlib's `Ring.mem_jacobson_iff` is this statement over a commutative ring. -/
 theorem mem_jacobson_iff_isUnit_one_add_mul_left {x : R} :
     x ∈ Ring.jacobson R ↔ ∀ y : R, IsUnit (1 + y * x) := by
   rw [mem_jacobson_iff_forall_exists_mul_one_add_mul_eq_one]
@@ -93,6 +99,12 @@ theorem mem_jacobson_iff_isUnit_one_add_mul_right {x : R} :
   mem_jacobson_iff_isUnit_one_add_mul_left.trans
     (forall_congr' fun _ => isUnit_one_add_mul_comm)
 
+/-- An element all of whose left multiples are nilpotent lies in the Jacobson radical. In
+particular, a left ideal consisting of nilpotent elements lies in the radical. -/
+theorem mem_jacobson_of_forall_isNilpotent_mul {x : R} (h : ∀ y : R, IsNilpotent (y * x)) :
+    x ∈ Ring.jacobson R :=
+  mem_jacobson_iff_isUnit_one_add_mul_left.2 fun y => (h y).isUnit_one_add
+
 variable (R) in
 /-- The quotient of a nontrivial ring by its Jacobson radical is nontrivial, the radical being
 proper by `Ring.jacobson_lt_top`. -/
@@ -100,6 +112,36 @@ instance instNontrivialQuotientJacobson [Nontrivial R] :
     Nontrivial (R ⧸ Ring.jacobson R) :=
   Ideal.Quotient.nontrivial_iff.mpr (Ring.jacobson_lt_top R).ne
 
+variable (R) in
+/-- **Units lift modulo the Jacobson radical**: the quotient map `R → R ⧸ J(R)` is a local
+homomorphism. If `ab ≡ 1` and `ba ≡ 1` modulo the radical, then `ab` and `ba` are units, so `a` has
+a right and a left inverse. -/
+instance isLocalHom_mk_jacobson : IsLocalHom (Ideal.Quotient.mk (Ring.jacobson R)) where
+  map_nonunit a ha := by
+    obtain ⟨b, hb⟩ := Ideal.Quotient.mk_surjective (↑ha.unit⁻¹ : R ⧸ Ring.jacobson R)
+    have hunit {x : R} (hx : Ideal.Quotient.mk (Ring.jacobson R) x = 1) : IsUnit x := by
+      have hmem : x - 1 ∈ Ring.jacobson R := by
+        rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, hx, map_one, sub_self]
+      simpa using (mem_jacobson_iff_isUnit_one_add_mul_left.1 hmem) 1
+    obtain ⟨u, hu⟩ := hunit (x := a * b) (by simp [hb])
+    obtain ⟨v, hv⟩ := hunit (x := b * a) (by simp [hb])
+    have hr : a * (b * ↑u⁻¹) = 1 := by rw [← mul_assoc, ← hu, Units.mul_inv]
+    have hl : (↑v⁻¹ * b) * a = 1 := by rw [mul_assoc, ← hv, Units.inv_mul]
+    exact isUnit_iff_exists_and_exists.mpr ⟨⟨_, hr⟩, ⟨_, hl⟩⟩
+
 end Ring
 
 end TauCeti
+
+namespace Ideal
+
+/-- If `I` lies in the Jacobson radical of `R` and `R ⧸ I` is trivial, then `R` is trivial: the
+ideal `I = ⊤` can only lie in the Jacobson radical of the zero ring. -/
+theorem subsingleton_of_le_jacobson {R : Type*} [CommRing R] {I : Ideal R}
+    (hI : I ≤ Ring.jacobson R) [Subsingleton (R ⧸ I)] : Subsingleton R := by
+  rw [← jacobson_bot] at hI
+  have h : (⊥ : Ideal R) = ⊤ :=
+    jacobson_eq_top_iff.mp <| top_le_iff.mp <| Quotient.subsingleton_iff.mp ‹_› ▸ hI
+  exact subsingleton_of_zero_eq_one (mem_bot.mp (h ▸ Submodule.mem_top : (1 : R) ∈ ⊥)).symm
+
+end Ideal

@@ -73,7 +73,7 @@ of `s` by at most the factor `K ^ d`. -/
 theorem euclideanHausdorffMeasure_image_le {K : ℝ≥0} {f : X → Y} {s : Set X}
     (hf : LipschitzOnWith K f s) (d : ℕ) :
     μHE[d] (f '' s) ≤ (K : ℝ≥0∞) ^ d * μHE[d] s := by
-  simp_rw [euclideanHausdorffMeasure_def, Measure.smul_apply, nnreal_smul_coe_apply]
+  simp_rw [euclideanHausdorffMeasure_def, _root_.smul_apply, nnreal_smul_coe_apply]
   calc _ ≤ (addHaarScalarFactor (volume : Measure (EuclideanSpace ℝ (Fin d))) μH[d] : ℝ≥0∞) *
         ((K : ℝ≥0∞) ^ (d : ℝ) * μH[d] s) := by
         gcongr

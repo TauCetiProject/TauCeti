@@ -30,6 +30,11 @@ These are the coordinate descriptions of subcomodules and of the stabilizer of a
 * `Submodule.coact_mem_range_iff_forall_matrixCoefficient_eq_zero`: over a field, the coaction
   of `m` lies in `W ⊗ C` exactly when `m` has no matrix coefficient against a functional
   vanishing on `W`.
+* `Submodule.coact_mem_range_of_forall_coactComponent_mem`: a subspace stable under every
+  contraction of the coaction contains the full coaction in its tensor-product image.
+* `Submodule.matrixCoefficient_eq_zero_of_mem_dualAnnihilator`: over any commutative semiring, if
+  the coaction of `m` lies in `W ⊗ C`, then `m` has no matrix coefficient against a functional
+  vanishing on `W`.
 * `Submodule.mapsTo_endOfPoint_baseChange_iff`: a point preserves `A ⊗ W` exactly when it
   kills those matrix coefficients.
 
@@ -46,6 +51,26 @@ open TauCeti
 universe u v w
 
 namespace Submodule
+
+section Semiring
+
+variable {R : Type u} {C : Type v} {M : Type w} [CommSemiring R]
+variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
+variable [AddCommMonoid M] [Module R M] [Comodule R C M]
+
+/-- If the coaction of `m` lies in `W ⊗ C`, then every matrix coefficient pairing `m` with a
+functional vanishing on `W` is zero. -/
+theorem matrixCoefficient_eq_zero_of_mem_dualAnnihilator (W : Submodule R M) {m : M}
+    (hm : Comodule.coact (R := R) (C := C) (M := M) m ∈
+      LinearMap.range (TensorProduct.map W.subtype (LinearMap.id : C →ₗ[R] C)))
+    {φ : Module.Dual R M} (hφ : φ ∈ W.dualAnnihilator) :
+    Comodule.matrixCoefficient (R := R) (C := C) φ m = 0 := by
+  obtain ⟨t, ht⟩ := hm
+  have hzero : φ ∘ₗ W.subtype = 0 := LinearMap.ext fun w ↦ (mem_dualAnnihilator φ).mp hφ w w.2
+  rw [Comodule.matrixCoefficient_def, ← ht, ← LinearMap.comp_apply, ← TensorProduct.map_comp,
+    LinearMap.id_comp, hzero, TensorProduct.map_zero_left, LinearMap.zero_apply, map_zero]
+
+end Semiring
 
 section Coalgebra
 
@@ -75,6 +100,20 @@ theorem coact_mem_range_iff_forall_matrixCoefficient_eq_zero (W : Submodule k M)
     intro ψ
     apply (TensorProduct.lid k C).injective
     simpa only [map_zero, hcontract] using h ψ
+
+/-- A subspace stable under every contraction of the coaction is a subcomodule. -/
+theorem coact_mem_range_of_forall_coactComponent_mem (W : Submodule k M)
+    (hW : ∀ (f : Module.Dual k C) {m : M}, m ∈ W →
+      Comodule.coactComponent (R := k) (C := C) f m ∈ W)
+    {m : M} (hm : m ∈ W) :
+    Comodule.coact (R := k) (C := C) m ∈
+      LinearMap.range (TensorProduct.map W.subtype (LinearMap.id : C →ₗ[k] C)) := by
+  rw [W.coact_mem_range_iff_forall_matrixCoefficient_eq_zero]
+  intro ψ
+  apply (Module.forall_dual_apply_eq_zero_iff k _).mp
+  intro f
+  rw [LinearMap.apply_matrixCoefficient, LinearMap.comp_apply, W.mkQ_apply,
+    (Submodule.Quotient.mk_eq_zero W).mpr (hW f hm), map_zero]
 
 end Coalgebra
 

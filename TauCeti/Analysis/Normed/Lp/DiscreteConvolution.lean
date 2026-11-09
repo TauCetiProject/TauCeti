@@ -120,12 +120,12 @@ theorem tsum_addRingConvolution_sq_le [AddGroup G] (f g : G → ℝ≥0∞) :
       = ∑' y, ∑' z, g y * g z * ∑' x, f (x - y) * f (x - z) := by
         simp_rw [addRingConvolution_eq_tsum_sub, sq, ← ENNReal.tsum_mul_right,
           ← ENNReal.tsum_mul_left]
-        rw [ENNReal.tsum_comm]
+        rw [_root_.tsum_comm]
         refine tsum_congr fun y ↦ ?_
-        rw [ENNReal.tsum_comm]
+        rw [_root_.tsum_comm]
         exact tsum_congr fun z ↦ tsum_congr fun x ↦ by ring
     _ ≤ ∑' y, ∑' z, g y * g z * ∑' x, f x ^ 2 :=
-        ENNReal.tsum_le_tsum fun y ↦ ENNReal.tsum_le_tsum fun z ↦ mul_le_mul_right (hcorr y z) _
+        _root_.tsum_le_tsum fun y ↦ _root_.tsum_le_tsum fun z ↦ mul_le_mul_right (hcorr y z) _
     _ = (∑' x, g x) ^ 2 * ∑' x, f x ^ 2 := by
         simp only [ENNReal.tsum_mul_right, ENNReal.tsum_mul_left, sq]
 
@@ -161,8 +161,8 @@ theorem tsum_sq_mul_addRingConvolution_le [AddGroup G] {ω : G → ℝ≥0∞} {
   -- Splitting the weight between the two factors bounds the weighted convolution pointwise.
   have hpt (x : G) : ω x * (f ⋆ᵣ₊ g) x ≤
       c * (((fun y ↦ ω y * f y) ⋆ᵣ₊ g) x + (f ⋆ᵣ₊ fun y ↦ ω y * g y) x) := by
-    simp_rw [addRingConvolution_eq_tsum_sub, ← ENNReal.tsum_add, ← ENNReal.tsum_mul_left]
-    refine ENNReal.tsum_le_tsum fun y ↦ ?_
+    simp_rw [addRingConvolution_eq_tsum_sub, ← _root_.tsum_add, ← ENNReal.tsum_mul_left]
+    refine _root_.tsum_le_tsum fun y ↦ ?_
     calc ω x * (f (x - y) * g y) ≤ c * (ω (x - y) + ω y) * (f (x - y) * g y) := by
           gcongr
           simpa using hω (x - y) y
@@ -175,12 +175,12 @@ theorem tsum_sq_mul_addRingConvolution_le [AddGroup G] {ω : G → ℝ≥0∞} {
   calc ∑' x, (ω x * (f ⋆ᵣ₊ g) x) ^ 2
       ≤ ∑' x, 2 * c ^ 2 * (((fun y ↦ ω y * f y) ⋆ᵣ₊ g) x ^ 2 +
           (f ⋆ᵣ₊ fun y ↦ ω y * g y) x ^ 2) := by
-        refine ENNReal.tsum_le_tsum fun x ↦ ?_
+        refine _root_.tsum_le_tsum fun x ↦ ?_
         grw [hpt x, mul_pow, hsq]
         exact le_of_eq (by ring)
     _ ≤ 2 * c ^ 2 * ((∑' x, g x) ^ 2 * (∑' x, (ω x * f x) ^ 2) +
           (∑' x, f x) ^ 2 * ∑' x, (ω x * g x) ^ 2) := by
-        rw [ENNReal.tsum_mul_left, ENNReal.tsum_add]
+        rw [ENNReal.tsum_mul_left, _root_.tsum_add]
         gcongr
         · exact tsum_addRingConvolution_sq_le _ _
         · exact tsum_addRingConvolution_sq_le' _ _
@@ -199,7 +199,7 @@ theorem enorm_addConvolution_le (L : E →L[𝕜] E' →L[𝕜] F) {M : Type*} [
     (g : M → E') (x : M) :
     ‖(f ⋆₊[L.toLinearMap₁₂] g) x‖ₑ ≤ ‖L‖ₑ * ((‖f ·‖ₑ) ⋆ᵣ₊ (‖g ·‖ₑ)) x := by
   simp only [addRingConvolution_apply, addConvolution, ← ENNReal.tsum_mul_left]
-  refine enorm_tsum_le_tsum_enorm.trans (ENNReal.tsum_le_tsum fun ab ↦ ?_)
+  refine enorm_tsum_le_tsum_enorm.trans (_root_.tsum_le_tsum fun ab ↦ ?_)
   rw [← mul_assoc]
   exact L.le_opENorm₂ _ _
 
@@ -238,7 +238,7 @@ theorem tsum_sq_one_add_norm_rpow_mul_enorm_addConvolution_le {G : Type*}
       ENNReal.ofReal_pow (by positivity), ENNReal.ofReal_ofNat]
   calc ∑' x, (ω x * ‖(a ⋆₊[L.toLinearMap₁₂] b) x‖ₑ) ^ 2
       ≤ ∑' x, (‖L‖ₑ * (ω x * (α ⋆ᵣ₊ β) x)) ^ 2 := by
-        refine ENNReal.tsum_le_tsum fun x ↦ ?_
+        refine _root_.tsum_le_tsum fun x ↦ ?_
         rw [mul_left_comm]
         gcongr
         exact enorm_addConvolution_le L a b x
@@ -305,12 +305,12 @@ private theorem addConvolutionExists_of_summable_sq_one_add_abs_rpow_mul_norm [C
     (ENNReal.mul_ne_top (enorm_ne_top (x := L)) (ENNReal.mul_ne_top ha' hb')) ?_
   calc ∑' ab : addFiber x, ‖L.toLinearMap₁₂ (a ab.1.1) (b ab.1.2)‖ₑ
       ≤ ∑' p : ℤ × ℤ, ‖L.toLinearMap₁₂ (a p.1) (b p.2)‖ₑ :=
-        ENNReal.tsum_comp_le_tsum_of_injective Subtype.val_injective
+        _root_.tsum_comp_le_tsum_of_injective Subtype.val_injective
           fun p : ℤ × ℤ ↦ ‖L.toLinearMap₁₂ (a p.1) (b p.2)‖ₑ
     _ ≤ ∑' p : ℤ × ℤ, ‖L‖ₑ * ‖a p.1‖ₑ * ‖b p.2‖ₑ :=
-        ENNReal.tsum_le_tsum fun p ↦ L.le_opENorm₂ _ _
+        _root_.tsum_le_tsum fun p ↦ L.le_opENorm₂ _ _
     _ = ‖L‖ₑ * ((∑' n, ‖a n‖ₑ) * ∑' n, ‖b n‖ₑ) := by
-        rw [ENNReal.tsum_prod (f := fun m n ↦ ‖L‖ₑ * ‖a m‖ₑ * ‖b n‖ₑ)]
+        rw [_root_.tsum_prod (f := fun m n ↦ ‖L‖ₑ * ‖a m‖ₑ * ‖b n‖ₑ)]
         simp only [ENNReal.tsum_mul_left, ENNReal.tsum_mul_right, mul_assoc]
 
 /-- The total convolution of two weighted square-summable sequences on `ℤ` is weighted

@@ -128,7 +128,7 @@ private lemma adFromCoordinates_injective (p : ι) :
   have hm : adCoordinateMatrix R ι p c = 0 := by simpa [ha0] using ha.symm
   funext ij
   have h := congrArg (fun X : Matrix ι ι R => X ij.1.1 ij.1.2) hm
-  simpa only [adCoordinateMatrix_apply, of_apply, dite_eq_right ij.2, zero_apply,
+  simpa only [adCoordinateMatrix_apply, of_apply, dite_eq_right ij.2, Matrix.zero_apply,
     Pi.zero_apply] using h
 
 private lemma adFromCoordinates_normalize (p : ι) (X : Matrix ι ι R) :
@@ -144,7 +144,7 @@ private lemma adFromCoordinates_normalize (p : ι) (X : Matrix ι ι R) :
     · obtain ⟨rfl, rfl⟩ := Prod.mk.inj h
       simp [adCoordinateMatrix_apply]
     · simp only [adCoordinateMatrix_apply, of_apply,
-        dite_eq_right h, c, sub_apply, scalar_apply, diagonal_apply]
+        dite_eq_right h, c, Matrix.sub_apply, scalar_apply, diagonal_apply]
   apply Subtype.ext
   dsimp only [adFromCoordinates, LinearMap.comp_apply, LieHom.coe_toLinearMap,
     LieHom.rangeRestrict_apply]

@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.D4.Tripled.BaseChange
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Generation
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Coroot
-import TauCeti.LinearAlgebra.Matrix.Cartan.TypeD
 
 /-!
 # Generation of the tripled type-D4 weight torus by root subgroups
@@ -19,10 +18,8 @@ commutative ring, the torus is already contained in the elementary subgroup gene
 root subgroups.
 
 The represented simple generators at each node form an `sl₂` triple by
-`TauCeti.D4Tripled.isSl2Triple_rep_serreRootGenerator`, and every row of the type-`D₄` Cartan
-matrix has the explicit Bezout certificate `TauCeti.sum_cartanMatrixD_mul_typeDCartanBezout`, so
-every simple root is a primitive character of the weight torus. The generic Kostant
-coroot-generation theorem then makes the torus redundant in the pointwise generating family.
+`TauCeti.D4Tripled.isSl2Triple_rep_serreRootGenerator`, so the generic Kostant coroot-generation
+theorem makes the torus redundant in the pointwise generating family.
 
 Testing that containment over the coordinate ring of the universal weight-torus point upgrades it
 to the scheme-theoretic statement: the toral-closure and root-generated defining ideals over `ℤ`
@@ -83,10 +80,7 @@ theorem weightTorusSubgroup_le_elementarySubgroup (A : CommAlgCat.{v} ℤ) :
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis d4TripledWeight
     isCartanWeightVector_latticeBasis (TypeDStd.rootGeneratorWeight 4)
     lie_serreH_serreRootGenerator Sum.inl Sum.inr isSl2Triple_rep_serreRootGenerator
-    (fun i => funext fun j => by simp) (typeDCartanBezout 4)
-    (fun i => by
-      simpa only [TypeDStd.rootGeneratorWeight_inl] using
-        sum_cartanMatrixD_mul_typeDCartanBezout (n := 4) (by norm_num) i) A
+    (fun i => funext fun j => by simp) A
 
 /-- Over every commutative ring, adjoining the tripled type-`D₄` weight torus to all positive and
 negative numbered simple root subgroups does not enlarge their elementary subgroup. -/

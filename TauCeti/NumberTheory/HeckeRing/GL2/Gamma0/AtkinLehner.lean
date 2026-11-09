@@ -15,7 +15,8 @@ import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.BadPrimeCoset
 import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.ElementaryDivisors
 import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.CosetMap
 import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.Diagonal.Coset
-import TauCeti.LinearAlgebra.Matrix.SmithNormalForm
+import TauCeti.NumberTheory.HeckeRing.GL2.AntiInvolution
+import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Int
 import TauCeti.Data.ZMod.Units
 import Mathlib.Data.Nat.Prime.Int
 
@@ -81,6 +82,7 @@ commutative semiring.
 * `HeckeRing.GL2.atkinLehnerAntiInvolution_bar_mem_doubleCoset_of_dvd_pow`: it fixes the double
   coset when the determinant divides a power of the level, the witness-free specialisation of
   the previous one.
+* `HeckeRing.GL2.atkinLehnerAntiInvolution_bar_natDiagGL_const`: it fixes the scalars.
 * `HeckeRing.GL2.atkinLehnerAntiInvolution_bar_mem_doubleCoset_of_smul`: the criterion survives
   scaling, the scalar's positivity and coprimality to the level being automatic.
 * `HeckeRing.GL2.atkinLehnerAntiInvolution_bar_mem_doubleCoset_of_primitive`: it fixes the
@@ -134,13 +136,15 @@ variable (N : ℕ)
 /-- `ι(g) = w · gᵀ · w⁻¹`, as a homomorphism to the opposite group. -/
 private noncomputable def atkinLehnerHom : GL (Fin 2) ℚ →* (GL (Fin 2) ℚ)ᵐᵒᵖ where
   toFun g := MulOpposite.op (natDiagGL 2 ![1, N] *
-    (transposeGLEquiv 2 g).unop * (natDiagGL 2 ![1, N])⁻¹)
+    (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2) g).unop *
+      (natDiagGL 2 ![1, N])⁻¹)
   map_one' := by simp
   map_mul' a b := by
     apply MulOpposite.unop_injective
     simp only [MulOpposite.unop_op, MulOpposite.unop_mul]
-    have h1 : (transposeGLEquiv 2 (a * b)).unop =
-        (transposeGLEquiv 2 b).unop * (transposeGLEquiv 2 a).unop := by
+    have h1 : (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2) (a * b)).unop =
+        (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2) b).unop *
+          (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2) a).unop := by
       simp only [map_mul, MulOpposite.unop_mul]
     rw [h1]; group
 
@@ -148,25 +152,34 @@ private noncomputable def atkinLehnerHom : GL (Fin 2) ℚ →* (GL (Fin 2) ℚ)�
 lemma do not each rely on unfolding the definition. -/
 @[simp] private lemma atkinLehnerHom_unop (g : GL (Fin 2) ℚ) :
     (atkinLehnerHom N g).unop =
-      natDiagGL 2 ![1, N] * (transposeGLEquiv 2 g).unop * (natDiagGL 2 ![1, N])⁻¹ := (rfl)
+      natDiagGL 2 ![1, N] *
+        (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2) g).unop *
+          (natDiagGL 2 ![1, N])⁻¹ := (rfl)
 
 /-- `ι` is involutive: transposition is, and the two conjugations by `w` cancel because
 transposition fixes `w`. -/
 private lemma atkinLehnerHom_involutive (g : GL (Fin 2) ℚ) :
     (atkinLehnerHom N (atkinLehnerHom N g).unop).unop = g := by
   simp only [atkinLehnerHom_unop]
-  have h_tr : (transposeGLEquiv 2 (natDiagGL 2 ![1, N] *
-      (transposeGLEquiv 2 g).unop * (natDiagGL 2 ![1, N])⁻¹)).unop =
-      (transposeGLEquiv 2 (natDiagGL 2 ![1, N])⁻¹).unop *
-        (transposeGLEquiv 2 (transposeGLEquiv 2 g).unop).unop *
-        (transposeGLEquiv 2 (natDiagGL 2 ![1, N])).unop := by
+  have h_tr : (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2)
+      (natDiagGL 2 ![1, N] *
+        (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2) g).unop *
+          (natDiagGL 2 ![1, N])⁻¹)).unop =
+      (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2)
+        (natDiagGL 2 ![1, N])⁻¹).unop *
+        (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2)
+          (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2) g).unop).unop *
+        (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2)
+          (natDiagGL 2 ![1, N])).unop := by
     rw [map_mul, map_mul]
     simp only [MulOpposite.unop_mul]
     group
-  have h_inv : (transposeGLEquiv 2 (natDiagGL 2 ![1, N])⁻¹).unop =
+  have h_inv : (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2)
+      (natDiagGL 2 ![1, N])⁻¹).unop =
       (natDiagGL 2 ![1, N])⁻¹ := by
-    rw [map_inv, MulOpposite.unop_inv, transposeGLEquiv_natDiagGL 2 ![1, N]]
-  rw [h_tr, transposeGLEquiv_transposeGLEquiv, transposeGLEquiv_natDiagGL 2 ![1, N], h_inv]
+    rw [map_inv, MulOpposite.unop_inv, transposeMulEquiv_natDiagGL 2 ![1, N]]
+  rw [h_tr, Matrix.GeneralLinearGroup.transposeMulEquiv_transposeMulEquiv,
+    transposeMulEquiv_natDiagGL 2 ![1, N], h_inv]
   group
 
 /-- The ambient Atkin–Lehner anti-involution as an equivalence with the opposite group. -/
@@ -217,7 +230,7 @@ private lemma atkinLehnerHom_unop_val [NeZero N] (g : GL (Fin 2) ℚ)
   have hcast : ((A 1 0 : ℤ) : ℚ) = (N : ℚ) * ((c : ℤ) : ℚ) := by
     exact_mod_cast congrArg (Int.cast : ℤ → ℚ) hc
   simp only [atkinLehnerHom_unop, atkinLehnerEntries, Units.val_mul, hw, hwinv,
-    transposeGLEquiv_coe, hA]
+    Matrix.GeneralLinearGroup.coe_unop_transposeMulEquiv, hA]
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [Matrix.mul_apply, Matrix.diagonal_apply, Matrix.map_apply,
@@ -245,13 +258,7 @@ private lemma atkinLehnerHom_mem_Gamma0Image [NeZero N] (g : GL (Fin 2) ℚ)
   refine ⟨⟨B, hB_det⟩, mem_Gamma0_iff_dvd.mpr ?_, Units.ext ?_⟩
   · simp only [hB, atkinLehnerEntries]
     exact dvd_mul_right _ _
-  · -- the entrywise cast of an integral special-linear element, inlined as at
-    -- `GL2/DiagonalCosetDegree.lean`
-    have hval : ∀ μ : SpecialLinearGroup (Fin 2) ℤ,
-        ((mapGL ℚ μ : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ) =
-          (μ : Matrix (Fin 2) (Fin 2) ℤ).map (Int.cast : ℤ → ℚ) :=
-      fun μ ↦ by simp [mapGL_coe_matrix, algebraMap_int_eq, RingHom.mapMatrix_apply]
-    rw [atkinLehnerHom_unop_val N _ A (hval σ) c hc, hval ⟨B, hB_det⟩]
+  · rw [atkinLehnerHom_unop_val N _ A (coe_mapGL_int σ) c hc, coe_mapGL_int ⟨B, hB_det⟩]
 
 /-- `ι` preserves `Δ₀(N)`: the determinant and the upper-left entry are unchanged, and the new
 lower-left entry `N · A 0 1` is visibly divisible by `N`. -/
@@ -301,7 +308,8 @@ noncomputable def atkinLehnerAutomorphism : GL (Fin 2) ℚ ≃* GL (Fin 2) ℚ :
 -- matrix entries are wanted.
 lemma atkinLehnerAutomorphism_apply (x : GL (Fin 2) ℚ) :
     atkinLehnerAutomorphism N x = natDiagGL 2 ![1, N] *
-      (transposeGLEquiv 2 x⁻¹).unop * (natDiagGL 2 ![1, N])⁻¹ :=
+      (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2) x⁻¹).unop *
+        (natDiagGL 2 ![1, N])⁻¹ :=
   (rfl)
 
 /-- Coercing the ambient automorphism to a monoid hom does not change its value. -/
@@ -344,7 +352,9 @@ private lemma atkinLehnerAutomorphism_toMonoidHom_apply (x : GL (Fin 2) ℚ) :
 definition. -/
 @[simp] lemma atkinLehnerAntiInvolution_bar [NeZero N] {x : GL (Fin 2) ℚ} (hx : x ∈ Delta0 N) :
     (atkinLehnerAntiInvolution N).bar x hx =
-      natDiagGL 2 ![1, N] * (transposeGLEquiv 2 x).unop * (natDiagGL 2 ![1, N])⁻¹ :=
+      natDiagGL 2 ![1, N] *
+        (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2) x).unop *
+          (natDiagGL 2 ![1, N])⁻¹ :=
   HeckeAntiInvolution.ofAmbient_bar _ _ _ _ x hx
 
 /-- On an inverse from `Δ₀(N)`, the ambient automorphism is the restricted Atkin–Lehner bar. -/
@@ -372,7 +382,8 @@ private lemma atkinLehnerHom_unop_det (x : GL (Fin 2) ℚ) :
     (((atkinLehnerHom N x).unop : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det =
       (x : Matrix (Fin 2) (Fin 2) ℚ).det := by
   simp only [atkinLehnerHom, MonoidHom.coe_mk, OneHom.coe_mk, MulOpposite.unop_op,
-    Units.val_mul, Matrix.det_units_conj, transposeGLEquiv_coe, Matrix.det_transpose]
+    Units.val_mul, Matrix.det_units_conj,
+    Matrix.GeneralLinearGroup.coe_unop_transposeMulEquiv, Matrix.det_transpose]
 
 /-- **The bar preserves the determinant**, so a determinant hypothesis on `x` transfers to
 `bar x` unchanged. -/
@@ -558,14 +569,26 @@ private lemma pos_and_coprime_of_coe_eq_smul (d : ℕ) (x x₀ : GL (Fin 2) ℚ)
     rw [hsplit] at hAunit
     exact isUnit_of_mul_isUnit_left hAunit
 
+/-- **The bar fixes the scalars**: for positive `d`, the scalar `diag(d, d)` is its own image.
+Its integral witness is diagonal, and the entry swap of `atkinLehnerAntiInvolution_bar_val`
+moves nothing on a diagonal matrix. -/
+lemma atkinLehnerAntiInvolution_bar_natDiagGL_const [NeZero N] {d : ℕ} (hd : 0 < d)
+    (hs : natDiagGL 2 (fun _ ↦ d) ∈ Delta0 N) :
+    (atkinLehnerAntiInvolution N).bar _ hs = natDiagGL 2 (fun _ ↦ d) := by
+  have hs_wit := natDiagGL_coe_eq_map_intCast 2 (fun _ ↦ d) fun _ ↦ hd
+  apply Units.ext
+  rw [atkinLehnerAntiInvolution_bar_val N hs _ hs_wit 0 (by simp), hs_wit]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [Matrix.diagonal]
+
 /-- **The criterion survives scaling.** If `x` is the multiple `d • x₀` of an element of `Δ₀(N)`
 whose double coset the bar fixes, then the bar fixes the double coset of `x` as well. Neither
 positivity of `d` nor coprimality of `d` to `N` is assumed: both are consequences of `x` lying
 in `Δ₀(N)`. -/
--- The scalar `d` is central in `GL₂(ℚ)`, and the bar fixes it: its integral witness is diagonal,
--- and the entry swap of `atkinLehnerAntiInvolution_bar_val` moves nothing on a diagonal matrix.
--- So this is `HeckeAntiInvolution.bar_mem_doubleCoset_self_mul_of_mem_centralizer` at that
--- scalar, a central element lying in every centralizer.
+-- The scalar `d` is central in `GL₂(ℚ)`, and the bar fixes it
+-- (`atkinLehnerAntiInvolution_bar_natDiagGL_const`). So this is
+-- `HeckeAntiInvolution.bar_mem_doubleCoset_self_mul_of_mem_centralizer` at that scalar, a
+-- central element lying in every centralizer.
 theorem atkinLehnerAntiInvolution_bar_mem_doubleCoset_of_smul [NeZero N] (d : ℕ)
     (x x₀ : GL (Fin 2) ℚ) (hx : x ∈ Delta0 N) (hx₀ : x₀ ∈ Delta0 N)
     (hsmul : (x : Matrix (Fin 2) (Fin 2) ℚ) = (d : ℚ) • (x₀ : Matrix (Fin 2) (Fin 2) ℚ))
@@ -581,11 +604,6 @@ theorem atkinLehnerAntiInvolution_bar_mem_doubleCoset_of_smul [NeZero N] (d : �
     natDiagGL_coe_eq_map_intCast 2 _ fun _ ↦ hd
   have hs_central : s ∈ Subgroup.center (GL (Fin 2) ℚ) :=
     Subgroup.mem_center_iff.mpr fun g ↦ (natDiagGL_const_comm 2 d g).symm
-  have hbar : (atkinLehnerAntiInvolution N).bar s hs = s := by
-    apply Units.ext
-    rw [atkinLehnerAntiInvolution_bar_val N hs _ hs_wit 0 (by simp), hs_wit]
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.diagonal]
   have hxeq : x = s * x₀ := by
     apply Units.ext
     rw [Units.val_mul, hsmul, hs_wit]
@@ -594,7 +612,8 @@ theorem atkinLehnerAntiInvolution_bar_mem_doubleCoset_of_smul [NeZero N] (d : �
       simp [Matrix.mul_apply, Matrix.smul_apply, Matrix.diagonal]
   subst hxeq
   exact (atkinLehnerAntiInvolution N).bar_mem_doubleCoset_self_mul_of_mem_centralizer hs hx₀
-    (Subgroup.center_le_centralizer _ hs_central) hbar hfix
+    (Subgroup.center_le_centralizer _ hs_central)
+    (atkinLehnerAntiInvolution_bar_natDiagGL_const N hd hs) hfix
 
 /-- **The Atkin-Lehner involution fixes the double coset of a primitive witness.** If `x ∈ Δ₀(N)`
 has an integral witness `A` no prime divides entrywise, then `bar x` lies in the `Γ₀(N)`-double
@@ -641,41 +660,16 @@ theorem atkinLehnerAntiInvolution_bar_mem_doubleCoset_of_primitive [NeZero N]
 and with no further hypothesis on `x`. This is exactly the hypothesis Shimura's commutativity
 criterion takes, in the pointwise form `HeckeAntiInvolution.bar_mem_doubleCoset_self` reads it.
 
-Dividing an integral witness by the gcd `d` of its four entries leaves a primitive one, which
+The bar fixes the scalars (`atkinLehnerAntiInvolution_bar_natDiagGL_const`), so
+`bar_mem_doubleCoset_of_forall_primitive` reduces to a primitive witness, which
 `atkinLehnerAntiInvolution_bar_mem_doubleCoset_of_primitive` settles with no hypothesis on the
-determinant. Putting the scalar back is
-`atkinLehnerAntiInvolution_bar_mem_doubleCoset_of_smul`, which asks nothing further of `d`: the
-positivity and the coprimality to the level it needs are read off `x ∈ Δ₀(N)` inside it. -/
+determinant. -/
 theorem atkinLehnerAntiInvolution_bar_mem_doubleCoset [NeZero N] (x : GL (Fin 2) ℚ)
     (hx : x ∈ Delta0 N) : (atkinLehnerAntiInvolution N).bar x hx ∈
-      DoubleCoset.doubleCoset x ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ)) := by
-  obtain ⟨A, hA, hxdet, hAN, hAunit⟩ := (mem_Delta0_iff N).mp hx
-  have hAco : Int.gcd (A 0 0) N = 1 := Int.isUnit_intCast_iff_gcd_eq_one.mp hAunit
-  have hA_det_pos : 0 < A.det := by
-    rw [← Int.cast_pos (R := ℚ), Int.cast_det, ← hA]
-    exact hxdet
-  -- divide the witness by the gcd `d` of its four entries
-  set d : ℕ := Nat.gcd (Nat.gcd (A 0 0).natAbs (A 0 1).natAbs)
-    (Nat.gcd (A 1 0).natAbs (A 1 1).natAbs) with hd_def
-  obtain ⟨A₀, hA₀_eq, hA₀_det_pos, hA₀N, hA₀co, hA₀_prim⟩ :=
-    exists_primitive_content_quotient N A hA_det_pos hAN hAco d hd_def
-  have hA₀_det_ne : (A₀.map (Int.cast : ℤ → ℚ)).det ≠ 0 := by
-    rw [← Int.cast_det]
-    exact_mod_cast hA₀_det_pos.ne'
-  set x₀ : GL (Fin 2) ℚ := Matrix.GeneralLinearGroup.mkOfDetNeZero _ hA₀_det_ne
-  have hx₀_val : (x₀ : Matrix (Fin 2) (Fin 2) ℚ) = A₀.map (Int.cast : ℤ → ℚ) := by simp [x₀]
-  have hx₀_det : 0 < (x₀ : Matrix (Fin 2) (Fin 2) ℚ).det := by
-    rw [hx₀_val, ← Int.cast_det]
-    exact_mod_cast hA₀_det_pos
-  have hx₀ : x₀ ∈ Delta0 N := (mem_Delta0_iff N).mpr ⟨A₀, hx₀_val, hx₀_det, hA₀N,
-    Int.isUnit_intCast_iff_gcd_eq_one.mpr hA₀co⟩
-  have hsmul : (x : Matrix (Fin 2) (Fin 2) ℚ) = (d : ℚ) • (x₀ : Matrix (Fin 2) (Fin 2) ℚ) := by
-    rw [hA, hx₀_val]
-    ext i j
-    simp only [Matrix.smul_apply, Matrix.map_apply, smul_eq_mul]
-    exact_mod_cast congrArg (Int.cast : ℤ → ℚ) (hA₀_eq i j)
-  exact atkinLehnerAntiInvolution_bar_mem_doubleCoset_of_smul N d x x₀ hx hx₀ hsmul
-    (atkinLehnerAntiInvolution_bar_mem_doubleCoset_of_primitive N x₀ hx₀ A₀ hx₀_val hA₀_prim)
+      DoubleCoset.doubleCoset x ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ)) :=
+  bar_mem_doubleCoset_of_forall_primitive N (atkinLehnerAntiInvolution N)
+    (fun _ hd hs ↦ atkinLehnerAntiInvolution_bar_natDiagGL_const N hd hs)
+    (atkinLehnerAntiInvolution_bar_mem_doubleCoset_of_primitive N) x hx
 
 /-- **The Atkin-Lehner bar acts trivially on `Γ₀(N) \ Δ₀(N) / Γ₀(N)`**, for nonzero level `N`.
 Each double coset is fixed, by `atkinLehnerAntiInvolution_bar_mem_doubleCoset` at any

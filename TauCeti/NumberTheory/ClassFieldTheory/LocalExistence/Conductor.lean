@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.Local.Conductor
+public import TauCeti.NumberTheory.ClassFieldTheory.Local.Conductor.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.Correspondence
 public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 

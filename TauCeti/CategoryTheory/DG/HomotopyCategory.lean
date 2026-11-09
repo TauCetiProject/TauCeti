@@ -36,6 +36,8 @@ preadditive and linear over the ground ring.
 
 ## Main results
 
+* `TauCeti.exactAt_iff_forall_exists_dgDifferential_eq`: a Hom complex is exact in a degree
+  exactly when every cycle of that degree is a boundary.
 * `TauCeti.dgHomotopyClass_eq_iff`: two cocycles have the same class exactly when their difference
   is a coboundary.
 * `TauCeti.dgHomotopyClass_eq_homologyπ`: a homotopy class is the image of any lifting cycle under
@@ -94,6 +96,16 @@ theorem dgBoundaries_le_dgCycles (X Y : C) :
     dgBoundaries R X Y ≤ dgCycles R X Y := by
   rintro _ ⟨h, rfl⟩
   exact dgDifferential_dgDifferential R h
+
+/-- A Hom complex is exact in degree `p + 1` exactly when every cycle of degree `p + 1` is a
+boundary. -/
+theorem exactAt_iff_forall_exists_dgDifferential_eq {X Y : C} {p : ℤ} :
+    (dgHomComplex R X Y).ExactAt (p + 1) ↔ ∀ z : DGHom R (p + 1) X Y,
+      dgDifferential R (p + 1) z = 0 → ∃ g : DGHom R p X Y, dgDifferential R p g = z := by
+  rw [HomologicalComplex.exactAt_iff' _ p (p + 1) (p + 1 + 1) (by simp) (by simp),
+    ShortComplex.moduleCat_exact_iff]
+  -- The maps of the short complex `sc'` are the differentials, by definition.
+  rfl
 
 private noncomputable def dgCyclesConcreteEquiv (X Y : C) :
     dgCycles R X Y ≃ₗ[R]
@@ -667,6 +679,15 @@ theorem homOf_neg {X Y : C} (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y) :
   rw [eq_neg_iff_add_eq_zero, ← homOf_add, ← homOf_zero]
   congr 1
   exact neg_add_cancel f
+
+/-- Taking a morphism to the homotopy category preserves multiplication by a sign. -/
+@[simp]
+theorem homOf_units_smul {X Y : C} (u : ℤˣ) (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y) :
+    homOf R (u • f) ((dgCycles R X Y).toAddSubgroup.zsmul_mem hf (u : ℤ)) = u • homOf R f hf := by
+  rcases Int.units_eq_one_or u with rfl | rfl
+  · simp only [one_smul]
+  · simp only [Units.neg_smul, one_smul]
+    exact homOf_neg R f hf
 
 /-- A closed degree-zero DG morphism represents zero precisely when it is a boundary. -/
 @[simp]

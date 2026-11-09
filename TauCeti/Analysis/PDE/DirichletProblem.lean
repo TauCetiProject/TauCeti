@@ -88,7 +88,9 @@ the constructed one, so it is available before, and independently of, uniqueness
   `∂Ω`.
 * `TauCeti.PDE.forall_energyFormH1_eq_setIntegral_iff_forall_testFunction` and
   `TauCeti.PDE.isWeakSolutionDirichlet_iff_forall_testFunction`: for bounded coefficients it is
-  enough to test the weak formulation against `C_c^∞(Ω)`.
+  enough to test the weak formulation against `C_c^∞(Ω)`; conversely
+  `TauCeti.PDE.IsWeakSolutionDirichlet.energyFormH1_ofTestFunctionₗ` tests a weak solution against
+  `C_c^∞(Ω)` with no hypothesis on the coefficients.
 * `TauCeti.PDE.isCoercive_energyFormH1L0`: a diagonal lower bound packaged as `IsCoercive`, and
   `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyFormH1L0_of_mass_lower_bound`: coercivity
   when the potential absorbs the drift.
@@ -218,10 +220,9 @@ theorem forall_energyFormH1_eq_setIntegral_iff_forall_testFunction
     (dirichletForcing_apply f v).symm.trans (dirichletForcing_apply_eq_setIntegral f v)
   have htest : ∀ φ : 𝓓(Omega, ℝ),
       ∫ x in Omega, f x * W1p.value (W1p.ofTestFunctionₗ mu Omega 2 φ) x ∂mu
-        = ∫ x in Omega, f x * φ x ∂mu := fun φ => by
-    refine integral_congr_ae ?_
-    filter_upwards [testFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
-    rw [W1p.value_ofTestFunctionₗ, hx]
+        = ∫ x in Omega, f x * φ x ∂mu := fun φ =>
+    integral_congr_ae ((W1p.value_ofTestFunctionₗ_ae (p := 2) φ).mono fun x hx =>
+      congrArg (f x * ·) hx)
   refine ⟨fun h φ => (h ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).trans (htest φ),
     fun h v => ?_⟩
   have hclosed : IsClosed {v : W1p mu Omega 2 |
@@ -235,6 +236,18 @@ theorem forall_energyFormH1_eq_setIntegral_iff_forall_testFunction
       (hforce ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).symm) v.2
   rw [← energyFormH1L_apply hcoeff, ← hforce v]
   exact hmem
+
+/-- A weak solution satisfies the weak equation `a(u, φ) = ∫_Ω f φ` against every test function
+`φ ∈ C_c^∞(Ω)`. Unlike the converse in
+`TauCeti.PDE.isWeakSolutionDirichlet_iff_forall_testFunction`, this needs no bound on the
+coefficients. -/
+theorem IsWeakSolutionDirichlet.energyFormH1_ofTestFunctionₗ {f : Lp ℝ 2 (mu.restrict Omega)}
+    {u : W1p0 mu Omega 2} (hu : IsWeakSolutionDirichlet a b c f u) (φ : 𝓓(Omega, ℝ)) :
+    energyFormH1 a b c (u : W1p mu Omega 2) (W1p.ofTestFunctionₗ mu Omega 2 φ) =
+      ∫ x in Omega, f x * φ x ∂mu :=
+  ((isWeakSolutionDirichlet_iff f u).1 hu ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).trans
+    (integral_congr_ae ((W1p.value_ofTestFunctionₗ_ae (p := 2) φ).mono fun x hx =>
+      congrArg (f x * ·) hx))
 
 /-- **Testing against test functions suffices.** When the energy density is essentially bounded,
 so that the energy form is continuous on `H¹(Ω)`, `u` is a weak solution as soon as the weak
@@ -540,51 +553,65 @@ the hyperplanes `xᵢ = s` and `xᵢ = t`, the principal part is uniformly ellip
 `λ ≤ Λ`, the drift is bounded by `β`, the mass coefficient is bounded by `γ` and nonnegative,
 and the drift is small in the sense `β(t - s) < λ`, then the Dirichlet problem has exactly one
 weak solution for every `f ∈ L²(Ω)`. The Poincaré constant of the slab is its width, and the
-domain need not be bounded: boundedness in one direction is enough. -/
+domain need not be bounded: boundedness in one direction is enough. Neither `0 ≤ β` nor `s ≤ t`
+is assumed, since either failing forces `Ω` to be empty. -/
 theorem existsUnique_isWeakSolutionDirichlet_of_subset_slab
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) a lam Lam)
     (ha : AEStronglyMeasurable a (volume.restrict Omega))
     (hb : AEStronglyMeasurable b (volume.restrict Omega))
-    (hc : AEStronglyMeasurable c (volume.restrict Omega)) (hbeta : 0 ≤ beta)
+    (hc : AEStronglyMeasurable c (volume.restrict Omega))
     (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖b x‖ ≤ beta)
     (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖c x‖ ≤ gamma)
     (hc_nonneg : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), 0 ≤ c x)
-    {i : Fin (n + 1)} {s t : ℝ} (hst : s ≤ t)
+    {i : Fin (n + 1)} {s t : ℝ}
     (hslab : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), x i ∈ Icc s t)
     (hsmall : beta * (t - s) < lam)
     (f : Lp ℝ 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))) :
-    ∃! u : W1p0 volume Omega 2, IsWeakSolutionDirichlet a b c f u :=
-  existsUnique_isWeakSolutionDirichlet_of_mul_norm_sq_le
+    ∃! u : W1p0 volume Omega 2, IsWeakSolutionDirichlet a b c f u := by
+  -- Run the argument with the drift bound `max β 0` and the slab `Icc s (max s t)`.
+  have hsmall' : max beta 0 * (max s t - s) < lam := by
+    have := max_mul_max_lt_of_mul_lt h.pos hsmall
+    have e : max (t - s) 0 = max s t - s := by
+      rcases le_total s t with hst | hst <;> simp [hst]
+    rwa [e] at this
+  exact existsUnique_isWeakSolutionDirichlet_of_mul_norm_sq_le
     (memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
       (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound)
-    (energyFormH1_poincare_constant_pos h.pos hbeta (by linarith) hsmall)
-    (fun w => mul_norm_sq_le_energyFormH1_self_of_subset_slab h ha hb hc hb_bound hc_bound
-      hc_nonneg hslab w.2) f
+    (energyFormH1_poincare_constant_pos h.pos (le_max_right beta 0)
+      (sub_nonneg.2 (le_max_left s t)) hsmall')
+    (fun w => mul_norm_sq_le_energyFormH1_self_of_subset_slab h ha hb hc
+      (fun x hx => (hb_bound x hx).trans (le_max_left beta 0)) hc_bound hc_nonneg
+      (fun x hx => Icc_subset_Icc_right (le_max_right s t) (hslab x hx)) w.2) f
 
 /-- **Existence and uniqueness for a domain inside a ball.** For `Ω ⊆ B(z, R) ⊆ ℝ^{n+1}` with a
 uniformly elliptic principal part, a drift bounded by `β`, a bounded nonnegative mass
 coefficient and the smallness condition `2βR < λ`, the Dirichlet problem has exactly one weak
 solution for every `f ∈ L²(Ω)`. The Poincaré constant used is the diameter bound `2R`, not the
-sharp one, so the smallness condition is not sharp either. -/
+sharp one, so the smallness condition is not sharp either. Neither `0 ≤ β` nor `0 ≤ R` is
+assumed, since either failing forces `Ω` to be empty. -/
 theorem existsUnique_isWeakSolutionDirichlet_of_subset_ball
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) a lam Lam)
     (ha : AEStronglyMeasurable a (volume.restrict Omega))
     (hb : AEStronglyMeasurable b (volume.restrict Omega))
-    (hc : AEStronglyMeasurable c (volume.restrict Omega)) (hbeta : 0 ≤ beta)
+    (hc : AEStronglyMeasurable c (volume.restrict Omega))
     (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖b x‖ ≤ beta)
     (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖c x‖ ≤ gamma)
     (hc_nonneg : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), 0 ≤ c x)
-    {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ} (hR : 0 ≤ R)
+    {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ}
     (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ Metric.ball z R)
     (hsmall : beta * (2 * R) < lam)
     (f : Lp ℝ 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))) :
-    ∃! u : W1p0 volume Omega 2, IsWeakSolutionDirichlet a b c f u :=
-  existsUnique_isWeakSolutionDirichlet_of_mul_norm_sq_le
+    ∃! u : W1p0 volume Omega 2, IsWeakSolutionDirichlet a b c f u := by
+  -- Run the argument with the drift bound `max β 0` and the radius `max R 0`.
+  have hsmall' : max beta 0 * (2 * max R 0) < lam := by
+    exact max_mul_two_mul_max_lt_of_mul_two_mul_lt h.pos hsmall
+  exact existsUnique_isWeakSolutionDirichlet_of_mul_norm_sq_le
     (memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
       (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound)
-    (energyFormH1_poincare_constant_pos h.pos hbeta (by linarith) hsmall)
-    (fun w => mul_norm_sq_le_energyFormH1_self_of_subset_ball h ha hb hc hb_bound hc_bound
-      hc_nonneg hball w.2) f
+    (energyFormH1_poincare_constant_pos h.pos (le_max_right beta 0) (by positivity) hsmall')
+    (fun w => mul_norm_sq_le_energyFormH1_self_of_subset_ball h ha hb hc
+      (fun x hx => (hb_bound x hx).trans (le_max_left beta 0)) hc_bound hc_nonneg
+      (hball.trans (Metric.ball_subset_ball (le_max_left R 0))) w.2) f
 
 /-- **The Dirichlet problem with boundary values in `H¹(Ω)`, for a domain inside a ball.** Under
 the hypotheses of
@@ -596,25 +623,29 @@ theorem existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) a lam Lam)
     (ha : AEStronglyMeasurable a (volume.restrict Omega))
     (hb : AEStronglyMeasurable b (volume.restrict Omega))
-    (hc : AEStronglyMeasurable c (volume.restrict Omega)) (hbeta : 0 ≤ beta)
+    (hc : AEStronglyMeasurable c (volume.restrict Omega))
     (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖b x‖ ≤ beta)
     (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖c x‖ ≤ gamma)
     (hc_nonneg : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), 0 ≤ c x)
-    {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ} (hR : 0 ≤ R)
+    {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ}
     (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ Metric.ball z R)
     (hsmall : beta * (2 * R) < lam)
     (f : Lp ℝ 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))))
     (g : W1p volume Omega 2) :
     ∃! u : W1p volume Omega 2, u - g ∈ w1p0Submodule volume Omega 2 ∧
       ∀ v : W1p0 volume Omega 2, energyFormH1 a b c u (v : W1p volume Omega 2) =
-        ∫ x in Omega, f x * W1p.value (v : W1p volume Omega 2) x :=
+        ∫ x in Omega, f x * W1p.value (v : W1p volume Omega 2) x := by
+  -- Run the argument with the drift bound `max β 0` and the radius `max R 0`.
+  have hsmall' : max beta 0 * (2 * max R 0) < lam := by
+    exact max_mul_two_mul_max_lt_of_mul_two_mul_lt h.pos hsmall
   have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
     (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound
-  existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq hcoeff
+  exact existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq hcoeff
     (isCoercive_energyFormH1L0 hcoeff
-      (energyFormH1_poincare_constant_pos h.pos hbeta (by linarith) hsmall)
-      fun w => mul_norm_sq_le_energyFormH1_self_of_subset_ball h ha hb hc hb_bound hc_bound
-        hc_nonneg hball w.2) f g
+      (energyFormH1_poincare_constant_pos h.pos (le_max_right beta 0) (by positivity) hsmall')
+      fun w => mul_norm_sq_le_energyFormH1_self_of_subset_ball h ha hb hc
+        (fun x hx => (hb_bound x hx).trans (le_max_left beta 0)) hc_bound hc_nonneg
+        (hball.trans (Metric.ball_subset_ball (le_max_left R 0))) w.2) f g
 
 end UniformlyEllipticOn
 
@@ -629,14 +660,14 @@ drift smallness condition is vacuous; unfolded through
 `∫_Ω ∇v · ∇u = ∫_Ω f v`. It is the existence half of the roadmap's end-to-end acceptance
 criterion for the Dirichlet problem on a ball. -/
 theorem existsUnique_isWeakSolutionDirichlet_laplacian_of_subset_ball
-    {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ} (hR : 0 ≤ R)
+    {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ}
     (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ Metric.ball z R)
     (f : Lp ℝ 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))) :
     ∃! u : W1p0 volume Omega 2, IsWeakSolutionDirichlet (fun _ => 1) 0 0 f u :=
   UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_subset_ball
     (uniformlyEllipticOn_const_one_one _) aestronglyMeasurable_const aestronglyMeasurable_const
-    aestronglyMeasurable_const le_rfl (fun _ _ => by simp) (gamma := 0) (fun _ _ => by simp)
-    (fun _ _ => le_rfl) hR hball (by simp) f
+    aestronglyMeasurable_const (beta := 0) (fun _ _ => by simp) (gamma := 0)
+    (fun _ _ => by simp) (fun _ _ => le_rfl) hball (by simp) f
 
 end Euclidean
 

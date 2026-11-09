@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Logistic.Basic
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -111,7 +112,7 @@ theorem isProbabilityMeasure_logLogisticMeasure_iff :
   refine ⟨fun h => ?_, fun h => isProbabilityMeasure_logLogisticMeasure h.1 h.2⟩
   by_contra hab
   rw [logLogisticMeasure_of_not_pos hab] at h
-  exact IsProbabilityMeasure.ne_zero (0 : Measure ℝ) rfl
+  exact not_isProbabilityMeasure_zero h
 
 /-- **The log-logistic law from a logistic variable.** If `Y` is logistic with location `log a`
 and scale `b⁻¹`, then `exp Y` has the log-logistic law with scale `a` and shape `b`. -/
@@ -274,7 +275,7 @@ theorem logLogisticMeasure_eq_withDensity (a b : ℝ) :
     logLogisticMeasure a b = volume.withDensity (logLogisticPDF a b) := by
   by_cases h : 0 < a ∧ 0 < b
   · have hmap := MeasureTheory.map_withDensity_abs_deriv_mul (f := logLogisticPDF a b)
-      MeasurableSet.univ Real.measurable_exp (fun y _ => (Real.hasDerivAt_exp y).hasDerivWithinAt)
+      MeasurableSet.univ (fun y _ => (Real.hasDerivAt_exp y).hasDerivWithinAt)
       Real.exp_injective.injOn
     simp only [Measure.restrict_univ, ofReal_abs_exp_mul_logLogisticPDF h.1 h.2, image_univ,
       Real.range_exp] at hmap

@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.GeneralLinear.Borel
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Augmentation.Basic
+public import Mathlib.LinearAlgebra.Matrix.Trace
 -- Private: `fin_cases` is used only inside proofs.
 import Mathlib.Tactic.FinCases
 
@@ -49,6 +51,10 @@ bracket, so it lands in the **square** `(U⁺)²` and not merely in `U⁺` itsel
   basis `(x, y, z)` it produces, whose three vectors are `TauCeti.heisenbergBasis_zero`,
   `TauCeti.heisenbergBasis_one` and `TauCeti.heisenbergBasis_two`, and whose coordinates are those
   three entries again (`TauCeti.heisenbergBasis_equivFun`).
+* `TauCeti.heisenbergTracePairing` and `TauCeti.heisenbergDualEquiv`: the trace pairing
+  `⟨M, A⟩ = tr (M A)` of `3 × 3` matrices with the Heisenberg Lie algebra, and the lower triangular
+  model of the dual that it produces, identifying the strictly lower triangular matrices with
+  `Module.Dual R (heisenberg R)`.
 
 ## Main results
 
@@ -71,6 +77,18 @@ bracket, so it lands in the **square** `(U⁺)²` and not merely in `U⁺` itsel
   contrast with the defining action on `R³`, which is faithful by instance inference.
 * `TauCeti.ι_heisenbergZ_mem_augmentation_toIdeal_sq`: **the central generator lies in the square of
   the augmentation ideal** of `U(L)`.
+* `Module.Dual.lieAnnihilator_heisenberg_eq_top_iff`,
+  `TauCeti.lieAnnihilator_heisenberg_toSubmodule_eq_span_heisenbergZ` and
+  `TauCeti.finrank_quotient_lieAnnihilator_heisenberg`: **the coadjoint stabilizer of `ν` is
+  everything when `ν z = 0` and, over a ring without zero divisors, the centre `R ∙ z` otherwise**,
+  so over a field the algebraic tangent models `L ⧸ L_ν` of the coadjoint orbits have dimension `0`
+  or `2`, even as their Kirillov–Kostant–Souriau form requires. By contrast the quotient of `L` by
+  the centralizer of `x` has dimension `1` (`TauCeti.finrank_quotient_lieAnnihilator_heisenbergX`).
+* `TauCeti.ker_heisenbergTracePairing`: **the trace pairing only sees the strictly lower triangular
+  part**, its kernel being the upper triangular matrices, and
+  `TauCeti.coe_heisenbergDualEquiv_symm_apply`: the functional with coordinates
+  `(ν x, ν y, ν z)` is the strictly lower triangular matrix with entries `ν x`, `ν y` and `ν z` in
+  the positions `(1, 0)`, `(2, 1)` and `(2, 0)`.
 
 ## Implementation notes
 
@@ -401,5 +419,155 @@ theorem ι_heisenbergZ_mem_augmentation_toIdeal_sq :
         (_root_.UniversalEnvelopingAlgebra R (heisenberg R))).toIdeal ^ 2 := by
   rw [← lie_heisenbergX_heisenbergY]
   exact UniversalEnvelopingAlgebra.ι_lie_mem_augmentation_toIdeal_sq R (heisenberg R) _ _
+
+/-! ### Coadjoint and adjoint orbits -/
+
+variable {R}
+
+/-- **A functional vanishing on the centre is fixed by the coadjoint action**, and conversely: the
+whole Heisenberg Lie algebra stabilizes `ν` exactly when `ν z = 0`, so the algebraic tangent model
+`L ⧸ L_ν` of the coadjoint orbit through such a `ν` is zero. -/
+theorem _root_.Module.Dual.lieAnnihilator_heisenberg_eq_top_iff (ν : Dual R (heisenberg R)) :
+    lieAnnihilator R (heisenberg R) ν = ⊤ ↔ ν (heisenbergZ R) = 0 := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · have hx : heisenbergX R ∈ lieAnnihilator R (heisenberg R) ν := h ▸ LieSubalgebra.mem_top _
+    have := LinearMap.congr_fun ((mem_lieAnnihilator R (heisenberg R)).mp hx) (heisenbergY R)
+    simpa using this
+  · refine eq_top_iff.mpr fun A _ => (mem_lieAnnihilator R (heisenberg R)).mpr ?_
+    ext B
+    simp [lie_eq_smul_heisenbergZ, h]
+
+/-- **Over a ring without zero divisors, the coadjoint stabilizer of a functional nonzero on the
+centre is the centre** `R ∙ z`:
+pairing `⁅A, ν⁆` with `y` and with `x` reads off the two superdiagonal entries of `A`, multiplied
+by `ν z`. -/
+theorem lieAnnihilator_heisenberg_toSubmodule_eq_span_heisenbergZ [NoZeroDivisors R]
+    {ν : Dual R (heisenberg R)} (hν : ν (heisenbergZ R) ≠ 0) :
+    (lieAnnihilator R (heisenberg R) ν).toSubmodule = R ∙ heisenbergZ R := by
+  refine le_antisymm (fun A hA => ?_) ?_
+  · rw [LieSubalgebra.mem_toSubmodule, mem_lieAnnihilator] at hA
+    have hy := LinearMap.congr_fun hA (heisenbergY R)
+    have hx := LinearMap.congr_fun hA (heisenbergX R)
+    simp only [Dual.lie_apply, lie_eq_smul_heisenbergZ, map_smul, smul_eq_mul, coe_heisenbergX,
+      coe_heisenbergY, LinearMap.zero_apply, neg_eq_zero, mul_eq_zero, hν, or_false] at hx hy
+    rw [eq_smul_heisenbergX_add_smul_heisenbergY_add_smul_heisenbergZ A]
+    refine Submodule.mem_span_singleton.mpr ⟨(A : Matrix (Fin 3) (Fin 3) R) 0 2, ?_⟩
+    simp_all
+  · rw [Submodule.span_singleton_le_iff_mem, LieSubalgebra.mem_toSubmodule, mem_lieAnnihilator]
+    ext B
+    simp
+
+/-- **The algebraic tangent models `L ⧸ L_ν` of the coadjoint orbits of the Heisenberg Lie algebra
+through functionals nonzero on the centre are two-dimensional.** -/
+theorem finrank_quotient_lieAnnihilator_heisenberg {K : Type*} [Field K]
+    {ν : Dual K (heisenberg K)} (hν : ν (heisenbergZ K) ≠ 0) :
+    finrank K (heisenberg K ⧸ (lieAnnihilator K (heisenberg K) ν).toSubmodule) = 2 := by
+  rw [lieAnnihilator_heisenberg_toSubmodule_eq_span_heisenbergZ hν]
+  have h := Submodule.finrank_quotient_add_finrank (K ∙ heisenbergZ K)
+  rw [finrank_span_singleton heisenbergZ_ne_zero, finrank_heisenberg] at h
+  omega
+
+/-- **The quotient of the Heisenberg Lie algebra by the centralizer of `x` is one-dimensional**,
+in contrast with the even-dimensional coadjoint tangent models: the centralizer is cut out by the
+single entry `A 1 2`, since `⁅A, x⁆ = -(A 1 2) • z`. -/
+theorem finrank_quotient_lieAnnihilator_heisenbergX {K : Type*} [Field K] :
+    finrank K (heisenberg K ⧸ (lieAnnihilator K (heisenberg K) (heisenbergX K)).toSubmodule) =
+      1 := by
+  set f := (heisenbergBasis K).coord 1
+  have hf : (lieAnnihilator K (heisenberg K) (heisenbergX K)).toSubmodule = LinearMap.ker f := by
+    ext A
+    simp [f, lie_eq_smul_heisenbergZ, Basis.coord_apply, ← Basis.equivFun_apply,
+      heisenbergZ_ne_zero]
+  have hsurj : Function.Surjective f := fun c =>
+    ⟨c • heisenbergY K, by simp [f, Basis.coord_apply, ← Basis.equivFun_apply]⟩
+  rw [hf, (f.quotKerEquivOfSurjective hsurj).finrank_eq, finrank_self]
+
+/-! ### The lower triangular model of the dual -/
+
+variable (R) in
+/-- The **trace pairing** `⟨M, A⟩ = tr (M A)` of `3 × 3` matrices with the Heisenberg Lie algebra.
+It only depends on the strictly lower triangular part of `M`
+(`TauCeti.ker_heisenbergTracePairing`). -/
+def heisenbergTracePairing : Matrix (Fin 3) (Fin 3) R →ₗ[R] Dual R (heisenberg R) :=
+  LinearMap.mk₂ R (fun M A => trace (M * (A : Matrix (Fin 3) (Fin 3) R)))
+    (fun _ _ _ => by simp [Matrix.add_mul]) (fun _ _ _ => by simp)
+    (fun _ _ _ => by simp [Matrix.mul_add]) (fun _ _ _ => by simp)
+
+theorem heisenbergTracePairing_apply (M : Matrix (Fin 3) (Fin 3) R) (A : heisenberg R) :
+    heisenbergTracePairing R M A = trace (M * (A : Matrix (Fin 3) (Fin 3) R)) := (rfl)
+
+@[simp]
+theorem heisenbergTracePairing_apply_heisenbergX (M : Matrix (Fin 3) (Fin 3) R) :
+    heisenbergTracePairing R M (heisenbergX R) = M 1 0 := by
+  simp [heisenbergTracePairing_apply, trace, Matrix.mul_apply, Fin.sum_univ_three, single_apply]
+
+@[simp]
+theorem heisenbergTracePairing_apply_heisenbergY (M : Matrix (Fin 3) (Fin 3) R) :
+    heisenbergTracePairing R M (heisenbergY R) = M 2 1 := by
+  simp [heisenbergTracePairing_apply, trace, Matrix.mul_apply, Fin.sum_univ_three, single_apply]
+
+@[simp]
+theorem heisenbergTracePairing_apply_heisenbergZ (M : Matrix (Fin 3) (Fin 3) R) :
+    heisenbergTracePairing R M (heisenbergZ R) = M 2 0 := by
+  simp [heisenbergTracePairing_apply, trace, Matrix.mul_apply, Fin.sum_univ_three, single_apply]
+
+/-- **The trace pairing only sees the strictly lower triangular part**: its kernel is the Borel
+subalgebra of upper triangular matrices. -/
+theorem ker_heisenbergTracePairing :
+    LinearMap.ker (heisenbergTracePairing R) = (upperTriangular R (Fin 3)).toSubmodule := by
+  ext M
+  rw [LinearMap.mem_ker, LieSubalgebra.mem_toSubmodule, mem_upperTriangular_iff]
+  constructor
+  · intro h i j hji
+    have hx := LinearMap.congr_fun h (heisenbergX R)
+    have hy := LinearMap.congr_fun h (heisenbergY R)
+    have hz := LinearMap.congr_fun h (heisenbergZ R)
+    simp only [heisenbergTracePairing_apply_heisenbergX, heisenbergTracePairing_apply_heisenbergY,
+      heisenbergTracePairing_apply_heisenbergZ, LinearMap.zero_apply] at hx hy hz
+    fin_cases i <;> fin_cases j <;> first | assumption | exact absurd hji (by decide)
+  · intro h
+    refine (heisenbergBasis R).ext fun k => ?_
+    fin_cases k <;> simp [h]
+
+variable (R) in
+/-- The **lower triangular model of the dual** of the Heisenberg Lie algebra: the trace pairing
+`Λ ↦ (A ↦ tr (Λ A))` identifies the strictly lower triangular `3 × 3` matrices with the dual, the
+coordinates `(p, q, r) = (ν X, ν Y, ν Z)` becoming the entries `Λ₁₀`, `Λ₂₁` and `Λ₂₀`. -/
+noncomputable def heisenbergDualEquiv :
+    strictLowerTriangular R (Fin 3) ≃ₗ[R] Dual R (heisenberg R) :=
+  LinearEquiv.ofBijective
+    (heisenbergTracePairing R ∘ₗ (strictLowerTriangular R (Fin 3) : Submodule R _).subtype) <| by
+    refine ⟨fun Λ Λ' h => Subtype.ext ?_, fun ν => ?_⟩
+    · have hx := LinearMap.congr_fun h (heisenbergX R)
+      have hy := LinearMap.congr_fun h (heisenbergY R)
+      have hz := LinearMap.congr_fun h (heisenbergZ R)
+      simp only [LinearMap.coe_comp, Function.comp_apply, Submodule.coe_subtype,
+        heisenbergTracePairing_apply_heisenbergX, heisenbergTracePairing_apply_heisenbergY,
+        heisenbergTracePairing_apply_heisenbergZ] at hx hy hz
+      rw [eq_smul_single_add_smul_single_add_smul_single_of_mem_strictLowerTriangular Λ.2,
+        eq_smul_single_add_smul_single_add_smul_single_of_mem_strictLowerTriangular Λ'.2,
+        hx, hy, hz]
+    · refine ⟨⟨ν (heisenbergX R) • single 1 0 1 + ν (heisenbergY R) • single 2 1 1 +
+        ν (heisenbergZ R) • single 2 0 1, add_mem (add_mem
+          (Submodule.smul_mem _ _ (single_mem_strictLowerTriangular (by decide) 1))
+          (Submodule.smul_mem _ _ (single_mem_strictLowerTriangular (by decide) 1)))
+          (Submodule.smul_mem _ _ (single_mem_strictLowerTriangular (by decide) 1))⟩, ?_⟩
+      refine (heisenbergBasis R).ext fun k => ?_
+      fin_cases k <;> simp
+
+@[simp]
+theorem heisenbergDualEquiv_apply (Λ : strictLowerTriangular R (Fin 3)) :
+    heisenbergDualEquiv R Λ = heisenbergTracePairing R Λ := (rfl)
+
+/-- The strictly lower triangular matrix of a functional `ν` has entries `ν X`, `ν Y` and `ν Z`
+in the positions `(1, 0)`, `(2, 1)` and `(2, 0)`. -/
+theorem coe_heisenbergDualEquiv_symm_apply (ν : Dual R (heisenberg R)) :
+    ((heisenbergDualEquiv R).symm ν : Matrix (Fin 3) (Fin 3) R) =
+      ν (heisenbergX R) • single 1 0 1 + ν (heisenbergY R) • single 2 1 1 +
+        ν (heisenbergZ R) • single 2 0 1 := by
+  set Λ := (heisenbergDualEquiv R).symm ν
+  have h : heisenbergDualEquiv R Λ = ν := LinearEquiv.apply_symm_apply _ _
+  rw [eq_smul_single_add_smul_single_add_smul_single_of_mem_strictLowerTriangular Λ.2, ← h]
+  simp
 
 end TauCeti

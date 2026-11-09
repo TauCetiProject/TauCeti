@@ -141,6 +141,11 @@ theorem forkLeft_ne_forkRight : forkLeft n hn ≠ forkRight n hn := by
   simp [forkLeft, forkRight] at this
   omega
 
+/-- The penultimate fork coordinate precedes the terminal one. -/
+theorem forkLeft_lt_forkRight : forkLeft n hn < forkRight n hn := by
+  simp only [Fin.lt_def, forkLeft_val, forkRight_val]
+  omega
+
 /-- The successor of the penultimate fork coordinate is the terminal coordinate. -/
 @[simp]
 theorem chainNext_forkLeft (h : (forkLeft n hn : ℕ) + 1 < n) :
@@ -317,11 +322,10 @@ theorem raisingMatrix_mem_typeD {K : Type*} [CommRing K] (i : Fin n) :
     raisingMatrix (K := K) n hn i ∈ LieAlgebra.Orthogonal.typeD (Fin n) K := by
   by_cases hi : (i : ℕ) + 1 < n
   · rw [raisingMatrix_of_chain n hn hi]
-    exact Matrix.fromBlocks_mem_typeD (ι := Fin n) _ 0 0 (by simp) (by simp)
+    exact Matrix.fromBlocks_mem_typeD_iff.mpr ⟨by simp, by simp, rfl⟩
   · rw [raisingMatrix_of_fork n hn hi]
-    simpa only [forkBlock, Matrix.transpose_zero, neg_zero] using
-      Matrix.fromBlocks_mem_typeD (K := K) (ι := Fin n) 0 (forkBlock n hn) 0
-      (forkBlock_transpose n hn) (by simp only [Matrix.transpose_zero, neg_zero])
+    exact Matrix.fromBlocks_mem_typeD_iff.mpr
+      ⟨Matrix.transpose_single_sub_single _ _ _, by simp, by simp⟩
 
 /-- The transpose of an explicit raising matrix is again in the split type-`D` Lie algebra. -/
 theorem loweringMatrix_mem_typeD {K : Type*} [CommRing K] (i : Fin n) :
@@ -329,12 +333,10 @@ theorem loweringMatrix_mem_typeD {K : Type*} [CommRing K] (i : Fin n) :
   by_cases hi : (i : ℕ) + 1 < n
   · rw [loweringMatrix, raisingMatrix_of_chain n hn hi,
       Matrix.fromBlocks_transpose]
-    exact Matrix.fromBlocks_mem_typeD (ι := Fin n) _ 0 0 (by simp) (by simp)
+    exact Matrix.fromBlocks_mem_typeD_iff.mpr ⟨by simp, by simp, rfl⟩
   · rw [loweringMatrix_of_fork n hn hi]
-    simpa only [forkBlock, Matrix.transpose_zero, neg_zero] using
-      Matrix.fromBlocks_mem_typeD (K := K) (ι := Fin n) 0 0 (-forkBlock n hn)
-      (by simp only [Matrix.transpose_zero, neg_zero]) (by
-      rw [Matrix.transpose_neg, forkBlock_transpose])
+    exact Matrix.fromBlocks_mem_typeD_iff.mpr
+      ⟨by simp, by rw [Matrix.transpose_neg, Matrix.transpose_single_sub_single], by simp⟩
 
 /-- The raising and lowering generators, indexed by two copies of the zero-based Bourbaki nodes;
 `Fin` index `i` represents node `i + 1`. -/
@@ -421,6 +423,14 @@ theorem rootGeneratorWeight_inl (i j : Fin n) :
 theorem rootGeneratorWeight_inr (i j : Fin n) :
     rootGeneratorWeight n (.inr i) j = -CartanMatrix.D n i j := by
   simp [rootGeneratorWeight]
+
+/-- Each numbered signed simple-root weight is nonzero as an integral character. -/
+theorem rootGeneratorWeight_ne_zero (k : Fin n ⊕ Fin n) :
+    rootGeneratorWeight n k ≠ 0 := by
+  intro h
+  have hdiag := congrFun h (Sum.elim id id k)
+  cases k <;> simp [rootGeneratorWeight_inl, rootGeneratorWeight_inr,
+    CartanMatrix.D_diag] at hdiag
 
 /-! ### The numbered generators sit at the named simple roots
 

@@ -90,7 +90,7 @@ def integralSpinActionSubring : Subring (CliffordAlgebra Q) where
     rw [map_zero, LinearMap.zero_apply]
     exact zero_mem _
   one_mem' x hx := by
-    rw [map_one, Module.End.one_apply]
+    rw [map_one, one_apply_eq_self]
     exact hx
   add_mem' {c d} hc hd x hx := by
     rw [map_add, LinearMap.add_apply]
@@ -99,7 +99,7 @@ def integralSpinActionSubring : Subring (CliffordAlgebra Q) where
     rw [map_neg, LinearMap.neg_apply]
     exact neg_mem (hc hx)
   mul_mem' {c d} hc hd x hx := by
-    rw [map_mul, Module.End.mul_apply]
+    rw [map_mul, mul_apply_eq_comp]
     exact hc (hd hx)
 
 /-- Membership in the integral-action subring means precisely that the spin action preserves the

@@ -8,7 +8,10 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
-import Mathlib.Geometry.Euclidean.Volume.Measure
+public import Mathlib.Geometry.Euclidean.Volume.Measure
+public import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
+public import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Orthogonal line coordinates and Lebesgue sections
@@ -28,9 +31,16 @@ and hyperplane sections through interior points have positive volume. The height
 points form an open set, and a set has positive volume at any open set of heights containing the
 height of an interior point.
 
+Pairing the line integrals `y ↦ ∫ f (y + t • e) dt` with a bounded transverse weight `ψ` is an
+integral of `ψ (y) f (y + t • e)` over product coordinates
+(`TauCeti.integral_mul_integral_line_eq`), so this pairing is continuous for `L¹` convergence on the
+whole space (`TauCeti.tendsto_integral_mul_integral_line`).
+
 More generally, for any subspace `K`, Tonelli's theorem splits Lebesgue integrals over `E` along
 the orthogonal decomposition `E = Kᗮ ⊕ K` (`Submodule.lintegral_eq_lintegral_lintegral_add`),
-via Mathlib's `Submodule.measurePreserving_measurableEquivProd`.
+via Mathlib's `Submodule.measurePreserving_measurableEquivProd`. In these coordinates based at a
+point `p`, a product of sets has the product volume, every point `x` is recovered as the sum of
+its two coordinates and `p`, and each coordinate moves no farther than `x` does.
 
 The coordinate construction uses Mathlib's `Submodule.orthogonalDecomposition` and
 `LinearIsometryEquiv.toSpanUnitSingleton`; its normalization follows Mathlib's volume
@@ -85,6 +95,54 @@ theorem lintegral_eq_lintegral_lintegral_line (e : E) (he : ‖e‖ = 1)
     lintegral_prod (fun p ↦ g (orthogonalLineEquiv e he p))
       (aemeasurable_comp_orthogonalLineEquiv e he hg)]
   simp only [orthogonalLineEquiv_apply]
+
+open Filter Topology in
+/-- If `∫⁻ g n → 0`, then along a subsequence the integrals of `g` along almost every line
+parallel to `e` tend to `0`. Applied to `g n = ‖f n - u‖ₑ`, `L¹` convergence of `f n` to `u`
+gives `L¹` convergence of their restrictions on almost every line, along a subsequence. -/
+theorem exists_strictMono_ae_tendsto_lintegral_line (e : E) (he : ‖e‖ = 1)
+    {g : ℕ → E → ℝ≥0∞} (hg : ∀ n, AEMeasurable (g n) volume)
+    (h : Tendsto (fun n ↦ ∫⁻ x, g n x) atTop (𝓝 0)) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ᵐ y : (ℝ ∙ e)ᗮ,
+      Tendsto (fun j ↦ ∫⁻ t : ℝ, g (φ j) ((y : E) + t • e)) atTop (𝓝 0) :=
+  exists_strictMono_ae_tendsto_zero_of_tendsto_lintegral
+    (fun n ↦ aemeasurable_lintegral_line e he (hg n))
+    (by simpa only [lintegral_eq_lintegral_lintegral_line e he (hg _)] using h)
+
+/-- The pairing of the line integrals of `f` with a bounded transverse weight `ψ` is an
+integral in orthogonal line coordinates. -/
+theorem integral_mul_integral_line_eq {f : E → ℝ} (hf : Integrable f) (e : E)
+    (he : ‖e‖ = 1) {ψ : (ℝ ∙ e)ᗮ → ℝ} (hψ : AEStronglyMeasurable ψ) {C : ℝ}
+    (hC : ∀ y, ‖ψ y‖ ≤ C) :
+    ∫ y : (ℝ ∙ e)ᗮ, ψ y * ∫ t : ℝ, f ((y : E) + t • e) =
+      ∫ p : (ℝ ∙ e)ᗮ × ℝ, ψ p.1 * f (orthogonalLineEquiv e he p) ∂(volume.prod volume) := by
+  have hint : Integrable (fun p : (ℝ ∙ e)ᗮ × ℝ ↦ ψ p.1 * f (orthogonalLineEquiv e he p))
+      (volume.prod volume) :=
+    ((measurePreserving_orthogonalLineEquiv e he).integrable_comp_of_integrable hf).bdd_mul
+      hψ.comp_fst (.of_forall fun p ↦ hC p.1)
+  rw [integral_prod _ hint]
+  simp only [orthogonalLineEquiv_apply, integral_const_mul]
+
+open Filter Topology in
+/-- Pairing line integrals with a bounded transverse weight is continuous for `L¹` convergence on
+the whole space. -/
+theorem tendsto_integral_mul_integral_line {ι : Type*} {l : Filter ι} {w : ι → E → ℝ}
+    {u : E → ℝ} (hw : ∀ n, Integrable (w n)) (hu : Integrable u)
+    (hlim : Tendsto (fun n ↦ ∫⁻ x, ‖w n x - u x‖ₑ) l (𝓝 0)) (e : E) (he : ‖e‖ = 1)
+    {ψ : (ℝ ∙ e)ᗮ → ℝ} (hψ : AEStronglyMeasurable ψ) {C : ℝ} (hC : ∀ y, ‖ψ y‖ ≤ C) :
+    Tendsto (fun n ↦ ∫ y : (ℝ ∙ e)ᗮ, ψ y * ∫ t : ℝ, w n ((y : E) + t • e)) l
+      (𝓝 (∫ y : (ℝ ∙ e)ᗮ, ψ y * ∫ t : ℝ, u ((y : E) + t • e))) := by
+  have hL := measurePreserving_orthogonalLineEquiv e he
+  simp_rw [integral_mul_integral_line_eq (hw _) e he hψ hC,
+    integral_mul_integral_line_eq hu e he hψ hC]
+  refine MeasureTheory.tendsto_integral_smul_of_tendsto_lintegral_enorm_sub (s := univ)
+    (.of_forall fun p ↦ hC p.1) (.of_forall fun _ h ↦ absurd (mem_univ _) h)
+    (.of_forall fun n ↦ (hL.integrable_comp_of_integrable (hw n)).bdd_mul hψ.comp_fst
+      (.of_forall fun p ↦ hC p.1))
+    (hψ.comp_fst.mul (hu.aestronglyMeasurable.comp_measurePreserving hL)) ?_
+  simpa only [Measure.restrict_univ, Function.comp_apply] using
+    hlim.congr fun n ↦ (hL.lintegral_comp_emb
+      (orthogonalLineEquiv e he).toHomeomorph.measurableEmbedding _).symm
 
 /-- Volume-a.e. equal sets have a.e. equal parallel sections for almost every transverse point.
 The exceptional transverse null set is allowed to depend on the direction. -/
@@ -270,5 +328,36 @@ theorem lintegral_eq_lintegral_lintegral_add (K : Submodule ℝ E)
     lintegral_prod_symm (fun q ↦ g (e.symm q))
       (hg.comp_quasiMeasurePreserving he.symm.quasiMeasurePreserving)]
   simp [e, add_comm]
+
+/-- In orthogonal coordinates along a subspace, a product of sets has the product volume. -/
+theorem volume_preimage_measurableEquivProd_prod (V : Submodule ℝ E) (p : E) (S : Set V)
+    (T : Set Vᗮ) : volume (V.measurableEquivProd p ⁻¹' S ×ˢ T) = volume S * volume T := by
+  have hΦ : MeasurePreserving (V.measurableEquivProd p) volume volume := by
+    simpa only [InnerProductSpace.euclideanHausdorffMeasure_eq_volume] using
+      V.measurePreserving_measurableEquivProd p
+  rw [hΦ.measure_preimage_equiv, Measure.volume_eq_prod, Measure.prod_prod]
+
+/-- A point is recovered from its orthogonal coordinates along a subspace based at `p`. -/
+theorem measurableEquivProd_fst_add_add_snd (V : Submodule ℝ E) (p x : E) :
+    ((V.measurableEquivProd p x).1 : E) + p + (V.measurableEquivProd p x).2 = x := by
+  conv_rhs => rw [← (V.measurableEquivProd p).symm_apply_apply x]
+  rw [measurableEquivProd_symm_apply, vadd_eq_add]
+  abel
+
+/-- If `k - p ∈ V`, both orthogonal coordinates of `x` along `V` based at `p` are at most as far
+from those of `k` as `x` is from `k`. -/
+theorem norm_measurableEquivProd_le (V : Submodule ℝ E) {p k : E} (hkp : k - p ∈ V) (x : E) :
+    ‖((V.measurableEquivProd p x).1 : E) + p - k‖ ≤ ‖x - k‖ ∧
+      ‖((V.measurableEquivProd p x).2 : E)‖ ≤ ‖x - k‖ := by
+  -- Both coordinates are orthogonal projections of `x - k`, since `k - p ∈ V`.
+  have hx : x -ᵥ p = (x - k) + (k - p) := by rw [vsub_eq_sub]; abel
+  rw [measurableEquivProd_apply, hx]
+  simp only [map_add, V.orthogonalProjectionOnto_mem_subspace_eq_self ⟨_, hkp⟩,
+    V.orthogonalProjectionOnto_orthogonal_apply_eq_zero hkp, add_zero, coe_add]
+  refine ⟨Eq.trans_le ?_ (V.norm_orthogonalProjectionOnto_apply_le _),
+    Vᗮ.norm_orthogonalProjectionOnto_apply_le _⟩
+  rw [← norm_coe]
+  congr 1
+  abel
 
 end Submodule

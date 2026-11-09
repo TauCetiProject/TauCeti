@@ -212,7 +212,7 @@ private theorem differentiableAt_cuspChart_symm_trans_of_ne_zero (D : Γ.CuspDat
       Periodic.cuspFunction D.width ((fun z : ℍ ↦ f (D.scaling⁻¹ • z)) ∘ ofComplex) := by
     filter_upwards [isOpen_ne.mem_nhds hu0, (cuspChart D hA).open_target.mem_nhds hu1] with v hv hv'
     rw [OpenPartialHomeomorph.trans_apply, cuspChart_symm_of_ne_zero D hA hv' hv,
-      Periodic.cuspFunction_eq_of_nonzero _ _ hv]
+      Function.Periodic.cuspFunction_eq_of_ne_zero _ _ hv]
     rfl
   -- The logarithmic lift of `u`, at which the scaled pullback is holomorphic.
   set τ₀ : ℍ := ⟨Periodic.invQParam D.width u,

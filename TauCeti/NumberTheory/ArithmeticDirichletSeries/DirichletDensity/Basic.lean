@@ -163,7 +163,7 @@ theorem HasDirichletDensity.compl (hS : HasDirichletDensity S δ) :
       · exact (hij rfl).elim
     have hsets : (⋃ b ∈ ({false, true} : Finset Bool), if b then S else Sᶜ) = Set.univ := by
       rw [Finset.set_biUnion_insert, Finset.set_biUnion_singleton]
-      simp [Set.union_comm]
+      simp []
     have hzeta := primeIdealZetaSum_biUnion_of_pairwiseDisjoint
       ({false, true} : Finset Bool)
         (fun b ↦ if b then S else Sᶜ) hdisj

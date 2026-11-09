@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Perfectoid.Basic
-public import TauCeti.RingTheory.Perfectoid.PseudoUniformizerRoots
+public import TauCeti.RingTheory.Perfectoid.PseudoUniformizerRoots.Basic
 import TauCeti.RingTheory.Perfection
 
 /-!

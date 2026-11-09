@@ -147,7 +147,7 @@ theorem squareClass_of_sq_mem_finset {ι : Type*} (d : ι → K) (root : ι → 
         obtain ⟨a, b, ha, hb, rfl⟩ :=
           TauCeti.IntermediateField.exists_add_mul_of_mem_sup_adjoin_sq hx2 hmem
         -- `(a + b * root i)² = r` lies in `F` while `root i ∉ F`, so the cross term vanishes.
-        rcases mul_eq_zero.mp (TauCeti.mul_eq_zero_of_add_mul_sq_mem hx2 hnext ha hb
+        rcases mul_eq_zero.mp ((TauCeti.add_mul_sq_mem_iff_mul_eq_zero hx2 hnext ha hb).mp
           (hy ▸ F.algebraMap_mem r)) with rfl | rfl
         · -- `y = b * root i`: then `y * root i = b * d i` lies in `F` and squares to `r * d i`.
           rw [zero_add] at hy

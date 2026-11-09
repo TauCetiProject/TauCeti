@@ -44,9 +44,13 @@ depends only on the isomorphism class of `G`.
 * `TauCeti.DerivedCentralQuotient.congr`: transport of the derived central quotient along an
   isomorphism of groups, built from the transport `MulEquiv.commutatorCongr` of the derived
   subgroup.
+* `TauCeti.DerivedCentralQuotient.quotientCenterEquivOfPerfect`: a perfect group modulo its centre
+  is the derived central quotient of every isomorphic group.
 
 ## Main results
 
+* `TauCeti.DerivedCentralQuotient.mulEquivQuotientCenter`: on a perfect group the output is the
+  quotient by the centre.
 * `TauCeti.DerivedCentralQuotient.mulEquivOfCenterEqBot`: a perfect group with trivial centre is its
   own derived central quotient.
 * `TauCeti.DerivedCentralQuotient.mulEquivOfIsSimpleGroup`: so is a nonabelian simple group.
@@ -54,6 +58,8 @@ depends only on the isomorphism class of `G`.
   and `TauCeti.DerivedCentralQuotient.mulEquivSelf` then makes the construction idempotent.
 * `TauCeti.DerivedCentralQuotient.subsingleton_iff`: the output is trivial exactly when `[G, G]` is
   commutative.
+* `TauCeti.Group.IsPerfect.nontrivial_quotient_center`: a nontrivial perfect group modulo its
+  centre is nontrivial, so the output is nontrivial when `[G, G]` is perfect and nontrivial.
 
 ## References
 
@@ -88,6 +94,18 @@ theorem isPerfect_of_not_isMulCommutative [IsSimpleGroup G] (h : ¬ IsMulCommuta
   exact h (center_eq_top_iff.mp hb)
 
 end IsSimpleGroup
+
+namespace Group.IsPerfect
+
+/-- A nontrivial perfect group is not commutative, so its quotient by its centre is nontrivial.
+Applied to `[G, G]`, this makes the derived central quotient nontrivial whenever the derived
+subgroup is perfect and nontrivial. -/
+instance nontrivial_quotient_center [Group.IsPerfect G] [Nontrivial G] :
+    Nontrivial (G ⧸ center G) :=
+  QuotientGroup.nontrivial_iff.mpr fun h ↦
+    Group.IsPerfect.not_isMulCommutative G (center_eq_top_iff.mp h)
+
+end Group.IsPerfect
 
 /-! ## The derived subgroup modulo its centre -/
 
@@ -145,6 +163,19 @@ theorem lift_surjective {K : Type*} [Group K] (f : ↥(commutator G) →* K)
     (MonoidHom.center_le_ker f hf hK)
 
 /-! ### The recipe on groups it has already succeeded on -/
+
+/-- **On a perfect group the derived central quotient is the quotient by the centre.** Since
+`[G, G] = G`, the recipe only removes the centre; for instance it turns a perfect special linear
+group into the projective special linear group. -/
+def mulEquivQuotientCenter [Group.IsPerfect G] : DerivedCentralQuotient G ≃* G ⧸ center G :=
+  let e : ↥(commutator G) ≃* G :=
+    (MulEquiv.subgroupCongr Group.IsPerfect.commutator_eq_top).trans Subgroup.topEquiv
+  QuotientGroup.congr _ _ e (Subgroup.map_center_eq e)
+
+@[simp]
+theorem mulEquivQuotientCenter_mk [Group.IsPerfect G] (x : ↥(commutator G)) :
+    mulEquivQuotientCenter (x : DerivedCentralQuotient G) = ((x : G) : G ⧸ center G) := by
+  simp [mulEquivQuotientCenter, QuotientGroup.congr_mk]
 
 /-- **A perfect group with trivial centre is its own derived central quotient.** -/
 def mulEquivOfCenterEqBot [Group.IsPerfect G] (h : center G = ⊥) :
@@ -241,6 +272,24 @@ theorem congr_symm (ψ : G ≃* G') :
   MulEquiv.ext fun x => QuotientGroup.induction_on x fun y => by
     simp only [DerivedCentralQuotient.congr, QuotientGroup.congr_symm, QuotientGroup.congr_mk,
       MulEquiv.commutatorCongr_symm]
+
+/-- **A perfect group modulo its centre is the derived central quotient of any isomorphic
+group.** This identifies the derived central quotient of the fixed points of a Steinberg
+endomorphism with the central quotient of a perfect matrix group isomorphic to them, as for
+`PSL_n(𝔽_q)` and `PSp_{2n}(𝔽_q)`. -/
+def quotientCenterEquivOfPerfect (h : commutator G = ⊤) (ψ : G ≃* G') :
+    G ⧸ center G ≃* DerivedCentralQuotient G' :=
+  letI : Group.IsPerfect G := ⟨h⟩
+  mulEquivQuotientCenter.symm.trans (congr ψ)
+
+@[simp]
+theorem quotientCenterEquivOfPerfect_mk (h : commutator G = ⊤) (ψ : G ≃* G')
+    (x : ↥(commutator G)) :
+    quotientCenterEquivOfPerfect h ψ ((x : G) : G ⧸ center G) =
+      (MulEquiv.commutatorCongr ψ x : DerivedCentralQuotient G') := by
+  let _ : Group.IsPerfect G := ⟨h⟩
+  rw [quotientCenterEquivOfPerfect, MulEquiv.trans_apply, ← mulEquivQuotientCenter_mk,
+    MulEquiv.symm_apply_apply, congr_mk]
 
 end DerivedCentralQuotient
 

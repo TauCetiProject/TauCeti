@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.Topology.Algebra.Ring.Subring
 
 import TauCeti.RingTheory.Huber.RingOfDefinition
+import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
 # Huber pairs
@@ -33,9 +34,12 @@ explicit.
 
 * `TauCeti.Huber.IsRingOfIntegralElements.mem_of_isTopologicallyNilpotent`: `A°° ⊆ A⁺` for
   every ring of integral elements.
+* `TauCeti.Huber.IsRingOfIntegralElements.mem_of_pow_mem`: `A⁺` contains every element some
+  positive power of which lies in `A⁺`.
 * `TauCeti.Huber.IsRingOfIntegralElements.map`: an isomorphism of topological rings carries a
   ring of integral elements onto a ring of integral elements.
-* `TauCeti.Huber.Pair.powerBounded`: `A⁺ = A°` is a ring of integral elements, the largest one.
+* `TauCeti.Huber.isRingOfIntegralElements_powerBoundedSubring`, `TauCeti.Huber.Pair.powerBounded`:
+  `A⁺ = A°` is a ring of integral elements, the largest one.
 * `TauCeti.Huber.Pair.discrete`: a discrete ring is a Huber pair with `A⁺ = A`, so the
   definitions above are not vacuous.
 * `TauCeti.Huber.Pair.Hom.id`, `TauCeti.Huber.Pair.Hom.comp`: morphisms of Huber pairs compose,
@@ -46,6 +50,10 @@ explicit.
 * `TauCeti.Huber.plusClosure`, `TauCeti.Huber.isRingOfIntegralElements_plusClosure` and
   `TauCeti.Huber.plusClosure_le`: the smallest ring of integral elements containing a set of
   power-bounded elements, the integral closure of the subring it generates together with `A°°`.
+* `TauCeti.Huber.map_plusClosure_le`: a continuous ring homomorphism `f` carries `plusClosure X`
+  into `plusClosure (f '' X)`.
+* `TauCeti.Huber.Pair.Hom.plusClosure_image_union_le`: for a morphism `f : (A, A⁺) → (B, B⁺)`
+  and `E ⊆ B⁺`, `plusClosure (f(A⁺) ∪ E) ⊆ B⁺`.
 * `TauCeti.Huber.Pair.quotient`: the quotient Huber pair, whose plus ring is the integral closure
   of the image of the original plus ring.
 * `TauCeti.Huber.Pair.Hom.quotientLift`: the universal factorisation of a morphism annihilating
@@ -113,6 +121,14 @@ theorem IsRingOfIntegralElements.mem_of_isTopologicallyNilpotent [Nonarchimedean
     (ha : IsTopologicallyNilpotent a) : a ∈ Aplus :=
   have := h.isIntegrallyClosedIn
   mem_of_isTopologicallyNilpotent_of_isIntegrallyClosedIn h.isOpen ha
+
+/-- A ring of integral elements `A⁺` contains every element some positive power of which lies in
+`A⁺`. -/
+theorem IsRingOfIntegralElements.mem_of_pow_mem [NonarchimedeanRing A] {Aplus : Subring A}
+    (h : IsRingOfIntegralElements Aplus) {a : A} {n : ℕ} (hn : 0 < n) (ha : a ^ n ∈ Aplus) :
+    a ∈ Aplus :=
+  have := h.isIntegrallyClosedIn
+  Subring.mem_of_pow_mem_of_isIntegrallyClosedIn hn ha
 
 /-- An isomorphism of topological rings carries a ring of integral elements onto a ring of
 integral elements. -/
@@ -211,6 +227,33 @@ theorem Hom.id_comp {S : Pair A} {T : Pair B} (f : Hom S T) : (Hom.id T).comp f 
 theorem Hom.comp_id {S : Pair A} {T : Pair B} (f : Hom S T) : f.comp (Hom.id S) = f := by
   ext; simp
 
+/-- An element integral over the image of the source plus ring lies in the target plus ring,
+which is integrally closed and contains that image. -/
+theorem Hom.mem_plus_of_isIntegral {S : Pair A} {T : Pair B} (f : Hom S T) {b : B}
+    (hb : IsIntegral (S.plus.map f.toRingHom) b) : b ∈ T.plus := by
+  let := T.isRingOfIntegralElements.isIntegrallyClosedIn
+  refine Subring.integralClosure_subring_le_iff.mpr ?_ ((mem_integralClosure_iff _ _).mpr hb)
+  rintro _ ⟨a, ha, rfl⟩
+  exact f.map_mem_plus a ha
+
+/-- Integrality over plus-ring images is transitive: if every element of `T⁺` is integral over
+the image of `S⁺`, then an element integral over the image of `T⁺` is integral over the image of
+`S⁺` under the composite, because the integral closure of the latter image contains the former. -/
+theorem Hom.isIntegral_plus_map_comp {S : Pair A} {T : Pair B} {U : Pair C}
+    {f : Hom S T} {g : Hom T U}
+    (hf : ∀ b ∈ T.plus, IsIntegral (S.plus.map f.toRingHom) b) {c : C}
+    (hc : IsIntegral (T.plus.map g.toRingHom) c) :
+    IsIntegral (S.plus.map (g.comp f).toRingHom) c := by
+  let R := S.plus.map (g.comp f).toRingHom
+  have hmap : T.plus.map g.toRingHom ≤ (integralClosure R C).toSubring := by
+    rintro _ ⟨b, hb, rfl⟩
+    have hR : (S.plus.map f.toRingHom).map g.toRingHom = R := by
+      simp only [R, toRingHom_comp, Subring.map_map]
+    let φ : S.plus.map f.toRingHom →+* R :=
+      g.toRingHom.restrict _ R fun b hb ↦ hR ▸ Subring.mem_map.mpr ⟨b, hb, rfl⟩
+    exact (hf b hb).map_of_comp_eq φ g.toRingHom (by ext; rfl)
+  exact Subring.integralClosure_subring_le_iff.mpr hmap hc
+
 variable (A) in
 /-- A discrete ring is a Huber pair with `A⁺ = A`: every element is power-bounded, the whole
 ring is open, and `⊤` is trivially integrally closed. This is the witness that the definitions
@@ -227,16 +270,23 @@ def discrete [DiscreteTopology A] : Pair A where
 theorem discrete_plus [DiscreteTopology A] : (discrete A).plus = ⊤ := (rfl)
 
 variable (A) in
-/-- The Huber pair with `A⁺ = A°`. This is a ring of integral elements because `A°` is open
+/-- In a Huber ring, `A°` is a ring of integral elements: it is open
 (`TauCeti.Huber.isOpen_powerBoundedSubring`) and integrally closed in `A`
 (`TauCeti.Huber.isPowerBounded_of_isIntegral`, Wedhorn Proposition 5.30(4)). Since every ring of
-integral elements is contained in `A°`, this is the largest one. -/
+integral elements is contained in `A°`, it is the largest one. -/
+theorem _root_.TauCeti.Huber.isRingOfIntegralElements_powerBoundedSubring :
+    IsRingOfIntegralElements (powerBoundedSubring A) where
+  isOpen := isOpen_powerBoundedSubring A
+  isIntegrallyClosedIn := inferInstance
+  le_powerBoundedSubring := le_rfl
+
+variable (A) in
+/-- The Huber pair with `A⁺ = A°`, a ring of integral elements by
+`TauCeti.Huber.isRingOfIntegralElements_powerBoundedSubring`. Since every ring of integral
+elements is contained in `A°`, this is the largest one. -/
 def powerBounded : Pair A where
   plus := powerBoundedSubring A
-  isRingOfIntegralElements :=
-    { isOpen := isOpen_powerBoundedSubring A
-      isIntegrallyClosedIn := inferInstance
-      le_powerBoundedSubring := le_rfl }
+  isRingOfIntegralElements := isRingOfIntegralElements_powerBoundedSubring A
 
 /-- The ring of integral elements of the largest Huber pair is `A°`. -/
 @[simp]
@@ -424,6 +474,32 @@ theorem isRingOfIntegralElements_plusClosure [IsTopologicalRing A] [IsHuberRing 
   exact Filter.mem_of_superset
     (isOpen_setOf_isTopologicallyNilpotent.mem_nhds IsTopologicallyNilpotent.zero)
     fun _ ha ↦ Subring.subset_closure (Or.inr ha)
+
+/-- **A continuous ring homomorphism carries `plusClosure X` into `plusClosure (f '' X)`**: it
+carries topologically nilpotent elements to topologically nilpotent elements, and elements
+integral over a subring to elements integral over its image. -/
+theorem map_plusClosure_le {B : Type*} [CommRing B] [TopologicalSpace B] {f : A →+* B}
+    (hf : Continuous f) (X : Set A) : (plusClosure X).map f ≤ plusClosure (f '' X) := by
+  set R := Subring.closure (X ∪ {a | IsTopologicallyNilpotent a})
+  set R' := Subring.closure (f '' X ∪ {b | IsTopologicallyNilpotent b})
+  -- `f` carries the generators of `R` into `R'`
+  have hR : R ≤ R'.comap f := Subring.closure_le.mpr <| Set.union_subset
+    (fun x hx ↦ Subring.subset_closure (Or.inl ⟨x, hx, rfl⟩))
+    fun _ hx ↦ Subring.subset_closure (Or.inr (hx.map hf))
+  intro _ hb
+  obtain ⟨a, ha, rfl⟩ := Subring.mem_map.mp hb
+  rw [plusClosure_def, Subalgebra.mem_toSubring, mem_integralClosure_iff] at ha ⊢
+  exact ha.map_of_comp_eq (f.restrict R R' hR) f (RingHom.ext fun _ ↦ rfl)
+
+/-- `plusClosure (f(A⁺) ∪ E) ⊆ B⁺` for every `E ⊆ B⁺`: `B⁺` is a ring of integral elements
+containing `f(A⁺)`. -/
+theorem Pair.Hom.plusClosure_image_union_le [IsTopologicalRing A] [IsHuberRing A] {B : Type*}
+    [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B] {S : Pair A}
+    {U : Pair B} (f : Hom S U) {E : Set B} (hE : E ⊆ U.plus) :
+    plusClosure (f.toRingHom '' S.plus ∪ E) ≤ U.plus := by
+  have := U.isRingOfIntegralElements.isIntegrallyClosedIn
+  exact plusClosure_le U.isRingOfIntegralElements.isOpen <|
+    Set.union_subset (Set.image_subset_iff.mpr f.map_mem_plus) hE
 
 end PlusClosure
 

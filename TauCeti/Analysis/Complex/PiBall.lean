@@ -10,12 +10,15 @@ public import Mathlib.Analysis.Complex.Basic
 /-!
 # Polydiscs centred at real points
 
-A ball in `ι → ℂ` for the sup norm is a polydisc. When its centre is a real point
+A ball in `ι → ℂ` for the sup norm is a polydisc: each coordinate of a point of `ball 0 r` has
+modulus less than `r`. When its centre is a real point
 `fun i ↦ (a i : ℂ)`, taking real parts maps it into the ball of the same radius around `a` in
 `ι → ℝ`, and it is invariant under complex conjugation.
 
 ## Main declarations
 
+* `Complex.pi_norm_div_lt_one_of_mem_ball`: every coordinate of a point of the polydisc
+  `ball 0 r` has modulus less than `r`, so dividing it by `r` lands in the unit disc.
 * `Complex.pi_re_mem_ball`: the real part of a point of the polydisc lies in the real ball.
 * `Complex.pi_ofReal_re_mem_ball`: the real part, viewed as a complex point, lies in the polydisc.
 * `Complex.pi_star_mem_ball_iff`: the polydisc is invariant under complex conjugation.
@@ -32,6 +35,13 @@ open Metric Set
 namespace Complex
 
 variable {ι : Type*} [Fintype ι] {a : ι → ℝ} {r : ℝ} {z : ι → ℂ}
+
+/-- Every coordinate of a point of the polydisc `ball 0 r`, divided by `r`, lies in the unit
+disc. -/
+theorem pi_norm_div_lt_one_of_mem_ball (hz : z ∈ ball 0 r) (i : ι) : ‖z i / r‖ < 1 := by
+  have hr : 0 < r := pos_of_mem_ball hz
+  rw [norm_div, norm_real, Real.norm_of_nonneg hr.le, div_lt_one hr]
+  exact (norm_le_pi_norm z i).trans_lt (mem_ball_zero_iff.1 hz)
 
 /-- The real part of a point of a polydisc centred at a real point `a` lies in the ball of the
 same radius around `a`. -/

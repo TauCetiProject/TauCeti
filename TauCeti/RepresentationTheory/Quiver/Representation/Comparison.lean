@@ -195,7 +195,7 @@ theorem indecProjRepToSimpleRep_ne_zero (i : Q) : indecProjRepToSimpleRep k i �
 /-- **`Pᵢ ↠ Sᵢ` is an epimorphism.** It is nonzero, and a nonzero morphism into a simple object is
 an epimorphism; `Sᵢ` is simple by `TauCeti.simpleRep_simple`. -/
 instance epi_indecProjRepToSimpleRep (i : Q) : Epi (indecProjRepToSimpleRep k i) :=
-  epi_of_nonzero_to_simple (indecProjRepToSimpleRep_ne_zero k i)
+  CategoryTheory.epi_of_ne_zero_to_simple (indecProjRepToSimpleRep_ne_zero k i)
 
 /-- **The surjection `Pᵢ ↠ Sᵢ` is unique up to a scalar**: `Hom(Pᵢ, Sᵢ)` is the line spanned by
 `TauCeti.indecProjRepToSimpleRep`. -/
@@ -264,7 +264,7 @@ theorem simpleRepToIndecInjRep_ne_zero (i : Q) : simpleRepToIndecInjRep k i ≠ 
 /-- **`Sᵢ ↪ Iᵢ` is a monomorphism.** It is nonzero, and a nonzero morphism out of a simple object is
 a monomorphism; `Sᵢ` is simple by `TauCeti.simpleRep_simple`. -/
 instance mono_simpleRepToIndecInjRep (i : Q) : Mono (simpleRepToIndecInjRep k i) :=
-  mono_of_nonzero_from_simple (simpleRepToIndecInjRep_ne_zero k i)
+  CategoryTheory.mono_of_ne_zero_from_simple (simpleRepToIndecInjRep_ne_zero k i)
 
 /-- **The embedding `Sᵢ ↪ Iᵢ` is unique up to a scalar**: `Hom(Sᵢ, Iᵢ)` is the line spanned by
 `TauCeti.simpleRepToIndecInjRep`. -/

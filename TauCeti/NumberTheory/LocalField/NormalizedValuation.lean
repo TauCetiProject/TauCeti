@@ -264,6 +264,15 @@ theorem toAdd_normalizedValuation_le_iff_valuation_le (x y : Kˣ) :
       (valueGroupWithZeroIsoInt_valuation_ne_zero x),
     OrderIsoClass.map_le_map_iff]
 
+/-- Two units have the same normalized valuation exactly when they have the same
+multiplicative valuation. -/
+theorem toAdd_normalizedValuation_eq_iff_valuation_eq (x y : Kˣ) :
+    (normalizedValuation K x).toAdd = (normalizedValuation K y).toAdd
+      ↔ valuation K (x : K) = valuation K (y : K) := by
+  rw [le_antisymm_iff, le_antisymm_iff (a := valuation K (x : K)),
+    toAdd_normalizedValuation_le_iff_valuation_le,
+    toAdd_normalizedValuation_le_iff_valuation_le, and_comm]
+
 /-- A uniformizer has normalized valuation `n` in its `n`-th power. -/
 theorem normalizedValuation_zpow_of_eq_ofAdd_one {ϖ : Kˣ}
     (hϖ : normalizedValuation K ϖ = .ofAdd 1) (n : ℤ) :
@@ -461,8 +470,7 @@ theorem normalizedAbsoluteValue_apply_ne_zero (x : K) (hx : x ≠ 0) :
         (-(normalizedValuation K (Units.mk0 x hx)).toAdd) := by
   rw [normalizedAbsoluteValue, Valuation.toAbsoluteValue_apply,
     WithZeroMulInt.toNNRat_apply_of_ne_zero]
-  · rw [toAdd_normalizedValuation_eq_ord, Valuation.ord_def, neg_neg,
-      WithZero.toAdd_unzero_eq_log]
+  · rw [toAdd_normalizedValuation_eq_ord, Valuation.ord_def, neg_neg]
     simp only [Units.val_mk0]
   · simp [intValuation, hx]
 

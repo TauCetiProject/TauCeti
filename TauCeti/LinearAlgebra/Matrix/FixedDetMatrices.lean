@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 
 /-!
@@ -23,13 +24,20 @@ bounded by a given constant.
 
 * `FixedDetMatrices.exists_smul_mem_reps`: for `n ≠ 0`, every determinant-`n` matrix can be moved
   into `FixedDetMatrices.reps n` by `SL(2, ℤ)`.
-* `FixedDetMatrices.eq_of_smul_eq_of_mem_reps`: two matrices of `FixedDetMatrices.reps n` in the
+* `FixedDetMatrices.eq_one_of_smul_mem_reps`: the only `g ∈ SL(2, ℤ)` moving a matrix of
+  `FixedDetMatrices.reps n` into `FixedDetMatrices.reps n` is `g = 1`; hence
+  (`FixedDetMatrices.eq_of_smul_eq_of_mem_reps`) two matrices of `FixedDetMatrices.reps n` in the
   same `SL(2, ℤ)`-orbit are equal.
 * `FixedDetMatrices.repsEquiv`: the representatives are parametrized by positive factor pairs
   `(a, d)` of `|n|` and residues `0 ≤ b < d`.
 * `FixedDetMatrices.ncard_reps`: `FixedDetMatrices.reps n` has `σ₁(|n|)` elements.
+* `FixedDetMatrices.sum_reps_pow`: for even `w`, the sum of `dʷ` over the representatives
+  `(a b; 0 d)` is `σ_{w+1}(|n|)`.
 * `FixedDetMatrices.finite_setOf_abs_le`: there are only finitely many integral matrices of
   determinant `n` whose entries are at most `B` in absolute value.
+* `FixedDetMatrices.toGL`: for `n ≠ 0`, an integral matrix of determinant `n` as an element of
+  `GL(m, ℚ)`, on which left multiplication by `SL(m, ℤ)` is multiplication by its image
+  (`FixedDetMatrices.toGL_smul`).
 
 ## References
 
@@ -61,32 +69,35 @@ theorem exists_smul_mem_reps (hn : n ≠ 0) (A : FixedDetMatrix (Fin 2) ℤ n) :
 theorem smul_coe_apply {R : Type*} [CommRing R] {m : R} (g : SpecialLinearGroup (Fin 2) R)
     (A : FixedDetMatrix (Fin 2) R m) (i j : Fin 2) :
     (g • A).1 i j = g i 0 * A.1 0 j + g i 1 * A.1 1 j := by
-  rw [smul_coe, mul_apply, Fin.sum_univ_two]
+  rw [smul_coe, Matrix.mul_apply, Fin.sum_univ_two]
 
-private lemma unitriangular_of_smul_mem_reps {A : FixedDetMatrix (Fin 2) ℤ n} {g : SL(2, ℤ)}
-    (hA : A ∈ reps n) (hgA : g • A ∈ reps n) : g 0 0 = 1 ∧ g 1 0 = 0 ∧ g 1 1 = 1 := by
-  obtain ⟨h₁₀, h₀₀, -⟩ := hgA
-  simp only [smul_coe_apply, hA.1, mul_zero, add_zero, mul_eq_zero, hA.2.1.ne', or_false] at h₁₀ h₀₀
+/-- No nontrivial element of `SL(2, ℤ)` moves a representative to a representative: if `A` and
+`g • A` both lie in `reps n`, then `g = 1`. -/
+theorem eq_one_of_smul_mem_reps {A : FixedDetMatrix (Fin 2) ℤ n} {g : SL(2, ℤ)}
+    (hA : A ∈ reps n) (hgA : g • A ∈ reps n) : g = 1 := by
+  obtain ⟨hA₁₀, hA₀₀, hA₀₁, hA₁₁⟩ := hA
+  obtain ⟨hg₁₀, h₀₀, h₀₁, h₁₁⟩ := hgA
+  simp only [smul_coe_apply, hA₁₀, mul_zero, add_zero, mul_eq_zero, hA₀₀.ne', or_false]
+    at hg₁₀ h₀₀
   have hdet : g 0 0 * g 1 1 = 1 := by
-    simpa only [det_fin_two, h₁₀, mul_zero, sub_zero] using g.det_coe
-  have hg₀₀ := Int.eq_one_of_mul_eq_one_right (nonneg_of_mul_nonneg_left h₀₀.le hA.2.1) hdet
-  exact ⟨hg₀₀, h₁₀, by rwa [hg₀₀, one_mul] at hdet⟩
+    simpa only [det_fin_two, hg₁₀, mul_zero, sub_zero] using g.det_coe
+  have hg₀₀ := Int.eq_one_of_mul_eq_one_right (nonneg_of_mul_nonneg_left h₀₀.le hA₀₀) hdet
+  rw [hg₀₀, one_mul] at hdet
+  simp only [smul_coe_apply, hg₀₀, hg₁₀, hdet, one_mul, zero_mul, zero_add] at h₀₁ h₁₁
+  -- `g 0 1 * A 1 1` is a multiple of `|A 1 1|` of absolute value less than `|A 1 1|`
+  have hg₀₁ : g 0 1 * A.1 1 1 = 0 :=
+    Int.eq_zero_of_abs_lt_dvd ((abs_dvd _ _).2 (dvd_mul_left _ _)) <| by
+      simpa only [add_sub_cancel_left] using abs_sub_lt_of_nonneg_of_lt h₀₁
+        ((le_abs_self _).trans_lt h₁₁) hA₀₁ ((le_abs_self _).trans_lt hA₁₁)
+  rw [mul_eq_zero, or_iff_left (abs_pos.mp ((abs_nonneg _).trans_lt hA₁₁))] at hg₀₁
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [hg₀₀, hg₀₁, hg₁₀, hdet]
 
 /-- Two matrices of `reps n` in the same `SL(2, ℤ)`-orbit are equal. -/
 theorem eq_of_smul_eq_of_mem_reps {A B : FixedDetMatrix (Fin 2) ℤ n} {g : SL(2, ℤ)}
     (hA : A ∈ reps n) (hB : B ∈ reps n) (h : g • A = B) : A = B := by
   subst h
-  obtain ⟨hg₀₀, hg₁₀, hg₁₁⟩ := unitriangular_of_smul_mem_reps hA hB
-  obtain ⟨hA₁₀, -, hA₀₁, hA₁₁⟩ := hA
-  obtain ⟨-, -, hB₀₁, hB₁₁⟩ := hB
-  simp only [smul_coe_apply, hg₀₀, hg₁₀, hg₁₁, one_mul, zero_mul, zero_add] at hB₀₁ hB₁₁
-  -- `g 0 1 * A 1 1` is a multiple of `|A 1 1|` of absolute value less than `|A 1 1|`
-  have hg₀₁ : g 0 1 * A.1 1 1 = 0 :=
-    Int.eq_zero_of_abs_lt_dvd ((abs_dvd _ _).2 (dvd_mul_left _ _)) <| by
-      simpa only [add_sub_cancel_left] using abs_sub_lt_of_nonneg_of_lt hB₀₁
-        ((le_abs_self _).trans_lt hB₁₁) hA₀₁ ((le_abs_self _).trans_lt hA₁₁)
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [smul_coe_apply, hg₀₀, hg₀₁, hg₁₀, hg₁₁, hA₁₀]
+  rw [eq_one_of_smul_mem_reps hA hB, one_smul]
 
 /-- The diagonal entries of an upper-triangular `2 × 2` matrix of determinant `m` multiply to
 `m`. -/
@@ -165,6 +176,28 @@ theorem ncard_reps (n : ℤ) : (reps n).ncard = ArithmeticFunction.sigma 1 n.nat
   simp only [Nat.card_fin]
   rw [Finset.sum_coe_sort]
 
+/-- **The divisor sum over the upper-triangular representatives**: for even `w`, the
+sum of `dʷ` over the representatives `(a b; 0 d)` in `reps n` is `σ_{w+1}(|n|)`, since each factor
+pair `(a, d)` of `|n|` carries `|d|` representatives. -/
+theorem sum_reps_pow {R : Type*} [CommRing R] {w : ℕ} (hw : Even w) :
+    ∑ A : reps n, ((A.1.1 1 1 : ℤ) : R) ^ w =
+      (ArithmeticFunction.sigma (w + 1) n.natAbs : R) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  have hsign : (n.sign : R) ^ w = 1 := by
+    rw [← Int.cast_pow, ← hw.pow_abs, Int.abs_sign_of_ne_zero hn, one_pow, Int.cast_one]
+  rw [← (repsEquiv hn).symm.sum_comp, Fintype.sum_sigma]
+  simp only [coe_repsEquiv_symm_apply, Matrix.of_apply, Matrix.cons_val',
+    Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one, Int.cast_mul,
+    Int.cast_natCast, mul_pow, hsign, one_mul, Finset.sum_const, Finset.card_univ,
+    Fintype.card_fin, nsmul_eq_mul]
+  rw [Finset.sum_coe_sort n.natAbs.divisorsAntidiagonal
+      (fun p ↦ ((p.2 : ℕ) : R) * ((p.2 : ℕ) : R) ^ w),
+    Nat.sum_divisorsAntidiagonal' (fun _ d ↦ ((d : ℕ) : R) * (d : R) ^ w),
+    ArithmeticFunction.sigma_apply]
+  push_cast
+  exact Finset.sum_congr rfl fun d _ ↦ by ring
+
 /-- **Finiteness of bounded matrices**: there are only finitely many integral matrices of
 determinant `n` whose entries are at most `B` in absolute value. -/
 theorem finite_setOf_abs_le {m : Type*} [Fintype m] [DecidableEq m] (n B : ℤ) :
@@ -172,5 +205,40 @@ theorem finite_setOf_abs_le {m : Type*} [Fintype m] [DecidableEq m] (n B : ℤ) 
   ((Set.Finite.pi' fun _ ↦ Set.Finite.pi' fun _ ↦ Set.finite_Icc (-B) B).preimage
     (f := fun A : FixedDetMatrix m ℤ n ↦ (A.1 : m → m → ℤ))
     Subtype.val_injective.injOn).subset fun _ hA i j ↦ abs_le.mp (hA i j)
+
+/-! ### Integral matrices of nonzero determinant as rational invertible matrices -/
+
+section ToGL
+
+variable {m : Type*} [Fintype m] [DecidableEq m]
+
+/-- For `n ≠ 0`, an integral matrix of determinant `n` as an invertible rational matrix, the form
+in which it acts on the upper half-plane and on the cusps `ℙ¹(ℚ)`. -/
+noncomputable def toGL (hn : n ≠ 0) (A : FixedDetMatrix m ℤ n) : GL m ℚ :=
+  .mkOfDetNeZero (A.1.map (Int.cast : ℤ → ℚ)) (by rw [← Int.cast_det, A.2]; exact_mod_cast hn)
+
+/-- The underlying matrix of `toGL hn A` is the entrywise cast of `A`. -/
+@[simp]
+theorem coe_toGL (hn : n ≠ 0) (A : FixedDetMatrix m ℤ n) :
+    (toGL hn A : Matrix m m ℚ) = A.1.map (Int.cast : ℤ → ℚ) := (rfl)
+
+/-- The determinant of `toGL hn A` is `n`. -/
+theorem det_toGL (hn : n ≠ 0) (A : FixedDetMatrix m ℤ n) :
+    (toGL hn A : Matrix m m ℚ).det = n := by
+  rw [coe_toGL, ← Int.cast_det, A.2]
+
+/-- `toGL hn` is injective: the cast `ℤ → ℚ` is. -/
+theorem toGL_injective (hn : n ≠ 0) : Function.Injective (toGL (m := m) hn) := fun A B h ↦
+  Subtype.ext <| Matrix.map_injective Int.cast_injective <| by
+    simpa only [coe_toGL] using congrArg Units.val h
+
+/-- Left multiplication by `g ∈ SL(m, ℤ)` becomes multiplication by its image in `GL(m, ℚ)`. -/
+theorem toGL_smul (hn : n ≠ 0) (g : SpecialLinearGroup m ℤ) (A : FixedDetMatrix m ℤ n) :
+    toGL hn (g • A) = SpecialLinearGroup.mapGL ℚ g * toGL hn A := by
+  ext : 1
+  simpa [smul_coe] using
+    Matrix.map_mul (f := Int.castRingHom ℚ) (L := (g : Matrix m m ℤ)) (M := A.1)
+
+end ToGL
 
 end FixedDetMatrices

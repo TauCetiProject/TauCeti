@@ -15,6 +15,8 @@ only:
 
 * equality on Cantor space has a Cantor antichain on the whole space, the identity map;
 * the universal relation has no Cantor antichain on any set;
+* a relation with countably many classes has no Cantor antichain: equality of first coordinates
+  has two classes on Cantor space and countably many on Baire space;
 * the subtype bridge bounds the quotient of a specified subset: equality restricted to the
   points of Cantor space starting with `true` has at least continuum many classes.
 -/
@@ -39,8 +41,22 @@ example : 𝔠 ≤ #(Quotient ((⊥ : Setoid (ℕ → Bool)).comap
     ((↑) : {x : ℕ → Bool | x 0 = true} → ℕ → Bool))) := by
   refine Setoid.HasCantorAntichainOn.continuum_le_mk_quotient_comap
     (Setoid.hasCantorAntichainOn_iff.2 ⟨fun a n => Nat.casesOn n true a, ?_, fun _ => rfl, ?_⟩)
-  · exact continuous_pi fun n => by cases n <;> fun_prop
+  · exact continuous_pi fun n => by
+      cases n with
+      | zero => exact continuous_const
+      | succ n => exact continuous_apply n
   · intro a b hab h
     have h' : (fun n => Nat.casesOn n true a : ℕ → Bool) = fun n => Nat.casesOn n true b := by
       simpa [Setoid.bot_def] using h
     exact hab (funext fun n => congrFun h' (n + 1))
+
+-- Equality of first coordinates on Cantor space has two classes, so it has no Cantor antichain.
+example (A : Set (ℕ → Bool)) : ¬ (Setoid.ker fun x : ℕ → Bool => x 0).HasCantorAntichainOn A :=
+  fun h => have := (Setoid.kerLift_injective fun x : ℕ → Bool => x 0).countable
+    aleph0_lt_continuum.not_ge (h.continuum_le_mk_quotient.trans mk_le_aleph0)
+
+-- Equality of first coordinates on Baire space has countably many classes, so it has no Cantor
+-- antichain either.
+example (A : Set (ℕ → ℕ)) : ¬ (Setoid.ker fun x : ℕ → ℕ => x 0).HasCantorAntichainOn A :=
+  fun h => have := (Setoid.kerLift_injective fun x : ℕ → ℕ => x 0).countable
+    aleph0_lt_continuum.not_ge (h.continuum_le_mk_quotient.trans mk_le_aleph0)

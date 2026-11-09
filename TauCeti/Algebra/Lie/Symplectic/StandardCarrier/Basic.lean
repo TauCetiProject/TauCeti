@@ -224,7 +224,7 @@ theorem rep_ι_apply (x : sp (Fin (n + 1)) ℚ)
     (v : (Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) :
     rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ x) v =
       (x : Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) ℚ) *ᵥ v :=
-  LieSubalgebra.matrixRepresentation_ι_apply _ x v
+  LieSubalgebra.matrixRepresentation_ι_apply x v
 
 /-- A Cartan generator acts diagonally on every standard-module vector with the recorded
 coordinate weight. -/
@@ -643,7 +643,7 @@ theorem rep_rootGenerator_rep_rootGenerator_eq_zero
 theorem pow_two_rep_rootGenerator_eq_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator n k)) ^ 2 = 0 := by
   refine LinearMap.ext fun v => ?_
-  rw [pow_two, Module.End.mul_apply, rep_rootGenerator_rep_rootGenerator_eq_zero,
+  rw [pow_two, mul_apply_eq_comp, rep_rootGenerator_rep_rootGenerator_eq_zero,
     LinearMap.zero_apply]
 
 /-- Every numbered root generator acts nilpotently on the standard module. -/

@@ -47,6 +47,8 @@ the first homology of the Seifert surface — leaves `σ_ω` unchanged
 * `TauCeti.KnotTheory.tristramLevineSignature_conj`: `ω` and `conj ω` give the same signature.
 * `TauCeti.KnotTheory.tristramLevineSignature_neg_transpose`: the mirror image, whose Seifert
   matrix is `-Vᵀ`, has the negated signature.
+* `TauCeti.KnotTheory.tristramLevineSignature_neg`: so does the reverse mirror image, whose
+  Seifert matrix is `-V`.
 * `TauCeti.KnotTheory.tristramLevineSignature_fromBlocks_zero`: additivity along a block
   diagonal.
 * `TauCeti.KnotTheory.exists_tristramLevineSignature_trefoilSeifertMatrix_ne`: the trefoil's
@@ -92,6 +94,12 @@ theorem isHermitian_tristramLevineForm (V : Matrix ι ι ℝ) (ω : ℂ) :
   rw [h]
   exact Matrix.isHermitian_add_transpose_self _
 
+/-- The Tristram--Levine form of the zero matrix vanishes. -/
+@[simp]
+theorem tristramLevineForm_zero_matrix (ω : ℂ) :
+    tristramLevineForm (0 : Matrix ι ι ℝ) ω = 0 := by
+  simp [tristramLevineForm]
+
 /-- The Tristram--Levine form vanishes at `ω = 1`. -/
 @[simp]
 theorem tristramLevineForm_one (V : Matrix ι ι ℝ) : tristramLevineForm V 1 = 0 := by
@@ -121,11 +129,18 @@ theorem tristramLevineForm_transpose (V : Matrix ι ι ℝ) (ω : ℂ) :
 
 /-- The Seifert matrix `-Vᵀ` of the mirror image has the negated form at the conjugate
 parameter. -/
-@[simp]
 theorem tristramLevineForm_neg_transpose (V : Matrix ι ι ℝ) (ω : ℂ) :
     tristramLevineForm (-Vᵀ) ω = -tristramLevineForm V (conj ω) := by
   ext i j
   simp [Matrix.transpose_apply]
+
+/-- Negating a Seifert matrix negates its Tristram--Levine form. -/
+@[simp]
+theorem tristramLevineForm_neg (V : Matrix ι ι ℝ) (ω : ℂ) :
+    tristramLevineForm (-V) ω = -tristramLevineForm V ω := by
+  ext i j
+  simp only [tristramLevineForm_apply, Matrix.neg_apply, Complex.ofReal_neg]
+  ring
 
 /-- Taking the same submatrix in both coordinates commutes with the Tristram--Levine form. -/
 @[simp]
@@ -178,6 +193,13 @@ theorem tristramLevineSignature_one (V : Matrix ι ι ℝ) : tristramLevineSigna
   simpa only [tristramLevineForm_one] using
     (Matrix.IsHermitian.signature_zero (ι := ι))
 
+/-- The zero matrix has Tristram--Levine signature zero. -/
+@[simp]
+theorem tristramLevineSignature_zero_matrix (ω : ℂ) :
+    tristramLevineSignature (0 : Matrix ι ι ℝ) ω = 0 := by
+  unfold tristramLevineSignature
+  simpa only [tristramLevineForm_zero_matrix] using (Matrix.IsHermitian.signature_zero (ι := ι))
+
 /-- **At `ω = -1` the Tristram--Levine signature is the classical signature** of the Seifert
 matrix. -/
 @[simp]
@@ -224,7 +246,6 @@ theorem tristramLevineSignature_transpose (V : Matrix ι ι ℝ) (ω : ℂ) :
 
 /-- **The mirror image negates the Tristram--Levine signature.** The mirror of a knot has
 Seifert matrix `-Vᵀ`. -/
-@[simp]
 theorem tristramLevineSignature_neg_transpose (V : Matrix ι ι ℝ) (ω : ℂ) :
     tristramLevineSignature (-Vᵀ) ω = -tristramLevineSignature V ω := by
   calc
@@ -233,6 +254,20 @@ theorem tristramLevineSignature_neg_transpose (V : Matrix ι ι ℝ) (ω : ℂ) 
       simpa only [tristramLevineForm_neg_transpose] using
         (isHermitian_tristramLevineForm V (conj ω)).signature_neg
     _ = -tristramLevineSignature V ω := by rw [tristramLevineSignature_conj]
+
+/-- **Negating a Seifert matrix negates its Tristram--Levine signature.** The reverse of the
+mirror image of a knot, its inverse in the concordance group, has Seifert matrix `-V`. -/
+@[simp]
+theorem tristramLevineSignature_neg (V : Matrix ι ι ℝ) (ω : ℂ) :
+    tristramLevineSignature (-V) ω = -tristramLevineSignature V ω := by
+  unfold tristramLevineSignature
+  simpa only [tristramLevineForm_neg] using (isHermitian_tristramLevineForm V ω).signature_neg
+
+/-- The singular parameters of `-V` are those of `V`. -/
+theorem det_tristramLevineForm_neg_ne_zero_iff [DecidableEq ι] (V : Matrix ι ι ℝ) (ω : ℂ) :
+    (tristramLevineForm (-V) ω).det ≠ 0 ↔ (tristramLevineForm V ω).det ≠ 0 := by
+  rw [tristramLevineForm_neg, det_neg]
+  simp
 
 /-- **Additivity of the Tristram--Levine signature along a block diagonal**, the Seifert matrix
 of a connected sum. -/

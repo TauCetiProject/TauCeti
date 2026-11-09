@@ -32,7 +32,7 @@ standard law `levyMeasure 0 1`.
 * `isProbabilityMeasure_levyMeasure` and `ae_lt_levyMeasure` give normalization and the
   almost-sure carrier `(m, ∞)`;
 * `levyMeasure_eq_withDensity`, `hasPDF_of_hasLaw_levyMeasure` and `rnDeriv_levyMeasure` identify
-  the density;
+  the density, and `lintegral_levyPDF_eq_one` and `integral_levyPDFReal_eq_one` normalize it;
 * `map_affine_levyMeasure` and `hasLaw_affine_levyMeasure` give positive affine transport, and
   `levyMeasure_eq_map_affine_levyMeasure_zero_one` writes every law as an image of the standard one;
 * `measurable_levyMeasure` proves joint measurability in the parameters.
@@ -116,12 +116,17 @@ def levyPDF (m c x : ℝ) : ℝ≥0∞ :=
 theorem levyPDF_eq_ofReal (m c x : ℝ) :
     levyPDF m c x = ENNReal.ofReal (levyPDFReal m c x) := (rfl)
 
-/-- The real Lévy density has its usual formula above the location at positive scale. -/
+/-- The real Lévy density has its usual formula above the location, at every scale: for a
+nonpositive scale both sides vanish. -/
 @[simp]
-theorem levyPDFReal_of_lt (hc : 0 < c) (hx : m < x) :
+theorem levyPDFReal_of_lt (hx : m < x) :
     levyPDFReal m c x =
       √(c / (2 * π)) * (x - m) ^ (-(3 / 2 : ℝ)) * exp (-c / (2 * (x - m))) := by
-  simp [levyPDFReal, hc, hx]
+  rcases lt_or_ge 0 c with hc | hc
+  · simp [levyPDFReal, hc, hx]
+  · have hsqrt : √(c / (2 * π)) = 0 :=
+      Real.sqrt_eq_zero'.mpr (div_nonpos_of_nonpos_of_nonneg hc (by positivity))
+    simp [levyPDFReal, not_lt.mpr hc, hsqrt]
 
 /-- The Lévy density vanishes at and below the location. -/
 @[simp]
@@ -140,7 +145,7 @@ theorem levyPDFReal_eq_inverseGammaPDFReal (m c x : ℝ) :
   by_cases hc : 0 < c
   · rcases le_or_gt x m with hx | hx
     · rw [levyPDFReal_of_le hx, inverseGammaPDFReal_of_nonpos (sub_nonpos.mpr hx)]
-    · rw [levyPDFReal_of_lt hc hx,
+    · rw [levyPDFReal_of_lt hx,
         inverseGammaPDFReal_of_pos one_half_pos (half_pos hc) (sub_pos.mpr hx),
         Real.Gamma_one_half_eq, ← Real.sqrt_eq_rpow, ← Real.sqrt_div' _ pi_pos.le,
         div_div]
@@ -160,12 +165,13 @@ theorem levyPDFReal_nonneg (m c x : ℝ) : 0 ≤ levyPDFReal m c x := by
 theorem toReal_levyPDF (m c x : ℝ) : (levyPDF m c x).toReal = levyPDFReal m c x := by
   rw [levyPDF_eq_ofReal, ENNReal.toReal_ofReal (levyPDFReal_nonneg m c x)]
 
-/-- The Lévy density has its usual formula above the location at positive scale. -/
+/-- The Lévy density has its usual formula above the location, at every scale: for a nonpositive
+scale both sides vanish. -/
 @[simp]
-theorem levyPDF_of_lt (hc : 0 < c) (hx : m < x) :
+theorem levyPDF_of_lt (hx : m < x) :
     levyPDF m c x =
       ENNReal.ofReal (√(c / (2 * π)) * (x - m) ^ (-(3 / 2 : ℝ)) * exp (-c / (2 * (x - m)))) := by
-  rw [levyPDF_eq_ofReal, levyPDFReal_of_lt hc hx]
+  rw [levyPDF_eq_ofReal, levyPDFReal_of_lt hx]
 
 /-- The `ℝ≥0∞`-valued Lévy density vanishes at and below the location. -/
 @[simp]
@@ -196,6 +202,20 @@ theorem levyMeasure_eq_withDensity (m c : ℝ) :
   congr 1
   funext x
   rw [levyPDF_eq_ofReal, levyPDFReal_eq_inverseGammaPDFReal, inverseGammaPDF_eq_ofReal]
+
+/-- The `ℝ≥0∞`-valued Lévy density has total mass `1` at positive scale. -/
+theorem lintegral_levyPDF_eq_one (hc : 0 < c) (m : ℝ) : ∫⁻ x, levyPDF m c x = 1 := by
+  have := isProbabilityMeasure_levyMeasure hc m
+  have h : levyMeasure m c univ = 1 := measure_univ
+  rwa [levyMeasure_eq_withDensity, withDensity_apply _ MeasurableSet.univ,
+    Measure.restrict_univ] at h
+
+/-- The real-valued Lévy density has integral `1` at positive scale. -/
+theorem integral_levyPDFReal_eq_one (hc : 0 < c) (m : ℝ) : ∫ x, levyPDFReal m c x = 1 := by
+  simp_rw [← toReal_levyPDF]
+  rw [integral_toReal (measurable_levyPDF m c).aemeasurable
+      (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top),
+    lintegral_levyPDF_eq_one hc m, ENNReal.toReal_one]
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 

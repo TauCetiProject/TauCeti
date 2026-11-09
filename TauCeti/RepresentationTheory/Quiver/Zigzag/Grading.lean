@@ -205,9 +205,9 @@ theorem zigzagGrade_zero_eq_span_range_vertexIdempotent :
         (Set.range fun i : V => zigzagMk k G (vertexIdempotent k (vertex G i))) := by
   refine le_antisymm ?_ ?_
   · intro w hw
-    refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
+    refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
       (grade k (DoubledQuiver G)) (zigzagIdeal k G).asIdeal (i := 0)
-      (PathAlgebra.grade_zero_eq_span_range_vertexIdempotent k (DoubledQuiver G)) ?_ hw
+      (PathAlgebra.grade_zero_eq_span_range_vertexIdempotent k (DoubledQuiver G))).2 ?_ hw
     rintro z ⟨v, rfl⟩
     rw [← zigzagMk_apply k G]
     exact Submodule.subset_span ⟨(vertexEquiv G).symm v, by simp⟩
@@ -222,9 +222,9 @@ theorem zigzagGrade_one_eq_span_range_ofArrow :
         zigzagMk k G (ofArrow (arrow G d.adj))) := by
   refine le_antisymm ?_ ?_
   · intro w hw
-    refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
+    refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
       (grade k (DoubledQuiver G)) (zigzagIdeal k G).asIdeal (i := 1)
-      (PathAlgebra.grade_one_eq_span_range_ofArrow) ?_ hw
+      (PathAlgebra.grade_one_eq_span_range_ofArrow)).2 ?_ hw
     rintro z ⟨⟨a, b, e⟩, rfl⟩
     rw [← zigzagMk_apply k G]
     obtain ⟨i, rfl⟩ : ∃ i, a = vertex G i :=
@@ -247,9 +247,9 @@ theorem zigzagGrade_two_eq_span_range_zigzagVolume :
       Submodule.span k (Set.range fun i : V => zigzagVolume k G i) := by
   refine le_antisymm ?_ ?_
   · intro w hw
-    refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
+    refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
       (grade k (DoubledQuiver G)) (zigzagIdeal k G).asIdeal (i := 2)
-      (PathAlgebra.grade_eq_span_image_basis k (DoubledQuiver G) 2) ?_ hw
+      (PathAlgebra.grade_eq_span_image_basis k (DoubledQuiver G) 2)).2 ?_ hw
     rintro z ⟨t, ht, rfl⟩
     rw [← zigzagMk_apply k G]
     simp only [coe_pathAlgebraBasis]
@@ -285,9 +285,8 @@ theorem zigzagGrade_eq_bot_of_three_le {n : ℕ} (hn : 3 ≤ n) : zigzagGrade k 
     simp only [coe_pathAlgebraBasis]
     exact TwoSidedIdeal.mem_asIdeal.mpr
       (mem_zigzagIdeal_of_isZigzagRelator k G (IsZigzagRelator.long_path t (hn.trans ht'.symm.le)))
-  refine TauCeti.GradedAlgebra.quotientPiece_eq_bot_of_le (grade k (DoubledQuiver G))
-    (zigzagIdeal k G).asIdeal fun y hy => ?_
-  exact hle hy
+  exact (TauCeti.GradedAlgebra.quotientPiece_eq_bot_iff (grade k (DoubledQuiver G))
+    (zigzagIdeal k G).asIdeal).2 fun _ hy => hle hy
 
 /-! ### Integer-indexed grading -/
 
@@ -343,6 +342,37 @@ theorem zigzagBasis_coord_dart_eq_zero_of_mem_zigzagIntegerGrade (hns : ∀ i : 
   | 2, _ =>
     rw [zigzagGrade_two_eq_span_range_zigzagVolume, Submodule.span_le]
     rintro _ ⟨i, rfl⟩
+    simp only [SetLike.mem_coe, LinearMap.mem_ker]
+    rw [← zigzagBasisFun_inr_inr, ← zigzagBasis_apply k G hns, zigzagBasis_coord_apply]
+    simp
+  | n + 3, _ =>
+    rw [zigzagGrade_eq_bot_of_three_le k G (by omega)]
+    exact bot_le
+
+/-- **A vertex coordinate vanishes off degree zero**: the pieces of nonzero degree are spanned by
+arrows and volume classes, which have no vertex-idempotent component. -/
+theorem zigzagBasis_coord_vertex_eq_zero_of_mem_zigzagIntegerGrade
+    (hns : ∀ i : V, ∃ j, G.Adj i j) (i : V) {e : ℤ} (he : e ≠ 0)
+    {x : nonisolatedZigzagQuotient k G} (hx : x ∈ zigzagIntegerGrade k G e) :
+    (zigzagBasis k G hns).coord (.inl i) x = 0 := by
+  classical
+  suffices hle : zigzagIntegerGrade k G e ≤
+      LinearMap.ker ((zigzagBasis k G hns).coord (.inl i)) from hle hx
+  rcases lt_or_ge e 0 with h | h
+  · simp [zigzagIntegerGrade_eq_bot_of_neg k G h]
+  obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le h
+  rw [zigzagIntegerGrade_ofNat]
+  match n, he with
+  | 0, he => exact absurd rfl he
+  | 1, _ =>
+    rw [zigzagGrade_one_eq_span_range_ofArrow, Submodule.span_le]
+    rintro _ ⟨d, rfl⟩
+    simp only [SetLike.mem_coe, LinearMap.mem_ker]
+    rw [← zigzagBasisFun_inr_inl, ← zigzagBasis_apply k G hns, zigzagBasis_coord_apply]
+    simp
+  | 2, _ =>
+    rw [zigzagGrade_two_eq_span_range_zigzagVolume, Submodule.span_le]
+    rintro _ ⟨j, rfl⟩
     simp only [SetLike.mem_coe, LinearMap.mem_ker]
     rw [← zigzagBasisFun_inr_inr, ← zigzagBasis_apply k G hns, zigzagBasis_coord_apply]
     simp

@@ -27,6 +27,8 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
 * `TestFunction.lineDerivOp_apply`: `∂_{v} φ` is the classical directional derivative of `φ`.
 * `TestFunction.lineDerivOp_one_apply_eq_deriv`: on the real line, `∂_{1} φ` is the derivative
   of `φ`.
+* `TestFunction.coe_iterate_lineDerivOp_one`: repeated derivatives on the real line agree with
+  the iterates of the ordinary derivative.
 * `TestFunction.lineDerivCLM_postcompCLM`: directional derivatives commute with postcomposition
   by a continuous linear map.
 * `TestFunction.lineDerivOp_comm` and `TestFunction.lineDeriv_lineDerivOp_comm`: directional
@@ -62,6 +64,17 @@ theorem lineDerivOp_one_apply_eq_deriv {Ω : Opens ℝ} (φ : 𝓓(Ω, F)) (x : 
     ∂_{(1 : ℝ)} φ x = deriv φ x := by
   rw [lineDerivOp_apply, (φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv,
     fderiv_apply_one_eq_deriv]
+
+/-- Iterating the directional derivative in direction `1` on a real-line test function
+agrees with iterating its ordinary derivative. -/
+@[simp]
+theorem coe_iterate_lineDerivOp_one {Ω : Opens ℝ} (φ : 𝓓(Ω, F)) (n : ℕ) :
+    ⇑((LineDeriv.lineDerivOp (1 : ℝ))^[n] φ) = deriv^[n] (φ : ℝ → F) := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    rw [Function.iterate_succ_apply', Function.iterate_succ_apply']
+    exact (funext (lineDerivOp_one_apply_eq_deriv _)).trans (congrArg deriv ih)
 
 /-- The underlying function of a directional derivative of a test function is its classical
 directional derivative. -/

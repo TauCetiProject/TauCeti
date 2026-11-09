@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -24,7 +25,8 @@ weak Fréchet derivative of the previous field. The fields of `∂_v u` are ther
 with `v` substituted in the innermost slot, the one belonging to the gradient. At the first level
 this substitution is `A ↦ A† v`, since the gradient is identified with a vector through the inner
 product. Conversely, the fields of `u` are reassembled from those of the `∂ᵢu` by inserting
-`⟪eᵢ, ·⟫` in the innermost slot. Neither direction uses the symmetry of weak second derivatives.
+`⟪eᵢ, ·⟫` in the innermost slot. Neither direction uses the symmetry of weak second derivatives,
+which is proved separately: since weak derivatives commute, the weak Hessian is symmetric.
 
 No boundedness or boundary regularity of `Ω` is assumed.
 
@@ -32,12 +34,19 @@ No boundedness or boundary regularity of `Ω` is assumed.
 
 * `TauCeti.Wkp.exists_hasWeakLineDerivOn_value`: every directional weak derivative of an element
   of `W^{k+1,p}(Ω)` lies in `W^{k,p}(Ω)`.
+* `TauCeti.Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq`: the first derivatives
+  of an element of `W^{2,p}(Ω)` lie in `W^{1,p}(Ω)`, with gradients given by the weak Hessian.
 * `TauCeti.Wkp.exists_value_eq_of_forall_hasWeakLineDerivOn`: if the weak derivatives of
   `u ∈ Lᵖ(Ω)` along an orthonormal basis lie in `W^{k,p}(Ω)`, then `u ∈ W^{k+1,p}(Ω)`.
 * `TauCeti.Wkp.exists_value_eq_iff_forall_exists_hasWeakLineDerivOn`: the two combined.
+* `TauCeti.Wkp.exists_value_ae_eq_of_forall_hasWeakLineDerivOn`: the reverse direction for a
+  function representative, with weak derivatives in every direction.
 * `TauCeti.W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn`: the second-order case in the
   form a difference-quotient argument supplies, with `Lᵖ` weak derivatives of the components
   `⟪∇u, eⱼ⟫` of the weak gradient.
+* `TauCeti.Wkp.inner_iteratedGradient_one_apply_ae_eq`: the weak Hessian is symmetric.
+* `TauCeti.Wkp.adjoint_iteratedGradient_one_ae_eq`: the weak Hessian is self-adjoint almost
+  everywhere.
 
 ## References
 
@@ -158,6 +167,20 @@ theorem Wkp.exists_hasWeakLineDerivOn_value :
       filter_upwards [(innerSL ℝ v).coeFn_compLp (Wkp.iteratedGradient 0 w)] with x hx
       rw [hx, innerSL_apply_apply, innerSL_apply_apply, real_inner_comm]
   | k + 1, w, v => (Wkp.exists_wkp_lineDeriv v k w).imp fun _ h => h.1
+
+/-- **First derivatives of a `W^{2,p}` function.** In every direction `v`, an element `u` of
+`W^{2,p}(Ω)` has a weak derivative `∂ᵥu` which is the value of an element of `W^{1,p}(Ω)`, whose
+weak derivative in a direction `w` is the entry `⟪D²u w, v⟫ = ∂_w ∂ᵥu` of the weak Hessian. -/
+theorem Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq (u : Wkp mu Omega p 2)
+    (v : E) :
+    ∃ d : W1p mu Omega p, HasWeakLineDerivOn mu Omega (Wkp.value 2 u) (W1p.value d) v ∧
+      ∀ w, (fun x => ⟪W1p.gradient d x, w⟫_ℝ) =ᵐ[mu.restrict Omega]
+        fun x => ⟪Wkp.iteratedGradient 1 u x w, v⟫_ℝ := by
+  obtain ⟨d, hd, hdg⟩ := Wkp.exists_wkp_lineDeriv_zero v u
+  refine ⟨d, by simpa only [Wkp.value_one] using hd, fun w => ?_⟩
+  rw [Wkp.iteratedGradient_zero] at hdg
+  filter_upwards [(contractL v 0).coeFn_compLp (Wkp.iteratedGradient 1 u)] with x hx
+  rw [hdg, hx, inner_contractL_zero, real_inner_comm]
 
 /-! ### From the directional derivatives to `W^{k+1,p}` -/
 
@@ -287,6 +310,31 @@ theorem Wkp.exists_value_eq_iff_forall_exists_hasWeakLineDerivOn (k : ℕ)
   exact Wkp.exists_value_eq_of_forall_hasWeakLineDerivOn (stdOrthonormalBasis ℝ E) u k
     fun i => h _
 
+/-- A function `w` in `Lᵖ(Ω)` whose weak derivative on `Ω` in every direction `v` is the value of
+an element `d v` of `W^{k,p}(Ω)` agrees almost everywhere on `Ω` with the value of an element of
+`W^{k+1,p}(Ω)`. This is `TauCeti.Wkp.exists_value_eq_iff_forall_exists_hasWeakLineDerivOn` for a
+function representative rather than an element of `Lᵖ`. -/
+theorem Wkp.exists_value_ae_eq_of_forall_hasWeakLineDerivOn (k : ℕ) {w : E → ℝ}
+    (hw : MemLp w p (mu.restrict Omega)) (d : E → Wkp mu Omega p k)
+    (hd : ∀ v, HasWeakLineDerivOn mu Omega w (Wkp.value k (d v)) v) :
+    ∃ W : Wkp mu Omega p (k + 1), Wkp.value (k + 1) W =ᵐ[mu.restrict Omega] w := by
+  obtain ⟨W, hW⟩ := (Wkp.exists_value_eq_iff_forall_exists_hasWeakLineDerivOn k
+    (hw.toLp w)).2 fun v => ⟨d v, (hd v).congr_ae hw.coeFn_toLp.symm⟩
+  exact ⟨W, hW ▸ hw.coeFn_toLp⟩
+
+/-- The first-order case of `TauCeti.Wkp.exists_value_ae_eq_of_forall_hasWeakLineDerivOn`: a
+function `w` in `Lᵖ(Ω)` whose weak derivative on `Ω` in every direction `v` is a function `w' v`
+in `Lᵖ(Ω)` agrees almost everywhere on `Ω` with the value of an element of `W^{1,p}(Ω)`. -/
+theorem Wkp.exists_value_one_ae_eq_of_forall_hasWeakLineDerivOn {w : E → ℝ}
+    (hw : MemLp w p (mu.restrict Omega)) (w' : E → E → ℝ)
+    (hw' : ∀ v, MemLp (w' v) p (mu.restrict Omega))
+    (h : ∀ v, HasWeakLineDerivOn mu Omega w (w' v) v) :
+    ∃ W : Wkp mu Omega p 1, Wkp.value 1 W =ᵐ[mu.restrict Omega] w :=
+  Wkp.exists_value_ae_eq_of_forall_hasWeakLineDerivOn 0 hw (fun v => (hw' v).toLp (w' v))
+    fun v => by
+      rw [Wkp.value_zero]
+      exact (h v).congr_ae_deriv (hw' v).coeFn_toLp.symm
+
 /-! ### Second order from the components of the gradient -/
 
 /-- **Second-order weak differentiability from directional derivatives.** Fix an orthonormal
@@ -316,5 +364,41 @@ theorem W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn {ι : Type*} [Fint
     exact ((W1p.hasWeakFDerivOn u).hasWeakLineDerivOn (b j)).congr_ae_deriv (hgrad j)
   obtain ⟨U, hU⟩ := Wkp.exists_value_eq_of_forall_hasWeakLineDerivOn b (W1p.value u) 1 hcomp
   exact ⟨U, W1p.ext_value (((Wkp.value_one _).symm.trans (Wkp.value_succ 1 U).symm).trans hU)⟩
+
+/-! ### Symmetry of the weak Hessian -/
+
+/-- **The weak Hessian is symmetric.** For `u ∈ W^{2,p}(Ω)` and directions `v` and `w`, the mixed
+weak derivatives `⟪D²u v, w⟫ = ∂_v ∂_w u` and `⟪D²u w, v⟫ = ∂_w ∂_v u` agree almost everywhere on
+`Ω`. Here `D²u` is the highest recorded weak derivative `TauCeti.Wkp.iteratedGradient 1 u`. -/
+theorem Wkp.inner_iteratedGradient_one_apply_ae_eq (u : Wkp mu Omega p 2) (v w : E) :
+    (fun x => ⟪Wkp.iteratedGradient 1 u x v, w⟫_ℝ) =ᵐ[mu.restrict Omega]
+      fun x => ⟪Wkp.iteratedGradient 1 u x w, v⟫_ℝ := by
+  set g := Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)
+  -- the component `⟪∇u, c⟫` has weak derivative `⟪D²u d, c⟫` in the direction `d`
+  have hcomp (c d : E) : HasWeakLineDerivOn mu Omega (fun x => ⟪g x, c⟫_ℝ)
+      (fun x => ⟪Wkp.iteratedGradient 1 u x d, c⟫_ℝ) d := by
+    simpa only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, real_inner_comm c] using
+      ((Wkp.hasWeakFDerivOn_iteratedGradient 0 u).clm_comp (innerSL ℝ c)).hasWeakLineDerivOn d
+  have hval (c : E) : HasWeakLineDerivOn mu Omega (Wkp.value 1 (Wkp.lowerOrder 1 u))
+      (fun x => ⟪g x, c⟫_ℝ) c := by
+    simpa only [innerSL_apply_apply] using
+      (Wkp.hasWeakFDerivOn_value (Wkp.lowerOrder 1 u)).hasWeakLineDerivOn c
+  exact (hcomp w v).ae_eq ((hval v).comm (hcomp v w) (hval w))
+
+/-- **The weak Hessian is self-adjoint.** For `u ∈ W^{2,p}(Ω)`, the weak Hessian
+`D²u(x) = TauCeti.Wkp.iteratedGradient 1 u x` is a self-adjoint endomorphism of `E` for almost
+every `x ∈ Ω`. -/
+theorem Wkp.adjoint_iteratedGradient_one_ae_eq (u : Wkp mu Omega p 2) :
+    ∀ᵐ x ∂mu.restrict Omega,
+      (Wkp.iteratedGradient 1 u x).adjoint = Wkp.iteratedGradient 1 u x := by
+  set b := stdOrthonormalBasis ℝ E
+  filter_upwards [ae_all_iff.2 fun i => ae_all_iff.2 fun j =>
+    Wkp.inner_iteratedGradient_one_apply_ae_eq u (b i) (b j)] with x hx
+  -- symmetry along an orthonormal basis gives self-adjointness
+  refine (ContinuousLinearMap.coe_injective ?_).symm
+  rw [← ContinuousLinearMap.adjoint_toLinearMap]
+  refine (LinearMap.eq_adjoint_iff_basis b.toBasis b.toBasis _ _).2 fun i j => ?_
+  simpa only [ContinuousLinearMap.coe_coe, OrthonormalBasis.coe_toBasis] using
+    (hx i j).trans (real_inner_comm _ _).symm
 
 end TauCeti

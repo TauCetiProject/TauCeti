@@ -31,6 +31,8 @@ Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 2, "Deri
 
 ## Main results
 
+* `AbstractSimplicialComplex.support_barycentricSubdivisionLinearMap_eq_greatest`: the support of
+  a nonnegative combination of the barycenters of a chain of faces is the greatest face.
 * `AbstractSimplicialComplex.linearIndepOn_faceBarycenter`: the barycenters of a chain of faces
   are linearly independent.
 * `AbstractSimplicialComplex.barycentricSubdivisionRealizationMap_injective`: the canonical
@@ -59,7 +61,7 @@ private theorem inv_card_pos (K : AbstractSimplicialComplex ι) (σ : Face K) :
 
 /-- The greatest face of a nonnegative chain-supported combination is exactly the coordinate
 support of its image under the barycentric-subdivision linear map. -/
-private theorem support_barycentricSubdivisionLinearMap_eq_greatest
+theorem support_barycentricSubdivisionLinearMap_eq_greatest
     (K : AbstractSimplicialComplex ι) {a : Face K →₀ ℝ} (ha : ∀ σ, 0 ≤ a σ)
     {σ : Face K} (hσ : σ ∈ a.support) (hmax : ∀ τ ∈ a.support, τ ≤ σ) :
     (barycentricSubdivisionLinearMap K a).support = σ.1 := by
@@ -130,6 +132,25 @@ private theorem barycentricSubdivisionLinearMap_apply_eq_of_exposed
     simp [hvτ]
   · exact fun h => (h hσ).elim
 
+/-- If two nonnegative combinations have the same image under the barycentric-subdivision linear
+map and `σ` is the greatest face of a chain-supported `a` and also lies in the support of `b`,
+then the coefficient of `σ` in `b` is at most that in `a`: read the image at a vertex exposing
+`σ` in `a`. -/
+private theorem coeff_le_of_barycentricSubdivisionLinearMap_eq
+    (K : AbstractSimplicialComplex ι) {a b : Face K →₀ ℝ} (hb : ∀ σ, 0 ≤ b σ)
+    (hca : IsChain (· ≤ ·) (a.support : Set (Face K))) {σ : Face K} (hσa : σ ∈ a.support)
+    (hσmaxa : ∀ τ ∈ a.support, τ ≤ σ) (hσb : σ ∈ b.support)
+    (hab : barycentricSubdivisionLinearMap K a = barycentricSubdivisionLinearMap K b) :
+    b σ ≤ a σ := by
+  obtain ⟨v, hvσ, hva⟩ := exists_mem_greatest_not_mem_of_ne_face K hca hσmaxa
+  refine le_of_mul_le_mul_right ?_ (inv_card_pos K σ)
+  rw [← barycentricSubdivisionLinearMap_apply_eq_of_exposed K hσa hvσ hva, hab,
+    barycentricSubdivisionLinearMap_apply]
+  have hsum := Finset.single_le_sum (s := b.support)
+    (f := fun ρ => b ρ * if v ∈ ρ.1 then (ρ.1.card : ℝ)⁻¹ else 0)
+    (fun ρ _ => mul_nonneg (hb ρ) (by positivity)) hσb
+  simpa [hvσ] using hsum
+
 private theorem barycentricSubdivisionLinearMap_injective_of_nonneg_of_isChain
     (K : AbstractSimplicialComplex ι) (a b : Face K →₀ ℝ)
     (ha : ∀ σ, 0 ≤ a σ) (hb : ∀ σ, 0 ≤ b σ)
@@ -138,7 +159,7 @@ private theorem barycentricSubdivisionLinearMap_injective_of_nonneg_of_isChain
     (hab : barycentricSubdivisionLinearMap K a = barycentricSubdivisionLinearMap K b) : a = b := by
   induction hmeasure : a.support.card + b.support.card using Nat.strong_induction_on
     generalizing a b with
-  | h n ih =>
+  | ind n ih =>
       -- A nonzero nonnegative combination has nonzero image, so the zero cases agree.
       by_cases ha0 : a = 0
       · subst a
@@ -161,29 +182,11 @@ private theorem barycentricSubdivisionLinearMap_injective_of_nonneg_of_isChain
             apply Subtype.ext
             rw [← hsuppa, hab, hsuppb]
           subst τ
-          obtain ⟨v, hvσ, hva⟩ :=
-            exists_mem_greatest_not_mem_of_ne_face K hca hσmaxa
-          obtain ⟨w, hwσ, hwb⟩ :=
-            exists_mem_greatest_not_mem_of_ne_face K hcb hτmaxb
-          have hcard : 0 < (σ.1.card : ℝ)⁻¹ := inv_card_pos K σ
-          have habσ : a σ = b σ := by
-            -- Evaluate at an exposed vertex for each chain to compare the greatest coefficients
-            -- in both directions.
-            have hab_le : b σ * (σ.1.card : ℝ)⁻¹ ≤ a σ * (σ.1.card : ℝ)⁻¹ := by
-              rw [← barycentricSubdivisionLinearMap_apply_eq_of_exposed K hσa hvσ hva, hab]
-              rw [barycentricSubdivisionLinearMap_apply]
-              have hsum := Finset.single_le_sum (s := b.support)
-                (f := fun ρ => b ρ * if v ∈ ρ.1 then (ρ.1.card : ℝ)⁻¹ else 0)
-                (fun ρ _ => mul_nonneg (hb ρ) (by positivity)) hτb
-              simpa [hvσ] using hsum
-            have hba_le : a σ * (σ.1.card : ℝ)⁻¹ ≤ b σ * (σ.1.card : ℝ)⁻¹ := by
-              rw [← barycentricSubdivisionLinearMap_apply_eq_of_exposed K hτb hwσ hwb, ← hab]
-              rw [barycentricSubdivisionLinearMap_apply]
-              have hsum := Finset.single_le_sum (s := a.support)
-                (f := fun ρ => a ρ * if w ∈ ρ.1 then (ρ.1.card : ℝ)⁻¹ else 0)
-                (fun ρ _ => mul_nonneg (ha ρ) (by positivity)) hσa
-              simpa [hwσ] using hsum
-            nlinarith
+          -- Reading the common image at an exposed vertex of each chain compares the greatest
+          -- coefficients in both directions.
+          have habσ : a σ = b σ := le_antisymm
+            (coeff_le_of_barycentricSubdivisionLinearMap_eq K ha hcb hτb hτmaxb hσa hab.symm)
+            (coeff_le_of_barycentricSubdivisionLinearMap_eq K hb hca hσa hσmaxa hτb hab)
           -- Erase the common greatest term and apply the strict induction hypothesis.
           have hmapErase : barycentricSubdivisionLinearMap K (a.erase σ) =
               barycentricSubdivisionLinearMap K (b.erase σ) := by

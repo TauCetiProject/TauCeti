@@ -54,6 +54,9 @@ Diagram Codes*, Definitions 2--3, and the oriented crossing convention of W. B. 
 * `TauCeti.BasedOrientedGaussCode.toOrientedPDCode_writhe` proves agreement of the two writhes.
 * `TauCeti.BasedOrientedGaussCode.toOrientedPDCode_injective` proves that the conversion loses no
   Gauss-code data.
+* `TauCeti.BasedOrientedGaussCode.relabel_toOrientedPDCode_eq` recognises the converted code up to
+  relabelling: an oriented PD-code whose arcs, directions and crossings are read off the traversal
+  of a Gauss code is a relabelling of its converted code.
 * `TauCeti.FramedBasedOrientedGaussCode.toFramedOrientedPDCode_injective` proves the same for the
   framed conversion.
 -/
@@ -226,14 +229,10 @@ private theorem traversalEdge_involutive (n : ℕ) : Function.Involutive (traver
   · exact Prod.ext (Equiv.apply_symm_apply (finRotate _) i) rfl
   · exact Prod.ext (Equiv.symm_apply_apply (finRotate _) i) rfl
 
-private def traversalEdgePerm (n : ℕ) : Equiv.Perm (Fin (2 * n) × Bool) :=
-  Function.Involutive.toPerm _ (traversalEdge_involutive n)
-
 /-- Arc pairing on visit ends is a perfect matching. -/
 private def traversalEdgePair (n : ℕ) : PerfectMatching (Fin (2 * n) × Bool) :=
-  PerfectMatching.mk (traversalEdgePerm n)
-    (fun p => (traversalEdgePerm n).left_inv p)
-    (by rintro ⟨i, outgoing⟩ h; cases outgoing <;> simp [traversalEdgePerm, traversalEdge] at h)
+  PerfectMatching.ofInvolutive (traversalEdge_involutive n)
+    (by rintro ⟨i, outgoing⟩ h; cases outgoing <;> simp [traversalEdge] at h)
 
 /-- The permutation that places the four crossing slots into the half-edge enumeration induced by
 the Gauss traversal. -/
@@ -267,7 +266,7 @@ noncomputable def toOrientedPDCode (D : BasedOrientedGaussCode n) : OrientedPDCo
     rw [PerfectMatching.congr_val_apply]
     obtain ⟨i, outgoing⟩ := (visitHalfEdgeEquiv n).symm h
     rw [Equiv.symm_apply_apply]
-    cases outgoing <;> simp [traversalEdgePair, traversalEdgePerm, traversalEdge]
+    cases outgoing <;> simp [traversalEdgePair, traversalEdge]
   orientation_oppositeCrossingSlot := by
     intro c slot
     simp only [Equiv.trans_apply, Equiv.symm_apply_apply, crossingHalfEdgeEquiv_apply]
@@ -304,7 +303,7 @@ private theorem toOrientedPDCode_edgePair_outgoing_aux (D : BasedOrientedGaussCo
     (i : Fin (2 * n)) :
     D.toOrientedPDCode.edgePair.val (visitHalfEdgeEquiv n (i, true)) =
       visitHalfEdgeEquiv n (finRotate _ i, false) := by
-  simp [toOrientedPDCode, traversalEdgePair, traversalEdgePerm, traversalEdge]
+  simp [toOrientedPDCode, traversalEdgePair, traversalEdge]
 
 /-- Arc pairing follows the cyclic traversal, changing an outgoing end to the next incoming end
 and an incoming end to the previous outgoing end. -/
@@ -424,6 +423,47 @@ theorem toOrientedPDCode_injective : Function.Injective (toOrientedPDCode (n := 
   · funext c
     apply Units.ext
     simpa using congrArg (fun C : OrientedPDCode n => C.crossingSign c) h
+
+/-- **Recognising the PD-code of a Gauss code.** An oriented PD-code `P` with `m ≠ 0` crossings
+and no crossing-free circle is a relabelling of the half-edges of the PD-code of a Gauss code `G`
+as soon as some labelling `φ` of the incoming and outgoing ends of the visits of `G` by half-edges
+of `P` reads off the data of `P` from the traversal of `G`: the arc from the outgoing end of each
+visit goes to the incoming end of the next, the outgoing ends point away from their crossings,
+the slots of each crossing hold the ends of the visits of `G` at that crossing that
+`TauCeti.BasedOrientedGaussCode.toOrientedPDCode` puts there, and the over-strand of every
+crossing is the strand on slots `0` and `2`. -/
+theorem relabel_toOrientedPDCode_eq {m : ℕ} (hm : m ≠ 0) (G : BasedOrientedGaussCode m)
+    (P : OrientedPDCode m) (φ : Fin (2 * m) × Bool ≃ Fin (4 * m))
+    (hedge : ∀ i, P.edgePair.val (φ (i, true)) = φ (finRotate _ i, false))
+    (horient : ∀ i b, P.orientation (φ (i, b)) = b)
+    (hcross : ∀ c slot, P.halfEdge (PDCode.crossingSlotEquiv m (c, slot)) =
+      φ (G.crossingVisit c slot, G.crossingOutgoing c slot))
+    (hover : ∀ c, P.overPair c = false) (hcount : P.crossinglessComponentCount = 0) :
+    G.toOrientedPDCode.relabel ((visitHalfEdgeEquiv m).symm.trans φ) (Equiv.refl _) = P := by
+  have hedge' (i : Fin (2 * m)) (b : Bool) : P.edgePair.val (φ (i, b)) =
+      φ (if b then (finRotate _ i, false) else ((finRotate _).symm i, true)) := by
+    cases b
+    · apply P.edgePair.apply_eq_of_apply_eq
+      have h := hedge ((finRotate _).symm i)
+      rwa [Equiv.apply_symm_apply] at h
+    · exact hedge i
+  apply OrientedPDCode.ext
+  · apply PDCode.ext
+    · refine Equiv.ext fun x ↦ ?_
+      obtain ⟨⟨c, slot⟩, rfl⟩ := (PDCode.crossingSlotEquiv m).surjective x
+      simp [PDCode.crossingBlockEquiv_refl, hcross]
+    · refine Subtype.ext (Equiv.ext fun x ↦ ?_)
+      obtain ⟨⟨i, b⟩, rfl⟩ := φ.surjective x
+      simp [hedge']
+    · simp [hm, hcount]
+    · funext c
+      simp [hover]
+  · funext x
+    obtain ⟨⟨i, b⟩, rfl⟩ := φ.surjective x
+    simp [horient]
+  · have h := P.card_crossinglessComponents
+    rw [hcount, Multiset.card_eq_zero] at h
+    simp [hm, h]
 
 end BasedOrientedGaussCode
 

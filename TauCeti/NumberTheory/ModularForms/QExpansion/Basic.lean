@@ -20,8 +20,11 @@ Alongside it, the raw-function form of Mathlib's coefficient-uniqueness statemen
 `[FunLike F ℍ ℂ]`, and `ℍ → ℂ` carries no such instance, so an operator built as a plain
 function on `ℍ` — every Hecke-style slash sum before it is packaged as a `ModularForm` — cannot
 invoke it. The proof is Mathlib's, run through `UpperHalfPlane.hasFPowerSeriesOnBall_cuspFunction`,
-which *is* stated for `{f : ℍ → ℂ}`, with `qExpansionFormalMultilinearSeries` spelled out
-inline for the same reason.
+which *is* stated for `{f : ℍ → ℂ}`, and through
+`TauCeti.UpperHalfPlane.hasFPowerSeriesAt_cuspFunction`, the raw-function statement that the
+`q`-expansion is the power series of an analytic cusp function at `0`, with
+`qExpansionFormalMultilinearSeries` spelled out as `FormalMultilinearSeries.ofScalars` for the
+same reason.
 
 Alongside them, the `n`-th coefficient bundled as a `ℂ`-linear functional on *cusp* forms,
 `CuspForm.qExpansionCoeffₗ` — the linear map above, composed with the inclusion of cusp forms
@@ -52,6 +55,10 @@ expanded through: one multiplies by `q` and divides the expansion of the product
 ## Main declarations
 
 * `TauCeti.ModularForm.qExpansionLinearMap`.
+* `ModularForm.qExpansion_zsmul` (at root, so dot notation on `ModularForm` elaborates): the
+  `q`-expansion commutes with integer multiples.
+* `TauCeti.UpperHalfPlane.hasFPowerSeriesAt_cuspFunction`: the `q`-expansion of a raw function
+  is the power series of its cusp function at `0`.
 * `TauCeti.UpperHalfPlane.qExpansion_coeff_unique`.
 * `CuspForm.qExpansionCoeffₗ` (at root, so dot notation on `CuspForm` elaborates): the `n`-th
   coefficient as a `ℂ`-linear functional on cusp forms.
@@ -100,6 +107,25 @@ lemma ModularForm.qExpansionLinearMap_apply {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ
   unfold ModularForm.qExpansionLinearMap
   rfl
 
+/-- The `q`-expansion commutes with integer multiples of a modular form: it is additive, by
+`ModularForm.qExpansionAddHom`. -/
+lemma _root_.ModularForm.qExpansion_zsmul {Γ : Subgroup (GL (Fin 2) ℝ)} (hh : 0 < h)
+    (hΓ : h ∈ Γ.strictPeriods) {k : ℤ} (n : ℤ) (f : ModularForm Γ k) :
+    qExpansion h ⇑(n • f) = n • qExpansion h f :=
+  map_zsmul (_root_.ModularForm.qExpansionAddHom hh hΓ k) n f
+
+/-- If the cusp function of a raw function `f` on `ℍ` is analytic at `0`, then the
+`q`-expansion of `f` is its power series at `0`.
+
+This is the raw-function form of the step Mathlib's `UpperHalfPlane.hasFPowerSeries_cuspFunction`
+proves inline: `qExpansionFormalMultilinearSeries` needs `[FunLike F ℍ ℂ]`, so the series is
+written as `FormalMultilinearSeries.ofScalars` of the coefficients. -/
+lemma UpperHalfPlane.hasFPowerSeriesAt_cuspFunction {f : ℍ → ℂ}
+    (hfanalytic : AnalyticAt ℂ (cuspFunction h f) 0) :
+    HasFPowerSeriesAt (cuspFunction h f) (.ofScalars ℂ fun m ↦ (qExpansion h f).coeff m) 0 := by
+  simpa [_root_.UpperHalfPlane.qExpansion_coeff, div_eq_mul_inv, mul_comm]
+    using hfanalytic.hasFPowerSeriesAt
+
 /-- **Uniqueness of `q`-expansion coefficients, for a raw function on `ℍ`.** If `f` is given by
 a convergent expansion `f τ = ∑' m, c m * 𝕢 h τ ^ m` and its cusp function is analytic at `0`,
 then the `c m` are the coefficients of `qExpansion h f`.
@@ -113,11 +139,8 @@ lemma UpperHalfPlane.qExpansion_coeff_unique {f : ℍ → ℂ} {c : ℕ → ℂ}
     c m = (qExpansion h f).coeff m := by
   have h1 := (_root_.UpperHalfPlane.hasFPowerSeriesOnBall_cuspFunction hh hfanalytic
     hf).hasFPowerSeriesAt
-  have h2 : HasFPowerSeriesAt (cuspFunction h f)
-      (.ofScalars ℂ fun m ↦ (qExpansion h f).coeff m) 0 := by
-    simpa [_root_.UpperHalfPlane.qExpansion_coeff, div_eq_mul_inv, mul_comm]
-      using hfanalytic.hasFPowerSeriesAt
-  simpa using congr_arg (FormalMultilinearSeries.coeff · m) (h1.eq_formalMultilinearSeries h2)
+  simpa using congr_arg (FormalMultilinearSeries.coeff · m)
+    (h1.eq_formalMultilinearSeries (hasFPowerSeriesAt_cuspFunction hfanalytic))
 
 /-- The `q`-parameter of width `h` is `h`-periodic, read on `ℂ` through `ofComplex`. -/
 theorem UpperHalfPlane.periodic_qParam_comp_ofComplex (hh : h ≠ 0) :
@@ -154,7 +177,7 @@ variable {f g : ℍ → ℂ}
 /-- Off `q = 0`, the cusp function is evaluated at the logarithm of `q`. -/
 theorem UpperHalfPlane.cuspFunction_of_ne_zero {q : ℂ} (hq : q ≠ 0) (f : ℍ → ℂ) :
     cuspFunction h f q = f (ofComplex (Function.Periodic.invQParam h q)) := by
-  simp [cuspFunction, Function.Periodic.cuspFunction_eq_of_nonzero _ _ hq]
+  simp [cuspFunction, Function.Periodic.cuspFunction_eq_of_ne_zero _ _ hq]
 
 /-- Off `q = 0`, cusp functions commute with pointwise binary operations. -/
 theorem UpperHalfPlane.cuspFunction_map₂_eventuallyEq (op : ℂ → ℂ → ℂ) (f g : ℍ → ℂ) :

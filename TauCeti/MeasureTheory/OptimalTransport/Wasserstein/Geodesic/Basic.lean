@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Function.CurveAction.Geodesic
 public import TauCeti.MeasureTheory.OptimalTransport.DynamicPlan
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
+import TauCeti.MeasureTheory.Function.LpSeminorm.EDist
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Infinity.Basic
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Superposition
 
@@ -44,6 +45,16 @@ constant-speed geodesic (`AbsolutelyContinuousOnInterval.isGeodesicSegment_of_cu
 The same comparison gives the dynamic formulation of the Wasserstein distance: `W_p (μ, ν) ^ p`
 is the least expected action of a dynamic plan from `μ` to `ν`.
 
+In a strictly convex separable Banach space `E` the affine segments are the only geodesics, so for
+`1 < p < ∞` the geodesic segments of `P_p (E)` from `μ` to `ν` are exactly the linear
+interpolations `t ↦ ((1 - t) • x + t • y)₊ π` of the optimal couplings `π` of `μ` and `ν`. The
+optimal coupling need not be unique.
+
+## Main definitions
+
+* `TauCeti.IsDisplacementInterpolation`: a curve of probability laws induced by an optimal
+  dynamic plan concentrated on constant-speed geodesics, without choosing a presentation.
+
 ## Main results
 
 * `TauCeti.wassersteinEDist_timeMarginal_eq`: the laws at intermediate times of a dynamic plan
@@ -58,7 +69,7 @@ is the least expected action of a dynamic plan from `μ` to `ν`.
   of such a plan between two points of `P_p (X)` trace a geodesic segment of `P_p (X)`.
 * `TauCeti.WassersteinSpace.instIsGeodesicSpace`: on a Polish geodesic space, `P_p (X)` is a
   geodesic space for every `1 ≤ p ≤ ∞`.
-* `TauCeti.WassersteinSpace.isGeodesicSegment_iff_exists_ae_mem_geodesicPaths`: for
+* `TauCeti.WassersteinSpace.isGeodesicSegment_iff_isDisplacementInterpolation`: for
   `1 < p < ∞`, the geodesic segments of `P_p (X)` are exactly the curves of laws of optimal
   dynamic plans concentrated on geodesic paths.
 * `TauCeti.wassersteinEDist_rpow_le_lintegral_curveAction` and
@@ -66,10 +77,14 @@ is the least expected action of a dynamic plan from `μ` to `ν`.
   expected `p`-action of a dynamic plan from `μ` to `ν` on a Polish geodesic space.
 * `TauCeti.WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul`: on a separable Banach
   space, the laws of `(1 - t) • x + t • y` under an optimal coupling form a geodesic segment.
-* `TauCeti.WassersteinSpace.exists_isGeodesicSegment_isOptimalCoupling`: for the exponent `2`,
-  the coupling `(x, (1 - t) • x + t • y)₊ γ` of the source with the law at time `t` is optimal.
+* `TauCeti.WassersteinSpace.exists_isGeodesicSegment_isOptimalCoupling`: for a finite exponent
+  `1 ≤ p < ∞`, the coupling `(x, (1 - t) • x + t • y)₊ γ` of the source with the law at time `t`
+  is optimal.
 * `TauCeti.WassersteinSpace.exists_dist_sq_eq_integral_isGeodesicSegment_map_smul_add_smul`: for
   the exponent `2`, the interpolated plan can be chosen with `∫ ‖x - y‖² dπ = W₂ (μ, ν)²`.
+* `TauCeti.WassersteinSpace.isGeodesicSegment_iff_exists_isOptimalCoupling`: on a strictly convex
+  separable Banach space and for `1 < p < ∞`, the geodesic segments of `P_p (E)` from `μ` to `ν`
+  are exactly the linear interpolations of the optimal couplings of `μ` and `ν`.
 
 ## References
 
@@ -88,6 +103,32 @@ open scoped ENNReal unitInterval
 namespace TauCeti
 
 variable {p : ℝ≥0∞}
+
+section Definition
+
+variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X]
+
+/-- A curve of probability laws is a displacement interpolation if it is the curve of time
+marginals of a probability dynamic plan on constant-speed geodesics with optimal endpoint law.
+The optimality uses `eLpNorm`, so it includes the infinite exponent and infinite values. -/
+def IsDisplacementInterpolation (p : ℝ≥0∞) (μ : I → ProbabilityMeasure X) : Prop :=
+  ∃ η : Measure C(I, X), IsProbabilityMeasure η ∧
+    (∀ᵐ c ∂η, c ∈ geodesicPaths X) ∧
+    (∀ t, η.timeMarginal t = (μ t : Measure X)) ∧
+    eLpNorm (fun z : X × X ↦ edist z.1 z.2) p η.endpointLaw =
+      wassersteinEDist p (μ 0 : Measure X) (μ 1 : Measure X)
+
+/-- The dynamic-plan characterization of displacement interpolation. -/
+theorem isDisplacementInterpolation_iff {μ : I → ProbabilityMeasure X} :
+    IsDisplacementInterpolation p μ ↔
+      ∃ η : Measure C(I, X), IsProbabilityMeasure η ∧
+        (∀ᵐ c ∂η, c ∈ geodesicPaths X) ∧
+        (∀ t, η.timeMarginal t = (μ t : Measure X)) ∧
+        eLpNorm (fun z : X × X ↦ edist z.1 z.2) p η.endpointLaw =
+          wassersteinEDist p (μ 0 : Measure X) (μ 1 : Measure X) :=
+  Iff.rfl
+
+end Definition
 
 section Interpolation
 
@@ -287,7 +328,7 @@ variable [Fact (1 ≤ p)]
 laws at intermediate times of a probability dynamic plan concentrated on geodesic paths, whose
 endpoint law is an optimal coupling of two laws `μ` and `ν` of finite `p`-th moment, trace a
 geodesic segment of `P_p (X)` from `μ` to `ν`. -/
-theorem exists_isGeodesicSegment_timeMarginal {η : Measure C(I, X)} [IsProbabilityMeasure η]
+theorem exists_isGeodesicSegment_timeMarginal {η : Measure C(I, X)}
     (hη : ∀ᵐ γ ∂η, γ ∈ geodesicPaths X) {μ ν : WassersteinSpace p X}
     (h0 : η.timeMarginal 0 = μ) (h1 : η.timeMarginal 1 = ν)
     (hopt : eLpNorm (fun z : X × X ↦ edist z.1 z.2) p η.endpointLaw =
@@ -296,6 +337,11 @@ theorem exists_isGeodesicSegment_timeMarginal {η : Measure C(I, X)} [IsProbabil
     ∃ γ : ℝ → WassersteinSpace p X, IsGeodesicSegment γ μ ν ∧
       ∀ t : I, ((γ t : ProbabilityMeasure X) : Measure X) = η.timeMarginal t := by
   have hp : (1 : ℝ≥0∞) ≤ p := Fact.out
+  -- `η` has the total mass of its law `μ` at time `0`.
+  have : IsProbabilityMeasure η := by
+    rw [← Measure.isProbabilityMeasure_map_iff (ContinuousMap.measurable_eval 0).aemeasurable,
+      ← Measure.timeMarginal_def, h0]
+    infer_instance
   have hμν := wassersteinEDist_ne_top measurable_edist μ ν
   have hW (s t : I) : wassersteinEDist p (η.timeMarginal s) (η.timeMarginal t) =
       edist s t * wassersteinEDist p ((μ : ProbabilityMeasure X) : Measure X)
@@ -337,10 +383,6 @@ instance instIsGeodesicSpace [IsGeodesicSpace X] : IsGeodesicSpace (WassersteinS
     obtain ⟨η, -, hη, h0, h1, hopt, -⟩ :=
       exists_ae_mem_geodesicPaths_wassersteinEDist_timeMarginal_eq Fact.out _ _
         (wassersteinEDist_ne_top measurable_edist μ ν)
-    have : IsProbabilityMeasure η := by
-      rw [← Measure.isProbabilityMeasure_map_iff (ContinuousMap.measurable_eval 0).aemeasurable,
-        ← Measure.timeMarginal_def, h0]
-      infer_instance
     obtain ⟨γ, hγ, -⟩ := exists_isGeodesicSegment_timeMarginal hη h0 h1 hopt
     exact ⟨γ, hγ⟩
 
@@ -399,16 +441,14 @@ theorem exists_ae_mem_geodesicPaths_of_isGeodesicSegment (hp1 : 1 < p) (hp : p �
 and `1 < p < ∞`. A curve `γ` in `P_p (X)` is a geodesic segment on `[0, 1]` exactly when it is
 the curve of laws of a probability dynamic plan concentrated on geodesic paths of `X` whose
 endpoint law is an optimal coupling of `γ 0` and `γ 1`. -/
-theorem isGeodesicSegment_iff_exists_ae_mem_geodesicPaths (hp1 : 1 < p) (hp : p ≠ ∞)
+theorem isGeodesicSegment_iff_isDisplacementInterpolation (hp1 : 1 < p) (hp : p ≠ ∞)
     {γ : ℝ → WassersteinSpace p X} :
     IsGeodesicSegment γ (γ 0) (γ 1) ↔
-      ∃ η : Measure C(I, X), IsProbabilityMeasure η ∧ (∀ᵐ c ∂η, c ∈ geodesicPaths X) ∧
-        (∀ t : I, η.timeMarginal t = ((γ t : ProbabilityMeasure X) : Measure X)) ∧
-        eLpNorm (fun z : X × X ↦ edist z.1 z.2) p η.endpointLaw =
-          wassersteinEDist p ((γ 0 : ProbabilityMeasure X) : Measure X)
-            ((γ 1 : ProbabilityMeasure X) : Measure X) := by
+      IsDisplacementInterpolation p (fun t : I ↦ (γ t : ProbabilityMeasure X)) := by
+  rw [isDisplacementInterpolation_iff]
+  simp only [Icc.coe_zero, Icc.coe_one]
   refine ⟨exists_ae_mem_geodesicPaths_of_isGeodesicSegment hp1 hp, ?_⟩
-  rintro ⟨η, hηP, hη, hmarg, hopt⟩
+  rintro ⟨η, -, hη, hmarg, hopt⟩
   obtain ⟨γ', hγ', hγ'η⟩ := exists_isGeodesicSegment_timeMarginal hη
     (by rw [hmarg, Icc.coe_zero]) (by rw [hmarg, Icc.coe_one]) hopt
   refine hγ'.congr fun t ht ↦ ext (ProbabilityMeasure.toMeasure_injective ?_)
@@ -438,23 +478,9 @@ theorem WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul {μ ν : Was
         ((ν : ProbabilityMeasure E) : Measure E)) :
     ∃ γ : ℝ → WassersteinSpace p E, IsGeodesicSegment γ μ ν ∧ ∀ t ∈ Icc (0 : ℝ) 1,
       ((γ t : ProbabilityMeasure E) : Measure E) = π.map fun z ↦ (1 - t) • z.1 + t • z.2 := by
-  have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
   -- The plan, lifted to the affine segments joining its pairs of points.
-  have hseg : Measurable (segmentPath : E × E → C(I, E)) := segmentPath.continuous.measurable
-  have hη : ∀ᵐ γ ∂π.map segmentPath, γ ∈ geodesicPaths E :=
-    (ae_map_iff hseg.aemeasurable isClosed_geodesicPaths.measurableSet).2 <|
-      .of_forall segmentPath_mem_geodesicPaths
-  have hmarg (t : I) : (π.map segmentPath).timeMarginal t =
-      π.map fun z ↦ (1 - (t : ℝ)) • z.1 + (t : ℝ) • z.2 := by
-    rw [Measure.timeMarginal_map _ hseg]
-    congr 1
-    ext z
-    simp [AffineMap.lineMap_apply_module]
-  have hend : (π.map segmentPath).endpointLaw = π := by
-    rw [Measure.endpointLaw_def, Measure.map_map
-      ContinuousMap.measurable_endpoints hseg]
-    convert Measure.map_id
-    ext z <;> simp
+  have hη := π.ae_mem_geodesicPaths_map_segmentPath
+  have hmarg := π.timeMarginal_map_segmentPath
   have h0 : (π.map segmentPath).timeMarginal 0 = ((μ : ProbabilityMeasure E) : Measure E) := by
     rw [hmarg, ← hπ.fst_eq]
     simp [Measure.fst]
@@ -462,37 +488,42 @@ theorem WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul {μ ν : Was
     rw [hmarg, ← hπ.snd_eq]
     simp [Measure.snd]
   obtain ⟨γ, hγ, hγt⟩ := WassersteinSpace.exists_isGeodesicSegment_timeMarginal hη h0 h1
-    (by rw [hend, hπopt])
+    (by rw [Measure.endpointLaw_map_segmentPath, hπopt])
   exact ⟨γ, hγ, fun t ht ↦ by rw [hγt ⟨t, ht⟩, hmarg]⟩
 
-omit [Fact (1 ≤ p)] in
-/-- The interpolation of an optimal coupling `γ` of two laws `μ` and `ν` of `P₂(E)` for the
-quadratic cost is a geodesic segment `μ_t` from `μ` to `ν`, and `(x, (1 - t) • x + t • y)₊ γ` is
-an optimal coupling of `μ` and `μ_t`. -/
-theorem WassersteinSpace.exists_isGeodesicSegment_isOptimalCoupling {μ ν : WassersteinSpace 2 E}
-    {γ : Measure (E × E)}
-    (hγ : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) γ
+/-- The interpolation of an optimal coupling `γ` of two laws `μ` and `ν` of `P_p (E)` for the
+cost `d ^ p`, for a finite exponent `1 ≤ p < ∞`, is a geodesic segment `μ_t` from `μ` to `ν`, and
+`(x, (1 - t) • x + t • y)₊ γ` is an optimal coupling of `μ` and `μ_t`. -/
+theorem WassersteinSpace.exists_isGeodesicSegment_isOptimalCoupling (hp : p ≠ ∞)
+    {μ ν : WassersteinSpace p E} {γ : Measure (E × E)}
+    (hγ : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ p.toReal) γ
       ((μ : ProbabilityMeasure E) : Measure E) ((ν : ProbabilityMeasure E) : Measure E)) :
-    ∃ c : ℝ → WassersteinSpace 2 E, IsGeodesicSegment c μ ν ∧ ∀ t ∈ Icc (0 : ℝ) 1,
-      IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ))
+    ∃ c : ℝ → WassersteinSpace p E, IsGeodesicSegment c μ ν ∧ ∀ t ∈ Icc (0 : ℝ) 1,
+      IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ p.toReal)
         (γ.map fun z ↦ (z.1, (1 - t) • z.1 + t • z.2))
         ((μ : ProbabilityMeasure E) : Measure E) ((c t : ProbabilityMeasure E) : Measure E) := by
-  have : IsProbabilityMeasure γ := hγ.isProbabilityMeasure
-  have hopt := ((isOptimalCoupling_edist_rpow_iff measurable_edist two_ne_zero
-    ENNReal.ofNat_ne_top).1 (by simpa using hγ)).2
-  obtain ⟨c, hc, hct⟩ :=
-    WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul hγ.toIsCoupling hopt
-  refine ⟨c, hc, fun t ht ↦ WassersteinSpace.isOptimalCoupling_of_integral_le_dist_sq ?_ ?_⟩
-  · refine ⟨?_, ?_⟩
-    · rw [Measure.fst_map_prodMk (by fun_prop) (by fun_prop), ← hγ.fst_eq, Measure.fst]
-    · rw [Measure.snd_map_prodMk (by fun_prop) (by fun_prop), hct t ht]
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
+  obtain ⟨hγc, hopt⟩ := (isOptimalCoupling_edist_rpow_iff measurable_edist hp0 hp).1 hγ
+  obtain ⟨c, hc, hct⟩ := WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul hγc hopt
+  refine ⟨c, hc, fun t ht ↦
+    (isOptimalCoupling_edist_rpow_iff measurable_edist hp0 hp).2 ⟨⟨?_, ?_⟩, ?_⟩⟩
+  · rw [Measure.fst_map_prodMk (by fun_prop) (by fun_prop), ← hγc.fst_eq, Measure.fst]
+  · rw [Measure.snd_map_prodMk (by fun_prop) (by fun_prop), hct t ht]
   · -- The displacement of the new coupling is `t` times that of `γ`.
-    have hpt (z : E × E) : ‖z.1 - ((1 - t) • z.1 + t • z.2)‖ ^ 2 = t ^ 2 * ‖z.1 - z.2‖ ^ 2 := by
-      have : z.1 - ((1 - t) • z.1 + t • z.2) = t • (z.1 - z.2) := by module
-      rw [this, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
-    rw [integral_map (by fun_prop) (by fun_prop)]
-    simp only [hpt, integral_const_mul, ← WassersteinSpace.dist_sq_eq_integral hγ,
-      hc.dist_source_apply ht, mul_pow, le_refl]
+    have hscale : eLpNorm (fun z : E × E ↦ z.1 - z.2) p
+        (γ.map fun z ↦ (z.1, (1 - t) • z.1 + t • z.2)) =
+        ‖t‖ₑ * eLpNorm (fun z : E × E ↦ z.1 - z.2) p γ := by
+      rw [eLpNorm_map_measure (by fun_prop) (by fun_prop), ← eLpNorm_const_smul]
+      congr 1
+      ext z
+      simp only [Function.comp_apply, Pi.smul_apply]
+      module
+    -- The law `μ_t` is at distance `t * W_p (μ, ν)` from `μ`.
+    have hdist : edist μ (c t) = ‖t‖ₑ * edist μ ν := by
+      rw [edist_dist, edist_dist, hc.dist_source_apply ht, ENNReal.ofReal_mul ht.1,
+        Real.enorm_eq_ofReal ht.1]
+    rw [← eLpNorm_sub_eq_eLpNorm_edist, hscale, eLpNorm_sub_eq_eLpNorm_edist, hopt]
+    simpa only [WassersteinSpace.edist_def] using hdist.symm
 
 omit [Fact (1 ≤ p)] in
 /-- **Quadratic linear interpolation.** On a separable Banach space `E`, two laws `μ` and `ν` of
@@ -512,20 +543,56 @@ theorem WassersteinSpace.exists_dist_sq_eq_integral_isGeodesicSegment_map_smul_a
     ENNReal.ofNat_ne_top _ _
     (exists_isCoupling_of_wassersteinEDist_ne_top
       (WassersteinSpace.wassersteinEDist_ne_top measurable_edist μ ν))
-  -- The `L²` norm of the displacement is the `L²` norm of the ground distance.
-  have hd : eLpNorm (fun z : E × E ↦ z.1 - z.2) 2 π = eLpNorm (fun z : E × E ↦ edist z.1 z.2) 2 π :=
-    eLpNorm_congr_enorm_ae (by fun_prop) measurable_edist.aestronglyMeasurable
-      (.of_forall fun z ↦ by simp [edist_eq_enorm_sub])
   have hmem : MemLp (fun z : E × E ↦ z.1 - z.2) 2 π := by
-    rw [memLp_iff, hd, hπopt]
+    rw [memLp_iff, eLpNorm_sub_eq_eLpNorm_edist, hπopt]
     exact (WassersteinSpace.wassersteinEDist_ne_top measurable_edist μ ν).lt_top
   refine ⟨π, hπ, hmem, ?_, WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul hπ hπopt⟩
-  rw [WassersteinSpace.dist_def, ← hπopt, ← hd,
+  rw [WassersteinSpace.dist_def, ← hπopt, ← eLpNorm_sub_eq_eLpNorm_edist,
     hmem.eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top,
     ENNReal.toReal_ofReal (by positivity)]
   simpa using Real.rpow_inv_natCast_pow (n := 2) (integral_nonneg fun z ↦ by positivity)
     two_ne_zero
 
 end Normed
+
+section StrictConvex
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [StrictConvexSpace ℝ E]
+  [CompleteSpace E] [SecondCountableTopology E] [MeasurableSpace E] [BorelSpace E] [Fact (1 ≤ p)]
+
+/-- **The geodesics of `P_p (E)` are the linear interpolations of optimal couplings.** Let `E` be
+a strictly convex separable Banach space and `1 < p < ∞`. A curve `γ` is a geodesic segment of
+`P_p (E)` from `μ` to `ν` exactly when there is an optimal coupling `π` of `μ` and `ν` for the
+cost `d ^ p` such that for every `t ∈ [0, 1]` the law `γ t` is the law of `(1 - t) • x + t • y`
+under `π`. The optimal coupling need not be unique (Ambrosio–Gigli–Savaré, §7.2). -/
+theorem WassersteinSpace.isGeodesicSegment_iff_exists_isOptimalCoupling (hp1 : 1 < p) (hp : p ≠ ∞)
+    {μ ν : WassersteinSpace p E} {γ : ℝ → WassersteinSpace p E} :
+    IsGeodesicSegment γ μ ν ↔ ∃ π, IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ p.toReal) π
+      ((μ : ProbabilityMeasure E) : Measure E) ((ν : ProbabilityMeasure E) : Measure E) ∧
+      ∀ t ∈ Icc (0 : ℝ) 1,
+        ((γ t : ProbabilityMeasure E) : Measure E) = π.map fun z ↦ (1 - t) • z.1 + t • z.2 := by
+  have hp0 : p ≠ 0 := (zero_lt_one.trans hp1).ne'
+  refine ⟨fun h ↦ ?_, fun ⟨π, hπ, hγ⟩ ↦ ?_⟩
+  · -- A geodesic segment is the curve of laws of an optimal dynamic plan on geodesic paths, and
+    -- the geodesic paths of `E` are affine segments.
+    obtain ⟨η, -, hη, hmarg, hopt⟩ := exists_ae_mem_geodesicPaths_of_isGeodesicSegment hp1 hp h
+    have hcoup := η.isCoupling_map_timeMarginal 0 1
+    rw [← Measure.endpointLaw_def, hmarg, hmarg, Icc.coe_zero, Icc.coe_one, h.source,
+      h.target] at hcoup
+    refine ⟨η.endpointLaw,
+      (isOptimalCoupling_edist_rpow_iff measurable_edist hp0 hp).2 ⟨hcoup, hopt⟩, fun t ht ↦ ?_⟩
+    rw [← hmarg ⟨t, ht⟩, Measure.timeMarginal_def, Measure.endpointLaw_def,
+      Measure.map_map (by fun_prop) ContinuousMap.measurable_endpoints]
+    refine Measure.map_congr ?_
+    filter_upwards [hη] with c hc
+    rw [eq_segmentPath_of_mem_geodesicPaths hc]
+    simp [segmentPath_apply, AffineMap.lineMap_apply_module]
+  · -- The linear interpolation of an optimal coupling is a geodesic segment.
+    obtain ⟨hπc, hπopt⟩ := (isOptimalCoupling_edist_rpow_iff measurable_edist hp0 hp).1 hπ
+    obtain ⟨γ₀, hγ₀, hγ₀t⟩ := exists_isGeodesicSegment_map_smul_add_smul hπc hπopt
+    exact hγ₀.congr fun t ht ↦
+      ext (ProbabilityMeasure.toMeasure_injective ((hγ t ht).trans (hγ₀t t ht).symm))
+
+end StrictConvex
 
 end TauCeti

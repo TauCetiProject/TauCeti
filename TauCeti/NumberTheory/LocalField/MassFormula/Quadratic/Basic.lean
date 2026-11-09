@@ -124,7 +124,7 @@ theorem totallyRamifiedOfDegree_two_eq (h2 : ¬ ringChar 𝓀[K] ∣ 2) {ϖ : �
   have huK : Even (normalizedValuation K uK).toAdd := by
     rw [normalizedValuation_integerUnits]
     exact ⟨0, by simp⟩
-  have huK' : ¬ IsSquare uK := fun h ↦ hu (isSquare_units_val_iff.2 h)
+  have huK' : ¬ IsSquare uK := fun h ↦ hu (Units.isSquare_coe_iff.2 h)
   obtain ⟨r, hr, hsq⟩ := exists_isSquare_mul_of_isUnit_two h2' hπ huK huK'
     (Units.mk0 a ha)
   have hsq' : IsSquare (a * (r : K)) := by simpa using hsq.map (Units.coeHom K)
@@ -159,7 +159,7 @@ theorem encard_totallyRamifiedOfDegree_two (h2 : ¬ ringChar 𝓀[K] ∣ 2) :
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
   obtain ⟨u, hu⟩ := exists_integerUnit_not_isSquare_residue h2'
   have hu' : ¬ IsSquare ((u : 𝒪[K]) : K) := fun h ↦
-    hu ((isSquare_unitsMap_subtype_iff h2' u).1 (isSquare_units_val_iff.1 h))
+    hu ((isSquare_unitsMap_subtype_iff h2' u).1 (Units.isSquare_coe_iff.1 h))
   obtain ⟨x, hx⟩ := IsSepClosed.exists_pow_nat_eq (algebraMap K (SeparableClosure K) ϖ) 2
   obtain ⟨y, hy⟩ := IsSepClosed.exists_pow_nat_eq
     (algebraMap K (SeparableClosure K) ((u : 𝒪[K]) * ϖ : 𝒪[K])) 2

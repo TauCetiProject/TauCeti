@@ -30,12 +30,11 @@ winding integrand; in particular it is `0` at `z = 0`. Its relation to the compl
 `realWindingIntegrand_def` and its coordinate form is `realWindingIntegrand_eq_div`. -/
 public noncomputable def realWindingIntegrand (z v : ℂ) : ℝ := (z⁻¹ * v).im
 
-/-- The real winding integrand is the imaginary part of the complex winding integrand `z⁻¹ * v`.
-This is a convenient public rewrite lemma relating the real integrand to the complex index
-integrand `(γ - w)⁻¹ * γ'`. -/
+/-- The real winding integrand is the imaginary part of the complex winding integrand
+`z⁻¹ * v`; for `z = γ t - w` and `v = γ' t` this is the complex index integrand
+`(γ t - w)⁻¹ * γ' t`. -/
 theorem realWindingIntegrand_def (z v : ℂ) :
-    realWindingIntegrand z v = (z⁻¹ * v).im := by
-  rw [realWindingIntegrand]
+    realWindingIntegrand z v = (z⁻¹ * v).im := (rfl)
 
 /-- The coordinate formula for the real winding integrand. -/
 @[simp] theorem realWindingIntegrand_eq_div (z v : ℂ) :
@@ -44,28 +43,30 @@ theorem realWindingIntegrand_def (z v : ℂ) :
   rw [realWindingIntegrand_def, inv_mul_eq_div, Complex.div_im]
   ring
 
+/-- The real winding integrand vanishes at the origin, whatever the velocity. -/
+theorem realWindingIntegrand_zero_left (v : ℂ) : realWindingIntegrand 0 v = 0 := by
+  simp only [realWindingIntegrand_def, inv_zero, zero_mul, Complex.zero_im]
+
 /-- Scaling position and velocity by the same nonzero complex parameter leaves the real winding
 integrand unchanged: it is the imaginary part of `(c * z)⁻¹ * (c * v) = z⁻¹ * v`, where the two
 factors of `c` cancel in `ℂ`. -/
 theorem realWindingIntegrand_mul_mul {c : ℂ} (hc : c ≠ 0) (z v : ℂ) :
     realWindingIntegrand (c * z) (c * v) = realWindingIntegrand z v := by
-  rw [realWindingIntegrand_def, realWindingIntegrand_def, mul_inv_rev,
-    mul_assoc, inv_mul_cancel_left₀ hc]
+  simp only [realWindingIntegrand_def, mul_inv_rev, mul_assoc, inv_mul_cancel_left₀ hc]
 
 /-- Negating the velocity while keeping the position fixed negates the real winding integrand:
 it is the imaginary part of `z⁻¹ * (-v) = -(z⁻¹ * v)`. -/
 theorem realWindingIntegrand_neg_right (z v : ℂ) :
     realWindingIntegrand z (-v) = -realWindingIntegrand z v := by
-  simp only [realWindingIntegrand_eq_div, Complex.neg_im, Complex.neg_re]; ring
+  simp only [realWindingIntegrand_def, mul_neg, Complex.neg_im]
 
 /-- **A crude bound on the real winding integrand.** `realWindingIntegrand z v = (z⁻¹ * v).im`,
-whose absolute value is at most `‖z⁻¹ * v‖ = ‖v‖ / ‖z‖` -- including at `z = 0`, where both sides
-vanish (`simp [realWindingIntegrand_eq_div]`, `div_zero`). -/
+whose absolute value is at most `‖z⁻¹ * v‖ = ‖v‖ / ‖z‖`. The bound holds for every `z`,
+including `z = 0`, where both sides vanish. -/
 theorem abs_realWindingIntegrand_le_div_norm (z v : ℂ) :
     |realWindingIntegrand z v| ≤ ‖v‖ / ‖z‖ := by
-  rw [realWindingIntegrand_def]
-  calc |(z⁻¹ * v).im| ≤ ‖z⁻¹ * v‖ := Complex.abs_im_le_norm _
-    _ = ‖v‖ / ‖z‖ := by rw [norm_mul, norm_inv, mul_comm, ← div_eq_mul_inv]
+  rw [realWindingIntegrand_def, div_eq_inv_mul, ← norm_inv, ← norm_mul]
+  exact Complex.abs_im_le_norm _
 
 /-- **The crude bound above, weakened to a uniform denominator** `m ≤ ‖z‖` away from the
 singularity. -/

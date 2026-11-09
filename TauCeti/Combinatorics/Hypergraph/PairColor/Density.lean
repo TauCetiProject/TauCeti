@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Basic
 public import Mathlib.Data.Finset.Prod
+public import Mathlib.Combinatorics.SimpleGraph.Density
 public import Mathlib.Algebra.BigOperators.Field
 public import Mathlib.Algebra.Order.Field.Rat
+import TauCeti.Data.Finset.Basic
 import Mathlib.Tactic.Positivity
 
 /-!
@@ -62,6 +64,25 @@ theorem pairColorDensity_mul_card_support [DecidableEq κ] [DecidableEq V]
       Nat.eq_zero_of_le_zero (h ▸ card_le_card hsub)
     simp [pairColorDensity_def, h, hc]
   · rw [pairColorDensity_def, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr h)]
+
+/-- For disjoint sets, every pair in `s ×ˢ t` is a distinct pair, so the density times
+`#s * #t` is the color count. -/
+theorem pairColorDensity_mul_card_of_disjoint [DecidableEq κ] (S : PairColorSystem κ V) (c : κ)
+    {s t : Finset V} (hst : Disjoint s t) :
+    pairColorDensity S c s t * (#s * #t) =
+      (#((s ×ˢ t).filter fun p => S.colorOfPair p.1 p.2 = some c) : ℚ) := by
+  classical
+  rw [← pairColorDensity_mul_card_support, filter_ne_product_of_disjoint hst, card_product,
+    Nat.cast_mul]
+
+/-- On disjoint sets, pair-color density agrees with the density of the relation selecting
+that color. This identifies the distinct-pair and Cartesian-product normalizations. -/
+theorem pairColorDensity_eq_edgeDensity_of_disjoint [DecidableEq κ]
+    (S : PairColorSystem κ V) (c : κ)
+    {s t : Finset V} (hst : Disjoint s t) :
+    pairColorDensity S c s t = Rel.edgeDensity (fun x y ↦ S.colorOfPair x y = some c) s t := by
+  classical
+  simp [pairColorDensity_def, filter_ne_product_of_disjoint hst, Rel.edgeDensity, Rel.interedges]
 
 /-- Pair-color densities are nonnegative. -/
 theorem pairColorDensity_nonneg (S : PairColorSystem κ V) (c : κ) (s t : Finset V) :
@@ -130,6 +151,15 @@ theorem sum_pairColorDensity [Fintype κ] [DecidableEq V]
   rw [← sum_div, ← Nat.cast_sum, hcount]
   exact div_self (Nat.cast_ne_zero.mpr h.card_pos.ne')
 
+/-- Palette densities sum to at most one: to one on nonempty distinct-pair support, and to zero
+otherwise. -/
+theorem sum_pairColorDensity_le_one [Fintype κ] (S : PairColorSystem κ V) (s t : Finset V) :
+    ∑ c, pairColorDensity S c s t ≤ 1 := by
+  classical
+  by_cases h : ((s ×ˢ t).filter fun p => p.1 ≠ p.2).Nonempty
+  · exact (sum_pairColorDensity S s t h).le
+  · simp [pairColorDensity_eq_zero_of_support_eq_empty S _ s t (not_nonempty_iff_eq_empty.1 h)]
+
 /-- Reversing both the ordered cells and the palette color preserves density. -/
 theorem pairColorDensity_swap (S : PairColorSystem κ V) (c : κ) (s t : Finset V) :
     pairColorDensity S (S.rev c) t s = pairColorDensity S c s t := by
@@ -139,10 +169,30 @@ theorem pairColorDensity_swap (S : PairColorSystem κ V) (c : κ) (s t : Finset 
     apply card_equiv (Equiv.prodComm V V)
     intro p
     simp [and_comm, ← S.colorOfPair_swap_eq_some_iff p.2 p.1 c]
-  have hsupport : #((t ×ˢ s).filter fun p => p.1 ≠ p.2) =
-      #((s ×ˢ t).filter fun p => p.1 ≠ p.2) := by
-    apply card_equiv (Equiv.prodComm V V)
-    simp [and_comm, ne_comm]
-  simp only [pairColorDensity_def, hcolor, hsupport]
+  simp only [pairColorDensity_def, hcolor, card_filter_ne_product_comm t s]
+
+/-- Pair-color density depends only on the colors on the tested rectangle. -/
+theorem pairColorDensity_congr {κ V : Type*} {S T : PairColorSystem κ V} {s t : Finset V}
+    (h : ∀ x ∈ s, ∀ y ∈ t, S.colorOfPair x y = T.colorOfPair x y) (c : κ) :
+    pairColorDensity S c s t = pairColorDensity T c s t := by
+  classical
+  have hf : {p ∈ s ×ˢ t | S.colorOfPair p.1 p.2 = some c} =
+      {p ∈ s ×ˢ t | T.colorOfPair p.1 p.2 = some c} := by
+    apply filter_congr
+    intro p hp
+    rw [h p.1 (mem_product.1 hp).1 p.2 (mem_product.1 hp).2]
+  simp only [pairColorDensity_def, hf]
+
+/-- Restriction along an embedding preserves every pair-color density on the image sets,
+including overlapping sets and empty distinct-pair supports. -/
+@[simp]
+theorem pairColorDensity_comap {W : Type*} (S : PairColorSystem κ W) (f : V ↪ W)
+    (c : κ) (s t : Finset V) :
+    pairColorDensity (S.comap f) c s t = pairColorDensity S c (s.map f) (t.map f) := by
+  classical
+  simp only [pairColorDensity_def, ← prodMap_map_product, filter_map,
+    Function.Embedding.coe_prodMap, Function.comp_def, Prod.map_fst, Prod.map_snd,
+    PairColorSystem.colorOfPair_comap, ne_eq, f.injective.eq_iff, card_map]
+  rfl
 
 end TauCeti

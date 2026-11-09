@@ -1,10 +1,11 @@
 name: pick-runner
 
 # Staging tries eligible dedicated machines before cloud-capacity discovery. Machines
-# advertise class, permanent machine, and ephemeral instance labels. All limits
-# are approximate: concurrent pickers can observe the same free capacity.
-# Full or unknown cloud capacity queues on GitHub instead of bypassing the
-# Namespace cap. Picker/control jobs do not count towards the build-job cap.
+# advertise capacity through registered runners with class, permanent machine,
+# and ephemeral instance labels. Concurrent pickers can observe the same free slot.
+# Capacity observations are advisory. A partial Namespace count below its cap
+# cannot establish spare capacity; unknown pools retain native GitHub fallback.
+# Picker/control jobs do not count towards the build-job cap.
 # Preserve the repository API reserve for status and merge automation.
 on:
   workflow_call:
@@ -21,10 +22,22 @@ on:
         description: Immutable 40-character PR head; empty disables dedicated PR placement and recovery
         type: string
         default: ""
+      pr-number:
+        description: Ordinary PR whose manual local-test route should be checked before selection
+        type: number
+        default: 0
     secrets:
+      SELF_TESTED_APP_ID: { required: false }
+      SELF_TESTED_APP_KEY: { required: false }
       FLEET_READ_TOKEN: { required: false }
       TAUCETI_GITHUB_STATE_TOKEN: { required: false }
     outputs:
+      hosted-slot:
+        description: Native GitHub bulk-build concurrency slot, from 0 through 18
+        value: ${{ jobs.pick.outputs.hosted-slot }}
+      skip-pr-build:
+        description: Eligible manual self-tested assertion for this exact PR head
+        value: ${{ jobs.pick.outputs.skip-pr-build }}
       runner:
         description: JSON runs-on target; callers must match attempt to their current github.run_attempt before using runner or pool
         value: ${{ jobs.pick.outputs.runner }}
@@ -49,12 +62,15 @@ on:
 
 jobs:
   pick:
-    # Bors selection must not wait behind the GitHub builds it is trying to
-    # dispatch. Reuse the existing small, high-priority Namespace control profile.
-    runs-on: ${{ inputs.fleet-staging && fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) || 'ubuntu-24.04' }}
+    # Every picker must reach the fleet without first waiting for a GitHub build slot.
+    # Keep control work small, high priority, and isolated to this workflow run.
+    # An operator can recover selection during a Namespace outage without a PR.
+    runs-on: ${{ vars.PICKER_GITHUB_FALLBACK == 'true' && 'ubuntu-24.04' || fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
     timeout-minutes: 5
     continue-on-error: true
     outputs:
+      hosted-slot: ${{ steps.hosted-slot.outputs.slot }}
+      skip-pr-build: ${{ steps.local-route.outputs.skip }}
       runner: ${{ steps.pick.outputs.runner }}
       pool: ${{ steps.pick.outputs.pool }}
       attempt: ${{ steps.pick.outputs.attempt }}
@@ -63,6 +79,16 @@ jobs:
       namespace_busy: ${{ steps.pick.outputs.namespace_busy }}
       namespace_cap: ${{ steps.pick.outputs.namespace_cap }}
     steps:
+      - name: Choose a native GitHub bulk-build concurrency slot
+        id: hosted-slot
+        env:
+          HOSTED_RUN_ID: ${{ github.run_id }}
+        run: |
+          python3 - <<'PYTHON'
+          import os
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              print("slot=" + str(int(os.environ["HOSTED_RUN_ID"]) % 19), file=output)
+          PYTHON
       - name: Checkout workflow-pinned runner selector
         uses: actions/checkout@v4
         with:
@@ -73,12 +99,33 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
           project-directory: .
+      - name: Read the allowlist using the existing organization App
+        id: team-token
+        if: inputs.pr-number > 0 && (contains(github.event.pull_request.labels.*.name, 'self-tested') || github.event.label.name == 'self-tested' || github.event_name == 'workflow_dispatch')
+        continue-on-error: true
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf
+        with:
+          app-id: ${{ secrets.SELF_TESTED_APP_ID }}
+          private-key: ${{ secrets.SELF_TESTED_APP_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-members: read
+      - name: Decide the manual PR route before runner selection
+        id: local-route
+        if: inputs.pr-number > 0 && (contains(github.event.pull_request.labels.*.name, 'self-tested') || github.event.label.name == 'self-tested' || github.event_name == 'workflow_dispatch')
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SELF_TESTED_MERGE_BACKEND: ${{ vars.MERGE_BACKEND }}
+          TAUCETI_TEAM_TOKEN: ${{ steps.team-token.outputs.token }}
+        run: python3 -m tauceti_tools script self_tested.py --pr '${{ inputs.pr-number }}'
       - name: Select destination in configured preference order
+        if: steps.local-route.outputs.skip != 'true'
         id: pick
         env:
           GH_TOKEN: ${{ github.token }}

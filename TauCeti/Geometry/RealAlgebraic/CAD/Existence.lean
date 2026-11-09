@@ -29,6 +29,8 @@ Nullified members, repeated roots, the empty family and stacks without sections 
 ## Main results
 
 * `TauCeti.exists_isCAD_signInvariant`: every finite set of polynomials has an adapted CAD.
+* `TauCeti.IsSemialgebraic.exists_isCAD_subset_or_disjoint`: every semialgebraic set is a union of
+  cells of some CAD.
 * `TauCeti.HasSemialgebraicProjections ℝ`: **projection closure**, the Tarski–Seidenberg theorem.
   Forgetting the coordinate `0` maps semialgebraic subsets of `ℝ ^ (n + 1)` to semialgebraic
   subsets of `ℝ ^ n` (`TauCeti.HasSemialgebraicProjections.isSemialgebraic_image_tail`). A
@@ -82,17 +84,25 @@ theorem exists_isCAD_signInvariant (F : Finset (MvPolynomial (Fin n) ℝ)) :
         simpa only [eval₂_id] using D.signInvariant_eval₂_of_mem_stackCells (hFG hf) hE
     exact ⟨𝒞, h𝒞, fun f hf E hE ↦ hsign E hE f hf⟩
 
+/-- **Decompositions adapted to a semialgebraic set.** For a semialgebraic subset `s` of `ℝ ^ n`
+there is a cylindrical algebraic decomposition of `ℝ ^ n` each cell of which lies in `s` or misses
+it, so that `s` is the union of the cells it contains (`TauCeti.IsCAD.sUnion_sep_subset`). -/
+theorem IsSemialgebraic.exists_isCAD_subset_or_disjoint {s : Set (Fin n → ℝ)}
+    (hs : IsSemialgebraic s) : ∃ 𝒞, IsCAD n 𝒞 ∧ ∀ E ∈ 𝒞, E ⊆ s ∨ Disjoint E s := by
+  classical
+  obtain ⟨m, p, Φ, rfl⟩ := hs.exists_eq_setOf_sign_eval
+  obtain ⟨𝒞, h𝒞, hp⟩ := exists_isCAD_signInvariant (Finset.univ.image p)
+  exact ⟨𝒞, h𝒞, fun E hE ↦ subset_or_disjoint_setOf_sign (f := fun i x ↦ eval x (p i))
+    (fun i ↦ hp _ (Finset.mem_image_of_mem _ (Finset.mem_univ i)) E hE) Φ⟩
+
 /-- **The Tarski–Seidenberg theorem.** The projection of a semialgebraic subset of `ℝ ^ (n + 1)`
 forgetting the coordinate `0` is semialgebraic. So quantifier elimination, the identification of
 semialgebraic sets with definable sets, and the image and composition laws of semialgebraic
 functions, which assume `HasSemialgebraicProjections`, hold over `ℝ` unconditionally. -/
 instance : HasSemialgebraicProjections ℝ where
   isSemialgebraic_image_tail {_ _} hs := by
-    classical
-    obtain ⟨m, p, Φ, rfl⟩ := hs.exists_eq_setOf_sign_eval
-    obtain ⟨𝒞, h𝒞, hp⟩ := exists_isCAD_signInvariant (Finset.univ.image p)
-    exact h𝒞.isSemialgebraic_image_tail_setOf_sign_eval
-      (fun i ↦ hp _ (Finset.mem_image_of_mem _ (Finset.mem_univ i))) Φ
+    obtain ⟨𝒞, h𝒞, h⟩ := hs.exists_isCAD_subset_or_disjoint
+    exact h𝒞.isSemialgebraic_image_tail h
 
 /-- **Sample points.** For finitely many real polynomials `p i` in `n` variables there is a
 finite set of points of `ℝ ^ n` at which the `p i` take every sign vector that they take on

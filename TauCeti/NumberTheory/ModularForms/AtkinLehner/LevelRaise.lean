@@ -121,7 +121,7 @@ theorem IsAtkinLehnerMatrix.smul_slash_scaleGL_slash_atkinLehnerGL [NeZero d₁]
     push_cast
     rw [mul_zpow, mul_zpow, show k - 2 = -(1 - k) + -1 by ring, zpow_add₀ hd₁,
       show k - 1 = -(1 - k) by ring]
-    simp only [zpow_neg, zpow_one]
+    simp only [_root_.zpow_neg, zpow_one]
     field_simp
   rw [ModularForm.smul_slash_of_det_pos k (val_det_atkinLehnerGL_pos _ _), ← SlashAction.slash_mul,
     hmul, SlashAction.slash_mul, ModularForm.slash_scalar, SlashAction.slash_mul,

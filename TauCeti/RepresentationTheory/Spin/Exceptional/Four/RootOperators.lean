@@ -137,11 +137,11 @@ private theorem toMatrix_spinAction_typeDSimpleRootBivector_fin_two_zero
   apply Module.Basis.toMatrixAlgEquiv_eq_single_of_apply_basis
   intro s
   rcases finsetFinTwo_cases s with rfl | rfl | rfl | rfl
-  · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector, Finset.ext_iff]
-  · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector, Finset.ext_iff]
-  · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector]
+  · simp [map_mul, mul_apply_eq_comp, P.pairingEquiv_dualVector, Finset.ext_iff]
+  · simp [map_mul, mul_apply_eq_comp, P.pairingEquiv_dualVector, Finset.ext_iff]
+  · simp [map_mul, mul_apply_eq_comp, P.pairingEquiv_dualVector]
   · rw [spinFourExteriorBasis_pair, orderedPair_eq_smul_exteriorBasis P b]
-    simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector,
+    simp [map_mul, mul_apply_eq_comp, P.pairingEquiv_dualVector,
       TauCeti.ExteriorAlgebra.ι_mul_basis,
       TauCeti.ExteriorAlgebra.contractLeft_coord_basis, Finset.ext_iff]
 
@@ -154,15 +154,15 @@ private theorem toMatrix_spinAction_typeDSimpleRootBivector_fin_two_one
   apply Module.Basis.toMatrixAlgEquiv_eq_single_of_apply_basis
   intro s
   rcases finsetFinTwo_cases s with rfl | rfl | rfl | rfl
-  · simp [map_mul, Module.End.mul_apply]
+  · simp [map_mul, mul_apply_eq_comp]
   · have h : ExteriorAlgebra.ι K (b 0) *
         (ExteriorAlgebra.ι K (b 1) * ExteriorAlgebra.ι K (b 0)) = 0 := by
       simpa using ExteriorAlgebra.ι_mul_prod_list (R := K)
         (![b 1, b 0] : Fin 2 → P.W) (1 : Fin 2)
-    simp [map_mul, Module.End.mul_apply, h]
-  · simp [map_mul, Module.End.mul_apply]
+    simp [map_mul, mul_apply_eq_comp, h]
+  · simp [map_mul, mul_apply_eq_comp]
   · rw [spinFourExteriorBasis_pair, orderedPair_eq_smul_exteriorBasis P b]
-    simp [map_mul, Module.End.mul_apply,
+    simp [map_mul, mul_apply_eq_comp,
       TauCeti.ExteriorAlgebra.ι_mul_basis, Finset.ext_iff]
 
 private theorem toMatrix_spinAction_typeDSimpleNegativeRootBivector_fin_two_zero
@@ -174,11 +174,11 @@ private theorem toMatrix_spinAction_typeDSimpleNegativeRootBivector_fin_two_zero
   apply Module.Basis.toMatrixAlgEquiv_eq_single_of_apply_basis
   intro s
   rcases finsetFinTwo_cases s with rfl | rfl | rfl | rfl
-  · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector, Finset.ext_iff]
-  · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector]
-  · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector]
+  · simp [map_mul, mul_apply_eq_comp, P.pairingEquiv_dualVector, Finset.ext_iff]
+  · simp [map_mul, mul_apply_eq_comp, P.pairingEquiv_dualVector]
+  · simp [map_mul, mul_apply_eq_comp, P.pairingEquiv_dualVector]
   · rw [spinFourExteriorBasis_pair, orderedPair_eq_smul_exteriorBasis P b]
-    simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector,
+    simp [map_mul, mul_apply_eq_comp, P.pairingEquiv_dualVector,
       TauCeti.ExteriorAlgebra.contractLeft_coord_basis, Finset.ext_iff]
 
 private theorem toMatrix_spinAction_typeDSimpleNegativeRootBivector_fin_two_one
@@ -190,13 +190,13 @@ private theorem toMatrix_spinAction_typeDSimpleNegativeRootBivector_fin_two_one
   apply Module.Basis.toMatrixAlgEquiv_eq_single_of_apply_basis
   intro s
   rcases finsetFinTwo_cases s with rfl | rfl | rfl | rfl
-  · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector, Finset.ext_iff]
-  · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector, Finset.ext_iff]
-  · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector, Finset.ext_iff]
+  · simp [map_mul, mul_apply_eq_comp, P.pairingEquiv_dualVector, Finset.ext_iff]
+  · simp [map_mul, mul_apply_eq_comp, P.pairingEquiv_dualVector, Finset.ext_iff]
+  · simp [map_mul, mul_apply_eq_comp, P.pairingEquiv_dualVector, Finset.ext_iff]
   · rw [spinFourExteriorBasis_pair, orderedPair_eq_smul_exteriorBasis P b]
     simp only [Nat.add_one_sub_one, Fin.mk_one, Fin.isValue, tsub_self, Fin.zero_eta,
       map_mul, spinAction_ι, SpinPolarizationData.cliffordOperator_coe_W', map_smul,
-      Module.End.mul_apply, SpinPolarizationData.contract_apply,
+      mul_apply_eq_comp, SpinPolarizationData.contract_apply,
       SpinPolarizationData.pairingEquiv_dualVector,
       TauCeti.ExteriorAlgebra.contractLeft_coord_basis, Finset.mem_insert,
       Finset.mem_singleton, zero_ne_one, or_false, ↓reduceIte, Finset.erase_insert_eq_erase,

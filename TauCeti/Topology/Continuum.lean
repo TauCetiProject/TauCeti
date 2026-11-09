@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Connected.Basic
+public import Mathlib.Topology.Connected.Clopen
 
 /-!
 # Nested intersections of continua
@@ -17,9 +17,13 @@ counterpart, `IsPreconnected.sUnion_directed`, and Cantor's intersection theorem
 `IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed`, but not the preservation of
 connectedness under a directed intersection; this file supplies it.
 
-It is written for `TauCeti/Topology/ClusterSet.lean`, where the boundary cluster set of a map is
-exhibited as such an intersection and is thereby a continuum — the first step of the Carathéodory
-boundary correspondence, layer **L5** of the conformal-mapping roadmap.
+Boundary cluster sets, ω-limit sets and prime-end impressions are such intersections under
+suitable hypotheses — a continuous map or curve with values in a compact set, approached through
+connected regions or along a half-line, or a null chain in a bounded domain — and are then
+preconnected or continua: see `TauCeti.isConnected_clusterSetOn`,
+`TauCeti.isPreconnected_setOf_mapClusterPt_atTop` and
+`TauCeti.IsNullChain.isConnected_nullChainImpression`. Without such hypotheses these sets need not
+be connected, or even nonempty.
 
 Both hypotheses on the family are essential. Without directedness a circle and a secant line are
 two continua meeting in two points, a disconnected intersection. Without compactness the theorem
@@ -29,13 +33,13 @@ recedes to infinity — intersect in the two lines, which are disconnected.
 
 ## The argument
 
-Suppose the intersection `C` splits: `C ⊆ u ∪ v` with `u`, `v` open, both meeting `C`, and
-`C ∩ u ∩ v = ∅`. Then `C \ v` and `C \ u` are disjoint nonempty compact sets, so in a Hausdorff
-space they have disjoint open neighbourhoods `U` and `V`, and `C ⊆ U ∪ V`. So `U ∪ V` is a
-neighbourhood of every point of `C`, and `exists_subset_nhds_of_isCompact` — any neighbourhood of
-the intersection of a directed family of compacts already contains one member — supplies a single
-`t i` covered by `U ∪ V`. That member meets both `U` and `V` — it contains `C` — so its
-connectedness forces `U ∩ V` to be nonempty, a contradiction.
+The intersection `C` is compact, hence closed, so it suffices to show that whenever `C` is
+covered by two disjoint closed sets `u` and `v`, it lies in one of them. The pieces `C ∩ u` and
+`C ∩ v` are disjoint compact sets, so in a Hausdorff space they have disjoint open neighbourhoods
+`U` and `V`, and `C ⊆ U ∪ V`. So `U ∪ V` is a neighbourhood of `C`, and
+`exists_subset_nhds_of_isCompact` — any neighbourhood of the intersection of a directed family of
+compacts already contains one member — supplies a single `t i ⊆ U ∪ V`. Being preconnected, `t i`
+lies in `U` or in `V`, and so does `C`; then `C` misses `v` or `u` respectively.
 
 ## Main results
 
@@ -65,39 +69,29 @@ Both hypotheses on the family are needed; see the module docstring for the two c
 theorem isPreconnected_iInter_of_directed [T2Space X] [Nonempty ι] (htd : Directed (· ⊇ ·) t)
     (htc : ∀ i, IsCompact (t i)) (htp : ∀ i, IsPreconnected (t i)) :
     IsPreconnected (⋂ i, t i) := by
-  rintro u v hu hv hCuv ⟨a, haC, hau⟩ ⟨b, hbC, hbv⟩
-  by_contra hcon
-  -- The two halves of the split, in the closed form `C \ v` and `C \ u`.
   have hCcl : IsClosed (⋂ i, t i) := isClosed_iInter fun i => (htc i).isClosed
   have hCco : IsCompact (⋂ i, t i) :=
     (htc (Classical.arbitrary ι)).of_isClosed_subset hCcl (iInter_subset _ _)
-  have hmem : ∀ x ∈ ⋂ i, t i, x ∈ u → x ∉ v := fun x hx hxu hxv => hcon ⟨x, hx, hxu, hxv⟩
-  have haA : a ∈ (⋂ i, t i) \ v := ⟨haC, hmem a haC hau⟩
-  have hbB : b ∈ (⋂ i, t i) \ u := ⟨hbC, fun hbu => hmem b hbC hbu hbv⟩
-  have hdisj : Disjoint ((⋂ i, t i) \ v) ((⋂ i, t i) \ u) := by
-    refine disjoint_left.mpr fun x hx hx' => ?_
-    rcases hCuv hx.1 with hxu | hxv
-    · exact hx'.2 hxu
-    · exact hx.2 hxv
-  -- Separate them by disjoint open sets; the intersection is covered by the two of them.
-  obtain ⟨U, V, hU, hV, hAU, hBV, hUV⟩ :=
-    SeparatedNhds.of_isCompact_isCompact (hCco.diff hv) (hCco.diff hu) hdisj
-  have hCUV : (⋂ i, t i) ⊆ U ∪ V := by
-    intro x hx
-    by_cases hxv : x ∈ v
-    · exact Or.inr (hBV ⟨hx, fun hxu => hmem x hx hxu hxv⟩)
-    · exact Or.inl (hAU ⟨hx, hxv⟩)
-  -- Cantor's intersection theorem: one member of the family is already covered by `U ∪ V`, and
-  -- that member is preconnected and meets both `U` and `V`, so they cannot be disjoint.
+  rw [isPreconnected_iff_subset_of_fully_disjoint_closed hCcl]
+  intro u v hu hv hCuv huv
+  -- Separate the two compact halves `C ∩ u` and `C ∩ v` by disjoint open sets `U` and `V`.
+  obtain ⟨U, V, hU, hV, hCU, hCV, hUV⟩ :=
+    SeparatedNhds.of_isCompact_isCompact (hCco.inter_right hu) (hCco.inter_right hv)
+      (huv.mono inter_subset_right inter_subset_right)
+  have hCUV : (⋂ i, t i) ⊆ U ∪ V := fun x hx =>
+    (hCuv hx).imp (fun hxu => hCU ⟨hx, hxu⟩) fun hxv => hCV ⟨hx, hxv⟩
+  -- One member `t i` is already covered by `U ∪ V`; being preconnected, it lies in `U` or in `V`,
+  -- and then so does the intersection, which therefore misses `v` or `u` respectively.
   obtain ⟨i, hi⟩ :=
     exists_subset_nhds_of_isCompact htd htc ((hU.union hV).mem_nhdsSet.mpr hCUV)
-  obtain ⟨x, -, hxU, hxV⟩ :=
-    htp i U V hU hV hi ⟨a, mem_iInter.mp haC i, hAU haA⟩ ⟨b, mem_iInter.mp hbC i, hBV hbB⟩
-  exact disjoint_left.mp hUV hxU hxV
+  rcases (htp i).subset_or_subset hU hV hUV hi with h | h
+  · exact .inl fun x hx => (hCuv hx).resolve_right fun hxv =>
+      disjoint_left.mp hUV (h (iInter_subset t i hx)) (hCV ⟨hx, hxv⟩)
+  · exact .inr fun x hx => (hCuv hx).resolve_left fun hxu =>
+      disjoint_left.mp hUV (hCU ⟨hx, hxu⟩) (h (iInter_subset t i hx))
 
-/-- **A directed intersection of continua is a continuum.** The nonemptiness of the intersection
-is Cantor's intersection theorem, and its connectedness is
-`TauCeti.isPreconnected_iInter_of_directed`. -/
+/-- **A directed intersection of continua is a continuum.** The family `t` of nonempty compact
+preconnected sets is indexed by a nonempty type and directed downwards. -/
 theorem isConnected_iInter_of_directed [T2Space X] [Nonempty ι] (htd : Directed (· ⊇ ·) t)
     (htn : ∀ i, (t i).Nonempty) (htc : ∀ i, IsCompact (t i)) (htp : ∀ i, IsPreconnected (t i)) :
     IsConnected (⋂ i, t i) :=

@@ -73,15 +73,21 @@ theorem cond_compl_zero_real_Iic (k : ℕ) :
 
 /-! ### The real cast -/
 
+/-- A function on `ℝ` is integrable for the real cast of a zero-truncated law exactly when it is
+integrable for the real cast of the original law. -/
+theorem integrable_map_natCast_cond_compl_zero_iff {E : Type*} [NormedAddCommGroup E]
+    {f : ℝ → E} :
+    Integrable f ((ν[|{0}ᶜ]).map (Nat.cast : ℕ → ℝ)) ↔ Integrable f (ν.map (Nat.cast : ℕ → ℝ)) := by
+  simp only [(MeasurableEmbedding.natCast (α := ℝ)).integrable_map_iff]
+  exact integrable_cond_compl_singleton_iff
+
 /-- The exponential-integrability domain of the real cast is unchanged by zero truncation. -/
 @[simp]
 theorem integrableExpSet_id_map_natCast_cond_compl_zero :
     integrableExpSet id ((ν[|{0}ᶜ]).map (Nat.cast : ℕ → ℝ)) =
       integrableExpSet id (ν.map (Nat.cast : ℕ → ℝ)) := by
   ext t
-  simp only [integrableExpSet, mem_ofPred_eq, id_eq,
-    (MeasurableEmbedding.natCast (α := ℝ)).integrable_map_iff]
-  exact integrable_cond_compl_singleton_iff
+  exact integrable_map_natCast_cond_compl_zero_iff ν
 
 /-- Every nonzero natural moment of the real cast of a zero-truncated law is the corresponding
 moment of the original law rescaled by `1 / (1 - ν.real {0})`. -/
@@ -110,9 +116,8 @@ theorem variance_id_map_natCast_cond_compl_zero
   · have hreal : ν.real {0} = 1 := by simp [measureReal_def, h0]
     simp [cond_compl_singleton_eq_zero_iff.2 h0, hreal]
   have := isProbabilityMeasure_cond_compl_singleton h0
-  have hsq : Integrable (fun x : ℝ => x ^ 2) ((ν[|{0}ᶜ]).map (Nat.cast : ℕ → ℝ)) := by
-    rw [(MeasurableEmbedding.natCast (α := ℝ)).integrable_map_iff] at hν ⊢
-    exact integrable_cond_compl_singleton_iff.2 hν
+  have hsq : Integrable (fun x : ℝ => x ^ 2) ((ν[|{0}ᶜ]).map (Nat.cast : ℕ → ℝ)) :=
+    integrable_map_natCast_cond_compl_zero_iff ν |>.2 hν
   have hmem : MemLp id 2 ((ν[|{0}ᶜ]).map (Nat.cast : ℕ → ℝ)) :=
     (memLp_two_iff_integrable_sq measurable_id.aestronglyMeasurable).2 hsq
   rw [variance_eq_sub hmem]

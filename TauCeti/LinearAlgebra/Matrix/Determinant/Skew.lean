@@ -117,8 +117,8 @@ theorem four_dvd_neg_one_pow_mul_det_add_transpose_sub_det_sub_transpose {k : �
     rw [← coe_evalRingHom, RingHom.map_det]
     congr 1
     refine Matrix.ext fun i j ↦ ?_
-    simp only [RingHom.mapMatrix_apply, map_apply, coe_evalRingHom, add_apply, smul_apply,
-      transpose_apply, eval_add, eval_mul, eval_X, eval_C, smul_eq_mul]
+    simp only [Matrix.add_apply, Matrix.smul_apply, transpose_apply, eval_add, eval_mul, eval_X,
+      smul_eq_mul, RingHom.mapMatrix_apply, map_apply, coe_evalRingHom, eval_C]
   have hq : (-1) ^ k * q.eval 1 - q.eval (-1) =
       (-1) ^ k * ∑ i ∈ Finset.range (2 * k + 1), q.coeff i * (1 - (-1) ^ (k + i)) := by
     rw [eval_eq_sum_range' hdeg, eval_eq_sum_range' hdeg, Finset.mul_sum, Finset.mul_sum,
@@ -130,7 +130,7 @@ theorem four_dvd_neg_one_pow_mul_det_add_transpose_sub_det_sub_transpose {k : �
   rw [heval, heval, one_smul, neg_one_smul, add_comm, neg_add_eq_sub] at hq
   rw [hq]
   refine dvd_mul_of_dvd_right
-    (Finset.four_dvd_sum_range_two_mul_add_one k _ (fun i hi ↦ ?_) ?_ fun i ↦ ?_) _
+    (Finset.four_dvd_sum_range_two_mul_add_one k _ (fun i hi ↦ ?_) ?_ fun i _ ↦ ?_) _
   · rw [hc i hi, neg_one_pow_eq_pow_mod_two, neg_one_pow_eq_pow_mod_two (n := k + i)]
     congr 3
     omega
@@ -156,7 +156,7 @@ theorem IsSymm.neg_one_pow_mul_det_modEq_zero_or_one {A : Matrix ι ι ℤ} (hA 
     ext i j
     have hji : A j i = A i j := hA.apply i j
     obtain ⟨m, hm⟩ := hd i
-    simp only [S, add_apply, transpose_apply, of_apply]
+    simp only [S, Matrix.add_apply, transpose_apply, of_apply]
     rcases lt_trichotomy (e i) (e j) with h | h | h
     · simp [h, h.not_gt, e.injective.ne_iff.1 h.ne']
     · obtain rfl := e.injective h

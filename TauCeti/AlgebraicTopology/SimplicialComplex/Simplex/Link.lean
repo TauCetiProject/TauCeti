@@ -95,6 +95,25 @@ theorem deletion_simplex_self : deletion (simplex V) V = simplexBoundary V := by
   · rintro ⟨hρ, hρV⟩
     exact ⟨hρ, fun hVρ => hρV (Subset.antisymm (mem_simplex.mp hρ).2 hVρ)⟩
 
+/-- The boundary of the closed star of a face with void link is its simplex boundary.
+In particular, this computes the boundary of the closed star of a maximal face. -/
+@[simp]
+theorem closedStar_inf_deletion_eq_simplexBoundary_of_link_eq_bot
+    {K : PreAbstractSimplicialComplex ι} (hσ : σ ∈ K) (hlink : link K σ = ⊥) :
+    closedStar K σ ⊓ deletion K σ = simplexBoundary σ := by
+  rw [closedStar_eq_simplex_of_link_eq_bot hσ hlink]
+  refine SetLike.ext fun ρ => ?_
+  rw [mem_inf, mem_deletion, mem_simplexBoundary]
+  constructor
+  · rintro ⟨hρ, -, hnot⟩
+    exact ⟨(mem_simplex.mp hρ).1,
+      Finset.ssubset_iff_subset_ne.mpr ⟨(mem_simplex.mp hρ).2,
+        fun heq => hnot heq.symm.subset⟩⟩
+  · rintro ⟨hne, hproper⟩
+    exact ⟨mem_simplex.mpr ⟨hne, hproper.subset⟩,
+      (K.isRelLowerSet_faces hσ).2 hproper.subset hne,
+      fun hsub => hproper.ne (Finset.Subset.antisymm hproper.subset hsub)⟩
+
 /-- A set `ρ` lies in the closed star of `σ` in the boundary of the simplex on `V` exactly when
 `ρ` is nonempty and `ρ ∪ σ` is a proper subset of `V`. -/
 theorem mem_closedStar_simplexBoundary {ρ : Finset ι} :

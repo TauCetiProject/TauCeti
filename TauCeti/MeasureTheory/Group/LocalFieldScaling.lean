@@ -125,7 +125,7 @@ of `ϖ` clears the denominators of the coordinates of `x`, since `K` is the loca
 away from `ϖ`. -/
 theorem exists_mem_scaledIntegerBox [IsDiscreteValuationRing 𝒪[K]] {ι : Type*} [Finite ι]
     {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) (x : ι → K) : ∃ k, x ∈ scaledIntegerBox ι (ϖ : K) k := by
-  have := isLocalizationAway_fractionRing (K := K) hϖ
+  have := hϖ.isLocalizationAway_fractionRing (K := K)
   have h (i : ι) : ∀ᶠ k in Filter.atTop, (ϖ : K) ^ k * x i ∈ 𝒪[K] := by
     obtain ⟨n, a, ha⟩ := IsLocalization.Away.surj ϖ (x i)
     simp only [Algebra.algebraMap_ofSubsemiring_apply] at ha
@@ -337,8 +337,8 @@ theorem addHaar_image_mulVec (μ : Measure (ι → K)) [μ.IsAddHaarMeasure] [μ
   have hBtop : μ (integerBox K ι) ≠ ∞ := isCompact_integerBox.measure_lt_top.ne
   have hc : (addHaarScalarFactor (μ.map f) μ : ℝ≥0∞) = 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ k := by
     have h := measure_image_mulVec_integerBox μ hϖ hk
-    rw [← hf, hsmul, Measure.smul_apply, ENNReal.smul_def, smul_eq_mul] at h
+    rw [← hf, hsmul, _root_.smul_apply, ENNReal.smul_def, smul_eq_mul] at h
     exact (ENNReal.mul_left_inj hB0 hBtop).1 h
-  rw [← hf, hsmul, Measure.smul_apply, ENNReal.smul_def, smul_eq_mul, hc]
+  rw [← hf, hsmul, _root_.smul_apply, ENNReal.smul_def, smul_eq_mul, hc]
 
 end MeasureTheory.Measure

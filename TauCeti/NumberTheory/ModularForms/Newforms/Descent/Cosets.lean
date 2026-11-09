@@ -212,7 +212,7 @@ theorem descendMatrixRat_of_le {p N : ℕ} [NeZero p]
       Matrix.SpecialLinearGroup.mapGL ℚ (descendExtraGamma p N) := by
   rw [descendMatrixRat]
   split_ifs <;> simp_all
-  all_goals omega
+  omega
 
 /-- The members of the descent family below index `p` are the upper-triangular matrices
 `[1, v; 0, p]`. -/

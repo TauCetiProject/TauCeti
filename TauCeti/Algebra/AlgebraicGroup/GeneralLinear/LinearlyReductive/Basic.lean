@@ -10,7 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.LinearlyReductive
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.LinearlyReductive.Basic
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.SmoothConnected
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Center
-import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.Invariants
+import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.LinearlyReductive
 import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Exact
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
 
@@ -92,12 +92,62 @@ private theorem fixed_of_center_and_specialLinear (hn : 0 < n) (m : M)
       apply (pointsMulEquiv n).injective
       have hcval : pointsMulEquiv n c = z := hcz
       simpa only [map_mul, hp, hcval] using hsz
-    rw [← hg, map_mul, Module.End.mul_apply, hc c hc']
+    rw [← hg, map_mul, mul_apply_eq_comp, hc c hc']
     exact hs _
 
 variable [CharZero k]
 variable {N : Type u} [AddCommGroup N] [Module k N]
   [Comodule k (coordinateHopfAlgebra k n) N]
+
+omit [IsAlgClosed k] in
+/-- A `GLₙ`-fixed vector `y` of a subcomodule `F` has, under a surjective comodule map from a
+subcomodule `E`, a preimage in `E` fixed by every point of `SLₙ`, by complete reducibility
+for `SLₙ`. -/
+private theorem exists_specialLinear_fixed_preimage
+    {E : Subcomodule k (coordinateHopfAlgebra k n) M}
+    {F : Subcomodule k (coordinateHopfAlgebra k n) N}
+    (a : Comodule.Hom k (coordinateHopfAlgebra k n) E F) (ha : Function.Surjective a) (y : F)
+    (hy : (y : N) ∈ Comodule.fixedSubcomodule k (coordinateHopfAlgebra k n) N) :
+    ∃ m : E, a m = y ∧ ∀ s : WithConv (SpecialLinear.coordinateHopfAlgebra k n →ₐ[k] k),
+      Comodule.basePointsRepresentation M
+        (BialgHom.mapDomain (SpecialLinear.coordinateMap k n).hom s) (m : M) = m := by
+  -- Keep each corestricted instance local: the ambient and subgroup coactions differ.
+  let s := (SpecialLinear.coordinateMap k n).hom
+  let aS := Comodule.corestrictHom s.toCoalgHom a
+  let _ : Comodule k (SpecialLinear.coordinateHopfAlgebra k n) E :=
+    Comodule.Corestrict s.toCoalgHom
+  let _ : Comodule k (SpecialLinear.coordinateHopfAlgebra k n) F :=
+    Comodule.Corestrict s.toCoalgHom
+  let _ : Comodule k (SpecialLinear.coordinateHopfAlgebra k n) N :=
+    Comodule.Corestrict s.toCoalgHom
+  have hyS : y ∈ @Comodule.fixedSubcomodule k (SpecialLinear.coordinateHopfAlgebra k n) F
+      _ _ _ _ _ _ _ (Comodule.Corestrict s.toCoalgHom) := by
+    apply ((Comodule.corestrictHom s.toCoalgHom F.subtype).mem_fixedSubcomodule_iff_of_injective
+      (by
+        intro a b hab
+        apply Subtype.ext
+        simpa only [Comodule.corestrictHom_apply, Subcomodule.subtype_apply] using hab) y).mp
+    rw [Comodule.mem_fixedSubcomodule, Comodule.corestrictHom_apply,
+      Subcomodule.subtype_apply, Comodule.corestrict_coact_apply]
+    simp only [Comodule.mem_fixedSubcomodule.mp hy, TensorProduct.map_tmul,
+      LinearMap.id_apply]
+    exact congrArg (fun c ↦ (y : N) ⊗ₜ[k] c) (map_one s)
+  obtain ⟨m, hm, hmy⟩ := aS.exists_fixed_preimage_of_isLinearlyReductive
+    ((linearlyReductiveCommHopfAlgProperty_iff k _).mp
+      (SpecialLinear.linearlyReductiveCommHopfAlgProperty_coordinateHopfAlgebra k n)) hyS
+        (by
+          obtain ⟨m, hm⟩ := ha y
+          exact ⟨m, by simpa only [Comodule.Hom.coe_toLinearMap, aS,
+            Comodule.corestrictHom_apply] using hm⟩)
+  refine ⟨m, by simpa only [aS, Comodule.corestrictHom_apply] using hmy, fun g ↦ ?_⟩
+  let _ : Comodule k (SpecialLinear.coordinateHopfAlgebra k n) M :=
+    Comodule.Corestrict s.toCoalgHom
+  have hfixed := (Comodule.corestrictHom s.toCoalgHom E.subtype).mem_fixedSubcomodule hm
+  have hfix := Comodule.basePointsRepresentation_eq_of_coact_eq_tmul_one
+    (m : M) (by simpa only [Comodule.corestrictHom_apply, Subcomodule.subtype_apply] using
+      Comodule.mem_fixedSubcomodule.mp hfixed) g
+  rw [Comodule.basePointsRepresentation_corestrict s] at hfix
+  exact hfix
 
 private theorem fixedMap_surjective_of_pos (hn : 0 < n)
     (f : Comodule.Hom k (coordinateHopfAlgebra k n) M N) (hf : Function.Surjective f) :
@@ -108,98 +158,29 @@ private theorem fixedMap_surjective_of_pos (hn : 0 < n)
   let I := CommHopfAlgCat.centerDefiningIdeal H
   let hI : I.IsNormal := (CommHopfAlgCat.isCentral_centerDefiningIdeal H).isNormal
   let q := (CommHopfAlgCat.mkQuotient H I).hom
-  let C := CommHopfAlgCat.quotient H I
-  have hC : Coalgebra.IsLinearlyReductive.{u, u, u} k C := by
+  have hC : Coalgebra.IsLinearlyReductive.{u, u, u} k (CommHopfAlgCat.quotient H I) := by
     let e := centerCoordinateLaurentIso (k := k) n hn ≪≫
       _root_.CommHopfAlgCat.isoMk (AddMonoidAlgebra.toMultiplicativeBialgEquiv k k ℤ)
     exact (Coalgebra.isLinearlyReductive_iff_of_coalgEquiv k
       (_root_.CommHopfAlgCat.ofIso e).toCoalgEquiv).mpr
         (Coalgebra.isLinearlyReductive_monoidAlgebra k (Multiplicative ℤ))
-  let E := hI.weightSpaceOneSubcomodule M
-  let F := hI.weightSpaceOneSubcomodule N
-  have hmem (V : Type u) [AddCommGroup V] [Module k V] [Comodule k H V] (v : V) :
-      v ∈ hI.weightSpaceOneSubcomodule V ↔
-        @Comodule.coact k C V _ _ _ _ _ _ (Comodule.Corestrict q.toCoalgHom) v =
-          v ⊗ₜ[k] (1 : C) := by
-    rw [hI.mem_weightSpaceOneSubcomodule, Comodule.corestrict_coact_apply]
-    have hq : q.toCoalgHom.toLinearMap = (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap := by
-      ext x
-      exact (BialgHom.toCoalgHom_apply q x).trans (CommHopfAlgCat.mkQuotient_apply H I x)
-    rw [hq]
-  let fC := Comodule.corestrictHom q.toCoalgHom f
-  have hmap (m : E) : (f.comp E.subtype) m ∈ F := by
-    let _ : Comodule k C M := Comodule.Corestrict q.toCoalgHom
-    let _ : Comodule k C N := Comodule.Corestrict q.toCoalgHom
-    rw [Comodule.Hom.comp_apply, Subcomodule.subtype_apply]
-    exact (hmem N _).mpr <| Comodule.mem_fixedSubcomodule.mp <|
-      fC.mem_fixedSubcomodule (Comodule.mem_fixedSubcomodule.mpr ((hmem M _).mp m.property))
-  let a := (f.comp E.subtype).codRestrict F hmap
-  have ha : Function.Surjective a := by
-    intro y
-    let _ : Comodule k C M := Comodule.Corestrict q.toCoalgHom
-    let _ : Comodule k C N := Comodule.Corestrict q.toCoalgHom
-    obtain ⟨m, hm, hmy⟩ := fC.exists_fixed_preimage_of_isLinearlyReductive hC
-      (Comodule.mem_fixedSubcomodule.mpr ((hmem N _).mp y.property)) (hf y)
-    exact ⟨⟨m, (hmem M _).mpr (Comodule.mem_fixedSubcomodule.mp hm)⟩,
-      Subtype.ext (by simpa only [a, Comodule.Hom.codRestrict_apply,
-        Comodule.Hom.comp_apply, Subcomodule.subtype_apply, fC,
-        Comodule.corestrictHom_apply] using hmy)⟩
+  obtain ⟨a, ha, hfa⟩ := hI.exists_surjective_hom_weightSpaceOneSubcomodule hC f hf
   intro y
-  have hyF : (y : N) ∈ F := by
-    apply (hmem N _).mpr
+  have hyF : (y : N) ∈ hI.weightSpaceOneSubcomodule N := by
+    apply (hI.mem_weightSpaceOneSubcomodule_iff_coact_corestrict N _).mpr
     rw [Comodule.corestrict_coact_apply, Comodule.mem_fixedSubcomodule.mp y.property]
     simp [BialgHom.toCoalgHom_apply]
-  let yF : F := ⟨y, hyF⟩
-  -- Now restrict the ambient center-invariant subcomodules to `SLₙ` and lift once more.
-  -- Keep each corestricted instance local: the ambient and subgroup coactions differ.
-  let s := (SpecialLinear.coordinateMap k n).hom
-  let aS := Comodule.corestrictHom s.toCoalgHom a
-  let _ : Comodule k (SpecialLinear.coordinateHopfAlgebra k n) E :=
-    Comodule.Corestrict s.toCoalgHom
-  let _ : Comodule k (SpecialLinear.coordinateHopfAlgebra k n) F :=
-    Comodule.Corestrict s.toCoalgHom
-  let _ : Comodule k (SpecialLinear.coordinateHopfAlgebra k n) N :=
-    Comodule.Corestrict s.toCoalgHom
-  have hyS : yF ∈ @Comodule.fixedSubcomodule k (SpecialLinear.coordinateHopfAlgebra k n) F
-      _ _ _ _ _ _ _ (Comodule.Corestrict s.toCoalgHom) := by
-    apply ((Comodule.corestrictHom s.toCoalgHom F.subtype).mem_fixedSubcomodule_iff_of_injective
-      (by
-        intro a b hab
-        apply Subtype.ext
-        simpa only [Comodule.corestrictHom_apply, Subcomodule.subtype_apply] using hab) yF).mp
-    rw [Comodule.mem_fixedSubcomodule, Comodule.corestrictHom_apply,
-      Subcomodule.subtype_apply, Comodule.corestrict_coact_apply]
-    simp only [yF, Comodule.mem_fixedSubcomodule.mp y.property, TensorProduct.map_tmul,
-      LinearMap.id_apply]
-    exact congrArg (fun c ↦ (y : N) ⊗ₜ[k] c) (map_one s)
-  obtain ⟨m, hm, hmy⟩ := aS.exists_fixed_preimage_of_isLinearlyReductive
-    ((linearlyReductiveCommHopfAlgProperty_iff k _).mp
-      (SpecialLinear.linearlyReductiveCommHopfAlgProperty_coordinateHopfAlgebra k n)) hyS
-        (by
-          obtain ⟨m, hm⟩ := ha yF
-          exact ⟨m, by simpa only [Comodule.Hom.coe_toLinearMap, aS,
-            Comodule.corestrictHom_apply] using hm⟩)
+  obtain ⟨m, hmy, hm⟩ := exists_specialLinear_fixed_preimage n a ha ⟨y, hyF⟩ y.property
   -- The lifted vector is fixed by both subgroups, hence by every ambient point.
-  refine ⟨⟨m, fixed_of_center_and_specialLinear n hn (m : M) ?_ ?_⟩, Subtype.ext ?_⟩
+  refine ⟨⟨m, fixed_of_center_and_specialLinear n hn (m : M) ?_ hm⟩, Subtype.ext ?_⟩
   · intro z hz
     obtain ⟨c, hc⟩ := hz
-    let _ : Comodule k C M := Comodule.Corestrict q.toCoalgHom
+    let _ : Comodule k (CommHopfAlgCat.quotient H I) M := Comodule.Corestrict q.toCoalgHom
     have hfix := Comodule.basePointsRepresentation_eq_of_coact_eq_tmul_one
-      (m : M) ((hmem M _).mp m.property) c
+      (m : M) ((hI.mem_weightSpaceOneSubcomodule_iff_coact_corestrict M _).mp m.property) c
     rw [Comodule.basePointsRepresentation_corestrict q] at hfix
     exact hc ▸ hfix
-  · intro g
-    let _ : Comodule k (SpecialLinear.coordinateHopfAlgebra k n) M :=
-      Comodule.Corestrict s.toCoalgHom
-    have hfixed := (Comodule.corestrictHom s.toCoalgHom E.subtype).mem_fixedSubcomodule hm
-    have hfix := Comodule.basePointsRepresentation_eq_of_coact_eq_tmul_one
-      (m : M) (by simpa only [Comodule.corestrictHom_apply, Subcomodule.subtype_apply] using
-        Comodule.mem_fixedSubcomodule.mp hfixed) g
-    rw [Comodule.basePointsRepresentation_corestrict s] at hfix
-    exact hfix
-  · simpa only [aS, Comodule.corestrictHom_apply, a, Comodule.Hom.codRestrict_apply,
-      Comodule.Hom.comp_apply, Subcomodule.subtype_apply, yF,
-      Comodule.Hom.fixedMap_apply] using congrArg Subtype.val hmy
+  · simpa only [Comodule.Hom.fixedMap_apply] using (hfa m).symm.trans (congrArg Subtype.val hmy)
 
 private theorem linearlyReductive_coordinateHopfAlgebra_algClosed :
     linearlyReductiveCommHopfAlgProperty k (coordinateHopfAlgebra k n) := by

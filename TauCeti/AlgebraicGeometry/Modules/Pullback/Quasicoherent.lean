@@ -21,6 +21,8 @@ Pullback along an open immersion `j : U ⟶ Y` is strong monoidal for all sheave
 (`Scheme.Modules.isIso_pullback_δ_of_isOpenImmersion`), and restriction along `j` is lax monoidal
 with invertible tensor map (`Scheme.Modules.restrictFunctorLaxMonoidal`,
 `Scheme.Modules.isIso_restrictFunctor_μ`).
+The restriction--pullback isomorphism identifies these tensor comparisons
+(`Scheme.Modules.restrictFunctorIsoPullback_inv_app_tensor`).
 
 These isomorphisms say that pulling back along `f` turns tensor products into tensor products as
 long as one factor is quasicoherent; in particular they apply to line bundles. This is what makes
@@ -107,24 +109,37 @@ instance isIso_restrictFunctor_μ (M N : Y.Modules) : IsIso (μ (restrictFunctor
   (restrictAdjunction j).isIso_μ_of_unit_of_counit (restrictAdjunction_unit_app_tensor j)
     (restrictAdjunction_counit_app_tensor j) M N
 
+/-- The restriction--pullback isomorphism identifies the oplax tensor comparison of pullback
+with the inverse tensor map of restriction. -/
+lemma restrictFunctorIsoPullback_inv_app_tensor (M N : Y.Modules) :
+    (restrictFunctorIsoPullback j).inv.app (M ⊗ N) ≫
+        inv (μ (restrictFunctor j) M N) =
+      δ (pullback j) M N ≫
+        ((restrictFunctorIsoPullback j).inv.app M ⊗ₘ
+          (restrictFunctorIsoPullback j).inv.app N) := by
+  let := (restrictAdjunction j).leftAdjointOplaxMonoidal
+  let σ := (restrictFunctorIsoPullback j).inv
+  have hσ : conjugateEquiv (restrictAdjunction j) (pullbackPushforwardAdjunction j) σ = 𝟙 _ := by
+    simp [σ, restrictFunctorIsoPullback, Adjunction.leftAdjointUniq]
+  have h := Adjunction.app_tensor_comp_δ_of_conjugateEquiv _ _ hσ M N
+  have hd : δ (restrictFunctor j) M N = inv (μ (restrictFunctor j) M N) := by
+    rw [Adjunction.leftAdjointOplaxMonoidal_δ]
+    exact ((restrictAdjunction j).inv_μ_eq_homEquiv_symm
+      (restrictAdjunction_counit_app_tensor j) M N).symm
+  rw [hd] at h
+  exact h
+
 /-- **Pullback along an open immersion is strong monoidal**: the tensor comparison
 `j^*(M ⊗ N) ⟶ j^*M ⊗ j^*N` is an isomorphism for all sheaves of modules `M` and `N`. -/
 instance isIso_pullback_δ_of_isOpenImmersion (M N : Y.Modules) :
     IsIso (δ (pullback j) M N) := by
-  -- Compare with restriction, carrying the oplax structure of a left adjoint of `pushforward j`.
-  let := (restrictAdjunction j).leftAdjointOplaxMonoidal
-  let σ := (Adjunction.leftAdjointUniq (restrictAdjunction j) (pullbackPushforwardAdjunction j)).inv
-  have hσ : conjugateEquiv (restrictAdjunction j) (pullbackPushforwardAdjunction j) σ = 𝟙 _ := by
-    simp [σ, Adjunction.leftAdjointUniq]
-  have h := Adjunction.app_tensor_comp_δ_of_conjugateEquiv _ _ hσ M N
-  have : IsIso (δ (restrictFunctor j) M N) := by
-    rw [Adjunction.leftAdjointOplaxMonoidal_δ]
-    exact (restrictAdjunction j).inv_μ_eq_homEquiv_symm (restrictAdjunction_counit_app_tensor j)
-      M N ▸ IsIso.inv_isIso (f := μ (restrictFunctor j) M N)
-  have : IsIso (δ (pullback j) M N ≫ (σ.app M ⊗ₘ σ.app N)) := by
-    rw [← h]
+  have : IsIso (δ (pullback j) M N ≫
+      ((restrictFunctorIsoPullback j).inv.app M ⊗ₘ
+        (restrictFunctorIsoPullback j).inv.app N)) := by
+    rw [← restrictFunctorIsoPullback_inv_app_tensor]
     infer_instance
-  exact IsIso.of_isIso_comp_right _ (σ.app M ⊗ₘ σ.app N)
+  exact IsIso.of_isIso_comp_right _
+    ((restrictFunctorIsoPullback j).inv.app M ⊗ₘ (restrictFunctorIsoPullback j).inv.app N)
 
 end OpenImmersion
 

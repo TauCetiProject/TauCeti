@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.Probability.Distributions.Beta.Cdf
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Cdf
@@ -270,7 +271,7 @@ private theorem kumaraswamyPDF_eq_jacobian_mul_betaPDF (ha : 0 < a) (hb : 0 < b)
   have hjac : 0 < a * x ^ (a - 1) := mul_pos ha (Real.rpow_pos_of_pos hx.1 _)
   rw [kumaraswamyPDF_of_mem_Ioo ha hb hx,
     betaPDF_of_pos_lt_one (Real.rpow_pos_of_pos hx.1 a) hxa, abs_of_pos hjac,
-    ← ENNReal.ofReal_mul hjac.le, beta_comm, beta_one_right hb, sub_self, Real.rpow_zero]
+    ← ENNReal.ofReal_mul hjac.le, beta_one_left hb, sub_self, Real.rpow_zero]
   congr 1
   field_simp
 
@@ -283,7 +284,7 @@ theorem map_rpow_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) :
     filter_upwards [ae_restrict_mem measurableSet_Ioo] with x hx
     exact kumaraswamyPDF_eq_jacobian_mul_betaPDF ha hb hx
   rw [kumaraswamyMeasure_eq_withDensity_restrict_Ioo, withDensity_congr_ae hweight,
-    TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul measurableSet_Ioo (by fun_prop)
+    TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul measurableSet_Ioo
       (fun x hx ↦ (Real.hasDerivAt_rpow_const (Or.inl hx.1.ne')).hasDerivWithinAt)
       ((Real.rpow_left_injOn ha.ne').mono fun x hx ↦ le_of_lt hx.1),
     Real.image_rpow_Ioo_zero_one ha, ← betaMeasure_eq_withDensity_restrict_Ioo]
@@ -317,7 +318,7 @@ theorem isProbabilityMeasure_kumaraswamyMeasure_iff :
   refine ⟨fun h ↦ ?_, fun h ↦ isProbabilityMeasure_kumaraswamyMeasure h.1 h.2⟩
   by_contra hab
   rw [kumaraswamyMeasure_of_not_pos hab] at h
-  exact IsProbabilityMeasure.ne_zero (0 : Measure ℝ) rfl
+  exact not_isProbabilityMeasure_zero h
 
 /-- With first shape parameter `1`, the Kumaraswamy law is the Beta `(1, b)` law. -/
 @[simp]

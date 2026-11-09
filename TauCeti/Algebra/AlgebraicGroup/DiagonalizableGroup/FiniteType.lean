@@ -90,14 +90,14 @@ noncomputable abbrev coordinateRing (G : FGCommGrpCat.{v}) :
 noncomputable abbrev coordinateMap {G H : FGCommGrpCat.{v}} (φ : G ⟶ H) :
     coordinateRing R G ⟶ coordinateRing R H :=
   FiniteTypeCommHopfAlgCat.ofHom
-    (MonoidAlgebra.mapDomainBialgHom R (FGCommGrpCat.toMonoidHom φ))
+    (MonoidAlgebra.mapDomainBialgHom R φ.hom.hom)
 
 /-- The bialgebra morphism underlying `coordinateMap φ` is the group-algebra map induced
 by the underlying group homomorphism. -/
 @[simp]
 theorem toBialgHom_coordinateMap {G H : FGCommGrpCat.{v}} (φ : G ⟶ H) :
     FiniteTypeCommHopfAlgCat.toBialgHom (coordinateMap R φ) =
-      MonoidAlgebra.mapDomainBialgHom R (FGCommGrpCat.toMonoidHom φ) :=
+      MonoidAlgebra.mapDomainBialgHom R φ.hom.hom :=
   rfl
 
 /-- The map on algebra-valued points induced by a diagonalizable-group coordinate morphism is
@@ -107,7 +107,7 @@ theorem mapPointsFunctor_coordinateMap_app {G H : FGCommGrpCat.{v}} (φ : G ⟶ 
     (A : CommAlgCat.{w} R)
     (p : HopfAlgebra.points (R := R) (H := MonoidAlgebra R H) A) :
     (CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap R φ).hom).app A p =
-      pointsMap (FGCommGrpCat.toMonoidHom φ) p := by
+      pointsMap φ.hom.hom p := by
   rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, pointsMap_apply]
   exact congrArg (fun f => WithConv.toConv (p.ofConv.comp f))
     (congrArg BialgHom.toAlgHom (toBialgHom_coordinateMap R φ))
@@ -120,14 +120,14 @@ already rewrites the left-hand side to `MonoidAlgebra.mapDomainBialgHom`, so `si
 never see this form. -/
 theorem coordinateMap_single {G H : FGCommGrpCat.{v}} (φ : G ⟶ H) (g : G) (r : R) :
     FiniteTypeCommHopfAlgCat.toBialgHom (coordinateMap R φ) (MonoidAlgebra.single g r) =
-      MonoidAlgebra.single (FGCommGrpCat.toMonoidHom φ g) r := by
+      MonoidAlgebra.single (φ.hom.hom g) r := by
   rw [toBialgHom_coordinateMap]
   exact MonoidAlgebra.mapDomain_single
 
 /-- A surjective homomorphism of character groups induces a surjective morphism of their
 coordinate Hopf algebras. -/
 theorem coordinateMap_surjective_of_surjective {G H : FGCommGrpCat.{v}} (φ : G ⟶ H)
-    (hφ : Function.Surjective (FGCommGrpCat.toMonoidHom φ)) :
+    (hφ : Function.Surjective φ.hom.hom) :
     Function.Surjective
       (FiniteTypeCommHopfAlgCat.toBialgHom (coordinateMap R φ)) := by
   rw [toBialgHom_coordinateMap]
@@ -154,10 +154,10 @@ the standard basis element indexed by `h`. -/
 theorem coordinateMapPreimage_apply_eq_iff [ConnectedSpace (PrimeSpectrum R)]
     {G H : FGCommGrpCat.{v}} (F : coordinateRing R G ⟶ coordinateRing R H)
     (g : G) (h : H) :
-    FGCommGrpCat.toMonoidHom (coordinateMapPreimage R F) g = h ↔
+    (coordinateMapPreimage R F).hom.hom g = h ↔
       FiniteTypeCommHopfAlgCat.toBialgHom F (MonoidAlgebra.single g 1) =
         MonoidAlgebra.single h 1 := by
-  simpa only [coordinateMapPreimage, FGCommGrpCat.toMonoidHom_ofHom] using
+  simpa only [coordinateMapPreimage, FGCommGrpCat.hom_hom_ofHom] using
     TauCeti.MonoidAlgebra.mapDomainBialgHomPreimage_apply_eq_iff R
       (FiniteTypeCommHopfAlgCat.toBialgHom F) g h
 
@@ -169,8 +169,8 @@ theorem coordinateMapPreimage_single [ConnectedSpace (PrimeSpectrum R)]
     (F : coordinateRing R G ⟶ coordinateRing R H) (g : G) :
     FiniteTypeCommHopfAlgCat.toBialgHom F (MonoidAlgebra.single g 1) =
       MonoidAlgebra.single
-        (FGCommGrpCat.toMonoidHom (coordinateMapPreimage R F) g) 1 := by
-  simpa only [coordinateMapPreimage, FGCommGrpCat.toMonoidHom_ofHom] using
+        ((coordinateMapPreimage R F).hom.hom g) 1 := by
+  simpa only [coordinateMapPreimage, FGCommGrpCat.hom_hom_ofHom] using
     TauCeti.MonoidAlgebra.mapDomainBialgHomPreimage_single R
       (FiniteTypeCommHopfAlgCat.toBialgHom F) g
 
@@ -183,7 +183,7 @@ theorem coordinateMap_coordinateMapPreimage [ConnectedSpace (PrimeSpectrum R)]
     coordinateMap R (coordinateMapPreimage R F) = F := by
   apply FiniteTypeCommHopfAlgCat.hom_ext
   rw [toBialgHom_coordinateMap]
-  simpa only [coordinateMapPreimage, FGCommGrpCat.toMonoidHom_ofHom] using
+  simpa only [coordinateMapPreimage, FGCommGrpCat.hom_hom_ofHom] using
     TauCeti.MonoidAlgebra.mapDomainBialgHom_mapDomainBialgHomPreimage R
       (FiniteTypeCommHopfAlgCat.toBialgHom F)
 
@@ -215,10 +215,10 @@ theorem coordinateMapPreimage_coordinateMap [ConnectedSpace (PrimeSpectrum R)]
     {G H : FGCommGrpCat.{v}} (φ : G ⟶ H) :
     coordinateMapPreimage R (coordinateMap R φ) = φ := by
   apply FGCommGrpCat.hom_ext
-  simpa only [coordinateMapPreimage, FGCommGrpCat.toMonoidHom_ofHom,
+  simpa only [coordinateMapPreimage, FGCommGrpCat.hom_hom_ofHom,
     toBialgHom_coordinateMap] using
     TauCeti.MonoidAlgebra.mapDomainBialgHomPreimage_mapDomainBialgHom R
-      (FGCommGrpCat.toMonoidHom φ)
+      φ.hom.hom
 
 /-- The coordinate-ring construction for finite-type diagonalizable groups.
 
@@ -230,15 +230,15 @@ functor, it becomes the usual contravariant assignment `G ↦ D(G)`. -/
   map := coordinateMap R
   map_id G := by
     apply FiniteTypeCommHopfAlgCat.hom_ext
-    rw [toBialgHom_coordinateMap, FGCommGrpCat.toMonoidHom_id]
+    rw [toBialgHom_coordinateMap, FGCommGrpCat.hom_hom_id]
     exact MonoidAlgebra.mapDomainBialgHom_id (R := R) (M := G)
   map_comp φ ψ := by
     apply FiniteTypeCommHopfAlgCat.hom_ext
-    rw [toBialgHom_coordinateMap, FGCommGrpCat.toMonoidHom_comp,
+    rw [toBialgHom_coordinateMap, FGCommGrpCat.hom_hom_comp,
       FiniteTypeCommHopfAlgCat.toBialgHom_comp, toBialgHom_coordinateMap,
       toBialgHom_coordinateMap]
     exact MonoidAlgebra.mapDomainBialgHom_comp (R := R)
-      (FGCommGrpCat.toMonoidHom ψ) (FGCommGrpCat.toMonoidHom φ)
+      ψ.hom.hom φ.hom.hom
 
 /-- The coordinate-ring functor sends a finitely generated commutative group to its
 coordinate Hopf algebra. -/

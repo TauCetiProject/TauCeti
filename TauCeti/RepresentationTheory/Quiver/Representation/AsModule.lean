@@ -170,7 +170,7 @@ theorem pathEnd_mul_pathEnd_of_comp {a b c : Q} (p : _root_.Quiver.Path a b)
     (q : _root_.Quiver.Path c a) :
     pathEnd k Q M ⟨a, b, p⟩ * pathEnd k Q M ⟨c, a, q⟩ = pathEnd k Q M ⟨c, b, q.comp p⟩ := by
   refine LinearMap.ext fun z => ?_
-  rw [Module.End.mul_apply, pathEnd_mk_apply, pathEnd_mk_apply, pathEnd_mk_apply,
+  rw [mul_apply_eq_comp, pathEnd_mk_apply, pathEnd_mk_apply, pathEnd_mk_apply,
     mapₗ_comp k Q M q p]
   exact congrArg _ (congrArg _ (DirectSum.component.lof_self k a _))
 
@@ -184,7 +184,7 @@ theorem pathEnd_mul_pathEnd_of_not_composable {x y : Quiver.TotalPath Q} (h : y.
     rw [pathEnd_apply]
     -- the projection onto a summand kills every other summand
     exact (DirectSum.component.of k x.1 y.2.1 _).trans (dite_eq_right h)
-  rw [Module.End.mul_apply, pathEnd_apply, key, map_zero, map_zero, LinearMap.zero_apply]
+  rw [mul_apply_eq_comp, pathEnd_apply, key, map_zero, map_zero, LinearMap.zero_apply]
 
 /-- **The trivial paths give the summand projections**, and those sum to the identity: this is what
 makes `TauCeti.QuiverRep.toEnd` unital, the unit of the path algebra being the sum of the vertex
@@ -194,7 +194,7 @@ theorem sum_pathEnd_nil [Fintype Q] :
   refine LinearMap.ext fun z => ?_
   rw [LinearMap.sum_apply]
   simp only [pathEnd_apply, mapₗ_nil, LinearMap.id_coe, id_eq,
-    ← DirectSum.apply_eq_component, Module.End.one_apply, DirectSum.lof_eq_of]
+    ← DirectSum.apply_eq_component, one_apply_eq_self, DirectSum.lof_eq_of]
   exact DirectSum.sum_univ_of z
 
 end Basic
@@ -286,7 +286,7 @@ private theorem asModuleAddEquiv_smul_pathAlgebra (f : pathAlgebra k Q) (x : asM
 private theorem asModuleAddEquiv_smul (r : k) (x : asModule k Q M) :
     asModuleAddEquiv k Q M (r • x) = r • asModuleAddEquiv k Q M x := by
   rw [← algebraMap_smul (pathAlgebra k Q) r x, asModuleAddEquiv_smul_pathAlgebra, AlgHom.commutes,
-    Algebra.algebraMap_eq_smul_one, LinearMap.smul_apply, Module.End.one_apply]
+    Algebra.algebraMap_eq_smul_one, LinearMap.smul_apply, one_apply_eq_self]
 
 /-- **The module carried by a representation is its direct sum of vertex spaces**, `k`-linearly.
 This is the identification consumers should go through, the `k`-action on

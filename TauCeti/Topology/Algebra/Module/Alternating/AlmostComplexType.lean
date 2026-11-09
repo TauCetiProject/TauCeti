@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Polynomial.AlgebraMap
+public import TauCeti.LinearAlgebra.Alternating.Derivation
 public import TauCeti.LinearAlgebra.End.Aeval
 public import TauCeti.Topology.Algebra.Module.Alternating.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.Curry
@@ -119,33 +120,13 @@ private lemma compSlot_apply (J : V →L[ℝ] V) (ω : V [⋀^ι]→L[ℝ] F) (i
   · simp
   · simp [update_of_ne hj]
 
-omit [Module ℂ F] [IsScalarTower ℝ ℂ F] [ContinuousConstSMul ℂ F] in
-/-- The sum of the forms obtained by applying `J` to one argument at a time is alternating. -/
-private lemma sum_compSlot_eq_zero (J : V →L[ℝ] V) (ω : V [⋀^ι]→L[ℝ] F) (v : ι → V)
-    {a b : ι} (hv : v a = v b) (hab : a ≠ b) :
-    (∑ i, compSlot J ω i) v = 0 := by
-  rw [sum_apply, Fintype.sum_eq_add a b hab]
-  · rw [compSlot_apply, compSlot_apply]
-    have hswap : update v b (J (v b)) = update v a (J (v a)) ∘ Equiv.swap a b := by
-      rw [update_comp_equiv, Equiv.symm_swap, Equiv.swap_apply_left, ← hv]
-      congr 1
-      ext j
-      rcases eq_or_ne j a with rfl | hja
-      · simp [hv]
-      rcases eq_or_ne j b with rfl | hjb
-      · simp [hv]
-      · simp [Equiv.swap_apply_of_ne_of_ne hja hjb]
-    rw [hswap, add_comm]
-    simpa using ω.toAlternatingMap.map_swap_add (update v a (J (v a))) hab
-  · rintro i ⟨hia, hib⟩
-    rw [compSlot_apply]
-    exact ω.map_eq_zero_of_eq _ (by simp [update_of_ne hia.symm, update_of_ne hib.symm, hv]) hab
-
 /-- An endomorphism `J` of `V` acts on alternating maps on `V` as a derivation: the result is the
 sum, over all arguments, of the alternating map with `J` applied to that argument. -/
 def alternatingDerivation (J : V →L[ℝ] V) :
     (V [⋀^ι]→L[ℝ] F) →ₗ[ℂ] V [⋀^ι]→L[ℝ] F where
-  toFun ω := ⟨∑ i, compSlot J ω i, fun v _ _ hv hab ↦ sum_compSlot_eq_zero J ω v hv hab⟩
+  toFun ω := ⟨∑ i, compSlot J ω i, fun v _ _ hv hab ↦ by
+    simpa [sum_apply, compSlot_apply] using
+      ((J : V →ₗ[ℝ] V).alternatingDerivation ω.toAlternatingMap).map_eq_zero_of_eq v hv hab⟩
   map_add' ω ω' := by
     ext v
     simp [sum_apply, compSlot_apply, Finset.sum_add_distrib]
@@ -156,6 +137,15 @@ def alternatingDerivation (J : V →L[ℝ] V) :
 theorem alternatingDerivation_apply (J : V →L[ℝ] V) (ω : V [⋀^ι]→L[ℝ] F) (v : ι → V) :
     J.alternatingDerivation ω v = ∑ i, ω (update v i (J (v i))) := by
   simp [alternatingDerivation, sum_apply, compSlot_apply]
+
+/-- The continuous derivation is the derivation `LinearMap.alternatingDerivation` of the
+underlying linear endomorphism on the underlying alternating maps. -/
+@[simp]
+theorem toAlternatingMap_alternatingDerivation (J : V →L[ℝ] V) (ω : V [⋀^ι]→L[ℝ] F) :
+    (J.alternatingDerivation ω).toAlternatingMap =
+      (J : V →ₗ[ℝ] V).alternatingDerivation ω.toAlternatingMap := by
+  ext v
+  simp [alternatingDerivation_apply]
 
 /-- On a one-form, the derivation is precomposition with `J`. -/
 theorem alternatingDerivation_apply_vecCons_fin_one (J : V →L[ℝ] V) (α : V [⋀^Fin 1]→L[ℝ] F)
@@ -196,32 +186,8 @@ theorem alternatingDerivation_alternatingDerivation_sub (J B : V →L[ℝ] V)
         B.alternatingDerivation (J.alternatingDerivation ω) =
       (B ∘L J).alternatingDerivation ω - (J ∘L B).alternatingDerivation ω := by
   ext v
-  -- Split each double sum into its diagonal part, where both endomorphisms hit the same
-  -- argument, and its off-diagonal part, which is symmetric in the two endomorphisms.
-  have hsplit (X Y : V →L[ℝ] V) :
-      ∑ i, ∑ j, ω (update (update v i (X (v i))) j (Y (update v i (X (v i)) j))) =
-        ∑ i, ω (update v i (Y (X (v i)))) +
-          ∑ i, ∑ j, if i = j then 0 else ω (update (update v i (X (v i))) j (Y (v j))) := by
-    rw [← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    have h (j : ι) : ω (update (update v i (X (v i))) j (Y (update v i (X (v i)) j))) =
-        (if i = j then ω (update v i (Y (X (v i)))) else 0) +
-          if i = j then 0 else ω (update (update v i (X (v i))) j (Y (v j))) := by
-      rcases eq_or_ne i j with rfl | h
-      · simp
-      · simp [h, Ne.symm h]
-    simp only [h, Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
-  have hsymm : ∑ i, ∑ j, (if i = j then 0 else
-        ω (update (update v i (J (v i))) j (B (v j)))) =
-      ∑ i, ∑ j, if i = j then 0 else ω (update (update v i (B (v i))) j (J (v j))) := by
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-    rcases eq_or_ne j i with rfl | h
-    · simp
-    · simp [h, Ne.symm h, update_comm h]
-  simp only [ContinuousAlternatingMap.sub_apply, alternatingDerivation_apply,
-    comp_apply, hsplit, hsymm]
-  abel
+  simpa [alternatingDerivation_apply] using DFunLike.congr_fun
+    ((J : V →ₗ[ℝ] V).alternatingDerivation_alternatingDerivation_sub B ω.toAlternatingMap) v
 
 end Derivation
 
@@ -311,6 +277,35 @@ theorem isOfType_zero_one_iff (α : V [⋀^Fin 1]→L[ℝ] F) :
   · ext w
     obtain ⟨v, rfl⟩ : ∃ v, w = ![v] := ⟨w 0, by ext i; fin_cases i; rfl⟩
     rw [J.alternatingDerivation_apply_vecCons_fin_one, h, smul_apply]
+
+/-- On a complex vector space, a one-form of type `(1,0)` for multiplication by `i` is
+complex-linear. -/
+theorem IsOfType.map_smul_complex {U : Type*} [AddCommGroup U] [Module ℂ U] [Module ℝ U]
+    [IsScalarTower ℝ ℂ U] [TopologicalSpace U] [ContinuousConstSMul ℂ U] {α : U [⋀^Fin 1]→L[ℝ] F}
+    (h : α.IsOfType (I • ContinuousLinearMap.id ℝ U) 1 0) (c : ℂ) (v : U) :
+    α ![c • v] = c • α ![v] := by
+  have hI : α ![I • v] = I • α ![v] := (isOfType_one_zero_iff α).1 h v
+  have hU : c • v = c.re • v + c.im • I • v := by
+    conv_lhs => rw [← re_add_im c]
+    rw [add_smul, mul_smul, ← coe_algebraMap, algebraMap_smul, algebraMap_smul]
+  have hF : c • α ![v] = c.re • α ![v] + c.im • I • α ![v] := by
+    conv_lhs => rw [← re_add_im c]
+    rw [add_smul, mul_smul, ← coe_algebraMap, algebraMap_smul, algebraMap_smul]
+  rw [hU, hF, ← hI]
+  rw [← ContinuousAlternatingMap.vecCons_smul, ← ContinuousAlternatingMap.vecCons_smul,
+    ← ContinuousAlternatingMap.vecCons_add]
+
+/-- On a one-dimensional complex vector space, a one-form of type `(1,0)` for multiplication by
+`i` which vanishes on a nonzero vector is zero. -/
+theorem IsOfType.eq_zero_of_apply_eq_zero {U : Type*} [AddCommGroup U] [Module ℂ U] [Module ℝ U]
+    [IsScalarTower ℝ ℂ U] [TopologicalSpace U] [ContinuousConstSMul ℂ U] {α : U [⋀^Fin 1]→L[ℝ] F}
+    (h : α.IsOfType (I • ContinuousLinearMap.id ℝ U) 1 0) (hU : Module.finrank ℂ U = 1) {w : U}
+    (hw : w ≠ 0) (hα : α ![w] = 0) : α = 0 := by
+  ext v
+  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero' w hw).1 hU (v 0)
+  have hv : v = ![c • w] := by ext i; fin_cases i; exact hc.symm
+  rw [hv, h.map_smul_complex, hα, smul_zero]
+  rfl
 
 /-- Pullback along a map intertwining the endomorphisms preserves type. -/
 theorem IsOfType.compContinuousLinearMap {K : W →L[ℝ] W} {f : W →L[ℝ] V}
@@ -416,7 +411,7 @@ theorem sum_typeProjection (J : V →L[ℝ] V) (ω : V [⋀^Fin k]→L[ℝ] F) :
     ∑ pq ∈ Finset.antidiagonal k, J.typeProjection pq.1 pq.2 ω = ω := by
   simp only [typeProjection, Prod.mk.eta]
   rw [← LinearMap.sum_apply, ← map_sum,
-    Lagrange.sum_basis (typeEigenvalue_injOn k) ⟨(k, 0), by simp⟩, map_one, Module.End.one_apply]
+    Lagrange.sum_basis (typeEigenvalue_injOn k) ⟨(k, 0), by simp⟩, map_one, one_apply_eq_self]
 
 /-- The projection onto type `(p,q)` fixes the forms of type `(p,q)`. -/
 @[simp]
@@ -458,9 +453,9 @@ theorem typeProjection_one_zero (J : V →L[ℝ] V) :
   ext ω v
   simp only [Lagrange.basisDivisor, typeEigenvalue, Nat.cast_one, CharP.cast_eq_zero, sub_zero,
     one_mul, zero_sub, neg_mul, sub_neg_eq_add, map_neg, map_mul, aeval_C, map_add, aeval_X,
-    Module.End.mul_apply, LinearMap.add_apply, Module.algebraMap_end_apply,
+    mul_apply_eq_comp, LinearMap.add_apply, Module.algebraMap_end_apply,
     ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.coe_smul, Pi.smul_apply,
-    LinearMap.smul_apply, LinearMap.sub_apply, Module.End.one_apply,
+    LinearMap.smul_apply, LinearMap.sub_apply, one_apply_eq_self,
     ContinuousAlternatingMap.coe_sub, Pi.sub_apply]
   rw [← two_mul, mul_inv, inv_I]
   match_scalars <;> ring_nf
@@ -475,10 +470,10 @@ theorem typeProjection_zero_one (J : V →L[ℝ] V) :
   rw [typeProjection, h, Lagrange.basis_pair_right (by decide)]
   ext ω v
   simp only [Lagrange.basisDivisor, typeEigenvalue, CharP.cast_eq_zero, Nat.cast_one, zero_sub,
-    neg_mul, one_mul, sub_zero, map_mul, aeval_C, aeval_sub, aeval_X, Module.End.mul_apply,
+    neg_mul, one_mul, sub_zero, map_mul, aeval_C, aeval_sub, aeval_X, mul_apply_eq_comp,
     LinearMap.sub_apply, Module.algebraMap_end_apply, ContinuousAlternatingMap.coe_smul,
     ContinuousAlternatingMap.coe_sub, Pi.smul_apply, Pi.sub_apply, smul_add, LinearMap.add_apply,
-    LinearMap.smul_apply, Module.End.one_apply, ContinuousAlternatingMap.add_apply]
+    LinearMap.smul_apply, one_apply_eq_self, ContinuousAlternatingMap.add_apply]
   rw [← neg_add', ← two_mul, inv_neg, mul_inv, inv_I]
   match_scalars <;> ring_nf
   norm_num
@@ -513,7 +508,7 @@ theorem typeProjection_two_zero_apply (hJ : ∀ v, J (J v) = -v) (β : V [⋀^Fi
   simp only [Lagrange.basisDivisor, typeEigenvalue, Nat.cast_ofNat, CharP.cast_eq_zero, sub_zero,
     Nat.cast_one, sub_self, zero_mul, mul_inv_rev, inv_I, neg_mul, map_neg, map_mul, map_zero,
     zero_sub, sub_neg_eq_add, aeval_C, aeval_X, map_add, LinearMap.neg_apply,
-    Module.End.mul_apply, LinearMap.add_apply, Module.algebraMap_end_apply, map_smul, smul_add,
+    mul_apply_eq_comp, LinearMap.add_apply, Module.algebraMap_end_apply, map_smul, smul_add,
     neg_add_rev, ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.coe_neg,
     ContinuousAlternatingMap.coe_smul, Pi.neg_apply, Pi.smul_apply,
     alternatingDerivation_apply_vecCons_fin_two,
@@ -530,7 +525,7 @@ theorem typeProjection_one_one_apply (hJ : ∀ v, J (J v) = -v) (β : V [⋀^Fin
   simp only [Lagrange.basisDivisor, typeEigenvalue, Nat.cast_one, sub_self, zero_mul,
     Nat.cast_ofNat, CharP.cast_eq_zero, sub_zero, zero_sub, inv_neg, mul_inv_rev, inv_I, neg_mul,
     neg_neg, map_mul, sub_neg_eq_add, zero_add, map_neg, mul_neg, aeval_C, aeval_sub,
-    aeval_X, map_add, LinearMap.neg_apply, Module.End.mul_apply, LinearMap.add_apply,
+    aeval_X, map_add, LinearMap.neg_apply, mul_apply_eq_comp, LinearMap.add_apply,
     Module.algebraMap_end_apply, map_smul, smul_add, LinearMap.sub_apply,
     ContinuousAlternatingMap.coe_neg, ContinuousAlternatingMap.coe_smul,
     ContinuousAlternatingMap.coe_sub, ContinuousAlternatingMap.coe_add, Pi.neg_apply, Pi.smul_apply,
@@ -549,7 +544,7 @@ theorem typeProjection_zero_two_apply (hJ : ∀ v, J (J v) = -v) (β : V [⋀^Fi
   rw [typeProjection, Lagrange.basis, h, Finset.prod_pair (by decide)]
   simp only [Lagrange.basisDivisor, typeEigenvalue, CharP.cast_eq_zero, Nat.cast_ofNat, zero_sub,
     neg_mul, sub_zero, map_mul, Nat.cast_one, sub_self, zero_mul, inv_neg, mul_inv_rev, inv_I,
-    neg_neg, map_zero, aeval_C, aeval_sub, aeval_X, Module.End.mul_apply,
+    neg_neg, map_zero, aeval_C, aeval_sub, aeval_X, mul_apply_eq_comp,
     Module.algebraMap_end_apply, map_smul, LinearMap.sub_apply, ContinuousAlternatingMap.coe_smul,
     ContinuousAlternatingMap.coe_sub, Pi.smul_apply, Pi.sub_apply,
     alternatingDerivation_alternatingDerivation_apply_vecCons_fin_two hJ,
@@ -698,25 +693,22 @@ private lemma aeval_alternatingDerivation_nodal (hJ : ∀ v, J (J v) = -v) (k : 
     have hP : ∀ pq ∈ Finset.antidiagonal (n + 1), P.eval (typeEigenvalue pq) = 0 :=
       fun pq hpq ↦ Lagrange.eval_nodal_at_node hpq
     -- Shifting the nodes by `±I` sends the degree-`n` eigenvalues to degree-`n + 1` ones, so `P`
-    -- annihilates the shifted derivations on degree-`n` forms. By `aeval_comp`, evaluating `P` at
-    -- the shifted derivation is evaluating the shifted polynomial at the derivation.
-    have hplus : aeval (J.alternatingDerivation + algebraMap ℂ _ I :
-        Module.End ℂ (V [⋀^Fin n]→L[ℝ] F)) P = 0 := by
-      have h := hvan (P.comp (X + C I)) fun ⟨p, q⟩ hpq ↦ by
-        rw [eval_comp]
-        convert hP (p + 1, q) (by simpa [Finset.mem_antidiagonal, add_right_comm] using hpq)
-          using 2
-        simp [typeEigenvalue]
-        ring
+    -- annihilates the shifted derivations on degree-`n` forms.
+    have hshift (c : ℂ) (hc : ∀ pq ∈ Finset.antidiagonal n,
+        P.eval (typeEigenvalue pq + c) = 0) : aeval (J.alternatingDerivation + algebraMap ℂ _ c :
+          Module.End ℂ (V [⋀^Fin n]→L[ℝ] F)) P = 0 := by
+      have h := hvan (P.comp (X + C c)) fun pq hpq ↦ by simpa using hc pq hpq
       simpa [aeval_comp] using h
+    have hplus := hshift I fun ⟨p, q⟩ hpq ↦ by
+      convert hP (p + 1, q) (by simpa [Finset.mem_antidiagonal, add_right_comm] using hpq) using 2
+      simp [typeEigenvalue]
+      ring
     have hminus : aeval (J.alternatingDerivation - algebraMap ℂ _ I :
         Module.End ℂ (V [⋀^Fin n]→L[ℝ] F)) P = 0 := by
-      have h := hvan (P.comp (X - C I)) fun ⟨p, q⟩ hpq ↦ by
-        rw [eval_comp]
+      simpa [sub_eq_add_neg] using hshift (-I) fun ⟨p, q⟩ hpq ↦ by
         convert hP (p, q + 1) (by simpa [Finset.mem_antidiagonal, ← add_assoc] using hpq) using 2
         simp [typeEigenvalue]
         ring
-      simpa [aeval_comp] using h
     ext ω w
     set Ω := aeval (J.alternatingDerivation : Module.End ℂ (V [⋀^Fin (n + 1)]→L[ℝ] F)) P ω
     have hint : ∀ v, curryLeftTopologicalLinear ℂ v Ω = 0 := by
@@ -731,12 +723,7 @@ private lemma aeval_alternatingDerivation_nodal (hJ : ∀ v, J (J v) = -v) (k : 
       simp only [LinearMap.zero_apply, LinearMap.sub_apply, LinearMap.add_apply,
         LinearMap.smul_apply] at h₁ h₂
       have h₃ : (2 : ℂ) • curryLeftTopologicalLinear ℂ v Ω = 0 := by
-        rw [two_smul]
-        calc curryLeftTopologicalLinear ℂ v Ω + curryLeftTopologicalLinear ℂ v Ω
-            = (curryLeftTopologicalLinear ℂ v Ω - I • curryLeftTopologicalLinear ℂ (J v) Ω) +
-                (curryLeftTopologicalLinear ℂ v Ω + I • curryLeftTopologicalLinear ℂ (J v) Ω) := by
-              abel
-          _ = 0 := by rw [← h₁, ← h₂, add_zero]
+        linear_combination (norm := module) -h₁ - h₂
       exact (smul_eq_zero.1 h₃).resolve_left two_ne_zero
     rw [LinearMap.zero_apply, ← Fin.cons_self_tail w]
     simpa [Matrix.vecCons] using congrArg (fun T ↦ T (Fin.tail w)) (hint (w 0))
@@ -767,7 +754,7 @@ theorem alternatingDerivation_typeProjection (hJ : ∀ v, J (J v) = -v)
         simp
       · rw [eval_mul, ← typeEigenvalue_mk,
           Lagrange.eval_basis_of_ne (Ne.symm h) (by simpa using hpq'), mul_zero])
-  rw [map_mul, Module.End.mul_apply, map_sub, aeval_X, aeval_C, LinearMap.sub_apply,
+  rw [map_mul, mul_apply_eq_comp, map_sub, aeval_X, aeval_C, LinearMap.sub_apply,
     Module.algebraMap_end_apply, LinearMap.zero_apply, sub_eq_zero] at h
   exact h
 

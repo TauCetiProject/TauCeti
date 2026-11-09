@@ -37,6 +37,8 @@ have the same `c₄` valuation too.
   discriminant is not divisible by `ϖ ^ 12` is minimal.
 * `WeierstrassCurve.exists_smul_eq_minimal`: Mathlib's chosen minimal equation is obtained by a
   change of variables.
+* `WeierstrassCurve.isElliptic_minimal`: so the chosen minimal equation of an elliptic curve is
+  elliptic.
 * `WeierstrassCurve.exists_smul_minimal_eq_of_smul_eq`: Mathlib's chosen minimal equation reaches
   every equation in its orbit by a change of variables.
 * `WeierstrassCurve.exists_smul_minimal_eq_minimal`: chosen minimal equations of isomorphic
@@ -78,9 +80,15 @@ have the same `c₄` valuation too.
 * `WeierstrassCurve.hasGoodReduction_iff_isUnit_integralModel_Δ`: an integral equation has good
   reduction exactly when its integral discriminant is a unit, and then it is elliptic
   (`WeierstrassCurve.HasGoodReduction.isElliptic`).
+* `WeierstrassCurve.hasMultiplicativeReduction_iff_not_isUnit_integralModel_Δ_and_isUnit_c₄`: it
+  has multiplicative reduction exactly when its integral discriminant is not a unit and its
+  integral `c₄` is.
 * `WeierstrassCurve.HasGoodReduction.baseChange` and `WeierstrassCurve.reduction_baseChange`:
   good reduction is preserved by base change along a map of discrete valuation rings, and the
   reduction of the base change is the base change of the reduction.
+* `WeierstrassCurve.hasGoodReduction_baseChange_iff` and
+  `WeierstrassCurve.hasMultiplicativeReduction_baseChange_iff`: along a local map of discrete
+  valuation rings, good and multiplicative reduction of an integral equation are unchanged.
 * `WeierstrassCurve.HasSplitMultiplicativeReduction.of_isMinimal_smul`: split multiplicative
   reduction transfers along such a change of variables.
 
@@ -232,6 +240,12 @@ theorem isMinimal_baseChange_of_not_pow_twelve_dvd_Δ (W : WeierstrassCurve R) {
 theorem exists_smul_eq_minimal (W : WeierstrassCurve K) :
     ∃ C : VariableChange K, C • W = W.minimal R :=
   ⟨_, rfl⟩
+
+/-- **The chosen minimal equation of an elliptic curve is elliptic**, being a change of variables
+of it. -/
+instance isElliptic_minimal (W : WeierstrassCurve K) [W.IsElliptic] : (W.minimal R).IsElliptic :=
+  have ⟨_, hC⟩ := W.exists_smul_eq_minimal R
+  hC ▸ inferInstance
 
 /-- **Mathlib's chosen minimal equation reaches every equation in its orbit.** If a change of
 variables carries `W` to `W'`, then some change of variables carries `W.minimal R` to `W'`. -/
@@ -464,8 +478,6 @@ theorem valuation_c₄_minimal_smul (D : VariableChange K) (W : WeierstrassCurve
     [W.IsElliptic] :
     valuation K (maximalIdeal R) ((D • W).minimal R).c₄ =
       valuation K (maximalIdeal R) (W.minimal R).c₄ := by
-  obtain ⟨C₀, hC₀⟩ := W.exists_smul_eq_minimal R
-  have : (W.minimal R).IsElliptic := hC₀ ▸ inferInstance
   obtain ⟨C, hC⟩ := exists_smul_minimal_eq_minimal R D W
   exact valuation_c₄_eq_of_isMinimal_smul R C hC
 
@@ -510,6 +522,23 @@ theorem hasGoodReduction_iff_isUnit_integralModel_Δ (W : WeierstrassCurve K) [I
   exact ⟨fun h ↦ h.goodReduction,
     fun h ↦ { toIsMinimal := isMinimal_of_valuation_Δ_eq_one R W h, goodReduction := h }⟩
 
+/-- **An integral equation has multiplicative reduction exactly when the discriminant of its
+integral model is not a unit and its `c₄` is.** Such an equation is automatically minimal
+(`isMinimal_of_valuation_c₄_eq_one`), so no minimality hypothesis appears. -/
+theorem hasMultiplicativeReduction_iff_not_isUnit_integralModel_Δ_and_isUnit_c₄
+    (W : WeierstrassCurve K) [IsIntegral R W] :
+    W.HasMultiplicativeReduction R ↔
+      ¬ IsUnit (W.integralModel R).Δ ∧ IsUnit (W.integralModel R).c₄ := by
+  have hval (x : R) : valuation K (maximalIdeal R) (algebraMap R K x) = 1 ↔ IsUnit x :=
+    (maximalIdeal R).valuation_eq_one_iff_notMem.trans IsLocalRing.notMem_maximalIdeal
+  have hlt (x : R) : valuation K (maximalIdeal R) (algebraMap R K x) < 1 ↔ ¬ IsUnit x :=
+    ((maximalIdeal R).valuation_lt_one_iff_mem _).trans (IsLocalRing.mem_maximalIdeal x)
+  rw [hasMultiplicativeReduction_iff, ← integralModel_Δ_eq R W, ← integralModel_c₄_eq R W, hval,
+    hlt]
+  refine ⟨fun h ↦ h.2, fun h ↦ ⟨isMinimal_of_valuation_c₄_eq_one R W ?_, h⟩⟩
+  rw [← integralModel_c₄_eq R W, hval]
+  exact h.2
+
 /-- **An equation with good reduction is elliptic**: its discriminant has valuation `1`, so it is
 nonzero. -/
 theorem HasGoodReduction.isElliptic {W : WeierstrassCurve K} (h : W.HasGoodReduction R) :
@@ -533,6 +562,32 @@ theorem HasGoodReduction.baseChange
   have := IsIntegral.baseChange hRS W
   rw [hasGoodReduction_iff_isUnit_integralModel_Δ, integralModel_baseChange hRS, map_Δ]
   exact ((hasGoodReduction_iff_isUnit_integralModel_Δ R W).mp h).map _
+
+/-- **Good reduction does not change under base change.** Let `R → S` be a local homomorphism of
+discrete valuation rings compatible with `K → L`. An integral equation over `R` has good reduction
+exactly when its base change to `L` has good reduction over `S`: the discriminant of its integral
+model is a unit in `R` exactly when its image is a unit in `S`. -/
+theorem hasGoodReduction_baseChange_iff [IsLocalHom (algebraMap R S)]
+    (hRS : (algebraMap S L).comp (algebraMap R S) = (algebraMap K L).comp (algebraMap R K))
+    (W : WeierstrassCurve K) [IsIntegral R W] :
+    (W.baseChange L).HasGoodReduction S ↔ W.HasGoodReduction R := by
+  have := IsIntegral.baseChange hRS W
+  rw [hasGoodReduction_iff_isUnit_integralModel_Δ, hasGoodReduction_iff_isUnit_integralModel_Δ,
+    integralModel_baseChange hRS, map_Δ, isUnit_map_iff]
+
+/-- **Multiplicative reduction does not change under base change.** Let `R → S` be a local
+homomorphism of discrete valuation rings compatible with `K → L`. An integral equation over `R`
+has multiplicative reduction exactly when its base change to `L` has multiplicative reduction over
+`S`, since both say that the integral discriminant is not a unit and the integral `c₄` is. Whether
+the reduction is split can change. -/
+theorem hasMultiplicativeReduction_baseChange_iff [IsLocalHom (algebraMap R S)]
+    (hRS : (algebraMap S L).comp (algebraMap R S) = (algebraMap K L).comp (algebraMap R K))
+    (W : WeierstrassCurve K) [IsIntegral R W] :
+    (W.baseChange L).HasMultiplicativeReduction S ↔ W.HasMultiplicativeReduction R := by
+  have := IsIntegral.baseChange hRS W
+  rw [hasMultiplicativeReduction_iff_not_isUnit_integralModel_Δ_and_isUnit_c₄,
+    hasMultiplicativeReduction_iff_not_isUnit_integralModel_Δ_and_isUnit_c₄,
+    integralModel_baseChange hRS, map_Δ, map_c₄, isUnit_map_iff, isUnit_map_iff]
 
 /-- **Reduction commutes with base change.** If `R → S` is a local homomorphism of discrete
 valuation rings compatible with `K → L`, and an equation is minimal over `R` with base change

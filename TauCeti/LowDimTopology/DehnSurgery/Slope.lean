@@ -65,11 +65,15 @@ the `ℚ ∪ {∞}` bijection through any framing's coordinate isomorphism.
 
 * `TauCeti.FramedBoundaryTorus.value_meridian` / `.value_longitude`: the meridian is `∞` and the
   longitude is `0`, fixing the meridian-longitude convention.
+* `TauCeti.FramedBoundaryTorus.slopeEquiv_symm_coe_ne_meridian`: a slope of finite value is not
+  the meridian.
 * `TauCeti.FramedBoundaryTorus.value_mk` / `.slopeEquiv_symm_apply`: the parametrisation in
   coordinates, in each direction — a primitive class has the value of its `(μ, λ)`-coordinates, and
   a value comes from the slope whose coordinates are the corresponding reduced pair.
 * `TauCeti.FramedBoundaryTorus.coord_symm_apply`: a pair of coordinates `(p, q)` names the class
   `p · μ + q · λ`, so the filling class of a slope is reachable without unfolding `coord`.
+* `TauCeti.FramedBoundaryTorus.value_shiftLongitude`: replacing the longitude `λ` by `λ + n · μ`
+  lowers every finite slope value by `n`.
 
 `ℚ ∪ {∞}` is Mathlib's one-point extension `OnePoint ℚ` from
 `Mathlib/Topology/Compactification/OnePoint/Basic.lean`; the reduced-fraction bookkeeping reuses
@@ -94,11 +98,11 @@ through the public defining equations (`Slope.congr_mk`, `Slope.value_mk`, `slop
 ordinary propositional lemmas instead of implicitly `@[defeq]` ones; an exported `@[defeq]` theorem
 would have to expose every definition it unfolds. -/
 
-variable {M N : Type*} [AddCommGroup M] [AddCommGroup N] [Module ℤ M] [Module ℤ N]
+variable {M N : Type*} [AddCommGroup M] [AddCommGroup N]
 
 /-- Two primitive classes represent the same slope when they agree up to sign. This is an
 equivalence relation on primitive classes. -/
-private def slopeSetoid (M : Type*) [AddCommGroup M] [Module ℤ M] :
+private def slopeSetoid (M : Type*) [AddCommGroup M] :
     Setoid {v : M // IsPrimitive v} where
   r a b := a.1 = b.1 ∨ a.1 = -b.1
   iseqv :=
@@ -120,7 +124,7 @@ private theorem slopeSetoid_rel_iff {a b : {v : M // IsPrimitive v}} :
 /-- A **slope** on a boundary torus with homology `M`: a primitive homology class taken modulo the
 sign action, i.e. an unoriented essential simple closed curve up to isotopy. This is basis-free — it
 refers only to the abstract module `M`, not to any choice of meridian-longitude basis. -/
-def Slope (M : Type*) [AddCommGroup M] [Module ℤ M] : Type _ :=
+def Slope (M : Type*) [AddCommGroup M] : Type _ :=
   Quotient (slopeSetoid M)
 
 namespace Slope
@@ -144,6 +148,8 @@ theorem mk_eq_mk_iff {v w : M} (hv : IsPrimitive v) (hw : IsPrimitive w) :
 theorem induction_on {C : Slope M → Prop} (s : Slope M)
     (h : ∀ (v : M) (hv : IsPrimitive v), C (mk v hv)) : C s :=
   Quotient.inductionOn s fun v => h v.1 v.2
+
+variable [Module ℤ M] [Module ℤ N]
 
 /-- A `ℤ`-linear equivalence `M ≃ₗ[ℤ] N` transports slopes bijectively; a framing's coordinate
 isomorphism uses this to carry a slope to the standard lattice. -/
@@ -442,6 +448,13 @@ theorem value_longitude : T.value T.longitude = (0 : ℚ) := by
   rw [Slope.congr_mk, Slope.value_mk, T.coord_basis_one, slopeValue_of_snd_ne_zero one_ne_zero]
   norm_num
 
+/-- A slope of finite value is not the meridian, whose value is `∞`. -/
+theorem slopeEquiv_symm_coe_ne_meridian (x : ℚ) : T.slopeEquiv.symm x ≠ T.meridian := by
+  intro hx
+  have hv := congrArg T.slopeEquiv hx
+  rw [Equiv.apply_symm_apply, slopeEquiv_apply, value_meridian] at hv
+  exact OnePoint.coe_ne_infty x hv
+
 /-! ### Changing the longitude -/
 
 /-- The change of `(μ, λ)`-coordinates `(p, q) ↦ (p - n q, q)` that accompanies replacing the
@@ -498,6 +511,24 @@ theorem shiftLongitudeBasis_one (n : ℤ) :
   rw [coord_basis_one, coord_shiftLongitude, map_add, map_zsmul, coord_basis_one,
     coord_basis_zero]
   simp
+
+/-- **Slope values under a change of longitude.** Replacing the longitude `λ` by `λ + n · μ`
+lowers every finite slope value by `n` and keeps `∞`: the class `p · μ + q · λ` is
+`(p - n q) · μ + q · (λ + n · μ)`.
+
+This is not a `simp` lemma: framings such as the preferred framing of a knot are reducible
+`shiftLongitude`s, and rewriting their values this way would preempt the lemmas stated for them. -/
+theorem value_shiftLongitude (n : ℤ) (s : Slope T.H) :
+    (T.shiftLongitude n).value s = (T.value s).map (· - (n : ℚ)) := by
+  induction s using Slope.induction_on with
+  | h v hv =>
+    rw [value_mk, value_mk, coord_shiftLongitude]
+    by_cases hq : (T.coord v).2 = 0
+    · simp [hq]
+    · rw [slopeValue_of_snd_ne_zero hq, slopeValue_of_snd_ne_zero (by exact hq), OnePoint.map_some]
+      congr 1
+      push_cast
+      field_simp
 
 /-- Shifting the longitude by `0` leaves the framing unchanged. -/
 @[simp]

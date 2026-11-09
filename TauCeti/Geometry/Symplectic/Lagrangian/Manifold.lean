@@ -147,7 +147,8 @@ theorem isLagrangianMap_iff_forall :
 theorem isIsotropicMap_iff :
     hσ.IsIsotropicMap J f ↔
       ∀ x (v w : TangentSpace J x),
-        SmoothForm.eval₂ σ (f x) (mfderiv J I f x v) (mfderiv J I f x w) = 0 := by
+        SmoothBundleForm.eval₂ σ (f x)
+            (mfderiv J I f x v) (mfderiv J I f x w) = 0 := by
   refine forall_congr' fun x ↦ ?_
   simp only [SymplecticForm.isIsotropic_iff, LinearMap.mem_range, forall_exists_index,
     forall_apply_eq_imp_iff, symplecticFormAt_apply, ContinuousLinearMap.coe_coe]
@@ -170,7 +171,7 @@ theorem IsLagrangianMap.isCoisotropicMap (h : hσ.IsLagrangianMap J f) : hσ.IsC
 the two-form back to zero. -/
 theorem isIsotropicMap_iff_mpullback_eq_zero [IsManifold J ∞ N] (hf : ContMDiff J I ∞ f) :
     hσ.IsIsotropicMap J f ↔ SmoothForm.mpullback f hf σ = 0 := by
-  rw [isIsotropicMap_iff, SmoothForm.ext_iff]
+  rw [isIsotropicMap_iff, SmoothBundleForm.ext_eval₂_iff]
   simp only [SmoothForm.eval₂_mpullback]
   simp
 
@@ -313,6 +314,19 @@ theorem isLagrangianImmersion_iff [FiniteDimensional ℝ E] [Nonempty N] :
   refine ⟨fun h ↦ ⟨h.isImmersion, h.isLagrangianMap⟩, fun ⟨himm, hL⟩ ↦ ⟨himm, hL.isIsotropicMap,
     ?_⟩⟩
   exact hL.two_mul_finrank (himm.mfderiv_injective (by simp) (Classical.arbitrary N))
+
+/-- A smooth immersion is Lagrangian exactly when its pulled-back two-form vanishes and
+its source has half the ambient dimension. This includes empty sources. -/
+theorem isLagrangianImmersion_iff_mpullback_eq_zero [FiniteDimensional ℝ E]
+    [IsManifold J ∞ N] (hf : IsImmersion J I ∞ f) :
+    hσ.IsLagrangianImmersion J f ↔
+      SmoothForm.mpullback f hf.contMDiff σ = 0 ∧ 2 * finrank ℝ E' = finrank ℝ E := by
+  constructor
+  · intro h
+    exact ⟨(isIsotropicMap_iff_mpullback_eq_zero hf.contMDiff).mp h.isIsotropicMap,
+      h.two_mul_finrank⟩
+  · rintro ⟨h, hdim⟩
+    exact ⟨hf, (isIsotropicMap_iff_mpullback_eq_zero hf.contMDiff).mpr h, hdim⟩
 
 end IsNondegenerate
 

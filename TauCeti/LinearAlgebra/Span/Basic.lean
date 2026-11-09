@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Tower
 public import Mathlib.LinearAlgebra.Span.Basic
+public import Mathlib.RingTheory.Ideal.Defs
+import Mathlib.Algebra.Algebra.Basic
 import Mathlib.Algebra.Field.Basic
 import Mathlib.Algebra.Module.Torsion.Field
+import Mathlib.Data.Fintype.BigOperators
 
 /-!
 # Finite spans and singleton spans
@@ -16,7 +20,14 @@ A generator with a unit coefficient in a linear combination can be replaced by t
 without changing the span. Over a division semiring, a nonzero vector in a singleton span can be
 used to recover the generator's membership in any submodule. Acting on a line gives the line
 through the image of its generator, so a group element stabilizes the line through a vector
-exactly when it sends that vector to a multiple of itself.
+exactly when it sends that vector to a multiple of itself. Finally, a submodule over a
+subring that is a direct sum `⊕ i, J i • y i` with nonzero ideal coefficients spans the same
+subspace over the larger field as the family `y`. A unitriangular change of a family indexed by a
+well-founded order, where each `z j` is `x j` plus a combination of the earlier `x l`, preserves
+the spans of initial segments. A ring homomorphism carries a span over `A` into a span over `B`
+as soon as it carries the generators into the target span and the scalars in `A` to scalars in `B`.
+Over a scalar extension, the image span of a semilinear map is spanned by its values on any
+spanning family of the domain.
 -/
 
 public section
@@ -90,5 +101,100 @@ theorem smul_span_singleton_eq_iff {g : G} {v : W} :
     exact ⟨(Units.mk0 c hc0)⁻¹, by simp [hc, Units.smul_def, smul_smul, hc0]⟩
 
 end GroupAction
+
+section IdealCoefficients
+
+variable {R K V : Type*} [CommRing R] [Field K] [Algebra R K] [AddCommGroup V] [Module K V]
+  [Module R V] [IsScalarTower R K V]
+
+/-- If `Λ = ⊕ i, J i • y i` with every `J i` nonzero, then `y` spans the same `K`-subspace as
+`Λ`. -/
+theorem span_range_eq_span_of_forall_mem_iff [FaithfulSMul R K] {ι : Type*} [Fintype ι]
+    {Λ : Submodule R V} {y : ι → V} {J : ι → Ideal R} (hJ : ∀ i, J i ≠ ⊥)
+    (hmem : ∀ x, x ∈ Λ ↔ ∃ c : ι → R, (∀ i, c i ∈ J i) ∧ ∑ i, c i • y i = x) :
+    span K (Set.range y) = span K (Λ : Set V) := by
+  classical
+  refine le_antisymm (span_le.2 <| Set.range_subset_iff.2 fun i ↦ ?_) (span_le.2 fun x hx ↦ ?_)
+  · obtain ⟨b, hb, hb0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (hJ i)
+    have hsum : ∑ k, (Pi.single i b : ι → R) k • y k = b • y i := by
+      rw [Fintype.sum_eq_single i fun k hk ↦ by simp [hk]]
+      simp
+    have hbΛ : b • y i ∈ Λ := hsum ▸ (hmem _).2 ⟨_, fun k ↦ by
+      by_cases hk : k = i
+      · subst hk
+        simpa using hb
+      · simp [hk], rfl⟩
+    have hb' : algebraMap R K b ≠ 0 :=
+      (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective R K)).2 hb0
+    rw [← inv_smul_smul₀ hb' (y i), algebraMap_smul]
+    exact smul_mem _ _ (subset_span hbΛ)
+  · obtain ⟨c, -, rfl⟩ := (hmem x).1 hx
+    exact sum_mem fun i _ ↦ by
+      rw [← algebraMap_smul K]
+      exact smul_mem _ _ (subset_span ⟨i, rfl⟩)
+
+end IdealCoefficients
+
+section Unitriangular
+
+variable {R M ι : Type*} [Ring R] [AddCommGroup M] [Module R M] [Preorder ι] [WellFoundedLT ι]
+
+/-- Initial segments of `x` and `z` span the same submodule when every `z j` is `x j` plus a
+combination of the earlier `x l`. -/
+theorem span_image_Iio_eq_span_image_Iio {x z : ι → M}
+    (h : ∀ j, z j - x j ∈ span R (x '' Set.Iio j)) (j : ι) :
+    span R (z '' Set.Iio j) = span R (x '' Set.Iio j) := by
+  refine le_antisymm (span_le.2 ?_) ?_
+  · rintro _ ⟨l, hl, rfl⟩
+    have hmem := add_mem (span_mono (Set.image_mono (Set.Iio_subset_Iio hl.le)) (h l))
+      (subset_span (R := R) ⟨l, hl, rfl⟩)
+    rwa [sub_add_cancel] at hmem
+  induction j using WellFoundedLT.induction with
+  | _ j ih =>
+    rw [span_le]
+    rintro _ ⟨l, hl, rfl⟩
+    have hmem := sub_mem (subset_span (R := R) (Set.mem_image_of_mem z hl)) <|
+      span_mono (Set.image_mono (Set.Iio_subset_Iio hl.le)) (ih l hl (h l))
+    rwa [sub_sub_cancel] at hmem
+
+end Unitriangular
+
+section RingHom
+
+/-- A ring homomorphism `f : R → S` carries `span_A T` into `span_B T'` as soon as it carries
+every generator in `T` into `span_B T'` and the image of every scalar in `A` is a scalar in `B`.
+Unlike `Submodule.apply_mem_span_image_of_mem_span`, no ring map `A → B` is required. -/
+theorem map_mem_span_of_forall_exists {A B R S : Type*} [CommSemiring A] [CommSemiring B]
+    [Semiring R] [Semiring S] [Algebra A R] [Algebra B S] (f : R →+* S) (T : Set R) (T' : Set S)
+    (hA : ∀ r : A, ∃ b : B, f (algebraMap A R r) = algebraMap B S b)
+    (hT : ∀ t ∈ T, f t ∈ Submodule.span B T') {z : R} (hz : z ∈ Submodule.span A T) :
+    f z ∈ Submodule.span B T' := by
+  induction hz using Submodule.span_induction with
+  | mem x hx => exact hT x hx
+  | zero => simp
+  | add x y _ _ hx hy => simpa using add_mem hx hy
+  | smul r x _ hx =>
+    obtain ⟨b, hb⟩ := hA r
+    rw [Algebra.smul_def, map_mul, hb, ← Algebra.smul_def]
+    exact Submodule.smul_mem _ _ hx
+
+end RingHom
+
+section SpanningFamily
+
+/-- Over a scalar extension, the image of a semilinear map is spanned by its values on any
+spanning family. The ring homomorphism defining semilinearity need not be surjective. -/
+theorem span_range_eq_span_range_comp_of_span_eq_top
+    {R R' S M N ι : Type*} [Semiring R] [Semiring R'] [Semiring S] [SMul R' S]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R' N]
+    [Module S N] [IsScalarTower R' S N] {σ : R →+* R'} {v : ι → M}
+    (hv : span R (Set.range v) = ⊤) (f : M →ₛₗ[σ] N) :
+    span S (Set.range f) = span S (Set.range (f ∘ v)) := by
+  refine le_antisymm (span_le.mpr ?_) (span_mono (Set.range_comp_subset_range _ _))
+  rintro _ ⟨x, rfl⟩
+  exact (image_span_subset f _ ((span S (Set.range (f ∘ v))).restrictScalars R')).mpr
+    (Set.forall_mem_range.mpr fun i ↦ subset_span ⟨i, rfl⟩) ⟨x, hv ▸ mem_top, rfl⟩
+
+end SpanningFamily
 
 end Submodule

@@ -103,7 +103,8 @@ theorem comp_diagGL_mem_laurentFunctions {f : GL (Fin n) R → R}
       have := hP (diagGL t)
       rwa [← Matrix.GeneralLinearGroup.val_det_apply, det_diagGL] at this
     have hu : (((∏ j, t j : Rˣ) ^ (-(m : ℤ)) : Rˣ) : R) * ((∏ i, t i : Rˣ) : R) ^ m = 1 := by
-      rw [← Units.val_pow_eq_pow_val, ← Units.val_mul, ← zpow_natCast (∏ i, t i) m, ← zpow_add]
+      rw [← Units.val_pow_eq_pow_val, ← Units.val_mul, ← zpow_natCast (∏ i, t i) m,
+        ← _root_.zpow_add]
       simp
     rw [← hd, weightCharHom_const, ← mul_assoc, hu, one_mul]
   have hfun : (fun t : Fin n → Rˣ ↦ f (diagGL t))

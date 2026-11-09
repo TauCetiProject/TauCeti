@@ -74,7 +74,7 @@ private theorem sum_projectionOnto_comp_internalProjection_eq_one {ι : Type w} 
   rw [map_sum] at hx
   rw [LinearMap.sum_apply]
   simpa only [LinearMap.comp_apply, LinearMap.domRestrict_apply, Submodule.subtype_apply,
-    Module.End.one_apply] using hx
+    one_apply_eq_self] using hx
 
 /-- **Azumaya's exchange lemma.** Let `M` be the internal direct sum of a finite family `Q` of
 indecomposable submodules, and let `N` be a direct summand of `M` whose endomorphism ring is local

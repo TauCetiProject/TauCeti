@@ -42,6 +42,8 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `integrable_expMeasure_iff`, `integral_expMeasure_eq`,
   `integrable_expMeasure_iff_integrableOn_Ioi`, `integral_expMeasure_eq_integral_Ioi` —
   integrability and integration against the exponential law, transferred to the real density;
+* `ae_pos_of_hasLaw_expMeasure`, `pos_of_hasLaw_expMeasure` — an exponential random variable is
+  almost surely positive, and on a probability space its rate is positive;
 * `integrable_pow_expMeasure` — every moment is integrable, for `0 < r`;
 * `integral_pow_expMeasure` — the `n`-th moment, `n ! / r ^ n`, for `0 < r`;
 * `integrable_rpow_expMeasure_iff`, `integral_rpow_expMeasure` — the exact real-power moment
@@ -90,6 +92,25 @@ variable {a r s t : ℝ} {n : ℕ}
 theorem expMeasure_eq_withDensity (r : ℝ) :
     expMeasure r = volume.withDensity (exponentialPDF r) := rfl
 
+end TauCeti.Probability
+
+namespace ProbabilityTheory
+
+/-- The exponential measure is zero when its rate is nonpositive. -/
+@[simp]
+theorem expMeasure_of_nonpos {r : ℝ} (hr : r ≤ 0) : expMeasure r = 0 := by
+  have hpdf : exponentialPDF r = 0 := by
+    funext x
+    rw [exponentialPDF_eq, Pi.zero_apply, ENNReal.ofReal_eq_zero]
+    split_ifs
+    · exact mul_nonpos_of_nonpos_of_nonneg hr (Real.exp_nonneg _)
+    · exact le_rfl
+  rw [TauCeti.Probability.expMeasure_eq_withDensity, hpdf, withDensity_zero]
+
+end ProbabilityTheory
+
+namespace TauCeti.Probability
+
 /-- Every singleton has zero exponential measure, for every rate. -/
 instance nullSingletonClass_expMeasure (r : ℝ) : NullSingletonClass (expMeasure r) := by
   rw [expMeasure_eq_withDensity]
@@ -109,6 +130,19 @@ zero and the statement holds trivially. -/
 theorem ae_pos_expMeasure (r : ℝ) : ∀ᵐ x ∂expMeasure r, 0 < x := by
   rw [expMeasure]
   exact ae_pos_gammaMeasure 1 r
+
+/-- A random variable with an exponential law is almost surely positive. -/
+theorem ae_pos_of_hasLaw_expMeasure {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    {X : Ω → ℝ} (hX : HasLaw X (expMeasure r) P) : ∀ᵐ ω ∂P, 0 < X ω :=
+  (hX.ae_iff measurableSet_Ioi.mem).2 (ae_pos_expMeasure r)
+
+/-- The rate of an exponential law of a random variable on a probability space is positive,
+because `expMeasure r` is the zero measure for `r ≤ 0`. -/
+theorem pos_of_hasLaw_expMeasure {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    [IsProbabilityMeasure P] {X : Ω → ℝ} (hX : HasLaw X (expMeasure r) P) : 0 < r := by
+  by_contra! hr
+  obtain ⟨h⟩ := hX.isProbabilityMeasure_iff.1 ‹_›
+  simp [expMeasure_of_nonpos hr] at h
 
 /-- Scaling an exponential variable by a positive constant divides its rate by that constant. -/
 @[simp]
@@ -329,18 +363,30 @@ theorem cdf_expMeasure_lt_one (hr : 0 < r) (x : ℝ) : cdf (expMeasure r) x < 1 
 /-- The memoryless property of a positive-rate exponential law, stated with conditional
 probability: after surviving for time `s`, the chance of surviving a further time `t` is the
 original tail probability at `t`. -/
-theorem memoryless_expMeasure (hr : 0 < r) (hs : 0 ≤ s) (ht : 0 ≤ t) :
+theorem memoryless_expMeasure (hr : 0 < r) (hs : 0 ≤ s) :
     cond (expMeasure r) (Ioi s) (Ioi (s + t)) = (expMeasure r) (Ioi t) := by
-  have hst : Ioi s ∩ Ioi (s + t) = Ioi (s + t) := by
-    rw [Set.inter_eq_right]
-    intro x hx
-    exact lt_of_le_of_lt (le_add_of_nonneg_right ht) hx
-  rw [cond_apply measurableSet_Ioi, hst, measure_Ioi_expMeasure hr s,
-    measure_Ioi_expMeasure hr (s + t), measure_Ioi_expMeasure hr t,
-    ite_eq_left hs, ite_eq_left (add_nonneg hs ht), ite_eq_left ht]
-  have hexponent : -(-(r * s)) + -(r * (s + t)) = -(r * t) := by ring
-  rw [← ENNReal.ofReal_inv_of_pos (exp_pos _), ← ENNReal.ofReal_mul (by positivity),
-    ← Real.exp_neg, ← Real.exp_add, hexponent]
+  rcases le_or_gt 0 t with ht | ht
+  · have hst : Ioi s ∩ Ioi (s + t) = Ioi (s + t) := by
+      rw [Set.inter_eq_right]
+      intro x hx
+      exact lt_of_le_of_lt (le_add_of_nonneg_right ht) hx
+    rw [cond_apply measurableSet_Ioi, hst, measure_Ioi_expMeasure hr s,
+      measure_Ioi_expMeasure hr (s + t), measure_Ioi_expMeasure hr t,
+      ite_eq_left hs, ite_eq_left (add_nonneg hs ht), ite_eq_left ht]
+    have hexponent : -(-(r * s)) + -(r * (s + t)) = -(r * t) := by ring
+    rw [← ENNReal.ofReal_inv_of_pos (exp_pos _), ← ENNReal.ofReal_mul (by positivity),
+      ← Real.exp_neg, ← Real.exp_add, hexponent]
+  · have _ : IsProbabilityMeasure (expMeasure r) := isProbabilityMeasure_expMeasure hr
+    have hst : Ioi s ∩ Ioi (s + t) = Ioi s := by
+      rw [Set.inter_eq_left]
+      intro x hx
+      exact lt_trans (by linarith) hx
+    have hpos : (expMeasure r) (Ioi s) ≠ 0 := by
+      rw [measure_Ioi_expMeasure hr s, ite_eq_left hs]
+      simpa using exp_pos _
+    rw [cond_apply measurableSet_Ioi, hst,
+      ENNReal.inv_mul_cancel hpos (measure_ne_top _ _), measure_Ioi_expMeasure hr t,
+      ite_eq_right (not_le.mpr ht), ENNReal.ofReal_one]
 
 /-- The excess above a nonnegative threshold, conditional on exceeding that threshold, has
 the original exponential law. This is the measure-level form of memorylessness. -/
@@ -361,7 +407,7 @@ theorem map_sub_cond_expMeasure (hr : 0 < r) (hs : 0 ≤ s) :
   by_cases hx : 0 ≤ x
   · have hmemory : (cond (expMeasure r) (Ioi s)).real (Ioi (s + x)) =
         (expMeasure r).real (Ioi x) :=
-      congrArg ENNReal.toReal (memoryless_expMeasure hr hs hx)
+      congrArg ENNReal.toReal (memoryless_expMeasure (t := x) hr hs)
     rw [← compl_Ioi, measureReal_compl measurableSet_Ioi, probReal_univ, hmemory,
       cdf_eq_real, ← compl_Ioi, measureReal_compl measurableSet_Ioi, probReal_univ]
   · have hinter : Ioi s ∩ Iic (s + x) = ∅ := by

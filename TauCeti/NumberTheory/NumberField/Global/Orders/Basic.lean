@@ -37,6 +37,8 @@ maximal order itself is packaged as `maximalNumberFieldOrder K`.
   ring of integers.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.toSubalgebra_ne_top`: an order is a proper subring
   of its number field.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.toRingOfIntegers_injective`: an order is determined
+  by its copy inside the maximal order.
 * `Ideal.restrictScalars_coeIdeal_map_toRingOfIntegersEquiv_mul_one`:
   over `ℤ`, an ideal of an order times `𝓞 K` is its extension to `𝓞 K`.
 
@@ -156,6 +158,19 @@ theorem coe_toRingOfIntegersEquiv (O : NumberFieldOrder K) (x : O.toRingOfIntege
 theorem coe_toRingOfIntegersEquiv_symm (O : NumberFieldOrder K) (y : O.toSubalgebra) :
     (((O.toRingOfIntegersEquiv.symm y : O.toRingOfIntegers) : 𝓞 K) : K) = y :=
   (rfl)
+
+/-- One order is contained in another exactly when their copies inside the maximal order are. -/
+@[simp]
+theorem toRingOfIntegers_le_toRingOfIntegers_iff {O O' : NumberFieldOrder K} :
+    O.toRingOfIntegers ≤ O'.toRingOfIntegers ↔ O.toSubalgebra ≤ O'.toSubalgebra :=
+  ⟨fun h x hx ↦ O'.mem_toRingOfIntegers (x := ⟨x, O.le_ringOfIntegers hx⟩) |>.mp
+    (h (O.mem_toRingOfIntegers.mpr hx)), fun h _ hx ↦ h hx⟩
+
+/-- An order is determined by its copy inside the maximal order. -/
+theorem toRingOfIntegers_injective :
+    Function.Injective (toRingOfIntegers : NumberFieldOrder K → Subalgebra ℤ (𝓞 K)) :=
+  fun _ _ h ↦ ext (le_antisymm (toRingOfIntegers_le_toRingOfIntegers_iff.mp h.le)
+    (toRingOfIntegers_le_toRingOfIntegers_iff.mp h.ge))
 
 /-- An order is a proper subring of its number field. -/
 theorem toSubalgebra_ne_top (O : NumberFieldOrder K) : O.toSubalgebra ≠ ⊤ := by

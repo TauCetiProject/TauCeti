@@ -41,6 +41,7 @@ diagrams in all.
   lemmas: every boundary point lies on an arc of exactly one of the three kinds.
 * `TauCeti.card_brauerDiagram_forall_isThrough`: there are `k !` diagrams all of whose arcs go
   through.
+* `TauCeti.BrauerDiagram.card_isLowerEnd`: a diagram on `k` strands has `k` arcs.
 * `TauCeti.BrauerDiagram.prod_eq_prod_isLowerEnd`: a product over the boundary points is a product
   over the arcs, indexed by their lower ends.
 
@@ -201,6 +202,14 @@ theorem notLowerEndEquiv_apply (D : BrauerDiagram k) (x : {x // ¬D.IsLowerEnd x
 theorem notLowerEndEquiv_symm_apply (D : BrauerDiagram k) (x : {x // D.IsLowerEnd x}) :
     D.notLowerEndEquiv.symm x = ⟨D.val x, D.not_isLowerEnd_val x.2⟩ :=
   (rfl)
+
+/-- **A Brauer diagram on `k` strands has `k` arcs**: its `2 * k` boundary points split evenly into
+the lower ends and their partners. -/
+@[simp]
+theorem card_isLowerEnd (D : BrauerDiagram k) : Fintype.card {x // D.IsLowerEnd x} = k := by
+  have hcompl := Fintype.card_subtype_compl D.IsLowerEnd
+  rw [Fintype.card_congr D.notLowerEndEquiv, Fintype.card_sum, Fintype.card_fin] at hcompl
+  omega
 
 /-- A product over the boundary points is a product over the arcs, each arc contributing the
 factors at its lower end and at its partner. -/

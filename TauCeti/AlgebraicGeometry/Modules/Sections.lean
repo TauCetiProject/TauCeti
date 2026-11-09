@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Linear.FunctorCategory
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
+import TauCeti.Topology.Sheaves.Presheaf
 import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 
 /-!
@@ -32,7 +33,11 @@ For a family of opens `V i` covering `W`, restriction to the cover
 containing the pairwise intersections (`Scheme.Modules.sectionsDiffPiBaseLinear`) are `R`-linear.
 By the sheaf condition the first is injective and its image is the kernel of the second
 (`Scheme.Modules.sectionsRestrictPiBaseLinear_injective`,
-`Scheme.Modules.exact_sectionsRestrictPiBaseLinear`).
+`Scheme.Modules.exact_sectionsRestrictPiBaseLinear`). In particular, sections are determined by
+their restrictions to affine opens (`Scheme.Modules.sections_ext_of_isAffineOpen`).
+
+Compatible families of sections of `M` are its global sections (`Scheme.Modules.sectionsEquivTop`),
+and so are the morphisms `𝒪_X ⟶ M` out of the structure sheaf (`Scheme.Modules.unitHomEquivTop`).
 -/
 
 public section
@@ -348,5 +353,77 @@ lemma pushforwardSectionsBaseLinearEquiv_symm_apply (M : X.Modules) (U : Y.Opens
   rfl
 
 end
+
+section AffineExt
+
+variable {X : Scheme.{u}}
+
+/-- Sections of an `𝒪_X`-module over `V` agree if their restrictions to all affine opens contained
+in `V` agree. -/
+lemma sections_ext_of_isAffineOpen {M : X.Modules} {V : X.Opens} {s t : Γ(M, V)}
+    (h : ∀ (U : X.Opens), IsAffineOpen U → ∀ hUV : U ≤ V,
+      M.presheaf.map (homOfLE hUV).op s = M.presheaf.map (homOfLE hUV).op t) : s = t :=
+  TopCat.Sheaf.eq_of_locally_eq' (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X)
+    (fun U : {U : X.affineOpens // U.1 ≤ V} ↦ U.1.1) V (fun U ↦ homOfLE U.2)
+    (fun x hx ↦ by
+      obtain ⟨_, ⟨U, hU, rfl⟩, hxU, hUV⟩ :=
+        X.isBasis_affineOpens.exists_subset_of_mem_open hx V.2
+      exact TopologicalSpace.Opens.mem_iSup.2 ⟨⟨⟨U, hU⟩, hUV⟩, hxU⟩)
+    s t fun U ↦ h _ U.1.2 U.2
+
+end AffineExt
+
+section UnitHom
+
+variable {X : Scheme.{u}} (M : X.Modules)
+
+/-- Compatible families of sections of `M` are its global sections: a family goes to its section
+over `X`, and a global section to the family of its restrictions. -/
+noncomputable def sectionsEquivTop : M.sections ≃ Γ(M, ⊤) where
+  toFun s := s.val (op ⊤)
+  invFun t := PresheafOfModules.sectionsMk (fun U ↦ M.presheaf.map U.unop.leTop.op t)
+    fun {U _} f ↦ (ConcreteCategory.congr_hom (M.presheaf.map_comp U.unop.leTop.op f) t).symm
+  left_inv s := PresheafOfModules.sections_ext _ _ fun U ↦
+    PresheafOfModules.sections_property s U.unop.leTop.op
+  right_inv t := TopCat.Presheaf.map_apply_eq_self M.presheaf _ t
+
+@[simp]
+lemma sectionsEquivTop_apply (s : M.sections) : M.sectionsEquivTop s = s.val (op ⊤) :=
+  (rfl)
+
+@[simp]
+lemma sectionsEquivTop_symm_val (t : Γ(M, ⊤)) (U : X.Opens) :
+    (M.sectionsEquivTop.symm t).val (op U) = M.presheaf.map U.leTop.op t :=
+  (rfl)
+
+/-- Applying `p : M ⟶ N` to a compatible family of sections applies `p` to its global section. -/
+lemma sectionsEquivTop_sectionsMap {N : X.Modules} (p : M ⟶ N) (s : M.sections) :
+    N.sectionsEquivTop (SheafOfModules.sectionsMap p s) = p.app ⊤ (M.sectionsEquivTop s) :=
+  (rfl)
+
+/-- Morphisms `𝒪_X ⟶ M` out of the structure sheaf are the global sections of `M`: a morphism
+goes to the image of `1` over `X`. This is Mathlib's `SheafOfModules.unitHomEquiv`, followed by
+the evaluation of a compatible family of sections at the terminal open `X`
+(`Scheme.Modules.sectionsEquivTop`). -/
+noncomputable def unitHomEquivTop : (SheafOfModules.unit X.ringCatSheaf ⟶ M) ≃ Γ(M, ⊤) :=
+  M.unitHomEquiv.trans M.sectionsEquivTop
+
+@[simp]
+lemma unitHomEquivTop_apply (f : SheafOfModules.unit X.ringCatSheaf ⟶ M) :
+    M.unitHomEquivTop f = f.val.app (op ⊤) (1 : X.ringCatSheaf.obj.obj (op ⊤)) :=
+  (rfl)
+
+@[simp]
+lemma unitHomEquivTop_symm_val_app (t : Γ(M, ⊤)) (U : X.Opens) (r : Γ(X, U)) :
+    (M.unitHomEquivTop.symm t).val.app (op U) r = r • M.presheaf.map U.leTop.op t :=
+  (rfl)
+
+/-- Composing a morphism `𝒪_X ⟶ M` with `p : M ⟶ N` applies `p` to the corresponding global
+section. -/
+lemma unitHomEquivTop_comp {N : X.Modules} (f : SheafOfModules.unit X.ringCatSheaf ⟶ M)
+    (p : M ⟶ N) : N.unitHomEquivTop (f ≫ p) = p.app ⊤ (M.unitHomEquivTop f) :=
+  (rfl)
+
+end UnitHom
 
 end AlgebraicGeometry.Scheme.Modules

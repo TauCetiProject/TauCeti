@@ -23,6 +23,18 @@ then uses `TauCeti.complexEuclideanRealLinearIsometryEquiv` to place each real c
 immediately before its imaginary coordinate. Both constructions preserve the original norm
 and real scalar action.
 
+Conversely, every even-dimensional real inner product space carries an orthogonal almost complex
+structure: transport multiplication by `i` along a real linear isometry with `ℂⁿ`.
+
+## Main results
+
+* `TauCeti.AlmostComplexStructure.exists_adapted_orthonormalBasis`: adapted orthonormal bases
+  exist.
+* `TauCeti.AlmostComplexStructure.exists_forall_norm_apply_eq`: orthogonal almost complex
+  structures exist in even dimension.
+* `OrthonormalBasis.exists_almostComplexStructure_finFour`: every orthonormal four-frame carries
+  an almost complex structure with `J e₀ = e₁` and `J e₂ = e₃`, without an orientation assumption.
+
 ## References
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
@@ -74,4 +86,37 @@ theorem exists_adapted_orthonormalBasis (J : AlmostComplexStructure V) (hJ : ∀
   rw [hsingle]
   exact (b.repr.symm.map_smul Complex.I _).trans (hI _)
 
+/-- An even-dimensional real inner product space admits an orthogonal almost complex structure,
+including the zero structure in dimension zero. -/
+theorem exists_forall_norm_apply_eq (hV : Even (finrank ℝ V)) :
+    ∃ J : AlmostComplexStructure V, ∀ v, ‖J v‖ = ‖v‖ := by
+  obtain ⟨n, hn⟩ := hV
+  -- A real linear isometry `e : V ≃ ℂⁿ`; then `J = e⁻¹ ∘ (i • ·) ∘ e`.
+  let e : V ≃ₗᵢ[ℝ] EuclideanSpace ℂ (Fin n) :=
+    ((stdOrthonormalBasis ℝ V).reindex (finCongr (by omega))).repr.trans
+      (complexEuclideanRealLinearIsometryEquiv n).symm
+  let L := DistribSMul.toLinearMap ℝ (EuclideanSpace ℂ (Fin n)) Complex.I
+  refine ⟨⟨e.symm.toLinearMap ∘ₗ L ∘ₗ e.toLinearMap, ?_⟩, fun v ↦ ?_⟩
+  · ext v
+    simp [L, smul_smul]
+  · simp [L, norm_smul]
+
 end TauCeti.AlmostComplexStructure
+
+namespace OrthonormalBasis
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- An orthonormal four-frame carries an almost complex structure rotating its two coordinate
+planes: `J e₀ = e₁` and `J e₂ = e₃`. -/
+theorem exists_almostComplexStructure_finFour (e : OrthonormalBasis (Fin 4) ℝ V) :
+    ∃ J : TauCeti.AlmostComplexStructure V, J (e 0) = e 1 ∧ J (e 2) = e 3 := by
+  let L := e.toBasis.constr ℝ ![e 1, -e 0, e 3, -e 2]
+  have hL (i : Fin 4) : L (e i) = ![e 1, -e 0, e 3, -e 2] i := e.toBasis.constr_basis ℝ _ i
+  have hsquare : L.comp L = -LinearMap.id := by
+    apply e.toBasis.ext
+    intro i
+    fin_cases i <;> simp [LinearMap.comp_apply, hL, map_neg]
+  exact ⟨⟨L, hsquare⟩, hL 0, hL 2⟩
+
+end OrthonormalBasis

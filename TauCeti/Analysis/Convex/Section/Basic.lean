@@ -236,6 +236,14 @@ theorem eq_of_mem_frontier_convexSection (hΩ : IsOpen Ω) (hu : ContinuousOn u 
   simpa only [add_assoc] using (mem_convexSection_iff.1
     (closure_convexSection_inter_subset hu hℓ (lt_add_of_pos_right h hε) ⟨hy.1, hyΩ⟩)).2
 
+/-- A section of height at most `H` lies in the section of height `H`, so it inherits its
+boundedness and the inclusion of its closure in the domain. -/
+theorem isBounded_convexSection_and_closure_subset_of_le [Bornology E] {H : ℝ} (hhH : h ≤ H)
+    (hH : Bornology.IsBounded (convexSection Ω u x ℓ H) ∧ closure (convexSection Ω u x ℓ H) ⊆ Ω) :
+    Bornology.IsBounded (convexSection Ω u x ℓ h) ∧ closure (convexSection Ω u x ℓ h) ⊆ Ω :=
+  ⟨hH.1.subset (convexSection_mono_height hhH),
+    (closure_mono (convexSection_mono_height hhH)).trans hH.2⟩
+
 end Topology
 
 end TauCeti

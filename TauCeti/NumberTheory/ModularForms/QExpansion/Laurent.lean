@@ -9,8 +9,10 @@ public import Mathlib.Analysis.Meromorphic.NormalForm
 public import Mathlib.RingTheory.LaurentSeries
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Laurent
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
+public import TauCeti.RingTheory.LaurentSeries.Ramified
 import Mathlib.Analysis.Complex.TaylorSeries
 import TauCeti.Analysis.Complex.UpperHalfPlane.QExpansion.Order
+import TauCeti.NumberTheory.ModularForms.QExpansion.Order
 import TauCeti.RingTheory.LaurentSeries.Basic
 
 /-!
@@ -24,7 +26,8 @@ forms, `f` may have poles in the upper half-plane, and a pole at the cusp. Such 
 over `ℂ`: if the pole at `q = 0` has order at most `k`, then `𝕢 ^ k * f` has an analytic cusp
 function, and the Laurent `q`-expansion is the `q`-expansion of `𝕢 ^ k * f` shifted down by `k`.
 The result does not depend on `k` (`TauCeti.UpperHalfPlane.laurentQExpansion_eq`), and it agrees
-with Mathlib's `UpperHalfPlane.qExpansion` when the cusp function is analytic at `0`.
+with Mathlib's `UpperHalfPlane.qExpansion` when the cusp function is analytic at `0`, in which case
+its constant term is the value of the cusp function at `0`.
 
 The Laurent `q`-expansion is compatible with the field operations: it is additive and
 multiplicative, and it commutes with scalars, powers, inverses and quotients. It only depends on
@@ -32,7 +35,8 @@ the cusp function on a punctured neighbourhood of `0`. Its order is the order of
 at `0`, so it vanishes exactly when the cusp function vanishes near `0`, and for a periodic
 function it converges to the function sufficiently high in the upper half-plane. This gives the
 `q`-expansion principle: two periodic functions meromorphic at `i∞` have the same Laurent
-`q`-expansion exactly when they agree near `i∞`.
+`q`-expansion exactly when they agree near `i∞`. Passing from the period `h` to a multiple
+`d * h` substitutes `q ^ d` for `q`.
 
 These are the expansions at `i∞` through which modular functions, and fields of modular
 functions with prescribed Fourier coefficients, are described. Compare
@@ -55,6 +59,8 @@ expansion here of the function read in the scaling coordinate of the cusp.
 * `TauCeti.UpperHalfPlane.hasSum_laurentQExpansion`: convergence near `i∞`.
 * `TauCeti.UpperHalfPlane.laurentQExpansion_eq_laurentQExpansion_iff`: the `q`-expansion
   principle.
+* `TauCeti.UpperHalfPlane.laurentQExpansion_pnat_mul`: the expansion at period `d * h` is the
+  expansion at period `h` in the variable `q ^ d`.
 * `TauCeti.Subgroup.CuspDatum.laurentQExpansion_eq_upperHalfPlane_laurentQExpansion`: agreement
   with the Laurent expansion at a cusp of a Fuchsian group.
 
@@ -194,6 +200,15 @@ theorem laurentQExpansion_of_analyticAt (hh : 0 < h) (hf : AnalyticAt ℂ (cuspF
   rw [laurentQExpansion_eq hh hf.meromorphicAt (k := 0)
     (by simpa using hf.meromorphicNFAt.meromorphicOrderAt_nonneg_iff_analyticAt.mpr hf)]
   simp
+
+/-- When the cusp function of `f` is analytic at `0`, the constant term of the Laurent
+`q`-expansion is the value of the cusp function at `0`. -/
+theorem laurentQExpansion_coeff_zero_of_analyticAt (hh : 0 < h)
+    (hf : AnalyticAt ℂ (cuspFunction h f) 0) :
+    (laurentQExpansion h f).coeff 0 = cuspFunction h f 0 := by
+  rw [laurentQExpansion_of_analyticAt hh hf]
+  simpa [UpperHalfPlane.qExpansion_coeff] using
+    HahnSeries.ofPowerSeries_apply_coeff (Γ := ℤ) (qExpansion h f) 0
 
 /-- The coefficients of the Laurent `q`-expansion are those of the `q`-expansion of `𝕢 ^ k * f`,
 shifted down by `k`. -/
@@ -452,6 +467,33 @@ theorem laurentQExpansion_eq_laurentQExpansion_iff (hh : 0 < h)
   rw [eq_cuspFunction τ hh.ne' hper, Pi.sub_apply, sub_eq_zero] at hτ
   exact hτ
 
+/-! ### Changing the period -/
+
+/-- **The Laurent `q`-expansion at period `d * h`.** For an `h`-periodic function whose cusp
+function is meromorphic at `0`, the Laurent `q`-expansion at period `d * h` is the expansion at
+period `h` in the variable `q ^ d`: since `𝕢 (d * h) ^ d = 𝕢 h`, the coefficient of `q ^ n` at
+period `h` becomes the coefficient of `q ^ (d * n)`. -/
+theorem laurentQExpansion_pnat_mul (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) h)
+    (hf : MeromorphicAt (cuspFunction h f) 0) (d : ℕ+) :
+    laurentQExpansion ((d : ℕ) * h) f = LaurentSeries.expand ℂ d (laurentQExpansion h f) := by
+  set k := cuspPoleOrder h f
+  set g : ℍ → ℂ := fun τ ↦ 𝕢 h τ ^ k * f τ
+  have han : AnalyticAt ℂ (cuspFunction h g) 0 :=
+    analyticAt_cuspFunction_qParam_pow_mul hh hf (neg_cuspPoleOrder_le h f)
+  have hgper : Periodic (g ∘ ofComplex) h := fun z ↦ by
+    simpa [g] using congrArg₂ (fun a b ↦ a ^ k * b) (periodic_qParam_comp_ofComplex hh.ne' z)
+      (hfper z)
+  -- twisting by `𝕢 (d * h) ^ (d * k) = 𝕢 h ^ k` at period `d * h` gives the same function `g`
+  have hg : (fun τ : ℍ ↦ 𝕢 ((d : ℕ) * h) τ ^ ((d : ℕ) * k) * f τ) = g := by
+    funext τ
+    rw [pow_mul, TauCeti.Periodic.qParam_nat_mul_pow d.ne_zero]
+  have han' := analyticAt_cuspFunction_nat_mul hh.ne' d.pos hgper han
+  rw [← hg] at han'
+  rw [laurentQExpansion_eq_of_analyticAt_qParam_pow_mul (by positivity) han', hg,
+    TauCeti.qExpansion_nat_mul hh.ne' d.pos hgper han,
+    laurentQExpansion_eq_of_analyticAt_qParam_pow_mul hh han, map_mul, LaurentSeries.expand_single,
+    LaurentSeries.expand_coe, mul_neg, Nat.cast_mul]
+
 end TauCeti.UpperHalfPlane
 
 /-! ### Comparison with the Laurent expansion at a Fuchsian cusp -/
@@ -472,7 +514,7 @@ theorem laurentQExpansion_eq_upperHalfPlane_laurentQExpansion (D : Γ.CuspDatum)
       UpperHalfPlane.laurentQExpansion D.width fun z ↦ f (D.scaling⁻¹ • z) := by
   have hk : k ≤ (k.toNat : ℤ) := Int.self_le_toNat k
   have han := analyticAt_twistedExtension_zero D k.toNat f hf (.of_forall fun z ↦ hhol _)
-    (TauCeti.UpperHalfPlane.isBigO_exp_of_le D.width D.width_pos (by exact_mod_cast hk) hbound)
+    (TauCeti.UpperHalfPlane.isBigO_exp_of_le D.width_pos.le (by exact_mod_cast hk) hbound)
   simp only [twistedExtension_def, cuspExtension_def, cuspTwist_inv_smul, zpow_natCast] at han
   rw [laurentQExpansion_eq_of_le D f hk hf hhol hbound,
     UpperHalfPlane.laurentQExpansion_eq_of_analyticAt_qParam_pow_mul D.width_pos han,

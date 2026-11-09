@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
@@ -14,11 +15,15 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Real
 If `X ^ r ≤ C * X ^ (r - 1)` for a finite `X`, then `X ≤ C`: the factor `X ^ (r - 1)` cancels,
 since it is neither `0` nor `∞` unless `X = 0`, in which case the conclusion is trivial. This is
 the last step of every norming argument for `Lᵖ` norms, where `X` is a norm and `X ^ r` is its
-pairing with the extremal function.
+pairing with the extremal function. In the same way, `m ≤ K * m ^ p` for a finite `m` and an
+exponent `p < 1` gives `m ^ (1 - p) ≤ K`, which turns an estimate `μ(A) ≤ K μ(A) ^ (1/n)` into the
+isoperimetric form `μ(A) ^ (1 - 1/n) ≤ K`.
 
 For an exponent `p ∈ [0, 1]` the powers `x ^ p` and `x ^ (1 - p)` multiply back to `x`, with no
 finiteness or positivity hypothesis on `x`. This is the case `s = t` of geometric interpolations
 `t ^ p s ^ (1 - p)`, such as the distortion coefficient `τ_{K,N}^{(t)}(θ)` with `p = 1 / N`.
+Rescaling the factors of a weighted geometric mean `a ^ p * b ^ q` by finite `F⁻¹` and `G⁻¹`
+rescales it by `(F ^ p * G ^ q)⁻¹`; this normalizes suprema to one in Prékopa–Leindler.
 For distinct `x` and `y` such a weighted geometric mean `x ^ (1 - p) * y ^ p` still dominates
 `min x y`, which compares the hypotheses of the Prékopa–Leindler inequality and of its version
 for the minimum.
@@ -32,6 +37,22 @@ product of three linear factors follow: at infinity the kernel decays like `y ^ 
 three distinct poles the product of the factors `‖z - eᵢ‖ₑ ^ (-1/2)` is controlled by their sum,
 since at most one of them can be large.
 
+A real power `y ↦ y ^ d` on `ℝ≥0∞` is upper semicontinuous from the right uniformly on intervals:
+for `ε ≠ 0`, every `y ∈ [x, z]` satisfies `y ^ d ≤ x ^ d + ε` once `z` is close enough to `x`.
+For `d ≥ 0` this is monotonicity and continuity; for `d < 0` the power is antitone. Enlarging a
+set slightly thus changes its `d`-dimensional diameter sum by little, as in Hausdorff measure
+approximations by open covers. In the exponent, the roots `c ^ (1 / p)` of a finite nonzero `c`
+tend to `1` as `p → ∞`, which turns a lower or upper bound weighted by a power of a measure into
+the corresponding bound in the limit of the `Lᵖ` seminorms.
+
+A real power of `ENNReal.ofReal (a * r)` with `0 ≤ a` splits as `ofReal a ^ d * ofReal r ^ d`
+for every exponent `d`, since neither factor is `∞`. This rescales the gauge `(2 r) ^ d` of
+densities and Hausdorff measures.
+
+Marcinkiewicz interpolation at the height `t / 2` produces the constant
+`p * 2⁻¹ ^ (1 - p) / (p - 1)` times twice the weak-type constant; this simplifies to
+`2 * p * 2 ^ (p - 1) / (p - 1)` times that constant.
+
 For a base in `ℝ≥0` greater than one, power comparisons also express rational bounds and
 closed intervals for a reciprocal radius parameter `α / r`.
 
@@ -39,21 +60,35 @@ closed intervals for a reciprocal radius parameter `α / r`.
 
 * `ENNReal.le_of_rpow_le_mul_rpow_sub_one`: `X ^ r ≤ C * X ^ (r - 1)` gives `X ≤ C` for a finite
   `X`.
+* `ENNReal.rpow_one_sub_le_of_le_mul_rpow`: `m ≤ K * m ^ p` gives `m ^ (1 - p) ≤ K` for a finite
+  `m` and `p < 1`.
 * `ENNReal.rpow_mul_rpow_one_sub`: `x ^ p * x ^ (1 - p) = x` for `p ∈ [0, 1]`.
+* `ENNReal.inv_mul_rpow_mul_inv_mul_rpow`:
+  `(F⁻¹ * a) ^ p * (G⁻¹ * b) ^ q = (F ^ p * G ^ q)⁻¹ * (a ^ p * b ^ q)` for finite `F`, `G`.
 * `ENNReal.sq_rpow_one_half`: `(x ^ 2) ^ (1 / 2) = x`, with no hypothesis on `x`.
+* `ENNReal.ofReal_mul_rpow`: `ofReal (a * r) ^ d = ofReal a ^ d * ofReal r ^ d` for `0 ≤ a`.
 * `ENNReal.min_le_rpow_one_sub_mul_rpow`: `min x y ≤ x ^ (1 - p) * y ^ p` for `p ∈ [0, 1]`.
 * `ENNReal.rpow_le_rpow_of_nonpos`: `x ≤ y` gives `y ^ z ≤ x ^ z` for `z ≤ 0`.
+* `ENNReal.eventually_forall_mem_Icc_rpow_le_add`: `y ^ d ≤ x ^ d + ε` for `y ∈ [x, z]` and `z`
+  near `x`.
+* `ENNReal.exists_pos_forall_mem_Icc_rpow_le_add`: for `x < r`, a radius `η > 0` with
+  `x + η ≤ r` and `y ^ d ≤ x ^ d + ε` for `y ∈ [x, x + η]`.
+* `ENNReal.tendsto_rpow_one_div_atTop`: `c ^ (1 / p) → 1` as `p → ∞` for `c ∉ {0, ∞}`.
 * `ENNReal.ofReal_inv_sqrt_le_enorm_rpow`: `ofReal (√x)⁻¹ ≤ ‖x‖ₑ ^ (-2⁻¹)` for every real `x`.
 * `ENNReal.ofReal_inv_sqrt_le_of_pow_three_le`: `y³ ≤ 2 |d|` gives `1 / √d ≤ √2 y^(-3/2)`.
 * `ENNReal.exists_enorm_sub_rpow_neg_half_mul_le`: for three distinct points `eᵢ`, the product of
   the `‖z - eᵢ‖ₑ ^ (-1/2)` is at most a constant times their sum.
+* `ENNReal.le_two_rpow_mul_inv_rpow_mul`: a bound `(s / 2) ^ q * a ≤ B` gives
+  `a ≤ 2 ^ q * (s ^ q)⁻¹ * B` for `s ≠ 0, ∞`.
+* `ENNReal.ofReal_mul_inv_two_rpow_div_mul_two_mul`: the Marcinkiewicz constant at height `t / 2`,
+  `ofReal (p * 2⁻¹ ^ (1 - p) / (p - 1)) * (2 * A) = ofReal (2 * p * 2 ^ (p - 1) / (p - 1)) * A`.
 * `NNReal.rpow_neg_mem_Icc_iff`: an interval of negative powers is equivalent to an interval
   for the reciprocal parameter `α / r`.
 -/
 
 public section
 
-open scoped ENNReal
+open scoped ENNReal NNReal Topology
 
 namespace ENNReal
 
@@ -69,15 +104,40 @@ theorem le_of_rpow_le_mul_rpow_sub_one {X C : ℝ≥0∞} {r : ℝ} (hX : X ≠ 
   rw [hXr, mul_comm C] at h
   exact (ENNReal.mul_le_mul_iff_right hpow0 (rpow_ne_top_of_ne_zero hX0 hX)).1 h
 
+/-- If `m ≤ K * m ^ p` for a finite `m` and an exponent `p < 1`, then `m ^ (1 - p) ≤ K`: the
+factor `m ^ p` cancels. -/
+theorem rpow_one_sub_le_of_le_mul_rpow {m K : ℝ≥0∞} {p : ℝ} (hp : p < 1) (hm : m ≠ ∞)
+    (h : m ≤ K * m ^ p) : m ^ (1 - p) ≤ K := by
+  rcases eq_or_ne m 0 with rfl | h0
+  · rw [zero_rpow_of_pos (sub_pos.2 hp)]
+    exact zero_le
+  rwa [rpow_sub _ _ h0 hm, rpow_one, ENNReal.div_le_iff
+    (rpow_pos (pos_iff_ne_zero.2 h0) hm).ne' (rpow_ne_top_of_ne_zero h0 hm)]
+
 /-- For `p ∈ [0, 1]`, the powers `x ^ p` and `x ^ (1 - p)` multiply back to `x`. -/
 theorem rpow_mul_rpow_one_sub (x : ℝ≥0∞) {p : ℝ} (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) :
     x ^ p * x ^ (1 - p) = x := by
   rw [← rpow_add_of_nonneg _ _ hp₀ (sub_nonneg.2 hp₁), add_sub_cancel, rpow_one]
 
+/-- Scaling the factors of `a ^ p * b ^ q` by `F⁻¹` and `G⁻¹` scales it by `(F ^ p * G ^ q)⁻¹`,
+for finite `F` and `G` and nonnegative exponents. -/
+theorem inv_mul_rpow_mul_inv_mul_rpow {p q : ℝ} (hp : 0 ≤ p) (hq : 0 ≤ q)
+    {F G : ℝ≥0∞} (hF : F ≠ ∞) (hG : G ≠ ∞) (a b : ℝ≥0∞) :
+    (F⁻¹ * a) ^ p * (G⁻¹ * b) ^ q = (F ^ p * G ^ q)⁻¹ * (a ^ p * b ^ q) := by
+  rw [mul_rpow_of_nonneg _ _ hp, mul_rpow_of_nonneg _ _ hq, inv_rpow, inv_rpow,
+    ENNReal.mul_inv (.inr (rpow_ne_top_of_nonneg hq hG)) (.inl (rpow_ne_top_of_nonneg hp hF))]
+  ring
+
 /-- The square root of a square in `ℝ≥0∞`, written as a real power: `(x ^ 2) ^ (1 / 2) = x`. -/
 theorem sq_rpow_one_half (x : ℝ≥0∞) : (x ^ 2) ^ (1 / 2 : ℝ) = x := by
   rw [← rpow_two, ← rpow_mul]
   norm_num
+
+/-- A real power of `ENNReal.ofReal (a * r)` with `0 ≤ a` splits as a product, for every
+exponent `d`. -/
+theorem ofReal_mul_rpow {a : ℝ} (ha : 0 ≤ a) (r d : ℝ) :
+    ENNReal.ofReal (a * r) ^ d = ENNReal.ofReal a ^ d * ENNReal.ofReal r ^ d := by
+  rw [ENNReal.ofReal_mul ha, mul_rpow_of_ne_top ofReal_ne_top ofReal_ne_top]
 
 /-- For `p ∈ [0, 1]`, the weighted geometric mean `x ^ (1 - p) * y ^ p` dominates `min x y`. -/
 theorem min_le_rpow_one_sub_mul_rpow (x y : ℝ≥0∞) {p : ℝ} (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) :
@@ -93,6 +153,41 @@ theorem rpow_le_rpow_of_nonpos {x y : ℝ≥0∞} {z : ℝ} (hxy : x ≤ y) (hz 
   obtain ⟨w, hw, rfl⟩ : ∃ w, 0 ≤ w ∧ z = -w := ⟨-z, neg_nonneg.mpr hz, (neg_neg z).symm⟩
   rw [rpow_neg, rpow_neg]
   exact ENNReal.inv_le_inv.mpr (rpow_le_rpow hxy hw)
+
+/-- For `ε ≠ 0`, every `y ∈ [x, z]` satisfies `y ^ d ≤ x ^ d + ε` once `z` is close enough to
+`x`. -/
+theorem eventually_forall_mem_Icc_rpow_le_add (x : ℝ≥0∞) {ε : ℝ≥0∞} (hε : ε ≠ 0) (d : ℝ) :
+    ∀ᶠ z in 𝓝 x, ∀ y ∈ Set.Icc x z, y ^ d ≤ x ^ d + ε := by
+  rcases le_or_gt 0 d with hd | hd
+  · rcases eq_or_ne (x ^ d) ∞ with hx | hx
+    · exact Filter.Eventually.of_forall fun _ _ _ ↦ by simp [hx]
+    filter_upwards [(continuous_rpow_const.tendsto x).eventually_lt_const
+      (ENNReal.lt_add_right hx hε)] with z hz y hy
+    exact (rpow_le_rpow hy.2 hd).trans hz.le
+  · exact Filter.Eventually.of_forall fun _ y hy ↦
+      (rpow_le_rpow_of_nonpos hy.1 hd.le).trans le_self_add
+
+/-- For `x < r` and `ε ≠ 0` there is `η > 0` with `x + η ≤ r` such that every `y ∈ [x, x + η]`
+satisfies `y ^ d ≤ x ^ d + ε`. -/
+theorem exists_pos_forall_mem_Icc_rpow_le_add {x r ε : ℝ≥0∞} (hxr : x < r) (hε : ε ≠ 0) (d : ℝ) :
+    ∃ η : ℝ≥0, 0 < η ∧ x + η ≤ r ∧ ∀ y ∈ Set.Icc x (x + η), y ^ d ≤ x ^ d + ε := by
+  have hg : Filter.Tendsto (fun η : ℝ≥0 ↦ x + η) (𝓝 0) (𝓝 x) := by
+    have hc : Continuous fun η : ℝ≥0 ↦ x + η := continuous_const.add continuous_coe
+    simpa using hc.tendsto 0
+  obtain ⟨η, ⟨hηr, hηd⟩, hη0⟩ := (((hg.eventually_lt_const hxr).and
+    (hg.eventually (eventually_forall_mem_Icc_rpow_le_add x hε d))).filter_mono
+    nhdsWithin_le_nhds |>.and self_mem_nhdsWithin).exists (f := 𝓝[>] (0 : ℝ≥0))
+  exact ⟨η, hη0, hηr.le, hηd⟩
+
+/-- For a finite nonzero `c`, the roots `c ^ (1 / p)` tend to `1` as the real exponent `p` tends
+to infinity. -/
+theorem tendsto_rpow_one_div_atTop {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ ∞) :
+    Filter.Tendsto (fun p : ℝ ↦ c ^ (1 / p)) Filter.atTop (𝓝 1) := by
+  lift c to ℝ≥0 using hc
+  have hc0 : c ≠ 0 := by simpa using hc0
+  have hexp : Filter.Tendsto (fun p : ℝ ↦ 1 / p) Filter.atTop (𝓝 0) :=
+    tendsto_const_nhds.div_atTop Filter.tendsto_id
+  simpa [coe_rpow_of_ne_zero hc0] using tendsto_coe.2 (tendsto_const_nhds.nnrpow hexp (.inl hc0))
 
 /-- The inverse square root of a real `x` is at most `‖x‖ₑ ^ (-1/2)`, as a value in `ℝ≥0∞`. The two
 agree for `x > 0`; for `x ≤ 0` the left side is `0`. -/
@@ -160,6 +255,31 @@ theorem exists_enorm_sub_rpow_neg_half_mul_le {E : Type*} [NormedAddGroup E] {e�
     calc h₁ * h₂ * h₃ ≤ h₁ * k * k := by gcongr <;> exact far ‹_›
       _ = k * k * h₁ := by ring
       _ ≤ k * k * (h₁ + h₂ + h₃) := by gcongr; exact le_self_add.trans le_self_add
+
+/-- A bound on `(s / 2) ^ q * a` bounds `a`. -/
+theorem le_two_rpow_mul_inv_rpow_mul {q : ℝ} {s a B : ℝ≥0∞} (hs : s ≠ 0) (hs' : s ≠ ∞)
+    (h : (s / 2) ^ q * a ≤ B) : a ≤ 2 ^ q * (s ^ q)⁻¹ * B := by
+  have hs2 : s / 2 ≠ 0 := ENNReal.div_ne_zero.2 ⟨hs, ENNReal.ofNat_ne_top⟩
+  have hs2' : s / 2 ≠ ∞ := ENNReal.div_ne_top hs' two_ne_zero
+  rw [ENNReal.mul_le_iff_le_inv (ENNReal.rpow_pos (pos_iff_ne_zero.2 hs2) hs2').ne'
+    (ENNReal.rpow_ne_top_of_ne_zero hs2 hs2')] at h
+  convert h using 2
+  rw [div_eq_mul_inv, ENNReal.mul_rpow_of_ne_zero hs (by simp), ENNReal.inv_rpow]
+  rw [ENNReal.mul_inv
+    (Or.inr (ENNReal.inv_ne_top.2 (ENNReal.rpow_pos two_pos ENNReal.ofNat_ne_top).ne'))
+    (Or.inl (ENNReal.rpow_ne_top_of_ne_zero hs hs')), inv_inv, mul_comm]
+
+/-- The constant that Marcinkiewicz interpolation at the height `2⁻¹ * t` produces from a weak-type
+`(1, 1)` constant `A` and the `L^∞` constant `1`: the factor `2` of `2 * A` and the power
+`2⁻¹ ^ (1 - p) = 2 ^ (p - 1)` combine into `2 * p * 2 ^ (p - 1) / (p - 1)`. -/
+theorem ofReal_mul_inv_two_rpow_div_mul_two_mul (p : ℝ) (A : ℝ≥0∞) :
+    ENNReal.ofReal (p * (2 : ℝ)⁻¹ ^ (1 - p) / (p - 1)) * (2 * A) =
+      ENNReal.ofReal (2 * p * 2 ^ (p - 1) / (p - 1)) * A := by
+  have hinv : ((2 : ℝ))⁻¹ ^ (1 - p) = 2 ^ (p - 1) := by
+    rw [Real.inv_rpow (by norm_num), ← Real.rpow_neg (by norm_num), neg_sub]
+  have hsplit : 2 * p * 2 ^ (p - 1) / (p - 1) = 2 * (p * 2 ^ (p - 1) / (p - 1)) := by ring
+  rw [hinv, hsplit, ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
+  ring
 
 end ENNReal
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Proper
 public import TauCeti.NumberTheory.QuadraticOrder.Ideal
+public import Mathlib.RingTheory.ClassGroup.Basic
 import TauCeti.Data.Rat.PrimitiveDenominator
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
@@ -168,5 +169,22 @@ theorem exists_pos_primitive_form_fractionalIdeal_eq (D : ℤ) [Fact (¬ IsSquar
     rw [← mul_assoc, ht_a, hβτ]
   refine ⟨f, hf, hp, ha, t, ht, ?_⟩
   exact fractionalIdeal_eq_of_generators D hD I f hf q t β hgen ht_a ht_gen
+
+/-- Every invertible fractional ideal of the nonsquare quadratic order is the product of the
+principal ideal of a positive rational and the invertible ideal of a primitive positive-leading
+form of the given discriminant. -/
+theorem exists_pos_primitive_form_invertibleFractionalIdeal_eq (D : ℤ) [Fact (¬ IsSquare D)]
+    (hD : D % 4 = 0 ∨ D % 4 = 1)
+    (I : (QuadraticOrder.numberFieldOrder D hD).invertibleProperFractionalIdeals) :
+    ∃ (f : BinaryQuadraticForm ℤ) (hf : f.discrim = D) (hp : f.IsPrimitive), 0 < f.a ∧
+      ∃ (r : ℚ) (u : (QuadraticAlgebra ℚ (D : ℚ) 0)ˣ), 0 < r ∧
+        (u : QuadraticAlgebra ℚ (D : ℚ) 0) = r ∧
+        I = toPrincipalIdeal _ _ u * f.invertibleFractionalIdeal D hf hp := by
+  obtain ⟨f, hf, hp, ha, r, hr, hscale⟩ := exists_pos_primitive_form_fractionalIdeal_eq D hD
+    I.val ((QuadraticOrder.numberFieldOrder D hD).invertible_isProper I)
+  have hrK : (r : QuadraticAlgebra ℚ (D : ℚ) 0) ≠ 0 := by exact_mod_cast hr.ne'
+  refine ⟨f, hf, hp, ha, r, Units.mk0 _ hrK, hr, rfl, Units.ext ?_⟩
+  rw [Units.val_mul, coe_toPrincipalIdeal, coe_invertibleFractionalIdeal]
+  exact hscale
 
 end TauCeti.BinaryQuadraticForm

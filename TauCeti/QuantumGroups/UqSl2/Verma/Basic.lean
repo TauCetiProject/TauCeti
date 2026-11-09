@@ -386,31 +386,31 @@ private def tuple (hq : q ≠ 0) (hμ : μ ≠ 0) : GeneratorTuple q (Module.End
   k := kOp q μ
   kInv := kInvOp q μ
   k_mul_kInv := end_ext fun j => by
-    simp only [Module.End.mul_apply, kOp_unitVec, kInvOp_unitVec, map_smul, smul_smul,
-      Module.End.one_apply]
+    simp only [mul_apply_eq_comp, kOp_unitVec, kInvOp_unitVec, map_smul, smul_smul,
+      one_apply_eq_self]
     rw [mul_mul_mul_comm, ← mul_pow, ← mul_pow, mul_inv_cancel₀ hq, one_pow, one_pow, one_mul,
       inv_mul_cancel₀ hμ, one_smul]
   kInv_mul_k := end_ext fun j => by
-    simp only [Module.End.mul_apply, kOp_unitVec, kInvOp_unitVec, map_smul, smul_smul,
-      Module.End.one_apply]
+    simp only [mul_apply_eq_comp, kOp_unitVec, kInvOp_unitVec, map_smul, smul_smul,
+      one_apply_eq_self]
     rw [mul_mul_mul_comm, ← mul_pow, ← mul_pow, inv_mul_cancel₀ hq, one_pow, one_pow, one_mul,
       mul_inv_cancel₀ hμ, one_smul]
   k_mul_e := end_ext fun j => by
     rcases j with _ | j
-    · simp only [Module.End.mul_apply, LinearMap.smul_apply, kOp_unitVec, map_smul, eOp_zero,
+    · simp only [mul_apply_eq_comp, LinearMap.smul_apply, kOp_unitVec, map_smul, eOp_zero,
         smul_zero, map_zero]
-    · simp only [Module.End.mul_apply, LinearMap.smul_apply, eOp_succ, kOp_unitVec, map_smul,
+    · simp only [mul_apply_eq_comp, LinearMap.smul_apply, eOp_succ, kOp_unitVec, map_smul,
         smul_smul]
       congr 1
       rw [pow_succ (q⁻¹ ^ 2) j]
       field_simp
   k_mul_f := end_ext fun j => by
-    simp only [Module.End.mul_apply, LinearMap.smul_apply, fOp_unitVec, kOp_unitVec, map_smul,
+    simp only [mul_apply_eq_comp, LinearMap.smul_apply, fOp_unitVec, kOp_unitVec, map_smul,
       smul_smul]
     congr 1
     ring
   e_mul_f_sub_f_mul_e := end_ext fun j => by
-    simp only [LinearMap.sub_apply, LinearMap.smul_apply, Module.End.mul_apply, fOp_unitVec,
+    simp only [LinearMap.sub_apply, LinearMap.smul_apply, mul_apply_eq_comp, fOp_unitVec,
       kOp_unitVec, kInvOp_unitVec, ← sub_smul, smul_smul]
     rcases j with _ | j
     · rw [eOp_succ, eOp_zero, map_zero, sub_zero, eCoeff_zero]
@@ -436,7 +436,7 @@ private theorem rep_f_pow (hq : q ≠ 0) (hμ : μ ≠ 0) (j : ℕ) :
   induction j with
   | zero => simp
   | succ j ih =>
-    rw [pow_succ', map_mul, Module.End.mul_apply, ih, rep_f, fOp_unitVec]
+    rw [pow_succ', map_mul, mul_apply_eq_comp, ih, rep_f, fOp_unitVec]
 
 /-- The Verma ideal acts trivially on `single 0 1` in the model. -/
 private theorem rep_unitVec_zero_eq_zero (hq : q ≠ 0) (hμ : μ ≠ 0) {a : UqSl2 q}
@@ -449,7 +449,7 @@ private theorem rep_unitVec_zero_eq_zero (hq : q ≠ 0) (hμ : μ ≠ 0) {a : Uq
         Module.algebraMap_end_apply, pow_zero, one_mul, sub_self]
   | zero => simp
   | add a c _ _ ha hc => rw [map_add, LinearMap.add_apply, ha, hc, add_zero]
-  | smul a c _ hc => rw [smul_eq_mul, map_mul, Module.End.mul_apply, hc, map_zero]
+  | smul a c _ hc => rw [smul_eq_mul, map_mul, mul_apply_eq_comp, hc, map_zero]
 
 /-- The complex-linear map `M(μ) → ℕ →₀ ℂ` sending the class of `a` to the image of
 `single 0 1` under the model action of `a`. -/

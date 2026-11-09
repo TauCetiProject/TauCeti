@@ -12,7 +12,10 @@ public import Mathlib.Data.Set.Finite.Lattice
 # Function symbols occurring in a term
 
 `Term.functionsIn` records function symbols together with their arities. The set is finite,
-unchanged by relabelling variables, and determines which interpretations a term can observe.
+unchanged by relabelling variables, bounded under substitution by the symbols of the substituted
+terms, mapped to its image under a language homomorphism (with
+`LHom.exists_eq_onTerm_of_functionsIn_subset` pulling back terms whose occurring symbols lie in the
+image of a given set), and determines which interpretations a term can observe.
 These facts supply the term cases of symbol locality for infinitary formulas.
 -/
 
@@ -51,6 +54,27 @@ theorem functionsIn_relabel (t : L.Term α) (g : α → β) :
   | var => simp
   | func f ts ih => simp [ih]
 
+/-- Substitution keeps every function symbol of the original term. -/
+theorem functionsIn_subset_functionsIn_subst (t : L.Term α) (f : α → L.Term β) :
+    t.functionsIn ⊆ (t.subst f).functionsIn := by
+  induction t with
+  | var => simp
+  | func F ts ih =>
+    simp only [functionsIn_func, subst]
+    exact Set.union_subset_union_right _ (Set.iUnion_mono ih)
+
+/-- Substitution adds at most the function symbols of the substituted terms. -/
+theorem functionsIn_subst_subset (t : L.Term α) (f : α → L.Term β) :
+    (t.subst f).functionsIn ⊆ t.functionsIn ∪ ⋃ a, (f a).functionsIn := by
+  induction t with
+  | var a =>
+    exact Set.subset_union_of_subset_right (Set.subset_iUnion (fun a => (f a).functionsIn) a) _
+  | func F ts ih =>
+    simp only [functionsIn_func, subst]
+    refine Set.union_subset (fun x hx => Or.inl (Or.inl hx)) (Set.iUnion_subset fun i => ?_)
+    refine (ih i).trans (Set.union_subset_union_left _ ?_)
+    exact Set.subset_union_of_subset_right (Set.subset_iUnion (fun i => (ts i).functionsIn) i) _
+
 /-- A language map sends the occurring function symbols to their images. -/
 @[simp]
 theorem functionsIn_onTerm (t : L.Term α) {L' : FirstOrder.Language.{u', v'}} (g : L →ᴸ L') :
@@ -76,3 +100,30 @@ theorem realize_congr_of_agreeOn {M : Type w} (t : L.Term α) (S S' : L.Structur
       exact Or.inr (Set.mem_iUnion.mpr ⟨i, hg⟩)))
 
 end FirstOrder.Language.Term
+
+namespace FirstOrder.Language.LHom
+
+variable {L : FirstOrder.Language.{u, v}} {L' : FirstOrder.Language.{u', v'}} {α : Type uα}
+
+/-- A term of `L'` whose occurring function symbols lie in the image of a set `F` under a language
+homomorphism `g : L →ᴸ L'` is the image under `g` of a term of `L` whose occurring function symbols
+lie in `F`. No injectivity of `g` is needed. -/
+theorem exists_eq_onTerm_of_functionsIn_subset (g : L →ᴸ L') {F : Set (Σ k, L.Functions k)}
+    (t : L'.Term α)
+    (hF : t.functionsIn ⊆ (fun f : Σ k, L.Functions k => ⟨f.1, g.onFunction f.2⟩) '' F) :
+    ∃ t₀ : L.Term α, g.onTerm t₀ = t ∧ t₀.functionsIn ⊆ F := by
+  induction t with
+  | var b => exact ⟨.var b, rfl, by simp⟩
+  | @func k f ts ih =>
+    rw [Term.functionsIn_func] at hF
+    obtain ⟨⟨k₀, f₀⟩, hf₀F, hfk⟩ := hF (Or.inl rfl)
+    cases hfk
+    have hts : ∀ i, ∃ t₀ : L.Term α, g.onTerm t₀ = ts i ∧ t₀.functionsIn ⊆ F := fun i =>
+      ih i ((Set.subset_union_of_subset_right
+        (Set.subset_iUnion (fun j => (ts j).functionsIn) i) _).trans hF)
+    choose ts₀ hts₀ hts₀F using hts
+    refine ⟨.func f₀ ts₀, by simp [LHom.onTerm, hts₀], ?_⟩
+    rw [Term.functionsIn_func]
+    exact Set.union_subset (Set.singleton_subset_iff.mpr hf₀F) (Set.iUnion_subset hts₀F)
+
+end FirstOrder.Language.LHom

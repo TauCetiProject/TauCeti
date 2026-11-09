@@ -127,7 +127,7 @@ private theorem exists_le_of_pow_mem (p : ℕ) [Fact p.Prime] [CharP L p] (φ : 
   set M := φ.carrier
   -- `X ^ p - a ^ p` is the minimal polynomial of `a` over `M`
   have hirr : Irreducible (X ^ p - C (⟨a ^ p, hap⟩ : M)) :=
-    X_pow_sub_C_irreducible_of_prime Fact.out fun c hc ↦ ha <| by
+    _root_.irreducible_X_pow_sub_C_of_prime Fact.out fun c hc ↦ ha <| by
       have hc' : (c : L) ^ p = a ^ p := congrArg Subtype.val hc
       rw [← frobenius_def p, ← frobenius_def p] at hc'
       exact frobenius_inj L p hc' ▸ c.2
@@ -193,13 +193,9 @@ private theorem powFieldRingHom_apply (f : L →ₐ[K] B ⧸ I) (x : L) :
 private noncomputable def powFieldLift (f : L →ₐ[K] B ⧸ I) : frobeniusPowers K L p 1 →ₐ[K] B :=
   { powFieldRingHom p hpB hI f with
     commutes' c := by
-      obtain ⟨d, rfl⟩ := (iterateFrobeniusEquiv K p 1).surjective c
-      -- the underlying function of `powFieldLift` is `powFieldRingHom`
-      change powFieldRingHom p hpB hI f _ = _
-      -- write the constant as a `p`-th power of a constant of `L`, then compute
-      rw [← iterateFrobeniusEquivPowers_algebraMap]
-      simp [-iterateFrobeniusEquivPowers_algebraMap, powFieldRingHom_apply,
-        ← Ideal.Quotient.mk_algebraMap, frobenius_def] }
+      -- write the constant as the `p`-th power of a constant, then compute
+      conv_rhs => rw [← frobeniusEquiv_symm_pow_p K p c, map_pow]
+      simp [powFieldRingHom, ← Ideal.Quotient.mk_algebraMap] }
 
 private theorem powFieldLift_apply (f : L →ₐ[K] B ⧸ I) (x : L) :
     powFieldLift p hpB hI f (iterateFrobeniusEquivPowers K L p 1 x) =

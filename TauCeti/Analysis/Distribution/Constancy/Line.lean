@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Analysis.Distribution.LocalConstancy
 public import TauCeti.Analysis.Distribution.TestFunction.DualEquiv
+import TauCeti.Analysis.Distribution.Constancy.Basic
 import TauCeti.Analysis.Distribution.DuBoisReymond
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
-import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 
 /-!
 # Constancy of distributions on the real line
@@ -18,8 +18,10 @@ A Banach-valued distribution on a connected nonempty open subset of the real lin
 first derivative exactly when it is integration against a unique constant. No order-zero or
 finite-mass assumption is needed. The local statement computes the constant using any
 integral-one test in a bounded interval: subtracting that test times the integral leaves a
-mean-zero test, which has a compactly supported smooth primitive in the same interval.
-Local constants then glue on the connected domain.
+mean-zero test, which has a compactly supported smooth primitive in the same interval; this
+needs no completeness of `F`. For a Banach space `F`, the global statements are the case `E = ℝ`,
+`μ = volume` of `Distribution.existsUnique_eq_ofFun_const_of_forall_lineDerivOp_eq_zero` and
+`Distribution.lineDerivOp_ofFun_const`, since `∂_{v} T = v • ∂_{1} T` on the line.
 
 The corresponding theorem for finite-dimensional vector-valued tests identifies a functional
 annihilating derivatives with integration against one fixed continuous linear map. This is the
@@ -78,30 +80,9 @@ variable [CompleteSpace F]
 derivative is integration against a unique constant. -/
 theorem existsUnique_eq_ofFun_const_of_lineDerivOp_eq_zero (T : 𝓓'(Ω, F))
     (hΩ : IsConnected (Ω : Set ℝ)) (hT : ∂_{(1 : ℝ)} T = 0) :
-    ∃! c : F, T = ofFun Ω (fun _ ↦ c) volume ⊤ := by
-  apply T.existsUnique_eq_ofFun_const_of_locally hΩ
-  intro x hx
-  obtain ⟨a, b, ⟨hax, hxb⟩, hab⟩ := mem_nhds_iff_exists_Ioo_subset.mp (Ω.isOpen.mem_nhds hx)
-  obtain ⟨η, hη, -, hηint⟩ := TestFunction.exists_nonneg_integral_eq_one
-    (μ := volume) (n := ⊤) isOpen_Ioo ⟨x, hax, hxb⟩ hab
-  exact ⟨Ioo a b, isOpen_Ioo, ⟨hax, hxb⟩, T η, fun φ hφ ↦
-    apply_eq_integral_smul_of_lineDerivOp_eq_zero hT hab η hη hηint φ hφ⟩
-
-/-- Integration against a constant has vanishing first distributional derivative. -/
-@[simp]
-theorem lineDerivOp_one_ofFun_const (c : F) :
-    ∂_{(1 : ℝ)} (ofFun Ω (fun _ ↦ c) volume ⊤) = 0 := by
-  ext φ
-  have hd : ∫ x, deriv (φ : ℝ → ℝ) x = 0 :=
-    integral_eq_zero_of_hasDerivAt_of_integrable
-      (fun x ↦ (φ.contDiff.differentiable (by simp) x).hasDerivAt)
-      ((φ.contDiff.continuous_deriv (by simp)).integrable_of_hasCompactSupport
-        φ.hasCompactSupport.deriv)
-      (φ.continuous.integrable_of_hasCompactSupport φ.hasCompactSupport)
-  simp only [lineDerivOp_apply_apply,
-    ofFun_apply (locallyIntegrableOn_const c), integral_smul_const]
-  simp only [FunLike.coe_neg, Pi.neg_apply, TestFunction.lineDerivOp_one_apply_eq_deriv,
-    integral_neg, hd, neg_zero, zero_smul, zero_apply]
+    ∃! c : F, T = ofFun Ω (fun _ ↦ c) volume ⊤ :=
+  T.existsUnique_eq_ofFun_const_of_forall_lineDerivOp_eq_zero volume hΩ fun v ↦ by
+    rw [← mul_one v, ← smul_eq_mul, lineDerivOp_left_smul, hT, smul_zero]
 
 /-- On a connected nonempty real open domain, zero derivative characterizes constant
 Banach-valued distributions. The nonemptiness makes the constant unique. -/
@@ -109,7 +90,7 @@ theorem lineDerivOp_one_eq_zero_iff (T : 𝓓'(Ω, F)) (hΩ : IsConnected (Ω : 
     ∂_{(1 : ℝ)} T = 0 ↔ ∃! c : F, T = ofFun Ω (fun _ ↦ c) volume ⊤ := by
   refine ⟨T.existsUnique_eq_ofFun_const_of_lineDerivOp_eq_zero hΩ, ?_⟩
   rintro ⟨c, rfl, -⟩
-  exact lineDerivOp_one_ofFun_const c
+  exact lineDerivOp_ofFun_const volume c 1
 
 /-- Two distributional primitives on a connected nonempty real open domain differ by
 integration against a unique constant. -/

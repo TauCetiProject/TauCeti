@@ -52,16 +52,16 @@ theorem mem_jacobson_bot_of_isOpen_subring {B : Subring A}
     (ϖ : B) (hϖ : IsPseudoUniformizer (ϖ : A)) :
     ϖ ∈ Ideal.jacobson (⊥ : Ideal B) := by
   classical
-  rw [Ideal.mem_jacobson_bot]
+  rw [Ideal.jacobson_bot, Ring.mem_jacobson_iff]
   intro y
   obtain ⟨P, hPB, hs⟩ := exists_pairOfDefinition_finset_subset hopen {ϖ, y}
     (fun x _ ↦ mem_powerBoundedSubring.mp (hle x.property))
   let π : P.ringOfDefinition := ⟨ϖ, hs ϖ (by simp)⟩
   let y₀ : P.ringOfDefinition := ⟨y, hs y (by simp)⟩
   have := P.henselianRing π hϖ
-  have hπ : π ∈ Ideal.jacobson (⊥ : Ideal P.ringOfDefinition) :=
+  have hπ : π ∈ Ring.jacobson P.ringOfDefinition :=
     HenselianRing.jac (Ideal.mem_span_singleton_self π)
-  exact (Ideal.mem_jacobson_bot.mp hπ y₀).map (Subring.inclusion hPB)
+  exact (Ring.mem_jacobson_iff.mp hπ y₀).map (Subring.inclusion hPB)
 
 /-- An open subring of the power-bounded subring of a complete Hausdorff Tate ring is
 henselian along any pseudouniformizer it contains. No boundedness of the whole subring, or
@@ -72,7 +72,8 @@ theorem henselianRing_of_isOpen_subring {B : Subring A}
     HenselianRing B (Ideal.span {ϖ}) := by
   classical
   refine ⟨(Ideal.span_singleton_le_iff_mem _).mpr
-    (mem_jacobson_bot_of_isOpen_subring hopen hle ϖ hϖ), fun f hf a hfa hu ↦ ?_⟩
+    (by simpa only [Ideal.jacobson_bot] using
+      mem_jacobson_bot_of_isOpen_subring hopen hle ϖ hϖ), fun f hf a hfa hu ↦ ?_⟩
   -- Record all the finite witnesses before choosing a ring of definition.
   obtain ⟨d, hd⟩ := Ideal.mem_span_singleton.mp hfa
   obtain ⟨b, hb⟩ := isUnit_iff_exists_inv.mp hu

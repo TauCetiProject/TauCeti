@@ -37,11 +37,18 @@ with that property to one that extends homotopies with values in a space in any 
   `TauCeti.HasHomotopyExtensionProperty.exists_homotopy_of_restrict`: for a closed subset,
   extension of homotopies with values in a space in an arbitrary universe, in terms of raw maps
   and of Mathlib's bundled homotopies.
+* `IsClopen.hasHomotopyExtensionProperty`: a clopen subset has the homotopy extension property.
 * `TauCeti.HasHomotopyExtensionProperty.isClosed`: in a Hausdorff space the property forces the
   subset to be closed, so the inclusion is a closed cofibration.
 * `TauCeti.HasHomotopyExtensionProperty.image` and
   `TauCeti.HasHomotopyExtensionProperty.image_of_isClosed`: transport of the property along a
   homeomorphism, inside one universe and, for a closed subset, across universes.
+* `TauCeti.HasHomotopyExtensionProperty.homotopicRel_of_retracing`: a homotopy followed by a
+  homotopy which retraces it at the points of a subset with the homotopy extension property can
+  be replaced by a homotopy relative to that subset.
+* `TauCeti.HasHomotopyExtensionProperty.exists_homotopy_apply_eq_of_trans_refl`: a homotopy which
+  at the points of such a subset runs through a given homotopy and then stays put can be replaced
+  by one which is exactly the given homotopy there.
 
 ## References
 
@@ -104,6 +111,11 @@ theorem hasHomotopyExtensionProperty_iff :
         (∀ a : A, H (0, a) = f a) →
           ∃ G : C(I × X, Y), (∀ x, G (0, x) = f x) ∧ ∀ (t : I) (a : A), G (t, a) = H (t, a) :=
   Iff.rfl
+
+/-- The empty subset has the homotopy extension property: a homotopy out of `∅` imposes nothing,
+and the constant homotopy extends the initial map. -/
+theorem hasHomotopyExtensionProperty_empty : HasHomotopyExtensionProperty (∅ : Set X) :=
+  fun f _ _ ↦ ⟨f.comp ContinuousMap.snd, fun _ ↦ rfl, fun _ a ↦ a.2.elim⟩
 
 /-- The defining consequence of the homotopy extension property: a homotopy out of `A` whose
 initial map extends to `X` extends to a homotopy out of `X`. -/
@@ -194,6 +206,24 @@ theorem hasHomotopyExtensionProperty_of_retraction (hA : IsClosed A) {r : C(I ×
     (hr' : ∀ p ∈ cylinderExtensionDomain A, r p = p) :
     HasHomotopyExtensionProperty A :=
   fun f H hH => exists_homotopy_extension_of_retraction hA hr hr' f H hH
+
+/-- A clopen subset has the homotopy extension property: the cylinder retracts onto
+`{0} × X ∪ I × A` by fixing the part over `A` and collapsing the part over the complement of `A`
+to the bottom of the cylinder. -/
+theorem _root_.IsClopen.hasHomotopyExtensionProperty (hA : IsClopen A) :
+    HasHomotopyExtensionProperty A := by
+  classical
+  have hfr : frontier {p : I × X | p.2 ∈ A} = ∅ :=
+    (hA.preimage (f := (Prod.snd : I × X → X)) continuous_snd).frontier_eq
+  have hr : Continuous fun p : I × X => if p.2 ∈ A then p else ((0 : I), p.2) :=
+    Continuous.if (by simp [hfr]) continuous_id (by fun_prop)
+  apply hasHomotopyExtensionProperty_of_retraction hA.isClosed (r := ⟨_, hr⟩)
+  · intro p
+    by_cases h : p.2 ∈ A <;> simp [h, mem_cylinderExtensionDomain_iff]
+  · rintro ⟨t, x⟩ hp
+    obtain rfl | hx : t = 0 ∨ x ∈ A := hp
+    · by_cases h : x ∈ A <;> simp [h]
+    · simp [hx]
 
 /-- Solving the universal homotopy extension problem, the one whose target is the subspace
 `{0} × X ∪ I × A` itself, produces a retraction of the cylinder onto that subspace. -/
@@ -299,5 +329,135 @@ theorem HasHomotopyExtensionProperty.image_of_isClosed {X' : Type u'} [Topologic
       · exact Or.inl h0
       · exact Or.inr (by rw [← hae, e.symm_apply_apply]; exact ha)
     simp [hr' _ hq']
+
+/-- The tent map `t ↦ min (2 t) (2 - 2 t)` on the unit interval, which rises from `0` to `1` on
+`[0, 1/2]` and falls back to `0` on `[1/2, 1]`. -/
+private noncomputable def tent (t : I) : I :=
+  ⟨min (2 * t) (2 - 2 * t), le_min (by linarith [t.2.1]) (by linarith [t.2.2]),
+    min_le_iff.2 <| (le_total (t : ℝ) (1 / 2)).imp (fun h => by linarith) fun h => by linarith⟩
+
+private lemma continuous_tent : Continuous tent := by
+  unfold tent
+  fun_prop
+
+private lemma tent_zero : tent 0 = 0 := by
+  ext
+  simp [tent]
+
+private lemma tent_one : tent 1 = 0 := by
+  ext
+  norm_num [tent]
+
+section Retracing
+
+variable {Y : Type u} [TopologicalSpace Y] {f₀ f₁ f₂ : C(X, Y)}
+
+/-- At a point where the homotopy `G` runs backwards along `F`, the concatenation `F.trans G`
+is `F` reparametrised by the tent map. -/
+private lemma trans_apply_of_retracing (F : f₀.Homotopy f₁) (G : f₁.Homotopy f₂) {x : X}
+    (hG : ∀ t, G (t, x) = F (σ t, x)) (t : I) :
+    F.trans G (t, x) = F (tent t, x) := by
+  rw [ContinuousMap.Homotopy.trans_apply]
+  split_ifs with ht
+  · congr 2
+    ext
+    simp [tent, min_eq_left (by linarith : (2 : ℝ) * t ≤ 2 - 2 * t)]
+  · rw [hG]
+    congr 2
+    ext
+    simp only [tent, coe_symm_eq]
+    rw [min_eq_right (by linarith)]
+    ring
+
+/-- **A homotopy which retraces itself on `A` can be made stationary on `A`.** Let `F` be a
+homotopy from `f₀` to `f₁`, and `G` a homotopy from `f₁` to `f₂` which, at every point of a subset
+`A` with the homotopy extension property, runs backwards along `F`. Then `f₀` and `f₂` are
+homotopic relative to `A`. -/
+theorem HasHomotopyExtensionProperty.homotopicRel_of_retracing
+    (hA : HasHomotopyExtensionProperty A) (F : f₀.Homotopy f₁) (G : f₁.Homotopy f₂)
+    (hG : ∀ t, ∀ x ∈ A, G (t, x) = F (σ t, x)) :
+    f₀.HomotopicRel f₂ A := by
+  -- On `A` the paths `t ↦ F.trans G (t, x)` follow `F` up to the time `tent t`. Contract them
+  -- onto the constant paths, cutting `F` off at time `tent t - u`, and extend this contraction
+  -- from `A` to `X` as a homotopy of maps into the path space `C(I, Y)`.
+  obtain ⟨E, hE₀, hE₁⟩ := hA.exists_extension
+    (ContinuousMap.curry ⟨fun p : X × I => F.trans G (p.2, p.1), by fun_prop⟩)
+    (ContinuousMap.curry ⟨fun p : (I × A) × I =>
+      F (projIcc 0 1 zero_le_one ((tent p.2 : ℝ) - p.1.1), p.1.2), by
+        have := continuous_tent
+        fun_prop⟩)
+    fun a => ContinuousMap.ext fun t => by
+      simp [trans_apply_of_retracing F G (hG · a a.2)]
+  -- Read the extended contraction off along the path `s ↦ (tent s, s)` in the square.
+  refine ⟨{ toFun := fun p => E (tent p.1, p.2) p.1
+            continuous_toFun := by
+              have := continuous_tent
+              fun_prop
+            map_zero_left := fun x => ?_
+            map_one_left := fun x => ?_
+            prop' := fun s x hx => ?_ }⟩
+  · simp [tent_zero, hE₀]
+  · simp [tent_one, hE₀]
+  · simp [hE₁ _ ⟨x, hx⟩]
+
+end Retracing
+
+section StationaryTail
+
+variable {Y : Type u} [TopologicalSpace Y] {f₀ f₁ : C(X, Y)}
+
+/-- **Removing a stationary tail on `A`.** Let `F` be a homotopy from `f₀` to `f₁`, and `G` a
+homotopy between the restrictions of `f₀` and `f₁` to a subset `A` with the homotopy extension
+property. If at every point of `A` the homotopy `F` runs through `G` at double speed and then
+stays put, that is, `F` is `G.trans (Homotopy.refl _)` on `A`, then some homotopy from `f₀` to `f₁`
+is exactly `G` on `A`. -/
+theorem HasHomotopyExtensionProperty.exists_homotopy_apply_eq_of_trans_refl
+    (hA : HasHomotopyExtensionProperty A) (F : f₀.Homotopy f₁)
+    (G : (f₀.comp (ContinuousMap.subtypeVal A)).Homotopy (f₁.comp (ContinuousMap.subtypeVal A)))
+    (hF : ∀ t (a : A), F (t, a) = (G.trans (ContinuousMap.Homotopy.refl _)) (t, a)) :
+    ∃ F' : f₀.Homotopy f₁, ∀ t (a : A), F' (t, a) = G (t, a) := by
+  -- On `A`, `F` runs through `G` at double speed: `F (t, a) = G (min (2 t) 1, a)`.
+  have hF' (t : I) (a : A) :
+      F (t, a) = G (projIcc 0 1 zero_le_one (min (2 * (t : ℝ)) 1), a) := by
+    rw [hF, ContinuousMap.Homotopy.trans_apply]
+    split_ifs with h
+    · congr 2
+      rw [min_eq_left (by linarith), projIcc_of_mem]
+    · rw [ContinuousMap.Homotopy.refl_apply, min_eq_right (by linarith), projIcc_right]
+      exact (G.apply_one a).symm
+  -- Extend, as maps into the path space, the deformation of these paths which slows `G` down to
+  -- unit speed, from `A` to `X`: at time `u` the path is `t ↦ G (max t (min (2 t) 1 - u))`.
+  obtain ⟨E, hE₀, hE₁⟩ := hA.exists_extension
+    (ContinuousMap.curry ⟨fun p : X × I => F (p.2, p.1), by fun_prop⟩)
+    (ContinuousMap.curry ⟨fun p : (I × A) × I =>
+      G (projIcc 0 1 zero_le_one (max (p.2 : ℝ) (min (2 * (p.2 : ℝ)) 1 - p.1.1)), p.1.2), by
+        fun_prop⟩)
+    fun a => ContinuousMap.ext fun t => by
+      have : max (t : ℝ) (min (2 * (t : ℝ)) 1 - 0) = min (2 * (t : ℝ)) 1 := by
+        rw [sub_zero]
+        exact max_eq_right (le_min (by linarith [t.2.1]) t.2.2)
+      simp only [ContinuousMap.curry_apply, ContinuousMap.coe_mk, Icc.coe_zero, this, hF']
+  -- Read the extension off along the path `s ↦ (min s (1 - s), s)` in the square, which starts
+  -- and ends on the undeformed paths.
+  let F' : f₀.Homotopy f₁ :=
+    { toFun := fun p => E (projIcc 0 1 zero_le_one (min (p.1 : ℝ) (1 - p.1)), p.2) p.1
+      continuous_toFun := by fun_prop
+      map_zero_left := fun x => by simp [hE₀]
+      map_one_left := fun x => by simp [hE₀] }
+  have hF'_apply (p : I × X) :
+      F' p = E (projIcc 0 1 zero_le_one (min (p.1 : ℝ) (1 - p.1)), p.2) p.1 := rfl
+  refine ⟨F', fun t a => ?_⟩
+  -- Along that path the deformation has slowed `G` down exactly to unit speed:
+  -- `max t (min (2 t) 1 - min t (1 - t)) = t`.
+  have key : projIcc 0 1 zero_le_one (max (t : ℝ) (min (2 * (t : ℝ)) 1 -
+      (projIcc 0 1 zero_le_one (min (t : ℝ) (1 - t)) : ℝ))) = t := by
+    have ht := t.2.1
+    have ht' := t.2.2
+    ext
+    simp only [coe_projIcc, min_def, max_def]
+    split_ifs <;> linarith
+  rw [hF'_apply, hE₁, ContinuousMap.curry_apply, ContinuousMap.coe_mk, key]
+
+end StationaryTail
 
 end TauCeti

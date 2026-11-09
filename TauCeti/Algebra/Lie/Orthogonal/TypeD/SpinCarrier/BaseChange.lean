@@ -253,7 +253,7 @@ noncomputable def baseChangePointsMulEquiv (B : CommAlgCat.{w} A) :
       points n hn B :=
   (CommHopfAlgCat.baseChangeIsoPointsMulEquiv (baseChangeCoordinateIso n hn A) B).trans
     (pointsPresentation n hn
-      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv
+      (CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv
 
 /-- The base-change points equivalence preserves the ambient invertible matrix. -/
 @[simp]
@@ -307,15 +307,15 @@ theorem baseChangePointsMulEquiv_mapPoints {B C : CommAlgCat.{w} A} (f : B ⟶ C
   simp only [baseChangePointsMulEquiv, MulEquiv.trans_apply]
   rw [CommHopfAlgCat.baseChangeIsoPointsMulEquiv_mapPoints,
     (pointsPresentation n hn
-      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv_mapPoints
+      (CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv_mapPoints
       (pointsPresentation n hn
-        (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) C))
-      ((TauCeti.CommAlgCat.restrictScalars (algebraMap ℤ A)).map f)]
+        (CommAlgCat.restrictScalarsObj (algebraMap ℤ A) C))
+      ((CommAlgCat.restrictScalars (algebraMap ℤ A)).map f)]
   have hring :
-      ((((TauCeti.CommAlgCat.restrictScalars (algebraMap ℤ A)).map f).hom : ↑B →+* ↑C)) =
+      ((((CommAlgCat.restrictScalars (algebraMap ℤ A)).map f).hom : ↑B →+* ↑C)) =
         (f.hom : ↑B →+* ↑C) := by
-    rw [TauCeti.CommAlgCat.restrictScalars_map,
-      TauCeti.CommAlgCat.restrictScalarsMap_hom]
+    rw [CommAlgCat.restrictScalars_map,
+      CommAlgCat.restrictScalarsMap_hom]
     exact RingHom.ext fun x ↦ AlgHom.restrictScalars_apply ℤ f.hom x
   rw [hring]
 
@@ -463,6 +463,22 @@ theorem baseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap
     (isNilpotent_rep_rootGenerator n hn) (latticeBasis n) (basisWeight n) A
     (definingIdeal_def n hn) k
 
+/-- Each transported numbered root-subgroup coordinate map is surjective over every
+commutative base ring. -/
+theorem rootSubgroupToBaseChangeCoordinateMap_surjective (k : Fin n ⊕ Fin n) :
+    Function.Surjective (rootSubgroupToBaseChangeCoordinateMap n hn A k).hom := by
+  rw [← baseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap n hn A k]
+  exact _root_.CommHopfAlgCat.baseChangeMap_surjective_of_iso (K := A)
+    (H := CommHopfAlgCat.quotient
+      (GeneralLinear.coordinateHopfAlgebra ℤ (dimension n)) (definingIdeal n hn))
+    (L := AdditiveGroup.coordinateHopfAlgebra ℤ)
+    (H' := CommHopfAlgCat.quotient
+      (GeneralLinear.coordinateHopfAlgebra A (dimension n)) (baseChangeDefiningIdeal n hn A))
+    (L' := AdditiveGroup.coordinateHopfAlgebra A)
+    (rootSubgroupIntegralCoordinateMap n hn k)
+    (rootSubgroupIntegralCoordinateMap_surjective n hn k)
+    (baseChangeCoordinateIso n hn A) (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ A)
+
 /-- On points, the transported factored coordinate map is the named numbered root subgroup. -/
 @[simp]
 theorem baseChangePointsMulEquiv_mapPointsFunctor_rootSubgroupToBaseChangeCoordinateMap
@@ -489,7 +505,7 @@ theorem baseChangePointsMulEquiv_mapPointsFunctor_rootSubgroupToBaseChangeCoordi
       (TauCeti.serreRootGenerator (CartanMatrix.D n))
       (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
       (rep_kostantForm_mem_lattice n hn) (isNilpotent_rep_rootGenerator n hn)
-      (latticeBasis n) (basisWeight n) A (definingIdeal_def n hn) k B q
+      (latticeBasis n) (basisWeight n) A k B q
   rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   unfold baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
   exact h

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Algebra.BCH.Local
-public import TauCeti.Geometry.Lie.Exponential.BCH
+public import TauCeti.Geometry.Lie.Exponential.BCH.Basic
 public import TauCeti.Geometry.Lie.Exponential.Units.Compatibility
 
 /-!

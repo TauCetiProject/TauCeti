@@ -203,6 +203,12 @@ theorem nextCrossing_symm_mem_crossingsAt_iff {p : Fin n} {j : Fin w.length} :
     (w.nextCrossing p).symm j ∈ w.crossingsAt p ↔ j ∈ w.crossingsAt p := by
   rw [← w.nextCrossing_mem_crossingsAt_iff, Equiv.apply_symm_apply]
 
+/-- Iterating the next crossing along a position stays among the crossings involving it. -/
+theorem pow_nextCrossing_mem_crossingsAt {j : Fin w.length} {p : Fin n}
+    (hj : j ∈ w.crossingsAt p) (k : ℕ) : (w.nextCrossing p ^ k) j ∈ w.crossingsAt p := by
+  rw [nextCrossing_def, ← zpow_natCast]
+  exact List.form_perm_zpow_apply_mem_imp_mem _ _ hj _
+
 /-- The slot of the crossing `j` at which a strand enters it from below on the position `p`:
 slot `3` on the lower position `i` of the letter, slot `0` on the upper position `i + 1`. -/
 def incomingSlot (j : Fin w.length) (p : Fin n) : Fin 4 :=
@@ -479,6 +485,12 @@ theorem orientation_closure (j : Fin w.length) (slot : Fin 4) :
     w.closure.orientation (crossingSlotEquiv w.length (j, slot)) =
       decide (slot = 1 ∨ slot = 2) := by
   simp [closure, IsOutgoing]
+
+/-- The half-edge at which a strand leaves a crossing is outgoing. -/
+theorem orientation_closure_crossing_outgoingSlot (j : Fin w.length) (p : Fin n) :
+    w.closure.orientation (w.closure.crossing j (w.outgoingSlot j p)) = true := by
+  rw [crossing_closure, orientation_closure, decide_eq_true_iff]
+  exact w.outgoingSlot_eq_one_or_two j p
 
 /-- The arcs of the closure are determined by the arcs leaving the crossings upwards: a perfect
 matching of the half-edges agreeing with them is the arc matching of the closure. -/

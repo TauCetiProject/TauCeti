@@ -36,6 +36,8 @@ exactly when `x ^ d ≠ 1` for each of its indices `d`.
 * `TauCeti.mul_add_mul_pow_of_mul_eq_zero`: if `e e' = 0`, then `e (a + e' b) ^ k = e a ^ k`.
 * `TauCeti.geom_sum_eq_zero_iff_pow_eq_one`: for `x ≠ 1` without zero divisors,
   `∑_{i < n} x ^ i = 0 ↔ x ^ n = 1`.
+* `TauCeti.pow_eq_one_of_geom_sum_eq_zero`: in any ring, `∑_{i < n} x ^ i = 0` implies
+  `x ^ n = 1`; in particular a root of `T² + T + 1` is a cube root of unity.
 * `TauCeti.prod_geom_sum_ne_zero_iff`: a product of `x`-integers is nonzero exactly when no index
   `d` has `x ^ d = 1`.
 -/
@@ -110,6 +112,19 @@ exactly when `x ^ n = 1`. -/
 theorem geom_sum_eq_zero_iff_pow_eq_one {R : Type*} [Ring R] [NoZeroDivisors R] {x : R}
     (hx : x ≠ 1) (n : ℕ) : ∑ i ∈ range n, x ^ i = 0 ↔ x ^ n = 1 := by
   rw [← sub_eq_zero (a := x ^ n), ← geom_sum_mul, mul_eq_zero, or_iff_left (sub_ne_zero.mpr hx)]
+
+/-- In any ring, if the `x`-integer `∑_{i < n} x ^ i` vanishes then `x ^ n = 1`, because
+`(∑_{i < n} x ^ i) (x - 1) = x ^ n - 1`. -/
+theorem pow_eq_one_of_geom_sum_eq_zero {R : Type*} [Ring R] {x : R} {n : ℕ}
+    (h : ∑ i ∈ range n, x ^ i = 0) : x ^ n = 1 := by
+  rw [← sub_eq_zero, ← geom_sum_mul, h, zero_mul]
+
+/-- In any ring, a root `x` of `T² + T + 1` is a cube root of unity. -/
+theorem pow_three_eq_one_of_sq_add_add_one_eq_zero {R : Type*} [Ring R] {x : R}
+    (h : x ^ 2 + x + 1 = 0) : x ^ 3 = 1 :=
+  pow_eq_one_of_geom_sum_eq_zero <| by
+    rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_one, pow_zero, pow_one, ← h]
+    abel
 
 /-- In a commutative ring without zero divisors and for `x ≠ 1`, a product of `x`-integers
 `∏_{d ∈ s} ∑_{i < d} x ^ i` is nonzero exactly when `x ^ d ≠ 1` for every `d ∈ s`. -/

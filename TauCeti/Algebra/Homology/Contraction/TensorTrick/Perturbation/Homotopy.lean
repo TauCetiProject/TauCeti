@@ -101,10 +101,7 @@ theorem isGradedCoderivationAlong_reducedTensorWords_perturb_homotopy
     simpa only [h, π, i, p, T, τ, reducedTensorWords_incl, reducedTensorWords_proj,
       reducedTensorWords_homotopy, ← ReducedTensorWords.map_comp] using
       c.deconcatenation_comp_reducedTensorWordsHomotopy G
-  have hΔδ : deconcatenation R M ∘ₗ δ =
-      (TensorProduct.map δ LinearMap.id + TensorProduct.map τ δ) ∘ₗ deconcatenation R M := by
-    rw [isGradedCoderivation_iff.mp hδ, LinearMap.lTensor_comp_rTensor,
-      LinearMap.rTensor_def, LinearMap.add_comp]
+  have hΔδ := hδ.deconcatenation_comp_eq
   have hΔδh : deconcatenation R M ∘ₗ δ ∘ₗ h =
       ((TensorProduct.map δ LinearMap.id + TensorProduct.map τ δ) ∘ₗ
         (TensorProduct.map h π + TensorProduct.map τ h)) ∘ₗ deconcatenation R M := by
@@ -145,8 +142,8 @@ theorem isGradedCoderivationAlong_reducedTensorWords_perturb_homotopy
     have e1 := LinearMap.congr_fun h1 w
     have e2 := LinearMap.congr_fun h2 w
     simp only [LinearMap.add_apply, LinearMap.comp_apply] at e1 e2
-    simp only [LinearMap.comp_apply, LinearMap.add_apply, Module.End.one_apply,
-      Module.End.mul_apply, map_add, e1, e2]
+    simp only [LinearMap.comp_apply, LinearMap.add_apply, one_apply_eq_self,
+      mul_apply_eq_comp, map_add, e1, e2]
   rw [isGradedCoderivationAlong_iff, LinearMap.rTensor_def]
   simpa only [C, ← LinearMap.comp_assoc, ← TensorProduct.map_comp,
     LinearMap.id_comp, LinearMap.comp_id, LinearMap.add_comp] using heq

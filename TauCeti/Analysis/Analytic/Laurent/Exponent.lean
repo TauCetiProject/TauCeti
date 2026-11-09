@@ -59,7 +59,7 @@ theorem laurentExponent_eq {r u v : E × 𝕜 → 𝕜} {x : E} {m n : ℤ}
     hu.comp_of_eq (analyticAt_const.prod analyticAt_id) (by simp)
   have hv' : AnalyticAt 𝕜 (fun z ↦ v (x, z)) 0 :=
     hv.comp_of_eq (analyticAt_const.prod analyticAt_id) (by simp)
-  apply AnalyticAt.unique_eventuallyEq_zpow_smul_nonzero
+  apply AnalyticAt.unique_eventuallyEq_zpow_smul_ne_zero
     (f := f) (z₀ := (0 : 𝕜))
   · refine ⟨_, hu', by simpa using hu0, ?_⟩
     rw [eventually_nhdsWithin_iff]

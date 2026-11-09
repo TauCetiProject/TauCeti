@@ -86,7 +86,8 @@ private theorem nonempty_algHom_of_isIdempotentElem [Algebra.FinitePresentation 
   have : K.Pure :=
     Module.Flat.of_linearEquiv (Ideal.quotientKerAlgEquivOfSurjective hsurj).toLinearEquiv
   have hK : K = ⊥ := by
-    refine Submodule.eq_bot_of_le_smul_of_le_jacobson_bot J K hKfg ?_ hJ
+    refine Submodule.eq_bot_of_le_smul_of_le_jacobson J K hKfg ?_
+      (by simpa only [Ideal.jacobson_bot] using hJ)
     rw [Ideal.smul_eq_mul, mul_comm, ← Ideal.inf_eq_mul_of_pure, inf_eq_left.mpr hKJ]
   have hinj : Function.Injective (Algebra.ofId S D) :=
     (RingHom.injective_iff_ker_eq_bot _).mpr hK
@@ -215,7 +216,8 @@ private theorem exists_isIdempotentElem_smul_eq_mul [HenselianRing S J]
   obtain ⟨e, he, heγ⟩ := HenselianRing.exists_isIdempotentElem_sub_mem_map J hγ
     fun x ↦ (hP x).imp fun _ h ↦ h.2
   refine ⟨e, he, heγ,
-    he.exists_smul_eq_mul_of_mul_sub_smul_mem (HenselianRing.jac (I := J)) fun x ↦ ?_⟩
+    he.exists_smul_eq_mul_of_mul_sub_smul_mem (show J ≤ Ideal.jacobson ⊥ by
+      simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (I := J))) fun x ↦ ?_⟩
   obtain ⟨σ, -, h2⟩ := hP x
   refine ⟨σ, ?_⟩
   convert sub_mem (add_mem (Ideal.mul_mem_right x _ heγ) h2)
@@ -268,7 +270,8 @@ is an `S`-algebra map `C → S`. -/
 theorem nonempty_algHom_of_bijective_reducedMap [HenselianRing S J]
     [Algebra.FinitePresentation S C] [Module.Flat S C] [Algebra.QuasiFinite S C]
     (hC : Function.Bijective (reducedMap J C)) : Nonempty (C →ₐ[S] S) := by
-  have hJ : J ≤ Ideal.jacobson ⊥ := HenselianRing.jac
+  have hJ : J ≤ Ideal.jacobson ⊥ := by
+    simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (I := J))
   obtain ⟨C', s, hfg, hsC', hspan, hZ⟩ :=
     Algebra.QuasiFinite.exists_fg_subalgebra_and_span_eq_top (R := S) (A := C)
   have : Module.Finite S C' := ⟨(Submodule.fg_top _).mpr hfg⟩
@@ -294,7 +297,7 @@ theorem nonempty_unique_algHom_of_isNeighbourhood [HenselianRing S J] {C : CommA
   obtain ⟨σ⟩ := nonempty_algHom_of_bijective_reducedMap J hbij
   have hJ : J.map (algebraMap S S) ≤ Ideal.jacobson ⊥ := by
     rw [Algebra.algebraMap_self, Ideal.map_id]
-    exact HenselianRing.jac
+    simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (I := J))
   exact ⟨{ default := σ, uniq := fun _ ↦ hC.algHom_ext hJ }⟩
 
 end TauCeti.Henselization

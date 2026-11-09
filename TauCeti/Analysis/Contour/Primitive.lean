@@ -7,13 +7,13 @@ module
 
 public import Mathlib.Analysis.Complex.HasPrimitives
 public import Mathlib.Analysis.Calculus.LogDeriv
-public import TauCeti.Analysis.Contour.PiecewiseC1On
+public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import TauCeti.Topology.FilledHull
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.Calculus.MeanValue
-import TauCeti.Analysis.Contour.Curve.Approximation
+import TauCeti.Analysis.Calculus.ContDiff.Approximation
 import TauCeti.Analysis.Contour.Curve.Concat
 import TauCeti.Analysis.Contour.Curve.Integrability
 import TauCeti.Analysis.Contour.HomologyCauchy

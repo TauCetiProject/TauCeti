@@ -41,7 +41,7 @@ theorem locallyOfFiniteType_id (hX : isAdic X) : LocallyOfFiniteType (𝟙 X) :=
       (isLocallyAffinoid_iff_sSup_eq_top X).mp hX.isLocallyAffinoid
   intro U
   obtain ⟨A, _, _, _, _, _, _, _, S, P, hP, ⟨e⟩⟩ :=
-    (isAffinoid_iff_exists_complete _).mp U.2
+    (isAffinoid_iff_exists_complete _).mp ((mem_propOpens_iff _).mp U.2)
   have hs : isSheafy (presentationLimitPreAdicSpace P S.plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem hP) :=
     ObjectProperty.prop_of_iso isSheafy e (isSheafy_restrict U.1.isOpenEmbedding hX.isSheafy)

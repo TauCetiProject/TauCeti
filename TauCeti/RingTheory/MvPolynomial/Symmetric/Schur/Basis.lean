@@ -44,7 +44,7 @@ the coordinates of `s_μ` are the Kostka numbers `K_{μν}`
 (`TauCeti.msymmBasis_repr_schurPoly`), which vanish unless `μ` dominates `ν`
 (`TauCeti.kostkaNumber_eq_zero_of_not_dominates`) and equal `1` on the diagonal
 (`TauCeti.kostkaNumber_self`).  Since dominance refines the lexicographic linear order on
-partitions (`TauCeti.lex_le_of_dominates`), the Kostka matrix is triangular with `1`s on the
+partitions (`Nat.Partition.lex_le_of_dominates`), the Kostka matrix is triangular with `1`s on the
 diagonal for that linear order, so its determinant is `1` and it is a change of basis.  This is
 where the ring hypothesis enters: over `ℕ` the transition matrix is not invertible.
 
@@ -58,7 +58,7 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
 * `TauCeti.msymmBasis`: **the monomial basis**.
 * `TauCeti.schurPolyBasis`: **the Schur basis**.
 * `TauCeti.partitionEquivSchurIndex`: identifies partitions of `n` with the Schur basis index
-  when the alphabet is `Fin d` and `n ≤ d`.
+  when the alphabet has at least `n` letters.
 
 ## Main results
 
@@ -92,25 +92,21 @@ namespace TauCeti
 open Finset MvPolynomial
 
 /-- For an alphabet with at least `n` letters, every partition of `n` indexes a Schur basis
-vector. -/
-def partitionEquivSchurIndex (n d : ℕ) (h : n ≤ d) :
-    n.Partition ≃ {μ : n.Partition // μ.parts.card ≤ Fintype.card (Fin d)} where
-  toFun μ := ⟨μ, μ.card_parts_le.trans (by simpa using h)⟩
-  invFun μ := μ.1
-  left_inv _ := rfl
-  right_inv _ := Subtype.ext rfl
+vector: a partition of `n` has at most `n` parts, so the subtype condition always holds. -/
+def partitionEquivSchurIndex (σ : Type*) [Fintype σ] (n : ℕ) (h : n ≤ Fintype.card σ) :
+    n.Partition ≃ {μ : n.Partition // μ.parts.card ≤ Fintype.card σ} :=
+  (Equiv.subtypeUnivEquiv fun μ : n.Partition => μ.card_parts_le.trans h).symm
 
 /-- Reindexing a partition into the Schur basis retains the same underlying partition. -/
 @[simp]
-theorem partitionEquivSchurIndex_apply (n d : ℕ) (h : n ≤ d) (μ : n.Partition) :
-    (partitionEquivSchurIndex n d h μ).1 = μ := by
-  simp [partitionEquivSchurIndex]
+theorem partitionEquivSchurIndex_apply (σ : Type*) [Fintype σ] (n : ℕ) (h : n ≤ Fintype.card σ)
+    (μ : n.Partition) : (partitionEquivSchurIndex σ n h μ).1 = μ := (rfl)
 
 /-- The inverse reindexing from the Schur basis returns the underlying partition. -/
 @[simp]
-theorem partitionEquivSchurIndex_symm_apply (n d : ℕ) (h : n ≤ d)
-    (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card (Fin d)}) :
-    (partitionEquivSchurIndex n d h).symm μ = μ.1 := (rfl)
+theorem partitionEquivSchurIndex_symm_apply (σ : Type*) [Fintype σ] (n : ℕ)
+    (h : n ≤ Fintype.card σ) (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
+    (partitionEquivSchurIndex σ n h).symm μ = μ.1 := (rfl)
 
 section CommSemiring
 
@@ -280,7 +276,7 @@ private theorem isUnit_det_schurPolyElem :
     intro ν μ hμν
     have hlt : (μ : n.Partition) < (ν : n.Partition) := Subtype.coe_lt_coe.mpr hμν
     rw [hentry ν μ, kostkaNumber_eq_zero_of_not_dominates fun hdom =>
-      absurd (lex_le_of_dominates hdom) (not_le.mpr hlt), Nat.cast_zero]
+      absurd (Nat.Partition.lex_le_of_dominates hdom) (not_le.mpr hlt), Nat.cast_zero]
   have hdiag : ∏ ν, (msymmBasis σ R n).toMatrix (schurPolyElem σ R n) ν ν = 1 :=
     Finset.prod_eq_one fun ν _ => by rw [hentry ν ν, kostkaNumber_self, Nat.cast_one]
   rw [Module.Basis.det_apply, Matrix.det_of_isUpperTriangular htri, hdiag]

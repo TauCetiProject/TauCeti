@@ -10,7 +10,7 @@ public import Mathlib.Topology.Category.TopCat.Monoidal
 public import Mathlib.Topology.Category.TopCat.Sphere
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Topology.Category.TopCat.Pullback
-public import TauCeti.Topology.Homotopy.Lifting
+public import TauCeti.Topology.Homotopy.Lifting.Basic
 
 /-!
 # Serre fibrations
@@ -26,10 +26,10 @@ theory of lifting properties apply: Serre fibrations contain the isomorphisms, a
 composition, retracts and products, and are stable under base change.
 
 The homotopy lifting property itself, `TauCeti.HasHomotopyLiftingProperty`, is in
-`TauCeti.Topology.Homotopy.Lifting`.  Since the closed unit ball of `ℝⁿ` is homeomorphic to the
-cube `Iⁿ`, a Serre fibration is equivalently a map with the homotopy lifting property with respect
-to every cube (`TauCeti.TopCat.mem_serreFibrations_iff_cube`); cubes are the convenient test spaces
-for subdivision arguments.
+`TauCeti.Topology.Homotopy.Lifting.Basic`.  Since the closed unit ball of `ℝⁿ` is homeomorphic to
+the cube `Iⁿ`, a Serre fibration is equivalently a map with the homotopy lifting property
+with respect to every cube (`TauCeti.TopCat.mem_serreFibrations_iff_cube`); cubes are the
+convenient test spaces for subdivision arguments.
 
 A map of fibrations is a commutative square, and it induces maps between the fibres
 (`CategoryTheory.CommSq.fiberMap`, in `TauCeti.Topology.Category.TopCat.Fiber`).  The base change
@@ -48,6 +48,8 @@ of a fibration along a map `g : B' ⟶ B` is again a fibration
   maps and product projections are Serre fibrations.
 * `TauCeti.TopCat.mem_serreFibrations_pullbackFst`: the base change of a Serre fibration is a
   Serre fibration.
+* `TauCeti.TopCat.mem_serreFibrations_restrictPreimage`: the restriction of a Serre fibration over
+  a subset of the base is a Serre fibration.
 
 ## References
 
@@ -160,6 +162,13 @@ at `e`. -/
 theorem exists_path_lift_of_mem_serreFibrations {p : E ⟶ B} (hp : serreFibrations p) {e : E}
     {b : B} (γ : Path (p e) b) : ∃ Γ : C(I, E), Γ 0 = e ∧ p ∘ Γ = γ :=
   (mem_serreFibrations_iff_cube.1 hp 0).exists_path_lift γ
+
+/-- The restriction `p⁻¹(t) → t` of a Serre fibration `p` over any subset `t` of the base is a
+Serre fibration. -/
+theorem mem_serreFibrations_restrictPreimage {p : E ⟶ B} (hp : serreFibrations p) (t : Set B) :
+    serreFibrations (TopCat.ofHom (p.hom.restrictPreimage t) :
+      TopCat.of (p ⁻¹' t) ⟶ TopCat.of t) :=
+  mem_serreFibrations_iff.2 fun n ↦ (mem_serreFibrations_iff.1 hp n).restrictPreimage t
 
 /-- The projection `B ⊗ F ⟶ B` is a Serre fibration. -/
 theorem mem_serreFibrations_fst {B F : TopCat.{u}} : serreFibrations (fst B F) :=

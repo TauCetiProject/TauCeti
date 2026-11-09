@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 -- Non-public: measurability of the sections `ν.map (Prod.mk a)` is used only inside a proof.
 import Mathlib.MeasureTheory.Measure.Prod
 
@@ -27,6 +28,9 @@ of measures.
 * `TauCeti.MeasureTheory.measurable_map_finiteMeasure_of_measurable_uncurry` — jointly varying a
   finite measure and the map that pushes it forward is measurable, with a probability-measure
   specialization.
+* `MeasureTheory.measurableSet_isLocallyFiniteMeasure` and
+  `MeasureTheory.measurableSet_isFiniteMeasureOnCompacts` — local finiteness is a measurable
+  condition on measures on a locally compact, sigma-compact Hausdorff space.
 -/
 
 public section
@@ -51,7 +55,7 @@ theorem measurable_sum_smul_dirac {β ι α : Type*} [MeasurableSpace β] [Measu
     (hf : ∀ i, Measurable fun b => f b i) :
     Measurable fun b => Measure.sum fun i => f b i • Measure.dirac (g i) := by
   refine Measure.measurable_measure.2 fun s hs => ?_
-  simp only [Measure.sum_apply _ hs, Measure.smul_apply, smul_eq_mul, Measure.dirac_apply' _ hs]
+  simp only [Measure.sum_apply _ hs, _root_.smul_apply, smul_eq_mul, Measure.dirac_apply' _ hs]
   exact Measurable.tsum fun i => (hf i).mul_const _
 
 /-- Pushing a probability measure forward along a fixed measurable map is measurable for the Giry
@@ -111,3 +115,36 @@ theorem measurable_probabilityMeasure_map_of_measurable_uncurry
 end MeasureTheory
 
 end TauCeti
+
+namespace MeasureTheory
+
+variable {X : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+  [T2Space X] [WeaklyLocallyCompactSpace X] [SigmaCompactSpace X]
+
+omit [T2Space X] in
+/-- Local finiteness is a measurable condition in the evaluation sigma-algebra on measures. -/
+theorem measurableSet_isLocallyFiniteMeasure :
+    MeasurableSet {μ : Measure X | IsLocallyFiniteMeasure μ} := by
+  let K := CompactExhaustion.choice X
+  -- The compact sets of an exhaustion need not be measurable, but their interiors are.
+  have h : {μ : Measure X | IsLocallyFiniteMeasure μ} = ⋂ n, {μ | μ (interior (K n)) < ∞} := by
+    ext μ
+    simp only [Set.mem_ofPred_eq, Set.mem_iInter]
+    refine ⟨fun _ n ↦ (measure_mono interior_subset).trans_lt (K.isCompact n).measure_lt_top,
+      fun h ↦ ⟨fun x ↦ ?_⟩⟩
+    obtain ⟨n, hn⟩ := K.exists_mem_nhds x
+    exact ⟨interior (K n), interior_mem_nhds.2 hn, h n⟩
+  rw [h]
+  exact MeasurableSet.iInter fun n ↦
+    measurableSet_lt (Measure.measurable_coe isOpen_interior.measurableSet) measurable_const
+
+/-- Finiteness on compact sets is measurable in the evaluation sigma-algebra on measures. -/
+theorem measurableSet_isFiniteMeasureOnCompacts :
+    MeasurableSet {μ : Measure X | IsFiniteMeasureOnCompacts μ} := by
+  let K := CompactExhaustion.choice X
+  simp_rw [K.isFiniteMeasureOnCompacts_iff]
+  simp only [Set.ofPred_forall]
+  exact MeasurableSet.iInter fun n =>
+    measurableSet_lt (Measure.measurable_coe (K.isCompact n).measurableSet) measurable_const
+
+end MeasureTheory

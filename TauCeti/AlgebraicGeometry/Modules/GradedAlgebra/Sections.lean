@@ -9,6 +9,7 @@ public import TauCeti.CategoryTheory.GradedObject.MonObj
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
 public import TauCeti.Algebra.Category.ModuleCat.Monoidal.GradedRing
 public import TauCeti.RingTheory.GradedAlgebra.DirectSum
+public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 public import Mathlib.RingTheory.GradedAlgebra.RingHom
 
 /-!
@@ -44,6 +45,8 @@ arguments here follow the proofs there.
   `sections_gMul_def`, `sections_gOne_def` and `gAlgebraSections_toFun`;
 * `CategoryTheory.CommMon.gradedSectionsGrading`: the grading of `⨁ n, Γ(Aₙ, U)` by its
   summands, as an internally graded algebra in the sense of `GradedAlgebra`;
+* `CategoryTheory.CommMon.map_gMul_sections`: restriction of sections preserves the homogeneous
+  multiplication;
 * `CategoryTheory.CommMon.restrictGradedSections`: restriction of
   sections along `V ≤ U`, a degree-preserving ring homomorphism, assembled into the presheaf of
   commutative rings `gradedSectionsPresheaf` under the structure presheaf of `X`
@@ -51,7 +54,10 @@ arguments here follow the proofs there.
   `CategoryTheory.CommMon.restrictGradedSectionsGradedHom`;
 * `CategoryTheory.CommMon.gradedSectionsMap`: the degree-preserving
   `Γ(X, U)`-algebra homomorphism induced by a morphism of graded algebras, natural in `U`
-  (`gradedSectionsPresheafMap`).
+  (`gradedSectionsPresheafMap`); its graded form is
+  `CategoryTheory.CommMon.gradedSectionsGradedHom`, which is surjective onto a homogeneous
+  component over an affine open when the morphism is an epimorphism of quasicoherent sheaves in
+  that degree (`grade_subset_range_gradedSectionsGradedHom_of_epi`).
 -/
 
 public section
@@ -67,7 +73,11 @@ universe u
 
 noncomputable section
 
-variable {X : Scheme.{u}} (A : CommMon (GradedObject ℕ X.Modules)) (U : X.Opens)
+variable {X : Scheme.{u}} (A : CommMon (GradedObject ℕ X.Modules))
+
+section Sections
+
+variable (U : X.Opens)
 
 /-- The unit of `A` on sections over `U`, as a morphism of `Γ(X, U)`-modules. -/
 private abbrev sectionsOne :
@@ -158,12 +168,15 @@ lemma _root_.CategoryTheory.CommMon.gAlgebraSections_toFun (r : Γ(X, U)) :
       A.toMon.one.app U (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) r) :=
   (rfl)
 
+end Sections
+
 section Restriction
 
-variable {U} {V : X.Opens} (f : V ⟶ U)
+variable {U V : X.Opens} (f : V ⟶ U)
 
 /-- Restriction of sections along `V ≤ U` preserves the homogeneous multiplication. -/
-private lemma map_gMul_sections {i j : ℕ} (x : Γ(A.X i, U)) (y : Γ(A.X j, U)) :
+lemma _root_.CategoryTheory.CommMon.map_gMul_sections {i j : ℕ} (x : Γ(A.X i, U))
+    (y : Γ(A.X j, U)) :
     (A.X (i + j)).presheaf.map f.op
         (GradedMonoid.GMul.mul (A := fun n ↦ Γ(A.X n, U)) x y) =
       GradedMonoid.GMul.mul (A := fun n ↦ Γ(A.X n, V))
@@ -210,7 +223,7 @@ def _root_.CategoryTheory.CommMon.restrictGradedSections :
   DirectSum.toSemiring
     (fun n ↦ (DirectSum.of (fun n ↦ Γ(A.X n, V)) n).comp ((A.X n).presheaf.map f.op).hom)
     ((congrArg _ (map_gOne_sections A f)).trans (DirectSum.of_zero_one _))
-    (fun x y ↦ (congrArg _ (map_gMul_sections A f x y)).trans (DirectSum.of_mul_of _ _).symm)
+    (fun x y ↦ (congrArg _ (A.map_gMul_sections f x y)).trans (DirectSum.of_mul_of _ _).symm)
 
 /-- Restriction of a homogeneous section is the restriction of the section, in the same
 degree. -/
@@ -220,10 +233,9 @@ lemma _root_.CategoryTheory.CommMon.restrictGradedSections_of (n : ℕ) (x : Γ(
       DirectSum.of _ n ((A.X n).presheaf.map f.op x) :=
   DirectSum.toSemiring_of _ _ _ _ _
 
-variable (U) in
 /-- Restriction of sections along the identity of an open is the identity. -/
 @[simp]
-lemma _root_.CategoryTheory.CommMon.restrictGradedSections_id :
+lemma _root_.CategoryTheory.CommMon.restrictGradedSections_id (U : X.Opens) :
     A.restrictGradedSections (𝟙 U) = RingHom.id _ :=
   DirectSum.ringHom_ext fun n x ↦ by simp
 
@@ -256,19 +268,18 @@ end Restriction
 
 /-- The grading of the ring `⨁ n, Γ(Aₙ, U)` of sections of a graded algebra by its summands
 `Γ(Aₙ, U)`. -/
-abbrev _root_.CategoryTheory.CommMon.gradedSectionsGrading :
+abbrev _root_.CategoryTheory.CommMon.gradedSectionsGrading (U : X.Opens) :
     ℕ → Submodule Γ(X, U) (⨁ n, Γ(A.X n, U)) :=
   DirectSum.summand Γ(X, U) fun n ↦ Γ(A.X n, U)
 
 section GradedRestriction
 
-variable {A U} in
+variable {U V : X.Opens}
+
 /-- A homogeneous section of degree `n` lies in the degree-`n` summand. -/
 theorem _root_.CategoryTheory.CommMon.of_mem_gradedSectionsGrading (n : ℕ) (x : Γ(A.X n, U)) :
     DirectSum.of _ n x ∈ A.gradedSectionsGrading U n :=
   DirectSum.of_mem_summand (R := Γ(X, U)) (M := fun n ↦ Γ(A.X n, U)) n x
-
-variable {U} {V : X.Opens}
 
 /-- Restriction of sections along an inclusion of opens `V ≤ U`, as a graded ring homomorphism
 between the graded rings of sections. Its underlying ring homomorphism is
@@ -279,7 +290,7 @@ def _root_.CategoryTheory.CommMon.restrictGradedSectionsGradedHom (i : V ⟶ U) 
   __ := A.restrictGradedSections i
   map_mem {n x} hx := by
     obtain ⟨x, rfl⟩ := DirectSum.mem_summand.mp hx
-    simpa using of_mem_gradedSectionsGrading n _
+    simpa using A.of_mem_gradedSectionsGrading n _
 
 /-- The underlying ring homomorphism of the graded restriction of sections is the restriction of
 sections. -/
@@ -295,10 +306,9 @@ theorem _root_.CategoryTheory.CommMon.restrictGradedSectionsGradedHom_apply (i :
     A.restrictGradedSectionsGradedHom i x = A.restrictGradedSections i x :=
   (rfl)
 
-variable (U) in
 /-- Graded restriction of sections along the identity is the identity. -/
 @[simp]
-theorem _root_.CategoryTheory.CommMon.restrictGradedSectionsGradedHom_id :
+theorem _root_.CategoryTheory.CommMon.restrictGradedSectionsGradedHom_id (U : X.Opens) :
     A.restrictGradedSectionsGradedHom (𝟙 U) = GradedRingHom.id _ :=
   GradedRingHom.ext fun x ↦ by simp
 
@@ -358,7 +368,6 @@ section Map
 
 variable {A} {B C : CommMon (GradedObject ℕ X.Modules)}
 
-omit U in
 /-- A morphism of graded algebras is multiplicative on sections. -/
 private lemma app_gMul_sections (φ : A ⟶ B) (U : X.Opens) {i j : ℕ} (x : Γ(A.X i, U))
     (y : Γ(A.X j, U)) :
@@ -370,7 +379,6 @@ private lemma app_gMul_sections (φ : A ⟶ B) (U : X.Opens) {i j : ℕ} (x : Γ
       (φ.hom.hom n)) (fun n ↦ by rw [Iso.refl_hom, Iso.refl_inv, Category.id_comp,
         Category.comp_id]) (Mon.map_mul φ.hom) i j)) (x ⊗ₜ y)).symm
 
-omit U in
 /-- A morphism of graded algebras preserves the unit on sections. -/
 private lemma app_gOne_sections (φ : A ⟶ B) (U : X.Opens) :
     (φ.hom.hom 0).app U (GradedMonoid.GOne.one (A := fun n ↦ Γ(A.X n, U))) =
@@ -379,7 +387,6 @@ private lemma app_gOne_sections (φ : A ⟶ B) (U : X.Opens) :
     ((Scheme.Modules.sectionsFunctor U).congr_map (Mon.one_map φ.hom)))
     (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) 1))
 
-omit U in
 /-- The `Γ(X, U)`-algebra homomorphism between graded rings of sections induced by a morphism of
 graded algebras. It applies the morphism degree by degree
 (`gradedSectionsMap_of`). -/
@@ -391,7 +398,6 @@ def _root_.CategoryTheory.CommMon.gradedSectionsMap (φ : A ⟶ B) (U : X.Opens)
     ((congrArg _ (app_gOne_sections φ U)).trans (DirectSum.of_zero_one _))
     (fun x y ↦ (congrArg _ (app_gMul_sections φ U x y)).trans (DirectSum.of_mul_of _ _).symm)
 
-omit U in
 /-- The map induced on graded rings of sections applies the morphism to each homogeneous
 section. -/
 @[simp]
@@ -401,14 +407,24 @@ lemma _root_.CategoryTheory.CommMon.gradedSectionsMap_of
       DirectSum.of _ n ((φ.hom.hom n).app U x) :=
   (DirectSum.toAlgebra_apply _ _ _ _ _ _).trans (DirectSum.toSemiring_of _ _ _ _ _)
 
-omit U in
+/-- The map induced on graded rings of sections applies the morphism to each homogeneous
+component. -/
+@[simp]
+lemma _root_.CategoryTheory.CommMon.gradedSectionsMap_apply (φ : A ⟶ B) (U : X.Opens)
+    (x : ⨁ n, Γ(A.X n, U)) (i : ℕ) :
+    gradedSectionsMap φ U x i = (φ.hom.hom i).app U (x i) := by
+  have h : (gradedSectionsMap φ U).toAddMonoidHom =
+      DirectSum.map fun n ↦ ((φ.hom.hom n).app U).hom :=
+    DirectSum.addHom_ext fun n y ↦ (gradedSectionsMap_of φ U n y).trans
+      (DirectSum.map_of (fun n ↦ ((φ.hom.hom n).app U).hom) n y).symm
+  exact congrArg (· i) (DFunLike.congr_fun h x)
+
 /-- The identity morphism induces the identity on graded rings of sections. -/
 @[simp]
 lemma _root_.CategoryTheory.CommMon.gradedSectionsMap_id (U : X.Opens) :
     gradedSectionsMap (𝟙 A) U = AlgHom.id _ _ :=
   DirectSum.algHom_ext _ _ fun n x ↦ gradedSectionsMap_of (𝟙 A) U n x
 
-omit U in
 /-- The map induced on graded rings of sections by a composite is the composite of the induced
 maps. -/
 lemma _root_.CategoryTheory.CommMon.gradedSectionsMap_comp
@@ -418,7 +434,6 @@ lemma _root_.CategoryTheory.CommMon.gradedSectionsMap_comp
     ((congrArg (gradedSectionsMap ψ U) (gradedSectionsMap_of φ U n x)).trans
       (gradedSectionsMap_of ψ U n _)).symm
 
-omit U in
 /-- The maps induced on graded rings of sections commute with restriction. -/
 lemma _root_.CategoryTheory.CommMon.gradedSectionsMap_restrictGradedSections
     (φ : A ⟶ B) {U V : X.Opens} (f : V ⟶ U)
@@ -437,7 +452,71 @@ lemma _root_.CategoryTheory.CommMon.gradedSectionsMap_restrictGradedSections
         ((congrArg _ (gradedSectionsMap_of φ U n y)).trans
           (B.restrictGradedSections_of f n _)).symm
 
-omit U in
+/-- The graded ring homomorphism between graded rings of sections induced by a morphism of graded
+algebras. Its underlying ring homomorphism is `CategoryTheory.CommMon.gradedSectionsMap`
+(`CategoryTheory.CommMon.gradedSectionsGradedHom_toRingHom`). -/
+def _root_.CategoryTheory.CommMon.gradedSectionsGradedHom (φ : A ⟶ B) (U : X.Opens) :
+    A.gradedSectionsGrading U →+*ᵍ B.gradedSectionsGrading U where
+  __ := (gradedSectionsMap φ U).toRingHom
+  map_mem {n x} hx := by
+    obtain ⟨x, rfl⟩ := DirectSum.mem_summand.mp hx
+    simpa using B.of_mem_gradedSectionsGrading n _
+
+/-- The underlying ring homomorphism of the graded homomorphism of sections induced by `φ` is
+`CategoryTheory.CommMon.gradedSectionsMap`. -/
+@[simp]
+lemma _root_.CategoryTheory.CommMon.gradedSectionsGradedHom_toRingHom (φ : A ⟶ B)
+    (U : X.Opens) :
+    (gradedSectionsGradedHom φ U).toRingHom = (gradedSectionsMap φ U).toRingHom :=
+  (rfl)
+
+/-- The graded homomorphism of sections induced by `φ` applies
+`CategoryTheory.CommMon.gradedSectionsMap`. -/
+@[simp]
+lemma _root_.CategoryTheory.CommMon.gradedSectionsGradedHom_apply (φ : A ⟶ B) (U : X.Opens)
+    (x : ⨁ n, Γ(A.X n, U)) :
+    gradedSectionsGradedHom φ U x = gradedSectionsMap φ U x :=
+  (rfl)
+
+/-- The identity morphism induces the identity graded homomorphism of sections. -/
+@[simp]
+lemma _root_.CategoryTheory.CommMon.gradedSectionsGradedHom_id (U : X.Opens) :
+    gradedSectionsGradedHom (𝟙 A) U = GradedRingHom.id _ :=
+  GradedRingHom.ext fun x ↦ by simp
+
+/-- The graded homomorphism of sections induced by a composite is the composite of the induced
+graded homomorphisms. -/
+lemma _root_.CategoryTheory.CommMon.gradedSectionsGradedHom_comp
+    (φ : A ⟶ B) (ψ : B ⟶ C) (U : X.Opens) :
+    gradedSectionsGradedHom (φ ≫ ψ) U =
+      (gradedSectionsGradedHom ψ U).comp (gradedSectionsGradedHom φ U) :=
+  GradedRingHom.ext fun x ↦ by simp [gradedSectionsMap_comp]
+
+/-- The graded homomorphisms of sections induced by `φ` commute with restriction. -/
+lemma _root_.CategoryTheory.CommMon.gradedSectionsGradedHom_comp_restrictGradedSectionsGradedHom
+    (φ : A ⟶ B) {U V : X.Opens} (i : V ⟶ U) :
+    (gradedSectionsGradedHom φ V).comp (A.restrictGradedSectionsGradedHom i) =
+      (B.restrictGradedSectionsGradedHom i).comp (gradedSectionsGradedHom φ U) :=
+  GradedRingHom.ext fun x ↦ by
+    simpa using gradedSectionsMap_restrictGradedSections φ i x
+
+/-- Over an affine open, a morphism of graded algebras that is an epimorphism of quasicoherent
+module sheaves in degree `i` maps the graded ring of sections onto its homogeneous component of
+degree `i`. -/
+theorem _root_.CategoryTheory.CommMon.grade_subset_range_gradedSectionsGradedHom_of_epi
+    (φ : A ⟶ B) (U : X.Opens) (hU : IsAffineOpen U) (i : ℕ) [hφ : Epi (φ.hom.hom i)]
+    [hA : (A.X i).IsQuasicoherent] [hB : (B.X i).IsQuasicoherent] :
+    (B.gradedSectionsGrading U i : Set (⨁ n, Γ(B.X n, U))) ⊆
+      Set.range (gradedSectionsGradedHom φ U) := by
+  rintro _ hx
+  obtain ⟨x, rfl⟩ := DirectSum.mem_summand.mp hx
+  -- the instances are passed explicitly, since `A.X` and `A.toMon.X` are only unfolded to each
+  -- other by elaboration
+  obtain ⟨y, rfl⟩ := @Scheme.Modules.Hom.app_surjective_of_epi_of_isAffineOpen _ (A.X i) (B.X i)
+    (φ.hom.hom i) hφ hA hB U hU x
+  exact ⟨DirectSum.of _ i y, (gradedSectionsGradedHom_apply φ U _).trans
+    (gradedSectionsMap_of φ U i y)⟩
+
 /-- The morphism of presheaves of graded rings of sections induced by a morphism of graded
 algebras: on each open `U` it is `gradedSectionsMap`. -/
 def _root_.CategoryTheory.CommMon.gradedSectionsPresheafMap (φ : A ⟶ B) :
@@ -447,7 +526,6 @@ def _root_.CategoryTheory.CommMon.gradedSectionsPresheafMap (φ : A ⟶ B) :
     ext x
     exact gradedSectionsMap_restrictGradedSections φ f.unop x
 
-omit U in
 /-- The components of `gradedSectionsPresheafMap φ` are the maps `gradedSectionsMap φ`. -/
 @[simp]
 lemma _root_.CategoryTheory.CommMon.gradedSectionsPresheafMap_app
@@ -456,7 +534,6 @@ lemma _root_.CategoryTheory.CommMon.gradedSectionsPresheafMap_app
       CommRingCat.ofHom (gradedSectionsMap φ U.unop).toRingHom :=
   (rfl)
 
-omit U in
 /-- The identity morphism induces the identity of the presheaf of graded rings of sections. -/
 @[simp]
 lemma _root_.CategoryTheory.CommMon.gradedSectionsPresheafMap_id :
@@ -464,7 +541,6 @@ lemma _root_.CategoryTheory.CommMon.gradedSectionsPresheafMap_id :
   ext U x
   exact DFunLike.congr_fun (gradedSectionsMap_id U.unop) x
 
-omit U in
 /-- The morphism of presheaves induced by a composite is the composite of the induced
 morphisms. -/
 lemma _root_.CategoryTheory.CommMon.gradedSectionsPresheafMap_comp (φ : A ⟶ B) (ψ : B ⟶ C) :
@@ -473,7 +549,6 @@ lemma _root_.CategoryTheory.CommMon.gradedSectionsPresheafMap_comp (φ : A ⟶ B
   ext U x
   exact DFunLike.congr_fun (gradedSectionsMap_comp φ ψ U.unop) x
 
-omit U in
 /-- The morphism of presheaves induced by a morphism of graded algebras is
 compatible with the structure morphisms from the structure presheaf. -/
 @[reassoc (attr := simp)]

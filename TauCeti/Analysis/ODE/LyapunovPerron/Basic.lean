@@ -13,7 +13,6 @@ public import Mathlib.Topology.MetricSpace.Contracting
 -- Private: the exponential integrals, the splitting of exponentials, and the product rule are used
 -- only inside the proofs below.
 import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.ODE.ExistUnique
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.Normed.Operator.Exponential
 import TauCeti.Topology.ContinuousMap.Bounded.Normed
@@ -329,9 +328,6 @@ solve the forced linear equation `y' = A y + g`. -/
 theorem hasDerivAt_lyapunovPerronIntegral (hα : 0 < α) (hg : Continuous g)
     (hgM : ∀ s, ‖g s‖ ≤ M) (t : ℝ) :
     HasDerivAt (lyapunovPerronIntegral A P g) (A (lyapunovPerronIntegral A P g t) + g t) t := by
-  have hexp_apply (u s : ℝ) (v : X) :
-      exp (u • A) (exp (s • A) v) = exp ((u + s) • A) v := by
-    rw [TauCeti.exp_add_smul, comp_apply]
   -- After pulling `exp (u A)` out of both integrals, the integrands no longer depend on `u`.
   set hp : ℝ → X := fun s ↦ exp ((-s) • A) (P (g s)) with hp_def
   set hq : ℝ → X := fun s ↦ exp ((-s) • A) (g s - P (g s)) with hq_def
@@ -344,18 +340,18 @@ theorem hasDerivAt_lyapunovPerronIntegral (hα : 0 < α) (hg : Continuous g)
   have hq_int (u : ℝ) : IntegrableOn hq (Ioi u) := by
     refine ((exp ((-u) • A)).integrable_comp (integrableOn_lyapunovPerron_unstable hu hα u
       hg.continuousOn fun s _ ↦ hgM s)).congr (ae_of_all _ fun s ↦ ?_)
-    simp only [hq_def, hexp_apply]
+    simp only [hq_def, ← ContinuousLinearMap.exp_add_smul_apply]
     congr 3
     ring
   have hstable (u : ℝ) : (∫ s in (0 : ℝ)..u, exp ((u - s) • A) (P (g s))) =
       exp (u • A) (∫ s in (0 : ℝ)..u, hp s) := by
     rw [← (exp (u • A)).intervalIntegral_comp_comm (hp_cont.intervalIntegrable _ _)]
-    simp only [hp_def, hexp_apply, sub_eq_add_neg]
+    simp only [hp_def, ← ContinuousLinearMap.exp_add_smul_apply, sub_eq_add_neg]
   have hunstable (u : ℝ) : (∫ s in Ioi u, exp ((u - s) • A) (g s - P (g s))) =
       exp (u • A) ((∫ s in Ioi 0, hq s) - ∫ s in (0 : ℝ)..u, hq s) := by
     rw [← intervalIntegral.integral_Ioi_sub_Ioi' (hq_int 0) (hq_int u), sub_sub_cancel,
       ← (exp (u • A)).integral_comp_comm (hq_int u)]
-    simp only [hq_def, hexp_apply, sub_eq_add_neg]
+    simp only [hq_def, ← ContinuousLinearMap.exp_add_smul_apply, sub_eq_add_neg]
   have hfun : lyapunovPerronIntegral A P g = fun u ↦
       exp (u • A) (∫ s in (0 : ℝ)..u, hp s) -
         exp (u • A) ((∫ s in Ioi 0, hq s) - ∫ s in (0 : ℝ)..u, hq s) := by
@@ -369,11 +365,11 @@ theorem hasDerivAt_lyapunovPerronIntegral (hα : 0 < α) (hg : Continuous g)
     (intervalIntegral.integral_hasDerivAt_right (hq_cont.intervalIntegrable 0 t)
       (hq_cont.stronglyMeasurableAtFilter _ _) hq_cont.continuousAt))
   have hpt : exp (t • A) (hp t) = P (g t) := by
-    simp only [hp_def, hexp_apply, add_neg_cancel, zero_smul, exp_zero,
-      one_apply_eq_self]
+    simp only [hp_def, ← ContinuousLinearMap.exp_add_smul_apply, add_neg_cancel, zero_smul,
+      exp_zero, one_apply_eq_self]
   have hqt : exp (t • A) (hq t) = g t - P (g t) := by
-    simp only [hq_def, hexp_apply, add_neg_cancel, zero_smul, exp_zero,
-      one_apply_eq_self]
+    simp only [hq_def, ← ContinuousLinearMap.exp_add_smul_apply, add_neg_cancel, zero_smul,
+      exp_zero, one_apply_eq_self]
   rw [hfun]
   refine (hP.sub hQ).congr_deriv ?_
   simp only [Pi.sub_apply, mul_apply_eq_comp, zero_sub, map_neg, hpt, hqt, map_sub]
@@ -422,8 +418,8 @@ theorem eq_zero_of_norm_exp_smul_apply_le
       rw [← mul_apply_eq_comp P, ((hAP.symm.smul_right t).exp_right).eq, mul_apply_eq_comp,
         hv, map_zero]
     have hback : exp ((-t) • A) (exp (t • A) v - P (exp (t • A) v)) = v := by
-      rw [hPexp, sub_zero, ← comp_apply, ← TauCeti.exp_add_smul, neg_add_cancel, zero_smul,
-        exp_zero, one_apply_eq_self]
+      rw [hPexp, sub_zero, ← ContinuousLinearMap.exp_add_smul_apply, neg_add_cancel,
+        zero_smul, exp_zero, one_apply_eq_self]
     calc ‖v‖ = ‖exp ((-t) • A) (exp (t • A) v - P (exp (t • A) v))‖ := by rw [hback]
       _ ≤ K * Real.exp (α * -t) * ‖exp (t • A) v‖ := hu (-t) (neg_nonpos.2 ht) _
       _ ≤ K * Real.exp (α * -t) * C := by gcongr; exact hC t ht
@@ -682,16 +678,9 @@ theorem eqOn_lyapunovPerronSolution_of_isIntegralCurveOn (hP : IsIdempotentElem 
     simp only [z, g, hγ t ht, map_sub]
     abel
   -- By uniqueness for the linear equation, `z t = exp (t A) (z 0)`.
-  have hz_exp (t : ℝ) (ht : 0 ≤ t) : z t = exp (t • A) (z 0) := by
-    have hw_cont : Continuous w := continuous_iff_continuousAt.2 fun t ↦ (hw t).continuousAt
-    refine ODE_solution_unique_of_mem_Icc_right (v := fun _ x ↦ A x) (s := fun _ ↦ univ)
-      (K := ‖A‖₊) (fun _ _ ↦ A.lipschitzWith.lipschitzOnWith)
-      ((hy_cont.sub hw_cont.continuousOn).mono Icc_subset_Ici_self)
-      (fun t ht ↦ hz t ht.1) (fun _ _ ↦ mem_univ _)
-      (((differentiable_exp_smul_const ℝ A).continuous.clm_apply continuous_const).continuousOn)
-      (fun t _ ↦ ((hasDerivAt_exp_smul_const' A t).clm_apply
-        (hasDerivAt_const t (z 0))).hasDerivWithinAt.congr_deriv (by simp [mul_apply_eq_comp]))
-      (fun _ _ ↦ mem_univ _) (by simp [z]) ⟨ht, le_rfl⟩
+  have hz_exp (t : ℝ) (ht : 0 ≤ t) : z t = exp (t • A) (z 0) :=
+    eq_exp_smul_apply_of_hasDerivWithinAt
+      (hy_cont.sub (continuous_iff_continuousAt.2 fun t ↦ (hw t).continuousAt).continuousOn) hz ht
   -- `z 0` has vanishing `P`-component and a bounded forward orbit, so it is zero.
   have hz0 : z 0 = 0 := by
     refine eq_zero_of_norm_exp_smul_apply_le hu hα hAP ?_ (C := B + (K * ‖y 0‖ +

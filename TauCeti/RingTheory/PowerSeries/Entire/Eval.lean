@@ -79,13 +79,8 @@ variable {R A : Type*} [NormedRing R] [SeminormedRing A] [SMulZeroClass R A] [Is
 
 /-- For an entire series `f = ∑ aₙ Xⁿ`, the terms `aₙ • bⁿ` are absolutely summable. -/
 theorem IsEntire.summable_norm_smul_pow (hf : f.IsEntire) (b : A) :
-    Summable fun n ↦ ‖coeff n f • b ^ n‖ := by
-  -- `‖bⁿ‖ ≤ ‖b‖ⁿ` only holds for `n ≥ 1`, so the term of index `0` is set aside
-  rw [← summable_nat_add_iff 1]
-  refine ((summable_nat_add_iff 1).mpr (hf.summable_norm_coeff_mul_pow ‖b‖)).of_nonneg_of_le
-    (fun _ ↦ norm_nonneg _) fun n ↦ ?_
-  exact (norm_smul_le _ _).trans
-    (mul_le_mul_of_nonneg_left (norm_pow_le' b n.succ_pos) (norm_nonneg _))
+    Summable fun n ↦ ‖coeff n f • b ^ n‖ :=
+  summable_norm_smul_pow_of_summable_norm_mul_pow (hf.summable_norm_coeff_mul_pow ‖b‖)
 
 /-- For an entire series `f = ∑ aₙ Xⁿ`, the terms `aₙ • bⁿ` are summable in a complete
 seminormed ring with a bounded scalar action. -/
@@ -116,6 +111,13 @@ theorem IsEntire.hasSum_evalAt [CompleteSpace A] (hf : f.IsEntire) (b : A) :
   rw [evalAt_def]
   exact (hf.summable_smul_pow b).hasSum
 
+/-- The truncations of an entire series `f`, evaluated at any `b` in a complete seminormed algebra,
+converge to `f(b)`. -/
+theorem IsEntire.tendsto_aeval_trunc [CompleteSpace A] (hf : f.IsEntire) (b : A) :
+    Tendsto (fun n ↦ Polynomial.aeval b (trunc n f)) atTop (𝓝 (f.evalAt b)) := by
+  simpa [Polynomial.aeval_def, eval₂_trunc_eq_sum_range, Algebra.smul_def] using
+    (hf.hasSum_evalAt b).tendsto_sum_nat
+
 /-- Evaluation of entire series commutes with continuous algebra homomorphisms:
 `ψ (f(b)) = f(ψ b)`. -/
 theorem IsEntire.map_evalAt [CompleteSpace A] {B F : Type*} [Semiring B] [Algebra R B]
@@ -133,9 +135,8 @@ variable {R A : Type*} [NormedCommRing R] [NormedRing A] [Algebra R A] [IsBounde
 
 /-- Evaluation is additive on entire series. -/
 theorem IsEntire.evalAt_add (hf : f.IsEntire) (hg : g.IsEntire) (b : A) :
-    (f + g).evalAt b = f.evalAt b + g.evalAt b := by
-  rw [evalAt_def]
-  exact HasSum.tsum_eq (by simpa [add_smul] using (hf.hasSum_evalAt b).add (hg.hasSum_evalAt b))
+    (f + g).evalAt b = f.evalAt b + g.evalAt b :=
+  evalAt_add_of_summable_norm (hf.summable_norm_smul_pow b) (hg.summable_norm_smul_pow b)
 
 /-- Evaluation commutes with subtraction of entire series. -/
 theorem IsEntire.evalAt_sub (hf : f.IsEntire) (hg : g.IsEntire) (b : A) :
@@ -151,26 +152,14 @@ theorem IsEntire.evalAt_smul (hf : f.IsEntire) (a : R) (b : A) :
 /-- Evaluation commutes with finite sums of entire series. -/
 theorem IsEntire.evalAt_sum {ι : Type*} (s : Finset ι) {f : ι → R⟦X⟧}
     (hf : ∀ i ∈ s, (f i).IsEntire) (b : A) :
-    (∑ i ∈ s, f i).evalAt b = ∑ i ∈ s, (f i).evalAt b := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert i s hi ih =>
-    rw [Finset.sum_insert hi, Finset.sum_insert hi,
-      (hf i (by simp)).evalAt_add (IsEntire.sum fun j hj ↦ hf j (by simp [hj])),
-      ih fun j hj ↦ hf j (by simp [hj])]
+    (∑ i ∈ s, f i).evalAt b = ∑ i ∈ s, (f i).evalAt b :=
+  evalAt_sum_of_summable_norm s fun i hi ↦ (hf i hi).summable_norm_smul_pow b
 
 /-- Evaluation is multiplicative on entire series: this is the Cauchy product formula for the
 absolutely convergent series `∑ aₙ • bⁿ` and `∑ cₙ • bⁿ`. -/
 theorem IsEntire.evalAt_mul (hf : f.IsEntire) (hg : g.IsEntire) (b : A) :
-    (f * g).evalAt b = f.evalAt b * g.evalAt b := by
-  rw [evalAt_def, evalAt_def, evalAt_def,
-    tsum_mul_tsum_eq_tsum_sum_antidiagonal_of_summable_norm (hf.summable_norm_smul_pow b)
-      (hg.summable_norm_smul_pow b)]
-  refine tsum_congr fun n ↦ ?_
-  rw [coeff_mul, Finset.sum_smul]
-  refine Finset.sum_congr rfl fun p hp ↦ ?_
-  rw [← Finset.mem_antidiagonal.mp hp, pow_add, smul_mul_smul_comm]
+    (f * g).evalAt b = f.evalAt b * g.evalAt b :=
+  evalAt_mul_of_summable_norm (hf.summable_norm_smul_pow b) (hg.summable_norm_smul_pow b)
 
 variable (R) in
 /-- **Evaluation of entire series at `b`** as a ring homomorphism from the subring of entire

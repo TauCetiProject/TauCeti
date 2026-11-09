@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Killing
-public import TauCeti.Algebra.Lie.InvariantForm
+public import TauCeti.Algebra.Lie.InvariantForm.Pi
+public import TauCeti.Algebra.Lie.Killing.Perfect
 
 /-!
 # Invariant bilinear forms on a simple Lie algebra are multiples of the Killing form
@@ -31,6 +32,8 @@ algebra over an algebraically closed field of characteristic zero.
 * `TauCeti.LieAlgebra.invariantForms_eq_span_killingForm` and
   `TauCeti.LieAlgebra.finrank_invariantForms_eq_one`: the invariant symmetric forms on `L` are the
   line spanned by the Killing form.
+* `TauCeti.LieAlgebra.finrank_invariantForms_pi_eq_card`: a finite product of such Lie algebras
+  has one independent invariant symmetric form per factor.
 
 ## References
 
@@ -84,5 +87,21 @@ theorem finrank_invariantForms_eq_one : finrank K (invariantForms K L L) = 1 := 
   rw [invariantForms_eq_span_killingForm K L]
   exact finrank_span_singleton (V := LinearMap.BilinForm K L)
     (IsKilling.killingForm_nondegenerate K L).ne_zero
+
+section Pi
+
+variable {ι : Type*} [Fintype ι] (𝔤 : ι → Type*)
+  [∀ i, LieRing (𝔤 i)] [∀ i, LieAlgebra K (𝔤 i)] [∀ i, FiniteDimensional K (𝔤 i)]
+  [∀ i, _root_.LieModule.IsIrreducible K (𝔤 i) (𝔤 i)] [∀ i, IsKilling K (𝔤 i)]
+
+/-- A finite product of simple Killing Lie algebras has one independent invariant symmetric
+form per factor, over an algebraically closed field. -/
+theorem finrank_invariantForms_pi_eq_card :
+    finrank K (invariantForms K (∀ i, 𝔤 i) (∀ i, 𝔤 i)) = Fintype.card ι := by
+  classical
+  rw [finrank_invariantForms_pi (fun i ↦ derivedSeries_one_eq_top_of_isKilling K (𝔤 i))]
+  simp [finrank_invariantForms_eq_one]
+
+end Pi
 
 end TauCeti.LieAlgebra

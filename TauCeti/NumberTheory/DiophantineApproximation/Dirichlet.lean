@@ -74,7 +74,7 @@ theorem exists_int_abs_sum_mul_sub_le [Nonempty κ] (A : Matrix ι κ ℝ) {P δ
   set T := toLin' M
   have hT : ∀ v, T v = Sum.elim (fun j ↦ v (.inl j))
       (fun i ↦ ∑ j, A i j * v (.inl j) - v (.inr i)) := fun v ↦ by
-    ext (j | i) <;> simp [T, M, mulVec, dotProduct, one_apply, sub_eq_add_neg]
+    ext (j | i) <;> simp [T, M, mulVec, dotProduct, Matrix.one_apply, sub_eq_add_neg]
   have hTT : Function.Involutive T := fun v ↦ by
     ext (j | i) <;> simp [hT]
   have hdet : |LinearMap.det T| = 1 := by

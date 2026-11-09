@@ -168,7 +168,7 @@ private theorem ord_adicOfIrreducible_X_pow_sub_algebraMap :
 /-- **The completion of `k(x)` at the place of an irreducible `X ^ p - a` is not `F_P[[T]]` over
 `k`**: the residue field `k[X] / (X ^ p - a)` has no copy over `k` in the completed valuation
 ring. For `p` prime, `X ^ p - a` is irreducible as soon as `a` is not a `p`-th power
-(`X_pow_sub_C_irreducible_of_prime`), so this happens over every imperfect field, for example
+(`irreducible_X_pow_sub_C_of_prime`), so this happens over every imperfect field, for example
 over `𝔽_p(a)` (`TauCeti.ratFunc_pow_ne_X`). The hypothesis `p ≠ 1` excludes characteristic
 zero, where the place of `X - a` is rational. -/
 theorem isEmpty_completionIntegers_algEquiv_powerSeries_adicOfIrreducible_X_pow_sub_C

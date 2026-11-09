@@ -1,0 +1,246 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.RingTheory.FormalGroup.Height.Basic
+import TauCeti.RingTheory.FormalGroup.AddInv
+import TauCeti.RingTheory.FormalGroup.Hom.Defect
+import TauCeti.RingTheory.FormalGroup.Obstruction
+import TauCeti.RingTheory.MvPowerSeries.Order
+import TauCeti.RingTheory.MvPowerSeries.Substitution
+import TauCeti.RingTheory.PowerSeries.Order
+
+/-!
+# Formal group laws of infinite height are additive
+
+Let `p` be a prime and let `F` be a commutative formal group law over a commutative ring `R` with
+`[p]_F = 0`. Then `p = 0` in `R`, since `p` is the linear coefficient of `[p]_F`, so no logarithm in
+the sense of `FormalGroup.log` is available. Nevertheless `F` is strictly isomorphic to the
+additive formal group law, along a coordinate that is unique once normalised: there is a unique
+power series
+
+  `g(X) = X + ∑_{i ≥ 2} aᵢ Xⁱ` with `a_{pᵏ} = 0` for every `k ≥ 1`
+
+such that `g(F(X, Y)) = g(X) + g(Y)`. Over a field of characteristic `p`, the condition
+`[p]_F = 0` says that `F` has height `⊤`, so the formal group laws of infinite height are exactly
+those isomorphic to the additive one. For `p = 2` this is Quillen's normalised logarithm of a
+formal group law of exponent two, `FormalGroup.exponentTwoLog`. No coefficient field and no further
+hypothesis on `R` is used: it may have nilpotents or be the zero ring.
+
+The power series `g` is constructed degree by degree. If `g` is additive along `F` up to degree
+`n`, the error `Φ(X, Y) = g(F(X, Y)) - g(X) - g(Y)` is the homomorphism defect of `g` from `F` to
+the additive formal group law, so its degree-`n` part is `r C_n` for the Lazard cocycle
+`C_n = ((X + Y)ⁿ - Xⁿ - Yⁿ) / d_n`
+(`FormalGroup.exists_homogeneousComponent_homDefect_eq_smul_lazardCocycle`).
+
+* If `n` is not a power of `p`, then `d_n` is prime to `p`, hence a unit in `R`, and replacing `g`
+  by `g - r d_n⁻¹ Xⁿ` makes `g` additive up to degree `n + 1`.
+* If `n = pᵏ` with `k ≥ 1`, then `d_n = p` and `r = 0`, since `r` is the coefficient of `Xⁿ` in
+  `[p]_{𝔾ₐ}(g(X)) - g([p]_F(X)) = p g(X) - g(0) = 0`
+  (`FormalGroup.homogeneousComponent_homDefect_eq_smul_lazardCocycle`).
+
+Each step leaves the coefficients in lower degrees, and those in degrees `pᵏ`, unchanged, and `g`
+is the limit of these approximations. Uniqueness is the fact that a nonzero homomorphism to
+the additive formal group law has order a power of `p`
+(`FormalGroup.exists_order_eq_pow_of_natCast_eq_zero`).
+
+## Main results
+
+* `FormalGroup.existsUnique_logarithm_of_nsmulSeries_eq_zero`: for commutative `F` with
+  `[p]_F = 0`, there is a unique power series `g = X + ⋯` without terms of degree `pᵏ`, `k ≥ 1`,
+  such that `g(F(X, Y)) = g(X) + g(Y)`.
+* `FormalGroup.logarithm_unique_of_natCast_eq_zero`: if `p = 0` in `R`, two such power series
+  agree, for any formal group law `F`.
+* `FormalGroup.exists_isStrict_formalGroupIso_𝔾ₐ`: a commutative formal group law with
+  `[p]_F = 0` is strictly isomorphic to the additive formal group law.
+* `FormalGroup.height_eq_top_iff_nonempty_formalGroupIso_𝔾ₐ`: over a field of characteristic `p`,
+  a commutative formal group law has height `⊤` exactly when it is isomorphic to the additive one.
+
+## References
+
+* M. Lazard, *Sur les groupes de Lie formels à un paramètre*, Bull. Soc. Math. France 83 (1955).
+* D. Quillen, *On the formal group laws of unoriented and complex cobordism theory*, Bull. Amer.
+  Math. Soc. 75 (1969).
+* D. C. Ravenel, *Complex Cobordism and Stable Homotopy Groups of Spheres*, Appendix A2.
+-/
+
+public section
+
+open MvPowerSeries
+
+namespace FormalGroup
+
+variable {R : Type*} [CommRing R] (F : FormalGroup R)
+
+section PSeries
+
+variable {F}
+
+/-- **The inductive step.** If `[p]_F = 0` and the additivity defect of `g` vanishes below degree
+`n ≥ 2`, subtracting a suitable multiple `c Xⁿ` makes it vanish below degree `n + 1`, and `c = 0`
+when `n` is a power of `p`. -/
+private theorem exists_le_order_homDefect_𝔾ₐ_sub_smul_X_pow [F.IsComm] {p : ℕ} (hp : p.Prime)
+    (hF : F.nsmulSeries p = 0) {n : ℕ} (hn₂ : 2 ≤ n) {g : PowerSeries R}
+    (hg : PowerSeries.constantCoeff g = 0) (hn : n ≤ (F.homDefect 𝔾ₐ g).order) :
+    ∃ c : R, ((n + 1 : ℕ) : ℕ∞) ≤ (F.homDefect 𝔾ₐ (g - c • PowerSeries.X ^ n)).order ∧
+      ∀ k, n = p ^ k → c = 0 := by
+  have hpR : (p : R) = 0 := F.natCast_eq_zero_of_nsmulSeries_eq_zero hF
+  by_cases hpow : ∃ k, n = p ^ k
+  · obtain ⟨k, rfl⟩ := hpow
+    have hk : k ≠ 0 := by
+      rintro rfl
+      simp at hn₂
+    -- the obstruction is the coefficient of `Xⁿ` in `[p]_{𝔾ₐ}(g(X)) - g([p]_F(X)) = 0`
+    have h0 := F.homogeneousComponent_homDefect_eq_smul_lazardCocycle hg hp hpR hk hn
+    have hp0 : (p : PowerSeries R) = 0 := by rw [← map_natCast PowerSeries.C, hpR, map_zero]
+    simp only [nsmulSeries_𝔾ₐ, hF, hp0, zero_mul, PowerSeries.subst_zero,
+      PowerSeries.subst_zero_of_constantCoeff_zero hg, sub_zero, map_zero, zero_smul,
+      MvPolynomial.coe_zero] at h0
+    refine ⟨0, ?_, fun _ _ ↦ rfl⟩
+    rw [zero_smul, sub_zero]
+    exact succ_le_order_of_homogeneousComponent_eq_zero hn h0
+  · -- `d_n` is prime to `p`, hence a unit in `R`
+    obtain ⟨c, hc⟩ := exists_succ_le_order_homDefect_sub_smul_X_pow (G := 𝔾ₐ) hn₂
+      (TauCeti.isUnit_lazardGcd hp hpR (by omega) hpow) hg hn
+    exact ⟨c, hc, fun k hk ↦ (hpow ⟨k, hk⟩).elim⟩
+
+end PSeries
+
+section Construction
+
+/-- The approximations to the logarithm: starting from `X`, step `n` subtracts the multiple
+`c (n + 2) g • X ^ (n + 2)` of the current approximation `g`. -/
+private noncomputable def approx (c : ℕ → PowerSeries R → R) : ℕ → PowerSeries R
+  | 0 => PowerSeries.X
+  | n + 1 => approx c n - c (n + 2) (approx c n) • PowerSeries.X ^ (n + 2)
+
+/-- **Existence of the normalised logarithm**, by passing to the limit of the approximations. -/
+private theorem exists_logarithm [F.IsComm] {p : ℕ} (hp : p.Prime) (hF : F.nsmulSeries p = 0) :
+    ∃ g : PowerSeries R, PowerSeries.constantCoeff g = 0 ∧ PowerSeries.coeff 1 g = 1 ∧
+      (∀ k, 0 < k → PowerSeries.coeff (p ^ k) g = 0) ∧ F.homDefect 𝔾ₐ g = 0 := by
+  choose! c hc using fun (n : ℕ) (g : PowerSeries R) (hn₂ : 2 ≤ n)
+    (hg : PowerSeries.constantCoeff g = 0) (hn : (n : ℕ∞) ≤ (F.homDefect 𝔾ₐ g).order) ↦
+    exists_le_order_homDefect_𝔾ₐ_sub_smul_X_pow hp hF hn₂ hg hn
+  -- `approx c n` is normalised and additive along `F` below degree `n + 2`
+  have key (n : ℕ) : PowerSeries.constantCoeff (approx c n) = 0 ∧
+      ((n + 2 : ℕ) : ℕ∞) ≤ (F.homDefect 𝔾ₐ (approx c n)).order ∧
+      ∀ k, 0 < k → PowerSeries.coeff (p ^ k) (approx c n) = 0 := by
+    induction n with
+    | zero =>
+      have hF' := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
+      refine ⟨PowerSeries.constantCoeff_X, ?_, fun k hk ↦ ?_⟩
+      · rw [approx, F.homDefect_𝔾ₐ PowerSeries.constantCoeff_X, PowerSeries.subst_X hF',
+          PowerSeries.subst_X (PowerSeries.HasSubst.X _),
+          PowerSeries.subst_X (PowerSeries.HasSubst.X _), sub_sub]
+        exact two_le_order_sub_X_add_X F.zero_constantCoeff F.lin_coeff_X F.lin_coeff_Y
+      · simp [approx, PowerSeries.coeff_X, hp.ne_one, hk.ne']
+    | succ n ih =>
+      obtain ⟨h₀, hord, hpow⟩ := ih
+      obtain ⟨hord', hc₀⟩ := hc (n + 2) (approx c n) (by omega) h₀ hord
+      refine ⟨by simp [approx, h₀], hord', fun k hk ↦ ?_⟩
+      rw [approx, map_sub, hpow k hk, PowerSeries.coeff_smul, PowerSeries.coeff_X_pow]
+      split_ifs with h
+      · simp [hc₀ k h.symm]
+      · simp
+  -- the limit of the approximations
+  obtain ⟨g, hlim⟩ := PowerSeries.exists_forall_le_order_sub (f := approx c) fun n ↦ by
+    rw [approx, sub_sub_cancel_left, PowerSeries.order_neg]
+    refine PowerSeries.nat_le_order _ _ fun i hi ↦ ?_
+    simp [PowerSeries.coeff_X_pow, show i ≠ n + 2 by omega]
+  have hcoeff {m n : ℕ} (hm : m < n) :
+      PowerSeries.coeff m g = PowerSeries.coeff m (approx c n) := by
+    rw [← sub_eq_zero, ← map_sub]
+    exact PowerSeries.coeff_of_lt_order m ((hlim n).trans_lt' (by exact_mod_cast hm))
+  have h₀ : PowerSeries.constantCoeff g = 0 := by
+    rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, hcoeff (n := 1) one_pos,
+      PowerSeries.coeff_zero_eq_constantCoeff_apply, (key 1).1]
+  refine ⟨g, h₀, ?_, fun k hk ↦ ?_, ?_⟩
+  · rw [hcoeff (n := 2) one_lt_two]
+    simp [approx]
+  · rw [hcoeff (Nat.lt_succ_self (p ^ k)), (key _).2.2 k hk]
+  · -- the additivity defect of the limit vanishes below every degree
+    refine order_eq_top_iff.mp (top_le_iff.mp (ENat.forall_natCast_le_iff_le.mp fun m _ ↦ ?_))
+    have hdiff := le_order_homDefect_𝔾ₐ F (by rw [map_sub, h₀, (key m).1, sub_zero]) (hlim m)
+    rw [homDefect_𝔾ₐ_sub F h₀ (key m).1] at hdiff
+    have h := le_order_add ((key m).2.1.trans' (by exact_mod_cast (by omega : m ≤ m + 2))) hdiff
+    rwa [add_sub_cancel] at h
+
+end Construction
+
+/-- **Uniqueness of the normalised logarithm** in characteristic `p`. Let `p` be a prime with
+`p = 0` in `R`, and let `F` be a formal group law over `R`, not necessarily commutative. Two power
+series `g, g' = X + ⋯` without terms of degree `pᵏ`, `k ≥ 1`, that are additive along `F` agree.
+
+Indeed `g - g'` is a homomorphism from `F` to the additive formal group law, and a nonzero such
+homomorphism has order a power of `p`. -/
+theorem logarithm_unique_of_natCast_eq_zero {p : ℕ} (hp : p.Prime) (hpR : (p : R) = 0)
+    {g g' : PowerSeries R} (h₀ : PowerSeries.constantCoeff g = 0) (h₁ : PowerSeries.coeff 1 g = 1)
+    (hpow : ∀ k, 0 < k → PowerSeries.coeff (p ^ k) g = 0)
+    (hg : PowerSeries.subst F.toPowerSeries g =
+      PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g)
+    (h₀' : PowerSeries.constantCoeff g' = 0) (h₁' : PowerSeries.coeff 1 g' = 1)
+    (hpow' : ∀ k, 0 < k → PowerSeries.coeff (p ^ k) g' = 0)
+    (hg' : PowerSeries.subst F.toPowerSeries g' =
+      PowerSeries.subst (X 0) g' + PowerSeries.subst (X 1) g') :
+    g = g' := by
+  by_contra hne
+  have hne' : g - g' ≠ 0 := sub_ne_zero.mpr hne
+  have hf₀ : PowerSeries.constantCoeff (g - g') = 0 := by rw [map_sub, h₀, h₀', sub_zero]
+  have hf := (TauCeti.FormalGroupHom.hom_additive_iff (F := F) hf₀).mpr <| by
+    rw [PowerSeries.subst_sub (PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff),
+      PowerSeries.subst_sub (PowerSeries.HasSubst.X _),
+      PowerSeries.subst_sub (PowerSeries.HasSubst.X _), hg, hg']
+    ring
+  obtain ⟨h, hh⟩ := F.exists_order_eq_pow_of_natCast_eq_zero 𝔾ₐ hp hpR hf₀ hf hne'
+  have hc := PowerSeries.coeff_order hne'
+  rw [hh, ENat.toNat_natCast, map_sub] at hc
+  rcases Nat.eq_zero_or_pos h with rfl | hh₀
+  · rw [pow_zero, h₁, h₁', sub_self] at hc
+    exact hc rfl
+  · rw [hpow h hh₀, hpow' h hh₀, sub_self] at hc
+    exact hc rfl
+
+/-- **The normalised logarithm of a formal group law of infinite height.** Let `p` be a prime and
+let `F` be a commutative formal group law over a commutative ring `R` with `[p]_F = 0`. There is a
+unique power series `g(X) = X + ∑_{i ≥ 2} aᵢ Xⁱ` with `a_{pᵏ} = 0` for every `k ≥ 1` such that
+`g(F(X, Y)) = g(X) + g(Y)`. -/
+theorem existsUnique_logarithm_of_nsmulSeries_eq_zero [F.IsComm] {p : ℕ} (hp : p.Prime)
+    (hF : F.nsmulSeries p = 0) :
+    ∃! g : PowerSeries R, PowerSeries.constantCoeff g = 0 ∧ PowerSeries.coeff 1 g = 1 ∧
+      (∀ k, 0 < k → PowerSeries.coeff (p ^ k) g = 0) ∧
+      PowerSeries.subst F.toPowerSeries g =
+        PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g := by
+  obtain ⟨g, h₀, h₁, hpow, hg⟩ := F.exists_logarithm hp hF
+  rw [F.homDefect_𝔾ₐ h₀, sub_sub, sub_eq_zero] at hg
+  refine ⟨g, ⟨h₀, h₁, hpow, hg⟩, fun g' ⟨h₀', h₁', hpow', hg'⟩ ↦ ?_⟩
+  exact F.logarithm_unique_of_natCast_eq_zero hp (F.natCast_eq_zero_of_nsmulSeries_eq_zero hF)
+    h₀' h₁' hpow' hg' h₀ h₁ hpow hg
+
+/-- **A formal group law of infinite height is additive.** If `p` is a prime and `F` is a
+commutative formal group law with `[p]_F = 0`, then `F` is strictly isomorphic to the additive
+formal group law. -/
+theorem exists_isStrict_formalGroupIso_𝔾ₐ [F.IsComm] {p : ℕ} (hp : p.Prime)
+    (hF : F.nsmulSeries p = 0) : ∃ f : TauCeti.FormalGroupIso F 𝔾ₐ, f.IsStrict := by
+  obtain ⟨g, ⟨h₀, h₁, -, hg⟩, -⟩ := F.existsUnique_logarithm_of_nsmulSeries_eq_zero hp hF
+  -- `g` is a strict coordinate transporting `F` to the additive formal group law
+  let φ : TauCeti.FormalCoordinate R := ⟨g, h₀, h₁ ▸ isUnit_one⟩
+  let f : TauCeti.FormalGroupHom F 𝔾ₐ :=
+    ⟨g, h₀, (TauCeti.FormalGroupHom.hom_additive_iff h₀).mpr hg⟩
+  rw [← f.smul_eq (φ := φ) rfl]
+  exact ⟨smulIso φ F, (isStrict_smulIso_iff φ F).mpr
+    (Units.ext (by rw [TauCeti.FormalCoordinate.val_linearCoeff]; exact h₁))⟩
+
+/-- **Formal group laws of infinite height are the additive ones.** Over a field `K` of
+characteristic `p`, a commutative formal group law has height `⊤` exactly when it is isomorphic
+to the additive formal group law. -/
+theorem height_eq_top_iff_nonempty_formalGroupIso_𝔾ₐ {K : Type*} [Field K] {p : ℕ}
+    [hp : Fact p.Prime] [CharP K p] (F : FormalGroup K) [F.IsComm] :
+    F.height p = ⊤ ↔ Nonempty (TauCeti.FormalGroupIso F 𝔾ₐ) := by
+  refine ⟨fun h ↦ ?_, fun ⟨f⟩ ↦ (f.height_eq p).trans height_𝔾ₐ⟩
+  obtain ⟨f, -⟩ := F.exists_isStrict_formalGroupIso_𝔾ₐ hp.out (F.height_eq_top_iff.mp h)
+  exact ⟨f⟩
+
+end FormalGroup

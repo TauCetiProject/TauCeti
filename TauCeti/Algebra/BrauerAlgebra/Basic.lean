@@ -39,7 +39,7 @@ The symmetric group sits inside: a permutation diagram closes no loop against an
 stacking permutation diagrams multiplies the permutations (`TauCeti.composeDiagram_permToBrauer`),
 so `σ ↦ permToBrauer σ` extends to an injective algebra map from the group algebra of `Sₖ`
 (`TauCeti.BrauerAlgebra.ofPerm`). The cap-cup generators satisfy Brauer's relations
-`e * e = δ • e` and `s * e = e = e * s`.
+`e * e = δ • e`, `s * e = e = e * s` and `σ e_{a,b} σ⁻¹ = e_{σ a, σ b}`.
 
 ## Main definitions
 
@@ -53,7 +53,8 @@ so `σ ↦ permToBrauer σ` extends to an injective algebra map from the group a
 
 ## Main results
 
-* `TauCeti.BrauerAlgebra.of_mul_of`: **the loop rule**, the multiplication on the diagram basis.
+* `TauCeti.BrauerAlgebra.of_mul_of`: **the loop rule**, the multiplication on the diagram basis,
+  and `TauCeti.BrauerAlgebra.of_mul_of_of_middleLoopCount_eq_zero`: a loop-free stack is a product.
 * `TauCeti.BrauerAlgebra.one_def`: the unit is the identity diagram.
 * `TauCeti.BrauerAlgebra.finrank_eq_doubleFactorial`: the Brauer algebra has rank `(2 * k - 1)‼`.
 * `TauCeti.BrauerAlgebra.algHom_ext`: an algebra map out of the Brauer algebra is determined by
@@ -63,6 +64,8 @@ so `σ ↦ permToBrauer σ` extends to an injective algebra map from the group a
   `TauCeti.BrauerAlgebra.of_permToBrauer_swap_mul_of_capCup` and
   `TauCeti.BrauerAlgebra.of_capCup_mul_of_permToBrauer_swap`: the relations `e * e = δ • e`,
   `s * e = e` and `e * s = e`.
+* `TauCeti.BrauerAlgebra.of_permToBrauer_mul_of_capCup_mul_of_permToBrauer_inv`: the relation
+  `σ e_{a,b} σ⁻¹ = e_{σ a, σ b}`.
 
 ## Implementation notes
 
@@ -291,6 +294,13 @@ theorem of_mul_of (D₁ D₂ : BrauerDiagram k) :
   ext : 1
   simp [coeff_mul, mulCoeff_single_single, Finsupp.smul_single]
 
+/-- **A loop-free stack is a product**: when stacking `D₁` above `D₂` closes up no loop, the product
+of the two diagrams is their composite, with no power of `δ`. -/
+theorem of_mul_of_of_middleLoopCount_eq_zero {D₁ D₂ : BrauerDiagram k}
+    (h : middleLoopCount D₁ D₂ = 0) :
+    (of D₁ * of D₂ : BrauerAlgebra R δ k) = of (composeDiagram D₁ D₂) := by
+  rw [of_mul_of, h, pow_zero, one_smul]
+
 /-- The unit of the Brauer algebra is the identity diagram. -/
 theorem one_def : (1 : BrauerAlgebra R δ k) = of (permToBrauer 1) := ext coeff_one
 
@@ -417,6 +427,16 @@ theorem of_capCup_mul_of_permToBrauer_swap (a b : Fin k) :
       of (capCup a b) := by
   rw [of_mul_of, composeDiagram_capCup_permToBrauer_swap, middleLoopCount_permToBrauer_right,
     pow_zero, one_smul]
+
+/-- **The mixed permutation/generator relation `σ e_{a,b} σ⁻¹ = e_{σ a, σ b}`**: conjugating a
+cap-cup diagram by a permutation diagram renames its pair. -/
+theorem of_permToBrauer_mul_of_capCup_mul_of_permToBrauer_inv (a b : Fin k)
+    (σ : Equiv.Perm (Fin k)) :
+    (of (permToBrauer σ) * of (capCup a b) * of (permToBrauer σ⁻¹) : BrauerAlgebra R δ k) =
+      of (capCup (σ a) (σ b)) := by
+  rw [mul_assoc, of_mul_of_of_middleLoopCount_eq_zero (middleLoopCount_permToBrauer_right _ _),
+    of_mul_of_of_middleLoopCount_eq_zero (middleLoopCount_permToBrauer_left _ _),
+    composeDiagram_permToBrauer_conj_capCup]
 
 end BrauerAlgebra
 

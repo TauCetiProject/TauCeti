@@ -57,8 +57,7 @@ follows from the inversion `Real.tanh_artanh` together with the addition formula
   its values at the two endpoints.
 * `Real.tanh_le_self` — the inverse form `tanh x ≤ x` of the lower bound, for `0 ≤ x`.
 
-The motivation is the conformal-mapping roadmap (`TauCetiRoadmap/ConformalMapping/README.md`),
-whose layer L2 asks for the hyperbolic (Poincaré) metric on the unit disc. Tau Ceti's
+The motivation is the hyperbolic (Poincaré) metric on the unit disc. Tau Ceti's
 `TauCeti.hyperbolicDist` is `Real.artanh` of the pseudo-hyperbolic expression, so the additive
 law below is what makes it satisfy the triangle inequality
 (`TauCeti.hyperbolicDist_triangle`, in `Conformal/Hyperbolic/Triangle.lean`) and what measures

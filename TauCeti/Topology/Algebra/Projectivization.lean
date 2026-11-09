@@ -6,7 +6,9 @@ Authors: Zayn Blore, The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.LocallyConvex.SeparatingDual
+public import Mathlib.Analysis.Normed.Module.Connected
 public import Mathlib.Analysis.RCLike.Lemmas
+public import Mathlib.Topology.Algebra.Projectivization
 public import TauCeti.LinearAlgebra.Projectivization.AffineChart
 public import TauCeti.LinearAlgebra.Projectivization.Basic
 public import TauCeti.Topology.Algebra.ConstMulAction
@@ -15,11 +17,12 @@ public import TauCeti.Topology.Algebra.ConstMulAction
 # The quotient topology on projective space
 
 `ℙ K V` is the quotient of the nonzero vectors `{v : V // v ≠ 0}` by the action of `Kˣ`.
-When `V` carries a topology we give `ℙ K V` the quotient topology, and we show that the
-quotient map `Projectivization.mk'` is an open quotient map as soon as scalar multiplication
-by units of `K` is continuous on `V`.
+When `V` carries a topology, Mathlib gives `ℙ K V` the quotient topology
+(`Projectivization.instTopologicalSpace`) and shows that the quotient map `Projectivization.mk'`
+is an open quotient map as soon as scalar multiplication by units of `K` is continuous on `V`
+(`Projectivization.isOpenQuotientMap_mk'`, in `Mathlib/Topology/Algebra/Projectivization`).
 
-We then prove the separation and compactness properties of this topology which make
+We prove the separation and compactness properties of this topology which make
 projective space a compact Hausdorff space, the ambient space of projective algebraic sets.
 Over a topological field `K` whose continuous linear forms on `V` separate points (for instance
 any normed space over `ℝ` or `ℂ`, by the Hahn–Banach theorem), two nonzero vectors span the same
@@ -27,7 +30,10 @@ line exactly when `f v * g w = f w * g v` for all continuous linear forms `f` an
 closed conditions, so the relation is closed and `ℙ K V` is Hausdorff. Over `ℝ` or `ℂ` every
 line meets the unit sphere, so for finite-dimensional `V` the projective space is a continuous
 image of a compact sphere and is compact. Second countability passes to `ℙ K V` along the open
-quotient map.
+quotient map. When `V` has real dimension greater than one, its nonzero vectors form a
+path-connected space, so `ℙ K V` is path-connected; over `ℝ` or `ℂ` the only other nonzero case is
+a real line, whose projectivization is a point. Hence `ℙ 𝕜 V` is path-connected, and in particular
+connected, for every nonzero normed space `V` over `ℝ` or `ℂ`.
 
 Finally, over a field with continuous multiplication and inversion, the standard affine charts
 `Projectivization.affineChart i` of `ℙ K (Fin (n + 1) → K)` are homeomorphisms from the open sets
@@ -36,15 +42,8 @@ of projective space.
 
 ## Main results
 
-* `Projectivization.instTopologicalSpace`: the quotient topology on `ℙ K V`.
-* `Projectivization.isQuotientMap_mk'`, `Projectivization.continuous_mk'`:
-  `mk' K : {v : V // v ≠ 0} → ℙ K V` is a quotient map, in particular continuous.
-* `Projectivization.isOpenQuotientMap_mk'`: `mk' K` is an open quotient map when `Kˣ` acts
-  continuously on `V`.
-* `Projectivization.continuous_iff`: a map out of `ℙ K V` is continuous iff its composite with
-  `mk' K` is.
-* `Projectivization.continuous_mk`, `Projectivization.continuous_map`: `Projectivization.mk`
-  and `Projectivization.map` are continuous.
+* `Projectivization.isOpen_linearProjectionDomain`: the points where a continuous linear map does
+  not vanish form an open set.
 * `Projectivization.mk'_eq_mk'_iff_forall_strongDual`: when continuous linear forms separate
   points, two nonzero vectors span the same line iff all the `2 × 2` minors
   `f v * g w - f w * g v` vanish.
@@ -53,14 +52,13 @@ of projective space.
 * `Projectivization.instCompactSpace`: `ℙ 𝕜 V` is compact for a finite-dimensional normed space
   `V` over `ℝ` or `ℂ`.
 * `Projectivization.instSecondCountableTopology`: `ℙ K V` is second countable when `V` is.
+* `Projectivization.pathConnectedSpace_of_one_lt_rank`: `ℙ K V` is path-connected when `V` has
+  real dimension greater than one, for any division ring `K`.
+* `Projectivization.instPathConnectedSpace`: `ℙ 𝕜 V` is path-connected for a nonzero normed space
+  `V` over `ℝ` or `ℂ`.
 * `Projectivization.isOpen_affineOpen`: the standard affine opens are open.
 * `Projectivization.affineOpenPartialHomeomorph`: the standard affine chart as an open partial
   homeomorphism from `U_i` onto `Fin n → K`.
-
-The topology and its quotient-map API (`instTopologicalSpace` through `isOpenQuotientMap_mk'`)
-follow Zayn Blore's Mathlib pull request
-[mathlib4#44117](https://github.com/leanprover-community/mathlib4/pull/44117), with the same names
-and statements.
 -/
 
 public section
@@ -76,54 +74,17 @@ variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
 
 variable [TopologicalSpace V]
 
-/-- The quotient topology on `ℙ K V`, coinduced by `Projectivization.mk'`. -/
-instance instTopologicalSpace : TopologicalSpace (ℙ K V) :=
-  inferInstanceAs (TopologicalSpace (Quotient (projectivizationSetoid K V)))
-
-/-- The map `mk' K` from nonzero vectors to `ℙ K V` is a quotient map. -/
-theorem isQuotientMap_mk' : IsQuotientMap (mk' K : {v : V // v ≠ 0} → ℙ K V) :=
-  isQuotientMap_quotient_mk'
-
-/-- The map `mk' K` from nonzero vectors to `ℙ K V` is continuous. -/
-@[fun_prop]
-theorem continuous_mk' : Continuous (mk' K : {v : V // v ≠ 0} → ℙ K V) :=
-  continuous_quotient_mk'
-
-variable {α : Type*} [TopologicalSpace α]
-
-/-- A map out of `ℙ K V` is continuous iff its composite with `mk' K` is continuous. -/
-theorem continuous_iff {f : ℙ K V → α} : Continuous f ↔ Continuous (f ∘ mk' K) :=
-  isQuotientMap_mk'.continuous_iff
-
-/-- `Projectivization.mk` is continuous in the vector, as long as the vector stays nonzero. -/
-@[fun_prop]
-theorem continuous_mk {f : α → V} (hf : Continuous f) (hf₀ : ∀ x, f x ≠ 0) :
-    Continuous fun x ↦ mk K (f x) (hf₀ x) :=
-  continuous_mk'.comp (hf.subtype_mk hf₀)
-
-section Map
-
-variable {L W : Type*} [DivisionRing L] [AddCommGroup W] [Module L W] [TopologicalSpace W]
-
-/-- An injective continuous semilinear map induces a continuous map on projective spaces. -/
-theorem continuous_map {σ : K →+* L} {f : V →ₛₗ[σ] W} (hf : Function.Injective f)
-    (hfc : Continuous f) : Continuous (map f hf) :=
-  continuous_iff.2 <| continuous_mk (hfc.comp continuous_subtype_val) _
-
-end Map
+/-- The set of points at which a continuous linear map does not vanish, the domain of
+`Projectivization.linearProjection G`, is open. -/
+theorem isOpen_linearProjectionDomain {W : Type*} [AddCommGroup W] [Module K W]
+    [TopologicalSpace W] [T1Space W] {G : V →ₗ[K] W} (hG : Continuous G) :
+    IsOpen (linearProjectionDomain G) := by
+  rw [← isQuotientMap_mk'.isOpen_preimage]
+  convert (isOpen_compl_singleton (x := (0 : W))).preimage (hG.comp continuous_subtype_val) using 1
+  ext v
+  simp [mk'_eq_mk]
 
 variable [ContinuousConstSMul Kˣ V]
-
-/-- When scalar multiplication by units of `K` is continuous on `V`, the map `mk' K` from
-nonzero vectors to `ℙ K V` is open. -/
-theorem isOpenMap_mk' : IsOpenMap (mk' K : {v : V // v ≠ 0} → ℙ K V) := fun U hU ↦ by
-  rw [← isQuotientMap_mk'.isOpen_preimage, preimage_image_mk']
-  exact isOpen_iUnion fun a ↦ isOpenMap_smul a U hU
-
-/-- When scalar multiplication by units of `K` is continuous on `V`, the map `mk' K` from
-nonzero vectors to `ℙ K V` is an open quotient map. -/
-theorem isOpenQuotientMap_mk' : IsOpenQuotientMap (mk' K : {v : V // v ≠ 0} → ℙ K V) :=
-  ⟨Quotient.mk''_surjective, continuous_mk', isOpenMap_mk'⟩
 
 /-- Projective space is second countable when the vector space is. -/
 instance instSecondCountableTopology [SecondCountableTopology V] :
@@ -185,10 +146,10 @@ variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜
 /-- Every point of `ℙ 𝕜 V` is spanned by a unit vector. -/
 theorem exists_norm_eq_one_mk_eq (x : ℙ 𝕜 V) :
     ∃ (v : V) (hv : v ≠ 0), ‖v‖ = 1 ∧ mk 𝕜 v hv = x := by
-  refine ⟨(‖x.rep‖⁻¹ : 𝕜) • x.rep, smul_ne_zero (by simpa using x.rep_nonzero) x.rep_nonzero,
-    norm_smul_inv_norm x.rep_nonzero, ?_⟩
+  refine ⟨(‖x.rep‖⁻¹ : 𝕜) • x.rep, smul_ne_zero (by simpa using x.rep_ne_zero) x.rep_ne_zero,
+    norm_smul_inv_norm x.rep_ne_zero, ?_⟩
   conv_rhs => rw [← x.mk_rep]
-  exact (mk_eq_mk_iff' 𝕜 _ _ _ x.rep_nonzero).2 ⟨_, rfl⟩
+  exact (mk_eq_mk_iff' 𝕜 _ _ _ x.rep_ne_zero).2 ⟨_, rfl⟩
 
 /-- **Projective space is compact** for a finite-dimensional normed space over `ℝ` or `ℂ`: it is
 the image of the compact unit sphere. -/
@@ -203,6 +164,42 @@ instance instCompactSpace [FiniteDimensional 𝕜 V] : CompactSpace (ℙ 𝕜 V)
   exact ⟨⟨v, mem_sphere_zero_iff_norm.2 hv⟩, rfl⟩
 
 end RCLike
+
+/-! ### Connectedness -/
+
+section Connected
+
+/-- Projective space is path-connected when `V`, as a real topological vector space, has
+dimension greater than one: it is then the continuous image of the path-connected space of
+nonzero vectors. The division ring `K` is arbitrary, so this applies equally to real, complex and
+quaternionic projective spaces. -/
+theorem pathConnectedSpace_of_one_lt_rank {K V : Type*} [DivisionRing K] [AddCommGroup V]
+    [Module K V] [TopologicalSpace V] [Module ℝ V] [ContinuousAdd V] [ContinuousSMul ℝ V]
+    (h : 1 < Module.rank ℝ V) : PathConnectedSpace (ℙ K V) := by
+  have := isPathConnected_iff_pathConnectedSpace.1
+    (isPathConnected_compl_singleton_of_one_lt_rank h (0 : V))
+  exact Function.Surjective.pathConnectedSpace
+    (f := fun v : ({0}ᶜ : Set V) ↦ mk K (v : V) (mem_compl_singleton_iff.1 v.2))
+    (fun x ↦ ⟨⟨x.rep, mem_compl_singleton_iff.2 x.rep_ne_zero⟩, x.mk_rep⟩)
+    (continuous_mk continuous_subtype_val _)
+
+variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+
+/-- **Projective space is path-connected** for a nonzero normed space `V` over `ℝ` or `ℂ`, hence
+connected. In real dimension greater than one this is `pathConnectedSpace_of_one_lt_rank`;
+otherwise `V` is a line and `ℙ 𝕜 V` is a single point. In particular `ℂℙⁿ` and `ℝℙⁿ` are
+connected for every `n`, including the point `n = 0`. -/
+instance instPathConnectedSpace [Nontrivial V] : PathConnectedSpace (ℙ 𝕜 V) := by
+  let _ : NormedSpace ℝ V := .restrictScalars ℝ 𝕜 V
+  by_cases h : 1 < Module.rank ℝ V
+  · exact pathConnectedSpace_of_one_lt_rank h
+  -- A real spanning vector of `V` also spans it over `𝕜`.
+  obtain ⟨v₀, hv₀⟩ := rank_le_one_iff.1 (not_lt.1 h)
+  have := subsingleton_of_rank_le_one (K := 𝕜) (rank_le_one_iff.2
+    ⟨v₀, fun v ↦ (hv₀ v).imp' (algebraMap ℝ 𝕜) fun r hr ↦ by rw [algebraMap_smul, hr]⟩)
+  exact ⟨inferInstance, fun x y ↦ Subsingleton.elim x y ▸ Joined.refl x⟩
+
+end Connected
 
 /-! ### The standard affine charts -/
 
@@ -235,10 +232,11 @@ theorem continuous_affineChart_symm (i : Fin (n + 1)) :
 
 variable [ContinuousMul K] [ContinuousInv₀ K] [T1Space K]
 
+omit [T1Space K] in
 /-- The standard affine chart of projective space is continuous on its domain. -/
 theorem continuousOn_affineChart (i : Fin (n + 1)) :
     ContinuousOn (affineChart (K := K) i) (affineOpen i) := by
-  refine (isOpen_affineOpen i).continuousOn_iff.2 fun x hx ↦ ?_
+  refine fun x hx ↦ ContinuousAt.continuousWithinAt ?_
   obtain ⟨v, rfl⟩ := isOpenQuotientMap_mk'.surjective x
   rw [mk'_eq_mk, mk_mem_affineOpen_iff] at hx
   -- Composed with the quotient map, the chart is a family of ratios of coordinates.

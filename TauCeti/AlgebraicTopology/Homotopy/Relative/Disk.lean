@@ -69,50 +69,6 @@ open scoped unitInterval
 
 namespace TauCeti
 
-/-! ### Contracting the open box -/
-
-section OpenBox
-
-variable {N : Type v}
-
-/-- The contraction of the open box `{1} × I^N ∪ I × ∂I^N` of the cube `I × I^N` to the centre
-`(1, c)` of its top face: up to time `1 / 2` it pushes every point up to the top face, and after
-that it shrinks the top face onto its centre. -/
-private def openBoxContraction (t : I) (z : I × I^N) : I × I^N :=
-  (projIcc 0 1 zero_le_one ((z.1 : ℝ) + 2 * t), cubeScale (min 1 (2 - 2 * (t : ℝ))) z.2)
-
-private theorem continuous_openBoxContraction :
-    Continuous fun q : I × (I × I^N) ↦ openBoxContraction q.1 q.2 :=
-  (continuous_projIcc.comp' (by fun_prop)).prodMk (continuous_cubeScale.comp
-    ((continuous_const.min (continuous_const.sub (continuous_const.mul
-      (continuous_subtype_val.comp continuous_fst)))).prodMk (continuous_snd.comp continuous_snd)))
-
-private theorem openBoxContraction_zero (z : I × I^N) : openBoxContraction 0 z = z := by
-  ext1
-  · simp [openBoxContraction]
-  · norm_num [openBoxContraction]
-
-private theorem openBoxContraction_one [Finite N] (z : I × I^N) :
-    openBoxContraction 1 z = (1, cubeCenter) := by
-  have := Fintype.ofFinite N
-  ext1
-  · exact projIcc_eq_one.2 (by simp; linarith [z.1.2.1])
-  · funext i
-    ext1
-    rw [openBoxContraction, cubeCenter_apply, cubeScale_apply_coe] <;> norm_num
-
-/-- The contraction keeps the open box `{1} × I^N ∪ I × ∂I^N` inside itself. -/
-private theorem openBoxContraction_mem {z : I × I^N} (hz : z.1 = 1 ∨ z.2 ∈ Cube.boundary N)
-    (t : I) : openBoxContraction t z ∈ Cube.prodBoundary N := by
-  refine Cube.mk_mem_prodBoundary ?_
-  by_cases ht : (t : ℝ) ≤ 1 / 2
-  · rcases hz with hz | hz
-    · exact .inl (projIcc_eq_one.2 (by simp [hz]; linarith [t.2.1]))
-    · exact .inr (by rwa [min_eq_left (by linarith), cubeScale_one])
-  · exact .inl (projIcc_eq_one.2 (by linarith [z.1.2.1]))
-
-end OpenBox
-
 /-! ### Deforming a map of pairs into a relative cube -/
 
 variable {N : Type v} [Finite N] {Y : TopCat.{u}} {B : Set Y}
@@ -132,7 +88,8 @@ private theorem exists_boundaryHomotopy (g : C(I × I^N, Y))
   have hbd := hasHomotopyExtensionProperty_cubeBoundary (N := N)
   obtain ⟨K, hK₀, hK⟩ := hbd.exists_extension_of_isClosed hbd.isClosed
     (⟨fun y ↦ ⟨g (0, y), hg (Cube.mk_zero_mem_prodBoundary y)⟩, by fun_prop⟩ : C(I^N, B))
-    ⟨fun q ↦ ⟨g (openBoxContraction q.1 (0, q.2)), hg (openBoxContraction_mem (.inr q.2.2) _)⟩,
+    ⟨fun q ↦ ⟨g (openBoxContraction q.1 (0, q.2)),
+        hg (openBoxContraction_mem_prodBoundary (.inr q.2.2) _)⟩,
       (g.continuous.comp (continuous_openBoxContraction.comp
         (continuous_fst.prodMk (continuous_const.prodMk
           (continuous_subtype_val.comp continuous_snd))))).subtype_mk _⟩
@@ -173,7 +130,7 @@ private theorem exists_boundaryHomotopy (g : C(I × I^N, Y))
     · simp only [ContinuousMap.coe_mk, h, hs, ite_true]
       exact (K (t, (z : I × I^N).2)).2
     · rw [ContinuousMap.coe_mk, hS (show (t, (z : I × I^N)) ∈ S from hS' z.2 hs)]
-      exact hg (openBoxContraction_mem (hS' z.2 hs) t)
+      exact hg (openBoxContraction_mem_prodBoundary (hS' z.2 hs) t)
   · exact (hS (show ((1 : I), (z : I × I^N)) ∈ S from hz)).trans
       (congrArg g (openBoxContraction_one _))
 

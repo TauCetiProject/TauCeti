@@ -39,7 +39,7 @@ and converging to `p`. The energy `f (γ t) - f p` is nonnegative
 the energy once `γ` stays near `p`, so by Grönwall's inequality the energy decays like
 `exp (-lam * t)` (`TauCeti.exists_sub_le_mul_exp_maximalIntegralCurve_neg_mgradient`). This is the
 manifold counterpart, for an arbitrary `C¹` metric, of the vector-space theorem
-`TauCeti.IsIntegralCurveOn.exists_sub_le_mul_exp_atTop`.
+`IsIntegralCurveOn.exists_sub_le_mul_exp_atTop`.
 
 Energy decay alone does not bound the distance from `γ t` to `p`, since the Hessian at a saddle
 has null directions. The distance is recovered from the Riemannian length of `γ`. The length over
@@ -51,9 +51,19 @@ so summing a geometric series bounds the tail length of `γ` after time `t`, and
 Riemannian distance from `γ t` to `p`, by a multiple of `sqrt (f (γ t) - f p)`. Hence that distance
 decays exponentially
 (`TauCeti.exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient`), as in
-`TauCeti.IsIntegralCurveOn.exists_norm_sub_le_mul_exp_atTop`. The distance is
+`IsIntegralCurveOn.exists_norm_sub_le_mul_exp_atTop`. The distance is
 `Manifold.riemannianEDist`, the infimum of lengths of `C¹` paths; on a Riemannian manifold in the
 sense of `IsRiemannianManifold` it is the ambient extended distance.
+
+Combined with the convergence theorems of `TauCeti.Geometry.Manifold.Morse.GradientFlow`, this
+gives exponential convergence without assuming convergence. A forward trajectory trapped in a
+compact set `K` whose critical points are all nondegenerate converges exponentially fast to a
+critical point in `K`
+(`TauCeti.exists_tendsto_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient`): such
+a `K` contains only finitely many critical points, so the trajectory has a limit, which is
+nondegenerate. In particular every forward negative gradient trajectory of a proper Morse function
+bounded below converges exponentially fast to a critical point
+(`IsMorse.exists_tendsto_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient`).
 
 ## Main results
 
@@ -70,6 +80,12 @@ sense of `IsRiemannianManifold` it is the ambient extended distance.
   limit, are bounded by a multiple of the square root of the energy.
 * `TauCeti.exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient`: such a
   trajectory converges to its limit exponentially fast in the Riemannian distance.
+* `TauCeti.exists_tendsto_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient`: a
+  forward trajectory trapped in a compact set with only nondegenerate critical points converges
+  exponentially fast to one of them.
+* `IsMorse.exists_tendsto_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient`:
+  every forward negative gradient trajectory of a proper Morse function bounded below converges
+  exponentially fast to a critical point.
 
 ## References
 
@@ -105,7 +121,7 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_mgradien
   obtain ⟨lam, hlam, hloj⟩ :=
     ((isManifoldNondegenerateCriticalPoint_iff I).1 hp).exists_mul_abs_sub_le_norm_fderiv_sq
   obtain ⟨C, hC, hbd⟩ :=
-    eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient (I := I) f p
+    eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient (I := I) p
   refine ⟨lam / C ^ 2, by positivity, ?_⟩
   filter_upwards [(continuousAt_extChartAt (I := I) p).eventually hloj, hbd,
     extChartAt_source_mem_nhds (I := I) p] with y hy hyb hys
@@ -113,7 +129,7 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_mgradien
     (extChartAt I p).left_inv (mem_extChartAt_source p)] at hy
   calc lam / C ^ 2 * |f y - f p| = lam * |f y - f p| / C ^ 2 := by ring
     _ ≤ ‖fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)‖ ^ 2 / C ^ 2 := by gcongr
-    _ ≤ (C * ‖mgradient I f y‖) ^ 2 / C ^ 2 := by gcongr
+    _ ≤ (C * ‖mgradient I f y‖) ^ 2 / C ^ 2 := by gcongr; exact hyb f
     _ = ‖mgradient I f y‖ ^ 2 := by field_simp
 
 end Lojasiewicz
@@ -299,7 +315,7 @@ the Riemannian distance.** If the maximal integral curve `γ` of `-grad f` throu
 all positive time and converges to a nondegenerate critical point `p`, then the Riemannian
 distance from `γ t` to `p` is at most `C * exp (-μ * t)` for some `μ, C > 0` and all large `t`.
 This is the manifold counterpart, for an arbitrary `C¹` metric, of the vector-space theorem
-`TauCeti.IsIntegralCurveOn.exists_norm_sub_le_mul_exp_atTop`. -/
+`IsIntegralCurveOn.exists_norm_sub_le_mul_exp_atTop`. -/
 theorem exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient
     (hf : ContMDiff I 𝓘(ℝ) 2 f) :
     ∃ μ > 0, ∃ C > 0, ∀ᶠ t in atTop,
@@ -319,5 +335,62 @@ theorem exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient
         ring_nf
 
 end Decay
+
+/-! ### Trapped trajectories and proper Morse functions -/
+
+section Trapped
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I 2 M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+  {f : M → ℝ} {x : M} {K : Set M}
+
+/-- **A trapped trajectory converges exponentially fast.** If the forward part of the maximal
+integral curve `γ` of `-grad f` through `x` stays in a compact set `K` all of whose critical points
+are nondegenerate, then `γ` converges to a critical point `p` in `K`, and the Riemannian distance
+from `γ t` to `p` is at most `C * exp (-μ * t)` for some `μ, C > 0` and all large `t`. The metric is
+an arbitrary `C¹` metric, `M` need not be compact, and the limit may be a saddle. -/
+theorem exists_tendsto_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient
+    (hf : ContMDiff I 𝓘(ℝ) 2 f) (hK : IsCompact K)
+    (hmem : MapsTo (maximalIntegralCurve (-mgradient I f) x)
+      (maximalIntegralCurveInterval (-mgradient I f) x ∩ Ici 0) K)
+    (hnd : ∀ y ∈ criticalPoints I f ∩ K, IsManifoldNondegenerateCriticalPoint I f y) :
+    ∃ p ∈ criticalPoints I f ∩ K,
+      Tendsto (maximalIntegralCurve (-mgradient I f) x) atTop (𝓝 p) ∧
+        ∃ μ > 0, ∃ C > 0, ∀ᶠ t in atTop,
+          Manifold.riemannianEDist I (maximalIntegralCurve (-mgradient I f) x t) p ≤
+            ENNReal.ofReal (C * Real.exp (-(μ * t))) := by
+  obtain ⟨p, hpK, hconv⟩ := exists_tendsto_maximalIntegralCurve_neg_mgradient hK hmem hf
+    (finite_criticalPoints_inter_of_forall_isManifoldNondegenerateCriticalPoint
+      (hf.of_le (by norm_num)) hK hnd)
+  exact ⟨p, hpK, hconv, exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient
+    (hnd p hpK) (Ici_subset_maximalIntegralCurveInterval_neg_mgradient hK hmem hf) hconv hf⟩
+
+/-- **Negative gradient trajectories of a proper Morse function converge exponentially fast.** If
+`f` is a proper Morse function bounded below, the maximal integral curve of `-grad f` through any
+point `x` converges to a critical point `p` of `f`, and the Riemannian distance from its value at
+time `t` to `p` is at most `C * exp (-μ * t)` for some `μ, C > 0` and all large `t`, for any `C¹`
+Riemannian metric. -/
+theorem IsMorse.exists_tendsto_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient
+    (hf : IsMorse I f) (hp : IsProperMap f) (hbdd : BddBelow (range f)) (x : M) :
+    ∃ p ∈ criticalPoints I f,
+      Tendsto (maximalIntegralCurve (-mgradient I f) x) atTop (𝓝 p) ∧
+        ∃ μ > 0, ∃ C > 0, ∀ᶠ t in atTop,
+          Manifold.riemannianEDist I (maximalIntegralCurve (-mgradient I f) x t) p ≤
+            ENNReal.ofReal (C * Real.exp (-(μ * t))) := by
+  have hf2 : ContMDiff I 𝓘(ℝ) 2 f := hf.contMDiff.of_le (by norm_cast)
+  obtain ⟨m, hm⟩ := hbdd
+  -- The forward trajectory stays in the compact band `m ≤ f ≤ f x`.
+  obtain ⟨p, hp, h⟩ :=
+    TauCeti.exists_tendsto_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient hf2
+      (hp.isCompact_preimage (isCompact_Icc (a := m) (b := f x)))
+      (fun s hs ↦
+        ⟨hm (mem_range_self _), mapsTo_maximalIntegralCurve_neg_mgradient_preimage_Iic hf2 hs⟩)
+      fun _ hy ↦ hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints hy.1
+  exact ⟨p, hp.1, h⟩
+
+end Trapped
 
 end TauCeti

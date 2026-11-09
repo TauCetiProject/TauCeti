@@ -16,6 +16,7 @@ import TauCeti.Analysis.Complex.Fuchsian.Shimizu
 import TauCeti.Analysis.Complex.UpperHalfPlane.Displacement
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Endpoint
 import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
+import TauCeti.Analysis.SpecificLimits.FastGeometric
 import TauCeti.Analysis.SpecialFunctions.Exp.Half
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.GroupTheory.GroupAction.ConjAct
@@ -101,8 +102,9 @@ namespace Subgroup
 
 open TauCeti (jorgensenSeq jorgensenSeq_zero jorgensenSeq_succ jorgensenSeq_mem
   map_jorgensenSeq)
-open Matrix.ProjectiveSpecialLinearGroup (parabolicFixedPoint upperRightHom upperRightHom_apply
-  mk_eq_mk_iff mk_smul_infty_eq_infty_iff mk_inv_mul_mul)
+open Matrix.ProjectiveSpecialLinearGroup (parabolicFixedPoint upperRightHom
+  mk_eq_mk_iff mk_smul_infty_eq_infty_iff mk_inv_mul_mul
+  trace_commutatorElement_sub_two_of_mk_eq_upperRightHom)
 open Matrix.SpecialLinearGroup (dilation dilation_inv dilation_zpow conj_dilation_apply_zero_zero
   conj_dilation_apply_zero_one conj_dilation_apply_one_zero conj_dilation_apply_one_one
   dilation_conj_apply_zero_zero dilation_conj_apply_zero_one dilation_conj_apply_one_zero
@@ -153,16 +155,14 @@ private theorem abs_jorgensenSeq_mul_le (s : ℝ) (B : SL(2, ℝ))
 
 variable {Γ : Subgroup PSL(2, ℝ)} {s : ℝ} {B : SL(2, ℝ)}
 
-/-- **Convergence.** If Jørgensen's inequality fails for the dilation `D` with `s > 0`, some
-iterate `Bₙ₊₁` is diagonal: suitable conjugates of the iterates by powers of `D` converge to `D`
-inside the discrete group `Γ`, so one of them is `±D`. -/
-private theorem exists_jorgensenSeq_diag [DiscreteTopology Γ] (hs : 0 < s)
-    (hD : (dilation s : PSL(2, ℝ)) ∈ Γ) (hB : (B : PSL(2, ℝ)) ∈ Γ)
+/-- If Jørgensen's inequality fails for the dilation `D` with `s > 0`, suitable conjugates of the
+iterates `Bₙ₊₁` by powers of `D` converge to `D`: the products `βₙ` of the off-diagonal entries
+tend to `0` geometrically, so the diagonal entries of `Bₙ₊₁` tend to those of `D`. -/
+private theorem exists_tendsto_dilation_conj_jorgensenSeq (hs : 0 < s)
     (hlt : (Real.exp (s / 2) - Real.exp (-(s / 2))) ^ 2 * (1 + |B 0 1 * B 1 0|) < 1) :
-    ∃ n, jorgensenSeq (dilation s) B (n + 1) 0 1 = 0 ∧
-      jorgensenSeq (dilation s) B (n + 1) 1 0 = 0 := by
+    ∃ k : ℕ → ℤ, Tendsto (fun n ↦ dilation (k n * s) * jorgensenSeq (dilation s) B (n + 1) *
+      dilation (-(k n * s))) atTop (𝓝 (dilation s)) := by
   set J := jorgensenSeq (dilation s) B
-  -- the products `βₙ` of the off-diagonal entries tend to `0` geometrically
   have hβ : Tendsto (fun n ↦ J n 0 1 * J n 1 0) atTop (𝓝 0) := by
     refine squeeze_zero_norm (fun n ↦ abs_jorgensenSeq_mul_le s B hlt.le n) ?_
     simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one (by positivity) hlt).mul_const
@@ -173,32 +173,43 @@ private theorem exists_jorgensenSeq_diag [DiscreteTopology Γ] (hs : 0 < s)
   have h11 : Tendsto (fun n ↦ J (n + 1) 1 1) atTop (𝓝 ((dilation s : SL(2, ℝ)) 1 1)) := by
     simp only [J, jorgensenSeq_succ, conj_dilation_apply_one_one]
     simpa using tendsto_const_nhds.sub (hβ.const_mul _)
-  obtain ⟨k, hk⟩ := exists_tendsto_dilation_conj hs h00 h11 (by simp) (by simp)
+  exact exists_tendsto_dilation_conj hs h00 h11 (by simp) (by simp)
     ((tendsto_add_atTop_iff_nat 1).2 hβ)
+
+/-- The conjugates `Dᵏ Bₙ D⁻ᵏ` of the iterates by the powers of `D = dilation s` lie in `Γ`. -/
+private theorem mk_dilation_mul_jorgensenSeq_mul_dilation_mem (hD : (dilation s : PSL(2, ℝ)) ∈ Γ)
+    (hB : (B : PSL(2, ℝ)) ∈ Γ) (k : ℤ) (n : ℕ) :
+    ((dilation (k * s) * jorgensenSeq (dilation s) B n * dilation (-(k * s)) : SL(2, ℝ)) :
+      PSL(2, ℝ)) ∈ Γ := by
+  have hDk : ((dilation (k * s) : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ := by
+    rw [← dilation_zpow, QuotientGroup.mk_zpow]
+    exact Γ.zpow_mem hD _
+  have hJ : ((jorgensenSeq (dilation s) B n : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ := by
+    rw [← QuotientGroup.mk'_apply, map_jorgensenSeq]
+    exact jorgensenSeq_mem hD hB _
+  simp only [← dilation_inv, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
+  exact Γ.mul_mem (Γ.mul_mem hDk hJ) (Γ.inv_mem hDk)
+
+/-- **Convergence.** If Jørgensen's inequality fails for the dilation `D` with `s > 0`, some
+iterate `Bₙ₊₁` is diagonal: suitable conjugates of the iterates by powers of `D` converge to `D`
+inside the discrete group `Γ`, so one of them is `±D`. -/
+private theorem exists_jorgensenSeq_diag [DiscreteTopology Γ] (hs : 0 < s)
+    (hD : (dilation s : PSL(2, ℝ)) ∈ Γ) (hB : (B : PSL(2, ℝ)) ∈ Γ)
+    (hlt : (Real.exp (s / 2) - Real.exp (-(s / 2))) ^ 2 * (1 + |B 0 1 * B 1 0|) < 1) :
+    ∃ n, jorgensenSeq (dilation s) B (n + 1) 0 1 = 0 ∧
+      jorgensenSeq (dilation s) B (n + 1) 1 0 = 0 := by
+  set J := jorgensenSeq (dilation s) B
+  obtain ⟨k, hk⟩ := exists_tendsto_dilation_conj_jorgensenSeq hs hlt
   -- the conjugates lie in `Γ`, so by discreteness one of them is `±D`
-  have hCmem (n : ℕ) :
-      ((dilation (k n * s) * J (n + 1) * dilation (-(k n * s)) : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ := by
-    have hDk : ((dilation (k n * s) : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ := by
-      rw [← dilation_zpow, QuotientGroup.mk_zpow]
-      exact Γ.zpow_mem hD _
-    have hJ : ((J (n + 1) : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ := by
-      rw [← QuotientGroup.mk'_apply, map_jorgensenSeq]
-      exact jorgensenSeq_mem hD hB _
-    simp only [← dilation_inv, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
-    exact Γ.mul_mem (Γ.mul_mem hDk hJ) (Γ.inv_mem hDk)
-  obtain ⟨n, hn⟩ := (eventually_mk_eq_of_tendsto hCmem hD hk).exists
-  rw [Matrix.ProjectiveSpecialLinearGroup.mk_eq_mk_iff] at hn
+  obtain ⟨n, hn⟩ := (eventually_mk_eq_of_tendsto
+    (fun n ↦ mk_dilation_mul_jorgensenSeq_mul_dilation_mem hD hB (k n) (n + 1)) hD hk).exists
   have hoff : (dilation (k n * s) * J (n + 1) * dilation (-(k n * s))) 0 1 = 0 ∧
       (dilation (k n * s) * J (n + 1) * dilation (-(k n * s))) 1 0 = 0 := by
-    rcases hn with h | h
+    rcases mk_eq_mk_iff.1 hn with h | h
     · rw [← h]
       simp
-    · have h01 := congrArg (fun M : SL(2, ℝ) ↦ M 0 1) h
-      have h10 := congrArg (fun M : SL(2, ℝ) ↦ M 1 0) h
-      simp only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply] at h01 h10
-      have hd01 : (dilation s : SL(2, ℝ)) 0 1 = 0 := by simp
-      have hd10 : (dilation s : SL(2, ℝ)) 1 0 = 0 := by simp
-      exact ⟨by linarith, by linarith⟩
+    · rw [neg_eq_iff_eq_neg.1 h.symm]
+      simp
   simp only [dilation_conj_apply_zero_one, dilation_conj_apply_one_zero, mul_eq_zero,
     Real.exp_ne_zero, false_or] at hoff
   exact ⟨n, hoff⟩
@@ -301,17 +312,19 @@ theorem one_le_abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_of_
       |((⁅A, B⁆ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace - 2| := by
   obtain ⟨g, s, -, hAg⟩ := TauCeti.UpperHalfPlane.exists_eq_conj_dilation_of_two_lt_abs_trace hhyp
   obtain ⟨P, rfl⟩ := QuotientGroup.mk_surjective g
-  -- move to the frame where `A` is the dilation: `X = P⁻¹ B P` and `Γ' = P⁻¹ Γ P`
+  -- move to the frame where `A` is the dilation: `X = P⁻¹ B P` in `Γ' = P⁻¹ Γ P`
+  let Γ' : Subgroup PSL(2, ℝ) := ConjAct.toConjAct (P : PSL(2, ℝ))⁻¹ • Γ
+  have : DiscreteTopology Γ' := TauCeti.discreteTopology_of_conjAct_smul_eq rfl
+  have hD : ((P⁻¹ * A * P : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ' := by
+    rw [mk_inv_mul_mul]
+    exact (Subgroup.inv_mul_mul_mem_conjAct_smul_iff (P : PSL(2, ℝ)) _ Γ).2 hA
+  have hXmem : ((P⁻¹ * B * P : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ' := by
+    rw [mk_inv_mul_mul]
+    exact (Subgroup.inv_mul_mul_mem_conjAct_smul_iff (P : PSL(2, ℝ)) _ Γ).2 hB
+  rw [mk_inv_mul_mul, hAg] at hD
+  group at hD
   set X : SL(2, ℝ) := P⁻¹ * B * P with hX
   have hXcoe : (X : PSL(2, ℝ)) = (P : PSL(2, ℝ))⁻¹ * B * P := mk_inv_mul_mul P B
-  set Γ' : Subgroup PSL(2, ℝ) := ConjAct.toConjAct (P : PSL(2, ℝ))⁻¹ • Γ
-  have : DiscreteTopology Γ' := TauCeti.discreteTopology_of_conjAct_smul_eq rfl
-  have hD : (dilation s : PSL(2, ℝ)) ∈ Γ' := by
-    have := (inv_mul_mul_mem_conjAct_smul_iff (P : PSL(2, ℝ)) _ Γ).2 hA
-    rwa [hAg, show (P : PSL(2, ℝ))⁻¹ * (P * (dilation s : PSL(2, ℝ)) * (P : PSL(2, ℝ))⁻¹) * P =
-      dilation s by group] at this
-  have hXmem : (X : PSL(2, ℝ)) ∈ Γ' :=
-    hXcoe ▸ (inv_mul_mul_mem_conjAct_smul_iff (P : PSL(2, ℝ)) _ Γ).2 hB
   -- the exceptional cases correspond under the change of frame
   have hconj (y : PSL(2, ℝ))
       (hy : (X : PSL(2, ℝ)) * (dilation s : PSL(2, ℝ)) * (X : PSL(2, ℝ))⁻¹ = y) :
@@ -370,32 +383,21 @@ private theorem one_le_four_sub_trace_sq_mul_one_add_cosh_div_two [DiscreteTopol
     rw [not_le, ← hc₀] at hlt
     linear_combination hlt
   -- the displacements `cₙ - 1 > 0` decrease strictly, since `cₙ₊₁ - 1 = κ (cₙ + 1) (cₙ - 1)`
-  have hstep (n : ℕ) (h₁ : 1 < c n) (h₀ : c n ≤ c 0) : 1 < c (n + 1) ∧ c (n + 1) < c n := by
-    have hrec : c (n + 1) = 1 + κ * (c n ^ 2 - 1) := cosh_dist_jorgensenSeq_succ_smul hAz B n
-    have hκc : κ * (c n + 1) < 1 := by nlinarith
-    have hpos : 0 < κ * ((c n + 1) * (c n - 1)) := mul_pos hκ (by nlinarith)
-    constructor <;> nlinarith
-  have hdec (n : ℕ) : 1 < c n ∧ c n ≤ c 0 := by
-    induction n with
-    | zero => exact ⟨hc₀ ▸ Real.one_lt_cosh.2 (dist_ne_zero.2 hBz), le_rfl⟩
-    | succ n ih =>
-        have := hstep n ih.1 ih.2
-        exact ⟨this.1, this.2.le.trans ih.2⟩
-  have hanti : StrictAnti c :=
-    strictAnti_nat_of_succ_lt fun n ↦ (hstep n (hdec n).1 (hdec n).2).2
+  have hanti : StrictAnti c := TauCeti.strictAnti_of_eq_one_add_mul_sq_sub_one hκ
+    (hc₀ ▸ Real.one_lt_cosh.2 (dist_ne_zero.2 hBz)) hlt' (cosh_dist_jorgensenSeq_succ_smul hAz B)
   -- so the elements `Bₙ` of `Γ` are distinct, yet all move `z` at most as far as `B` does
   let f : ℕ → Γ := fun n ↦ ⟨J n, jorgensenSeq_mem hA hB n⟩
   have hinj : Function.Injective f := fun m n h ↦ by
     have hJ : J m = J n := congrArg Subtype.val h
-    exact hanti.injective (by simp only [c, hJ])
+    apply hanti.injective
+    simp only [c, hJ]
   have hfin := ProperlyDiscontinuousSMul.finite_disjoint_inter_image (Γ := Γ)
     (isCompact_singleton (x := z)) (isCompact_closedBall z (dist (B • z) z))
-  refine Set.infinite_range_of_injective hinj (hfin.subset ?_)
-  rintro _ ⟨n, rfl⟩
+  refine Set.infinite_range_of_injective hinj (hfin.subset (Set.range_subset_iff.2 fun n ↦ ?_))
   refine ⟨J n • z, ⟨z, rfl, rfl⟩, ?_⟩
   rw [Metric.mem_closedBall, ← abs_of_nonneg (dist_nonneg (x := J n • z)),
     ← abs_of_nonneg (dist_nonneg (x := B • z)), ← Real.cosh_le_cosh, ← hc₀]
-  exact (hdec n).2
+  exact hanti.antitone n.zero_le
 
 /-- **Jørgensen's inequality for an element fixing a point.** Let `Γ ≤ PSL(2, ℝ)` be discrete and
 let `A ∈ SL(2, ℝ)` lift a nontrivial element of `Γ` fixing `z ∈ ℍ`. Every `B ∈ Γ` not fixing `z`
@@ -469,14 +471,16 @@ theorem one_le_abs_trace_commutatorElement_sub_two_of_isParabolic [DiscreteTopol
   obtain ⟨σ, hσ⟩ := MulAction.exists_smul_eq PSL(2, ℝ) (∞ : OnePoint ℝ) c
   obtain ⟨x, hx, hAx⟩ := hpar.exists_conj_eq_upperRightHom hσ
   obtain ⟨S, rfl⟩ := QuotientGroup.mk_surjective σ
+  let Γ' : Subgroup PSL(2, ℝ) := ConjAct.toConjAct (S : PSL(2, ℝ))⁻¹ • Γ
+  have : DiscreteTopology Γ' := TauCeti.discreteTopology_of_conjAct_smul_eq rfl
+  have hTmem : ((S⁻¹ * A * S : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ' := by
+    rw [mk_inv_mul_mul]
+    exact (Subgroup.inv_mul_mul_mem_conjAct_smul_iff (S : PSL(2, ℝ)) _ Γ).2 hA
+  have hXmem : ((S⁻¹ * B * S : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ' := by
+    rw [mk_inv_mul_mul]
+    exact (Subgroup.inv_mul_mul_mem_conjAct_smul_iff (S : PSL(2, ℝ)) _ Γ).2 hB
   set T : SL(2, ℝ) := S⁻¹ * A * S with hT
   set X : SL(2, ℝ) := S⁻¹ * B * S with hX
-  set Γ' : Subgroup PSL(2, ℝ) := ConjAct.toConjAct (S : PSL(2, ℝ))⁻¹ • Γ
-  have : DiscreteTopology Γ' := TauCeti.discreteTopology_of_conjAct_smul_eq rfl
-  have hTmem : (T : PSL(2, ℝ)) ∈ Γ' :=
-    (mk_inv_mul_mul S A) ▸ (inv_mul_mul_mem_conjAct_smul_iff (S : PSL(2, ℝ)) _ Γ).2 hA
-  have hXmem : (X : PSL(2, ℝ)) ∈ Γ' :=
-    (mk_inv_mul_mul S B) ▸ (inv_mul_mul_mem_conjAct_smul_iff (S : PSL(2, ℝ)) _ Γ).2 hB
   have hTx : (T : PSL(2, ℝ)) = upperRightHom x := (mk_inv_mul_mul S A).trans hAx
   -- the conjugate `X` of `B` does not fix `∞`, so Shimizu's lemma bounds its lower-left entry
   have hX0 : X 1 0 ≠ 0 := by
@@ -484,26 +488,13 @@ theorem one_le_abs_trace_commutatorElement_sub_two_of_isParabolic [DiscreteTopol
     have h' := (mk_smul_infty_eq_infty_iff X).2 h
     rw [mk_inv_mul_mul, mul_smul, mul_smul, hσ, inv_smul_eq_iff] at h'
     exact hBc (h'.trans hσ)
-  have hshim := inv_le_abs_apply_one_zero_of_upperRightHom_mem hx (hTx ▸ hTmem) hXmem
-    hX0
-  -- `T = ±!![1, x; 0, 1]`, so `tr ⁅T, X⁆ - 2 = x² (X 1 0)²`
-  have hTe : T 1 0 = 0 ∧ T 1 1 = T 0 0 ∧ T 0 1 ^ 2 = x ^ 2 := by
-    rw [upperRightHom_apply, mk_eq_mk_iff] at hTx
-    have hT' : T = SpecialLinearGroup.transvection (zero_ne_one' (Fin 2)) x ∨
-        T = -SpecialLinearGroup.transvection (zero_ne_one' (Fin 2)) x := by
-      rcases hTx with h | h
-      · exact Or.inl h.symm
-      · exact Or.inr (by rw [h, neg_neg])
-    rcases hT' with h | h <;> rw [h] <;>
-      simp [SpecialLinearGroup.transvection_coe]
+  have hshim := inv_le_abs_apply_one_zero_of_upperRightHom_mem hx (hTx ▸ hTmem) hXmem hX0
+  -- `T = ±!![1, x; 0, 1]`, so `tr ⁅A, B⁆ - 2 = tr ⁅T, X⁆ - 2 = x² (X 1 0)²`
   have hcomm : ⁅A, B⁆ = S * ⁅T, X⁆ * S⁻¹ := by
     simp only [hT, hX, commutatorElement_def]
     group
-  have htr : ((⁅T, X⁆ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace - 2 = x ^ 2 * X 1 0 ^ 2 := by
-    rw [SpecialLinearGroup.trace_commutatorElement_sub_two_fin_two, Matrix.det_fin_two, ← hTe.2.2]
-    simp only [Matrix.sub_apply, Matrix.mul_apply, Fin.sum_univ_two, hTe.1, hTe.2.1]
-    ring
-  rw [hcomm, trace_mul_mul_inv, htr, abs_of_nonneg (by positivity)]
+  rw [hcomm, trace_mul_mul_inv, trace_commutatorElement_sub_two_of_mk_eq_upperRightHom hTx,
+    abs_of_nonneg (by positivity)]
   rw [inv_le_iff_one_le_mul₀ (abs_pos.2 hx)] at hshim
   nlinarith [abs_mul_abs_self x, abs_mul_abs_self (X 1 0), abs_nonneg x, abs_nonneg (X 1 0)]
 

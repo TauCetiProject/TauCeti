@@ -27,21 +27,17 @@ itself. The Borsuk-map specialization
 separation; there the embedding comes for free, an injective path from the compact unit interval
 into a Hausdorff space being a closed embedding. No formalization is vendored.
 
-## Roadmap role
+## Arcs do not separate the plane
 
-The Carathéodory enclosure step (layer **L5** of
-`TauCetiRoadmap/ConformalMapping/README.md`) is now unconditional: the
-preconnectedness/winding-number route in
-`TauCeti/Analysis/Complex/Conformal/Crosscut/Inside.lean` discharges it without plane
-separation. The classical separation route — Borsuk's criterion (PR #4701) plus arc
-nonseparation — remains relevant for future work. This file supplies the logarithm
-construction needed for that
-route: applying `TauCeti.hasContinuousLogOn_sub_div_sub_range_of_injective_path` shows that any two
-points off a simple arc lie in the same component of its complement.
+This file supplies the logarithm construction for the classical separation route: fed to Borsuk's
+criterion, `TauCeti.hasContinuousLogOn_sub_div_sub_range_of_injective_path` shows that any two
+points off a simple arc lie in the same component of its complement. That is
+`Path.isConnected_compl_range_of_injective` in
+`TauCeti/Analysis/Complex/PlaneSeparation/JordanCurve.lean`.
 
-This is deliberately stated for paths in an arbitrary topological space, since neither the lifting
-argument nor descent to the range uses planar geometry. The logarithm is still complex-valued, as
-required by `TauCeti.HasContinuousLogOn` and by the L5 Borsuk-map consumer.
+The main theorem is deliberately stated for paths in an arbitrary topological space, since neither
+the lifting argument nor descent to the range uses planar geometry. The logarithm is still
+complex-valued, as required by `TauCeti.HasContinuousLogOn` and by the Borsuk map.
 
 ## Main results
 

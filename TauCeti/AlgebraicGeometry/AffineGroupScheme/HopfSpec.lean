@@ -13,6 +13,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 public import TauCeti.Algebra.Coalgebra.Convolution
+public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 
 /-!
 # Infrastructure for Hopf spectra
@@ -110,25 +111,6 @@ theorem hom_ext_of_preimage_unop_eq {Q : _root_.CommHopfAlgCat.{u} R}
 end CommHopfAlgCat
 
 namespace TauCeti
-
-/-- Finite morphisms of schemes respect isomorphisms. -/
-instance isFinite_respectsIso :
-    MorphismProperty.RespectsIso (@IsFinite : MorphismProperty Scheme.{u}) :=
-  MorphismProperty.respectsIso_of_isStableUnderComposition
-    (fun _ _ f (_ : IsIso f) ↦ inferInstance)
-
-/-- Flat morphisms of schemes respect isomorphisms. -/
-instance flat_respectsIso :
-    MorphismProperty.RespectsIso (@Flat : MorphismProperty Scheme.{u}) :=
-  MorphismProperty.respectsIso_of_isStableUnderComposition
-    (fun _ _ f (_ : IsIso f) ↦ inferInstance)
-
-/-- Morphisms of schemes locally of finite presentation respect isomorphisms. -/
-instance locallyOfFinitePresentation_respectsIso :
-    MorphismProperty.RespectsIso
-      (@LocallyOfFinitePresentation : MorphismProperty Scheme.{u}) :=
-  MorphismProperty.respectsIso_of_isStableUnderComposition
-    (fun _ _ f (_ : IsIso f) ↦ inferInstance)
 
 /-- The scheme underlying the Hopf spectrum of `H` is its ordinary spectrum. -/
 @[simp↓]

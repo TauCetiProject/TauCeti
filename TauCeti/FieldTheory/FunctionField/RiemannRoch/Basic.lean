@@ -36,8 +36,12 @@ Fields and Codes*, 2nd ed., Definition 1.4.4 through Definition 1.4.10.
 
 ## Main results
 
+* `TauCeti.mem_riemannRochSpace_of_pow_mem`: if `f ^ n ∈ L(D)` and `D < n (E + 1)`, then
+  `f ∈ L(E)`.
 * `TauCeti.one_mem_riemannRochSpace_iff`: `1 ∈ L(D)` exactly when `D` is effective.
 * `TauCeti.mul_mem_riemannRochSpace_add`: multiplication maps `L(A) × L(B)` into `L(A + B)`.
+* `TauCeti.exists_linearMap_mul_riemannRochSpace`: multiplication by a section of `L(D)` is a
+  `k`-linear map `L(B) → L(E)` when `D + B ≤ E`.
 * `TauCeti.riemannRochSpace_mul_le_riemannRochSpace_add` and
   `TauCeti.riemannRochSpace_pow_le_riemannRochSpace_nsmul`: as products of subspaces,
   `L(A) · L(B) ⊆ L(A + B)` and `L(A)ⁿ ⊆ L(n A)`.
@@ -58,6 +62,11 @@ Fields and Codes*, 2nd ed., Definition 1.4.4 through Definition 1.4.10.
   `TauCeti.Divisor.dim_le_degree_posPart_add_one`: `L(D)` is finite-dimensional, with
   `ℓ(D) ≤ deg D⁺ + [algebraicClosure k F : k]` and hence `ℓ(D) ≤ deg D⁺ + 1` over an exact
   constant field (Proposition 1.4.9).
+* `TauCeti.mem_algebraicClosure_of_mul_mem_riemannRochSpace`: a section `x` of `L(B)` with
+  `z * x ∈ L(D)`, for `z` of the exact order `-D.coeff P` on the support of `B`, is algebraic
+  over the constants.
+* `TauCeti.dim_add_le_one_add_dim_add_of_finrank_ker_eq_one`: a map `L(B) → L(A + B) / L(A)` with
+  one-dimensional kernel gives `ℓ(A) + ℓ(B) ≤ 1 + ℓ(A + B)`.
 
 Finite-dimensionality and the estimates leading to it are proved with no hypothesis on the
 constant field; only the sharp `+ 1` needs `IsIntegrallyClosedIn k F`.  For a non-exact constant
@@ -121,6 +130,23 @@ theorem mem_riemannRochSpace_iff_neg_le_ord {D : Divisor k F} {f : F} (hf : f �
   rw [P.valuation_eq_exp_neg_ord hf, WithZero.exp_le_exp]
   omega
 
+/-- **Roots of functions in a Riemann–Roch space.** If `f ^ n ∈ L(D)` for some `n ≥ 1` and
+`D < n (E + 1)` at every place, then `f ∈ L(E)`: the pole orders of `f` are those of `f ^ n`
+divided by `n`. For instance `E = ⌊D / n⌋`. -/
+theorem mem_riemannRochSpace_of_pow_mem {n : ℕ} (hn : 0 < n) {D E : Divisor k F}
+    (hDE : ∀ P : Place k F, D.coeff P < n * (E.coeff P + 1)) {f : F}
+    (hf : f ^ n ∈ riemannRochSpace D) : f ∈ riemannRochSpace E := by
+  rcases eq_or_ne f 0 with rfl | h0
+  · exact zero_mem _
+  rw [mem_riemannRochSpace_iff_neg_le_ord h0]
+  intro P
+  -- `n · ord_P f = ord_P (f ^ n) ≥ -D(P) > -n (E(P) + 1)`.
+  have hord := (mem_riemannRochSpace_iff_neg_le_ord (pow_ne_zero n h0)).mp hf P
+  rw [P.ord_pow] at hord
+  have := hDE P
+  have hn' : (0 : ℤ) < n := by exact_mod_cast hn
+  nlinarith
+
 /-- Membership in `L(nP)` for a single place `P`: a nonzero function lies in `L(nP)` exactly when
 its order at `P` is at least `-n` and it is regular at every other place. -/
 theorem mem_riemannRochSpace_zsmul_ofPoint_iff {P : Place k F} {n : ℤ} {f : F} (hf : f ≠ 0) :
@@ -166,8 +192,8 @@ theorem riemannRochSpace_sub_ofFinset_eq {D : Divisor k F} {T : Finset (Place k 
     (hT : ∀ P ∈ T, riemannRochSpace (D - WeilDivisor.ofPoint P) = riemannRochSpace D) :
     riemannRochSpace (D - WeilDivisor.ofFinset T) = riemannRochSpace D := by
   classical
-  refine le_antisymm (riemannRochSpace_mono (sub_le_self _ (WeilDivisor.isEffective_iff_zero_le.mp
-    (WeilDivisor.isEffective_ofFinset T)))) fun f hf ↦ ?_
+  refine le_antisymm (riemannRochSpace_mono (sub_le_self _ (WeilDivisor.ofFinset_nonneg T)))
+    fun f hf ↦ ?_
   refine mem_riemannRochSpace_iff.mpr fun Q ↦ ?_
   by_cases hQ : Q ∈ T
   · rw [← hT Q hQ, mem_riemannRochSpace_iff] at hf
@@ -198,6 +224,14 @@ theorem mul_mem_riemannRochSpace_add {A B : Divisor k F} {f g : F}
   have hfP := (mem_riemannRochSpace_iff_neg_le_ord hf0).mp hf P
   have hgP := (mem_riemannRochSpace_iff_neg_le_ord hg0).mp hg P
   omega
+
+/-- Multiplication by a section `z` of `L(D)` is a `k`-linear map `L(B) → L(E)` whenever
+`D + B ≤ E`. -/
+theorem exists_linearMap_mul_riemannRochSpace {B D E : Divisor k F} (hDBE : D + B ≤ E)
+    {z : F} (hz : z ∈ riemannRochSpace D) :
+    ∃ f : riemannRochSpace B →ₗ[k] riemannRochSpace E, ∀ x, (f x : F) = z * x :=
+  ⟨((LinearMap.mulLeft k z).domRestrict (riemannRochSpace B)).codRestrict (riemannRochSpace E)
+    fun x ↦ riemannRochSpace_mono hDBE (mul_mem_riemannRochSpace_add hz x.2), fun _ ↦ rfl⟩
 
 /-- The `n`-th power of a section of `L(A)` is a section of `L(n A)`. -/
 theorem pow_mem_riemannRochSpace_zsmul {A : Divisor k F} {f : F} (hf : f ∈ riemannRochSpace A)
@@ -479,7 +513,7 @@ theorem finiteDimensional_riemannRochSpace (hF : IsFunctionField k F) (D : Divis
     FiniteDimensional k (riemannRochSpace D) := by
   have := (finiteDimensional_and_finrank_le_of_le hF
     (Divisor.degree D⁺ - Divisor.degree (0 : Divisor k F)).toNat 0 D⁺
-    (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_posPart D)) le_rfl
+    (posPart_nonneg D) le_rfl
     (finiteDimensional_riemannRochSpace_zero hF)).1
   exact Submodule.finiteDimensional_of_le (riemannRochSpace_mono (le_posPart D))
 
@@ -562,8 +596,7 @@ theorem Divisor.dim_le_degree_posPart_add_finrank (hF : IsFunctionField k F) (D 
     (Divisor.dim D : ℤ) ≤
       Divisor.degree D⁺ + Module.finrank k (algebraicClosure k F) := by
   have hmono : Divisor.dim D ≤ Divisor.dim D⁺ := Divisor.dim_mono hF (le_posPart D)
-  have h := Divisor.dim_le_dim_add_degree_sub hF
-    (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_posPart D))
+  have h := Divisor.dim_le_dim_add_degree_sub hF (posPart_nonneg D)
   rw [Divisor.dim_zero hF, Divisor.degree_zero] at h
   omega
 
@@ -582,10 +615,71 @@ theorem Divisor.dim_zero_of_isIntegrallyClosedIn (hF : IsFunctionField k F)
   rw [Divisor.dim_zero hF]
   exact isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one.mp hex
 
+/-- Over an exact constant field, a Riemann–Roch space of dimension at least two contains a
+transcendental function: the algebraic functions are the constants, which lie in `L(0)`, of
+dimension one. -/
+theorem Divisor.exists_mem_riemannRochSpace_transcendental (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {D : Divisor k F} (hD : 2 ≤ Divisor.dim D) :
+    ∃ x ∈ riemannRochSpace D, Transcendental k x := by
+  by_contra! h
+  have hle : riemannRochSpace D ≤ riemannRochSpace 0 := fun x hx ↦
+    (mem_riemannRochSpace_zero_iff hF).mpr (mem_algebraicClosure_iff.mpr (not_not.mp (h x hx)))
+  have := finiteDimensional_riemannRochSpace hF (0 : Divisor k F)
+  have := Submodule.finrank_mono hle
+  rw [← Divisor.dim_def, ← Divisor.dim_def,
+    Divisor.dim_zero_of_isIntegrallyClosedIn hF hex] at this
+  omega
+
 /-- `ℓ(D) = 0` for a negative divisor (Stichtenoth, Lemma 1.4.7(b)). -/
 theorem Divisor.dim_eq_zero_of_lt_zero (hF : IsFunctionField k F) {D : Divisor k F} (hD : D < 0) :
     Divisor.dim D = 0 := by
   exact (Divisor.dim_eq_zero_iff_riemannRochSpace_eq_bot hF D).mpr
     (riemannRochSpace_eq_bot_of_lt_zero hF hD)
+
+/-- A section `x` of `L(B)` such that `z * x ∈ L(D)`, where `z` has the exact order `-D.coeff P` at
+every place `P` in the support of `B`, is algebraic over the constants. -/
+theorem mem_algebraicClosure_of_mul_mem_riemannRochSpace (hF : IsFunctionField k F)
+    {B D : Divisor k F} {z x : F}
+    (hz0 : z ≠ 0) (hzord : ∀ P ∈ B.support, P.ord z = -D.coeff P)
+    (hxB : x ∈ riemannRochSpace B) (hxz : z * x ∈ riemannRochSpace D) :
+    x ∈ algebraicClosure k F := by
+  apply (Place.mem_algebraicClosure_iff_forall_mem_integers hF).mpr
+  intro P
+  rw [P.mem_integers_iff_ord_nonneg]
+  rcases eq_or_ne x 0 with hx0 | hx0
+  · simp [hx0]
+  by_cases hPB : P ∈ B.support
+  · have hbound := (mem_riemannRochSpace_iff_neg_le_ord (mul_ne_zero hz0 hx0)).mp
+      hxz P
+    rw [P.ord_mul hz0 hx0, hzord P hPB] at hbound
+    omega
+  · have hxbound := (mem_riemannRochSpace_iff_neg_le_ord hx0).mp hxB P
+    have hcoeff : B.coeff P = 0 := by
+      simpa only [WeilDivisor.mem_support_iff, not_not] using hPB
+    rw [hcoeff] at hxbound
+    omega
+
+/-- Rank-nullity for a map `L(B) → L(A + B) / L(A)` with one-dimensional kernel gives the
+dimension inequality. -/
+theorem dim_add_le_one_add_dim_add_of_finrank_ker_eq_one (hF : IsFunctionField k F)
+    {A B : Divisor k F} (hB : 0 ≤ B)
+    (T : riemannRochSpace B →ₗ[k]
+      (riemannRochSpace (A + B) ⧸ (riemannRochSpace A).submoduleOf (riemannRochSpace (A + B))))
+    (hker : Module.finrank k T.ker = 1) :
+    Divisor.dim A + Divisor.dim B ≤ 1 + Divisor.dim (A + B) := by
+  let _ := finiteDimensional_riemannRochSpace hF B
+  let _ := finiteDimensional_riemannRochSpace hF (A + B)
+  have hrank := LinearMap.finrank_range_add_finrank_ker T
+  have hrange := Submodule.finrank_le T.range
+  have hquotRank := rank_quotient_riemannRochSpace_add_dim hF
+    (D := A) (E := A + B) (le_add_of_nonneg_right hB)
+  have hquot : Module.finrank k (riemannRochSpace (A + B) ⧸
+      (riemannRochSpace A).submoduleOf (riemannRochSpace (A + B))) + Divisor.dim A =
+      Divisor.dim (A + B) := by
+    rw [← Module.finrank_eq_rank] at hquotRank
+    exact_mod_cast hquotRank
+  rw [hker, Nat.add_comm] at hrank
+  rw [← Divisor.dim_def B] at hrank
+  omega
 
 end TauCeti

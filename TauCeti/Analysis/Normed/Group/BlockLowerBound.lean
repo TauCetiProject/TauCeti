@@ -48,7 +48,7 @@ theorem enorm_ge_of_blocks {c : ℝ≥0∞} {ι : Type*}
         simp_rw [mul_pow]
         exact (ENNReal.tsum_mul_left).symm
       _ ≤ ∑' i, ‖blocks i y‖ₑ ^ 2 :=
-        ENNReal.tsum_le_tsum fun i => by gcongr; exact hblock i
+        tsum_le_tsum fun i => by gcongr; exact hblock i
       _ = ‖y‖ₑ ^ 2 := hsplit _
   by_contra hcon
   push Not at hcon

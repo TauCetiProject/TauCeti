@@ -14,7 +14,7 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Probability.Moments.MGFAnalytic
 -- Non-public: `Measure.ext_of_forall_integral_exp_neg_natCast_mul_eq` supplies the
 -- Laplace-determinacy step in the uniqueness proof.
-import TauCeti.Probability.Moments.LaplaceDeterminacy
+import TauCeti.Probability.Moments.LaplaceDeterminacy.Basic
 -- Non-public: Markov's inequality supplies the Laplace tail bound.
 import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
 -- Non-public: an integrable function of norm at least one forces a finite measure.
@@ -567,7 +567,7 @@ protected lemma smul {f : ℝ → ℝ} {μ : Measure ℝ≥0} (c : ℝ≥0)
   have := hf.isFiniteMeasure
   have : IsFiniteMeasure ((c : ℝ≥0∞) • μ) := by
     refine ⟨?_⟩
-    rw [Measure.smul_apply, smul_eq_mul]
+    rw [_root_.smul_apply, smul_eq_mul]
     exact ENNReal.mul_lt_top ENNReal.coe_lt_top (measure_lt_top μ univ)
   refine ⟨inferInstance, fun t ht => ?_⟩
   rw [laplaceTransform_smul_measure, ENNReal.coe_toReal, ← hf.eq_laplaceTransform ht]

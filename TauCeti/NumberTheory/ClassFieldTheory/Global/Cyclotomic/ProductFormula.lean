@@ -118,8 +118,8 @@ private theorem ratLocalFactor_eq_one {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : ℓ �
     (hnum : ¬ ℓ ∣ (a : ℚ).num.natAbs) (hden : ¬ ℓ ∣ (a : ℚ).den) : ratLocalFactor p ℓ a = 1 := by
   obtain ⟨u, hu⟩ := PadicInt.isUnit_natCast_of_coprime (p := p)
     ((Nat.coprime_primes Fact.out Fact.out).2 hℓ.symm)
-  rw [ratLocalFactor_of_ne p hu, padicValRat, padicValInt, padicValNat.eq_zero_of_not_dvd hnum,
-    padicValNat.eq_zero_of_not_dvd hden]
+  rw [ratLocalFactor_of_ne p hu, padicValRat, padicValInt, multiplicity_eq_zero_of_not_dvd hnum,
+    multiplicity_eq_zero_of_not_dvd hden]
   simp
 
 /-- The archimedean factor of `a ∈ ℚˣ`, read in the completion `x`, is the sign of `a`. -/

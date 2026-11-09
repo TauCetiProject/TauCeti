@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.Wedge
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
+public import TauCeti.Geometry.Manifold.DeRham.ExtendByZero
+public import TauCeti.Geometry.Manifold.Orientation.OpenSubset
+import TauCeti.Geometry.Manifold.DifferentialForm.Integration.OpenSubset
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import Mathlib.LinearAlgebra.Isomorphisms
@@ -34,6 +37,12 @@ representative formula pairs it with the class of the constant function `1` to g
   manifold, the exterior derivative of a compactly supported form integrates to zero.
 * `TauCeti.compactlySupportedDeRhamCohomology.integral`: integration `H^n_c(M) → ℝ`, computed on
   classes by `TauCeti.compactlySupportedDeRhamCohomology.integral_mk`.
+* `TauCeti.compactlySupportedDeRhamCohomology.integral_extendByZero` and
+  `TauCeti.compactlySupportedDeRhamCohomology.integral_extendByZeroTop`: integration commutes with
+  extension by zero `H^n_c(U) → H^n_c(W)` along open subsets `U ≤ W`, and with extension by zero
+  `H^n_c(U) → H^n_c(M)` into the whole manifold.
+* `TauCeti.compactlySupportedDeRhamCohomology.integral_map_diffeomorph`: integration is
+  preserved by orientation-preserving diffeomorphisms.
 * `TauCeti.poincarePairing`: the pairing `H^k_dR(M) → H^l_c(M) → ℝ`, the wedge product followed
   by integration (`TauCeti.poincarePairing_apply`), computed on classes by
   `TauCeti.poincarePairing_mk`.
@@ -49,6 +58,7 @@ public section
 
 noncomputable section
 
+open TopologicalSpace
 open scoped ContDiff Manifold
 
 namespace TauCeti
@@ -110,6 +120,61 @@ theorem integral_mk (o : Manifold.Orientation I M (Fin n))
     integral o (mk I n φ) = integralTopForm o φ.1.1 :=
   LinearMap.equivOfSurjective_apply _ _
 
+/-- Reversing the orientation negates integration on compactly supported cohomology. -/
+@[simp]
+theorem integral_neg (o : Manifold.Orientation I M (Fin n)) : integral (-o) = -integral o := by
+  refine LinearMap.ext fun x ↦ ?_
+  obtain ⟨φ, rfl⟩ := mk_surjective I n x
+  rw [LinearMap.neg_apply, integral_mk, integral_mk, integralTopForm_neg]
+
+omit [SigmaCompactSpace M] in
+/-- Integration on compactly supported cohomology commutes with extension by zero: for open
+subsets `U ≤ W`, `∫_W ext x = ∫_U x` for the orientations restricted from `M`. -/
+@[simp]
+theorem integral_extendByZero (o : Manifold.Orientation I M (Fin n)) {U W : Opens M}
+    [SigmaCompactSpace U] [SigmaCompactSpace W] (h : U ≤ W)
+    (x : compactlySupportedDeRhamCohomology I U n) :
+    integral (o.restrict W) (extendByZero h n x) = integral (o.restrict U) x := by
+  obtain ⟨φ, rfl⟩ := mk_surjective I n x
+  rw [extendByZero_mk, integral_mk, integral_mk, compactlySupportedClosedForms.coe_extendByZero]
+  exact integralTopForm_extendByZero o h ((mem_compactlySupportedForms I).mp
+    ((mem_compactlySupportedClosedForms I).mp φ.2).1)
+
+/-- Integration on compactly supported cohomology commutes with extension by zero from an open
+subset `U` into `M`: `∫_M ext x = ∫_U x` for the orientation restricted to `U`. -/
+@[simp]
+theorem integral_extendByZeroTop (o : Manifold.Orientation I M (Fin n)) (U : Opens M)
+    [SigmaCompactSpace U] (x : compactlySupportedDeRhamCohomology I U n) :
+    integral o (extendByZeroTop U n x) = integral (o.restrict U) x := by
+  let Φ : (⊤ : Opens M) ≃ₘ⟮I, I⟯ M := Diffeomorph.ofTop ⊤ rfl
+  rw [← integral_extendByZero o (le_top : U ≤ ⊤), ← equivOfDiffeomorph_extendByZeroTop]
+  obtain ⟨φ, hφ⟩ := mk_surjective I n (extendByZeroTop U n x)
+  have h : integralTopForm (o.restrict ⊤) (mpullback I I Φ φ.1.1) = integralTopForm o φ.1.1 := by
+    rw [Diffeomorph.coe_ofTop]
+    exact integralTopForm_mpullback_subtypeVal o ⊤ (by simp)
+  rw [← hφ, equivOfDiffeomorph_mk, integral_mk, integral_mk, ← h]
+  exact congrArg _ (compactlySupportedClosedForms.coe_coe_mpullback _ _ _ n φ).symm
+
+/-- An orientation-preserving diffeomorphism preserves integration on compactly supported
+cohomology. No integrability hypothesis is needed: representatives are smooth and compactly
+supported. The target orientation must be specified explicitly, so this is not a simp lemma. -/
+theorem integral_map_diffeomorph
+    {H' N : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'}
+    [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
+    [BoundarylessManifold J N] [T2Space N] [SigmaCompactSpace N]
+    (o : Manifold.Orientation I M (Fin n)) (o' : Manifold.Orientation J N (Fin n))
+    (Φ : M ≃ₘ⟮I, J⟯ N) (hΦ : ∀ x, o.IsOrientationPreservingAt o' Φ x)
+    (c : compactlySupportedDeRhamCohomology J N n) :
+    integral o (map Φ Φ.contMDiff
+      (by simpa only [Diffeomorph.coe_toHomeomorph] using Φ.toHomeomorph.isProperMap) n c) =
+      integral o' c := by
+  obtain ⟨φ, rfl⟩ := mk_surjective J n c
+  rw [map_mk, integral_mk, integral_mk, compactlySupportedClosedForms.coe_mpullback,
+    SmoothForm.coe_mpullback]
+  simpa only [Diffeomorph.coe_toHomeomorph] using
+    Φ.toHomeomorph.isOpenEmbedding.integralTopForm_mpullback_of_isOrientationPreservingAt
+      hΦ (fun y _ ↦ ⟨Φ.symm y, Φ.apply_symm_apply y⟩)
+
 end compactlySupportedDeRhamCohomology
 
 variable (I M) in
@@ -136,7 +201,7 @@ theorem poincarePairing_mk (o : Manifold.Orientation I M (Fin (k + l)))
     (φ : closedForms I M k) (ψ : compactlySupportedClosedForms I M l) :
     poincarePairing I M o (deRhamCohomology.mk I k φ)
         (compactlySupportedDeRhamCohomology.mk I l ψ) =
-      integralTopForm o ((φ.1 : RoughForm I M ℝ k).wedge ψ.1.1) := by
+      integralTopForm o (RoughForm.wedge (φ.1 : RoughForm I M ℝ k) ψ.1.1) := by
   rw [poincarePairing_apply, compactlySupportedDeRhamCohomology.wedge_mk,
     compactlySupportedDeRhamCohomology.integral_mk, SmoothForm.coe_wedge]
 

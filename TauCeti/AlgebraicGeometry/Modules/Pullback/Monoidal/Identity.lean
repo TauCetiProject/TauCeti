@@ -50,13 +50,13 @@ theorem pullback_id_η (X : Scheme.{u}) :
 identification with the identity functor. -/
 @[reassoc (attr := simp)]
 theorem pullback_id_δ (X : Scheme.{u}) (E F : QuasicoherentSheaf X) :
-    δ (pullback (𝟙 X)) E F ≫
+    CategoryTheory.Functor.OplaxMonoidal.δ (pullback (𝟙 X)) E F ≫
         ((pullbackId X).hom.app E ⊗ₘ (pullbackId X).hom.app F) =
       (pullbackId X).hom.app (E ⊗ F) := by
   apply ObjectProperty.hom_ext
   -- Read full-subcategory composition and tensor on the underlying modules. This avoids
   -- mixing the category instances for `X.Modules` and its unfolded sheaf type during rewriting.
-  change (δ (pullback (𝟙 X)) E F).hom ≫
+  change (CategoryTheory.Functor.OplaxMonoidal.δ (pullback (𝟙 X)) E F).hom ≫
       (tensorHom (C := X.Modules) ((pullbackId X).hom.app E).hom
         ((pullbackId X).hom.app F).hom) =
     ((pullbackId X).hom.app (E ⊗ F)).hom
@@ -78,11 +78,12 @@ theorem pullback_id_δ (X : Scheme.{u}) (E F : QuasicoherentSheaf X) :
 instance isMonoidal_pullbackId_hom (X : Scheme.{u}) :
     NatTrans.IsMonoidal (pullbackId X).hom where
   unit := by
-    rw [← pullback_id_η X]
-    exact Functor.Monoidal.ε_η _
+    erw [← pullback_id_η X]
+    exact CategoryTheory.Functor.Monoidal.ε_η _
   tensor E F := by
-    rw [← cancel_epi (δ (pullback (𝟙 X)) E F)]
+    rw [← cancel_epi (CategoryTheory.Functor.OplaxMonoidal.δ (pullback (𝟙 X)) E F)]
     simp [pullback_id_δ]
+    rfl
 
 end
 

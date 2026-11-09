@@ -187,6 +187,27 @@ lemma baseChangeFunctor_map {H L : _root_.CommHopfAlgCat.{v} k} (φ : H ⟶ L) :
     (baseChangeFunctor (K := K)).map φ = baseChangeMap (K := K) φ :=
   (rfl)
 
+/-- If a surjective coordinate map and its composite with a lift commute with base-change
+identifications, then the lift itself commutes with those identifications. -/
+theorem baseChangeMap_lift_comp_iso_hom
+    {H Q L : _root_.CommHopfAlgCat.{v} k}
+    {H' Q' L' : _root_.CommHopfAlgCat.{max w v} K}
+    (f : H ⟶ Q) (hf : Function.Surjective f.hom) (lift : Q ⟶ L)
+    (f' : H' ⟶ Q') (lift' : Q' ⟶ L')
+    (eH : baseChange (K := K) H ≅ H')
+    (eQ : baseChange (K := K) Q ≅ Q')
+    (eL : baseChange (K := K) L ≅ L')
+    (hf' : baseChangeMap f ≫ eQ.hom = eH.hom ≫ f')
+    (hcomp : (eH.inv ≫ baseChangeMap (f ≫ lift)) ≫ eL.hom = f' ≫ lift') :
+    baseChangeMap lift ≫ eL.hom = eQ.hom ≫ lift' := by
+  let F := baseChangeFunctor (k := k) (K := K)
+  have := ConcreteCategory.epi_of_surjective _ (baseChangeMap_surjective (K := K) f hf)
+  rw [← baseChangeFunctor_map] at this ⊢
+  apply (cancel_epi (F.map f)).mp
+  rw [← Category.assoc, ← Functor.map_comp, baseChangeFunctor_map]
+  rw [← Category.assoc, hf', Category.assoc]
+  exact (Iso.inv_comp_eq eH).mp hcomp
+
 section Tower
 
 variable (k K) {E : Type v} [CommRing E] [Algebra k E] [Algebra E K] [IsScalarTower k E K]
@@ -224,7 +245,7 @@ on the same algebra, with scalars restricted from `K` to `k`. -/
 noncomputable def baseChangePointsMulEquiv (H : _root_.CommHopfAlgCat.{v} k) :
     HopfAlgebra.points (R := K) (H := baseChange (K := K) H) A ≃*
       HopfAlgebra.points (R := k) (H := H)
-        (_root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A) :=
+        (CommAlgCat.restrictScalarsObj (algebraMap k K) A) :=
   letI : Algebra k A := Algebra.compHom A (algebraMap k K)
   letI : IsScalarTower k K A := IsScalarTower.of_algebraMap_eq' rfl
   (AlgHom.baseChangePointsMulEquiv (k := k) (K := K) (A := H) (R := A)).symm
@@ -244,7 +265,7 @@ lemma baseChangePointsMulEquiv_apply_apply (H : _root_.CommHopfAlgCat.{v} k)
 lemma baseChangePointsMulEquiv_symm_apply_tmul
     (H : _root_.CommHopfAlgCat.{v} k)
     (f : HopfAlgebra.points (R := k) (H := H)
-      (_root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A))
+      (CommAlgCat.restrictScalarsObj (algebraMap k K) A))
     (s : K) (h : H) :
     ((baseChangePointsMulEquiv (K := K) A H).symm f).ofConv (s ⊗ₜ[k] h) = s • f.ofConv h :=
   letI : Algebra k A := Algebra.compHom A (algebraMap k K)
@@ -259,13 +280,13 @@ lemma baseChangePointsMulEquiv_mapValue
     (χ : A ⟶ B) (f : HopfAlgebra.points (R := K) (H := baseChange (K := K) H) A) :
     baseChangePointsMulEquiv (K := K) B H (HopfAlgebra.mapPoints (H := baseChange (K := K) H) χ f) =
       HopfAlgebra.mapPoints (H := H)
-        ((_root_.TauCeti.CommAlgCat.restrictScalars (algebraMap k K)).map χ)
+        ((CommAlgCat.restrictScalars (algebraMap k K)).map χ)
       (baseChangePointsMulEquiv (K := K) A H f) := by
   let : Algebra k A := Algebra.compHom A (algebraMap k K)
   let : IsScalarTower k K A := IsScalarTower.of_algebraMap_eq' rfl
   let : Algebra k B := Algebra.compHom B (algebraMap k K)
   let : IsScalarTower k K B := IsScalarTower.of_algebraMap_eq' rfl
-  rw [_root_.TauCeti.CommAlgCat.restrictScalars_map]
+  rw [CommAlgCat.restrictScalars_map]
   -- `HopfAlgebra.mapPoints` is definitionally the multiplicative map induced by
   -- `AlgHom.mapValue`; after rewriting the restricted categorical map, `change` exposes
   -- that underlying `AlgHom.mapValue` statement.
@@ -274,7 +295,7 @@ lemma baseChangePointsMulEquiv_mapValue
     AlgHom.mapValue (H := H) (χ.hom.restrictScalars k)
       (baseChangePointsMulEquiv (K := K) A H f)
   simpa [baseChangePointsMulEquiv, HopfAlgebra.mapPoints,
-    _root_.TauCeti.CommAlgCat.restrictScalarsMap, AlgHom.mapValue_apply]
+    CommAlgCat.restrictScalarsMap, AlgHom.mapValue_apply]
     using AlgHom.baseChangePointsMulEquiv_symm_mapValue (k := k) (K := K) (A := H)
       (R := A) (S := B) χ.hom f
 
@@ -284,7 +305,7 @@ lemma baseChangePointsMulEquiv_mapDomain {H L : _root_.CommHopfAlgCat.{v} k}
     baseChangePointsMulEquiv (K := K) A H
         (BialgHom.mapDomain (A := A) ((baseChangeMap (K := K) φ).hom) f) =
       BialgHom.mapDomain
-        (A := _root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A)
+        (A := CommAlgCat.restrictScalarsObj (algebraMap k K) A)
         φ.hom
         (baseChangePointsMulEquiv (K := K) A L f) := by
   let : Algebra k A := Algebra.compHom A (algebraMap k K)
@@ -303,7 +324,7 @@ noncomputable def baseChangeIsoPointsMulEquiv (e : L ≅ baseChange (K := K) H)
     (A : CommAlgCat.{x} K) :
     HopfAlgebra.points (R := K) (H := L) A ≃*
       HopfAlgebra.points (R := k) (H := H)
-        (_root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A) :=
+        (CommAlgCat.restrictScalarsObj (algebraMap k K) A) :=
   (BialgEquiv.mapDomainMulEquiv (A := A) (_root_.CommHopfAlgCat.ofIso e.symm)).trans
     (baseChangePointsMulEquiv (K := K) A H)
 
@@ -356,7 +377,7 @@ lemma baseChangeIsoPointsMulEquiv_mapPoints (e : L ≅ baseChange (K := K) H)
     (f : HopfAlgebra.points (R := K) (H := L) A) :
     baseChangeIsoPointsMulEquiv e B (HopfAlgebra.mapPoints (H := L) χ f) =
       HopfAlgebra.mapPoints (H := H)
-        ((_root_.TauCeti.CommAlgCat.restrictScalars (algebraMap k K)).map χ)
+        ((CommAlgCat.restrictScalars (algebraMap k K)).map χ)
         (baseChangeIsoPointsMulEquiv e A f) := by
   -- Transport along `e` is a pre-composition in the coordinate Hopf algebra, so it commutes with
   -- the post-composition by `χ` in the value algebra. The bundled `mapDomainMulEquiv` and

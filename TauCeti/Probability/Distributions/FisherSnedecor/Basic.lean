@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Distributions.Beta.Basic
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.Analysis.SpecialFunctions.Beta
 import TauCeti.MeasureTheory.Measure.WithDensity
@@ -128,8 +129,7 @@ theorem isProbabilityMeasure_fisherSnedecorMeasure_iff :
   · intro h
     by_contra hmn
     rw [fisherSnedecorMeasure_of_not_pos hmn] at h
-    let _ : IsProbabilityMeasure (0 : Measure ℝ) := h
-    exact (IsProbabilityMeasure.ne_zero (0 : Measure ℝ)) rfl
+    exact not_isProbabilityMeasure_zero h
   · rintro ⟨hm, hn⟩
     exact isProbabilityMeasure_fisherSnedecorMeasure hm hn
 
@@ -433,7 +433,6 @@ theorem fisherSnedecorMeasure_eq_withDensity (m n : ℝ) :
     rw [fisherSnedecorMeasure_eq_map hm hn, betaMeasure_eq_withDensity_restrict_Ioo,
       withDensity_congr_ae hweight,
       MeasureTheory.map_withDensity_abs_deriv_mul measurableSet_Ioo
-        (measurable_fisherSnedecorMap m n)
         (fun u hu ↦ (hasDerivAt_fisherSnedecorMap m n hu.2.ne).hasDerivWithinAt)
         ((fisherSnedecorMap_strictMonoOn hm hn).injOn.mono fun _ hu ↦ hu.2),
       fisherSnedecorMap_image_Ioo hm hn, ← withDensity_indicator measurableSet_Ioi,

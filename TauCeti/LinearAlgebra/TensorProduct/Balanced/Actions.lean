@@ -53,7 +53,7 @@ private def leftActionHom : S →+* Module.End k (BalancedTensorProduct k A M N)
   map_one' := hom_ext fun m n ↦ by simp [leftAction_tmul]
   map_add' s t := hom_ext fun m n ↦ by simp [leftAction_tmul, add_smul, add_tmul]
   map_mul' s t := hom_ext fun m n ↦ by
-    simp [Module.End.mul_apply, leftAction_tmul, mul_smul]
+    simp [mul_apply_eq_comp, leftAction_tmul, mul_smul]
 
 /-- The module structure induced by the outer action on the first factor. -/
 @[instance_reducible]
@@ -152,7 +152,7 @@ private def rightActionHom : T →+* Module.End k (BalancedTensorProduct k A M N
   map_one' := hom_ext fun m n ↦ by simp [rightAction_tmul]
   map_add' s t := hom_ext fun m n ↦ by simp [rightAction_tmul, add_smul, tmul_add]
   map_mul' s t := hom_ext fun m n ↦ by
-    simp [Module.End.mul_apply, rightAction_tmul, mul_smul]
+    simp [mul_apply_eq_comp, rightAction_tmul, mul_smul]
 
 /-- The module structure induced by the outer action on the second factor. -/
 @[instance_reducible]

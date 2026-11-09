@@ -33,6 +33,13 @@ of `f` at `x`, so it is injective there and its image contains an explicit ball 
 `fderiv ℝ g x`. The Morse index is preserved because the negative index of a nondegenerate
 symmetric bilinear form is locally constant.
 
+Nondegeneracy of all critical points on a compact set `K` persists as well: there is
+`δ > 0` such that every function `g`, `C²` on `K`, whose first and second derivatives stay within
+`δ` of those of `f` on `K`, again has only nondegenerate critical points on `K`. At a point of `K`
+either the differential of `f` is far from zero, and then so is that of `g`, or the second
+derivative of `f` is far from the closed set of non-invertible operators, and then that of `g` is
+invertible. Compactness makes the two alternatives uniform.
+
 ## Main declarations
 
 * `TauCeti.IsNondegenerateCriticalPoint.exists_criticalPoint_perturbation`: in a Banach space, a
@@ -43,6 +50,9 @@ symmetric bilinear form is locally constant.
   index there.
 * `TauCeti.IsNondegenerateCriticalPoint.exists_criticalPoint_perturbation_morseIndex_eq`: in
   finite dimensions the perturbed critical point moreover has the Morse index of `x`.
+* `TauCeti.HasNondegenerateCriticalPointsOn.exists_pos_forall_hasNondegenerateCriticalPointsOn`:
+  in a Banach space, a function `C²`-close to `f` on a compact set on which `f` has only
+  nondegenerate critical points has only nondegenerate critical points there.
 
 ## References
 
@@ -59,6 +69,28 @@ open scoped NNReal Topology
 namespace TauCeti.IsNondegenerateCriticalPoint
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : E → ℝ} {x : E}
+
+/-- If the second derivative of `f` is within `κ / 2` of `L` and that of `g` within `κ / 2` of
+that of `f` on a closed ball, then on the ball the second derivative of `g` is within `κ` of `L`
+and `fderiv ℝ g` is `κ`-approximated by `L`. -/
+private theorem approximatesLinearOn_fderiv_closedBall {g : E → ℝ} {L : E →L[ℝ] E →L[ℝ] ℝ}
+    {r κ : ℝ} (hκ : 0 ≤ κ) (hg : ∀ y ∈ closedBall x r, ContDiffAt ℝ 2 g y)
+    (hfy : ∀ y ∈ closedBall x r, ‖fderiv ℝ (fderiv ℝ f) y - L‖ < κ / 2)
+    (hgf : ∀ y ∈ closedBall x r, ‖fderiv ℝ (fderiv ℝ g) y - fderiv ℝ (fderiv ℝ f) y‖ ≤ κ / 2) :
+    (∀ y ∈ closedBall x r, ‖fderiv ℝ (fderiv ℝ g) y - L‖ ≤ κ) ∧
+      ApproximatesLinearOn (fderiv ℝ g) L (closedBall x r) ⟨κ, hκ⟩ := by
+  have hdiff : ∀ y ∈ closedBall x r, DifferentiableAt ℝ (fderiv ℝ g) y := fun y hy ↦
+    ((hg y hy).fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  have hclose : ∀ y ∈ closedBall x r, ‖fderiv ℝ (fderiv ℝ g) y - L‖ ≤ κ := fun y hy ↦
+    calc ‖fderiv ℝ (fderiv ℝ g) y - L‖
+        ≤ ‖fderiv ℝ (fderiv ℝ g) y - fderiv ℝ (fderiv ℝ f) y‖ +
+            ‖fderiv ℝ (fderiv ℝ f) y - L‖ :=
+          norm_sub_le_norm_sub_add_norm_sub (fderiv ℝ (fderiv ℝ g) y)
+            (fderiv ℝ (fderiv ℝ f) y) L
+      _ ≤ κ / 2 + κ / 2 := add_le_add (hgf y hy) (hfy y hy).le
+      _ = κ := add_halves _
+  exact ⟨hclose, fun y hy z hz ↦
+    (convex_closedBall x r).norm_image_sub_le_of_norm_fderiv_le' hdiff hclose hz hy⟩
 
 /-- **Persistence of a nondegenerate critical point under small `C²` perturbations.**
 
@@ -103,25 +135,13 @@ theorem exists_criticalPoint_perturbation [CompleteSpace E]
   refine ⟨K, ?_⟩
   filter_upwards [Ioo_mem_nhdsGT hρ] with r hr
   refine ⟨min (κ / 2) (r / (2 * C)), by have := hr.1; positivity, fun g hg hgx hgf ↦ ?_⟩
-  have hdiff : ∀ y ∈ closedBall x r, DifferentiableAt ℝ (fderiv ℝ g) y := fun y hy ↦
-    ((hg y hy).fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  -- On the ball the second derivative of `g` stays within `κ` of `L`.
-  have hclose : ∀ y ∈ closedBall x r,
-      ‖fderiv ℝ (fderiv ℝ g) y - (L : E →L[ℝ] E →L[ℝ] ℝ)‖ ≤ κ := fun y hy ↦ by
-    have hfy : ‖fderiv ℝ (fderiv ℝ f) y - (L : E →L[ℝ] E →L[ℝ] ℝ)‖ < κ / 2 := by
+  have hfy : ∀ y ∈ closedBall x r, ‖fderiv ℝ (fderiv ℝ f) y - (L : E →L[ℝ] E →L[ℝ] ℝ)‖ < κ / 2 :=
+    fun y hy ↦ by
       rw [hL]
       exact (mem_ball_iff_norm (E := E →L[ℝ] E →L[ℝ] ℝ)).1 <|
         hρf (lt_of_le_of_lt (mem_closedBall.1 hy) hr.2)
-    calc ‖fderiv ℝ (fderiv ℝ g) y - (L : E →L[ℝ] E →L[ℝ] ℝ)‖
-        ≤ ‖fderiv ℝ (fderiv ℝ g) y - fderiv ℝ (fderiv ℝ f) y‖ +
-            ‖fderiv ℝ (fderiv ℝ f) y - (L : E →L[ℝ] E →L[ℝ] ℝ)‖ :=
-          norm_sub_le_norm_sub_add_norm_sub (fderiv ℝ (fderiv ℝ g) y)
-            (fderiv ℝ (fderiv ℝ f) y) (L : E →L[ℝ] E →L[ℝ] ℝ)
-      _ ≤ κ / 2 + κ / 2 := add_le_add ((hgf y hy).trans (min_le_left _ _)) hfy.le
-      _ = κ := add_halves _
-  have happrox : ApproximatesLinearOn (fderiv ℝ g) (L : E →L[ℝ] E →L[ℝ] ℝ)
-      (closedBall x r) ⟨κ, hκ.le⟩ := fun y hy z hz ↦
-    (convex_closedBall x r).norm_image_sub_le_of_norm_fderiv_le' hdiff hclose hz hy
+  obtain ⟨hclose, happrox⟩ := approximatesLinearOn_fderiv_closedBall hκ.le hg hfy
+    fun y hy ↦ (hgf y hy).trans (min_le_left _ _)
   set n := ‖fderiv ℝ g x‖
   have hεr : 2 * C * n ≤ r := by
     have : n ≤ r / (2 * C) := hgx.trans (min_le_right _ _)
@@ -139,22 +159,10 @@ theorem exists_criticalPoint_perturbation [CompleteSpace E]
   · calc dist y x ≤ 2 * C * n := mem_closedBall.1 hyε
       _ ≤ K * n := by gcongr
   · -- Value: near `y` the differential of `g` is bounded by `(‖L‖ + κ)` times the distance to `y`.
-    let M : ℝ := ‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ
-    have hbound : ∀ w ∈ closedBall x (2 * C * n), ‖fderiv ℝ g w‖ ≤ M * (2 * (2 * C * n)) :=
-      fun w hw ↦ by
-        have hlip := happrox.lipschitzWith.dist_le_mul ⟨w, hsub hw⟩ ⟨y, hsub hyε⟩
-        simp only [domRestrict_apply, hy0, dist_zero_right, Subtype.dist_eq] at hlip
-        calc ‖fderiv ℝ g w‖ ≤ M * dist w y := hlip
-          _ ≤ M * (2 * (2 * C * n)) := by
-            gcongr
-            linarith [dist_triangle_right w y x, mem_closedBall.1 hw, mem_closedBall.1 hyε]
-    have hval := (convex_closedBall x (2 * C * n)).norm_image_sub_le_of_norm_fderiv_le
-      (fun w hw ↦ ((hg w (hsub hw)).differentiableAt (by norm_num))) hbound
-      (mem_closedBall_self (by positivity)) hyε
-    rw [Real.norm_eq_abs, ← dist_eq_norm] at hval
-    calc |g y - g x| ≤ M * (2 * (2 * C * n)) * dist y x := hval
-      _ ≤ M * (2 * (2 * C * n)) * (2 * C * n) := by gcongr; exact mem_closedBall.1 hyε
-      _ = (8 * M * C ^ 2) * n ^ 2 := by ring
+    calc |g y - g x| ≤ (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * (2 * (2 * C * n)) * (2 * C * n) :=
+        Real.norm_eq_abs _ ▸ happrox.norm_sub_le_of_fderiv_eq_zero
+          (fun w hw ↦ (hg w (hsub hw)).differentiableAt (by norm_num)) hsub hyε hy0
+      _ = (8 * (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * C ^ 2) * n ^ 2 := by ring
       _ ≤ K * n ^ 2 := by gcongr; linarith
 
 /-- **The Morse index is stable under small changes of the Hessian.**
@@ -172,11 +180,7 @@ theorem exists_pos_forall_morseIndex_eq [FiniteDimensional ℝ E]
     ⟨hg.isSymmSndFDerivAt (by simp)⟩
   have hmorse (g : E → ℝ) (y : E) :
       morseIndex g y = sigNeg (fderiv ℝ (fderiv ℝ g) y).toBilinForm.toQuadraticMap := by
-    rw [morseIndex_def]
-    congr 1
-    ext v
-    rw [LinearMap.BilinMap.toQuadraticMap_apply, hessianQuadraticForm_apply,
-      ContinuousLinearMap.toBilinForm_apply]
+    rw [morseIndex_def, hessianQuadraticForm_def]
   -- The negative index is locally constant on the space of symmetric forms.
   let a : {B : E →L[ℝ] E →L[ℝ] ℝ // B.toBilinForm.IsSymm} :=
     ⟨fderiv ℝ (fderiv ℝ f) x, hsymm h.contDiffAt⟩
@@ -231,3 +235,56 @@ theorem exists_criticalPoint_perturbation_morseIndex_eq [FiniteDimensional ℝ E
     _ = ε := add_halves _
 
 end TauCeti.IsNondegenerateCriticalPoint
+
+namespace TauCeti.HasNondegenerateCriticalPointsOn
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : E → ℝ}
+
+/-- **Nondegeneracy on a compact set persists under small `C²` perturbations.**
+
+Let `f` have only nondegenerate critical points on a compact subset `K` of a Banach space, with
+first and second derivatives continuous on `K`. Then there is `δ > 0` such that every function `g`
+which is `C²` at each point of `K`, and whose first and second derivatives are within `δ` of those
+of `f` at each point of `K`, again has only nondegenerate critical points on `K`. -/
+theorem exists_pos_forall_hasNondegenerateCriticalPointsOn [CompleteSpace E] {K : Set E}
+    (hK : IsCompact K) (hf₁ : ContinuousOn (fderiv ℝ f) K)
+    (hf₂ : ContinuousOn (fderiv ℝ (fderiv ℝ f)) K) (hM : HasNondegenerateCriticalPointsOn f K) :
+    ∃ δ > 0, ∀ g : E → ℝ, (∀ x ∈ K, ContDiffAt ℝ 2 g x) →
+      (∀ x ∈ K, ‖fderiv ℝ g x - fderiv ℝ f x‖ ≤ δ) →
+      (∀ x ∈ K, ‖fderiv ℝ (fderiv ℝ g) x - fderiv ℝ (fderiv ℝ f) x‖ ≤ δ) →
+      HasNondegenerateCriticalPointsOn g K := by
+  -- The non-invertible operators form a closed set `S`; if it is empty there is nothing to prove.
+  set S : Set (E →L[ℝ] E →L[ℝ] ℝ) := {T | ¬T.IsInvertible}
+  have hS : IsClosed S := ContinuousLinearMap.isOpen_setOfPred_isInvertible.isClosed_compl
+  rcases S.eq_empty_or_nonempty with hSe | hSne
+  · refine ⟨1, one_pos, fun g hg _ _ ↦ hasNondegenerateCriticalPointsOn_iff.2
+      fun x hx hgx ↦ ⟨hg x hx, hgx, not_not.1 fun h ↦ ?_⟩⟩
+    exact hSe.subset (show fderiv ℝ (fderiv ℝ g) x ∈ S from h)
+  -- `φ x` is positive on `K`: at a critical point of `f` the Hessian lies outside `S`.
+  set φ : E → ℝ := fun x ↦ ‖fderiv ℝ f x‖ + infDist (fderiv ℝ (fderiv ℝ f) x) S
+  have hφ : ContinuousOn φ K := hf₁.norm.add ((continuous_infDist_pt S).comp_continuousOn hf₂)
+  have hpos (x : E) (hx : x ∈ K) : 0 < φ x := by
+    by_cases h₀ : fderiv ℝ f x = 0
+    · have h := (hS.notMem_iff_infDist_pos hSne).1 fun h ↦
+        h (hasNondegenerateCriticalPointsOn_iff.1 hM hx h₀).isInvertible
+      simpa [φ, h₀] using h
+    · exact add_pos_of_pos_of_nonneg (norm_pos_iff.2 h₀) infDist_nonneg
+  -- By compactness, `φ` has a positive lower bound `m` on `K`.
+  obtain ⟨m, hm, hmK⟩ : ∃ m > 0, ∀ x ∈ K, m ≤ φ x := by
+    rcases K.eq_empty_or_nonempty with rfl | hne
+    · exact ⟨1, one_pos, by simp⟩
+    obtain ⟨x₀, hx₀, hmin⟩ := hK.exists_isMinOn hne hφ
+    exact ⟨φ x₀, hpos x₀ hx₀, fun x hx ↦ hmin hx⟩
+  refine ⟨m / 3, by positivity, fun g hg hg₁ hg₂ ↦ hasNondegenerateCriticalPointsOn_iff.2
+    fun x hx hgx ↦ ⟨hg x hx, hgx, not_not.1 fun h ↦ ?_⟩⟩
+  -- At a critical point of `g` the differential of `f` is at most `m / 3`, so the Hessian of `f`
+  -- is at distance at least `2m / 3` from `S`, while that of `g` lies in `S` within `m / 3` of it.
+  have h₁ : ‖fderiv ℝ f x‖ ≤ m / 3 := by simpa [hgx] using hg₁ x hx
+  have h₂ : infDist (fderiv ℝ (fderiv ℝ f) x) S ≤
+      ‖fderiv ℝ (fderiv ℝ g) x - fderiv ℝ (fderiv ℝ f) x‖ :=
+    (infDist_le_dist_of_mem (show fderiv ℝ (fderiv ℝ g) x ∈ S from h)).trans_eq
+      ((dist_comm _ _).trans
+        (dist_eq_norm (fderiv ℝ (fderiv ℝ g) x) (fderiv ℝ (fderiv ℝ f) x)))
+  linarith [hmK x hx, hg₂ x hx]
+
+end TauCeti.HasNondegenerateCriticalPointsOn

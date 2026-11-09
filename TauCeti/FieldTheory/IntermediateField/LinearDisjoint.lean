@@ -8,6 +8,8 @@ module
 public import Mathlib.FieldTheory.LinearDisjoint
 public import Mathlib.FieldTheory.Relrank
 public import TauCeti.LinearAlgebra.LinearIndependent.Algebra
+public import TauCeti.RingTheory.AlgebraTower
+public import TauCeti.RingTheory.Algebraic.LinearIndependent
 
 /-!
 # Relative degrees under linearly disjoint base change
@@ -44,14 +46,19 @@ The declarations live in Mathlib's `IntermediateField` namespace so that this do
 side: if the image of `k'` in a common overfield `E` is linearly disjoint from `F` over `k`, a
 family of `F` linearly independent over `k` stays linearly independent over `k'` in `E`.
 `TauCeti.linearDisjoint_fieldRange_of_forall_finiteDimensional` reduces that linear disjointness,
-for algebraic `k' / k`, to the finite subextensions of `k' / k`.
+for algebraic `k' / k`, to the finite subextensions of `k' / k`, and
+`IntermediateField.LinearDisjoint.fieldRange_intermediateField` restricts it to any intermediate
+field. With no algebraicity assumption on the new constants,
+`IntermediateField.LinearDisjoint.transcendental_algebraMap` preserves transcendental elements and
+`IntermediateField.LinearDisjoint.linearIndependent_adjoin_algebraMap_comp` preserves linear
+independence over an intermediate field after adjoining it to the new constants.
 -/
 
 public section
 
 noncomputable section
 
-open scoped IntermediateField
+open scoped IntermediateField IntermediateField.algebraAdjoinAdjoin
 
 namespace TauCeti
 
@@ -209,6 +216,65 @@ theorem _root_.IntermediateField.LinearDisjoint.linearIndependent_algebraMap_com
     fun _ _ ↦ by
       simp only [AddMonoidHom.id_apply, Algebra.smul_def, IntermediateField.algebraMap_apply,
         AlgHom.equivFieldRange_apply_coe, IsScalarTower.toAlgHom_apply]
+
+/-- A transcendental element remains transcendental after a linearly disjoint extension. -/
+theorem _root_.IntermediateField.LinearDisjoint.transcendental_algebraMap
+    (H : (IsScalarTower.toAlgHom k k' E).fieldRange.LinearDisjoint F)
+    {x : F} (hx : Transcendental k x) : Transcendental k' (algebraMap F E x) := by
+  have hli : LinearIndependent k' (fun n : ℕ ↦ algebraMap F E x ^ n) := by
+    simpa only [Function.comp_def, map_pow] using
+      H.linearIndependent_algebraMap_comp hx.linearIndependent_pow
+  intro ha
+  obtain ⟨d, hd⟩ := ha.exists_card_le_of_linearIndependent_pow
+  have hbound := hd (fun i : Fin (d + 1) ↦ (i : ℕ)) (hli.comp _ Fin.val_injective)
+  simp only [Fintype.card_fin] at hbound
+  omega
+
+/-- A linearly disjoint extension preserves independence over an intermediate field after
+adjoining that field to the enlarged constants. The constants may be transcendental. -/
+theorem _root_.IntermediateField.LinearDisjoint.linearIndependent_adjoin_algebraMap_comp
+    (H : (IsScalarTower.toAlgHom k k' E).fieldRange.LinearDisjoint F) (C : IntermediateField k F)
+    {ι : Type*} {c : ι → F} (hc : LinearIndependent C c) :
+    LinearIndependent (IntermediateField.adjoin k' (Set.range (algebraMap C E)))
+      (algebraMap F E ∘ c) := by
+  let b := Module.Basis.ofVectorSpace k C
+  let S := Algebra.adjoin k' (Set.range (algebraMap C E))
+  let w : _ → S := fun i ↦ ⟨algebraMap C E (b i), Algebra.subset_adjoin ⟨b i, rfl⟩⟩
+  have hprod := H.linearIndependent_algebraMap_comp (linearIndependent_smul b.linearIndependent hc)
+  have hw : Submodule.span k' (Set.range w) = ⊤ := by
+    let f := IsScalarTower.toAlgHom k C E
+    let e := AlgEquiv.ofInjective f f.injective
+    have hspan := f.range.adjoin_eq_span_basis k' (b.map e.toLinearEquiv)
+    have hrange : (f.range : Set E) = Set.range (algebraMap C E) := by
+      -- The tower homomorphism is the algebra map on elements.
+      rfl
+    have hfun : (fun i ↦ ((b.map e.toLinearEquiv) i : E)) =
+        algebraMap C E ∘ b := by
+      ext i
+      exact AlgEquiv.ofInjective_apply f f.injective (b i)
+    rw [hrange, hfun] at hspan
+    apply Submodule.map_injective_of_injective (f := S.val.toLinearMap) Subtype.val_injective
+    rw [Submodule.map_span, Submodule.map_top, ← Set.range_comp]
+    have hval : S.val.toLinearMap = S.toSubmodule.subtype :=
+      (Subalgebra.toSubmodule_subtype S).symm
+    rw [hval, Submodule.range_subtype]
+    exact hspan.symm
+  have hli : LinearIndependent S (algebraMap F E ∘ c) := by
+    apply LinearIndependent.of_smul_of_span_eq_top (b := w) (hb := hw)
+    convert (linearIndependent_equiv' (Equiv.prodComm ι _) (g := fun p : ι × _ ↦
+      algebraMap F E (b p.2 • c p.1)) rfl).mpr hprod using 1
+    ext p
+    simp [Algebra.smul_def, IsScalarTower.algebraMap_apply C F E, w]
+  exact (LinearIndependent.iff_fractionRing S
+    (IntermediateField.adjoin k' (Set.range (algebraMap C E)))).mp hli
+
+/-- Linear disjointness of the image of `k'` from `F` restricts to the image of every intermediate
+field `M` of `k' / k`. This is the converse of
+`TauCeti.linearDisjoint_fieldRange_of_forall_finiteDimensional`. -/
+theorem _root_.IntermediateField.LinearDisjoint.fieldRange_intermediateField
+    (H : (IsScalarTower.toAlgHom k k' E).fieldRange.LinearDisjoint F) (M : IntermediateField k k') :
+    (IsScalarTower.toAlgHom k M E).fieldRange.LinearDisjoint F :=
+  H.of_le_left (by rintro _ ⟨m, rfl⟩; exact ⟨m, rfl⟩)
 
 /-- **Linear disjointness from the finite subextensions**: if `k' / k` is algebraic and the image
 in `E` of every finite subextension `M` of `k' / k` is linearly disjoint from `F` over `k`, then so

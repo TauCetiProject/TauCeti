@@ -237,6 +237,23 @@ theorem transpose_insertPoint (x : GridState n) (newColumn newRow : Fin (n + 1))
     (x.insertPoint newColumn newRow).transpose = x.transpose.insertPoint newRow newColumn :=
   GridState.ext fun r ↦ by simp [insertPoint, transpose, Equiv.optionCongr_symm]
 
+/-- Diagonal reflection splits the transposed point across the exchanged row and column. -/
+theorem transpose_splitPoint (x : GridState n) (newColumn newRow : Fin (n + 1))
+    (splitColumn : Fin n) :
+    (x.splitPoint newColumn newRow splitColumn).transpose =
+      x.transpose.splitPoint newRow newColumn (x splitColumn) := by
+  refine GridState.ext fun r ↦ ?_
+  apply (x.splitPoint newColumn newRow splitColumn).toPerm.injective
+  rw [apply_transpose_apply]
+  induction r using Fin.succAboveCases newRow with
+  | x => simp
+  | p r =>
+    by_cases hr : r = x splitColumn
+    · subst r
+      simp
+    · have hc : x.toPerm.symm r ≠ splitColumn := fun h ↦ hr ((Equiv.symm_apply_eq x.toPerm).mp h)
+      simp [hr, hc]
+
 /-- Reversing both coordinates of a grid state with an inserted point reverses the coordinates of
 the inserted point. -/
 theorem rotate_insertPoint (x : GridState n) (newColumn newRow : Fin (n + 1)) :
@@ -486,6 +503,32 @@ theorem stabilizeX_castSucc_X (s : Fin n) (newRow : Fin (n + 1)) :
 theorem stabilizeX_succ_X (s : Fin n) (newRow : Fin (n + 1)) :
     (G.stabilizeX s.succ newRow s).X = G.X.insertPoint s.castSucc newRow := by
   rw [stabilizeX_X, GridState.splitPoint_succ_eq_insertPoint]
+
+/-- In the stabilization splitting the `X`-marking of column `s` with a new column just before
+it, the `X`-marking state has its point `(G.X s).succ` in the new column `s.castSucc`. -/
+theorem stabilizeX_X_castSucc (s : Fin n) :
+    (G.stabilizeX s.castSucc (G.X s).castSucc s).X s.castSucc = (G.X s).succ := by
+  have h := G.X.insertPoint_apply_succAbove s.succ (G.X s).castSucc s
+  rwa [Fin.succAbove_succ_self, Fin.succAbove_castSucc_self,
+    ← GridState.splitPoint_castSucc_eq_insertPoint, ← stabilizeX_X] at h
+
+/-- In the stabilization splitting the `X`-marking of column `s` with a new column just before
+it, exchanging the two points of the `X`-marking state in the new block gives the `X`-marking
+state of `G` with the center `(s.succ, (G.X s).succ)` of the block inserted. -/
+theorem stabilizeX_X_swapColumns (s : Fin n) :
+    (G.stabilizeX s.castSucc (G.X s).castSucc s).X.swapColumns s.succ s.castSucc =
+      G.X.insertPoint s.succ (G.X s).succ := by
+  rw [GridState.swapColumns_eq_swapRows, stabilizeX_X_castSucc, stabilizeX_X,
+    GridState.splitPoint_castSucc_eq_insertPoint, GridState.insertPoint_apply_newColumn,
+    GridState.insertPoint_swapRows]
+
+/-- In the stabilization splitting the `X`-marking of column `s` with a new column just before
+it, the `X`-marking state does not contain the center `(s.succ, (G.X s).succ)` of the new
+block. -/
+theorem stabilizeX_X_succ_ne (s : Fin n) :
+    (G.stabilizeX s.castSucc (G.X s).castSucc s).X s.succ ≠ (G.X s).succ := by
+  rw [stabilizeX_X, GridState.splitPoint_castSucc_apply_succ]
+  exact Fin.castSucc_lt_succ.ne
 
 /-- Splitting the `O`-marking of column `s` with a new column just before it gives the same
 diagram as splitting its `X`-marking with a new column just after it: both put an `O` at

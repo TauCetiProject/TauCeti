@@ -11,7 +11,10 @@ public import TauCeti.LinearAlgebra.SymplecticGroup
 -- This module supplies general-linear-group reindexing and re-exports the `GL` notation and its
 -- matrix coercion.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
+public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
+public import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
 
 /-!
 # The symplectic group as a subgroup of the general linear group
@@ -60,6 +63,9 @@ symplectic coordinate Hopf algebra and group scheme live in
   `TauCeti.GLSymplecticFin.mulEquivGLSymplectic` identifying the two presentations. The
   `Fin`-indexed form is what the symplectic coordinate Hopf algebra cuts out of `GLₘ₊ₘ`, whose
   coordinate ring is `Fin`-indexed.
+* `TauCeti.nondegenerate_JFin`: the transported alternating form is nondegenerate.
+
+* `TauCeti.GLSymplecticFin.det_eq_one`: a `Fin`-indexed symplectic matrix has determinant one.
 * `TauCeti.GLSymplecticFin.positiveLongRootTransvectionHom` and
   `negativeLongRootTransvectionHom`: the two families of long-root one-parameter subgroups.
 * `TauCeti.GLSymplecticFin.differenceShortRootHom`, `positiveSumShortRootHom`, and
@@ -259,6 +265,20 @@ theorem JFin_submatrix :
   ext i j
   simp [JFin]
 
+/-- The transported alternating form is `Matrix.J` with rows and columns reindexed along
+`finSumFinEquiv`. -/
+theorem JFin_eq_submatrix :
+    JFin m R = (J (Fin m) R).submatrix finSumFinEquiv.symm finSumFinEquiv.symm :=
+  (rfl)
+
+variable {m R} in
+/-- **The standard alternating form is nondegenerate**: `J` is invertible, its determinant being
+that of Mathlib's `Matrix.J`. -/
+theorem nondegenerate_JFin : (JFin m R).Nondegenerate :=
+  .of_det_mem_nonZeroDivisors <| by
+    rw [JFin_eq_submatrix, det_submatrix_equiv_self]
+    exact (isUnit_det_J _ _).mem_nonZeroDivisors
+
 /-- The transported alternating form of `Sp₄`, written out. -/
 theorem JFin_two_eq : JFin 2 R = !![0, 0, -1, 0; 0, 0, 0, -1; 1, 0, 0, 0; 0, 1, 0, 0] := by
   have hJ : JFin 2 R =
@@ -287,20 +307,37 @@ theorem JFin_mul_self : JFin m R * JFin m R = -1 := by
   have h' := congrArg (fun M => M.submatrix finSumFinEquiv.symm finSumFinEquiv.symm) h
   simpa [Matrix.submatrix_submatrix, hone] using h'
 
+/-- The transported alternating form is antisymmetric, which is Mathlib's `Matrix.J_transpose` read
+through the reindexing. -/
+@[simp]
+theorem JFin_transpose : (JFin m R)ᵀ = -JFin m R := by
+  rw [JFin, Matrix.transpose_submatrix, Matrix.J_transpose, Matrix.submatrix_neg, Pi.neg_apply,
+    Pi.neg_apply]
+
 variable {m R} in
-/-- A scalar matrix preserving the transported alternating form has scalar a square root of one,
-provided the form is nonempty: the relation reads `c ^ 2 • J = J`, and `J` has an entry equal to
-one. -/
-theorem sq_eq_one_of_smul_one_mul_JFin_mul_transpose_eq (hm : m ≠ 0) {c : R}
-    (h : (c • (1 : Matrix (Fin (m + m)) (Fin (m + m)) R)) * JFin m R *
-      (c • (1 : Matrix (Fin (m + m)) (Fin (m + m)) R))ᵀ = JFin m R) : c ^ 2 = 1 := by
-  have h' : (c ^ 2) • JFin m R = JFin m R := by simpa [smul_smul, sq] using h
-  -- Read the relation in `Fin m ⊕ Fin m` coordinates, where `J` has a visible entry `1`.
-  have hJ := congrArg (fun M ↦ M.submatrix finSumFinEquiv finSumFinEquiv) h'
-  simp only [Matrix.submatrix_smul, JFin_submatrix] at hJ
-  have hentry := congrFun (congrFun hJ (Sum.inr ⟨0, Nat.pos_of_ne_zero hm⟩))
-    (Sum.inl ⟨0, Nat.pos_of_ne_zero hm⟩)
-  simpa [Matrix.J] using hentry
+/-- The transported alternating form vanishes on the diagonal: `vᵀ J v = 0`. -/
+@[simp]
+theorem dotProduct_JFin_mulVec_self (v : Fin (m + m) → R) : v ⬝ᵥ (JFin m R *ᵥ v) = 0 := by
+  -- Read the form in `Fin m ⊕ Fin m` coordinates, where `J` is the block matrix `[0, -1; 1, 0]`.
+  have hv : v = (v ∘ finSumFinEquiv) ∘ finSumFinEquiv.symm := by
+    ext; simp
+  rw [JFin, hv, Matrix.submatrix_mulVec_equiv, Equiv.symm_symm, Function.comp_assoc,
+    finSumFinEquiv.self_comp_symm, Function.comp_id]
+  simp only [dotProduct, Function.comp_apply]
+  rw [← finSumFinEquiv.sum_comp]
+  simp [Fintype.sum_sum_type, J, Matrix.fromBlocks_mulVec, Matrix.neg_mulVec, Function.comp_def,
+    mul_comm]
+
+variable {m R} in
+/-- The transported alternating form is antisymmetric: `wᵀ J u = -(uᵀ J w)`. -/
+theorem dotProduct_JFin_mulVec_eq_neg (u w : Fin (m + m) → R) :
+    w ⬝ᵥ (JFin m R *ᵥ u) = -(u ⬝ᵥ (JFin m R *ᵥ w)) := by
+  rw [Matrix.dotProduct_mulVec, dotProduct_comm, ← Matrix.vecMul_transpose, JFin_transpose,
+    Matrix.vecMul_neg, dotProduct_neg, neg_neg]
+
+/-- The transported alternating form is a unit, with inverse its negative. -/
+theorem isUnit_JFin : IsUnit (JFin m R) :=
+  Matrix.isUnit_of_mul_self_eq_neg_one (JFin_mul_self m R)
 
 variable {m R} in
 /-- A matrix preserving the transported alternating form is a symplectic matrix in Mathlib's
@@ -427,6 +464,18 @@ theorem coe_mulEquivGLSymplectic (M : GLSymplecticFin m R) :
       Equiv.reindexGL finSumFinEquiv.symm R (M : GL (Fin (m + m)) R) := by
   simp [mulEquivGLSymplectic]
 
+variable {m R} in
+/-- **A `Fin`-indexed symplectic matrix has determinant one.** So the determinant denominators
+of rational functions on `GL (m + m)` disappear when they are restricted to the symplectic
+group. -/
+theorem det_eq_one (M : GLSymplecticFin m R) :
+    ((M : GL (Fin (m + m)) R) : Matrix (Fin (m + m)) (Fin (m + m)) R).det = 1 := by
+  -- Reindex along `finSumFinEquiv`, which preserves the determinant, and apply Mathlib's
+  -- `SymplecticGroup.det_eq_one` in sum coordinates.
+  have h := GLSymplectic.mem_iff_mem_symplecticGroup.mp (mulEquivGLSymplectic m R M).2
+  rw [coe_mulEquivGLSymplectic, Equiv.coe_reindexGL, Equiv.symm_symm] at h
+  rw [← SymplecticGroup.det_eq_one h, Matrix.det_submatrix_equiv_self]
+
 /-- A ring morphism carries `Fin`-indexed symplectic matrices to symplectic matrices. -/
 def map {S : Type*} [CommRing S] (f : R →+* S) :
     GLSymplecticFin m R →* GLSymplecticFin m S where
@@ -447,6 +496,13 @@ theorem coe_map {S : Type*} [CommRing S] (f : R →+* S) (M : GLSymplecticFin m 
     ((GLSymplecticFin.map m R f M : GLSymplecticFin m S) : GL (Fin (m + m)) S) =
       Matrix.GeneralLinearGroup.map f (M : GL (Fin (m + m)) R) :=
   (rfl)
+
+variable {m R} in
+/-- Entrywise application of an injective ring morphism is injective on `Fin`-indexed symplectic
+matrices. -/
+theorem map_injective {S : Type*} [CommRing S] {f : R →+* S} (hf : Function.Injective f) :
+    Function.Injective (GLSymplecticFin.map m R f) := fun _ _ h =>
+  Subtype.ext (Matrix.GeneralLinearGroup.map_injective hf (congrArg Subtype.val h))
 
 end GLSymplecticFin
 

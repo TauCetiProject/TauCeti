@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Complexification
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Dual
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Oriented
 
 /-!
@@ -43,19 +44,29 @@ the positive orientation and `-1` for the negative one.
 * `CliffordAlgebra.complexVolume_eq`: `Γ = i ^ ⌊(n + 1) / 2⌋ c(e₁) ⋯ c(eₙ)` for every positively
   oriented orthonormal basis `e` that is orthogonal for `Q`, and
   `CliffordAlgebra.complexVolume_eq_prod_pairs`: in dimension `2ℓ` it groups as
-  `Γ = i ^ ℓ (c(e₁) c(e₂)) ⋯ (c(e₂ℓ₋₁) c(e₂ℓ))`.
+  `Γ = i ^ ℓ (c(e₁) c(e₂)) ⋯ (c(e₂ℓ₋₁) c(e₂ℓ))`, while
+  `CliffordAlgebra.complexVolume_eq_prod_pairs_mul`: in dimension `2ℓ + 1` it groups as
+  `ω_ℂ = i ^ (ℓ + 1) (c(e₁) c(e₂)) ⋯ (c(e₂ℓ₋₁) c(e₂ℓ)) c(e₂ℓ₊₁)`.
+* `CliffordAlgebra.ofBaseChangeAux_volumeElement`: conversely, the real volume element is
+  `(-i) ^ ⌊(n + 1) / 2⌋ Γ`.
 * `CliffordAlgebra.complexVolume_neg_orientation`: reversing the orientation negates `Γ`, and
   `CliffordAlgebra.complexVolume_positiveOrientation`: in rank zero, `Γ = 1`.
+* `CliffordAlgebra.map_complexVolume`: the complexification of an isometry of quadratic forms that
+  also preserves the norms carries `Γ` to `Γ` for the transported orientation.
 * `CliffordAlgebra.complexVolume_mul_self`: `Γ² = 1` for `Q v = -‖v‖²`.
+* `CliffordAlgebra.complexVolume_smul_complexVolume_smul`,
+  `CliffordAlgebra.lsmul_complexVolume_involutive`: `Γ` acts as an involution on every module.
 * `CliffordAlgebra.conjStar_complexVolume`: `Γ` is fixed by the conjugate-linear Clifford
   involution, while `CliffordAlgebra.star_complexVolume` computes the complex-linear Clifford
   conjugation `star Γ = (-1) ^ ⌊(n + 1) / 2⌋ Γ`; in dimension `2ℓ` this is `(-1) ^ ℓ Γ`.
 * `CliffordAlgebra.complexVolume_mul_eq_involute_mul`: in even dimension, `Γ x = involute x Γ`;
-  hence `Γ` commutes with even elements (`CliffordAlgebra.commute_complexVolume_of_mem_even`) and
-  anticommutes with odd ones (`CliffordAlgebra.complexVolume_mul_of_mem_odd`), and in particular
-  with vectors (`CliffordAlgebra.complexVolume_mul_ι_of_even`). For `Q v = -‖v‖²`, conjugation by
-  `Γ` is the grade involution (`CliffordAlgebra.complexVolume_mul_mul_complexVolume`).
+  hence `Γ` anticommutes with odd elements (`CliffordAlgebra.complexVolume_mul_of_mem_odd`), in
+  particular with vectors (`CliffordAlgebra.complexVolume_mul_ι_of_even`). For `Q v = -‖v‖²`,
+  conjugation by `Γ` is the grade involution
+  (`CliffordAlgebra.complexVolume_mul_mul_complexVolume`).
 * `CliffordAlgebra.complexVolume_mem_center`: in odd dimension, `Γ` is central.
+* `CliffordAlgebra.commute_complexVolume_of_mem_even`: in every dimension, `Γ` commutes with even
+  elements.
 
 Only the statements involving `Γ²` assume `Q v = -‖v‖²`; the others hold for every `Q`.
 
@@ -95,6 +106,13 @@ theorem complexVolume_def :
 
 variable {Q}
 
+/-- The real volume element is `(-i) ^ ⌊(n + 1) / 2⌋ Γ` in the complexified Clifford algebra; in
+dimension two it is `-i Γ`. -/
+theorem ofBaseChangeAux_volumeElement :
+    ofBaseChangeAux ℂ Q (volumeElement Q o) = (-Complex.I) ^ ((n + 1) / 2) • complexVolume Q o := by
+  rw [complexVolume_def, smul_smul, ← mul_pow, neg_mul, Complex.I_mul_I, neg_neg, one_pow,
+    one_smul]
+
 /-- Reversing the orientation negates the normalized complex volume element. -/
 @[simp]
 theorem complexVolume_neg_orientation : complexVolume Q (-o) = -complexVolume Q o := by
@@ -122,6 +140,21 @@ theorem complexVolume_eq_prod_pairs {ℓ : ℕ} [Fact (finrank ℝ V = 2 * ℓ)]
     List.prod_flatten, List.map_ofFn, show (2 * ℓ + 1) / 2 = ℓ by omega]
   simp [List.ofFn_succ, Function.comp_def]
 
+/-- **`ω_ℂ` as a product of adjacent pairs and a last vector**: in dimension `2ℓ + 1`,
+`ω_ℂ = i ^ (ℓ + 1) (c(e₁) c(e₂)) ⋯ (c(e₂ℓ₋₁) c(e₂ℓ)) c(e₂ℓ₊₁)` for every positively oriented
+orthonormal basis `e` that is orthogonal for `Q`. -/
+theorem complexVolume_eq_prod_pairs_mul {ℓ : ℕ} [Fact (finrank ℝ V = 2 * ℓ + 1)]
+    {o : Orientation ℝ V (Fin (2 * ℓ + 1))} (b : OrthonormalBasis (Fin (2 * ℓ + 1)) ℝ V)
+    (hb : b.toBasis.orientation = o) (hQb : (QuadraticMap.associated Q).IsOrthoᵢ b.toBasis) :
+    complexVolume Q o = Complex.I ^ (ℓ + 1) • ((List.ofFn fun k : Fin ℓ ↦
+      ι (Q.baseChange ℂ) (1 ⊗ₜ b ⟨2 * k, by omega⟩) *
+        ι (Q.baseChange ℂ) (1 ⊗ₜ b ⟨2 * k + 1, by omega⟩)).prod *
+      ι (Q.baseChange ℂ) (1 ⊗ₜ b (Fin.last (2 * ℓ)))) := by
+  rw [complexVolume_eq o b hb hQb, List.finRange_succ_last,
+    show (2 * ℓ + 1 + 1) / 2 = ℓ + 1 by omega]
+  simp [List.prod_append, ← List.ofFn_eq_map, List.ofFn_mul', List.prod_flatten, List.ofFn_succ,
+    Function.comp_def]
+
 /-- **The normalized complex volume element in rank zero**: for the positive orientation of a
 zero-dimensional space, `Γ = 1`. By `CliffordAlgebra.complexVolume_neg_orientation`, the negative
 orientation gives `Γ = -1`. -/
@@ -131,6 +164,23 @@ theorem complexVolume_positiveOrientation [Fact (finrank ℝ V = 0)] :
   rw [complexVolume_eq _ ((stdOrthonormalBasis ℝ V).reindex (finCongr Fact.out))
     (Basis.orientation_isEmpty _) fun i ↦ i.elim0]
   simp
+
+section Naturality
+
+variable {V' : Type*} [NormedAddCommGroup V'] [InnerProductSpace ℝ V'] [FiniteDimensional ℝ V']
+  [Fact (finrank ℝ V' = n)] {Q' : QuadraticForm ℝ V'}
+
+/-- **Naturality of `Γ`**: the complexification of an isometric equivalence `e` of the quadratic
+forms that also preserves the norms carries `Γ` for `o` to `Γ` for the transported orientation.
+In particular an orientation-preserving isometry of `V` fixing `Q` fixes `Γ`, while an
+orientation-reversing one negates it (`CliffordAlgebra.complexVolume_neg_orientation`). -/
+theorem map_complexVolume (e : Q.IsometryEquiv Q') (he : ∀ v, ‖e v‖ = ‖v‖) :
+    map (e.toIsometry.baseChange ℂ) (complexVolume Q o) =
+      complexVolume Q' (o.map (Fin n) e.toLinearEquiv) := by
+  rw [complexVolume_def, complexVolume_def, map_smul, ← QuadraticMap.Isometry.ofBaseChangeAux_map,
+    map_volumeElement o e he]
+
+end Naturality
 
 /-- The grade involution multiplies `Γ` by `(-1) ^ n`. -/
 @[simp]
@@ -203,11 +253,6 @@ theorem complexVolume_mul_eq_involute_mul (hn : Even n) (x : CliffordAlgebra (Q.
   | mul a b ha hb => rw [← mul_assoc, ha, mul_assoc, hb, map_mul, mul_assoc]
   | add a b ha hb => rw [mul_add, ha, hb, map_add, add_mul]
 
-/-- In even dimension `Γ` commutes with every even element. -/
-theorem commute_complexVolume_of_mem_even (hn : Even n) {x : CliffordAlgebra (Q.baseChange ℂ)}
-    (hx : x ∈ evenOdd (Q.baseChange ℂ) 0) : Commute (complexVolume Q o) x := by
-  rw [Commute, SemiconjBy, complexVolume_mul_eq_involute_mul o hn, involute_eq_of_mem_even hx]
-
 /-- In even dimension `Γ` anticommutes with every odd element. -/
 theorem complexVolume_mul_of_mem_odd (hn : Even n) {x : CliffordAlgebra (Q.baseChange ℂ)}
     (hx : x ∈ evenOdd (Q.baseChange ℂ) 1) : complexVolume Q o * x = -(x * complexVolume Q o) := by
@@ -231,6 +276,14 @@ theorem complexVolume_mem_center (hn : Odd n) :
   | mul a b ha hb => rw [mul_assoc, hb, ← mul_assoc, ha, mul_assoc]
   | add a b ha hb => rw [add_mul, mul_add, ha, hb]
 
+/-- `Γ` commutes with every even element, in every dimension: in even dimension `Γ` intertwines the
+grade involution, and in odd dimension `Γ` is central. -/
+theorem commute_complexVolume_of_mem_even {x : CliffordAlgebra (Q.baseChange ℂ)}
+    (hx : x ∈ evenOdd (Q.baseChange ℂ) 0) : Commute (complexVolume Q o) x := by
+  rcases Nat.even_or_odd n with hn | hn
+  · rw [Commute, SemiconjBy, complexVolume_mul_eq_involute_mul o hn, involute_eq_of_mem_even hx]
+  · exact ((Subalgebra.mem_center_iff.mp (complexVolume_mem_center o hn) x).symm)
+
 section Form
 
 variable (hQ : ∀ v, Q v = -‖v‖ ^ 2)
@@ -242,6 +295,19 @@ theorem complexVolume_mul_self : complexVolume Q o * complexVolume Q o = 1 := by
   rw [complexVolume_def, smul_mul_smul_comm, ← map_mul, volumeElement_mul_self o hQ, ← mul_pow,
     Complex.I_mul_I]
   simp [Algebra.smul_def, ← pow_add, ← two_mul]
+
+/-- **`Γ` acts as an involution** on every module: `Γ • Γ • ψ = ψ`. -/
+theorem complexVolume_smul_complexVolume_smul {M : Type*}
+    [MulAction (CliffordAlgebra (Q.baseChange ℂ)) M] (ψ : M) :
+    complexVolume Q o • complexVolume Q o • ψ = ψ := by
+  rw [← mul_smul, complexVolume_mul_self o hQ, one_smul]
+
+/-- Multiplication by `Γ` is an involution of every module. -/
+theorem lsmul_complexVolume_involutive {M : Type*} [AddCommGroup M] [Module ℂ M]
+    [Module (CliffordAlgebra (Q.baseChange ℂ)) M]
+    [IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) M] :
+    Function.Involutive (Algebra.lsmul ℂ ℂ M (complexVolume Q o)) :=
+  complexVolume_smul_complexVolume_smul o hQ
 
 /-- **In even dimension, conjugation by `Γ` is the grade involution**: `Γ x Γ = involute x`. -/
 theorem complexVolume_mul_mul_complexVolume (hn : Even n) (x : CliffordAlgebra (Q.baseChange ℂ)) :

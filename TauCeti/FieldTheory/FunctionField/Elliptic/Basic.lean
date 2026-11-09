@@ -42,6 +42,11 @@ transported group depends on the choice of `P₀`, so it is a definition, not an
   a place of degree one;
   `TauCeti.isEllipticFunctionField_iff_genus_eq_one_and_exists_place_degree_eq_one` is the
   converse.
+* `TauCeti.isEllipticFunctionField_of_genus_eq_one`: over an algebraically closed field, a
+  function field of genus one is elliptic.
+* `TauCeti.IsEllipticFunctionField.infinite_degreeClass_ker_iff`: `Cl⁰(F)` is infinite exactly
+  when `F` has infinitely many places of degree one;
+  `TauCeti.infinite_degreeClass_ker_of_genus_eq_one` applies it over an algebraically closed field.
 * `TauCeti.Place.degreeOneAddCommGroup_add_eq_iff`: the group law of the degree-one places,
   `P ⊕ Q = R ↔ P + Q ∼ R + P₀`.
 
@@ -121,6 +126,13 @@ theorem isEllipticFunctionField_iff_genus_eq_one_and_exists_place_degree_eq_one
   rw [Divisor.degree_ofPoint, hP]
   norm_num
 
+/-- **Over an algebraically closed field, a function field of genus one is elliptic**: the
+constant field is exact and every place has degree one. -/
+theorem isEllipticFunctionField_of_genus_eq_one [IsAlgClosed k] (hF : IsFunctionField k F)
+    (hg : genus k F = 1) : IsEllipticFunctionField k F :=
+  (isEllipticFunctionField_iff_genus_eq_one_and_exists_place_degree_eq_one hF
+    isIntegrallyClosedIn_of_isAlgClosed).mpr ⟨hg, (Place.infinite_setOf_degree_eq_one hF).nonempty⟩
+
 /-! ### The degree-one places as the degree-zero divisor class group -/
 
 namespace Place
@@ -184,6 +196,33 @@ theorem degreeOneEquivDegreeZeroClassGroup_base (hF : IsFunctionField k F)
     degreeOneEquivDegreeZeroClassGroup hF hex hg hP₀ ⟨P₀, hP₀⟩ = 0 :=
   Subtype.ext (by rw [val_degreeOneEquivDegreeZeroClassGroup_apply,
     WeilDivisor.pointDifference_self, map_zero, ZeroMemClass.coe_zero])
+
+end Place
+
+/-! ### Infinitude of the degree-zero divisor class group -/
+
+/-- **`Cl⁰(F)` is infinite exactly when there are infinitely many places of degree one**, for an
+elliptic function field `F` with exact constants: the places of degree one are in bijection with
+`Cl⁰(F)` (Stichtenoth, Proposition 6.1.7). -/
+theorem IsEllipticFunctionField.infinite_degreeClass_ker_iff (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (he : IsEllipticFunctionField k F) :
+    Infinite (Divisor.degreeClass hF).ker ↔ {P : Place k F | P.degree = 1}.Infinite := by
+  obtain ⟨P₀, hP₀⟩ := he.exists_place_degree_eq_one hF hex
+  rw [← Set.infinite_coe_iff]
+  exact (Place.degreeOneEquivDegreeZeroClassGroup hF hex he.genus_eq_one hP₀).infinite_iff.symm
+
+/-- **Over an algebraically closed field, the degree-zero divisor class group of a function field
+of genus one is infinite**: every place has degree one, and there are infinitely many places. -/
+theorem infinite_degreeClass_ker_of_genus_eq_one [IsAlgClosed k] (hF : IsFunctionField k F)
+    (hg : genus k F = 1) : Infinite (Divisor.degreeClass hF).ker :=
+  ((isEllipticFunctionField_of_genus_eq_one hF hg).infinite_degreeClass_ker_iff hF
+    isIntegrallyClosedIn_of_isAlgClosed).mpr (Place.infinite_setOf_degree_eq_one hF)
+
+/-! ### The group law of the degree-one places -/
+
+namespace Place
+
+variable {P₀ : Place k F}
 
 /-- **Addition of the classes of two degree-one places** (Stichtenoth, Proposition 6.1.7): the
 images of `P` and `Q` in `Cl⁰(F)` add up to the image of `R` exactly when the divisors `P + Q`

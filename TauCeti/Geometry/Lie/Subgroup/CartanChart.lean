@@ -23,6 +23,9 @@ the embedded Lie-subgroup chart.
 * `TauCeti.Lie.isOpen_subgroupOf_of_lieSubalgebraOfSubgroup_le`: a closed subgroup of a closed
   subgroup `K` whose Lie algebra contains that of `K` is open in `K`.
 
+* `TauCeti.Lie.le_of_lieSubalgebraOfSubgroup_le`: a closed connected subgroup lies in any
+  closed subgroup whose Lie algebra contains its own.
+
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd edition (2013), Theorem 20.12.
@@ -43,7 +46,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [FiniteDimensional ℝ E] [LieGroup I ∞ G]
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
 /-- For a closed subgroup, there are a complementary submodule and positive radius such that small
@@ -51,14 +54,14 @@ transverse exponentials lie in the subgroup exactly at zero, while the complemen
 product is a local diffeomorphism at the identity. -/
 theorem exists_complement_data_of_isClosed_subgroup {K : Subgroup G}
     (hK : IsClosed (K : Set G)) :
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
     ∃ (q : Submodule ℝ (LeftInvariantDerivation I G)) (ε : ℝ),
       IsCompl ((lieSubalgebraOfSubgroup (I := I) K).toSubmodule) q ∧ 0 < ε ∧
         (∀ X ∈ q, ‖X‖ < ε →
           (lieExp (I := I) X ∈ K ↔ X = 0)) ∧
         IsLocalDiffeomorphAt 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule × q) I ∞
           (Submodule.lieExpMulLieExp (lieSubalgebraOfSubgroup (I := I) K).toSubmodule q) 0 := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   dsimp only
   let p : Submodule ℝ (LeftInvariantDerivation I G) :=
     (lieSubalgebraOfSubgroup (I := I) K).toSubmodule
@@ -69,16 +72,31 @@ theorem exists_complement_data_of_isClosed_subgroup {K : Subgroup G}
     (I := I) (G := G) p q hpq
   exact ⟨q, ε, hpq, hε, hsep, hf⟩
 
+/-- If a product `exp X₁ * exp X₂` of a Lie-subalgebra exponential and a small transverse
+exponential lies in the closed subgroup `K`, then `exp X₂` is trivial, so the product equals
+`exp X₁`. -/
+private theorem lieExp_eq_of_mul_mem [T2Space G] {K : Subgroup G} (hK : IsClosed (K : Set G))
+    {q : Submodule ℝ (LeftInvariantDerivation I G)} {ε : ℝ}
+    (hsep : ∀ X ∈ q, ‖X‖ < ε → (lieExp (I := I) X ∈ K ↔ X = 0))
+    {X₁ X₂ : LeftInvariantDerivation I G} (hX₁ : X₁ ∈ lieSubalgebraOfSubgroup (I := I) K)
+    (hX₂ : X₂ ∈ q) (hnorm : ‖X₂‖ < ε)
+    (hmem : lieExp (I := I) X₁ * lieExp (I := I) X₂ ∈ K) :
+    lieExp (I := I) X₁ * lieExp (I := I) X₂ = lieExp (I := I) X₁ := by
+  have hz1K : lieExp (I := I) X₁ ∈ K := lieExp_mem_of_mem_lieSubalgebraOfSubgroup hK hX₁
+  have hz2K : lieExp (I := I) X₂ ∈ K := by
+    simpa using K.mul_mem (K.inv_mem hz1K) hmem
+  rw [(hsep X₂ hX₂ hnorm).mp hz2K, lieExp_zero, mul_one]
+
 /-- Near the identity, a closed subgroup is exactly the exponential image of its Lie algebra.
 This is the local membership criterion for the embedded Lie-subgroup chart. -/
 theorem exists_mem_nhds_one_iff_exists_mem_lieSubalgebraOfSubgroup_and_lieExp_eq_of_isClosed
     {K : Subgroup G}
     (hK : IsClosed (K : Set G)) :
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
     ∃ U ∈ 𝓝 (1 : G), ∀ x : G, x ∈ U →
       (x ∈ K ↔ ∃ X : LeftInvariantDerivation I G,
         X ∈ lieSubalgebraOfSubgroup (I := I) K ∧ lieExp (I := I) X = x) := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   dsimp only
   let p : Submodule ℝ (LeftInvariantDerivation I G) :=
     (lieSubalgebraOfSubgroup (I := I) K).toSubmodule
@@ -121,23 +139,11 @@ theorem exists_mem_nhds_one_iff_exists_mem_lieSubalgebraOfSubgroup_and_lieExp_eq
       have hzA' : z.2 ∈ Metric.ball (0 : q) ε := by
         simpa only [A, Set.mem_preimage] using hzA
       simpa only [Metric.mem_ball, dist_zero_right, Submodule.norm_coe] using hzA'
-    have hz1p : (z.1 : LeftInvariantDerivation I G) ∈
-        (lieSubalgebraOfSubgroup (I := I) K).toSubmodule := by
-      simpa only [p] using z.1.property
-    have hz1K : lieExp (I := I) (z.1 : LeftInvariantDerivation I G) ∈ K :=
-      lieExp_mem_of_mem_lieSubalgebraOfSubgroup hK
-        ((LieSubalgebra.mem_toSubmodule (lieSubalgebraOfSubgroup (I := I) K)).mp hz1p)
-    have hz2K : lieExp (I := I) (z.2 : LeftInvariantDerivation I G) ∈ K := by
-      have hm := K.mul_mem (K.inv_mem hz1K) hxK
-      rw [← hzprod] at hm
-      simpa using hm
-    have hz20 : (z.2 : LeftInvariantDerivation I G) = 0 :=
-      (hsep (z.2 : LeftInvariantDerivation I G) z.2.property hz2norm).mp hz2K
-    refine ⟨(z.1 : LeftInvariantDerivation I G),
-      (LieSubalgebra.mem_toSubmodule (lieSubalgebraOfSubgroup (I := I) K)).mp hz1p, ?_⟩
-    have hzprod' := hzprod
-    rw [hz20, lieExp_zero, mul_one] at hzprod'
-    exact hzprod'
+    have hz1p : (z.1 : LeftInvariantDerivation I G) ∈ lieSubalgebraOfSubgroup (I := I) K :=
+      (LieSubalgebra.mem_toSubmodule (lieSubalgebraOfSubgroup (I := I) K)).mp
+        (by simpa only [p] using z.1.property)
+    exact ⟨_, hz1p, (lieExp_eq_of_mul_mem hK hsep hz1p z.2.property hz2norm
+      (by rwa [hzprod])).symm.trans hzprod⟩
   -- The reverse direction is the defining exponential-membership property of the Lie subalgebra.
   · rintro ⟨X, hX, rfl⟩
     exact lieExp_mem_of_mem_lieSubalgebraOfSubgroup hK hX
@@ -159,5 +165,19 @@ theorem isOpen_subgroupOf_of_lieSubalgebraOfSubgroup_le [T2Space G] {T K : Subgr
   obtain ⟨X, hX, hXk⟩ := (hUK k hk).mp k.2
   rw [SetLike.mem_coe, Subgroup.mem_subgroupOf, ← hXk]
   exact lieExp_mem_of_mem_lieSubalgebraOfSubgroup hT (h hX)
+
+/-- A closed connected subgroup lies in any closed subgroup containing its Lie algebra. -/
+theorem le_of_lieSubalgebraOfSubgroup_le [T2Space G] {K L : Subgroup G}
+    (hK : IsClosed (K : Set G)) (hconn : IsPreconnected (K : Set G))
+    (hL : IsClosed (L : Set G))
+    (h : lieSubalgebraOfSubgroup (I := I) K ≤ lieSubalgebraOfSubgroup (I := I) L) :
+    K ≤ L := by
+  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  let _ : PreconnectedSpace K := isPreconnected_iff_preconnectedSpace.mp hconn
+  have hopen := isOpen_subgroupOf_of_lieSubalgebraOfSubgroup_le hL hK h
+  have huniv := IsClopen.eq_univ
+    ⟨(L.subgroupOf K).isClosed_of_isOpen hopen, hopen⟩ ⟨1, (L.subgroupOf K).one_mem⟩
+  intro k hk
+  exact Subgroup.mem_subgroupOf.mp (Set.eq_univ_iff_forall.mp huniv (⟨k, hk⟩ : K))
 
 end TauCeti.Lie

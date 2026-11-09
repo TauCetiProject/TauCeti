@@ -73,6 +73,8 @@ spectrum from that of its orthogonal complement.
   spanned by the vectors of the ordered eigenbasis whose eigenvalues lie in `Ω`.
 * `LinearMap.IsSymmetric.coe_starProjection_pointSpectralSubspace`: its orthogonal projection is
   the functional calculus of the indicator function of `Ω`.
+* `ContinuousLinearMap.abs_le_norm_of_mem_restrictedPointSpectrum`: every real eigenvalue of a
+  bounded operator `T` has absolute value at most `‖T‖`.
 * `LinearMap.IsSymmetric.pointSpectrumIn_Iic_iff`, `LinearMap.IsSymmetric.pointSpectrumIn_Ici_iff`:
   on a finite-dimensional invariant subspace, point-spectral containment in a half-line is a
   quadratic-form bound.
@@ -92,6 +94,9 @@ spectrum from that of its orthogonal complement.
 * `Module.End.PointOrderedGap.of_pointSpectrumIn`,
   `Module.End.PointOrderedGap.of_re_inner_apply_self`: containment on opposite sides of a cut, or
   opposite quadratic-form bounds, give an ordered gap.
+* `Module.End.PointIntervalExteriorGap.of_re_inner_apply_self`: an upper quadratic-form bound
+  for a bounded operator `T` on `U` and a lower one for `B` on `V` give an interval/exterior gap
+  with interval `[-‖T‖, a]`.
 * `Module.End.exists_pos_pointSpectraSeparated_iff_disjoint`: in finite dimension, two restricted
   point spectra are separated by a positive distance exactly when they are disjoint.
 * `LinearMap.IsSymmetric.eigenvalues_ne_eigenvalues_of_disjoint`: for symmetric `A` and `B` with
@@ -538,6 +543,21 @@ theorem mul_norm_le_norm_apply_sub_smul_of_pointSpectrumIn (hT : T.IsSymmetric)
 
 end LinearMap.IsSymmetric
 
+namespace ContinuousLinearMap
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- Every real eigenvalue of a bounded operator `T`, carried by any subspace, has absolute value
+at most `‖T‖`. -/
+theorem abs_le_norm_of_mem_restrictedPointSpectrum {T : E →L[𝕜] E} {U : Submodule 𝕜 E} {μ : ℝ}
+    (hμ : μ ∈ restrictedPointSpectrum (T : E →ₗ[𝕜] E) U) : |μ| ≤ ‖T‖ := by
+  obtain ⟨x, -, hx0, hx⟩ := mem_restrictedPointSpectrum_iff.mp hμ
+  have h := T.le_opNorm x
+  rw [← coe_coe, hx, norm_smul, RCLike.norm_ofReal] at h
+  exact le_of_mul_le_mul_right h (norm_pos_iff.mpr hx0)
+
+end ContinuousLinearMap
+
 /-! ### Spectral separation -/
 
 namespace Module.End
@@ -797,6 +817,24 @@ theorem PointOrderedGap.of_re_inner_apply_self
     (hB : ∀ y ∈ V, (a + δ) * ‖y‖ ^ 2 ≤ RCLike.re ⟪B y, y⟫_𝕜) : A.PointOrderedGap U B V δ :=
   .of_pointSpectrumIn (pointSpectrumIn_Iic_of_re_inner_apply_self_le hA)
     (pointSpectrumIn_Ici_of_le_re_inner_apply_self hB)
+
+/-- **Form bounds give an interval/exterior gap.** If `re ⟪T x, x⟫ ≤ a ‖x‖²` on `U` and
+`b ‖y‖² ≤ re ⟪B y, y⟫` on `V`, then the restricted point spectrum of `T` on `U` lies in
+`[-‖T‖, a]` and that of `B` on `V` avoids `(-‖T‖ - (b - a), b)`. -/
+theorem PointIntervalExteriorGap.of_re_inner_apply_self {T : E →L[𝕜] E} {b : ℝ}
+    (hT : ∀ x ∈ U, RCLike.re ⟪T x, x⟫_𝕜 ≤ a * ‖x‖ ^ 2)
+    (hB : ∀ y ∈ V, b * ‖y‖ ^ 2 ≤ RCLike.re ⟪B y, y⟫_𝕜) :
+    PointIntervalExteriorGap (T : E →ₗ[𝕜] E) U B V (-‖T‖) a (b - a) := by
+  refine ⟨pointSpectrumIn_iff.mpr fun x hx hx0 μ hμ ↦ ⟨?_, ?_⟩, ?_⟩
+  · -- An eigenvalue is bounded in absolute value by the operator norm.
+    have h := T.le_opNorm x
+    rw [← ContinuousLinearMap.coe_coe, hμ, norm_smul, RCLike.norm_ofReal] at h
+    linarith [neg_abs_le μ, le_of_mul_le_mul_right h (norm_pos_iff.mpr hx0)]
+  · exact pointSpectrumIn_iff.mp (pointSpectrumIn_Iic_of_re_inner_apply_self_le hT) x hx hx0 μ hμ
+  · refine (pointSpectrumIn_Ici_of_le_re_inner_apply_self hB).mono le_rfl fun ν hν ↦ ?_
+    simp only [Set.mem_compl_iff, Set.mem_Ioo, not_and, not_lt]
+    intro
+    linarith [Set.mem_Ici.mp hν]
 
 end FormBound
 

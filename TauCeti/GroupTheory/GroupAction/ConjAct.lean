@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
+public import Mathlib.Algebra.GroupWithZero.Action.End
 import Mathlib.Algebra.Group.Subgroup.Actions
 
 /-!
@@ -19,20 +20,33 @@ A normal subgroup `N` of `G` carries the conjugation action `MulAut.conjNormal` 
 Dually, conjugation cannot move a *central* element: a subgroup containing one has every
 conjugate containing it too.
 
+A conjugate `gΓg⁻¹` sees `g` only modulo the normalizer of `Γ` on the right, and multiplying `g`
+on the left by an element of the normalizer of `Γ₁` conjugates the relative stabilizer
+`(gΓ₂g⁻¹).subgroupOf Γ₁` by that element. `TauCeti.NumberTheory.HeckeRing.StabConjugation` turns
+these into equivalences of Hecke decomposition quotients.
+
 For an action of `G` on a type, translation by `g` carries the orbits of a subgroup `H` onto the
-orbits of its conjugate `g H g⁻¹`.
+orbits of its conjugate `g H g⁻¹`. If the action is faithful, a point stabilizer acts faithfully
+by conjugation on every transitive normal subgroup.
 
 ## Main statements
 
 * `MonoidHom.map_conjNormal_val`: a homomorphism from a normal subgroup to a commutative monoid is
   unchanged by conjugation by an element of that subgroup.
+* `Subgroup.conjugationAction`: the explicit conjugation action on a normal subgroup.
 * `Subgroup.inv_mul_mul_mem_conjAct_smul_iff`: conjugation preserves subgroup membership.
 * `Subgroup.mem_conjAct_smul_of_mem_center`: a central element of a subgroup lies in each of its
   conjugates.
 * `Subgroup.inclusion_conj_smul`: the inclusion of a normal subgroup into a larger normal
   subgroup commutes with conjugation.
+* `Subgroup.conjAct_smul_mul_right_of_mem_normalizer`: `(gh)Γ(gh)⁻¹ = gΓg⁻¹` when `h`
+  normalizes `Γ`.
+* `Subgroup.subgroupOf_conjAct_smul_mul_left_of_mem_normalizer`: left multiplication of `g` by an
+  element of the normalizer of `Γ₁` conjugates `(gΓ₂g⁻¹).subgroupOf Γ₁`.
 * `TauCeti.MulAction.orbitRel_smul_smul_iff_of_conjAct_smul_eq`: `g • x` and `g • y` lie in the
   same orbit of `g H g⁻¹` exactly when `x` and `y` lie in the same orbit of `H`.
+* `Subgroup.stabilizer_conjNormal_injective`: in a faithful action, the conjugation map
+  from a point stabilizer to `MulAut N` is injective for every transitive normal subgroup `N`.
 -/
 
 public section
@@ -55,6 +69,34 @@ end MonoidHom
 namespace Subgroup
 
 open scoped Pointwise
+
+section ConjugationAction
+
+open scoped IsMulCommutative
+
+variable {G : Type*} [Group G] (N : Subgroup G) [N.Normal]
+
+/-- Conjugation by the ambient group on a normal subgroup. -/
+@[instance_reducible]
+def conjugationAction : MulDistribMulAction G N :=
+  MulDistribMulAction.compHom N (MulAut.conjNormal (H := N))
+
+attribute [local instance] conjugationAction
+
+@[simp]
+theorem coe_conjugationAction_smul (g : G) (n : N) :
+    ((g • n : N) : G) = g * n * g⁻¹ := (rfl)
+
+variable {N} [IsMulCommutative N]
+
+/-- Conjugation by an element of an abelian normal subgroup is trivial on that subgroup. -/
+@[simp]
+theorem conjugationAction_coe_smul (n m : N) : (n : G) • m = m := by
+  apply Subtype.ext
+  rw [coe_conjugationAction_smul, ← coe_mul, ← coe_inv, ← coe_mul]
+  simp
+
+end ConjugationAction
 
 /-- Conjugating an element and a subgroup by the same inverse preserves membership. -/
 @[simp]
@@ -79,6 +121,34 @@ theorem inclusion_conj_smul {G : Type*} [Group G] {H K : Subgroup G} [H.Normal] 
     rw [coe_inclusion, ConjAct.Subgroup.val_conj_smul, ConjAct.Subgroup.val_conj_smul,
       coe_inclusion]
 
+/-- Conjugation only sees `g` modulo the normalizer on the right: `(gh)Γ(gh)⁻¹ = gΓg⁻¹`
+whenever `h` normalizes `Γ`. Membership in `Γ` itself is the special case
+`Subgroup.le_normalizer`. -/
+theorem conjAct_smul_mul_right_of_mem_normalizer {G : Type*} [Group G] (Γ : Subgroup G) (g : G)
+    {h : G} (hh : h ∈ normalizer Γ) :
+    ConjAct.toConjAct (g * h) • Γ = ConjAct.toConjAct g • Γ := by
+  rw [map_mul, ← smul_smul, conjAct_pointwise_smul_eq_self hh]
+
+/-- Left multiplication of the base point by anything normalizing `Γ₁` conjugates the
+stabilizer by it: `x` stabilizes `hg` exactly when `h⁻¹xh` stabilizes `g`. Membership in `Γ₁`
+itself is the special case `Subgroup.le_normalizer`.
+
+The conjugating automorphism of `↥Γ₁` is `Subgroup.normalizerMonoidHom`, which is defined for
+exactly this: `MulAut.conj h` would need `h` to be an element of `Γ₁`. -/
+theorem subgroupOf_conjAct_smul_mul_left_of_mem_normalizer {G : Type*} [Group G]
+    (Γ₁ Γ₂ : Subgroup G) (g : G) (h : normalizer (Γ₁ : Set G)) :
+    (ConjAct.toConjAct ((h : G) * g) • Γ₂).subgroupOf Γ₁ =
+      ((ConjAct.toConjAct g • Γ₂).subgroupOf Γ₁).map
+        (Γ₁.normalizerMonoidHom h).toMonoidHom := by
+  ext x
+  rw [mem_map_equiv]
+  simp only [mem_subgroupOf, mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def, map_inv,
+    ConjAct.ofConjAct_toConjAct, inv_inv, normalizerMonoidHom_apply_symm_apply_coe]
+  -- Both sides are membership of the *same* element of `Γ₂`, written with different
+  -- bracketing: `(hg)⁻¹x(hg)` versus `g⁻¹(h⁻¹xh)g`. Reassociating proves that identity; the
+  -- `iff` is then congruence along it, so no rewriting has to find a redex.
+  exact iff_of_eq (congrArg (· ∈ Γ₂) (by simp only [mul_inv_rev, mul_assoc]))
+
 end Subgroup
 
 namespace TauCeti.MulAction
@@ -101,3 +171,20 @@ theorem orbitRel_smul_smul_iff_of_conjAct_smul_eq {G X : Type*} [Group G] [MulAc
   · rw [mul_smul, mul_smul, inv_smul_smul, hkx]
 
 end TauCeti.MulAction
+
+open _root_.MulAction in
+/-- **A point stabilizer acts faithfully by conjugation on a transitive normal subgroup**: for a
+faithful action and a normal subgroup `N` acting transitively, conjugation
+`stabilizer G x →* MulAut N` is injective. -/
+theorem Subgroup.stabilizer_conjNormal_injective {G X : Type*} [Group G] [MulAction G X]
+    [FaithfulSMul G X] (N : Subgroup G) [N.Normal] [IsPretransitive N X] (x : X) :
+    Function.Injective ((MulAut.conjNormal (H := N)).comp (stabilizer G x).subtype) := by
+  refine (injective_iff_map_eq_one _).mpr fun h hh ↦
+    Subtype.ext (eq_of_smul_eq_smul (α := X) fun y ↦ ?_)
+  rw [MonoidHom.comp_apply, Subgroup.coe_subtype] at hh
+  obtain ⟨n, rfl⟩ := exists_smul_eq N x y
+  have hcomm : (h : G) * n = n * h := by
+    have hc := congrArg (fun f : MulAut N ↦ ((f n : N) : G)) hh
+    simpa only [MulAut.conjNormal_apply, MulAut.one_apply, mul_inv_eq_iff_eq_mul] using hc
+  rw [OneMemClass.coe_one, subgroup_smul_def, ← mul_smul, hcomm, mul_smul,
+    mem_stabilizer_iff.mp h.2, one_smul]

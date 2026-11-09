@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.DiscreteSubset
+public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 public import TauCeti.Analysis.Calculus.Bilinear
 public import TauCeti.Analysis.Calculus.SecondDerivative
 public import TauCeti.Topology.Algebra.Module.BilinearForm
@@ -13,6 +14,10 @@ public import TauCeti.Topology.Algebra.Module.BilinearForm
 -- inside the proof of `TauCeti.IsNondegenerateCriticalPoint.neg`.
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Add
+-- Private: invariance of criticality is used only inside the proofs of
+-- `TauCeti.isNondegenerateCriticalPoint_comp_iff` and
+-- `TauCeti.HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const`.
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 
 /-!
 # Nondegenerate critical points
@@ -91,6 +96,11 @@ the notion be read off in any chart.
   nondegeneracy is invariant under a change of coordinates with invertible differential.
 * `TauCeti.IsNondegenerateCriticalPoint.neg` and `TauCeti.isNondegenerateCriticalPoint_neg`:
   nondegeneracy is invariant under negating the function.
+* `TauCeti.isNondegenerateCriticalPoint_add_const_iff`: nondegeneracy is invariant under adding a
+  constant.
+* `TauCeti.HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const`: a function equal to a function
+  with nondegenerate critical points composed with a `C²` chart of invertible differential, plus a
+  constant, has nondegenerate critical points on the source of the chart.
 * `ContinuousLinearMap.isNondegenerateCriticalPoint_apply_self`: the local model. A
   continuous bilinear form `B` whose polarization `B.flip + B` is invertible makes `z ↦ B z z` a
   function with a nondegenerate critical point at the origin.
@@ -176,8 +186,7 @@ theorem isNondegenerateCriticalPoint_iff_separatingLeft [FiniteDimensional ℝ E
         (fderiv ℝ (fderiv ℝ f) x).toBilinForm.SeparatingLeft := by
   refine ⟨fun h ↦ ⟨h.contDiffAt, h.fderiv_eq_zero, h.separatingLeft⟩,
     fun ⟨hd, h0, hnd⟩ ↦ ⟨hd, h0, ?_⟩⟩
-  exact ContinuousLinearMap.isInvertible_of_injective
-    ((ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective _).1 hnd)
+  exact ContinuousLinearMap.isInvertible_iff_separatingLeft.2 hnd
 
 /-- Nondegeneracy at a point depends only on the germ of the function there. -/
 theorem IsNondegenerateCriticalPoint.congr_of_eventuallyEq {g : E → ℝ}
@@ -228,6 +237,8 @@ At a critical point the first-order term of the chain rule drops out, so the sec
 transforms as a bilinear form; this is `TauCeti.fderiv_fderiv_comp_apply_of_fderiv_eq_zero`, proved
 in `TauCeti.Analysis.Calculus.SecondDerivative` because it involves no nondegeneracy. It is why the
 Hessian at a critical point, and hence nondegeneracy, does not depend on the choice of chart.
+That criticality itself does not depend on it is `TauCeti.fderiv_comp_eq_zero_iff_of_isInvertible`
+in `TauCeti.Analysis.Calculus.FDeriv.Comp`.
 -/
 
 /-- **Nondegeneracy of a critical point does not depend on the coordinates.** If `f` is `C²` at
@@ -236,15 +247,10 @@ nondegenerate critical point at `b` exactly when `f` has one at `φ b`. -/
 theorem isNondegenerateCriticalPoint_comp_iff {φ : F → E} {b : F} (hf : ContDiffAt ℝ 2 f (φ b))
     (hφ : ContDiffAt ℝ 2 φ b) (hinv : (fderiv ℝ φ b).IsInvertible) :
     IsNondegenerateCriticalPoint (f ∘ φ) b ↔ IsNondegenerateCriticalPoint f (φ b) := by
+  have hcrit : fderiv ℝ (f ∘ φ) b = 0 ↔ fderiv ℝ f (φ b) = 0 :=
+    fderiv_comp_eq_zero_iff_of_isInvertible (hf.differentiableAt (by norm_num))
+      (hφ.differentiableAt (by norm_num)) hinv
   obtain ⟨e, he⟩ := hinv
-  -- The differential of `f ∘ φ` at `b` is that of `f` at `φ b` precomposed with the equivalence
-  -- `e`, so one vanishes exactly when the other does.
-  have hcrit : fderiv ℝ (f ∘ φ) b = 0 ↔ fderiv ℝ f (φ b) = 0 := by
-    rw [fderiv_comp (x := b) (hf.differentiableAt (by norm_num))
-      (hφ.differentiableAt (by norm_num)), ← he]
-    refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]; ext u; simp⟩
-    ext u
-    simpa using congrArg (fun L : F →L[ℝ] ℝ ↦ L (e.symm u)) h
   -- The Hessian pulls back as `ψ ↦ ψ ∘ e` composed with the Hessian composed with `e`, and each of
   -- the three factors is invertible.
   have hEq : fderiv ℝ f (φ b) = 0 → fderiv ℝ (fderiv ℝ (f ∘ φ)) b =
@@ -293,6 +299,45 @@ gives both directions. -/
 theorem isNondegenerateCriticalPoint_neg :
     IsNondegenerateCriticalPoint (-f) x ↔ IsNondegenerateCriticalPoint f x :=
   ⟨fun h ↦ by simpa using h.neg, IsNondegenerateCriticalPoint.neg⟩
+
+/-- **Nondegeneracy of a critical point is invariant under adding a constant**, which changes
+neither the differential nor the second derivative. -/
+@[simp]
+theorem isNondegenerateCriticalPoint_add_const_iff (c : ℝ) :
+    IsNondegenerateCriticalPoint (fun y ↦ f y + c) x ↔ IsNondegenerateCriticalPoint f x := by
+  have hfun : fderiv ℝ (fun y ↦ f y + c) = fderiv ℝ f := funext fun _ ↦ fderiv_add_const c
+  refine ⟨fun h ↦ ⟨?_, ?_, ?_⟩, fun h ↦ ⟨h.contDiffAt.add contDiffAt_const, ?_, ?_⟩⟩
+  · simpa using h.contDiffAt.sub (contDiffAt_const (c := c))
+  · simpa [hfun] using h.fderiv_eq_zero
+  · simpa [hfun] using h.isInvertible
+  · simpa [hfun] using h.fderiv_eq_zero
+  · simpa [hfun] using h.isInvertible
+
+/-- **Nondegenerate critical points pull back through a chart.** If `k` has nondegenerate critical
+points on the target of an open partial homeomorphism `Φ`, is `C²` there, and `Φ` is `C²` with
+invertible differential on its source, then every function that equals `k ∘ Φ + r` on the source
+has nondegenerate critical points on the source. -/
+theorem HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const
+    {Φ : OpenPartialHomeomorph F E} {k : E → ℝ} {h : F → ℝ} {r : ℝ}
+    (hk : HasNondegenerateCriticalPointsOn k Φ.target)
+    (hkd : ∀ w ∈ Φ.target, ContDiffAt ℝ 2 k w)
+    (hΦ : ∀ u ∈ Φ.source, ContDiffAt ℝ 2 Φ u ∧ (fderiv ℝ Φ u).IsInvertible)
+    (hev : ∀ u ∈ Φ.source, h u = k (Φ u) + r) :
+    HasNondegenerateCriticalPointsOn h Φ.source := by
+  refine hasNondegenerateCriticalPointsOn_iff.2 fun u hu hcrit ↦ ?_
+  obtain ⟨hΦu, hinv⟩ := hΦ u hu
+  have hev' : h =ᶠ[𝓝 u] (fun w ↦ k w + r) ∘ Φ :=
+    eventually_of_mem (Φ.open_source.mem_nhds hu) hev
+  -- Criticality passes to `k` at `Φ u`, since the differential of `Φ` there is invertible.
+  have hkcrit : fderiv ℝ k (Φ u) = 0 := by
+    rw [hev'.fderiv_eq, fderiv_comp_eq_zero_iff_of_isInvertible
+      (((hkd _ (Φ.map_source hu)).add contDiffAt_const).differentiableAt (by norm_num))
+      (hΦu.differentiableAt (by norm_num)) hinv] at hcrit
+    simpa [fderiv_add_const] using hcrit
+  have hnd : IsNondegenerateCriticalPoint (fun w ↦ k w + r) (Φ u) :=
+    (isNondegenerateCriticalPoint_add_const_iff _).2
+      (hasNondegenerateCriticalPointsOn_iff.1 hk (Φ.map_source hu) hkcrit)
+  exact (hnd.comp hΦu hinv).congr_of_eventuallyEq hev'.symm
 
 end Morse
 

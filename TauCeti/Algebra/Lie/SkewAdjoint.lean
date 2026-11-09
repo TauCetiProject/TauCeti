@@ -65,14 +65,19 @@ composite is not built here.
 
 * `TauCeti.mem_skewAdjointMatricesLieSubalgebra_toMatrix_iff`: matrix skew-adjointness for a Gram
   matrix is equivalent to basis-free skew-adjointness.
+* `skewAdjointLieSubalgebra.apply_left`: a skew-adjoint endomorphism moves across its
+  form with a sign change, `B (A u) w = -B u (A w)`.
 * `TauCeti.LieAlgebra.ad_mem_skewAdjointSubmodule`: invariance of a form is skew-adjointness of the
   adjoint action.
 * `TauCeti.LieAlgebra.ker_adSkewAdjoint`: the kernel of `adSkewAdjoint` is the centre, so the map is
   injective exactly when the centre is trivial
   (`TauCeti.LieAlgebra.adSkewAdjoint_injective_iff`); the same for the polar-form and Killing
   specializations (`TauCeti.LieAlgebra.ker_adjointSO`, `TauCeti.LieAlgebra.ker_killingAdjointSO`).
-* `TauCeti.LieAlgebra.polarBilin_killingQuadraticForm`: the polar form of the Killing quadratic
+* `TauCeti.LieAlgebra.polarBilin_killingQuadraticForm` and
+  `TauCeti.LieAlgebra.polar_killingQuadraticForm`: the polar form of the Killing quadratic
   form is `2 • killingForm`.
+* `TauCeti.LieAlgebra.associated_killingQuadraticForm`: over a ring in which `2` is invertible, the
+  associated bilinear form of the Killing quadratic form is `killingForm`.
 * `TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate`: over a ring in which `2` is invertible,
   the Killing quadratic form of a Killing-semisimple Lie algebra is nondegenerate.
 * `Module.Basis.dualBasis_polarBilin_killingQuadraticForm_apply`: the basis dual for the polar form
@@ -164,6 +169,14 @@ theorem coe_skewAdjointLieEquivOfBasis_apply (b : Module.Basis n R M) (B : Bilin
 end Basis
 
 end TauCeti
+
+/-- A skew-adjoint endomorphism moves across its bilinear form with a sign change:
+`B (A u) w = -B u (A w)`. -/
+theorem skewAdjointLieSubalgebra.apply_left {R M : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] {B : BilinForm R M} (A : skewAdjointLieSubalgebra B) (u w : M) :
+    B ((A : Module.End R M) u) w = -B u ((A : Module.End R M) w) := by
+  rw [(LinearMap.mem_skewAdjointSubmodule (A : Module.End R M)).1 A.2 u w, Pi.neg_apply,
+    map_neg]
 
 namespace TauCeti.LieAlgebra
 
@@ -306,6 +319,22 @@ theorem polarBilin_killingQuadraticForm :
   rw [killingQuadraticForm]
   exact LinearMap.BilinMap.polarBilin_toQuadraticMap_of_flip (LieModule.traceForm_flip R L L)
 
+/-- The pointwise form of `polarBilin_killingQuadraticForm`: the polar form of the Killing quadratic
+form at `x` and `y` is `2 * κ(x, y)`. -/
+@[simp]
+theorem polar_killingQuadraticForm (x y : L) :
+    QuadraticMap.polar (killingQuadraticForm R L) x y = 2 * killingForm R L x y := by
+  simpa only [QuadraticMap.polarBilin_apply_apply, LinearMap.smul_apply, smul_eq_mul] using
+    LinearMap.congr_fun₂ (polarBilin_killingQuadraticForm R L) x y
+
+/-- The associated bilinear form of the Killing quadratic form is the Killing form, since the
+Killing form is symmetric. -/
+@[simp]
+theorem associated_killingQuadraticForm [Invertible (2 : R)] :
+    QuadraticMap.associated (killingQuadraticForm R L) = killingForm R L := by
+  rw [killingQuadraticForm]
+  exact QuadraticMap.associated_left_inverse R (LieModule.traceForm_comm R L L)
+
 /-- The Killing quadratic form is nondegenerate for a Killing-semisimple Lie algebra over a ring in
 which `2` is invertible. Both hypotheses are needed: `IsKilling` is nondegeneracy of `κ` itself, and
 without an invertible `2` the polar form of a quadratic form is a weaker invariant than the form. -/
@@ -353,7 +382,7 @@ variable {K : Type u} [Field K] [Invertible (2 : K)]
 /-- The basis dual to `b` for the polar form of the Killing quadratic form is half the
 Killing-dual basis. The factor records that this polar form is `2 • killingForm K L`. -/
 @[simp]
-theorem dualBasis_polarBilin_killingQuadraticForm_apply {ι : Type w} [Fintype ι]
+theorem dualBasis_polarBilin_killingQuadraticForm_apply {ι : Type w} [Finite ι]
     [DecidableEq ι] {L : Type v} [LieRing L] [LieAlgebra K L]
     [_root_.LieAlgebra.IsKilling K L]
     (b : Module.Basis ι K L) (i : ι) :
@@ -363,16 +392,9 @@ theorem dualBasis_polarBilin_killingQuadraticForm_apply {ι : Type w} [Fintype �
           rw [← _root_.TauCeti.LieAlgebra.polarBilin_killingQuadraticForm]
           exact QuadraticMap.nondegenerate_polar_iff.mpr
             (_root_.TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate K L)) b i =
-      (2 : K)⁻¹ • killingDualBasis b i := by
-  let hκ := _root_.LieAlgebra.IsKilling.killingForm_nondegenerate K L
-  have hdual (j : ι) :
-      LinearMap.BilinForm.dualBasis (killingForm K L) hκ b j = killingDualBasis b j := by
-    apply LinearMap.ker_eq_bot.mp hκ.ker_eq_bot
-    apply b.ext
-    intro k
-    rw [LinearMap.BilinForm.apply_dualBasis_left, killingForm_killingDualBasis_left]
-    simp only [eq_comm]
-  rw [b.dualBasis_smul_apply (killingForm K L) hκ (2 : K)
-    (Invertible.ne_zero (2 : K)), hdual]
+      (2 : K)⁻¹ • killingDualBasis b i :=
+  b.dualBasis_smul_apply (killingForm K L)
+    (_root_.LieAlgebra.IsKilling.killingForm_nondegenerate K L) (2 : K)
+    (Invertible.ne_zero (2 : K)) i
 
 end Module.Basis

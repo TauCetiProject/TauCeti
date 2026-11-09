@@ -68,6 +68,10 @@ the input to the ray class number formula.
 * `TauCeti.GlobalNumberFields.classMap_eq_one_iff_of_finitePart_eq`: the kernel of a transition
   map between moduli with the same finite part consists of the classes of sign patterns trivial at
   the real places of the smaller modulus.
+* `TauCeti.GlobalNumberFields.residueSignRayClass_injective_iff`: the residue units and signs embed
+  into the ray class group exactly when every integer unit is congruent to one.
+* `TauCeti.GlobalNumberFields.neg_one_mem_unitsCongruenceSubgroup_iff`: the unit `-1` is congruent
+  to one exactly when `2` lies in the finite part and the infinite part is empty.
 
 ## References
 
@@ -161,6 +165,27 @@ theorem rayClassToClassGroup_eq_oneEquivClassGroup_comp_classMap (m : Modulus K)
     MulEquiv.coe_toMonoidHom, oneEquivClassGroup_rayClassMk,
     NumberFieldArithmetic.coe_idealsAwayInclusion]
 
+/-- Multiplying an ideal prime to `𝔪` by the principal ideal of a unit `x` congruent to one
+modulo `𝔪` and with prescribed valuations `exp (count I)` at the other primes of `𝔫.support`
+gives an ideal prime to `𝔫`. -/
+private theorem mul_toPrincipalIdeal_mem_idealsAway {𝔪 𝔫 : Modulus K} (I : idealsPrimeTo 𝔪)
+    {x : Kˣ} (hxm : IsCongrOne 𝔪 x)
+    (hval : ∀ v ∈ 𝔫.support, v ∉ 𝔪.support →
+      v.valuation K (x : K) = WithZero.exp (FractionalIdeal.count K v I.1.1)) :
+    I.1 * toPrincipalIdeal (RingOfIntegers K) K x ∈
+      NumberFieldArithmetic.idealsAway K 𝔫.support :=
+  NumberFieldArithmetic.mem_idealsAway_iff.mpr (by
+    intro v hv
+    rw [Units.val_mul, FractionalIdeal.count_mul K v (Units.ne_zero I)
+      (Units.ne_zero (toPrincipalIdeal (RingOfIntegers K) K x)),
+      FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation]
+    by_cases hvm : v ∈ 𝔪.support
+    · rw [NumberFieldArithmetic.mem_idealsAway_iff.mp I.2 v hvm,
+        hxm.valuation_eq_one ((Modulus.mem_support_iff 𝔪 v).mp hvm)]
+      simp
+    · rw [hval v hv hvm, WithZero.log_exp]
+      ring)
+
 /-- Transition from a larger modulus to any divisor is surjective. -/
 theorem classMap_surjective {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
     Function.Surjective (classMap h) := by
@@ -187,28 +212,19 @@ theorem classMap_surjective {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
         (hx v (Modulus.support_mono h hvm)).le
     · rw [← signHom_apply_eq_one_iff x w, hsign]
       rfl
+  have hval : ∀ v ∈ 𝔫.support, v ∉ 𝔪.support →
+      v.valuation K (x : K) = WithZero.exp (FractionalIdeal.count K v I.1.1) := by
+    intro v hv hvm
+    calc
+      v.valuation K (x : K) = v.valuation K (p v) :=
+        Valuation.map_eq_of_sub_lt _ (by
+          have hlt := hx v hv
+          simp only [a, γ, ite_eq_right hvm] at hlt
+          rw [hp v]
+          exact hlt)
+      _ = _ := hp v
   let J : idealsPrimeTo 𝔫 := ⟨I.1 * toPrincipalIdeal (RingOfIntegers K) K x,
-    NumberFieldArithmetic.mem_idealsAway_iff.mpr (by
-    intro v hv
-    rw [Units.val_mul, FractionalIdeal.count_mul K v (Units.ne_zero I)
-      (Units.ne_zero (toPrincipalIdeal (RingOfIntegers K) K x)),
-      FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation]
-    by_cases hvm : v ∈ 𝔪.support
-    · rw [NumberFieldArithmetic.mem_idealsAway_iff.mp I.2 v hvm,
-        hxm.valuation_eq_one ((Modulus.mem_support_iff 𝔪 v).mp hvm)]
-      simp
-    · have hval : v.valuation K (x : K) = WithZero.exp
-          (FractionalIdeal.count K v I.1.1) := by
-        calc
-          v.valuation K (x : K) = v.valuation K (p v) :=
-            Valuation.map_eq_of_sub_lt _ (by
-              have hlt := hx v hv
-              simp only [a, γ, ite_eq_right hvm] at hlt
-              rw [hp v]
-              exact hlt)
-          _ = _ := hp v
-      rw [hval, WithZero.log_exp]
-      ring)⟩
+    mul_toPrincipalIdeal_mem_idealsAway I hxm hval⟩
   refine ⟨rayClassMk 𝔫 J, ?_⟩
   rw [classMap_rayClassMk]
   let xm : primeToSubgroup 𝔪 :=
@@ -380,6 +396,36 @@ theorem unitsResidueSignHom_neg_one (𝔪 : Modulus K) :
   · rw [residueSignHom_snd, modulusSignHom_apply, signHom_apply_eq_neg_one_iff,
       coe_unitsToPrimeToSubgroup]
     simp
+
+/-! ### The unit obstruction -/
+
+/-- **The residue units and signs embed into the ray class group exactly when every integer unit
+is congruent to one modulo `𝔪`.**  Otherwise the residues and signs of the integer units are
+nontrivial elements of the kernel of `residueSignRayClass 𝔪`. -/
+theorem residueSignRayClass_injective_iff (𝔪 : Modulus K) :
+    Function.Injective (residueSignRayClass 𝔪) ↔ unitsCongruenceSubgroup 𝔪 = ⊤ := by
+  rw [← MonoidHom.ker_eq_bot_iff, ker_residueSignRayClass, MonoidHom.range_eq_bot_iff,
+    ← MonoidHom.ker_eq_top_iff, ker_unitsResidueSignHom]
+
+/-- **The unit `-1` is congruent to one modulo `𝔪` exactly when `2` lies in the finite part and
+the infinite part is empty.** -/
+theorem neg_one_mem_unitsCongruenceSubgroup_iff (𝔪 : Modulus K) :
+    -1 ∈ unitsCongruenceSubgroup 𝔪 ↔ (2 : 𝓞 K) ∈ 𝔪.finitePart ∧ 𝔪.infinitePart = ∅ := by
+  rw [← ker_unitsResidueSignHom, MonoidHom.mem_ker, unitsResidueSignHom_neg_one]
+  simp [Units.ext_iff, neg_eq_iff_add_eq_zero, one_add_one_eq_two, funext_iff,
+    Finset.eq_empty_iff_forall_notMem, ← Ideal.Quotient.eq_zero_iff_mem, map_ofNat]
+
+/-- **Some integer unit is not congruent to one modulo `𝔪`** as soon as `2` does not lie in the
+finite part or the infinite part selects a real place: the unit `-1` is then not congruent to
+one. -/
+theorem unitsCongruenceSubgroup_ne_top {𝔪 : Modulus K}
+    (h𝔪 : (2 : 𝓞 K) ∉ 𝔪.finitePart ∨ 𝔪.infinitePart.Nonempty) :
+    unitsCongruenceSubgroup 𝔪 ≠ ⊤ := by
+  intro htop
+  obtain ⟨h2, hinf⟩ :=
+    (neg_one_mem_unitsCongruenceSubgroup_iff 𝔪).mp (htop ▸ Subgroup.mem_top _)
+  rw [← Finset.not_nonempty_iff_eq_empty] at hinf
+  tauto
 
 /-! ### Transition maps that only forget real places -/
 

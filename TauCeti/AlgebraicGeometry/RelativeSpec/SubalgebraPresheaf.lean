@@ -33,8 +33,9 @@ finite group (`CommMon.invariantSubalgebraPresheaf`).
 * `CommMon.SubalgebraPresheaf.IsCoequifibered`: the localization condition under which the spectra
   glue, with the criterion `CommMon.SubalgebraPresheaf.IsCoequifibered.of_isLocalizationAway`;
 * `CommMon.SubalgebraPresheaf.relativeSpec`, with the affine structure morphism
-  `CommMon.SubalgebraPresheaf.relativeSpecToBase` and the chart description
-  `CommMon.SubalgebraPresheaf.isPullback_relativeSpecCover`;
+  `CommMon.SubalgebraPresheaf.relativeSpecToBase`, the chart description
+  `CommMon.SubalgebraPresheaf.isPullback_relativeSpecCover` and the chartwise criterion
+  `CommMon.SubalgebraPresheaf.relativeSpecToBase_iff` for its local properties;
 * `CommMon.SubalgebraPresheaf.relativeSpecπ`, with
   `CommMon.SubalgebraPresheaf.isPullback_relativeSpecπ` and
   `CommMon.SubalgebraPresheaf.relativeSpecMap_relativeSpecπ`.
@@ -236,6 +237,21 @@ lemma isPullback_relativeSpecCover (U : X.AffineZariskiSite) :
 /-- The structure morphism of the relative spectrum of `S` is affine. -/
 instance isAffineHom_relativeSpecToBase : IsAffineHom S.relativeSpecToBase :=
   isAffineHom_relativeGluingData_toBase (IsCoequifibered.coequifibered_toSectionsPresheaf (S := S))
+
+/-- A morphism property which is local on the target holds for the structure morphism of the
+relative spectrum of `S` exactly when it holds for `Spec` of the structure maps
+`Γ(X, U) ⟶ S.sections U` over the affine opens `U` of `X`. -/
+lemma relativeSpecToBase_iff (P : MorphismProperty Scheme.{u}) [IsZariskiLocalAtTarget P] :
+    P S.relativeSpecToBase ↔ ∀ U : X.affineOpens,
+      P (Spec.map (CommRingCat.ofHom (algebraMap Γ(X, U.1) (S.sections U.1)))) := by
+  rw [IsZariskiLocalAtTarget.iff_of_iSup_eq_top (P := P) _ (iSup_affineOpens_eq_top X)]
+  refine forall_congr' fun U ↦ ?_
+  -- Over `U`, the restriction of the structure morphism is the chart of `S` over `U`.
+  have h := S.isPullback_relativeSpecCover ⟨U.1, U.2⟩
+  have h' := isPullback_morphismRestrict S.relativeSpecToBase U.1
+  rw [← P.cancel_left_of_respectsIso (h.isoIsPullback _ _ h').hom,
+    h.isoIsPullback_hom_fst _ _ h', P.cancel_right_of_respectsIso, toSectionsPresheaf_app]
+  rfl
 
 /-- Maps out of the relative spectrum of `S` are determined on its affine charts. -/
 lemma relativeSpec_hom_ext {T : Scheme.{u}} {f g : S.relativeSpec ⟶ T}

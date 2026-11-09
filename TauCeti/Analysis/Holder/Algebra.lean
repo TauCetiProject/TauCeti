@@ -114,10 +114,10 @@ theorem pow_apply (f : HolderSpace α X A) (n : ℕ) (x : X) : (f ^ n) x = f x ^
   induction n with
   | zero =>
     have h : f ^ 0 = (1 : HolderSpace α X A) := rfl
-    rw [h, one_apply, pow_zero]
+    rw [h, TauCeti.HolderSpace.one_apply, pow_zero]
   | succ n ih =>
     calc
-      (f ^ (n + 1)) x = (f ^ n) x * f x := mul_apply (f ^ n) f x
+      (f ^ (n + 1)) x = (f ^ n) x * f x := TauCeti.HolderSpace.mul_apply (f ^ n) f x
       _ = f x ^ (n + 1) := by rw [ih, pow_succ]
 
 instance : Ring (HolderSpace α X A) :=
@@ -225,10 +225,10 @@ theorem norm_toBoundedContinuousFunctionA [Nonempty X] [Nontrivial A] :
 /-- Evaluation at a point as a continuous algebra homomorphism. -/
 def evalA (x : X) : HolderSpace α X A →A[ℝ] A where
   toFun f := f x
-  map_zero' := zero_apply x
-  map_one' := one_apply x
-  map_add' f g := add_apply f g x
-  map_mul' f g := mul_apply f g x
+  map_zero' := TauCeti.HolderSpace.zero_apply x
+  map_one' := TauCeti.HolderSpace.one_apply x
+  map_add' f g := TauCeti.HolderSpace.add_apply f g x
+  map_mul' f g := TauCeti.HolderSpace.mul_apply f g x
   commutes' c := algebraMap_apply c x
   cont := (evalCLM x).continuous.congr (evalCLM_apply x)
 

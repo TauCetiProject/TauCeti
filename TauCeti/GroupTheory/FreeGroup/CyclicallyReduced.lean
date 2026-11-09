@@ -33,6 +33,12 @@ theorem reduceCyclically_toWord_eq_nil_iff {x : FreeGroup α} :
     subst x
     simp [toWord_one]
 
+/-- A free-group element has nonempty cyclic reduction exactly when it is not the identity. -/
+@[to_additive]
+theorem length_reduceCyclically_toWord_pos_iff {x : FreeGroup α} :
+    0 < (reduceCyclically x.toWord).length ↔ x ≠ 1 := by
+  rw [List.length_pos_iff, Ne, reduceCyclically_toWord_eq_nil_iff]
+
 /-- The reduced-word length of a positive power is the length of the conjugating
 prefix twice, plus the exponent times the cyclically reduced length. -/
 @[to_additive]

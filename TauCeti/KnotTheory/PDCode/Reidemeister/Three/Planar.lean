@@ -213,39 +213,26 @@ def reidemeisterThreeMonodromyOrbitEquiv
   -- The selected crossings are connected, so the local rewire acts trivially
   -- on its graph-component labels on both sides of the move.
   have hn₀₁ : E.edgePair.val (D.crossing (c 0) 1) = D.crossing (c 1) 3 := by
-    have ht := reidemeisterThree_edgePair_transport D c (D.crossing (c 1) 1)
-    rw [h₁₂] at ht
-    simpa only [E, reidemeisterThreePerm_apply_crossing, reidemeisterThreeSlots_apply,
-      Matrix.cons_val, Prod.fst, Prod.snd]
-      using ht
+    simpa only [E, h₁₂, reidemeisterThreePerm_apply_crossing, reidemeisterThreeSlots_apply,
+      Matrix.cons_val] using reidemeisterThree_edgePair_transport D c (D.crossing (c 1) 1)
   have hn₁₂ : E.edgePair.val (D.crossing (c 1) 2) = D.crossing (c 2) 0 := by
-    have ht := reidemeisterThree_edgePair_transport D c (D.crossing (c 0) 2)
-    rw [h₀₁] at ht
-    simpa only [E, reidemeisterThreePerm_apply_crossing, reidemeisterThreeSlots_apply,
-      Matrix.cons_val, Prod.fst, Prod.snd]
-      using ht
+    simpa only [E, h₀₁, reidemeisterThreePerm_apply_crossing, reidemeisterThreeSlots_apply,
+      Matrix.cons_val] using reidemeisterThree_edgePair_transport D c (D.crossing (c 0) 2)
   have hρOld : ∀ x, graphOrbit D (D.reidemeisterThreePerm c x) = graphOrbit D x :=
     graphOrbit_perm D c D (graphOrbit_triangle c D 2 0 1 3 h₀₁ h₁₂)
   have hρNew : ∀ x, graphOrbit E (D.reidemeisterThreePerm c x) = graphOrbit E x := by
     apply graphOrbit_perm D c E
-    intro j s
-    simpa only [E, reidemeisterThree_crossing] using
-      graphOrbit_triangle c E 1 3 2 0
-        (by simpa only [E, reidemeisterThree_crossing] using hn₀₁)
-        (by simpa only [E, reidemeisterThree_crossing] using hn₁₂) j s
-  have heOld : ∀ x, graphOrbit D (D.edgePair.val x) = graphOrbit D x := by
-    intro x
+    simpa only [E, reidemeisterThree_crossing] using graphOrbit_triangle c E 1 3 2 0
+      (by simpa only [E, reidemeisterThree_crossing] using hn₀₁)
+      (by simpa only [E, reidemeisterThree_crossing] using hn₁₂)
+  have heOld (x) : graphOrbit D (D.edgePair.val x) = graphOrbit D x := by
     simpa only [graphOrbit, toPermutationTriple_σ1] using D.toPermutationTriple.mk_σ1_apply x
-  have heNew : ∀ x, graphOrbit E (E.edgePair.val x) = graphOrbit E x := by
-    intro x
+  have heNew (x) : graphOrbit E (E.edgePair.val x) = graphOrbit E x := by
     simpa only [graphOrbit, toPermutationTriple_σ1] using E.toPermutationTriple.mk_σ1_apply x
-  have heOldNew : ∀ x, graphOrbit E (D.edgePair.val x) = graphOrbit E x := by
-    intro x
+  have heOldNew (x) : graphOrbit E (D.edgePair.val x) = graphOrbit E x := by
     have hx := heNew (D.reidemeisterThreePerm c x)
-    rw [reidemeisterThree_edgePair_transport D c, hρNew, hρNew] at hx
-    exact hx
-  have heNewOld : ∀ x, graphOrbit D (E.edgePair.val x) = graphOrbit D x := by
-    intro x
+    rwa [reidemeisterThree_edgePair_transport D c, hρNew, hρNew] at hx
+  have heNewOld (x) : graphOrbit D (E.edgePair.val x) = graphOrbit D x := by
     obtain ⟨y, rfl⟩ := (D.reidemeisterThreePerm c).surjective x
     rw [reidemeisterThree_edgePair_transport D c, hρOld, hρOld, heOld]
   have hr : E.crossingRotation = D.crossingRotation := by

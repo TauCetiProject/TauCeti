@@ -138,7 +138,7 @@ theorem exists_map_sub_eq_mk_comp [Module.Projective A P₀]
   have hrange : range (f₀ - g₀) ≤ range q := by
     rw [← LinearMap.exact_iff.mp hq]
     rintro _ ⟨x, rfl⟩
-    simpa only [mem_ker, sub_apply, map_sub, sub_eq_zero, comp_apply] using
+    simpa only [mem_ker, LinearMap.sub_apply, map_sub, sub_eq_zero, comp_apply] using
       LinearMap.congr_fun hfg x
   obtain ⟨s, hs⟩ := exists_comp_eq_of_range_le hrange
   let t := f₁ - g₁ - s ∘ₗ p
@@ -153,7 +153,7 @@ theorem exists_map_sub_eq_mk_comp [Module.Projective A P₀]
   intro φ
   have hrep : φ ∘ₗ t = (φ ∘ₗ f₁ - φ ∘ₗ g₁) - p.lcomp Aᵐᵒᵖ A (φ ∘ₗ s) := by
     simp [t, comp_sub, comp_assoc, lcomp_apply']
-  simp only [sub_apply, map_mk, comp_apply, h, lift_mk, lcomp_apply']
+  simp only [comp_apply, LinearMap.sub_apply, map_mk, h, lift_mk, lcomp_apply']
   rw [hrep, map_sub, map_sub, mk_lcomp, sub_zero]
 
 /-- If a module map factors through a projective, any lift to presentations induces a transpose

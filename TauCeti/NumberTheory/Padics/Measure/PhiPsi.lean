@@ -8,9 +8,11 @@ module
 public import Mathlib.NumberTheory.Padics.Measure.AmiceTransform
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import TauCeti.NumberTheory.Padics.Division
+public import TauCeti.NumberTheory.Padics.Measure.Moments
 public import TauCeti.NumberTheory.Padics.Measure.Multiples
 public import TauCeti.NumberTheory.Padics.Measure.Pushforward
-import TauCeti.NumberTheory.Padics.MahlerBasis
+import TauCeti.NumberTheory.Padics.MahlerBasis.Basic
+import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # The operators `φ` and `ψ` on measures on `ℤ_p`
@@ -38,12 +40,16 @@ norm.
 
 * `AbstractMeasure.phiMeasure`: pushforward along `x ↦ p x`.
 * `AbstractMeasure.psiMeasure`: restriction to `pℤ_p` followed by transport along `p x ↦ x`.
+* `TauCeti.psiSeries`: the transport of `psiMeasure` through the integral Amice equivalence.
 
 ## Main results
 
 * `AbstractMeasure.amiceTransform_map_mulLeft_natCast`: pushforward along `x ↦ m x` is the
   substitution `T ↦ (1 + T) ^ m - 1` on Amice transforms.
 * `AbstractMeasure.amiceTransform_phiMeasure`: `A_(φ μ) (T) = A_μ ((1 + T) ^ p - 1)`.
+* `TauCeti.psiSeries_phi`: series psi is a left inverse of Frobenius substitution.
+* `AbstractMeasure.amiceTransform_unitRestriction`: restriction to the units is the series
+  projector `F ↦ F - (psiSeries p F).subst ((1 + X) ^ p - 1)`.
 * `AbstractMeasure.psiMeasure_phiMeasure`: `ψ (φ μ) = μ`.
 * `AbstractMeasure.phiMeasure_psiMeasure`: `φ (ψ μ)` is the restriction of `μ` to `pℤ_p`.
 * `AbstractMeasure.unitRestriction_eq_id_sub_phiMeasure_comp_psiMeasure`: `1 - φ ψ` is restriction
@@ -159,6 +165,19 @@ theorem psiMeasure_apply (μ : D(ℤ_[p], R)) (f : C(ℤ_[p], R)) :
     psiMeasure μ f = μ (pMultiplesIndicator p R * f.comp (PadicInt.divideByP p)) := by
   rw [psiMeasure, LinearMap.comp_apply, map_apply, restrictMultiples_apply]
 
+/-- Psi on measures is continuous for the weak topologies. This statement does not
+require complete or ultrametric coefficients. -/
+theorem continuous_psiMeasure_weak :
+    @Continuous _ _ (WeakTopology (X := ℤ_[p]) (R := R) (E := R))
+      (WeakTopology (X := ℤ_[p]) (R := R) (E := R)) (psiMeasure (p := p) (R := R)) := by
+  let : TopologicalSpace D(ℤ_[p], R) := WeakTopology
+  have heval : Continuous (fun μ : D(ℤ_[p], R) ↦ fun f : C(ℤ_[p], R) ↦ μ f) :=
+    continuous_induced_dom
+  refine continuous_induced_rng.mpr <| continuous_pi fun f ↦ ?_
+  simpa only [psiMeasure_apply, Function.comp_def] using
+    (continuous_apply (pMultiplesIndicator (p := p) (R := R) *
+      f.comp (PadicInt.divideByP p))).comp heval
+
 /-- `ψ` is a left inverse of `φ`. -/
 @[simp]
 theorem psiMeasure_phiMeasure (μ : D(ℤ_[p], R)) : psiMeasure (phiMeasure μ) = μ := by
@@ -214,6 +233,13 @@ theorem unitRestriction_eq_self_iff_psiMeasure_eq_zero (μ : D(ℤ_[p], R)) :
     unitRestriction μ = μ ↔ psiMeasure μ = 0 := by
   rw [unitRestriction_eq_self_iff_restrictMultiples_eq_zero,
     psiMeasure_eq_zero_iff_restrictMultiples_eq_zero]
+
+/-- Dilation by a unit preserves the kernel of measure psi. -/
+theorem psiMeasure_map_mulLeft_unit_eq_zero
+    (μ : D(ℤ_[p], R)) (a : ℤ_[p]ˣ) (hμ : psiMeasure μ = 0) :
+    psiMeasure (map (ContinuousMap.mulLeft (a : ℤ_[p])) μ) = 0 := by
+  rw [← unitRestriction_eq_self_iff_psiMeasure_eq_zero] at hμ ⊢
+  rw [unitRestriction_map_mulLeft_unit, hμ]
 
 /-- **`ψ` is determined by `φ`**: it is the unique linear map `ψ` for which `φ ψ` is the
 restriction to `pℤ_p`. Such a map is automatically a left inverse of `φ`
@@ -287,5 +313,117 @@ example : psiMeasure (dirac R (1 : ℤ_[3])) = 0 :=
   psiMeasure_dirac_of_not_dvd fun h ↦ PadicInt.p_nonunit (isUnit_of_dvd_one h)
 
 end Examples
+
+end AbstractMeasure
+
+namespace TauCeti
+
+open AbstractMeasure
+
+variable (p)
+
+/-- Psi on integral power series, obtained from restriction to `pℤ_p` followed by pushforward
+along `x ↦ x / p` through the integral Amice equivalence. It is a linear map. -/
+def psiSeries : ℤ_[p]⟦X⟧ →ₗ[ℤ_[p]] ℤ_[p]⟦X⟧ :=
+  amiceTransformEquiv.conj psiMeasure
+
+variable {p}
+
+/-- Series psi is the transport of measure psi through the integral Amice equivalence. -/
+theorem psiSeries_eq_transport :
+    psiSeries p = amiceTransformEquiv.toLinearMap ∘ₗ psiMeasure ∘ₗ
+      amiceTransformEquiv.symm.toLinearMap := (rfl)
+
+/-- The measure-theoretic description of series psi. -/
+theorem psiSeries_apply (F : ℤ_[p]⟦X⟧) :
+    psiSeries p F = amiceTransform (psiMeasure (amiceTransformEquiv.symm F)) := by
+  simp only [psiSeries, LinearEquiv.conj_apply_apply, amiceTransformEquiv_apply]
+
+/-- The Amice transform intertwines measure psi and series psi. -/
+@[simp↓]
+theorem psiSeries_amiceTransform (μ : D(ℤ_[p], ℤ_[p])) :
+    psiSeries p μ.amiceTransform = (psiMeasure μ).amiceTransform := by
+  simp only [psiSeries, LinearEquiv.conj_apply_apply, ← amiceTransformEquiv_apply,
+    LinearEquiv.symm_apply_apply]
+
+/-- Series psi is a left inverse of Frobenius substitution. -/
+@[simp]
+theorem psiSeries_phi (F : ℤ_[p]⟦X⟧) :
+    psiSeries p (F.subst ((1 + X) ^ p - 1)) = F := by
+  obtain ⟨μ, rfl⟩ := amiceTransformEquiv.surjective F
+  rw [amiceTransformEquiv_apply, ← amiceTransform_phiMeasure,
+    psiSeries_amiceTransform, psiMeasure_phiMeasure]
+
+/-- Frobenius after psi is the Amice transform of restriction to `pℤ_p`. -/
+theorem subst_psiSeries_amiceTransform (μ : D(ℤ_[p], ℤ_[p])) :
+    (psiSeries p μ.amiceTransform).subst ((1 + X) ^ p - 1) =
+      (restrictMultiples μ).amiceTransform := by
+  rw [psiSeries_amiceTransform, ← amiceTransform_phiMeasure, phiMeasure_psiMeasure]
+
+/-- Series psi kills the Amice transform of `μ` iff `μ` is supported on `ℤ_pˣ`,
+i.e. its restriction to `pℤ_p` vanishes. -/
+theorem psiSeries_amiceTransform_eq_zero_iff (μ : D(ℤ_[p], ℤ_[p])) :
+    psiSeries p μ.amiceTransform = 0 ↔ restrictMultiples μ = 0 := by
+  rw [psiSeries_amiceTransform, map_eq_zero_iff _ injective_amiceTransform,
+    psiMeasure_eq_zero_iff_restrictMultiples_eq_zero]
+
+/-- Psi divides the exponent by `p` on binomial series with exponent in `pℤ_p`. -/
+@[simp]
+theorem psiSeries_binomialSeries_mul (x : ℤ_[p]) :
+    psiSeries p (binomialSeries ℤ_[p] ((p : ℤ_[p]) * x)) = binomialSeries ℤ_[p] x := by
+  rw [← amiceTransform_dirac, psiSeries_amiceTransform, psiMeasure_dirac_mul,
+    amiceTransform_dirac]
+
+/-- Psi kills binomial series whose exponent is a unit. -/
+@[simp]
+theorem psiSeries_binomialSeries_of_not_dvd {x : ℤ_[p]} (hx : ¬ (p : ℤ_[p]) ∣ x) :
+    psiSeries p (binomialSeries ℤ_[p] x) = 0 := by
+  rw [← amiceTransform_dirac, psiSeries_amiceTransform, psiMeasure_dirac_of_not_dvd hx,
+    map_zero]
+
+/-- Psi fixes the constant series one. -/
+@[simp]
+theorem psiSeries_one : psiSeries p 1 = 1 := by
+  simpa only [mul_zero, binomialSeries_zero] using psiSeries_binomialSeries_mul (p := p) 0
+
+/-- Psi kills `1 + X`, the transform of the Dirac mass at the unit one. -/
+@[simp]
+theorem psiSeries_one_add_X : psiSeries p (1 + X) = 0 := by
+  have hunit : ¬ (p : ℤ_[p]) ∣ 1 := fun h ↦ PadicInt.p_nonunit (isUnit_of_dvd_one h)
+  have h := psiSeries_binomialSeries_of_not_dvd hunit
+  rw [← Nat.cast_one (R := ℤ_[p]), binomialSeries_nat, pow_one] at h
+  exact h
+
+/-- Psi divides the exponent of a natural power of `1 + X` by `p` when `p` divides it, and kills
+the power otherwise. -/
+@[simp]
+theorem psiSeries_one_add_X_pow (n : ℕ) :
+    psiSeries p ((1 + X) ^ n) = if p ∣ n then (1 + X) ^ (n / p) else 0 := by
+  split_ifs with h
+  · obtain ⟨k, rfl⟩ := h
+    have hk := psiSeries_binomialSeries_mul (p := p) (k : ℤ_[p])
+    rw [← Nat.cast_mul, binomialSeries_nat, binomialSeries_nat] at hk
+    rwa [Nat.mul_div_cancel_left _ (Fact.out : p.Prime).pos]
+  · have hn : ¬ (p : ℤ_[p]) ∣ (n : ℤ_[p]) := by
+      simpa using (PadicInt.pow_p_dvd_natCast_iff (p := p) 1 n).not.mpr (by simpa using h)
+    simpa using psiSeries_binomialSeries_of_not_dvd hn
+
+-- Psi divides the exponent by the prime on atoms in pℤ_p; it does not average their mass.
+example : psiSeries 3 ((1 + X) ^ 3) = 1 + X := by
+  have h := psiSeries_binomialSeries_mul (p := 3) 1
+  rw [mul_one, binomialSeries_nat, ← Nat.cast_one (R := ℤ_[3]), binomialSeries_nat,
+    pow_one] at h
+  exact h
+
+end TauCeti
+
+namespace AbstractMeasure
+
+/-- Restriction to the units is the unit projector on integral Amice transforms. -/
+theorem amiceTransform_unitRestriction (μ : D(ℤ_[p], ℤ_[p])) :
+    (unitRestriction μ).amiceTransform =
+      μ.amiceTransform - (TauCeti.psiSeries p μ.amiceTransform).subst ((1 + X) ^ p - 1) := by
+  rw [TauCeti.subst_psiSeries_amiceTransform, unitRestriction_eq_sub, LinearMap.sub_apply,
+    LinearMap.id_apply, map_sub]
 
 end AbstractMeasure

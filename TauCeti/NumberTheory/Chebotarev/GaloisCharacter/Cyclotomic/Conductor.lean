@@ -46,6 +46,8 @@ Over `ℚ` the Artin map is injective, and the conductor of `ℚ(ζ_m)/ℚ` is:
 * `MonoidHom.conductor_comp_cyclotomicArtin_eq` and
   `NumberField.Chebotarev.cyclotomicConductor_eq_cyclotomicConductor`: the conductors of the
   Galois characters, and the conductor of `F / K`, do not depend on the level.
+* `NumberField.Chebotarev.cyclotomicConductor_rat_eq_rayClassConductor_bot`: over `ℚ`, the
+  conductor is that of the trivial subgroup of the ray class group of `(m)·∞`.
 * `NumberField.Chebotarev.cyclotomicConductor_rat_of_le_two`,
   `NumberField.Chebotarev.cyclotomicConductor_rat`, and
   `NumberField.Chebotarev.cyclotomicConductor_rat_of_mod_four_eq_two`: the conductor of
@@ -202,8 +204,9 @@ theorem cyclotomicArtin_rat_injective : Function.Injective (cyclotomicArtin ℚ 
     exact (ratModulusEquivGal m F).injective
   exact key _ (cyclotomicModulus_rat m) _ _ (cyclotomicArtin_comp_rayClassMk (K := ℚ) F m)
 
--- Over `ℚ` the conductor is that of the trivial subgroup of the ray class group of `(m)·∞`.
-private theorem cyclotomicConductor_rat_eq :
+/-- **Over `ℚ` the cyclotomic conductor is the conductor of the trivial subgroup of the ray class
+group of `(m)·∞`**: the cyclotomic Artin map over `ℚ` is injective. -/
+theorem cyclotomicConductor_rat_eq_rayClassConductor_bot :
     cyclotomicConductor ℚ F m =
       rayClassConductor (⊥ : Subgroup (RayClassGroup (ratModulus m (NeZero.ne m)))) := by
   rw [cyclotomicConductor, (MonoidHom.ker_eq_bot_iff _).mpr (cyclotomicArtin_rat_injective F)]
@@ -212,18 +215,21 @@ private theorem cyclotomicConductor_rat_eq :
 /-- **The conductor of `ℚ(ζ_m)/ℚ` for `m ≤ 2` is trivial**: then `ℚ(ζ_m) = ℚ`. -/
 @[simp] theorem cyclotomicConductor_rat_of_le_two (hm : m ≤ 2) :
     cyclotomicConductor ℚ F m = Modulus.one ℚ := by
-  rw [cyclotomicConductor_rat_eq, rayClassConductor_bot_ratModulus_of_le_two hm]
+  rw [cyclotomicConductor_rat_eq_rayClassConductor_bot,
+    rayClassConductor_bot_ratModulus_of_le_two hm]
 
 /-- **The conductor of `ℚ(ζ_m)/ℚ` is `(m)·∞`** for `m > 2` not equal to `2` modulo `4`. -/
 @[simp] theorem cyclotomicConductor_rat (h2 : 2 < m) (h4 : m % 4 ≠ 2) :
     cyclotomicConductor ℚ F m = ratModulus m (NeZero.ne m) := by
-  rw [cyclotomicConductor_rat_eq, rayClassConductor_bot_ratModulus h2 h4]
+  rw [cyclotomicConductor_rat_eq_rayClassConductor_bot,
+    rayClassConductor_bot_ratModulus h2 h4]
 
 /-- **The conductor of `ℚ(ζ_m)/ℚ` is `(m / 2)·∞`** for `m > 2` equal to `2` modulo `4`: then
 `ℚ(ζ_m) = ℚ(ζ_{m/2})` with `m / 2` odd. -/
 @[simp] theorem cyclotomicConductor_rat_of_mod_four_eq_two (h2 : 2 < m) (h4 : m % 4 = 2) :
     cyclotomicConductor ℚ F m = ratModulus (m / 2) (by omega) := by
-  rw [cyclotomicConductor_rat_eq, rayClassConductor_bot_ratModulus_of_mod_four_eq_two h2 h4]
+  rw [cyclotomicConductor_rat_eq_rayClassConductor_bot,
+    rayClassConductor_bot_ratModulus_of_mod_four_eq_two h2 h4]
 
 end Rat
 

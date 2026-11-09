@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.Perm.Fin
 public import TauCeti.FieldTheory.FunctionField.Belyi.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Equiv
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.LocalData
 public import TauCeti.FieldTheory.RatFunc.Mobius
 import Mathlib.LinearAlgebra.Matrix.Notation
 import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
@@ -52,10 +53,14 @@ itself with the new algebra structure, or any other model of it.
 * `TauCeti.IsAlgebraicBelyiPair.of_branchPointAut`: reordering the branch points of an algebraic
   Belyi pair gives an algebraic Belyi pair.
 * `TauCeti.finrank_eq_of_branchPointAut`: of the same degree.
-* `TauCeti.Place.restrict_map_eq_markedPlace_iff_of_branchPointAut` and
-  `TauCeti.Place.ramificationIdx_map_of_branchPointAut`: the places over the
+* `TauCeti.Place.restrict_map_eq_markedPlace_iff_of_branchPointAut`,
+  `TauCeti.Place.ramificationIdx_map_of_branchPointAut` and
+  `TauCeti.Place.relativeDegree_map_of_branchPointAut`: the places over the
   branch point numbered `i` of the new pair are those over the branch point numbered `ρ i` of the
-  old one, with the same ramification indices.
+  old one, with the same ramification indices and relative degrees.
+* `TauCeti.Place.localData_markedPlace_of_branchPointAut`: hence the local data `(e, f)` over
+  the branch point numbered `i` of the new pair are those over the branch point numbered `ρ i`
+  of the old one.
 
 ## References
 
@@ -188,6 +193,29 @@ have the same ramification index over `k(t)`. -/
 theorem ramificationIdx_map_of_branchPointAut (P : Place k F) :
     ramificationIdx (RatFunc k) (P.map e) = ramificationIdx (RatFunc k) P :=
   ramificationIdx_map e (branchPointAut k ρ⁻¹).toRingEquiv (commute_branchPointAut_inv ρ e he) P
+
+/-- **Reordering the branch points keeps the relative degrees**: when `e : F ≃ₐ[k] F'`
+replaces the Belyi function `t` of `F` by `m(t)`, a place of `F` and its transport to `F'`
+have the same relative degree over `k(t)`. -/
+theorem relativeDegree_map_of_branchPointAut [IsScalarTower k (RatFunc k) F]
+    [IsScalarTower k (RatFunc k) F'] [Algebra.IsIntegral (RatFunc k) F]
+    [Algebra.IsIntegral (RatFunc k) F'] (P : Place k F) :
+    relativeDegree k (RatFunc k) (P.map e) = relativeDegree k (RatFunc k) P :=
+  relativeDegree_map e (branchPointAut k ρ⁻¹) (commute_branchPointAut_inv ρ e he) P
+
+/-- **Reordering the branch points permutes the local data**: when `e : F ≃ₐ[k] F'` replaces
+the Belyi function `t` of `F` by `m(t)`, the multiset of pairs `(e, f)` of ramification indices
+and relative degrees at the places of `F'` over the branch point numbered `i` is the one at the
+places of `F` over the branch point numbered `ρ i`. -/
+theorem localData_markedPlace_of_branchPointAut [IsScalarTower k (RatFunc k) F]
+    [IsScalarTower k (RatFunc k) F'] [FiniteDimensional (RatFunc k) F]
+    [FiniteDimensional (RatFunc k) F'] (i : Fin 3) :
+    localData (k' := k) (F' := F') k (RatFunc k) (markedPlace k i) =
+      localData (k' := k) (F' := F) k (RatFunc k) (markedPlace k (ρ i)) :=
+  localData_eq_of_equiv _ _ (mapEquiv e)
+    (fun P ↦ by rw [mapEquiv_apply, restrict_map_eq_markedPlace_iff_of_branchPointAut ρ e he])
+    (fun P _ ↦ by rw [mapEquiv_apply, ramificationIdx_map_of_branchPointAut ρ e he])
+    (fun P _ ↦ by rw [mapEquiv_apply, relativeDegree_map_of_branchPointAut ρ e he])
 
 end Reorder
 

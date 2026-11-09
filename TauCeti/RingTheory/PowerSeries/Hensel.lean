@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Splits
+public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import Mathlib.RingTheory.PowerSeries.Inverse
+public import TauCeti.RingTheory.Henselian.Basic
 public import TauCeti.RingTheory.Polynomial.DegreeLT
 public import TauCeti.RingTheory.PowerSeries.Swap
+import Mathlib.RingTheory.AdicCompletion.Completeness
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Polynomial.Depressed
 
@@ -49,6 +53,12 @@ each step gives uniqueness of the factorization.
   power of `X` factors into two monic factors of positive degree. This is the degree-lowering
   splitting step of the Newton–Puiseux algorithm, combining the coprime splitting of the reduction
   (`Polynomial.Monic.exists_isCoprime_mul_eq_of_nextCoeff_eq_zero`) with Hensel lifting.
+* `PowerSeries.henselianLocalRing`: over a field `K`, `K⟦t⟧` is a Henselian local ring, being
+  complete for its maximal ideal `(t)`.
+* `PowerSeries.exists_pow_eq_of_constantCoeff_eq_pow` and `PowerSeries.exists_pow_eq_of_isUnit`:
+  a unit of `K⟦t⟧` whose constant coefficient is a nonzero `n`-th power, with `n` invertible in
+  `K`, is an `n`-th power; over an algebraically closed field every unit of `K⟦t⟧` has an `n`-th
+  root for every `n` invertible in `K`.
 
 ## References
 
@@ -286,3 +296,52 @@ theorem Monic.exists_monic_mul_eq_of_nextCoeff_map_eq_zero {P : K⟦X⟧[X]} (hP
 end Splitting
 
 end Polynomial
+
+namespace PowerSeries
+
+variable {K : Type*} [Field K]
+
+/-- **Hensel's lemma for `K⟦t⟧`.** Over a field `K`, the power series ring `K⟦t⟧` is a Henselian
+local ring: it is complete for its maximal ideal `(t)`, so this is Mathlib's
+`IsAdicComplete.henselianRing` at the maximal ideal, read through
+`TauCeti.IsAdicComplete.henselianLocalRing`. -/
+instance henselianLocalRing : HenselianLocalRing K⟦X⟧ :=
+  have : IsAdicComplete (IsLocalRing.maximalIdeal K⟦X⟧) K⟦X⟧ := by
+    rw [maximalIdeal_eq_span_X]
+    infer_instance
+  TauCeti.IsAdicComplete.henselianLocalRing _
+
+/-- **`n`-th roots of units in `K⟦t⟧`.** If `n` is invertible in `K` and the constant
+coefficient of `u` is `c ^ n` for some `c ≠ 0`, then `u` has an `n`-th root with constant
+coefficient `c`, by Hensel's lemma applied to `X ^ n - u` at the approximate root `c`. -/
+theorem exists_pow_eq_of_constantCoeff_eq_pow {n : ℕ} (hn : (n : K) ≠ 0) {u : K⟦X⟧} {c : K}
+    (hc : c ≠ 0) (hu : constantCoeff u = c ^ n) :
+    ∃ v : K⟦X⟧, v ^ n = u ∧ constantCoeff v = c := by
+  have hres {x y : K⟦X⟧} :
+      IsLocalRing.residue K⟦X⟧ x = IsLocalRing.residue K⟦X⟧ y ↔
+        constantCoeff x = constantCoeff y := by
+    rw [← sub_eq_zero, ← map_sub, IsLocalRing.residue_eq_zero_iff, ← ker_coeff_eq_max_ideal,
+      RingHom.mem_ker, map_sub, sub_eq_zero]
+  obtain ⟨v, hv, hvc⟩ := TauCeti.HenselianLocalRing.exists_pow_eq_of_residue_pow_eq
+    (x₀ := C c) (u := u)
+    (by rw [isUnit_iff_constantCoeff, map_natCast]; exact hn.isUnit)
+    (by rw [isUnit_iff_constantCoeff, constantCoeff_C]; exact hc.isUnit)
+    (by rw [← map_pow, hres, map_pow, constantCoeff_C, hu])
+  exact ⟨v, hv, by rwa [hres, constantCoeff_C] at hvc⟩
+
+/-- Over an algebraically closed field `K`, every unit of `K⟦t⟧` has an `n`-th root for every `n`
+invertible in `K`. -/
+theorem exists_pow_eq_of_isUnit [IsAlgClosed K] {n : ℕ} (hn : (n : K) ≠ 0) {u : K⟦X⟧}
+    (hu : IsUnit u) : ∃ v : K⟦X⟧, v ^ n = u := by
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    exact hn Nat.cast_zero
+  obtain ⟨c, hc⟩ := IsAlgClosed.exists_pow_nat_eq (constantCoeff u) (Nat.pos_of_ne_zero hn0)
+  have hc0 : c ≠ 0 := by
+    rintro rfl
+    rw [zero_pow hn0] at hc
+    exact (isUnit_iff_constantCoeff.mp hu).ne_zero hc.symm
+  obtain ⟨v, hv, -⟩ := exists_pow_eq_of_constantCoeff_eq_pow hn hc0 hc.symm
+  exact ⟨v, hv⟩
+
+end PowerSeries

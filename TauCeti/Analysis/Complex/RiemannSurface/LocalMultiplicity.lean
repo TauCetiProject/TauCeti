@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import Mathlib.Data.ENat.Monoid
 import TauCeti.Analysis.Analytic.Order
+import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # The local multiplicity of a holomorphic map between Riemann surfaces
@@ -223,6 +224,17 @@ theorem natCast_localMultiplicity (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt �
   rw [← localMultiplicity_eq_zero_iff hf, localMultiplicity_def, analyticOrderNatAt, htop,
     ENat.toNat_top]
 
+/-- The preferred-chart representative of a holomorphic, locally nonconstant map is itself
+locally nonconstant. -/
+theorem not_eventuallyConst_chartAt_comp_comp_chartAt_symm
+    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y)
+    (hnc : ¬ EventuallyConst f (𝓝 x)) :
+    ¬ EventuallyConst ((chartAt ℂ (f x) ∘ f) ∘ (chartAt ℂ x).symm)
+      (𝓝 (chartAt ℂ x x)) := by
+  simp only [eventuallyConst_iff_analyticOrderAt_sub_eq_top, comp_apply,
+    (chartAt ℂ x).left_inv (mem_chart_source ℂ x), ← natCast_localMultiplicity hf hnc]
+  simp
+
 /-! ### Composition -/
 
 /-- **Multiplicativity of the local multiplicity.** The local multiplicity of a composition of
@@ -315,9 +327,7 @@ theorem eventually_localMultiplicity_eq_one
   have hderiv : ∀ᶠ z in 𝓝[≠] c x, deriv (fun z ↦ c' (f (c.symm z))) z ≠ 0 := by
     refine hFa.deriv.eventually_eq_zero_or_eventually_ne_zero.resolve_left fun h ↦ htop ?_
     rw [← hFa.analyticOrderAt_deriv_add_one, analyticOrderAt_eq_top.2 h, top_add]
-  have hc : Tendsto c (𝓝[≠] x) (𝓝[≠] c x) :=
-    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      ((c.continuousAt hcx).mono_left nhdsWithin_le_nhds) (c.eventually_ne_nhdsWithin hcx)
+  have hc : Tendsto c (𝓝[≠] x) (𝓝[≠] c x) := c.tendsto_nhdsNE hcx
   -- At a nearby point `y ≠ x`, compute the local multiplicity in the charts `c` and `c'`.
   filter_upwards [hc.eventually hderiv,
     nhdsWithin_le_nhds ((c.continuousAt hcx).eventually hFa.eventually_analyticAt),

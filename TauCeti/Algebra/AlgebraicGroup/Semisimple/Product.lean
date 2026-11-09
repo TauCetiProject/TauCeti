@@ -48,10 +48,7 @@ theorem tensorProduct (H K : FiniteTypeCommHopfAlgCat.{u, u} k)
   rw [semisimpleCommHopfAlgProperty_iff_solvableRadicalDefiningIdeal_baseChange_eq_augmentation]
   refine ⟨?_, geometricallyConnectedCommHopfAlgProperty.tensorProduct H.obj K.obj
     hH.geometricallyConnected hK.geometricallyConnected, ?_⟩
-  · exact (smoothCommHopfAlgProperty_iff _).mp <|
-      smoothCommHopfAlgProperty.tensorProduct H.obj K.obj
-        ((smoothCommHopfAlgProperty_iff _).mpr hH.smooth)
-        ((smoothCommHopfAlgProperty_iff _).mpr hK.smooth)
+  · exact FiniteTypeCommHopfAlgCat.smooth_tensorProduct hH.smooth hK.smooth
   · let e := FiniteTypeCommHopfAlgCat.baseChangeTensorProductIso (AlgebraicClosure k) H K
     have hrad := FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_tensorProduct_eq_augmentation
       (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H)

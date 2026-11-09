@@ -31,6 +31,8 @@ supplies both facts.
 * `Finpartition.sum_sum_piFinset_parts`: a sum over maps `ι → s` splits along cell assignments.
 * `Finpartition.sum_piFinset_apply_part`: a sum over maps `ι → s` of a function of their cell
   assignments weights each cell assignment by the size of its box.
+* `Finpartition.mem_piFinset_part_iff`: a map lies in the box of parts through `x` exactly when
+  it has the same cell assignment as `x`.
 * `Finpartition.injective_of_mem_piFinset_parts`: a map in the box of an injective cell assignment
   is injective.
 * `Finpartition.card_filter_not_injective_part_le`: at most
@@ -38,8 +40,11 @@ supplies both facts.
   non-injective cell assignment.
 * `Finpartition.sum_prod_card_of_not_injective_le`: the same bound for the total size of the boxes
   of non-injective cell assignments.
-* `Finpartition.sum_prod_card_of_not_injective_le_of_card_le`: when all parts have size at most
-  `m`, these boxes have total size at most `(card ι).choose 2 * m * #s ^ (card ι - 1)`.
+* `Finpartition.card_filter_not_injective_part_le_of_card_le`,
+  `Finpartition.sum_prod_card_of_not_injective_le_of_card_le`: when all parts have size at most
+  `m`, both counts are at most `(card ι).choose 2 * m * #s ^ (card ι - 1)`.
+* `Finpartition.card_embedding_exists_mem_part_le_of_card_le`: the same bound for the embeddings
+  `ι ↪ α` sending two distinct points to a common part of a partition of a finite type `α`.
 -/
 
 public section
@@ -92,6 +97,14 @@ theorem injective_of_mem_piFinset_parts {φ : ι → P.parts} (hφ : Injective �
 theorem part_eq_of_mem_piFinset_parts {φ : ι → P.parts} {g : ι → α}
     (hg : g ∈ Fintype.piFinset fun i ↦ (φ i : Finset α)) (i : ι) : P.part (g i) = φ i :=
   P.part_eq_of_mem (φ i).2 (Fintype.mem_piFinset.1 hg i)
+
+/-- A map `y` lies in the box of parts through a map `x : ι → s` exactly when `y` has the same
+cell assignment as `x`. -/
+theorem mem_piFinset_part_iff {x y : ι → α} (hx : ∀ i, x i ∈ s) :
+    y ∈ Fintype.piFinset (fun i ↦ P.part (x i)) ↔
+      (fun i ↦ P.part (y i)) = fun i ↦ P.part (x i) := by
+  simp only [Fintype.mem_piFinset, funext_iff]
+  exact forall_congr' fun i ↦ (P.part_eq_iff_mem (P.part_mem.2 (hx i))).symm
 
 /-- A sum over the maps `ι → s` of a function of their cell assignments counts each cell
 assignment `φ` with the size `∏ i, #(φ i)` of its box. -/
@@ -181,12 +194,12 @@ theorem sum_prod_card_of_not_injective_le :
   · rw [filter_false_of_mem fun g hg ↦ by rwa [hpart hg, ← hinj, not_not], card_empty]
   · rw [filter_true_of_mem fun g hg ↦ by rwa [hpart hg, ← hinj], Fintype.card_piFinset]
 
-/-- If every part of `P` has at most `m` elements, the boxes of the non-injective cell assignments
-have total size at most `(card ι).choose 2 * m * #s ^ (card ι - 1)`. -/
-theorem sum_prod_card_of_not_injective_le_of_card_le {m : ℕ} (hm : ∀ A ∈ P.parts, #A ≤ m) :
-    ∑ φ : ι → P.parts with ¬Injective φ, ∏ i, #(φ i : Finset α) ≤
+omit [DecidableEq ι] in
+/-- The bound `(card ι).choose 2 * #s ^ (card ι - 2) * ∑ A ∈ P.parts, #A ^ 2` is at most
+`(card ι).choose 2 * m * #s ^ (card ι - 1)` when every part of `P` has at most `m` elements. -/
+private theorem choose_two_mul_pow_mul_sum_sq_le {m : ℕ} (hm : ∀ A ∈ P.parts, #A ≤ m) :
+    (Fintype.card ι).choose 2 * #s ^ (Fintype.card ι - 2) * ∑ A ∈ P.parts, #A ^ 2 ≤
       (Fintype.card ι).choose 2 * m * #s ^ (Fintype.card ι - 1) := by
-  refine P.sum_prod_card_of_not_injective_le.trans ?_
   rcases lt_or_ge (Fintype.card ι) 2 with hι | hι
   · simp [Nat.choose_eq_zero_of_lt hι]
   · calc (Fintype.card ι).choose 2 * #s ^ (Fintype.card ι - 2) * ∑ A ∈ P.parts, #A ^ 2
@@ -195,5 +208,39 @@ theorem sum_prod_card_of_not_injective_le_of_card_le {m : ℕ} (hm : ∀ A ∈ P
       _ = (Fintype.card ι).choose 2 * m * #s ^ (Fintype.card ι - 1) := by
           rw [show Fintype.card ι - 1 = Fintype.card ι - 2 + 1 by omega, pow_succ]
           ring
+
+/-- If every part of `P` has at most `m` elements, at most
+`(card ι).choose 2 * m * #s ^ (card ι - 1)` maps `ι → s` send two distinct coordinates to a common
+part. -/
+theorem card_filter_not_injective_part_le_of_card_le {m : ℕ} (hm : ∀ A ∈ P.parts, #A ≤ m) :
+    #{g ∈ Fintype.piFinset (fun _ : ι ↦ s) | ¬Injective fun i ↦ P.part (g i)} ≤
+      (Fintype.card ι).choose 2 * m * #s ^ (Fintype.card ι - 1) :=
+  P.card_filter_not_injective_part_le.trans (P.choose_two_mul_pow_mul_sum_sq_le hm)
+
+/-- If every part of `P` has at most `m` elements, the boxes of the non-injective cell assignments
+have total size at most `(card ι).choose 2 * m * #s ^ (card ι - 1)`. -/
+theorem sum_prod_card_of_not_injective_le_of_card_le {m : ℕ} (hm : ∀ A ∈ P.parts, #A ≤ m) :
+    ∑ φ : ι → P.parts with ¬Injective φ, ∏ i, #(φ i : Finset α) ≤
+      (Fintype.card ι).choose 2 * m * #s ^ (Fintype.card ι - 1) :=
+  P.sum_prod_card_of_not_injective_le.trans (P.choose_two_mul_pow_mul_sum_sq_le hm)
+
+/-- If every part of a finite partition `P` of a finite type `α` has at most `m` elements, at most
+`(card ι).choose 2 * m * card α ^ (card ι - 1)` embeddings `ι ↪ α` send two distinct points to a
+common part. -/
+theorem card_embedding_exists_mem_part_le_of_card_le [Fintype α]
+    (P : Finpartition (univ : Finset α)) {m : ℕ} (hm : ∀ A ∈ P.parts, #A ≤ m) :
+    #{f : ι ↪ α | ∃ i j, i ≠ j ∧ ∃ A ∈ P.parts, f i ∈ A ∧ f j ∈ A} ≤
+      (Fintype.card ι).choose 2 * m * Fintype.card α ^ (Fintype.card ι - 1) := by
+  calc #{f : ι ↪ α | ∃ i j, i ≠ j ∧ ∃ A ∈ P.parts, f i ∈ A ∧ f j ∈ A}
+      ≤ #{g ∈ Fintype.piFinset (fun _ : ι ↦ (univ : Finset α)) |
+          ¬Injective fun i ↦ P.part (g i)} := by
+        refine card_le_card_of_injOn (fun f ↦ ⇑f) (fun f hf ↦ ?_)
+          fun f _ g _ h ↦ DFunLike.coe_injective h
+        -- Two distinct points in a common part have the same cell.
+        obtain ⟨i, j, hij, A, hA, hi, hj⟩ := (mem_filter.1 hf).2
+        simp only [coe_filter, Set.mem_ofPred_eq, Fintype.mem_piFinset, mem_univ, implies_true,
+          true_and]
+        exact fun h ↦ hij (h ((P.part_eq_of_mem hA hi).trans (P.part_eq_of_mem hA hj).symm))
+    _ ≤ _ := by simpa using P.card_filter_not_injective_part_le_of_card_le (ι := ι) hm
 
 end Finpartition

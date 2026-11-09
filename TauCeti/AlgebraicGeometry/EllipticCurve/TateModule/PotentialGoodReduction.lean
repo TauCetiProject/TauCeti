@@ -14,6 +14,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.NumberTheory.LocalField.AlgebraicExtension.DiscreteValuationRing
 import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
+import TauCeti.NumberTheory.LocalField.NatCastValuation
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Extension
 
 /-!
@@ -131,15 +132,11 @@ theorem Affine.Point.map_eq_self_of_mem_inertiaSubgroup_of_mem_fixingSubgroup
   -- `τ` and `ρ` have the same underlying map.
   have hτρ (x : M) : τ x = ρ x := by
     rw [AlgEquiv.ofRingEquiv_apply, AlgEquiv.coe_toRingEquiv]
-  have hτ : τ ∈ LocalFieldsRamification.lowerRamificationGroup L M 0 := by
-    have h := restrictNormal_mem_lowerRamificationGroup_zero M hσ
-    rw [LocalFieldsRamification.mem_lowerRamificationGroup_iff] at h ⊢
-    -- Hence `τ` and `ρ` act on `𝒪[M]` by the same map.
-    intro x
-    have hx : τ • x = ρ • x := Subtype.ext <| by
-      rw [AlgEquiv.coe_smul_integerRing, AlgEquiv.coe_smul_integerRing, hτρ]
-    rw [hx]
-    exact h x
+  have hτρ' : τ.restrictScalars K = ρ := AlgEquiv.ext hτρ
+  have hτ : τ ∈ LocalFieldsRamification.lowerRamificationGroup L M 0 :=
+    (LocalFieldsRamification.comap_restrictScalarsHom_lowerRamificationGroup K M L 0).le
+      (Subgroup.mem_comap.2 ((AlgEquiv.restrictScalarsHom_apply ..).trans hτρ' ▸
+        restrictNormal_mem_lowerRamificationGroup_zero M hσ))
   have hcomm : σ.toAlgHom.comp M.val = M.val.comp ρ.toAlgHom :=
     AlgHom.ext fun x ↦ (AlgEquiv.restrictNormal_commutes σ M x).symm
   obtain ⟨Q, hQP⟩ := (Affine.Point.exists_map_eq_iff P M.val).mpr
@@ -149,27 +146,9 @@ theorem Affine.Point.map_eq_self_of_mem_inertiaSubgroup_of_mem_fixingSubgroup
         (IntermediateField.subset_adjoin K _ (Set.mem_insert_of_mem _ rfl)))⟩, rfl⟩⟩
   rw [← hQP, ← map_nsmul, Affine.Point.map_map, hcomm, ← Affine.Point.map_map] at hP
   have hQ := Affine.Point.map_injective M.val hP
-  -- Transport `Q` to the model `C • W` over `L`, which has good reduction.
-  have hbc : W⁄M = (W⁄L)⁄M :=
-    (WeierstrassCurve.map_baseChange W (IsScalarTower.toAlgHom K L M)).symm
-  set e := AddEquiv.cast (M := fun V : WeierstrassCurve M ↦ V.toAffine.Point) hbc
-  set pv := (W⁄L).pointEquivVariableChange M C
-  have key (R : (W⁄M).toAffine.Point) :
-      Affine.Point.map τ.toAlgHom (pv.symm (e R)) =
-        pv.symm (e (Affine.Point.map ρ.toAlgHom R)) := by
-    rw [map_pointEquivVariableChange_symm]
-    congr 1
-    -- Both sides apply `σ` to the coordinates of `R`.
-    rcases R with _ | ⟨x, y, hxy⟩
-    · simp only [← Affine.Point.zero_def, _root_.map_zero]
-    · rw [AddEquiv.cast_apply, Affine.Point.cast_some hbc, Affine.Point.map_some,
-        Affine.Point.map_some, AddEquiv.cast_apply, Affine.Point.cast_some hbc]
-      simp only [AlgEquiv.toAlgHom_apply, hτρ]
-  have hn' : (n : 𝓀[L]) ≠ 0 := by
-    rwa [← map_natCast (algebraMap 𝓀[K] 𝓀[L]), map_ne_zero_iff _ (algebraMap 𝓀[K] 𝓀[L]).injective]
-  have hQ' := Affine.Point.map_eq_self_of_mem_lowerRamificationGroup_zero (W := C • W⁄L) hn' hτ
-    (P := pv.symm (e Q)) (by rw [← map_nsmul, ← map_nsmul, key, hQ])
-  rw [key, pv.symm.injective.eq_iff, e.injective.eq_iff] at hQ'
+  have hQ' := Affine.Point.map_restrictScalars_eq_self_of_mem_lowerRamificationGroup_zero
+    (W := W) C hn hτ (Q := Q) (by rwa [hτρ'])
+  rw [hτρ'] at hQ'
   rw [← hQP, Affine.Point.map_map, hcomm, ← Affine.Point.map_map, hQ']
 
 /-- **The Tate module is unramified over a field of good reduction.** Let `L` be a finite
@@ -185,7 +164,7 @@ theorem tateModuleGaloisRepresentation_eq_one_of_mem_inertiaSubgroup_of_mem_fixi
     (hσL : σ ∈ ι.fieldRange.fixingSubgroup) :
     W.tateModuleGaloisRepresentation ℓ σ = 1 := by
   refine LinearMap.ext fun x ↦ TateModule.ext fun n ↦ Subtype.ext ?_
-  rw [coe_proj_tateModuleGaloisRepresentation, Module.End.one_apply]
+  rw [coe_proj_tateModuleGaloisRepresentation, one_apply_eq_self]
   refine Affine.Point.map_eq_self_of_mem_inertiaSubgroup_of_mem_fixingSubgroup ι C (n := ℓ ^ n)
     ?_ hσ hσL ?_
   · rw [Nat.cast_pow]
@@ -222,7 +201,7 @@ theorem HasPotentialGoodReduction.exists_tateModuleGaloisRepresentation_eq_one
   let : Algebra S 𝒪[L] := ((algebraMap S L).codRestrict 𝒪[L]
     (valuation_algebraMap_le_one_of_isLocalHom hS)).toAlgebra
   have hgood' : (C • W⁄L).HasGoodReduction 𝒪[L] := by
-    have h := HasGoodReduction.baseChange S 𝒪[L] (L := L) (RingHom.ext fun _ ↦ rfl) hgood
+    have h := HasGoodReduction.baseChange S 𝒪[L] (L := L) (by ext; rfl) hgood
     rwa [baseChange, Algebra.algebraMap_self, map_id] at h
   have := hgood'.toIsMinimal
   have : (integralModel 𝒪[L] (C • W⁄L)).IsElliptic :=
@@ -277,17 +256,17 @@ section FiniteImage
 
 variable [W.IsElliptic]
 
-open scoped Classical in
 /-- **Good reduction over a finite extension from an unramified Tate module.** Let `M` be a finite
 extension of `K` inside `K^{alg}`, and let `ℓ` be a prime different from the residue characteristic
 of `K`. If every element of the inertia subgroup of `Gal(K^{alg}/K)` fixing `M` acts trivially on
 the `ℓ`-adic Tate module of `W`, then `W` has potential good reduction. -/
 theorem hasPotentialGoodReduction_of_tateModuleGaloisRepresentation_eq_one
-    (M : IntermediateField K (AlgebraicClosure K)) [FiniteDimensional K M] {ℓ : ℕ} [Fact ℓ.Prime]
-    (hℓ : (ℓ : 𝓀[K]) ≠ 0)
+    (M : IntermediateField K (AlgebraicClosure K)) [FiniteDimensional K M]
+    [DecidableEq (AlgebraicClosure K)] {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : (ℓ : 𝓀[K]) ≠ 0)
     (h : ∀ σ ∈ inertiaSubgroup K, σ ∈ M.fixingSubgroup →
       W.tateModuleGaloisRepresentation ℓ σ = 1) :
     W.HasPotentialGoodReduction 𝒪[K] := by
+  classical
   -- Equip `M` with its structure of a local field.
   let := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) M
   let := finiteIntermediateFieldTopology K (AlgebraicClosure K) M
@@ -300,10 +279,7 @@ theorem hasPotentialGoodReduction_of_tateModuleGaloisRepresentation_eq_one
   have : IsMinimal 𝒪[M] (C • W⁄M) := hC ▸ inferInstance
   have hℓM : (ℓ : 𝓀[M]) ≠ 0 := by
     rwa [← map_natCast (algebraMap 𝓀[K] 𝓀[M]), map_ne_zero_iff _ (algebraMap 𝓀[K] 𝓀[M]).injective]
-  have hℓK : (ℓ : K) ≠ 0 :=
-    natCast_ne_zero_of_isUnit ((IsLocalRing.residue_ne_zero_iff_isUnit _).1 (by rwa [map_natCast]))
-  have hℓ' : (ℓ : AlgebraicClosure M) ≠ 0 := by
-    simpa using (map_ne_zero (algebraMap K (AlgebraicClosure M))).2 hℓK
+  have hℓ' : (ℓ : AlgebraicClosure M) ≠ 0 := natCast_ne_zero_of_residueField_natCast_ne_zero hℓ
   -- By the criterion of Néron, Ogg and Shafarevich over `M`, it suffices that every `τ ∈ I_M`
   -- fixes the points of `ℓ`-power order of `C • W` over `M^{alg}`.
   refine hasGoodReduction_of_tateModuleGaloisRepresentation_eq_one _ hℓM fun τ hτ ↦
@@ -318,8 +294,7 @@ theorem hasPotentialGoodReduction_of_tateModuleGaloisRepresentation_eq_one
   let σ : AlgebraicClosure K ≃ₐ[M] AlgebraicClosure K := (φ.symm.trans τ').trans φ
   have hσ (z : AlgebraicClosure M) : φ (τ' z) = σ (φ z) := by
     simp [σ]
-  have hℓ'' : (ℓ : AlgebraicClosure K) ≠ 0 := by
-    simpa using (map_ne_zero (algebraMap K (AlgebraicClosure K))).2 hℓK
+  have hℓ'' : (ℓ : AlgebraicClosure K) ≠ 0 := natCast_ne_zero_of_residueField_natCast_ne_zero hℓ
   have hfix := (tateModuleGaloisRepresentation_eq_one_iff hℓ'').1 <| h (σ.restrictScalars K)
     ((φ.toRingEquiv.mem_inertiaSubgroup_iff_of_semiconj (τ := τ')
       (σ := σ.restrictScalars K) hσ).2 hτ)
@@ -335,27 +310,18 @@ theorem hasPotentialGoodReduction_of_tateModuleGaloisRepresentation_eq_one
   have hQ := hfix k (e (Affine.Point.map φ.toAlgHom (pv P)))
     (by rw [← map_nsmul, ← map_nsmul, ← map_nsmul, hP, map_zero, map_zero, map_zero])
   -- The cast `e` does not change coordinates.
-  have hcoord {V V' : WeierstrassCurve (AlgebraicClosure K)} (h : V = V')
-      (R : V.toAffine.Point) :
-      Affine.Point.xCoord (cast (congrArg (fun V ↦ V.toAffine.Point) h) R) =
-          Affine.Point.xCoord R ∧
-        Affine.Point.yCoord (cast (congrArg (fun V ↦ V.toAffine.Point) h) R) =
-          Affine.Point.yCoord R := by
-    subst h
-    exact ⟨rfl, rfl⟩
-  rw [Affine.Point.map_eq_self_iff, AddEquiv.cast_apply, (hcoord hbc.symm _).1,
-    (hcoord hbc.symm _).2, Affine.Point.xCoord_map, Affine.Point.yCoord_map] at hQ
+  rw [Affine.Point.map_eq_self_iff, AddEquiv.cast_apply, Affine.Point.xCoord_cast hbc.symm,
+    Affine.Point.yCoord_cast hbc.symm, Affine.Point.xCoord_map, Affine.Point.yCoord_map] at hQ
   rw [Affine.Point.map_eq_self_iff]
   exact ⟨φ.injective ((hσ _).trans hQ.1), φ.injective ((hσ _).trans hQ.2)⟩
 
-open scoped Classical in
 /-- **A finite inertia image is trivial on the inertia of a finite extension.** Let `ℓ` be a prime
 invertible in `K`. If the image of the inertia subgroup of
 `Gal(K^{alg}/K)` in the automorphisms of the `ℓ`-adic Tate module of `W` is finite, then there is a
 finite extension `M` of `K` inside `K^{alg}` such that every element of the inertia subgroup fixing
 `M` acts trivially on the Tate module. -/
-theorem exists_tateModuleGaloisRepresentation_eq_one_of_finite_image {ℓ : ℕ} [Fact ℓ.Prime]
-    (hℓ : (ℓ : K) ≠ 0)
+theorem exists_tateModuleGaloisRepresentation_eq_one_of_finite_image
+    [DecidableEq (AlgebraicClosure K)] {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : (ℓ : K) ≠ 0)
     (h : (W.tateModuleGaloisRepresentation ℓ ''
       (inertiaSubgroup K : Set (Field.absoluteGaloisGroup K))).Finite) :
     ∃ M : IntermediateField K (AlgebraicClosure K), FiniteDimensional K M ∧
@@ -370,37 +336,35 @@ theorem exists_tateModuleGaloisRepresentation_eq_one_of_finite_image {ℓ : ℕ}
       (k := 2) ?_ (fun σ hσ P hP ↦ ?_) ⟨hσ, hσM⟩⟩
   · calc 3 ≤ 2 ^ 2 := by norm_num
       _ ≤ ℓ ^ 2 := Nat.pow_le_pow_left (Fact.out : ℓ.Prime).two_le 2
-  -- An element of `G_K` fixing `M` fixes `K(E[ℓ²])`, hence `E(K^{alg})[ℓ²]`.
+  -- An element of `G_K` fixing `M` fixes `K(E[ℓ²])`, hence `E(K^{alg})[ℓ²]`; the torsion there is
+  -- stated with the classical decidable equality on `K^{alg}`, and the two group laws agree.
   refine (W.forall_smul_torsionCoeff_eq_self_iff (by exact_mod_cast pow_ne_zero 2 hℓ) σ).1
-    (mem_fixingSubgroup_divisionField_iff.1 ?_) P hP
+    (mem_fixingSubgroup_divisionField_iff.1 ?_) P (by convert hP)
   refine (IntermediateField.mem_fixingSubgroup_iff _ _).2 fun x hx ↦ Subtype.ext ?_
   exact (coe_absoluteGaloisGroupRestrictEquiv_apply K σ x).trans
     ((IntermediateField.mem_fixingSubgroup_iff _ _).1 hσ.2 x ((IntermediateField.mem_lift x).2 hx))
 
-open scoped Classical in
 /-- **A finite inertia image forces potential good reduction** (Silverman AEC VII.7.3, the
 converse implication; Serre–Tate). Let `W` be an elliptic curve over a nonarchimedean local field
 `K`, and let `ℓ` be a prime different from the residue characteristic of `K`. If the image of the
 inertia subgroup of `Gal(K^{alg}/K)` in the automorphisms of the `ℓ`-adic Tate module of `W` is
 finite, then `W` has potential good reduction. -/
-theorem hasPotentialGoodReduction_of_finite_image_tateModuleGaloisRepresentation {ℓ : ℕ}
-    [Fact ℓ.Prime] (hℓ : (ℓ : 𝓀[K]) ≠ 0)
+theorem hasPotentialGoodReduction_of_finite_image_tateModuleGaloisRepresentation
+    [DecidableEq (AlgebraicClosure K)] {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : (ℓ : 𝓀[K]) ≠ 0)
     (h : (W.tateModuleGaloisRepresentation ℓ ''
       (inertiaSubgroup K : Set (Field.absoluteGaloisGroup K))).Finite) :
     W.HasPotentialGoodReduction 𝒪[K] :=
   have ⟨M, _, hM⟩ := W.exists_tateModuleGaloisRepresentation_eq_one_of_finite_image
-    (natCast_ne_zero_of_isUnit ((IsLocalRing.residue_ne_zero_iff_isUnit _).1
-      (by rwa [map_natCast]))) h
+    (natCast_ne_zero_of_residueField_natCast_ne_zero hℓ) h
   W.hasPotentialGoodReduction_of_tateModuleGaloisRepresentation_eq_one M hℓ hM
 
-open scoped Classical in
 /-- **The criterion of Néron, Ogg and Shafarevich for potential good reduction** (Silverman AEC
 VII.7.3). Let `W` be an elliptic curve over a nonarchimedean local field `K`, and let `ℓ` be a
 prime different from the residue characteristic of `K`. Then `W` has potential good reduction
 exactly when the inertia subgroup of `Gal(K^{alg}/K)` acts on the `ℓ`-adic Tate module of `W`
 through a finite quotient. -/
-theorem hasPotentialGoodReduction_iff_finite_image_tateModuleGaloisRepresentation {ℓ : ℕ}
-    [Fact ℓ.Prime] (hℓ : (ℓ : 𝓀[K]) ≠ 0) :
+theorem hasPotentialGoodReduction_iff_finite_image_tateModuleGaloisRepresentation
+    [DecidableEq (AlgebraicClosure K)] {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : (ℓ : 𝓀[K]) ≠ 0) :
     W.HasPotentialGoodReduction 𝒪[K] ↔
       (W.tateModuleGaloisRepresentation ℓ ''
         (inertiaSubgroup K : Set (Field.absoluteGaloisGroup K))).Finite :=

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.DedekindDomain.Basic
 public import TauCeti.AlgebraicGeometry.Fibers
 
 /-!
@@ -18,6 +19,14 @@ including its projection identities.
 
 The comparison lets statements about the special fibre be transported between its base-change
 presentation and the fibre over the closed point, while preserving both projections.
+
+Every point of the spectrum of a local domain of Krull dimension at most one, such as a discrete
+valuation ring, is its generic point or its closed point, which coincide when the ring is a field
+(`IsLocalRing.Ring.KrullDimLE.eq_bot_or_eq_top`). Combined with the generic-point comparison of
+`TauCeti.AlgebraicGeometry.Fibers`, a property of morphisms invariant under isomorphism therefore
+holds on every fibre of a scheme over such a ring exactly when it holds on the generic and the
+special fibre (`TauCeti.forall_fiberToSpecResidueField_iff`). This turns
+fibrewise criteria, such as the one for nodal curves, into conditions on these two fibres.
 -/
 
 public section
@@ -158,5 +167,36 @@ lemma specialFiberIsoFiberClosedPoint_inv_fiberToSpecResidueField :
   exact h
 
 end ClosedPoint
+
+section DimensionLEOne
+
+variable {R : CommRingCat.{u}} [IsLocalRing R] [IsDomain R] [Ring.DimensionLEOne R]
+variable (K : Type u) [CommRing K] [Algebra R K] [IsFractionRing R K]
+variable {X : Scheme.{u}} (toBase : X ⟶ Spec R)
+
+/-- **Fibrewise properties over a local domain of dimension at most one.** A property of
+morphisms invariant under isomorphism holds for every fibre `X_y ⟶ Spec κ(y)` of a scheme over
+such a ring `R`, for instance a discrete valuation ring, exactly when it holds for the generic
+fibre over the fraction field and for the special fibre over the residue field. -/
+theorem forall_fiberToSpecResidueField_iff (P : MorphismProperty Scheme.{u}) [P.RespectsIso] :
+    (∀ y, P (toBase.fiberToSpecResidueField y)) ↔
+      P (genericFiber R K toBase).hom ∧ P (specialFiber R toBase).hom := by
+  have hη : P (toBase.fiberToSpecResidueField (genericPoint (Spec R))) ↔
+      P (genericFiber R K toBase).hom := by
+    rw [← MorphismProperty.cancel_left_of_respectsIso P
+      (genericFiberIsoFiberGenericPoint (K := K) toBase).hom,
+      genericFiberIsoFiberGenericPoint_hom_fiberToSpecResidueField,
+      MorphismProperty.cancel_right_of_respectsIso P]
+  have hs : P (toBase.fiberToSpecResidueField (closedPoint R)) ↔
+      P (specialFiber R toBase).hom := by
+    rw [← MorphismProperty.cancel_left_of_respectsIso P
+      (specialFiberIsoFiberClosedPoint R toBase).hom,
+      specialFiberIsoFiberClosedPoint_hom_fiberToSpecResidueField,
+      MorphismProperty.cancel_right_of_respectsIso P]
+  refine ⟨fun h ↦ ⟨hη.mp (h _), hs.mp (h _)⟩, fun ⟨hg, hc⟩ y ↦ ?_⟩
+  obtain rfl | rfl := IsLocalRing.Ring.KrullDimLE.eq_bot_or_eq_top y
+  exacts [genericPoint_eq_bot_of_affine R ▸ hη.mpr hg, hs.mpr hc]
+
+end DimensionLEOne
 
 end TauCeti

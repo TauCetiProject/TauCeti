@@ -6,15 +6,30 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fintype.BigOperators
+public import Mathlib.Algebra.BigOperators.Ring.Finset
 
 /-!
-# Sums over maps of a function of two coordinates
+# Sums over finite types
+
+A sum of values that are all equal to `d` on the indices satisfying `p`, and zero elsewhere, is
+the number of such indices times `d` (`Fintype.sum_ite_eq_card_nsmul`).
 
 For a finite type `ι` and finite coordinate sets `s i`, a sum over maps taking their `i`th value
 in `s i` of a quantity depending only on two distinct coordinates is a sum over the pairs of
 values, with each pair counted once for every choice of the remaining coordinates.
 Counting arguments use
 this to reduce a sum over labelled copies of a pattern to a sum over one pair of its vertices.
+
+More generally, any sum over such a box splits at two distinct coordinates `i` and `j`: sum over
+the maps with prescribed values at `i` and `j`, and then over all values of the two coordinates,
+substituted with `Function.update`. Telescoping arguments use this to test one pair of
+coordinates while the others stay fixed. The same splitting at three distinct coordinates tests
+one triple of coordinates.
+
+Splitting at a single coordinate `e` averages it out: if `G` does not see the value at `e`, the
+sum of `a (f e) * G f` over all maps `f` vanishes as soon as `a` sums to zero
+(`Fintype.sum_apply_mul_eq_zero`). Second-moment computations over uniformly random colorings
+use this to discard every term containing a coordinate that occurs only once.
 -/
 
 public section
@@ -22,6 +37,14 @@ public section
 open Finset
 
 namespace Fintype
+
+/-- A sum of values `f i` over the indices satisfying `p`, all of which are equal to `d`, is the
+number of such indices times `d`. -/
+theorem sum_ite_eq_card_nsmul {ι M : Type*} [Fintype ι] [AddCommMonoid M] {p : ι → Prop}
+    [DecidablePred p] {f : ι → M} {d : M} (hf : ∀ i, p i → f i = d) :
+    (∑ i, if p i then f i else 0) = Fintype.card {i // p i} • d := by
+  rw [Fintype.card_subtype, ← sum_filter]
+  exact sum_eq_card_nsmul fun i hi ↦ hf i (mem_filter.1 hi).2
 
 /-- A sum of a function of two distinct coordinates over a finite box counts each pair
 of values once for every choice of the remaining coordinates. -/
@@ -53,5 +76,94 @@ theorem sum_piFinset_apply_apply {ι κ M : Type*} [Fintype ι] [DecidableEq ι]
         exact Finset.sum_congr rfl fun g hg ↦ by rw [← (mem_filter.1 hg).2]
     _ = (∏ k ∈ univ \ {i, j}, #(s k)) • ∑ x ∈ s i, ∑ y ∈ s j, F x y := by
         rw [sum_nsmul, sum_product]
+
+/-- A sum over a finite box splits at two distinct coordinates `i` and `j`: for values
+`a ∈ s i` and `b ∈ s j`, each map in the box arises exactly once by overwriting the `i`th and `j`th
+values of a map in the box taking the values `a` at `i` and `b` at `j`. -/
+theorem sum_piFinset_eq_sum_filter_sum_sum_update {ι κ M : Type*} [Fintype ι] [DecidableEq ι]
+    [DecidableEq κ] [AddCommMonoid M] {i j : ι} (hij : i ≠ j) (s : ι → Finset κ) {a b : κ}
+    (ha : a ∈ s i) (hb : b ∈ s j) (F : (ι → κ) → M) :
+    ∑ g ∈ piFinset s, F g =
+      ∑ h ∈ piFinset s with h i = a ∧ h j = b, ∑ x ∈ s i, ∑ y ∈ s j,
+        F (Function.update (Function.update h i x) j y) := by
+  simp_rw [← sum_product']
+  refine sum_nbij' (fun g ↦ (Function.update (Function.update g i a) j b, g i, g j))
+    (fun q ↦ Function.update (Function.update q.1 i q.2.1) j q.2.2) ?_ ?_ ?_ ?_ ?_
+  · intro g hg
+    simp only [mem_piFinset, mem_product, mem_filter] at hg ⊢
+    refine ⟨⟨fun l ↦ ?_, by simp [hij]⟩, hg i, hg j⟩
+    simp only [Function.update_apply]
+    split_ifs <;> simp_all
+  · rintro ⟨h, x, y⟩ hq
+    simp only [mem_piFinset, mem_product, mem_filter] at hq ⊢
+    intro l
+    simp only [Function.update_apply]
+    split_ifs <;> simp_all
+  · intro g _
+    ext l
+    simp only [Function.update_apply]
+    split_ifs <;> simp_all
+  · rintro ⟨h, x, y⟩ hq
+    simp only [mem_piFinset, mem_product, mem_filter] at hq
+    obtain ⟨⟨-, rfl, rfl⟩, -, -⟩ := hq
+    ext l <;> simp only [Function.update_apply] <;> split_ifs <;> simp_all
+  · intro g _
+    congr 1
+    ext l
+    simp only [Function.update_apply]
+    split_ifs <;> simp_all
+
+/-- A sum over a finite box splits at three distinct coordinates `i`, `j` and `l`: for values
+`a ∈ s i`, `b ∈ s j` and `c ∈ s l`, each map in the box arises exactly once by overwriting the
+`i`th, `j`th and `l`th values of a map in the box taking the values `a`, `b` and `c` there. -/
+theorem sum_piFinset_eq_sum_filter_sum_sum_sum_update {ι κ M : Type*} [Fintype ι]
+    [DecidableEq ι] [DecidableEq κ] [AddCommMonoid M] {i j l : ι} (hij : i ≠ j) (hil : i ≠ l)
+    (hjl : j ≠ l) (s : ι → Finset κ) {a b c : κ} (ha : a ∈ s i) (hb : b ∈ s j) (hc : c ∈ s l)
+    (F : (ι → κ) → M) :
+    ∑ g ∈ piFinset s, F g =
+      ∑ h ∈ piFinset s with h i = a ∧ h j = b ∧ h l = c, ∑ x ∈ s i, ∑ y ∈ s j, ∑ z ∈ s l,
+        F (Function.update (Function.update (Function.update h i x) j y) l z) := by
+  -- Split at `i` and `j`, then split the fibre, a box with singleton cells at `i` and `j`, at
+  -- `i` and `l`.
+  have hfib : {h ∈ piFinset s | h i = a ∧ h j = b} =
+      piFinset (Function.update (Function.update s i {a}) j {b}) := by
+    rw [piFinset_update_singleton_eq_filter_piFinset_eq _ _ (by simpa [hij.symm] using hb),
+      piFinset_update_singleton_eq_filter_piFinset_eq _ _ ha, filter_filter]
+  rw [sum_piFinset_eq_sum_filter_sum_sum_update hij s ha hb, hfib,
+    sum_piFinset_eq_sum_filter_sum_sum_update hil _ (a := a) (b := c) (by simp [hij])
+      (by simpa [hil.symm, hjl.symm]),
+    ← hfib, filter_filter]
+  refine Finset.sum_congr (filter_congr fun h _ ↦ by tauto) fun h hh ↦ ?_
+  obtain ⟨-, ⟨rfl, -⟩, -⟩ := mem_filter.1 hh
+  simp only [Function.update_self, Function.update_of_ne hij, Function.update_of_ne hil.symm,
+    Function.update_of_ne hjl.symm, sum_singleton, Function.update_eq_self]
+  rw [sum_comm]
+  refine Finset.sum_congr rfl fun x _ ↦ ?_
+  rw [sum_comm]
+  refine Finset.sum_congr rfl fun y _ ↦ Finset.sum_congr rfl fun z _ ↦ ?_
+  rw [Function.update_comm hil.symm, Function.update_comm hjl.symm]
+
+/-- **Averaging out one coordinate.** If `a` sums to zero and `G` does not depend on the value of
+its argument at `e`, then summing `a (f e) * G f` over all maps `f : ι → α` gives zero. -/
+theorem sum_apply_mul_eq_zero {ι α R : Type*} [Fintype ι] [DecidableEq ι] [Fintype α]
+    [NonUnitalNonAssocSemiring R] (e : ι) {a : α → R} (ha : ∑ v, a v = 0)
+    {G : (ι → α) → R} (hG : ∀ f v, G (Function.update f e v) = G f) :
+    ∑ f : ι → α, a (f e) * G f = 0 := by
+  obtain hα | ⟨⟨w⟩⟩ := isEmpty_or_nonempty α
+  · have : IsEmpty (ι → α) := ⟨fun f ↦ hα.elim (f e)⟩
+    simp
+  -- Split off the coordinate `e`; the remaining factor does not see its value.
+  rw [← (Equiv.funSplitAt e α).symm.sum_comp, Fintype.sum_prod_type, sum_comm]
+  refine Finset.sum_eq_zero fun r _ ↦ ?_
+  have hsplit (v : α) : (Equiv.funSplitAt e α).symm (v, r) =
+      Function.update ((Equiv.funSplitAt e α).symm (w, r)) e v := by
+    ext j
+    by_cases hj : j = e
+    · subst hj; simp
+    · simp [hj]
+  calc ∑ v, a ((Equiv.funSplitAt e α).symm (v, r) e) * G ((Equiv.funSplitAt e α).symm (v, r))
+      = ∑ v, a v * G ((Equiv.funSplitAt e α).symm (w, r)) :=
+        Finset.sum_congr rfl fun v _ ↦ by rw [hsplit v, hG, Function.update_self]
+    _ = 0 := by rw [← sum_mul, ha, zero_mul]
 
 end Fintype

@@ -8,6 +8,8 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import TauCeti.AlgebraicGeometry.RationalPoint.Basic
+public import TauCeti.AlgebraicGeometry.Geometrically.GlobalSections
+import TauCeti.AlgebraicGeometry.AffineScheme
 
 /-!
 # The pushforward of the structure sheaf under flat base change
@@ -31,6 +33,10 @@ for a proper (more generally, universally closed and quasi-separated) integral s
 universally" under which line bundles rigidified along a section of `X` have no automorphisms
 other than the identity, after every base change.
 
+The same universal equality holds for every universally closed quasi-separated geometrically
+reduced and geometrically connected scheme over a field, including reducible curves. No rational
+point is needed in this version.
+
 ## Main results
 
 * `AlgebraicGeometry.Scheme.Hom.isIso_app_of_isBasis`: a morphism of schemes induces
@@ -42,6 +48,9 @@ other than the identity, after every base change.
   `p_* 𝒪_{X_T} = 𝒪_T` after every base change.
 * `TauCeti.AlgebraicGeometry.isIso_app_pullback_fst_of_section`: the same for a universally
   closed quasi-separated integral scheme with a rational point, such as a proper one.
+* `isIso_app_pullback_fst_of_geometricallyReduced_of_geometricallyConnected`: the same for a
+  universally closed quasi-separated geometrically reduced and geometrically connected scheme
+  over a field, without a rational point or irreducibility.
 
 ## References
 
@@ -96,15 +105,8 @@ theorem isIso_app_pullback_fst_of_flat [QuasiCompact f] [QuasiSeparated f] [Flat
     IsIso ((pullback.fst g f).app U) := by
   -- The affine opens of `T` lying over an affine open of `S` form a basis of `T`.
   let ι := {UV : T.affineOpens × S.affineOpens // (UV.1 : T.Opens) ≤ g ⁻¹ᵁ UV.2}
-  refine (pullback.fst g f).isIso_app_of_isBasis (B := fun i : ι ↦ i.1.1) ?_ (fun i ↦ ?_) U
-  · refine Opens.isBasis_iff_nbhd.mpr fun {W x} hx ↦ ?_
-    obtain ⟨_, ⟨V, hV, rfl⟩, hxV, -⟩ :=
-      S.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (g x)) isOpen_univ
-    obtain ⟨_, ⟨U', hU', rfl⟩, hxU', hU'W⟩ :=
-      T.isBasis_affineOpens.exists_subset_of_mem_open (⟨hx, hxV⟩ : x ∈ W ⊓ g ⁻¹ᵁ V)
-        (W ⊓ g ⁻¹ᵁ V).isOpen
-    exact ⟨U', ⟨⟨(⟨U', hU'⟩, ⟨V, hV⟩), fun y hy ↦ (hU'W hy).2⟩, rfl⟩, hxU',
-      fun y hy ↦ (hU'W hy).1⟩
+  refine (pullback.fst g f).isIso_app_of_isBasis (B := fun i : ι ↦ i.1.1)
+    g.isBasis_range_affineOpens_le_preimage (fun i ↦ ?_) U
   · obtain ⟨⟨⟨U', hU'⟩, ⟨V, hV⟩⟩, hUV⟩ := i
     -- Over `U'` the sections of the fibre product are `Γ(X, f⁻¹ V) ⊗_{Γ(S, V)} Γ(T, U')`.
     have H := (IsPullback.of_hasPullback g f).flip
@@ -147,3 +149,29 @@ theorem isIso_app_pullback_fst_of_section (f : X ⟶ Spec (.of K)) [IsIntegral X
 end AlgebraicGeometry
 
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+universe u
+
+variable {K : Type u} [Field K] {X T : Scheme.{u}}
+
+/-- **Universal structure-sheaf equality for geometrically reduced connected schemes.** A
+universally closed quasi-separated geometrically reduced and geometrically connected scheme over
+a field satisfies `p_* 𝒪 = 𝒪` after base change by any scheme over that field. In particular the
+scheme is allowed to be reducible, and it need not have a rational point. -/
+theorem isIso_app_pullback_fst_of_geometricallyReduced_of_geometricallyConnected
+    (f : X ⟶ Spec (.of K)) [UniversallyClosed f] [QuasiSeparated f]
+    [GeometricallyReduced f] [GeometricallyConnected f]
+    (g : T ⟶ Spec (.of K)) (U : T.Opens) :
+    IsIso ((pullback.fst g f).app U) := by
+  let _ : X.Over (Spec (.of K)) := ⟨f⟩
+  have : UniversallyClosed (X ↘ Spec (.of K)) := inferInstanceAs (UniversallyClosed f)
+  have : QuasiSeparated (X ↘ Spec (.of K)) := inferInstanceAs (QuasiSeparated f)
+  have : GeometricallyReduced (X ↘ Spec (.of K)) := inferInstanceAs (GeometricallyReduced f)
+  have : GeometricallyConnected (X ↘ Spec (.of K)) := inferInstanceAs (GeometricallyConnected f)
+  have : IsIso f.appTop := (ConcreteCategory.isIso_iff_bijective _).mpr
+    (X.appTop_bijective_of_geometricallyReduced_of_geometricallyConnected K)
+  exact TauCeti.AlgebraicGeometry.isIso_app_pullback_fst_of_isIso_appTop f g U
+
+end AlgebraicGeometry.Scheme.Hom

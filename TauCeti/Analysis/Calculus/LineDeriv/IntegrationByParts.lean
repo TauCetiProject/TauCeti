@@ -48,6 +48,10 @@ Lipschitz test function.
   bilinear form on a finite-dimensional space.
 * `TauCeti.integral_bilinForm_fderiv_apply_eq_zero_of_isAlt`: for an alternating bilinear form
   the integral vanishes.
+* `TauCeti.integral_fderiv_apply_eq_zero_of_hasCompactSupport`: the integral of a directional
+  derivative of a compactly supported `C¹` map vanishes.
+  `TauCeti.integral_fderiv_eq_zero_of_hasCompactSupport` is the same statement for the whole
+  derivative.
 * `TauCeti.integral_lineDeriv_mul_eq_neg_of_contDiffOn`: integration by parts between a function
   `C¹` on an open set and a Lipschitz function with compact support in it.
 
@@ -120,6 +124,26 @@ theorem integral_bilinear_fderiv_apply_comm (B : V →L[ℝ] V →L[ℝ] W) (hu 
   rw [step v w, step w v]
   simp only [hsymm]
 
+/-- The integral of a directional derivative of a compactly supported `C¹` map vanishes. -/
+theorem integral_fderiv_apply_eq_zero_of_hasCompactSupport (hu : ContDiff ℝ 1 u)
+    (hsupp : HasCompactSupport u) (v : E) : ∫ x, fderiv ℝ u x v ∂μ = 0 := by
+  have h := integral_smul_fderiv_eq_neg_fderiv_smul_of_integrable (μ := μ)
+    (f := fun _ ↦ (1 : ℝ)) (g := u) (v := v) (by simp)
+    (by simpa using ((hu.continuous_fderiv one_ne_zero).clm_apply continuous_const)
+      |>.integrable_of_hasCompactSupport (hsupp.fderiv_apply (𝕜 := ℝ) v))
+    (by simpa using hu.continuous.integrable_of_hasCompactSupport hsupp)
+    (fun _ _ ↦ differentiableAt_const _)
+    (fun _ _ ↦ (hu.differentiable one_ne_zero).differentiableAt)
+  simpa using h
+
+/-- The integral of the derivative of a compactly supported `C¹` map vanishes. -/
+theorem integral_fderiv_eq_zero_of_hasCompactSupport (hu : ContDiff ℝ 1 u)
+    (hsupp : HasCompactSupport u) : ∫ x, fderiv ℝ u x ∂μ = 0 := by
+  ext v
+  rw [ContinuousLinearMap.integral_apply ((hu.continuous_fderiv one_ne_zero)
+    |>.integrable_of_hasCompactSupport (hsupp.fderiv (𝕜 := ℝ))) v,
+    integral_fderiv_apply_eq_zero_of_hasCompactSupport hu hsupp v, zero_apply]
+
 variable [FiniteDimensional ℝ V]
 
 /-- Exchanging the two differentiation directions does not change the integral of a bilinear form
@@ -138,7 +162,7 @@ theorem integral_bilinForm_fderiv_apply_eq_zero_of_isAlt {b : LinearMap.BilinFor
     (hb : b.IsAlt) (hu : ContDiff ℝ 2 u) (hsupp : HasCompactSupport u) (v w : E) :
     ∫ x, b (fderiv ℝ u x v) (fderiv ℝ u x w) ∂μ = 0 := by
   have hneg : ∀ x : E, b (fderiv ℝ u x w) (fderiv ℝ u x v) =
-      -b (fderiv ℝ u x v) (fderiv ℝ u x w) := fun x ↦ (hb.neg _ _).symm
+      -b (fderiv ℝ u x v) (fderiv ℝ u x w) := fun x ↦ (hb.neg_eq _ _).symm
   have h := integral_bilinForm_fderiv_apply_comm (μ := μ) b hu hsupp v w
   simp only [hneg, integral_neg] at h
   linarith
@@ -150,6 +174,17 @@ open scoped NNReal Topology
 
 variable {g : E → ℝ} {L : ℝ≥0}
 
+omit [FiniteDimensional ℝ E] in
+/-- The directional derivative of a Lipschitz function `g` with compact support lies in every
+`Lq`, being bounded with compact support. -/
+theorem _root_.LipschitzWith.memLp_lineDeriv_of_hasCompactSupport {q : ENNReal} {ν : Measure E}
+    [IsFiniteMeasureOnCompacts ν] (hg : LipschitzWith L g) (hgc : HasCompactSupport g) (v : E) :
+    MemLp (fun x => lineDeriv ℝ g x v) q ν := by
+  have hdgc : HasCompactSupport fun x => lineDeriv ℝ g x v :=
+    hgc.mono' fun x hx => by_contra fun h => hx (lineDeriv_of_notMem_tsupport h v)
+  exact hdgc.memLp_of_bound (aestronglyMeasurable_lineDeriv hg.continuous ν) (L * ‖v‖)
+    (.of_forall fun _ => norm_lineDeriv_le_of_lipschitz ℝ hg)
+
 /-- **Integration by parts against a Lipschitz function.** For an open set `U`, a function `f`
 that is `C¹` on `U`, and a Lipschitz function `g` with compact support in `U`,
 `∫ (∂_v g) f = -∫ g (∂_v f)`, where `∂_v g = lineDeriv ℝ g · v` exists almost everywhere by
@@ -160,7 +195,7 @@ theorem integral_lineDeriv_mul_eq_neg_of_contDiffOn {U : Set E} (hU : IsOpen U) 
     (hf : ContDiffOn ℝ 1 f U) (hg : LipschitzWith L g) (hgc : HasCompactSupport g)
     (hgs : tsupport g ⊆ U) (v : E) :
     ∫ x, lineDeriv ℝ g x v * f x ∂μ = -∫ x, g x * fderiv ℝ f x v ∂μ := by
-  obtain ⟨χ, hχ, -, hχ1, hχc, hχs⟩ := hgc.exists_contDiff_cutoff hU hgs
+  obtain ⟨χ, hχ, -, hχ1, hχc, hχs⟩ := hgc.exists_contDiff_cutoff_eventuallyEq_one hU hgs
   set F : E → ℝ := fun x => χ x * f x
   -- `F = χ f` is `C¹` on the whole space: near a point outside `U` it vanishes identically.
   have hF : ContDiff ℝ 1 F := by
@@ -171,10 +206,8 @@ theorem integral_lineDeriv_mul_eq_neg_of_contDiffOn {U : Set E} (hU : IsOpen U) 
   have hibp := hFC.integral_lineDeriv_mul_eq (μ := μ) hg hgc v
   -- On a neighbourhood of each point of `tsupport g` the cutoff is one, so `F` agrees with `f`.
   have hnear : ∀ x ∈ tsupport g, F =ᶠ[𝓝 x] f := fun x hx => by
-    filter_upwards [isOpen_interior.mem_nhds (hχ1 hx)] with y hy
-    have hy1 : y ∈ χ ⁻¹' {1} := interior_subset hy
-    have hχy : χ y = 1 := Set.mem_singleton_iff.mp (Set.mem_preimage.mp hy1)
-    simp [F, hχy]
+    filter_upwards [hχ1 x hx] with y hy
+    simp [F, hy]
   have h1 : ∀ x, lineDeriv ℝ F x v * g x = g x * fderiv ℝ f x v := fun x => by
     by_cases hx : x ∈ tsupport g
     · have hfx : DifferentiableAt ℝ f x :=

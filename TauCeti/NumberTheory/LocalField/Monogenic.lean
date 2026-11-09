@@ -26,6 +26,8 @@ In that basis the additive valuation of an element of `𝒪[L]` is read off from
 * `TauCeti.exists_integerRing_adjoin_eq_top`: `𝒪[L]` is monogenic over `𝒪[K]`.
 * `TauCeti.IsTotallyRamified.integralPowerBasis`: the power basis of `𝒪[L]` over `𝒪[K]` generated
   by a uniformizer of a totally ramified extension, of length `e(L/K)`.
+* `TauCeti.IsTotallyRamified.exists_sum_algebraMap_mul_pow_eq`: every element of `𝒪[L]` is
+  `∑ i < e(L/K), t_i ϖ^i` with coefficients `t_i ∈ 𝒪[K]`.
 * `TauCeti.IsTotallyRamified.addVal_eq_iInf_integralPowerBasis_repr`: the additive valuation of
   `x ∈ 𝒪[L]` is the least of `e(L/K) · v_K(a_i) + i` over the coordinates `a_i` of `x` in that
   basis.
@@ -93,6 +95,17 @@ theorem IsTotallyRamified.integralPowerBasis_dim (h : IsTotallyRamified K L) {ϖ
     (hϖ : Irreducible ϖ) : (h.integralPowerBasis hϖ).dim = ramificationIndex K L := by
   rw [← PowerBasis.finrank, finrank_integerRing,
     (isTotallyRamified_iff_ramificationIndex_eq_finrank K L).1 h]
+
+/-- In a totally ramified extension, every element of `𝒪[L]` has coordinates in the powers
+`1, ϖ, …, ϖ ^ (n - 1)` of a uniformizer `ϖ` of `L`, where `n = e(L/K)`. -/
+theorem IsTotallyRamified.exists_sum_algebraMap_mul_pow_eq (h : IsTotallyRamified K L)
+    {ϖ : 𝒪[L]} (hϖ : Irreducible ϖ) {n : ℕ} (hn : ramificationIndex K L = n) (y : 𝒪[L]) :
+    ∃ t : Fin n → 𝒪[K], ∑ i, algebraMap 𝒪[K] 𝒪[L] (t i) * ϖ ^ (i : ℕ) = y := by
+  let b := (h.integralPowerBasis hϖ).basis.reindex
+    (finCongr ((h.integralPowerBasis_dim hϖ).trans hn))
+  refine ⟨b.repr y, ?_⟩
+  conv_rhs => rw [← b.sum_repr y]
+  simp [b, Algebra.smul_def]
 
 /-- **Valuations in the integral power basis.** In a totally ramified extension `L/K` with
 uniformizer `ϖ`, the additive valuation of `x ∈ 𝒪[L]` is the least of `e(L/K) · v_K(a_i) + i`,

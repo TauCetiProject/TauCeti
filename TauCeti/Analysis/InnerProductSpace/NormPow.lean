@@ -8,10 +8,15 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Analysis.InnerProductSpace.NormPow
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+public import TauCeti.Analysis.Calculus.ContDiff.Homogeneous
+import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Analysis.Calculus.Gradient
 
 /-!
-# Real powers of the norm away from the origin
+# Real powers of the norm
 
 Mathlib computes the derivative of `x ↦ ‖x‖ ^ p` on the whole inner-product space when
 `1 < p`.  Negative powers, which occur in the Newtonian kernel, are smooth only away from the
@@ -19,7 +24,10 @@ origin.  This file supplies the corresponding local derivative, Hessian, and Lap
 under the explicit hypothesis `x ≠ 0`, together with the Laplacian of the dipole-type product
 `x ↦ ⟪a, x⟫ ‖x‖^p`.  The critical exponents give the functions `‖x‖^(2 - dim E)` and
 `⟪a, x⟫ ‖x‖^(-dim E)`, harmonic away from the origin, from which the Poisson kernel of a ball is
-assembled.
+assembled. The logarithm of the norm, the limit of `(‖x‖ ^ p - 1) / p` as `p → 0`, has
+derivative `‖x‖⁻² ⟨x, ·⟩` and Laplacian `(dim E - 2) / ‖x‖²` away from the origin. From these
+follow the gradient and the Laplacian of a radial function `w(log ‖x‖) - log ‖x‖`, the conformal
+exponent of a rotationally symmetric metric written over flat space.
 
 The Hessian is bounded by `‖x‖ ^ (p - 2)` in size and, for `p ≤ 3`, by `‖a - b‖ ‖b‖ ^ (p - 3)`
 in its variation between points `a` and `b` with `2 ‖a - b‖ ≤ ‖b‖`.  For negative `p` these are
@@ -29,19 +37,31 @@ The first derivative proof adapts Mathlib's `hasFDerivAt_norm_rpow`, retaining i
 chain-rule argument while replacing the global exponent hypothesis with the local condition
 `x ≠ 0`.
 
+For positive exponents, `contDiff_norm_rpow_of_lt` additionally gives global `Cᵏ` regularity
+whenever `k < p`, including the behavior at the origin, on arbitrary real inner-product spaces.
+
 ## Main declarations
 
 * `hasFDerivAt_norm_rpow_of_ne`: the derivative of an arbitrary real power away from zero.
+* `hasFDerivAt_norm_of_ne`: the derivative of the norm itself away from zero.
 * `iteratedFDeriv_two_norm_rpow_apply`: the Hessian of an arbitrary real power away from zero.
 * `norm_iteratedFDeriv_two_norm_rpow_le`: the Hessian is `O(‖x‖ ^ (p - 2))`.
 * `norm_iteratedFDeriv_two_norm_rpow_sub_le`: for `p ≤ 3`, the Hessian changes by
   `O(‖a - b‖ ‖b‖ ^ (p - 3))` between points `a` and `b` with `2 ‖a - b‖ ≤ ‖b‖`.
 * `laplacian_norm_rpow_of_ne`: the radial Laplacian formula
   `Δ ‖x‖^p = p (p + dim E - 2) ‖x‖^(p-2)` away from zero.
+* `ContDiffAt.laplacian_comp_norm`: the Laplacian of a radial function,
+  `Δ F(‖x‖) = F''(‖x‖) + (dim E - 1) F'(‖x‖) / ‖x‖` away from zero.
 * `laplacian_inner_mul_norm_rpow_of_ne`: the dipole formula
   `Δ (⟪a, x⟫ ‖x‖^p) = p (p + dim E) ⟪a, x⟫ ‖x‖^(p-2)` away from zero.
 * `harmonicAt_norm_rpow_two_sub_finrank`, `harmonicAt_inner_mul_norm_rpow_neg_finrank`: the
   harmonic radial and dipole powers.
+* `hasFDerivAt_log_norm_of_ne`, `laplacian_log_norm_of_ne`: the derivative and the Laplacian of
+  `x ↦ log ‖x‖` away from zero.
+* `norm_gradient_comp_log_norm_sub_log_norm`, `laplacian_comp_log_norm_sub_log_norm`: the norm of
+  the gradient and the Laplacian of `x ↦ w(log ‖x‖) - log ‖x‖` away from zero.
+* `exists_contDiff_eq_comp_log_norm_sub_log_norm`: a smooth function on `E` equal to
+  `w(log ‖x‖) - log ‖x‖` outside a ball around the origin.
 -/
 
 public section
@@ -51,9 +71,52 @@ noncomputable section
 namespace TauCeti
 
 open Filter InnerProductSpace Laplacian Topology
-open scoped RealInnerProductSpace
+open scoped RealInnerProductSpace ContDiff Gradient
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+-- Hyperplane reflection identifies equal-radius jets without compactness of the sphere.
+private theorem norm_iteratedFDeriv_eq_of_norm_eq
+    (p : ℝ) (j : ℕ) {x y : E} (hxy : ‖x‖ = ‖y‖) :
+    ‖iteratedFDeriv ℝ j (fun x : E ↦ ‖x‖ ^ p) x‖ =
+      ‖iteratedFDeriv ℝ j (fun x : E ↦ ‖x‖ ^ p) y‖ := by
+  let R := (ℝ ∙ (x - y))ᗮ.reflection
+  have hcomp : (fun x : E ↦ ‖x‖ ^ p) ∘ R = (fun x : E ↦ ‖x‖ ^ p) := by
+    funext z
+    simp
+  have h := R.norm_iteratedFDeriv_comp_right (fun x : E ↦ ‖x‖ ^ p) x j
+  rw [hcomp, Submodule.reflection_sub hxy] at h
+  exact h
+
+/-- Every real power of the norm whose exponent exceeds `k` is `Cᵏ`, including at zero,
+on an arbitrary real inner-product space. -/
+theorem contDiff_norm_rpow_of_lt {k : ℕ} {p : ℝ}
+    (hp : (k : ℝ) < p) : ContDiff ℝ k (fun x : E ↦ ‖x‖ ^ p) := by
+  have hf : ContDiffOn ℝ k (fun x : E ↦ ‖x‖ ^ p) {0}ᶜ := by
+    intro x hx
+    exact ((contDiffAt_norm ℝ hx).rpow_const_of_ne
+      (norm_ne_zero_iff.mpr hx)).contDiffWithinAt
+  apply contDiff_of_iteratedFDeriv_norm_rpow_bound hf
+    (by simp [Real.zero_rpow (lt_of_le_of_lt (Nat.cast_nonneg k) hp).ne']) hp
+  intro j hj
+  by_cases hE : Subsingleton E
+  · let := hE
+    exact ⟨0, fun x hx ↦ (hx (Subsingleton.elim _ _)).elim⟩
+  · have : Nontrivial E := not_subsingleton_iff_nontrivial.mp hE
+    obtain ⟨v, hv⟩ := exists_ne (0 : E)
+    let e : E := ‖v‖⁻¹ • v
+    have he : ‖e‖ = 1 := by simp [e, norm_smul, hv]
+    refine ⟨‖iteratedFDeriv ℝ j (fun x : E ↦ ‖x‖ ^ p) e‖, fun x hx ↦ ?_⟩
+    let θ : E := ‖x‖⁻¹ • x
+    have hθ : ‖θ‖ = 1 := by simp [θ, norm_smul, hx]
+    have hθ0 : θ ≠ 0 := norm_ne_zero_iff.mp (by rw [hθ]; norm_num)
+    have hscale := norm_iteratedFDeriv_smul_of_homogeneous (hf.of_le (by exact_mod_cast hj))
+      (p := p) (fun t ht y ↦ by simp only [norm_smul, Real.norm_of_nonneg ht.le,
+        Real.mul_rpow ht.le (norm_nonneg y), smul_eq_mul])
+      (norm_pos_iff.mpr hx) hθ0
+    have hnorm := norm_iteratedFDeriv_eq_of_norm_eq p j (hθ.trans he.symm)
+    simpa only [θ, smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.mpr hx), one_smul,
+      hnorm, mul_comm] using hscale.le
 
 /-- Away from the origin, the derivative of `x ↦ ‖x‖ ^ p` is
 `p ‖x‖ ^ (p - 2) ⟨x, ·⟩`.  Unlike Mathlib's `hasFDerivAt_norm_rpow`, this local form
@@ -69,6 +132,78 @@ theorem hasFDerivAt_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
 theorem fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
     fderiv ℝ (fun y : E ↦ ‖y‖ ^ p) x = (p * ‖x‖ ^ (p - 2)) • innerSL ℝ x :=
   (hasFDerivAt_norm_rpow_of_ne p hx).fderiv
+
+/-- Away from the origin, the derivative of `x ↦ log ‖x‖` is `‖x‖⁻² ⟨x, ·⟩`. -/
+theorem hasFDerivAt_log_norm_of_ne {x : E} (hx : x ≠ 0) :
+    HasFDerivAt (fun y : E ↦ Real.log ‖y‖) ((‖x‖ ^ 2)⁻¹ • innerSL ℝ x) x := by
+  have h := ((Real.hasDerivAt_log (pow_pos (norm_pos_iff.2 hx) 2).ne').div_const 2
+    ).comp_hasFDerivAt x (hasStrictFDerivAt_norm_sq x).hasFDerivAt
+  convert h using 1
+  · funext y
+    simp only [Function.comp_apply, Real.log_pow]
+    ring
+  · ext v
+    simp only [smul_apply, coe_innerSL_apply, smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat]
+    ring
+
+/-- Away from the origin, the derivative of `x ↦ log ‖x‖` has norm `‖x‖⁻¹`. -/
+theorem norm_fderiv_log_norm_of_ne {x : E} (hx : x ≠ 0) :
+    ‖fderiv ℝ (fun y : E ↦ Real.log ‖y‖) x‖ = ‖x‖⁻¹ := by
+  have : ‖x‖ ≠ 0 := norm_ne_zero_iff.2 hx
+  simp [(hasFDerivAt_log_norm_of_ne hx).fderiv, norm_smul, innerSL_apply_norm]
+  field_simp
+
+/-- The norm of the gradient of the radial function `w(log ‖z‖) - log ‖z‖` at a point `y ≠ 0` where
+`w` is differentiable at `s = log ‖y‖` is `|w'(s) - 1| / ‖y‖`. -/
+theorem norm_gradient_comp_log_norm_sub_log_norm [CompleteSpace E] {w : ℝ → ℝ} {y : E}
+    (hy : y ≠ 0) (hw : DifferentiableAt ℝ w (Real.log ‖y‖)) :
+    ‖∇ (fun z : E ↦ w (Real.log ‖z‖) - Real.log ‖z‖) y‖ = |deriv w (Real.log ‖y‖) - 1| * ‖y‖⁻¹ := by
+  have hd : HasFDerivAt ((fun s ↦ w s - s) ∘ fun z : E ↦ Real.log ‖z‖)
+      ((deriv w (Real.log ‖y‖) - 1) • fderiv ℝ (fun z : E ↦ Real.log ‖z‖) y) y :=
+    (hw.hasDerivAt.sub (hasDerivAt_id _)).comp_hasFDerivAt y
+      (hasFDerivAt_log_norm_of_ne hy).differentiableAt.hasFDerivAt
+  -- The function is the composition `ψ ∘ log ‖·‖` with `ψ s = w s - s`, the form matched by the
+  -- chain rule.
+  rw [show (fun z : E ↦ w (Real.log ‖z‖) - Real.log ‖z‖) =
+      (fun s ↦ w s - s) ∘ fun z : E ↦ Real.log ‖z‖ from rfl,
+    norm_gradient_eq_norm_fderiv, hd.fderiv, norm_smul, norm_fderiv_log_norm_of_ne hy,
+    Real.norm_eq_abs]
+
+/-- For a smooth `w` and every `c`, there is a smooth function on `E` equal to the radial function
+`w(log ‖z‖) - log ‖z‖` where `‖z‖ > e^c`. The radial function itself may be singular at the origin;
+it is cut off below `log ‖z‖ = c - 1`. -/
+theorem exists_contDiff_eq_comp_log_norm_sub_log_norm {w : ℝ → ℝ} (hw : ContDiff ℝ ∞ w) (c : ℝ) :
+    ∃ φ : E → ℝ, ContDiff ℝ ∞ φ ∧
+      ∀ z : E, Real.exp c < ‖z‖ → φ z = w (Real.log ‖z‖) - Real.log ‖z‖ := by
+  classical
+  set ψ : ℝ → ℝ := fun s ↦ Real.smoothTransition (s - c + 1) * (w s - s)
+  have hψ : ContDiff ℝ ∞ ψ := (Real.smoothTransition.contDiff.comp
+    ((contDiff_id.sub contDiff_const).add contDiff_const)).mul (hw.sub contDiff_id)
+  refine ⟨fun z ↦ if z = 0 then 0 else ψ (Real.log ‖z‖), ?_, fun z hz ↦ ?_⟩
+  · refine contDiff_iff_contDiffAt.2 fun z ↦ ?_
+    rcases eq_or_ne z 0 with rfl | hz
+    · -- Near the origin `log ‖x‖ < c - 1`, where the cutoff vanishes.
+      refine contDiffAt_const (c := (0 : ℝ)).congr_of_eventuallyEq ?_
+      filter_upwards [Metric.ball_mem_nhds (0 : E) (Real.exp_pos (c - 1))] with x hx
+      rcases eq_or_ne x 0 with rfl | hx₀
+      · simp
+      have hlog : Real.log ‖x‖ ≤ c - 1 :=
+        ((Real.log_lt_iff_lt_exp (norm_pos_iff.2 hx₀)).2 (mem_ball_zero_iff.1 hx)).le
+      simp [hx₀, ψ, Real.smoothTransition.zero_of_nonpos (by linarith : Real.log ‖x‖ - c + 1 ≤ 0)]
+    · refine (hψ.contDiffAt.comp z ((Real.contDiffAt_log.2 (norm_ne_zero_iff.2 hz)).comp z
+        (contDiffAt_norm ℝ hz))).congr_of_eventuallyEq ?_
+      filter_upwards [isOpen_ne.mem_nhds hz] with x hx
+      simp [hx]
+  · have hz₀ : z ≠ 0 := norm_pos_iff.1 ((Real.exp_pos _).trans hz)
+    have hlog : c < Real.log ‖z‖ := (Real.lt_log_iff_exp_lt (norm_pos_iff.2 hz₀)).2 hz
+    simp [hz₀, ψ, Real.smoothTransition.one_of_one_le (by linarith : 1 ≤ Real.log ‖z‖ - c + 1)]
+
+/-- Away from the origin, the derivative of the norm is `‖x‖⁻¹ ⟨x, ·⟩`. -/
+theorem hasFDerivAt_norm_of_ne {x : E} (hx : x ≠ 0) :
+    HasFDerivAt (fun y : E ↦ ‖y‖) (‖x‖⁻¹ • innerSL ℝ x) x := by
+  convert hasFDerivAt_norm_rpow_of_ne 1 hx using 1
+  · simp
+  · norm_num [Real.rpow_neg_one]
 
 /-- The Hessian of `x ↦ ‖x‖ ^ p` away from the origin, evaluated on two directions. -/
 theorem iteratedFDeriv_two_norm_rpow_apply (p : ℝ) {x : E} (hx : x ≠ 0) (v w : E) :
@@ -293,6 +428,26 @@ theorem laplacian_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
   rw [mul_assoc (p * (p - 2)), hrpow]
   ring
 
+open Gradient in
+/-- **The radial Laplacian.** Away from the origin, a radial function `x ↦ F ‖x‖` has Laplacian
+`F'' (‖x‖) + (dim E - 1) F' (‖x‖) / ‖x‖`. Only the regularity of `F` at `‖x‖` is used. -/
+theorem _root_.ContDiffAt.laplacian_comp_norm {F : ℝ → ℝ} {x : E} (hF : ContDiffAt ℝ 2 F ‖x‖)
+    (hx : x ≠ 0) :
+    Δ (fun y : E ↦ F ‖y‖) x =
+      deriv (deriv F) ‖x‖ + (Module.finrank ℝ E - 1) * deriv F ‖x‖ / ‖x‖ := by
+  have hnorm : 0 < ‖x‖ := norm_pos_iff.mpr hx
+  have hΔ : Δ (fun y : E ↦ ‖y‖) x = (Module.finrank ℝ E - 1) / ‖x‖ := by
+    have h := laplacian_norm_rpow_of_ne 1 hx
+    norm_num only [Real.rpow_one, Real.rpow_neg_one] at h
+    rw [h, div_eq_mul_inv]
+    ring
+  have hgrad : ‖∇ (fun y : E ↦ ‖y‖) x‖ = 1 := by
+    rw [norm_gradient_eq_norm_fderiv, (hasFDerivAt_norm_of_ne hx).fderiv, norm_smul,
+      innerSL_apply_norm, norm_inv, norm_norm, inv_mul_cancel₀ hnorm.ne']
+  rw [← Function.comp_def F fun y : E ↦ ‖y‖,
+    hF.laplacian_comp (contDiffAt_norm ℝ hx), hgrad, hΔ]
+  ring
+
 /-- The Laplacian of the dipole-type product `x ↦ ⟪a, x⟫ ‖x‖ ^ p` away from the origin is
 `p (p + dim E) ⟪a, x⟫ ‖x‖ ^ (p - 2)`. -/
 theorem laplacian_inner_mul_norm_rpow_of_ne (a : E) (p : ℝ) {x : E} (hx : x ≠ 0) :
@@ -331,6 +486,47 @@ theorem harmonicAt_inner_mul_norm_rpow_neg_finrank (a : E) {x : E} (hx : x ≠ 0
   filter_upwards [eventually_ne_nhds hx] with y hy
   rw [laplacian_inner_mul_norm_rpow_of_ne a _ hy, Pi.zero_apply]
   ring
+
+/-- The Laplacian of `x ↦ log ‖x‖` away from the origin is `(dim E - 2) / ‖x‖²`. -/
+theorem laplacian_log_norm_of_ne {x : E} (hx : x ≠ 0) :
+    Δ (fun y : E ↦ Real.log ‖y‖) x = (Module.finrank ℝ E - 2) / ‖x‖ ^ 2 := by
+  have ht : ‖x‖ ^ 2 ≠ 0 := by positivity
+  have hcomp : (fun y : E ↦ Real.log ‖y‖) = (fun t ↦ Real.log t / 2) ∘ fun y : E ↦ ‖y‖ ^ 2 := by
+    funext y
+    simp only [Function.comp_apply, Real.log_pow]
+    ring
+  have hlog : deriv (fun t : ℝ ↦ Real.log t / 2) = fun t ↦ t⁻¹ / 2 := by
+    funext t
+    simp
+  rw [hcomp, ContDiffAt.laplacian_comp (q := fun y : E ↦ ‖y‖ ^ 2)
+    ((Real.contDiffAt_log.2 ht).div_const _) (contDiff_norm_sq ℝ).contDiffAt, laplacian_norm_sq,
+    hlog, norm_gradient_eq_norm_fderiv]
+  simp [fderiv_norm_sq_apply, RCLike.norm_nsmul ℝ, innerSL_apply_norm]
+  field_simp
+  ring
+
+/-- The Laplacian of the radial function `w(log ‖z‖) - log ‖z‖` on a real inner product space of
+dimension `N`, at a point `y ≠ 0` with `s = log ‖y‖` where `w` is `C²`, is
+`(w''(s) + (w'(s) - 1) (N - 2)) / ‖y‖²`. -/
+theorem laplacian_comp_log_norm_sub_log_norm {w : ℝ → ℝ} {y : E} (hy : y ≠ 0)
+    (hw : ContDiffAt ℝ 2 w (Real.log ‖y‖)) :
+    Δ (fun z : E ↦ w (Real.log ‖z‖) - Real.log ‖z‖) y =
+      (deriv (deriv w) (Real.log ‖y‖) + (deriv w (Real.log ‖y‖) - 1) *
+        (Module.finrank ℝ E - 2)) / ‖y‖ ^ 2 := by
+  have hlog : ContDiffAt ℝ 2 (fun z : E ↦ Real.log ‖z‖) y :=
+    (Real.contDiffAt_log.2 (norm_ne_zero_iff.2 hy)).comp y (contDiffAt_norm ℝ hy)
+  have hψ : ContDiffAt ℝ 2 (fun s ↦ w s - s) (Real.log ‖y‖) := hw.sub contDiffAt_id
+  have hderiv : deriv (fun s ↦ w s - s) =ᶠ[𝓝 (Real.log ‖y‖)] fun s ↦ deriv w s - 1 := by
+    filter_upwards [hw.eventually (by simp)] with s hs
+    exact ((hs.differentiableAt (by simp)).hasDerivAt.sub (hasDerivAt_id s)).deriv
+  -- As in `TauCeti.norm_gradient_comp_log_norm_sub_log_norm`, the function is the composition
+  -- `ψ ∘ log ‖·‖` with `ψ s = w s - s`, the form matched by the chain rule
+  -- `ContDiffAt.laplacian_comp`.
+  change Δ ((fun s ↦ w s - s) ∘ fun z : E ↦ Real.log ‖z‖) y = _
+  rw [ContDiffAt.laplacian_comp (q := fun z : E ↦ Real.log ‖z‖) hψ hlog, hderiv.deriv_eq,
+    hderiv.eq_of_nhds, deriv_sub_const, laplacian_log_norm_of_ne hy, norm_gradient_eq_norm_fderiv,
+    norm_fderiv_log_norm_of_ne hy]
+  field_simp
 
 end TauCeti
 

@@ -31,11 +31,12 @@ the Euler class inequalities for foliations.
 
 The Euler class is natural under maps of Thom pairs covering a map of bases
 (`TauCeti.eulerClass_naturality`), in particular under pullback of bundles
-(`TauCeti.eulerClass_pullback`), and pullback carries Thom classes to Thom classes
-(`TauCeti.IsThomClass.pullback`). A bundle with a nowhere-vanishing continuous section has zero
-Euler class (`TauCeti.eulerClass_eq_zero_of_forall_ne_zero`): the zero section is homotopic,
-through `t • s`, to a section with values in `E₀`, and every relative class restricts to zero on
-`E₀`. So a trivial bundle of positive rank has zero Euler class
+(`TauCeti.eulerClass_pullback`). A map of Thom pairs restricting to isomorphisms of fibre pairs
+carries Thom classes to Thom classes (`TauCeti.IsThomClass.singularCohomologyMap`); in particular,
+pullback of bundles does (`TauCeti.IsThomClass.pullback`). A bundle with a nowhere-vanishing
+continuous section has zero Euler class (`TauCeti.eulerClass_eq_zero_of_forall_ne_zero`): the zero
+section is homotopic, through `t • s`, to a section with values in `E₀`, and every relative class
+restricts to zero on `E₀`. So a trivial bundle of positive rank has zero Euler class
 (`TauCeti.eulerClass_trivial_eq_zero`).
 
 Cohomology is the singular cohomology of `TauCeti/AlgebraicTopology/Cohomology/`, with the same
@@ -46,10 +47,19 @@ uses `C := ModuleCat ℤ`, `k := ℤ`, and `R = M = ModuleCat.of ℤ ℤ`.
 
 * `TauCeti.zeroSectionCompl`: the nonzero vectors `E₀` of a bundle.
 * `TauCeti.thomPair`: the Thom pair `(E, E₀)`.
-* `TauCeti.fiberThomPairMap`: the inclusion of the fibre pair `(E_b, E_b ∖ {0})` into the Thom
-  pair.
+* `TauCeti.thomPairOver`: the Thom pair `(E|_W, E₀|_W)` of the restriction to a subset `W` of the
+  base; over the whole base it is the Thom pair `(E, E₀)` (`TauCeti.thomPairOverUnivIso`).
+* `TauCeti.thomPairOverMap`: the restriction map `(E|_W, E₀|_W) ⟶ (E|_{W'}, E₀|_{W'})` for
+  `W ⊆ W'`.
+* `TauCeti.fiberThomPairMap`, `TauCeti.fiberThomPairOverMap`: the inclusions of the fibre pair
+  `(E_b, E_b ∖ {0})` into the Thom pair and into the Thom pair over a set containing `b`.
+* `TauCeti.thomPairProj`: the projection of the total space to the base, as a morphism of
+  topological spaces out of the ambient space of the Thom pair.
 * `TauCeti.IsThomClass`: a relative class restricting to a generator on every fibre.
 * `TauCeti.eulerClass`: the Euler class `Hⁿ(E, E₀) ⟶ Hⁿ(B)`.
+* `TauCeti.negTotalSpace`, `TauCeti.negThomPairMap`: fibrewise negation, as a self-map of the
+  total space and of the Thom pair; it does not change Euler classes
+  (`TauCeti.singularCohomologyMap_negThomPairMap_comp_eulerClass`).
 
 ## References
 
@@ -103,6 +113,75 @@ section. -/
 abbrev thomPair : TopPair.{w} :=
   TopPair.ofSubset (X := TopCat.of (TotalSpace F E)) (zeroSectionCompl F E)
 
+/-- The Thom pair `(E|_W, E₀|_W)` of the restriction of a bundle to a subset `W` of its base: the
+vectors over `W`, relative to the nonzero ones, as subspaces of the total space. -/
+abbrev thomPairOver (W : Set B) : TopPair.{w} :=
+  TopPair.ofInclusion (X := TopCat.of (TotalSpace F E))
+    (inter_subset_left : π F E ⁻¹' W ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' W)
+
+/-- The map of pairs `(E|_B, E₀|_B) ⟶ (E, E₀)` forgetting that every vector lies over the base. -/
+private def thomPairOverUnivHom : thomPairOver F E univ ⟶ thomPair F E :=
+  TopPair.ofHom (TopCat.isoOfHomeo ((Homeomorph.setCongr preimage_univ).trans
+      (Homeomorph.Set.univ (TotalSpace F E)))).hom
+    (TopCat.ofHom ⟨fun v ↦ ⟨v.1, v.2.2⟩, by fun_prop⟩) (by ext; rfl)
+
+/-- Over the whole base, the Thom pair `(E|_B, E₀|_B)` of the restriction is the Thom pair
+`(E, E₀)`. -/
+def thomPairOverUnivIso : thomPairOver F E univ ≅ thomPair F E :=
+  have : IsIso (TopPair.Hom.fst (thomPairOverUnivHom F E)) := (TopCat.isoOfHomeo _).isIso_hom
+  have := TopPair.isIso_of_isIso_fst_of_surjective_snd (thomPairOverUnivHom F E) fun v ↦
+    ⟨⟨v.1, trivial, v.2⟩, rfl⟩
+  asIso (thomPairOverUnivHom F E)
+
+@[simp]
+theorem thomPairOverUnivIso_hom_fst_apply (v : π F E ⁻¹' univ) :
+    TopPair.Hom.fst (thomPairOverUnivIso F E).hom v = v.1 :=
+  (rfl)
+
+@[simp]
+theorem thomPairOverUnivIso_hom_snd_apply (v : ↥(π F E ⁻¹' univ ∩ zeroSectionCompl F E)) :
+    TopPair.Hom.snd (thomPairOverUnivIso F E).hom v = ⟨v.1, v.2.2⟩ :=
+  (rfl)
+
+@[simp]
+theorem thomPairOverUnivIso_inv_fst_apply (v : TotalSpace F E) :
+    TopPair.Hom.fst (thomPairOverUnivIso F E).inv v = ⟨v, trivial⟩ :=
+  Subtype.ext ((thomPairOverUnivIso_hom_fst_apply F E _).symm.trans
+    ((TopPair.proj₁.mapIso (thomPairOverUnivIso F E)).inv_hom_id_apply v))
+
+@[simp]
+theorem thomPairOverUnivIso_inv_snd_apply (v : zeroSectionCompl F E) :
+    TopPair.Hom.snd (thomPairOverUnivIso F E).inv v = ⟨v.1, trivial, v.2⟩ :=
+  Subtype.ext (congrArg Subtype.val ((TopPair.Hom.w_apply (thomPairOverUnivIso F E).inv v).trans
+    (thomPairOverUnivIso_inv_fst_apply F E v.1)) :)
+
+/-- For `W ⊆ W'`, the map of Thom pairs `(E|_W, E₀|_W) ⟶ (E|_{W'}, E₀|_{W'})` induced by the
+inclusion. -/
+def thomPairOverMap {W W' : Set B} (h : W ⊆ W') : thomPairOver F E W ⟶ thomPairOver F E W' :=
+  TopPair.ofHom (TopCat.ofHom (ContinuousMap.inclusion (preimage_mono h)))
+    (TopCat.ofHom (ContinuousMap.inclusion (inter_subset_inter_left _ (preimage_mono h))))
+    (by ext; rfl)
+
+@[simp]
+theorem thomPairOverMap_fst_apply {W W' : Set B} (h : W ⊆ W') (v : π F E ⁻¹' W) :
+    TopPair.Hom.fst (thomPairOverMap F E h) v = ⟨v.1, h v.2⟩ :=
+  (rfl)
+
+@[simp]
+theorem thomPairOverMap_snd_apply {W W' : Set B} (h : W ⊆ W')
+    (v : (thomPairOver F E W).snd) :
+    TopPair.Hom.snd (thomPairOverMap F E h) v = ⟨v.1, h v.2.1, v.2.2⟩ :=
+  (rfl)
+
+@[simp]
+theorem thomPairOverMap_self {W : Set B} : thomPairOverMap F E (subset_refl W) = 𝟙 _ :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
+
+@[reassoc (attr := simp)]
+theorem thomPairOverMap_comp_thomPairOverMap {W W' W'' : Set B} (h : W ⊆ W') (h' : W' ⊆ W'') :
+    thomPairOverMap F E h ≫ thomPairOverMap F E h' = thomPairOverMap F E (h.trans h') :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
+
 end Pair
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R : C}
@@ -125,6 +204,63 @@ theorem fiberThomPairMap_fst_apply (b : B) (x : E b) :
     TopPair.Hom.fst (fiberThomPairMap F E b) x = TotalSpace.mk b x := by
   unfold fiberThomPairMap
   exact TopPair.ofSubsetMap_fst_apply _ _ _
+
+/-- The projection `π : E ⟶ B` of a fibre bundle, as a morphism of topological spaces out of the
+ambient space of its Thom pair. -/
+def thomPairProj : (thomPair F E).fst ⟶ TopCat.of B :=
+  TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩
+
+@[simp]
+theorem thomPairProj_apply (v : TotalSpace F E) : thomPairProj F E v = v.proj :=
+  (rfl)
+
+/-- The fibre inclusion over `b` followed by the projection is constant at `b`. -/
+theorem fiberThomPairMap_fst_comp_thomPairProj (b : B) :
+    TopPair.Hom.fst (fiberThomPairMap F E b) ≫ thomPairProj F E =
+      TopCat.ofHom (ContinuousMap.const _ b) :=
+  TopCat.ext fun x ↦ congrArg TotalSpace.proj (fiberThomPairMap_fst_apply F E b x)
+
+/-- The inclusion `(E_b, E_b ∖ {0}) ⟶ (E|_W, E₀|_W)` of the fibre over a point `b ∈ W` into the
+Thom pair of the restriction to `W`. -/
+def fiberThomPairOverMap {W : Set B} {b : B} (hb : b ∈ W) :
+    TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b)) ⟶ thomPairOver F E W :=
+  TopPair.ofHom
+    (TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk b x, hb⟩,
+      (FiberBundle.continuous_totalSpaceMk F E b).subtype_mk _⟩)
+    (TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk b x.1, hb, mem_zeroSectionCompl.2 x.2⟩,
+      ((FiberBundle.continuous_totalSpaceMk F E b).comp continuous_subtype_val).subtype_mk _⟩)
+    (by ext; rfl)
+
+@[simp]
+theorem fiberThomPairOverMap_fst_apply {W : Set B} {b : B} (hb : b ∈ W) (x : E b) :
+    TopPair.Hom.fst (fiberThomPairOverMap F E hb) x = ⟨TotalSpace.mk b x, hb⟩ :=
+  (rfl)
+
+/-- The fibre inclusions commute with the restriction maps of Thom pairs. -/
+@[reassoc (attr := simp)]
+theorem fiberThomPairOverMap_comp_thomPairOverMap {W W' : Set B} (h : W ⊆ W') {b : B}
+    (hb : b ∈ W) :
+    fiberThomPairOverMap F E hb ≫ thomPairOverMap F E h = fiberThomPairOverMap F E (h hb) :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
+
+/-- Over the whole base, the fibre inclusion into `(E|_B, E₀|_B)` is the fibre inclusion into the
+Thom pair `(E, E₀)`. -/
+@[reassoc (attr := simp)]
+theorem fiberThomPairOverMap_comp_thomPairOverUnivIso_hom (b : B) :
+    fiberThomPairOverMap F E (mem_univ b) ≫ (thomPairOverUnivIso F E).hom =
+      fiberThomPairMap F E b :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun x ↦ (fiberThomPairMap_fst_apply F E b x).symm)
+
+/-- The fibre inclusion over `b` into the Thom pair `(E, E₀)`, followed by the inclusion of the
+pair over the whole base into the pair over a set `W'` covering the base, is the fibre inclusion
+into the pair over any `W ⊆ W'` containing `b`, followed by the inclusion of the pair over `W`
+into the pair over `W'`. -/
+theorem fiberThomPairMap_comp_thomPairOverUnivIso_inv_comp_thomPairOverMap {W W' : Set B}
+    (h : univ ⊆ W') (h' : W ⊆ W') {b : B} (hb : b ∈ W) :
+    fiberThomPairMap F E b ≫ (thomPairOverUnivIso F E).inv ≫ thomPairOverMap F E h =
+      fiberThomPairOverMap F E hb ≫ thomPairOverMap F E h' := by
+  rw [← fiberThomPairOverMap_comp_thomPairOverUnivIso_hom, Category.assoc, Iso.hom_inv_id_assoc,
+    fiberThomPairOverMap_comp_thomPairOverMap, fiberThomPairOverMap_comp_thomPairOverMap]
 
 variable [NormedAddCommGroup F] [NormedSpace ℝ F]
 
@@ -155,6 +291,34 @@ theorem IsThomClass.neg {u : (thomPair F E).singularCohomology R k M (finrank �
   refine ⟨hu.1, fun b ↦ ?_⟩
   rw [map_neg, ← Set.neg_singleton, Submodule.span_neg]
   exact hu.2 b
+
+variable {F E} in
+/-- **Thom classes pull back along fibrewise isomorphisms.** Let `φ : (E', E'₀) ⟶ (E, E₀)` be a map
+of Thom pairs which, over a map of bases `g : B' → B`, restricts on the fibre over every `b'` to an
+isomorphism `ψ b'` of fibre pairs `(E'_{b'}, E'_{b'} ∖ {0}) ≅ (E_{g b'}, E_{g b'} ∖ {0})`. Then `φ`
+pulls Thom classes of `E` back to Thom classes of `E'`. -/
+theorem IsThomClass.singularCohomologyMap {B' : Type w} [TopologicalSpace B'] {E' : B' → Type w}
+    [TopologicalSpace (TotalSpace F E')] [∀ b, TopologicalSpace (E' b)] [FiberBundle F E']
+    [∀ b, Zero (E' b)] {u : (thomPair F E).singularCohomology R k M (finrank ℝ F)}
+    (hu : IsThomClass F E u) (φ : thomPair F E' ⟶ thomPair F E) (g : B' → B)
+    (ψ : ∀ b', TopPair.ofSubset (X := TopCat.of (E' b')) ({0}ᶜ : Set (E' b')) ≅
+      TopPair.ofSubset (X := TopCat.of (E (g b'))) ({0}ᶜ : Set (E (g b'))))
+    (hψ : ∀ b', fiberThomPairMap F E' b' ≫ φ = (ψ b').hom ≫ fiberThomPairMap F E (g b')) :
+    IsThomClass F E' (TopPair.singularCohomologyMap φ _ u) := by
+  refine ⟨hu.1, fun b' ↦ ?_⟩
+  rw [← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyMap_comp, hψ,
+    TopPair.singularCohomologyMap_comp, ConcreteCategory.comp_apply]
+  -- The isomorphism `ψ b'` induces a linear isomorphism `e` in cohomology, carrying generators to
+  -- generators; by definition of the cohomology functor, `e` applies
+  -- `TopPair.singularCohomologyMap (ψ b').hom`.
+  let e : (TopPair.ofSubset (X := TopCat.of (E (g b'))) ({0}ᶜ : Set (E (g b')))).singularCohomology
+      R k M (finrank ℝ F) ≃ₗ[k]
+      (TopPair.ofSubset (X := TopCat.of (E' b')) ({0}ᶜ : Set (E' b'))).singularCohomology
+        R k M (finrank ℝ F) :=
+    ((TopPair.singularCohomologyFunctor R k M (finrank ℝ F)).mapIso (ψ b').op).toLinearEquiv
+  have h := (Submodule.map_eq_top_iff (e := e)).2 (hu.2 (g b'))
+  rw [← Submodule.span_image_linearEquiv e, Set.image_singleton] at h
+  exact h
 
 end ThomClass
 
@@ -187,17 +351,21 @@ theorem fiberThomPairMap_comp_pullbackThomPairMap (b' : B') :
     fiberThomPairMap F ((⇑f) *ᵖ E) b' ≫ pullbackThomPairMap F E f = fiberThomPairMap F E (f b') :=
   TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (TopCat.ext fun _ ↦ rfl)
 
+/-- The canonical map from the total space of a pull-back bundle covers the map of bases. -/
+theorem pullbackThomPairMap_fst_comp_thomPairProj :
+    TopPair.Hom.fst (pullbackThomPairMap F E f) ≫ thomPairProj F E =
+      thomPairProj F ((⇑f) *ᵖ E) ≫ TopCat.ofHom f :=
+  TopCat.ext fun v ↦ congrArg TotalSpace.proj (pullbackThomPairMap_fst_apply F E f v)
+
 variable [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 variable {F E} in
 /-- The pullback of a Thom class of `E` along a continuous map `f` is a Thom class of `f*E`. -/
 theorem IsThomClass.pullback {u : (thomPair F E).singularCohomology R k M (finrank ℝ F)}
     (hu : IsThomClass F E u) :
-    IsThomClass F ((⇑f) *ᵖ E) (TopPair.singularCohomologyMap (pullbackThomPairMap F E f) _ u) := by
-  refine ⟨hu.1, fun b' ↦ ?_⟩
-  rw [← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyMap_comp,
-    fiberThomPairMap_comp_pullbackThomPairMap]
-  exact hu.2 (f b')
+    IsThomClass F ((⇑f) *ᵖ E) (TopPair.singularCohomologyMap (pullbackThomPairMap F E f) _ u) :=
+  hu.singularCohomologyMap _ f (fun _ ↦ Iso.refl _) fun b' ↦
+    (fiberThomPairMap_comp_pullbackThomPairMap F E f b').trans (Category.id_comp _).symm
 
 end Pullback
 
@@ -215,6 +383,33 @@ def zeroSectionHom : TopCat.of B ⟶ (thomPair F E).fst :=
 @[simp]
 theorem zeroSectionHom_apply (b : B) : zeroSectionHom F E b = zeroSection F E b :=
   (rfl)
+
+/-- Fibrewise negation `v ↦ -v` of a real vector bundle, written `v ↦ (-1) • v`, as a self-map of
+its total space. -/
+def negTotalSpace : C(TotalSpace F E, TotalSpace F E) where
+  toFun v := TotalSpace.mk' F v.proj ((-1 : ℝ) • v.2)
+  continuous_toFun := continuous_const.smul_totalSpace continuous_id
+
+@[simp]
+theorem negTotalSpace_apply (v : TotalSpace F E) :
+    negTotalSpace F E v = TotalSpace.mk' F v.proj ((-1 : ℝ) • v.2) :=
+  (rfl)
+
+/-- Fibrewise negation `v ↦ -v`, as a self-map of the Thom pair `(E, E₀)`. -/
+def negThomPairMap : thomPair F E ⟶ thomPair F E :=
+  TopPair.ofSubsetMap (TopCat.ofHom (negTotalSpace F E)) fun v (hv : v.2 ≠ 0) ↦
+    (smul_ne_zero (neg_ne_zero.2 one_ne_zero) hv : ((-1 : ℝ) • v.2) ≠ 0)
+
+@[simp]
+theorem negThomPairMap_fst_apply (v : TotalSpace F E) :
+    TopPair.Hom.fst (negThomPairMap F E) v = TotalSpace.mk' F v.proj ((-1 : ℝ) • v.2) :=
+  TopPair.ofSubsetMap_fst_apply (X := TopCat.of (TotalSpace F E)) _ _ v
+
+/-- Fibrewise negation fixes the zero section. -/
+theorem zeroSectionHom_comp_negThomPairMap_fst :
+    zeroSectionHom F E ≫ TopPair.Hom.fst (negThomPairMap F E) = zeroSectionHom F E :=
+  TopCat.ext fun b ↦ (negThomPairMap_fst_apply F E _).trans
+    (congrArg (TotalSpace.mk' F b) (smul_zero (-1 : ℝ)))
 
 variable (R k M) in
 /-- The Euler class `e(u) ∈ Hⁿ(B)` of a relative class `u ∈ Hⁿ(E, E₀)` of a real vector bundle, as
@@ -264,6 +459,15 @@ theorem eulerClass_eq_zero_of_forall_ne_zero {s : ∀ b, E b}
       map_one_left := fun b ↦ by simp; rfl }
   rw [eulerClass_def, H.congr_singularCohomologyMap, TopCat.singularCohomologyMap_comp,
     TopPair.singularCohomologyπ_comp_singularCohomologyMap_assoc, zero_comp]
+
+/-- **The Euler class is invariant under fibrewise negation**: pulling a relative class back along
+`v ↦ -v` does not change its Euler class, since negation fixes the zero section. -/
+theorem singularCohomologyMap_negThomPairMap_comp_eulerClass (n : ℕ) :
+    TopPair.singularCohomologyMap (negThomPairMap F E) n ≫ eulerClass R k M F E n =
+      eulerClass R k M F E n := by
+  rw [eulerClass_naturality F E (negThomPairMap F E) (𝟙 _)
+    ((zeroSectionHom_comp_negThomPairMap_fst F E).trans (Category.id_comp _).symm),
+    TopCat.singularCohomologyMap_id, Category.comp_id]
 
 variable {B' : Type w} [TopologicalSpace B'] (f : C(B', B)) in
 /-- The Euler class of a pullback bundle `f*E` is the pullback along `f` of the Euler class of

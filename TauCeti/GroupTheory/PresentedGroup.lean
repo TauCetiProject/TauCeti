@@ -6,36 +6,60 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.PresentedGroup
+import Mathlib.GroupTheory.QuotientGroup.Basic
+import TauCeti.GroupTheory.FreeGroup.Basic
 
 /-!
-# Evaluation of signed words in free and presented groups
+# Words and changes of relators in presented groups
 
 A signed word is a list of pairs `(x, b)`, with `true` denoting a generator and `false` its
-inverse. This file gives product formulas for evaluating such words under a homomorphism from a
-free group and under the quotient map to a presented group.
+inverse. This file gives the product formula for the image of such a word under the quotient map
+to a presented group. The corresponding formulas for free groups are in
+`TauCeti.GroupTheory.FreeGroup.Basic`.
+
+Equality of the normal closures of two relator sets gives a canonical isomorphism of the
+presented groups, preserving the image of every word.
 
 ## Main results
 
-* `MonoidHom.apply_freeGroup_mk`: a homomorphism evaluates a signed word letter by letter.
 * `PresentedGroup.mk_mk`: the class of a word is the product of its signed generators.
-* `PresentedGroup.lift_inv_of_mk`: inverting every generator flips every sign in a word.
 -/
 
 public section
 
-namespace MonoidHom
-
-/-- A homomorphism out of a free group evaluates on the word `L` as the product of the images of
-its signed letters. This is `FreeGroup.lift_mk` for a homomorphism not presented as a lift. -/
-theorem apply_freeGroup_mk {α G : Type*} [Group G] (F : FreeGroup α →* G)
-    (L : List (α × Bool)) :
-    F (FreeGroup.mk L) =
-      (L.map fun p => cond p.2 (F (FreeGroup.of p.1)) (F (FreeGroup.of p.1))⁻¹).prod := by
-  rw [FreeGroup.lift_unique F (f := fun x => F (FreeGroup.of x)) fun _ => rfl, FreeGroup.lift_mk]
-
-end MonoidHom
-
 namespace PresentedGroup
+
+/-- Relator sets with the same normal closure present canonically isomorphic groups. -/
+def equivOfNormalClosureEq {α : Type*} {S T : Set (FreeGroup α)}
+    (h : Subgroup.normalClosure S = Subgroup.normalClosure T) :
+    PresentedGroup S ≃* PresentedGroup T where
+  toFun := QuotientGroup.quotientMulEquivOfEq h
+  invFun := (QuotientGroup.quotientMulEquivOfEq h).symm
+  left_inv := (QuotientGroup.quotientMulEquivOfEq h).left_inv
+  right_inv := (QuotientGroup.quotientMulEquivOfEq h).right_inv
+  map_mul' := (QuotientGroup.quotientMulEquivOfEq h).map_mul
+
+/-- The canonical change of relators preserves every word. -/
+@[simp]
+theorem equivOfNormalClosureEq_mk {α : Type*} {S T : Set (FreeGroup α)}
+    (h : Subgroup.normalClosure S = Subgroup.normalClosure T) (w : FreeGroup α) :
+    equivOfNormalClosureEq h (mk S w) = mk T w :=
+  QuotientGroup.quotientMulEquivOfEq_mk h w
+
+/-- The inverse change of relators also preserves every word. -/
+@[simp]
+theorem equivOfNormalClosureEq_symm_mk {α : Type*} {S T : Set (FreeGroup α)}
+    (h : Subgroup.normalClosure S = Subgroup.normalClosure T) (w : FreeGroup α) :
+    (equivOfNormalClosureEq h).symm (mk T w) = mk S w := by
+  apply (equivOfNormalClosureEq h).injective
+  simp
+
+/-- Relabeling generators relabels every word by the induced free-group isomorphism. -/
+@[simp]
+theorem equivPresentedGroup_mk {α β : Type*} (S : Set (FreeGroup α)) (e : α ≃ β)
+    (w : FreeGroup α) :
+    equivPresentedGroup S e (mk S w) = mk _ (FreeGroup.freeGroupCongr e w) :=
+  (rfl)
 
 /-- The image of a word in a presented group is the product of the images of its signed
 letters. -/
@@ -43,16 +67,5 @@ theorem mk_mk {α : Type*} (S : Set (FreeGroup α)) (L : List (α × Bool)) :
     mk S (FreeGroup.mk L) =
       (L.map fun p => cond p.2 (of p.1) (of p.1)⁻¹).prod :=
   (mk S).apply_freeGroup_mk L
-
-/-- Inverting every generator of a presented group sends the class of a word to the class of the
-word with every sign flipped. -/
-theorem lift_inv_of_mk {α : Type*} (S : Set (FreeGroup α)) (L : List (α × Bool)) :
-    FreeGroup.lift (fun x => (of x : PresentedGroup S)⁻¹) (FreeGroup.mk L) =
-      mk S (FreeGroup.mk (L.map fun p => (p.1, !p.2))) := by
-  rw [FreeGroup.lift_mk, mk_mk, List.map_map]
-  congr 1
-  refine List.map_congr_left fun p _ => ?_
-  obtain ⟨x, b⟩ := p
-  cases b <;> simp
 
 end PresentedGroup

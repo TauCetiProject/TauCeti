@@ -15,12 +15,32 @@ import TauCeti.RingTheory.Ideal.Quotient.Radical
 A nonzero algebra finite over a finite-variable Monsky–Washnitzer algebra admits a finite
 injective algebra map from another Monsky–Washnitzer algebra, with no more variables.
 In particular this applies to every nonzero quotient of an overconvergent algebra, retaining
-nilpotents. Its residue fields are finite over the coefficient field, as are its quotients
-by ideals with maximal radical. No characteristic or nontrivial valuation assumption is needed.
+nilpotents. The residue fields of such an algebra at its maximal ideals are finite over the
+coefficient field, as are its quotients by ideals with maximal radical. No characteristic or
+nontrivial valuation assumption is needed.
 
 A distinguished relation in the kernel lets one remove a variable while retaining finiteness.
 Together with the distinguishing automorphisms, this gives an induction on the number of variables.
 This is the algebraic normalisation used to study residue fields and morphisms of dagger algebras.
+
+## Main results
+
+* `TauCeti.Dagger.washnitzerAlgebra.exists_finite_injective`: Noether normalisation. A nonzero
+  algebra finite over the Monsky–Washnitzer algebra `K⟨X⟩†` in finitely many variables `X` is
+  finite over an injectively embedded `K⟨Y_1, …, Y_n⟩†` with `n` at most the number of
+  variables `X`.
+* `TauCeti.Dagger.washnitzerAlgebra.finite_of_isField`: a field finite over such a `K⟨X⟩†` is
+  finite-dimensional over `K`.
+* `TauCeti.Dagger.washnitzerAlgebra.finite_quotient_of_isMaximal`: an algebra finite over such a
+  `K⟨X⟩†` has residue fields at its maximal ideals finite-dimensional over `K`.
+* `TauCeti.Dagger.washnitzerAlgebra.finite_quotient_of_isMaximal_radical`: its quotients by ideals
+  with maximal radical are finite-dimensional over `K`.
+* `TauCeti.Dagger.washnitzerAlgebra.finite_quotient_pow`: in particular, the quotients of
+  `K⟨X⟩†` by the powers of a maximal ideal are finite-dimensional over `K`.
+* `TauCeti.Dagger.IsDaggerAlgebra.finite_quotient_of_isMaximal`,
+  `TauCeti.Dagger.IsDaggerAlgebra.finite_quotient_of_isMaximal_radical` and
+  `TauCeti.Dagger.IsDaggerAlgebra.finite_quotient_pow_of_isMaximal_radical`: the same finiteness
+  for dagger algebras, which are finite over a Monsky–Washnitzer algebra through a presentation.
 
 ## References
 
@@ -62,16 +82,16 @@ private theorem exists_finite_map_of_not_injective {σ : Type*} [Finite σ]
   exact ⟨ψ.comp (washnitzerAlgebra.optionC (R := K)),
     finite_comp_optionC_of_isDistinguished hd hu hψ hz⟩
 
-omit [CompleteSpace K] in
 /-- An injective finite map already gives a normalisation, after indexing the variables by
 `Fin`. -/
-private theorem exists_finite_injective_of_injective {σ : Type*} [Finite σ]
-    {A : Type*} [CommRing A] [Algebra K A] {π : W σ →ₐ[K] A}
+private theorem exists_finite_injective_of_injective {R : Type*} [NormedCommRing R]
+    [IsUltrametricDist R] {σ : Type*} [Finite σ]
+    {A : Type*} [CommRing A] [Algebra R A] {π : washnitzerAlgebra σ R →ₐ[R] A}
     (hπ : π.Finite) (hinj : Function.Injective π) :
-    ∃ (n : ℕ) (g : W (Fin n) →ₐ[K] A),
+    ∃ (n : ℕ) (g : washnitzerAlgebra (Fin n) R →ₐ[R] A),
       n ≤ Nat.card σ ∧ Function.Injective g ∧ g.Finite := by
   let := Fintype.ofFinite σ
-  let r := washnitzerAlgebra.renameAlgEquiv (R := K) (Fintype.equivFin σ).symm
+  let r := washnitzerAlgebra.renameAlgEquiv (R := R) (Fintype.equivFin σ).symm
   exact ⟨_, π.comp r.toAlgHom, by simp [Nat.card_eq_fintype_card],
     hinj.comp r.injective, hπ.comp (AlgHom.Finite.of_surjective _ r.surjective)⟩
 
@@ -115,8 +135,8 @@ theorem washnitzerAlgebra.exists_finite_injective {σ : Type v} [Finite σ]
       obtain ⟨n, g, hn, hg, hfin⟩ := ih A γ hγ
       exact ⟨n, g, hn.trans (by simp), hg, hfin⟩
 
-/-- A field finite over a finite-variable Monsky–Washnitzer algebra is finite over the
-coefficient field. More generally it suffices that the target ring satisfy `IsField`. -/
+/-- A field finite over a finite-variable Monsky–Washnitzer algebra is finite-dimensional over
+the coefficient field `K`. The field is given as a commutative ring `A` with `IsField A`. -/
 theorem washnitzerAlgebra.finite_of_isField {σ : Type*} [Finite σ]
     {A : Type*} [CommRing A] [Algebra K A] {π : W σ →ₐ[K] A}
     (hπ : π.Finite) (hA : IsField A) : Module.Finite K A := by
@@ -147,8 +167,10 @@ theorem washnitzerAlgebra.finite_quotient_of_isMaximal {σ : Type*} [Finite σ]
     ((AlgHom.Finite.of_surjective (Ideal.Quotient.mkₐ K m) Ideal.Quotient.mk_surjective).comp hπ)
     ((Ideal.Quotient.maximal_ideal_iff_isField_quotient m).mp ‹_›)
 
-/-- Quotients by ideals with maximal radical are finite-dimensional, including their
-nilpotent thickening. In particular this applies to primary ideals with maximal radical. -/
+/-- If `A` is finite over a finite-variable Monsky–Washnitzer algebra and the radical of `q` is
+maximal, then `A ⧸ q` is finite-dimensional over the coefficient field `K`. This covers the
+nilpotent thickenings `A ⧸ m ^ n` of a residue field, for `m` maximal and `0 < n`. Such an ideal
+`q` is automatically primary, by `Ideal.isPrimary_of_isMaximal_radical`. -/
 theorem washnitzerAlgebra.finite_quotient_of_isMaximal_radical {σ : Type*} [Finite σ]
     {A : Type*} [CommRing A] [Algebra K A] {π : W σ →ₐ[K] A}
     (hπ : π.Finite) (q : Ideal A) [q.radical.IsMaximal] : Module.Finite K (A ⧸ q) := by
@@ -157,5 +179,52 @@ theorem washnitzerAlgebra.finite_quotient_of_isMaximal_radical {σ : Type*} [Fin
   have : IsNoetherianRing A := IsNoetherianRing.of_finite (W σ) A
   have : Module.Finite K (A ⧸ q.radical) := finite_quotient_of_isMaximal hπ q.radical
   exact q.moduleFinite_quotient_of_radical (IsNoetherian.noetherian _)
+
+/-- The quotients of a finite-variable Monsky–Washnitzer algebra by all powers of a maximal ideal
+are finite-dimensional over the coefficient field, including the zero quotient for exponent
+zero. -/
+theorem washnitzerAlgebra.finite_quotient_pow {σ : Type*} [Finite σ] (m : Ideal (W σ))
+    [m.IsMaximal] (k : ℕ) : Module.Finite K (W σ ⧸ m ^ k) := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · have : Subsingleton (W σ ⧸ m ^ 0) := by
+      rw [pow_zero, Ideal.one_eq_top]
+      exact Ideal.Quotient.subsingleton_iff.mpr rfl
+    exact Module.Finite.of_finite
+  · have : (m ^ k).radical.IsMaximal := by
+      rwa [Ideal.radical_pow m hk, ‹m.IsMaximal›.isPrime.radical]
+    exact finite_quotient_of_isMaximal_radical (AlgHom.Finite.id K (W σ)) (m ^ k)
+
+namespace IsDaggerAlgebra
+
+variable {A : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
+
+variable (K) in
+/-- **Residue fields of dagger algebras are finite.** Every maximal-ideal quotient of a
+`K`-dagger algebra is finite-dimensional over `K`. -/
+theorem finite_quotient_of_isMaximal (m : Ideal A) [m.IsMaximal] : Module.Finite K (A ⧸ m) := by
+  obtain ⟨n, π, hπ⟩ := exists_surjective (K := K) (A := A)
+  exact washnitzerAlgebra.finite_quotient_of_isMaximal (AlgHom.Finite.of_surjective π hπ) m
+
+variable (K) in
+/-- If the radical of an ideal `q` of a `K`-dagger algebra `A` is maximal, then `A ⧸ q` is
+finite-dimensional over `K`. -/
+theorem finite_quotient_of_isMaximal_radical (q : Ideal A) [q.radical.IsMaximal] :
+    Module.Finite K (A ⧸ q) := by
+  obtain ⟨n, π, hπ⟩ := exists_surjective (K := K) (A := A)
+  exact washnitzerAlgebra.finite_quotient_of_isMaximal_radical
+    (AlgHom.Finite.of_surjective π hπ) q
+
+variable (K) in
+/-- The quotients of a `K`-dagger algebra by all powers of an ideal with maximal radical are
+finite-dimensional over `K`, including the zero quotient for exponent zero. -/
+theorem finite_quotient_pow_of_isMaximal_radical (q : Ideal A) [q.radical.IsMaximal] (n : ℕ) :
+    Module.Finite K (A ⧸ q ^ n) := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · have : Subsingleton (A ⧸ q ^ 0) := Ideal.Quotient.subsingleton_iff.mpr (by simp)
+    infer_instance
+  · have : (q ^ n).radical.IsMaximal := by rwa [Ideal.radical_pow q hn.ne']
+    exact finite_quotient_of_isMaximal_radical K _
+
+end IsDaggerAlgebra
 
 end TauCeti.Dagger

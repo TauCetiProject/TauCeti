@@ -48,6 +48,14 @@ description determines a well-defined homomorphism on idele classes.
 * `TauCeti.GlobalNumberFields.finiteIndex_raySubgroup`: hence the ray subgroup has finite index.
 * `TauCeti.GlobalNumberFields.classMap_comp_rayClassQuotient`: the maps are compatible with the
   transition maps between ray class groups.
+* `TauCeti.GlobalNumberFields.raySubgroup_le_raySubgroup_iff`: for `𝔪 ∣ 𝔫`, the ray subgroup of
+  `𝔪` lies in that of `𝔫` exactly when the transition map from `𝔫` to `𝔪` is injective.
+* `TauCeti.GlobalNumberFields.rayClassQuotient_ofAdicCompletion_of_isUniformizer`: the idele that
+  is a uniformizer at a finite place `v` outside `𝔪` and `1` elsewhere is sent to the ray class of
+  the prime `v`.
+* `TauCeti.GlobalNumberFields.ideleClassGroup_hom_ext_of_raySubgroup_le`: two homomorphisms out of
+  the idele class group that kill `raySubgroup 𝔪` are equal once they agree on the uniformizers at
+  the finite places outside `𝔪`.
 * `TauCeti.GlobalNumberFields.rayClassQuotient_ofCompletion_neg_one`: the idele that is `-1` at
   one real place of `𝔪` and `1` elsewhere is sent to the ray class of the trivial residue and the
   sign pattern that is `-1` exactly at that place.
@@ -62,7 +70,7 @@ noncomputable section
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum IsDedekindDomain.FiniteAdeleRing
   NumberField
-open scoped NumberField
+open scoped NumberField nonZeroDivisors
 
 namespace TauCeti.GlobalNumberFields
 
@@ -223,6 +231,14 @@ theorem rayClassQuotient_mk_of_mem {x : IdeleGroup (𝓞 K) K} (hx : x ∈ idele
     ideleToRayClassFun_eq 1 (by simpa using hx), ideleRayClass_apply]
   simp_rw [map_one, one_mul]
 
+/-- The ordinary ideal class of an idele is its ray class at the trivial modulus. -/
+@[simp]
+theorem oneEquivClassGroup_rayClassQuotient_mk (x : IdeleGroup (𝓞 K) K) :
+    oneEquivClassGroup (rayClassQuotient (Modulus.one K) x) =
+      FiniteAdeleRing.toClassGroup (𝓞 K) K (IdeleGroup.toFiniteIdele (𝓞 K) K x) := by
+  rw [rayClassQuotient_mk_of_mem (by simp), oneEquivClassGroup_rayClassMk,
+    FiniteAdeleRing.toClassGroup_apply]
+
 /-- The class of an idele is the class of its product with a principal idele. -/
 private theorem mk_eq_mk_unitEmbedding_mul (x : IdeleGroup (𝓞 K) K) (α : Kˣ) :
     (x : IdeleClassGroup (𝓞 K) K) =
@@ -337,6 +353,75 @@ theorem classMap_comp_rayClassQuotient {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ �
     (c : IdeleClassGroup (𝓞 K) K) :
     classMap h (rayClassQuotient 𝔫 c) = rayClassQuotient 𝔪 c := by
   rw [← MonoidHom.comp_apply, classMap_comp_rayClassQuotient]
+
+/-- **Comparison of ray subgroups along a transition map**: for `𝔪 ∣ 𝔫`, the ray subgroup of `𝔪`
+lies in that of `𝔫` exactly when the transition map from `𝔫` to `𝔪` is injective. Under the
+surjective ray class map modulo `𝔫`, the ray subgroup of `𝔪` is the preimage of the kernel of the
+transition map, and that of `𝔫` is the preimage of the trivial subgroup. -/
+theorem raySubgroup_le_raySubgroup_iff {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
+    raySubgroup 𝔪 ≤ raySubgroup 𝔫 ↔ (classMap h).ker ≤ ⊥ := by
+  rw [← ker_rayClassQuotient, ← ker_rayClassQuotient, ← classMap_comp_rayClassQuotient h,
+    ← MonoidHom.comap_ker, ← MonoidHom.comap_bot (rayClassQuotient 𝔫)]
+  exact Subgroup.comap_le_comap_of_surjective (rayClassQuotient_surjective 𝔫)
+
+/-! ### Uniformizers at finite places -/
+
+/-- **The ray class of a uniformizer at a finite place is the ray class of the prime.** For a
+finite place `v` of `K` outside the support of a modulus `𝔪` and a uniformizer `π` of `K_v`, the
+class of the idele with component `π` at `v` and `1` elsewhere has the ray class of the prime `v`:
+this idele is congruent to one modulo `𝔪`, and its fractional ideal is `v`. -/
+theorem rayClassQuotient_ofAdicCompletion_of_isUniformizer {v : HeightOneSpectrum (𝓞 K)}
+    (hv : v ∉ 𝔪.support) {π : (v.adicCompletion K)ˣ} (hπ : IsUniformizer (v.adicCompletion K) π)
+    (I : idealsPrimeTo 𝔪)
+    (hI : ((I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) =
+      (v.asIdeal : FractionalIdeal (𝓞 K)⁰ K)) :
+    rayClassQuotient 𝔪 (IdeleClassGroup.ofAdicCompletion (𝓞 K) K v π) = rayClassMk 𝔪 I := by
+  -- The idele concentrated at `v` is trivial at the places of `𝔪`.
+  have hmem : IdeleGroup.ofAdicCompletion (𝓞 K) K v π ∈ ideleCongrOneSubgroup 𝔪 := by
+    refine mem_ideleCongrOneSubgroup_iff.mpr ⟨fun v' hv' ↦ ?_, fun w _ ↦ ?_⟩
+    · have hne : v' ≠ v := fun he ↦ hv ((Modulus.mem_support_iff 𝔪 v).mpr (he ▸ hv'))
+      simp [ideleFiniteCoord_ofAdicCompletion_of_ne v' hne]
+    · simp [InfinitePlace.ideleInfiniteCoord_ofAdicCompletion]
+  -- A uniformizer has valuation `exp (-1)`, so the fractional ideal of the idele is `v`.
+  have : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+  rw [IdeleClassGroup.ofAdicCompletion_apply, rayClassQuotient_mk_of_mem hmem]
+  refine congrArg _ (Subtype.ext ?_)
+  dsimp only
+  rw [toFractionalIdeal_toFiniteIdele_ofAdicCompletion_of_eq_exp_neg_one v
+    (v.isUniformizer_iff_valued_eq_exp_neg_one.1 hπ)]
+  exact Units.ext ((coe_unitOfPrime v K).trans hI.symm)
+
+/-- **Homomorphisms out of the idele class group are determined on uniformizers.** Two
+homomorphisms out of `C_K` whose kernels contain the ray subgroup of `𝔪` are equal as soon as they
+agree on the class of every idele that is a uniformizer at a finite place outside the support of
+`𝔪` and `1` elsewhere. Both factor through the ray class group of `𝔪`, which is generated by the
+ray classes of the primes outside the support, and those are the images of these ideles
+(`rayClassQuotient_ofAdicCompletion_of_isUniformizer`).
+
+By `exists_raySubgroup_le_of_isOpen`, every homomorphism with open kernel kills some ray
+subgroup. -/
+theorem ideleClassGroup_hom_ext_of_raySubgroup_le {M : Type*} [Group M]
+    {f g : IdeleClassGroup (𝓞 K) K →* M} (hf : raySubgroup 𝔪 ≤ f.ker)
+    (hg : raySubgroup 𝔪 ≤ g.ker)
+    (h : ∀ v ∉ 𝔪.support, ∀ π : (v.adicCompletion K)ˣ, IsUniformizer (v.adicCompletion K) π →
+      f (IdeleClassGroup.ofAdicCompletion (𝓞 K) K v π) =
+        g (IdeleClassGroup.ofAdicCompletion (𝓞 K) K v π)) :
+    f = g := by
+  -- Factor `f` and `g` through the ray class group, and compare the factorizations on primes.
+  let f' := (rayClassQuotient 𝔪).liftOfSurjective (rayClassQuotient_surjective 𝔪)
+    ⟨f, (ker_rayClassQuotient 𝔪).trans_le hf⟩
+  let g' := (rayClassQuotient 𝔪).liftOfSurjective (rayClassQuotient_surjective 𝔪)
+    ⟨g, (ker_rayClassQuotient 𝔪).trans_le hg⟩
+  have hf' : f'.comp (rayClassQuotient 𝔪) = f := (rayClassQuotient 𝔪).liftOfRightInverse_comp _ _ _
+  have hg' : g'.comp (rayClassQuotient 𝔪) = g := (rayClassQuotient 𝔪).liftOfRightInverse_comp _ _ _
+  suffices f' = g' by rw [← hf', ← hg', this]
+  refine (MonoidHom.cancel_right (rayClassMk_surjective 𝔪)).mp
+    (NumberFieldArithmetic.idealsAway_hom_ext fun I v hv hI ↦ ?_)
+  obtain ⟨π, hπ⟩ := exists_isUniformizer (v.adicCompletion K)
+  rw [MonoidHom.comp_apply, MonoidHom.comp_apply,
+    ← rayClassQuotient_ofAdicCompletion_of_isUniformizer hv hπ I hI,
+    ← MonoidHom.comp_apply f', hf', ← MonoidHom.comp_apply g', hg']
+  exact h v hv π hπ
 
 /-! ### Signs at the real places -/
 

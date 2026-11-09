@@ -35,6 +35,8 @@ the dimension.
 * `Matrix.eval_one_charpolyRev`: the value of `det (1 - X A)` at `X = 1` is `det (1 - A)`.
 * `Matrix.charpolyRev_map`, `Matrix.charpolyRev_transpose`, `Matrix.charpolyRev_reindex`:
   functoriality in the coefficient ring and invariance under transposition and relabelling.
+* `Matrix.charpolyRev_eq_charpolyRev_iff`: for matrices of the same size, `det (1 - X A)`
+  determines the characteristic polynomial and conversely.
 * `Matrix.charpolyRev_fromBlocks_zero₂₁`, `Matrix.BlockTriangular.charpolyRev`: multiplicativity on
   block-triangular matrices, with `Matrix.charpolyRev_of_isUpperTriangular` and
   `Matrix.charpolyRev_diagonal` as special cases.
@@ -159,6 +161,14 @@ theorem charpolyRev_reindex (e : ι ≃ κ) (A : Matrix ι ι R) :
     (reindex e e A).charpolyRev = A.charpolyRev := by
   rw [charpolyRev_eq_reflect, charpolyRev_eq_reflect, charpoly_reindex, Fintype.card_congr e]
 
+/-- For square matrices of the same size, `det (1 - X A) = det (1 - X B)` if and only if `A` and
+`B` have the same characteristic polynomial. -/
+theorem charpolyRev_eq_charpolyRev_iff {A : Matrix ι ι R} {B : Matrix κ κ R}
+    (h : Fintype.card ι = Fintype.card κ) :
+    A.charpolyRev = B.charpolyRev ↔ A.charpoly = B.charpoly := by
+  rw [charpolyRev_eq_reflect, charpolyRev_eq_reflect, h]
+  exact ⟨fun h' ↦ by simpa using congrArg (reflect (Fintype.card κ)) h', fun h' ↦ h' ▸ rfl⟩
+
 /-- `det (1 - X A)` of an empty matrix is `1`. -/
 @[simp]
 theorem charpolyRev_isEmpty [IsEmpty ι] (A : Matrix ι ι R) : A.charpolyRev = 1 := by
@@ -271,7 +281,7 @@ theorem BlockTriangular.charpolyRev {α : Type*} [LinearOrder α] {b : ι → α
   rw [Matrix.charpolyRev, h'.det]
   refine Finset.prod_congr rfl fun a _ ↦ congrArg det ?_
   ext i j
-  simp [toSquareBlock_def, one_apply, Subtype.ext_iff]
+  simp [toSquareBlock_def, Matrix.one_apply, Subtype.ext_iff]
 
 /-- `det (1 - X A)` of an upper-triangular matrix is the product of the factors `1 - A i i X`. -/
 theorem charpolyRev_of_isUpperTriangular [LinearOrder ι] {A : Matrix ι ι R}

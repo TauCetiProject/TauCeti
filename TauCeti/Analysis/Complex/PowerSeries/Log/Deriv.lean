@@ -113,7 +113,7 @@ theorem coeff_logDeriv_eq_iteratedDeriv (f : ℂ⟦X⟧)
           (FormalMultilinearSeries.ofScalarsSum (E := ℂ) fun n ↦ coeff n f)) 0 /
           n.factorial := by
   induction n using Nat.strong_induction_on with
-  | h n ih =>
+  | ind n ih =>
       have hr := coeff_logDeriv_recurrence f hf0 n
       have ha := iteratedDeriv_logDeriv_recurrence f hf0 hf n
       rw [Finset.sum_range_succ] at hr ha

@@ -691,7 +691,7 @@ theorem eq_one_of_isOfFinOrder_of_forall_proj_eq [hp : Fact p.Prime]
     (hfix : ∀ t, proj k (φ t) = proj k t) : φ = 1 := by
   have hcast (n : ℕ) (ψ : Module.End ℤ_[p] (TateModule p A)) (t : TateModule p A) :
       ((n : Module.End ℤ_[p] (TateModule p A)) * ψ) t = n • ψ t := by
-    rw [Module.End.mul_apply, Module.End.natCast_apply]
+    rw [_root_.mul_apply_eq_comp, _root_.natCast_apply_eq_smul]
   refine eq_one_of_isOfFinOrder_of_pow_dvd_sub_one hp.out (fun ψ ψ' h ↦ ?_) (fun ψ hψ ↦ ?_) hk hφ
     ?_
   · -- `T_p A` has no `p`-torsion, so `p` is left regular in its endomorphism ring.
@@ -707,16 +707,16 @@ theorem eq_one_of_isOfFinOrder_of_forall_proj_eq [hp : Fact p.Prime]
     set g : Module.End ℤ_[p] (TateModule p A) := ((p ^ k : ℕ) : Module.End ℤ_[p] (TateModule p A))
     have hg : Function.Injective g := fun s t hst ↦ sub_eq_zero.mp
       (eq_zero_of_pow_nsmul_eq_zero (k := k) (by
-        rw [smul_sub, ← Module.End.natCast_apply (R := ℤ_[p]),
-          ← Module.End.natCast_apply (R := ℤ_[p])]
+        rw [smul_sub, ← _root_.natCast_apply_eq_smul (F := Module.End ℤ_[p] (TateModule p A)),
+          ← _root_.natCast_apply_eq_smul (F := Module.End ℤ_[p] (TateModule p A))]
         exact sub_eq_zero.mpr hst))
     have hrange (t : TateModule p A) : (φ - 1) t ∈ LinearMap.range g := by
       obtain ⟨y, hy⟩ := (proj_eq_zero_iff (n := k) (x := (φ - 1) t)).mp (by
-        rw [LinearMap.sub_apply, Module.End.one_apply, map_sub, hfix, sub_self])
-      exact ⟨y, by rw [hy, Module.End.natCast_apply]⟩
+        rw [LinearMap.sub_apply, _root_.one_apply_eq_self, map_sub, hfix, sub_self])
+      exact ⟨y, by rw [hy, _root_.natCast_apply_eq_smul]⟩
     refine ⟨(LinearEquiv.ofInjective g hg).symm.toLinearMap ∘ₗ (φ - 1).codRestrict _ hrange,
       LinearMap.ext fun t ↦ ?_⟩
-    rw [← Nat.cast_pow, Module.End.mul_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    rw [← Nat.cast_pow, _root_.mul_apply_eq_comp, LinearMap.comp_apply, LinearEquiv.coe_coe,
       ← LinearEquiv.ofInjective_apply (f := g) (h := hg), LinearEquiv.apply_symm_apply,
       LinearMap.codRestrict_apply]
 

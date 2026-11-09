@@ -14,7 +14,7 @@ import TauCeti.Algebra.Polynomial.Bivariate
 import Mathlib.Algebra.MvPolynomial.Funext
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import TauCeti.Algebra.MvPolynomial.Units
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Basic
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Unramified
 import TauCeti.FieldTheory.FunctionField.PlaneCurve.Basic
 import TauCeti.FieldTheory.FunctionField.PlaneCurve.ConstantField
@@ -82,6 +82,10 @@ field extension when `k` is small.
   projective plane curve of degree `d` over a field with more than `d + 1` elements.
 * `TauCeti.genus_eq_of_isHomogeneous`: the same over every field `k`.
 * `TauCeti.isIntegrallyClosedIn_of_isHomogeneous`: `k` is the exact constant field of `F`.
+* `TauCeti.genus_eq_of_isHomogeneous_of_aeval_insertNth_eq_zero` and
+  `TauCeti.isIntegrallyClosedIn_of_isHomogeneous_of_aeval_insertNth_eq_zero`: the same two
+  statements for generators `x` and `y` read in any of the three affine charts `Xᵢ = 1`, with
+  either of them transcendental.
 * `TauCeti.degree_sup_poles_of_isHomogeneous`: the line at infinity cuts out a divisor
   `(x)_∞ ⊔ (y)_∞` of degree `d`.
 * `TauCeti.linearIndepOn_pow_mul_pow_of_isHomogeneous`: the monomials `x ^ i y ^ j` with
@@ -408,6 +412,61 @@ private theorem irreducible_map_dehomogenize_two (hG : G.IsHomogeneous d)
   rw [aeval_dehomogenize, insertNth_two, h, aeval_C] at hxy
   exact hc.ne_zero ((map_eq_zero_iff _ (algebraMap k F).injective).mp hxy.symm)
 
+/-- For `G(c, 1, 0) ≠ 0`, the sheared and normalized affine equation
+`g' = G(X₀ + c X₁, X₁, 1) / G(c, 1, 0)` of a smooth projective plane curve with a point
+`(x : y : 1)` is irreducible of total degree `d` with the coefficient of `Y^d` equal to `1`, and is
+smooth in both affine charts. -/
+private theorem irreducible_dehomogenize_linearSubst_shear (hG : G.IsHomogeneous d)
+    (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0)
+    {x y : F} (h : aeval ![x, y, 1] G = 0) {c : k} (hc : eval ![c, 1, 0] G ≠ 0) :
+    let g' := dehomogenize 2 (C (eval ![c, 1, 0] G)⁻¹ * linearSubst (shear c) G)
+    Irreducible g' ∧ g'.coeff (Finsupp.single 1 g'.totalDegree) = 1 ∧ g'.totalDegree = d ∧
+      Ideal.span {g', pderiv 0 g', pderiv 1 g'} = ⊤ ∧
+      Ideal.span {g'.inftyChart g'.totalDegree, pderiv 0 (g'.inftyChart g'.totalDegree),
+        pderiv 1 (g'.inftyChart g'.totalDegree)} = ⊤ := by
+  have h21 : (2 : Fin 3).succAbove 1 = 1 := rfl
+  set g := dehomogenize 2 G with hg_def
+  set μ := (eval ![c, 1, 0] G)⁻¹ with hμ
+  have hμ0 : μ ≠ 0 := inv_ne_zero hc
+  set G' := C μ * linearSubst (shear c) G with hG'_def
+  have hG' : G'.IsHomogeneous d := by
+    simpa using (isHomogeneous_C (Fin 3) μ).mul (hG.linearSubst (shear c))
+  have hsm' : ∀ v : Fin 3 → K, v ≠ 0 → aeval v G' = 0 → ∃ l, aeval v (pderiv l G') ≠ 0 := by
+    intro v hv hv0
+    rw [hG'_def, map_mul, aeval_C, mul_eq_zero, map_eq_zero, or_iff_right hμ0] at hv0
+    obtain ⟨l, hl⟩ := exists_aeval_pderiv_linearSubst_ne_zero
+      (by rw [det_shear]; exact one_ne_zero) hsm hv hv0
+    refine ⟨l, ?_⟩
+    rw [hG'_def, pderiv_C_mul, map_mul, aeval_C]
+    exact mul_ne_zero ((map_ne_zero _).mpr hμ0) hl
+  set g' := dehomogenize 2 G' with hg'_def
+  have hg' : g' = C μ * shearEquiv c g := by
+    rw [hg'_def, hG'_def, map_mul, dehomogenize_linearSubst_shear, hg_def, algHom_C,
+      algebraMap_eq]
+  have hirr' : Irreducible g' := by
+    rw [hg', irreducible_isUnit_mul ((IsUnit.mk0 _ hμ0).map C)]
+    exact (MulEquiv.irreducible_iff (shearEquiv c).toMulEquiv).mpr
+      (irreducible_map_dehomogenize_two hG hsm h).of_map
+  have hlead1 : g'.coeff (Finsupp.single 1 d) = 1 := by
+    have hv : (shear c).mulVec (Pi.single 1 1) = ![c, 1, 0] := by
+      ext i
+      fin_cases i <;> simp [shear, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+    rw [hg'_def, coeff_dehomogenize_single hG' 2 1, h21, hG'.coeff_single_eq_eval, hG'_def,
+      map_mul, eval_C, eval_linearSubst, hv, hμ, inv_mul_cancel₀ hc]
+  have hdeg' : g'.totalDegree = d := by
+    refine le_antisymm ((totalDegree_dehomogenize_le 2 G').trans hG'.totalDegree_le) ?_
+    have hmem : Finsupp.single 1 d ∈ g'.support := by
+      rw [mem_support_iff, hlead1]
+      exact one_ne_zero
+    simpa using le_totalDegree hmem
+  have hlead : g'.coeff (Finsupp.single 1 g'.totalDegree) = 1 := by rw [hdeg', hlead1]
+  -- Both affine charts of `G' = 0` are smooth.
+  have hsmA := span_dehomogenize_two_pderiv_eq_top hG' hsm'
+  have hsmI := span_inftyChart_pderiv_eq_top hG' hsm'
+  rw [← hg'_def] at hsmA hsmI
+  rw [← hdeg'] at hsmI
+  exact ⟨hirr', hlead, hdeg', hsmA, hsmI⟩
+
 /-- **The projected equation of a smooth projective plane curve**: under the hypotheses of
 `TauCeti.genus_eq_of_isHomogeneous_of_lt_card`, some `c ∈ k` with `G(c, 1, 0) ≠ 0` makes
 `u = x - c y` transcendental, and the sheared affine equation `g' ∈ k[X, Y]` is irreducible of
@@ -449,78 +508,31 @@ private theorem exists_aeval_sub_mul_eq_zero (hG : G.IsHomogeneous d)
     simpa using RingHom.mem_ker.mp (hle (Submodule.mem_top (x := 1)))
   obtain ⟨c, hc, hcab⟩ := exists_eval_ne_zero_and_mul_add_ne_zero hG
     (aeval_X_one_zero_ne_zero (K := K) hG hsm h) hcard hab
-  -- The sheared and normalized equation `G' = G(X₀ + c X₁, X₁, X₂) / G(c, 1, 0)`.
+  obtain ⟨hirr', hlead, hdeg', hsmA, hsmI⟩ := irreducible_dehomogenize_linearSubst_shear hG hsm h hc
   set μ := (eval ![c, 1, 0] G)⁻¹ with hμ
   have hμ0 : μ ≠ 0 := inv_ne_zero hc
-  set G' := C μ * linearSubst (shear c) G with hG'_def
-  have hG' : G'.IsHomogeneous d := by
-    simpa using (isHomogeneous_C (Fin 3) μ).mul (hG.linearSubst (shear c))
-  have hsm' : ∀ v : Fin 3 → K, v ≠ 0 → aeval v G' = 0 → ∃ l, aeval v (pderiv l G') ≠ 0 := by
-    intro v hv hv0
-    rw [hG'_def, map_mul, aeval_C, mul_eq_zero, map_eq_zero, or_iff_right hμ0] at hv0
-    obtain ⟨l, hl⟩ := exists_aeval_pderiv_linearSubst_ne_zero
-      (by rw [det_shear]; exact one_ne_zero) hsm hv hv0
-    refine ⟨l, ?_⟩
-    rw [hG'_def, pderiv_C_mul, map_mul, aeval_C]
-    exact mul_ne_zero ((map_ne_zero _).mpr hμ0) hl
-  set g' := dehomogenize 2 G' with hg'_def
-  have hg' : g' = C μ * shearEquiv c g := by
-    rw [hg'_def, hG'_def, map_mul, dehomogenize_linearSubst_shear, hg_def, algHom_C,
-      algebraMap_eq]
-  have hirr' : Irreducible g' := by
-    rw [hg', irreducible_isUnit_mul ((IsUnit.mk0 _ hμ0).map C)]
-    exact (MulEquiv.irreducible_iff (shearEquiv c).toMulEquiv).mpr
-      (irreducible_map_dehomogenize_two hG hsm h).of_map
-  have hlead1 : g'.coeff (Finsupp.single 1 d) = 1 := by
-    have hv : (shear c).mulVec (Pi.single 1 1) = ![c, 1, 0] := by
-      ext i
-      fin_cases i <;> simp [shear, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
-    rw [hg'_def, coeff_dehomogenize_single hG' 2 1, h21, hG'.coeff_single_eq_eval, hG'_def,
-      map_mul, eval_C, eval_linearSubst, hv, hμ, inv_mul_cancel₀ hc]
-  have hdeg' : g'.totalDegree = d := by
-    refine le_antisymm ((totalDegree_dehomogenize_le 2 G').trans hG'.totalDegree_le) ?_
-    have hmem : Finsupp.single 1 d ∈ g'.support := by
-      rw [mem_support_iff, hlead1]
-      exact one_ne_zero
-    simpa using le_totalDegree hmem
-  have hlead : g'.coeff (Finsupp.single 1 g'.totalDegree) = 1 := by rw [hdeg', hlead1]
-  -- Both affine charts of `G' = 0` are smooth.
-  have hsmA := span_dehomogenize_two_pderiv_eq_top hG' hsm'
-  have hsmI := span_inftyChart_pderiv_eq_top hG' hsm'
-  rw [← hg'_def] at hsmA hsmI
-  rw [← hdeg'] at hsmI
+  set g' := dehomogenize 2 (C μ * linearSubst (shear c) G) with hg'_def
   -- The projection from `(c : 1 : 0)` is `u = x - c y`.
   set u := x - algebraMap k F c * y with hu_def
   have hxu : u + algebraMap k F c * y = x := by rw [hu_def]; ring
   have heval : ∀ v w : F,
       aeval ![v, w] g' = algebraMap k F μ * aeval ![v + algebraMap k F c * w, w, 1] G :=
     fun v w ↦ by
-      rw [hg'_def, aeval_dehomogenize, hpt, hG'_def, map_mul, aeval_C, aeval_linearSubst_shear]
+      rw [hg'_def, aeval_dehomogenize, hpt, map_mul, aeval_C, aeval_linearSubst_shear]
       simp
-  -- If `u` were algebraic over `k`, then `y`, a root of the monic `g'(u, Y)`, would be algebraic
-  -- over `k(u)`, hence over `k`, and so would `x = u + c y`.
-  have hu : Transcendental k u := by
-    intro hua
-    have := IntermediateField.isAlgebraic_adjoin_simple hua.isIntegral
-    have hdegL : (g'.map (algebraMap k k⟮u⟯)).totalDegree ≤ g'.totalDegree :=
-      Finset.sup_mono (support_map_subset _ _)
-    have hmonL := Polynomial.Bivariate.monic_equivMvPolynomial_symm hdegL
-      (by rw [coeff_map, hlead, map_one])
-    have hyL : IsAlgebraic k⟮u⟯ y :=
-      Polynomial.Bivariate.isAlgebraic_of_aeval_algebraMap_eq_zero
-        (a := IntermediateField.AdjoinSimple.gen k u) (hmonL.map _).ne_zero
-        (by rw [IntermediateField.AdjoinSimple.algebraMap_gen, aeval_map_algebraMap, heval, hxu, h,
-          mul_zero])
-    exact hx (hxu ▸ hua.add ((isAlgebraic_algebraMap c).mul
-      (hyL.restrictScalars_of_isIntegral k)))
   -- `∂g'/∂Y (u, y) = (c ∂G/∂X₀ + ∂G/∂X₁)(x, y, 1) / G(c, 1, 0)`, nonzero by the choice of `c`.
   have hpd : aeval ![u, y] (pderiv 1 g') = algebraMap k F μ * (algebraMap k F c * a + b) := by
-    rw [hg'_def, pderiv_dehomogenize, h21, aeval_dehomogenize, hpt, hG'_def, pderiv_C_mul,
+    rw [hg'_def, pderiv_dehomogenize, h21, aeval_dehomogenize, hpt, pderiv_C_mul,
       pderiv_linearSubst, Fin.sum_univ_three]
     simp only [map_mul, map_add, aeval_C]
     rw [aeval_linearSubst_shear, aeval_linearSubst_shear, aeval_linearSubst_shear]
     simp [shear, hxu, ha_def, hb_def]
-  exact ⟨c, g', hc, hu, hirr', hlead, hdeg', hsmA, hsmI, by rw [heval, hxu, h, mul_zero],
+  have hroot : aeval ![u, y] g' = 0 := by rw [heval, hxu, h, mul_zero]
+  -- If `u` were algebraic, so would be `y` (a root of the monic `g'(u, Y)`) and `x = u + c y`.
+  have hu : Transcendental k u := fun hua ↦
+    hx (hxu ▸ hua.add ((isAlgebraic_algebraMap c).mul
+      (Polynomial.Bivariate.isAlgebraic_of_isAlgebraic_of_aeval_eq_zero hlead hua hroot)))
+  exact ⟨c, g', hc, hu, hirr', hlead, hdeg', hsmA, hsmI, hroot,
     hpd ▸ mul_ne_zero ((map_ne_zero _).mpr hμ0) hcab⟩
 
 /-- **A separating projection of a smooth projective plane curve**: let `G ∈ k[X₀, X₁, X₂]` be
@@ -659,6 +671,69 @@ theorem genus_eq_of_isHomogeneous (hG : G.IsHomogeneous d)
     rw [← genus_eq_genus_of_constantCompositum_eq_top hF hex hc]
     exact genus_eq_of_isHomogeneous_of_lt_card (K := K) hex' (hG.map _) hsm' hcard hx' hgen' h'
   · exact genus_eq_of_isHomogeneous_of_lt_card hex hG hsm (by simp) hx hgen h
+
+omit [IsAlgClosed K] in
+/-- **Moving the affine chart.** A point `(x, y)` of `G = 0` in the chart `Xᵢ = 1`, with
+homogeneous coordinates `x` and `y` in the remaining positions in increasing order and `1` at
+position `i`, one of them transcendental, becomes after a permutation `σ` of the coordinates a
+point `(u, v)` of `rename σ G = 0` in the chart `X₂ = 1` with `u` transcendental. The permuted
+equation is again nonsingular, and `u`, `v` are `x`, `y` in some order. -/
+private theorem exists_rename_aeval_eq_zero_of_aeval_insertNth_eq_zero
+    (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0) (i : Fin 3)
+    {x y : F} (hxy : Transcendental k x ∨ Transcendental k y)
+    (h : aeval (i.insertNth 1 ![x, y]) G = 0) :
+    ∃ (σ : Equiv.Perm (Fin 3)) (u v : F), Transcendental k u ∧ k⟮u, v⟯ = k⟮x, y⟯ ∧
+      aeval ![u, v, 1] (rename σ G) = 0 ∧
+      ∀ b : Fin 3 → K, b ≠ 0 → aeval b (rename σ G) = 0 →
+        ∃ l, aeval b (pderiv l (rename σ G)) ≠ 0 := by
+  -- Nonsingularity survives every permutation of the coordinates.
+  have hsmσ (σ : Equiv.Perm (Fin 3)) (b : Fin 3 → K) (hb : b ≠ 0)
+      (hbG : aeval b (rename σ G) = 0) : ∃ l, aeval b (pderiv l (rename σ G)) ≠ 0 := by
+    rw [aeval_rename] at hbG
+    obtain ⟨l, hl⟩ := hsm (b ∘ σ) (fun h0 ↦ hb (funext fun j ↦ by
+      simpa using congrFun h0 (σ.symm j))) hbG
+    exact ⟨σ l, by rwa [pderiv_rename σ.injective, aeval_rename]⟩
+  -- The permutation sending `i` to `2` and the remaining coordinates, in order, to `0` and `1`.
+  let τ : Equiv.Perm (Fin 3) := (finSuccEquiv' i).trans (finSuccEquiv' (Fin.last 2)).symm
+  have hτ (u v : F) : ![u, v, 1] ∘ τ = i.insertNth 1 ![u, v] := by
+    ext j
+    refine Fin.succAboveCases i ?_ (fun m ↦ ?_) j
+    · simp [τ]
+    · fin_cases m <;> simp [τ, -Fin.reduceLast, Fin.succAbove_last]
+  rcases hxy with hx | hy
+  · exact ⟨τ, x, y, hx, rfl, by rwa [aeval_rename, hτ], hsmσ τ⟩
+  · -- Swap the first two coordinates as well, to put the transcendental `y` first.
+    have hs : ![y, x, (1 : F)] ∘ Equiv.swap 0 1 = ![x, y, 1] := by
+      ext j
+      fin_cases j <;> simp [Equiv.swap_apply_of_ne_of_ne]
+    refine ⟨τ.trans (Equiv.swap 0 1), y, x, hy, by rw [Set.pair_comm], ?_, hsmσ _⟩
+    rwa [aeval_rename, Equiv.coe_trans, ← Function.comp_assoc, hs, hτ]
+
+/-- **The genus of a smooth projective plane curve, in any affine chart**: as
+`TauCeti.genus_eq_of_isHomogeneous`, for a point `(x, y)` of `G = 0` in the chart `Xᵢ = 1`, whose
+homogeneous coordinates are `x` and `y` in the remaining positions in increasing order and `1` at
+position `i`, and with either `x` or `y` transcendental. -/
+theorem genus_eq_of_isHomogeneous_of_aeval_insertNth_eq_zero (hG : G.IsHomogeneous d)
+    (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0) (i : Fin 3)
+    {x y : F} (hxy : Transcendental k x ∨ Transcendental k y) (hgen : k⟮x, y⟯ = ⊤)
+    (h : aeval (i.insertNth 1 ![x, y]) G = 0) :
+    genus k F = (d - 1) * (d - 2) / 2 := by
+  obtain ⟨σ, u, v, hu, huv, h', hsm'⟩ :=
+    exists_rename_aeval_eq_zero_of_aeval_insertNth_eq_zero hsm i hxy h
+  exact genus_eq_of_isHomogeneous hG.rename_isHomogeneous hsm' hu (huv.trans hgen) h'
+
+/-- **The constant field of a smooth projective plane curve, in any affine chart**: as
+`TauCeti.isIntegrallyClosedIn_of_isHomogeneous`, for a point `(x, y)` of `G = 0` in the chart
+`Xᵢ = 1`, whose homogeneous coordinates are `x` and `y` in the remaining positions in increasing
+order and `1` at position `i`, and with either `x` or `y` transcendental. -/
+theorem isIntegrallyClosedIn_of_isHomogeneous_of_aeval_insertNth_eq_zero (hG : G.IsHomogeneous d)
+    (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0) (i : Fin 3)
+    {x y : F} (hxy : Transcendental k x ∨ Transcendental k y) (hgen : k⟮x, y⟯ = ⊤)
+    (h : aeval (i.insertNth 1 ![x, y]) G = 0) :
+    IsIntegrallyClosedIn k F := by
+  obtain ⟨σ, u, v, hu, huv, h', hsm'⟩ :=
+    exists_rename_aeval_eq_zero_of_aeval_insertNth_eq_zero hsm i hxy h
+  exact isIntegrallyClosedIn_of_isHomogeneous hG.rename_isHomogeneous hsm' hu (huv.trans hgen) h'
 
 /-- The genus of a smooth projective plane curve of positive degree `d`, doubled, as an integer:
 `2g = (d - 1)(d - 2)`. -/

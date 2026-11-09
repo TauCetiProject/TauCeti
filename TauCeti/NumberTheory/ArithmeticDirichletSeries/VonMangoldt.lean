@@ -16,6 +16,11 @@ The von Mangoldt function of a nonzero ideal `A` of the ring of integers of a nu
 packages that function as an `IdealArithmeticFunction` and defines its pointwise product with an
 ideal arithmetic function.
 
+This is the algebraic part of the logarithmic-derivative identity for ideal Dirichlet series: it
+supplies the coefficient and its exact prime-power support. The identity itself needs Euler
+products, and is proved in
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/EulerProduct/Logarithm/VonMangoldtCoeff.lean`.
+
 ## Main definitions
 
 * `TauCeti.IdealArithmeticFunction.vonMangoldt` is the complex-valued ideal von Mangoldt
@@ -43,13 +48,6 @@ This is the ideal analogue of Mathlib's `ArithmeticFunction.vonMangoldt`.  Here 
 chosen from `IsPrimePow` rather than computed by `Nat.minFac`, its logarithmic weight is
 `Ideal.absNorm P` rather than `p`, and the function is complex-valued to match
 `IdealArithmeticFunction`.
-
-## Roadmap role
-
-This is the algebraic part of Layer **2.3** of
-`TauCetiRoadmap/ArithmeticDirichletSeries/README.md`.  The logarithmic-derivative identity named in
-that target additionally requires the Euler-product package of Layer 3; this file supplies its
-coefficient and exact prime-power support in advance.
 
 ## References
 

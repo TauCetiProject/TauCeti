@@ -105,7 +105,7 @@ theorem isSmoothForm_circleAngularForm : IsSmoothForm (𝓡 1) ∞ circleAngular
 /-- The angular form `dθ` as a smooth closed form on the circle. It is closed because the circle
 is `1`-dimensional. -/
 def circleAngularClosedForm : closedForms (𝓡 1) Circle 1 :=
-  ⟨⟨circleAngularForm, isSmoothForm_circleAngularForm.mem_smoothForms⟩,
+  ⟨⟨circleAngularForm, isSmoothForm_circleAngularForm.mem_smoothBundleForms⟩,
     mem_closedForms_of_finrank_le (𝓡 1) (by simp) _⟩
 
 /-- The underlying rough form of `circleAngularClosedForm` is `circleAngularForm`. -/
@@ -291,8 +291,7 @@ private theorem image_circleParam :
       {Circle.exp (-Real.pi)}ᶜ := by
   have hsurj : Function.Surjective (EuclideanSpace.proj (𝕜 := ℝ) (0 : Fin 1)) := fun t ↦
     ⟨(EuclideanSpace.equiv (Fin 1) ℝ).symm (fun _ ↦ t), rfl⟩
-  have h := compl_circleExp_image_Icc (a := -Real.pi) (b := -Real.pi) le_rfl
-    (by linarith [Real.pi_pos])
+  have h := compl_circleExp_image_Icc (-Real.pi) (-Real.pi)
   rw [Set.Icc_self, Set.image_singleton, show -Real.pi + 2 * Real.pi = Real.pi by ring] at h
   -- The parametrization factors through the coordinate projection, which is surjective.
   rw [h, show (fun z : EuclideanSpace ℝ (Fin 1) ↦ Circle.exp (z 0)) =
@@ -327,13 +326,15 @@ theorem integralTopForm_circleOrientation_circleAngularForm :
   have hD : MeasurableSet ((EuclideanSpace.proj (𝕜 := ℝ) (0 : Fin 1)) ⁻¹'
       Set.Ioo (-Real.pi) Real.pi) :=
     measurableSet_Ioo.preimage (EuclideanSpace.proj (𝕜 := ℝ) 0).continuous.measurable
-  have h := integralTopForm_eq_oriented_parametrization l circleAngularForm
+  have h := integralTopForm_eq_oriented_parametrization l
+    (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis circleAngularForm
     (isSmoothForm_circleAngularForm.integrableTopForm hc
       (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis)
-    hD image_circleParam injOn_circleParam circleParamDerivEquiv
+    hD (Set.finite_singleton _) image_circleParam injOn_circleParam circleParamDerivEquiv
     (fun z _ ↦ hasMFDerivAt_circleParam z)
     (fun z _ ↦ by
       rw [← Manifold.Orientation.orientationAt_mk, hl, map_circleParamDerivEquiv_orientation])
+  rw [OrthonormalBasis.addHaar_eq_volume] at h
   rw [← hl, h.2, MeasureTheory.setIntegral_congr_fun hD fun z _ ↦
       circleAngularForm_apply_circleParamDerivEquiv z]
   rw [MeasureTheory.setIntegral_const, MeasureTheory.measureReal_def,

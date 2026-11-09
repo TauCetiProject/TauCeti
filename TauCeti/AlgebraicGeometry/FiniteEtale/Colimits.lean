@@ -35,6 +35,8 @@ has coordinate algebra the limit of the action diagram, the subalgebra of invari
 * `HasColimitsOfShape (SingleObj M) (FiniteEtaleScheme (Spec R))` for a finite monoid `M` in any
   universe: quotients of finite étale schemes over an affine base by finite monoid actions, in
   particular by finite group actions.
+* `PreservesColimitsOfShape (SingleObj M) ((finiteEtaleSchemeProperty (Spec R)).ι ⋙ algΓ R)`:
+  global sections send these quotients to the invariants of the coordinate algebra.
 
 ## References
 
@@ -77,6 +79,15 @@ instance {M : Type*} [Monoid M] [Finite M] :
   obtain ⟨n, ⟨e⟩⟩ := Finite.exists_equiv_fin M
   let := e.symm.monoid
   exact hasColimitsOfShape_of_equivalence e.symm.mulEquiv.toSingleObjEquiv
+
+/-- **Quotients by finite monoids are computed on coordinate algebras.** The global-sections
+functor `algΓ R` sends the quotient of a finite étale `Spec R`-scheme by a finite monoid action to
+the limit of the action on its coordinate algebra, the subalgebra of invariants. -/
+instance {M : Type*} [Monoid M] [Finite M] :
+    PreservesColimitsOfShape (SingleObj M) ((finiteEtaleSchemeProperty (Spec R)).ι ⋙ algΓ R) := by
+  obtain ⟨n, ⟨e⟩⟩ := Finite.exists_equiv_fin M
+  let := e.symm.monoid
+  exact preservesColimitsOfShape_of_equiv e.symm.mulEquiv.toSingleObjEquiv _
 
 end FiniteEtaleScheme
 

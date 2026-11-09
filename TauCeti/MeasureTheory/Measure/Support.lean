@@ -8,14 +8,26 @@ module
 public import Mathlib.MeasureTheory.Measure.Support
 
 /-!
-# Topological support under continuous maps
+# Topological support under discrete spaces, restriction, scalar multiplication, and continuous maps
 
-This file identifies the support of a pushforward by a continuous map when the source measure has
-full support. It also shows that pushing a measure forward along a homeomorphism transports its
-topological support onto the image of the original support.
+This file characterizes support by singleton masses on discrete spaces, and identifies the support
+of restriction to an open set for a measure positive on nonempty open sets, the support of a
+nonzero scalar multiple of a measure, and the support of a pushforward by a continuous map. It also
+shows that pushing a measure forward along a homeomorphism transports its topological support onto
+the image of the original support.
 
 ## Main result
 
+* `MeasureTheory.Measure.mem_support_iff_measure_singleton_pos` — on a discrete space, support
+  membership is equivalent to positive singleton mass.
+* `MeasureTheory.Measure.support_eq_setOf_singleton_ne_zero` — on a discrete space, the support
+  consists exactly of the points with nonzero singleton mass.
+* `MeasureTheory.Measure.support_smul_measure` — multiplying a measure by a nonzero scalar
+  preserves its support.
+* `MeasureTheory.Measure.support_restrict_of_isOpen` — restricting a measure positive on
+  nonempty open sets to an open set gives support equal to that set's closure.
+* `MeasureTheory.Measure.support_map_eq_closure_image` — a continuous pushforward has support
+  equal to the closure of the image of the support, when the source support has full measure.
 * `MeasureTheory.Measure.support_map_eq_closure_range` — a continuous image of a full-support
   measure has support equal to the closure of the map's range.
 * `MeasureTheory.Measure.support_map_homeomorph` — the support of a pushforward by a homeomorphism
@@ -25,27 +37,74 @@ topological support onto the image of the original support.
 public section
 
 open Set
+open scoped ENNReal
 
 namespace MeasureTheory.Measure
 
+/-- On a discrete space, a point belongs to the support exactly when its singleton has
+positive mass. No compatibility between the measurable structure and topology is needed. -/
+@[simp]
+theorem mem_support_iff_measure_singleton_pos {X : Type*} [TopologicalSpace X]
+    [DiscreteTopology X] [MeasurableSpace X] {μ : Measure X} {x : X} :
+    x ∈ μ.support ↔ 0 < μ {x} := by
+  rw [mem_support_iff_forall]
+  exact ⟨fun h ↦ h _ (isOpen_discrete _ |>.mem_nhds (Set.mem_singleton x)),
+    fun h _ hU ↦ h.trans_le (measure_mono (Set.singleton_subset_iff.mpr (mem_of_mem_nhds hU)))⟩
+
+/-- On a discrete topological space, the support of a measure consists exactly of the points with
+nonzero singleton mass. -/
+theorem support_eq_setOf_singleton_ne_zero {X : Type*} [TopologicalSpace X]
+    [DiscreteTopology X] [MeasurableSpace X] (μ : Measure X) :
+    μ.support = {x | μ {x} ≠ 0} :=
+  Set.ext fun _ ↦ mem_support_iff_measure_singleton_pos.trans pos_iff_ne_zero
+
+/-- Multiplying a measure by a nonzero `ℝ≥0∞` scalar preserves its topological support. -/
+theorem support_smul_measure {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    (c : ℝ≥0∞) (μ : Measure X) (hc : c ≠ 0) :
+    (c • μ).support = μ.support := by
+  rw [support_eq_forall_isOpen, support_eq_forall_isOpen]
+  ext x
+  simp only [Set.mem_ofPred_eq, smul_apply, smul_eq_mul]
+  constructor <;> intro h U hxU hU
+  · exact (ENNReal.mul_pos_iff.mp (h U hxU hU)).2
+  · exact ENNReal.mul_pos_iff.mpr ⟨pos_iff_ne_zero.mpr hc, h U hxU hU⟩
+
+/-- Restricting a measure positive on nonempty open sets to an open set gives support equal
+to the closure of that set. -/
+@[simp]
+theorem support_restrict_of_isOpen {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] (μ : Measure X) [μ.IsOpenPosMeasure]
+    {s : Set X} (hs : IsOpen s) : (μ.restrict s).support = closure s := by
+  refine Set.Subset.antisymm (support_restrict_subset.trans inter_subset_left) ?_
+  apply closure_minimal _ isClosed_support
+  simpa only [hs.interior_eq, support_eq_univ, inter_univ] using
+    (interior_inter_support (μ := μ) (s := s))
+
 variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [BorelSpace X]
   [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+
+/-- The support of a continuous pushforward is the closure of the image of the support,
+provided that the source support has full measure. -/
+theorem support_map_eq_closure_image (μ : Measure X) (hμ : μ.support ∈ ae μ)
+    {f : X → Y} (hf : Continuous f) :
+    (μ.map f).support = closure (f '' μ.support) := by
+  apply Set.Subset.antisymm
+  · apply support_subset_of_isClosed isClosed_closure
+    exact (ae_map_iff hf.measurable.aemeasurable isClosed_closure.measurableSet).2 <|
+      (Filter.eventually_mem_set.mpr hμ).mono fun x hx ↦ subset_closure (mem_image_of_mem f hx)
+  · refine closure_minimal ?_ isClosed_support
+    rintro _ ⟨x, hx, rfl⟩
+    rw [support_eq_forall_isOpen]
+    intro U hxU hU
+    rw [Measure.map_apply hf.measurable hU.measurableSet]
+    exact (mem_support_iff_forall x).mp hx (f ⁻¹' U)
+      ((hU.preimage hf).mem_nhds hxU)
 
 /-- The support of the pushforward of a full-support measure by a continuous map is the closure of
 the map's range. No injectivity, surjectivity, or properness hypothesis is needed. -/
 theorem support_map_eq_closure_range (μ : Measure X) {f : X → Y} (hμ : μ.support = Set.univ)
     (hf : Continuous f) : (μ.map f).support = closure (Set.range f) := by
-  apply Set.Subset.antisymm
-  · apply support_subset_of_isClosed isClosed_closure
-    exact (ae_map_iff hf.measurable.aemeasurable isClosed_closure.measurableSet).2 <|
-      ae_of_all _ fun x ↦ subset_closure (Set.mem_range_self x)
-  · rw [support_eq_forall_isOpen]
-    intro y hy U hyU hU
-    obtain ⟨z, hzx, ⟨x, rfl⟩⟩ := mem_closure_iff.mp hy U hU hyU
-    rw [Measure.map_apply hf.measurable hU.measurableSet]
-    have hx : x ∈ μ.support := by simp [hμ]
-    exact (mem_support_iff_forall x).mp hx (f ⁻¹' U)
-      ((hU.preimage hf).mem_nhds hzx)
+  rw [support_map_eq_closure_image μ (by simp [hμ]) hf, hμ, image_univ]
 
 /-- A homeomorphism carries the support of a measure onto the support of its pushforward. -/
 theorem support_map_homeomorph (μ : Measure X) (e : X ≃ₜ Y) :

@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Module.Equiv.Opposite
 public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Combinatorics.Quiver.PathWeight
+public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.LinearAlgebra.Graded.ExtendByZero
 public import TauCeti.RepresentationTheory.Quiver.Radical
 
@@ -61,6 +62,8 @@ algebra and equips it with a differential, neither of which is part of `gradeBy`
   `TauCeti.PathAlgebra.ofArrow_mem_gradeBy_iff` and
   `TauCeti.PathAlgebra.vertexIdempotent_mem_gradeBy_iff` read off the degree of an arrow and of a
   vertex idempotent.
+* `TauCeti.PathAlgebra.koszulTwist_vertexIdempotent`: the Koszul twist of the grading by an
+  integer arrow weight fixes the vertex idempotents.
 * `TauCeti.PathAlgebra.gradedAlgebra`: **the path-length grading**, the `GradedAlgebra` instance
   on `TauCeti.PathAlgebra.grade`, with `TauCeti.PathAlgebra.grade_mul_grade_le` and
   `TauCeti.PathAlgebra.isInternal_grade` its two halves.
@@ -145,6 +148,16 @@ theorem mem_gradeBy_iff {m : M} {f : pathAlgebra k Q} :
       ∀ x ∈ ((pathAlgebraBasis k Q).repr f).support, x.2.2.addWeight wt = m := by
   rw [gradeBy_eq_span_image_basis, Module.Basis.mem_span_image]
   exact ⟨fun h _ hx => h hx, fun h _ hx => h _ hx⟩
+
+/-- A nonzero element homogeneous for two arrow weights has a path carrying both weights. -/
+theorem exists_path_of_ne_zero_mem_gradeBy_inf {M' : Type*} [AddMonoid M']
+    {wt' : ∀ {a b : Q}, (a ⟶ b) → M'} {m : M} {n : M'} {f : pathAlgebra k Q}
+    (hf : f ≠ 0) (hmem : f ∈ gradeBy k wt m ⊓ gradeBy k wt' n) :
+    ∃ x : Quiver.TotalPath Q, x.2.2.addWeight wt = m ∧ x.2.2.addWeight wt' = n := by
+  classical
+  obtain ⟨x, hx⟩ := Finsupp.support_nonempty_iff.mpr
+    (fun h => hf ((pathAlgebraBasis k Q).repr.map_eq_zero_iff.mp h))
+  exact ⟨x, mem_gradeBy_iff.mp hmem.1 x hx, mem_gradeBy_iff.mp hmem.2 x hx⟩
 
 variable (wt) in
 /-- A basis path is homogeneous of its own weight. -/
@@ -433,6 +446,22 @@ theorem isHomogeneous_gradeBy_gradeBy {M' : Type*} [AddMonoid M']
     exact Submodule.smul_mem _ r hy
 
 end GradedAlgebra
+
+section KoszulTwist
+
+variable {k : Type w} {Q : Type u} [CommRing k] [Quiver.{v} Q] [Finite Q]
+  {wt : ∀ {a b : Q}, (a ⟶ b) → ℤ}
+
+/-- The Koszul twist `x ↦ (-1) ^ (q |x|) x` of the grading by an integer arrow weight fixes the
+vertex idempotents, which have degree zero. -/
+@[simp]
+theorem koszulTwist_vertexIdempotent (q : ℤ) (v : Q) :
+    (InternalGrading.ofDecomposition (gradeBy k wt)).koszulTwist q (vertexIdempotent k v) =
+      vertexIdempotent k v :=
+  InternalGrading.koszulTwist_apply_of_mem_zero _
+    (by rw [InternalGrading.ofDecomposition_piece]; exact vertexIdempotent_mem_gradeBy_zero wt v) q
+
+end KoszulTwist
 
 /-! ### The path-length grading -/
 

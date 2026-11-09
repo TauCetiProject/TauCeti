@@ -8,29 +8,32 @@ module
 public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 
 /-!
-# Pushing the base of a composition-product along a map the kernel factors through
+# Operations on the base of a composition-product
 
 Mathlib's `MeasureTheory.Measure.compProd` records how `μ ⊗ₘ κ` reacts to operations on the
 kernel, but not what happens when the *base* measure is pushed forward. In general nothing does:
 `(μ ⊗ₘ κ).map (Prod.map f id)` cannot be read off `μ.map f`, because `κ` still sees the finer
-information carried by the points of the source. The one case in which it can is exactly the case
-in which `κ` itself factors through `f`, and that case is the content of this file.
+information carried by the points of the source. It can when `κ` itself factors through `f`, and
+that case is the main content of this file. It is the base-side counterpart of Mathlib's
+`MeasureTheory.Measure.compProd_map`, which pushes the kernel side forward instead.
+
+Restricting the base, by contrast, always commutes with the composition-product.
 
 ## Main statements
 
-* `TauCeti.Measure.map_prodMap_compProd_comap` — for `f : W → Y` measurable and `κ : Kernel Y Z`,
-  `(μ ⊗ₘ κ.comap f hf).map (Prod.map f id) = μ.map f ⊗ₘ κ`.
+* `MeasureTheory.Measure.map_prodMap_compProd_comap` — for `f : W → Y` measurable and
+  `κ : Kernel Y Z`, `(μ ⊗ₘ κ.comap f hf).map (Prod.map f id) = μ.map f ⊗ₘ κ`.
+* `MeasureTheory.Measure.compProd_restrict_left` — restricting the base to `s` restricts the
+  composition-product to `s ×ˢ univ`.
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory
+open ProbabilityTheory
 
-namespace TauCeti
-
-namespace Measure
+namespace MeasureTheory.Measure
 
 variable {W Y Z : Type*} [MeasurableSpace W] [MeasurableSpace Y] [MeasurableSpace Z]
 
@@ -45,14 +48,16 @@ theorem map_prodMap_compProd_comap (μ : Measure W) [SFinite μ] (κ : Kernel Y 
     (μ ⊗ₘ κ.comap f hf).map (Prod.map f id) = μ.map f ⊗ₘ κ := by
   have hmap : Measurable (Prod.map f (id : Z → Z)) := hf.prodMap measurable_id
   ext s hs
-  rw [MeasureTheory.Measure.map_apply hmap hs,
-    MeasureTheory.Measure.compProd_apply (hs.preimage hmap),
-    MeasureTheory.Measure.compProd_apply hs,
+  rw [map_apply hmap hs, compProd_apply (hs.preimage hmap), compProd_apply hs,
     lintegral_map (Kernel.measurable_kernel_prodMk_left hs) hf]
-  refine lintegral_congr fun w ↦ ?_
-  rw [Kernel.comap_apply]
-  rfl
+  simp [Set.preimage_preimage]
 
-end Measure
+/-- Restricting the base of a composition-product to `s` restricts the product to `s ×ˢ univ`.
+This is the measure counterpart of Mathlib's `ProbabilityTheory.Kernel.compProd_restrict_left`. -/
+theorem compProd_restrict_left (μ : Measure W) [SFinite μ] (κ : Kernel W Z) [IsSFiniteKernel κ]
+    {s : Set W} (hs : MeasurableSet s) :
+    μ.restrict s ⊗ₘ κ = (μ ⊗ₘ κ).restrict (s ×ˢ Set.univ) := by
+  rw [compProd, compProd, ← Kernel.restrict_const hs, ← Kernel.restrict_apply _ (hs.prod .univ),
+    Kernel.compProd_restrict_left]
 
-end TauCeti
+end MeasureTheory.Measure

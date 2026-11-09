@@ -38,7 +38,7 @@ radius the Krull dimension of the restricted series ring is at least `dim R + 1`
 ## Main results
 
 * `TauCeti.PowerSeries.norm_eq_gaussNorm`: the norm of a restricted series is its Gauss norm.
-* `TauCeti.PowerSeries.norm_le_iff`: the norm is bounded by `r ≥ 0` exactly when every weighted
+* `TauCeti.PowerSeries.norm_le_iff`: the norm is bounded by `r` exactly when every weighted
   coefficient norm `‖aₙ‖ cⁿ` is.
 * `TauCeti.PowerSeries.tendsto_trunc_atTop`: polynomial truncations converge in the Gauss norm.
 * `TauCeti.PowerSeries.norm_C`, `TauCeti.PowerSeries.norm_X`: constants keep their norm, and the
@@ -47,6 +47,9 @@ radius the Krull dimension of the restricted series ring is at least `dim R + 1`
   `TauCeti.PowerSeries.gaussValuation`.
 * `TauCeti.PowerSeries.ringKrullDim_succ_le_ringKrullDim_isRestricted_subring`: adjoining a
   restricted variable, at any radius, raises the Krull dimension by at least one.
+* `PowerSeries.isRestricted_map_of_abs_lt_one` and `TauCeti.PowerSeries.isUnit_mk_map`: series
+  with coefficients mapped into the closed unit ball are restricted inside the unit disc, and
+  units of `O⟦X⟧` map to units of every ring of series restricted there.
 * Instances: `NormedRing`, `NormedCommRing`, `IsUltrametricDist`, `NormOneClass`,
   `NormMulClass` and `CompleteSpace` on `PowerSeries.IsRestricted.subring c`.
 
@@ -90,13 +93,13 @@ theorem norm_coeff_mul_pow_le (f : PowerSeries.IsRestricted.subring (R := R) c) 
     ‖(f : PowerSeries R).coeff n‖ * c ^ n ≤ ‖f‖ :=
   PowerSeries.le_gaussNorm norm c _ (hasGaussNorm_of_isRestricted f.2) n
 
-/-- The norm of a restricted series is bounded by a nonnegative `r` exactly when every weighted
-coefficient norm `‖aₙ‖ cⁿ` is. -/
-theorem norm_le_iff {f : PowerSeries.IsRestricted.subring (R := R) c} {r : ℝ} (hr : 0 ≤ r) :
+/-- The norm of a restricted series is bounded by `r` exactly when every weighted coefficient norm
+`‖aₙ‖ cⁿ` is. -/
+theorem norm_le_iff {f : PowerSeries.IsRestricted.subring (R := R) c} {r : ℝ} :
     ‖f‖ ≤ r ↔ ∀ n, ‖(f : PowerSeries R).coeff n‖ * c ^ n ≤ r := by
   refine ⟨fun h n ↦ (norm_coeff_mul_pow_le f n).trans h, fun h ↦ ?_⟩
   rw [norm_eq_gaussNorm, PowerSeries.gaussNorm_eq]
-  exact Real.iSup_le h hr
+  exact Real.iSup_le h <| (norm_nonneg _).trans (by simpa using h 0)
 
 /-- A constant series has the norm of its coefficient. -/
 @[simp]
@@ -141,7 +144,7 @@ theorem tendsto_trunc_atTop (f : PowerSeries.IsRestricted.subring (R := R) c) :
       (gt_mem_nhds (half_pos hε)))
   refine ⟨N, fun n hn ↦ ?_⟩
   rw [dist_eq_norm]
-  refine lt_of_le_of_lt ((norm_le_iff (half_pos hε).le).mpr fun m ↦ ?_) (half_lt_self hε)
+  refine lt_of_le_of_lt (norm_le_iff.mpr fun m ↦ ?_) (half_lt_self hε)
   simp only [AddSubgroupClass.coe_sub, map_sub, Polynomial.coeff_coe, PowerSeries.coeff_trunc]
   split_ifs with hm
   · simp only [sub_self, norm_zero, zero_mul]
@@ -203,6 +206,32 @@ theorem continuous_restrictedRadiusHom [Fact (0 < r)] [Fact (0 < s)] :
 
 end Radius
 
+section Map
+
+variable {O R : Type*} [Semiring O] [NormedRing R] {φ : O →+* R}
+
+/-- A series whose coefficients map into the closed unit ball of a normed ring is restricted at
+every radius of absolute value less than one. -/
+theorem _root_.PowerSeries.isRestricted_map_of_abs_lt_one (hφ : ∀ x, ‖φ x‖ ≤ 1)
+    (g : PowerSeries O) {r : ℝ} (hr : |r| < 1) :
+    (g.map φ).IsRestricted r :=
+  _root_.PowerSeries.HasGaussNorm.isRestricted_of_abs_lt
+    ⟨1, Set.forall_mem_range.mpr fun n ↦ by simpa using hφ (g.coeff n)⟩ hr
+
+/-- **A formal unit is a unit of every ring of series restricted inside the unit disc.** If `φ`
+maps into the closed unit ball, the image of a unit `u` of `O⟦X⟧` is a unit of the ring of series
+restricted at any radius of absolute value less than one, with inverse the image of `u⁻¹`. -/
+theorem isUnit_mk_map [IsUltrametricDist R] (hφ : ∀ x, ‖φ x‖ ≤ 1) {u : _root_.PowerSeries O}
+    (hu : IsUnit u) {r : ℝ} (hr : |r| < 1) :
+    IsUnit (⟨u.map φ, u.isRestricted_map_of_abs_lt_one hφ hr⟩ :
+      _root_.PowerSeries.IsRestricted.subring (R := R) r) := by
+  obtain ⟨u, rfl⟩ := hu
+  exact ⟨⟨⟨_, _root_.PowerSeries.isRestricted_map_of_abs_lt_one hφ _ hr⟩,
+    ⟨_, _root_.PowerSeries.isRestricted_map_of_abs_lt_one hφ (↑u⁻¹ : _root_.PowerSeries O) hr⟩,
+    Subtype.ext (by simp [← map_mul]), Subtype.ext (by simp [← map_mul])⟩, rfl⟩
+
+end Map
+
 section NormedCommRing
 
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] (c : ℝ) [Fact (0 < c)]
@@ -212,6 +241,36 @@ noncomputable instance instNormedCommRingIsRestrictedSubring :
     NormedCommRing (PowerSeries.IsRestricted.subring (R := R) c) :=
   inferInstanceAs (NormedCommRing
     (MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Unit ↦ c)))
+
+/-- Coefficients act boundedly on the restricted algebra with its Gauss norm. -/
+instance : IsBoundedSMul R (PowerSeries.IsRestricted.subring (R := R) c) :=
+  IsBoundedSMul.of_norm_smul_le fun a f ↦ by
+    have ha : algebraMap R (PowerSeries.IsRestricted.subring (R := R) c) a =
+        ⟨PowerSeries.C a, PowerSeries.isRestricted_C c a⟩ :=
+      Subtype.ext (MvPowerSeries.coe_algebraMap_isRestrictedSubring a)
+    simpa only [Algebra.smul_def, ha, norm_C] using
+      norm_mul_le (algebraMap R (PowerSeries.IsRestricted.subring (R := R) c) a) f
+
+variable {c} in
+/-- In the Gauss norm at a radius `c > 0`, the linear polynomial `a + d X` has weighted norm at
+most `M` once both `‖a‖` and `‖d‖ c` do. -/
+theorem norm_polynomialToRestricted_C_add_X_mul_C_mul_le {a d : R} {w M : ℝ}
+    (ha : ‖a‖ * w ≤ M) (hd : ‖d‖ * c * w ≤ M) :
+    ‖polynomialToRestricted c (Polynomial.C a + Polynomial.X * Polynomial.C d)‖ * w ≤ M := by
+  rcases le_or_gt w 0 with hw | hw
+  · have h0 := norm_coeff_mul_pow_le
+      (polynomialToRestricted c (Polynomial.C a + Polynomial.X * Polynomial.C d)) 0
+    simp only [coe_polynomialToRestricted, Polynomial.coeff_coe, pow_zero, mul_one,
+      Polynomial.coeff_add, Polynomial.coeff_C_zero, Polynomial.coeff_X_mul_zero, add_zero] at h0
+    exact (mul_le_mul_of_nonpos_right h0 hw).trans ha
+  have hM : 0 ≤ M := (mul_nonneg (norm_nonneg _) hw.le).trans ha
+  rw [← le_div_iff₀ hw, norm_le_iff]
+  intro i
+  rw [le_div_iff₀ hw]
+  rcases i with _ | _ | i
+  · simpa using ha
+  · simpa [mul_right_comm] using hd
+  · simpa [Polynomial.coeff_C, Polynomial.coeff_X_mul] using hM
 
 end NormedCommRing
 

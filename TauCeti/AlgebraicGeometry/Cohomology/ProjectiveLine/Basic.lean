@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.Genus
 public import TauCeti.AlgebraicGeometry.Cohomology.MayerVietoris
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
+public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Vanishing
 public import TauCeti.AlgebraicGeometry.Cohomology.SectionsQuotient.Linear
 public import TauCeti.AlgebraicGeometry.Cohomology.Trivial
 public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
@@ -65,8 +66,6 @@ All in the namespace `TauCeti.AlgebraicGeometry.projectiveLine`:
 * `bijective_baseRingToGlobalSections`: the global functions on `ℙ¹_R` are the constants `R`.
 * `cohomologyZeroTrivialLinearEquiv`: `H⁰(ℙ¹_R, 𝒪) ≃ₗ[R] R`.
 * `subsingleton_cohomology_one_trivial`: `H¹(ℙ¹_R, 𝒪) = 0` over any ring.
-* `subsingleton_cohomology_of_two_le`: `Hⁿ(ℙ¹_R, M) = 0` for `n ≥ 2` and `M` quasi-coherent, over
-  any ring.
 * `finite_cohomology_zero`, `finite_cohomology_one`: `H⁰(ℙ¹_R, M)` and `H¹(ℙ¹_R, M)` are finitely
   generated `R`-modules for `M` quasi-coherent of finite type, over a Noetherian ring for `H⁰` and
   over any ring for `H¹`.
@@ -358,16 +357,6 @@ instance subsingleton_cohomology_one_trivial :
     exact QuotientAddGroup.subsingleton_quotient_top
   exact (sectionsQuotientEquivCohomologyOne M _ _ (basicOpen_coord_sup_eq_top R) (hacyclic 0)
     (hacyclic 1)).symm.toEquiv.subsingleton
-
-/-- **Vanishing above dimension one**: over any ring, a quasi-coherent sheaf on the projective
-line has no cohomology in degrees at least two. -/
-theorem subsingleton_cohomology_of_two_le (M : (projectiveLine R).Modules)
-    [M.IsQuasicoherent] (n : ℕ) (hn : 2 ≤ n) : Subsingleton (Cohomology M n) :=
-  subsingleton_cohomology_of_two_le_of_isAffineOpen M
-    (Proj.isAffineOpen_basicOpen 𝒜 _ (coord_mem R 0) one_pos)
-    (Proj.isAffineOpen_basicOpen 𝒜 _ (coord_mem R 1) one_pos)
-    (Proj.basicOpen_mul 𝒜 _ _ ▸ Proj.isAffineOpen_basicOpen 𝒜 _ (coord_mul_coord_mem R) two_pos)
-    (basicOpen_coord_sup_eq_top R) n hn
 
 /-- The structure map from `R` to the global functions on the projective line is bijective, as
 the algebra map of the `R`-algebra structure given by `Scheme.baseRingToStructurePresheaf`. -/
@@ -757,7 +746,7 @@ instance finite_cohomology [IsNoetherianRing R] (M : (projectiveLine R).Modules)
   rcases n with _ | _ | n
   · exact finite_cohomology_zero R M
   · exact finite_cohomology_one R M
-  · have := subsingleton_cohomology_of_two_le R M (n + 2) (by omega)
+  · have := (Pi.basisFun R (Fin 2)).subsingleton_cohomology_proj_of_card_le M (n + 2) (by simp)
     infer_instance
 
 variable (k : Type u) [Field k]

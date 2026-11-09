@@ -78,7 +78,7 @@ theorem repr_integralDividedPower_eq_zero_of_not_lt
           (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M n
           (fun _ hv ↦ dividedPower_apply_mem_of_kostantForm_apply_mem
             e h ρ hM i n hv) (b s)) r = 0 := by
-  apply repr_eq_zero_of_isCartanWeightVector e h ρ M hM b wt hwt
+  apply repr_eq_zero_of_isCartanWeightVector h ρ M b wt hwt
   · rw [coe_integralDividedPower_apply]
     exact IsCartanWeightVector.integralDividedPower e hα (hwt s) n
   · exact fun heq ↦ hrs (horder hn heq)

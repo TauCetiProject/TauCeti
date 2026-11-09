@@ -18,7 +18,8 @@ import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 This file identifies the generic covariance matrix from
 `TauCeti.Probability.Moments.Covariance` with the covariance parameter of Mathlib's multivariate
 Gaussian, and records the centred multivariate Gaussian as the image of the standard Gaussian
-under the square root of its matrix parameter. It also records covariance under matrix-valued
+under the square root of its matrix parameter. It also records measurability of Gaussian laws
+with covariance scaled by a precision parameter, covariance under matrix-valued
 linear maps and characterizes independence of complementary coordinate blocks.
 
 ## Main results
@@ -33,6 +34,8 @@ linear maps and characterizes independence of complementary coordinate blocks.
   of the standard Gaussian.
 * `TauCeti.Probability.multivariateGaussian_zero_right` identifies the zero-covariance law with
   the point mass at its mean.
+* `TauCeti.Probability.measurable_multivariateGaussian_inv_smul` shows that the family
+  `τ ↦ N(m, τ⁻¹ • S)` is measurable in the precision `τ`.
 * `TauCeti.Probability.covariance_inner_matrix_multivariateGaussian` computes covariance after two
   matrix
   maps.
@@ -67,6 +70,14 @@ theorem covMatrix_multivariateGaussian [Fintype ι] [DecidableEq ι] (m : Euclid
   ext i j
   simpa only [covMatrix_apply] using covariance_eval_multivariateGaussian hS i j
 
+/-- Each coordinate of a multivariate Gaussian has as mean the corresponding coordinate of the
+mean parameter. No hypothesis on the covariance parameter is needed. -/
+@[simp]
+theorem integral_eval_multivariateGaussian [Fintype ι] [DecidableEq ι] (m : EuclideanSpace ℝ ι)
+    (S : Matrix ι ι ℝ) (i : ι) : ∫ x, x i ∂multivariateGaussian m S = m i := by
+  simpa using (EuclideanSpace.proj (𝕜 := ℝ) i).integral_comp_comm
+    (IsGaussian.integrable_id (μ := multivariateGaussian m S))
+
 /-- The Bochner mean of a random variable with a multivariate Gaussian law is its Gaussian mean. -/
 theorem integral_of_hasLaw_multivariateGaussian [Fintype ι] [DecidableEq ι]
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
@@ -89,6 +100,12 @@ theorem multivariateGaussian_zero_eq_map_stdGaussian_sqrt [Fintype ι] [Decidabl
 theorem multivariateGaussian_zero_right [Fintype ι] [DecidableEq ι] (m : EuclideanSpace ℝ ι) :
     multivariateGaussian m (0 : Matrix ι ι ℝ) = Measure.dirac m := by
   simp [multivariateGaussian]
+
+/-- The Gaussian family `τ ↦ N(m, τ⁻¹ • S)` is measurable in the precision `τ`. -/
+theorem measurable_multivariateGaussian_inv_smul [Fintype ι] [DecidableEq ι]
+    (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ) :
+    Measurable fun τ : ℝ => multivariateGaussian m (τ⁻¹ • S) :=
+  measurable_multivariateGaussian.comp (measurable_const.prodMk (by fun_prop))
 
 /-- The covariance of scalar inner-product projections after two matrix-valued linear maps of a
 multivariate Gaussian. -/
@@ -132,6 +149,92 @@ theorem covariance_inner_matrix_multivariateGaussian
           (S.mulVec (K.transpose.mulVec y.ofLp))).symm
   · exact IsGaussian.memLp_two_id
 
+/-- The pair of coordinate blocks of a multivariate Gaussian has a Gaussian law. -/
+private lemma hasGaussianLaw_sumEquivProd_multivariateGaussian
+    {κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
+    (m : EuclideanSpace ℝ (ι ⊕ κ)) (S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) :
+    HasGaussianLaw
+      (fun x => ((EuclideanSpace.sumEquivProd x).1, (EuclideanSpace.sumEquivProd x).2))
+      (multivariateGaussian m S) := by
+  refine ⟨by fun_prop, ?_⟩
+  -- Match the map field in the definition of `HasGaussianLaw`.
+  change IsGaussian ((multivariateGaussian m S).map
+    (EuclideanSpace.sumEquivProd : EuclideanSpace ℝ (ι ⊕ κ) →
+      EuclideanSpace ℝ ι × EuclideanSpace ℝ κ))
+  infer_instance
+
+/-- Independent coordinate blocks of a multivariate Gaussian have vanishing cross-covariance
+block. -/
+private lemma submatrix_eq_zero_of_indepFun_sumEquivProd_multivariateGaussian
+    {κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
+    (m : EuclideanSpace ℝ (ι ⊕ κ)) {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS : S.PosSemidef)
+    (h : IndepFun (fun x => (EuclideanSpace.sumEquivProd x).1)
+        (fun x => (EuclideanSpace.sumEquivProd x).2) (multivariateGaussian m S)) :
+    S.submatrix Sum.inl Sum.inr = 0 := by
+  have hpair := hasGaussianLaw_sumEquivProd_multivariateGaussian m S
+  ext i j
+  have hmeasurable_i : Measurable (fun x : EuclideanSpace ℝ ι => x.ofLp i) := by fun_prop
+  have hmeasurable_j : Measurable (fun x : EuclideanSpace ℝ κ => x.ofLp j) := by fun_prop
+  have hind := h.comp hmeasurable_i hmeasurable_j
+  have hi := hpair.fst.map_fun (EuclideanSpace.proj i)
+  have hj := hpair.snd.map_fun (EuclideanSpace.proj j)
+  have hmemi : MemLp
+      ((fun x : EuclideanSpace ℝ ι => x.ofLp i) ∘
+        fun x => (EuclideanSpace.sumEquivProd x).1) 2
+      (multivariateGaussian m S) := by
+    convert hi.memLp_two using 1
+    funext x
+    rfl
+  have hmemj : MemLp
+      ((fun x : EuclideanSpace ℝ κ => x.ofLp j) ∘
+        fun x => (EuclideanSpace.sumEquivProd x).2) 2
+      (multivariateGaussian m S) := by
+    convert hj.memLp_two using 1
+    funext x
+    rfl
+  have hcov := hind.covariance_eq_zero hmemi hmemj
+  have hentry := covariance_eval_multivariateGaussian (μ := m) hS (Sum.inl i) (Sum.inr j)
+  -- Unfold the submatrix entry selected by extensionality.
+  change S (Sum.inl i) (Sum.inr j) = 0
+  rw [← hentry]
+  have hfst : (fun x : EuclideanSpace ℝ (ι ⊕ κ) => x.ofLp (Sum.inl i)) =
+      (fun x : EuclideanSpace ℝ ι => x.ofLp i) ∘
+        fun x => (EuclideanSpace.sumEquivProd x).1 := by
+    funext x
+    rfl
+  have hsnd : (fun x : EuclideanSpace ℝ (ι ⊕ κ) => x.ofLp (Sum.inr j)) =
+      (fun x : EuclideanSpace ℝ κ => x.ofLp j) ∘
+        fun x => (EuclideanSpace.sumEquivProd x).2 := by
+    funext x
+    rfl
+  rw [hfst, hsnd]
+  exact hcov
+
+/-- Vanishing cross-covariance block makes the coordinate blocks of a multivariate Gaussian
+independent. -/
+private lemma indepFun_sumEquivProd_multivariateGaussian_of_submatrix_eq_zero
+    {κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
+    (m : EuclideanSpace ℝ (ι ⊕ κ)) {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS : S.PosSemidef)
+    (hzero : S.submatrix Sum.inl Sum.inr = 0) :
+    IndepFun (fun x => (EuclideanSpace.sumEquivProd x).1)
+        (fun x => (EuclideanSpace.sumEquivProd x).2) (multivariateGaussian m S) := by
+  have hpair := hasGaussianLaw_sumEquivProd_multivariateGaussian m S
+  have hpair_eval : HasGaussianLaw
+      (fun x => ((EuclideanSpace.sumEquivProd x).1.ofLp,
+        (EuclideanSpace.sumEquivProd x).2.ofLp)) (multivariateGaussian m S) :=
+    hpair.map_equiv_fun
+      ((EuclideanSpace.equiv ι ℝ).prodCongr (EuclideanSpace.equiv κ ℝ))
+  have hind_eval := hpair_eval.indepFun_of_covariance_eval fun i j => by
+    have hentry := covariance_eval_multivariateGaussian (μ := m) hS (Sum.inl i) (Sum.inr j)
+    -- The coordinate functions from `map_equiv_fun` reduce through `sumEquivProd` and
+    -- `EuclideanSpace.equiv` only definitionally; there is no named rewrite lemma exposing them.
+    change cov[fun x => x.ofLp (Sum.inl i), fun x => x.ofLp (Sum.inr j);
+      multivariateGaussian m S] = 0
+    rw [hentry]
+    exact congrFun (congrFun hzero i) j
+  convert hind_eval.comp (by fun_prop : Measurable (EuclideanSpace.equiv ι ℝ).symm)
+    (by fun_prop : Measurable (EuclideanSpace.equiv κ ℝ).symm) using 1 <;> ext x i <;> rfl
+
 /-- The two complementary coordinate blocks of a multivariate Gaussian with positive-semidefinite
 covariance are independent exactly when their cross-covariance block vanishes. -/
 theorem indepFun_sumEquivProd_multivariateGaussian_iff
@@ -140,70 +243,8 @@ theorem indepFun_sumEquivProd_multivariateGaussian_iff
     (hS : S.PosSemidef) :
     IndepFun (fun x => (EuclideanSpace.sumEquivProd x).1)
         (fun x => (EuclideanSpace.sumEquivProd x).2) (multivariateGaussian m S) ↔
-      S.submatrix Sum.inl Sum.inr = 0 := by
-  have hpair : HasGaussianLaw
-      (fun x => ((EuclideanSpace.sumEquivProd x).1, (EuclideanSpace.sumEquivProd x).2))
-      (multivariateGaussian m S) := by
-    refine ⟨by fun_prop, ?_⟩
-    -- Match the map field in the definition of `HasGaussianLaw`.
-    change IsGaussian ((multivariateGaussian m S).map
-      (EuclideanSpace.sumEquivProd : EuclideanSpace ℝ (ι ⊕ κ) →
-        EuclideanSpace ℝ ι × EuclideanSpace ℝ κ))
-    infer_instance
-  constructor
-  · intro h
-    ext i j
-    have hmeasurable_i : Measurable (fun x : EuclideanSpace ℝ ι => x.ofLp i) := by fun_prop
-    have hmeasurable_j : Measurable (fun x : EuclideanSpace ℝ κ => x.ofLp j) := by fun_prop
-    have hind := h.comp hmeasurable_i hmeasurable_j
-    have hi := hpair.fst.map_fun (EuclideanSpace.proj i)
-    have hj := hpair.snd.map_fun (EuclideanSpace.proj j)
-    have hmemi : MemLp
-        ((fun x : EuclideanSpace ℝ ι => x.ofLp i) ∘
-          fun x => (EuclideanSpace.sumEquivProd x).1) 2
-        (multivariateGaussian m S) := by
-      convert hi.memLp_two using 1
-      funext x
-      rfl
-    have hmemj : MemLp
-        ((fun x : EuclideanSpace ℝ κ => x.ofLp j) ∘
-          fun x => (EuclideanSpace.sumEquivProd x).2) 2
-        (multivariateGaussian m S) := by
-      convert hj.memLp_two using 1
-      funext x
-      rfl
-    have hcov := hind.covariance_eq_zero hmemi hmemj
-    have hentry := covariance_eval_multivariateGaussian (μ := m) hS (Sum.inl i) (Sum.inr j)
-    -- Unfold the submatrix entry selected by extensionality.
-    change S (Sum.inl i) (Sum.inr j) = 0
-    rw [← hentry]
-    have hfst : (fun x : EuclideanSpace ℝ (ι ⊕ κ) => x.ofLp (Sum.inl i)) =
-        (fun x : EuclideanSpace ℝ ι => x.ofLp i) ∘
-          fun x => (EuclideanSpace.sumEquivProd x).1 := by
-      funext x
-      rfl
-    have hsnd : (fun x : EuclideanSpace ℝ (ι ⊕ κ) => x.ofLp (Sum.inr j)) =
-        (fun x : EuclideanSpace ℝ κ => x.ofLp j) ∘
-          fun x => (EuclideanSpace.sumEquivProd x).2 := by
-      funext x
-      rfl
-    rw [hfst, hsnd]
-    exact hcov
-  · intro hzero
-    have hpair_eval : HasGaussianLaw
-        (fun x => ((EuclideanSpace.sumEquivProd x).1.ofLp,
-          (EuclideanSpace.sumEquivProd x).2.ofLp)) (multivariateGaussian m S) :=
-      hpair.map_equiv_fun
-        ((EuclideanSpace.equiv ι ℝ).prodCongr (EuclideanSpace.equiv κ ℝ))
-    have hind_eval := hpair_eval.indepFun_of_covariance_eval fun i j => by
-      have hentry := covariance_eval_multivariateGaussian (μ := m) hS (Sum.inl i) (Sum.inr j)
-      -- The coordinate functions from `map_equiv_fun` reduce through `sumEquivProd` and
-      -- `EuclideanSpace.equiv` only definitionally; there is no named rewrite lemma exposing them.
-      change cov[fun x => x.ofLp (Sum.inl i), fun x => x.ofLp (Sum.inr j);
-        multivariateGaussian m S] = 0
-      rw [hentry]
-      exact congrFun (congrFun hzero i) j
-    convert hind_eval.comp (by fun_prop : Measurable (EuclideanSpace.equiv ι ℝ).symm)
-      (by fun_prop : Measurable (EuclideanSpace.equiv κ ℝ).symm) using 1 <;> ext x i <;> rfl
+      S.submatrix Sum.inl Sum.inr = 0 :=
+  ⟨submatrix_eq_zero_of_indepFun_sumEquivProd_multivariateGaussian m hS,
+    indepFun_sumEquivProd_multivariateGaussian_of_submatrix_eq_zero m hS⟩
 
 end TauCeti.Probability

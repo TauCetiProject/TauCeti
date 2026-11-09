@@ -18,10 +18,14 @@ compatibility under linear equivalences.
 ## Main results
 
 * `Orientation.map_trans`: transport along a composite is the composite of the transports.
+* `Orientation.map_reindex`: transport along a linear equivalence commutes with reindexing.
 * `Orientation.map_eq_map_iff_det_mul_pos`: `f` and `g` transport `x` to the same orientation
   if and only if `0 < det f * det g`.
+* `Orientation.map_eq_map_of_det_pos`: two linear equivalences whose relative map has positive
+  determinant transport an orientation to the same orientation.
 * `Orientation.intCast_units_smul_eq_ite`: an integer unit acts by retention or reversal.
 * `Orientation.intCast_units_smul_injective`: the two signs give distinct orientations.
+* `Orientation.reindex_perm`: reindexing along a permutation multiplies by its sign.
 * `Orientation.map_units_smul_eq_iff_det_mul_pos`: the signed-Jacobian compatibility criterion.
 * `Orientation.intCast_units_smul_ite_eq`: the relative sign reconstructs an orientation.
 -/
@@ -43,6 +47,16 @@ theorem Orientation.map_trans (e : M ≃ₗ[R] N) (f : N ≃ₗ[R] P) (x : Orien
     Orientation.map ι (e.trans f) x = Orientation.map ι f (Orientation.map ι e x) := by
   induction x using Module.Ray.ind with | h v hv => rfl
 
+/-- Transporting an orientation along a linear equivalence commutes with reindexing its index
+type. -/
+theorem Orientation.map_reindex {ι' : Type*} (e : M ≃ₗ[R] N) (f : ι ≃ ι')
+    (x : Orientation R M ι) :
+    Orientation.map ι' e (Orientation.reindex R M f x) =
+      Orientation.reindex R N f (Orientation.map ι e x) := by
+  induction x using Module.Ray.ind with | h v hv =>
+    simp only [map_apply, reindex_apply]
+    congr 1
+
 end CommSemiring
 
 section CommRing
@@ -63,6 +77,17 @@ theorem Orientation.intCast_units_smul_injective [IsDomain R] (o : Orientation R
   rcases Int.units_eq_one_or u with rfl | rfl <;>
     rcases Int.units_eq_one_or v with rfl | rfl <;>
     simp_all [Module.Ray.ne_neg_self, (Module.Ray.ne_neg_self o).symm]
+
+/-- Reindexing an orientation along a permutation of its index type multiplies it by the sign of
+the permutation. -/
+theorem Orientation.reindex_perm [Fintype ι] [DecidableEq ι] (σ : Equiv.Perm ι)
+    (o : Orientation R M ι) :
+    Orientation.reindex R M σ o =
+      Units.map (Int.castRingHom R).toMonoidHom (Equiv.Perm.sign σ) • o := by
+  induction o using Module.Ray.ind with | h v hv =>
+    simp only [Orientation.reindex_apply, AlternatingMap.domDomCongr_perm, smul_rayOfNeZero,
+      Units.smul_def, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, eq_intCast,
+      Int.cast_smul_eq_zsmul]
 
 end CommRing
 
@@ -87,6 +112,15 @@ theorem Orientation.map_eq_map_iff_det_mul_pos [FiniteDimensional R M] (x : Orie
       div_eq_mul_inv, mul_comm]
   rw [htransport, map_eq_iff_det_pos _ _ h, hdet]
   exact div_pos_iff.trans mul_pos_iff.symm
+
+/-- Two linear equivalences `S` and `T` such that `S.trans T.symm` has positive determinant
+transport an orientation to the same orientation. -/
+theorem Orientation.map_eq_map_of_det_pos [FiniteDimensional R M] {N : Type*} [AddCommGroup N]
+    [Module R N] (x : Orientation R M ι) (S T : M ≃ₗ[R] N) (h : Fintype.card ι = finrank R M)
+    (hdet : 0 < LinearMap.det ((S.trans T.symm : M ≃ₗ[R] M) : M →ₗ[R] M)) :
+    Orientation.map ι S x = Orientation.map ι T x := by
+  have hfix := (map_eq_iff_det_pos x _ h).mpr hdet
+  rwa [map_trans, ← map_symm, Equiv.symm_apply_eq] at hfix
 
 /-- The signed Jacobian criterion for transporting orientations with arbitrary unit scalars. -/
 theorem Orientation.map_units_smul_eq_iff_det_mul_pos [FiniteDimensional R M]

@@ -75,5 +75,39 @@ else:sys.exit(2)
         self.assertEqual([c[2] for c in calls if c[:2]==['run','download']],['100'])
 
 
+class InspectTests(unittest.TestCase):
+    def test_inspect_preserves_checker_exit_status_and_only_uploads_written_checkpoints(self):
+        workflow = yaml.safe_load((ROOT/'.github/workflows/stack-policy.yml').read_text())
+        steps = workflow['jobs']['enforce']['steps']
+        inspect = next(s for s in steps if s.get('id') == 'inspect')
+        upload = next(s for s in steps if s.get('name') == 'Save batch progress')
+        self.assertIn("steps.inspect.outputs.checkpoint == 'true'", upload['if'])
+        for status, checkpoint in ((0, False), (0, True), (1, False), (1, True)):
+            with self.subTest(status=status, checkpoint=checkpoint), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                checker = root/'python3'
+                checker.write_text('#!/usr/bin/env bash\n' +
+                    ('touch "$RUNNER_TEMP/stack-policy-out/state.json"\n' if checkpoint else '') +
+                    f'exit {status}\n')
+                checker.chmod(0o700)
+                output = root/'outputs'
+                output.touch()
+                result = subprocess.run(['bash', '-c', inspect['run']], text=True, capture_output=True,
+                    env={**os.environ, 'PATH': str(root)+os.pathsep+os.environ['PATH'],
+                         'RUNNER_TEMP': str(root), 'GITHUB_OUTPUT': str(output),
+                         'GITHUB_EVENT_PATH': str(root/'event.json'), 'GITHUB_EVENT_NAME': 'schedule',
+                         'REQUESTED_PR': '0', 'APPLY_ENABLED': 'true', 'BATCH_ENABLED': 'true'})
+                self.assertEqual(result.returncode, status, result.stderr)
+                self.assertEqual(output.read_text(), 'checkpoint=true\n' if checkpoint else '')
+
+    def test_draft_changes_do_not_wake_policy_and_recovery_runs_every_six_hours(self):
+        for name, trigger in (('stack-policy.yml', 'pull_request_target'), ('stack-policy-wake.yml', 'pull_request')):
+            workflow = yaml.safe_load((ROOT/'.github/workflows'/name).read_text())
+            events = workflow.get('on', workflow.get(True))
+            self.assertEqual(events[trigger]['types'], ['opened', 'reopened', 'edited', 'synchronize'])
+            if name == 'stack-policy.yml':
+                self.assertEqual(events['schedule'], [{'cron': '10 */6 * * *'}])
+
+
 if __name__=='__main__':
     unittest.main()

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.Newforms.Hecke.Integral
-import TauCeti.RingTheory.Subring.Basic
+import TauCeti.Algebra.Algebra.Subalgebra.Lattice
 import Mathlib.Algebra.Algebra.RestrictScalars
 
 /-!
@@ -77,7 +77,7 @@ theorem heckeTDiamondCuspNewRationalAlgebra_le_iff
 theorem heckeTDiamondCuspNewRationalAlgebra_toSubmodule :
     Subalgebra.toSubmodule (heckeTDiamondCuspNewRationalAlgebra N k) =
       Submodule.span ℚ (heckeTDiamondCuspNewIntegralAlgebra N k : Set _) :=
-  Subring.toSubmodule_adjoin_coe (heckeTDiamondCuspNewIntegralAlgebra N k).toSubring
+  Algebra.adjoin_coe_eq_span ℚ (heckeTDiamondCuspNewIntegralAlgebra N k)
 
 /-- Each integral newspace Hecke operator belongs to the rational newspace Hecke algebra. -/
 theorem heckeTDiamondCuspNewIntegralAlgebra_le_rational :

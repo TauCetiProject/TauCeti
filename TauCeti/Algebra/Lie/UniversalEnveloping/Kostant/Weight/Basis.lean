@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+import TauCeti.Algebra.Module.Lattice
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
@@ -57,10 +58,18 @@ choice is confined to one weight space at a time.
 
 ## Main results
 
+* `TauCeti.UniversalEnvelopingAlgebra.map_mem_iSup_jointWeightSpace`: a morphism of Lie modules
+  maps the span of the integral joint weight spaces into that of its target.
 * `TauCeti.UniversalEnvelopingAlgebra.eq_zero_of_isCartanWeightVector_of_sum_eq_zero`: vectors of
   pairwise distinct integral weights are independent.
+* `TauCeti.UniversalEnvelopingAlgebra.IsCartanWeightVector.eq_zero_of_forall_ne`: in a space spanned
+  by weight vectors, a weight vector of any other weight is zero.
+* `TauCeti.UniversalEnvelopingAlgebra.isNilpotent_of_isCartanWeightVector`: on a space spanned by
+  finitely many weight vectors, a root vector with a nonzero root acts nilpotently.
 * `TauCeti.UniversalEnvelopingAlgebra.isInternal_weightSublattice`: a Kostant-stable subgroup lying
   in the span of the integral joint weight spaces is their internal direct sum.
+* `TauCeti.UniversalEnvelopingAlgebra.mem_range_kostantWeightFin_iff`: the weights recorded by the
+  numbered weight basis are exactly those whose weight sublattice is nonzero.
 
 ## References
 
@@ -100,6 +109,20 @@ theorem mem_jointWeightSpace_iff {μ : κ → ℤ} {x : V} :
     x ∈ jointWeightSpace h ρ μ ↔ IsCartanWeightVector h ρ μ x := by
   rw [jointWeightSpace, Submodule.mem_iInf, isCartanWeightVector_iff_mem_eigenspace]
 
+/-- **A morphism of Lie modules respects the integral weight spaces**: it maps a vector in the span
+of the integral joint weight spaces of `M` into the span of those of `N`. -/
+theorem map_mem_iSup_jointWeightSpace {M N : Type*} [AddCommGroup M] [Module ℚ M]
+    [LieRingModule L M] [LieModule ℚ L M] [AddCommGroup N] [Module ℚ N] [LieRingModule L N]
+    [LieModule ℚ L N] {m : M} (hm : m ∈ ⨆ μ : κ → ℤ, jointWeightSpace h (representation ℚ L M) μ)
+    (f : M →ₗ⁅ℚ,L⁆ N) : f m ∈ ⨆ μ : κ → ℤ, jointWeightSpace h (representation ℚ L N) μ := by
+  have hle : (⨆ μ : κ → ℤ, jointWeightSpace h (representation ℚ L M) μ).map
+      (f : M →ₗ[ℚ] N) ≤ ⨆ μ : κ → ℤ, jointWeightSpace h (representation ℚ L N) μ := by
+    rw [Submodule.map_iSup]
+    refine iSup_mono fun μ => Submodule.map_le_iff_le_comap.mpr fun v hv => ?_
+    rw [Submodule.mem_comap, mem_jointWeightSpace_iff]
+    exact ((mem_jointWeightSpace_iff h _).1 hv).map f
+  exact hle (Submodule.mem_map_of_mem hm)
+
 /-- The **weight sublattice** of weight `μ` of a subgroup `M ≤ V`: the part of `M` on which every
 designated Cartan vector `h j` acts by the scalar `μ j`. -/
 def weightSublattice (μ : κ → ℤ) : Submodule ℤ M :=
@@ -113,28 +136,97 @@ theorem mem_weightSublattice_iff {μ : κ → ℤ} {x : M} :
     mem_jointWeightSpace_iff]
   rfl
 
+/-- The weight slice of a subgroup spanning a rational representation spans the corresponding
+rational joint weight space. No stability or finite-generation assumption is needed. -/
+theorem span_weightSublattice_eq_jointWeightSpace (N : Submodule ℤ V)
+    (hN : Submodule.span ℚ (N : Set V) = ⊤) (μ : κ → ℤ) :
+    Submodule.span ℚ
+        ((fun x : N.toAddSubgroup => (x : V)) ''
+          (weightSublattice h ρ N.toAddSubgroup μ : Set N.toAddSubgroup)) =
+      jointWeightSpace h ρ μ := by
+  refine le_antisymm (Submodule.span_le.mpr ?_) ?_
+  · rintro _ ⟨x, hx, rfl⟩
+    exact (mem_jointWeightSpace_iff h ρ).mpr
+      ((mem_weightSublattice_iff h ρ N.toAddSubgroup).mp hx)
+  · intro x hx
+    obtain ⟨r, hr0, hrN⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ N hN x
+    have hrW : r • x ∈ jointWeightSpace h ρ μ :=
+      ((jointWeightSpace h ρ μ).restrictScalars ℤ).smul_mem r hx
+    have hrQ : (r : ℚ) ≠ 0 := Int.cast_ne_zero.mpr hr0
+    rw [← inv_smul_smul₀ hrQ x, Int.cast_smul_eq_zsmul]
+    exact Submodule.smul_mem _ _ (Submodule.subset_span
+      ⟨⟨r • x, hrN⟩, (mem_weightSublattice_iff h ρ N.toAddSubgroup).mpr
+        ((mem_jointWeightSpace_iff h ρ).mp hrW), rfl⟩)
+
 /-! ## Independence of weight vectors -/
+
+/-- **The joint weight spaces of distinct integral weights are independent.** This is generic
+independence of joint eigenspaces, restricted along the injective cast of integral weights. -/
+theorem iSupIndep_jointWeightSpace : iSupIndep (jointWeightSpace h ρ) := by
+  have hind' : iSupIndep fun μ : κ → ℚ =>
+      ⨅ j : κ, Module.End.eigenspace
+        (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j))) (μ j) :=
+    iSupIndep_iInf_eigenspace fun j =>
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j))
+  suffices iSupIndep (fun μ : κ → ℤ => jointWeightSpace h ρ μ) by simpa only
+  simpa only [jointWeightSpace, Function.comp_def] using
+    hind'.comp fun μ ν hμν => by
+      ext j
+      exact_mod_cast congr_fun hμν j
 
 /-- **Weight vectors of pairwise distinct weights are independent.** If a finite family of joint
 eigenvectors of the designated Cartan operators, indexed by pairwise distinct integral weights, sums
 to zero, then every member of the family is zero. -/
 theorem eq_zero_of_isCartanWeightVector_of_sum_eq_zero {s : Finset (κ → ℤ)} {w : (κ → ℤ) → V}
     (hw : ∀ l ∈ s, IsCartanWeightVector h ρ l (w l)) (hsum : ∑ l ∈ s, w l = 0)
-    {l₀ : κ → ℤ} (hl₀ : l₀ ∈ s) : w l₀ = 0 := by
-  -- Restrict generic joint-eigenspace independence along the injective cast of integral weights.
-  have hind : iSupIndep (jointWeightSpace h ρ) := by
-    have hind' : iSupIndep fun μ : κ → ℚ =>
-        ⨅ j : κ, Module.End.eigenspace
-          (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j))) (μ j) :=
-      iSupIndep_iInf_eigenspace fun j =>
-        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j))
-    suffices iSupIndep (fun μ : κ → ℤ => jointWeightSpace h ρ μ) by simpa only
-    simpa only [jointWeightSpace, Function.comp_def] using
-      hind'.comp fun μ ν hμν => by
-        ext j
-        exact_mod_cast congr_fun hμν j
-  exact (iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero _).1 hind s w
+    {l₀ : κ → ℤ} (hl₀ : l₀ ∈ s) : w l₀ = 0 :=
+  (iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero _).1 (iSupIndep_jointWeightSpace h ρ) s w
     (fun l hl => (mem_jointWeightSpace_iff h ρ).2 (hw l hl)) hsum l₀ hl₀
+
+variable {h ρ} in
+/-- **A weight vector of a weight missing from a spanning family of weight vectors is zero.** If
+`V` is spanned by weight vectors `b k` of weights `wt k`, then `V` is the sum of the joint weight
+spaces of the weights `wt k`, which meets the joint weight space of any other weight only in zero.
+-/
+theorem IsCartanWeightVector.eq_zero_of_forall_ne {η : Type*} {b : η → V} {wt : η → κ → ℤ}
+    (hb : ∀ k, IsCartanWeightVector h ρ (wt k) (b k))
+    (hspan : Submodule.span ℚ (Set.range b) = ⊤) {μ : κ → ℤ} {v : V}
+    (hv : IsCartanWeightVector h ρ μ v) (hμ : ∀ k, wt k ≠ μ) : v = 0 := by
+  have hle : Submodule.span ℚ (Set.range b) ≤
+      ⨆ (ν : κ → ℤ) (_ : ν ≠ μ), jointWeightSpace h ρ ν := by
+    rw [Submodule.span_le]
+    rintro _ ⟨k, rfl⟩
+    exact Submodule.mem_iSup_of_mem (wt k) <| Submodule.mem_iSup_of_mem (hμ k) <|
+      (mem_jointWeightSpace_iff h ρ).2 (hb k)
+  rw [hspan] at hle
+  exact (Submodule.disjoint_def.1 (iSupIndep_jointWeightSpace h ρ μ)) v
+    ((mem_jointWeightSpace_iff h ρ).2 hv) (hle Submodule.mem_top)
+
+/-! ## Nilpotence of root vectors -/
+
+/-- **A root vector acts nilpotently on a space spanned by finitely many weight vectors.** Let `x`
+be an eigenvector of the designated Cartan vectors under the adjoint action, with a nonzero integral
+root `α`. Then `ρ(x)ⁿ` raises the weight of a weight vector by `n α`. Only finitely many weights
+occur among a finite spanning family of weight vectors, so a large enough power of `ρ(x)` carries
+every vector of the family to a weight vector of an absent weight, which is zero. -/
+theorem isNilpotent_of_isCartanWeightVector {η : Type*} [Finite η] {b : η → V}
+    {wt : η → κ → ℤ} (hb : ∀ k, IsCartanWeightVector h ρ (wt k) (b k))
+    (hspan : Submodule.span ℚ (Set.range b) = ⊤) {x : L} {α : κ → ℤ}
+    (hα : ∀ j, ⁅h j, x⁆ = (α j : ℚ) • x) (hα0 : α ≠ 0) :
+    IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ x)) := by
+  -- The exponents `n` for which some `wt k + n • α` is again a weight of the family.
+  have hfin : {n : ℕ | ∃ k, wt k + n • α ∈ Set.range wt}.Finite := by
+    have hinj (k : η) : Function.Injective fun n : ℕ => wt k + n • α := fun m n hmn =>
+      IsAddTorsionFree.nsmul_left_injective hα0 (add_left_cancel hmn)
+    rw [Set.ofPred_exists]
+    exact Set.finite_iUnion fun k => (Set.finite_range wt).preimage (hinj k).injOn
+  obtain ⟨N, hN⟩ := hfin.bddAbove
+  refine ⟨N + 1, LinearMap.ext_on_range hspan fun k => ?_⟩
+  rw [LinearMap.zero_apply]
+  refine (IsCartanWeightVector.pow_rootVector (fun _ : Unit => x) (i := ()) hα (hb k)
+    (N + 1)).eq_zero_of_forall_ne hb hspan fun k' hk' => ?_
+  have : N + 1 ≤ N := hN ⟨k, k', hk'⟩
+  omega
 
 /-- **The weight sublattices of a subgroup are independent.** -/
 theorem iSupIndep_weightSublattice : iSupIndep (weightSublattice h ρ M) := by
@@ -294,6 +386,20 @@ theorem isCartanWeightVector_kostantWeightBasisFin
       ((kostantWeightBasisFin e h ρ M hM hV x : M) : V) := by
   rw [kostantWeightBasisFin_apply]
   exact isCartanWeightVector_kostantWeightBasis e h ρ M hM hV _
+
+/-- **The weights recorded by the `Fin`-indexed weight basis are exactly the weights of the
+lattice**: an integral weight is carried by some vector of the basis if and only if its weight
+sublattice is nonzero. -/
+theorem mem_range_kostantWeightFin_iff {μ : κ → ℤ} :
+    μ ∈ Set.range (kostantWeightFin e h ρ M hM hV) ↔ weightSublattice h ρ M μ ≠ ⊥ := by
+  refine ⟨?_, fun hμ => ?_⟩
+  · rintro ⟨x, rfl⟩
+    rw [Submodule.ne_bot_iff]
+    exact ⟨_, kostantWeightBasis_mem e h ρ M hM hV _, (kostantWeightBasis e h ρ M hM hV).ne_zero _⟩
+  · have := Submodule.nontrivial_iff_ne_bot.mpr hμ
+    obtain ⟨j⟩ := (Module.Free.chooseBasis ℤ (weightSublattice h ρ M μ)).index_nonempty
+    exact ⟨kostantWeightBasisIndexEquivFin e h ρ M hM hV ⟨μ, j⟩, by
+      simp only [kostantWeightFin, Equiv.symm_apply_apply]⟩
 
 end WeightBasis
 

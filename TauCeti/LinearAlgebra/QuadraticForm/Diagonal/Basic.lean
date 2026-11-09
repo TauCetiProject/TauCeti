@@ -28,6 +28,7 @@ of squares.
   diagonal form with regular weights is nondegenerate.
 * `QuadraticMap.weightedSumSquares_units`: unit weights may be replaced by the scalars they name.
 * `QuadraticMap.neg_weightedSumSquares`: negating a diagonal form negates its weights.
+* `QuadraticMap.weightedSumSquares_fin_two_apply`: evaluating a binary diagonal form.
 * `QuadraticMap.weightedSumSquares_apply_three_single` and
   `QuadraticMap.not_anisotropic_weightedSumSquares_of_ternary_eq_zero`: evaluating a diagonal form
   on a linear combination of three distinct basis vectors, and deducing that a ternary solution with
@@ -182,6 +183,11 @@ theorem _root_.QuadraticMap.weightedSumSquares_units (w : ι → Rˣ) :
   ext x
   simp [QuadraticMap.weightedSumSquares_apply, Units.smul_def]
 
+/-- Evaluate a binary diagonal form `⟨a, b⟩` on a vector of `R²`. -/
+theorem _root_.QuadraticMap.weightedSumSquares_fin_two_apply (a b : R) (x : Fin 2 → R) :
+    QuadraticMap.weightedSumSquares R ![a, b] x = a * (x 0 * x 0) + b * (x 1 * x 1) := by
+  simp [QuadraticMap.weightedSumSquares_apply, Fin.sum_univ_two]
+
 /-- Evaluate a diagonal form on a linear combination of three distinct coordinate vectors. -/
 -- Apply before the generic `weightedSumSquares_apply` expansion.
 @[simp high]
@@ -286,6 +292,15 @@ theorem _root_.QuadraticMap.nondegenerate_weightedSumSquares {w : ι → R}
   ext i
   simpa [QuadraticMap.associated_weightedSumSquares, Pi.single_apply,
     (hw i).left.mul_left_eq_zero_iff] using hx (Pi.single i 1)
+
+/-- The form `⟨1, a, -a⟩` with `a` a unit is nondegenerate when two is invertible. -/
+theorem _root_.QuadraticMap.nondegenerate_weightedSumSquares_one_self_neg (a : Rˣ) :
+    (QuadraticMap.weightedSumSquares R ![1, (a : R), -(a : R)]).Nondegenerate :=
+  QuadraticMap.nondegenerate_weightedSumSquares fun i => by
+    fin_cases i
+    · exact isRegular_one
+    · exact a.isUnit.isRegular
+    · exact (a.isUnit.neg).isRegular
 
 /-- Isometric diagonal forms with unit weights have weight products differing by a square. An
 isometry of the coordinate spaces changes the Gram matrix of a diagonal form by a congruence, so

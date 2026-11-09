@@ -62,7 +62,7 @@ private theorem uniqueFactorizationMonoid_option {σ : Type*} [Finite σ]
   refine { irreducible_iff_prime := fun {f} ↦ ⟨fun hf ↦ ?_, Prime.irreducible⟩ }
   -- Make `f` distinguished in `Y`, and pass to its image `g` in `S = R⟨Y⟩`.
   obtain ⟨e, s, hd, hu⟩ := exists_algEquiv_isDistinguished_isUnit f hf.ne_zero
-  let Φ : Tate (Option σ) ≃+* S := restrictedOptionEquiv
+  let Φ : Tate (Option σ) ≃+* S := restrictedOptionEquiv.toRingEquiv
   let E : Tate (Option σ) ≃+* S := (e : Tate (Option σ) ≃+* Tate (Option σ)).trans Φ
   have hE : E f = Φ (e f) := by simp [E]
   rw [← MulEquiv.prime_iff E, hE]
@@ -70,7 +70,7 @@ private theorem uniqueFactorizationMonoid_option {σ : Type*} [Finite σ]
   set g : S := Φ (e f)
   -- Weierstrass preparation: `g = u * ι ω` with `u` a unit and `ω` monic.
   obtain ⟨u, ω, hu', hm, hmul⟩ := hd.exists_isUnit_isMonicOfDegree_mul_eq hu zero_lt_one g.2
-  have hg : g = u * ι ω := Subtype.ext (by simpa [ι] using hmul.symm)
+  have hg : g = u * ι ω := Subtype.ext (by simpa [g, Φ, ι] using hmul.symm)
   have hassoc : Associated (ι ω) g := by
     rw [hg, mul_comm]
     exact associated_mul_unit_right _ _ hu'
@@ -80,14 +80,8 @@ private theorem uniqueFactorizationMonoid_option {σ : Type*} [Finite σ]
   have hωp : Prime ω := UniqueFactorizationMonoid.irreducible_iff_prime.mp
     (hω.irreducible_of_irreducible_polynomialToRestricted zero_lt_one hm
       (hassoc.symm.irreducible hf))
-  -- So `S ⧸ (ι ω) ≃ R[Y] ⧸ (ω)` is a domain, and `ι ω` is prime.
-  have : IsDomain (Polynomial R ⧸ Ideal.span {ω}) :=
-    (Ideal.Quotient.isDomain_iff_prime _).mpr
-      ((Ideal.span_singleton_prime hωp.ne_zero).mpr hωp)
-  have : IsDomain (S ⧸ Ideal.span {ι ω}) :=
-    (hω.polynomialQuotientEquiv zero_lt_one hm).symm.toMulEquiv.isDomain _
-  exact hassoc.prime ((Ideal.span_singleton_prime (hassoc.symm.irreducible hf).ne_zero).mp
-    ((Ideal.Quotient.isDomain_iff_prime _).mp this))
+  -- So `ι ω` is prime by the quotient comparison, and so is `g`.
+  exact hassoc.prime ((hω.prime_polynomialToRestricted_iff zero_lt_one hm).mpr hωp)
 
 /-- **Tate algebras are unique factorisation domains.** Over a complete nonarchimedean field `K`,
 the Tate algebra `K⟨X₁, …, Xₙ⟩` in finitely many variables is a unique factorisation domain. -/
@@ -98,8 +92,7 @@ instance uniqueFactorizationMonoid {σ : Type*} [Finite σ] :
   · -- Renaming the variables along `e : α ≃ β` is a ring isomorphism of Tate algebras.
     exact (IsRestricted.renameAlgEquiv (R := K) e fun _ ↦ 1).toMulEquiv.uniqueFactorizationMonoid h
   · -- Without variables every series is a constant, so the Tate algebra is isomorphic to `K`.
-    exact (RingEquiv.ofBijective (algebraMap K (Tate PEmpty))
-      ⟨(algebraMap K _).injective, algebraMap_isRestrictedSubring_surjective⟩).toMulEquiv
+    exact (IsRestricted.isEmptyEquiv (R := K) (σ := PEmpty) _).symm.toMulEquiv
       |>.uniqueFactorizationMonoid inferInstance
 
 end TauCeti.MvPowerSeries

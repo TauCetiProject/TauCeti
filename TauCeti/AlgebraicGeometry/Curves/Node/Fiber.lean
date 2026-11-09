@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.Node.Relative
 public import Mathlib.AlgebraicGeometry.Fiber
+public import TauCeti.AlgebraicGeometry.SpecialFiber.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Fiber
 import TauCeti.CategoryTheory.MorphismProperty.Limits
@@ -38,6 +39,10 @@ one exactly when it is flat and locally of finite presentation and its fibres ov
 fields are at worst nodal curves. Such fibres have pure dimension one
 (`TauCeti.AlgebraicGeometry.PureRelativeDimension.of_syntomicOfRelativeDimension`).
 
+Over a local domain of Krull dimension at most one, for instance a discrete valuation ring, every
+point of the base is the generic or the closed point, so the fibrewise criterion reduces to the
+generic and the special fibre.
+
 ## Main results
 
 * `AtWorstNodalOfRelativeDimensionOne.of_baseChange_field`: a syntomic
@@ -48,6 +53,9 @@ fields are at worst nodal curves. Such fibres have pure dimension one
 * `atWorstNodalOfRelativeDimensionOne_iff_flat_and_fiberToSpecResidueField`: a morphism is at
   worst nodal of relative dimension one exactly when it is flat and locally of finite presentation
   and all its fibres over residue fields are at worst nodal.
+* `atWorstNodalOfRelativeDimensionOne_iff_genericFiber_and_specialFiber`: over a local domain of
+  dimension at most one, a morphism is at worst nodal exactly when it is flat and locally of
+  finite presentation and its generic and special fibres are at worst nodal.
 
 ## References
 
@@ -160,5 +168,25 @@ theorem atWorstNodalOfRelativeDimensionOne_iff_flat_and_fiberToSpecResidueField
     syntomicOfRelativeDimension_iff_flat_and_fiberToSpecResidueField]
   exact ⟨fun ⟨⟨hfl, hfp, _⟩, h⟩ ↦ ⟨hfl, hfp, h⟩,
     fun ⟨hfl, hfp, h⟩ ↦ ⟨⟨hfl, hfp, fun y ↦ (h y).syntomic⟩, h⟩⟩
+
+section DimensionLEOne
+
+variable {R : CommRingCat.{u}} [IsLocalRing R] [IsDomain R] [Ring.DimensionLEOne R]
+variable (K : Type u) [CommRing K] [Algebra R K] [IsFractionRing R K]
+variable {X : Scheme.{u}} (toBase : X ⟶ Spec R)
+
+/-- **The two-fibre criterion for nodal curves.** Over a local domain of dimension at most one,
+for instance a discrete valuation ring, a morphism is at worst nodal of relative dimension one
+exactly when it is flat and locally of finite presentation and both its generic fibre over the
+fraction field and its special fibre over the residue field are at worst nodal. -/
+theorem atWorstNodalOfRelativeDimensionOne_iff_genericFiber_and_specialFiber :
+    AtWorstNodalOfRelativeDimensionOne toBase ↔
+      Flat toBase ∧ LocallyOfFinitePresentation toBase ∧
+        AtWorstNodalOfRelativeDimensionOne (genericFiber R K toBase).hom ∧
+          AtWorstNodalOfRelativeDimensionOne (specialFiber R toBase).hom := by
+  rw [atWorstNodalOfRelativeDimensionOne_iff_flat_and_fiberToSpecResidueField,
+    forall_fiberToSpecResidueField_iff K toBase]
+
+end DimensionLEOne
 
 end TauCeti.AlgebraicGeometry

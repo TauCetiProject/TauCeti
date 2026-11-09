@@ -13,12 +13,22 @@ public import Mathlib.Analysis.Complex.Basic
 The quotient `z₂ / z₁` of two points of an open half-plane through the origin is never a
 nonpositive real, so it lies in `Complex.slitPlane`. The half-plane is encoded by a normal
 direction `a`: its members are the `z` with `0 < (conj a * z).re`. Specializations to the
-four axis-aligned half-planes cover the common cases. A relative displacement smaller than
-the distance to a pole also gives a slit-plane quotient.
+four axis-aligned half-planes cover the common cases. Points within distance `1` of `1` lie in
+the right half-plane, so this applies to quotients of nearly equal points. A relative
+displacement smaller than the distance to a pole also gives a slit-plane quotient. A product of
+two points in the right half-plane lies in the slit plane as well, and positive real scaling
+preserves it.
 
+Translating a point of the slit plane by a nonnegative real number keeps it in the slit plane,
+and translating a point of `slitPlane ∪ {0}` by a positive one lands in the slit plane.
 The module also records a locally uniform lower bound for the distance from a point of the slit
 plane to the closed negative half-axis. This bound locally dominates slit-plane kernels and thus
 supports differentiation and holomorphy arguments for parameter-dependent Stieltjes integrals.
+For `x` in the slit plane, `‖t + x‖` grows at least linearly in the real number `t ≥ 0`; this
+controls integrands of the form `(t + x) ^ s` over `t ∈ (0, ∞)`, such as those of Carlson's
+symmetric elliptic integrals.
+For `x ∈ slitPlane ∪ {0}`, the quotient `a / (t + x)` is continuous for `t > 0` and the term
+`x / (t + x) · t` stays bounded.
 
 These criteria feed logarithm evaluations of index integrals: a curve piece confined to a
 half-plane about the winding point has slit-compatible chord ratios, so its index integral
@@ -28,8 +38,16 @@ is a principal logarithm.
 
 * `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`
 * `TauCeti.div_mem_slitPlane_of_re_conj_mul_pos`
+* `TauCeti.re_pos_of_norm_sub_one_lt_one`
 * `TauCeti.div_mem_slitPlane_of_re_pos`, `…_of_re_neg`, `…_of_im_pos`, `…_of_im_neg`
+* `TauCeti.mul_mem_slitPlane_of_re_pos`
+* `TauCeti.ofReal_mul_mem_slitPlane`, `TauCeti.div_ofReal_mem_slitPlane`
+* `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
+* `TauCeti.ofReal_mem_slitPlane_union_zero`, `TauCeti.mem_slitPlane_union_zero_iff`
 * `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`
+* `TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add`
+* `TauCeti.exists_norm_div_ofReal_add_mul_le`, `TauCeti.continuousOn_div_ofReal_add`
+* `TauCeti.exists_norm_inv_ofReal_add_le` -- `(t + p)⁻¹ = O((1 + t)⁻¹)` for `p ∈ slitPlane`
 -/
 
 public section
@@ -71,10 +89,24 @@ theorem div_mem_slitPlane_of_re_conj_mul_pos {a z₁ z₂ : ℂ}
   rw [hz₂, hkey, Complex.re_ofReal_mul] at h₂
   nlinarith
 
+/-- A complex number at distance less than `1` from `1` lies in the open right half-plane. -/
+theorem re_pos_of_norm_sub_one_lt_one {q : ℂ} (hq : ‖q - 1‖ < 1) : 0 < q.re := by
+  have h := Complex.re_le_norm (1 - q)
+  rw [norm_sub_rev, Complex.sub_re, Complex.one_re] at h
+  linarith
+
 /-- Two points in the right half-plane have their ratio in the slit plane. -/
 theorem div_mem_slitPlane_of_re_pos {z₁ z₂ : ℂ} (h₁ : 0 < z₁.re) (h₂ : 0 < z₂.re) :
     z₂ / z₁ ∈ slitPlane :=
   div_mem_slitPlane_of_re_conj_mul_pos (a := 1) (by simpa) (by simpa)
+
+/-- The product of two points in the open right half-plane lies in the slit plane. -/
+theorem mul_mem_slitPlane_of_re_pos {z₁ z₂ : ℂ} (h₁ : 0 < z₁.re) (h₂ : 0 < z₂.re) :
+    z₁ * z₂ ∈ slitPlane := by
+  have hi : 0 < (z₂⁻¹).re := by
+    rw [inv_re]
+    exact div_pos h₂ (normSq_pos.mpr (by rintro rfl; simp at h₂))
+  simpa using div_mem_slitPlane_of_re_pos hi h₁
 
 /-- Two points in the left half-plane have their ratio in the slit plane. -/
 theorem div_mem_slitPlane_of_re_neg {z₁ z₂ : ℂ} (h₁ : z₁.re < 0) (h₂ : z₂.re < 0) :
@@ -94,6 +126,54 @@ theorem div_mem_slitPlane_of_im_neg {z₁ z₂ : ℂ} (h₁ : z₁.im < 0) (h₂
   div_mem_slitPlane_of_re_conj_mul_pos (a := -Complex.I)
     (by simpa [Complex.mul_re] using neg_pos.mpr h₁)
     (by simpa [Complex.mul_re] using neg_pos.mpr h₂)
+
+/-- Multiplication by a positive real preserves membership in the slit plane. -/
+theorem ofReal_mul_mem_slitPlane {c : ℝ} (hc : 0 < c) {z : ℂ}
+    (hz : z ∈ slitPlane) : (c : ℂ) * z ∈ slitPlane := by
+  rw [mem_slitPlane_iff] at hz ⊢
+  rcases hz with h_re | h_im
+  · exact Or.inl <| by simpa using mul_pos hc h_re
+  · exact Or.inr <| by simpa using mul_ne_zero hc.ne' h_im
+
+/-- Division by a positive real preserves membership in the slit plane. -/
+theorem div_ofReal_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) {c : ℝ} (hc : 0 < c) :
+    z / (c : ℂ) ∈ slitPlane := by
+  rw [div_eq_mul_inv, ← ofReal_inv, mul_comm]
+  exact ofReal_mul_mem_slitPlane (inv_pos.mpr hc) hz
+
+/-- Translating a point of the slit plane by a nonnegative real number keeps it in the slit
+plane. -/
+theorem ofReal_add_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) {t : ℝ} (ht : 0 ≤ t) :
+    (t : ℂ) + z ∈ slitPlane := by
+  rcases mem_slitPlane_iff.mp hz with h | h
+  · exact mem_slitPlane_iff.mpr (Or.inl (by
+      simp only [Complex.add_re, Complex.ofReal_re]; linarith))
+  · exact mem_slitPlane_iff.mpr (Or.inr (by simpa using h))
+
+/-- Translating a point of `slitPlane ∪ {0}` by a positive real number lands in the slit
+plane. -/
+theorem ofReal_add_mem_slitPlane_of_mem_union {z : ℂ} (hz : z ∈ slitPlane ∪ {0}) {t : ℝ}
+    (ht : 0 < t) : (t : ℂ) + z ∈ slitPlane := by
+  rcases hz with hz | hz
+  · exact ofReal_add_mem_slitPlane hz ht.le
+  · rw [Set.mem_singleton_iff.mp hz, add_zero]
+    exact ofReal_mem_slitPlane.mpr ht
+
+/-- A nonnegative real number lies in `slitPlane ∪ {0}`. -/
+theorem ofReal_mem_slitPlane_union_zero {x : ℝ} (hx : 0 ≤ x) : (x : ℂ) ∈ slitPlane ∪ {0} := by
+  rcases hx.eq_or_lt with h | h
+  · exact Or.inr (by simp [← h])
+  · exact Or.inl (ofReal_mem_slitPlane.mpr h)
+
+open scoped ComplexOrder in
+/-- A complex number lies in `slitPlane ∪ {0}` iff it does not lie on the open negative real
+half-axis: `0 ≤ z.re ∨ z.im ≠ 0`. This is the domain hypothesis of
+`Complex.continuousAt_cpow_const_of_re_pos`. -/
+theorem mem_slitPlane_union_zero_iff {z : ℂ} :
+    z ∈ slitPlane ∪ {0} ↔ 0 ≤ z.re ∨ z.im ≠ 0 := by
+  rw [← Complex.not_lt_zero_iff, Set.mem_union, Complex.mem_slitPlane_iff_not_le_zero,
+    Set.mem_singleton_iff, lt_iff_le_and_ne]
+  tauto
 
 /-- On a small ball around a point of the slit plane, the distance from `w` to the point `-x`
 of the closed negative half-axis is bounded below by a fixed multiple of `1 + x`. -/
@@ -130,6 +210,42 @@ theorem exists_pos_forall_mem_ball_mul_one_add_le_norm_add {z : ℂ} (hz : z ∈
       ‖z + ((x : ℝ) : ℂ)‖ = ‖(w + ((x : ℝ) : ℂ)) + (z - w)‖ := by congr 1; ring
       _ ≤ ‖w + ((x : ℝ) : ℂ)‖ + ‖z - w‖ := norm_add_le _ _
   nlinarith [hzc x x.coe_nonneg, x.coe_nonneg]
+
+/-- For `x ∈ slitPlane`, `‖t + x‖` grows at least linearly: `c (1 + t) ≤ ‖t + x‖` for `t ≥ 0`. -/
+theorem exists_pos_mul_one_add_le_norm_ofReal_add {x : ℂ} (hx : x ∈ slitPlane) :
+    ∃ c, 0 < c ∧ ∀ t : ℝ, 0 ≤ t → c * (1 + t) ≤ ‖(t : ℂ) + x‖ := by
+  obtain ⟨c, hc, h⟩ := exists_pos_forall_mem_ball_mul_one_add_le_norm_add hx
+  refine ⟨c, hc, fun t ht => ?_⟩
+  rw [add_comm (t : ℂ)]
+  exact h x (Metric.mem_ball_self hc) ⟨t, ht⟩
+
+/-- For `x ∈ slitPlane ∪ {0}`, the term `x / (t + x) · t` is bounded for `t > 0`. -/
+theorem exists_norm_div_ofReal_add_mul_le {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) :
+    ∃ C, 0 ≤ C ∧ ∀ t : ℝ, 0 < t → ‖x / ((t : ℂ) + x) * t‖ ≤ C := by
+  rcases hx with hx | hx
+  · obtain ⟨c, hc, h⟩ := exists_pos_mul_one_add_le_norm_ofReal_add hx
+    refine ⟨‖x‖ / c, by positivity, fun t ht => ?_⟩
+    have hpos : 0 < ‖(t : ℂ) + x‖ := lt_of_lt_of_le (by positivity) (h t ht.le)
+    rw [norm_mul, norm_div, Complex.norm_real, Real.norm_of_nonneg ht.le, div_mul_eq_mul_div,
+      div_le_div_iff₀ hpos hc]
+    have := h t ht.le
+    nlinarith [norm_nonneg x]
+  · exact ⟨0, le_rfl, fun t _ => by simp [Set.mem_singleton_iff.mp hx]⟩
+
+/-- For `x ∈ slitPlane ∪ {0}` and any `a : ℂ`, the quotient `a / (t + x)` is continuous in the
+real variable `t > 0`. -/
+theorem continuousOn_div_ofReal_add {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) (a : ℂ) :
+    ContinuousOn (fun t : ℝ => a / ((t : ℂ) + x)) (Set.Ioi 0) := fun _ ht =>
+  (continuousAt_const.div (Complex.continuous_ofReal.add continuous_const).continuousAt
+    (slitPlane_ne_zero (ofReal_add_mem_slitPlane_of_mem_union hx ht))).continuousWithinAt
+
+/-- For `p ∈ slitPlane`, the reciprocal `(t + p)⁻¹` is `O((1 + t)⁻¹)` uniformly in `t ≥ 0`. -/
+theorem exists_norm_inv_ofReal_add_le {p : ℂ} (hp : p ∈ slitPlane) :
+    ∃ C, 0 < C ∧ ∀ t : ℝ, 0 ≤ t → ‖((t : ℂ) + p)⁻¹‖ ≤ C * (1 + t)⁻¹ := by
+  obtain ⟨c, hc, h⟩ := exists_pos_mul_one_add_le_norm_ofReal_add hp
+  refine ⟨c⁻¹, inv_pos.mpr hc, fun t ht => ?_⟩
+  rw [norm_inv, ← mul_inv]
+  exact inv_anti₀ (by positivity) (h t ht)
 
 end TauCeti
 

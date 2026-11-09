@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Ring.Int
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.LinearAlgebra.Matrix.Block
+public import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 import Mathlib.LinearAlgebra.Matrix.Notation
@@ -44,12 +45,15 @@ determinant.
   nonzero entry in column `j`; hence `Matrix.IsHermiteNormalForm.pivot_unique`: the pivot rows are
   determined by `H`.
 * `Matrix.IsHermiteNormalForm.linearIndependent_cols`: the columns of `H` are `ℤ`-linearly
-  independent.
+  independent; hence `Matrix.IsHermiteNormalForm.rank_eq`: `H` has as many columns as its rank.
 * `Matrix.IsHermiteNormalForm.isUpperTriangular`, `Matrix.IsHermiteNormalForm.diag_pos`: a square
   matrix in Hermite normal form is upper triangular with positive diagonal;
   `Matrix.IsHermiteNormalForm.det_eq_prod_diag` and `Matrix.IsHermiteNormalForm.det_pos`: so its
   determinant is the product of the pivots, and is positive.
 * `Matrix.IsHermiteNormalForm.one`: the identity matrix is in Hermite normal form.
+* `Matrix.isHermitePivotedBy_of_succ`, `Matrix.isHermitePivotedBy_cons`: a matrix in Hermite normal
+  form extends to one with an extra top row, and also with an extra first column whose pivot is in
+  the top row.
 
 ## References
 
@@ -151,6 +155,11 @@ theorem linearIndependent_cols (hH : H.IsHermiteNormalForm) : LinearIndependent 
   let ⟨_, h⟩ := hH
   h.linearIndependent_cols
 
+/-- A matrix in Hermite normal form has as many columns as its rank, the rank of its column
+lattice. -/
+theorem rank_eq (hH : H.IsHermiteNormalForm) : H.rank = k := by
+  rw [rank_eq_finrank_span_cols, finrank_span_eq_card hH.linearIndependent_cols, Fintype.card_fin]
+
 /-- A square matrix in Hermite normal form is in Hermite normal form with the identity as pivot
 rows. -/
 theorem isHermitePivotedBy_id {H : Matrix (Fin m) (Fin m) ℤ} (hH : H.IsHermiteNormalForm) :
@@ -187,6 +196,61 @@ end IsHermiteNormalForm
 theorem isHermiteNormalForm_of_fin_zero (H : Matrix (Fin m) (Fin 0) ℤ) : H.IsHermiteNormalForm :=
   ⟨Fin.elim0, fun j ↦ j.elim0, fun j ↦ j.elim0, fun j ↦ j.elim0, fun {j} ↦ j.elim0,
     fun {j} ↦ j.elim0⟩
+
+/-! ### Adding a top row -/
+
+/-- If deleting the top row of `H` leaves a matrix `H'` in Hermite normal form with pivot rows
+`p`, then `H` is in Hermite normal form with pivot rows `Fin.succ ∘ p`, whatever its top row. -/
+theorem isHermitePivotedBy_of_succ {H' : Matrix (Fin m) (Fin k) ℤ} {p : Fin k → Fin m}
+    (h : H'.IsHermitePivotedBy p) {H : Matrix (Fin (m + 1)) (Fin k) ℤ}
+    (hH : ∀ (i : Fin m) (j : Fin k), H i.succ j = H' i j) :
+    H.IsHermitePivotedBy (Fin.succ ∘ p) where
+  strictMono := Fin.strictMono_succ.comp h.strictMono
+  pivot_pos j := by simpa [hH] using h.pivot_pos j
+  eq_zero_of_lt j {i} hi := by
+    cases i using Fin.cases with
+    | zero => exact absurd hi (Fin.not_lt_zero _)
+    | succ i => rw [hH]; exact h.eq_zero_of_lt j (Fin.succ_lt_succ_iff.mp hi)
+  nonneg_of_lt hjj' := by simpa [hH] using h.nonneg_of_lt hjj'
+  lt_pivot_of_lt hjj' := by simpa [hH] using h.lt_pivot_of_lt hjj'
+
+/-- Let `H` have a positive top left entry `H 0 0`, zeros below it, top row entries reduced modulo
+`H 0 0`, and, after deleting the top row and the first column, a matrix `H'` in Hermite normal
+form with pivot rows `p`. Then `H` is in Hermite normal form, with pivot rows `0` followed by
+`Fin.succ ∘ p`. -/
+theorem isHermitePivotedBy_cons {H' : Matrix (Fin m) (Fin k) ℤ} {p : Fin k → Fin m}
+    (h : H'.IsHermitePivotedBy p) {H : Matrix (Fin (m + 1)) (Fin (k + 1)) ℤ}
+    (h₀ : 0 < H 0 0) (hcol : ∀ i : Fin m, H i.succ 0 = 0)
+    (hH : ∀ (i : Fin m) (j : Fin k), H i.succ j.succ = H' i j)
+    (hrow : ∀ j : Fin k, 0 ≤ H 0 j.succ ∧ H 0 j.succ < H 0 0) :
+    H.IsHermitePivotedBy (Fin.cons 0 (Fin.succ ∘ p)) where
+  strictMono := Fin.strictMono_cons.mpr
+    ⟨fun _ ↦ Fin.succ_pos _, Fin.strictMono_succ.comp h.strictMono⟩
+  pivot_pos j := by
+    cases j using Fin.cases with
+    | zero => exact h₀
+    | succ j => simpa [hH] using h.pivot_pos j
+  eq_zero_of_lt j {i} hi := by
+    cases i using Fin.cases with
+    | zero => exact absurd hi (Fin.not_lt_zero _)
+    | succ i =>
+      cases j using Fin.cases with
+      | zero => exact hcol i
+      | succ j => rw [hH]; exact h.eq_zero_of_lt j (by simpa using hi)
+  nonneg_of_lt {j j'} hjj' := by
+    cases j' using Fin.cases with
+    | zero => exact absurd hjj' (Fin.not_lt_zero _)
+    | succ j' =>
+      cases j using Fin.cases with
+      | zero => exact (hrow j').1
+      | succ j => simpa [hH] using h.nonneg_of_lt (Fin.succ_lt_succ_iff.mp hjj')
+  lt_pivot_of_lt {j j'} hjj' := by
+    cases j' using Fin.cases with
+    | zero => exact absurd hjj' (Fin.not_lt_zero _)
+    | succ j' =>
+      cases j using Fin.cases with
+      | zero => exact (hrow j').2
+      | succ j => simpa [hH] using h.lt_pivot_of_lt (Fin.succ_lt_succ_iff.mp hjj')
 
 /-! ### Examples -/
 

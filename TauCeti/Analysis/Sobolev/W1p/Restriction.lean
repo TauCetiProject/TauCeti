@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Basic
+public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import Mathlib.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
@@ -26,7 +28,11 @@ interior regularity arguments pass from a weak solution on `Ω` to smaller open 
   `W^{1,p}(U)` for `U ⊆ Ω`.
 * `TauCeti.W1p.value_restrictL` and `TauCeti.W1p.gradient_restrictL`: restriction commutes with
   the value and weak-gradient projections; their `_ae` variants identify representatives.
+* `TauCeti.W1p.value_restrictL_ofTestFunctionₗ_ae`: a restricted test function has its original
+  value almost everywhere on the smaller open set.
 * `TauCeti.W1p.restrictL_self` and `TauCeti.W1p.restrictL_restrictL`: restriction is functorial.
+* `TauCeti.W1p.setIntegral_norm_gradient_sub_sq_eq`: the `L²` distance on the smaller set between
+  the weak gradients of a function and of a function defined only there.
 * `TauCeti.W1p.continuous_setAverage_value`: the mean of the value component over a fixed
   finite-measure subset depends continuously on the Sobolev function.
 
@@ -192,6 +198,20 @@ theorem W1p.value_restrictL_ae (hU : U ≤ Omega) (u : W1p mu Omega p) :
     (by simpa only [one_smul] using
       Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)) (W1p.value u)
 
+/-- Restricting a test function from `Omega` to `U` preserves its value almost everywhere on
+`U`. -/
+theorem W1p.value_restrictL_ofTestFunctionₗ_ae (hU : U ≤ Omega) (φ : 𝓓(Omega, ℝ)) :
+    W1p.value (W1p.restrictL hU (W1p.ofTestFunctionₗ mu Omega p φ)) =ᵐ[mu.restrict U] φ :=
+  (W1p.value_restrictL_ae hU _).trans
+    (ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hU)
+      (W1p.value_ofTestFunctionₗ_ae φ))
+
+/-- A Sobolev function on `Omega` whose value agrees almost everywhere on the smaller open set `U`
+with the value of `u` restricts to `u` on `U`. -/
+theorem W1p.restrictL_eq_of_value_ae_eq (hU : U ≤ Omega) {u : W1p mu U p} {w : W1p mu Omega p}
+    (hvalw : W1p.value w =ᵐ[mu.restrict U] W1p.value u) : W1p.restrictL hU w = u :=
+  W1p.ext_value (Lp.ext ((W1p.value_restrictL_ae hU w).trans hvalw))
+
 /-- Restriction keeps the same weak-gradient representative on the smaller open set. -/
 theorem W1p.gradient_restrictL_ae (hU : U ≤ Omega) (u : W1p mu Omega p) :
     W1p.gradient (W1p.restrictL hU u) =ᵐ[mu.restrict U] W1p.gradient u := by
@@ -230,6 +250,22 @@ theorem W1p.restrictL_restrictL (hU : U ≤ Omega) (hV : V ≤ U) (u : W1p mu Om
       (MeasureTheory.ae_mono (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hV)))
   exact ((W1p.value_restrictL_ae hV (W1p.restrictL hU u)).trans hsecond).trans
     (W1p.value_restrictL_ae (hV.trans hU) u).symm
+
+/-- The squared `L²(U)` distance between the weak gradients of `u ∈ W^{1,2}(Ω)` and
+`w ∈ W^{1,2}(U)` is the squared norm of the weak gradient of the difference of the restriction of
+`u` to `U` and `w`. -/
+theorem W1p.setIntegral_norm_gradient_sub_sq_eq (hU : U ≤ Omega) (u : W1p mu Omega 2)
+    (w : W1p mu U 2) :
+    ∫ x in U, ‖W1p.gradient u x - W1p.gradient w x‖ ^ 2 ∂mu =
+      ‖W1p.gradient (W1p.restrictL hU u - w)‖ ^ 2 := by
+  have hsub : W1p.gradient (W1p.restrictL hU u - w) =
+      W1p.gradient (W1p.restrictL hU u) - W1p.gradient w := by
+    simp only [← W1p.gradientL_apply, map_sub]
+  rw [← MeasureTheory.Lp.integral_norm_sq_eq_norm_sq]
+  refine integral_congr_ae ?_
+  filter_upwards [W1p.gradient_restrictL_ae hU u,
+    Lp.coeFn_sub (W1p.gradient (W1p.restrictL hU u)) (W1p.gradient w)] with x h1 h2
+  rw [hsub, h2, Pi.sub_apply, h1]
 
 /-! ### Subset averages -/
 

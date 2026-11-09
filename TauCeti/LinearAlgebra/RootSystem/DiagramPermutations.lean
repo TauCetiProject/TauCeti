@@ -42,7 +42,8 @@ The conventions follow Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, p
   `TauCeti.trialityPermD4_apply_apply_apply` the pointwise form of that order relation.
 * `TauCeti.cartanMatrix_A_graphPermA`, `TauCeti.cartanMatrix_D_graphPermD`,
   `TauCeti.cartanMatrix_E6_graphPermE6` and `TauCeti.cartanMatrix_D4_trialityPermD4`: each graph
-  permutation is an automorphism of the corresponding Cartan matrix.
+  permutation is an automorphism of the corresponding Cartan matrix, and
+  `TauCeti.reindex_cartanMatrix_A_graphPermA` restates the type-`A` case in `Matrix.reindex` form.
 * `TauCeti.cartanMatrix_B2_lengthPermRankTwo`, `TauCeti.cartanMatrix_G2_lengthPermRankTwo` and
   `TauCeti.cartanMatrix_F4_lengthPermF4`: each length permutation instead carries its Cartan matrix
   to the transposed matrix, and `TauCeti.cartanMatrix_B2_submatrix_lengthPermRankTwo_ne` and its
@@ -97,6 +98,10 @@ theorem graphPermA_ne_one {n : ℕ} (hn : 2 ≤ n) : graphPermA n ≠ 1 := by
 @[simp] theorem graphPermA_sq (n : ℕ) : graphPermA n ^ 2 = 1 := by
   ext i
   simp [graphPermA, pow_two, Equiv.Perm.mul_apply]
+
+/-- Reversal of a chain is its own inverse. -/
+@[simp] lemma graphPermA_symm (n : ℕ) : (graphPermA n).symm = graphPermA n :=
+  Fin.revPerm_symm
 
 /-- Reversal of a chain of at least two nodes has order exactly two. -/
 @[simp] theorem orderOf_graphPermA {n : ℕ} (hn : 2 ≤ n) : orderOf (graphPermA n) = 2 :=
@@ -238,6 +243,13 @@ lemma lengthPermF4_apply (i : Fin 4) : lengthPermF4 i = i.rev :=
   simp only [DynkinType.cartanMatrix_A, CartanMatrix.A, Matrix.of_apply, graphPermA,
     Fin.revPerm_apply, Fin.ext_iff, Fin.val_rev]
   split_ifs <;> omega
+
+/-- Reversal is an automorphism of the type-`A` Cartan matrix, in `Matrix.reindex` form. -/
+theorem reindex_cartanMatrix_A_graphPermA (n : ℕ) :
+    (CartanMatrix.A n).reindex (graphPermA n) (graphPermA n) = CartanMatrix.A n := by
+  ext i j
+  rw [Matrix.reindex_apply, Matrix.submatrix_apply, graphPermA_symm, ← DynkinType.cartanMatrix_A]
+  exact cartanMatrix_A_graphPermA n i j
 
 -- Every defining condition of `CartanMatrix.D n` is invariant under exchanging the two fork
 -- indices, hence so is the whole `if`-chain; `key` records that exchange on index values.

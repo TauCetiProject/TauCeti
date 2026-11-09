@@ -63,7 +63,7 @@ theorem perturbationSeries_naturality
   have hTX' := congrArg (fun a ↦ a (f x)) (c'.one_add_mul_perturbationSeries δ' hU')
   have hTf := LinearMap.congr_fun hT (c.perturbationSeries δ x)
   have hδf := LinearMap.congr_fun hδ x
-  simpa only [LinearMap.comp_apply, Module.End.mul_apply] using hTf.trans
+  simpa only [LinearMap.comp_apply, mul_apply_eq_comp] using hTf.trans
     ((congrArg f hTX).trans (hδf.trans hTX'.symm))
 
 /-- The induced map on retracts commutes with the perturbed differentials. Compatibility with

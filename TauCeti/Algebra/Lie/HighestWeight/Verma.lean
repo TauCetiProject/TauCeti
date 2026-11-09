@@ -108,6 +108,9 @@ is a linear equivalence (`TauCeti.universalEnvelopingEquivVermaModule`). Through
 * `TauCeti.vermaIdeal_ne_top`, `TauCeti.vermaGenerator_ne_zero` and
   `TauCeti.isHighestWeightVector_vermaGenerator`: **`M(lam) ≠ 0` for every `lam`**, and its
   canonical generator is a highest weight vector of weight `lam`.
+* `TauCeti.instIsTriangularizableVermaModule` and
+  `TauCeti.instIsTriangularizableIrreducibleQuotient`: `M(lam)` and `L(lam)` are triangularizable
+  for the Cartan subalgebra.
 * `TauCeti.universalEnvelopingEquivVermaModule`, with
   `TauCeti.universalEnvelopingEquivVermaModule_apply` and
   `TauCeti.universalEnvelopingEquivVermaModule_mul`: **`M(lam)` is a free `U(n⁻)`-module of rank
@@ -227,7 +230,7 @@ theorem representation_vermaModule_apply (u : U) (m : VermaModule b lam) :
   | ι x => rw [UniversalEnvelopingAlgebra.representation_ι_apply, vermaModule_ι_smul]
   | algebraMap r => rw [AlgHom.commutes, Module.algebraMap_end_apply, algebraMap_smul]
   | add u w hu hw => rw [map_add, LinearMap.add_apply, hu, hw, add_smul]
-  | mul u w hu hw => rw [map_mul, Module.End.mul_apply, hw, hu, mul_smul]
+  | mul u w hu hw => rw [map_mul, mul_apply_eq_comp, hw, hu, mul_smul]
 
 /-- **The canonical projection** `U(L) → M(lam)`, bundled as a `U(L)`-linear map so that its
 algebraic behaviour — `map_zero`, `map_add`, `map_smul` — is available from the `LinearMap` API
@@ -443,6 +446,12 @@ theorem isHighestWeightVector_vermaGenerator :
 instance : Nontrivial (VermaModule b lam) :=
   ⟨⟨vermaGenerator b lam, 0, vermaGenerator_ne_zero b lam⟩⟩
 
+/-- **`M(lam)` is triangularizable for the Cartan subalgebra**, being a highest weight module: its
+generalized weight spaces span it. -/
+instance instIsTriangularizableVermaModule : IsTriangularizable K H (VermaModule b lam) :=
+  isTriangularizable_of_isHighestWeightVector_of_lieSpan_eq_top
+    (isHighestWeightVector_vermaGenerator b lam) (lieSpan_vermaGenerator_eq_top b lam)
+
 /-! ### The Verma module is free of rank one over `U(n⁻)` -/
 
 /-- **The Verma module is a free `U(n⁻)`-module of rank one on its canonical generator**: the map
@@ -504,7 +513,7 @@ theorem pow_toEnd_vermaGenerator_ne_zero {f : L} (hf : f ∈ negativeNilradical 
     induction k with
     | zero => simp
     | succ k ih =>
-      rw [pow_succ', Module.End.mul_apply, ih, pow_succ', mul_smul, LieSubalgebra.coe_incl,
+      rw [pow_succ', mul_apply_eq_comp, ih, pow_succ', mul_smul, LieSubalgebra.coe_incl,
         vermaModule_ι_smul, toEnd_apply_apply]
   rw [key, LinearEquiv.map_ne_zero_iff]
   refine pow_ne_zero _ fun h ↦ hf0 ?_
@@ -595,5 +604,15 @@ theorem isHighestWeightVector_irreducibleQuotientGenerator :
     IsHighestWeightVector b lam (irreducibleQuotientGenerator b lam) :=
   isHighestWeightVector_mk_of_isHighestWeightVector_of_lieSpan_eq_top
     (isHighestWeightVector_vermaGenerator b lam) (lieSpan_vermaGenerator_eq_top b lam)
+
+/-- **`L(lam)` is triangularizable for the Cartan subalgebra**, being a highest weight module. When
+`L(lam)` is finite-dimensional, Mathlib's results on root vectors and weight spaces of
+finite-dimensional triangularizable modules therefore apply to it, for instance
+`LieModule.isNilpotent_toEnd_of_mem_rootSpace`: every root vector acts on it nilpotently. -/
+instance instIsTriangularizableIrreducibleQuotient :
+    IsTriangularizable K H (irreducibleQuotient b lam) :=
+  isTriangularizable_of_isHighestWeightVector_of_lieSpan_eq_top
+    (isHighestWeightVector_irreducibleQuotientGenerator b lam)
+    (lieSpan_irreducibleQuotientGenerator_eq_top b lam)
 
 end TauCeti

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Level
+public import TauCeti.Geometry.Manifold.RegularValue.Level
 public import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
 public import Mathlib.Geometry.Manifold.Submersion
 
@@ -32,7 +32,7 @@ coordinates (`TauCeti.apply_scalarSubmersionChartAt_extend_symm`). With the char
 submersion at `x` with complement `ker D` (`TauCeti.IsRegularPoint.isSubmersionAtOfComplement`).
 
 On a regular level `f⁻¹(c)` the second coordinate is all that remains: the chart restricts on the
-level to the preferred level chart `TauCeti.scalarRegularLevelChartAt`, built from the same `D`,
+level to the preferred level chart `TauCeti.regularLevelChartAt`, built from the same `D`,
 `P` and implicit-function chart, followed by the inverse of the same identification
 `K : ker D ≃ (Fin (dim E - 1) → ℝ)` (`TauCeti.scalarSubmersionChartAt_extend_coe`), and the two
 charts have the same domain on the level (`TauCeti.preimage_coe_scalarSubmersionChartAt_source`).
@@ -81,7 +81,7 @@ preferred-chart derivative of `f`. -/
 private theorem hasStrictFDerivAt_coord (hf : ContMDiffAt I 𝓘(ℝ) 1 f x) :
     HasStrictFDerivAt (fun y ↦ f ((extChartAt I x).symm y) - f x)
       (fderiv ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x)) (extChartAt I x x) :=
-  (hf.contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt one_ne_zero).sub_const _
+  (hf.contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv one_ne_zero).sub_const _
 
 private theorem range_eq_top (hx : IsRegularPoint I 𝓘(ℝ) f x) :
     (fderiv ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x)).range = ⊤ :=
@@ -206,8 +206,8 @@ private theorem contMDiffAt_modelChart {n : ℕ∞ω} [IsManifold I n M] {y : Bo
   rw [OpenPartialHomeomorph.coe_trans]
   exact hcoord.comp y hchart
 
-/-- The inverse of the submersion chart is `C^n` wherever `f` is, when `1 ≤ n`. -/
-private theorem contMDiffAt_modelChart_symm {n : ℕ∞ω} [IsManifold I n M] (hn : 1 ≤ n) {v : E}
+/-- The inverse of the submersion chart is `C^n` wherever `f` is. -/
+private theorem contMDiffAt_modelChart_symm {n : ℕ∞ω} [IsManifold I n M] {v : E}
     (hv : v ∈ (modelChart hf hx).target)
     (hfv : ContMDiffAt I 𝓘(ℝ) n f
       ((BoundarylessModel.homeomorph I M).symm ((modelChart hf hx).symm v))) :
@@ -225,8 +225,7 @@ private theorem contMDiffAt_modelChart_symm {n : ℕ∞ω} [IsManifold I n M] (h
   have hcoord : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) n (coordChart hf hx).symm v := by
     rw [contMDiffAt_iff_contDiffAt, coe_coordChart_symm]
     exact (HasStrictFDerivAt.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_mem
-      (hasStrictFDerivAt_coord hf) _ _ hvΦ hvD.2
-      ((hg.differentiableAt (zero_lt_one.trans_le hn).ne').hasFDerivAt) hg).comp v
+      (hasStrictFDerivAt_coord hf) _ _ hvΦ hvD.2 hg).comp v
       (coordEquiv hx).contDiff.contDiffAt
   have hchart : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) n
       (chartAt E (BoundarylessModel.homeomorph I M x)).symm p := by
@@ -238,14 +237,14 @@ private theorem contMDiffAt_modelChart_symm {n : ℕ∞ω} [IsManifold I n M] (h
 
 /-- The submersion chart, restricted to an open set on which `f` is `C^n`, is a chart of the `C^n`
 maximal atlas of the self-modelled copy of `M`. -/
-private theorem restrOpen_modelChart_mem_maximalAtlas {n : ℕ∞ω} [IsManifold I n M] (hn : 1 ≤ n)
+private theorem restrOpen_modelChart_mem_maximalAtlas {n : ℕ∞ω} [IsManifold I n M]
     {U : Set (BoundarylessModel I M)} (hU : IsOpen U)
     (hfU : ∀ y ∈ U, ContMDiffAt I 𝓘(ℝ) n f ((BoundarylessModel.homeomorph I M).symm y)) :
     (modelChart hf hx).restrOpen U hU ∈
       IsManifold.maximalAtlas 𝓘(ℝ, E) n (BoundarylessModel I M) := by
   refine OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn _ (fun y hy ↦ ?_) fun v hv ↦ ?_
   · exact (contMDiffAt_modelChart hf hx hy.1 (hfU y hy.2)).contMDiffWithinAt
-  · exact (contMDiffAt_modelChart_symm hf hx hn hv.1 (hfU _ hv.2)).contMDiffWithinAt
+  · exact (contMDiffAt_modelChart_symm hf hx hv.1 (hfU _ hv.2)).contMDiffWithinAt
 
 end ScalarSubmersion
 
@@ -288,7 +287,7 @@ theorem scalarSubmersionChartAt_source :
       let D := fderiv ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x)
       let hD : HasStrictFDerivAt (fun y ↦ f ((extChartAt I x).symm y) - f x) D
           (extChartAt I x x) :=
-        (hf.contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt one_ne_zero).sub_const _
+        (hf.contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv one_ne_zero).sub_const _
       let hD' : D.range = ⊤ := LinearMap.range_eq_top.2 hx.surjective_fderiv_comp_extChartAt_symm
       let hker := D.isFredholm_of_finiteDimensional.closedComplemented_ker
       {w : M | w ∈ (chartAt H x).source ∧ extChartAt I x w ∈
@@ -322,7 +321,7 @@ theorem scalarSubmersionChartAt_extend_symm_apply (v : E) :
       let D := fderiv ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x)
       let hD : HasStrictFDerivAt (fun y ↦ f ((extChartAt I x).symm y) - f x) D
           (extChartAt I x x) :=
-        (hf.contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt one_ne_zero).sub_const _
+        (hf.contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv one_ne_zero).sub_const _
       let hD' : D.range = ⊤ := LinearMap.range_eq_top.2 hx.surjective_fderiv_comp_extChartAt_symm
       let hker := D.isFredholm_of_finiteDimensional.closedComplemented_ker
       (extChartAt I x).symm ((hD.implicitToOpenPartialHomeomorphOfComplemented _ D hD' hker).symm
@@ -338,7 +337,7 @@ theorem mem_scalarSubmersionChartAt_extend_target_iff (v : E) :
       let D := fderiv ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x)
       let hD : HasStrictFDerivAt (fun y ↦ f ((extChartAt I x).symm y) - f x) D
           (extChartAt I x x) :=
-        (hf.contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt one_ne_zero).sub_const _
+        (hf.contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv one_ne_zero).sub_const _
       let hD' : D.range = ⊤ := LinearMap.range_eq_top.2 hx.surjective_fderiv_comp_extChartAt_symm
       let hker := D.isFredholm_of_finiteDimensional.closedComplemented_ker
       let L := D.implicitCoordEquiv hD' hker
@@ -364,9 +363,9 @@ theorem apply_scalarSubmersionChartAt_extend_symm {v : E}
     ← sub_eq_iff_eq_add, apply_modelChart_symm hf hx hv,
     ContinuousLinearMap.implicitCoordEquiv_apply]
 
-/-- If `f` is `C^n` on the source of its submersion chart at `x`, `1 ≤ n`, then this chart belongs
+/-- If `f` is `C^n` on the source of its submersion chart at `x`, then this chart belongs
 to the `C^n` maximal atlas of `M`. -/
-theorem scalarSubmersionChartAt_mem_maximalAtlas {n : ℕ∞ω} [IsManifold I n M] (hn : 1 ≤ n)
+theorem scalarSubmersionChartAt_mem_maximalAtlas {n : ℕ∞ω} [IsManifold I n M]
     (hfn : ∀ y ∈ (scalarSubmersionChartAt hf hx).source, ContMDiffAt I 𝓘(ℝ) n f y) :
     scalarSubmersionChartAt hf hx ∈ IsManifold.maximalAtlas I n M := by
   rw [scalarSubmersionChartAt, BoundarylessModel.originalChart_mem_maximalAtlas_iff]
@@ -376,7 +375,7 @@ theorem scalarSubmersionChartAt_mem_maximalAtlas {n : ℕ∞ω} [IsManifold I n 
       Homeomorph.apply_symm_apply]
   refine OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn _ (fun y hy ↦ ?_) fun v hv ↦ ?_
   · exact (contMDiffAt_modelChart hf hx hy (hfy y hy)).contMDiffWithinAt
-  · exact (contMDiffAt_modelChart_symm hf hx hn hv
+  · exact (contMDiffAt_modelChart_symm hf hx hv
       (hfy _ ((modelChart hf hx).map_target hv))).contMDiffWithinAt
 
 /-- **A regular point of a scalar function is a submersion point.** If `f` is `C^n` near a regular
@@ -408,7 +407,7 @@ theorem IsRegularPoint.isSubmersionAtOfComplement {n : ℕ∞ω} [IsManifold I n
     have h := mem_scalarSubmersionChartAt_source hf hx
     rwa [scalarSubmersionChartAt, BoundarylessModel.originalChart_source, mem_preimage] at h
   · exact (BoundarylessModel.originalChart_mem_maximalAtlas_iff I φ n).2
-      (restrOpen_modelChart_mem_maximalAtlas hf hx hn hU' fun y hy ↦ hfU _ hy)
+      (restrOpen_modelChart_mem_maximalAtlas hf hx hU' fun y hy ↦ hfU _ hy)
   · rw [BoundarylessModel.originalChart_extend_target] at hv
     rw [comp_apply, comp_apply, BoundarylessModel.originalChart_extend_symm_apply, hφ,
       OpenPartialHomeomorph.extend_coe, modelWithCornersSelf_coe, id_comp]
@@ -422,7 +421,7 @@ variable {c : ℝ} (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) 1 f x) (hreg
 
 /-- **On a regular level, the submersion chart is the level chart.** At a point `x` of a regular
 level `f⁻¹(c)`, the extended submersion chart sends each point `w` of the level in the preferred
-chart at `x` to the kernel vector `K⁻¹ (scalarRegularLevelChartAt x w)` of the derivative `D` of
+chart at `x` to the kernel vector `K⁻¹ (regularLevelChartAt x w)` of the derivative `D` of
 `f` in the preferred extended chart at `x`, where `K : ker D ≃ (Fin (dim E - 1) → ℝ)` is the
 identification used by the level atlas. -/
 theorem scalarSubmersionChartAt_extend_coe (x : {x : M // f x = c}) {w : {x : M // f x = c}}
@@ -431,8 +430,8 @@ theorem scalarSubmersionChartAt_extend_coe (x : {x : M // f x = c}) {w : {x : M 
       let D := fderiv ℝ (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
       ((D.kerModelEquiv D.isFredholm_of_finiteDimensional.finite_ker
         (hreg.isRegularPoint x.2).finrank_ker_fderiv_comp_extChartAt_symm).symm
-          (scalarRegularLevelChartAt hf hreg x w) : E) := by
-  rw [scalarSubmersionChartAt_extend_apply _ _ hw, scalarRegularLevelChartAt_apply]
+          (regularLevelChartAt (n := finrank ℝ E - 1) hf hreg (by rw [finrank_self]) x w) : E) := by
+  rw [scalarSubmersionChartAt_extend_apply _ _ hw, regularLevelChartAt_apply]
   dsimp only
   rw [ContinuousLinearEquiv.symm_apply_apply, w.2, x.2, sub_self,
     ContinuousLinearMap.implicitCoordEquiv_symm_apply_zero_mk]
@@ -442,14 +441,14 @@ of a regular level `f⁻¹(c)` lies in the source of the submersion chart at a p
 exactly when it lies in the source of the preferred level chart at `x`. -/
 theorem preimage_coe_scalarSubmersionChartAt_source (x : {x : M // f x = c}) :
     Subtype.val ⁻¹' (scalarSubmersionChartAt (hf x x.2) (hreg.isRegularPoint x.2)).source =
-      (scalarRegularLevelChartAt hf hreg x).source := by
+      (regularLevelChartAt (n := finrank ℝ E - 1) hf hreg (by rw [finrank_self]) x).source := by
   have hfun : (fun y ↦ f ((extChartAt I (x : M)).symm y) - f x) =
       fun y ↦ f ((extChartAt I (x : M)).symm y) - c := by
     rw [x.2]
   have hD := hasStrictFDerivAt_coord (hf x x.2)
   have hD' := range_eq_top (hreg.isRegularPoint x.2)
   have hker := closedComplemented_ker (f := f) (I := I) (x : M)
-  rw [scalarSubmersionChartAt_source, scalarRegularLevelChartAt_source]
+  rw [scalarSubmersionChartAt_source, regularLevelChartAt_source]
   dsimp only
   rw [HasStrictFDerivAt.implicitToOpenPartialHomeomorphOfComplemented_congr hD (hfun ▸ hD) hfun rfl
       hD' hker,

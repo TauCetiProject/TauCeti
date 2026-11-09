@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 public import TauCeti.Analysis.PDE.DirichletProblem
-import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 
 /-!
@@ -136,21 +135,18 @@ theorem W1p.exists_harmonicOnNhd_ae_eq_gradient {p : ENNReal} [Fact (1 ≤ p)]
     {w : W1p mu Omega p} (hw : WeaklyHarmonicOn mu Omega (W1p.value w)) :
     ∃ H : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι, HarmonicOnNhd H Omega ∧
       (W1p.gradient w : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) =ᵐ[mu.restrict Omega] H := by
-  classical
-  set b := EuclideanSpace.basisFun ι ℝ
-  -- Each coordinate `⟪bᵢ, ∇w⟫` is a weak derivative of the weakly harmonic `w`, so it is weakly
-  -- harmonic, and Weyl's lemma gives it a harmonic representative.
-  have hi : ∀ i, ∃ h : EuclideanSpace ℝ ι → ℝ, HarmonicOnNhd h Omega ∧
-      (fun x => ⟪b i, W1p.gradient w x⟫_ℝ) =ᵐ[mu.restrict Omega] h := fun i => by
-    have hd := (hasWeakFDerivOn_iff.1 (W1p.hasWeakFDerivOn w)) (b i)
-    simp only [innerSL_apply_apply, real_inner_comm (b i)] at hd
-    exact (hd.weaklyHarmonicOn hw).exists_harmonicOnNhd_ae_eq
-  choose h hh hae using hi
-  refine ⟨fun x => ∑ i, h i x • b i, HarmonicOnNhd.sum _ fun i _ =>
-    (hh i).comp_CLM (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (b i)), ?_⟩
-  filter_upwards [ae_all_iff.2 hae] with x hx
-  conv_lhs => rw [← b.sum_repr' (W1p.gradient w x)]
-  exact Finset.sum_congr rfl fun i _ => by rw [hx i]
+  obtain ⟨H, hH, hgrad⟩ :=
+    ((W1p.hasWeakFDerivOn w).weaklyHarmonicOn hw).exists_harmonicOnNhd_ae_eq
+  let e := InnerProductSpace.toDual ℝ (EuclideanSpace ℝ ι)
+  refine ⟨fun x => e.symm (H x), hH.comp_CLM e.symm.toContinuousLinearMap, ?_⟩
+  filter_upwards [hgrad] with x hx
+  apply e.injective
+  rw [e.apply_symm_apply]
+  have hRiesz : e (W1p.gradient w x) = innerSL ℝ (W1p.gradient w x) := by
+    ext v
+    simp only [e, InnerProductSpace.toDual_apply_apply, innerSL_apply_apply]
+  rw [hRiesz]
+  exact hx
 
 /-- **Harmonic replacement.** Let `Ω ⊆ ℝ^{n+1}` be an open set contained in a ball, and let
 `u ∈ H¹(Ω)`. There is `w ∈ H¹(Ω)` with the same boundary values, `u - w ∈ H¹₀(Ω)`, solving
@@ -182,9 +178,8 @@ theorem exists_sub_mem_w1p0Submodule_harmonicOnNhd_ae_eq_of_subset_ball {n : ℕ
   obtain ⟨w, ⟨huw, hw⟩, -⟩ :=
     UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
       (b := 0) (c := 0) h1 aestronglyMeasurable_const aestronglyMeasurable_const
-      aestronglyMeasurable_const le_rfl
-      (fun _ _ => by simp) (gamma := 0) (fun _ _ => by simp) (fun _ _ => le_rfl)
-      (le_max_right R 0) (hball.trans (ball_subset_ball (le_max_left R 0))) (by simp) 0 u
+      aestronglyMeasurable_const (beta := 0) (fun _ _ => by simp) (gamma := 0)
+      (fun _ _ => by simp) (fun _ _ => le_rfl) hball (by simp) 0 u
   have hw0 : ∀ v : W1p0 volume Omega 2,
       energyFormH1 (fun _ => 1) 0 0 w (v : W1p volume Omega 2) = 0 := fun v => by
     rw [hw v, ← dirichletForcing_apply_eq_setIntegral, dirichletForcing_apply, inner_zero_left]

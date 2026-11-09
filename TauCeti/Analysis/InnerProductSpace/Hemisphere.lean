@@ -8,6 +8,10 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Orthogonal
 public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.Normed.Module.Ball.Radial.Extension
+import TauCeti.Data.Set.InjOnUnion
+import TauCeti.Topology.ContinuousMap.GlueClosedEmbeddings
 
 /-!
 # Closed hemispheres of a unit sphere
@@ -21,6 +25,13 @@ The closed hemispheres around `p` and `-p` cover the sphere and meet in the equa
 sphere of `(ℝ ∙ p)ᗮ`, included in `S` by `TauCeti.equatorInclusion (p : E)`. Closed hemispheres
 are the discs out of which the sphere is built in the inductive computations of the homology
 of the complement of an embedded sphere.
+
+Conversely, a space covered by two closed discs which meet exactly along their boundary spheres is
+a sphere, whatever the homeomorphism by which the boundary spheres are matched: the first disc is
+sent onto the closed hemisphere around `p`, and the second onto the closed hemisphere around `-p`
+after the radial extension of the matching homeomorphism (`Homeomorph.radialExtension`). This is
+how a manifold built from two discs, such as one carrying a Morse function with exactly two
+critical points, is recognized as a sphere.
 
 ## Main definitions
 
@@ -37,6 +48,13 @@ of the complement of an embedded sphere.
 * `TauCeti.range_equatorInclusion`: the equator is the intersection of the closed hemispheres
   around `p` and `-p`.
 * `TauCeti.isometry_equatorInclusion`: the equator inclusion preserves distances.
+* `TauCeti.nonempty_homeomorph_sphere_of_union_closedBall`: two closed discs glued along their
+  boundary spheres form a sphere.
+
+## References
+
+* J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
+  proof of Theorem 4.1, for the gluing of two discs along their boundary spheres.
 -/
 
 public section
@@ -218,5 +236,143 @@ theorem frontier_setOf_inner_nonneg :
       inner_sub_left, hx, hp]
     have hpos : 0 < (√(1 + t ^ 2))⁻¹ := inv_pos.2 (Real.sqrt_pos.2 (by positivity))
     nlinarith
+
+/-! ### Two discs glued along their boundary spheres -/
+
+section Gluing
+
+/-- The inverse of `TauCeti.hemisphereHomeomorph p` lifts `y` to height `√(1 - ‖y‖²)` along
+`p`. -/
+private theorem inner_coe_hemisphereHomeomorph_symm_apply (y : closedBall (0 : (ℝ ∙ (p : E))ᗮ) 1) :
+    ⟪(((hemisphereHomeomorph p).symm y : sphere (0 : E) 1) : E), (p : E)⟫ =
+      √(1 - ‖(y : (ℝ ∙ (p : E))ᗮ)‖ ^ 2) := by
+  rw [coe_hemisphereHomeomorph_symm_apply]
+  exact (add_sqrt_smul_mem_sphere p y).2
+
+/-- Every point of the sphere lies in the image of the closed ball under the inverse of
+`TauCeti.hemisphereHomeomorph p`, or under that map composed with the antipode. -/
+private theorem exists_eq_hemisphereHomeomorph_symm_or_neg (y : sphere (0 : E) 1) :
+    ∃ v : closedBall (0 : (ℝ ∙ (p : E))ᗮ) 1,
+      y = (hemisphereHomeomorph p).symm v ∨ y = -(hemisphereHomeomorph p).symm v := by
+  by_cases hy : 0 ≤ ⟪(y : E), (p : E)⟫
+  · exact ⟨hemisphereHomeomorph p ⟨y, hy⟩, Or.inl (by simp)⟩
+  · have hy' : 0 ≤ ⟪((-y : sphere (0 : E) 1) : E), (p : E)⟫ := by
+      rw [coe_neg_sphere, inner_neg_left]
+      linarith
+    exact ⟨hemisphereHomeomorph p ⟨-y, hy'⟩, Or.inr (by simp)⟩
+
+variable [FiniteDimensional ℝ E] {X : Type*} [TopologicalSpace X] {A B : Set X}
+
+/-- `TauCeti.nonempty_homeomorph_sphere_of_union_closedBall` for discs in the orthogonal
+complement of a unit vector `p`. The first disc is carried onto the closed hemisphere around `p`
+by the inverse of `TauCeti.hemisphereHomeomorph p`. The second is carried onto the closed
+hemisphere around `-p` after the radial extension of the gluing homeomorphism of the boundary
+spheres, so that the two maps agree on `A ∩ B`. -/
+private theorem nonempty_homeomorph_sphere_of_union_closedBall_orthogonal
+    (hA : IsClosed A) (hB : IsClosed B) (hAB : A ∪ B = univ)
+    (eA : A ≃ₜ closedBall (0 : (ℝ ∙ (p : E))ᗮ) 1) (eB : B ≃ₜ closedBall (0 : (ℝ ∙ (p : E))ᗮ) 1)
+    (hAe : ∀ x : A, (x : X) ∈ B ↔ ‖(eA x : (ℝ ∙ (p : E))ᗮ)‖ = 1)
+    (hBe : ∀ x : B, (x : X) ∈ A ↔ ‖(eB x : (ℝ ∙ (p : E))ᗮ)‖ = 1) :
+    Nonempty (X ≃ₜ sphere (0 : E) 1) := by
+  classical
+  set e := hemisphereHomeomorph p
+  obtain ⟨H, hHn, hHB⟩ := Homeomorph.exists_norm_eq_of_closedBall_glue eA eB hAe hBe
+  -- The two hemisphere maps, which agree on `A ∩ B`.
+  let gA (x : A) : sphere (0 : E) 1 := e.symm (eA x)
+  have hmemB (x : B) : -H (eB x) ∈ closedBall (0 : (ℝ ∙ (p : E))ᗮ) 1 := by
+    rw [mem_closedBall_zero_iff, norm_neg, hHn]
+    exact mem_closedBall_zero_iff.1 (eB x).2
+  let gB (x : B) : sphere (0 : E) 1 := -(e.symm ⟨_, hmemB x⟩ : sphere (0 : E) 1)
+  have hgAB (x : X) (hxA : x ∈ A) (hxB : x ∈ B) : gA ⟨x, hxA⟩ = gB ⟨x, hxB⟩ := by
+    ext1
+    simp [gA, gB, e, hHB x hxA hxB, (hAe ⟨x, hxA⟩).1 hxB]
+  let g : C(X, sphere (0 : E) 1) := ContinuousMap.glueClosedEmbeddings
+    (i := (Subtype.val : A → X)) (j := (Subtype.val : B → X)) ⟨gA, by fun_prop⟩
+    ⟨gB, by fun_prop⟩ hA.isClosedEmbedding_subtypeVal hB.isClosedEmbedding_subtypeVal
+    (by simpa [Subtype.range_coe] using hAB) fun x y h ↦ by
+      obtain ⟨x, hx⟩ := x
+      obtain ⟨y, hy⟩ := y
+      cases h
+      exact hgAB x hx hy
+  have hg_A (x : A) : g x = gA x := ContinuousMap.glueClosedEmbeddings_apply_left _ _ _ _ _ _ x
+  have hg_B (x : B) : g x = gB x := ContinuousMap.glueClosedEmbeddings_apply_right _ _ _ _ _ _ x
+  -- `g` sends exactly the points of `A` into the closed hemisphere around `p`.
+  have hupper (x : X) : 0 ≤ ⟪(g x : E), (p : E)⟫ ↔ x ∈ A := by
+    refine ⟨fun h ↦ ?_, fun hx ↦ hg_A ⟨x, hx⟩ ▸ (e.symm (eA ⟨x, hx⟩)).2⟩
+    by_contra hx
+    have hxB := Set.compl_subset_iff_union.mpr hAB hx
+    rw [hg_B ⟨x, hxB⟩] at h
+    simp only [gB, e, coe_neg_sphere, inner_neg_left, inner_coe_hemisphereHomeomorph_symm_apply,
+      norm_neg, hHn, neg_nonneg] at h
+    have h₀ := Real.sqrt_eq_zero'.1 (le_antisymm h (Real.sqrt_nonneg _))
+    refine hx ((hBe ⟨x, hxB⟩).2 (le_antisymm (mem_closedBall_zero_iff.1 (eB _).2) ?_))
+    nlinarith [norm_nonneg (eB ⟨x, hxB⟩ : (ℝ ∙ (p : E))ᗮ)]
+  -- Injectivity: `g` is injective on `A` and on `B`, whose images lie in opposite hemispheres.
+  have hinjA : Function.Injective gA := fun x y h ↦
+    eA.injective (e.symm.injective (Subtype.val_injective h))
+  have hinjB : Function.Injective gB := fun x y h ↦ by
+    have h' : (e.symm ⟨_, hmemB x⟩ : sphere (0 : E) 1) = e.symm ⟨_, hmemB y⟩ :=
+      neg_injective h
+    exact eB.injective (Subtype.ext (H.injective (neg_injective
+      (congrArg Subtype.val (e.symm.injective (Subtype.val_injective h'))))))
+  have hinj : Function.Injective g :=
+    injective_of_injOn_of_union_eq_univ
+      (P := fun y : sphere (0 : E) 1 ↦ 0 ≤ ⟪(y : E), (p : E)⟫) hAB hupper
+      (fun x hx y hy h ↦ congrArg Subtype.val
+        (hinjA ((hg_A ⟨x, hx⟩).symm.trans (h.trans (hg_A ⟨y, hy⟩)))))
+      (fun x hx y hy h ↦ congrArg Subtype.val
+        (hinjB ((hg_B ⟨x, hx⟩).symm.trans (h.trans (hg_B ⟨y, hy⟩)))))
+  -- Surjectivity: the closed hemispheres around `p` and `-p` cover the sphere.
+  have hsurj : Function.Surjective g := by
+    intro y
+    obtain ⟨v, rfl | rfl⟩ := exists_eq_hemisphereHomeomorph_symm_or_neg p y
+    · exact ⟨eA.symm v, by rw [hg_A]; simp [gA, e]⟩
+    · have hz : H.symm (-(v : (ℝ ∙ (p : E))ᗮ)) ∈ closedBall (0 : (ℝ ∙ (p : E))ᗮ) 1 := by
+        rw [mem_closedBall_zero_iff, ← hHn (H.symm _), H.apply_symm_apply, norm_neg]
+        exact mem_closedBall_zero_iff.1 v.2
+      refine ⟨eB.symm ⟨_, hz⟩, ?_⟩
+      rw [hg_B]
+      have hw : (⟨_, hmemB (eB.symm ⟨_, hz⟩)⟩ : closedBall (0 : (ℝ ∙ (p : E))ᗮ) 1) = v :=
+        Subtype.ext (by simp)
+      simp only [gB, hw, e]
+  -- A compact space mapping bijectively and continuously onto the sphere is homeomorphic to it.
+  have : CompactSpace (closedBall (0 : (ℝ ∙ (p : E))ᗮ) 1) :=
+    isCompact_iff_compactSpace.1 (isCompact_closedBall _ _)
+  have : CompactSpace X := ⟨hAB ▸ (isCompact_iff_compactSpace.2 eA.symm.compactSpace).union
+    (isCompact_iff_compactSpace.2 eB.symm.compactSpace)⟩
+  exact ⟨g.continuous.homeoOfEquivCompactToT2 (f := Equiv.ofBijective g ⟨hinj, hsurj⟩)⟩
+
+omit [FiniteDimensional ℝ E] in
+/-- **Two discs glued along their boundary spheres form a sphere.** Let `X` be covered by two
+closed sets `A` and `B`, each homeomorphic to the closed unit ball of a real inner product space
+`F` of dimension `n`, such that `A ∩ B` corresponds to the unit sphere under both
+homeomorphisms. Then `X` is homeomorphic to the unit sphere of any real inner product space of
+dimension `n + 1`. The gluing homeomorphism of the boundary spheres is arbitrary: it extends
+radially over the disc (`Homeomorph.radialExtension`). For `n = 0`, `A` and `B` are points and
+`X` is the two-point sphere `S⁰`. -/
+theorem nonempty_homeomorph_sphere_of_union_closedBall {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    (hF : Module.finrank ℝ E = Module.finrank ℝ F + 1)
+    (hA : IsClosed A) (hB : IsClosed B) (hAB : A ∪ B = univ)
+    (eA : A ≃ₜ closedBall (0 : F) 1) (eB : B ≃ₜ closedBall (0 : F) 1)
+    (hAe : ∀ x : A, (x : X) ∈ B ↔ ‖(eA x : F)‖ = 1)
+    (hBe : ∀ x : B, (x : X) ∈ A ↔ ‖(eB x : F)‖ = 1) :
+    Nonempty (X ≃ₜ sphere (0 : E) 1) := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
+  have : Fact (Module.finrank ℝ E = Module.finrank ℝ F + 1) := ⟨hF⟩
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hF
+  obtain ⟨p⟩ : Nonempty (sphere (0 : E) 1) :=
+    (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
+  -- Identify `F` isometrically with the orthogonal complement of `p`.
+  have hdim : Module.finrank ℝ (ℝ ∙ (p : E))ᗮ = Module.finrank ℝ F :=
+    Submodule.finrank_orthogonal_span_singleton (ne_zero_of_mem_unit_sphere p)
+  let L : F ≃ₗᵢ[ℝ] (ℝ ∙ (p : E))ᗮ :=
+    (stdOrthonormalBasis ℝ F).equiv (stdOrthonormalBasis ℝ _) (finCongr hdim.symm)
+  let S : closedBall (0 : F) 1 ≃ₜ closedBall (0 : (ℝ ∙ (p : E))ᗮ) 1 :=
+    L.toHomeomorph.subtype fun v ↦ by simp
+  exact nonempty_homeomorph_sphere_of_union_closedBall_orthogonal p hA hB hAB (eA.trans S)
+    (eB.trans S) (fun x ↦ by simpa [S] using hAe x) (fun x ↦ by simpa [S] using hBe x)
+
+end Gluing
 
 end TauCeti

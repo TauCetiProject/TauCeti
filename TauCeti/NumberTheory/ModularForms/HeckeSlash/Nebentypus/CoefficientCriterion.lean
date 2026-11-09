@@ -94,14 +94,14 @@ private lemma primePower_eq_coeff_smul_of_relations (F : modFormCharSpace k χ)
     rw [hpow r]
     by_cases hpN : Nat.Coprime p N
     · rw [heckeRingHomCharSpace_heckeTGeneratorRecGamma0_succ_succ k χ hp.pos hpN]
-      simp only [LinearMap.sub_apply, Module.End.mul_apply, LinearMap.smul_apply,
+      simp only [LinearMap.sub_apply, mul_apply_eq_comp, LinearMap.smul_apply,
         ih₁, ih₂, map_smul, ← heckeTCompositeGamma0_prime N hp, hprime,
         smul_smul, sub_smul, ← ZMod.coe_unitOfCoprime p hpN, MulChar.ofUnitHom_coe]
       ring_nf
     · have hχ : (MulChar.ofUnitHom χ : DirichletCharacter ℂ N) p = 0 :=
         MulChar.map_nonunit _ (by rwa [ZMod.isUnit_iff_coprime])
       rw [heckeTGeneratorRecGamma0_succ_succ, heckeTScalarGamma0_of_not_coprime N hpN]
-      simp only [smul_zero, zero_mul, sub_zero, map_mul, Module.End.mul_apply, ih₂,
+      simp only [smul_zero, zero_mul, sub_zero, map_mul, mul_apply_eq_comp, ih₂,
         map_smul, ← heckeTCompositeGamma0_prime N hp, hprime, smul_smul, hχ]
       rw [mul_comm]
 
@@ -157,7 +157,7 @@ theorem forall_heckeTCompositeGamma0_eq_coeff_smul_iff
       rw [heckeTCompositeGamma0_prime_pow N hp]
       exact primePower_eq_coeff_smul_of_relations F h₁ hp (hprime hp) (hpow p hp) v
     | coprime a b ha hb hab iha ihb =>
-      rw [heckeTCompositeGamma0_mul_of_coprime N hab, map_mul, Module.End.mul_apply,
+      rw [heckeTCompositeGamma0_mul_of_coprime N hab, map_mul, mul_apply_eq_comp,
         ihb (by omega), map_smul, iha (by omega), smul_smul, hmul a b hab, mul_comm]
 
 end TauCeti

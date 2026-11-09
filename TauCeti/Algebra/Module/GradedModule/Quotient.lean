@@ -49,6 +49,8 @@ differential over a polynomial ring whose variables move the degree; the kernel 
   homogeneous exactly when it is homogeneous in the source.
 * `TauCeti.InternalGrading.decompose_quotient_mk`: homogeneous projection commutes with the
   quotient map.
+* `TauCeti.InternalGrading.isHomogeneous_rangeRestrict`: the corestriction of a homogeneous map
+  to its image keeps its degree.
 * `TauCeti.InternalGrading.isHomogeneous_mkQ`: the quotient map has degree zero.
 -/
 
@@ -124,6 +126,15 @@ theorem coe_decompose_submodule (p : ι) (x : U) :
 theorem isHomogeneous_subtype [AddMonoid ι] :
     LinearMap.IsHomogeneous U.subtype (G.submodule U hU).piece G.piece 0 :=
   LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by simpa using hx
+
+/-- The corestriction of a homogeneous linear map to its image has the same degree, for the
+grading of the image by its homogeneous elements. -/
+theorem isHomogeneous_rangeRestrict [AddMonoid ι] {N : Type*} [AddCommMonoid N] [Module R N]
+    [Module S N] {H : InternalGrading R N ι} {f : N →ₗ[S] M} {r : ι}
+    (hf : LinearMap.IsHomogeneous f H.piece G.piece r) :
+    LinearMap.IsHomogeneous f.rangeRestrict H.piece
+      (G.submodule (_root_.LinearMap.range f) hf.isHomogeneous_range).piece r :=
+  LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ hf.map_mem hx
 
 end Submodule
 

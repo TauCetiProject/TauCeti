@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
+import TauCeti.Geometry.Manifold.Immersion.Basic
 
 /-!
 # Bundled smooth embeddings
@@ -34,14 +35,22 @@ later tubular-neighbourhood and surgery interfaces.
 * `TauCeti.SmoothEmbedding.prodMap`: the product of two bundled smooth embeddings.
 * `TauCeti.SmoothEmbedding.sumInl` / `sumInr`: the coproduct inclusions as smooth embeddings.
 
+## Main results
+
+* `Manifold.IsSmoothEmbedding.contMDiff_iff_comp`: smoothness can be tested after composition
+  with a smooth embedding, without a separate continuity hypothesis.
+* `TauCeti.isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero`: the slice `x ↦ (x, c)` of a product
+  `M × M'` is a smooth embedding when the preferred chart of `M'` at `c` sends `c` to `0`.
+* `Manifold.IsImmersion.isSmoothEmbedding_of_isProperMap`: an injective proper immersion is a
+  smooth embedding.
+* `Manifold.IsSmoothEmbedding.of_le`: lowering the regularity order preserves smooth embeddings.
+
 The construction is a thin wrapper around Mathlib's
 `Manifold.IsSmoothEmbedding` API, especially `IsSmoothEmbedding.id`, `of_opens`, `prodMap`,
 `sumInl`, and `sumInr`.
 -/
 
 public section
-
-namespace TauCeti
 
 open scoped Manifold ContDiff
 open Topology
@@ -60,6 +69,20 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M' : Type*} [TopologicalSpace M'] [ChartedSpace G M']
   {N' : Type*} [TopologicalSpace N'] [ChartedSpace G' N']
   {n : ℕ∞ω}
+
+namespace Manifold.IsSmoothEmbedding
+
+/-- A map into a smoothly embedded manifold is smooth if and only if its composite with
+the embedding is smooth. No separate continuity assumption is needed. -/
+theorem contMDiff_iff_comp {f : M → N} {φ : N → N'}
+    (hφ : Manifold.IsSmoothEmbedding J J' n φ) :
+    ContMDiff I J n f ↔ ContMDiff I J' n (φ ∘ f) := by
+  rw [ContMDiff.iff_comp_isImmersion hφ.isImmersion]
+  exact ⟨And.right, fun h ↦ ⟨hφ.isEmbedding.continuous_iff.2 h.continuous, h⟩⟩
+
+end Manifold.IsSmoothEmbedding
+
+namespace TauCeti
 
 /-- A bundled `C^n` smooth embedding between manifolds.
 
@@ -277,5 +300,32 @@ theorem coe_sumInr {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H M₂]
   exact sumInr_apply (I := I) (n := n) (M := M) x
 
 end SmoothEmbedding
+
+open Manifold in
+/-- **Slices of a product.** If the preferred chart of `M'` at `c` sends `c` to `0`, then the slice
+`x ↦ (x, c)` of the product `M × M'` is a smooth embedding: in product charts it is `u ↦ (u, 0)`. -/
+theorem isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero [IsManifold I n M] [IsManifold I' n M']
+    {c : M'} (hc : extChartAt I' c c = 0) :
+    IsSmoothEmbedding I (I.prod I') n (fun x : M ↦ (x, c)) := by
+  refine ⟨IsImmersionOfComplement.isImmersion (F := F) fun x ↦ ?_, isEmbedding_prodMkLeft c⟩
+  refine IsImmersionAtOfComplement.mk_of_continuousAt_of_extChartAt (by fun_prop)
+    (ContinuousLinearEquiv.refl 𝕜 _) fun v hv ↦ ?_
+  simp only [Function.comp_apply, ContinuousLinearEquiv.refl_apply]
+  rw [extChartAt_prod, PartialEquiv.prod_coe]
+  simp only [hc, (extChartAt I x).right_inv hv]
+
+/-- **Proper injective immersions are smooth embeddings.** A proper map is closed, so an injective
+proper immersion is a closed topological embedding. -/
+theorem _root_.Manifold.IsImmersion.isSmoothEmbedding_of_isProperMap {f : M → N}
+    (hf : Manifold.IsImmersion I J n f) (hinj : Function.Injective f) (hp : IsProperMap f) :
+    Manifold.IsSmoothEmbedding I J n f :=
+  ⟨hf, (Topology.IsClosedEmbedding.of_continuous_injective_isClosedMap hp.continuous hinj
+    hp.isClosedMap).isEmbedding⟩
+
+/-- Lowering the regularity order preserves smooth embeddings. -/
+theorem _root_.Manifold.IsSmoothEmbedding.of_le {m : ℕ∞ω} {f : M → N}
+    (h : Manifold.IsSmoothEmbedding I J m f) (hnm : n ≤ m) :
+    Manifold.IsSmoothEmbedding I J n f :=
+  ⟨h.isImmersion.of_le hnm, h.isEmbedding⟩
 
 end TauCeti

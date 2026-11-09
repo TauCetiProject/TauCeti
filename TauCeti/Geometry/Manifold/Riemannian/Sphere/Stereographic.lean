@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Geometry.Manifold.Instances.Sphere
 
 /-!
 # The round metric in stereographic coordinates
@@ -34,6 +35,8 @@ projection onto the equatorial hyperplane, which is `y ↦ σ⁻¹(2 y)`, the fa
 * `TauCeti.fderiv_stereoInvFunAux_apply`: the differential of `σ⁻¹`.
 * `TauCeti.inner_fderiv_stereoInvFunAux`: the conformal factor of `σ⁻¹` on the hyperplane
   orthogonal to `v`.
+* `TauCeti.inner_fderiv_stereoInvFunAux_two_smul`: the conformal factor `(2 / (1 + ‖y‖²))²` of
+  `y ↦ σ⁻¹ (2 J y)` for a linear isometry `J` into that hyperplane.
 * `TauCeti.inner_mfderiv_stereographic'_symm`: the round metric pulled back along the inverse of
   the stereographic chart `stereographic' n v`.
 
@@ -89,6 +92,29 @@ theorem inner_fderiv_stereoInvFunAux (hv : ‖v‖ = 1) {w a b : E} (hw : w ∈ 
   field_simp
   ring
 
+/-- **The conformal factor of equatorial stereographic coordinates.** For a unit vector `v` and a
+linear isometry `J` of a real inner product space `F` into the hyperplane orthogonal to `v`, the
+map `y ↦ σ⁻¹ (2 J y)` satisfies `⟪dσ⁻¹ a, dσ⁻¹ b⟫ = (2 / (1 + ‖y‖²))² ⟪a, b⟫` at `y`. -/
+theorem inner_fderiv_stereoInvFunAux_two_smul {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] (hv : ‖v‖ = 1) (J : F →ₗᵢ[ℝ] E) (hJ : ∀ c, J c ∈ (ℝ ∙ v)ᗮ)
+    (y a b : F) :
+    ⟪fderiv ℝ (fun w ↦ stereoInvFunAux v ((2 : ℝ) • J w)) y a,
+      fderiv ℝ (fun w ↦ stereoInvFunAux v ((2 : ℝ) • J w)) y b⟫_ℝ =
+      (2 / (1 + ‖y‖ ^ 2)) ^ 2 * ⟪a, b⟫_ℝ := by
+  set L : F →L[ℝ] E := (2 : ℝ) • J.toContinuousLinearMap
+  have hL (c : F) : L c ∈ (ℝ ∙ v)ᗮ := Submodule.smul_mem _ _ (hJ c)
+  have hd : HasFDerivAt (fun w ↦ stereoInvFunAux v ((2 : ℝ) • J w))
+      ((fderiv ℝ (stereoInvFunAux v) (L y)).comp L) y :=
+    ((contDiff_stereoInvFunAux (m := 1)).differentiable one_ne_zero _).hasFDerivAt.comp y
+      L.hasFDerivAt
+  rw [hd.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    inner_fderiv_stereoInvFunAux hv (hL y) (hL a) (hL b)]
+  simp only [L, smul_apply, LinearIsometry.coe_toContinuousLinearMap,
+    norm_smul, LinearIsometry.norm_map, Real.norm_eq_abs, abs_two, real_inner_smul_left,
+    real_inner_smul_right, LinearIsometry.inner_map_map]
+  field_simp
+  ring
+
 variable {n : ℕ} [Fact (finrank ℝ E = n + 1)]
 
 /-- **The round metric in stereographic coordinates.** Pulled back along the inverse of the
@@ -105,9 +131,8 @@ theorem inner_mfderiv_stereographic'_symm (v : sphere (0 : E) 1)
     mdifferentiableAt_atlas_symm (e := stereographic' n v) (Exists.intro v rfl) (by simp)
   -- Read in `E`, the inverse chart is `σ⁻¹` precomposed with the isometry `U.symm`.
   have hfun : ((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm =
-      stereoInvFunAux (v : E) ∘ ((↑) : (ℝ ∙ (v : E))ᗮ → E) ∘ U.symm := by
-    funext y
-    simp [stereographic'_symm_apply, smul_add, U]
+      stereoInvFunAux (v : E) ∘ ((↑) : (ℝ ∙ (v : E))ᗮ → E) ∘ U.symm :=
+    coe_comp_stereographic'_symm v
   have hd (c : TangentSpace (𝓡 n) y) :
       mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) _
           (mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm y c) =

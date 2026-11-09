@@ -10,6 +10,9 @@ public import TauCeti.Analysis.Complex.QuadraticLeviForm
 public import TauCeti.Geometry.Manifold.Complex.LeviForm
 public import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+public import TauCeti.Geometry.Manifold.Morse.SquaredDistance
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
 
 /-!
 # Squared distance on complex manifolds
@@ -20,8 +23,16 @@ the actual complex manifold derivative of `i`. In particular, it is positive def
 at every immersion point, independently of the center `a`.
 
 At a critical point the resulting intrinsic real Hessian identity bounds the real
-Morse index by the complex dimension. These are the differential identities needed
-to apply Morse theory to squared-distance exhaustions of complex submanifolds.
+Morse index by the complex dimension. Combining this index bound with Haar genericity of
+squared-distance Morse functions along smooth immersions (`TauCeti.ae_isMorse_norm_sq_sub_comp`)
+shows that for a smooth holomorphic immersion of a second-countable complex manifold into a
+finite-dimensional complex inner product space and almost every center `a`, `y ↦ ‖i y - a‖²` is a
+real Morse function whose critical points all have index at most `finrank ℂ E`
+(`TauCeti.ae_isMorse_and_manifoldMorseIndex_norm_sq_sub_comp_le`,
+`TauCeti.exists_isMorse_and_manifoldMorseIndex_norm_sq_sub_comp_le`).
+
+Along the inclusion of an open subset, squared distance is strictly plurisubharmonic at every
+point (`TauCeti.isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_subtypeVal`).
 
 ## References
 
@@ -33,8 +44,8 @@ The calculation uses `TauCeti.manifoldLeviForm_comp_apply` and
 
 public section
 
-open Complex Function Module
-open scoped Manifold
+open Complex Function MeasureTheory Module TopologicalSpace
+open scoped ContDiff Manifold
 
 namespace TauCeti
 
@@ -90,9 +101,10 @@ theorem isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_comp_iff
 
 /-- Squared distance along a complex `C²` map is real `C²`. -/
 theorem contMDiffAt_norm_sq_sub_comp (hi : ContMDiffAt 𝓘(ℂ, E) 𝓘(ℂ, F) 2 i x) :
-    ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 (fun y ↦ ‖i y - a‖ ^ 2) x :=
-  (contDiff_norm_sq ℂ).contDiffAt.contMDiffAt.comp x
-    ((hi.restrictScalars ℝ).sub contMDiffAt_const)
+    ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 (fun y ↦ ‖i y - a‖ ^ 2) x := by
+  have hiR : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, F) 2 i x := by
+    simpa using hi.restrictScalars ℝ
+  exact (contDiff_norm_sq ℂ).contDiffAt.contMDiffAt.comp x (hiR.sub contMDiffAt_const)
 
 /-- The sum of the real Hessian on a complex tangent vector and its rotation by `I`
 is four times the squared norm of the tangent map. The Hessian here is computed in the
@@ -136,5 +148,59 @@ theorem manifoldMorseIndex_norm_sq_sub_comp_le [FiniteDimensional ℂ E]
     manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - a‖ ^ 2) x ≤ finrank ℂ E := by
   have hpos := (isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_comp_iff (a := a) hi).2 hinj
   exact hpos.manifoldMorseIndex_le (contMDiffAt_norm_sq_sub_comp hi) hcrit
+
+/-- Along the inclusion of an open subset of a complex inner product space, the squared distance
+from any point is strictly plurisubharmonic at every point. -/
+theorem isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_subtypeVal (U : Opens F) (a : F)
+    (x : U) : IsManifoldStrictlyPlurisubharmonicAt F (fun y : U ↦ ‖(y : F) - a‖ ^ 2) x := by
+  rw [isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_comp_iff
+    (contMDiff_subtype_val (I := 𝓘(ℂ, F)) x)]
+  exact Manifold.injective_mvfderiv_subtype_val x
+
+section Immersion
+
+variable [FiniteDimensional ℂ E] [FiniteDimensional ℂ F] [IsManifold 𝓘(ℂ, E) ∞ M]
+  [SecondCountableTopology M]
+
+/-- **Generic low-index squared-distance Morse functions on a holomorphically immersed manifold.**
+For a smooth holomorphic immersion `i : M → F` of a second-countable complex manifold into a
+finite-dimensional complex inner product space and almost every `a ∈ F` (with respect to any Haar
+measure `μ`), `y ↦ ‖i y - a‖ ^ 2` is a real Morse function on `M` whose critical points all have
+Morse index at most `finrank ℂ E`. -/
+theorem ae_isMorse_and_manifoldMorseIndex_norm_sq_sub_comp_le
+    [MeasurableSpace F] [BorelSpace F] (μ : Measure F) [μ.IsAddHaarMeasure]
+    (hi : ContMDiff 𝓘(ℂ, E) 𝓘(ℂ, F) ∞ i)
+    (hinj : ∀ x, Injective (mvfderiv 𝓘(ℂ, E) i x)) :
+    ∀ᵐ a ∂μ, IsMorse 𝓘(ℝ, E) (fun y ↦ ‖i y - a‖ ^ 2) ∧
+      ∀ x ∈ criticalPoints 𝓘(ℝ, E) (fun y ↦ ‖i y - a‖ ^ 2),
+        manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - a‖ ^ 2) x ≤ finrank ℂ E := by
+  let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+  have : FiniteDimensional ℝ F := Module.Finite.trans ℂ F
+  have : IsManifold 𝓘(ℝ, E) ∞ M :=
+    IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) ∞ M)
+  have : IsManifold 𝓘(ℝ, E) 2 M := .of_le (n := ∞) (by norm_cast)
+  have : IsManifold 𝓘(ℂ, E) 2 M := .of_le (n := ∞) (by norm_cast)
+  have hiR : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ i := by simpa using hi.restrictScalars ℝ
+  have hinjR (x : M) : Injective (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, F) i x) :=
+    ((hi x).mdifferentiableAt (by simp)).injective_mfderiv_restrictScalars ℝ
+      (injective_mvfderiv_iff.1 (hinj x))
+  filter_upwards [ae_isMorse_norm_sq_sub_comp μ hiR hinjR] with a ha
+  exact ⟨ha, fun x hx ↦ manifoldMorseIndex_norm_sq_sub_comp_le ((hi x).of_le (by norm_cast))
+    (hinj x) (mem_criticalPoints.1 hx)⟩
+
+/-- **Existence of a low-index squared-distance Morse function on a holomorphically immersed
+manifold.** -/
+theorem exists_isMorse_and_manifoldMorseIndex_norm_sq_sub_comp_le
+    (hi : ContMDiff 𝓘(ℂ, E) 𝓘(ℂ, F) ∞ i)
+    (hinj : ∀ x, Injective (mvfderiv 𝓘(ℂ, E) i x)) :
+    ∃ a : F, IsMorse 𝓘(ℝ, E) (fun y ↦ ‖i y - a‖ ^ 2) ∧
+      ∀ x ∈ criticalPoints 𝓘(ℝ, E) (fun y ↦ ‖i y - a‖ ^ 2),
+        manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - a‖ ^ 2) x ≤ finrank ℂ E := by
+  let _ : MeasurableSpace F := borel F
+  have : BorelSpace F := ⟨rfl⟩
+  have : FiniteDimensional ℝ F := Module.Finite.trans ℂ F
+  exact (ae_isMorse_and_manifoldMorseIndex_norm_sq_sub_comp_le Measure.addHaar hi hinj).exists
+
+end Immersion
 
 end TauCeti

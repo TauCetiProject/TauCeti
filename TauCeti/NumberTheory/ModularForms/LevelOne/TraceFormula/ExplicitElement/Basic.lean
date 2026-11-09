@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.MatrixModule
 import Mathlib.Tactic.LinearCombination
 
@@ -40,6 +41,8 @@ coefficient of the class of `M` is the sum of the weights of `M` and `-M`.
 * `TauCeti.PopaZagier.det_pos_of_weight_ne_zero`, `TauCeti.PopaZagier.abs_le_of_weight_ne_zero`:
   every matrix occurring in (15) has positive determinant `n` and entries at most `2n` in absolute
   value, so only finitely many occur for each `n` (Popa–Zagier, Lemma 4(a)).
+* `TauCeti.PopaZagier.finite_support_weight_traceDetFiber`: in particular only finitely many
+  matrices of a given trace and determinant have nonzero weight.
 * `TauCeti.PopaZagier.abs_le_of_weightᵢ_ne_zero`: the same bound for a matrix of nonzero weight
   in any one of the four sums `T₁`, ..., `T₄`.
 * `TauCeti.PopaZagier.weight_neg_eq_zero`: with Popa–Zagier's representatives, `c > 0` or
@@ -100,6 +103,19 @@ all three are equalities is not covered by the rule; it does not occur in (15). 
   else if w ≤ x ∧ x ≤ y ∧ y ≤ z then
     if w = x ∧ y = z then 3 else if w = x ∧ x = y ∨ x = y ∧ y = z then 2 else 6
   else 0
+
+/-- A first line `x ≤ y ≤ z` of nonzero weight holds. -/
+@[grind →]
+theorem le_of_chainWeight₃_ne_zero {x y z : ℤ} (h : chainWeight₃ x y z ≠ 0) : x ≤ y ∧ y ≤ z := by
+  unfold chainWeight₃ at h
+  split_ifs at h <;> omega
+
+/-- A first line `w ≤ x ≤ y ≤ z` of nonzero weight holds. -/
+@[grind →]
+theorem le_of_chainWeight₄_ne_zero {w x y z : ℤ} (h : chainWeight₄ w x y z ≠ 0) :
+    w ≤ x ∧ x ≤ y ∧ y ≤ z := by
+  unfold chainWeight₄ at h
+  split_ifs at h <;> omega
 
 /-- Twelve times the coefficient of `(a b; c d)` in `T₁ = ⟨a - d ≤ -b ≤ c; 0 ≤ c < a⟩`. -/
 @[expose] def weight₁ (a b c d : ℤ) : ℤ :=
@@ -312,6 +328,17 @@ twice its determinant in absolute value. -/
 theorem abs_le_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ} (h : weight M ≠ 0) (i j : Fin 2) :
     |M i j| ≤ 2 * M.det :=
   abs_le_of_weightᵢ_ne_zero (weightᵢ_ne_zero_of_weight_ne_zero h) i j
+
+/-- Only finitely many matrices of trace `t` and determinant `n` have nonzero weight: their
+entries are at most `2 n` in absolute value (`abs_le_of_weight_ne_zero`). -/
+theorem finite_support_weight_traceDetFiber (t n : ℤ) :
+    (Function.support fun M : traceDetFiber (Fin 2) t n ↦ weight M.1).Finite := by
+  refine ((FixedDetMatrices.finite_setOf_abs_le (m := Fin 2) n (2 * n)).preimage
+    (f := fun M : traceDetFiber (Fin 2) t n ↦
+      (⟨M.1, (mem_traceDetFiber.mp M.2).2⟩ : FixedDetMatrix (Fin 2) ℤ n))
+    fun M _ N _ h ↦ Subtype.ext (by simpa using congrArg Subtype.val h)).subset fun M hM i j ↦ ?_
+  have := abs_le_of_weight_ne_zero hM i j
+  rwa [(mem_traceDetFiber.mp M.2).2] at this
 
 /-- Every matrix `M = (a b; c d)` of nonzero weight has `c > 0`, or `c = 0 < a`. -/
 theorem pos_or_eq_zero_and_pos_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ} (h : weight M ≠ 0) :

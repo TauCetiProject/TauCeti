@@ -50,7 +50,8 @@ open BinaryGolay IntegralLattice
 lattice exactly when `b` reduces to a Golay codeword and `∑ 2bᵢ ≡ 0 (mod 8)`. -/
 private theorem even_mem_constructionBLattice_carrier_iff (b : Fin 24 → ℤ) :
     (fun i ↦ ((2 * b i + 0 : ℤ) : ℚ) / 2) ∈ constructionBLattice.carrier ↔
-      (fun i ↦ (b i : ZMod 2)) ∈ code ∧ ∑ i, (2 * b i + 0) ≡ 4 * 0 [ZMOD 8] := by
+      (fun i ↦ (b i : ZMod 2)) ∈ TauCeti.BinaryGolay.code ∧ ∑ i,
+        (2 * b i + 0) ≡ 4 * 0 [ZMOD 8] := by
   have hx : (fun i ↦ ((2 * b i + 0 : ℤ) : ℚ) / 2) = fun i ↦ (b i : ℚ) := by
     funext i
     push_cast
@@ -65,7 +66,8 @@ element of the Golay Construction B lattice exactly when `b` reduces to a Golay 
 `∑ (2bᵢ + 1) ≡ 4 (mod 8)`. The difference is the integer vector `b + 2 e₀`. -/
 private theorem odd_sub_leechShift_mem_constructionBLattice_carrier_iff (b : Fin 24 → ℤ) :
     (fun i ↦ ((2 * b i + 1 : ℤ) : ℚ) / 2) - leechShift ∈ constructionBLattice.carrier ↔
-      (fun i ↦ (b i : ZMod 2)) ∈ code ∧ ∑ i, (2 * b i + 1) ≡ 4 * 1 [ZMOD 8] := by
+      (fun i ↦ (b i : ZMod 2)) ∈ TauCeti.BinaryGolay.code ∧ ∑ i,
+        (2 * b i + 1) ≡ 4 * 1 [ZMOD 8] := by
   have hx : (fun i ↦ ((2 * b i + 1 : ℤ) : ℚ) / 2) - leechShift =
       fun i ↦ ((b i + if i = 0 then 2 else 0 : ℤ) : ℚ) := by
     funext i
@@ -95,14 +97,15 @@ when `x = a / 2` for an integer vector `a = 2b + m 𝟙` with `m ∈ {0, 1}`, `b
 codeword modulo two, and `∑ aᵢ ≡ 4m (mod 8)`. -/
 theorem mem_leechLattice_carrier_iff_exists (x : Fin 24 → ℚ) :
     x ∈ leechLattice.carrier ↔
-      ∃ m : ℤ, (m = 0 ∨ m = 1) ∧ ∃ b : Fin 24 → ℤ, (fun i ↦ (b i : ZMod 2)) ∈ code ∧
+      ∃ m : ℤ, (m = 0 ∨ m = 1) ∧ ∃ b : Fin 24 → ℤ,
+        (fun i ↦ (b i : ZMod 2)) ∈ TauCeti.BinaryGolay.code ∧
         ∑ i, (2 * b i + m) ≡ 4 * m [ZMOD 8] ∧ x = fun i ↦ ((2 * b i + m : ℤ) : ℚ) / 2 := by
   constructor
   · rw [mem_leechLattice_carrier_iff]
     rintro (hx | hx)
     · -- The half-lattice: `x` is an integer vector `b`, and `m = 0`.
       obtain ⟨b, -, rfl⟩ := (ConstructionA.mem_lattice 2).mp
-        (ConstructionB.lattice_le code (constructionBLattice_carrier ▸ hx))
+        (ConstructionB.lattice_le TauCeti.BinaryGolay.code (constructionBLattice_carrier ▸ hx))
       have hb : (fun i ↦ (b i : ℚ)) = fun i ↦ ((2 * b i + 0 : ℤ) : ℚ) / 2 := by
         funext i
         push_cast
@@ -113,7 +116,7 @@ theorem mem_leechLattice_carrier_iff_exists (x : Fin 24 → ℚ) :
     · -- The odd coset: `x - s` is an integer vector `y`, and `x = (2b + 𝟙) / 2` with
       -- `b = y - 2 e₀`.
       obtain ⟨y, -, hy⟩ := (ConstructionA.mem_lattice 2).mp
-        (ConstructionB.lattice_le code (constructionBLattice_carrier ▸ hx))
+        (ConstructionB.lattice_le TauCeti.BinaryGolay.code (constructionBLattice_carrier ▸ hx))
       set b : Fin 24 → ℤ := fun i ↦ y i - if i = 0 then 2 else 0
       have hxb : x = fun i ↦ ((2 * b i + 1 : ℤ) : ℚ) / 2 := by
         funext i

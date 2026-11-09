@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.UniformSpace.HeineCantor
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 
 /-!
 # Iterated derivatives of a directional derivative
@@ -26,14 +27,20 @@ form in which a fixed directional derivative commutes with all higher derivative
 As an application, every derivative of the first-order Taylor remainder
 `z ↦ f (z - h) - f z + Df(z) h` of a compactly supported `C^{i+1}` map is `o(‖h‖)` uniformly on the
 whole space. This controls every derivative of the difference quotients of translates of a
-compactly supported smooth function at once.
+compactly supported smooth function at once. The same holds for the first-order Taylor remainder
+`x ↦ g (p + h, x) - g (p, x) - Dg(p, x) (h, 0)` of a compactly supported map `g` on a product in
+its first variable, with derivatives taken in the second: this controls the difference quotients
+of a smooth family of compactly supported functions with respect to a parameter.
 
 ## Main declarations
 
 * `ContDiff.iteratedFDeriv_fderiv_apply`: `Dⁱ (y ↦ Df(y) v) = D(Dⁱ f)(·) v`.
+* `ContDiff.norm_iteratedFDeriv_fderiv_apply_le`: `‖Dⁱ (y ↦ Df(y) v)‖ ≤ ‖D^{i+1} f‖ ‖v‖`.
 * `TauCeti.tsupport_sub_sub_add_fderiv_subset`: the support of the first-order Taylor remainder.
 * `HasCompactSupport.exists_norm_iteratedFDeriv_sub_sub_add_fderiv_le`: the uniform estimate on
   the derivatives of the first-order Taylor remainder.
+* `HasCompactSupport.exists_norm_iteratedFDeriv_prod_right_sub_sub_le`: the same estimate for the
+  Taylor remainder in a parameter.
 -/
 
 public section
@@ -79,6 +86,14 @@ theorem ContDiff.iteratedFDeriv_fderiv_apply {n : WithTop ℕ∞} {f : E → F} 
     ext w : 1
     rw [TauCeti.fderiv_clm_apply_const_apply hD]
     exact (hg.contDiffAt (x := x)).isSymmSndFDerivAt le_rfl w v
+
+/-- The `i`-th iterated derivative of a directional derivative `y ↦ Df(y) v` is bounded by the
+`(i + 1)`-th iterated derivative of `f`: `‖Dⁱ (y ↦ Df(y) v) (x)‖ ≤ ‖D^{i+1} f (x)‖ ‖v‖`. -/
+theorem ContDiff.norm_iteratedFDeriv_fderiv_apply_le {n : WithTop ℕ∞} {f : E → F}
+    (hf : ContDiff 𝕜 n f) {i : ℕ} (hi : minSmoothness 𝕜 (i + 1) ≤ n) (v x : E) :
+    ‖iteratedFDeriv 𝕜 i (fun y ↦ fderiv 𝕜 f y v) x‖ ≤ ‖iteratedFDeriv 𝕜 (i + 1) f x‖ * ‖v‖ := by
+  rw [hf.iteratedFDeriv_fderiv_apply hi, ← norm_fderiv_iteratedFDeriv]
+  exact (fderiv 𝕜 (iteratedFDeriv 𝕜 i f) x).le_opNorm v
 
 namespace TauCeti
 
@@ -128,3 +143,39 @@ theorem HasCompactSupport.exists_norm_iteratedFDeriv_sub_sub_add_fderiv_le
     (Metric.mem_ball_self hδ)
     (by rwa [Metric.mem_ball, dist_eq_norm, sub_sub_cancel_left, norm_neg])
   simpa only [sub_sub_cancel_left, map_neg, sub_neg_eq_add, norm_neg] using hmv
+
+/-- **Uniform first-order Taylor estimate in a parameter.** If `g : P × E → F` is `C^{i+1}` with
+compact support, then the `i`-th derivative in the second variable of the first-order Taylor
+remainder `x ↦ g (p + h, x) - g (p, x) - Dg(p, x) (h, 0)` in the first variable is `o(‖h‖)` as
+`h → 0`, uniformly on the whole space. -/
+theorem HasCompactSupport.exists_norm_iteratedFDeriv_prod_right_sub_sub_le
+    {P E F : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {n : WithTop ℕ∞}
+    {g : P × E → F} (hgc : HasCompactSupport g) (hg : ContDiff ℝ n g) {i : ℕ} (hi : i + 1 ≤ n)
+    (p : P) {ε : ℝ} (hε : 0 < ε) :
+    ∃ δ > 0, ∀ h : P, ‖h‖ < δ → ∀ y,
+      ‖iteratedFDeriv ℝ i (fun x ↦ g (p + h, x) - g (p, x) - fderiv ℝ g (p, x) (h, 0)) y‖ ≤
+        ε * ‖h‖ := by
+  obtain ⟨δ, hδ, hrem⟩ := hgc.exists_norm_iteratedFDeriv_sub_sub_add_fderiv_le hg hi hε
+  refine ⟨δ, hδ, fun h hh y ↦ ?_⟩
+  have hw : ‖((-h, 0) : P × E)‖ = ‖h‖ := by simp
+  -- The remainder in `p` is the slice at `p` of the Taylor remainder of `g` on the product with
+  -- displacement `(-h, 0)`, whose derivatives in the second variable are its total derivatives
+  -- restricted to the second factor.
+  set R := fun q : P × E ↦ g (q - (-h, 0)) - g q + fderiv ℝ g q (-h, 0)
+  have hin : (i : WithTop ℕ∞) ≤ n := le_trans (by norm_cast; omega) hi
+  have hR : ContDiff ℝ i R :=
+    (((hg.comp (contDiff_id.sub contDiff_const)).sub hg).of_le hin).add
+      ((hg.fderiv_right hi).clm_apply contDiff_const)
+  have hslice : (fun x ↦ g (p + h, x) - g (p, x) - fderiv ℝ g (p, x) (h, 0)) =
+      fun x ↦ R (p, x) := by
+    funext x
+    have hn : ((-h, 0) : P × E) = -(h, 0) := by simp
+    simp only [R, hn, sub_neg_eq_add, Prod.mk_add_mk, add_zero, map_neg, ← sub_eq_add_neg]
+  rw [hslice, _root_.ContDiff.iteratedFDeriv_prod_right hR i le_rfl]
+  refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
+  have hprod : ∏ _ : Fin i, ‖ContinuousLinearMap.inr ℝ P E‖ ≤ 1 := by
+    rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+    exact pow_le_one₀ (norm_nonneg _) (ContinuousLinearMap.norm_inr_le_one ..)
+  calc _ ≤ ‖iteratedFDeriv ℝ i R (p, y)‖ * 1 := mul_le_mul_of_nonneg_left hprod (norm_nonneg _)
+    _ ≤ ε * ‖h‖ := by rw [mul_one, ← hw]; exact hrem _ (hw ▸ hh) _

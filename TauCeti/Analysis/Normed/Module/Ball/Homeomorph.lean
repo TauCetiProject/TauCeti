@@ -199,7 +199,8 @@ def cubeHomeomorphClosedBall : (N → I) ≃ₜ closedBall (0 : N → ℝ) 1 :=
     Homeomorph.piCongrRight fun _ ↦ (iccHomeoI (-1 : ℝ) 1 (by norm_num)).symm
   let b : (N → Icc (-1 : ℝ) 1) ≃ₜ univ.pi (fun _ : N ↦ Icc (-1 : ℝ) 1) :=
     { toEquiv := (Equiv.Set.univPi _).symm
-      continuous_toFun := by fun_prop
+      continuous_toFun := (continuous_pi fun i ↦
+        continuous_subtype_val.comp (continuous_apply i)).subtype_mk _
       continuous_invFun := continuous_pi fun i ↦
         ((continuous_apply i).comp continuous_subtype_val).subtype_mk _ }
   have h : univ.pi (fun _ : N ↦ Icc (-1 : ℝ) 1) = closedBall (0 : N → ℝ) 1 := by

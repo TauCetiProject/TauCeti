@@ -42,6 +42,9 @@ a group in `Type`.
   `TauCeti.classifyingSpaceFirstHomologyAddEquiv_loopClass`,
   `TauCeti.classifyingSpaceFirstHomologyAddEquiv_symm_ofMul_of`: the class of a loop representing
   `g` corresponds to the class of `g`.
+* `TauCeti.classifyingSpaceFirstHomologyAddEquiv_homologyMap_hurewiczHomologyAddEquiv`: a map
+  into the classifying space sends the class of a loop to the class of the group element its
+  image represents, after a change of base point.
 * `TauCeti.classifyingSpaceFirstHomologyAddEquiv_homologyMap`: naturality in the group.
 * `TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology_hurewiczHomologyAddEquiv`,
   `TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology_loopClass`: the class of a loop
@@ -109,6 +112,23 @@ theorem classifyingSpaceFirstHomologyAddEquiv_symm_ofMul_of (g : G) :
           (Abelianization.of ((classifyingSpaceFundamentalGroupMulEquiv G).symm g))) := by
   rw [AddEquiv.symm_apply_eq, classifyingSpaceFirstHomologyAddEquiv_hurewiczHomologyAddEquiv,
     MulEquiv.apply_symm_apply]
+
+/-- **Maps into the classifying space on first homology.** For a continuous map `f` from a
+path-connected space to `classifyingSpace G` and a path `γ` from `f x` to the base point, the map
+induced by `f` on integral first homology sends the Hurewicz class of a loop `a` at `x` to the
+class of the group element represented by `f ∘ a`, moved to the base point along `γ`. -/
+theorem classifyingSpaceFirstHomologyAddEquiv_homologyMap_hurewiczHomologyAddEquiv
+    {X : Type} [TopologicalSpace X] [PathConnectedSpace X] (f : C(X, classifyingSpace G))
+    {x : X} (γ : Path (f x) (classifyingSpaceBasepoint G)) (a : FundamentalGroup X x) :
+    classifyingSpaceFirstHomologyAddEquiv G
+        ((HomologicalComplex.homologyMap ((singularChains ℤ).map (TopCat.ofHom f)) 1).hom
+          (hurewiczHomologyAddEquiv (X := TopCat.of X) x (Additive.ofMul (Abelianization.of a)))) =
+      Additive.ofMul (Abelianization.of (classifyingSpaceFundamentalGroupMulEquiv G
+        (FundamentalGroup.fundamentalGroupMulEquivOfPath γ (FundamentalGroup.map f x a)))) := by
+  rw [homologyMap_hurewiczHomologyAddEquiv, toMul_ofMul, Abelianization.map_of]
+  simp only [TopCat.hom_ofHom]
+  rw [← hurewiczHomologyAddEquiv_fundamentalGroupMulEquivOfPath γ,
+    classifyingSpaceFirstHomologyAddEquiv_hurewiczHomologyAddEquiv]
 
 /-- **The first homology of the classifying space is natural in the group.** Under the
 identifications `classifyingSpaceFirstHomologyAddEquiv` of `H₁(BG; ℤ)` with `Gᵃᵇ` and of

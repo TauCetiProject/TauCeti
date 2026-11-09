@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.FourierTransform
-public import TauCeti.MeasureTheory.Integral.ExpDecay
+public import TauCeti.MeasureTheory.Integral.Exp.Decay
+import TauCeti.Analysis.Complex.Coordinates
+import TauCeti.Analysis.SpecialFunctions.Exp.Oscillation
 
 /-!
 # The Fourier transform of the two-sided exponential
@@ -43,37 +45,20 @@ theorem integral_exp_mul_I_mul_exp_neg_mul_abs (ha : 0 < a) (b : ℝ) :
   -- Rewrite the integrand as a single complex exponential on each half-line.
   have hre₁ : ((a : ℂ) + b * Complex.I).re = a := by simp
   have hre₂ : (-(a : ℂ) + b * Complex.I).re = -a := by simp
-  have key : ∀ c x : ℝ, Complex.exp ((b : ℂ) * x * Complex.I) * (Real.exp (c * x) : ℂ)
-      = Complex.exp (((c : ℂ) + b * Complex.I) * x) := by
-    intro c x
-    rw [Complex.ofReal_exp, ← Complex.exp_add]
-    congr 1
-    push_cast
-    ring
   have hm : EqOn (fun x : ℝ ↦ Complex.exp ((b : ℂ) * x * Complex.I) * (Real.exp (-(a * |x|)) : ℂ))
       (fun x : ℝ ↦ Complex.exp (((a : ℂ) + b * Complex.I) * x)) (Iic 0) := by
     intro x hx
     have hxa : -(a * |x|) = a * x := by rw [abs_of_nonpos (mem_Iic.mp hx)]; ring
-    simpa only [hxa] using key a x
+    simpa only [hxa] using exp_mul_I_mul_ofReal_exp_mul b a x
   have hp : EqOn (fun x : ℝ ↦ Complex.exp ((b : ℂ) * x * Complex.I) * (Real.exp (-(a * |x|)) : ℂ))
       (fun x : ℝ ↦ Complex.exp ((-(a : ℂ) + b * Complex.I) * x)) (Ioi 0) := by
     intro x hx
     have hxa : -(a * |x|) = -a * x := by rw [abs_of_pos (mem_Ioi.mp hx)]; ring
-    simpa only [hxa, Complex.ofReal_neg] using key (-a) x
-  -- Integrability comes from the real two-sided exponential, since the oscillation has norm one.
-  have hint : Integrable
-      (fun x : ℝ ↦ Complex.exp ((b : ℂ) * x * Complex.I) * (Real.exp (-(a * |x|)) : ℂ))
-      := ((integrable_exp_neg_mul_abs ha).ofReal).bdd_mul (c := 1) (by fun_prop)
-        (.of_forall fun x ↦ by simp [Complex.norm_exp])
-  have hne₁ : (a : ℂ) + b * Complex.I ≠ 0 := by
-    intro h
-    rw [h] at hre₁
-    exact ha.ne' (by simpa using hre₁.symm)
+    simpa only [hxa, Complex.ofReal_neg] using exp_mul_I_mul_ofReal_exp_mul b (-a) x
+  have hint := integrable_exp_mul_I_mul_exp_neg_mul_abs ha b
+  have hne₁ := Complex.ofReal_add_mul_I_ne_zero ha.ne' b
   have hne₂ : -(a : ℂ) + b * Complex.I ≠ 0 := by
-    intro h
-    rw [h] at hre₂
-    simp only [Complex.zero_re] at hre₂
-    exact ha.ne' (by linarith)
+    simpa using Complex.ofReal_add_mul_I_ne_zero (neg_ne_zero.2 ha.ne') b
   have hsq : (0 : ℝ) < a ^ 2 + b ^ 2 := by positivity
   -- Evaluate the two half-line integrals and combine the resulting rational functions.
   rw [← intervalIntegral.integral_Iic_add_Ioi hint.integrableOn hint.integrableOn,

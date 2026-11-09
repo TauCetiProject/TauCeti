@@ -293,7 +293,7 @@ theorem lower_raise_apply (v : Sl2Std K n) (i : Fin (n + 1)) :
 theorem lie_raise_lower : ⁅raise K n, lower K n⁆ = diag K n := by
   rw [LieRing.of_associative_ring_bracket]
   refine LinearMap.ext fun v => funext fun i => ?_
-  rw [LinearMap.sub_apply, sub_apply, Module.End.mul_apply, Module.End.mul_apply,
+  rw [LinearMap.sub_apply, sub_apply, mul_apply_eq_comp, mul_apply_eq_comp,
     raise_lower_apply, lower_raise_apply, diag_apply]
   ring
 
@@ -301,7 +301,7 @@ theorem lie_raise_lower : ⁅raise K n, lower K n⁆ = diag K n := by
 theorem lie_diag_raise : ⁅diag K n, raise K n⁆ = (2 : K) • raise K n := by
   rw [LieRing.of_associative_ring_bracket]
   refine LinearMap.ext fun v => funext fun i => ?_
-  rw [LinearMap.sub_apply, sub_apply, Module.End.mul_apply, Module.End.mul_apply,
+  rw [LinearMap.sub_apply, sub_apply, mul_apply_eq_comp, mul_apply_eq_comp,
     LinearMap.smul_apply, smul_apply, diag_apply (raise K n v), raise_apply (diag K n v),
     raise_apply v]
   by_cases h : (i : ℕ) < n
@@ -315,7 +315,7 @@ theorem lie_diag_raise : ⁅diag K n, raise K n⁆ = (2 : K) • raise K n := by
 theorem lie_diag_lower : ⁅diag K n, lower K n⁆ = -((2 : K) • lower K n) := by
   rw [LieRing.of_associative_ring_bracket]
   refine LinearMap.ext fun v => funext fun i => ?_
-  rw [LinearMap.sub_apply, sub_apply, Module.End.mul_apply, Module.End.mul_apply,
+  rw [LinearMap.sub_apply, sub_apply, mul_apply_eq_comp, mul_apply_eq_comp,
     LinearMap.neg_apply, neg_apply, LinearMap.smul_apply, smul_apply, diag_apply (lower K n v),
     lower_apply (diag K n v), lower_apply v]
   by_cases h : 0 < (i : ℕ)
@@ -519,7 +519,7 @@ theorem lower_pow_basis_zero (i : Fin (n + 1)) :
     have hlt : ((i.castSucc : Fin (n + 1)) : ℕ) < n := i.isLt
     have hidx : (⟨((i.castSucc : Fin (n + 1)) : ℕ) + 1, by omega⟩ : Fin (n + 1)) = i.succ := by
       ext; simp
-    rw [hval, pow_succ', Module.End.mul_apply, ih, map_smul, lower_basis _ hlt, hidx, smul_smul,
+    rw [hval, pow_succ', mul_apply_eq_comp, ih, map_smul, lower_basis _ hlt, hidx, smul_smul,
       Finset.prod_range_succ, mul_comm]
 
 /-! ### The coordinate basis indexed by the naturals -/
@@ -612,7 +612,7 @@ theorem raise_pow_apply_of_le {k : ℕ}
   induction k generalizing i with
   | zero => simp
   | succ k ih =>
-      rw [pow_succ', Module.End.mul_apply, raise_apply]
+      rw [pow_succ', mul_apply_eq_comp, raise_apply]
       have hi : (i : ℕ) < n := by omega
       rw [dite_eq_left hi]
       let j : Fin (n + 1) := ⟨(i : ℕ) + 1, by omega⟩
@@ -633,7 +633,7 @@ theorem raise_pow_apply_eq_zero (k : ℕ) (v : Sl2Std K n) (i : Fin (n + 1))
   induction k generalizing i with
   | zero => exact absurd h (by have := i.isLt; omega)
   | succ k ih =>
-    rw [pow_succ', Module.End.mul_apply, raise_apply]
+    rw [pow_succ', mul_apply_eq_comp, raise_apply]
     by_cases hi : (i : ℕ) < n
     · rw [dite_eq_left hi, ih ⟨(i : ℕ) + 1, by omega⟩ (by rw [Fin.val_mk]; omega), mul_zero]
     · rw [dite_eq_right hi]
@@ -674,7 +674,7 @@ theorem lower_pow_apply_of_le {k : ℕ}
   induction k generalizing i with
   | zero => simp
   | succ k ih =>
-      rw [pow_succ', Module.End.mul_apply, lower_apply]
+      rw [pow_succ', mul_apply_eq_comp, lower_apply]
       have hi : 0 < (i : ℕ) := by omega
       rw [dite_eq_left hi]
       let j : Fin (n + 1) := ⟨(i : ℕ) - 1, by omega⟩
@@ -706,7 +706,7 @@ theorem lower_pow_apply_eq_zero (k : ℕ) (v : Sl2Std K n) (i : Fin (n + 1))
   induction k generalizing i with
   | zero => omega
   | succ k ih =>
-      rw [pow_succ', Module.End.mul_apply, lower_apply]
+      rw [pow_succ', mul_apply_eq_comp, lower_apply]
       by_cases hi : 0 < (i : ℕ)
       · rw [dite_eq_left hi]
         let j : Fin (n + 1) := ⟨(i : ℕ) - 1, by omega⟩
@@ -751,7 +751,7 @@ theorem diag_pow_apply
   induction k with
   | zero => simp
   | succ k ih =>
-      rw [pow_succ', Module.End.mul_apply, diag_apply, ih]
+      rw [pow_succ', mul_apply_eq_comp, diag_apply, ih]
       ring
 
 end Sl2Std
@@ -966,12 +966,12 @@ the form of irreducibility that the classification of
 `TauCeti/Algebra/Lie/Sl2/WeightString.lean` asks for; here the two forms agree, since the standard
 triple generates all of `sl (Fin 2) K`
 (`TauCeti.toLieSubalgebra_isSl2Triple_single_eq_top`), so
-`TauCeti.isIrreducible_of_eq_top` carries the one to the other. -/
+`TauCeti.isIrreducible_iff_of_eq_top` carries the one to the other. -/
 instance isIrreducible_toLieSubalgebra :
     LieModule.IsIrreducible K
       ((isSl2Triple_single (R := K) (zero_ne_one : (0 : Fin 2) ≠ 1)).toLieSubalgebra K)
       (Sl2Std K n) :=
-  isIrreducible_of_eq_top (toLieSubalgebra_isSl2Triple_single_eq_top _)
+  (isIrreducible_iff_of_eq_top (toLieSubalgebra_isSl2Triple_single_eq_top _)).2 inferInstance
 
 /-- **The classification of the finite-dimensional irreducible `sl₂`-modules.** A Noetherian
 module over `sl (Fin 2) K` which is irreducible over the subalgebra of the standard triple and

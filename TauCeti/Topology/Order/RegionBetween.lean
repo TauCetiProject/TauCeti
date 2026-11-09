@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Analysis.Normed.Ring.Lemmas
 public import TauCeti.Topology.ContinuousOn.ClosedGraph
 public import TauCeti.Topology.UnitInterval.Basic
+public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 
 /-!
 # Closures of bands and band interpolation maps
@@ -36,6 +37,9 @@ elementary endpoint calculus which glues the cell maps of that construction.
 * `TauCeti.continuousOn_regionBetweenMap`: the band map is continuous on the closed band whenever
   the base and endpoint maps are continuous and every collapsed source fibre lies over a collapsed
   target fibre.
+* `OpenPartialHomeomorph.regionBetween`: when the base map is an open partial homeomorphism and
+  the continuous endpoints are strictly ordered, interpolation is an open partial homeomorphism
+  between the open bands. Its inverse uses the inverse base map with the endpoint pairs exchanged.
 
 ## References
 
@@ -74,6 +78,14 @@ theorem closedRegionBetween_self (f : α → ℝ) (s : Set α) :
   ext ⟨x, t⟩
   simp [le_antisymm_iff, and_comm]
 
+/-- The closed region between two constant functions over a set `s` is the prism
+`s ×ˢ Icc y₁ y₂`. -/
+@[simp]
+theorem closedRegionBetween_const (s : Set α) (y₁ y₂ : ℝ) :
+    closedRegionBetween (Function.const α y₁) (Function.const α y₂) s = s ×ˢ Icc y₁ y₂ := by
+  ext ⟨x, t⟩
+  simp
+
 /-- The region between two functions only depends on their values on the base set. -/
 theorem regionBetween_congr {f f' g g' : α → ℝ} {s : Set α} (hf : EqOn f f' s)
     (hg : EqOn g g' s) : regionBetween f g s = regionBetween f' g' s := by
@@ -86,6 +98,24 @@ theorem closedRegionBetween_congr {f f' g g' : α → ℝ} {s : Set α} (hf : Eq
   ext ⟨x, t⟩
   simp only [mem_closedRegionBetween]
   exact and_congr_right fun hx ↦ by rw [hf hx, hg hx]
+
+/-- The closed region between two ordered functions is the union of the open region and the two
+graphs. -/
+theorem closedRegionBetween_eq_union {f g : α → ℝ} {s : Set α} (h : ∀ x ∈ s, f x ≤ g x) :
+    closedRegionBetween f g s = s.graphOn f ∪ regionBetween f g s ∪ s.graphOn g := by
+  ext ⟨x, t⟩
+  simp only [mem_closedRegionBetween, mem_union, mem_graphOn, regionBetween, mem_ofPred_eq]
+  constructor
+  · rintro ⟨hx, h₁, h₂⟩
+    rcases h₁.eq_or_lt with h₁ | h₁
+    · exact .inl (.inl ⟨hx, h₁⟩)
+    rcases h₂.eq_or_lt with h₂ | h₂
+    · exact .inr ⟨hx, h₂.symm⟩
+    · exact .inl (.inr ⟨hx, h₁, h₂⟩)
+  · rintro ((⟨hx, rfl⟩ | ⟨hx, h₁, h₂⟩) | ⟨hx, rfl⟩)
+    · exact ⟨hx, le_rfl, h x hx⟩
+    · exact ⟨hx, h₁.le, h₂.le⟩
+    · exact ⟨hx, h x hx, le_rfl⟩
 
 /-- The closed region between two functions continuous on a closed set is closed. -/
 theorem isClosed_closedRegionBetween [TopologicalSpace α] {f g : α → ℝ} {s : Set α}
@@ -186,6 +216,13 @@ theorem regionBetweenMap_apply (g : X → Y) (φ φ' : X → ℝ) (ψ ψ' : Y �
 
 @[simp]
 theorem regionBetweenMap_fst (p : X × ℝ) : (regionBetweenMap g φ φ' ψ ψ' p).1 = g p.1 :=
+  (rfl)
+
+/-- The height coordinate of the band map is affine interpolation between the endpoints. -/
+@[simp]
+theorem regionBetweenMap_snd (p : X × ℝ) :
+    (regionBetweenMap g φ φ' ψ ψ' p).2 =
+      ψ (g p.1) + (p.2 - φ p.1) / (φ' p.1 - φ p.1) * (ψ' (g p.1) - ψ (g p.1)) :=
   (rfl)
 
 /-- Over a collapsed fibre `φ x = φ' x`, the band map is the graph map of the lower target
@@ -312,6 +349,31 @@ theorem bijOn_regionBetweenMap_regionBetween (h : InvOn g' g s t) (hg : MapsTo g
     (regionBetween_subset_closedRegionBetween ψ ψ' t)).bijOn
     (mapsTo_regionBetweenMap_regionBetween hg hψ) (mapsTo_regionBetweenMap_regionBetween hg' hφ)
 
+/-- Interpolation with unchanged endpoints is the identity on every closed fibre,
+including a collapsed fibre. -/
+theorem regionBetweenMap_id {a b : X → ℝ} {p : X × ℝ}
+    (hp : p.2 ∈ Icc (a p.1) (b p.1)) :
+    regionBetweenMap id a b a b p = p := by
+  rcases p with ⟨x, r⟩
+  by_cases h : a x = b x
+  · have hr : b x = r := le_antisymm (h ▸ hp.1) hp.2
+    simp [h, hr]
+  · simp [regionBetweenMap_apply, div_mul_cancel₀ _ (sub_ne_zero.mpr (Ne.symm h))]
+
+/-- Successive band interpolations compose to the direct interpolation. A collapsed
+intermediate fibre must also collapse in the final band; no converse is needed. -/
+theorem regionBetweenMap_comp {Z : Type*} (g : X → Y) (h : Y → Z)
+    (a b : X → ℝ) (c d : Y → ℝ) (u v : Z → ℝ) (p : X × ℝ)
+    (hcollapse : c (g p.1) = d (g p.1) → u (h (g p.1)) = v (h (g p.1))) :
+    regionBetweenMap h c d u v (regionBetweenMap g a b c d p) =
+      regionBetweenMap (h ∘ g) a b u v p := by
+  rcases p with ⟨x, r⟩
+  by_cases hc : c (g x) = d (g x)
+  · simp [regionBetweenMap_apply, hc, hcollapse hc]
+  · simp only [regionBetweenMap_apply, Function.comp_apply, add_sub_cancel_left, Prod.mk.injEq,
+      true_and]
+    field_simp
+
 variable [TopologicalSpace X] [TopologicalSpace Y]
 
 /-- **Continuity of the closed-band map**: if the base map and the endpoints are continuous and
@@ -353,4 +415,76 @@ theorem continuousOn_regionBetweenMap (hg : ContinuousOn g s) (hφ : ContinuousO
 
 end regionBetweenMap
 
+/-- The open band between continuous endpoints over an open base is open. -/
+theorem isOpen_regionBetween {X : Type*} [TopologicalSpace X] {s : Set X}
+    {φ φ' : X → ℝ} (hs : IsOpen s) (hφ : ContinuousOn φ s) (hφ' : ContinuousOn φ' s) :
+    IsOpen (regionBetween φ φ' s) := by
+  have hopen : IsOpen (Prod.fst ⁻¹' s : Set (X × ℝ)) := hs.preimage continuous_fst
+  have hfst : MapsTo (Prod.fst : X × ℝ → X) (Prod.fst ⁻¹' s) s := fun _ h ↦ h
+  have hpair : ContinuousOn (fun p : X × ℝ ↦ (φ p.1, p.2, φ' p.1)) (Prod.fst ⁻¹' s) :=
+    (hφ.comp continuousOn_fst hfst).prodMk
+      (continuousOn_snd.prodMk (hφ'.comp continuousOn_fst hfst))
+  exact hpair.isOpen_inter_preimage hopen
+    ((isOpen_lt continuous_fst (continuous_fst.comp continuous_snd)).inter
+      (isOpen_lt (continuous_fst.comp continuous_snd) (continuous_snd.comp continuous_snd)))
+
 end TauCeti
+
+namespace OpenPartialHomeomorph
+
+open TauCeti
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- Affine interpolation between strictly ordered continuous endpoints lifts an open partial
+homeomorphism of the bases to an open partial homeomorphism of their open bands. -/
+noncomputable def regionBetween (e : OpenPartialHomeomorph X Y) (φ φ' : X → ℝ) (ψ ψ' : Y → ℝ)
+    (hφ : ContinuousOn φ e.source) (hφ' : ContinuousOn φ' e.source)
+    (hψ : ContinuousOn ψ e.target) (hψ' : ContinuousOn ψ' e.target)
+    (hφφ' : ∀ x ∈ e.source, φ x < φ' x) (hψψ' : ∀ y ∈ e.target, ψ y < ψ' y) :
+    OpenPartialHomeomorph (X × ℝ) (Y × ℝ) where
+  toFun := regionBetweenMap e φ φ' ψ ψ'
+  invFun := regionBetweenMap e.symm ψ ψ' φ φ'
+  source := _root_.regionBetween φ φ' e.source
+  target := _root_.regionBetween ψ ψ' e.target
+  map_source' := mapsTo_regionBetweenMap_regionBetween e.mapsTo hψψ'
+  map_target' := mapsTo_regionBetweenMap_regionBetween e.symm.mapsTo hφφ'
+  left_inv' := fun _ hp ↦ regionBetweenMap_regionBetweenMap (e.left_inv hp.1)
+    (fun h ↦ False.elim ((hψψ' _ (e.map_source hp.1)).ne h)) (Ioo_subset_Icc_self hp.2)
+  right_inv' := fun _ hp ↦ regionBetweenMap_regionBetweenMap (e.right_inv hp.1)
+    (fun h ↦ False.elim ((hφφ' _ (e.map_target hp.1)).ne h)) (Ioo_subset_Icc_self hp.2)
+  continuousOn_toFun := (continuousOn_regionBetweenMap e.continuousOn hφ hφ' hψ hψ'
+    e.mapsTo (fun x hx h ↦ False.elim ((hφφ' x hx).ne h))).mono
+      (regionBetween_subset_closedRegionBetween _ _ _)
+  continuousOn_invFun := (continuousOn_regionBetweenMap e.continuousOn_symm hψ hψ' hφ hφ'
+    e.symm.mapsTo (fun y hy h ↦ False.elim ((hψψ' y hy).ne h))).mono
+      (regionBetween_subset_closedRegionBetween _ _ _)
+  open_source := isOpen_regionBetween e.open_source hφ hφ'
+  open_target := isOpen_regionBetween e.open_target hψ hψ'
+
+variable (e : OpenPartialHomeomorph X Y) (φ φ' : X → ℝ) (ψ ψ' : Y → ℝ)
+  (hφ : ContinuousOn φ e.source) (hφ' : ContinuousOn φ' e.source)
+  (hψ : ContinuousOn ψ e.target) (hψ' : ContinuousOn ψ' e.target)
+  (hφφ' : ∀ x ∈ e.source, φ x < φ' x) (hψψ' : ∀ y ∈ e.target, ψ y < ψ' y)
+
+@[simp]
+theorem regionBetween_source :
+    (e.regionBetween φ φ' ψ ψ' hφ hφ' hψ hψ' hφφ' hψψ').source =
+      _root_.regionBetween φ φ' e.source := (rfl)
+
+@[simp]
+theorem regionBetween_target :
+    (e.regionBetween φ φ' ψ ψ' hφ hφ' hψ hψ' hφφ' hψψ').target =
+      _root_.regionBetween ψ ψ' e.target := (rfl)
+
+@[simp]
+theorem coe_regionBetween :
+    ⇑(e.regionBetween φ φ' ψ ψ' hφ hφ' hψ hψ' hφφ' hψψ') =
+      regionBetweenMap e φ φ' ψ ψ' := (rfl)
+
+@[simp]
+theorem coe_regionBetween_symm :
+    ⇑(e.regionBetween φ φ' ψ ψ' hφ hφ' hψ hψ' hφφ' hψψ').symm =
+      regionBetweenMap e.symm ψ ψ' φ φ' := (rfl)
+
+end OpenPartialHomeomorph

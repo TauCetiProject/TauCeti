@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Torsion.PrimaryComponent
+public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 public import TauCeti.RingTheory.AdicCompletion.AlgHom
+public import TauCeti.RingTheory.AdicCompletion.Finite
 
 /-!
 # The completion action on ideal-power-torsion modules
@@ -21,10 +22,17 @@ residue modulo `I ^ n`. The hypothesis is membership of every element in
 between such modules is linear for these completion actions, and restriction of scalars recovers
 the original action of `R`.
 
+For a finite `R`-module `N`, `TauCeti.AdicCompletion.torsionLiftEquiv` identifies `R`-linear maps
+`N → M` with completion-linear maps `AdicCompletion I N → M`; its inverse is restriction along
+`AdicCompletion.of`. This is the completion adjunction `Hom_{R̂}(N̂, E) ≃ Hom_R(N, E)` used in
+Matlis duality, for `E` an injective hull of the residue field of a Noetherian local ring. No
+Noetherian hypothesis is needed: the extension of a linear map evaluates a completed element
+through its residue modulo a power of `I` that kills the values of the map.
+
 The construction uses the compatible residues of Mathlib's `AdicCompletion`, formalized by
 Judith Ludwig and Christian Merten, and the quotient actions on `Submodule.torsionBySet`.
 For its role in Matlis duality, see the Stacks Project,
-Section 47.7, Tag 08Z1.
+Section 47.7, Tag 08Z1, and Remark 47.7.9.
 -/
 
 public section
@@ -237,5 +245,115 @@ theorem torsionRestrictScalarsEquiv_apply
 @[simp]
 theorem torsionRestrictScalarsEquiv_symm_apply (f : M →ₗ[R] N) (x : M) :
     (torsionRestrictScalarsEquiv hM hN).symm f x = f x := (rfl)
+
+open _root_.AdicCompletion
+
+/-- The extension of `f` through the residues modulo `I ^ n`, for `f` with values killed by
+`I ^ n`. -/
+private def _root_.AdicCompletion.liftAt (f : N →ₗ[R] M) (n : ℕ)
+    (hf : ∀ y, f y ∈ Submodule.torsionBySet R M ↑(I ^ n)) : AdicCompletion I N →ₗ[R] M :=
+  (I ^ n • ⊤ : Submodule R N).liftQ f
+    (Submodule.smul_le.mpr fun r hr y _ ↦ by
+      simpa using (Submodule.mem_torsionBySet_iff _ _).mp (hf y) ⟨r, hr⟩) ∘ₗ
+    eval I N n
+
+private theorem _root_.AdicCompletion.liftAt_apply {f : N →ₗ[R] M} {n : ℕ}
+    (hf : ∀ y, f y ∈ Submodule.torsionBySet R M ↑(I ^ n)) {x : AdicCompletion I N} {y : N}
+    (hx : eval I N n x = Submodule.Quotient.mk y) : liftAt f n hf x = f y := by
+  simp only [liftAt, LinearMap.comp_apply, hx, Submodule.liftQ_apply]
+
+private theorem _root_.AdicCompletion.liftAt_smul {f : N →ₗ[R] M} {n : ℕ}
+    (hf : ∀ y, f y ∈ Submodule.torsionBySet R M ↑(I ^ n)) (a : AdicCompletion I R)
+    (x : AdicCompletion I N) :
+    letI := torsionModule hM
+    liftAt f n hf (a • x) = a • liftAt f n hf x := by
+  let := torsionModule hM
+  obtain ⟨y, hy⟩ := Submodule.Quotient.mk_surjective _ (eval I N n x)
+  obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective (evalₐ I n a)
+  have hax : eval I N n (a • x) = Submodule.Quotient.mk (r • y) := by
+    rw [eval_apply, smul_eval, val_smul_eq_evalₐ_smul, ← eval_apply, ← hy, ← hr,
+      Module.Quotient.mk_smul_mk]
+  rw [liftAt_apply hf hax, liftAt_apply hf hy.symm, map_smul,
+    a.torsion_smul_eq hM (f y) r (hf y) hr.symm]
+
+/-- `liftAt` as a linear map over the completion. -/
+private def liftAtLinear {f : N →ₗ[R] M} {n : ℕ}
+    (hf : ∀ y, f y ∈ Submodule.torsionBySet R M ↑(I ^ n)) :
+    letI := torsionModule hM
+    AdicCompletion I N →ₗ[AdicCompletion I R] M :=
+  letI := torsionModule hM
+  { liftAt f n hf with map_smul' := liftAt_smul hM hf }
+
+private theorem liftAtLinear_apply {f : N →ₗ[R] M} {n : ℕ}
+    (hf : ∀ y, f y ∈ Submodule.torsionBySet R M ↑(I ^ n)) {x : AdicCompletion I N} {y : N}
+    (hx : eval I N n x = Submodule.Quotient.mk y) :
+    letI := torsionModule hM
+    liftAtLinear hM hf x = f y :=
+  liftAt_apply hf hx
+
+variable [Module.Finite R N]
+
+/-- Two extensions through residues modulo different powers of `I` agree. -/
+private theorem liftAtLinear_eq {f : N →ₗ[R] M} {m n : ℕ}
+    (hm : ∀ y, f y ∈ Submodule.torsionBySet R M ↑(I ^ m))
+    (hn : ∀ y, f y ∈ Submodule.torsionBySet R M ↑(I ^ n)) :
+    letI := torsionModule hM
+    liftAtLinear hM hm = liftAtLinear hM hn := by
+  let := torsionModule hM
+  refine linearMap_ext_of_finite I fun x ↦ ?_
+  rw [liftAtLinear_apply hM hm (eval_of I N m x), liftAtLinear_apply hM hn (eval_of I N n x)]
+
+/-- For a finite module `N` and a module `M` whose elements are each killed by a power of `I`,
+every `R`-linear map `N → M` extends uniquely to a linear map `AdicCompletion I N → M` over the
+completion, for the canonical completion action on `M`. The extension of `f` evaluates a
+completed element through its residue modulo `I ^ n`, for any `n` such that `I ^ n` kills the
+values of `f` (`torsionLiftEquiv_apply`). Neither a Noetherian hypothesis nor completeness of `R`
+is needed. -/
+def torsionLiftEquiv :
+    letI := torsionModule hM
+    (N →ₗ[R] M) ≃ₗ[AdicCompletion I R] (AdicCompletion I N →ₗ[AdicCompletion I R] M) := by
+  let := torsionModule hM
+  refine LinearEquiv.symm
+    { toFun g := g.restrictScalars R ∘ₗ of I N
+      map_add' _ _ := by ext; simp
+      map_smul' _ _ := by ext; simp
+      invFun f := liftAtLinear hM
+        (I.exists_forall_mem_torsionBySet_pow_of_mem_primaryComponent f fun _ ↦ hM _).choose_spec
+      left_inv g := linearMap_ext_of_finite I fun x ↦ ?_
+      right_inv f := LinearMap.ext fun x ↦ ?_ }
+  · simpa using liftAtLinear_apply hM
+      (I.exists_forall_mem_torsionBySet_pow_of_mem_primaryComponent
+        (g.restrictScalars R ∘ₗ of I N) fun _ ↦ hM _).choose_spec
+      (eval_of I N _ x)
+  · simpa using liftAtLinear_apply hM
+      (I.exists_forall_mem_torsionBySet_pow_of_mem_primaryComponent f fun _ ↦ hM _).choose_spec
+      (eval_of I N _ x)
+
+/-- The extension of `f` evaluates a completed element through any of its residues modulo a power
+`I ^ n` killing the values of `f`. -/
+theorem torsionLiftEquiv_apply {f : N →ₗ[R] M} {n : ℕ}
+    (hf : ∀ y, f y ∈ Submodule.torsionBySet R M ↑(I ^ n)) {x : AdicCompletion I N} {y : N}
+    (hx : eval I N n x = Submodule.Quotient.mk y) : torsionLiftEquiv hM f x = f y := by
+  -- `torsionLiftEquiv` is the inverse of a structure whose `invFun` is `liftAtLinear`.
+  have h : torsionLiftEquiv hM f =
+      liftAtLinear hM
+        (I.exists_forall_mem_torsionBySet_pow_of_mem_primaryComponent f fun _ ↦ hM _).choose_spec :=
+      (rfl)
+  rw [h, liftAtLinear_eq hM _ hf, liftAtLinear_apply hM hf hx]
+
+/-- The extension of `f` agrees with `f` on the image of `N`. -/
+@[simp]
+theorem torsionLiftEquiv_apply_of (f : N →ₗ[R] M) (x : N) :
+    torsionLiftEquiv hM f (of I N x) = f x :=
+  torsionLiftEquiv_apply hM
+    (I.exists_forall_mem_torsionBySet_pow_of_mem_primaryComponent f fun _ ↦ hM _).choose_spec
+    (eval_of I N _ x)
+
+/-- The inverse of `torsionLiftEquiv` restricts a linear map along `AdicCompletion.of`. -/
+@[simp]
+theorem torsionLiftEquiv_symm_apply
+    (g : letI := torsionModule hM
+         AdicCompletion I N →ₗ[AdicCompletion I R] M) (x : N) :
+    (torsionLiftEquiv hM).symm g x = g (of I N x) := (rfl)
 
 end TauCeti.AdicCompletion

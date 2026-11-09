@@ -22,24 +22,15 @@ Corollary 3.4.
 
 public section
 
-namespace RingPreordering
-
-variable {K : Type*} [CommRing K]
-
 /-- The sums of squares form a proper preordering in a formally real commutative ring. -/
-def sumSq [IsSemireal K] : RingPreordering K where
-  __ := Subsemiring.sumSq K
-  mem_of_isSquare' hx := by simpa using hx.isSumSq
-  neg_one_notMem' := by simpa using IsSemireal.not_isSumSq_neg_one K
-
-@[simp] theorem mem_sumSq [IsSemireal K] (x : K) :
-    x ∈ sumSq (K := K) ↔ IsSumSq x := Subsemiring.mem_sumSq
-
-end RingPreordering
+theorem Subsemiring.IsPreordering.sumSq {K : Type*} [CommRing K] [IsSemireal K] :
+    (Subsemiring.sumSq K).IsPreordering where
+  mem_of_isSquare hx := by simpa using hx.isSumSq
+  neg_one_notMem := by simpa using IsSemireal.not_isSumSq_neg_one K
 
 /-- A formally real field admits a compatible linear order. -/
 theorem IsSemireal.exists_linearOrder {K : Type*} [Field K] [IsSemireal K] :
     ∃ o : LinearOrder K, letI := o
       IsStrictOrderedRing K := by
-  obtain ⟨o, ho, _⟩ := RingPreordering.exists_linearOrder (RingPreordering.sumSq (K := K))
+  obtain ⟨o, ho, _⟩ := (Subsemiring.IsPreordering.sumSq (K := K)).exists_linearOrder
   exact ⟨o, ho⟩

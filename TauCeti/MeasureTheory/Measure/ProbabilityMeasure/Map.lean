@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import Mathlib.MeasureTheory.Function.ConvergenceInDistribution
+import Mathlib.MeasureTheory.Measure.FiniteMeasureProd
+import Mathlib.MeasureTheory.Measure.DiracProba
 
 /-!
 # Continuous pushforwards of probability measures
@@ -25,6 +27,11 @@ bounded-continuous-test-function characterization of weak convergence.
 random variables that depends continuously on a parameter, for every outcome, depend continuously
 on that parameter. For example, the time marginals of a law on a space of continuous paths form a
 continuous curve of probability measures.
+
+`MeasureTheory.ProbabilityMeasure.continuous_map_of_continuous_uncurry` allows the input law
+to vary together with the parameter of a jointly continuous map. It combines Mathlib's
+`ProbabilityMeasure.continuous_prod` and `continuous_diracProba` by representing the
+parameter as a Dirac factor.
 -/
 
 public section
@@ -47,6 +54,36 @@ lemma continuous_map_of_measurable {f : X → Y} (hf : Continuous f) (hm : Measu
     rw [toMeasure_map, lintegral_map (by fun_prop) hm]
   simp_rw [hmap]
   exact continuous_lintegral_boundedContinuousFunction (g.compContinuous ⟨f, hf⟩)
+
+end MeasureTheory.ProbabilityMeasure
+
+namespace MeasureTheory.ProbabilityMeasure
+
+open TopologicalSpace
+
+variable {T X Y : Type*} [TopologicalSpace T] [MeasurableSpace T] [OpensMeasurableSpace T]
+    [SecondCountableTopology T] [PseudoMetrizableSpace T]
+    [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+    [SecondCountableTopology X] [PseudoMetrizableSpace X]
+    [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+
+/-- Pushforward by a jointly continuous map depends weakly continuously on both its
+parameter and its input probability law. -/
+lemma continuous_map_of_continuous_uncurry {f : T → X → Y}
+    (hf : Continuous (Function.uncurry f)) :
+    Continuous (fun p : T × ProbabilityMeasure X ↦ p.2.map (f p.1)) := by
+  have hprod : Continuous (fun p : T × ProbabilityMeasure X ↦
+      (diracProba p.1).prod p.2) :=
+    continuous_prod.comp ((continuous_diracProba.comp continuous_fst).prodMk continuous_snd)
+  have h := (continuous_map hf).comp hprod
+  apply h.congr
+  intro p
+  apply ProbabilityMeasure.toMeasure_injective
+  simp only [Function.comp_def, toMeasure_map, toMeasure_prod]
+  -- `diracProba` bundles `Measure.dirac` with its probability-measure instance.
+  have hd : (diracProba p.1).toMeasure = Measure.dirac p.1 := (rfl)
+  rw [hd, Measure.dirac_prod, Measure.map_map hf.measurable (by fun_prop)]
+  simp only [Function.comp_def, Function.uncurry]
 
 end MeasureTheory.ProbabilityMeasure
 

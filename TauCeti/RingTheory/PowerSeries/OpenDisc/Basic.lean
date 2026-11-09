@@ -55,8 +55,14 @@ on the open unit disc (`PowerSeries.onOpenDisc_log`).
 
 ## Main results
 
+* `PowerSeries.OnOpenDisc.summable_norm_coeff_mul_pow`: the weighted coefficient norms
+  `‖coeff n f‖ * t ^ n` are summable for `|t| < R₀`.
+* `PowerSeries.OnOpenDisc.summable_norm_coeff_mul_pow'` and
+  `PowerSeries.OnOpenDisc.summable_coeff_mul_pow`: absolute summability at points inside the
+  disc, and summability when the coefficient ring is complete.
 * `PowerSeries.OnOpenDisc.isRestricted`: a series on the open disc of radius `R₀` is restricted
-  at every radius `r` with `|r| < R₀`.
+  at every radius `r` with `|r| < R₀`; `PowerSeries.OnOpenDisc.isRestricted_max` is the form for
+  the larger of two radii below `R₀`, one of them nonnegative.
 * `PowerSeries.onOpenDisc_iff_of_tendsto`: the condition can be tested along radii tending
   to `R₀` from below.
 * `PowerSeries.onOpenDisc_iff_forall_hasGaussNorm`: the condition amounts to bounded weighted
@@ -71,6 +77,8 @@ on the open unit disc (`PowerSeries.onOpenDisc_log`).
 * `PowerSeries.OnOpenDisc.hasseDeriv`, `PowerSeries.OnOpenDisc.derivative` and
   `PowerSeries.OnOpenDisc.map`: the condition is preserved by Hasse derivatives and bounded
   coefficient maps.
+* `PowerSeries.OnOpenDisc.rescale`: if `f(X)` lies on the open disc of radius `‖a‖ * R₀`, then
+  `f(aX)` lies on the open disc of radius `R₀`.
 * `PowerSeries.onOpenDisc_log`: over a normed field of characteristic zero, `log (1 + X)` lies on
   the open unit disc.
 
@@ -107,6 +115,37 @@ theorem OnOpenDisc.isRestricted (hf : f.OnOpenDisc R₀) {r : ℝ} (hr : |r| < R
   have hs : 0 < s := (abs_nonneg r).trans_lt hrs
   exact TauCeti.PowerSeries.isRestricted_of_abs_le (hf s hs hsR)
     (hrs.le.trans_eq (abs_of_pos hs).symm)
+
+/-- A series on the open disc of radius `R₀` is restricted at the larger of a nonnegative radius
+`s < R₀` and a radius `t < R₀`. -/
+theorem OnOpenDisc.isRestricted_max (hf : f.OnOpenDisc R₀) {s t : ℝ} (hs : 0 ≤ s)
+    (hsR : s < R₀) (htR : t < R₀) : f.IsRestricted (max s t) :=
+  hf.isRestricted (by rw [abs_of_nonneg (le_max_of_le_left hs)]; exact max_lt hsR htR)
+
+/-- Inside its open disc, the weighted coefficient norms of a power series are summable.
+No completeness or ultrametric hypothesis is needed. -/
+theorem OnOpenDisc.summable_norm_coeff_mul_pow (hf : f.OnOpenDisc R₀) {t : ℝ}
+    (ht : |t| < R₀) : Summable fun n ↦ ‖coeff n f‖ * t ^ n := by
+  obtain ⟨s, hts, hsR⟩ := exists_between ht
+  have hs : 0 < s := (abs_nonneg t).trans_lt hts
+  exact (hf s hs hsR).summable_norm_coeff_mul_pow (by rwa [abs_of_pos hs])
+
+/-- A series on an open disc is absolutely summable at every point inside the disc. -/
+theorem OnOpenDisc.summable_norm_coeff_mul_pow' (hf : f.OnOpenDisc R₀) {t : R}
+    (ht : ‖t‖ < R₀) : Summable fun n ↦ ‖coeff n f * t ^ n‖ := by
+  -- In a general normed ring the power bound holds only in positive degree.
+  rw [← summable_nat_add_iff 1]
+  refine ((summable_nat_add_iff 1).mpr
+    (hf.summable_norm_coeff_mul_pow (t := ‖t‖) (by simpa using ht))).of_nonneg_of_le
+      (fun _ ↦ norm_nonneg _) fun n ↦ ?_
+  exact (norm_mul_le _ _).trans
+    (mul_le_mul_of_nonneg_left (norm_pow_le' t n.succ_pos) (norm_nonneg _))
+
+/-- Over a complete normed ring, a series on an open disc is summable at every point
+inside the disc. -/
+theorem OnOpenDisc.summable_coeff_mul_pow [CompleteSpace R] (hf : f.OnOpenDisc R₀) {t : R}
+    (ht : ‖t‖ < R₀) : Summable fun n ↦ coeff n f * t ^ n :=
+  (hf.summable_norm_coeff_mul_pow' ht).of_norm
 
 /-- For a nonpositive radius `R₀` the open disc is empty, and every series lies on it. -/
 theorem onOpenDisc_of_nonpos (h : R₀ ≤ 0) (f : R⟦X⟧) : f.OnOpenDisc R₀ :=
@@ -313,6 +352,18 @@ theorem OnOpenDisc.derivative (hf : f.OnOpenDisc R₀) : (d⁄dX f).OnOpenDisc R
   rw [← hasseDeriv_one_apply]
   exact hf.hasseDeriv 1
 
+/-- **Rescaling changes the radius of the disc.** If `f(X)` lies on the open disc of radius
+`‖a‖ * R₀`, then `f(aX)` lies on the open disc of radius `R₀`. For `a = 0` the series `f(0 · X)`
+is the constant `f(0)`, which lies on every open disc. -/
+theorem OnOpenDisc.rescale {a : R} (hf : f.OnOpenDisc (‖a‖ * R₀)) :
+    (rescale a f).OnOpenDisc R₀ := by
+  intro r hr hrR
+  rcases (norm_nonneg a).eq_or_lt with ha | ha
+  · obtain rfl : a = 0 := norm_eq_zero.mp ha.symm
+    rw [rescale_zero_apply]
+    exact onOpenDisc_C _ r hr hrR
+  · exact (hf.isRestricted (by rw [abs_of_pos (by positivity)]; gcongr)).rescale
+
 end NormedCommRing
 
 section NormedField
@@ -325,14 +376,20 @@ theorem norm_coeff_log_le (n : ℕ) : ‖coeff n (log K)‖ ≤ ‖(n : K)⁻¹�
   · simp
   · simp [coeff_log, hn, div_eq_mul_inv]
 
-/-- Over a normed field of characteristic zero, the logarithm series `log (1 + X)` lies on the
-open unit disc. -/
-theorem onOpenDisc_log : (log K).OnOpenDisc 1 := by
+/-- A series whose coefficient norms are bounded by the norms of inverse natural numbers
+lies on the open unit disc. -/
+theorem onOpenDisc_one_of_norm_coeff_le {f : K⟦X⟧}
+    (h : ∀ n, ‖coeff n f‖ ≤ ‖(n : K)⁻¹‖) : f.OnOpenDisc 1 := by
   refine onOpenDisc_iff.mpr fun r hr hr1 ↦ ?_
   rw [isRestricted_iff']
   exact squeeze_zero (fun n ↦ by positivity)
-    (fun n ↦ mul_le_mul_of_nonneg_right (norm_coeff_log_le n) (pow_nonneg hr.le n))
+    (fun n ↦ mul_le_mul_of_nonneg_right (h n) (pow_nonneg hr.le n))
     (NormedField.tendsto_norm_inv_natCast_mul_pow K hr.le hr1)
+
+/-- Over a normed field of characteristic zero, the logarithm series `log (1 + X)` lies on the
+open unit disc. -/
+theorem onOpenDisc_log : (log K).OnOpenDisc 1 :=
+  onOpenDisc_one_of_norm_coeff_le norm_coeff_log_le
 
 end NormedField
 

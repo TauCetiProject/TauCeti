@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Sharpness
 public import TauCeti.NumberTheory.LocalField.Norm.Conductor
 public import TauCeti.NumberTheory.LocalField.Different.Hilbert
 public import TauCeti.NumberTheory.LocalField.Discriminant.Basic
-import TauCeti.FieldTheory.Separable.Quadratic
+import TauCeti.FieldTheory.Separable.PrimeDegree
 
 /-!
 # Quadratic discriminants from the defect

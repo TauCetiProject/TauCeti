@@ -35,6 +35,11 @@ contribution to every additive invariant.
 * `TauCeti.Contour.Cycle.integral` — the additive extension of the contour integral.
 * `TauCeti.Contour.Cycle.integral_comp_comm`: continuous linear maps commute with the integral
   of a vector-valued function over a cycle, when its contour integrand is integrable.
+* `TauCeti.Contour.Cycle.integral_congr`, `TauCeti.Contour.Cycle.integral_add`,
+  `TauCeti.Contour.Cycle.integral_sub`, `TauCeti.Contour.Cycle.integral_smul`: the integral depends
+  only on the integrand on the trace, and is linear in integrands continuous there.
+* `TauCeti.Contour.Cycle.integral_smul_const`: the integral of a scalar function times a constant
+  vector.
 * `TauCeti.Contour.Cycle.norm_integral_le_of_norm_le_const`: a bound for the integrand on the
   trace, times the length of the cycle, bounds the integral.
 * `TauCeti.Contour.Cycle.windingNumber` — the additive extension of the winding number.
@@ -250,6 +255,16 @@ theorem trace_add_subset (C D : Cycle) : trace (C + D) ⊆ trace C ∪ trace D :
   · exact Set.mem_union_left _ (mem_trace_iff.mpr ⟨γ, hγC, hz⟩)
   · exact Set.mem_union_right _ (mem_trace_iff.mpr ⟨γ, hγD, hz⟩)
 
+/-- The trace of a finite sum of cycles is contained in the union of the traces. -/
+theorem trace_sum_subset {ι : Type*} (s : Finset ι) (C : ι → Cycle) :
+    trace (∑ i ∈ s, C i) ⊆ ⋃ i ∈ s, trace (C i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.sum_insert hi, Finset.set_biUnion_insert]
+    exact (trace_add_subset _ _).trans (union_subset_union_right _ ih)
+
 /-- A nonzero integer multiple has the same trace as the original cycle. -/
 theorem trace_zsmul (C : Cycle) {n : ℤ} (hn : n ≠ 0) : trace (n • C) = trace C := by
   simp [trace, hn]
@@ -362,6 +377,56 @@ theorem integral_comp_comm {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ
   rw [map_zsmul, ← L.intervalIntegral_comp_comm (hf γ hγ)]
   simp only [map_smul]
 
+/-- The integral over a cycle only depends on the integrand on the trace of the cycle. -/
+theorem integral_congr {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f g : ℂ → E}
+    {C : Cycle} (h : EqOn f g (trace C)) : integral f C = integral g C := by
+  rw [integral_eq_sum_support, integral_eq_sum_support]
+  refine Finset.sum_congr rfl fun γ hγ ↦ congrArg _ (intervalIntegral.integral_congr fun t ht ↦ ?_)
+  simp only [h (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩)]
+
+/-- The integral over a cycle is additive in integrands continuous on its trace. -/
+@[simp]
+theorem integral_add {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f g : ℂ → E}
+    {C : Cycle} (hf : ContinuousOn f (trace C)) (hg : ContinuousOn g (trace C)) :
+    integral (fun z ↦ f z + g z) C = integral f C + integral g C := by
+  simp only [integral_eq_sum_support, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun γ hγ ↦ ?_
+  rw [← smul_add, ← intervalIntegral.integral_add (intervalIntegrable_of_mem_support hf hγ)
+    (intervalIntegrable_of_mem_support hg hγ)]
+  simp only [smul_add]
+
+/-- The integral over a cycle commutes with differences of integrands continuous on its trace. -/
+@[simp]
+theorem integral_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f g : ℂ → E}
+    {C : Cycle} (hf : ContinuousOn f (trace C)) (hg : ContinuousOn g (trace C)) :
+    integral (fun z ↦ f z - g z) C = integral f C - integral g C := by
+  simp only [integral_eq_sum_support, ← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun γ hγ ↦ ?_
+  rw [← smul_sub, ← intervalIntegral.integral_sub (intervalIntegrable_of_mem_support hf hγ)
+    (intervalIntegrable_of_mem_support hg hγ)]
+  simp only [smul_sub]
+
+/-- Scalar multiples can be taken out of the integral over a cycle. -/
+@[simp]
+theorem integral_smul {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [NormedSpace 𝕜 E] [SMulCommClass 𝕜 ℂ E] (c : 𝕜) (f : ℂ → E) (C : Cycle) :
+    integral (fun z ↦ c • f z) C = c • integral f C := by
+  simp only [integral_eq_sum_support, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun γ _ ↦ ?_
+  rw [smul_comm c, ← intervalIntegral.integral_smul]
+  exact congrArg _ (intervalIntegral.integral_congr fun t _ ↦ (smul_comm c _ _).symm)
+
+/-- The integral over a cycle of a scalar function times a constant vector is the integral of the
+scalar function times that vector. -/
+@[simp]
+theorem integral_smul_const {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+    (f : ℂ → ℂ) (v : E) (C : Cycle) :
+    integral (fun z ↦ f z • v) C = integral f C • v := by
+  simp only [integral_eq_sum_support, Finset.sum_smul, smul_assoc]
+  refine Finset.sum_congr rfl fun γ _ ↦ ?_
+  rw [← intervalIntegral.integral_smul_const]
+  simp only [smul_assoc]
+
 /-- **Norm bound for a cycle integral.** If `‖f‖ ≤ M` on the trace of `C`, then the integral of
 `f` over `C` is at most `M` times the length of `C`: the sum of the lengths
 `∫ t in Ι γ.a γ.b, ‖γ' t‖` of the curves in its support, each weighted by the absolute value of
@@ -443,6 +508,11 @@ theorem IsNullHomologous.zero (Ω : Set ℂ) : IsNullHomologous (0 : Cycle) Ω :
   rw [isNullHomologous_iff]
   intro z _
   simp
+
+/-- Every cycle is null-homologous in the whole plane, since there are no exterior points. -/
+@[simp]
+theorem isNullHomologous_univ (C : Cycle) : IsNullHomologous C univ :=
+  fun _ hz ↦ (hz trivial).elim
 
 /-- A sum of null-homologous cycles is null-homologous. -/
 theorem IsNullHomologous.add {C D : Cycle} {Ω : Set ℂ} (hC : IsNullHomologous C Ω)

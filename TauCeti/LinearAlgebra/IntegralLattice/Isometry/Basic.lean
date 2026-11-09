@@ -40,6 +40,9 @@ composition) follows Mathlib's `LinearMap.BilinForm.IsometryEquiv` API in
 
 ## Main results
 
+* `TauCeti.IntegralLattice.Isometry.ambientEquiv_eq_of_forall_apply_eq` and
+  `TauCeti.IntegralLattice.Isometry.map_carrier_ambientEquiv`: ambient equivalences depend only on
+  pointwise action, and `ambientEquiv` maps the source carrier onto the target carrier.
 * `TauCeti.IntegralLattice.Isometry.carrierEquiv_ofCarrierEquiv` and
   `TauCeti.IntegralLattice.Isometry.ofCarrierEquiv_carrierEquiv`: the two round trips between
   ambient isometries and form-preserving carrier equivalences.
@@ -53,7 +56,6 @@ composition) follows Mathlib's `LinearMap.BilinForm.IsometryEquiv` API in
 
 ## References
 
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 1
 * W. Ebeling, *Lattices and Codes*, Chapter 1
 -/
 
@@ -124,6 +126,20 @@ def ambientEquiv (e : Isometry L M) : V ≃ₗ[ℤ] W :=
 @[simp]
 theorem ambientEquiv_apply (e : Isometry L M) (x : V) : e.ambientEquiv x = e x := (rfl)
 
+/-- Two integral-lattice isometries between the same ambient spaces that agree pointwise have the
+same ambient integral equivalence, even when their source or target lattices differ. -/
+theorem ambientEquiv_eq_of_forall_apply_eq {L' : IntegralLattice V} {M' : IntegralLattice W}
+    {f : Isometry L M} {e : Isometry L' M'} (h : ∀ x, f x = e x) :
+    f.ambientEquiv = e.ambientEquiv :=
+  LinearEquiv.ext fun x ↦ by rw [ambientEquiv_apply, ambientEquiv_apply, h x]
+
+/-- The ambient integral equivalence of an isometry maps the source carrier onto the target
+carrier. -/
+@[simp]
+theorem map_carrier_ambientEquiv (e : Isometry L M) :
+    L.carrier.map e.ambientEquiv.toLinearMap = M.carrier :=
+  e.map_carrier
+
 /-- An ambient vector's image belongs to the target carrier if and only if the vector belongs
 to the source carrier. -/
 @[simp]
@@ -141,6 +157,10 @@ theorem apply_mem_carrier_iff (e : Isometry L M) (x : V) :
 @[ext]
 theorem ext {e f : Isometry L M} (h : ∀ x, e x = f x) : e = f :=
   DFunLike.coe_injective (funext h)
+
+/-- Into a trivial ambient space there is at most one isometry. -/
+instance [Subsingleton W] : Subsingleton (Isometry L M) :=
+  ⟨fun _ _ ↦ Isometry.ext fun _ ↦ Subsingleton.elim _ _⟩
 
 /-- The identity isometry of an integral lattice. -/
 @[refl]
@@ -165,6 +185,11 @@ theorem ofEq_apply {L M : IntegralLattice V} (h : L = M) (x : V) : ofEq h x = x 
   subst h
   rfl
 
+/-- Identifying a lattice with itself along `rfl` is the identity isometry. -/
+@[simp]
+theorem ofEq_rfl (L : IntegralLattice V) : ofEq (rfl : L = L) = refl L :=
+  ext fun x ↦ by rw [ofEq_apply, refl_apply]
+
 /-- The inverse of an integral-lattice isometry. -/
 @[symm]
 def symm (e : Isometry L M) : Isometry M L where
@@ -183,6 +208,14 @@ theorem apply_symm_apply (e : Isometry L M) (y : W) : e (e.symm y) = y :=
 /-- Inverting an isometry twice yields the original isometry. -/
 @[simp]
 theorem symm_symm (e : Isometry L M) : e.symm.symm = e := by
+  ext
+  rfl
+
+/-- The inverse of the identification of equal lattices is the identification along the reversed
+equality. -/
+@[simp]
+theorem symm_ofEq {L M : IntegralLattice V} (h : L = M) : (ofEq h).symm = ofEq h.symm := by
+  subst h
   ext
   rfl
 

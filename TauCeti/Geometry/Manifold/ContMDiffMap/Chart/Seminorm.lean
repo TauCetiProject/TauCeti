@@ -137,6 +137,16 @@ theorem chartCkSeminorm_le_iff (x : M)
     exact Seminorm.finset_sup_apply_le hr fun m _ ↦
       (chartDerivativeSeminorm_le_iff x K m _ f hr).mpr (h m (by omega))
 
+/-- Raising the derivative order can only increase the compact chart `C^k` seminorm. -/
+theorem chartCkSeminorm_le_of_le (x : M)
+    (K : TopologicalSpace.Compacts (extChartAt I x).target) {k l : ℕ} (hkl : k ≤ l)
+    (hl : l ≤ n) :
+    chartCkSeminorm (F := F) x K k ((Nat.cast_le.mpr hkl).trans hl) ≤
+      chartCkSeminorm x K l hl := by
+  intro f
+  refine (chartCkSeminorm_le_iff x K k _ f (apply_nonneg _ _)).mpr fun m hm z hz ↦ ?_
+  exact (chartCkSeminorm_le_iff x K l hl f (apply_nonneg _ _)).mp le_rfl m (hm.trans hkl) z hz
+
 /-- The compact chart `C^k` seminorm on the empty coordinate set is zero. -/
 @[simp]
 theorem chartCkSeminorm_bot (x : M) (k : ℕ) (hk : k ≤ n) :
@@ -146,6 +156,20 @@ theorem chartCkSeminorm_bot (x : M) (k : ℕ) (hk : k ≤ n) :
   · exact (chartCkSeminorm_le_iff x ⊥ k hk f le_rfl).mpr
       (by intro m hm z hz; exact False.elim hz)
   · exact apply_nonneg _ _
+
+/-- The compact chart `C^k` seminorm only sees a map near the points represented by its compact
+coordinate set: it vanishes on a map which is zero near each of them. -/
+theorem chartCkSeminorm_eq_zero_of_eventuallyEq_zero (x : M)
+    (K : TopologicalSpace.Compacts (extChartAt I x).target) (k : ℕ) (hk : k ≤ n)
+    {f : C^n⟮I, M; 𝓘(𝕜, F), F⟯}
+    (hf : ∀ z ∈ K, (f : M → F) =ᶠ[𝓝 ((extChartAt I x).symm z)] 0) :
+    chartCkSeminorm x K k hk f = 0 := by
+  refine le_antisymm ((chartCkSeminorm_le_iff x K k hk f le_rfl).mpr fun m hm z hz ↦ ?_)
+    (apply_nonneg _ _)
+  have hz : f ∘ (extChartAt I x).symm =ᶠ[𝓝[(extChartAt I x).target] (z : E)] fun _ ↦ 0 :=
+    (hf z hz).comp_tendsto (continuousOn_extChartAt_symm x (z : E) z.2)
+  rw [chartIteratedFDeriv_self_target_apply, hz.iteratedFDerivWithin_eq (hz.eq_of_nhdsWithin z.2),
+    iteratedFDerivWithin_fun_zero, Pi.zero_apply, norm_zero]
 
 /-- Positive strict `C^k` control is equivalent to pointwise strict control of every coordinate
 derivative through order `k`. -/

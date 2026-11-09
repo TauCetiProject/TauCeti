@@ -23,6 +23,9 @@ parametrised continuously by Baire space has a section selecting, over each poin
 projection, the image of the lexicographically least parameter. The coordinatewise
 characterisation `TauCeti.isLeast_image_toLex_iff` is the form in which that proof consumes it.
 
+The file also records that distinct points of a sequence space eventually have distinct initial
+segments, uniformly over an injective finite family (`PiNat.eventually_injective_res`).
+
 ## Main results
 
 * `TauCeti.isLeast_image_toLex_iff`: a point `β ∈ F` is lexicographically least in `F` exactly
@@ -30,6 +33,8 @@ characterisation `TauCeti.isLeast_image_toLex_iff` is the form in which that pro
   `F` in the cylinder of its first `n` coordinates.
 * `IsClosed.exists_isLeast_image_toLex`: a nonempty closed subset of `ℕ → ℕ` has a
   lexicographically least element.
+* `PiNat.eventually_injective_res`: the initial segments of an injective finite family of
+  sequences are pairwise distinct from some length on.
 
 ## References
 
@@ -107,3 +112,22 @@ theorem _root_.IsClosed.exists_isLeast_image_toLex {F : Set (ℕ → ℕ)} (hF :
   exact ⟨Nat.sInf_mem ((lexLeastStage_nonempty hne n).image _), fun m hm => Nat.sInf_le hm⟩
 
 end TauCeti
+
+namespace PiNat
+
+/-- Distinct branches of a tree eventually separate: for an injective finite family `a` of
+sequences, the initial segments `PiNat.res (a i) j` of length `j` are pairwise distinct for all
+large `j`. -/
+theorem eventually_injective_res {ι β : Type*} [Finite ι] {a : ι → ℕ → β}
+    (ha : Function.Injective a) :
+    ∀ᶠ j in atTop, Function.Injective fun i => PiNat.res (a i) j := by
+  have (p : ι × ι) : ∀ᶠ j in atTop, PiNat.res (a p.1) j = PiNat.res (a p.2) j → p.1 = p.2 := by
+    by_cases hp : p.1 = p.2
+    · exact Eventually.of_forall fun _ _ => hp
+    obtain ⟨q, hq⟩ := Function.ne_iff.1 (ha.ne hp)
+    filter_upwards [eventually_gt_atTop q] with j hj hres
+    exact absurd (PiNat.res_eq_res.1 hres hj) hq
+  filter_upwards [eventually_all.2 this] with j hj i i' hii'
+  exact hj (i, i') hii'
+
+end PiNat

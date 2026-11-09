@@ -7,10 +7,11 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.PlanInterpolation
 public import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.Subsolution
-import TauCeti.Analysis.PDE.HopfLax
+import TauCeti.Analysis.PDE.HopfLax.Integrable
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 import TauCeti.MeasureTheory.OptimalTransport.Duality.LowerSemicontinuous
 import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
+import TauCeti.Topology.Order.Interval
 
 /-!
 # The Benamou–Brenier formula
@@ -139,34 +140,20 @@ private theorem ofReal_kantorovichDualValue_le
     simpa [g, abs_div, abs_of_pos hκ] using div_le_div_of_nonneg_right (φ.norm_coe_le_norm x)
       hκ.le
   have hgb : BddBelow (range g) := ⟨-(‖φ‖ / κ), forall_mem_range.2 fun x ↦ (abs_le.1 (hgC x)).1⟩
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
-  -- At time `0` the Hopf–Lax value lies below `g`, at time `T` above `ψ / κ`.
-  have hHle {s : ℝ} (hs : 0 ≤ s) (x : E) : hopfLax (‖·‖ ^ p) g s x ≤ g x := by
-    simpa [Real.zero_rpow hp0] using hopfLax_le_add_mul hgb
-      ⟨0, forall_mem_range.2 fun w ↦ Real.rpow_nonneg (norm_nonneg w) p⟩ hs x
-  have hHT (y : E) : ψ y / κ ≤ hopfLax (‖·‖ ^ p) g (b - a) y := by
-    rw [hopfLax_norm_rpow g hT]
-    refine le_ciInf fun x ↦ ?_
-    calc ψ y / κ = (-φ x + (φ x + ψ y)) / κ := by ring
-      _ ≤ (-φ x + ‖y - x‖ ^ p) / κ := by
-          gcongr
-          rw [norm_sub_rev]
-          exact hφψ x y
-      _ = g x + ‖y - x‖ ^ p / (b - a) ^ (p - 1) := by simp only [g, κ]; ring
   have hHi (t s : ℝ) (hs : 0 < s) :
       Integrable (fun x ↦ hopfLax (‖·‖ ^ p) g s x) (ν t : Measure E) :=
-    .of_bound (((continuousOn_hopfLax_norm_rpow hp (by fun_prop) hgb).comp_continuous
-      (f := fun x : E ↦ (s, x)) (by fun_prop) fun _ ↦ hs).aestronglyMeasurable) (‖φ‖ / κ)
-      (ae_of_all _ fun x ↦ (abs_hopfLax_norm_rpow_le hp0 hgC hs.le x))
+    integrable_hopfLax_norm_rpow (zero_lt_one.trans_le hp) hgC hs _
   -- For `0 < δ < T`, the dual value with `ν (b - δ)` in place of `ν b` is bounded by the action.
   have hstep {δ : ℝ} (hδ : 0 < δ) (hδT : δ < b - a) :
       ENNReal.ofReal ((∫ y, ψ y ∂(ν (b - δ) : Measure E) + ∫ x, φ x ∂(ν a : Measure E)) / κ) ≤
         ∫⁻ t in Ioo a b, ∫⁻ x, ‖v t x‖ₑ ^ p ∂(ν t : Measure E) := by
     refine le_trans (ENNReal.ofReal_le_ofReal ?_)
       (ofReal_integral_hopfLax_sub_le h hν hp (by fun_prop) hgC hδ hδT)
-    have hψ := integral_mono ((ψ.integrable _).div_const κ) (hHi (b - δ) (b - a) hT) hHT
+    have hψ := integral_mono ((ψ.integrable _).div_const κ) (hHi (b - δ) (b - a) hT)
+      (le_hopfLax_norm_rpow_neg_div (φ := φ) hT hφψ)
     have hgi : Integrable g (ν a : Measure E) := (φ.integrable _).neg.div_const κ
-    have hφ := integral_mono (hHi a δ hδ) hgi (hHle hδ.le)
+    have hφ := integral_mono (hHi a δ hδ) hgi
+      (hopfLax_norm_rpow_le_self (zero_lt_one.trans_le hp).ne' hgb hδ.le)
     have hg : ∫ x, g x ∂(ν a : Measure E) = -((∫ x, φ x ∂(ν a : Measure E)) / κ) := by
       simp only [g, integral_div, integral_neg, neg_div]
     rw [integral_div] at hψ
@@ -174,14 +161,8 @@ private theorem ofReal_kantorovichDualValue_le
     rw [add_div]
     linarith
   -- Letting `δ → 0`, narrow continuity of `ν` at `b` recovers the dual value.
-  have hb' : Tendsto (fun δ : ℝ ↦ b - δ) (𝓝[>] 0) (𝓝[Icc a b] b) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
-    · have : Tendsto (fun δ : ℝ ↦ b - δ) (𝓝 0) (𝓝 (b - 0)) := tendsto_const_nhds.sub tendsto_id
-      rw [sub_zero] at this
-      exact this.mono_left nhdsWithin_le_nhds
-    · filter_upwards [Ioo_mem_nhdsGT hT] with δ hδ using ⟨by linarith [hδ.2], by linarith [hδ.1]⟩
   have hψlim := FiniteMeasure.tendsto_iff_forall_integral_tendsto.1
-    ((hν b (right_mem_Icc.2 hab.le)).tendsto.comp hb') ψ
+    ((hν b (right_mem_Icc.2 hab.le)).tendsto.comp (tendsto_sub_nhdsGT_nhdsWithin_Icc hab)) ψ
   have hle := le_of_tendsto (ENNReal.tendsto_ofReal ((hψlim.add_const _).div_const κ))
     (by filter_upwards [Ioo_mem_nhdsGT hT] with δ hδ using hstep hδ.1 hδ.2)
   rw [kantorovichDualValue_def]
@@ -192,21 +173,25 @@ private theorem ofReal_kantorovichDualValue_le
     _ ≤ _ := by gcongr
 
 /-- **The Benamou–Brenier lower bound.** Let `t ↦ νₜ` be a curve of finite measures, narrowly
-continuous on `[a, b]` with `a < b`, solving the continuity equation with velocity `v` on
-`(a, b)`, whose endpoint laws `ν_a` and `ν_b` are probability measures. Then for `1 ≤ p < ∞` the
-`p`-Wasserstein distance between the endpoint laws is controlled by the `p`-action of `v`:
-`W_p (ν_a, ν_b) ^ p ≤ (b - a) ^ (p - 1) * ∫_a^b ∫ ‖vₜ‖ ^ p dνₜ dt`.
+continuous on `[a, b]` with `a ≤ b`, solving the continuity equation with velocity `v` on
+`(a, b)`, whose initial law `ν_a` is a probability measure (by conservation of mass, so is `ν_b`).
+Then for `1 ≤ p < ∞` the `p`-Wasserstein distance between the endpoint laws is controlled by the
+`p`-action of `v`: `W_p (ν_a, ν_b) ^ p ≤ (b - a) ^ (p - 1) * ∫_a^b ∫ ‖vₜ‖ ^ p dνₜ dt`.
 
 On `[0, 1]` the factor is `1`, and this is the inequality `W_p (ν₀, ν₁) ^ p ≤ ∫₀¹ ∫ ‖vₜ‖ ^ p dνₜ dt`
 of the Benamou–Brenier formula. -/
 theorem wassersteinEDist_rpow_le (h : IsContinuityEquation (fun t ↦ (ν t : Measure E)) v a b)
-    (hν : ContinuousOn ν (Icc a b)) (hab : a < b) [IsProbabilityMeasure (ν a : Measure E)]
-    [IsProbabilityMeasure (ν b : Measure E)] {p : ℝ≥0∞} (hp : 1 ≤ p) (hp_top : p ≠ ∞) :
+    (hν : ContinuousOn ν (Icc a b)) (hab : a ≤ b) [IsProbabilityMeasure (ν a : Measure E)]
+    {p : ℝ≥0∞} (hp : 1 ≤ p) (hp_top : p ≠ ∞) :
     wassersteinEDist p (ν a : Measure E) (ν b) ^ p.toReal ≤
       ENNReal.ofReal ((b - a) ^ (p.toReal - 1)) *
         ∫⁻ t in Ioo a b, ∫⁻ x, ‖v t x‖ₑ ^ p.toReal ∂(ν t : Measure E) := by
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
   have hp₁ : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp_top hp
+  obtain rfl | hab := hab.eq_or_lt
+  · simp [ENNReal.zero_rpow_of_pos (zero_lt_one.trans_le hp₁)]
+  have : IsProbabilityMeasure (ν b : Measure E) :=
+    ⟨(h.measure_univ_eq hν (left_mem_Icc.2 hab.le) (right_mem_Icc.2 hab.le)).trans measure_univ⟩
   rw [wassersteinEDist_rpow_eq_transportCost measurable_edist hp0 hp_top]
   refine (isLUB_ofReal_kantorovichDualValue_boundedContinuous_of_lowerSemicontinuous
     (ENNReal.continuous_rpow_const.comp continuous_edist).lowerSemicontinuous
@@ -238,7 +223,7 @@ theorem isLeast_lintegral_isContinuityEquation {μ₀ μ₁ : Measure E} [IsProb
         ContinuousOn ν (Icc 0 1) ∧ (ν 0 : Measure E) = μ₀ ∧ (ν 1 : Measure E) = μ₁ ∧
         ∫⁻ t in Ioo 0 1, ∫⁻ x, ‖v t x‖ₑ ^ p.toReal ∂(ν t : Measure E) = A} := by
     rintro A ⟨ν, v, hce, hν, rfl, rfl, rfl⟩
-    simpa using hce.wassersteinEDist_rpow_le hν zero_lt_one hp hp_top
+    simpa using hce.wassersteinEDist_rpow_le hν zero_le_one hp hp_top
   refine ⟨?_, hlow⟩
   -- The displacement interpolation of an optimal coupling attains the bound.
   obtain ⟨π, hπ⟩ := exists_isOptimalCoupling μ₀ μ₁
@@ -281,7 +266,7 @@ theorem wassersteinEDist_rpow_eq_sInf_lintegral_isContinuityEquation {μ₀ μ�
   by_cases hfin : wassersteinEDist p μ₀ μ₁ = ∞
   · refine le_antisymm (le_sInf ?_) ?_
     · rintro A ⟨ν, v, hce, hν, rfl, rfl, rfl⟩
-      simpa using hce.wassersteinEDist_rpow_le hν zero_lt_one hp hp_top
+      simpa using hce.wassersteinEDist_rpow_le hν zero_le_one hp hp_top
     · rw [hfin, ENNReal.top_rpow_of_pos (ENNReal.toReal_pos (zero_lt_one.trans_le hp).ne' hp_top)]
       exact le_top
   · exact (isLeast_lintegral_isContinuityEquation hp hp_top hfin).csInf_eq.symm

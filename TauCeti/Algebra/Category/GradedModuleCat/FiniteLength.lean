@@ -75,6 +75,30 @@ theorem exists_mono_cokernel_finrank_lt (M : GradedModuleCat.{v} 𝒜) [Module.F
   have hQdim : Module.finrank k Q < Module.finrank k M := by omega
   exact ⟨Y, i, hi, inferInstance, inferInstance, hQ, hYdim, hQdim⟩
 
+/-- An extension-closed property holding on zero objects and finite-dimensional simple objects
+holds on every finite-dimensional graded module. Only extensions with finite-dimensional ends
+are needed. -/
+theorem finite_induction (X : GradedModuleCat.{v} 𝒜) [Module.Finite k X]
+    (P : ObjectProperty (GradedModuleCat.{v} 𝒜))
+    (hzero : ∀ M : GradedModuleCat.{v} 𝒜, IsZero M → P M)
+    (hsimple : ∀ M : GradedModuleCat.{v} 𝒜, Module.Finite k M → Simple M → P M)
+    (hext : ∀ {S : ShortComplex (GradedModuleCat.{v} 𝒜)},
+      [Module.Finite k S.X₁] → [Module.Finite k S.X₃] →
+      S.ShortExact → P S.X₁ → P S.X₃ → P S.X₂) : P X := by
+  classical
+  induction hn : Module.finrank k X using Nat.strong_induction_on generalizing X with
+  | _ n ih =>
+    by_cases hX : IsZero X
+    · exact hzero X hX
+    by_cases hs : Simple X
+    · exact hsimple X inferInstance hs
+    obtain ⟨Z, i, hi, hZ, hQ, _, hdimZ, hdimQ⟩ :=
+      X.exists_mono_cokernel_finrank_lt hX hs
+    have : Module.Finite k Z := hZ
+    have : Module.Finite k (cokernelObj i) := hQ
+    exact hext (shortExact_cokernelπ i) (ih _ (hn ▸ hdimZ) Z rfl)
+      (ih _ (hn ▸ hdimQ) (cokernelObj i) rfl)
+
 /-- Every nonzero finite-dimensional graded module has a simple graded quotient. The quotient
 is finite-dimensional over the same field and lies in the same universe as the source. -/
 theorem exists_simple_quotient (M : GradedModuleCat.{v} 𝒜) [Module.Finite k M]

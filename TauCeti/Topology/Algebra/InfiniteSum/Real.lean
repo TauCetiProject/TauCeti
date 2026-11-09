@@ -5,82 +5,99 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.InfiniteSum
-public import Mathlib.Analysis.SpecificLimits.Basic
+public import Mathlib.Topology.Algebra.InfiniteSum.Real
+import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
-# Weighted geometric majorants over an index and an exponent
+# Unbounded weights preserving summability
 
-For a family `r : ι → E` in a seminormed additive group whose norms are less than one, and
-eventually at most `1 - ε`, wherever the weight `w` is nonzero, the double family
-`(i, e) ↦ w i * ‖r i‖ ^ (e + 1)` is summable over `ι × ℕ` as soon as `i ↦ w i * ‖r i‖` is
-summable. Each fibre is geometric, so it
-sums to `w i * ‖r i‖ / (1 - ‖r i‖)`, and the eventual bound keeps `1 / (1 - ‖r i‖)` under `ε⁻¹`
-off a finite set; a fibre where the weight vanishes is zero and needs no bound at all.
+A summable real sequence `a` remains summable after multiplication by suitable weights
+`c n ≥ 1` tending to infinity: no summable sequence decays at a slowest possible rate. This is
+the standard device for rescaling an absolutely convergent series of products `x n * y n` so that
+one factor tends to zero while the other stays absolutely summable.
+
+The weights count the blocks into which the tails of `|a|` are cut: `c n` is one more than the
+number of indices `k` with `N k ≤ n`, where the tail of `|a|` beyond `N k` is at most `2⁻ᵏ`.
 
 ## Main results
 
-* `TauCeti.summable_mul_norm_pow_succ`: the weighted double family is summable over `ι × ℕ`.
+* `Summable.exists_tendsto_atTop_summable_mul`: weights `c n ≥ 1` with `c n → ∞` and
+  `∑ n, c n * a n` summable.
 -/
 
 public section
 
-namespace TauCeti
+open Filter Finset
+open scoped Topology
 
-/-- **A weighted geometric family is summable over index and exponent together.**  Let `w : ι → ℝ`
-be weights with `i ↦ w i * ‖r i‖` summable, and let `r` be a family in a seminormed additive group
-which, *at every index where `w` is nonzero*, has norm less than one and eventually norm at most
-`1 - ε`.  Then the double family `(i, e) ↦ w i * ‖r i‖ ^ (e + 1)` is summable over `ι × ℕ`.
+/-- The weights `1 + #{k ≤ n | N k ≤ n}` tend to infinity along a strictly increasing sequence
+of cut points `N`. -/
+private lemma tendsto_one_add_sum_ite {N : ℕ → ℕ} (hN : StrictMono N) :
+    Tendsto (fun n ↦ 1 + ∑ k ∈ range (n + 1), if N k ≤ n then (1 : ℝ) else 0) atTop atTop := by
+  refine tendsto_atTop_atTop.2 fun r ↦ ⟨N ⌈r⌉₊, fun n hn ↦ ?_⟩
+  have hsub : range (⌈r⌉₊ + 1) ⊆ range (n + 1) :=
+    Finset.range_subset_range.2 (Nat.succ_le_succ ((hN.id_le _).trans hn))
+  have hones : ∑ k ∈ range (⌈r⌉₊ + 1), (if N k ≤ n then (1 : ℝ) else 0) = ⌈r⌉₊ + 1 := by
+    rw [Finset.sum_ite_of_true fun k hk ↦
+      (hN.monotone (Nat.lt_succ_iff.1 (Finset.mem_range.1 hk))).trans hn]
+    simp
+  have hle := Finset.sum_le_sum_of_subset_of_nonneg hsub
+    (f := fun k ↦ if N k ≤ n then (1 : ℝ) else 0) fun k _ _ ↦ by split_ifs <;> norm_num
+  rw [hones] at hle
+  linarith [Nat.le_ceil r]
 
-Both conditions on `r` are restricted to the support of `w`, and off that support nothing is asked
-of `r` at all: a fibre with `w i = 0` is identically zero whatever `r i` is.  The weights are
-unrestricted in sign, since only `|w i|` enters the majorant.
+/-- Cutting a nonnegative summable sequence `b` off below the points `N k`, whose tails are at most
+`2⁻ᵏ`, gives column sums `∑' k, (if N k ≤ n then b n else 0)` that are summable in `n`. -/
+private lemma summable_tsum_ite_le {b : ℕ → ℝ} (hb : Summable b) (hb0 : ∀ n, 0 ≤ b n)
+    {N : ℕ → ℕ} (hNtail : ∀ k, ∑' m, b (m + N k) ≤ (1 / 2 : ℝ) ^ k) :
+    Summable fun n ↦ ∑' k, if N k ≤ n then b n else 0 := by
+  have hd0 (k n : ℕ) : 0 ≤ (if N k ≤ n then b n else 0) := by
+    split_ifs <;> simp [hb0]
+  have hdk (k : ℕ) : Summable fun n ↦ if N k ≤ n then b n else 0 :=
+    hb.of_nonneg_of_le (hd0 k) fun n ↦ by split_ifs <;> simp [hb0]
+  have htsum_d (k : ℕ) : ∑' n, (if N k ≤ n then b n else 0) ≤ (1 / 2 : ℝ) ^ k := by
+    rw [← (hdk k).sum_add_tsum_nat_add (N k), Finset.sum_eq_zero fun i hi ↦ by
+      simp [not_le.2 (Finset.mem_range.1 hi)]]
+    simpa using hNtail k
+  -- Summing over `k` first, then over `n`, is possible.
+  have hprod : Summable fun p : ℕ × ℕ ↦ if N p.1 ≤ p.2 then b p.2 else 0 :=
+    (summable_prod_of_nonneg fun p ↦ hd0 p.1 p.2).2 ⟨hdk, (summable_geometric_two).of_nonneg_of_le
+      (fun k ↦ tsum_nonneg (hd0 k)) htsum_d⟩
+  exact ((summable_prod_of_nonneg fun p : ℕ × ℕ ↦ hd0 p.2 p.1).1
+    ((Equiv.prodComm ℕ ℕ).summable_iff.2 hprod)).2
 
-The eventual bound is what the fibres need — the fibre at `i` sums to `w i * ‖r i‖ / (1 - ‖r i‖)`,
-which is comparable to `w i * ‖r i‖` only where `‖r i‖` stays away from `1`. Summability of `r`
-would give this, but is far stronger: it rules out a family of constant norm with summable
-weights.
-
-This is the bound a termwise differentiation argument runs on whenever the differentiated terms are
-an index-only weight times a norm power; it says nothing on its own about which families have that
-form. -/
-theorem summable_mul_norm_pow_succ {ι E : Type*} [SeminormedAddGroup E] {r : ι → E} {w : ι → ℝ}
-    (hbd : ∃ ε > 0, ∀ᶠ i in Filter.cofinite, w i ≠ 0 → ‖r i‖ ≤ 1 - ε)
-    (hwr : Summable fun i ↦ w i * ‖r i‖) (h1 : ∀ i, w i ≠ 0 → ‖r i‖ < 1) :
-    Summable fun ie : ι × ℕ ↦ w ie.1 * ‖r ie.1‖ ^ (ie.2 + 1) := by
-  obtain ⟨ε, hε, hfar⟩ := hbd
-  have habs : Summable fun i ↦ |w i| * ‖r i‖ := by
-    refine (summable_abs_iff.2 hwr).congr fun i ↦ ?_
-    rw [abs_mul, abs_of_nonneg (norm_nonneg (r i))]
-  -- The absolute-value family is nonnegative, so it can be assembled fibrewise.  A fibre with
-  -- `w i = 0` is identically zero, so it needs no hypothesis on `‖r i‖`.
-  have hfib : ∀ i, Summable fun e : ℕ ↦ |w i| * ‖r i‖ ^ (e + 1) := fun i ↦ by
-    rcases eq_or_ne (w i) 0 with h | h
-    · simp [h]
-    · exact (((summable_geometric_of_lt_one (norm_nonneg _) (h1 i h)).mul_left ‖r i‖).congr
-        fun e ↦ by ring).mul_left |w i|
-  have houter : Summable fun i ↦ ∑' e : ℕ, |w i| * ‖r i‖ ^ (e + 1) := by
-    refine Summable.of_norm_bounded_eventually (g := fun i ↦ ε⁻¹ * (|w i| * ‖r i‖))
-      (habs.mul_left ε⁻¹) ?_
-    filter_upwards [hfar] with i hi
-    rcases eq_or_ne (w i) 0 with h | h
-    · simp [h]
-    · have hval : ∑' e : ℕ, |w i| * ‖r i‖ ^ (e + 1) = |w i| * (‖r i‖ / (1 - ‖r i‖)) := by
-        rw [tsum_mul_left, tsum_congr fun e ↦ pow_succ' ‖r i‖ e, tsum_mul_left,
-          tsum_geometric_of_lt_one (norm_nonneg _) (h1 i h), div_eq_mul_inv]
-      rw [Real.norm_of_nonneg (tsum_nonneg fun e ↦ by positivity), hval]
-      -- Where `‖r i‖ ≤ 1 - ε` the fibre sum `‖r i‖ / (1 - ‖r i‖)` is at most `ε⁻¹ ‖r i‖`.
-      have hd : ‖r i‖ / (1 - ‖r i‖) ≤ ε⁻¹ * ‖r i‖ := by
-        rw [div_le_iff₀ (by linarith [h1 i h])]
-        have hεi : ε * (ε⁻¹ * ‖r i‖) = ‖r i‖ := by field_simp
-        nlinarith [norm_nonneg (r i), inv_pos.2 hε, hi h]
-      calc |w i| * (‖r i‖ / (1 - ‖r i‖)) ≤ |w i| * (ε⁻¹ * ‖r i‖) :=
-            mul_le_mul_of_nonneg_left hd (abs_nonneg _)
-        _ = ε⁻¹ * (|w i| * ‖r i‖) := by ring
-  have hmaj : Summable fun ie : ι × ℕ ↦ |w ie.1| * ‖r ie.1‖ ^ (ie.2 + 1) :=
-    (summable_prod_of_nonneg fun ie ↦ by positivity).mpr ⟨hfib, houter⟩
-  refine hmaj.of_norm_bounded fun ie ↦ ?_
-  rw [Real.norm_eq_abs, abs_mul,
-    abs_of_nonneg (by positivity : (0:ℝ) ≤ ‖r ie.1‖ ^ (ie.2 + 1))]
-
-end TauCeti
+/-- A summable real sequence remains summable after multiplication by suitable weights `c n ≥ 1`
+tending to infinity. -/
+theorem Summable.exists_tendsto_atTop_summable_mul {a : ℕ → ℝ} (ha : Summable a) :
+    ∃ c : ℕ → ℝ, (∀ n, 1 ≤ c n) ∧ Tendsto c atTop atTop ∧ Summable fun n ↦ c n * a n := by
+  set b : ℕ → ℝ := fun n ↦ |a n| with hb_def
+  have hb : Summable b := ha.abs
+  have hb0 (n : ℕ) : 0 ≤ b n := abs_nonneg _
+  -- A strictly increasing sequence of cut points `N k` beyond which the tail of `b` is `≤ 2⁻ᵏ`.
+  obtain ⟨N, hN, hNtail⟩ : ∃ N : ℕ → ℕ, StrictMono N ∧
+      ∀ k, ∑' m, b (m + N k) ≤ (1 / 2 : ℝ) ^ k :=
+    extraction_forall_of_eventually fun k ↦
+      (tendsto_sum_nat_add b).eventually (Iic_mem_nhds (by positivity))
+  have hcol := summable_tsum_ite_le hb hb0 hNtail
+  -- Only the indices `k ≤ n` contribute to the column `n`, since `k ≤ N k`.
+  have hcol_eq (n : ℕ) : ∑' k, (if N k ≤ n then b n else 0) =
+      ∑ k ∈ range (n + 1), if N k ≤ n then b n else 0 :=
+    tsum_eq_sum fun k hk ↦ by
+      have hk' : n + 1 ≤ k := by simpa using hk
+      have hNk : k ≤ N k := hN.id_le k
+      simp [show ¬N k ≤ n by omega]
+  -- The weight `c n` is one more than the number of cut points `N k ≤ n`.
+  set c : ℕ → ℝ := fun n ↦ 1 + ∑ k ∈ range (n + 1), if N k ≤ n then (1 : ℝ) else 0 with hc_def
+  have hc1 (n : ℕ) : 1 ≤ c n := by
+    have : 0 ≤ ∑ k ∈ range (n + 1), if N k ≤ n then (1 : ℝ) else 0 :=
+      Finset.sum_nonneg fun k _ ↦ by split_ifs <;> norm_num
+    simp only [hc_def]
+    linarith
+  refine ⟨c, hc1, tendsto_one_add_sum_ite hN, ?_⟩
+  · -- `|c n * a n| ≤ b n + ∑ k ≤ n, if N k ≤ n then b n else 0`, which is summable.
+    refine summable_abs_iff.1 ((hb.add hcol).of_nonneg_of_le (fun n ↦ abs_nonneg _) fun n ↦ ?_)
+    rw [abs_mul, abs_of_nonneg (zero_le_one.trans (hc1 n)), hcol_eq]
+    simp only [hc_def, add_mul, one_mul, Finset.sum_mul]
+    gcongr with k
+    simp only [hb_def]
+    split_ifs <;> simp

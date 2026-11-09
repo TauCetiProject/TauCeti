@@ -122,7 +122,7 @@ theorem HasBoundedApproximationPropertyWith.of_tendsto {ι : Type*} {l : Filter 
     HasBoundedApproximationPropertyWith 𝕜 E C := by
   have hbounded : ∃ D : ℝ, ∀ i, ‖T i‖ ≤ D := ⟨C, hbound⟩
   have heq : Equicontinuous (fun i x => T i x) :=
-    ((NormedSpace.equicontinuous_TFAE T).out 6 2).mp hbounded
+    ((NormedSpace.equicontinuous_tfae T).out 6 2).mp hbounded
   intro K hK ε hε
   have : CompactSpace K := isCompact_iff_compactSpace.mp hK
   have hpoint : Tendsto (fun i (x : K) => T i x) l (𝓝 fun x : K => (x : E)) :=

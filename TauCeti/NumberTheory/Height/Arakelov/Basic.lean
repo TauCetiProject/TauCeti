@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Height.NumberField
 
-import TauCeti.NumberTheory.NumberField.FinitePlace
+import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
 /-!
 # Euclidean heights over number fields

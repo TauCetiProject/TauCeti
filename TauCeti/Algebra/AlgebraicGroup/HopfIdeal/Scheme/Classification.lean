@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
 public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Basic
+public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 public import TauCeti.CategoryTheory.Subobject.FactorThru
 
 /-!
@@ -42,6 +43,9 @@ ideals of `H`.
   subgroup schemes of `Spec H` by Hopf ideals of `H`.
 * `TauCeti.CommHopfAlgCat.hopfIdealOrderIsoClosedSubgroup_symm_apply_eq_ker`: the inverse
   classification computed from a surjective coordinate presentation.
+* `TauCeti.CommHopfAlgCat.finiteLocallyFree_quotientClosedSubgroup_iff`: the quotient closed
+  subgroup is finite locally free of constant rank `k` over `Spec R` exactly when `H ⧸ I` is
+  finite projective of constant rank `k` over `R`.
 
 ## References
 
@@ -375,6 +379,32 @@ theorem mk_quotientSpecMapOfLe_eq_quotientClosedSubgroup
   exact (quotientSubobject_ker_eq_mk (quotient H I) (quotient H J)
     (quotientMapOfLe H hIJ) (quotientMapOfLe_surjective H hIJ) (Iso.refl _)
     (quotientSpecMapOfLe H hIJ) (by simp [quotientSpecMapOfLe_def])).symm
+
+/-- The closed subgroup scheme cut out by a Hopf ideal `I` of a commutative `R`-Hopf algebra `H`
+is finite locally free of constant rank `k` over `Spec R` exactly when `H ⧸ I` is finite projective
+of constant rank `k` over `R`. -/
+theorem finiteLocallyFree_quotientClosedSubgroup_iff (H : _root_.CommHopfAlgCat.{u} R)
+    (I : HopfIdeal R H) {k : ℕ} :
+    (IsFinite ((quotientClosedSubgroup H I).1 : Grp (Over (Spec (CommRingCat.of R)))).X.hom ∧
+        Flat ((quotientClosedSubgroup H I).1 : Grp (Over (Spec (CommRingCat.of R)))).X.hom ∧
+        LocallyOfFinitePresentation ((quotientClosedSubgroup H I).1 :
+          Grp (Over (Spec (CommRingCat.of R)))).X.hom ∧
+        ∀ s, (((quotientClosedSubgroup H I).1 :
+          Grp (Over (Spec (CommRingCat.of R)))).X.hom).finrank s = k) ↔
+      _root_.Module.Finite R (H ⧸ I.toIdeal) ∧ _root_.Module.Projective R (H ⧸ I.toIdeal) ∧
+        ∀ p, _root_.Module.rankAtStalk (R := R) (H ⧸ I.toIdeal) p = k := by
+  let e : ((quotientClosedSubgroup H I).1 : Grp (Over (Spec (CommRingCat.of R)))).X ≅
+      (quotientSpec H I).X :=
+    (Grp.forget _).mapIso (Subobject.underlying.mapIso
+      (eqToIso (quotientClosedSubgroup_coe H I)) ≪≫ Subobject.underlyingIso (quotientSpecι H I))
+  refine (finiteLocallyFree_iff_of_iso e).trans ?_
+  rw [← moduleFinite_iff_isFinite_hopfSpec]
+  refine and_congr_right fun _ ↦ ?_
+  rw [← and_assoc, ← moduleProjective_iff_flat_and_locallyOfFinitePresentation_hopfSpec]
+  refine and_congr_right fun _ ↦ ?_
+  -- The points of `Spec R` are the prime ideals of `R`, where `finrank_hopfSpec` is stated.
+  exact forall_congr' fun s ↦ (congrArg (· = k)
+    (finrank_hopfSpec R (_root_.CommHopfAlgCat.quotient H I) s)).to_iff
 
 end CommHopfAlgCat
 

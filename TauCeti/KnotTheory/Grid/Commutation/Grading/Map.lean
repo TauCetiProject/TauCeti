@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.KnotTheory.Grid.Commutation.FullyBlocked
 public import TauCeti.KnotTheory.Grid.Commutation.Grading.Basic
 
 /-!
@@ -22,6 +23,8 @@ pentagon maps and their sum `GridDiagram.commutationMap` preserve the bigraded a
 Alexander-homogeneous chain pieces. For a turn exchanging two columns whose marking segments
 interleave, the same maps are homogeneous of a possibly nonzero bidegree; these are the maps
 attached to a crossing change in `TauCeti.KnotTheory.Grid.CrossingChange.Grading`.
+Taking constant terms, the fully blocked pentagon map `GridDiagram.fullyBlockedCommutationMap` of
+a column commutation preserves the bidegree of every state.
 
 These are grading statements over arbitrary commutative semirings, not chain-map or
 homotopy-equivalence assertions. The integer Alexander grading requires an odd number of link
@@ -41,6 +44,9 @@ components, as in the existing unblocked bigrading API.
   `TauCeti.OddComponentGridDiagram.commutationMap_mem_alexanderChainMinusPiece`, with their
   terminal-side and initial-side parts: for a column commutation these maps preserve the
   gradings.
+* `TauCeti.OddComponentGridDiagram.fullyBlockedCommutationMap_single_apply_eq_zero_of_bidegree_ne`:
+  the fully blocked pentagon map of a column commutation has no matrix entries between states of
+  different bidegrees.
 
 ## References
 
@@ -215,6 +221,22 @@ theorem commutationMap_mem_alexanderChainMinusPiece (C : GridDiagram.ColumnCommu
     (hc : c ∈ G.alexanderChainMinusPiece R a) :
     G.1.commutationMap R C c ∈ (G.swapColumns C).alexanderChainMinusPiece R a := by
   simpa using G.commutationMap_mem_alexanderChainMinusPiece_add R C hc
+
+/-- The fully blocked pentagon map has no matrix entries between states of different bidegrees:
+a pentagon carrying no markings preserves both the `O`-Maslov and the Alexander grading. -/
+theorem fullyBlockedCommutationMap_single_apply_eq_zero_of_bidegree_ne
+    (C : GridDiagram.ColumnCommutationData G.1) (R : Type*) [CommSemiring R]
+    {x y : GridState n} (h : (G.swapColumns C).bidegree y ≠ G.bidegree x) :
+    G.1.fullyBlockedCommutationMap R C (Finsupp.single x 1) y = 0 := by
+  rw [GridDiagram.fullyBlockedCommutationMap_single_apply, one_mul,
+    ← G.1.commutationMap_single_apply, constantCoeff_eq]
+  by_contra hne
+  have hx := G.single_monomial_mem_bigradedChainMinusPiece R x 0 1
+  rw [monomial_zero', C_1] at hx
+  have hy := (mem_bigradedChainMinusPiece _).mp
+    (G.commutationMap_mem_bigradedChainMinusPiece C R hx) y 0 (mem_support_iff.mpr hne)
+  rw [monomialBidegree_zero, monomialBidegree_zero] at hy
+  exact h hy
 
 end OddComponentGridDiagram
 

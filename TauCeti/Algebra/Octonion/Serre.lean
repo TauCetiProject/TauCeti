@@ -132,7 +132,7 @@ private theorem ad_pow_raisingDerivation_zero :
     (LieAlgebra.ad R (derivationLieAlgebra R (Octonion R)) (raisingDerivation 0) ^ 3)
       ⁅raisingDerivation (R := R) 0, raisingDerivation 1⁆ = 0 := by
   simp only [raisingDerivation_zero, raisingDerivation_one, pow_succ, pow_zero,
-    Module.End.one_apply, Module.End.mul_apply, LieAlgebra.ad_apply,
+    one_apply_eq_self, mul_apply_eq_comp, LieAlgebra.ad_apply,
     ← lie_skew (upperDerivation (R := R) _) (slDerivation _), lie_slDerivation_upperDerivation,
     lie_upperDerivation_upperDerivation, lie_upperDerivation_lowerDerivation, map_neg,
     neg_eq_zero]
@@ -155,7 +155,7 @@ private theorem ad_pow_loweringDerivation_zero :
     (LieAlgebra.ad R (derivationLieAlgebra R (Octonion R)) (loweringDerivation 0) ^ 3)
       ⁅loweringDerivation (R := R) 0, loweringDerivation 1⁆ = 0 := by
   simp only [loweringDerivation_zero, loweringDerivation_one, pow_succ, pow_zero,
-    Module.End.one_apply, Module.End.mul_apply, LieAlgebra.ad_apply, neg_lie, neg_neg,
+    one_apply_eq_self, mul_apply_eq_comp, LieAlgebra.ad_apply, neg_lie, neg_neg,
     ← lie_skew (lowerDerivation (R := R) _) (slDerivation _), lie_slDerivation_lowerDerivation,
     lie_lowerDerivation_lowerDerivation,
     ← lie_skew (lowerDerivation (R := R) _) (upperDerivation _),
@@ -247,7 +247,7 @@ theorem isSerreSystem :
     have hCM : (-CartanMatrix.G₂ 0 0).toNat = 0 ∧ (-CartanMatrix.G₂ 0 1).toNat = 3 ∧
         (-CartanMatrix.G₂ 1 0).toNat = 1 ∧ (-CartanMatrix.G₂ 1 1).toNat = 0 := by
       decide
-    simp only [Fin.forall_fin_two, hCM, pow_zero, Module.End.one_apply, lie_self,
+    simp only [Fin.forall_fin_two, hCM, pow_zero, one_apply_eq_self, lie_self,
       pow_one, LieAlgebra.ad_apply, ad_pow_raisingDerivation_zero,
       lie_raisingDerivation_one_lie_raisingDerivation_one_raisingDerivation_zero, and_self]
   ad_pow_lie_F_F := by
@@ -255,7 +255,7 @@ theorem isSerreSystem :
     have hCM : (-CartanMatrix.G₂ 0 0).toNat = 0 ∧ (-CartanMatrix.G₂ 0 1).toNat = 3 ∧
         (-CartanMatrix.G₂ 1 0).toNat = 1 ∧ (-CartanMatrix.G₂ 1 1).toNat = 0 := by
       decide
-    simp only [Fin.forall_fin_two, hCM, pow_zero, Module.End.one_apply, lie_self,
+    simp only [Fin.forall_fin_two, hCM, pow_zero, one_apply_eq_self, lie_self,
       pow_one, LieAlgebra.ad_apply, ad_pow_loweringDerivation_zero,
       lie_loweringDerivation_one_lie_loweringDerivation_one_loweringDerivation_zero, and_self]
 

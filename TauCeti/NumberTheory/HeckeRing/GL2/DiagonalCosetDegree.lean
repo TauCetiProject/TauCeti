@@ -82,9 +82,7 @@ private lemma conj_natDiagGL_mem_of_dvd (N : ℕ) (a : Fin 2 → ℕ) (ha : ∀ 
     have h' := congr_arg ((natDiagGL 2 a)⁻¹ * ·) h
     simp only [← mul_assoc, inv_mul_cancel, one_mul] at h'; exact h'
   apply Units.ext
-  have hval : ∀ μ : SL(2, ℤ), (↑(mapGL ℚ μ) : Matrix _ _ ℚ) = μ.val.map (Int.cast) :=
-    fun μ ↦ by simp [mapGL_coe_matrix, algebraMap_int_eq, RingHom.mapMatrix_apply]
-  simp only [Units.val_mul, hval]
+  simp only [Units.val_mul, coe_mapGL_int]
   ext i j
   simp only [natDiagGL_coe 2 a ha, Matrix.diagonal_mul, Matrix.mul_diagonal,
     Matrix.map_apply]

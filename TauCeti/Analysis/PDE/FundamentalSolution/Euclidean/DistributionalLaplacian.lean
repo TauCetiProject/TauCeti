@@ -185,15 +185,19 @@ theorem integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul (hn : 3 ≤ n)
     filter_upwards [volume.ae_ne 0] with x hx
     rw [regKernelDeriv_zero hn v hx]
   -- Both sides converge as `t → 0⁺`.
-  have hL := tendsto_integral_mul_of_dominated_away (0 : EuclideanSpace ℝ (Fin n))
-    (l := 𝓝[>] (0 : ℝ)) (K := regKernel n) (K₀ := regKernel n 0) hg'
-    (eventually_mem_nhdsWithin.mono fun t ht ↦ continuous_regKernel ht)
+  have hL := tendsto_integral_mul_of_dominated_away
+    (measure_singleton (0 : EuclideanSpace ℝ (Fin n))) (μ := volume)
+    (l := 𝓝[>] (0 : ℝ)) (K := regKernel n) (K₀ := regKernel n 0) hg'.aestronglyMeasurable
+    (eventually_mem_nhdsWithin.mono fun t ht ↦ (continuous_regKernel ht).aestronglyMeasurable)
     (by simpa [regKernel_zero] using integrable_newtonianKernel_mul hg' hcg')
     (eventually_mem_nhdsWithin.mono fun t ht x hx ↦ abs_regKernel_le hn (le_of_lt ht) hx)
     (fun x hx ↦ (tendsto_sq_add_rpow (norm_ne_zero_iff.mpr hx) _).const_mul _)
-  have hR := tendsto_integral_mul_of_dominated_away (0 : EuclideanSpace ℝ (Fin n))
-    (l := 𝓝[>] (0 : ℝ)) (K := regKernelDeriv n v) (K₀ := regKernelDeriv n v 0) hg.continuous
-    (eventually_mem_nhdsWithin.mono fun t ht ↦ continuous_regKernelDeriv v ht)
+  have hR := tendsto_integral_mul_of_dominated_away
+    (measure_singleton (0 : EuclideanSpace ℝ (Fin n))) (μ := volume)
+    (l := 𝓝[>] (0 : ℝ)) (K := regKernelDeriv n v) (K₀ := regKernelDeriv n v 0)
+    hg.continuous.aestronglyMeasurable
+    (eventually_mem_nhdsWithin.mono fun t ht ↦
+      (continuous_regKernelDeriv v ht).aestronglyMeasurable)
     ((integrable_fderiv_newtonianKernel_mul v hg.continuous hc).congr hderiv)
     (eventually_mem_nhdsWithin.mono fun t ht x hx ↦
       abs_regKernelDeriv_le hn v (le_of_lt ht) hx)

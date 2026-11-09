@@ -257,22 +257,20 @@ theorem smoothTensorInducedDiagonalClass_trivialF2_changeTransversal
     (hdz : (trivialF2 U).gradedResolutionDifferential z = 0) :
     ContinuousCohomology.coeffMap (smoothTensorInducedTrivialF2Iso G U hU t).hom.hom
         (Fintype.card (G ⧸ U) * n)
-        (smoothTensorInducedDiagonalClass.{0, v, 0} U hU t
+        (smoothTensorInducedDiagonalClass.{0, v, v} U hU t
           ⟨trivialF2 U, isSmoothDiscrete_trivialF2 U⟩
-          (fun a ↦ by simpa only [two_nsmul] using trivialF2_two_nsmul_eq_zero U a)
+          (trivialF2_add_self U)
           z hz hinv hdz) =
       ContinuousCohomology.coeffMap (smoothTensorInducedTrivialF2Iso G U hU s).hom.hom
         (Fintype.card (G ⧸ U) * n)
-        (smoothTensorInducedDiagonalClass.{0, v, 0} U hU s
+        (smoothTensorInducedDiagonalClass.{0, v, v} U hU s
           ⟨trivialF2 U, isSmoothDiscrete_trivialF2 U⟩
-          (fun a ↦ by simpa only [two_nsmul] using trivialF2_two_nsmul_eq_zero U a)
+          (trivialF2_add_self U)
           z hz hinv hdz) := by
   let A : SmoothDiscreteTopRep.{0, v, v} ℤ U :=
     ⟨trivialF2 U, isSmoothDiscrete_trivialF2 U⟩
-  have hA (a : A.obj.V) : a + a = 0 := by
-    simpa only [two_nsmul] using trivialF2_two_nsmul_eq_zero U a
-  have h := coeffMap_smoothTensorInducedDiagonalClass_changeTransversal.{0, v, 0}
-    U hU s t A hA z hz hinv hdz
+  have h := coeffMap_smoothTensorInducedDiagonalClass_changeTransversal.{0, v, v}
+    U hU s t A (trivialF2_add_self U) z hz hinv hdz
   have hcoef := congrArg (fun f ↦ f.hom)
     (smoothTensorInducedTrivialF2Iso_changeTransversal_hom G U hU s t)
   erw [ObjectProperty.FullSubcategory.comp_hom] at hcoef

@@ -17,9 +17,12 @@ useful before projection closure is available: semialgebraicity of a graph alone
 us recover its projection onto the input coordinates.
 
 This file gives the graph predicate its basic API.  It proves restriction, congruence, and
-piecewise-gluing laws and shows that polynomial maps are semialgebraic.  It also proves the
+piecewise-gluing laws and shows that polynomial maps, and more generally functions whose graph
+over a semialgebraic domain is cut out by polynomial equations
+(`TauCeti.isSemialgebraicOn_of_forall_eq_iff`), are semialgebraic.  It also proves the
 operations whose graphs are inverse images of the given graphs, so that no coordinate has to be
 eliminated: pairing two functions on the same domain (`TauCeti.IsSemialgebraicOn.sumElim`),
+assembling a function from its coordinates (`TauCeti.IsSemialgebraicOn.pi`),
 precomposition with a polynomial map (`TauCeti.IsSemialgebraicOn.comp_eval`), pointwise
 negation (`TauCeti.IsSemialgebraicOn.neg`), and bijective changes of the input or output
 coordinates (`TauCeti.isSemialgebraicOn_preimage_comp_equiv_iff`,
@@ -33,6 +36,10 @@ from projection closure in `TauCeti.Geometry.RealAlgebraic.Semialgebraic.Image`.
 S. Basu, R. Pollack, and M.-F. Roy,
 [Algorithms in Real Algebraic Geometry](https://doi.org/10.1007/3-540-33099-2),
 second edition, Chapter 2.
+
+`TauCeti.isSemialgebraicOn_of_forall_eq_iff` is adapted from its complex-coordinate counterpart
+`TauCeti.isSemialgebraicOn_complexToRealPi_of_forall_eq_iff` in
+`TauCeti.Geometry.RealAlgebraic.Semialgebraic.Complex`.
 -/
 
 public section
@@ -82,6 +89,16 @@ theorem mem_preimage_sumArrowEquivProdArrow_graphOn {f : (σ → R) → (τ → 
   rw [mem_preimage, mem_graphOn]
   -- `Equiv.sumArrowEquivProdArrow σ τ R z` is `(z ∘ Sum.inl, z ∘ Sum.inr)` by definition.
   rfl
+
+omit [CommRing R] [LinearOrder R] in
+/-- Membership in a scalar graph encoded using `Unit` output coordinates is given by the
+input-domain condition and equality of the scalar output coordinate. -/
+theorem mem_preimage_sumArrowEquivProdArrow_scalar_graphOn {f : (σ → R) → R}
+    {s : Set (σ → R)} {z : σ ⊕ Unit → R} :
+    z ∈ Equiv.sumArrowEquivProdArrow σ Unit R ⁻¹' s.graphOn (fun x _ ↦ f x) ↔
+      z ∘ Sum.inl ∈ s ∧ f (z ∘ Sum.inl) = z (Sum.inr ()) := by
+  rw [mem_preimage_sumArrowEquivProdArrow_graphOn]
+  simp only [funext_iff, Function.comp_apply, Unique.forall_iff]
 
 /-- The domain of a function semialgebraic on a set is semialgebraic. -/
 theorem IsSemialgebraicOn.isSemialgebraic {f : (σ → R) → (τ → R)} {s : Set (σ → R)}
@@ -153,37 +170,29 @@ theorem IsSemialgebraicOn.glue {f g h : (σ → R) → (τ → R)} {s t : Set (�
 
 section PolynomialMap
 
+/-- A function is semialgebraic on a semialgebraic domain `s` when its graph over `s` is cut out
+by finitely many polynomial equations in the input and output coordinates: for `x ∈ s`, `f x = y`
+exactly when every `p k` vanishes at `Sum.elim x y`. -/
+theorem isSemialgebraicOn_of_forall_eq_iff {ι : Type*} [Finite ι] {f : (σ → R) → (τ → R)}
+    {s : Set (σ → R)} (hs : IsSemialgebraic s) (p : ι → MvPolynomial (σ ⊕ τ) R)
+    (hp : ∀ x ∈ s, ∀ y, f x = y ↔ ∀ k, eval (Sum.elim x y) (p k) = 0) :
+    IsSemialgebraicOn f s := by
+  refine isSemialgebraicOn_def.2 ⟨hs, ?_⟩
+  convert (hs.preimage_comp Sum.inl).inter
+    (IsSemialgebraic.iInter fun k ↦ isSemialgebraic_eval_eq_zero (p k)) using 1
+  ext z
+  rw [mem_preimage_sumArrowEquivProdArrow_graphOn]
+  simp only [mem_inter_iff, mem_iInter, mem_preimage, mem_ofPred_eq]
+  refine and_congr_right fun hz ↦ ?_
+  rw [hp _ hz, Sum.elim_comp_inl_inr]
+
 /-- A map whose output coordinates are polynomials in the input coordinates is semialgebraic on
 every semialgebraic domain. -/
 theorem isSemialgebraicOn_eval [Finite τ] (p : τ → MvPolynomial σ R)
     {s : Set (σ → R)} (hs : IsSemialgebraic s) :
-    IsSemialgebraicOn (fun x i => eval x (p i)) s := by
-  refine ⟨hs, ?_⟩
-  have hgraph : Equiv.sumArrowEquivProdArrow σ τ R ⁻¹'
-      s.graphOn (fun x i => eval x (p i)) =
-      ((fun z : σ ⊕ τ → R => z ∘ Sum.inl) ⁻¹' s) ∩
-        ⋂ i, {z | eval z (X (Sum.inr i) - rename Sum.inl (p i)) = 0} := by
-    ext z
-    have hfst : (Equiv.sumArrowEquivProdArrow σ τ R z).1 = z ∘ Sum.inl := by
-      funext i
-      exact Equiv.sumArrowEquivProdArrow_apply_fst z i
-    have hsnd : (Equiv.sumArrowEquivProdArrow σ τ R z).2 = z ∘ Sum.inr := by
-      funext i
-      exact Equiv.sumArrowEquivProdArrow_apply_snd z i
-    simp only [mem_preimage, mem_graphOn, mem_inter_iff, mem_iInter, mem_ofPred_eq, hfst, hsnd]
-    constructor
-    · rintro ⟨hz, hp⟩
-      refine ⟨hz, fun i => ?_⟩
-      simpa [sub_eq_zero, MvPolynomial.eval_rename] using (congrFun hp i).symm
-    · rintro ⟨hz, hp⟩
-      refine ⟨hz, funext fun i => ?_⟩
-      have hi := hp i
-      have hi' : z (Sum.inr i) = eval (z ∘ Sum.inl) (p i) := by
-        simpa [sub_eq_zero, MvPolynomial.eval_rename] using hi
-      exact hi'.symm
-  rw [hgraph]
-  exact (hs.preimage_comp Sum.inl).inter <|
-    .iInter fun i => isSemialgebraic_eval_eq_zero (X (Sum.inr i) - rename Sum.inl (p i))
+    IsSemialgebraicOn (fun x i => eval x (p i)) s :=
+  isSemialgebraicOn_of_forall_eq_iff hs (fun i => X (Sum.inr i) - rename Sum.inl (p i))
+    fun x _ y => by simp [funext_iff, sub_eq_zero, eval_rename, eq_comm (a := y _)]
 
 /-- A polynomial map between coordinate spaces is semialgebraic. -/
 theorem isSemialgebraicMap_eval [Finite τ] (p : τ → MvPolynomial σ R) :
@@ -244,6 +253,23 @@ theorem IsSemialgebraicMap.sumElim {f : (σ → R) → (τ → R)} {g : (σ → 
     (hf : IsSemialgebraicMap f) (hg : IsSemialgebraicMap g) :
     IsSemialgebraicMap fun x => Sum.elim (f x) (g x) :=
   isSemialgebraicOn_univ.1 <| (isSemialgebraicOn_univ.2 hf).sumElim (isSemialgebraicOn_univ.2 hg)
+
+/-- A function with finitely many output coordinates is semialgebraic on a semialgebraic domain if
+each of its coordinates is.  No projection is needed: the graph is the intersection of the inverse
+images of the graphs of the coordinates. -/
+theorem IsSemialgebraicOn.pi [Finite τ] {f : (σ → R) → (τ → R)} {s : Set (σ → R)}
+    (hs : IsSemialgebraic s) (hf : ∀ i, IsSemialgebraicOn (fun x (_ : Unit) => f x i) s) :
+    IsSemialgebraicOn f s := by
+  refine ⟨hs, ?_⟩
+  convert (hs.preimage_comp Sum.inl).inter
+    (.iInter fun i => (hf i).graph.preimage_comp (Sum.elim Sum.inl fun _ => Sum.inr i)) using 1
+  ext z
+  simp only [mem_inter_iff, mem_iInter, mem_preimage_sumArrowEquivProdArrow_graphOn,
+    mem_preimage (f := fun x : σ ⊕ τ → R => x ∘ Sum.inl),
+    mem_preimage (f := fun x : σ ⊕ τ → R => x ∘ Sum.elim Sum.inl fun _ => Sum.inr _),
+    Function.comp_assoc, Sum.elim_comp_inl, Function.comp_apply, Sum.elim_inr, funext_iff,
+    forall_const]
+  exact and_congr_right fun hz => by simp [hz]
 
 /-- Precomposing a semialgebraic function with a polynomial map gives a semialgebraic function on
 the inverse image of its domain.  No projection is needed: the new graph is the inverse image of

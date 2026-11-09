@@ -19,8 +19,10 @@ Weyl group. In particular, its intersection with `N` is the inverse image of `W_
 
 The indexing set has type `Set T.simple`, so every selected generator is a simple reflection.
 No finiteness, field, or algebraic-group hypothesis is needed. The empty set gives `B`, and
-the set of all simple reflections gives the ambient group. This file does not classify all
-subgroups containing `B` or identify these abstract subgroups with subgroup schemes.
+the set of all simple reflections gives the ambient group; consequently `B` is the ambient group
+exactly when there are no simple reflections (`TauCeti.TitsSystem.subgroupB_eq_top_iff`). This
+file does not classify all subgroups containing `B` or identify these abstract subgroups with
+subgroup schemes.
 
 The Bruhat cells and their uniqueness are those of
 `TauCeti.GroupTheory.TitsSystem.Bruhat.Basic` and `Bruhat.Uniqueness`.
@@ -199,5 +201,13 @@ theorem standardParabolic_univ : T.standardParabolic Set.univ = ⊤ := by
   refine ⟨w, ?_, hw⟩
   rw [Set.image_univ, Subtype.range_val, T.closure_simple]
   exact Subgroup.mem_top _
+
+/-- The subgroup `B` is the whole group exactly when there are no simple reflections. -/
+theorem subgroupB_eq_top_iff : T.subgroupB = ⊤ ↔ T.simple = ∅ := by
+  refine ⟨fun hB ↦ Set.eq_empty_of_forall_notMem fun s hs ↦ T.simple_ne_one hs ?_, fun hS ↦ ?_⟩
+  · rw [← T.bruhatCell_subset_iff, T.bruhatCell_one, hB, Subgroup.coe_top]
+    exact Set.subset_univ _
+  · have : IsEmpty T.simple := ⟨fun s ↦ Set.eq_empty_iff_forall_notMem.mp hS _ s.property⟩
+    rw [← T.standardParabolic_empty, ← Set.univ_eq_empty_iff.mpr this, T.standardParabolic_univ]
 
 end TauCeti.TitsSystem

@@ -137,7 +137,7 @@ theorem signature_realify (hA : A.IsHermitian) :
         Matrix.signature (Matrix.diagonal hA.eigenvalues) := by
     conv_lhs => rw [hAeq]
     rw [realify_mul, realify_mul, realify_conjTranspose,
-      Matrix.signature_congr (Matrix.isUnit_det_realify hU), realify_map_ofReal,
+      Matrix.signature_congr (Matrix.isUnit_det_realify_iff.mpr hU), realify_map_ofReal,
       Matrix.signature_fromBlocks_zero]
   rw [key, Matrix.signature_diagonal, signature_def]
   ring
@@ -149,7 +149,7 @@ theorem signature_congr [DecidableEq ι] {P : Matrix ι ι 𝕜} (hP : IsUnit P.
     (Matrix.isHermitian_mul_mul_conjTranspose P hA).signature = hA.signature := by
   have h : Matrix.signature (P * A * Pᴴ).realify = Matrix.signature A.realify := by
     rw [realify_mul, realify_mul, realify_conjTranspose,
-      Matrix.signature_congr (Matrix.isUnit_det_realify hP)]
+      Matrix.signature_congr (Matrix.isUnit_det_realify_iff.mpr hP)]
   rw [(Matrix.isHermitian_mul_mul_conjTranspose P hA).signature_realify,
     hA.signature_realify] at h
   omega

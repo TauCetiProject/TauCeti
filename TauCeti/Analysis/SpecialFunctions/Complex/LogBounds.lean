@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
-public import TauCeti.Topology.Algebra.InfiniteSum.Real
+public import TauCeti.Analysis.SpecificLimits.WeightedGeometric
 
 /-!
 # Taylor series bounds for `-log (1 - ·)`
@@ -18,9 +18,9 @@ prime-power-style sum over pairs equals the sum of local logarithms.
 
 Both hypotheses are needed.  `∀ i, ‖r i‖ < 1` alone does not suffice: the fibre at `i` sums to
 `‖r i‖ / (1 - ‖r i‖)`, which is dominated by `‖r i‖` only when `‖r i‖` is bounded away from `1`,
-and summability of `r` is what supplies that uniformity.  That fibrewise argument is not carried out
-here: it is `TauCeti.summable_mul_norm_pow_succ`, stated for a seminormed additive group and an
-arbitrary real weight, and this file uses it at weight `1`.
+and summability of `r` is what supplies that uniformity.  The double-family summability is not
+proved here: it is `TauCeti.summable_mul_norm_pow_succ`, stated for a seminormed additive group and
+an arbitrary real weight, and this file uses it at weight `1`.
 
 The file also gives an explicit truncation error for a single `z`: the `n`-th partial sum
 `∑ j ∈ Icc 1 n, z ^ j / j` differs from `log (1 - z)⁻¹` by at most

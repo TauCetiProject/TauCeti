@@ -12,7 +12,7 @@ import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import all TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Basic
-import all TauCeti.Geometry.Manifold.VectorBundle.Tangent
+import all TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # The Levi-Civita connection in the upper half-space
@@ -108,7 +108,7 @@ omit [FiniteDimensional ℝ E] in
       contDiffAt_const).mdifferentiableAt one_ne_zero)
     (contMDiff_coe.of_le (show (2 : ℕ∞ω) ≤ ω from le_top) x) (by simp)
   rw [← h]
-  simp only [mpullback, TauCeti.mlieBracket_const_model_space, map_zero]
+  simp only [mpullback, mlieBracket_const_model_space, map_zero]
 
 omit [FiniteDimensional ℝ E] in
 private theorem mvfderiv_inner_constantField (u v w : P) (x : UpperHalfSpace E) :

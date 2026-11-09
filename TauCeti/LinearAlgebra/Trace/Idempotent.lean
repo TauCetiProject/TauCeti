@@ -45,6 +45,8 @@ maximal ideal.
   `trace f = a * finrank (range f)`, the case `f = 1` of the previous statement.
 * `LinearMap.trace_eq_finrank_range_of_isIdempotentElem`: over a local ring, the trace of
   an idempotent endomorphism of a finite free module is the rank of its range.
+* `LinearMap.trace_eq_sum_of_comp_eq_of_apply_single_eq`: the trace of an endomorphism acting
+  through a projection onto the free summand `ι → R` is the trace of its matrix there.
 * `Matrix.IsIdempotentElem.eq_zero_of_trace_eq_zero`: over a field of characteristic zero, an
   idempotent matrix of trace zero is zero.
 * `TauCeti.LinearMap.two_mul_finrank_ker_one_add_of_sq_eq_one`: for an involution `σ`,
@@ -74,7 +76,7 @@ For `a ≠ 0` this says that `a⁻¹ • c` is a projection onto `range c` commu
 theorem LinearMap.trace_mul_eq_mul_trace_restrict_range {c f : Module.End K M} {a : K}
     (hc : c * c = a • c) (hcf : Commute c f)
     (hf : ∀ x ∈ _root_.LinearMap.range c, f x ∈ _root_.LinearMap.range c :=
-      fun _ ⟨y, hy⟩ => ⟨f y, by rw [← hy, ← Module.End.mul_apply, hcf.eq, Module.End.mul_apply]⟩) :
+      fun _ ⟨y, hy⟩ => ⟨f y, by rw [← hy, ← mul_apply_eq_comp, hcf.eq, mul_apply_eq_comp]⟩) :
     _root_.LinearMap.trace K M (c * f) =
       a * _root_.LinearMap.trace K (_root_.LinearMap.range c) (f.restrict hf) := by
   rcases eq_or_ne a 0 with rfl | ha
@@ -83,13 +85,13 @@ theorem LinearMap.trace_mul_eq_mul_trace_restrict_range {c f : Module.End K M} {
     rw [pow_two, hcf.symm.mul_mul_mul_comm, hc, zero_smul, zero_mul]
   · -- `a⁻¹ • c` fixes the range of `c` pointwise, so on that range `a⁻¹ • c * f` is `f`
     have hfix : ∀ x ∈ _root_.LinearMap.range c, (a⁻¹ • c) x = x := fun _ ⟨y, hy⟩ => by
-      rw [← hy, LinearMap.smul_apply, ← Module.End.mul_apply, hc, LinearMap.smul_apply, smul_smul,
+      rw [← hy, LinearMap.smul_apply, ← mul_apply_eq_comp, hc, LinearMap.smul_apply, smul_smul,
         inv_mul_cancel₀ ha, one_smul]
     have hmem : ∀ x, (a⁻¹ • c * f) x ∈ _root_.LinearMap.range c := fun x =>
-      ⟨a⁻¹ • f x, by rw [map_smul, Module.End.mul_apply, LinearMap.smul_apply]⟩
+      ⟨a⁻¹ • f x, by rw [map_smul, mul_apply_eq_comp, LinearMap.smul_apply]⟩
     have hres : (a⁻¹ • c * f).restrict (fun x _ => hmem x) = f.restrict hf :=
       LinearMap.ext fun x => Subtype.ext <| by
-        rw [LinearMap.coe_restrict_apply, LinearMap.coe_restrict_apply, Module.End.mul_apply,
+        rw [LinearMap.coe_restrict_apply, LinearMap.coe_restrict_apply, mul_apply_eq_comp,
           hfix _ (hf x x.2)]
     have htrace := _root_.LinearMap.trace_restrict_eq_of_forall_mem _ (a⁻¹ • c * f) hmem
     rw [hres, smul_mul_assoc, map_smul, smul_eq_mul] at htrace
@@ -102,16 +104,16 @@ theorem LinearMap.trace_sub_mul_eq_mul_trace_restrict_ker {c f : Module.End K M}
     (hf : ∀ x ∈ _root_.LinearMap.ker c, f x ∈ _root_.LinearMap.ker c :=
       fun x hx ↦ by
         rw [_root_.LinearMap.mem_ker] at hx ⊢
-        rw [← Module.End.mul_apply, hcf.eq, Module.End.mul_apply, hx, map_zero]) :
+        rw [← mul_apply_eq_comp, hcf.eq, mul_apply_eq_comp, hx, map_zero]) :
     _root_.LinearMap.trace K M ((a • 1 - c) * f) =
       a * _root_.LinearMap.trace K (_root_.LinearMap.ker c) (f.restrict hf) := by
   have hmem : ∀ x, ((a • 1 - c) * f) x ∈ _root_.LinearMap.ker c := by
     intro x
     have hcx := congrArg (fun L : Module.End K M ↦ L (f x)) hc
-    simpa [Module.End.mul_apply] using sub_eq_zero.mpr hcx.symm
+    simpa [mul_apply_eq_comp] using sub_eq_zero.mpr hcx.symm
   have hres : ((a • 1 - c) * f).restrict (fun x _ ↦ hmem x) = a • f.restrict hf := by
     ext x
-    simp [Module.End.mul_apply, _root_.LinearMap.mem_ker.mp (hf x x.2)]
+    simp [mul_apply_eq_comp, _root_.LinearMap.mem_ker.mp (hf x x.2)]
   have h := _root_.LinearMap.trace_restrict_eq_of_forall_mem _ ((a • 1 - c) * f) hmem
   rw [hres, map_smul, smul_eq_mul] at h
   exact h.symm
@@ -127,7 +129,7 @@ theorem LinearMap.trace_eq_mul_finrank_range {f : M →ₗ[K] M} {a : K} (hf : f
   have hone : ∀ h : ∀ x ∈ _root_.LinearMap.range f, (1 : Module.End K M) x ∈
       _root_.LinearMap.range f, (1 : Module.End K M).restrict h = 1 := fun _ =>
     LinearMap.ext fun x => Subtype.ext <| by
-      rw [LinearMap.coe_restrict_apply, Module.End.one_apply, Module.End.one_apply]
+      rw [LinearMap.coe_restrict_apply, one_apply_eq_self, one_apply_eq_self]
   rwa [mul_one, hone, _root_.LinearMap.trace_one] at h
 
 /-- **The trace of an involution determines its `-1`-eigenspace**: if `σ ^ 2 = 1`, then
@@ -176,7 +178,7 @@ projective, hence free over the local ring `A`, so Mathlib's `LinearMap.IsProj.t
 theorem trace_eq_finrank_range_of_isIdempotentElem {f : Module.End A N}
     (hf : IsIdempotentElem f) :
     LinearMap.trace A N f = (finrank A (LinearMap.range f) : A) := by
-  have hfx (x : N) : f (f x) = f x := by rw [← Module.End.mul_apply, hf.eq]
+  have hfx (x : N) : f (f x) = f x := by rw [← mul_apply_eq_comp, hf.eq]
   have : Module.Projective A (LinearMap.range f) :=
     .of_split (LinearMap.range f).subtype f.rangeRestrict
       (LinearMap.ext fun ⟨_, y, rfl⟩ ↦ Subtype.ext (by simp [hfx]))
@@ -191,6 +193,31 @@ theorem trace_eq_finrank_range_of_isIdempotentElem {f : Module.End A N}
   have := Module.free_of_flat_of_isLocalRing (R := A) (P := LinearMap.range f)
   have := Module.free_of_flat_of_isLocalRing (R := A) (P := LinearMap.ker f)
   exact (LinearMap.IsIdempotentElem.isProj_range f hf).trace
+
+/-- **The trace of an endomorphism acting through a projection onto a free summand.** Let `φ` be an
+injective linear map from `ι → R` to `M`, let `W` be a projection of `M` onto the range of `φ`, and
+let `L` be an endomorphism with `L ∘ W = L` that sends the image under `φ` of the `j`-th standard
+basis vector of `ι → R` to `φ (a j)`. Then the trace of `L` is the trace `∑ j, a j j` of `a`. -/
+theorem trace_eq_sum_of_comp_eq_of_apply_single_eq {R M ι : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [Module.Free R M] [Module.Finite R M] [Fintype ι] [DecidableEq ι]
+    {φ : (ι → R) →ₗ[R] M}
+    (hφ : Function.Injective φ) {W L : M →ₗ[R] M} (hW : ∀ s, W s ∈ LinearMap.range φ)
+    (hWφ : ∀ c, W (φ c) = φ c) (hLW : L ∘ₗ W = L) {a : ι → ι → R}
+    (hL : ∀ j, L (φ (Pi.single j 1)) = φ (a j)) : trace R M L = ∑ j, a j j := by
+  let ψ := LinearEquiv.ofInjective φ hφ
+  let ρ : M →ₗ[R] ι → R := ψ.symm.toLinearMap ∘ₗ W.codRestrict (LinearMap.range φ) hW
+  have hφρ' (s : M) : φ (ρ s) = W s := by
+    have h := congrArg Subtype.val (ψ.apply_symm_apply ⟨W s, hW s⟩)
+    rwa [LinearEquiv.ofInjective_apply] at h
+  have hφρ : φ ∘ₗ ρ = W := LinearMap.ext hφρ'
+  have hρφ (c : ι → R) : ρ (φ c) = c := hφ (by rw [hφρ', hWφ])
+  have hmat : ρ ∘ₗ L ∘ₗ φ = Matrix.toLin' (Matrix.of fun l j ↦ a j l) := by
+    ext j l
+    simp only [LinearMap.comp_apply, LinearMap.coe_single, hL, hρφ, Matrix.toLin'_apply,
+      Matrix.mulVec_single_one, Matrix.col_apply, Matrix.of_apply]
+  rw [← hLW, ← hφρ, ← LinearMap.comp_assoc, LinearMap.trace_comp_comm', hmat,
+    Matrix.trace_toLin'_eq]
+  simp [Matrix.trace]
 
 end LinearMap
 

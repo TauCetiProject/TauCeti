@@ -9,7 +9,7 @@ public import Mathlib.Dynamics.Flow
 public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.Quotient.Descent
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Topology.MappingTorus.Basic
 
 /-!
@@ -77,6 +77,8 @@ projections to the circle, so the topological results for `TauCeti.MappingTorus`
   exactly when `s` is an integer `k` and `x` is a fixed point of `φ ^ k`.
 * `TauCeti.SmoothMappingTorus.isFixedPt_flow_mk_iff_mem_zmultiples`: the periods of the orbit
   through `[t, x]` are the integer multiples of the minimal period of `x` under `φ`.
+* `TauCeti.SmoothMappingTorus.mk_eq_mk_iff_sub_mem_zmultiples`: `[t, x] = [s, x]` exactly when
+  `t - s` is a multiple of the least period of `x`.
 * `TauCeti.SmoothMappingTorus.contMDiff_uncurry_flow`: the suspension flow is jointly `C^n`.
 * `TauCeti.SmoothMappingTorus.mfderiv_mk_apply`,
   `TauCeti.SmoothMappingTorus.mfderiv_proj_mfderiv_uncurry_mk`: the differential of a fibre
@@ -150,13 +152,31 @@ theorem contMDiff_ofProd_symm (m : ℕ∞ω) :
     ContMDiff (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) m (ofProd φ).symm :=
   contMDiff_id
 
+/-- The identification of `ℝ × M` with the cover, as a `C^m` diffeomorphism for every `m`. -/
+def ofProdDiffeomorph (m : ℕ∞ω) : (ℝ × M) ≃ₘ^m⟮𝓘(ℝ).prod I, 𝓘(ℝ).prod I⟯ Cover φ where
+  toEquiv := ofProd φ
+  contMDiff_toFun := contMDiff_ofProd φ m
+  contMDiff_invFun := contMDiff_ofProd_symm φ m
+
+/-- The diffeomorphism `ofProdDiffeomorph φ m` is the identification `ofProd φ`. -/
+@[simp]
+theorem coe_ofProdDiffeomorph (m : ℕ∞ω) : ⇑(ofProdDiffeomorph φ m) = ofProd φ := (rfl)
+
+/-- The inverse of the diffeomorphism `ofProdDiffeomorph φ m` is the identification
+`(ofProd φ).symm`. -/
+@[simp]
+theorem coe_ofProdDiffeomorph_symm (m : ℕ∞ω) :
+    ⇑(ofProdDiffeomorph φ m).symm = (ofProd φ).symm := (rfl)
+
 /-- The identification of `ℝ × M` with the cover is a local diffeomorphism. -/
 theorem isLocalDiffeomorph_ofProd (m : ℕ∞ω) :
     IsLocalDiffeomorph (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) m (ofProd φ) :=
-  Diffeomorph.isLocalDiffeomorph
-    { toEquiv := ofProd φ
-      contMDiff_toFun := contMDiff_ofProd φ m
-      contMDiff_invFun := contMDiff_ofProd_symm φ m }
+  (ofProdDiffeomorph φ m).isLocalDiffeomorph
+
+/-- The identification of the cover with `ℝ × M` is a local diffeomorphism. -/
+theorem isLocalDiffeomorph_ofProd_symm (m : ℕ∞ω) :
+    IsLocalDiffeomorph (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) m (ofProd φ).symm :=
+  (ofProdDiffeomorph φ m).symm.isLocalDiffeomorph
 
 /-! ### The action of `Multiplicative ℤ` -/
 
@@ -288,6 +308,13 @@ theorem mk_eq_mk_iff {t s : ℝ} {x y : M} :
 @[simp]
 theorem mk_add_intCast (t : ℝ) (k : ℤ) (x : M) : mk φ (t + k) x = mk φ t ((φ ^ k) x) :=
   (mk_eq_mk_iff φ).2 ⟨k, rfl, by simp⟩
+
+/-- Moving the real coordinate by a natural number `j` changes the fibre coordinate by the iterate
+`φ^[j]`. -/
+@[simp]
+theorem mk_add_natCast (t : ℝ) (j : ℕ) (y : M) : mk φ (t + j) y = mk φ t ((⇑φ)^[j] y) := by
+  have h := mk_add_intCast φ t j y
+  rwa [Int.cast_natCast, zpow_natCast, Diffeomorph.coe_pow] at h
 
 /-- Moving the real coordinate once around the circle changes the fibre coordinate by `φ`. -/
 @[simp]
@@ -448,6 +475,33 @@ theorem isFixedPt_flow_mk_iff_mem_zmultiples {s t : ℝ} {x : M} :
     exact ⟨m, by push_cast; ring⟩
   · rintro ⟨m, rfl⟩
     exact ⟨m * Function.minimalPeriod φ x, by push_cast; ring, (h _).2 (dvd_mul_left _ _)⟩
+
+/-- Two points `[t, x]` and `[s, x]` of the mapping torus with the same fibre coordinate agree
+exactly when `t - s` is an integer multiple of the least period of `x` under `φ`. -/
+theorem mk_eq_mk_iff_sub_mem_zmultiples {t s : ℝ} {x : M} :
+    mk φ t x = mk φ s x ↔ t - s ∈ AddSubgroup.zmultiples (Function.minimalPeriod φ x : ℝ) := by
+  rw [← isFixedPt_flow_mk_iff_mem_zmultiples (t := s), Function.IsFixedPt, flow_mk,
+    add_sub_cancel, eq_comm]
+
+/-- Some point `[s, x]` equals `[t, y]` exactly when `y = (φ ^ k) x` for an integer `k`: the orbit
+of the suspension flow through `[0, x]` meets the fibre at height `t` in the points
+`[t, (φ ^ k) x]`. -/
+theorem exists_mk_eq_mk_iff {t : ℝ} {x y : M} :
+    (∃ s : ℝ, mk φ s x = mk φ t y) ↔ ∃ k : ℤ, (φ ^ k) x = y := by
+  simp_rw [eq_comm (a := mk φ _ x), mk_eq_mk_iff]
+  constructor
+  · rintro ⟨s, k, -, rfl⟩
+    exact ⟨-k, rfl⟩
+  · rintro ⟨k, rfl⟩
+    exact ⟨t + k, -k, by push_cast; ring, by simp⟩
+
+/-- If `x` is a periodic point of `φ` with period `d`, then `t ↦ [t, x]` is periodic with
+period `d`. -/
+theorem periodic_mk {φ : M ≃ₘ^n⟮I, I⟯ M} {d : ℕ} {x : M} (h : Function.IsPeriodicPt φ d x) :
+    Function.Periodic (fun t ↦ mk φ t x) d := fun t ↦ by
+  obtain ⟨c, hc⟩ := h.minimalPeriod_dvd
+  rw [mk_eq_mk_iff_sub_mem_zmultiples, add_sub_cancel_left, AddSubgroup.mem_zmultiples_iff]
+  exact ⟨c, by rw [hc, zsmul_eq_mul]; push_cast; ring⟩
 
 section Manifold
 

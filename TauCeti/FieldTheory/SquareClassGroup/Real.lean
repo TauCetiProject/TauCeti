@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Algebra.Ring.Subring.Units
 public import TauCeti.Algebra.Group.Units.Basic
-public import TauCeti.FieldTheory.SquareClassGroup.Basic
+public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 
 /-!
 # Square classes of real numbers
@@ -30,6 +30,8 @@ form.
   square-class group exactly when `n` is even.
 * `TauCeti.eq_one_or_eq_squareClassHom_neg_one`: every real square class is either the trivial
   class or the class of `-1`, in multiplicative notation.
+* `TauCeti.natCard_units_quotient_square_real`: the multiplicative real square-class group has two
+  elements.
 -/
 
 public section
@@ -41,7 +43,7 @@ namespace Units
 /-- A real unit is a square exactly when it is positive. -/
 @[simp]
 theorem isSquare_iff_pos (u : ℝˣ) : IsSquare u ↔ 0 < (u : ℝ) := by
-  rw [← isSquare_units_val_iff, Real.isSquare_iff]
+  rw [← Units.isSquare_coe_iff, Real.isSquare_iff]
   exact ⟨fun h ↦ lt_of_le_of_ne h (Units.ne_zero u).symm, le_of_lt⟩
 
 /-- The squares in the real unit group are exactly the positive units. -/
@@ -60,7 +62,7 @@ theorem squareClass_eq_zero_iff_pos (u : ℝˣ) : squareClass u = 0 ↔ 0 < (u :
 @[simp]
 theorem squareClass_eq_squareClass_neg_one_iff_neg (u : ℝˣ) :
     squareClass u = squareClass (-1 : ℝˣ) ↔ (u : ℝ) < 0 := by
-  rw [squareClass_eq_iff_isSquare_mul, ← isSquare_units_val_iff, Real.isSquare_iff]
+  rw [squareClass_eq_iff_isSquare_mul, ← Units.isSquare_coe_iff, Real.isSquare_iff]
   simp only [Units.val_neg, mul_neg, mul_one]
   constructor
   · exact fun h ↦ lt_of_le_of_ne (neg_nonneg.mp h) (Units.ne_zero u)
@@ -96,28 +98,21 @@ theorem sum_squareClass_eq_ncard_nsmul {ι : Type*} [Fintype ι] (w : ι → ℝ
     Finset.sum_const, ← Set.ncard_coe_finset]
   simp
 
-private theorem ofAdd_mk_ofMul (u : ℝˣ) :
-    Multiplicative.ofAdd (QuotientAddGroup.mk (Additive.ofMul u)) = squareClassHom u := by
-  rw [squareClassHom_apply, squareClass_def]
-
-private theorem squareClassHom_eq_one_or_eq_squareClassHom_neg_one (u : ℝˣ) :
-    squareClassHom u = 1 ∨ squareClassHom u = squareClassHom (-1 : ℝˣ) := by
-  rcases lt_or_gt_of_ne (Units.ne_zero u) with hu | hu
-  · refine Or.inr ?_
-    rw [squareClassHom_apply, squareClassHom_apply,
-      (Units.squareClass_eq_squareClass_neg_one_iff_neg u).mpr hu]
-  · refine Or.inl ?_
-    rw [squareClassHom_apply, (Units.squareClass_eq_zero_iff_pos u).mpr hu]
-    rfl
-
-/-- Every real square class is either the trivial class or the class of `-1`. -/
-theorem eq_one_or_eq_squareClassHom_neg_one (x : Multiplicative (SquareClassGroup ℝ)) :
+/-- Every real multiplicative square class is either trivial or the class of `-1`. -/
+theorem eq_one_or_eq_squareClassHom_neg_one (x : ℝˣ ⧸ Subgroup.square ℝˣ) :
     x = 1 ∨ x = squareClassHom (-1 : ℝˣ) := by
-  refine Multiplicative.rec ?_ x
-  intro y
-  obtain ⟨a, ha⟩ := QuotientAddGroup.mk_surjective (y : SquareClassGroup ℝ)
-  rw [← ha]
-  obtain ⟨u, rfl⟩ := (Additive.ofMul.surjective a)
-  simpa only [ofAdd_mk_ofMul] using squareClassHom_eq_one_or_eq_squareClassHom_neg_one u
+  obtain ⟨u, rfl⟩ := squareClassHom_surjective x
+  rcases lt_or_gt_of_ne (Units.ne_zero u) with hu | hu
+  · exact Or.inr ((squareClassHom_eq_iff _ _).mpr
+      ((Units.squareClass_eq_squareClass_neg_one_iff_neg u).mpr hu))
+  · exact Or.inl ((squareClassHom_eq_one_iff u).mpr ((Units.isSquare_iff_pos u).mpr hu))
+
+/-- The multiplicative real square-class group has exactly two elements, the trivial class and the
+class of `-1`. -/
+theorem natCard_units_quotient_square_real : Nat.card (ℝˣ ⧸ Subgroup.square ℝˣ) = 2 := by
+  refine Nat.card_eq_two_iff.mpr ⟨1, squareClassHom (-1 : ℝˣ), ?_, ?_⟩
+  · rw [ne_comm, Ne, squareClassHom_eq_one_iff, Units.isSquare_iff_pos]
+    norm_num
+  · exact Set.eq_univ_of_forall fun x ↦ by simpa using eq_one_or_eq_squareClassHom_neg_one x
 
 end TauCeti

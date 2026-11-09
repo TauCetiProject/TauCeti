@@ -418,6 +418,13 @@ automorphism. -/
     diagramAut ht (t.diagramSymmetry.inv_mem hσ) = (diagramAut ht hσ)⁻¹ :=
   map_inv (diagramAutHom ht) ⟨σ, hσ⟩
 
+/-- The weight map of the inverse diagram automorphism is precomposition with the node permutation
+itself, so it permutes the fundamental weights by `σ⁻¹`. This is the pullback of characters along a
+pinned automorphism moving the simple root subgroups by `σ`. -/
+@[simp] theorem diagramAut_inv_weightMap (hσ : σ ∈ t.diagramSymmetry) :
+    (diagramAut ht hσ)⁻¹.toHom.weightMap = (LinearEquiv.funCongrLeft ℤ ℤ σ).toLinearMap := by
+  rw [← diagramAut_inv, diagramAut_weightMap, Equiv.Perm.inv_def, Equiv.symm_symm]
+
 /-- **A node permutation of finite order induces an automorphism satisfying the same relation.**
 This is the source of `γ ^ 2 = 1` for the order-two diagram symmetries of `Aₙ`, `Dₙ` and `E₆`, and
 of `γ ^ 3 = 1` for the triality of `D₄`. -/

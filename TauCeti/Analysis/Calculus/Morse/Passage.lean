@@ -129,6 +129,13 @@ theorem splitExitTime_nonneg [NormedAddCommGroup Eᵤ] (hz : z.snd ≠ 0) (hzε 
     0 ≤ splitExitTime ε z :=
   Real.log_nonneg ((one_le_div (norm_pos_iff.2 hz)).2 hzε)
 
+/-- The entry time is nonpositive for a point whose first coordinate lies in the closed ball of
+radius `ε`. -/
+theorem splitEntryTime_nonpos [SeminormedAddCommGroup Eₛ] (hzε : ‖z.fst‖ ≤ ε) :
+    splitEntryTime ε z ≤ 0 :=
+  have hε : 0 ≤ ε := (norm_nonneg _).trans hzε
+  Real.log_nonpos (div_nonneg (norm_nonneg _) hε) (div_le_one_of_le₀ hzε hε)
+
 /-- **Long passages near the stable set.** If points approach the stable set `y = 0` from outside
 it, their exit times tend to `+∞`. -/
 theorem tendsto_splitExitTime_atTop [NormedAddCommGroup Eᵤ] {ι : Type*} {l : Filter ι}
@@ -387,6 +394,16 @@ theorem norm_fst_le_and_norm_snd_le_iff_of_mem_splitPassage_source
   obtain ⟨hε, hx⟩ := pos_and_fst_ne_zero_of_entrance hz
   rw [norm_fst_splitQuadraticFlow_le_iff hε hx, norm_snd_splitQuadraticFlow_le_iff hε hz.2.1,
     splitEntryTime_eq_zero hε.ne' hz.1, mem_Icc]
+
+/-- For a point of the exit face, the orbit lies in the box `‖x‖ ≤ ε, ‖y‖ ≤ ε` exactly between
+the entry time and time `0`. -/
+theorem norm_fst_le_and_norm_snd_le_iff_of_mem_splitPassage_target
+    (hz : z ∈ (splitPassage ε).target) :
+    ‖(splitQuadraticFlow t z).fst‖ ≤ ε ∧ ‖(splitQuadraticFlow t z).snd‖ ≤ ε ↔
+      t ∈ Icc (splitEntryTime ε z) 0 := by
+  obtain ⟨hε, hy⟩ := pos_and_snd_ne_zero_of_exit hz
+  rw [norm_fst_splitQuadraticFlow_le_iff hε hz.2.1, norm_snd_splitQuadraticFlow_le_iff hε hy,
+    splitExitTime_eq_zero hε.ne' hz.1, mem_Icc]
 
 /-! ### Breaking, gluing, and the linear λ-lemma -/
 

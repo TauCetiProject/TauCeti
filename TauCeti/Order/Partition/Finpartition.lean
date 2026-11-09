@@ -13,6 +13,7 @@ import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Combinatorics.SimpleGraph.Regularity.Equitabilise
 import Mathlib.Data.Set.Finite.Range
 
 /-!
@@ -21,25 +22,41 @@ import Mathlib.Data.Set.Finite.Range
 This file contains general-purpose constructions and facts about finite partitions: the partition
 of the top element into an element and its complement, the decidability of the refinement order,
 the single part of the coarsest partition of a non-bottom element, the fact that a partition having
-the whole element as a part is the coarsest, the partition of a type into the
+the whole element as a part is the coarsest, the characterization of the coarsest partition as the
+one with exactly one part, the partition of a type into the
 fibres of a map to a finite type, the associated indexed partition, the sizes of the traces of a
 subset on the parts, cardinality bounds for common refinements, a bound on the sum of the squared
-part sizes, the refinement relations of `Finpartition.bind` and of a refining partition's parts,
+part sizes, the existence of a partition into at most `k` parts of size at most `#s / k + 1`, the
+refinement relations of `Finpartition.bind` and of a refining partition's parts,
 the monotonicity of `Finpartition.bind`, products over its parts, its parts through each point,
 and the fact that it is inverse to restricting a refinement to the parts of the coarser partition,
 the fact that restriction undoes `Finpartition.extend` and deletes a singleton part,
 the behavior of intersections of parts under refinement, the symmetry of lying in a common part,
-the determination of a partition by its parts through each point, the parts of a restriction, the
-monotonicity of `Finpartition.part` under refinement, the coarse parent
+the complementarity of two different parts through points that cover the whole set,
+the determination of a partition by its parts through each point, the factor of the part through
+a point in a product over the parts, the parts of a restriction, the
+monotonicity of `Finpartition.part` under refinement and the characterization of refinement by
+the parts through each point, the constancy of the coarse part and of membership in a union of
+parts on each part of a partition, the fact that a refinement with no more parts than the coarser
+partition is equal to it, the parts through a point of the finest and the coarsest partitions
+and of a common refinement,
+the characterization of the finest partition as the one whose parts all have one element,
+the count of the parts by points singled out in each part (in a linear order, the first or the last
+point of each part), the part of a point in a linear order as its part before the last point of that
+part with the last point adjoined, the criterion for that part to be a pair, the coarse parent
 `Finpartition.refinementParent` of a part of a finer partition, together with decomposition and
 summation formulas for the fine parts below a coarse part and for sums over points of functions of
 the fine and coarse parts through them, the fact that a set with at most two elements has no finite
-partitions other than the finest and the coarsest, the position of the parts of
-`Finpartition.atomise` relative to the sets it cuts along, and the pullback `Finpartition.comap`
+partitions other than the finest and the coarsest, the partition
+`Finpartition.pairPartition` with one pair part and singletons elsewhere, the partition
+`Finpartition.splitPartition` into a subset and its complement, the position of the parts of
+`Finpartition.atomise`, and of its common refinements with other partitions, relative to the sets
+it cuts along, and the pullback `Finpartition.comap`
 of a finite partition of the image `f '' s` to a finite partition of `s`, which is an order
 embedding whose image consists of the partitions coarser than the partition of `s` into the fibres
 of `f`, each of which is the pullback of its pushforward `Finpartition.pushforward`, a left inverse
-of the pullback.
+of the pullback; pulling a partition of `univ` back along an equivalence moves its parts along the
+inverse equivalence.
 -/
 
 public section
@@ -96,6 +113,15 @@ theorem eq_top_of_mem_parts {α : Type*} [Lattice α] [OrderBot α] {a : α} [De
     {P : Finpartition a} (h : a ∈ P.parts) : P = ⊤ :=
   top_le_iff.1 fun _ hb => ⟨a, h, (Finset.mem_singleton.1 (parts_top_subset a hb)).le⟩
 
+/-- A finite partition of a non-bottom element `a` has exactly one part if and only if it is the
+coarsest partition. -/
+theorem card_parts_eq_one_iff {α : Type*} [Lattice α] [OrderBot α] {a : α} [Decidable (a = ⊥)]
+    {P : Finpartition a} (ha : a ≠ ⊥) : P.parts.card = 1 ↔ P = ⊤ := by
+  refine ⟨fun h => ?_, fun h => by rw [h, parts_top ha, Finset.card_singleton]⟩
+  obtain ⟨b, hb⟩ := Finset.card_eq_one.1 h
+  obtain rfl : b = a := by simpa [hb] using P.sup_parts
+  exact eq_top_of_mem_parts (by simp [hb])
+
 /-- The number of parts in a common refinement is at most the product of the two part counts. -/
 theorem card_parts_inf_le_mul {α : Type*} [DistribLattice α] [OrderBot α] [DecidableEq α]
     {a : α} (P Q : Finpartition a) :
@@ -110,7 +136,7 @@ theorem sum_card_inter_parts {ι : Type*} [DecidableEq ι] {s X : Finset ι} (P 
     (hX : X ⊆ s) : ∑ C ∈ P.parts, (X ∩ C).card = X.card := by
   have h := P.sum_restrict hX (fun C ↦ C.card) (by simp)
   rw [Finpartition.sum_card_parts] at h
-  simp_rw [h, Finset.inf_eq_inter, Finset.inter_comm]
+  simp_rw [h, Finset.inter_comm]
 
 /-- Juxtaposing finite partitions of the parts of `P` refines `P`. -/
 theorem bind_le {α : Type*} [Lattice α] [OrderBot α] [IsModularLattice α] [DecidableEq α]
@@ -175,6 +201,18 @@ theorem sum_sq_card_parts_le {ι : Type*} [DecidableEq ι] {s : Finset ι} (P : 
     ∑ A ∈ P.parts, A.card ^ 2 ≤ m * s.card := by
   rw [← P.sum_card_parts, Finset.mul_sum]
   exact Finset.sum_le_sum fun A hA ↦ by rw [sq]; exact Nat.mul_le_mul_right _ (hm A hA)
+
+/-- A finite set has a partition into at most `k` parts, each with at most `#s / k + 1` elements:
+an equipartition into `k` parts when `k ≤ #s`, and the partition into singletons otherwise. -/
+theorem exists_card_parts_le_card_le {ι : Type*} [DecidableEq ι] (s : Finset ι) {k : ℕ}
+    (hk : k ≠ 0) :
+    ∃ E : Finpartition s, E.parts.card ≤ k ∧ ∀ A ∈ E.parts, A.card ≤ s.card / k + 1 := by
+  obtain hks | hsk := le_or_gt k s.card
+  · obtain ⟨E, hE, hcard⟩ := exists_equipartition_card_eq s hk hks
+    exact ⟨E, hcard.le, fun A hA ↦ hcard ▸ hE.card_part_le_average_add_one hA⟩
+  · refine ⟨⊥, ((card_bot s).trans_lt hsk).le, fun A hA ↦ ?_⟩
+    obtain ⟨a, -, rfl⟩ := mem_bot_iff.1 hA
+    simp
 
 variable {Ω : Type*} {u : Set Ω}
 
@@ -331,9 +369,49 @@ theorem part_mono (h : P ≤ Q) (a : α) : P.part a ⊆ Q.part a := by
     exact hPC
   · simp [P.part_eq_empty.2 ha]
 
+/-- If a point of `s` has the same part as `b`, then `b` lies in that part. -/
+theorem mem_part_of_part_eq_part {a b : α} (ha : a ∈ s) (hab : P.part a = P.part b) :
+    b ∈ P.part a := by
+  have hb : b ∈ s := by rw [← P.part_nonempty, ← hab, P.part_nonempty]; exact ha
+  rw [hab]
+  exact P.mem_part hb
+
+/-- Points lying in a common part of a refinement lie in a common part of the coarser
+partition. -/
+theorem part_eq_part_of_le (h : P ≤ Q) {a b : α} (hab : P.part a = P.part b) :
+    Q.part a = Q.part b := by
+  by_cases ha : a ∈ s
+  · have hb : b ∈ P.part a := P.mem_part_of_part_eq_part ha hab
+    exact (Q.part_eq_of_mem (Q.part_mem.2 ha) (part_mono h a hb)).symm
+  · have hb : b ∉ s := P.part_eq_empty.1 (hab ▸ P.part_eq_empty.2 ha)
+    rw [Q.part_eq_empty.2 ha, Q.part_eq_empty.2 hb]
+
+/-- Membership in a union of parts is constant on each part. -/
+theorem mem_iff_mem_of_part_eq_part {X : Finset α} (hX : ∀ C ∈ P.parts, C ⊆ X ∨ Disjoint C X)
+    {a b : α} (ha : a ∈ s) (hab : P.part a = P.part b) : a ∈ X ↔ b ∈ X := by
+  have ha' := P.mem_part ha
+  have hb : b ∈ P.part a := P.mem_part_of_part_eq_part ha hab
+  rcases hX _ (P.part_mem.2 ha) with hs | hd
+  · exact iff_of_true (hs ha') (hs hb)
+  · exact iff_of_false (disjoint_left.1 hd ha') (disjoint_left.1 hd hb)
+
+/-- In the partition of `s` into one part, the part through each point of `s` is `s`. -/
+@[simp]
+theorem part_top {a : α} (ha : a ∈ s) : (⊤ : Finpartition s).part a = s :=
+  part_eq_of_mem _ (by simp [parts_top (Finset.ne_empty_of_mem ha)]) ha
+
 /-- Lying in the same part of a finite partition is symmetric. -/
 theorem mem_part_comm {a b : α} : b ∈ P.part a ↔ a ∈ P.part b := by
   simp only [mem_part_iff_exists, and_comm]
+
+/-- If the parts through two points of `s` are different and cover `s`, they are complementary. -/
+theorem part_eq_sdiff_part {a b : α} (ha : a ∈ s) (hb : b ∈ s) (hab : P.part a ∪ P.part b = s)
+    (hne : P.part a ≠ P.part b) : P.part a = s \ P.part b := by
+  ext w
+  refine ⟨fun hw => mem_sdiff.2 ⟨P.part_subset a hw, fun hw₂ => hne ?_⟩, fun hw => ?_⟩
+  · rw [← (P.mem_part_iff_part_eq_part (P.part_subset a hw) ha).1 hw,
+      (P.mem_part_iff_part_eq_part (P.part_subset a hw) hb).1 hw₂]
+  · exact (mem_union.1 (hab.symm ▸ (mem_sdiff.1 hw).1)).resolve_right (mem_sdiff.1 hw).2
 
 /-- A finite partition of a finset is determined by the part containing each point. -/
 theorem part_injective : Function.Injective (part : Finpartition s → α → Finset α) := by
@@ -351,6 +429,64 @@ theorem ext_of_part (h : ∀ a ∈ s, P.part a = Q.part a) : P = Q :=
     by_cases ha : a ∈ s
     · exact h a ha
     · rw [P.part_eq_empty.2 ha, Q.part_eq_empty.2 ha]
+
+/-- A product over the parts of a finite partition of `s` splits off the factor of the part
+through a point `a` of `s`. -/
+theorem prod_parts_eq_mul_prod_filter_notMem {M : Type*} [CommMonoid M] (P : Finpartition s)
+    {a : α} (ha : a ∈ s) (f : Finset α → M) :
+    ∏ B ∈ P.parts, f B = f (P.part a) * ∏ B ∈ P.parts with a ∉ B, f B := by
+  have hpart : {B ∈ P.parts | a ∈ B} = {P.part a} := Finset.ext fun B => by
+    rw [mem_filter, mem_singleton]
+    exact ⟨fun h => (P.part_eq_of_mem h.1 h.2).symm,
+      by rintro rfl; exact ⟨P.part_mem.2 ha, P.mem_part_self.2 ha⟩⟩
+  rw [← prod_filter_mul_prod_filter_not P.parts (a ∈ ·), hpart, prod_singleton]
+
+/-- A finite partition refines another exactly when the part through each point lies in the part
+of the other through that point. -/
+theorem le_iff_forall_part_subset : P ≤ Q ↔ ∀ a, P.part a ⊆ Q.part a := by
+  refine ⟨part_mono, fun h B hB => ?_⟩
+  obtain ⟨a, ha⟩ := P.nonempty_of_mem_parts hB
+  exact ⟨Q.part a, Q.part_mem.2 (P.le hB ha), P.part_eq_of_mem hB ha ▸ h a⟩
+
+/-- In the common refinement of two finite partitions, the part through a point is the
+intersection of the parts through it. -/
+@[simp]
+theorem part_inf (P Q : Finpartition s) (a : α) : (P ⊓ Q).part a = P.part a ∩ Q.part a := by
+  by_cases ha : a ∈ s
+  · refine part_eq_of_mem _ ?_ (mem_inter.2 ⟨P.mem_part ha, Q.mem_part ha⟩)
+    rw [parts_inf, mem_erase]
+    exact ⟨ne_empty_of_mem (mem_inter.2 ⟨P.mem_part ha, Q.mem_part ha⟩),
+      mem_image.2 ⟨(P.part a, Q.part a), mem_product.2 ⟨P.part_mem.2 ha, Q.part_mem.2 ha⟩, rfl⟩⟩
+  · simp [(P ⊓ Q).part_eq_empty.2 ha, P.part_eq_empty.2 ha]
+
+/-- In the partition into singletons, the part through a point is that point alone. -/
+@[simp]
+theorem part_bot {a : α} (ha : a ∈ s) : (⊥ : Finpartition s).part a = {a} :=
+  part_eq_of_mem _ (mem_bot_iff.2 ⟨a, ha, rfl⟩) (mem_singleton_self a)
+
+/-- A finite partition of `s` is the partition into singletons exactly when each of its parts has
+one element. -/
+theorem eq_bot_iff_forall_card_eq_one : P = ⊥ ↔ ∀ B ∈ P.parts, #B = 1 := by
+  refine ⟨?_, fun h => le_bot_iff.1 fun B hB => ?_⟩
+  · rintro rfl B hB
+    obtain ⟨i, -, rfl⟩ := mem_bot_iff.1 hB
+    exact card_singleton i
+  · obtain ⟨i, rfl⟩ := card_eq_one.1 (h B hB)
+    exact ⟨{i}, mem_bot_iff.2 ⟨i, P.le hB (mem_singleton_self i), rfl⟩, le_rfl⟩
+
+/-- If each part of a finite partition of `s` contains exactly one point satisfying `p`, then
+there are as many parts as points of `s` satisfying `p`. -/
+theorem card_filter_eq_card_parts {p : α → Prop} [DecidablePred p]
+    (h : ∀ B ∈ P.parts, ∃! x, x ∈ B ∧ p x) : #{x ∈ s | p x} = #P.parts := by
+  refine card_bij (fun x _ => P.part x) (fun x hx => P.part_mem.2 (mem_filter.1 hx).1) ?_ ?_
+  · intro x hx y hy hxy
+    obtain ⟨hxs, hpx⟩ := mem_filter.1 hx
+    obtain ⟨hys, hpy⟩ := mem_filter.1 hy
+    exact (h _ (P.part_mem.2 hxs)).unique ⟨P.mem_part_self.2 hxs, hpx⟩
+      ⟨hxy ▸ P.mem_part_self.2 hys, hpy⟩
+  · intro B hB
+    obtain ⟨x, ⟨hxB, hpx⟩, -⟩ := h B hB
+    exact ⟨x, mem_filter.2 ⟨P.le hB hxB, hpx⟩, P.part_eq_of_mem hB hxB⟩
 
 /-- Restricting a partition to a subset `t` cuts the part through each point of `t` down to `t`. -/
 @[simp]
@@ -411,6 +547,29 @@ theorem sum_apply_part_part (h : Q ≤ P) {M : Type*} [AddCommMonoid M]
   exact Finset.sum_congr rfl fun a ha => by
     rw [Q.part_eq_of_mem B.2 ha, part_eq_refinementParent h B ha]
 
+/-- A refinement `Q ≤ P` with at most as many parts as `P` is `P` itself. -/
+theorem eq_of_le_of_card_parts_le (h : Q ≤ P) (hc : #Q.parts ≤ #P.parts) : Q = P := by
+  classical
+  have hsurj : Function.Surjective (refinementParent h) := fun A => by
+    obtain ⟨B, hB, hBA⟩ := exists_le_of_le h A.2
+    exact ⟨⟨B, hB⟩, (refinementParent_eq_iff h).2 hBA⟩
+  have hinj : Function.Injective (refinementParent h) :=
+    ((Fintype.bijective_iff_surjective_and_card _).2
+      ⟨hsurj, by simpa using hc.antisymm (card_mono h)⟩).1
+  -- Each fine part is the only fine part below its coarse parent, so it equals that parent.
+  have key (B : Q.parts) : B.1 = (refinementParent h B).1 := by
+    rw [← biUnion_filter_refinementParent_eq h (refinementParent h B)]
+    have hB : ({B' | refinementParent h B' = refinementParent h B} : Finset Q.parts) = {B} :=
+      Finset.ext fun B' => by simp [hinj.eq_iff]
+    rw [hB, singleton_biUnion]
+  ext C
+  refine ⟨fun hC => ?_, fun hC => ?_⟩
+  · have hC' : C = (refinementParent h ⟨C, hC⟩).1 := key ⟨C, hC⟩
+    exact hC' ▸ (refinementParent h _).2
+  · obtain ⟨B, hB⟩ := hsurj ⟨C, hC⟩
+    have hBC : B.1 = C := by rw [key B, hB]
+    exact hBC ▸ B.2
+
 /-- A finite partition of a set with at most two elements is either the partition into singletons
 or the partition into one part. -/
 theorem eq_bot_or_eq_top_of_pair {i j : α} (P : Finpartition ({i, j} : Finset α)) :
@@ -465,7 +624,7 @@ theorem parts_restrict_erase_of_singleton_mem {i : α} (hi : {i} ∈ P.parts) :
     inter_eq_left.2 fun x hx => mem_erase.2
       ⟨fun hxi => hBi (P.eq_of_mem_parts hB hi hx (hxi ▸ mem_singleton_self i)), P.le hB hx⟩
   ext B
-  simp only [parts_restrict, inf_eq_inter, mem_erase, mem_image]
+  simp only [parts_restrict, mem_erase, mem_image]
   constructor
   · rintro ⟨hB, C, hC, rfl⟩
     obtain rfl | hCi := eq_or_ne C {i}
@@ -476,6 +635,150 @@ theorem parts_restrict_erase_of_singleton_mem {i : α} (hi : {i} ∈ P.parts) :
     exact ⟨P.ne_bot hB, B, hB, hBi hB hBi'⟩
 
 end FinsetRefinement
+
+section LinearOrder
+
+open scoped Finset
+
+variable {α : Type*} [LinearOrder α] {s : Finset α} (P : Finpartition s)
+
+/-- A finite partition of a finite set in a linear order has as many parts as there are points
+that are the greatest point of their part. -/
+theorem card_filter_forall_mem_part_le : #{x ∈ s | ∀ y ∈ P.part x, y ≤ x} = #P.parts := by
+  refine P.card_filter_eq_card_parts fun B hB => ?_
+  have hne := P.nonempty_of_mem_parts hB
+  refine ⟨B.max' hne, ⟨B.max'_mem hne, fun y hy => ?_⟩, fun x ⟨hxB, hx⟩ => ?_⟩
+  · exact B.le_max' y (P.part_eq_of_mem hB (B.max'_mem hne) ▸ hy)
+  · exact le_antisymm (B.le_max' x hxB) (hx _ (P.part_eq_of_mem hB hxB ▸ B.max'_mem hne))
+
+/-- A finite partition of a finite set in a linear order has as many parts as there are points
+that are the least point of their part. -/
+theorem card_filter_forall_mem_part_ge : #{x ∈ s | ∀ y ∈ P.part x, x ≤ y} = #P.parts := by
+  refine P.card_filter_eq_card_parts fun B hB => ?_
+  have hne := P.nonempty_of_mem_parts hB
+  refine ⟨B.min' hne, ⟨B.min'_mem hne, fun y hy => ?_⟩, fun x ⟨hxB, hx⟩ => ?_⟩
+  · exact B.min'_le y (P.part_eq_of_mem hB (B.min'_mem hne) ▸ hy)
+  · exact le_antisymm (hx _ (P.part_eq_of_mem hB hxB ▸ B.min'_mem hne)) (B.min'_le x hxB)
+
+/-- If `m` is the first and `x` the last point of the part of `m`, then the part of `m` is its part
+in the restriction to the points before `x`, with `x` adjoined. -/
+theorem part_eq_insert_part_restrict {m x : α} (hm : ∀ y ∈ P.part m, m ≤ y) (hxm : x ∈ P.part m)
+    (hmax : ∀ y ∈ P.part m, y ≤ x) :
+    P.part m = insert x ((P.restrict (filter_subset (· < x) s)).part m) := by
+  ext y
+  rw [mem_insert]
+  by_cases hmx : m < x
+  · have hmt : m ∈ {y ∈ s | y < x} := mem_filter.2 ⟨P.part_nonempty.1 ⟨x, hxm⟩, hmx⟩
+    rw [part_restrict _ _ hmt, mem_inter, mem_filter]
+    refine ⟨fun hy => (hmax y hy).eq_or_lt.imp id fun hyx => ⟨hy, P.part_subset m hy, hyx⟩, ?_⟩
+    rintro (rfl | ⟨hy, -⟩)
+    exacts [hxm, hy]
+  · have hmt : m ∉ {y ∈ s | y < x} := fun h => hmx (mem_filter.1 h).2
+    rw [(P.restrict _).part_eq_empty.2 hmt, or_iff_left (notMem_empty y)]
+    refine ⟨fun hy => le_antisymm (hmax y hy) ?_, by rintro rfl; exact hxm⟩
+    exact (not_lt.1 hmx).trans (hm y hy)
+
+/-- If `x > m` is the last point of the part of `m`, the part of `m` is the pair `{m, x}` exactly
+when `m` is its only point before `x`. -/
+theorem part_eq_pair_iff_inter_filter_lt_eq_singleton {m x : α}
+    (hxm : x ∈ P.part m) (hmax : ∀ y ∈ P.part m, y ≤ x) (hmx : m < x) :
+    P.part m = {m, x} ↔ P.part m ∩ {y ∈ s | y < x} = {m} := by
+  have hms : m ∈ s := P.part_nonempty.1 ⟨x, hxm⟩
+  refine ⟨fun h => ?_, fun h => Subset.antisymm (fun y hy => ?_) ?_⟩
+  · rw [h]
+    ext y
+    simp only [mem_inter, mem_insert, mem_singleton, mem_filter]
+    constructor
+    · rintro ⟨rfl | rfl, -, hy⟩
+      exacts [rfl, absurd hy (lt_irrefl _)]
+    · rintro rfl
+      exact ⟨Or.inl rfl, hms, hmx⟩
+  · rcases (hmax y hy).lt_or_eq with hyx | rfl
+    · exact mem_insert.2 <| Or.inl <| mem_singleton.1 <|
+        h ▸ mem_inter.2 ⟨hy, mem_filter.2 ⟨P.part_subset m hy, hyx⟩⟩
+    · exact mem_insert.2 <| Or.inr <| mem_singleton_self _
+  · exact insert_subset (P.mem_part_self.2 hms) (singleton_subset_iff.2 hxm)
+
+end LinearOrder
+
+section PairSplit
+
+/-! ### The partition with one pair part, and the partition into a subset and its complement -/
+
+variable {α : Type*} [DecidableEq α] {s C : Finset α} {i j : α}
+
+/-- The partition of `s` with the part `{i, j}`, all other points forming singletons. -/
+noncomputable def pairPartition (s : Finset α) (i j : α) (hij : {i, j} ⊆ s) : Finpartition s :=
+  (⊥ : Finpartition (s \ {i, j})).extend (insert_ne_empty i {j}) sdiff_disjoint
+    (sdiff_union_of_subset hij)
+
+/-- The parts of `pairPartition s i j` are `{i, j}` and the singletons of the other points. -/
+theorem mem_parts_pairPartition {hij : {i, j} ⊆ s} {B : Finset α} :
+    B ∈ (pairPartition s i j hij).parts ↔ B = {i, j} ∨ ∃ k ∈ s \ {i, j}, {k} = B := by
+  rw [pairPartition, extend_parts, mem_insert, mem_bot_iff]
+
+/-- A part of `pairPartition s i j` with two different points is `{i, j}`. -/
+theorem eq_pair_of_mem_parts_pairPartition {hij : {i, j} ⊆ s} {B : Finset α}
+    (hB : B ∈ (pairPartition s i j hij).parts) {a c : α} (ha : a ∈ B) (hc : c ∈ B)
+    (hac : a ≠ c) : B = {i, j} := by
+  obtain h | ⟨k, -, rfl⟩ := mem_parts_pairPartition.1 hB
+  · exact h
+  · rw [mem_singleton] at ha hc
+    exact absurd (ha.trans hc.symm) hac
+
+/-- The part of `pairPartition s i j` through `i` is `{i, j}`. -/
+@[simp]
+theorem part_pairPartition (hij : {i, j} ⊆ s) : (pairPartition s i j hij).part i = {i, j} :=
+  part_eq_of_mem _ (mem_parts_pairPartition.2 (Or.inl rfl)) (mem_insert_self i _)
+
+/-- A partition in which `i` and `j` share a part is coarser than `pairPartition s i j`. -/
+theorem pairPartition_le {hij : {i, j} ⊆ s} {R : Finpartition s} (hR : j ∈ R.part i) :
+    pairPartition s i j hij ≤ R := by
+  have hi : i ∈ s := hij (mem_insert_self i _)
+  refine fun B hB => ?_
+  obtain rfl | ⟨k, hk, rfl⟩ := mem_parts_pairPartition.1 hB
+  · refine ⟨R.part i, R.part_mem.2 hi, fun z hz => ?_⟩
+    rcases mem_insert.1 hz with rfl | hz
+    exacts [R.mem_part_self.2 hi, mem_singleton.1 hz ▸ hR]
+  · exact ⟨R.part k, R.part_mem.2 (sdiff_subset hk),
+      singleton_subset_iff.2 (R.mem_part_self.2 (sdiff_subset hk))⟩
+
+/-- For `i ≠ j`, `pairPartition s i j` is not the partition into singletons. -/
+theorem pairPartition_ne_bot {hij : {i, j} ⊆ s} (hne : i ≠ j) :
+    pairPartition s i j hij ≠ ⊥ := fun h => by
+  have h' : {i, j} ∈ (pairPartition s i j hij).parts := mem_parts_pairPartition.2 (Or.inl rfl)
+  rw [h, mem_bot_iff] at h'
+  obtain ⟨k, -, hk⟩ := h'
+  exact hne ((mem_singleton.1 (hk ▸ mem_insert_self i _)).trans
+    (mem_singleton.1 (hk ▸ mem_insert_of_mem (mem_singleton_self j))).symm)
+
+/-- The partition of `s` into a nonempty part `C ⊆ s` and the rest `s \ C`. -/
+noncomputable def splitPartition (s C : Finset α) (hC : C.Nonempty) (hCs : C ⊆ s) :
+    Finpartition s :=
+  (⊤ : Finpartition (s \ C)).extend hC.ne_empty sdiff_disjoint (sdiff_union_of_subset hCs)
+
+variable {hC : C.Nonempty} {hCs : C ⊆ s}
+
+/-- When `s \ C` is nonempty, the parts of `splitPartition s C` are `C` and `s \ C`. -/
+theorem parts_splitPartition (hsC : (s \ C).Nonempty) :
+    (splitPartition s C hC hCs).parts = {C, s \ C} := by
+  rw [splitPartition, extend_parts, parts_top hsC.ne_empty]
+
+/-- The part of `splitPartition s C` through a point of `C` is `C`. -/
+@[simp]
+theorem part_splitPartition_of_mem {z : α} (hz : z ∈ C) :
+    (splitPartition s C hC hCs).part z = C :=
+  part_eq_of_mem _ (by simp [splitPartition]) hz
+
+/-- The part of `splitPartition s C` through a point of `s` outside `C` is `s \ C`. -/
+@[simp]
+theorem part_splitPartition_of_notMem {z : α} (hz : z ∈ s) (hzC : z ∉ C) :
+    (splitPartition s C hC hCs).part z = s \ C := by
+  have hzsC : z ∈ s \ C := mem_sdiff.2 ⟨hz, hzC⟩
+  exact part_eq_of_mem _
+    (by rw [parts_splitPartition ⟨z, hzsC⟩]; exact mem_insert_of_mem (mem_singleton_self _)) hzsC
+
+end PairSplit
 
 section Atomise
 
@@ -489,6 +792,13 @@ theorem subset_or_disjoint_of_mem_atomise {F : Finset (Finset α)} {t u : Finset
   · exact Or.inl fun i hi ↦ ((Finset.mem_filter.1 hi).2 u hu).1 huR
   · exact Or.inr <| Finset.disjoint_left.2 fun i hi hiu ↦
       huR (((Finset.mem_filter.1 hi).2 u hu).2 hiu)
+
+/-- Each part of a common refinement `P ⊓ atomise s F` lies inside or outside each member of
+`F`. -/
+theorem subset_or_disjoint_of_mem_inf_atomise {P : Finpartition s} {F : Finset (Finset α)}
+    {t u : Finset α} (ht : t ∈ (P ⊓ atomise s F).parts) (hu : u ∈ F) : t ⊆ u ∨ Disjoint t u := by
+  obtain ⟨T, hT, htT⟩ := (inf_le_right : P ⊓ atomise s F ≤ atomise s F) ht
+  exact (subset_or_disjoint_of_mem_atomise hT hu).imp htT.trans (Disjoint.mono_left htT)
 
 end Atomise
 
@@ -553,6 +863,17 @@ theorem prod_parts_comap {M : Type*} [CommMonoid M] (P : Finpartition (s.image f
     ∏ X ∈ (P.comap f).parts, g X = ∏ C ∈ P.parts, g {x ∈ s | f x ∈ C} :=
   prod_image fun C hC D hD hCD => by
     rw [← image_filter_mem_of_mem_parts hC, hCD, image_filter_mem_of_mem_parts hD]
+
+/-- Pulling back a finite partition `P` of `univ` along an equivalence `g`, after identifying
+`univ` with its image under `g`, moves each part of `P` along `g.symm`. -/
+theorem parts_comap_copy_equiv [Fintype α] [Fintype β] (P : Finpartition (univ : Finset β))
+    (g : α ≃ β) :
+    ((P.copy (image_univ_equiv g).symm).comap g).parts =
+      P.parts.image fun B => B.map g.symm.toEmbedding := by
+  rw [parts_comap, copy_parts]
+  refine image_congr fun B _ => ?_
+  ext x
+  simp [mem_map_equiv]
 
 /-- Pulling back along `f` reflects and preserves refinement. -/
 @[simp]

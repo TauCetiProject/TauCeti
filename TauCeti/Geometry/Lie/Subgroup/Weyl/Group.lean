@@ -55,7 +55,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G]
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
 /-- **The adjoint representation of the normalizer of `K` on `Lie(K)`**: the adjoint
@@ -84,7 +84,7 @@ def _root_.Subgroup.weylAdjointRepresentation (K : Subgroup G) [IsMulCommutative
       (lieSubalgebraOfSubgroup (I := I) K).toSubmodule :=
   K.normalizerQuotientLift (K.normalizerAdjointRepresentation (I := I)) fun g hg =>
     LinearMap.ext fun X => Subtype.ext <| by
-      rw [Module.End.one_apply, Subgroup.coe_normalizerAdjointRepresentation_apply]
+      rw [one_apply_eq_self, Subgroup.coe_normalizerAdjointRepresentation_apply]
       exact Ad_apply_eq_self_of_mem_lieSubalgebraOfSubgroup hg X.2
 
 @[simp]

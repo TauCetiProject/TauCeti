@@ -51,7 +51,7 @@ theorem exists_nonneg_isChain_mapDomain (f : α →₀ R) (g : β →₀ R)
         mapDomain Prod.fst w = f ∧ mapDomain Prod.snd w = g := by
     intro n
     induction n using Nat.strong_induction_on with
-    | h n ih =>
+    | ind n ih =>
       intro f g hn hf hg hmass
       -- Zero mass forces both nonnegative marginals to vanish.
       by_cases hf0 : f = 0

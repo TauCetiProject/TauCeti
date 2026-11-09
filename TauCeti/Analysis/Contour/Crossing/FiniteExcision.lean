@@ -38,7 +38,7 @@ additivity, while the local crossing contribution is computed by the crossing-an
 
 * `TauCeti.Contour.exciseCrossings_eqOn_window` and
   `TauCeti.Contour.exciseCrossings_eqOn_compl` — the simultaneous pointwise description.
-* `TauCeti.Contour.IsPiecewiseC1On.exciseCrossings` — finite excision preserves piecewise
+* `TauCeti.IsPiecewiseC1On.exciseCrossings` — finite excision preserves piecewise
   `C¹` regularity.
 * `TauCeti.Contour.exciseCrossings_closed` — finite excision preserves closedness.
 * `TauCeti.Contour.exciseCrossings_ne_center` — the resulting curve avoids the centre on
@@ -275,7 +275,7 @@ theorem exciseCrossings_perm {γ : ℝ → ℂ} {s : ℂ}
 
 /-- Finite excision preserves piecewise-`C¹` regularity when the windows are pairwise disjoint,
 strictly inside the parameter interval, and their cap endpoints agree with the original curve. -/
-theorem IsPiecewiseC1On.exciseCrossings {γ : ℝ → ℂ} {s : ℂ} {a b : ℝ}
+theorem _root_.TauCeti.IsPiecewiseC1On.exciseCrossings {γ : ℝ → ℂ} {s : ℂ} {a b : ℝ}
     {windows : List CircularCapWindow} (hγ : IsPiecewiseC1On γ a b)
     (hpw : windows.Pairwise fun W V => Disjoint W.interval V.interval)
     (hinside : ∀ W ∈ windows, a < W.lower ∧ W.lower < W.upper ∧ W.upper < b)

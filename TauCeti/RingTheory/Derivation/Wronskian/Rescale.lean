@@ -86,7 +86,7 @@ private theorem exists_rescaleCoefficients (D : Derivation k R R) (a : R) (i : �
         have hj0 : j ≠ 0 := by omega
         simp [d, hj0, hc j (by omega), hc (j - 1) (by omega)]
       · simp [hd, hlast, hdiag, pow_succ, mul_comm]
-      · rw [Function.iterate_succ_apply', hiter, Derivation.smul_apply, smul_eq_mul]
+      · rw [Function.iterate_succ_apply', hiter, _root_.smul_apply, smul_eq_mul]
         exact TauCeti.sum_rescaleCoefficients D a c i z hlast
 
 /-- Rescaling a derivation by `a` multiplies an `n`-function Wronskian by

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.TypeTags.Finite
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RepresentationTheory.Rep.Basic
+public import TauCeti.Algebra.Group.Prod
 public import TauCeti.Data.ZMod.MonoidHomEquiv
 import Mathlib.Tactic.Abel
 
@@ -32,11 +33,16 @@ Its group cohomology is read off in
 * `AddMonoidHom.cyclicRepHom f hA hB hf`: an additive map `f` with `f ∘ A = B ∘ f`, as a morphism
   of cyclic representations; it is compatible with composition
   (`AddMonoidHom.cyclicRepHom_comp`).
+* `AddEquiv.cyclicRepBinaryBicone hA hB`: the cyclic representation of the product automorphism
+  `A × B` of `T × M`, with the projections and inclusions of `T × M`, as a binary bicone of the
+  cyclic representations of `A` and `B`; it is a biproduct
+  (`AddEquiv.cyclicRepBinaryBiconeIsBilimit`).
 
 ## Main results
 
 * `AddEquiv.cyclicRepresentation_ofAdd_apply`: the element `a` of `C_m` acts by `A^[a.val]`.
-* `AddEquiv.cyclicRepresentation_norm_apply`: the norm is the ordered sum of powers of `A`.
+* `AddEquiv.cyclicRepresentation_norm_apply`, `AddEquiv.cyclicRep_norm_apply`: the norm is the
+  ordered sum of powers of `A`.
 * `AddEquiv.mem_ker_cyclicRep_norm_iff`, `AddEquiv.mem_range_cyclicRep_norm_iff`: the kernel and
   image of the norm, in terms of the ordered sum of powers of `A`.
 * `AddEquiv.mem_ker_cyclicRep_applyAsHom_sub_iff`,
@@ -63,13 +69,13 @@ noncomputable def cyclicRepresentation : Representation ℤ (Multiplicative (ZMo
   LinearEquiv.automorphismGroup.toLinearMapMonoidHom.comp
     ((TauCeti.zmodMonoidHomEquiv m (T ≃ₗ[ℤ] T)).symm ⟨A.toIntLinearEquiv, by
       ext x
-      rw [LinearEquiv.coe_pow]
+      rw [FunLike.coe_pow_eq_iterate]
       simpa using congrFun hA x⟩)
 
 /-- The element `a` of `C_m` acts on `T` by the `a.val`-th iterate of `A`. -/
 theorem cyclicRepresentation_ofAdd_apply (a : ZMod m) (x : T) :
     A.cyclicRepresentation hA (.ofAdd a) x = (⇑A)^[a.val] x := by
-  simp [cyclicRepresentation, LinearEquiv.coe_pow]
+  simp [cyclicRepresentation, FunLike.coe_pow_eq_iterate]
 
 /-- The generator `ofAdd 1` of `C_m` acts on `T` by `A`. -/
 @[simp]
@@ -79,6 +85,14 @@ theorem cyclicRepresentation_ofAdd_one_apply (x : T) :
   obtain rfl | hm := eq_or_ne m 1
   · simpa using (congrFun hA x).symm
   · rw [Nat.one_mod_eq_one.mpr hm, Function.iterate_one]
+
+/-- A power of the selected generator acts by the corresponding iterate, without reducing
+its exponent modulo the period. -/
+theorem cyclicRepresentation_ofAdd_one_pow_apply (d : ℕ) (x : T) :
+    A.cyclicRepresentation hA ((.ofAdd 1) ^ d) x = (⇑A)^[d] x := by
+  rw [map_pow, pow_apply_eq_iterate]
+  congr 1
+  exact funext (A.cyclicRepresentation_ofAdd_one_apply hA)
 
 /-- The norm of the cyclic representation of `A` is the ordered sum of the powers
 `A^0, …, A^(m-1)`. -/
@@ -96,13 +110,19 @@ noncomputable abbrev cyclicRep : Rep ℤ (Multiplicative (ZMod m)) :=
 
 open CategoryTheory Rep
 
+/-- The norm of the bundled cyclic representation of `A` is the ordered sum of its powers. -/
+theorem cyclicRep_norm_apply (x : T) :
+    (A.cyclicRep hA).norm.asHom.hom.toLinearMap x =
+      ∑ j ∈ Finset.range m, (⇑A)^[j] x := by
+  rw [Representation.IntertwiningMap.coe_toLinearMap, Rep.norm_apply, Rep.of_ρ,
+    cyclicRepresentation_norm_apply]
+
 /-- An element of `T` lies in the kernel of the norm of the cyclic representation of `A` exactly
 when the ordered sum of its images under the powers of `A` vanishes. -/
 theorem mem_ker_cyclicRep_norm_iff (x : T) :
     x ∈ LinearMap.ker (A.cyclicRep hA).norm.asHom.hom.toLinearMap ↔
       ∑ j ∈ Finset.range m, (⇑A)^[j] x = 0 := by
-  rw [LinearMap.mem_ker, Representation.IntertwiningMap.coe_toLinearMap, Rep.norm_apply, Rep.of_ρ,
-    cyclicRepresentation_norm_apply]
+  rw [LinearMap.mem_ker, cyclicRep_norm_apply]
 
 /-- An element of `T` lies in the image of the norm of the cyclic representation of `A` exactly
 when it is the ordered sum of the images of some `y` under the powers of `A`. -/
@@ -110,12 +130,11 @@ theorem mem_range_cyclicRep_norm_iff (x : T) :
     x ∈ LinearMap.range (A.cyclicRep hA).norm.asHom.hom.toLinearMap ↔
       ∃ y, ∑ j ∈ Finset.range m, (⇑A)^[j] y = x := by
   refine LinearMap.mem_range.trans (exists_congr fun y ↦ ?_)
-  rw [Representation.IntertwiningMap.coe_toLinearMap, Rep.norm_apply, Rep.of_ρ,
-    cyclicRepresentation_norm_apply]
+  rw [cyclicRep_norm_apply]
 
 /-- The map `ρ(g) - 𝟙` of the periodic resolution, for the generator `g = ofAdd 1`, sends `y` to
 `A y - y`. -/
-private theorem cyclicRep_applyAsHom_sub_apply (y : T) :
+theorem cyclicRep_applyAsHom_sub_apply (y : T) :
     (applyAsHom (A.cyclicRep hA) (.ofAdd 1) - 𝟙 _).hom.toLinearMap y = A y - y := by
   rw [sub_hom, Representation.IntertwiningMap.coe_toLinearMap,
     Representation.IntertwiningMap.coe_sub, Pi.sub_apply, applyAsHom_apply]
@@ -219,6 +238,51 @@ theorem cyclicRepHom_comp {N : Type u} [AddCommGroup N] {C : N ≃+ N} (g : M �
     coe_comp]
 
 end AddMonoidHom
+
+/-! ### Products -/
+
+namespace AddEquiv
+
+universe u
+
+open CategoryTheory Limits
+
+variable {T M : Type u} [AddCommGroup T] [AddCommGroup M] {m : ℕ} {A : T ≃+ T} {B : M ≃+ M}
+  (hA : (⇑A)^[m] = id) (hB : (⇑B)^[m] = id)
+
+variable [NeZero m]
+
+/-- The cyclic representation of the product automorphism `A × B` of `T × M`, with the morphisms
+of cyclic representations defined by the projections `T × M → T`, `T × M → M` and the inclusions
+`T → T × M`, `M → T × M`, is a binary bicone of the cyclic representations of `A` and `B`. It is
+a biproduct (`AddEquiv.cyclicRepBinaryBiconeIsBilimit`). Its body is exposed, so that its cone
+point is the cyclic representation of `A × B` and its structure maps are the morphisms defined by
+the projections and inclusions by definition, as the cohomology of the cyclic representation of
+`A × B` is read through this bicone. -/
+@[expose]
+noncomputable def cyclicRepBinaryBicone : BinaryBicone (A.cyclicRep hA) (B.cyclicRep hB) where
+  pt := (A.prodCongr B).cyclicRep (iterate_prodCongr_eq_id hA hB)
+  fst := (AddMonoidHom.fst T M).cyclicRepHom _ hA fun _ ↦ rfl
+  snd := (AddMonoidHom.snd T M).cyclicRepHom _ hB fun _ ↦ rfl
+  inl := (AddMonoidHom.inl T M).cyclicRepHom hA _ fun _ ↦ by simp [prodCongr]
+  inr := (AddMonoidHom.inr T M).cyclicRepHom hB _ fun _ ↦ by simp [prodCongr]
+  inl_fst := by ext; simp [AddMonoidHom.cyclicRepHom]
+  inl_snd := by ext; simp [AddMonoidHom.cyclicRepHom]
+  inr_fst := by ext; simp [AddMonoidHom.cyclicRepHom]
+  inr_snd := by ext; simp [AddMonoidHom.cyclicRepHom]
+
+/-- The cyclic representation of `A × B` is the biproduct of the cyclic representations of `A`
+and `B`, with the projections and inclusions of `T × M` as structure maps. -/
+noncomputable def cyclicRepBinaryBiconeIsBilimit : (cyclicRepBinaryBicone hA hB).IsBilimit :=
+  isBinaryBilimitOfTotal _ <| by
+    ext1
+    rw [Rep.add_hom]
+    ext x
+    -- On underlying groups the structure maps are `Prod.fst`, `Prod.inl`, `Prod.snd` and
+    -- `Prod.inr`, so the total map sends `x` to `(x.1, 0) + (0, x.2)`.
+    exact Prod.fst_add_snd x
+
+end AddEquiv
 
 namespace AddMonoidHom
 

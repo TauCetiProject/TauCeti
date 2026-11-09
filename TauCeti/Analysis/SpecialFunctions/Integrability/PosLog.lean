@@ -7,24 +7,34 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrability.PosLog
 public import Mathlib.MeasureTheory.Integral.CircleAverage
+import TauCeti.Topology.MetricSpace.Pseudo.Defs
 
 /-!
-# Circle averages of `log⁺ ‖f‖⁻¹` for meromorphic functions
+# Circle averages of `log⁺ ‖f‖⁻¹` and a Fatou bound
 
 For `f` meromorphic on a circle, `log⁺ ‖f‖⁻¹ = log⁺ ‖f‖ - log ‖f‖` is circle integrable, and its
 circle average is the difference of the circle averages of `log⁺ ‖f‖` and of `log ‖f‖`. This is the
 identity `ValueDistribution.proximity_sub_proximity_inv_eq_circleAverage` of Nevanlinna theory, for
 a function meromorphic only on the circle and a circle with arbitrary centre. Since the integrand is
 nonnegative, the same identity also computes the lower Lebesgue integral of `log⁺ ‖f‖⁻¹` over one
-period, the form needed to apply Fatou's lemma.
+period. Fatou's lemma then bounds the measure of angles where values on a sequence of circles
+approach zero through nonzero values; this last result only needs circle integrability.
 
 ## Main results
 
 * `MeromorphicOn.circleIntegrable_posLog_inv_norm` — `log⁺ ‖f‖⁻¹` is circle integrable.
+* `ContinuousOn.circleIntegrable_posLog_norm` — `log⁺ ‖f‖` is circle integrable when `f` is
+  continuous on the circle.
+* `DifferentiableOn.circleIntegrable_posLog_norm` — `log⁺ ‖f‖` is circle integrable on every
+  circle inside a disc on which `f` is holomorphic.
+* `CircleIntegrable.circleAverage_posLog_norm_sub_const_le` — circle averages of `log⁺ ‖f - a‖`
+  are at most those of `log⁺ ‖f‖` plus `log⁺ ‖a‖ + log 2`.
 * `MeromorphicOn.circleAverage_posLog_inv_norm` — the circle average of `log⁺ ‖f‖⁻¹` is the
   difference of the circle averages of `log⁺ ‖f‖` and of `log ‖f‖`.
 * `MeromorphicOn.lintegral_ofReal_posLog_inv_norm_circleMap` — the lower Lebesgue integral of
   `log⁺ ‖f‖⁻¹` over one period of the circle is `2π` times that difference.
+* `TauCeti.volume_setOf_tendsto_circleMap_nhdsNE_zero` — bounded circle averages of
+  `log⁺ ‖f‖⁻¹` force the angles with nonzero radial values tending to zero to be null.
 -/
 
 public section
@@ -39,6 +49,37 @@ private lemma posLog_inv_norm_eq_sub (f : ℂ → ℂ) :
   funext z
   simp only [Pi.sub_apply]
   linarith [posLog_sub_posLog_inv (x := ‖f z‖)]
+
+/-- `log⁺ ‖f‖` is circle integrable if `f` is continuous on the circle. -/
+theorem _root_.ContinuousOn.circleIntegrable_posLog_norm
+    {E : Type*} [SeminormedAddCommGroup E] {f : ℂ → E}
+    (hf : ContinuousOn f (sphere c |r|)) :
+    CircleIntegrable (fun z ↦ log⁺ ‖f z‖) c r :=
+  (continuous_posLog.comp_continuousOn hf.norm).circleIntegrable'
+
+/-- `log⁺ ‖f‖` is circle integrable over every circle inside a disc on which `f` is
+holomorphic. -/
+theorem _root_.DifferentiableOn.circleIntegrable_posLog_norm {R : ℝ}
+    (hf : DifferentiableOn ℂ f (ball c R)) (hr : r ∈ Ioo 0 R) :
+    CircleIntegrable (fun z ↦ log⁺ ‖f z‖) c r :=
+  (hf.continuousOn.mono (Metric.sphere_abs_subset_ball hr)).circleIntegrable_posLog_norm
+
+/-- Circle averages of `log⁺ ‖f - a‖` are at most those of `log⁺ ‖f‖` plus
+`log⁺ ‖a‖ + log 2`, whenever both integrands are circle integrable. -/
+theorem _root_.CircleIntegrable.circleAverage_posLog_norm_sub_const_le
+    {E : Type*} [SeminormedAddCommGroup E] {f : ℂ → E}
+    (hf : CircleIntegrable (fun z ↦ log⁺ ‖f z‖) c r)
+    (a : E) (hfa : CircleIntegrable (fun z ↦ log⁺ ‖f z - a‖) c r) :
+    circleAverage (fun z ↦ log⁺ ‖f z - a‖) c r ≤
+      circleAverage (fun z ↦ log⁺ ‖f z‖) c r + (log⁺ ‖a‖ + Real.log 2) := by
+  have hadd := circleAverage_add hf (circleIntegrable_const (log⁺ ‖a‖ + Real.log 2) c r)
+  rw [circleAverage_const] at hadd
+  rw [← hadd]
+  refine circleAverage_mono hfa (hf.add (circleIntegrable_const _ _ _)) fun z _ ↦ ?_
+  have := Real.posLog_norm_add_le (f z) (-a)
+  simp only [norm_neg, ← sub_eq_add_neg] at this
+  simp only [Pi.add_apply]
+  linarith
 
 namespace MeromorphicOn
 
@@ -74,3 +115,41 @@ theorem lintegral_ofReal_posLog_inv_norm_circleMap (hf : MeromorphicOn f (sphere
   field_simp
 
 end MeromorphicOn
+
+namespace TauCeti
+
+open Filter Topology
+open scoped ENNReal
+
+/-- **Fatou's lemma on circles.** If `log⁺ ‖f‖⁻¹` is integrable on the circles about `c` of
+radii `ρ n`, and its circle averages there are at most `B`, then the angles in one period along
+which `f (circleMap c (ρ n) θ)` tends to `0` through nonzero values form a null set. -/
+theorem volume_setOf_tendsto_circleMap_nhdsNE_zero {ρ : ℕ → ℝ} {B : ℝ}
+    (hf : ∀ n, CircleIntegrable (fun z ↦ log⁺ ‖f z‖⁻¹) c (ρ n))
+    (hB : ∀ n, circleAverage (fun z ↦ log⁺ ‖f z‖⁻¹) c (ρ n) ≤ B) :
+    volume {θ ∈ Ioc 0 (2 * π) | Tendsto (fun n ↦ f (circleMap c (ρ n) θ))
+      atTop (𝓝[≠] 0)} = 0 := by
+  set G : ℕ → ℝ → ℝ≥0∞ := fun n θ ↦ ENNReal.ofReal (log⁺ ‖f (circleMap c (ρ n) θ)‖⁻¹)
+  have hG : ∀ n, AEMeasurable (G n) (volume.restrict (Ioc 0 (2 * π))) := fun n ↦
+    (((intervalIntegrable_iff_integrableOn_Ioc_of_le
+      two_pi_pos.le).1 (hf n)).aemeasurable).ennreal_ofReal
+  have hbound : ∀ n, ∫⁻ θ in Ioc 0 (2 * π), G n θ ≤ ENNReal.ofReal (2 * π * B) := fun n ↦ by
+    have hi := ofReal_integral_eq_lintegral_ofReal
+      ((intervalIntegrable_iff_integrableOn_Ioc_of_le two_pi_pos.le).1 (hf n))
+      (Filter.Eventually.of_forall fun θ ↦ posLog_nonneg)
+    rw [← hi, ← intervalIntegral.integral_of_le two_pi_pos.le]
+    have haverage : ∫ θ in 0..2 * π, log⁺ ‖f (circleMap c (ρ n) θ)‖⁻¹ =
+        2 * π * circleAverage (fun z ↦ log⁺ ‖f z‖⁻¹) c (ρ n) := by
+      rw [circleAverage_def, smul_eq_mul]
+      field_simp
+    exact ENNReal.ofReal_le_ofReal (haverage ▸
+      mul_le_mul_of_nonneg_left (hB n) two_pi_pos.le)
+  refine measure_mono_null ?_ (measure_eq_top_of_setLIntegral_ne_top
+    (AEMeasurable.liminf hG) (((lintegral_liminf_le' hG).trans
+      (liminf_le_of_frequently_le' (.of_forall hbound))).trans_lt ENNReal.ofReal_lt_top).ne)
+  refine fun θ hθ ↦ ⟨hθ.1, ?_⟩
+  exact (ENNReal.tendsto_ofReal_atTop.comp (tendsto_atTop_mono
+    (fun _ ↦ by rw [posLog_apply]; exact le_max_right _ _) (tendsto_log_atTop.comp
+      (tendsto_inv_nhdsGT_zero.comp (tendsto_norm_nhdsNE_zero.comp hθ.2))))).liminf_eq
+
+end TauCeti

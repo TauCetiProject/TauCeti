@@ -216,10 +216,10 @@ private theorem gridAction_descent (a : Fin (DynkinType.A n).rank) (m s : ℕ)
   induction s generalizing m with
   | zero =>
     have heq : (⟨m, hm⟩ : Fin (DynkinType.A n).rank) = a := Fin.ext (by omega)
-    simp only [ladderValley_zero_zero, map_one, Module.End.one_apply, heq]
+    simp only [ladderValley_zero_zero, map_one, one_apply_eq_self, heq]
   | succ s ih =>
     have hm' : m + 1 < (DynkinType.A n).rank := by omega
-    rw [← d_mul_ladderValley_succ_zero, map_mul, Module.End.mul_apply,
+    rw [← d_mul_ladderValley_succ_zero, map_mul, mul_apply_eq_comp,
       ih (m + 1) (by omega) hm']
     have harr := gridAction_arrow k a ⟨m + 1, hm'⟩ ⟨m, hm⟩ s 0
       ((diagramGraph_A_adj n _ _).2 (.inr rfl))
@@ -242,7 +242,7 @@ private theorem gridAction_valley (a : Fin (DynkinType.A n).rank) (m s r : ℕ)
   | zero => simpa only [Nat.add_zero] using gridAction_descent k a m s hs hmr
   | succ r ih =>
     have hmr' : m + r < (DynkinType.A n).rank := by omega
-    rw [← u_mul_ladderValley, map_mul, Module.End.mul_apply,
+    rw [← u_mul_ladderValley, map_mul, mul_apply_eq_comp,
       ih (by omega) hmr']
     have harr := gridAction_arrow k a ⟨m + r, hmr'⟩ ⟨m + (r + 1), hmr⟩ s r
       ((diagramGraph_A_adj n _ _).2 (.inl (by dsimp; omega)))
@@ -266,8 +266,8 @@ private theorem gridAction_bounded_valley (a b : Fin (DynkinType.A n).rank) (m :
   have hmr : m + (b.val - m) < (DynkinType.A n).rank := by omega
   have heq : (⟨m + (b.val - m), hmr⟩ : Fin (DynkinType.A n).rank) = b :=
     Fin.ext (by dsimp; omega)
-  rw [signlessPreprojectiveAValley_def, map_mul, map_mul, Module.End.mul_apply,
-    Module.End.mul_apply, gridAction_vertex, gridAction_valley k a m _ _ hs hr hmr, heq,
+  rw [signlessPreprojectiveAValley_def, map_mul, map_mul, mul_apply_eq_comp,
+    mul_apply_eq_comp, gridAction_vertex, gridAction_valley k a m _ _ hs hr hmr, heq,
     gridAction_vertex]
 
 private noncomputable def gridDetect (a b : Fin (DynkinType.A n).rank) : Π →ₗ[k] Grid k where

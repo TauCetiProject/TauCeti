@@ -126,18 +126,18 @@ theorem separableSpace (hp_top : p ≠ ∞) :
   have hnull₃ : ν₃ ((↑(s.image T) : Set X)ᶜ) = 0 := by
     have hzero : (∑ x ∈ s.image T, (m x : ℝ≥0∞) • Measure.dirac x)
         ((↑(s.image T) : Set X)ᶜ) = 0 := by
-      rw [Measure.coe_finsetSum, Finset.sum_apply]
+      rw [FunLike.coe_sum, Finset.sum_apply]
       refine Finset.sum_eq_zero fun x hx ↦ ?_
-      rw [Measure.smul_apply, Measure.dirac_apply' _ (s.image T).measurableSet.compl,
+      rw [_root_.smul_apply, Measure.dirac_apply' _ (s.image T).measurableSet.compl,
         Set.indicator_of_notMem (by simpa using hx), smul_zero]
-    rw [hν₃_def, Measure.smul_apply, hzero, smul_zero]
+    rw [hν₃_def, _root_.smul_apply, hzero, smul_zero]
   have hprob₃ : IsProbabilityMeasure ν₃ := by
     refine ⟨?_⟩
     have hmass : (∑ x ∈ s.image T, (m x : ℝ≥0∞) • Measure.dirac x) univ
         = ((∑ x ∈ s.image T, m x : ℕ) : ℝ≥0∞) := by
-      rw [Measure.coe_finsetSum, Finset.sum_apply, ← hmsum]
+      rw [FunLike.coe_sum, Finset.sum_apply, ← hmsum]
       exact Finset.sum_congr rfl fun x _ ↦ by simp
-    rw [hν₃_def, Measure.smul_apply, hmass, smul_eq_mul, hmsum,
+    rw [hν₃_def, _root_.smul_apply, hmass, smul_eq_mul, hmsum,
       ENNReal.inv_mul_cancel (Nat.cast_ne_zero.2 hmpos.ne') (ENNReal.natCast_ne_top _)]
   obtain ⟨x₁, _⟩ : (s.image T).Nonempty := by
     rw [Finset.nonempty_iff_ne_empty]

@@ -43,7 +43,9 @@ dimension two with finite residue field.
   every prime of its support has height at least two.
 * `TauCeti.Iwasawa.isPseudoNull_iff_annihilator`: the annihilator criterion, every prime
   containing `ann_A M` has height at least two; for a quotient `A ⧸ I` this is
-  `TauCeti.Iwasawa.isPseudoNull_quotient_iff`.
+  `TauCeti.Iwasawa.isPseudoNull_quotient_iff`. A variant relative to another module `N`,
+  `TauCeti.Iwasawa.isPseudoNull_of_mem_annihilator`, needs only one annihilating element lying in
+  no prime of height at most one in the support of `N`.
 * `TauCeti.Iwasawa.IsPseudoNull.isTorsion`: over a domain, pseudo-null modules are torsion.
 * `TauCeti.Iwasawa.isPseudoNull_iff_subsingleton`: over a ring of dimension at most one, such as a
   Dedekind domain, only the zero module is pseudo-null.
@@ -51,7 +53,7 @@ dimension two with finite residue field.
   `TauCeti.Iwasawa.IsPseudoNull.of_exact`: over a noetherian ring, submodules, quotients and
   extensions of pseudo-null modules are pseudo-null.
 * `TauCeti.Iwasawa.isPseudoNull_iff_finite`: over a noetherian local ring of dimension two with
-  finite residue field, a finitely generated module is pseudo-null iff it is finite.
+  finite residue field, a module is pseudo-null iff it is finite.
 
 The examples at the end of the file check the definition over `Λ = ℤ_p⟦T⟧`: the module
 `Λ ⧸ (p, T) = 𝔽_p` is pseudo-null, while `Λ ⧸ (p)` is not, because its support contains the
@@ -109,6 +111,16 @@ theorem isPseudoNull_quotient_iff (I : Ideal A) :
     IsPseudoNull A (A ⧸ I) ↔ ∀ 𝔭 : PrimeSpectrum A, I ≤ 𝔭.asIdeal → 1 < 𝔭.asIdeal.height := by
   rw [isPseudoNull_iff_annihilator, Ideal.annihilator_quotient]
 
+/-- A finitely generated module `M` killed by `a`, with support inside the support of `N`, is
+pseudo-null, provided `a` lies in no prime of height at most one in the support of `N`. -/
+theorem isPseudoNull_of_mem_annihilator {N : Type*} [AddCommGroup N] [Module A N]
+    [Module.Finite A M] {a : A}
+    (ha : ∀ 𝔭 ∈ Module.support A N, 𝔭.asIdeal.height ≤ 1 → a ∉ 𝔭.asIdeal)
+    (haM : a ∈ Module.annihilator A M) (hM : Module.support A M ⊆ Module.support A N) :
+    IsPseudoNull A M :=
+  isPseudoNull_iff_support.mpr ⟨‹_›, fun 𝔭 h𝔭 ↦ not_le.mp fun hht ↦
+    ha 𝔭 (hM h𝔭) hht (Module.annihilator_le_of_mem_support h𝔭 haM)⟩
+
 /-- The zero module is pseudo-null. -/
 theorem IsPseudoNull.of_subsingleton [Subsingleton M] : IsPseudoNull A M :=
   isPseudoNull_iff_support.mpr ⟨inferInstance, by simp [Module.support_eq_empty]⟩
@@ -160,6 +172,11 @@ theorem IsPseudoNull.of_exact {N P : Type*} [AddCommGroup N] [Module A N] [AddCo
   rw [Module.support_of_exact hfg hf hg] at h𝔭
   exact h𝔭.elim hM.one_lt_height hP.one_lt_height
 
+/-- A product of two pseudo-null modules is pseudo-null. -/
+theorem IsPseudoNull.prod {N : Type*} [AddCommGroup N] [Module A N] (hM : IsPseudoNull A M)
+    (hN : IsPseudoNull A N) : IsPseudoNull A (M × N) :=
+  hM.of_exact .inl_snd LinearMap.inl_injective LinearMap.snd_surjective hN
+
 /-- In a short exact sequence over a noetherian ring, the middle term is pseudo-null iff both
 outer terms are. -/
 theorem isPseudoNull_iff_of_exact [IsNoetherianRing A] {N P : Type*} [AddCommGroup N] [Module A N]
@@ -175,23 +192,29 @@ variable [IsLocalRing A]
 
 /-- Over a noetherian local ring of dimension two with finite residue field, for example the
 Iwasawa algebra `O⟦T⟧` of a complete discrete valuation ring `O` with finite residue field, a
-finitely generated module is pseudo-null iff it is finite. -/
+module is pseudo-null iff it is finite. -/
 theorem isPseudoNull_iff_finite [IsNoetherianRing A] [Finite (ResidueField A)]
-    (hdim : ringKrullDim A = 2) [Module.Finite A M] : IsPseudoNull A M ↔ Finite M := by
-  -- In dimension two the maximal ideal is the only prime of height at least two.
-  have key (𝔭 : Ideal A) [𝔭.IsPrime] : 1 < 𝔭.height ↔ 𝔭 = maximalIdeal A :=
-    Ideal.lt_height_iff_eq_maximalIdeal (n := 1) hdim
-  -- Both sides say that the annihilator contains a power of the maximal ideal.
-  rw [isPseudoNull_iff_annihilator,
-    Module.finite_iff_finite_quotient_annihilator (A := A), finite_quotient_iff]
-  refine ⟨fun h ↦ Ideal.exists_pow_le_of_le_radical_of_fg ?_ (IsNoetherian.noetherian _),
-    fun ⟨n, hn⟩ 𝔭 h𝔭 ↦ ?_⟩
-  · rw [Ideal.radical_eq_sInf]
-    refine le_sInf fun J ⟨hJ, hJp⟩ ↦ ?_
-    rw [(key J).mp (h ⟨J, hJp⟩ hJ)]
-  · rw [key]
-    exact le_antisymm (le_maximalIdeal Ideal.IsPrime.ne_top')
-      (Ideal.IsPrime.le_of_pow_le (hn.trans h𝔭))
+    (hdim : ringKrullDim A = 2) : IsPseudoNull A M ↔ Finite M := by
+  have main [Module.Finite A M] : IsPseudoNull A M ↔ Finite M := by
+    -- In dimension two the maximal ideal is the only prime of height at least two.
+    have key (𝔭 : Ideal A) [𝔭.IsPrime] : 1 < 𝔭.height ↔ 𝔭 = maximalIdeal A :=
+      Ideal.lt_height_iff_eq_maximalIdeal (n := 1) hdim
+    -- Both sides say that the annihilator contains a power of the maximal ideal.
+    rw [isPseudoNull_iff_annihilator,
+      Module.finite_iff_finite_quotient_annihilator (A := A), finite_quotient_iff]
+    refine ⟨fun h ↦ Ideal.exists_pow_le_of_le_radical_of_fg ?_ (IsNoetherian.noetherian _),
+      fun ⟨n, hn⟩ 𝔭 h𝔭 ↦ ?_⟩
+    · rw [Ideal.radical_eq_sInf]
+      refine le_sInf fun J ⟨hJ, hJp⟩ ↦ ?_
+      rw [(key J).mp (h ⟨J, hJp⟩ hJ)]
+    · rw [key]
+      exact le_antisymm (le_maximalIdeal Ideal.IsPrime.ne_top')
+        (Ideal.IsPrime.le_of_pow_le (hn.trans h𝔭))
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have := h.finite
+    exact main.mp h
+  · have : Module.Finite A M := .of_finite
+    exact main.mpr h
 
 end Local
 
@@ -203,17 +226,8 @@ example (p : ℕ) [Fact p.Prime] :
     IsPseudoNull ℤ_[p]⟦X⟧ (ℤ_[p]⟦X⟧ ⧸ Ideal.span {C (p : ℤ_[p]), X}) ∧
       ¬ IsPseudoNull ℤ_[p]⟦X⟧ (ℤ_[p]⟦X⟧ ⧸ Ideal.span {C (p : ℤ_[p])}) := by
   refine ⟨(isPseudoNull_quotient_iff _).mpr fun 𝔮 h𝔮 ↦ ?_, fun h ↦ ?_⟩
-  · have hX : X ∉ Ideal.span {C (p : ℤ_[p])} := by
-      rw [← PadicInt.ker_map_toZMod, RingHom.mem_ker, map_X]
-      exact X_ne_zero
-    have h1 : Ideal.span {C (p : ℤ_[p])} < 𝔮.asIdeal := by
-      refine lt_of_le_of_ne (Ideal.span_le.mpr ?_) fun h ↦ hX (h ▸ h𝔮 (Ideal.subset_span ?_))
-      · exact Set.singleton_subset_iff.mpr (h𝔮 (Ideal.subset_span (by simp)))
-      · simp
-    have := PadicInt.isPrime_span_C_p (p := p)
-    have h2 := Ideal.height_add_one_le_of_lt_of_isPrime h1
-    rw [PadicInt.height_span_C_p] at h2
-    exact lt_of_lt_of_le (by norm_num) h2
+  · exact PadicInt.one_lt_height_of_C_p_mem_of_X_mem (h𝔮 (Ideal.subset_span (by simp)))
+      (h𝔮 (Ideal.subset_span (by simp)))
   · exact ((isPseudoNull_quotient_iff _).mp h ⟨_, PadicInt.isPrime_span_C_p⟩ le_rfl).ne'
       PadicInt.height_span_C_p
 

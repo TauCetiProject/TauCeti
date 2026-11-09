@@ -11,7 +11,10 @@ public import TauCeti.NumberTheory.Height.Naive
 
 import Mathlib.Analysis.Complex.IsIntegral
 import Mathlib.Topology.Algebra.Polynomial
+import TauCeti.NumberTheory.NumberField.Global.Places.Height
+import TauCeti.NumberTheory.Height.SInteger
 import TauCeti.NumberTheory.NumberField.AdjoinPair
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
@@ -44,6 +47,9 @@ of bounded degree and bounded house.
   `TauCeti.exists_mem_rootSet_norm_eq_house`: the house is the maximum of the moduli of the
   complex conjugates; in particular `‖x‖ ≤ ⌈x⌉` for algebraic `x ∈ ℂ` (`TauCeti.norm_le_house`).
 * `TauCeti.house_eq_numberField_house`: on a number field the house is `NumberField.house`.
+* `NumberField.house_le_exp_logHeight₁`, `NumberField.logHeight₁_le_finrank_mul_posLog_house`:
+  `house x ≤ exp h(x)` for the relative height `h` over a number field `K`, and conversely
+  `h(x) ≤ [K : ℚ] log⁺ (house x)` for an algebraic integer `x` of `K`.
 * `TauCeti.house_map`, `TauCeti.house_eq_of_minpoly_eq`: invariance under field embeddings and
   conjugation.
 * `TauCeti.house_mul_le`, `TauCeti.house_add_le`, `TauCeti.house_pow`: the house is
@@ -64,11 +70,23 @@ of bounded degree and bounded house.
   lies in the number field `ℚ(α)` of degree `deg α`, with the same house.
 * `NumberField.house_natCast_mul_pow_mul_pow_le`: the house of `c bⁿ αʲ` in a number field is
   at most `(2 b max(1, ⌈α⌉))ⁿ` when `c ≤ 2ⁿ` and `j ≤ n`.
+* `NumberField.one_le_norm_mul_house_pow`: Liouville's inequality, a nonzero algebraic integer
+  `x` of a number field of degree `d` satisfies `1 ≤ ‖σ x‖ ⌈x⌉ᵈ⁻¹` for every complex embedding
+  `σ`.
+* `NumberField.eq_zero_of_norm_le_exp_of_house_le_exp`: Liouville's inequality in exponential
+  form, an element `y` of a number field with `m ^ N y` integral is zero once `‖σ y‖`, `⌈y⌉` and
+  `|m| ^ N` are small enough.
+* `TauCeti.inv_norm_le_pow_mul_house_pow_of_mem_rootSet`,
+  `TauCeti.inv_norm_le_natDenominator_pow_mul_house_pow_of_mem_rootSet`,
+  `TauCeti.inv_norm_le_natDenominator_pow_mul_house_pow`: every complex conjugate `z` of a
+  nonzero algebraic number `x` of degree `d` satisfies `‖z‖ ≥ den(x)⁻ᵈ ⌈x⌉¹⁻ᵈ`, and more
+  generally `‖z‖ ≥ b⁻ᵈ ⌈x⌉¹⁻ᵈ` whenever `b x` is integral for some positive integer `b`.
 
 ## References
 
 * J.-H. Evertse, *Diophantine Approximation*, lecture notes (2019), ch. 3, §3.4 and
-  Exercises 3.5, 3.6; ch. 3, Lemma 3.6, p. 42, for the Galois conjugate of modulus at least `1`.
+  Exercises 3.5, 3.6; ch. 3, Lemma 3.6, p. 42, for the Galois conjugate of modulus at least `1`;
+  ch. 3, Exercise 3.7, p. 60, for the lower bound `‖z‖ ≥ den(z)⁻ᵈ ⌈z⌉¹⁻ᵈ`.
 * C. Smyth, *The Mahler measure of algebraic numbers: a survey* (2008), §3.
 -/
 
@@ -134,6 +152,44 @@ theorem house_eq_numberField_house {K : Type*} [Field K] [NumberField K] (x : K)
   · obtain ⟨φ, -, hφ⟩ := Finset.exists_mem_eq_sup' Finset.univ_nonempty fun φ : K →+* ℂ ↦ ‖φ x‖₊
     rw [NumberField.house_eq_sup', hφ, coe_nnnorm]
     exact norm_le_house_of_mem_rootSet (hroots ▸ ⟨φ, rfl⟩)
+
+open Height NumberField in
+/-- Every conjugate of a number-field element has modulus at most the exponential of its
+relative logarithmic height. -/
+theorem _root_.NumberField.house_le_exp_logHeight₁ {K : Type*} [Field K] [NumberField K]
+    (x : K) : NumberField.house x ≤ Real.exp (logHeight₁ x) := by
+  by_cases hx : x = 0
+  · simp [hx, NumberField.house]
+  rw [NumberField.house, canonicalEmbedding]
+  refine (pi_norm_le_iff_of_nonneg (Real.exp_pos _).le).mpr fun φ ↦ ?_
+  let w : InfinitePlace K := InfinitePlace.mk φ
+  have h := TauCeti.GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁
+    (Sum.inr w) x
+  simp only [TauCeti.GlobalNumberFields.normalizedAbsValue_inr, Real.log_pow, abs_mul,
+    Nat.abs_cast] at h
+  have hm : (1 : ℝ) ≤ w.mult := by exact_mod_cast InfinitePlace.mult_pos (w := w)
+  have hw : Real.log (w x) ≤ logHeight₁ x :=
+    (le_abs_self _).trans ((le_mul_of_one_le_left (abs_nonneg _) hm).trans h)
+  -- The place constructed from φ evaluates x as the complex norm of φ x.
+  change w x ≤ Real.exp (logHeight₁ x)
+  rw [← Real.exp_log (InfinitePlace.pos_iff.mpr hx)]
+  exact Real.exp_le_exp.mpr hw
+
+open Height NumberField Real in
+/-- The relative logarithmic height of an algebraic integer `x` of a number field `K` is at most
+`[K : ℚ] * log⁺ (house x)`. This is a converse to `NumberField.house_le_exp_logHeight₁`; the
+integrality hypothesis is needed, since `1 / 2` has house `1 / 2` but positive height. -/
+theorem _root_.NumberField.logHeight₁_le_finrank_mul_posLog_house {K : Type*} [Field K]
+    [NumberField K] {x : K} (hx : IsIntegral ℤ x) :
+    logHeight₁ x ≤ Module.finrank ℚ K * log⁺ (NumberField.house x) := by
+  have hx' : x ∈ (∅ : Set (IsDedekindDomain.HeightOneSpectrum (𝓞 K))).integer K :=
+    (Set.mem_integer_empty_iff K).mpr ⟨⟨x, hx⟩, rfl⟩
+  rw [logHeight₁_eq_of_mem_integer _ hx', finsum_mem_empty, add_zero,
+    ← InfinitePlace.sum_mult_eq, Nat.cast_sum, Finset.sum_mul]
+  refine Finset.sum_le_sum fun w _ ↦ mul_le_mul_of_nonneg_left
+    (posLog_le_posLog (by linarith [apply_nonneg w x]) ?_) (Nat.cast_nonneg _)
+  rw [← InfinitePlace.norm_embedding_eq]
+  exact NumberField.norm_embedding_le_house _ _
 
 /-- The house depends only on `minpoly ℚ x`: conjugates, possibly lying in different fields, have
 equal house. -/
@@ -339,6 +395,97 @@ theorem exists_numberField_of_isIntegral_natCast_mul {α : F} {b : ℕ} (hb : b 
       (algebraMap ℚ⟮α⟯ F).injective]
     simpa [IntermediateField.AdjoinSimple.coe_gen] using hbα
   · rw [← house_coe, ← IntermediateField.algebraMap_apply, hα']
+
+/-- **Liouville's inequality** in a number field `K` of degree `d`: a nonzero algebraic integer
+`x ∈ K` satisfies `1 ≤ ‖σ x‖ ⌈x⌉ᵈ⁻¹` for every embedding `σ : K →+* ℂ`, since its norm is a
+nonzero integer. -/
+theorem _root_.NumberField.one_le_norm_mul_house_pow {K : Type*} [Field K] [NumberField K]
+    {x : K} (hx : IsIntegral ℤ x) (h0 : x ≠ 0) (σ : K →+* ℂ) :
+    1 ≤ ‖σ x‖ * NumberField.house x ^ (Module.finrank ℚ K - 1) := by
+  have h1 : (1 : ℝ) ≤ |(Algebra.norm ℚ x : ℝ)| :=
+    NumberField.RingOfIntegers.one_le_abs_norm (α := ⟨x, hx⟩) fun h ↦ h0 (congr_arg Subtype.val h)
+  rw [← Real.norm_eq_abs, Rat.norm_cast_real] at h1
+  exact h1.trans (NumberField.norm_norm_le_norm_mul_house_pow x σ)
+
+/-- **Liouville's inequality in exponential form.** Let `K` be a number field of degree `d`,
+`σ : K →+* ℂ`, `y ∈ K` and `m ≠ 0` an integer with `m ^ N y` an algebraic integer. If
+`‖σ y‖ ≤ exp A`, `⌈y⌉ ≤ exp B` and `|m| ^ N ≤ exp C` with `C + A + (d - 1) (C + B) < 0`,
+then `y = 0`. -/
+theorem _root_.NumberField.eq_zero_of_norm_le_exp_of_house_le_exp {K : Type*} [Field K]
+    [NumberField K] (σ : K →+* ℂ) {y : K} {m : ℤ} (hm : m ≠ 0) {N : ℕ}
+    (hint : IsIntegral ℤ ((m : K) ^ N * y)) {A B C : ℝ} (hσ : ‖σ y‖ ≤ Real.exp A)
+    (hy : NumberField.house y ≤ Real.exp B) (hmC : |(m : ℝ)| ^ N ≤ Real.exp C)
+    (h : C + A + (Module.finrank ℚ K - 1 : ℕ) * (C + B) < 0) :
+    y = 0 := by
+  by_contra hy0
+  have hx0 : (m : K) ^ N * y ≠ 0 := mul_ne_zero (pow_ne_zero _ (Int.cast_ne_zero.2 hm)) hy0
+  have hσx : ‖σ ((m : K) ^ N * y)‖ ≤ Real.exp C * Real.exp A := by
+    rw [map_mul, map_pow, map_intCast, norm_mul, norm_pow, Complex.norm_intCast]
+    exact mul_le_mul hmC hσ (norm_nonneg _) (Real.exp_pos _).le
+  have hhx : NumberField.house ((m : K) ^ N * y) ≤ Real.exp C * Real.exp B := by
+    refine (NumberField.house_mul_le _ _).trans
+      (mul_le_mul ?_ hy (NumberField.house_nonneg _) (Real.exp_pos _).le)
+    rwa [NumberField.house_pow, NumberField.house_intCast, Int.cast_abs]
+  have hlt :
+      Real.exp C * Real.exp A * (Real.exp C * Real.exp B) ^ (Module.finrank ℚ K - 1) < 1 := by
+    rw [← Real.exp_add, ← Real.exp_add, ← Real.exp_nat_mul, ← Real.exp_add]
+    exact Real.exp_lt_one_iff.2 (by linarith)
+  refine absurd (lt_of_le_of_lt ?_ hlt) (lt_irrefl 1)
+  exact (NumberField.one_le_norm_mul_house_pow hint hx0 σ).trans <| mul_le_mul hσx
+    (pow_le_pow_left₀ (NumberField.house_nonneg _) hhx _)
+    (pow_nonneg (NumberField.house_nonneg _) _) (by positivity)
+
+/-- A Liouville-type lower bound for the conjugates of a nonzero algebraic number: if `b ≠ 0`
+and `b x` is integral over `ℤ`, then every complex conjugate `z` of `x` satisfies
+`‖z‖⁻¹ ≤ bᵈ ⌈x⌉ᵈ⁻¹`, that is, `‖z‖ ≥ b⁻ᵈ ⌈x⌉¹⁻ᵈ`, where `d` is the degree of `x`. For an
+algebraic integer `x` one may take `b = 1`. -/
+theorem inv_norm_le_pow_mul_house_pow_of_mem_rootSet {x : F} {b : ℕ} (hb : b ≠ 0)
+    (hbx : IsIntegral ℤ ((b : F) * x)) (h0 : x ≠ 0) {z : ℂ}
+    (hz : z ∈ (minpoly ℚ x).rootSet ℂ) :
+    ‖z‖⁻¹ ≤ (b : ℝ) ^ (minpoly ℚ x).natDegree * house x ^ ((minpoly ℚ x).natDegree - 1) := by
+  obtain ⟨K, _, α, rfl, hfin, hint, hhouse⟩ := exists_numberField_of_isIntegral_natCast_mul hb hbx
+  have hα0 : α ≠ 0 := by rintro rfl; simp at h0
+  have hmin : minpoly ℚ (algebraMap K F α) = minpoly ℚ α :=
+    minpoly.algHom_eq (IsScalarTower.toAlgHom ℚ K F) (algebraMap K F).injective α
+  rw [hmin] at hz
+  obtain ⟨σ, rfl⟩ : ∃ σ : K →+* ℂ, σ α = z := by
+    rwa [← NumberField.Embeddings.range_eval_eq_rootSet_minpoly] at hz
+  -- Liouville's inequality for the nonzero algebraic integer `b α`, whose conjugates have modulus
+  -- at most `b ⌈x⌉`.
+  have hnorm := NumberField.one_le_norm_mul_house_pow hint
+    (mul_ne_zero (Nat.cast_ne_zero.mpr hb) hα0) σ
+  rw [NumberField.house_nat_mul, hhouse, hfin, hmin] at hnorm
+  have hd : (minpoly ℚ α).natDegree = (minpoly ℚ α).natDegree - 1 + 1 :=
+    (Nat.sub_add_cancel (minpoly.natDegree_pos (Algebra.IsIntegral.isIntegral α))).symm
+  have hσ : 0 < ‖σ α‖ := norm_pos_iff.mpr ((map_ne_zero σ).mpr hα0)
+  rw [hmin, inv_le_iff_one_le_mul₀' hσ]
+  calc (1 : ℝ)
+      ≤ b * ‖σ α‖ * (b * house (algebraMap K F α)) ^ ((minpoly ℚ α).natDegree - 1) := by
+        simpa using hnorm
+    _ = _ := by rw [hd, pow_succ, Nat.add_sub_cancel]; ring
+
+/-- The lower bound `‖z‖⁻¹ ≤ den(x)ᵈ ⌈x⌉ᵈ⁻¹` for every complex conjugate `z` of a nonzero
+algebraic number `x` of degree `d`, where `den(x)` is its natural-number denominator.
+Equivalently, `‖z‖ ≥ den(x)⁻ᵈ ⌈x⌉¹⁻ᵈ`. -/
+theorem inv_norm_le_natDenominator_pow_mul_house_pow_of_mem_rootSet {x : F} (h0 : x ≠ 0)
+    {z : ℂ} (hz : z ∈ (minpoly ℚ x).rootSet ℂ) :
+    ‖z‖⁻¹ ≤ (Algebra.natDenominator x : ℝ) ^ (minpoly ℚ x).natDegree *
+      house x ^ ((minpoly ℚ x).natDegree - 1) := by
+  have hx : IsAlgebraic ℚ x := by
+    by_contra hx
+    simp [minpoly.eq_zero (fun h ↦ hx h.isAlgebraic)] at hz
+  refine inv_norm_le_pow_mul_house_pow_of_mem_rootSet
+    (IsAlgebraic.natDenominator_ne_zero ((IsFractionRing.isAlgebraic_iff ℤ ℚ F).2 hx)) ?_ h0 hz
+  simpa [nsmul_eq_mul] using Algebra.isIntegral_natDenominator_smul x
+
+/-- A nonzero algebraic complex number `z` of degree `d` satisfies
+`‖z‖⁻¹ ≤ den(z)ᵈ ⌈z⌉ᵈ⁻¹`, that is, `‖z‖ ≥ den(z)⁻ᵈ ⌈z⌉¹⁻ᵈ`. -/
+theorem inv_norm_le_natDenominator_pow_mul_house_pow {z : ℂ} (hz : IsAlgebraic ℚ z)
+    (h0 : z ≠ 0) :
+    ‖z‖⁻¹ ≤ (Algebra.natDenominator z : ℝ) ^ (minpoly ℚ z).natDegree *
+      house z ^ ((minpoly ℚ z).natDegree - 1) :=
+  inv_norm_le_natDenominator_pow_mul_house_pow_of_mem_rootSet h0 <|
+    (mem_rootSet_of_ne (minpoly.ne_zero hz.isIntegral)).2 (minpoly.aeval ℚ z)
 
 /-- In a number field, the house of `c b ^ n α ^ j` is at most `(2 b max(1, ⌈α⌉)) ^ n` when
 `c ≤ 2 ^ n` and `j ≤ n`. -/

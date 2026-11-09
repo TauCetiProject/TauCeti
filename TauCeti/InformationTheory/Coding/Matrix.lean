@@ -11,7 +11,6 @@ public import TauCeti.InformationTheory.Coding.Basic
 public import TauCeti.LinearAlgebra.Matrix.ColumnRowPartitioned
 
 import Mathlib.LinearAlgebra.Basis.Submodule
-import TauCeti.Algebra.Module.Submodule.Map
 import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
@@ -409,8 +408,7 @@ theorem IsGeneratorMatrix.vecMul_encodingEquiv_symm_apply (hG : C.IsGeneratorMat
 theorem isGeneratorMatrix_of_basis (b : Module.Basis ρ F C) :
     C.IsGeneratorMatrix (Matrix.of fun r ↦ (b r : ι → F)) := by
   rw [isGeneratorMatrix_def, generatedBy_eq_span_rows, Matrix.of_row]
-  simpa only [LinearMap.id_apply, Submodule.map_id] using
-    (Submodule.map_eq_span_basis C b LinearMap.id).symm
+  exact (Submodule.span_range_subtype_eq_top_iff C fun r ↦ (b r).2).1 b.span_eq
 
 omit [Fintype ρ] in
 /-- The matrix whose rows are the vectors of a basis has linearly independent rows. -/

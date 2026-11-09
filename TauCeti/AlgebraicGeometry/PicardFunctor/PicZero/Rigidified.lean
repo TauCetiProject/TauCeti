@@ -177,53 +177,24 @@ lemma rigidifiedPicardDegreeZeroFunctorι_app_mem {T : (Over S)ᵒᵖ}
       rigidifiedPicardDegreeZeroSubgroup f x₀ hx₀ T :=
   a.2
 
-private def rigidifiedPicardDegreeZeroToRelativeHom (T : (Over S)ᵒᵖ) :
-    (rigidifiedPicardDegreeZeroFunctor f x₀ hx₀).obj T →*
-      (relativePicardDegreeZeroFunctor f).obj T :=
-  relativePicardDegreeZeroFunctor.mkHom f
-    (((rigidifiedPicardFunctorIso f x₀ hx₀).hom.app T).hom.comp
-      ((rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀).app T).hom) fun a ↦
-        (mem_relativePicardDegreeZeroSubgroup_iff f).mp <|
-          (mem_rigidifiedPicardDegreeZeroSubgroup_iff f x₀ hx₀).mp
-            (rigidifiedPicardDegreeZeroFunctorι_app_mem f x₀ hx₀ a)
-
-@[simp]
-private lemma relativePicardDegreeZeroFunctorι_app_toRelativeHom (T : (Over S)ᵒᵖ)
-    (a : (rigidifiedPicardDegreeZeroFunctor f x₀ hx₀).obj T) :
-    (relativePicardDegreeZeroFunctorι f).app T
-        (rigidifiedPicardDegreeZeroToRelativeHom f x₀ hx₀ T a) =
-      (rigidifiedPicardFunctorIso f x₀ hx₀).hom.app T
-        ((rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀).app T a) := by
-  unfold rigidifiedPicardDegreeZeroToRelativeHom
-  exact relativePicardDegreeZeroFunctorι_app_mkHom f _ _ _
-
 /-- Forgetting the rigidification maps the degree-zero rigidified Picard functor to the
 degree-zero relative Picard functor. -/
 def rigidifiedPicardDegreeZeroToRelative :
-    rigidifiedPicardDegreeZeroFunctor f x₀ hx₀ ⟶ relativePicardDegreeZeroFunctor f where
-  app T := CommGrpCat.ofHom (rigidifiedPicardDegreeZeroToRelativeHom f x₀ hx₀ T)
-  naturality := by
-    intro T T' g
-    ext a
-    apply relativePicardDegreeZeroFunctorι_app_injective f _
-    -- Both restricted functors are opaque, so compare their sections through the inclusion.
-    change (relativePicardDegreeZeroFunctorι f).app T'
-        (rigidifiedPicardDegreeZeroToRelativeHom f x₀ hx₀ T'
-          ((rigidifiedPicardDegreeZeroFunctor f x₀ hx₀).map g a)) =
-      (relativePicardDegreeZeroFunctorι f).app T'
-        ((relativePicardDegreeZeroFunctor f).map g
-          (rigidifiedPicardDegreeZeroToRelativeHom f x₀ hx₀ T a))
-    simp only [relativePicardDegreeZeroFunctorι_app_toRelativeHom,
-      NatTrans.naturality_apply (relativePicardDegreeZeroFunctorι f),
-      NatTrans.naturality_apply (rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀)]
-    exact NatTrans.naturality_apply (rigidifiedPicardFunctorIso f x₀ hx₀).hom g _
+    rigidifiedPicardDegreeZeroFunctor f x₀ hx₀ ⟶ relativePicardDegreeZeroFunctor f :=
+  relativePicardDegreeZeroFunctor.lift f (H := 𝟭 _)
+    (rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀ ≫ (rigidifiedPicardFunctorIso f x₀ hx₀).hom)
+    fun _ a ↦ (mem_relativePicardDegreeZeroSubgroup_iff f).mp <|
+      (mem_rigidifiedPicardDegreeZeroSubgroup_iff f x₀ hx₀).mp
+        (rigidifiedPicardDegreeZeroFunctorι_app_mem f x₀ hx₀ a)
 
 @[simp]
-private lemma rigidifiedPicardDegreeZeroToRelative_app_apply (T : (Over S)ᵒᵖ)
+private lemma relativePicardDegreeZeroFunctorι_app_toRelative_app (T : (Over S)ᵒᵖ)
     (a : (rigidifiedPicardDegreeZeroFunctor f x₀ hx₀).obj T) :
-    (rigidifiedPicardDegreeZeroToRelative f x₀ hx₀).app T a =
-      rigidifiedPicardDegreeZeroToRelativeHom f x₀ hx₀ T a :=
-  rfl
+    (relativePicardDegreeZeroFunctorι f).app T
+        ((rigidifiedPicardDegreeZeroToRelative f x₀ hx₀).app T a) =
+      (rigidifiedPicardFunctorIso f x₀ hx₀).hom.app T
+        ((rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀).app T a) :=
+  relativePicardDegreeZeroFunctorι_app_lift_app f (H := 𝟭 _) _ _ T a
 
 private def relativePicardDegreeZeroToRigidifiedHom (T : (Over S)ᵒᵖ) :
     (relativePicardDegreeZeroFunctor f).obj T →*
@@ -289,19 +260,17 @@ def rigidifiedPicardDegreeZeroFunctorIso :
       ext T a
       apply rigidifiedPicardDegreeZeroFunctorι_app_injective f x₀ hx₀ T
       simp only [NatTrans.comp_app, CommGrpCat.comp_apply,
-        rigidifiedPicardDegreeZeroToRelative_app_apply,
         relativePicardDegreeZeroToRigidified_app_apply,
         rigidifiedPicardDegreeZeroFunctorι_app_toRigidifiedHom,
-        relativePicardDegreeZeroFunctorι_app_toRelativeHom]
+        relativePicardDegreeZeroFunctorι_app_toRelative_app]
       exact (rigidifiedPicardFunctorIso f x₀ hx₀).hom_inv_id_app_apply T
         ((rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀).app T a)
     inv_hom_id := by
+      ext1
       ext T c
-      apply relativePicardDegreeZeroFunctorι_app_injective f T
-      simp only [NatTrans.comp_app, CommGrpCat.comp_apply,
+      simp only [Category.id_comp, NatTrans.comp_app, CommGrpCat.comp_apply,
         relativePicardDegreeZeroToRigidified_app_apply,
-        rigidifiedPicardDegreeZeroToRelative_app_apply,
-        relativePicardDegreeZeroFunctorι_app_toRelativeHom,
+        relativePicardDegreeZeroFunctorι_app_toRelative_app,
         rigidifiedPicardDegreeZeroFunctorι_app_toRigidifiedHom]
       exact (rigidifiedPicardFunctorIso f x₀ hx₀).inv_hom_id_app_apply T
         ((relativePicardDegreeZeroFunctorι f).app T c) }
@@ -312,11 +281,8 @@ degree-zero condition is the comparison of the full rigidified and relative Pica
 theorem rigidifiedPicardDegreeZeroToRelative_comp_relativePicardDegreeZeroFunctorι :
     rigidifiedPicardDegreeZeroToRelative f x₀ hx₀ ≫ relativePicardDegreeZeroFunctorι f =
       rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀ ≫
-        (rigidifiedPicardFunctorIso f x₀ hx₀).hom := by
-  ext T a
-  simp only [NatTrans.comp_app, CommGrpCat.comp_apply,
-    rigidifiedPicardDegreeZeroToRelative_app_apply,
-    relativePicardDegreeZeroFunctorι_app_toRelativeHom]
+        (rigidifiedPicardFunctorIso f x₀ hx₀).hom :=
+  relativePicardDegreeZeroFunctor.lift_comp_ι' f _ _
 
 /-- Restoring the rigidification of a degree-zero relative Picard class and then forgetting the
 degree-zero condition is the inverse comparison of the full Picard presheaves. -/

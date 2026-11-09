@@ -85,7 +85,7 @@ theorem Algebra.exists_norm_eq_of_norm_sub_mem {I : Ideal R} [HenselianRing R I]
     have h : Algebra.norm R a = u * (↑u⁻¹ * (Algebra.norm R a - u) + 1) := by
       rw [mul_add, mul_one, ← mul_assoc, Units.mul_inv, one_mul, sub_add_cancel]
     rw [h]
-    refine u.isUnit.mul (Ideal.isUnit_of_sub_one_mem_jacobson_bot _ ?_)
+    refine u.isUnit.mul (Ideal.isUnit_of_sub_one_mem_jacobson _ ?_)
     rw [add_sub_cancel_right]
     exact HenselianRing.jac (I.mul_mem_left _ hav)
   -- Solve the monic equation `Q(t) = κ v N(a)⁻¹` by Hensel's lemma at the approximate root `0`.

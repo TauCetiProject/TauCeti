@@ -19,6 +19,8 @@ algebras and requires no cohomological invariant map.
 
 * `TauCeti.RegularFormClass.quaternionSubgroupSignEquiv_apply_hasseInvariant`: the comparison of
   Brauer-valued and sign-valued Hasse invariants.
+* `TauCeti.RegularFormClass.localHasse_mk_neg_neg_mul`: the Hasse sign of a pure quaternion
+  norm form, obtained from its Brauer-valued invariant.
 
 ## References
 
@@ -55,6 +57,23 @@ theorem quaternionSubgroupSignEquiv_apply_hasseInvariant (q : RegularFormClass K
       simp [f]
     rw [hprod, map_prod, localHasse_mk]
     simp only [map_prod, f, BrauerGroup.quaternionSubgroupSignEquiv_apply_quaternionClass]
+
+/-- The Hasse sign of the pure quaternion norm form `⟨-a, -b, ab⟩` is
+`(a,b) · (-1,-1)`. This takes priority over the general diagonal product formula. -/
+@[simp high]
+theorem localHasse_mk_neg_neg_mul (a b : Kˣ) :
+    localHasse (Quotient.mk (regularFormSetoid K) ⟨3, ![-a, -b, a * b]⟩) =
+      hilbertSymbol a b * hilbertSymbol (-1 : Kˣ) (-1) := by
+  let f := BrauerGroup.quaternionSubgroupSignEquiv (K := K)
+  have h : (⟨hasseInvariant (Quotient.mk (regularFormSetoid K) ⟨3, ![-a, -b, a * b]⟩),
+      hasseInvariant_mem_quaternionSubgroup _⟩ : BrauerGroup.quaternionSubgroup K) =
+      ⟨BrauerGroup.quaternionClass a b, BrauerGroup.quaternionClass_mem_quaternionSubgroup K a b⟩ *
+      ⟨BrauerGroup.quaternionClass (-1) (-1),
+        BrauerGroup.quaternionClass_mem_quaternionSubgroup K (-1) (-1)⟩ := by
+    exact Subtype.ext (hasseInvariant_mk_neg_neg_mul a b)
+  have hf := congrArg f h
+  simpa only [f, quaternionSubgroupSignEquiv_apply_hasseInvariant, map_mul,
+    BrauerGroup.quaternionSubgroupSignEquiv_apply_quaternionClass] using hf
 
 end RegularFormClass
 

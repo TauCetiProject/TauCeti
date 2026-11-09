@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.Algebra.NeZero
+import Mathlib.Data.Set.Image
 import Mathlib.Data.Set.Insert
 
 /-!
@@ -18,6 +19,7 @@ the entry of an insertion at one of them in the other position, and compares upd
 insertions there. It also shows how `Fin.snoc` interacts with reindexing along a map extended to
 send the last position to the last position. The image of an initial segment under `Fin.cons`
 is obtained by inserting the first entry into the corresponding image for the tail.
+A tuple of length three is determined by its three entries.
 
 ## Main results
 
@@ -29,8 +31,17 @@ is obtained by inserting the first entry into the corresponding image for the ta
   appending and then reindexing along the extension of `g` that fixes the last position.
 * `Fin.tail_contractNth_succ`, `Fin.init_contractNth_castSucc`: contracting two adjacent entries
   away from the first (last) one commutes with dropping the first (last) entry.
+* `Fin.snoc_comp_swap_castSucc`: exchanging two entries other than the last one commutes with
+  appending.
 * `Fin.tail_snoc`: dropping the first entry commutes with appending a last one.
 * `Fin.snoc_tail_comp_rev`: appending the first entry to the reversed tail reverses the tuple.
+* `Fin.forall_snoc_eq_iff_snoc_eq`: appending one entry to each of two tuples gives the same
+  equality pattern exactly when the old patterns agree and the new entries repeat the same
+  positions.
+* `Fin.update_append_castAdd`, `Fin.update_append_natAdd`: updating an entry of `Fin.append u v`
+  updates the corresponding entry of `u` or of `v`.
+* `Fin.append_comp_swap_castAdd`, `Fin.append_comp_swap_natAdd`: exchanging two entries of
+  `Fin.append u v` exchanges the corresponding entries of `u` or of `v`.
 * `Fin.contractNth_zero_cons`, `Fin.contractNth_succ_cons`: contracting entries of a tuple
   `Fin.cons x a`.
 * `Fin.contractNth_castSucc_castSucc_snoc`, `Fin.contractNth_castSucc_last_snoc`: contracting
@@ -44,9 +55,18 @@ is obtained by inserting the first entry into the corresponding image for the ta
   is deleting entry `j + 1` and then overwriting entry `j` by the contraction.
 * `Fin.update_removeNth_succ_eq_removeNth_castSucc`: deleting entry `j + 1` and then overwriting
   entry `j` by the deleted entry is deleting entry `j`.
+* `Fin.contractNth_castSucc_const`: contracting two adjacent entries of a constant tuple.
+* `Fin.insertNth_apply_zero_of_ne_zero`, `Fin.insertNth_apply_last_of_ne_last`: inserting away
+  from the first (last) position keeps the first (last) entry.
+* `Fin.contractNth_castSucc_insertNth_succ_castSucc`: contracting the two steps of a path that
+  meet at an inserted vertex.
 * `Fin.removeNth_succ_cons`: deleting an entry of `Fin.cons x a` other than the first deletes
   the corresponding entry of `a`.
 * `Fin.insertNth_one_ne_zero`: inserting the entry `1` gives a nonzero tuple.
+* `Fin.injective_apply_zero_one_two`: a tuple of length three is determined by its entries.
+* `Fin.injective_comp_succAbove_of_eq` and `Fin.range_comp_succAbove_of_eq`: if `b p = b q`,
+  deleting the entry at `p` or at `q` gives an injective tuple in the same cases, and does not
+  change the set of entries.
 -/
 
 public section
@@ -91,6 +111,16 @@ theorem snoc_comp_snoc_castSucc_comp {n : ℕ} (c : Fin n → α) (z : α) (g : 
   funext i
   exact lastCases (by simp) (fun j => by simp) i
 
+/-- Exchanging the entries `j` and `k` of `Fin.snoc c z` is appending `z` to `c` with the entries
+`j` and `k` exchanged. -/
+theorem snoc_comp_swap_castSucc {n : ℕ} (c : Fin n → α) (z : α) (j k : Fin n) :
+    snoc c z ∘ Equiv.swap j.castSucc k.castSucc = snoc (c ∘ Equiv.swap j k) z := by
+  funext i
+  refine lastCases ?_ (fun i ↦ ?_) i
+  · simp [Equiv.swap_apply_of_ne_of_ne, (castSucc_lt_last j).ne.symm, (castSucc_lt_last k).ne.symm]
+  · rw [Function.comp_apply, ← (castSucc_injective n).map_swap j k i]
+    simp
+
 /-- Dropping the first entry of `Fin.snoc a x` is appending `x` to the tail of `a`. -/
 theorem tail_snoc {n : ℕ} (a : Fin (n + 1) → α) (x : α) :
     tail (snoc a x : Fin (n + 2) → α) = snoc (tail a) x := by
@@ -100,6 +130,58 @@ theorem tail_snoc {n : ℕ} (a : Fin (n + 1) → α) (x : α) :
 theorem snoc_tail_comp_rev {α : Type*} {n : ℕ} (a : Fin (n + 1) → α) :
     snoc (tail a ∘ rev) (a 0) = a ∘ rev := by
   rw [← cons_comp_rev, cons_self_tail]
+
+/-- Appending one entry to each of two tuples gives the same equality pattern exactly when the
+old patterns agree and the new entries repeat the same positions. -/
+theorem forall_snoc_eq_iff_snoc_eq {β : Sort*} {n : ℕ} {a : Fin n → α} {b : Fin n → β} {x : α}
+    {y : β} :
+    (∀ i j, (snoc a x : Fin (n + 1) → α) i = (snoc a x : Fin (n + 1) → α) j ↔
+      (snoc b y : Fin (n + 1) → β) i = (snoc b y : Fin (n + 1) → β) j) ↔
+      (∀ i j, a i = a j ↔ b i = b j) ∧ ∀ i, a i = x ↔ b i = y := by
+  simp only [Fin.forall_fin_succ', snoc_castSucc, snoc_last, eq_comm (a := x), eq_comm (a := y),
+    iff_self, and_true]
+  exact ⟨fun h => ⟨fun i => (h.1 i).1, fun i => (h.1 i).2⟩,
+    fun h => ⟨fun i => ⟨h.1 i, h.2 i⟩, h.2⟩⟩
+
+/-- Updating `Fin.append u v` at a position of `u` is appending the updated `u` to `v`. -/
+@[simp]
+theorem update_append_castAdd {n : ℕ} (u : Fin m → α) (v : Fin n → α) (i : Fin m) (a : α) :
+    Function.update (append u v) (castAdd n i) a = append (Function.update u i a) v :=
+  funext fun j ↦ addCases (fun j ↦ by simp [Function.update_apply])
+    (fun j ↦ by
+      rw [Function.update_of_ne fun h ↦ by simp [Fin.ext_iff] at h; omega]
+      simp) j
+
+/-- Updating `Fin.append u v` at a position of `v` is appending `u` to the updated `v`. -/
+@[simp]
+theorem update_append_natAdd {n : ℕ} (u : Fin m → α) (v : Fin n → α) (i : Fin n) (a : α) :
+    Function.update (append u v) (natAdd m i) a = append u (Function.update v i a) :=
+  funext fun j ↦ addCases (fun j ↦ by
+      rw [Function.update_of_ne fun h ↦ by simp [Fin.ext_iff] at h; omega]
+      simp)
+    (fun j ↦ by simp [Function.update_apply]) j
+
+/-- Exchanging two entries of `Fin.append u v` at positions of `u` is appending `v` to `u` with
+those entries exchanged. -/
+theorem append_comp_swap_castAdd {n : ℕ} (u : Fin m → α) (v : Fin n → α) (j k : Fin m) :
+    append u v ∘ Equiv.swap (castAdd n j) (castAdd n k) = append (u ∘ Equiv.swap j k) v :=
+  funext fun i ↦ addCases
+    (fun i ↦ by rw [Function.comp_apply, ← (castAdd_injective m n).map_swap j k i]; simp)
+    (fun i ↦ by
+      rw [Function.comp_apply, Equiv.swap_apply_of_ne_of_ne
+        (fun h ↦ by simp [Fin.ext_iff] at h; omega) (fun h ↦ by simp [Fin.ext_iff] at h; omega)]
+      simp) i
+
+/-- Exchanging two entries of `Fin.append u v` at positions of `v` is prepending `u` to `v` with
+those entries exchanged. -/
+theorem append_comp_swap_natAdd {n : ℕ} (u : Fin m → α) (v : Fin n → α) (j k : Fin n) :
+    append u v ∘ Equiv.swap (natAdd m j) (natAdd m k) = append u (v ∘ Equiv.swap j k) :=
+  funext fun i ↦ addCases
+    (fun i ↦ by
+      rw [Function.comp_apply, Equiv.swap_apply_of_ne_of_ne
+        (fun h ↦ by simp [Fin.ext_iff] at h; omega) (fun h ↦ by simp [Fin.ext_iff] at h; omega)]
+      simp)
+    (fun i ↦ by rw [Function.comp_apply, ← (natAdd_injective n m).map_swap j k i]; simp) i
 
 section ContractNth
 
@@ -184,6 +266,16 @@ theorem contractNth_castSucc_eq_update_removeNth_succ (j : Fin (n + 1)) (a : Fin
   · rw [Function.update_of_ne hkj.ne', contractNth_apply_of_gt _ _ _ _ hkj, removeNth_apply,
       succAbove_of_lt_succ _ _ (by simpa using hkj)]
 
+/-- Contracting two adjacent entries of a constant tuple overwrites one entry of the shorter
+constant tuple by the contraction. -/
+theorem contractNth_castSucc_const (j : Fin n) (x : α) :
+    contractNth j.castSucc op (fun _ => x) = Function.update (fun _ => x) j (op x x) := by
+  funext k
+  rcases lt_trichotomy k j with hkj | rfl | hkj
+  · rw [Function.update_of_ne hkj.ne, contractNth_apply_of_lt _ _ _ _ hkj]
+  · rw [Function.update_self, contractNth_apply_of_eq _ _ _ _ rfl]
+  · rw [Function.update_of_ne hkj.ne', contractNth_apply_of_gt _ _ _ _ hkj]
+
 end ContractNth
 
 /-- Deleting entry `j + 1` and then overwriting entry `j` by the deleted entry is deleting
@@ -200,6 +292,50 @@ theorem update_removeNth_succ_eq_removeNth_castSucc {n : ℕ} (j : Fin (n + 1))
   · rw [Function.update_of_ne hkj.ne', removeNth_apply, removeNth_apply,
       succAbove_of_lt_succ _ _ (by simpa using hkj),
       succAbove_of_le_castSucc _ _ (by simpa using hkj.le)]
+
+/-- Inserting at a position other than the first keeps the first entry. -/
+@[simp]
+theorem insertNth_apply_zero_of_ne_zero {β : Type*} {n : ℕ} {p : Fin (n + 2)} (hp : p ≠ 0)
+    (v : β) (x : Fin (n + 1) → β) : insertNth (α := fun _ => β) p v x 0 = x 0 := by
+  rw [← succAbove_ne_zero_zero hp, insertNth_apply_succAbove]
+
+/-- Inserting at a position other than the last keeps the last entry. -/
+@[simp]
+theorem insertNth_apply_last_of_ne_last {β : Type*} {n : ℕ} {p : Fin (n + 2)}
+    (hp : p ≠ last (n + 1)) (v : β) (x : Fin (n + 1) → β) :
+    insertNth (α := fun _ => β) p v x (last (n + 1)) = x (last n) := by
+  rw [← succAbove_ne_last_last hp, insertNth_apply_succAbove]
+
+/-- **Contracting along a path with an inserted vertex.** Let `f k` be a function of the two
+endpoints of the `k`-th step of a path. Along the path obtained from `x` by inserting `v` after
+`xₗ`, contracting the steps `l` and `l + 1` gives the entries `f ((l + 1).succAbove k)` read
+along `x`, except in position `l`, which holds `op (f l xₗ v) (f (l + 1) v xₗ₊₁)`. -/
+theorem contractNth_castSucc_insertNth_succ_castSucc {β γ : Sort*} {n : ℕ} (op : γ → γ → γ)
+    (l : Fin n) (f : Fin (n + 1) → β → β → γ) (x : Fin (n + 1) → β) (v : β) :
+    contractNth l.castSucc op (fun k => f k
+        (insertNth (α := fun _ => β) l.succ.castSucc v x k.castSucc)
+        (insertNth (α := fun _ => β) l.succ.castSucc v x k.succ)) =
+      Function.update (fun k => f (l.succ.succAbove k) (x k.castSucc) (x k.succ)) l
+        (op (f l.castSucc (x l.castSucc) v) (f l.succ v (x l.succ))) := by
+  funext k
+  rcases lt_trichotomy k l with h | rfl | h
+  · rw [contractNth_apply_of_lt _ _ _ _ h, Function.update_of_ne h.ne,
+      succAbove_of_castSucc_lt _ _ (by simpa using h.le)]
+    have h₁ : k.castSucc.castSucc < l.succ.castSucc := lt_def.mpr (by simp; omega)
+    have h₂ : k.succ.castSucc < l.succ.castSucc := lt_def.mpr (by simp; omega)
+    rw [← succAbove_of_castSucc_lt _ _ h₁, succ_castSucc k, ← succAbove_of_castSucc_lt _ _ h₂,
+      insertNth_apply_succAbove, insertNth_apply_succAbove]
+  · rw [contractNth_apply_of_eq _ _ _ _ rfl, Function.update_self]
+    have h₁ : k.castSucc.castSucc < k.succ.castSucc := lt_def.mpr (by simp)
+    rw [← succAbove_of_castSucc_lt _ _ h₁, succ_castSucc k,
+      ← succAbove_of_le_castSucc k.succ.castSucc k.succ le_rfl, insertNth_apply_same,
+      insertNth_apply_succAbove, insertNth_apply_succAbove]
+  · rw [contractNth_apply_of_gt _ _ _ _ h, Function.update_of_ne h.ne',
+      succAbove_of_le_castSucc _ _ (by simpa using h)]
+    have h₁ : l.succ.castSucc ≤ k.castSucc.castSucc := le_def.mpr (by simp; omega)
+    have h₂ : l.succ.castSucc ≤ k.succ.castSucc := le_def.mpr (by simp; omega)
+    rw [← succ_castSucc k, ← succAbove_of_le_castSucc _ _ h₁, ← succAbove_of_le_castSucc _ _ h₂,
+      insertNth_apply_succAbove, insertNth_apply_succAbove]
 
 /-- Deleting an entry of `Fin.cons x a` other than the first deletes the corresponding entry
 of `a`. -/
@@ -221,5 +357,61 @@ theorem image_cons_le_eq_insert {α : Type*} {n : ℕ} (x : α) (p : Fin m → �
 theorem insertNth_one_ne_zero {α : Type*} [Zero α] [One α] [NeZero (1 : α)] {n : ℕ}
     (i : Fin (n + 1)) (z : Fin n → α) : insertNth (α := fun _ ↦ α) i 1 z ≠ 0 :=
   fun h ↦ one_ne_zero (α := α) (by simpa using congr_fun h i)
+
+/-- A tuple of length three is determined by its three entries. -/
+theorem injective_apply_zero_one_two {α : Type*} :
+    Function.Injective fun x : Fin 3 → α ↦ (x 0, x 1, x 2) := by
+  intro x y h
+  simp only [Prod.mk.injEq] at h
+  funext m
+  match m with
+  | 0 => exact h.1
+  | 1 => exact h.2.1
+  | 2 => exact h.2.2
+
+
+/-- If deleting the entry at `q` leaves an injective tuple, two positions other than `q` holding
+the same entry are equal. -/
+theorem eq_of_injective_comp_succAbove {n : ℕ} {b : Fin (n + 1) → α} {q : Fin (n + 1)}
+    (hq : Function.Injective (b ∘ q.succAbove)) {i j : Fin (n + 1)} (hi : i ≠ q) (hj : j ≠ q)
+    (h : b i = b j) : i = j := by
+  obtain ⟨i, rfl⟩ := exists_succAbove_eq hi
+  obtain ⟨j, rfl⟩ := exists_succAbove_eq hj
+  exact congrArg _ (hq h)
+
+/-- If `b p = b q`, deleting the entry at `p` leaves an injective tuple exactly when
+deleting the entry at `q` does. -/
+theorem injective_comp_succAbove_of_eq {n : ℕ} {b : Fin (n + 1) → α} {p q : Fin (n + 1)}
+    (h : b p = b q) (hp : Function.Injective (b ∘ p.succAbove)) :
+    Function.Injective (b ∘ q.succAbove) := by
+  obtain rfl | hpq := eq_or_ne p q
+  · exact hp
+  intro x y hxy
+  have key (z : Fin (n + 1)) (hz : z ≠ q) :
+      (if z = p then q else z) ≠ p ∧ b (if z = p then q else z) = b z := by
+    split_ifs with hzp
+    · exact ⟨hpq.symm, hzp ▸ h.symm⟩
+    · exact ⟨hzp, rfl⟩
+  have hx := key _ (succAbove_ne q x)
+  have hy := key _ (succAbove_ne q y)
+  have := eq_of_injective_comp_succAbove hp hx.1 hy.1 (hx.2.trans (hxy.trans hy.2.symm))
+  refine succAbove_right_injective (p := q) ?_
+  split_ifs at this with h₁ h₂ h₂
+  · exact h₁.trans h₂.symm
+  · exact absurd this.symm (succAbove_ne q y)
+  · exact absurd this (succAbove_ne q x)
+  · exact this
+
+/-- If `b p = b q` for `p ≠ q`, deleting the entry at `p` does not change the set of entries. -/
+theorem range_comp_succAbove_of_eq {α : Type*} {n : ℕ} {b : Fin (n + 1) → α}
+    {p q : Fin (n + 1)} (hpq : p ≠ q) (h : b p = b q) :
+    Set.range (b ∘ p.succAbove) = Set.range b := by
+  refine (Set.range_comp_subset_range _ _).antisymm ?_
+  rintro _ ⟨i, rfl⟩
+  by_cases hi : i = p
+  · obtain ⟨z, hz⟩ := exists_succAbove_eq hpq.symm
+    exact ⟨z, by simp [hz, hi, h]⟩
+  · obtain ⟨z, hz⟩ := exists_succAbove_eq hi
+    exact ⟨z, by simp [hz]⟩
 
 end Fin

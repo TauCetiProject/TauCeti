@@ -20,10 +20,19 @@ an affine algebraic group `G` over a field of characteristic zero, the centraliz
 smooth with Lie algebra `ker (ad x)`, so these are also the elements whose group centralizer has
 minimal dimension.
 
-This notion differs from Mathlib's `LieAlgebra.IsRegular`, which minimizes the dimension of the
-Engel subalgebra, the generalized `0`-eigenspace of `ad x`. No nilpotent element of a nonzero
-semisimple Lie algebra is regular in that sense, while the regular nilpotent elements are regular
-in the sense of this file.
+This notion differs from Mathlib's `LieAlgebra.IsRegular`, which is stated for `L` finite free
+over a commutative ring `R`. There the coefficients of the characteristic polynomial of `ad x` are
+polynomial functions of `x`, `LieAlgebra.rank R L` is the least index of a coefficient that is not
+the zero polynomial, and `x` is regular when the coefficient of index `LieAlgebra.rank R L` of the
+characteristic polynomial of `ad x` is nonzero. Over a field such an element has an Engel
+subalgebra, the generalized `0`-eigenspace of `ad x`, of minimal dimension
+(`LieAlgebra.isRegular_iff_finrank_engel_eq_rank` and `LieAlgebra.rank_le_finrank_engel`), and over
+an infinite field the converse holds as well (`LieAlgebra.exists_isRegular`). Over a finite field
+the converse can fail, since there may be no element regular in Mathlib's sense at all. So minimal
+centralizer dimension, Mathlib's characteristic-polynomial condition and minimal Engel dimension
+are three notions of regularity that differ in general. No nilpotent element of a nonzero
+semisimple Lie algebra is regular in Mathlib's sense, while the regular nilpotent elements are
+regular in the sense of this file.
 
 Dimensions are measured by the cardinal `Module.rank`, so the notion is meaningful also when `L`
 is infinite-dimensional; in finite dimension it is the minimality of `finrank K (ker (ad x))`
@@ -87,8 +96,9 @@ dimension among the centralizers of all elements. The dimension is the cardinal 
 that an infinite-dimensional centralizer is never smaller than a finite-dimensional one. Over a
 field of characteristic zero this is the dimension of the group centralizer `C_G(x)` when the Lie
 algebra is that of an affine algebraic group `G`. This differs from Mathlib's
-`LieAlgebra.IsRegular`, which minimizes the dimension of the generalized `0`-eigenspace of
-`ad x`. -/
+`LieAlgebra.IsRegular`, which asks that the coefficient of index `LieAlgebra.rank` of the
+characteristic polynomial of `ad x` be nonzero, and from minimality of the dimension of the Engel
+subalgebra, the generalized `0`-eigenspace of `ad x`. -/
 def IsCentralizerRegular (x : L) : Prop :=
   ∀ y : L, Module.rank K (ker (ad K L x)) ≤ Module.rank K (ker (ad K L y))
 
@@ -242,25 +252,13 @@ variable {K : Type*} {L : Type u} {L' : Type v} [Field K] [LieRing L] [LieAlgebr
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-- A Lie algebra isomorphism carries the centralizer of `x` onto the centralizer of its image. -/
-theorem ker_ad_apply (e : L ≃ₗ⁅K⁆ L') (x : L) :
-    ker (ad K L' (e x)) = (ker (ad K L x)).map (e.toLinearEquiv : L →ₗ[K] L') := by
-  rw [← conj_ad_apply, LinearEquiv.conj_apply, ker_comp, LinearEquiv.ker_comp,
-    Submodule.comap_equiv_eq_map_symm, LinearEquiv.symm_symm]
-
-/-- A Lie algebra isomorphism carries the centralizer of `x` onto the centralizer of its image,
-so the two have the same dimension. -/
+/-- The adjoint endomorphisms of corresponding elements under a Lie algebra isomorphism
+have ranges of the same dimension, even for infinite-dimensional Lie algebras. -/
 @[simp]
-theorem finrank_ker_ad_apply (e : L ≃ₗ⁅K⁆ L') (x : L) :
-    finrank K (ker (ad K L' (e x))) = finrank K (ker (ad K L x)) := by
-  rw [ker_ad_apply, LinearEquiv.finrank_map_eq]
-
-/-- A Lie algebra isomorphism carries the centralizer of `x` onto the centralizer of its image,
-so the two have the same cardinal dimension, up to universe lifting. -/
-theorem lift_rank_ker_ad_apply (e : L ≃ₗ⁅K⁆ L') (x : L) :
-    Cardinal.lift.{u} (Module.rank K (ker (ad K L' (e x)))) =
-      Cardinal.lift.{v} (Module.rank K (ker (ad K L x))) := by
-  rw [ker_ad_apply, LinearEquiv.lift_rank_map_eq]
+theorem finrank_range_ad_apply (e : L ≃ₗ⁅K⁆ L') (x : L) :
+    finrank K (range (ad K L' (e x))) = finrank K (range (ad K L x)) := by
+  rw [← conj_ad_apply, LinearEquiv.conj_apply, LinearEquiv.range_comp,
+    LinearMap.range_comp, LinearEquiv.finrank_map_eq]
 
 /-- **Regularity is invariant under Lie algebra isomorphisms**, in particular under the adjoint
 action of a group acting by Lie algebra automorphisms. -/

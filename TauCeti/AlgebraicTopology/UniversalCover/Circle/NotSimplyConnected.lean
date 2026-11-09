@@ -15,21 +15,20 @@ The circle computation `π₁(AddCircle p) ≃* Multiplicative ℤ`
 (`AddCircle.fundamentalGroupMulEquiv`) has an immediate qualitative payoff: since
 `Multiplicative ℤ` is nontrivial and infinite, so is the fundamental group of the circle, and
 therefore the circle is **not simply connected**. Being non-simply-connected, it is not
-contractible, and it is not homeomorphic to any simply connected space; in particular the
-circle is not homeomorphic to the real line nor to any real normed space.
+contractible, and it is not homotopy equivalent (in particular, not homeomorphic) to any simply
+connected space; in particular the circle is not homotopy equivalent to the real line nor to any
+real normed space.
 
-These are the standard topological consequences of `π₁(S¹) ≅ ℤ`, and they realise the
-universal-covers roadmap Stage 4 "applications" (`TauCetiRoadmap/UniversalCovers/README.md`),
-extending the circle computation (item 12, `π₁(S¹) ≅ ℤ`) to the classical fact that the
-circle and the line are topologically distinct.
+These are the standard topological consequences of `π₁(S¹) ≅ ℤ`, extending the circle
+computation to the classical fact that the circle and the line are topologically distinct.
 
 The nontriviality and infinitude of the fundamental group are transported from
 `Multiplicative ℤ` along the circle equivalence. Non-simple-connectivity then follows because
-a simply connected space has a subsingleton fundamental group. The homeomorphism statements
-consume Mathlib's transfer of `SimplyConnectedSpace` along a homotopy equivalence
-(`ContinuousMap.HomotopyEquiv.simplyConnectedSpace`, via `Homeomorph.toHomotopyEquiv`) and the
-contractibility of a real topological vector space
-(`RealTopologicalVectorSpace.contractibleSpace`). No Mathlib code is vendored.
+a simply connected space has a subsingleton fundamental group. The homotopy-equivalence
+statements consume Mathlib's transfer of `SimplyConnectedSpace` along a homotopy equivalence
+(`ContinuousMap.HomotopyEquiv.simplyConnectedSpace`) and the contractibility of a real
+topological vector space (`RealTopologicalVectorSpace.contractibleSpace`). No Mathlib code is
+vendored.
 
 The same consequences for Mathlib's complex unit circle `Circle` follow from
 `Circle.fundamentalGroupMulEquiv`.
@@ -40,18 +39,21 @@ The same consequences for Mathlib's complex unit circle `Circle` follow from
   group of `AddCircle p` (`p ≠ 0`), at any basepoint, is nontrivial and infinite.
 * `AddCircle.not_simplyConnectedSpace`: `AddCircle p` is not simply connected.
 * `AddCircle.not_contractibleSpace`: `AddCircle p` is not contractible.
-* `AddCircle.isEmpty_homeomorph_of_simplyConnectedSpace`,
-  `AddCircle.isEmpty_homeomorph_real`: `AddCircle p` is not homeomorphic to a simply
+* `AddCircle.isEmpty_homotopyEquiv_of_simplyConnectedSpace`,
+  `AddCircle.isEmpty_homotopyEquiv_real`: `AddCircle p` is not homotopy equivalent to a simply
   connected space, nor to `ℝ`.
 * `UnitAddCircle.*`: the specialisations to the unit circle `S¹ = ℝ ⧸ ℤ`.
 * `Circle.nontrivial_fundamentalGroup`, `Circle.infinite_fundamentalGroup`: the complex unit
   circle's fundamental group is nontrivial and infinite.
 * `Circle.not_simplyConnectedSpace`, `Circle.not_contractibleSpace`: the complex unit circle is
   not simply connected or contractible.
-* `Circle.isEmpty_homeomorph_real`: the complex unit circle is not homeomorphic to `ℝ`.
+* `Circle.isEmpty_homotopyEquiv_of_simplyConnectedSpace`, `Circle.isEmpty_homotopyEquiv_real`:
+  the complex unit circle is not homotopy equivalent to a simply connected space, nor to `ℝ`.
 -/
 
 public section
+
+open scoped ContinuousMap
 
 namespace AddCircle
 
@@ -92,18 +94,18 @@ connected, and the circle is not. -/
 theorem not_contractibleSpace (hp : p ≠ 0) : ¬ ContractibleSpace (AddCircle p) :=
   TauCeti.not_contractibleSpace_of_not_simplyConnectedSpace (not_simplyConnectedSpace p hp)
 
-/-- The circle `AddCircle p` (`p ≠ 0`) is not homeomorphic to any simply connected space: a
-homeomorphism is in particular a homotopy equivalence, and simple connectivity transfers along
-homotopy equivalences, which the circle does not enjoy. -/
-theorem isEmpty_homeomorph_of_simplyConnectedSpace (hp : p ≠ 0)
+/-- The circle `AddCircle p` (`p ≠ 0`) is not homotopy equivalent (in particular, not
+homeomorphic) to any simply connected space: simple connectivity transfers along homotopy
+equivalences, and the circle is not simply connected. -/
+theorem isEmpty_homotopyEquiv_of_simplyConnectedSpace (hp : p ≠ 0)
     (Y : Type*) [TopologicalSpace Y] [SimplyConnectedSpace Y] :
-    IsEmpty (AddCircle p ≃ₜ Y) :=
-  TauCeti.isEmpty_homeomorph_of_not_simplyConnectedSpace (not_simplyConnectedSpace p hp) Y
+    IsEmpty (AddCircle p ≃ₕ Y) :=
+  TauCeti.isEmpty_homotopyEquiv_of_not_simplyConnectedSpace (not_simplyConnectedSpace p hp) Y
 
-/-- The circle `AddCircle p` (`p ≠ 0`) is not homeomorphic to the real line: the circle is not
-simply connected but `ℝ` is contractible. -/
-theorem isEmpty_homeomorph_real (hp : p ≠ 0) : IsEmpty (AddCircle p ≃ₜ ℝ) :=
-  TauCeti.isEmpty_homeomorph_real_of_not_simplyConnectedSpace (not_simplyConnectedSpace p hp)
+/-- The circle `AddCircle p` (`p ≠ 0`) is not homotopy equivalent (in particular, not
+homeomorphic) to the real line: the circle is not simply connected but `ℝ` is contractible. -/
+theorem isEmpty_homotopyEquiv_real (hp : p ≠ 0) : IsEmpty (AddCircle p ≃ₕ ℝ) :=
+  TauCeti.isEmpty_homotopyEquiv_real_of_not_simplyConnectedSpace (not_simplyConnectedSpace p hp)
 
 end AddCircle
 
@@ -125,9 +127,10 @@ theorem not_simplyConnectedSpace : ¬ SimplyConnectedSpace UnitAddCircle :=
 theorem not_contractibleSpace : ¬ ContractibleSpace UnitAddCircle :=
   AddCircle.not_contractibleSpace 1 one_ne_zero
 
-/-- The unit circle `S¹ = ℝ ⧸ ℤ` is not homeomorphic to the real line. -/
-theorem isEmpty_homeomorph_real : IsEmpty (UnitAddCircle ≃ₜ ℝ) :=
-  AddCircle.isEmpty_homeomorph_real 1 one_ne_zero
+/-- The unit circle `S¹ = ℝ ⧸ ℤ` is not homotopy equivalent (in particular, not homeomorphic)
+to the real line. -/
+theorem isEmpty_homotopyEquiv_real : IsEmpty (UnitAddCircle ≃ₕ ℝ) :=
+  AddCircle.isEmpty_homotopyEquiv_real 1 one_ne_zero
 
 end UnitAddCircle
 
@@ -154,16 +157,16 @@ connected, and the circle is not. -/
 theorem not_contractibleSpace : ¬ ContractibleSpace Circle :=
   TauCeti.not_contractibleSpace_of_not_simplyConnectedSpace not_simplyConnectedSpace
 
-/-- The complex unit circle `Circle` is not homeomorphic to any simply connected space: a
-homeomorphism is a homotopy equivalence, and simple connectivity transfers along homotopy
-equivalences, which the circle does not enjoy. -/
-theorem isEmpty_homeomorph_of_simplyConnectedSpace (Y : Type*) [TopologicalSpace Y]
-    [SimplyConnectedSpace Y] : IsEmpty (Circle ≃ₜ Y) :=
-  TauCeti.isEmpty_homeomorph_of_not_simplyConnectedSpace not_simplyConnectedSpace Y
+/-- The complex unit circle `Circle` is not homotopy equivalent (in particular, not
+homeomorphic) to any simply connected space: simple connectivity transfers along homotopy
+equivalences, and the circle is not simply connected. -/
+theorem isEmpty_homotopyEquiv_of_simplyConnectedSpace (Y : Type*) [TopologicalSpace Y]
+    [SimplyConnectedSpace Y] : IsEmpty (Circle ≃ₕ Y) :=
+  TauCeti.isEmpty_homotopyEquiv_of_not_simplyConnectedSpace not_simplyConnectedSpace Y
 
-/-- The complex unit circle `Circle` is not homeomorphic to the real line: the circle is not
-simply connected but `ℝ` is contractible. -/
-theorem isEmpty_homeomorph_real : IsEmpty (Circle ≃ₜ ℝ) :=
-  TauCeti.isEmpty_homeomorph_real_of_not_simplyConnectedSpace not_simplyConnectedSpace
+/-- The complex unit circle `Circle` is not homotopy equivalent (in particular, not
+homeomorphic) to the real line: the circle is not simply connected but `ℝ` is contractible. -/
+theorem isEmpty_homotopyEquiv_real : IsEmpty (Circle ≃ₕ ℝ) :=
+  TauCeti.isEmpty_homotopyEquiv_real_of_not_simplyConnectedSpace not_simplyConnectedSpace
 
 end Circle

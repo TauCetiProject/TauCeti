@@ -118,24 +118,16 @@ private theorem map_genericMatrix_generatedCoordinateLift (k : Fin 6 ⊕ Fin 6) 
       1 + SymmetricAlgebra.ι R R 1 •
         (Sum.elim raisingMatrix loweringMatrix k).map
           (Int.cast : ℤ → AdditiveGroup.coordinateHopfAlgebra R) := by
-  let A := CommAlgCat.of R (AdditiveGroup.coordinateHopfAlgebra R)
-  let q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A :=
-    toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R))
-  have hu : AdditiveGroup.gaPointsMulEquiv (R := R) q =
-      Multiplicative.ofAdd (SymmetricAlgebra.ι R R 1) := by
-    rw [← ofAdd_toAdd (AdditiveGroup.gaPointsMulEquiv (R := R) q),
-      AdditiveGroup.toAdd_gaPointsMulEquiv]
-    simp [q]
-  have h := congrArg (fun g : Matrix.GeneralLinearGroup (Fin 27) A =>
-    (g : Matrix (Fin 27) (Fin 27) A))
-    (pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgroupPoints R k A q)
-  rw [← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear,
-    BialgHom.mapDomain_apply] at h
-  simp only [q, AlgHom.id_comp] at h
-  rw [h, hu]
+  apply GeneralLinear.map_genericMatrix_eq_of_pointToGeneralLinear
+    ((generatedCoordinateLift R (.inl k)).hom.comp (generatedCoordinateMap R).hom)
+  rw [BialgHom.mapDomain_comp, MonoidHom.comp_apply,
+    BialgHom.mapDomain_apply (generatedCoordinateLift R (.inl k)).hom,
+    pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgroupPoints R k
+      (CommAlgCat.of R (AdditiveGroup.coordinateHopfAlgebra R))
+      (toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R)))]
   rcases k with i | i
-  · rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, weightTable_raisingMatrix, Sum.elim_inl]
-  · rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd, weightTable_loweringMatrix, Sum.elim_inr]
+  · rw [coe_rootSubgroupPoints_inl, weightTable_raisingMatrix, Sum.elim_inl]
+  · rw [coe_rootSubgroupPoints_inr, weightTable_loweringMatrix, Sum.elim_inr]
 
 variable {B : Type v} [CommRing B] [Algebra R B]
 

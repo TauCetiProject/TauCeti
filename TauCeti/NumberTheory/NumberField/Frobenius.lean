@@ -211,7 +211,7 @@ theorem isArithFrobAt_apply_sqrt_eq_self_iff_mod_eight
       sq_one_add_div_two_sub_self hx hd
   have hcong : σ • w - w ^ 2 ∈ Q := by
     have h := hσ w
-    rwa [natCard_quotient_under_of_liesOver (p := 2) Q,
+    rwa [natCard_quotient_under_of_liesOver (n := 2) Q,
       MulSemiringAction.toAlgHom_apply] at h
   have hfix : σ • w = w ↔ σ x = x := by
     rw [← (FaithfulSMul.algebraMap_injective (𝓞 K) K).eq_iff,
@@ -235,20 +235,20 @@ theorem isArithFrobAt_apply_sqrt_eq_self_iff_mod_eight
       rw [h] at hcong
       have hmem := Q.neg_mem hcong
       rw [neg_sub, hwsq] at hmem
-      exact (algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp hmem
+      exact (algebraMap_mem_iff_dvd_of_liesOver Q _).mp hmem
     · intro h
       rcases hpm with hfix | hneg
       · exact hfix
-      · have hemem := (algebraMap_int_mem_iff_dvd_of_liesOver Q (d / 4)).mpr h
+      · have hemem := (algebraMap_mem_iff_dvd_of_liesOver Q (d / 4)).mpr h
         have htwo : (2 : 𝓞 K) ∈ Q := by
-          simpa using (algebraMap_int_mem_iff_dvd_of_liesOver Q 2).mpr (dvd_refl 2)
+          simpa using (algebraMap_mem_iff_dvd_of_liesOver Q (2 : ℤ)).mpr (dvd_refl 2)
         have hone : (1 : 𝓞 K) ∈ Q := by
           have hsum := Q.add_mem (Q.add_mem hcong hemem) (Q.mul_mem_right w htwo)
           rw [hneg] at hsum
           convert hsum using 1
           linear_combination hwsq
         have hbad : (2 : ℤ) ∣ 1 :=
-          (algebraMap_int_mem_iff_dvd_of_liesOver Q 1).mp (by simpa using hone)
+          (algebraMap_mem_iff_dvd_of_liesOver Q 1).mp (by simpa using hone)
         norm_num at hbad
   rw [← hfix, heven, Int.dvd_iff_emod_eq_zero]
   omega

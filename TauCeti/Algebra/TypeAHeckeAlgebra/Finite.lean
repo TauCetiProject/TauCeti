@@ -28,12 +28,14 @@ strand there are no generators and the algebra is `R`
 The elementary braids map to the generators, giving a homomorphism from the braid group on `n`
 strands to the units (`TauCeti.TypeAHeckeAlgebra.braidHom`) whose image spans the algebra. Adding
 an uncrossed last strand gives the tower map `TauCeti.TypeAHeckeAlgebra.strandIncl`, `T i ↦ T i`,
-compatible with the strand inclusions of the braid groups.
+compatible with the strand inclusions of the braid groups. Adding an uncrossed first strand gives
+`TauCeti.TypeAHeckeAlgebra.tailIncl`, `T i ↦ T (i + 1)`. The parameters `q` and `-q` give
+isomorphic algebras by the sign twist `T i ↦ -T i` (`TauCeti.TypeAHeckeAlgebra.negEquiv`).
 
 The finite presentation maps onto the stage of the first `n` strands of the infinite type-A Hecke
 algebra (`TauCeti.TypeAHeckeAlgebra.range_toInfinite`), compatibly with the tower maps. That this
-map is injective, so that the finite presentation is isomorphic to the stage, is the basis theorem
-(the algebra is free of rank `n!`) and is not proved here.
+map is injective, so that the finite presentation is isomorphic to the stage, is proved in
+`TauCeti.Algebra.TypeAHeckeAlgebra.Embedding` from the basis theorem.
 
 ## Main definitions
 
@@ -45,7 +47,11 @@ map is injective, so that the finite presentation is isomorphic to the stage, is
 * `TauCeti.TypeAHeckeAlgebra.braidHom`: the homomorphism from the braid group on `n` strands to
   the units.
 * `TauCeti.TypeAHeckeAlgebra.strandIncl`: the tower map from `n` to `n + 1` strands.
+* `TauCeti.TypeAHeckeAlgebra.castAdd` and `TauCeti.TypeAHeckeAlgebra.natAdd`: the block maps
+  placing the Hecke algebras on `a` and on `b` strands on the first `a` and on the last `b` of
+  `a + b` strands.
 * `TauCeti.TypeAHeckeAlgebra.toInfinite`: the map to the infinite type-A Hecke algebra.
+* `TauCeti.TypeAHeckeAlgebra.negEquiv`: the sign twist between parameters `q` and `-q`.
 
 ## Main results
 
@@ -58,8 +64,12 @@ map is injective, so that the finite presentation is isomorphic to the stage, is
   tower maps.
 * `TauCeti.TypeAHeckeAlgebra.range_toInfinite`: the image in the infinite algebra is the stage of
   the first `n` strands.
+* `TauCeti.TypeAHeckeAlgebra.commute_castAdd_natAdd`, `TauCeti.TypeAHeckeAlgebra.toInfinite_castAdd`
+  and `TauCeti.TypeAHeckeAlgebra.toInfinite_natAdd`: the two blocks commute, and in the infinite
+  algebra the right block map is the strand shift.
 * `TauCeti.TypeAHeckeAlgebra.algebraMap_injective`: the presentation does not collapse the
   scalars.
+* `TauCeti.TypeAHeckeAlgebra.T_ne_algebraMap`: a generator is not a scalar when `q ≠ -q⁻¹`.
 
 ## References
 
@@ -154,6 +164,15 @@ theorem T_sub_algebraMap_mul_T_add_algebraMap_eq_zero (i : Fin (n - 1)) :
     simp [← map_mul]
   simp only [sub_mul, mul_add, T_mul_self, ← Algebra.commutes _ (T q i), hq,
     Algebra.smul_def, map_sub]
+  abel
+
+/-- The element `T i + q⁻¹` is idempotent up to `q + q⁻¹`. -/
+theorem T_add_algebraMap_mul_self (i : Fin (n - 1)) :
+    (T q i + algebraMap R _ (↑q⁻¹ : R)) * (T q i + algebraMap R _ (↑q⁻¹ : R)) =
+      ((q : R) + ↑q⁻¹) • (T q i + algebraMap R _ (↑q⁻¹ : R)) := by
+  have hq : (q : R) * ↑q⁻¹ = 1 := q.mul_inv
+  simp only [Algebra.algebraMap_eq_smul_one, add_mul, mul_add, smul_mul_assoc, mul_smul_comm,
+    smul_smul, one_mul, mul_one, T_mul_self, smul_add, hq, sub_smul, add_smul, one_smul]
   abel
 
 /-- Two generators on adjacent pairs of strands satisfy the braid relation. -/
@@ -284,6 +303,26 @@ theorem strandIncl_T (i : Fin (n - 1)) :
     strandIncl R q n (T q i) = T q (Fin.castLE (by omega) i) := by
   rw [strandIncl, lift_T]
 
+/-- On a positive number of strands, the generator index under the tower map is `castSucc`. -/
+theorem strandIncl_T_castSucc (i : Fin n) :
+    strandIncl R q (n + 1) (T q i) = T q i.castSucc := by
+  rw [strandIncl_T]
+  exact congrArg (T q) (Fin.ext rfl)
+
+/-- The last generator commutes with every element coming from two stages earlier in the
+finite Hecke tower. -/
+theorem commute_T_last_strandIncl_strandIncl (n : ℕ)
+    (x : TypeAHeckeAlgebra R q (n + 1)) :
+    Commute (T q (Fin.last (n + 1)))
+      (strandIncl R q (n + 2) (strandIncl R q (n + 1) x)) := by
+  have hx : strandIncl R q (n + 2) (strandIncl R q (n + 1) x) ∈
+      ((strandIncl R q (n + 2)).comp (strandIncl R q (n + 1))).range := ⟨x, rfl⟩
+  rw [← Algebra.map_top, ← adjoin_range_T, AlgHom.map_adjoin, ← Set.range_comp] at hx
+  apply Algebra.commute_of_mem_adjoin_of_forall_mem_commute hx
+  rintro _ ⟨i, rfl⟩
+  simp only [Function.comp_apply, AlgHom.comp_apply, strandIncl_T]
+  exact commute_T (Or.inr (by have := i.isLt; dsimp; omega))
+
 /-- Adding an uncrossed last strand to a braid adds an uncrossed last strand to its image: the
 braid homomorphisms are compatible with the strand inclusions of the braid groups and the tower
 maps. -/
@@ -302,13 +341,37 @@ theorem braidHom_strandIncl (b : BraidGroup (n + 1)) :
 
 end StrandIncl
 
+section TailIncl
+
+variable (q)
+
+/-- Adding an uncrossed first strand: `T i` goes to `T (i + 1)`. -/
+def tailIncl (n : ℕ) : TypeAHeckeAlgebra R q n →ₐ[R] TypeAHeckeAlgebra R q (n + 1) :=
+  lift (fun i ↦ T q ⟨i + 1, by omega⟩)
+    (fun _ ↦ T_mul_self _) (fun h ↦ T_braid (.inl (by simpa using h)))
+    (fun h ↦ (commute_T (.inl (by simpa using h))).eq)
+
+/-- The shifted-tail inclusion sends each generator to its successor. -/
+@[simp]
+theorem tailIncl_T {n : ℕ} (i : Fin (n - 1)) :
+    tailIncl q n (T q i) = T q ⟨i + 1, by omega⟩ := by
+  rw [tailIncl, lift_T]
+
+/-- In positive rank the generator formula uses the usual `Fin.succ` index. -/
+theorem tailIncl_T_succ {n : ℕ} (i : Fin n) :
+    tailIncl q (n + 1) (T q i) = T q i.succ := by
+  rw [tailIncl_T]
+  congr 1
+
+end TailIncl
+
 section Infinite
 
 variable (R q n) in
 /-- The map from the type-A Hecke algebra on `n` strands to the infinite type-A Hecke algebra,
 sending each generator to the generator with the same index. Its image is the stage of the first
-`n` strands (`TauCeti.TypeAHeckeAlgebra.range_toInfinite`); that it is injective is the basis
-theorem. -/
+`n` strands (`TauCeti.TypeAHeckeAlgebra.range_toInfinite`), and it is injective
+(`TauCeti.TypeAHeckeAlgebra.toInfinite_injective`). -/
 def toInfinite : TypeAHeckeAlgebra R q n →ₐ[R] InfiniteTypeAHeckeAlgebra R q :=
   lift (fun i ↦ InfiniteTypeAHeckeAlgebra.T q i) (fun _ ↦ InfiniteTypeAHeckeAlgebra.T_mul_self _)
     (fun {i j} h ↦ by rw [← h]; exact InfiniteTypeAHeckeAlgebra.T_braid _)
@@ -340,6 +403,19 @@ theorem toInfinite_strandIncl (x : TypeAHeckeAlgebra R q n) :
     hom_ext fun i ↦ by simp
   exact DFunLike.congr_fun h x
 
+variable (q) in
+/-- In the infinite algebra, the shifted-tail inclusion is the shift by one strand. -/
+@[simp]
+theorem toInfinite_tailIncl (n : ℕ) (x : TypeAHeckeAlgebra R q n) :
+    toInfinite R q (n + 1) (tailIncl q n x) =
+      InfiniteTypeAHeckeAlgebra.shift R q 1 (toInfinite R q n x) := by
+  have h : (toInfinite R q (n + 1)).comp (tailIncl q n) =
+      (InfiniteTypeAHeckeAlgebra.shift R q 1).comp (toInfinite R q n) := by
+    apply hom_ext
+    intro i
+    simp
+  exact AlgHom.congr_fun h x
+
 /-- The map to the infinite type-A Hecke algebra intertwines the two braid homomorphisms. -/
 @[simp]
 theorem toInfinite_braidHom (b : BraidGroup n) :
@@ -358,7 +434,90 @@ theorem algebraMap_injective : Function.Injective (algebraMap R (TypeAHeckeAlgeb
 instance [Nontrivial R] : Nontrivial (TypeAHeckeAlgebra R q n) :=
   algebraMap_injective.nontrivial
 
+/-- A generator is not a scalar when the two eigenvalues `q` and `-q⁻¹` are distinct. -/
+theorem T_ne_algebraMap (hq : (q : R) ≠ -↑q⁻¹) (i : Fin (n - 1)) (r : R) :
+    T q i ≠ algebraMap R _ r := fun h ↦
+  InfiniteTypeAHeckeAlgebra.T_ne_algebraMap hq i r <| by
+    simpa using congrArg (toInfinite R q n) h
+
+/-- Over a nontrivial base ring, no generator vanishes. -/
+@[simp]
+theorem T_ne_zero [Nontrivial R] (i : Fin (n - 1)) : T q i ≠ 0 :=
+  (isUnit_T i).ne_zero
+
 end Infinite
+
+section Block
+
+variable {a b : ℕ}
+
+variable (R q a b) in
+/-- The left block map: the Hecke algebra on `a` strands acting on the first `a` of `a + b`
+strands, sending the generator `T i` to the generator `T i`. -/
+def castAdd : TypeAHeckeAlgebra R q a →ₐ[R] TypeAHeckeAlgebra R q (a + b) :=
+  lift (fun i ↦ T q (Fin.castLE (by omega) i)) (fun _ ↦ T_mul_self _)
+    (fun h ↦ T_braid (Or.inl h))
+    (fun h ↦ (commute_T (R := R) (q := q) (n := a + b) (Or.inl h)).eq)
+
+/-- The left block map sends each generator to the generator with the same index. -/
+@[simp]
+theorem castAdd_T (i : Fin (a - 1)) :
+    castAdd R q a b (T q i) = T q (Fin.castLE (by omega) i) := by
+  rw [castAdd, lift_T]
+
+variable (R q a b) in
+/-- The right block map: the Hecke algebra on `b` strands acting on the last `b` of `a + b`
+strands, sending the generator `T j` to the generator `T (a + j)`. -/
+def natAdd : TypeAHeckeAlgebra R q b →ₐ[R] TypeAHeckeAlgebra R q (a + b) :=
+  lift (fun j ↦ T q ⟨a + j, by omega⟩) (fun _ ↦ T_mul_self _)
+    (fun {i j} h ↦ by
+      have hij : a + (i : ℕ) + 1 = a + j := by omega
+      exact T_braid (Or.inl hij))
+    (fun {i j} h ↦ by
+      have hij : a + (i : ℕ) + 2 ≤ a + j := by omega
+      exact (commute_T (Or.inl hij)).eq)
+
+/-- The right block map sends the generator `T j` to the generator `T (a + j)`. -/
+@[simp]
+theorem natAdd_T (j : Fin (b - 1)) : natAdd R q a b (T q j) = T q ⟨a + j, by omega⟩ := by
+  rw [natAdd, lift_T]
+
+/-- The images of the two block maps commute: they act on disjoint blocks of strands. -/
+theorem commute_castAdd_natAdd (x : TypeAHeckeAlgebra R q a) (y : TypeAHeckeAlgebra R q b) :
+    Commute (castAdd R q a b x) (natAdd R q a b y) := by
+  have hmem {c : ℕ} (f : TypeAHeckeAlgebra R q c →ₐ[R] TypeAHeckeAlgebra R q (a + b))
+      (z : TypeAHeckeAlgebra R q c) : f z ∈ Algebra.adjoin R (Set.range (f ∘ T q)) := by
+    rw [Set.range_comp, ← AlgHom.map_adjoin, adjoin_range_T]
+    exact ⟨z, trivial, rfl⟩
+  refine Algebra.commute_of_mem_adjoin_of_forall_mem_commute (hmem _ y) ?_
+  rintro _ ⟨j, rfl⟩
+  refine (Algebra.commute_of_mem_adjoin_of_forall_mem_commute (hmem _ x) ?_).symm
+  rintro _ ⟨i, rfl⟩
+  simp only [Function.comp_apply, castAdd_T, natAdd_T]
+  have hij : (i : ℕ) + 2 ≤ a + j := by
+    have := i.isLt
+    omega
+  exact commute_T (Or.inr hij)
+
+/-- The left block map is compatible with the maps to the infinite type-A Hecke algebra. -/
+@[simp]
+theorem toInfinite_castAdd (x : TypeAHeckeAlgebra R q a) :
+    toInfinite R q (a + b) (castAdd R q a b x) = toInfinite R q a x := by
+  have h : (toInfinite R q (a + b)).comp (castAdd R q a b) = toInfinite R q a :=
+    hom_ext fun i ↦ by simp
+  exact DFunLike.congr_fun h x
+
+/-- In the infinite type-A Hecke algebra, the right block map is the strand shift by `a`. -/
+@[simp]
+theorem toInfinite_natAdd (y : TypeAHeckeAlgebra R q b) :
+    toInfinite R q (a + b) (natAdd R q a b y) =
+      InfiniteTypeAHeckeAlgebra.shift R q a (toInfinite R q b y) := by
+  have h : (toInfinite R q (a + b)).comp (natAdd R q a b) =
+      (InfiniteTypeAHeckeAlgebra.shift R q a).comp (toInfinite R q b) :=
+    hom_ext fun j ↦ by simp [Nat.add_comm a]
+  exact DFunLike.congr_fun h y
+
+end Block
 
 section LeOne
 
@@ -385,6 +544,43 @@ theorem algEquivOfLeOne_apply (h : n ≤ 1) (r : R) :
     algEquivOfLeOne R q h r = algebraMap R _ r := (rfl)
 
 end LeOne
+
+section Neg
+
+/-- The algebra map from the type-A Hecke algebra with parameter `q` to the one with parameter
+`q' = -q` sending `T i` to `-T i`. -/
+private def negHom (q' : Rˣ) (h : -q = q') :
+    TypeAHeckeAlgebra R q n →ₐ[R] TypeAHeckeAlgebra R q' n :=
+  lift (fun i ↦ -T q' i)
+    (fun i ↦ by
+      subst h
+      simp only [neg_mul_neg, T_mul_self, inv_neg, Units.val_neg, smul_neg, ← neg_smul, neg_sub,
+        sub_neg_eq_add, neg_add_eq_sub])
+    (fun h ↦ by simp only [mul_neg, neg_mul, T_braid (Or.inl h)])
+    (fun h ↦ by simp only [neg_mul_neg, (commute_T (Or.inl h)).eq])
+
+private theorem negHom_T (q' : Rˣ) (h : -q = q') (i : Fin (n - 1)) :
+    negHom q' h (T q i) = -T q' i :=
+  lift_T _ _ _ _ i
+
+variable (R q n) in
+/-- The sign twist: the type-A Hecke algebras with parameters `q` and `-q` are isomorphic by
+`T i ↦ -T i`. Both parameters give the same quadratic relation up to this sign. -/
+def negEquiv : TypeAHeckeAlgebra R q n ≃ₐ[R] TypeAHeckeAlgebra R (-q) n :=
+  AlgEquiv.ofAlgHom (negHom (-q) rfl) (negHom q (neg_neg q))
+    (hom_ext fun i ↦ by simp [negHom_T]) (hom_ext fun i ↦ by simp [negHom_T])
+
+/-- The sign twist sends `T i` to `-T i`. -/
+@[simp]
+theorem negEquiv_T (i : Fin (n - 1)) : negEquiv R q n (T q i) = -T (-q) i :=
+  negHom_T _ _ i
+
+/-- The inverse of the sign twist sends `T i` to `-T i`. -/
+@[simp]
+theorem negEquiv_symm_T (i : Fin (n - 1)) : (negEquiv R q n).symm (T (-q) i) = -T q i :=
+  negHom_T _ _ i
+
+end Neg
 
 end TypeAHeckeAlgebra
 

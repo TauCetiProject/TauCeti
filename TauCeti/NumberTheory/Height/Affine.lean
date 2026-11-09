@@ -31,7 +31,8 @@ analogue of `Height.mulHeight₁` and agrees with it on a one-element tuple
 The affine height is deliberately not invariant under scaling
 (`Height.exists_mulHeightAff_smul_ne`). What it gains is domination: for finite index types, it
 bounds the projective height of the tuple and the height of every coordinate, and it can only
-drop under re-indexing.
+drop under re-indexing. In the other direction, it is bounded above by the product of the
+scalar heights of the coordinates.
 
 ## Main definitions
 
@@ -43,11 +44,17 @@ drop under re-indexing.
 * `Height.mulHeightAff_eq`: for finite `ι`, the affine height as a product of the local factors
   `max (⨆ i, v (x i)) 1`; `Height.prod_mulHeightAff_eq` splits a finite product of affine heights
   into the products of these local factors place by place.
+* `Height.iSup_option_elim_eq_max`, `Height.iSup_option_elim_smul_le`: the local factor
+  `max (⨆ i, v (x i)) 1` for any nonnegative multiplicative `v`, and its bound for a scalar
+  multiple; `Height.mul_log_iSup_option_elim_smul_le` turns a logarithmic bound for `v c` and
+  the local sup norm of `x` into one for the local factor of `c • x`.
 * `Height.hasFiniteMulSupport_max_iSup_nonarchAbsVal`: the nonarchimedean local factors are `1`
   at all but finitely many places.
 * `Height.mulHeight_le_mulHeightAff`, `Height.mulHeight₁_le_mulHeightAff`: for finite `ι`, the
   affine height dominates the projective height of the tuple and the height of each coordinate.
   The second fails for `Height.mulHeight`.
+* `Height.mulHeightAff_le_prod_mulHeight₁`: for finite `ι`, the affine height is at most
+  `∏ i, mulHeight₁ (x i)`; `Height.logHeightAff_le_sum_logHeight₁` is its logarithmic form.
 * `Height.mulHeightAff_comp_le`, `Height.mulHeightAff_comp_equiv`: monotonicity under
   re-indexing between finite index types, and equality for a bijection between arbitrary ones.
 * `Height.mulHeight_cons_one`: for `x : Fin n → K`, prepending the coordinate `1` with
@@ -177,23 +184,68 @@ section Finite
 
 variable [Finite ι] [Finite ι']
 
+section LocalFactor
+
+omit [AdmissibleAbsValues K]
+
+variable {F : Type*} [FunLike F K ℝ] [MonoidWithZeroHomClass F K ℝ] [NonnegHomClass F K ℝ]
+
+/-- The local sup norm `⨆ i, v (x i)` of a nonzero finite tuple is positive. -/
+lemma iSup_apply_pos (v : F) {x : ι → K} (hx : x ≠ 0) : 0 < ⨆ i, v (x i) := by
+  obtain ⟨i, hi⟩ := Function.ne_iff.mp hx
+  exact ((apply_nonneg v _).lt_of_ne' ((map_ne_zero v).mpr hi)).trans_le
+    (Finite.le_ciSup_of_le i le_rfl)
+
+omit [NonnegHomClass F K ℝ] in
+/-- The local sup norm of a tuple with a coordinate `1` appended is at least `1`. -/
+lemma one_le_iSup_option_elim (v : F) (x : ι → K) : 1 ≤ ⨆ o : Option ι, v (o.elim 1 x) :=
+  Finite.le_ciSup_of_le none (by simp)
+
+/-- The local factor of the affine height: the local sup norm of a tuple with a coordinate `1`
+appended is `max (⨆ i, v (x i)) 1`. -/
+lemma iSup_option_elim_eq_max (v : F) (x : ι → K) :
+    ⨆ o : Option ι, v (o.elim 1 x) = max (⨆ i, v (x i)) 1 := by
+  refine le_antisymm (ciSup_le fun o ↦ ?_) (max_le ?_ (one_le_iSup_option_elim v x))
+  · cases o with
+    | none => simp
+    | some i => exact le_max_of_le_left (Finite.le_ciSup_of_le i le_rfl)
+  · exact Real.iSup_le (fun i ↦ Finite.le_ciSup_of_le (some i) le_rfl)
+      (Real.iSup_nonneg_of_nonnegHomClass v _)
+
+/-- The local factor of the affine height of a scalar multiple `c • x` is at most
+`max (v c * ⨆ i, v (x i)) 1`. -/
+lemma iSup_option_elim_smul_le (v : F) (c : K) (x : ι → K) :
+    ⨆ o : Option ι, v (o.elim 1 (c • x)) ≤ max (v c * ⨆ i, v (x i)) 1 := by
+  rw [iSup_option_elim_eq_max]
+  simp only [Pi.smul_apply, smul_eq_mul, map_mul, ← Real.mul_iSup_of_nonneg (apply_nonneg v c),
+    le_refl]
+
+/-- A logarithmic bound `m * log (v c) + m * log (⨆ i, v (x i)) ≤ B` with `0 ≤ m` and `0 ≤ B`
+bounds `m` times the logarithm of the local factor of the affine height of `c • x`. -/
+lemma mul_log_iSup_option_elim_smul_le (v : F) {x : ι → K} (hx : x ≠ 0) {c : K} (hc : c ≠ 0)
+    {m B : ℝ} (hm : 0 ≤ m) (hB : 0 ≤ B) (h : m * log (v c) + m * log (⨆ i, v (x i)) ≤ B) :
+    m * log (⨆ o : Option ι, v (o.elim 1 (c • x))) ≤ B := by
+  have hs := iSup_apply_pos v hx
+  have hvc : 0 < v c := (apply_nonneg v c).lt_of_ne' ((map_ne_zero v).mpr hc)
+  calc m * log (⨆ o : Option ι, v (o.elim 1 (c • x)))
+      ≤ m * log (max (v c * ⨆ i, v (x i)) 1) :=
+        mul_le_mul_of_nonneg_left (log_le_log (zero_lt_one.trans_le
+          (one_le_iSup_option_elim v _)) (iSup_option_elim_smul_le v c x)) hm
+    _ ≤ B := by
+      rcases le_total (v c * ⨆ i, v (x i)) 1 with h1 | h1
+      · simpa [max_eq_right h1] using hB
+      · rwa [max_eq_left h1, log_mul hvc.ne' hs.ne', mul_add]
+
+end LocalFactor
+
 /-- The affine height as a product of local factors: at each place `v` the factor is
 `max (⨆ i, v (x i)) 1`, the tuple analogue of the local factor `max (v x) 1` of
 `Height.mulHeight₁`. -/
 lemma mulHeightAff_eq (x : ι → K) :
     mulHeightAff x = (archAbsVal.map fun v ↦ max (⨆ i, v (x i)) 1).prod *
       ∏ᶠ v : nonarchAbsVal, max (⨆ i, v.val (x i)) 1 := by
-  -- At each place, the supremum over the appended tuple is `max (⨆ i, v (x i)) 1`.
-  have key (v : AbsoluteValue K ℝ) : ⨆ o : Option ι, v (o.elim 1 x) = max (⨆ i, v (x i)) 1 := by
-    refine le_antisymm (ciSup_le fun o ↦ ?_) (max_le ?_ ?_)
-    · cases o with
-      | none => simp
-      | some i => exact le_max_of_le_left (Finite.le_ciSup_of_le i le_rfl)
-    · exact Real.iSup_le (fun i ↦ Finite.le_ciSup_of_le (some i) le_rfl)
-        (Real.iSup_nonneg_of_nonnegHomClass v _)
-    · exact Finite.le_ciSup_of_le none (by simp)
   have hx : (fun o : Option ι ↦ o.elim 1 x) ≠ 0 := fun h ↦ one_ne_zero (congrFun h none)
-  simp only [mulHeightAff_def, mulHeight_eq hx, key]
+  simp only [mulHeightAff_def, mulHeight_eq hx, iSup_option_elim_eq_max]
 
 /-- The nonarchimedean local factor `max (⨆ i, v (x i)) 1` of the affine height is `1` at all
 but finitely many places. -/
@@ -283,6 +335,32 @@ lemma mulHeight₁_le_mulHeightAff [Finite ι] (x : ι → K) (i : ι) :
 lemma logHeight₁_le_logHeightAff [Finite ι] (x : ι → K) (i : ι) :
     logHeight₁ (x i) ≤ logHeightAff x :=
   log_le_log (mulHeight₁_pos _) (mulHeight₁_le_mulHeightAff x i)
+
+/-- The affine height is at most the product of the scalar heights of its coordinates. -/
+lemma mulHeightAff_le_prod_mulHeight₁ [Fintype ι] (x : ι → K) :
+    mulHeightAff x ≤ ∏ i, mulHeight₁ (x i) := by
+  classical
+  -- The affine tuple occurs among the coordinates of the Segre product of `(x i, 1)`.
+  let e : Option ι → ι → Fin 2 := fun o i ↦ if o = some i then 0 else 1
+  have he : (fun o : Option ι ↦ o.elim 1 x) =
+      (fun s : ι → Fin 2 ↦ ∏ i, ![x i, 1] (s i)) ∘ e := by
+    funext o
+    cases o with
+    | none => simp [e]
+    | some j => simp [e, apply_ite]
+  rw [mulHeightAff_def, he]
+  calc
+    _ ≤ mulHeight (fun s : ι → Fin 2 ↦ ∏ i, ![x i, 1] (s i)) := mulHeight_comp_le e _
+    _ = ∏ i, mulHeight₁ (x i) := by
+      rw [mulHeight_fun_prod_eq (by simp)]
+      simp only [mulHeight₁_eq_mulHeight]
+
+/-- The affine logarithmic height is at most the sum of the scalar logarithmic heights. -/
+lemma logHeightAff_le_sum_logHeight₁ [Fintype ι] (x : ι → K) :
+    logHeightAff x ≤ ∑ i, logHeight₁ (x i) := by
+  simpa [logHeightAff_eq_log_mulHeightAff, logHeight₁_eq_log_mulHeight₁,
+    Real.log_prod (fun i _ ↦ mulHeight₁_ne_zero (x i))] using
+    Real.log_le_log (mulHeightAff_pos x) (mulHeightAff_le_prod_mulHeight₁ x)
 
 /-- **The affine height is not invariant under scaling.** Over `ℚ`, doubling the tuple `![1]`
 changes its affine height from `1` to `2`, while the projective height of every tuple is

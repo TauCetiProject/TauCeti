@@ -49,6 +49,15 @@ is evaluated at `v` by its image in the residue field, and the condition cutting
   every element,
   since every element of a fraction field is a fraction, and neither needs the
   definition unfolded.
+* `TauCeti.ValuationSpectrum.residueFieldValuation_comap_algebraMap`: the residue-field valuation
+  restricts to the valuation of `v` along `A → κ(v)`, so a point is the pullback of its
+  residue-field valuation.
+* `TauCeti.ValuationSpectrum.comap_algebraMap_residueField_ofValuation`: the point of `Spv κ(v)`
+  given by the residue-field valuation pulls back to `v`.
+* `TauCeti.ValuationSpectrum.comap_algebraMap_residueField_injective`: pulling back along
+  `A → κ(𝔭)` is injective on valuation spectra.
+* `TauCeti.ValuationSpectrum.mem_range_comap_algebraMap_residueField_iff`: the points of `Spv A`
+  coming from `Spv κ(𝔭)` are exactly those with support `𝔭`.
 
 ## References
 
@@ -136,6 +145,43 @@ theorem residueFieldValuation_mk' (v : Spv A) (x : residueRing v)
     Valuation.extendToLocalization_mk' (quotientValuation v)
       (fun _ hs ↦ quotientValuation_ne_zero v (nonZeroDivisors.ne_zero hs))
       (v.supp.ResidueField) x s
+
+/-- **The residue-field valuation restricts to the valuation of `v`** along `A → κ(v)`. With
+`TauCeti.ValuationSpectrum.ofValuation_valuation` this says that a point is the pullback of its
+residue-field valuation. -/
+@[simp]
+theorem residueFieldValuation_comap_algebraMap (v : Spv A) :
+    (residueFieldValuation v).comap (algebraMap A v.supp.ResidueField) = v.valuation := by
+  rw [IsScalarTower.algebraMap_eq A (residueRing v), Valuation.comap_comp,
+    ← quotientValuation_comap_quotientMk]
+  congr 1
+  ext x
+  simp
+
+/-- **A point is the pullback of its residue-field valuation.** The point of `Spv κ(v)` given by
+`residueFieldValuation v` pulls back to `v` along `A → κ(v)`. -/
+theorem comap_algebraMap_residueField_ofValuation (v : Spv A) :
+    comap (algebraMap A v.supp.ResidueField) (ofValuation (residueFieldValuation v)) = v := by
+  rw [comap_ofValuation, residueFieldValuation_comap_algebraMap, ofValuation_valuation]
+
+/-- Pulling back along `A → κ(𝔭)` is injective on valuation spectra, since `A → κ(𝔭)` is a
+surjection followed by a localization. -/
+theorem comap_algebraMap_residueField_injective (p : Ideal A) [p.IsPrime] :
+    Function.Injective (comap (algebraMap A p.ResidueField)) := by
+  rw [IsScalarTower.algebraMap_eq A (A ⧸ p), comap_comp]
+  exact (comap_injective Ideal.Quotient.mk_surjective).comp
+    (localization_comap_injective (nonZeroDivisors (A ⧸ p)) p.ResidueField)
+
+/-- **The points of `Spv κ(𝔭)` inside `Spv A`.** A point `v` of `Spv A` is the pullback of a
+point of the valuation spectrum of the residue field `κ(𝔭)` exactly when its support is `𝔭`. -/
+theorem mem_range_comap_algebraMap_residueField_iff (p : Ideal A) [p.IsPrime] (v : Spv A) :
+    v ∈ Set.range (comap (algebraMap A p.ResidueField)) ↔ v.supp = p := by
+  constructor
+  · rintro ⟨w, rfl⟩
+    rw [supp_comap, Ideal.eq_bot_of_prime w.supp, ← RingHom.ker_eq_comap_bot,
+      Ideal.ker_algebraMap_residueField]
+  · rintro rfl
+    exact ⟨ofValuation (residueFieldValuation v), comap_algebraMap_residueField_ofValuation v⟩
 
 end ValuationSpectrum
 

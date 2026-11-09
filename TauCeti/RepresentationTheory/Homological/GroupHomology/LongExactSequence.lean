@@ -44,17 +44,14 @@ public section
 
 universe u
 
-open CategoryTheory Rep ShortComplex
+open CategoryTheory Rep
 
 namespace TauCeti.groupHomology
 
 open _root_.groupHomology
 
 variable {k G H : Type u} [CommRing k] [Group G] [Group H]
-
-section Naturality
-
-variable (f : G →* H) {X : ShortComplex (Rep.{u} k G)} {Y : ShortComplex (Rep.{u} k H)}
+  (f : G →* H) {X : ShortComplex (Rep.{u} k G)} {Y : ShortComplex (Rep.{u} k H)}
 
 /-- A morphism `Φ : X ⟶ Res_f Y` of short complexes of representations, along a group
 homomorphism `f : G →* H`, induces a morphism between the short complexes of inhomogeneous chain
@@ -77,26 +74,26 @@ noncomputable def chainsMapShortComplex (Φ : X ⟶ Y.map (resFunctor f)) :
     (chainsMap_comp f (MonoidHom.id H) Φ.τ₂ Y.g).symm.trans
       ((congrArg (chainsMap f) Φ.comm₂₃).trans (chainsMap_comp (MonoidHom.id G) f X.g Φ.τ₃))
 
-/-- The first component of `chainsMapShortComplex f Φ` is the chain map induced by the pair `(f,
-Φ.τ₁)`. -/
+/-- The first component of `chainsMapShortComplex f Φ` is the chain map induced by the pair
+`(f, Φ.τ₁)`. -/
 @[simp]
 theorem chainsMapShortComplex_τ₁ (Φ : X ⟶ Y.map (resFunctor f)) :
-    (chainsMapShortComplex f Φ).τ₁ = chainsMap f Φ.τ₁ := by
-  rw [chainsMapShortComplex.eq_def]
+    (chainsMapShortComplex f Φ).τ₁ = chainsMap f Φ.τ₁ :=
+  (rfl)
 
-/-- The second component of `chainsMapShortComplex f Φ` is the chain map induced by the pair `(f,
-Φ.τ₂)`. -/
+/-- The second component of `chainsMapShortComplex f Φ` is the chain map induced by the pair
+`(f, Φ.τ₂)`. -/
 @[simp]
 theorem chainsMapShortComplex_τ₂ (Φ : X ⟶ Y.map (resFunctor f)) :
-    (chainsMapShortComplex f Φ).τ₂ = chainsMap f Φ.τ₂ := by
-  rw [chainsMapShortComplex.eq_def]
+    (chainsMapShortComplex f Φ).τ₂ = chainsMap f Φ.τ₂ :=
+  (rfl)
 
-/-- The third component of `chainsMapShortComplex f Φ` is the chain map induced by the pair `(f,
-Φ.τ₃)`. -/
+/-- The third component of `chainsMapShortComplex f Φ` is the chain map induced by the pair
+`(f, Φ.τ₃)`. -/
 @[simp]
 theorem chainsMapShortComplex_τ₃ (Φ : X ⟶ Y.map (resFunctor f)) :
-    (chainsMapShortComplex f Φ).τ₃ = chainsMap f Φ.τ₃ := by
-  rw [chainsMapShortComplex.eq_def]
+    (chainsMapShortComplex f Φ).τ₃ = chainsMap f Φ.τ₃ :=
+  (rfl)
 
 /-- **The connecting map of group homology is natural with respect to change of group.** For short
 exact sequences `X` of `G`-representations and `Y` of `H`-representations, and a morphism
@@ -108,7 +105,5 @@ theorem δ_naturality (hX : X.ShortExact) (hY : Y.ShortExact) (Φ : X ⟶ Y.map 
     δ hX i j hij ≫ map f Φ.τ₁ j = map f Φ.τ₃ i ≫ δ hY i j hij :=
   HomologicalComplex.HomologySequence.δ_naturality (chainsMapShortComplex f Φ)
     (map_chainsFunctor_shortExact hX) (map_chainsFunctor_shortExact hY) i j hij
-
-end Naturality
 
 end TauCeti.groupHomology

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.SnakeLemma
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Finite
 public import Mathlib.RingTheory.QuotSMulTop
+public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
 
 /-!
 # The kernel–cokernel exact sequence of multiplication by a scalar
@@ -24,7 +25,8 @@ The functor `QuotSMulTop r` and the right-exact half of this sequence are Mathli
 (`QuotSMulTop.map`, `QuotSMulTop.map_exact`, `QuotSMulTop.map_surjective`). This file supplies the
 torsion functor `TauCeti.torsionByMap`, the left-exact half, the connecting map
 `TauCeti.torsionByδ` (Mathlib's `SnakeLemma.δ'` for this diagram), exactness at its two ends, and
-its naturality in morphisms of short exact sequences.
+its naturality in morphisms of short exact sequences. A surjection with uniquely `r`-divisible
+kernel induces a bijection on `r`-torsion, so every `r`-torsion point lifts uniquely.
 
 Naturality is what makes the connecting map compatible with extra structure. For `R = ℤ`, `r = ℓ`
 and a group `G` acting on the sequence by additive automorphisms, each `g : G` gives a morphism of
@@ -33,21 +35,37 @@ commutes with the actions of `g` on `M₃[ℓ]` and on `M₁ ⧸ ℓM₁`. This 
 sequence enters the comparison of `M ⧸ ℓM` with `M[ℓ]` for `G`-modules in Neukirch–Schmidt–Wingberg,
 *Cohomology of Number Fields*, (7.3.3).
 
+For `R = ℤ` and an injective additive map `f : Λ → E`, the sequence `0 → Λ → E → E / f(Λ) → 0`
+with the orbit space `E / f(Λ)` of translation by the range of `f` is short exact; for a lattice
+`Λ` in a real vector space `E` this is the torus `E / Λ`. Its connecting map
+`LinearMap.orbitRelQuotientTorsionByδ` sends an `r`-torsion point `[β]` with `r • β = f l` to the
+class of `l` in `Λ ⧸ rΛ`, so this class does not depend on the representative `β`.
+
 ## Main definitions
 
 * `TauCeti.torsionByMap`: the restriction `M[r] →ₗ[R] N[r]` of a linear map.
 * `TauCeti.torsionByδ`: the connecting map `M₃[r] →ₗ[R] M₁ ⧸ rM₁` of a short exact sequence.
 * `TauCeti.torsionByδEquiv`: the connecting map as an isomorphism, when multiplication by `r` is
   bijective on `M₂`.
+* `LinearMap.orbitRelQuotientTorsionByδ`: the connecting map `(E / f(Λ))[r] → Λ ⧸ rΛ` of the orbit
+  space of an injective map `f : Λ → E`.
 
 ## Main results
 
 * `TauCeti.injective_torsionByMap`, `TauCeti.exact_torsionByMap`: `M[r]` is left exact.
+* `TauCeti.bijective_torsionByMap_of_bijective_ker_smul`,
+  `TauCeti.existsUnique_torsion_lift_of_bijective_ker_smul`: a surjection with uniquely
+  `r`-divisible kernel induces a bijection on `r`-torsion and lifts `r`-torsion uniquely.
 * `TauCeti.torsionByδ_eq`: the connecting map sends `g y` to the class of `z` when `f z = r • y`.
 * `TauCeti.exact_torsionByMap_torsionByδ`, `TauCeti.exact_torsionByδ_quotSMulTop_map`: exactness
   at `M₃[r]` and at `M₁ ⧸ rM₁`.
+* `TauCeti.injective_torsionByδ`: the connecting map is injective when multiplication by `r` is
+  injective on `M₂`.
 * `TauCeti.torsionByδ_comp_torsionByMap`: naturality of the connecting map.
 * `TauCeti.finite_quotSMulTop_of_exact`: `M₁ ⧸ rM₁` is finite when `M₃[r]` and `M₂ ⧸ rM₂` are.
+* `LinearMap.orbitRelQuotientTorsionByδ_eq`, `LinearMap.quotSMulTop_mk_eq_mk_of_smul_eq`: the
+  connecting map of an orbit space sends `[β]` to the class of `l` when `r • β = f l`, and this
+  class is independent of the representative `β`.
 -/
 
 public section
@@ -176,6 +194,16 @@ theorem finite_quotSMulTop_of_exact (hfg : Exact f g) (hf : Injective f) (hg : S
   exact (AddGroup.fintypeOfKerLeRange (torsionByδ r hfg hf hg).toAddMonoidHom
     (QuotSMulTop.map r f).toAddMonoidHom fun x hx ↦ (h x).1 hx).finite
 
+/-- **Injectivity of the connecting map**: when multiplication by `r` is injective on `M₂`, the
+connecting map `M₃[r] → M₁ ⧸ rM₁` is injective, since its kernel is the image of `M₂[r] = 0`. -/
+theorem injective_torsionByδ (hfg : Exact f g) (hf : Injective f) (hg : Surjective g)
+    (hr : Injective fun x : M₂ ↦ r • x) : Injective (torsionByδ r hfg hf hg) :=
+  (injective_iff_map_eq_zero _).2 fun x hx ↦ by
+    -- `x` comes from `M₂[r]`, which vanishes.
+    obtain ⟨y, rfl⟩ := (exact_torsionByMap_torsionByδ hfg hf hg x).1 hx
+    have hy : y = 0 := Subtype.ext (hr (by simp))
+    rw [hy, map_zero]
+
 variable (r) in
 /-- **The connecting isomorphism `M₃[r] ≃ M₁ ⧸ rM₁`.** When multiplication by `r` is bijective on
 `M₂`, both `M₂[r]` and `M₂ ⧸ rM₂` vanish, so the six-term sequence makes the connecting map an
@@ -184,11 +212,7 @@ torus `M₃`, this identifies the `r`-torsion points of the torus with `M₁ ⧸
 noncomputable def torsionByδEquiv (hfg : Exact f g) (hf : Injective f) (hg : Surjective g)
     (hr : Bijective fun x : M₂ ↦ r • x) : torsionBy R M₃ r ≃ₗ[R] QuotSMulTop r M₁ :=
   LinearEquiv.ofBijective (torsionByδ r hfg hf hg)
-    ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ by
-      -- `x` comes from `M₂[r]`, which vanishes.
-      obtain ⟨y, rfl⟩ := (exact_torsionByMap_torsionByδ hfg hf hg x).1 hx
-      have hy : y = 0 := Subtype.ext (hr.1 (by simp))
-      rw [hy, map_zero],
+    ⟨injective_torsionByδ hfg hf hg hr.1,
     fun q ↦ (exact_torsionByδ_quotSMulTop_map hfg hf hg q).1 <| by
       -- `M₂ ⧸ rM₂` vanishes, so `q` maps to zero.
       obtain ⟨z, rfl⟩ := Submodule.Quotient.mk_surjective _ q
@@ -228,4 +252,93 @@ theorem torsionByδ_comp_torsionByMap (hfg : Exact f g) (hf : Injective f) (hg :
 
 end Snake
 
+section Lift
+
+variable {R : Type*} [CommRing R] (r : R) {M N : Type*}
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- A surjective linear map induces a bijection on `r`-torsion when multiplication
+by `r` is bijective on its kernel. -/
+theorem bijective_torsionByMap_of_bijective_ker_smul (f : M →ₗ[R] N)
+    (hf : Surjective f) (hr : Bijective fun x : LinearMap.ker f ↦ r • x) :
+    Bijective (torsionByMap r f) := by
+  have hex := LinearMap.exact_subtype_ker_map f
+  have hinj := (LinearMap.ker f).injective_subtype
+  have : Subsingleton (QuotSMulTop r (LinearMap.ker f)) := by
+    apply Submodule.Quotient.subsingleton_iff.mpr
+    apply top_unique
+    intro x _
+    obtain ⟨y, rfl⟩ := hr.2 x
+    exact Submodule.smul_mem_pointwise_smul y r ⊤ trivial
+  exact ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ by
+    obtain ⟨y, rfl⟩ := (exact_torsionByMap hex hinj x).1 hx
+    have hy : y = 0 := Subtype.ext (hr.1 (by simp))
+    rw [hy, map_zero],
+    fun y ↦ (exact_torsionByMap_torsionByδ hex hinj hf y).1 (Subsingleton.elim _ _)⟩
+
+/-- A surjective linear map whose kernel is uniquely divisible by `r` lifts every
+`r`-torsion point uniquely to an `r`-torsion point. -/
+theorem existsUnique_torsion_lift_of_bijective_ker_smul (f : M →ₗ[R] N)
+    (hf : Surjective f) (hr : Bijective fun x : LinearMap.ker f ↦ r • x)
+    (y : N) (hy : r • y = 0) : ∃! x : M, r • x = 0 ∧ f x = y := by
+  obtain ⟨x, hx, huniq⟩ :=
+    (bijective_torsionByMap_of_bijective_ker_smul r f hf hr).existsUnique
+      ⟨y, (mem_torsionBy_iff _ _).mpr hy⟩
+  refine ⟨x, ⟨(mem_torsionBy_iff _ _).mp x.2, congrArg Subtype.val hx⟩, fun z hz ↦ ?_⟩
+  exact congrArg Subtype.val (huniq ⟨z, (mem_torsionBy_iff _ _).mpr hz.1⟩ (Subtype.ext hz.2))
+
+end Lift
+
 end TauCeti
+
+/-! ### Orbit spaces of injective maps -/
+
+namespace LinearMap
+
+open TauCeti
+
+variable {Λ E : Type*} [AddCommGroup Λ] [AddCommGroup E] (f : Λ →ₗ[ℤ] E) (hf : Injective f)
+  (r : ℤ)
+
+/-- **The connecting map of an orbit space** `(E / f(Λ))[r] → Λ ⧸ rΛ`, for an injective additive
+map `f : Λ → E` and the orbit space `E / f(Λ)` of translation by its range, for instance a lattice
+and its torus: the connecting map `TauCeti.torsionByδ` of the exact sequence
+`0 → Λ → E → E / f(Λ) → 0`. It sends the class of `β` with `r • β = f l` to the class of `l`
+(`LinearMap.orbitRelQuotientTorsionByδ_eq`). -/
+noncomputable def orbitRelQuotientTorsionByδ :
+    torsionBy ℤ (AddAction.orbitRel.Quotient (range f) E) r →ₗ[ℤ] QuotSMulTop r Λ :=
+  torsionByδ r (g := (range f).orbitRelQuotientMkHom.toIntLinearMap)
+    (exact_orbitRelQuotientMkHom_range f) hf <| by
+      rw [AddMonoidHom.coe_toIntLinearMap, Submodule.coe_orbitRelQuotientMkHom]
+      exact Quotient.mk_surjective
+
+/-- **The characterization of the connecting map of an orbit space**: if `x` is the class of `β`
+and `r • β = f l`, then `x` is sent to the class of `l`. -/
+theorem orbitRelQuotientTorsionByδ_eq (x : torsionBy ℤ (AddAction.orbitRel.Quotient (range f) E) r)
+    {β : E} (hx : (x : AddAction.orbitRel.Quotient (range f) E) = Quotient.mk _ β) {l : Λ}
+    (hl : f l = r • β) :
+    f.orbitRelQuotientTorsionByδ hf r x = Submodule.Quotient.mk l :=
+  torsionByδ_eq _ hf _ x (by simpa using hx.symm) hl
+
+/-- The connecting map of an orbit space is injective when multiplication by `r` is injective on
+`E`, as for a real vector space and `r ≠ 0`. -/
+theorem injective_orbitRelQuotientTorsionByδ (hr : Injective fun v : E ↦ r • v) :
+    Injective (f.orbitRelQuotientTorsionByδ hf r) :=
+  injective_torsionByδ _ hf _ hr
+
+include hf in
+/-- **Independence of the lift.** If `β₁` and `β₂` represent the same point of the orbit space
+`E / f(Λ)`, and `r • β₁ = f l₁`, `r • β₂ = f l₂`, then `l₁` and `l₂` agree modulo `rΛ`. -/
+theorem quotSMulTop_mk_eq_mk_of_smul_eq {β₁ β₂ : E}
+    (hβ : (Quotient.mk _ β₁ : AddAction.orbitRel.Quotient (range f) E) = Quotient.mk _ β₂)
+    {l₁ l₂ : Λ} (hl₁ : f l₁ = r • β₁) (hl₂ : f l₂ = r • β₂) :
+    (Submodule.Quotient.mk l₁ : QuotSMulTop r Λ) = Submodule.Quotient.mk l₂ := by
+  have hx : (Quotient.mk _ β₁ : AddAction.orbitRel.Quotient (range f) E) ∈ torsionBy ℤ _ r := by
+    have h := map_zsmul (range f).orbitRelQuotientMkHom r β₁
+    rw [Submodule.coe_orbitRelQuotientMkHom, ← hl₁] at h
+    rw [mem_torsionBy_iff, ← h, Submodule.orbitRelQuotient_mk_eq_zero_iff]
+    exact mem_range_self f l₁
+  rw [← f.orbitRelQuotientTorsionByδ_eq hf r ⟨_, hx⟩ rfl hl₁,
+    f.orbitRelQuotientTorsionByδ_eq hf r ⟨_, hx⟩ hβ hl₂]
+
+end LinearMap

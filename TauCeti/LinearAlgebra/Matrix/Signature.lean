@@ -193,7 +193,7 @@ theorem signature_hyperbolicGram :
     rw [diagonal_fin_two]
     ext i j
     fin_cases i <;> fin_cases j <;>
-      simp [mul_apply, Fin.sum_univ_two, transpose_apply] <;> ring
+      simp [Matrix.mul_apply, Fin.sum_univ_two, transpose_apply] <;> ring
   rw [signature_eq_of_congr_diagonal hP hd, Fin.sum_univ_two]
   norm_num
 

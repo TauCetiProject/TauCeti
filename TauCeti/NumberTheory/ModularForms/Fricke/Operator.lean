@@ -75,6 +75,8 @@ transport of the later Fricke rungs is built from.
   `S_k(Γ₁(N)) → M_k(Γ₁(N))`.
 * `TauCeti.frickeOperator_diamondOp`, `TauCeti.frickeOperatorCusp_diamondOpCusp`: the
   **diamond shift** `W ∘ ⟨d⟩ = ⟨d⁻¹⟩ ∘ W`, on modular and on cusp forms.
+* `TauCeti.frickeGL_smul_eq_S_smul`: on `ℍ`, `W` acts as `τ ↦ -1 / (N τ)`, the inversion `S`
+  after the dilation by `N`.
 
 ## Provenance
 
@@ -107,8 +109,8 @@ the diamond label — the same substitution by which `Gamma0MapUnits_frickeConjS
 `toHomUnits_gamma0Map_frickeConjGamma0_eq_inv` in `Fricke/Conjugation.lean`, and the reason no
 `Gamma0MapUnits` definition is needed to state it. AINTLIB evaluates `⟨d⟩` on a representative
 through its private `diamondOp_eq_diamondOpAux`; the public `coe_diamondOp` does that here, so
-no auxiliary is introduced. The cusp-form twin `frickeOperatorCusp_diamondOpCusp` has no
-counterpart in the source.
+no auxiliary is introduced. The cusp-form twin `frickeOperatorCusp_diamondOpCusp` and the
+action lemma `frickeGL_smul_eq_S_smul` have no counterpart in the source.
 
 ## References
 
@@ -122,6 +124,15 @@ open scoped MatrixGroups ModularForm Pointwise
 namespace TauCeti
 
 variable {N : ℕ} [NeZero N] {k : ℤ}
+
+/-- **The Fricke matrix acts on `ℍ` as `τ ↦ -1 / (N τ)`**: the inversion `S` after the dilation
+`τ ↦ N τ` by the positive real `N`. -/
+public theorem frickeGL_smul_eq_S_smul (τ : ℍ) :
+    frickeGL ℝ N • τ =
+      ModularGroup.S • ((⟨N, Nat.cast_pos.mpr (NeZero.pos N)⟩ : {r : ℝ // 0 < r}) • τ) := by
+  apply UpperHalfPlane.ext
+  rw [coe_smul_of_det_pos val_det_frickeGL_pos, modular_S_smul]
+  simp [num, denom, coe_pos_real_smul, inv_neg, neg_div]
 
 /-- **`W` normalizes `Γ₁(N)` in `GL (Fin 2) ℝ`**: conjugating the image of `Γ₁(N)` by the Fricke
 matrix returns that same subgroup. This is `frickeConjSL_mem_Gamma1` — that `W σ W⁻¹` stays in

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.IndexNSmul
 public import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Group
 public import TauCeti.LinearAlgebra.IntegralLattice.Gram
@@ -37,6 +38,11 @@ Gram matrix of `b`: the coefficient of `b j` along the dual vector indexed by `i
   constructed from a nonsingular integral symmetric matrix.
 * `TauCeti.IntegralLattice.inv_smul_mem_carrier_of_forall_dvd`: for `p` prime to `det L`, a vector
   pairing into `pℤ` with all of `L` lies in `p L`.
+* `TauCeti.IntegralLattice.exists_isCoprime_integralForm`: for a prime `p` prime to `det L`, a
+  vector outside `p L` pairs with some lattice vector coprimely to `p`.
+* `TauCeti.IntegralLattice.natCard_discriminantGroup_dvd_pow_finrank` and
+  `TauCeti.IntegralLattice.exists_mem_dualCarrier_eq_nsmul`: a discriminant group killed by `n`
+  has order dividing `n^r`, `r` the rank, and if the order is `n^r` then `L = nLᵛ`.
 
 ## References
 
@@ -125,6 +131,17 @@ theorem inv_smul_mem_carrier_of_forall_dvd (L : IntegralLattice V) [L.IsNondegen
     ((addOrderOf_dvd_natCard x).trans (L.natCard_discriminantGroup).dvd)
   exact (L.discriminantGroup_mk_eq_zero_iff _).mp (AddMonoid.addOrderOf_eq_one_iff.mp horder)
 
+/-- **A vector outside `p L` pairs with some lattice vector coprimely to `p`** when the prime `p`
+is prime to the discriminant. -/
+theorem exists_isCoprime_integralForm (L : IntegralLattice V) [L.IsNondegenerate] {p : ℕ}
+    (hp : p.Prime) (hd : p.Coprime L.discriminant) {v : L} (hv : ∀ y : L, v ≠ (p : ℤ) • y) :
+    ∃ w : L, IsCoprime (L.integralForm v w) p := by
+  have : NeZero p := ⟨hp.ne_zero⟩
+  by_contra! h
+  have hmem := L.inv_smul_mem_carrier_of_forall_dvd hd fun w ↦ by
+    simpa [isCoprime_comm, Prime.coprime_iff_not_dvd (Nat.prime_iff_prime_int.mp hp)] using h w
+  exact hv ⟨_, hmem⟩ (Subtype.ext (by simp [← Nat.cast_smul_eq_nsmul ℚ, hp.ne_zero]))
+
 open Classical in
 /-- The discriminant group of a lattice constructed from a nonsingular integral symmetric matrix
 has cardinality equal to the absolute value of that matrix's determinant. -/
@@ -135,5 +152,68 @@ theorem natCard_discriminantGroup_ofGramMatrix {ι : Type v} [Fintype ι]
   have : (ofGramMatrix b G hG).IsNondegenerate :=
     isNondegenerate_ofGramMatrix b G hG hdet
   rw [natCard_discriminantGroup, discriminant_ofGramMatrix]
+
+/-! ## Discriminant groups killed by `n` -/
+
+section Torsion
+
+variable (L : IntegralLattice V) [L.IsNondegenerate] (n : ℕ)
+
+omit [L.IsNondegenerate] in
+/-- A dual vector whose discriminant class is killed by `n` has its `n`-th multiple in the
+lattice. -/
+theorem nsmul_mem_carrier (hn : ∀ x : L.DiscriminantGroup, n • x = 0)
+    (y : L.dualCarrier) : n • (y : V) ∈ L.carrier := by
+  have h := hn (L.carrierInDual.mkQ y)
+  rwa [← map_nsmul, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, mem_carrierInDual_iff,
+    Submodule.coe_smul_of_tower] at h
+
+omit [L.IsNondegenerate] in
+/-- When `nA_L = 0`, the image `nLᵛ` of multiplication by `n` lies in `L`, viewed inside `Lᵛ`. -/
+private theorem range_nsmul_le_carrierInDual (hn : ∀ x : L.DiscriminantGroup, n • x = 0) :
+    (nsmulAddMonoidHom (α := L.dualCarrier) n).range ≤ L.carrierInDual.toAddSubgroup := by
+  rintro _ ⟨y, rfl⟩
+  rw [Submodule.mem_toAddSubgroup, mem_carrierInDual_iff, nsmulAddMonoidHom_apply,
+    Submodule.coe_smul_of_tower]
+  exact L.nsmul_mem_carrier n hn y
+
+omit [L.IsNondegenerate] in
+/-- The index of `L` in `Lᵛ` is the order of the discriminant group. -/
+private theorem index_carrierInDual :
+    L.carrierInDual.toAddSubgroup.index = Nat.card L.DiscriminantGroup :=
+  AddSubgroup.index_eq_card _
+
+/-- The index of `nLᵛ` in `Lᵛ` is `n^r`, `r` the rank. -/
+private theorem index_range_nsmul :
+    (nsmulAddMonoidHom (α := L.dualCarrier) n).range.index = n ^ finrank ℚ V := by
+  rw [AddSubgroup.index_range_nsmul, finrank_dualCarrier]
+
+/-- **A discriminant group killed by `n` has order dividing `n^r`**, `r` the rank: it is a
+quotient of `Lᵛ/nLᵛ ≅ (ℤ/n)^r`. -/
+theorem natCard_discriminantGroup_dvd_pow_finrank
+    (hn : ∀ x : L.DiscriminantGroup, n • x = 0) :
+    Nat.card L.DiscriminantGroup ∣ n ^ finrank ℚ V := by
+  rw [← L.index_carrierInDual, ← L.index_range_nsmul]
+  exact AddSubgroup.index_dvd_of_le (L.range_nsmul_le_carrierInDual n hn)
+
+/-- **If the discriminant group is killed by `n` and has order `n^r`, `r` the rank, then
+`L = nLᵛ`**: every lattice vector is `n` times a dual vector. -/
+theorem exists_mem_dualCarrier_eq_nsmul (hn : ∀ x : L.DiscriminantGroup, n • x = 0)
+    (hcard : Nat.card L.DiscriminantGroup = n ^ finrank ℚ V) {x : V} (hx : x ∈ L.carrier) :
+    ∃ y ∈ L.dualCarrier, x = n • y := by
+  have hle := L.range_nsmul_le_carrierInDual n hn
+  have hrel := AddSubgroup.relIndex_mul_index hle
+  rw [L.index_carrierInDual, hcard, ← L.index_range_nsmul] at hrel
+  have hK : L.carrierInDual.toAddSubgroup ≤ (nsmulAddMonoidHom (α := L.dualCarrier) n).range :=
+    AddSubgroup.relIndex_eq_one.mp
+      (Nat.eq_of_mul_eq_mul_right (by rw [L.index_range_nsmul, ← hcard]; exact Nat.card_pos)
+        (hrel.trans (one_mul _).symm))
+  obtain ⟨y, hy⟩ := hK ((Submodule.mem_toAddSubgroup _).mpr
+    ((L.mem_carrierInDual_iff ⟨x, L.le_dualCarrier hx⟩).mpr hx))
+  have hy' := congrArg Subtype.val hy
+  rw [nsmulAddMonoidHom_apply, Submodule.coe_smul_of_tower] at hy'
+  exact ⟨y, y.2, hy'.symm⟩
+
+end Torsion
 
 end TauCeti.IntegralLattice

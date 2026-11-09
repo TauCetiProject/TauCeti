@@ -56,8 +56,6 @@ open _root_.FundamentalGroupoid
 variable {X : Type*} [TopologicalSpace X] {ι : Type*} {U : ι → Set X}
   {D : Type*} [Category D]
 
-variable (hU : ∀ x, ∃ i, U i ∈ 𝓝 x)
-
 section Partition
 
 /-- The `k`-th point of the uniform partition of the unit interval into `N` pieces; it is constant
@@ -67,7 +65,7 @@ private def pt (N k : ℕ) : I := Set.Icc.addNSMul zero_le_one (1 / N : ℝ) k
 private lemma coe_pt {N k : ℕ} (hk : k ≤ N) : (pt N k : ℝ) = k / N := by
   rcases Nat.eq_zero_or_pos N with rfl | hN
   · obtain rfl : k = 0 := by omega
-    simp [pt, Set.Icc.addNSMul_zero]
+    simp [pt]
   rw [pt, Set.Icc.addNSMul, projIcc_of_mem]
   · simp [div_eq_mul_inv]
   · simp only [zero_add, nsmul_eq_mul, mem_Icc]
@@ -75,10 +73,16 @@ private lemma coe_pt {N k : ℕ} (hk : k ≤ N) : (pt N k : ℝ) = k / N := by
     rw [mul_one_div, div_le_one (by exact_mod_cast hN)]
     exact_mod_cast hk
 
-private lemma pt_zero (N : ℕ) : pt N 0 = 0 := Subtype.ext (by simp [pt, Set.Icc.addNSMul_zero])
+private lemma pt_zero (N : ℕ) : pt N 0 = 0 := Subtype.ext (by simp [pt])
 
 private lemma pt_self {N : ℕ} (hN : N ≠ 0) : pt N N = 1 :=
   Subtype.ext (by rw [coe_pt le_rfl]; simp [hN])
+
+private lemma pt_eq_one {N k : ℕ} (hN : N ≠ 0) (hk : N ≤ k) : pt N k = 1 := by
+  rw [pt, Set.Icc.addNSMul, projIcc_of_right_le]
+  · rfl
+  · rw [zero_add, nsmul_eq_mul, mul_one_div, le_div_iff₀ (by positivity), one_mul]
+    exact_mod_cast hk
 
 private lemma pt_mono (N : ℕ) : Monotone (pt N) :=
   Set.Icc.monotone_addNSMul _ (by positivity)
@@ -107,377 +111,9 @@ private lemma mem_Icc_pt {N k : ℕ} : pt N k ∈ Icc (pt N k) (pt N (k + 1)) :=
 private lemma mem_Icc_pt_succ {N k : ℕ} : pt N (k + 1) ∈ Icc (pt N k) (pt N (k + 1)) :=
   right_mem_Icc.2 (pt_mono N k.le_succ)
 
-end Partition
-
-variable (U) in
-/-- `γ` maps every piece of the uniform partition of the unit interval into `N` pieces into a
-single member of `U`. -/
-private def IsFine {x y : X} (γ : Path x y) (N : ℕ) : Prop :=
-  ∀ k, ∃ i, ∀ t ∈ Icc (pt N k) (pt N (k + 1)), γ t ∈ U i
-
-include hU in
-private lemma exists_isFine {x y : X} (γ : Path x y) :
-    ∃ N₀, ∀ N, N₀ ≤ N → N ≠ 0 ∧ IsFine U γ N := by
-  obtain ⟨δ, hδ, h⟩ := lebesgue_number_lemma_of_metric_of_mem_nhds isCompact_univ
-    (c := fun i ↦ γ ⁻¹' U i) fun t _ ↦
-      (hU (γ t)).imp fun _ ↦ γ.continuous.continuousAt.preimage_mem_nhds
-  obtain ⟨n, hn⟩ := exists_nat_one_div_lt hδ
-  refine ⟨n + 1, fun N hN ↦ ⟨by omega, fun k ↦ ?_⟩⟩
-  obtain ⟨i, hi⟩ := h (pt N k) (mem_univ _)
-  refine ⟨i, fun t ht ↦ hi ?_⟩
-  rw [mem_ball, Subtype.dist_eq, Real.dist_eq]
-  exact (abs_sub_pt_le ht).trans_lt <|
-    (one_div_le_one_div_of_le (by positivity) (by exact_mod_cast hN)).trans_lt hn
-
-private lemma IsFine.subpath_mem {x y : X} {γ : Path x y} {N : ℕ} (h : IsFine U γ N) (k : ℕ) :
-    ∃ i, ∀ t, γ.subpath (pt N k) (pt N (k + 1)) t ∈ U i :=
-  (h k).imp fun _ hi ↦ Path.subpath_apply_mem hi mem_Icc_pt mem_Icc_pt_succ
-
-section Construction
-
-variable (F : ∀ i, _root_.FundamentalGroupoid (U i) ⥤ D)
-  (hF : ∀ i j, map (ContinuousMap.inclusion (inter_subset_left : U i ∩ U j ⊆ U i)) ⋙ F i =
-    map (ContinuousMap.inclusion (inter_subset_right : U i ∩ U j ⊆ U j)) ⋙ F j)
-
-/-- The object of `D` assigned to a point, through a chosen member of the cover. -/
-private def glueObj (x : X) : D :=
-  (F (hU x).choose).obj (mk ⟨x, mem_of_mem_nhds (hU x).choose_spec⟩)
-
-include hF in
-private lemma obj_eq (i : ι) {x : X} (hx : x ∈ U i) :
-    (F i).obj (mk ⟨x, hx⟩) = glueObj hU F x :=
-  Functor.congr_obj (hF i (hU x).choose) (mk ⟨x, hx, mem_of_mem_nhds (hU x).choose_spec⟩)
-
-include hF in
-/-- The value of the local functor `F i` on a path lying in `U i`. -/
-private def locVal (i : ι) {x y : X} (P : Path x y) (hP : ∀ t, P t ∈ U i) :
-    glueObj hU F x ⟶ glueObj hU F y :=
-  eqToHom (obj_eq hU F hF i (P.source ▸ hP 0)).symm ≫
-    (F i).map (Path.Homotopic.Quotient.mk
-      (P.codRestrict (x := ⟨x, P.source ▸ hP 0⟩) (y := ⟨y, P.target ▸ hP 1⟩) hP)) ≫
-    eqToHom (obj_eq hU F hF i (P.target ▸ hP 1))
-
-include hF in
-/-- The local value does not depend on the member of the cover containing the path. -/
-private lemma locVal_congr_index (i j : ι) {x y : X} (P : Path x y) (hi : ∀ t, P t ∈ U i)
-    (hj : ∀ t, P t ∈ U j) : locVal hU F hF i P hi = locVal hU F hF j P hj := by
-  have hx : x ∈ U i ∩ U j := P.source ▸ ⟨hi 0, hj 0⟩
-  have hy : y ∈ U i ∩ U j := P.target ▸ ⟨hi 1, hj 1⟩
-  have h := Functor.congr_hom (hF i j) (Path.Homotopic.Quotient.mk
-    (P.codRestrict (x := ⟨x, hx⟩) (y := ⟨y, hy⟩) fun t ↦ ⟨hi t, hj t⟩) : mk _ ⟶ mk _)
-  have hPi : (P.codRestrict (x := ⟨x, hx⟩) (y := ⟨y, hy⟩) fun t ↦ ⟨hi t, hj t⟩).map
-      (ContinuousMap.inclusion inter_subset_left).continuous =
-      P.codRestrict (x := ⟨x, hx.1⟩) (y := ⟨y, hy.1⟩) hi := by
-    ext t
-    exact (Path.codRestrict_coe (s := U i ∩ U j) (x := ⟨x, hx⟩) (y := ⟨y, hy⟩) P _ t).trans
-      (Path.codRestrict_coe (x := ⟨x, hx.1⟩) (y := ⟨y, hy.1⟩) P hi t).symm
-  have hPj : (P.codRestrict (x := ⟨x, hx⟩) (y := ⟨y, hy⟩) fun t ↦ ⟨hi t, hj t⟩).map
-      (ContinuousMap.inclusion inter_subset_right).continuous =
-      P.codRestrict (x := ⟨x, hx.2⟩) (y := ⟨y, hy.2⟩) hj := by
-    ext t
-    exact (Path.codRestrict_coe (s := U i ∩ U j) (x := ⟨x, hx⟩) (y := ⟨y, hy⟩) P _ t).trans
-      (Path.codRestrict_coe (x := ⟨x, hx.2⟩) (y := ⟨y, hy.2⟩) P hj t).symm
-  have h' : ((F i).map (Path.Homotopic.Quotient.mk (P.codRestrict hi) :
-        mk (⟨x, hx.1⟩ : U i) ⟶ mk (⟨y, hy.1⟩ : U i))) =
-      eqToHom ((obj_eq hU F hF i hx.1).trans (obj_eq hU F hF j hx.2).symm) ≫
-        (F j).map (Path.Homotopic.Quotient.mk (P.codRestrict hj) :
-          mk (⟨x, hx.2⟩ : U j) ⟶ mk (⟨y, hy.2⟩ : U j)) ≫
-        eqToHom ((obj_eq hU F hF j hy.2).trans (obj_eq hU F hF i hy.1).symm) := by
-    rw [← hPi, ← hPj]
-    exact h
-  simp only [locVal]
-  rw [h']
-  simp
-
-include hF in
-/-- The local value of a concatenation is the composite of the local values. -/
-private lemma locVal_trans (i : ι) {x y z : X} (P : Path x y) (Q : Path y z)
-    (hP : ∀ t, P t ∈ U i) (hQ : ∀ t, Q t ∈ U i) (hPQ : ∀ t, P.trans Q t ∈ U i) :
-    locVal hU F hF i (P.trans Q) hPQ = locVal hU F hF i P hP ≫ locVal hU F hF i Q hQ := by
-  have h : (P.trans Q).codRestrict (x := ⟨x, P.source ▸ hP 0⟩) (y := ⟨z, Q.target ▸ hQ 1⟩) hPQ =
-      (P.codRestrict (x := ⟨x, P.source ▸ hP 0⟩) (y := ⟨y, P.target ▸ hP 1⟩) hP).trans
-        (Q.codRestrict (x := ⟨y, P.target ▸ hP 1⟩) (y := ⟨z, Q.target ▸ hQ 1⟩) hQ) := by
-    ext t
-    simp only [Path.codRestrict_coe, Path.trans_apply]
-    split_ifs <;> simp
-  simp only [locVal, h, Path.Homotopic.Quotient.mk_trans]
-  rw [← comp_eq, Functor.map_comp]
-  simp
-
-include hF in
-/-- Local values compose along a relation `[P] ⬝ [Q] = [R]` between the homotopy classes of the
-restrictions of the paths to `U i`. -/
-private lemma locVal_comp_eq_of_trans (i : ι) {x y z : X} (P : Path x y) (Q : Path y z)
-    (R : Path x z) (hP : ∀ t, P t ∈ U i) (hQ : ∀ t, Q t ∈ U i) (hR : ∀ t, R t ∈ U i)
-    (h : Path.Homotopic.Quotient.trans
-        (Path.Homotopic.Quotient.mk
-          (P.codRestrict (x := ⟨x, P.source ▸ hP 0⟩) (y := ⟨y, P.target ▸ hP 1⟩) hP))
-        (Path.Homotopic.Quotient.mk
-          (Q.codRestrict (x := ⟨y, P.target ▸ hP 1⟩) (y := ⟨z, Q.target ▸ hQ 1⟩) hQ)) =
-      Path.Homotopic.Quotient.mk
-        (R.codRestrict (x := ⟨x, P.source ▸ hP 0⟩) (y := ⟨z, Q.target ▸ hQ 1⟩) hR)) :
-    locVal hU F hF i P hP ≫ locVal hU F hF i Q hQ = locVal hU F hF i R hR := by
-  simp only [locVal, ← h]
-  rw [← comp_eq, Functor.map_comp]
-  simp
-
-include hF in
-/-- The local value only depends on the underlying function of the path, up to transport of
-its endpoints. -/
-private lemma locVal_congr (i : ι) {x y x' y' : X} (P : Path x y) (Q : Path x' y')
-    (hx : x = x') (hy : y = y') (h : ∀ t, P t = Q t) (hP : ∀ t, P t ∈ U i)
-    (hQ : ∀ t, Q t ∈ U i) :
-    locVal hU F hF i P hP =
-      eqToHom (congrArg (glueObj hU F) hx) ≫ locVal hU F hF i Q hQ ≫
-        eqToHom (congrArg (glueObj hU F) hy).symm := by
-  subst hx hy
-  obtain rfl : P = Q := Path.ext (funext h)
-  simp
-
-include hF in
-/-- Local values along the images of two paths with the same endpoints in a simply connected
-space agree. -/
-private lemma locVal_eq_of_simplyConnected (i : ι) {Y : Type*} [TopologicalSpace Y]
-    [SimplyConnectedSpace Y] (g : C(Y, X)) (hg : ∀ y, g y ∈ U i) {y₀ y₁ : Y}
-    (α β : Path y₀ y₁) {x₀ x₁ : X} (P Q : Path x₀ x₁) (hPα : ∀ t, P t = g (α t))
-    (hQβ : ∀ t, Q t = g (β t)) (hP : ∀ t, P t ∈ U i) (hQ : ∀ t, Q t ∈ U i) :
-    locVal hU F hF i P hP = locVal hU F hF i Q hQ := by
-  have hx : x₀ = g y₀ := by rw [← P.source, hPα, α.source]
-  have hy : x₁ = g y₁ := by rw [← P.target, hPα, α.target]
-  subst hx hy
-  obtain rfl : P = α.map g.continuous := Path.ext (funext hPα)
-  obtain rfl : Q = β.map g.continuous := Path.ext (funext hQβ)
-  let g' : C(Y, U i) := ⟨fun y ↦ ⟨g y, hg y⟩, g.continuous.codRestrict hg⟩
-  have hα : (α.map g.continuous).codRestrict (x := ⟨g y₀, hg y₀⟩) (y := ⟨g y₁, hg y₁⟩) hP =
-      α.map g'.continuous := by
-    ext t
-    exact Path.codRestrict_coe (x := ⟨g y₀, hg y₀⟩) (y := ⟨g y₁, hg y₁⟩) _ hP t
-  have hβ : (β.map g.continuous).codRestrict (x := ⟨g y₀, hg y₀⟩) (y := ⟨g y₁, hg y₁⟩) hQ =
-      β.map g'.continuous := by
-    ext t
-    exact Path.codRestrict_coe (x := ⟨g y₀, hg y₀⟩) (y := ⟨g y₁, hg y₁⟩) _ hQ t
-  simp only [locVal, hα, hβ,
-    Path.Homotopic.Quotient.eq.2 ((SimplyConnectedSpace.paths_homotopic α β).map g')]
-
-include hF in
-private lemma locVal_refl (i : ι) (x : X) (h : ∀ t, Path.refl x t ∈ U i) :
-    locVal hU F hF i (Path.refl x) h = 𝟙 _ := by
-  have hr : (Path.refl x).codRestrict (x := ⟨x, h 0⟩) (y := ⟨x, h 0⟩) h =
-      Path.refl (⟨x, h 0⟩ : U i) := by
-    ext t
-    exact Path.codRestrict_coe (x := ⟨x, h 0⟩) (y := ⟨x, h 0⟩) _ h t
-  have hid : (Path.Homotopic.Quotient.mk (Path.refl (⟨x, h 0⟩ : U i)) : mk _ ⟶ mk _) =
-      𝟙 (mk (⟨x, h 0⟩ : U i)) :=
-    (id_eq_path_refl _).symm
-  simp [locVal, hr, hid]
-
-include hF in
-/-- The local value of a path which stays at its starting point is the identity, up to
-transport. -/
-private lemma locVal_eq_eqToHom (i : ι) {x y : X} (P : Path x y) (hP : ∀ t, P t ∈ U i)
-    (hconst : ∀ t, P t = x) :
-    locVal hU F hF i P hP = eqToHom (congrArg (glueObj hU F) (P.target ▸ hconst 1).symm) := by
-  have hy : y = x := P.target ▸ hconst 1
-  rw [locVal_congr hU F hF i P (Path.refl x) rfl hy hconst hP fun _ ↦ P.source ▸ hP 0,
-    locVal_refl]
-  simp
-
-include hF in
-/-- The local value of a path lying in some member of the cover. -/
-private def pathVal {x y : X} (P : Path x y) (h : ∃ i, ∀ t, P t ∈ U i) :
-    glueObj hU F x ⟶ glueObj hU F y :=
-  locVal hU F hF h.choose P h.choose_spec
-
-include hF in
-private lemma pathVal_eq (i : ι) {x y : X} (P : Path x y) (h : ∃ i, ∀ t, P t ∈ U i)
-    (hi : ∀ t, P t ∈ U i) : pathVal hU F hF P h = locVal hU F hF i P hi :=
-  locVal_congr_index hU F hF _ _ P _ _
-
-include hF in
-/-- Local values are additive along consecutive subpaths inside one member of the cover. -/
-private lemma pathVal_subpath_trans {x y : X} (γ : Path x y) (i : ι) {lo hi : I}
-    (hγ : ∀ t ∈ Icc lo hi, γ t ∈ U i) {a b c : I} (ha : a ∈ Icc lo hi) (hb : b ∈ Icc lo hi)
-    (hc : c ∈ Icc lo hi) (hab : ∃ i, ∀ t, γ.subpath a b t ∈ U i)
-    (hbc : ∃ i, ∀ t, γ.subpath b c t ∈ U i) (hac : ∃ i, ∀ t, γ.subpath a c t ∈ U i) :
-    pathVal hU F hF (γ.subpath a b) hab ≫ pathVal hU F hF (γ.subpath b c) hbc =
-      pathVal hU F hF (γ.subpath a c) hac := by
-  rw [pathVal_eq hU F hF i _ _ (Path.subpath_apply_mem hγ ha hb),
-    pathVal_eq hU F hF i _ _ (Path.subpath_apply_mem hγ hb hc),
-    pathVal_eq hU F hF i _ _ (Path.subpath_apply_mem hγ ha hc)]
-  have hlohi : lo ≤ hi := ha.1.trans ha.2
-  obtain ⟨a', rfl⟩ : ∃ a', Icc.convexComb lo hi a' = a := ⟨_, (Icc.eq_convexComb ha.1 ha.2).symm⟩
-  obtain ⟨b', rfl⟩ : ∃ b', Icc.convexComb lo hi b' = b := ⟨_, (Icc.eq_convexComb hb.1 hb.2).symm⟩
-  obtain ⟨c', rfl⟩ : ∃ c', Icc.convexComb lo hi c' = c := ⟨_, (Icc.eq_convexComb hc.1 hc.2).symm⟩
-  have haU : γ (Icc.convexComb lo hi a') ∈ U i := hγ _ ha
-  have hbU : γ (Icc.convexComb lo hi b') ∈ U i := hγ _ hb
-  have hcU : γ (Icc.convexComb lo hi c') ∈ U i := hγ _ hc
-  let g : C(I, X) := γ.toContinuousMap.comp ⟨_, Icc.continuous_convexComb lo hi⟩
-  let g' : C(I, U i) := ⟨fun t ↦ ⟨g t,
-    hγ _ ⟨Icc.le_convexComb hlohi t, Icc.convexComb_le hlohi t⟩⟩,
-    g.continuous.codRestrict _⟩
-  let p : Path (g' 0) (g' 1) := Path.id.map g'.continuous
-  have hpa : (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i) = p a' := by
-    apply Subtype.ext
-    rfl
-  have hpb : (⟨γ (Icc.convexComb lo hi b'), hbU⟩ : U i) = p b' := by
-    apply Subtype.ext
-    rfl
-  have hpc : (⟨γ (Icc.convexComb lo hi c'), hcU⟩ : U i) = p c' := by
-    apply Subtype.ext
-    rfl
-  let qab : Path (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i)
-      ⟨γ (Icc.convexComb lo hi b'), hbU⟩ :=
-    (γ.subpath (Icc.convexComb lo hi a') (Icc.convexComb lo hi b')).codRestrict
-      (Path.subpath_apply_mem hγ ha hb)
-  let qbc : Path (⟨γ (Icc.convexComb lo hi b'), hbU⟩ : U i)
-      ⟨γ (Icc.convexComb lo hi c'), hcU⟩ :=
-    (γ.subpath (Icc.convexComb lo hi b') (Icc.convexComb lo hi c')).codRestrict
-      (Path.subpath_apply_mem hγ hb hc)
-  let qac : Path (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i)
-      ⟨γ (Icc.convexComb lo hi c'), hcU⟩ :=
-    (γ.subpath (Icc.convexComb lo hi a') (Icc.convexComb lo hi c')).codRestrict
-      (Path.subpath_apply_mem hγ ha hc)
-  have cast_subpath_eq_codRestrict (r s : I)
-      (hrU : γ (Icc.convexComb lo hi r) ∈ U i) (hsU : γ (Icc.convexComb lo hi s) ∈ U i)
-      (hr : (⟨γ (Icc.convexComb lo hi r), hrU⟩ : U i) = p r)
-      (hs : (⟨γ (Icc.convexComb lo hi s), hsU⟩ : U i) = p s)
-      (hrs : ∀ t, γ.subpath (Icc.convexComb lo hi r) (Icc.convexComb lo hi s) t ∈ U i) :
-      (p.subpath r s).cast hr hs =
-        (γ.subpath (Icc.convexComb lo hi r) (Icc.convexComb lo hi s)).codRestrict hrs := by
-    apply Path.ext
-    funext t
-    apply Subtype.ext
-    simp only [Path.cast_coe, Path.codRestrict_coe, Path.subpath, p, Path.map_coe, g', g]
-    have hcomb : Icc.convexComb (Icc.convexComb lo hi r) (Icc.convexComb lo hi s) t =
-        Icc.convexComb lo hi (Icc.convexComb r s t) := by
-      ext
-      simp only [Icc.coe_convexComb]
-      ring
-    exact congrArg γ hcomb.symm
-  have hab' : (p.subpath a' b').cast hpa hpb = qab :=
-    cast_subpath_eq_codRestrict a' b' haU hbU hpa hpb (Path.subpath_apply_mem hγ ha hb)
-  have hbc' : (p.subpath b' c').cast hpb hpc = qbc :=
-    cast_subpath_eq_codRestrict b' c' hbU hcU hpb hpc (Path.subpath_apply_mem hγ hb hc)
-  have hac' : (p.subpath a' c').cast hpa hpc = qac :=
-    cast_subpath_eq_codRestrict a' c' haU hcU hpa hpc (Path.subpath_apply_mem hγ ha hc)
-  have hquot : Path.Homotopic.Quotient.trans (Path.Homotopic.Quotient.mk qab)
-      (Path.Homotopic.Quotient.mk qbc) = Path.Homotopic.Quotient.mk qac := by
-    rw [← hab', ← hbc', ← hac']
-    exact Path.Homotopic.Quotient.subpath_cast_trans p a' b' c' hpa hpb hpc
-  exact locVal_comp_eq_of_trans hU F hF i _ _ _ _ _ _ hquot
-
-include hF in
-private lemma pathVal_congr {x y x' y' : X} (P : Path x y) (Q : Path x' y') (hx : x = x')
-    (hy : y = y') (h : ∀ t, P t = Q t) (hP : ∃ i, ∀ t, P t ∈ U i) (hQ : ∃ i, ∀ t, Q t ∈ U i) :
-    pathVal hU F hF P hP =
-      eqToHom (congrArg (glueObj hU F) hx) ≫ pathVal hU F hF Q hQ ≫
-        eqToHom (congrArg (glueObj hU F) hy).symm := by
-  obtain ⟨i, hi⟩ := hQ
-  rw [pathVal_eq hU F hF i P hP fun t ↦ h t ▸ hi t, pathVal_eq hU F hF i Q _ hi]
-  exact locVal_congr hU F hF i P Q hx hy h _ hi
-
-include hF in
-/-- The value of `γ` on the `k`-th piece of the uniform partition into `N` pieces. -/
-private def segVal {x y : X} (γ : Path x y) {N : ℕ} (h : IsFine U γ N) (k : ℕ) :
-    glueObj hU F (γ (pt N k)) ⟶ glueObj hU F (γ (pt N (k + 1))) :=
-  pathVal hU F hF (γ.subpath (pt N k) (pt N (k + 1))) (h.subpath_mem k)
-
-include hF in
-/-- On a run of partition points inside an interval which `γ` maps into one member of the cover,
-the composite of the segment values is the value of the subpath between the extreme points. -/
-private lemma map_segVal_eq {x y : X} (γ : Path x y) {N : ℕ} (h : IsFine U γ N) (i : ι)
-    {lo hi : I} (hγ : ∀ t ∈ Icc lo hi, γ t ∈ U i) {a b : ℕ} (hab : a ≤ b)
-    (hpt : ∀ j, a ≤ j → j ≤ b → pt N j ∈ Icc lo hi) :
-    Functor.OfSequence.map (segVal hU F hF γ h) a b hab =
-      pathVal hU F hF (γ.subpath (pt N a) (pt N b))
-        ⟨i, Path.subpath_apply_mem hγ (hpt a le_rfl hab) (hpt b hab le_rfl)⟩ := by
-  induction b, hab using Nat.le_induction with
-  | base =>
-    rw [Functor.OfSequence.map_id, pathVal_eq hU F hF i _ _
-      (Path.subpath_apply_mem hγ (hpt a le_rfl le_rfl) (hpt a le_rfl le_rfl)),
-      locVal_eq_eqToHom hU F hF i _ _ fun t ↦ by simp]
-    simp
-  | succ b hab ih =>
-    rw [Functor.OfSequence.map_comp _ a b (b + 1) hab b.le_succ,
-      ih fun j hj hj' ↦ hpt j hj (by omega), Functor.OfSequence.map_le_succ, segVal,
-      pathVal_subpath_trans hU F hF γ i hγ (hpt a le_rfl (by omega)) (hpt b hab (by omega))
-        (hpt (b + 1) (by omega) le_rfl)]
-
-include hF in
-/-- The value of `γ` computed along the uniform partition into `N` pieces. -/
-private def liftN {x y : X} (γ : Path x y) {N : ℕ} (h : IsFine U γ N) (hN : N ≠ 0) :
-    glueObj hU F x ⟶ glueObj hU F y :=
-  eqToHom (by rw [pt_zero, γ.source]) ≫
-    Functor.OfSequence.map (segVal hU F hF γ h) 0 N N.zero_le ≫
-      eqToHom (by rw [pt_self hN, γ.target])
-
-include hF in
-/-- For a path inside one member of the cover, the partition value is the local value. -/
-private lemma liftN_eq_locVal {x y : X} (γ : Path x y) {N : ℕ} (h : IsFine U γ N) (hN : N ≠ 0)
-    (i : ι) (hγ : ∀ t, γ t ∈ U i) : liftN hU F hF γ h hN = locVal hU F hF i γ hγ := by
-  have hmem : ∀ t, γ.subpath (pt N 0) (pt N N) t ∈ U i := fun _ ↦ hγ _
-  rw [liftN, map_segVal_eq hU F hF γ h i (lo := 0) (hi := 1) (fun t _ ↦ hγ t) (Nat.zero_le N)
-    fun j _ _ ↦ ⟨unitInterval.nonneg', unitInterval.le_one'⟩, pathVal_eq hU F hF i _ _ hmem,
-    locVal_congr hU F hF i _ γ (by rw [pt_zero, γ.source]) (by rw [pt_self hN, γ.target])
-      (fun t ↦ by simp [Path.subpath, pt_zero, pt_self hN]) hmem hγ]
-  simp
-
-include hF in
-private lemma liftN_congr {x y : X} (γ : Path x y) {N N' : ℕ} (hNN' : N = N') (h : IsFine U γ N)
-    (h' : IsFine U γ N') (hN : N ≠ 0) (hN' : N' ≠ 0) :
-    liftN hU F hF γ h hN = liftN hU F hF γ h' hN' := by
-  subst hNN'
-  rfl
-
-include hF in
-/-- Refining the uniform partition does not change the partition value. -/
-private lemma liftN_mul {x y : X} (γ : Path x y) {M N : ℕ} (hM : M ≠ 0) (hN : N ≠ 0)
-    (h : IsFine U γ N) (h' : IsFine U γ (M * N)) :
-    liftN hU F hF γ h' (mul_ne_zero hM hN) = liftN hU F hF γ h hN := by
-  have key : ∀ k (hk : k ≤ N),
-      Functor.OfSequence.map (segVal hU F hF γ h') 0 (M * k) (M * k).zero_le =
-        eqToHom (by rw [pt_zero, pt_zero]) ≫
-          Functor.OfSequence.map (segVal hU F hF γ h) 0 k k.zero_le ≫
-            eqToHom (by rw [pt_mul hM hk]) := by
-    intro k hk
-    induction k with
-    | zero => simp [Functor.OfSequence.map_id]
-    | succ k ih =>
-      obtain ⟨i, hi⟩ := h k
-      rw [Functor.OfSequence.map_comp _ 0 (M * k) (M * (k + 1)) (M * k).zero_le
-          (Nat.mul_le_mul_left M k.le_succ),
-        map_segVal_eq hU F hF γ h' i hi (Nat.mul_le_mul_left M k.le_succ) fun j hj hj' ↦
-          ⟨pt_mul hM (k.le_succ.trans hk) ▸ pt_mono _ hj, pt_mul hM hk ▸ pt_mono _ hj'⟩,
-        ih (by omega), Functor.OfSequence.map_comp _ 0 k (k + 1) k.zero_le k.le_succ,
-        Functor.OfSequence.map_le_succ, segVal,
-        pathVal_congr hU F hF _ _ (by rw [pt_mul hM (k.le_succ.trans hk)])
-          (by rw [pt_mul hM hk]) (fun t ↦ by rw [pt_mul hM (k.le_succ.trans hk), pt_mul hM hk]) _
-          (h.subpath_mem k)]
-      simp
-  rw [liftN, liftN, key N le_rfl]
-  simp
-
-include hU in
-private lemma exists_isFine_homotopy {x y : X} {p q : Path x y} (H : p.Homotopy q) :
-    ∃ N, N ≠ 0 ∧ ∀ l k, ∃ i, ∀ t ∈ Icc (pt N l) (pt N (l + 1)),
-      ∀ s ∈ Icc (pt N k) (pt N (k + 1)), H (t, s) ∈ U i := by
-  obtain ⟨δ, hδ, h⟩ := lebesgue_number_lemma_of_metric_of_mem_nhds isCompact_univ
-    (c := fun i ↦ H ⁻¹' U i) fun ts _ ↦
-      (hU (H ts)).imp fun _ ↦ H.continuous.continuousAt.preimage_mem_nhds
-  obtain ⟨n, hn⟩ := exists_nat_one_div_lt hδ
-  have hN : (1 / ((n + 1 : ℕ) : ℝ)) < δ := by exact_mod_cast hn
-  refine ⟨n + 1, n.succ_ne_zero, fun l k ↦ ?_⟩
-  obtain ⟨i, hi⟩ := h (pt (n + 1) l, pt (n + 1) k) (mem_univ _)
-  refine ⟨i, fun t ht s hs ↦ hi ?_⟩
-  rw [mem_ball, Prod.dist_eq, max_lt_iff, Subtype.dist_eq, Subtype.dist_eq, Real.dist_eq,
-    Real.dist_eq]
-  exact ⟨(abs_sub_pt_le ht).trans_lt hN, (abs_sub_pt_le hs).trans_lt hN⟩
-
-private lemma pt_eq_one {N k : ℕ} (hN : N ≠ 0) (hk : N ≤ k) : pt N k = 1 := by
-  rw [pt, Set.Icc.addNSMul, projIcc_of_right_le]
-  · rfl
-  · rw [zero_add, nsmul_eq_mul, mul_one_div, le_div_iff₀ (by positivity), one_mul]
-    exact_mod_cast hk
+private lemma convexComb_mem_Icc_pt (N k : ℕ) (u : I) :
+    Icc.convexComb (pt N k) (pt N (k + 1)) u ∈ Icc (pt N k) (pt N (k + 1)) :=
+  ⟨Icc.le_convexComb (pt_mono N k.le_succ) u, Icc.convexComb_le (pt_mono N k.le_succ) u⟩
 
 private lemma trans_pt_left {x y z : X} (γ : Path x y) (δ : Path y z) {N k : ℕ} (hk : k ≤ N) :
     γ.trans δ (pt (N + N) k) = γ (pt N k) := by
@@ -539,7 +175,214 @@ private lemma trans_subpath_right {x y z : X} (γ : Path x y) (δ : Path y z) {N
     field_simp
     ring
 
-include hF in
+/-- A path traced by a homotopy of paths: the `k`-th partition point, while the homotopy
+parameter runs through the `l`-th piece of the uniform partition into `N` pieces. -/
+private def colSeg {x y : X} {p q : Path x y} (H : p.Homotopy q) (N l k : ℕ) :
+    Path (H.eval (pt N l) (pt N k)) (H.eval (pt N (l + 1)) (pt N k)) where
+  toFun u := H (Icc.convexComb (pt N l) (pt N (l + 1)) u, pt N k)
+  continuous_toFun := H.continuous.comp ((Icc.continuous_convexComb _ _).prodMk continuous_const)
+  source' := by simp
+  target' := by simp
+
+end Partition
+
+variable (hU : ∀ x, ∃ i, U i ∈ 𝓝 x)
+
+section Fine
+
+variable (U) in
+/-- `γ` maps every piece of the uniform partition of the unit interval into `N` pieces into a
+single member of `U`. -/
+private def IsFine {x y : X} (γ : Path x y) (N : ℕ) : Prop :=
+  ∀ k, ∃ i, ∀ t ∈ Icc (pt N k) (pt N (k + 1)), γ t ∈ U i
+
+private lemma IsFine.subpath_mem {x y : X} {γ : Path x y} {N : ℕ} (h : IsFine U γ N) (k : ℕ) :
+    ∃ i, ∀ t, γ.subpath (pt N k) (pt N (k + 1)) t ∈ U i :=
+  (h k).imp fun _ hi ↦ Path.subpath_apply_mem hi mem_Icc_pt mem_Icc_pt_succ
+
+include hU
+
+private lemma exists_isFine {x y : X} (γ : Path x y) :
+    ∃ N₀, ∀ N, N₀ ≤ N → N ≠ 0 ∧ IsFine U γ N := by
+  obtain ⟨δ, hδ, h⟩ := lebesgue_number_lemma_of_metric_of_mem_nhds isCompact_univ
+    (c := fun i ↦ γ ⁻¹' U i) fun t _ ↦
+      (hU (γ t)).imp fun _ ↦ γ.continuous.continuousAt.preimage_mem_nhds
+  obtain ⟨n, hn⟩ := exists_nat_one_div_lt hδ
+  refine ⟨n + 1, fun N hN ↦ ⟨by omega, fun k ↦ ?_⟩⟩
+  obtain ⟨i, hi⟩ := h (pt N k) (mem_univ _)
+  refine ⟨i, fun t ht ↦ hi ?_⟩
+  rw [mem_ball, Subtype.dist_eq, Real.dist_eq]
+  exact (abs_sub_pt_le ht).trans_lt <|
+    (one_div_le_one_div_of_le (by positivity) (by exact_mod_cast hN)).trans_lt hn
+
+private lemma exists_isFine_homotopy {x y : X} {p q : Path x y} (H : p.Homotopy q) :
+    ∃ N, N ≠ 0 ∧ ∀ l k, ∃ i, ∀ t ∈ Icc (pt N l) (pt N (l + 1)),
+      ∀ s ∈ Icc (pt N k) (pt N (k + 1)), H (t, s) ∈ U i := by
+  obtain ⟨δ, hδ, h⟩ := lebesgue_number_lemma_of_metric_of_mem_nhds isCompact_univ
+    (c := fun i ↦ H ⁻¹' U i) fun ts _ ↦
+      (hU (H ts)).imp fun _ ↦ H.continuous.continuousAt.preimage_mem_nhds
+  obtain ⟨n, hn⟩ := exists_nat_one_div_lt hδ
+  have hN : (1 / ((n + 1 : ℕ) : ℝ)) < δ := by exact_mod_cast hn
+  refine ⟨n + 1, n.succ_ne_zero, fun l k ↦ ?_⟩
+  obtain ⟨i, hi⟩ := h (pt (n + 1) l, pt (n + 1) k) (mem_univ _)
+  refine ⟨i, fun t ht s hs ↦ hi ?_⟩
+  rw [mem_ball, Prod.dist_eq, max_lt_iff, Subtype.dist_eq, Subtype.dist_eq, Real.dist_eq,
+    Real.dist_eq]
+  exact ⟨(abs_sub_pt_le ht).trans_lt hN, (abs_sub_pt_le hs).trans_lt hN⟩
+
+end Fine
+
+section Construction
+
+variable (F : ∀ i, _root_.FundamentalGroupoid (U i) ⥤ D)
+  (hF : ∀ i j, map (ContinuousMap.inclusion (inter_subset_left : U i ∩ U j ⊆ U i)) ⋙ F i =
+    map (ContinuousMap.inclusion (inter_subset_right : U i ∩ U j ⊆ U j)) ⋙ F j)
+
+/-- The object of `D` assigned to a point, through a chosen member of the cover. -/
+private def glueObj (x : X) : D :=
+  (F (hU x).choose).obj (mk ⟨x, mem_of_mem_nhds (hU x).choose_spec⟩)
+
+include hF
+
+private lemma obj_eq (i : ι) {x : X} (hx : x ∈ U i) :
+    (F i).obj (mk ⟨x, hx⟩) = glueObj hU F x :=
+  Functor.congr_obj (hF i (hU x).choose) (mk ⟨x, hx, mem_of_mem_nhds (hU x).choose_spec⟩)
+
+/-- The value of the local functor `F i` on a path lying in `U i`. -/
+private def locVal (i : ι) {x y : X} (P : Path x y) (hP : ∀ t, P t ∈ U i) :
+    glueObj hU F x ⟶ glueObj hU F y :=
+  eqToHom (obj_eq hU F hF i (P.source ▸ hP 0)).symm ≫
+    (F i).map (Path.Homotopic.Quotient.mk
+      (P.codRestrict (x := ⟨x, P.source ▸ hP 0⟩) (y := ⟨y, P.target ▸ hP 1⟩) hP)) ≫
+    eqToHom (obj_eq hU F hF i (P.target ▸ hP 1))
+
+/-- The local value does not depend on the member of the cover containing the path. -/
+private lemma locVal_congr_index (i j : ι) {x y : X} (P : Path x y) (hi : ∀ t, P t ∈ U i)
+    (hj : ∀ t, P t ∈ U j) : locVal hU F hF i P hi = locVal hU F hF j P hj := by
+  have hx : x ∈ U i ∩ U j := P.source ▸ ⟨hi 0, hj 0⟩
+  have hy : y ∈ U i ∩ U j := P.target ▸ ⟨hi 1, hj 1⟩
+  have h := Functor.congr_hom (hF i j) (Path.Homotopic.Quotient.mk
+    (P.codRestrict (x := ⟨x, hx⟩) (y := ⟨y, hy⟩) fun t ↦ ⟨hi t, hj t⟩) : mk _ ⟶ mk _)
+  have hPi : (P.codRestrict (x := ⟨x, hx⟩) (y := ⟨y, hy⟩) fun t ↦ ⟨hi t, hj t⟩).map
+      (ContinuousMap.inclusion inter_subset_left).continuous =
+      P.codRestrict (x := ⟨x, hx.1⟩) (y := ⟨y, hy.1⟩) hi := by
+    ext t
+    exact (Path.codRestrict_coe (s := U i ∩ U j) (x := ⟨x, hx⟩) (y := ⟨y, hy⟩) P _ t).trans
+      (Path.codRestrict_coe (x := ⟨x, hx.1⟩) (y := ⟨y, hy.1⟩) P hi t).symm
+  have hPj : (P.codRestrict (x := ⟨x, hx⟩) (y := ⟨y, hy⟩) fun t ↦ ⟨hi t, hj t⟩).map
+      (ContinuousMap.inclusion inter_subset_right).continuous =
+      P.codRestrict (x := ⟨x, hx.2⟩) (y := ⟨y, hy.2⟩) hj := by
+    ext t
+    exact (Path.codRestrict_coe (s := U i ∩ U j) (x := ⟨x, hx⟩) (y := ⟨y, hy⟩) P _ t).trans
+      (Path.codRestrict_coe (x := ⟨x, hx.2⟩) (y := ⟨y, hy.2⟩) P hj t).symm
+  have h' : ((F i).map (Path.Homotopic.Quotient.mk (P.codRestrict hi) :
+        mk (⟨x, hx.1⟩ : U i) ⟶ mk (⟨y, hy.1⟩ : U i))) =
+      eqToHom ((obj_eq hU F hF i hx.1).trans (obj_eq hU F hF j hx.2).symm) ≫
+        (F j).map (Path.Homotopic.Quotient.mk (P.codRestrict hj) :
+          mk (⟨x, hx.2⟩ : U j) ⟶ mk (⟨y, hy.2⟩ : U j)) ≫
+        eqToHom ((obj_eq hU F hF j hy.2).trans (obj_eq hU F hF i hy.1).symm) := by
+    rw [← hPi, ← hPj]
+    exact h
+  simp only [locVal]
+  rw [h']
+  simp
+
+/-- The local value of a concatenation is the composite of the local values. -/
+private lemma locVal_trans (i : ι) {x y z : X} (P : Path x y) (Q : Path y z)
+    (hP : ∀ t, P t ∈ U i) (hQ : ∀ t, Q t ∈ U i) (hPQ : ∀ t, P.trans Q t ∈ U i) :
+    locVal hU F hF i (P.trans Q) hPQ = locVal hU F hF i P hP ≫ locVal hU F hF i Q hQ := by
+  have h : (P.trans Q).codRestrict (x := ⟨x, P.source ▸ hP 0⟩) (y := ⟨z, Q.target ▸ hQ 1⟩) hPQ =
+      (P.codRestrict (x := ⟨x, P.source ▸ hP 0⟩) (y := ⟨y, P.target ▸ hP 1⟩) hP).trans
+        (Q.codRestrict (x := ⟨y, P.target ▸ hP 1⟩) (y := ⟨z, Q.target ▸ hQ 1⟩) hQ) := by
+    ext t
+    simp only [Path.codRestrict_coe, Path.trans_apply]
+    split_ifs <;> simp
+  simp only [locVal, h, Path.Homotopic.Quotient.mk_trans]
+  rw [← comp_eq, Functor.map_comp]
+  simp
+
+/-- Local values compose along a relation `[P] ⬝ [Q] = [R]` between the homotopy classes of the
+restrictions of the paths to `U i`. -/
+private lemma locVal_comp_eq_of_trans (i : ι) {x y z : X} (P : Path x y) (Q : Path y z)
+    (R : Path x z) (hP : ∀ t, P t ∈ U i) (hQ : ∀ t, Q t ∈ U i) (hR : ∀ t, R t ∈ U i)
+    (h : Path.Homotopic.Quotient.trans
+        (Path.Homotopic.Quotient.mk
+          (P.codRestrict (x := ⟨x, P.source ▸ hP 0⟩) (y := ⟨y, P.target ▸ hP 1⟩) hP))
+        (Path.Homotopic.Quotient.mk
+          (Q.codRestrict (x := ⟨y, P.target ▸ hP 1⟩) (y := ⟨z, Q.target ▸ hQ 1⟩) hQ)) =
+      Path.Homotopic.Quotient.mk
+        (R.codRestrict (x := ⟨x, P.source ▸ hP 0⟩) (y := ⟨z, Q.target ▸ hQ 1⟩) hR)) :
+    locVal hU F hF i P hP ≫ locVal hU F hF i Q hQ = locVal hU F hF i R hR := by
+  simp only [locVal, ← h]
+  rw [← comp_eq, Functor.map_comp]
+  simp
+
+/-- The local value only depends on the underlying function of the path, up to transport of
+its endpoints. -/
+private lemma locVal_congr (i : ι) {x y x' y' : X} (P : Path x y) (Q : Path x' y')
+    (hx : x = x') (hy : y = y') (h : ∀ t, P t = Q t) (hP : ∀ t, P t ∈ U i)
+    (hQ : ∀ t, Q t ∈ U i) :
+    locVal hU F hF i P hP =
+      eqToHom (congrArg (glueObj hU F) hx) ≫ locVal hU F hF i Q hQ ≫
+        eqToHom (congrArg (glueObj hU F) hy).symm := by
+  subst hx hy
+  obtain rfl : P = Q := Path.ext (funext h)
+  simp
+
+/-- Local values along the images of two paths with the same endpoints in a simply connected
+space agree. -/
+private lemma locVal_eq_of_simplyConnected (i : ι) {Y : Type*} [TopologicalSpace Y]
+    [SimplyConnectedSpace Y] (g : C(Y, X)) (hg : ∀ y, g y ∈ U i) {y₀ y₁ : Y}
+    (α β : Path y₀ y₁) {x₀ x₁ : X} (P Q : Path x₀ x₁) (hPα : ∀ t, P t = g (α t))
+    (hQβ : ∀ t, Q t = g (β t)) (hP : ∀ t, P t ∈ U i) (hQ : ∀ t, Q t ∈ U i) :
+    locVal hU F hF i P hP = locVal hU F hF i Q hQ := by
+  have hx : x₀ = g y₀ := by rw [← P.source, hPα, α.source]
+  have hy : x₁ = g y₁ := by rw [← P.target, hPα, α.target]
+  subst hx hy
+  obtain rfl : P = α.map g.continuous := Path.ext (funext hPα)
+  obtain rfl : Q = β.map g.continuous := Path.ext (funext hQβ)
+  let g' : C(Y, U i) := ⟨fun y ↦ ⟨g y, hg y⟩, g.continuous.codRestrict hg⟩
+  have hα : (α.map g.continuous).codRestrict (x := ⟨g y₀, hg y₀⟩) (y := ⟨g y₁, hg y₁⟩) hP =
+      α.map g'.continuous := by
+    ext t
+    exact Path.codRestrict_coe (x := ⟨g y₀, hg y₀⟩) (y := ⟨g y₁, hg y₁⟩) _ hP t
+  have hβ : (β.map g.continuous).codRestrict (x := ⟨g y₀, hg y₀⟩) (y := ⟨g y₁, hg y₁⟩) hQ =
+      β.map g'.continuous := by
+    ext t
+    exact Path.codRestrict_coe (x := ⟨g y₀, hg y₀⟩) (y := ⟨g y₁, hg y₁⟩) _ hQ t
+  simp only [locVal, hα, hβ,
+    Path.Homotopic.Quotient.eq.2 ((SimplyConnectedSpace.paths_homotopic α β).map g')]
+
+private lemma locVal_refl (i : ι) (x : X) (h : ∀ t, Path.refl x t ∈ U i) :
+    locVal hU F hF i (Path.refl x) h = 𝟙 _ := by
+  have hr : (Path.refl x).codRestrict (x := ⟨x, h 0⟩) (y := ⟨x, h 0⟩) h =
+      Path.refl (⟨x, h 0⟩ : U i) := by
+    ext t
+    exact Path.codRestrict_coe (x := ⟨x, h 0⟩) (y := ⟨x, h 0⟩) _ h t
+  have hid : (Path.Homotopic.Quotient.mk (Path.refl (⟨x, h 0⟩ : U i)) : mk _ ⟶ mk _) =
+      𝟙 (mk (⟨x, h 0⟩ : U i)) :=
+    (id_eq_path_refl _).symm
+  simp [locVal, hr, hid]
+
+/-- The local value of a path which stays at its starting point is the identity, up to
+transport. -/
+private lemma locVal_eq_eqToHom (i : ι) {x y : X} (P : Path x y) (hP : ∀ t, P t ∈ U i)
+    (hconst : ∀ t, P t = x) :
+    locVal hU F hF i P hP = eqToHom (congrArg (glueObj hU F) (P.target ▸ hconst 1).symm) := by
+  have hy : y = x := P.target ▸ hconst 1
+  rw [locVal_congr hU F hF i P (Path.refl x) rfl hy hconst hP fun _ ↦ P.source ▸ hP 0,
+    locVal_refl]
+  simp
+
+/-- The local value of a path lying in some member of the cover. -/
+private def pathVal {x y : X} (P : Path x y) (h : ∃ i, ∀ t, P t ∈ U i) :
+    glueObj hU F x ⟶ glueObj hU F y :=
+  locVal hU F hF h.choose P h.choose_spec
+
+private lemma pathVal_eq (i : ι) {x y : X} (P : Path x y) (h : ∃ i, ∀ t, P t ∈ U i)
+    (hi : ∀ t, P t ∈ U i) : pathVal hU F hF P h = locVal hU F hF i P hi :=
+  locVal_congr_index hU F hF _ _ P _ _
+
 private lemma pathVal_eq_eqToHom {x y : X} (P : Path x y) (hP : ∃ i, ∀ t, P t ∈ U i)
     (hconst : ∀ t, P t = x) :
     pathVal hU F hF P hP = eqToHom (congrArg (glueObj hU F) (P.target ▸ hconst 1).symm) := by
@@ -547,13 +390,146 @@ private lemma pathVal_eq_eqToHom {x y : X} (P : Path x y) (hP : ∃ i, ∀ t, P 
   rw [pathVal_eq hU F hF i P _ hi]
   exact locVal_eq_eqToHom hU F hF i P hi hconst
 
-include hF in
+/-- Local values are additive along consecutive subpaths inside one member of the cover. -/
+private lemma pathVal_subpath_trans {x y : X} (γ : Path x y) (i : ι) {lo hi : I}
+    (hγ : ∀ t ∈ Icc lo hi, γ t ∈ U i) {a b c : I} (ha : a ∈ Icc lo hi) (hb : b ∈ Icc lo hi)
+    (hc : c ∈ Icc lo hi) (hab : ∃ i, ∀ t, γ.subpath a b t ∈ U i)
+    (hbc : ∃ i, ∀ t, γ.subpath b c t ∈ U i) (hac : ∃ i, ∀ t, γ.subpath a c t ∈ U i) :
+    pathVal hU F hF (γ.subpath a b) hab ≫ pathVal hU F hF (γ.subpath b c) hbc =
+      pathVal hU F hF (γ.subpath a c) hac := by
+  rw [pathVal_eq hU F hF i _ _ (Path.subpath_apply_mem hγ ha hb),
+    pathVal_eq hU F hF i _ _ (Path.subpath_apply_mem hγ hb hc),
+    pathVal_eq hU F hF i _ _ (Path.subpath_apply_mem hγ ha hc)]
+  have hlohi : lo ≤ hi := ha.1.trans ha.2
+  obtain ⟨a', rfl⟩ : ∃ a', Icc.convexComb lo hi a' = a := ⟨_, (Icc.eq_convexComb ha.1 ha.2).symm⟩
+  obtain ⟨b', rfl⟩ : ∃ b', Icc.convexComb lo hi b' = b := ⟨_, (Icc.eq_convexComb hb.1 hb.2).symm⟩
+  obtain ⟨c', rfl⟩ : ∃ c', Icc.convexComb lo hi c' = c := ⟨_, (Icc.eq_convexComb hc.1 hc.2).symm⟩
+  have haU : γ (Icc.convexComb lo hi a') ∈ U i := hγ _ ha
+  have hbU : γ (Icc.convexComb lo hi b') ∈ U i := hγ _ hb
+  have hcU : γ (Icc.convexComb lo hi c') ∈ U i := hγ _ hc
+  let g : C(I, X) := γ.toContinuousMap.comp ⟨_, Icc.continuous_convexComb lo hi⟩
+  let g' : C(I, U i) := ⟨fun t ↦ ⟨g t,
+    hγ _ ⟨Icc.le_convexComb hlohi t, Icc.convexComb_le hlohi t⟩⟩,
+    g.continuous.codRestrict _⟩
+  let p : Path (g' 0) (g' 1) := Path.id.map g'.continuous
+  -- `p` parametrises `γ` on `[lo, hi]`: this holds by unfolding `Path.map`, `codRestrict`, `comp`
+  have hp : ∀ t, (p t : X) = γ (Icc.convexComb lo hi t) := fun _ ↦ rfl
+  have hpa : (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i) = p a' := Subtype.ext (hp a').symm
+  have hpb : (⟨γ (Icc.convexComb lo hi b'), hbU⟩ : U i) = p b' := Subtype.ext (hp b').symm
+  have hpc : (⟨γ (Icc.convexComb lo hi c'), hcU⟩ : U i) = p c' := Subtype.ext (hp c').symm
+  let qab : Path (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i)
+      ⟨γ (Icc.convexComb lo hi b'), hbU⟩ :=
+    (γ.subpath (Icc.convexComb lo hi a') (Icc.convexComb lo hi b')).codRestrict
+      (Path.subpath_apply_mem hγ ha hb)
+  let qbc : Path (⟨γ (Icc.convexComb lo hi b'), hbU⟩ : U i)
+      ⟨γ (Icc.convexComb lo hi c'), hcU⟩ :=
+    (γ.subpath (Icc.convexComb lo hi b') (Icc.convexComb lo hi c')).codRestrict
+      (Path.subpath_apply_mem hγ hb hc)
+  let qac : Path (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i)
+      ⟨γ (Icc.convexComb lo hi c'), hcU⟩ :=
+    (γ.subpath (Icc.convexComb lo hi a') (Icc.convexComb lo hi c')).codRestrict
+      (Path.subpath_apply_mem hγ ha hc)
+  have hab' : (p.subpath a' b').cast hpa hpb = qab :=
+    Path.cast_subpath_eq_codRestrict γ p hp a' b'
+  have hbc' : (p.subpath b' c').cast hpb hpc = qbc :=
+    Path.cast_subpath_eq_codRestrict γ p hp b' c'
+  have hac' : (p.subpath a' c').cast hpa hpc = qac :=
+    Path.cast_subpath_eq_codRestrict γ p hp a' c'
+  have hquot : Path.Homotopic.Quotient.trans (Path.Homotopic.Quotient.mk qab)
+      (Path.Homotopic.Quotient.mk qbc) = Path.Homotopic.Quotient.mk qac := by
+    rw [← hab', ← hbc', ← hac']
+    exact Path.Homotopic.Quotient.subpath_cast_trans p a' b' c' hpa hpb hpc
+  exact locVal_comp_eq_of_trans hU F hF i _ _ _ _ _ _ hquot
+
+private lemma pathVal_congr {x y x' y' : X} (P : Path x y) (Q : Path x' y') (hx : x = x')
+    (hy : y = y') (h : ∀ t, P t = Q t) (hP : ∃ i, ∀ t, P t ∈ U i) (hQ : ∃ i, ∀ t, Q t ∈ U i) :
+    pathVal hU F hF P hP =
+      eqToHom (congrArg (glueObj hU F) hx) ≫ pathVal hU F hF Q hQ ≫
+        eqToHom (congrArg (glueObj hU F) hy).symm := by
+  obtain ⟨i, hi⟩ := hQ
+  rw [pathVal_eq hU F hF i P hP fun t ↦ h t ▸ hi t, pathVal_eq hU F hF i Q _ hi]
+  exact locVal_congr hU F hF i P Q hx hy h _ hi
+
+/-- The value of `γ` on the `k`-th piece of the uniform partition into `N` pieces. -/
+private def segVal {x y : X} (γ : Path x y) {N : ℕ} (h : IsFine U γ N) (k : ℕ) :
+    glueObj hU F (γ (pt N k)) ⟶ glueObj hU F (γ (pt N (k + 1))) :=
+  pathVal hU F hF (γ.subpath (pt N k) (pt N (k + 1))) (h.subpath_mem k)
+
+/-- On a run of partition points inside an interval which `γ` maps into one member of the cover,
+the composite of the segment values is the value of the subpath between the extreme points. -/
+private lemma map_segVal_eq {x y : X} (γ : Path x y) {N : ℕ} (h : IsFine U γ N) (i : ι)
+    {lo hi : I} (hγ : ∀ t ∈ Icc lo hi, γ t ∈ U i) {a b : ℕ} (hab : a ≤ b)
+    (hpt : ∀ j, a ≤ j → j ≤ b → pt N j ∈ Icc lo hi) :
+    Functor.OfSequence.map (segVal hU F hF γ h) a b hab =
+      pathVal hU F hF (γ.subpath (pt N a) (pt N b))
+        ⟨i, Path.subpath_apply_mem hγ (hpt a le_rfl hab) (hpt b hab le_rfl)⟩ := by
+  induction b, hab using Nat.le_induction with
+  | base =>
+    rw [Functor.OfSequence.map_id, pathVal_eq hU F hF i _ _
+      (Path.subpath_apply_mem hγ (hpt a le_rfl le_rfl) (hpt a le_rfl le_rfl)),
+      locVal_eq_eqToHom hU F hF i _ _ fun t ↦ by simp]
+    simp
+  | succ b hab ih =>
+    rw [Functor.OfSequence.map_comp _ a b (b + 1) hab b.le_succ,
+      ih fun j hj hj' ↦ hpt j hj (by omega), Functor.OfSequence.map_le_succ, segVal,
+      pathVal_subpath_trans hU F hF γ i hγ (hpt a le_rfl (by omega)) (hpt b hab (by omega))
+        (hpt (b + 1) (by omega) le_rfl)]
+
+/-- The value of `γ` computed along the uniform partition into `N` pieces. -/
+private def liftN {x y : X} (γ : Path x y) {N : ℕ} (h : IsFine U γ N) (hN : N ≠ 0) :
+    glueObj hU F x ⟶ glueObj hU F y :=
+  eqToHom (by rw [pt_zero, γ.source]) ≫
+    Functor.OfSequence.map (segVal hU F hF γ h) 0 N N.zero_le ≫
+      eqToHom (by rw [pt_self hN, γ.target])
+
+/-- For a path inside one member of the cover, the partition value is the local value. -/
+private lemma liftN_eq_locVal {x y : X} (γ : Path x y) {N : ℕ} (h : IsFine U γ N) (hN : N ≠ 0)
+    (i : ι) (hγ : ∀ t, γ t ∈ U i) : liftN hU F hF γ h hN = locVal hU F hF i γ hγ := by
+  have hmem : ∀ t, γ.subpath (pt N 0) (pt N N) t ∈ U i := fun _ ↦ hγ _
+  rw [liftN, map_segVal_eq hU F hF γ h i (lo := 0) (hi := 1) (fun t _ ↦ hγ t) (Nat.zero_le N)
+    fun j _ _ ↦ ⟨unitInterval.nonneg', unitInterval.le_one'⟩, pathVal_eq hU F hF i _ _ hmem,
+    locVal_congr hU F hF i _ γ (by rw [pt_zero, γ.source]) (by rw [pt_self hN, γ.target])
+      (fun t ↦ by simp [Path.subpath, pt_zero, pt_self hN]) hmem hγ]
+  simp
+
+private lemma liftN_congr {x y : X} (γ : Path x y) {N N' : ℕ} (hNN' : N = N') (h : IsFine U γ N)
+    (h' : IsFine U γ N') (hN : N ≠ 0) (hN' : N' ≠ 0) :
+    liftN hU F hF γ h hN = liftN hU F hF γ h' hN' := by
+  subst hNN'
+  rfl
+
+/-- Refining the uniform partition does not change the partition value. -/
+private lemma liftN_mul {x y : X} (γ : Path x y) {M N : ℕ} (hM : M ≠ 0) (hN : N ≠ 0)
+    (h : IsFine U γ N) (h' : IsFine U γ (M * N)) :
+    liftN hU F hF γ h' (mul_ne_zero hM hN) = liftN hU F hF γ h hN := by
+  have key : ∀ k (hk : k ≤ N),
+      Functor.OfSequence.map (segVal hU F hF γ h') 0 (M * k) (M * k).zero_le =
+        eqToHom (by rw [pt_zero, pt_zero]) ≫
+          Functor.OfSequence.map (segVal hU F hF γ h) 0 k k.zero_le ≫
+            eqToHom (by rw [pt_mul hM hk]) := by
+    intro k hk
+    induction k with
+    | zero => simp [Functor.OfSequence.map_id]
+    | succ k ih =>
+      obtain ⟨i, hi⟩ := h k
+      rw [Functor.OfSequence.map_comp _ 0 (M * k) (M * (k + 1)) (M * k).zero_le
+          (Nat.mul_le_mul_left M k.le_succ),
+        map_segVal_eq hU F hF γ h' i hi (Nat.mul_le_mul_left M k.le_succ) fun j hj hj' ↦
+          ⟨pt_mul hM (k.le_succ.trans hk) ▸ pt_mono _ hj, pt_mul hM hk ▸ pt_mono _ hj'⟩,
+        ih (by omega), Functor.OfSequence.map_comp _ 0 k (k + 1) k.zero_le k.le_succ,
+        Functor.OfSequence.map_le_succ, segVal,
+        pathVal_congr hU F hF _ _ (by rw [pt_mul hM (k.le_succ.trans hk)])
+          (by rw [pt_mul hM hk]) (fun t ↦ by rw [pt_mul hM (k.le_succ.trans hk), pt_mul hM hk]) _
+          (h.subpath_mem k)]
+      simp
+  rw [liftN, liftN, key N le_rfl]
+  simp
+
 /-- The value of a path: its partition value along any sufficiently fine uniform partition. -/
 private def lift {x y : X} (γ : Path x y) : glueObj hU F x ⟶ glueObj hU F y :=
   liftN hU F hF γ ((exists_isFine hU γ).choose_spec _ le_rfl).2
     ((exists_isFine hU γ).choose_spec _ le_rfl).1
 
-include hF in
 private lemma lift_eq_liftN {x y : X} (γ : Path x y) {N : ℕ} (h : IsFine U γ N) (hN : N ≠ 0) :
     lift hU F hF γ = liftN hU F hF γ h hN := by
   have hspec := (exists_isFine hU γ).choose_spec
@@ -563,19 +539,16 @@ private lemma lift_eq_liftN {x y : X} (γ : Path x y) {N : ℕ} (h : IsFine U γ
     ← liftN_mul hU F hF γ hN₀ hN h (hspec _ (Nat.le_mul_of_pos_right _ (Nat.pos_of_ne_zero hN))).2]
   exact liftN_congr hU F hF γ (Nat.mul_comm _ _) _ _ _ _
 
-include hF in
 /-- For a path inside one member of the cover, the value is the local value. -/
 private lemma lift_eq_locVal {x y : X} (γ : Path x y) (i : ι) (hγ : ∀ t, γ t ∈ U i) :
     lift hU F hF γ = locVal hU F hF i γ hγ := by
   obtain ⟨N₀, hN₀⟩ := exists_isFine hU γ
   rw [lift_eq_liftN hU F hF γ (hN₀ N₀ le_rfl).2 (hN₀ N₀ le_rfl).1, liftN_eq_locVal]
 
-include hF in
 private lemma lift_refl (x : X) : lift hU F hF (Path.refl x) = 𝟙 _ := by
   obtain ⟨i, hi⟩ := hU x
   rw [lift_eq_locVal hU F hF _ i fun _ ↦ mem_of_mem_nhds hi, locVal_refl]
 
-include hF in
 private lemma lift_trans {x y z : X} (γ : Path x y) (δ : Path y z) :
     lift hU F hF (γ.trans δ) = lift hU F hF γ ≫ lift hU F hF δ := by
   obtain ⟨N₁, h₁⟩ := exists_isFine hU γ
@@ -626,20 +599,6 @@ private lemma lift_trans {x y z : X} (γ : Path x y) (δ : Path y z) :
     second N le_rfl]
   simp
 
-/-- A path traced by a homotopy of paths: the `k`-th partition point, while the homotopy
-parameter runs through the `l`-th piece of the uniform partition into `N` pieces. -/
-private def colSeg {x y : X} {p q : Path x y} (H : p.Homotopy q) (N l k : ℕ) :
-    Path (H.eval (pt N l) (pt N k)) (H.eval (pt N (l + 1)) (pt N k)) where
-  toFun u := H (Icc.convexComb (pt N l) (pt N (l + 1)) u, pt N k)
-  continuous_toFun := H.continuous.comp ((Icc.continuous_convexComb _ _).prodMk continuous_const)
-  source' := by simp
-  target' := by simp
-
-private lemma convexComb_mem_Icc_pt (N k : ℕ) (u : I) :
-    Icc.convexComb (pt N k) (pt N (k + 1)) u ∈ Icc (pt N k) (pt N (k + 1)) :=
-  ⟨Icc.le_convexComb (pt_mono N k.le_succ) u, Icc.convexComb_le (pt_mono N k.le_succ) u⟩
-
-include hF in
 /-- The values along the boundary of one cell of a homotopy of paths satisfy the square relation
 of the cell. -/
 private lemma pathVal_cell {x y : X} {p q : Path x y} (H : p.Homotopy q) (N l k : ℕ) (i : ι)
@@ -677,7 +636,6 @@ private lemma pathVal_cell {x y : X} {p q : Path x y} (H : p.Homotopy q) (N l k 
   · rw [Path.trans_apply]
     split_ifs with h <;> rw [one_div] at h <;> simp [g, colSeg, Path.subpath, Path.trans_apply, h]
 
-include hF in
 /-- Homotopic paths have the same value. -/
 private lemma lift_eq_of_homotopy {x y : X} {p q : Path x y} (H : p.Homotopy q) :
     lift hU F hF p = lift hU F hF q := by

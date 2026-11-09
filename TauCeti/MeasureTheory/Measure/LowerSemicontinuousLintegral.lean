@@ -68,7 +68,7 @@ theorem lintegral_eq_iSup_lintegral_lscApprox (hf : LowerSemicontinuous f) (μ :
     ∫⁻ x, f x ∂μ = ⨆ n : ℕ, ∫⁻ x, (lscApprox f n x : ℝ≥0∞) ∂μ := by
   rw [← lintegral_iSup (fun n ↦ (lscApprox f n).continuous.measurable.coe_nnreal_ennreal)
     (monotone_coe_lscApprox f)]
-  exact lintegral_congr fun x ↦ (iSup_coe_lscApprox hf x).symm
+  exact lintegral_congr fun x ↦ (iSup_coe_lscApprox (hf x)).symm
 
 /-- Integration of a lower semicontinuous `f : Ω → ℝ≥0∞` is lower semicontinuous in the finite
 measure, for the topology of weak convergence. -/

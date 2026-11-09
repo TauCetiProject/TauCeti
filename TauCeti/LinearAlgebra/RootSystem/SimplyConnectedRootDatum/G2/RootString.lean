@@ -11,19 +11,25 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.Lengt
 /-!
 # Root strings in the pinned `G₂` root datum
 
-This file records the root-string calculations that distinguish the short-root span in
-characteristic three.  For the pinned datum `TauCeti.DynkinType.g2SimplyConnectedRootDatum` they
-say:
+This file records root-string calculations for the short-root span in characteristic three
+and for the long–short Chevalley straightening relation. For the pinned datum
+`TauCeti.DynkinType.g2SimplyConnectedRootDatum` they say:
 
 * a long root pairs by a multiple of three with every short coroot;
 * whenever a long root plus a short root is a root, the resulting root is short;
-* whenever two short roots add to a long root, their root string has bottom coefficient two.
+* whenever two short roots add to a long root, their root string has bottom coefficient two;
+* when a root sum is long, adding either summand again does not give a root;
+* a short root and a long root whose sum is a root have descending string coefficient zero
+  and ascending coefficient three.
 
-The last statement means that the corresponding Chevalley bracket coefficient is
-`±(2 + 1) = ±3`, the sign depending on the choice of Chevalley basis.  Thus all three results are
+The coefficient-two statement means that the corresponding Chevalley bracket coefficient is
+`±(2 + 1) = ±3`, the sign depending on the choice of Chevalley basis.  The first three results are
 the integral root-datum input for proving that the span of the short root spaces, together with
 the short coroot directions, is an ideal after base change to characteristic three.
-Constructing that Lie ideal and identifying the induced exceptional isogeny are later steps.
+The absence of higher roots also gives the class-two Chevalley commutator relation at a long
+root sum.
+The four-term long–short string gives the exact factors two and three that occur in the
+successive divided brackets used by straightening.
 
 ## Main results
 
@@ -33,6 +39,10 @@ Constructing that Lie ideal and identifying the induced exceptional isogeny are 
   and a short root is short.
 * `TauCeti.DynkinType.g2_chainBotCoeff_eq_two_of_short_add_short_eq_long`: two short roots whose sum
   is long have bottom root-string coefficient two.
+* `TauCeti.DynkinType.g2_root_add_notMem_range_of_add_eq_long`: a long root sum has no
+  higher roots.
+* `TauCeti.DynkinType.g2_chainBotCoeff_eq_zero_and_chainTopCoeff_eq_three_of_short_long`:
+  the four-term string starting at a long root in a short-root direction.
 
 ## References
 
@@ -118,6 +128,42 @@ theorem g2_chainBotCoeff_eq_two_of_short_add_short_eq_long (i j k : Fin 12)
     simpa using (P.algebraMap_pairingIn ℤ j i).trans hpair
   have hstring := P.chainBotCoeff_sub_chainTopCoeff hli
   rw [hpairIn] at hstring
+  omega
+
+/-- If the sum of two `G₂` roots is long, adding either summand to that sum does not give a
+root. This is the absence of higher roots in the corresponding class-two root string. -/
+theorem g2_root_add_notMem_range_of_add_eq_long (i j k : Fin 12)
+    (hk : g2Length k = 3)
+    (hadd : g2SimplyConnectedRootDatum.root k =
+      g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root j) :
+    g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root k ∉
+      range g2SimplyConnectedRootDatum.root := by
+  rintro ⟨l, hl⟩
+  simp only [g2SimplyConnectedRootDatum_root, g2Root_apply] at hadd hl
+  rw [g2Length_apply] at hk
+  revert i j k l
+  decide +kernel
+
+/-- A short root and a long root whose sum is a root start a four-term root string:
+its descending coefficient is zero and its ascending coefficient is three. -/
+theorem g2_chainBotCoeff_eq_zero_and_chainTopCoeff_eq_three_of_short_long
+    (i j : Fin 12) (hi : g2Length i = 1) (hj : g2Length j = 3)
+    (hadd : g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root j ∈
+      range g2SimplyConnectedRootDatum.root) :
+    g2SimplyConnectedRootDatum.chainBotCoeff i j = 0 ∧
+      g2SimplyConnectedRootDatum.chainTopCoeff i j = 3 := by
+  have hp : g2SimplyConnectedRootDatum.pairing j i = -3 := by
+    simp only [mem_range, g2SimplyConnectedRootDatum_root, g2SimplyConnectedRootDatum_pairing,
+      g2Root_apply, g2Coroot_apply] at hadd ⊢
+    rw [g2Length_apply] at hi hj
+    revert i j
+    decide +kernel
+  have hli := g2SimplyConnectedRootDatum.linearIndependent_of_add_mem_range_root' hadd
+  have hs := g2SimplyConnectedRootDatum.chainBotCoeff_sub_chainTopCoeff hli
+  have hb := g2SimplyConnectedRootDatum.chainBotCoeff_add_chainTopCoeff_le_three (i := i) (j := j)
+  have hp' : g2SimplyConnectedRootDatum.pairingIn ℤ j i = -3 := by
+    simpa using (g2SimplyConnectedRootDatum.algebraMap_pairingIn ℤ j i).trans hp
+  rw [hp'] at hs
   omega
 
 end TauCeti.DynkinType

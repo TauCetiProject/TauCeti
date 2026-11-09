@@ -32,6 +32,8 @@ decreases along orbits, so the orbit cannot converge to `x`.
   flow, once a coordinate of negative weight has grown.
 * `TauCeti.IsAdaptedPseudoGradient.flow_toChart_symm`: the flow of an adapted pseudo-gradient is
   the linear flow while the linear orbit stays in the chart.
+* `TauCeti.IsAdaptedPseudoGradient.flow_toChart_symm_of_forall_mem_uIcc`: the same at time `t`,
+  when the linear orbit stays in the chart on the closed interval between `0` and `t`.
 * `TauCeti.IsAdaptedPseudoGradient.flow_toChart_symm_of_forall_coord_eq_zero`: on the coordinate
   subspace of the positive weights, the flow is the contraction `z ↦ e^{-t} z`.
 * `TauCeti.IsAdaptedPseudoGradient.mem_stableSet_of_forall_coord_eq_zero`: near `x`, the points
@@ -40,6 +42,8 @@ decreases along orbits, so the orbit cannot converge to `x`.
   other points near `x`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_forall_mem_stableSet_iff`: on a small coordinate cube,
   `W^s(x)` is the coordinate subspace of the positive weights.
+* `TauCeti.IsAdaptedPseudoGradient.exists_forall_coord_flow_eq_exp_smul`: on a small coordinate
+  cube, points of `W^s(x)` move by the linear contraction `z ↦ e^{-t} z` for all `t ≥ 0`.
 
 ## References
 
@@ -234,6 +238,42 @@ theorem flow_toChart_symm (hX : IsAdaptedPseudoGradient f X) (φ : MorseChart E 
   rw [hX.flow_apply]
   exact heq ht
 
+/-- **In a Morse chart, the flow of an adapted pseudo-gradient is linear up to time `t`.** If `X`
+is the linear field `z ↦ (-wᵢ zᵢ)ᵢ` in the Morse chart `φ`, and the linear orbit of `z` stays in
+the chart for all times between `0` and `t`, then at time `t` the flow of `X` from the point with
+coordinates `z` is the point with coordinates `(e^{-wᵢ t} zᵢ)ᵢ`. -/
+theorem flow_toChart_symm_of_forall_mem_uIcc (hX : IsAdaptedPseudoGradient f X)
+    (φ : MorseChart E f x)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {z : Fin (Module.finrank ℝ E) → ℝ} {t : ℝ}
+    (hz : ∀ s ∈ uIcc 0 t, φ.coord.symm (φ.linearFlow s z) ∈ φ.toChart.target) :
+    hX.flow t (φ.toChart.symm (φ.coord.symm z)) =
+      φ.toChart.symm (φ.coord.symm (φ.linearFlow t z)) := by
+  -- The times at which the linear orbit lies in the chart form an open set containing the
+  -- endpoints of `[min 0 t, max 0 t]`, so it contains an open interval around each endpoint, and
+  -- hence an open interval around the whole closed interval.
+  set U := {s : ℝ | φ.coord.symm (φ.linearFlow s z) ∈ φ.toChart.target}
+  have hU : IsOpen U :=
+    φ.toChart.open_target.preimage <|
+      φ.coord.symm.toLinearMap.continuous_of_finiteDimensional.comp <|
+        continuous_iff_continuousAt.2 fun s ↦ (φ.hasDerivAt_linearFlow z s).continuousAt
+  have hIcc : Icc (min 0 t) (max 0 t) ⊆ U := fun s hs ↦ hz s (by rwa [← Icc_min_max])
+  obtain ⟨a, b₁, ⟨ha, hb₁⟩, hab₁⟩ := mem_nhds_iff_exists_Ioo_subset.1 <|
+    hU.mem_nhds (hIcc ⟨le_rfl, min_le_max⟩)
+  obtain ⟨a₂, b, ⟨ha₂, hb⟩, hab₂⟩ := mem_nhds_iff_exists_Ioo_subset.1 <|
+    hU.mem_nhds (hIcc ⟨min_le_max, le_rfl⟩)
+  have hab : Ioo a b ⊆ U := fun s hs ↦ by
+    rcases lt_or_ge s (min 0 t) with hsm | hsm
+    · exact hab₁ ⟨hs.1, hsm.trans hb₁⟩
+    rcases le_or_gt s (max 0 t) with hsM | hsM
+    · exact hIcc ⟨hsm, hsM⟩
+    · exact hab₂ ⟨ha₂.trans hsM, hs.2⟩
+  have hmem {s : ℝ} (hs : s ∈ uIcc 0 t) : s ∈ Ioo a b := by
+    rw [← Icc_min_max] at hs
+    exact ⟨ha.trans_le hs.1, hs.2.trans_lt hb⟩
+  exact hX.flow_toChart_symm φ hφ (hmem left_mem_uIcc) hab (hmem right_mem_uIcc)
+
 /-- **On the stable subspace the flow contracts.** Let `X` be the linear field `z ↦ (-wᵢ zᵢ)ᵢ` in
 the Morse chart `φ`, and let `z` be small coordinates vanishing in every direction of negative
 weight. Then for `t ≥ 0` the flow moves the point with coordinates `z` to the point with
@@ -271,20 +311,13 @@ theorem mem_stableSet_of_forall_coord_eq_zero (hX : IsAdaptedPseudoGradient f X)
     {r : ℝ} (hrT : ∀ z, ‖z‖ < r → φ.coord.symm z ∈ φ.toChart.target)
     {y : M} (hy : y ∈ φ.toChart.source) (hyr : ‖φ.coord (φ.toChart y)‖ < r / 2)
     (hu : ∀ i, φ.weight i < 0 → φ.coord (φ.toChart y) i = 0) : y ∈ hX.flow.stableSet x := by
-  have hr : 0 < r := by linarith [norm_nonneg (φ.coord (φ.toChart y))]
   set z := φ.coord (φ.toChart y)
-  have hcont : Tendsto (fun w ↦ φ.toChart.symm (φ.coord.symm w)) (𝓝 0)
-      (𝓝 (φ.toChart.symm (φ.coord.symm 0))) := by
-    refine (φ.toChart.continuousAt_symm (hrT 0 (by simpa using hr))).comp ?_
-    exact φ.coordL.symm.continuous.continuousAt.congr (.of_forall φ.coordL_symm_apply)
   have hlin : Tendsto (fun t ↦ Real.exp (-t) • z) atTop (𝓝 0) := by
     simpa using Real.tendsto_exp_neg_atTop_nhds_zero.smul_const z
-  have h := (hcont.comp hlin).congr' (f₂ := fun t ↦ hX.flow t y) <| by
-    filter_upwards [eventually_ge_atTop 0] with t ht
-    rw [comp_apply, ← hX.flow_toChart_symm_of_forall_coord_eq_zero φ hφ hrT hyr hu ht,
-      φ.toChart_symm_coord_symm_coord hy]
-  rw [φ.toChart_symm_coord_symm_zero] at h
-  exact Flow.mem_stableSet.2 h
+  refine Flow.mem_stableSet.2 <| (φ.tendsto_toChart_symm_coord_symm_nhds_zero.comp hlin).congr' ?_
+  filter_upwards [eventually_ge_atTop 0] with t ht
+  rw [comp_apply, ← hX.flow_toChart_symm_of_forall_coord_eq_zero φ hφ hrT hyr hu ht,
+    φ.toChart_symm_coord_symm_coord hy]
 
 /-- **The energy barrier.** Let `X` be the linear field `z ↦ (-wᵢ zᵢ)ᵢ` in the Morse chart `φ`,
 and let the coordinates of `y` be small, with some coordinate of negative weight nonzero. Then the
@@ -369,6 +402,34 @@ theorem exists_forall_mem_stableSet_iff (hX : IsAdaptedPseudoGradient f X)
       hf.continuous.continuousAt (hX.antitone_flow hf _))
   · gcongr
     linarith
+
+/-- **The linear contraction on the local stable set.** Let `X` be the linear field
+`z ↦ (-wᵢ zᵢ)ᵢ` in the Morse chart `φ`. On a small coordinate cube, a point `y` of `W^s(x)` stays
+in the chart for all positive times, and its coordinates at time `t ≥ 0` are `e^{-t}` times those
+of `y`. -/
+theorem exists_forall_coord_flow_eq_exp_smul (hX : IsAdaptedPseudoGradient f X)
+    (φ : MorseChart E f x)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) :
+    ∃ ρ > 0, ∀ y ∈ hX.flow.stableSet x, y ∈ φ.toChart.source → ‖φ.coord (φ.toChart y)‖ < ρ →
+      ∀ t, 0 ≤ t → hX.flow t y ∈ φ.toChart.source ∧
+        φ.coord (φ.toChart (hX.flow t y)) = Real.exp (-t) • φ.coord (φ.toChart y) := by
+  obtain ⟨ε, hε, hεs⟩ := hX.exists_forall_mem_stableSet_iff φ hφ hf
+  obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
+  refine ⟨min ε (r / 2), by positivity, fun y hys hy hyρ t ht ↦ ?_⟩
+  set z := φ.coord (φ.toChart y)
+  have hu := (hεs y hy (hyρ.trans_le (min_le_left _ _))).1 hys
+  have hz2 : ‖z‖ < r / 2 := hyρ.trans_le (min_le_right _ _)
+  have hflow := hX.flow_toChart_symm_of_forall_coord_eq_zero φ hφ hrT hz2 hu ht
+  rw [φ.toChart_symm_coord_symm_coord hy] at hflow
+  -- The contracted coordinates are again coordinates of a point of the chart.
+  have hnorm : ‖Real.exp (-t) • z‖ ≤ ‖z‖ := by
+    rw [norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le]
+    exact mul_le_of_le_one_left (norm_nonneg _) (Real.exp_le_one_iff.2 (neg_nonpos.2 ht))
+  have hT := hrT _ (hnorm.trans_lt (hz2.trans (half_lt_self hr)))
+  rw [hflow]
+  exact ⟨φ.toChart.map_target hT, by rw [φ.toChart.right_inv hT, LinearEquiv.apply_symm_apply]⟩
 
 end IsAdaptedPseudoGradient
 

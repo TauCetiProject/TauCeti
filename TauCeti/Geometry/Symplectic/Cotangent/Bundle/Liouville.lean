@@ -142,7 +142,7 @@ variable (I M) in
 bundle projection. It is a smooth one-form on `T*M`, and in every bundle chart it is the linear
 Liouville form `TauCeti.cotangentLiouvilleForm`, that is `Σ pᵢ dqᵢ`. -/
 def liouvilleForm : SmoothForm (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (CotangentBundle I M) ℝ 1 :=
-  ⟨liouvilleRough I M, isSmoothForm_liouvilleRough.mem_smoothForms⟩
+  ⟨liouvilleRough I M, isSmoothForm_liouvilleRough.mem_smoothBundleForms⟩
 
 /-- The underlying rough form of `liouvilleForm`. -/
 private theorem coe_liouvilleForm : (liouvilleForm I M).1 = liouvilleRough I M :=
@@ -163,8 +163,26 @@ with coordinates `(q, p)`, the Liouville form is the linear Liouville form
 `λ_(q,p)(δq, δp) = p(δq)`, that is `Σ pᵢ dqᵢ`. -/
 theorem inChartAt_liouvilleForm (z₀ : CotangentBundle I M) {w : E × (E →L[ℝ] ℝ)}
     (hw : w ∈ (extChartAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z₀).target) :
-    (liouvilleForm I M).1.inChartAt z₀ w = cotangentLiouvilleForm w :=
+    RoughForm.inChartAt (liouvilleForm I M).1 z₀ w = cotangentLiouvilleForm w :=
   inChartAt_liouvilleRough z₀ hw
+
+variable {G H'' : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [TopologicalSpace H'']
+  {K : ModelWithCorners ℝ G H''} {X : Type*} [TopologicalSpace X] [ChartedSpace H'' X] in
+/-- The Liouville form pulled back along a map `ψ : X → T*M` lying over a map `g : X → M`
+evaluates a tangent vector `v` at `x` by applying the covector `ψ x` to `dg v`, provided `ψ` is
+differentiable at `x`. -/
+theorem mpullback_liouvilleForm_apply_of_proj_comp_eq {ψ : X → CotangentBundle I M} {g : X → M}
+    (hproj : ∀ y, (ψ y).proj = g y) {x : X}
+    (hψ : MDifferentiableAt K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ψ x) (v : Fin 1 → TangentSpace K x) :
+    mpullback K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ψ (liouvilleForm I M).1 x v =
+      (ψ x).2 (mfderiv K I g x (v 0)) := by
+  rw [mpullback_apply, liouvilleForm_apply]
+  have hπ : π (E →L[ℝ] ℝ) (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) ∘ ψ = g := funext hproj
+  -- The chain rule computes the derivative of `π ∘ ψ = g`.
+  have hπψ := mfderiv_comp_apply x
+    ((Bundle.contMDiff_proj (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) _).mdifferentiableAt
+      one_ne_zero) hψ (v 0)
+  rw [← hπψ, hπ]
 
 /-- **The Liouville form is tautological.** Pulling it back along the section `x ↦ σ x` of the
 cotangent bundle defined by a family of covectors `σ` gives back `σ`, at every point where that
@@ -175,15 +193,10 @@ theorem mpullback_liouvilleForm_section {σ : (x : M) → TangentSpace I x →L[
     mpullback I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (fun y ↦ TotalSpace.mk' (E →L[ℝ] ℝ) y (σ y))
         (liouvilleForm I M).1 x =
       ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ 0 (σ x) := by
-  have hcomp := mfderiv_comp x
-    ((Bundle.contMDiff_proj (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) _).mdifferentiableAt
-      one_ne_zero) hσ
-  -- The projection of the section is the identity of `M`.
-  rw [show (π (E →L[ℝ] ℝ) (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) ∘
-      fun y ↦ TotalSpace.mk' (E →L[ℝ] ℝ) y (σ y)) = id from rfl, mfderiv_id] at hcomp
+  -- The section lies over the identity of `M`.
   ext v
-  rw [mpullback_apply, liouvilleForm_apply, ContinuousAlternatingMap.ofSubsingleton_apply_apply]
-  exact congrArg (σ x) (DFunLike.congr_fun hcomp (v 0)).symm
+  rw [mpullback_liouvilleForm_apply_of_proj_comp_eq (g := id) (fun _ ↦ rfl) hσ, mfderiv_id,
+    ContinuousAlternatingMap.ofSubsingleton_apply_apply, ContinuousLinearMap.id_apply]
 
 /-- **The Liouville form is tautological.** Pulling it back along the smooth section of the
 cotangent bundle defined by a smooth one-form `α` gives back `α`. -/
@@ -198,9 +211,37 @@ theorem mpullback_liouvilleForm (α : SmoothForm I M ℝ 1) :
   rw [ContinuousAlternatingMap.ofSubsingleton_apply_apply, SmoothForm.degreeOneEquiv_apply_apply]
   exact congrArg (α.1 x) (funext fun i ↦ by rw [Fin.fin_one_eq_zero i])
 
+variable {F H' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ F H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold J 2 N] in
+/-- The Liouville form pulled back by a smooth map `ψ : T*M → T*N` covering a map `f : M → N`
+evaluates a tangent vector at `z` by applying the covector `ψ z` to `df (dπ v)`. The base map `f`
+is automatically smooth, as it is `x ↦ π (ψ (0_x))`. -/
+theorem mpullback_liouvilleForm_apply_of_proj_apply_eq
+    {ψ : CotangentBundle I M → CotangentBundle J N}
+    (hψ : ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) ∞ ψ)
+    {f : M → N} (hproj : ∀ z, (ψ z).proj = f z.proj) (z : CotangentBundle I M)
+    (v : Fin 1 → TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z) :
+    (SmoothForm.mpullback ψ hψ (liouvilleForm J N)).1 z v =
+      (ψ z).2 (mfderiv I J f z.proj (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I
+        (π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) z (v 0))) := by
+  -- The base map `f` is `x ↦ π_N (ψ (0_x))`, hence smooth.
+  have hf : MDifferentiableAt I J f z.proj := by
+    have : f = (π (F →L[ℝ] ℝ) (fun x : N ↦ TangentSpace J x →L[ℝ] ℝ)) ∘ ψ ∘ zeroSection _ _ :=
+      funext fun x ↦ by simp [hproj]
+    rw [this]
+    exact ((contMDiff_proj _).comp (hψ.comp (contMDiff_zeroSection ℝ _)) _).mdifferentiableAt
+      (by simp)
+  -- Since `ψ` covers `f`, the chain rule gives `d(π_N ∘ ψ) = df ∘ dπ_M`.
+  rw [SmoothForm.coe_mpullback, ← mfderiv_comp_apply z hf
+    ((contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) _).mdifferentiableAt one_ne_zero)]
+  exact mpullback_liouvilleForm_apply_of_proj_comp_eq (g := f ∘ TotalSpace.proj) hproj
+    ((hψ z).mdifferentiableAt (by simp)) v
+
 /-- The Liouville form pulled back by a smooth self-map `g` of the cotangent bundle covering the
 identity evaluates a tangent vector at `z` by applying the covector `g z` to its image under the
-derivative of the projection. -/
+derivative of the projection. This is the `f = id` case of
+`mpullback_liouvilleForm_apply_of_proj_apply_eq`. -/
 theorem mpullback_liouvilleForm_apply_of_proj_eq {g : CotangentBundle I M → CotangentBundle I M}
     (hg : ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ g)
     (hproj : ∀ z, (g z).proj = z.proj) (z : CotangentBundle I M)
@@ -208,9 +249,33 @@ theorem mpullback_liouvilleForm_apply_of_proj_eq {g : CotangentBundle I M → Co
     (SmoothForm.mpullback g hg (liouvilleForm I M)).1 z v =
       (g z).2 (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I
         (π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) z (v 0)) := by
-  rw [SmoothForm.mpullback_apply, liouvilleForm_apply]
-  exact congrArg (g z).2 (DFunLike.congr_fun
-    (mfderiv_proj_comp_mfderiv_of_proj_eq ((hg z).mdifferentiableAt (by simp)) hproj) (v 0))
+  rw [mpullback_liouvilleForm_apply_of_proj_apply_eq hg (f := id) hproj z,
+    mfderiv_id, ContinuousLinearMap.id_apply]
+
+variable {G H'' : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [TopologicalSpace H'']
+  {K : ModelWithCorners ℝ G H''} {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
+  [IsManifold K 1 P] in
+/-- **Rescaling covectors rescales the pulled-back Liouville form.** If a map `φ` into the
+cotangent bundle multiplies each covector `ψ y` of a map `ψ` by a scalar `c y`, keeping its base
+point, then `φ^*λ = c • ψ^*λ`. The scalar function `c` need not be smooth or nonzero. -/
+theorem mpullback_liouvilleForm_apply_of_eq_smul {φ ψ : P → CotangentBundle I M}
+    (hφ : ContMDiff K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ φ)
+    (hψ : ContMDiff K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ψ) (c : P → ℝ)
+    (hφψ : ∀ y, φ y = TotalSpace.mk' (E →L[ℝ] ℝ) (ψ y).proj (c y • (ψ y).2)) (y : P) :
+    (SmoothForm.mpullback φ hφ (liouvilleForm I M)).1 y =
+      c y • (SmoothForm.mpullback ψ hψ (liouvilleForm I M)).1 y := by
+  obtain rfl : φ = fun y ↦ TotalSpace.mk' (E →L[ℝ] ℝ) (ψ y).proj (c y • (ψ y).2) := funext hφψ
+  ext v
+  rw [ContinuousAlternatingMap.smul_apply, SmoothForm.mpullback_apply,
+    SmoothForm.mpullback_apply, liouvilleForm_apply, liouvilleForm_apply]
+  -- Both maps cover the same map `y ↦ (ψ y).proj`, so `dπ` sends their differentials to the same
+  -- tangent vector of `M`.
+  have hπ (z : CotangentBundle I M) : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I
+      (π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) z :=
+    (contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) z).mdifferentiableAt one_ne_zero
+  rw [← mfderiv_comp_apply y (hπ _) ((hφ y).mdifferentiableAt (by simp)),
+    ← mfderiv_comp_apply y (hπ _) ((hψ y).mdifferentiableAt (by simp))]
+  rfl
 
 end Liouville
 
@@ -242,7 +307,8 @@ bundle, the canonical symplectic form is the linear form
 theorem inChartAt_symplecticForm_apply (z₀ : CotangentBundle I M) {w : E × (E →L[ℝ] ℝ)}
     (hw : w ∈ (extChartAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z₀).target)
     (v : Fin 2 → E × (E →L[ℝ] ℝ)) :
-    (symplecticForm I M).1.inChartAt z₀ w v = strongDualCotangentSymplecticForm (v 0) (v 1) := by
+    RoughForm.inChartAt (symplecticForm I M).1 z₀ w v =
+      strongDualCotangentSymplecticForm (v 0) (v 1) := by
   have huniq : UniqueDiffWithinAt ℝ (range (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))) w :=
     (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).uniqueDiffOn w (extChartAt_target_subset_range z₀ hw)
   have hd : (mextDeriv (liouvilleRough I M)).inChartAt z₀ w =
@@ -271,7 +337,7 @@ theorem symplecticForm_apply (z : CotangentBundle I M)
 `z`, is the linear form `TauCeti.strongDualCotangentSymplecticForm`. -/
 theorem eval₂_symplecticForm (z : CotangentBundle I M)
     (v w : TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z) :
-    SmoothForm.eval₂ (symplecticForm I M) z v w =
+    SmoothBundleForm.eval₂ (symplecticForm I M) z v w =
       strongDualCotangentSymplecticForm (V := E) v w := by
   simp
 

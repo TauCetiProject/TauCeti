@@ -112,7 +112,7 @@ theorem ad_pow_lie_eq_zero_of_rootSpace_sub_eq_bot {α β : Weight K H L} (hα :
     simp
   rw [hexp, Nat.add_sub_cancel, hadt]
   rw [pow_succ] at hzero
-  simpa [Module.End.mul_apply] using hzero
+  simpa [mul_apply_eq_comp] using hzero
 
 /-! ## Simple roots -/
 
@@ -148,8 +148,7 @@ theorem isSerreSystem_coroot (b : (rootSystem H).Base) {e f : ↥b.support → L
     (he : ∀ i : ↥b.support, e i ∈ rootSpace H (⇑((i : H.root) : Weight K H L)))
     (hf : ∀ i : ↥b.support, f i ∈ rootSpace H (-⇑((i : H.root) : Weight K H L))) :
     IsSerreSystem K b.cartanMatrixᵀ (fun i ↦ (((rootSystem H).coroot i : H) : L)) e f where
-  lie_H_H i j := by
-    simp [← LieSubalgebra.coe_bracket, trivial_lie_zero]
+  lie_H_H i j := LieSubalgebra.lie_eq_zero_of_mem (Subtype.prop _) (Subtype.prop _)
   lie_E_F_self i := (hsl2 i).lie_e_f
   lie_E_F_of_ne i j hij := by
     have hmem : ⁅e i, f j⁆ ∈ rootSpace H

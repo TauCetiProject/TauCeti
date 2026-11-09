@@ -58,6 +58,22 @@ theorem exists_int_contsAux_eq (v : K) (n : ℕ) :
 
 variable [IsStrictOrderedRing K] {v : K} {n : ℕ}
 
+/-- The next convergent denominator is at most the current one times one plus the next
+partial denominator. Together with `le_of_succ_get?_den`, this bounds their ratio. -/
+theorem of_den_le_partDen_add_one_mul_den {b : K}
+    (hb : (of v).partDens.get? n = some b) :
+    (of v).dens (n + 1) ≤ (b + 1) * (of v).dens n := by
+  obtain ⟨gp, hs, rfl⟩ := exists_s_b_of_partDen hb
+  have hprev : ((of v).contsAux n).b ≤ ((of v).contsAux (n + 1)).b := by
+    cases n with
+    | zero => simp [zeroth_contAux_eq_one_zero, first_contAux_eq_h_one]
+    | succ n =>
+      simpa only [den_eq_conts_b, nth_cont_eq_succ_nth_contAux] using
+        (of_den_mono (v := v) (n := n))
+  simpa only [den_eq_conts_b, nth_cont_eq_succ_nth_contAux,
+    contsAux_recurrence hs rfl rfl, of_partNum_eq_one (partNum_eq_s_a hs),
+    one_mul, add_mul] using add_le_add_right hprev (gp.b * ((of v).contsAux (n + 1)).b)
+
 /-- The error of a convergent exceeds `1 / (Bₙ (Bₙ + Bₙ₊₁))`. Together with
 `GenContFract.abs_sub_convs_le` this determines `|v - Aₙ / Bₙ|` up to a factor of two. -/
 theorem one_div_lt_abs_sub_convs (hn : ¬(of v).TerminatedAt n) :

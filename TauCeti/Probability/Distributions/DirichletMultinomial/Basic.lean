@@ -65,7 +65,7 @@ theorem dirichletMultinomialMeasure_eq_bind {a : ι → ℝ} (n : ℕ)
   rw [dirichletMultinomialMeasure]
   by_cases ha : ∀ i, 0 < a i
   · apply Measure.bind_congr_right
-    filter_upwards [ae_extendWeights_dirichletMeasure ha
+    filter_upwards [ae_extendWeights_dirichletMeasure (a := a)
       (StdSimplex.single (Classical.arbitrary ι)), hp] with x hx hpx
     congr 1
     apply StdSimplex.ext
@@ -103,7 +103,7 @@ theorem dirichletMultinomialMeasure_real_singleton {a : ι → ℝ}
   let p : EuclideanSpace ℝ ι → StdSimplex ℝ≥0 ι := fun x ↦
     (StdSimplex.single (Classical.arbitrary ι) : StdSimplex ℝ≥0 ι).extendWeights
       (fun i ↦ (x i).toNNReal)
-  have hp := ae_extendWeights_dirichletMeasure ha
+  have hp := ae_extendWeights_dirichletMeasure (a := a)
     (StdSimplex.single (Classical.arbitrary ι))
   rw [dirichletMultinomialMeasure_eq_bind n p hp, measureReal_def,
     Measure.bind_apply (measurableSet_singleton k)
@@ -178,7 +178,7 @@ theorem dirichletMultinomialMeasure_eq_sum_dirac {a : ι → ℝ}
   classical
   apply Measure.ext_of_singleton
   intro k
-  simp [dirichletMultinomialMeasure_singleton ha, Measure.finsetSum_apply,
+  simp [dirichletMultinomialMeasure_singleton ha, _root_.sum_apply,
     Pi.single_apply, mul_ite, Finset.mem_piAntidiag]
 
 /-- With no trials, a valid Dirichlet-multinomial law is concentrated at the zero count vector. -/

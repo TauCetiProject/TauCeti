@@ -154,12 +154,6 @@ theorem markovChainLaw_apply_setOf_loopPathAt (bs : List (List α)) :
   rw [hset, ← Measure.map_apply (by fun_prop) (measurableSet_singleton _),
     markovChainLaw_map_prefix_apply_singleton_loopPathAt]
 
-/-- **A chain started at `a₀` starts at `a₀`.** -/
-theorem markovChainLaw_dirac_ae_apply_zero (κ : Kernel α α) [IsMarkovKernel κ] (a₀ : α) :
-    ∀ᵐ x ∂(markovChainLaw (Measure.dirac a₀) κ), x 0 = a₀ :=
-  HasLaw.ae_eq_of_dirac
-    ⟨(measurable_pi_apply 0).aemeasurable, markovChainLaw_map_eval_zero _ _⟩
-
 end LoopMass
 
 /-! ## The law of an excursion -/

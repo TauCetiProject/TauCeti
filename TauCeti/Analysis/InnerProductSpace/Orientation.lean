@@ -5,15 +5,36 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Analysis.InnerProductSpace.Orientation
+public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
+public import Mathlib.LinearAlgebra.Alternating.Curry
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Continuous oriented volume forms
 
 This file packages Mathlib's oriented volume form as a continuous alternating map.  The
 construction is shared by the manifold Riemannian volume form and the planar complex area form.
+
+It also evaluates the volume form on an arbitrary, not necessarily orthonormal, family of vectors:
+its absolute value is the square root of the Gram determinant, it vanishes exactly on linearly
+dependent families, and on a basis its sign records whether the basis is positively oriented. In
+a coordinate frame of a Riemannian manifold this is the familiar formula
+`vol = ±√(det g) dx¹ ∧ ⋯ ∧ dxⁿ`.
+
+Two oriented inner product spaces of the same positive finite dimension are related by an
+orientation-preserving linear isometric equivalence
+(`Orientation.exists_linearIsometryEquiv_map_eq`). So every orientation of an inner product space
+is transported from a given orientation of a model space by some orthonormal frame.
+
+The orthogonal complement `(ℝ ∙ p)ᗮ` of a nonzero vector `p` is oriented with `p` as positive
+normal: a basis of `(ℝ ∙ p)ᗮ` is positive exactly when `p` followed by it is a positive basis of
+the whole space (`Orientation.orthogonalSpanSingleton`,
+`Orientation.orientation_eq_orthogonalSpanSingleton_iff`). This orients the tangent hyperplanes of
+spheres.
 -/
 
 public section
@@ -52,5 +73,149 @@ theorem eq_volumeFormL_of_apply_orthonormal (o : Orientation ℝ E (Fin n))
   ext v
   rw [ContinuousAlternatingMap.apply_eq_det_mul ω b.toBasis, hω', mul_one,
     volumeFormL_apply, o.volumeForm_robust b hb]
+
+/-- **The volume of a family of vectors is the square root of its Gram determinant**, up to
+sign: `|vol v| = √(det ⟪vᵢ, vⱼ⟫)`. -/
+theorem abs_volumeForm_apply_eq_sqrt_det_gram (o : Orientation ℝ E (Fin n)) (v : Fin n → E) :
+    |o.volumeForm v| = √(Matrix.gram ℝ v).det := by
+  rcases n with - | n
+  · refine o.eq_or_eq_neg_of_isEmpty.elim ?_ ?_ <;> rintro rfl <;> simp
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  let b : OrthonormalBasis (Fin (n + 1)) ℝ E :=
+    (stdOrthonormalBasis ℝ E).reindex (finCongr Fact.out)
+  -- In the orthonormal basis `b`, the Gram matrix of `v` is `Aᵀ A` for the coordinate matrix `A`.
+  have hA : b.toBasis.toMatrix v = Matrix.of fun i j ↦ b.repr (v j) i := by
+    ext i j
+    simp [Module.Basis.toMatrix_apply]
+  rw [o.volumeForm_robust' b, Module.Basis.det_apply, Matrix.gram_eq_conjTranspose_mul b,
+    Matrix.det_mul, Matrix.det_conjTranspose, star_trivial, Real.sqrt_mul_self_eq_abs, hA]
+
+/-- The volume form is positive on a basis exactly when the basis is positively oriented. -/
+theorem volumeForm_apply_pos_iff {o : Orientation ℝ E (Fin n)} {b : Module.Basis (Fin n) ℝ E} :
+    0 < o.volumeForm b ↔ b.orientation = o := by
+  rcases n with - | n
+  · rw [b.orientation_isEmpty]
+    refine o.eq_or_eq_neg_of_isEmpty.elim ?_ ?_ <;> rintro rfl
+    · simp
+    · simp only [volumeForm_zero_neg, neg_apply,
+        AlternatingMap.constLinearEquivOfIsEmpty_apply, AlternatingMap.constOfIsEmpty_apply,
+        Left.neg_pos_iff]
+      exact iff_of_false (by norm_num) (Module.Ray.ne_neg_self _)
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  let f := ((stdOrthonormalBasis ℝ E).reindex (finCongr Fact.out)).adjustToOrientation o
+  rw [o.volumeForm_robust f (OrthonormalBasis.orientation_adjustToOrientation _ _),
+    ← Module.Basis.orientation_eq_iff_det_pos, OrthonormalBasis.orientation_adjustToOrientation,
+    eq_comm]
+
+/-- The volume form is nonzero on a family of vectors exactly when the family is linearly
+independent. -/
+theorem volumeForm_apply_ne_zero_iff {o : Orientation ℝ E (Fin n)} {v : Fin n → E} :
+    o.volumeForm v ≠ 0 ↔ LinearIndependent ℝ v := by
+  rcases n with - | n
+  · refine iff_of_true ?_ linearIndependent_empty_type
+    refine o.eq_or_eq_neg_of_isEmpty.elim ?_ ?_ <;> rintro rfl <;> simp
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have hcard : Fintype.card (Fin (n + 1)) = Module.finrank ℝ E := by
+    simp [Fact.out (p := Module.finrank ℝ E = n + 1)]
+  let b : OrthonormalBasis (Fin (n + 1)) ℝ E :=
+    (stdOrthonormalBasis ℝ E).reindex (finCongr Fact.out)
+  rw [← abs_ne_zero, o.volumeForm_robust' b, abs_ne_zero, ← isUnit_iff_ne_zero,
+    ← b.toBasis.is_basis_iff_det]
+  exact ⟨And.left, fun h ↦ ⟨h, h.span_eq_top_of_card_eq_finrank hcard⟩⟩
+
+/-- The volume of a positively oriented basis is the square root of its Gram determinant. -/
+theorem volumeForm_apply_eq_sqrt_det_gram (o : Orientation ℝ E (Fin n))
+    (b : Module.Basis (Fin n) ℝ E) (hb : b.orientation = o) :
+    o.volumeForm b = √(Matrix.gram ℝ b).det := by
+  rw [← abs_of_pos (volumeForm_apply_pos_iff.2 hb), abs_volumeForm_apply_eq_sqrt_det_gram]
+
+/-- The volume of a negatively oriented basis is minus the square root of its Gram determinant. -/
+theorem volumeForm_apply_eq_neg_sqrt_det_gram (o : Orientation ℝ E (Fin n))
+    (b : Module.Basis (Fin n) ℝ E) (hb : b.orientation ≠ o) :
+    o.volumeForm b = -√(Matrix.gram ℝ b).det := by
+  have hb' : b.orientation = -o := by
+    rw [(b.orientation_ne_iff_eq_neg o).1 (Ne.symm hb)]
+    exact (neg_neg b.orientation).symm
+  have h := (-o).volumeForm_apply_eq_sqrt_det_gram b hb'
+  rwa [volumeForm_neg_orientation, neg_apply, neg_eq_iff_eq_neg] at h
+
+section LinearIsometryEquiv
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [NormedAddCommGroup W]
+  [InnerProductSpace ℝ W] {ι : Type*} [Fintype ι] [Nonempty ι]
+
+/-- Two oriented real inner product spaces of the same positive finite dimension are related by an
+orientation-preserving linear isometric equivalence: it carries a positively oriented orthonormal
+basis of one to a positively oriented orthonormal basis of the other. -/
+theorem exists_linearIsometryEquiv_map_eq (hV : Module.finrank ℝ V = Fintype.card ι)
+    (hW : Module.finrank ℝ W = Fintype.card ι) (o : Orientation ℝ V ι) (o' : Orientation ℝ W ι) :
+    ∃ φ : V ≃ₗᵢ[ℝ] W, Orientation.map ι φ.toLinearEquiv o = o' := by
+  classical
+  have : FiniteDimensional ℝ V := Module.finite_of_finrank_pos (hV ▸ Fintype.card_pos)
+  have : FiniteDimensional ℝ W := Module.finite_of_finrank_pos (hW ▸ Fintype.card_pos)
+  let bV₀ := (stdOrthonormalBasis ℝ V).reindex (Fintype.equivFinOfCardEq hV.symm).symm
+  let bW₀ := (stdOrthonormalBasis ℝ W).reindex (Fintype.equivFinOfCardEq hW.symm).symm
+  let φ := (bV₀.adjustToOrientation o).equiv (bW₀.adjustToOrientation o') (Equiv.refl ι)
+  have hmap : (bV₀.adjustToOrientation o).toBasis.map φ.toLinearEquiv =
+      (bW₀.adjustToOrientation o').toBasis :=
+    Module.Basis.eq_of_apply_eq fun i ↦ by simp [φ]
+  refine ⟨φ, ?_⟩
+  rw [← bV₀.orientation_adjustToOrientation o, ← Module.Basis.orientation_map, hmap,
+    bW₀.orientation_adjustToOrientation]
+
+end LinearIsometryEquiv
+
+section OrthogonalSpanSingleton
+
+variable {m : ℕ}
+
+variable [Fact (Module.finrank ℝ E = m + 1)]
+
+/-- The top form `w ↦ vol(p, w₀, …, wₘ₋₁)` on the orthogonal complement of `p`. -/
+private def orthogonalSpanSingletonForm (o : Orientation ℝ E (Fin (m + 1))) (p : E) :
+    (ℝ ∙ p)ᗮ [⋀^Fin m]→ₗ[ℝ] ℝ :=
+  (o.volumeForm.curryLeft p).compLinearMap (ℝ ∙ p)ᗮ.subtype
+
+private theorem orthogonalSpanSingletonForm_apply (o : Orientation ℝ E (Fin (m + 1))) (p : E)
+    (w : Fin m → (ℝ ∙ p)ᗮ) :
+    orthogonalSpanSingletonForm o p w = o.volumeForm (Fin.cons p fun i ↦ (w i : E)) := by
+  rw [orthogonalSpanSingletonForm, AlternatingMap.compLinearMap_apply,
+    AlternatingMap.curryLeft_apply_apply]
+  -- `Matrix.vecCons` is `Fin.cons`, and `Submodule.subtype` is the coercion.
+  rfl
+
+private theorem orthogonalSpanSingletonForm_apply_ne_zero (o : Orientation ℝ E (Fin (m + 1)))
+    {p : E} (hp : p ≠ 0) (b : Module.Basis (Fin m) ℝ (ℝ ∙ p)ᗮ) :
+    orthogonalSpanSingletonForm o p b ≠ 0 := by
+  rw [orthogonalSpanSingletonForm_apply]
+  exact volumeForm_apply_ne_zero_iff.2
+    (LinearIndependent.finCons_orthogonal_span_singleton hp
+      (b.linearIndependent.map' _ (Submodule.ker_subtype _)) fun i ↦ (b i).2)
+
+/-- The orientation of the orthogonal complement `(ℝ ∙ p)ᗮ` of a nonzero vector `p` of an
+oriented space for which `p` is a positive normal: a basis `b` of `(ℝ ∙ p)ᗮ` is positive exactly
+when `p, b₀, …, bₘ₋₁` is a positive basis of the whole space
+(`Orientation.orientation_eq_orthogonalSpanSingleton_iff`). For the unit sphere, this is the
+orientation of the tangent hyperplane at `p` for which the outward normal comes first. -/
+def orthogonalSpanSingleton (o : Orientation ℝ E (Fin (m + 1))) {p : E} (hp : p ≠ 0) :
+    Orientation ℝ (ℝ ∙ p)ᗮ (Fin m) :=
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ m
+  rayOfNeZero ℝ (orthogonalSpanSingletonForm o p) fun h ↦
+    orthogonalSpanSingletonForm_apply_ne_zero o hp
+      (Module.finBasisOfFinrankEq ℝ _ (Submodule.finrank_orthogonal_span_singleton hp))
+      (by simp [h])
+
+/-- A basis `b` of `(ℝ ∙ p)ᗮ` is positive for `o.orthogonalSpanSingleton hp` exactly when
+`p, b₀, …, bₘ₋₁` has positive volume, that is, is a positive basis for `o`. -/
+theorem orientation_eq_orthogonalSpanSingleton_iff (o : Orientation ℝ E (Fin (m + 1)))
+    {p : E} (hp : p ≠ 0) (b : Module.Basis (Fin m) ℝ (ℝ ∙ p)ᗮ) :
+    b.orientation = o.orthogonalSpanSingleton hp ↔
+      0 < o.volumeForm (Fin.cons p fun i ↦ (b i : E)) := by
+  have hc := orthogonalSpanSingletonForm_apply_ne_zero o hp b
+  rw [orthogonalSpanSingleton, Module.Basis.orientation, ray_eq_iff,
+    (orthogonalSpanSingletonForm o p).eq_smul_basis_det b,
+    sameRay_smul_right_iff_of_ne b.det_ne_zero hc, orthogonalSpanSingletonForm_apply]
+
+end OrthogonalSpanSingleton
 
 end Orientation

@@ -32,7 +32,7 @@ positive time, every cluster point of `γ t` as `t → ∞` is a critical point 
 contains only finitely many critical points the trajectory converges to one of them
 (`TauCeti.exists_tendsto_maximalIntegralCurve_neg_mgradient`). This is the manifold counterpart,
 for an arbitrary Riemannian metric, of the vector-space theorem
-`TauCeti.IsIntegralCurveOn.exists_tendsto_atTop`. The ω-limit set of the trajectory is nonempty,
+`IsIntegralCurveOn.exists_tendsto_atTop`. The ω-limit set of the trajectory is nonempty,
 connected and invariant under the local flow, and `f` is constant on it, so the gradient vanishes
 there.
 
@@ -53,6 +53,8 @@ arbitrary: it need not be adapted to the Morse charts of `f`.
 * `TauCeti.integrableOn_Ioi_norm_mgradient_sq_maximalIntegralCurve` and
   `TauCeti.integral_Ioi_norm_mgradient_sq_maximalIntegralCurve`: the energy of a forward
   trajectory along which `f` has a limit is finite, and equals the drop of `f`.
+* `TauCeti.mapsTo_maximalIntegralCurve_neg_mgradient_preimage_Iic`: a forward trajectory stays in
+  the sublevel of its initial point.
 * `TauCeti.Ici_subset_maximalIntegralCurveInterval_neg_mgradient`: a trapped forward trajectory
   exists for all positive time.
 * `TauCeti.mem_criticalPoints_of_mapClusterPt_maximalIntegralCurve_neg_mgradient`: the ω-limit
@@ -123,6 +125,20 @@ theorem antitoneOn_comp_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I �
   · intro s hs
     rw [(hderiv s hs).deriv, neg_nonpos]
     positivity
+
+/-- **A forward trajectory stays in the sublevel of its initial point.** The forward part of the
+maximal integral curve of `-grad f` through `x` lies in the sublevel `{y | f y ≤ f x}`. -/
+theorem mapsTo_maximalIntegralCurve_neg_mgradient_preimage_Iic (hf : ContMDiff I 𝓘(ℝ) 2 f) :
+    MapsTo (maximalIntegralCurve (-mgradient I f) x)
+      (maximalIntegralCurveInterval (-mgradient I f) x ∩ Ici 0) (f ⁻¹' Iic (f x)) := by
+  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  rintro s ⟨hs, hs0⟩
+  have h0 := zero_mem_maximalIntegralCurveInterval (x := x)
+    (contMDiff_neg_mgradient_one hf).contMDiffAt
+  have h : f (maximalIntegralCurve (-mgradient I f) x s) ≤
+      f (maximalIntegralCurve (-mgradient I f) x 0) :=
+    antitoneOn_comp_maximalIntegralCurve_neg_mgradient hf h0 hs hs0
+  rwa [maximalIntegralCurve_zero h0] at h
 
 /-- The function `-f` increases along a negative gradient trajectory at rate `‖grad f‖²`. -/
 private theorem hasDerivAt_neg_comp_maximalIntegralCurve_neg_mgradient
@@ -279,23 +295,16 @@ omit hK hmem
 /-- **Negative gradient trajectories of a proper Morse function converge.** If `f` is a proper
 Morse function bounded below, the maximal integral curve of `-grad f` through any point converges
 to a critical point of `f`, for any `C¹` Riemannian metric. -/
-theorem IsMorse.exists_tendsto_maximalIntegralCurve_neg_mgradient [I.Boundaryless]
+theorem IsMorse.exists_tendsto_maximalIntegralCurve_neg_mgradient
     (hf : IsMorse I f) (hp : IsProperMap f) (hbdd : BddBelow (range f)) (x : M) :
     ∃ p ∈ criticalPoints I f, Tendsto (maximalIntegralCurve (-mgradient I f) x) atTop (𝓝 p) := by
   have hf2 : ContMDiff I 𝓘(ℝ) 2 f := hf.contMDiff.of_le (by norm_cast)
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
   obtain ⟨m, hm⟩ := hbdd
   -- The forward trajectory stays in the compact band `m ≤ f ≤ f x`.
   have hmem : MapsTo (maximalIntegralCurve (-mgradient I f) x)
-      (maximalIntegralCurveInterval (-mgradient I f) x ∩ Ici 0) (f ⁻¹' Icc m (f x)) := by
-    rintro s ⟨hs, hs0⟩
-    have h0 := zero_mem_maximalIntegralCurveInterval (x := x)
-      (contMDiff_neg_mgradient_one hf2).contMDiffAt
-    refine ⟨hm (mem_range_self _), ?_⟩
-    have h : f (maximalIntegralCurve (-mgradient I f) x s) ≤
-        f (maximalIntegralCurve (-mgradient I f) x 0) :=
-      antitoneOn_comp_maximalIntegralCurve_neg_mgradient hf2 h0 hs hs0
-    rwa [maximalIntegralCurve_zero h0] at h
+      (maximalIntegralCurveInterval (-mgradient I f) x ∩ Ici 0) (f ⁻¹' Icc m (f x)) :=
+    fun s hs ↦
+      ⟨hm (mem_range_self _), mapsTo_maximalIntegralCurve_neg_mgradient_preimage_Iic hf2 hs⟩
   obtain ⟨p, hp, htend⟩ := TauCeti.exists_tendsto_maximalIntegralCurve_neg_mgradient
     (hp.isCompact_preimage isCompact_Icc) hmem hf2
     (hf.finite_criticalPoints_inter (hp.isCompact_preimage isCompact_Icc))

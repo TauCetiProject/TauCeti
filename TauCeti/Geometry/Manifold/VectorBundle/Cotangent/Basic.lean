@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # The cotangent bundle of a manifold
@@ -161,6 +161,32 @@ theorem extChartAt_extChartAt_symm_snd_apply_fderivWithin (z₀ z₁ : Cotangent
   rw [extChartAt_extChartAt_symm z₀ z₁ p hq hq₁, hd, ContinuousLinearMap.comp_apply,
     Function.comp_apply, ← tangentCoordChange_def, tangentCoordChange_comp ⟨⟨hx, hq₁⟩, hx⟩,
     tangentCoordChange_self hx]
+
+/-- Pulling a `C^n` family of model covectors back through tangent-bundle coordinates gives a
+`C^n` cotangent section wherever the coordinates are defined. -/
+theorem contMDiffOn_mk_comp_continuousLinearMapAt {n : WithTop ℕ∞}
+    [IsManifold I (n + 1) M] (x : M) {U : Set M}
+    (hU : U ⊆ (trivializationAt E (TangentSpace I) x).baseSet)
+    {c : M → E →L[𝕜] 𝕜} (hc : ContMDiffOn I 𝓘(𝕜, E →L[𝕜] 𝕜) n c U) :
+    ContMDiffOn I (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) n
+      (fun y ↦ TotalSpace.mk' (E →L[𝕜] 𝕜) y
+        (c y ∘L (trivializationAt E (TangentSpace I) x).continuousLinearMapAt 𝕜 y)) U := by
+  let : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  let e := trivializationAt E (TangentSpace I) x
+  let α : Π y : M, TangentSpace I y →L[𝕜] 𝕜 :=
+    fun y ↦ c y ∘L e.continuousLinearMapAt 𝕜 y
+  have hU' : U ⊆ e.baseSet := hU
+  let e' := trivializationAt 𝕜 (Bundle.Trivial M 𝕜) x
+  let eh := e.continuousLinearMap (RingHom.id 𝕜) e'
+  apply (eh.contMDiffOn_iff (f := fun y ↦ TotalSpace.mk' (E →L[𝕜] 𝕜) y (α y))
+    (fun y hy ↦ eh.mem_source.mpr (by
+      simp [eh, e', Trivial.eq_trivialization M 𝕜, hU' hy]))).mpr
+  refine ⟨contMDiffOn_id, hc.congr ?_⟩
+  intro y hy
+  ext v
+  simp [eh, e', α, Bundle.Trivialization.continuousLinearMap_apply,
+    Trivial.eq_trivialization M 𝕜, e.continuousLinearMapAt_symmL (hU' hy)]
 
 section Pullback
 

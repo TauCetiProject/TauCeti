@@ -87,16 +87,13 @@ the case `v.valuation K x = 1`.
 public section
 noncomputable section
 
-local notation "𝒪" => _root_.NumberField.RingOfIntegers
-
-open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField
+open NumberField
 open NumberField.InfinitePlace
 
 namespace TauCeti
 
-variable {K : Type*} [Field K] [NumberField K]
+variable {K : Type*} [Field K]
 
-omit [NumberField K] in
 /-- The archimedean symbol at a real place is `-1` exactly when both global units are negative
 there.  This is the real formula `TauCeti.hilbertSymbol_real`, read at a place of a number field
 through `TauCeti.unitAtRealPlace`; it is the sign criterion by which a sign prescription multiplies
@@ -108,7 +105,6 @@ theorem hilbertSymbol_unitAtRealPlace_eq_neg_one_iff (w : {w : InfinitePlace K /
       embedding_of_isReal w.2 (a : K) < 0 ∧ embedding_of_isReal w.2 (b : K) < 0 := by
   rw [hilbertSymbol_real_eq_neg_one_iff, unitAtRealPlace_apply, unitAtRealPlace_apply]
 
-omit [NumberField K] in
 /-- The archimedean symbol at a real place is `1` exactly when one of the two global units is
 positive there. -/
 theorem hilbertSymbol_unitAtRealPlace_eq_one_iff (w : {w : InfinitePlace K // w.IsReal})
@@ -117,13 +113,11 @@ theorem hilbertSymbol_unitAtRealPlace_eq_one_iff (w : {w : InfinitePlace K // w.
       0 < embedding_of_isReal w.2 (a : K) ∨ 0 < embedding_of_isReal w.2 (b : K) := by
   rw [hilbertSymbol_real_eq_one_iff, unitAtRealPlace_apply, unitAtRealPlace_apply]
 
-omit [NumberField K] in
 /-- A global unit is a square at a real place exactly when it is positive there. -/
 theorem isSquare_unitAtRealPlace_iff (w : {w : InfinitePlace K // w.IsReal}) (a : Kˣ) :
     IsSquare (unitAtRealPlace w a) ↔ 0 < embedding_of_isReal w.2 (a : K) := by
   rw [Units.isSquare_iff_pos, unitAtRealPlace_apply]
 
-omit [NumberField K] in
 /-- A global unit is a nonsquare at a real place exactly when it is negative there. -/
 theorem not_isSquare_unitAtRealPlace_iff (w : {w : InfinitePlace K // w.IsReal}) (a : Kˣ) :
     ¬IsSquare (unitAtRealPlace w a) ↔ embedding_of_isReal w.2 (a : K) < 0 := by
@@ -135,7 +129,6 @@ theorem not_isSquare_unitAtRealPlace_iff (w : {w : InfinitePlace K // w.IsReal})
     exact a.ne_zero ((embedding_of_isReal w.2).injective h1)
   exact ⟨fun h => ⟨h, hne⟩, fun h => h.1⟩
 
-omit [NumberField K] in
 /-- **A prescribed negative global unit at a real place has a partner with symbol `-1`.**
 
 Given the element `b` whose local nonsquareness a sign-prescription argument presupposes, there is
@@ -151,7 +144,6 @@ theorem exists_hilbertSymbol_eq_neg_one_atRealPlace (w : {w : InfinitePlace K //
       rw [hilbertSymbol_unitAtRealPlace_eq_neg_one_iff]
       norm_num [hb]⟩
 
-omit [NumberField K] in
 /-- The image of a global unit in the completion `K_w` at a real place `w`, read in `ℝ` through
 the isomorphism `K_w ≃ ℝ`, is its image under the real embedding at `w`. -/
 theorem units_map_ringEquivRealOfIsReal_algebraMap (w : {w : InfinitePlace K // w.IsReal})
@@ -160,7 +152,6 @@ theorem units_map_ringEquivRealOfIsReal_algebraMap (w : {w : InfinitePlace K // 
       (Units.map (algebraMap K w.1.Completion).toMonoidHom b) = unitAtRealPlace w b :=
   Units.ext (by simp)
 
-omit [NumberField K] in
 /-- At a real place `w`, the Hilbert symbol of the images of two global units in the completion
 `K_w` is the real Hilbert symbol of their images under the real embedding at `w`. -/
 theorem hilbertSymbol_completion_eq_unitAtRealPlace (w : {w : InfinitePlace K // w.IsReal})
@@ -171,7 +162,6 @@ theorem hilbertSymbol_completion_eq_unitAtRealPlace (w : {w : InfinitePlace K //
   rw [← hilbertSymbol_units_map_ringEquiv (Completion.ringEquivRealOfIsReal w.2),
     units_map_ringEquivRealOfIsReal_algebraMap, units_map_ringEquivRealOfIsReal_algebraMap]
 
-omit [NumberField K] in
 /-- Over the completion at a complex place, every Hilbert symbol is `1`: the completion is
 isomorphic to `ℂ`, where every element is a square. -/
 theorem hilbertSymbol_completion_eq_one_of_isComplex {w : InfinitePlace K} (hw : w.IsComplex)
@@ -179,7 +169,6 @@ theorem hilbertSymbol_completion_eq_one_of_isComplex {w : InfinitePlace K} (hw :
   rw [← hilbertSymbol_units_map_ringEquiv (Completion.ringEquivComplexOfIsComplex hw)]
   exact hilbertSymbol_eq_one_of_isAlgClosed _ _
 
-omit [NumberField K] in
 /-- Over the completion at an infinite place, the Hilbert symbol is multiplicative in its first
 argument: at a real place this is `TauCeti.hilbertSymbol_real_mul_left` read through the
 isomorphism with `ℝ`, and at a complex place every symbol is `1`. -/
@@ -192,7 +181,6 @@ theorem hilbertSymbol_completion_mul_left (w : InfinitePlace K) (a a' c : w.Comp
       ← hilbertSymbol_units_map_ringEquiv e a' c, map_mul, hilbertSymbol_real_mul_left]
   · simp [hilbertSymbol_completion_eq_one_of_isComplex hw]
 
-omit [NumberField K] in
 /-- Over the completion at an infinite place, the symbol with first argument `1` is `1`. -/
 @[simp]
 theorem hilbertSymbol_completion_one_left (w : InfinitePlace K) (c : w.Completionˣ) :

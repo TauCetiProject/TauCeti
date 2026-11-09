@@ -68,8 +68,9 @@ variable [AddMonoid A] [HasShift C A]
 `c = a + b`. Its component at `X` is `G (X⟦c⟧) ≅ G (X⟦a⟧⟦b⟧) ≅ G (X⟦a⟧) ≅ G X`. -/
 def shiftComp {a b c : A} (α : shiftFunctor C a ⋙ G ≅ G) (β : shiftFunctor C b ⋙ G ≅ G)
     (h : a + b = c) : shiftFunctor C c ⋙ G ≅ G :=
-  isoWhiskerRight (shiftFunctorAdd' C a b c h) G ≪≫ Functor.associator _ _ _ ≪≫
-    isoWhiskerLeft (shiftFunctor C a) β ≪≫ α
+  CategoryTheory.Functor.isoWhiskerRight (shiftFunctorAdd' C a b c h) G ≪≫
+    CategoryTheory.Functor.associator _ _ _ ≪≫
+    CategoryTheory.Functor.isoWhiskerLeft (shiftFunctor C a) β ≪≫ α
 
 @[simp]
 theorem shiftComp_hom_app {a b c : A} (α : shiftFunctor C a ⋙ G ≅ G)
@@ -87,26 +88,28 @@ theorem shiftComp_assoc {a b c ab bc abc : A} (α : shiftFunctor C a ⋙ G ≅ G
   ext X
   have hγ := γ.hom.naturality ((shiftFunctorAdd' C a b ab hab).hom.app X)
   have hs := G.congr_map (shiftFunctorAdd'_assoc_hom_app a b c ab bc abc hab hbc habc X)
-  simp only [Functor.comp_map] at hγ
-  simp only [Functor.map_comp] at hs
+  simp only [CategoryTheory.Functor.comp_map] at hγ
+  simp only [CategoryTheory.Functor.map_comp] at hs
   simp only [shiftComp_hom_app, Category.assoc, ← reassoc_of% hγ, reassoc_of% hs]
 
 /-- The shift-invariance isomorphism in a degree `a = 0` coming from `shiftFunctorZero'` is a
 left unit for `shiftComp`. -/
 theorem shiftComp_zero_left {a b : A} (ha : a = 0) (β : shiftFunctor C b ⋙ G ≅ G) :
-    (isoWhiskerRight (shiftFunctorZero' C a ha) G ≪≫ G.leftUnitor).shiftComp β
+    (CategoryTheory.Functor.isoWhiskerRight (shiftFunctorZero' C a ha) G ≪≫
+      G.leftUnitor).shiftComp β
       (by rw [ha, zero_add]) = β := by
   subst ha
   ext X
   have hβ := β.hom.naturality ((shiftFunctorZero C A).inv.app X)
-  simp only [Functor.comp_map, Functor.id_obj] at hβ
+  simp only [CategoryTheory.Functor.comp_map, CategoryTheory.Functor.id_obj] at hβ
   simp [shiftFunctorZero'_eq_shiftFunctorZero, shiftFunctorAdd'_zero_add_hom_app,
     reassoc_of% hβ]
 
 /-- The shift-invariance isomorphism in a degree `b = 0` coming from `shiftFunctorZero'` is a
 right unit for `shiftComp`. -/
 theorem shiftComp_zero_right {a b : A} (α : shiftFunctor C a ⋙ G ≅ G) (hb : b = 0) :
-    α.shiftComp (isoWhiskerRight (shiftFunctorZero' C b hb) G ≪≫ G.leftUnitor)
+    α.shiftComp (CategoryTheory.Functor.isoWhiskerRight (shiftFunctorZero' C b hb) G ≪≫
+      G.leftUnitor)
       (by rw [hb, add_zero]) = α := by
   subst hb
   ext X
@@ -116,8 +119,9 @@ theorem shiftComp_zero_right {a b : A} (α : shiftFunctor C a ⋙ G ≅ G) (hb :
 `b + a = 0`. Its component at `X` is `G (X⟦b⟧) ≅ G (X⟦b⟧⟦a⟧) ≅ G X`. -/
 def shiftInv {a : A} (α : shiftFunctor C a ⋙ G ≅ G) (b : A) (h : b + a = 0) :
     shiftFunctor C b ⋙ G ≅ G :=
-  isoWhiskerLeft (shiftFunctor C b) α.symm ≪≫ (Functor.associator _ _ _).symm ≪≫
-    isoWhiskerRight (shiftFunctorCompIsoId C b a h) G ≪≫ G.leftUnitor
+  CategoryTheory.Functor.isoWhiskerLeft (shiftFunctor C b) α.symm ≪≫
+    (CategoryTheory.Functor.associator _ _ _).symm ≪≫
+    CategoryTheory.Functor.isoWhiskerRight (shiftFunctorCompIsoId C b a h) G ≪≫ G.leftUnitor
 
 @[simp]
 theorem shiftInv_hom_app {a : A} (α : shiftFunctor C a ⋙ G ≅ G) (b : A) (h : b + a = 0)
@@ -149,9 +153,10 @@ theorem shiftComp_shiftInv {a b c : A} (α : shiftFunctor C a ⋙ G ≅ G) (h : 
   subst hc
   ext X
   have hα := α.hom.naturality ((shiftFunctorCompIsoId C a b h).hom.app X)
-  simp only [Functor.comp_map, Functor.comp_obj, Functor.id_obj] at hα
+  simp only [CategoryTheory.Functor.comp_map, CategoryTheory.Functor.comp_obj,
+    CategoryTheory.Functor.id_obj] at hα
   rw [shiftComp_hom_app, shiftInv_hom_app, ← shift_shiftFunctorCompIsoId_hom_app a b h X,
-    Category.assoc, hα, Iso.inv_hom_id_app_assoc, ← Functor.map_comp]
+    Category.assoc, hα, Iso.inv_hom_id_app_assoc, ← CategoryTheory.Functor.map_comp]
   simp [shiftFunctorZero'_eq_shiftFunctorZero, shiftFunctorCompIsoId]
 
 /-- Composition with a shift-invariance isomorphism is cancellable. -/
@@ -175,7 +180,9 @@ variable [HasShift C ℤ] {n : ℤ}
 /-- The nonnegative powers of a periodicity isomorphism. -/
 private def periodicityNatPow (φ : shiftFunctor C n ⋙ G ≅ G) :
     (k : ℕ) → shiftFunctor C (n * k) ⋙ G ≅ G
-  | 0 => isoWhiskerRight (shiftFunctorZero' C (n * (0 : ℕ)) (by simp)) G ≪≫ G.leftUnitor
+  | 0 =>
+      CategoryTheory.Functor.isoWhiskerRight (shiftFunctorZero' C (n * (0 : ℕ)) (by simp)) G ≪≫
+        G.leftUnitor
   | k + 1 => φ.shiftComp (periodicityNatPow φ k) (by push_cast; ring)
 
 /-- The negative powers of a periodicity isomorphism. -/
@@ -235,12 +242,12 @@ theorem periodicityZPow_add (φ : shiftFunctor C n ⋙ G ≅ G) (i j k : ℤ) (h
   | succ i ih =>
     rw [periodicityZPow_succ φ (i + j) k (by omega), ih (i + j) rfl,
       periodicityZPow_succ φ i (i + 1) rfl, shiftComp_assoc]
-    all_goals subst h; ring
+    subst h; ring
   | pred i ih =>
     rw [← shiftComp_left_cancel_iff φ (by ring : n + n * k = n * (k + 1)),
       ← periodicityZPow_succ φ k (k + 1) rfl, ih (k + 1) (by omega),
       periodicityZPow_succ φ (-i - 1) (-i) (by omega), shiftComp_assoc]
-    all_goals subst h; ring
+    subst h; ring
 
 /-- The cocycle law of the powers of a periodicity isomorphism, on components. -/
 theorem periodicityZPow_add_hom_app (φ : shiftFunctor C n ⋙ G ≅ G) (i j k : ℤ)
@@ -256,18 +263,20 @@ theorem periodicityZPow_one_hom_app (φ : shiftFunctor C n ⋙ G ≅ G) (X : C) 
     (φ.periodicityZPow 1).hom.app X = G.map (eqToHom (by rw [mul_one])) ≫ φ.hom.app X := by
   have key (z m : ℤ) (hz : z = 0) (h : n + z = m) :
       (shiftFunctorAdd' C n z m h).hom.app X ≫ (shiftFunctorZero' C z hz).hom.app (X⟦n⟧) =
-        eqToHom (by rw [← h, hz, add_zero, Functor.id_obj]) := by
+        eqToHom (by rw [← h, hz, add_zero, CategoryTheory.Functor.id_obj]) := by
     subst hz h
     simp [shiftFunctorZero'_eq_shiftFunctorZero, shiftFunctorAdd'_eq_shiftFunctorAdd,
       shiftFunctorAdd_add_zero_hom_app]
   rw [periodicityZPow_succ φ 0 1 rfl, shiftComp_hom_app, periodicityZPow_zero]
-  simp [← Functor.map_comp_assoc, key]
+  simp [← CategoryTheory.Functor.map_comp_assoc, key]
 
 /-- The powers of a periodicity isomorphism are the only family of shift-invariance
 isomorphisms that starts with the unit and is built by composing with `φ`. -/
 theorem periodicityZPow_unique (φ : shiftFunctor C n ⋙ G ≅ G)
     (ψ : (i : ℤ) → shiftFunctor C (n * i) ⋙ G ≅ G)
-    (h₀ : ψ 0 = isoWhiskerRight (shiftFunctorZero' C (n * 0) (mul_zero n)) G ≪≫ G.leftUnitor)
+    (h₀ : ψ 0 =
+      CategoryTheory.Functor.isoWhiskerRight (shiftFunctorZero' C (n * 0) (mul_zero n)) G ≪≫
+        G.leftUnitor)
     (hsucc : ∀ i j (h : i + 1 = j), ψ j = φ.shiftComp (ψ i) (by rw [← h]; ring)) :
     ψ = φ.periodicityZPow := by
   funext i

@@ -27,7 +27,11 @@ by its base change.
 
 * `TauCeti.Isogeny.mapDifferential_pullback_invariantDifferential`: base change commutes with the
   pullback of the invariant differential.
+* `TauCeti.Isogeny.map_pullbackDifferential_invariantDifferential_eq_smul`: if `φ^*ω₂ = c ω₁`, the
+  base change of `φ` along `f` pulls the invariant differential back to `f c` times it.
 * `TauCeti.Isogeny.isSeparable_map_iff`: an isogeny is separable if and only if its base change is.
+* `TauCeti.Isogeny.isSeparable_baseChange`: the base change `φ.baseChange K` of a separable
+  isogeny is separable, as an instance.
 
 No material is copied from an external formalisation.
 -/
@@ -58,6 +62,19 @@ theorem mapDifferential_pullback_invariantDifferential (φ : Isogeny W₁ W₂)
     ← WeierstrassCurve.Affine.FunctionField.map_genericX W₂ f,
     map_fieldPullback_map, map_fieldPullback_map]
 
+/-- **The constant of an isogeny under field base change**: if `φ^*ω₂ = c ω₁` for a constant
+`c ∈ F`, then the base change of `φ` along `f : F →+* K` pulls the invariant differential back to
+`f c` times the invariant differential. -/
+theorem map_pullbackDifferential_invariantDifferential_eq_smul (φ : Isogeny W₁ W₂)
+    (f : F →+* K) {c : F}
+    (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁) :
+    (φ.map f).pullbackDifferential (invariantDifferential (W₂.map f)) =
+      f c • invariantDifferential (W₁.map f) := by
+  rw [← mapDifferential_pullback_invariantDifferential, hc,
+    ← algebraMap_smul W₁.FunctionField c, (FunctionField.mapDifferential W₁ f).map_smulₛₗ,
+    FunctionField.mapDifferential_invariantDifferential, FunctionField.map_algebraMap,
+    algebraMap_smul]
+
 /-- **Separability is invariant under arbitrary field base change.** An isogeny is separable if
 and only if the isogeny obtained by carrying its coefficients along `f : F →+* K` is separable. -/
 theorem isSeparable_map_iff [W₁.IsElliptic] [W₂.IsElliptic] (φ : Isogeny W₁ W₂)
@@ -82,6 +99,14 @@ theorem isSeparable_of_map [W₁.IsElliptic] [W₂.IsElliptic] (φ : Isogeny W�
     [Algebra.IsSeparable (φ.map f).fieldPullback.fieldRange (W₁.map f).FunctionField] :
     Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField :=
   (isSeparable_map_iff φ f).1 inferInstance
+
+open WeierstrassCurve in
+/-- The base change of a separable isogeny is separable. -/
+instance isSeparable_baseChange [Algebra F K] {W₁ W₂ : WeierstrassCurve F} [W₁.IsElliptic]
+    [W₂.IsElliptic] (φ : Isogeny W₁.toAffine W₂.toAffine)
+    [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField] :
+    Algebra.IsSeparable (φ.baseChange K).fieldPullback.fieldRange (W₁⁄K).toAffine.FunctionField :=
+  isSeparable_map φ (algebraMap F K)
 
 end Isogeny
 

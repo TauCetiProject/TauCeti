@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.Jordan.UpperHalfPlane
 public import Mathlib.Topology.Compactification.OnePoint.Basic
 import Mathlib.Topology.Bornology.BoundedOperation
 import TauCeti.Analysis.Complex.PlaneSeparation.RiemannSphere
+import TauCeti.Analysis.Normed.Field.Inversion
 
 /-!
 # Unbounded Jordan domains
@@ -65,19 +66,6 @@ theorem isOpen_image_inv_sub (hUo : IsOpen U) (hqU : q ∉ U) :
   rw [this]
   exact (continuousOn_const.add continuousOn_inv₀).isOpen_inter_preimage isOpen_compl_singleton hUo
 
-/-- Inverting a set `U` about a point `q` outside its closure gives a bounded set. -/
-theorem isBounded_image_inv_sub (hq : q ∉ closure U) :
-    IsBounded ((fun z : ℂ => (z - q)⁻¹) '' U) := by
-  -- a ball about `q` misses `U`, so the inversion is bounded by the inverse of its radius
-  obtain ⟨r, hr, hrU⟩ := Metric.isOpen_iff.mp isClosed_closure.isOpen_compl q hq
-  refine isBounded_iff_forall_norm_le.mpr ⟨r⁻¹, ?_⟩
-  rintro _ ⟨z, hz, rfl⟩
-  have hrz : r ≤ ‖z - q‖ := by
-    rw [← dist_eq_norm, dist_comm]
-    exact not_lt.mp fun h => hrU (mem_ball'.mpr h) (subset_closure hz)
-  rw [norm_inv]
-  exact inv_anti₀ hr hrz
-
 /-- A Jordan curve of the Riemann sphere through the point at infinity is unbounded in the plane:
 were its finite part `S` bounded, infinity would be an isolated point of the curve. -/
 theorem not_isBounded_of_isJordanCurve_insert_infty {S : Set ℂ}
@@ -102,35 +90,6 @@ theorem not_isBounded_of_isJordanCurve_frontier
   fun h =>
     not_isBounded_of_isJordanCurve_insert_infty hUJ (h.closure.subset frontier_subset_closure)
 
-/-- Inverting an unbounded set `U` about a point `q` outside its closure, the closure of the image
-is the image of the closure together with `0`, the image of infinity. -/
-theorem closure_image_inv_sub (hq : q ∉ closure U) (hUb : ¬IsBounded U) :
-    closure ((fun z : ℂ => (z - q)⁻¹) '' U) = insert 0 ((fun z : ℂ => (z - q)⁻¹) '' closure U) := by
-  refine Subset.antisymm (fun w hw => ?_) (insert_subset ?_ ?_)
-  · rcases eq_or_ne w 0 with rfl | hw0
-    · exact mem_insert _ _
-    refine mem_insert_of_mem _ ?_
-    rw [image_eq_preimage_of_inverse (f := fun z : ℂ => (z - q)⁻¹)
-      (g := fun w : ℂ => q + w⁻¹)
-      (by intro z; simp) (by intro w; simp)]
-    have hκ : ContinuousAt (fun w : ℂ => q + w⁻¹) w := by fun_prop (disch := exact hw0)
-    have h := mem_closure_image hκ hw
-    rwa [image_eq_preimage_of_inverse (f := fun z : ℂ => (z - q)⁻¹)
-      (g := fun w : ℂ => q + w⁻¹)
-      (by intro z; simp) (by intro w; simp),
-      image_preimage_eq _ fun z => ⟨(z - q)⁻¹, by simp⟩] at h
-  · -- `U` reaches infinity, where the inversion tends to `0`
-    have : NeBot (cobounded ℂ ⊓ 𝓟 U) := by
-      rw [neBot_iff, Ne, inf_principal_eq_bot, ← isBounded_def]
-      exact hUb
-    exact mem_closure_of_tendsto
-      ((tendsto_inv₀_cobounded.comp (tendsto_sub_const_cobounded q)).mono_left inf_le_left)
-      (mem_inf_of_right (mem_principal.mpr fun z hz => mem_image_of_mem _ hz))
-  · have hc : ContinuousOn (fun z : ℂ => (z - q)⁻¹) (closure U) :=
-      ContinuousOn.inv₀ (f := fun z : ℂ => z - q) (by fun_prop) fun z hz =>
-        sub_ne_zero.mpr fun h => hq (h ▸ hz)
-    exact hc.image_closure
-
 /-- Inverting an open unbounded set `U` about a point `q` outside its closure, the frontier of the
 image is the image of the frontier together with `0`, the image of infinity. -/
 theorem frontier_image_inv_sub (hUo : IsOpen U) (hq : q ∉ closure U) (hUb : ¬IsBounded U) :
@@ -141,7 +100,7 @@ theorem frontier_image_inv_sub (hUo : IsOpen U) (hq : q ∉ closure U) (hUb : ¬
     rw [inv_eq_zero, sub_eq_zero] at hz0
     exact hq (subset_closure (hz0 ▸ hz))
   have hV := isOpen_image_inv_sub hUo fun h => hq (subset_closure h)
-  rw [hV.frontier_eq, closure_image_inv_sub hq hUb, insert_sdiff_of_notMem _ hU0,
+  rw [hV.frontier_eq, closure_image_inv_sub hUb, insert_sdiff_of_notMem _ hU0,
     hUo.frontier_eq, image_sdiff (f := fun z : ℂ => (z - q)⁻¹)
       (inv_injective.comp (sub_left_injective (b := q)))]
 
@@ -218,19 +177,15 @@ theorem exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_inft
     rintro ⟨z, hz, hz0⟩
     rw [inv_eq_zero, sub_eq_zero] at hz0
     exact hq (hz0 ▸ hS hz)
-  rw [closure_image_inv_sub hq hUb, insert_sdiff_self_of_notMem (h0 subset_rfl)] at hgcl
+  rw [closure_image_inv_sub hUb, insert_sdiff_self_of_notMem (h0 subset_rfl)] at hgcl
   rw [hVfr, insert_sdiff_self_of_notMem (h0 frontier_subset_closure)] at hgR
-  have hκ (S : Set ℂ) : BijOn (fun w : ℂ => q + w⁻¹) ((fun z : ℂ => (z - q)⁻¹) '' S) S := by
-    refine ⟨?_, ((add_right_injective q).comp inv_injective).injOn,
-      fun z hz => ⟨_, ⟨z, hz, rfl⟩, by simp⟩⟩
-    rintro _ ⟨z, hz, rfl⟩
-    simpa using hz
   have hgne : ∀ z ∈ {z : ℂ | 0 ≤ z.im}, g z ≠ 0 := fun z hz hgz =>
     h0 subset_rfl (hgz ▸ hgcl.mapsTo hz)
   have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
   refine ⟨fun z => q + (g z)⁻¹, continuousOn_const.add (hgc.inv₀ hgne),
-    (differentiableOn_const q).add (hgd.inv fun z hz => hgne z (hH0 hz)), (hκ U).comp hgV,
-    (hκ _).comp hgcl, (hκ _).comp hgR, ?_⟩
+    (differentiableOn_const q).add (hgd.inv fun z hz => hgne z (hH0 hz)),
+    (bijOn_add_inv_image_inv_sub U).comp hgV, (bijOn_add_inv_image_inv_sub _).comp hgcl,
+    (bijOn_add_inv_image_inv_sub _).comp hgR, ?_⟩
   -- `g` tends to `0` without taking the value `0`, so `q + g⁻¹` tends to infinity
   refine (tendsto_const_add_cobounded q).comp (tendsto_inv₀_nhdsNE_zero.comp ?_)
   exact tendsto_nhdsWithin_iff.mpr

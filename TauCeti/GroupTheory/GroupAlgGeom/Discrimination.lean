@@ -18,6 +18,14 @@ used to recognize irreducible coordinate groups and, with trivial coefficients, 
 The coefficient maps need not be injective: the same definitions apply to the coefficient maps
 of quotients of free `G`-groups, even before the quotient is known to be a `G`-group.
 
+## Main results
+
+* `TauCeti.GroupAlgGeom.IsDiscriminatedBy.isSeparatedBy`: discrimination implies separation.
+* `TauCeti.GroupAlgGeom.IsSeparatedBy.nonempty_gHom`: a nontrivial group separated by `H` admits a
+  coefficient-preserving homomorphism to `H`.
+* `TauCeti.GroupAlgGeom.isSeparatedBy_iff_iInf_ker`: separation by `H` means the kernels of all
+  coefficient-preserving homomorphisms to `H` intersect trivially.
+
 ## References
 
 * G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
@@ -95,6 +103,12 @@ theorem of_injective {ιK : G →* K} {ιL : G →* L} {ιH : G →* H}
   intro k hk
   obtain ⟨φ, hφ⟩ := h (f k) ((map_ne_one_iff f hf).2 hk)
   exact ⟨φ.comp f, by simpa [GHom.coe_comp] using hφ⟩
+
+/-- A nontrivial group separated by `H` admits a coefficient-preserving homomorphism to `H`. -/
+theorem nonempty_gHom [Nontrivial K] {ιK : G →* K} {ιH : G →* H}
+    (h : IsSeparatedBy ιK ιH) : Nonempty (GHom ιK ιH) :=
+  let ⟨k, hk⟩ := exists_ne (1 : K)
+  ⟨((isSeparatedBy_def _ _).1 h k hk).choose⟩
 
 end IsSeparatedBy
 

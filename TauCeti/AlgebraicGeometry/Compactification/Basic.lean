@@ -20,6 +20,9 @@ We realize this category as a full subcategory of Mathlib's `CategoryTheory.Fact
 so its morphisms and category laws are inherited rather than reconstructed.
 As in the Stacks Project's category of compactifications, density is not required.
 These definitions impose no quasi-compactness or quasi-separatedness condition on the base.
+Being a compactification is invariant under isomorphism of factorizations, and an isomorphism
+of ambient schemes compatible with both maps is an isomorphism of compactifications
+(`Compactification.isoMk`).
 
 The dense compactifications form the further full subcategory where the open immersion is
 scheme-theoretically dominant. This condition retains the scheme structure, including
@@ -81,6 +84,28 @@ abbrev ofHom {Y : Scheme.{u}} (j : X ⟶ Y) (p : Y ⟶ S)
   ⟨⟨Y, j, p, fac⟩, (compactificationProperty_iff f _).mpr
     ⟨inferInstance, inferInstance, inferInstance⟩⟩
 
+section LocalizationAway
+
+variable {R : CommRingCat.{u}}
+
+/-- The tautological compactification of a principal affine open, over its ambient spectrum. -/
+noncomputable abbrev localizationAway (r : R) :
+    Compactification (Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away r)))) :=
+  ofHom (Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away r))))
+    (𝟙 _) (by simp)
+
+/-- Localizing at a non-zero-divisor gives a schematically dense interior; the ring need
+not be reduced. -/
+theorem isSchemeTheoreticallyDominant_localizationAway (r : R) (hr : IsRegular r) :
+    IsSchemeTheoreticallyDominant (localizationAway r).j := by
+  apply (isSchemeTheoreticallyDominant_SpecMap_iff _).mpr
+  apply (IsLocalization.injective_iff_isRegular (S := Localization.Away r)
+    (Submonoid.powers r)).mpr
+  rintro ⟨_, n, rfl⟩
+  exact hr.pow n
+
+end LocalizationAway
+
 /-- A morphism of compactifications fixes the source and lies over the base. -/
 abbrev Hom (C D : Compactification f) : Type _ := C ⟶ D
 
@@ -108,6 +133,29 @@ instance isIso_hom_h {C D : Compactification f} (h : Hom C D) [IsIso h] : IsIso 
   (ObjectProperty.ι _ ⋙ Factorisation.forget (f := f)).map_isIso h
 
 end Hom
+
+/-- An isomorphism of ambient schemes fixing the source and lying over the base is an
+isomorphism of compactifications. -/
+def isoMk {C D : Compactification f} (e : C.Xbar ≅ D.Xbar) (hj : C.j ≫ e.hom = D.j)
+    (hp : e.hom ≫ D.p = C.p) : C ≅ D :=
+  ObjectProperty.isoMk _
+    { hom := { h := e.hom }
+      inv :=
+        { h := e.inv
+          ι_h := (Iso.comp_inv_eq e).mpr hj.symm
+          h_π := (Iso.inv_comp_eq e).mpr hp.symm }
+      hom_inv_id := Factorisation.Hom.ext e.hom_inv_id
+      inv_hom_id := Factorisation.Hom.ext e.inv_hom_id }
+
+@[simp]
+theorem isoMk_hom_hom_h {C D : Compactification f} (e : C.Xbar ≅ D.Xbar)
+    (hj : C.j ≫ e.hom = D.j) (hp : e.hom ≫ D.p = C.p) : (isoMk e hj hp).hom.hom.h = e.hom :=
+  (rfl)
+
+@[simp]
+theorem isoMk_inv_hom_h {C D : Compactification f} (e : C.Xbar ≅ D.Xbar)
+    (hj : C.j ≫ e.hom = D.j) (hp : e.hom ≫ D.p = C.p) : (isoMk e hj hp).inv.hom.h = e.inv :=
+  (rfl)
 
 /-- A compactifiable morphism is separated. -/
 theorem isSeparated (C : Compactification f) : IsSeparated f := by
@@ -142,6 +190,16 @@ theorem isInitialIdentity_to_hom_h [IsProper f] (C : Compactification f) :
   simpa using ((isInitialIdentity f).to C).hom.ι_h
 
 end Compactification
+
+/-- Being a compactification is invariant under isomorphism of factorizations. -/
+instance : (compactificationProperty f).IsClosedUnderIsomorphisms where
+  of_iso {C D} e hC := by
+    obtain ⟨_, _, _⟩ := (compactificationProperty_iff f C).mp hC
+    -- The maps of ambient schemes underlying `e` are mutually inverse.
+    have : IsIso e.hom.h := (Factorisation.forget.mapIso e).isIso_hom
+    have : IsIso e.inv.h := (Factorisation.forget.mapIso e).isIso_inv
+    rw [compactificationProperty_iff, ← e.hom.ι_h, ← e.inv.h_π]
+    exact ⟨inferInstance, inferInstance, inferInstance⟩
 
 /-- Scheme-theoretic density of the interior of a compactification. -/
 def denseCompactificationProperty : ObjectProperty (Compactification f) :=
@@ -209,6 +267,16 @@ theorem liftOfIsClosedImmersion_hom_h_comp {C D : Compactification f} (φ : D �
     [IsClosedImmersion φ.hom.h] (E : DenseCompactification f) (h : E.obj ⟶ C) :
     (liftOfIsClosedImmersion φ E h).hom.h ≫ φ.hom.h = h.hom.h :=
   IsClosedImmersion.lift_fac _ _ _
+
+/-- Over a schematically dense interior, a section of the base vanishes on the ambient
+scheme exactly when it vanishes on the source. In particular nilpotent sections pulled back
+from the base are not lost. -/
+theorem app_p_eq_zero_iff (C : Compactification f) [IsSchemeTheoreticallyDominant C.j]
+    {U : S.Opens} (s : Γ(S, U)) : C.p.app U s = 0 ↔ f.app U s = 0 := by
+  rw [← map_eq_zero_iff _ (C.j.app_injective (C.p ⁻¹ᵁ U)), ← CommRingCat.comp_apply,
+    ← Scheme.Hom.comp_app, Scheme.Hom.congr_app C.obj.ι_π U]
+  exact map_eq_zero_iff (X.presheaf.map _).hom
+    (ConcreteCategory.injective_of_mono_of_preservesPullback _)
 
 end Compactification
 

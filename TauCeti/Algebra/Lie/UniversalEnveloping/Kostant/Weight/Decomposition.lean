@@ -104,7 +104,7 @@ theorem exists_mem_kostantForm_forall_apply_eq (j : κ) (a : ℤ) (N : ℕ) (g :
   · intro i hi x hx
     have hshift : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j) -
         (a : _root_.UniversalEnvelopingAlgebra ℚ L)) x = (i : ℚ) • x := by
-      rw [map_sub, map_intCast, LinearMap.sub_apply, hx, Module.End.intCast_apply,
+      rw [map_sub, map_intCast, LinearMap.sub_apply, hx, intCast_apply_eq_smul,
         ← Int.cast_smul_eq_zsmul ℚ a x, ← sub_smul]
       norm_num
     have hterm : ∀ k ∈ range (N + 1),

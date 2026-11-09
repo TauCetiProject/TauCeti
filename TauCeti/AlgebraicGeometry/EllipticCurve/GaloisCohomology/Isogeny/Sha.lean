@@ -172,13 +172,20 @@ theorem ker_shafarevichTateMap_le_torsionBy (f : Hom W₁.toAffine W₂.toAffine
 
 /-! ### Finiteness -/
 
+/-- The kernel of the map on Shafarevich–Tate groups is finite whenever the degree-torsion
+of the source is finite. -/
+theorem finite_ker_shafarevichTateMap (f : Hom W₁.toAffine W₂.toAffine)
+    [Finite (AddSubgroup.torsionBy (W₁.shafarevichTateGroup τ) f.degree)] :
+    Finite (f.shafarevichTateMap τ).ker :=
+  Finite.of_injective _
+    (AddSubgroup.inclusion_injective (f.ker_shafarevichTateMap_le_torsionBy τ))
+
 /-- If the `deg f`-torsion of `Sha(W₁)` is finite, then `Sha(W₁)` is finite as soon as `Sha(W₂)`
 is: the kernel of `f.shafarevichTateMap τ` lies in that torsion. -/
 theorem finite_shafarevichTateGroup_of_finite (f : Hom W₁.toAffine W₂.toAffine)
     [Finite (AddSubgroup.torsionBy (W₁.shafarevichTateGroup τ) f.degree)]
     [Finite (W₂.shafarevichTateGroup τ)] : Finite (W₁.shafarevichTateGroup τ) :=
-  have : Finite (f.shafarevichTateMap τ).ker := Finite.of_injective _
-    (AddSubgroup.inclusion_injective (f.ker_shafarevichTateMap_le_torsionBy τ))
+  have := f.finite_ker_shafarevichTateMap τ
   (f.shafarevichTateMap τ).finite_iff_finite_ker_range.2 ⟨inferInstance, inferInstance⟩
 
 /-- **Isogeny invariance of the finiteness of Shafarevich–Tate groups**: if the `deg f`-torsion

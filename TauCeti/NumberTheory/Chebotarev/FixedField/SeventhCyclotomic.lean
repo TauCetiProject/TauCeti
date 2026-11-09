@@ -67,7 +67,9 @@ theorem isArithFrobAt_frobeniusThreeSeven
     IsArithFrobAt (𝓞 ℚ) (frobeniusThreeSeven (L := L)) Q := by
   have hm := seven_not_mem_of_absNorm_three 𝔭 h𝔭
   apply (TauCeti.NumberField.isArithFrobAt_iff_galEquivZMod_eq_absNorm 𝔭 hm Q _).2
-  simp [h𝔭]
+  simpa only [h𝔭, Nat.cast_ofNat, (zeta_spec 7 ℚ L).autToPow_eq_unitsMap_galEquivZMod dvd_rfl,
+    ZMod.unitsMap_self, MonoidHom.id_apply] using
+      (autToPow_frobeniusThreeSeven (L := L))
 
 /-- At a prime above three, the unpowered restriction of the absolute Frobenius is an
 arithmetic Frobenius of `ℚ(√-7)/ℚ`. Its action on the square-root generator is negation,
@@ -89,11 +91,10 @@ theorem inertiaDeg_under_seventhCyclotomicQuadraticSubfield
     (h𝔭 : Ideal.absNorm 𝔭.asIdeal = 3)
     (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal] :
     (Q.under (𝓞 ↥(seventhCyclotomicQuadraticSubfield (L := L)))).inertiaDeg (𝓞 ℚ) = 2 := by
-  have hQ : Q ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot 𝔭.ne_bot Q
   have _ : Algebra.IsUnramifiedAt (𝓞 ℚ) Q :=
     isUnramifiedAt_of_absNorm_three 𝔭 h𝔭 Q
   rw [seventhCyclotomicQuadraticSubfield_def,
-    Ideal.inertiaDeg_under_fixedField_zpowers_pow_eq_gcd Q hQ
+    Ideal.inertiaDeg_under_fixedField_zpowers_pow_eq_gcd Q
       (isArithFrobAt_frobeniusThreeSeven 𝔭 h𝔭 Q) 2,
     orderOf_frobeniusThreeSeven]
   decide

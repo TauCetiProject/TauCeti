@@ -142,7 +142,7 @@ theorem sum_multinomialWeight_eq_one (n : ℕ) (p : StdSimplex NNReal ι) :
 /-- The multinomial law is a probability measure. -/
 theorem isProbabilityMeasure_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) :
     IsProbabilityMeasure (multinomialMeasure n p) := by
-  rw [isProbabilityMeasure_iff, multinomialMeasure, Measure.finsetSum_apply]
+  rw [isProbabilityMeasure_iff, multinomialMeasure, _root_.sum_apply]
   simpa using sum_multinomialWeight_eq_one n p
 
 /-- With no trials, the multinomial law is concentrated at the zero count vector. -/
@@ -157,7 +157,7 @@ zero elsewhere. -/
 theorem multinomialMeasure_singleton (n : ℕ) (p : StdSimplex NNReal ι) (k : ι → ℕ) :
     multinomialMeasure n p {k} =
       if ∑ i, k i = n then multinomialWeight p.weights k else 0 := by
-  simp [multinomialMeasure, Measure.finsetSum_apply, Pi.single_apply,
+  simp [multinomialMeasure, _root_.sum_apply, Pi.single_apply,
     mul_ite, Finset.mem_piAntidiag]
 
 /-- The real singleton mass of a multinomial law, in the usual factorial form. -/
@@ -221,7 +221,7 @@ size. -/
 @[simp]
 theorem multinomialMeasure_sum_eq (n : ℕ) (p : StdSimplex NNReal ι) :
     multinomialMeasure n p {k | ∑ i, k i = n} = 1 := by
-  rw [multinomialMeasure, Measure.finsetSum_apply]
+  rw [multinomialMeasure, _root_.sum_apply]
   calc
     _ = ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeight p.weights k := by
       apply Finset.sum_congr rfl
@@ -267,11 +267,10 @@ theorem inner_multinomialToEuclidean [Fintype ι] (θ : EuclideanSpace ℝ ι) (
   exact Finset.sum_congr rfl fun i _ ↦ mul_comm _ _
 
 /-- The cast of count vectors into Euclidean space is measurable. -/
-theorem measurable_multinomialToEuclidean [Finite ι] :
-    Measurable (multinomialToEuclidean (ι := ι)) := by
-  have := Fintype.ofFinite ι
-  refine (EuclideanSpace.equiv ι ℝ).symm.continuous.measurable.comp ?_
-  exact Measurable.of_eval fun i => measurable_from_nat.comp (measurable_pi_apply i)
+theorem measurable_multinomialToEuclidean :
+    Measurable (multinomialToEuclidean (ι := ι)) :=
+  (WithLp.measurable_toLp 2 (ι → ℝ)).comp
+    (Measurable.of_eval fun i => measurable_from_nat.comp (measurable_pi_apply i))
 
 /-- Casting count vectors into Euclidean space is a measurable embedding. -/
 theorem measurableEmbedding_multinomialToEuclidean [Finite ι] :

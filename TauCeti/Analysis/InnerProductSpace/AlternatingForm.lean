@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Contraction
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 
 /-!
 # Alternating forms on a real inner product space
@@ -27,7 +28,9 @@ Manifolds*. It carries the contraction by `⟪u, ·⟫` to the interior product
 wedges by Gram determinants, defines the pointwise inner product of `k`-forms,
 `TauCeti.alternatingFormInner`. For an orthonormal basis `(eᵢ)` it is
 `⟨α, β⟩ = ∑_{i₁ < ⋯ < iₖ} α(e_{i₁}, …, e_{iₖ}) β(e_{i₁}, …, e_{iₖ})`, so the increasing wedges of
-the dual coframe are orthonormal.
+the dual coframe are orthonormal. For an arbitrary basis `b`, with dual basis `b*` for the inner
+product, a form is represented by `∑ α(b_{i₁}, …, b_{iₖ}) b*_{i₁} ∧ ⋯ ∧ b*_{iₖ}`
+(`Module.Basis.alternatingFormEquiv_symm_eq_sum`).
 
 ## Main definitions
 
@@ -39,7 +42,10 @@ the dual coframe are orthonormal.
 * `TauCeti.alternatingFormEquiv_wedge`: the identification carries `x ∧ y` to the wedge of forms.
 * `TauCeti.alternatingFormEquiv_koszulDifferential`: it carries the contraction by `⟪u, ·⟫` to
   the interior product by `u`.
+* `LinearIsometry.alternatingFormEquiv_map`: musical identification commutes with isometries.
 * `TauCeti.alternatingFormInner_eq_sum`: the inner product of forms in an orthonormal basis.
+* `Module.Basis.alternatingFormEquiv_symm_eq_sum`: the element of `⋀ᵏ V` representing a form, in
+  an arbitrary basis.
 
 ## References
 
@@ -201,3 +207,66 @@ theorem alternatingFormInner_eq_sum {ι : Type*} [Fintype ι] [LinearOrder ι]
     inner_alternatingFormEquiv_symm_ιMulti, inner_alternatingFormEquiv_symm_ιMulti]
 
 end TauCeti
+
+namespace LinearIsometry
+
+open TauCeti
+
+variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
+
+/-- The musical identification of exterior powers with alternating forms commutes with
+linear isometric embeddings: pulling back the form of the image recovers the original form. -/
+@[simp]
+theorem alternatingFormEquiv_map (e : V →ₗᵢ[ℝ] W) {k : ℕ} (a : ⋀[ℝ]^k V) :
+    (alternatingFormEquiv W k (exteriorPower.map k e.toLinearMap a)).compContinuousLinearMap
+        e.toContinuousLinearMap =
+      alternatingFormEquiv V k a := by
+  ext v
+  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, alternatingFormEquiv_apply]
+  simpa [exteriorPower.map_apply_ιMulti] using
+    exteriorPower.inner_map_map e a (ιMulti ℝ k v)
+
+end LinearIsometry
+
+namespace Module.Basis
+
+open TauCeti
+
+variable {ι : Type*} [LinearOrder ι]
+
+/-- The wedges of the dual basis `b*` and the coordinates of `⋀ᵏ V` in the basis induced by `b`:
+`⟪b*_{i₁} ∧ ⋯ ∧ b*_{iₖ}, w₁ ∧ ⋯ ∧ wₖ⟫` is the coordinate of `w₁ ∧ ⋯ ∧ wₖ` at
+`{i₁ < ⋯ < iₖ}`. -/
+theorem inner_ιMulti_dualBasis [Finite ι] (b : Basis ι ℝ V) {k : ℕ} (s : powersetCard ι k)
+    (w : Fin k → V) :
+    ⟪ιMulti ℝ k (LinearMap.BilinForm.dualBasis (innerₗ V) nondegenerate_inner b ∘
+        powersetCard.ofFinEmbEquiv.symm s), ιMulti ℝ k w⟫ =
+      (b.exteriorPower k).repr (ιMulti ℝ k w) s := by
+  have := Fintype.ofFinite ι
+  rw [inner_ιMulti_ιMulti, basis_repr_apply, ιMultiDual_apply_ιMulti]
+  congr 1
+  ext i j
+  simp [inner_dualBasis_left]
+
+/-- **A form in an arbitrary basis**: the element of `⋀ᵏ V` representing a form `α` is
+`∑ α(b_{i₁}, …, b_{iₖ}) b*_{i₁} ∧ ⋯ ∧ b*_{iₖ}`, the sum running over the increasing `k`-tuples
+`i₁ < ⋯ < iₖ`, where `b*` is the dual basis of `b` for the inner product. -/
+theorem alternatingFormEquiv_symm_eq_sum [Fintype ι] (b : Basis ι ℝ V) {k : ℕ}
+    (α : V [⋀^Fin k]→L[ℝ] ℝ) :
+    (alternatingFormEquiv V k).symm α = ∑ s : powersetCard ι k,
+      α (b ∘ powersetCard.ofFinEmbEquiv.symm s) •
+        ιMulti ℝ k (LinearMap.BilinForm.dualBasis (innerₗ V) nondegenerate_inner b ∘
+          powersetCard.ofFinEmbEquiv.symm s) := by
+  classical
+  -- Both sides have the same inner product with each basis vector `b_{t₁} ∧ ⋯ ∧ b_{tₖ}`.
+  refine InnerProductSpace.ext_inner_left_basis (b.exteriorPower k) fun t ↦ ?_
+  have ht : b.exteriorPower k t = ιMulti ℝ k (b ∘ powersetCard.ofFinEmbEquiv.symm t) := by
+    rw [basis_apply, ιMulti_family]
+  simp only [inner_sum, real_inner_smul_right]
+  simp_rw [real_inner_comm _ (b.exteriorPower k t)]
+  conv_rhs => enter [2, s]; rw [ht, inner_ιMulti_dualBasis, ← ht, Basis.repr_self,
+    Finsupp.single_apply]
+  rw [ht, inner_alternatingFormEquiv_symm_ιMulti]
+  simp
+
+end Module.Basis

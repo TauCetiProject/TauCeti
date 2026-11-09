@@ -186,7 +186,7 @@ theorem asAlgebraHom_eq_zero_of_mul_single_eq_neg
   -- Absorbing `g` into `a` costs a sign but leaves `v` alone, so the value equals its negation
   have key : ρ.asAlgebraHom a v = -(ρ.asAlgebraHom a v) := by
     conv_lhs => rw [← hfix]
-    rw [← Representation.asAlgebraHom_single_one ρ, ← Module.End.mul_apply, ← map_mul, hneg,
+    rw [← Representation.asAlgebraHom_single_one ρ, ← mul_apply_eq_comp, ← map_mul, hneg,
       map_neg, LinearMap.neg_apply]
   -- so doubling it agrees with doubling `0`, and doubling is injective
   refine h2inj ?_

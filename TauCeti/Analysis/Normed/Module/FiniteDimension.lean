@@ -16,8 +16,9 @@ public import TauCeti.Topology.Algebra.Module.FiniteDimension
 Over a complete nontrivially normed field every linear functional on a finite-dimensional normed
 space is continuous, so the continuous dual `E →L[𝕜] 𝕜` coincides with the algebraic dual
 `Module.Dual 𝕜 E`. Mathlib records that coincidence as the linear equivalence
-`LinearMap.toContinuousLinearMap`; this file reads off the one consequence of it that dimension
-counts need, namely that the continuous dual has the same dimension as the space.
+`LinearMap.toContinuousLinearMap`; this file reads off two consequences of it that dimension
+counts need: the continuous dual has the same dimension as the space, and every continuous
+functional on a space injecting into it extends to it.
 
 Two complements of the same space in a finite-dimensional space are continuously linearly
 isomorphic. This allows pointwise choices of complements to be identified with a single model.
@@ -27,6 +28,9 @@ sphere consists of two antipodal points.
 A linear endomorphism of a finite-dimensional normed space that is bounded below by `c > 0` is
 injective, hence invertible, and its inverse is bounded by `c⁻¹`.
 
+Rescaled coordinates send any compact subset of a finite-dimensional real normed space into an
+arbitrarily small ball of `Fin n → ℝ`.
+
 A family of bases whose vectors depend continuously on a parameter has frame and coordinate maps
 that depend continuously on the parameter in the operator norm.
 
@@ -34,6 +38,8 @@ that depend continuously on the parameter in the operator norm.
 
 * `ContinuousLinearMap.dual_finrank_eq`: in finite dimensions the continuous dual has the same
   dimension as the space.
+* `ContinuousLinearMap.surjective_compL_flip_of_injective`: precomposition with an injective map
+  into a finite-dimensional space is surjective on continuous duals.
 * `TauCeti.nonempty_continuousLinearEquiv_of_prod_continuousLinearEquiv`: complements of
   the same space in a finite-dimensional space are isomorphic.
 * `TauCeti.continuous_det_div_conj`: the determinant phase `det A / conj (det A)` of a continuous
@@ -41,6 +47,10 @@ that depend continuously on the parameter in the operator norm.
 * `Module.Basis.continuous_equivFunL_symm_of_continuous`,
   `Module.Basis.continuous_equivFunL_of_continuous`: a family of bases whose vectors depend
   continuously on a parameter has continuously varying frame and coordinate maps.
+* `ContinuousLinearEquiv.piRing_apply`, `ContinuousLinearEquiv.piRing_symm_apply`: the
+  identification of maps out of a coordinate space with their values on the standard basis.
+* `IsCompact.exists_continuousLinearEquiv_mapsTo_ball`: linear coordinates sending a compact set
+  into a given ball around the origin.
 -/
 
 public section
@@ -58,6 +68,18 @@ theorem _root_.ContinuousLinearMap.dual_finrank_eq :
   rw [← LinearEquiv.finrank_eq
     (LinearMap.toContinuousLinearMap : (E →ₗ[𝕜] 𝕜) ≃ₗ[𝕜] E →L[𝕜] 𝕜)]
   exact Subspace.dual_finrank_eq
+
+/-- Precomposition with an injective continuous linear map `L : F →L[𝕜] E` into a
+finite-dimensional space is surjective on continuous duals: every continuous functional on `F`
+is `g ∘L L` for some continuous functional `g` on `E`, since every linear functional on `E` is
+continuous. -/
+theorem _root_.ContinuousLinearMap.surjective_compL_flip_of_injective {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {L : F →L[𝕜] E} (hL : Function.Injective L) :
+    Function.Surjective ((ContinuousLinearMap.compL 𝕜 F E 𝕜).flip L) := by
+  intro f
+  obtain ⟨g, hg⟩ := LinearMap.dualMap_surjective_of_injective (f := L.toLinearMap) hL
+    f.toLinearMap
+  exact ⟨LinearMap.toContinuousLinearMap g, ContinuousLinearMap.ext (LinearMap.congr_fun hg)⟩
 
 /-- Over a complete field, two complements of the same space `V` in a finite-dimensional space `W`
 are continuously linearly isomorphic: both have dimension `finrank W - finrank V`. -/
@@ -116,6 +138,28 @@ theorem continuous_det_div_conj (A : X → E ≃L[𝕜] E)
 
 end Star
 
+/-- **Rescaled coordinates.** A compact subset `C` of a finite-dimensional real normed space `X` is
+sent into the ball `‖y‖ < r` of `Fin (finrank ℝ X) → ℝ`, for any `r > 0`, by a continuous linear
+equivalence: the basis coordinates of `X`, scaled down far enough. -/
+theorem _root_.IsCompact.exists_continuousLinearEquiv_mapsTo_ball {X : Type*}
+    [NormedAddCommGroup X] [NormedSpace ℝ X] [FiniteDimensional ℝ X] {C : Set X}
+    (hC : IsCompact C) {r : ℝ} (hr : 0 < r) :
+    ∃ L : X ≃L[ℝ] Fin (Module.finrank ℝ X) → ℝ, Set.MapsTo L C (Metric.ball 0 r) := by
+  set e := (Module.finBasis ℝ X).equivFunL
+  obtain ⟨R, hR⟩ := hC.exists_bound_of_continuousOn e.continuous.continuousOn
+  set t : ℝ := r / (2 * (|R| + 1)) with ht
+  have ht0 : 0 < t := by positivity
+  set L : X →L[ℝ] Fin (Module.finrank ℝ X) → ℝ := t • (e : X →L[ℝ] _)
+  set A : (Fin (Module.finrank ℝ X) → ℝ) →L[ℝ] X := t⁻¹ • (e.symm : _ →L[ℝ] X)
+  refine ⟨.equivOfInverse L A (fun z ↦ by simp [L, A, ht0.ne'])
+    (fun y ↦ by simp [L, A, ht0.ne']), fun z hz ↦ ?_⟩
+  rw [mem_ball_zero_iff]
+  calc ‖L z‖ = t * ‖e z‖ := by simp [L, norm_smul, abs_of_pos ht0]
+    _ ≤ t * |R| := mul_le_mul_of_nonneg_left ((hR z hz).trans (le_abs_self R)) ht0.le
+    _ < r := by
+      rw [ht, div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
+      nlinarith [abs_nonneg R]
+
 end TauCeti
 
 namespace Module.Basis
@@ -152,6 +196,23 @@ theorem continuous_equivFunL_of_continuous (h : ∀ i, Continuous fun y ↦ B y 
     (continuous_equivFunL_symm_of_continuous h).continuousAt
 
 end Module.Basis
+
+namespace ContinuousLinearEquiv
+
+variable {𝕜 E ι : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [Fintype ι] [DecidableEq ι]
+
+/-- The vector of a map out of a coordinate space lists its values on the standard basis. -/
+@[simp] theorem piRing_apply (f : (ι → 𝕜) →L[𝕜] E) (i : ι) :
+    piRing (𝕜 := 𝕜) (E := E) ι f i = f (Pi.single i 1) :=
+  LinearEquiv.piRing_apply (R := 𝕜) (S := 𝕜) f.toLinearMap i
+
+/-- The map out of a coordinate space with prescribed values on the standard basis. -/
+@[simp] theorem piRing_symm_apply (f : ι → E) (v : ι → 𝕜) :
+    (piRing (𝕜 := 𝕜) (E := E) ι).symm f v = ∑ i, v i • f i :=
+  LinearEquiv.piRing_symm_apply (R := 𝕜) (S := 𝕜) f v
+
+end ContinuousLinearEquiv
 
 namespace LinearMap
 

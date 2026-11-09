@@ -7,6 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.RingTheory.Valuation.Basic
+public import Mathlib.RingTheory.Valuation.ValuationSubring
+import TauCeti.RingTheory.Valuation.ValuationSubring
 
 /-!
 # Linear independence from distinct valuations
@@ -22,15 +24,26 @@ distinct nonzero valuations. When `v` is not trivial on `A`, it asks their valua
 different cosets of the image of `A`. This is how the value-group index of a valued field
 extension, and with it the ramification index, is bounded by the degree of the extension.
 
+Several valuations give a second criterion. If `v i` are valuations on an algebra over a field `K`,
+all at most `1` on a valuation subring `O` of `K`, and `e i` is strictly the largest member of a
+family `e` for `v i`, then `e` is linearly independent over `K`: in a relation, divide by a
+coefficient dividing all the others in `O`, and the summand `e k` dominates for `v k`. This is how
+the number of extensions of a valuation to a finite extension is bounded by the degree.
+
 ## Main results
 
 * `Valuation.linearIndependent_of_map_smul_ne`: a family whose nonzero scalar multiples have
   nonzero valuations, distinct for different members, is linearly independent.
+* `Valuation.linearIndependent_of_map_lt`: a family in which each member strictly dominates the
+  others for its own valuation, the valuations being bounded on a common valuation subring of the
+  scalars, is linearly independent.
 
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Grundlehren 322, Springer, 1999, Chapter II,
   Proposition 6.8, for the inequality `e f ≤ n` proved by this argument.
+* A. J. Engler and A. Prestel, *Valued Fields*, Springer Monographs in Mathematics, 2005, §3.2,
+  for the bound on the number of extensions of a valuation by the degree.
 -/
 
 public section
@@ -65,6 +78,36 @@ theorem linearIndependent_of_map_smul_ne {A B : Type*} [CommRing A] [Ring B] [Al
   have h := v.map_sum_eq_of_lt hjt hlt
   rw [hsum', v.map_zero] at h
   exact hf j (g j) hgj h.symm
+
+/-- **Elements each dominating for its own valuation are linearly independent.** Let `v i` be
+valuations on an algebra `C` over a field `K` with `v i ≤ 1` on a valuation subring `O` of `K`. If
+`v i (e i) ≠ 0` and `v i (e j) < v i (e i)` for `j ≠ i`, then `e` is linearly independent over
+`K`. -/
+theorem linearIndependent_of_map_lt {K C : Type*} [Field K] [Ring C] [Algebra K C]
+    {O : ValuationSubring K} {ι : Type*} {Γ : ι → Type*}
+    [∀ i, LinearOrderedCommMonoidWithZero (Γ i)] (v : ∀ i, Valuation C (Γ i))
+    (hO : ∀ i, ∀ a ∈ O, v i (algebraMap K C a) ≤ 1) {e : ι → C} (he : ∀ i, v i (e i) ≠ 0)
+    (hlt : ∀ i j, j ≠ i → v i (e j) < v i (e i)) : LinearIndependent K e := by
+  classical
+  rw [linearIndependent_iff']
+  intro s g hg i₀ hi₀
+  by_contra hne
+  -- a coefficient `g k` dividing all the others in `O`
+  obtain ⟨k, hks, hgk, hO'⟩ := O.exists_ne_zero_and_div_mem ⟨i₀, hi₀, hne⟩
+  -- after dividing by `g k`, the summand `e k` dominates for `v k`
+  have hsum : e k + ∑ i ∈ s.erase k, (g i / g k) • e i = 0 := by
+    have h := congrArg ((g k)⁻¹ • ·) hg
+    simp only [smul_zero, Finset.smul_sum, smul_smul] at h
+    rw [← Finset.add_sum_erase _ _ hks, inv_mul_cancel₀ hgk, one_smul] at h
+    simpa only [div_eq_inv_mul] using h
+  have hlt' : v k (∑ i ∈ s.erase k, (g i / g k) • e i) < v k (e k) := by
+    refine Valuation.map_sum_lt _ (he k) fun i hi ↦ ?_
+    rw [Algebra.smul_def, map_mul]
+    exact lt_of_le_of_lt (mul_le_of_le_one_left' (hO k _ (hO' i (Finset.mem_of_mem_erase hi))))
+      (hlt k i (Finset.ne_of_mem_erase hi))
+  have := (v k).map_add_eq_of_lt_left hlt'
+  rw [hsum, map_zero] at this
+  exact he k this.symm
 
 end Valuation
 

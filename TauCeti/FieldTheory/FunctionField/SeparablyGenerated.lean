@@ -17,7 +17,14 @@ needed for the differential calculus of an algebraic function field in arbitrary
 while keeping the more general results over imperfect fields stated with an explicit separating
 element.
 
-Over an imperfect field a separating element need not exist. An element of `F` outside `k` with a
+Over an imperfect field a separating element still exists when `F` is geometrically reduced over
+`k`, for instance when `L ⊗[k] F` is reduced for an algebraically closed field `L` over `k`
+(`Algebra.IsGeometricallyReduced.of_isReduced_tensorProduct`). If `F ⊗[k] L` is even a domain,
+then `k` is moreover algebraically closed in `F`
+(`TauCeti.algebraicClosure_eq_bot_of_isDomain_tensorProduct`), so `F` is separably generated with
+exact constants, that is, a regular extension of `k`.
+
+In general a separating element need not exist. An element of `F` outside `k` with a
 `p`-power in `k`, such as `t^{1/p}` in `𝔽_p(t^{1/p})(X)` over `𝔽_p(t)`, would be both separable
 and purely inseparable over `k(x)` for a separating `x`, hence a constant of `k(x)`, which it is
 not.
@@ -26,13 +33,16 @@ not.
 
 * `TauCeti.IsFunctionField.exists_transcendental_and_isSeparable_adjoin_of_perfectField`: a
   function field over a perfect field has a separating element.
+* `TauCeti.IsFunctionField.exists_transcendental_and_isSeparable_adjoin_of_isGeometricallyReduced`:
+  a geometrically reduced function field has a separating element.
 * `TauCeti.not_isSeparable_adjoin_of_pow_mem`: an element outside `k` with a power
   `α ^ q ^ n` in `k` rules out every separating element.
 
-## Reference
+## References
 
-H. Stichtenoth, *Algebraic Function Fields and Codes*, second edition, Proposition 3.10.2 and
-Section IV.1.
+* H. Stichtenoth, *Algebraic Function Fields and Codes*, second edition, Proposition 3.10.2 and
+  Section IV.1.
+* S. Lang, *Introduction to Algebraic Geometry*, Chapter III, Section 1.
 -/
 
 public section
@@ -58,6 +68,17 @@ theorem exists_transcendental_and_isSeparable_adjoin_of_perfectField [PerfectFie
     ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
   let : Algebra.EssFiniteType k F := hF.essFiniteType
   exact TauCeti.exists_transcendental_and_isSeparable_adjoin_of_perfectField hF.trdeg_eq_one
+
+/-- **A geometrically reduced function field is separably generated**: if `F` is geometrically
+reduced over `k`, then it has a transcendental element `x` such that `F / k(x)` is separable,
+whether or not `k` is perfect. Finiteness over `k(x)` follows separately from
+`TauCeti.IsFunctionField.finiteDimensional_adjoin`. -/
+theorem exists_transcendental_and_isSeparable_adjoin_of_isGeometricallyReduced
+    [Algebra.IsGeometricallyReduced k F] (hF : IsFunctionField k F) :
+    ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
+  let : Algebra.EssFiniteType k F := hF.essFiniteType
+  exact TauCeti.exists_transcendental_and_isSeparable_adjoin_of_isGeometricallyReduced
+    hF.trdeg_eq_one
 
 end IsFunctionField
 

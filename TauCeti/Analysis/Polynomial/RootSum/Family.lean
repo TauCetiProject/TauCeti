@@ -95,12 +95,12 @@ theorem analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm_of_anal
         ((coeffEquiv ℂ (m i)).symm ((piSigmaConstHomeomorph ℂ e).symm c i))))
       (piSigmaConstHomeomorph ℂ e c₀) := by
     convert hmiddle using 1
-    all_goals rfl
+    rfl
   convert AnalyticAt.comp
     (f := fun c => fun i => coeffEquiv ℂ (m i) (_root_.Sym.map (φ i)
       ((coeffEquiv ℂ (m i)).symm ((piSigmaConstHomeomorph ℂ e).symm c i))))
     (analyticAt_piSigmaConstHomeomorph e' _) hmiddle' using 1
-  all_goals rfl
+  rfl
 
 end Sym
 

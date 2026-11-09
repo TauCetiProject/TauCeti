@@ -52,6 +52,8 @@ proved there.
 
 * `TauCeti.CoordinatePullback.map`: the base-changed coordinate pullback.
 * `TauCeti.Isogeny.map`: the base-changed isogeny.
+* `TauCeti.Isogeny.baseChange`: the base change of an isogeny of curves over `F` to an extension
+  `K` of `F`, typed between `W₁⁄K` and `W₂⁄K`.
 
 ## Main results
 
@@ -265,6 +267,14 @@ theorem map_map (φ : Isogeny W₁ W₂) (f : F →+* K) (g : K →+* L) :
   apply Isogeny.ext
   rw [map_pullback, map_pullback, map_pullback]
   exact CoordinatePullback.map_map φ.pullback f g
+
+open WeierstrassCurve in
+variable (K) in
+/-- The base change of an isogeny `φ : W₁ → W₂` to an extension `K` of `F`, typed between the base
+changes `W₁⁄K` and `W₂⁄K`. -/
+noncomputable abbrev baseChange [Algebra F K] {W₁ W₂ : WeierstrassCurve F}
+    (φ : Isogeny W₁.toAffine W₂.toAffine) : Isogeny (W₁⁄K).toAffine (W₂⁄K).toAffine :=
+  φ.map (algebraMap F K)
 
 end Isogeny
 

@@ -36,17 +36,6 @@ local notation "H" => MulAction.stabilizer (Equiv.Perm (Fin 3)) a
 local notation "B" => symmetricThreeCharThreeSimpleClassBasis k
 local notation "C" => symmetricThreeStabilizerSimpleClassBasis k a
 
-omit [CharP k 3] in
-private theorem signLinearCharacter_mul_self :
-    signLinearCharacter k (Fin 3) * signLinearCharacter k (Fin 3) = 1 := by
-  ext g
-  simp only [MonoidHom.mul_apply, Units.val_mul, coe_signLinearCharacter_apply,
-    MonoidHom.one_apply, Units.val_one]
-  have h := Int.units_mul_self (Equiv.Perm.sign g)
-  have hz : (Equiv.Perm.sign g : ℤ) * (Equiv.Perm.sign g : ℤ) = 1 :=
-    congrArg Units.val h
-  simpa only [Int.cast_mul, Int.cast_one] using congrArg (fun z : ℤ => (z : k)) hz
-
 -- `symmetricThreeCharThreeSimpleClassBasis_apply` simplifies the left side before this theorem
 -- can fire as a simp lemma; use the named theorem to rewrite the class product.
 /-- The sign basis vector squares to the unit in the characteristic-three Grothendieck ring. -/

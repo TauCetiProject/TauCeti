@@ -376,7 +376,7 @@ def logSpaceRep : Representation ℝ (L ≃ₐ[K] L) (logSpace L) where
     have h : (LinearMap.funLeft ℝ ℝ fun w : {w : InfinitePlace L // w ≠ w₀} ↦ τ⁻¹ • w.1)
         (logSpaceExtend L y) = fun w ↦ logSpaceExtend L y (τ⁻¹ • w.1) :=
       funext fun w ↦ LinearMap.funLeft_apply _ _ _ _ w
-    simp only [LinearMap.comp_apply, LinearMap.funLeft_apply, Module.End.mul_apply, h,
+    simp only [LinearMap.comp_apply, LinearMap.funLeft_apply, mul_apply_eq_comp, h,
       logSpaceExtend_eq_self hτ, mul_inv_rev, mul_smul]
 
 variable {K L}
@@ -421,7 +421,7 @@ theorem logEmbedding_smul (σ : L ≃ₐ[K] L) (x : Additive (𝓞 L)ˣ) :
 variable (K L) in
 /-- The unit lattice `logEmbedding L ((𝓞 L)ˣ)` as an integral subrepresentation of `logSpaceRep`:
 it is stable under `Aut(L/K)` by `TauCeti.NumberField.Units.logEmbedding_smul`. -/
-def unitLatticeSubrep : Subrepresentation (logSpaceRep K L).restrictScalarsInt where
+def unitLatticeSubrep : Subrepresentation ((logSpaceRep K L).restrictScalars ℤ) where
   toSubmodule := unitLattice L
   apply_mem_toSubmodule σ y := by
     rintro ⟨x, -, rfl⟩

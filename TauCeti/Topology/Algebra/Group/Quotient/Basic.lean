@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.GroupTheory.GroupAction.Quotient
+public import Mathlib.GroupTheory.Index
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
@@ -49,6 +50,9 @@ Neither compactness nor total disconnectedness is needed.
   subgroups `V ≤ U` is continuous.
 * `OpenSubgroup.isClopen_image_mk`: the image of an open subgroup of `G` under the
   quotient map `G → G ⧸ N` is clopen.
+* `Subgroup.instFiniteIndexQuotientOpenSubgroup`, `Subgroup.instCompactSpaceQuotientOpenSubgroup`:
+  the image in `G ⧸ N` of an open subgroup of finite index, respectively compact, has finite
+  index, respectively is compact.
 * `Subgroup.comapMk'OpenNormalOrderIso`: open normal subgroups of `G ⧸ N` correspond
   to the open normal subgroups of `G` containing `N`.
 -/
@@ -271,6 +275,17 @@ theorem coe_quotientOpenSubgroupMap (U : OpenSubgroup G) (u : U.toSubgroup) :
 theorem continuous_quotientOpenSubgroupMap (U : OpenSubgroup G) :
     Continuous (quotientOpenSubgroupMap N U) :=
   continuous_induced_rng.2 (QuotientGroup.continuous_mk.comp continuous_subtype_val)
+
+/-- The image in `G / N` of an open subgroup of finite index has finite index. -/
+instance instFiniteIndexQuotientOpenSubgroup (U : OpenSubgroup G) [U.toSubgroup.FiniteIndex] :
+    (quotientOpenSubgroup N U).toSubgroup.FiniteIndex :=
+  FiniteIndex.map_of_surjective U.toSubgroup (QuotientGroup.mk'_surjective N)
+
+/-- The image in `G / N` of a compact open subgroup is compact. -/
+instance instCompactSpaceQuotientOpenSubgroup (U : OpenSubgroup G) [CompactSpace U.toSubgroup] :
+    CompactSpace (quotientOpenSubgroup N U).toSubgroup :=
+  ((QuotientGroup.mk' N).subgroupMap_surjective U.toSubgroup).compactSpace
+    (continuous_quotientOpenSubgroupMap N U)
 
 end OpenSubgroup
 

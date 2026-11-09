@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.HighestWeight.Casimir
 public import TauCeti.Algebra.Lie.Weights.WeylInvariance
 import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Algebra.Lie.HighestWeight.Separation
 
 /-!
 # Freudenthal's multiplicity recursion
@@ -27,8 +28,10 @@ with `⟨·,·⟩` the invariant form `TauCeti.invForm` and `ρ` the Weyl vector
 The anchor at the top weight, `dim Mλ = 1`, is
 `TauCeti.formalCharacter_coeff_eq_one_of_isHighestWeightVector_of_lieSpan_eq_top`. Reading the
 formula downwards from there as a computation of the lower multiplicities needs one more
-ingredient, namely that the scalar on the left is nonzero at every weight strictly below `λ`;
-that nonvanishing is a separate prerequisite, and is not proved here.
+ingredient, namely that the scalar on the left is nonzero at every weight strictly below `λ`.
+That is the separation of the weights of a highest weight module by the Casimir scalar,
+`TauCeti.casimirScalar_ne_casimirScalar_of_genWeightSpace_ne_bot_of_isHighestWeightVector`, and
+with it the recursion is solved for `dim Mμ` at every `μ ≠ λ`.
 
 ## The two halves
 
@@ -62,8 +65,11 @@ the `⟨μ + ρ, μ + ρ⟩` of the statement comes from.
 
 * `TauCeti.sum_weightString_neg_eq_add`: **the two directions of a root string differ by the
   summand at the foot of the string**, the reflection symmetry in the form the recursion consumes.
+* `TauCeti.freudenthalRHS`: the double sum `∑_{α > 0} ∑_{j ≥ 1} dim M_{μ + jα} · ⟨μ + jα, α⟩`.
 * `TauCeti.freudenthal_multiplicity_formula`: **Freudenthal's multiplicity recursion** for a
   finite-dimensional highest weight module.
+* `TauCeti.coeff_formalCharacter_eq_freudenthalRHS_div`: **the recursion solved for the
+  multiplicity** at every linear form other than the highest weight.
 
 ## Implementation notes
 
@@ -191,6 +197,40 @@ theorem sum_weightString_erase_zero_eq_add_sum_erase_zero {beta : Dual K H}
   rw [zero_add, one_nsmul]
   exact congrArg _ (Finset.sum_congr rfl fun k _ ↦ by rw [hrung])
 
+/-! ### The right-hand side of the recursion -/
+
+section FreudenthalRHS
+
+variable [IsTriangularizable K H L]
+
+variable (M) in
+/-- **The Freudenthal double sum** `∑_{α > 0} ∑_{j ≥ 1} dim M_{μ + jα} · ⟨μ + jα, α⟩` attached to a
+base `b` and a linear form `μ` on the Cartan subalgebra. The inner sum runs over the `α`-string
+above `μ` with the rung `μ` itself removed, a finite set because `M` is finite-dimensional. Twice
+this sum is the right-hand side of Freudenthal's multiplicity recursion
+`TauCeti.freudenthal_multiplicity_formula`. -/
+noncomputable def freudenthalRHS (b : (IsKilling.rootSystem H).Base) (mu : Dual K H) : K :=
+  ∑ i ∈ posRootsFinset (IsKilling.rootSystem H) b,
+    ∑ j ∈ (weightString M
+        (Weight.coe_toLinear_ne_zero_iff.mpr (H.isNonZero_coe_root i)) mu).erase 0,
+      (finrank K (genWeightSpace M
+          ((mu + j • ((i : Weight K H L) : Dual K H) : Dual K H) : H → K)) : K) *
+        invForm (mu + j • ((i : Weight K H L) : Dual K H)) ((i : Weight K H L) : Dual K H)
+
+/-- **The defining formula of the Freudenthal double sum.** The definition is sealed, so this is the
+equation through which the sum is unfolded, here and downstream. -/
+theorem freudenthalRHS_def (b : (IsKilling.rootSystem H).Base) (mu : Dual K H) :
+    freudenthalRHS M b mu =
+      ∑ i ∈ posRootsFinset (IsKilling.rootSystem H) b,
+        ∑ j ∈ (weightString M
+            (Weight.coe_toLinear_ne_zero_iff.mpr (H.isNonZero_coe_root i)) mu).erase 0,
+          (finrank K (genWeightSpace M
+              ((mu + j • ((i : Weight K H L) : Dual K H) : Dual K H) : H → K)) : K) *
+            invForm (mu + j • ((i : Weight K H L) : Dual K H)) ((i : Weight K H L) : Dual K H) :=
+  (rfl)
+
+end FreudenthalRHS
+
 variable [IsAlgClosed K]
 
 /-- **The two rungs exchanged by the reflection carry opposite summands.** Reflecting the
@@ -253,6 +293,75 @@ private theorem exists_int_apply_coroot_of_genWeightSpace_add_zsmul_ne_bot
   push_cast
   linear_combination hm'
 
+/-- If no rung of the `α`-string through `μ` can be a weight because `⟨μ, α^∨⟩` is not an integer,
+then all the weight spaces along the string are trivial. -/
+private theorem genWeightSpace_add_zsmul_eq_bot_of_not_int {alpha : Weight K H L}
+    (halpha : alpha.IsNonZero) {mu : Dual K H}
+    (hint : ¬∃ n : ℤ, mu (IsKilling.coroot alpha) = (n : K)) (i : ℤ) :
+    genWeightSpace M ((mu + i • (alpha : Dual K H) : Dual K H) : H → K) = ⊥ := by
+  by_contra hne
+  exact hint (exists_int_apply_coroot_of_genWeightSpace_add_zsmul_ne_bot halpha hne)
+
+omit [IsAlgClosed K] in
+/-- The `α`-string sum as a sum of `stringTerm` over an initial segment, when the string stops
+before the rung `N`. -/
+private theorem sum_range_stringTerm_natCast {alpha : Weight K H L}
+    (halphaD : (alpha : Dual K H) ≠ 0) (mu : Dual K H) {N : ℕ}
+    (hbotPos : ∀ j : ℕ, N ≤ j →
+      genWeightSpace M ((mu + j • (alpha : Dual K H) : Dual K H) : H → K) = ⊥) :
+    ∑ j ∈ Finset.range (N + 1), stringTerm M mu (alpha : Dual K H) (j : ℤ) =
+      (∑ j ∈ (weightString M halphaD mu).erase 0,
+        (finrank K (genWeightSpace M
+          ((mu + j • (alpha : Dual K H) : Dual K H) : H → K)) : K) *
+          invForm (mu + j • (alpha : Dual K H)) (alpha : Dual K H)) +
+        stringTerm M mu (alpha : Dual K H) 0 := by
+  rw [Finset.sum_congr rfl fun j _ ↦ stringTerm_natCast mu (alpha : Dual K H) j,
+    sum_weightString_erase_eq_sum_range halphaD mu hbotPos,
+    ← Finset.add_sum_erase _ _ (Finset.mem_range.mpr (Nat.succ_pos N)), stringTerm_zero,
+    zero_smul, add_zero]
+  ring
+
+omit [IsAlgClosed K] in
+/-- The `-α`-string sum as a sum of `stringTerm` over an initial segment, when the string stops
+before the rung `N`. -/
+private theorem sum_range_stringTerm_neg_natCast {alpha : Weight K H L}
+    (halphaD : (alpha : Dual K H) ≠ 0) (mu : Dual K H) {N : ℕ}
+    (hbotNeg : ∀ j : ℕ, N ≤ j →
+      genWeightSpace M ((mu + j • (-(alpha : Dual K H)) : Dual K H) : H → K) = ⊥) :
+    ∑ j ∈ Finset.range (N + 1), stringTerm M mu (alpha : Dual K H) (-(j : ℤ)) =
+      stringTerm M mu (alpha : Dual K H) 0 -
+        ∑ j ∈ (weightString M (neg_ne_zero.mpr halphaD) mu).erase 0,
+          (finrank K (genWeightSpace M
+            ((mu + j • (-(alpha : Dual K H)) : Dual K H) : H → K)) : K) *
+            invForm (mu + j • (-(alpha : Dual K H))) (-(alpha : Dual K H)) := by
+  rw [Finset.sum_congr rfl fun j _ ↦ stringTerm_neg_natCast mu (alpha : Dual K H) j,
+    Finset.sum_neg_distrib,
+    sum_weightString_erase_eq_sum_range (neg_ne_zero.mpr halphaD) mu hbotNeg,
+    ← Finset.add_sum_erase _ _ (Finset.mem_range.mpr (Nat.succ_pos N)), stringTerm_zero,
+    zero_smul, add_zero, map_neg]
+  ring
+
+/-- The two-sided `α`-string sum over `[-N, N]` vanishes when `⟨μ, α^∨⟩` is an integer and all
+the weight spaces beyond the rung `N` are trivial. -/
+private theorem sum_Icc_stringTerm_eq_zero_of_eq_bot {alpha : Weight K H L} {mu : Dual K H}
+    {n : ℤ} (hn : mu (IsKilling.coroot alpha) = (n : K)) {N : ℕ}
+    (hN : ∀ i : ℤ, N ≤ i.natAbs →
+      genWeightSpace M ((mu + i • (alpha : Dual K H) : Dual K H) : H → K) = ⊥) :
+    ∑ i ∈ Finset.Icc (-(N : ℤ)) N, stringTerm M mu (alpha : Dual K H) i = 0 := by
+  have hsub : Finset.Icc (-(N : ℤ)) N ⊆ Finset.Icc (-n - ((N : ℤ) + |n|)) ((N : ℤ) + |n|) := by
+    intro i hi
+    rw [Finset.mem_Icc] at hi ⊢
+    rcases abs_cases n with ⟨h, hs⟩ | ⟨h, hs⟩ <;> omega
+  have hcancel : ∀ i ∈ Finset.Icc (-n - ((N : ℤ) + |n|)) ((N : ℤ) + |n|),
+      i ∉ Finset.Icc (-(N : ℤ)) N → stringTerm M mu (alpha : Dual K H) i = 0 := by
+    intro i _ hnot
+    have hfar : N ≤ i.natAbs := by
+      by_contra hlt
+      exact hnot (Finset.mem_Icc.mpr (by omega))
+    rw [stringTerm, LieSubmodule.finrank_eq_zero_of_eq_bot (hN i hfar), Nat.cast_zero, zero_mul]
+  rw [Finset.sum_subset hsub hcancel]
+  exact sum_Icc_stringTerm_eq_zero hn (by ring)
+
 /-- **The two directions of a root string differ by the summand at its foot.** For a root `α` of
 the Cartan subalgebra `H` and any linear form `μ` on `H`, the Freudenthal string sum in the
 direction `-α` exceeds the one in the direction `α` by `dim Mμ · ⟨μ, α⟩`.
@@ -289,10 +398,7 @@ theorem sum_weightString_neg_eq_add {alpha : Weight K H L} (halpha : alpha.IsNon
   by_cases hint : ∃ n : ℤ, mu (IsKilling.coroot alpha) = (n : K)
   case neg =>
     -- No rung of the string is a weight at all, so every term in sight vanishes.
-    have hbot : ∀ i : ℤ,
-        genWeightSpace M ((mu + i • (alpha : Dual K H) : Dual K H) : H → K) = ⊥ := fun i ↦ by
-      by_contra hne
-      exact hint (exists_int_apply_coroot_of_genWeightSpace_add_zsmul_ne_bot halpha hne)
+    have hbot := genWeightSpace_add_zsmul_eq_bot_of_not_int (M := M) halpha hint
     have hemptyPos : weightString M halphaD mu = ∅ := by
       rw [weightString_eq_empty_iff]
       intro j
@@ -310,59 +416,9 @@ theorem sum_weightString_neg_eq_add {alpha : Weight K H L} (halpha : alpha.IsNon
     simp
   case pos =>
     obtain ⟨n, hn⟩ := hint
-    -- The `α`-string sum, as a sum of `stringTerm` over an initial segment.
-    have hposCast : ∀ j ∈ Finset.range (N + 1),
-        stringTerm M mu (alpha : Dual K H) (j : ℤ) =
-          (finrank K (genWeightSpace M
-            ((mu + j • (alpha : Dual K H) : Dual K H) : H → K)) : K) *
-            invForm (mu + j • (alpha : Dual K H)) (alpha : Dual K H) :=
-      fun j _ ↦ stringTerm_natCast mu (alpha : Dual K H) j
-    have hpos : ∑ j ∈ Finset.range (N + 1), stringTerm M mu (alpha : Dual K H) (j : ℤ) =
-        (∑ j ∈ (weightString M halphaD mu).erase 0,
-          (finrank K (genWeightSpace M
-            ((mu + j • (alpha : Dual K H) : Dual K H) : H → K)) : K) *
-            invForm (mu + j • (alpha : Dual K H)) (alpha : Dual K H)) +
-          stringTerm M mu (alpha : Dual K H) 0 := by
-      rw [Finset.sum_congr rfl hposCast, sum_weightString_erase_eq_sum_range halphaD mu hbotPos,
-        ← Finset.add_sum_erase _ _ (Finset.mem_range.mpr (Nat.succ_pos N)), stringTerm_zero,
-        zero_smul, add_zero]
-      ring
-    -- and the `-α`-string sum, in the same form.
-    have hnegCast : ∀ j ∈ Finset.range (N + 1),
-        stringTerm M mu (alpha : Dual K H) (-(j : ℤ)) =
-          -((finrank K (genWeightSpace M
-            ((mu + j • (-(alpha : Dual K H)) : Dual K H) : H → K)) : K) *
-            invForm (mu + j • (-(alpha : Dual K H))) (-(alpha : Dual K H))) :=
-      fun j _ ↦ stringTerm_neg_natCast mu (alpha : Dual K H) j
-    have hneg : ∑ j ∈ Finset.range (N + 1), stringTerm M mu (alpha : Dual K H) (-(j : ℤ)) =
-        stringTerm M mu (alpha : Dual K H) 0 -
-          ∑ j ∈ (weightString M (neg_ne_zero.mpr halphaD) mu).erase 0,
-            (finrank K (genWeightSpace M
-              ((mu + j • (-(alpha : Dual K H)) : Dual K H) : H → K)) : K) *
-              invForm (mu + j • (-(alpha : Dual K H))) (-(alpha : Dual K H)) := by
-      rw [Finset.sum_congr rfl hnegCast, Finset.sum_neg_distrib,
-        sum_weightString_erase_eq_sum_range (neg_ne_zero.mpr halphaD) mu hbotNeg,
-        ← Finset.add_sum_erase _ _ (Finset.mem_range.mpr (Nat.succ_pos N)), stringTerm_zero,
-        zero_smul, add_zero, map_neg]
-      ring
-    -- The two-sided sum vanishes.
-    have hzero : ∑ i ∈ Finset.Icc (-(N : ℤ)) N, stringTerm M mu (alpha : Dual K H) i = 0 := by
-      have hsub : Finset.Icc (-(N : ℤ)) N ⊆ Finset.Icc (-n - ((N : ℤ) + |n|)) ((N : ℤ) + |n|) := by
-        intro i hi
-        rw [Finset.mem_Icc] at hi ⊢
-        rcases abs_cases n with ⟨h, hs⟩ | ⟨h, hs⟩ <;> omega
-      have hcancel : ∀ i ∈ Finset.Icc (-n - ((N : ℤ) + |n|)) ((N : ℤ) + |n|),
-          i ∉ Finset.Icc (-(N : ℤ)) N → stringTerm M mu (alpha : Dual K H) i = 0 := by
-        intro i _ hnot
-        have hfar : N ≤ i.natAbs := by
-          by_contra hlt
-          exact hnot (Finset.mem_Icc.mpr (by omega))
-        rw [stringTerm, LieSubmodule.finrank_eq_zero_of_eq_bot (hN i hfar), Nat.cast_zero,
-          zero_mul]
-      rw [Finset.sum_subset hsub hcancel]
-      exact sum_Icc_stringTerm_eq_zero hn (by ring)
     have hsplit := sum_Icc_eq_add_sum_range (stringTerm M mu (alpha : Dual K H)) N
-    rw [hzero, hpos, hneg, zero_add, stringTerm_zero] at hsplit
+    rw [sum_Icc_stringTerm_eq_zero_of_eq_bot hn hN, sum_range_stringTerm_natCast halphaD mu hbotPos,
+      sum_range_stringTerm_neg_natCast halphaD mu hbotNeg, zero_add, stringTerm_zero] at hsplit
     linear_combination hsplit
 
 /-! ### The recursion -/
@@ -387,11 +443,11 @@ highest weight vector of weight `λ`. Then for every linear form `μ` on the Car
 
 `(⟨λ + ρ, λ + ρ⟩ - ⟨μ + ρ, μ + ρ⟩) · dim Mμ = 2 ∑_{α > 0} ∑_{j ≥ 1} dim M_{μ + jα} · ⟨μ + jα, α⟩`,
 
-the inner sum running over the `α`-string above `μ` with the rung `μ` itself removed.
+the inner sum running over the `α`-string above `μ` with the rung `μ` itself removed; the double
+sum is `TauCeti.freudenthalRHS`.
 
 Together with `dim Mλ = 1` at the top weight this is the recursion for the multiplicities below
-`λ`. Running it as a downward computation of `dim Mμ` needs in addition that the scalar on the
-left is nonzero there, which is not proved here. -/
+`λ`; solved for `dim Mμ` it is `TauCeti.coeff_formalCharacter_eq_freudenthalRHS_div`. -/
 theorem freudenthal_multiplicity_formula {b : (IsKilling.rootSystem H).Base} {lam : Dual K H}
     {v : M} (hv : IsHighestWeightVector b lam v) (hgen : LieSubmodule.lieSpan K L {v} = ⊤)
     (mu : Dual K H) :
@@ -400,14 +456,9 @@ theorem freudenthal_multiplicity_formula {b : (IsKilling.rootSystem H).Base} {la
         invForm (mu + weylVector (IsKilling.rootSystem H) b)
           (mu + weylVector (IsKilling.rootSystem H) b)) *
         (finrank K (genWeightSpace M (mu : H → K)) : K) =
-      2 * ∑ i ∈ posRootsFinset (IsKilling.rootSystem H) b,
-        ∑ j ∈ (weightString M
-            (Weight.coe_toLinear_ne_zero_iff.mpr (H.isNonZero_coe_root i)) mu).erase 0,
-          (finrank K (genWeightSpace M
-            ((mu + j • ((i : Weight K H L) : Dual K H) : Dual K H) : H → K)) : K) *
-            invForm (mu + j • ((i : Weight K H L) : Dual K H))
-              ((i : Weight K H L) : Dual K H) := by
+      2 * freudenthalRHS M b mu := by
   classical
+  rw [freudenthalRHS_def]
   -- The Casimir operator acts on all of `M`, hence on `Mμ`, by the scalar of the highest weight.
   have hop : casimirGenWeightSpaceEnd M (mu : H → K) =
       casimirScalar b lam • (LinearMap.id : Module.End K (genWeightSpace M (mu : H → K))) := by
@@ -435,5 +486,45 @@ theorem freudenthal_multiplicity_formula {b : (IsKilling.rootSystem H).Base} {la
   rw [hfoot] at hsum
   simp only [casimirScalar_def] at hsum
   linear_combination hsum
+
+/-- **Freudenthal's recursion, solved for the multiplicity.** Let `M` be a finite-dimensional
+module generated by a highest weight vector of weight `λ`. At every linear form `μ ≠ λ` on the
+Cartan subalgebra,
+
+`dim Mμ = 2 ∑_{α > 0} ∑_{j ≥ 1} dim M_{μ + jα} · ⟨μ + jα, α⟩ / (⟨λ + ρ, λ + ρ⟩ - ⟨μ + ρ, μ + ρ⟩)`.
+
+The right-hand side only involves the multiplicities of the weights `μ + jα` with `j ≥ 1` lying
+strictly above `μ`, so, starting from `dim Mλ = 1`, it determines the multiplicities of `M` by
+downward recursion from the top weight. At a weight `μ ≠ λ` of `M` the denominator is nonzero by
+`TauCeti.casimirScalar_ne_casimirScalar_of_genWeightSpace_ne_bot_of_isHighestWeightVector`; at a
+form `μ` that is not a weight both sides vanish. The hypothesis `μ ≠ λ` cannot be dropped: at
+`μ = λ` the denominator vanishes while `dim Mλ = 1`. -/
+theorem coeff_formalCharacter_eq_freudenthalRHS_div {b : (IsKilling.rootSystem H).Base}
+    {lam : Dual K H} {v : M} (hv : IsHighestWeightVector b lam v)
+    (hgen : LieSubmodule.lieSpan K L {v} = ⊤) {mu : Dual K H} (hne : mu ≠ lam) :
+    ((formalCharacter K H M).coeff mu : K) =
+      2 * freudenthalRHS M b mu /
+        (invForm (lam + weylVector (IsKilling.rootSystem H) b)
+            (lam + weylVector (IsKilling.rootSystem H) b) -
+          invForm (mu + weylVector (IsKilling.rootSystem H) b)
+            (mu + weylVector (IsKilling.rootSystem H) b)) := by
+  have hfreud := freudenthal_multiplicity_formula hv hgen mu
+  rw [formalCharacter_coeff, Int.cast_natCast]
+  by_cases hmu : genWeightSpace M (mu : H → K) = ⊥
+  · -- off the weights, the recursion forces the double sum to vanish as well
+    rw [LieSubmodule.finrank_eq_zero_of_eq_bot hmu, Nat.cast_zero, mul_zero, eq_comm,
+      mul_eq_zero, or_iff_right two_ne_zero] at hfreud
+    rw [LieSubmodule.finrank_eq_zero_of_eq_bot hmu, Nat.cast_zero, hfreud, mul_zero, zero_div]
+  · -- at a weight below the top, the Casimir scalars of `λ` and `μ` differ
+    have hden : invForm (lam + weylVector (IsKilling.rootSystem H) b)
+          (lam + weylVector (IsKilling.rootSystem H) b) -
+        invForm (mu + weylVector (IsKilling.rootSystem H) b)
+          (mu + weylVector (IsKilling.rootSystem H) b) ≠ 0 := by
+      have hsep :=
+        casimirScalar_ne_casimirScalar_of_genWeightSpace_ne_bot_of_isHighestWeightVector hv hgen
+          hmu hne
+      rw [casimirScalar_def, casimirScalar_def] at hsep
+      exact sub_ne_zero.mpr fun h ↦ hsep (by rw [h])
+    rw [eq_div_iff hden, mul_comm, hfreud]
 
 end TauCeti

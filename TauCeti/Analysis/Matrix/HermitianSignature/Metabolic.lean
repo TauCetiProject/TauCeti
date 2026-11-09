@@ -75,7 +75,7 @@ theorem signature_eq_zero_of_fromBlocks_zero₁₁ {B D : Matrix ι ι 𝕜}
   have hcancel : Bᴴ * Xᴴ + (X * B + D) = 0 := by
     rw [hXB, hBX]
     ext i j
-    simp only [add_apply, smul_apply, smul_eq_mul, zero_apply]
+    simp only [Matrix.add_apply, Matrix.smul_apply, smul_eq_mul, Matrix.zero_apply]
     ring
   let P : Matrix (ι ⊕ ι) (ι ⊕ ι) 𝕜 := Matrix.fromBlocks 1 0 X 1
   have hP : IsUnit P.det := by simp [P]

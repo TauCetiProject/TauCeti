@@ -55,7 +55,7 @@ theorem posDef_gcd_divisors (N : ℕ) :
   have hfactor : Bᴴ * diagonal (fun i : N.divisors ↦ (Nat.totient i.val : 𝕜)) * B =
       (of fun i j : N.divisors ↦ (Nat.gcd i.val j.val : 𝕜)) := by
     ext i j
-    rw [mul_apply]
+    rw [Matrix.mul_apply]
     simp only [mul_diagonal, conjTranspose_apply]
     simp only [B, of_apply, apply_ite star, star_one, star_zero, ite_mul, one_mul, zero_mul,
       mul_ite, mul_one, mul_zero]

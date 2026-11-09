@@ -80,7 +80,7 @@ private noncomputable abbrev genericDeterminant (S : Type*) [CommRing S] :=
 
 /-- The standard scalar-extension equivalence for the polynomial coordinate ring of matrices. -/
 private noncomputable abbrev polynomialBaseChangeEquiv :
-    K ⊗[R] MatrixMonoid.CoordinateRing R n ≃ₐ[K] MatrixMonoid.CoordinateRing K n :=
+    K ⊗[R] MatrixMonoid.CoordinateRing R (Fin n) ≃ₐ[K] MatrixMonoid.CoordinateRing K (Fin n) :=
   MvPolynomial.algebraTensorAlgEquiv R K
 
 private theorem polynomialBaseChangeEquiv_one_tmul_genericDeterminant :
@@ -112,7 +112,7 @@ noncomputable def coordinateRingBaseChangeAlgEquiv :
 same polynomial with its coefficients extended to the new base. -/
 @[simp]
 theorem coordinateRingBaseChangeAlgEquiv_tmul_coordinateRingMap
-    (s : K) (p : MatrixMonoid.CoordinateRing R n) :
+    (s : K) (p : MatrixMonoid.CoordinateRing R (Fin n)) :
     coordinateRingBaseChangeAlgEquiv R K n (s ⊗ₜ[R] coordinateRingMap R n p) =
       s • coordinateRingMap K n (MvPolynomial.map (algebraMap R K) p) := by
   rw [coordinateRingBaseChangeAlgEquiv, AlgEquiv.trans_apply, coordinateRingMap_apply,
@@ -132,7 +132,7 @@ theorem coordinateRingBaseChangeAlgEquiv_one_tmul_X (i j : Fin n) :
 extended coefficients back to the corresponding pure tensor. -/
 @[simp]
 theorem coordinateRingBaseChangeAlgEquiv_symm_coordinateRingMap
-    (p : MatrixMonoid.CoordinateRing R n) :
+    (p : MatrixMonoid.CoordinateRing R (Fin n)) :
     (coordinateRingBaseChangeAlgEquiv R K n).symm
         (coordinateRingMap K n (MvPolynomial.map (algebraMap R K) p)) =
       1 ⊗ₜ[R] coordinateRingMap R n p := by
@@ -233,7 +233,7 @@ theorem coordinateHopfAlgebraBaseChangeBialgEquiv_tmul
 multiplies by the scalar in the new base. -/
 @[simp]
 theorem coordinateHopfAlgebraBaseChangeBialgEquiv_tmul_coordinateRingMap
-    (s : K) (p : MatrixMonoid.CoordinateRing R n) :
+    (s : K) (p : MatrixMonoid.CoordinateRing R (Fin n)) :
     coordinateHopfAlgebraBaseChangeBialgEquiv R K n
         (s ⊗ₜ[R] coordinateHopfAlgebraAlgEquiv R n (coordinateRingMap R n p)) =
       coordinateHopfAlgebraAlgEquiv K n
@@ -245,7 +245,7 @@ theorem coordinateHopfAlgebraBaseChangeBialgEquiv_tmul_coordinateRingMap
 coefficients back to the corresponding pure tensor. -/
 @[simp]
 theorem coordinateHopfAlgebraBaseChangeBialgEquiv_symm_coordinateRingMap
-    (p : MatrixMonoid.CoordinateRing R n) :
+    (p : MatrixMonoid.CoordinateRing R (Fin n)) :
     (coordinateHopfAlgebraBaseChangeBialgEquiv R K n).symm
         (coordinateHopfAlgebraAlgEquiv K n
           (coordinateRingMap K n (MvPolynomial.map (algebraMap R K) p))) =
@@ -327,7 +327,7 @@ underlying bialgebra equivalence. -/
 @[simp]
 theorem coordinateHopfAlgebraBaseChangeIso_hom_apply
     (R : Type u) (K : Type max u v) [CommRing R] [CommRing K] [Algebra R K]
-    (n : ℕ) (s : K) (p : MatrixMonoid.CoordinateRing R n) :
+    (n : ℕ) (s : K) (p : MatrixMonoid.CoordinateRing R (Fin n)) :
     (coordinateHopfAlgebraBaseChangeIso R K n).hom
         (s ⊗ₜ[R] coordinateHopfAlgebraAlgEquiv R n (coordinateRingMap R n p)) =
       coordinateHopfAlgebraAlgEquiv K n
@@ -398,7 +398,7 @@ to its scalar pure tensor. -/
 @[simp]
 theorem coordinateHopfAlgebraBaseChangeIso_inv_apply
     (R : Type u) (K : Type max u v) [CommRing R] [CommRing K] [Algebra R K]
-    (n : ℕ) (s : K) (p : MatrixMonoid.CoordinateRing R n) :
+    (n : ℕ) (s : K) (p : MatrixMonoid.CoordinateRing R (Fin n)) :
     s • (coordinateHopfAlgebraBaseChangeIso R K n).inv
         (coordinateHopfAlgebraAlgEquiv K n
           (coordinateRingMap K n (MvPolynomial.map (algebraMap R K) p))) =

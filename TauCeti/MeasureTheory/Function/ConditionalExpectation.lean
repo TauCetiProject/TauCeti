@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 -- Non-public: `eLpNorm_condExp_le_eLpNorm` (the Lᵖ contraction of conditional expectation) is
 -- used only inside proofs below, not in any public signature.
+import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 
 /-!
@@ -35,6 +36,12 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 - `lintegral_enorm_condExp_rpow_le`: Jensen's inequality for the conditional expectation as an
   inequality of `lintegral`s, `∫⁻ ‖μ[f | m]‖ₑ ^ p ≤ ∫⁻ ‖f‖ₑ ^ p` for `1 ≤ p`, with no
   integrability hypothesis.
+- `lintegral_ofReal_posPart_condExp_sub_le`: the positive part of `μ[f | m] - a` integrates to at
+  most `‖f‖₁ + ‖a‖ₑ · μ univ`, uniformly in the σ-algebra `m`.
+- `integral_mul_le_of_condExp_le`: if `Z ≥ 0` is a.e. `m`-measurable and the conditional mean of
+  `W` is at most `K`, then `∫ Z * W ≤ K * ∫ Z`.
+- `condExpLp`: for a finite measure and `1 ≤ p ≤ ∞`, conditional expectation as a contractive
+  continuous linear operator on `Lᵖ`.
 
 All are generic conditional-expectation facts (no exchangeability/tail/directing-measure
 hypotheses), each the bridge for a downstream construction.
@@ -42,7 +49,8 @@ hypotheses), each the bridge for a downstream construction.
 The first two are adapted from `cameronfreer/exchangeability` (`Probability/CondExp.lean` and
 `Probability/Martingale/Convergence.lean`, pin `e0532e59ceff23edab44dda9ab0655debbc9cc22`); the
 third from `Graphon/LevyDownward.lean` in `cameronfreer/graphon` (Apache 2.0) at commit
-`175911f9d2e053f2a33d966658dfce0e4ae2811d`.
+`175911f9d2e053f2a33d966658dfce0e4ae2811d`. `lintegral_ofReal_posPart_condExp_sub_le` is adapted
+from `cameronfreer/exchangeability` (`Probability/Martingale/Crossings/Bounds.lean`, same pin).
 -/
 
 public section
@@ -51,7 +59,7 @@ noncomputable section
 
 open MeasureTheory Filter
 
-open scoped Topology
+open scoped ENNReal Topology
 
 namespace TauCeti
 
@@ -269,6 +277,83 @@ theorem lintegral_enorm_condExp_rpow_le {Ω E : Type*} [NormedAddCommGroup E] [N
   have h := eLpNorm_condExp_le_eLpNorm (μ := μ) (m := m) f (p := .ofReal p) (by simpa using hp)
   simpa [eLpNorm_eq_lintegral_rpow_enorm_toReal, hp₀, hp₀.le, integrable_condExp.1, hf,
     ENNReal.rpow_le_rpow_iff] using h
+
+/-- **Positive-part bound for the conditional expectation**: for a real level `a`, the positive
+part of `μ[f | m] - a` integrates to at most `‖f‖₁ + ‖a‖ₑ · μ univ`. The bound is uniform in the
+σ-algebra `m`, which is what makes it useful along a whole filtration, e.g. to feed Doob's
+upcrossing inequality. No integrability or measurability hypothesis is needed. -/
+theorem lintegral_ofReal_posPart_condExp_sub_le {Ω : Type*} {m m₀ : MeasurableSpace Ω}
+    {μ : Measure Ω} (f : Ω → ℝ) (a : ℝ) :
+    ∫⁻ ω, ENNReal.ofReal ((μ[f | m] ω - a)⁺) ∂μ ≤ eLpNorm f 1 μ + ‖a‖ₑ * μ Set.univ := by
+  -- Pointwise `(x - a)⁺ ≤ |x - a|`, then the triangle inequality and the L¹ contraction.
+  calc ∫⁻ ω, ENNReal.ofReal ((μ[f | m] ω - a)⁺) ∂μ
+      ≤ ∫⁻ ω, (‖μ[f | m] ω‖ₑ + ‖a‖ₑ) ∂μ := lintegral_mono fun ω => by
+        grw [← enorm_sub_le, Real.enorm_eq_ofReal_abs]
+        exact ENNReal.ofReal_le_ofReal (sup_le (le_abs_self _) (abs_nonneg _))
+    _ = eLpNorm (μ[f | m]) 1 μ + ‖a‖ₑ * μ Set.univ := by
+        rw [lintegral_add_right _ measurable_const, lintegral_const,
+          eLpNorm_one_eq_lintegral_enorm integrable_condExp.aestronglyMeasurable]
+    _ ≤ eLpNorm f 1 μ + ‖a‖ₑ * μ Set.univ := by
+        grw [eLpNorm_condExp_le_eLpNorm f le_rfl]
+
+/-- Pulling out an a.e. `m`-measurable factor: if `Z ≥ 0` almost everywhere and the
+conditional mean of `W` is at most `K`, then `∫ Z * W ≤ K * ∫ Z`. -/
+theorem integral_mul_le_of_condExp_le {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    {m : MeasurableSpace Ω} (hm : m ≤ mΩ) [SigmaFinite (μ.trim hm)] {Z W : Ω → ℝ} {K : ℝ}
+    (hZ : AEStronglyMeasurable[m] Z μ) (hZ0 : 0 ≤ᵐ[μ] Z)
+    (hZint : Integrable Z μ) (hWint : Integrable W μ) (hZW : Integrable (fun ω ↦ Z ω * W ω) μ)
+    (hW : μ[W | m] ≤ᵐ[μ] fun _ ↦ K) :
+    ∫ ω, Z ω * W ω ∂μ ≤ K * ∫ ω, Z ω ∂μ := by
+  have hpull : μ[Z * W | m] =ᵐ[μ] Z * μ[W | m] :=
+    condExp_mul_of_aestronglyMeasurable_left hZ hZW hWint
+  have hint : Integrable (Z * μ[W | m]) μ := integrable_condExp.congr hpull
+  calc ∫ ω, Z ω * W ω ∂μ = ∫ ω, μ[Z * W | m] ω ∂μ := (integral_condExp hm).symm
+    _ = ∫ ω, (Z * μ[W | m]) ω ∂μ := integral_congr_ae hpull
+    _ ≤ ∫ ω, K * Z ω ∂μ := by
+      refine integral_mono_ae hint (hZint.const_mul K) ?_
+      filter_upwards [hW, hZ0] with ω hω hω0
+      simpa [mul_comm] using mul_le_mul_of_nonneg_left hω hω0
+    _ = K * ∫ ω, Z ω ∂μ := integral_const_mul _ _
+
+section Lp
+
+variable (𝕜 : Type*) [RCLike 𝕜] {Ω E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedSpace 𝕜 E] [CompleteSpace E] (m : MeasurableSpace Ω) {m₀ : MeasurableSpace Ω}
+  (p : ℝ≥0∞) [Fact (1 ≤ p)] (μ : Measure Ω) [IsFiniteMeasure μ]
+
+/-- **Conditional expectation on `Lᵖ`.** For a finite measure `μ` and `1 ≤ p ≤ ∞`, conditional
+expectation with respect to `m` is a continuous linear operator on `Lᵖ(μ)`. Its values are a.e.
+the conditional expectations (`condExpLp_ae_eq`), and it is a contraction by Jensen's inequality
+(`norm_condExpLp_le`). -/
+noncomputable def condExpLp : Lp E p μ →L[𝕜] Lp E p μ :=
+  LinearMap.mkContinuous
+    { toFun f := ((Lp.memLp f).condExp (m := m) Fact.out).toLp _
+      map_add' f g := by
+        rw [← MemLp.toLp_add]
+        refine MemLp.toLp_congr _ _ ((condExp_congr_ae (Lp.coeFn_add f g)).trans ?_)
+        exact condExp_add ((Lp.memLp f).integrable Fact.out)
+          ((Lp.memLp g).integrable Fact.out) m
+      map_smul' c f := by
+        rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
+        exact MemLp.toLp_congr _ _
+          ((condExp_congr_ae (Lp.coeFn_smul c f)).trans (condExp_smul c _ m)) }
+    1 fun f => by
+      rw [one_mul, LinearMap.coe_mk, AddHom.coe_mk, Lp.norm_toLp, Lp.norm_def]
+      exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top f)
+        (eLpNorm_condExp_le_eLpNorm _ Fact.out)
+
+variable {𝕜 m p μ}
+
+/-- The values of `condExpLp` are a.e. the conditional expectations. -/
+theorem condExpLp_ae_eq (f : Lp E p μ) : condExpLp 𝕜 m p μ f =ᵐ[μ] μ[f | m] :=
+  MemLp.coeFn_toLp ((Lp.memLp f).condExp Fact.out)
+
+variable (𝕜 m p μ) in
+/-- Conditional expectation is a contraction on `Lᵖ`. -/
+theorem norm_condExpLp_le : ‖(condExpLp 𝕜 m p μ : Lp E p μ →L[𝕜] Lp E p μ)‖ ≤ 1 :=
+  LinearMap.mkContinuous_norm_le _ zero_le_one _
+
+end Lp
 
 end MeasureTheory
 

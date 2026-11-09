@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Trace
 public import TauCeti.LinearAlgebra.Complex.Conjugation
+public import TauCeti.Topology.Algebra.Module.Trace
 
 /-!
 # Trace-free self-adjoint endomorphisms
@@ -38,8 +39,12 @@ pairing `tr (T* U) = tr (T U)` is real.
 ## Main results
 
 * `LinearMap.trace_adjoint`, `ContinuousLinearMap.trace_adjoint`: `tr T* = conj (tr T)`.
+* `LinearMap.trace_eq_zero_of_inner_left_eq_neg`: a skew-adjoint endomorphism of a real inner
+  product space has trace zero.
 * `IsSelfAdjoint.conj_trace`, `IsSelfAdjoint.conj_trace_mul`: the trace of a self-adjoint
   endomorphism, and the trace pairing `tr (T U)` of two of them, are real.
+* `ContinuousLinearMap.traceCLM_symmPart_comp`: over `ℝ`, only the symmetric part of `A` enters
+  the trace pairing `tr (A M)` with a self-adjoint `M`.
 * `InnerProductSpace.trace_rankOne_mul`, `InnerProductSpace.trace_mul_rankOne`: the trace pairing
   of `T` with a rank-one endomorphism, `tr (x y* T) = tr (T x y*) = ⟪y, T x⟫`.
 * `TauCeti.trace_traceFreePart`, `TauCeti.traceFreePart_of_trace_eq_zero`,
@@ -68,6 +73,18 @@ theorem trace_adjoint (T : E →ₗ[𝕜] E) : trace 𝕜 E T.adjoint = conj (tr
   let b := stdOrthonormalBasis 𝕜 E
   simp [trace_eq_sum_inner _ b, adjoint_inner_right, map_sum]
 
+/-- A skew-adjoint endomorphism of a finite-dimensional real inner product space, one with
+`⟪A u, w⟫ = -⟪u, A w⟫`, has trace zero. -/
+theorem trace_eq_zero_of_inner_left_eq_neg {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] {A : V →ₗ[ℝ] V}
+    (hA : ∀ u w, ⟪A u, w⟫_ℝ = -⟪u, A w⟫_ℝ) : trace ℝ V A = 0 := by
+  let b := stdOrthonormalBasis ℝ V
+  rw [trace_eq_sum_inner A b]
+  refine Finset.sum_eq_zero fun i _ ↦ ?_
+  have h := hA (b i) (b i)
+  rw [real_inner_comm] at h
+  linarith
+
 end LinearMap
 
 namespace ContinuousLinearMap
@@ -93,6 +110,19 @@ theorem _root_.IsSelfAdjoint.conj_trace_mul [CompleteSpace E] {T U : E →L[𝕜
     conj (LinearMap.trace 𝕜 E (T * U)) = LinearMap.trace 𝕜 E (T * U) := by
   rw [← toLinearMap_mul, ← trace_adjoint, ← star_eq_adjoint, star_mul, hT.star_eq, hU.star_eq]
   simpa using LinearMap.trace_mul_comm 𝕜 (U : E →ₗ[𝕜] E) T
+
+open TauCeti in
+/-- Only the symmetric part `(A + A†) / 2` of `A` enters the trace pairing `tr (A M)` with a
+self-adjoint endomorphism `M` of a real inner product space. -/
+theorem traceCLM_symmPart_comp {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [FiniteDimensional ℝ V] (A M : V →L[ℝ] V) (hM : M.adjoint = M) :
+    traceCLM ℝ V (((2⁻¹ : ℝ) • (A + A.adjoint)) ∘L M) = traceCLM ℝ V (A ∘L M) := by
+  -- `tr (A† M) = tr ((M A)†) = tr (M A) = tr (A M)`
+  have h : traceCLM ℝ V (A.adjoint ∘L M) = traceCLM ℝ V (A ∘L M) := by
+    conv_lhs => rw [← hM, ← adjoint_comp]
+    rw [traceCLM_apply, trace_adjoint, RCLike.conj_to_real, ← traceCLM_apply, traceCLM_comp_comm]
+  rw [smul_comp, add_comp, map_smul, map_add, h, smul_eq_mul]
+  ring
 
 end ContinuousLinearMap
 

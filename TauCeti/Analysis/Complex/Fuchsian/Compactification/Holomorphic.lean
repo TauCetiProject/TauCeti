@@ -76,8 +76,8 @@ theorem mdifferentiable_compactifiedQuotientMap [DiscreteTopology Γ] (h : Δ �
       | h z =>
           obtain ⟨ε, hε, hΔ, hΓ⟩ :=
             (eventually_mem_nhdsWithin.and
-              ((eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Δ z).and
-                (eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Γ z))).exists
+              ((eventually_isOpenEmbedding_orbitRelQuotientMap_stabilizerBall Δ z).and
+                (eventually_isOpenEmbedding_orbitRelQuotientMap_stabilizerBall Γ z))).exists
           let e := stabilizerBallQuotientChart hε hΔ
           let e' := stabilizerBallQuotientChart hε hΓ
           let c := ofQuotientChart e

@@ -69,12 +69,12 @@ theorem lie_mem_ker_inf_range_pow_add {e x y : L} {i j : ℕ}
   have hpow {c : L} {n : ℕ} (hc : ⁅e, (ad K L e ^ n) c⁆ = 0) {m : ℕ} (hm : n < m) :
       (ad K L e ^ m) c = 0 :=
     Module.End.pow_map_zero_of_le (Nat.succ_le_of_lt hm)
-      (by simpa only [pow_succ', Module.End.mul_apply, ad_apply] using hc)
+      (by simpa only [pow_succ', mul_apply_eq_comp, ad_apply] using hc)
   have hleib : (ad K L e ^ (i + j)) ⁅a, b⁆ =
       ((i + j).choose i : K) • ⁅(ad K L e ^ i) a, (ad K L e ^ j) b⁆ := by
     have hD : ⇑(LieDerivation.ad K L e) = ⇑(ad K L e) := funext fun c => by simp
     have := (LieDerivation.ad K L e).iterate_apply_lie (i + j) a b
-    simp only [hD, ← Module.End.pow_apply] at this
+    simp only [hD, ← pow_apply_eq_iterate] at this
     rw [this, Finset.sum_eq_single_of_mem (i, j) (Finset.mem_antidiagonal.2 rfl),
       Nat.cast_smul_eq_nsmul]
     rintro ⟨p, q⟩ hpq hne

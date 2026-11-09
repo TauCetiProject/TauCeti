@@ -32,6 +32,8 @@ reflecting root. The construction is independent of any choice of an enumeration
 * `TauCeti.SplitTorus.coordinateRoot` and `coordinateCoroot`: the vectors `e_i - e_j`, defined
   for arbitrary pairs of coordinates.
 * `TauCeti.SplitTorus.coordinateRootDatum`: the resulting reduced root datum.
+* `TauCeti.SplitTorus.coordinateRootDatum_coroot'_apply`: the coroot indexed by `(i, j)` evaluates
+  a character `x` to `x i - x j`.
 * `TauCeti.SplitTorus.coordinateRootDatum_pairing_apply`: the closed formula for its Cartan
   integers.
 * `TauCeti.SplitTorus.coordinateRootDatum_reflection_apply` and
@@ -335,6 +337,20 @@ theorem coordinateRootDatum_pairing_comm [Finite σ] (p q : CoordinateRootIndex 
 instance isReduced_coordinateRootDatum [Finite σ] : (coordinateRootDatum σ).IsReduced :=
   RootPairing.isReduced_of_pairing_comm _ coordinateRootDatum_pairing_comm
 
+/-- The coroot indexed by `p = (i, j)` evaluates a character `x` to the difference `x i - x j`
+of two of its coordinates.
+
+Not `@[simp]`: `RootPairing.coroot'` is an `abbrev`, so `simp` would unfold the left-hand side
+before this lemma could fire. -/
+theorem coordinateRootDatum_coroot'_apply [Finite σ] (p : CoordinateRootIndex σ) (x : σ →₀ ℤ) :
+    (coordinateRootDatum σ).coroot' p x = x p.1.1 - x p.1.2 := by
+  classical
+  let _ := Fintype.ofFinite σ
+  rw [RootPairing.coroot', LinearMap.flip_apply, coordinateRootDatum_coroot,
+    coordinateRootDatum_toLinearMap, dotPairing_apply,
+    x.sum_fintype (fun i c ↦ c * coordinateCoroot p.1.1 p.1.2 i) (by simp)]
+  simp [coordinateCoroot_apply, mul_sub, mul_ite]
+
 open Classical in
 /-- Reflection in the coordinate root indexed by `p` precomposes an arbitrary character with the
 transposition of the two coordinates of `p`. -/
@@ -342,18 +358,8 @@ transposition of the two coordinates of `p`. -/
 theorem coordinateRootDatum_reflection_apply [Finite σ] (p : CoordinateRootIndex σ)
     (x : σ →₀ ℤ) (a : σ) :
     (coordinateRootDatum σ).reflection p x a = x ((Equiv.swap p.1.1 p.1.2) a) := by
-  rw [RootPairing.reflection_apply, coordinateRootDatum_root]
-  simp only [RootPairing.coroot', LinearMap.flip_apply, coordinateRootDatum_coroot,
-    coordinateRootDatum_toLinearMap, Finsupp.sub_apply, Finsupp.smul_apply, smul_eq_mul,
-    coordinateRoot_apply]
-  have hpairing : dotPairing x (coordinateCoroot p.1.1 p.1.2) =
-      x p.1.1 - x p.1.2 := by
-    classical
-    let _ := Fintype.ofFinite σ
-    rw [dotPairing_apply,
-      x.sum_fintype (fun i c ↦ c * coordinateCoroot p.1.1 p.1.2 i) (by simp)]
-    simp [coordinateCoroot_apply, mul_sub, mul_ite]
-  rw [hpairing]
+  rw [RootPairing.reflection_apply, coordinateRootDatum_coroot'_apply, coordinateRootDatum_root]
+  simp only [Finsupp.sub_apply, Finsupp.smul_apply, smul_eq_mul, coordinateRoot_apply]
   simpa only [smul_eq_mul, mul_comm] using
     (apply_swap_eq (fun b : σ ↦ x b) p.1.1 p.1.2 a).symm
 

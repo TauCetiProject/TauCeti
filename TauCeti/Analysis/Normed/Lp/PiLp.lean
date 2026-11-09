@@ -10,11 +10,11 @@ public import Mathlib.Analysis.Normed.Lp.PiLp
 /-!
 # Comparisons of finite product norms and distances
 
-The finite `Lᵖ` norm respects coordinatewise bounds on norms, including when the two
-families have different target spaces. This compares scalar evaluations of a vector
-family with the vector family's `Lᵖ` norm. For constant fibres we deduce the bound for
-the image of a family under a map of bounded growth, the norm of a family of multiples
-of one vector, and the invariance of the norm under reindexing.
+The finite `Lᵖ` norm is nonnegative for every exponent and respects coordinatewise bounds on
+norms, including when the two families have different target spaces. This compares scalar
+evaluations of a vector family with the vector family's `Lᵖ` norm. For constant fibres we
+deduce the bound for the image of a family under a map of bounded growth, the norm of a family
+of multiples of one vector, and the invariance of the norm under reindexing.
 
 For `p ≥ 1`, the `Lᵖ` distance dominates the sup distance. In the other direction, the `L²`
 distance is at most the square root of the number of coordinates times the sup distance.
@@ -22,6 +22,13 @@ These estimates give inclusions between balls in the two metrics. The correspond
 Cauchy–Schwarz estimate bounds the sum of coordinate norms by `√(card ι)` times the `L²` norm.
 The coordinate spaces may be different seminormed groups, or pseudometric spaces for the
 distance comparisons.
+
+Extending a vector of `Lᵖ(ι, E)` by zero along an embedding `f : ι ↪ ι'` places its coordinate `i`
+in the slot `f i`, and the vectors so obtained are those whose coordinates outside the range of
+`f` vanish. In particular, extending a vector of `Lᵖ(Fin k, E)` by zero onto the first `k`
+coordinates of `Lᵖ(Fin n, E)`, for `k ≤ n`, places its coordinates in the slots `j < k`; the
+vectors so obtained are those whose coordinates `j ≥ k` vanish.
+The finite sum against a zero-extended vector reduces to the sum over its original coordinates.
 
 ## Source
 
@@ -59,6 +66,17 @@ theorem norm_mono [∀ i, SeminormedAddGroup (E i)] [∀ i, Norm (F i)]
     · exact Finset.sum_nonneg fun _ _ ↦ Real.rpow_nonneg (norm_nonneg _) _
     · exact h _
 
+/-- The finite `Lᵖ` norm is nonnegative for every exponent, including `p < 1`, where `PiLp p E`
+carries a norm but no seminormed group structure. -/
+protected theorem norm_nonneg' [∀ i, SeminormedAddGroup (E i)] (x : PiLp p E) : 0 ≤ ‖x‖ := by
+  rcases p.trichotomy with rfl | rfl | hp
+  · rw [norm_eq_card]
+    positivity
+  · rw [norm_eq_ciSup]
+    exact Real.iSup_nonneg fun i ↦ norm_nonneg _
+  · rw [norm_eq_sum hp]
+    exact Real.rpow_nonneg (Finset.sum_nonneg fun _ _ ↦ Real.rpow_nonneg (norm_nonneg _) _) _
+
 variable [∀ i, SeminormedAddCommGroup (E i)]
 
 /-- Taking coordinate norms preserves the finite `Lᵖ` norm. -/
@@ -72,6 +90,18 @@ theorem sum_norm_le_sqrt_card_mul_norm (x : PiLp 2 E) :
     ∑ i, ‖x i‖ ≤ Real.sqrt (Fintype.card ι) * ‖x‖ := by
   simpa [PiLp.norm_eq_of_L2] using
     Real.sum_mul_le_sqrt_mul_sqrt Finset.univ (fun _ : ι ↦ 1) (fun i ↦ ‖x i‖)
+
+/-- Reindexing a finite family along an equivalence preserves its `Lᵖ` norm, for every
+exponent. -/
+theorem norm_toLp_comp_equiv {E : Type*} [SeminormedAddCommGroup E] {κ : Type*} [Fintype κ]
+    (e : κ ≃ ι) (x : ι → E) : ‖WithLp.toLp p (x ∘ e)‖ = ‖WithLp.toLp p x‖ := by
+  rcases p.trichotomy with rfl | rfl | hp
+  · simp only [norm_eq_card, Set.toFinite_toFinset, Set.toFinset_card]
+    exact congrArg Nat.cast (Fintype.card_congr (e.subtypeEquiv fun _ ↦ Iff.rfl))
+  · simp only [norm_eq_ciSup]
+    exact e.iSup_congr fun _ ↦ rfl
+  · simp only [norm_eq_sum hp]
+    exact congrArg (· ^ _) (Fintype.sum_equiv e _ _ fun _ ↦ rfl)
 
 section Constant
 
@@ -97,15 +127,6 @@ theorem norm_toLp_smul_const {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜
         (norm_mono fun i ↦ by simp [norm_smul, mul_comm])
     _ = ‖WithLp.toLp p a‖ * ‖y‖ := by
       rw [norm_smul, _root_.norm_norm, norm_norm (WithLp.toLp p a), mul_comm]
-
-/-- Reindexing a finite family along an equivalence preserves its `Lᵖ` norm. -/
-theorem norm_toLp_comp_equiv {κ : Type*} [Fintype κ] (e : κ ≃ ι) (x : ι → E) :
-    ‖WithLp.toLp p (x ∘ e)‖ = ‖WithLp.toLp p x‖ := by
-  have he : LinearIsometryEquiv.piLpCongrLeft p ℤ E e.symm (WithLp.toLp p x) =
-      WithLp.toLp p (x ∘ e) := by
-    ext i
-    simp [Equiv.piCongrLeft']
-  rw [← he, LinearIsometryEquiv.norm_map]
 
 end Constant
 
@@ -155,3 +176,68 @@ theorem preimage_ofLp_ball_subset_ball [Nonempty ι] (x : PiLp 2 β) (r : ℝ) :
 end PseudoMetricSpace
 
 end PiLp
+
+namespace LinearIsometry
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {𝕜 E : Type*} [Semiring 𝕜] [SeminormedAddCommGroup E]
+  [Module 𝕜 E] {ι ι' : Type*} [Fintype ι] [Fintype ι'] {k n : ℕ}
+
+/-- Extending a vector of `Lᵖ(ι, E)` by zero along an embedding `f : ι ↪ ι'` puts its coordinate
+`i` in the slot `f i`. -/
+theorem piLpExtendByZero_apply_apply (f : ι ↪ ι') (v : PiLp p fun _ : ι ↦ E) (i : ι) :
+    piLpExtendByZero p 𝕜 E f v (f i) = v i := by
+  simpa using f.injective.extend_apply (fun i ↦ v i) 0 i
+
+/-- The vectors of `Lᵖ(ι', E)` obtained by extending a vector of `Lᵖ(ι, E)` by zero along an
+embedding `f : ι ↪ ι'` are those whose coordinates outside the range of `f` vanish. -/
+theorem range_piLpExtendByZero (f : ι ↪ ι') :
+    Set.range (piLpExtendByZero p 𝕜 E f) =
+      {y : PiLp p fun _ : ι' ↦ E | ∀ j ∉ Set.range f, y j = 0} := by
+  refine Set.ext fun y ↦ ⟨?_, fun hy ↦ ?_⟩
+  · rintro ⟨w, rfl⟩ j hj
+    exact piLpExtendByZero_apply_eq_zero hj w
+  · refine ⟨WithLp.toLp p fun i ↦ y (f i), PiLp.ext fun j ↦ ?_⟩
+    by_cases hj : j ∈ Set.range f
+    · obtain ⟨i, rfl⟩ := hj
+      rw [piLpExtendByZero_apply_apply, PiLp.toLp_apply]
+    · rw [piLpExtendByZero_apply_eq_zero hj, hy j hj]
+
+/-- Extending a vector of `Lᵖ(Fin k, E)` by zero onto the first `k` coordinates of
+`Lᵖ(Fin n, E)` puts its coordinates in the slots `j < k` and zeros elsewhere. -/
+theorem piLpExtendByZero_castLEEmb_apply (hk : k ≤ n) (w : PiLp p fun _ : Fin k ↦ E)
+    (j : Fin n) :
+    piLpExtendByZero p 𝕜 E (Fin.castLEEmb hk) w j = if h : j.val < k then w ⟨j, h⟩ else 0 := by
+  split_ifs with h
+  · have hj : Fin.castLEEmb hk ⟨j, h⟩ = j := Fin.ext rfl
+    conv_lhs => rw [← hj]
+    exact piLpExtendByZero_apply_apply _ w _
+  · exact piLpExtendByZero_apply_eq_zero (by simpa [Fin.range_castLE] using h) w
+
+/-- The vectors of `Lᵖ(Fin n, E)` obtained by extending a vector of `Lᵖ(Fin k, E)` by zero are
+those whose coordinates `j ≥ k` vanish. -/
+theorem range_piLpExtendByZero_castLEEmb (hk : k ≤ n) :
+    Set.range (piLpExtendByZero p 𝕜 E (Fin.castLEEmb hk)) =
+      {y : PiLp p fun _ : Fin n ↦ E | ∀ j : Fin n, k ≤ j.val → y j = 0} := by
+  simp [range_piLpExtendByZero, Fin.range_castLE]
+
+end LinearIsometry
+
+namespace LinearIsometry
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {𝕜 : Type*} [NormedRing 𝕜]
+  {ι ι' : Type*} [Fintype ι] [Fintype ι']
+
+/-- A finite sum paired with a vector extended by zero along an embedding reduces to the sum over
+the original coordinates. -/
+theorem sum_mul_piLpExtendByZero (f : ι ↪ ι') (x : PiLp p fun _ : ι ↦ 𝕜) (h : ι' → 𝕜) :
+    ∑ b, h b * piLpExtendByZero p 𝕜 𝕜 f x b = ∑ a, h (f a) * x a := by
+  rw [← Finset.sum_extend_zero_of_injective (t := Finset.univ) (fun a ↦ h (f a) * x a)
+    f.injective fun _ => Finset.mem_univ _]
+  refine Finset.sum_congr rfl fun b _ => ?_
+  by_cases hb : b ∈ Set.range f
+  · obtain ⟨a, rfl⟩ := hb
+    simp [f.injective.extend_apply]
+  · simp [Function.extend_apply' _ _ _ (by simpa using hb),
+      piLpExtendByZero_apply_eq_zero hb]
+
+end LinearIsometry

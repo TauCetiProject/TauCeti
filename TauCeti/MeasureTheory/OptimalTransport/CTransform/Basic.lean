@@ -333,6 +333,15 @@ theorem uniformContinuous_iInf_sub [PseudoMetricSpace Y] [Nonempty X]
   rw [Real.dist_eq, abs_lt]
   constructor <;> linarith
 
+/-- The infimal `c`-transform of a real potential is uniformly continuous when the cost is. -/
+theorem uniformContinuous_iInf_sub_of_uniformContinuous [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] [Nonempty X] {c : X × Y → ℝ} {φ : X → ℝ} (hc : UniformContinuous c)
+    (hbdd : ∀ y, BddBelow (Set.range fun x ↦ c (x, y) - φ x)) :
+    UniformContinuous fun y ↦ ⨅ x, (c (x, y) - φ x) :=
+  uniformContinuous_iInf_sub (fun ε hε ↦ by
+    obtain ⟨δ, hδ, h⟩ := Metric.uniformContinuous_iff.1 hc ε hε
+    exact ⟨δ, hδ, fun x y y' hy ↦ h (by simpa [Prod.dist_eq] using hy)⟩) hbdd
+
 /-- **Regularity of conjugate potentials.** Let `c` be a bounded uniformly continuous cost on a
 product of nonempty pseudometric spaces, and let `φ`, `ψ` be real potentials each of which is the
 real infimal transform of the other: `φ x = ⨅ y, (c (x, y) - ψ y)` and
@@ -371,18 +380,12 @@ theorem exists_boundedContinuousFunction_of_eq_iInf_sub [PseudoMetricSpace X]
   have hψge (y : Y) : m - max (M - ψ y₀) 0 ≤ ψ y := by
     rw [hψ y]
     exact le_ciInf fun x ↦ by linarith [hcm (x, y), hφle x]
-  -- The sections of a uniformly continuous cost share a uniform modulus of continuity.
-  have hmod := Metric.uniformContinuous_iff.1 hc
   have hψu : UniformContinuous ψ := by
-    have h := uniformContinuous_iInf_sub (c := c) (φ := φ) (fun ε hε ↦ by
-      obtain ⟨δ, hδ, h⟩ := hmod ε hε
-      exact ⟨δ, hδ, fun x y y' hy ↦ h (by simpa [Prod.dist_eq] using hy)⟩) hbψ
+    have h := uniformContinuous_iInf_sub_of_uniformContinuous (φ := φ) hc hbψ
     rwa [← funext hψ] at h
   have hφu : UniformContinuous φ := by
-    have h := uniformContinuous_iInf_sub (c := fun z : Y × X ↦ c (z.2, z.1)) (φ := ψ)
-      (fun ε hε ↦ by
-        obtain ⟨δ, hδ, h⟩ := hmod ε hε
-        exact ⟨δ, hδ, fun y x x' hx ↦ h (by simpa [Prod.dist_eq] using hx)⟩) hbφ
+    have h := uniformContinuous_iInf_sub_of_uniformContinuous (c := fun z : Y × X ↦ c (z.2, z.1))
+      (φ := ψ) (hc.comp uniformContinuous_swap) hbφ
     rwa [← funext hφ] at h
   set C := |m| + max (M - φ x₀) 0 + max (M - ψ y₀) 0
   exact ⟨.ofNormedAddCommGroup φ hφu.continuous C fun x ↦ abs_le.2
@@ -761,22 +764,13 @@ section Bounded
 
 variable {c : X × Y → ℝ} {φ : X → EReal}
 
-/-- **`c`-concave potentials of a bounded cost are bounded and real.** If the cost is bounded
-and the `c`-concave potential `φ` takes a finite value somewhere, then `φ` and its
-`c`-transform take only finite values, given by two bounded real potentials `f` and `g`, and
-each of these is the real infimal transform of the other. The pair `(f, g)` is therefore a
-bounded real dual pair with the same contact set as `(φ, φᶜ)`. -/
-theorem IsCConcave.exists_real_conjugate (hφ : IsCConcave c φ)
-    (hcb : BddBelow (Set.range c)) (hca : BddAbove (Set.range c))
-    (hfin : ∃ (x : X) (a : ℝ), φ x = a) :
-    ∃ (f : X → ℝ) (g : Y → ℝ), (∀ x, φ x = f x) ∧ (∀ y, cTransform c φ y = g y) ∧
-      Bornology.IsBounded (Set.range f) ∧ Bornology.IsBounded (Set.range g) ∧
-      (∀ x, f x = ⨅ y, (c (x, y) - g y)) ∧ ∀ y, g y = ⨅ x, (c (x, y) - f x) := by
-  obtain ⟨m, hm⟩ := hcb
-  obtain ⟨M, hM⟩ := hca
-  have hm' : ∀ z, m ≤ c z := fun z ↦ hm (Set.mem_range_self z)
-  have hM' : ∀ z, c z ≤ M := fun z ↦ hM (Set.mem_range_self z)
-  obtain ⟨x₀, a, ha⟩ := hfin
+/-- **Upper bounds for `c`-concave potentials of a bounded-above cost.** If `φ` is `c`-concave and
+takes a finite value `a` somewhere, then its `c`-transform is bounded above by `M - a`, it is finite
+at some point `y₀`, and `φ` is bounded above by `M - b` where `b` is that finite value. -/
+private theorem IsCConcave.exists_transform_eq_coe_and_le (hφ : IsCConcave c φ) {M : ℝ}
+    (hM' : ∀ z, c z ≤ M) {x₀ : X} {a : ℝ} (ha : φ x₀ = a) :
+    ∃ (y₀ : Y) (b : ℝ), cTransform c φ y₀ = b ∧
+      (∀ y, cTransform c φ y ≤ ((M - a : ℝ) : EReal)) ∧ ∀ x, φ x ≤ ((M - b : ℝ) : EReal) := by
   set ψ := cTransform c φ
   have hφψ : cTransformSymm c ψ = φ := hφ.cTransformSymm_cTransform
   -- The finite value of `φ` bounds its transform from above.
@@ -795,14 +789,35 @@ theorem IsCConcave.exists_real_conjugate (hφ : IsCConcave c φ)
   obtain ⟨b, hb⟩ : ∃ b : ℝ, ψ y₀ = b :=
     ⟨(ψ y₀).toReal, (EReal.coe_toReal (ne_top_of_le_ne_top (EReal.coe_ne_top _) (hψ_le y₀))
       hy₀).symm⟩
-  have : Nonempty X := ⟨x₀⟩
-  have : Nonempty Y := ⟨y₀⟩
   -- That finite value of the transform bounds `φ` from above.
   have hφ_le (x : X) : φ x ≤ ((M - b : ℝ) : EReal) := by
     rw [← hφψ]
     refine (cTransformSymm_le c ψ x y₀).trans ?_
     rw [hb, ← EReal.coe_sub, EReal.coe_le_coe_iff]
     linarith [hM' (x, y₀)]
+  exact ⟨y₀, b, hb, hψ_le, hφ_le⟩
+
+/-- **`c`-concave potentials of a bounded cost are bounded and real.** If the cost is bounded
+and the `c`-concave potential `φ` takes a finite value somewhere, then `φ` and its
+`c`-transform take only finite values, given by two bounded real potentials `f` and `g`, and
+each of these is the real infimal transform of the other. The pair `(f, g)` is therefore a
+bounded real dual pair with the same contact set as `(φ, φᶜ)`. -/
+theorem IsCConcave.exists_real_conjugate (hφ : IsCConcave c φ)
+    (hcb : BddBelow (Set.range c)) (hca : BddAbove (Set.range c))
+    (hfin : ∃ (x : X) (a : ℝ), φ x = a) :
+    ∃ (f : X → ℝ) (g : Y → ℝ), (∀ x, φ x = f x) ∧ (∀ y, cTransform c φ y = g y) ∧
+      Bornology.IsBounded (Set.range f) ∧ Bornology.IsBounded (Set.range g) ∧
+      (∀ x, f x = ⨅ y, (c (x, y) - g y)) ∧ ∀ y, g y = ⨅ x, (c (x, y) - f x) := by
+  obtain ⟨m, hm⟩ := hcb
+  obtain ⟨M, hM⟩ := hca
+  have hm' : ∀ z, m ≤ c z := fun z ↦ hm (Set.mem_range_self z)
+  have hM' : ∀ z, c z ≤ M := fun z ↦ hM (Set.mem_range_self z)
+  obtain ⟨x₀, a, ha⟩ := hfin
+  set ψ := cTransform c φ
+  have hφψ : cTransformSymm c ψ = φ := hφ.cTransformSymm_cTransform
+  obtain ⟨y₀, b, hb, hψ_le, hφ_le⟩ := hφ.exists_transform_eq_coe_and_le hM' ha
+  have : Nonempty X := ⟨x₀⟩
+  have : Nonempty Y := ⟨y₀⟩
   -- Each transform is an infimum of the cost minus a potential bounded above, hence bounded
   -- below.
   have hφ_ge (x : X) : ((m - (M - a) : ℝ) : EReal) ≤ φ x := by

@@ -32,9 +32,6 @@ open Polynomial
 
 namespace TauCeti
 
-local instance : RingHomIsometric (Int.castRingHom ℂ) where
-  norm_map := by simp [Int.norm_eq_abs]
-
 variable {F : Type*} [Field F] [CharZero F]
 
 /-- The rational minimal polynomial has the same degree as the primitive minimal polynomial

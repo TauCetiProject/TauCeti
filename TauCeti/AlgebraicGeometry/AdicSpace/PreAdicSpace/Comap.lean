@@ -549,6 +549,22 @@ theorem presentationLimitPreAdicSpaceComap_toHom
       presentationLimitPresheafedSpaceComap φ hφ hplus hAplus hBplus hP hP' hsheaf := by
   rw [presentationLimitPreAdicSpaceComap]
 
+/-- On points, the morphism `Spa(φ)` of adic spectra induced by `φ` is pullback of valuations
+along `φ`. -/
+theorem presentationLimitPreAdicSpaceComap_base_val
+    (φ : A →+* B) (hφ : Continuous φ)
+    (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b)
+    (hP : P.ringOfDefinition ≤ Aplus) (hP' : P'.ringOfDefinition ≤ Bplus)
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
+      (presentationLimitPresheaf P' Bplus))
+    (x : presentationLimitPreAdicSpace P' Bplus hBplus hP') :
+    ((presentationLimitPreAdicSpaceComap φ hφ hplus hAplus hBplus hP hP' hsheaf).base x :
+      spa Aplus).1 = comap φ (x : spa Bplus).1 := by
+  rw [presentationLimitPreAdicSpaceComap_toHom, presentationLimitPresheafedSpaceComap_base]
+  exact spaComap_val φ hφ Aplus Bplus hplus x
+
 /-- **The stalk maps on rational germs.** Let `R(p)` be a rational open of `Spa(A, A⁺)` and `R(q)` a
 rational open of `Spa(B, B⁺)` inside its preimage. At a point `x` of `R(q)`, the stalk map of the
 morphism induced by `φ` carries the germ of an element of `A⟨p⟩` to the germ of its image under the
@@ -583,6 +599,21 @@ theorem presentationLimitRationalGerm_comp_stalkMap_presentationLimitPreAdicSpac
         ((spaBasicOpen_le_map_spaBasicOpen_iff φ hφ hplus).mpr hsub) x hy hx)
 
 /-! ### Functoriality -/
+
+/-- `presentationLimitPreAdicSpaceComap` depends on `(φ, hφ, hplus)` only through `φ`. -/
+theorem presentationLimitPreAdicSpaceComap_congr
+    {φ₁ φ₂ : A →+* B} (h : φ₁ = φ₂)
+    (hφ₁ : Continuous φ₁) (hφ₂ : Continuous φ₂)
+    (hplus₁ : ∀ a ∈ Aplus, φ₁ a ∈ Bplus) (hplus₂ : ∀ a ∈ Aplus, φ₂ a ∈ Bplus)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b)
+    (hP : P.ringOfDefinition ≤ Aplus) (hP' : P'.ringOfDefinition ≤ Bplus)
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
+      (presentationLimitPresheaf P' Bplus)) :
+    presentationLimitPreAdicSpaceComap φ₁ hφ₁ hplus₁ hAplus hBplus hP hP' hsheaf =
+      presentationLimitPreAdicSpaceComap φ₂ hφ₂ hplus₂ hAplus hBplus hP hP' hsheaf := by
+  subst h
+  rfl
 
 /-- **The identity of `A` induces the identity morphism** of `Spa(A, A⁺)`. -/
 @[simp]

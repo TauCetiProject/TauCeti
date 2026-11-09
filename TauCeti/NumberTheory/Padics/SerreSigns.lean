@@ -278,7 +278,7 @@ theorem isSquare_neg_fifteen_padicTwo : IsSquare (-15 : ℚ_[2]) := by
 /-- A unit `u` of `ℤ_2` is a square of `ℚ_2ˣ` exactly when `ε(u) = ω(u) = 0`. -/
 theorem isSquare_iff_serreEps_eq_zero_and_serreOmega_eq_zero {a : ℚ_[2]ˣ} {u : ℤ_[2]ˣ}
     (ha : (a : ℚ_[2]) = u) : IsSquare a ↔ serreEps u = 0 ∧ serreOmega u = 0 := by
-  rw [← isSquare_units_val_iff, ha, isSquare_coe_iff_mem_unitsPrincipal_three,
+  rw [← Units.isSquare_coe_iff, ha, isSquare_coe_iff_mem_unitsPrincipal_three,
     serreEps_eq_zero_and_serreOmega_eq_zero_iff]
 
 end TauCeti

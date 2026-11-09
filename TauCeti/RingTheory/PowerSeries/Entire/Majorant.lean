@@ -56,12 +56,19 @@ transform `D(B, F)`, which is therefore entire.
   norms of an entire series tend to zero.
 * `PowerSeries.IsEntire.exists_newtonMajorant` and `PowerSeries.isEntire_of_norm_coeff_le_prod`:
   the two directions of `PowerSeries.isEntire_iff_exists_newtonMajorant`.
+* `PowerSeries.IsEntire.exists_newtonMajorant_mul`: a Newton majorant dominating the
+  convolution of the coefficient norms of two entire series.
 * `PowerSeries.norm_coeff_succ_mul_pow_le_colemanMajorant` and
   `PowerSeries.colemanMajorant_le`: `β_B(r)` is the least upper bound of the weighted
   coefficients of positive degree.
 * `PowerSeries.monotoneOn_colemanMajorant` and `PowerSeries.colemanMajorant_le_div_mul`:
   monotonicity, and the linear bound near `0`.
 * `PowerSeries.tendsto_colemanMajorant`: `β_B(ρᵢ) → 0` whenever `ρᵢ → 0` with `ρᵢ ≥ 0`.
+* `PowerSeries.norm_coeff_trunc_le_prod` and
+  `PowerSeries.norm_coeff_trunc_succ_mul_pow_le_colemanMajorant`: truncations of `F` and `B`
+  obey the same Newton and Coleman majorants.
+* `PowerSeries.tendsto_colemanMajorant_sub_trunc`: the majorants `β_(B - trunc L B)(r)` of the
+  tails of a series restricted at `r` tend to zero as `L → ∞`.
 
 ## References
 
@@ -158,6 +165,34 @@ theorem isEntire_iff_exists_newtonMajorant (hF0 : ‖coeff 0 F‖ ≤ 1) :
       ∀ j, ‖coeff j F‖ ≤ ∏ i ∈ range j, ρ i :=
   ⟨fun hF ↦ hF.exists_newtonMajorant hF0,
     fun ⟨_, _, _, hρ, hF⟩ ↦ isEntire_of_norm_coeff_le_prod hρ hF⟩
+
+/-- **Newton majorants of products.** For entire series `F = ∑ aⱼ Tʲ` and `G = ∑ bⱼ Tʲ` with
+`‖a₀‖ ≤ 1` and `‖b₀‖ ≤ 1`, one positive antitone sequence `ρ` tending to zero dominates the
+convolution of their coefficient norms: `∑ i + l = j, ‖aᵢ‖ ‖bₗ‖ ≤ ∏ i < j, ρᵢ`. It is therefore
+a Newton majorant of `F * G` and of every product of truncations of `F` and `G`. -/
+theorem IsEntire.exists_newtonMajorant_mul {G : R⟦X⟧} (hF : F.IsEntire) (hG : G.IsEntire)
+    (hF0 : ‖coeff 0 F‖ ≤ 1) (hG0 : ‖coeff 0 G‖ ≤ 1) :
+    ∃ ρ : ℕ → ℝ, (∀ i, 0 < ρ i) ∧ Antitone ρ ∧ Tendsto ρ atTop (𝓝 0) ∧
+      ∀ j, ∑ x ∈ antidiagonal j, ‖coeff x.1 F‖ * ‖coeff x.2 G‖ ≤ ∏ i ∈ range j, ρ i := by
+  -- the real series of coefficient norms of an entire series is entire
+  have hnorm {H : R⟦X⟧} (hH : H.IsEntire) : (mk fun n ↦ ‖coeff n H‖ : ℝ⟦X⟧).IsEntire :=
+    isEntire_iff.2 fun r ↦ by simpa [isRestricted_iff'] using hH.isRestricted r
+  obtain ⟨ρ, hρ₀, hρ, hlim, hρFG⟩ := ((hnorm hF).mul (hnorm hG)).exists_newtonMajorant (by
+    simpa [coeff_mul] using mul_le_mul hF0 hG0 (norm_nonneg _) zero_le_one)
+  refine ⟨ρ, hρ₀, hρ, hlim, fun j ↦ ?_⟩
+  have hsum : 0 ≤ ∑ x ∈ antidiagonal j, ‖coeff x.1 F‖ * ‖coeff x.2 G‖ :=
+    sum_nonneg fun x _ ↦ mul_nonneg (norm_nonneg _) (norm_nonneg _)
+  simpa [coeff_mul, abs_of_nonneg hsum] using hρFG j
+
+/-- Truncation preserves a Newton majorant: `‖coeff j (trunc b F)‖ ≤ ∏ i < j, ρ i` whenever
+`‖coeff j F‖ ≤ ∏ i < j, ρ i` for all `j` and `ρ` is nonnegative. -/
+theorem norm_coeff_trunc_le_prod {ρ : ℕ → ℝ} (hρ₀ : ∀ i, 0 ≤ ρ i)
+    (hF : ∀ j, ‖coeff j F‖ ≤ ∏ i ∈ range j, ρ i) (b j : ℕ) :
+    ‖(trunc b F).coeff j‖ ≤ ∏ i ∈ range j, ρ i := by
+  rw [coeff_trunc]
+  split_ifs
+  · exact hF j
+  · simpa using prod_nonneg fun i _ ↦ hρ₀ i
 
 end NewtonMajorant
 
@@ -262,6 +297,36 @@ theorem colemanMajorant_trunc_le {r : ℝ} (hB : B.IsRestricted r) (hr : 0 ≤ r
   split_ifs
   · exact norm_coeff_succ_mul_pow_le_colemanMajorant hB m
   · simpa using colemanMajorant_nonneg B hr
+
+/-- The weighted coefficients of positive degree of a truncation of `B` are bounded by the
+Coleman majorant of `B` at any nonnegative radius where `B` is restricted. -/
+theorem norm_coeff_trunc_succ_mul_pow_le_colemanMajorant {r : ℝ} (hB : B.IsRestricted r)
+    (hr : 0 ≤ r) (a j : ℕ) :
+    ‖(trunc a B).coeff (j + 1)‖ * r ^ (j + 1) ≤ colemanMajorant B r := by
+  simpa [Polynomial.coeff_coe] using (norm_coeff_succ_mul_pow_le_colemanMajorant
+    (TauCeti.PowerSeries.isRestricted_polynomial (trunc a B)) j).trans
+    (colemanMajorant_trunc_le hB hr a)
+
+/-- **Decay of the tail majorants.** If `B` is restricted at the radius `r`, the Coleman majorants
+of its tails `B - trunc L B`, the suprema `sup_{m ≥ max L 1} ‖bₘ‖ rᵐ`, tend to zero as
+`L → ∞`. -/
+theorem tendsto_colemanMajorant_sub_trunc {r : ℝ} (hB : B.IsRestricted r) :
+    Tendsto (fun L ↦ colemanMajorant (B - (trunc L B : R⟦X⟧)) r) atTop (𝓝 0) := by
+  refine tendsto_order.2 ⟨fun ε hε ↦ Eventually.of_forall fun L ↦ ?_, fun ε hε ↦ ?_⟩
+  · -- the majorant of the restricted tail is at least its weighted coefficient of degree two
+    have htail : (B - (trunc L B : R⟦X⟧)).IsRestricted r :=
+      hB.sub (TauCeti.PowerSeries.isRestricted_polynomial _)
+    refine hε.trans_le (le_trans ?_ (norm_coeff_succ_mul_pow_le_colemanMajorant htail 1))
+    exact mul_nonneg (norm_nonneg _) (by simpa using sq_nonneg r)
+  · obtain ⟨J, hJ⟩ := eventually_atTop.1
+      (((isRestricted_iff' _ _).1 hB).eventually (gt_mem_nhds (half_pos hε)))
+    filter_upwards [eventually_ge_atTop J] with L hL
+    refine (colemanMajorant_le fun m ↦ ?_).trans_lt (half_lt_self hε)
+    rw [map_sub, Polynomial.coeff_coe, coeff_trunc]
+    split_ifs with hm
+    · simpa using (half_pos hε).le
+    · rw [sub_zero]
+      exact (hJ _ (by omega)).le
 
 /-- The Coleman majorant at the radius `0` vanishes. -/
 @[simp]

@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.InnerProductSpace.Trace.Free
+import TauCeti.LinearAlgebra.Matrix.Determinant.FinFour
 
 /-!
 # Metric and functorial properties of the Hodge star
@@ -16,10 +19,27 @@ The Hodge star preserves the inner product and hence defines a linear isometric 
 between complementary exterior powers. Combined with the defining identity
 `⟪⋆x, y⟫ = vol (x ∧ y)`, this gives the wedge characterization `α ∧ ⋆β = ⟪α, β⟫ vol`.
 On the top exterior power the inner product is the product of the volumes,
-`⟪x, y⟫ = vol x * vol y`, since `⋆1` is a unit vector representing the volume.
+`⟪x, y⟫ = vol x * vol y`, since `⋆1` is a unit vector representing the volume. In an even
+middle degree the Hodge star is an isometric involution, hence symmetric, so a self-dual or
+anti-self-dual form pairs with `⋆y` as with `±y`.
 Reversing the orientation negates the Hodge star, and transporting the orientation along a
 linear isometric equivalence commutes with it. These statements hold also in dimension zero, for
 either orientation.
+
+The derivation action `D_A` of a skew-adjoint endomorphism `A`, which applies `A` to one factor of
+a wedge at a time, commutes with the Hodge star in every degree (`Orientation.hodgeStar_lieMap`):
+`D_A` is skew-adjoint and acts on the top exterior power by `tr A = 0`, so it preserves the
+characterization `⟪⋆x, y⟫ = vol (x ∧ y)`. This is the infinitesimal form of the invariance of the
+star under rotations.
+
+In dimension four, the Hodge star of a wedge of two vectors pairs with another such wedge to the
+volume of the four vectors, `⟪⋆(a ∧ b), u ∧ w⟫ = vol(a, b, u, w)`
+(`Orientation.inner_hodgeStar_ιMulti_two`). For a positively oriented orthonormal basis `e`, this
+gives `⋆(e₀ ∧ e₁) = e₂ ∧ e₃`, `⋆(e₀ ∧ e₂) = -(e₁ ∧ e₃)` and `⋆(e₀ ∧ e₃) = e₁ ∧ e₂`
+(`Orientation.hodgeStar_ιMulti_zero_one` and its companions). Consequently an anti-self-dual
+two-vector is determined by its coordinates along `e₀ ∧ e₁`, `e₀ ∧ e₂` and `e₀ ∧ e₃`, and its
+squared norm is twice the sum of their squares (`Orientation.inner_ιMulti_two_of_hodgeStar_eq_neg`,
+`Orientation.norm_sq_of_hodgeStar_eq_neg`).
 
 ## References
 
@@ -92,6 +112,31 @@ theorem inner_hodgeStar_hodgeStar {k l : ℕ} (hkl : k + l = finrank ℝ V)
     (x y : ⋀[ℝ]^k V) : ⟪o.hodgeStar hkl x, o.hodgeStar hkl y⟫ = ⟪x, y⟫ := by
   simpa only [← o.hodgeStarIsometry_toLinearEquiv hkl, LinearIsometryEquiv.coe_toLinearEquiv]
     using (o.hodgeStarIsometry hkl).inner_map_map x y
+
+/-- In an even middle degree, `k + k = finrank ℝ V` with `k` even, the Hodge star is symmetric,
+`⟪⋆x, y⟫ = ⟪x, ⋆y⟫`, being an isometric involution. This covers two-forms in dimension four. -/
+theorem isSymmetric_hodgeStar_of_even {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V) :
+    (o.hodgeStar hkk : ⋀[ℝ]^k V →ₗ[ℝ] ⋀[ℝ]^k V).IsSymmetric := fun x y ↦ by
+  conv_lhs => rw [← o.hodgeStar_hodgeStar_of_even hk hkk y]
+  exact o.inner_hodgeStar_hodgeStar hkk x (o.hodgeStar hkk y)
+
+/-- A self-dual `η`, with `⋆η = η`, in an even middle degree pairs with `⋆y` as with `y`:
+`⟪η, ⋆y⟫ = ⟪η, y⟫`. -/
+theorem inner_hodgeStar_right_of_hodgeStar_eq_self {k : ℕ} (hk : Even k)
+    (hkk : k + k = finrank ℝ V) {η : ⋀[ℝ]^k V} (hη : o.hodgeStar hkk η = η) (y : ⋀[ℝ]^k V) :
+    ⟪η, o.hodgeStar hkk y⟫ = ⟪η, y⟫ := by
+  have h := o.isSymmetric_hodgeStar_of_even hk hkk η y
+  simp only [LinearEquiv.coe_coe, hη] at h
+  exact h.symm
+
+/-- An anti-self-dual `μ`, with `⋆μ = -μ`, in an even middle degree pairs with `⋆y` as with
+`-y`: `⟪μ, ⋆y⟫ = -⟪μ, y⟫`. -/
+theorem inner_hodgeStar_right_of_hodgeStar_eq_neg {k : ℕ} (hk : Even k)
+    (hkk : k + k = finrank ℝ V) {μ : ⋀[ℝ]^k V} (hμ : o.hodgeStar hkk μ = -μ) (y : ⋀[ℝ]^k V) :
+    ⟪μ, o.hodgeStar hkk y⟫ = -⟪μ, y⟫ := by
+  have h := o.isSymmetric_hodgeStar_of_even hk hkk μ y
+  simp only [LinearEquiv.coe_coe, hμ, inner_neg_left] at h
+  exact h.symm
 
 /-- **The wedge characterization of the Hodge star**: `α ∧ ⋆β = ⟪α, β⟫ vol`, that is, the
 volume of `α ∧ ⋆β` is the inner product of `α` and `β`, for `α β ∈ ⋀ᵏ V`. -/
@@ -166,5 +211,98 @@ theorem hodgeStar_map (φ : V ≃ₗᵢ[ℝ] W) {k l : ℕ}
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
   rw [hb, hodgeStar_orthonormalBasis, hodgeStar_orthonormalBasis, hvol,
     map_smul, map_zsmul_unit, hb]
+
+/-- **Skew-adjoint endomorphisms commute with the Hodge star**: `⋆ (D_A x) = D_A (⋆ x)` for the
+derivation action `D_A` of a skew-adjoint endomorphism `A` on forms of every degree. This is the
+infinitesimal form of the invariance of `⋆` under rotations. -/
+theorem hodgeStar_lieMap {k l : ℕ} (hkl : k + l = finrank ℝ V) {A : V →ₗ[ℝ] V}
+    (hA : ∀ u w, ⟪A u, w⟫ = -⟪u, A w⟫) (x : ⋀[ℝ]^k V) :
+    o.hodgeStar hkl (lieMap k A x) = lieMap l A (o.hodgeStar hkl x) := by
+  -- `D_A` is skew-adjoint, and it acts on the top exterior power by `tr A = 0`.
+  refine ext_inner_right ℝ fun y ↦ ?_
+  rw [inner_hodgeStar_apply, inner_lieMap_left hA, inner_hodgeStar_apply, eq_neg_iff_add_eq_zero,
+    wedgePairing_lieMap_add_wedgePairing_lieMap, LinearMap.trace_eq_zero_of_inner_left_eq_neg hA,
+    zero_mul]
+
+end Orientation
+
+/-! ### Two-forms in dimension four -/
+
+namespace Orientation
+
+variable [Fact (finrank ℝ V = 4)] (o : Orientation ℝ V (Fin 4))
+
+/-- In dimension four, the Hodge star of a wedge of two vectors pairs with another such wedge to
+the volume of the four vectors: `⟪⋆(a ∧ b), u ∧ w⟫ = vol(a, b, u, w)`. -/
+theorem inner_hodgeStar_ιMulti_two (hkl : 2 + 2 = finrank ℝ V) (a b u w : V) :
+    ⟪o.hodgeStar hkl (ιMulti ℝ 2 ![a, b]), ιMulti ℝ 2 ![u, w]⟫ = o.volumeForm ![a, b, u, w] := by
+  -- Read the wedge of the four vectors in the degree `finrank ℝ V`.
+  have key : ∀ {d : ℕ} (hd : d = 4) (f : Fin 4 → V),
+      ExteriorAlgebra.ιMulti ℝ d (f ∘ finCongr hd) = ExteriorAlgebra.ιMulti ℝ 4 f := by
+    rintro d rfl f
+    rfl
+  rw [inner_hodgeStar_apply, wedgePairing_apply_eq_of_coe_mul_eq _ hkl _ _
+    (ιMulti ℝ _ (![a, b, u, w] ∘ finCongr (Fact.out : finrank ℝ V = 4))), volumeEquiv_ιMulti]
+  · congr 1
+  · simp only [ιMulti_apply_coe, key, ExteriorAlgebra.ιMulti_mul_ιMulti]
+    congr 1
+    ext i
+    fin_cases i <;> rfl
+
+variable {o} (hkl : 2 + 2 = finrank ℝ V) {e : OrthonormalBasis (Fin 4) ℝ V}
+  (he : e.toBasis.orientation = o)
+include he
+
+/-- For a positively oriented orthonormal basis `e` in dimension four, `⋆(e₀ ∧ e₁) = e₂ ∧ e₃`. -/
+theorem hodgeStar_ιMulti_zero_one :
+    o.hodgeStar hkl (ιMulti ℝ 2 ![e 0, e 1]) = ιMulti ℝ 2 ![e 2, e 3] := by
+  refine ext_inner_ιMulti_two fun u w ↦ ?_
+  rw [o.inner_hodgeStar_ιMulti_two hkl, inner_ιMulti_two]
+  simp [o.volumeForm_robust e he, Basis.det_apply, Matrix.det_fin_four, Basis.toMatrix_apply,
+    ← e.repr_apply_apply, OrthonormalBasis.repr_self]
+
+/-- For a positively oriented orthonormal basis `e` in dimension four,
+`⋆(e₀ ∧ e₂) = -(e₁ ∧ e₃)`. -/
+theorem hodgeStar_ιMulti_zero_two :
+    o.hodgeStar hkl (ιMulti ℝ 2 ![e 0, e 2]) = -ιMulti ℝ 2 ![e 1, e 3] := by
+  refine ext_inner_ιMulti_two fun u w ↦ ?_
+  rw [o.inner_hodgeStar_ιMulti_two hkl, inner_neg_left, inner_ιMulti_two]
+  simp [o.volumeForm_robust e he, Basis.det_apply, Matrix.det_fin_four, Basis.toMatrix_apply,
+    ← e.repr_apply_apply, OrthonormalBasis.repr_self]
+  ring
+
+/-- For a positively oriented orthonormal basis `e` in dimension four, `⋆(e₀ ∧ e₃) = e₁ ∧ e₂`. -/
+theorem hodgeStar_ιMulti_zero_three :
+    o.hodgeStar hkl (ιMulti ℝ 2 ![e 0, e 3]) = ιMulti ℝ 2 ![e 1, e 2] := by
+  refine ext_inner_ιMulti_two fun u w ↦ ?_
+  rw [o.inner_hodgeStar_ιMulti_two hkl, inner_ιMulti_two]
+  simp [o.volumeForm_robust e he, Basis.det_apply, Matrix.det_fin_four, Basis.toMatrix_apply,
+    ← e.repr_apply_apply, OrthonormalBasis.repr_self]
+  ring
+
+/-- For a positively oriented orthonormal basis `e` in dimension four, the coordinates of an
+anti-self-dual `μ`, with `⋆μ = -μ`, in the basis `eᵢ ∧ eⱼ` are determined by its three coordinates
+along `e₀ ∧ e₁`, `e₀ ∧ e₂` and `e₀ ∧ e₃`. -/
+theorem inner_ιMulti_two_of_hodgeStar_eq_neg {μ : ⋀[ℝ]^2 V}
+    (hμ : o.hodgeStar hkl μ = -μ) :
+    ⟪μ, ιMulti ℝ 2 ![e 2, e 3]⟫ = -⟪μ, ιMulti ℝ 2 ![e 0, e 1]⟫ ∧
+      ⟪μ, ιMulti ℝ 2 ![e 1, e 3]⟫ = ⟪μ, ιMulti ℝ 2 ![e 0, e 2]⟫ ∧
+      ⟪μ, ιMulti ℝ 2 ![e 1, e 2]⟫ = -⟪μ, ιMulti ℝ 2 ![e 0, e 3]⟫ := by
+  have hneg := o.inner_hodgeStar_right_of_hodgeStar_eq_neg even_two hkl hμ
+  refine ⟨?_, ?_, ?_⟩
+  · rw [← o.hodgeStar_ιMulti_zero_one hkl he, hneg]
+  · rw [← neg_neg (ιMulti ℝ 2 ![e 1, e 3]), ← o.hodgeStar_ιMulti_zero_two hkl he,
+      inner_neg_right, hneg, neg_neg]
+  · rw [← o.hodgeStar_ιMulti_zero_three hkl he, hneg]
+
+/-- For a positively oriented orthonormal basis `e` in dimension four, the squared norm of an
+anti-self-dual `μ`, with `⋆μ = -μ`, is twice the sum of the squares of its coordinates along
+`e₀ ∧ e₁`, `e₀ ∧ e₂` and `e₀ ∧ e₃`. -/
+theorem norm_sq_of_hodgeStar_eq_neg {μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = -μ) :
+    ‖μ‖ ^ 2 = 2 * (⟪μ, ιMulti ℝ 2 ![e 0, e 1]⟫ ^ 2 + ⟪μ, ιMulti ℝ 2 ![e 0, e 2]⟫ ^ 2 +
+      ⟪μ, ιMulti ℝ 2 ![e 0, e 3]⟫ ^ 2) := by
+  obtain ⟨h23, h13, h12⟩ := o.inner_ιMulti_two_of_hodgeStar_eq_neg hkl he hμ
+  rw [e.norm_sq_eq_sum_sq_inner_ιMulti_two, h23, h13, h12]
+  ring
 
 end Orientation

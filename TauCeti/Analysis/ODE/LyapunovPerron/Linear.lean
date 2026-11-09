@@ -60,13 +60,13 @@ def lyapunovPerronIntegralCLM
           funext s
           simp
         rw [hfun] at h
-        simpa only [BoundedContinuousFunction.add_apply, lyapunovPerronMap_apply,
+        simpa only [_root_.add_apply, lyapunovPerronMap_apply,
           map_zero, zero_add, id_eq, add_comm] using eq_add_of_sub_eq h
       map_smul' := by
         intro c γ
         ext t
         simp only [F, lyapunovPerronMap_apply, map_zero, zero_add, id_eq,
-          BoundedContinuousFunction.smul_apply, RingHom.id_apply]
+          _root_.smul_apply, RingHom.id_apply]
         rw [← lyapunovPerronIntegral_smul]
         rfl }
   L.mkContinuous (2 * K / α) (fun γ ↦ by

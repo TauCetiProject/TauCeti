@@ -8,15 +8,16 @@ module
 public import Mathlib.Data.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.ToLin
+import Mathlib.Algebra.Group.Pi.Units
 
 /-!
 # Diagonal matrices: products with matrix units, and commutation
 
 This file records generic identities about diagonal matrices. Multiplying a rectangular matrix
-unit on both sides by diagonal matrices of the corresponding row and column sizes rescales its one
-nonzero entry. And a matrix commuting with a diagonal matrix has no entry away from the diagonal
-wherever that diagonal matrix separates two coordinates, so a matrix commuting with a diagonal
-matrix of pairwise distinct entries is itself diagonal.
+unit on one or both sides by diagonal matrices of the corresponding row and column sizes rescales
+its one nonzero entry. And a matrix commuting with a diagonal matrix has no entry away from the
+diagonal wherever that diagonal matrix separates two coordinates, so a matrix commuting with a
+diagonal matrix of pairwise distinct entries is itself diagonal.
 
 Neither statement needs a unit or an associative multiplication in the entries: the first holds
 over a `NonUnitalNonAssocSemiring`, and the second adds commutativity and cancellation by nonzero
@@ -29,6 +30,11 @@ basis vector maps to the corresponding scalar multiple of the target basis vecto
 
 * `TauCeti.diagonal_mul_single_mul_diagonal`: multiplying `Eᵢⱼ(c)` on the left and right by
   diagonal matrices rescales its entry by the corresponding diagonal coefficients.
+* `TauCeti.diagonal_mul_single`, `TauCeti.single_mul_diagonal`: multiplying `Eᵢⱼ(c)` on one side
+  by a diagonal matrix rescales its entry by the diagonal coefficient of its row or column.
+* `TauCeti.isUnit_diagonal_iff`: a diagonal matrix over a possibly noncommutative semiring is a
+  unit exactly when its diagonal is.
+* `TauCeti.isUnit_diagonal_snoc_one_iff`: `diagonal (1, …, 1, x)` is a unit exactly when `x` is.
 * `TauCeti.apply_eq_zero_of_commute_diagonal`: a matrix commuting with a diagonal matrix has
   vanishing `(i, j)` entry wherever that diagonal matrix separates `i` from `j`.
 * `TauCeti.isDiag_of_commute_diagonal`: a matrix commuting with a diagonal matrix of pairwise
@@ -48,7 +54,6 @@ variable {A : Type*} [NonUnitalNonAssocSemiring A] {i : m} {j : n}
 
 /-- Multiplying a matrix unit on the left and right by diagonal matrices rescales its nonzero
 entry by the corresponding diagonal entries. -/
-@[simp]
 theorem diagonal_mul_single_mul_diagonal {v : m → A} {w : n → A} (c : A) :
     diagonal v * single i j c * diagonal w = single i j (v i * c * w j) := by
   ext a b
@@ -57,6 +62,45 @@ theorem diagonal_mul_single_mul_diagonal {v : m → A} {w : n → A} (c : A) :
   · obtain ⟨rfl, rfl⟩ := h
     simp
   · simp [h]
+
+omit [Fintype n] in
+/-- Multiplying a matrix unit on the left by a diagonal matrix rescales its nonzero entry by the
+diagonal entry of its row. -/
+@[simp]
+theorem diagonal_mul_single (v : m → A) (c : A) :
+    diagonal v * single i j c = single i j (v i * c) := by
+  ext a b
+  by_cases h : i = a ∧ j = b
+  · obtain ⟨rfl, rfl⟩ := h
+    simp
+  · simp [Matrix.diagonal_mul, h]
+
+omit [Fintype m] in
+/-- Multiplying a matrix unit on the right by a diagonal matrix rescales its nonzero entry by the
+diagonal entry of its column. -/
+@[simp]
+theorem single_mul_diagonal (w : n → A) (c : A) :
+    single i j c * diagonal w = single i j (c * w j) := by
+  ext a b
+  by_cases h : i = a ∧ j = b
+  · obtain ⟨rfl, rfl⟩ := h
+    simp [Matrix.mul_diagonal]
+  · simp [Matrix.mul_diagonal, h]
+
+/-- A diagonal matrix is a unit exactly when its family of diagonal entries is. Unlike Mathlib's
+`Matrix.isUnit_diagonal`, the entries need not commute. -/
+theorem isUnit_diagonal_iff {R : Type*} [Semiring R] {v : n → R} :
+    IsUnit (diagonal v) ↔ IsUnit v := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.map (diagonalRingHom n R)⟩
+  obtain ⟨M, h₁, h₂⟩ := isUnit_iff_exists.1 h
+  refine isUnit_iff_exists.2 ⟨fun i ↦ M i i, funext fun i ↦ ?_, funext fun i ↦ ?_⟩
+  · simpa [diagonal_mul] using congr_fun₂ h₁ i i
+  · simpa [mul_diagonal] using congr_fun₂ h₂ i i
+
+/-- `diagonal (1, …, 1, x)` is a unit exactly when `x` is. -/
+theorem isUnit_diagonal_snoc_one_iff {R : Type*} [Semiring R] {d : ℕ} (x : R) :
+    IsUnit (diagonal (Fin.snoc (α := fun _ ↦ R) (1 : Fin d → R) x)) ↔ IsUnit x := by
+  simp [isUnit_diagonal_iff, Pi.isUnit_iff, Fin.forall_fin_succ']
 
 section Commute
 

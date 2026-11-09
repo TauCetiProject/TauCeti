@@ -60,7 +60,7 @@ private theorem pow_apply_of_apply_eq_smul {f : Module.End ℚ V} {v : V} {μ : 
     (h : f v = μ • v) : ∀ k : ℕ, (f ^ k) v = μ ^ k • v
   | 0 => by simp
   | k + 1 => by
-    rw [pow_succ, Module.End.mul_apply, h, map_smul, pow_apply_of_apply_eq_smul h k, smul_smul,
+    rw [pow_succ, mul_apply_eq_comp, h, map_smul, pow_apply_of_apply_eq_smul h k, smul_smul,
       ← pow_succ']
 
 private theorem smeval_apply_of_apply_eq_smul {f : Module.End ℚ V} {v : V} {μ : ℚ}

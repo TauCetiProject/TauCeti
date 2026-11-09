@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.WeightedEval.UniversalProperty
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
+public import TauCeti.Topology.Algebra.Nonarchimedean.LinearTopology
 public import TauCeti.Topology.Algebra.UniformRing
 
 /-!
@@ -33,6 +35,12 @@ algebra `TauCeti.Huber.restrictedMvPowerSeriesCompletion k A`, which the roadmap
 `A⟨X₁,…,Xₖ⟩` for an arbitrary Tate ring, so this is that algebra's universal property. It is
 stated for a general weight family because nothing in the argument uses triviality.
 
+Into a complete Hausdorff linearly topologised ring, such as an adic ring, the completed
+restricted-series algebra is free on its variables: a continuous ring homomorphism from `A`
+extends uniquely, for arbitrary values of the variables. Every element of a linearly
+topologised ring is power-bounded, so the universal property applies with no condition
+on the values.
+
 ## Main definitions
 
 * `weightedEvalHomCompletion`: the evaluation homomorphism of 5.50, extended to the completion.
@@ -44,6 +52,9 @@ stated for a general weight family because nothing in the argument uses triviali
 * existsUnique_continuous_ringHom_completion_weightedRestrictedSubring_of_isWeightedVarPowerBounded
   — the same under `IsWeightedVarPowerBounded`, the coordinatewise condition Proposition 5.50
   states. This is the one to cite as 5.50.
+* `existsUnique_continuous_ringHom_restrictedMvPowerSeriesCompletion_of_isLinearTopology`: the
+  universal property of `A⟨X₁, …, Xₖ⟩` into a complete Hausdorff linearly topologised ring, with
+  no condition on the values of the variables.
 * `completion_weightedRestrictedSubring_ringHom_ext_of_continuous`: the uniqueness half on its own,
   which asks of the target only a semiring structure and a Hausdorff topology.
 * `weightedEvalHomCompletion_coe`: the value of the extension on the image of `A⟨X⟩_T`. The body of
@@ -53,6 +64,8 @@ stated for a general weight family because nothing in the argument uses triviali
 ## References
 
 * T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Proposition 5.50.
+* A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, §7.5.3, for
+  the universal property of restricted power series over an adic ring.
 -/
 
 public section
@@ -188,6 +201,29 @@ theorem
     (isWeightBounded_of_isWeightedVarPowerBounded hb)
 
 end UniversalProperty
+
+section LinearTopology
+
+variable {B : Type*} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
+  [IsLinearTopology B B] [CompleteSpace B] [T2Space B]
+
+/-- **The universal property of `A⟨X₁, …, Xₖ⟩` for linearly topologised targets.** A continuous
+ring homomorphism `φ : A → B` into a complete Hausdorff linearly topologised ring, such as an
+adic ring, extends to exactly one continuous ring homomorphism `A⟨X₁, …, Xₖ⟩ → B` sending each
+`Xᵢ` to a prescribed `bᵢ`, with no condition on the `bᵢ`. -/
+theorem existsUnique_continuous_ringHom_restrictedMvPowerSeriesCompletion_of_isLinearTopology
+    {φ : A →+* B} (hφ : Continuous φ) (b : Fin k → B) :
+    ∃! ψ : restrictedMvPowerSeriesCompletion k A →+* B, Continuous ψ ∧
+      (∀ a, ψ (algebraMap A (restrictedMvPowerSeriesCompletion k A) a) = φ a) ∧
+      ∀ i, ψ ((weightedX _ isWeightFamily_one_weight i :
+        weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+          restrictedMvPowerSeriesCompletion k A) = b i := by
+  have := IsLinearTopology.nonarchimedeanRing B
+  simpa only [algebraMap_completion_weightedRestrictedSubring_apply] using
+    existsUnique_continuous_ringHom_completion_weightedRestrictedSubring isWeightFamily_one_weight
+      hφ.continuousAt (isWeightBounded_of_isLinearTopology φ _ b)
+
+end LinearTopology
 
 end TauCeti.Huber
 

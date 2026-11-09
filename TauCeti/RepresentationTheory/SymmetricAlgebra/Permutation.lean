@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
+import TauCeti.Data.Fintype.Fin
+import TauCeti.RepresentationTheory.SymmetricAlgebra.Degrees
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
 
 /-!
@@ -31,7 +33,8 @@ degree-one invariant `e₁ = ∑ᵢ xᵢ` is a genuine invariant linear form, no
 conventions: it spans the invariant linear forms on `K[σ]`. When `n` is invertible in `K`, `K[σ]`
 is the direct sum of the fixed line spanned by `∑ᵢ i` and the trace-zero hyperplane `e₁ = 0`, on
 which `S_σ` acts by its reflection representation. That representation omits the trivial summand
-and its basic invariants have degrees `2, …, n` instead; it is not treated here.
+and its basic invariants have degrees `2, …, n` instead; see
+`TauCeti.RepresentationTheory.SymmetricAlgebra.Standard`.
 
 No hypothesis on `K` beyond commutativity is needed: the fundamental theorem holds over every
 commutative ring, including in characteristic dividing `n!`, where the group order is not
@@ -52,9 +55,12 @@ invertible. The cases `n = 0` and `n = 1` are included: the invariant algebra is
   group is isomorphic to `MvPolynomial.symmetricSubalgebra`.
 * `Representation.esymmSymmetricAlgebraInvariantsEquiv`: **the invariant algebra of the full
   permutation representation of `S_σ` is a polynomial algebra** on the elementary symmetric
-  invariants, with `coe_esymmSymmetricAlgebraInvariantsEquiv_X` computing the generators and
+  invariants, with `coe_esymmSymmetricAlgebraInvariantsEquiv_X` computing the generators,
+  `coe_esymmSymmetricAlgebraInvariantsEquiv_X_zero` identifying `e₁` with the coefficient sum, and
   `esymmSymmetricAlgebraInvariantsEquiv_X_mem_homogeneousSubmodule` giving their degrees
   `1, …, n`.
+* `Representation.map_univ_eq_of_bijective_aeval_ofMulAction_perm_dual`: every system of basic
+  invariants of the full permutation representation has the multiset of degrees `{1, …, n}`.
 
 ## References
 
@@ -201,6 +207,20 @@ theorem coe_esymmSymmetricAlgebraInvariantsEquiv_X_eq_sum (hn : Fintype.card σ 
         SymmetricAlgebra.ι K _ ((MonoidAlgebra.basis σ K).dualBasis j) := by
   simp [coe_esymmSymmetricAlgebraInvariantsEquiv_X, esymm]
 
+/-- The elementary symmetric invariant of degree one is the coefficient sum `e₁ = ∑ᵢ xᵢ`, which
+spans the invariant linear forms. When `Fintype.card σ` is invertible in `K`, so that `K[σ]` splits
+off the trivial summand spanned by `∑ᵢ i`, it spans the dual of that summand. -/
+theorem coe_esymmSymmetricAlgebraInvariantsEquiv_X_zero (hn : Fintype.card σ = n + 1) :
+    (esymmSymmetricAlgebraInvariantsEquiv K σ hn (X 0) :
+        SymmetricAlgebra K (Module.Dual K K[σ])) =
+      SymmetricAlgebra.ι K _ (MonoidAlgebra.basis σ K).sumCoords := by
+  have hsum : ∑ j, (MonoidAlgebra.basis σ K).dualBasis j = (MonoidAlgebra.basis σ K).sumCoords :=
+    (MonoidAlgebra.basis σ K).ext fun i ↦ by
+      simp [Module.Basis.coord_apply]
+  rw [coe_esymmSymmetricAlgebraInvariantsEquiv_X_eq_sum, Fin.val_zero, zero_add,
+    Finset.powersetCard_one, Finset.sum_map, ← hsum, map_sum]
+  simp
+
 /-- **The basic invariants of the full permutation representation have degrees `1, …, n`**: the
 generator `Xᵢ` is sent to a homogeneous invariant of degree `i + 1`. -/
 theorem esymmSymmetricAlgebraInvariantsEquiv_X_mem_homogeneousSubmodule
@@ -213,6 +233,23 @@ theorem esymmSymmetricAlgebraInvariantsEquiv_X_mem_homogeneousSubmodule
       (b := (MonoidAlgebra.basis σ K).dualBasis),
     AlgEquiv.apply_symm_apply]
   exact isHomogeneous_esymm _
+
+omit [DecidableEq σ] in
+/-- **The degrees of the full permutation representation of `S_σ` are `1, …, n`.** If `σ` has `n`
+elements, then every system of basic invariants of `Sym(K[σ]*)^(S_σ)`, that is, every family of
+homogeneous invariants of degrees `d i` on which the invariant algebra is a polynomial algebra,
+has the multiset of degrees `{1, …, n}`. -/
+theorem map_univ_eq_of_bijective_aeval_ofMulAction_perm_dual [Nontrivial K]
+    (hn : Fintype.card σ = n) {ι : Type*} [Fintype ι]
+    {f : ι → (ofMulAction K (Equiv.Perm σ) σ).dual.symmetricAlgebraInvariants} {d : ι → ℕ}
+    (hf : ∀ i, (f i : SymmetricAlgebra K (Module.Dual K K[σ])) ∈
+      homogeneousSubmodule K (Module.Dual K K[σ]) (d i))
+    (hbij : Function.Bijective (aeval (R := K) f)) :
+    Finset.univ.val.map d = (Multiset.range n).map (· + 1) := by
+  classical
+  rw [_root_.Representation.map_univ_eq_of_bijective_aeval_of_algEquiv_symmetricAlgebraInvariants
+    _ hf hbij _ (esymmSymmetricAlgebraInvariantsEquiv_X_mem_homogeneousSubmodule K σ hn)]
+  exact Fin.univ_val_map_eq_map_range (· + 1) n
 
 end Perm
 

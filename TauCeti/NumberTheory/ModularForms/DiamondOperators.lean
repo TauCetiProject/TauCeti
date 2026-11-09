@@ -101,6 +101,8 @@ variable {N : ℕ}
 
 open CongruenceSubgroup
 
+namespace TauCeti
+
 /-- Pointwise formula for the translated-and-transported modular form underlying
 `diamondOpAux`. -/
 private lemma mcast_translate_apply (k : ℤ) (g : ↥(Gamma0 N))
@@ -591,8 +593,8 @@ theorem projection_mem_modFormCharSpace {k : ℤ}
     F.projection _ hF f ∈ modFormCharSpace k χ := by
   rw [mem_modFormCharSpace_iff]
   intro d
-  rw [diamondOpHom_apply, ← Module.End.mul_apply, ← (commute_projection_diamondOp hF (hd d)).eq,
-    Module.End.mul_apply, diamondOp_apply_of_mem_modFormCharSpace k χ d hf, map_smul]
+  rw [diamondOpHom_apply, ← mul_apply_eq_comp, ← (commute_projection_diamondOp hF (hd d)).eq,
+    mul_apply_eq_comp, diamondOp_apply_of_mem_modFormCharSpace k χ d hf, map_smul]
 
 /-- **A diamond-stable complement of the cusp forms splits each nebentypus space.** If `F` is a
 complement of the cusp forms in `M_k(Γ₁(N))` stable under the diamond operators, then its forms of
@@ -617,3 +619,5 @@ theorem isCompl_comap_subtype_range_cuspToModFormCharSpace {k : ℤ}
     have hs : f - e ∈ LinearMap.range (cuspToModFormCharSpace k χ) :=
       (mem_range_cuspToModFormCharSpace_iff k χ _).mpr (Submodule.sub_projection_mem _ _)
     exact Submodule.mem_sup.mpr ⟨e, he, f - e, hs, add_sub_cancel _ _⟩
+
+end TauCeti

@@ -483,7 +483,7 @@ theorem exists_isCoupling_withDensity_exp_add [IsFiniteMeasure μ] [IsFiniteMeas
       (∀ y, |ψ y| ≤ C) ∧ IsCoupling ((μ.prod ν).withDensity fun z ↦
         ENNReal.ofReal (Real.exp (φ z.1 + ψ z.2 + g z))) μ ν := by
   by_cases hμ : μ = 0
-  · have hν : ν = 0 := by rw [← Measure.measure_univ_eq_zero, ← hμν, hμ, Measure.coe_zero,
+  · have hν : ν = 0 := by rw [← Measure.measure_univ_eq_zero, ← hμν, hμ, FunLike.coe_zero,
       Pi.zero_apply]
     subst hμ hν
     exact ⟨0, 0, 0, measurable_const, measurable_const, fun _ ↦ by simp, fun _ ↦ by simp,

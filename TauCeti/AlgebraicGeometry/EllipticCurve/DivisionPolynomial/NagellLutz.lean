@@ -129,7 +129,7 @@ private lemma isInteger_of_odd_prime_factor {x y : K}
   obtain ⟨x', y', hns', hQ_eq⟩ := Affine.Point.exists_eq_some_of_ne_zero hQ_ne
   have hx' : IsLocalization.IsInteger R x' :=
     isInteger_x_of_odd_torsion_of_squarefree W hns'
-      (Int.not_even_iff_odd.mpr ((Int.odd_coe_nat p).mpr (hp.odd_of_ne_two hodd)))
+      (Int.not_even_iff_odd.mpr ((Int.odd_natCast p).mpr (hp.odd_of_ne_two hodd)))
       (zsmul_fromAffine_eq_zero_iff.mpr (hQ_eq ▸ hpQ)) hsf
   exact isInteger_of_zsmul_isInteger W hns hns'
     (by rw [natCast_zsmul]; exact hQ_eq) hx'

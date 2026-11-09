@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
+import TauCeti.Data.ZMod.Units
 
 /-!
-# Factoring a Dirichlet character through a divisor
+# Basic facts about Dirichlet characters
+
+A nonprincipal character has sum zero over a full period of natural-number representatives.
 
 Facts about when a Dirichlet character `χ` mod `N` factors through a divisor of `N`, stated for
 characters valued in any `CommMonoidWithZero`, which is the generality of
@@ -26,18 +29,27 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
 
 ## Main results
 
+* `DirichletCharacter.sum_range_eq_zero_of_ne_one`: cancellation over a full period.
 * `DirichletCharacter.exists_alt_unit_in_coset_with_char_separation`: character separation within
   a fibre of the reduction map.
 * `DirichletCharacter.factorsThrough_gcd_of_changeLevel_factorsThrough`: a factorisation of the
   lift to a multiple level through `d` descends to a factorisation of `χ` through `gcd (N, d)`,
   and `DirichletCharacter.factorsThrough_div_of_changeLevel_factorsThrough`: its arithmetic
   specialisation, from `L N / p` to `N / p`.
+* `DirichletCharacter.factorsThrough_div_iff_factorization_conductor_lt`: for a prime `p ∣ N`,
+  `χ` factors through `N / p` exactly when `v_p(cond χ) < v_p(N)`.
 * `DirichletCharacter.exists_eq_comp_unitsMap_of_factorsThrough`: a factorisation of
   `MulChar.ofUnitHom χ` through `d`, read back on unit homomorphisms as `χ = χ₀ ∘ unitsMap`.
 * `DirichletCharacter.factorsThroughEquiv`: the characters at level `N` factoring through
   `d ∣ N` correspond to the characters modulo `d`.
 * `DirichletCharacter.changeLevel_natCast_of_coprime`: changing the level preserves the values
   at naturals prime to the new level.
+* `DirichletCharacter.apply_eq_one_of_conductor_dvd`: a character is `1` at every integer prime
+  to its level and congruent to `1` modulo a multiple of its conductor.
+* `DirichletCharacter.conductor_dvd_iff_forall_odd`: conversely, the conductor divides `d`, which
+  need not divide the level, as soon as the character is `1` at every *odd* natural number prime
+  to the level and congruent to `1` modulo `d`. This is how a divisibility of the conductor is
+  read off the values of the Kronecker symbol at odd arguments.
 * `DirichletCharacter.changeLevel_trans_mul_toUnitHom`: raising a product of characters through an
   intermediate level, read on unit homomorphisms.
 * `DirichletCharacter.changeLevel_apply_neg_one`, `DirichletCharacter.even_changeLevel_iff`:
@@ -46,6 +58,9 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   criterion at a prime-power level, obtained by comparing values on congruent units, and its
   specialisations `DirichletCharacter.conductor_eq_four_of_apply_one_ne_apply_three` and
   `DirichletCharacter.conductor_eq_eight_of_apply_one_ne_apply_five`.
+* `DirichletCharacter.sum_mul_eq_zero_of_forall_units`: coefficient extraction by orthogonality; a
+  combination of symmetrised character sums that vanishes on every pair of units has vanishing
+  coefficients against every pair of character multiplicities.
 
 ## Provenance
 
@@ -72,6 +87,21 @@ divides `gcd (N, L N / p) = N / p` — stated once for characters valued in any
 public section
 
 namespace DirichletCharacter
+
+/-- A nonprincipal Dirichlet character sums to zero over a full period. -/
+theorem sum_range_eq_zero_of_ne_one {R : Type*} [CommRing R] [IsDomain R] {N : ℕ}
+    (χ : DirichletCharacter R N) (hχ : χ ≠ 1) :
+    ∑ n ∈ Finset.range N, χ n = 0 := by
+  rcases N.eq_zero_or_pos with rfl | hN
+  · simp
+  have : NeZero N := ⟨hN.ne'⟩
+  calc
+    _ = ∑ a : ZMod N, χ a := by
+      exact Finset.sum_nbij' (Nat.cast : ℕ → ZMod N) ZMod.val
+        (by simp) (fun a _ ↦ Finset.mem_range.mpr a.val_lt)
+        (fun n hn ↦ ZMod.val_natCast_of_lt (Finset.mem_range.mp hn))
+        (fun a _ ↦ ZMod.natCast_zmod_val a) (by intros; rfl)
+    _ = 0 := χ.sum_eq_zero_of_ne_one hχ
 
 /-- A character which factors through `d` takes the same value on level-units congruent modulo
 `d`. -/
@@ -146,11 +176,17 @@ theorem factorsThrough_gcd_of_changeLevel_factorsThrough {R : Type*} [CommMonoid
 This is `factorsThrough_gcd_of_changeLevel_factorsThrough` at the gcd
 `gcd (N, L N / p) = gcd (p, L) · (N / p) = N / p`. -/
 theorem factorsThrough_div_of_changeLevel_factorsThrough {R : Type*} [CommMonoidWithZero R]
-    {N p L : ℕ} [NeZero N] [NeZero L] (hpN : p ∣ N) (hpL : Nat.Coprime p L)
+    {N p L : ℕ} (hpN : p ∣ N) (hpL : Nat.Coprime p L)
     {ψ : DirichletCharacter R N}
     (hfac : (changeLevel (Nat.dvd_mul_left N L) ψ).FactorsThrough (L * N / p)) :
     ψ.FactorsThrough (N / p) := by
-  have : NeZero (L * N) := ⟨mul_ne_zero (NeZero.ne L) (NeZero.ne N)⟩
+  rcases Nat.eq_zero_or_pos N with rfl | hN
+  · simpa using FactorsThrough.same_level ψ
+  rcases Nat.eq_zero_or_pos L with rfl | hL
+  · rw [Nat.coprime_zero_right] at hpL
+    subst hpL
+    simpa using FactorsThrough.same_level ψ
+  have : NeZero (L * N) := ⟨(Nat.mul_pos hL hN).ne'⟩
   have hgcd : Nat.gcd N (L * N / p) = N / p := by
     rw [Nat.mul_div_assoc L hpN]
     calc Nat.gcd N (L * (N / p)) = Nat.gcd (p * (N / p)) (L * (N / p)) := by
@@ -199,11 +235,86 @@ theorem coe_factorsThroughEquiv_symm_apply {R : Type*} [CommMonoidWithZero R] {N
     ((factorsThroughEquiv h).symm ψ : DirichletCharacter R N) = changeLevel h ψ :=
   (rfl)
 
+/-- For a prime `p ∣ N`, a character modulo `N` is defined modulo `N / p` exactly when the
+exponent of `p` in its conductor is smaller than the exponent of `p` in `N`. -/
+theorem factorsThrough_div_iff_factorization_conductor_lt {R : Type*} [CommMonoidWithZero R]
+    {N p : ℕ} [NeZero N] (hp : p.Prime) (hpN : p ∣ N)
+    (χ : DirichletCharacter R N) :
+    χ.FactorsThrough (N / p) ↔ χ.conductor.factorization p < N.factorization p := by
+  have hNp : N / p ≠ 0 := (Nat.div_pos (Nat.le_of_dvd (NeZero.pos N) hpN) hp.pos).ne'
+  have hle := (Nat.factorization_le_iff_dvd χ.conductor_ne_zero (NeZero.ne N)).mpr
+    χ.conductor_dvd_level
+  have hpos := hp.factorization_pos_of_dvd (NeZero.ne N) hpN
+  rw [← mem_conductorSet_iff, mem_conductorSet_iff_conductor_dvd χ (Nat.div_dvd_of_dvd hpN),
+    ← Nat.factorization_le_iff_dvd χ.conductor_ne_zero hNp, Nat.factorization_div hpN,
+    hp.factorization, Finsupp.le_def]
+  refine ⟨fun h ↦ ?_, fun h q ↦ ?_⟩
+  · have := h p
+    simp only [Finsupp.tsub_apply, Finsupp.single_eq_same] at this
+    omega
+  · rcases eq_or_ne q p with rfl | hq
+    · simp only [Finsupp.tsub_apply, Finsupp.single_eq_same]
+      omega
+    · simpa [Finsupp.single_eq_of_ne hq] using hle q
+
 /-- Raising the level of a Dirichlet character does not change its value at a natural number
 prime to the new level. -/
 theorem changeLevel_natCast_of_coprime {R : Type*} [CommMonoidWithZero R] {d n : ℕ} (h : d ∣ n)
     (χ : DirichletCharacter R d) {m : ℕ} (hm : m.Coprime n) : changeLevel h χ m = χ m := by
   simpa using changeLevel_eq_cast_of_dvd' χ h (a := (m : ℤ)) (Nat.isCoprime_iff_coprime.mpr hm)
+
+/-- The product character at the least common multiple of the levels is the pointwise product
+on natural numbers, including the nonunits. -/
+@[simp] theorem mul_natCast {R : Type*} [CommMonoidWithZero R] {M N : ℕ}
+    (χ : DirichletCharacter R M) (ψ : DirichletCharacter R N) (n : ℕ) :
+    χ.mul ψ n = χ n * ψ n := by
+  by_cases hn : n.Coprime (Nat.lcm M N)
+  · rw [DirichletCharacter.mul, MulChar.mul_apply,
+      changeLevel_natCast_of_coprime _ _ hn, changeLevel_natCast_of_coprime _ _ hn]
+  · have hzero : χ.mul ψ n = 0 :=
+      (χ.mul ψ).map_nonunit (by rwa [ZMod.isUnit_iff_coprime])
+    rw [hzero]
+    have hbad : ¬ n.Coprime M ∨ ¬ n.Coprime N := by
+      by_contra! h
+      exact hn ((h.1.mul_right h.2).of_dvd_right (Nat.lcm_dvd_mul M N))
+    rcases hbad with h | h
+    · rw [χ.map_nonunit (by rwa [ZMod.isUnit_iff_coprime]), zero_mul]
+    · rw [ψ.map_nonunit (by rwa [ZMod.isUnit_iff_coprime]), mul_zero]
+
+/-- **A character is trivial modulo a multiple of its conductor.** If the conductor of `χ`
+divides `d`, then `χ a = 1` for every integer `a` prime to the level with `a ≡ 1 (mod d)`. The
+divisor `d` need not divide the level. -/
+theorem apply_eq_one_of_conductor_dvd {R : Type*} [CommMonoidWithZero R] {N d : ℕ}
+    (χ : DirichletCharacter R N) (hd : χ.conductor ∣ d) {a : ℤ} (ha : IsCoprime a N)
+    (had : a ≡ 1 [ZMOD d]) : χ a = 1 := by
+  rw [← primitiveCharacter_apply_of_isCoprime χ ha,
+    (ZMod.intCast_eq_intCast_iff _ _ _).mpr (had.of_dvd (Int.natCast_dvd_natCast.mpr hd)),
+    Int.cast_one, map_one]
+
+/-- **The conductor, read on odd representatives.** The conductor of `χ` divides `d` exactly
+when `χ a = 1` for every odd natural number `a` prime to the level `N` with `a ≡ 1 (mod d)`.
+The divisor `d` need not divide `N`. Testing only odd `a` is what makes the criterion usable for
+the Kronecker symbol, which agrees with the Jacobi symbol only at odd arguments. -/
+theorem conductor_dvd_iff_forall_odd {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
+    (χ : DirichletCharacter R N) {d : ℕ} :
+    χ.conductor ∣ d ↔ ∀ a : ℕ, _root_.Odd a → a.Coprime N → a ≡ 1 [MOD d] → χ a = 1 := by
+  refine ⟨fun hd a _ haN had ↦ ?_, fun h ↦ ?_⟩
+  · simpa using χ.apply_eq_one_of_conductor_dvd hd (Nat.isCoprime_iff_coprime.mpr haN)
+      (Int.natCast_modEq_iff.mpr had)
+  rcases eq_or_ne d 0 with rfl | hd
+  · exact dvd_zero _
+  -- The factorisation through `d` is found at the level `N * d`, where every unit congruent to
+  -- `1` modulo `d` is the class of an odd natural number; it descends to `χ` because
+  -- `changeLevel` preserves the conductor.
+  have : NeZero (N * d) := ⟨mul_ne_zero (NeZero.ne N) hd⟩
+  have hfac : (changeLevel (dvd_mul_right N d) χ).FactorsThrough d := by
+    refine (factorsThrough_iff_ker_unitsMap (dvd_mul_left d N)).mpr fun u hu ↦ ?_
+    obtain ⟨a, ha, hao, rfl⟩ := ZMod.exists_odd_unitOfCoprime_eq u
+    have had : a ≡ 1 [MOD d] := by
+      simpa [Units.ext_iff, ← ZMod.natCast_eq_natCast_iff] using hu
+    simpa [Units.ext_iff, changeLevel_natCast_of_coprime _ _ ha] using
+      h a hao (ha.coprime_dvd_right (dvd_mul_right N d)) had
+  simpa [conductor_changeLevel] using conductor_dvd_of_mem_conductorSet _ hfac
 
 /-- **Raising a product through an intermediate level.** If `a ∣ m`, `b ∣ m` and `m ∣ n`, the
 product of `χ₁` and `χ₂` raised directly to level `n` is, on units, their product raised to
@@ -227,5 +338,60 @@ value at `-1` of its lift to any multiple level. -/
 theorem even_changeLevel_iff {S : Type*} [CommRing S] {d n : ℕ} (h : d ∣ n)
     (χ : DirichletCharacter S d) : (changeLevel h χ).Even ↔ χ.Even := by
   rw [Even, Even, changeLevel_apply_neg_one]
+
+/-- If a combination of the symmetrised character sums `psi i x + phi i x` vanishes against every
+pair of units, then the coefficients of the combination vanish against every pair of
+multiplicities `(if psi i = χ then 1 else 0) + if phi i = χ then 1 else 0`. This extracts the
+`χ ⊗ χ'`-coefficient by orthogonality of the Dirichlet characters. -/
+theorem sum_mul_eq_zero_of_forall_units {R : Type*} [CommRing R] [IsDomain R] [CharZero R]
+    {N : ℕ} [NeZero N] {ι : Type*} {s : Finset ι} [DecidableEq (DirichletCharacter R N)]
+    {psi phi : ι → DirichletCharacter R N} {g : ι → R}
+    (hunits : ∀ x y : (ZMod N)ˣ,
+      ∑ i ∈ s, g i * ((psi i x + phi i x) * (psi i y + phi i y)) = 0)
+    (χ χ' : DirichletCharacter R N) :
+    ∑ i ∈ s, g i * (((if psi i = χ then 1 else 0) + if phi i = χ then 1 else 0) *
+      ((if psi i = χ' then 1 else 0) + if phi i = χ' then 1 else 0)) = 0 := by
+  classical
+  -- The multiplicity `ε i χ` of `χ` in the pair `(psi i, phi i)`.
+  let ε (i : ι) (χ : DirichletCharacter R N) : R :=
+    (if psi i = χ then 1 else 0) + if phi i = χ then 1 else 0
+  -- Orthogonality of the characters: `∑ₓ χ⁻¹(x) ψ(x)` is `#(ZMod N)ˣ` if `ψ = χ` and `0` otherwise.
+  have horth (χ ψ : DirichletCharacter R N) :
+      ∑ x, χ⁻¹ x * ψ x = if ψ = χ then (Fintype.card (ZMod N)ˣ : R) else 0 := by
+    simp_rw [← MulChar.mul_apply]
+    split_ifs with hψ
+    · rw [hψ, inv_mul_cancel, MulChar.sum_one_eq_card_units]
+    · exact MulChar.sum_eq_zero_of_ne_one (inv_mul_eq_one.not.mpr (Ne.symm hψ))
+  have hc : (Fintype.card (ZMod N)ˣ : R) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  have hε (i : ι) (χ : DirichletCharacter R N) :
+      ∑ x, χ⁻¹ x * (psi i x + phi i x) = Fintype.card (ZMod N)ˣ * ε i χ := by
+    simp only [mul_add, Finset.sum_add_distrib, horth, ε]
+    split_ifs <;> ring
+  -- Summing against `χ⁻¹ ⊗ χ'⁻¹` extracts the coefficient of `χ ⊗ χ'`.
+  have hcoeff (χ χ' : DirichletCharacter R N) : ∑ i ∈ s, g i * (ε i χ * ε i χ') = 0 := by
+    have hsum' : ∑ x, ∑ y, χ⁻¹ x * χ'⁻¹ y *
+        ∑ i ∈ s, g i * ((psi i x + phi i x) * (psi i y + phi i y)) = 0 := by
+      refine Finset.sum_eq_zero fun x _ ↦ Finset.sum_eq_zero fun y _ ↦ ?_
+      by_cases hx : IsUnit x
+      · by_cases hy : IsUnit y
+        · simpa using mul_eq_zero_of_right (χ⁻¹ x * χ'⁻¹ y) (hunits hx.unit hy.unit)
+        · simp [MulChar.map_nonunit χ'⁻¹ hy]
+      · simp [MulChar.map_nonunit χ⁻¹ hx]
+    have key : ∑ i ∈ s, g i * ((∑ x, χ⁻¹ x * (psi i x + phi i x)) *
+        ∑ y, χ'⁻¹ y * (psi i y + phi i y)) = 0 := by
+      rw [← hsum']
+      simp_rw [Finset.sum_mul_sum, Finset.mul_sum]
+      rw [Finset.sum_comm]
+      refine Finset.sum_congr rfl fun x _ ↦ ?_
+      rw [Finset.sum_comm]
+      refine Finset.sum_congr rfl fun y _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
+      ring
+    have key' : (Fintype.card (ZMod N)ˣ : R) ^ 2 * ∑ i ∈ s, g i * (ε i χ * ε i χ') = 0 := by
+      rw [← key, Finset.mul_sum]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      rw [hε, hε]
+      ring
+    exact (mul_eq_zero.mp key').resolve_left (pow_ne_zero 2 hc)
+  exact hcoeff χ χ'
 
 end DirichletCharacter

@@ -12,6 +12,7 @@ public import TauCeti.Data.Sym.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Substitution
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import Mathlib.Data.Fin.VecNotation
+import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 
 /-!
 # The symmetric power of a field, charted by elementary symmetric functions
@@ -339,6 +340,12 @@ theorem coeffEquiv_symm_apply (f : Fin n → K) : (((coeffEquiv K n).symm f : Sy
       (Polynomial.monicOfCoeff f).roots := by
   rw [← roots_toMonic ((coeffEquiv K n).symm f), toMonic_coeffEquiv_symm]
 
+/-- Applying the inverse coefficient chart to the lower coefficients of a monic polynomial
+recovers its roots, counted with multiplicity. -/
+theorem coeffEquiv_symm_coeff_of_monic {p : K[X]} (hp : p.Monic) (hdeg : p.natDegree = n) :
+    (((coeffEquiv K n).symm (fun i => p.coeff i) : Sym K n) : Multiset K) = p.roots := by
+  rw [coeffEquiv_symm_apply, Polynomial.monicOfCoeff_coeff hp hdeg]
+
 /-- **The tuples through a point satisfy an affine equation in the elementary symmetric chart.** A
 point `a` belongs to `s` exactly when the monic polynomial whose lower coefficients are the
 coordinates of `s` vanishes at `a`. For `0 < n`, the equation has coefficient `1` on the
@@ -412,8 +419,10 @@ theorem exists_map_eval_esymm_eq_eval (q : K[X]) :
   have hftsf : ∀ k : ℕ, ∃ W : MvPolynomial (Fin n) K,
       MvPolynomial.aeval (fun j : Fin n => esymm (Fin n) K ((j : ℕ) + 1)) W =
         MvPolynomial.bind₁ (fun i : Fin n => Polynomial.aeval (MvPolynomial.X i) q)
-          (esymm (Fin n) K k) := fun k =>
-    (esymm_isSymmetric (Fin n) K k).exists_aeval_esymm_eq_bind₁_aeval_X q
+          (esymm (Fin n) K k) := fun k => by
+    obtain ⟨W, hW⟩ := (esymmAlgHom_fin_bijective K n).surjective
+      ⟨_, (esymm_isSymmetric (Fin n) K k).bind₁_aeval_X q⟩
+    exact ⟨W, by rw [← esymmAlgHom_apply, hW]⟩
   choose W hW using hftsf
   refine ⟨W, fun s k => ?_⟩
   obtain ⟨v, hv⟩ := ofFn_surjective s

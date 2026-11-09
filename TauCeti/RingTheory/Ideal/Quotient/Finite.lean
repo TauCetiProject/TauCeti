@@ -51,6 +51,8 @@ the base field.
 
 * `Ideal.finite_quotient_mul`: products preserve module-finite quotients when the first ideal
   is finitely generated over `R`.
+* `Ideal.fg_of_le_of_finite_quotient`: over a noetherian base, an ideal containing a finitely
+  generated ideal with module-finite quotient is finitely generated.
 
 * `TauCeti.span_range_prod_quotient_span_pow_eq_top`: **an explicit spanning set of
   `R ⧸ Ideal.span s ^ n`**, the images of the products of fewer than `n` elements of `s`.
@@ -208,5 +210,16 @@ theorem finite_quotient_mul {A R : Type*} [CommSemiring A] [CommRing R] [Algebra
   have : Module.Finite A ((R ⧸ I * J) ⧸ N) :=
     Module.Finite.equiv (eQ.restrictScalars A).symm
   exact Module.Finite.of_restrictScalars_submodule_quotient N
+
+/-- Over a noetherian base ring `A`, an ideal `I` of an `A`-algebra `R` is finitely generated as
+soon as it contains a finitely generated ideal `J` such that `R ⧸ J` is a finite `A`-module:
+then `R ⧸ J` is a noetherian `R`-module. -/
+theorem fg_of_le_of_finite_quotient {A R : Type*} [CommRing A] [CommRing R] [Algebra A R]
+    [IsNoetherianRing A] {I J : Ideal R} (hJ : J.FG) (hJI : J ≤ I) [Module.Finite A (R ⧸ J)] :
+    I.FG := by
+  have : IsNoetherian R (R ⧸ J) :=
+    isNoetherian_of_tower A (isNoetherian_of_isNoetherianRing_of_finite A (R ⧸ J))
+  refine Submodule.fg_of_fg_map_of_fg_inf_ker J.mkQ (IsNoetherian.noetherian _) ?_
+  rwa [Submodule.ker_mkQ, inf_eq_right.mpr hJI]
 
 end Ideal

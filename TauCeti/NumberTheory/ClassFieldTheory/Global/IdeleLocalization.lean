@@ -922,7 +922,7 @@ def ideleLocalization : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K) →+
     (Π₀ v : HeightOneSpectrum (𝓞 K), Br (v.adicCompletion K)) ×
       ((w : InfinitePlace K) → Br w.Completion) where
   toFun x :=
-    (dfinsuppOfFiniteSupport (fun v ↦ ideleBrLocalization v x)
+    (DFinsupp.ofSupportFinite (fun v ↦ ideleBrLocalization v x)
       (finite_setOfPred_ideleBrLocalization_ne_zero x), fun w ↦ ideleInfiniteBrLocalization w x)
   map_zero' := Prod.ext (DFinsupp.ext fun _ ↦ by simp) (funext fun _ ↦ map_zero _)
   map_add' x y := Prod.ext (DFinsupp.ext fun _ ↦ by simp) (funext fun _ ↦ map_add _ x y)
@@ -931,7 +931,7 @@ def ideleLocalization : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K) →+
 @[simp]
 theorem ideleLocalization_fst_apply (x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))
     (v : HeightOneSpectrum (𝓞 K)) : (ideleLocalization K x).1 v = ideleBrLocalization v x :=
-  dfinsuppOfFiniteSupport_apply _ _ v
+  DFinsupp.ofSupportFinite_apply _ _ v
 
 /-- The component of the localization map at an infinite place `w` is
 `ideleInfiniteBrLocalization w`. -/

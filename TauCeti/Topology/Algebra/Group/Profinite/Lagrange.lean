@@ -61,7 +61,8 @@ theorem _root_.Subgroup.profiniteOrder_apply_eq_add_profiniteIndex (H : Subgroup
       congr 1
       funext N
       have hcard := (H.map (QuotientGroup.mk' N.toSubgroup)).card_mul_index
-      rw [← hcard, padicValNat.mul Nat.card_pos.ne'
+      simp only [Nat.padicValNat_def]
+      rw [← hcard, Nat.multiplicity_mul Nat.card_pos.ne'
         Subgroup.index_ne_zero_of_finite, Nat.cast_add]
     _ = (⨆ N : OpenNormalSubgroup G,
           (padicValNat ℓ
@@ -74,15 +75,17 @@ theorem _root_.Subgroup.profiniteOrder_apply_eq_add_profiniteIndex (H : Subgroup
       intro N M
       let K : OpenNormalSubgroup G := N ⊓ M
       refine ⟨K, add_le_add ?_ ?_⟩
-      · rw [padicValNat_eq_emultiplicity Nat.card_pos.ne',
-          padicValNat_eq_emultiplicity Nat.card_pos.ne']
+      · simp only [Nat.padicValNat_def]
+        rw [multiplicity_eq_emultiplicity Nat.card_pos.ne',
+          multiplicity_eq_emultiplicity Nat.card_pos.ne']
         apply emultiplicity_le_emultiplicity_of_dvd_right
         rw [← Subgroup.relIndex_ker H (QuotientGroup.mk' N.toSubgroup),
           ← Subgroup.relIndex_ker H (QuotientGroup.mk' K.toSubgroup),
           QuotientGroup.ker_mk', QuotientGroup.ker_mk']
         exact Subgroup.relIndex_dvd_of_le_left _ inf_le_left
-      · rw [padicValNat_eq_emultiplicity Subgroup.index_ne_zero_of_finite,
-          padicValNat_eq_emultiplicity Subgroup.index_ne_zero_of_finite]
+      · simp only [Nat.padicValNat_def]
+        rw [multiplicity_eq_emultiplicity Subgroup.index_ne_zero_of_finite,
+          multiplicity_eq_emultiplicity Subgroup.index_ne_zero_of_finite]
         apply emultiplicity_le_emultiplicity_of_dvd_right
         rw [H.index_map_mk'_eq_index_sup M.toSubgroup,
           H.index_map_mk'_eq_index_sup K.toSubgroup]

@@ -95,6 +95,14 @@ theorem specialLinearRootSign_mul_swap_eq_neg_one_pow
   unfold Nat.dist
   omega
 
+/-- Over `ℤ`, the interval-root sign is `Int.negOnePow` of zero for a positive root and of the
+height minus one for a negative root. -/
+theorem specialLinearRootSign_eq_negOnePow (i j : Fin (r + 1)) :
+    specialLinearRootSign r ℤ i j =
+      (((if i < j then 0 else ((i : ℕ) - j - 1 : ℕ)) : ℤ).negOnePow : ℤ) := by
+  rw [specialLinearRootSign_def]
+  split_ifs <;> simp [Int.coe_negOnePow_natCast]
+
 /-- The signed matrix unit belonging to an unequal pair of indices. -/
 def specialLinearSignedRoot (i j : Fin (r + 1)) (h : i ≠ j) : sl (Fin (r + 1)) A :=
   single i j h (specialLinearRootSign r A i j)

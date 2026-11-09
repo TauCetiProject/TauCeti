@@ -251,8 +251,8 @@ at a Morse critical point. -/
 theorem contDiffAt_negativeGradientFlow_graph (hf : LipschitzWith K (∇ f))
     (hfs : ContDiff ℝ 2 f) {g : E → E} {v : E} (hg : ContDiffAt ℝ 1 g v) (t : ℝ) :
     ContDiffAt ℝ 1 (fun w ↦ negativeGradientFlow f hf t (x + (w + g w))) v :=
-  (contDiff_negativeGradientFlow_apply f hf hfs t).contDiffAt.comp v
-    (contDiffAt_const.add (contDiffAt_id.add hg))
+  (contDiff_negativeGradientFlow_apply f hf le_rfl (by simpa [one_add_one_eq_two] using hfs)
+    t).contDiffAt.comp v (contDiffAt_const.add (contDiffAt_id.add hg))
 
 namespace IsNondegenerateCriticalPoint
 

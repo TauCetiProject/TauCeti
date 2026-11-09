@@ -31,6 +31,9 @@ element of the original algebra.
   every left ideal consisting of elements with spectrum in `{0}`.
 * `TauCeti.mem_nonUnitalJacobson_iff_forall_quasispectrum_mul_subset_singleton_zero`: the
   nonunital characterization.
+* `AlgHom.apply_eq_zero_of_mem_jacobson`,
+  `NonUnitalAlgHom.apply_eq_zero_of_mem_nonUnitalJacobson`: characters, unital or nonunital,
+  kill the radical.
 
 ## References
 
@@ -101,3 +104,17 @@ theorem mem_nonUnitalJacobson_iff_forall_quasispectrum_mul_subset_singleton_zero
   simpa using hk2
 
 end TauCeti
+
+/-- Every character of an algebra over a field kills the Jacobson radical. -/
+theorem AlgHom.apply_eq_zero_of_mem_jacobson {𝕜 A : Type*} [Field 𝕜] [Ring A] [Algebra 𝕜 A]
+    (φ : A →ₐ[𝕜] 𝕜) {a : A} (ha : a ∈ Ring.jacobson A) : φ a = 0 :=
+  TauCeti.Ring.spectrum_subset_singleton_zero_of_mem_jacobson ha (AlgHom.apply_mem_spectrum φ a)
+
+/-- Every nonunital character of a nonunital algebra over a field kills its Jacobson radical. -/
+theorem NonUnitalAlgHom.apply_eq_zero_of_mem_nonUnitalJacobson {𝕜 A : Type*} [Field 𝕜]
+    [NonUnitalRing A] [Module 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
+    (φ : A →ₙₐ[𝕜] 𝕜) {a : A} (ha : a ∈ TauCeti.nonUnitalJacobson 𝕜 A) : φ a = 0 := by
+  have h :=
+    (TauCeti.mem_nonUnitalJacobson_iff_forall_quasispectrum_mul_subset_singleton_zero.mp ha a)
+      (NonUnitalAlgHom.apply_mem_quasispectrum φ (a * a))
+  simpa using h

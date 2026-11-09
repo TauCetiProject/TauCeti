@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.NumberField.House
 public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
 public import TauCeti.NumberTheory.Height.FiniteOrder
+
+import TauCeti.NumberTheory.Height.House
 
 /-!
 # Height zero and torsion units
@@ -14,7 +17,9 @@ public import TauCeti.NumberTheory.Height.FiniteOrder
 A unit of a number field has multiplicative height one, equivalently logarithmic height zero,
 exactly when it belongs to the torsion subgroup. Both relative and absolute heights detect
 this subgroup, which is also the kernel of the logarithmic embedding. Consequently every
-unit in a fundamental system has strictly positive logarithmic height.
+unit in a fundamental system has strictly positive logarithmic height. Conversely, the height of
+a unit `ζ ∏ j, u j ^ e j` with `ζ` torsion is bounded by its exponents `e j` and the houses of the
+`u j`.
 
 For a nonzero algebraic integer, height one likewise characterizes finite multiplicative
 order and implies that the integer is a unit.
@@ -93,6 +98,40 @@ theorem one_lt_absMulHeight₁ {u : (𝓞 K)ˣ} (hu : u ∉ torsion K) :
 theorem absLogHeight₁_pos {u : (𝓞 K)ˣ} (hu : u ∉ torsion K) :
     0 < absLogHeight₁ (u : K) :=
   Real.log_pos (one_lt_absMulHeight₁ hu)
+
+/-- A unit `ζ ∏ j, u j ^ e j` with `ζ` a root of unity and every `|e j| ≤ B` has relative height
+at most `[K : ℚ] * B * ∑ j, log (house (u j))`. -/
+theorem logHeight₁_mul_prod_zpow_le {ι : Type*} [Fintype ι] {u : ι → (𝓞 K)ˣ} {ζ : (𝓞 K)ˣ}
+    (hζ : ζ ∈ torsion K) {e : ι → ℤ} {B : ℝ} (he : ∀ j, |(e j : ℝ)| ≤ B) :
+    logHeight₁ ((ζ * ∏ j, u j ^ e j : (𝓞 K)ˣ) : K) ≤
+      Module.finrank ℚ K * (B * ∑ j, Real.log (house (u j : K))) := by
+  have hcoe : ((ζ * ∏ j, u j ^ e j : (𝓞 K)ˣ) : K) = (ζ : K) * ∏ j, (u j : K) ^ e j := by
+    rw [coe_mul]
+    congr 1
+    simp only [← coe_zpow]
+    exact map_prod ((_root_.Units.coeHom K).comp (_root_.Units.map
+      (algebraMap (𝓞 K) K).toMonoidHom)) _ _
+  -- Each `u j` is an algebraic integer of house at least `1`.
+  have hu (j : ι) :
+      logHeight₁ (u j : K) ≤ Module.finrank ℚ K * Real.log (house (u j : K)) := by
+    have h := logHeight₁_le_finrank_mul_posLog_house (u j : 𝓞 K).isIntegral_coe
+    rwa [Real.posLog_eq_log (by
+      rw [abs_of_nonneg (house_nonneg _)]
+      exact one_le_house_of_isIntegral (RingOfIntegers.isIntegral_coe _) (coe_ne_zero (u j)))] at h
+  calc logHeight₁ ((ζ * ∏ j, u j ^ e j : (𝓞 K)ˣ) : K)
+      ≤ logHeight₁ (ζ : K) + ∑ j, logHeight₁ ((u j : K) ^ e j) := by
+        rw [hcoe]
+        exact (logHeight₁_mul_le _ _).trans (add_le_add le_rfl (logHeight₁_prod_le _ _))
+    _ = ∑ j, |(e j : ℝ)| * logHeight₁ (u j : K) := by
+        rw [(logHeight₁_eq_zero_iff ζ).mpr hζ, zero_add]
+        refine Finset.sum_congr rfl fun j _ ↦ ?_
+        rw [logHeight₁_zpow, Nat.cast_natAbs, Int.cast_abs]
+    _ ≤ ∑ j, B * (Module.finrank ℚ K * Real.log (house (u j : K))) :=
+        Finset.sum_le_sum fun j _ ↦ mul_le_mul (he j) (hu j) (zero_le_logHeight₁ _)
+          ((abs_nonneg _).trans (he j))
+    _ = Module.finrank ℚ K * (B * ∑ j, Real.log (house (u j : K))) := by
+        rw [← Finset.mul_sum, ← Finset.mul_sum]
+        ring
 
 end NumberField.Units
 

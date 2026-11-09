@@ -124,6 +124,17 @@ applied to `w`. -/
     (h.mfderiv_riemannianLog_comp_mfderiv_riemannianExp hv)
     (h.mfderiv_riemannianExp_comp_mfderiv_riemannianLog hv)) _
 
+/-- Normal coordinate fields associated to independent tangent vectors remain linearly independent
+on the normal neighbourhood. -/
+theorem linearIndependent_normalCoordinateField (h : IsNormalDomain I M p U)
+    {ι : Type*} {v : ι → TangentSpace I p} (hv : LinearIndependent ℝ v)
+    {q : M} (hq : q ∈ riemannianExp I M p '' U) :
+    LinearIndependent ℝ (fun i ↦ normalCoordinateField I M p U (v i) q) := by
+  obtain ⟨w, hw, rfl⟩ := hq
+  simp_rw [h.normalCoordinateField_riemannianExp hw]
+  exact hv.map' _ (LinearMap.ker_eq_bot.mpr
+    ((h.isLocalDiffeomorphOn ⟨w, hw⟩).isInvertible_mfderiv (by simp)).injective)
+
 /-- **The normal coordinate field at the centre** `p` is the tangent vector it is defined by. -/
 @[simp] theorem normalCoordinateField_self (h : IsNormalDomain I M p U) (w : TangentSpace I p) :
     normalCoordinateField I M p U w p = w := by

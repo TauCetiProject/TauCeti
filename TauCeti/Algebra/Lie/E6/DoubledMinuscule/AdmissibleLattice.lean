@@ -23,12 +23,13 @@ square-zero, and its coordinate basis consists of Cartan weight vectors with wei
 
 The resulting admissible lattice is both full-weight and stable under the type-`E₆` diagram
 symmetry at the level of its weight basis. It is therefore the lattice input for the graph-stable
-type-`E₆` Chevalley--Demazure carrier required by Layer 9 of the ReductiveGroups roadmap and by
-the `²E₆` branch of the CFSGStatement roadmap.
+type-`E₆` Chevalley--Demazure group scheme and the twisted `²E₆` groups.
 
-The rationalization and coordinate-lattice argument specialize the formal pattern of
-`TauCeti/Algebra/Lie/E6/Minuscule/AdmissibleLattice.lean`; the mathematical change is the
-contragredient second block and its doubled weight basis.
+The rationalization and coordinate-lattice argument parallel the generic weight-table API of
+`TauCeti/Algebra/Lie/Presentation/MinusculeWeightTable/Rational.lean` and
+`TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/MinusculeWeightTable.lean`, as instantiated for
+`V(ϖ₁)` by `TauCeti.E6Minuscule.weightTable` in `TauCeti/Algebra/Lie/E6/Minuscule/Basic.lean`.
+Here the representation is the doubled one, with the contragredient block `V(ϖ₆)` adjoined.
 
 ## Main declarations
 
@@ -200,7 +201,7 @@ theorem rep_serreRootGenerator_sq (k : Fin 6 ⊕ Fin 6) :
       (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ k)) ^ 2 = 0 := by
   apply LinearMap.ext
   intro v
-  rw [pow_two, Module.End.mul_apply]
+  rw [pow_two, mul_apply_eq_comp]
   cases k with
   | inl i =>
       simpa only [TauCeti.serreRootGenerator_inl, rep_ι_apply,

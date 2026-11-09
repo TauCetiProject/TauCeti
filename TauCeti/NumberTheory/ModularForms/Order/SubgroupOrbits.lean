@@ -30,7 +30,7 @@ image of `Γ` in `GL (Fin 2) ℝ` are the same subsets of `ℍ`.
 
 Because that is an ordinary `MulAction.orbitRel.Quotient`, the *other* function the valence
 formula indexes over it — the stabiliser order — needs no modular-specific definition at all:
-`TauCeti.cardStabilizerOnOrbit` in `GroupTheory/GroupAction/Stabilizer.lean` applies to this
+`TauCeti.cardStabilizerOnOrbit` in `GroupTheory/GroupAction/Stabilizer/Basic.lean` applies to this
 quotient directly. Only the vanishing order, below, needs the determinant-`1` argument that
 makes it well defined here.
 

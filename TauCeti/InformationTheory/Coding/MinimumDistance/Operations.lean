@@ -64,7 +64,7 @@ theorem hammingMinDist_le_hammingMinDist_puncture_add_card_compl :
     have hx0 : x ≠ 0 := fun h ↦ hy0 (by rw [← hxs, h]; rfl)
     calc
       hammingMinDist (C : Set (ι → A)) ≤ hammingNorm x :=
-        hammingMinDist_le_hammingNorm hx hx0
+        hammingMinDist_le_hammingNorm C.zero_mem hx hx0
       _ = hammingNorm y + hammingNorm (sᶜ.domRestrict x) := by
         rw [hammingNorm_eq_domRestrict_add_domRestrict_compl s, hxs]
       _ ≤ hammingMinDist (puncture C s : Set (s → A)) + Fintype.card ↥sᶜ := by
@@ -81,7 +81,8 @@ theorem hammingMinDist_le_hammingMinDist_shorten (hS : shorten C s ≠ ⊥) :
   have hxsc : sᶜ.domRestrict x = 0 := funext fun i ↦ hxoff i i.2
   have hx0 : x ≠ 0 := fun h ↦ hy0 (by rw [← hxs, h]; rfl)
   calc
-    hammingMinDist (C : Set (ι → A)) ≤ hammingNorm x := hammingMinDist_le_hammingNorm hx hx0
+    hammingMinDist (C : Set (ι → A)) ≤ hammingNorm x :=
+      hammingMinDist_le_hammingNorm C.zero_mem hx hx0
     _ = hammingMinDist (shorten C s : Set (s → A)) := by
       rw [hammingNorm_eq_domRestrict_add_domRestrict_compl s, hxs, hxsc, hammingNorm_zero,
         add_zero, hyd]
@@ -126,7 +127,7 @@ theorem hammingMinDist_punctureAt_add_one_eq [DecidableEq ι] (i : ι) {x : ι �
     intro h
     simp [h] at hyw
     omega
-  have hupper := hammingMinDist_le_hammingNorm (E := punctureAt C i) hyC hy0
+  have hupper := hammingMinDist_le_hammingNorm (punctureAt C i).zero_mem hyC hy0
   have hlower := hammingMinDist_le_hammingMinDist_punctureAt_add_one C i
   omega
 
@@ -181,8 +182,7 @@ theorem finrank_punctureAt_eq (i : ι)
     Module.finrank F (punctureAt C i) = Module.finrank F C := by
   classical
   refine finrank_punctureAt_of_single_notMem C fun h ↦ ?_
-  have hle := hammingMinDist_le_hammingNorm (E := C.toAddSubgroup) h (by simp)
-  rw [Submodule.coe_toAddSubgroup] at hle
+  have hle := hammingMinDist_le_hammingNorm C.zero_mem h (by simp)
   have hone : hammingNorm (Pi.single i 1 : ι → F) = 1 := by
     rw [hammingNorm, Finset.card_eq_one]
     exact ⟨i, by ext; simp [Pi.single_apply]⟩
@@ -336,11 +336,11 @@ theorem _root_.AddSubgroup.hammingMinDist_directSum (C : AddSubgroup (ι → A))
   apply le_antisymm
   · apply le_min
     · simpa only [hammingNorm_sumElim, hammingNorm_zero, add_zero, hxd] using
-        hammingMinDist_le_hammingNorm hxmem hxne
+        hammingMinDist_le_hammingNorm (zero_mem _) hxmem hxne
     · have hyne : Sum.elim (0 : ι → A) y ≠ 0 := fun h ↦
         hy0 (funext fun j ↦ congrFun h (.inr j))
       simpa only [hammingNorm_sumElim, hammingNorm_zero, zero_add, hyd] using
-        hammingMinDist_le_hammingNorm (sumElim_zero_left_mem_directSum C hy) hyne
+        hammingMinDist_le_hammingNorm (zero_mem _) (sumElim_zero_left_mem_directSum C hy) hyne
   · apply (le_hammingMinDist_iff_hammingNorm hsum).mpr
     intro z hz hz0
     obtain ⟨hzC, hzD⟩ := mem_directSum_iff.mp hz
@@ -358,9 +358,9 @@ theorem _root_.AddSubgroup.hammingMinDist_directSum (C : AddSubgroup (ι → A))
         | inl i => exact congrFun hleft i
         | inr j => exact congrFun hright j
       exact (min_le_right _ _).trans
-        ((hammingMinDist_le_hammingNorm hzD hright).trans (Nat.le_add_left _ _))
+        ((hammingMinDist_le_hammingNorm D.zero_mem hzD hright).trans (Nat.le_add_left _ _))
     · exact (min_le_left _ _).trans
-        ((hammingMinDist_le_hammingNorm hzC hleft).trans (Nat.le_add_right _ _))
+        ((hammingMinDist_le_hammingNorm C.zero_mem hzC hleft).trans (Nat.le_add_right _ _))
 
 /-- Adding a zero code on the right preserves minimum distance, including for a zero left code. -/
 @[simp]

@@ -43,7 +43,7 @@ variable (M : Type*) [AddCommGroup M] [Module k M]
 /-- A rational `GLₙ` coaction extends uniquely to the matrix monoid if and only if
 it takes values in polynomial matrix coordinates. This also applies to infinite modules. -/
 theorem existsUnique_matrixMonoidComodule_iff :
-    (∃! σ : Comodule k (MatrixMonoid.coordinateBialgebra k n) M,
+    (∃! σ : Comodule k (MatrixMonoid.coordinateBialgebra k (Fin n)) M,
       (polynomialCoordinateBialgHom k n).toCoalgHom.toLinearMap.lTensor M ∘ₗ σ.coact =
         Comodule.coact (R := k) (C := coordinateHopfAlgebra k n)) ↔
       ∀ m, Comodule.coact (R := k) (C := coordinateHopfAlgebra k n) m ∈
@@ -55,7 +55,7 @@ when each entry of its coefficient matrix lies in the polynomial coordinate suba
 The criterion works with any finite basis, over every field and in size zero. -/
 theorem existsUnique_matrixMonoidComodule_iff_coefficientMatrix
     {ι : Type*} [Finite ι] (b : Module.Basis ι k M) :
-    (∃! σ : Comodule k (MatrixMonoid.coordinateBialgebra k n) M,
+    (∃! σ : Comodule k (MatrixMonoid.coordinateBialgebra k (Fin n)) M,
       (polynomialCoordinateBialgHom k n).toCoalgHom.toLinearMap.lTensor M ∘ₗ σ.coact =
         Comodule.coact (R := k) (C := coordinateHopfAlgebra k n)) ↔
       ∀ i j, Comodule.coefficientMatrix (C := coordinateHopfAlgebra k n) b i j ∈
@@ -73,7 +73,7 @@ variable (M : Type*) [AddCommMonoid M] [Module k M]
 every algebra-valued general-linear point. The coaction factorization determines this
 comparison without requiring a chosen basis. -/
 theorem endOfPoint_matrixMonoidComodule
-    (σ : Comodule k (MatrixMonoid.coordinateBialgebra k n) M)
+    (σ : Comodule k (MatrixMonoid.coordinateBialgebra k (Fin n)) M)
     (hσ : (polynomialCoordinateBialgHom k n).toCoalgHom.toLinearMap.lTensor M ∘ₗ σ.coact =
       Comodule.coact (R := k) (C := coordinateHopfAlgebra k n))
     {A : Type*} [CommRing A] [Algebra k A]

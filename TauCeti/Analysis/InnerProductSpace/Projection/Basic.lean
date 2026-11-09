@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, GPT-6
 -/
 module
 
@@ -20,14 +20,17 @@ hypothesis on the ambient space, where the adjoint of a bounded operator need no
 A map `T P_U` that factors through the projection onto a finite-dimensional `U` has rank at most
 `dim U`. For subspaces `U` and `V` of the same finite dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the
 same dimension. The orthogonal complement of a nonzero vector has codimension one, and fewer than
-`dim E` vectors have a common nonzero orthogonal vector.
+`dim E` vectors have a common nonzero orthogonal vector, which may be taken of norm one. A nonzero
+vector followed by a linearly independent family in its orthogonal complement is linearly
+independent.
 
 For finite-dimensional `U` and `V` with `dim V ≤ dim U`, a lower bound `k ‖u‖² ≤ ‖P_V u‖²` for
 `u ∈ U` transfers to the same lower bound `k ‖v‖² ≤ ‖P_U v‖²` for `v ∈ V`.
 
 The projection `P_U v` is the point of `v + Uᗮ` of least norm, and it is the only one: a vector
 `w` with `‖w‖ ≤ ‖P_U w‖` equals `P_U w`. Equivalently, `v ∈ U` exactly when adding a vector of
-`Uᗮ` never decreases the norm of `v`.
+`Uᗮ` never decreases the norm of `v`. Over `ℝ`, Pythagoras splits the squared distance from a
+point `b + c`, with `b ∈ U` and `c ∈ Uᗮ`, into its components along `U` and `Uᗮ`.
 
 Since the kernel of `P_V` is `Vᗮ`, the projection `P_V` is injective on `U` exactly when no
 nonzero vector of `U` is orthogonal to `V`.
@@ -38,15 +41,31 @@ Compressing the square of the difference `P_U - P_V` to `U`, from either side, g
 A linear map agrees with its composition with the orthogonal projection onto the orthogonal
 complement of its kernel whenever the kernel admits an orthogonal projection.
 
+## Provenance
+
+The submodule inclusion-adjoint identity is adapted from
+`ForTauCeti/Analysis/InnerProductSpace/SinTheta/Perturbation.lean` in the
+AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
+
 ## Main results
 
+* `Submodule.adjoint_subtype`: the adjoint of subspace inclusion is orthogonal projection
+  onto that subspace.
+* `Submodule.adjoint_orthogonalProjectionOnto_toLinearMap`: the adjoint of restricted
+  orthogonal projection is subspace inclusion.
 * `Submodule.norm_starProjection_comp_starProjection_comm`: `‖P_U P_V‖ = ‖P_V P_U‖`.
 * `Submodule.finrank_range_comp_starProjection_le`: `rank (T P_U) ≤ dim U`.
 * `Submodule.finrank_inf_orthogonal_comm`: `dim (U ⊓ Vᗮ) = dim (V ⊓ Uᗮ)` when `dim U = dim V`.
 * `Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one`: `dim (𝕜 ∙ v)ᗮ = dim E - 1`
   for a nonzero vector `v`.
-* `TauCeti.exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank`: fewer than `dim E` vectors
-  have a common nonzero orthogonal vector.
+* `TauCeti.exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank`,
+  `TauCeti.exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank`: fewer than `dim E` vectors
+  have a common nonzero, and hence a common unit, orthogonal vector.
+* `TauCeti.ne_neg_of_inner_eq_zero`: a vector orthogonal to a nonzero vector `b` is not `-b`.
+* `LinearIndependent.finCons_orthogonal_span_singleton`: a nonzero vector `p` followed by a
+  linearly independent family in `(𝕜 ∙ p)ᗮ` is linearly independent.
+* `LinearIsometry.exists_mem_sphere_inner_eq_zero`: a linear isometry into a space of larger
+  finite dimension has a unit vector orthogonal to its range.
 * `Submodule.mul_norm_sq_le_norm_starProjection_sq_of_finrank_le`: for finite-dimensional
   subspaces with `dim V ≤ dim U`, a lower bound on `‖P_V u‖²` over `U` transfers to the same
   bound on `‖P_U v‖²` over `V`.
@@ -54,6 +73,8 @@ complement of its kernel whenever the kernel admits an orthogonal projection.
   is its projection.
 * `Submodule.mem_iff_forall_mem_orthogonal_norm_le_norm_add`: `v ∈ U` if and only if
   `‖v‖ ≤ ‖v + w‖` for every `w ∈ Uᗮ`.
+* `Submodule.norm_sub_add_sq_of_mem_of_mem_orthogonal`: Pythagoras for `‖v - (b + c)‖²` with
+  `b ∈ R` and `c ∈ Rᗮ`, split along `R` and `Rᗮ`.
 * `Submodule.injOn_starProjection_iff_disjoint`: `P_V` is injective on `U` if and only if
   `U ⊓ Vᗮ = ⊥`.
 * `Submodule.starProjection_sub_starProjection_sq_mul_starProjection`,
@@ -239,6 +260,50 @@ theorem starProjection_mul_starProjection_sub_starProjection_sq :
   simp only [sq, sub_mul, mul_sub, mul_assoc, hP.eq, hQ.eq, hP.mul_self_mul]
   abel
 
+/-- The adjoint of the inclusion `U → E` is the orthogonal projection `E → U`.
+Both maps are regarded as finite-dimensional algebraic linear maps. -/
+@[simp]
+theorem adjoint_subtype [FiniteDimensional 𝕜 E] :
+    LinearMap.adjoint U.subtype = U.orthogonalProjectionOnto.toLinearMap := by
+  rw [eq_comm]
+  apply (LinearMap.eq_adjoint_iff
+    U.orthogonalProjectionOnto.toLinearMap U.subtype).2
+  intro x y
+  -- Identify the ambient action of the restricted orthogonal projection with
+  -- `starProjection`; the inner-product identity is then a projection property.
+  change ⟪U.starProjection x, (y : E)⟫_𝕜 = ⟪x, (y : E)⟫_𝕜
+  rw [U.inner_starProjection_left_eq_right,
+    U.starProjection_eq_self_iff.mpr y.2]
+
+/-- The algebraic adjoint of the orthogonal projection `E → U` is the inclusion `U → E`.
+This is the elementary simplification rule for the adjoints of cross-projections and
+self-adjoint compressions, together with `LinearMap.adjoint_comp`. -/
+@[simp]
+theorem adjoint_orthogonalProjectionOnto_toLinearMap [FiniteDimensional 𝕜 E] :
+    LinearMap.adjoint U.orthogonalProjectionOnto.toLinearMap = U.subtype := by
+  rw [← U.adjoint_subtype, LinearMap.adjoint_adjoint]
+
+section Real
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+  (R : Submodule ℝ F) [R.HasOrthogonalProjection]
+
+/-- Pythagoras for the squared distance from `b + c`, where `b ∈ R` and `c ∈ Rᗮ`: the
+components of `v - (b + c)` along `R` and `Rᗮ` are `P v - b` and `v - P v - c`, where `P` is the
+orthogonal projection onto `R`. -/
+theorem norm_sub_add_sq_of_mem_of_mem_orthogonal (v : F) {b c : F} (hb : b ∈ R) (hc : c ∈ Rᗮ) :
+    ‖v - (b + c)‖ ^ 2 = ‖R.starProjection v‖ ^ 2 + ‖v - R.starProjection v - c‖ ^ 2 -
+      2 * ⟪b, R.starProjection v⟫_ℝ + ‖b‖ ^ 2 := by
+  have hperp : v - R.starProjection v - c ∈ Rᗮ :=
+    Rᗮ.sub_mem (R.sub_starProjection_mem_orthogonal v) hc
+  have hsplit : v - (b + c) = (R.starProjection v - b) + (v - R.starProjection v - c) := by abel
+  rw [hsplit, norm_add_sq_real,
+    R.inner_right_of_mem_orthogonal (R.sub_mem (R.starProjection_apply_mem v) hb) hperp,
+    norm_sub_sq_real, real_inner_comm]
+  ring
+
+end Real
+
 end Submodule
 
 namespace TauCeti
@@ -260,7 +325,59 @@ theorem exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank (s : Finset E)
     omega
   exact ⟨e, he₀, fun u hu ↦ Submodule.inner_right_of_mem_orthogonal (Submodule.subset_span hu) he⟩
 
+/-- Fewer than `dim E` vectors have a common orthogonal unit vector. -/
+theorem exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (s : Finset E)
+    (hs : s.card < Module.finrank 𝕜 E) : ∃ e : E, ‖e‖ = 1 ∧ ∀ u ∈ s, ⟪u, e⟫_𝕜 = 0 := by
+  obtain ⟨e, he₀, he⟩ := exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank s hs
+  exact ⟨(‖e‖⁻¹ : 𝕜) • e, norm_smul_inv_norm he₀, fun u hu ↦ by
+    rw [inner_smul_right, he u hu, mul_zero]⟩
+
+/-- A vector orthogonal to a nonzero vector `b` is not `-b`. -/
+theorem ne_neg_of_inner_eq_zero {a b : E} (hb : b ≠ 0) (hab : ⟪a, b⟫_𝕜 = 0) : a ≠ -b := by
+  rintro rfl
+  rw [inner_neg_left, neg_eq_zero, inner_self_eq_zero] at hab
+  exact hb hab
+
 end TauCeti
+
+namespace LinearIndependent
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {m : ℕ}
+
+/-- A nonzero vector followed by a linearly independent family in its orthogonal complement is
+linearly independent. -/
+theorem finCons_orthogonal_span_singleton {p : E} (hp : p ≠ 0) {w : Fin m → E}
+    (hw : LinearIndependent 𝕜 w) (hwp : ∀ i, w i ∈ (𝕜 ∙ p)ᗮ) :
+    LinearIndependent 𝕜 (Fin.cons p w) := by
+  refine linearIndependent_finCons.2 ⟨hw, fun h ↦ hp ?_⟩
+  have hle : Submodule.span 𝕜 (Set.range w) ≤ (𝕜 ∙ p)ᗮ :=
+    Submodule.span_le.2 (Set.range_subset_iff.2 hwp)
+  exact inner_self_eq_zero.1 (Submodule.mem_orthogonal_singleton_iff_inner_right.1 (hle h))
+
+end LinearIndependent
+
+namespace LinearIsometry
+
+open scoped InnerProductSpace
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [NormedAddCommGroup F]
+  [InnerProductSpace ℝ F]
+
+/-- A linear isometry into a finite-dimensional space of larger dimension has a unit vector
+orthogonal to its range. -/
+theorem exists_mem_sphere_inner_eq_zero (ι : F →ₗᵢ[ℝ] E) [FiniteDimensional ℝ E]
+    (h : Module.finrank ℝ F < Module.finrank ℝ E) :
+    ∃ v : Metric.sphere (0 : E) 1, ∀ x, ⟪(v : E), ι x⟫_ℝ = 0 := by
+  have hW : LinearMap.range ι.toLinearMap ≠ ⊤ := fun hW ↦ by
+    have := LinearMap.finrank_range_of_inj ι.injective
+    rw [hW, finrank_top] at this
+    omega
+  obtain ⟨w, hw, hw0⟩ :=
+    Submodule.exists_mem_ne_zero_of_ne_bot (Submodule.orthogonal_eq_bot_iff.not.2 hW)
+  refine ⟨⟨‖w‖⁻¹ • w, by simp [norm_smul, norm_ne_zero_iff.2 hw0]⟩, fun x ↦ ?_⟩
+  rw [inner_smul_left, (Submodule.mem_orthogonal' _ w).1 hw (ι x) ⟨x, rfl⟩, mul_zero]
+
+end LinearIsometry
 
 namespace LinearMap
 

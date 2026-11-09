@@ -61,7 +61,7 @@ theorem eq_of_antitone_of_ncard_eq [PartialOrder α] {f g : ℕ →₀ α}
     (h : ∀ a ≠ 0, {i | f i = a}.ncard = {i | g i = a}.ncard) : f = g := by
   ext i
   induction i using Nat.strong_induction_on with
-  | h i ih =>
+  | ind i ih =>
     exact le_antisymm (le_of_antitone_of_ncard_eq hg ih h)
       (le_of_antitone_of_ncard_eq hf (fun j hj ↦ (ih j hj).symm) fun a ha ↦ (h a ha).symm)
 

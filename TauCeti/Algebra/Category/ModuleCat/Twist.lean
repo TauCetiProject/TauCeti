@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.Aut
+public import Mathlib.CategoryTheory.Action
 public import TauCeti.Algebra.Category.ModuleCat.Smooth.Basic
 public import TauCeti.CategoryTheory.Monoidal.Action.Basic
 public import TauCeti.CategoryTheory.Monoidal.Action.FullSubcategory
+public import TauCeti.CategoryTheory.Monoidal.Action.Pseudofunctor
 
 /-!
 # Twisting modules by ring automorphisms
@@ -37,9 +39,15 @@ sense of Mathlib's `MonoidalLeftAction`, that is, a coherent categorical action 
   acts by homeomorphisms, and for the smooth modules for a family of left ideals
   (`TauCeti.smoothModules`) when each twist preserves the family up to cofinality. The action
   then restricts to these full subcategories.
+* `RingHom.leftLinearRestrictScalars`: restriction of scalars along a ring homomorphism
+  intertwining two such actions is equivariant for the twisting actions, with identity lineators.
 
 Through `MonoidalLeftAction.pseudofunctor`, the action is a pseudofunctor out of the one-object
 bicategory of `H` whose unit and composition comparisons are those of restriction of scalars.
+For a monoid `G` acting on `A` by ring automorphisms and on a type `X`,
+`TauCeti.actionCategoryTwist X a` is this pseudofunctor composed with the label functor
+`ActionCategory.π` of the action category `G ⋉ X`, so that an arrow labelled `g` acts by
+restricting scalars along `(a g)⁻¹`.
 
 ## Implementation notes
 
@@ -237,3 +245,136 @@ lemma isStableUnderLeftAction_smoothModules {ι : Type*} (J : ι → Submodule A
     TauCeti.smoothModules_restrictScalars _ (hJ h) hM
 
 end MonoidHom
+
+namespace RingHom
+
+open Functor.LaxLeftLinear Functor.OplaxLeftLinear
+
+variable {H : Type*} [Monoid H] {A : Type u} [Ring A] {B : Type*} [Ring B] (f : A →+* B)
+  {a : H →* RingAut A} {b : H →* RingAut B} (hf : ∀ h x, f (a h x) = b h (f x))
+
+include hf in
+/-- If a ring homomorphism `f : A →+* B` intertwines actions `a` and `b` of `H` by ring
+automorphisms, then restriction of scalars along `f` is equivariant for the twisting actions.
+Twisting the restriction of a `B`-module by `h` and restricting its twist are both restriction
+of scalars along `f ∘ (a h)⁻¹ = (b h)⁻¹ ∘ f`, and the lineators are the identity maps of the
+underlying abelian group. -/
+@[instance_reducible]
+noncomputable def leftLinearRestrictScalars :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    letI := b.restrictScalarsMonoidalLeftAction.{v}
+    (ModuleCat.restrictScalars.{v} f).LeftLinear (Discrete H) :=
+  letI := a.restrictScalarsMonoidalLeftAction.{v}
+  letI := b.restrictScalarsMonoidalLeftAction.{v}
+  have hsymm (h : H) (x : A) : f ((a h).symm x) = (b h).symm (f x) := by
+    rw [RingEquiv.eq_symm_apply, ← hf, RingEquiv.apply_symm_apply]
+  -- Both lineators are the identity on the carrier of `M`. By
+  -- `ModuleCat.restrictScalars.smul_def`, `r : A` acts on that carrier by `f ((a c).symm r)`
+  -- through the twisted restriction and by `(b c).symm (f r)` through the restricted twist; these
+  -- agree by `hsymm`. The ascription `show M from x` views `x` in `M`, so that both sides are the
+  -- action of `B` on `M` and differ only in the scalar.
+  { μₗ c M := ModuleCat.ofHom
+      (X := (c ⊙ₗ (ModuleCat.restrictScalars f).obj M : ModuleCat.{v} A))
+      (Y := (ModuleCat.restrictScalars f).obj (c ⊙ₗ M : ModuleCat.{v} B))
+      { toFun := fun x => x
+        map_add' _ _ := rfl
+        map_smul' r x := congrArg (· • (show M from x)) (hsymm c.as r) }
+    δₗ c M := ModuleCat.ofHom
+      (X := (ModuleCat.restrictScalars f).obj (c ⊙ₗ M : ModuleCat.{v} B))
+      (Y := (c ⊙ₗ (ModuleCat.restrictScalars f).obj M : ModuleCat.{v} A))
+      { toFun := fun x => x
+        map_add' _ _ := rfl
+        map_smul' r x :=
+          (congrArg (· • (show M from x)) (hsymm c.as r)).symm }
+    μₗ_naturality_left _ _ := by ext; rfl
+    μₗ_naturality_right _ _ _ _ := by ext; rfl
+    μₗ_associativity _ _ _ := by ext; rfl
+    μₗ_unitality _ := by ext; rfl
+    δₗ_naturality_left _ _ := by ext; rfl
+    δₗ_naturality_right _ _ _ _ := by ext; rfl
+    δₗ_associativity _ _ _ := by ext; rfl
+    δₗ_unitality_inv _ := by ext; rfl
+    μₗ_comp_δₗ _ _ := by ext; rfl
+    δₗ_comp_μₗ _ _ := by ext; rfl }
+
+/-- The lax lineators of `RingHom.leftLinearRestrictScalars` are identity maps. -/
+@[simp]
+lemma leftLinearRestrictScalars_μₗ_apply (c : Discrete H) (M : ModuleCat.{v} B) (x : M) :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    letI := b.restrictScalarsMonoidalLeftAction.{v}
+    letI := f.leftLinearRestrictScalars hf
+    μₗ (ModuleCat.restrictScalars.{v} f) c M x = x :=
+  (rfl)
+
+/-- The oplax lineators of `RingHom.leftLinearRestrictScalars` are identity maps. -/
+@[simp]
+lemma leftLinearRestrictScalars_δₗ_apply (c : Discrete H) (M : ModuleCat.{v} B) (x : M) :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    letI := b.restrictScalarsMonoidalLeftAction.{v}
+    letI := f.leftLinearRestrictScalars hf
+    δₗ (ModuleCat.restrictScalars.{v} f) c M x = x :=
+  (rfl)
+
+end RingHom
+
+namespace TauCeti
+
+open Bicategory
+
+variable {G : Type*} [Monoid G] (X : Type*) [MulAction G X] {A : Type u} [Ring A]
+  (a : G →* RingAut A)
+
+/-- The twisting action of `G` on `ModuleCat A`, as a pseudofunctor out of the action category
+`G ⋉ X` (an action groupoid when `G` is a group): an arrow labelled `g` acts by restricting
+scalars along `(a g)⁻¹`. It is the classifying pseudofunctor of
+`MonoidHom.restrictScalarsMonoidalLeftAction` composed with the label functor
+`ActionCategory.π G X`. -/
+-- The body is exposed: the transport functors must be definitionally restrictions of scalars, so
+-- that full subcategories of this family can be stated and computed in terms of
+-- `ModuleCat.restrictScalars`.
+@[expose]
+noncomputable def actionCategoryTwist :
+    LocallyDiscrete (ActionCategory G X) ⥤ᵖ Cat.{v, max u (v + 1)} :=
+  letI := a.restrictScalarsMonoidalLeftAction.{v}
+  (ActionCategory.π G X).toPseudofunctor.comp
+    (MonoidalLeftAction.pseudofunctor G (ModuleCat.{v} A))
+
+variable {X a}
+
+@[simp]
+lemma actionCategoryTwist_obj (x : LocallyDiscrete (ActionCategory G X)) :
+    (actionCategoryTwist.{v} X a).obj x = Cat.of (ModuleCat.{v} A) :=
+  rfl
+
+/-- The transport functor of `actionCategoryTwist X a` along an arrow labelled `g` is restriction
+of scalars along `(a g)⁻¹`. -/
+lemma actionCategoryTwist_map_toFunctor {x y : LocallyDiscrete (ActionCategory G X)}
+    (f : x ⟶ y) :
+    ((actionCategoryTwist.{v} X a).map f).toFunctor =
+      ModuleCat.restrictScalars ((a f.as.hom).symm : A →+* A) :=
+  rfl
+
+/-- The unit comparison of `actionCategoryTwist X a` is `ModuleCat.restrictScalarsId'App`. -/
+lemma actionCategoryTwist_mapId_app (x : LocallyDiscrete (ActionCategory G X))
+    (M : ModuleCat.{v} A) :
+    (Cat.Hom.toNatIso ((actionCategoryTwist.{v} X a).mapId x)).app M =
+      ModuleCat.restrictScalarsId'App ((a 1).symm : A →+* A)
+        (by ext; simp [RingAut.one_eq_refl]) M :=
+  Iso.ext rfl
+
+/-- The composition comparison of `actionCategoryTwist X a` at `f ≫ g`, an arrow labelled by the
+product `g.hom * f.hom`, is `ModuleCat.restrictScalarsComp'App` for the factorization
+`(a (g.hom * f.hom))⁻¹ = (a f.hom)⁻¹ ∘ (a g.hom)⁻¹`. -/
+lemma actionCategoryTwist_mapComp_app {x y z : LocallyDiscrete (ActionCategory G X)}
+    (f : x ⟶ y) (g : y ⟶ z) (M : ModuleCat.{v} A) :
+    (Cat.Hom.toNatIso ((actionCategoryTwist.{v} X a).mapComp f g)).app M =
+      ModuleCat.restrictScalarsComp'App ((a g.as.hom).symm : A →+* A)
+        ((a f.as.hom).symm : A →+* A) ((a (g.as.hom * f.as.hom)).symm : A →+* A)
+        (by ext; simp [← RingAut.inv_apply, mul_inv_rev, RingAut.mul_apply]) M :=
+  letI := a.restrictScalarsMonoidalLeftAction.{v}
+  -- The composition comparison of the composite pseudofunctor is that of the classifying
+  -- pseudofunctor, preceded by the image of an identity `2`-morphism of `SingleObj G`.
+  Iso.ext <| (Category.id_comp _).trans
+    ((MonoidalLeftAction.pseudofunctor_mapComp_hom_toNatTrans_app _ _ M).trans rfl)
+
+end TauCeti

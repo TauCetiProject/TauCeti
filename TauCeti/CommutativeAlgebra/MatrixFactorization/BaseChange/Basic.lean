@@ -115,16 +115,14 @@ original odd module. -/
 /-- The even-to-odd differential of the scalar-extended factorization is the scalar
 extension of `d₀`. -/
 @[simp] theorem baseChangeFunctor_obj_d₀ (f : S →+* T) (X : MatrixFactorization S w) :
-    (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
-        ((baseChangeFunctor f).obj X).obj.d₀ =
+    ((baseChangeFunctor f).obj X).obj.d₀.hom =
       (ModuleCat.extendScalars f).map
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map X.obj.d₀) := rfl
 
 /-- The odd-to-even differential of the scalar-extended factorization is the scalar
 extension of `d₁`. -/
 @[simp] theorem baseChangeFunctor_obj_d₁ (f : S →+* T) (X : MatrixFactorization S w) :
-    (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
-        ((baseChangeFunctor f).obj X).obj.d₁ =
+    ((baseChangeFunctor f).obj X).obj.d₁.hom =
       (ModuleCat.extendScalars f).map
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map X.obj.d₁) := rfl
 
@@ -132,8 +130,7 @@ extension of `d₁`. -/
 extension of `f₀`. -/
 @[simp] theorem baseChangeFunctor_map_f₀ (f : S →+* T)
     {X Y : MatrixFactorization S w} (g : X ⟶ Y) :
-    (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
-        ((baseChangeFunctor f).map g).hom.f₀ =
+    ((baseChangeFunctor f).map g).hom.f₀.hom =
       (ModuleCat.extendScalars f).map
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map g.hom.f₀) := rfl
 
@@ -141,8 +138,7 @@ extension of `f₀`. -/
 of `f₁`. -/
 @[simp] theorem baseChangeFunctor_map_f₁ (f : S →+* T)
     {X Y : MatrixFactorization S w} (g : X ⟶ Y) :
-    (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
-        ((baseChangeFunctor f).map g).hom.f₁ =
+    ((baseChangeFunctor f).map g).hom.f₁.hom =
       (ModuleCat.extendScalars f).map
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map g.hom.f₁) := rfl
 
@@ -155,11 +151,11 @@ instance baseChangeFunctor_additive (f : S →+* T) :
     apply CurvedDuplex.hom_ext
     · apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
       simp only [baseChangeFunctor_map_f₀, ObjectProperty.add_hom, CurvedDuplex.add_f₀,
-        Functor.map_add]
+        Functor.map_add, FGModuleCat.forget₂_map]
       rfl
     · apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
       simp only [baseChangeFunctor_map_f₁, ObjectProperty.add_hom, CurvedDuplex.add_f₁,
-        Functor.map_add]
+        Functor.map_add, FGModuleCat.forget₂_map]
       rfl
 
 /-- The even differential of the base change of a parity shift is the even differential of the
@@ -168,9 +164,8 @@ theorem baseChangeFunctor_obj_parityShift_d₀ (f : S →+* T) (X : MatrixFactor
     ((baseChangeFunctor f).obj (parityShift.obj X)).obj.d₀ =
       (parityShift.obj ((baseChangeFunctor f).obj X)).obj.d₀ := by
   apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
-  simp only [parityShift_obj_d₀, baseChangeFunctor_obj_d₀, Functor.map_neg]
-  -- Forgetting finite generation is the identity on morphisms, hence commutes with negation.
-  rfl
+  simp only [parityShift_obj_d₀, FGModuleCat.forget₂_map, baseChangeFunctor_obj_d₀]
+  exact (ModuleCat.extendScalars f).map_neg
 
 /-- The odd differential of the base change of a parity shift is the odd differential of the
 parity shift of the base change: both are `-(T ⊗ d₀)`. -/
@@ -178,9 +173,8 @@ theorem baseChangeFunctor_obj_parityShift_d₁ (f : S →+* T) (X : MatrixFactor
     ((baseChangeFunctor f).obj (parityShift.obj X)).obj.d₁ =
       (parityShift.obj ((baseChangeFunctor f).obj X)).obj.d₁ := by
   apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
-  simp only [parityShift_obj_d₁, baseChangeFunctor_obj_d₁, Functor.map_neg]
-  -- Forgetting finite generation is the identity on morphisms, hence commutes with negation.
-  rfl
+  simp only [parityShift_obj_d₁, FGModuleCat.forget₂_map, baseChangeFunctor_obj_d₁]
+  exact (ModuleCat.extendScalars f).map_neg
 
 /-- Base change commutes with the parity shift. Both sides have the same components, and the
 negated differentials agree because extension of scalars is additive. -/
@@ -311,10 +305,10 @@ instance baseChangeToCurvedDuplex_additive (f : S →+* T) (hw : f w = 0) :
     intro X Y g h
     apply CurvedDuplex.hom_ext
     · simp only [baseChangeToCurvedDuplex_map_f₀, ObjectProperty.add_hom,
-        CurvedDuplex.add_f₀, Functor.map_add]
+        CurvedDuplex.add_f₀, Functor.map_add, FGModuleCat.forget₂_map]
       rfl
     · simp only [baseChangeToCurvedDuplex_map_f₁, ObjectProperty.add_hom,
-        CurvedDuplex.add_f₁, Functor.map_add]
+        CurvedDuplex.add_f₁, Functor.map_add, FGModuleCat.forget₂_map]
       rfl
 
 /-- The two-periodic complex obtained by reducing a matrix factorization along a ring map

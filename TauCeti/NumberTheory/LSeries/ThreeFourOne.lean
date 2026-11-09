@@ -48,8 +48,9 @@ noncomputable section
 
 /-! ### The concrete 3-4-1 combination -/
 
-/-- The three nonnegative weights `3`, `4`, and `1` in the `3-4-1` combination. -/
-def threeFourOneWeight : Fin 3 → ℝ := ![3, 4, 1]
+/-- The three nonnegative weights `3`, `4`, and `1` in the `3-4-1` combination, as complex
+numbers. -/
+def threeFourOneWeight : Fin 3 → ℂ := ![3, 4, 1]
 
 /-- The frequencies `0`, `1`, and `2` in the `3-4-1` combination. -/
 def threeFourOneFrequency : Fin 3 → ℕ := ![0, 1, 2]
@@ -84,10 +85,7 @@ theorem threeFourOneCombination_def (z : ℂ) :
 theorem trigonometricCombination_threeFourOne (z : ℂ) :
     trigonometricCombination Finset.univ threeFourOneWeight threeFourOneFrequency z =
       threeFourOneCombination z := by
-  rw [trigonometricCombination_def, threeFourOneCombination_def, Fin.sum_univ_three]
-  simp only [threeFourOneWeight_zero, threeFourOneWeight_one, threeFourOneWeight_two,
-    threeFourOneFrequency_zero, threeFourOneFrequency_one, threeFourOneFrequency_two,
-    pow_zero, pow_one, one_re, mul_one, one_mul]
+  simp [trigonometricCombination_def, threeFourOneCombination_def, Fin.sum_univ_three]
 
 /-- On the unit circle the `3-4-1` expression is twice a square. -/
 theorem threeFourOneCombination_eq_two_mul_sq {z : ℂ} (hz : ‖z‖ = 1) :
@@ -121,10 +119,8 @@ theorem threeFourOne_re_neg_log_one_sub_nonneg {a : ℝ} (ha₀ : 0 ≤ a) (ha�
       (-log (1 - a * z ^ 2)).re := by
   have h := sum_re_neg_log_one_sub_nonneg
     isNonnegativeTrigonometricCombination_threeFourOne ha₀ ha₁ hz
-  simpa only [trigonometricCombination_def, Fin.sum_univ_three, threeFourOneWeight_zero,
-    threeFourOneWeight_one, threeFourOneWeight_two, threeFourOneFrequency_zero,
-    threeFourOneFrequency_one, threeFourOneFrequency_two, pow_zero, pow_one, mul_one,
-    one_mul] using h
+  simp [Fin.sum_univ_three] at h ⊢
+  linarith
 
 end
 

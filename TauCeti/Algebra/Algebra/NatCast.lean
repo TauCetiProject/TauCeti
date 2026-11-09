@@ -27,6 +27,7 @@ differentiation.
 * `Subalgebra.natCast_mul_mem_iff`: if `(m : K)` is a unit, a `K`-subalgebra contains `m * t`
   exactly when it contains `t`.
 * `TauCeti.isUnit_natCast_of_ne_zero`: every nonzero natural number is a unit in a `ℚ`-algebra.
+* `TauCeti.natCast_mul_algebraMap_inv`: `m · (1 / m) = 1` in a `ℚ`-algebra, for `m ≠ 0`.
 * `TauCeti.inv_natCast_add_one_smul_mul_natCast_add_one`: `(k + 1)⁻¹ • a * (k + 1) = a` in a
   `ℚ`-algebra.
 -/
@@ -56,6 +57,12 @@ namespace TauCeti
 theorem isUnit_natCast_of_ne_zero {K : Type*} [Semiring K] [Algebra ℚ K] {m : ℕ}
     (hm : m ≠ 0) : IsUnit (m : K) := by
   simpa using (Nat.cast_ne_zero.2 hm : (m : ℚ) ≠ 0).isUnit.map (algebraMap ℚ K)
+
+/-- Multiplying by a nonzero natural number `m` and by the image of `m⁻¹ : ℚ` cancel in a
+`ℚ`-algebra. -/
+theorem natCast_mul_algebraMap_inv {K : Type*} [Semiring K] [Algebra ℚ K] {m : ℕ}
+    (hm : m ≠ 0) : (m : K) * algebraMap ℚ K (m : ℚ)⁻¹ = 1 := by
+  rw [← map_natCast (algebraMap ℚ K), ← map_mul, mul_inv_cancel₀ (Nat.cast_ne_zero.2 hm), map_one]
 
 /-- Dividing by `k + 1` and multiplying by `k + 1` cancel in a `ℚ`-algebra. -/
 theorem inv_natCast_add_one_smul_mul_natCast_add_one {R : Type*} [Semiring R] [Algebra ℚ R]

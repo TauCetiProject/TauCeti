@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.BaseChange
+public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
@@ -236,6 +236,22 @@ def simpleSupportEquiv : Fin t.rank ≃ (t.rationalBase ht).support :=
     ((t.simpleSupportEquiv ht i : Fin t.numRoots)) = (e.symm x : Fin t.numRoots) := rfl
     _ = (x : Fin t.numRoots) := hcoe
     _ = t.simpleIndex ht i := coe_simpleSupportEquivSimplyConnectedBase t ht i
+
+variable {t ht} in
+/-- Every Bourbaki-numbered simple root `t.simpleIndex ht i` lies in the support of the pinned
+base. -/
+theorem simpleIndex_mem_support (i : Fin t.rank) :
+    t.simpleIndex ht i ∈ (t.rationalBase ht).support := by
+  rw [← coe_simpleSupportEquiv]
+  exact (t.simpleSupportEquiv ht i).2
+
+variable {t ht} in
+/-- Every element of the support of the pinned base is a Bourbaki-numbered simple root
+`t.simpleIndex ht i`. -/
+theorem exists_simpleIndex_eq_of_mem_support {k : Fin t.numRoots}
+    (hk : k ∈ (t.rationalBase ht).support) : ∃ i, t.simpleIndex ht i = k := by
+  obtain ⟨i, hi⟩ := (t.simpleSupportEquiv ht).surjective ⟨k, hk⟩
+  exact ⟨i, by rw [← coe_simpleSupportEquiv, hi]⟩
 
 /-- **The Cartan matrix of the pinned base is the standard Cartan matrix of the Dynkin type**, read
 through the Bourbaki numbering. This is what lets a construction stated against

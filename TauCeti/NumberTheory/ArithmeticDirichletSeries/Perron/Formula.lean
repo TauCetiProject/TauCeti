@@ -78,7 +78,7 @@ private theorem lintegral_norm_term_mul_perronIntegrand_ne_top (hx : 0 < x) (hc 
       _ = ENNReal.ofReal (‖LSeries.term f (c : ℂ) n‖ * (x ^ c / c)) * ENNReal.ofReal (2 * T) := by
           have hlen : T - -T = 2 * T := by ring
           rw [setLIntegral_const, Real.volume_Ioc, hlen]
-  refine ne_of_lt (lt_of_le_of_lt (ENNReal.tsum_le_tsum hstep) ?_)
+  refine ne_of_lt (lt_of_le_of_lt (tsum_le_tsum hstep) ?_)
   rw [ENNReal.tsum_mul_right]
   refine ENNReal.mul_lt_top ?_ ENNReal.ofReal_lt_top
   rw [← ENNReal.ofReal_tsum_of_nonneg (fun n ↦ by positivity) (h.norm.mul_right _)]
@@ -213,7 +213,7 @@ private theorem norm_mul_truncatedPerronKernel_sub_step_le (hx : 0 < x) (hc : 0 
   rcases eq_or_ne (f n) 0 with hfn | hfn
   · rw [hfn, zero_mul, zero_mul, sub_zero, norm_zero, zero_mul]
   rcases Nat.eq_zero_or_pos n with rfl | hn0
-  · rw [Nat.cast_zero, div_zero, truncatedPerronKernel_zero hc.ne', mul_zero,
+  · rw [Nat.cast_zero, div_zero, truncatedPerronKernel_zero, mul_zero,
       perronStep_of_lt_one zero_lt_one, mul_zero, sub_zero, norm_zero]
     positivity
   · have hcast : (0 : ℝ) < n := Nat.cast_pos.2 hn0
@@ -296,7 +296,7 @@ theorem tendsto_truncatedPerron_LSeries (hx : 0 < x) (hc : 0 < c)
       (𝓝 (f n * perronStep (x / n))) := by
     intro n
     rcases Nat.eq_zero_or_pos n with rfl | hn0
-    · simp only [Nat.cast_zero, div_zero, truncatedPerronKernel_zero hc.ne', mul_zero,
+    · simp only [Nat.cast_zero, div_zero, truncatedPerronKernel_zero, mul_zero,
         perronStep_of_lt_one zero_lt_one]
       exact tendsto_const_nhds
     · exact ((tendsto_truncatedPerronKernel (div_pos hx (Nat.cast_pos.2 hn0)) hc).const_mul _)
@@ -306,7 +306,7 @@ theorem tendsto_truncatedPerron_LSeries (hx : 0 < x) (hc : 0 < c)
           (if 1 / 2 < x / n then ‖f n‖ else 0) := by
     filter_upwards [eventually_ge_atTop (1 : ℝ)] with T hT n
     rcases Nat.eq_zero_or_pos n with rfl | hn0
-    · rw [Nat.cast_zero, div_zero, truncatedPerronKernel_zero hc.ne', mul_zero, norm_zero]
+    · rw [Nat.cast_zero, div_zero, truncatedPerronKernel_zero, mul_zero, norm_zero]
       split_ifs <;> positivity
     · rw [norm_mul]
       have hbd := norm_truncatedPerronKernel_le_bound (div_pos hx (Nat.cast_pos.2 hn0)) hc hT

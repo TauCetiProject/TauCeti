@@ -68,10 +68,10 @@ private theorem _root_.AlgHom.IsArithFrobAt.sub_legendreSym_smul_mem {φ : S →
         algebraMap ℤ S (d ^ (p / 2) - legendreSym p d) * x := by
       simp only [map_sub, sub_mul, zsmul_eq_mul, eq_intCast]
     rw [hfactor]
-    exact Q.mul_mem_right x ((algebraMap_int_mem_iff_dvd_of_liesOver Q _).mpr heuler)
+    exact Q.mul_mem_right x ((algebraMap_mem_iff_dvd_of_liesOver Q _).mpr heuler)
   -- Combine with the base congruence `φ x ≡ x ^ p (mod Q)`.
   have hpow : φ x - x ^ p ∈ Q := by
-    simpa only [Ideal.natCard_quotient_under_of_liesOver (p := p) Q] using H x
+    simpa only [Ideal.natCard_quotient_under_of_liesOver (n := p) Q] using H x
   have hsum := Q.add_mem hpow hstep
   rw [hxp] at hsum
   rwa [sub_add_sub_cancel] at hsum
@@ -87,7 +87,7 @@ private theorem add_self_notMem (hodd : p ≠ 2) (hd : ¬ (p : ℤ) ∣ d)
     simpa only [add_mul, ← sq, hx, map_mul, map_ofNat, two_mul, map_add] using
       Q.mul_mem_right x hmem
   rcases (Nat.prime_iff_prime_int.mp (Fact.out : p.Prime)).dvd_mul.mp
-      ((algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp h2d) with h2 | hdd
+      ((algebraMap_mem_iff_dvd_of_liesOver Q _).mp h2d) with h2 | hdd
   · -- `p ∣ 2` forces `p = 2`, excluded.
     exact hodd ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp
       (by exact_mod_cast h2))

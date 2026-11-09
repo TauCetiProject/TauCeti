@@ -8,9 +8,14 @@ module
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import Mathlib.AlgebraicGeometry.Stalk
+public import Mathlib.AlgebraicGeometry.PullbackCarrier
 
 /-!
-# Dominant morphisms of irreducible schemes and rational functions
+# Dominant morphisms and rational functions
+
+Base change along a morphism with an open underlying map preserves dominance
+(`IsDominant.pullback_fst_of_isOpenMap`). This applies in particular to étale morphisms,
+without reducedness or irreducibility assumptions.
 
 A morphism `f : X ⟶ Y` of schemes is dominant (`AlgebraicGeometry.IsDominant`) when its image is
 dense. Between irreducible schemes this says exactly that `f` sends the generic point of `X` to the
@@ -47,6 +52,10 @@ the generic point, and a dominant one by its pullback of rational functions.
   generic stalks with this property.
 * `AlgebraicGeometry.Scheme.Hom.germToFunctionField_functionFieldMap`: `f^*` sends the germ of a
   section `s` over an open `U` to the germ of its pullback `f^* s` over `f⁻¹ U`.
+* `AlgebraicGeometry.Scheme.Hom.functionFieldMap_algebraMap_stalk`: `f^*` is compatible with the
+  maps of stalks `𝒪_{Y,f x} ⟶ 𝒪_{X,x}`.
+* `AlgebraicGeometry.Scheme.Hom.appLE_injective_of_isDominant`: between integral schemes, the
+  pullback of sections `Γ(Y, U) ⟶ Γ(X, V)` along a dominant morphism is injective for nonempty `V`.
 * `AlgebraicGeometry.Scheme.Hom.functionFieldMap_id` and
   `AlgebraicGeometry.Scheme.Hom.functionFieldMap_comp`: functoriality.
 * `AlgebraicGeometry.isDominant_fromSpecStalk_genericPoint`: the canonical morphism `Spec K(X) ⟶ X`
@@ -68,6 +77,14 @@ open CategoryTheory TopologicalSpace
 namespace AlgebraicGeometry
 
 universe u
+
+open CategoryTheory.Limits in
+/-- Base change of a dominant morphism along a morphism whose underlying map is open is
+dominant. No flatness or reducedness assumption is needed. -/
+theorem IsDominant.pullback_fst_of_isOpenMap {X Y S : Scheme.{u}} (f : X ⟶ S) (g : Y ⟶ S)
+    [IsDominant g] (hf : IsOpenMap f) : IsDominant (pullback.fst f g) := by
+  rw [isDominant_iff, DenseRange, Scheme.Pullback.range_fst]
+  exact g.denseRange.preimage hf
 
 variable {X Y Z : Scheme.{u}} [IrreducibleSpace X] [IrreducibleSpace Y]
 
@@ -167,6 +184,36 @@ theorem germToFunctionField_functionFieldMap (f : X ⟶ Y) [IsDominant f] (U : Y
     Y.germToFunctionField U ≫ f.functionFieldMap = f.app U ≫ X.germToFunctionField (f ⁻¹ᵁ U) := by
   rw [Scheme.germToFunctionField, Scheme.germToFunctionField, functionFieldMap,
     TopCat.Presheaf.germ_stalkSpecializes_assoc, germ_stalkMap]
+
+/-- The pullback of rational functions `f^*` along a dominant morphism `f : X ⟶ Y` of irreducible
+schemes is compatible with the maps of stalks: at a point `x` of `X`, it sends the image in `K(Y)`
+of an element `a` of `𝒪_{Y,f x}` to the image in `K(X)` of its pullback `f^* a ∈ 𝒪_{X,x}`. -/
+theorem functionFieldMap_algebraMap_stalk (f : X ⟶ Y) [IsDominant f] (x : X)
+    (a : Y.presheaf.stalk (f x)) :
+    f.functionFieldMap.hom (algebraMap (Y.presheaf.stalk (f x)) Y.functionField a) =
+      algebraMap (X.presheaf.stalk x) X.functionField (f.stalkMap x a) := by
+  rw [RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra, functionFieldMap,
+    ← CommRingCat.comp_apply, ← Category.assoc, TopCat.Presheaf.stalkSpecializes_comp,
+    CommRingCat.comp_apply,
+    f.stalkSpecializes_stalkMap_apply _ _ ((genericPoint_spec X).specializes trivial)]
+
+omit [IrreducibleSpace X] [IrreducibleSpace Y] in
+/-- For a dominant morphism `f : X ⟶ Y` of integral schemes, the pullback of sections
+`f.appLE U V e : Γ(Y, U) ⟶ Γ(X, V)` is injective as soon as `V` is nonempty: both rings of
+sections embed into the function fields, and `f^* : K(Y) ⟶ K(X)` is a homomorphism of fields. -/
+theorem appLE_injective_of_isDominant [IsIntegral X] [IsIntegral Y] (f : X ⟶ Y) [IsDominant f]
+    (U : Y.Opens) (V : X.Opens) [Nonempty V] (e : V ≤ f ⁻¹ᵁ U) :
+    Function.Injective (f.appLE U V e) := by
+  have : Nonempty U := ⟨⟨_, e (Classical.arbitrary V).2⟩⟩
+  have h : f.appLE U V e ≫ X.germToFunctionField V =
+      Y.germToFunctionField U ≫ f.functionFieldMap := by
+    rw [germToFunctionField_functionFieldMap, Scheme.germToFunctionField,
+      Scheme.germToFunctionField, Scheme.Hom.appLE, Category.assoc, TopCat.Presheaf.germ_res]
+  refine fun a b hab ↦ Y.germToFunctionField_injective U (f.functionFieldMap.hom.injective ?_)
+  have ha := congr(($h).hom a)
+  have hb := congr(($h).hom b)
+  simp only [CommRingCat.hom_comp, RingHom.comp_apply, hab] at ha hb
+  exact ha.symm.trans hb
 
 /-- The pullback of rational functions along the identity is the identity. -/
 @[simp]

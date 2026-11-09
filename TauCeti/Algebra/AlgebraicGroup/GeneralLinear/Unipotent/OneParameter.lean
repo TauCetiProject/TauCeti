@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Basic
 public import TauCeti.RingTheory.Nilpotent.Log
+public import TauCeti.Algebra.AlgebraicGroup.OneParameter.Basic
 import Mathlib.Algebra.Polynomial.Roots
 
 /-!
@@ -60,21 +61,32 @@ theorem Matrix.GeneralLinearGroup.map_aeval_expSMulHom
   simp only [toAdd_ofAdd, RingHom.coe_coe, Polynomial.aeval_X,
     RingHom.mapMatrix_apply, Matrix.map_map, Function.comp_def, Polynomial.aeval_C]
 
+/-- The coefficient of `tᵐ` in the polynomial exponential `exp(tX)` is `Xᵐ / m!`. -/
+theorem Matrix.coeff_exp_X_smul_C_mapMatrix
+    {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] [Algebra ℚ R]
+    {X : Matrix ι ι R} (hX : IsNilpotent X) (m : ℕ) (i j : ι) :
+    (IsNilpotent.exp ((Polynomial.X : R[X]) • Polynomial.C.mapMatrix X) i j).coeff m =
+      ((m.factorial : ℚ)⁻¹ • X ^ m) i j := by
+  obtain ⟨k, hk⟩ := hX
+  have hk' : ((Polynomial.X : R[X]) • Polynomial.C.mapMatrix X) ^ (k + (m + 1)) = 0 := by
+    rw [smul_pow, ← map_pow, pow_add X, hk, zero_mul, map_zero, smul_zero]
+  rw [IsNilpotent.exp_eq_sum hk', Matrix.sum_apply, Polynomial.finsetSum_coeff,
+    Finset.sum_eq_single_of_mem m (Finset.mem_range.mpr (by omega)) fun l _ hl ↦ ?_] <;>
+    rw [smul_pow, ← map_pow, Matrix.smul_apply, Matrix.smul_apply, RingHom.mapMatrix_apply,
+      Matrix.map_apply, smul_eq_mul, Polynomial.coeff_smul, Polynomial.coeff_X_pow_mul']
+  · simp
+  · split_ifs with h
+    · rw [Polynomial.coeff_C_of_ne_zero (by omega), smul_zero]
+    · exact smul_zero _
+
 /-- The linear coefficient of the polynomial exponential `exp(tX)` is `X`. -/
 theorem Matrix.coeff_one_exp_X_smul_C_mapMatrix
     {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] [Algebra ℚ R]
     {X : Matrix ι ι R} (hX : IsNilpotent X) (i j : ι) :
     (IsNilpotent.exp ((Polynomial.X : R[X]) • Polynomial.C.mapMatrix X) i j).coeff 1 =
       X i j := by
-  obtain ⟨k, hk⟩ := hX
-  have hk' : ((Polynomial.X : R[X]) • Polynomial.C.mapMatrix X) ^ (k + 2) = 0 := by
-    rw [smul_pow, ← map_pow, pow_add X, hk, zero_mul, map_zero, smul_zero]
-  rw [IsNilpotent.exp_eq_sum hk', Matrix.sum_apply, Polynomial.finsetSum_coeff,
-    Finset.sum_eq_single_of_mem 1 (by simp) fun m _ hm ↦ ?_]
-  · simp
-  · obtain h | rfl : 1 < m ∨ m = 0 := by omega
-    · simp [smul_pow, Polynomial.coeff_X_pow_mul', h.not_ge]
-    · by_cases hij : i = j <;> simp [hij, Polynomial.coeff_one]
+  rw [Matrix.coeff_exp_X_smul_C_mapMatrix hX, Nat.factorial_one, Nat.cast_one, inv_one, one_smul,
+    pow_one]
 
 namespace TauCeti.GeneralLinear
 
@@ -133,9 +145,37 @@ theorem aeval_zero_comp_nilpotentOneParameterCoordinateMap (hX : IsNilpotent X) 
   rw [AlgHom.convOne_apply, Bialgebra.counitAlgHom_apply, Algebra.algebraMap_self,
     RingHom.id_apply]
 
-section ClosedSubgroup
+/-- The polynomial exponential curve satisfies the additive parameter law on base points. -/
+theorem aeval_comp_nilpotentOneParameterCoordinateMap_add (hX : IsNilpotent X) (s t : R) :
+    toConv ((Polynomial.aeval (s + t)).comp (nilpotentOneParameterCoordinateMap n hX)) =
+      toConv ((Polynomial.aeval s).comp (nilpotentOneParameterCoordinateMap n hX)) *
+        toConv ((Polynomial.aeval t).comp (nilpotentOneParameterCoordinateMap n hX)) := by
+  simp only [aeval_comp_nilpotentOneParameterCoordinateMap, toConv_ofConv]
+  simp only [← pointsMulEquiv_symm_apply, ← map_mul, ← ofAdd_add]
 
 variable [IsDomain R]
+
+/-- A polynomial one-parameter subgroup of `GLₙ` through a unipotent matrix `g` is the
+finite exponential curve of `log g`. The conclusion identifies regular maps, not only points. -/
+theorem eq_nilpotentOneParameterCoordinateMap_log
+    (γ : coordinateHopfAlgebra R n →ₐ[R] R[X])
+    (hγ : ∀ s t : R, toConv ((Polynomial.aeval (s + t)).comp γ) =
+      toConv ((Polynomial.aeval s).comp γ) * toConv ((Polynomial.aeval t).comp γ))
+    (g : Matrix.GeneralLinearGroup (Fin n) R)
+    (hg : IsNilpotent ((g : Matrix (Fin n) (Fin n) R) - 1))
+    (h : toConv ((Polynomial.aeval (1 : R)).comp γ) = generalLinearToPoint n g) :
+    γ = nilpotentOneParameterCoordinateMap n (IsNilpotent.isNilpotent_log hg) := by
+  have : CharZero R := Algebra.charZero_of_charZero ℚ R
+  apply γ.eq_of_aeval_one_comp_eq _ hγ
+    (aeval_comp_nilpotentOneParameterCoordinateMap_add n _)
+  apply toConv_injective
+  rw [h, aeval_comp_nilpotentOneParameterCoordinateMap, toConv_ofConv]
+  congr 1
+  ext i j
+  simp [IsNilpotent.exp_log hg]
+
+section ClosedSubgroup
+
 variable {Y : Matrix (Fin n) (Fin n) R}
 
 /-- The polynomial exponential curve through a point of a closed subgroup is itself a

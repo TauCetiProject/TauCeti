@@ -84,17 +84,18 @@ theorem galEquivZMod_symm_pow_padicValNat_absNorm_mem_fixingSubgroup (hp : p.Cop
     (K : IntermediateField ℚ F) (I : Ideal (𝓞 K)) :
     (Rat.galEquivZMod n F).symm (ZMod.unitOfCoprime p hp ^ padicValNat p (absNorm I)) ∈
       K.fixingSubgroup := by
+  simp only [Nat.padicValNat_def]
   induction I using UniqueFactorizationMonoid.induction_on_prime with
   | h₁ =>
-    rw [Submodule.zero_eq_bot, absNorm_bot, padicValNat_zero_right, pow_zero, map_one]
+    rw [Submodule.zero_eq_bot, absNorm_bot, _root_.multiplicity_zero_right, pow_zero, map_one]
     exact one_mem _
   | h₂ I hI =>
-    rw [Ideal.isUnit_iff.mp hI, absNorm_top, padicValNat_one_right, pow_zero, map_one]
+    rw [Ideal.isUnit_iff.mp hI, absNorm_top, _root_.multiplicity_one_right, pow_zero, map_one]
     exact one_mem _
   | h₃ I P hI hP ih =>
     have hP0 : P ≠ ⊥ := hP.ne_zero
     have : P.IsPrime := (Ideal.prime_iff_isPrime hP0).mp hP
-    rw [map_mul, padicValNat.mul (absNorm_eq_zero_iff.not.mpr hP0)
+    rw [map_mul, Nat.multiplicity_mul (absNorm_eq_zero_iff.not.mpr hP0)
       (absNorm_eq_zero_iff.not.mpr hI), pow_add, map_mul]
     refine mul_mem ?_ ih
     -- `P` lies over the rational prime `q = 𝔑 (P ∩ ℤ)`, and `𝔑 P = q ^ f(P/q)`.
@@ -107,10 +108,10 @@ theorem galEquivZMod_symm_pow_padicValNat_absNorm_mem_fixingSubgroup (hp : p.Cop
     rw [← pow_inertiaDeg (absNorm (P.under ℤ)) P]
     by_cases hqp : absNorm (P.under ℤ) = p
     · have : P.LiesOver (span {(p : ℤ)}) := hqp ▸ this
-      rw [hqp, padicValNat.prime_pow]
+      rw [hqp, Nat.multiplicity_prime_pow]
       exact galEquivZMod_symm_pow_inertiaDeg_mem_fixingSubgroup hp K P
     · have : Fact (absNorm (P.under ℤ)).Prime := ⟨hq⟩
-      rw [padicValNat.pow, padicValNat_primes (Ne.symm hqp), mul_zero, pow_zero,
+      rw [Nat.multiplicity_pow, multiplicity_primes (Ne.symm hqp), mul_zero, pow_zero,
         map_one]
       exact one_mem _
 
@@ -124,14 +125,15 @@ theorem galEquivZMod_symm_zpow_padicValRat_norm_mem_fixingSubgroup (hp : p.Copri
   -- On integers the valuation of the norm is that of the absolute norm of the principal ideal.
   have hint (z : 𝓞 K) : padicValRat p (Algebra.norm ℚ (z : K)) =
       padicValNat p (absNorm (span {z})) := by
-    rw [← Algebra.coe_norm_int, padicValRat.of_int, absNorm_span_singleton, padicValInt]
+    rw [← Algebra.coe_norm_int, padicValRat.of_int, absNorm_span_singleton, padicValInt,
+      Nat.padicValNat_def]
   have hmem (z : 𝓞 K) : (Rat.galEquivZMod n F).symm
       (ZMod.unitOfCoprime p hp ^ padicValRat p (Algebra.norm ℚ (z : K))) ∈ K.fixingSubgroup := by
     rw [hint, zpow_natCast]
     exact galEquivZMod_symm_pow_padicValNat_absNorm_mem_fixingSubgroup hp K _
   obtain ⟨⟨d, hd⟩, r, hr⟩ := IsLocalization.exists_integer_multiple (nonZeroDivisors (𝓞 K)) x
   by_cases hx : x = 0
-  · rw [hx, Algebra.norm_zero, padicValRat.zero, zpow_zero, map_one]
+  · rw [hx, Algebra.norm_zero, padicValRat.zero, _root_.zpow_zero, map_one]
     exact one_mem _
   have hd0 : Algebra.norm ℚ (d : K) ≠ 0 :=
     Algebra.norm_ne_zero_iff.mpr (by simpa using nonZeroDivisors.ne_zero hd)
@@ -141,7 +143,7 @@ theorem galEquivZMod_symm_zpow_padicValRat_norm_mem_fixingSubgroup (hp : p.Copri
       padicValRat p (Algebra.norm ℚ (r : K)) - padicValRat p (Algebra.norm ℚ (d : K)) := by
     rw [hnorm, padicValRat.mul hd0 (Algebra.norm_ne_zero_iff.mpr hx)]
     ring
-  rw [hval, zpow_sub, ← div_eq_mul_inv, map_div]
+  rw [hval, _root_.zpow_sub, ← div_eq_mul_inv, map_div]
   exact div_mem (hmem r) (hmem d)
 
 end TauCeti.NumberField

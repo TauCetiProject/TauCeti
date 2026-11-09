@@ -51,11 +51,9 @@ local notation "Q" => CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgeb
 
 /-- The exceptional coordinate endomorphism is finite and faithfully flat. -/
 theorem isIsogeny_quotientIsogeny : CommHopfAlgCat.IsIsogeny quotientIsogeny := by
-  have hsmooth : Algebra.Smooth 𝔽₂ Q := by
+  have : Algebra.Smooth 𝔽₂ Q := by
     rw [← definingIdeal_def]
     infer_instance
-  let _ : Algebra.IsGeometricallyReduced 𝔽₂ Q :=
-    @isGeometricallyReduced_of_smooth 𝔽₂ Q _ _ _ hsmooth
   exact (CommHopfAlgCat.isIsogeny_iff_finite_and_dominant quotientIsogeny).2
     ⟨finite_quotientIsogeny, comap_quotientIsogeny_involutive.surjective.denseRange⟩
 

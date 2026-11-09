@@ -12,6 +12,8 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Transvection
 public import TauCeti.LinearAlgebra.QuadraticForm.Transvection.ParameterBaseChange
 
+import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
+
 /-!
 # Extension of scalars for Spin groups and even unitary groups
 
@@ -25,6 +27,12 @@ The same map restricts to the even unitary carriers `U(C₀, σ)`, compatibly wi
 Spin. Over a field `K`, this is how `U(C₀, σ)` is read as a twisted form: after extension to a
 field `L` splitting the even Clifford algebra, the image lands in the unitary group of a matrix
 algebra with involution.
+
+An isomorphism `σ : A ≃ₐ[R] B` of coefficient algebras induces the isomorphism
+`CliffordAlgebra.baseChangeCongr σ Q` of the Clifford algebras of `Q_A` and `Q_B`. It preserves
+Clifford conjugation, the even part and the vector generators, so it restricts to an isomorphism
+of Spin groups. For complex conjugation of `ℂ` over `ℝ` this is coefficientwise conjugation of a
+complexified Spin group.
 
 ## Main results
 
@@ -41,6 +49,9 @@ algebra with involution.
   quotient root-subgroup homomorphism.
 * `CliffordAlgebra.spinGroupBaseChange_baseChange` identifies direct and successive scalar
   extension.
+* `CliffordAlgebra.baseChangeCongr_mem_spinGroup` and `CliffordAlgebra.spinGroupBaseChangeCongr`:
+  an isomorphism of coefficient algebras preserves the Spin group, and restricts to an isomorphism
+  of Spin groups.
 * `CliffordAlgebra.evenUnitaryGroupBaseChange` extends the scalars of an even unitary unit, and
   `CliffordAlgebra.evenUnitaryGroupBaseChange_injective` proves injectivity for faithful flat
   extensions.
@@ -188,6 +199,60 @@ theorem spinGroupBaseChange_baseChange (z : spinGroup Q) :
   exact ofBaseChangeAux_baseChange Q _
 
 end ScalarTower
+
+/-! ### Isomorphisms of the coefficient algebra -/
+
+section Congr
+
+variable {B : Type x} [CommRing B] [Algebra R B] (σ : A ≃ₐ[R] B) (Q : QuadraticForm R M)
+
+/-- The isomorphism `CliffordAlgebra.baseChangeCongr σ Q : Cℓ(A ⊗ M) ≃ Cℓ(B ⊗ M)` induced by an
+isomorphism of coefficient algebras sends Spin elements to Spin elements. -/
+theorem baseChangeCongr_mem_spinGroup {x : CliffordAlgebra (Q.baseChange A)}
+    (hx : x ∈ spinGroup (Q.baseChange A)) :
+    baseChangeCongr σ Q x ∈ spinGroup (Q.baseChange B) := by
+  let : Invertible (2 : B) := (Invertible.map (algebraMap R B) 2).copy 2 (map_ofNat _ _).symm
+  rw [spinGroup.mem_iff, pinGroup.mem_iff]
+  refine ⟨⟨?_, ?_⟩, ?_⟩
+  · obtain ⟨u, hu, rfl⟩ := (pinGroup.mem_iff.mp hx.1).1
+    simpa using lipschitzGroup.coe_mem_iff_mem.mpr (map_mem_lipschitzGroup_of_map_ι
+      (baseChangeCongr σ Q :
+        CliffordAlgebra (Q.baseChange A) →+* CliffordAlgebra (Q.baseChange B))
+      (LinearMap.rTensor M σ.toLinearMap) (fun w ↦ by simp) hu)
+  · rw [Unitary.mem_iff, ← baseChangeCongr_star, ← map_mul, ← map_mul]
+    simp [spinGroup.star_mul_self_of_mem hx, spinGroup.mul_star_self_of_mem hx]
+  · -- With `2` invertible, the even part is the fixed space of the grade involution, which
+    -- `baseChangeCongr σ Q` preserves.
+    rw [← Subalgebra.mem_toSubmodule, even_toSubmodule, ← involute_eq_self_iff,
+      ← baseChangeCongr_involute, spinGroup.involute_eq hx]
+
+/-- **Coefficient isomorphisms act on Spin groups.** An isomorphism `σ : A ≃ₐ[R] B` of
+coefficient algebras restricts `CliffordAlgebra.baseChangeCongr σ Q` to an isomorphism of the
+Spin groups of `Q_A` and `Q_B`. For complex conjugation of `ℂ` over `ℝ` this is coefficientwise
+conjugation of the Spin group of a complexified real quadratic form. -/
+def spinGroupBaseChangeCongr : spinGroup (Q.baseChange A) ≃* spinGroup (Q.baseChange B) where
+  toFun x := ⟨baseChangeCongr σ Q x, baseChangeCongr_mem_spinGroup σ Q x.2⟩
+  invFun x := ⟨baseChangeCongr σ.symm Q x, baseChangeCongr_mem_spinGroup σ.symm Q x.2⟩
+  left_inv x := Subtype.ext <| by simp [← baseChangeCongr_symm]
+  right_inv x := Subtype.ext <| by simp [← baseChangeCongr_symm]
+  map_mul' x y := Subtype.ext (map_mul (baseChangeCongr σ Q) (x : CliffordAlgebra _) y)
+
+/-- The Clifford value of `CliffordAlgebra.spinGroupBaseChangeCongr` is computed by
+`CliffordAlgebra.baseChangeCongr`. -/
+@[simp]
+theorem coe_spinGroupBaseChangeCongr_apply (x : spinGroup (Q.baseChange A)) :
+    (spinGroupBaseChangeCongr σ Q x : CliffordAlgebra (Q.baseChange B)) =
+      baseChangeCongr σ Q (x : CliffordAlgebra (Q.baseChange A)) :=
+  (rfl)
+
+/-- The inverse of `CliffordAlgebra.spinGroupBaseChangeCongr` is induced by the inverse
+coefficient isomorphism. -/
+@[simp]
+theorem spinGroupBaseChangeCongr_symm :
+    (spinGroupBaseChangeCongr σ Q).symm = spinGroupBaseChangeCongr σ.symm Q :=
+  (rfl)
+
+end Congr
 
 /-! ### The even unitary carrier -/
 

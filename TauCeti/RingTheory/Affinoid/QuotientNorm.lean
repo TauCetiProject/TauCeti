@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Ring.Quotient
 public import TauCeti.RingTheory.Affinoid.Continuity
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.ClosedIdeal
 public import Mathlib.Topology.Algebra.Algebra.Equiv
-
-import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
 # Quotient norms and the topology of affinoid algebras
@@ -36,6 +35,8 @@ and the Banach open mapping theorem. Equivalent norms need not be equal or isome
   an affinoid algebra are equivalent.
 * `TauCeti.IsAffinoidAlgebra.presentationContinuousAlgEquiv`: two Tate presentations of the same
   algebra give homeomorphic residue algebras for their quotient Gauss norms.
+* `TauCeti.IsAffinoidAlgebra.residueNormedCommRing`: every affinoid algebra carries a complete
+  ultrametric algebra norm, transported from the residue algebra of a chosen Tate presentation.
 
 ## References
 
@@ -67,34 +68,27 @@ theorem isOpenQuotientMap (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
 
 /-- For a surjective algebra homomorphism `f` from a noetherian ultrametric Banach algebra onto a
 completely normed affinoid algebra, the algebraic first isomorphism theorem `A ⧸ ker f ≃ B` is a
-homeomorphism for the quotient topology on `A ⧸ ker f`. -/
+homeomorphism for the quotient topology on `A ⧸ ker f`. This is
+`ContinuousAlgHom.quotientKerEquivOfSurjective` applied to `f`, which is automatically
+continuous. -/
 noncomputable def quotientKerContinuousAlgEquiv (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
     (hf : Function.Surjective f) : (A ⧸ RingHom.ker f) ≃A[K] B :=
-  let e := Ideal.quotientKerAlgEquivOfSurjective hf
-  have he : (e : A ⧸ RingHom.ker f → B) = RingHom.kerLift (f : A →+* B) := by
-    funext x
-    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-    rw [Ideal.quotientKerAlgEquivOfSurjective_mk]
-    exact (RingHom.kerLift_mk (f : A →+* B) a).symm
-  have h : IsHomeomorph e := he ▸
-    RingHom.isHomeomorph_kerLift (hB.isOpenQuotientMap f hf).isQuotientMap
-  { e with
-    continuous_toFun := h.continuous
-    continuous_invFun :=
-      (e.toEquiv.toHomeomorphOfContinuousOpen h.continuous h.isOpenMap).symm.continuous }
+  ContinuousAlgHom.quotientKerEquivOfSurjective ⟨f, hB.continuous_algHom f⟩ hf
 
 /-- The first isomorphism theorem sends the class of `a` to `f a`. -/
 @[simp]
 theorem quotientKerContinuousAlgEquiv_mk (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
     (hf : Function.Surjective f) (a : A) :
-    hB.quotientKerContinuousAlgEquiv f hf (Ideal.Quotient.mk _ a) = f a := (rfl)
+    hB.quotientKerContinuousAlgEquiv f hf (Ideal.Quotient.mk _ a) = f a :=
+  ContinuousAlgHom.quotientKerEquivOfSurjective_mk ⟨f, hB.continuous_algHom f⟩ hf a
 
 /-- The underlying algebra isomorphism is the algebraic first isomorphism theorem. -/
 @[simp]
 theorem toAlgEquiv_quotientKerContinuousAlgEquiv (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
     (hf : Function.Surjective f) :
     (hB.quotientKerContinuousAlgEquiv f hf).toAlgEquiv =
-      Ideal.quotientKerAlgEquivOfSurjective hf := (rfl)
+      Ideal.quotientKerAlgEquivOfSurjective hf :=
+  ContinuousAlgHom.toAlgEquiv_quotientKerEquivOfSurjective ⟨f, hB.continuous_algHom f⟩ hf
 
 end Surjective
 
@@ -149,5 +143,63 @@ by
   simp [presentationContinuousAlgEquiv, ← hg]
 
 end Presentation
+
+section ResidueNorm
+
+variable {D : Type*} [CommRing D] [Algebra K D] (hD : IsAffinoidAlgebra K D)
+
+/-- The isomorphism of an affinoid algebra `D` with the residue algebra `K⟨X₁, …, Xₙ⟩ ⧸ ker π`
+of a chosen Tate presentation `π : K⟨X₁, …, Xₙ⟩ → D`. -/
+noncomputable def residueAlgEquiv :
+    D ≃ₐ[K] IsRestricted.subring (R := K)
+        (fun _ : Fin ((isAffinoidAlgebra_iff K D).mp hD).choose ↦ 1) ⧸
+      RingHom.ker ((isAffinoidAlgebra_iff K D).mp hD).choose_spec.choose :=
+  (Ideal.quotientKerAlgEquivOfSurjective
+    ((isAffinoidAlgebra_iff K D).mp hD).choose_spec.choose_spec).symm
+
+/-- **The residue norm on an affinoid algebra.** The norm `‖x‖ = ‖residueAlgEquiv hD x‖` on `D`,
+transported from the quotient Gauss norm of a chosen Tate presentation. It is a complete
+ultrametric `K`-algebra norm (`TauCeti.IsAffinoidAlgebra.residueNormedAlgebra`,
+`TauCeti.IsAffinoidAlgebra.isUltrametricDist_residueNormedCommRing`,
+`TauCeti.IsAffinoidAlgebra.completeSpace_residueNormedCommRing`). It is not an instance, since it
+depends on the chosen presentation; all such norms define the same topology
+(`TauCeti.IsAffinoidAlgebra.toContinuousAlgEquiv`). -/
+noncomputable abbrev residueNormedCommRing : NormedCommRing D :=
+  NormedCommRing.induced D _ hD.residueAlgEquiv hD.residueAlgEquiv.injective
+
+/-- The residue norm `TauCeti.IsAffinoidAlgebra.residueNormedCommRing` is a `K`-algebra norm. -/
+noncomputable abbrev residueNormedAlgebra :
+    letI := hD.residueNormedCommRing
+    NormedAlgebra K D :=
+  letI := hD.residueNormedCommRing
+  NormedAlgebra.induced K D _ hD.residueAlgEquiv
+
+/-- `TauCeti.IsAffinoidAlgebra.residueAlgEquiv` preserves the residue norm. -/
+theorem norm_residueAlgEquiv (x : D) :
+    letI := hD.residueNormedCommRing
+    ‖residueAlgEquiv hD x‖ = ‖x‖ :=
+  (rfl)
+
+/-- The residue norm on an affinoid algebra is ultrametric. -/
+theorem isUltrametricDist_residueNormedCommRing :
+    letI := hD.residueNormedCommRing
+    IsUltrametricDist D :=
+  letI := hD.residueNormedCommRing
+  IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm fun x y ↦ by
+    simpa only [← hD.norm_residueAlgEquiv, map_add] using
+      IsUltrametricDist.norm_add_le_max (residueAlgEquiv hD x) (residueAlgEquiv hD y)
+
+/-- An affinoid algebra is complete for its residue norm. -/
+theorem completeSpace_residueNormedCommRing :
+    letI := hD.residueNormedCommRing
+    CompleteSpace D :=
+  letI := hD.residueNormedCommRing
+  let e : D ≃ᵢ _ :=
+    { hD.residueAlgEquiv.toEquiv with
+      isometry_toFun := AddMonoidHomClass.isometry_of_norm hD.residueAlgEquiv
+        hD.norm_residueAlgEquiv }
+  e.completeSpace_iff.mpr inferInstance
+
+end ResidueNorm
 
 end TauCeti.IsAffinoidAlgebra

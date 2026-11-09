@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Preadditive.Basic
 public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
 public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import Mathlib.CategoryTheory.Retract
+public import Mathlib.RingTheory.LocalRing.Basic
 public import TauCeti.CategoryTheory.IrreducibleMorphism
 
 /-!
@@ -63,6 +65,13 @@ what ties the sequence to the arrows of the Auslander-Reiten quiver.
 * `TauCeti.IsRightAlmostSplit.not_isSplitMono`, `.not_mono` and `.ne_zero` and their left-hand
   duals: **an epimorphic right almost split morphism is neither a split monomorphism nor — in a
   balanced category — a monomorphism, and it is nonzero.**
+* `TauCeti.IsLeftAlmostSplit.isLocalRing_end` and `TauCeti.IsRightAlmostSplit.isLocalRing_end`:
+  in a preadditive category, **the source of a left almost split morphism and the target of a
+  right almost split morphism have local endomorphism rings**, with no finiteness hypothesis.
+* `TauCeti.IsLeftAlmostSplit.isIso_of_isSplitMono_of_comm` and
+  `TauCeti.IsRightAlmostSplit.isIso_of_isSplitEpi_of_comm`: in a commutative square whose lower
+  map is left almost split and whose upper map is not a split monomorphism, a split monomorphism
+  on sources is invertible, and dually on targets.
 * Invariance under isomorphisms of the source and the target,
   `TauCeti.isRightAlmostSplit_comp_iso_iff`, `TauCeti.isRightAlmostSplit_iso_comp_iff` and their
   left-hand analogues, so the notions descend to a skeleton.
@@ -234,67 +243,57 @@ theorem isLeftAlmostSplit_op_iff : IsLeftAlmostSplit f.op ↔ IsRightAlmostSplit
 
 /-- **Postcomposing a right almost split morphism with an isomorphism keeps it right almost
 split.** -/
-theorem IsRightAlmostSplit.comp_iso (hf : IsRightAlmostSplit f) {Y' : C} (e : Y ≅ Y') :
-    IsRightAlmostSplit (f ≫ e.hom) := by
-  refine ⟨fun _ ↦ hf.not_isSplitEpi (isSplitEpi_of_isSplitEpi_comp_iso f e), fun Z g hg ↦ ?_⟩
-  have hg' : ¬ IsSplitEpi (g ≫ e.symm.hom) :=
-    fun _ ↦ hg (isSplitEpi_of_isSplitEpi_comp_iso g e.symm)
-  obtain ⟨h, hh⟩ := hf.factors Z (g ≫ e.symm.hom) hg'
+theorem IsRightAlmostSplit.comp_iso (hf : IsRightAlmostSplit f) {Y' : C} (g : Y ⟶ Y')
+    [IsIso g] : IsRightAlmostSplit (f ≫ g) := by
+  refine ⟨by simpa using hf.not_isSplitEpi, fun Z a ha ↦ ?_⟩
+  obtain ⟨h, hh⟩ := hf.factors Z (a ≫ inv g) (by simpa using ha)
   exact ⟨h, by simp [reassoc_of% hh]⟩
 
 /-- **Precomposing a right almost split morphism with an isomorphism keeps it right almost
 split.** -/
-theorem IsRightAlmostSplit.iso_comp (hf : IsRightAlmostSplit f) {X' : C} (e : X' ≅ X) :
-    IsRightAlmostSplit (e.hom ≫ f) := by
-  refine ⟨fun _ ↦ hf.not_isSplitEpi (isSplitEpi_of_isSplitEpi_comp e.hom f), fun Z g hg ↦ ?_⟩
-  obtain ⟨h, hh⟩ := hf.factors Z g hg
-  exact ⟨h ≫ e.inv, by simp [hh]⟩
+theorem IsRightAlmostSplit.iso_comp (hf : IsRightAlmostSplit f) {X' : C} (g : X' ⟶ X)
+    [IsIso g] : IsRightAlmostSplit (g ≫ f) := by
+  refine ⟨fun _ ↦ hf.not_isSplitEpi (isSplitEpi_of_isSplitEpi_comp g f), fun Z a ha ↦ ?_⟩
+  obtain ⟨h, hh⟩ := hf.factors Z a ha
+  exact ⟨h ≫ inv g, by simp [hh]⟩
 
 /-- **Precomposing a left almost split morphism with an isomorphism keeps it left almost
 split.** -/
-theorem IsLeftAlmostSplit.iso_comp (hf : IsLeftAlmostSplit f) {X' : C} (e : X' ≅ X) :
-    IsLeftAlmostSplit (e.hom ≫ f) := by
-  rw [← isRightAlmostSplit_op_iff, op_comp, ← Iso.op_hom]
-  exact (isRightAlmostSplit_op_iff.mpr hf).comp_iso e.op
+theorem IsLeftAlmostSplit.iso_comp (hf : IsLeftAlmostSplit f) {X' : C} (g : X' ⟶ X)
+    [IsIso g] : IsLeftAlmostSplit (g ≫ f) := by
+  rw [← isRightAlmostSplit_op_iff, op_comp]
+  exact (isRightAlmostSplit_op_iff.mpr hf).comp_iso g.op
 
 /-- **Postcomposing a left almost split morphism with an isomorphism keeps it left almost
 split.** -/
-theorem IsLeftAlmostSplit.comp_iso (hf : IsLeftAlmostSplit f) {Y' : C} (e : Y ≅ Y') :
-    IsLeftAlmostSplit (f ≫ e.hom) := by
-  rw [← isRightAlmostSplit_op_iff, op_comp, ← Iso.op_hom]
-  exact (isRightAlmostSplit_op_iff.mpr hf).iso_comp e.op
+theorem IsLeftAlmostSplit.comp_iso (hf : IsLeftAlmostSplit f) {Y' : C} (g : Y ⟶ Y')
+    [IsIso g] : IsLeftAlmostSplit (f ≫ g) := by
+  rw [← isRightAlmostSplit_op_iff, op_comp]
+  exact (isRightAlmostSplit_op_iff.mpr hf).iso_comp g.op
 
 /-- Being right almost split is invariant under an isomorphism of the target. -/
 @[simp]
-theorem isRightAlmostSplit_comp_iso_iff {Y' : C} (e : Y ≅ Y') :
-    IsRightAlmostSplit (f ≫ e.hom) ↔ IsRightAlmostSplit f := by
-  refine ⟨fun hf ↦ ?_, fun hf ↦ hf.comp_iso e⟩
-  have h : (f ≫ e.hom) ≫ e.symm.hom = f := by simp
-  exact h ▸ hf.comp_iso e.symm
+theorem isRightAlmostSplit_comp_iso_iff {Y' : C} (g : Y ⟶ Y') [IsIso g] :
+    IsRightAlmostSplit (f ≫ g) ↔ IsRightAlmostSplit f :=
+  ⟨fun hf ↦ by simpa using hf.comp_iso (inv g), fun hf ↦ hf.comp_iso g⟩
 
 /-- Being right almost split is invariant under an isomorphism of the source. -/
 @[simp]
-theorem isRightAlmostSplit_iso_comp_iff {X' : C} (e : X' ≅ X) :
-    IsRightAlmostSplit (e.hom ≫ f) ↔ IsRightAlmostSplit f := by
-  refine ⟨fun hf ↦ ?_, fun hf ↦ hf.iso_comp e⟩
-  have h : e.symm.hom ≫ e.hom ≫ f = f := by simp
-  exact h ▸ hf.iso_comp e.symm
+theorem isRightAlmostSplit_iso_comp_iff {X' : C} (g : X' ⟶ X) [IsIso g] :
+    IsRightAlmostSplit (g ≫ f) ↔ IsRightAlmostSplit f :=
+  ⟨fun hf ↦ by simpa using hf.iso_comp (inv g), fun hf ↦ hf.iso_comp g⟩
 
 /-- Being left almost split is invariant under an isomorphism of the source. -/
 @[simp]
-theorem isLeftAlmostSplit_iso_comp_iff {X' : C} (e : X' ≅ X) :
-    IsLeftAlmostSplit (e.hom ≫ f) ↔ IsLeftAlmostSplit f := by
-  refine ⟨fun hf ↦ ?_, fun hf ↦ hf.iso_comp e⟩
-  have h : e.symm.hom ≫ e.hom ≫ f = f := by simp
-  exact h ▸ hf.iso_comp e.symm
+theorem isLeftAlmostSplit_iso_comp_iff {X' : C} (g : X' ⟶ X) [IsIso g] :
+    IsLeftAlmostSplit (g ≫ f) ↔ IsLeftAlmostSplit f :=
+  ⟨fun hf ↦ by simpa using hf.iso_comp (inv g), fun hf ↦ hf.iso_comp g⟩
 
 /-- Being left almost split is invariant under an isomorphism of the target. -/
 @[simp]
-theorem isLeftAlmostSplit_comp_iso_iff {Y' : C} (e : Y ≅ Y') :
-    IsLeftAlmostSplit (f ≫ e.hom) ↔ IsLeftAlmostSplit f := by
-  refine ⟨fun hf ↦ ?_, fun hf ↦ hf.comp_iso e⟩
-  have h : (f ≫ e.hom) ≫ e.symm.hom = f := by simp
-  exact h ▸ hf.comp_iso e.symm
+theorem isLeftAlmostSplit_comp_iso_iff {Y' : C} (g : Y ⟶ Y') [IsIso g] :
+    IsLeftAlmostSplit (f ≫ g) ↔ IsLeftAlmostSplit f :=
+  ⟨fun hf ↦ by simpa using hf.comp_iso (inv g), fun hf ↦ hf.comp_iso g⟩
 
 /-- Restricting a right almost split morphism to a retract through which it factors
 preserves right almost splitness. -/
@@ -312,6 +311,34 @@ theorem IsLeftAlmostSplit.comp_retract_r (hf : IsLeftAlmostSplit f) {P : C}
   exact (isRightAlmostSplit_op_iff.mpr hf).retract_i_comp s.op
     (by simpa only [Retract.op_r, Retract.op_i, ← op_comp, Category.assoc] using
       congrArg Quiver.Hom.op hs)
+
+/-! ### Split comparison maps -/
+
+/-- A split monomorphism on sources in a square with left almost-split lower map is
+invertible if the upper map is not a split monomorphism. -/
+theorem IsLeftAlmostSplit.isIso_of_isSplitMono_of_comm {X' Y' : C} {g : X' ⟶ Y'}
+    (hg : IsLeftAlmostSplit g) (hf : ¬ IsSplitMono f) (a : X ⟶ X') (b : Y ⟶ Y')
+    (h : f ≫ b = a ≫ g) [IsSplitMono a] : IsIso a := by
+  have hr : IsSplitMono (retraction a) := by
+    by_contra hr
+    obtain ⟨t, ht⟩ := hg.factors X (retraction a) hr
+    apply hf
+    refine IsSplitMono.mk' ⟨b ≫ t, ?_⟩
+    rw [← Category.assoc, h, Category.assoc, ht, IsSplitMono.id]
+  exact IsIso.of_mono_retraction a
+
+/-- A split epimorphism on targets in a square with right almost-split upper map is
+invertible if the lower map is not a split epimorphism. -/
+theorem IsRightAlmostSplit.isIso_of_isSplitEpi_of_comm {X' Y' : C} {g : X' ⟶ Y'}
+    (hf : IsRightAlmostSplit f) (hg : ¬ IsSplitEpi g) (a : X ⟶ X') (b : Y ⟶ Y')
+    (h : f ≫ b = a ≫ g) [IsSplitEpi b] : IsIso b := by
+  have hs : IsSplitEpi (section_ b) := by
+    by_contra hs
+    obtain ⟨t, ht⟩ := hf.factors Y' (section_ b) hs
+    apply hg
+    refine IsSplitEpi.mk' ⟨t ≫ a, ?_⟩
+    rw [Category.assoc, ← h, ← Category.assoc, ht, IsSplitEpi.id]
+  exact IsIso.of_epi_section b
 
 /-! ### Interaction with epimorphisms, monomorphisms, and irreducible morphisms -/
 
@@ -485,5 +512,98 @@ theorem IsLeftAlmostSplit.indecomposable (hf : IsLeftAlmostSplit f) : Indecompos
     (e.op.symm ≪≫ biprod.opIso A B)).imp IsZero.unop IsZero.unop
 
 end Indecomposable
+
+/-! ### Local endomorphism rings of the almost split ends -/
+
+section LocalRing
+
+variable [Preadditive C]
+
+/-- For an endomorphism `a` of the source of a left almost split morphism `f`, either `a` or
+`𝟙 X - a` is a split monomorphism: otherwise both factor through `f`, and so does their sum. -/
+private theorem IsLeftAlmostSplit.isSplitMono_or_isSplitMono_id_sub (hf : IsLeftAlmostSplit f)
+    (a : X ⟶ X) : IsSplitMono a ∨ IsSplitMono (𝟙 X - a) := by
+  by_contra h
+  rw [not_or] at h
+  obtain ⟨t, ht⟩ := hf.factors X a h.1
+  obtain ⟨t', ht'⟩ := hf.factors X _ h.2
+  exact hf.not_isSplitMono
+    (IsSplitMono.mk' ⟨t + t', by rw [Preadditive.comp_add, ht, ht', add_sub_cancel]⟩)
+
+/-- For an endomorphism `a` of the target of a right almost split morphism `f`, either `a` or
+`𝟙 Y - a` is a split epimorphism: otherwise both factor through `f`, and so does their sum. -/
+private theorem IsRightAlmostSplit.isSplitEpi_or_isSplitEpi_id_sub (hf : IsRightAlmostSplit f)
+    (a : Y ⟶ Y) : IsSplitEpi a ∨ IsSplitEpi (𝟙 Y - a) := by
+  by_contra h
+  rw [not_or] at h
+  obtain ⟨t, ht⟩ := hf.factors Y a h.1
+  obtain ⟨t', ht'⟩ := hf.factors Y _ h.2
+  exact hf.not_isSplitEpi
+    (IsSplitEpi.mk' ⟨t + t', by rw [Preadditive.add_comp, ht, ht', add_sub_cancel]⟩)
+
+/-- A split monic endomorphism `a` of the source of a left almost split morphism is invertible.
+The idempotent `retraction a ≫ a` cannot have `𝟙 X - retraction a ≫ a` split monic, since `a`
+annihilates the latter and is nonzero; so it is split monic, and hence so is `retraction a`. -/
+private theorem IsLeftAlmostSplit.isIso_of_isSplitMono (hf : IsLeftAlmostSplit f) (a : X ⟶ X)
+    [IsSplitMono a] : IsIso a := by
+  have h0 : a ≫ (𝟙 X - retraction a ≫ a) = 0 := by
+    rw [Preadditive.comp_sub, Category.comp_id, ← Category.assoc, IsSplitMono.id,
+      Category.id_comp, sub_self]
+  rcases hf.isSplitMono_or_isSplitMono_id_sub (retraction a ≫ a) with h | h
+  · have : IsSplitMono (retraction a) := isSplitMono_of_isSplitMono_comp _ a
+    exact IsIso.of_mono_retraction a
+  · exfalso
+    have h1 : 𝟙 X = 0 := calc
+      𝟙 X = (a ≫ (𝟙 X - retraction a ≫ a) ≫ retraction (𝟙 X - retraction a ≫ a)) ≫
+          retraction a := by rw [IsSplitMono.id, Category.comp_id, IsSplitMono.id]
+      _ = 0 := by rw [← Category.assoc a, h0, zero_comp, zero_comp]
+    exact hf.not_isSplitMono (IsSplitMono.mk' ⟨0, by rw [comp_zero, h1]⟩)
+
+/-- A split epic endomorphism `a` of the target of a right almost split morphism is invertible.
+The idempotent `a ≫ section_ a` cannot have `𝟙 Y - a ≫ section_ a` split epic, since the latter
+annihilates `a`, which is nonzero; so it is split epic, and hence so is `section_ a`. -/
+private theorem IsRightAlmostSplit.isIso_of_isSplitEpi (hf : IsRightAlmostSplit f) (a : Y ⟶ Y)
+    [IsSplitEpi a] : IsIso a := by
+  have h0 : (𝟙 Y - a ≫ section_ a) ≫ a = 0 := by
+    rw [Preadditive.sub_comp, Category.id_comp, Category.assoc, IsSplitEpi.id,
+      Category.comp_id, sub_self]
+  rcases hf.isSplitEpi_or_isSplitEpi_id_sub (a ≫ section_ a) with h | h
+  · have : IsSplitEpi (section_ a) := isSplitEpi_of_isSplitEpi_comp a _
+    exact IsIso.of_epi_section a
+  · exfalso
+    have h1 : 𝟙 Y = 0 := calc
+      𝟙 Y = section_ a ≫ (section_ (𝟙 Y - a ≫ section_ a) ≫ (𝟙 Y - a ≫ section_ a)) ≫ a := by
+          rw [IsSplitEpi.id, Category.id_comp, IsSplitEpi.id]
+      _ = 0 := by rw [Category.assoc, h0, comp_zero, comp_zero]
+    exact hf.not_isSplitEpi (IsSplitEpi.mk' ⟨0, by rw [zero_comp, h1]⟩)
+
+/-- **The source of a left almost split morphism has a local endomorphism ring.** The
+endomorphisms that are not split monomorphisms are exactly those factoring through the left
+almost split morphism, so they are closed under addition. No finiteness hypothesis is needed. -/
+theorem IsLeftAlmostSplit.isLocalRing_end (hf : IsLeftAlmostSplit f) : IsLocalRing (End X) := by
+  have : Nontrivial (End X) := nontrivial_of_ne 1 0 fun h ↦
+    hf.not_isSplitMono (IsSplitMono.mk' ⟨0, by rw [comp_zero]; exact (congrArg End.asHom h).symm⟩)
+  refine IsLocalRing.of_isUnit_or_isUnit_one_sub_self fun a ↦ ?_
+  simp only [isUnit_iff_isIso]
+  rcases hf.isSplitMono_or_isSplitMono_id_sub a.asHom with h | h
+  · exact Or.inl (hf.isIso_of_isSplitMono a.asHom)
+  · have : IsSplitMono (1 - a).asHom := h
+    exact Or.inr (hf.isIso_of_isSplitMono _)
+
+/-- **The target of a right almost split morphism has a local endomorphism ring.** The
+endomorphisms that are not split epimorphisms are exactly those factoring through the right
+almost split morphism, so they are closed under addition. No finiteness hypothesis is needed. -/
+theorem IsRightAlmostSplit.isLocalRing_end (hf : IsRightAlmostSplit f) :
+    IsLocalRing (End Y) := by
+  have : Nontrivial (End Y) := nontrivial_of_ne 1 0 fun h ↦
+    hf.not_isSplitEpi (IsSplitEpi.mk' ⟨0, by rw [zero_comp]; exact (congrArg End.asHom h).symm⟩)
+  refine IsLocalRing.of_isUnit_or_isUnit_one_sub_self fun a ↦ ?_
+  simp only [isUnit_iff_isIso]
+  rcases hf.isSplitEpi_or_isSplitEpi_id_sub a.asHom with h | h
+  · exact Or.inl (hf.isIso_of_isSplitEpi a.asHom)
+  · have : IsSplitEpi (1 - a).asHom := h
+    exact Or.inr (hf.isIso_of_isSplitEpi _)
+
+end LocalRing
 
 end TauCeti

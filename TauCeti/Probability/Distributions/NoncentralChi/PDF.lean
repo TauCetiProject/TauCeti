@@ -202,6 +202,64 @@ theorem noncentralChiPDFReal_eq_besselI (hk : 0 ≤ k) (hδ : 0 < δ) (hs : 0 < 
     (pow_pos hδ 2) (by positivity), hsqrt, hpow, NNReal.coe_pow]
   ring
 
+/-- The degree-two noncentral chi density is the Rice density. Unlike the general Bessel
+formula, this specialization also includes zero noncentrality. -/
+theorem noncentralChiPDFReal_two_eq_besselI (δ : ℝ≥0) (hs : 0 < s) (hx : 0 < x) :
+    noncentralChiPDFReal 2 δ s x =
+      x / s ^ 2 * exp (-((x / s) ^ 2 + δ ^ 2) / 2) * besselI 0 (δ * x / s) := by
+  by_cases hδ0 : δ = 0
+  · subst δ
+    rw [noncentralChiPDFReal_zero_noncentrality, chiPDFReal_of_pos (by norm_num) hs hx]
+    simp only [NNReal.coe_zero, zero_pow two_ne_zero, add_zero, zero_mul, zero_div,
+      besselI_zero]
+    norm_num [Real.Gamma_one]
+    field_simp
+  · have hδ : 0 < δ := (pos_iff_ne_zero.mpr hδ0)
+    simpa only [show (2 : ℝ) / 2 - 1 = 0 by norm_num, Real.rpow_zero, mul_one] using
+      noncentralChiPDFReal_eq_besselI (k := 2) (δ := δ) (by norm_num) hδ hs hx
+
+/-- The Rice density in terms of the norm `ν` of the planar Gaussian mean and its positive
+coordinate scale `s`. -/
+theorem noncentralChiPDFReal_two_div_scale_eq_besselI (ν : ℝ≥0) (hs : 0 < s) (hx : 0 < x) :
+    noncentralChiPDFReal 2 (ν / s.toNNReal) s x =
+      x / s ^ 2 * exp (-(x ^ 2 + ν ^ 2) / (2 * s ^ 2)) *
+        besselI 0 (x * ν / s ^ 2) := by
+  rw [noncentralChiPDFReal_two_eq_besselI (ν / s.toNNReal) hs hx]
+  simp only [NNReal.coe_div, Real.coe_toNNReal _ hs.le]
+  congr 2
+  all_goals field_simp [hs.ne']
+
+/-- The real noncentral chi density is continuous on `(0, ∞)` for all parameter values. -/
+theorem continuousOn_noncentralChiPDFReal (k : ℝ) (δ : ℝ≥0) (s : ℝ) :
+    ContinuousOn (noncentralChiPDFReal k δ s) (Ioi 0) := by
+  rcases lt_or_ge k 0 with hk | hk
+  · exact continuousOn_const.congr fun x _ ↦ noncentralChiPDFReal_of_neg hk
+  rcases le_or_gt s 0 with hs | hs
+  · exact continuousOn_const.congr fun x _ ↦ noncentralChiPDFReal_of_scale_nonpos hs
+  rcases eq_or_ne δ 0 with rfl | hδ0
+  · rw [funext (noncentralChiPDFReal_zero_noncentrality k s)]
+    rcases hk.eq_or_lt' with rfl | hk'
+    · exact continuousOn_const.congr fun x _ ↦ chiPDFReal_of_not_pos fun h ↦ h.1.ne rfl
+    · refine ContinuousOn.congr ?_ fun x hx ↦ chiPDFReal_of_pos hk' hs hx
+      intro x (hx : 0 < x)
+      have hxs : 0 < x / s := div_pos hx hs
+      exact (((continuousAt_const.mul
+        ((continuousAt_id.div_const s).rpow continuousAt_const (Or.inl hxs.ne'))).mul
+        (by fun_prop)).div_const s).continuousWithinAt
+  · have hδ : 0 < δ := pos_iff_ne_zero.mpr hδ0
+    refine ContinuousOn.congr ?_ fun x hx ↦ noncentralChiPDFReal_eq_besselI hk hδ hs hx
+    intro x (hx : 0 < x)
+    have hbase : 0 < x / (s * (δ : ℝ)) := by positivity
+    have harg : 0 < (δ : ℝ) * x / s := by positivity
+    refine (((by fun_prop : ContinuousAt (fun y : ℝ ↦ y / s ^ 2 *
+        exp (-((y / s) ^ 2 + (δ : ℝ) ^ 2) / 2)) x).mul
+      ((continuousAt_id.div_const _).rpow continuousAt_const (Or.inl hbase.ne'))).mul ?_
+      ).continuousWithinAt
+    exact ContinuousAt.comp (g := fun p : ℝ × ℝ ↦ besselI p.1 p.2)
+      (f := fun z : ℝ ↦ (k / 2 - 1, (δ : ℝ) * z / s))
+      (Real.continuousAt_besselI (Or.inl harg.ne'))
+      (by fun_prop : Continuous fun z : ℝ ↦ (k / 2 - 1, (δ : ℝ) * z / s)).continuousAt
+
 /-- **Scaled square roots of the continuous noncentral chi-squared component.** The image of
 the continuous noncentral chi-squared component under `s * √·` is the continuous noncentral chi
 component; the substitution is `y = (x / s) ^ 2` on the positive half-line. -/
@@ -240,7 +298,7 @@ private theorem map_withDensity_noncentralChiSquaredPDF (hs : 0 < s) :
         noncentralChiSquaredPDF_eq_ofReal, ENNReal.ofReal_mul (by positivity)]
     · simp [ht, noncentralChiPDF_of_nonpos (not_lt.mp ht)]
   have hchange := TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul
-    (f := noncentralChiSquaredPDF k (δ ^ 2)) measurableSet_Ioi (by fun_prop)
+    (f := noncentralChiSquaredPDF k (δ ^ 2)) measurableSet_Ioi
     (fun t _ ↦ (hderiv t).hasDerivWithinAt) hinj
   rw [himage] at hchange
   rw [hsource, ← hchange, Measure.map_map (by fun_prop) (by fun_prop), htarget]

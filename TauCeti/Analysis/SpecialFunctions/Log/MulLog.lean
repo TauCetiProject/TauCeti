@@ -20,6 +20,8 @@ up a small amount of its value is bounded by that same tangent line.
 
 * `Real.mul_log_sub_mul_log_ge`: for `0 < a` and `0 ≤ u`,
   `u * log u - a * log a ≥ (u - a) * (log a + 1)`.
+* `Real.sub_le_mul_log_sub_mul_log`: for `0 ≤ a, b` with `a = 0` whenever `b = 0`,
+  `a - b ≤ a * log a - a * log b`, the scalar form of Klein's inequality.
 * `Real.sub_mul_log_le`: for `0 ≤ t` and `t ≤ x / 2`,
   `(x - t) * log (x - t) - x * log x ≤ -t * (log x - log 2 + 1)`.
 * `TauCeti.sq_sqrt_sub_sqrt_le_mul_log_sub_mul_log_sub`: for `0 < a` and `0 ≤ u`, the gap
@@ -29,6 +31,9 @@ up a small amount of its value is bounded by that same tangent line.
 * `Real.sq_sub_le_mul_sub_mul_log_sub_log`: for `0 < p, q ≤ M`,
   `(p - q) ^ 2 ≤ M * ((p - q) * (log p - log q))`, the strong monotonicity of the logarithm on
   `(0, M]`.
+* `Real.mul_sq_log_sub_log_le_sub_mul_log_sub_log`: for `m ≤ p, q` with `0 < p, q`,
+  `m * (log p - log q) ^ 2 ≤ (p - q) * (log p - log q)`, the strong monotonicity of the
+  exponential on `[log m, ∞)`.
 
 The first estimate is the tangent line at `a`, whose slope `log a + 1` is the derivative
 `Real.deriv_mul_log` of the function. It is stated for `u = 0` as well, where the convention
@@ -68,6 +73,15 @@ theorem mul_log_sub_mul_log_ge (a u : ℝ) (ha : 0 < a) (hu : 0 ≤ u) :
   · subst hu0
     simp only [Real.log_zero, zero_mul]
     linarith
+
+/-- The scalar form of Klein's inequality: `a - b ≤ a * log a - a * log b` for `0 ≤ a, b`,
+provided `a = 0` whenever `b = 0`. For `0 < b` it is the supporting line
+`Real.mul_log_sub_mul_log_ge` at `b`; the proviso excludes `b = 0 < a`, where it fails. -/
+theorem sub_le_mul_log_sub_mul_log {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : b = 0 → a = 0) :
+    a - b ≤ a * Real.log a - a * Real.log b := by
+  rcases hb.eq_or_lt with rfl | hb
+  · simp [hab rfl]
+  nlinarith [mul_log_sub_mul_log_ge b a hb ha]
 
 /-- The loss of the function `u ↦ u * log u` at a value `x` that gives up an amount `t`, where
 `0 ≤ t` and `t ≤ x / 2`, is at most `-t * (log x - log 2 + 1)`: the supporting line
@@ -118,6 +132,29 @@ theorem sq_sub_le_mul_sub_mul_log_sub_log {p q M : ℝ} (hp : 0 < p) (hq : 0 < q
   calc p * ((p - q) * (1 - q / p)) ≤ p * ((p - q) * (Real.log p - Real.log q)) :=
         mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hlog hpq) hp.le
     _ ≤ M * ((p - q) * (Real.log p - Real.log q)) := mul_le_mul_of_nonneg_right hpM hgap
+
+/-- The exponential is strongly monotone on `[log m, ∞)`: for `0 < p, q` with `m ≤ p, q`,
+`m * (log p - log q) ^ 2 ≤ (p - q) * (log p - log q)`. Equivalently, for `log p ≠ log q` the
+difference quotient `(p - q) / (log p - log q)` of `exp` between `log q` and `log p` is at least
+`m`. This is the counterpart of `Real.sq_sub_le_mul_sub_mul_log_sub_log`, with the roles of a
+point and its logarithm exchanged. -/
+theorem mul_sq_log_sub_log_le_sub_mul_log_sub_log {p q m : ℝ} (hp : 0 < p) (hq : 0 < q)
+    (hmp : m ≤ p) (hmq : m ≤ q) :
+    m * (Real.log p - Real.log q) ^ 2 ≤ (p - q) * (Real.log p - Real.log q) := by
+  wlog hqp : q ≤ p generalizing p q
+  · have h := this hq hp hmq hmp (le_of_not_ge hqp)
+    linarith
+  -- Scale `q (log p - log q) ≤ p - q`, from `log y ≤ y - 1`, by `log p - log q ≥ 0`.
+  have hlog : q * (Real.log p - Real.log q) ≤ p - q := by
+    have h := Real.log_le_sub_one_of_pos (div_pos hp hq)
+    rw [Real.log_div hp.ne' hq.ne'] at h
+    calc q * (Real.log p - Real.log q) ≤ q * (p / q - 1) := mul_le_mul_of_nonneg_left h hq.le
+      _ = p - q := by field_simp
+  have hgap : 0 ≤ Real.log p - Real.log q := sub_nonneg.2 (Real.log_le_log hq hqp)
+  calc m * (Real.log p - Real.log q) ^ 2 ≤ q * (Real.log p - Real.log q) ^ 2 :=
+        mul_le_mul_of_nonneg_right hmq (sq_nonneg _)
+    _ = (q * (Real.log p - Real.log q)) * (Real.log p - Real.log q) := by ring
+    _ ≤ (p - q) * (Real.log p - Real.log q) := mul_le_mul_of_nonneg_right hlog hgap
 
 end Real
 

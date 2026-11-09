@@ -121,15 +121,24 @@ theorem coe_mk (ρ : Representation A Γ M) (hρ : Continuous fun p : Γ × M =>
 theorem ext {ρ σ : ContinuousRep Γ A M} (h : ∀ g x, ρ g x = σ g x) : ρ = σ :=
   DFunLike.ext _ _ fun g => LinearMap.ext (h g)
 
+/-- **Joint continuity in the form `fun_prop` uses.** If `f : X → Γ` and `g : X → M` are
+continuous, then so is `x ↦ ρ (f x) (g x)`. This is the field `continuous_action`, stated through
+the coercion `⇑ρ` in compositional form. -/
+@[fun_prop]
+theorem _root_.Continuous.continuousRep_apply {X : Type*} [TopologicalSpace X]
+    (ρ : ContinuousRep Γ A M) {f : X → Γ} {g : X → M} (hf : Continuous f) (hg : Continuous g) :
+    Continuous fun x => ρ (f x) (g x) :=
+  ρ.continuous_action.comp (hf.prodMk hg)
+
 /-- **Each operator of a jointly continuous representation is continuous.** -/
 @[fun_prop]
-theorem continuous_apply (ρ : ContinuousRep Γ A M) (g : Γ) : Continuous (ρ g) :=
-  ρ.continuous_action.comp (continuous_const.prodMk continuous_id)
+theorem continuous_apply (ρ : ContinuousRep Γ A M) (g : Γ) : Continuous (ρ g) := by
+  fun_prop
 
 /-- The orbit map `g ↦ ρ g x` of a jointly continuous representation is continuous. -/
 @[fun_prop]
-theorem continuous_orbit (ρ : ContinuousRep Γ A M) (x : M) : Continuous fun g => ρ g x :=
-  ρ.continuous_action.comp (continuous_id.prodMk continuous_const)
+theorem continuous_orbit (ρ : ContinuousRep Γ A M) (x : M) : Continuous fun g => ρ g x := by
+  fun_prop
 
 section ContRepresentation
 

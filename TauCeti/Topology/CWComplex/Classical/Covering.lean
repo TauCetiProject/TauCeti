@@ -13,6 +13,8 @@ public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
 public import TauCeti.Topology.CWComplex.Classical.Map
 public import TauCeti.Topology.Covering.Convex
 public import TauCeti.Topology.SeparatedMap
+import TauCeti.Topology.CWComplex.Comparison
+import TauCeti.Topology.Covering.Pullback
 
 /-!
 # Lifting a CW structure along a covering map
@@ -58,7 +60,11 @@ over their centres
 (`TauCeti.nat_card_cell_preimage`), so `d` times as many cells as `C` when every fibre over `C`
 has `d` points (`TauCeti.nat_card_cell_preimage_of_card_fiber`). This is the input for the
 multiplicativity of the Euler characteristic in finite covers. In particular the total space of
-such a cover of a finite CW complex has finite CW type (`IsCoveringMap.finiteCWType`).
+such a cover of a finite CW complex is a finite CW complex. More generally, the total space of a
+cover with finite fibres of a space of finite CW type has finite CW type
+(`IsCoveringMap.finiteCWType`): pulled back along a homotopy equivalence with a finite CW complex,
+the cover becomes a finite CW complex homotopy equivalent to its total space
+(`IsCoveringMap.pullbackHomotopyEquiv`).
 
 ## References
 
@@ -78,13 +84,29 @@ universe u
 
 namespace TauCeti
 
-variable {E B : Type u} [TopologicalSpace E] [TopologicalSpace B] {p : E → B}
-  {C : Set B} [CWComplex C]
+variable {E B : Type u} [TopologicalSpace B] {p : E → B} {C : Set B}
+
+section Lift
+
+variable [CWComplex C]
 
 variable (p C) in
 /-- The `n`-cells of the lifted CW structure: an `n`-cell of `C` together with a point of the fibre
 of `p` over the image of the centre of its characteristic map. -/
 private abbrev CoverCell (n : ℕ) : Type u := Σ i : cell C n, p ⁻¹' {map n i 0}
+
+variable (C) in
+private theorem finite_coverCell [RelCWComplex.FiniteType C]
+    (hfin : ∀ b, Finite ↥(p ⁻¹' {b})) (n : ℕ) :
+    _root_.Finite (CoverCell p C n) :=
+  have : _root_.Finite (cell C n) := FiniteType.finite_cell n
+  inferInstance
+
+variable (C) in
+private theorem eventually_isEmpty_coverCell [RelCWComplex.FiniteDimensional C] :
+    ∀ᶠ n in Filter.atTop, IsEmpty (CoverCell p C n) :=
+  (FiniteDimensional.eventually_isEmpty_cell (C := C) (D := ∅)).mono
+    fun _ h ↦ ⟨fun c ↦ h.false c.1⟩
 
 /-- The characteristic map of a cell, as a continuous map on the closed unit ball. -/
 private def cellBallMap {n : ℕ} (i : cell C n) : C(closedBall (0 : Fin n → ℝ) 1, B) :=
@@ -94,10 +116,7 @@ private def cellBallMap {n : ℕ} (i : cell C n) : C(closedBall (0 : Fin n → �
 private def ballCentre (n : ℕ) : closedBall (0 : Fin n → ℝ) 1 :=
   ⟨0, mem_closedBall_self zero_le_one⟩
 
-section Lift
-
-variable (hp : IsCoveringMap p)
-include hp
+variable [TopologicalSpace E] (hp : IsCoveringMap p)
 
 /-- The lift of the characteristic map of `c.1` through `p` sending the centre to `c.2`. -/
 private def coverLift {n : ℕ} (c : CoverCell p C n) : C(closedBall (0 : Fin n → ℝ) 1, E) :=
@@ -368,7 +387,7 @@ end Lift
 
 section Structure
 
-variable [T2Space B] (C) (hp : IsCoveringMap p)
+variable [TopologicalSpace E] (C) [CWComplex C] [T2Space B] (hp : IsCoveringMap p) {n : ℕ}
 
 /-- **A CW structure lifts along a covering map.** If `C` is a CW complex in the Hausdorff space
 `B` and `p : E → B` is a covering map, then `p ⁻¹' C` is a CW complex in `E`. Its `n`-cells are the
@@ -396,24 +415,22 @@ def cellPreimageEquiv (n : ℕ) :
 
 /-- The characteristic maps of `TauCeti.cwComplexPreimage` are the extended lifts
 `coverLiftFun`, by construction. -/
-private theorem map_eq_coverLiftFun {n : ℕ}
+private theorem map_eq_coverLiftFun
     (c : letI := cwComplexPreimage C hp; cell (p ⁻¹' C) n) (x : Fin n → ℝ) :
     letI := cwComplexPreimage C hp
     map n c x = coverLiftFun hp c x :=
   (rfl)
 
-variable {n : ℕ} (c : Σ i : cell C n, p ⁻¹' {map n i 0})
-
 /-- The characteristic maps of `TauCeti.cwComplexPreimage` are the maps `coverCellMap`, by
 construction. -/
-private theorem map_cellPreimageEquiv_symm :
+private theorem map_cellPreimageEquiv_symm (c : Σ i : cell C n, p ⁻¹' {map n i 0}) :
     letI := cwComplexPreimage C hp
     map n ((cellPreimageEquiv C hp n).symm c) = coverCellMap hp c :=
   (rfl)
 
 /-- The characteristic map of a lifted cell sends the centre to the chosen point over the centre
 of the underlying cell. -/
-theorem map_cellPreimageEquiv_symm_zero :
+theorem map_cellPreimageEquiv_symm_zero (c : Σ i : cell C n, p ⁻¹' {map n i 0}) :
     letI := cwComplexPreimage C hp
     map n ((cellPreimageEquiv C hp n).symm c) 0 = c.2 := by
   rw [map_cellPreimageEquiv_symm, coverCellMap_apply,
@@ -422,12 +439,12 @@ theorem map_cellPreimageEquiv_symm_zero :
 
 /-- The characteristic map of a lifted cell lifts the characteristic map of the underlying cell
 on the closed unit ball. -/
-theorem apply_map_cellPreimageEquiv_symm {x : Fin n → ℝ} (hx : x ∈ closedBall 0 1) :
+theorem apply_map_cellPreimageEquiv_symm (c : Σ i : cell C n, p ⁻¹' {map n i 0})
+    {x : Fin n → ℝ} (hx : x ∈ closedBall 0 1) :
     letI := cwComplexPreimage C hp
     p (map n ((cellPreimageEquiv C hp n).symm c) x) = map n c.1 x := by
   rw [map_cellPreimageEquiv_symm, coverCellMap_apply, coverLiftFun_apply hp c hx]
 
-omit c in
 /-- Over a surjective covering map, every cell of `C` has a lift. -/
 theorem exists_cellPreimageEquiv_fst_eq (hsurj : Function.Surjective p) (i : cell C n) :
     letI := cwComplexPreimage C hp
@@ -436,50 +453,27 @@ theorem exists_cellPreimageEquiv_fst_eq (hsurj : Function.Surjective p) (i : cel
   obtain ⟨e, he⟩ := hsurj (map n i 0)
   exact ⟨(cellPreimageEquiv C hp n).symm ⟨i, e, he⟩, by rw [Equiv.apply_symm_apply]⟩
 
-section Finite
-
-variable (hfin : ∀ b, Finite ↥(p ⁻¹' {b}))
-
-omit c in
-omit [TopologicalSpace E] [T2Space B] in
-include hfin in
-private theorem finite_coverCell [RelCWComplex.FiniteType C] (n : ℕ) :
-    _root_.Finite (CoverCell p C n) :=
-  have : _root_.Finite (cell C n) := FiniteType.finite_cell n
-  inferInstance
-
-omit c in
-omit [TopologicalSpace E] [T2Space B] in
-private theorem eventually_isEmpty_coverCell [RelCWComplex.FiniteDimensional C] :
-    ∀ᶠ n in Filter.atTop, IsEmpty (CoverCell p C n) :=
-  (FiniteDimensional.eventually_isEmpty_cell (C := C) (D := ∅)).mono
-    fun _ h ↦ ⟨fun c ↦ h.false c.1⟩
-
-include hfin
-
-omit c in
 /-- The lift of a finite CW complex along a covering map with finite fibres is finite. -/
-theorem finite_cwComplexPreimage [RelCWComplex.Finite C] :
+theorem finite_cwComplexPreimage [RelCWComplex.Finite C] (hfin : ∀ b, Finite ↥(p ⁻¹' {b})) :
     letI := cwComplexPreimage C hp
     RelCWComplex.Finite (p ⁻¹' C) :=
   letI := cwComplexPreimage C hp
   { eventually_isEmpty_cell := eventually_isEmpty_coverCell C
     finite_cell := finite_coverCell C hfin }
 
-omit c in
 /-- The number of `n`-cells of the lift of `C` along `p` is the sum, over the `n`-cells of `C`, of
 the number of points over their centres. -/
-theorem nat_card_cell_preimage [RelCWComplex.FiniteType C] :
+theorem nat_card_cell_preimage [RelCWComplex.FiniteType C] (hfin : ∀ b, Finite ↥(p ⁻¹' {b})) :
     letI := cwComplexPreimage C hp
     Nat.card (cell (p ⁻¹' C) n) = ∑ᶠ i : cell C n, Nat.card ↥(p ⁻¹' {map n i 0}) := by
   have : _root_.Finite (cell C n) := FiniteType.finite_cell n
   have := Fintype.ofFinite (cell C n)
   rw [Nat.card_congr (cellPreimageEquiv C hp n), Nat.card_sigma, finsum_eq_sum_of_fintype]
 
-omit c in
 /-- **Cells of a `d`-sheeted cover.** If every fibre of `p` over `C` has `d` points, the lift of `C`
 along `p` has `d` times as many `n`-cells as `C`. -/
-theorem nat_card_cell_preimage_of_card_fiber [RelCWComplex.FiniteType C] {d : ℕ}
+theorem nat_card_cell_preimage_of_card_fiber [RelCWComplex.FiniteType C]
+    (hfin : ∀ b, Finite ↥(p ⁻¹' {b})) {d : ℕ}
     (hd : ∀ b ∈ C, Nat.card ↥(p ⁻¹' {b}) = d) :
     letI := cwComplexPreimage C hp
     Nat.card (cell (p ⁻¹' C) n) = d * Nat.card (cell C n) := by
@@ -490,25 +484,26 @@ theorem nat_card_cell_preimage_of_card_fiber [RelCWComplex.FiniteType C] {d : �
   rw [nat_card_cell_preimage C hp hfin, finsum_eq_sum_of_fintype]
   simp [hc, mul_comm]
 
-end Finite
-
-omit c in
-include hp in
-/-- The total space of a covering, with finite fibres, of a finite CW complex has finite CW type: it
-is a finite CW complex itself. -/
-theorem _root_.IsCoveringMap.finiteCWType [CWComplex (univ : Set B)]
-    [RelCWComplex.Finite (univ : Set B)] (hfin : ∀ b, Finite ↥(p ⁻¹' {b})) : FiniteCWType E := by
-  let := cwComplexPreimage univ hp
-  have := finite_cwComplexPreimage univ hp hfin
-  have := hp.t2Space
-  exact ((Homeomorph.setCongr (preimage_univ (f := p))).trans
-    (Homeomorph.Set.univ E)).symm.finiteCWType
-
 end Structure
+
+/-- The total space of a covering, with finite fibres, of a space of finite CW type has finite CW
+type. -/
+theorem _root_.IsCoveringMap.finiteCWType [TopologicalSpace E] [FiniteCWType B]
+    (hp : IsCoveringMap p) (hfin : ∀ b, Finite ↥(p ⁻¹' {b})) : FiniteCWType E := by
+  obtain ⟨Z, _, _, _, _, ⟨e⟩⟩ := FiniteCWType.exists_homotopyEquiv_univ B
+  have hq := hp.pullback_fst e.symm.toFun.continuous
+  let := cwComplexPreimage univ hq
+  have := finite_cwComplexPreimage univ hq fun z ↦
+    .of_equiv _ (Function.Pullback.fstPreimageEquiv z).symm
+  have := hq.t2Space
+  have : FiniteCWType (Function.Pullback e.symm p) :=
+    ((Homeomorph.setCongr (preimage_univ (f := Function.Pullback.fst))).trans
+      (Homeomorph.Set.univ _)).symm.finiteCWType
+  exact (hp.pullbackHomotopyEquiv e.symm).symm.finiteCWType
 
 section Cellular
 
-variable [T2Space B] (C) (hp : IsCoveringMap p)
+variable [TopologicalSpace E] (C) [CWComplex C] [T2Space B] (hp : IsCoveringMap p)
 
 /-- **The covering map is cellular** for the lifted CW structure, as a map from `p ⁻¹' C` to `C`:
 the lifted open `n`-cells lie over the open `n`-cells of `C`. -/
@@ -536,9 +531,9 @@ When `p` is the quotient covering map of a free action of a group `G` on `E`
 a point `e` over the centre of a cell to the lift through `g • e`. The action is free, and its
 orbits are exactly the sets of lifts of one cell of `C`. -/
 
-variable [T2Space B] (C) {G : Type*} [Group G] [MulAction G E] (hG : IsQuotientCoveringMap p G)
+variable [TopologicalSpace E] (C) {G : Type*} [Group G] [MulAction G E]
+  (hG : IsQuotientCoveringMap p G) {n : ℕ}
 
-omit [T2Space B] [CWComplex C] in
 /-- Translation by `g`, restricted to the preimage `p ⁻¹' C`, which it preserves because `p` is
 invariant under the action. -/
 def preimageSMul (g : G) : TopCat.of (p ⁻¹' C) ⟶ TopCat.of (p ⁻¹' C) :=
@@ -546,28 +541,17 @@ def preimageSMul (g : G) : TopCat.of (p ⁻¹' C) ⟶ TopCat.of (p ⁻¹' C) :=
   TopCat.ofHom ⟨fun x ↦ ⟨g • x.1, by simpa only [mem_preimage, hG.map_smul] using x.2⟩,
     by fun_prop⟩
 
-omit [T2Space B] [CWComplex C] in
 @[simp]
 theorem coe_preimageSMul_apply (g : G) (x : p ⁻¹' C) :
     (preimageSMul C hG g x : E) = g • (x : E) :=
   (rfl)
 
-/-- The action of `G` on the `n`-cells of the lift of `C` along a quotient covering map, by its
-action on the points over the centres of the cells of `C`. -/
-@[implicit_reducible]
-def cellPreimageMulAction (n : ℕ) :
-    letI := cwComplexPreimage C hG.isCoveringMap
-    MulAction G (cell (p ⁻¹' C) n) :=
-  letI (i : cell C n) := hG.mulActionFiber (map n i 0)
-  inferInstanceAs (MulAction G (Σ i : cell C n, p ⁻¹' {map n i 0}))
+variable [CWComplex C]
 
-variable {n : ℕ} (g : G) (c : Σ i : cell C n, p ⁻¹' {map n i 0})
-
-omit [T2Space B] in
 /-- Translating a lift of a characteristic map by `g` gives the lift through the translated point
 over the centre. -/
-private theorem coverLift_smul (hgc : p (g • (c.2 : E)) = map n c.1 0)
-    (x : closedBall (0 : Fin n → ℝ) 1) :
+private theorem coverLift_smul (g : G) (c : Σ i : cell C n, p ⁻¹' {map n i 0})
+    (hgc : p (g • (c.2 : E)) = map n c.1 0) (x : closedBall (0 : Fin n → ℝ) 1) :
     coverLift hG.isCoveringMap ⟨c.1, ⟨g • (c.2 : E), hgc⟩⟩ x =
       g • coverLift hG.isCoveringMap c x := by
   have := hG.toContinuousConstSMul
@@ -580,10 +564,21 @@ private theorem coverLift_smul (hgc : p (g • (c.2 : E)) = map n c.1 0)
     simp only [Function.comp_apply, hG.map_smul, coverLift_apply]
   · simp only [Function.comp_apply, coverLift_ballCentre]
 
+variable [T2Space B]
+
+/-- The action of `G` on the `n`-cells of the lift of `C` along a quotient covering map, by its
+action on the points over the centres of the cells of `C`. -/
+@[implicit_reducible]
+def cellPreimageMulAction (n : ℕ) :
+    letI := cwComplexPreimage C hG.isCoveringMap
+    MulAction G (cell (p ⁻¹' C) n) :=
+  letI (i : cell C n) := hG.mulActionFiber (map n i 0)
+  inferInstanceAs (MulAction G (Σ i : cell C n, p ⁻¹' {map n i 0}))
+
 /-- The first component of `cellPreimageEquiv` of a translated cell: translation does not move
 the underlying cell of `C`. -/
 @[simp]
-theorem cellPreimageEquiv_smul_fst (c : letI := cwComplexPreimage C hG.isCoveringMap
+theorem cellPreimageEquiv_smul_fst (g : G) (c : letI := cwComplexPreimage C hG.isCoveringMap
       cell (p ⁻¹' C) n) :
     letI := cwComplexPreimage C hG.isCoveringMap
     letI := cellPreimageMulAction C hG n
@@ -594,7 +589,7 @@ theorem cellPreimageEquiv_smul_fst (c : letI := cwComplexPreimage C hG.isCoverin
 /-- The second component of `cellPreimageEquiv` of a translated cell: the chosen point over the
 centre is translated. -/
 @[simp]
-theorem coe_cellPreimageEquiv_smul_snd (c : letI := cwComplexPreimage C hG.isCoveringMap
+theorem coe_cellPreimageEquiv_smul_snd (g : G) (c : letI := cwComplexPreimage C hG.isCoveringMap
       cell (p ⁻¹' C) n) :
     letI := cwComplexPreimage C hG.isCoveringMap
     letI := cellPreimageMulAction C hG n
@@ -603,7 +598,7 @@ theorem coe_cellPreimageEquiv_smul_snd (c : letI := cwComplexPreimage C hG.isCov
   (rfl)
 
 /-- The characteristic map of a translated cell is the translate of the characteristic map. -/
-theorem map_smul_cellPreimage (c : letI := cwComplexPreimage C hG.isCoveringMap
+theorem map_smul_cellPreimage (g : G) (c : letI := cwComplexPreimage C hG.isCoveringMap
       cell (p ⁻¹' C) n) (x : Fin n → ℝ) :
     letI := cwComplexPreimage C hG.isCoveringMap
     letI := cellPreimageMulAction C hG n

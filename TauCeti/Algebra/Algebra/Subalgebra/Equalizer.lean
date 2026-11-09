@@ -21,6 +21,11 @@ The invariant subalgebra `FixedPoints.subalgebra R S G` of a monoid `G` acting o
 equalizer of the diagonal map `S → (ι → S)` and `s ↦ (σ i • s)ᵢ`, for any family `σ : ι → G`
 enumerating `G` (`TauCeti.FixedPoints.subalgebra_eq_equalizer`). Properties of equalizers
 therefore pass to invariant subalgebras.
+
+For algebra maps `f g : A →ₐ[R] B` and an element `P : B`, the elements `x` of `A` with
+`P * g x = f x * P` form a subalgebra (`TauCeti.intertwiningSubalgebra`): `P` intertwines `g`
+with `f` on it. For `P = 1` this is the equalizer of `g` and `f`. To show that `P` intertwines
+`g` with `f` on a subalgebra, it suffices to check it on generators.
 -/
 
 public section
@@ -67,3 +72,29 @@ theorem subalgebra_eq_equalizer {R S : Type*} [CommSemiring R] [Semiring S] [Alg
   exact forall_congr' fun _ ↦ eq_comm
 
 end TauCeti.FixedPoints
+
+namespace TauCeti
+
+variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
+
+/-- The subalgebra of the elements `x` with `P * g x = f x * P`, on which `P` intertwines the
+algebra maps `g` and `f`. -/
+def intertwiningSubalgebra (P : B) (f g : A →ₐ[R] B) : Subalgebra R A where
+  carrier := {x | P * g x = f x * P}
+  mul_mem' {x y} hx hy := by
+    simp only [Set.mem_ofPred_eq, map_mul] at hx hy ⊢
+    rw [← mul_assoc, hx, mul_assoc, hy, mul_assoc]
+  add_mem' {x y} hx hy := by
+    simp only [Set.mem_ofPred_eq, map_add] at hx hy ⊢
+    rw [mul_add, add_mul, hx, hy]
+  algebraMap_mem' r := by
+    simp only [Set.mem_ofPred_eq, AlgHom.commutes]
+    exact (Algebra.commutes r P).symm
+
+/-- Membership in the intertwining subalgebra is the intertwining identity. -/
+@[simp]
+theorem mem_intertwiningSubalgebra {P : B} {f g : A →ₐ[R] B} {x : A} :
+    x ∈ intertwiningSubalgebra P f g ↔ P * g x = f x * P :=
+  Iff.rfl
+
+end TauCeti

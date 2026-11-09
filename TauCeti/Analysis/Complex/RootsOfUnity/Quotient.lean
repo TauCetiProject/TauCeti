@@ -32,6 +32,11 @@ covering map of the punctured plane with nonvanishing derivative (Mathlib's
 `isCoveringMapOn_npow`). At the centre, `u ↦ u ^ m` vanishes to order exactly `m`
 (Mathlib's `analyticOrderAt_centeredMonomial`).
 
+On the disc itself, viewed as a type with the restricted action, the rotations fix the centre and
+are free away from it (`TauCeti.smul_rootsOfUnityBall_of_coe_eq_zero`,
+`TauCeti.stabilizer_rootsOfUnityBall_of_coe_ne_zero`), and they act faithfully when the radius is
+positive (`TauCeti.faithfulSMul_rootsOfUnityBall`).
+
 The homeomorphism is built from Mathlib's theorem that `u ↦ u ^ m` is an open quotient map of
 `ℂ` (`Complex.isOpenQuotientMap_pow`, a consequence of the open mapping theorem), restricted to
 the saturated set `s`, together with the identification of its fibres with the orbits of the
@@ -45,11 +50,18 @@ restricted power map with its image.
 * `SubMulAction.rootsOfUnityQuotientHomeomorph`: the orbit space of an invariant set `s` is
   homeomorphic to `(· ^ m) '' s`, sending the class of `u` to `u ^ m`.
 * `TauCeti.rootsOfUnityBall`: the open disc of radius `r` about `0`, as an invariant set.
+* `TauCeti.isOpen_rootsOfUnityBall`: the disc is open in `ℂ`, hence locally compact
+  (`TauCeti.rootsOfUnityBall.instLocallyCompactSpace`).
 * `TauCeti.image_pow_ball`: `u ↦ u ^ m` maps the disc of radius `r` onto the disc of radius
   `r ^ m`.
 * `TauCeti.rootsOfUnityBallQuotientHomeomorph`: the orbit space of the disc of radius `r` is
   homeomorphic to the disc of radius `r ^ m`.
 * `TauCeti.freeLocus_rootsOfUnity`: for `m ≥ 2`, the action is free exactly off `0`.
+* `TauCeti.stabilizer_rootsOfUnityBall_of_coe_ne_zero`,
+  `TauCeti.smul_rootsOfUnityBall_of_coe_eq_zero`: on the disc of radius `r`, the rotations are
+  free away from the centre and fix the centre.
+* `TauCeti.faithfulSMul_rootsOfUnityBall`: the rotations act faithfully on a disc of positive
+  radius.
 
 ## References
 
@@ -142,6 +154,19 @@ theorem coe_rootsOfUnityBall (r : ℝ) :
 theorem mem_rootsOfUnityBall {r : ℝ} {u : ℂ} : u ∈ rootsOfUnityBall m r ↔ ‖u‖ < r := by
   rw [← SetLike.mem_coe, coe_rootsOfUnityBall, mem_ball_zero_iff]
 
+/-- The disc of radius `r` is open in `ℂ`. -/
+theorem isOpen_rootsOfUnityBall {r : ℝ} : IsOpen (rootsOfUnityBall m r : Set ℂ) := by
+  simp [Metric.isOpen_ball]
+
+/-- The disc of radius `r` is locally compact, as an open subset of `ℂ`. -/
+instance rootsOfUnityBall.instLocallyCompactSpace {r : ℝ} :
+    LocallyCompactSpace (rootsOfUnityBall m r) :=
+  isOpen_rootsOfUnityBall.locallyCompactSpace
+/-- The rotations do not change the coordinate `u ↦ u ^ m` of a point of the disc. -/
+theorem coe_smul_rootsOfUnityBall_pow {r : ℝ} (ζ : rootsOfUnity m ℂ) (u : rootsOfUnityBall m r) :
+    ((ζ • u : rootsOfUnityBall m r) : ℂ) ^ m = (u : ℂ) ^ m := by
+  rw [SubMulAction.val_smul, rootsOfUnity.smul_pow]
+
 /-- For `0 ≤ r`, the map `u ↦ u ^ m` sends the disc of radius `r` about `0` onto the disc of
 radius `r ^ m`. -/
 theorem image_pow_ball {r : ℝ} (hr : 0 ≤ r) :
@@ -184,5 +209,30 @@ theorem freeLocus_rootsOfUnity (hm : 1 < m) :
     Finite.one_lt_card_iff_nontrivial.mp (by rwa [Complex.card_rootsOfUnity])
   rw [h, stabilizer_rootsOfUnity_zero] at hu
   exact top_ne_bot hu
+
+variable {r : ℝ}
+
+/-- The rotations act freely on the disc away from its centre. -/
+theorem stabilizer_rootsOfUnityBall_of_coe_ne_zero {u : rootsOfUnityBall m r} (hu : (u : ℂ) ≠ 0) :
+    stabilizer (rootsOfUnity m ℂ) u = ⊥ := by
+  rw [SubMulAction.stabilizer_of_subMul, stabilizer_rootsOfUnity_of_ne_zero hu]
+
+/-- Every rotation fixes the centre of the disc. -/
+theorem smul_rootsOfUnityBall_of_coe_eq_zero {u : rootsOfUnityBall m r} (hu : (u : ℂ) = 0)
+    (ζ : rootsOfUnity m ℂ) : ζ • u = u := by
+  ext
+  rw [SubMulAction.val_smul, hu, rootsOfUnity.smul_eq_mul, mul_zero]
+
+/-- The rotations act faithfully on a disc of positive radius: a rotation fixing the nonzero point
+`r / 2` is the identity. -/
+theorem faithfulSMul_rootsOfUnityBall (hr : 0 < r) :
+    FaithfulSMul (rootsOfUnity m ℂ) (rootsOfUnityBall m r) := by
+  refine faithfulSMul_iff.2 fun ζ hζ ↦ ?_
+  let u : rootsOfUnityBall m r := ⟨(r / 2 : ℝ), by
+    rw [mem_rootsOfUnityBall, Complex.norm_real, Real.norm_of_nonneg (by positivity)]
+    linarith⟩
+  have hu : (u : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 (by positivity)
+  simpa [stabilizer_rootsOfUnityBall_of_coe_ne_zero hu] using
+    (mem_stabilizer_iff.2 (hζ u) : ζ ∈ stabilizer (rootsOfUnity m ℂ) u)
 
 end TauCeti

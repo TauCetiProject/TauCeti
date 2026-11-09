@@ -354,10 +354,10 @@ theorem spinToSpecialOrthogonal_weightedSumSquares_one_surjective_iff :
   · intro h x y z hs
     have := h (Units.mk0 _ hs) (mem_unitValueSet.2 ((represents_iff _ _).2 ⟨![x, y, z], by
       simp [happ]⟩))
-    rwa [← isSquare_units_val_iff, Units.val_mk0] at this
+    rwa [← Units.isSquare_coe_iff, Units.val_mk0] at this
   · intro h a ha
     obtain ⟨v, hv⟩ := (represents_iff _ _).1 (mem_unitValueSet.1 ha)
-    rw [← isSquare_units_val_iff, ← hv, happ]
+    rw [← Units.isSquare_coe_iff, ← hv, happ]
     exact h _ _ _ (by rw [← happ, hv]; exact a.ne_zero)
 
 /-- The Spin action on the special orthogonal group of the rational sum of three squares is not

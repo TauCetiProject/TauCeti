@@ -42,6 +42,8 @@ weight spaces of `M ⊗ N` and must agree with it termwise
   `μ + ν = χ`, of the submodules spanned by `Mμ ⊗ Nν`.
 * `TauCeti.genWeightSpace_tensorProduct_ne_bot` and `TauCeti.exists_weight_add_eq`: **the weights of
   `M ⊗ N` are exactly the sums of a weight of `M` and a weight of `N`.**
+* `TauCeti.exists_mem_weight_tensorProduct`: if the weights of `M` and of `N` lie in an
+  additively closed set of linear forms, such as a weight lattice, then so do those of `M ⊗ N`.
 * `TauCeti.instLinearWeightsTensorProduct`: tensor products inherit linear weights from their
   finite-dimensional triangularizable factors.
 
@@ -253,6 +255,19 @@ theorem exists_weight_add_eq (χ : Weight K L (M ⊗[K] N)) :
       simp
     exact absurd hμν (hc ⟨μ, hμ⟩ ⟨ν, hν⟩)
   exact absurd hbot χ.genWeightSpace_ne_bot
+
+/-- **Weights in an additively closed set are preserved by tensor products.** If every weight of
+`M` and every weight of `N` agrees with a linear form in `s`, a set closed under addition such as a
+weight lattice, then so does every weight of `M ⊗ N`: by `TauCeti.exists_weight_add_eq` it is the
+sum of a weight of each factor. -/
+theorem exists_mem_weight_tensorProduct {S : Type*} [SetLike S (Module.Dual K L)]
+    [AddMemClass S (Module.Dual K L)] {s : S}
+    (hM : ∀ χ : Weight K L M, ∃ φ ∈ s, ⇑φ = ⇑χ) (hN : ∀ χ : Weight K L N, ∃ φ ∈ s, ⇑φ = ⇑χ)
+    (χ : Weight K L (M ⊗[K] N)) : ∃ φ ∈ s, ⇑φ = ⇑χ := by
+  obtain ⟨μ, ν, hμν⟩ := exists_weight_add_eq χ
+  obtain ⟨φ, hφ, hφμ⟩ := hM μ
+  obtain ⟨ψ, hψ, hψν⟩ := hN ν
+  exact ⟨φ + ψ, add_mem hφ hψ, by rw [LinearMap.coe_add, hφμ, hψν, hμν]⟩
 
 /-- A tensor product of finite-dimensional triangularizable modules with linear weights again has
 linear weights. Every weight of the tensor product is a sum of weights of the two factors. -/

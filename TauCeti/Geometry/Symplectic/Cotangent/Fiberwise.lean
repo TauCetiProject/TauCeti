@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.Liouville
+import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 
 /-!
 # Fibrewise negation and magnetic translation of a linear cotangent space
@@ -245,19 +246,9 @@ lemma strongDualCotangentSymplecticForm_fderiv_cotangentFiberTranslate
     strongDualCotangentSymplecticForm (fderiv ℝ (cotangentFiberTranslate σ) x v)
         (fderiv ℝ (cotangentFiberTranslate σ) x w) =
       strongDualCotangentSymplecticForm v w + extDeriv σ x.1 ![v.1, w.1] := by
-  -- The two one-element sublists of `![v.1, w.1]` that enter the formula for `dσ`.
-  have h0 : Fin.removeNth 0 ![v.1, w.1] = fun _ ↦ w.1 := by
-    funext i
-    simp [Subsingleton.elim i 0, Fin.removeNth]
-  have h1 : Fin.removeNth 1 ![v.1, w.1] = fun _ ↦ v.1 := by
-    funext i
-    simp [Subsingleton.elim i 0, Fin.removeNth]
-  rw [extDeriv_apply hσ, Fin.sum_univ_two, h0, h1]
-  simp only [fderiv_cotangentFiberTranslate hσ,
-    fderiv_continuousAlternatingMap_apply_const_apply hσ, ofSubsingletonLIE_symm_apply,
-    strongDualCotangentSymplecticForm_apply, _root_.sub_apply, ofSubsingleton_symm_apply_apply,
-    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, Fin.val_zero, Fin.val_one,
-    pow_zero, pow_one, one_smul, neg_smul]
+  rw [extDeriv_apply_pair]
+  simp only [fderiv_cotangentFiberTranslate hσ, ofSubsingletonLIE_symm_apply,
+    strongDualCotangentSymplecticForm_apply, _root_.sub_apply, ofSubsingleton_symm_apply_apply]
   ring
 
 /-- For a one-form `σ` that is closed at `q = π x`, the derivative of the magnetic translation at

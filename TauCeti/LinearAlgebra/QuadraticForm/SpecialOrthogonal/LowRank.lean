@@ -13,8 +13,9 @@ public import TauCeti.LinearAlgebra.Determinant.Basic
 
 A determinant-one automorphism of a finite free module of rank at most one over a commutative
 ring is the identity. Thus its special orthogonal group is trivial, even for a degenerate
-quadratic form and in characteristic two. This supplies the low-dimensional boundary of
-spinor-norm image calculations.
+quadratic form and in characteristic two. On a zero module this needs no finiteness or freeness
+hypothesis. This supplies the low-dimensional boundary of spinor-norm image calculations and of
+the Spin double cover.
 -/
 
 public section
@@ -23,8 +24,15 @@ namespace QuadraticMap
 
 open TauCeti.QuadraticMap
 
-variable {R V N : Type*} [CommRing R] [AddCommGroup V] [Module R V]
-  [Module.Free R V] [Module.Finite R V] [AddCommMonoid N] [Module R N]
+variable {R V N : Type*} [CommRing R] [AddCommGroup V] [Module R V] [AddCommMonoid N] [Module R N]
+
+/-- On a zero module every linear automorphism is the identity, so the special orthogonal group
+is trivial. No finiteness or freeness is needed. -/
+instance subsingleton_specialOrthogonalGroup_of_subsingleton [Subsingleton V]
+    (Q : QuadraticMap R V N) : Subsingleton (specialOrthogonalGroup Q) :=
+  ⟨fun _ _ ↦ Subtype.ext <| LinearEquiv.ext fun _ ↦ Subsingleton.elim _ _⟩
+
+variable [Module.Free R V] [Module.Finite R V]
 
 /-- The special orthogonal group of a quadratic map on a finite free module of rank at most
 one is trivial.

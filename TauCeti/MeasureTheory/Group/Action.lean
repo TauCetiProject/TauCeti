@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.MeasureTheory.Group.Action
 public import Mathlib.Topology.MetricSpace.IsometricSMul
 
@@ -15,7 +16,8 @@ General facts about `SMulInvariantMeasure`, Mathlib's class of measures invarian
 multiplication, that do not concern ergodicity: the restriction of an invariant measure to an
 exactly invariant measurable set is again invariant (`SMulInvariantMeasure.restrict`), and for a
 transitive isometric action all balls of one radius have the same invariant measure
-(`measure_ball_eq_measure_ball`).
+(`measure_ball_eq_measure_ball`). Every linear action on a finite-dimensional real space has
+measurable translations (`measurableConstSMul_of_finiteDimensional`).
 -/
 
 public section
@@ -56,5 +58,17 @@ theorem measure_ball_eq_measure_ball (μ : Measure X) [SMulInvariantMeasure G X 
   rw [← Metric.smul_ball, measure_smul]
 
 end Ball
+
+section Linear
+
+variable {G E : Type*} [Monoid G] [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [DistribMulAction G E] [SMulCommClass G ℝ E]
+
+/-- Every linear action on a finite-dimensional real space has measurable translations. -/
+theorem measurableConstSMul_of_finiteDimensional : MeasurableConstSMul G E :=
+  ⟨fun g => (LinearMap.continuous_of_finiteDimensional
+    (DistribMulAction.toModuleEnd ℝ E g)).measurable⟩
+
+end Linear
 
 end MeasureTheory
