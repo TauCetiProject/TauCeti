@@ -710,11 +710,7 @@ lemma mkQuotient_eq_zero_iff (H : FiniteTypeCommHopfAlgCat.{u, v} R)
     (I : HopfIdeal R H) (h : H) : toBialgHom (mkQuotient H I) h = 0 ↔ h ∈ I :=
   CommHopfAlgCat.mkQuotient_eq_zero_iff H.obj I h
 
-end TauCeti.FiniteTypeCommHopfAlgCat
-
 variable {H K : FiniteTypeCommHopfAlgCat.{u, v} R}
-
-namespace TauCeti.FiniteTypeCommHopfAlgCat
 
 /-- An isomorphism of finite-type commutative Hopf algebras induces an isomorphism from the
 quotient by the inverse-image Hopf ideal to the corresponding quotient of the target. -/
