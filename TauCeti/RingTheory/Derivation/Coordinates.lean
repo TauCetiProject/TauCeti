@@ -12,6 +12,7 @@ import Mathlib.Algebra.Order.Pi
 import Mathlib.Algebra.Order.Sub.Prod
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Nat.Factorial.BigOperators
+import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.RingTheory.Derivation.Basic
 import TauCeti.RingTheory.Ideal.IsAugmentation
 
@@ -281,14 +282,6 @@ theorem coordinateOperator_apply_prod_pow_sub_mem {χ : A →ₐ[R] R} {t : ι �
     exact sum_mem fun α _ ↦ χ.smul_sub_smul_mem_smul_top _ _
 
 variable [Algebra ℚ R]
-
-omit [Fintype ι] in
-/-- A nonzero natural number is invertible in a `ℚ`-algebra, with inverse the image of its
-rational inverse. -/
-private theorem natCast_mul_algebraMap_inv {n : ℕ} (hn : n ≠ 0) :
-    (n : R) * algebraMap ℚ R (n : ℚ)⁻¹ = 1 := by
-  rw [← map_natCast (algebraMap ℚ R), ← map_mul, mul_inv_cancel₀ (Nat.cast_ne_zero.2 hn),
-    map_one]
 
 /-- The coefficients of the coordinate expression of `D : A →ₗ[R] N` in the coordinates `u`:
 `c α = (α!)⁻¹ ∑_{γ ≤ α} (α choose γ) (-u) ^ (α - γ) • D (u ^ γ)`. At a point `χ` this is
