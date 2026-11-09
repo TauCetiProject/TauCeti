@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Convex.SimplicialComplex.Subdivision
 import TauCeti.Analysis.Convex.SimplicialComplex.Carrier
 import TauCeti.Analysis.Convex.Extreme
+import TauCeti.Analysis.Convex.Intrinsic
 
 /-!
 # Extending a subdivision of a subcomplex
@@ -91,18 +92,16 @@ private lemma intrinsicFrontier_subset_space_union (s : {s : K.faces // s.1 ∉ 
         (_ : t ≠ s ∧ convexHull ℝ (t.1.1 : Set E) ⊆ convexHull ℝ (s.1.1 : Set E)),
         convexHull ℝ (t.1.1 : Set E) := by
   intro x hx
-  obtain ⟨t, ht, hts, hxt⟩ := exists_mem_faces_subset_mem_intrinsicInterior s.1.2
-    (intrinsicFrontier_subset (s.1.1.finite_toSet.isCompact_convexHull (𝕜 := ℝ)).isClosed hx)
+  have hcl : IsClosed (convexHull ℝ (s.1.1 : Set E)) := s.1.1.finite_toSet.isClosed_convexHull ℝ
+  rw [← hcl.sdiff_intrinsicInterior] at hx
+  obtain ⟨t, ht, hts, hxt⟩ := exists_mem_faces_subset_mem_intrinsicInterior s.1.2 hx.1
   by_cases htA : t ∈ A.faces
   · exact .inl (convexHull_subset_space htA (intrinsicInterior_subset hxt))
   · let j : {s : K.faces // s.1 ∉ A.faces} := ⟨⟨t, ht⟩, htA⟩
     refine .inr (mem_iUnion₂.mpr ⟨j, ⟨?_, convexHull_mono (Finset.coe_subset.mpr hts)⟩,
       intrinsicInterior_subset hxt⟩)
     intro hjs
-    have hxi : x ∉ intrinsicInterior ℝ (convexHull ℝ (s.1.1 : Set E)) := by
-      rw [← intrinsicClosure_sdiff_intrinsicInterior] at hx
-      exact hx.2
-    exact hxi (hjs ▸ hxt)
+    exact hx.2 (hjs ▸ hxt)
 
 /-- In a finite-dimensional real normed space, a locally finite subdivision of a subcomplex
 of a locally finite complex extends to a locally finite subdivision of the whole complex.
