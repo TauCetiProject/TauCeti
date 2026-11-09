@@ -56,6 +56,9 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
   `TauCeti.norm_iteratedFDeriv_succ_le_sum_coordinateDeriv`: the converse estimates, bounding a
   Fréchet derivative by coordinate derivatives, or by Fréchet derivatives of the first partial
   derivatives.
+* `TauCeti.iteratedFDeriv_succ_const_eq_sum_coordinateDeriv`: on the diagonal, the Fréchet
+  derivative of order `k + 1` is a combination of the `k`-th ones of the first partial derivatives.
+* `TauCeti.coordinateDeriv_pair_comm`: two partial derivatives of a `C²` function commute.
 * `ContDiff.coordinateDeriv_snd`: joint smoothness of partial derivatives in the second variable.
 * `TauCeti.coordinateDeriv_coordinateDeriv_comm`: partial derivatives in different variables
   commute.
@@ -243,6 +246,20 @@ theorem norm_iteratedFDeriv_succ_le_sum_coordinateDeriv {k : ℕ} {f : Coordinat
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
   refine ((T j).norm_iteratedFDeriv_comp_left (hdf j).contDiffAt le_rfl).trans ?_
   exact mul_le_of_le_one_left (norm_nonneg _) (hT j)
+
+/-- Two coordinate derivatives of a `C²` function commute: `∂ᵢ ∂ⱼ f = ∂ⱼ ∂ᵢ f`. -/
+theorem coordinateDeriv_pair_comm {f : CoordinateSpace n → A} (hf : ContDiff ℝ 2 f)
+    (i j : Fin n) : coordinateDeriv [i, j] f = coordinateDeriv [j, i] f := by
+  funext x
+  have hd : Differentiable ℝ (fderiv ℝ f) :=
+    (hf.fderiv_right (m := 1) (by norm_num)).differentiable (by simp)
+  have hs := hf.contDiffAt.isSymmSndFDerivAt (x := x) (by simp)
+  have h (l : Fin n) : coordinateDeriv [l] f = fun y ↦ fderiv ℝ f y (EuclideanSpace.single l 1) :=
+    funext fun y ↦ coordinateDeriv_cons l [] f y
+  rw [coordinateDeriv_cons, coordinateDeriv_cons, h, h,
+    fderiv_clm_apply (hd x) (differentiableAt_const _),
+    fderiv_clm_apply (hd x) (differentiableAt_const _)]
+  simpa using hs _ _
 
 theorem coordinateDeriv_add (α : List (Fin n)) {f g : CoordinateSpace n → A}
     (hf : ContDiff ℝ α.length f) (hg : ContDiff ℝ α.length g) :
@@ -844,6 +861,22 @@ theorem _root_.ContinuousLinearMap.apply_eq_sum_single (L : CoordinateSpace n �
     (h : CoordinateSpace n) : L h = ∑ j, h j • L (EuclideanSpace.single j 1) := by
   conv_lhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr h]
   simp
+
+/-- The `(k + 1)`-st Fréchet derivative of a `C^(k+1)` function on the diagonal `(v, …, v)` is a
+combination of the `k`-th Fréchet derivatives of its first partial derivatives:
+`D^(k+1) f x (v, …, v) = ∑ⱼ vⱼ D^k (∂ⱼ f) x (v, …, v)`. -/
+theorem iteratedFDeriv_succ_const_eq_sum_coordinateDeriv {k : ℕ} {f : CoordinateSpace n → A}
+    (hf : ContDiff ℝ (k + 1) f) (x v : CoordinateSpace n) :
+    iteratedFDeriv ℝ (k + 1) f x (fun _ ↦ v) =
+      ∑ j, v j • iteratedFDeriv ℝ k (coordinateDeriv [j] f) x (fun _ ↦ v) := by
+  rw [iteratedFDeriv_succ_apply_right, ContinuousLinearMap.apply_eq_sum_single]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  have hj : coordinateDeriv [j] f =
+      ContinuousLinearMap.apply ℝ A (EuclideanSpace.single j 1) ∘ fderiv ℝ f :=
+    funext fun y ↦ coordinateDeriv_cons j [] f y
+  rw [hj, ContinuousLinearMap.iteratedFDeriv_comp_left _
+    (hf.fderiv_right le_rfl).contDiffAt le_rfl]
+  rfl
 
 /-- A combination `∑ j, h j • X j` has norm at most `‖h‖ ∑ j, ‖X j‖`. -/
 theorem CoordinateSpace.norm_sum_smul_le (h : CoordinateSpace n) (X : Fin n → A) :

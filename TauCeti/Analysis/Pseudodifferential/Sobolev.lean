@@ -63,7 +63,9 @@ Since the `H^s` norm is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`, this is the est
   (`TauCeti.Symbol.HasCompactSpatialSupport.hasFDerivAt_fourier_slice`,
   `TauCeti.Symbol.HasCompactSpatialSupport.coordinateDeriv_fourier_slice`), and
   `(∂_{x_j} a)^(η, ξ) = 2πi ηⱼ â(η, ξ)`
-  (`TauCeti.Symbol.HasCompactSpatialSupport.fourier_spatialDeriv_slice`).
+  (`TauCeti.Symbol.HasCompactSpatialSupport.fourier_spatialDeriv_slice`), and Fourier inversion
+  `∫ exp(2πi ⟪η, x⟫) â(η, ξ) dη = a(x, ξ)`
+  (`TauCeti.Symbol.HasCompactSpatialSupport.integral_fourierChar_smul_fourier_slice`).
 * `TauCeti.Symbol.HasCompactSpatialSupport.fourier_quantizeSchwartzValue`: the Fourier transform
   of `Op(a) u`.
 * `TauCeti.Symbol.HasCompactSpatialSupport.exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le`:
@@ -292,6 +294,28 @@ theorem HasCompactSpatialSupport.coordinateDeriv_fourier_slice (ha : a.HasCompac
     Real.fourier_eq]
   simp only [Circle.smul_def, coefficient_frequencyDeriv, coordinateDeriv_cons,
     coordinateDeriv_nil]
+
+/-- The Fourier transform of the position slice, twisted by the phase `exp(2πi ⟪η, x⟫)`, is
+integrable in `η`. -/
+theorem HasCompactSpatialSupport.integrable_fourierChar_smul_fourier_slice
+    (ha : a.HasCompactSpatialSupport) (x ξ : CoordinateSpace n) :
+    Integrable fun η ↦ (𝐞 ⟪η, x⟫ : ℂ) • 𝓕 (fun y ↦ a.coefficient (y, ξ)) η := by
+  have he : Continuous fun η : CoordinateSpace n ↦ (𝐞 ⟪η, x⟫ : ℂ) := by fun_prop
+  have hF : Continuous fun η ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η := by
+    simpa only [Function.comp_def, id] using
+      ha.continuous_fourier_slice.comp (continuous_id.prodMk continuous_const)
+  refine (𝓕 (ha.sliceSchwartz ξ)).integrable.norm.mono' (he.smul hF).aestronglyMeasurable
+    (.of_forall fun η ↦ ?_)
+  rw [norm_smul, Circle.norm_coe, one_mul, ha.fourier_sliceSchwartz]
+
+/-- **Fourier inversion** for the position slices of a symbol with compact spatial support:
+`∫ exp(2πi ⟪η, x⟫) â(η, ξ) dη = a(x, ξ)`. -/
+theorem HasCompactSpatialSupport.integral_fourierChar_smul_fourier_slice [CompleteSpace W]
+    (ha : a.HasCompactSpatialSupport) (x ξ : CoordinateSpace n) :
+    ∫ η, (𝐞 ⟪η, x⟫ : ℂ) • 𝓕 (fun y ↦ a.coefficient (y, ξ)) η = a.coefficient (x, ξ) := by
+  simp_rw [← ha.fourier_sliceSchwartz ξ, ← Circle.smul_def]
+  rw [← Real.fourierInv_eq, ← SchwartzMap.fourierInv_coe, fourierInv_fourier_eq,
+    ha.coe_sliceSchwartz]
 
 end Decay
 

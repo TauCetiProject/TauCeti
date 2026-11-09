@@ -26,7 +26,8 @@ position slice `y ↦ b(y, ξ)`. This file shows that `a # b` is a symbol of ord
 its quantization `Op(a # b) u` equals the Fourier integral defining `Op(a)`, evaluated on the
 function `Op(b) u`. The composition symbol is the starting point of the symbol calculus of
 composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic expansion
-`∑_α (1 / α!) ∂_ξ^α a D_x^α b`, whose leading term is the pointwise composition `Symbol.comp`.
+`∑_α (1 / α!) ∂_ξ^α a D_x^α b`, whose leading term is the pointwise composition `Symbol.comp`
+(`TauCeti.Analysis.Pseudodifferential.Composition.Expansion`).
 
 ## Main results
 

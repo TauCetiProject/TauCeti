@@ -14,7 +14,8 @@ import Mathlib.Analysis.Calculus.MeanValue
 /-!
 # Taylor polynomials: size and sign of the remainder, and the derivatives of `f(x) / x`
 
-Three facts about Mathlib's Taylor polynomials `taylorWithinEval f n s x₀ x`.
+Three facts about Mathlib's Taylor polynomials `taylorWithinEval f n s x₀ x`, and Taylor's theorem
+along a segment in a normed space.
 
 * **Size of the remainder.** From the Lagrange form of the remainder, if `|f⁽ⁿ⁺¹⁾| ≤ M` between
   `x₀` and `x`, then `|f x - T(x)| ≤ M |x - x₀|ⁿ⁺¹ / (n+1)!`, where `T` is the Taylor polynomial
@@ -31,9 +32,14 @@ Three facts about Mathlib's Taylor polynomials `taylorWithinEval f n s x₀ x`.
   the last factor being the Taylor polynomial of order `n` of `f` expanded at `t` and evaluated
   at `0`.
 
-The last two combined show that the iterated derivatives of `f(t) / t` alternate in sign whenever
-`f` is nonnegative and the derivatives of `f'` alternate in sign — the statement that a Bernstein
-function divided by its parameter is completely monotone.
+* **Taylor's theorem along a segment.** For `f : E → F` on a real normed space, applying the
+  size of the remainder to `t ↦ f (x + t • v)` on `[0, 1]` gives
+  `‖f (x + v) - ∑_{k ≤ n} D^k f(x) (v, …, v) / k!‖ ≤ C ‖v‖ⁿ⁺¹ / n!` whenever
+  `‖D^(n+1) f‖ ≤ C` on the segment from `x` to `x + v`.
+
+The second and third facts combined show that the iterated derivatives of `f(t) / t` alternate in
+sign whenever `f` is nonnegative and the derivatives of `f'` alternate in sign — the statement that
+a Bernstein function divided by its parameter is completely monotone.
 
 ## Main declarations
 
@@ -43,6 +49,8 @@ function divided by its parameter is completely monotone.
   `(-1)ⁿ f⁽ⁿ⁺¹⁾ ≥ 0` on `(x, y)`, then `f x` is at most the Taylor polynomial of order `n` at `y`,
   evaluated at `x`.
 * `TauCeti.iteratedDeriv_div_id`: the formula for the `n`-th derivative of `t ↦ f t / t`.
+* `TauCeti.norm_sub_sum_iteratedFDeriv_le`: Taylor's theorem along a segment, for a function on
+  a real normed space.
 -/
 
 public section
@@ -126,5 +134,43 @@ theorem iteratedDeriv_div_id {f : ℝ → ℝ} {s : Set ℝ} {n : ℕ} {t : ℝ}
     pow_add (-1 : ℝ) k m]
   field_simp
   simp [pow_right_comm _ k 2]
+
+/-- **Taylor's theorem along a segment**, for a function on a real normed space. If `f` is
+`C^(n+1)` and `‖D^(n+1) f‖ ≤ C` on the segment from `x` to `x + v`, then `f (x + v)` differs from
+the Taylor polynomial `∑_{k ≤ n} D^k f(x) (v, …, v) / k!` by at most `C ‖v‖^(n+1) / n!`. -/
+theorem norm_sub_sum_iteratedFDeriv_le {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F} {n : ℕ} (hf : ContDiff ℝ (n + 1) f)
+    {x v : E} {C : ℝ} (hC : ∀ t ∈ Icc (0 : ℝ) 1, ‖iteratedFDeriv ℝ (n + 1) f (x + t • v)‖ ≤ C) :
+    ‖f (x + v) - ∑ k ∈ Finset.range (n + 1), (k ! : ℝ)⁻¹ • iteratedFDeriv ℝ k f x (fun _ ↦ v)‖ ≤
+      C * ‖v‖ ^ (n + 1) / n ! := by
+  set g : ℝ → F := fun t ↦ f (x + t • v)
+  have hfx : ContDiff ℝ (n + 1) fun z ↦ f (x + z) := hf.comp (contDiff_const.add contDiff_id)
+  have hg : g = (fun z ↦ f (x + z)) ∘ ContinuousLinearMap.toSpanSingleton ℝ v := by
+    funext t
+    simp [g]
+  have hg' : ContDiff ℝ (n + 1) g := hg ▸ hfx.comp (ContinuousLinearMap.contDiff _)
+  -- The derivatives of `g` within `[0, 1]` are the derivatives of `f` in the direction `v`.
+  have hwithin (k : ℕ) (hk : k ≤ n + 1) (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
+      iteratedDerivWithin k g (Icc 0 1) t = iteratedFDeriv ℝ k f (x + t • v) (fun _ ↦ v) := by
+    rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Icc zero_lt_one)
+      ((hg'.of_le (by exact_mod_cast hk)).contDiffAt) ht, iteratedDeriv_eq_iteratedFDeriv, hg,
+      ContinuousLinearMap.iteratedFDeriv_comp_right _ hfx _ (by exact_mod_cast hk),
+      ContinuousMultilinearMap.compContinuousLinearMap_apply, iteratedFDeriv_comp_add_left]
+    simp
+  have h := taylor_mean_remainder_bound (f := g) (C := C * ‖v‖ ^ (n + 1)) zero_le_one
+    hg'.contDiffOn (right_mem_Icc.2 zero_le_one) fun t ht ↦ by
+      rw [hwithin _ le_rfl t ht]
+      refine ((iteratedFDeriv ℝ (n + 1) f (x + t • v)).le_opNorm _).trans ?_
+      simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+      gcongr
+      exact hC t ht
+  rw [taylor_within_apply] at h
+  simp only [sub_zero, one_pow, mul_one] at h
+  have hsum : ∑ k ∈ Finset.range (n + 1), (k ! : ℝ)⁻¹ • iteratedFDeriv ℝ k f x (fun _ ↦ v) =
+      ∑ k ∈ Finset.range (n + 1), (k ! : ℝ)⁻¹ • iteratedDerivWithin k g (Icc 0 1) 0 :=
+    Finset.sum_congr rfl fun k hk ↦ by
+      rw [hwithin k (by simp at hk; omega) 0 (left_mem_Icc.2 zero_le_one), zero_smul, add_zero]
+  rw [hsum]
+  simpa [g] using h
 
 end TauCeti

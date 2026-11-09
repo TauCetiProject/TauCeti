@@ -46,6 +46,7 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
 
 * `TauCeti.one_add_norm_sq_rpow_mul_norm_le`: one power of `‖x‖` costs one order of the
   Japanese bracket, `⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)`.
+* `TauCeti.norm_pow_le_one_add_norm_sq_rpow`: hence `‖x‖ ^ k ≤ ⟨x⟩ ^ k`.
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
 * `TauCeti.integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq`,
@@ -76,6 +77,19 @@ theorem one_add_norm_sq_rpow_mul_norm_le {E : Type*} [NormedAddCommGroup E] (x :
   rw [add_div, Real.rpow_add (by positivity), ← Real.sqrt_eq_rpow]
   gcongr
   exact Real.le_sqrt_of_sq_le (by linarith)
+
+/-- A power of the norm is bounded by the same power of the Japanese bracket:
+`‖x‖ ^ k ≤ ⟨x⟩ ^ k`. -/
+theorem norm_pow_le_one_add_norm_sq_rpow {E : Type*} [NormedAddCommGroup E] (x : E) (k : ℕ) :
+    ‖x‖ ^ k ≤ (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    calc ‖x‖ ^ (k + 1) = ‖x‖ ^ k * ‖x‖ := pow_succ _ _
+      _ ≤ (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2) * ‖x‖ := by gcongr
+      _ ≤ _ := by
+        rw [Nat.cast_succ]
+        exact one_add_norm_sq_rpow_mul_norm_le x k
 
 variable {V : Type*} [NormedAddCommGroup V] [MeasurableSpace V] [BorelSpace V]
 
