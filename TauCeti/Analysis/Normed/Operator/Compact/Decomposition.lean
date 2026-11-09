@@ -67,12 +67,10 @@ theorem exists_ker_pow_succ_eq_one_sub (hK : IsCompactOperator K) :
     rw [heq]
     exact hfsep n _ hy
   obtain ⟨m, n, hmn, hlt⟩ := hK.exists_dist_lt_of_norm_le hfnorm one_pos
-  rw [dist_eq_norm] at hlt
-  rcases hmn.lt_or_gt with h | h
-  · exact (hsep m n h).not_gt (by rwa [norm_sub_rev])
-  · exact (hsep n m h).not_gt hlt
+  rw [dist_eq_norm'] at hlt
+  exact (hsep m n hmn).not_gt hlt
 
-variable [CompleteSpace 𝕜] [IsRCLikeNormedField 𝕜] [CompleteSpace X]
+variable [IsRCLikeNormedField 𝕜] [CompleteSpace X]
 
 /-- **The stable Riesz splitting at `1`.** For a compact operator `K`, the kernels and ranges
 of powers of `1 - K` are constant from some stage onward, and their stable values are

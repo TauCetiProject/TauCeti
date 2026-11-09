@@ -15,7 +15,7 @@ import TauCeti.Algebra.BigOperators.Finset.Average
 
 A representation has almost invariant vectors if every finite set of group elements moves some
 unit vector by arbitrarily little. Restriction along a homomorphism preserves this condition.
-Its failure is equivalent to a finite squared-displacement inequality controlling every vector.
+Its failure is characterized by a finite quadratic lower bound on orbit displacements.
 For finite groups it is equivalent to the existence of a nonzero invariant vector, without
 unitarity or completeness assumptions. The quantitative averaging lemma also produces an
 invariant vector close to a vector whose entire orbit is close to it.
@@ -83,59 +83,51 @@ theorem hasAlmostInvariantVectors_of_invariant {v : V} (hv : v ≠ 0)
   hasAlmostInvariantVectors_of_invariant_unit (norm_smul_inv_norm hv)
     (ρ.invariants.smul_mem (‖v‖⁻¹ : 𝕜) hfixed)
 
-/-- Absence of almost invariant vectors is equivalent to a finite squared-displacement bound
-on the whole space. This criterion does not require unitarity or completeness. -/
+/-- Failure of almost invariant vectors is equivalent to a uniform finite quadratic lower
+bound on orbit displacements. This applies to normed representations, without unitarity or
+completeness assumptions. -/
 theorem not_hasAlmostInvariantVectors_iff (ρ : ContRepresentation 𝕜 G V) :
     ¬ρ.HasAlmostInvariantVectors ↔
-      ∃ (F : Finset G) (C : ℝ), 0 < C ∧
-        ∀ v : V, ‖v‖ ^ 2 ≤ C * ∑ g ∈ F, ‖ρ g v - v‖ ^ 2 := by
+      ∃ (F : Finset G) (c : ℝ), 0 < c ∧
+        ∀ v : V, c * ‖v‖ ^ 2 ≤ ∑ g ∈ F, ‖ρ g v - v‖ ^ 2 := by
   classical
   constructor
   · intro hρ
-    rw [hasAlmostInvariantVectors_def] at hρ
-    push Not at hρ
+    simp only [HasAlmostInvariantVectors, not_forall, not_exists, not_and,
+      not_lt, exists_prop] at hρ
     obtain ⟨F, ε, hε, hF⟩ := hρ
-    refine ⟨F, (ε ^ 2)⁻¹, by positivity, fun v ↦ ?_⟩
+    refine ⟨F, ε ^ 2, sq_pos_of_pos hε, fun v ↦ ?_⟩
     by_cases hv : v = 0
     · simp [hv]
-    have hvpos : 0 < ‖v‖ := norm_pos_iff.mpr hv
     obtain ⟨g, hg, hgv⟩ := hF ((‖v‖⁻¹ : 𝕜) • v) (norm_smul_inv_norm hv)
-    have hdis : ε * ‖v‖ ≤ ‖ρ g v - v‖ := by
-      apply (le_div_iff₀ hvpos).mp
-      simpa [← smul_sub, norm_smul, div_eq_inv_mul] using hgv
-    have hsq : ε ^ 2 * ‖v‖ ^ 2 ≤ ‖ρ g v - v‖ ^ 2 := by
-      simpa only [mul_pow] using
-        (sq_le_sq₀ (by positivity) (norm_nonneg _)).mpr hdis
-    have hsum : ‖ρ g v - v‖ ^ 2 ≤ ∑ g ∈ F, ‖ρ g v - v‖ ^ 2 :=
-      Finset.single_le_sum (fun g _ ↦ sq_nonneg ‖ρ g v - v‖) hg
+    have hnorm : ε * ‖v‖ ≤ ‖ρ g v - v‖ := by
+      simp only [map_smul, ← smul_sub, norm_smul, norm_inv,
+        RCLike.norm_ofReal, abs_norm] at hgv
+      exact (le_div_iff₀ (norm_pos_iff.mpr hv)).mp
+        (by simpa [div_eq_inv_mul] using hgv)
     calc
-      ‖v‖ ^ 2 = (ε ^ 2)⁻¹ * (ε ^ 2 * ‖v‖ ^ 2) := by field_simp
-      _ ≤ (ε ^ 2)⁻¹ * ∑ g ∈ F, ‖ρ g v - v‖ ^ 2 :=
-        mul_le_mul_of_nonneg_left (hsq.trans hsum) (by positivity)
-  · rintro ⟨F, C, hC, hbound⟩ hρ
-    let ε : ℝ := (C * (F.card : ℝ) + 1)⁻¹
-    have hden : 0 < C * (F.card : ℝ) + 1 := by positivity
-    have hε : 0 < ε := inv_pos.mpr hden
-    have hεle : ε ≤ 1 := by
-      dsimp [ε]
-      exact inv_le_one_of_one_le₀ (by nlinarith [Nat.cast_nonneg (α := ℝ) F.card])
-    obtain ⟨v, hv, hF⟩ := (hasAlmostInvariantVectors_def ρ).mp hρ F ε hε
-    have hsum : (∑ g ∈ F, ‖ρ g v - v‖ ^ 2) ≤ (F.card : ℝ) * ε := by
+      ε ^ 2 * ‖v‖ ^ 2 = (ε * ‖v‖) ^ 2 := (mul_pow _ _ _).symm
+      _ ≤ ‖ρ g v - v‖ ^ 2 := pow_le_pow_left₀ (by positivity) hnorm 2
+      _ ≤ ∑ g ∈ F, ‖ρ g v - v‖ ^ 2 :=
+        Finset.single_le_sum (fun i _ ↦ sq_nonneg ‖ρ i v - v‖) hg
+  · rintro ⟨F, c, hc, hF⟩ hρ
+    have hn : 0 < (F.card : ℝ) + 1 := by positivity
+    have hε : 0 < Real.sqrt (c / (F.card + 1)) := Real.sqrt_pos.mpr (div_pos hc hn)
+    obtain ⟨v, hv, hmove⟩ := hρ F _ hε
+    have hsum : (∑ g ∈ F, ‖ρ g v - v‖ ^ 2) ≤ F.card * (c / (F.card + 1)) := by
       calc
-        (∑ g ∈ F, ‖ρ g v - v‖ ^ 2) ≤ ∑ _g ∈ F, ε := by
+        (∑ g ∈ F, ‖ρ g v - v‖ ^ 2) ≤
+            ∑ _g ∈ F, c / (F.card + 1) := by
           apply Finset.sum_le_sum
           intro g hg
-          have hsmall := hF g hg
-          have hnorm := norm_nonneg (ρ g v - v)
-          nlinarith
-        _ = (F.card : ℝ) * ε := by simp
-    have hlt : C * ((F.card : ℝ) * ε) < 1 := by
-      dsimp [ε]
-      rw [← mul_assoc, ← div_eq_mul_inv, div_lt_one hden]
-      linarith
-    have := hbound v
-    rw [hv] at this
-    nlinarith [mul_le_mul_of_nonneg_left hsum hC.le]
+          have := pow_le_pow_left₀ (norm_nonneg _) (hmove g hg).le 2
+          simpa only [Real.sq_sqrt (div_nonneg hc.le hn.le)] using this
+        _ = _ := by simp
+    have hmul : c / (F.card + 1) * (F.card + 1) = c := div_mul_cancel₀ _ hn.ne'
+    have hpos : 0 < c / (F.card + 1) := div_pos hc hn
+    have := hF v
+    rw [hv, one_pow, mul_one] at this
+    nlinarith
 
 end NormedSpace
 

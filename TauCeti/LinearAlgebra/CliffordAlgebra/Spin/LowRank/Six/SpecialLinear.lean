@@ -379,7 +379,7 @@ private theorem finrank_evenOdd_zero_eq_four :
     finrank K (evenOdd (0 : QuadraticForm K M) 0) = 4 := by
   have : Nontrivial M := ⟨⟨b 0, 0, b.ne_zero 0⟩⟩
   have : Module.Finite K M := Module.Finite.of_basis b
-  rw [finrank_evenOdd_zero, finrank_eq_card_basis b]
+  rw [finrank_evenOdd, finrank_eq_card_basis b]
   simp
 
 variable {N : Submodule K (ExteriorAlgebra K M)} (hN : N = evenOdd (0 : QuadraticForm K M) 0)

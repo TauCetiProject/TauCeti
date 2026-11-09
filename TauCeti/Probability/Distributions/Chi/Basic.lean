@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Gamma.Sqrt
 public import TauCeti.Probability.Distributions.Affine
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 
 /-!
 # Chi distributions

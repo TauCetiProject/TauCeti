@@ -19,6 +19,10 @@ again invariant, so an invariant subspace admitting an orthogonal projection has
 complement. This is the averaging-free half of complete reducibility: it needs no measure, only
 that every action operator preserves the inner product.
 
+For the subspace of fixed vectors, its orthogonal complement is invariant even for a unitary
+*monoid* representation; `IsUnitary.invariantsOrthogonal` is the resulting representation,
+which has no nonzero invariant vectors.
+
 Invariance of a submodule is Mathlib's `Representation.invtSubmodule`, the sublattice of submodules
 invariant under every action operator, and semisimplicity is Mathlib's
 `Representation.IsSemisimpleRepresentation`, the statement that the lattice of subrepresentations is
@@ -80,6 +84,53 @@ open scoped InnerProductSpace
 
 namespace ContRepresentation
 
+/-! ### The orthogonal complement of the fixed subspace -/
+
+section Monoid
+
+variable {𝕜 G V : Type*} [RCLike 𝕜] [Monoid G] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+
+namespace IsUnitary
+
+variable {ρ : ContRepresentation 𝕜 G V}
+
+/-- The restriction of a unitary representation to the orthogonal complement of its invariant
+vectors. -/
+def invariantsOrthogonal (hρ : ρ.IsUnitary) : ContRepresentation 𝕜 G ρ.invariantsᗮ :=
+  ρ.subrepresentation ρ.invariantsᗮ (fun g _ hv ↦ by
+    rw [Submodule.mem_orthogonal]
+    intro w hw
+    rw [← hw g, hρ.inner_map_map]
+    exact hv w hw)
+
+/-- The action on the orthogonal complement is the original action on underlying vectors. -/
+@[simp]
+theorem coe_invariantsOrthogonal_apply (hρ : ρ.IsUnitary) (g : G) (v : ρ.invariantsᗮ) :
+    (hρ.invariantsOrthogonal g v : V) = ρ g v :=
+  coe_subrepresentation_apply _ _
+
+/-- The orthogonal-complement representation is unitary. -/
+theorem isUnitary_invariantsOrthogonal (hρ : ρ.IsUnitary) :
+    hρ.invariantsOrthogonal.IsUnitary :=
+  hρ.subrepresentation _
+
+/-- Removing the invariant subspace leaves no nonzero invariant vectors. -/
+@[simp]
+theorem invariants_invariantsOrthogonal (hρ : ρ.IsUnitary) :
+    hρ.invariantsOrthogonal.invariants = ⊥ := by
+  apply eq_bot_iff.mpr
+  intro v hv
+  have hfixed : (v : V) ∈ ρ.invariants := by
+    intro g
+    simpa only [coe_invariantsOrthogonal_apply] using congrArg Subtype.val (hv g)
+  have hzero : (v : V) = 0 :=
+    (Submodule.disjoint_def.mp ρ.invariants.orthogonal_disjoint) v hfixed v.property
+  exact Subtype.ext hzero
+
+end IsUnitary
+
+end Monoid
+
 /-! ### The orthogonal complement of an invariant subspace -/
 
 section Unitary
@@ -99,35 +150,6 @@ theorem apply_mem_orthogonal (hπ : IsUnitary π) (hW : ∀ g, ∀ v ∈ W, π g
   intro u hu
   rw [hπ.inner_map_right]
   exact hv _ (hW g⁻¹ u hu)
-
-/-- The orthogonal complement of the invariant vectors of a unitary representation is stable
-under the action. -/
-theorem apply_mem_orthogonal_invariants (hπ : IsUnitary π) (g : G) {v : V}
-    (hv : v ∈ π.invariantsᗮ) : π g v ∈ π.invariantsᗮ :=
-  hπ.apply_mem_orthogonal (fun g w hw ↦ by simpa [hw g] using hw) g hv
-
-/-- The restriction of a unitary representation to the orthogonal complement of its invariant
-vectors. -/
-def invariantsOrthogonal (hπ : IsUnitary π) : ContRepresentation 𝕜 G π.invariantsᗮ :=
-  π.subrepresentation π.invariantsᗮ (fun g _ hv ↦ hπ.apply_mem_orthogonal_invariants g hv)
-
-/-- The restricted action on the invariant complement agrees with the ambient action. -/
-@[simp]
-theorem coe_invariantsOrthogonal_apply (hπ : IsUnitary π) (g : G) (v : π.invariantsᗮ) :
-    ((hπ.invariantsOrthogonal g v : π.invariantsᗮ) : V) = π g (v : V) :=
-  coe_subrepresentation_apply g v
-
-/-- The restriction to the orthogonal complement of the invariant vectors has no nonzero
-invariant vectors. -/
-@[simp]
-theorem invariants_invariantsOrthogonal (hπ : IsUnitary π) :
-    hπ.invariantsOrthogonal.invariants = ⊥ := by
-  apply le_antisymm _ bot_le
-  intro v hv
-  have hmem : (v : V) ∈ π.invariants := mem_invariants_subrepresentation.mp hv
-  have hzero : (v : V) = 0 :=
-    (Submodule.disjoint_def.mp (Submodule.orthogonal_disjoint π.invariants)) _ hmem v.property
-  exact (Submodule.mem_bot 𝕜).mpr (Subtype.ext hzero)
 
 /-- **Invariant complements.** For a unitary representation of a group, the orthogonal complement
 of an invariant submodule is again invariant. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.NatAntidiagonal
 public import Mathlib.Data.Nat.Choose.Basic
+import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Nat.Choose.Vandermonde
 import Mathlib.RingTheory.PowerSeries.WellKnown
 import TauCeti.Data.Nat.Choose.Basic
@@ -41,6 +42,8 @@ applies to sums in any additive commutative monoid, including coefficient sums f
 ## Main results
 
 * `Nat.sum_antidiagonal_choose_add_mul_choose_add`: the upper-index Vandermonde convolution.
+* `Nat.sum_antidiagonal_snd_add_choose`: summing `(r + m).choose (k + m)` over the second
+  coordinate of the antidiagonal of `N` gives `(N + (m + 1)).choose (k + (m + 1))`.
 * `Nat.sum_range_ascFactorial_mul_choose_mul_choose`: its version weighted by a rising factorial,
   `∑_{k ≤ N - K} (k + r)⁽ᵐ⁾ * C(k + r - 1, k) * C(N - r - k, K - r) = r⁽ᵐ⁾ * C(N + m, K + m)`.
 * `Nat.sum_range_choose_mul_choose_add_sum_range_choose_mul_choose`: the complementary partial
@@ -191,5 +194,29 @@ theorem sum_range_choose_mul_choose_add_sum_range_choose_mul_choose
     have hadd : k + 1 + r = k + r + 1 := by omega
     rw [hadd]
     omega
+
+/-- Summing `(r + m).choose (k + m)` over the second coordinate of the antidiagonal of `N` raises
+both binomial indices by one. -/
+theorem sum_antidiagonal_snd_add_choose (N k m : ℕ) :
+    ∑ r ∈ antidiagonal N, (r.2 + m).choose (k + m) = (N + (m + 1)).choose (k + (m + 1)) := by
+  rw [← Nat.sum_antidiagonal_swap]
+  simp only [Prod.snd_swap]
+  rw [Nat.sum_antidiagonal_eq_sum_range_succ_mk]
+  calc
+    ∑ r ∈ range (N + 1), (r + m).choose (k + m) =
+        ∑ r ∈ Icc m (N + m), r.choose (k + m) := by
+      convert! (sum_map (range (N + 1)) (addRightEmbedding m)
+        (fun r ↦ r.choose (k + m))).symm using 2
+      rw [range_eq_Ico, map_add_right_Ico, zero_add, Nat.add_right_comm,
+        Ico_add_one_right_eq_Icc]
+    _ = ∑ r ∈ Icc (k + m) (N + m), r.choose (k + m) := by
+      symm
+      apply sum_subset (by intro r hr; simp only [mem_Icc] at *; omega)
+      intro r hr hnot
+      apply Nat.choose_eq_zero_of_lt
+      simp only [mem_Icc] at *
+      omega
+    _ = (N + (m + 1)).choose (k + (m + 1)) := by
+      simpa only [Nat.add_assoc] using Nat.sum_Icc_choose (N + m) (k + m)
 
 end Nat
