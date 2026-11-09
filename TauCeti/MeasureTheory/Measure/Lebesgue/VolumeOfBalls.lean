@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # The real volume of the unit ball
@@ -28,14 +29,6 @@ open MeasureTheory Metric Module Real Set
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V] [Nontrivial V]
-
-omit [Nontrivial V] in
-/-- In a zero-dimensional real inner product space every nonempty set has volume one. -/
-private theorem volume_eq_one_of_subsingleton [Subsingleton V] {s : Set V} (hs : s.Nonempty) :
-    volume s = 1 := by
-  have hpar := (stdOrthonormalBasis ℝ V).volume_parallelepiped
-  rwa [Subsingleton.eq_univ_of_nonempty ⟨0, (mem_parallelepiped_iff _ _).2 ⟨0, by simp, by simp⟩⟩,
-    ← Subsingleton.eq_univ_of_nonempty hs] at hpar
 
 omit [Nontrivial V] in
 /-- The real volume of the unit ball of a real inner product space of dimension `d` is
