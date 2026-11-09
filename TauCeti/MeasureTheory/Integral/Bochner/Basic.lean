@@ -48,6 +48,8 @@ for set and probability integrals.
   integrands sum, almost everywhere, to at most a third integrable function.
 * `integral_min_le_left` and `integral_le_integral_max` compare the integral of an integrable
   function with that of its pointwise minimum or maximum with another integrable function.
+* `ofReal_setIntegral_norm_sq_eq` reads the set integral of `‖f‖²` in `ℝ≥0∞` as the lower
+  integral of `‖f‖ₑ ^ 2`.
 * `toReal_lintegral_coe_eq_integral` identifies `(∫⁻ ω, (f ω : ℝ≥0∞) ∂μ).toReal` with
   `∫ ω, (f ω : ℝ) ∂μ` for any almost-everywhere measurable `f : Ω → ℝ≥0`.
 
@@ -80,6 +82,8 @@ for set and probability integrals.
   function on a probability space.
 * `integral_max_sub_sq_le_mul_measureReal` bounds the integral of the squared truncation
   `((f - l)⁺)²` of a function `f ≤ M` by `(M - l)²` times the measure of `{l ≤ f}`.
+* `exists_mem_sub_div_lt_of_sub_lt_integral`: if `f ≤ M` on a probability space has integral
+  within `δ` of `M`, then `f` comes within `δ / μ B` of `M` on every set `B` of positive mass.
 
 ## `L¹` convergence
 
@@ -372,6 +376,25 @@ theorem integral_max_sub_sq_le_mul_measureReal {Ω : Type*} [MeasurableSpace Ω]
     _ = (M - l) ^ 2 * μ.real {x | l ≤ f x} := by
         rw [integral_indicator_const _ hS, smul_eq_mul, mul_comm]
 
+/-- On a probability space, let `f ≤ M` almost everywhere have integral within `δ` of `M`. Then on
+every measurable set `B` of positive mass, `f` comes within `δ / μ B` of `M` somewhere. -/
+theorem exists_mem_sub_div_lt_of_sub_lt_integral {Ω : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} [IsProbabilityMeasure μ] {f : Ω → ℝ} {M δ : ℝ} (hf : Integrable f μ)
+    (hfM : ∀ᵐ x ∂μ, f x ≤ M) (hδ : M - δ < ∫ x, f x ∂μ) {B : Set Ω} (hB : MeasurableSet B)
+    (hpB : 0 < μ.real B) : ∃ x ∈ B, M - δ / μ.real B < f x := by
+  by_contra! hcon
+  have hle : ∫ x, f x ∂μ ≤ ∫ x, (M - B.indicator (fun _ ↦ δ / μ.real B) x) ∂μ := by
+    refine integral_mono_ae hf ((integrable_const M).sub
+      ((integrable_const _).indicator hB)) ?_
+    filter_upwards [hfM] with x hx
+    by_cases hxB : x ∈ B
+    · simpa [hxB, sub_div' hpB.ne'] using hcon x hxB
+    · simpa [hxB] using hx
+  rw [integral_sub (integrable_const M) ((integrable_const _).indicator hB), integral_const,
+    integral_indicator_const _ hB, smul_eq_mul, smul_eq_mul, probReal_univ, one_mul,
+    mul_div_cancel₀ _ hpB.ne'] at hle
+  linarith
+
 /-- The positive part of the integral of a real-valued function is at most the integral of its
 pointwise positive part. No integrability or pointwise sign assumption on `f` is needed. -/
 theorem ofReal_integral_le_lintegral_ofReal {Ω : Type*} [MeasurableSpace Ω]
@@ -432,6 +455,15 @@ theorem ofReal_integral_add_ofReal_integral_le {Ω : Type*} [MeasurableSpace Ω]
       filter_upwards [hF0, hFG] with x h0 h1 using by simp only [Pi.zero_apply] at h0; linarith
     · rw [integral_undef hG]
       simp
+
+/-- The set integral of `‖f‖²`, read in `ℝ≥0∞`, is the lower integral of `‖f‖ₑ ^ 2`. -/
+theorem ofReal_setIntegral_norm_sq_eq {X V : Type*} [MeasurableSpace X] {μ : Measure X}
+    [NormedAddCommGroup V] {f : X → V} {S : Set X}
+    (hf : IntegrableOn (fun x => ‖f x‖ ^ 2) S μ) :
+    ENNReal.ofReal (∫ x in S, ‖f x‖ ^ 2 ∂μ) = ∫⁻ x in S, ‖f x‖ₑ ^ (2 : ℝ) ∂μ := by
+  rw [ofReal_integral_eq_lintegral_ofReal hf (ae_of_all _ fun _ => sq_nonneg _)]
+  refine lintegral_congr fun x => ?_
+  rw [ENNReal.rpow_two, ← ofReal_norm, ENNReal.ofReal_pow (norm_nonneg _)]
 
 /-- The real value of the extended Lebesgue integral of an almost-everywhere measurable
 `ℝ≥0`-valued function equals its Bochner integral. Neither finiteness of the measure nor

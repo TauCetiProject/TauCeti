@@ -111,6 +111,26 @@ theorem homotopyOperator_apply (φ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0
           (.inl ℝ E (EuclideanSpace ℝ (Fin 1)))) 0 1 volume :=
   (rfl)
 
+/-- The homotopy operator vanishes at `x` when, at every time `t`, the form `φ (x, t)` vanishes on
+every family whose first vector is the unit time vector `∂ₜ = (0, 1)`. -/
+theorem homotopyOperator_apply_eq_zero
+    {φ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) F (k + 1)} {x : M}
+    (h : ∀ (t : Icc (0 : ℝ) 1) (v : Fin k → E × EuclideanSpace ℝ (Fin 1)),
+      φ (x, t) (Matrix.vecCons ((0 : E), (1 : TangentSpace (𝓡∂ 1) t)) v) = 0) :
+    homotopyOperator φ x = 0 := by
+  rw [homotopyOperator_apply]
+  -- The integrand vanishes: its first argument is `∂ₜ`.
+  refine (intervalIntegral.integral_congr (g := fun _ ↦ (0 : E [⋀^Fin k]→L[ℝ] F))
+    fun t _ ↦ ?_).trans (intervalIntegral.integral_zero (E := E [⋀^Fin k]→L[ℝ] F))
+  refine ContinuousAlternatingMap.ext fun w ↦ ?_
+  -- `curryLeft_apply_apply` does not fire: the tangent spaces of the cylinder are the model
+  -- spaces only by definition. So state the evaluation of the curried form on `∂ₜ` followed by
+  -- the included vectors explicitly.
+  change φ (x, projIcc 0 1 zero_le_one t)
+    (Matrix.vecCons ((0 : E), (1 : TangentSpace (𝓡∂ 1) (projIcc 0 1 zero_le_one t)))
+      fun i ↦ ((w i : E), (0 : EuclideanSpace ℝ (Fin 1)))) = 0
+  exact h _ _
+
 /-- The homotopy operator of the zero form is zero. -/
 @[simp]
 theorem homotopyOperator_zero :
