@@ -86,14 +86,12 @@ theorem commutatorElement_chevalleyRootSubgroup_of_isSimplyLaced (hs : t.IsSimpl
         chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v)⁆ =
       chevalleyRootSubgroup ρ M hM hnil γ A
         (Multiplicative.ofAdd ((t.structureConstant ht α β : A) * (u * v))) := by
-  have hcomm := t.pairing_simplyConnectedRootDatum_symm ht hs
-  have hαγ := lie_chevalleySystem_eq_zero
+  have hcomm := t.pairing_simplyConnectedRootDatum_comm ht hs
+  have hαγ := lie_chevalleySystem_eq_zero_of_add_eq hγ
     (RootPairing.root_add_notMem_of_root_eq_add hcomm hγ)
-    (RootPairing.root_add_ne_zero_of_root_eq_add hcomm hγ)
   have hγ' := hγ.trans (add_comm _ _)
-  have hβγ := lie_chevalleySystem_eq_zero
+  have hβγ := lie_chevalleySystem_eq_zero_of_add_eq hγ'
     (RootPairing.root_add_notMem_of_root_eq_add hcomm hγ')
-    (RootPairing.root_add_ne_zero_of_root_eq_add hcomm hγ')
   exact commutatorElement_chevalleyRootSubgroup_of_lie_eq ρ M hM hnil
     (lie_chevalleySystem_eq_structureConstant_zsmul hγ) hαγ hβγ A u v
 

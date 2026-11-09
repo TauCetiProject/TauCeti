@@ -40,7 +40,7 @@ The resulting symmetry allows the general root-string results in
   coroot coordinates.
 * `TauCeti.DynkinType.coroot_reflectionPerm_simpleIndex`: simple reflections in coroot
   coordinates.
-* `TauCeti.DynkinType.pairing_simplyConnectedRootDatum_symm`: the Cartan pairing is symmetric.
+* `TauCeti.DynkinType.pairing_simplyConnectedRootDatum_comm`: the Cartan pairing is symmetric.
 
 ## References
 
@@ -125,7 +125,7 @@ theorem coroot_reflectionPerm_simpleIndex (i : Fin t.rank) (k : Fin t.numRoots) 
 
 include hs in
 /-- The Cartan pairing of a simply-laced pinned datum is symmetric. -/
-theorem pairing_simplyConnectedRootDatum_symm (α β : Fin t.numRoots) :
+theorem pairing_simplyConnectedRootDatum_comm (α β : Fin t.numRoots) :
     (t.simplyConnectedRootDatum ht).pairing α β =
       (t.simplyConnectedRootDatum ht).pairing β α := by
   rw [t.pairing_eq_coroot_vecMul_dotProduct ht hs,
