@@ -714,28 +714,11 @@ theorem exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_dim_lt
     Submodule.lt_of_le_of_finrank_lt_finrank (riemannRochSpace_mono hED) hfinranklt
   obtain ⟨x, hxD, hxE⟩ := IsConcreteLE.exists_of_lt hlt
   have hx0 : x ≠ 0 := fun hx ↦ hxE (hx ▸ Submodule.zero_mem _)
-  have hxDord := (mem_riemannRochSpace_iff_neg_le_ord hx0).mp hxD
-  have hxnotE : ¬∀ Q : Place k F, -E.coeff Q ≤ Q.ord x := by
-    simpa [mem_riemannRochSpace_iff_neg_le_ord hx0] using hxE
-  push Not at hxnotE
-  obtain ⟨Q, hQ⟩ := hxnotE
-  have hQP : Q = P := by
-    by_contra hne
-    have hxQ := hxDord Q
-    simp only [E, D, WeilDivisor.coeff_zsmul,
-      WeilDivisor.coeff_ofPoint_of_ne hne] at hxQ hQ
-    omega
-  subst Q
-  refine ⟨x, hx0, ?_, fun Q hQP ↦ ?_⟩
-  · have hxP := hxDord P
-    simp only [D, WeilDivisor.coeff_zsmul, WeilDivisor.coeff_ofPoint_self, mul_one] at hxP
-    simp only [E, WeilDivisor.coeff_zsmul, WeilDivisor.coeff_ofPoint_self, mul_one,
-      hnsub] at hQ
-    omega
-  · have hxQ := hxDord Q
-    simp only [D, WeilDivisor.coeff_zsmul, WeilDivisor.coeff_ofPoint_of_ne hQP,
-      mul_zero] at hxQ
-    omega
+  have hEeq : E = D - WeilDivisor.ofPoint P := by
+    simp only [D, E, hnsub, sub_smul, one_smul]
+  have hord := Divisor.ord_eq_neg_coeff_of_not_mem_sub_ofPoint hxD (hEeq ▸ hxE)
+  refine ⟨x, hx0, ?_, ((mem_riemannRochSpace_zsmul_ofPoint_iff hx0).mp hxD).2⟩
+  simpa [D] using hord
 
 end Place
 
