@@ -320,6 +320,7 @@ theorem isCoprime_signedDiscr_of_isCoprime_level {d : ℤ} (hd : IsCoprime d (le
   rw [Nat.coprime_iff_gcd_eq_one, ← Int.natAbs_natCast (level L), ← Int.gcd_eq_natAbs_gcd_natAbs]
   exact Int.isCoprime_iff_gcd_eq_one.mp hd
 
+omit [IsZLattice ℝ L] in
 /-- **The signed discriminant of an even full lattice of even rank is a discriminant**, congruent
 to `0` or `1` modulo `4`. -/
 theorem IsEven.signedDiscr_modEq_zero_or_one (hL : IsEven L) (hE : Even (finrank ℝ E)) :
@@ -344,6 +345,7 @@ theorem IsIntegral.signedDiscr_sqrt_smul_ne_zero (h : IsIntegral L) {m : ℕ} (h
   have : NeZero √(m : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hm))⟩
   exact (h.sqrt_smul m).signedDiscr_ne_zero
 
+omit [IsZLattice ℝ L] in
 /-- For an even full lattice `L` of even rank and `m ≠ 0`, `signedDiscr (√m • L)` is congruent to
 `0` or `1` modulo `4`. -/
 theorem IsEven.signedDiscr_sqrt_smul_modEq_zero_or_one (hL : IsEven L) (hE : Even (finrank ℝ E))
