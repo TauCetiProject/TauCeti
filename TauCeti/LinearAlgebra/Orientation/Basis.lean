@@ -11,9 +11,11 @@ public import TauCeti.LinearAlgebra.Orientation.Basic
 # The sign of a basis relative to an orientation
 
 The relative sign takes values in the integer units and compensates the sign of a change of
-basis. Empty index types are included, so both zero-dimensional orientations retain their sign.
-Two orientations are equal exactly when they agree on whether they are the orientation of a
-fixed basis (`Module.Basis.eq_iff_eq_orientation_iff`).
+basis. It is unchanged when the orientation and the basis are transported along the same linear
+equivalence (`Orientation.signBasis_map`). Empty index types are included, so both
+zero-dimensional orientations retain their sign. Two orientations are equal exactly when they
+agree on whether they are the orientation of a fixed basis
+(`Module.Basis.eq_iff_eq_orientation_iff`).
 -/
 
 public section
@@ -61,6 +63,19 @@ def signBasis (o : Orientation R E ι) (b : Module.Basis ι R E) : ℤˣ := by
 @[simp]
 theorem signBasis_orientation (b : Module.Basis ι R E) : signBasis b.orientation b = 1 := by
   simp [signBasis]
+
+/-- Transporting both the orientation and the basis along a linear equivalence preserves their
+relative sign. -/
+@[simp]
+theorem signBasis_map {F : Type*} [AddCommGroup F] [Module R F] (o : Orientation R E ι)
+    (b : Module.Basis ι R E) (e : E ≃ₗ[R] F) :
+    signBasis (Orientation.map ι e o) (b.map e) = signBasis o b := by
+  unfold signBasis
+  congr 1
+  rw [eq_iff_iff, ← (Orientation.map ι e).injective.eq_iff]
+  -- The two orientations of `b.map e` may carry different `DecidableEq` instances.
+  convert Iff.rfl using 2
+  simp [Module.Basis.orientation_map]
 
 /-- Reversing the orientation reverses the relative basis sign. -/
 @[simp]

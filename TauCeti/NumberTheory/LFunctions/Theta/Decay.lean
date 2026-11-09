@@ -46,9 +46,7 @@ private theorem norm_archGaussian_le_exp_mul {x : mixedSpace K} {δ t : ℝ}
     ‖archGaussian y x‖ ≤ Real.exp (-(Real.pi * δ / 2) * t) *
       ‖archGaussian (fun _ ↦ (1 / 2 : ℝ)) x‖ := by
   classical
-  have hQ : 0 ≤ mixedInner K x x := by
-    rw [mixedInner_self_eq_sum]
-    exact Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
+  have hQ := mixedInner_self_nonneg K x
   have hsum : t * mixedInner K x x ≤ ∑ w, y w * normAtPlace w x ^ 2 := by
     rw [mixedInner_self_eq_sum, Finset.mul_sum]
     exact Finset.sum_le_sum fun w _ ↦ mul_le_mul_of_nonneg_right (hy w) (sq_nonneg _)

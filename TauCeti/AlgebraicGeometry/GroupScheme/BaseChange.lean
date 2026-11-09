@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Limits
 public import Mathlib.AlgebraicGeometry.Pullbacks
+public import Mathlib.CategoryTheory.Limits.Constructions.Over.Basic
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
+public import Mathlib.CategoryTheory.Monoidal.Cartesian.GrpLimits
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 
 /-!
@@ -16,7 +19,8 @@ The base change of a group scheme `G` over `X` along `s : Y ⟶ X` is the pullba
 over category, lifted to group objects. This file identifies the points of the base change with
 points of `G` over the same test scheme viewed over the old base, through the pullback
 adjunction, and shows that this identification is multiplicative. On underlying morphisms, the
-identity, product and inverse of points of the base change project to those of `G`.
+identity, product and inverse of points of the base change project to those of `G`. Base change
+of group schemes preserves finite limits.
 
 ## Main declarations
 
@@ -26,6 +30,8 @@ identity, product and inverse of points of the base change project to those of `
   postcomposition with the first pullback projection.
 * `TauCeti.GroupScheme.pullback_mapGrp_mul_left_fst` (and its `one`/`inv` analogues): the group
   law of a base change projects to the group law of the original group scheme.
+* `TauCeti.GroupScheme.pullbackMapGrp_preservesFiniteLimits`: base change of group schemes
+  preserves finite limits.
 
 ## References
 
@@ -192,5 +198,17 @@ theorem pullback_mapGrp_inv_left_fst (s : Y ⟶ X) (G : Grp (Over X)) (T : Over 
     baseChangePointMulEquiv_apply_left]
   -- `rw` cannot see through the type of `p.left`, so reassociate by unification
   exact Category.assoc _ _ _
+
+/-- Pullback of group schemes along an arbitrary base morphism preserves finite limits. In
+particular, it preserves kernels. -/
+noncomputable instance pullbackMapGrp_preservesFiniteLimits (s : Y ⟶ X) :
+    Limits.PreservesFiniteLimits (Over.pullback s).mapGrp :=
+  -- Forgetting the group structure after the lifted pullback functor is definitionally the same
+  -- functor as first forgetting and then applying pullback in the over category.
+  have : Limits.PreservesFiniteLimits ((Over.pullback s).mapGrp ⋙ Grp.forget (Over Y)) :=
+    ⟨fun J _ _ ↦ inferInstanceAs
+      (Limits.PreservesLimitsOfShape J (Grp.forget (Over X) ⋙ Over.pullback s))⟩
+  have : Limits.ReflectsFiniteLimits (Grp.forget (Over Y)) := ⟨fun _ _ _ ↦ inferInstance⟩
+  Limits.preservesFiniteLimits_of_reflects_of_preserves _ (Grp.forget (Over Y))
 
 end TauCeti.GroupScheme
