@@ -171,7 +171,7 @@ theorem finrank_cohomFp_two_multiplicative_pi_padicInt_fin_two :
   have hfg := (presentedProP.finite_H2_iff {r} hrels (presentedProPEquivPiPadicInt p) htriv).mp hfin
   -- One relator bounds the relation rank by one.
   have hle : Module.finrank (ZMod p) (H2 G (ZMod p)) ≤ 1 :=
-    (presentedProP.finrank_H2_le_iff {r} hrels (presentedProPEquivPiPadicInt p) htriv hfg 1).mpr
+    (presentedProP.finrank_H2_le_iff {r} hrels (presentedProPEquivPiPadicInt p) hfg 1).mpr
       ⟨{⟨r, le_topologicalClosure _ (subset_normalClosure rfl)⟩}, by simp,
         by rw [Finset.coe_singleton, Set.image_singleton]⟩
   have : Finite (H2 G (ZMod p)) := hfin
