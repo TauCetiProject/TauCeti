@@ -23,8 +23,8 @@ For counting measure, singleton-supported vectors separate L² functions and det
 continuous linear maps out of L². On a compact space with a finite measure, the L² pairing of an
 L² function with a continuous function is an integral
 (`MeasureTheory.L2.inner_toLp_continuousMap`), extending Mathlib's `ContinuousMap.inner_toLp`.
-The integral of `⟪f x, c⟫` is `⟪∫ f, c⟫` (`integral_inner_left`), the counterpart of Mathlib's
-`integral_inner` with the integrand in the left slot.
+The integral of `⟪f x, c⟫` is `⟪∫ f, c⟫` (`TauCeti.integral_inner_left`), the counterpart of
+Mathlib's `integral_inner` with the integrand in the left slot.
 Indicators of any countably spanning generating π-system of finite-measure sets have
 dense real linear span in L².
 
@@ -135,6 +135,8 @@ theorem eq_zero_of_apply_indicatorConstLp_singleton
 
 end ContinuousLinearMap
 
+namespace TauCeti
+
 section IntegralInner
 
 variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]
@@ -148,8 +150,6 @@ theorem integral_inner_left {f : α → E} (hf : Integrable f μ) (c : E) :
     (innerSLFlip 𝕜 c).integral_comp_commSL RCLike.conj_smul hf
 
 end IntegralInner
-
-namespace TauCeti
 
 open MeasureTheory
 open scoped ENNReal
