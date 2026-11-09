@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Kernel
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral
+public import TauCeti.MeasureTheory.Integral.DecayMajorant
 
 /-!
 # `Lᵖ` boundedness of quantizations with integrable kernels
@@ -15,17 +16,19 @@ A symbol `a` of order `m < -n` has an integrable frequency slice, so its quantiz
 integral operator `Op(a) u (x) = ∫ K_a(x, y) u(y) dy` with the continuous kernel
 `K_a = TauCeti.quantizationKernel a`. The decay of `K_a` off the diagonal
 (`TauCeti.Symbol.one_add_norm_div_pow_mul_norm_quantizationKernel_le`), with `n + 1` frequency
-derivatives, makes its row and column integrals finite, and Schur's test
-(`TauCeti.integralOperatorLp`) then bounds `Op(a)` on every `Lᵖ`, `1 ≤ p ≤ ∞`.
+derivatives, makes its row integral at `x` finite. When the symbol estimates are moreover uniform
+in the position (`TauCeti.Symbol.IsUniform`), the row and column integrals are bounded uniformly,
+and Schur's test (`TauCeti.integralOperatorLp`) then bounds `Op(a)` on every `Lᵖ`, `1 ≤ p ≤ ∞`.
 
 The bounds are stated in a scale-invariant form. If at every position
 `∫ ‖a(x, ξ)‖ dξ ≤ A` and `∫ ‖∂_{ξ_j}^{n+1} a(x, ξ)‖ dξ ≤ A Rⁿ⁺¹` for every coordinate `j`, then
 the row and column integrals of `‖K_a‖`, and hence the `Lᵖ` operator norm, are at most `C_n A Rⁿ`
-with a constant `C_n` depending only on `n`. A symbol of order `0` cut off to frequencies of size
-`2^k` satisfies these hypotheses with `A` of size `2^{kn}` and `R = 2^{-k}`, so the dyadic pieces
-of an order-zero symbol have `Lᵖ` norms bounded independently of `k`; these are the diagonal
-estimates of the almost-orthogonality argument (`TauCeti.norm_sum_le_of_almost_orthogonal`) for
-the `L²` boundedness of operators of order `0`.
+with a constant `C_n` depending only on `n`. A uniform symbol of order `0` multiplied by a smooth
+dyadic cutoff to frequencies of size `2^k` satisfies these hypotheses at every position with `A`
+of size `2^{kn}` and `R = 2^{-k}`, so these dyadic pieces have `Lᵖ` norms bounded independently
+of `k`; these are the diagonal estimates of the almost-orthogonality argument
+(`TauCeti.norm_sum_le_of_almost_orthogonal`) for the `L²` boundedness of uniform operators of
+order `0`.
 
 ## Main results
 
@@ -58,34 +61,6 @@ namespace Symbol
 variable {n : ℕ} {m : ℝ}
   {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W]
 
-/-- Plumbing for the Schur integrals: a function of `w` bounded by `D (1 + ‖x₀ - w‖ / R)⁻ⁿ⁻¹` has
-lower integral at most `D Rⁿ ∫ (1 + ‖w‖)⁻ⁿ⁻¹ dw`. -/
-private theorem lintegral_le_of_le_inv_one_add_norm_div_pow {R D : ℝ} (hR : 0 < R) (hD : 0 ≤ D)
-    (x₀ : CoordinateSpace n) {f : CoordinateSpace n → ℝ≥0∞}
-    (hf : ∀ w, f w ≤ ENNReal.ofReal (D * ((1 + ‖x₀ - w‖ / R) ^ (n + 1))⁻¹)) :
-    ∫⁻ w, f w ≤
-      ENNReal.ofReal (D * (∫ w : CoordinateSpace n, ((1 + ‖w‖) ^ (n + 1))⁻¹) * R ^ n) := by
-  set g : CoordinateSpace n → ℝ := fun w ↦ D * ((1 + ‖w‖ / R) ^ (n + 1))⁻¹
-  -- `g` is integrable, as a rescaling of `(1 + ‖w‖) ^ (-(n + 1))`.
-  have hg : Integrable g := by
-    have h := (integrable_one_add_norm (μ := (volume : Measure (CoordinateSpace n)))
-      (r := n + 1) (by simp)).comp_smul (inv_ne_zero hR.ne')
-    refine (h.const_mul D).congr (ae_of_all _ fun w ↦ ?_)
-    simp only [g, norm_smul, norm_inv, Real.norm_eq_abs, abs_of_pos hR]
-    rw [Real.rpow_neg (by positivity), ← Nat.cast_one, ← Nat.cast_add, Real.rpow_natCast,
-      inv_mul_eq_div]
-  -- Its integral is `D Rⁿ ∫ (1 + ‖w‖)⁻ⁿ⁻¹ dw`, by the change of variables `w ↦ R⁻¹ w`.
-  have hint : ∫ w, g w = D * (∫ w : CoordinateSpace n, ((1 + ‖w‖) ^ (n + 1))⁻¹) * R ^ n := by
-    have h := Measure.integral_comp_inv_smul_of_nonneg (volume : Measure (CoordinateSpace n))
-      (fun w ↦ ((1 + ‖w‖) ^ (n + 1))⁻¹) hR.le
-    simp only [norm_smul, norm_inv, Real.norm_eq_abs, abs_of_pos hR, finrank_euclideanSpace_fin,
-      smul_eq_mul, inv_mul_eq_div] at h
-    simp only [g, integral_const_mul, h]
-    ring
-  refine (lintegral_mono hf).trans_eq ?_
-  rw [← hint, ← integral_sub_left_eq_self g volume x₀,
-    ofReal_integral_eq_lintegral_ofReal (hg.comp_sub_left x₀) (ae_of_all _ fun w ↦ by positivity)]
-
 /-- **Schur bound in the second variable.** If at the position `x` the frequency slice of a
 symbol of order `m < -n` has `∫ ‖a(x, ξ)‖ dξ ≤ A` and its `(n + 1)`-st frequency derivatives have
 `∫ ‖∂_{ξ_j}^{n+1} a(x, ξ)‖ dξ ≤ A Rⁿ⁺¹`, then `∫ ‖K_a(x, y)‖ dy ≤ C_n A Rⁿ`, with a constant
@@ -98,8 +73,11 @@ theorem lintegral_enorm_quantizationKernel_right_le (a : Symbol n V W m) (hm : m
       ENNReal.ofReal (2 ^ (n + 1) * (1 + √n ^ (n + 1)) * ((2 * π) ^ n)⁻¹ * A *
         (∫ w : CoordinateSpace n, ((1 + ‖w‖) ^ (n + 1))⁻¹) * R ^ n) := by
   have hA : 0 ≤ A := (integral_nonneg fun _ ↦ norm_nonneg _).trans h₀
-  refine lintegral_le_of_le_inv_one_add_norm_div_pow hR (by positivity) x fun y ↦ ?_
-  rw [← ofReal_norm]
+  have h := lintegral_le_of_le_inv_one_add_norm_div_pow (μ := volume)
+    (D := 2 ^ (n + 1) * (1 + √n ^ (n + 1)) * ((2 * π) ^ n)⁻¹ * A) hR (by positivity) x
+    (f := fun y ↦ ‖quantizationKernel a.coefficient x y‖ₑ) fun y ↦ ?_
+  · simpa only [finrank_euclideanSpace_fin] using h
+  rw [← ofReal_norm, finrank_euclideanSpace_fin]
   refine ENNReal.ofReal_le_ofReal ?_
   rw [← div_eq_mul_inv, le_div_iff₀ (by positivity), mul_comm]
   exact a.one_add_norm_div_pow_mul_norm_quantizationKernel_le hm hR (n + 1) h₀ h₁ y
@@ -115,8 +93,11 @@ theorem lintegral_enorm_quantizationKernel_left_le (a : Symbol n V W m) (hm : m 
       ENNReal.ofReal (2 ^ (n + 1) * (1 + √n ^ (n + 1)) * ((2 * π) ^ n)⁻¹ * A *
         (∫ w : CoordinateSpace n, ((1 + ‖w‖) ^ (n + 1))⁻¹) * R ^ n) := by
   have hA : 0 ≤ A := (integral_nonneg fun _ ↦ norm_nonneg _).trans (h₀ y)
-  refine lintegral_le_of_le_inv_one_add_norm_div_pow hR (by positivity) y fun x ↦ ?_
-  rw [← ofReal_norm, norm_sub_rev]
+  have h := lintegral_le_of_le_inv_one_add_norm_div_pow (μ := volume)
+    (D := 2 ^ (n + 1) * (1 + √n ^ (n + 1)) * ((2 * π) ^ n)⁻¹ * A) hR (by positivity) y
+    (f := fun x ↦ ‖quantizationKernel a.coefficient x y‖ₑ) fun x ↦ ?_
+  · simpa only [finrank_euclideanSpace_fin] using h
+  rw [← ofReal_norm, norm_sub_rev, finrank_euclideanSpace_fin]
   refine ENNReal.ofReal_le_ofReal ?_
   rw [← div_eq_mul_inv, le_div_iff₀ (by positivity), mul_comm]
   exact a.one_add_norm_div_pow_mul_norm_quantizationKernel_le hm hR (n + 1) (h₀ x) (h₁ x) y

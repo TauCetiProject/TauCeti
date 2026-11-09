@@ -385,8 +385,9 @@ each frequency coordinate have `∫ ‖∂_{ξ_j}^N a(x, ξ)‖ dξ ≤ A R^N`, 
 `(1 + ‖x - y‖ / R)^N ‖K_a(x, y)‖ ≤ 2^N (1 + √n^N) (2π)⁻ⁿ A` for every `y`.
 
 The hypotheses are compatible with the frequency dilations `a(x, ξ) ↦ a(x, ξ / λ)`, `λ > 0`, which
-multiply `A` by `λⁿ` and `R` by `λ⁻¹`; this makes the estimate uniform over the dyadic frequency
-pieces of a symbol. -/
+multiply `A` by `λⁿ` and `R` by `λ⁻¹`. For a uniform symbol of order `0` multiplied by smooth
+dyadic frequency cutoffs, this makes the estimate uniform over the dyadic pieces and over the
+position `x`. -/
 theorem one_add_norm_div_pow_mul_norm_quantizationKernel_le (a : Symbol n V W m) (hm : m < -n)
     {x : CoordinateSpace n} {A R : ℝ} (hR : 0 < R) (N : ℕ)
     (h₀ : ∫ ξ, ‖a.coefficient (x, ξ)‖ ≤ A)
