@@ -29,7 +29,7 @@ is onto when that vector is cyclic.
 
 ## Main declarations
 
-* `ContRepresentation.IsUnitary.posSemidef_inner_apply_inv_mul`: coefficients of unitary
+* `ContRepresentation.IsUnitary.posSemidef_inner_map_inv_mul`: coefficients of unitary
   representations are positive definite.
 * `Matrix.PosSemidef.gnsRepresentation`: the GNS unitary representation of a positive-definite
   function, with `Matrix.PosSemidef.isUnitary_gnsRepresentation` and
@@ -54,16 +54,16 @@ open scoped ComplexConjugate ComplexOrder
 
 namespace ContRepresentation.IsUnitary
 
-variable {G V : Type*} [Group G] [NormedAddCommGroup V] [InnerProductSpace ℂ V]
-  {π : ContRepresentation ℂ G V}
+variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+  {π : ContRepresentation 𝕜 G V}
 
 /-- The coefficient `g ↦ ⟪ξ, π g ξ⟫` of a unitary representation is positive definite: the kernel
 `(g, h) ↦ ⟪ξ, π (g⁻¹ * h) ξ⟫` is positive semidefinite. -/
-theorem posSemidef_inner_apply_inv_mul (hπ : π.IsUnitary) (ξ : V) :
-    (Matrix.of fun g h : G ↦ ⟪ξ, π (g⁻¹ * h) ξ⟫_ℂ).PosSemidef := by
-  convert TauCeti.posSemidef_gram ℂ fun g : G ↦ π g ξ using 1
+theorem posSemidef_inner_map_inv_mul (hπ : π.IsUnitary) (ξ : V) :
+    (Matrix.of fun g h : G ↦ ⟪ξ, π (g⁻¹ * h) ξ⟫_𝕜).PosSemidef := by
+  convert TauCeti.posSemidef_gram 𝕜 fun g : G ↦ π g ξ using 1
   ext g h
-  rw [Matrix.of_apply, Matrix.gram_apply, hπ.inner_apply_inv_mul]
+  rw [Matrix.of_apply, Matrix.gram_apply, hπ.inner_map_inv_mul]
 
 end ContRepresentation.IsUnitary
 
@@ -170,7 +170,7 @@ omit [CompleteSpace V] in
 private theorem inner_apply_apply_of_coeff {π : ContRepresentation ℂ G V} (hπ : π.IsUnitary)
     {ξ : V} (hξ : ∀ g, ⟪ξ, π g ξ⟫_ℂ = φ g) (g h : G) :
     ⟪π g ξ, π h ξ⟫_ℂ = φ (g⁻¹ * h) := by
-  rw [← hπ.inner_apply_inv_mul, hξ]
+  rw [← hπ.inner_map_inv_mul, hξ]
 
 /-- The universal property of the GNS representation: if `ξ` is a vector of a unitary
 representation `π` whose coefficient is `φ`, then `gnsVector g ↦ π g ξ` extends to a linear
@@ -251,6 +251,6 @@ theorem posSemidef_inv_mul_iff_exists_isUnitary :
     hφ.gnsRepresentation, hφ.gnsVector 1, hφ.isUnitary_gnsRepresentation,
     fun g ↦ (hφ.inner_gnsVector_one_gnsRepresentation g).symm⟩, ?_⟩
   rintro ⟨V, _, _, _, π, ξ, hπ, hξ⟩
-  simpa only [hξ] using hπ.posSemidef_inner_apply_inv_mul ξ
+  simpa only [hξ] using hπ.posSemidef_inner_map_inv_mul ξ
 
 end TauCeti

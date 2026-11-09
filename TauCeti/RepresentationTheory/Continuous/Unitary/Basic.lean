@@ -190,7 +190,7 @@ theorem inner_map_right (hπ : IsUnitary π) (g : G) (v w : V) :
 omit [CompleteSpace V] in
 /-- The inner product of two translates of vectors by a unitary group representation depends only
 on the relative position `g⁻¹ * h` of the group elements. -/
-theorem inner_apply_inv_mul (hπ : IsUnitary π) (g h : G) (v w : V) :
+theorem inner_map_inv_mul (hπ : IsUnitary π) (g h : G) (v w : V) :
     ⟪v, π (g⁻¹ * h) w⟫_𝕜 = ⟪π g v, π h w⟫_𝕜 := by
   rw [map_mul, ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply, hπ.inner_map_right,
     inv_inv]
