@@ -226,26 +226,12 @@ section LineDeriv
 
 variable [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- On an infinite-dimensional normed space every test function vanishes: the open set where it
-is nonzero would contain a compact closed ball. -/
-theorem coe_eq_zero_of_not_finiteDimensional (hE : ¬FiniteDimensional ℝ E) (φ : 𝓓(Ω, ℝ)) :
-    (φ : E → ℝ) = 0 := by
-  by_contra hne
-  obtain ⟨x, hx⟩ := Function.ne_iff.mp hne
-  obtain ⟨r, hr, hrU⟩ := Metric.isOpen_iff.mp
-    (isOpen_ne_fun φ.continuous continuous_const : IsOpen {y | φ y ≠ (0 : ℝ)}) x (by simpa using hx)
-  refine hE (FiniteDimensional.of_isCompact_closedBall ℝ (c := x) (half_pos hr) ?_)
-  refine φ.hasCompactSupport.isCompact.of_isClosed_subset Metric.isClosed_closedBall fun y hy ↦ ?_
-  exact subset_tsupport _ (hrU (Metric.closedBall_subset_ball (half_lt_self hr) hy))
-
 /-- The directional derivative of a test function has integral zero against an additive Haar
 measure: `∫ ∂_w φ = 0`. -/
 theorem integral_lineDeriv_eq_zero (φ : 𝓓(Ω, ℝ)) (w : E) :
     ∫ x, lineDeriv ℝ (φ : E → ℝ) x w ∂μ = 0 := by
-  by_cases hE : FiniteDimensional ℝ E
-  swap
-  · simp [coe_eq_zero_of_not_finiteDimensional hE φ, lineDeriv]
+  rcases φ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ φ.continuous with h | hE
+  · simp [h, lineDeriv]
   have hd := φ.contDiff.differentiable (by simp)
   have hint (ψ : 𝓓(Ω, ℝ)) : Integrable ψ μ :=
     ψ.continuous.integrable_of_hasCompactSupport ψ.hasCompactSupport
