@@ -138,17 +138,17 @@ theorem exists_attach_differential_eq_of_forall_exists (hN : N₀ ≤ N₁) (hgN
     exact mem_span_range_iff_exists_finsupp.2 ⟨u, by rw [linearCombination_apply]⟩
   -- The differential of the lift `y'` of the new coordinates, read off from `D² = 0`.
   have hDS : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m.m
-      (rowFiniteSignedMap (𝒜 := 𝒜) a y') + rowFiniteSignedMap (𝒜 := 𝒜) a y = 0 := by
+      (rowFiniteSignedMap 𝒜 1 a y') + rowFiniteSignedMap 𝒜 1 a y = 0 := by
     have h₀ := (m.attach a ha hca).differential_sq_zero h (sumElim 0 y')
     rw [attach_differential_sumElim, map_zero, zero_add, hy', attach_differential_sumElim,
       ← sumElim_zero_zero, sumElim_inj] at h₀
     exact h₀.1
-  have hΦS : linearCombination A g (rowFiniteSignedMap (𝒜 := 𝒜) a y') +
+  have hΦS : linearCombination A g (rowFiniteSignedMap 𝒜 1 a y') +
       linearCombination A c y = dM (linearCombination A c y') := by
     have h₀ := hΦ (sumElim 0 y')
     rwa [attach_differential_sumElim, map_zero, zero_add, hy', hΦ', hΦ', map_zero, zero_add] at h₀
   -- What is left is a relative cycle of `g` with target in `N₀`, hence a relative boundary.
-  obtain ⟨u', w', hw', hu', huw⟩ := hK (u - rowFiniteSignedMap (𝒜 := 𝒜) a y')
+  obtain ⟨u', w', hw', hu', huw⟩ := hK (u - rowFiniteSignedMap 𝒜 1 a y')
     (w - linearCombination A c y' - dM w₁)
     (by rw [map_sub, eq_neg_of_add_eq_zero_left hu, eq_neg_of_add_eq_zero_left hDS, sub_self])
     (by
