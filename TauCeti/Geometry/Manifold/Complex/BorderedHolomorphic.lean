@@ -140,6 +140,26 @@ def borderedHolomorphicGroupoid : StructureGroupoid ClosedUpperHalfPlane :=
   contDiffGroupoid ∞ closedUpperHalfPlaneModel ⊓
     ClosedUpperHalfPlane.interiorHolomorphicPregroupoid.groupoid
 
+/-- Membership in the infimum of two structure groupoids. This holds by `Iff.rfl`: Mathlib's `⊓`
+on structure groupoids is the intersection of their members. -/
+private theorem mem_inf_structureGroupoid {G G' : StructureGroupoid ClosedUpperHalfPlane}
+    {e : OpenPartialHomeomorph ClosedUpperHalfPlane ClosedUpperHalfPlane} :
+    e ∈ G ⊓ G' ↔ e ∈ G ∧ e ∈ G' :=
+  Iff.rfl
+
+/-- Membership in the smooth groupoid of the closed upper half-plane, read in the ambient
+coordinate. This holds by `Iff.rfl`: `contDiffGroupoid` is the groupoid of
+`contDiffPregroupoid`, whose property is smoothness of the coordinate expression on the model
+range. -/
+private theorem mem_contDiffGroupoid_closedUpperHalfPlaneModel_iff
+    {e : OpenPartialHomeomorph ClosedUpperHalfPlane ClosedUpperHalfPlane} :
+    e ∈ contDiffGroupoid ∞ closedUpperHalfPlaneModel ↔
+      ContDiffOn ℝ ∞ (closedUpperHalfPlaneModel ∘ e ∘ closedUpperHalfPlaneModel.symm)
+          (closedUpperHalfPlaneModel.symm ⁻¹' e.source ∩ range closedUpperHalfPlaneModel) ∧
+        ContDiffOn ℝ ∞ (closedUpperHalfPlaneModel ∘ e.symm ∘ closedUpperHalfPlaneModel.symm)
+          (closedUpperHalfPlaneModel.symm ⁻¹' e.target ∩ range closedUpperHalfPlaneModel) :=
+  Iff.rfl
+
 /-- Members of the bordered holomorphic groupoid are smooth up to the boundary. -/
 theorem borderedHolomorphicGroupoid_le_contDiffGroupoid :
     borderedHolomorphicGroupoid ≤ contDiffGroupoid ∞ closedUpperHalfPlaneModel :=
@@ -155,6 +175,7 @@ theorem mem_borderedHolomorphicGroupoid_iff
         (closedUpperHalfPlaneModel.symm ⁻¹' e.source ∩ {z | 0 < z.im}) ∧
       DifferentiableOn ℂ (closedUpperHalfPlaneModel ∘ e.symm ∘ closedUpperHalfPlaneModel.symm)
         (closedUpperHalfPlaneModel.symm ⁻¹' e.target ∩ {z | 0 < z.im}) := by
+  rw [borderedHolomorphicGroupoid, mem_inf_structureGroupoid, mem_groupoid_of_pregroupoid]
   constructor
   · rintro ⟨hc, h₁, h₂⟩
     exact ⟨hc, (ClosedUpperHalfPlane.interiorHolomorphicPregroupoid_property_source_iff hc).1 h₁,
@@ -205,9 +226,10 @@ theorem toOpenPartialHomeomorph_mem_borderedHolomorphicGroupoid
           (closedUpperHalfPlaneModel.symm ⁻¹' univ ∩ {z | 0 < z.im}) := by
     intro k K hK hk
     exact hK.differentiableOn.congr fun z hz ↦ hcoord hk (le_of_lt hz.2)
-  refine mem_borderedHolomorphicGroupoid_iff.2 ⟨⟨?_, ?_⟩, ?_, ?_⟩
-  · simpa [contDiffPregroupoid] using hsmooth hF hhF
-  · simpa [contDiffPregroupoid] using hsmooth hG hhG
+  refine mem_borderedHolomorphicGroupoid_iff.2
+    ⟨mem_contDiffGroupoid_closedUpperHalfPlaneModel_iff.2 ⟨?_, ?_⟩, ?_, ?_⟩
+  · simpa using hsmooth hF hhF
+  · simpa using hsmooth hG hhG
   · simpa using hholo hF hhF
   · simpa using hholo hG hhG
 
@@ -260,12 +282,11 @@ is antiholomorphic, so it is not a bordered holomorphic chart change. -/
 theorem negConj_notMem_borderedHolomorphicGroupoid :
     negConj.toOpenPartialHomeomorph ∉ borderedHolomorphicGroupoid := by
   intro hmem
-  have hd := (mem_borderedHolomorphicGroupoid_iff.1 hmem).2.1
-  have hat := hd.differentiableAt <|
-    ((negConj.toOpenPartialHomeomorph.open_source.preimage
-      closedUpperHalfPlaneModel.continuous_symm).inter
-        (isOpen_lt continuous_const continuous_im)).mem_nhds
-          (show (I : ℂ) ∈ _ from ⟨by simp, by simp⟩)
+  -- The interior condition, evaluated at the point `I`, gives differentiability there.
+  have hprop := (mem_groupoid_of_pregroupoid.1 (mem_inf_structureGroupoid.1 hmem).2).1
+  have hat : DifferentiableAt ℂ
+      (closedUpperHalfPlaneModel ∘ negConj ∘ closedUpperHalfPlaneModel.symm) I :=
+    (interiorHolomorphicPregroupoid_property_iff.1 hprop ⟨I, by simp⟩ (by simp) (by simp)).2
   refine Complex.not_differentiableAt_neg_conj I (hat.congr_of_eventuallyEq ?_)
   exact (eventually_coe_closedUpperHalfPlaneModel_symm (by simp)).mono fun w hw ↦ by
     simp [hw]
