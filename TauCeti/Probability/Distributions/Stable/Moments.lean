@@ -154,18 +154,15 @@ theorem integral_abs_sub_rpow_stableMeasure (hα : α ∈ Ioc 0 2) (hq : 0 < q) 
       (m := m) (a := -m) (b := 1) (Or.inl one_ne_zero)
   rw [← integral_map_of_stronglyMeasurable (μ := stableMeasure α 0 s m)
     (f := fun x : ℝ ↦ |x| ^ q) (by fun_prop) (by fun_prop), hcenter]
-  set ν := stableMeasure α 0 s 0
+  set ν := stableMeasure α 0 s 0 with hν
   have := isProbabilityMeasure_stableMeasure hα hβ s 0
   -- The power-weighted characteristic-function deficit is a rescaled Gamma integral.
   have hdeficit : ∫ t in Ioi (0 : ℝ), t ^ (-(q + 1)) * (ν.real univ - (charFun ν t).re) =
       s ^ q * (Gamma (1 - q / α) / q) := by
     calc
       _ = ∫ t in Ioi (0 : ℝ), t ^ (-(q + 1)) * (1 - exp (-(s * t) ^ α)) := by
-        apply setIntegral_congr_fun measurableSet_Ioi
-        intro t ht
-        change t ^ (-(q + 1)) * (ν.real univ - (charFun ν t).re) =
-          t ^ (-(q + 1)) * (1 - exp (-(s * t) ^ α))
-        rw [show ν = stableMeasure α 0 s 0 from rfl, probReal_univ,
+        refine setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ ?_
+        rw [hν, probReal_univ,
           charFun_stableMeasure_zero_skew_zero_location_re hα,
           abs_of_pos (mul_pos hspos ht)]
       _ = _ := integral_Ioi_rpow_neg_mul_one_sub_exp_neg_mul_rpow hspos hq hqα
@@ -175,18 +172,9 @@ theorem integral_abs_sub_rpow_stableMeasure (hα : α ∈ Ioc 0 2) (hq : 0 < q) 
   have hΓ : Gamma q ≠ 0 := (Gamma_pos_of_pos hq).ne'
   have hsin : sin (π * q / 2) ≠ 0 :=
     (sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [pi_pos, hα.2])).ne'
-  have hden : 2 * (q * Gamma q) * sin (π * q / 2) ≠ 0 := by
-    exact mul_ne_zero (mul_ne_zero two_ne_zero (mul_ne_zero hq.ne' hΓ)) hsin
-  rw [div_mul_eq_mul_div] at hbridge
-  have hcross := (eq_div_iff hden).1 hbridge
-  calc
-    ∫ y, |y| ^ q ∂ν =
-        (s ^ q * (Gamma (1 - q / α) / q) *
-          (2 * (q * Gamma q) * sin (π * q / 2))) / π := by
-      apply (eq_div_iff pi_ne_zero).2
-      simpa only [mul_comm] using hcross.symm
-    _ = s ^ q * (2 * Gamma q * sin (π * q / 2) / π) * Gamma (1 - q / α) := by
-      field_simp [hq.ne']
+  have hsin' : sin (q * π / 2) ≠ 0 := by simpa only [mul_comm] using hsin
+  field_simp [hq.ne', hΓ, hsin, hsin'] at hbridge ⊢
+  nlinarith only [hbridge]
 
 end TauCeti.Probability
 
