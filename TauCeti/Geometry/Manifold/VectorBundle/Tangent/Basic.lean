@@ -326,6 +326,45 @@ theorem mvfderiv_extend_eventuallyEq (hf : ContMDiffAt I 𝓘(𝕜, F) 1 f x)
 
 end Extend
 
+section TrivializationCoordinates
+
+/-- If a tangent vector field is `C^n` on `V`, then its coordinate expression in the preferred
+trivialization of the tangent bundle at `a`, read through the inverse extended chart, is `C^n` on
+the interior points of the chart target which lie over `V`. -/
+theorem contDiffOn_trivializationAt_extChartAt_symm {n : ℕ∞ω} [IsManifold I (n + 1) M]
+    (v : (x : M) → TangentSpace I x) (a : M) {V : Set M} :
+    haveI : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
+    ContMDiffOn I I.tangent n (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) V →
+    ContDiffOn 𝕜 n (fun z ↦ (trivializationAt E (TangentSpace I) a
+      (⟨(extChartAt I a).symm z, v ((extChartAt I a).symm z)⟩ : TangentBundle I M)).2)
+      (interior (extChartAt I a).target ∩ (extChartAt I a).symm ⁻¹' V) := by
+  have _ : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
+  have _ : IsManifold I n M := IsManifold.of_le (n := n + 1) le_self_add
+  have _ : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  intro hv
+  let e := trivializationAt E (TangentSpace I) a
+  let W := interior (extChartAt I a).target ∩ (extChartAt I a).symm ⁻¹' V
+  have hsection : ContMDiffOn (modelWithCornersSelf 𝕜 E) I.tangent n
+      ((fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) ∘ (extChartAt I a).symm)
+      W := hv.comp
+    ((contMDiffOn_extChartAt_symm a).mono (inter_subset_left.trans interior_subset))
+    (fun _ hz ↦ hz.2)
+  have hmap : MapsTo
+      ((fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) ∘ (extChartAt I a).symm)
+      W e.source := by
+    intro z hz
+    rw [TangentBundle.trivializationAt_source]
+    -- Membership in this preimage reduces definitionally by projecting the displayed
+    -- tangent-bundle point to its base point; there is no separate projection lemma to apply.
+    change (extChartAt I a).symm z ∈ (chartAt H a).source
+    simpa only [extChartAt_source] using
+      (extChartAt I a).map_target (interior_subset hz.1)
+  have hcoord := ((e.contMDiffOn_iff hmap).mp hsection).2
+  simpa only [Function.comp_apply] using hcoord.contDiffOn
+
+end TrivializationCoordinates
+
 section TangentChart
 
 /-- The tangent coordinate change between the charts at `x` and `y` is `C^n` on the overlap of
@@ -1063,8 +1102,9 @@ theorem tangentSpaceProdEquiv_mfderiv_prodMap_id {φ : 𝕜 → 𝕜} {p : M × 
 /-- If `φ' t ≠ 0`, the differential of `(x, t) ↦ (x, φ t)` on `M × 𝕜` at `(x, t)` is
 invertible. -/
 theorem isInvertible_mfderiv_prodMap_id {φ : 𝕜 → 𝕜} {p : M × 𝕜}
-    (hφ : DifferentiableAt 𝕜 φ p.2) (hφ' : deriv φ p.2 ≠ 0) :
+    (hφ' : deriv φ p.2 ≠ 0) :
     (mfderiv (I.prod 𝓘(𝕜)) (I.prod 𝓘(𝕜)) (Prod.map id φ) p).IsInvertible := by
+  have hφ := differentiableAt_of_deriv_ne_zero hφ'
   refine ⟨(tangentSpaceProdEquiv p).trans
     (((ContinuousLinearEquiv.refl 𝕜 (TangentSpace I p.1)).prodCongr
       ((NormedSpace.fromTangentSpace p.2).trans
@@ -1116,12 +1156,17 @@ theorem tangentSpaceProdEquiv_symmL_trivializationAt [IsManifold I 1 M] [IsManif
   exact congrArg (fun L : E × F →L[𝕜] E × F ↦ L v) h
 
 /-- On a product `M × F` with a normed space `F`, the inverse of the canonical tangent-bundle
-trivialization at `p`, over a point `q` of the domain of the chart at `p`, depends neither on the
-`F`-coordinate of `p` nor on that of `q`. -/
+trivialization at `p`, over a point `q`, depends neither on the `F`-coordinate of `p` nor on that
+of `q`. Both sides vanish when `q` lies outside the domain of the chart at `p`. -/
 theorem symmL_trivializationAt_prod_model_space [IsManifold I 1 M] {p q : M × F}
-    (hq : q.1 ∈ (chartAt H p.1).source) (s s' : F) (v : E × F) :
+    (s s' : F) (v : E × F) :
     (trivializationAt (E × F) (TangentSpace (I.prod 𝓘(𝕜, F))) p).symmL 𝕜 q v =
       (trivializationAt (E × F) (TangentSpace (I.prod 𝓘(𝕜, F))) (p.1, s)).symmL 𝕜 (q.1, s') v := by
+  by_cases hq : q.1 ∈ (chartAt H p.1).source
+  swap
+  · rw [Trivialization.symmL_apply_of_notMem _ (by simpa using hq),
+      Trivialization.symmL_apply_of_notMem _ (by simpa using hq)]
+    rfl
   have hq₁ : q ∈ (chartAt (ModelProd H F) p).source := by simpa using hq
   have hq₂ : (q.1, s') ∈ (chartAt (ModelProd H F) (p.1, s)).source := by simpa using hq
   have h₁ := tangentSpaceProdEquiv_symmL_trivializationAt (I := I) (J := 𝓘(𝕜, F)) hq₁ v
@@ -1159,23 +1204,45 @@ theorem tangentCoordChange_sumInr (x y z : M') :
   ext w
   simp [ChartedSpace.sum_chartAt_inr, Sum.inr_injective.extend_apply]
 
-/-- Over the domain of the chart at `x`, the inverse of the canonical tangent-bundle trivialization
-of `M ⊕ M'` at a point `x` of `M` is the inverse trivialization of `M` at `x`. -/
-theorem symmL_trivializationAt_sumInl {x z : M} (hz : z ∈ (chartAt H x).source) :
+/-- The inverse of the canonical tangent-bundle trivialization of `M ⊕ M'` at a point `x` of `M`
+is the inverse trivialization of `M` at `x`. Both sides vanish outside the domain of the chart
+at `x`. -/
+@[simp]
+theorem symmL_trivializationAt_sumInl {x z : M} :
     (trivializationAt E (TangentSpace I : M ⊕ M' → Type _) (Sum.inl x)).symmL 𝕜 (Sum.inl z) =
       (trivializationAt E (TangentSpace I : M → Type _) x).symmL 𝕜 z := by
   have : Nonempty H := nonempty_of_chartedSpace x
+  by_cases hz : z ∈ (chartAt H x).source
+  swap
+  · have h₁ : (Sum.inl z : M ⊕ M') ∉
+        (trivializationAt E (TangentSpace I : M ⊕ M' → Type _) (Sum.inl x)).baseSet := by
+      simpa [ChartedSpace.sum_chartAt_inl] using hz
+    have h₂ : z ∉ (trivializationAt E (TangentSpace I : M → Type _) x).baseSet := by
+      simpa using hz
+    exact DFunLike.ext _ _ fun u ↦ (Trivialization.symmL_apply_of_notMem _ h₁ u).trans
+      (Trivialization.symmL_apply_of_notMem _ h₂ u).symm
   rw [TangentBundle.symmL_trivializationAt_eq_core
       (by simpa [ChartedSpace.sum_chartAt_inl] using hz),
     TangentBundle.symmL_trivializationAt_eq_core hz]
   exact tangentCoordChange_sumInl x z z
 
-/-- Over the domain of the chart at `y`, the inverse of the canonical tangent-bundle trivialization
-of `M ⊕ M'` at a point `y` of `M'` is the inverse trivialization of `M'` at `y`. -/
-theorem symmL_trivializationAt_sumInr {y z : M'} (hz : z ∈ (chartAt H y).source) :
+/-- The inverse of the canonical tangent-bundle trivialization of `M ⊕ M'` at a point `y` of `M'`
+is the inverse trivialization of `M'` at `y`. Both sides vanish outside the domain of the chart
+at `y`. -/
+@[simp]
+theorem symmL_trivializationAt_sumInr {y z : M'} :
     (trivializationAt E (TangentSpace I : M ⊕ M' → Type _) (Sum.inr y)).symmL 𝕜 (Sum.inr z) =
       (trivializationAt E (TangentSpace I : M' → Type _) y).symmL 𝕜 z := by
   have : Nonempty H := nonempty_of_chartedSpace y
+  by_cases hz : z ∈ (chartAt H y).source
+  swap
+  · have h₁ : (Sum.inr z : M ⊕ M') ∉
+        (trivializationAt E (TangentSpace I : M ⊕ M' → Type _) (Sum.inr y)).baseSet := by
+      simpa [ChartedSpace.sum_chartAt_inr] using hz
+    have h₂ : z ∉ (trivializationAt E (TangentSpace I : M' → Type _) y).baseSet := by
+      simpa using hz
+    exact DFunLike.ext _ _ fun u ↦ (Trivialization.symmL_apply_of_notMem _ h₁ u).trans
+      (Trivialization.symmL_apply_of_notMem _ h₂ u).symm
   rw [TangentBundle.symmL_trivializationAt_eq_core
       (by simpa [ChartedSpace.sum_chartAt_inr] using hz),
     TangentBundle.symmL_trivializationAt_eq_core hz]

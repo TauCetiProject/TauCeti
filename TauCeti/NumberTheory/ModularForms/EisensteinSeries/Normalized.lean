@@ -90,7 +90,7 @@ theorem qExpansion_normalizedCharEisensteinSeriesMF_coeff (hk : 3 ≤ (k : ℤ))
     rw [DirichletCharacter.isPrimitive_def, DirichletCharacter.conductor_inv]
     exact hphi
   have hv : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
-  have hgauss := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hv hphiInv
+  have hgauss := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hphiInv
     (isPrimitive_stdAddChar v)
   have hfactorial : ((k - 1).factorial : ℂ) ≠ 0 :=
     Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)

@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import Mathlib.FieldTheory.KummerPolynomial
 public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
-public import TauCeti.Algebra.Polynomial.XPowSubC
+public import TauCeti.Algebra.Polynomial.XPow.SubC
 public import TauCeti.RingTheory.Valuation.Discrete.Order
 import Mathlib.FieldTheory.SeparableDegree
 
@@ -20,7 +20,7 @@ through a primitive `n`-th root of unity, which is unavailable for `n = 2` in ch
 For `n = 2`, a single square root `δ` of `a` generates the root-set adjunction, because the only
 other root is `-δ`. Discrete valuations give irreducibility and degree criteria for general
 binomial extensions. Elementary root-set and splitting facts are in
-`TauCeti.Algebra.Polynomial.XPowSubC`.
+`TauCeti.Algebra.Polynomial.XPow.SubC`.
 
 ## Main results
 
