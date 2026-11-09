@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Renewal.TranslateBounds
-public import Mathlib.MeasureTheory.Group.Convolution
+public import TauCeti.Probability.Renewal.Translate.Bounds
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
 import TauCeti.MeasureTheory.Group.Convolution.IntervalBound
 import TauCeti.Topology.ContinuousMap.CompactlySupported
@@ -25,8 +24,10 @@ Let `U = ∑ n, F^{∗n}` be the renewal measure of a probability measure `F` on
 renewals near time `t`. The renewal equation `U = δ₀ + F ∗ U` translates to
 
 ```text
-Uₜ = δ_{-t} + F ∗ Uₜ.
+Uₜ = δ_{-t} + F ∗ Uₜ
 ```
+
+(`MeasureTheory.Measure.translatedRenewalMeasure_eq_dirac_add_conv`).
 
 As `t → ∞` the point mass `δ_{-t}` escapes to `-∞`. This file shows that consequently every vague
 limit `η` of translates `U_{t i}` with `t i → ∞` is `F`-harmonic, `F ∗ η = η`. Vague convergence
@@ -40,8 +41,6 @@ measure, identifies every limit of the translates.
 
 ## Main results
 
-* `MeasureTheory.Measure.translatedRenewalMeasure_eq_dirac_add_conv`: the translated renewal
-  equation `Uₜ = δ_{-t} + F ∗ Uₜ`.
 * `MeasureTheory.Measure.measure_Icc_le_of_tendsto_integral`: a locally finite vague limit `η` of
   translates `U_{t i}` inherits the local renewal bound, `η [a, b] ≤ U [0, b - a + 2]`, so its
   masses of intervals of a fixed length are bounded uniformly in their position.
@@ -74,29 +73,7 @@ open scoped ENNReal NNReal CompactlySupported
 
 namespace MeasureTheory.Measure
 
-variable (μ : Measure ℝ≥0)
-
-/-- The renewal equation `U = δ₀ + μ ∗ U`, translated by `-t` on the real line: the translated
-renewal measure `Uₜ` satisfies `Uₜ = δ_{-t} + μ ∗ Uₜ`. -/
-theorem translatedRenewalMeasure_eq_dirac_add_conv [SFinite μ] (t : ℝ) :
-    μ.translatedRenewalMeasure t =
-      dirac (-t) + μ.map ((↑) : ℝ≥0 → ℝ) ∗ μ.translatedRenewalMeasure t := by
-  have hcomp : (fun s : ℝ≥0 ↦ (s : ℝ) - t) = (fun x : ℝ ↦ x + -t) ∘ ((↑) : ℝ≥0 → ℝ) := by
-    funext s
-    simp [sub_eq_add_neg]
-  have hcoe : (μ ∗ μ.renewalMeasure).map ((↑) : ℝ≥0 → ℝ) =
-      μ.map ((↑) : ℝ≥0 → ℝ) ∗ μ.renewalMeasure.map ((↑) : ℝ≥0 → ℝ) :=
-    map_conv_addMonoidHom NNReal.toRealHom.toAddMonoidHom measurable_coe_nnreal_real
-  rw [translatedRenewalMeasure_def, hcomp, ← map_map (by fun_prop) measurable_coe_nnreal_real]
-  conv_lhs => rw [renewalMeasure_eq_dirac_add_conv]
-  rw [Measure.map_add _ _ measurable_coe_nnreal_real, Measure.map_add _ _ (by fun_prop),
-    map_dirac' measurable_coe_nnreal_real, map_dirac' (by fun_prop), hcoe, ← conv_dirac,
-    ← conv_dirac, conv_assoc]
-  simp
-
-section Harmonic
-
-variable {μ}
+variable {μ : Measure ℝ≥0}
 
 /-- A locally finite vague limit of translates of the renewal measure inherits the local renewal
 bound, up to enlarging the length of the interval by `2`. -/
@@ -136,8 +113,6 @@ theorem measure_Icc_le_of_tendsto_integral [IsProbabilityMeasure μ] (hμ : μ {
               refine (measure_mono (Icc_subset_Icc_right ?_)).trans
                 (μ.translatedRenewalMeasure_Icc_add_le (t i) (a - 1) (b - a + 2).toNNReal)
               linarith [Real.le_coe_toNNReal (b - a + 2)]
-
-end Harmonic
 
 variable [IsProbabilityMeasure μ]
 
