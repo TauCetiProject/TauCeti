@@ -169,8 +169,12 @@ private theorem IsWarpedProduct.curvatureOperator_horizontal_horizontal_vertical
     simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
       mvfderiv_comp_fst_apply, prodVectorField_fst, Function.comp_apply, hfirst,
       smul_smul, add_smul]
-  have hc := mvfderiv_div_commutator_eq_zero a (fun _ ↦ rfl) (hf p.1)
-    (hX.mdifferentiableAt (by simp)) (hY.mdifferentiableAt (by simp)) hp
+  have hc : a Y p.1 * a X p.1 + mvfderiv I (a Y) p.1 (X p.1) -
+      (a X p.1 * a Y p.1 + mvfderiv I (a X) p.1 (Y p.1)) - a (mlieBracket I X Y) p.1 = 0 := by
+    have := mvfderiv_div_mvfderiv_sub_eq_mlieBracket (hf p.1) (by simp)
+      (hX.mdifferentiableAt (by simp)) (hY.mdifferentiableAt (by simp)) hp
+    simp only [a]
+    linear_combination this
   have hfirst' (U : Π x : M, TangentSpace I x) :
       (fun q ↦ leviCivitaConnection (I.prod J) (M × N) (prodVectorField (I := I) 0 V) q
         (prodVectorField (J := J) U 0 q)) =

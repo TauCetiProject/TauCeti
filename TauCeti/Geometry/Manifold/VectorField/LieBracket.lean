@@ -32,8 +32,8 @@ prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
   vector fields `y ↦ A y` and `y ↦ B y` is `x ↦ B (A x) - A (B x)`.
 * `mvfderiv_mlieBracket`: a differential sends the manifold bracket to the commutator of
   directional derivatives.
-* `mvfderiv_div_commutator_eq_zero`: the second derivatives of a scalar function `f` cancel in
-  the commutator of the differentials `df(U) / f`.
+* `mvfderiv_div_mvfderiv_sub_eq_mlieBracket`: the differential `df / f` of the logarithm of a
+  nonvanishing function is closed, i.e. `X (df(Y) / f) - Y (df(X) / f) = df([X, Y]) / f`.
 * `TauCeti.eq_mlieBracket_of_mvfderiv_extChartAt`: tested against the extended chart at a point,
   this identity characterises the manifold bracket at that point.
 * `VectorField.lieBracketWithin_mpullbackWithin_extChartAt_symm`: at the chart centre, the flat
@@ -206,23 +206,24 @@ theorem mvfderiv_mlieBracket {f : M → F} {V W : ∀ x : M, TangentSpace I x} {
     TauCeti.fderivWithin_fderivWithin_chart_apply_mpullbackWithin hf hn hV]
 
 /-- The second derivatives of a scalar function `f` cancel in the commutator of the logarithmic
-differentials: with `a U = df(U) / f`, the identity
-`a Y · a X + X (a Y) - (a X · a Y + Y (a X)) - a [X, Y] = 0` holds at a point `p` where `f` is
-`C²` and nonzero and the vector fields `X`, `Y` are differentiable. -/
-theorem mvfderiv_div_commutator_eq_zero [IsRCLikeNormedField 𝕜] {f : M → 𝕜}
-    (a : (Π x : M, TangentSpace I x) → M → 𝕜)
-    (ha : ∀ U, a U = fun x ↦ mvfderiv I f x (U x) / f x)
-    {X Y : Π x : M, TangentSpace I x} {p : M} (hf : CMDiffAt 2 f p)
-    (hX : MDiffAt (T% X) p) (hY : MDiffAt (T% Y) p) (hp : f p ≠ 0) :
-    a Y p * a X p + mvfderiv I (a Y) p (X p) -
-      (a X p * a Y p + mvfderiv I (a X) p (Y p)) - a (mlieBracket I X Y) p = 0 := by
-  have hfd := hf.mdifferentiableAt (by simp)
-  have hdX := TauCeti.mdifferentiableAt_mvfderiv_apply hf (by simp) hX
-  have hdY := TauCeti.mdifferentiableAt_mvfderiv_apply hf (by simp) hY
-  -- The derivative of `a U` along `Z`, by the quotient rule.
+differentials `df(U) / f`: the logarithmic differential is closed, so
+`X (df(Y) / f) - Y (df(X) / f) = df([X, Y]) / f` at a point `p` where `f` is `C^n` with
+`minSmoothness 𝕜 2 ≤ n` and nonzero and the vector fields `X`, `Y` are differentiable. -/
+theorem mvfderiv_div_mvfderiv_sub_eq_mlieBracket {n : ℕ∞ω} {f : M → 𝕜}
+    {X Y : Π x : M, TangentSpace I x} {p : M} (hf : CMDiffAt n f p)
+    (hn : minSmoothness 𝕜 2 ≤ n) (hX : MDiffAt (T% X) p) (hY : MDiffAt (T% Y) p)
+    (hp : f p ≠ 0) :
+    mvfderiv I (fun x ↦ mvfderiv I f x (Y x) / f x) p (X p) -
+      mvfderiv I (fun x ↦ mvfderiv I f x (X x) / f x) p (Y p) =
+        mvfderiv I f p (mlieBracket I X Y p) / f p := by
+  have hfd := hf.mdifferentiableAt
+    (pos_iff_ne_zero.mp ((by norm_num : (0 : ℕ∞ω) < 2).trans_le (le_minSmoothness.trans hn)))
+  have hdX := TauCeti.mdifferentiableAt_mvfderiv_apply hf hn hX
+  have hdY := TauCeti.mdifferentiableAt_mvfderiv_apply hf hn hY
+  -- The derivative of `df(U) / f` along `Z`, by the quotient rule.
   have hda {U Z : Π x : M, TangentSpace I x}
       (hdU : MDiffAt (fun x ↦ mvfderiv I f x (U x)) p) :
-      mvfderiv I (a U) p (Z p) =
+      mvfderiv I (fun x ↦ mvfderiv I f x (U x) / f x) p (Z p) =
         (1 / f p) * mvfderiv I (fun x ↦ mvfderiv I f x (U x)) p (Z p) -
           (mvfderiv I f p (U p) / f p ^ 2) * mvfderiv I f p (Z p) := by
     have hinv : mvfderiv I (fun x ↦ (f x)⁻¹) p (Z p) =
@@ -232,13 +233,13 @@ theorem mvfderiv_div_commutator_eq_zero [IsRCLikeNormedField 𝕜] {f : M → �
       rw [(hasDerivAt_inv hp).hasFDerivAt.fderiv] at hd
       simpa only [Function.comp_def, ContinuousLinearMap.toSpanSingleton_apply,
         smul_eq_mul, mul_comm] using hd
-    simp only [ha, div_eq_mul_inv]
+    simp only [div_eq_mul_inv]
     rw [mvfderiv_fun_mul (g := fun x ↦ (f x)⁻¹) hdU (hfd.inv hp)]
     simp only [add_apply, smul_apply, smul_eq_mul, hinv]
     ring
-  have hcomm := mvfderiv_mlieBracket hf (by simp) hX hY
-  rw [hda hdY, hda hdX]
-  simp only [ha, hcomm]
+  have hcomm := mvfderiv_mlieBracket hf hn hX hY
+  rw [hda hdY, hda hdX, hcomm]
+  field_simp
   ring
 
 namespace TauCeti
