@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Holder
 public import TauCeti.Analysis.Complex.Pompeiu.Newtonian
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Complex
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Normed.Operator.Holder
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 

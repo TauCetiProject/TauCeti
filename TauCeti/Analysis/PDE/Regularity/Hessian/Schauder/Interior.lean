@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.CompactSupport
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Normed.Operator.Holder
@@ -329,60 +331,6 @@ private theorem interior_constant_le {κ lam Z B Q A K N X : ℝ} (hκ : 0 ≤ �
         have : 0 ≤ Q * A := mul_nonneg hQ hA
         nlinarith
 
-/-- Translating a cutoff keeps the global Hölder constant and the uniform bound of the cutoff and
-of its first and second partial derivatives. -/
-private theorem holderWith_translate_cutoff {α Z : ℝ≥0} {ζ₀ : E → ℝ} (x₀ : E)
-    (hZ0 : HolderWith Z α ζ₀ ∧ ∀ x, |ζ₀ x| ≤ Z)
-    (hZ1 : ∀ i, HolderWith Z α (fun x => fderiv ℝ ζ₀ x (EuclideanSpace.single i 1)) ∧
-      ∀ x, |fderiv ℝ ζ₀ x (EuclideanSpace.single i 1)| ≤ Z)
-    (hZ2 : ∀ i j, HolderWith Z α (fun x =>
-        fderiv ℝ (fderiv ℝ ζ₀) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) ∧
-      ∀ x, |fderiv ℝ (fderiv ℝ ζ₀) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ Z) :
-    (HolderWith Z α (fun x => ζ₀ (x - x₀)) ∧ ∀ x, |ζ₀ (x - x₀)| ≤ Z) ∧
-    (∀ i, HolderWith Z α
-        (fun x => fderiv ℝ (fun x => ζ₀ (x - x₀)) x (EuclideanSpace.single i 1)) ∧
-      ∀ x, |fderiv ℝ (fun x => ζ₀ (x - x₀)) x (EuclideanSpace.single i 1)| ≤ Z) ∧
-    ∀ i j, HolderWith Z α (fun x => fderiv ℝ (fderiv ℝ fun x => ζ₀ (x - x₀)) x
-        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) ∧
-      ∀ x, |fderiv ℝ (fderiv ℝ fun x => ζ₀ (x - x₀)) x (EuclideanSpace.single i 1)
-        (EuclideanSpace.single j 1)| ≤ Z := by
-  have hD1 : fderiv ℝ (fun x => ζ₀ (x - x₀)) = fun x => fderiv ℝ ζ₀ (x - x₀) :=
-    funext fun _ => fderiv_comp_sub x₀
-  have hD2 : fderiv ℝ (fderiv ℝ fun x => ζ₀ (x - x₀)) =
-      fun x => fderiv ℝ (fderiv ℝ ζ₀) (x - x₀) := by
-    rw [hD1]
-    exact funext fun _ => fderiv_comp_sub x₀
-  have htr {g : E → ℝ} (h : HolderWith Z α g ∧ ∀ x, |g x| ≤ Z) :
-      HolderWith Z α (fun x => g (x - x₀)) ∧ ∀ x, |g (x - x₀)| ≤ Z :=
-    ⟨fun x y => by simpa only [edist_sub_right] using h.1 (x - x₀) (y - x₀), fun x => h.2 _⟩
-  refine ⟨htr hZ0, fun i => ?_, fun i j => ?_⟩
-  · rw [hD1]
-    exact htr (hZ1 i)
-  · rw [hD2]
-    exact htr (hZ2 i j)
-
-/-- The `L²` norm of the second derivative of a `C²` function supported in a closed ball is bounded
-by the volume of the ball and the bound on its second partial derivatives. -/
-private theorem toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall {w : E → ℝ}
-    (hw : ContDiff ℝ 2 w) {x₀ : E} {R B : ℝ}
-    (hsupp : Function.support (iteratedFDeriv ℝ 2 w) ⊆ closedBall x₀ R)
-    (hB : ∀ x i j,
-      |fderiv ℝ (fderiv ℝ w) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ B) :
-    (eLpNorm (iteratedFDeriv ℝ 2 w) 2 volume).toReal ≤
-      (volume (closedBall (0 : E) R)).toReal ^ (2⁻¹ : ℝ) * (((n : ℝ) + 1) ^ 2 * B) := by
-  have hB₀ : 0 ≤ B := (abs_nonneg _).trans (hB 0 0 0)
-  have hnorm (x : E) : ‖iteratedFDeriv ℝ 2 w x‖ ≤ ((n : ℝ) + 1) ^ 2 * B := by
-    refine ((iteratedFDeriv ℝ 2 w x).opNorm_le_card_sq_mul_of_norm_apply_le
-      (EuclideanSpace.basisFun _ ℝ) (B := B) fun i j => ?_).trans_eq (by simp)
-    simpa [iteratedFDeriv_two_apply] using hB x i j
-  refine (ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity)
-    measure_closedBall_lt_top.ne) ENNReal.ofReal_ne_top) (eLpNorm_le_of_ae_bound_of_support_subset
-    (hw.continuous_iteratedFDeriv le_rfl).aestronglyMeasurable hsupp (ae_of_all _ hnorm))).trans
-    (le_of_eq ?_)
-  rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (by positivity),
-    Measure.addHaar_closedBall_center]
-  simp only [ENNReal.toReal_ofNat]
-
 /-- The cutoff product `ζ u` of a cutoff `ζ` supported in the ball `B_R` and a `C²` function `u`
 on `B_R` with bounds `N` on `u` and its first two derivatives and a Hölder Hessian is a `C²`
 function with Hölder Hessian supported in `closedBall x₀ R`. The operator `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼ` applied
@@ -440,22 +388,8 @@ private theorem cutoff_mul_data {ζ u : E → ℝ} {x₀ : E} {R : ℝ} {α Z N 
       hHu hHdu (fun i j => (hL i j).mono hsR) (fun x hx => hM x (hsR hx)) hK).mono
       (le_of_eq (by ring)), hsupp, ?_⟩
   exact (toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall hw hsupp
-    (B := 4 * Z * N) fun x i j => by simpa using (hWH i j).2 x).trans_eq (by ring)
-
-/-- The translate `x ↦ ζ₀ (x - x₀)` of a smooth cutoff, equal to one near `closedBall 0 ρ` and
-supported in `ball 0 R`, is `C²` on `ball x₀ R`, equal to one near `closedBall x₀ ρ`, and supported
-in `ball x₀ R`. -/
-private theorem translate_cutoff_facts {ζ₀ : E → ℝ} {x₀ : E} {R ρ : ℝ} (hζ₀ : ContDiff ℝ ∞ ζ₀)
-    (hζ₀1 : closedBall (0 : E) ρ ⊆ interior (ζ₀ ⁻¹' {1})) (hζ₀s : tsupport ζ₀ ⊆ ball 0 R) :
-    ContDiffOn ℝ 2 (fun x => ζ₀ (x - x₀)) (ball x₀ R) ∧
-      closedBall x₀ ρ ⊆ interior ((fun x => ζ₀ (x - x₀)) ⁻¹' {1}) ∧
-      tsupport (fun x => ζ₀ (x - x₀)) ⊆ ball x₀ R := by
-  refine ⟨((hζ₀.comp (contDiff_id.sub contDiff_const)).of_le (by norm_cast)).contDiffOn,
-    fun x hx => ?_, fun x hx => ?_⟩
-  · exact preimage_interior_subset_interior_preimage (continuous_id.sub continuous_const)
-      (hζ₀1 (by simpa [dist_eq_norm] using hx))
-  · simpa [dist_eq_norm] using hζ₀s (tsupport_comp_subset_preimage ζ₀
-      (continuous_id.sub continuous_const) hx)
+    (B := 4 * Z * N) fun x i j => by simpa using (hWH i j).2 x).trans_eq
+    (by simp only [Fintype.card_fin]; push_cast; ring)
 
 /-- **The interior Schauder estimate on small balls.** Let `0 < α < 1`. There is `C₀ > 0`,
 depending only on dimension and `α`, with the following property. Let `0 < λ`, `Λ`, `L`, `M` and
@@ -515,7 +449,8 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
   obtain ⟨hζ2, hζ1, hζs⟩ := translate_cutoff_facts (x₀ := x₀) (R := R) hζ₀ hζ₀1 hζ₀s
   -- Translation keeps the global Hölder constants and the uniform bounds of `ζ₀` and its
   -- derivatives.
-  obtain ⟨hZ0, hZ1, hZ2⟩ := holderWith_translate_cutoff x₀ hZ0 hZ1 hZ2
+  obtain ⟨hZ0, hZ1, hZ2⟩ :=
+    holderWith_translate_cutoff (fun i => EuclideanSpace.single i 1) x₀ hZ0 hZ1 hZ2
   -- Bounds and Hölder constants of `u` and its derivatives on `B_R`.
   -- The cutoff product `w = ζ u`.
   set w : E → ℝ := ζ * u

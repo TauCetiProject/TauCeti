@@ -11,6 +11,8 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.Monotonicity
 import TauCeti.Topology.MetricSpace.Thickening
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
+import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 
 /-!
 # Iterated derivative seminorms under linear changes of variables
@@ -135,3 +137,40 @@ theorem toReal_eLpNorm_iteratedFDeriv_two_comp_le [μ.IsAddHaarMeasure]
 end Thickening
 
 end MeasureTheory.Measure
+
+namespace TauCeti
+
+section EuclideanHessian
+
+open MeasureTheory Metric
+
+/-- The `L²` norm of the second derivative of a `C²` function on a Euclidean space supported in a
+closed ball is bounded by the volume of the ball and the bound on its second partial derivatives. -/
+theorem toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall
+    {ι : Type*} [Fintype ι] [Nonempty ι] [DecidableEq ι]
+    {w : EuclideanSpace ℝ ι → ℝ} (hw : ContDiff ℝ 2 w)
+    {x₀ : EuclideanSpace ℝ ι} {R B : ℝ}
+    (hsupp : Function.support (iteratedFDeriv ℝ 2 w) ⊆ closedBall x₀ R)
+    (hB : ∀ x i j,
+      |fderiv ℝ (fderiv ℝ w) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ B) :
+    (eLpNorm (iteratedFDeriv ℝ 2 w) 2 volume).toReal ≤
+      (volume (closedBall (0 : EuclideanSpace ℝ ι) R)).toReal ^ (2⁻¹ : ℝ) *
+        ((Fintype.card ι : ℝ) ^ 2 * B) := by
+  have hB₀ : 0 ≤ B :=
+    (abs_nonneg _).trans (hB 0 (Classical.arbitrary ι) (Classical.arbitrary ι))
+  have hnorm (x : EuclideanSpace ℝ ι) :
+      ‖iteratedFDeriv ℝ 2 w x‖ ≤ (Fintype.card ι : ℝ) ^ 2 * B := by
+    refine (iteratedFDeriv ℝ 2 w x).opNorm_le_card_sq_mul_of_norm_apply_le
+      (EuclideanSpace.basisFun _ ℝ) (B := B) fun i j => ?_
+    simpa [iteratedFDeriv_two_apply] using hB x i j
+  refine (ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity)
+    measure_closedBall_lt_top.ne) ENNReal.ofReal_ne_top) (eLpNorm_le_of_ae_bound_of_support_subset
+    (hw.continuous_iteratedFDeriv le_rfl).aestronglyMeasurable hsupp (ae_of_all _ hnorm))).trans
+    (le_of_eq ?_)
+  rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (by positivity),
+    Measure.addHaar_closedBall_center]
+  simp only [ENNReal.toReal_ofNat]
+
+end EuclideanHessian
+
+end TauCeti

@@ -22,7 +22,7 @@ the two forms of the second derivative.
 
 public section
 
-open scoped NNReal
+open scoped NNReal Topology
 
 namespace TauCeti
 
@@ -104,5 +104,16 @@ theorem norm_iteratedFDeriv_iteratedFDeriv (f : E → F) (i m : ℕ) (x : E) :
       (fderiv 𝕜 (iteratedFDeriv 𝕜 m f)) x i
     rw [← h] at he
     rw [he, norm_iteratedFDeriv_fderiv, ih, Nat.add_right_comm, Nat.add_assoc]
+
+/-- Where a function `ζ` equals one on a neighbourhood of `x`, every iterated derivative of `ζ * u`
+at `x` is that of `u`. -/
+theorem _root_.Filter.EventuallyEq.iteratedFDeriv_mul_eq {𝕜 F A : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedRing A] [NormedSpace 𝕜 A] {k : ℕ}
+    {ζ u : F → A} {x : F} (hζ : ζ =ᶠ[𝓝 x] 1) :
+    iteratedFDeriv 𝕜 k (ζ * u) x = iteratedFDeriv 𝕜 k u x := by
+  have hev : ζ * u =ᶠ[𝓝 x] u := by
+    filter_upwards [hζ] with y hy
+    simp only [Pi.mul_apply, hy, Pi.one_apply, one_mul]
+  exact (hev.iteratedFDeriv 𝕜 k).eq_of_nhds
 
 end TauCeti
