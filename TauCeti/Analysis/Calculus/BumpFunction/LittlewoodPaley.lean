@@ -27,7 +27,8 @@ only finitely many nonzero terms. In finite dimension, the `k`-th derivative of 
 Keeping `φ` itself as a low-frequency piece and discarding the cutoffs with `j ≤ 0` gives the
 **inhomogeneous** partition `ψ₀ = φ, ψ₁, ψ₂, …`, which sums to `1` on all of `E`. Its partial sums
 are `∑_{j ≤ N} ψⱼ = φ (2^{-N} ·)`, each `ψ_{j+1}` is the rescaling `ψ₁ (2^{-j} ·)`, and pieces whose
-indices differ by at least a fixed `L` have disjoint supports. This is the partition used to
+indices differ by at least a fixed `L` have disjoint supports; this finite overlap holds as well
+between the partitions built from two different bump functions. This is the partition used to
 decompose a tempered distribution into frequency blocks for Besov and Bessel-potential spaces.
 
 ## Main declarations
@@ -38,7 +39,8 @@ decompose a tempered distribution into frequency blocks for Besov and Bessel-pot
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaley_le`: `‖D^k ψⱼ‖ ≤ B 2^{-jk}`.
 * `ContDiffBump.inhomogeneousLittlewoodPaley`: the inhomogeneous partition `ψ₀ = φ, ψ₁, ψ₂, …`.
 * `ContDiffBump.hasSum_inhomogeneousLittlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for every `ξ`.
-* `ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`: finite overlap of the pieces.
+* `ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`: finite overlap of the pieces of
+  two inhomogeneous partitions.
 * `ContDiffBump.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_le`: the uniform rescaled
   derivative bounds for the inhomogeneous partition.
 
@@ -292,24 +294,26 @@ theorem hasSum_inhomogeneousLittlewoodPaley (ξ : E) :
     div_le_iff₀ (pow_pos two_pos _), mul_comm]
   exact hN'
 
-/-- **Finite overlap.** There is `L` such that the pieces `ψⱼ` and `ψₖ` have disjoint supports
-whenever `j + L ≤ k`. -/
-theorem exists_inhomogeneousLittlewoodPaley_mul_eq_zero :
+/-- **Finite overlap.** For bump functions `φ` and `φ'`, there is `L` such that the piece `ψⱼ` of
+the partition built from `φ` and the piece `ψ'ₖ` of the partition built from `φ'` have disjoint
+supports whenever `j + L ≤ k`. Taking `φ' = φ` gives the finite overlap of a single
+partition. -/
+theorem exists_inhomogeneousLittlewoodPaley_mul_eq_zero (φ' : ContDiffBump (0 : E)) :
     ∃ L : ℕ, ∀ j k : ℕ, j + L ≤ k → ∀ ξ : E,
-      φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0 := by
-  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (φ.rOut / φ.rIn) (one_lt_two (α := ℝ))
-  have hn' : φ.rOut ≤ 2 ^ n * φ.rIn := ((div_lt_iff₀ φ.rIn_pos).1 hn).le
+      φ.inhomogeneousLittlewoodPaley j ξ * φ'.inhomogeneousLittlewoodPaley k ξ = 0 := by
+  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (φ.rOut / φ'.rIn) (one_lt_two (α := ℝ))
+  have hn' : φ.rOut ≤ 2 ^ n * φ'.rIn := ((div_lt_iff₀ φ'.rIn_pos).1 hn).le
   refine ⟨n + 1, fun j k hjk ξ ↦ ?_⟩
   obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := Nat.exists_eq_add_one.2 (by omega)
-  rcases le_or_gt ‖ξ‖ (2 ^ k * φ.rIn) with hξ | hξ
-  · rw [φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le hξ, mul_zero]
+  rcases le_or_gt ‖ξ‖ (2 ^ k * φ'.rIn) with hξ | hξ
+  · rw [φ'.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le hξ, mul_zero]
   · refine mul_eq_zero_of_left (φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm ?_) _
     refine le_trans ?_ hξ.le
-    calc (2 : ℝ) ^ j * φ.rOut ≤ 2 ^ j * (2 ^ n * φ.rIn) :=
+    calc (2 : ℝ) ^ j * φ.rOut ≤ 2 ^ j * (2 ^ n * φ'.rIn) :=
           mul_le_mul_of_nonneg_left hn' (pow_nonneg zero_le_two _)
-      _ = 2 ^ (j + n) * φ.rIn := by rw [pow_add, mul_assoc]
-      _ ≤ 2 ^ k * φ.rIn :=
-          mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two (by omega)) φ.rIn_pos.le
+      _ = 2 ^ (j + n) * φ'.rIn := by rw [pow_add, mul_assoc]
+      _ ≤ 2 ^ k * φ'.rIn :=
+          mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two (by omega)) φ'.rIn_pos.le
 
 end HasContDiffBump
 
