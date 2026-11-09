@@ -29,11 +29,19 @@ open MeasureTheory Metric Module Real Set
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V] [Nontrivial V]
 
-/-- The real volume of the unit ball of a nontrivial real inner product space of dimension `d` is
+omit [Nontrivial V] in
+/-- The real volume of the unit ball of a real inner product space of dimension `d` is
 `π ^ (d / 2) / Γ(d / 2 + 1)`. -/
 theorem volume_real_unitBall :
     volume.real (ball (0 : V) 1) =
       π ^ ((finrank ℝ V : ℝ) / 2) / Gamma (finrank ℝ V / 2 + 1) := by
+  rcases subsingleton_or_nontrivial V with hV | hV
+  · -- In the zero space the unit ball is the whole space, the unit parallelepiped.
+    have hpar := (stdOrthonormalBasis ℝ V).volume_parallelepiped
+    rw [Subsingleton.eq_univ_of_nonempty ⟨0, (mem_parallelepiped_iff _ _).2 ⟨0, by simp, by simp⟩⟩,
+      ← Subsingleton.eq_univ_of_nonempty (nonempty_ball.2 one_pos : (ball (0 : V) 1).Nonempty)]
+      at hpar
+    simp [measureReal_def, hpar, finrank_zero_of_subsingleton]
   rw [measureReal_def, InnerProductSpace.volume_ball, ENNReal.ofReal_one, one_pow, one_mul,
     ENNReal.toReal_ofReal (by positivity), Real.pow_sqrt_eq_rpow pi_pos.le]
 
