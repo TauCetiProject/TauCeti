@@ -72,8 +72,11 @@ nonsingular reduction
 point of `W₁(L)`, of odd order, and `φ P ≠ 0` also has nonsingular reduction, then applying `φ` to
 `τ P = (a₁ q) • P` and comparing with `τ (φ P) = (a₂ q) • φ P` shows that `(a₁ - a₂) q` kills
 `φ P`. Since `a₁ - a₂` is `0` or `±2` and `q` is a power of `p`, this forces `a₁ = a₂`: the two
-multiplicative reductions are both split or both nonsplit. This file does not produce such a point
-`P`.
+multiplicative reductions are both split or both nonsplit. The hypothesis that `W₂` has
+multiplicative reduction is not needed: `W₂` does not have good reduction since `W₁` does not, and
+it does not have additive reduction, since then `E₀(L)` would have no nonzero torsion of order prime
+to `p` (`WeierstrassCurve.Affine.Point.eq_zero_of_hasAdditiveReduction`), while `φ P` is such a
+point. This file does not produce such a point `P`.
 
 ## Main results
 
@@ -94,10 +97,13 @@ multiplicative reductions are both split or both nonsplit. This file does not pr
   have the same local polynomial.
 * `TauCeti.Isogeny.localPolynomial_eq_of_hasPotentialGoodReduction`: at potential good reduction,
   isogenous curves have the same local polynomial.
-* `TauCeti.Isogeny.frobeniusTrace_reduction_eq_of_hasMultiplicativeReduction`: isogenous minimal
-  equations with multiplicative reduction have reductions with the same Frobenius trace, given a
-  point of odd order prime to `p` over a finite extension such that it and its nonzero image both
-  have nonsingular reduction.
+* `TauCeti.Isogeny.hasMultiplicativeReduction_of_nsmul_eq_zero`: a minimal equation isogenous to
+  one with multiplicative reduction has multiplicative reduction, given a nonzero point of order
+  prime to `p` with nonsingular reduction over an extension.
+* `TauCeti.Isogeny.frobeniusTrace_reduction_eq_of_hasMultiplicativeReduction`: if `W₁` has
+  multiplicative reduction, isogenous minimal equations have reductions with the same Frobenius
+  trace, given a point of odd order prime to `p` over a finite extension such that it and its
+  nonzero image both have nonsingular reduction.
 
 ## References
 
@@ -304,16 +310,35 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [DecidableEq L] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
   [IsMinimal 𝒪[K] W₁] [IsMinimal 𝒪[K] W₂]
 
+omit [Module.Finite K L] in
+/-- **A curve isogenous to one with multiplicative reduction has multiplicative reduction, given a
+point of order prime to `p` with nonsingular reduction.** Let `W₁` and `W₂` be elliptic curves
+over a nonarchimedean local field `K`, given by minimal equations, let `W₁` have multiplicative
+reduction, and let `φ : W₁ → W₂` be an isogeny. If, over an extension `L/K` of local fields, some
+nonzero point of `W₂(L)` with nonsingular reduction is killed by an integer `n` nonzero in the
+residue field of `K`, then `W₂` has multiplicative reduction. -/
+theorem hasMultiplicativeReduction_of_nsmul_eq_zero (h₁ : W₁.HasMultiplicativeReduction 𝒪[K])
+    (φ : Isogeny W₁.toAffine W₂.toAffine) {n : ℕ} (hn : (n : 𝓀[K]) ≠ 0)
+    {Q : (W₂⁄L).toAffine.Point} (hQ : n • Q = 0)
+    (hQ₀ : Q ∈ (W₂⁄L).toAffine.nonsingularReduction (valuation L)) (hQ0 : Q ≠ 0) :
+    W₂.HasMultiplicativeReduction 𝒪[K] := by
+  rcases hasGoodReduction_or_hasMultiplicativeReduction_or_hasAdditiveReduction 𝒪[K] (W := W₂)
+    with h₂ | h₂ | h₂
+  · exact absurd (φ.hasGoodReduction_iff.2 h₂) h₁.not_hasGoodReduction
+  · exact h₂
+  · exact absurd (Affine.Point.eq_zero_of_hasAdditiveReduction h₂ hn hQ₀ hQ) hQ0
+
 /-- **Isogenous curves with multiplicative reduction have reductions with the same Frobenius
 trace, given a point with nonsingular reduction on both.** Let `W₁` and `W₂` be elliptic curves
 over a nonarchimedean local field `K` whose residue field has `q` elements, given by minimal
-equations with multiplicative reduction, and let `φ : W₁ → W₂` be an isogeny. Let `L/K` be a finite
-extension with an automorphism `τ` acting on the residue field of `L` as `x ↦ x ^ q`, and let `P`
-be a point of `W₁(L)` killed by an odd integer `n` nonzero in the residue field of `K`. If `P` and
-`φ P ≠ 0` both have nonsingular reduction, then the reductions of `W₁` and `W₂` have the same
-Frobenius trace, so the two reductions are both split or both nonsplit. -/
+equations, let `W₁` have multiplicative reduction, and let `φ : W₁ → W₂` be an isogeny. Let `L/K` be
+a finite extension with an automorphism `τ` acting on the residue field of `L` as `x ↦ x ^ q`, and
+let `P` be a point of `W₁(L)` killed by an odd integer `n` nonzero in the residue field of `K`. If
+`P` and `φ P ≠ 0` both have nonsingular reduction, then `W₂` has multiplicative reduction too
+(`TauCeti.Isogeny.hasMultiplicativeReduction_of_nsmul_eq_zero`), and the reductions of `W₁` and
+`W₂` have the same Frobenius trace, so the two reductions are both split or both nonsplit. -/
 theorem frobeniusTrace_reduction_eq_of_hasMultiplicativeReduction
-    (h₁ : W₁.HasMultiplicativeReduction 𝒪[K]) (h₂ : W₂.HasMultiplicativeReduction 𝒪[K])
+    (h₁ : W₁.HasMultiplicativeReduction 𝒪[K])
     (φ : Isogeny W₁.toAffine W₂.toAffine) {τ : Gal(L/K)}
     (hτ : ∀ x : 𝓀[L], τ • x = x ^ Nat.card 𝓀[K]) {n : ℕ} (hn : (n : 𝓀[K]) ≠ 0) (hodd : Odd n)
     {P : (W₁⁄L).toAffine.Point} (hP : n • P = 0)
@@ -329,6 +354,7 @@ theorem frobeniusTrace_reduction_eq_of_hasMultiplicativeReduction
   set q := Nat.card 𝓀[K]
   have hQ : n • Q = 0 :=
     (f.pointMap_nsmul n P).symm.trans ((congrArg f.pointMap hP).trans f.pointMap_zero)
+  have h₂ := φ.hasMultiplicativeReduction_of_nsmul_eq_zero h₁ hn hQ hφP₀ hφP
   -- `τ` acts as `a₁ q` at `P` and as `a₂ q` at `Q`, and commutes with `φ`, so `(a₁ - a₂) q`
   -- kills `Q`
   have hQ₀ : ((a₁ - a₂) * q) • Q = 0 := by
