@@ -155,7 +155,7 @@ theorem integrable_exp_mul_id_logLogisticMeasure_iff (ha : 0 < a) (hb : 0 < b) (
     TauCeti.integrable_exp_mul_of_ge t 0 ht measurable_id.aemeasurable hnonneg⟩
   have hmom : ¬ Integrable (fun x : ℝ => id x ^ b) (logLogisticMeasure a b) := by
     simp [integrable_rpow_logLogisticMeasure_iff ha hb, abs_of_pos hb]
-  exact TauCeti.not_integrable_exp_mul_of_not_integrable_rpow b measurable_id.aemeasurable
+  exact TauCeti.not_integrable_exp_mul_of_not_integrable_rpow b
     hnonneg hb.le hmom ht h
 
 /-- The exact exponential-integrability domain of a log-logistic law is the nonpositive

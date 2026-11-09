@@ -46,6 +46,8 @@ to the restriction of `dα` to `D`.
   when the Lie bracket of their extensions is tangent to `D`.
 * `TauCeti.distributionLeviForm_swap` and `TauCeti.distributionLeviForm_self`: the Levi form is
   antisymmetric and alternating.
+* `TauCeti.distributionLeviForm_eq_zero_iff`: vanishing at a point can be tested on local
+  regular tangent fields.
 * `TauCeti.isInvolutiveDistribution_iff_distributionLeviForm_eq_zero`: a `C¹` distribution is
   involutive exactly when its Levi form vanishes at every point.
 * `TauCeti.distributionLeviForm_standardContactDistribution_ne_zero`: the Levi form of the standard
@@ -268,6 +270,38 @@ theorem distributionLeviForm_apply_eq_zero_iff (hD : IsContMDiffDistribution I n
   obtain ⟨U, hU, hxU, X, hX⟩ := isContMDiffDistribution_iff.mp hD x
   exact hX.distributionLeviForm_apply_eq_zero_iff hn (hU.mem_nhds hxU) hV hW hVD hWD
 
+/-- The Levi form vanishes at a point exactly when brackets of `C^n` local tangent fields
+belong to the distribution there, for a `C^n` distribution with `1 ≤ n`. The fields are only
+required to be regular and tangent on an open neighbourhood of the point. -/
+theorem distributionLeviForm_eq_zero_iff (hD : IsContMDiffDistribution I n k D) (hn : 1 ≤ n) :
+    distributionLeviForm D x = 0 ↔
+      ∀ ⦃U : Set M⦄, IsOpen U → x ∈ U → ∀ ⦃V W : Π y : M, TangentSpace I y⦄,
+        CMDiff[U] n (T% V) → CMDiff[U] n (T% W) → (∀ y ∈ U, V y ∈ D y) →
+          (∀ y ∈ U, W y ∈ D y) → mlieBracket I V W x ∈ D x := by
+  have hn0 : n ≠ 0 := (zero_lt_one.trans_le hn).ne'
+  constructor
+  · intro hzero U hU hxU V W hV hW hVD hWD
+    apply (distributionLeviForm_apply_eq_zero_iff hD hn
+      ((hV.contMDiffAt (hU.mem_nhds hxU)).mdifferentiableAt hn0)
+      ((hW.contMDiffAt (hU.mem_nhds hxU)).mdifferentiableAt hn0)
+      (eventually_of_mem (hU.mem_nhds hxU) hVD)
+      (eventually_of_mem (hU.mem_nhds hxU) hWD)).mp
+    rw [hzero, LinearMap.zero_apply, LinearMap.zero_apply]
+  · intro h
+    ext u v
+    obtain ⟨U, hU, hxU, V, hV, hVD, hVx⟩ := hD.exists_contMDiffOn_apply_eq u
+    obtain ⟨U', hU', hxU', W, hW, hWD, hWx⟩ := hD.exists_contMDiffOn_apply_eq v
+    have hmem := h (hU.inter hU') ⟨hxU, hxU'⟩ (hV.mono inter_subset_left)
+      (hW.mono inter_subset_right) (fun y hy ↦ hVD y hy.1) (fun y hy ↦ hWD y hy.2)
+    rw [show u = ⟨V x, hVD x hxU⟩ from Subtype.ext hVx.symm,
+      show v = ⟨W x, hWD x hxU'⟩ from Subtype.ext hWx.symm,
+      LinearMap.zero_apply, LinearMap.zero_apply]
+    exact (distributionLeviForm_apply_eq_zero_iff hD hn
+      ((hV.contMDiffAt (hU.mem_nhds hxU)).mdifferentiableAt hn0)
+      ((hW.contMDiffAt (hU'.mem_nhds hxU')).mdifferentiableAt hn0)
+      (eventually_of_mem (hU.mem_nhds hxU) hVD)
+      (eventually_of_mem (hU'.mem_nhds hxU') hWD)).mpr hmem
+
 /-- **A `C¹` distribution is involutive exactly when its Levi form vanishes.** -/
 theorem isInvolutiveDistribution_iff_distributionLeviForm_eq_zero
     (hD : IsContMDiffDistribution I n k D) (hn : 1 ≤ n) :
@@ -275,22 +309,10 @@ theorem isInvolutiveDistribution_iff_distributionLeviForm_eq_zero
   have hn0 : n ≠ 0 := (zero_lt_one.trans_le hn).ne'
   refine ⟨fun hinv x ↦ ?_, fun h ↦ isInvolutiveDistribution_iff.mpr
     fun U hU V W hV hW hVD hWD x hx ↦ ?_⟩
-  · ext u v
-    obtain ⟨U, hU, hxU, V, hV, hVD, hVx⟩ := hD.exists_contMDiffOn_apply_eq u
-    obtain ⟨U', hU', hxU', W, hW, hWD, hWx⟩ := hD.exists_contMDiffOn_apply_eq v
-    have hUU' := (hU.inter hU').mem_nhds ⟨hxU, hxU'⟩
-    have hmem := hinv.mlieBracket_mem (hU.inter hU')
-      ((hV.mono inter_subset_left).mdifferentiableOn hn0)
-      ((hW.mono inter_subset_right).mdifferentiableOn hn0) (fun y hy ↦ hVD y hy.1)
-      (fun y hy ↦ hWD y hy.2) ⟨hxU, hxU'⟩
-    rw [show u = ⟨V x, hVD x hxU⟩ from Subtype.ext hVx.symm,
-      show v = ⟨W x, hWD x hxU'⟩ from Subtype.ext hWx.symm, LinearMap.zero_apply,
-      LinearMap.zero_apply]
-    exact (distributionLeviForm_apply_eq_zero_iff hD hn
-      (((hV.mono inter_subset_left).contMDiffAt hUU').mdifferentiableAt hn0)
-      (((hW.mono inter_subset_right).contMDiffAt hUU').mdifferentiableAt hn0)
-      (eventually_of_mem (hU.mem_nhds hxU) hVD)
-      (eventually_of_mem (hU'.mem_nhds hxU') hWD)).mpr hmem
+  · apply (distributionLeviForm_eq_zero_iff hD hn).mpr
+    intro U hU hxU V W hV hW hVD hWD
+    exact hinv.mlieBracket_mem hU (hV.mdifferentiableOn hn0) (hW.mdifferentiableOn hn0)
+      hVD hWD hxU
   · have hUx := hU.mem_nhds hx
     refine (distributionLeviForm_apply_eq_zero_iff hD hn (hV.mdifferentiableAt hUx)
       (hW.mdifferentiableAt hUx) (eventually_of_mem hUx hVD) (eventually_of_mem hUx hWD)).mp ?_
