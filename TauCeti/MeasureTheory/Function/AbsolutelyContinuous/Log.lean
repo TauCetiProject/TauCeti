@@ -44,10 +44,12 @@ complex curves, which stays in the slit plane, has the difference of the two log
 derivatives as derivative. -/
 theorem ae_hasDerivAt_log_div {f g : ℝ → ℂ} {a b : ℝ}
     (hf : AbsolutelyContinuousOnInterval f a b) (hg : AbsolutelyContinuousOnInterval g a b)
-    (hg0 : ∀ t ∈ uIcc a b, g t ≠ 0) (h : ∀ t ∈ uIcc a b, f t / g t ∈ slitPlane) :
+    (h : ∀ t ∈ uIcc a b, f t / g t ∈ slitPlane) :
     ∀ᵐ t, t ∈ uIoc a b →
       HasDerivAt (Complex.log ∘ fun t ↦ f t / g t) (deriv f t / f t - deriv g t / g t) t := by
   have hf0 : ∀ t ∈ uIcc a b, f t ≠ 0 := fun t ht h0 ↦ by
+    simpa [h0] using h t ht
+  have hg0 : ∀ t ∈ uIcc a b, g t ≠ 0 := fun t ht h0 ↦ by
     simpa [h0] using h t ht
   filter_upwards [(hf.fun_div hg hg0).ae_hasDerivAt_clog h,
     hf.boundedVariationOn.ae_differentiableAt_of_mem_uIcc,

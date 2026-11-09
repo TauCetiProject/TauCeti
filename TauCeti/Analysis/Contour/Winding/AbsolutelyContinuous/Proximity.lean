@@ -71,7 +71,7 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist_o
   have hlogderiv : ∀ᵐ t, t ∈ uIoc a b →
       HasDerivAt (Complex.log ∘ fun t ↦ (γ₁ t - z) / (γ₀ t - z))
         ((γ₁ t - z)⁻¹ * deriv γ₁ t - (γ₀ t - z)⁻¹ * deriv γ₀ t) t := by
-    filter_upwards [hα₁.ae_hasDerivAt_log_div hα₀ h₀ne hσslit] with t ht ht'
+    filter_upwards [hα₁.ae_hasDerivAt_log_div hα₀ hσslit] with t ht ht'
     simpa [div_eq_inv_mul] using ht ht'
   -- FTC evaluates the logarithmic derivative at the equal endpoint ratios.
   have hint := hlog.integral_eq_sub_of_ae_hasDerivAt hlogderiv

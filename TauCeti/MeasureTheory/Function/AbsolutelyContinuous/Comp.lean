@@ -75,13 +75,14 @@ protected theorem clog {σ : ℝ → ℂ} {a b : ℝ} (hσ : AbsolutelyContinuou
   hσ.comp_of_contDiffAt fun _ ⟨t, ht, hσt⟩ ↦
     (Complex.contDiffAt_log (hσt ▸ h t ht)).restrict_scalars ℝ
 
-/-- The quotient of two absolutely continuous complex curves is absolutely continuous when the
-denominator does not vanish on the interval. -/
-protected theorem fun_div {f g : ℝ → ℂ} {a b : ℝ} (hf : AbsolutelyContinuousOnInterval f a b)
+/-- The quotient of two absolutely continuous curves valued in a normed field is absolutely
+continuous when the denominator does not vanish on the interval. -/
+protected theorem fun_div {K : Type*} [NormedField K] [NormedAlgebra ℝ K] {f g : ℝ → K}
+    {a b : ℝ} (hf : AbsolutelyContinuousOnInterval f a b)
     (hg : AbsolutelyContinuousOnInterval g a b) (h0 : ∀ t ∈ uIcc a b, g t ≠ 0) :
     AbsolutelyContinuousOnInterval (fun t ↦ f t / g t) a b := by
   have hinv : AbsolutelyContinuousOnInterval (fun t ↦ (g t)⁻¹) a b :=
-    hg.comp_of_contDiffAt (φ := fun x : ℂ ↦ x⁻¹) fun _ ⟨t, ht, hgt⟩ ↦
+    hg.comp_of_contDiffAt (φ := fun x : K ↦ x⁻¹) fun _ ⟨t, ht, hgt⟩ ↦
       hgt ▸ contDiffAt_inv ℝ (h0 t ht)
   simpa only [div_eq_mul_inv, smul_eq_mul] using hf.fun_smul hinv
 
