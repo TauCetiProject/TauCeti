@@ -133,21 +133,21 @@ variable {A B C : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   [CommRing C] [UniformSpace C] [IsUniformAddGroup C] [IsTopologicalRing C] [CompleteSpace C]
   [T0Space C] [IsHuberRing C] {S : Pair A} {U : Pair B} {V : Pair C}
 
-/-- A weighted quotient presentation of `g ∘ f` gives a weighted quotient presentation of `g`.
-Enlarge the coefficientwise images of the weights by small generators of open ideals so that they
-are admissible over the intermediate Huber ring. -/
-private theorem exists_isQuotientMapping_of_comp {k : ℕ} {T : Fin k → Set A}
+omit [IsUniformAddGroup C] [CompleteSpace C] [T0Space C] in
+/-- Enlarge the coefficientwise images of the weights by small generators of open ideals, so that
+they are admissible over the intermediate Huber ring and bounded for the evaluated variables. -/
+private theorem exists_weightFamily_isWeightBounded_of_comp {k : ℕ} {T : Fin k → Set A}
     (hTfin : ∀ i, (T i).Finite) (hT : IsWeightFamily T) {f : Hom S U} {g : Hom U V}
-    {π : Hom (S.weighted hT).completion V} (hπ : π.IsQuotientMapping)
+    {π : Hom (S.weighted hT).completion V}
     (hcomm : π.comp (S.weightedCompletionHom hT) = g.comp f) :
-    ∃ (T' : Fin k → Set B) (_ : ∀ i, (T' i).Finite) (hT' : IsWeightFamily T')
-      (ρ : Hom (U.weighted hT').completion V),
-      ρ.IsQuotientMapping ∧ ρ.comp (U.weightedCompletionHom hT') = g := by
+    ∃ (T' : Fin k → Set B) (_ : ∀ i, (T' i).Finite) (_ : IsWeightFamily T'),
+      (∀ i, f.toRingHom '' T i ⊆ T' i) ∧
+      (∀ i t, t ∈ T' i → g.toRingHom t * π.toRingHom (weightedX T hT i) ∈ V.plus) ∧
+      IsWeightBounded g.toRingHom T' (fun i ↦ π.toRingHom (weightedX T hT i)) := by
   classical
   let b : Fin k → C := fun i ↦ π.toRingHom (weightedX T hT i)
-  have hcomm' : π.toRingHom.comp (algebraMap A (Completion (weightedRestrictedSubring T hT))) =
-      g.toRingHom.comp f.toRingHom := by
-    rw [← Hom.toRingHom_weightedCompletionHom, ← Hom.toRingHom_comp, hcomm, Hom.toRingHom_comp]
+  have hcomm' := congrArg Hom.toRingHom hcomm
+  simp only [Hom.toRingHom_comp, Hom.toRingHom_weightedCompletionHom] at hcomm'
   have hgen (i : Fin k) (t : A) (ht : t ∈ T i) :
       g.toRingHom (f.toRingHom t) * b i ∈ V.plus := by
     have hx := π.map_mem_plus _
@@ -176,6 +176,23 @@ private theorem exists_isQuotientMapping_of_comp {k : ℕ} {T : Fin k → Set A}
     isWeightBounded_of_isWeightedVarPowerBounded <|
       (isWeightedVarPowerBounded_iff_of_finite hT'fin).mpr fun i t ht ↦
         V.isRingOfIntegralElements.isPowerBounded_of_mem (hplus i t ht)
+  exact ⟨T', hT'fin, hT', hTT', hplus, hb⟩
+
+/-- A weighted quotient presentation of `g ∘ f` gives a weighted quotient presentation of `g`.
+Enlarge the coefficientwise images of the weights by small generators of open ideals so that they
+are admissible over the intermediate Huber ring. -/
+private theorem exists_isQuotientMapping_of_comp {k : ℕ} {T : Fin k → Set A}
+    (hTfin : ∀ i, (T i).Finite) (hT : IsWeightFamily T) {f : Hom S U} {g : Hom U V}
+    {π : Hom (S.weighted hT).completion V} (hπ : π.IsQuotientMapping)
+    (hcomm : π.comp (S.weightedCompletionHom hT) = g.comp f) :
+    ∃ (T' : Fin k → Set B) (_ : ∀ i, (T' i).Finite) (hT' : IsWeightFamily T')
+      (ρ : Hom (U.weighted hT').completion V),
+      ρ.IsQuotientMapping ∧ ρ.comp (U.weightedCompletionHom hT') = g := by
+  classical
+  obtain ⟨T', hT'fin, hT', hTT', hplus, hb⟩ :=
+    exists_weightFamily_isWeightBounded_of_comp hTfin hT hcomm
+  have hcomm' := congrArg Hom.toRingHom hcomm
+  simp only [Hom.toRingHom_comp, Hom.toRingHom_weightedCompletionHom] at hcomm'
   obtain ⟨ρ, hρ, hρg, hρπ⟩ := exists_isOpenQuotientMap_comp_weightedMapCompletion_eq
     hT hT' hTT' hπ.isOpenQuotientMap hcomm' f.continuous_toRingHom g.continuous_toRingHom hb
   -- Evaluation respects the plus rings because it respects their constants and weighted variables.

@@ -139,55 +139,10 @@ theorem isMeagre_setOf_not_isRegularParameter [SecondCountableTopology (E × Λ)
         ℕ∞ω) ≤ n) :
     IsMeagre {l | ¬ IsRegularParameter f c l} := by
   let S := {z : E × Λ | f z = c}
-  let fixedDeriv (z : S) : E →L[ℝ] F :=
-    (fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)
-  let parameterDeriv (z : S) : Λ →L[ℝ] F :=
-    (fderiv ℝ f z).comp (ContinuousLinearMap.inr ℝ E Λ)
   -- Package the coordinate-level local theorem as a neighbourhood of each solution together
   -- with one nowhere dense exceptional set in the common parameter space.
-  have hlocal : ∀ z : S, ∃ Q ∈ 𝓝 z, ∃ B : Set Λ, IsNowhereDense B ∧
-      ∀ w : S, w ∈ Q → ¬ Surjective (fixedDeriv w) → (w : E × Λ).2 ∈ B := by
-    intro z
-    have hn0 : n ≠ 0 := by
-      intro hnzero
-      have hpos : (0 : ℕ∞ω) <
-          ((finrank ℝ (fixedDeriv z).ker * finrank ℝ (fixedDeriv z).ker + 1 : ℕ) :
-            ℕ∞ω) := by
-        simp
-      exact (not_lt_of_ge ((hn z z.2).trans_eq hnzero) hpos)
-    have hstrict : HasStrictFDerivAt f ((fixedDeriv z).coprod (parameterDeriv z)) z := by
-      simpa only [fixedDeriv, parameterDeriv,
-        ContinuousLinearMap.coprod_comp_inl_inr] using
-        (hcont z z.2).hasStrictFDerivAt_fderiv hn0
-    have hfixed : ContinuousLinearMap.IsFredholm (fixedDeriv z) := hFred z z.2
-    have hsurj : Surjective ((fixedDeriv z).coprod (parameterDeriv z)) := by
-      simpa only [fixedDeriv, parameterDeriv,
-        ContinuousLinearMap.coprod_comp_inl_inr] using htotal z z.2
-    obtain ⟨N, hNnhds, -, -, hNnowhere⟩ :=
-      exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetParameterMap
-        hstrict (hcont z z.2) hfixed hsurj z.2 (hn z z.2) (U := univ) univ_mem
-    let Φ := levelSetChart hstrict (LinearMap.range_eq_top.mpr hsurj)
-      (hfixed.closedComplemented_ker_coprod hsurj) z.2
-    let g := levelSetParameterMap hstrict hsurj
-      (hfixed.closedComplemented_ker_coprod hsurj) z.2
-    obtain ⟨Q₀, hQ₀nhds, hQ₀⟩ := exists_mem_nhds_forall_mem_source_and_levelSetChart_mem
-      hstrict hsurj (hfixed.closedComplemented_ker_coprod hsurj) z.2 hNnhds
-    let Q : Set S := Subtype.val ⁻¹' Q₀
-    let B : Set Λ := g ''
-      (N ∩ {k | ¬ Surjective ((fderiv ℝ f ((Φ.symm k : S) : E × Λ)).comp
-        (ContinuousLinearMap.inl ℝ E Λ))})
-    have hQnhds : Q ∈ 𝓝 z := continuous_subtype_val.continuousAt.preimage_mem_nhds hQ₀nhds
-    refine ⟨Q, hQnhds, B, hNnowhere, ?_⟩
-    intro w hwQ hwbad
-    obtain ⟨hwsource, hwN⟩ := hQ₀ w hwQ
-    have hwback : Φ.symm (Φ w) = w := Φ.left_inv hwsource
-    have hwbad' : ¬ Surjective ((fderiv ℝ f ((Φ.symm (Φ w) : S) : E × Λ)).comp
-        (ContinuousLinearMap.inl ℝ E Λ)) := by
-      rw [hwback]
-      exact hwbad
-    refine ⟨Φ w, ⟨hwN, hwbad'⟩, ?_⟩
-    exact levelSetParameterMap_levelSetChart hstrict hsurj
-      (hfixed.closedComplemented_ker_coprod hsurj) z.2 hwsource
+  have hlocal := fun z : S => exists_mem_nhds_isNowhereDense_not_surjective_fderiv_comp_inl z
+    (hcont z z.2) (hFred z z.2) (htotal z z.2) (hn z z.2)
   -- Second countability reduces this neighbourhood cover of the universal level set to a
   -- countable subcover.
   choose! Q hQnhds B hBnowhere hQB using hlocal

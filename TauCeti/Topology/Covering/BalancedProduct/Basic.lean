@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Covering.Quotient
+import TauCeti.Topology.Covering.Quotient
 
 /-!
 # The balanced product of a quotient covering map with a discrete set
@@ -291,20 +292,7 @@ private theorem isOpen_of_isOpen_preimage_inter_sheet (hqc : IsQuotientCoveringM
         exact ⟨hw, hu⟩
     rw [heq]
     exact (hopen.preimage hcont).inter hUo
-  rw [← hqc.toIsQuotientMap.isOpen_preimage]
-  -- The preimage of `W` is covered by the translates of that slice, because `W ⊆ q '' U`.
-  have hcover : q ⁻¹' W = ⋃ k : G, k • (q ⁻¹' W ∩ U) := by
-    refine Set.Subset.antisymm (fun w hw => ?_) (Set.iUnion_subset fun k w hw => ?_)
-    · obtain ⟨u, hu, hqu⟩ := hWV hw
-      obtain ⟨m, hm⟩ := hqc.apply_eq_iff_mem_orbit.mp hqu.symm
-      refine Set.mem_iUnion.mpr ⟨m, Set.mem_smul_set.mpr ⟨u, ⟨?_, hu⟩, hm⟩⟩
-      rw [Set.mem_preimage, hqu]
-      exact hw
-    · obtain ⟨w', ⟨hw', -⟩, rfl⟩ := Set.mem_smul_set.mp hw
-      rw [Set.mem_preimage, hqc.map_smul]
-      exact hw'
-  rw [hcover]
-  exact isOpen_iUnion fun k => hslice.smul k
+  exact hqc.isOpen_of_isOpen_preimage_inter hWV hslice
 
 variable (A) in
 /-- The evenly covered neighbourhood of `q e` cut out by a set `U` around `e` whose `G`-translates

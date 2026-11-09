@@ -528,7 +528,7 @@ theorem recutTerminalPentagonPair_mem_unpairedHexagonComposites {x y z : GridSta
     simp only [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr] at hF
     exact G.terminal_pair_ne_composite C P Q hrow htop F
       ((T.toRectangleDecomposition.existsUnique_isRecut hTone
-        hrecut.isEmpty_first hrecut.isEmpty_second).unique hF (hrecut.symm hone hp hq))
+        hrecut.isEmpty_first hrecut.isEmpty_second).unique hF (hrecut.symm hp hq))
 
 /-! ### The complementary branch -/
 
@@ -726,7 +726,7 @@ theorem recutTerminalPentagonPairHexagonRectangle_mem_unpairedHexagonComposites
     simp only [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl] at hF
     exact G.terminal_pair_ne_composite C P Q hrow htop F
       ((T.toRectangleDecomposition.existsUnique_isRecut hTone
-        hrecut.isEmpty_first hrecut.isEmpty_second).unique hF (hrecut.symm hone hp hq))
+        hrecut.isEmpty_first hrecut.isEmpty_second).unique hF (hrecut.symm hp hq))
 
 /-! ### The matching -/
 
