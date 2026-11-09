@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
-public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 
 /-!
 # Variations with a prescribed moving endpoint
@@ -16,8 +16,10 @@ public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 Let `F : ℝ → ℝ → M` be a two-parameter family of curves, `σ : ℝ → M` a curve with
 `σ 0 = F 0 a`, `ψ = extChartAt I x₀` an extended chart and `β : ℝ → ℝ` a profile. The **chart
 endpoint correction** `TauCeti.Manifold.chartEndpointCorrection I F σ a x₀ β` is the family
-`(s, t) ↦ ψ⁻¹ (ψ (F s t) + β t • (ψ (σ s) - ψ (F s a)))`, equal to `F s t` where `β t = 0`.
-Its central curve is `F 0`, and where `β a = 1` its curves start at `σ s`. On a manifold without
+equal to `F s t` where `β t = 0` and to `ψ⁻¹ (ψ (F s t) + β t • (ψ (σ s) - ψ (F s a)))`
+elsewhere; the two agree where `F s t` lies in the chart. Its central curve is `F 0` when the
+central curve lies in the chart on the support of `β`, and when `β a = 1` its curve at `s` starts
+at `σ s` whenever `σ s` lies in the chart. On a manifold without
 boundary it is as regular as `F`, `σ` and `β` along the central curve. If the velocity of `σ` at
 `0` is the variation field of `F` at `a`, the correction has the same variation field as `F`.
 
@@ -60,14 +62,17 @@ variable
 
 variable (I) in
 /-- The correction of the family `F` which, in the extended chart `ψ` at `x₀`, moves `F s t` by
-`β t` times the displacement `ψ (σ s) - ψ (F s a)` of the left endpoint `F s a` to `σ s`:
-`(s, t) ↦ ψ⁻¹ (ψ (F s t) + β t • (ψ (σ s) - ψ (F s a)))`. Where `β t = 0` it is `F s t`. -/
+`β t` times the displacement `ψ (σ s) - ψ (F s a)` of the left endpoint `F s a` to `σ s`. It is
+defined piecewise: where `β t = 0` it is `F s t`, and elsewhere it is
+`ψ⁻¹ (ψ (F s t) + β t • (ψ (σ s) - ψ (F s a)))`. The two descriptions agree where `F s t` lies
+in the chart (`chartEndpointCorrection_eq_chart`). -/
 def chartEndpointCorrection (F : ℝ → ℝ → M) (σ : ℝ → M) (a : ℝ) (x₀ : M) (β : ℝ → ℝ)
     (s t : ℝ) : M :=
   if β t = 0 then F s t else (extChartAt I x₀).symm
     (extChartAt I x₀ (F s t) + β t • (extChartAt I x₀ (σ s) - extChartAt I x₀ (F s a)))
 
 /-- Where the profile vanishes, the correction is the original family. -/
+@[simp]
 theorem chartEndpointCorrection_of_profile_eq_zero {t : ℝ} (ht : β t = 0) (s : ℝ) :
     chartEndpointCorrection I F σ a x₀ β s t = F s t := by
   rw [chartEndpointCorrection, ite_eq_left ht]
@@ -82,7 +87,8 @@ theorem chartEndpointCorrection_eq_chart {s t : ℝ} (ht : F s t ∈ (extChartAt
   · rw [hβ, zero_smul, add_zero, (extChartAt I x₀).left_inv ht]
   · rfl
 
-/-- The central curve of the correction is the central curve of the original family. -/
+/-- If `σ 0 = F 0 a` and the central curve `F 0` lies in the chart wherever the profile is
+nonzero, the central curve of the correction is the central curve of the original family. -/
 theorem chartEndpointCorrection_zero (hbase : F 0 a = σ 0)
     (hsource : ∀ t ∈ support β, F 0 t ∈ (extChartAt I x₀).source) :
     chartEndpointCorrection I F σ a x₀ β 0 = F 0 := by
@@ -92,7 +98,8 @@ theorem chartEndpointCorrection_zero (hbase : F 0 a = σ 0)
   · rw [chartEndpointCorrection_eq_chart (hsource t ht), hbase, sub_self, smul_zero, add_zero]
     exact (extChartAt I x₀).left_inv (hsource t ht)
 
-/-- Where the profile is one at `a`, the left endpoint of the correction follows `σ`. -/
+/-- If the profile is one at `a` and `σ s` lies in the chart, the curve of the correction at `s`
+starts at `σ s`. -/
 theorem chartEndpointCorrection_endpoint {s : ℝ} (hβ : β a = 1)
     (hσ : σ s ∈ (extChartAt I x₀).source) :
     chartEndpointCorrection I F σ a x₀ β s a = σ s := by
@@ -196,24 +203,6 @@ theorem variationField_chartEndpointCorrection [IsManifold I 1 M] {t : ℝ}
   rw [variationField_apply, variationField_apply]
   exact hleft.curveVelocity_eq.trans (hdc.trans hright.curveVelocity_eq)
 
-omit [I.Boundaryless] in
-/-- A bump profile around `a`, supported where a curve continuous at `a` stays in the extended
-chart at its value at `a`, and vanishing at a given parameter `b > a`. -/
-private theorem exists_contDiffBump_tsupport {γ : ℝ → M} {b : ℝ} (hab : a < b)
-    (hγ : ContinuousAt γ a) :
-    ∃ φ : ContDiffBump a,
-      (∀ t ∈ tsupport φ, γ t ∈ (extChartAt I (γ a)).source) ∧ φ b = 0 := by
-  obtain ⟨δ, hδ, hδJ⟩ := Metric.mem_nhds_iff.mp (inter_mem
-    (hγ.preimage_mem_nhds
-      ((isOpen_extChartAt_source (I := I) (γ a)).mem_nhds (mem_extChartAt_source (γ a))))
-    (isOpen_Iio.mem_nhds hab))
-  let φ : ContDiffBump a := ⟨δ / 4, δ / 2, by positivity, by linarith⟩
-  have hφ : tsupport φ ⊆ Metric.ball a δ := by
-    rw [φ.tsupport_eq]
-    exact Metric.closedBall_subset_ball (by dsimp only [φ]; linarith)
-  exact ⟨φ, fun t ht ↦ (hδJ (hφ ht)).1,
-    image_eq_zero_of_notMem_tsupport fun hb ↦ lt_irrefl b (hδJ (hφ hb)).2⟩
-
 /-- **Variations with a prescribed moving endpoint.** On a `C^n` manifold without boundary, let
 `γ` be `C^n` on `[a, b]` with `a < b`, and let `σ` be a curve which is `C^n` at `0` with
 `σ 0 = γ a`. Then there is a `C^n` variation of `γ` whose curves start at `σ s` for `s` near
@@ -225,21 +214,24 @@ theorem exists_contMDiffAt_endpointVariation {n : ℕ∞} [IsManifold I n M] {γ
       (∀ t ∈ uIcc a b,
         ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t)) ∧
       (∀ᶠ s in 𝓝 0, F s a = σ s) ∧ ∀ s, F s b = γ b := by
-  obtain ⟨φ, hφ, hφb⟩ :=
-    exists_contDiffBump_tsupport (I := I) hab (hγ a left_mem_uIcc).continuousAt
+  obtain ⟨φ, hφs, -, hφ, -, hφa⟩ := exists_contDiff_tsupport_subset (n := n) (x := a)
+    (s := γ ⁻¹' (extChartAt I (γ a)).source ∩ Iio b) (inter_mem
+      ((hγ a left_mem_uIcc).continuousAt.preimage_mem_nhds
+        ((isOpen_extChartAt_source (γ a)).mem_nhds (mem_extChartAt_source (γ a))))
+      (isOpen_Iio.mem_nhds hab))
+  have hφb : φ b = 0 := image_eq_zero_of_notMem_tsupport fun hb ↦ lt_irrefl b (hφs hb).2
   have ha : γ a ∈ (extChartAt I (γ a)).source := mem_extChartAt_source (γ a)
   have hγ₂ (t : ℝ) (ht : t ∈ uIcc a b) :
       ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n (fun z : ℝ × ℝ ↦ γ z.2) (0, t) :=
     (hγ t ht).comp (0, t) contDiff_snd.contMDiff.contMDiffAt
   refine ⟨chartEndpointCorrection I (fun _ ↦ γ) σ a (γ a) φ,
-    chartEndpointCorrection_zero hbase fun t ht ↦ hφ t (subset_tsupport φ ht),
-    fun t ht ↦ contMDiffAt_chartEndpointCorrection hφ φ.contDiff hσ hbase ha
+    chartEndpointCorrection_zero hbase fun t ht ↦ (hφs (subset_tsupport φ ht)).1,
+    fun t ht ↦ contMDiffAt_chartEndpointCorrection (fun t ht ↦ (hφs ht).1) hφ hσ hbase ha
       (hγ₂ a left_mem_uIcc) (hγ₂ t ht), ?_,
     fun s ↦ chartEndpointCorrection_of_profile_eq_zero hφb s⟩
   filter_upwards [hσ.continuousAt.preimage_mem_nhds
     ((isOpen_extChartAt_source (γ a)).mem_nhds (by rwa [← hbase]))] with s hs
-  exact chartEndpointCorrection_endpoint
-    (φ.one_of_mem_closedBall (Metric.mem_closedBall_self φ.rIn_pos.le)) hs
+  exact chartEndpointCorrection_endpoint hφa hs
 
 /-- **Correcting the moving endpoint of a variation.** On a `C^n` manifold without boundary, with
 `1 ≤ n`, let `F` be a family which is `C^n` along its central curve on `[a, b]`, with `a < b`,
@@ -264,21 +256,25 @@ theorem exists_contMDiffAt_endpointCorrection {n : ℕ∞} [IsManifold I n M] (h
   have hslice (t : ℝ) (ht : t ∈ uIcc a b) : ContMDiffAt 𝓘(ℝ, ℝ) I n (fun s ↦ F s t) 0 :=
     (hF t ht).comp 0 (contDiff_prodMk_left t).contMDiff.contMDiffAt
   have hFa := hF a left_mem_uIcc
-  obtain ⟨φ, hφ, hφb⟩ := exists_contDiffBump_tsupport (I := I) (γ := F 0) hab
-    ((hFa.comp a (contDiff_prodMk_right 0).contMDiff.contMDiffAt).continuousAt)
+  obtain ⟨φ, hφs, -, hφ, -, hφa⟩ := exists_contDiff_tsupport_subset (n := n) (x := a)
+    (s := F 0 ⁻¹' (extChartAt I (F 0 a)).source ∩ Iio b) (inter_mem
+      ((hFa.comp a (contDiff_prodMk_right 0).contMDiff.contMDiffAt).continuousAt.preimage_mem_nhds
+        ((isOpen_extChartAt_source (F 0 a)).mem_nhds (mem_extChartAt_source (F 0 a))))
+      (isOpen_Iio.mem_nhds hab))
+  have hφb : φ b = 0 := image_eq_zero_of_notMem_tsupport fun hb ↦ lt_irrefl b (hφs hb).2
   have ha : F 0 a ∈ (extChartAt I (F 0 a)).source := mem_extChartAt_source (F 0 a)
   refine ⟨chartEndpointCorrection I F σ a (F 0 a) φ,
-    chartEndpointCorrection_zero hbase fun t ht ↦ hφ t (subset_tsupport φ ht),
-    fun t ht ↦ contMDiffAt_chartEndpointCorrection hφ φ.contDiff hσ hbase ha hFa (hF t ht),
+    chartEndpointCorrection_zero hbase fun t ht ↦ (hφs (subset_tsupport φ ht)).1,
+    fun t ht ↦ contMDiffAt_chartEndpointCorrection (fun t ht ↦ (hφs ht).1) hφ hσ hbase ha hFa
+      (hF t ht),
     ?_, fun s ↦ chartEndpointCorrection_of_profile_eq_zero hφb s, fun t ht ↦ ?_⟩
   · filter_upwards [hσ.continuousAt.preimage_mem_nhds
       ((isOpen_extChartAt_source (F 0 a)).mem_nhds (by rwa [← hbase]))] with s hs
-    exact chartEndpointCorrection_endpoint
-      (φ.one_of_mem_closedBall (Metric.mem_closedBall_self φ.rIn_pos.le)) hs
+    exact chartEndpointCorrection_endpoint hφa hs
   · by_cases htφ : t ∈ tsupport φ
     · exact variationField_chartEndpointCorrection ((hslice t ht).mdifferentiableAt hn₀)
         ((hslice a left_mem_uIcc).mdifferentiableAt hn₀) (hσ.mdifferentiableAt hn₀)
-        (hφ t htφ) ha hbase hvel
+        (hφs htφ).1 ha hbase hvel
     · have hφt : φ t = 0 := image_eq_zero_of_notMem_tsupport htφ
       rw [variationField_apply, variationField_apply]
       exact EventuallyEq.curveVelocity_eq
