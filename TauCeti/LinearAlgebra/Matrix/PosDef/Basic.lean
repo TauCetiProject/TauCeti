@@ -213,11 +213,13 @@ section TrivialStar
 
 variable {B K : Type*} [CommRing K] [LinearOrder K] [IsStrictOrderedRing K] [StarRing K]
 
-/-- **A positive definite matrix on a nonempty index type forces the star of `K` to be trivial**:
-for `s ≠ star s`, the vector supported at one index with entry `s - star s` has a nonpositive
-quadratic form. -/
+/-- **A positive definite matrix on a nonempty index type forces the star of `K` to be trivial.**
+This supplies the `TrivialStar K` instance, so that the ordinary quadratic-form results over a
+linearly ordered commutative ring apply to such a matrix. -/
 theorem trivialStar [Nonempty B] {S : Matrix B B K} (hS : S.PosDef) : TrivialStar K := by
   classical
+  -- If `s ≠ star s`, the vector supported at one index with entry `s - star s` has a
+  -- nonpositive quadratic form, contradicting positive definiteness.
   obtain ⟨k₀⟩ := ‹Nonempty B›
   exact ⟨fun s ↦ by
     by_contra hne
