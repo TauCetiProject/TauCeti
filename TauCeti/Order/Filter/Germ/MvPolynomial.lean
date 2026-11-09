@@ -73,16 +73,18 @@ theorem eval₂_coeRingHom_comp_coe {α S T : Type*} [CommSemiring S] [CommSemir
     funext y
     rw [eval_map]
     exact hom_eval₂ P u (Pi.evalRingHom (fun _ : α ↦ T) y) f
-  rw [← heval]
-  exact (hom_eval₂ P u (coeRingHom l) f).symm
+  rw [← heval, ← coe_coeRingHom, hom_eval₂]
 
 /-- Evaluating `P : (MvPolynomial σ R)[X]` at the germ of `f` gives the germ of
 `y ↦ P (y, f y)`, where `P (y, t)` is `(P.map (MvPolynomial.eval y)).eval t`. -/
 theorem aeval_coe [CommSemiring R] {l : Filter (σ → R)} (P : (MvPolynomial σ R)[X])
     (f : (σ → R) → R) :
     aeval (f : Germ l R) P =
-      ((fun y ↦ (P.map (MvPolynomial.eval y)).eval (f y) : (σ → R) → R) : Germ l R) :=
-  eval₂_coeRingHom_comp_coe l (RingHom.pi fun y ↦ MvPolynomial.eval y) P f
+      ((fun y ↦ (P.map (MvPolynomial.eval y)).eval (f y) : (σ → R) → R) : Germ l R) := by
+  rw [aeval_def, RingHom.algebraMap_toAlgebra, eval₂_coeRingHom_comp_coe]
+  -- The remaining coefficient ring homomorphisms agree because evaluating the `y`-th coordinate of
+  -- `RingHom.pi fun y ↦ MvPolynomial.eval y` is `MvPolynomial.eval y`, by definition.
+  rfl
 
 /-- The germ of `f` is algebraic over the coordinate polynomials exactly when `f` satisfies a
 nonzero polynomial relation `P (y, f y) = 0` eventually along `l`. -/
