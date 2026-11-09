@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RepresentationTheory.Compact.Haar
 public import Mathlib.Topology.ContinuousMap.Compact
+public import Mathlib.RepresentationTheory.Continuous.Basic
+import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
 /-!
@@ -18,6 +20,12 @@ and right translation needed for averaging representations.
 
 The implementation reuses Mathlib's Bochner integral, its commutation with continuous linear maps,
 and the generic left-, right-, and inversion-invariance lemmas for integrals on groups.
+
+Left invariance also makes averaging along a representation equivariant: for a continuous
+representation `σ` and a map `c` from a `G`-space, `y ↦ ∫ g, σ g (c (g⁻¹ • y)) ∂μ` intertwines
+the action with `σ` for any left-invariant measure `μ`
+(`ContRepresentation.integral_apply_inv_smul_smul`). This is the Bochner average that linearizes
+a compact group action at a fixed point.
 
 The construction is the averaging operator from Layer 0 of the
 [compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/roadmap/representation-theory/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md).
@@ -155,3 +163,26 @@ end RCLikeScalars
 end CompactGroup
 
 end TauCeti
+
+namespace ContRepresentation
+
+/-- **Equivariance of the integral Bochner average.** For a left-invariant measure `μ` on `G`, a
+continuous representation `σ` and any map `c : X → F` from a `G`-space, the average
+`y ↦ ∫ g, σ g (c (g⁻¹ • y)) ∂μ` intertwines the action on `X` with `σ`. -/
+theorem integral_apply_inv_smul_smul {G X F : Type*} [Group G] [MeasurableSpace G]
+    [MeasurableMul G] (μ : Measure G) [μ.IsMulLeftInvariant] [MulAction G X]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] (σ : ContRepresentation ℝ G F) (c : X → F) (h : G)
+    (y : X) : ∫ g, σ g (c (g⁻¹ • h • y)) ∂μ = σ h (∫ g, σ g (c (g⁻¹ • y)) ∂μ) := by
+  have hσ (a b : G) (hab : a * b = 1) (v : F) : σ a (σ b v) = v := by
+    rw [← mul_apply_eq_comp, ← map_mul, hab, map_one, one_apply_eq_self]
+  let L : F ≃L[ℝ] F := ContinuousLinearEquiv.equivOfInverse (σ h) (σ h⁻¹)
+    (hσ _ _ (inv_mul_cancel h)) (hσ _ _ (mul_inv_cancel h))
+  calc ∫ g, σ g (c (g⁻¹ • h • y)) ∂μ = ∫ g, σ (h * g) (c ((h * g)⁻¹ • h • y)) ∂μ :=
+        (integral_mul_left_eq_self (fun g ↦ σ g (c (g⁻¹ • h • y))) h).symm
+    _ = ∫ g, L (σ g (c (g⁻¹ • y))) ∂μ := by
+        congr 1
+        ext g
+        simp [L, mul_inv_rev, mul_smul, map_mul]
+    _ = σ h (∫ g, σ g (c (g⁻¹ • y)) ∂μ) := L.integral_comp_comm _
+
+end ContRepresentation

@@ -286,6 +286,139 @@ theorem continuousAt_integral_smul_of_continuousOn {G : Type*} [NormedAddCommGro
 
 end Topological
 
+/-! ### Parameters with continuous partial derivatives
+
+The parameter space `α` carries no differentiable structure. The integrand is only required to
+be `C^n` in `x` for each fixed parameter, with its partial derivatives in `x` of every order up to
+`n` jointly continuous in `(x, y)`. This is the setting of an average over a compact group, which
+is a manifold but not an open subset of a normed space. The results for a `C^n` integrand on an
+open subset of `E × P` below are the special case of the integrand `(x, y) ↦ F (x, ι y)`. -/
+
+section PartialDerivatives
+
+variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] {U : Set E}
+
+/-- The zeroth iterated partial derivative of `F` in `x` is continuous exactly where `F` is. -/
+theorem continuousOn_iteratedFDeriv_zero_partial_iff {P G : Type*} [TopologicalSpace P]
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {F : E × P → G} {W : Set (E × P)} :
+    ContinuousOn (fun p : E × P ↦ iteratedFDeriv ℝ 0 (fun x ↦ F (x, p.2)) p.1) W ↔
+      ContinuousOn F W := by
+  have h : (fun p : E × P ↦ iteratedFDeriv ℝ 0 (fun x ↦ F (x, p.2)) p.1) =
+      (continuousMultilinearCurryFin0 ℝ E G).symm ∘ F := by
+    ext p
+    simp
+  rw [h, LinearIsometryEquiv.comp_continuousOn_iff]
+
+/-- The iterated partial derivatives of the partial derivative of `F` in `x` are continuous
+wherever those of `F` of one order higher are. -/
+theorem continuousOn_iteratedFDeriv_fderiv_partial {P G : Type*} [TopologicalSpace P]
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {F : E × P → G} {W : Set (E × P)} {k : ℕ}
+    (hF : ContinuousOn
+      (fun p : E × P ↦ iteratedFDeriv ℝ (k + 1) (fun x ↦ F (x, p.2)) p.1) W) :
+    ContinuousOn
+      (fun p : E × P ↦ iteratedFDeriv ℝ k (fderiv ℝ fun x ↦ F (x, p.2)) p.1) W := by
+  refine ((continuousMultilinearCurryRightEquiv' ℝ k E G).continuous.comp_continuousOn hF).congr
+    fun p _ ↦ ?_
+  simp [iteratedFDeriv_succ_eq_comp_right]
+
+/-- **Differentiation under the integral sign with continuous partial derivatives.** If `F` is
+continuous on `U × α`, differentiable in `x` on the open set `U` for every parameter `y`, and its
+partial derivative in `x` is continuous on `U × α`, then integrating `F (x, y)` against an
+integrable weight `g` over the compact space `α` is differentiable on `U`, with derivative the
+integral of the partial derivatives. -/
+theorem hasFDerivAt_integral_smul_of_continuousOn_fderiv {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {F : E × α → G} (hg : Integrable g μ) (hU : IsOpen U)
+    (hF : ContinuousOn F (U ×ˢ univ)) (hdiff : ∀ y, DifferentiableOn ℝ (fun x ↦ F (x, y)) U)
+    (hD : ContinuousOn (fun p : E × α ↦ fderiv ℝ (fun x ↦ F (x, p.2)) p.1) (U ×ˢ univ))
+    {x₀ : E} (hx₀ : x₀ ∈ U) :
+    HasFDerivAt (fun x ↦ ∫ y, g y • F (x, y) ∂μ)
+      (∫ y, g y • fderiv ℝ (fun x ↦ F (x, y)) x₀ ∂μ) x₀ := by
+  set D : E × α → E →L[ℝ] G := fun p ↦ fderiv ℝ (fun x ↦ F (x, p.2)) p.1
+  have hW : IsOpen (U ×ˢ (univ : Set α)) := hU.prod isOpen_univ
+  have hmem : ∀ y, (x₀, id y) ∈ U ×ˢ (univ : Set α) := fun y ↦ ⟨hx₀, mem_univ y⟩
+  have hderiv : ∀ p ∈ U ×ˢ (univ : Set α), HasFDerivAt (fun x ↦ F (x, p.2)) (D p) p.1 :=
+    fun p hp ↦ ((hdiff p.2).differentiableAt (hU.mem_nhds hp.1)).hasFDerivAt
+  obtain ⟨C, hC⟩ := isCompact_univ.exists_eventually_norm_le hW
+    (fun y _ ↦ hD.continuousAt (hW.mem_nhds (hmem y))) (fun y _ ↦ hmem y)
+  simp only [mem_univ, forall_const] at hC
+  refine hasFDerivAt_integral_of_dominated_of_fderiv_le (F' := fun x y ↦ g y • D (x, y))
+    (bound := fun y ↦ ‖g y‖ * C) hC ?_
+    (integrable_smul_of_continuousOn hg continuous_id hF hmem)
+    (integrable_smul_of_continuousOn hg continuous_id hD hmem).aestronglyMeasurable ?_
+    (hg.norm.mul_const C) ?_
+  · filter_upwards [hC] with x hx
+    exact (integrable_smul_of_continuousOn hg continuous_id hF
+      fun y ↦ (hx y).1).aestronglyMeasurable
+  · refine ae_of_all _ fun y x hx ↦ ?_
+    rw [norm_smul]
+    exact mul_le_mul_of_nonneg_left (hx y).2 (norm_nonneg _)
+  · exact ae_of_all _ fun y x hx ↦ (hderiv (x, y) (hx y).1).const_smul (g y)
+
+private theorem contDiffOn_integral_smul_nat_of_continuousOn {G : Type max u v}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] (m : ℕ) {F : E × α → G} (hg : Integrable g μ)
+    (hU : IsOpen U) (hF : ∀ y, ContDiffOn ℝ m (fun x ↦ F (x, y)) U)
+    (hcont : ∀ k ≤ m, ContinuousOn
+      (fun p : E × α ↦ iteratedFDeriv ℝ k (fun x ↦ F (x, p.2)) p.1) (U ×ˢ univ)) :
+    ContDiffOn ℝ m (fun x ↦ ∫ y, g y • F (x, y) ∂μ) U := by
+  have hF₀ : ContinuousOn F (U ×ˢ univ) :=
+    continuousOn_iteratedFDeriv_zero_partial_iff.1 (hcont 0 (Nat.zero_le m))
+  induction m generalizing G with
+  | zero =>
+      exact contDiffOn_zero.2 fun x hx ↦
+        (continuousAt_integral_smul_of_continuousOn hg continuous_id (hU.prod isOpen_univ) hF₀
+          fun y ↦ ⟨hx, mem_univ y⟩).continuousWithinAt
+  | succ m ih =>
+      have hcontD : ∀ k ≤ m, ContinuousOn (fun p : E × α ↦
+          iteratedFDeriv ℝ k (fderiv ℝ fun x ↦ F (x, p.2)) p.1) (U ×ˢ univ) := fun k hk ↦
+        continuousOn_iteratedFDeriv_fderiv_partial (hcont (k + 1) (by omega))
+      have hD : ContinuousOn (fun p : E × α ↦ fderiv ℝ (fun x ↦ F (x, p.2)) p.1)
+          (U ×ˢ univ) :=
+        continuousOn_iteratedFDeriv_zero_partial_iff.1 (hcontD 0 (Nat.zero_le m))
+      have hderiv : ∀ x ∈ U, HasFDerivAt (fun x ↦ ∫ y, g y • F (x, y) ∂μ)
+          (∫ y, g y • fderiv ℝ (fun x ↦ F (x, y)) x ∂μ) x :=
+        fun x hx ↦ hasFDerivAt_integral_smul_of_continuousOn_fderiv hg hU hF₀
+        (fun y ↦ (hF y).differentiableOn (by simp)) hD hx
+      rw [Nat.cast_add, Nat.cast_one, contDiffOn_succ_iff_fderiv_of_isOpen hU]
+      refine ⟨fun x hx ↦ (hderiv x hx).differentiableAt.differentiableWithinAt,
+        fun h ↦ absurd h (by simp), ?_⟩
+      refine (ih (F := fun p ↦ fderiv ℝ (fun x ↦ F (x, p.2)) p.1)
+        (fun y ↦ (hF y).fderiv_of_isOpen hU le_rfl) hcontD hD).congr fun x hx ↦
+        (hderiv x hx).fderiv
+
+/-- **Smoothness of integrals with continuous partial derivatives.** Let `F` be `C^n` in `x` on
+the open set `U` for every parameter `y` of the compact space `α`, with partial derivatives in `x`
+of every order `k ≤ n` jointly continuous on `U × α`. Then integrating `F (x, y)` against an
+integrable weight `g` is `C^n` in `x` on `U`. -/
+theorem contDiffOn_integral_smul_of_continuousOn_iteratedFDeriv {G : Type v}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {n : ℕ∞} {F : E × α → G} (hg : Integrable g μ)
+    (hU : IsOpen U) (hF : ∀ y, ContDiffOn ℝ n (fun x ↦ F (x, y)) U)
+    (hcont : ∀ k : ℕ, (k : ℕ∞) ≤ n → ContinuousOn
+      (fun p : E × α ↦ iteratedFDeriv ℝ k (fun x ↦ F (x, p.2)) p.1) (U ×ˢ univ)) :
+    ContDiffOn ℝ n (fun x ↦ ∫ y, g y • F (x, y) ∂μ) U := by
+  let eG : Type max u v := ULift.{u} G
+  let isoG : eG ≃L[ℝ] G := ContinuousLinearEquiv.ulift
+  have he : ContDiffOn ℝ n (fun x ↦ ∫ y, g y • isoG.symm (F (x, y)) ∂μ) U := by
+    rw [contDiffOn_iff_forall_nat_le]
+    intro m hm
+    have hm' : (m : ℕ∞) ≤ n := by exact_mod_cast hm
+    refine contDiffOn_integral_smul_nat_of_continuousOn (F := fun p ↦ isoG.symm (F p)) m hg hU
+      (fun y ↦ isoG.symm.contDiff.comp_contDiffOn ((hF y).of_le (by exact_mod_cast hm)))
+      fun k hk ↦ ?_
+    refine ((isoG.symm : G →L[ℝ] eG).compContinuousMultilinearMapL ℝ _ _ _ |>.continuous
+      |>.comp_continuousOn (hcont k ((Nat.cast_le.mpr hk).trans hm'))).congr
+      fun p hp ↦ ?_
+    have hFp : ContDiffAt ℝ n (fun x ↦ F (x, p.2)) p.1 :=
+      (hF p.2).contDiffAt (hU.mem_nhds hp.1)
+    exact (isoG.symm : G →L[ℝ] eG).iteratedFDeriv_comp_left hFp
+      (by exact_mod_cast (Nat.cast_le.mpr hk).trans hm')
+  refine (isoG.contDiff.comp_contDiffOn he).congr fun x _ ↦ ?_
+  have hsmul : ∀ y, g y • isoG.symm (F (x, y)) = isoG.symm (g y • F (x, y)) :=
+    fun y ↦ (map_smul _ _ _).symm
+  simp only [Function.comp_apply, hsmul, ContinuousLinearEquiv.integral_comp_comm,
+    ContinuousLinearEquiv.apply_symm_apply]
+
+end PartialDerivatives
+
 variable {E : Type u} {P : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup P] [NormedSpace ℝ P] {ι : α → P} {W : Set (E × P)}
 
@@ -347,47 +480,20 @@ theorem hasFDerivAt_integral_smul_of_contDiffOn {G : Type*} [NormedAddCommGroup 
     (hF : ContDiffOn ℝ 1 F W) {x₀ : E} (hx₀ : ∀ y, (x₀, ι y) ∈ W) :
     HasFDerivAt (fun x ↦ ∫ y, g y • F (x, ι y) ∂μ)
       (∫ y, g y • fderiv ℝ (fun x ↦ F (x, ι y)) x₀ ∂μ) x₀ := by
-  set D : E × P → E →L[ℝ] G := fun p ↦ fderiv ℝ (fun x ↦ F (x, p.2)) p.1
-  have hD : ContinuousOn D W :=
-    (ContDiffOn.fderiv_partial_of_isOpen (m := 0) (by simpa using hF) hW).continuousOn
-  have hdiff : ∀ p ∈ W, HasFDerivAt (fun x ↦ F (x, p.2)) (D p) p.1 := fun p hp ↦
-    (((hF.contDiffAt (hW.mem_nhds hp)).differentiableAt one_ne_zero).comp p.1
-      (differentiableAt_id.prodMk (differentiableAt_const p.2))).hasFDerivAt
-  have hmem : ∀ y ∈ Set.range ι, (x₀, y) ∈ W := Set.forall_mem_range.mpr hx₀
-  obtain ⟨C, hC⟩ := (isCompact_range hι).exists_eventually_norm_le hW
-    (fun y hy ↦ hD.continuousAt (hW.mem_nhds (hmem y hy))) hmem
-  simp only [Set.forall_mem_range] at hC
-  refine hasFDerivAt_integral_of_dominated_of_fderiv_le (F' := fun x y ↦ g y • D (x, ι y))
-    (bound := fun y ↦ ‖g y‖ * C) hC ?_
-    (integrable_smul_of_continuousOn hg hι hF.continuousOn hx₀)
-    (integrable_smul_of_continuousOn hg hι hD hx₀).aestronglyMeasurable ?_
-    (hg.norm.mul_const C) ?_
-  · filter_upwards [hC] with x hx
-    exact (integrable_smul_of_continuousOn hg hι hF.continuousOn
-      fun y ↦ (hx y).1).aestronglyMeasurable
-  · refine ae_of_all _ fun y x hx ↦ ?_
-    rw [norm_smul]
-    exact mul_le_mul_of_nonneg_left (hx y).2 (norm_nonneg _)
-  · exact ae_of_all _ fun y x hx ↦ (hdiff (x, ι y) (hx y).1).const_smul (g y)
-
-private theorem contDiffOn_integral_smul_nat {G : Type max u v} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] (m : ℕ) {F : E × P → G} (hg : Integrable g μ) (hι : Continuous ι)
-    (hW : IsOpen W) (hF : ContDiffOn ℝ m F W) {U : Set E} (hU : IsOpen U)
-    (hUW : ∀ x ∈ U, ∀ y, (x, ι y) ∈ W) :
-    ContDiffOn ℝ m (fun x ↦ ∫ y, g y • F (x, ι y) ∂μ) U := by
-  induction m generalizing G with
-  | zero =>
-      exact contDiffOn_zero.2 fun x hx ↦
-        (continuousAt_integral_smul_of_continuousOn hg hι hW hF.continuousOn
-          (hUW x hx)).continuousWithinAt
-  | succ m ih =>
-      have hF' : ContDiffOn ℝ ((m : WithTop ℕ∞) + 1) F W := by exact_mod_cast hF
-      have hderiv := fun x hx ↦ hasFDerivAt_integral_smul_of_contDiffOn hg hι hW
-        (hF'.of_le le_add_self) (hUW x hx)
-      rw [Nat.cast_add, Nat.cast_one, contDiffOn_succ_iff_fderiv_of_isOpen hU]
-      refine ⟨fun x hx ↦ (hderiv x hx).differentiableAt.differentiableWithinAt,
-        fun h ↦ absurd h (by simp), ?_⟩
-      exact (ih (hF'.fderiv_partial_of_isOpen hW)).congr fun x hx ↦ (hderiv x hx).fderiv
+  -- `{x₀} × ι(α)` has an open neighbourhood `U × ι(α)` inside `W`, by compactness of `α`.
+  let U : Set E := {x | ∀ y, (x, ι y) ∈ W}
+  have hc : Continuous fun p : E × α ↦ (p.1, ι p.2) :=
+    continuous_fst.prodMk (hι.comp continuous_snd)
+  have hU : IsOpen U := isOpen_iff_mem_nhds.2 fun x hx ↦
+    (isCompact_univ.eventually_forall_of_forall_eventually (P := fun x y ↦ (x, ι y) ∈ W)
+      fun y _ ↦ (hW.preimage hc).mem_nhds (hx y)).mono fun _ h y ↦ h y (mem_univ y)
+  have hUW : ∀ p ∈ U ×ˢ (univ : Set α), (p.1, ι p.2) ∈ W := fun p hp ↦ hp.1 p.2
+  have hFy (y : α) : ContDiffOn ℝ 1 (fun x ↦ F (x, ι y)) U :=
+    hF.comp (contDiffOn_id.prodMk contDiffOn_const) fun x hx ↦ hx y
+  exact hasFDerivAt_integral_smul_of_continuousOn_fderiv (F := fun p ↦ F (p.1, ι p.2)) hg hU
+    (hF.continuousOn.comp hc.continuousOn hUW) (fun y ↦ (hFy y).differentiableOn one_ne_zero)
+    ((ContDiffOn.fderiv_partial_of_isOpen (m := 0) (by simpa using hF) hW).continuousOn.comp
+      hc.continuousOn hUW) hx₀
 
 /-- **Smoothness of integrals over a compact parameter space.** If `F` is `C^n` on an open set
 `W ⊆ E × P` and `{x} × ι(α) ⊆ W` for every `x` in an open set `U`, then integrating `F (x, ι y)`
@@ -397,18 +503,11 @@ theorem contDiffOn_integral_smul_of_contDiffOn {G : Type v} [NormedAddCommGroup 
     (hι : Continuous ι) (hW : IsOpen W) (hF : ContDiffOn ℝ n F W) {U : Set E} (hU : IsOpen U)
     (hUW : ∀ x ∈ U, ∀ y, (x, ι y) ∈ W) :
     ContDiffOn ℝ n (fun x ↦ ∫ y, g y • F (x, ι y) ∂μ) U := by
-  let eG : Type max u v := ULift.{u} G
-  let isoG : eG ≃L[ℝ] G := ContinuousLinearEquiv.ulift
-  have he : ContDiffOn ℝ n (fun x ↦ ∫ y, g y • isoG.symm (F (x, ι y)) ∂μ) U := by
-    rw [contDiffOn_iff_forall_nat_le]
-    intro m hm
-    exact contDiffOn_integral_smul_nat m hg hι hW
-      (isoG.symm.contDiff.comp_contDiffOn (hF.of_le (by exact_mod_cast hm))) hU hUW
-  refine (isoG.contDiff.comp_contDiffOn he).congr fun x _ ↦ ?_
-  have hsmul : ∀ y, g y • isoG.symm (F (x, ι y)) = isoG.symm (g y • F (x, ι y)) :=
-    fun y ↦ (map_smul _ _ _).symm
-  simp only [Function.comp_apply, hsmul, ContinuousLinearEquiv.integral_comp_comm,
-    ContinuousLinearEquiv.apply_symm_apply]
+  have hFy (y : α) : ContDiffOn ℝ n (fun x ↦ F (x, ι y)) U :=
+    hF.comp (contDiffOn_id.prodMk contDiffOn_const) fun x hx ↦ hUW x hx y
+  exact contDiffOn_integral_smul_of_continuousOn_iteratedFDeriv (F := fun p ↦ F (p.1, ι p.2)) hg
+    hU hFy fun k hk ↦ (hF.continuousOn_iteratedFDeriv_partial hW (by exact_mod_cast hk)).comp
+      (continuous_fst.prodMk (hι.comp continuous_snd)).continuousOn fun p hp ↦ hUW p.1 hp.1 p.2
 
 /-- The first-order remainder of an integral against a weight over a compact parameter space is
 the integral of the pointwise remainder: if `F` and a candidate partial derivative `D` are
@@ -564,132 +663,6 @@ theorem _root_.Convex.contDiffOn_integral_smul_of_contDiffOn {G : Type v} [Norme
     ContinuousLinearEquiv.apply_symm_apply]
 
 end Convex
-
-/-! ### Parameters with continuous partial derivatives
-
-The parameter space `α` now carries no differentiable structure. The integrand is only required to
-be `C^n` in `x` for each fixed parameter, with its partial derivatives in `x` of every order up to
-`n` jointly continuous in `(x, y)`. This is the setting of an average over a compact group, which
-is a manifold but not an open subset of a normed space. -/
-
-section PartialDerivatives
-
-variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] {U : Set E}
-
-/-- The iterated partial derivatives of the partial derivative of `F` in `x` are continuous
-wherever those of `F` of one order higher are. -/
-theorem continuousOn_iteratedFDeriv_fderiv_partial {P G : Type*} [TopologicalSpace P]
-    [NormedAddCommGroup G] [NormedSpace ℝ G] {F : E × P → G} {W : Set (E × P)} {k : ℕ}
-    (hF : ContinuousOn
-      (fun p : E × P ↦ iteratedFDeriv ℝ (k + 1) (fun x ↦ F (x, p.2)) p.1) W) :
-    ContinuousOn
-      (fun p : E × P ↦ iteratedFDeriv ℝ k (fderiv ℝ fun x ↦ F (x, p.2)) p.1) W := by
-  refine ((continuousMultilinearCurryRightEquiv' ℝ k E G).continuous.comp_continuousOn hF).congr
-    fun p _ ↦ ?_
-  simp [iteratedFDeriv_succ_eq_comp_right]
-
-/-- **Differentiation under the integral sign with continuous partial derivatives.** If `F` is
-continuous on `U × α`, differentiable in `x` on the open set `U` for every parameter `y`, and its
-partial derivative in `x` is continuous on `U × α`, then integrating `F (x, y)` against an
-integrable weight `g` over the compact space `α` is differentiable on `U`, with derivative the
-integral of the partial derivatives. -/
-theorem hasFDerivAt_integral_smul_of_continuousOn_fderiv {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] {F : E × α → G} (hg : Integrable g μ) (hU : IsOpen U)
-    (hF : ContinuousOn F (U ×ˢ univ)) (hdiff : ∀ y, DifferentiableOn ℝ (fun x ↦ F (x, y)) U)
-    (hD : ContinuousOn (fun p : E × α ↦ fderiv ℝ (fun x ↦ F (x, p.2)) p.1) (U ×ˢ univ))
-    {x₀ : E} (hx₀ : x₀ ∈ U) :
-    HasFDerivAt (fun x ↦ ∫ y, g y • F (x, y) ∂μ)
-      (∫ y, g y • fderiv ℝ (fun x ↦ F (x, y)) x₀ ∂μ) x₀ := by
-  set D : E × α → E →L[ℝ] G := fun p ↦ fderiv ℝ (fun x ↦ F (x, p.2)) p.1
-  have hW : IsOpen (U ×ˢ (univ : Set α)) := hU.prod isOpen_univ
-  have hmem : ∀ y, (x₀, id y) ∈ U ×ˢ (univ : Set α) := fun y ↦ ⟨hx₀, mem_univ y⟩
-  have hderiv : ∀ p ∈ U ×ˢ (univ : Set α), HasFDerivAt (fun x ↦ F (x, p.2)) (D p) p.1 :=
-    fun p hp ↦ ((hdiff p.2).differentiableAt (hU.mem_nhds hp.1)).hasFDerivAt
-  obtain ⟨C, hC⟩ := isCompact_univ.exists_eventually_norm_le hW
-    (fun y _ ↦ hD.continuousAt (hW.mem_nhds (hmem y))) (fun y _ ↦ hmem y)
-  simp only [mem_univ, forall_const] at hC
-  refine hasFDerivAt_integral_of_dominated_of_fderiv_le (F' := fun x y ↦ g y • D (x, y))
-    (bound := fun y ↦ ‖g y‖ * C) hC ?_
-    (integrable_smul_of_continuousOn hg continuous_id hF hmem)
-    (integrable_smul_of_continuousOn hg continuous_id hD hmem).aestronglyMeasurable ?_
-    (hg.norm.mul_const C) ?_
-  · filter_upwards [hC] with x hx
-    exact (integrable_smul_of_continuousOn hg continuous_id hF
-      fun y ↦ (hx y).1).aestronglyMeasurable
-  · refine ae_of_all _ fun y x hx ↦ ?_
-    rw [norm_smul]
-    exact mul_le_mul_of_nonneg_left (hx y).2 (norm_nonneg _)
-  · exact ae_of_all _ fun y x hx ↦ (hderiv (x, y) (hx y).1).const_smul (g y)
-
-private theorem contDiffOn_integral_smul_nat_of_continuousOn {G : Type max u v}
-    [NormedAddCommGroup G] [NormedSpace ℝ G] (m : ℕ) {F : E × α → G} (hg : Integrable g μ)
-    (hU : IsOpen U) (hF : ∀ y, ContDiffOn ℝ m (fun x ↦ F (x, y)) U)
-    (hcont : ∀ k ≤ m, ContinuousOn
-      (fun p : E × α ↦ iteratedFDeriv ℝ k (fun x ↦ F (x, p.2)) p.1) (U ×ˢ univ)) :
-    ContDiffOn ℝ m (fun x ↦ ∫ y, g y • F (x, y) ∂μ) U := by
-  induction m generalizing G with
-  | zero =>
-      have hF₀ : ContinuousOn F (U ×ˢ univ) :=
-        ((continuousMultilinearCurryFin0 ℝ E G).continuous.comp_continuousOn
-          (hcont 0 le_rfl)).congr fun p _ ↦ by simp
-      exact contDiffOn_zero.2 fun x hx ↦
-        (continuousAt_integral_smul_of_continuousOn hg continuous_id (hU.prod isOpen_univ) hF₀
-          fun y ↦ ⟨hx, mem_univ y⟩).continuousWithinAt
-  | succ m ih =>
-      have hF₀ : ContinuousOn F (U ×ˢ univ) :=
-        ((continuousMultilinearCurryFin0 ℝ E G).continuous.comp_continuousOn
-          (hcont 0 (Nat.zero_le _))).congr fun p _ ↦ by simp
-      have hcontD : ∀ k ≤ m, ContinuousOn (fun p : E × α ↦
-          iteratedFDeriv ℝ k (fderiv ℝ fun x ↦ F (x, p.2)) p.1) (U ×ˢ univ) := fun k hk ↦
-        continuousOn_iteratedFDeriv_fderiv_partial (hcont (k + 1) (by omega))
-      have hD : ContinuousOn (fun p : E × α ↦ fderiv ℝ (fun x ↦ F (x, p.2)) p.1)
-          (U ×ˢ univ) :=
-        ((continuousMultilinearCurryFin0 ℝ E (E →L[ℝ] G)).continuous.comp_continuousOn
-          (hcontD 0 (Nat.zero_le m))).congr fun p _ ↦ by simp
-      have hderiv : ∀ x ∈ U, HasFDerivAt (fun x ↦ ∫ y, g y • F (x, y) ∂μ)
-          (∫ y, g y • fderiv ℝ (fun x ↦ F (x, y)) x ∂μ) x :=
-        fun x hx ↦ hasFDerivAt_integral_smul_of_continuousOn_fderiv hg hU hF₀
-        (fun y ↦ (hF y).differentiableOn (by simp)) hD hx
-      rw [Nat.cast_add, Nat.cast_one, contDiffOn_succ_iff_fderiv_of_isOpen hU]
-      refine ⟨fun x hx ↦ (hderiv x hx).differentiableAt.differentiableWithinAt,
-        fun h ↦ absurd h (by simp), ?_⟩
-      refine (ih (F := fun p ↦ fderiv ℝ (fun x ↦ F (x, p.2)) p.1)
-        (fun y ↦ (hF y).fderiv_of_isOpen hU le_rfl) hcontD).congr fun x hx ↦
-        (hderiv x hx).fderiv
-
-/-- **Smoothness of integrals with continuous partial derivatives.** Let `F` be `C^n` in `x` on
-the open set `U` for every parameter `y` of the compact space `α`, with partial derivatives in `x`
-of every order `k ≤ n` jointly continuous on `U × α`. Then integrating `F (x, y)` against an
-integrable weight `g` is `C^n` in `x` on `U`. -/
-theorem contDiffOn_integral_smul_of_continuousOn_iteratedFDeriv {G : Type v}
-    [NormedAddCommGroup G] [NormedSpace ℝ G] {n : ℕ∞} {F : E × α → G} (hg : Integrable g μ)
-    (hU : IsOpen U) (hF : ∀ y, ContDiffOn ℝ n (fun x ↦ F (x, y)) U)
-    (hcont : ∀ k : ℕ, (k : ℕ∞) ≤ n → ContinuousOn
-      (fun p : E × α ↦ iteratedFDeriv ℝ k (fun x ↦ F (x, p.2)) p.1) (U ×ˢ univ)) :
-    ContDiffOn ℝ n (fun x ↦ ∫ y, g y • F (x, y) ∂μ) U := by
-  let eG : Type max u v := ULift.{u} G
-  let isoG : eG ≃L[ℝ] G := ContinuousLinearEquiv.ulift
-  have he : ContDiffOn ℝ n (fun x ↦ ∫ y, g y • isoG.symm (F (x, y)) ∂μ) U := by
-    rw [contDiffOn_iff_forall_nat_le]
-    intro m hm
-    have hm' : (m : ℕ∞) ≤ n := by exact_mod_cast hm
-    refine contDiffOn_integral_smul_nat_of_continuousOn (F := fun p ↦ isoG.symm (F p)) m hg hU
-      (fun y ↦ isoG.symm.contDiff.comp_contDiffOn ((hF y).of_le (by exact_mod_cast hm)))
-      fun k hk ↦ ?_
-    refine ((isoG.symm : G →L[ℝ] eG).compContinuousMultilinearMapL ℝ _ _ _ |>.continuous
-      |>.comp_continuousOn (hcont k ((Nat.cast_le.mpr hk).trans hm'))).congr
-      fun p hp ↦ ?_
-    have hFp : ContDiffAt ℝ n (fun x ↦ F (x, p.2)) p.1 :=
-      (hF p.2).contDiffAt (hU.mem_nhds hp.1)
-    exact (isoG.symm : G →L[ℝ] eG).iteratedFDeriv_comp_left hFp
-      (by exact_mod_cast (Nat.cast_le.mpr hk).trans hm')
-  refine (isoG.contDiff.comp_contDiffOn he).congr fun x _ ↦ ?_
-  have hsmul : ∀ y, g y • isoG.symm (F (x, y)) = isoG.symm (g y • F (x, y)) :=
-    fun y ↦ (map_smul _ _ _).symm
-  simp only [Function.comp_apply, hsmul, ContinuousLinearEquiv.integral_comp_comm,
-    ContinuousLinearEquiv.apply_symm_apply]
-
-end PartialDerivatives
 
 end CompactParameter
 

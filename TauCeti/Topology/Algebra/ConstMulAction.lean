@@ -99,7 +99,8 @@ theorem isClosed_stabilizer {G X : Type*} [Group G] [MulAction G X] [Topological
   isClosed_singleton.preimage hx
 
 /-- Under a jointly continuous action of a compact space, the points whose whole orbit lies in an
-open set `s` form an open set: the largest invariant subset of an open set is open. -/
+open set `s` form an open set. For a group action, this set is the largest invariant subset of
+`s`. -/
 theorem isOpen_setOf_forall_smul_mem {G X : Type*} [SMul G X] [TopologicalSpace G]
     [CompactSpace G] [TopologicalSpace X] [ContinuousSMul G X] {s : Set X} (hs : IsOpen s) :
     IsOpen {x : X | ∀ g : G, g • x ∈ s} := by
