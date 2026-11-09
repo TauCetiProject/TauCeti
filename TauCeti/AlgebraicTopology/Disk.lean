@@ -304,6 +304,19 @@ lemma sq_diskBoundary_one_eq_one (s : TopCat.diskBoundary.{u} 1) :
   rw [mem_sphere_zero_iff_norm.1 s.down.2, Fin.sum_univ_one, Real.norm_eq_abs, sq_abs] at h
   simpa using h.symm
 
+/-- The coordinates of a point of the boundary `S¹` of the `2`-disk satisfy `s₀² + s₁² = 1`. -/
+lemma sq_add_sq_diskBoundary_two_eq_one (s : TopCat.diskBoundary.{u} 2) :
+    ((s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 2)) 1)).down :
+        EuclideanSpace ℝ (Fin 2)) 0 ^ 2 +
+      ((s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 2)) 1)).down :
+        EuclideanSpace ℝ (Fin 2)) 1 ^ 2 = 1 := by
+  have h := EuclideanSpace.norm_sq_eq
+    ((s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 2)) 1)).down :
+      EuclideanSpace ℝ (Fin 2))
+  rw [mem_sphere_zero_iff_norm.1 s.down.2, Fin.sum_univ_two, Real.norm_eq_abs, Real.norm_eq_abs,
+    sq_abs, sq_abs] at h
+  simpa using h.symm
+
 /-- The `n`-sphere is nonempty. -/
 instance nonempty_topCatSphere (n : ℕ) : Nonempty (TopCat.sphere.{u} n) :=
   ⟨ULift.up ⟨EuclideanSpace.single 0 1, by simp⟩⟩
