@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.A11D7E6
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.A2Twelfth
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.D4Six.Glue
-public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.A1TwentyFour
+public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.A1TwentyFour.Basic
 
 /-!
 # The table glue subgroups of the separately identified rows
@@ -34,7 +34,7 @@ component list of the row is read as the explicit family; it preserves the Conwa
 of a word (`encodeGlueWord_glueModuleIsometry`) and its glue minimum
 (`sum_glueMinimum_glueModuleIsometry`).  For `A₁²⁴` the identification of the table subgroup is
 `map_glueSubgroup_a1TwentyFourth` from
-`TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.A1TwentyFour`.  For `A₂¹²` and
+`TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.A1TwentyFour.Basic`.  For `A₂¹²` and
 `A₁₁ D₇ E₆` the generators agree literally.  For
 `D₄⁶` they do not: the table spans the `𝔽₄`-scalar orbits of the printed words, while
 `d4SixGlueSubgroup` adjoins only `[222222]` to them, so the comparison uses that the latter is

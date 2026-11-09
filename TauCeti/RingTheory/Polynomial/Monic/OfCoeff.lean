@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Polynomial.Degree.Operations
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Algebra.Polynomial.Monic
+public import Mathlib.Algebra.Star.Basic
+import Mathlib.Algebra.Star.BigOperators
 
 /-!
 # The monic polynomial with prescribed lower coefficients
@@ -27,6 +29,8 @@ a *free* tuple rather than as the data of a polynomial subtype.
   whose `n` lower coefficients are `c`.
 * `TauCeti.Polynomial.monic_monicOfCoeff`, `TauCeti.Polynomial.natDegree_monicOfCoeff`,
   `TauCeti.Polynomial.eval_monicOfCoeff`: its monicity, its degree and its values.
+* `TauCeti.Polynomial.star_eval_monicOfCoeff`: over a commutative star ring, conjugating its value
+  conjugates the coefficients and the argument.
 * `TauCeti.Polynomial.coeff_monicOfCoeff` and `TauCeti.Polynomial.monicOfCoeff_coeff`: the
   coefficients are read back off, and every monic polynomial of degree `n` arises this way, so the
   two constructions are mutually inverse.
@@ -109,6 +113,12 @@ coefficients. -/
 theorem map_monicOfCoeff {S : Type*} [CommSemiring S] (φ : R →+* S) (c : Fin n → R) :
     (monicOfCoeff c).map φ = monicOfCoeff (fun i ↦ φ (c i)) := by
   simp [monicOfCoeff, Polynomial.map_sum]
+
+/-- Conjugating the value of the monic polynomial with prescribed lower coefficients conjugates
+its coefficients and its argument. -/
+theorem star_eval_monicOfCoeff [StarRing R] (c : Fin n → R) (z : R) :
+    star ((monicOfCoeff c).eval z) = (monicOfCoeff fun i ↦ star (c i)).eval (star z) := by
+  simp [eval_monicOfCoeff, star_sum, star_pow]
 
 /-- Adding `t` to the constant coefficient of the tuple adds the constant polynomial `t`. -/
 @[simp]

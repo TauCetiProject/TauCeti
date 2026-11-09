@@ -152,13 +152,31 @@ theorem contMDiff_ofProd_symm (m : ℕ∞ω) :
     ContMDiff (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) m (ofProd φ).symm :=
   contMDiff_id
 
+/-- The identification of `ℝ × M` with the cover, as a `C^m` diffeomorphism for every `m`. -/
+def ofProdDiffeomorph (m : ℕ∞ω) : (ℝ × M) ≃ₘ^m⟮𝓘(ℝ).prod I, 𝓘(ℝ).prod I⟯ Cover φ where
+  toEquiv := ofProd φ
+  contMDiff_toFun := contMDiff_ofProd φ m
+  contMDiff_invFun := contMDiff_ofProd_symm φ m
+
+/-- The diffeomorphism `ofProdDiffeomorph φ m` is the identification `ofProd φ`. -/
+@[simp]
+theorem coe_ofProdDiffeomorph (m : ℕ∞ω) : ⇑(ofProdDiffeomorph φ m) = ofProd φ := (rfl)
+
+/-- The inverse of the diffeomorphism `ofProdDiffeomorph φ m` is the identification
+`(ofProd φ).symm`. -/
+@[simp]
+theorem coe_ofProdDiffeomorph_symm (m : ℕ∞ω) :
+    ⇑(ofProdDiffeomorph φ m).symm = (ofProd φ).symm := (rfl)
+
 /-- The identification of `ℝ × M` with the cover is a local diffeomorphism. -/
 theorem isLocalDiffeomorph_ofProd (m : ℕ∞ω) :
     IsLocalDiffeomorph (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) m (ofProd φ) :=
-  Diffeomorph.isLocalDiffeomorph
-    { toEquiv := ofProd φ
-      contMDiff_toFun := contMDiff_ofProd φ m
-      contMDiff_invFun := contMDiff_ofProd_symm φ m }
+  (ofProdDiffeomorph φ m).isLocalDiffeomorph
+
+/-- The identification of the cover with `ℝ × M` is a local diffeomorphism. -/
+theorem isLocalDiffeomorph_ofProd_symm (m : ℕ∞ω) :
+    IsLocalDiffeomorph (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) m (ofProd φ).symm :=
+  (ofProdDiffeomorph φ m).symm.isLocalDiffeomorph
 
 /-! ### The action of `Multiplicative ℤ` -/
 

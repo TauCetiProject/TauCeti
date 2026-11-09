@@ -9,12 +9,10 @@ public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.Analysis.Distribution.TestFunction.Translation
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.MeasureTheory.Group.Integral
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import TauCeti.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.NormDuality
-import TauCeti.MeasureTheory.Constructions.UnitInterval
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -176,65 +174,15 @@ private theorem exists_lineDeriv_eq_sub
     (hVΩ : ∀ t ∈ Icc (0 : ℝ) 1, MapsTo (· + t • h) V Ω) (g : 𝓓(V, ℝ)) :
     ∃ Φ : 𝓓(Ω, ℝ), ((∀ x, ‖g x‖ ≤ 1) → ∀ y, ‖Φ y‖ ≤ 1) ∧ ((∀ x, 0 ≤ g x) → ∀ y, 0 ≤ Φ y) ∧
       ∀ y, lineDeriv ℝ (Φ : E → ℝ) y h = g y - g (y - h) := by
-  set Φ : E → ℝ := fun y => ∫ t in (0 : ℝ)..1, g (y - t • h) with hΦ_def
-  have hΦs : ContDiff ℝ ∞ Φ := by
-    rw [← contDiffOn_univ]
-    refine (contDiffOn_integral_smul_of_contDiffOn (n := (⊤ : ℕ∞))
-      (F := fun p : E × ℝ => g (p.1 - p.2 • h)) (μ := (volume : Measure unitInterval))
-      (integrable_const (1 : ℝ)) continuous_subtype_val isOpen_univ
-      (g.contDiff.comp (contDiff_fst.sub (contDiff_snd.smul contDiff_const))).contDiffOn
-      isOpen_univ fun _ _ _ => mem_univ _).congr fun y _ => ?_
-    simp [hΦ_def, intervalIntegral_eq_integral_unitInterval]
-  -- `Φ` vanishes off the compact set `C ⊆ Ω` swept out by `tsupport g` along `[0, 1] h`.
-  set C : Set E := (fun p : E × ℝ => p.1 + p.2 • h) '' (tsupport g ×ˢ Icc 0 1)
-  have hCc : IsCompact C :=
-    (g.hasCompactSupport.isCompact.prod isCompact_Icc).image (by fun_prop)
-  have hCΩ : C ⊆ Ω := by
-    rintro _ ⟨⟨x, t⟩, ⟨hx, ht⟩, rfl⟩
-    exact hVΩ t ht (g.tsupport_subset hx)
-  have hΦC (y : E) (hy : y ∉ C) : Φ y = 0 := by
-    refine (intervalIntegral.integral_congr (g := fun _ => (0 : ℝ)) fun t ht => ?_).trans
-      (by simp)
-    rw [uIcc_of_le zero_le_one] at ht
-    exact image_eq_zero_of_notMem_tsupport fun hmem =>
-      hy ⟨(y - t • h, t), ⟨hmem, ht⟩, by simp⟩
-  have hsupp : support Φ ⊆ C := fun y hy => by
-    by_contra hyC
-    exact hy (hΦC y hyC)
-  let Ψ : 𝓓(Ω, ℝ) := ⟨Φ, hΦs, HasCompactSupport.intro hCc hΦC,
-    (closure_minimal hsupp hCc.isClosed).trans hCΩ⟩
-  have hΨ : (Ψ : E → ℝ) = Φ := rfl
-  refine ⟨Ψ, fun hg y => ?_, fun hg y => ?_, fun y => ?_⟩
+  obtain ⟨Φ, hΦ⟩ := exists_testFunction_eq_intervalIntegral hVΩ g
+  have hΦ' : (Φ : E → ℝ) = fun y => ∫ t in (0 : ℝ)..1, g (y - t • h) := funext hΦ
+  refine ⟨Φ, fun hg y => ?_, fun hg y => ?_, fun y => ?_⟩
   · -- `|Φ y| ≤ 1` since `|g| ≤ 1`.
-    simpa [hΨ] using intervalIntegral.norm_integral_le_of_norm_le_const
+    simpa [hΦ] using intervalIntegral.norm_integral_le_of_norm_le_const
       (f := fun t => g (y - t • h)) (a := 0) (b := 1) (C := 1) fun t _ => hg _
-  · exact intervalIntegral.integral_nonneg zero_le_one fun t _ => hg _
-  · -- `s ↦ Φ (y + s h)` differentiates by the fundamental theorem of calculus, as
-    -- `Φ (y + s h) = ∫_{-s}^{1-s} g (y - t h) dt`.
-    set f : ℝ → ℝ := fun t => g (y - t • h)
-    have hf : Continuous f := g.continuous.comp (by fun_prop)
-    have hline : (fun s : ℝ => Φ (y + s • h)) =
-        fun s => (∫ t in (0 : ℝ)..1 - s, f t) - ∫ t in (0 : ℝ)..-s, f t := by
-      funext s
-      rw [intervalIntegral.integral_interval_sub_left (hf.intervalIntegrable _ _)
-        (hf.intervalIntegrable _ _), hΦ_def]
-      have hshift := intervalIntegral.integral_comp_sub_right f s (a := 0) (b := 1)
-      rw [zero_sub, sub_eq_add_neg 1 s, ← sub_eq_add_neg] at hshift
-      rw [← hshift]
-      refine intervalIntegral.integral_congr fun t _ => ?_
-      simp only [f, sub_smul]
-      congr 1
-      abel
-    -- `HasLineDerivAt` is by definition the derivative at `0` of `s ↦ Φ (y + s • h)`.
-    have hlin : HasLineDerivAt ℝ Φ (f 0 - f 1) y h := by
-      unfold HasLineDerivAt
-      rw [hline]
-      have h1 := ((hf.integral_hasStrictDerivAt 0 (1 - 0)).hasDerivAt.comp 0
-        ((hasDerivAt_id 0).const_sub 1))
-      have h2 := ((hf.integral_hasStrictDerivAt 0 (-0)).hasDerivAt.comp 0 (hasDerivAt_id 0).neg)
-      exact (h1.sub h2).congr_deriv (by simp only [sub_zero, neg_zero, mul_neg, mul_one]; ring)
-    rw [hΨ, hlin.lineDeriv]
-    simp [f]
+  · simpa [hΦ] using intervalIntegral.integral_nonneg zero_le_one fun t _ => hg (y - t • h)
+  · rw [hΦ']
+    exact (g.continuous.hasLineDerivAt_intervalIntegral_comp_sub y).lineDeriv
 
 omit [FiniteDimensional ℝ E] in
 /-- Pairing the difference `u (· + h) - u` with a test function `g` on `V` amounts to pairing `u`
@@ -250,9 +198,9 @@ private theorem exists_integral_comp_add_sub_mul_eq (hu : LocallyIntegrableOn u 
   refine ⟨Φ, hΦ1, hΦ0, ?_⟩
   -- By translation invariance of `μ`, `∫ g u (· + h) = ∫ g (· - h) u`.
   have hg₀ : Integrable (fun x => g x * u x) μ := by
-    simpa using integrable_smul_of_locallyIntegrableOn (hu.mono_set hV0) g
+    simpa using g.integrable_smul (hu.mono_set hV0)
   have hgh : Integrable (fun y => g (y - h) * u y) μ := by
-    simpa using integrable_smul_of_locallyIntegrableOn hu (translateTestFunction hV1 g)
+    simpa using TestFunction.integrable_smul (translateTestFunction hV1 g) hu
   have hgh' : Integrable (fun x => g x * u (x + h)) μ := by
     simpa using hgh.comp_add_right h
   have htrans : ∫ x, g x * u (x + h) ∂μ = ∫ y, g (y - h) * u y ∂μ := by

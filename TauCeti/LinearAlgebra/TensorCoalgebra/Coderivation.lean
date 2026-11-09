@@ -339,6 +339,54 @@ theorem IsCoderivation.eq_of_letter_comp_eq
 
 variable (R)
 
+/-- The comultiplication of `coderiv F` on a full word, expanded as the sum over a cut position and
+a collapsed block, with the cut either before or after the block. -/
+private theorem deconcatenation_coderiv_subword_zero (F : ReducedTensorWords R M →ₗ[R] M) {n : ℕ}
+    (x : Fin n → M) :
+    deconcatenation R M (coderiv R F (subword R x 0 n)) =
+      (∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1), ∑ c ∈ Finset.range (p + 1),
+          subword R x 0 c ⊗ₜ[R]
+            splice R x c (n - c) (p - c) d (F (subword R x p d))) +
+        ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1), ∑ c ∈ Finset.range n,
+          splice R x 0 c p d (F (subword R x p d)) ⊗ₜ[R] subword R x c (n - c) := by
+  rw [coderiv_subword R F x (a := 0) (b := n) (K := n) (le_refl n), map_sum,
+    ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun p _ ↦ ?_
+  rw [map_sum, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun d _ ↦ ?_
+  rw [deconcatenation_splice R x _]
+  simp only [Nat.zero_add]
+
+/-- The right-hand side of the co-Leibniz rule for `coderiv F` on a full word, expanded as a sum
+over a cut position and a collapsed block. -/
+private theorem rTensor_add_lTensor_coderiv_deconcatenation_subword_zero
+    (F : ReducedTensorWords R M →ₗ[R] M) {n : ℕ} (x : Fin n → M) :
+    LinearMap.rTensor (ReducedTensorWords R M) (coderiv R F)
+        (deconcatenation R M (subword R x 0 n)) +
+      LinearMap.lTensor (ReducedTensorWords R M) (coderiv R F)
+        (deconcatenation R M (subword R x 0 n)) =
+      (∑ c ∈ Finset.range n, ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1),
+          splice R x 0 c p d (F (subword R x p d)) ⊗ₜ[R] subword R x c (n - c)) +
+        ∑ c ∈ Finset.range n, ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1),
+          subword R x 0 c ⊗ₜ[R]
+            splice R x c (n - c) p d (F (subword R x (c + p) d)) := by
+  have h : deconcatenation R M (subword R x 0 n) =
+      ∑ c ∈ Finset.range n, subword R x 0 c ⊗ₜ[R] subword R x c (n - c) := by
+    simpa using map_deconcatenation_subword R LinearMap.id LinearMap.id x 0 n
+  rw [h, map_sum, map_sum]
+  congr 1 <;> refine Finset.sum_congr rfl fun c hc ↦ ?_ <;>
+    simp only [Finset.mem_range] at hc
+  · rw [LinearMap.rTensor_tmul,
+      coderiv_subword R F x (a := 0) (b := c) (K := n) (by omega),
+      TensorProduct.sum_tmul]
+    exact Finset.sum_congr rfl fun p _ ↦ by
+      rw [TensorProduct.sum_tmul]
+      simp only [Nat.zero_add]
+  · rw [LinearMap.lTensor_tmul,
+      coderiv_subword R F x (a := c) (b := n - c) (K := n) (by omega),
+      TensorProduct.tmul_sum]
+    exact Finset.sum_congr rfl fun p _ ↦ by rw [TensorProduct.tmul_sum]
+
 /-- `coderiv F` is a coderivation.  Both sides of the co-Leibniz rule are the sum, over a cut
 position and a collapsed block, of the tensor of the two halves with the block collapsed in
 whichever half contains it; a block is never split by a cut, and a cut never splits the new
@@ -350,47 +398,8 @@ theorem isCoderivation_coderiv (F : ReducedTensorWords R M →ₗ[R] M) :
   have hn : 0 < n.1 := n.2
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.add_apply]
   rw [of_tprod_eq_subword R hn x]
-  have hLHS : deconcatenation R M (coderiv R F (subword R x 0 n.1)) =
-      (∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1), ∑ c ∈ Finset.range (p + 1),
-          subword R x 0 c ⊗ₜ[R]
-            splice R x c (n.1 - c) (p - c) d (F (subword R x p d))) +
-        ∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1), ∑ c ∈ Finset.range n.1,
-          splice R x 0 c p d (F (subword R x p d)) ⊗ₜ[R] subword R x c (n.1 - c) := by
-    rw [coderiv_subword R F x (a := 0) (b := n.1) (K := n.1) (le_refl n.1), map_sum,
-      ← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun p _ ↦ ?_
-    rw [map_sum, ← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun d _ ↦ ?_
-    rw [deconcatenation_splice R x _]
-    simp only [Nat.zero_add]
-  have hdelta : deconcatenation R M (subword R x 0 n.1) =
-      ∑ c ∈ Finset.range n.1, subword R x 0 c ⊗ₜ[R] subword R x c (n.1 - c) := by
-    rw [deconcatenation_subword R x (a := 0) (b := n.1)]
-    simp only [Nat.zero_add]
-    exact sum_Ioo_eq_sum_range n.1 _ (by rw [subword_length_zero, TensorProduct.zero_tmul])
-  have hRHS : LinearMap.rTensor (ReducedTensorWords R M) (coderiv R F)
-        (deconcatenation R M (subword R x 0 n.1)) +
-      LinearMap.lTensor (ReducedTensorWords R M) (coderiv R F)
-        (deconcatenation R M (subword R x 0 n.1)) =
-      (∑ c ∈ Finset.range n.1, ∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1),
-          splice R x 0 c p d (F (subword R x p d)) ⊗ₜ[R] subword R x c (n.1 - c)) +
-        ∑ c ∈ Finset.range n.1, ∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1),
-          subword R x 0 c ⊗ₜ[R]
-            splice R x c (n.1 - c) p d (F (subword R x (c + p) d)) := by
-    rw [hdelta, map_sum, map_sum]
-    congr 1 <;> refine Finset.sum_congr rfl fun c hc ↦ ?_ <;>
-      simp only [Finset.mem_range] at hc
-    · rw [LinearMap.rTensor_tmul,
-        coderiv_subword R F x (a := 0) (b := c) (K := n.1) (by omega),
-        TensorProduct.sum_tmul]
-      exact Finset.sum_congr rfl fun p _ ↦ by
-        rw [TensorProduct.sum_tmul]
-        simp only [Nat.zero_add]
-    · rw [LinearMap.lTensor_tmul,
-        coderiv_subword R F x (a := c) (b := n.1 - c) (K := n.1) (by omega),
-        TensorProduct.tmul_sum]
-      exact Finset.sum_congr rfl fun p _ ↦ by rw [TensorProduct.tmul_sum]
-  rw [hLHS, hRHS, add_comm]
+  rw [deconcatenation_coderiv_subword_zero R F x,
+    rTensor_add_lTensor_coderiv_deconcatenation_subword_zero R F x, add_comm]
   congr 1
   · exact Eq.trans (Finset.sum_congr rfl fun p _ ↦ Finset.sum_comm) Finset.sum_comm
   · have hg : ∀ c q : ℕ, n.1 ≤ c + q →

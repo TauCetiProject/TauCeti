@@ -125,16 +125,12 @@ private theorem abs_jorgensen_apply_one_zero (hw : 0 ≤ w) (n : ℕ) :
 
 /-! ### Convergence of the iteration -/
 
-/-- If the lower-left entry of `A` is small enough, Jørgensen's iteration converges to the
-transvection `T`. The lower-left entries are squared at each step, and the upper-left entries
-stay bounded because they satisfy `a_{n+1} = 1 - w * a_n * c_n`. -/
-private theorem tendsto_jorgensen (hw : 0 < w) (hlt : w * |A 1 0| < 1) :
-    Tendsto (jorgensenSeq (transSL w) A) atTop (𝓝 (transSL w)) := by
+/-- The upper-left entries of Jørgensen's iteration stay bounded when `w * |A 1 0| < 1`, because
+they satisfy `a_{n+1} = 1 - w * a_n * c_n` and the lower-left entries decay geometrically. -/
+private theorem abs_jorgensen_apply_zero_zero_le (hw : 0 < w) (hlt : w * |A 1 0| < 1) (n : ℕ) :
+    |jorgensenSeq (transSL w) A n 0 0| ≤ max |A 0 0| (1 - w * |A 1 0|)⁻¹ := by
   set ε := w * |A 1 0| with hεdef
   have hε0 : 0 ≤ ε := by positivity
-  have hεle : ∀ n, w * |jorgensenSeq (transSL w) A n 1 0| ≤ ε ^ n := fun n => by
-    rw [abs_jorgensen_apply_one_zero hw.le, ← hεdef]
-    exact pow_le_pow_of_le_one hε0 hlt.le Nat.lt_two_pow_self.le
   have hεle1 : ∀ n, w * |jorgensenSeq (transSL w) A n 1 0| ≤ ε := fun n => by
     have h := pow_le_pow_of_le_one hε0 hlt.le (Nat.one_le_two_pow (n := n))
     rw [pow_one] at h
@@ -149,22 +145,34 @@ private theorem tendsto_jorgensen (hw : 0 < w) (hlt : w * |A 1 0| < 1) :
     nlinarith
   have htri : ∀ t : ℝ, |1 - t| ≤ 1 + |t| := fun t => by
     simpa [sub_eq_add_neg] using abs_add_le (1 : ℝ) (-t)
-  have habs : ∀ n, |jorgensenSeq (transSL w) A n 0 0| ≤ C := by
-    intro n
-    induction n with
-    | zero => rw [jorgensenSeq_zero]; exact le_max_left _ _
-    | succ n ih =>
-        rw [jorgensenSeq_succ, conj_transSL_apply_zero_zero]
-        calc |1 - w * jorgensenSeq (transSL w) A n 0 0 * jorgensenSeq (transSL w) A n 1 0|
-            ≤ 1 + |w * jorgensenSeq (transSL w) A n 0 0 * jorgensenSeq (transSL w) A n 1 0| :=
-              htri _
-          _ = 1 + |jorgensenSeq (transSL w) A n 0 0| *
-                (w * |jorgensenSeq (transSL w) A n 1 0|) := by
-              rw [abs_mul, abs_mul, abs_of_nonneg hw.le]; ring
-          _ ≤ 1 + C * ε := by
-              have := mul_le_mul ih (hεle1 n) (by positivity) hC0
-              linarith
-          _ ≤ C := hCε
+  induction n with
+  | zero => rw [jorgensenSeq_zero]; exact le_max_left _ _
+  | succ n ih =>
+      rw [jorgensenSeq_succ, conj_transSL_apply_zero_zero]
+      calc |1 - w * jorgensenSeq (transSL w) A n 0 0 * jorgensenSeq (transSL w) A n 1 0|
+          ≤ 1 + |w * jorgensenSeq (transSL w) A n 0 0 * jorgensenSeq (transSL w) A n 1 0| :=
+            htri _
+        _ = 1 + |jorgensenSeq (transSL w) A n 0 0| *
+              (w * |jorgensenSeq (transSL w) A n 1 0|) := by
+            rw [abs_mul, abs_mul, abs_of_nonneg hw.le]; ring
+        _ ≤ 1 + C * ε := by
+            have := mul_le_mul ih (hεle1 n) (by positivity) hC0
+            linarith
+        _ ≤ C := hCε
+
+/-- If the lower-left entry of `A` is small enough, Jørgensen's iteration converges to the
+transvection `T`. The lower-left entries are squared at each step, and the upper-left entries
+stay bounded because they satisfy `a_{n+1} = 1 - w * a_n * c_n`. -/
+private theorem tendsto_jorgensen (hw : 0 < w) (hlt : w * |A 1 0| < 1) :
+    Tendsto (jorgensenSeq (transSL w) A) atTop (𝓝 (transSL w)) := by
+  set ε := w * |A 1 0| with hεdef
+  have hε0 : 0 ≤ ε := by positivity
+  have hεle : ∀ n, w * |jorgensenSeq (transSL w) A n 1 0| ≤ ε ^ n := fun n => by
+    rw [abs_jorgensen_apply_one_zero hw.le, ← hεdef]
+    exact pow_le_pow_of_le_one hε0 hlt.le Nat.lt_two_pow_self.le
+  set C := max |A 0 0| (1 - ε)⁻¹
+  have hC0 : 0 ≤ C := le_max_of_le_right (by positivity)
+  have habs := abs_jorgensen_apply_zero_zero_le hw hlt
   have hprod : Tendsto
       (fun n => w * jorgensenSeq (transSL w) A n 0 0 * jorgensenSeq (transSL w) A n 1 0) atTop
       (𝓝 0) := by

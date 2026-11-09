@@ -47,6 +47,8 @@ reachability after deleting a set of vertices of `G` is reachability avoiding th
   along the bidirected arrow family.
 * `Graph.reachableAvoiding_bidirectedHom_iff`: reachability after deleting a set of vertices is
   reachability along the bidirected arrow family avoiding that set.
+* `Graph.reachableWithout_bidirectedHom_iff`: reachability after deleting a set of edges is
+  reachability along the bidirected arrow family without the arrows those edges give.
 * `TauCeti.ArrowWalk.internallyDisjoint_toGraphWalk_iff`: the identification preserves and
   reflects internal disjointness.
 -/
@@ -373,6 +375,20 @@ theorem reachableAvoiding_bidirectedHom_iff {Y : Set α} {x y : V(G)} :
     fun ⟨p, _, hp⟩ ↦ ⟨p.toBidirected x.2, fun v hv ↦ hp v ?_⟩⟩
   rw [← Walk.vertices_toBidirected p x.2]
   exact List.mem_unattach.2 ⟨v.2, hv⟩
+
+/-- Two actual vertices are reachable after deleting a set `E` of edges of `G` exactly when a
+directed walk of the bidirected arrow family joins them using no arrow given by an edge of `E`. -/
+theorem reachableWithout_bidirectedHom_iff {E : Set β} {x y : V(G)} :
+    ReachableWithout {a : Σ v w, G.BidirectedHom v w | a.2.2.1 ∈ E} x y ↔
+      (G.deleteEdges E).Reachable x y := by
+  rw [reachableWithout_def, reachable_deleteEdges_iff_exists_walk]
+  refine ⟨fun ⟨q, hq⟩ ↦ ⟨x.2, q.toGraphWalk, fun e he heE ↦ ?_⟩,
+    fun ⟨_, p, hp⟩ ↦ ⟨Walk.bidirectedEquiv G x y p, fun a ha haE ↦ ?_⟩⟩
+  · rw [ArrowWalk.edges_toGraphWalk, List.mem_map] at he
+    obtain ⟨a, ha, rfl⟩ := he
+    exact hq a ha heE
+  · rw [Walk.bidirectedEquiv_apply] at ha
+    exact hp _ (Walk.edges_toBidirected p x.2 ▸ List.mem_map_of_mem ha) haE
 
 /-- A set of actual vertices that the bidirected arrow family cannot avoid on its way from `x` to
 `y` separates `x` from `y` in `G`. -/

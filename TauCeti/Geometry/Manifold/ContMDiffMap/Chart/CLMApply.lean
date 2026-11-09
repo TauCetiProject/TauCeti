@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.CLMApply
-public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Seminorm
+public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.WithSeminorms
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Data.Nat.Choose.Sum
 
@@ -32,7 +32,7 @@ estimate), and the compact chart seminorms from `Chart.Seminorm`.
 public section
 
 open Set TopologicalSpace
-open scoped Manifold
+open scoped NNReal Manifold TauCeti.ManifoldWeakWhitney
 
 namespace ContMDiffMap
 
@@ -106,5 +106,29 @@ theorem chartCkSeminorm_le_clmApplyLinearMap
     simp [hBA]
   simpa only [heq] using
     chartCkSeminorm_clmApplyLinearMap_le B (clmApplyLinearMap A f) x K k hk
+
+/-- A fixed smooth family of continuous linear maps acts continuously on the native weak Whitney
+map space. The compact Leibniz estimate controls all transition derivatives. -/
+theorem continuous_clmApplyLinearMap
+    (A : C^n⟮I, M; 𝓘(𝕜, F →L[𝕜] G), F →L[𝕜] G⟯) :
+    Continuous (clmApplyLinearMap A) := by
+  apply WithSeminorms.continuous_of_continuous_comp
+    (withSeminorms_manifoldWeakWhitney (I := I) (M := M) (F := G) (n := n))
+    (clmApplyLinearMap A)
+  rintro ⟨x, ⟨m, hm⟩, K⟩
+  let C : ℝ≥0 := ⟨2 ^ m * chartCkSeminorm x K m hm A, by positivity⟩
+  let q : Seminorm 𝕜 C^n⟮I, M; 𝓘(𝕜, F), F⟯ := C • chartCkSeminorm x K m hm
+  have hc : Continuous q := by
+    simpa only [q, FunLike.coe_smul] using
+      (continuous_chartCkSeminorm (F := F) x K m hm).const_smul C
+  apply Seminorm.continuous_of_le hc
+  intro f
+  have hd : chartDerivativeSeminorm x K m hm (clmApplyLinearMap A f) ≤
+      chartCkSeminorm x K m hm (clmApplyLinearMap A f) :=
+    (chartDerivativeSeminorm_le_iff x K m hm _ (apply_nonneg _ _)).mpr fun z hz ↦
+      (chartCkSeminorm_le_iff x K m hm _ (apply_nonneg _ _)).mp le_rfl m le_rfl z hz
+  dsimp only [q]
+  rw [chartSeminormFamily_apply, Seminorm.comp_apply, smul_apply, NNReal.smul_def, smul_eq_mul]
+  exact hd.trans (chartCkSeminorm_clmApplyLinearMap_le A f x K m hm)
 
 end ContMDiffMap

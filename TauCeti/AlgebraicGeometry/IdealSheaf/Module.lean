@@ -148,9 +148,8 @@ lemma sheafι_app_injective (U : X.Opens) : Function.Injective (Scheme.Modules.H
 /-- The image of the sections of the ideal sheaf in `Γ(X, U)` is `sections I U`. -/
 @[simp]
 lemma range_sheafι_app (U : X.Opens) :
-    Set.range (Scheme.Modules.Hom.app I.sheafι U) = (I.sections U : Set Γ(X, U)) := by
-  ext s
-  exact ⟨fun ⟨t, ht⟩ ↦ ht ▸ I.sheafι_app_mem U t, fun hs ↦ ⟨I.sectionMk s hs, rfl⟩⟩
+    Set.range (Scheme.Modules.Hom.app I.sheafι U) = (I.sections U : Set Γ(X, U)) :=
+  I.submodule.toSubmodule.range_ι_app (op U)
 
 /-- Over an affine open `U`, the sections of `Iⁿ` are the regular functions in the ideal
 `I(U)ⁿ`. -/
@@ -163,7 +162,7 @@ theorem range_sheafι_app_pow (U : X.affineOpens) (n : ℕ) :
 def sheafLift {M : X.Modules} (φ : M ⟶ SheafOfModules.unit X.ringCatSheaf)
     (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ I.sections U) :
     M ⟶ I.sheaf :=
-  TauCeti.SheafOfModules.liftToSubmodule I.submodule φ fun U s ↦ hφ U.unop s
+  I.submodule.lift φ fun U s ↦ hφ U.unop s
 
 /-- `sheafLift` factors `φ` through `I`: composing it with the inclusion `I ⟶ 𝒪_X` recovers
 `φ`. -/
@@ -171,7 +170,7 @@ def sheafLift {M : X.Modules} (φ : M ⟶ SheafOfModules.unit X.ringCatSheaf)
 lemma sheafLift_ι {M : X.Modules} (φ : M ⟶ SheafOfModules.unit X.ringCatSheaf)
     (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ I.sections U) :
     I.sheafLift φ hφ ≫ I.sheafι = φ :=
-  TauCeti.SheafOfModules.liftToSubmodule_ι _ _ _
+  SheafOfModules.Submodule.lift_ι _ _ _
 
 /-- Every regular function is a section of the unit ideal sheaf, which cuts out the empty closed
 subscheme. -/

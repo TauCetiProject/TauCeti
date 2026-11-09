@@ -110,18 +110,6 @@ private theorem baseChangeMap_mkQuotient_comp_eqToIso
   subst J
   simp
 
-/-- Quotient maps commute with transporting their defining ideal along an equality. -/
-private theorem mkQuotient_comp_eqToIso
-    {I J : HopfIdeal A (GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht))}
-    (hIJ : I = J) :
-    CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht)) I ≫
-        (eqToIso (congrArg
-          (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht)))
-          hIJ)).hom =
-      CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht)) J := by
-  subst J
-  simp
-
 /-- The equality identifying the named Geck defining ideal with its generic Kostant spelling,
 transported through quotient formation and scalar extension. -/
 private noncomputable def geckIntegralCoordinateTransportIso :
@@ -180,14 +168,14 @@ theorem mkQuotient_comp_geckBaseChangeCoordinateIso_hom :
             (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
             (t.geckDefiningIdeal ht)) := by
   rw [geckBaseChangeCoordinateIso, Iso.trans_hom, Iso.trans_hom,
-    ← Category.assoc, t.mkQuotient_comp_eqToIso ht A
-      (by rfl : t.geckBaseChangeDefiningIdeal ht A =
+    eqToIso.hom, ← Category.assoc, CommHopfAlgCat.mkQuotient_comp_eqToHom
+      (Eq.symm (by rfl : t.geckBaseChangeDefiningIdeal ht A =
         kostantToralBaseChangePresentationIdeal
           (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
           (t.geckCoordinateLattice ht).toAddSubgroup
           (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
           (t.isNilpotent_geckRepresentation_rootGenerator ht)
-          (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A), ← Category.assoc,
+          (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A)), ← Category.assoc,
     mkQuotient_comp_kostantToralBaseChangePresentationIso_hom, Category.assoc,
     geckIntegralCoordinateTransportIso,
     t.baseChangeMap_mkQuotient_comp_eqToIso ht A (t.geckDefiningIdeal_def ht).symm]
@@ -387,7 +375,7 @@ theorem pointToGeneralLinear_mapDomain_geckRootSubgroupToBaseChangeCoordinateMap
       (t.geckCoordinateLattice ht).toAddSubgroup
       (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
       (t.isNilpotent_geckRepresentation_rootGenerator ht)
-      (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A (t.geckDefiningIdeal_def ht) i B q
+      (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A i B q
       using 1
   congr 1
   erw [BialgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply,
@@ -419,7 +407,7 @@ theorem geckBaseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap
     geckRootSubgroupIntegralCoordinateMap, ← Category.assoc
       (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
         (t.geckDefiningIdeal ht)),
-    t.mkQuotient_comp_eqToIso ht ℤ (t.geckDefiningIdeal_def ht),
+    eqToIso.hom, CommHopfAlgCat.mkQuotient_comp_eqToHom (t.geckDefiningIdeal_def ht).symm,
     mkQuotient_comp_kostantRootSubgroupToralCoordinateMap,
     mkQuotient_comp_geckRootSubgroupToBaseChangeCoordinateMap,
     geckRootSubgroupBaseChangeCoordinateMap]
@@ -597,7 +585,7 @@ theorem geckBaseChangeCoordinateIso_hom_comp_weightTorusBaseChangeMap :
     geckWeightTorusIntegralCoordinateMap, ← Category.assoc
       (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
         (t.geckDefiningIdeal ht)),
-    t.mkQuotient_comp_eqToIso ht ℤ (t.geckDefiningIdeal_def ht),
+    eqToIso.hom, CommHopfAlgCat.mkQuotient_comp_eqToHom (t.geckDefiningIdeal_def ht).symm,
     mkQuotient_comp_kostantWeightTorusToralCoordinateMap,
     mkQuotient_comp_geckWeightTorusToBaseChangeCoordinateMap,
     geckWeightTorusBaseChangeCoordinateMap]

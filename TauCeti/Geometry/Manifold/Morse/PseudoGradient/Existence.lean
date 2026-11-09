@@ -144,6 +144,19 @@ theorem exists_pos_forall_norm_lt_mem_target :
     (φ.toChart.open_target.preimage φ.coordL.symm.continuous) 0 h0
   exact ⟨r, hr, fun z hz ↦ by simpa using hball (mem_ball_zero_iff.2 hz)⟩
 
+/-- The coordinate change of a Morse chart is continuous. -/
+theorem continuous_coord : Continuous φ.coord :=
+  φ.coordL.continuous.congr φ.coordL_apply
+
+open Filter in
+/-- The point with coordinates `w` tends to the critical point as `w` tends to `0`. -/
+theorem tendsto_toChart_symm_coord_symm_nhds_zero :
+    Tendsto (fun w ↦ φ.toChart.symm (φ.coord.symm w)) (𝓝 0) (𝓝 x) := by
+  obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
+  have h := (φ.toChart.continuousAt_symm (hrT 0 (by simpa using hr))).comp
+    (φ.coordL.symm.continuous.continuousAt.congr (.of_forall φ.coordL_symm_apply))
+  rwa [ContinuousAt, comp_apply, φ.toChart_symm_coord_symm_zero] at h
+
 /-- The derivative of the quadratic normal form. -/
 theorem hasFDerivAt_quadratic (z : E) :
     HasFDerivAt φ.quadratic
@@ -316,6 +329,161 @@ section Existence
 
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
 
+section LocalField
+
+variable {C : Set M} {φ : ∀ c : C, MorseChart E f c} {A : C → Set M} {D : Set M}
+
+/-- Near a point of the neighbourhood `A c₀` of a critical point, the Morse field of `c₀` is a
+local candidate for the pseudo-gradient: it decreases `f` at the regular points of `D`, and it
+agrees with the Morse field of every `c` at the points of `A c`, because the sets `A c` lie in
+pairwise disjoint sets `W c`. -/
+private theorem exists_nhds_contMDiffOn_field_of_mem {W : C → Set M}
+    (hCcrit : ∀ c : C, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f c = 0) (hW : ∀ c, IsOpen (W c))
+    (hWdisj : ∀ c c' : C, c ≠ c' → Disjoint (W c) (W c'))
+    (hAsub : ∀ c, A c ⊆ (φ c).toChart.source ∩ W c) (hDreg : D ⊆ (criticalPoints 𝓘(ℝ, E) f)ᶜ)
+    {c₀ : C} {y₀ : M} (hy₀ : y₀ ∈ A c₀) :
+    ∃ V ∈ 𝓝 y₀, ∃ s : (y : M) → TangentSpace 𝓘(ℝ, E) y,
+      ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞
+        (fun y ↦ (⟨y, s y⟩ : TangentBundle 𝓘(ℝ, E) M)) V ∧
+      ∀ y ∈ V, (y ∈ D → mvfderiv 𝓘(ℝ, E) f y (s y) < 0) ∧
+        ∀ c, y ∈ A c → s y = (φ c).field y := by
+  have hVo : IsOpen ((φ c₀).toChart.source ∩ W c₀) := (φ c₀).toChart.open_source.inter (hW c₀)
+  refine ⟨_, hVo.mem_nhds (hAsub c₀ hy₀), (φ c₀).field,
+    (φ c₀).contMDiffOn_field.mono inter_subset_left, fun y hy ↦ ⟨fun hyD ↦ ?_, fun c hyA ↦ ?_⟩⟩
+  · have hycrit : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0 := by
+      simpa only [mem_compl_iff, mem_criticalPoints_iff_mfderiv_eq_zero] using hDreg hyD
+    exact (φ c₀).mvfderiv_field_apply_lt_zero hy.1 fun hyx ↦ hycrit (hyx ▸ hCcrit c₀)
+  · obtain rfl : c₀ = c := by
+      by_contra hne
+      exact (hWdisj c₀ c hne).le_bot ⟨hy.2, (hAsub c hyA).2⟩
+    rfl
+
+/-- Near a point of the regular core `D` that is outside the neighbourhoods `A c`, a constant
+field in a chart is a local candidate for the pseudo-gradient. -/
+private theorem exists_nhds_contMDiffOn_field_of_mem_of_notMem_iUnion
+    (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) (hAclosed : IsClosed (⋃ c, A c))
+    (hDreg : D ⊆ (criticalPoints 𝓘(ℝ, E) f)ᶜ) {y₀ : M} (hy₀D : y₀ ∈ D) (hy₀A : y₀ ∉ ⋃ c, A c) :
+    ∃ V ∈ 𝓝 y₀, ∃ s : (y : M) → TangentSpace 𝓘(ℝ, E) y,
+      ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞
+        (fun y ↦ (⟨y, s y⟩ : TangentBundle 𝓘(ℝ, E) M)) V ∧
+      ∀ y ∈ V, (y ∈ D → mvfderiv 𝓘(ℝ, E) f y (s y) < 0) ∧
+        ∀ c, y ∈ A c → s y = (φ c).field y := by
+  have hcrit : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y₀ ≠ 0 := by
+    simpa only [mem_compl_iff, mem_criticalPoints_iff_mfderiv_eq_zero] using hDreg hy₀D
+  obtain ⟨v, V, hV, hVc, hVneg⟩ := exists_mem_nhds_mvfderiv_chartConstField_lt_zero hf hcrit
+  refine ⟨_, Filter.inter_mem (hAclosed.isOpen_compl.mem_nhds hy₀A) hV, chartConstField E y₀ v,
+    (contMDiffOn_chartConstField y₀ v).mono fun y hy ↦ hVc hy.2,
+    fun y hy ↦ ⟨fun _ ↦ hVneg y hy.2, fun c hyA ↦ (hy.1 (mem_iUnion.2 ⟨c, hyA⟩)).elim⟩⟩
+
+omit [FiniteDimensional ℝ E] in
+/-- Away from the regular core `D` and the neighbourhoods `A c`, the zero field is a local
+candidate for the pseudo-gradient. -/
+private theorem exists_nhds_contMDiffOn_field_of_notMem_of_notMem_iUnion
+    (hDc : IsClosed D) (hAclosed : IsClosed (⋃ c, A c))
+    {y₀ : M} (hy₀D : y₀ ∉ D) (hy₀A : y₀ ∉ ⋃ c, A c) :
+    ∃ V ∈ 𝓝 y₀, ∃ s : (y : M) → TangentSpace 𝓘(ℝ, E) y,
+      ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞
+        (fun y ↦ (⟨y, s y⟩ : TangentBundle 𝓘(ℝ, E) M)) V ∧
+      ∀ y ∈ V, (y ∈ D → mvfderiv 𝓘(ℝ, E) f y (s y) < 0) ∧
+        ∀ c, y ∈ A c → s y = (φ c).field y :=
+  ⟨_, Filter.inter_mem (hDc.isOpen_compl.mem_nhds hy₀D) (hAclosed.isOpen_compl.mem_nhds hy₀A),
+    fun _ ↦ 0, (Bundle.contMDiff_zeroSection ℝ
+      (TangentSpace 𝓘(ℝ, E) : M → Type _)).contMDiffOn,
+    fun _ hy ↦ ⟨fun hyD ↦ (hy.1 hyD).elim, fun c hyA ↦ (hy.2 (mem_iUnion.2 ⟨c, hyA⟩)).elim⟩⟩
+
+/-- **A pseudo-gradient on a regular core, equal to the Morse fields near the critical points.**
+Let `D` be a closed set of regular points and `A c` closed neighbourhoods of finitely many critical
+points `c`, inside Morse charts and pairwise disjoint open sets `W c`. Then there is a smooth vector
+field along which `f` decreases on `D` and which equals the Morse field of `c` on `A c`. -/
+private theorem exists_contMDiff_field_lt_zero_and_eq_field [T2Space M] [SigmaCompactSpace M]
+    {W : C → Set M} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f)
+    (hCcrit : ∀ c : C, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f c = 0) (hW : ∀ c, IsOpen (W c))
+    (hWdisj : ∀ c c' : C, c ≠ c' → Disjoint (W c) (W c'))
+    (hAsub : ∀ c, A c ⊆ (φ c).toChart.source ∩ W c) (hDc : IsClosed D)
+    (hDreg : D ⊆ (criticalPoints 𝓘(ℝ, E) f)ᶜ) (hAclosed : IsClosed (⋃ c, A c)) :
+    ∃ s : (y : M) → TangentSpace 𝓘(ℝ, E) y,
+      ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞
+        (fun y ↦ (⟨y, s y⟩ : TangentBundle 𝓘(ℝ, E) M)) ∧
+      ∀ y, (y ∈ D → mvfderiv 𝓘(ℝ, E) f y (s y) < 0) ∧
+        ∀ c, y ∈ A c → s y = (φ c).field y := by
+  -- The fibrewise convex constraint: `df(v) < 0` on `D`, and equality with the Morse field on
+  -- each `A c`.
+  let t : (y : M) → Set (TangentSpace 𝓘(ℝ, E) y) := fun y ↦
+    {v | y ∈ D → mvfderiv 𝓘(ℝ, E) f y v < 0} ∩
+      {v | ∀ c, y ∈ A c → v = (φ c).field y}
+  have ht : ∀ y, Convex ℝ (t y) := by
+    intro y
+    refine Convex.inter ?_ fun v hv w hw a b _ _ hab c hyA ↦ ?_
+    · by_cases hy : y ∈ D
+      · simp only [hy, true_implies]
+        exact convex_halfSpace_lt (mvfderiv 𝓘(ℝ, E) f y).isLinear 0
+      · simp [hy, convex_univ]
+    · rw [hv c hyA, hw c hyA, ← add_smul, hab, one_smul]
+  have hloc : ∀ y₀ : M, ∃ V ∈ 𝓝 y₀, ∃ s : (y : M) → TangentSpace 𝓘(ℝ, E) y,
+      ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞
+        (fun y ↦ (⟨y, s y⟩ : TangentBundle 𝓘(ℝ, E) M)) V ∧ ∀ y ∈ V, s y ∈ t y := by
+    intro y₀
+    by_cases hA : y₀ ∈ ⋃ c, A c
+    · obtain ⟨c, hc⟩ := mem_iUnion.1 hA
+      exact exists_nhds_contMDiffOn_field_of_mem hCcrit hW hWdisj hAsub hDreg hc
+    · by_cases hy₀D : y₀ ∈ D
+      · exact exists_nhds_contMDiffOn_field_of_mem_of_notMem_iUnion hf hAclosed hDreg hy₀D hA
+      · exact exists_nhds_contMDiffOn_field_of_notMem_of_notMem_iUnion hDc hAclosed hy₀D hA
+  obtain ⟨s, hs⟩ := exists_contMDiffSection_forall_mem_convex_of_local 𝓘(ℝ, E)
+    (n := (⊤ : ℕ∞)) (TangentSpace 𝓘(ℝ, E)) t ht hloc
+  exact ⟨s, s.contMDiff, hs⟩
+
+/-- **The pseudo-gradient property on a neighbourhood of `K`.** Let `s` be a smooth field along
+which `f` decreases on `D`, equal to the Morse field of `c` on the neighbourhood `A c` of `c`. If
+`K` lies in the union of `D` and the interiors of the `A c`, and every critical point of `f` in `K`
+is one of the `c`, then `s` is a pseudo-gradient on an open neighbourhood of `K`, equal to the
+Morse field on a smaller Morse chart around each critical point in `K`. -/
+private theorem exists_isOpen_pseudoGradientOn_of_field {K : Set M}
+    (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) (hCcrit : ∀ c : C, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f c = 0)
+    (hCK : ∀ x ∈ K, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 → x ∈ C)
+    (hAn : ∀ c : C, A c ∈ 𝓝 (c : M)) (hAsub : ∀ c, A c ⊆ (φ c).toChart.source)
+    (hKU : K ⊆ D ∪ ⋃ c, interior (A c))
+    {s : (y : M) → TangentSpace 𝓘(ℝ, E) y}
+    (hsm : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞
+      (fun y ↦ (⟨y, s y⟩ : TangentBundle 𝓘(ℝ, E) M)))
+    (hs : ∀ y, (y ∈ D → mvfderiv 𝓘(ℝ, E) f y (s y) < 0) ∧
+      ∀ c, y ∈ A c → s y = (φ c).field y) :
+    ∃ U ∈ 𝓝ˢ K, IsOpen U ∧
+      ∃ X : (x : M) → TangentSpace 𝓘(ℝ, E) x,
+        ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞
+            (fun x ↦ (⟨x, X x⟩ : TangentBundle 𝓘(ℝ, E) M)) ∧
+          (∀ x ∈ U, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x ≠ 0 →
+            mvfderiv 𝓘(ℝ, E) f x (X x) < 0) ∧
+          ∀ x ∈ K, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 →
+            ∃ φ : MorseChart E f x, φ.toChart.source ⊆ U ∧
+              ∀ y ∈ φ.toChart.source, X y = φ.field y := by
+  -- By continuity of `df(s)`, descent on `D` extends to an open set `V`; together with the
+  -- interiors of the chart neighbourhoods it gives the open neighbourhood `U` of `K`.
+  have hdesc : Continuous (fun y ↦ mvfderiv 𝓘(ℝ, E) f y (s y)) :=
+    ((hf.contMDiff_mvfderiv_apply (m := (⊤ : ℕ∞)) (by simp)).comp hsm).continuous
+  have hVo : IsOpen ((fun y ↦ mvfderiv 𝓘(ℝ, E) f y (s y)) ⁻¹' Iio 0) := isOpen_Iio.preimage hdesc
+  have hGo : IsOpen (⋃ c : C, interior (A c)) := isOpen_iUnion fun _ ↦ isOpen_interior
+  have hUo := hVo.union hGo
+  refine ⟨_, mem_nhdsSet_iff_forall.2 fun x hx ↦ hUo.mem_nhds ?_, hUo, s, hsm, ?_, ?_⟩
+  · rcases hKU hx with hxD | hxG
+    · exact Or.inl ((hs x).1 hxD)
+    · exact Or.inr hxG
+  · intro y hy hyreg
+    rcases hy with hyV | hyG
+    · exact hyV
+    · obtain ⟨c, hyA⟩ := mem_iUnion.1 hyG
+      rw [(hs y).2 c (interior_subset hyA)]
+      exact (φ c).mvfderiv_field_apply_lt_zero (hAsub c (interior_subset hyA))
+        fun hyx ↦ hyreg (hyx ▸ hCcrit c)
+  · intro x hxK hx
+    let c : C := ⟨x, hCK x hxK hx⟩
+    refine ⟨(φ c).restr isOpen_interior (mem_interior_iff_mem_nhds.2 (hAn c)),
+      fun y hy ↦ ?_, fun y hy ↦ ?_⟩ <;> rw [MorseChart.restr_source] at hy
+    · exact Or.inr (mem_iUnion.2 ⟨c, hy.2⟩)
+    · simpa only [MorseChart.restr_field] using (hs y).2 c (interior_subset hy.2)
+
+end LocalField
+
 open Filter in
 /-- **Existence of a pseudo-gradient near a compact set.** Let `K` be a compact subset of a
 regular Hausdorff sigma-compact manifold and let `f` be smooth. If every critical point of `f` in
@@ -343,8 +511,10 @@ theorem _root_.IsCompact.exists_contMDiff_pseudoGradientOn_nhds [T2Space M] [Sig
   classical
   let _ : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace E M
   -- The critical points in `K` are isolated, hence finitely many. Choose a Morse chart at each,
-  -- and pairwise disjoint closed neighbourhoods `A x` inside these charts.
+  -- and pairwise disjoint closed neighbourhoods `A c` inside these charts.
   let C := criticalPoints 𝓘(ℝ, E) f ∩ K
+  have hCcrit (c : C) : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f c = 0 :=
+    mem_criticalPoints_iff_mfderiv_eq_zero.1 c.2.1
   have hC : C.Finite := by
     refine (hK.inter_left (isClosed_criticalPoints (hf.of_le (by simp)))).finite ?_
     rw [isDiscrete_iff_nhdsNE]
@@ -353,176 +523,29 @@ theorem _root_.IsCompact.exists_contMDiff_pseudoGradientOn_nhds [T2Space M] [Sig
     filter_upwards [(hnd x hxK
       (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx)).eventually_notMem_criticalPoints]
       with y hy using fun h ↦ hy h.1
-  let φ : ∀ x ∈ C, MorseChart E f x := fun x hx ↦
-    ((hnd x hx.2 (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.1)).nonempty_morseChart
+  let φ : ∀ c : C, MorseChart E f c := fun c ↦
+    ((hnd c c.2.2 (hCcrit c)).nonempty_morseChart
       (Eventually.of_forall fun _ ↦ hf.contMDiffAt)).some
   obtain ⟨W, hW, hWdisj⟩ := hC.t2_separation
-  have hA : ∀ x (hx : x ∈ C), ∃ A, A ∈ 𝓝 x ∧ IsClosed A ∧
-      A ⊆ (φ x hx).toChart.source ∩ W x := fun x hx ↦
-    exists_mem_nhds_isClosed_subset
-      (Filter.inter_mem ((φ x hx).toChart.open_source.mem_nhds (φ x hx).mem_source)
-        ((hW x).2.mem_nhds (hW x).1))
-  choose A hAn hAc hAsub using hA
-  let A' : M → Set M := fun x ↦ if hx : x ∈ C then A x hx else ∅
-  have hA' : ∀ x (hx : x ∈ C), A' x = A x hx := fun x hx ↦ by simp [A', hx]
-  -- The rest `R` of `K` is compact and regular, so finitely many closed regular neighbourhoods
-  -- cover it; `D` is their union.
-  let G := ⋃ x ∈ C, interior (A' x)
-  have hGo : IsOpen G := isOpen_biUnion fun _ _ ↦ isOpen_interior
-  have hcritical_mem_G {x : M} (hxK : x ∈ K)
-      (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) : x ∈ G := by
-    have hxC : x ∈ C := ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hx, hxK⟩
-    refine mem_iUnion₂.2 ⟨x, hxC, ?_⟩
-    rw [hA' x hxC]
-    exact mem_interior_iff_mem_nhds.2 (hAn x hxC)
-  let R := K \ G
-  have hRc : IsCompact R := hK.diff hGo
-  have hRreg : ∀ x ∈ R, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x ≠ 0 := by
-    intro x hx hzero
-    exact hx.2 (hcritical_mem_G hx.1 hzero)
-  have hB : ∀ x ∈ R, ∃ B, B ∈ 𝓝 x ∧ IsClosed B ∧
-      B ⊆ (criticalPoints 𝓘(ℝ, E) f)ᶜ := fun x hx ↦
-    exists_mem_nhds_isClosed_subset
-      ((isClosed_criticalPoints (hf.of_le (by simp))).isOpen_compl.mem_nhds
-        (fun hcrit ↦ hRreg x hx (mem_criticalPoints_iff_mfderiv_eq_zero.1 hcrit)))
-  choose B hBn hBc hBsub using hB
-  let B' : M → Set M := fun x ↦ if hx : x ∈ R then B x hx else ∅
-  have hB' : ∀ x (hx : x ∈ R), B' x = B x hx := fun x hx ↦ by simp [B', hx]
-  obtain ⟨q, hqR, hq⟩ := hRc.elim_nhds_subcover B' fun x hx ↦ by
-    rw [hB' x hx]
-    exact hBn x hx
-  let D := ⋃ x ∈ q, B' x
-  have hDc : IsClosed D := isClosed_biUnion_finset fun x hx ↦ by
-    rw [hB' x (hqR x hx)]
-    exact hBc x (hqR x hx)
-  have hRD : R ⊆ D := hq
-  have hDreg : D ⊆ (criticalPoints 𝓘(ℝ, E) f)ᶜ := by
-    rintro y hy
-    obtain ⟨x, hxq, hyB⟩ := mem_iUnion₂.1 hy
-    rw [hB' x (hqR x hxq)] at hyB
-    exact hBsub x (hqR x hxq) hyB
-  have hAclosed : IsClosed (⋃ x ∈ C, A' x) :=
-    hC.isClosed_biUnion fun x hx ↦ by rw [hA' x hx]; exact hAc x hx
-  -- The fibrewise convex constraint: `df(v) < 0` on `D`, and equality with the Morse field on
-  -- each `A x`. Locally it is met by a Morse field near some `A x`, by a chart-constant field near
-  -- a point of `D` away from all `A x`, and by the zero field away from `D` and all `A x`.
-  let ℓ : (y : M) → TangentSpace 𝓘(ℝ, E) y →L[ℝ] ℝ :=
-    fun y ↦ mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y
-  let t : (y : M) → Set (TangentSpace 𝓘(ℝ, E) y) := fun y ↦
-    {v | y ∈ D → ℓ y v < 0} ∩
-      ⋂ x, ⋂ (hx : x ∈ C), ⋂ (_ : y ∈ A x hx), {(φ x hx).field y}
-  have ht : ∀ y, Convex ℝ (t y) := by
-    intro y
-    refine Convex.inter ?_ (convex_iInter fun x ↦ convex_iInter fun hx ↦
-      convex_iInter fun _ ↦ convex_singleton _)
-    by_cases hy : y ∈ D
-    · simp only [hy, true_implies]
-      exact convex_halfSpace_lt (ℓ y).isLinear 0
-    · simp [hy, convex_univ]
-  have hloc : ∀ y₀ : M, ∃ V ∈ 𝓝 y₀, ∃ s : (y : M) → TangentSpace 𝓘(ℝ, E) y,
-      ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞
-        (fun y ↦ (⟨y, s y⟩ : TangentBundle 𝓘(ℝ, E) M)) V ∧ ∀ y ∈ V, s y ∈ t y := by
-    intro y₀
-    by_cases h : ∃ x, ∃ hx : x ∈ C, y₀ ∈ A x hx
-    · obtain ⟨x, hx, hy₀⟩ := h
-      have hVo : IsOpen ((φ x hx).toChart.source ∩ W x) :=
-        (φ x hx).toChart.open_source.inter (hW x).2
-      refine ⟨_, hVo.mem_nhds (hAsub x hx hy₀), (φ x hx).field,
-        (φ x hx).contMDiffOn_field.mono inter_subset_left, fun y hy ↦ ⟨fun hyD ↦ ?_, ?_⟩⟩
-      · have hycrit : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0 := by
-          simpa only [mem_compl_iff, mem_criticalPoints_iff_mfderiv_eq_zero] using hDreg hyD
-        exact (φ x hx).mvfderiv_field_apply_lt_zero hy.1 fun hyx ↦
-          hycrit (hyx ▸ mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.1)
-      · simp only [mem_iInter, mem_singleton_iff]
-        intro x' hx' hy'
-        have hxx' : x = x' := by
-          by_contra hne
-          exact Set.disjoint_left.1 (hWdisj hx hx' hne) hy.2 ((hAsub x' hx' hy').2)
-        subst hxx'
-        rfl
-    · simp only [not_exists] at h
-      by_cases hy₀D : y₀ ∈ D
-      · have hcrit : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y₀ ≠ 0 := by
-          simpa only [mem_compl_iff, mem_criticalPoints_iff_mfderiv_eq_zero] using hDreg hy₀D
-        obtain ⟨v, V, hV, hVc, hVneg⟩ :=
-          exists_mem_nhds_mvfderiv_chartConstField_lt_zero hf hcrit
-        refine ⟨_, Filter.inter_mem (hAclosed.isOpen_compl.mem_nhds ?_) hV,
-          chartConstField E y₀ v,
-          (contMDiffOn_chartConstField y₀ v).mono fun y hy ↦ hVc hy.2,
-          fun y hy ↦ ⟨fun _ ↦ hVneg y hy.2, ?_⟩⟩
-        · simp only [mem_compl_iff, mem_iUnion, not_exists]
-          intro x hx hmem
-          rw [hA' x hx] at hmem
-          exact h x hx hmem
-        · simp only [mem_iInter, mem_singleton_iff]
-          intro x hx hyA
-          exfalso
-          refine hy.1 (mem_iUnion₂.2 ⟨x, hx, ?_⟩)
-          rwa [hA' x hx]
-      · refine ⟨Dᶜ ∩ (⋃ x ∈ C, A' x)ᶜ,
-          Filter.inter_mem (hDc.isOpen_compl.mem_nhds hy₀D)
-            (hAclosed.isOpen_compl.mem_nhds ?_), fun _ ↦ 0,
-          (Bundle.contMDiff_zeroSection ℝ
-            (TangentSpace 𝓘(ℝ, E) : M → Type _)).contMDiffOn,
-          fun y hy ↦ ?_⟩
-        · simp only [mem_compl_iff, mem_iUnion, not_exists]
-          intro x hx hmem
-          rw [hA' x hx] at hmem
-          exact h x hx hmem
-        · refine ⟨fun hyD ↦ (hy.1 hyD).elim, ?_⟩
-          simp only [mem_iInter, mem_singleton_iff]
-          intro x hx hyA
-          exfalso
-          exact hy.2 (mem_iUnion₂.2 ⟨x, hx, by rwa [hA' x hx]⟩)
-  obtain ⟨s, hs⟩ := exists_contMDiffSection_forall_mem_convex_of_local 𝓘(ℝ, E)
-    (n := (⊤ : ℕ∞)) (TangentSpace 𝓘(ℝ, E)) t ht hloc
-  -- By continuity of `df(s)`, descent on `D ⊇ R` extends to an open set `V`; together with the
-  -- interiors `G` of the chart neighbourhoods it gives the open neighbourhood `U` of `K`.
-  have hdesc : Continuous (fun y ↦ mvfderiv 𝓘(ℝ, E) f y (s y)) :=
-    ((hf.contMDiff_mvfderiv_apply (m := (⊤ : ℕ∞)) (by simp)).comp s.contMDiff).continuous
-  let V := (fun y ↦ mvfderiv 𝓘(ℝ, E) f y (s y)) ⁻¹' Iio 0
-  let U := V ∪ G
-  have hVo : IsOpen V := isOpen_Iio.preimage hdesc
-  have hUo : IsOpen U := hVo.union hGo
-  have hKU : K ⊆ U := by
-    intro x hxK
-    by_cases hxG : x ∈ G
-    · exact Or.inr hxG
-    · apply Or.inl
-      have hxR : x ∈ R := ⟨hxK, hxG⟩
-      exact (hs x).1 (hRD hxR)
-  refine ⟨U, mem_nhdsSet_iff_forall.2 fun x hx ↦ hUo.mem_nhds (hKU hx), hUo, s,
-    s.contMDiff, ?_, ?_⟩
-  · intro y hy hyreg
-    rcases hy with hyV | hyG
-    · exact hyV
-    · obtain ⟨x, hxC, hyA⟩ := mem_iUnion₂.1 hyG
-      have hyA' : y ∈ interior (A x hxC) := by rwa [← hA' x hxC]
-      have hysource : y ∈ (φ x hxC).toChart.source :=
-        (hAsub x hxC (interior_subset hyA')).1
-      have hsy : s y = (φ x hxC).field y := by
-        have := (hs y).2
-        simp only [mem_iInter, mem_singleton_iff] at this
-        exact this x hxC (interior_subset hyA')
-      rw [hsy]
-      exact (φ x hxC).mvfderiv_field_apply_lt_zero hysource fun hyx ↦
-        hyreg (hyx ▸ mem_criticalPoints_iff_mfderiv_eq_zero.1 hxC.1)
-  · intro x hxK hx
-    have hxC : x ∈ C := ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hx, hxK⟩
-    let ψ := (φ x hxC).restr isOpen_interior (mem_interior_iff_mem_nhds.2 (hAn x hxC))
-    refine ⟨ψ, fun y hy ↦ ?_, fun y hy ↦ ?_⟩
-    · rw [MorseChart.restr_source] at hy
-      apply Or.inr
-      refine mem_iUnion₂.2 ⟨x, hxC, ?_⟩
-      rw [hA' x hxC]
-      exact hy.2
-    rw [MorseChart.restr_source] at hy
-    have hyA : y ∈ A x hxC := interior_subset hy.2
-    have hsy : s y = (φ x hxC).field y := by
-      have := (hs y).2
-      simp only [mem_iInter, mem_singleton_iff] at this
-      exact this x hxC hyA
-    simpa only [ψ, MorseChart.restr_field] using hsy
+  choose A hAn hAc hAsub using fun c : C ↦ exists_mem_nhds_isClosed_subset
+    (Filter.inter_mem ((φ c).toChart.open_source.mem_nhds (φ c).mem_source)
+      ((hW c).2.mem_nhds (hW c).1))
+  have : Finite C := hC.to_subtype
+  -- The regular core `R` of `K`, away from the interiors of these neighbourhoods, is compact.
+  let R := K \ ⋃ c : C, interior (A c)
+  have hRc : IsCompact R := hK.diff (isOpen_iUnion fun _ ↦ isOpen_interior)
+  have hCK (x : M) (hxK : x ∈ K) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) : x ∈ C :=
+    ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hx, hxK⟩
+  have hRreg : R ⊆ (criticalPoints 𝓘(ℝ, E) f)ᶜ := fun x hx hcrit ↦ hx.2 <|
+    mem_iUnion.2 ⟨⟨x, hcrit, hx.1⟩, mem_interior_iff_mem_nhds.2 (hAn ⟨x, hcrit, hx.1⟩)⟩
+  obtain ⟨s, hsm, hs⟩ := exists_contMDiff_field_lt_zero_and_eq_field hf hCcrit
+    (fun c ↦ (hW c).2) (fun c c' h ↦ hWdisj c.2 c'.2 (Subtype.coe_injective.ne h)) hAsub
+    hRc.isClosed hRreg (isClosed_iUnion_of_finite hAc)
+  exact exists_isOpen_pseudoGradientOn_of_field hf hCcrit hCK hAn (fun c y hy ↦ (hAsub c hy).1)
+    (fun x hxK ↦ by
+      by_cases hx : x ∈ ⋃ c : C, interior (A c)
+      · exact Or.inr hx
+      · exact Or.inl ⟨hxK, hx⟩) hsm hs
 
 /-- A Morse function has a smooth pseudo-gradient on a neighbourhood of every compact set. The
 field retains the exact linear normal form on smaller Morse charts around the critical points in

@@ -113,12 +113,12 @@ lemma spectralSequencePageXMap_comp_pageXIsoEInfty_hom (r : ℤ) (hr : 2 ≤ r) 
   exact (map_EMap ..).symm
 
 /-- **The comparison theorem.** Let `φ : X ⟶ Y` be a morphism of spectral objects indexed by
-`EInt` and `a ≤ b` such that `H^m(⊥ ≤ i)` vanishes for `i ≤ a` and `m ∈ {n, n + 1}`, and
-`H^m(i ≤ ⊤)` vanishes for `i ≥ b` and `m ∈ {n - 1, n}`, for `X` and `Y`. If the induced morphism of
-spectral sequences is an isomorphism on every object of some page `r ≥ 2`, then `φ` is an
-isomorphism on the abutments
+`EInt` and integers `a`, `b` (no inequality between them is needed) such that `H^m(⊥ ≤ i)`
+vanishes for `i ≤ a` and `m ∈ {n, n + 1}`, and `H^m(i ≤ ⊤)` vanishes for `i ≥ b` and
+`m ∈ {n - 1, n}`, for `X` and `Y`. If the induced morphism of spectral sequences is an
+isomorphism on every object of some page `r ≥ 2`, then `φ` is an isomorphism on the abutments
 `H^n(⊥ ≤ ⊤)`. -/
-theorem isIso_hom_app_abutment_of_isIso_page {a b : ℤ} (hab : a ≤ b) (n : ℤ)
+theorem isIso_hom_app_abutment_of_isIso_page {a b : ℤ} (n : ℤ)
     (hXa : ∀ m i : ℤ, n ≤ m → m ≤ n + 1 → i ≤ a →
       IsZero ((X.H m).obj (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ i)))))
     (hYa : ∀ m i : ℤ, n ≤ m → m ≤ n + 1 → i ≤ a →
@@ -130,6 +130,9 @@ theorem isIso_hom_app_abutment_of_isIso_page {a b : ℤ} (hab : a ≤ b) (n : �
     (r : ℤ) (hr : 2 ≤ r)
     (h : ∀ pq, IsIso (((spectralSequenceMap coreE₂Cohomological φ).hom r hr).f pq)) :
     IsIso ((φ.hom n).app (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤)))) := by
+  wlog hab : a ≤ b generalizing a
+  · exact this (a := b) (fun m i hm₀ hm₁ hi => hXa m i hm₀ hm₁ (hi.trans (not_le.1 hab).le))
+      (fun m i hm₀ hm₁ hi => hYa m i hm₀ hm₁ (hi.trans (not_le.1 hab).le)) le_rfl
   refine isIso_hom_app_abutment φ hab (hXa n a le_rfl (by lia) le_rfl)
     (hYa n a le_rfl (by lia) le_rfl) (hXb n b (by lia) le_rfl le_rfl)
     (hYb n b (by lia) le_rfl le_rfl) (fun q haq hqb => ?_)

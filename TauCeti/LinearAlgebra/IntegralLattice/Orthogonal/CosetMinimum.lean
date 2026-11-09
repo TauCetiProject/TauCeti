@@ -63,14 +63,14 @@ theorem setOf_form_self_orthogonalSum (a : L.DiscriminantGroup) (b : M.Discrimin
     rw [discriminantGroupOrthogonalSumEquiv_mk, LinearEquiv.apply_symm_apply] at hclass
     refine ⟨_, ⟨(L.orthogonalSumDualCarrierEquiv M x).1, congrArg Prod.fst hclass, rfl⟩,
       _, ⟨(L.orthogonalSumDualCarrierEquiv M x).2, congrArg Prod.snd hclass, rfl⟩, ?_⟩
-    simp only [orthogonalSum_form, orthogonalSumForm_apply,
+    simp only [orthogonalSum_form, LinearMap.BilinForm.prod_apply,
       orthogonalSumDualCarrierEquiv_apply]
   · rintro ⟨r, ⟨x, hx, rfl⟩, s, ⟨y, hy, rfl⟩, rfl⟩
     refine ⟨(L.orthogonalSumDualCarrierEquiv M).symm (x, y), ?_, ?_⟩
     · apply (L.discriminantGroupOrthogonalSumEquiv M).injective
       rw [discriminantGroupOrthogonalSumEquiv_mk, LinearEquiv.apply_symm_apply,
         LinearEquiv.apply_symm_apply, hx, hy]
-    · simp only [orthogonalSum_form, orthogonalSumForm_apply,
+    · simp only [orthogonalSum_form, LinearMap.BilinForm.prod_apply,
         coe_orthogonalSumDualCarrierEquiv_symm_apply]
 
 /-- Attained least norms in two discriminant cosets add to the attained least norm of the
@@ -108,7 +108,7 @@ theorem form_self_orthogonalSum_eq_add_iff
     congrArg Prod.fst hclass, rfl⟩
   have h₂ := hM ⟨(L.orthogonalSumDualCarrierEquiv M x).2,
     congrArg Prod.snd hclass, rfl⟩
-  simp only [orthogonalSum_form, orthogonalSumForm_apply,
+  simp only [orthogonalSum_form, LinearMap.BilinForm.prod_apply,
     orthogonalSumDualCarrierEquiv_apply] at *
   constructor
   · intro h

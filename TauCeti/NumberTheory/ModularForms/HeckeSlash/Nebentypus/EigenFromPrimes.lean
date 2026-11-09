@@ -44,7 +44,7 @@ law then assembles arbitrary mixtures of good and bad prime-power blocks.
 
 public section
 
-open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup HeckeRing.GLn
+open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup HeckeRing.GLn TauCeti
 
 open scoped MatrixGroups ModularForm HeckeCosetModule
 

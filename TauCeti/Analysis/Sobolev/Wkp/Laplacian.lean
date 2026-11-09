@@ -86,9 +86,9 @@ theorem forall_integral_laplacian_smul_value_eq_iff (u : Wkp mu Omega p 2) {f : 
       fun g hg hgc hgs => by
         set φ : 𝓓(Omega, ℝ) := ⟨g, hg, hgc, hgs⟩
         have hi₁ : Integrable (fun x => g x • LinearMap.trace ℝ E (iteratedGradient 1 u x)) mu := by
-          simpa [φ] using integrable_smul_of_locallyIntegrableOn htr φ
+          simpa [φ] using φ.integrable_smul htr
         have hi₂ : Integrable (fun x => g x • f x) mu := by
-          simpa [φ] using integrable_smul_of_locallyIntegrableOn hf φ
+          simpa [φ] using φ.integrable_smul hf
         simp only [Pi.sub_apply, smul_sub]
         rw [integral_sub hi₁ hi₂, sub_eq_zero]
         simpa [φ] using h φ

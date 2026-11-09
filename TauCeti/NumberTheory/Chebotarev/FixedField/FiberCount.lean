@@ -86,7 +86,7 @@ private theorem isArithFrobAt_of_fixedField_isArithFrobAt
   have hconj : IsConj sigma phi :=
     ConjClasses.mk_eq_mk_iff_isConj.mp hclass.symm
   have hsigma_mem : sigma ∈ Subgroup.zpowers phi := by
-    rw [Ideal.zpowers_eq_stabilizer_of_isArithFrobAt Q hphi.ne_bot hphi]
+    rw [Ideal.zpowers_eq_stabilizer_of_isArithFrobAt Q hphi]
     rw [MulAction.mem_stabilizer_iff, ← AlgEquiv.toFixedFieldAlgEquiv_smul_ideal]
     exact hrel.mem_stabilizer
   have horder : orderOf sigma = orderOf phi :=
@@ -95,8 +95,8 @@ private theorem isArithFrobAt_of_fixedField_isArithFrobAt
     apply Subgroup.eq_of_le_of_card_ge (Subgroup.zpowers_le.mpr hsigma_mem)
     rw [Nat.card_zpowers, Nat.card_zpowers, horder]
   have hdeg : (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers sigma)))).inertiaDeg (𝓞 K) = 1 :=
-    (Ideal.inertiaDeg_under_fixedField_eq_one_iff Q hphi.ne_bot
-      (Subgroup.zpowers sigma) hphi).2 (hz.symm ▸ Subgroup.mem_zpowers phi)
+    (Ideal.inertiaDeg_under_fixedField_eq_one_iff Q (Subgroup.zpowers sigma) hphi).2
+      (hz.symm ▸ Subgroup.mem_zpowers phi)
   have habs := NumberField.isArithFrobAt_restrictScalars_of_inertiaDeg_eq_one hrel hdeg
   rw [AlgEquiv.restrictScalars_toFixedFieldAlgEquiv] at habs
   exact habs
@@ -244,7 +244,7 @@ theorem inertiaDeg_eq_one_iff_under_mem_frobeniusPrimeSet (sigma : L ≃ₐ[K] L
     let _ : Algebra.IsUnramifiedAt (𝓞 K) Q.1 := isUnramifiedAt_of_mem_frobeniusPrimeSet hp Q.1
     have habs := isArithFrobAt_of_fixedField_isArithFrobAt sigma _ hp Q.1 hQK hQ
     rw [← hQE]
-    exact Ideal.inertiaDeg_under_fixedField_eq_one_of_isArithFrobAt Q.1 habs.ne_bot habs
+    exact Ideal.inertiaDeg_under_fixedField_eq_one_of_isArithFrobAt Q.1 habs
 
 /-! ### Residue-degree-one fibres of the elements of `⟨σ⟩` -/
 
@@ -317,7 +317,7 @@ theorem fixedField_frobenius_fiber_inertiaDeg_eq_one_card_mul
         IsArithFrobAt (𝓞 ↥(fixedField (Subgroup.zpowers σ))) τ Q.1.asIdeal := by
     have : Q.1.asIdeal.LiesOver p.asIdeal := ⟨(congrArg HeightOneSpectrum.asIdeal Q.2.1).symm⟩
     have : Algebra.IsUnramifiedAt (𝓞 K) Q.1.asIdeal := hur Q.1.asIdeal
-    have hdeg := (Ideal.inertiaDeg_under_fixedField_eq_one_iff Q.1.asIdeal Q.1.ne_bot _ Q.2.2).2
+    have hdeg := (Ideal.inertiaDeg_under_fixedField_eq_one_iff Q.1.asIdeal _ Q.2.2).2
       (σ.restrictScalars_mem_zpowers τ)
     rw [HeightOneSpectrum.under_asIdeal]
     exact ⟨hdeg, (NumberField.isArithFrobAt_iff_restrictScalars_eq_pow_inertiaDeg Q.2.2 τ).mpr

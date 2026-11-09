@@ -32,7 +32,6 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E
 translated ball `ball (x - a) R`. -/
 theorem _root_.ContDiffOn.comp_add_right_ball (hf : ContDiffOn 𝕜 n f (ball x R)) (a : E) :
     ContDiffOn 𝕜 n (fun y ↦ f (y + a)) (ball (x - a) R) :=
-  hf.comp (contDiffOn_id.add contDiffOn_const) fun y hy ↦ by
-    simpa [mem_ball, dist_eq_norm, sub_sub_eq_add_sub] using hy
+  hf.comp (contDiffOn_id.add contDiffOn_const) (preimage_add_right_ball a x R).superset
 
 end TauCeti

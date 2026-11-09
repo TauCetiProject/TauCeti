@@ -23,7 +23,8 @@ quadratic field-norm computation).
 `Algebra.IsQuadraticExtension.exists_ne_zero_eq_algebraMap_add_algebraMap_mul`: for a *second*
 generator the `θ`-coefficient is nonzero, so any two generators differ by `θ' = b + aθ` with
 `a ≠ 0` and a statement proved for one transfers to every other.
-`TauCeti.linearIndependent_one_of_notMem_range_algebraMap` is the linear-algebra step behind them.
+`TauCeti.linearIndependent_one_iff_notMem_range_algebraMap`, the linear-algebra step behind them,
+characterises the elements `θ` making `1, θ` linearly independent as exactly the non-scalar ones.
 `TauCeti.quadraticExtensionBasis` makes `(1, x)` a basis for any non-scalar `x` in a
 degree-two algebra over a field, with evaluation lemmas for its two basis vectors.
 
@@ -55,23 +56,13 @@ section GeneratorExistence
 
 variable (K L : Type*) [CommSemiring K] [StrongRankCondition K]
 
-/-- A quadratic algebra contains an element outside the image of the base ring. Were every
-element in the image of `algebraMap`, the algebra would have rank one, contradicting
-`finrank = 2`. The base `K` needs to be a commutative semiring with the strong rank condition,
-and `L` a semiring. The strong rank condition forces `K` to be nontrivial; the quadratic-extension
-hypothesis makes `L` free of rank `2`, and the faithful scalar action makes `algebraMap`
-injective. -/
+/-- A quadratic algebra contains an element outside the image of the base ring. The base `K` is
+any commutative semiring with the strong rank condition (Mathlib's setting for
+`Algebra.IsQuadraticExtension`) and `L` any semiring. -/
 theorem Algebra.IsQuadraticExtension.exists_notMem_range_algebraMap [Semiring L] [Algebra K L]
     [Algebra.IsQuadraticExtension K L] : ∃ θ : L, θ ∉ Set.range (algebraMap K L) := by
-  have : Nontrivial K := by
-    classical
-    by_contra h
-    have : Subsingleton K := not_nontrivial_iff_subsingleton.mp h
-    have hle := StrongRankCondition.le_of_fin_injective (R := K)
-      (0 : (Fin 1 → K) →ₗ[K] (Fin 0 → K)) (fun a b _ => Subsingleton.elim a b)
-    omega
   have h2 := Algebra.IsQuadraticExtension.finrank_eq_two K L
-  have : Nontrivial L := Module.nontrivial_of_finrank_pos (R := K) (by rw [h2]; norm_num)
+  have : Nontrivial L := Module.nontrivial_of_finrank_pos (R := K) (by omega)
   by_contra! h
   have h1 : Module.finrank K L = 1 :=
     Module.finrank_of_bijective_algebraMap ⟨FaithfulSMul.algebraMap_injective K L, h⟩
@@ -81,16 +72,14 @@ end GeneratorExistence
 
 variable (K L : Type*) [Field K]
 
-/-- `1` and any element lying outside the base field are linearly independent over the base
-field. The ambient algebra needs only a semiring structure: its field-algebra structure supplies
-a ring structure, and the hypothesis on `θ` implies that the algebra is nontrivial. -/
-theorem TauCeti.linearIndependent_one_of_notMem_range_algebraMap [Semiring L] [Algebra K L]
-    {θ : L} (hθ : θ ∉ Set.range (algebraMap K L)) : LinearIndependent K ![(1 : L), θ] := by
+/-- `1` and an element `θ` are linearly independent over the base field exactly when `θ` lies
+outside the base field. The ambient algebra `L` need only be a semiring. -/
+theorem TauCeti.linearIndependent_one_iff_notMem_range_algebraMap [Semiring L] [Algebra K L]
+    {θ : L} : LinearIndependent K ![(1 : L), θ] ↔ θ ∉ Set.range (algebraMap K L) := by
   let _ : Ring L := Algebra.semiringToRing K
-  have : Nontrivial L := by
-    by_contra h
-    have : Subsingleton L := not_nontrivial_iff_subsingleton.mp h
-    exact hθ ⟨0, Subsingleton.elim _ _⟩
+  refine ⟨fun h ⟨a, ha⟩ ↦ (LinearIndependent.pair_iff' (h.ne_zero 0)).mp h a ?_, fun hθ ↦ ?_⟩
+  · simp [← ha, Algebra.smul_def]
+  have : Nontrivial L := nontrivial_of_ne θ (algebraMap K L 0) fun h ↦ hθ ⟨0, h.symm⟩
   exact (LinearIndependent.pair_iff' one_ne_zero).mpr fun a ha ↦
     hθ ⟨a, by rwa [Algebra.algebraMap_eq_smul_one]⟩
 
@@ -102,7 +91,7 @@ noncomputable def quadraticExtensionBasis [Semiring L] [Algebra K L] {x : L}
     Module.Basis (Fin 2) K L := by
   let _ : Ring L := Algebra.semiringToRing K
   exact basisOfLinearIndependentOfCardEqFinrank (b := ![1, x])
-    (linearIndependent_one_of_notMem_range_algebraMap K L hx) (by simp [hfin])
+    ((linearIndependent_one_iff_notMem_range_algebraMap K L).mpr hx) (by simp [hfin])
 
 @[simp]
 theorem quadraticExtensionBasis_zero [Semiring L] [Algebra K L] {x : L}
@@ -126,16 +115,10 @@ theorem Algebra.IsQuadraticExtension.exists_eq_algebraMap_add_algebraMap_mul [Se
     [Algebra K L] [Algebra.IsQuadraticExtension K L] {θ : L}
     (hθ : θ ∉ Set.range (algebraMap K L)) (x : L) :
     ∃ a b : K, x = algebraMap K L b + algebraMap K L a * θ := by
-  let _ : Ring L := Algebra.semiringToRing K
-  have h2 := Algebra.IsQuadraticExtension.finrank_eq_two K L
-  have : Nontrivial L := Module.nontrivial_of_finrank_pos (R := K) (by rw [h2]; norm_num)
-  have hli := TauCeti.linearIndependent_one_of_notMem_range_algebraMap K L hθ
-  have hmem : x ∈ Submodule.span K (Set.range ![(1 : L), θ]) := by
-    rw [hli.span_eq_top_of_card_eq_finrank (by rw [Fintype.card_fin]; exact h2.symm)]
-    trivial
-  rw [Matrix.range_cons_cons_empty, Submodule.mem_span_pair] at hmem
-  obtain ⟨c, d, hcd⟩ := hmem
-  exact ⟨d, c, by rw [← hcd, Algebra.smul_def, Algebra.smul_def, mul_one]⟩
+  let b := TauCeti.quadraticExtensionBasis K L hθ (Algebra.IsQuadraticExtension.finrank_eq_two K L)
+  refine ⟨b.repr x 1, b.repr x 0, ?_⟩
+  conv_lhs => rw [← b.sum_repr x]
+  simp [b, Fin.sum_univ_two, Algebra.smul_def]
 
 /-- Any element of a quadratic extension `L/K` is a `K`-linear combination of `1` and a given
 generator `θ`, and the `θ`-coefficient is nonzero if the element also lies outside `K`. So any
@@ -148,6 +131,6 @@ theorem Algebra.IsQuadraticExtension.exists_ne_zero_eq_algebraMap_add_algebraMap
     Algebra.IsQuadraticExtension.exists_eq_algebraMap_add_algebraMap_mul K L hθ θ'
   refine ⟨a, b, ?_, hab⟩
   rintro rfl
-  exact hθ' ⟨b, by rw [hab, map_zero, zero_mul, add_zero]⟩
+  exact hθ' ⟨b, by simp [hab]⟩
 
 end

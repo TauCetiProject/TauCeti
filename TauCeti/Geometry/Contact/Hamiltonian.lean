@@ -150,6 +150,18 @@ theorem mlieDerivForm_apply_eq (hX : α.IsContactHamiltonianVectorField f X) {x 
   rw [mlieDerivForm_apply_eq_mextDeriv_add hX.apply_eq (α.mdifferentiableAt x) hXd,
     hX.mextDeriv_apply_eq, ContinuousAlternatingMap.smul_apply, smul_eq_mul, sub_add_cancel]
 
+/-- The derivative of `α(W)` along a contact Hamiltonian vector field `X` of `f`, from
+`L_X α = (R_α f) α`: `X(α(W)) - α([X, W]) = (R_α f) α(W)`. -/
+theorem mvfderiv_apply_sub_apply_mlieBracket {x : M}
+    {W : (y : M) → TangentSpace I y} (hX : α.IsContactHamiltonianVectorField f X)
+    (hXd : MDifferentiableAt I I.tangent (fun y ↦ (X y : TangentBundle I M)) x)
+    (hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x) :
+    mvfderiv I (fun y ↦ α.1 y ![W y]) x (X x) - α.1 x ![mlieBracket I X W x] =
+      mvfderiv I f x (α.reebVectorField x) * α.1 x ![W x] := by
+  have h := mlieDerivForm_apply_one (V := X) (α.mdifferentiableAt x) hW
+  rw [hX.mlieDerivForm_apply_eq hXd, ContinuousAlternatingMap.smul_apply, smul_eq_mul] at h
+  exact h.symm
+
 /-- **Cartan's formula for a contact Hamiltonian vector field**: a differentiable contact
 Hamiltonian vector field `X` of `f` satisfies `L_X α = (R_α f) α`. -/
 theorem mlieDerivForm_eq (hX : α.IsContactHamiltonianVectorField f X)
@@ -165,16 +177,14 @@ theorem mlieBracket_mem_kerDistribution (hX : α.IsContactHamiltonianVectorField
     (hYd : MDifferentiableAt I I.tangent (fun y ↦ (Y y : TangentBundle I M)) x)
     (hY : ∀ᶠ y in 𝓝 x, Y y ∈ α.kerDistribution y) :
     mlieBracket I X Y x ∈ α.kerDistribution x := by
-  -- The bracket formula `(L_X α)(Y) = X(α(Y)) - α([X, Y])`, where `α(Y) = 0` near `x` and
-  -- `(L_X α)(Y) = (R_α f) α(Y) = 0`.
-  have h := mlieDerivForm_apply_one (V := X) (α.mdifferentiableAt x) hYd
+  -- The bracket formula `X(α(Y)) - α([X, Y]) = (R_α f) α(Y)`, where `α(Y) = 0` near `x`.
+  have h := hX.mvfderiv_apply_sub_apply_mlieBracket hXd hYd
   have hd : mvfderiv I (fun y ↦ α.1 y ![Y y]) x = 0 := by
     rw [Filter.EventuallyEq.mvfderiv_eq (f := fun _ ↦ (0 : ℝ))
       (hY.mono fun y hy ↦ mem_kerDistribution.1 hy)]
     exact mvfderiv_const (0 : ℝ)
-  rw [hX.mlieDerivForm_apply_eq hXd, ContinuousAlternatingMap.smul_apply,
-    mem_kerDistribution.1 hY.self_of_nhds, smul_zero, hd, zero_apply, zero_sub,
-    zero_eq_neg] at h
+  rw [mem_kerDistribution.1 hY.self_of_nhds, hd, mul_zero, zero_apply, zero_sub,
+    neg_eq_zero] at h
   exact mem_kerDistribution.2 h
 
 end IsContactHamiltonianVectorField
@@ -298,6 +308,29 @@ theorem isContactHamiltonianVectorField_iff_eq :
     hα.isContactHamiltonianVectorField_contactHamiltonianVectorField f⟩
   rw [hα.contactFlat_contactHamiltonianVectorField,
     hα.isContactHamiltonianVectorField_iff_contactFlat.1 hX x]
+
+/-- A contact Hamiltonian vector field is characterized by its value under `α` and its
+contraction equation tested only on the contact hyperplanes. -/
+theorem isContactHamiltonianVectorField_iff_kerDistribution :
+    α.IsContactHamiltonianVectorField f X ↔ ∀ x, α.1 x ![X x] = f x ∧
+      ∀ v ∈ α.kerDistribution x, mextDeriv α.1 x ![X x, v] = -mvfderiv I f x v := by
+  constructor
+  · intro hX x
+    refine ⟨hX.apply_eq x, fun v hv ↦ ?_⟩
+    rw [hX.mextDeriv_apply_eq, mem_kerDistribution.1 hv, mul_zero, zero_sub]
+  · intro hX x
+    refine ⟨(hX x).1, fun v ↦ ?_⟩
+    -- Subtract the Reeb component to test the equation on a vector in the contact plane.
+    have hv : v - α.1 x ![v] • α.reebVectorField x ∈ α.kerDistribution x := by
+      rw [mem_kerDistribution, ← degreeOneEquiv_apply_apply_vec, map_sub, map_smul]
+      simp only [degreeOneEquiv_apply_apply_vec, hα.apply_reebVectorField,
+        smul_eq_mul, mul_one, sub_self]
+    have h := (hX x).2 _ hv
+    have hR := hα.mextDeriv_reebVectorField_right x (X x)
+    rw [mextDeriv_eq_bilinFormAt] at hR
+    simp only [mextDeriv_eq_bilinFormAt, map_sub, map_smul, hR,
+      smul_eq_mul] at h ⊢
+    linarith
 
 /-- The contact Hamiltonian vector field of a constant `c` is `c R_α`. -/
 @[simp]

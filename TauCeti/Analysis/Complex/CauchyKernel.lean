@@ -67,16 +67,6 @@ theorem integrable_truncatedCauchyKernel (R : ℝ) : Integrable (truncatedCauchy
   (integrable_indicator_iff isClosed_closedBall.measurableSet).mpr
     (Complex.locallyIntegrable_inv.integrableOn_isCompact (isCompact_closedBall 0 R))
 
-/-- A pole in a disk of radius `R` contributes at most `4πR` to its inverse-distance integral. -/
-theorem integral_norm_sub_inv_closedBall_le {w c : ℂ} {R : ℝ}
-    (hw : w ∈ closedBall c R) :
-    (∫ z in closedBall c R, ‖z - w‖⁻¹) ≤ 4 * Real.pi * R := by
-  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball c R)]
-  have h := TauCeti.integral_norm_sub_rpow_one_sub_finrank_le (mu := volume) w hw
-  norm_num [Complex.finrank_real_complex, measureReal_def, Complex.volume_ball] at h
-  simpa only [Real.rpow_neg_one, norm_sub_rev] using
-    h.trans_eq (by ring : _ = 4 * Real.pi * R)
-
 /-- The inverse-distance integral over a disk centered at its pole is `2πR`. -/
 theorem integral_norm_sub_inv_closedBall {R : ℝ} (hR : 0 ≤ R) (w : ℂ) :
     (∫ z in closedBall w R, ‖z - w‖⁻¹) = 2 * Real.pi * R := by
@@ -84,6 +74,33 @@ theorem integral_norm_sub_inv_closedBall {R : ℝ} (hR : 0 ≤ R) (w : ℂ) :
   have h := TauCeti.integral_norm_sub_rpow_ball (mu := volume) (s := -1) (by simp) hR w
   norm_num [Complex.finrank_real_complex, measureReal_def, Complex.volume_ball] at h
   simpa only [Real.rpow_neg_one, norm_sub_rev, Real.rpow_one, div_one] using h
+
+/-- A pole in a concentric output disk of radius `R` contributes at most `2π(r + R)`
+to the inverse-distance integral over an input disk of radius `r`. -/
+theorem integral_norm_sub_inv_closedBall_le_add {w c : ℂ} {r R : ℝ} (hr : 0 ≤ r)
+    (hw : w ∈ closedBall c R) :
+    (∫ z in closedBall c r, ‖z - w‖⁻¹) ≤ 2 * Real.pi * (r + R) := by
+  have hR : 0 ≤ R := dist_nonneg.trans (mem_closedBall.mp hw)
+  have hsub : closedBall c r ⊆ closedBall w (r + R) := by
+    intro z hz
+    exact mem_closedBall.mpr ((dist_triangle z c w).trans
+      (add_le_add (mem_closedBall.mp hz) (by simpa only [dist_comm] using mem_closedBall.mp hw)))
+  have hi := (Complex.locallyIntegrable_sub_inv w).integrableOn_isCompact
+    (isCompact_closedBall w (r + R))
+  calc (∫ z in closedBall c r, ‖z - w‖⁻¹)
+      ≤ ∫ z in closedBall w (r + R), ‖z - w‖⁻¹ := by
+        apply setIntegral_mono_set
+          (by simpa only [IntegrableOn, norm_inv, norm_sub_rev] using hi.norm)
+          (Eventually.of_forall fun _ ↦ inv_nonneg.mpr (norm_nonneg _))
+        exact hsub.eventuallyLE
+    _ = 2 * Real.pi * (r + R) := integral_norm_sub_inv_closedBall (add_nonneg hr hR) w
+
+/-- A pole in a disk of radius `R` contributes at most `4πR` to its inverse-distance integral. -/
+theorem integral_norm_sub_inv_closedBall_le {w c : ℂ} {R : ℝ}
+    (hw : w ∈ closedBall c R) :
+    (∫ z in closedBall c R, ‖z - w‖⁻¹) ≤ 4 * Real.pi * R := by
+  convert integral_norm_sub_inv_closedBall_le_add (dist_nonneg.trans (mem_closedBall.mp hw)) hw
+    using 1; ring
 
 /-- The `L¹` norm of the truncated reciprocal kernel is `2πR`. -/
 theorem integral_norm_truncatedCauchyKernel {R : ℝ} (hR : 0 ≤ R) :

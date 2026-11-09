@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Induction.Clifford.Extension.Multiplicity
-public import TauCeti.RepresentationTheory.FDRep.BalancedEvaluation
+public import TauCeti.RepresentationTheory.Induction.Clifford.Extension.Reconstruction
 
 /-!
 # Equivariant reconstruction from Clifford multiplicities
@@ -43,75 +42,6 @@ universe u v
 
 variable {k : Type u} {G : Type v} [Group G] {N : Subgroup G} [N.Normal]
 
-section CommRing
-
-variable [CommRing k] (A : FDRep k N) (W : FDRep k (inertia A))
-
-local notation "res" => Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia A))
-local notation "resW" => (Functor.obj (res) W : FDRep k N)
-local notation "R" => forget₂ (FDRep k N) (Rep k N)
-local notation "F" => (R) ⋙ forget₂ (Rep k N) (ModuleCat k)
-local notation "V" => (Functor.obj (R) A : Rep k N)
-local notation "M" => (A ⟶ resW)
-local notation "E" => BalancedTensorProduct k (End A) M V
-
-attribute [local instance] endModule
-
-private noncomputable def implementerTensorMap (p : implementers A) : E →ₗ[k] E :=
-  BalancedTensorProduct.lift
-    (((BalancedTensorProduct.mk k (End A)).comp
-      (cliffordMultiplicityRepresentation A W (QuotientGroup.mk p : Carrier A))).compl₂
-        (p.1.2.toLinearMap : V →ₗ[k] V))
-    (fun (d : End A) (f : M) (x : V) => by
-      -- The quotient map is typed using its exposed quotient carrier; `erw` bridges that
-      -- carrier to `Carrier A` while applying the named bilinear-map equations.
-      erw [LinearMap.compl₂_apply, LinearMap.comp_apply, BalancedTensorProduct.mk_apply,
-        LinearMap.compl₂_apply, LinearMap.comp_apply, BalancedTensorProduct.mk_apply]
-      erw [cliffordMultiplicityRepresentation_smul, commutantAction_mk]
-      rw [BalancedTensorProduct.balance]
-      congr 1
-      erw [(F).endModule_smul A, (F).endModule_smul A]
-      exact (implementerConj_apply p d (p.1.2 x)).trans
-        (congrArg (fun y : A => p.1.2 (d.asHom.hom.hom.hom y))
-          (p.1.2.symm_apply_apply x)))
-
-private theorem implementerTensorMap_tmul (p : implementers A) (f : M) (x : V) :
-    implementerTensorMap A W p (BalancedTensorProduct.tmul k (End A) (N := V) f x) =
-      BalancedTensorProduct.tmul k (End A) (N := V)
-        (cliffordMultiplicityRepresentation A W (QuotientGroup.mk p : Carrier A) f) (p.1.2 x) := by
-  simp only [implementerTensorMap, BalancedTensorProduct.lift_tmul]
-  erw [LinearMap.compl₂_apply, LinearMap.comp_apply, BalancedTensorProduct.mk_apply]
-  rfl
-
-private noncomputable def implementerTensorRepresentation :
-    Representation k (implementers A) E where
-  toFun := implementerTensorMap A W
-  map_one' := by
-    apply BalancedTensorProduct.hom_ext
-    intro f x
-    rw [implementerTensorMap_tmul]
-    erw [QuotientGroup.mk_one, map_one]
-    rfl
-  map_mul' p q := by
-    apply BalancedTensorProduct.hom_ext
-    intro f x
-    erw [mul_apply_eq_comp, implementerTensorMap_tmul, implementerTensorMap_tmul,
-      implementerTensorMap_tmul, QuotientGroup.mk_mul, map_mul]
-    rfl
-
-private theorem implementerTensorRepresentation_kernelLift (d : (End A)ˣ) :
-    implementerTensorRepresentation A W (kernelLift A d) = 1 := by
-  apply BalancedTensorProduct.hom_ext
-  intro f x
-  erw [implementerTensorRepresentation, implementerTensorMap_tmul,
-    cliffordMultiplicityRepresentation_mk_kernelLift, BalancedTensorProduct.balance]
-  rw [one_apply_eq_self]
-  erw [(F).endModule_smul A, kernelLift_snd_apply]
-  exact congrArg (BalancedTensorProduct.tmul k (End A) (N := V) f)
-    (congrArg (fun a : End A => a.asHom.hom.hom.hom x) d.inv_val)
-
-end CommRing
-
 section Field
 
 variable [Field k] (A : FDRep k N) (W : FDRep k (inertia A))
@@ -126,18 +56,12 @@ local notation "E" => BalancedTensorProduct k (End A) M V
 
 attribute [local instance] endModule
 
-private theorem projection_ker_le_tensor_ker :
-    (projection A).ker ≤ (implementerTensorRepresentation A W).toHomUnits.ker := by
-  intro p hp
-  obtain ⟨d, rfl⟩ := (range_kernelLift_eq_ker_projection A).symm ▸ hp
-  apply Units.ext
-  exact implementerTensorRepresentation_kernelLift A W d
-
 /-- The inertia action on the balanced multiplicity tensor. It is independent of the
 implementing operator, since inverse precomposition cancels its action on the vector factor. -/
 noncomputable def cliffordTensorRepresentation : Representation k (inertia A) E :=
-  (Units.coeHom _).comp ((projection A).liftOfSurjective (projection_surjective A)
-    ⟨(implementerTensorRepresentation A W).toHomUnits, projection_ker_le_tensor_ker A W⟩)
+  cliffordBalancedTensorRepresentation A (cliffordMultiplicityRepresentation A W)
+    (cliffordMultiplicityRepresentation_smul A W)
+    (fun d f => by simp)
 
 /-- Any implementing operator computes the inertia action on pure tensors. -/
 theorem cliffordTensorRepresentation_projection_tmul (p : implementers A) (f : M) (x : V) :
@@ -145,12 +69,7 @@ theorem cliffordTensorRepresentation_projection_tmul (p : implementers A) (f : M
         (BalancedTensorProduct.tmul k (End A) (N := V) f x) =
       BalancedTensorProduct.tmul k (End A) (N := V)
         (cliffordMultiplicityRepresentation A W (QuotientGroup.mk p : Carrier A) f) (p.1.2 x) := by
-  have h := MonoidHom.liftOfRightInverse_comp_apply (projection A)
-    (Function.surjInv (projection_surjective A)) (Function.rightInverse_surjInv _)
-    ⟨(implementerTensorRepresentation A W).toHomUnits, projection_ker_le_tensor_ker A W⟩ p
-  exact (congrArg (fun a : (Module.End k E)ˣ => (a : Module.End k E)
-    (BalancedTensorProduct.tmul k (End A) (N := V) f x)) h).trans
-      (implementerTensorMap_tmul A W p f x)
+  exact cliffordBalancedTensorRepresentation_projection_tmul A _ _ _ p f x
 
 /-- Postcomposition by an inertia intertwiner acts on the multiplicity factor of the
 balanced tensor and commutes with the reconstructed inertia actions. -/

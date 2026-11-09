@@ -642,7 +642,7 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_gradient_fenchelCon
         fun z => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) := by
       ext z
       rw [Prod.fst_swap, Prod.snd_swap, norm_sub_rev]
-    exact hcs ▸ hπ.swap hc.measurable
+    exact hcs ▸ hπ.swap
   have hT := measurable_gradient fun x => (u x).toReal
   have hS := measurable_gradient fun y => (fenchelConjugate (innerₗ E) u y).toReal
   have hlaw : HasLaw (∇ fun x => (u x).toReal) ν μ :=

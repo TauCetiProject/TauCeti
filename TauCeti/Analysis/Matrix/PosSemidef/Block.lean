@@ -37,7 +37,7 @@ variable {ι κ 𝕜 : Type*} [RCLike 𝕜] {S : Matrix (ι ⊕ κ) (ι ⊕ κ) 
 
 /-- In a positive-semidefinite block matrix, the kernel of the lower-right block is
 contained in the kernel of the upper-right block. No invertibility is required. -/
-theorem ker_toEuclideanLin_toBlocks₂₂_le [Finite ι] [Fintype κ] [DecidableEq κ]
+theorem ker_toEuclideanLin_toBlocks₂₂_le [Fintype κ] [DecidableEq κ]
     (hS : S.PosSemidef) :
     LinearMap.ker S.toBlocks₂₂.toEuclideanLin ≤ LinearMap.ker S.toBlocks₁₂.toEuclideanLin := by
   intro x hx
@@ -46,7 +46,7 @@ theorem ker_toEuclideanLin_toBlocks₂₂_le [Finite ι] [Fintype κ] [Decidable
 
 /-- In a positive-semidefinite block matrix, the kernel of the upper-left block is
 contained in the kernel of the lower-left block. -/
-theorem ker_toEuclideanLin_toBlocks₁₁_le [Fintype ι] [Finite κ] [DecidableEq ι]
+theorem ker_toEuclideanLin_toBlocks₁₁_le [Fintype ι] [DecidableEq ι]
     (hS : S.PosSemidef) :
     LinearMap.ker S.toBlocks₁₁.toEuclideanLin ≤ LinearMap.ker S.toBlocks₂₁.toEuclideanLin := by
   intro x hx

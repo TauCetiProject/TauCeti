@@ -53,6 +53,8 @@ uses `C := ModuleCat ℤ`, `k := ℤ`, and `R = M = ModuleCat.of ℤ ℤ`.
   `W ⊆ W'`.
 * `TauCeti.fiberThomPairMap`, `TauCeti.fiberThomPairOverMap`: the inclusions of the fibre pair
   `(E_b, E_b ∖ {0})` into the Thom pair and into the Thom pair over a set containing `b`.
+* `TauCeti.thomPairProj`: the projection of the total space to the base, as a morphism of
+  topological spaces out of the ambient space of the Thom pair.
 * `TauCeti.IsThomClass`: a relative class restricting to a generator on every fibre.
 * `TauCeti.eulerClass`: the Euler class `Hⁿ(E, E₀) ⟶ Hⁿ(B)`.
 * `TauCeti.negTotalSpace`, `TauCeti.negThomPairMap`: fibrewise negation, as a self-map of the
@@ -203,6 +205,21 @@ theorem fiberThomPairMap_fst_apply (b : B) (x : E b) :
   unfold fiberThomPairMap
   exact TopPair.ofSubsetMap_fst_apply _ _ _
 
+/-- The projection `π : E ⟶ B` of a fibre bundle, as a morphism of topological spaces out of the
+ambient space of its Thom pair. -/
+def thomPairProj : (thomPair F E).fst ⟶ TopCat.of B :=
+  TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩
+
+@[simp]
+theorem thomPairProj_apply (v : TotalSpace F E) : thomPairProj F E v = v.proj :=
+  (rfl)
+
+/-- The fibre inclusion over `b` followed by the projection is constant at `b`. -/
+theorem fiberThomPairMap_fst_comp_thomPairProj (b : B) :
+    TopPair.Hom.fst (fiberThomPairMap F E b) ≫ thomPairProj F E =
+      TopCat.ofHom (ContinuousMap.const _ b) :=
+  TopCat.ext fun x ↦ congrArg TotalSpace.proj (fiberThomPairMap_fst_apply F E b x)
+
 /-- The inclusion `(E_b, E_b ∖ {0}) ⟶ (E|_W, E₀|_W)` of the fibre over a point `b ∈ W` into the
 Thom pair of the restriction to `W`. -/
 def fiberThomPairOverMap {W : Set B} {b : B} (hb : b ∈ W) :
@@ -333,6 +350,12 @@ over `f b'`. -/
 theorem fiberThomPairMap_comp_pullbackThomPairMap (b' : B') :
     fiberThomPairMap F ((⇑f) *ᵖ E) b' ≫ pullbackThomPairMap F E f = fiberThomPairMap F E (f b') :=
   TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (TopCat.ext fun _ ↦ rfl)
+
+/-- The canonical map from the total space of a pull-back bundle covers the map of bases. -/
+theorem pullbackThomPairMap_fst_comp_thomPairProj :
+    TopPair.Hom.fst (pullbackThomPairMap F E f) ≫ thomPairProj F E =
+      thomPairProj F ((⇑f) *ᵖ E) ≫ TopCat.ofHom f :=
+  TopCat.ext fun v ↦ congrArg TotalSpace.proj (pullbackThomPairMap_fst_apply F E f v)
 
 variable [NormedAddCommGroup F] [NormedSpace ℝ F]
 

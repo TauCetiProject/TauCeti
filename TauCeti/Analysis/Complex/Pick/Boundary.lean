@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Pick.Nevanlinna
+import Mathlib.Order.Interval.Set.Union
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
-import Mathlib.Order.SuccPred.IntervalSucc
+import TauCeti.Order.Interval.Set.RealGrid
 
 /-!
 # Real boundary values and the support of a Nevanlinna measure
@@ -128,44 +129,24 @@ private theorem measureReal_Icc_le_mul [IsFiniteMeasure mu] (hbeta : 0 ≤ beta)
     (hd : ∀ u ∈ Icc a b, ∀ v : ℝ, 0 < v → v < delta →
       (F ((u : ℂ) + (v : ℂ) * I)).im < eps) :
     mu.real (Icc a b) ≤ (b - a) * eps := by
-  obtain ⟨N, hN⟩ := exists_nat_gt ((b - a) / (2 * delta))
-  have hNpos : 0 < N := by
-    by_contra h
-    have hzero : N = 0 := by omega
-    rw [hzero, Nat.cast_zero] at hN
-    exact absurd hN (not_lt.2 (div_nonneg (by linarith) (by positivity)))
-  have hNposR : (0 : ℝ) < N := by exact_mod_cast hNpos
-  set v : ℝ := (b - a) / (2 * N) with hvdef
-  have hvpos : 0 < v := by
-    rw [hvdef]
-    positivity
-  have hvlt : v < delta := by
-    rw [hvdef, div_lt_iff₀ (by positivity)]
-    rw [div_lt_iff₀ (by positivity)] at hN
-    nlinarith
-  have hbeq : b = a + 2 * (N : ℝ) * v := by
-    rw [hvdef]
-    field_simp
-    ring
-  have hmono : Monotone (fun k : ℕ ↦ a + 2 * k * v) := by
-    intro k l hkl
-    have hklR : (k : ℝ) ≤ l := by exact_mod_cast hkl
-    nlinarith [mul_nonneg (sub_nonneg.mpr hklR) hvpos.le]
-  have hcover : Icc a b ⊆
-      ⋃ k ∈ Finset.range N, Icc (a + 2 * k * v) (a + 2 * (k + 1) * v) := by
+  obtain ⟨N, w, hNpos, hwpos, hwlt, hbeq⟩ :=
+    Real.exists_nat_step_lt_of_lt hab (by positivity : 0 < 2 * delta)
+  obtain ⟨v, rfl⟩ : ∃ v, w = 2 * v := ⟨w / 2, by ring⟩
+  have hvpos : 0 < v := by linarith
+  have hvlt : v < delta := by linarith
+  have hcover : Icc a b ⊆ ⋃ k ∈ Finset.range N, Icc (a + 2 * k * v) (a + 2 * (k + 1) * v) := by
     intro x hx
+    simp only [Set.mem_iUnion, Finset.mem_range]
     rcases hx.1.eq_or_lt with hxa | hxa
     · subst x
-      simp only [Set.mem_iUnion, Finset.mem_range]
       exact ⟨0, hNpos, by constructor <;> simp [hvpos.le]⟩
-    · have hx' : x ∈ ⋃ k ∈ Ico 0 N,
-          Ioc (a + 2 * k * v) (a + 2 * (Order.succ k) * v) := by
-        rw [hmono.biUnion_Ico_Ioc_map_succ]
-        simpa only [Nat.cast_zero, mul_zero, zero_mul, add_zero, ← hbeq] using ⟨hxa, hx.2⟩
-      simp only [Set.mem_iUnion, mem_Ico] at hx'
-      obtain ⟨k, ⟨-, hkN⟩, hxk⟩ := hx'
-      simp only [Set.mem_iUnion, Finset.mem_range]
-      exact ⟨k, hkN, Ioc_subset_Icc_self (by simpa using hxk)⟩
+    · have hxb : x ≤ a + 2 * (N : ℝ) * v := by have := hx.2; rw [hbeq] at this; linarith
+      have h := Ioc_subset_biUnion_Ioc N (fun k : ℕ ↦ a + 2 * k * v)
+        ⟨by simpa using hxa, hxb⟩
+      simp only [Set.mem_iUnion, Finset.mem_range] at h
+      obtain ⟨k, hk, hxk⟩ := h
+      push_cast at hxk
+      exact ⟨k, hk, Ioc_subset_Icc_self hxk⟩
   have hstep : ∀ k ∈ Finset.range N,
       mu.real (Icc (a + 2 * k * v) (a + 2 * (k + 1) * v)) ≤ 2 * v * eps := by
     intro k hk
@@ -189,9 +170,7 @@ private theorem measureReal_Icc_le_mul [IsFiniteMeasure mu] (hbeta : 0 ≤ beta)
         measureReal_biUnion_finset_le _ _
     _ ≤ ∑ _k ∈ Finset.range N, 2 * v * eps := Finset.sum_le_sum hstep
     _ = (b - a) * eps := by
-        have hNv : (N : ℝ) * (2 * v) = b - a := by
-          rw [hvdef]
-          field_simp
+        have hNv : (N : ℝ) * (2 * v) = b - a := by linarith
         rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul, ← mul_assoc, hNv]
 
 /-- **The Stieltjes--Perron vanishing theorem.** A Nevanlinna measure gives no mass to a compact

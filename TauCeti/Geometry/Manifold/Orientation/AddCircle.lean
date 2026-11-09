@@ -169,22 +169,9 @@ theorem orientationAt_orientation_prod_orientation (q : ℝ) [Fact (0 < q)]
     (x : AddCircle p × AddCircle q) :
     ((AddCircle.orientation p).prod (AddCircle.orientation q)).orientationAt x =
       (Module.Basis.finTwoProd ℝ).orientation := by
-  -- The ordered product of the two standard bases of `ℝ` is the standard basis of `ℝ × ℝ`.
-  have hb : ((Module.Basis.singleton (Fin 1) ℝ).prod (Module.Basis.singleton (Fin 1) ℝ)).reindex
-      finSumFinEquiv = Module.Basis.finTwoProd ℝ := by
-    refine Module.Basis.eq_of_apply_eq (Fin.forall_fin_two.2 ⟨?_, ?_⟩)
-    · have h0 : finSumFinEquiv.symm (0 : Fin (1 + 1)) = Sum.inl 0 :=
-        finSumFinEquiv_symm_apply_castAdd 0
-      rw [Module.Basis.finTwoProd_zero]
-      simp [Module.Basis.prod_apply, h0]
-    · have h1 : finSumFinEquiv.symm (1 : Fin (1 + 1)) = Sum.inr 0 :=
-        finSumFinEquiv_symm_apply_natAdd 0
-      rw [Module.Basis.finTwoProd_one]
-      simp [Module.Basis.prod_apply, h1]
   rw [Manifold.Orientation.orientationAt_prod, orientationAt_orientation,
     orientationAt_orientation]
-  exact (_root_.Orientation.prod_basis_orientation _ _ _ _).trans
-    (congrArg Module.Basis.orientation hb)
+  exact _root_.Orientation.prod_singleton_orientation
 
 /-! ### Orientation behaviour of maps -/
 

@@ -29,9 +29,9 @@ distinct vertices, whatever their direction (`TauCeti.Quiver.underlyingGraph_con
   underlying graph once an injective vertex map sends its edges to arrows.
 * `TauCeti.Quiver.underlyingGraph_congr`: two quiver structures joining the same pairs of
   distinct vertices by an arrow, in either direction, have the same underlying graph.
-* `TauCeti.Quiver.isAcyclic_underlyingGraph_of_lt`: a quiver in which the arrows out of each vertex
-  all share their target, and every arrow strictly lowers a height function, has a forest as its
-  underlying graph.
+* `TauCeti.Quiver.isAcyclic_underlyingGraph_of_lt`: a quiver in which the arrows out of each vertex,
+  other than loops, all share their target, and every arrow other than a loop strictly lowers a
+  height function, has a forest as its underlying graph.
 * `TauCeti.Quiver.subsingleton_hom_sum_of_lt`: for fixed vertices `a` and `b`, if each directional
   arrow type is subsingleton and arrows between them lower an asymmetric height relation, then at
   most one arrow joins `a` and `b`, counted in both directions.
@@ -78,36 +78,41 @@ theorem isContained_underlyingGraph_of_injective {W : Type*} {H : SimpleGraph W}
     H.IsContained (underlyingGraph V) :=
   ⟨⟨⟨φ, fun {_ _} h ↦ underlyingGraph_adj.mpr ⟨hφ.ne (H.ne_of_adj h), hadj h⟩⟩, hφ⟩⟩
 
-/-- If every arrow strictly lowers a height function, then two vertices adjacent in the underlying
-graph are joined by an arrow out of the one whose height is not below the other's. -/
+/-- If every arrow other than a loop strictly lowers a height function, then two vertices adjacent
+in the underlying graph are joined by an arrow out of the one whose height is not below the
+other's. -/
 private theorem nonempty_hom_of_adj_of_not_lt {α : Type*} [LT α] {ht : V → α}
-    (hlt : ∀ ⦃a b : V⦄, (a ⟶ b) → ht b < ht a) {a b : V} (hab : (underlyingGraph V).Adj a b)
-    (hnlt : ¬ht a < ht b) : Nonempty (a ⟶ b) :=
-  ((underlyingGraph_adj.mp hab).2.resolve_right fun ⟨e⟩ ↦ hnlt (hlt e))
+    (hlt : ∀ ⦃a b : V⦄, (a ⟶ b) → a ≠ b → ht b < ht a) {a b : V}
+    (hab : (underlyingGraph V).Adj a b) (hnlt : ¬ht a < ht b) : Nonempty (a ⟶ b) :=
+  (underlyingGraph_adj.mp hab).2.resolve_right fun ⟨e⟩ ↦ hnlt (hlt e hab.ne.symm)
 
 /-- **The underlying graph of an in-forest is acyclic.** If the arrows out of each vertex of a
-quiver all share their target, and every arrow strictly lowers a height function `ht` into a
-strictly ordered type, then the underlying graph of the quiver has no cycle. -/
+quiver, other than loops, all share their target, and every arrow other than a loop strictly lowers
+a height function `ht` into a strictly ordered type, then the underlying graph of the quiver has no
+cycle. Loops are unconstrained, since the underlying graph forgets them. -/
 theorem isAcyclic_underlyingGraph_of_lt {α : Type*} [LT α] [IsStrictOrder α (· < ·)]
     (ht : V → α)
-    (hlt : ∀ ⦃a b : V⦄, (a ⟶ b) → ht b < ht a)
-    (hout : ∀ ⦃a b b' : V⦄, (a ⟶ b) → (a ⟶ b') → b = b') :
+    (hlt : ∀ ⦃a b : V⦄, (a ⟶ b) → a ≠ b → ht b < ht a)
+    (hout : ∀ ⦃a b b' : V⦄, (a ⟶ b) → (a ⟶ b') → a ≠ b → a ≠ b' → b = b') :
     (underlyingGraph V).IsAcyclic := by
   classical
   -- Adjoin equality to the strict order to use the finite maximal-element API.
   let : PartialOrder α := partialOrderOfSO ((· < ·) : α → α → Prop)
   intro v c hc
   obtain ⟨u, hu, hmax⟩ := c.support.toFinset.exists_maximalFor ht ⟨v, by simp⟩
-  have hu : u ∈ c.support := List.mem_toFinset.mp hu
-  have hmax' (x : V) (hx : x ∈ (c.rotate u hu).support) : ¬ht u < ht x := fun h ↦
-    h.not_ge (hmax (List.mem_toFinset.mpr ((c.mem_support_rotate_iff u hu).mp hx)) h.le)
+  rw [List.mem_toFinset] at hu
+  -- Rotate the cycle to start at a vertex `u` of maximal height. Both of its edges at `u` are then
+  -- arrows out of `u`, so they lead to the same vertex, which a cycle forbids.
   have hc' := hc.rotate hu
   have hnil := hc'.not_nil
-  obtain ⟨e⟩ := nonempty_hom_of_adj_of_not_lt hlt ((c.rotate u hu).adj_snd hnil)
-    (hmax' _ ((c.rotate u hu).getVert_mem_support 1))
-  obtain ⟨e'⟩ := nonempty_hom_of_adj_of_not_lt hlt ((c.rotate u hu).adj_penultimate hnil).symm
-    (hmax' _ ((c.rotate u hu).getVert_mem_support _))
-  exact hc'.snd_ne_penultimate (hout e e')
+  have hmax' (i : ℕ) : ¬ht u < ht ((c.rotate u hu).getVert i) := fun h ↦ h.not_ge <| hmax
+    (List.mem_toFinset.mpr <| (c.mem_support_rotate_iff u hu).mp <|
+      (c.rotate u hu).getVert_mem_support i) h.le
+  have h₁ := (c.rotate u hu).adj_snd hnil
+  have h₂ := ((c.rotate u hu).adj_penultimate hnil).symm
+  obtain ⟨e⟩ := nonempty_hom_of_adj_of_not_lt hlt h₁ (hmax' _)
+  obtain ⟨e'⟩ := nonempty_hom_of_adj_of_not_lt hlt h₂ (hmax' _)
+  exact hc'.snd_ne_penultimate (hout e e' h₁.ne h₂.ne)
 
 /-- For fixed vertices `a` and `b`, if each of `a ⟶ b` and `b ⟶ a` is subsingleton and arrows
 between them lower a height function into a type with an asymmetric relation, then

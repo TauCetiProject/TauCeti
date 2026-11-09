@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.Discriminant
 public import TauCeti.Analysis.SpecialFunctions.QPochhammer
+import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
@@ -119,8 +120,7 @@ half-plane. -/
 theorem eta_neg_one_div_sq {τ : ℂ} (hτ : 0 < τ.im) : η (-1 / τ) ^ 2 = -I * τ * η τ ^ 2 := by
   have h : η (-1 / τ) = (Complex.sqrt I)⁻¹ * (Complex.sqrt τ * η τ) := by
     simpa using _root_.ModularForm.eta_comp_eq_csqrt_I_inv hτ
-  have hsq (z : ℂ) : Complex.sqrt z ^ 2 = z := by rw [Complex.sqrt, cpow_ofNat_inv_pow]
-  rw [h, mul_pow, mul_pow, inv_pow, hsq, hsq, inv_I]
+  rw [h, mul_pow, mul_pow, inv_pow, Complex.sq_sqrt, Complex.sq_sqrt, inv_I]
   ring
 
 /-- **The `S`-transformation of `η` at a positive real multiple**: for real `c > 0`,

@@ -41,7 +41,7 @@ recurrences of a normalized form into eigenvector equations at every prime.
 
 public section
 
-open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup
+open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup TauCeti
 
 open scoped MatrixGroups ModularForm
 

@@ -7,10 +7,10 @@ module
 
 public import Mathlib.AlgebraicGeometry.AffineSpace
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
-public import Mathlib.RingTheory.Smooth.Basic
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Smooth
 
 /-!
 # The additive group scheme
@@ -118,13 +118,6 @@ variable (R : Type u) [CommRing R]
 `SymmetricAlgebra R R`, with primitive generator `SymmetricAlgebra.ι R R 1`. -/
 noncomputable abbrev coordinateHopfAlgebra : CommHopfAlgCat.{u} R :=
   CommHopfAlgCat.of R (SymmetricAlgebra R R)
-
-/-- The coordinate algebra of `𝔾ₐ` is smooth: it is the polynomial algebra on the single
-generator `x`. -/
-instance instSmoothSymmetricAlgebra : Algebra.Smooth R (SymmetricAlgebra R R) :=
-  letI : Algebra.Smooth R (MvPolynomial (CoordinateIndex.{u}) R) :=
-    ⟨inferInstance, inferInstance⟩
-  Algebra.Smooth.of_equiv (coordinateAlgEquiv R).symm
 
 /-- The coordinate Hopf algebra of `𝔾ₐ` is reduced over a reduced ring: it is the polynomial
 algebra on the single generator `x`. -/

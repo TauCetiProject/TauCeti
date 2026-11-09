@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Invertible
-public import TauCeti.RingTheory.IntegralOrder.Basic
+public import TauCeti.Algebra.MonoidAlgebra.Trace
+public import TauCeti.RingTheory.IntegralOrder.Overorder
 public import TauCeti.RepresentationTheory.GroupAlgebra.Average
 
 /-!
@@ -28,6 +29,14 @@ element, so `R[G] + R e` is an order strictly containing `R[G]`; thus `R[G]` is 
 hypothesis on `#G` cannot be dropped: over `R = F = 𝔽_p` and `G = C_p` the group ring `R[G]` is the
 only order in `F[G]`.
 
+Maximal orders exist whenever `R` is integrally closed and noetherian and the regular trace form of
+`E` is nondegenerate: every order then lies in a maximal one. All orders containing a given order
+`Λ` lie in one finitely generated `R`-module, the trace-dual lattice of an `F`-basis of `E` inside
+`Λ`, so they satisfy the ascending chain condition and have a maximal element; since any order
+containing that element also contains `Λ`, it is a maximal order. The nondegeneracy holds for
+`F[G]` when the order of the finite group `G` is nonzero in `F`, so `R[G]` then lies in a maximal
+order of `F[G]`; in characteristic zero it holds for every semisimple algebra.
+
 ## Main definitions
 
 * `TauCeti.IntegralOrder.IsMaximalOrder F Λ`: the `R`-order `Λ` in `E` is maximal among `R`-orders.
@@ -41,6 +50,10 @@ only order in `F[G]`.
   order.
 * `TauCeti.IntegralOrder.isMaximalOrder_bot`: an integrally closed domain is a maximal order in its
   fraction field.
+* `TauCeti.IntegralOrder.IsOrder.exists_le_isMaximalOrder`: over an integrally closed noetherian
+  domain, if the regular trace form of `E` is nondegenerate, every order lies in a maximal order.
+* `TauCeti.IntegralOrder.groupRing_exists_le_isMaximalOrder`: if `#G` is nonzero in `F`, the group
+  ring `R[G]` of a finite group lies in a maximal order of `F[G]`.
 * `TauCeti.IntegralOrder.groupRing_not_isMaximalOrder`: if `#G` is invertible in `F` but not a unit
   of `R`, the group ring `R[G]` is not a maximal order in `F[G]`.
 * `TauCeti.IntegralOrder.zsmul_average_mem_groupRingSubalgebra_iff`: an integer multiple `k e` of
@@ -49,7 +62,9 @@ only order in `F[G]`.
 ## References
 
 * H. Johnston, *Notes on Galois modules*, Definition 13.6 and Examples 13.7.
-* J. Voight, *Quaternion algebras*, Definition 10.4.1.
+* J. Voight, *Quaternion algebras*, Definition 10.4.1 and paragraph 10.4.2; the existence of
+  maximal orders is proved there for separable algebras with the reduced trace, and here with the
+  regular trace.
 -/
 
 public section
@@ -126,6 +141,37 @@ theorem isMaximalOrder_bot [IsIntegrallyClosed R] : IsMaximalOrder F (⊥ : Suba
   exact isOrder_bot
 
 end Field
+
+section Existence
+
+variable {R F E : Type*} [CommRing R] [Field F] [Ring E]
+  [Algebra R F] [IsFractionRing R F] [Algebra F E] [Algebra R E] [IsScalarTower R F E]
+  [FiniteDimensional F E] [IsIntegrallyClosed R] [IsNoetherianRing R]
+
+/-- **Every order lies in a maximal order.** Let `R` be an integrally closed noetherian domain with
+fraction field `F` and `E` a finite-dimensional `F`-algebra whose regular trace form
+`(x, y) ↦ Tr_F (x * y)` is nondegenerate. Every `R`-order in `E` is contained in a maximal `R`-order
+in `E`. In characteristic zero, `TauCeti.nondegenerate_regularTraceForm` supplies the
+nondegeneracy for every semisimple `E`. -/
+theorem IsOrder.exists_le_isMaximalOrder (hB : (Algebra.regularTraceForm F E).Nondegenerate)
+    {Λ : Subalgebra R E} (hΛ : IsOrder F Λ) : ∃ Γ, Λ ≤ Γ ∧ IsMaximalOrder F Γ := by
+  -- a maximal order among the overorders of `Λ` is a maximal order, as its overorders contain `Λ`
+  have := hΛ.wellFoundedGT_overorder hB
+  obtain ⟨⟨Γ, hΛΓ, hΓ⟩, -, hmax⟩ := exists_maximal_of_wellFoundedGT
+    (fun _ : {Γ : Subalgebra R E // Λ ≤ Γ ∧ IsOrder F Γ} => True) ⟨⟨Λ, le_rfl, hΛ⟩, trivial⟩
+  exact ⟨Γ, hΛΓ, hΓ, fun Γ' hΓ' hle => hmax (y := ⟨Γ', hΛΓ.trans hle, hΓ'⟩) trivial hle⟩
+
+omit [Ring E] [Algebra F E] [Algebra R E] [IsScalarTower R F E] [FiniteDimensional F E] in
+variable (R F) in
+/-- **Group rings lie in maximal orders.** Let `R` be an integrally closed noetherian domain with
+fraction field `F`, and `G` a finite group whose order is nonzero in `F`. Then the group ring `R[G]`
+is contained in a maximal `R`-order in `F[G]`; for instance `ℤ[G]` lies in a maximal order of
+`ℚ[G]`. -/
+theorem groupRing_exists_le_isMaximalOrder (G : Type*) [Group G] [Finite G]
+    [NeZero (Nat.card G : F)] : ∃ Γ, groupRingSubalgebra R F G ≤ Γ ∧ IsMaximalOrder F Γ :=
+  (groupRing_isOrder R F G).exists_le_isMaximalOrder MonoidAlgebra.nondegenerate_regularTraceForm
+
+end Existence
 
 section GroupRing
 
