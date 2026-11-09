@@ -59,7 +59,7 @@ are separate later steps.
 * `TauCeti.Sym.coeffEquiv_one_apply` and `TauCeti.Sym.coeffEquiv_two_apply`: the chart in degrees
   one and two, pinning down the sign convention.
 * `TauCeti.Sym.toMonic_ofFn` and `TauCeti.Sym.coeffEquiv_ofFn_apply`: read on an ordered tuple
-  `f : Fin n → R` through `TauCeti.Sym.ofFn`, the monic polynomial is the product
+  `f : Fin n → R` through `Sym.ofFn`, the monic polynomial is the product
   `∏ i, (X - C (f i))` of linear factors and the chart reads off its coefficients.
 * `TauCeti.Sym.exists_map_eval_esymm_eq_eval`: over a commutative ring, applying a univariate
   polynomial to every point of a tuple acts on each elementary symmetric function by evaluating a
@@ -145,8 +145,8 @@ theorem toMonic_append (s : Sym R n) (t : Sym R m) :
 
 /-- The monic polynomial of the unordered tuple underlying an ordered one `f : Fin n → R` is the
 product of the corresponding linear factors. -/
-theorem toMonic_ofFn (f : Fin n → R) : (toMonic (ofFn f) : R[X]) = ∏ i, (X - C (f i)) := by
-  rw [coe_toMonic, coe_ofFn]
+theorem toMonic_ofFn (f : Fin n → R) : (toMonic (Sym.ofFn f) : R[X]) = ∏ i, (X - C (f i)) := by
+  rw [coe_toMonic, Sym.coe_ofFn]
   simp [← List.prod_ofFn, List.map_ofFn, Function.comp_def]
 
 /-- The monic polynomial of a constant tuple is a pure power of a linear factor. -/
@@ -208,14 +208,14 @@ theorem mem_iff_isRoot {a : R} {s : Sym R n} :
 the unordered tuple of those roots: a full set of simple roots pins the polynomial down. -/
 theorem toMonic_ofFn_eq_of_forall_isRoot {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree = n)
     {w : Fin n → R} (hw : Function.Injective w) (hroot : ∀ i, (p : R[X]).IsRoot (w i)) :
-    (toMonic (ofFn w) : R[X]) = p := by
-  have hle : (ofFn w : Multiset R) ≤ p.roots := by
-    refine (Multiset.le_iff_subset (by rw [coe_ofFn]; simpa using List.nodup_ofFn.2 hw)).2
+    (toMonic (Sym.ofFn w) : R[X]) = p := by
+  have hle : (Sym.ofFn w : Multiset R) ≤ p.roots := by
+    refine (Multiset.le_iff_subset (by rw [Sym.coe_ofFn]; simpa using List.nodup_ofFn.2 hw)).2
       fun a ha => ?_
-    obtain ⟨i, rfl⟩ := mem_ofFn.1 (by simpa using ha)
+    obtain ⟨i, rfl⟩ := Sym.mem_ofFn.1 (by simpa using ha)
     exact (mem_roots' (p := p)).2 ⟨hp.ne_zero, hroot i⟩
-  have hcard : Multiset.card (ofFn w : Multiset R) = n := Sym.card_coe
-  have hroots : (ofFn w : Multiset R) = p.roots :=
+  have hcard : Multiset.card (Sym.ofFn w : Multiset R) = n := Sym.card_coe
+  have hroots : (Sym.ofFn w : Multiset R) = p.roots :=
     Multiset.eq_of_le_of_card_le hle (by rw [hcard, ← hdeg]; exact p.card_roots')
   rw [coe_toMonic, ofMultiset_apply, hroots]
   exact prod_multiset_X_sub_C_of_monic_of_roots_card_eq hp (by rw [← hroots, hcard, hdeg])
@@ -318,7 +318,7 @@ theorem coeffEquiv_apply (s : Sym K n) (i : Fin n) :
 /-- The chart of an unordered tuple presented by an ordered one `f : Fin n → K` reads off the
 coefficients of the product of the linear factors of `f`. -/
 theorem coeffEquiv_ofFn_apply (f : Fin n → K) (i : Fin n) :
-    coeffEquiv K n (ofFn f) i = (∏ j, (X - C (f j))).coeff i := by
+    coeffEquiv K n (Sym.ofFn f) i = (∏ j, (X - C (f j))).coeff i := by
   rw [coeffEquiv_apply_eq_coeff, toMonic_ofFn]
 
 /-- The inverse chart, read as a polynomial rather than as a root multiset, is
@@ -351,8 +351,8 @@ point `a` belongs to `s` exactly when the monic polynomial whose lower coefficie
 coordinates of `s` vanishes at `a`. For `0 < n`, the equation has coefficient `1` on the
 constant coordinate. In degree zero it reads `1 = 0`, so its locus is empty. -/
 theorem mem_iff_pow_add_sum_coeffEquiv_mul_pow_eq_zero {a : K} {s : Sym K n} :
-    s ∈ basepointDivisor a ↔ a ^ n + ∑ i : Fin n, coeffEquiv K n s i * a ^ (i : ℕ) = 0 := by
-  simp only [mem_basepointDivisor]
+    s ∈ Sym.basepointDivisor a ↔ a ^ n + ∑ i : Fin n, coeffEquiv K n s i * a ^ (i : ℕ) = 0 := by
+  simp only [Sym.mem_basepointDivisor]
   have h := toMonic_coeffEquiv_symm (coeffEquiv K n s)
   rw [Equiv.symm_apply_apply] at h
   rw [← _root_.Sym.mem_coe, mem_iff_isRoot, h, IsRoot.def, Polynomial.eval_monicOfCoeff]
@@ -425,7 +425,7 @@ theorem exists_map_eval_esymm_eq_eval (q : K[X]) :
     exact ⟨W, by rw [← esymmAlgHom_apply, hW]⟩
   choose W hW using hftsf
   refine ⟨W, fun s k => ?_⟩
-  obtain ⟨v, hv⟩ := ofFn_surjective s
+  obtain ⟨v, hv⟩ := Sym.ofFn_surjective s
   have hcoe : (s : Multiset K) = univ.val.map v := by
     rw [← hv, Sym.coe_ofFn, ← Fin.univ_val_map]
   have hmap : (Sym.map (fun z => eval z q) s : Multiset K) =
