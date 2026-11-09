@@ -40,7 +40,7 @@ namespace TauCeti
 variable {Ω : Type*} {B : ℝ≥0 → Ω → ℝ}
   {n : ℕ} {t : Fin (n + 1) → ℝ≥0}
 
-/-- The vector of Brownian increments standardized by their interval lengths. -/
+/-- Brownian increments on a finite grid, each divided by the square root of its interval length. -/
 noncomputable def normalizedBrownianIncrements (B : ℝ≥0 → Ω → ℝ) (t : Fin (n + 1) → ℝ≥0)
     (ω : Ω) (i : Fin n) : ℝ :=
   (B (t i.succ) ω - B (t i.castSucc) ω) /
