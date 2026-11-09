@@ -10,6 +10,7 @@ public import Mathlib.Probability.Independence.InfinitePi
 public import Mathlib.Probability.Independence.Integration
 public import TauCeti.Probability.Distributions.CompoundPoisson.RandomSum
 public import TauCeti.Probability.Distributions.Poisson.SizeBias
+public import TauCeti.Probability.RandomMeasure.LaplaceFunctional
 
 /-!
 # Finite Poisson sampling laws
@@ -251,5 +252,70 @@ theorem map_finitePoissonLaw {Y : Type*} [MeasurableSpace Y] (r : ℝ≥0)
   simp only [finitePoissonLaw,
     Measure.map_map (Measure.measurable_map f hf) Measure.measurable_dirac,
     Measure.map_map Measure.measurable_dirac hf, Function.comp_def, Measure.map_dirac' hf]
+
+/-- The finite sampling exponential formula, expressed as an integral against its intensity. -/
+theorem laplaceFunctional_finitePoissonLaw (r : ℝ≥0) (Q : Measure X)
+    [IsProbabilityMeasure Q] {f : X → ℝ≥0∞} (hf : Measurable f) :
+    (finitePoissonLaw r Q).laplaceFunctional id f =
+      (ENNReal.expNeg (∫⁻ x, 1 - (ENNReal.expNeg (f x) : ℝ≥0∞)
+        ∂((r : ℝ≥0∞) • Q)) : ℝ≥0∞) := by
+  let b := ∫⁻ x, (ENNReal.expNeg (f x) : ℝ≥0∞) ∂Q
+  have hb : b ≤ 1 := by
+    simpa [b] using lintegral_mono (μ := Q)
+      (fun x => ENNReal.coe_le_one_iff.mpr (ENNReal.expNeg_le_one (f x)))
+  have hsub : (∫⁻ x, 1 - (ENNReal.expNeg (f x) : ℝ≥0∞) ∂Q) = 1 - b := by
+    rw [lintegral_sub (by fun_prop) (ne_top_of_le_ne_top ENNReal.one_ne_top hb)
+      (Filter.Eventually.of_forall fun x =>
+        ENNReal.coe_le_one_iff.mpr (ENNReal.expNeg_le_one (f x)))]
+    simp [b]
+  rw [lintegral_smul_measure, hsub, Measure.laplaceFunctional_def]
+  simp only [id_eq]
+  have hfinite := lintegral_exp_neg_finitePoissonLaw r Q hf
+  simp_rw [← ENNReal.coe_expNeg] at hfinite
+  rw [hfinite, smul_eq_mul, ← ENNReal.coe_toNNReal (a := 1 - b) (by finiteness),
+    ← ENNReal.coe_mul, ENNReal.expNeg_coe]
+  congr 2
+  have hreal : ((1 - b).toNNReal : ℝ) = 1 - b.toReal := by
+    simpa only [ENNReal.coe_toNNReal_eq_toReal, ENNReal.toReal_one] using
+      ENNReal.toReal_sub_of_le hb (by finiteness)
+  rw [NNReal.coe_mul, hreal]
+  dsimp [b]
+  ring
+
+/-- Normalizing a finite intensity and using its total mass as rate gives a probability
+sampling law, including for the zero intensity. -/
+instance isProbabilityMeasure_finitePoissonLaw_normalize (μ : Measure X) [IsFiniteMeasure μ] :
+    IsProbabilityMeasure (finitePoissonLaw (μ univ).toNNReal ((μ univ)⁻¹ • μ)) := by
+  by_cases hμ : μ = 0
+  · subst μ
+    simpa using (inferInstance : IsProbabilityMeasure (Measure.dirac (0 : Measure X)))
+  · let : NeZero μ := ⟨hμ⟩
+    infer_instance
+
+/-- Finite sampling with normalized intensity has that intensity as its mean measure. -/
+@[simp] theorem join_finitePoissonLaw_normalize (μ : Measure X) [IsFiniteMeasure μ] :
+    (finitePoissonLaw (μ univ).toNNReal ((μ univ)⁻¹ • μ)).join = μ := by
+  by_cases hμ : μ = 0
+  · simp [hμ]
+  · let : NeZero μ := ⟨hμ⟩
+    rw [join_finitePoissonLaw, ENNReal.coe_toNNReal (measure_ne_top μ univ), smul_smul,
+      ENNReal.mul_inv_cancel (NeZero.ne (μ univ)) (measure_ne_top μ univ), one_smul]
+
+/-- The exponential formula for finite sampling from a normalized finite intensity. -/
+theorem laplaceFunctional_finitePoissonLaw_normalize (μ : Measure X) [IsFiniteMeasure μ]
+    {f : X → ℝ≥0∞} (hf : Measurable f) :
+    (finitePoissonLaw (μ univ).toNNReal ((μ univ)⁻¹ • μ)).laplaceFunctional id f =
+      (ENNReal.expNeg (∫⁻ x, 1 - (ENNReal.expNeg (f x) : ℝ≥0∞) ∂μ) : ℝ≥0∞) := by
+  by_cases hμ : μ = 0
+  · subst μ
+    simp only [Measure.laplaceFunctional_def, id_eq, lintegral_zero_measure,
+      ENNReal.expNeg_zero, ENNReal.coe_one]
+    simp only [FunLike.coe_zero, Pi.zero_apply, ENNReal.toNNReal_zero, finitePoissonLaw_zero]
+    rw [lintegral_dirac' _ (by fun_prop)]
+    simp
+  · let : NeZero μ := ⟨hμ⟩
+    rw [laplaceFunctional_finitePoissonLaw _ _ hf,
+      ENNReal.coe_toNNReal (measure_ne_top μ univ), smul_smul,
+      ENNReal.mul_inv_cancel (NeZero.ne (μ univ)) (measure_ne_top μ univ), one_smul]
 
 end TauCeti.Probability
