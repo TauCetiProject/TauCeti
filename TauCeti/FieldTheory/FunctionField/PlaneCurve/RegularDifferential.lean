@@ -306,7 +306,7 @@ theorem weilDifferentialFiltration_zero_eq_span_of_aeval_eq_zero (hF : IsFunctio
         ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).2) hω
   rw [weilDifferentialDivisor_repartitionDualMul_inv_weilDifferentialCotrace_of_aeval_eq_zero hF
     hex hirr hlead hsm hsm' hgen hy rfl] at hW
-  rw [← map_riemannRochSpace_repartitionDualMulRight hF hex hω hW 0, sub_zero,
+  rw [← map_riemannRochSpace_repartitionDualMulRight hF hex hW 0, sub_zero,
     riemannRochSpace_sub_three_zsmul_poles_eq_span_of_aeval_eq_zero hF hex hirr hlead hsm hsm' hgen
       hy,
     Submodule.map_span, Set.image_image]
