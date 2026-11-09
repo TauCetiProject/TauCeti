@@ -35,8 +35,8 @@ bound the change of this form under a perturbation of `A`
 In a real inner product space we also record the quadratic perturbation estimates for a coercive
 symmetric operator `A`: the increment of `F - ⟪·, y + A z⟫` is that of a quadratic centred at
 `x + z` up to the second-order error of `F`
-(`abs_increment_le_of_abs_expansion_le`), and a coercive quadratic of this form dominates its
-perturbation on a sphere (`lt_of_forall_abs_increment_le`).
+(`increment_sub_quadratic_eq`), and a coercive quadratic of this form dominates its
+perturbation on a sphere (`lt_on_sphere_of_abs_increment_le`).
 
 ## Provenance
 
@@ -239,12 +239,13 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- The increment of `g = F - ⟪·, p⟫` for `p = y + A z` from `x` to `x'` is
 `⟪A (x' - x - z), x' - x - z⟫ / 2 - ⟪A z, z⟫ / 2`, up to the error of the second-order expansion
-of `F` at `x` with gradient `y` and Hessian `A`. -/
-theorem abs_increment_le_of_abs_expansion_le {A : E →L[ℝ] E} (hA : (A : E →ₗ[ℝ] E).IsSymmetric)
-    {x x' y z : E} {a b δ : ℝ}
-    (hb : |a - b - ⟪y, x' - x⟫_ℝ - ⟪A (x' - x), x' - x⟫_ℝ / 2| ≤ δ * ‖x' - x‖ ^ 2) :
-    |(a - ⟪x', y + A z⟫_ℝ) - (b - ⟪x, y + A z⟫_ℝ) -
-      (⟪A (x' - x - z), x' - x - z⟫_ℝ / 2 - ⟪A z, z⟫_ℝ / 2)| ≤ δ * ‖x' - x‖ ^ 2 := by
+of `F` at `x` with gradient `y` and Hessian `A`: for symmetric `A`, the difference of the two
+is exactly that error, where `F x' = a` and `F x = b`. -/
+theorem increment_sub_quadratic_eq {A : E →L[ℝ] E} (hA : (A : E →ₗ[ℝ] E).IsSymmetric)
+    {x x' y z : E} {a b : ℝ} :
+    (a - ⟪x', y + A z⟫_ℝ) - (b - ⟪x, y + A z⟫_ℝ) -
+      (⟪A (x' - x - z), x' - x - z⟫_ℝ / 2 - ⟪A z, z⟫_ℝ / 2) =
+      a - b - ⟪y, x' - x⟫_ℝ - ⟪A (x' - x), x' - x⟫_ℝ / 2 := by
   have hsym : ⟪A z, x' - x⟫_ℝ = ⟪A (x' - x), z⟫_ℝ := by
     exact (hA z (x' - x)).trans (real_inner_comm _ _)
   have hexp : ⟪A (x' - x - z), x' - x - z⟫_ℝ =
@@ -254,7 +255,6 @@ theorem abs_increment_le_of_abs_expansion_le {A : E →L[ℝ] E} (hA : (A : E �
     ring
   have hpx : ⟪x', y + A z⟫_ℝ - ⟪x, y + A z⟫_ℝ = ⟪y, x' - x⟫_ℝ + ⟪A (x' - x), z⟫_ℝ := by
     rw [← inner_sub_left, inner_add_right, ← hsym, real_inner_comm y, real_inner_comm (A z)]
-  convert hb using 2
   linarith
 
 /-- If `g` has, on `closedBall x r`, the increment from `x` of a quadratic centred at `x + z`, up
@@ -265,13 +265,14 @@ theorem lt_on_sphere_of_abs_increment_le {A : E →L[ℝ] E} {g : E → ℝ} {x 
     (hδ0 : 0 ≤ δ) (hδ : δ ≤ c * (1 - s) ^ 2 / 8) (hz : ‖z‖ ≤ s * r)
     (hincr : ∀ x' ∈ closedBall x r, |g x' - g x - (⟪A (x' - x - z), x' - x - z⟫_ℝ / 2 -
       ⟪A z, z⟫_ℝ / 2)| ≤ δ * ‖x' - x‖ ^ 2) :
-    ∀ x' ∈ closedBall x r \ ball x r, g (x + z) < g x' := by
+    ∀ x' ∈ sphere x r, g (x + z) < g x' := by
   have hη : 0 < 1 - s := sub_pos.2 hs
   have hsr : s * r ≤ r := by nlinarith [norm_nonneg z]
-  rintro x' ⟨hx', hx'b⟩
+  intro x' hx'
   have hnorm : ‖x' - x‖ = r := by
     rw [← dist_eq_norm]
-    exact le_antisymm (mem_closedBall.1 hx') (not_lt.1 hx'b)
+    exact mem_sphere.1 hx'
+  replace hx' := sphere_subset_closedBall hx'
   have hzr : x + z ∈ closedBall x r := by
     rw [mem_closedBall, dist_eq_norm, add_sub_cancel_left]
     exact hz.trans hsr
