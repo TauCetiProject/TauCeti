@@ -142,8 +142,10 @@ theorem norm_integral_le_of_ae_norm_le_rpow {F : Type*} [NormedAddCommGroup F]
     _ = (2 / α * A + 2 / (1 - α) * B) * δ ^ α := by rw [hpow]; ring
 
 open scoped Interval in
-/-- Splitting both integrals at `s₀ = 2 t' - t = t' - (t - t')`: the part below `s₀` is controlled
-by the difference of the integrands, and the two parts above `s₀` are of size `O(c h ^ β)`. -/
+/-- **Difference of two integrals over nearby intervals.** Let `s₀ = 2 t' - t`, so that
+`t - s₀ = 2 (t - t')`, and suppose `0 ≤ s₀ ≤ t' ≤ t`. If `‖∫₀^{s₀} (g₁ - g₂)‖ ≤ D`,
+`‖∫_{s₀}^t g₁‖ ≤ c (2 (t - t')) ^ β` and `‖∫_{s₀}^{t'} g₂‖ ≤ c (t - t') ^ β` for `0 ≤ β ≤ 1`,
+then `‖∫₀^t g₁ - ∫₀^{t'} g₂‖ ≤ D + 3 c (t - t') ^ β`. -/
 theorem norm_intervalIntegral_sub_le_of_sub_le {V : Type*} [NormedAddCommGroup V]
     [NormedSpace ℝ V] {g₁ g₂ : ℝ → V} {c β t t' D : ℝ} (hc : 0 ≤ c) (hβ₀ : 0 ≤ β) (hβ₁ : β ≤ 1)
     (hs₀ : 0 ≤ 2 * t' - t) (htt' : t' ≤ t) (hg₁ : IntervalIntegrable g₁ volume 0 t)
