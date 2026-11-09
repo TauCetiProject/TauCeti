@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Contraction
+public import TauCeti.LinearAlgebra.Contraction
 
 /-!
 # Subspaces of linear maps stable under composition
@@ -16,8 +16,6 @@ linear-algebra input to irreducibility of two-sided Hom representations.
 -/
 
 public section
-
-open scoped TensorProduct
 
 namespace Submodule
 
@@ -38,13 +36,6 @@ theorem eq_bot_or_eq_top_of_comp_mem (N : Submodule k (V →ₗ[k] W))
     convert hleft (l.smulRight w) (hright (φ.smulRight v) hf) using 1
     ext
     simp [hl]
-  refine N.eq_top_iff'.mpr fun F ↦ ?_
-  obtain ⟨z, rfl⟩ := (dualTensorHomEquiv k V W).surjective F
-  induction z using TensorProduct.inductionOn with
-  | tmul φ w =>
-    convert hrank φ w using 1
-    ext
-    simp
-  | add a b ha hb => simpa using N.add_mem ha hb
+  exact N.eq_top_iff'.mpr fun F ↦ LinearMap.induction_on_smulRight F hrank fun _ _ ↦ N.add_mem
 
 end Submodule
