@@ -503,43 +503,6 @@ theorem target_ne_source_of_hasOneCommonSide (D : GridRectangleDecomposition x z
     (h : D.HasOneCommonSide) : z ≠ x :=
   D.target_ne_source_iff.mpr (Or.inr h)
 
-/-- Two decompositions between the same endpoint states use the same three side columns when one of
-them has one common side: the other cannot have disjoint sides, which would move four columns, nor
-equal source and target. -/
-theorem sideColumns_union_eq_of_hasOneCommonSide
-    (D E : GridRectangleDecomposition x z) (hD : D.HasOneCommonSide) :
-    D.first.sideColumns ∪ D.second.sideColumns =
-      E.first.sideColumns ∪ E.second.sideColumns := by
-  have hE : E.HasOneCommonSide := by
-    refine (E.hasDisjointSides_or_hasOneCommonSide_of_ne
-      (D.target_ne_source_of_hasOneCommonSide hD)).resolve_left fun hdis ↦ ?_
-    obtain ⟨hll, hlr, hrl, hrr⟩ := E.hasDisjointSides_iff.mp hdis
-    -- the four side columns of `E` are all moved, so there are at least four moved columns
-    have hsub : E.first.sideColumns ∪ E.second.sideColumns ⊆
-        D.first.sideColumns ∪ D.second.sideColumns := by
-      intro c hc
-      rw [← D.target_apply_ne_iff_mem_sideColumns_union hD]
-      simp only [Finset.mem_union, GridRectangleBetween.mem_sideColumns] at hc
-      rcases hc with (rfl | rfl) | (rfl | rfl)
-      · rw [E.second.map_of_ne _ hll hlr, E.first.map_left]
-        exact fun h ↦ E.first.left_ne_right (x.toPerm.injective h.symm)
-      · rw [E.second.map_of_ne _ hrl hrr, E.first.map_right]
-        exact fun h ↦ E.first.left_ne_right (x.toPerm.injective h)
-      · rw [E.second.map_left, E.first.map_of_ne _ hlr.symm hrr.symm]
-        exact fun h ↦ E.second.left_ne_right (x.toPerm.injective h.symm)
-      · rw [E.second.map_right, E.first.map_of_ne _ hll.symm hrl.symm]
-        exact fun h ↦ E.second.left_ne_right (x.toPerm.injective h)
-    have hcard := Finset.card_le_card hsub
-    have hsum := Finset.card_union_add_card_inter E.first.sideColumns E.second.sideColumns
-    have hzero := E.card_commonSideColumns_eq_zero_iff.mpr hdis
-    rw [commonSideColumns] at hzero
-    rw [hzero, E.first.card_sideColumns, E.second.card_sideColumns] at hsum
-    rw [D.card_sideColumns_union_eq_three hD] at hcard
-    omega
-  ext c
-  rw [← D.target_apply_ne_iff_mem_sideColumns_union hD,
-    ← E.target_apply_ne_iff_mem_sideColumns_union hE]
-
 /-- A decomposition sharing exactly one side column does not use the same unordered pair of side
 columns twice: coinciding side pairs are the diagonal case. -/
 theorem sideColumns_ne_of_hasOneCommonSide (D : GridRectangleDecomposition x z)
@@ -553,6 +516,39 @@ theorem not_hasDisjointSides_of_hasOneCommonSide (D : GridRectangleDecomposition
   have hzero := D.card_commonSideColumns_eq_zero_iff.mpr hdisjoint
   rw [HasOneCommonSide] at h
   omega
+
+/-- Two decompositions between the same endpoint states use the same three side columns when one of
+them has one common side: the other cannot have disjoint sides, which would move four columns, nor
+equal source and target. -/
+theorem sideColumns_union_eq_of_hasOneCommonSide
+    (D E : GridRectangleDecomposition x z) (hD : D.HasOneCommonSide) :
+    D.first.sideColumns ∪ D.second.sideColumns =
+      E.first.sideColumns ∪ E.second.sideColumns := by
+  have hE : E.HasOneCommonSide := by
+    refine (E.hasDisjointSides_or_hasOneCommonSide_of_ne
+      (D.target_ne_source_of_hasOneCommonSide hD)).resolve_left fun hdis ↦ ?_
+    -- the target is two disjoint transpositions of the source, so every decomposition of it has
+    -- disjoint sides
+    have hz : z = (x.swapColumns E.first.left E.first.right).swapColumns E.second.left
+        E.second.right :=
+      E.second.target_eq_swapColumns.trans
+        (congrArg (·.swapColumns E.second.left E.second.right) E.first.target_eq_swapColumns)
+    obtain ⟨hll, hlr, hrl, hrr⟩ := E.hasDisjointSides_iff.mp hdis
+    have hdisjoint : Disjoint ({E.first.left, E.first.right} : Finset (Fin n))
+        {E.second.left, E.second.right} := by
+      simp only [Finset.disjoint_insert_left, Finset.disjoint_singleton_left, Finset.mem_insert,
+        Finset.mem_singleton, not_or]
+      exact ⟨⟨hll, hlr⟩, hrl, hrr⟩
+    have key : ∀ (z' : GridState n) (D' : GridRectangleDecomposition x z'),
+        z' = (x.swapColumns E.first.left E.first.right).swapColumns E.second.left
+          E.second.right → D'.HasDisjointSides := by
+      rintro z' D' rfl
+      exact hasDisjointSides_of_disjoint x E.first.left_ne_right E.second.left_ne_right
+        hdisjoint D'
+    exact D.not_hasDisjointSides_of_hasOneCommonSide hD (key z D hz)
+  ext c
+  rw [← D.target_apply_ne_iff_mem_sideColumns_union hD,
+    ← E.target_apply_ne_iff_mem_sideColumns_union hE]
 
 /-- Off the diagonal, failing to have disjoint side pairs is equivalent to having a same-side or
 mixed-side overlap. -/
