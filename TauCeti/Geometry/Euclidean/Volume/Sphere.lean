@@ -218,6 +218,7 @@ private theorem injOn_smul_ofLp {ψ : W → E} {s : Set W} (hnorm : ∀ w ∈ s,
     simpa only [← ht] using h
   exact WithLp.ofLp_injective 2 (Prod.ext ht hw)
 
+omit [FiniteDimensional ℝ W] in
 /-- **Cone formula.** Let `ψ : W → E` take values in the unit sphere near a measurable set `s`,
 where `dim W + 1 = dim E`, and let `ψ` be injective on `s` and differentiable on `s` with injective
 derivative. Then the `dim W`-dimensional Hausdorff measure of `ψ '' s` is `dim E` times the
@@ -227,6 +228,11 @@ theorem euclideanHausdorffMeasure_image_eq_finrank_mul_volume_Ioo_smul {ψ : W �
     (hψ : ∀ w ∈ s, ∀ᶠ y in 𝓝 w, ‖ψ y‖ = 1) (hd : ∀ w ∈ s, DifferentiableAt ℝ ψ w)
     (hinj : ∀ w ∈ s, Injective (fderiv ℝ ψ w)) (hψs : InjOn ψ s) :
     μHE[finrank ℝ W] (ψ '' s) = finrank ℝ E * volume (Ioo (0 : ℝ) 1 • (ψ '' s)) := by
+  rcases s.eq_empty_or_nonempty with rfl | ⟨w₀, hw₀⟩
+  · simp
+  -- A nonempty `s` forces `W` to be finite dimensional: `fderiv ℝ ψ w₀` is injective into `E`.
+  have : FiniteDimensional ℝ W :=
+    FiniteDimensional.of_injective (fderiv ℝ ψ w₀ : W →ₗ[ℝ] E) (hinj w₀ hw₀)
   -- We apply the area formula to the cone map `Φ (t, w) = t • ψ w` on `Ioo 0 1 × s`, which is
   -- injective with image the cone and has Jacobian `t ^ k` times that of `ψ`. Fubini–Tonelli then
   -- separates `∫ t ^ k = 1 / (k + 1)` from `∫ J ψ`, which is `μHE[k] (ψ '' s)` by the area formula.
