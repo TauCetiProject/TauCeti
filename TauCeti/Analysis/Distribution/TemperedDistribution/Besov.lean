@@ -8,10 +8,8 @@ module
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
 import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
-import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.BesselPotential
-import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 
 /-!
 # Inhomogeneous Besov spaces
@@ -32,15 +30,17 @@ spaces `H^{s,p}` of Mathlib (`TemperedDistribution.MemSobolev`) sit between two 
 
 Both inclusions come from the kernel bound `‖J^t Δⱼ‖_{Lᵖ → Lᵖ} ≤ C 2^{jt}` for the Bessel potential
 `J^t` on a block (`TemperedDistribution.exists_besselPotential_compL_littlewoodPaleyBlock_eq`). If
-`J^s u = g ∈ Lᵖ`, then `Δⱼ u = J^{-s} Δⱼ g`, so `2^{js} ‖Δⱼ u‖_p ≤ C ‖g‖_p`. Conversely, if
-`Σⱼ 2^{js} ‖Δⱼ u‖_p < ∞`, then the series `Σⱼ J^s Δⱼ u` converges absolutely in `Lᵖ`, and in `𝓢'`
-it sums to `J^s u` because `u = Σⱼ Δⱼ u` there. In particular Schwartz functions lie in every
-Besov space.
+`J^s u = g ∈ Lᵖ`, then `Δⱼ u = J^{-s} Δⱼ g`, so `2^{js} ‖Δⱼ u‖_p ≤ C ‖g‖_p`
+(`TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_two_rpow_mul_norm_le`). Conversely, if
+`Σⱼ 2^{js} ‖Δⱼ u‖_p < ∞`, then `J^s u ∈ Lᵖ`
+(`TemperedDistribution.exists_besselPotential_eq_and_norm_le_tsum`). In particular Schwartz
+functions lie in every Besov space with `q ≠ 0`; for `q = 0` membership requires all but finitely
+many blocks to vanish.
 
 The spaces decrease in `s` and increase in `q`, and lowering the smoothness by any positive
-amount absorbs every change of `q`: `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' < s`. Since `Δⱼ u` is
-band-limited to the ball of radius `2^j φ.rOut`, Bernstein's inequality
-`‖Δⱼ u‖_r ≤ C 2^{jn(1/p - 1/r)} ‖Δⱼ u‖_p` gives the embedding
+amount absorbs every change of `q` to a nonzero target: `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' < s`
+and `q' ≠ 0`. Since `Δⱼ u` is band-limited to the ball of radius `2^j φ.rOut`, Bernstein's
+inequality `‖Δⱼ u‖_r ≤ C 2^{jn(1/p - 1/r)} ‖Δⱼ u‖_p` gives the embedding
 `B^s_{p,q} ⊆ B^{s - n(1/p - 1/r)}_{r,q}` for `p ≤ r`.
 
 ## Main declarations
@@ -55,10 +55,8 @@ band-limited to the ball of radius `2^j φ.rOut`, Bernstein's inequality
   `TemperedDistribution.MemBesov.of_lt`: monotonicity in `s` and `q`.
 * `TemperedDistribution.MemBesov.of_le_integrability`: the Bernstein embedding
   `B^s_{p,q} ⊆ B^{s - n(1/p - 1/r)}_{r,q}`.
-* `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_two_rpow_mul_norm_le`,
-  `TemperedDistribution.MemSobolev.memBesov`: `H^{s,p} ⊆ B^s_{p,∞}`, with the block bound.
-* `TemperedDistribution.exists_besselPotential_eq_and_norm_le_tsum`,
-  `TemperedDistribution.MemBesov.memSobolev`: `B^s_{p,1} ⊆ H^{s,p}`, with the norm bound.
+* `TemperedDistribution.MemSobolev.memBesov`: `H^{s,p} ⊆ B^s_{p,∞}`.
+* `TemperedDistribution.MemBesov.memSobolev`: `B^s_{p,1} ⊆ H^{s,p}`.
 * `SchwartzMap.memBesov`: Schwartz functions lie in every Besov space with `q ≠ 0`.
 
 ## References
@@ -169,7 +167,8 @@ theorem MemBesov.of_lt (hu : MemBesov φ s p q u) (hs : s' < s) (hq' : q' ≠ 0)
   obtain ⟨g, hg, hgm⟩ := hu
   obtain ⟨M, hM⟩ := (hgm.of_exponent_ge le_top).bddAbove
   have hρ₁ : (2 : ℝ) ^ (s' - s) < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hs)
-  refine ⟨g, hg, ((memℓp_geometric_of_lt_one (by positivity) hρ₁ hq').const_mul M).mono fun j ↦ ?_⟩
+  have hρ : ‖(2 : ℝ) ^ (s' - s)‖ < 1 := by rwa [Real.norm_of_nonneg (by positivity)]
+  refine ⟨g, hg, ((TauCeti.memℓp_geometric_of_norm_lt_one hρ hq').const_mul M).mono fun j ↦ ?_⟩
   have hMj : (2 : ℝ) ^ (j * s) * ‖g j‖ ≤ M := by
     simpa [Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ 2 ^ (j * s) * ‖g j‖)] using
       hM ⟨j, rfl⟩
@@ -211,44 +210,6 @@ theorem MemBesov.of_le_integrability [Fact (1 ≤ r)] (hu : MemBesov φ s p q u)
 
 section Sobolev
 
-/-- **`H^{s,p} ⊆ B^s_{p,∞}`, quantitatively.** There is `C`, depending only on `φ` and `s`, such
-that for every `1 ≤ p ≤ ∞`, if the Bessel potential `J^s u` is an `Lᵖ` function `g`, then every
-block `Δⱼ u` is an `Lᵖ` function `h` with `2^{js} ‖h‖_p ≤ C ‖g‖_p`. -/
-theorem exists_littlewoodPaleyBlock_eq_and_two_rpow_mul_norm_le (φ : ContDiffBump (0 : E))
-    (s : ℝ) :
-    ∃ C : ℝ, ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ) {u : 𝓢'(E, F)}
-      (g : Lp F p (volume : Measure E)), besselPotential E F s u = g →
-      ∃ h : Lp F p (volume : Measure E), littlewoodPaleyBlock F φ j u = h ∧
-        (2 : ℝ) ^ (j * s) * ‖h‖ ≤ C * ‖g‖ := by
-  obtain ⟨C₀, hC₀⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
-  obtain ⟨C₁, hC₁⟩ := exists_besselPotential_compL_littlewoodPaleyBlock_eq (F := F) φ (-s)
-  refine ⟨C₁ * C₀, fun {p} _ j u g hg ↦ ?_⟩
-  obtain ⟨σ, hσ, hσn⟩ := hC₁ j
-  obtain ⟨g', hg', hg'n⟩ := hC₀ j g
-  obtain ⟨h, hh, hhn⟩ := exists_fourierMultiplierCLM_eq_and_norm_le σ g'
-  refine ⟨h, ?_, ?_⟩
-  · -- `Δⱼ u = Δⱼ J^{-s} g = J^{-s} Δⱼ g = T_σ Δⱼ g`.
-    have hu : u = besselPotential E F (-s) g := by
-      rw [← hg, besselPotential_besselPotential_apply, add_neg_cancel, besselPotential_zero,
-        ContinuousLinearMap.id_apply]
-    rw [hu, littlewoodPaleyBlock_besselPotential_comm, ← ContinuousLinearMap.comp_apply, hσ,
-      ContinuousLinearMap.comp_apply, hg', hh]
-  · have hK : (2 : ℝ) ^ (j * s) * ∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖ ≤ C₁ := by
-      calc (2 : ℝ) ^ (j * s) * ∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖
-          ≤ (2 : ℝ) ^ (j * s) * (C₁ * ((2 : ℝ) ^ j) ^ (-s)) := by gcongr
-        _ = C₁ := by
-          rw [← Real.rpow_natCast_mul zero_le_two, mul_left_comm, ← Real.rpow_add zero_lt_two,
-            mul_neg, add_neg_cancel,
-            Real.rpow_zero, mul_one]
-    have hg'0 : 0 ≤ C₀ * ‖g‖ := (norm_nonneg _).trans hg'n
-    calc (2 : ℝ) ^ (j * s) * ‖h‖
-        ≤ (2 : ℝ) ^ (j * s) * ((∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖) * (C₀ * ‖g‖)) := by
-          gcongr
-          exact hhn.trans (mul_le_mul_of_nonneg_left hg'n (integral_nonneg fun _ ↦ norm_nonneg _))
-      _ = ((2 : ℝ) ^ (j * s) * ∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖) * (C₀ * ‖g‖) := by ring
-      _ ≤ C₁ * (C₀ * ‖g‖) := by gcongr
-      _ = C₁ * C₀ * ‖g‖ := by ring
-
 /-- **`H^{s,p} ⊆ B^s_{p,∞}`.** A tempered distribution in the Bessel-potential space `H^{s,p}`
 lies in the Besov space `B^s_{p,∞}`. -/
 theorem MemSobolev.memBesov (φ : ContDiffBump (0 : E)) (hu : MemSobolev s p u) :
@@ -261,48 +222,6 @@ theorem MemSobolev.memBesov (φ : ContDiffBump (0 : E)) (hu : MemSobolev s p u) 
   dsimp only
   rw [Real.norm_of_nonneg (by positivity)]
   exact hhn j
-
-/-- **`B^s_{p,1} ⊆ H^{s,p}`, quantitatively.** There is `C`, depending only on `φ` and `s`, such
-that for every `1 ≤ p ≤ ∞`, if the blocks `Δⱼ u` are `Lᵖ` functions `gⱼ` with
-`Σⱼ 2^{js} ‖gⱼ‖_p < ∞`, then the Bessel potential `J^s u` is an `Lᵖ` function `h` with
-`‖h‖_p ≤ C Σⱼ 2^{js} ‖gⱼ‖_p`. -/
-theorem exists_besselPotential_eq_and_norm_le_tsum (φ : ContDiffBump (0 : E)) (s : ℝ) :
-    ∃ C : ℝ, ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {u : 𝓢'(E, F)}
-      (g : ℕ → Lp F p (volume : Measure E)), (∀ j, littlewoodPaleyBlock F φ j u = g j) →
-      Summable (fun j : ℕ ↦ (2 : ℝ) ^ (j * s) * ‖g j‖) →
-      ∃ h : Lp F p (volume : Measure E), besselPotential E F s u = h ∧
-        ‖h‖ ≤ C * ∑' j : ℕ, (2 : ℝ) ^ (j * s) * ‖g j‖ := by
-  obtain ⟨C, hC⟩ := exists_besselPotential_compL_littlewoodPaleyBlock_eq (F := F) φ s
-  refine ⟨C, fun {p} _ u g hg hsum ↦ ?_⟩
-  choose σ hσ hσn using hC
-  -- The pieces `J^s Δⱼ u = T_{σⱼ} gⱼ` are `Lᵖ` functions with `‖J^s Δⱼ u‖_p ≤ C 2^{js} ‖gⱼ‖_p`.
-  choose k hk hkn using fun j ↦ exists_fourierMultiplierCLM_eq_and_norm_le (σ j) (g j)
-  have hkJ (j : ℕ) : besselPotential E F s (littlewoodPaleyBlock F φ j u) = k j := by
-    rw [← ContinuousLinearMap.comp_apply, hσ, ContinuousLinearMap.comp_apply, hg, hk]
-  have hkn' (j : ℕ) : ‖k j‖ ≤ C * ((2 : ℝ) ^ (j * s) * ‖g j‖) := by
-    calc ‖k j‖ ≤ (∫ x, ‖𝓕⁻ (σ j : E → ℂ) x‖) * ‖g j‖ := hkn j
-      _ ≤ C * ((2 : ℝ) ^ j) ^ s * ‖g j‖ := by gcongr; exact hσn j
-      _ = C * ((2 : ℝ) ^ (j * s) * ‖g j‖) := by rw [← Real.rpow_natCast_mul zero_le_two, mul_assoc]
-  -- The series `Σⱼ J^s Δⱼ u` converges absolutely in `Lᵖ`.
-  have hksum : Summable fun j ↦ ‖k j‖ :=
-    (hsum.mul_left C).of_nonneg_of_le (fun _ ↦ norm_nonneg _) hkn'
-  have hH := hksum.of_norm.hasSum
-  refine ⟨∑' j, k j, ?_, ?_⟩
-  · -- In `𝓢'` the same series sums to `J^s u`, since `u = Σⱼ Δⱼ u` there.
-    have h₁ : Tendsto (fun N ↦ ∑ j ∈ Finset.range N, (k j : 𝓢'(E, F))) atTop
-        (𝓝 ((∑' j, k j : Lp F p (volume : Measure E)) : 𝓢'(E, F))) := by
-      have := ((Lp.toTemperedDistributionCLM F volume p).hasSum hH).tendsto_sum_nat
-      simpa only [Lp.toTemperedDistributionCLM_apply] using this
-    have h₂ : Tendsto (fun N ↦ ∑ j ∈ Finset.range N, (k j : 𝓢'(E, F))) atTop
-        (𝓝 (besselPotential E F s u)) := by
-      simp_rw [← hkJ, ← map_sum]
-      exact ((besselPotential E F s).continuous.tendsto u).comp
-        (tendsto_sum_littlewoodPaleyBlock φ u)
-    exact tendsto_nhds_unique h₂ h₁
-  · calc ‖∑' j, k j‖ ≤ ∑' j : ℕ, ‖k j‖ := norm_tsum_le_tsum_norm hksum
-      _ ≤ ∑' j : ℕ, C * ((2 : ℝ) ^ (j * s) * ‖g j‖) :=
-        hksum.tsum_le_tsum hkn' (hsum.mul_left C)
-      _ = C * ∑' j : ℕ, (2 : ℝ) ^ (j * s) * ‖g j‖ := tsum_mul_left
 
 /-- **`B^s_{p,1} ⊆ H^{s,p}`.** A tempered distribution in the Besov space `B^s_{p,1}` lies in the
 Bessel-potential space `H^{s,p}`. -/

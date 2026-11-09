@@ -13,30 +13,43 @@ public import Mathlib.LinearAlgebra.StdBasis
 
 The characteristic equation for Mathlib's bundled coordinate evaluation lets users compute
 with `lp.evalCLM` without unfolding its construction as a bounded linear map, and the ℓ¹ norm is
-the sum of the norms of the coordinates (`lp.hasSum_norm_one`). A geometric sequence with ratio in
-`[0, 1)` lies in every `ℓ^q` with `q ≠ 0` (`memℓp_geometric_of_lt_one`). The scalar
-coordinate vectors are linearly independent, and vectors in their span vanish outside the
-corresponding indices. These algebraic facts hold over normed rings at every exponent.
+the sum of the norms of the coordinates (`lp.hasSum_norm_one`). A geometric sequence whose ratio
+has norm less than `1` lies in every `ℓ^q` with `q ≠ 0`
+(`TauCeti.memℓp_geometric_of_norm_lt_one`). The scalar coordinate vectors are linearly
+independent, and vectors in their span vanish outside the corresponding indices. These algebraic
+facts hold over normed rings at every exponent.
 -/
 
 public section
 
 open scoped ENNReal
 
-/-- A geometric sequence `(ρ ^ j)ⱼ` with `0 ≤ ρ < 1` lies in `ℓ^q` for every `q ≠ 0`. -/
-theorem memℓp_geometric_of_lt_one {ρ : ℝ} (hρ₀ : 0 ≤ ρ) (hρ₁ : ρ < 1) {q : ℝ≥0∞} (hq : q ≠ 0) :
-    Memℓp (fun j : ℕ ↦ ρ ^ j) q := by
-  rcases q.trichotomy with rfl | rfl | hq'
-  · exact absurd rfl hq
-  · refine memℓp_infty ⟨1, ?_⟩
-    rintro _ ⟨j, rfl⟩
-    dsimp only
-    rw [Real.norm_of_nonneg (by positivity)]
-    exact pow_le_one₀ hρ₀ hρ₁.le
-  · refine memℓp_gen ((summable_geometric_of_lt_one (Real.rpow_nonneg hρ₀ _)
-      (Real.rpow_lt_one hρ₀ hρ₁ hq')).congr fun j ↦ ?_)
-    rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_natCast, ← Real.rpow_natCast,
-      ← Real.rpow_mul hρ₀, ← Real.rpow_mul hρ₀, mul_comm]
+namespace TauCeti
+
+/-- A geometric sequence `(ρ ^ j)ⱼ` with `‖ρ‖ < 1` lies in `ℓ^q` for every `q ≠ 0`. -/
+theorem memℓp_geometric_of_norm_lt_one {𝕜 : Type*} [NormedRing 𝕜] {ρ : 𝕜} (hρ : ‖ρ‖ < 1)
+    {q : ℝ≥0∞} (hq : q ≠ 0) : Memℓp (fun j : ℕ ↦ ρ ^ j) q := by
+  have hρ₀ := norm_nonneg ρ
+  have hgeom : Memℓp (fun j : ℕ ↦ ‖ρ‖ ^ j) q := by
+    rcases q.trichotomy with rfl | rfl | hq'
+    · exact absurd rfl hq
+    · refine memℓp_infty ⟨1, ?_⟩
+      rintro _ ⟨j, rfl⟩
+      dsimp only
+      rw [Real.norm_of_nonneg (by positivity)]
+      exact pow_le_one₀ hρ₀ hρ.le
+    · refine memℓp_gen ((summable_geometric_of_lt_one (Real.rpow_nonneg hρ₀ _)
+        (Real.rpow_lt_one hρ₀ hρ hq')).congr fun j ↦ ?_)
+      rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_natCast, ← Real.rpow_natCast,
+        ← Real.rpow_mul hρ₀, ← Real.rpow_mul hρ₀, mul_comm]
+  -- `‖ρ ^ j‖ ≤ ‖ρ‖ ^ j` for `j ≠ 0`; the constant absorbs `‖ρ ^ 0‖ = ‖1‖`.
+  refine (hgeom.const_mul (max ‖(1 : 𝕜)‖ 1)).mono fun j ↦ ?_
+  rcases j.eq_zero_or_pos with rfl | hj
+  · simp
+  · calc ‖ρ ^ j‖ ≤ ‖ρ‖ ^ j := norm_pow_le' ρ hj
+      _ ≤ max ‖(1 : 𝕜)‖ 1 * ‖ρ‖ ^ j := le_mul_of_one_le_left (by positivity) (le_max_right _ _)
+
+end TauCeti
 
 namespace lp
 
