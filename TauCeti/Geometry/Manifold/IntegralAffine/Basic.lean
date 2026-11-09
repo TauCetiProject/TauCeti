@@ -13,12 +13,12 @@ public import Mathlib.Topology.LocallyConstant.Basic
 /-!
 # The structure groupoid of integral affine chart changes
 
-Integral affine maps agreeing on a nonempty open set have the same global
-extension, including their integral lattice maps. Consequently a map locally
-equal to integral affine equivalences on a connected open set extends uniquely
-to one global integral affine equivalence. The integral affine self-equivalences
-form a group acting on the ambient space, and the structure groupoid of integral
-affine chart changes is the corresponding `TauCeti.smulGroupoid`.
+A map that is locally equal to global integral affine equivalences on a connected open set
+extends uniquely to one global integral affine equivalence. This rests on the rigidity
+`IntegralAffineEquiv.eq_of_eqOn_open`: integral affine equivalences agreeing on a nonempty open
+set are equal. The structure groupoid of integral affine chart changes is the
+`TauCeti.smulGroupoid` of the group of integral affine self-equivalences acting on the ambient
+space.
 
 Adapted from `yuma-mizuno-lean/Mei`, commit
 `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca`,
@@ -33,13 +33,12 @@ namespace TauCeti.Toric
 
 variable {N N' V W : Type*} [AddCommGroup N] [AddCommGroup N']
   [NormedAddCommGroup V] [NormedSpace ℝ V]
-  [NormedAddCommGroup W] [NormedSpace ℝ W]
+  [AddCommGroup W] [Module ℝ W]
   {i : N →+ V} {i' : N' →+ W}
   {h : IsIntegralLattice i} {h' : IsIntegralLattice i'}
 
 /-- On a nonempty connected open set, a map that near each point agrees with one global integral
-affine equivalence agrees with a unique global integral affine equivalence on the whole set. No
-connectedness of the image is assumed. -/
+affine equivalence agrees with a unique global integral affine equivalence on the whole set. -/
 theorem IntegralAffineEquiv.existsUnique_extension {f : V → W} {s : Set V}
     (hf : ∀ x ∈ s, ∃ e : IntegralAffineEquiv h h', f =ᶠ[𝓝 x] e) (hs : IsOpen s)
     (hc : IsConnected s) : ∃! e : IntegralAffineEquiv h h', EqOn f e s := by
@@ -59,13 +58,12 @@ theorem IntegralAffineEquiv.existsUnique_extension {f : V → W} {s : Set V}
       ⟨y.val, y.property, hy, hxU y⟩
     intro z hz
     exact (hEq y hz.2.2).symm.trans (hEq x hz.2.1)
-  let b : LocallyConstant s (IntegralAffineEquiv h h') := ⟨E, hE⟩
   let : PreconnectedSpace s := Subtype.preconnectedSpace hc.isPreconnected
   obtain ⟨x, hx⟩ := hc.nonempty
   let e := E ⟨x, hx⟩
   have he : EqOn f e s := by
     intro y hy
-    have hEy := b.apply_eq_of_preconnectedSpace ⟨y, hy⟩ ⟨x, hx⟩
+    have hEy := hE.apply_eq_of_preconnectedSpace ⟨y, hy⟩ ⟨x, hx⟩
     exact (hEq ⟨y, hy⟩ (hxU ⟨y, hy⟩)).trans
       (congrArg (fun a : IntegralAffineEquiv h h' => a y) hEy)
   refine ⟨e, he, ?_⟩
@@ -83,88 +81,11 @@ theorem IntegralAffineEquiv.existsUnique_extension_connectedComponentIn {f : V �
     (fun y hy => hf y (connectedComponentIn_subset s x hy))
     hs.connectedComponentIn (isConnected_connectedComponentIn_iff.mpr hx)
 
-namespace IntegralAffineEquiv
-
-/-- Integral affine self-equivalences form a group under composition, with `e * f` the
-equivalence applying `f` first. -/
-instance : Group (IntegralAffineEquiv h h) where
-  mul e f := f.trans e
-  one := refl h
-  inv := symm
-  mul_assoc e f g := (trans_assoc g f e).symm
-  one_mul := trans_refl
-  mul_one := refl_trans
-  inv_mul_cancel := self_trans_symm
-
-/-- The product `e * f` applies `f` first. -/
-theorem mul_def (e f : IntegralAffineEquiv h h) : e * f = f.trans e := (rfl)
-
-/-- The identity of the group is the identity equivalence. -/
-theorem one_def : (1 : IntegralAffineEquiv h h) = refl h := (rfl)
-
-/-- The inverse in the group is the symmetric equivalence. -/
-theorem inv_def (e : IntegralAffineEquiv h h) : e⁻¹ = e.symm := (rfl)
-
-/-- A product acts by composing the actions. -/
-@[simp]
-theorem coe_mul (e f : IntegralAffineEquiv h h) (x : V) : (e * f) x = e (f x) := by
-  rw [mul_def, trans_apply]
-
-/-- The identity of the group acts as the identity map. -/
-@[simp]
-theorem coe_one (x : V) : (1 : IntegralAffineEquiv h h) x = x := by
-  rw [one_def, refl_apply]
-
-/-- The lattice equivalence of a product is the composite of the lattice equivalences. -/
-@[simp]
-theorem mul_latticeEquiv (e f : IntegralAffineEquiv h h) :
-    (e * f).latticeEquiv = f.latticeEquiv.trans e.latticeEquiv := by
-  rw [mul_def, trans_latticeEquiv]
-
-/-- The identity of the group has the identity lattice equivalence. -/
-@[simp]
-theorem one_latticeEquiv : (1 : IntegralAffineEquiv h h).latticeEquiv = AddEquiv.refl N := by
-  rw [one_def, refl_latticeEquiv]
-
-/-- The inverse has the inverse lattice equivalence. -/
-@[simp]
-theorem inv_latticeEquiv (e : IntegralAffineEquiv h h) :
-    (e⁻¹).latticeEquiv = e.latticeEquiv.symm := by
-  rw [inv_def, symm_latticeEquiv]
-
-/-- Integral affine self-equivalences act on the ambient space by evaluation. -/
-instance : MulAction (IntegralAffineEquiv h h) V where
-  smul e x := e x
-  one_smul x := coe_one x
-  mul_smul e f x := coe_mul e f x
-
-/-- The action of an integral affine self-equivalence on the ambient space is evaluation. -/
-@[simp]
-theorem smul_def (e : IntegralAffineEquiv h h) (x : V) : e • x = e x := (rfl)
-
-instance : ContinuousConstSMul (IntegralAffineEquiv h h) V :=
-  ⟨fun e => by simpa only [smul_def] using e.continuous⟩
-
-end IntegralAffineEquiv
-
 variable (h) in
 /-- The structure groupoid of integral affine chart changes: open partial homeomorphisms of the
 ambient space that are locally given by an integral affine self-equivalence. -/
 abbrev integralAffineGroupoid : StructureGroupoid V :=
   smulGroupoid (IntegralAffineEquiv h h) V
-
-/-- An open partial homeomorphism is an integral affine chart change exactly when near each point
-of its source it agrees with an integral affine self-equivalence. -/
-theorem mem_integralAffineGroupoid_iff {e : OpenPartialHomeomorph V V} :
-    e ∈ integralAffineGroupoid h ↔
-      ∀ x ∈ e.source, ∃ a : IntegralAffineEquiv h h, e =ᶠ[𝓝 x] a :=
-  mem_smulGroupoid_iff
-
-/-- A global integral affine self-equivalence, as a homeomorphism, is an integral affine chart
-change. -/
-theorem IntegralAffineEquiv.mem_integralAffineGroupoid (a : IntegralAffineEquiv h h) :
-    (Homeomorph.smul a : V ≃ₜ V).toOpenPartialHomeomorph ∈ integralAffineGroupoid h :=
-  smul_mem_smulGroupoid a
 
 /-- A connected nonempty chart-change domain has a unique global integral affine extension. -/
 theorem existsUnique_extension_of_mem_integralAffineGroupoid

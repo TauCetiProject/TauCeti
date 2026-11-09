@@ -14,10 +14,11 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 An integral affine equivalence is a real affine equivalence together with an
 isomorphism of the integral lattices compatible with its linear part. Its
-translation is arbitrary. Both directions pull rational functionals back to
-rational functionals. In normed spaces the integral lattice supplies finite
-dimensionality and hence continuity without further assumptions. These
-equivalences transport affine inequalities by composition with their inverses.
+translation is arbitrary. The self-equivalences of a fixed lattice form a group acting on the
+ambient space, and equivalences agreeing on a nonempty open set are equal. Both directions pull
+rational functionals back to rational functionals. In normed spaces the integral lattice supplies
+finite dimensionality and hence continuity without further assumptions. These equivalences
+transport affine inequalities by composition with their inverses.
 
 Adapted from `Mei/Geometry/Toric/Algebraic/IntegralAffine.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei),
@@ -176,6 +177,63 @@ theorem trans_assoc {N''' V''' : Type*} [AddCommGroup N'''] [AddCommGroup V''']
     (e.trans f).trans g = e.trans (f.trans g) := by
   ext; rfl
 
+/-- Integral affine self-equivalences form a group under composition, with `e * f` the
+equivalence applying `f` first. -/
+instance : Group (IntegralAffineEquiv h h) where
+  mul e f := f.trans e
+  one := refl h
+  inv := symm
+  mul_assoc e f g := (trans_assoc g f e).symm
+  one_mul := trans_refl
+  mul_one := refl_trans
+  inv_mul_cancel := self_trans_symm
+
+/-- The product `e * f` applies `f` first. -/
+theorem mul_def (e f : IntegralAffineEquiv h h) : e * f = f.trans e := (rfl)
+
+/-- The identity of the group is the identity equivalence. -/
+theorem one_def : (1 : IntegralAffineEquiv h h) = refl h := (rfl)
+
+/-- The inverse in the group is the symmetric equivalence. -/
+theorem inv_def (e : IntegralAffineEquiv h h) : e⁻¹ = e.symm := (rfl)
+
+/-- A product acts by composing the actions. -/
+@[simp]
+theorem coe_mul (e f : IntegralAffineEquiv h h) (x : V) : (e * f) x = e (f x) := by
+  rw [mul_def, trans_apply]
+
+/-- The identity of the group acts as the identity map. -/
+@[simp]
+theorem coe_one (x : V) : (1 : IntegralAffineEquiv h h) x = x := by
+  rw [one_def, refl_apply]
+
+/-- The lattice equivalence of a product is the composite of the lattice equivalences. -/
+@[simp]
+theorem mul_latticeEquiv (e f : IntegralAffineEquiv h h) :
+    (e * f).latticeEquiv = f.latticeEquiv.trans e.latticeEquiv := by
+  rw [mul_def, trans_latticeEquiv]
+
+/-- The identity of the group has the identity lattice equivalence. -/
+@[simp]
+theorem one_latticeEquiv : (1 : IntegralAffineEquiv h h).latticeEquiv = AddEquiv.refl N := by
+  rw [one_def, refl_latticeEquiv]
+
+/-- The inverse has the inverse lattice equivalence. -/
+@[simp]
+theorem inv_latticeEquiv (e : IntegralAffineEquiv h h) :
+    (e⁻¹).latticeEquiv = e.latticeEquiv.symm := by
+  rw [inv_def, symm_latticeEquiv]
+
+/-- Integral affine self-equivalences act on the ambient space by evaluation. -/
+instance : MulAction (IntegralAffineEquiv h h) V where
+  smul e x := e x
+  one_smul x := coe_one x
+  mul_smul e f x := coe_mul e f x
+
+/-- The action of an integral affine self-equivalence on the ambient space is evaluation. -/
+@[simp]
+theorem smul_def (e : IntegralAffineEquiv h h) (x : V) : e • x = e x := (rfl)
+
 /-- The linear part is rational relative to the given integral lattices. -/
 theorem isRationalLinearMap (e : IntegralAffineEquiv h h') :
     IsRationalLinearMap h h' e.toAffineEquiv.linear.toLinearMap :=
@@ -185,6 +243,24 @@ theorem isRationalLinearMap (e : IntegralAffineEquiv h h') :
 end IntegralAffineEquiv
 
 end Algebra
+
+namespace IntegralAffineEquiv
+
+section Rigidity
+
+variable {N N' V V' : Type*} [AddCommGroup N] [AddCommGroup N'] [NormedAddCommGroup V]
+  [NormedSpace ℝ V] [AddCommGroup V'] [Module ℝ V'] {i : N →+ V} {i' : N' →+ V'}
+  {h : IsIntegralLattice i} {h' : IsIntegralLattice i'}
+
+/-- Agreement on a nonempty open set determines the entire integral affine equivalence. -/
+theorem eq_of_eqOn_open {e f : IntegralAffineEquiv h h'} {s : Set V}
+    (hs : IsOpen s) (hne : s.Nonempty) (he : Set.EqOn e f s) : e = f := by
+  apply toAffineEquiv_injective
+  exact AffineEquiv.ext_on (hs.affineSpan_eq_top hne) e.toAffineEquiv f.toAffineEquiv he
+
+end Rigidity
+
+end IntegralAffineEquiv
 
 namespace IntegralAffineEquiv
 
@@ -198,11 +274,8 @@ theorem continuous (e : IntegralAffineEquiv h h') : Continuous e := by
   let := h.finiteDimensional
   exact e.toAffineEquiv.continuous_of_finiteDimensional
 
-/-- Agreement on a nonempty open set determines the entire integral affine equivalence. -/
-theorem eq_of_eqOn_open {e f : IntegralAffineEquiv h h'} {s : Set V}
-    (hs : IsOpen s) (hne : s.Nonempty) (he : Set.EqOn e f s) : e = f := by
-  apply toAffineEquiv_injective
-  exact AffineEquiv.ext_on (hs.affineSpan_eq_top hne) e.toAffineEquiv f.toAffineEquiv he
+instance : ContinuousConstSMul (IntegralAffineEquiv h h) V :=
+  ⟨fun e => by simpa only [smul_def] using e.continuous⟩
 
 /-- The underlying continuous affine map used to transport affine inequalities. -/
 def toContinuousAffineMap (e : IntegralAffineEquiv h h') : V →ᴬ[ℝ] V' :=
