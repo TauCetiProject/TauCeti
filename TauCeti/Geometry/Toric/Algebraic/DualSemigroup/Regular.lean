@@ -283,7 +283,7 @@ theorem mem_iff_forall_realCharacter_nonneg (hi : IsIntegralLattice i) (hσ : Is
   rw [← B.sum_repr v, Fintype.sum_sum_type]
   simp only [hinr, zero_smul, Finset.sum_const_zero, add_zero]
   refine Submodule.sum_mem _ fun ρ _ ↦ ?_
-  rw [hi.isBaseChange_basis_apply]
+  rw [hi.isBaseChange.basis_apply, AddMonoidHom.coe_toIntLinearMap]
   exact σ.smul_mem (hcoord (Sum.inl ρ) ▸ h _ (hmem (Sum.inl ρ)))
     (ρ.1.isFaceOf.le (hb ρ).mem)
 
