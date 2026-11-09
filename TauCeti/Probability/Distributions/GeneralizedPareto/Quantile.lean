@@ -122,7 +122,7 @@ private theorem tendsto_quantile_generalizedParetoMeasure_nhdsLT_one_of_nonneg (
     Tendsto (fun u => ((generalizedParetoMeasure s ξ).quantile u : EReal))
       (𝓝[<] 1) (𝓝 ⊤) := by
   rcases hξ.eq_or_lt with hξ | hξ
-  · rw [← hξ, generalizedParetoMeasure_zero hs]
+  · rw [← hξ, generalizedParetoMeasure_zero]
     exact tendsto_quantile_expMeasure_nhdsLT_one (inv_pos.mpr hs)
   rw [EReal.tendsto_coe_nhds_top_iff]
   have hsub : Tendsto (fun u : ℝ => 1 - u) (𝓝[<] 1) (𝓝[>] 0) := by
