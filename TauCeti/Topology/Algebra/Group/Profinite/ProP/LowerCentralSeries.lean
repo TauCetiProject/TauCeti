@@ -329,23 +329,33 @@ theorem IsProP.mem_of_forall_mk_mem_map_pLowerCentralSeries (hG : IsProP p G) (h
   have := Subgroup.mul_mem_sup hxH (hk (QuotientGroup.eq.mp hx))
   rwa [mul_inv_cancel_left] at this
 
-/-- **Recovering elements of closed subgroups from compatible classes.** In a pro-`p` group, a
+omit [TotallyDisconnectedSpace G] in
+/-- **Recovering elements of closed subgroups from compatible classes.** In a compact group, a
 family `q k i ∈ G ⧸ λ_k`, compatible along the quotient maps and lying at every level in the image
-of a closed subgroup `H i`, is the family of classes of elements `t i ∈ H i`. -/
-theorem IsProP.exists_forall_mem_and_forall_mk_eq_pLowerCentralSeries (hG : IsProP p G)
-    (hp : p.Prime) {ι : Type*} {H : ι → Subgroup G} (hH : ∀ i, IsClosed (H i : Set G))
-    (q : ∀ k, ι → G ⧸ pLowerCentralSeries p G k)
+of a closed subgroup `H i`, is the family of classes of elements `t i ∈ H i`: the fibres over
+`q k i` are nonempty, closed and nested, so they have a common point. -/
+theorem exists_forall_mem_and_forall_mk_eq_pLowerCentralSeries {ι : Type*} {H : ι → Subgroup G}
+    (hH : ∀ i, IsClosed (H i : Set G)) (q : ∀ k, ι → G ⧸ pLowerCentralSeries p G k)
     (hq : ∀ k i, QuotientGroup.mapOfLE (pLowerCentralSeries_succ_le k) (q (k + 1) i) = q k i)
     (hmem : ∀ k i, q k i ∈ (H i).map (QuotientGroup.mk' (pLowerCentralSeries p G k))) :
     ∃ t : ι → G, (∀ i, t i ∈ H i) ∧
       ∀ k i, (t i : G ⧸ pLowerCentralSeries p G k) = q k i := by
-  choose t ht using fun i ↦ (hG.existsUnique_forall_mk_eq_pLowerCentralSeries hp (fun k ↦ q k i)
-    fun k g hg ↦ by
-      rw [← hq k i]
-      exact (QuotientGroup.mapOfLE_mk (pLowerCentralSeries_succ_le k) g).symm.trans
-        (congrArg _ hg)).exists
-  exact ⟨t, fun i ↦ hG.mem_of_forall_mk_mem_map_pLowerCentralSeries hp (hH i) fun k ↦
-    (ht i k).symm ▸ hmem k i, fun k i ↦ ht i k⟩
+  have key (i : ι) : ∃ t ∈ H i, ∀ k, (t : G ⧸ pLowerCentralSeries p G k) = q k i := by
+    let S : ℕ → Set G := fun k ↦ {g | g ∈ H i ∧ (g : G ⧸ pLowerCentralSeries p G k) = q k i}
+    have hS : ∀ k, IsClosed (S k) := fun k ↦
+      (hH i).inter ((isClosed_singleton (x := q k i)).preimage QuotientGroup.continuous_mk)
+    obtain ⟨t, ht⟩ := IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed S
+      (fun k g hg ↦ ⟨hg.1, by
+        rw [← hq k i, ← hg.2]
+        exact QuotientGroup.mapOfLE_mk (pLowerCentralSeries_succ_le k) g |>.symm⟩)
+      (fun k ↦ by
+        obtain ⟨x, hx, hxk⟩ := Subgroup.mem_map.mp (hmem k i)
+        exact ⟨x, hx, hxk⟩)
+      (hS 0).isCompact hS
+    rw [Set.mem_iInter] at ht
+    exact ⟨t, (ht 0).1, fun k ↦ (ht k).2⟩
+  choose t htH htk using key
+  exact ⟨t, htH, fun k i ↦ htk i k⟩
 
 /-- A map into a pro-`p` group is continuous exactly when all of its composites with the quotient
 maps `G → G ⧸ λ_k` are. No finite generation is needed. -/
