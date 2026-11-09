@@ -292,6 +292,15 @@ lemma exists_intersection_self_eq (h : 1 < Fintype.card T.Component) (i : T.Comp
   rw [hc, Int.toNat_of_nonneg (by omega)]
   ring
 
+/-- A component of self-intersection `-2w` has a nonnegative intersection number only with
+other components. -/
+theorem ne_of_intersection_nonneg {i j : T.Component}
+    (hi : T.intersection i i = -(2 * (T.weight i : ℤ))) (h : 0 ≤ T.intersection i j) :
+    i ≠ j := by
+  rintro rfl
+  have := (T.weight i).pos
+  omega
+
 /-! ### Bounds at the neighbours of a component -/
 
 /-- The multiplicity-weighted intersection number `mᵢaᵢⱼ` is bounded by the weighted
