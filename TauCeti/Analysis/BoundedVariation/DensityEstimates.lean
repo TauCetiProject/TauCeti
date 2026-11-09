@@ -144,7 +144,7 @@ private theorem ofReal_abs_inner_setIntegral_polarDensity_le_mul_liminf
   -- `σ` is integrable on the compact sets `closedBall x ρ ⊆ Ω`.
   have hint (ρ : ℝ) (hρ : closedBall x ρ ⊆ Ω) :
       IntegrableOn σ (((↑) : Ω → E) ⁻¹' closedBall x ρ) ν :=
-    (locallyIntegrable_polarDensity hu hfin).integrableOn_isCompact
+    (locallyIntegrable_polarDensity (μ := μ) (Ω := Ω) (u := s.indicator 1)).integrableOn_isCompact
       (Topology.IsInducing.subtypeVal.isCompact_preimage' (isCompact_closedBall x ρ)
         (by rwa [Subtype.range_coe]))
   -- Cutoffs between `closedBall x r` and `ball x (r + h)` with Lipschitz constant `t / h`.
