@@ -118,22 +118,28 @@ private theorem discDoubleMap_surjective : Surjective discDoubleMap := by
       refine ⟨inr _ ⟨(conj w)⁻¹, mem_closedBall_zero_iff.2 hu⟩, ?_⟩
       rw [discDoubleMap_inr, ← unitCircleInversion_coe hw0, unitCircleInversion_unitCircleInversion]
 
+private theorem discDoubleMap_bijective : Bijective discDoubleMap :=
+  ⟨discDoubleMap_injective, discDoubleMap_surjective⟩
+
 /-- The doubled closed unit disc is the Riemann sphere: the first sheet is the closed unit disc
 and the second sheet is its image `w ↦ (conj w)⁻¹` under the inversion in the unit circle. -/
 noncomputable def discDoubleHomeomorph : DoubleAlong discBoundary ≃ₜ OnePoint ℂ :=
-  Continuous.homeoOfEquivCompactToT2
-    (f := Equiv.ofBijective discDoubleMap ⟨discDoubleMap_injective, discDoubleMap_surjective⟩)
-    discDoubleMap.continuous
+  IsHomeomorph.homeomorph discDoubleMap
+    (isHomeomorph_iff_continuous_bijective.2 ⟨discDoubleMap.continuous, discDoubleMap_bijective⟩)
+
+private theorem discDoubleHomeomorph_apply (p : DoubleAlong discBoundary) :
+    discDoubleHomeomorph p = discDoubleMap p := by
+  rw [discDoubleHomeomorph, IsHomeomorph.homeomorph_apply]
 
 @[simp]
 theorem discDoubleHomeomorph_inl (z : closedBall (0 : ℂ) 1) :
-    discDoubleHomeomorph (inl _ z) = ((z : ℂ) : OnePoint ℂ) :=
-  discDoubleMap_inl z
+    discDoubleHomeomorph (inl _ z) = ((z : ℂ) : OnePoint ℂ) := by
+  rw [discDoubleHomeomorph_apply, discDoubleMap_inl]
 
 @[simp]
 theorem discDoubleHomeomorph_inr (z : closedBall (0 : ℂ) 1) :
-    discDoubleHomeomorph (inr _ z) = unitCircleInversion ((z : ℂ) : OnePoint ℂ) :=
-  discDoubleMap_inr z
+    discDoubleHomeomorph (inr _ z) = unitCircleInversion ((z : ℂ) : OnePoint ℂ) := by
+  rw [discDoubleHomeomorph_apply, discDoubleMap_inr]
 
 /-- The sheet exchange of the doubled disc is the inversion of the sphere in the unit circle. -/
 @[simp]

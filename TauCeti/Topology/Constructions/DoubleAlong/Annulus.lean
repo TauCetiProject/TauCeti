@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Constructions.DoubleAlong.Basic
 public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.ClosedAnnulus
 public import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
 public import Mathlib.Topology.Order.ProjIcc
 
@@ -28,8 +29,8 @@ double is not constructed here.
 
 ## Main declarations
 
-* `TauCeti.DoubleAlong.annulus` and `TauCeti.DoubleAlong.annulusBoundary`: the closed annulus
-  and its two boundary circles.
+* `TauCeti.DoubleAlong.annulusBoundary`: the two boundary circles of the closed annulus
+  `Complex.closedAnnulus`.
 * `TauCeti.DoubleAlong.annulusDoubleHomeomorph`: the doubled annulus is `Circle × Circle`.
 * `TauCeti.DoubleAlong.annulusDoubleHomeomorph_swap`: the sheet exchange is `(u, v) ↦ (u, v⁻¹)`.
 * `TauCeti.DoubleAlong.annulusDoubleHomeomorph_image_fixed`: the fixed set is two circles.
@@ -49,48 +50,34 @@ open Circle Complex ComplexConjugate Function Metric Set Topology
 
 namespace TauCeti.DoubleAlong
 
-/-- The closed annulus `r₁ ≤ ‖z‖ ≤ r₂` in `ℂ`. -/
-noncomputable def annulus (r₁ r₂ : ℝ) : Set ℂ :=
-  closedBall 0 r₂ \ ball 0 r₁
-
-@[simp]
-theorem mem_annulus {r₁ r₂ : ℝ} {z : ℂ} : z ∈ annulus r₁ r₂ ↔ r₁ ≤ ‖z‖ ∧ ‖z‖ ≤ r₂ := by
-  simp [annulus, and_comm]
-
 /-- The two boundary circles of the closed annulus, as a subset of the annulus. -/
-def annulusBoundary (r₁ r₂ : ℝ) : Set (annulus r₁ r₂) :=
+def annulusBoundary (r₁ r₂ : ℝ) : Set (closedAnnulus r₁ r₂) :=
   {z | ‖(z : ℂ)‖ = r₁ ∨ ‖(z : ℂ)‖ = r₂}
 
 @[simp]
-theorem mem_annulusBoundary {r₁ r₂ : ℝ} {z : annulus r₁ r₂} :
+theorem mem_annulusBoundary {r₁ r₂ : ℝ} {z : closedAnnulus r₁ r₂} :
     z ∈ annulusBoundary r₁ r₂ ↔ ‖(z : ℂ)‖ = r₁ ∨ ‖(z : ℂ)‖ = r₂ :=
   Iff.rfl
 
-theorem isCompact_annulus (r₁ r₂ : ℝ) : IsCompact (annulus r₁ r₂) :=
-  (isCompact_closedBall 0 r₂).diff isOpen_ball
-
-instance instCompactSpaceAnnulus (r₁ r₂ : ℝ) : CompactSpace (annulus r₁ r₂) :=
-  isCompact_iff_compactSpace.1 (isCompact_annulus r₁ r₂)
-
 variable {r₁ r₂ : ℝ}
 
-private theorem le_norm (z : annulus r₁ r₂) : r₁ ≤ ‖(z : ℂ)‖ :=
-  (mem_annulus.1 z.2).1
+private theorem le_norm (z : closedAnnulus r₁ r₂) : r₁ ≤ ‖(z : ℂ)‖ :=
+  (mem_closedAnnulus.1 z.2).1
 
-private theorem norm_le (z : annulus r₁ r₂) : ‖(z : ℂ)‖ ≤ r₂ :=
-  (mem_annulus.1 z.2).2
+private theorem norm_le (z : closedAnnulus r₁ r₂) : ‖(z : ℂ)‖ ≤ r₂ :=
+  (mem_closedAnnulus.1 z.2).2
 
 /-! ### The coordinates of the torus model -/
 
 /-- A point of the annulus, as a nonzero complex number. -/
-private def toNonzero (h₀ : 0 < r₁) (z : annulus r₁ r₂) : ({0}ᶜ : Set ℂ) :=
+private def toNonzero (h₀ : 0 < r₁) (z : closedAnnulus r₁ r₂) : ({0}ᶜ : Set ℂ) :=
   ⟨z, norm_pos_iff.1 (h₀.trans_le (le_norm z))⟩
 
 /-- The direction `z / ‖z‖` of a point of the annulus, its first polar coordinate. -/
-private noncomputable def direction (h₀ : 0 < r₁) (z : annulus r₁ r₂) : Circle :=
+private noncomputable def direction (h₀ : 0 < r₁) (z : closedAnnulus r₁ r₂) : Circle :=
   Circle.homeomorphSphere.symm (homeomorphUnitSphereProd ℂ (toNonzero h₀ z)).1
 
-private theorem coe_direction (h₀ : 0 < r₁) (z : annulus r₁ r₂) :
+private theorem coe_direction (h₀ : 0 < r₁) (z : closedAnnulus r₁ r₂) :
     (direction h₀ z : ℂ) = (z : ℂ) / (‖(z : ℂ)‖ : ℂ) := by
   simp [direction, toNonzero, div_eq_inv_mul, ← ofReal_inv, ← real_smul]
 
@@ -100,13 +87,13 @@ private theorem continuous_direction (h₀ : 0 < r₁) :
     ((homeomorphUnitSphereProd ℂ).continuous.comp (continuous_subtype_val.subtype_mk _)))
 
 /-- The radial parameter `1 - 2 (‖z‖ - r₁) / (r₂ - r₁)`, running from `1` to `-1`. -/
-private noncomputable def height (z : annulus r₁ r₂) : Icc (-1 : ℝ) 1 :=
+private noncomputable def height (z : closedAnnulus r₁ r₂) : Icc (-1 : ℝ) 1 :=
   projIcc (-1) 1 (by norm_num) (1 - 2 * (‖(z : ℂ)‖ - r₁) / (r₂ - r₁))
 
 private theorem continuous_height : Continuous (height (r₁ := r₁) (r₂ := r₂)) :=
   continuous_projIcc.comp (by fun_prop)
 
-private theorem coe_height (h : r₁ < r₂) (z : annulus r₁ r₂) :
+private theorem coe_height (h : r₁ < r₂) (z : closedAnnulus r₁ r₂) :
     (height z : ℝ) = 1 - 2 * (‖(z : ℂ)‖ - r₁) / (r₂ - r₁) := by
   have hr : 0 < r₂ - r₁ := sub_pos.2 h
   rw [height, projIcc_of_mem]
@@ -116,7 +103,7 @@ private theorem coe_height (h : r₁ < r₂) (z : annulus r₁ r₂) :
   · rw [sub_le_self_iff]
     exact div_nonneg (by linarith [le_norm z]) hr.le
 
-private theorem norm_eq_of_height_eq (h : r₁ < r₂) {z w : annulus r₁ r₂}
+private theorem norm_eq_of_height_eq (h : r₁ < r₂) {z w : closedAnnulus r₁ r₂}
     (hzw : height z = height w) : ‖(z : ℂ)‖ = ‖(w : ℂ)‖ := by
   have := congrArg Subtype.val hzw
   rw [coe_height h, coe_height h] at this
@@ -124,7 +111,7 @@ private theorem norm_eq_of_height_eq (h : r₁ < r₂) {z w : annulus r₁ r₂}
   field_simp at this
   linarith
 
-private theorem mem_annulusBoundary_of_height_sq (h : r₁ < r₂) {z : annulus r₁ r₂}
+private theorem mem_annulusBoundary_of_height_sq (h : r₁ < r₂) {z : closedAnnulus r₁ r₂}
     (hz : (height z : ℝ) ^ 2 = 1) : z ∈ annulusBoundary r₁ r₂ := by
   have hr : (r₂ - r₁) ≠ 0 := (sub_pos.2 h).ne'
   rw [sq, mul_self_eq_one_iff, coe_height h] at hz
@@ -137,7 +124,7 @@ private theorem mem_annulusBoundary_of_height_sq (h : r₁ < r₂) {z : annulus 
     field_simp at hz
     linarith
 
-private theorem height_sq_of_mem_annulusBoundary (h : r₁ < r₂) {z : annulus r₁ r₂}
+private theorem height_sq_of_mem_annulusBoundary (h : r₁ < r₂) {z : closedAnnulus r₁ r₂}
     (hz : z ∈ annulusBoundary r₁ r₂) : (height z : ℝ) ^ 2 = 1 := by
   have hr : (r₂ - r₁) ≠ 0 := (sub_pos.2 h).ne'
   rw [coe_height h]
@@ -161,17 +148,17 @@ private noncomputable def annulusDoubleMap (h₀ : 0 < r₁) (h : r₁ < r₂) :
       simp only [ContinuousMap.coe_mk,
         inv_upperSemicircle_of_sq_eq_one (height_sq_of_mem_annulusBoundary h z.2)]
 
-private theorem annulusDoubleMap_inl (h₀ : 0 < r₁) (h : r₁ < r₂) (z : annulus r₁ r₂) :
+private theorem annulusDoubleMap_inl (h₀ : 0 < r₁) (h : r₁ < r₂) (z : closedAnnulus r₁ r₂) :
     annulusDoubleMap h₀ h (inl _ z) = (direction h₀ z, upperSemicircle (height z)) :=
   desc_inl _ _ _ _ z
 
-private theorem annulusDoubleMap_inr (h₀ : 0 < r₁) (h : r₁ < r₂) (z : annulus r₁ r₂) :
+private theorem annulusDoubleMap_inr (h₀ : 0 < r₁) (h : r₁ < r₂) (z : closedAnnulus r₁ r₂) :
     annulusDoubleMap h₀ h (inr _ z) = (direction h₀ z, (upperSemicircle (height z))⁻¹) :=
   desc_inr _ _ _ _ z
 
 /-- Points with the same direction and the same radial parameter coincide. -/
 private theorem eq_of_direction_eq_of_height_eq (h₀ : 0 < r₁) (h : r₁ < r₂)
-    {z w : annulus r₁ r₂} (hd : direction h₀ z = direction h₀ w) (hh : height z = height w) :
+    {z w : closedAnnulus r₁ r₂} (hd : direction h₀ z = direction h₀ w) (hh : height z = height w) :
     z = w := by
   have := (homeomorphUnitSphereProd ℂ).injective (a₁ := toNonzero h₀ z) (a₂ := toNonzero h₀ w)
     (Prod.ext (Circle.homeomorphSphere.symm.injective hd)
@@ -205,7 +192,7 @@ private theorem annulusDoubleMap_injective (h₀ : 0 < r₁) (h : r₁ < r₂) :
 
 /-- Every direction and every radial parameter is attained by a point of the annulus. -/
 private theorem exists_direction_eq_and_height_eq (h₀ : 0 < r₁) (h : r₁ < r₂) (u : Circle)
-    (x : Icc (-1 : ℝ) 1) : ∃ z : annulus r₁ r₂, direction h₀ z = u ∧ height z = x := by
+    (x : Icc (-1 : ℝ) 1) : ∃ z : closedAnnulus r₁ r₂, direction h₀ z = u ∧ height z = x := by
   set r : ℝ := r₁ + (1 - (x : ℝ)) / 2 * (r₂ - r₁) with hr
   have hr₁ : r₁ ≤ r := by
     have : 0 ≤ (1 - (x : ℝ)) / 2 * (r₂ - r₁) :=
@@ -222,7 +209,7 @@ private theorem exists_direction_eq_and_height_eq (h₀ : 0 < r₁) (h : r₁ < 
   rw [← hq] at hpolar
   have hnorm : ‖(q : ℂ)‖ = r := by
     simpa using congrArg (fun p : sphere (0 : ℂ) 1 × Ioi (0 : ℝ) ↦ (p.2 : ℝ)) hpolar
-  refine ⟨⟨q, by rw [mem_annulus, hnorm]; exact ⟨hr₁, hr₂⟩⟩, ?_, ?_⟩
+  refine ⟨⟨q, by rw [mem_closedAnnulus, hnorm]; exact ⟨hr₁, hr₂⟩⟩, ?_, ?_⟩
   · rw [direction, toNonzero, ← Circle.homeomorphSphere.symm_apply_apply u]
     exact congrArg (fun p : sphere (0 : ℂ) 1 × Ioi (0 : ℝ) ↦ Circle.homeomorphSphere.symm p.1)
       hpolar
@@ -240,38 +227,40 @@ private theorem annulusDoubleMap_surjective (h₀ : 0 < r₁) (h : r₁ < r₂) 
   · exact ⟨inl _ z, by rw [annulusDoubleMap_inl, hd, hh, hv]⟩
   · exact ⟨inr _ z, by rw [annulusDoubleMap_inr, hd, hh, hv]⟩
 
+private theorem annulusDoubleMap_bijective (h₀ : 0 < r₁) (h : r₁ < r₂) :
+    Bijective (annulusDoubleMap h₀ h) :=
+  ⟨annulusDoubleMap_injective h₀ h, annulusDoubleMap_surjective h₀ h⟩
+
 /-- For `0 < r₁ < r₂`, the closed annulus `r₁ ≤ ‖z‖ ≤ r₂` doubled along its two boundary circles
 is the torus `Circle × Circle`. The first coordinate is the direction `z / ‖z‖`; the radial
 parameter is sent to the upper unit semicircle on the first sheet and to the lower one on the
 second. -/
 noncomputable def annulusDoubleHomeomorph (h₀ : 0 < r₁) (h : r₁ < r₂) :
     DoubleAlong (annulusBoundary r₁ r₂) ≃ₜ Circle × Circle :=
-  Continuous.homeoOfEquivCompactToT2
-    (f := Equiv.ofBijective (annulusDoubleMap h₀ h)
-      ⟨annulusDoubleMap_injective h₀ h, annulusDoubleMap_surjective h₀ h⟩)
-    (annulusDoubleMap h₀ h).continuous
+  IsHomeomorph.homeomorph (annulusDoubleMap h₀ h) (isHomeomorph_iff_continuous_bijective.2
+    ⟨(annulusDoubleMap h₀ h).continuous, annulusDoubleMap_bijective h₀ h⟩)
 
 private theorem annulusDoubleHomeomorph_apply (h₀ : 0 < r₁) (h : r₁ < r₂)
     (p : DoubleAlong (annulusBoundary r₁ r₂)) :
-    annulusDoubleHomeomorph h₀ h p = annulusDoubleMap h₀ h p :=
-  rfl
+    annulusDoubleHomeomorph h₀ h p = annulusDoubleMap h₀ h p := by
+  rw [annulusDoubleHomeomorph, IsHomeomorph.homeomorph_apply]
 
 /-- The first coordinate of the doubled annulus is the direction `z / ‖z‖`. -/
 @[simp]
-theorem coe_annulusDoubleHomeomorph_inl_fst (h₀ : 0 < r₁) (h : r₁ < r₂) (z : annulus r₁ r₂) :
+theorem coe_annulusDoubleHomeomorph_inl_fst (h₀ : 0 < r₁) (h : r₁ < r₂) (z : closedAnnulus r₁ r₂) :
     ((annulusDoubleHomeomorph h₀ h (inl _ z)).1 : ℂ) = (z : ℂ) / (‖(z : ℂ)‖ : ℂ) := by
   rw [annulusDoubleHomeomorph_apply, annulusDoubleMap_inl, coe_direction]
 
 /-- Both sheets have the same direction coordinate. -/
 @[simp]
-theorem annulusDoubleHomeomorph_inr_fst (h₀ : 0 < r₁) (h : r₁ < r₂) (z : annulus r₁ r₂) :
+theorem annulusDoubleHomeomorph_inr_fst (h₀ : 0 < r₁) (h : r₁ < r₂) (z : closedAnnulus r₁ r₂) :
     (annulusDoubleHomeomorph h₀ h (inr _ z)).1 = (annulusDoubleHomeomorph h₀ h (inl _ z)).1 := by
   rw [annulusDoubleHomeomorph_apply, annulusDoubleHomeomorph_apply, annulusDoubleMap_inl,
     annulusDoubleMap_inr]
 
 /-- The radial coordinate of the first sheet is `x + √(1 - x²) I`, where
 `x = 1 - 2 (‖z‖ - r₁) / (r₂ - r₁)`. -/
-theorem coe_annulusDoubleHomeomorph_inl_snd (h₀ : 0 < r₁) (h : r₁ < r₂) (z : annulus r₁ r₂) :
+theorem coe_annulusDoubleHomeomorph_inl_snd (h₀ : 0 < r₁) (h : r₁ < r₂) (z : closedAnnulus r₁ r₂) :
     ((annulusDoubleHomeomorph h₀ h (inl _ z)).2 : ℂ) =
       ((1 - 2 * (‖(z : ℂ)‖ - r₁) / (r₂ - r₁) : ℝ) : ℂ) +
         √(1 - (1 - 2 * (‖(z : ℂ)‖ - r₁) / (r₂ - r₁)) ^ 2) * I := by
@@ -279,7 +268,7 @@ theorem coe_annulusDoubleHomeomorph_inl_snd (h₀ : 0 < r₁) (h : r₁ < r₂) 
 
 /-- The radial coordinate of the second sheet is the conjugate of that of the first sheet. -/
 @[simp]
-theorem annulusDoubleHomeomorph_inr_snd (h₀ : 0 < r₁) (h : r₁ < r₂) (z : annulus r₁ r₂) :
+theorem annulusDoubleHomeomorph_inr_snd (h₀ : 0 < r₁) (h : r₁ < r₂) (z : closedAnnulus r₁ r₂) :
     (annulusDoubleHomeomorph h₀ h (inr _ z)).2 = (annulusDoubleHomeomorph h₀ h (inl _ z)).2⁻¹ := by
   rw [annulusDoubleHomeomorph_apply, annulusDoubleHomeomorph_apply, annulusDoubleMap_inl,
     annulusDoubleMap_inr]
@@ -316,14 +305,15 @@ theorem annulusDoubleHomeomorph_image_fixed (h₀ : 0 < r₁) (h : r₁ < r₂) 
 
 /-- A point of the inner boundary circle on the first sheet is sent to the circle `v = 1`. -/
 theorem annulusDoubleHomeomorph_inl_snd_eq_one (h₀ : 0 < r₁) (h : r₁ < r₂)
-    {z : annulus r₁ r₂} (hz : ‖(z : ℂ)‖ = r₁) : (annulusDoubleHomeomorph h₀ h (inl _ z)).2 = 1 := by
+    {z : closedAnnulus r₁ r₂} (hz : ‖(z : ℂ)‖ = r₁) :
+    (annulusDoubleHomeomorph h₀ h (inl _ z)).2 = 1 := by
   apply Circle.ext
   rw [coe_annulusDoubleHomeomorph_inl_snd, hz]
   simp
 
 /-- A point of the outer boundary circle on the first sheet is sent to the circle `v = -1`. -/
 theorem annulusDoubleHomeomorph_inl_snd_eq_neg_one (h₀ : 0 < r₁) (h : r₁ < r₂)
-    {z : annulus r₁ r₂} (hz : ‖(z : ℂ)‖ = r₂) :
+    {z : closedAnnulus r₁ r₂} (hz : ‖(z : ℂ)‖ = r₂) :
     (annulusDoubleHomeomorph h₀ h (inl _ z)).2 = -1 := by
   apply Circle.ext
   rw [coe_annulusDoubleHomeomorph_inl_snd, hz, mul_div_assoc, div_self (sub_pos.2 h).ne']
