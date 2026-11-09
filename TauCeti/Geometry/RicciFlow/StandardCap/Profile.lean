@@ -59,7 +59,10 @@ nonempty (`TauCeti.exists_isStandardCapProfile`), so the standard cap can be cho
 The witness profile is `2 sin (θ / 2)` for an odd angle function `θ` which is the identity near
 `0`, nondecreasing and concave on `[0, ∞)`, and equal to `π / 2` beyond a finite radius. The angle
 `θ` is a rescaled primitive of a smooth even cutoff; rescaling fixes its final value without
-changing it near `0`.
+changing it near `0`. Building a profile as the primitive of a `smoothTransition` cutoff follows
+`TauCeti.torpedoProfile` in `TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Torpedo`.
+That profile has a fixed cap-to-cylinder ratio, so here the primitive is additionally rescaled to
+reach the prescribed final angle `π / 2` while remaining the identity near the tip.
 
 ## References
 
@@ -118,6 +121,7 @@ theorem apply_zero : f 0 = 0 := by
   simpa using hf.eventuallyEq_two_mul_sin.eq_of_nhds
 
 /-- A standard cap profile has unit slope at the tip. -/
+@[simp]
 theorem deriv_zero : deriv f 0 = 1 := by
   have h : HasDerivAt (fun r : ℝ ↦ 2 * sin (r / 2)) (2 * (cos (0 / 2) * (1 / 2))) 0 :=
     ((hasDerivAt_id' 0).div_const 2).sin.const_mul 2
@@ -251,7 +255,7 @@ private theorem capRamp_of_two_le {r : ℝ} (hr : 2 ≤ r) : capRamp r = capRamp
   exact capCutoff_of_two_le hs.1
 
 private theorem one_le_capRamp_two : 1 ≤ capRamp 2 := by
-  have h := monotone_capRamp (show (1 : ℝ) ≤ 2 by norm_num)
+  have h : capRamp 1 ≤ capRamp 2 := monotone_capRamp (by norm_num)
   rwa [capRamp_of_abs_le_one (by norm_num)] at h
 
 /-- The scale `k` for which `k · capRamp (r / k)` is `π / 2` on `[2 k, ∞)`. -/
@@ -333,7 +337,8 @@ private theorem isStandardCapProfile_capProfile : IsStandardCapProfile capProfil
   exists_eq_two_mul_sin := ⟨capScale, capScale_pos, fun r hr ↦ by
     rw [capProfile, capAngle_of_abs_le (by rw [abs_of_nonneg hr.1]; exact hr.2.le)]⟩
   exists_eq_sqrt_two := ⟨2 * capScale, fun r hr ↦ by
-    rw [capProfile, capAngle_of_le hr, show π / 2 / 2 = π / 4 by ring, sin_pi_div_four]
+    have hπ : π / 2 / 2 = π / 4 := by ring
+    rw [capProfile, capAngle_of_le hr, hπ, sin_pi_div_four]
     ring⟩
 
 /-- Standard cap profiles exist. -/
