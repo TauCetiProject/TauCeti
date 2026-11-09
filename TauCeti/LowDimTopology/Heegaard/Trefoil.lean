@@ -318,18 +318,10 @@ theorem relativeGrading_trefoil_one_two :
 second basepoint `z`, so it lowers the Alexander grading by one
 (`TauCeti.HeegaardRegionSystem.relativeAlexanderGrading_trefoil_one_two`). -/
 theorem hatDomains_trefoil_one_two :
-    trefoil.hatDomains ![1, 1, 1] (trefoilGenerator 1) (trefoilGenerator 2) = {Pi.single 2 1} := by
-  ext D
-  rw [mem_hatDomains_iff, Set.mem_singleton_iff]
-  constructor
-  · rintro ⟨hD, hw, -, -⟩
-    -- `D - B₂` is periodic, hence zero.
-    have hP := isDomainBetween_trefoil_one_two.sub_mem_periodicDomains_iff.mpr
-      ⟨hD, fun w => by simpa using hw w⟩
-    rwa [periodicDomains_trefoil, AddSubgroup.mem_bot, sub_eq_zero] at hP
-  · rintro rfl
-    exact ⟨isDomainBetween_trefoil_one_two, fun _ => by simp,
-      Pi.single_nonneg.mpr zero_le_one, maslovIndex_trefoil_single_two⟩
+    trefoil.hatDomains ![1, 1, 1] (trefoilGenerator 1) (trefoilGenerator 2) = {Pi.single 2 1} :=
+  (subsingleton_hatDomains_of_periodicDomains_eq_bot periodicDomains_trefoil _ _ _
+    ).eq_singleton_of_mem (mem_hatDomains_iff.mpr ⟨isDomainBetween_trefoil_one_two,
+      fun _ => by simp, Pi.single_nonneg.mpr zero_le_one, maslovIndex_trefoil_single_two⟩)
 
 /-- The only incidence domain in `hatDomains` from `a` to `b` is `O + B₂`. It contains the second
 basepoint `z`, so it lowers the Alexander grading by one
@@ -337,18 +329,10 @@ basepoint `z`, so it lowers the Alexander grading by one
 with incidence data only: in genus one `O + B₂` is not the domain of a Whitney disk. -/
 theorem hatDomains_trefoil_zero_one :
     trefoil.hatDomains ![1, 1, 1] (trefoilGenerator 0) (trefoilGenerator 1) = {![1, 0, 1]} := by
-  ext D
-  rw [mem_hatDomains_iff, Set.mem_singleton_iff]
-  constructor
-  · rintro ⟨hD, hw, -, -⟩
-    -- `D - (O + B₂)` is periodic, hence zero.
-    have hP := isDomainBetween_trefoil_zero_one.sub_mem_periodicDomains_iff.mpr
-      ⟨hD, fun w => by simpa using hw w⟩
-    rwa [periodicDomains_trefoil, AddSubgroup.mem_bot, sub_eq_zero] at hP
-  · rintro rfl
-    refine ⟨isDomainBetween_trefoil_zero_one, fun _ => by simp, fun i => ?_,
-      maslovIndex_trefoil_octagon_add_bigon⟩
-    fin_cases i <;> simp
+  refine (subsingleton_hatDomains_of_periodicDomains_eq_bot periodicDomains_trefoil _ _ _
+    ).eq_singleton_of_mem (mem_hatDomains_iff.mpr ⟨isDomainBetween_trefoil_zero_one,
+      fun _ => by simp, fun i => ?_, maslovIndex_trefoil_octagon_add_bigon⟩)
+  fin_cases i <;> simp
 
 end HeegaardRegionSystem
 
