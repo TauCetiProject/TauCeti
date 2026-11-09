@@ -223,8 +223,7 @@ theorem weaklyRegular [OpensMeasurableSpace α] [μ.WeaklyRegular] (h : ν ≪ �
 omit [IsFiniteMeasure ν] in
 /-- On an `R₁` space with its Borel σ-algebra, a measure absolutely continuous with
 respect to a finite measure that is inner regular for compact sets is inner regular for compact
-sets: restrict it to a measurable set of finite measure and apply
-`MeasureTheory.Measure.AbsolutelyContinuous.innerRegularWRT`. -/
+sets. Compact inner approximation holds on every measurable set of finite measure. -/
 theorem innerRegularCompactLTTop [BorelSpace α] [R1Space α] [μ.InnerRegularCompactLTTop]
     (h : ν ≪ μ) : ν.InnerRegularCompactLTTop := by
   -- Closures of compact sets are compact and closed, so measurable, approximating sets.
