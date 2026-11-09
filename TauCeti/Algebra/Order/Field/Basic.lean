@@ -261,22 +261,6 @@ theorem le_two_mul_of_le_add_mul {α : Type*} [Field α] [LinearOrder α] [IsStr
     {J X Y : α} (hJ : 0 ≤ J) (hX : X ≤ 1 / 2) (h : J ≤ Y + X * J) : J ≤ 2 * Y := by
   nlinarith [mul_le_mul_of_nonneg_right hX hJ]
 
-end TauCeti
-
-/-- If `w` is bounded above on `K` and every positive `ε` admits a point `z ∈ K` with
-`f z ≤ m` and `f x + ε * w x ≤ f z + ε * w z`, then `f x ≤ m`. No sign condition on the
-barrier or its upper bound is needed. -/
-theorem BddAbove.le_of_forall_pos_exists_add_mul_le {X α : Type*}
-    [Field α] [LinearOrder α] [IsStrictOrderedRing α] {K : Set X} {w : X → α}
-    (hw : BddAbove (w '' K)) {f : X → α} {m : α} {x : X}
-    (H : ∀ ε : α, 0 < ε → ∃ z ∈ K, f x + ε * w x ≤ f z + ε * w z ∧ f z ≤ m) :
-    f x ≤ m := by
-  obtain ⟨C, hC⟩ := hw
-  refine TauCeti.le_of_forall_pos_mul_le (C := C - w x) fun ε hε => ?_
-  obtain ⟨z, hzK, hxz, hfz⟩ := H ε hε
-  have hwzC := mul_le_mul_of_nonneg_left (hC (Set.mem_image_of_mem w hzK)) hε.le
-  nlinarith
-
 /-- The bookkeeping bound `C (M + N P + N) ≤ C (1 + P) (M + N)` for nonnegative `C`, `M` and
 `P`. -/
 theorem mul_add_mul_add_le_mul_one_add_mul_add {R : Type*} [CommSemiring R] [PartialOrder R]
@@ -306,3 +290,19 @@ theorem mul_le_two_mul_one_add_mul_of_absorb {R : Type*} [Field R] [LinearOrder 
   have hCγ : C * (K + γ * N) ≤ C * ((1 + γ) * (K + N)) :=
     mul_le_mul_of_nonneg_left hγN hC
   linarith
+
+end TauCeti
+
+/-- If `w` is bounded above on `K` and every positive `ε` admits a point `z ∈ K` with
+`f z ≤ m` and `f x + ε * w x ≤ f z + ε * w z`, then `f x ≤ m`. No sign condition on the
+barrier or its upper bound is needed. -/
+theorem BddAbove.le_of_forall_pos_exists_add_mul_le {X α : Type*}
+    [Field α] [LinearOrder α] [IsStrictOrderedRing α] {K : Set X} {w : X → α}
+    (hw : BddAbove (w '' K)) {f : X → α} {m : α} {x : X}
+    (H : ∀ ε : α, 0 < ε → ∃ z ∈ K, f x + ε * w x ≤ f z + ε * w z ∧ f z ≤ m) :
+    f x ≤ m := by
+  obtain ⟨C, hC⟩ := hw
+  refine TauCeti.le_of_forall_pos_mul_le (C := C - w x) fun ε hε => ?_
+  obtain ⟨z, hzK, hxz, hfz⟩ := H ε hε
+  have hwzC := mul_le_mul_of_nonneg_left (hC (Set.mem_image_of_mem w hzK)) hε.le
+  nlinarith

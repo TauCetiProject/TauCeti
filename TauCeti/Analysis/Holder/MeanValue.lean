@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.MeanValue
 public import TauCeti.Topology.MetricSpace.Holder
-import Mathlib.Analysis.Calculus.ContDiff.Comp
 
 /-!
 # Hölder bounds from bounds on a function and its derivative
