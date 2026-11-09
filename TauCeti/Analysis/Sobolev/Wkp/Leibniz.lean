@@ -41,7 +41,10 @@ Such a `w` also exists in `W^{k,p}(Ω)` whenever `ζ` is smooth on an open set c
 compact set `closure Ω` (`TauCeti.Wkp.exists_value_ae_eq_mul_of_contDiffOn`), for every
 `1 ≤ p ≤ ∞`. The factor need not be smooth away from `closure Ω`: this is the
 form in which the derivatives of a coefficient field smooth on a larger domain act on Sobolev
-functions on a compactly contained subdomain.
+functions on a compactly contained subdomain. It also exists whenever `ζ` is smooth with compact
+support, on any open `Ω` and with no condition relating the support to `Ω`
+(`TauCeti.Wkp.exists_value_ae_eq_mul_of_hasCompactSupport`): this is the form of a cutoff near a
+boundary point, whose support crosses `∂Ω`.
 
 The Hessian formula is what localizes a second-order estimate. Writing `L = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼ`, it
 gives `L(ζ u) = ζ L u + (terms in ∇u and u)`, so an estimate for compactly supported functions,
@@ -75,6 +78,19 @@ theorem norm_leibnizRemainder_le (zeta : E → ℝ) (v : E) (s : ℝ) (x : E) :
   rw [ContinuousLinearMap.norm_smulRight_apply, ContinuousLinearMap.norm_smulRight_apply,
     innerSL_apply_norm, innerSL_apply_norm, norm_smul]
   ring
+
+/-- The Leibniz remainder `∇ζ ⊗ v + v ⊗ ∇ζ + s D²ζ` vanishes off the support of `ζ`. -/
+theorem leibnizRemainder_eq_zero_of_notMem_tsupport {zeta : E → ℝ} {x : E}
+    (hx : x ∉ tsupport zeta) (v : E) (s : ℝ) :
+    (innerSL ℝ (∇ zeta x)).smulRight v + (innerSL ℝ v).smulRight (∇ zeta x)
+      + s • fderiv ℝ (∇ zeta) x = 0 := by
+  have hs0 := tsupport_iteratedGradientChain_subset zeta 0
+  have hs1 := tsupport_iteratedGradientChain_subset zeta 1
+  rw [iteratedGradientChain_zero] at hs0
+  rw [iteratedGradientChain_succ, iteratedGradientChain_zero] at hs1
+  have h1 : ∇ zeta x = 0 := image_eq_zero_of_notMem_tsupport fun h => hx (hs0 h)
+  have h2 : fderiv ℝ (∇ zeta) x = 0 := image_eq_zero_of_notMem_tsupport fun h => hx (hs1 h)
+  simp [h1, h2]
 
 end LeibnizRemainder
 
@@ -174,6 +190,42 @@ theorem norm_iteratedGradient_one_le_of_value_ae_eq_mul {u w : Wkp mu Omega p 2}
   exact h.trans
     (add_le_add hzun (norm_iteratedGradient_one_sub_toLp_le_of_value_ae_eq_mul hzeta hg hh hzu hw))
 
+/-- Multiplication by `ψ` maps `W^{k,p}(Ω)` to itself whenever `ψ` belongs to a class `P` of
+functions smooth and essentially bounded on `Ω`, which is closed under directional derivatives.
+The two forms below take for `P` the functions smooth near a compact `closure Ω`, and the smooth
+functions of compact support. -/
+private theorem exists_value_ae_eq_mul_of_forall (P : (E → ℝ) → Prop)
+    (hP : ∀ φ, P φ → ContDiffOn ℝ ∞ φ Omega ∧ MemLp φ ⊤ (mu.restrict Omega))
+    (hPd : ∀ φ, P φ → ∀ v, P fun x => fderiv ℝ φ x v) (k : ℕ) {psi : E → ℝ} (hpsi : P psi)
+    (u : Wkp mu Omega p k) :
+    ∃ w : Wkp mu Omega p k, (value k w : E → ℝ) =ᵐ[mu.restrict Omega]
+      fun x => psi x * value k u x := by
+  -- A function in `P` is bounded on `Ω`, so multiplying by it preserves `Lᵖ(Ω)`.
+  have hLp : ∀ {phi : E → ℝ}, P phi → ∀ f : Lp ℝ p (mu.restrict Omega),
+      ∃ g : Lp ℝ p (mu.restrict Omega), (g : E → ℝ) =ᵐ[mu.restrict Omega]
+        fun x => phi x * f x := fun {phi} hphi f => by
+    have h : MemLp (fun x => phi x * f x) p (mu.restrict Omega) :=
+      (hP phi hphi).2.fun_mul (Lp.memLp f)
+    exact ⟨h.toLp _, h.coeFn_toLp⟩
+  induction k generalizing psi with
+  | zero => simpa only [value_zero] using hLp hpsi (value 0 u)
+  | succ k ih =>
+    obtain ⟨g, hg⟩ := hLp hpsi (value (k + 1) u)
+    set b := stdOrthonormalBasis ℝ E
+    refine (exists_value_eq_of_forall_hasWeakLineDerivOn b g k fun i => ?_).imp
+      fun w (hw : value (k + 1) w = g) => hw ▸ hg
+    -- `∂ᵢ(ψ u) = ψ ∂ᵢu + (∂ᵢψ) u`, and both summands lie in `W^{k,p}(Ω)` by induction.
+    obtain ⟨d, hd⟩ := exists_hasWeakLineDerivOn_value k u (b i)
+    obtain ⟨w₁, hw₁⟩ := ih hpsi d
+    obtain ⟨w₂, hw₂⟩ := ih (hPd psi hpsi (b i)) (lowerOrder k u)
+    refine ⟨w₁ + w₂, (((hd.contDiffOn_smul (hP psi hpsi).1).congr_ae
+      ?_).congr_ae_deriv ?_)⟩
+    · filter_upwards [hg] with x hx
+      rw [hx, smul_eq_mul]
+    · filter_upwards [value_add k w₁ w₂ ▸ Lp.coeFn_add (value k w₁) (value k w₂), hw₁, hw₂]
+        with x hx h₁ h₂
+      rw [hx, Pi.add_apply, h₁, h₂, ← value_succ, smul_eq_mul, smul_eq_mul]
+
 /-- **Smooth multiplication in `W^{k,p}`.** Let `Ω` have compact closure inside an open set `U`.
 If `ψ` is smooth on `U` and `u ∈ W^{k,p}(Ω)`, then `ψ u` lies in `W^{k,p}(Ω)`: some element of
 `W^{k,p}(Ω)` has value `ψ u` almost everywhere on `Ω`.
@@ -184,34 +236,29 @@ theorem exists_value_ae_eq_mul_of_contDiffOn {U : Set E} (hU : IsOpen U)
     (hΩ : IsCompact (closure (Omega : Set E))) (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ)
     {psi : E → ℝ} (hpsi : ContDiffOn ℝ ∞ psi U) (u : Wkp mu Omega p k) :
     ∃ w : Wkp mu Omega p k, (value k w : E → ℝ) =ᵐ[mu.restrict Omega]
-      fun x => psi x * value k u x := by
-  -- A function continuous on `U` is bounded on `Ω`, so multiplying by it preserves `Lᵖ(Ω)`.
-  have hLp : ∀ {phi : E → ℝ}, ContinuousOn phi U → ∀ f : Lp ℝ p (mu.restrict Omega),
-      ∃ g : Lp ℝ p (mu.restrict Omega), (g : E → ℝ) =ᵐ[mu.restrict Omega]
-        fun x => phi x * f x := fun {phi} hphi f => by
-    have h : MemLp (fun x => phi x * f x) p (mu.restrict Omega) :=
-      ((hphi.mono hΩU).memLp_top_restrict_of_subset_isCompact hΩ Omega.isOpen.measurableSet
-        subset_closure).fun_mul (Lp.memLp f)
-    exact ⟨h.toLp _, h.coeFn_toLp⟩
-  induction k generalizing psi with
-  | zero => simpa only [value_zero] using hLp hpsi.continuousOn (value 0 u)
-  | succ k ih =>
-    obtain ⟨g, hg⟩ := hLp hpsi.continuousOn (value (k + 1) u)
-    set b := stdOrthonormalBasis ℝ E
-    refine (exists_value_eq_of_forall_hasWeakLineDerivOn b g k fun i => ?_).imp
-      fun w (hw : value (k + 1) w = g) => hw ▸ hg
-    -- `∂ᵢ(ψ u) = ψ ∂ᵢu + (∂ᵢψ) u`, and both summands lie in `W^{k,p}(Ω)` by induction.
-    obtain ⟨d, hd⟩ := exists_hasWeakLineDerivOn_value k u (b i)
-    obtain ⟨w₁, hw₁⟩ := ih hpsi d
-    obtain ⟨w₂, hw₂⟩ := ih ((hpsi.fderiv_of_isOpen hU (by simp)).clm_apply contDiffOn_const)
-      (lowerOrder k u)
-    refine ⟨w₁ + w₂, (((hd.contDiffOn_smul (hpsi.mono (subset_closure.trans hΩU))).congr_ae
-      ?_).congr_ae_deriv ?_)⟩
-    · filter_upwards [hg] with x hx
-      rw [hx, smul_eq_mul]
-    · filter_upwards [value_add k w₁ w₂ ▸ Lp.coeFn_add (value k w₁) (value k w₂), hw₁, hw₂]
-        with x hx h₁ h₂
-      rw [hx, Pi.add_apply, h₁, h₂, ← value_succ, smul_eq_mul, smul_eq_mul]
+      fun x => psi x * value k u x :=
+  exists_value_ae_eq_mul_of_forall (ContDiffOn ℝ ∞ · U)
+    (fun _ hphi => ⟨hphi.mono (subset_closure.trans hΩU),
+      (hphi.continuousOn.mono hΩU).memLp_top_restrict_of_subset_isCompact hΩ
+        Omega.isOpen.measurableSet subset_closure⟩)
+    (fun _ hphi _ => (hphi.fderiv_of_isOpen hU (by simp)).clm_apply contDiffOn_const) k hpsi u
+
+/-- **Multiplication by a test function in `W^{k,p}`.** If `ψ` is smooth with compact support and
+`u ∈ W^{k,p}(Ω)`, then `ψ u` lies in `W^{k,p}(Ω)`: some element of `W^{k,p}(Ω)` has value `ψ u`
+almost everywhere on `Ω`.
+
+The support of `ψ` need not lie in `Ω`, and nothing is assumed about `Ω` beyond openness: unlike
+`TauCeti.Wkp.exists_mem_wkp0Submodule_value_ae_eq_mul`, this does not produce zero boundary
+values. -/
+theorem exists_value_ae_eq_mul_of_hasCompactSupport (k : ℕ) {psi : E → ℝ}
+    (hpsi : ContDiff ℝ ∞ psi) (hcpt : HasCompactSupport psi) (u : Wkp mu Omega p k) :
+    ∃ w : Wkp mu Omega p k, (value k w : E → ℝ) =ᵐ[mu.restrict Omega]
+      fun x => psi x * value k u x :=
+  exists_value_ae_eq_mul_of_forall (fun phi => ContDiff ℝ ∞ phi ∧ HasCompactSupport phi)
+    (fun _ hphi => ⟨hphi.1.contDiffOn,
+      hphi.1.continuous.memLp_top_of_hasCompactSupport hphi.2 _⟩)
+    (fun _ hphi v => ⟨(hphi.1.fderiv_right (m := ∞) (by simp)).clm_apply contDiff_const,
+      hphi.2.fderiv_apply (𝕜 := ℝ) v⟩) k ⟨hpsi, hcpt⟩ u
 
 end Wkp
 

@@ -64,25 +64,6 @@ namespace PDE
 open MeasureTheory TopologicalSpace
 open scoped ENNReal NNReal InnerProductSpace Gradient ContDiff
 
-section LeibnizRemainder
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-
-/-- The Leibniz remainder `∇ζ ⊗ v + v ⊗ ∇ζ + s D²ζ` vanishes off the support of `ζ`. -/
-private theorem leibnizRemainder_eq_zero {zeta : E → ℝ} {x : E} (hx : x ∉ tsupport zeta)
-    (v : E) (s : ℝ) :
-    (innerSL ℝ (∇ zeta x)).smulRight v + (innerSL ℝ v).smulRight (∇ zeta x)
-      + s • fderiv ℝ (∇ zeta) x = 0 := by
-  have hs0 := tsupport_iteratedGradientChain_subset zeta 0
-  have hs1 := tsupport_iteratedGradientChain_subset zeta 1
-  rw [iteratedGradientChain_zero] at hs0
-  rw [iteratedGradientChain_succ, iteratedGradientChain_zero] at hs1
-  have h1 : ∇ zeta x = 0 := image_eq_zero_of_notMem_tsupport fun h => hx (hs0 h)
-  have h2 : fderiv ℝ (∇ zeta) x = 0 := image_eq_zero_of_notMem_tsupport fun h => hx (hs1 h)
-  simp [h1, h2]
-
-end LeibnizRemainder
-
 variable {n : ℕ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- Extending `w ∈ W^{2,p}_0(Ω)` by zero to all of `ℝⁿ` preserves the vanishing of `w` off a set
@@ -205,7 +186,7 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
     rw [h1, Real.norm_eq_abs]
     by_cases hx : x ∈ tsupport zeta
     · exact Matrix.abs_contraction_le (h2 hx) _
-    · simp [hT, leibnizRemainder_eq_zero hx]
+    · simp [hT, leibnizRemainder_eq_zero_of_notMem_tsupport hx]
   have hE : MemLp (fun x => Matrix.contraction (a x) (T x)) p (volume.restrict Omega) :=
     (Lp.memLp TL).of_le_mul hEmeas hEle
   have hζf : MemLp (fun x => zeta x * f x) p (volume.restrict Omega) := hζ_top.smul (Lp.memLp f)

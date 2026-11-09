@@ -43,15 +43,13 @@ For an orthonormal basis `eᵢ`, `tr (A D²u) = ∑ᵢⱼ ⟪A eⱼ, eᵢ⟫ ∂
 on `A` beyond `λ`, which is what freezing variable coefficients near the boundary requires.
 
 The estimate extends to strong solutions of the non-divergence-form equation `tr (A ∘ D²u) = f`
-whose coefficient field `A` is uniformly close to a positive multiple of the identity,
-`‖A x - μ • 1‖ ≤ δ μ` with `δ` depending only on `E` and `p`: then `‖D²u‖ ≤ (C / μ) ‖f‖`
+whose coefficient field `A` is uniformly close to an operator `A₀` with `λ ‖ξ‖² ≤ ⟪A₀ ξ, ξ⟫`,
+`‖A x - A₀‖ ≤ δ λ` with `δ` depending only on `E` and `p`: then `‖D²u‖ ≤ (C / λ) ‖f‖`
 (in namespace `TauCeti`,
 `exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_comp_eq_of_norm_sub_le_of_normalHalfSpace`).
 As in the whole-space estimate for coefficients of small oscillation, the coefficients need only be
 controlled on a closed set `s` outside which `u` vanishes, which is the situation after cutting
-`u` off near a boundary point. A general constant elliptic matrix is not covered: unlike on the
-whole space, the linear change of variables turning it into the Laplacian must also preserve the
-half-space.
+`u` off near a boundary point, where `A₀` is the value of a continuous coefficient field there.
 
 This is the flat-boundary model of the global `W^{2,p}` estimates for the Dirichlet problem:
 flattening the boundary of a `C^{1,1}` domain turns the equation near a boundary point into one on
@@ -82,11 +80,11 @@ Since `‖e⁻¹‖ ≤ λ^(-1/2)`, `‖D²u ∘ e‖ ≤ λ⁻¹ ‖D²v‖` po
 the `Lᵖ` norms of `D²u ∘ e` and of `f ∘ e` by the same Jacobian factor
 (`TauCeti.Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp`).
 
-For variable coefficients, freeze them at `μ • 1`:
-`μ tr D²u = f - tr ((A - μ • 1) ∘ D²u)`. The weak Hessian vanishes where `u` does
+For variable coefficients, freeze them at `A₀`:
+`tr (A₀ ∘ D²u) = f - tr ((A - A₀) ∘ D²u)`. The weak Hessian vanishes where `u` does
 (`TauCeti.Wkp.iteratedGradient_ae_eq_zero_of_value_ae_eq_zero_of_isOpen`), and on `s` the error
-term is at most `dim (ℝ × E) · δ μ ‖D²u‖` pointwise (`ContinuousLinearMap.norm_traceCLM_le`). The
-estimate for the Laplacian then gives `‖D²u‖ ≤ (C₀ / μ) (‖f‖ + dim (ℝ × E) δ μ ‖D²u‖)`, and the
+term is at most `dim (ℝ × E) · δ λ ‖D²u‖` pointwise (`ContinuousLinearMap.norm_traceCLM_le`). The
+constant-coefficient estimate then gives `‖D²u‖ ≤ (C₀ / λ) (‖f‖ + dim (ℝ × E) δ λ ‖D²u‖)`, and the
 choice of `δ` makes the coefficient of `‖D²u‖` on the right at most `1 / 2`, so it is absorbed
 (`TauCeti.PDE.le_two_mul_div_mul_of_le_div_mul_of_le_add`).
 
@@ -357,27 +355,29 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_comp_eq_of_normalHa
 
 /-- **The Calderón–Zygmund estimate on a half-space for coefficients of small oscillation.** Let
 `1 < p < ∞`. There are constants `C` and `δ > 0`, depending only on `E` and `p`, with the
-following property. Let `H = {x | a < x.fst}` be a half-space of `ℝ × E`, let `s` be a closed set,
-let `μ > 0`, and let `A` be a field of endomorphisms of `ℝ × E` with `‖A x - μ • 1‖ ≤ ε` for almost
-every `x ∈ s ∩ H`, where `ε ≤ δ μ`. Then every `u ∈ W^{2,p}(H)` whose first-order part lies in
-`W^{1,p}_0(H)`, which vanishes almost everywhere on `H \ s`, and which solves the
-non-divergence-form equation `tr (A ∘ D²u) = f` almost everywhere on `H`, with `f ∈ Lᵖ(H)`,
-satisfies
+following property. Let `H = {x | a < x.fst}` be a half-space of `ℝ × E`, let `A₀` be an operator
+on `ℝ × E` with `λ ‖ξ‖² ≤ ⟪A₀ ξ, ξ⟫` and `0 < λ`, let `s` be a closed set, and let `A` be a field
+of endomorphisms of `ℝ × E` with `‖A x - A₀‖ ≤ ε` for almost every `x ∈ s ∩ H`, where `ε ≤ δ λ`.
+Then every `u ∈ W^{2,p}(H)` whose first-order part lies in `W^{1,p}_0(H)`, which vanishes almost
+everywhere on `H \ s`, and which solves the non-divergence-form equation `tr (A ∘ D²u) = f` almost
+everywhere on `H`, with `f ∈ Lᵖ(H)`, satisfies
 
-`‖D²u‖_{Lᵖ(H)} ≤ (C / μ) ‖f‖_{Lᵖ(H)}`,
+`‖D²u‖_{Lᵖ(H)} ≤ (C / λ) ‖f‖_{Lᵖ(H)}`,
 
 where `D²u` is the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u`, with the operator norm on
 endomorphisms of `ℝ × E`. Since the weak Hessian is symmetric, in an orthonormal basis
-`tr (A ∘ D²u) = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu`, where `aᵢⱼ` are the matrix entries of `A`. No measurability or
-continuity of `A` is assumed. -/
+`tr (A ∘ D²u) = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu`, where `aᵢⱼ` are the matrix entries of `A`. The constants do not
+depend on `A₀` beyond `λ`, and no measurability or continuity of `A` is assumed. -/
 theorem
     exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_comp_eq_of_norm_sub_le_of_normalHalfSpace
     (hp : 1 < p) (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧ ∀ (a : ℝ)
+      {A₀ : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
       {A : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
-      {s : Set (WithLp 2 (ℝ × E))} {μ ε : ℝ}, 0 < μ → IsClosed s → ε ≤ δ * μ →
+      {s : Set (WithLp 2 (ℝ × E))} {lam ε : ℝ}, 0 < lam →
+      (∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A₀ ξ, ξ⟫_ℝ) → IsClosed s → ε ≤ δ * lam →
       (∀ᵐ x ∂(volume : Measure (WithLp 2 (ℝ × E))).restrict (normalHalfSpace (E := E) a),
-        x ∈ s → ‖A x - μ • 1‖ ≤ ε) →
+        x ∈ s → ‖A x - A₀‖ ≤ ε) →
       ∀ (u : Wkp (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p 2)
         (f : Lp ℝ p ((volume : Measure (WithLp 2 (ℝ × E))).restrict (normalHalfSpace (E := E) a))),
         Wkp.firstOrder 1 u ∈ w1p0Submodule volume (normalHalfSpace a) p →
@@ -385,49 +385,48 @@ theorem
           x ∉ s → Wkp.value 2 u x = 0) →
         (∀ᵐ x ∂(volume : Measure (WithLp 2 (ℝ × E))).restrict (normalHalfSpace (E := E) a),
           traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L Wkp.iteratedGradient 1 u x) = f x) →
-        ‖Wkp.iteratedGradient 1 u‖ ≤ C / μ * ‖f‖ := by
+        ‖Wkp.iteratedGradient 1 u‖ ≤ C / lam * ‖f‖ := by
   obtain ⟨C, hC⟩ :=
-    exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq_of_normalHalfSpace (E := E)
+    exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_comp_eq_of_normalHalfSpace (E := E)
       hp hp_top
   set N : ℝ := (Module.finrank ℝ (WithLp 2 (ℝ × E)) : ℝ)
   have hN : 0 < N := Nat.cast_pos.2 Module.finrank_pos
   refine ⟨2 * C, 1 / (2 * (C + 1) * N), by positivity,
-    fun a {A s μ ε} hμ hs hε hA u f hu hus hf => ?_⟩
+    fun a {A₀ A s lam ε} hlam hA₀ hs hε hA u f hu hus hf => ?_⟩
   set D := Wkp.iteratedGradient 1 u
-  set g := (traceCLM ℝ (WithLp 2 (ℝ × E))).compLpL p _ D
+  -- The frozen operator `M ↦ tr (A₀ ∘ M)` applied to the weak Hessian.
+  set T : (WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) →L[ℝ] ℝ :=
+    traceCLM ℝ (WithLp 2 (ℝ × E)) ∘L ContinuousLinearMap.compL ℝ _ _ _ A₀
+  set g := T.compLpL p _ D
   -- The weak Hessian vanishes on `H \ s`, where `u` does.
   have hD0 : ∀ᵐ x ∂(volume : Measure (WithLp 2 (ℝ × E))).restrict (normalHalfSpace (E := E) a),
       x ∉ s → D x = 0 :=
     Wkp.iteratedGradient_ae_eq_zero_of_value_ae_eq_zero_of_isOpen 1 u hs.isOpen_compl hus
-  -- The half-space estimate for the Laplacian, applied to the trace of the weak Hessian.
-  have hDg : ‖D‖ ≤ C * ‖g‖ := hC a u g hu rfl
-  -- Freezing the coefficients at `μ • 1` costs at most `N ε |D²u|` pointwise.
-  have hgf : ‖μ • g - f‖ ≤ N * ε * ‖D‖ := by
+  -- The constant-coefficient estimate for the frozen operator.
+  have hDg : ‖D‖ ≤ C / lam * ‖g‖ := hC hlam hA₀ a u g hu
+    ((T.coeFn_compLpL D).mono fun x hx => hx.symm)
+  -- Freezing the coefficients at `A₀` costs at most `N ε |D²u|` pointwise.
+  have hgf : ‖g - f‖ ≤ N * ε * ‖D‖ := by
     refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
-    filter_upwards [Lp.coeFn_sub (μ • g) f, Lp.coeFn_smul μ g,
-      (traceCLM ℝ (WithLp 2 (ℝ × E))).coeFn_compLpL D, hf, hA, hD0]
-      with x hsub hsmul hgx hfx hAx hDx
-    rw [hsub, Pi.sub_apply, hsmul, Pi.smul_apply, hgx, ← hfx]
+    filter_upwards [Lp.coeFn_sub g f, T.coeFn_compLpL D, hf, hA, hD0]
+      with x hsub hgx hfx hAx hDx
+    rw [hsub, Pi.sub_apply, hgx, ← hfx]
     by_cases hxs : x ∈ s
-    · -- On `s`, the difference is minus the trace of `(A x - μ • 1) ∘ D²u`.
-      have hdiff : μ • traceCLM ℝ (WithLp 2 (ℝ × E)) (D x) -
-          traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L D x) =
-          -traceCLM ℝ (WithLp 2 (ℝ × E)) ((A x - μ • 1) ∘L D x) := by
-        simp [ContinuousLinearMap.sub_comp, ContinuousLinearMap.one_def]
+    · -- On `s`, the difference is minus the trace of `(A x - A₀) ∘ D²u`.
+      have hdiff : T (D x) - traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L D x) =
+          -traceCLM ℝ (WithLp 2 (ℝ × E)) ((A x - A₀) ∘L D x) := by
+        simp [T, ContinuousLinearMap.sub_comp]
       rw [hdiff, norm_neg]
-      calc ‖traceCLM ℝ (WithLp 2 (ℝ × E)) ((A x - μ • 1) ∘L D x)‖
-          ≤ N * ‖(A x - μ • 1) ∘L D x‖ := ContinuousLinearMap.norm_traceCLM_le _
-        _ ≤ N * (‖A x - μ • 1‖ * ‖D x‖) := by gcongr; exact ContinuousLinearMap.opNorm_comp_le _ _
+      calc ‖traceCLM ℝ (WithLp 2 (ℝ × E)) ((A x - A₀) ∘L D x)‖
+          ≤ N * ‖(A x - A₀) ∘L D x‖ := ContinuousLinearMap.norm_traceCLM_le _
+        _ ≤ N * (‖A x - A₀‖ * ‖D x‖) := by gcongr; exact ContinuousLinearMap.opNorm_comp_le _ _
         _ ≤ N * (ε * ‖D x‖) := by gcongr; exact hAx hxs
         _ = N * ε * ‖D x‖ := by ring
     · rw [hDx hxs]
       simp
-  -- Hence `‖μ • g‖ ≤ ‖f‖ + N ε ‖D²u‖`, and the error term is absorbed on the left.
-  have hDμg : ‖D‖ ≤ C / μ * ‖μ • g‖ := by
-    rw [norm_smul, Real.norm_of_nonneg hμ.le, ← mul_assoc, div_mul_cancel₀ _ hμ.ne']
-    exact hDg
+  -- Hence `‖g‖ ≤ ‖f‖ + N ε ‖D²u‖`, and the error term is absorbed on the left.
   rw [NNReal.coe_mul, NNReal.coe_ofNat]
-  exact PDE.le_two_mul_div_mul_of_le_div_mul_of_le_add hμ C.coe_nonneg hN hε (norm_nonneg _) hDμg
-    (by linarith [norm_sub_norm_le (μ • g) f])
+  exact PDE.le_two_mul_div_mul_of_le_div_mul_of_le_add hlam C.coe_nonneg hN hε (norm_nonneg _) hDg
+    (by linarith [norm_sub_norm_le g f])
 
 end TauCeti

@@ -8,7 +8,9 @@ module
 public import TauCeti.Analysis.Sobolev.Wkp.Zero
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
+import TauCeti.Analysis.Sobolev.CompactSupport
 import TauCeti.Analysis.Sobolev.W1p.Extension
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import Mathlib.Analysis.Normed.Operator.Extend
 
 /-!
@@ -26,6 +28,15 @@ domain Sobolev function can acquire singular distributional derivatives across t
 
 The extension is characterized by continuity and its action on the dense family of test
 functions: a test function on `Ω` becomes the same function on `Ω'`.
+
+Without zero boundary values, extension by zero still works across the part of `∂Ω` that a
+function avoids. If `u ∈ W^{k,p}(Ω)` vanishes outside a closed set `K` with `Ω' ∩ K ⊆ Ω`, its
+extension by zero lies in `W^{k,p}(Ω')`
+(`TauCeti.Wkp.exists_value_eq_extendByZeroLpₗᵢ_of_isClosed`), with highest weak derivative the
+extension of that of `u` (`TauCeti.Wkp.iteratedGradient_eq_extendByZeroLpₗᵢ_of_isClosed`, and
+pointwise `TauCeti.Wkp.iteratedGradient_ae_eq_indicator_of_isClosed`). Here
+`K` may meet `∂Ω` outside `Ω'`. This is how a function cut off near a flat part of `∂Ω` becomes a
+function on a half-space, with no condition on the flat part.
 
 ## References
 
@@ -218,5 +229,99 @@ theorem Wkp0.restrictL_extendByZeroₗᵢ (hsub : Omega ≤ Omega') (k : ℕ)
   exact (Wkp.value_restrictL_ae hsub k _).trans (by
     rw [Wkp0.value_extendByZeroₗᵢ]
     exact coeFn_extendByZeroLpₗᵢ_restrict ℝ _ _ _)
+
+section ClosedSupport
+
+variable {K : Set E}
+
+/-- **Extension by zero across a closed support.** Let `Ω ≤ Ω'` be open and let `K` be closed
+with `Ω' ∩ K ⊆ Ω`. If `u ∈ W^{k,p}(Ω)` vanishes almost everywhere on `Ω` outside `K`, then its
+extension by zero lies in `W^{k,p}(Ω')`. Unlike `TauCeti.Wkp0.extendByZeroₗᵢ`, no zero boundary
+values are assumed: `K` may meet `∂Ω`, provided it does so outside `Ω'`. -/
+theorem Wkp.exists_value_eq_extendByZeroLpₗᵢ_of_isClosed (hsub : Omega ≤ Omega')
+    (hK : IsClosed K) (hKΩ : (Omega' : Set E) ∩ K ⊆ Omega) :
+    ∀ (k : ℕ) (u : Wkp mu Omega p k),
+      (∀ᵐ x ∂mu.restrict Omega, x ∉ K → Wkp.value k u x = 0) →
+      ∃ w : Wkp mu Omega' p k, Wkp.value k w =
+        extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet (SetLike.coe_subset_coe.mpr hsub)
+          (Wkp.value k u)
+  | 0, u, _ => ⟨extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet
+      (SetLike.coe_subset_coe.mpr hsub) (Wkp.value 0 u), Wkp.value_zero _⟩
+  | k + 1, u, hu => by
+    -- In every direction, the extension of `∂ᵥu ∈ W^{k,p}(Ω)` is a weak derivative of the
+    -- extension of `u`, and lies in `W^{k,p}(Ω')` by induction.
+    have key : ∀ v : E, ∃ z : Wkp mu Omega' p k, HasWeakLineDerivOn mu Omega'
+        (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet (SetLike.coe_subset_coe.mpr hsub)
+          (Wkp.value (k + 1) u) : E → ℝ) (Wkp.value k z) v := by
+      intro v
+      obtain ⟨d, hd⟩ := Wkp.exists_hasWeakLineDerivOn_value k u v
+      have hd0 := hd.ae_eq_zero_of_isOpen hK.isOpen_compl hu
+      obtain ⟨z, hz⟩ := Wkp.exists_value_eq_extendByZeroLpₗᵢ_of_isClosed hsub hK hKΩ k d hd0
+      refine ⟨z, ((hd.indicator_of_isClosed hK hKΩ hu hd0).congr_ae ?_).congr_ae_deriv ?_⟩
+      · exact (coeFn_extendByZeroLpₗᵢ ℝ _ _ _).symm
+      · rw [hz]
+        exact (coeFn_extendByZeroLpₗᵢ ℝ _ _ _).symm
+    choose z hz using key
+    obtain ⟨w, hw⟩ := Wkp.exists_value_ae_eq_of_forall_hasWeakLineDerivOn k (Lp.memLp _) z hz
+    exact ⟨w, Lp.ext hw⟩
+
+/-- **The weak derivatives of an extension across a closed support.** In the situation of
+`TauCeti.Wkp.exists_value_eq_extendByZeroLpₗᵢ_of_isClosed`, the highest weak derivative of the
+extension of `u` is the extension of the highest weak derivative of `u`. -/
+theorem Wkp.iteratedGradient_eq_extendByZeroLpₗᵢ_of_isClosed (hsub : Omega ≤ Omega')
+    (hK : IsClosed K) (hKΩ : (Omega' : Set E) ∩ K ⊆ Omega) (k : ℕ)
+    {u : Wkp mu Omega p (k + 1)} {w : Wkp mu Omega' p (k + 1)}
+    (hu : ∀ᵐ x ∂mu.restrict Omega, x ∉ K → Wkp.value (k + 1) u x = 0)
+    (hw : Wkp.value (k + 1) w =
+      extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet (SetLike.coe_subset_coe.mpr hsub)
+        (Wkp.value (k + 1) u)) :
+    Wkp.iteratedGradient k w =
+      extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet (SetLike.coe_subset_coe.mpr hsub)
+        (Wkp.iteratedGradient k u) := by
+  have hΩ : MeasurableSet (Omega : Set E) := Omega.isOpen.measurableSet
+  -- On `Ω`, `w` restricts to `u`, so the two highest derivatives agree there.
+  have hres : Wkp.restrictL hsub (k + 1) w = u := by
+    apply Wkp.ext (k + 1)
+    apply Lp.ext
+    refine (Wkp.value_restrictL_ae hsub (k + 1) w).trans ?_
+    rw [hw]
+    exact coeFn_extendByZeroLpₗᵢ_restrict ℝ _ _ _
+  have hΩeq := Wkp.iteratedGradient_restrictL_ae hsub k w
+  rw [hres] at hΩeq
+  -- Off `K`, `w` vanishes, and hence so does its highest derivative.
+  have hw0 : ∀ᵐ x ∂mu.restrict Omega', x ∈ Kᶜ → Wkp.value (k + 1) w x = 0 := by
+    rw [hw]
+    filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hΩ (SetLike.coe_subset_coe.mpr hsub)
+      (Wkp.value (k + 1) u), ae_restrict_of_ae ((ae_restrict_iff' hΩ).1 hu)] with x he hx hxK
+    rw [he]
+    by_cases hxΩ : x ∈ (Omega : Set E)
+    · rw [Set.indicator_of_mem hxΩ, hx hxΩ hxK]
+    · rw [Set.indicator_of_notMem hxΩ]
+  have hK0 := Wkp.iteratedGradient_ae_eq_zero_of_value_ae_eq_zero_of_isOpen k w hK.isOpen_compl hw0
+  apply Lp.ext
+  filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hΩ (SetLike.coe_subset_coe.mpr hsub)
+    (Wkp.iteratedGradient k u), ae_restrict_of_ae ((ae_restrict_iff' hΩ).1 hΩeq), hK0,
+    ae_restrict_mem Omega'.isOpen.measurableSet] with x he hx hx0 hxΩ'
+  rw [he]
+  by_cases hxΩ : x ∈ (Omega : Set E)
+  · rw [Set.indicator_of_mem hxΩ, hx hxΩ]
+  · rw [Set.indicator_of_notMem hxΩ, hx0 fun hxK => hxΩ (hKΩ ⟨hxΩ', hxK⟩)]
+
+/-- The pointwise form of `TauCeti.Wkp.iteratedGradient_eq_extendByZeroLpₗᵢ_of_isClosed`: almost
+everywhere on `Ω'`, the highest weak derivative of the extension is that of `u` on `Ω` and `0`
+off `Ω`. -/
+theorem Wkp.iteratedGradient_ae_eq_indicator_of_isClosed (hsub : Omega ≤ Omega')
+    (hK : IsClosed K) (hKΩ : (Omega' : Set E) ∩ K ⊆ Omega) (k : ℕ)
+    {u : Wkp mu Omega p (k + 1)} {w : Wkp mu Omega' p (k + 1)}
+    (hu : ∀ᵐ x ∂mu.restrict Omega, x ∉ K → Wkp.value (k + 1) u x = 0)
+    (hw : Wkp.value (k + 1) w =
+      extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet (SetLike.coe_subset_coe.mpr hsub)
+        (Wkp.value (k + 1) u)) :
+    (Wkp.iteratedGradient k w : E → IteratedGradient E k) =ᵐ[mu.restrict Omega']
+      (Omega : Set E).indicator (Wkp.iteratedGradient k u) := by
+  rw [Wkp.iteratedGradient_eq_extendByZeroLpₗᵢ_of_isClosed hsub hK hKΩ k hu hw]
+  exact coeFn_extendByZeroLpₗᵢ ℝ _ _ _
+
+end ClosedSupport
 
 end TauCeti

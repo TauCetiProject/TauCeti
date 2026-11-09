@@ -36,6 +36,8 @@ The compact-support statements `indicator_of_isCompact` are corollaries of
 * `TauCeti.HasWeakFDerivOn.indicator_of_isClosed`: its Fréchet form.
 * `TauCeti.HasWeakLineDerivOn.indicator_of_isCompact`: whole-space compact-support extension.
 * `TauCeti.HasWeakFDerivOn.indicator_of_isCompact`: its Fréchet form.
+* `TauCeti.HasWeakLineDerivOn.ae_eq_zero_of_isOpen`: a weak derivative vanishes on an open set
+  where the function does.
 
 ## References
 
@@ -152,6 +154,25 @@ theorem HasWeakFDerivOn.indicator_of_isClosed {U : E → E →L[ℝ] F}
   refine ((h.hasWeakLineDerivOn v).indicator_of_isClosed hK hKV hu hUv).congr_ae_deriv
     (.of_forall fun x => ?_)
   by_cases hx : x ∈ (Ω : Set E) <;> simp [hx]
+
+/-- **A weak derivative vanishes where the function does.** If `u` vanishes almost everywhere on
+the part of `Ω` inside an open set `t`, then so does every weak derivative of `u` on `Ω`. In
+particular the derivative hypothesis of `TauCeti.HasWeakLineDerivOn.indicator_of_isClosed` follows
+from the one on the value, with `t = Kᶜ`. -/
+theorem HasWeakLineDerivOn.ae_eq_zero_of_isOpen [BorelSpace E]
+    (h : HasWeakLineDerivOn μ Ω u u' v) {t : Set E} (ht : IsOpen t)
+    (hu : ∀ᵐ x ∂μ.restrict Ω, x ∈ t → u x = 0) :
+    ∀ᵐ x ∂μ.restrict Ω, x ∈ t → u' x = 0 := by
+  have := h.completeSpace
+  let O : Opens E := Ω ⊓ ⟨t, ht⟩
+  have hOm : MeasurableSet (O : Set E) := O.isOpen.measurableSet
+  have hu0 : u =ᵐ[μ.restrict O] 0 := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset inf_le_left hu, ae_restrict_mem hOm]
+      with x hx hxO using hx hxO.2
+  have h0 := (ae_restrict_iff' hOm).1
+    ((h.mono inf_le_left).ae_eq (hasWeakLineDerivOn_zero.congr_ae hu0.symm))
+  filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet, ae_restrict_of_ae h0]
+    with x hxΩ hx hxt using hx ⟨hxΩ, hxt⟩
 
 variable {mu : Measure E} {Omega : Opens E}
 
