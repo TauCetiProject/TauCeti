@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Charpoly.Quotient
 public import TauCeti.RepresentationTheory.Augmentation.Basic
 public import TauCeti.RepresentationTheory.Irreducible
 
@@ -52,6 +53,8 @@ arbitrary `z` produces all the others, and those differences span.
   irreducible.
 * `TauCeti.char_standardRepresentation`: its character is the character of `k[α]` less `1`, the
   `1` being the character of the trivial quotient of `k[α]` by the standard subrepresentation.
+* `TauCeti.charpoly_standardRepresentation_mul_X_sub_one`: likewise its characteristic polynomial
+  times `X - 1` is the characteristic polynomial on `k[α]`.
 * `TauCeti.standardRepresentation_injective`: over a nontrivial ring, the standard representation
   is faithful when `|α| ≥ 3`.
 
@@ -161,6 +164,38 @@ theorem char_standardRepresentation (g : Equiv.Perm α) :
     (standardRepresentation k α).character g =
       (Representation.ofMulAction k (Equiv.Perm α) α).character g - 1 :=
   character_augmentationSubrepresentation g
+
+/-- **The characteristic polynomial of the standard representation** times `X - 1` is the
+characteristic polynomial of the permutation representation `k[α]`. The factor `X - 1` is the
+characteristic polynomial of the trivial one-dimensional quotient of `k[α]` by the standard
+subrepresentation, so, as for the character, no hypothesis on `|α|` in `k` is needed. -/
+theorem charpoly_standardRepresentation_mul_X_sub_one (g : Equiv.Perm α) :
+    (standardRepresentation k α g).charpoly * (Polynomial.X - 1) =
+      (Representation.ofMulAction k (Equiv.Perm α) α g).charpoly := by
+  have := Fintype.ofFinite α
+  have : Module.Finite k (MonoidAlgebra k α) := Module.Finite.of_basis (MonoidAlgebra.basis α k)
+  set W := (augmentationSubrepresentation k (Equiv.Perm α) α).toSubmodule
+  have hW : W ≤ W.comap (Representation.ofMulAction k (Equiv.Perm α) α g) := fun _ hv ↦
+    (augmentationSubrepresentation k (Equiv.Perm α) α).apply_mem_toSubmodule g hv
+  -- The permutation action is trivial on the quotient by the standard subrepresentation, since
+  -- it preserves the sum of the coefficients.
+  have hQ : W.mapQ W _ hW = 1 := by
+    refine Submodule.linearMap_qext _ (LinearMap.ext fun v ↦ ?_)
+    simp only [LinearMap.coe_comp, Function.comp_apply, Submodule.mkQ_apply, Submodule.mapQ_apply,
+      one_apply_eq_self, Submodule.Quotient.eq, W, toSubmodule_augmentationSubrepresentation,
+      LinearMap.mem_ker, map_sub, sumCoords_basis_ofMulAction, sub_self]
+  have hfin : Module.finrank k (MonoidAlgebra k α ⧸ W) = 1 := by
+    have h := W.finrank_quotient_add_finrank
+    rw [finrank_augmentationSubrepresentation,
+      Module.finrank_eq_card_basis (MonoidAlgebra.basis α k)] at h
+    have := Fintype.card_pos (α := α)
+    omega
+  have hres : (Representation.ofMulAction k (Equiv.Perm α) α g).restrict hW =
+      standardRepresentation k α g :=
+    LinearMap.ext fun v ↦ Subtype.ext (by
+      rw [LinearMap.coe_restrict_apply, coe_standardRepresentation_apply])
+  rw [LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ W _ hW, hQ, hres,
+    LinearMap.charpoly_one, hfin, pow_one]
 
 end Character
 

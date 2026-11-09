@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Perm.Cycle.Concrete
+public import Mathlib.Logic.Equiv.Fin.Rotate
 public import TauCeti.GroupTheory.Coxeter.ExchangeCondition
 public import TauCeti.GroupTheory.SpecificGroups.Braid.Basic
+import TauCeti.Data.List.Rotate
 
 /-!
 # The symmetric group as the Coxeter group of type `A`
@@ -18,7 +21,10 @@ system, `TauCeti.permCoxeterSystem n`, and identifies its combinatorics:
 
 * a simple reflection `s i` is a right descent of `σ` exactly when `σ` reverses the order of the
   two letters `i` and `i + 1`;
-* the Coxeter length of `σ` is its number of inversions, the pairs `x < y` with `σ y < σ x`.
+* the Coxeter length of `σ` is its number of inversions, the pairs `x < y` with `σ y < σ x`;
+* a Coxeter element, a product of all the adjacent transpositions each taken once in any order, is
+  an `n`-cycle, so the Coxeter number of type `A_{n-1}` is `n`. In the natural order the product
+  `s 0 * s 1 * ⋯ * s (n - 2)` is the cycle `(0 1 ⋯ n-1)`.
 
 The indexing follows `TauCeti.BraidGroup`: the simple reflection `s i` is
 `TauCeti.BraidGroup.transposition i`, which swaps the strands `TauCeti.BraidGroup.strand i` and
@@ -42,6 +48,11 @@ Iwahori–Hecke algebra is defined.
   descents are the reversed adjacent pairs of `σ` and of `σ⁻¹`.
 * `TauCeti.permCoxeterSystem_length_eq_card_inversion`: the Coxeter length is the number of
   inversions.
+* `TauCeti.isCycle_wordProd_permCoxeterSystem`, `TauCeti.cycleType_wordProd_permCoxeterSystem`
+  and `TauCeti.orderOf_wordProd_permCoxeterSystem`: every Coxeter element is a cycle through all
+  `n` letters, of order `n`.
+* `TauCeti.permCoxeterSystem_wordProd_finRange`: the Coxeter element in the natural order is
+  `finRotate n`.
 * `TauCeti.BraidGroup.permHom_eq_toCoxeterGroup`: the strand permutation of a braid is the
   canonical map from the Artin group of type `A` onto its Coxeter group.
 
@@ -53,6 +64,13 @@ one observation: along a word `s_{a₁} ⋯ s_{aₖ}` for `σ`, follow the two v
 `i` and `i + 1` by the suffix products `s_{aⱼ} ⋯ s_{aₖ}`. An adjacent transposition reverses the
 relative order of exactly one pair of values, so if `σ` reverses the order of `i` and `i + 1`, some
 letter `s_{aⱼ}` reverses that pair, and deleting it spells `σ * s i`.
+
+That a Coxeter element is an `n`-cycle is proved for all orderings at once, by induction on `k`: a
+word using each of `s 0, …, s (k - 1)` exactly once spells a cycle through the letters `0, …, k`.
+Cutting a word that uses each of `s 0, …, s k` once at its letter `s k` writes it as `a * s k * b`,
+which is conjugate by `a` to `s k * (b * a)`. The word for `b * a` uses each of
+`s 0, …, s (k - 1)` once, so it spells a cycle through `0, …, k`, and composing with `s k`, the
+transposition of `k` with the new letter `k + 1`, inserts `k + 1` into that cycle.
 
 ## References
 
@@ -313,6 +331,167 @@ theorem permCoxeterSystem_length_eq_card_inversion (σ : Equiv.Perm (Fin n)) :
       (by simpa using hdesc)
     rw [mul_transposition_mul_self] at hcard
     rw [hcard, ← ih _ hlen]
+
+/-! ### Coxeter elements -/
+
+/-- A product of adjacent transpositions `s i` with `i < k` preserves the letters `≤ k`. -/
+private theorem val_prod_map_transposition_le_iff {k : ℕ} {ω : List (Fin (n - 1))}
+    (hω : ∀ i ∈ ω, (i : ℕ) < k) (y : Fin n) :
+    ((ω.map transposition).prod y : ℕ) ≤ k ↔ (y : ℕ) ≤ k := by
+  induction ω with
+  | nil => simp
+  | cons a ω ih =>
+    have ha := hω a (List.mem_cons_self ..)
+    rw [List.map_cons, List.prod_cons, Equiv.Perm.mul_apply, val_transposition_apply,
+      ← ih fun i hi ↦ hω i (List.mem_cons_of_mem a hi)]
+    split_ifs <;> omega
+
+/-- The core induction: a product of the adjacent transpositions `s i`, `i < k`, each taken once
+in any order, is the cycle through the letters `0, …, k` in some order. -/
+private theorem exists_formPerm_eq_prod_map_transposition (k : ℕ) (hk : k < n)
+    (ω : List (Fin (n - 1))) (hω : ω.Nodup) (hmem : ∀ i, i ∈ ω ↔ (i : ℕ) < k) :
+    ∃ L : List (Fin n), L.Nodup ∧ (∀ x, x ∈ L ↔ (x : ℕ) ≤ k) ∧
+      (ω.map transposition).prod = L.formPerm := by
+  induction k generalizing ω with
+  | zero =>
+    obtain rfl : ω = [] := List.eq_nil_iff_forall_not_mem.mpr fun i hi ↦ by
+      simpa using (hmem i).1 hi
+    exact ⟨[⟨0, hk⟩], List.nodup_singleton _, fun x ↦ by simp [Fin.ext_iff], by simp⟩
+  | succ k ih =>
+    -- Split the word at its letter `s k`.
+    let m : Fin (n - 1) := ⟨k, by omega⟩
+    obtain ⟨ω₁, ω₂, rfl⟩ := List.append_of_mem ((hmem m).2 (Nat.lt_succ_self k))
+    obtain ⟨hmn, hnd⟩ := List.nodup_cons.mp (List.nodup_middle.mp hω)
+    have hlt : ∀ i ∈ ω₁ ++ ω₂, (i : ℕ) < k := fun i hi ↦ by
+      have h₁ := (hmem i).1 (by simp only [List.mem_append, List.mem_cons] at hi ⊢; tauto)
+      have h₂ : i ≠ m := fun h ↦ hmn (h ▸ hi)
+      simp only [ne_eq, Fin.ext_iff, m] at h₂
+      omega
+    obtain ⟨L, hLnd, hLmem, hL⟩ := ih (by omega) (ω₂ ++ ω₁) (List.nodup_append_comm.mp hnd)
+      fun i ↦ ⟨fun hi ↦ hlt i (by simp only [List.mem_append] at hi ⊢; tauto), fun hi ↦ by
+        have h := (hmem i).2 (by omega)
+        have h' : i ≠ m := fun h ↦ by simp [h, m] at hi
+        simp only [List.mem_append, List.mem_cons] at h ⊢
+        tauto⟩
+    -- Rotate the cycle so that it starts at the letter `k`.
+    obtain ⟨p, hp⟩ : ∃ p : Fin n, (p : ℕ) = k := ⟨⟨k, by omega⟩, rfl⟩
+    obtain ⟨q, hq⟩ : ∃ q : Fin n, (q : ℕ) = k + 1 := ⟨⟨k + 1, hk⟩, rfl⟩
+    obtain ⟨L₁, L₂, rfl⟩ := List.append_of_mem ((hLmem p).2 hp.le)
+    have hrot : (L₁ ++ p :: L₂) ~r (p :: (L₂ ++ L₁)) := by
+      simpa using List.isRotated_append (l := L₁) (l' := p :: L₂)
+    have hmemq : ∀ y, y ∈ q :: p :: (L₂ ++ L₁) ↔ (y : ℕ) ≤ k + 1 := fun y ↦ by
+      rw [List.mem_cons, ← hrot.mem_iff, hLmem, Fin.ext_iff]
+      omega
+    obtain ⟨A, hAdef⟩ : ∃ A, (ω₁.map transposition).prod = A := ⟨_, rfl⟩
+    have hA : ∀ y, (A y : ℕ) ≤ k + 1 ↔ (y : ℕ) ≤ k + 1 :=
+      hAdef ▸ val_prod_map_transposition_le_iff fun i hi ↦ (hmem i).1 (by simp [hi])
+    refine ⟨(q :: p :: (L₂ ++ L₁)).map A, ?_, fun x ↦ ?_, ?_⟩
+    · refine List.Nodup.map A.injective (List.nodup_cons.mpr ⟨fun h ↦ ?_, hrot.nodup_iff.mp hLnd⟩)
+      have := (hLmem q).1 (hrot.mem_iff.mpr h)
+      omega
+    · rw [List.mem_map]
+      constructor
+      · rintro ⟨y, hy, rfl⟩
+        exact (hA y).2 ((hmemq y).1 hy)
+      · intro hx
+        exact ⟨A.symm x, (hmemq _).2 ((hA _).1 (by simpa using hx)), by simp⟩
+    · rw [List.formPerm_map_equiv, List.formPerm_cons_cons,
+        ← List.formPerm_eq_of_isRotated hLnd hrot, ← hL]
+      have hm : transposition m = Equiv.swap q p := by
+        rw [transposition_eq_swap, Equiv.swap_comm]
+        congr 1 <;> exact Fin.ext (by simp [m, hp, hq])
+      simp only [List.map_append, List.map_cons, List.prod_append, List.prod_cons, hm, hAdef]
+      ext x
+      simp
+
+/-- A word using each simple reflection of `S_n` exactly once spells a single cycle through all `n`
+letters. -/
+private theorem exists_formPerm_eq_wordProd_permCoxeterSystem {ω : List (Fin (n - 1))}
+    (hω : ω.Perm (List.finRange (n - 1))) (hn : n ≠ 0) :
+    ∃ L : List (Fin n), L.Nodup ∧ L.length = n ∧ (permCoxeterSystem n).wordProd ω = L.formPerm := by
+  obtain ⟨L, hLnd, hLmem, hL⟩ := exists_formPerm_eq_prod_map_transposition (n - 1) (by omega) ω
+    (hω.nodup_iff.mpr (List.nodup_finRange _)) fun i ↦ by simp [hω.mem_iff]
+  refine ⟨L, hLnd, ?_, by rw [permCoxeterSystem_wordProd, hL]⟩
+  have huniv : L.toFinset = Finset.univ :=
+    Finset.eq_univ_of_forall fun x ↦ List.mem_toFinset.mpr ((hLmem x).2 (by omega))
+  rw [← List.toFinset_card_of_nodup hLnd, huniv, Finset.card_univ, Fintype.card_fin]
+
+/-- **A Coxeter element of `S_n` is an `n`-cycle.** A product of all the adjacent transpositions,
+each taken once in any order, is a cycle. -/
+theorem isCycle_wordProd_permCoxeterSystem {ω : List (Fin (n - 1))}
+    (hω : ω.Perm (List.finRange (n - 1))) (hn : 2 ≤ n) :
+    ((permCoxeterSystem n).wordProd ω).IsCycle := by
+  obtain ⟨L, hLnd, hLlen, hL⟩ := exists_formPerm_eq_wordProd_permCoxeterSystem hω (by omega)
+  exact hL ▸ List.isCycle_formPerm hLnd (by rw [hLlen]; exact hn)
+
+/-- A Coxeter element of `S_n`, for `n ≥ 2`, moves every letter. -/
+theorem support_wordProd_permCoxeterSystem {ω : List (Fin (n - 1))}
+    (hω : ω.Perm (List.finRange (n - 1))) (hn : 2 ≤ n) :
+    ((permCoxeterSystem n).wordProd ω).support = Finset.univ := by
+  obtain ⟨L, hLnd, hLlen, hL⟩ := exists_formPerm_eq_wordProd_permCoxeterSystem hω (by omega)
+  rw [hL, List.support_formPerm_of_nodup L hLnd fun x hx ↦ by simp [hx] at hLlen; omega]
+  refine Finset.eq_univ_of_card _ ?_
+  rw [List.toFinset_card_of_nodup hLnd, hLlen, Fintype.card_fin]
+
+/-- The cycle type of a Coxeter element of `S_n`, for `n ≥ 2`, is `{n}`. -/
+theorem cycleType_wordProd_permCoxeterSystem {ω : List (Fin (n - 1))}
+    (hω : ω.Perm (List.finRange (n - 1))) (hn : 2 ≤ n) :
+    ((permCoxeterSystem n).wordProd ω).cycleType = {n} := by
+  rw [(isCycle_wordProd_permCoxeterSystem hω hn).cycleType,
+    support_wordProd_permCoxeterSystem hω hn, Finset.card_univ, Fintype.card_fin]
+
+/-- Any two letters lie in the same cycle of a Coxeter element of `S_n`. -/
+theorem sameCycle_wordProd_permCoxeterSystem {ω : List (Fin (n - 1))}
+    (hω : ω.Perm (List.finRange (n - 1))) (x y : Fin n) :
+    ((permCoxeterSystem n).wordProd ω).SameCycle x y := by
+  rcases lt_or_ge n 2 with hn | hn
+  · obtain rfl : x = y := Fin.ext (by omega)
+    exact Equiv.Perm.SameCycle.refl _ _
+  · have hsupp := support_wordProd_permCoxeterSystem hω hn
+    exact (isCycle_wordProd_permCoxeterSystem hω hn).sameCycle
+      (Equiv.Perm.mem_support.mp (hsupp ▸ Finset.mem_univ x))
+      (Equiv.Perm.mem_support.mp (hsupp ▸ Finset.mem_univ y))
+
+/-- **The Coxeter number of type `A_{n-1}` is `n`.** Every Coxeter element of `S_n`, a product of
+all the adjacent transpositions each taken once in any order, has order `n`. -/
+theorem orderOf_wordProd_permCoxeterSystem {ω : List (Fin (n - 1))}
+    (hω : ω.Perm (List.finRange (n - 1))) (hn : n ≠ 0) :
+    orderOf ((permCoxeterSystem n).wordProd ω) = n := by
+  rcases lt_or_ge n 2 with hn' | hn'
+  · obtain rfl : n = 1 := by omega
+    rw [Subsingleton.elim ((permCoxeterSystem 1).wordProd ω) 1, orderOf_one]
+  · rw [(isCycle_wordProd_permCoxeterSystem hω hn').orderOf,
+      support_wordProd_permCoxeterSystem hω hn', Finset.card_univ, Fintype.card_fin]
+
+/-- The product `s 0 * ⋯ * s (k - 1)` of the first `k` adjacent transpositions is the cycle
+`(0 1 ⋯ k)`. -/
+private theorem val_prod_map_transposition_take_finRange {k : ℕ} (hk : k ≤ n - 1) (x : Fin n) :
+    ((((List.finRange (n - 1)).take k).map transposition).prod x : ℕ) =
+      if (x : ℕ) < k then (x : ℕ) + 1 else if (x : ℕ) = k then 0 else x := by
+  induction k generalizing x with
+  | zero =>
+    simp only [List.take_zero, List.map_nil, List.prod_nil, Equiv.Perm.coe_one, id_eq]
+    split_ifs <;> omega
+  | succ k ih =>
+    rw [List.take_add_one, List.getElem?_eq_getElem (by simp; omega), List.getElem_finRange,
+      Option.toList_some, List.map_append,
+      List.prod_append, List.map_singleton, List.prod_singleton, Equiv.Perm.mul_apply,
+      ih (by omega), val_transposition_apply]
+    simp only [Fin.val_cast]
+    split_ifs <;> omega
+
+/-- **The Coxeter cycle of `S_n`.** The Coxeter element `s 0 * s 1 * ⋯ * s (n - 2)`, the product
+of the adjacent transpositions in their natural order, is the cycle `(0 1 ⋯ n-1)`, that is
+`finRotate n : i ↦ i + 1` modulo `n`. -/
+theorem permCoxeterSystem_wordProd_finRange :
+    (permCoxeterSystem n).wordProd (List.finRange (n - 1)) = finRotate n := by
+  ext x
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by have := x.pos; omega⟩
+  have h := val_prod_map_transposition_take_finRange (n := m + 1) (k := m) le_rfl x
+  rw [List.take_of_length_le (by simp)] at h
+  rw [permCoxeterSystem_wordProd, h, coe_finRotate]
+  simp only [Fin.ext_iff, Fin.val_last]
+  split_ifs <;> omega
 
 end TauCeti
 
