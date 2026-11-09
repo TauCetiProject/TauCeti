@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 
 import Mathlib.FieldTheory.KummerExtension
 import TauCeti.RingTheory.RootsOfUnity.PowFiber
-import TauCeti.Algebra.Polynomial.XPowSubC
+import TauCeti.Algebra.Polynomial.XPow.SubC
 import TauCeti.LinearAlgebra.LinearIndependent.MonoidHom
 
 /-!
