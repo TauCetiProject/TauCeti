@@ -89,6 +89,7 @@ theorem Continuous.exists_testFunction_dist_le {f : E → F} (hf : Continuous f)
   exact ρ.dist_normed_convolution_le hf.aestronglyMeasurable fun y hy =>
     (hfη ((mem_ball.mp hy).trans_le (min_le_left _ _))).le
 
+omit [FiniteDimensional ℝ E] in
 /-- A `C¹` function supported in a compact set `K` is approximated by test functions on `Ω`
 uniformly together with its derivative, as long as a closed thickening `cthickening δ K` lies in
 `Ω`: for every `ε > 0` there is a test function on `Ω`, supported in `cthickening δ K`, within `ε`
@@ -98,6 +99,20 @@ theorem ContDiff.exists_testFunction_dist_le_and_dist_fderiv_le {f : E → F}
     (hδ : 0 < δ) (hKΩ : cthickening δ K ⊆ Ω) {ε : ℝ} (hε : 0 < ε) :
     ∃ φ : 𝓓(Ω, F), tsupport φ ⊆ cthickening δ K ∧
       ∀ x, dist (φ x) (f x) ≤ ε ∧ dist (fderiv ℝ φ x) (fderiv ℝ f x) ≤ ε := by
+  by_cases hfd : FiniteDimensional ℝ E
+  swap
+  · -- In infinite dimensions a compactly supported continuous function vanishes.
+    have hf0 : f = 0 := by
+      funext x
+      by_contra hx
+      obtain ⟨r, hr, hball⟩ :=
+        Metric.isOpen_iff.1 (isOpen_ne_fun hf.continuous continuous_const) x hx
+      have hsub : closedBall x (r / 2) ⊆ tsupport f := fun y hy ↦
+        subset_closure (hball (mem_ball.2 ((mem_closedBall.1 hy).trans_lt (half_lt_self hr))))
+      exact hfd (.of_isCompact_closedBall ℝ (half_pos hr)
+        (hK.of_isClosed_subset isClosed_closedBall (hsub.trans hfK)))
+    subst hf0
+    exact ⟨0, by simp, fun x ↦ by simp [hε.le]⟩
   borelize E
   have hfc : HasCompactSupport f := hK.of_isClosed_subset (isClosed_tsupport f) hfK
   have hDf : Continuous (fderiv ℝ f) := hf.continuous_fderiv one_ne_zero
