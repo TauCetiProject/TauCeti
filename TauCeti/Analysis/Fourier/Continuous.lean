@@ -63,10 +63,12 @@ variable {V E : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteD
 /-- The Fourier integral of a function is homogeneous: `𝓕 (c • f) = c • 𝓕 f`. On functions, `𝓕`
 is by definition `VectorFourier.fourierIntegral` for the pairing `innerₗ V`
 (`Real.instFourierTransform`), so this is Mathlib's `VectorFourier.fourierIntegral_const_smul`. -/
+@[simp]
 theorem fourier_const_smul (c : ℂ) (f : V → E) : 𝓕 (c • f) = c • 𝓕 f :=
   VectorFourier.fourierIntegral_const_smul _ _ _ _ _
 
 /-- The Fourier integral of `-f` is `-𝓕 f`. -/
+@[simp]
 theorem fourier_neg (f : V → E) : 𝓕 (-f) = -𝓕 f := by
   simpa only [neg_one_smul] using fourier_const_smul (-1) f
 
