@@ -153,20 +153,6 @@ theorem isDistinguishedAt_nodeNormalForm {b : E}
 
 /-! ### The coordinate change on the stalk at the node -/
 
-/-- Transporting a holomorphic stalk along `p = q` with `RingEquiv.cast` keeps its
-representative. The origin is fixed by the coordinate change only propositionally, since
-`0 + 0 = 0` in `ℂ` is not a definitional equality. A cast, unlike
-`TopCat.Presheaf.stalkCongr`, is computed by `subst`. -/
-private theorem toFilterGerm_ringEquivCast {p q : (E × ℂ) × ℂ} (h : p = q)
-    {g : (holomorphicStructureSheaf 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ)).presheaf.stalk p}
-    {f : (E × ℂ) × ℂ → ℂ}
-    (hg : toFilterGerm 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ) p (𝓝 p) le_rfl g = f) :
-    toFilterGerm 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ) q (𝓝 q) le_rfl
-      (RingEquiv.cast (R := fun p ↦ (holomorphicStructureSheaf 𝓘(ℂ, (E × ℂ) × ℂ)
-        ((E × ℂ) × ℂ)).presheaf.stalk p) h g) = f := by
-  subst h
-  exact hg
-
 /-- The origin `((b, 0), 0)` is fixed by `nodeCoordinateChange`. -/
 private theorem nodeCoordinateChange_origin (b : E) :
     ((b, (0 : ℂ)), (0 : ℂ)) = nodeCoordinateChange ((b, (0 : ℂ)), (0 : ℂ)) := by
