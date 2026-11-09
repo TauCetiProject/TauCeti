@@ -9,8 +9,13 @@ public import Mathlib.RingTheory.KrullDimension.Basic
 public import TauCeti.RingTheory.Japanese
 
 import Mathlib.RingTheory.Finiteness.Quotient
+import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 import Mathlib.RingTheory.Localization.Finiteness
 import Mathlib.RingTheory.Localization.Submodule
+import TauCeti.RingTheory.Ideal.MinimalPrime.Basic
+import TauCeti.RingTheory.IntegralClosure.Map
+import TauCeti.RingTheory.IntegralClosure.Pi
+import TauCeti.RingTheory.IntegralClosure.Transfer
 
 /-!
 # Nagata rings
@@ -36,6 +41,11 @@ definition and its elementary permanence properties and examples.
   Lemma 10.162.7 (032V)). This is what makes the Nagata property of a scheme, asked of the
   section rings of its affine opens, checkable on an affine open cover.
 * `TauCeti.Ring.IsNagata.isJapanese`: a Nagata domain is Japanese.
+* `TauCeti.Ring.IsNagata.finite_integralClosure`: for a Nagata ring `R` and a reduced `R`-algebra
+  `S` essentially of finite type, the integral closure of `R` in `S` is a finite `R`-module
+  (Stacks, Lemma 10.162.2 (03GH)). The ring `S` embeds in the product of the fraction fields of its
+  quotients by its finitely many minimal primes `q`, each a finitely generated field extension of
+  the fraction field of the Japanese domain `R ⧸ (q ∩ R)`.
 * `TauCeti.Ring.IsNagata.of_krullDimLE_zero`: a Noetherian ring of Krull dimension zero, such as
   a field or an Artinian ring, is Nagata.
 * `TauCeti.Ring.isNagata_iff_isJapanese`: a Noetherian domain of Krull dimension at most one is
@@ -96,6 +106,52 @@ theorem _root_.RingEquiv.isNagata {S : Type v} [CommRing S] [IsNagata R] (e : R 
 /-- A Nagata domain is Japanese. -/
 instance (priority := 100) isJapanese [IsDomain R] [IsNagata R] : IsJapanese R :=
   (RingEquiv.quotientBot R).isJapanese
+
+/-- For a prime `q` of an `R`-algebra `S` essentially of finite type over a Nagata ring `R`, the
+integral closure of `R` in the fraction field of `S ⧸ q` is a finite `R`-module. -/
+private theorem finite_integralClosure_fractionRing_quotient [IsNagata R] (S : Type v)
+    [CommRing S] [Algebra R S] [Algebra.EssFiniteType R S] (q : Ideal S) [q.IsPrime] :
+    Module.Finite R (integralClosure R (FractionRing (S ⧸ q))) := by
+  set R' := R ⧸ q.under R
+  set L := FractionRing (S ⧸ q)
+  -- `L` is a finitely generated field extension of the fraction field of the Japanese domain `R'`.
+  have : FaithfulSMul R' (S ⧸ q) :=
+    (faithfulSMul_iff_algebraMap_injective _ _).mpr Ideal.algebraMap_quotient_injective
+  let : Algebra (FractionRing R') L := FractionRing.liftAlgebra R' L
+  have : Algebra.EssFiniteType R' (S ⧸ q) := .of_comp R R' (S ⧸ q)
+  have : Algebra.EssFiniteType (S ⧸ q) L := .of_isLocalization (S := L) (nonZeroDivisors (S ⧸ q))
+  have : Algebra.EssFiniteType R' L := .comp R' (S ⧸ q) L
+  have : Algebra.EssFiniteType (FractionRing R') L := .of_comp R' (FractionRing R') L
+  have := IsJapanese.finite_integralClosure (R := R') (FractionRing R') L
+  -- `R'` is integral over `R`, so the integral closure of `R'` in `L` is that of `R`.
+  have : IsIntegralClosure (integralClosure R' L) R L :=
+    TauCeti.IsIntegralClosure.tower_bot (A := R')
+  have : Module.Finite R (integralClosure R' L) := .trans R' _
+  exact .equiv
+    (IsIntegralClosure.equiv R (integralClosure R' L) L (integralClosure R L)).toLinearEquiv
+
+/-- **Finiteness of integral closures over a Nagata ring.** For a Nagata ring `R` and a reduced
+`R`-algebra `S` essentially of finite type, the integral closure of `R` in `S` is a finite
+`R`-module. Stacks, Lemma 10.162.2 (03GH). -/
+theorem finite_integralClosure [IsNagata R] (S : Type v) [CommRing S] [IsReduced S] [Algebra R S]
+    [Algebra.EssFiniteType R S] : Module.Finite R (integralClosure R S) := by
+  have : IsNoetherianRing S := Algebra.EssFiniteType.isNoetherianRing R S
+  have : Finite (minimalPrimes S) := (minimalPrimes.finite_of_isNoetherianRing S).to_subtype
+  have (q : minimalPrimes S) : q.1.IsPrime := q.2.1.1
+  let L (q : minimalPrimes S) := FractionRing (S ⧸ q.1)
+  -- The reduced ring `S` embeds into the product of the fraction fields of its quotients by its
+  -- finitely many minimal primes.
+  let g : S →ₐ[R] ∀ q, L q := AlgHom.pi fun q ↦
+    (IsScalarTower.toAlgHom R (S ⧸ q.1) (L q)).comp (Ideal.Quotient.mkₐ R q.1)
+  have hg : Function.Injective g := by
+    have := (Function.Injective.piMap fun q ↦ IsFractionRing.injective (S ⧸ q.1) (L q)).comp
+      (Ideal.injective_pi_quotient_mk_minimalPrimes S)
+    exact this
+  have (q : minimalPrimes S) : Module.Finite R (integralClosure R (L q)) :=
+    finite_integralClosure_fractionRing_quotient S q.1
+  have : Module.Finite R (integralClosure R (∀ q, L q)) :=
+    .equiv (integralClosurePiAlgEquiv R L).symm.toLinearEquiv
+  exact .of_injective g.mapIntegralClosure.toLinearMap (AlgHom.mapIntegralClosure_injective hg)
 
 /-- A Noetherian ring of Krull dimension zero, for instance an Artinian ring or the zero ring, is
 Nagata. -/

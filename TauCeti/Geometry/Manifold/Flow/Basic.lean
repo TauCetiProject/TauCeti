@@ -19,9 +19,12 @@ remains in the interval of existence.
 
 For complete normed model spaces, the existing smooth-dependence theorem for maximal integral
 curves gives joint openness of the domain and joint smoothness of the flow, so flowing a `C^n`
-family of points for a `C^n` family of times is again `C^n`.  Along a trajectory, a function changes
-at the rate of its derivative in the direction of the vector field.  The escape theorem says that a
-maximal trajectory approaching a finite right endpoint eventually leaves every compact set.
+family of points for a `C^n` family of times is again `C^n`.  At time zero, the derivative of the
+flow is the field in the time direction and the identity in the space directions, so flowing for a
+time `τ` vanishing at `x` has derivative `w ↦ w + dτ_x(w) • v x` at `x`.  Along a trajectory, a
+function changes at the rate of its derivative in the direction of the vector field.  The escape
+theorem says that a maximal trajectory approaching a finite right endpoint eventually leaves every
+compact set.
 
 ## Main declarations
 
@@ -31,6 +34,9 @@ maximal trajectory approaching a finite right endpoint eventually leaves every c
 * `TauCeti.contMDiffOn_flowOf`: joint regularity of the flow for complete model spaces.
 * `TauCeti.contMDiffAt_flowOf_comp`: flowing `C^n` families of points for `C^n` families of times.
 * `TauCeti.hasDerivAt_comp_flowOf`: the time derivative of a function along a trajectory.
+* `TauCeti.mfderiv_flowOf_zero_apply`: the derivative of the flow at time zero.
+* `TauCeti.hasMFDerivAt_flowOf_comp_of_eq_zero`: the derivative of flowing for a time that
+  vanishes at the base point.
 * `TauCeti.flowOf_add`: the domain-aware group law.
 * `TauCeti.flowOf_neg_flowOf`: flowing backwards undoes flowing forwards.
 * `TauCeti.eventually_flowOf_notMem`: escape from compact sets at a finite right endpoint.
@@ -202,6 +208,58 @@ theorem hasDerivAt_comp_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace 
       isOpen_maximalIntegralCurveInterval.mem_nhds (mem_flowDomain.mp hx)
   exact Manifold.hasDerivAt_comp_curve hg
     (((isMIntegralCurveOn_flowOf hv x).isMIntegralCurveAt hopen).hasMFDerivAt)
+
+/-- **The derivative of the flow at time zero.** At `(0, x)`, the derivative of
+`(t, y) ↦ flowOf v t y` sends the time direction to the field at `x` and is the identity in the
+space direction. -/
+theorem mfderiv_flowOf_zero_apply [IsManifold I 1 M]
+    {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (x : M) (a : ℝ)
+    (w : TangentSpace I x) :
+    -- The two sides live in tangent spaces at different points, both equal to `E` by definition,
+    -- so the equation is stated in `E`.
+    @Eq E (mfderiv (𝓘(ℝ).prod I) I (fun y : ℝ × M ↦ flowOf v y.1 y.2) (0, x) ((a, w) : ℝ × E))
+      (a • v x + w) := by
+  have h0 : ((0 : ℝ), x) ∈ flowDomain v := mem_flowDomain_zero hv x
+  have hG : MDifferentiableAt (𝓘(ℝ).prod I) I (fun y : ℝ × M ↦ flowOf v y.1 y.2) (0, x) :=
+    ((contMDiffOn_flowOf le_rfl hv).contMDiffAt
+      ((isOpen_flowDomain hv).mem_nhds h0)).mdifferentiableAt one_ne_zero
+  have hopen : {s : ℝ | (s, x) ∈ flowDomain v} ∈ 𝓝 (0 : ℝ) :=
+    ((isOpen_flowDomain hv).preimage (continuous_id.prodMk continuous_const)).mem_nhds h0
+  have htime := ((isMIntegralCurveOn_flowOf hv x).isMIntegralCurveAt hopen).hasMFDerivAt.mfderiv
+  have hspace : (fun z : M ↦ flowOf v 0 z) = id := funext (flowOf_zero hv)
+  have h1 : @Eq E (mfderiv 𝓘(ℝ) I (fun t : ℝ ↦ flowOf v t x) 0 a) (a • v x) := by
+    rw [htime]
+    -- Unfold the application of `smulRight`, whose domain is the tangent space of `ℝ` at `0`.
+    change @Eq E ((1 : ℝ →L[ℝ] ℝ) a • v (flowOf v 0 x)) (a • v x)
+    rw [flowOf_zero hv x]
+    rfl
+  have h2 : @Eq E (mfderiv I I (fun z : M ↦ flowOf v 0 z) x w) w := by
+    rw [hspace, mfderiv_id]
+    rfl
+  -- The splitting of the derivative into its time and space parts is an equation in the tangent
+  -- space at `flowOf v 0 x`, which is `E` by definition, so it composes with `h1` and `h2`.
+  exact (mfderiv_prod_eq_add_apply hG).trans (congrArg₂ (· + ·) h1 h2)
+
+/-- **Flowing for a time that vanishes at a point.** If `τ x = 0`, the map
+`z ↦ flowOf v (τ z) z` has derivative `w ↦ w + dτ_x(w) • v x` at `x`. -/
+theorem hasMFDerivAt_flowOf_comp_of_eq_zero [IsManifold I 1 M]
+    {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {x : M} {τ : M → ℝ}
+    {dτ : TangentSpace I x →L[ℝ] ℝ} (hτ : HasMFDerivAt I 𝓘(ℝ) τ x dτ) (hτx : τ x = 0) :
+    HasMFDerivAt I I (fun z ↦ flowOf v (τ z) z) x
+      (ContinuousLinearMap.id ℝ (TangentSpace I x) + dτ.smulRight (v x)) := by
+  have h0 : (τ x, x) ∈ flowDomain v := hτx ▸ mem_flowDomain_zero hv x
+  have hG : MDifferentiableAt (𝓘(ℝ).prod I) I (fun y : ℝ × M ↦ flowOf v y.1 y.2) (τ x, x) :=
+    ((contMDiffOn_flowOf le_rfl hv).contMDiffAt
+      ((isOpen_flowDomain hv).mem_nhds h0)).mdifferentiableAt one_ne_zero
+  refine (hG.hasMFDerivAt.comp (f := fun z ↦ (τ z, id z)) x
+    (hτ.prodMk (hasMFDerivAt_id x))).congr_mfderiv ?_
+  refine ContinuousLinearMap.ext fun w ↦ ?_
+  -- Evaluate the composite with the pairing `z ↦ (τ z, z)` at `w`, as an equation in `E`.
+  change @Eq E (mfderiv (𝓘(ℝ).prod I) I (fun y : ℝ × M ↦ flowOf v y.1 y.2) (τ x, x)
+    ((dτ w, w) : ℝ × E)) (w + dτ w • v x)
+  rw [hτx, mfderiv_flowOf_zero_apply hv, add_comm]
 
 omit [CompleteSpace E] in
 /-- The domain-aware group law for the maximal flow.  If time `s` is defined at `x` and time `t`
