@@ -50,6 +50,10 @@ function by a function of temperate growth multiplies the function pointwise
   which Young's inequality bounds, and the extension above covers `p < ∞`. Schwartz functions are
   not dense in `L^∞`; there the multiplier of `f` is identified directly with the convolution
   `𝓕⁻ σ ⋆ f` by pairing with Schwartz functions and Fubini's theorem.
+* The extended `Lᵖ` norm `TemperedDistribution.lpENorm p u` of a tempered distribution is `‖g‖_p`
+  when `u` is the distribution of `g ∈ Lᵖ`, which is unique by the first point, and `∞`
+  otherwise. It measures distributions not known in advance to be `Lᵖ` functions, such as the
+  Littlewood–Paley blocks in a Besov norm.
 
 ## Main declarations
 
@@ -76,6 +80,10 @@ function by a function of temperate growth multiplies the function pointwise
   on `L^∞`, the multiplier with a Schwartz symbol `σ` is convolution with `𝓕⁻ σ`.
 * `TemperedDistribution.exists_fourierMultiplierCLM_eq_and_norm_le`: the multiplier with a
   Schwartz symbol `σ` maps `f ∈ Lᵖ` to some `g ∈ Lᵖ` with `‖g‖_p ≤ ‖𝓕⁻ σ‖₁ ‖f‖_p`.
+* `MeasureTheory.Lp.toTemperedDistribution_injective`: an `Lᵖ` function is determined by its
+  tempered distribution.
+* `TemperedDistribution.lpENorm`: the extended `Lᵖ` norm of a tempered distribution, `‖g‖_p` on
+  the distribution of `g ∈ Lᵖ` and `∞` off `Lᵖ`; it is subadditive and absolutely homogeneous.
 
 ## References
 
@@ -113,6 +121,12 @@ theorem ae_eq_of_toTemperedDistribution_apply_eq {μ : Measure E} [μ.HasTempera
   have hψ₂ : ContDiff ℝ ∞ (Complex.ofRealCLM ∘ ψ) := by fun_prop
   have := h (hψ₁.toSchwartzMap hψ₂)
   simpa [Lp.toTemperedDistribution_apply] using this
+
+/-- An `Lᵖ` function is determined by its tempered distribution. -/
+theorem toTemperedDistribution_injective {μ : Measure E} [μ.HasTemperateGrowth]
+    [IsLocallyFiniteMeasure μ] {p : ENNReal} [Fact (1 ≤ p)] :
+    Function.Injective (toTemperedDistribution : Lp F p μ → 𝓢'(E, F)) :=
+  LinearMap.ker_eq_bot.mp ker_toTemperedDistributionCLM_eq_bot
 
 omit [FiniteDimensional ℝ E] in
 /-- Multiplying the tempered distribution of an `Lᵖ` function `u` by a function `g` of temperate
@@ -372,5 +386,78 @@ theorem exists_fourierMultiplierCLM_eq_and_norm_le {p : ℝ≥0∞} [Fact (1 ≤
   rcases eq_or_ne p ∞ with rfl | hp
   · exact exists_fourierMultiplierCLM_eq_and_norm_le_top σ f
   · exact exists_fourierMultiplierCLM_eq_and_norm_le_of_ne_top hp σ f
+
+
+/-! ### The extended `Lᵖ` norm of a tempered distribution -/
+
+section LpENorm
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+variable (p) in
+/-- The **extended `Lᵖ` norm** of a tempered distribution: `‖g‖_p` if `u` is the tempered
+distribution of `g ∈ Lᵖ(E, F)`, and `∞` if `u` is not given by an `Lᵖ` function. -/
+noncomputable def lpENorm (u : 𝓢'(E, F)) : ℝ≥0∞ :=
+  ⨅ (g : Lp F p (volume : Measure E)) (_ : u = g), ‖g‖ₑ
+
+/-- On the tempered distribution of an `Lᵖ` function, the extended `Lᵖ` norm is its norm. -/
+@[simp]
+theorem lpENorm_toTemperedDistribution (g : Lp F p (volume : Measure E)) :
+    lpENorm p (g : 𝓢'(E, F)) = ‖g‖ₑ := by
+  refine le_antisymm ?_ (le_iInf₂ fun _ h ↦ (Lp.toTemperedDistribution_injective h ▸ le_rfl))
+  exact iInf₂_le (f := fun (g' : Lp F p (volume : Measure E)) (_ : (g : 𝓢'(E, F)) = g') ↦ ‖g'‖ₑ)
+    g rfl
+
+/-- A tempered distribution that is not given by an `Lᵖ` function has infinite extended `Lᵖ`
+norm. -/
+theorem lpENorm_eq_top {u : 𝓢'(E, F)} (hu : ∀ g : Lp F p (volume : Measure E), u ≠ g) :
+    lpENorm p u = ∞ := by
+  simp [lpENorm, hu]
+
+/-- The extended `Lᵖ` norm of a tempered distribution is finite exactly when the distribution is
+given by an `Lᵖ` function. -/
+theorem lpENorm_lt_top_iff {u : 𝓢'(E, F)} :
+    lpENorm p u < ∞ ↔ ∃ g : Lp F p (volume : Measure E), u = g := by
+  refine ⟨fun h ↦ ?_, fun ⟨g, hg⟩ ↦ hg ▸ (lpENorm_toTemperedDistribution g).symm ▸ enorm_lt_top⟩
+  by_contra! hu
+  exact h.ne (lpENorm_eq_top hu)
+
+@[simp]
+theorem lpENorm_zero : lpENorm p (0 : 𝓢'(E, F)) = 0 := by
+  rw [← map_zero (Lp.toTemperedDistributionCLM F (volume : Measure E) p),
+    Lp.toTemperedDistributionCLM_apply, lpENorm_toTemperedDistribution, enorm_zero]
+
+theorem lpENorm_add_le (u v : 𝓢'(E, F)) : lpENorm p (u + v) ≤ lpENorm p u + lpENorm p v := by
+  rcases eq_top_or_lt_top (lpENorm p u) with hu | hu
+  · simp [hu]
+  rcases eq_top_or_lt_top (lpENorm p v) with hv | hv
+  · simp [hv]
+  obtain ⟨g, rfl⟩ := lpENorm_lt_top_iff.1 hu
+  obtain ⟨h, rfl⟩ := lpENorm_lt_top_iff.1 hv
+  rw [← Lp.toTemperedDistributionCLM_apply, ← Lp.toTemperedDistributionCLM_apply, ← map_add,
+    Lp.toTemperedDistributionCLM_apply]
+  simpa using enorm_add_le g h
+
+/-- The extended `Lᵖ` norm is absolutely homogeneous. -/
+theorem lpENorm_smul (c : ℂ) (u : 𝓢'(E, F)) : lpENorm p (c • u) = ‖c‖ₑ * lpENorm p u := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  rcases eq_top_or_lt_top (lpENorm p u) with hu | hu
+  · -- If `c • u` were an `Lᵖ` function, so would be `u = c⁻¹ • (c • u)`.
+    rw [hu, ENNReal.mul_top (enorm_ne_zero.2 hc)]
+    by_contra! h
+    obtain ⟨g, hg⟩ := lpENorm_lt_top_iff.1 (lt_top_iff_ne_top.2 h)
+    refine (lt_top_iff_ne_top.1 (lpENorm_lt_top_iff.2 ⟨c⁻¹ • g, ?_⟩)) hu
+    rw [← Lp.toTemperedDistributionCLM_apply, map_smul, Lp.toTemperedDistributionCLM_apply, ← hg,
+      inv_smul_smul₀ hc]
+  · obtain ⟨g, rfl⟩ := lpENorm_lt_top_iff.1 hu
+    rw [← Lp.toTemperedDistributionCLM_apply, ← map_smul]
+    simp only [Lp.toTemperedDistributionCLM_apply, lpENorm_toTemperedDistribution, enorm_smul]
+
+@[simp]
+theorem lpENorm_neg (u : 𝓢'(E, F)) : lpENorm p (-u) = lpENorm p u := by
+  simpa using lpENorm_smul (-1) u
+
+end LpENorm
 
 end TemperedDistribution
