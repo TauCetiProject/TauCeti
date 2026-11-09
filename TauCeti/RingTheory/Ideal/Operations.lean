@@ -112,6 +112,17 @@ section CommSemiring
 
 variable {R : Type*} [CommSemiring R]
 
+/-- The product of an element of `I ^ i` and an element of `I ^ j` lies in `I ^ (i + j)`. -/
+theorem mul_mem_pow_add {I : Ideal R} {i j : ℕ} {x y : R} (hx : x ∈ I ^ i) (hy : y ∈ I ^ j) :
+    x * y ∈ I ^ (i + j) := by
+  rw [pow_add]
+  exact mul_mem_mul hx hy
+
+/-- Every element lies in `I ^ 0 = ⊤`. -/
+theorem mem_pow_zero (I : Ideal R) (r : R) : r ∈ I ^ 0 := by
+  rw [pow_zero, one_eq_top]
+  exact Submodule.mem_top
+
 /-- The product `I * J`, viewed as a submodule of `I`, is the action of `J` on `I`. -/
 theorem smul_top_eq_comap_mul (I J : Ideal R) :
     J • (⊤ : Submodule R I) = Submodule.comap I.subtype (I * J) := by
