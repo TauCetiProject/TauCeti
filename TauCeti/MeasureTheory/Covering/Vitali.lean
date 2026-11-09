@@ -6,37 +6,74 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Covering.Vitali
-public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
+public import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 -- `Mathlib.MeasureTheory.Constructions.BorelSpace.Metric` is imported privately: it supplies only
--- the measurability of balls inside the proof.
+-- the measurability of balls inside the proofs.
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 
 /-!
-# The Vitali covering estimate for two measures
+# Integral and measure estimates over a Vitali subfamily
 
-Mathlib's `Vitali.exists_disjoint_subfamily_covering_enlargement_closedBall` extracts, from a
-family of balls of bounded radii centred at the points of a set `S`, a pairwise disjoint
-subfamily whose fourfold enlargements still cover `S`. This file turns that covering lemma into
-a measure estimate: if `t` times the `ν`-measure of each fourfold enlarged ball is at most the
-`μ`-integral of `g` over the original ball, then `t * ν S ≤ ∫⁻ g ∂μ`.
+Mathlib's Vitali covering lemmas
+(`Vitali.exists_disjoint_subfamily_covering_enlargement_ball` and
+`Vitali.exists_disjoint_subfamily_covering_enlargement_closedBall`) extract, from a family of
+balls of bounded radii, a disjoint subfamily whose enlargements cover every ball of the family.
+This file records the estimates that the extraction is usually applied for.
 
-Taking `ν = μ` an additive Haar measure gives the weak-type `(1, 1)` Hardy–Littlewood maximal
-inequality, and a weight `ν = μ.withDensity w` gives its weighted form of Fefferman and Stein.
+* If the integral of `G` over each enlarged ball `B(x, 4 r x)` is controlled by the integral of
+  `F` over `B(x, r x)`, and all the balls `B(x, r x)` lie in a set `S`, then the integral of `G`
+  over a measurable set containing every centre is controlled by the integral of `F` over `S`.
+  Stopping-time arguments, such as the proof of Gehring's lemma, use it in place of a
+  Calderón–Zygmund decomposition.
+* If `t` times the `ν`-measure of each fourfold enlarged ball is at most the `μ`-integral of `g`
+  over the original ball, then `t * ν S ≤ ∫⁻ g ∂μ`. Taking `ν = μ` an additive Haar measure gives
+  the weak-type `(1, 1)` Hardy–Littlewood maximal inequality, and a weight `ν = μ.withDensity w`
+  gives its weighted form of Fefferman and Stein.
 
 ## Main statements
 
-* `TauCeti.mul_measure_le_lintegral_of_forall_exists_ball`: the Vitali covering estimate.
+* `TauCeti.exists_superset_setLIntegral_le`: summing ball-wise integral estimates over a disjoint
+  Vitali subfamily.
+* `TauCeti.mul_measure_le_lintegral_of_forall_exists_ball`: the Vitali covering estimate for two
+  measures.
 -/
 
 public section
 
 namespace TauCeti
 
-open MeasureTheory Metric Set
+open MeasureTheory Metric Set TopologicalSpace
 open scoped ENNReal
 
-variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X]
-  [TopologicalSpace.SeparableSpace X] [OpensMeasurableSpace X] {μ ν : Measure X} {t : ℝ≥0∞}
+variable {α : Type*} [PseudoMetricSpace α] [SeparableSpace α] [MeasurableSpace α]
+  [OpensMeasurableSpace α] {μ ν : Measure α}
+
+/-- **Summing over a Vitali subfamily.** Let every centre `x ∈ X` carry a radius `0 < r x ≤ rm`
+with `B(x, r x) ⊆ S`, and suppose the integral of `G` over each enlarged ball `B(x, 4 r x)` is at
+most the integral of `F` over `B(x, r x)`. Then `X` lies in a measurable set `U` on which the
+integral of `G` is at most the integral of `F` over `S`. -/
+theorem exists_superset_setLIntegral_le {X S : Set α} {r : α → ℝ} {rm : ℝ}
+    (hr : ∀ x ∈ X, 0 < r x ∧ r x ≤ rm) (hS : ∀ x ∈ X, ball x (r x) ⊆ S) {G F : α → ℝ≥0∞}
+    (hball : ∀ x ∈ X, ∫⁻ y in ball x (4 * r x), G y ∂μ ≤ ∫⁻ y in ball x (r x), F y ∂μ) :
+    ∃ U, MeasurableSet U ∧ X ⊆ U ∧ ∫⁻ y in U, G y ∂μ ≤ ∫⁻ y in S, F y ∂μ := by
+  -- A disjoint subfamily whose `4`-fold enlargements cover the balls `B(x, r x)`.
+  obtain ⟨u, huX, hudisj, hucov⟩ := Vitali.exists_disjoint_subfamily_covering_enlargement_ball X
+    id r rm (fun a ha => (hr a ha).2) 4 (by norm_num)
+  have hucount : u.Countable := hudisj.countable_of_isOpen (fun _ _ => isOpen_ball)
+    (fun a ha => nonempty_ball.2 (hr a (huX ha)).1)
+  have : Countable u := hucount.to_subtype
+  refine ⟨⋃ a : u, ball (a : α) (4 * r a),
+    (isOpen_iUnion fun _ => isOpen_ball).measurableSet, fun x hx => ?_, ?_⟩
+  · obtain ⟨c, hcu, hc⟩ := hucov x hx
+    exact mem_iUnion.2 ⟨⟨c, hcu⟩, hc (mem_ball_self (hr x hx).1)⟩
+  have hdisj : Pairwise (Function.onFun Disjoint fun a : u => ball (a : α) (r a)) :=
+    fun a a' haa' => hudisj a.2 a'.2 (Subtype.coe_injective.ne haa')
+  have hUS : (⋃ a : u, ball (a : α) (r a)) ⊆ S := iUnion_subset fun a => hS a (huX a.2)
+  calc _ ≤ ∑' a : u, ∫⁻ y in ball (a : α) (4 * r a), G y ∂μ := lintegral_iUnion_le _ _
+    _ ≤ ∑' a : u, ∫⁻ y in ball (a : α) (r a), F y ∂μ := tsum_le_tsum fun a => hball a (huX a.2)
+    _ = ∫⁻ y in ⋃ a : u, ball (a : α) (r a), F y ∂μ :=
+        (lintegral_iUnion (fun _ => measurableSet_ball) hdisj _).symm
+    _ ≤ _ := lintegral_mono_set hUS
 
 /-- **The Vitali covering estimate**, for two measures. If every point of `S` is the centre of a
 ball `ball x r` of radius at most `R` such that `t` times the `ν`-measure of the fourfold enlarged
@@ -48,7 +85,8 @@ disjoint subfamily of those balls whose fourfold enlargements still cover `S`, a
 turns the sum of the integrals over the selected balls into a single integral over their union.
 With `ν = μ` an additive Haar measure this is `TauCeti.mul_measure_le_of_forall_exists_ball`; a
 weight `ν = μ.withDensity w` gives the weighted maximal inequality. -/
-theorem mul_measure_le_lintegral_of_forall_exists_ball {S : Set X} {R : ℝ} {g : X → ℝ≥0∞}
+theorem mul_measure_le_lintegral_of_forall_exists_ball {S : Set α} {R : ℝ} {g : α → ℝ≥0∞}
+    {t : ℝ≥0∞}
     (hS : ∀ x ∈ S, ∃ r ∈ Ioc 0 R, t * ν (closedBall x (4 * r)) ≤ ∫⁻ y in ball x r, g y ∂μ) :
     t * ν S ≤ ∫⁻ y, g y ∂μ := by
   choose! r hr hle using hS
@@ -65,18 +103,18 @@ theorem mul_measure_le_lintegral_of_forall_exists_ball {S : Set X} {R : ℝ} {g 
     obtain ⟨b, hb, hball⟩ := hcov x hx
     exact mem_biUnion hb (hball (mem_closedBall_self (hr x hx).1.le))
   -- The selected balls are pairwise disjoint, so the integrals over them add up to at most `∫⁻ g`.
-  have hdisj' : Pairwise (Function.onFun Disjoint fun b : u => ball (b : X) (r b)) :=
+  have hdisj' : Pairwise (Function.onFun Disjoint fun b : u => ball (b : α) (r b)) :=
     fun b b' hbb' =>
       (hdisj b.2 b'.2 (Subtype.coe_injective.ne hbb')).mono ball_subset_closedBall
         ball_subset_closedBall
   calc t * ν S
-      ≤ t * ∑' b : u, ν (closedBall (b : X) (4 * r b)) := by
+      ≤ t * ∑' b : u, ν (closedBall (b : α) (4 * r b)) := by
         gcongr
         exact (measure_mono hsub).trans (measure_biUnion_le ν hcount _)
-    _ = ∑' b : u, t * ν (closedBall (b : X) (4 * r b)) := ENNReal.tsum_mul_left.symm
-    _ ≤ ∑' b : u, ∫⁻ y in ball (b : X) (r b), g y ∂μ :=
+    _ = ∑' b : u, t * ν (closedBall (b : α) (4 * r b)) := ENNReal.tsum_mul_left.symm
+    _ ≤ ∑' b : u, ∫⁻ y in ball (b : α) (r b), g y ∂μ :=
         _root_.tsum_le_tsum fun b => hle b (hu b.2)
-    _ = ∫⁻ y in ⋃ b : u, ball (b : X) (r b), g y ∂μ := by
+    _ = ∫⁻ y in ⋃ b : u, ball (b : α) (r b), g y ∂μ := by
         rw [lintegral_iUnion (fun b => measurableSet_ball) hdisj']
     _ ≤ ∫⁻ y, g y ∂μ := setLIntegral_le_lintegral _ _
 

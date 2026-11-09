@@ -26,6 +26,9 @@ The criterion applies over arbitrary smooth finite-dimensional manifolds, includ
 noncompact manifolds and manifolds with boundary, and places no finite-dimensionality
 assumption on the target fibres.
 
+Composition of differentiable Hom-bundle sections is differentiable, including within
+parameter sets (`MDifferentiableWithinAt.clm_bundle_comp`).
+
 The file also records that pulling back a fixed continuous bilinear form on the model fibre
 along a trivialization gives a `C^n` field of bilinear forms over its base set
 (`TauCeti.Manifold.contMDiffOn_trivializationAt_pullbackForm`), conversely that a field of
@@ -681,3 +684,66 @@ theorem _root_.ContMDiffWithinAt.clm_bundle_flip
     (heq.self_of_nhdsWithin (Set.mem_insert x s))
 
 end Flip
+
+section Composition
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {EB EM : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
+  {HB HM : Type*} [TopologicalSpace HB] [TopologicalSpace HM]
+  {IB : ModelWithCorners 𝕜 EB HB} {IM : ModelWithCorners 𝕜 EM HM}
+  {B M : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+  [TopologicalSpace M] [ChartedSpace HM M]
+  {F₁ F₂ F₃ : Type*}
+  [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
+  [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+  [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃]
+  {V₁ V₂ V₃ : B → Type*}
+  [∀ x, AddCommGroup (V₁ x)] [∀ x, Module 𝕜 (V₁ x)] [∀ x, TopologicalSpace (V₁ x)]
+  [∀ x, AddCommGroup (V₂ x)] [∀ x, Module 𝕜 (V₂ x)] [∀ x, TopologicalSpace (V₂ x)]
+  [∀ x, AddCommGroup (V₃ x)] [∀ x, Module 𝕜 (V₃ x)] [∀ x, TopologicalSpace (V₃ x)]
+  [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul 𝕜 (V₂ x)]
+  [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousSMul 𝕜 (V₃ x)]
+  [TopologicalSpace (TotalSpace F₁ V₁)] [TopologicalSpace (TotalSpace F₂ V₂)]
+  [TopologicalSpace (TotalSpace F₃ V₃)]
+  [FiberBundle F₁ V₁] [VectorBundle 𝕜 F₁ V₁]
+  [FiberBundle F₂ V₂] [VectorBundle 𝕜 F₂ V₂]
+  [FiberBundle F₃ V₃] [VectorBundle 𝕜 F₃ V₃]
+  {b : M → B} {s : Set M} {x : M}
+  {A : ∀ y, V₁ (b y) →L[𝕜] V₂ (b y)}
+  {C : ∀ y, V₂ (b y) →L[𝕜] V₃ (b y)}
+
+/-- Composition of differentiable Hom-bundle sections is differentiable within a set.
+The families may lie over a varying base map, and no finite-rank assumption is needed. -/
+theorem MDifferentiableWithinAt.clm_bundle_comp
+    (hC : MDifferentiableWithinAt IM (IB.prod 𝓘(𝕜, F₂ →L[𝕜] F₃))
+      (fun y ↦ TotalSpace.mk' (F₂ →L[𝕜] F₃)
+        (E := fun z ↦ V₂ z →L[𝕜] V₃ z) (b y) (C y)) s x)
+    (hA : MDifferentiableWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂))
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+        (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (A y)) s x) :
+    MDifferentiableWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₃))
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
+        (E := fun z ↦ V₁ z →L[𝕜] V₃ z) (b y) ((C y).comp (A y))) s x := by
+  simp only [mdifferentiableWithinAt_hom_bundle] at hC hA ⊢
+  have h₂ := mem_baseSet_trivializationAt F₂ V₂ (b x)
+  refine ⟨hA.1, (hC.2.clm_comp hA.2).congr_of_eventuallyEq ?_
+    (ContinuousLinearMap.inCoordinates_comp _ _ h₂)⟩
+  filter_upwards [hA.1.continuousWithinAt.preimage_mem_nhdsWithin
+    ((trivializationAt F₂ V₂ (b x)).open_baseSet.mem_nhds h₂)] with y hy
+  exact ContinuousLinearMap.inCoordinates_comp _ _ hy
+
+/-- Composition of Hom-bundle sections differentiable at a point is differentiable there. -/
+theorem MDifferentiableAt.clm_bundle_comp
+    (hC : MDifferentiableAt IM (IB.prod 𝓘(𝕜, F₂ →L[𝕜] F₃))
+      (fun y ↦ TotalSpace.mk' (F₂ →L[𝕜] F₃)
+        (E := fun z ↦ V₂ z →L[𝕜] V₃ z) (b y) (C y)) x)
+    (hA : MDifferentiableAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂))
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+        (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (A y)) x) :
+    MDifferentiableAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₃))
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
+        (E := fun z ↦ V₁ z →L[𝕜] V₃ z) (b y) ((C y).comp (A y))) x :=
+  MDifferentiableWithinAt.clm_bundle_comp hC hA
+
+end Composition
