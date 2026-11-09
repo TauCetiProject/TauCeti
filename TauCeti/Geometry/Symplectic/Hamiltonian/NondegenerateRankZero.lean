@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.EngelSubalgebra
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Quadratic
+public import TauCeti.Geometry.Symplectic.LinearReduction
 import Mathlib.Algebra.Lie.AdjointAction.Basic
 import Mathlib.FieldTheory.Separable
 import TauCeti.Algebra.Lie.AdjointAction.Basic
@@ -35,7 +36,9 @@ This file sets up this notion on a symplectic vector space, the local model of t
 * `TauCeti.SymplecticForm.IsNondegenerateQuadraticFamily ω Q`: the Hamiltonian endomorphisms of a
   family `Q` of quadratic forms generate a Cartan subalgebra of `sp(V, ω)`. This depends only on
   the linear span of the family (`isNondegenerateQuadraticFamily_iff_of_span_eq`), and is
-  invariant under linear symplectomorphisms (`isNondegenerateQuadraticFamily_comp_iff`). By
+  invariant under linear symplectomorphisms (`isNondegenerateQuadraticFamily_comp_iff`). In
+  particular, forms on `V` and the forms they induce on the reduced space of `⊤` are nondegenerate
+  together (`isNondegenerateQuadraticFamily_reduction_iff_of_eq_top`). By
   Mathlib's `LieSubalgebra.normalizer_eq_self_of_engel_le`, a Poisson-commuting family is
   nondegenerate as soon as it contains the Engel subalgebra of one Hamiltonian endomorphism
   (`isNondegenerateQuadraticFamily_of_engel_le`).
@@ -189,6 +192,20 @@ theorem isNondegenerateQuadraticFamily_of_subsingleton [Subsingleton V]
   refine ⟨inferInstance, ?_⟩
   ext a
   simp only [Subsingleton.elim a 0, zero_mem]
+
+/-- Over the whole space, nondegeneracy of a family of reduced quadratic forms is nondegeneracy of
+the original family. -/
+theorem isNondegenerateQuadraticFamily_reduction_iff_of_eq_top {U : Submodule ℝ V} (hU : U = ⊤)
+    (Q : ι → QuadraticForm ℝ V)
+    (hQ : ∀ i, ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar (Q i) w u = 0) :
+    (ω.reduction U).IsNondegenerateQuadraticFamily
+        (fun i ↦ ω.reducedQuadraticForm U (Q i) (hQ i)) ↔
+      ω.IsNondegenerateQuadraticFamily Q := by
+  subst hU
+  rw [← isNondegenerateQuadraticFamily_comp_iff ω.isSymplectomorphism_reducedSpaceTopEquiv]
+  congr! with i
+  ext v
+  simp
 
 /-- **Regular elements give Cartan subalgebras.** A family of pairwise Poisson-commuting quadratic
 forms is nondegenerate as soon as the Engel subalgebra of the Hamiltonian endomorphism of some

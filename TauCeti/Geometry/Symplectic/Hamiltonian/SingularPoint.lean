@@ -62,8 +62,6 @@ hyperbolic and focus-focus blocks is thereby the classification of nondegenerate
   `dim E - 2 rank dF_x`.
 * `TauCeti.SymplecticForm.polar_hessianQuadraticForm_eq_zero_of_mem_orthogonal`: the Hessians of
   critical functions `ℓ ∘ F` vanish on `(ker dF_x)^ω` for Poisson-commuting components.
-* `TauCeti.SymplecticForm.isNondegenerateQuadraticFamily_reduction_iff_of_eq_top`: over the whole
-  space, nondegeneracy of reduced quadratic forms is nondegeneracy of the original forms.
 * `TauCeti.SymplecticForm.isNondegeneratePoint_iff_isNondegenerateRankZeroPoint`: at a critical
   point, nondegeneracy is rank-zero nondegeneracy.
 * `TauCeti.SymplecticForm.isNondegeneratePoint_of_two_mul_finrank_range`: regular points of
@@ -166,39 +164,6 @@ section Hessian
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup G] [NormedSpace ℝ G] (ω : SymplecticForm E) {F : E → G} {x : E}
-
-/-- **The Hamiltonian vector of a commuting function lies in the radical of the Hessian.** If `f`
-is `C²` and critical at `x`, and `H` is `C²` at `x` and Poisson-commutes with `f` on a
-neighbourhood of `x`, then the Hessian of `f` at `x` pairs `X_H(x)` with every vector to zero.
-Indeed `df(X_H) = -{H, f}` vanishes near `x`, and its derivative at `x` is
-`v ↦ D²f_x(v, X_H(x))` because `df_x = 0`. -/
-theorem polar_hessianQuadraticForm_hamiltonianVectorField_eq_zero {f H : E → ℝ}
-    (hf : ContDiffAt ℝ 2 f x) (hfx : fderiv ℝ f x = 0) (hH : ContDiffAt ℝ 2 H x)
-    (hHf : ω.poissonBracket H f =ᶠ[𝓝 x] 0) (v : E) :
-    QuadraticMap.polar (hessianQuadraticForm f x) (ω.hamiltonianVectorField H x) v = 0 := by
-  have hdf := (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
-  have hdH := (hH.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
-  have hX : DifferentiableAt ℝ (ω.hamiltonianVectorField H) x := by
-    have hdef : ω.hamiltonianVectorField H =
-        fun y ↦ ω.toBilinForm.toContinuousBilinearMap.inverse (fderiv ℝ H y) :=
-      funext (hamiltonianVectorField_def ω H)
-    rw [hdef]
-    exact (ω.toBilinForm.toContinuousBilinearMap.inverse.hasFDerivAt.comp x
-      hdH.hasFDerivAt).differentiableAt
-  -- The function `y ↦ df_y (X_H y) = -{H, f}(y)` vanishes near `x`.
-  have hzero : (fun y ↦ fderiv ℝ f y (ω.hamiltonianVectorField H y)) =ᶠ[𝓝 x] fun _ ↦ 0 := by
-    filter_upwards [hHf] with y hy
-    rw [← apply_hamiltonianVectorField, ← neg_eq_zero, ω.neg_eq]
-    simpa [poissonBracket_def] using hy
-  have hderiv := hdf.hasFDerivAt.clm_apply hX.hasFDerivAt
-  rw [hzero.hasFDerivAt_iff, hfx, ContinuousLinearMap.zero_comp, zero_add] at hderiv
-  have h0 := congr($((hasFDerivAt_const (0 : ℝ) x).unique hderiv) v)
-  simp only [zero_apply, ContinuousLinearMap.flip_apply] at h0
-  rw [QuadraticMap.polar]
-  simp only [hessianQuadraticForm_apply, map_add, add_apply]
-  rw [hf.isSymmSndFDerivAt (by simp [minSmoothness_of_isRCLikeNormedField])
-    (ω.hamiltonianVectorField H x) v, ← h0]
-  ring
 
 /-- **Hessians of critical components vanish on `(ker dF_x)^ω`.** Let `F` be `C²` at `x` and let
 `ℓ` vanish on the image of `dF_x`. If every function `ℓ' ∘ F` Poisson-commutes with `ℓ ∘ F` on a
@@ -303,20 +268,6 @@ theorem isNondegeneratePoint_of_two_mul_finrank_range (hF : ContDiffAt ℝ 2 F x
     Module.finrank_zero_iff (R := ℝ).1 (by omega)
   exact (isNondegeneratePoint_iff_of_poissonBracket hF hcomm).2
     (isNondegenerateQuadraticFamily_of_subsingleton _)
-
-/-- Over the whole space, nondegeneracy of a family of reduced quadratic forms is nondegeneracy of
-the original family. -/
-theorem isNondegenerateQuadraticFamily_reduction_iff_of_eq_top {ι : Type*}
-    {U : Submodule ℝ E} (hU : U = ⊤) (Q : ι → QuadraticForm ℝ E)
-    (hQ : ∀ i, ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar (Q i) w u = 0) :
-    (ω.reduction U).IsNondegenerateQuadraticFamily
-        (fun i ↦ ω.reducedQuadraticForm U (Q i) (hQ i)) ↔
-      ω.IsNondegenerateQuadraticFamily Q := by
-  subst hU
-  rw [← isNondegenerateQuadraticFamily_comp_iff ω.isSymplectomorphism_reducedSpaceTopEquiv]
-  congr! with i
-  ext v
-  simp
 
 /-- **Comparison with rank zero.** At a critical point of `F`, the transversal space is the whole
 space and `x` is a nondegenerate point exactly when it is a nondegenerate rank-zero point. -/
