@@ -330,11 +330,12 @@ end TauCeti
 modulo `N = p ^ f - 1`, where `f = φ(pⁿ)`, agree modulo `pⁿ`: modulo `N` the class of `p` has
 order exactly `f`, and `a ^ f = 1` modulo `pⁿ`. -/
 theorem ZMod.unitsMap_eq_of_zpow_of_unitsMap_eq {p m n : ℕ} (hp : 1 < p)
-    (hf : (p ^ n).totient ≠ 0) (hpN : p.Coprime (p ^ (p ^ n).totient - 1))
     (hdN : p ^ (p ^ n).totient - 1 ∣ m) (hdP : p ^ n ∣ m) {r a : (ZMod m)ˣ} {k : ℤ}
     (hra : r = a ^ k) (hqN : (a : ZMod m).cast = (p : ZMod (p ^ (p ^ n).totient - 1)))
     (hqN' : (r : ZMod m).cast = (p : ZMod (p ^ (p ^ n).totient - 1))) :
     ZMod.unitsMap hdP r = ZMod.unitsMap hdP a := by
+  have hf : (p ^ n).totient ≠ 0 := (Nat.totient_pos.2 (pow_pos (zero_lt_one.trans hp) n)).ne'
+  have hpN : p.Coprime (p ^ (p ^ n).totient - 1) := Nat.coprime_pow_sub_one p _ hp hf
   have hqN₁ : ZMod.unitsMap hdN a = ZMod.unitOfCoprime p hpN :=
     Units.ext (by rw [ZMod.unitsMap_val, hqN, ZMod.coe_unitOfCoprime])
   have hqN₂ : ZMod.unitsMap hdN r = ZMod.unitOfCoprime p hpN :=

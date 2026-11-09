@@ -251,7 +251,7 @@ private theorem toZModPow_localCyclotomicCharacter_of_mk_eq_artinMap {u : ℤ_[p
     (restrictNormalHom_mem_zpowers_of_mk_eq_artinMap p g hg m ρ hρm E
       (IntermediateField.adjoin.mono ℚ_[p] {ζ} {z | z ^ m = 1}
         (Set.singleton_subset_iff.2 hζ.pow_eq_one)))
-  have hP := ZMod.unitsMap_eq_of_zpow_of_unitsMap_eq (Fact.out : p.Prime).one_lt hf hpN hdN hdP
+  have hP := ZMod.unitsMap_eq_of_zpow_of_unitsMap_eq (Fact.out : p.Prime).one_lt hdN hdP
     (a := hζ'.autToPow ℚ_[p] gE) (k := k) (by simp only [r, ← hk, map_zpow])
     (hζ'.cast_autToPow_restrictNormalHom_eq hdN g hgN) hρN'
   rw [← hgP, ← hρP, ← ZMod.unitsMap_val hdP, ← ZMod.unitsMap_val hdP, hP]
