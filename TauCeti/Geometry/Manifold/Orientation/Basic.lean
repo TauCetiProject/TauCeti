@@ -238,6 +238,7 @@ protected theorem neg_neg (o : Orientation I M ι) : - -o = o := by
   induction o using Orientation.inductionOn with | h l =>
   rw [neg_mk, neg_mk, OrientationLift.neg_neg]
 
+omit [IsManifold I 1 M] in
 instance : InvolutiveNeg (Orientation I M ι) where
   neg_neg := Orientation.neg_neg
 
