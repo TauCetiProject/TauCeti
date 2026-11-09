@@ -18,7 +18,7 @@ arguments `a i` with `‖a i‖ ≤ c i`, provided `S` is complete and ultrametr
 bound `C` and is the unique continuous ring homomorphism with the prescribed values on
 constants and variables.
 
-`MvPowerSeries.restrictedEval₂OfBound` first applies the bounded coefficient map
+`RingHom.restrictedEval₂OfBound` first applies the bounded coefficient map
 `TauCeti.MvPowerSeries.restrictedMap`, then evaluates over `S` along its identity map using
 `MvPowerSeries.restrictedEval₂`. Thus it uses the same convergent monomial sum as contractive
 evaluation, and agrees with that evaluation whenever the coefficient map is contractive.
@@ -31,8 +31,9 @@ The construction commutes with bounded coefficient maps and continuous maps of t
 
 public section
 
-namespace MvPowerSeries
+namespace RingHom
 
+open MvPowerSeries
 open TauCeti.Huber
 open TauCeti.MvPowerSeries (restrictedMap coe_restrictedMap norm_restrictedMap_le
   continuous_restrictedMap polynomialToRestricted restrictedMap_polynomialToRestricted
@@ -170,4 +171,4 @@ theorem map_restrictedEval₂OfBound (θ : S →+* T) (hθ : Continuous θ) {D :
 
 end Naturality
 
-end MvPowerSeries
+end RingHom
