@@ -159,6 +159,7 @@ theorem exists_pairOfDefinition_map_eq (hf : IsAdicHom f) (P : PairOfDefinition 
   exact exists_pairOfDefinition_of_continuous P hf.continuous
     (hf.isOpen_map P.isOpen_extendedIdealOfDefinition)
 
+omit [IsTopologicalRing B] in
 /-- An open quotient homomorphism from a Huber ring is adic. -/
 theorem of_isOpenQuotientMap [IsHuberRing A] (hf : IsOpenQuotientMap f) :
     IsAdicHom f := by

@@ -514,7 +514,7 @@ theorem laurentQExpansion_eq_upperHalfPlane_laurentQExpansion (D : Γ.CuspDatum)
       UpperHalfPlane.laurentQExpansion D.width fun z ↦ f (D.scaling⁻¹ • z) := by
   have hk : k ≤ (k.toNat : ℤ) := Int.self_le_toNat k
   have han := analyticAt_twistedExtension_zero D k.toNat f hf (.of_forall fun z ↦ hhol _)
-    (TauCeti.UpperHalfPlane.isBigO_exp_of_le D.width D.width_pos (by exact_mod_cast hk) hbound)
+    (TauCeti.UpperHalfPlane.isBigO_exp_of_le D.width_pos.le (by exact_mod_cast hk) hbound)
   simp only [twistedExtension_def, cuspExtension_def, cuspTwist_inv_smul, zpow_natCast] at han
   rw [laurentQExpansion_eq_of_le D f hk hf hhol hbound,
     UpperHalfPlane.laurentQExpansion_eq_of_analyticAt_qParam_pow_mul D.width_pos han,

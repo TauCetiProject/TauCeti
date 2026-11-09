@@ -33,9 +33,10 @@ carrying one finite family to another with the same equality pattern
 (`TauCeti.exists_perm_apply_eq_of_eq_iff`), the fact that a permutation
 is a single cycle on each of its own orbits, the transport of its cycles along an equivalence of
 types, transport of cycle quotients along conjugating equivalences, and the factorization of an
-invariant function through a map on whose fibres the permutation is a single cycle, and a correction
-by a power of a cycle for a permutation commuting with it. Points over distinct classes of the cycle
-quotient are distinct (`Equiv.Perm.ne_of_sameCycle_out`), every such class is nonempty
+invariant function through a map on whose fibres the permutation is a single cycle, also stated
+for the difference `x ↦ c (σ⁻¹ x) - c x` (`Equiv.Perm.forall_comp_symm_sub_eq_zero_iff`), and a
+correction by a power of a cycle for a permutation commuting with it. Points over distinct classes
+of the cycle quotient are distinct (`Equiv.Perm.ne_of_sameCycle_out`), every such class is nonempty
 (`Equiv.Perm.card_sameCycle_out_pos`), and precomposing with `σ` does not change a sum over a
 `σ`-orbit (`Equiv.Perm.sum_filter_sameCycle_comp`). It also identifies functions invariant under a
 permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`). Finally, right
@@ -207,6 +208,22 @@ theorem factorsThrough_of_forall_isCycleOn {ι β : Type*} {g : α → ι}
     (hσ : ∀ i, σ.IsCycleOn {x | g x = i}) {f : α → β} (hf : ∀ x, f (σ x) = f x) :
     f.FactorsThrough g :=
   fun _ b hab => ((hσ (g b)).2 hab rfl).apply_eq_of_apply_eq hf
+
+/-- If `σ` is a single cycle on each fibre of `g`, then a function `c` has vanishing difference
+`x ↦ c (σ⁻¹ x) - c x` exactly when it factors through `g`. -/
+theorem forall_comp_symm_sub_eq_zero_iff {ι M : Type*} [AddGroup M] {g : α → ι}
+    (hσ : ∀ i, σ.IsCycleOn {x | g x = i}) (c : α → M) :
+    (∀ x, c (σ.symm x) - c x = 0) ↔ ∃ a : ι → M, ∀ x, c x = a (g x) := by
+  simp only [sub_eq_zero]
+  constructor
+  · intro hc
+    obtain ⟨a, ha⟩ := (Function.factorsThrough_iff _).mp
+      (σ.factorsThrough_of_forall_isCycleOn hσ fun x => by simpa using (hc (σ x)).symm)
+    exact ⟨a, congrFun ha⟩
+  · rintro ⟨a, ha⟩ x
+    have hg : g (σ (σ.symm x)) = g (σ.symm x) := (hσ (g (σ.symm x))).1.mapsTo rfl
+    rw [Equiv.apply_symm_apply] at hg
+    rw [ha, ha, hg]
 
 variable {σ} in
 /-- Points in the orbits of the representatives of two distinct classes of the cycle quotient

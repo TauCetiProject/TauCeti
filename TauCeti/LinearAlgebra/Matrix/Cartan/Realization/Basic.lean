@@ -105,6 +105,10 @@ theorem rootEvaluation_corootMap (c : I → K) :
 /-- The span of the simple coroots, as an embedded coordinate space. -/
 def corootSpan : Submodule K H := Submodule.span K (Set.range R.coroot)
 
+omit [Fintype I] in
+/-- The coroot span is the span of the simple coroots. -/
+theorem corootSpan_def : R.corootSpan = Submodule.span K (Set.range R.coroot) := (rfl)
+
 /-- The coroot embedding has image the coroot span. -/
 theorem range_corootMap : LinearMap.range R.corootMap = R.corootSpan :=
   Fintype.range_linearCombination K R.coroot
@@ -270,6 +274,10 @@ section FiniteDimensional
 def IsMinimal (_R : CartanRealization A H) : Prop :=
   FiniteDimensional K H ∧ finrank K H = 2 * Fintype.card I - A.rank
 
+variable {R} in
+/-- A minimal realization has finite-dimensional ambient space. -/
+theorem IsMinimal.finiteDimensional (hR : R.IsMinimal) : FiniteDimensional K H := hR.1
+
 variable [FiniteDimensional K H]
 
 omit [Fintype I] in
@@ -359,6 +367,28 @@ theorem isMinimal_iff_cartanCenter_le_corootSpan :
     rw [inf_eq_left.mpr h] at hi
     omega
 
+omit [FiniteDimensional K H] in
+/-- A realization of a nonsingular matrix is minimal exactly when the simple coroots span
+its ambient space. Either condition implies finite dimensionality. -/
+theorem isMinimal_iff_corootSpan_eq_top [DecidableEq I] (hA : IsUnit A) :
+    R.IsMinimal ↔ R.corootSpan = ⊤ := by
+  classical
+  have hrank := Matrix.rank_of_isUnit A hA
+  constructor
+  · intro hR
+    let := hR.finiteDimensional
+    have h := R.isMinimal_iff.mp hR
+    rw [hrank] at h
+    apply Submodule.eq_top_of_finrank_eq
+    rw [R.finrank_corootSpan]
+    omega
+  · intro h
+    let := Module.Finite.of_basis (Basis.mk R.coroot_linearIndependent (le_of_eq h.symm))
+    rw [R.isMinimal_iff, hrank]
+    have hd := R.finrank_corootSpan
+    rw [h, finrank_top] at hd
+    omega
+
 end FiniteDimensional
 
 section Transport
@@ -437,6 +467,44 @@ theorem isMinimal_map (e : H ≃ₗ[K] H') : (R.map e).IsMinimal ↔ R.IsMinimal
   · rintro ⟨hfin, hdim⟩
     let := hfin
     exact ⟨e.finiteDimensional, by rw [← e.finrank_eq]; exact hdim⟩
+
+omit [Fintype I] in
+/-- If the coroots span both realizations, there is a unique linear equivalence preserving
+all simple roots and coroots. Unlike the singular minimal case, the coroots form a basis. -/
+theorem existsUnique_linearEquiv_of_corootSpan_eq_top (S : CartanRealization A H')
+    (hR : R.corootSpan = ⊤) (hS : S.corootSpan = ⊤) :
+    ∃! e : H ≃ₗ[K] H', R.map e = S := by
+  let b := Basis.mk R.coroot_linearIndependent (le_of_eq hR.symm)
+  let c := Basis.mk S.coroot_linearIndependent (le_of_eq hS.symm)
+  have hb (i : I) : b i = R.coroot i := Basis.mk_apply _ _ i
+  have hc (i : I) : c i = S.coroot i := Basis.mk_apply _ _ i
+  let e := b.equiv c (Equiv.refl I)
+  have he (i : I) : e (R.coroot i) = S.coroot i := by
+    simpa only [hb, hc, Equiv.refl_apply] using b.equiv_apply i c (Equiv.refl I)
+  refine ⟨e, (R.map e).ext (fun i => he i) (fun i => ?_), ?_⟩
+  · have hf : (S.root i).comp e.toLinearMap = R.root i := by
+      apply b.ext
+      intro j
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, hb, he, root_coroot]
+    ext h
+    simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
+      map_root_apply] using (LinearMap.congr_fun hf (e.symm h)).symm
+  · intro f hf
+    apply LinearEquiv.toLinearMap_injective
+    apply b.ext
+    intro i
+    have hfc : f (R.coroot i) = S.coroot i :=
+      congrArg (fun T : CartanRealization A H' => T.coroot i) hf
+    simpa only [LinearEquiv.coe_coe, hb] using hfc.trans (he i).symm
+
+/-- Minimal realizations of a nonsingular matrix have a unique root- and coroot-preserving
+isomorphism. Singular matrices need not have uniqueness. -/
+theorem existsUnique_linearEquiv_of_isMinimal [DecidableEq I]
+    (S : CartanRealization A H') (hA : IsUnit A) (hR : R.IsMinimal) (hS : S.IsMinimal) :
+    ∃! e : H ≃ₗ[K] H', R.map e = S := by
+  exact R.existsUnique_linearEquiv_of_corootSpan_eq_top S
+    ((R.isMinimal_iff_corootSpan_eq_top hA).mp hR)
+    ((S.isMinimal_iff_corootSpan_eq_top hA).mp hS)
 
 end Transport
 
