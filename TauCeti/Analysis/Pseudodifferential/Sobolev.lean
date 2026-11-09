@@ -702,6 +702,7 @@ theorem quantizeSobolev_smul (ha : a.HasCompactSpatialSupport) (c : ℂ)
   exact integral_smul c _
 
 /-- The zero symbol quantizes to the zero operator `H^s → H^{s - m}`. -/
+@[simp]
 theorem quantizeSobolev_zero (h : (0 : Symbol n V W m).HasCompactSpatialSupport) (s : ℝ) :
     (0 : Symbol n V W m).quantizeSobolev h s = 0 := by
   have h₀ := quantizeSobolev_add h h (by rwa [add_zero]) s
