@@ -118,7 +118,8 @@ theorem sum_abs_le_two_mul_sum_abs_sum_mul {α β : Type*} [Fintype β]
     (fun a ha b hb => hinj a (mem_of_mem_erase ha) b (mem_of_mem_erase hb))
     (fun a => v a + if a = t' then v t else 0) ((sum_erase_merge ht'A' htA v).trans hv)
   -- The vectors of `t` and `t'` differ somewhere, so `t` exceeds `t'` by at least `1` in total.
-  have hgap := Finset.one_le_sum_sub_of_lt <| lt_of_le_of_ne (ht t' (mem_of_mem_erase ht'A'))
+  have hgap := Finset.one_le_sum_sub_of_lt (R := ℝ) <|
+    lt_of_le_of_ne (ht t' (mem_of_mem_erase ht'A'))
     fun h => (ne_of_mem_erase ht'A') (hinj t' (mem_of_mem_erase ht'A') t htA h)
   -- Removing `t` costs `|v t|` once on the left and at least `|v t|` on the right.
   have hright : ∑ i, |∑ a ∈ A, v a * C a i| =

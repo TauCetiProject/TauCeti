@@ -17,9 +17,10 @@ A chain need not have a greatest element, and a finite set need not have one eit
 chain always does: comparability upgrades a maximal element to a greatest one. Dually, a minimal
 element of a finite chain is least.
 
-The order is an arbitrary reflexive transitive `≤` rather than a `Preorder`, matching the level of
-`Set.Finite.exists_maximal` and `Set.Finite.exists_minimal`, so the results also apply to a
-relation carrying no `Preorder` instance. Every preorder supplies both instances.
+For the `IsChain` lemmas the order is an arbitrary reflexive transitive `≤` rather than a
+`Preorder`, matching the level of `Set.Finite.exists_maximal` and `Set.Finite.exists_minimal`, so
+these results also apply to a relation carrying no `Preorder` instance. Every preorder supplies
+both instances. The `Finset` lemma is stated for a `Preorder`.
 
 ## Main results
 

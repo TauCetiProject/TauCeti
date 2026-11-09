@@ -7,32 +7,34 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
-public import Mathlib.Basic.Real.Basic
+public import Mathlib.Algebra.Order.Ring.Cast
 import Mathlib.Algebra.Order.Group.Nat
 import Mathlib.Data.Fintype.BigOperators
 
 /-!
 # Sums of differences of natural-valued functions
 
-If `c < d` as functions from a finite type to the natural numbers, then the real differences
-`d i - c i` sum to at least `1`.
+If `c ≤ d` pointwise and `c ≠ d` (that is, `c < d` in the pointwise order) for functions from a
+finite type to the natural numbers, then the differences `d i - c i`, computed in a linearly
+ordered ring, sum to at least `1`.
 
 ## Main results
 
-* `Finset.one_le_sum_sub_of_lt`: `1 ≤ ∑ i, ((d i : ℝ) - c i)` for `c < d`.
+* `Finset.one_le_sum_sub_of_lt`: `1 ≤ ∑ i, ((d i : R) - c i)` for `c < d`.
 -/
 
 public section
 
 open Finset
 
-/-- If `c < d` coordinatewise on a finite index type, the differences sum to at least `1`. -/
-theorem Finset.one_le_sum_sub_of_lt {β : Type*} [Fintype β] {c d : β → ℕ} (h : c < d) :
-    1 ≤ ∑ i, ((d i : ℝ) - c i) := by
+/-- If `c ≤ d` pointwise and `c ≠ d` (that is, `c < d` in the pointwise order) on a finite index
+type, the differences `d i - c i` sum to at least `1`. -/
+theorem Finset.one_le_sum_sub_of_lt {R β : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+    [Fintype β] {c d : β → ℕ} (h : c < d) : 1 ≤ ∑ i, ((d i : R) - c i) := by
   obtain ⟨i₀, hi₀⟩ := Pi.lt_def.mp h |>.2
-  calc (1 : ℝ) ≤ (d i₀ : ℝ) - c i₀ := by
+  calc (1 : R) ≤ (d i₀ : R) - c i₀ := by
         rw [le_sub_iff_add_le', ← Nat.cast_one, ← Nat.cast_add, Nat.cast_le]
         omega
-    _ ≤ ∑ i, ((d i : ℝ) - c i) :=
-        single_le_sum (f := fun i => (d i : ℝ) - c i)
+    _ ≤ ∑ i, ((d i : R) - c i) :=
+        single_le_sum (f := fun i => (d i : R) - c i)
           (fun i _ => sub_nonneg.mpr (Nat.cast_le.mpr (h.le i))) (mem_univ i₀)
