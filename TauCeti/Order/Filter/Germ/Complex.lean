@@ -46,39 +46,6 @@ private theorem eval₂_coeRingHom_eq_zero (P : (MvPolynomial σ ℂ)[X]) {f : (
   simp only [hu]
   exact hrel
 
-/-- Real germs embed into complex germs as an injective algebra map over the coordinate
-polynomials. -/
-private theorem exists_injective_algHom_germ_ofReal
-    [Algebra (MvPolynomial σ ℝ) (Germ l ℝ)] [Algebra (MvPolynomial σ ℝ) (Germ l ℂ)]
-    (hA : ∀ p : MvPolynomial σ ℝ, algebraMap _ (Germ l ℝ) p =
-      ((fun y ↦ MvPolynomial.eval y p : (σ → ℝ) → ℝ) : Germ l ℝ))
-    (hB : ∀ p : MvPolynomial σ ℝ, algebraMap _ (Germ l ℂ) p =
-      ((fun y ↦ (MvPolynomial.eval y p : ℂ) : (σ → ℝ) → ℂ) : Germ l ℂ)) :
-    ∃ g : Germ l ℝ →ₐ[MvPolynomial σ ℝ] Germ l ℂ, Function.Injective g ∧
-      ∀ u : (σ → ℝ) → ℝ, g (u : Germ l ℝ) = ((fun y ↦ (u y : ℂ) : (σ → ℝ) → ℂ) : Germ l ℂ) := by
-  obtain ⟨g, hg⟩ := RingHom.exists_algHom_mapGerm (A := MvPolynomial σ ℝ) (algebraMap ℝ ℂ)
-    (l := l) fun p ↦ by
-      rw [hA, hB, RingHom.mapGerm_coe, Complex.coe_algebraMap]
-      rfl
-  exact ⟨g, fun a b hab ↦ (algebraMap ℝ ℂ).mapGerm_injective l Complex.ofReal_injective
-      (by rwa [hg, hg] at hab), fun u ↦ by rw [hg]; exact RingHom.mapGerm_coe _ _ _⟩
-
-/-- Complex conjugation of germs is an algebra automorphism over the real coordinate
-polynomials. -/
-private theorem exists_algHom_germ_star [Algebra (MvPolynomial σ ℝ) (Germ l ℂ)]
-    (hB : ∀ p : MvPolynomial σ ℝ, algebraMap _ (Germ l ℂ) p =
-      ((fun y ↦ (MvPolynomial.eval y p : ℂ) : (σ → ℝ) → ℂ) : Germ l ℂ)) :
-    ∃ j : Germ l ℂ →ₐ[MvPolynomial σ ℝ] Germ l ℂ,
-      ∀ u : (σ → ℝ) → ℂ,
-        j (u : Germ l ℂ) = ((fun y ↦ star (u y) : (σ → ℝ) → ℂ) : Germ l ℂ) := by
-  obtain ⟨j, hj⟩ := RingHom.exists_algHom_mapGerm (A := MvPolynomial σ ℝ) (starRingEnd ℂ)
-    (l := l) fun p ↦ by
-      rw [hB, RingHom.mapGerm_coe]
-      congr 1
-      funext y
-      exact Complex.conj_ofReal _
-  exact ⟨j, fun u ↦ by rw [hj]; exact RingHom.mapGerm_coe _ _ _⟩
-
 end Helpers
 
 end Polynomial
@@ -99,21 +66,13 @@ theorem isAlgebraic_re_im {α : Type*} {l : Filter α} {R : Type*} [CommRing R] 
     rw [← Germ.coe_add f (fun y ↦ star (f y)), ← Germ.coe_mul]
     congr 1
     funext y
-    apply Complex.ext <;> simp only [Complex.ofReal_re, RCLike.star_def, one_div, Pi.mul_apply,
-      Pi.add_apply, Complex.mul_re, Complex.add_re, Complex.conj_re, Complex.inv_re,
-      Complex.re_ofNat, Complex.normSq_ofNat, div_self_mul_self', Complex.add_im, Complex.conj_im,
-      add_neg_cancel, Complex.inv_im, Complex.im_ofNat, neg_zero, zero_div, mul_zero, sub_zero,
-      Complex.ofReal_im, Complex.mul_im, zero_mul, add_zero]
+    apply Complex.ext <;> simp [Complex.mul_re, Complex.mul_im]
     ring
   · convert (hf.sub hconj).mul (hc (-(Complex.I / 2))) using 1
     rw [← Germ.coe_sub f (fun y ↦ star (f y)), ← Germ.coe_mul]
     congr 1
     funext y
-    simp only [RCLike.star_def, Pi.mul_apply, Pi.sub_apply, mul_neg, Complex.ext_iff,
-      Complex.ofReal_re, Complex.neg_re, Complex.mul_re, Complex.sub_re, Complex.conj_re, sub_self,
-      Complex.div_ofNat_re, Complex.I_re, zero_div, mul_zero, Complex.sub_im, Complex.conj_im,
-      sub_neg_eq_add, Complex.div_ofNat_im, Complex.I_im, one_div, zero_sub, neg_neg,
-      Complex.ofReal_im, Complex.neg_im, Complex.mul_im, zero_mul, add_zero, neg_zero, and_true]
+    simp [Complex.ext_iff, Complex.mul_re, Complex.mul_im]
     ring
 
 end Filter.Germ
@@ -161,18 +120,27 @@ theorem exists_real_polynomial_relations {σ : Type*} {l : Filter (σ → ℝ)}
     exact eval₂_coeRingHom_eq_zero P hrel
   have halgR : IsAlgebraic R (f : B) := halg.restrictScalars_of_isIntegral R
   let : Algebra R (Germ l ℝ) := Germ.mvPolynomialAlgebra l
-  obtain ⟨g, hg, hg_apply⟩ := exists_injective_algHom_germ_ofReal
-    (Germ.mvPolynomialAlgebra_algebraMap_apply l) hB
-  obtain ⟨j, hj_apply⟩ := exists_algHom_germ_star hB
+  -- The real inclusion and conjugation act on germs over the real coordinate polynomials.
+  let g : Germ l ℝ →ₐ[R] B := (algebraMap ℝ ℂ).mapGermAlgHom l fun p ↦ by
+    rw [Germ.mvPolynomialAlgebra_algebraMap_apply, hB, RingHom.mapGerm_coe,
+      Complex.coe_algebraMap, Function.comp_def]
+  have hg : Function.Injective g := by
+    simp only [g, B, RingHom.coe_mapGermAlgHom]
+    exact (algebraMap ℝ ℂ).mapGerm_injective l Complex.ofReal_injective
+  let j : B →ₐ[R] B := (starRingEnd ℂ).mapGermAlgHom l fun p ↦ by
+    rw [hB, RingHom.mapGerm_coe, Function.comp_def]
+    simp only [Complex.conj_ofReal]
   have hc (z : ℂ) : IsAlgebraic R ((fun _ : σ → ℝ ↦ z) : B) := by
     have hz' : IsIntegral R (MvPolynomial.C z : S) := Algebra.IsIntegral.isIntegral _
     convert hz'.isAlgebraic.algHom (IsScalarTower.toAlgHom R S B) using 1
     simp only [IsScalarTower.toAlgHom_apply, RingHom.algebraMap_toAlgebra, hs,
       MvPolynomial.eval_C]
   -- Recover the two components from f and its conjugate, then reflect along the real inclusion.
-  obtain ⟨hre, him⟩ := Germ.isAlgebraic_re_im halgR (hj_apply f ▸ halgR.algHom j) hc
+  obtain ⟨hre, him⟩ := Germ.isAlgebraic_re_im halgR
+    (by simpa [j, B, Function.comp_def] using halgR.algHom j) hc
   exact ⟨Germ.isAlgebraic_coe_iff.mp ((isAlgebraic_algHom_iff g hg).mp
-      (by rwa [hg_apply])),
-    Germ.isAlgebraic_coe_iff.mp ((isAlgebraic_algHom_iff g hg).mp (by rwa [hg_apply]))⟩
+      (by simpa [g, B, Function.comp_def] using hre)),
+    Germ.isAlgebraic_coe_iff.mp ((isAlgebraic_algHom_iff g hg).mp
+      (by simpa [g, B, Function.comp_def] using him))⟩
 
 end Polynomial

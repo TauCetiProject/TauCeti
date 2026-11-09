@@ -55,11 +55,19 @@ theorem mapGerm_injective (f : R →+* S) (l : Filter α) (hf : Function.Injecti
 
 /-- A ring homomorphism `φ : R →+* S` induces an algebra homomorphism between germs whenever it
 is compatible with algebra structures over a common commutative semiring `A`. -/
-theorem exists_algHom_mapGerm {l : Filter α} {A : Type*} [CommSemiring A]
-    [Algebra A (Filter.Germ l R)] [Algebra A (Filter.Germ l S)] (φ : R →+* S)
+def mapGermAlgHom (φ : R →+* S) (l : Filter α) {A : Type*} [CommSemiring A]
+    [Algebra A (Filter.Germ l R)] [Algebra A (Filter.Germ l S)]
     (h : ∀ a : A, φ.mapGerm l (algebraMap A (Filter.Germ l R) a) =
       algebraMap A (Filter.Germ l S) a) :
-    ∃ g : Filter.Germ l R →ₐ[A] Filter.Germ l S, ∀ x, g x = φ.mapGerm l x :=
-  ⟨{ φ.mapGerm l with commutes' := h }, fun _ ↦ rfl⟩
+    Filter.Germ l R →ₐ[A] Filter.Germ l S :=
+  { φ.mapGerm l with commutes' := h }
+
+@[simp]
+theorem coe_mapGermAlgHom (φ : R →+* S) (l : Filter α) {A : Type*} [CommSemiring A]
+    [Algebra A (Filter.Germ l R)] [Algebra A (Filter.Germ l S)]
+    (h : ∀ a : A, φ.mapGerm l (algebraMap A (Filter.Germ l R) a) =
+      algebraMap A (Filter.Germ l S) a) :
+    ⇑(φ.mapGermAlgHom l h) = φ.mapGerm l := by
+  simp [mapGermAlgHom]
 
 end RingHom
