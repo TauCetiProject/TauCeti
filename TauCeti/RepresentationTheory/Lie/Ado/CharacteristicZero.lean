@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.LeviDecomposition.Solvable
 public import TauCeti.Algebra.Lie.Prod
 public import TauCeti.RepresentationTheory.Lie.Abelian
-import TauCeti.Algebra.Lie.SemiDirect.AdNilpotent
 import TauCeti.RepresentationTheory.Lie.AdNilpotent
 public import TauCeti.RepresentationTheory.Lie.EnvelopingExtension.Nilrepresentation
 import TauCeti.LinearAlgebra.End.Prod
@@ -156,10 +155,12 @@ private theorem isAdoStage_of_sup {T T' H : LieSubalgebra K L}
       exact hσN _ hzN
     · -- every component in `H` is `ad`-nilpotent, so its derivation of `I` is nilpotent
       have hloc (r : H') (s : I) : ∃ n : ℕ, ((ψ r).toLinearMap ^ n) s = 0 := by
-        obtain ⟨n, hn⟩ := LieIdeal.isNilpotent_ad_toLinearMap_of_isNilpotent_ad I (H'.incl r)
-          (LieAlgebra.isNilpotent_ad_of_mem_nilradical
-            (hN _ (hHT' r.2)))
-        exact ⟨n, LinearMap.congr_fun hn s⟩
+        obtain ⟨n, hn⟩ := I.isNilpotent_toEnd_of_isNilpotent_ad (H'.incl r)
+          (T'.isNilpotent_ad_of_isNilpotent_ad
+            (LieAlgebra.isNilpotent_ad_of_mem_nilradical (hN _ (hHT' r.2))))
+        have hψr : (ψ r).toLinearMap = LieModule.toEnd K T' I (H'.incl r) :=
+          LinearMap.ext fun s ↦ LieIdeal.ad_apply_apply I _ s
+        exact ⟨n, by rw [hψr]; exact LinearMap.congr_fun hn s⟩
       exact hall (fun s ↦ hσN _ (hN _ (hTT' ((ι s).2)))) _ fun s ↦ hloc _ s
 
 /-- **A codimension-one step of the Ado flag.** An Ado stage at `T` extends to the Lie span

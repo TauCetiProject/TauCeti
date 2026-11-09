@@ -60,11 +60,10 @@ theorem toLieSubalgebra_idealOfLeNormalizer (hT' : T' ≤ T.normalizer) (hle : T
 /-- If a Lie subalgebra `T'` lies in the sum of `T` and a Lie subalgebra `H` normalizing `T`, then
 `T'` normalizes `T`. -/
 theorem le_normalizer_of_le_sup (hsup : T'.toSubmodule ≤ T.toSubmodule ⊔ H.toSubmodule)
-    (hH : H ≤ T.normalizer) : T' ≤ T.normalizer := fun x hx ↦ by
-  obtain ⟨t, ht, h, hh, rfl⟩ := Submodule.mem_sup.mp (hsup hx)
-  refine (mem_normalizer_iff T _).mpr fun y hy ↦ ?_
-  rw [add_lie]
-  exact T.add_mem (T.lie_mem ht hy) ((mem_normalizer_iff T h).mp (hH hh) y hy)
+    (hH : H ≤ T.normalizer) : T' ≤ T.normalizer :=
+  (toSubmodule_le_toSubmodule _ _).mp <| hsup.trans <| sup_le
+    ((toSubmodule_le_toSubmodule _ _).mpr T.le_normalizer)
+    ((toSubmodule_le_toSubmodule _ _).mpr hH)
 
 /-- If the underlying submodules of `T`, `H` and `T'` satisfy `T ⊔ H = T'`, then `T ≤ T'`. -/
 theorem le_left_of_sup_eq (hsup : T.toSubmodule ⊔ H.toSubmodule = T'.toSubmodule) : T ≤ T' :=

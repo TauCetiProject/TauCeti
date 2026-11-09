@@ -60,6 +60,8 @@ This file supplies general constructions for Lie modules that are missing from M
   its image.
 * `LieHom.isNilpotent_ad_of_surjective`: adjoint nilpotence descends along a surjective
   Lie homomorphism.
+* `LieIdeal.isNilpotent_toEnd_of_isNilpotent_ad`: an `ad`-nilpotent element acts nilpotently on
+  every Lie ideal.
 * `LieHom.lieIdealComap_injective`: the restriction of an injective Lie homomorphism to the
   preimage of a Lie ideal is injective.
 * `LieSubmodule.lie_iSup`: bracketing with a Lie ideal distributes over suprema of Lie submodules.
@@ -495,6 +497,14 @@ theorem _root_.LieEquiv.isNilpotent_ad_apply_iff (e : L ≃ₗ⁅R⁆ L') (x : L
   refine ⟨fun h ↦ ?_, e.toLieHom.isNilpotent_ad_of_surjective e.surjective⟩
   simpa only [LieEquiv.coe_toLieHom, LieEquiv.symm_apply_apply] using
     e.symm.toLieHom.isNilpotent_ad_of_surjective e.symm.surjective h
+
+/-- If `x` is `ad`-nilpotent in a Lie algebra `L`, then it acts nilpotently on every Lie ideal `I`
+of `L`, which is a Lie module over `L`. -/
+theorem _root_.LieIdeal.isNilpotent_toEnd_of_isNilpotent_ad (I : LieIdeal R L) (x : L)
+    (hx : IsNilpotent (LieAlgebra.ad R L x)) : IsNilpotent (LieModule.toEnd R L I x) := by
+  obtain ⟨n, hn⟩ := hx
+  exact ⟨n, Module.End.submodule_pow_eq_zero_of_pow_eq_zero (N := I.toSubmodule)
+    (LinearMap.ext fun _ ↦ rfl) hn⟩
 
 variable (f : L →ₗ⁅R⁆ L') (I : LieIdeal R L')
 

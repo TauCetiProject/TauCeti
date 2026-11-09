@@ -27,8 +27,6 @@ dimension, or characteristic zero is required.
   component of a semidirect sum.
 * `LieAlgebra.SemiDirectSum.isNilpotent_derivation_of_isNilpotent_ad_inr`: adjoint nilpotence
   of a complementary element implies nilpotence of its derivation on the ideal.
-* `LieIdeal.isNilpotent_ad_toLinearMap_of_isNilpotent_ad`: an element of a Lie subalgebra `T'` that
-  is `ad`-nilpotent in the ambient algebra acts nilpotently on every ideal of `T'`.
 * `LieIdeal.isNilpotent_ad_right_of_isCompl`: the corresponding result for an internal split
   ideal extension, stated on a sum of elements in the two complementary factors.
 
@@ -91,14 +89,5 @@ theorem _root_.LieIdeal.isNilpotent_ad_right_of_isCompl (J : LieIdeal R L)
     simp [e]
   simpa only [hs] using
     LieAlgebra.SemiDirectSum.isNilpotent_ad_right _ he
-
-/-- If `x` lies in a Lie subalgebra `T'` of `L` and is `ad`-nilpotent in `L`, then its adjoint
-action on any ideal `I` of `T'` is nilpotent. -/
-theorem _root_.LieIdeal.isNilpotent_ad_toLinearMap_of_isNilpotent_ad {T' : LieSubalgebra R L}
-    (I : LieIdeal R T') (x : T') (hx : IsNilpotent (LieAlgebra.ad R L (x : L))) :
-    IsNilpotent (LieIdeal.ad I x).toLinearMap := by
-  obtain ⟨n, hn⟩ := T'.isNilpotent_ad_of_isNilpotent_ad hx
-  exact ⟨n, Module.End.submodule_pow_eq_zero_of_pow_eq_zero (N := I.toSubmodule)
-    (LinearMap.ext fun s ↦ (congrArg Subtype.val (LieIdeal.ad_apply_apply I x s)).symm) hn⟩
 
 end TauCeti
