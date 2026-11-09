@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Chebotarev.FixedField.ExceptionalPrimes
 public import TauCeti.NumberTheory.NumberField.SplittingField
+import TauCeti.Algebra.Polynomial.XPowSubC
 import TauCeti.FieldTheory.GaloisGroups.Cubic
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 import TauCeti.NumberTheory.NumberField.Frobenius.FixedField.Inertia
@@ -125,6 +126,70 @@ private theorem ramificationIdx_eq_three_of_minpoly_eq_X_pow_three_sub_two
   rw [hqX]
   exact multiplicity_pow_self_of_prime prime_X 3
 
+/-- A root of `X ^ 3 - 2` in a `ℚ`-algebra that is a domain has cube equal to `2`. -/
+private theorem pow_three_eq_two_of_mem_rootSet
+    {L : Type*} [CommRing L] [IsDomain L] [Algebra ℚ L] {x : L}
+    (hx : x ∈ (X ^ 3 - 2 : ℚ[X]).rootSet L) : x ^ 3 = 2 := by
+  have h := (mem_rootSet_X_pow_sub_C (F := ℚ) (a := 2) (n := 3) (by norm_num)).mp
+    (by simpa only [map_ofNat] using hx)
+  simpa only [map_ofNat] using h
+
+/-- A root of `X ^ 3 - 2` in a `ℚ`-algebra that is a field is nonzero. -/
+private theorem ne_zero_of_mem_rootSet
+    {L : Type*} [Field L] [Algebra ℚ L] {x : L}
+    (hx : x ∈ (X ^ 3 - 2 : ℚ[X]).rootSet L) : x ≠ 0 := by
+  have : CharZero L := charZero_of_injective_algebraMap (algebraMap ℚ L).injective
+  rintro rfl
+  exact two_ne_zero (by simpa using (pow_three_eq_two_of_mem_rootSet hx).symm)
+
+/-- The quotient of two roots of `X ^ 3 - 2` has cube equal to `1`. -/
+private theorem div_pow_three_eq_one_of_mem_rootSet
+    {L : Type*} [Field L] [Algebra ℚ L] {x y : L}
+    (hx : x ∈ (X ^ 3 - 2 : ℚ[X]).rootSet L) (hy : y ∈ (X ^ 3 - 2 : ℚ[X]).rootSet L) :
+    (x / y) ^ 3 = 1 := by
+  have : CharZero L := charZero_of_injective_algebraMap (algebraMap ℚ L).injective
+  rw [div_pow, pow_three_eq_two_of_mem_rootSet hx, pow_three_eq_two_of_mem_rootSet hy,
+    div_self two_ne_zero]
+
+/-- The quotient of two distinct roots of `X ^ 3 - 2` is a primitive cube root of unity. -/
+private theorem isPrimitiveRoot_div_of_mem_rootSet
+    {L : Type*} [Field L] [Algebra ℚ L] {beta gamma : L}
+    (hbeta : beta ∈ (X ^ 3 - 2 : ℚ[X]).rootSet L)
+    (hgamma : gamma ∈ (X ^ 3 - 2 : ℚ[X]).rootSet L) (hne : gamma ≠ beta) :
+    IsPrimitiveRoot (gamma / beta) 3 := by
+  have hzeta1 : gamma / beta ≠ 1 := fun hz ↦
+    hne ((div_eq_one_iff_eq (ne_zero_of_mem_rootSet hbeta)).mp hz)
+  exact isPrimitiveRoot_of_mem_nthRootsFinset (by decide)
+    ((mem_nthRootsFinset (by decide) _).mpr
+      (div_pow_three_eq_one_of_mem_rootSet hgamma hbeta)) hzeta1
+
+/-- In the splitting field of `X ^ 3 - 2`, the quotient of a distinct root by a fixed root
+generates the field over any intermediate field containing that fixed root. -/
+private theorem adjoin_div_eq_top_of_mem
+    {L : Type*} [Field L] [Algebra ℚ L]
+    [Polynomial.IsSplittingField ℚ L (X ^ 3 - 2 : ℚ[X])]
+    {beta gamma : L} (E : IntermediateField ℚ L)
+    (hbeta : beta ∈ (X ^ 3 - 2 : ℚ[X]).rootSet L)
+    (hgamma : gamma ∈ (X ^ 3 - 2 : ℚ[X]).rootSet L) (hne : gamma ≠ beta)
+    (hbetaE : beta ∈ E) :
+    IntermediateField.adjoin E ({gamma / beta} : Set L) = ⊤ := by
+  let _ : SMul ℚ E := E.algebra'.toSMul
+  let _ : Algebra ℚ E := E.algebra'
+  let _ : IsScalarTower ℚ E L := E.isScalarTower_mid'
+  have hzeta := isPrimitiveRoot_div_of_mem_rootSet hbeta hgamma hne
+  have htopE : IntermediateField.adjoin E ((X ^ 3 - 2 : ℚ[X]).rootSet L) = ⊤ :=
+    IntermediateField.adjoin_eq_top_of_adjoin_eq_top ℚ
+      (isSplittingField_iff_intermediateField.mp inferInstance).2
+  apply top_unique
+  rw [← htopE]
+  refine IntermediateField.adjoin_le_iff.mpr fun delta hdelta ↦ ?_
+  have hmu := div_pow_three_eq_one_of_mem_rootSet hdelta hbeta
+  have hbeta_mem : beta ∈ IntermediateField.adjoin E ({gamma / beta} : Set L) :=
+    IntermediateField.algebraMap_mem _ (⟨beta, hbetaE⟩ : E)
+  have := (IntermediateField.adjoin E ({gamma / beta} : Set L)).mul_mem hbeta_mem
+    (hzeta.mem_adjoin_of_pow_eq_one hmu)
+  rwa [mul_div_cancel₀ delta (ne_zero_of_mem_rootSet hbeta)] at this
+
 private theorem isCyclotomicExtension_fixedField_stabilizer_root
     {L : Type*} [Field L] [Algebra ℚ L] [FiniteDimensional ℚ L]
     [Polynomial.IsSplittingField ℚ L (X ^ 3 - 2 : ℚ[X])]
@@ -139,146 +204,56 @@ private theorem isCyclotomicExtension_fixedField_stabilizer_root
   let _ : Algebra ℚ E := E.algebra'
   let _ : IsScalarTower ℚ E L := E.isScalarTower_mid'
   let _ : FiniteDimensional E L := IntermediateField.finiteDimensional_right E
-  let zeta : L := gamma / beta
-  have hbeta3 : beta ^ 3 = 2 := by
-    rw [Polynomial.mem_rootSet] at hbeta
-    apply sub_eq_zero.mp
-    simpa only [map_sub, map_pow, aeval_X, map_ofNat] using hbeta.2
-  have hgamma3 : gamma ^ 3 = 2 := by
-    rw [Polynomial.mem_rootSet] at hgamma
-    apply sub_eq_zero.mp
-    simpa only [map_sub, map_pow, aeval_X, map_ofNat] using hgamma.2
-  have htwo : (2 : L) ≠ 0 := by
-    intro h
-    have h' : (algebraMap ℚ L) (2 : ℚ) = (algebraMap ℚ L) 0 := by
-      simpa using h
-    exact (by norm_num : (2 : ℚ) ≠ 0) ((algebraMap ℚ L).injective h')
-  have hbeta0 : beta ≠ 0 := by
-    intro hb
-    rw [hb, zero_pow (by decide : 3 ≠ 0)] at hbeta3
-    exact htwo hbeta3.symm
-  have hzeta3 : zeta ^ 3 = 1 := by
-    dsimp [zeta]
-    rw [div_pow, hgamma3, hbeta3, div_self htwo]
-  have hzeta1 : zeta ≠ 1 := by
-    intro hz
-    exact hne ((div_eq_one_iff_eq hbeta0).mp hz)
-  have hzeta : IsPrimitiveRoot zeta 3 := by
-    apply IsPrimitiveRoot.mk_of_lt zeta (by decide) hzeta3
-    intro l hl hlt
-    interval_cases l
-    · simpa only [pow_one] using hzeta1
-    · intro hzeta2
-      apply hzeta1
-      calc
-        zeta = zeta ^ 3 := by rw [pow_succ, hzeta2, one_mul]
-        _ = 1 := hzeta3
-  have hadjoin : IntermediateField.adjoin E ({zeta} : Set L) = ⊤ := by
-    have htop : IntermediateField.adjoin ℚ ((X ^ 3 - 2 : ℚ[X]).rootSet L) = ⊤ :=
-      (isSplittingField_iff_intermediateField.mp inferInstance).2
-    have htopE : IntermediateField.adjoin E ((X ^ 3 - 2 : ℚ[X]).rootSet L) = ⊤ :=
-      IntermediateField.adjoin_eq_top_of_adjoin_eq_top ℚ htop
-    apply top_unique
-    rw [← htopE]
-    apply IntermediateField.adjoin_le_iff.mpr
-    intro delta hdelta
-    have hdelta3 : delta ^ 3 = 2 := by
-      rw [Polynomial.mem_rootSet] at hdelta
-      apply sub_eq_zero.mp
-      simpa only [map_sub, map_pow, aeval_X, map_ofNat] using hdelta.2
-    have hmu : (delta / beta) ^ 3 = 1 := by
-      rw [div_pow, hdelta3, hbeta3, div_self htwo]
-    have hmu_mem : delta / beta ∈ IntermediateField.adjoin E ({zeta} : Set L) :=
-      hzeta.mem_adjoin_of_pow_eq_one hmu
-    have hbeta_mem : beta ∈ IntermediateField.adjoin E ({zeta} : Set L) := by
-      exact IntermediateField.algebraMap_mem _
-        (⟨beta, mem_fixedField_stabilizer beta⟩ : E)
-    have := (IntermediateField.adjoin E ({zeta} : Set L)).mul_mem hbeta_mem hmu_mem
-    rwa [mul_div_cancel₀ delta hbeta0] at this
-  refine (IsCyclotomicExtension.iff_adjoin_eq_top {3} E L).mpr ⟨?_, ?_⟩
-  · intro n hn hn0
-    simp only [Set.mem_singleton_iff] at hn
-    subst n
-    exact ⟨zeta, hzeta⟩
-  · rw [← IntermediateField.top_toSubalgebra, ← hadjoin,
-      IntermediateField.adjoin_toSubalgebra_of_isAlgebraic]
-    · apply le_antisymm
-      · apply Algebra.adjoin_le
-        rintro x ⟨n, hn, -, hx⟩
-        simp only [Set.mem_singleton_iff] at hn
-        subst n
-        exact hzeta.mem_algebraAdjoin_of_pow_eq_one hx
-      · apply Algebra.adjoin_le
-        intro x hx
-        simp only [Set.mem_singleton_iff] at hx
-        subst x
-        apply Algebra.subset_adjoin
-        exact ⟨3, Set.mem_singleton 3, by decide, hzeta.pow_eq_one⟩
-    · intro x _
-      exact Algebra.IsAlgebraic.isAlgebraic x
+  have hzeta := isPrimitiveRoot_div_of_mem_rootSet hbeta hgamma hne
+  have hadjoin := adjoin_div_eq_top_of_mem E hbeta hgamma hne (mem_fixedField_stabilizer beta)
+  have _ := hzeta.intermediateField_adjoin_isCyclotomicExtension E
+  exact IsCyclotomicExtension.equiv (S := {3}) (A := E) (B := E⟮gamma / beta⟯) (C := L)
+    ((IntermediateField.equivOfEq hadjoin).trans IntermediateField.topEquiv)
 
 open IsDedekindDomain (HeightOneSpectrum)
 
-public section
-
-/-- In the splitting field of `X ^ 3 - 2`, a prime of a cubic root field above `2` belongs to
-the fixed-field exceptional set even though it is unramified in the splitting field. -/
-theorem exists_mem_primesAboveRamifiedPrimes_not_mem_ramifiedPrimes_X_pow_three_sub_two :
-    let f : ℚ[X] := X ^ 3 - 2
-    let L := f.SplittingField
-    ∃ beta : L, beta ∈ f.rootSet L ∧
-      let E := fixedField (stabilizer (L ≃ₐ[ℚ] L) beta)
-      ∃ P : HeightOneSpectrum (𝓞 E),
-        P.asIdeal.under ℤ = Ideal.span {(2 : ℤ)} ∧
-          P ∈ NumberField.Chebotarev.primesAboveRamifiedPrimes ℚ L E ∧
-            P ∉ NumberField.Chebotarev.ramifiedPrimes E L := by
+/-- The splitting field of `X ^ 3 - 2` contains two distinct roots of it. -/
+private theorem exists_ne_mem_rootSet_X_pow_three_sub_two :
+    ∃ beta gamma : (X ^ 3 - 2 : ℚ[X]).SplittingField,
+      beta ∈ (X ^ 3 - 2 : ℚ[X]).rootSet (X ^ 3 - 2 : ℚ[X]).SplittingField ∧
+      gamma ∈ (X ^ 3 - 2 : ℚ[X]).rootSet (X ^ 3 - 2 : ℚ[X]).SplittingField ∧ gamma ≠ beta := by
   let f : ℚ[X] := X ^ 3 - 2
-  let L := f.SplittingField
-  have hsep : f.Separable := by
-    dsimp [f]
-    exact irreducible_X_pow_three_sub_two.separable
-  let _ : IsGalois ℚ L := IsGalois.of_separable_splitting_field hsep
-  have hcard : Fintype.card (f.rootSet L) = 3 := by
+  have hsep : f.Separable := irreducible_X_pow_three_sub_two.separable
+  have hcard : Fintype.card (f.rootSet f.SplittingField) = 3 := by
     rw [Polynomial.card_rootSet_eq_natDegree hsep (SplittingField.splits f)]
     dsimp [f]
     compute_degree
     norm_num
-  let rootsEquiv : f.rootSet L ≃ Fin 3 := Fintype.equivFinOfCardEq hcard
-  let betaRoot : f.rootSet L := rootsEquiv.symm 0
-  let gammaRoot : f.rootSet L := rootsEquiv.symm 1
-  let beta : L := betaRoot.1
-  let gamma : L := gammaRoot.1
-  have hbeta : beta ∈ f.rootSet L := betaRoot.2
-  have hgamma : gamma ∈ f.rootSet L := gammaRoot.2
-  have hgammaBeta : gamma ≠ beta := by
-    intro h
-    have hroots : gammaRoot = betaRoot := Subtype.ext h
-    have : (1 : Fin 3) = 0 := rootsEquiv.symm.injective hroots
-    simp at this
-  refine ⟨beta, hbeta, ?_⟩
-  let E := fixedField (stabilizer (L ≃ₐ[ℚ] L) beta)
-  let _ : IsScalarTower ℚ E L := E.isScalarTower_mid'
-  let _ : IsGalois E L := IsGalois.of_fixed_field L (stabilizer (L ≃ₐ[ℚ] L) beta)
-  have hcyc : IsCyclotomicExtension {3} E L :=
-    isCyclotomicExtension_fixedField_stabilizer_root
-      (by simpa [f] using hbeta) (by simpa [f] using hgamma) hgammaBeta
-  let _ : IsCyclotomicExtension {3} E L := hcyc
-  obtain ⟨theta, htheta⟩ := rootElementMinpoly (by simpa [f] using hbeta)
-  have hthetaC : minpoly ℤ theta.1 = X ^ 3 - C 2 := by
-    simpa using htheta
-  let p2 : Ideal ℤ := Ideal.span {(2 : ℤ)}
+  obtain ⟨⟨b, hb⟩, ⟨g, hg⟩, hne⟩ := Fintype.exists_pair_of_one_lt_card (by rw [hcard]; norm_num)
+  exact ⟨b, g, hb, hg, fun h ↦ hne (Subtype.ext h.symm)⟩
+
+/-- The prime `2` has a prime of the cubic root field above it with ramification index three. -/
+private theorem exists_prime_liesOver_two_ramificationIdx_eq_three
+    {K : Type*} [Field K] [NumberField K] (theta : NumberField.IntegralPrimitiveElement K)
+    (hmin : minpoly ℤ theta.1 = X ^ 3 - C 2) :
+    ∃ P : Ideal (𝓞 K), P.IsPrime ∧ P.LiesOver (Ideal.span {(2 : ℤ)}) ∧
+      P.ramificationIdx ℤ = 3 := by
   let _ : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  let _ : p2.IsMaximal := by
-    dsimp [p2]
-    exact Int.ideal_span_isMaximal_of_prime 2
-  let _ : p2.IsPrime := by
-    exact (inferInstance : p2.IsMaximal).isPrime
-  let P0 : p2.primesOver (𝓞 E) := Classical.choice inferInstance
-  let P : Ideal (𝓞 E) := P0.1
-  let _ : P.IsPrime := P0.2.1
-  let _ : P.LiesOver p2 := P0.2.2
-  have hramP : P.ramificationIdx ℤ = 3 :=
-    ramificationIdx_eq_three_of_minpoly_eq_X_pow_three_sub_two theta hthetaC P
+  let _ : (Ideal.span {(2 : ℤ)}).IsMaximal := Int.ideal_span_isMaximal_of_prime 2
+  let _ : (Ideal.span {(2 : ℤ)}).IsPrime :=
+    (inferInstance : (Ideal.span {(2 : ℤ)}).IsMaximal).isPrime
+  let P0 : (Ideal.span {(2 : ℤ)}).primesOver (𝓞 K) := Classical.choice inferInstance
+  exact ⟨P0.1, P0.2.1, P0.2.2,
+    ramificationIdx_eq_three_of_minpoly_eq_X_pow_three_sub_two theta hmin P0.1⟩
+
+/-- If `L / E` is `3`-cyclotomic and some prime of `𝓞 E` above `2` has ramification index three
+over `ℤ`, then some height-one prime of `E` above `2` lies in `primesAboveRamifiedPrimes ℚ L E`
+but not in `ramifiedPrimes E L`. -/
+private theorem exists_mem_primesAboveRamifiedPrimes_not_mem_ramifiedPrimes_of_isCyclotomic
+    {L : Type*} [Field L] [NumberField L] [IsGalois ℚ L] (E : IntermediateField ℚ L)
+    [IsGalois E L] (hcyc : IsCyclotomicExtension {3} E L) (P : Ideal (𝓞 E)) [P.IsPrime]
+    [P.LiesOver (Ideal.span {(2 : ℤ)})] (hramP : P.ramificationIdx ℤ = 3) :
+    ∃ P : HeightOneSpectrum (𝓞 E),
+      P.asIdeal.under ℤ = Ideal.span {(2 : ℤ)} ∧
+        P ∈ NumberField.Chebotarev.primesAboveRamifiedPrimes ℚ L E ∧
+          P ∉ NumberField.Chebotarev.ramifiedPrimes E L := by
+  let _ : IsScalarTower ℚ E L := E.isScalarTower_mid'
+  let p2 : Ideal ℤ := Ideal.span {(2 : ℤ)}
   let Q0 : P.primesOver (𝓞 L) := Classical.choice inferInstance
   let Q : Ideal (𝓞 L) := Q0.1
   let _ : Q.IsPrime := Q0.2.1
@@ -314,6 +289,36 @@ theorem exists_mem_primesAboveRamifiedPrimes_not_mem_ramifiedPrimes_X_pow_three_
       (K := ℚ) (L := L) (E := E) QQ).mpr hinertia
   · exact (NumberField.Chebotarev.under_notMem_ramifiedPrimes_iff_isUnramifiedAt
       (K := E) (L := L) QQ).mpr hUnramified
+
+public section
+
+/-- In the splitting field of `X ^ 3 - 2`, a prime of a cubic root field above `2` belongs to
+the fixed-field exceptional set even though it is unramified in the splitting field. -/
+theorem exists_mem_primesAboveRamifiedPrimes_not_mem_ramifiedPrimes_X_pow_three_sub_two :
+    let f : ℚ[X] := X ^ 3 - 2
+    let L := f.SplittingField
+    ∃ beta : L, beta ∈ f.rootSet L ∧
+      let E := fixedField (stabilizer (L ≃ₐ[ℚ] L) beta)
+      ∃ P : HeightOneSpectrum (𝓞 E),
+        P.asIdeal.under ℤ = Ideal.span {(2 : ℤ)} ∧
+          P ∈ NumberField.Chebotarev.primesAboveRamifiedPrimes ℚ L E ∧
+            P ∉ NumberField.Chebotarev.ramifiedPrimes E L := by
+  let f : ℚ[X] := X ^ 3 - 2
+  let L := f.SplittingField
+  let _ : IsGalois ℚ L :=
+    IsGalois.of_separable_splitting_field irreducible_X_pow_three_sub_two.separable
+  obtain ⟨beta, gamma, hbeta, hgamma, hgammaBeta⟩ := exists_ne_mem_rootSet_X_pow_three_sub_two
+  refine ⟨beta, hbeta, ?_⟩
+  let E := fixedField (stabilizer (L ≃ₐ[ℚ] L) beta)
+  let _ : IsScalarTower ℚ E L := E.isScalarTower_mid'
+  let _ : IsGalois E L := IsGalois.of_fixed_field L (stabilizer (L ≃ₐ[ℚ] L) beta)
+  have hcyc : IsCyclotomicExtension {3} E L :=
+    isCyclotomicExtension_fixedField_stabilizer_root hbeta hgamma hgammaBeta
+  obtain ⟨theta, htheta⟩ := rootElementMinpoly hbeta
+  obtain ⟨P, _, _, hramP⟩ :=
+    exists_prime_liesOver_two_ramificationIdx_eq_three theta (by simpa using htheta)
+  exact exists_mem_primesAboveRamifiedPrimes_not_mem_ramifiedPrimes_of_isCyclotomic E hcyc P
+    hramP
 
 end
 end
