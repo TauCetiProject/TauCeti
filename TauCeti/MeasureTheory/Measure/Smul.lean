@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.CompleteLattice
+import Mathlib.MeasureTheory.Measure.Module
 
 /-!
 # Order and positivity of scalar multiples of measures
@@ -32,9 +33,7 @@ theorem pos_of_smul_le_smul {α : Type*} [MeasurableSpace α] {μ : Measure α} 
     (ha : 0 < a) (h : a • μ ≤ b • μ) (hμ : μ ≠ 0) : 0 < b := by
   refine pos_iff_ne_zero.2 fun h0 => hμ ?_
   rw [h0, zero_smul, Measure.nonpos_iff_eq_zero'] at h
-  rw [← Measure.measure_univ_eq_zero]
-  have := congr($h univ)
-  simpa [ha.ne'] using this
+  exact (Measure.ennreal_smul_eq_zero.mp h).resolve_left ha.ne'
 
 end Measure
 
