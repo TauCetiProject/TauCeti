@@ -196,24 +196,22 @@ theorem length_map (e : W ≃* H) (w : W) : (cs.map e).length (e w) = cs.length 
 
 end Transport
 
+private theorem length_le_of_simple_eq {M' : CoxeterMatrix B}
+    (cs' : CoxeterSystem M' W) (h : cs.simple = cs'.simple) (w : W) :
+    cs.length w ≤ cs'.length w := by
+  obtain ⟨l, hl, rfl⟩ := cs'.exists_isReduced w
+  calc
+    cs.length (cs'.wordProd l) = cs.length (cs.wordProd l) := by
+      simp only [CoxeterSystem.wordProd, h]
+    _ ≤ l.length := cs.length_wordProd_le l
+    _ = cs'.length (cs'.wordProd l) := hl.eq.symm
+
 /-- Coxeter systems on the same group with the same indexed simple reflections have the same
 length function, even if their Coxeter matrices differ. -/
 theorem _root_.CoxeterSystem.length_eq_of_simple_eq {M' : CoxeterMatrix B}
     (cs' : CoxeterSystem M' W) (h : ∀ i, cs.simple i = cs'.simple i) (w : W) :
-    cs.length w = cs'.length w := by
-  have hs : cs.simple = cs'.simple := funext h
-  apply le_antisymm
-  · obtain ⟨l, hl, rfl⟩ := cs'.exists_isReduced w
-    calc
-      cs.length (cs'.wordProd l) = cs.length (cs.wordProd l) := by
-        simp only [CoxeterSystem.wordProd, hs]
-      _ ≤ l.length := cs.length_wordProd_le l
-      _ = cs'.length (cs'.wordProd l) := hl.eq.symm
-  · obtain ⟨l, hl, rfl⟩ := cs.exists_isReduced w
-    calc
-      cs'.length (cs.wordProd l) = cs'.length (cs'.wordProd l) := by
-        simp only [CoxeterSystem.wordProd, hs]
-      _ ≤ l.length := cs'.length_wordProd_le l
-      _ = cs.length (cs.wordProd l) := hl.eq.symm
+    cs.length w = cs'.length w :=
+  le_antisymm (length_le_of_simple_eq cs cs' (funext h) w)
+    (length_le_of_simple_eq cs' cs (funext h).symm w)
 
 end TauCeti

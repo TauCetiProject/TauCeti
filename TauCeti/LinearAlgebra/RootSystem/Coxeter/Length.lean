@@ -52,6 +52,9 @@ theorem weylCoxeterSystem_mulEquiv_symm_apply
   have h : (weylCoxeterSystem P b).mulEquiv.symm.toMonoidHom = weylCoxeterHom P b := by
     apply (coxeterMatrixOfBase P b).toCoxeterSystem.ext_simple
     intro i
+    simp only [MulEquiv.coe_toMonoidHom, CoxeterMatrix.toCoxeterSystem_simple]
+    -- By definition, a Coxeter system's simple reflection is its inverse stored equivalence
+    -- applied to the matrix generator, so the left side is exactly its simple reflection.
     exact (weylCoxeterSystem_simple P b i).trans (weylCoxeterHom_apply_simple P b i).symm
   exact DFunLike.congr_fun h w
 
