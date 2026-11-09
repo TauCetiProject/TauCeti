@@ -166,10 +166,10 @@ theorem exists_contDiff_hasCompactSupport_strict_approximation (hu : Integrable 
     exact le_rfl
   -- Lower semicontinuity and the upper estimate give equality in the limit.
   refine ⟨w, hw, hwlim, TauCeti.tendsto_totalVariationOn_of_le_add
-    (fun n => (hw n).1.continuous.locallyIntegrable.locallyIntegrableOn ⊤)
+    (.of_forall fun n => (hw n).1.continuous.locallyIntegrable.locallyIntegrableOn ⊤)
     (hu.locallyIntegrable.locallyIntegrableOn ⊤) (fun K _ _ =>
       tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hwlim
-        (fun _ => zero_le) (fun n => setLIntegral_le_lintegral _ _)) hb hwv⟩
+        (fun _ => zero_le) (fun n => setLIntegral_le_lintegral _ _)) hb (.of_forall hwv)⟩
 
 end MeasureTheory.Integrable
 
@@ -581,9 +581,9 @@ theorem exists_contDiffOn_strict_approximation (hu : LocallyIntegrableOn u Ω μ
   have hL : Tendsto (fun n => ∫⁻ x in Ω, ‖w n x - u x‖ₑ ∂μ) atTop (𝓝 0) :=
     tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hzero (fun _ => zero_le) hwL
   refine ⟨w, hw, hL, TauCeti.tendsto_totalVariationOn_of_le_add
-    (fun n => (hw n).continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet) hu
+    (.of_forall fun n => (hw n).continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet) hu
     (fun K _ hKΩ => tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hL
-      (fun _ => zero_le) fun _ => lintegral_mono_set hKΩ) hzero hwV⟩
+      (fun _ => zero_le) fun _ => lintegral_mono_set hKΩ) hzero (.of_forall hwV)⟩
 
 /-- **Strict approximation on an open set, with gradients.** A function `u` locally integrable on
 an arbitrary open set `Ω` is the limit of functions `w n` smooth on `Ω` with
