@@ -103,6 +103,19 @@ theorem closure_range_eq_generatorSuffix_sup_zpowers {n : ℕ} (x : Fin (n + 1) 
     ← Subgroup.zpowers_eq_closure, sup_comm, generatorSuffix_succ, generatorSuffix_zero,
     Fin.tail_def]
 
+/-- For a finite suffix subgroup, to normalize it it suffices to conjugate each suffix generator
+back into it. Finiteness supplies the reverse inclusion, so no inverse conjugation relations
+are required. -/
+theorem mem_normalizer_generatorSuffix {n : ℕ} (x : Fin n → G) (k : ℕ)
+    [Finite (generatorSuffix x k)] {g : G}
+    (hconj : ∀ i : Fin n, k ≤ (i : ℕ) → g * x i * g⁻¹ ∈ generatorSuffix x k) :
+    g ∈ Subgroup.normalizer (generatorSuffix x k) := by
+  apply Subgroup.mem_normalizer_fintype
+  have h : (generatorSuffix x k).map (MulAut.conj g).toMonoidHom ≤ generatorSuffix x k := by
+    rw [Subgroup.map_le_iff_le_comap, generatorSuffix_le_iff]
+    exact hconj
+  exact fun y hy ↦ h ⟨y, hy, rfl⟩
+
 -- The induction establishes finiteness before using it to turn one-sided conjugation
 -- into normalization. Its two conclusions are exposed separately below.
 private theorem power_conjugate_bound {n : ℕ} (x : Fin n → G)
@@ -126,15 +139,11 @@ private theorem power_conjugate_bound {n : ℕ} (x : Fin n → G)
       rw [generatorSuffix_succ, generatorSuffix_zero]
     have : Finite (generatorSuffix x 1) := heq ▸ htail.1
     have hnorm : x 0 ∈ Subgroup.normalizer (generatorSuffix x 1) := by
-      apply Subgroup.mem_normalizer_fintype
-      have h : (generatorSuffix x 1).map (MulAut.conj (x 0)).toMonoidHom ≤
-          generatorSuffix x 1 := by
-        rw [Subgroup.map_le_iff_le_comap, generatorSuffix_le_iff]
-        intro j hj
-        simpa using hconj 0 j (by
-          simp only [Fin.lt_def, Fin.val_zero]
-          omega)
-      exact fun g hg ↦ h ⟨g, hg, rfl⟩
+      apply mem_normalizer_generatorSuffix
+      intro j hj
+      simpa using hconj 0 j (by
+        simp only [Fin.lt_def, Fin.val_zero]
+        omega)
     have hf := (generatorSuffix x 1).finite_sup_zpowers (hm 0) hnorm (hpow 0)
     have hc := (generatorSuffix x 1).card_sup_zpowers_le (hm 0) hnorm (hpow 0)
     rw [closure_range_eq_generatorSuffix_sup_zpowers]
