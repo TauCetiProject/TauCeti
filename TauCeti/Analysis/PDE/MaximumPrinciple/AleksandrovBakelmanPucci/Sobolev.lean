@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.Analysis.Matrix.Contraction
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Sobolev.Wkp.Local.UniformApproximation
+import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
 # The Aleksandrov–Bakelman–Pucci estimate for strong solutions
