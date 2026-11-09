@@ -104,7 +104,7 @@ theorem map_coe_equivIco_withDensity_haarAddCircle (a : ℝ) {f : AddCircle T �
   rw [← hf, map_coe_equivIco_volume] at key
   rw [hvol, withDensity_smul_measure, Measure.map_smul, key,
     ← withDensity_smul' _ _ (ENNReal.inv_ne_top.2 (by simpa using hT.out))]
-  · rfl
+  · simp only [Pi.smul_def, smul_eq_mul]
   · exact hemb.measurable.aemeasurable
 
 section Periodization
