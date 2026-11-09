@@ -15,9 +15,9 @@ public import TauCeti.Analysis.Matrix.MeasurableSpace
 public import TauCeti.Analysis.Matrix.Frobenius
 public import TauCeti.Probability.Distributions.Gaussian.ProperComplex.Modulus
 public import TauCeti.Probability.Distributions.Gaussian.ProperComplex.Moments
+public import TauCeti.Probability.Distributions.Gaussian.Product
 public import TauCeti.Probability.Distributions.MatrixNormal.Basic
 public import TauCeti.Probability.Distributions.Wishart.Moments
-public import TauCeti.MeasureTheory.Constructions.Pi
 
 /-!
 # Ginibre matrices and Gaussian Gram matrices
@@ -125,47 +125,6 @@ theorem map_columns_ginibreReal (m n : ℕ) :
       (multivariateGaussian_one_eq_map_pi
         (0 : EuclideanSpace ℝ (Fin n × Fin m)))
   rw [hgauss]
-  let fiber (j : Fin n) := {p : Fin n × Fin m // p.1 = j}
-  let e (j : Fin n) : Fin m ≃ fiber j :=
-    { toFun := fun i ↦ ⟨(j, i), rfl⟩
-      invFun := fun p ↦ p.1.2
-      left_inv := fun _ ↦ rfl
-      right_inv := fun p ↦ by
-        apply Subtype.ext
-        exact Prod.ext p.2.symm rfl }
-  have hfiber (j : Fin n) :
-      MeasurePreserving
-        (fun z : ∀ p : fiber j, ℝ ↦ WithLp.toLp 2 fun i : Fin m ↦ z (e j i))
-        (Measure.pi fun _ : fiber j ↦ gaussianReal 0 1)
-        (multivariateGaussian 0 (1 : Matrix (Fin m) (Fin m) ℝ)) := by
-    refine ⟨(WithLp.measurable_toLp 2 _).comp
-      (MeasurableEquiv.piCongrLeft (fun _ : fiber j ↦ ℝ) (e j)).symm.measurable, ?_⟩
-    calc
-      Measure.map (fun z : ∀ p : fiber j, ℝ ↦ WithLp.toLp 2 fun i : Fin m ↦ z (e j i))
-          (Measure.pi fun _ : fiber j ↦ gaussianReal 0 1) =
-        Measure.map (WithLp.toLp 2 ∘
-          (MeasurableEquiv.piCongrLeft (fun _ : fiber j ↦ ℝ) (e j)).symm)
-          (Measure.pi fun _ : fiber j ↦ gaussianReal 0 1) := by
-            congr 1
-      _ = Measure.map (WithLp.toLp 2)
-          (Measure.map
-            (MeasurableEquiv.piCongrLeft (fun _ : fiber j ↦ ℝ) (e j)).symm
-            (Measure.pi fun _ : fiber j ↦ gaussianReal 0 1)) := by
-              rw [← Measure.map_map (WithLp.measurable_toLp 2 _)
-                (MeasurableEquiv.piCongrLeft (fun _ : fiber j ↦ ℝ) (e j)).symm.measurable]
-      _ = Measure.map (WithLp.toLp 2)
-          (Measure.pi fun _ : Fin m ↦ gaussianReal 0 1) := by
-            rw [(measurePreserving_piCongrLeft
-              (fun _ : fiber j ↦ gaussianReal 0 1) (e j)).symm.map_eq]
-      _ = multivariateGaussian 0 (1 : Matrix (Fin m) (Fin m) ℝ) :=
-        (multivariateGaussian_one_eq_map_pi (0 : EuclideanSpace ℝ (Fin m))).symm
-  have hregroup := measurePreserving_pi_fiberwise
-    (f := fun p : Fin n × Fin m ↦ p.1)
-    (μ := fun _ : Fin n × Fin m ↦ gaussianReal 0 1)
-    (ν := fun _ : Fin n ↦
-      multivariateGaussian 0 (1 : Matrix (Fin m) (Fin m) ℝ))
-    (g := fun j z ↦ WithLp.toLp 2 fun i : Fin m ↦ z (e j i))
-    hfiber
   rw [Measure.map_map (by fun_prop) (by fun_prop)]
   calc
     _ = Measure.map (fun z j ↦ WithLp.toLp 2 fun i : Fin m ↦ z (j, i))
@@ -174,8 +133,7 @@ theorem map_columns_ginibreReal (m n : ℕ) :
       funext z j
       ext i
       simp [E, matrixVecMeasurableEquiv_symm_apply]
-    _ = _ := by
-      convert hregroup.map_eq using 1
+    _ = _ := map_pi_gaussianReal_to_vectors
 
 /-- The real Gaussian Gram law is the pushforward of the real Ginibre law under
 `X ↦ X * Xᵀ`. -/
@@ -345,19 +303,28 @@ theorem integral_trace_re_gaussianGramComplex (m n : ℕ) :
   simp_rw [integral_finsetSum _ fun j _ ↦ hint _ j, hval]
   simp
 
+set_option linter.unusedTactic false in
 /-- The real Gaussian Gram law is supported on positive semidefinite matrices. -/
 theorem ae_posSemidef_gaussianGramReal (m n : ℕ) :
     ∀ᵐ A ∂(gaussianGramReal m n), A.PosSemidef := by
+  -- The closedness lemma was renamed in a newer Mathlib version.
   rw [gaussianGramReal, ae_map_iff measurable_subtype_coe.aemeasurable
-      isClosed_setOfPred_posSemidef.measurableSet]
+      (by
+        first
+        | exact isClosed_setOfPred_posSemidef.measurableSet
+        | exact Matrix.posSemidef_is_closed.measurableSet)]
   exact ae_posSemidef_wishartGramMeasure n 1
 
+set_option linter.unusedTactic false in
 open scoped ComplexOrder in
 /-- The complex Gaussian Gram law is supported on positive semidefinite matrices. -/
 theorem ae_posSemidef_gaussianGramComplex (m n : ℕ) :
     ∀ᵐ A ∂(gaussianGramComplex m n), A.PosSemidef := by
   rw [gaussianGramComplex, ae_map_iff measurable_matrix_mul_conjTranspose.aemeasurable
-      isClosed_setOfPred_posSemidef.measurableSet]
+      (by
+        first
+        | exact isClosed_setOfPred_posSemidef.measurableSet
+        | exact Matrix.posSemidef_is_closed.measurableSet)]
   exact Filter.Eventually.of_forall fun X ↦ posSemidef_self_mul_conjTranspose X
 
 end Probability
