@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.Complex
 public import TauCeti.Algebra.Homology.DG.Bimodule.Defs
+import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
@@ -110,7 +111,7 @@ theorem twistedDifferential_smul (hM : IsDGBimodule hA hB ℳ dM) {p : ℤ} {a :
   have hlin : twistedDifferential m ℳ dM ∘ₗ DistribSMul.toLinearMap R (P → M) a =
       DistribSMul.toLinearMap R (P → M) (dA a) +
         p.negOnePow • (DistribSMul.toLinearMap R (P → M) a ∘ₗ twistedDifferential m ℳ dM) :=
-    ext_of_apply_single_of_mem ℳ fun x q α hα ↦ by
+    LinearMap.pi_ext_of_decomposition ℳ fun x q α hα ↦ by
       simpa using twistedDifferential_smul_single m dM hM ha x hα
   simpa using LinearMap.congr_fun hlin f
 

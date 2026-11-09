@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.DG.Twisted.Cocycle
 public import TauCeti.Algebra.Homology.DG.Module.Right.Defs
 public import TauCeti.Algebra.Homology.GradedCochainComplex
+import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
@@ -150,24 +151,6 @@ theorem iSup_twistedTotalGrading_eq_top : (⨆ n, twistedTotalGrading ℳ ind n)
     exact zero_mem _
 
 end Decomposition
-
-section Ext
-
-variable {R : Type uR} {M : Type uM} [Semiring R] [AddCommMonoid M] [Module R M]
-  {P : Type uP} [Finite P] [DecidableEq P] (ℳ : ℤ → Submodule R M) [DirectSum.Decomposition ℳ]
-  {N : Type*} [AddCommMonoid N] [Module R N]
-
-/-- Two linear maps out of `P → M` agree if they agree on the homogeneous elementary tensors
-`Pi.single x α`, with `α` in a piece `ℳ q`. -/
-theorem ext_of_apply_single_of_mem {φ ψ : (P → M) →ₗ[R] N}
-    (h : ∀ (x : P) {q : ℤ} {α : M}, α ∈ ℳ q → φ (Pi.single x α) = ψ (Pi.single x α)) :
-    φ = ψ := by
-  refine LinearMap.pi_ext' fun x ↦ ?_
-  refine DirectSum.decompose_lhom_ext ℳ fun i ↦ ?_
-  refine LinearMap.ext fun α ↦ ?_
-  simpa using h x α.2
-
-end Ext
 
 end TotalGrading
 
@@ -316,7 +299,7 @@ theorem twistedDifferential_sq_zero (hm : ∀ x y, m x y ∈ 𝒜 (ind y - ind x
   suffices key : ∀ (x : P) {q : ℤ} {α : M}, α ∈ ℳ q →
       twistedDifferential m ℳ dM (twistedDifferential m ℳ dM (Pi.single x α)) = 0 by
     have hlin : twistedDifferential m ℳ dM ∘ₗ twistedDifferential m ℳ dM = 0 :=
-      ext_of_apply_single_of_mem ℳ fun x q α hα ↦ key x hα
+      LinearMap.pi_ext_of_decomposition ℳ fun x q α hα ↦ key x hα
     simpa using LinearMap.congr_fun hlin f
   intro x q α hα
   funext z

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.Continuation
+import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
@@ -176,7 +177,7 @@ theorem homotopyMap_twistedDifferential (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - 
     have hlin : continuationMap R M ν₁ - continuationMap R M ν₀ =
         twistedDifferential mQ ℳ dM ∘ₗ homotopyMap h ℳ +
           homotopyMap h ℳ ∘ₗ twistedDifferential mP ℳ dM :=
-      ext_of_apply_single_of_mem ℳ fun x q α hα ↦ by simpa using key x hα
+      LinearMap.pi_ext_of_decomposition ℳ fun x q α hα ↦ by simpa using key x hα
     simpa using LinearMap.congr_fun hlin f
   intro x q α hα
   funext w

@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.DG.Twisted.Complex
 public import TauCeti.Algebra.Homology.DG.Twisted.Filtration
 public import Mathlib.Data.Matrix.Mul
+import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
@@ -216,7 +217,7 @@ theorem continuationMap_twistedDifferential (hν : ∀ x y, ν x y ∈ 𝒜 (ind
         twistedDifferential mQ ℳ dM (continuationMap R M ν (Pi.single x α)) by
     have hlin : continuationMap R M ν ∘ₗ twistedDifferential mP ℳ dM =
         twistedDifferential mQ ℳ dM ∘ₗ continuationMap R M ν :=
-      ext_of_apply_single_of_mem ℳ fun x q α hα ↦ key x hα
+      LinearMap.pi_ext_of_decomposition ℳ fun x q α hα ↦ key x hα
     exact LinearMap.congr_fun hlin f
   intro x q α hα
   funext w
