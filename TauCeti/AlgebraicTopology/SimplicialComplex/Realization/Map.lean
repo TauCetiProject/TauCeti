@@ -313,14 +313,7 @@ theorem image_realizationMap_ofPred_support {α β : Type*} [DecidableEq β]
     {P : Finset α → Prop} {Q : Finset β → Prop}
     (hPQ : ∀ s, P s ↔ Q (s.image f)) :
     f.realizationMap '' {x | P x.1.support} = {y | Q y.1.support} := by
-  ext y
-  obtain ⟨x, rfl⟩ := hf y
-  simp only [Set.mem_ofPred_eq, support_realizationMap, ← hPQ]
-  refine ⟨?_, fun h ↦ ⟨x, h, rfl⟩⟩
-  rintro ⟨x', hx', hxx'⟩
-  have himg : x.1.support.image f = x'.1.support.image f := by
-    rw [← support_realizationMap, ← support_realizationMap, hxx']
-  rw [hPQ, himg, ← hPQ]
-  exact hx'
+  simpa only [Set.preimage_ofPred_eq, support_realizationMap, ← hPQ] using
+    Set.image_preimage_eq {y : Realization L | Q y.1.support} hf
 
 end TauCeti.PreAbstractSimplicialComplex.SimplicialMap
