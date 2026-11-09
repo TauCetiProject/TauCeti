@@ -333,7 +333,7 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_saddleCurves
   have hupos : ContDiff ℝ ∞ upos := haxis i1
   have hzero : (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) ∈ ψ.target := by
     simpa only [hψx] using ψ.map_source hxψ
-  have hinvzero : ψ.toOpenPartialHomeomorph.symm 0 = x := by
+  have hinvzero : ψ.symm 0 = x := by
     rw [← hψx]
     exact ψ.left_inv hxψ
   have huneg0 : uneg 0 = 0 := by simp [uneg]
@@ -350,11 +350,11 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_saddleCurves
     hunegTarget.mono fun t ht ↦
       (ψ.contMDiffOn_invFun.contMDiffAt (ψ.open_target.mem_nhds ht)).comp t
         huneg.contMDiff.contMDiffAt,
-    by simp [γneg, huneg0, hinvzero],
+    by simpa [γneg, huneg0] using hinvzero,
     huposTarget.mono fun t ht ↦
       (ψ.contMDiffOn_invFun.contMDiffAt (ψ.open_target.mem_nhds ht)).comp t
         hupos.contMDiff.contMDiffAt,
-    by simp [γpos, hupos0, hinvzero], ?_⟩
+    by simpa [γpos, hupos0] using hinvzero, ?_⟩
   filter_upwards [hunegTarget.filter_mono nhdsWithin_le_nhds,
     huposTarget.filter_mono nhdsWithin_le_nhds, self_mem_nhdsWithin] with t htn htp ht
   have hsourceNeg : γneg t ∈ ψ.source := ψ.map_target htn
