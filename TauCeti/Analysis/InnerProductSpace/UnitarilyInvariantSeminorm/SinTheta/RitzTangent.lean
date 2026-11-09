@@ -53,7 +53,7 @@ private theorem isTransverse_of_tanThetaSpectralGap
   intro x hx hxperp
   rcases hx with ⟨y, rfl⟩
   have hxyUperp : X.toLinearMap y ∈ Uᗮ := hxperp
-  have hMupper := hA.re_inner_ritz_le_of_pointSpectrumIn X hgap.1 y
+  have hMupper := hA.re_inner_ritz_le_of_pointSpectrumIn X.toLinearMap hgap.1 y
   have hAlower := hA.le_re_inner_of_pointSpectrumIn_orthogonal hU hgap.2 hxyUperp
   have hinner :
       RCLike.re ⟪(X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap) y, y⟫_𝕜 =
@@ -221,7 +221,7 @@ private theorem tanThetaResidualWitness_scalar
     have hvnorm : ‖LinearMap.rightSingularBasis
         (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i‖ = 1 :=
       (LinearMap.rightSingularBasis _).orthonormal.norm_eq_one i
-    have hMupper := hA.re_inner_ritz_le_of_pointSpectrumIn X hgap.1
+    have hMupper := hA.re_inner_ritz_le_of_pointSpectrumIn X.toLinearMap hgap.1
       (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i)
     have hAlower := hA.le_re_inner_of_pointSpectrumIn_orthogonal hU hgap.2 hy
     rw [hvnorm] at hMupper

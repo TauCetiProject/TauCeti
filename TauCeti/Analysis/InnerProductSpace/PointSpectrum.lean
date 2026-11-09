@@ -859,11 +859,11 @@ theorem eigenvalues_ne_eigenvalues_of_disjoint (hA : A.IsSymmetric) (hB : B.IsSy
 
 
 /-- The trial-space spectral bound on the Ritz compression `X† A X`, in quadratic-form shape. -/
-theorem re_inner_ritz_le_of_pointSpectrumIn (hA : A.IsSymmetric) (X : F →ₗᵢ[𝕜] E) {α : ℝ}
+theorem re_inner_ritz_le_of_pointSpectrumIn (hA : A.IsSymmetric) (X : F →ₗ[𝕜] E) {α : ℝ}
     (h : Module.End.PointSpectrumIn
-      (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap) ⊤ (Set.Iic α)) (y : F) :
-    RCLike.re ⟪(X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap) y, y⟫_𝕜 ≤ α * ‖y‖ ^ 2 :=
-  (hA.adjoint_conj X.toLinearMap).re_inner_apply_self_le_of_pointSpectrumIn
+      (X.adjoint ∘ₗ A ∘ₗ X) ⊤ (Set.Iic α)) (y : F) :
+    RCLike.re ⟪(X.adjoint ∘ₗ A ∘ₗ X) y, y⟫_𝕜 ≤ α * ‖y‖ ^ 2 :=
+  (hA.adjoint_conj X).re_inner_apply_self_le_of_pointSpectrumIn
     (fun _ _ => Submodule.mem_top) h Submodule.mem_top
 
 /-- The separated spectral bound on the orthogonal complement of an invariant subspace, in
