@@ -149,7 +149,7 @@ theorem IsCapacitatedMatching.isMatching_setOf_eq_one [G.Loopless]
 
 /-- Ordinary matchings in a finite loopless multigraph are equivalent to unit-capacity multiset
 matchings. The equivalence retains each selected edge identity as multiplicity one. -/
-@[expose] noncomputable def matchingEquivUnitCapacitated [G.Loopless] :
+noncomputable def matchingEquivUnitCapacitated [G.Loopless] :
     {M : Set E(G) // G.IsMatching M} ≃ {x : E(G) → ℕ // G.IsCapacitatedMatching 1 x} where
   toFun M := ⟨M.1.indicator 1, (isMatching_iff_isCapacitatedMatching_indicator M.1).1 M.2⟩
   invFun x := ⟨{e | x.1 e = 1}, x.2.isMatching_setOf_eq_one⟩
@@ -158,16 +158,26 @@ matchings. The equivalence retains each selected edge identity as multiplicity o
     exact Set.indicator_eq_one_iff_mem ℕ
   right_inv x := Subtype.ext x.2.indicator_setOf_eq_one
 
+private theorem matchingEquivUnitCapacitated_apply_private [G.Loopless]
+    (M : {M : Set E(G) // G.IsMatching M}) :
+    (G.matchingEquivUnitCapacitated M : E(G) → ℕ) = M.1.indicator 1 :=
+  rfl
+
+private theorem matchingEquivUnitCapacitated_symm_apply_private [G.Loopless]
+    (x : {x : E(G) → ℕ // G.IsCapacitatedMatching 1 x}) :
+    (G.matchingEquivUnitCapacitated.symm x : Set E(G)) = {e | x.1 e = 1} :=
+  rfl
+
 @[simp]
 theorem matchingEquivUnitCapacitated_apply [G.Loopless] (M : {M : Set E(G) // G.IsMatching M}) :
     (G.matchingEquivUnitCapacitated M : E(G) → ℕ) = M.1.indicator 1 :=
-  rfl
+  matchingEquivUnitCapacitated_apply_private M
 
 @[simp]
 theorem matchingEquivUnitCapacitated_symm_apply [G.Loopless]
     (x : {x : E(G) → ℕ // G.IsCapacitatedMatching 1 x}) :
     (G.matchingEquivUnitCapacitated.symm x : Set E(G)) = {e | x.1 e = 1} :=
-  rfl
+  matchingEquivUnitCapacitated_symm_apply_private x
 
 namespace IsCapacitatedMatching
 
