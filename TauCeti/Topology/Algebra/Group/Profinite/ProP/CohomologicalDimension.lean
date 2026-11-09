@@ -230,7 +230,7 @@ theorem ZModTwist.surjective_explicitCoeff2_reduce_of_cohomologicalDimensionAt_l
   obtain ⟨i, rfl⟩ := Nat.exists_eq_add_of_le' hj
   have : Subsingleton (continuousCohomology 3 (ofDiscreteModule ℤ G (ZModTwist χ i))) :=
     (cohomologicalDimensionAt_le_iff_forall_finite hp.out.ne_zero 2).1 h _
-      (ZModTwist.isPPrimaryTorsion χ i) 3 (by norm_num)
+      (ZModTwist.isAddPGroup χ i) 3 (by norm_num)
   have hS :=
     (ZModTwist.shortExact χ (rfl : i + j = i + j)).explicitCoeff2_proj_surjective_of_subsingleton
   rwa [ZModTwist.shortExact_projDistribMulActionHom] at hS
