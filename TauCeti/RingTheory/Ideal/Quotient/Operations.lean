@@ -41,6 +41,9 @@ on the quotient by `I` (`MonoidHom.quotientRingAut`), assembled from Mathlib's
 
 If every class modulo a maximal ideal `m` comes from `f`, then `m.comap f` is maximal
 (`Ideal.isMaximal_comap_of_surjective_quotient_mk_comp`).
+
+A linear endomorphism commuting with multiplication by each element of a set `s` induces an
+endomorphism of the quotient by `Ideal.span s` (`Ideal.exists_quotient_linearMap_of_map_mul`).
 -/
 
 public section
@@ -125,6 +128,31 @@ theorem isMaximal_comap_of_surjective_quotient_mk_comp {A S F : Type*} [Ring A] 
   let := Ideal.Quotient.field m
   have := RingHom.ker_isMaximal_of_surjective ((Ideal.Quotient.mk m).comp (f : A →+* S)) hf
   rwa [← RingHom.comap_ker, Ideal.mk_ker, Ideal.comap_coe] at this
+
+/-- A linear endomorphism commuting with multiplication by each element of a set `s` preserves the
+ideal spanned by `s`, so it induces a compatible endomorphism of the quotient by that ideal. -/
+theorem exists_quotient_linearMap_of_map_mul {k A : Type*} [CommRing k] [CommRing A]
+    [Algebra k A] {s : Set A} (T : A →ₗ[k] A)
+    (hmul : ∀ f ∈ s, ∀ x, T (f * x) = f * T x) :
+    ∃ Q : (A ⧸ Ideal.span s) →ₗ[k] (A ⧸ Ideal.span s),
+      ∀ x, Q (Ideal.Quotient.mk _ x) = Ideal.Quotient.mk _ (T x) := by
+  have hT : (Ideal.span s).restrictScalars k ≤ ((Ideal.span s).restrictScalars k).comap T := by
+    intro x hx
+    -- Generalize over the multiplier, since `T` commutes only with multiplication by `s`.
+    suffices h : ∀ a, T (a * x) ∈ Ideal.span s by simpa using h 1
+    induction hx using Submodule.span_induction with
+    | mem f hf =>
+      intro a
+      rw [mul_comm, hmul f hf]
+      exact Ideal.mul_mem_right _ _ (Ideal.subset_span hf)
+    | zero => simp
+    | add x y _ _ hx hy => intro a; rw [mul_add, map_add]; exact add_mem (hx a) (hy a)
+    | smul b x _ hx => intro a; rw [smul_eq_mul, ← mul_assoc]; exact hx (a * b)
+  refine ⟨(Submodule.Quotient.restrictScalarsEquiv k _).conj (Submodule.mapQ _ _ T hT),
+    fun x ↦ ?_⟩
+  rw [LinearEquiv.conj_apply_apply, ← Ideal.Quotient.mk_eq_mk,
+    Submodule.Quotient.restrictScalarsEquiv_symm_mk, Submodule.mapQ_apply,
+    Submodule.Quotient.restrictScalarsEquiv_mk, Ideal.Quotient.mk_eq_mk]
 
 /-- The linear combination, with coefficients in `R ⧸ I`, of the classes in `S ⧸ IS` of elements
 `b j` of `S`, evaluated at the classes of `c j`, is the class of `∑ j, c j * b j`. -/
