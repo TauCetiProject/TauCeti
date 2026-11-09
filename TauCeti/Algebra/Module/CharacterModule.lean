@@ -61,8 +61,20 @@ theorem CharacterModule.eval_injective (M : Type*) [AddCommGroup M] :
 
 /-- The cardinality of the character module equals the cardinality of the group. -/
 @[simp]
-theorem natCard_characterModule (M : Type*) [AddCommGroup M] [Finite M] :
+theorem natCard_characterModule (M : Type*) [AddCommGroup M] :
     Nat.card (CharacterModule M) = Nat.card M := by
+  by_cases hM : Finite M
+  swap
+  · -- both sides vanish: an infinite group has an infinite character module, since it embeds in
+    -- the double character module, which is finite as soon as the character module is
+    have hinf : Infinite (CharacterModule M) := by
+      refine ⟨fun hc ↦ hM ?_⟩
+      have := hc
+      have : Finite (CharacterModule (CharacterModule M)) := inferInstance
+      exact Finite.of_injective (β := CharacterModule (CharacterModule M)) _
+        (CharacterModule.eval_injective M)
+    have : Infinite M := not_finite_iff_infinite.mp hM
+    rw [Nat.card_eq_zero_of_infinite, Nat.card_eq_zero_of_infinite]
   cases nonempty_fintype M
   have : Fintype (CharacterModule M) := Fintype.ofFinite _
   have : Fintype (CharacterModule (CharacterModule M)) := Fintype.ofFinite _
