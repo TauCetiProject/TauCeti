@@ -122,7 +122,6 @@ lemma infinite_zero : Infinite (0 : K[X]).Factors := by
   have hSm : ∀ q ∈ S, q.Monic := fun q hq ↦ by
     obtain ⟨q, -, rfl⟩ := Finset.mem_image.mp hq
     exact Factors.monic q
-  have hPm : (X * ∏ q ∈ S, q).Monic := monic_X.mul (monic_prod_of_monic _ _ hSm)
   have hPdeg : 0 < (X * ∏ q ∈ S, q).natDegree := by
     rw [monic_X.natDegree_mul (monic_prod_of_monic _ _ hSm), natDegree_X]
     omega
