@@ -131,7 +131,7 @@ theorem add (hf : IsDivisorSectionAt D f x) (hg : IsDivisorSectionAt D g x) :
     IsDivisorSectionAt D (f + g) x where
   meromorphicAt := hf.meromorphicAt.add hg.meromorphicAt
   neg_le_meromorphicOrderAt := (le_min hf.neg_le_meromorphicOrderAt
-    hg.neg_le_meromorphicOrderAt).trans (meromorphicOrderAt_add hf.meromorphicAt hg.meromorphicAt)
+    hg.neg_le_meromorphicOrderAt).trans (meromorphicOrderAt_add hg.meromorphicAt)
   contMDiffAt hD := (hf.contMDiffAt hD).add (hg.contMDiffAt hD)
   apply_eq_zero hD := by simp [hf.apply_eq_zero hD, hg.apply_eq_zero hD]
 
