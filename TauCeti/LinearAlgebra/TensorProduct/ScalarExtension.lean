@@ -43,9 +43,9 @@ this compares base change to the fibre ring `B ⊗[R] κ(p)` with base change to
 * `TensorProduct.cancelBaseChangeRight` and `TensorProduct.cancelBaseChangeLeft`: cancelling
   a scalar-extended algebra identifies two iterated scalar extensions.
 * `TensorProduct.exists_rTensor_section`, `TensorProduct.exists_smul_linearMap_eq_self`: after
-  tensoring over `R` with a field `Q` that is an `R`-algebra, a surjection has an `R`-linear
-  section, and after tensoring with any `R`-algebra `Q`, multiplication by an element whose
-  image in `Q` is a unit has an `R`-linear right inverse.
+  tensoring over `R` with a division ring `Q` that is an `R`-algebra, a surjection has an
+  `R`-linear section, and after tensoring with any `R`-algebra `Q`, multiplication by an element
+  whose image in `Q` is a unit has an `R`-linear right inverse.
 * `TensorProduct.AlgebraTensorModule.cancelBaseChangeTensor`: tensoring with two
   scalar-extended modules cancels both copies of the extended coefficient ring.
 -/
@@ -277,12 +277,12 @@ namespace TensorProduct
 
 section FieldSections
 
-variable {R : Type*} [CommRing R] (Q : Type*) [Field Q] [Algebra R Q]
+variable {R : Type*} [CommSemiring R] (Q : Type*) [DivisionRing Q] [Algebra R Q]
 
-/-- A surjection of `R`-modules has an `R`-linear section after tensoring with a field `Q`
-over `R`, because `P ⊗[R] Q` is a `Q`-vector space. -/
-theorem exists_rTensor_section {N P : Type*} [AddCommGroup N] [Module R N]
-    [AddCommGroup P] [Module R P] {g : N →ₗ[R] P} (hg : Function.Surjective g) :
+/-- A surjection of `R`-modules has an `R`-linear section after tensoring with a division ring `Q`
+over `R`, because `P ⊗[R] Q` is a free `Q`-module. -/
+theorem exists_rTensor_section {N P : Type*} [AddCommMonoid N] [Module R N]
+    [AddCommMonoid P] [Module R P] {g : N →ₗ[R] P} (hg : Function.Surjective g) :
     ∃ s : P ⊗[R] Q →ₗ[R] N ⊗[R] Q,
       ∀ x, TensorProduct.AlgebraTensorModule.rTensor R Q g (s x) = x := by
   obtain ⟨s₀, hs₀⟩ := Module.projective_lifting_property
