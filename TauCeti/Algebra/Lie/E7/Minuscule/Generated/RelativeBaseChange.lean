@@ -57,7 +57,7 @@ noncomputable def generatorCoordinateAlgebraBaseChangeIso
   match j with
   | .inl _ => AdditiveGroup.coordinateHopfAlgebraBaseChangeIso R S
   | .inr _ => _root_.CommHopfAlgCat.isoMk
-      (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv R S
+      (MonoidAlgebra.scalarTensorBialgEquiv R S
         (G := SplitTorus.characterGroup (Fin 7)))
 
 omit [Module.Free R S] in

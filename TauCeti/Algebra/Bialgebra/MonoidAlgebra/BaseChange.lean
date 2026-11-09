@@ -29,10 +29,10 @@ groups of multiplicative type and non-split tori.
 
 ## Main declarations
 
-* `TauCeti.MonoidAlgebra.scalarTensorBialgEquiv`: base change of a monoid bialgebra is the monoid
-  bialgebra over the extended scalars.
-* `TauCeti.MonoidAlgebra.mapDomainBialgHom_comp_scalarTensorBialgEquiv`: the equivalence is natural
-  in the indexing monoid.
+* `MonoidAlgebra.scalarTensorBialgEquiv`: base change of a monoid bialgebra is the monoid bialgebra
+  over the extended scalars.
+* `MonoidAlgebra.mapDomainBialgHom_comp_scalarTensorBialgEquiv`: the equivalence is natural in the
+  indexing monoid.
 * `MonoidAlgebra.scalarTensorBialgEquiv_tmul_scalarTensorBialgEquiv_one_tmul`: the equivalence
   is compatible with a scalar tower `R → k → K`.
 
@@ -48,7 +48,7 @@ public section
 
 open TensorProduct
 
-namespace TauCeti.MonoidAlgebra
+namespace MonoidAlgebra
 
 universe u v w w'
 
@@ -95,15 +95,6 @@ theorem mapDomainBialgHom_comp_scalarTensorBialgEquiv (φ : G →* G') :
   apply _root_.BialgHom.coe_toAlgHom_injective
   ext
   simp
-
-end TauCeti.MonoidAlgebra
-
-namespace MonoidAlgebra
-
-open TauCeti.MonoidAlgebra
-
-variable (k K : Type*) [CommSemiring k] [CommSemiring K] [Algebra k K]
-variable {G : Type*} [CommMonoid G]
 
 /-- **Base change of monoid bialgebras composes in stages.** For a scalar tower `R → k → K`,
 extending an element of `R[G]` to `k[G]` and then tensoring with `s : K` agrees with tensoring it

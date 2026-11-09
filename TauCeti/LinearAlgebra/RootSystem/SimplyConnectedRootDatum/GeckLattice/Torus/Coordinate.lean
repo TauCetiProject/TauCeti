@@ -93,7 +93,7 @@ theorem geckWeightTorusToBaseChangeCoordinateMap_surjective :
     (t.geckWeightTorusIntegralCoordinateMap ht)
     (t.geckWeightTorusIntegralCoordinateMap_surjective ht hwt)
     (t.geckBaseChangeCoordinateIso ht R)
-    (_root_.CommHopfAlgCat.isoMk (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ R
+    (_root_.CommHopfAlgCat.isoMk (MonoidAlgebra.scalarTensorBialgEquiv ℤ R
       (G := SplitTorus.characterGroup (Fin t.rank))))
 
 /-- The intrinsic Hopf ideal of the weight torus in the specialized Geck carrier. -/
@@ -198,7 +198,7 @@ theorem map_baseChangeHopfIdeal_geckWeightTorusIntegralDefiningIdeal :
   rw [geckWeightTorusIntegralDefiningIdeal, geckWeightTorusDefiningIdeal]
   refine CommHopfAlgCat.map_baseChangeHopfIdeal_kerOfSurjective
     (t.geckBaseChangeCoordinateIso ht R).symm
-    (_root_.CommHopfAlgCat.isoMk (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ R
+    (_root_.CommHopfAlgCat.isoMk (MonoidAlgebra.scalarTensorBialgEquiv ℤ R
       (G := SplitTorus.characterGroup (Fin t.rank))))
     (t.geckWeightTorusIntegralCoordinateMap_surjective ht hwt)
     (t.geckWeightTorusToBaseChangeCoordinateMap_surjective ht hwt R) ?_
