@@ -67,9 +67,6 @@ acceleration of the curve on this computation.
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf--Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "Covariant derivative along a curve": agreement with the ambient derivative for a
-  pulled-back vector field.
 * M. P. do Carmo, *Riemannian Geometry*, Birkhauser, 1992, Ch. 2, Proposition 2.2(c).
 * The moving-chart operator characterized here was informed by
   `formalized-sources/DoCarmo/DoCarmoLib/Riemannian/Connection/CovariantDerivativeAlong.lean` in
@@ -192,7 +189,7 @@ omit [FiniteDimensional 𝕜 E]
 /-- Along a curve, the derivative of the coordinate reading of a pulled-back vector-bundle section
 is the reading of its flat frame derivative in the direction of the velocity. -/
 theorem derivWithin_sectionCoord_pullback
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
     {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ y, AddCommGroup (V y)]
     [∀ y, Module 𝕜 (V y)] [∀ y, TopologicalSpace (V y)] [FiberBundle F V]
     [∀ y, IsTopologicalAddGroup (V y)] [∀ y, ContinuousSMul 𝕜 (V y)]
@@ -205,6 +202,7 @@ theorem derivWithin_sectionCoord_pullback
     derivWithin (sectionCoord (F := F) γ (fun r ↦ Y (γ r)) x) s t =
       (trivializationAt F V x).continuousLinearMapAt 𝕜 (γ t)
         (frameCovariantDerivative I b (trivializationAt F V x) Y (γ t) w) := by
+  have : FiniteDimensional 𝕜 F := Module.Finite.of_basis b
   set e := trivializationAt F V x
   set σ : ι → M → 𝕜 := fun i ↦ (LinearMap.piApply (e.localFrameCoeff I b i)) Y
   -- Read Mathlib's local-frame expansion through the trivialization.

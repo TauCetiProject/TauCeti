@@ -143,8 +143,7 @@ theorem mem_range_mapRingHom_iff_fixed (z : RatFunc K) :
         (Polynomial.map_injective _ (algebraMap F K).injective))).toAlgebra
   have hpoly (p : F[X]) : algebraMap (RatFunc F) (RatFunc K) (algebraMap F[X] _ p) =
       algebraMap K[X] _ (p.map (algebraMap F K)) := by
-    rw [RingHom.algebraMap_toAlgebra, coe_mapRingHom_eq_coe_map]
-    simpa using map_apply_div (Polynomial.mapRingHom (algebraMap F K)) _ p 1
+    rw [RingHom.algebraMap_toAlgebra, mapRingHom_algebraMap, Polynomial.coe_mapRingHom]
   have := TauCeti.RatFunc.isScalarTower_of_algebraMap_C (F := F) (K := K) fun c ↦ by
     rw [← algebraMap_C, ← algebraMap_C, hpoly, Polynomial.map_C]
   have hX : algebraMap (RatFunc F) (RatFunc K) X = X := by
