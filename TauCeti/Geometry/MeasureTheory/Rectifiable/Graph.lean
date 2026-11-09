@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Calculus.TangentCone.Graph
 public import Mathlib.Geometry.Euclidean.Volume.Measure
-public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 
 /-!
 # Approximate tangency of differentiable normal graphs
