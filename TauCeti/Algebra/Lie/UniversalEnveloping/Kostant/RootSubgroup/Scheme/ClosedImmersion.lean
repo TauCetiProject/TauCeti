@@ -65,9 +65,10 @@ criterion supplies the same closed subgroup.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_apply_of_isRootStep`: the same
   statement read as a matrix entry.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupPoints_apply_baseChange_basis_of_action`:
-  the class-two exponential formula for an operator with one nonzero basis column.
+  the exponential formula for a root operator sending one basis vector to another and killing the
+  rest.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_transvectionUnit_of_action`:
-  a class-two root operator with one nonzero basis column exponentiates to a transvection.
+  a root operator with one nonzero basis column exponentiates to a transvection.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_sum`: a nilpotent root
   operator exponentiates to the finite sum of its integral divided-power matrices.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_one_add_smul` and, in the same
@@ -380,12 +381,10 @@ theorem kostantRootSubgroupMatrix_apply_of_isRootStep [Fintype η] [DecidableEq 
 
 end IsRootStep
 
-/-- A class-two root operator with one nonzero basis column acts by adding the parameter times
-that column after base change. -/
+/-- A root operator that sends one basis vector to another and kills all remaining basis vectors
+acts by adding the parameter times that column after base change. -/
 theorem kostantRootSubgroupPoints_apply_baseChange_basis_of_action [DecidableEq η]
-    {A : Type*} [CommRing A] (source target : η)
-    (hclass : nilpotencyClass
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) = 2)
+    {A : Type*} [CommRing A] (source target : η) (hne : target ≠ source)
     (haction : ∀ s, ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s : V) =
       if s = source then (b target : V) else 0)
     (f : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) (s : η) :
@@ -399,9 +398,28 @@ theorem kostantRootSubgroupPoints_apply_baseChange_basis_of_action [DecidableEq 
     apply Subtype.ext
     rw [coe_integralDividedPower_one_apply, Module.End.smul_def, haction]
     split <;> rfl
-  rw [Module.Basis.baseChange_apply, kostantRootSubgroupPoints_tmul, hclass,
-    Finset.sum_range_succ, Finset.sum_range_one, integralDividedPower_zero, hone]
-  split <;> simp [smul_tmul']
+  have hsq : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s : V)) = 0 := by
+    by_cases hs : s = source
+    · subst hs
+      rw [haction s]
+      simp only [↓reduceIte]
+      rw [haction target]
+      simp only [hne, ↓reduceIte]
+    · rw [haction s]
+      simp only [hs, ↓reduceIte, map_zero]
+  have hstep : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b source : V) =
+      (1 : ℤ) • (b target : V) := by
+    rw [haction source]
+    simp only [↓reduceIte, one_zsmul]
+  rw [Module.Basis.baseChange_apply, kostantRootSubgroupPoints_tmul,
+    ← Finset.sum_subset
+      (Finset.range_subset_range.2 (two_le_nilpotencyClass_of_step hnil isUnit_one hstep))]
+  · rw [Finset.sum_range_succ, Finset.sum_range_one, integralDividedPower_zero, hone]
+    split <;> simp [smul_tmul']
+  · intro k _ hk
+    rw [Finset.mem_range] at hk
+    rw [integralDividedPower_apply_eq_zero_of_two_le _ hsq (by omega), TensorProduct.tmul_zero]
 
 /-- A divided power has the prescribed matrix in an integral lattice basis. -/
 theorem integralDividedPower_basis_eq_sum [Fintype η] (k : ℕ) (X : Matrix η η ℤ)
@@ -419,12 +437,10 @@ theorem integralDividedPower_basis_eq_sum [Fintype η] (k : ℕ) (X : Matrix η 
 
 variable [Fintype η] [DecidableEq η]
 
-/-- A class-two root operator that sends one basis vector to another and kills all remaining
-basis vectors exponentiates to the corresponding elementary transvection. -/
+/-- A root operator that sends one basis vector to another and kills all remaining basis vectors
+exponentiates to the corresponding elementary transvection. -/
 theorem kostantRootSubgroupMatrix_eq_transvectionUnit_of_action
     {A : Type*} [CommRing A] (source target : η) (hne : target ≠ source)
-    (hclass : nilpotencyClass
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) = 2)
     (haction : ∀ s, ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s : V) =
       if s = source then (b target : V) else 0)
     (f : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
@@ -435,7 +451,7 @@ theorem kostantRootSubgroupMatrix_eq_transvectionUnit_of_action
   intro row col
   rw [kostantRootSubgroupMatrix_apply,
     kostantRootSubgroupPoints_apply_baseChange_basis_of_action e h ρ M hM i hnil b source
-      target hclass haction f,
+      target hne haction f,
     TauCeti.coe_transvectionUnit]
   simp only [map_add, Module.Basis.repr_self, Finsupp.add_apply, Matrix.transvection,
     Matrix.add_apply, Matrix.one_apply, Matrix.single_apply, Finsupp.single_apply]
