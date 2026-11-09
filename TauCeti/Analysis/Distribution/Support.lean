@@ -328,10 +328,10 @@ end AugmentationGroup
 
 section Module
 
-variable [AddCommMonoid V] [Module ℝ V]
+variable {𝕜 : Type*} [DivisionRing 𝕜] [AddCommMonoid V] [Module 𝕜 V]
 
 /-- The augmentation is homogeneous. -/
-theorem augmentation_smul (f : 𝓓^{n}(Ω, F) → V) (a : ℝ) (c : F) :
+theorem augmentation_smul (f : 𝓓^{n}(Ω, F) → V) (a : 𝕜) (c : F) :
     augmentation (a • f) c = a • augmentation f c := by
   rcases eq_or_ne a 0 with rfl | ha
   · unfold augmentation
