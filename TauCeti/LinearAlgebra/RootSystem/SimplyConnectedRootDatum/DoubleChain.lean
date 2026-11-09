@@ -92,8 +92,8 @@ theorem pairings_of_double_chain {α β γ δ : Fin t.numRoots}
   · simpa using ((P).algebraMap_pairingIn ℤ α β).symm.trans
       (congrArg (algebraMap ℤ ℤ) hαβ)
 
-/-- The sum of the initial short root and the last root of a double chain is neither a root
-nor zero. -/
+/-- The sum `α + δ` of the root `α` and the last root `δ = 2α + β` of a double chain is
+neither a root nor zero. -/
 theorem root_add_last_notMem_of_double_chain {α β γ δ : Fin t.numRoots}
     (hγ : (P).root γ = (P).root α + (P).root β)
     (hδ : (P).root δ = (P).root α + (P).root γ) :
@@ -115,8 +115,8 @@ theorem root_add_last_notMem_of_double_chain {α β γ δ : Fin t.numRoots}
   · intro hz
     simp [hz] at heval
 
-/-- The sum of the initial long root and the middle root of a double chain is neither a root
-nor zero. -/
+/-- The sum `β + γ` of the initial root `β` and the middle root `γ = α + β` of a double chain
+is neither a root nor zero. -/
 theorem root_add_middle_notMem_of_double_chain {α β γ δ : Fin t.numRoots}
     (hγ : (P).root γ = (P).root α + (P).root β)
     (hδ : (P).root δ = (P).root α + (P).root γ) :
