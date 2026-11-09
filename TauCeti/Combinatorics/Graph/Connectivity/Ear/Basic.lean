@@ -538,9 +538,7 @@ theorem graphAfter_snoc_castSucc (d : G.EarDecomposition H) (ear : G.Ear H)
 @[simp]
 theorem graphAfter_snoc_zero (d : G.EarDecomposition H) (ear : G.Ear H) :
     (d.snoc ear).graphAfter 0 = d.graphAfter 0 := by
-  -- Projection reduction exposes `Fin.lastCases`; rewriting cannot unfold the opaque `snoc` body.
-  change Fin.lastCases ear.add d.graphAfter 0 = d.graphAfter 0
-  rw [← Fin.castSucc_zero, Fin.lastCases_castSucc]
+  exact snoc_graphAfter_zero d ear
 
 /-- Adjoining an ear preserves the property of starting from a single vertex. -/
 @[simp]

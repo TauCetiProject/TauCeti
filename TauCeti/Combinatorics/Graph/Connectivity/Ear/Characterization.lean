@@ -93,11 +93,10 @@ theorem IsEdgeConnected.exists_earDecomposition_of_earDecomposition
 any chosen actual vertex. -/
 theorem IsEdgeConnected.exists_earDecomposition [Finite V(G)] [Finite E(G)]
     (hG : G.IsEdgeConnected 2) (v : V(G)) :
-    ∃ d : G.EarDecomposition G, d.IsVertexStart := by
+    ∃ d : G.EarDecomposition G, d.initial = Graph.noEdge {v.1} β := by
   obtain ⟨d, hinit⟩ :=
     hG.exists_earDecomposition_of_earDecomposition (EarDecomposition.vertex v)
-  exact ⟨d, (EarDecomposition.isVertexStart_iff d).mpr
-    ⟨v, hinit.trans (by simp)⟩⟩
+  exact ⟨d, hinit.trans (by simp)⟩
 
 /-- **Ear characterization of two-edge-connectivity.** A finite multigraph with a nonempty actual
 vertex set is `2`-edge-connected exactly when it admits an ear decomposition built from one vertex
@@ -105,7 +104,10 @@ by adjoining open or closed ears. -/
 theorem isEdgeConnected_two_iff_exists_isVertexStart_earDecomposition
     [Finite V(G)] [Finite E(G)] [Nonempty V(G)] :
     G.IsEdgeConnected 2 ↔ ∃ d : G.EarDecomposition G, d.IsVertexStart :=
-  ⟨fun hG ↦ hG.exists_earDecomposition (Classical.arbitrary V(G)),
+  ⟨fun hG ↦ by
+      obtain ⟨d, hinit⟩ := hG.exists_earDecomposition (Classical.arbitrary V(G))
+      exact ⟨d, (EarDecomposition.isVertexStart_iff d).mpr
+        ⟨Classical.arbitrary V(G), hinit⟩⟩,
     fun ⟨d, _⟩ ↦ d.isEdgeConnected_two⟩
 
 end Graph
