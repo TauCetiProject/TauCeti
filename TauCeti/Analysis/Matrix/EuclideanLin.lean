@@ -35,7 +35,8 @@ Conversely, every continuous linear automorphism of Euclidean space is the map o
 matrix. This correspondence is a group isomorphism, and the matrix depends continuously on the
 automorphism.
 
-A square matrix is unitary exactly when its continuous linear map preserves the inner product.
+A square matrix is unitary exactly when its continuous linear map preserves the inner product,
+and a unitary matrix acts as a linear isometry equivalence of Euclidean space.
 The rows of a unitary matrix form an orthonormal basis, so the values of the quadratic form of a
 matrix `A` on an orthonormal basis are the diagonal entries of a unitary conjugate of `A`; for a
 diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
@@ -56,6 +57,9 @@ diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
   continuous linear map;
 * `Matrix.mem_unitaryGroup_iff_inner_toEuclideanCLM` — a matrix is unitary exactly when its
   Euclidean operator preserves the inner product;
+* `Matrix.UnitaryGroup.toLinearIsometryEquiv` — the group homomorphism from the unitary group to
+  the linear isometry group of Euclidean space, acting as the matrix does
+  (`Matrix.UnitaryGroup.toLinearIsometryEquiv_apply`);
 * `Matrix.toEuclideanCLM_apply_apply` — the coordinate formula for the continuous linear map of
   a matrix, which depends continuously on the matrix (`Matrix.continuous_toEuclideanCLM`) and
   conversely (`Matrix.continuous_toEuclideanCLM_symm`);
@@ -188,6 +192,25 @@ theorem mem_unitaryGroup_iff_inner_toEuclideanCLM {M : Matrix ι ι 𝕜} :
   refine EquivLike.injective (toEuclideanCLM (n := ι) (𝕜 := 𝕜)) ?_
   rw [map_mul, map_star, map_one, ContinuousLinearMap.star_eq_adjoint]
   exact (ContinuousLinearMap.inner_map_map_iff_adjoint_comp_self _).mp h
+
+/-- A unitary matrix acts on `EuclideanSpace 𝕜 ι` as a linear isometry equivalence, and this is a
+group homomorphism from the unitary group to the linear isometry group. -/
+noncomputable def UnitaryGroup.toLinearIsometryEquiv :
+    unitaryGroup ι 𝕜 →* (EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) where
+  toFun A := Unitary.linearIsometryEquiv
+    ⟨toEuclideanCLM (n := ι) (𝕜 := 𝕜) A, Unitary.map_mem toEuclideanCLM A.2⟩
+  map_one' := LinearIsometryEquiv.ext fun x ↦
+    DFunLike.congr_fun (map_one (toEuclideanCLM (n := ι) (𝕜 := 𝕜))) x
+  map_mul' A B := LinearIsometryEquiv.ext fun x ↦
+    DFunLike.congr_fun (map_mul (toEuclideanCLM (n := ι) (𝕜 := 𝕜)) (A : Matrix ι ι 𝕜) B) x
+
+/-- The linear isometry of a unitary matrix acts as the matrix does. -/
+@[simp]
+theorem UnitaryGroup.toLinearIsometryEquiv_apply (A : unitaryGroup ι 𝕜)
+    (x : EuclideanSpace 𝕜 ι) :
+    UnitaryGroup.toLinearIsometryEquiv A x = toEuclideanLin (A : Matrix ι ι 𝕜) x := by
+  simp only [UnitaryGroup.toLinearIsometryEquiv, MonoidHom.coe_mk, OneHom.coe_mk]
+  exact toEuclideanCLM_apply (A : Matrix ι ι 𝕜) x
 
 /-- The determinant of a diagonal continuous linear map is the product of its diagonal entries. -/
 @[simp]
