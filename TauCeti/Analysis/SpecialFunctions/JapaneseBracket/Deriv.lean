@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 
 /-!
 # Derivatives of powers of the Japanese bracket
@@ -267,11 +268,9 @@ theorem exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le {c : ℝ} (hc : 
   have hcomp : (fun x : E ↦ (1 + ‖c • x‖ ^ 2) ^ r) = f ∘ g := by
     funext x
     simp only [Function.comp_apply, f, hg]
-  rw [hcomp, g.iteratedFDeriv_comp_right hf x le_rfl]
-  calc ‖(iteratedFDeriv ℝ k f (g x)).compContinuousLinearMap fun _ ↦ g‖
-        ≤ ‖iteratedFDeriv ℝ k f (g x)‖ * ∏ _ : Fin k, ‖g‖ :=
-        ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _
-    _ = ‖iteratedFDeriv ℝ k f (g x)‖ * ‖g‖ ^ k := by simp
+  rw [hcomp]
+  calc ‖iteratedFDeriv ℝ k (f ∘ g) x‖
+        ≤ ‖iteratedFDeriv ℝ k f (g x)‖ * ‖g‖ ^ k := g.norm_iteratedFDeriv_comp_right_le hf x le_rfl
     _ ≤ max C 0 * (1 + ‖c • x‖ ^ 2) ^ (r - k / 2) * ‖g‖ ^ k := by
         gcongr
         rw [← hg]
