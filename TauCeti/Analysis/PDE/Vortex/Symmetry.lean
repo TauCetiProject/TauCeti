@@ -40,9 +40,8 @@ preserve the limit, while a rotation by `u` multiplies it by `u^m`. The constant
 the end framing. This constant gauge does not tend to one at infinity, so it is a change of the
 frame of the line at infinity rather than an element of the framed gauge group.
 
-These are identities of smooth differential expressions; their Sobolev completions are not
-treated here. The induced action on the zero divisor of a vortex is in
-`TauCeti.Analysis.PDE.Vortex.Divisor`.
+These are identities of smooth differential expressions; their Sobolev completions, and the
+induced action on the divisor of a vortex, are not treated here.
 
 ## Main results
 

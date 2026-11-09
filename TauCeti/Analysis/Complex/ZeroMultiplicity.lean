@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.ContinuousLog.ArgumentPrinciple
 public import Mathlib.Algebra.Polynomial.Roots
 import TauCeti.Algebra.BigOperators.Finprod
-import TauCeti.Analysis.Normed.Module.LocalFactorization
+import TauCeti.Analysis.Complex.Wirtinger.Similarity
 import Mathlib.Data.Finsupp.Multiset
 import Mathlib.Topology.Algebra.Polynomial
 
@@ -24,7 +24,7 @@ No holomorphy is assumed. This is the local form that the similarity principle
 (`TauCeti.exists_contDiffAt_pow_mul_of_conjWirtingerDeriv_apply_one_eq_mul`) gives for solutions
 of `∂bar f = a f`, for instance for the section of a plane vortex, and it is the hypothesis of the
 topological argument principle `TauCeti.finsum_eq_of_tendsto_mul_inv_pow`. The exponent of such a
-factorization is unique (`TauCeti.eq_of_eventually_sub_pow_smul_eq`), so `f` has at most one zero
+factorization is unique (`TauCeti.eq_of_eventually_sub_pow_mul_eq`), so `f` has at most one zero
 multiplicity function (`TauCeti.IsZeroMultiplicity.unique`); it is positive exactly at the zeros of
 `f`.
 
@@ -73,9 +73,9 @@ theorem unique (h : IsZeroMultiplicity f n) (h' : IsZeroMultiplicity f n') : n =
   funext fun z ↦ by
     obtain ⟨v, hv, hv₀, hf⟩ := isZeroMultiplicity_iff.1 h z
     obtain ⟨v', hv', hv₀', hf'⟩ := isZeroMultiplicity_iff.1 h' z
-    exact eq_of_eventually_sub_pow_smul_eq hv hv₀ hv' hv₀' <| by
+    exact eq_of_eventually_sub_pow_mul_eq hv hv₀ hv' hv₀' <| by
       filter_upwards [hf, hf'] with w hw hw'
-      rw [smul_eq_mul, smul_eq_mul, ← hw, ← hw']
+      rw [← hw, ← hw']
 
 /-- A function with a zero multiplicity function is continuous. -/
 theorem continuous (h : IsZeroMultiplicity f n) : Continuous f :=
