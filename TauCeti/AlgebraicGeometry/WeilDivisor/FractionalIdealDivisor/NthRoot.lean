@@ -156,9 +156,9 @@ restriction is what makes this multiplicative, integer division being additive o
 and not in general; for `n = 0` the map is constantly `1` and the subgroup is trivial. -/
 noncomputable def nthRootHom (n : ℕ) : nDivisible R K n →* (FractionalIdeal R⁰ K)ˣ where
   toFun I := nthRootFun R K n (I : (FractionalIdeal R⁰ K)ˣ)
-  map_one' := units_eq_of_forall_count_eq R K fun v ↦ by
+  map_one' := FractionalIdeal.units_ext_count fun v ↦ by
     simp only [count_nthRootFun, Subgroup.coe_one, Units.val_one, count_one, Int.zero_ediv]
-  map_mul' I J := units_eq_of_forall_count_eq R K fun v ↦ by
+  map_mul' I J := FractionalIdeal.units_ext_count fun v ↦ by
     rw [count_nthRootFun, Units.val_mul, count_mul K v (Units.ne_zero _) (Units.ne_zero _),
       count_nthRootFun, count_nthRootFun, Subgroup.coe_mul, Units.val_mul,
       count_mul K v (Units.ne_zero _) (Units.ne_zero _),
@@ -166,8 +166,8 @@ noncomputable def nthRootHom (n : ℕ) : nDivisible R K n →* (FractionalIdeal 
 
 variable {R K} in
 /-- The multiplicities of the `n`-th root are those of `I`, divided by `n`. Together with
-`units_eq_of_forall_count_eq` this determines `nthRootHom` completely, so no lemma below needs to
-unfold it. -/
+`FractionalIdeal.units_ext_count` this determines `nthRootHom` completely, so no lemma below
+needs to unfold it. -/
 @[simp]
 lemma count_nthRootHom (n : ℕ) (I : nDivisible R K n) (v : HeightOneSpectrum R) :
     count K v (nthRootHom R K n I : FractionalIdeal R⁰ K) =
@@ -178,7 +178,7 @@ lemma count_nthRootHom (n : ℕ) (I : nDivisible R K n) (v : HeightOneSpectrum R
 returns the original ideal. -/
 lemma nthRootHom_pow (n : ℕ) (I : nDivisible R K n) :
     nthRootHom R K n I ^ n = (I : (FractionalIdeal R⁰ K)ˣ) :=
-  units_eq_of_forall_count_eq R K fun v ↦ by
+  FractionalIdeal.units_ext_count fun v ↦ by
     rw [Units.val_pow_eq_pow_val, count_pow, count_nthRootHom,
       Int.mul_ediv_cancel' (mem_nDivisible.mp I.2 v)]
 
@@ -271,12 +271,12 @@ lemma nthRootClass_eq_one_iff {n : ℕ} (u : unitsNDivisible R K n) :
   · -- Every multiplicity of `(u)` is divisible by `0`, hence zero, so `(u)` is already trivial and
     -- both sides hold.
     have hu1 : toPrincipalIdeal R K (u : Kˣ) = 1 :=
-      units_eq_of_forall_count_eq R K fun v ↦ by
+      FractionalIdeal.units_ext_count fun v ↦ by
         rw [coe_toPrincipalIdeal, Units.val_one, count_one]
         exact zero_dvd_iff.mp (by simpa using mem_unitsNDivisible.mp u.2 v)
     obtain ⟨a, ha⟩ := (toPrincipalIdeal_eq_one_iff _).mp hu1
     have hroot : nthRootHom R K 0 (unitsNDivisibleToNDivisible R K 0 u) = 1 :=
-      units_eq_of_forall_count_eq R K fun v ↦ by
+      FractionalIdeal.units_ext_count fun v ↦ by
         rw [count_nthRootHom, Nat.cast_zero, Int.ediv_zero, Units.val_one, count_one]
     exact iff_of_true (by rw [nthRootClass_apply, hroot, map_one])
       ⟨a, 1, by rw [pow_zero, mul_one, ha]⟩
@@ -292,7 +292,7 @@ lemma nthRootClass_eq_one_iff {n : ℕ} (u : unitsNDivisible R K n) :
     exact ⟨a, w, by rw [ha]; group⟩
   · rintro ⟨a, w, hw⟩
     -- Conversely `w` generates the `n`-th root: its multiplicities are those of `(u)` over `n`.
-    refine ⟨w, units_eq_of_forall_count_eq R K fun v ↦ ?_⟩
+    refine ⟨w, FractionalIdeal.units_ext_count fun v ↦ ?_⟩
     have hcu : count K v ((toPrincipalIdeal R K (u : Kˣ) : (FractionalIdeal R⁰ K)ˣ) :
         FractionalIdeal R⁰ K) = n * count K v
           ((toPrincipalIdeal R K w : (FractionalIdeal R⁰ K)ˣ) : FractionalIdeal R⁰ K) := by
