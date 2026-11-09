@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Contour.Winding.Number.Segment.Formula
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 import Mathlib.Analysis.SpecialFunctions.Complex.Log
 import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
-import TauCeti.Analysis.Complex.Basic
+import TauCeti.Analysis.Complex.Coordinates
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Concat
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Continuity
@@ -258,12 +258,12 @@ theorem exists_forall_windingNumber_eq_add_one_of_eqOn_segment {Γ : ℝ → ℂ
   have h_off_add : ∀ h : ℝ, 0 < h → ‖v‖ * |h| < r → v * (s + h * I) + z₀ ∉ Γ '' uIcc a c := by
     intro h hh hlt
     refine hoff _ (by rwa [Metric.mem_ball, dist_add_right, Complex.dist_mul_add_mul_I]) ?_
-    rw [add_sub_add_right_eq_sub, TauCeti.im_div_add_mul_I_sub hv]
+    rw [add_sub_add_right_eq_sub, TauCeti.mul_add_mul_I_sub_mul_div_im hv]
     exact hh.ne'
   have h_off_sub : ∀ h : ℝ, 0 < h → ‖v‖ * |h| < r → v * (s - h * I) + z₀ ∉ Γ '' uIcc a c := by
     intro h hh hlt
     refine hoff _ (by rwa [Metric.mem_ball, dist_add_right, Complex.dist_mul_sub_mul_I]) ?_
-    rw [add_sub_add_right_eq_sub, TauCeti.im_div_sub_mul_I_sub hv]
+    rw [add_sub_add_right_eq_sub, TauCeti.mul_sub_mul_I_sub_mul_div_im hv]
     exact (neg_lt_zero.mpr hh).ne
   have h_tend : Tendsto (fun h : ℝ ↦
       windingNumber Γ a c (v * (s + h * I) + z₀) - windingNumber Γ a c (v * (s - h * I) + z₀))
@@ -309,10 +309,10 @@ theorem exists_forall_windingNumber_eq_add_one_of_eqOn_segment {Γ : ℝ → ℂ
     rwa [Metric.mem_ball, dist_add_right, Complex.dist_mul_sub_mul_I]
   have e₁ := windingNumber_eq_of_mem_ball_of_mul_im_pos hΓ hclosed hoff 1 w₁ hw₁ _ hmem_add
     (by simpa using h₁)
-    (by rw [add_sub_add_right_eq_sub, TauCeti.im_div_add_mul_I_sub hv]; simpa using hh_pos)
+    (by rw [add_sub_add_right_eq_sub, TauCeti.mul_add_mul_I_sub_mul_div_im hv]; simpa using hh_pos)
   have e₂ := windingNumber_eq_of_mem_ball_of_mul_im_pos hΓ hclosed hoff (-1) w₂ hw₂ _ hmem_sub
     (by simpa using h₂)
-    (by rw [add_sub_add_right_eq_sub, TauCeti.im_div_sub_mul_I_sub hv]; simpa using hh_pos)
+    (by rw [add_sub_add_right_eq_sub, TauCeti.mul_sub_mul_I_sub_mul_div_im hv]; simpa using hh_pos)
   rw [e₁, e₂, h_jump, Int.cast_one]
 
 end TauCeti.Contour
