@@ -13,9 +13,10 @@ public import Mathlib.Topology.Homotopy.Basic
 # Homotopy compatibility of canonical metric changes
 
 Successive inverse-square-root changes of metric need not equal the direct change. Their
-orthogonal discrepancy nevertheless has a canonical path to the identity in the special
-orthogonal group. Interpolate the intermediate metric from the final metric to the chosen
-intermediate metric, and take the composition correction throughout this interpolation.
+orthogonal discrepancy nevertheless has a canonical path to the identity in the orthogonal
+group of a real Hilbert space, and in the special orthogonal group in finite dimension.
+Interpolate the intermediate metric from the final metric to the chosen intermediate metric,
+and take the composition correction throughout this interpolation.
 
 The correction depends continuously on both metrics. Consequently the path works for continuous
 families of metrics, not merely for individual pairs. Multiplying it by the direct transport
@@ -24,7 +25,9 @@ final metric. No commutation of Riesz operators, choice of eigenbasis, or positi
 hypothesis is required.
 
 The constructions use `ContinuousLinearMap.metricChangeCompositionCorrection` and the native
-operator-norm topology on `TauCeti.specialOrthogonalGroup`.
+operator-norm topology on `unitary (E →L[ℝ] E)`. In finite dimension,
+`metricChangeCompositionCorrectionSpecialOrthogonalPath` restricts this path to
+`TauCeti.specialOrthogonalGroup`.
 
 ## References
 
@@ -43,37 +46,30 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 local postfix:1024 "♯" => continuousLinearMapOfBilin (𝕜 := ℝ)
 
-variable [FiniteDimensional ℝ E]
+variable [CompleteSpace E]
 
 /-- The canonical path from the identity to the discrepancy between successive transport
 through `h` and direct transport to `k`. At time `t`, its intermediate metric is
-`(1 - t) • k + t • h`. The entire path lies in the special orthogonal group. -/
+`(1 - t) • k + t • h`. The entire path consists of orthogonal operators. -/
 noncomputable def metricChangeCompositionCorrectionPath (h k : E →L[ℝ] E →L[ℝ] ℝ)
     (hH : IsStrictlyPositive h♯) (hK : IsStrictlyPositive k♯) :
-    Path (1 : TauCeti.specialOrthogonalGroup E)
-      ⟨Unitary.linearIsometryEquiv.symm (h.metricChangeCompositionCorrection k hH hK),
-        metricChangeCompositionCorrection_mem_specialOrthogonalGroup h k hH hK⟩ where
-  toFun t := ⟨Unitary.linearIsometryEquiv.symm
+    Path (1 : unitary (E →L[ℝ] E))
+      (Unitary.linearIsometryEquiv.symm (h.metricChangeCompositionCorrection k hH hK)) where
+  toFun t := Unitary.linearIsometryEquiv.symm
     ((AffineMap.lineMap k h (t : ℝ)).metricChangeCompositionCorrection k
-      (isStrictlyPositive_lineMap k h hK hH t) hK),
-    metricChangeCompositionCorrection_mem_specialOrthogonalGroup _ _ _ _⟩
-  continuous_toFun := ((Path.segment k h).continuous.metricChangeCompositionCorrection
-    continuous_const (isStrictlyPositive_lineMap k h hK hH) (fun _ ↦ hK)).subtype_mk _
-  source' := by
-    apply Subtype.ext
-    simp [← LinearIsometryEquiv.one_def]
-  target' := by
-    apply Subtype.ext
-    simp
+      (isStrictlyPositive_lineMap k h hK hH t t.2) hK)
+  continuous_toFun := (Path.segment k h).continuous.metricChangeCompositionCorrection
+    continuous_const (fun t ↦ isStrictlyPositive_lineMap k h hK hH t t.2) (fun _ ↦ hK)
+  source' := by simp [← LinearIsometryEquiv.one_def]
+  target' := by simp
 
 /-- Evaluation of the canonical correction path, as an operator on vectors. -/
 @[simp]
 theorem metricChangeCompositionCorrectionPath_apply (h k : E →L[ℝ] E →L[ℝ] ℝ)
     (hH : IsStrictlyPositive h♯) (hK : IsStrictlyPositive k♯) (t : unitInterval) (v : E) :
-    (((metricChangeCompositionCorrectionPath h k hH hK t : TauCeti.specialOrthogonalGroup E) :
-      unitary (E →L[ℝ] E)) : E →L[ℝ] E) v =
+    (metricChangeCompositionCorrectionPath h k hH hK t : E →L[ℝ] E) v =
       (AffineMap.lineMap k h (t : ℝ)).metricChangeCompositionCorrection k
-        (isStrictlyPositive_lineMap k h hK hH t) hK v :=
+        (isStrictlyPositive_lineMap k h hK hH t t.2) hK v :=
   (rfl)
 
 /-- The canonical correction paths depend jointly continuously on time and on a continuous
@@ -89,8 +85,8 @@ theorem _root_.Continuous.metricChangeCompositionCorrectionPath
     simp only [AffineMap.lineMap_apply_module]
     fun_prop
   exact (hline.metricChangeCompositionCorrection (hk.comp continuous_snd)
-    (fun p ↦ isStrictlyPositive_lineMap (k p.2) (h p.2) (kpos p.2) (hpos p.2) p.1)
-    (fun p ↦ kpos p.2)).subtype_mk _
+    (fun p ↦ isStrictlyPositive_lineMap (k p.2) (h p.2) (kpos p.2) (hpos p.2) p.1 p.1.2)
+    (fun p ↦ kpos p.2))
 
 /-- No correction path is introduced when the intermediate and final metrics agree. -/
 @[simp]
@@ -101,7 +97,7 @@ theorem metricChangeCompositionCorrectionPath_self_apply (h : E →L[ℝ] E →L
   simp [metricChangeCompositionCorrectionPath_apply]
 
 /-- A homotopy from direct transport to `k` to successive transport through `h`, obtained
-by composing the canonical special-orthogonal correction path with the direct transport. -/
+by composing the canonical orthogonal correction path with the direct transport. -/
 noncomputable def metricChangeCompositionHomotopy (h k : E →L[ℝ] E →L[ℝ] ℝ)
     (hH : IsStrictlyPositive h♯) (hK : IsStrictlyPositive k♯) :
     ContinuousMap.Homotopy
@@ -109,10 +105,10 @@ noncomputable def metricChangeCompositionHomotopy (h k : E →L[ℝ] E →L[ℝ]
       ⟨fun v ↦ h.metricChangeBetween k (h.metricChangeTransport v),
         (h.metricChangeBetween k).continuous.comp h.metricChangeTransport.continuous⟩ where
   toFun p := k.metricChangeTransport
-    ((metricChangeCompositionCorrectionPath h k hH hK p.1).1.1 p.2)
+    ((metricChangeCompositionCorrectionPath h k hH hK p.1).1 p.2)
   continuous_toFun := k.metricChangeTransport.continuous.comp
-    ((continuous_subtype_val.comp (continuous_subtype_val.comp
-      ((metricChangeCompositionCorrectionPath h k hH hK).continuous.comp continuous_fst))).clm_apply
+    ((continuous_subtype_val.comp
+      ((metricChangeCompositionCorrectionPath h k hH hK).continuous.comp continuous_fst)).clm_apply
         continuous_snd)
   map_zero_left v := by simp
   map_one_left v := by
@@ -127,7 +123,7 @@ theorem metricChangeCompositionHomotopy_apply (h k : E →L[ℝ] E →L[ℝ] ℝ
     (hH : IsStrictlyPositive h♯) (hK : IsStrictlyPositive k♯) (t : unitInterval) (v : E) :
     metricChangeCompositionHomotopy h k hH hK (t, v) =
       k.metricChangeTransport
-        (((metricChangeCompositionCorrectionPath h k hH hK t).1 : E →L[ℝ] E) v) :=
+        ((metricChangeCompositionCorrectionPath h k hH hK t : E →L[ℝ] E) v) :=
   (rfl)
 
 /-- Every slice of the composition homotopy is an isometry from the reference inner product
@@ -140,5 +136,28 @@ theorem apply_metricChangeCompositionHomotopy (h k : E →L[ℝ] E →L[ℝ] ℝ
   simp only [metricChangeCompositionHomotopy_apply, metricChangeCompositionCorrectionPath_apply,
     apply_metricChangeTransport_metricChangeTransport hK]
   exact LinearIsometryEquiv.inner_map_map _ u v
+
+/-- In finite dimension the canonical orthogonal correction path lands in the special
+orthogonal group, giving the oriented comparison between direct and successive transport. -/
+noncomputable def metricChangeCompositionCorrectionSpecialOrthogonalPath
+    [FiniteDimensional ℝ E] (h k : E →L[ℝ] E →L[ℝ] ℝ)
+    (hH : IsStrictlyPositive h♯) (hK : IsStrictlyPositive k♯) :
+    Path (1 : TauCeti.specialOrthogonalGroup E)
+      ⟨Unitary.linearIsometryEquiv.symm (h.metricChangeCompositionCorrection k hH hK),
+        metricChangeCompositionCorrection_mem_specialOrthogonalGroup h k hH hK⟩ where
+  toFun t := ⟨metricChangeCompositionCorrectionPath h k hH hK t,
+    metricChangeCompositionCorrection_mem_specialOrthogonalGroup _ _ _ _⟩
+  continuous_toFun := (metricChangeCompositionCorrectionPath h k hH hK).continuous.subtype_mk _
+  source' := Subtype.ext (Path.source _)
+  target' := Subtype.ext (Path.target _)
+
+/-- Forgetting the determinant condition recovers the Hilbert-space correction path. -/
+@[simp]
+theorem metricChangeCompositionCorrectionSpecialOrthogonalPath_coe
+    [FiniteDimensional ℝ E] (h k : E →L[ℝ] E →L[ℝ] ℝ)
+    (hH : IsStrictlyPositive h♯) (hK : IsStrictlyPositive k♯) (t : unitInterval) :
+    (metricChangeCompositionCorrectionSpecialOrthogonalPath h k hH hK t :
+      unitary (E →L[ℝ] E)) = metricChangeCompositionCorrectionPath h k hH hK t := by
+  rfl
 
 end ContinuousLinearMap

@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.Dual
 public import Mathlib.Analysis.Convex.Basic
-public import Mathlib.Topology.UnitInterval
 
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
@@ -75,7 +74,7 @@ relative to the fixed inner product of `E`.
 public section
 
 open InnerProductSpace
-open scoped InnerProductSpace unitInterval
+open scoped InnerProductSpace
 
 /-- The Riesz operator of a real bilinear form, written as Mathlib's `InnerProductSpace.Dual`
 writes it. -/
@@ -370,11 +369,12 @@ theorem convex_setOf_isStrictlyPositive_continuousLinearMapOfBilin [CompleteSpac
 
 /-- The affine interpolation of positive metrics remains positive, including at its endpoints. -/
 theorem isStrictlyPositive_lineMap [CompleteSpace E] (h k : E →L[ℝ] E →L[ℝ] ℝ)
-    (hH : IsStrictlyPositive h♯) (hK : IsStrictlyPositive k♯) (t : unitInterval) :
-    IsStrictlyPositive (AffineMap.lineMap h k (t : ℝ))♯ := by
+    (hH : IsStrictlyPositive h♯) (hK : IsStrictlyPositive k♯)
+    (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) :
+    IsStrictlyPositive (AffineMap.lineMap h k t)♯ := by
   rw [AffineMap.lineMap_apply_module]
   exact convex_setOf_isStrictlyPositive_continuousLinearMapOfBilin hH hK
-    (sub_nonneg.mpr t.2.2) t.2.1 (sub_add_cancel 1 (t : ℝ))
+    (sub_nonneg.mpr ht.2) ht.1 (sub_add_cancel 1 t)
 
 /-- Pullback of a positive metric by a continuous linear equivalence of real Hilbert spaces
 is positive. No preservation of the reference inner products is needed. -/
