@@ -10,14 +10,12 @@ public import TauCeti.RingTheory.PowerSeries.GaussNorm
 /-!
 # Estimates for the Gauss norm of restricted series
 
-Elementary bounds on the Gauss norm of power series over a (semi)normed ring: the Gauss norm of a
-product of series with a bounded first factor, the ultrametric bound for a difference, and the
-approximation of a restricted series by a truncation leaving a small tail.
+Elementary bounds on the Gauss norm of power series over a (semi)normed ring: the ultrametric
+bound for a difference and the approximation of a restricted series by a truncation leaving a
+small tail.
 
 ## Main results
 
-* `TauCeti.PowerSeries.gaussNorm_mul_le_of_le`: the Gauss norm of a product of series with a
-  Gauss norm is bounded by a bound on the first factor times the Gauss norm of the second.
 * `TauCeti.PowerSeries.gaussNorm_sub_le_of_le`: the Gauss norm of a difference is bounded by a
   common bound on the two Gauss norms, over an ultrametric ring.
 * `TauCeti.PowerSeries.exists_gaussNorm_trunc_sub_le`: some truncation of a restricted series has
@@ -33,14 +31,6 @@ variable {c : ℝ}
 section Ultrametric
 
 variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
-
-/-- The Gauss norm of a product of series with Gauss norm is bounded by a bound on the first factor
-times the Gauss norm of the second. -/
-theorem gaussNorm_mul_le_of_le (hc : 0 ≤ c) {a b : PowerSeries R} (ha : a.HasGaussNorm norm c)
-    (hb : b.HasGaussNorm norm c) {C : ℝ} (h : a.gaussNorm norm c ≤ C) :
-    (a * b).gaussNorm norm c ≤ C * b.gaussNorm norm c :=
-  (gaussNorm_mul_le hc ha hb).trans
-    (mul_le_mul_of_nonneg_right h (PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg))
 
 /-- The Gauss norm of a difference of series with Gauss norm is bounded when both Gauss norms
 are. -/
