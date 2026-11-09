@@ -62,6 +62,7 @@ noncomputable def quotientDifferentIdealEquivTraceDualQuotient {δ : B}
       apply Subtype.ext
       simpa [map_mul, algebraMap_ne_zero_of_differentIdeal_eq_span (K := K) hδ] using hb)
 
+omit [IsFractionRing B L] in
 /-- On representatives, the quotient comparison divides an integral element by a generator
 of the different. The equality in the hypothesis specifies the resulting fraction without
 unfolding its membership proof. -/
@@ -71,6 +72,7 @@ theorem quotientDifferentIdealEquivTraceDualQuotient_mk {δ : B}
     (hx : (x : L) * algebraMap B L δ = algebraMap B L b) :
     quotientDifferentIdealEquivTraceDualQuotient hδ (Ideal.Quotient.mk _ b) =
       Submodule.Quotient.mk x := by
+  have := IsIntegralClosure.isFractionRing_of_finite_extension A K L B
   have he : equivTraceDualOfDifferentIdealEqSpan (K := K) (L := L) hδ b = x := by
     apply (equivTraceDualOfDifferentIdealEqSpan (K := K) (L := L) hδ).symm.injective
     rw [LinearEquiv.symm_apply_apply]
@@ -79,6 +81,7 @@ theorem quotientDifferentIdealEquivTraceDualQuotient_mk {δ : B}
   simp only [← Ideal.Quotient.mk_eq_mk, quotientDifferentIdealEquivTraceDualQuotient,
     Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe, he]
 
+omit [IsFractionRing B L] in
 /-- The inverse quotient comparison multiplies a complementary element by a generator of
 the different. -/
 theorem quotientDifferentIdealEquivTraceDualQuotient_symm_mk {δ : B}
