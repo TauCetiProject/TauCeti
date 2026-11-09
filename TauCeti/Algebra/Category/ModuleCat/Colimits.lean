@@ -51,6 +51,8 @@ the homology of a space exhausted by subspaces whose successive relative homolog
 * `TauCeti.ModuleCat.isIso_of_isIso_app_self`: a natural transformation between
   colimit-preserving functors out of `ModuleCat R` whose component at `R` is invertible is an
   isomorphism.
+* `TauCeti.ModuleCat.exists_injective_of_iso_sigma`: a module isomorphic to a nonempty coproduct
+  of copies of `R` receives an injective linear map from `R`.
 * `ModuleCat.telescopeDiff`: the map `⨁ₙ Fₙ → ⨁ₙ Fₙ`, `x ↦ x - φₙ(x)`, which is injective
   (`ModuleCat.telescopeDiff_injective`).
 * `ModuleCat.telescopeShortComplex`: the telescope sequence of a cocone over `F : ℕ ⥤ ModuleCat R`,
@@ -160,6 +162,13 @@ theorem finite_coproduct_of_finite_support {ι : Type*} (M : ι → ModuleCat.{v
   apply Module.Finite.of_fg_top
   rw [← htop, hrange]
   exact Submodule.fg_iSup _ fun i ↦ Submodule.fg_range _
+
+/-- A module isomorphic to a coproduct of copies of `R` indexed by a nonempty type receives an
+injective linear map from `R`, through a coproduct inclusion. -/
+theorem exists_injective_of_iso_sigma {M : ModuleCat.{u} R} {J : Type u} [Nonempty J]
+    (e : M ≅ ∐ fun _ : J ↦ ModuleCat.of R R) : ∃ f : R →ₗ[R] M, Function.Injective f :=
+  let g := Sigma.ι (fun _ : J ↦ ModuleCat.of R R) (Classical.arbitrary J) ≫ e.inv
+  ⟨g.hom, (ModuleCat.mono_iff_injective g).1 inferInstance⟩
 
 end ModuleCat
 

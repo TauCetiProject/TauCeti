@@ -75,7 +75,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   of the curve `q ↦ w (q, t)` of a map `w : 𝕜 × 𝕜 → M`.
 * `HasMFDerivAt.fst_curve` and `HasMFDerivAt.snd_curve`:
   the components of a curve in a product move with the components of its velocity.
-* `HasMFDerivAt.hasDerivAt_extChartAt_comp`: a curve read in any fixed extended chart containing
+* `HasMFDerivWithinAt.hasDerivWithinAt_extChartAt_comp` and
+  `HasMFDerivAt.hasDerivAt_extChartAt_comp`: a curve read in any fixed extended chart containing
   its value has the coordinate expression of its velocity as velocity.
 * `TauCeti.Manifold.variationField`: the variation field `V(t) = ∂F/∂s (0, t)` of a two-parameter
   family `F : 𝕜 → 𝕜 → M`, the transverse velocity at `s = 0`; it vanishes where the curves near
@@ -697,6 +698,34 @@ end TauCeti.Manifold
 
 end
 
+namespace HasMFDerivWithinAt
+
+open TauCeti.Manifold
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {γ : 𝕜 → M} {s : Set 𝕜} {t : 𝕜} {x : M} {w : TangentSpace I (γ t)}
+
+/-- Reading a curve in a fixed extended chart converts its within-set velocity to its
+coordinate expression. This includes derivatives at interval endpoints. -/
+theorem hasDerivWithinAt_extChartAt_comp
+    (hγ : HasMFDerivWithinAt 𝓘(𝕜, 𝕜) I γ s t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w))
+    (hsrc : γ t ∈ (extChartAt I x).source) :
+    HasDerivWithinAt ((extChartAt I x) ∘ γ)
+      (tangentCoordChange I (γ t) x (γ t) w) s t := by
+  replace hsrc := extChartAt_source I x ▸ hsrc
+  have hderiv := TauCeti.Manifold.hasDerivWithinAt_comp_curve
+    (mdifferentiableAt_extChartAt (I := I) hsrc) hγ
+  convert hderiv using 1
+  simp only [mvfderiv]
+  rw [(hasMFDerivAt_extChartAt (I := I) hsrc).mfderiv,
+    mfderiv_chartAt_eq_tangentCoordChange hsrc]
+  rfl
+
+end HasMFDerivWithinAt
+
 namespace HasMFDerivAt
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -735,15 +764,8 @@ that, read in the chart, it solves the coordinate equation of the field. -/
 theorem hasDerivAt_extChartAt_comp [IsManifold I 1 M] {γ : 𝕜 → M} {x : M}
     {w : TangentSpace I (γ t)} (hγ : HasMFDerivAt 𝓘(𝕜, 𝕜) I γ t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w))
     (hsrc : γ t ∈ (extChartAt I x).source) :
-    HasDerivAt ((extChartAt I x) ∘ γ) (tangentCoordChange I (γ t) x (γ t) w) t := by
-  replace hsrc := extChartAt_source I x ▸ hsrc
-  have hderiv := TauCeti.Manifold.hasDerivAt_comp_curve
-    (mdifferentiableAt_extChartAt (I := I) hsrc) hγ
-  convert hderiv using 1
-  simp only [mvfderiv]
-  rw [(hasMFDerivAt_extChartAt (I := I) hsrc).mfderiv,
-    mfderiv_chartAt_eq_tangentCoordChange hsrc]
-  rfl
+    HasDerivAt ((extChartAt I x) ∘ γ) (tangentCoordChange I (γ t) x (γ t) w) t :=
+  (hγ.hasMFDerivWithinAt.hasDerivWithinAt_extChartAt_comp hsrc).hasDerivAt Filter.univ_mem
 
 end HasMFDerivAt
 

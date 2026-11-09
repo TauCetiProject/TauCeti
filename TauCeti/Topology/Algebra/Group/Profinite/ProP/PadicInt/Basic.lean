@@ -357,6 +357,23 @@ theorem exists_padicPow_mul_padicPow_eq_of_commute (hP : IsProP p P) {a b : P}
   simpa only [ψ, MonoidHom.noncommCoprod_apply, ContinuousMonoidHom.coe_toMonoidHom,
     MonoidHom.coe_ofClass, IsProP.padicPowHom_apply] using hst
 
+/-- The closed normal closure of `r` lies in the preimage of the closed subgroup of `p`-adic powers
+of the class of `r` in the topological abelianization. -/
+lemma normalClosure_topologicalClosure_le_comap_range_padicPowHom (hP : IsProP p P) (r : P) :
+    (Subgroup.normalClosure {r}).topologicalClosure ≤
+      ((hP.topologicalAbelianization_self.padicPowHom
+        (r : TopologicalAbelianization P) :
+          Multiplicative ℤ_[p] →* TopologicalAbelianization P).range).comap
+            (QuotientGroup.mk' (commutator P).topologicalClosure) := by
+  have hF := hP.topologicalAbelianization_self
+  refine Subgroup.topologicalClosure_minimal _ (Subgroup.normalClosure_le_normal ?_) ?_
+  · rw [Set.singleton_subset_iff, SetLike.mem_coe, Subgroup.mem_comap, MonoidHom.mem_range]
+    exact ⟨Multiplicative.ofAdd 1, by
+      rw [MonoidHom.coe_ofClass, hF.padicPowHom_ofAdd_one, QuotientGroup.mk'_apply]⟩
+  · rw [Subgroup.coe_comap, MonoidHom.coe_range, MonoidHom.coe_ofClass]
+    exact ((isCompact_range (hF.padicPowHom _).continuous).isClosed).preimage
+      continuous_quot_mk
+
 /-- In the additive group of `ℤ_[p]`, the `p`-adic power of `1` by `l` is `l` itself. -/
 @[simp]
 theorem padicPow_ofAdd_one_padicInt (p : ℕ) [Fact p.Prime] (l : ℤ_[p]) :

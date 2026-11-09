@@ -182,6 +182,12 @@ theorem cylindricalEndLift_sub_endCenter_ne_zero (q : Puncture) (z : ℂ) :
   rw [cylindricalEndLift_eq, add_sub_cancel_left]
   exact mul_ne_zero q.endScale_ne_zero (Complex.exp_ne_zero _)
 
+/-- An end lift at `z` lies at distance `‖b_q‖ exp (-2π Re z)` from the center of the end. -/
+theorem norm_cylindricalEndLift_sub_endCenter (q : Puncture) (z : ℂ) :
+    ‖q.cylindricalEndLift z - q.endCenter‖ = ‖q.endScale‖ * Real.exp (-(2 * π * z.re)) := by
+  rw [cylindricalEndLift_eq, add_sub_cancel_left, norm_mul, Complex.norm_exp]
+  simp
+
 /-- The real part of the exponent of the end lifts. -/
 private theorem re_neg_two_pi_mul (z : ℂ) : (-(2 * (π : ℂ)) * z).re = -(2 * π) * z.re := by
   rw [show -(2 * (π : ℂ)) * z = ((-(2 * π) : ℝ) : ℂ) * z by push_cast; ring,
