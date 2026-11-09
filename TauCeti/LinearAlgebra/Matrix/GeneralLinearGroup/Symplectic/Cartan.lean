@@ -54,6 +54,25 @@ theorem coe_cartanInvolution (g : GLSymplectic l R) :
   rw [SymplecticGroup.inv_eq_symplectic_inv _ (mem_iff_mem_symplecticGroup.mp g.property)]
   simp [transpose_mul, J_transpose, J_inv, mul_assoc]
 
+/-- The matrix of the symplectic inverse-transpose involution `θ g = (gᵀ)⁻¹`. -/
+theorem coe_cartanInvolution_val (g : GLSymplectic l R) :
+    ((cartanInvolution g : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R) =
+      (((g : GL (l ⊕ l) R)⁻¹ : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ := by
+  rw [coe_cartanInvolution, coe_inverseTranspose]
+
+/-- The matrix of the inverse of `θ g = (gᵀ)⁻¹` is `gᵀ`. -/
+theorem coe_cartanInvolution_inv (g : GLSymplectic l R) :
+    (((cartanInvolution g : GL (l ⊕ l) R)⁻¹ : GL (l ⊕ l) R) :
+      Matrix (l ⊕ l) (l ⊕ l) R) = ((g : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ := by
+  rw [coe_cartanInvolution, ← map_inv, coe_inverseTranspose, inv_inv]
+
+/-- The matrix of `(θ g)⁻¹ g` is `gᵀ g`. -/
+theorem coe_cartanInvolution_inv_mul (g : GLSymplectic l R) :
+    ((((cartanInvolution g)⁻¹ * g : GLSymplectic l R) : GL (l ⊕ l) R) :
+      Matrix (l ⊕ l) (l ⊕ l) R) =
+      ((g : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ * (g : GL (l ⊕ l) R) := by
+  rw [Subgroup.coe_mul, Units.val_mul, Subgroup.coe_inv, coe_cartanInvolution_inv]
+
 /-- Applying the symplectic inverse-transpose involution twice is the identity. -/
 @[simp]
 theorem cartanInvolution_cartanInvolution (g : GLSymplectic l R) :
