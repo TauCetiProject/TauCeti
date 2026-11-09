@@ -21,9 +21,11 @@ by the absolute value of the determinant of its linear part
 `MeasureTheory.Measure.addHaar_image_affineEquiv` for affine equivalences), the affine form of
 Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap`. The affine dilation `y ↦ x + r • y`,
 `r ≠ 0`, is quasi-measure-preserving for every additive Haar measure
-(`MeasureTheory.Measure.quasiMeasurePreserving_add_smul`), and it scales the measure of the
-part of a set in a ball by the inverse dimension power of `r`
-(`MeasureTheory.Measure.addHaar_preimage_add_smul_inter_ball`).
+(`MeasureTheory.Measure.quasiMeasurePreserving_add_smul`). For `r > 0` it scales measures by the
+inverse dimension power of `r` (`MeasureTheory.Measure.addHaar_preimage_add_smul`), in
+particular the measure of the part of a set in a ball or closed ball
+(`MeasureTheory.Measure.addHaar_preimage_add_smul_inter_ball`,
+`MeasureTheory.Measure.addHaar_preimage_add_smul_inter_closedBall`).
 
 A linear map into a finite-dimensional real normed space that is not surjective has almost every
 fibre empty for every additive Haar measure on the codomain
@@ -97,6 +99,13 @@ theorem quasiMeasurePreserving_add_smul (x : F) {r : ℝ} (hr : r ≠ 0) :
     QuasiMeasurePreserving (fun y ↦ x + r • y) μ μ :=
   (measurePreserving_add_left μ x).quasiMeasurePreserving.comp (quasiMeasurePreserving_smul μ hr)
 
+/-- **The volume of a blow-up.** For `r > 0`, the preimage of `s` under the affine dilation
+`y ↦ x + r • y` has measure `r ^ (-n) μ s`, where `n = dim F`. -/
+theorem addHaar_preimage_add_smul (x : F) {r : ℝ} (hr : 0 < r) (s : Set F) :
+    μ ((fun y ↦ x + r • y) ⁻¹' s) = ENNReal.ofReal ((r ^ Module.finrank ℝ F)⁻¹) * μ s := by
+  have h : (fun y ↦ x + r • y) ⁻¹' s = (r • ·) ⁻¹' ((fun y ↦ x + y) ⁻¹' s) := rfl
+  rw [h, addHaar_preimage_smul μ hr.ne', measure_preimage_add, abs_of_pos (by positivity)]
+
 /-- **The volume of a blow-up in a ball.** For `r > 0`, the preimage of `s` under the affine
 dilation `y ↦ x + r • y` satisfies `μ(s_{x,r} ∩ ball 0 ρ) = r ^ (-n) μ(s ∩ ball x (r * ρ))`, where
 `n = dim F`. -/
@@ -106,10 +115,19 @@ theorem addHaar_preimage_add_smul_inter_ball (x : F) {r : ℝ} (hr : 0 < r) (s :
   have hball : (fun y ↦ x + r • y) ⁻¹' Metric.ball x (r * ρ) = Metric.ball 0 ρ := by
     ext y
     simp [norm_smul, abs_of_pos hr, mul_lt_mul_iff_right₀ hr]
-  rw [← hball, ← preimage_inter]
-  have h : (fun y ↦ x + r • y) ⁻¹' (s ∩ Metric.ball x (r * ρ)) =
-      (r • ·) ⁻¹' ((fun y ↦ x + y) ⁻¹' (s ∩ Metric.ball x (r * ρ))) := rfl
-  rw [h, addHaar_preimage_smul μ hr.ne', measure_preimage_add, abs_of_pos (by positivity)]
+  rw [← hball, ← preimage_inter, addHaar_preimage_add_smul μ x hr]
+
+/-- **The volume of a blow-up in a closed ball.** For `r > 0`, the preimage of `s` under the
+affine dilation `y ↦ x + r • y` satisfies
+`μ(s_{x,r} ∩ closedBall 0 ρ) = r ^ (-n) μ(s ∩ closedBall x (r * ρ))`, where `n = dim F`. -/
+theorem addHaar_preimage_add_smul_inter_closedBall (x : F) {r : ℝ} (hr : 0 < r) (s : Set F)
+    (ρ : ℝ) :
+    μ ((fun y ↦ x + r • y) ⁻¹' s ∩ Metric.closedBall 0 ρ) =
+      ENNReal.ofReal ((r ^ Module.finrank ℝ F)⁻¹) * μ (s ∩ Metric.closedBall x (r * ρ)) := by
+  have hball : (fun y ↦ x + r • y) ⁻¹' Metric.closedBall x (r * ρ) = Metric.closedBall 0 ρ := by
+    ext y
+    simp [norm_smul, abs_of_pos hr, mul_le_mul_iff_right₀ hr]
+  rw [← hball, ← preimage_inter, addHaar_preimage_add_smul μ x hr]
 
 end Affine
 
