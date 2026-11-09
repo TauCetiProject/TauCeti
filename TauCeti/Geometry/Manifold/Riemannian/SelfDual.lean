@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
-import TauCeti.Geometry.Manifold.Riemannian.Codifferential
+public import TauCeti.Geometry.Manifold.Riemannian.Codifferential
 
 /-!
 # Self-dual and anti-self-dual forms on an oriented Riemannian manifold
@@ -554,6 +554,21 @@ variable {o} in
 theorem mem_selfDualForms {α : SmoothForm I M ℝ k} :
     α ∈ selfDualForms o ↔ hodgeStar o rfl α = α := by
   rw [selfDualForms, Module.End.mem_eigenspace_iff, one_smul]
+
+/-- A smooth self-dual two-form on a four-manifold is coclosed exactly when it is closed. -/
+theorem codifferential_eq_zero_iff_mextDeriv_eq_zero_of_mem_selfDualForms
+    (o : Manifold.Orientation I M (Fin (2 + 2))) {γ : SmoothForm I M ℝ 2}
+    (hγ : γ ∈ selfDualForms o) :
+    codifferential o (show 1 + 1 + 2 = 2 + 2 from rfl) γ = 0 ↔ mextDerivₗ I 2 γ = 0 := by
+  have hstar := mem_selfDualForms.mp hγ
+  constructor
+  · intro h
+    -- In degree two the identity ⋆d*γ = d⋆γ has positive sign, and ⋆γ = γ.
+    have hs := hodgeStar_codifferential o
+      (show 1 + 1 + 2 = 2 + 2 from rfl) (show 1 + (2 + 1) = 2 + 2 from rfl) γ
+    simpa only [h, map_zero, hstar, Nat.reduceAdd, neg_one_sq, one_smul] using hs.symm
+  · intro h
+    simp [codifferential_apply o rfl rfl, hstar, h]
 
 variable {o} in
 /-- A smooth form is anti-self-dual exactly when `⋆α = -α`. -/
