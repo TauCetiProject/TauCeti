@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.SimpleGraph.Finite
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
 
 /-!

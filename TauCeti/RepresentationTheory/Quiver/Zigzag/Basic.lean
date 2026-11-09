@@ -10,7 +10,6 @@ public import Mathlib.Combinatorics.SimpleGraph.AdjMatrix
 public import Mathlib.Combinatorics.SimpleGraph.DegreeSum
 public import Mathlib.Combinatorics.SimpleGraph.Maps
 public import TauCeti.Combinatorics.Quiver.Prefunctor
-public import TauCeti.Combinatorics.SimpleGraph.Finite
 
 /-!
 # Doubled quivers of simple graphs
