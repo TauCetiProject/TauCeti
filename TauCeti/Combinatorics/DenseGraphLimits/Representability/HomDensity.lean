@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Representability.ConnectionMatrix
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Structural
-import TauCeti.Data.Finset.Sym
+import Mathlib.Data.Finset.Sym
 import TauCeti.LinearAlgebra.Matrix.PosSemidef
 import TauCeti.MeasureTheory.Integral.Pi
 import TauCeti.MeasureTheory.Integral.PosSemidef
@@ -166,11 +166,11 @@ private theorem prod_edgeFactor_glue (A B : LabeledGraph k) [DecidableRel (A.glu
     have hl : (A.graph.edgeFinset.map (A.glueInl B).sym2Map) \
           (Finset.univ.map (labelEmb (A.glue B))).sym2 =
         (A.graph.edgeFinset \ (Finset.univ.map (labelEmb A)).sym2).map (A.glueInl B).sym2Map :=
-      by rw [hmapl, Finset.map_sym2Map_sdiff_sym2_map]
+      by rw [hmapl, Finset.sym2_map, Finset.map_sdiff]
     have hr : (B.graph.edgeFinset.map (A.glueInr B).sym2Map) \
           (Finset.univ.map (labelEmb (A.glue B))).sym2 =
         (B.graph.edgeFinset \ (Finset.univ.map (labelEmb B)).sym2).map (A.glueInr B).sym2Map :=
-      by rw [hmapr, Finset.map_sym2Map_sdiff_sym2_map]
+      by rw [hmapr, Finset.sym2_map, Finset.map_sdiff]
     -- An edge meeting an unlabeled vertex comes from only one side.
     have hdisj : Disjoint ((A.graph.edgeFinset \ (Finset.univ.map (labelEmb A)).sym2).map
         (A.glueInl B).sym2Map)
