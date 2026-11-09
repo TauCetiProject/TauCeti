@@ -39,6 +39,8 @@ its graph equations `Y i - f i`. These formulas need no monomial order.
 * `MvPolynomial.coeff_mul_of_mem_pow_idealOfVars`: for `p ∈ J ^ k` and a monomial `e` of total
   degree at most `k`, the coefficient of `e` in `p * q` is the coefficient of `e` in `p` times the
   constant coefficient of `q`.
+* `MvPolynomial.linearIndependent_of_sub_monomial_mem_pow_idealOfVars`: polynomials whose lowest
+  terms are nonzero multiples of pairwise distinct monomials are linearly independent.
 * `MvPolynomial.ker_aeval_sumElim`: the graph equations generate the kernel of substitution
   which keeps the original variables.
 * `MvPolynomial.ker_aeval_eq_comap_graph`: the relations among a family of polynomials are
@@ -99,6 +101,37 @@ theorem coeff_mul_of_mem_pow_idealOfVars (p : MvPolynomial σ R) {k : ℕ}
     have hdeg : degree a + degree b = degree e := by rw [← map_add, hab]
     rw [(mem_pow_idealOfVars_iff' k p).mp hp a (by omega), zero_mul]
   · exact fun h ↦ absurd (Finset.mem_antidiagonal.mpr (add_zero e)) h
+
+/-- **Distinct lowest monomials are linearly independent.** Over a ring without zero divisors, a
+family of polynomials is linearly independent if each member `v i` is a nonzero multiple of a
+monomial `s i` up to terms of higher total degree, that is, modulo the `(degree (s i) + 1)`-th
+power of the ideal of the variables, and the monomials `s i` are pairwise distinct. -/
+theorem linearIndependent_of_sub_monomial_mem_pow_idealOfVars {R : Type*} [CommRing R]
+    [NoZeroDivisors R] {ι : Type*} {v : ι → MvPolynomial σ R} {s : ι → σ →₀ ℕ}
+    (hs : Function.Injective s) {c : ι → R} (hc : ∀ i, c i ≠ 0)
+    (hv : ∀ i, v i - monomial (s i) (c i) ∈ idealOfVars σ R ^ (degree (s i) + 1)) :
+    LinearIndependent R v := by
+  classical
+  -- In total degree at most that of `s j`, the only monomial of `v j` is `s j`.
+  have hcoeff (i j : ι) (hij : degree (s i) ≤ degree (s j)) :
+      (v j).coeff (s i) = if i = j then c j else 0 := by
+    have h := (mem_pow_idealOfVars_iff' _ _).mp (hv j) (s i) (Nat.lt_succ_of_le hij)
+    rw [coeff_sub, coeff_monomial, sub_eq_zero] at h
+    simp only [h, hs.eq_iff, eq_comm]
+  rw [linearIndependent_iff']
+  intro t g hg i hi
+  -- Induct on the degree of `s i`: the coefficient of `s i` in the combination is `g i * c i`.
+  induction hd : degree (s i) using Nat.strong_induction_on generalizing i with
+  | _ d ih =>
+    have h := congrArg (fun p : MvPolynomial σ R ↦ p.coeff (s i)) hg
+    simp only [coeff_sum, coeff_smul] at h
+    rw [Finset.sum_eq_single_of_mem i hi, hcoeff i i le_rfl] at h
+    · simp only [↓reduceIte, smul_eq_mul] at h
+      exact (mul_eq_zero.mp h).resolve_right (hc i)
+    · intro j hj hji
+      rcases lt_or_ge (degree (s j)) d with hlt | hle
+      · rw [ih _ hlt j hj rfl, zero_smul]
+      · simp [hcoeff i j (hd ▸ hle), Ne.symm hji]
 
 section Graph
 

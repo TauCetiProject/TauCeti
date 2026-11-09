@@ -38,8 +38,9 @@ says that the classes of the elements `ζ_λ`, for `λ` a partition of `n`, span
 `Hₙ`, over every commutative ring and for every unit `q`. Consequently two trace functionals on
 `Hₙ` agree as soon as they agree on every `ζ_λ`
 (`TauCeti.InfiniteTypeAHeckeAlgebra.trace_eq_of_cycleBlock_values`). This is the spanning half of
-the theorem that these classes form a basis of the cocenter; their linear independence is not
-proved here.
+the theorem that these classes form a basis of the cocenter; their linear independence, over an
+infinite integral domain and for parameters at which the `Q`-integers `[d]_Q`, `d ≤ n`, are nonzero
+and `Q ≠ 1`, is proved in `TauCeti.Algebra.TypeAHeckeAlgebra.Cocenter.Basis`.
 
 A linear functional `τ` on the infinite type-A Hecke algebra is *block multiplicative* when
 `τ (x * shift a y) = τ x * τ y` for every `x` in the stage of the first `a` strands and every
@@ -93,6 +94,9 @@ strands past the next `b` strands.
   block-multiplicative functional with the cycle values of a Markov trace is that Markov trace.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_cycleBlock`: a Markov trace with
   parameter `z` takes the value `∏ᵢ (q * z) ^ (λᵢ - 1)` on `ζ_λ`.
+* `TauCeti.TypeAHeckeAlgebra.apply_stageEquiv_symm_cycleBlock`: a family of functionals on the
+  finite Hecke algebras, multiplicative along the block maps, takes the value
+  `φ 0 1 * ∏ᵢ φ (ζ_(λᵢ))` on `ζ_λ`.
 * `TauCeti.TypeAHeckeAlgebra.trace_eq_of_cycleWord_values`: on the finite Hecke algebras, two
   families of trace functionals which are multiplicative along the block maps
   `TauCeti.TypeAHeckeAlgebra.castAdd` and `TauCeti.TypeAHeckeAlgebra.natAdd` and agree on all
@@ -715,28 +719,29 @@ end InfiniteTypeAHeckeAlgebra
 
 namespace TypeAHeckeAlgebra
 
-open InfiniteTypeAHeckeAlgebra (stage cycleBlockWord)
+open InfiniteTypeAHeckeAlgebra (stage cycleBlockWord cycleBlock cycleBlock_mem_stage)
 
 variable {R : Type*} [CommRing R] {q : Rˣ}
 
-/-- Two block-multiplicative families of functionals on the finite Hecke algebras which agree on
-every cycle word agree on every element whose image in the infinite algebra is a cycle-block
-word. -/
-private theorem apply_eq_of_toInfinite_eq_cycleBlockWord
-    {φ φ' : ∀ n, TypeAHeckeAlgebra R q n →ₗ[R] R}
+/-- **Block-multiplicative functionals on cycle-block words.** A family of functionals on the
+finite Hecke algebras which is multiplicative along the block maps takes, on an element whose image
+in the infinite algebra is the cycle-block word of `[m₁, …, mₖ]`, the value
+`φ 0 1 * ∏ᵢ φ (ζ_(mᵢ))`. -/
+theorem apply_eq_mul_prod_of_toInfinite_eq_cycleBlockWord
+    {φ : ∀ n, TypeAHeckeAlgebra R q n →ₗ[R] R}
     (hφm : ∀ a b x y, φ (a + b) (castAdd R q a b x * natAdd R q a b y) = φ a x * φ b y)
-    (hφm' : ∀ a b x y, φ' (a + b) (castAdd R q a b x * natAdd R q a b y) = φ' a x * φ' b y)
-    (h : ∀ m, φ m (cycleWord q m) = φ' m (cycleWord q m)) (l : List ℕ) :
+    (l : List ℕ) :
     ∀ {n} (_ : l.sum = n) (x : TypeAHeckeAlgebra R q n),
-      toInfinite R q n x = cycleBlockWord q l → φ n x = φ' n x := by
+      toInfinite R q n x = cycleBlockWord q l →
+        φ n x = φ 0 1 * (l.map fun m ↦ φ m (cycleWord q m)).prod := by
   induction l with
   | nil =>
     rintro n hn x hx
     rw [List.sum_nil] at hn
     subst hn
-    obtain rfl : x = cycleWord q 0 := toInfinite_injective R q 0 (by
-      rw [hx, InfiniteTypeAHeckeAlgebra.cycleBlockWord_nil, cycleWord_zero, map_one])
-    exact h 0
+    obtain rfl : x = 1 := toInfinite_injective R q 0 (by
+      rw [hx, InfiniteTypeAHeckeAlgebra.cycleBlockWord_nil, map_one])
+    rw [List.map_nil, List.prod_nil, mul_one]
   | cons m l ih =>
     rintro n hn x hx
     rw [List.sum_cons] at hn
@@ -749,7 +754,23 @@ private theorem apply_eq_of_toInfinite_eq_cycleBlockWord
       toInfinite_injective R q _ (by
         rw [hx, InfiniteTypeAHeckeAlgebra.cycleBlockWord_cons, map_mul, toInfinite_castAdd,
           toInfinite_natAdd, toInfinite_cycleWord, hy])
-    rw [hφm, hφm', h, ih rfl y hy]
+    rw [hφm, ih rfl y hy, List.map_cons, List.prod_cons, mul_left_comm]
+
+/-- **Block-multiplicative functionals on the elements `ζ_λ`.** A family of functionals on the
+finite Hecke algebras which is multiplicative along the block maps takes, on the preimage in the
+Hecke algebra on `n` strands of the element `ζ_λ` of a partition `λ` of `n`, the value
+`φ 0 1 * ∏ᵢ φ (ζ_(λᵢ))`. -/
+theorem apply_stageEquiv_symm_cycleBlock {φ : ∀ n, TypeAHeckeAlgebra R q n →ₗ[R] R}
+    (hφm : ∀ a b x y, φ (a + b) (castAdd R q a b x * natAdd R q a b y) = φ a x * φ b y)
+    {n : ℕ} (μ : n.Partition) :
+    φ n ((stageEquiv R q n).symm ⟨cycleBlock q μ, cycleBlock_mem_stage μ⟩) =
+      φ 0 1 * (μ.parts.map fun m ↦ φ m (cycleWord q m)).prod := by
+  rw [apply_eq_mul_prod_of_toInfinite_eq_cycleBlockWord hφm (μ.parts.sort (· ≥ ·))
+      (by rw [← Multiset.sum_coe, Multiset.sort_eq, μ.parts_sum]) _
+      (by
+        rw [toInfinite_stageEquiv_symm_apply]
+        exact InfiniteTypeAHeckeAlgebra.cycleBlock_def μ),
+    ← Multiset.prod_coe, ← Multiset.map_coe, Multiset.sort_eq]
 
 /-- **Cycle words determine block-multiplicative traces on the finite Hecke algebras.** Two
 families of trace functionals on the Hecke algebras on `n` strands, both multiplicative along the
@@ -767,12 +788,10 @@ theorem trace_eq_of_cycleWord_values {φ φ' : ∀ n, TypeAHeckeAlgebra R q n �
       (x y : stage R q n) : ψ φ (x * y) = ψ φ (y * x) := by
     simp only [ψ, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_mul, hφ]
   have key : ψ φ = ψ φ' := InfiniteTypeAHeckeAlgebra.trace_eq_of_cycleBlock_values
-    (hψ φ hφ) (hψ φ' hφ') fun μ ↦
-      apply_eq_of_toInfinite_eq_cycleBlockWord hφm hφm' h (μ.parts.sort (· ≥ ·))
-        (by rw [← Multiset.sum_coe, Multiset.sort_eq, μ.parts_sum]) _
-        (by
-          rw [AlgEquiv.toLinearMap_apply, toInfinite_stageEquiv_symm_apply]
-          exact InfiniteTypeAHeckeAlgebra.cycleBlock_def μ)
+    (hψ φ hφ) (hψ φ' hφ') fun μ ↦ by
+      have h₀ : φ 0 1 = φ' 0 1 := by simpa using h 0
+      simp only [ψ, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
+        apply_stageEquiv_symm_cycleBlock hφm, apply_stageEquiv_symm_cycleBlock hφm', h, h₀]
   ext x
   simpa [ψ] using LinearMap.congr_fun key (stageEquiv R q n x)
 
