@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import TauCeti.Analysis.Normed.Operator.DeterminantLoop
+public import TauCeti.Analysis.Normed.Operator.RotationLoop
 public import TauCeti.LinearAlgebra.TotallyReal.Graph
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Map
 import Mathlib.Analysis.Normed.Module.FiniteDimension
@@ -71,46 +73,6 @@ open Module Real
 open scoped InnerProductSpace unitInterval
 
 namespace TauCeti
-
-/-! ### The full rotation -/
-
-section Rotation
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
-
-variable (E) in
-/-- The **full rotation** `t ↦ e^{2πit}` of a complex inner product space, as a loop of
-real-linear maps. -/
-def rotationLoop (t : I) : E →L[ℝ] E :=
-  (Complex.exp ((2 * π * t : ℝ) * Complex.I) • ContinuousLinearMap.id ℂ E).restrictScalars ℝ
-
-/-- The full rotation at time `t` is multiplication by `e^{2πit}`. -/
-@[simp]
-theorem rotationLoop_apply (t : I) (z : E) :
-    rotationLoop E t z = Complex.exp ((2 * π * t : ℝ) * Complex.I) • z :=
-  (rfl)
-
-variable (E) in
-/-- The full rotation is a continuous family of operators. -/
-theorem continuous_rotationLoop : Continuous (rotationLoop E) :=
-  (ContinuousLinearMap.restrictScalarsIsometry ℂ E E ℝ ℝ).continuous.comp (by fun_prop)
-
-/-- The full rotation preserves the inner product, so in particular the symplectic form
-`Im ⟪·, ·⟫`. -/
-theorem inner_rotationLoop_apply (t : I) (x y : E) :
-    ⟪rotationLoop E t x, rotationLoop E t y⟫_ℂ = ⟪x, y⟫_ℂ := by
-  rw [rotationLoop_apply, rotationLoop_apply, inner_smul_left, inner_smul_right, ← mul_assoc,
-    Complex.conj_mul', Complex.norm_exp_ofReal_mul_I, Complex.ofReal_one, one_pow, one_mul]
-
-variable (E) in
-/-- The full rotation is a closed loop. -/
-theorem rotationLoop_zero_eq_one : rotationLoop E 0 = rotationLoop E 1 := by
-  ext z
-  simp only [rotationLoop_apply, Set.Icc.coe_zero, Set.Icc.coe_one, mul_zero, mul_one,
-    Complex.ofReal_zero, zero_mul, Complex.exp_zero]
-  rw [Complex.ofReal_mul, Complex.ofReal_ofNat, Complex.exp_two_pi_mul_I]
-
-end Rotation
 
 /-! ### The graph loop of a loop of linear symplectic maps -/
 
@@ -328,7 +290,11 @@ theorem maslovIndex_symplecticGraphLoop_rotationLoop
   rw [maslovIndex_symplecticGraphLoop hK _ _ _ _ δ fun t => ?_, hδ]
   have hdet : LinearMap.det ((rotationLoop E t).complexLinearPart : E →ₗ[ℂ] E) =
       Complex.exp ((finrank ℂ E * (2 * π * t) : ℝ) * Complex.I) := by
-    rw [rotationLoop, ContinuousLinearMap.complexLinearPart_restrictScalars,
+    have hrot : rotationLoop E t = (Complex.exp ((2 * π * t : ℝ) * Complex.I) •
+        ContinuousLinearMap.id ℂ E).restrictScalars ℝ := by
+      ext z
+      simp
+    rw [hrot, ContinuousLinearMap.complexLinearPart_restrictScalars,
       ContinuousLinearMap.toLinearMap_smul, ContinuousLinearMap.coe_id, LinearMap.det_smul,
       LinearMap.det_id, mul_one, ← Complex.exp_nat_mul]
     push_cast
