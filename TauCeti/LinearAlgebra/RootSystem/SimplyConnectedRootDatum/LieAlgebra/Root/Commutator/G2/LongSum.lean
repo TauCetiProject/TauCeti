@@ -88,11 +88,10 @@ theorem commutatorElement_chevalleyRootSubgroup_G2_of_long_sum {α β γ : Fin G
         chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v)⁆ =
       chevalleyRootSubgroup ρ M hM hnil γ A
         (Multiplicative.ofAdd ((G2.structureConstant ht α β : A) * (u * v))) := by
-  have hcomm := commute_chevalleyRootSubgroup ρ M hM hnil
+  have hcomm := commute_chevalleyRootSubgroup_of_lie_eq_zero ρ M hM hnil
     (lie_chevalleySystem_eq_zero_of_add_eq (hadd.trans (add_comm _ _))
       (g2_root_add_notMem_range_of_long_sum hγ (hadd.trans (add_comm _ _)))) A
-    (Multiplicative.ofAdd v)
-    (Multiplicative.ofAdd ((G2.structureConstant ht α β : A) * (u * v)))
+    v ((G2.structureConstant ht α β : A) * (u * v))
   rw [commutatorElement_def, chevalleyRootSubgroup_mul_G2_of_long_sum ρ M hM hnil hγ hadd,
     mul_inv_cancel_right, hcomm.eq]
   simp

@@ -240,7 +240,7 @@ theorem commutatorElement_chevalleyRootSubgroup_of_g2_short_pair
     g2_short_pair_vanishing_brackets hi hj hk hij hik hkj
   have H (r s) (hrs : ⁅G2.chevalleySystem ht r, G2.chevalleySystem ht s⁆ = 0) (p q : A) :
       Commute (x r p) (x s q) :=
-    commute_chevalleyRootSubgroup ρ M hM hnil hrs A _ _
+    commute_chevalleyRootSubgroup_of_lie_eq_zero ρ M hM hnil hrs A p q
   have hmLong := g2_short_pair_last_long hi hj hk
     ((g2_root_add_iff i j k).1 hij) ((g2_root_add_iff k j m).1 hkj)
   let t := (G2.structureConstant ht j k : A) * (v * ((c : A) * (2 * u * v)))
