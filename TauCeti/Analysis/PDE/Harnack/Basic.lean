@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Harnack's inequality in every dimension
@@ -77,9 +78,8 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.le_div_pow_mul_of_nonneg
       (ball_subset_ball' hxy).eventuallyLE
   rw [(hu.mono (closedBall_subset_closedBall' hxy)).setIntegral_ball_eq,
     hu.setIntegral_ball_eq] at hle
-  simp only [smul_eq_mul, measureReal_def, μ.addHaar_ball_of_pos x hr,
-    μ.addHaar_ball_of_pos y hs, ENNReal.toReal_mul,
-    ENNReal.toReal_ofReal (pow_nonneg hr.le _), ENNReal.toReal_ofReal (pow_nonneg hs.le _)] at hle
+  simp only [smul_eq_mul, μ.addHaar_real_ball_of_pos x hr, μ.addHaar_real_ball_of_pos y hs,
+    measureReal_def] at hle
   have hB : 0 < (μ (ball 0 1)).toReal :=
     ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
   rw [div_pow, div_mul_eq_mul_div, le_div_iff₀ (by positivity)]

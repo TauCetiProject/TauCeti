@@ -28,6 +28,8 @@ by left multiplication on the second factor. It is a `G'`-torsor, and `p ↦ [p,
   `NonabelianH1.map_id`, `NonabelianH1.map_comp` and `NonabelianH1.map_one`.
 * `CategoryTheory.Sheaf.NonabelianH1.map_mk_eq_mk`: a `φ`-equivariant morphism from `P` to a
   `G'`-torsor `R` identifies the image of the class of `P` with the class of `R`.
+* `CategoryTheory.Sheaf.NonabelianH1.map_mk_eq_mk_iff`: the image of the class of `P` is the
+  class of a `G'`-torsor `R` if and only if there is a `φ`-equivariant morphism from `P` to `R`.
 * `CategoryTheory.Sheaf.NonabelianH1.map_connecting`: for an extension `1 → A → B → Q → 1`, the
   composite `Q(C) → H¹(A) → H¹(B)` is trivial.
 
@@ -237,6 +239,15 @@ lemma map_mk_eq_mk {φ : G ⟶ G'} {P : Torsor G} {R : Torsor G'} (u : P.sheaf �
     map φ (mk P) = mk R :=
   (map_mk φ P).trans (mk_eq_mk_of_hom (P.mapLift u hu))
 
+/-- The image of the class of a `G`-torsor `P` under `map φ` is the class of a `G'`-torsor `R` if
+and only if there is a `φ`-equivariant morphism from `P` to `R`. -/
+lemma map_mk_eq_mk_iff {φ : G ⟶ G'} {P : Torsor G} {R : Torsor G'} :
+    map φ (mk P) = mk R ↔ ∃ u : P.sheaf ⟶ R.sheaf, ∀ (U : Cᵒᵖ) (g : G.obj.obj U)
+      (p : P.sheaf.obj.obj U), u.hom.app U (g • p) = φ.hom.app U g • u.hom.app U p := by
+  refine ⟨fun h ↦ ?_, fun ⟨u, hu⟩ ↦ map_mk_eq_mk u hu⟩
+  obtain ⟨e⟩ := mk_eq_mk_iff.1 ((map_mk φ P).symm.trans h)
+  exact ⟨P.toMap φ ≫ e.hom.hom, fun U g p ↦ by simp [Torsor.toMap_smul, e.hom.map_smul]⟩
+
 /-- The identity of `G` induces the identity of `H¹(G)`. -/
 @[simp]
 lemma map_id : map (𝟙 G) = id := by
@@ -263,6 +274,20 @@ the trivial torsor. -/
 lemma map_one (φ : G ⟶ G') : map φ 1 = 1 :=
   map_mk_eq_mk ((sheafCompose J (forget GrpCat.{w})).map φ) fun U g p ↦
     map_mul (φ.hom.app U).hom g p
+
+/-- A morphism of sheaves of groups which is trivial on sections induces the constant map to the
+base point. -/
+lemma map_eq_one_of_forall_app_eq_one {φ : G ⟶ G'}
+    (hφ : ∀ (U : Cᵒᵖ) (g : G.obj.obj U), φ.hom.app U g = 1) (x : NonabelianH1 G) :
+    map φ x = 1 := by
+  induction x using ind with | h P => ?_
+  exact map_mk_eq_mk (R := Torsor.trivial G') (ObjectProperty.homMk
+    { app U := ↾fun _ ↦ (1 : G'.obj.obj U)
+      naturality U V f := by
+        ext
+        exact (_root_.map_one (G'.obj.map f).hom).symm })
+    -- The action of `G'` on the trivial torsor is multiplication.
+    fun U g _ ↦ (by rw [hφ, mul_one] : (1 : G'.obj.obj U) = φ.hom.app U g * 1)
 
 /-- For an extension `1 → A → B → Q → 1` of sheaves of groups, the composite
 `Q(C) → H¹(A) → H¹(B)` is trivial: the torsor of lifts of a global section of `Q` maps to the
