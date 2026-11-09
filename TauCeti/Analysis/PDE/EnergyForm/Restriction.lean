@@ -42,6 +42,10 @@ integrability hypotheses on `Ω`.
   essentially bounded it satisfies `a(u, v) = ⟪G - c, ∇v⟫_{L²(B)}` for every `v ∈ H¹₀(B)` and
   every constant `c` with `G - c ∈ L²(B)`, since constants have zero divergence. This is the
   hypothesis of the energy estimate for the replacement on a ball.
+* `TauCeti.PDE.forall_energyFormH1_restrictL_eq_setIntegral`: if `u` solves `-∂ᵢ(aⁱʲ ∂ⱼu) = f`
+  weakly on `Ω`, tested against test functions, then on every open `B ⊆ Ω` on which `a` is
+  essentially bounded and `f` is square integrable it satisfies `a(u, v) = ∫_B f v` for every
+  `v ∈ H¹₀(B)`, with no integrability of `f` on all of `Ω`.
 * `TauCeti.PDE.inner_toLp_gradient_ofTestFunctionₗ`: the test-function case,
   `⟪G - c, ∇φ⟫_{L²(B)} = ∫_B ⟨G, ∇φ⟩`.
 -/
@@ -322,6 +326,60 @@ theorem forall_energyFormH1_restrictL_eq_inner {B : Opens (EuclideanSpace ℝ ι
   rw [hext, hu, hmono] at hφ
   rw [hφ, φ.setIntegral_inner_gradient_eq_integral_inner_gradient G (φ.tsupport_subset.trans hB),
     φ.setIntegral_inner_gradient_eq_integral_inner_gradient G φ.tsupport_subset]
+
+/-- The weak equation `-∂ᵢ(aⁱʲ ∂ⱼu) = f` on `Ω`, tested against test functions, holds on every
+open `B ⊆ Ω` against all of `H¹₀(B)`, provided `f` is square integrable on `B` and the
+coefficients are essentially bounded on `B`. Nothing is assumed about `f` outside `B`, so this
+applies to right-hand sides that are only locally integrable on `Ω`. -/
+theorem forall_energyFormH1_restrictL_eq_setIntegral {B : Opens (EuclideanSpace ℝ ι)}
+    (hB : B ≤ Omega) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict B)) {u : W1p mu Omega 2}
+    {f : EuclideanSpace ℝ ι → ℝ}
+    (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
+      ∫ x in Omega, f x * φ x ∂mu)
+    (hf : MemLp f 2 (mu.restrict B)) (v : W1p0 mu B 2) :
+    energyFormH1 a 0 0 (W1p.restrictL hB u) (v : W1p mu B 2) =
+      ∫ x in B, f x * W1p.value (v : W1p mu B 2) x ∂mu := by
+  -- On `B`, the integral against `f` is the `L²` inner product with `f`.
+  have hinner (w : W1p mu B 2) :
+      ⟪hf.toLp, W1p.value w⟫_ℝ = ∫ x in B, f x * W1p.value w x ∂mu := by
+    rw [L2.inner_def]
+    refine integral_congr_ae (hf.coeFn_toLp.mono fun x hx => ?_)
+    simp [hx, RCLike.inner_apply, mul_comm]
+  set L : W1p mu B 2 →L[ℝ] ℝ :=
+    energyFormH1L ha (W1p.restrictL hB u) - (innerSL ℝ hf.toLp).comp W1p.valueL
+  have hL : ∀ w, L w = energyFormH1 a 0 0 (W1p.restrictL hB u) w - ⟪hf.toLp, W1p.value w⟫_ℝ :=
+    fun w => by
+      simp only [L, sub_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply,
+        W1p.valueL_apply, energyFormH1L_apply, Pi.zero_def]
+  -- The functional `L` is continuous, so it suffices that it vanishes on test functions.
+  suffices hzero : (w1p0Submodule mu B 2 : Set (W1p mu B 2)) ⊆ {w | L w = 0} by
+    have := hzero v.2
+    simp only [mem_ofPred_eq, hL] at this
+    rw [← hinner]
+    linarith
+  refine w1p0Submodule_subset_of_isClosed (isClosed_eq L.continuous continuous_const) fun φ => ?_
+  simp only [mem_ofPred_eq, hL, hinner, sub_eq_zero]
+  -- The zero extension of `φ` from `B` to `Ω` is `φ` regarded as a test function on `Ω`, so
+  -- `a(u|_B, φ) = a(u, φ) = ∫_Ω f φ = ∫_B f φ`.
+  have hext : ((W1p0.extendByZeroL hB
+      (⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩ : W1p0 mu B 2) : W1p0 mu Omega 2) :
+      W1p mu Omega 2) = W1p.ofTestFunctionₗ mu Omega 2 (TestFunction.monoCLM ℝ φ) := by
+    apply Subtype.ext
+    rw [W1p0.coe_extendByZeroL]
+    exact Sobolev1JetLp.extendByZeroₗᵢ_ofTestFunctionₗ hB φ
+  have hφ := energyFormH1_restrictL a 0 0 hB u ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩
+  have hmono : ((TestFunction.monoCLM ℝ φ : 𝓓(Omega, ℝ)) : EuclideanSpace ℝ ι → ℝ) = φ := by
+    rw [TestFunction.monoCLM_apply]
+    simp [hB]
+  rw [hext, hu, hmono] at hφ
+  -- Both integrals vanish off `tsupport φ ⊆ B`, and on `B` the value of `φ` is `φ`.
+  have hsupp : ∀ x ∉ (B : Set (EuclideanSpace ℝ ι)), f x * φ x = 0 := fun x hx => by
+    rw [image_eq_zero_of_notMem_tsupport fun h => hx (φ.tsupport_subset h), mul_zero]
+  rw [hφ, setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => hsupp x fun h => hx (hB h),
+    ← setIntegral_eq_integral_of_forall_compl_eq_zero hsupp]
+  exact integral_congr_ae ((W1p.value_ofTestFunctionₗ_ae (p := 2) φ).mono fun x hx => by
+    simp only [hx])
 
 end Transfer
 
