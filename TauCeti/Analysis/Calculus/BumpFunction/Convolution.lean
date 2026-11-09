@@ -224,14 +224,9 @@ theorem tendstoUniformlyOn_convolution_indicator_ball {ι : Type*} {l : Filter �
     intro y hy
     have hcont : ContinuousAt ((ball x r).indicator V) y :=
       (hVc.congr fun z hz => indicator_of_mem hz V).continuousAt (isOpen_ball.mem_nhds hy)
-    have hconv : Tendsto (fun p : ι × G => Fn p.1 p.2) (l ×ˢ 𝓝 y)
-        (𝓝 (((ball x r).indicator V) y)) := by
-      simp only [Fn, convolution_flip]
-      exact ContDiffBump.convolution_tendsto_right (hphi.comp tendsto_fst)
-        (Eventually.of_forall fun _ => hVm) (hcont.tendsto.comp tendsto_snd) tendsto_snd
-    apply tendsto_uniformity_iff_dist_tendsto_zero.2
-    simpa only [dist_self, Function.comp_apply] using
-      (hcont.tendsto.comp tendsto_snd).dist hconv
+    exact tendstoUniformlyOnFilter_iff_tendsto.1
+      (by simpa only [Fn, convolution_flip] using
+        tendstoUniformlyOnFilter_normed_convolution (μ := μ) hphi hVm hcont)
   have hsub : closedBall x (r / 2) ⊆ ball x r := closedBall_subset_ball (half_lt_self hr)
   exact ((tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact
     (isCompact_closedBall x (r / 2))).1 (hlocal.mono hsub)).mono ball_subset_closedBall
