@@ -50,8 +50,10 @@ For the action groupoid of a discrete group acting on a space, these notions are
 * `TauCeti.ineffectiveKernel hs x`: the normal subgroup of ineffective automorphisms of `x`.
 * `TauCeti.map_autMulEquivOfIso_ineffectiveKernel`: isomorphisms transport ineffective kernels.
 * `TauCeti.EffectiveQuotient C`: the quotient of `C` by the germ relation `TauCeti.germRel C`,
-  with its projection `TauCeti.toEffectiveQuotient C` and universal property
-  `TauCeti.EffectiveQuotient.lift`.
+  with its projection `TauCeti.toEffectiveQuotient C`. Both are exposed definitions unfolding to
+  `CategoryTheory.Quotient (germRel C)` and its projection, so the universal property is
+  `CategoryTheory.Quotient.lift (germRel C)` with `CategoryTheory.Quotient.lift_spec` and
+  `CategoryTheory.Quotient.lift_unique`.
 * `TauCeti.toEffectiveQuotient_map_eq_iff`: two parallel arrows have the same image exactly when
   they induce the same germ.
 * `TauCeti.quotientIneffectiveKernelMulEquivAut`: the isotropy of the effective quotient at `x` is
@@ -188,44 +190,6 @@ theorem EffectiveQuotient.objEquiv_symm_toEffectiveQuotient_obj (x : C) :
 theorem toEffectiveQuotient_obj_objEquiv_symm (x : EffectiveQuotient C) :
     (toEffectiveQuotient C).obj ((EffectiveQuotient.objEquiv C).symm x) = x :=
   (rfl)
-
-section Lift
-
-variable {D : Type*} [Category* D] (F : C ⥤ D)
-  (H : ∀ (x y : C) (f f' : x ⟶ y), germRel C f f' → F.map f = F.map f')
-
-/-- The universal property of the effective quotient: a functor sending arrows related by the germ
-relation to the same arrow factors through the effective quotient. -/
-@[expose] def EffectiveQuotient.lift : EffectiveQuotient C ⥤ D :=
-  CategoryTheory.Quotient.lift (germRel C) F H
-
-@[simp]
-theorem EffectiveQuotient.toEffectiveQuotient_comp_lift :
-    toEffectiveQuotient C ⋙ EffectiveQuotient.lift F H = F :=
-  CategoryTheory.Quotient.lift_spec _ _ _
-
-@[simp]
-theorem EffectiveQuotient.lift_obj_toEffectiveQuotient_obj (x : C) :
-    (EffectiveQuotient.lift F H).obj ((toEffectiveQuotient C).obj x) = F.obj x :=
-  (rfl)
-
-@[simp]
-theorem EffectiveQuotient.lift_map_toEffectiveQuotient_map {x y : C} (f : x ⟶ y) :
-    (EffectiveQuotient.lift F H).map ((toEffectiveQuotient C).map f) = F.map f :=
-  (rfl)
-
-/-- A functor out of the effective quotient that restricts to `F` along the projection is the
-induced functor `TauCeti.EffectiveQuotient.lift F H`. -/
-theorem EffectiveQuotient.lift_unique (Φ : EffectiveQuotient C ⥤ D)
-    (hΦ : toEffectiveQuotient C ⋙ Φ = F) : Φ = EffectiveQuotient.lift F H :=
-  CategoryTheory.Quotient.lift_unique _ _ _ Φ hΦ
-
-/-- Two functors out of the effective quotient are equal when they agree after the projection. -/
-theorem EffectiveQuotient.ext_functor {F₁ F₂ : EffectiveQuotient C ⥤ D}
-    (h : toEffectiveQuotient C ⋙ F₁ = toEffectiveQuotient C ⋙ F₂) : F₁ = F₂ :=
-  CategoryTheory.Quotient.lift_unique' _ _ _ h
-
-end Lift
 
 /-- Every automorphism in the effective quotient is the image of an automorphism. -/
 theorem mapAut_toEffectiveQuotient_surjective (x : C) :
