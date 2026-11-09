@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Flat.Tensor
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.Flat.Extensions
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # Flat quotients by universally regular elements
@@ -91,14 +92,9 @@ remains injective after tensoring `B` with any `R`-module. This is the short exa
 theorem lTensor_mulLeft_injective_of_quotient_span_singleton {g : B}
     (hg : IsSMulRegular B g) [Flat R (B ⧸ Ideal.span {g})]
     (M : Type w) [AddCommGroup M] [Module R M] :
-    Function.Injective (LinearMap.lTensor M (LinearMap.mulLeft R g)) := by
-  let π : B →ₗ[R] B ⧸ Ideal.span {g} :=
-    (Ideal.Quotient.mkₐ R (Ideal.span {g})).toLinearMap
-  have hπ : Function.Surjective π := Ideal.Quotient.mk_surjective
-  have hexact : Function.Exact (LinearMap.mulLeft R g) π := fun y ↦ by
-    simp [π, Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton', mul_comm]
-  exact LinearMap.lTensor_injective_of_exact_of_flat π hπ (LinearMap.mulLeft R g) hg
-    hexact M
+    Function.Injective (LinearMap.lTensor M (LinearMap.mulLeft R g)) :=
+  LinearMap.lTensor_injective_of_exact_of_flat _ Ideal.Quotient.mk_surjective
+    (LinearMap.mulLeft R g) hg (Ideal.exact_mulLeft_mkₐ_span_singleton g) M
 
 /-- If `g` is a nonzerodivisor on `B` and `B ⧸ (g)` is flat over `R`, then `1 ⊗ g` is a
 nonzerodivisor after every algebra base change `R → S`. Only a semiring structure on `S` is
@@ -125,7 +121,7 @@ theorem quotient_span_singleton_of_lTensor_mulLeft_injective [Flat R B] (g : B)
     Flat R (B ⧸ Ideal.span {g}) :=
   of_exact_of_lTensor_quotient_injective (LinearMap.mulLeft R g)
     (Ideal.Quotient.mkₐ R (Ideal.span {g})).toLinearMap
-    (fun y ↦ by simp [Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton', mul_comm])
+    (Ideal.exact_mulLeft_mkₐ_span_singleton g)
     Ideal.Quotient.mk_surjective hg
 
 /-- For a flat `R`-algebra `B` and a nonzerodivisor `g`, the quotient `B ⧸ (g)` is flat over `R`
