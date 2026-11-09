@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.DerivationMap
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Naturality
 public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.RingTheory.Ideal.Cotangent
-public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 
 /-!
 # The cotangent space at the identity

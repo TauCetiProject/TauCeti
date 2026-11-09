@@ -14,6 +14,7 @@ import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Connected
 import TauCeti.LinearAlgebra.TensorProduct.Basic
 import TauCeti.RingTheory.Extension.Cotangent.Vanishing
 import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
+import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 
 /-!
 # Smooth connected closed subgroups with equal tangent spaces

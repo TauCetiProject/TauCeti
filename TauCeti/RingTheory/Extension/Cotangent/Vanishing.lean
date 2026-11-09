@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Extension.Cotangent.Basic
 public import Mathlib.RingTheory.Kaehler.Basic
-import Mathlib.RingTheory.TensorProduct.Free
 
 /-!
 # Vanishing of the cotangent module of an extension
