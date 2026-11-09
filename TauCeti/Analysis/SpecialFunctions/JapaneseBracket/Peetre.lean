@@ -48,6 +48,7 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   between its two factors.
 * `TauCeti.one_add_norm_sq_rpow_le_one_add_norm_rpow`: the bracket is at most the
   inhomogeneous norm, `⟨x⟩ ^ r ≤ (1 + ‖x‖) ^ r` for `r ≥ 0`.
+* `TauCeti.one_add_norm_sq_rpow_le_one_add_norm_pow`: `⟨x⟩ ^ N ≤ (1 + ‖x‖) ^ N` for natural `N`.
 * `TauCeti.one_add_norm_sq_rpow_le_two_pow_mul_one_add_norm_pow`: the comparison
   `⟨x⟩ ^ N ≤ 2 ^ N (1 + ‖x‖ ^ N)` of a natural power of the bracket with a power of the norm.
 
@@ -206,13 +207,18 @@ theorem one_add_norm_sq_rpow_le_one_add_norm_rpow (x : E) {r : ℝ} (hr : 0 ≤ 
         rw [← Real.rpow_natCast (1 + ‖x‖) 2, ← Real.rpow_mul (by positivity)]
         ring_nf
 
+/-- A natural power of the Japanese bracket is at most the same power of `1 + ‖x‖`:
+`(1 + ‖x‖ ^ 2) ^ (N / 2) ≤ (1 + ‖x‖) ^ N`. -/
+theorem one_add_norm_sq_rpow_le_one_add_norm_pow (x : E) (N : ℕ) :
+    (1 + ‖x‖ ^ 2) ^ ((N : ℝ) / 2) ≤ (1 + ‖x‖) ^ N := by
+  simpa only [Real.rpow_natCast] using one_add_norm_sq_rpow_le_one_add_norm_rpow x N.cast_nonneg
+
 /-- A natural power of the Japanese bracket is comparable to the same power of the norm:
 `(1 + ‖x‖ ^ 2) ^ (N / 2) ≤ 2 ^ N (1 + ‖x‖ ^ N)`. -/
 theorem one_add_norm_sq_rpow_le_two_pow_mul_one_add_norm_pow (x : E) (N : ℕ) :
     (1 + ‖x‖ ^ 2) ^ ((N : ℝ) / 2) ≤ 2 ^ N * (1 + ‖x‖ ^ N) :=
-  calc (1 + ‖x‖ ^ 2) ^ ((N : ℝ) / 2) ≤ (1 + ‖x‖) ^ (N : ℝ) :=
-        one_add_norm_sq_rpow_le_one_add_norm_rpow x N.cast_nonneg
-    _ = (1 + ‖x‖) ^ N := Real.rpow_natCast _ N
+  calc (1 + ‖x‖ ^ 2) ^ ((N : ℝ) / 2) ≤ (1 + ‖x‖) ^ N :=
+        one_add_norm_sq_rpow_le_one_add_norm_pow x N
     _ ≤ 2 ^ (N - 1) * (1 ^ N + ‖x‖ ^ N) := add_pow_le zero_le_one (norm_nonneg x) N
     _ ≤ 2 ^ N * (1 + ‖x‖ ^ N) := by
         rw [one_pow]

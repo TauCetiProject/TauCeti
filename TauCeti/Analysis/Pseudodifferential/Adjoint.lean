@@ -9,7 +9,6 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.ParametricIntegral
-import TauCeti.Analysis.Fourier.Parametric
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.MeasureTheory.Function.L2Space
@@ -85,6 +84,13 @@ section Slice
 
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {a : Symbol n V W m}
+
+/-- The Fourier slice `â(g t, h t)` is continuous along continuous maps `g` and `h`. -/
+private theorem HasCompactSpatialSupport.continuous_fourier_slice_comp
+    (ha : a.HasCompactSpatialSupport) {X : Type*} [TopologicalSpace X]
+    {g h : X → CoordinateSpace n} (hg : Continuous g) (hh : Continuous h) :
+    Continuous fun t ↦ 𝓕 (fun x ↦ a.coefficient (x, h t)) (g t) :=
+  (ha.continuous_fourier_slice.comp (hg.prodMk hh) :)
 
 /-- The decay of `â(θ, ξ - 2πθ)`: for a symbol of order `m` with compact spatial support,
 `‖â(θ, ξ - 2πθ)‖ ≤ C (1 + ‖θ‖) ^ (-(n + 1)) ⟨ξ⟩ ^ m`, which is integrable in `θ`. The decay of `â`
@@ -328,7 +334,7 @@ private theorem HasCompactSpatialSupport.continuous_leftCoeff_integrand
     (Real.continuous_fourierChar.comp (continuous_id.inner continuous_const)).subtype_val
   have h₂ : Continuous fun θ : CoordinateSpace n ↦
       𝓕 (fun x ↦ a.coefficient (x, p.2 - (2 * π) • θ)) θ := by
-    exact ha.continuous_fourier_slice continuous_id (by fun_prop)
+    exact ha.continuous_fourier_slice_comp continuous_id (by fun_prop)
   exact h₁.smul h₂
 
 private theorem integrable_one_add_norm_rpow_neg :
@@ -340,7 +346,7 @@ private theorem HasCompactSpatialSupport.integrable_fourier_slice_sub
     Integrable fun θ : CoordinateSpace n ↦ 𝓕 (fun x ↦ a.coefficient (x, ξ - (2 * π) • θ)) θ := by
   obtain ⟨C, -, hC⟩ := ha.exists_norm_fourier_slice_sub_le
   exact ((integrable_one_add_norm_rpow_neg.mul_const ((1 + ‖ξ‖ ^ 2) ^ (m / 2))).const_mul
-    C).mono' (ha.continuous_fourier_slice continuous_id (by fun_prop)).aestronglyMeasurable
+    C).mono' (ha.continuous_fourier_slice_comp continuous_id (by fun_prop)).aestronglyMeasurable
       (.of_forall fun θ ↦ hC θ ξ)
 
 private theorem HasCompactSpatialSupport.integrable_leftCoeff_integrand
@@ -357,7 +363,6 @@ private theorem HasCompactSpatialSupport.hasFDerivAt_leftCoeff
     (ha : a.HasCompactSpatialSupport) (p₀ : CoordinateSpace n × CoordinateSpace n) :
     HasFDerivAt (leftCoeff a) (coordCLM (fun j ↦ leftCoeff (Symbol.spatialDeriv j a) p₀)
       (fun j ↦ leftCoeff (Symbol.frequencyDeriv j a) p₀)) p₀ := by
-  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
   -- A common integrable bound `D (1 + ‖θ‖) ^ (-(n + 1))` for the shifted Fourier slices of all
   -- first derivatives of `a`, at frequencies within distance one of `p₀.2`.
   choose Cx hCx0 hCx using fun j ↦ (ha.spatialDeriv j).exists_norm_fourier_slice_sub_le
@@ -392,14 +397,18 @@ private theorem HasCompactSpatialSupport.hasFDerivAt_leftCoeff
     (S := fun θ ζ ↦ 𝓕 (fun x ↦ a.coefficient (x, ζ)) θ)
     (A := fun j θ ζ ↦ 𝓕 (fun x ↦ (Symbol.spatialDeriv j a).coefficient (x, ζ)) θ)
     (B := fun j θ ζ ↦ 𝓕 (fun x ↦ (Symbol.frequencyDeriv j a).coefficient (x, ζ)) θ)
-    (fun j θ ζ ↦ ha.fourier_spatialDeriv_slice j θ ζ)
+    (fun j θ ζ ↦ by
+      rw [ha.fourier_spatialDeriv_slice, EuclideanSpace.inner_single_right, one_mul, conj_trivial])
     (fun θ ζ ↦ by
-      simpa only [coefficient_frequencyDeriv] using
-        hasFDerivAt_fourier_slice_coordinateDeriv ((a.contDiff_coefficient).of_le (by simp)) hK hKa
-          θ ζ)
-    (fun ξ ↦ ha.continuous_fourier_slice continuous_id (by fun_prop))
-    (fun j ξ ↦ (ha.spatialDeriv j).continuous_fourier_slice continuous_id (by fun_prop))
-    (fun j ξ ↦ (ha.frequencyDeriv j).continuous_fourier_slice continuous_id (by fun_prop))
+      have h := ha.hasFDerivAt_fourier_slice θ ζ
+      refine h.congr_fderiv (ContinuousLinearMap.ext fun w ↦ ?_)
+      rw [ContinuousLinearMap.apply_eq_sum_single _ w]
+      simp only [sum_apply, ContinuousLinearMap.smulRight_apply, PiLp.proj_apply]
+      refine Finset.sum_congr rfl fun j _ ↦ ?_
+      rw [← ha.coordinateDeriv_fourier_slice, coordinateDeriv_cons, coordinateDeriv_nil, h.fderiv])
+    (fun ξ ↦ ha.continuous_fourier_slice_comp continuous_id (by fun_prop))
+    (fun j ξ ↦ (ha.spatialDeriv j).continuous_fourier_slice_comp continuous_id (by fun_prop))
+    (fun j ξ ↦ (ha.frequencyDeriv j).continuous_fourier_slice_comp continuous_id (by fun_prop))
     (fun ξ ↦ ha.integrable_fourier_slice_sub ξ)
     (integrable_one_add_norm_rpow_neg.const_mul D) p₀ (fun θ ξ hξ j ↦ ⟨?_, ?_⟩)
   · exact (hball hξ (hCx0 j) (hCx j θ ξ)).trans (by gcongr; exact (hterm j).1)
@@ -646,7 +655,7 @@ private theorem HasCompactSpatialSupport.integrable_adjointIntegrand
       (Real.continuous_fourierChar.comp (by fun_prop)).subtype_val
     have h₂ : Continuous fun q : CoordinateSpace n × (CoordinateSpace n × CoordinateSpace n) ↦
         𝓕 (fun x ↦ a.coefficient (x, (2 * π) • (q.2.1 - q.2.2))) q.2.2 :=
-      ha.continuous_fourier_slice (by fun_prop) (by fun_prop)
+      ha.continuous_fourier_slice_comp (by fun_prop) (by fun_prop)
     exact h₁.mul ((h₂.clm_apply (u.continuous.comp continuous_fst)).inner
       ((𝓕 v).continuous.comp (by fun_prop)))
   refine ((u.integrable.norm.mul_prod hg).const_mul (C * (2 * π) ^ |m|)).mono'
@@ -707,7 +716,7 @@ private theorem HasCompactSpatialSupport.integral_inner_quantizeSchwartzValue_eq
       𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (η - ζ) (𝓕 u ζ) := by
     refine (((𝓕 u).integrable_one_add_norm_sq_rpow_mul_norm (m / 2)).const_mul
       (C * (2 * π) ^ |m|)).mono' ?_ (.of_forall fun ζ ↦ ?_)
-    · exact ((ha.continuous_fourier_slice (by fun_prop) (by fun_prop)).clm_apply
+    · exact ((ha.continuous_fourier_slice_comp (by fun_prop) (by fun_prop)).clm_apply
         (𝓕 u).continuous).aestronglyMeasurable
     · have hscale := one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) m ζ
       have h := hC (η - ζ) ((2 * π) • ζ)
