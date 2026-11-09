@@ -28,7 +28,8 @@ Away from the poles this says `H = V_J(q₃) + p₃² / (2 (1 - q₃²))`, where
 `V_j(z) = j² / (2 (1 - z²)) + z` is the effective potential of the reduced one-degree-of-freedom
 system (`TauCeti.sphericalPendulumEffectivePotential`). Consequently the heights occurring in a
 fibre `F⁻¹(h, j)` are exactly the `z ∈ [-1, 1]` with `z ≤ h` and `j² ≤ 2 (h - z) (1 - z²)`, and
-the image of `F` is the set of `(h, j)` for which such a height exists.
+the image of `F` is the set of `(h, j)` for which such a height exists. Taking `z = 0` shows that
+the value `(1, 0)` of the unstable equilibrium lies in the interior of the image.
 
 For `j ≠ 0` the effective potential has a unique minimum on `(-1, 1)`, at the unique root
 `z_j ∈ (-1, 0)` of `j² z + (1 - z²)² = 0`, with minimum value `(3 z_j² - 1) / (2 z_j)`. The
@@ -49,6 +50,8 @@ compact.
 * `TauCeti.image_apply_two_preimage_sphericalPendulumEnergyMomentum`: the heights occurring in a
   fibre of `F`.
 * `TauCeti.image_sphericalPendulumEnergyMomentum`: the image of the energy–momentum map.
+* `TauCeti.mem_interior_image_sphericalPendulumEnergyMomentum`: `(1, 0)` lies in the interior of
+  the image.
 * `TauCeti.fst_sphericalPendulumEnergyMomentum_eq_neg_one_iff`: the energy `-1` is attained only
   at the south pole at rest.
 * `TauCeti.isMinOn_sphericalPendulumEffectivePotential_iff` and
@@ -329,6 +332,17 @@ theorem image_sphericalPendulumEnergyMomentum :
   · exact ⟨fun ⟨x, hx, hxc⟩ ↦ ⟨x, hx, hxc⟩, fun ⟨x, hx, hxc⟩ ↦ ⟨x, hx, hxc⟩⟩
   · exact ⟨fun ⟨z, hz, hzh, hj⟩ ↦ ⟨z, hz, hzh, hj⟩, fun ⟨z, hz, hzh, hj⟩ ↦ ⟨z, hz, hzh, hj⟩⟩
 
+/-- The value `(1, 0)` of the unstable equilibrium lies in the interior of the image of the
+energy–momentum map. -/
+theorem mem_interior_image_sphericalPendulumEnergyMomentum :
+    ((1 : ℝ), (0 : ℝ)) ∈
+      interior (sphericalPendulumEnergyMomentum '' sphericalPendulumPhaseSpace) := by
+  rw [mem_interior_iff_mem_nhds, image_sphericalPendulumEnergyMomentum]
+  -- The height `z = 0` occurs in every fibre over `{j² < h}`.
+  filter_upwards [(isOpen_lt (f := fun c : ℝ × ℝ ↦ c.2 ^ 2) (by fun_prop)
+    continuous_fst).mem_nhds (by norm_num)] with c hc
+  exact ⟨0, by norm_num, by nlinarith, by nlinarith⟩
+
 /-- With vertical angular momentum zero, the values of the energy are the `h ≥ -1`. The bottom
 value is described by `TauCeti.fst_sphericalPendulumEnergyMomentum_eq_neg_one_iff`. -/
 theorem mk_zero_mem_image_sphericalPendulumEnergyMomentum_iff (h : ℝ) :
@@ -500,17 +514,16 @@ theorem sphericalPendulumEnergyMomentum_eq_iff_of_isMinOn {j z₀ : ℝ} (hj : j
     sphericalPendulumEnergyMomentum x = (sphericalPendulumEffectivePotential j z₀, j) ↔
       (sphericalPendulumEnergyMomentum x).2 = j ∧ x.1 2 = z₀ ∧ x.2 2 = 0 := by
   -- Points with `J = j ≠ 0` are away from the poles.
-  have hpole : (sphericalPendulumEnergyMomentum x).2 = j → x.1 2 ^ 2 < 1 := fun hJ ↦
-    lt_of_le_of_ne (by nlinarith [(apply_two_mem_Icc_of_mem_sphericalPendulumPhaseSpace hx).1,
-      (apply_two_mem_Icc_of_mem_sphericalPendulumPhaseSpace hx).2])
-      fun h1 ↦ hj (hJ ▸ snd_sphericalPendulumEnergyMomentum_eq_zero_of_sq_eq_one hx h1)
+  have hpole (hJ : (sphericalPendulumEnergyMomentum x).2 = j) : x.1 2 ^ 2 < 1 :=
+    ((sq_lt_one_iff_abs_lt_one _).trans abs_lt).2
+      (apply_two_mem_Ioo_of_mem_sphericalPendulumPhaseSpace_of_snd_ne_zero hx (hJ ▸ hj))
   constructor
   · intro hF
     have hJ : (sphericalPendulumEnergyMomentum x).2 = j := congrArg Prod.snd hF
     have hH : (sphericalPendulumEnergyMomentum x).1 = sphericalPendulumEffectivePotential j z₀ :=
       congrArg Prod.fst hF
+    have hzI := apply_two_mem_Ioo_of_mem_sphericalPendulumPhaseSpace_of_snd_ne_zero hx (hJ ▸ hj)
     have hz := hpole hJ
-    have hzI : x.1 2 ∈ Ioo (-1) 1 := ((sq_lt_one_iff_abs_lt_one _).trans abs_lt).1 hz
     have hE := fst_sphericalPendulumEnergyMomentum_eq hx hz
     rw [hJ, hH] at hE
     have hd : 0 < 2 * (1 - x.1 2 ^ 2) := by linarith

@@ -239,8 +239,8 @@ theorem isRegularPoint_comp_iff (hfd : MDifferentiableAt I J f (g p))
     (hgd : MDifferentiableAt K I g p) :
     IsRegularPoint K J (f ∘ g) p ↔
       (mfderiv K I g p).range.map (mfderiv I J f (g p)).toLinearMap = ⊤ := by
-  rw [isRegularPoint_iff, mfderiv_comp p hfd hgd, ← LinearMap.range_comp, LinearMap.range_eq_top]
-  rfl
+  rw [isRegularPoint_iff, mfderiv_comp p hfd hgd, ← LinearMap.range_comp, LinearMap.range_eq_top,
+    ← ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.coe_coe]
 
 end Composition
 

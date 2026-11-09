@@ -38,7 +38,8 @@ of `F` from below. The value `(1, 0)` of the unstable equilibrium, classically t
 value of the pendulum, is isolated among the critical values: every other value near it is regular
 (`TauCeti.eventually_isRegularValue_sphericalPendulumEnergyMomentum_nhdsNE`), since
 `min V_j ≤ V_j(0) = j² / 2`. It lies in the interior of the image of `F`
-(`TauCeti.mem_interior_image_sphericalPendulumEnergyMomentum`).
+(`TauCeti.mem_interior_image_sphericalPendulumEnergyMomentum`, proved with the image of `F` in
+`TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum`).
 
 ## Main results
 
@@ -47,9 +48,8 @@ value of the pendulum, is isolated among the critical values: every other value 
 * `TauCeti.not_isRegularPoint_sphericalPendulumEnergyMomentum_iff`: the critical points.
 * `TauCeti.image_setOf_not_isRegularPoint_sphericalPendulumEnergyMomentum` and
   `TauCeti.isRegularValue_sphericalPendulumEnergyMomentum_iff`: the critical and regular values.
-* `TauCeti.eventually_isRegularValue_sphericalPendulumEnergyMomentum_nhdsNE` and
-  `TauCeti.mem_interior_image_sphericalPendulumEnergyMomentum`: the value `(1, 0)` is an isolated
-  critical value in the interior of the image.
+* `TauCeti.eventually_isRegularValue_sphericalPendulumEnergyMomentum_nhdsNE`: the value `(1, 0)`
+  is an isolated critical value.
 
 ## References
 
@@ -148,6 +148,42 @@ private theorem lagrange_cases {q0 q1 q2 p0 p1 p2 l m a b : ℝ}
       · rw [← hr']
         exact (mul_eq_zero.1 h3).resolve_left (pow_ne_zero 2 hl)
 
+/-- **Lagrange multipliers for a map into the plane.** If a linear map `DF` does not map the kernel
+of a linear map `D` onto `ℝ²`, then some `(l, m) ≠ 0` and `c` satisfy
+`l DF₁ + m DF₂ = c₀ D₁ + c₁ D₂`. -/
+private theorem exists_lagrange_multipliers {E : Type*} [AddCommGroup E] [Module ℝ E]
+    {D DF : E →ₗ[ℝ] ℝ × ℝ} (hne : D.ker.map DF ≠ ⊤) :
+    ∃ l m : ℝ, (l ≠ 0 ∨ m ≠ 0) ∧ ∃ c : Fin 2 → ℝ,
+      ∀ v, l * (DF v).1 + m * (DF v).2 = c 0 * (D v).1 + c 1 * (D v).2 := by
+  -- A nonzero functional `f = l (·).1 + m (·).2` on `ℝ²` kills `DF (ker D)`.
+  obtain ⟨f, hf0, hf⟩ :=
+    Submodule.exists_dual_map_eq_bot_of_lt_top (lt_top_iff_ne_top.2 hne) inferInstance
+  have hK : ⨅ i, LinearMap.ker
+      (![LinearMap.fst ℝ ℝ ℝ ∘ₗ D, LinearMap.snd ℝ ℝ ℝ ∘ₗ D] i) ≤
+        LinearMap.ker (f ∘ₗ DF) := by
+    intro v hv
+    simp only [Submodule.mem_iInf, LinearMap.mem_ker, Fin.forall_fin_two, Matrix.cons_val_zero,
+      Matrix.cons_val_one, LinearMap.coe_comp, comp_apply, LinearMap.fst_apply,
+      LinearMap.snd_apply] at hv
+    have hv' : v ∈ D.ker := Prod.ext hv.1 hv.2
+    have hmem : f (DF v) ∈ (D.ker.map DF).map f :=
+      ⟨DF v, ⟨v, hv', rfl⟩, rfl⟩
+    rw [hf, Submodule.mem_bot] at hmem
+    exact hmem
+  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun ℝ).1 (mem_span_of_iInf_ker_le_ker hK)
+  have hf' (w : ℝ × ℝ) : f w = f (1, 0) * w.1 + f (0, 1) * w.2 := by
+    conv_lhs => rw [show w = w.1 • ((1 : ℝ), (0 : ℝ)) + w.2 • ((0 : ℝ), (1 : ℝ)) by
+      ext <;> simp]
+    rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul, mul_comm, mul_comm w.2]
+  refine ⟨f (1, 0), f (0, 1), ?_, c, fun v ↦ ?_⟩
+  · by_contra! h
+    exact hf0 (LinearMap.ext fun w ↦ by rw [hf', h.1, h.2]; simp)
+  · have h := LinearMap.congr_fun hc v
+    simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, LinearMap.add_apply,
+      LinearMap.smul_apply, LinearMap.coe_comp, comp_apply, LinearMap.fst_apply,
+      LinearMap.snd_apply, smul_eq_mul] at h
+    rw [← hf', ← h]
+
 /-- In coordinates, the differentials of the constraint map and of the energy–momentum map. -/
 private theorem fderiv_coords (q p a b : EuclideanSpace ℝ (Fin 3)) :
     fderiv ℝ sphericalPendulumConstraint (q, p) (a, b) =
@@ -171,44 +207,16 @@ private theorem pole_or_relativeEquilibrium_of_map_ne_top {q p : EuclideanSpace 
       (q 0 * p 1 - q 1 * p 0) ^ 2 * q 2 + (1 - q 2 ^ 2) ^ 2 = 0) := by
   obtain ⟨hq, hqp⟩ := coords_of_mem_sphericalPendulumPhaseSpace hx
   dsimp only at hq hqp
-  -- A nonzero functional `f = l (·).1 + m (·).2` on `ℝ²` kills `dF (ker dg)`.
-  obtain ⟨f, hf0, hf⟩ :=
-    Submodule.exists_dual_map_eq_bot_of_lt_top (lt_top_iff_ne_top.2 hne) inferInstance
-  set D : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3) →ₗ[ℝ] ℝ × ℝ :=
-    (fderiv ℝ sphericalPendulumConstraint (q, p)).toLinearMap with hDdef
-  set DF : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3) →ₗ[ℝ] ℝ × ℝ :=
-    (fderiv ℝ sphericalPendulumEnergyMomentum (q, p)).toLinearMap with hDFdef
-  have hK : ⨅ i, LinearMap.ker
-      (![LinearMap.fst ℝ ℝ ℝ ∘ₗ D, LinearMap.snd ℝ ℝ ℝ ∘ₗ D] i) ≤
-        LinearMap.ker (f ∘ₗ DF) := by
-    intro v hv
-    simp only [Submodule.mem_iInf, LinearMap.mem_ker, Fin.forall_fin_two, Matrix.cons_val_zero,
-      Matrix.cons_val_one, LinearMap.coe_comp, comp_apply, LinearMap.fst_apply,
-      LinearMap.snd_apply] at hv
-    have hv' : v ∈ D.ker := Prod.ext hv.1 hv.2
-    have hmem : f (DF v) ∈ (D.ker.map DF).map f :=
-      ⟨DF v, ⟨v, hv', rfl⟩, rfl⟩
-    rw [hf, Submodule.mem_bot] at hmem
-    exact hmem
-  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun ℝ).1 (mem_span_of_iInf_ker_le_ker hK)
-  have hf' (w : ℝ × ℝ) : f w = f (1, 0) * w.1 + f (0, 1) * w.2 := by
-    conv_lhs => rw [show w = w.1 • ((1 : ℝ), (0 : ℝ)) + w.2 • ((0 : ℝ), (1 : ℝ)) by
-      ext <;> simp]
-    rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul, mul_comm, mul_comm w.2]
-  have hlm : f (1, 0) ≠ 0 ∨ f (0, 1) ≠ 0 := by
-    by_contra! h
-    exact hf0 (LinearMap.ext fun w ↦ by rw [hf', h.1, h.2]; simp)
+  obtain ⟨l, m, hlm, c, hc⟩ := exists_lagrange_multipliers hne
   have hev (a b : EuclideanSpace ℝ (Fin 3)) :
       c 0 * (2 * (q 0 * a 0 + q 1 * a 1 + q 2 * a 2)) +
           c 1 * (q 0 * b 0 + q 1 * b 1 + q 2 * b 2 + (a 0 * p 0 + a 1 * p 1 + a 2 * p 2)) =
-        f (1, 0) * (p 0 * b 0 + p 1 * b 1 + p 2 * b 2 + a 2) +
-          f (0, 1) * (a 0 * p 1 - a 1 * p 0 + q 0 * b 1 - q 1 * b 0) := by
-    have h := LinearMap.congr_fun hc (a, b)
+        l * (p 0 * b 0 + p 1 * b 1 + p 2 * b 2 + a 2) +
+          m * (a 0 * p 1 - a 1 * p 0 + q 0 * b 1 - q 1 * b 0) := by
+    have h := hc (a, b)
     obtain ⟨hD, hDF⟩ := fderiv_coords q p a b
-    simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, LinearMap.add_apply,
-      LinearMap.smul_apply, LinearMap.coe_comp, comp_apply, LinearMap.fst_apply,
-      LinearMap.snd_apply, ContinuousLinearMap.coe_coe, smul_eq_mul, hDdef, hDFdef, hD, hDF] at h
-    rw [h, hf']
+    simp only [ContinuousLinearMap.coe_coe, hD, hDF] at h
+    exact h.symm
   -- The six coordinates of the multiplier equation.
   have ea0 := hev (EuclideanSpace.single 0 1) 0
   have ea1 := hev (EuclideanSpace.single 1 1) 0
@@ -378,13 +386,6 @@ theorem isRegularValue_sphericalPendulumEnergyMomentum_iff (c : ℝ × ℝ) :
   simp only [mem_union, mem_insert_iff, mem_singleton_iff, mem_ofPred_eq, not_or, and_assoc,
     ne_eq]
 
-/-- A neighbourhood of `(1, 0)` free of the other critical values and inside the image of the
-energy–momentum map. -/
-private theorem setOf_lt_fst_and_sq_snd_lt_one_mem_nhds :
-    {c : ℝ × ℝ | 1 / 2 < c.1 ∧ c.2 ^ 2 < 1} ∈ 𝓝 ((1 : ℝ), (0 : ℝ)) :=
-  ((isOpen_lt continuous_const continuous_fst).inter
-    (isOpen_lt (continuous_snd.pow 2) continuous_const)).mem_nhds (by norm_num)
-
 /-- **The value `(1, 0)` of the upper equilibrium is an isolated critical value.** Every value of
 the energy–momentum map close to `(1, 0)`, other than `(1, 0)` itself, is a regular value: near
 `(1, 0)` there are no relative equilibria, whose energies `min V_j ≤ V_j(0) = j² / 2` are small for
@@ -392,24 +393,17 @@ small `j`. -/
 theorem eventually_isRegularValue_sphericalPendulumEnergyMomentum_nhdsNE :
     ∀ᶠ c in 𝓝[≠] ((1 : ℝ), (0 : ℝ)), IsRegularValue 𝓘(ℝ, Fin 4 → ℝ) 𝓘(ℝ, ℝ × ℝ)
       (fun y : sphericalPendulumPhaseSpace ↦ sphericalPendulumEnergyMomentum y) c := by
-  filter_upwards [nhdsWithin_le_nhds setOf_lt_fst_and_sq_snd_lt_one_mem_nhds, self_mem_nhdsWithin]
-    with c ⟨hc1, hc2⟩ hne
+  filter_upwards [nhdsWithin_le_nhds
+      ((isOpen_lt (f := fun c : ℝ × ℝ ↦ c.2 ^ 2) (by fun_prop) continuous_fst).mem_nhds
+        (by norm_num)),
+    self_mem_nhdsWithin] with c hc hne
+  have hc1 : 0 < c.1 := (sq_nonneg c.2).trans_lt hc
   refine (isRegularValue_sphericalPendulumEnergyMomentum_iff c).2
     ⟨fun h ↦ by rw [h] at hc1; norm_num at hc1, hne, fun ⟨_, hleast⟩ ↦ ?_⟩
-  -- The minimum of `V_j` is at most `V_j(0) = j² / 2 < 1 / 2`.
+  -- The minimum of `V_j` is at most `V_j(0) = j² / 2 < h` for `j² < h`.
   have h0 := hleast.2 (mem_image_of_mem _ (show (0 : ℝ) ∈ Ioo (-1) 1 by norm_num))
   rw [sphericalPendulumEffectivePotential_def] at h0
   norm_num at h0
   linarith
-
-/-- The value `(1, 0)` of the unstable equilibrium lies in the interior of the image of the
-energy–momentum map. -/
-theorem mem_interior_image_sphericalPendulumEnergyMomentum :
-    ((1 : ℝ), (0 : ℝ)) ∈
-      interior (sphericalPendulumEnergyMomentum '' sphericalPendulumPhaseSpace) := by
-  rw [mem_interior_iff_mem_nhds, image_sphericalPendulumEnergyMomentum]
-  -- The height `z = 0` occurs in every fibre over `{1 / 2 < h, j² < 1}`.
-  filter_upwards [setOf_lt_fst_and_sq_snd_lt_one_mem_nhds] with c ⟨hc1, hc2⟩
-  exact ⟨0, by norm_num, by linarith, by nlinarith⟩
 
 end TauCeti
