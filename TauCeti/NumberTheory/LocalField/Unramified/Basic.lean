@@ -223,11 +223,9 @@ theorem IsUnramified.irreducible_algebraMap [IsUnramified K L] {π : 𝒪[K]} (h
       exact hs.symm.mul_mul ht.symm
     exact associated_of_dvd_dvd (algebraMap_integerRing_dvd_iff.1 h1.dvd)
       (algebraMap_integerRing_dvd_iff.1 h1.symm.dvd)
-  obtain ⟨w, hw⟩ := hπst
-  have hπ' : π = s * (t * ↑w⁻¹) := by rw [← mul_assoc, ← hw]; simp
-  rcases hπ.isUnit_or_isUnit hπ' with h | h
+  rcases (hπst.irreducible hπ).isUnit_or_isUnit rfl with h | h
   · exact Or.inl (hs.isUnit_iff.1 (h.map _))
-  · exact Or.inr (ht.isUnit_iff.1 ((isUnit_of_mul_isUnit_left h).map _))
+  · exact Or.inr (ht.isUnit_iff.1 (h.map _))
 
 variable (K L) in
 /-- **An extension of nonarchimedean local fields is unramified exactly when its residue degree

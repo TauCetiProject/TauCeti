@@ -567,22 +567,6 @@ theorem ramificationIndex_eq_ramificationIdx :
     pow_dvd_pow_iff hϖ.ne_zero hϖ.not_isUnit] at hle
   omega
 
-/-- In a tower `M/L/K`, the normalized valuation of `M` on the image of `Kˣ` factors through
-the units map of the step `K → L`. -/
-theorem normalizedValuation_comp_unitsMap_tower (K L M : Type*) [Field K] [Field L] [Field M]
-    [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M]
-    [Algebra K L] [Algebra L M] [Algebra K M] [IsScalarTower K L M] :
-    (normalizedValuation M).comp (Units.map (algebraMap K M : K →* M)) =
-      ((normalizedValuation M).comp (Units.map (algebraMap L M : L →* M))).comp
-        (Units.map (algebraMap K L : K →* L)) := by
-  have h : Units.map (algebraMap K M : K →* M) =
-      (Units.map (algebraMap L M : L →* M)).comp (Units.map (algebraMap K L : K →* L)) := by
-    rw [← Units.map_comp]
-    congr 1
-    ext x
-    exact IsScalarTower.algebraMap_apply K L M x
-  rw [h, MonoidHom.comp_assoc]
-
 /-- The normalized valuation of `M` on the image of `Lˣ` is that of `L` composed with the
 ramification-index power map. -/
 theorem normalizedValuation_comp_unitsMap_algebraMap (L M : Type*) [Field L] [ValuativeRel L]
