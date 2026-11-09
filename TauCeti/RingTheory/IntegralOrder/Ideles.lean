@@ -28,12 +28,15 @@ The finite idele group `J_f(Λ)` is the restricted product of the unit groups `B
 to the unit groups `Λ_vˣ`, and `U_f(Λ) ⊆ J_f(Λ)` is the subgroup of ideles with every component
 in `Λ_vˣ`. Units of `B` map diagonally to `J_f(Λ)`.
 
-To a finite idele `α` we attach the right `Λ`-lattice `I(α) = B ∩ ∏_v α_v Λ_v`
-(`TauCeti.OrderIdeles.lattice`), glued from the local lattices `α_v Λ_v` with
-`TauCeti.glueCompletions`. Its completion at every `v` is exactly `α_v Λ_v`; `I(α) = I(β)` exactly
-when `α U_f(Λ) = β U_f(Λ)`; left multiplication by a unit `b` of `B` carries `I(α)` onto `I(bα)`;
-and `I(1) = Λ`. Restricted ideles thus act on full lattices by prescribing all their completions;
-this is the input for describing locally free lattices over an order by idele double cosets.
+To a finite idele `α` we attach the `A`-submodule `I(α) = B ∩ ∏_v α_v Λ_v` of `B`
+(`TauCeti.OrderIdeles.lattice`), a right `Λ`-module glued from the local lattices `α_v Λ_v` with
+`TauCeti.glueCompletions`. Since `Λ` spans `B`, `I(α)` spans `B` over `F`, its completion at every
+`v` is exactly `α_v Λ_v`, `I(α) = I(β)` exactly when `α U_f(Λ) = β U_f(Λ)`, and left multiplication
+by a unit `b` of `B` carries `I(α)` onto `I(bα)`. When `A` is not a field, `I(1) = Λ`; if moreover
+`Λ` is an order, so finitely generated over `A`, then every `I(α)` is finitely generated and hence a
+full `A`-lattice in `B`. Restricted ideles thus act on full lattices by prescribing all their
+completions; this is the input for describing locally free lattices over an order by idele double
+cosets.
 The local lattices `α_v Λ_v` are pointwise translates `α_v • Λ_v` of submodules.
 
 ## Main definitions
@@ -48,9 +51,10 @@ The local lattices `α_v Λ_v` are pointwise translates `α_v • Λ_v` of submo
 * `TauCeti.OrderIdeles.baseChange_lattice`: the completion of `I(α)` at `v` is `α_v Λ_v`.
 * `TauCeti.OrderIdeles.lattice_eq_lattice_iff`: `I(α) = I(β)` if and only if `α⁻¹ β ∈ U_f(Λ)`.
 * `TauCeti.OrderIdeles.lattice_principal_mul`: `I(bα) = b I(α)` for a unit `b` of `B`.
-* `TauCeti.OrderIdeles.lattice_one`: `I(1) = Λ`.
+* `TauCeti.OrderIdeles.lattice_one`: `I(1) = Λ` when `A` is not a field.
 * `TauCeti.OrderIdeles.mul_mem_lattice`: `I(α)` is a right `Λ`-module.
-* `TauCeti.OrderIdeles.isLattice_lattice`: when `Λ` is an order, `I(α)` is an `A`-lattice in `B`.
+* `TauCeti.OrderIdeles.isLattice_lattice`: when `Λ` is an order and `A` is not a field, `I(α)` is
+  an `A`-lattice in `B`.
 
 ## References
 
@@ -115,7 +119,7 @@ theorem mul_mem_lattice {α : FiniteIdeles F Λ} {x y : B} (hx : x ∈ lattice F
   have := mul_mem (hx v) (Subalgebra.tmul_mem_baseChange hy 1)
   rwa [mul_assoc, Algebra.TensorProduct.tmul_mul_tmul, mul_one] at this
 
-/-- **The identity idele gives `Λ`.** -/
+/-- **The identity idele gives `Λ`** when `A` is not a field. -/
 @[simp]
 theorem lattice_one (hA : ¬IsField A) : lattice F Λ 1 = Subalgebra.toSubmodule Λ := by
   conv_rhs => rw [← glueCompletions_baseChange (K := F) hA (Subalgebra.toSubmodule Λ)]
