@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Star.Basic
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RingTheory.Finiteness.Prod
 
+import TauCeti.LinearAlgebra.Dimension.Prod
+
 /-!
 # The Cayley–Dickson double of a ring with involution
 
@@ -190,12 +192,7 @@ variable (R A) in
 theorem finrank_eq [Semiring R] [StrongRankCondition R] [AddCommMonoid A] [Module R A]
     [Module.Free R A] :
     Module.finrank R (CayleyDickson A) = 2 * Module.finrank R A := by
-  by_cases hA : Module.Finite R A
-  · rw [(linearEquivProd R A).finrank_eq, Module.finrank_prod, two_mul]
-  · have hC : ¬ Module.Finite R (CayleyDickson A) := fun h ↦
-      hA (have := Module.Finite.equiv (linearEquivProd R A)
-        Module.Finite.of_surjective (LinearMap.fst R A A) Prod.fst_surjective)
-    rw [Module.finrank_of_not_finite hA, Module.finrank_of_not_finite hC]
+  rw [(linearEquivProd R A).finrank_eq, Module.finrank_prod_self]
 
 /-! ### The multiplication and the involution -/
 
