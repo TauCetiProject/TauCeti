@@ -42,9 +42,10 @@ the zero sheaf is free on the empty type.
 ## Main declarations
 
 * `TauCeti.SheafOfModules.subsingleton_of_epi_free_of_card_lt`: an epimorphism `free J ⟶ free K`
-  with `|J| < |K|` forces the sheaf of rings to vanish;
-* `TauCeti.SheafOfModules.natCard_eq_of_iso_free`: consequently, isomorphic finite free sheaves
-  over a sheaf of rings with a nonzero ring of sections have index types of the same cardinality,
+  from a free sheaf on a finite type with `|J| < |K|` forces the sheaf of rings to vanish;
+* `TauCeti.SheafOfModules.natCard_eq_of_iso_free`: consequently, isomorphic free sheaves, the
+  first on a finite type, over a sheaf of rings with a nonzero ring of sections have index types of
+  the same cardinality,
   which makes the rank of a finite locally free sheaf well defined;
 * `SheafOfModules.GeneratingSections.exists_isIso_π_isFiniteType`: a sheaf of modules that is
   free and of finite type is free on a finite type;
@@ -78,9 +79,10 @@ variable {R : Sheaf J CommRingCat.{u}}
 
 section Free
 
-/-- If there is an epimorphism `free J ⟶ free K` between free sheaves of modules on finite types
-with `|J| < |K|`, then the sheaf of rings vanishes: all its rings of sections are trivial. -/
-theorem subsingleton_of_epi_free_of_card_lt {I K : Type u} [Finite I] [Finite K]
+/-- If there is an epimorphism `free J ⟶ free K` from a free sheaf of modules on a finite type
+with `|J| < |K|` (so that `K` is finite as well), then the sheaf of rings vanishes: all its rings
+of sections are trivial. -/
+theorem subsingleton_of_epi_free_of_card_lt {I K : Type u} [Finite I]
     (f : free (R := ringCatSheaf R) I ⟶ free K) [Epi f] (h : Nat.card I < Nat.card K)
     (W : Cᵒᵖ) : Subsingleton ((ringCatSheaf R).obj.obj W) := by
   by_contra hW
@@ -88,6 +90,7 @@ theorem subsingleton_of_epi_free_of_card_lt {I K : Type u} [Finite I] [Finite K]
   -- `ringCatSheaf` forgets commutativity, so the commutative ring structure on the sections of
   -- `R` over `W` is recovered from `R` itself; the strong rank condition needs it.
   let : CommRing ((ringCatSheaf R).obj.obj W) := inferInstanceAs (CommRing (R.obj.obj W))
+  have : Finite K := Nat.finite_of_card_ne_zero (by omega)
   have := Fintype.ofFinite I
   have := Fintype.ofFinite K
   let g : free (R := ringCatSheaf R) K ⟶ free I :=
@@ -101,16 +104,6 @@ theorem subsingleton_of_epi_free_of_card_lt {I K : Type u} [Finite I] [Finite K]
   rw [Module.finrank_fintype_fun_eq_card, Module.finrank_fintype_fun_eq_card] at hle
   rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card] at h
   omega
-
-/-- Isomorphic free sheaves of modules on finite types have index types of the same cardinality,
-as soon as the sheaf of rings has one nonzero ring of sections. -/
-theorem natCard_eq_of_iso_free {I K : Type u} [Finite I] [Finite K]
-    (e : free (R := ringCatSheaf R) I ≅ free K) (W : Cᵒᵖ)
-    [Nontrivial ((ringCatSheaf R).obj.obj W)] : Nat.card I = Nat.card K := by
-  by_contra h
-  rcases Nat.lt_or_gt_of_ne h with h | h
-  · exact not_subsingleton _ (subsingleton_of_epi_free_of_card_lt e.hom h W)
-  · exact not_subsingleton _ (subsingleton_of_epi_free_of_card_lt e.inv h W)
 
 /-- If there is an epimorphism from a free sheaf of modules on a finite type to the free sheaf of
 modules on an infinite type, then the sheaf of rings vanishes. -/
@@ -132,6 +125,19 @@ theorem subsingleton_of_epi_free_of_infinite {I K : Type u} [Finite I] [Infinite
   refine subsingleton_of_epi_free_of_card_lt (f ≫ r) ?_ W
   rw [Nat.card_eq_finsetCard, hs]
   exact Nat.lt_succ_self _
+
+/-- Isomorphic free sheaves of modules, the first on a finite type, have index types of the same
+cardinality, as soon as the sheaf of rings has one nonzero ring of sections. -/
+theorem natCard_eq_of_iso_free {I K : Type u} [Finite I]
+    (e : free (R := ringCatSheaf R) I ≅ free K) (W : Cᵒᵖ)
+    [Nontrivial ((ringCatSheaf R).obj.obj W)] : Nat.card I = Nat.card K := by
+  by_cases hK : Finite K
+  · by_contra h
+    rcases Nat.lt_or_gt_of_ne h with h | h
+    · exact not_subsingleton _ (subsingleton_of_epi_free_of_card_lt e.hom h W)
+    · exact not_subsingleton _ (subsingleton_of_epi_free_of_card_lt e.inv h W)
+  · have := not_finite_iff_infinite.1 hK
+    exact (not_subsingleton _ (subsingleton_of_epi_free_of_infinite e.hom W)).elim
 
 end Free
 

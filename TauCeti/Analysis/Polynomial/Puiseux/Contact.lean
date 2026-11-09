@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Analytic.Rotation
 public import TauCeti.Analysis.Polynomial.Puiseux.Multiplicity
+import TauCeti.Analysis.Normed.Module.Ball
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Topology.Connected.FiniteFamily
 import TauCeti.Analysis.Normed.Module.Connected
@@ -37,10 +38,10 @@ open Filter Function Metric Polynomial Set Topology
 
 namespace TauCeti
 
-/-- Rotation permutes a complete continuous splitting of a power-substituted polynomial
-family. The permutation is unique even if roots collide at `t = 0`; distinctness is
-required only on the punctured disc. -/
-theorem existsUnique_root_rotation_perm {E : Type*} [TopologicalSpace E]
+/-- The first half of `existsUnique_root_rotation_perm`: on the punctured product, rotation
+permutes the labels of the splitting, by a permutation `σ` of `Fin n`. -/
+private theorem exists_perm_root_rotation_of_punctured
+    {E : Type*} [TopologicalSpace E]
     {U : Set E} {R : ℝ} {N n : ℕ} {ζ : ℂ}
     {P : E × ℂ → ℂ[X]} {r : Fin n → E × ℂ → ℂ}
     (hU : IsPreconnected U) (hR : 0 < R) (hζ : ζ ^ N = 1) (hζnorm : ‖ζ‖ = 1)
@@ -48,7 +49,7 @@ theorem existsUnique_root_rotation_perm {E : Type*} [TopologicalSpace E]
     (hinj : ∀ b ∈ U ×ˢ (ball 0 R \ {0}), Injective (fun i ↦ r i b))
     (hP : ∀ b ∈ U ×ˢ ball 0 R, P (b.1, b.2 ^ N) = ∏ i, (X - C (r i b)))
     (x₀ : U) :
-    ∃! σ : Equiv.Perm (Fin n), ∀ i b, b ∈ U ×ˢ ball 0 R →
+    ∃ σ : Equiv.Perm (Fin n), ∀ i, ∀ b ∈ U ×ˢ (ball 0 R \ {0}),
       r (σ i) b = r i (b.1, ζ * b.2) := by
   classical
   let S := U ×ˢ (ball (0 : ℂ) R \ {0})
@@ -56,10 +57,7 @@ theorem existsUnique_root_rotation_perm {E : Type*} [TopologicalSpace E]
   let κ : E × ℂ → E × ℂ := fun b ↦ (b.1, ζ * b.2)
   have hζ0 : ζ ≠ 0 := by intro hz; simp [hz] at hζnorm
   have hκ : Continuous κ := by fun_prop
-  have hκT : MapsTo κ T T := by
-    intro b hb
-    refine ⟨hb.1, ?_⟩
-    simpa only [κ, mem_ball_zero_iff, norm_mul, hζnorm, one_mul] using hb.2
+  have hκT : MapsTo κ T T := mapsTo_prodMk_smul_ball hζnorm
   have hκS : MapsTo κ S S := fun b hb ↦
     ⟨(hκT ⟨hb.1, hb.2.1⟩).1, (hκT ⟨hb.1, hb.2.1⟩).2, mul_ne_zero hζ0 hb.2.2⟩
   let := isPathConnected_iff_pathConnectedSpace.1
@@ -92,22 +90,44 @@ theorem existsUnique_root_rotation_perm {E : Type*} [TopologicalSpace E]
     intro i j hij
     apply hinj (κ b₀) (hκS b₀.property)
     exact (hall i b₀).symm.trans ((congrArg (fun k ↦ r k b₀) hij).trans (hall j b₀))
-  let σ : Equiv.Perm (Fin n) := Equiv.ofBijective p ((Finite.injective_iff_bijective).1 hpinj)
+  exact ⟨Equiv.ofBijective p ((Finite.injective_iff_bijective).1 hpinj),
+    fun i b hb ↦ hall i ⟨b, hb⟩⟩
+
+
+/-- Rotation permutes a complete continuous splitting of a power-substituted polynomial
+family. The permutation is unique even if roots collide at `t = 0`; distinctness is
+required only on the punctured disc. -/
+theorem existsUnique_root_rotation_perm {E : Type*} [TopologicalSpace E]
+    {U : Set E} {R : ℝ} {N n : ℕ} {ζ : ℂ}
+    {P : E × ℂ → ℂ[X]} {r : Fin n → E × ℂ → ℂ}
+    (hU : IsPreconnected U) (hR : 0 < R) (hζ : ζ ^ N = 1) (hζnorm : ‖ζ‖ = 1)
+    (hr : ∀ i, ContinuousOn (r i) (U ×ˢ ball 0 R))
+    (hinj : ∀ b ∈ U ×ˢ (ball 0 R \ {0}), Injective (fun i ↦ r i b))
+    (hP : ∀ b ∈ U ×ˢ ball 0 R, P (b.1, b.2 ^ N) = ∏ i, (X - C (r i b)))
+    (x₀ : U) :
+    ∃! σ : Equiv.Perm (Fin n), ∀ i b, b ∈ U ×ˢ ball 0 R →
+      r (σ i) b = r i (b.1, ζ * b.2) := by
+  classical
+  obtain ⟨σ, hσ⟩ := exists_perm_root_rotation_of_punctured hU hR hζ hζnorm hr hinj hP x₀
+  let S := U ×ˢ (ball (0 : ℂ) R \ {0})
+  let T := U ×ˢ ball (0 : ℂ) R
+  let κ : E × ℂ → E × ℂ := fun b ↦ (b.1, ζ * b.2)
+  have hκ : Continuous κ := by fun_prop
+  have hκT : MapsTo κ T T := mapsTo_prodMk_smul_ball hζnorm
   -- Continuity extends the label identities through collisions at the hyperplane.
   have hdense : T ⊆ closure S := by
     rw [closure_prod_eq, Set.sdiff_eq]
     exact prod_mono subset_closure
       ((dense_compl_singleton (0 : ℂ)).open_subset_closure_inter isOpen_ball)
   have heq (i : Fin n) : EqOn (r (σ i)) (fun b ↦ r i (κ b)) T := by
-    have heqS : EqOn (r (σ i)) (fun b ↦ r i (κ b)) S := fun b hb ↦ hall i ⟨b, hb⟩
+    have heqS : EqOn (r (σ i)) (fun b ↦ r i (κ b)) S := fun b hb ↦ hσ i b hb
     exact heqS.of_subset_closure (hr _) ((hr i).comp hκ.continuousOn hκT)
       (prod_mono subset_rfl sdiff_subset) hdense
-  refine ⟨σ, heq, ?_⟩
-  intro σ' hσ'
-  apply Equiv.ext
-  intro i
-  exact hinj b₀ b₀.property
-    ((hσ' i b₀ ⟨b₀.property.1, b₀.property.2.1⟩).trans (hall i b₀).symm)
+  refine ⟨σ, heq, fun σ' hσ' ↦ Equiv.ext fun i ↦ ?_⟩
+  have ht₀ : ((R / 2 : ℝ) : ℂ) ∈ ball (0 : ℂ) R \ {0} := by
+    refine ⟨by simp [abs_of_pos hR]; linarith, by simpa using hR.ne'⟩
+  have hb₀ : (x₀.val, ((R / 2 : ℝ) : ℂ)) ∈ S := ⟨x₀.property, ht₀⟩
+  exact hinj _ hb₀ ((hσ' i _ ⟨hb₀.1, ht₀.1⟩).trans (hσ i _ hb₀).symm)
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {U : Set E} {R : ℝ} {N n a : ℕ}

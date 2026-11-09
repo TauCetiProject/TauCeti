@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Order
+public import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # The analytic order of products, power maps and derivatives
@@ -102,11 +103,21 @@ theorem analyticOrderAt_pow_sub_zero_pow {m : ℕ} (hm : m ≠ 0) :
 derivative at `x` does not vanish: the `iff` form of Mathlib's
 `AnalyticAt.analyticOrderAt_sub_eq_one_of_deriv_ne_zero`. -/
 theorem _root_.AnalyticAt.analyticOrderAt_sub_eq_one_iff_deriv_ne_zero {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E] [CharZero 𝕜] {f : 𝕜 → E} {x : 𝕜}
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {x : 𝕜}
     (hf : AnalyticAt 𝕜 f x) :
     analyticOrderAt (f · - f x) x = 1 ↔ deriv f x ≠ 0 := by
-  rw [← hf.analyticOrderAt_deriv_add_one, ← hf.deriv.analyticOrderAt_eq_zero]
-  simp
+  refine ⟨fun h => ?_, hf.analyticOrderAt_sub_eq_one_of_deriv_ne_zero⟩
+  obtain ⟨g, hg, hgx, hfg⟩ := (AnalyticAt.analyticOrderAt_eq_natCast (hf.sub analyticAt_const)).1
+    (h.trans Nat.cast_one.symm)
+  have hd : HasDerivAt f (g x) x := by
+    have h1 := (HasDerivAt.fun_smul ((hasDerivAt_id x).sub_const x)
+      hg.differentiableAt.hasDerivAt).add_const (f x)
+    simp only [id_eq, sub_self, zero_smul, zero_add, one_smul] at h1
+    refine h1.congr_of_eventuallyEq ?_
+    filter_upwards [hfg] with z hz
+    simp only [pow_one, Pi.sub_apply] at hz
+    simp [← hz]
+  rwa [hd.deriv]
 
 /-- A function analytic at `z₀` and dominated there by `f` vanishes to at least the order of `f`
 at `z₀`. No analyticity of `f` is needed: a non-analytic `f` has order `0`. -/

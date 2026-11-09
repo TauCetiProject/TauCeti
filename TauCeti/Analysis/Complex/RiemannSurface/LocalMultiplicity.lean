@@ -237,6 +237,17 @@ theorem natCast_localMultiplicity (hf : ContinuousAt f x)
   exact Nat.cast_analyticOrderNatAt fun htop ↦
     hne (eventuallyConst_of_analyticOrderAt_eq_top hf htop)
 
+omit [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y] in
+/-- The preferred-chart representative of a map continuous at `x` and locally nonconstant there is
+itself locally nonconstant. -/
+theorem not_eventuallyConst_chartAt_comp_comp_chartAt_symm (hf : ContinuousAt f x)
+    (hnc : ¬ EventuallyConst f (𝓝 x)) :
+    ¬ EventuallyConst ((chartAt ℂ (f x) ∘ f) ∘ (chartAt ℂ x).symm)
+      (𝓝 (chartAt ℂ x x)) := by
+  simp only [eventuallyConst_iff_analyticOrderAt_sub_eq_top, comp_apply,
+    (chartAt ℂ x).left_inv (mem_chart_source ℂ x), ← natCast_localMultiplicity hf hnc]
+  simp
+
 /-! ### Composition -/
 
 /-- **Multiplicativity of the local multiplicity.** The local multiplicity of a composition of
