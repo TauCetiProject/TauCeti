@@ -44,12 +44,14 @@ No inner product instance on the algebraic dual is installed.
   continuously on the sesquilinear form.
 * `InnerProductSpace.ker_continuousLinearMapOfBilin`: the Riesz operator of a form has the kernel
   of the form.
-* `InnerProductSpace.isUnit_continuousLinearMapOfBilin`: in finite dimension, the Riesz operator
-  of an injective form is invertible.
+* `InnerProductSpace.continuousLinearMapOfBilin_neg`: the Riesz operator of `-B` is the negative
+  of that of `B`.
 * `InnerProductSpace.adjoint_continuousLinearMapOfBilin`: over `ℝ`, the adjoint of the Riesz
   operator represents the transposed form.
-* `InnerProductSpace.isSelfAdjoint_continuousLinearMapOfBilin`: over `ℝ`, the Riesz operator of
-  a symmetric form is self-adjoint.
+* `InnerProductSpace.isSelfAdjoint_continuousLinearMapOfBilin` and
+  `InnerProductSpace.isUnit_continuousLinearMapOfBilin`: over `ℝ`, the Riesz operator of a
+  symmetric form is self-adjoint, and in finite dimension that of a nondegenerate form is
+  invertible.
 * `ContinuousLinearMap.continuousLinearMapOfBilin_bilinearComp`: pulling a real bilinear form back
   along a linear isometry equivalence conjugates its Riesz operator.
 * `InnerProductSpace.dualMetric`: the Hermitian form on the algebraic dual transported by Riesz.
@@ -115,13 +117,11 @@ theorem ker_continuousLinearMapOfBilin (B : E →L⋆[𝕜] E →L[𝕜] 𝕜) :
   ext u
   simp [continuousLinearMapOfBilin]
 
-/-- In finite dimension, the Fréchet–Riesz operator of an injective sesquilinear form is
-invertible. -/
-theorem isUnit_continuousLinearMapOfBilin [FiniteDimensional 𝕜 E] {B : E →L⋆[𝕜] E →L[𝕜] 𝕜}
-    (hB : Function.Injective B) : IsUnit (continuousLinearMapOfBilin B) := by
-  refine ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.mpr
-    ((LinearMap.isUnit_iff_ker_eq_bot _).mpr ?_)
-  exact (ker_continuousLinearMapOfBilin B).trans (LinearMap.ker_eq_bot.mpr hB)
+/-- The Fréchet–Riesz operator of the negative of a form is the negative of its Riesz operator. -/
+@[simp]
+theorem continuousLinearMapOfBilin_neg (B : E →L⋆[𝕜] E →L[𝕜] 𝕜) :
+    continuousLinearMapOfBilin (-B) = -continuousLinearMapOfBilin B :=
+  ContinuousLinearMap.comp_neg _ _
 
 /-- Evaluating functionals at each other's Riesz representatives is conjugate-symmetric:
 `β(α♯) = conj (α(β♯))`. Over `ℝ` this says `β(α♯) = α(β♯)`. -/
@@ -168,11 +168,21 @@ theorem adjoint_continuousLinearMapOfBilin (B : F →L[ℝ] F →L[ℝ] ℝ) :
 
 /-- The Fréchet–Riesz operator of a symmetric real bilinear form is self-adjoint. -/
 theorem isSelfAdjoint_continuousLinearMapOfBilin {B : F →L[ℝ] F →L[ℝ] ℝ}
-    (hB : ∀ u v, B u v = B v u) : IsSelfAdjoint (continuousLinearMapOfBilin B) := by
-  rw [IsSelfAdjoint, ContinuousLinearMap.star_eq_adjoint, adjoint_continuousLinearMapOfBilin]
+    (hB : ∀ v w, B v w = B w v) : IsSelfAdjoint (continuousLinearMapOfBilin B) := by
+  rw [ContinuousLinearMap.isSelfAdjoint_iff', adjoint_continuousLinearMapOfBilin]
   congr 1
-  ext u v
-  exact hB v u
+  ext v w
+  exact hB w v
+
+/-- In finite dimension, the Fréchet–Riesz operator of a nondegenerate real bilinear form is
+invertible. -/
+theorem isUnit_continuousLinearMapOfBilin [FiniteDimensional ℝ F] {B : F →L[ℝ] F →L[ℝ] ℝ}
+    (hB : Function.Injective B) : IsUnit (continuousLinearMapOfBilin B) := by
+  refine ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.mpr
+    ((LinearMap.isUnit_iff_ker_eq_bot _).mpr ?_)
+  rw [LinearMap.ker_eq_bot]
+  exact LinearMap.ker_eq_bot.mp
+    ((ker_continuousLinearMapOfBilin B).trans (LinearMap.ker_eq_bot.mpr hB))
 
 end Real
 

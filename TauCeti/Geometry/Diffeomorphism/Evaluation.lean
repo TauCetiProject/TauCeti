@@ -8,13 +8,15 @@ module
 public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Geometry.Diffeomorphism.Topology
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
+public import Mathlib.Topology.Homotopy.Basic
 
 /-!
 # Continuous evaluation of diffeomorphisms
 
 On a compact source manifold with locally compact model, the weak Whitney topology makes
 evaluation of `C^n` diffeomorphisms continuous in both the diffeomorphism and the point.
-For self-diffeomorphisms this gives continuity of the tautological action.
+For self-diffeomorphisms this gives continuity of the tautological action, and evaluations
+at the two ends of a path in the source are homotopic (`Diffeomorph.evalAtHomotopy`).
 -/
 
 public section
@@ -47,5 +49,20 @@ theorem applyContinuousSMul : ContinuousSMul (M ≃ₘ^n⟮I, I⟯ M) M :=
 
 scoped[TauCeti.DiffeomorphWeakWhitney] attribute [instance]
   Diffeomorph.applyContinuousSMul
+
+/-- Evaluations at two points joined by a path `γ` are homotopic, through evaluation along `γ`. -/
+noncomputable def evalAtHomotopy {x₀ x₁ : M} (γ : Path x₀ x₁) :
+    ContinuousMap.Homotopy (evalAt (I := I) (J := J) (n := n) (N := N) x₀) (evalAt x₁) where
+  toFun p := p.2 (γ p.1)
+  continuous_toFun := by fun_prop
+  map_zero_left f := by simp
+  map_one_left f := by simp
+
+/-- At time `t`, the homotopy `evalAtHomotopy γ` evaluates at `γ t`. -/
+@[simp]
+theorem evalAtHomotopy_apply {x₀ x₁ : M} (γ : Path x₀ x₁)
+    (p : unitInterval × (M ≃ₘ^n⟮I, J⟯ N)) :
+    evalAtHomotopy (I := I) (J := J) (n := n) γ p = p.2 (γ p.1) :=
+  (rfl)
 
 end Diffeomorph

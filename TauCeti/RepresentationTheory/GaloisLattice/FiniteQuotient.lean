@@ -104,18 +104,28 @@ theorem exists_finiteDimensional_normal_fixingSubgroup_le
   rw [_root_.krullTopology_mem_nhds_one_iff_of_normal K L] at hU_nhds
   exact hU_nhds
 
-/-- Every open subgroup of the Galois group of a normal extension has finite quotient. -/
+omit [Normal K L] in
+/-- Every open subgroup of the automorphism group of an extension has finite quotient. -/
 theorem finite_quotient_of_isOpen
     (U : Subgroup Gal(L/K)) (hU : IsOpen (U : Set Gal(L/K))) :
     Finite (Gal(L/K) ⧸ U) := by
-  obtain ⟨E, hEfinite, hEnormal, hEU⟩ :=
-    exists_finiteDimensional_normal_fixingSubgroup_le U hU
-  let _ : FiniteDimensional K E := hEfinite
-  let _ : Normal K E := hEnormal
-  let _ : Finite Gal(E / K) := (AlgEquiv.fintype K E).finite
-  have hEindex : E.fixingSubgroup.FiniteIndex := by
-    rw [← E.restrictNormalHom_ker]
-    infer_instance
+  obtain ⟨E, hEfinite, hEU⟩ :=
+    (_root_.krullTopology_mem_nhds_one_iff K L (U : Set Gal(L/K))).mp (hU.mem_nhds U.one_mem)
+  -- Cosets of `E.fixingSubgroup` are determined by the restriction to `E`.
+  let f : Gal(L/K) ⧸ E.fixingSubgroup → (E →ₐ[K] L) :=
+    Quotient.lift (fun σ ↦ (σ : L →ₐ[K] L).comp E.val) fun σ τ h ↦ by
+      refine AlgHom.ext fun x ↦ ?_
+      have := (IntermediateField.mem_fixingSubgroup_iff _ _).mp
+        (QuotientGroup.leftRel_apply.mp h) x x.2
+      exact (by simpa using congrArg σ this : τ x = σ x).symm
+  have hf : Function.Injective f := by
+    refine Quotient.ind₂ fun σ τ h ↦ Quotient.sound <| QuotientGroup.leftRel_apply.mpr ?_
+    refine (IntermediateField.mem_fixingSubgroup_iff _ _).mpr fun y hy ↦ ?_
+    have h' : σ y = τ y := DFunLike.congr_fun h ⟨y, hy⟩
+    simpa [AlgEquiv.symm_apply_eq] using h'.symm
+  let _ : Finite (E →ₐ[K] L) := inferInstance
+  have hEindex : E.fixingSubgroup.FiniteIndex :=
+    @Subgroup.finiteIndex_of_finite_quotient _ _ _ (Finite.of_injective f hf)
   have hUindex : U.FiniteIndex :=
     @Subgroup.finiteIndex_of_le _ _ E.fixingSubgroup U hEindex hEU
   exact @Subgroup.finite_quotient_of_finiteIndex _ _ U hUindex

@@ -36,6 +36,10 @@ and a cocycle slanted by a boundary is a coboundary, so the slant product descen
 `HomologicalComplex.homologyCross`, and it is natural along maps of the triples `(K, L, T)`
 compatible with the chain maps `D` (`TauCeti.ChainComplex.slant_naturality`).
 
+Slanting by a cycle `z` of degree zero is a pullback: if `v ↦ e (D (z ⊗ v))` is a chain map
+`c : L ⟶ T'` for some chain map `e : T ⟶ T'`, then `e^* φ / [z] = c^* φ`
+(`TauCeti.ChainComplex.slant_homologyπ_zero_homologyMap`).
+
 The slant product of singular cohomology, `Hⁿ(X × Y) × Hₚ(X) ⟶ H^q(Y)`, is the case where `D` is
 the shuffle map; it produces, for instance, the classes `c₁(U) / γ ∈ H¹(Y)` of a line bundle `U`
 on `X × Y` and loops `γ` in `X`.
@@ -50,6 +54,8 @@ on `X × Y` and loops `γ` in `X`.
   `TauCeti.ChainComplex.slant_homologyπ` computing it on classes of cycles and cocycles.
 * `TauCeti.ChainComplex.kronecker_slant`: the evaluation law `⟨φ / x, y⟩ = ⟨φ, D_*(x × y)⟩`.
 * `TauCeti.ChainComplex.slant_naturality`: naturality.
+* `TauCeti.ChainComplex.slant_homologyπ_zero_homologyMap`: the slant product by a cycle of degree
+  zero along which `D` restricts to a chain map.
 
 ## References
 
@@ -424,6 +430,31 @@ theorem kronecker_slant (p q n : ℕ) (h : p + q = n) (x : K.homology p)
   rw [slant_homologyπ, kronecker_homologyπ_homologyπ, hcross, hD, kronecker_homologyπ_homologyπ,
     iCycles_slantCycles, hDi, hi]
   exact slantCochain_apply D p q n h _ _ _
+
+/-- **The slant product by a cycle of degree zero**: let `z` be a cycle of degree zero, `e : T ⟶ T'`
+a chain map and `c : L ⟶ T'` a chain map with `c (v) = e (D (z ⊗ v))` in degree `q`. Then
+`e^* φ / [z] = c^* φ` for every class `φ ∈ H^q(Hom(T', P))`. For the shuffle map of singular chains,
+`z` a point of `X` and `e` induced by the projection `X × Y ⟶ Y`, the composite
+`v ↦ e (D (z ⊗ v))` is the identity, so slanting a class pulled back from `Y` by a point returns it
+(`TopCat.singularSlant_homologyπ_singularCohomologyMap_snd`). -/
+lemma slant_homologyπ_zero_homologyMap {T' : ChainComplex (ModuleCat.{u} k) ℕ} (e : T ⟶ T')
+    (c : L ⟶ T') (z : K.cycles 0) (q : ℕ)
+    (hc : ModuleCat.tensorMk (K.iCycles 0 z) ≫ ιTensorObj K L 0 q q (zero_add q) ≫ D.f q ≫
+      e.f q = c.f q)
+    (φ : (T'.linearYonedaObj k P).homology q) :
+    slant k D 0 q q (zero_add q) (K.homologyπ 0 z)
+        (homologyMap (K := T'.linearYonedaObj k P) (L := T.linearYonedaObj k P)
+          ((linearYonedaFunctor k P).map e.op) q φ) =
+      homologyMap (K := T'.linearYonedaObj k P) (L := L.linearYonedaObj k P)
+        ((linearYonedaFunctor k P).map c.op) q φ := by
+  obtain ⟨ψ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ q φ
+  rw [homologyMap_linearYonedaFunctor_map_homologyπ_apply, slant_homologyπ,
+    homologyMap_linearYonedaFunctor_map_homologyπ_apply]
+  congr 1
+  apply HomologicalComplex.moduleCat_iCycles_injective
+  rw [iCycles_slantCycles, iCycles_cyclesMap_linearYonedaFunctor_map_apply,
+    iCycles_cyclesMap_linearYonedaFunctor_map_apply, ← hc]
+  exact ModuleCat.hom_ext (LinearMap.ext fun v ↦ rfl)
 
 end Cohomology
 

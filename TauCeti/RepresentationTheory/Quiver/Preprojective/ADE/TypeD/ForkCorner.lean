@@ -21,8 +21,8 @@ the resulting dimension upper bound. Linear independence over a field is proved 
 `TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.Basis`. The longest
 word relation holds in every source/target corner and over every commutative ring, including
 characteristic two. As in the existing type-`D` word API, quotient carriers use
-`forkNeighborSetFintype`; imported callers can select it as a local instance when writing
-path-algebra representatives explicitly.
+`SimpleGraph.neighborSetFintypeOfFinite`; imported callers can select it as a local instance when
+writing path-algebra representatives explicitly.
 
 The path reduction is reused from the type-`D` normal forms. See Crawley-Boevey,
 *Quiver algebras, weighted projective lines, and the Deligne--Simpson problem*, Section 1,
@@ -36,7 +36,7 @@ namespace TauCeti
 
 open PathAlgebra DoubledQuiver
 
-attribute [local instance] forkNeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 variable (k : Type*) [CommRing k] {n : ℕ}
 
