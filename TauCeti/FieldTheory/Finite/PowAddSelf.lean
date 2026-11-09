@@ -54,20 +54,21 @@ namespace FiniteField
 
 variable {K : Type*} [Field K] {p n : ℕ} [ExpChar K p]
 
-/-- For `1 < q`, a finite field has at most `q` elements `b` with `b ^ q + b = 0`, these being
-roots of `X ^ q + X`. -/
-theorem card_filter_pow_add_self_eq_zero_le [Fintype K] [DecidableEq K] {q : ℕ} (hq : 1 < q) :
-    #({b | b ^ q + b = 0} : Finset K) ≤ q := by
-  have hX : (X ^ q + X : K[X]).natDegree = q := by
+/-- For `1 < q`, a finite subset `s` of a domain has at most `q` elements `b` with
+`b ^ q + b = 0`, these being roots of `X ^ q + X`. -/
+theorem card_filter_pow_add_self_eq_zero_le {R : Type*} [CommRing R] [IsDomain R]
+    [DecidableEq R] (s : Finset R) {q : ℕ} (hq : 1 < q) :
+    #{b ∈ s | b ^ q + b = 0} ≤ q := by
+  have hX : (X ^ q + X : R[X]).natDegree = q := by
     rw [natDegree_add_eq_left_of_degree_lt] <;> simp [hq]
   refine (card_le_degree_of_subset_roots fun b hb ↦ ?_).trans hX.le
   rw [mem_roots (ne_zero_of_natDegree_gt (hX ▸ hq))]
   simpa using (Finset.mem_filter.mp hb).2
 
-/-- For `1 < q`, a finite field has at most `q` elements `c` with `c ^ q = c`, these being roots
-of `X ^ q - X`. -/
-theorem card_filter_pow_eq_self_le [Fintype K] [DecidableEq K] {q : ℕ} (hq : 1 < q) :
-    #({c | c ^ q = c} : Finset K) ≤ q := by
+/-- For `1 < q`, a finite subset `s` of a domain has at most `q` elements `c` with `c ^ q = c`,
+these being roots of `X ^ q - X`. -/
+theorem card_filter_pow_eq_self_le {R : Type*} [CommRing R] [IsDomain R] [DecidableEq R]
+    (s : Finset R) {q : ℕ} (hq : 1 < q) : #{c ∈ s | c ^ q = c} ≤ q := by
   refine (card_le_degree_of_subset_roots fun c hc ↦ ?_).trans (natDegree_X_pow_sub_X hq).le
   rw [mem_roots (X_pow_sub_X_ne_zero hq)]
   simp [(Finset.mem_filter.mp hc).2]
@@ -87,7 +88,7 @@ theorem natCard_pow_add_self_eq (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
   have hq : 1 < q := (Nat.one_lt_pow_iff two_ne_zero).mp (hK ▸ Fintype.one_lt_card)
   -- The additive map `T b = b ^ q + b`, the iterated Frobenius plus the identity.
   let T : K →+ K := (iterateFrobenius K p n).toAddMonoidHom + AddMonoidHom.id K
-  have hT (b : K) : T b = b ^ q + b := rfl
+  have hT (b : K) : T b = b ^ q + b := by simp [T, iterateFrobenius_def, hqdef]
   -- The image of `T` lies in the root set of `X ^ q - X`.
   have himage_sub : Finset.univ.image T ⊆ ({c | c ^ q = c} : Finset K) := by
     intro c hc
@@ -101,8 +102,8 @@ theorem natCard_pow_add_self_eq (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
     congr 1 <;> rw [Nat.card_eq_fintype_card, ← Fintype.card_coe] <;>
       exact Fintype.card_congr (Equiv.subtypeEquivRight fun b ↦ by simp)
   have hker : #({b | T b = 0} : Finset K) ≤ q := by
-    simpa [hT] using card_filter_pow_add_self_eq_zero_le (K := K) hq
-  have hfix := card_filter_pow_eq_self_le (K := K) hq
+    simpa [hT] using card_filter_pow_add_self_eq_zero_le (Finset.univ : Finset K) hq
+  have hfix := card_filter_pow_eq_self_le (Finset.univ : Finset K) hq
   have hkerq : #({b | T b = 0} : Finset K) = q := by
     have := (Finset.card_le_card himage_sub).trans hfix
     nlinarith
@@ -112,7 +113,8 @@ theorem natCard_pow_add_self_eq (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
     nlinarith
   -- Each fibre over the image has the size of the kernel.
   have hcmem : c ∈ Set.range T := by
-    simpa using (show c ∈ Finset.univ.image T by simp [himage, hc])
+    have : c ∈ Finset.univ.image T := by simp [himage, hc]
+    simpa using this
   rw [Nat.card_eq_fintype_card, Fintype.card_subtype]
   exact (AddMonoidHom.card_fiber_eq_of_mem_range T hcmem ⟨0, map_zero T⟩).trans hkerq
 
