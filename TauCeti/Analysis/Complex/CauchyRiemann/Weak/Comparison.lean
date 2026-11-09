@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Wirtinger.Weak
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Inhomogeneous.Floer
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # The weak Cauchy–Riemann equation: comparisons
@@ -21,7 +22,8 @@ This file compares the planar weak equation `TauCeti.IsWeakCauchyRiemannOn` of
   structure `J` on a finite-dimensional real normed space `V`, the standard structure `i` on the
   domain `ℂ`, and `u` of class `C¹` on an open set, the homogeneous weak equation with the field
   `J(u)` is Tau Ceti's `IsPseudoholomorphicOn`. Testing on `∂ₛ` suffices because the two
-  coordinate vectors are related by `i`; `TauCeti.forall_map_I_mul_eq_iff` is the linear algebra.
+  coordinate vectors are related by `i`; `LinearMap.forall_apply_I_mul_eq_iff` is the linear
+  algebra.
 * `TauCeti.IsWeakCauchyRiemannOn.hasWeakConjWirtingerDerivOn`: for the constant structure `i` on
   a complex space, a weak solution has weak conjugate Wirtinger derivative `η(z, u)/2`; in
   particular the homogeneous equation is `\bar∂u = 0` weakly.
@@ -45,28 +47,6 @@ namespace TauCeti
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {p : ENNReal} {Ω : Opens ℂ}
   {u : ℂ → V}
 
-/-- A real-linear map `L : ℂ → V` intertwines multiplication by `i` with a complex structure `A`
-exactly when `L 1 + A (L i) = 0`: the value on `∂ₜ` is determined by the value on `∂ₛ`. -/
-theorem forall_map_I_mul_eq_iff {L : ℂ →L[ℝ] V} {A : V →L[ℝ] V} (hA : ∀ v, A (A v) = -v) :
-    (∀ w, L (I * w) = A (L w)) ↔ L 1 + A (L I) = 0 := by
-  have hdecomp : ∀ w : ℂ, L w = w.re • L 1 + w.im • L I := fun w => by
-    have hw : w = w.re • (1 : ℂ) + w.im • I := by simp
-    conv_lhs => rw [hw]
-    rw [map_add, map_smul, map_smul]
-  constructor
-  · intro h
-    have h1 := h 1
-    rw [mul_one] at h1
-    rw [h1, hA, add_neg_cancel]
-  · intro h w
-    have hI : L I = A (L 1) := by
-      have h' := congrArg A h
-      rw [map_add, hA, map_zero] at h'
-      exact (add_neg_eq_zero.1 h').symm
-    rw [hdecomp, hdecomp w, map_add, map_smul, map_smul, hI, hA]
-    simp only [mul_re, I_re, I_im, zero_mul, one_mul, zero_sub, mul_im]
-    module
-
 section Pseudoholomorphic
 
 variable [FiniteDimensional ℝ V]
@@ -87,9 +67,10 @@ theorem isWeakCauchyRiemannOn_iff_isPseudoholomorphicOn
     (hu.differentiableOn one_ne_zero).differentiableAt (Ω.isOpen.mem_nhds hz)
   have hnhds : (Ω : Set ℂ) ∈ nhds z := Ω.isOpen.mem_nhds hz
   have hj : ∀ w : ℂ, (AlmostComplexStructure.ofComplexModule ℂ).constSmooth z w = I * w :=
-    fun w => (AlmostComplexStructure.constSmooth_apply _ z w).trans (by simp; rfl)
-  refine (forall_map_I_mul_eq_iff (L := fderiv ℝ u z)
-    (A := (J.toEndomorphism (u z) : V →L[ℝ] V)) (J.apply_apply (u z))).symm.trans ?_
+    fun w => (AlmostComplexStructure.constSmooth_apply _ z w).trans
+      (by rw [AlmostComplexStructure.ofComplexModule_apply, smul_eq_mul])
+  refine (LinearMap.forall_apply_I_mul_eq_iff (fderiv ℝ u z : ℂ →ₗ[ℝ] V)
+    (A := (J.toEndomorphism (u z) : V →L[ℝ] V).toLinearMap) (J.apply_apply (u z))).symm.trans ?_
   constructor
   · intro h
     refine IsPseudoholomorphicAt.isPseudoholomorphicWithinAt

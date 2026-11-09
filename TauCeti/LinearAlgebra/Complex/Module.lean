@@ -22,7 +22,9 @@ For a real-linear map `L` into a complex module, its defect from complex lineari
 A real-linear map vanishing at `I` is unchanged by conjugating its argument
 (`LinearMap.apply_conj_of_apply_I_eq_zero`). A real-linear map with `L I = A (L 1)`, for `A`
 squaring to `-1`, satisfies `L (b * I) = A (L b)` for every `b`
-(`LinearMap.apply_mul_I_eq_of_apply_I_eq`). A a real-bilinear map vanishing at `(1, I)` and
+(`LinearMap.apply_mul_I_eq_of_apply_I_eq`), and a real-linear map intertwines multiplication by
+`I` with such an `A` exactly when `L 1 + A (L I) = 0` (`LinearMap.forall_apply_I_mul_eq_iff`).
+A a real-bilinear map vanishing at `(1, I)` and
 `(I, 1)` is unchanged by conjugating both arguments.
 Multiplication by `I` and by `-I` are mutually inverse on any complex multiplication action.
 
@@ -83,6 +85,21 @@ theorem apply_mul_I_eq_of_apply_I_eq {F : Type*} [AddCommGroup F] [Module ℝ F]
   rw [L.apply_eq_re_smul_one_add_im_smul_I, L.apply_eq_re_smul_one_add_im_smul_I b, hL]
   simp [hA]
   module
+
+/-- A real-linear map `L` out of the complex plane intertwines multiplication by `I` with an
+endomorphism `A` squaring to `-1` exactly when `L 1 + A (L I) = 0`: the value at `I` is then
+determined by the value at `1`. -/
+theorem forall_apply_I_mul_eq_iff {F : Type*} [AddCommGroup F] [Module ℝ F]
+    (L : ℂ →ₗ[ℝ] F) {A : F →ₗ[ℝ] F} (hA : ∀ v, A (A v) = -v) :
+    (∀ w, L (I * w) = A (L w)) ↔ L 1 + A (L I) = 0 := by
+  refine ⟨fun h => ?_, fun h w => ?_⟩
+  · rw [← mul_one I, h 1, hA, add_neg_cancel]
+  · have hI : L I = A (L 1) := by
+      have h' := congrArg A h
+      rw [map_add, hA, map_zero] at h'
+      exact (add_neg_eq_zero.1 h').symm
+    rw [mul_comm]
+    exact L.apply_mul_I_eq_of_apply_I_eq hI hA w
 
 /-- A real-bilinear map on the complex plane with `B 1 I = B I 1 = 0` is unchanged by
 conjugating both arguments. -/

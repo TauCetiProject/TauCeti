@@ -20,10 +20,11 @@ is `∂ₛu + J(z, u) ∂ₜu = η(z, u)`, in the coordinate `z = s + it`. Its w
 * `TauCeti.IsWeakCauchyRiemannOn p Ω J η u`, for an open set `Ω`: `u` is continuous on `Ω`, it is
   locally `Lᵖ` there, and it has a weak derivative `D` on `Ω`, locally `Lᵖ` as well, with
   `D z 1 + J z (u z) (D z I) = η z (u z)` for almost every `z ∈ Ω`;
-* `TauCeti.IsWeakCauchyRiemannHalfOn p U J η u`, for a set `U` meant to be relatively open in the
-  closed upper half-plane: the same, with the weak derivative and the equation taken on the
-  interior of `U` and the `Lᵖ` bounds on the compact subsets of `U` itself, as in
-  `TauCeti.MemWkpLoc`. On an open set the two predicates agree.
+* `TauCeti.IsWeakCauchyRiemannUpToBoundaryOn p U J η u`, for an arbitrary set `U`: the same,
+  with the weak derivative and the equation taken on the interior of `U` and the `Lᵖ` bounds on
+  the compact subsets of `U` itself, as in `TauCeti.MemWkpLoc`. The intended sets are half-discs,
+  relatively open in the closed upper half-plane, where these bounds reach the real axis; no
+  such hypothesis is imposed. On an open set the two predicates agree.
 
 This is McDuff–Salamon's normalization: for a constant `J` the left-hand side is twice the
 Cauchy–Riemann operator `\bar∂ = (∂ₛ + J ∂ₜ)/2`. No hypothesis on `J` is part of the predicates:
@@ -40,9 +41,8 @@ them, so the linear equations with arbitrary coefficient fields are special case
 * `TauCeti.IsWeakLinearCauchyRiemannOn`: the linear equation `∂ₛξ + J(z) ∂ₜξ + C(z) ξ = 0`, whose
   solutions form a real vector space.
 * `TauCeti.isWeakCauchyRiemannOn_id` and `TauCeti.not_isWeakCauchyRiemannOn_conj`: for `J = i`
-  the identity solves the homogeneous equation and conjugation does not, while
-  `TauCeti.fderiv_id_swapped` and `TauCeti.fderiv_conj_swapped` show that the swapped expression
-  `D(i) + J D(1)` reverses these verdicts.
+  the identity solves the homogeneous equation and conjugation does not. Two examples at the end
+  of the file show that the swapped expression `D(i) + J D(1)` would reverse these verdicts.
 * `TauCeti.isWeakCauchyRiemannOn_const_iff`: a constant `u₀` solves the equation exactly when
   `η(z, u₀) = 0` for almost every `z ∈ Ω`.
 
@@ -71,12 +71,13 @@ def IsWeakCauchyRiemannOn (p : ENNReal) (Ω : Opens ℂ) (J : ℂ → V → V �
   ContinuousOn u Ω ∧ MemLpLoc p Ω u ∧ ∃ D : ℂ → ℂ →L[ℝ] V, HasWeakFDerivOn volume Ω u D ∧
     MemLpLoc p Ω D ∧ ∀ᵐ z ∂volume.restrict (Ω : Set ℂ), D z 1 + J z (u z) (D z I) = η z (u z)
 
-/-- The weak nonlinear Cauchy–Riemann equation up to the boundary of a set `U`, meant to be
-relatively open in the closed upper half-plane. The map `u` is continuous on `U`, it is locally
-`Lᵖ` on `U`, and it has a weak derivative `D` on the interior of `U` that is locally `Lᵖ` on `U`
-and satisfies `D z 1 + J z (u z) (D z I) = η z (u z)` almost everywhere on that interior. The
-local `Lᵖ` bounds reach the boundary, as in `TauCeti.MemWkpLoc`. -/
-def IsWeakCauchyRiemannHalfOn (p : ENNReal) (U : Set ℂ) (J : ℂ → V → V →L[ℝ] V)
+/-- The weak nonlinear Cauchy–Riemann equation up to the boundary of a set `U`. The intended
+sets are half-discs, relatively open in the closed upper half-plane, but none is required. The map
+`u` is continuous on `U`, it is locally `Lᵖ` on `U`, and it has a weak derivative `D` on the
+interior of `U` that is locally `Lᵖ` on `U` and satisfies `D z 1 + J z (u z) (D z I) = η z (u z)`
+almost everywhere on that interior. The local `Lᵖ` bounds reach the boundary, as in
+`TauCeti.MemWkpLoc`. -/
+def IsWeakCauchyRiemannUpToBoundaryOn (p : ENNReal) (U : Set ℂ) (J : ℂ → V → V →L[ℝ] V)
     (η : ℂ → V → V) (u : ℂ → V) : Prop :=
   ContinuousOn u U ∧ MemLpLoc p U u ∧ ∃ D : ℂ → ℂ →L[ℝ] V,
     HasWeakFDerivOn volume (Opens.interior U) u D ∧ MemLpLoc p U D ∧
@@ -89,7 +90,7 @@ theorem isWeakCauchyRiemannOn_iff : IsWeakCauchyRiemannOn p Ω J η u ↔
   Iff.rfl
 
 /-- The weak equation up to the boundary unfolded into its defining conditions. -/
-theorem isWeakCauchyRiemannHalfOn_iff : IsWeakCauchyRiemannHalfOn p U J η u ↔
+theorem isWeakCauchyRiemannUpToBoundaryOn_iff : IsWeakCauchyRiemannUpToBoundaryOn p U J η u ↔
     ContinuousOn u U ∧ MemLpLoc p U u ∧ ∃ D : ℂ → ℂ →L[ℝ] V,
       HasWeakFDerivOn volume (Opens.interior U) u D ∧ MemLpLoc p U D ∧
         ∀ᵐ z ∂volume.restrict (interior U), D z 1 + J z (u z) (D z I) = η z (u z) :=
@@ -138,8 +139,8 @@ theorem mono_exponent (h : IsWeakCauchyRiemannOn p Ω J η u) (hqp : q ≤ p) :
   exact ⟨hc, hu.mono_exponent hqp, D, hD, hDp.mono_exponent hqp, hae⟩
 
 /-- An open-set weak solution is a weak solution up to the boundary of the same set. -/
-theorem isWeakCauchyRiemannHalfOn (h : IsWeakCauchyRiemannOn p Ω J η u) :
-    IsWeakCauchyRiemannHalfOn p (Ω : Set ℂ) J η u := by
+theorem isWeakCauchyRiemannUpToBoundaryOn (h : IsWeakCauchyRiemannOn p Ω J η u) :
+    IsWeakCauchyRiemannUpToBoundaryOn p (Ω : Set ℂ) J η u := by
   obtain ⟨hc, hu, D, hD, hDp, hae⟩ := h
   refine ⟨hc, hu, D, ?_, hDp, ?_⟩
   · rwa [Opens.interior_coe]
@@ -158,18 +159,26 @@ theorem isWeakCauchyRiemannOn_iff_forall_hasWeakFDerivOn :
   obtain ⟨hu, D, hD, hDp⟩ := memWkpLoc_succ_iff_of_isOpen.1 hw
   exact ⟨hc, hu, D, hD, memWkpLoc_zero_iff.1 hDp, hall D hD⟩
 
-namespace IsWeakCauchyRiemannHalfOn
+namespace IsWeakCauchyRiemannUpToBoundaryOn
 
 /-- A weak solution up to the boundary is continuous on `U`. -/
-theorem continuousOn (h : IsWeakCauchyRiemannHalfOn p U J η u) : ContinuousOn u U := h.1
+theorem continuousOn (h : IsWeakCauchyRiemannUpToBoundaryOn p U J η u) : ContinuousOn u U := h.1
+
+/-- A weak solution up to the boundary is locally `Lᵖ` on `U`. -/
+theorem memLpLoc (h : IsWeakCauchyRiemannUpToBoundaryOn p U J η u) : MemLpLoc p U u := h.2.1
+
+/-- The codomain of a weak solution up to the boundary is complete. -/
+theorem completeSpace (h : IsWeakCauchyRiemannUpToBoundaryOn p U J η u) : CompleteSpace V := by
+  obtain ⟨-, -, D, hD, -⟩ := h
+  exact hD.completeSpace
 
 /-- A weak solution up to the boundary belongs to `W^{1,p}_loc` up to the boundary. -/
-theorem memWkpLoc_one (h : IsWeakCauchyRiemannHalfOn p U J η u) : MemWkpLoc p U 1 u := by
+theorem memWkpLoc_one (h : IsWeakCauchyRiemannUpToBoundaryOn p U J η u) : MemWkpLoc p U 1 u := by
   obtain ⟨-, hu, D, hD, hDp, -⟩ := h
   exact memWkpLoc_succ_iff.2 ⟨hu, D, hD, memWkpLoc_zero_iff.2 hDp⟩
 
 /-- **Independence of the weak derivative**, up to the boundary. -/
-theorem ae_eq_of_hasWeakFDerivOn (h : IsWeakCauchyRiemannHalfOn p U J η u)
+theorem ae_eq_of_hasWeakFDerivOn (h : IsWeakCauchyRiemannUpToBoundaryOn p U J η u)
     {D : ℂ → ℂ →L[ℝ] V} (hD : HasWeakFDerivOn volume (Opens.interior U) u D) :
     ∀ᵐ z ∂volume.restrict (interior U), D z 1 + J z (u z) (D z I) = η z (u z) := by
   obtain ⟨-, -, D', hD', -, hae⟩ := h
@@ -177,32 +186,44 @@ theorem ae_eq_of_hasWeakFDerivOn (h : IsWeakCauchyRiemannHalfOn p U J η u)
   rwa [← hDz]
 
 /-- Restricting a weak solution up to the boundary to a smaller set preserves it. -/
-theorem mono (h : IsWeakCauchyRiemannHalfOn p U J η u) (hU : U' ⊆ U) :
-    IsWeakCauchyRiemannHalfOn p U' J η u := by
+theorem mono (h : IsWeakCauchyRiemannUpToBoundaryOn p U J η u) (hU : U' ⊆ U) :
+    IsWeakCauchyRiemannUpToBoundaryOn p U' J η u := by
   obtain ⟨hc, hu, D, hD, hDp, hae⟩ := h
   exact ⟨hc.mono hU, hu.mono_set hU, D, hD.mono (interior_mono hU), hDp.mono_set hU,
     ae_restrict_of_ae_restrict_of_subset (interior_mono hU) hae⟩
 
 /-- Decreasing the exponent preserves weak solutions up to the boundary. -/
-theorem mono_exponent (h : IsWeakCauchyRiemannHalfOn p U J η u) (hqp : q ≤ p) :
-    IsWeakCauchyRiemannHalfOn q U J η u := by
+theorem mono_exponent (h : IsWeakCauchyRiemannUpToBoundaryOn p U J η u) (hqp : q ≤ p) :
+    IsWeakCauchyRiemannUpToBoundaryOn q U J η u := by
   obtain ⟨hc, hu, D, hD, hDp, hae⟩ := h
   exact ⟨hc, hu.mono_exponent hqp, D, hD, hDp.mono_exponent hqp, hae⟩
 
 /-- A weak solution up to the boundary of `U` is a weak solution on the interior of `U`. -/
-theorem isWeakCauchyRiemannOn_interior (h : IsWeakCauchyRiemannHalfOn p U J η u) :
+theorem isWeakCauchyRiemannOn_interior (h : IsWeakCauchyRiemannUpToBoundaryOn p U J η u) :
     IsWeakCauchyRiemannOn p (Opens.interior U) J η u := by
   obtain ⟨hc, hu, D, hD, hDp, hae⟩ := h
   exact ⟨hc.mono interior_subset, hu.mono_set interior_subset, D, hD,
     hDp.mono_set interior_subset, hae⟩
 
-end IsWeakCauchyRiemannHalfOn
+end IsWeakCauchyRiemannUpToBoundaryOn
+
+/-- A weak solution up to the boundary is a continuous map in `W^{1,p}_loc` up to the boundary
+for which the equation holds with every weak derivative on the interior. -/
+theorem isWeakCauchyRiemannUpToBoundaryOn_iff_forall_hasWeakFDerivOn :
+    IsWeakCauchyRiemannUpToBoundaryOn p U J η u ↔ ContinuousOn u U ∧ MemWkpLoc p U 1 u ∧
+      ∀ D : ℂ → ℂ →L[ℝ] V, HasWeakFDerivOn volume (Opens.interior U) u D →
+        ∀ᵐ z ∂volume.restrict (interior U), D z 1 + J z (u z) (D z I) = η z (u z) := by
+  refine ⟨fun h => ⟨h.continuousOn, h.memWkpLoc_one, fun D hD => h.ae_eq_of_hasWeakFDerivOn hD⟩,
+    fun ⟨hc, hw, hall⟩ => ?_⟩
+  obtain ⟨hu, D, hD, hDp⟩ := memWkpLoc_succ_iff.1 hw
+  exact ⟨hc, hu, D, hD, memWkpLoc_zero_iff.1 hDp, hall D hD⟩
 
 /-- On an open set, the weak equation up to the boundary is the open-set weak equation. -/
-theorem isWeakCauchyRiemannHalfOn_coe_iff :
-    IsWeakCauchyRiemannHalfOn p (Ω : Set ℂ) J η u ↔ IsWeakCauchyRiemannOn p Ω J η u :=
+@[simp]
+theorem isWeakCauchyRiemannUpToBoundaryOn_coe_iff :
+    IsWeakCauchyRiemannUpToBoundaryOn p (Ω : Set ℂ) J η u ↔ IsWeakCauchyRiemannOn p Ω J η u :=
   ⟨fun h => by simpa only [Opens.interior_coe] using h.isWeakCauchyRiemannOn_interior,
-    IsWeakCauchyRiemannOn.isWeakCauchyRiemannHalfOn⟩
+    IsWeakCauchyRiemannOn.isWeakCauchyRiemannUpToBoundaryOn⟩
 
 /-! ### Comparison with the classical equation -/
 
@@ -241,6 +262,7 @@ theorem isWeakCauchyRiemannOn_of_contDiffOn (hu : ContDiffOn ℝ 1 u Ω)
 /-- **Constant maps.** A constant map is a weak solution exactly when the inhomogeneous term
 vanishes at its value for almost every point of `Ω`. No hypothesis on `J` is needed, since the
 weak derivative of a constant is zero. -/
+@[simp]
 theorem isWeakCauchyRiemannOn_const_iff (u₀ : V) :
     IsWeakCauchyRiemannOn p Ω J η (fun _ => u₀) ↔
       ∀ᵐ z ∂volume.restrict (Ω : Set ℂ), η z u₀ = 0 := by
@@ -315,6 +337,10 @@ end IsWeakLinearCauchyRiemannOn
 
 section Standard
 
+/-- Conjugation is real-linear, so it is its own derivative. -/
+private theorem fderiv_conj_eq (z : ℂ) : fderiv ℝ conj z = conjCLE.toContinuousLinearMap :=
+  conjCLE.fderiv
+
 /-- The identity solves the homogeneous equation for `J = i`: its derivative is the identity and
 `1 + i·i = 0`. -/
 theorem isWeakCauchyRiemannOn_id :
@@ -332,20 +358,18 @@ theorem not_isWeakCauchyRiemannOn_conj (hΩ : (Ω : Set ℂ).Nonempty) :
   obtain ⟨z, hz⟩ := hΩ
   intro h
   have h2 := h z hz
-  rw [show fderiv ℝ conj z = conjCLE.toContinuousLinearMap from conjCLE.fderiv] at h2
+  rw [fderiv_conj_eq] at h2
   norm_num [Complex.ext_iff] at h2
 
-/-- With the swapped expression `D(i) + J D(1)` the identity would not be a solution:
-`i + i·1 = 2i ≠ 0`. -/
-theorem fderiv_id_swapped (z : ℂ) :
-    fderiv ℝ id z I + (I • ContinuousLinearMap.id ℝ ℂ) (fderiv ℝ id z 1) ≠ 0 := by
+-- With the swapped expression `D(i) + J D(1)` in place of `D(1) + J D(i)`, the identity would
+-- not be a solution, since `i + i·1 = 2i ≠ 0`.
+example (z : ℂ) : fderiv ℝ id z I + (I • ContinuousLinearMap.id ℝ ℂ) (fderiv ℝ id z 1) ≠ 0 := by
   norm_num [Complex.ext_iff]
 
-/-- With the swapped expression `D(i) + J D(1)` conjugation would be a solution:
-`-i + i·1 = 0`. -/
-theorem fderiv_conj_swapped (z : ℂ) :
+-- With the swapped expression, conjugation would be a solution, since `-i + i·1 = 0`.
+example (z : ℂ) :
     fderiv ℝ conj z I + (I • ContinuousLinearMap.id ℝ ℂ) (fderiv ℝ conj z 1) = 0 := by
-  rw [show fderiv ℝ conj z = conjCLE.toContinuousLinearMap from conjCLE.fderiv]
+  rw [fderiv_conj_eq]
   norm_num [Complex.ext_iff]
 
 end Standard
