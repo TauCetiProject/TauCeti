@@ -60,6 +60,8 @@ these sets for a generic perturbation needs.
 * `TauCeti.exists_admissible_forall_mem_range_fderiv_perturbedFlow_sup_span_eq_top`: one finite
   family, supported in a prescribed open set, that spans at every point of a compact set of start
   points whose orbits meet that open set.
+* `TauCeti.exists_pos_forall_range_fderiv_perturbedFlow_sup_span_eq_top`: spanning at the
+  parameter `0` on a compact set of start points persists for all small parameters.
 
 ## References
 
@@ -436,5 +438,43 @@ theorem exists_admissible_forall_mem_range_fderiv_perturbedFlow_sup_span_eq_top 
   refine top_unique ((le_of_eq hyx.symm).trans (sup_le_sup_right ?_ _))
   exact range_fst_fderiv_perturbedFlow_inr_le hfs hf _ _ _ _ (fun k ↦ eqv ⟨⟨x, hxt⟩, k⟩)
     (fun k ↦ by rw [Equiv.symm_apply_apply]) y T
+
+/-- **Spanning persists for small parameters.** If, for a family `h` and a time `T`, the
+parameter derivative at `0` of `s ↦ φ^{f + ∑ sᵢ hᵢ}_T x` spans `E` together with the flow
+direction `∇f(φ_T x)` at every point `x` of a compact set `C`, then for all sufficiently small
+parameters `s` the parameter derivative at `s` spans `E` together with the gradient of
+`perturb f h s` at the end point, at every point of `C`. -/
+theorem exists_pos_forall_range_fderiv_perturbedFlow_sup_span_eq_top {ι : Type*} [Fintype ι]
+    {h : ι → E → ℝ} (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
+    (hh : ∀ i, ContDiff ℝ 2 (h i)) (hc : ∀ i, HasCompactSupport (h i)) {C : Set E}
+    (hC : IsCompact C) {T : ℝ}
+    (hspan : ∀ x ∈ C,
+      LinearMap.range (((ContinuousLinearMap.fst ℝ E (EuclideanSpace ℝ ι)).comp
+          ((fderiv ℝ (perturbedFlow f h hf hh hc T) (x, 0)).comp
+            (ContinuousLinearMap.inr ℝ E (EuclideanSpace ℝ ι)))) :
+            EuclideanSpace ℝ ι →ₗ[ℝ] E) ⊔
+        (ℝ ∙ ∇ f (negativeGradientFlow f hf T x)) = ⊤) :
+    ∃ δ > 0, ∀ s : EuclideanSpace ℝ ι, ‖s‖ < δ → ∀ x ∈ C,
+      LinearMap.range (((ContinuousLinearMap.fst ℝ E (EuclideanSpace ℝ ι)).comp
+          ((fderiv ℝ (perturbedFlow f h hf hh hc T) (x, s)).comp
+            (ContinuousLinearMap.inr ℝ E (EuclideanSpace ℝ ι)))) :
+            EuclideanSpace ℝ ι →ₗ[ℝ] E) ⊔
+        (ℝ ∙ ∇ (perturb f h s) (perturbedFlow f h hf hh hc T (x, s)).1) = ⊤ := by
+  have hS := isOpen_setOf_range_fderiv_perturbedFlow_sup_span_eq_top hfs hf hh hc
+  -- The spanning condition near `(0, x)` for each `x ∈ C`, then uniformly on `C`.
+  have hev : ∀ᶠ s in 𝓝 (0 : EuclideanSpace ℝ ι), ∀ x ∈ C, (T, x, s) ∈
+      {q : ℝ × E × EuclideanSpace ℝ ι |
+        LinearMap.range (((ContinuousLinearMap.fst ℝ E (EuclideanSpace ℝ ι)).comp
+            ((fderiv ℝ (perturbedFlow f h hf hh hc q.1) q.2).comp
+              (ContinuousLinearMap.inr ℝ E (EuclideanSpace ℝ ι)))) :
+              EuclideanSpace ℝ ι →ₗ[ℝ] E) ⊔
+          (ℝ ∙ ∇ (perturb f h q.2.2) (perturbedFlow f h hf hh hc q.1 q.2).1) = ⊤} := by
+    refine hC.eventually_forall_of_forall_eventually fun x hx ↦ ?_
+    have hcont : Continuous fun z : EuclideanSpace ℝ ι × E ↦ (T, z.2, z.1) :=
+      continuous_const.prodMk (continuous_snd.prodMk continuous_fst)
+    refine hcont.continuousAt.preimage_mem_nhds (hS.mem_nhds ?_)
+    simpa [perturbedFlow_apply_zero, perturb_zero] using hspan x hx
+  obtain ⟨δ, hδ, hball⟩ := Metric.eventually_nhds_iff.1 hev
+  exact ⟨δ, hδ, fun s hs ↦ hball (by rwa [dist_zero_right])⟩
 
 end TauCeti
