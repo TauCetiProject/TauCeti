@@ -24,14 +24,14 @@ Möbius transformation is determined by its first jet at `0` together with its v
 
 * At a finite point `z` with finite image, the derivative of `z ↦ (a z + b) / (c z + d)` is
   multiplication by `(a d - b c) / (c z + d) ^ 2`
-  (`Matrix.GeneralLinearGroup.mfderiv_smul_coe`, in
+  (`Matrix.GeneralLinearGroup.mfderiv_smul_coe_apply`, in
   `TauCeti.Geometry.Manifold.Instances.OnePoint.Moebius`).
 * The subgroup of `PGL(2, 𝕜)` fixing `0` and `∞` is the group `𝕜ˣ` of dilations
   (`OnePoint.pglFixingZeroInftyEquiv`), and this coordinate is the first jet at `0`: an element
   fixing `0` and `∞` has derivative `a` at `0`, where `a` is its coordinate
-  (`OnePoint.mfderiv_smul_zero_eq_pglFixingZeroInftyEquiv`). Read in the inverted chart at the
-  other fixed point `∞`, its derivative is `a⁻¹`
-  (`OnePoint.mfderiv_smul_infty_eq_pglFixingZeroInftyEquiv`).
+  (`OnePoint.mfderiv_smul_zero_apply_eq_pglFixingZeroInftyEquiv`). Read in the inverted chart at
+  the other fixed point `∞`, its derivative is `a⁻¹`
+  (`OnePoint.mfderiv_smul_infty_apply_eq_pglFixingZeroInftyEquiv`).
 * **First-jet coordinates.** For distinct points `p` and `q` and a nonzero tangent vector `v` at
   `p`, exactly one element of `PGL(2, 𝕜)` sends `0` to `p` and `∞` to `q` and has derivative `v`
   at `0` on the unit tangent vector `1` (`OnePoint.existsUnique_pgl_smul_zero_infty_mfderiv_eq`).
@@ -47,14 +47,14 @@ direction at one of them, in the way that ordered triples normalize three marked
 
 ## Main results
 
-* `OnePoint.mfderiv_pglFixingZeroInftyEquiv_symm_zero` and
-  `OnePoint.mfderiv_pglFixingZeroInftyEquiv_symm_infty`: the dilation `z ↦ a z` has derivative `a`
-  at `0` and `a⁻¹` at `∞`.
-* `OnePoint.mfderiv_pgl_smul_ne_zero`: the derivative of a Möbius transformation is nonzero on
-  nonzero tangent vectors.
-* `OnePoint.mfderiv_smul_zero_eq_pglFixingZeroInftyEquiv`: the coordinate of an element fixing `0`
-  and `∞` is its derivative at `0`.
-* `OnePoint.mfderiv_mul_pglFixingZeroInftyEquiv_symm_zero`: precomposing with the dilation
+* `OnePoint.mfderiv_pglFixingZeroInftyEquiv_symm_zero_apply` and
+  `OnePoint.mfderiv_pglFixingZeroInftyEquiv_symm_infty_apply`: the dilation `z ↦ a z` has
+  derivative `a` at `0` and `a⁻¹` at `∞`.
+* `OnePoint.mfderiv_pgl_smul_apply_ne_zero`: the derivative of a Möbius transformation is nonzero
+  on nonzero tangent vectors.
+* `OnePoint.mfderiv_smul_zero_apply_eq_pglFixingZeroInftyEquiv`: the coordinate of an element
+  fixing `0` and `∞` is its derivative at `0`.
+* `OnePoint.mfderiv_mul_pglFixingZeroInftyEquiv_symm_zero_apply`: precomposing with the dilation
   `z ↦ a z` multiplies the derivative at `0` by `a`.
 * `OnePoint.existsUnique_pgl_smul_zero_infty_mfderiv_eq`: the first-jet coordinates of
   `PGL(2, 𝕜)`.
@@ -84,7 +84,7 @@ private theorem mdifferentiableAt_pgl_smul (g : PGL(2, 𝕜)) (x : OnePoint 𝕜
 
 /-- The derivative of a Möbius transformation of `PGL(2, 𝕜)` vanishes on no nonzero tangent
 vector, since the transformation is a diffeomorphism. -/
-theorem mfderiv_pgl_smul_ne_zero (g : PGL(2, 𝕜)) (x : OnePoint 𝕜) {v : 𝕜} (hv : v ≠ 0) :
+theorem mfderiv_pgl_smul_apply_ne_zero (g : PGL(2, 𝕜)) (x : OnePoint 𝕜) {v : 𝕜} (hv : v ≠ 0) :
     (mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun y : OnePoint 𝕜 ↦ g • y) x v : 𝕜) ≠ 0 := by
   intro h
   obtain ⟨e, he⟩ := (Diffeomorph.constSmul 𝓘(𝕜) ⊤ g).isInvertible_mfderiv (x := x) (by simp)
@@ -99,7 +99,7 @@ namespace OnePoint
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜] [ProperSpace 𝕜]
 
 /-- **The dilation `z ↦ a z` has derivative `a` at `0`.** -/
-theorem mfderiv_pglFixingZeroInftyEquiv_symm_zero (a : 𝕜ˣ) (v : 𝕜) :
+theorem mfderiv_pglFixingZeroInftyEquiv_symm_zero_apply (a : 𝕜ˣ) (v : 𝕜) :
     mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ (pglFixingZeroInftyEquiv.symm a : PGL(2, 𝕜)) • x)
       ((0 : 𝕜) : OnePoint 𝕜) v = (a * v : 𝕜) := by
   refine mfderiv_apply_eq_of_hasDerivAt (mdifferentiableAt_pgl_smul _ _) ?_
@@ -110,7 +110,7 @@ theorem mfderiv_pglFixingZeroInftyEquiv_symm_zero (a : 𝕜ˣ) (v : 𝕜) :
 
 /-- **The dilation `z ↦ a z` has derivative `a⁻¹` at `∞`**, read in the inverted chart, in which
 it is `w ↦ a⁻¹ w`. -/
-theorem mfderiv_pglFixingZeroInftyEquiv_symm_infty (a : 𝕜ˣ) (v : 𝕜) :
+theorem mfderiv_pglFixingZeroInftyEquiv_symm_infty_apply (a : 𝕜ˣ) (v : 𝕜) :
     mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ (pglFixingZeroInftyEquiv.symm a : PGL(2, 𝕜)) • x)
       (∞ : OnePoint 𝕜) v = (((a⁻¹ : 𝕜ˣ) : 𝕜) * v : 𝕜) := by
   refine mfderiv_apply_eq_of_hasDerivAt (mdifferentiableAt_pgl_smul _ _) ?_
@@ -125,26 +125,26 @@ theorem mfderiv_pglFixingZeroInftyEquiv_symm_infty (a : 𝕜ˣ) (v : 𝕜) :
 /-- **The coordinate of an element fixing `0` and `∞` is its first jet at `0`**: the unit `a`
 attached to it by `OnePoint.pglFixingZeroInftyEquiv` is its derivative at `0`. -/
 @[simp]
-theorem mfderiv_smul_zero_eq_pglFixingZeroInftyEquiv
+theorem mfderiv_smul_zero_apply_eq_pglFixingZeroInftyEquiv
     (g : fixingSubgroup PGL(2, 𝕜) {((0 : 𝕜) : OnePoint 𝕜), (∞ : OnePoint 𝕜)}) (v : 𝕜) :
     mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ (g : PGL(2, 𝕜)) • x) ((0 : 𝕜) : OnePoint 𝕜) v =
       ((pglFixingZeroInftyEquiv g : 𝕜) * v : 𝕜) := by
   conv_lhs => rw [← pglFixingZeroInftyEquiv.symm_apply_apply g]
-  exact mfderiv_pglFixingZeroInftyEquiv_symm_zero _ v
+  exact mfderiv_pglFixingZeroInftyEquiv_symm_zero_apply _ v
 
 /-- The derivative at `∞` of an element fixing `0` and `∞`, read in the inverted chart, is the
 inverse of its derivative at `0`. -/
 @[simp]
-theorem mfderiv_smul_infty_eq_pglFixingZeroInftyEquiv
+theorem mfderiv_smul_infty_apply_eq_pglFixingZeroInftyEquiv
     (g : fixingSubgroup PGL(2, 𝕜) {((0 : 𝕜) : OnePoint 𝕜), (∞ : OnePoint 𝕜)}) (v : 𝕜) :
     mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ (g : PGL(2, 𝕜)) • x) (∞ : OnePoint 𝕜) v =
       ((((pglFixingZeroInftyEquiv g)⁻¹ : 𝕜ˣ) : 𝕜) * v : 𝕜) := by
   conv_lhs => rw [← pglFixingZeroInftyEquiv.symm_apply_apply g]
-  exact mfderiv_pglFixingZeroInftyEquiv_symm_infty _ v
+  exact mfderiv_pglFixingZeroInftyEquiv_symm_infty_apply _ v
 
 /-- Precomposing a Möbius transformation with the dilation `z ↦ a z` multiplies its derivative at
 `0` by `a`. -/
-theorem mfderiv_mul_pglFixingZeroInftyEquiv_symm_zero (g : PGL(2, 𝕜)) (a : 𝕜ˣ) (v : 𝕜) :
+theorem mfderiv_mul_pglFixingZeroInftyEquiv_symm_zero_apply (g : PGL(2, 𝕜)) (a : 𝕜ˣ) (v : 𝕜) :
     mfderiv 𝓘(𝕜) 𝓘(𝕜)
       (fun x : OnePoint 𝕜 ↦ (g * (pglFixingZeroInftyEquiv.symm a : PGL(2, 𝕜))) • x)
       ((0 : 𝕜) : OnePoint 𝕜) v =
@@ -156,7 +156,7 @@ theorem mfderiv_mul_pglFixingZeroInftyEquiv_symm_zero (g : PGL(2, 𝕜)) (a : �
   -- The dilation fixes `0`, so the chain rule evaluates the derivative of `g` at `0` itself.
   refine (mfderiv_comp_apply_of_eq ((0 : 𝕜) : OnePoint 𝕜) (y := ((0 : 𝕜) : OnePoint 𝕜))
     (mdifferentiableAt_pgl_smul _ _) (mdifferentiableAt_pgl_smul _ _) (by simp) v).trans ?_
-  rw [mfderiv_pglFixingZeroInftyEquiv_symm_zero]
+  rw [mfderiv_pglFixingZeroInftyEquiv_symm_zero_apply]
   exact (mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ g • x) _).map_smul (a : 𝕜) v
 
 /-- **First-jet coordinates of `PGL(2, 𝕜)`.** For distinct points `p` and `q` of the projective
@@ -174,7 +174,7 @@ theorem existsUnique_pgl_smul_zero_infty_mfderiv_eq {p q : OnePoint 𝕜} (hpq :
   obtain ⟨h, h0, -, hinf⟩ :=
     (existsUnique_pgl_smul_zero_one_infty_eq (Ne.symm hr.1) hpq hr.2).exists
   set u : 𝕜 := mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ h • x) ((0 : 𝕜) : OnePoint 𝕜) (1 : 𝕜)
-  have hu : u ≠ 0 := mfderiv_pgl_smul_ne_zero h _ one_ne_zero
+  have hu : u ≠ 0 := mfderiv_pgl_smul_apply_ne_zero h _ one_ne_zero
   -- Two transformations agreeing at `0` and `∞` differ by a dilation.
   have hfix (g : PGL(2, 𝕜)) (hg0 : g • ((0 : 𝕜) : OnePoint 𝕜) = p)
       (hginf : g • (∞ : OnePoint 𝕜) = q) :
@@ -188,11 +188,11 @@ theorem existsUnique_pgl_smul_zero_infty_mfderiv_eq {p q : OnePoint 𝕜} (hpq :
     PGL(2, 𝕜)), ⟨?_, ?_, ?_⟩, ?_⟩
   · simp [mul_smul, h0]
   · rw [mul_smul, pglFixingZeroInftyEquiv_symm_smul_infty, hinf]
-  · rw [mfderiv_mul_pglFixingZeroInftyEquiv_symm_zero]
+  · rw [mfderiv_mul_pglFixingZeroInftyEquiv_symm_zero_apply]
     exact div_mul_cancel₀ v hu
   · rintro g ⟨hg0, hginf, hgv⟩
     obtain ⟨a, rfl⟩ := hfix g hg0 hginf
-    rw [mfderiv_mul_pglFixingZeroInftyEquiv_symm_zero] at hgv
+    rw [mfderiv_mul_pglFixingZeroInftyEquiv_symm_zero_apply] at hgv
     have ha : a = Units.mk0 (v / u) (div_ne_zero hv hu) := Units.ext (eq_div_of_mul_eq hu hgv)
     rw [ha]
 

@@ -59,8 +59,8 @@ surface, and in the affine coordinate the transformation of `!![a, b; c, d]` has
 * `OnePoint.instContMDiffConstSMulPSL`: `PSL(2, 𝕜)` acts on `OnePoint 𝕜` by analytic maps.
 * `OnePoint.instContMDiffConstSMulGLReal`, `OnePoint.instContMDiffConstSMulPSLReal`: `GL(2, ℂ)`
   and `PSL(2, ℂ)` act on the Riemann sphere by smooth maps of the underlying real surface.
-* `Matrix.GeneralLinearGroup.mfderiv_smul_coe`: the derivative of a Möbius transformation at a
-  finite point with finite image, read in the affine charts.
+* `Matrix.GeneralLinearGroup.mfderiv_smul_coe_apply`: the derivative of a Möbius transformation
+  at a finite point with finite image, read in the affine charts.
 * `OnePoint.mfderiv_smul_coe_apply`: the same derivative on the Riemann sphere regarded as a real
   surface.
 
@@ -255,7 +255,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜] [Prope
 /-- **The derivative of a Möbius transformation.** At a finite point `z` that is not a pole,
 `z ↦ (a z + b) / (c z + d)` has derivative `(a d - b c) / (c z + d) ^ 2`, read in the affine
 charts at `z` and at its image. -/
-theorem mfderiv_smul_coe (g : GL (Fin 2) 𝕜) {z : 𝕜} (hz : g 1 0 * z + g 1 1 ≠ 0) (v : 𝕜) :
+theorem mfderiv_smul_coe_apply (g : GL (Fin 2) 𝕜) {z : 𝕜} (hz : g 1 0 * z + g 1 1 ≠ 0) (v : 𝕜) :
     mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ g • x) z v =
       ((g : Matrix (Fin 2) (Fin 2) 𝕜).det / (g 1 0 * z + g 1 1) ^ 2 * v : 𝕜) := by
   have hq : Continuous fun w : 𝕜 ↦ g 1 0 * w + g 1 1 := by fun_prop
@@ -290,8 +290,10 @@ theorem mfderiv_smul_coe_apply (g : GL (Fin 2) ℂ) {z : ℂ} (hz : g 1 0 * z + 
       (g : Matrix (Fin 2) (Fin 2) ℂ).det / (g 1 0 * z + g 1 1) ^ 2 * v := by
   have hmd : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (g • · : OnePoint ℂ → OnePoint ℂ) z :=
     (contMDiff_const_smul (I := 𝓘(ℂ)) (n := ω) g).mdifferentiableAt (by simp)
-  -- The real derivative is the complex one, computed by `mfderiv_smul_coe`; the casts
-  -- `tangentSpaceCastModel` between the tangent spaces and `ℂ` are identities.
-  exact (DFunLike.congr_fun (hmd.mfderiv_restrictScalars ℝ) v).trans (g.mfderiv_smul_coe hz v)
+  -- The real derivative is the complex one, computed by
+  -- `Matrix.GeneralLinearGroup.mfderiv_smul_coe_apply`; the casts `tangentSpaceCastModel` between
+  -- the tangent spaces and `ℂ` are identities.
+  exact (DFunLike.congr_fun (hmd.mfderiv_restrictScalars ℝ) v).trans
+    (g.mfderiv_smul_coe_apply hz v)
 
 end OnePoint
