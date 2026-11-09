@@ -167,6 +167,19 @@ instance etale_respectsIso :
   CategoryTheory.MorphismProperty.respectsIso_of_isStableUnderComposition
     fun _ _ _ (_ : CategoryTheory.IsIso _) ↦ inferInstance
 
+-- For the same reason, instance search does not derive these from the general instances for
+-- categories with pullbacks and for properties stable under base change, so register them here
+-- for base change of étale schemes along `f`.
+/-- Étale schemes over `Y` can be pulled back along any `f : X ⟶ Y`. -/
+instance etale_hasPullbacksAlong {X Y : AlgebraicGeometry.Scheme} (f : X ⟶ Y) :
+    CategoryTheory.MorphismProperty.HasPullbacksAlong @AlgebraicGeometry.Etale f :=
+  ⟨fun _ _ ↦ inferInstance⟩
+
+/-- Étale morphisms are stable under base change along any `f : X ⟶ Y`. -/
+instance etale_isStableUnderBaseChangeAlong {X Y : AlgebraicGeometry.Scheme} (f : X ⟶ Y) :
+    CategoryTheory.MorphismProperty.IsStableUnderBaseChangeAlong @AlgebraicGeometry.Etale f :=
+  ⟨CategoryTheory.MorphismProperty.IsStableUnderBaseChange.of_isPullback⟩
+
 section ClosedFibre
 
 open CategoryTheory CategoryTheory.Limits _root_.AlgebraicGeometry IsLocalRing
