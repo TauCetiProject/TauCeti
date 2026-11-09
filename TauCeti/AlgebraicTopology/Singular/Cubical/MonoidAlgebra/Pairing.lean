@@ -50,6 +50,9 @@ operations of the chain systems of trajectory spaces in Morse theory.
 * `TauCeti.cubicalChainDifferential_cubicalChainSumPairing`,
   `TauCeti.cubicalChainSumPairing_assoc`, `TauCeti.cubicalChainSumPairing_mulMap`: the Leibniz
   rule, associativity, and the Pontryagin product.
+* `TauCeti.cubicalChainSumMap_cubicalChainSumPairing_of_comp`,
+  `TauCeti.cubicalChainSumMap_cubicalChainSumPairing_of_mul`: push-forward of a pairing along a
+  map compatible with another pairing, or multiplicative into a topological monoid.
 
 ## References
 
@@ -503,6 +506,29 @@ theorem cubicalChainSumPairing_mulMap {G : Type*} [Monoid G] [TopologicalSpace G
     | of q c' =>
       rw [← DirectSum.lof_eq_of R, ← DirectSum.lof_eq_of R, cubicalChainSumPairing_lof_lof,
         cubicalChainLof_mul, mul_def]
+
+/-- **Naturality of the pairing**: if `g (f (x, y)) = f' (h x, h' y)`, pushing the pairing of `f`
+forward along `g` is the pairing of `f'` of the push-forwards along `h` and `h'`. -/
+theorem cubicalChainSumMap_cubicalChainSumPairing_of_comp {X' Y' : Type*} [TopologicalSpace X']
+    [TopologicalSpace Y'] {f : C(X × Y, Z)} {g : C(Z, W)} {f' : C(X' × Y', W)} {h : C(X, X')}
+    {h' : C(Y, Y')} (hf : ∀ x y, g (f (x, y)) = f' (h x, h' y))
+    (a : normalizedCubicalChainAlgebra X R) (b : normalizedCubicalChainAlgebra Y R) :
+    cubicalChainSumMap R g (cubicalChainSumPairing R f a b) =
+      cubicalChainSumPairing R f' (cubicalChainSumMap R h a) (cubicalChainSumMap R h' b) := by
+  have hcomp : g.comp f = f'.comp (h.prodMap h') :=
+    ContinuousMap.ext fun ⟨x, y⟩ ↦ by simpa using hf x y
+  rw [cubicalChainSumMap_cubicalChainSumPairing, hcomp, cubicalChainSumPairing_comp_prodMap]
+
+/-- If `g (f (x, y)) = h x * h' y` in a topological monoid `G`, pushing the pairing of `f`
+forward along `g` is the Pontryagin product of the push-forwards along `h` and `h'`. -/
+theorem cubicalChainSumMap_cubicalChainSumPairing_of_mul {G : Type*} [Monoid G]
+    [TopologicalSpace G] [ContinuousMul G] {f : C(X × Y, Z)} {g : C(Z, G)} {h : C(X, G)}
+    {h' : C(Y, G)} (hf : ∀ x y, g (f (x, y)) = h x * h' y) (a : normalizedCubicalChainAlgebra X R)
+    (b : normalizedCubicalChainAlgebra Y R) :
+    cubicalChainSumMap R g (cubicalChainSumPairing R f a b) =
+      cubicalChainSumMap R h a * cubicalChainSumMap R h' b := by
+  rw [cubicalChainSumMap_cubicalChainSumPairing_of_comp (f' := mulMap G) (by simpa using hf),
+    cubicalChainSumPairing_mulMap]
 
 end SumPairing
 
