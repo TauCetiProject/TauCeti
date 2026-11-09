@@ -82,6 +82,11 @@ theorem plumbingMap_apply (q : Puncture) (L : ℝ) (w : ℂ) :
 theorem plumbingFactor_ne_zero (q : Puncture) (L : ℝ) : q.plumbingFactor L ≠ 0 :=
   div_ne_zero (mul_ne_zero q.endScale_ne_zero (Complex.exp_ne_zero _)) two_ne_zero
 
+/-- The plumbing factors of the two input ends differ by a sign, as their end scales do. -/
+theorem plumbingFactor_one (L : ℝ) : one.plumbingFactor L = -zero.plumbingFactor L := by
+  simp only [plumbingFactor_def, endScale_one, endScale_zero]
+  ring
+
 /-- The plumbing factor is the end scale times the positive real number `e^{-2πL} / 2`. -/
 theorem plumbingFactor_eq_mul_ofReal (q : Puncture) (L : ℝ) :
     q.plumbingFactor L = q.endScale * ((Real.exp (-(2 * π * L)) / 2 : ℝ) : ℂ) := by
@@ -104,6 +109,12 @@ theorem contDiff_inverse_plumbingMap (q : Puncture) {n : WithTop ℕ∞} :
     ((contDiff_snd (𝕜 := ℝ)).sub (contDiff_const (c := q.endCenter))).mul
       ((q.contDiff_plumbingFactor.comp contDiff_fst).inv
         (fun p => q.plumbingFactor_ne_zero p.1))
+
+/-- The plumbing map scales distances by `‖b_q‖ e^{-2πL} / 2`. -/
+theorem norm_plumbingFactor (q : Puncture) (L : ℝ) :
+    ‖q.plumbingFactor L‖ = ‖q.endScale‖ * Real.exp (-(2 * π * L)) / 2 := by
+  rw [plumbingFactor_eq_mul_ofReal, norm_mul, Complex.norm_real,
+    Real.norm_of_nonneg (by positivity), mul_div_assoc]
 
 /-- The first input of the inserted sphere sits at the center of the end it is plumbed into. -/
 @[simp]
@@ -189,6 +200,24 @@ theorem sub_endCenter_div_plumbingFactor_ne_zero (q : Puncture) (L : ℝ) {w : �
     (hw : w ≠ q.endCenter) : (w - q.endCenter) / q.plumbingFactor L ≠ 0 :=
   div_ne_zero (sub_ne_zero.2 hw) (q.plumbingFactor_ne_zero L)
 
+/-- The point `(w - c_q) / ψ'` undoing the plumbing map is the puncture `1` exactly when `w` is the
+image `ψ(1)` of that puncture. -/
+theorem sub_endCenter_div_plumbingFactor_eq_one_iff (q : Puncture) (L : ℝ) {w : ℂ} :
+    (w - q.endCenter) / q.plumbingFactor L = 1 ↔ w = q.plumbingMap L 1 := by
+  constructor
+  · intro h
+    rw [← h, plumbingMap_sub_endCenter_div]
+  · rintro rfl
+    exact plumbingMap_sub_endCenter_div_plumbingFactor q L 1
+
+/-- Away from the punctures `0`, `1` and `ψ(1)` of the four-punctured sphere, the point
+`(w - c_q) / ψ'` undoing the plumbing map lies in the thrice-punctured sphere. -/
+theorem sub_endCenter_div_plumbingFactor_ne_zero_and_ne_one (q : Puncture) (L : ℝ) {w : ℂ}
+    (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1) :
+    (w - q.endCenter) / q.plumbingFactor L ≠ 0 ∧ (w - q.endCenter) / q.plumbingFactor L ≠ 1 :=
+  ⟨q.sub_endCenter_div_plumbingFactor_ne_zero L (ne_endCenter hw.1 q),
+    fun h => hw.2 ((q.sub_endCenter_div_plumbingFactor_eq_one_iff L).mp h)⟩
+
 /-- Undoing the plumbing map lowers the longitudinal coordinate by `L`: the end coordinate at `∞`
 of `(w - c_q) / ψ'` is that of `w` on the end `q`, minus `L`. -/
 theorem re_endCoord_inf_sub_endCenter_div (q : Puncture) (L : ℝ) {w : ℂ}
@@ -197,6 +226,30 @@ theorem re_endCoord_inf_sub_endCenter_div (q : Puncture) (L : ℝ) {w : ℂ}
   have h := re_endCoord_plumbingMap q L (q.sub_endCenter_div_plumbingFactor_ne_zero L hw)
   rw [plumbingMap_sub_endCenter_div] at h
   linarith
+
+/-- **The plumbing map on discs.** At a positive end `q`, undoing the plumbing map of neck length
+`L` sends `w` into the disc `‖·‖ ≤ 2 exp (2πR)` bounded by the circle `s = -R` of the end at `∞`
+exactly when `w` lies in the disc `‖w - c_q‖ ≤ exp (-2π(L - R)) / 2` bounded by the circle
+`s = L - R` of the end `q`. -/
+theorem norm_sub_endCenter_div_plumbingFactor_le_iff {q : Puncture} (hq : q ≠ inf) (L R : ℝ)
+    {w : ℂ} :
+    ‖(w - q.endCenter) / q.plumbingFactor L‖ ≤ 2 * Real.exp (2 * π * R) ↔
+      ‖w - q.endCenter‖ ≤ Real.exp (-(2 * π * (L - R))) / 2 := by
+  have hexp : Real.exp (-(2 * π * (L - R))) =
+      Real.exp (2 * π * R) * Real.exp (-(2 * π * L)) := by
+    rw [← Real.exp_add]
+    ring_nf
+  rw [norm_div, norm_plumbingFactor, norm_endScale hq, div_le_iff₀ (by positivity), hexp]
+  constructor <;> intro h <;> linarith
+
+/-- At a positive end `q`, the image of the point `1` under the plumbing map of neck length `L`
+lies in the open disc `‖· - c_q‖ < exp (-2π(L - 1)) / 2` bounded by the circle `s = L - 1` of the
+end `q`. -/
+theorem norm_plumbingMap_one_sub_endCenter_lt {q : Puncture} (hq : q ≠ inf) (L : ℝ) :
+    ‖q.plumbingMap L 1 - q.endCenter‖ < Real.exp (-(2 * π * (L - 1))) / 2 := by
+  rw [plumbingMap_apply, add_sub_cancel_left, mul_one, norm_plumbingFactor, norm_endScale hq]
+  have := Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos] : -(2 * π * L) < -(2 * π * (L - 1)))
+  linarith [Real.exp_pos (-(2 * π * L))]
 
 /-- **The plumbing map preserves the angular forms.** It pulls the angular form `dt` of the end
 `q` back to the angular form `dt` of the end at `∞`. -/

@@ -89,6 +89,21 @@ theorem continuationMap_apply (f : P → M) (y : Q) :
     continuationMap R M ν f y = ∑ x, op (ν x y) • f x :=
   (rfl)
 
+/-- The continuation map is additive in the matrix. -/
+theorem continuationMap_add (F G : Matrix P Q A) :
+    continuationMap R M (F + G) = continuationMap R M F + continuationMap R M G :=
+  LinearMap.ext fun f ↦ funext fun y ↦ (continuationMap_apply (F + G) f y).trans <| by
+    simp only [LinearMap.add_apply, Pi.add_apply, continuationMap_apply F,
+      continuationMap_apply G, Matrix.add_apply, op_add, add_smul, Finset.sum_add_distrib]
+
+variable (R M P Q) in
+/-- The zero matrix induces the zero map. -/
+@[simp]
+theorem continuationMap_zero : continuationMap R M (0 : Matrix P Q A) = 0 :=
+  LinearMap.ext fun f ↦ funext fun y ↦ (continuationMap_apply (0 : Matrix P Q A) f y).trans <| by
+    simp only [Matrix.zero_apply, op_zero, zero_smul, Finset.sum_const_zero, LinearMap.zero_apply,
+      Pi.zero_apply]
+
 /-- The `y`-component of the continuation map of an elementary tensor `α ⊗ x`. -/
 @[simp]
 theorem continuationMap_single_apply [DecidableEq P] (x : P) (α : M) (y : Q) :
@@ -123,13 +138,12 @@ theorem continuationMap_kronecker [DecidableEq P] :
     Finset.sum_ite_eq', Finset.mem_univ, ite_true]
 
 /-- The matrix product induces the composite of the continuation maps. -/
-theorem continuationMap_matMul (ν₁ : P → Q → A) (ν₂ : Q → S → A) :
-    continuationMap R M (Matrix.of ν₁ * Matrix.of ν₂) =
-      (continuationMap R M ν₂).comp (continuationMap R M ν₁) := by
-  refine LinearMap.ext fun f ↦ funext fun z ↦ (continuationMap_apply _ f z).trans ?_
-  rw [LinearMap.comp_apply, continuationMap_apply]
-  simp only [continuationMap_apply, Matrix.mul_apply, Matrix.of_apply, Finset.op_sum,
-    Finset.sum_smul, Finset.smul_sum, op_mul, mul_smul]
+theorem continuationMap_matMul (F : Matrix P Q A) (G : Matrix Q S A) :
+    continuationMap R M (F * G) = (continuationMap R M G).comp (continuationMap R M F) := by
+  refine LinearMap.ext fun f ↦ funext fun z ↦ ?_
+  rw [LinearMap.comp_apply, continuationMap_apply (F * G), continuationMap_apply G]
+  simp only [continuationMap_apply F, Matrix.mul_apply, Finset.op_sum, Finset.sum_smul,
+    Finset.smul_sum, op_mul, mul_smul]
   exact Finset.sum_comm
 
 end MapMatrix

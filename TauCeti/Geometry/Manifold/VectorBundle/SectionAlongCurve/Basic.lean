@@ -20,6 +20,8 @@ reading.
 * `TauCeti.Manifold.sectionCoord`: the coordinate reading of a section along a curve.
 * `TauCeti.Manifold.differentiableWithinAt_sectionCoord`: a differentiability entry point for that
   reading within a parameter set.
+* `TauCeti.Manifold.differentiableWithinAt_sectionCoord_sum`: finite sums of sections with
+  differentiable readings have differentiable readings.
 * `TauCeti.Manifold.contDiffWithinAt_sectionCoord_iff`: the `C^n` coordinate characterization
   for a section along a `C^n` base curve.
 -/
@@ -66,6 +68,14 @@ theorem sectionCoord_add (W' : ∀ t, V (γ t)) (x : M) :
   funext t
   exact map_add _ _ _
 
+/-- Coordinate reading commutes with pointwise subtraction of sections along a curve. -/
+@[simp]
+theorem sectionCoord_sub (W' : ∀ t, V (γ t)) (x : M) :
+    sectionCoord (F := F) γ (fun t ↦ W t - W' t) x =
+      sectionCoord (F := F) γ W x - sectionCoord (F := F) γ W' x := by
+  funext t
+  exact map_sub _ _ _
+
 /-- Coordinate reading commutes with finite sums of sections along a curve. -/
 @[simp]
 theorem sectionCoord_sum {ι : Type*} (A : Finset ι) (U : ι → ∀ t, V (γ t)) (x : M) :
@@ -99,6 +109,15 @@ theorem sectionCoord_comp (φ : 𝕜 → 𝕜) (x : M) :
   simp only [sectionCoord_apply, Function.comp_apply]
 
 /-! ### Differentiability of the coordinate reading -/
+
+/-- A finite sum of sections along a curve whose coordinate readings are differentiable within
+`s` at `t` again has a coordinate reading differentiable within `s` at `t`. -/
+theorem differentiableWithinAt_sectionCoord_sum {ι : Type*} {A : Finset ι}
+    {U : ι → ∀ t, V (γ t)} {x : M} {s : Set 𝕜} {t : 𝕜}
+    (hU : ∀ i ∈ A, DifferentiableWithinAt 𝕜 (sectionCoord (F := F) γ (U i) x) s t) :
+    DifferentiableWithinAt 𝕜 (sectionCoord (F := F) γ (fun r ↦ ∑ i ∈ A, U i r) x) s t := by
+  rw [sectionCoord_sum]
+  exact DifferentiableWithinAt.fun_sum hU
 
 /-- Given a `C^n` base curve, a section along it is `C^n` as a map into the total space if
 and only if its coordinate reading in any trivialization containing the base point is `C^n`.
@@ -160,5 +179,24 @@ theorem differentiableAt_sectionCoord {x : M} {t : 𝕜} [ContMDiffVectorBundle 
     DifferentiableAt 𝕜 (sectionCoord (F := F) γ W x) t := by
   rw [← differentiableWithinAt_univ]
   exact differentiableWithinAt_sectionCoord γ W h.mdifferentiableWithinAt hx
+
+/-- Given a differentiable base curve, differentiability of a section along it is equivalent
+to differentiability of its reading in any bundle chart containing the current base point. -/
+theorem differentiableAt_sectionCoord_iff {x : M} {t : 𝕜}
+    [ContMDiffVectorBundle 1 F V I]
+    (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ t)
+    (hx : γ t ∈ (trivializationAt F V x).baseSet) :
+    DifferentiableAt 𝕜 (sectionCoord (F := F) γ W x) t ↔
+      MDifferentiableAt 𝓘(𝕜, 𝕜) (I.prod 𝓘(𝕜, F))
+        (fun r ↦ TotalSpace.mk' F (γ r) (W r)) t := by
+  refine ⟨fun h ↦ ?_, fun h ↦ differentiableAt_sectionCoord γ W h hx⟩
+  let e := trivializationAt F V x
+  rw [e.mdifferentiableAt_totalSpace_iff I
+    (fun r ↦ TotalSpace.mk' F (γ r) (W r)) (x₀ := t) ((e.coe_mem_source).2 hx)]
+  refine ⟨hγ, h.mdifferentiableAt.congr_of_eventuallyEq ?_⟩
+  have he : ∀ᶠ r in 𝓝 t, γ r ∈ e.baseSet :=
+    hγ.continuousAt.preimage_mem_nhds (e.open_baseSet.mem_nhds hx)
+  filter_upwards [he] with r hr
+  exact (e.continuousLinearMapAt_apply_of_mem 𝕜 hr (W r)).symm
 
 end TauCeti.Manifold

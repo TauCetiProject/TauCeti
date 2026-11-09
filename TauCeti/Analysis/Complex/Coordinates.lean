@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import TauCeti.LinearAlgebra.Complex.Determinant
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # Real coordinates of the complex plane
@@ -16,7 +17,11 @@ The real linear coordinate interchange is an involution with determinant `-1`, r
 the reversal of orientation. Any `v` has real coordinates in the real basis `u`, `r * u * I`,
 `u ≠ 0`, `r ≠ 0`, of radial and angular directions at the point `r * u`
 (`Complex.eq_re_mul_add_im_div_mul`). The real frame `(1, 0)`, `(i, 0)`, `(0, 1)` of `ℂ × ℝ` is
-linearly independent.
+linearly independent. A point `c + t * I` of a vertical line with `c ≠ 0` is nonzero.
+
+A rank-one map `L.smulRight w` built from a real functional `L` on `ℂ` splits along the real
+basis `1, I` as `L 1 • re ⊗ w + L I • im ⊗ w`
+(`ContinuousLinearMap.smulRight_eq_re_add_im`).
 -/
 
 public section
@@ -72,4 +77,24 @@ theorem linearIndependent_one_zero_I_zero_zero_one :
   · simpa using congrArg (fun x : ℂ × ℝ ↦ x.1.im) hg
   · simpa using congrArg Prod.snd hg
 
+/-- A point `c + t * I` of the vertical line `Re z = c` is nonzero as soon as `c` is.  Mathlib's
+`Complex.ne_zero_of_re_pos` covers only the positive-real-part case. -/
+theorem ofReal_add_mul_I_ne_zero {c : ℝ} (hc : c ≠ 0) (t : ℝ) : (c : ℂ) + t * I ≠ 0 :=
+  fun h ↦ hc (by simpa using congrArg Complex.re h)
+
 end Complex
+
+namespace ContinuousLinearMap
+
+/-- The rank-one map `L.smulRight w` determined by a real functional `L` on `ℂ` splits along the
+real basis `1, I` of `ℂ`. -/
+theorem smulRight_eq_re_add_im {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+    [IsTopologicalAddGroup F] [ContinuousSMul ℝ F] (L : ℂ →L[ℝ] ℝ) (w : F) :
+    L.smulRight w =
+      L 1 • Complex.reCLM.smulRight w + L Complex.I • Complex.imCLM.smulRight w := by
+  ext v
+  have hv := (L : ℂ →ₗ[ℝ] ℝ).apply_eq_re_smul_one_add_im_smul_I v
+  simp only [ContinuousLinearMap.coe_coe, smul_eq_mul] at hv
+  simp [hv, add_smul, smul_smul, mul_comm]
+
+end ContinuousLinearMap

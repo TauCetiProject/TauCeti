@@ -15,9 +15,10 @@ import Mathlib.Algebra.Field.Equiv
 
 /-! # Finite extensions of an abstract real closed field
 
-Odd-degree finite extensions of a real closed field are trivial. A field of
-characteristic different from two in which every element is a square has no quadratic
-extension. These are the degree reductions used by the Sylow argument in `Galois.lean`.
+Odd-degree field extensions of a real closed field are trivial. A field of characteristic
+different from two in which every element is a square has no quadratic extension; more
+generally, no commutative domain is two-dimensional over it. These are the degree reductions
+used by the Sylow argument in `Galois.lean`.
 
 ## References
 
@@ -34,14 +35,13 @@ namespace TauCeti.RealClosure
 open Polynomial Module
 
 variable {R E : Type*} [Field R] [IsRealClosed R] [Field E] [Algebra R E]
-    [FiniteDimensional R E]
 
-/-- An odd-degree finite extension of a real closed field is trivial. -/
+/-- An odd-degree extension of a real closed field is trivial. -/
 theorem finrank_eq_one_of_odd (h : Odd (finrank R E)) : finrank R E = 1 := by
+  have : FiniteDimensional R E := Module.finite_of_finrank_pos h.pos
   obtain ⟨x, hx⟩ := Field.exists_primitive_element R E
-  have hdeg := (Field.primitive_element_iff_minpoly_natDegree_eq R x).mp hx
-  obtain ⟨a, ha⟩ := IsRealClosed.exists_isRoot_of_odd_natDegree (hdeg ▸ h)
-  rw [← hdeg]
+  rw [← (Field.primitive_element_iff_minpoly_natDegree_eq R x).mp hx] at h ⊢
+  obtain ⟨a, ha⟩ := IsRealClosed.exists_isRoot_of_odd_natDegree h
   exact natDegree_eq_of_degree_eq_some
     (degree_eq_one_of_irreducible_of_root (minpoly.irreducible (IsIntegral.of_finite R x)) ha)
 
@@ -49,15 +49,18 @@ section Quadratic
 
 variable {K L : Type*} [Field K] [NeZero (2 : K)]
 
-/-- A square-closed field of characteristic different from two has no quadratic extension. -/
-theorem finrank_ne_two_of_forall_isSquare [Field L] [Algebra K L]
+/-- A square-closed field of characteristic different from two has no quadratic extension.
+More generally, no commutative domain is two-dimensional over it. -/
+theorem finrank_ne_two_of_forall_isSquare [CommRing L] [IsDomain L] [Algebra K L]
     (hsq : ∀ x : K, IsSquare x) : finrank K L ≠ 2 := by
   intro htwo
   have : Algebra.IsQuadraticExtension K L := ⟨htwo⟩
+  have : Module.Finite K L := Module.finite_of_finrank_eq_succ htwo
   obtain ⟨a, b, ⟨e⟩⟩ :=
     Algebra.IsQuadraticExtension.exists_algEquiv_quadraticAlgebra (R := K) (A := L)
   exact QuadraticAlgebra.not_isField_of_isSquare_discr (hsq _)
-    (e.symm.toRingEquiv.toMulEquiv.isField (Field.toIsField L))
+    (e.symm.toRingEquiv.toMulEquiv.isField <|
+      (Algebra.IsIntegral.isField_iff_isField (algebraMap K L).injective).mp (Field.toIsField K))
 
 end Quadratic
 

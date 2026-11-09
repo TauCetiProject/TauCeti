@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Renewal.Count
+public import TauCeti.Probability.Renewal.StrongLaw
 public import TauCeti.Probability.Distributions.Exponential.Basic
 public import TauCeti.Probability.Distributions.Gamma.Cdf
 public import TauCeti.Probability.Distributions.Gamma.Sum
@@ -19,7 +19,8 @@ public import TauCeti.Probability.Distributions.Poisson.Tail
 Let the increments `T 0, T 1, …` of a renewal process be independent with the exponential law of
 rate `r`. Then the `n`-th arrival time has the gamma (Erlang) law of shape `n` and rate `r`,
 and the count `N t` of arrivals in `[0, t]` has the Poisson law of mean `r * t`. Consequently the
-renewal function is linear, `𝔼[N t] = r * t`.
+renewal function is linear, `𝔼[N t] = r * t`. The long-run count per unit time converges
+almost surely to `r`; this last assertion needs only pairwise independence of the increments.
 
 The count law follows from the duality between gamma and Poisson laws. For `n ≥ 1`,
 `n ≤ N t` holds exactly when the `n`-th arrival is at most `t`, so `P(n ≤ N t)` is the gamma cdf
@@ -42,6 +43,8 @@ variable on a probability space.
 * `TauCeti.Probability.lintegral_renewalCount_of_expMeasure`,
   `TauCeti.Probability.integral_renewalCountNat_of_expMeasure` — the renewal function is
   `t ↦ r * t`.
+* `TauCeti.Probability.ae_tendsto_renewalCountNat_div_of_expMeasure` — the almost-sure
+  long-run arrival rate is `r`, along the full nonnegative real time axis.
 
 ## References
 
@@ -54,24 +57,33 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory Filter Set
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal Topology
 
 namespace TauCeti.Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {T : ℕ → Ω → ℝ≥0} {r : ℝ≥0}
 
+private lemma identDistrib_of_hasLaw_expMeasure
+    (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) (n : ℕ) :
+    IdentDistrib (T n) (T 0) P P := by
+  simpa only [Function.comp_def, Real.toNNReal_coe] using
+    ((hlaw n).identDistrib (hlaw 0)).comp measurable_real_toNNReal
+
+private lemma measure_eq_zero_lt_one_of_hasLaw_expMeasure
+    {X : Ω → ℝ≥0} (hlaw : HasLaw (fun ω ↦ (X ω : ℝ)) (expMeasure r) P) :
+    P {ω | X ω = 0} < 1 := by
+  refine (measure_mono_null (fun ω hω ↦ ?_)
+    (ae_iff.1 (ae_pos_of_hasLaw_expMeasure hlaw))).trans_lt zero_lt_one
+  simp_all
+
 /-- **Nonexplosion with exponential increments.** For independent exponential increments,
 almost surely the arrival times tend to infinity. -/
-theorem ae_tendsto_arrival_atTop_of_expMeasure (hT : ∀ n, Measurable (T n))
-    (hindep : iIndepFun T P)
+theorem ae_tendsto_arrival_atTop_of_expMeasure (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) :
     ∀ᵐ ω ∂P, Tendsto (fun n ↦ arrival T n ω) atTop atTop := by
   have := hindep.isProbabilityMeasure
-  refine ae_tendsto_arrival_atTop hT hindep (fun n ↦ ?_) ?_
-  · simpa [Function.comp_def] using ((hlaw n).identDistrib (hlaw 0)).comp measurable_real_toNNReal
-  · refine (measure_mono_null (fun ω hω ↦ ?_)
-      (ae_iff.1 (ae_pos_of_hasLaw_expMeasure (hlaw 0)))).trans_lt zero_lt_one
-    simp_all
+  exact ae_tendsto_arrival_atTop hindep (identDistrib_of_hasLaw_expMeasure hlaw)
+    (measure_eq_zero_lt_one_of_hasLaw_expMeasure (hlaw 0))
 
 /-- **Erlang arrival times.** For independent exponential increments of rate `r`, the `n`-th
 arrival time has the gamma law of shape `n` and rate `r` whenever `n ≠ 0`. -/
@@ -89,15 +101,14 @@ theorem hasLaw_arrival_gammaMeasure (hindep : iIndepFun T P)
 
 /-- For independent exponential increments of rate `r`, the count at time `t` reaches `n`
 with probability `P(n, r * t)`, the regularized lower incomplete gamma function. -/
-theorem measure_le_renewalCountNat_of_expMeasure (hT : ∀ n, Measurable (T n))
-    (hindep : iIndepFun T P)
+theorem measure_le_renewalCountNat_of_expMeasure (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) (t : ℝ≥0) {n : ℕ}
     (hn : n ≠ 0) :
     P {ω | n ≤ renewalCountNat T t ω} = ENNReal.ofReal (regularizedGamma n (r * t)) := by
   have := hindep.isProbabilityMeasure
   have hr := pos_of_hasLaw_expMeasure (hlaw 0)
   have hae : {ω | n ≤ renewalCountNat T t ω} =ᵐ[P] {ω | (arrival T n ω : ℝ) ≤ t} := by
-    filter_upwards [ae_tendsto_arrival_atTop_of_expMeasure hT hindep hlaw] with ω hω
+    filter_upwards [ae_tendsto_arrival_atTop_of_expMeasure hindep hlaw] with ω hω
     simp [le_renewalCountNat_iff hω]
   rw [measure_congr hae, ← ofReal_measureReal,
     measureReal_le_of_hasLaw_gammaMeasure (by exact_mod_cast Nat.pos_of_ne_zero hn)
@@ -121,7 +132,7 @@ theorem hasLaw_renewalCountNat_poissonMeasure (hT : ∀ n, Measurable (T n))
       simp
     rw [← ofReal_measureReal (μ := poissonMeasure (r * t)), htail,
       poissonMeasure_tail_eq_regularizedGamma, ← htail, NNReal.coe_mul, ← Nat.cast_succ,
-      ← measure_le_renewalCountNat_of_expMeasure hT hindep hlaw t m.succ_ne_zero]
+      ← measure_le_renewalCountNat_of_expMeasure hindep hlaw t m.succ_ne_zero]
     simp [preimage]
 
 /-- For independent exponential increments of rate `r`, the count at time `t` equals `n` with
@@ -142,7 +153,7 @@ theorem lintegral_renewalCount_of_expMeasure (hT : ∀ n, Measurable (T n))
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) (t : ℝ≥0) :
     ∫⁻ ω, renewalCount T t ω ∂P = r * t := by
   have hae : ∀ᵐ ω ∂P, (renewalCountNat T t ω : ℝ≥0∞) = renewalCount T t ω := by
-    filter_upwards [ae_tendsto_arrival_atTop_of_expMeasure hT hindep hlaw] with ω hω
+    filter_upwards [ae_tendsto_arrival_atTop_of_expMeasure hindep hlaw] with ω hω
     exact natCast_renewalCountNat hω t
   rw [← lintegral_congr_ae hae,
     (hasLaw_renewalCountNat_poissonMeasure hT hindep hlaw t).lintegral_comp
@@ -161,5 +172,25 @@ theorem integral_renewalCountNat_of_expMeasure (hT : ∀ n, Measurable (T n))
       .of_discrete,
     integral_natCast_poissonMeasure]
   simp
+
+/-- **The long-run rate of exponential renewals.** For pairwise independent exponential
+increments of rate `r`, the count per unit time converges almost surely to `r`. The convergence
+holds along all nonnegative real times on one event of probability one, not just along integer
+times. The law hypotheses supply a.e. measurability and force `r > 0`. -/
+theorem ae_tendsto_renewalCountNat_div_of_expMeasure [IsProbabilityMeasure P]
+    (hindep : Pairwise fun i j ↦ IndepFun (T i) (T j) P)
+    (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) :
+    ∀ᵐ ω ∂P, Tendsto (fun t : ℝ≥0 ↦ (renewalCountNat T t ω : ℝ) / (t : ℝ)) atTop
+      (𝓝 (r : ℝ)) := by
+  have hr : 0 < (r : ℝ) := by exact_mod_cast pos_of_hasLaw_expMeasure (hlaw 0)
+  have hmean : (∫⁻ ω, (T 0 ω : ℝ≥0∞) ∂P).toReal = (r : ℝ)⁻¹ := by
+    have h := integral_eq_lintegral_of_nonneg_ae
+      (Eventually.of_forall fun ω ↦ (T 0 ω).coe_nonneg)
+      (hlaw 0).aemeasurable.aestronglyMeasurable
+    rw [(hlaw 0).integral_eq, integral_id_expMeasure hr] at h
+    simpa only [ENNReal.ofReal_coe_nnreal] using h.symm
+  simpa only [ENNReal.toReal_inv, hmean, inv_inv] using
+    ae_tendsto_renewalCountNat_div hindep (identDistrib_of_hasLaw_expMeasure hlaw)
+      (measure_eq_zero_lt_one_of_hasLaw_expMeasure (hlaw 0))
 
 end TauCeti.Probability

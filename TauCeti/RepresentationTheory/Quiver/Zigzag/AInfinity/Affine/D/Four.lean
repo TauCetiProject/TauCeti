@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Backtrack
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.MatrixRepresentation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal
 
 /-!
@@ -399,14 +400,13 @@ theorem not_exists_hochschildDifferential_eq_obstruction_liuWangAffineD4Walk [No
     (by decide) (v := 1) (by decide)
 
 /-- **The quartic Hochschild cohomology `HH^{4, -2}` of the affine `D₄` zigzag algebra is
-nonzero**, over every nontrivial commutative ring: the centre has the four distinct neighbours
-`0`, `2`, `3` and `4`. -/
+nonzero**, over every nontrivial commutative ring: this is the case `G = D₄` of
+`TauCeti.not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained`. -/
 theorem not_hochschildVanishesAt_four_affineD4 [Nontrivial k] :
     ¬(zigzagStrictAInfinityAlgebra k
       (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide))).HochschildVanishesAt
         ⟨4, by norm_num⟩ :=
-  not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra (δ := affineD4LeafDart)
-    (by decide) (v := 1) (by decide)
+  not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained le_rfl .rfl
 
 /-- **The loop operation of Liu--Wang's walk alone gives a non-formal deformation**, over every
 nontrivial commutative ring in which `2` is invertible: the loop deformation with coefficient one

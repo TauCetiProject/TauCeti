@@ -24,7 +24,7 @@ for Hazewinkel's functional equation.
 
 ## Main results
 
-* `MonoidHom.map_neg_one_eq_one_or_eq_neg_one`: the image of `-1` is `1` or `-1`.
+* `TauCeti.map_neg_one_eq_one_or_eq_neg_one`: the image of `-1` is `1` or `-1`.
 * `Set.MapsTo.natCast_pow_mul_apply_mem`: if a ring homomorphism `f` maps `A` into `B`, then
   `n ^ k * x ∈ A` implies `n ^ k * f x ∈ B`.
 * `Set.MapsTo.ringHom_pow`: if a ring endomorphism `f` maps `A` into itself, so does `f ^ n`.
@@ -32,17 +32,17 @@ for Hazewinkel's functional equation.
 
 public section
 
-namespace MonoidHom
+namespace TauCeti
 
 /-- A multiplicative map into a ring without zero divisors sends `-1` to `1` or `-1`.
 Only distributive negation and a multiplicative identity are required in the source; the target
 ring need not be associative. -/
-theorem map_neg_one_eq_one_or_eq_neg_one {M R : Type*} [MulOneClass M] [HasDistribNeg M]
-    [NonAssocRing R] [NoZeroDivisors R] (f : M →* R) :
+theorem map_neg_one_eq_one_or_eq_neg_one {F M R : Type*} [MulOneClass M] [HasDistribNeg M]
+    [NonAssocRing R] [NoZeroDivisors R] [FunLike F M R] [MonoidHomClass F M R] (f : F) :
     f (-1) = 1 ∨ f (-1) = -1 :=
   mul_self_eq_one_iff.mp (by rw [← map_mul]; simp)
 
-end MonoidHom
+end TauCeti
 
 namespace Set.MapsTo
 

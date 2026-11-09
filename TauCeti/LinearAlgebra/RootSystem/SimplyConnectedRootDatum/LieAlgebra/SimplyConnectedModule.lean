@@ -7,11 +7,11 @@ module
 
 public import Mathlib.Algebra.Lie.DirectSum
 public import Mathlib.LinearAlgebra.DirectSum.Finite
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Basis
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Fundamental.Basic
 -- Non-public: these supply the inputs of the proofs, never the vocabulary of a statement.
 import TauCeti.Algebra.Lie.DirectSum
 import TauCeti.Algebra.Lie.Weights.Faithful
+import TauCeti.RepresentationTheory.Lie.AdNilpotent
 
 /-!
 # The full-weight module of the pinned rational Lie algebra
@@ -49,8 +49,8 @@ This file proves the properties of `V_sc(t)` that make it suitable for this:
   `V_sc(t)`.
 * `TauCeti.DynkinType.isNilpotent_toEnd_scModule_of_mem_rootSpace`: every root vector acts
   nilpotently on `V_sc(t)`.
-* `TauCeti.DynkinType.isNilpotent_representation_scModule_rootGenerator`: the numbered raising and
-  lowering generators act nilpotently on `V_sc(t)`.
+* `TauCeti.DynkinType.isNilpotent_representation_scModule_rootGenerator`: the compact full-weight
+  specialization used by the numbered root-subgroup API.
 
 ## References
 
@@ -118,22 +118,14 @@ theorem isNilpotent_toEnd_scModule_of_mem_rootSpace {x : t.lieAlgebra ht}
   DirectSum.isNilpotent_toEnd_iff.mpr fun _ => isNilpotent_toEnd_of_mem_rootSpace _ _ hχ hx
 
 open _root_.TauCeti.UniversalEnvelopingAlgebra in
-/-- **The numbered raising and lowering generators act nilpotently on `V_sc(t)`**, in the shape the
-Kostant root subgroups, elementary groups and group schemes take this hypothesis: the generators
-`eᵢ` and `fᵢ` are root vectors of `±αᵢ`
-(`TauCeti.DynkinType.isNilpotent_toEnd_scModule_of_mem_rootSpace`). -/
+/-- The numbered raising and lowering generators act nilpotently on the full-weight module. -/
+-- Using the general theorem directly at its consumers makes simpNF on
+-- scElementaryDiagramAut_kostantRootSubgroupParam exceed the default heartbeat limit.
 theorem isNilpotent_representation_scModule_rootGenerator (i : Fin t.rank ⊕ Fin t.rank) :
     IsNilpotent (representation ℚ (t.lieAlgebra ht) (t.scModule ht)
       (_root_.UniversalEnvelopingAlgebra.ι ℚ
-        (LieAlgebra.Basis.rootGenerator (t.lieBasis ht) i))) := by
-  have hne (j : Fin t.rank) : ⇑((t.lieBasis ht).baseSupp j) ≠ 0 := fun h =>
-    (t.lieBasis ht).linearIndependent_baseSupp.ne_zero j ((LinearMap.coe_zero_iff _).mp h)
-  rw [representation_ι]
-  rcases i with j | j
-  · exact t.isNilpotent_toEnd_scModule_of_mem_rootSpace ht (hne j)
-      (by rw [LieAlgebra.Basis.rootGenerator_inl]; exact lieBasis_e_mem_rootSpace _ j)
-  · exact t.isNilpotent_toEnd_scModule_of_mem_rootSpace ht (neg_ne_zero.mpr (hne j))
-      (by rw [LieAlgebra.Basis.rootGenerator_inr]; exact lieBasis_f_mem_rootSpace _ j)
+        (LieAlgebra.Basis.rootGenerator (t.lieBasis ht) i))) :=
+  t.isNilpotent_representation_rootGenerator ht i
 
 /-- **The full-weight module is faithful**: only the zero element of the pinned Lie algebra acts
 by zero on `V_sc(t)`. -/
@@ -152,6 +144,7 @@ instance instIsFaithfulScModule : IsFaithful ℚ (t.lieAlgebra ht) (t.scModule h
     rw [← (t.fundamentalWeight ht).sum_repr f]
     simp only [LinearMap.sum_apply, LinearMap.smul_apply, hϖ, smul_zero, Finset.sum_const_zero]
   exact isFaithful_of_isFaithful_cartanSubalgebra (H := t.cartanSubalgebra ht)
+
 
 end
 

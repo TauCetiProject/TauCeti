@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MixedImage
 import Mathlib.Algebra.FiniteSupport.Basic
 import Mathlib.NumberTheory.NumberField.ProductFormula
 import TauCeti.Algebra.Module.ZLattice.Basic
+import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MulVolume
 import TauCeti.NumberTheory.NumberField.FinitePlace.Ideal
 import TauCeti.RingTheory.DedekindDomain.PseudoBasis
@@ -125,11 +126,8 @@ theorem covolume_mixedImage_of_pseudoBasis [DecidableEq ι] {Λ : Submodule (�
   have hdetb : (Matrix.of ⇑b).det ≠ 0 := by
     rw [← Pi.basisFun_det_apply]
     exact ((Pi.basisFun K ι).isUnit_det b).ne_zero
-  have hdet : |LinearMap.det φ| = |(Algebra.norm ℚ (Matrix.of ⇑b).det : ℝ)| := by
-    have hA : A = ((Matrix.of ⇑b).map (mixedEmbedding K))ᵀ := rfl
-    rw [LinearMap.det_restrictScalars, LinearMap.det_toLin', hA, Matrix.det_transpose,
-      ← RingHom.mapMatrix_apply, ← RingHom.map_det, abs_algebraNorm, norm_eq_norm]
-    simp
+  have hdet : |LinearMap.det φ| = |(Algebra.norm ℚ (Matrix.of ⇑b).det : ℝ)| :=
+    mixedEmbedding.abs_det_changeOfVariables ⇑b
   have hdet0 : IsUnit (LinearMap.det φ) := by
     rw [isUnit_iff_ne_zero, ← abs_ne_zero, hdet, abs_ne_zero, Rat.cast_ne_zero]
     exact (Algebra.norm_ne_zero_iff).mpr hdetb
@@ -141,19 +139,8 @@ theorem covolume_mixedImage_of_pseudoBasis [DecidableEq ι] {Λ : Submodule (�
   -- The `ℤ`-span of the product basis is the product of the coefficient lattices.
   have hP (z : ι → mixedSpace K) : z ∈ span ℤ (Set.range P) ↔
       ∃ c : ι → K, (∀ i, c i ∈ IsLocalization.coeSubmodule K (J i)) ∧
-        (fun i ↦ mixedEmbedding K (c i)) = z := by
-    have hU (i : ι) (x : mixedSpace K) :
-        (∀ k, (fractionalIdealLatticeBasis K (U i)).repr x k ∈ Set.range (algebraMap ℤ ℝ)) ↔
-          ∃ c ∈ IsLocalization.coeSubmodule K (J i), mixedEmbedding K c = x := by
-      rw [← Basis.mem_span_iff_repr_mem, mem_span_fractionalIdealLatticeBasis]
-      simp [U]
-    rw [P.mem_span_iff_repr_mem ℤ]
-    simp only [P, Pi.basis_repr, Sigma.forall, hU]
-    refine ⟨fun h ↦ ?_, ?_⟩
-    · choose c hc hcz using h
-      exact ⟨c, hc, funext hcz⟩
-    · rintro ⟨c, hc, rfl⟩ i
-      exact ⟨c i, hc i, rfl⟩
+        (fun i ↦ mixedEmbedding K (c i)) = z :=
+    mem_span_pi_fractionalIdealLatticeBasis (J := U) z
   -- The mixed image is the image of that product under the change of variables.
   have hL : Λ.mixedImage = span ℤ (Set.range (P.map (LinearMap.equivOfIsUnitDet hdet0))) := by
     have hrange : Set.range (P.map (LinearMap.equivOfIsUnitDet hdet0)) =
@@ -234,25 +221,33 @@ theorem isGreatest_apply_det_of_pseudoBasis [DecidableEq ι]
     dsimp only
     rw [hmat, Matrix.det_mul, map_mul, mul_comm]
     gcongr
-    rw [Matrix.det_apply]
-    obtain ⟨σ, -, hσ⟩ := IsNonarchimedean.finset_image_add_of_nonempty _
-      (fun y z ↦ FinitePlace.add_le v y z) (Finset.univ_nonempty (α := Equiv.Perm ι))
-    refine hσ.trans ?_
-    have hsign : ∀ y : K, v (Equiv.Perm.sign σ • y) = v y := fun y ↦ by
-      rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with h | h <;> simp [h]
-    rw [hsign, map_prod]
-    gcongr with i
-    exact hle i ((hΛ _).1 (hx (σ i) (Set.mem_univ _)) i)
+    exact Matrix.abv_det_le_prod_of_le' _ v.add_le fun k i ↦
+      hle i ((hΛ _).1 (hx k (Set.mem_univ _)) i)
 
 /-- **The largest local determinant of an `𝓞 K`-module.** For a finitely generated `𝓞 K`-module
-`Λ` spanning `ι → K` and a finite place `v`, the values of `v` on the determinants of `card ι`
-vectors of `Λ` have a largest element. -/
+`Λ` and a finite place `v`, the values of `v` on the determinants of `card ι` vectors of `Λ` have a
+largest element. If `Λ` does not span `ι → K`, all these determinants vanish. -/
 theorem exists_isGreatest_apply_det [DecidableEq ι] {Λ : Submodule (𝓞 K) (ι → K)} (hΛ : Λ.FG)
-    (hspan : span K (Λ : Set (ι → K)) = ⊤) (v : FinitePlace K) :
+    (v : FinitePlace K) :
     ∃ B, IsGreatest
       ((fun x : ι → ι → K ↦ v (Matrix.of x).det) '' Set.univ.pi fun _ ↦ (Λ : Set (ι → K))) B := by
-  obtain ⟨b, J, hJ, hmem⟩ := exists_pseudoBasis (K := K) (ι := ι) Λ hΛ hspan (by simp)
-  exact ⟨_, isGreatest_apply_det_of_pseudoBasis b hJ hmem v⟩
+  by_cases hspan : span K (Λ : Set (ι → K)) = ⊤
+  · obtain ⟨b, J, hJ, hmem⟩ := exists_pseudoBasis (K := K) (ι := ι) Λ hΛ hspan (by simp)
+    exact ⟨_, isGreatest_apply_det_of_pseudoBasis b hJ hmem v⟩
+  · have : Nonempty ι := by
+      by_contra h
+      rw [not_nonempty_iff] at h
+      exact hspan (Subsingleton.elim _ _)
+    refine ⟨0, ⟨0, fun _ _ ↦ Λ.zero_mem, by simp⟩, ?_⟩
+    rintro _ ⟨x, hx, rfl⟩
+    have hdet : (Matrix.of x).det = 0 := by
+      by_contra hne
+      refine hspan (eq_top_iff.2 ?_)
+      have hli := (Matrix.linearIndependent_row_iff_isUnit (A := Matrix.of x)).2
+        ((Matrix.isUnit_iff_isUnit_det _).2 (isUnit_iff_ne_zero.2 hne))
+      rw [← hli.span_eq_top_of_card_eq_finrank' (by simp)]
+      exact Submodule.span_mono (by rintro _ ⟨i, rfl⟩; exact hx i (Set.mem_univ _))
+    simp [hdet]
 
 open scoped Classical in
 /-- **The covolume of an `𝓞 K`-module, read at the finite places.** Let `Λ` be a finitely

@@ -154,6 +154,18 @@ theorem cycleWord_next (j : Fin n) :
   rw [cycleWord_def, cycleWord_def, cycleLength_next, ← partialCycleWord_succ',
     partialCycleWord_succ, next_iterate_cycleLength]
 
+/-- Cycle words based at vertices on the same vertex cycle are conjugate in the free side
+group. In particular, imposing a cycle relation at one vertex imposes it throughout the cycle. -/
+theorem isConj_cycleWord_of_mem_cycle {j i : Fin n} (hi : i ∈ sigma.cycle j) :
+    IsConj (sigma.cycleWord j) (sigma.cycleWord i) := by
+  obtain ⟨m, rfl⟩ := (sigma.mem_cycle_iff j i).mp hi
+  clear hi
+  induction m with
+  | zero => exact .refl _
+  | succ m ih =>
+    rw [Function.iterate_succ_apply', cycleWord_next]
+    exact ih.trans (isConj_iff.mpr ⟨_, rfl⟩)
+
 /-- The `t`-th power of a cycle word is a relation exactly when the order of the cycle
 transformation divides `t`. -/
 theorem cycleWord_pow_mem_ker_iff (j : Fin n) (t : ℕ) :

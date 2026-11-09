@@ -393,6 +393,15 @@ theorem isBipartite_graph_E8 : E8.graph.IsBipartite :=
       simp only [nodes_E8]
       decide)⟩
 
+/-- The affine diagram `Dₙ` is bipartite: the path `0 - 1 - ⋯ - (n - 2)` is coloured by parity,
+and the leaves `n - 1` at node `1` and `n` at node `n - 3` take the other colour. -/
+theorem isBipartite_graph_D {n : ℕ} (hn : 4 ≤ n) : (D n).graph.IsBipartite := by
+  refine ⟨.mk (fun i ↦ ⟨if (i : ℕ) ≤ n - 2 then (i : ℕ) % 2 else if (i : ℕ) = n - 1 then 0
+    else n % 2, by split_ifs <;> omega⟩) fun {i j} h ↦ ?_⟩
+  have hij := (graph_D_adj hn (i := i) (j := j)).1 h
+  simp only [ne_eq, Fin.mk.injEq]
+  split_ifs <;> omega
+
 /-! ## The generalized Cartan matrix -/
 
 /-- The generalized Cartan matrix of an affine simply-laced diagram: `2I - A` for the adjacency
@@ -467,6 +476,15 @@ lemma cartanMatrix_apply_of_not_adj {t : AffineDynkinType} {i j : Fin t.nodes} (
     rw [graph_A, SimpleGraph.cycleGraph_two_eq_top] at h
     exact (h ((SimpleGraph.top_adj i j).2 hij)).elim
   · simp [cartanMatrix_apply ht, hij, h]
+
+open scoped Classical in
+/-- The affine `E₆` Cartan matrix entries, with the conditional indexed by `Fin 7`: the Cartan API
+is indexed by `Fin E6.nodes`, whose implicit decidability instance is opaque outside its
+module, so adjacency is decided classically. -/
+lemma cartanMatrix_E6_apply (i j : Fin 7) : E6.cartanMatrix i j =
+    if i = j then 2 else if E6.graph.Adj i j then -1 else 0 := by
+  convert cartanMatrix_apply isGraphical_E6 i j using 1
+  split_ifs <;> first | rfl | contradiction
 
 /-- The generalized Cartan matrix of an affine simply-laced diagram is symmetric, `A₁` included:
 away from `A₁` the matrix is `2I - A` and an adjacency matrix is symmetric, while at `A₁` the

@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import Mathlib.AlgebraicGeometry.Group.Affine
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.Localization
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.EpiMono
 public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 import TauCeti.AlgebraicGeometry.AffineScheme
@@ -24,6 +25,12 @@ The same surjectivity holds over every affine open of an arbitrary scheme.
 Consequently, global sections preserve short exact sequences whose middle and right terms are
 quasicoherent. This is the affine exactness step used in Serre's affine acyclicity theorem; see
 Hartshorne, *Algebraic Geometry*, Chapter III, Theorem 3.5.
+
+Global sections also detect isomorphisms: on an affine scheme, a morphism of quasicoherent
+modules that is bijective on global sections is an isomorphism, and so is a quasicoherent
+submodule containing every global section. Global sections are those on the affine chart
+`Spec Γ(X, ⊤) ⟶ X`, an isomorphism, and on a spectrum they are the inverse of the tilde
+equivalence (Stacks, Lemma 26.7.5, Tag 01I7).
 
 The file also records the base-ring action on affine global sections and extensionality of
 sections by restriction to basic opens.
@@ -179,6 +186,48 @@ lemma Scheme.Modules.section_ext_basicOpen {M : (Spec A).Modules} {U : (Spec A).
   obtain ⟨_, ⟨_, ⟨f, rfl⟩, rfl⟩, hxf, hfU : PrimeSpectrum.basicOpen f ≤ U⟩ :=
     PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hx U.2
   exact ⟨_, hfU, hxf, h f hfU⟩
+
+/-- On an affine scheme, a morphism of quasicoherent modules that is bijective on global
+sections is an isomorphism. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_of_bijective_sectionsFunctor_map_top
+    {X : Scheme.{u}} [IsAffine X] {M N : X.Modules} [M.IsQuasicoherent] [N.IsQuasicoherent]
+    (f : M ⟶ N) (hf : Function.Bijective ((Scheme.Modules.sectionsFunctor ⊤).map f).hom) :
+    IsIso f := by
+  let hU := isAffineOpen_top X
+  have := hU.isOpenImmersion_fromSpec
+  have : IsIso ((Scheme.Modules.sectionsFunctor ⊤).map f) :=
+    (ConcreteCategory.isIso_iff_bijective _).mpr hf
+  have : IsIso (moduleSpecΓFunctor.map ((Scheme.Modules.restrictFunctor hU.fromSpec).map f)) :=
+    (NatIso.isIso_map_iff hU.restrictFromSpecCompModuleSpecΓFunctorIso f).mpr this
+  -- On the spectrum, global sections of quasicoherent modules are the inverse of the tilde
+  -- equivalence, which reflects isomorphisms.
+  let P := SheafOfModules.isQuasicoherent (Spec Γ(X, ⊤)).ringCatSheaf
+  have hM : P ((Scheme.Modules.restrictFunctor hU.fromSpec).obj M) :=
+    Scheme.Modules.isQuasicoherent_restrictFunctor _ _
+  have hN : P ((Scheme.Modules.restrictFunctor hU.fromSpec).obj N) :=
+    Scheme.Modules.isQuasicoherent_restrictFunctor _ _
+  let g : (⟨_, hM⟩ : P.FullSubcategory) ⟶ ⟨_, hN⟩ :=
+    ObjectProperty.homMk ((Scheme.Modules.restrictFunctor hU.fromSpec).map f)
+  have : IsIso ((tildeEquiv (R := Γ(X, ⊤))).inverse.map g) := by assumption
+  have : IsIso g := isIso_of_reflects_iso g (tildeEquiv (R := Γ(X, ⊤))).inverse
+  have : IsIso ((Scheme.Modules.restrictFunctor hU.fromSpec).map f) :=
+    inferInstanceAs (IsIso (P.ι.map g))
+  have : IsIso hU.fromSpec := by rw [IsAffineOpen.fromSpec_top]; infer_instance
+  exact Scheme.Modules.isIso_of_isIso_restrictFunctor_map hU.fromSpec f
+
+/-- On an affine scheme, a quasicoherent submodule of a quasicoherent module `N` containing every
+global section of `N` is all of `N`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_of_mono_of_surjective_sectionsFunctor_map_top
+    {X : Scheme.{u}} [IsAffine X] {M N : X.Modules} [M.IsQuasicoherent] [N.IsQuasicoherent]
+    (i : M ⟶ N) [Mono i]
+    (hi : Function.Surjective ((Scheme.Modules.sectionsFunctor ⊤).map i).hom) : IsIso i := by
+  -- Evaluation of sheaves of modules preserves limits, hence monomorphisms. Its instances are
+  -- stated for `SheafOfModules X.ringCatSheaf`, which instance search does not unfold
+  -- `X.Modules` to.
+  have : Mono (C := SheafOfModules X.ringCatSheaf) i := inferInstanceAs (Mono (C := X.Modules) i)
+  have := (SheafOfModules.evaluation X.ringCatSheaf (Opposite.op ⊤)).map_mono i
+  exact Scheme.Modules.isIso_of_bijective_sectionsFunctor_map_top i
+    ⟨(ModuleCat.mono_iff_injective _).mp this, hi⟩
 
 end AlgebraicGeometry
 

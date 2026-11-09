@@ -14,7 +14,8 @@ import TauCeti.SetTheory.Descriptive.PerfectSet
 These examples exercise the perfect set theorem for analytic sets on concrete spaces:
 
 * the projection to `ℝ` of a closed subset of `ℝ × (ℕ → ℕ)`, an analytic set that need not be
-  Borel, contains a Cantor copy and has `𝔠` points as soon as it is uncountable;
+  Borel, contains a Cantor copy and has `𝔠` points as soon as it is uncountable, and its pairs of
+  distinct points form an analytic subset of `ℝ × ℝ`;
 * the closed equivalence relation `|x| = |y|` on `ℝ`, the kernel of the absolute value, has a
   Cantor antichain.
 -/
@@ -28,6 +29,10 @@ example {C : Set (ℝ × (ℕ → ℕ))} (hC : IsClosed C) (hunc : ¬(Prod.fst '
     #(Prod.fst '' C) = 𝔠 :=
   have hs : AnalyticSet (Prod.fst '' C) := hC.analyticSet.image_of_continuous continuous_fst
   ⟨hs.exists_nat_bool_injection_of_not_countable hunc, hs.mk_eq_continuum_of_not_countable hunc⟩
+
+-- The pairs of distinct points of such a projection form an analytic subset of `ℝ × ℝ`.
+example {C : Set (ℝ × (ℕ → ℕ))} (hC : IsClosed C) : AnalyticSet (Prod.fst '' C).offDiag :=
+  (hC.analyticSet.image_of_continuous continuous_fst).offDiag
 
 -- The relation `|x| = |y|` on `ℝ` has a Cantor antichain: the range `[0, ∞)` of the absolute
 -- value is uncountable.

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Module
-public import Mathlib.Algebra.Order.Ring.Defs
+public import Mathlib.Algebra.Order.Module.Defs
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 
@@ -38,6 +38,9 @@ eigenvalues.
   against a nonnegative antitone sequence give at most the sum of its first `k` terms.
 * `TauCeti.sum_range_mul_le_sum_range_of_sum_eq`: the same for weights of total mass exactly `k`,
   against an antitone sequence of any sign.
+* `TauCeti.sum_range_eq_zero_of_sum_smul_eq_zero`: the equality case against a strictly decreasing
+  weight; if `d` has nonnegative proper partial sums, vanishing total, and vanishing weighted sum,
+  then all its partial sums vanish.
 -/
 
 public section
@@ -111,5 +114,32 @@ theorem sum_range_mul_le_sum_range_of_sum_eq {w c : ℕ → R} {N k : ℕ} (hk :
   have h := sum_range_mul_le_sum_range_of_sum_le (w := fun i ↦ w i - w (N - 1)) hk hc0 hc1
     hck.le (fun i hi ↦ sub_le_sub_right (hw i hi) _) (by simp)
   simpa [sub_mul, sum_sub_distrib, ← mul_sum, hck, Nat.cast_comm] using h
+
+/-- **Equality case of Abel's inequality against a strictly decreasing weight.** If every proper
+initial sum of `d` is nonnegative, the total sum of `d` over the first `N` indices vanishes, `w` is
+strictly decreasing on the first `N` indices, and `∑_{i < N} w i • d i = 0`, then every initial
+sum of `d` up to `N` vanishes. The sequence takes values in an ordered module, and positive
+scalars act strictly monotonically; no multiplication on the target is required. -/
+theorem sum_range_eq_zero_of_sum_smul_eq_zero {R M : Type*} [Ring R] [PartialOrder R]
+    [IsOrderedAddMonoid R] [AddCommGroup M] [PartialOrder M] [IsOrderedAddMonoid M]
+    [Module R M] [PosSMulStrictMono R M] {d : ℕ → M} {w : ℕ → R} {N : ℕ}
+    (hd : ∀ k < N, 0 ≤ ∑ i ∈ range k, d i) (hdN : ∑ i ∈ range N, d i = 0)
+    (hw : ∀ i, i + 1 < N → w (i + 1) < w i) (hwd : ∑ i ∈ range N, w i • d i = 0) :
+    ∀ k ≤ N, ∑ i ∈ range k, d i = 0 := by
+  have hterms : ∀ k ∈ range (N - 1), 0 ≤ (w k - w (k + 1)) • ∑ i ∈ range (k + 1), d i :=
+    fun k hk ↦ smul_nonneg (sub_nonneg.mpr (hw k (by grind)).le) (hd _ (by grind))
+  have hsum : ∑ k ∈ range (N - 1), (w k - w (k + 1)) • ∑ i ∈ range (k + 1), d i = 0 := by
+    have h := sum_range_by_parts w d N
+    simp only [hdN, smul_zero, zero_sub, hwd, zero_eq_neg] at h
+    rw [← neg_eq_zero, ← sum_neg_distrib, ← h]
+    exact sum_congr rfl fun k _ ↦ by rw [← neg_smul, neg_sub]
+  intro k hk
+  rcases hk.eq_or_lt with rfl | hkN
+  · exact hdN
+  rcases k with _ | k
+  · simp
+  have hterm := (sum_eq_zero_iff_of_nonneg hterms).mp hsum k (mem_range.mpr (by omega))
+  exact ((hd _ hkN).eq_or_lt.resolve_right fun h ↦
+    (smul_pos (sub_pos.mpr (hw k hkN)) h).ne' hterm).symm
 
 end TauCeti

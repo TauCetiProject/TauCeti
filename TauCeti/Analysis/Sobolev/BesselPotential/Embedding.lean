@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
 import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 import Mathlib.Analysis.Normed.Operator.Banach
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
@@ -48,6 +49,8 @@ spaces.
 
 * `TemperedDistribution.MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq`: an `L²` function in
   `H^s`, `2s > n`, agrees almost everywhere with a continuous function vanishing at infinity.
+* `TemperedDistribution.tendsto_cocompact_of_mem_realSobolevFunctions`: a continuous real
+  function in `H^s`, `2s > n`, tends to zero at infinity.
 * `TauCeti.Wkp.toZeroAtInfty`: the Sobolev embedding `W^{k,2}(ℝⁿ) →L[ℝ] C₀(ℝⁿ)` for `2k > n`.
 * `TauCeti.Wkp.value_ae_eq_toZeroAtInfty`, `TauCeti.Wkp.toZeroAtInfty_eq_iff`: the embedding sends
   a Sobolev function to its unique continuous representative.
@@ -94,16 +97,36 @@ theorem MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq {s : ℝ} (hs : finrank
         (by simpa only [innerₗ_apply_apply] using continuous_inner) hint
       zero_at_infty' := hneg ▸ tendsto_integral_exp_inner_smul_cocompact _ }
   -- Fourier inversion on `𝓢'` identifies `u` with `𝓕⁻ v`.
-  have hu' : (u : 𝓢'(E, F)) = 𝓕⁻ (v : 𝓢'(E, F)) := by
-    rw [← hv]
-    exact (FourierTransform.fourierInv_fourier_eq _).symm
-  refine ⟨g, Lp.ae_eq_of_toTemperedDistribution_apply_eq u
-    g.continuous.locallyIntegrable fun φ => ?_⟩
-  rw [hu', Lp.fourierInv_toTemperedDistribution_apply, ZeroAtInftyContinuousMap.coe_mk]
+  refine ⟨g, ?_⟩
+  rw [ZeroAtInftyContinuousMap.coe_mk]
+  exact Lp.ae_eq_fourierInv_of_fourier_eq hv
+
+/-- **Continuous Sobolev functions vanish at infinity.** A continuous real function in `H^s`,
+`s > dim E / 2`, tends to zero at infinity: it agrees almost everywhere, hence everywhere, with
+the continuous representative given by `MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq`. -/
+theorem tendsto_cocompact_of_mem_realSobolevFunctions {s : ℝ} (hs : finrank ℝ E < 2 * s)
+    {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2) (hcont : Continuous f) :
+    Tendsto f (cocompact E) (𝓝 0) := by
+  obtain ⟨u, hu, hS⟩ := mem_realSobolevFunctions.1 hf
+  obtain ⟨g, hg⟩ := hS.exists_zeroAtInftyContinuousMap_ae_eq hs
+  have hae : (fun x ↦ (f x : ℂ)) =ᵐ[volume] g := by
+    filter_upwards [Complex.ofRealCLM.coeFn_compLp u, hu, hg] with x h₁ h₂ h₃
+    rw [← h₃, h₁, h₂, Complex.ofRealCLM_apply]
+  have hc : Continuous fun x ↦ (f x : ℂ) := Complex.continuous_ofReal.comp hcont
+  have heq := (hc.ae_eq_iff_eq volume g.continuous).1 hae
+  have hg0 : Tendsto (fun x ↦ (f x : ℂ)) (cocompact E) (𝓝 0) := heq ▸ g.zero_at_infty'
+  simpa [Function.comp_def] using (Complex.continuous_re.tendsto 0).comp hg0
 
 end TemperedDistribution
 
 namespace TauCeti
+
+/-- For `s > 1`, the order `s` is above half the real dimension of the plane, so `H^s(ℂ)` embeds
+into the continuous functions vanishing at infinity and is an algebra. -/
+theorem finrank_real_complex_lt_two_mul {s : ℝ} (hs : 1 < s) : (finrank ℝ ℂ : ℝ) < 2 * s := by
+  rw [Complex.finrank_real_complex]
+  push_cast
+  linarith
 
 namespace Wkp
 

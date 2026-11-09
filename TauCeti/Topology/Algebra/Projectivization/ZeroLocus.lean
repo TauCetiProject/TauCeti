@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.MvPolynomial
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.LinearAlgebra.Matrix.Rank.Closed
 public import TauCeti.LinearAlgebra.Projectivization.ZeroLocus
-public import TauCeti.RingTheory.MvPolynomial.Jacobian
+public import TauCeti.RingTheory.MvPolynomial.Jacobian.Basic
 public import TauCeti.Topology.Algebra.MvPolynomial.HomogeneousSubmodule
 public import TauCeti.Topology.Algebra.MvPolynomial.ZeroLocus
 public import TauCeti.Topology.Algebra.Projectivization
@@ -294,9 +294,8 @@ noncomputable def complexProjectiveZeroLocusAffineOpenHomeomorph
     (hp : ∀ k, (p k).IsHomogeneous (d k)) (i : Fin (n + 1)) :
     ↥(complexProjectiveZeroLocus p ∩ Projectivization.affineOpen i) ≃ₜ
       affineZeroLocus fun k ↦ dehomogenize i (p k) :=
-  (Projectivization.affineOpenPartialHomeomorph i).homeomorphOfImageSubsetSource
-    (by simp)
-    (by simpa using image_affineChart_complexProjectiveZeroLocus_inter_affineOpen hp i)
+  Projectivization.interAffineOpenHomeomorph
+    (image_affineChart_complexProjectiveZeroLocus_inter_affineOpen hp i)
 
 /-- The homeomorphism `TauCeti.complexProjectiveZeroLocusAffineOpenHomeomorph` is the affine
 chart. -/

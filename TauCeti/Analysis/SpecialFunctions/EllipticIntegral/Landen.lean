@@ -96,8 +96,7 @@ theorem legendreEc_eq_one_add_mul_legendreEc {k : ℝ} (hk : k ^ 2 < 1) :
     simpa only [c] using legendreK_eq_one_add_mul_legendreK hk
   have harg : legendreEc (2 * √((1 - c) / (1 + c)) /
       (1 + (1 - c) / (1 + c))) = legendreEc k := by
-    rw [two_mul_sqrt_div_one_add_eq_abs hk.le]
-    rcases abs_choice k with h | h <;> simp only [h, legendreEc_neg]
+    rw [two_mul_sqrt_div_one_add_eq_abs hk.le, legendreEc_abs]
   rw [harg] at hE
   field_simp at hE hK ⊢
   -- The ascending identities at (1 - c) / (1 + c) have denominator 1 + c.

@@ -140,6 +140,27 @@ lemma monotone_renewalCountNat (ω : Ω) : Monotone fun t ↦ renewalCountNat T 
   · simp only [renewalCountNat_eq_zero_of_not_tendsto T hω]
     exact monotone_const
 
+variable {T} in
+/-- Before the observation time, the natural count is the finite sum over the
+completed arrivals at that time. The artificial arrival at index zero is omitted.
+On explosive paths both sides are zero by the count's exceptional-path convention. -/
+theorem renewalCountNat_eq_sum_range_of_le {ω : Ω} {s t : ℝ≥0} (hst : s ≤ t) :
+    renewalCountNat T s ω = ∑ k ∈ Finset.range (renewalCountNat T t ω),
+      if arrival T (k + 1) ω ≤ s then 1 else 0 := by
+  classical
+  by_cases hω : Tendsto (fun n ↦ arrival T n ω) atTop atTop
+  · have hsum (n : ℕ) :
+        (∑ k ∈ Finset.range n, if k + 1 ≤ renewalCountNat T s ω then 1 else 0) =
+          min n (renewalCountNat T s ω) := by
+      induction n with
+      | zero => simp
+      | succ n hn =>
+        rw [Finset.sum_range_succ, hn]
+        split_ifs with h <;> omega
+    simp_rw [← le_renewalCountNat_iff hω]
+    rw [hsum, min_eq_right (monotone_renewalCountNat T ω hst)]
+  · simp [hω]
+
 /-- The natural count is locally constant to the right, even on the exceptional event. -/
 lemma eventually_renewalCountNat_eq_nhdsGE (t : ℝ≥0) (ω : Ω) :
     ∀ᶠ s in 𝓝[≥] t, renewalCountNat T s ω = renewalCountNat T t ω := by
@@ -171,12 +192,26 @@ lemma measurable_renewalCountNat (hT : ∀ n, Measurable (T n)) (t : ℝ≥0) :
 
 variable {P : Measure Ω}
 
+/-- If every increment is almost-everywhere measurable, so is the natural-valued renewal count at
+every time `t`. -/
+@[fun_prop]
+theorem aemeasurable_renewalCountNat (hT : ∀ n, AEMeasurable (T n) P) (t : ℝ≥0) :
+    AEMeasurable (renewalCountNat T t) P := by
+  set T' : ℕ → Ω → ℝ≥0 := fun n ↦ (hT n).mk (T n)
+  have hT' (n : ℕ) : Measurable (T' n) := (hT n).measurable_mk
+  have hT'_ae (n : ℕ) : T' n =ᵐ[P] T n := (hT n).ae_eq_mk.symm
+  refine (measurable_renewalCountNat hT' t).aemeasurable.congr ?_
+  filter_upwards [arrival_congr_ae hT'_ae] with ω harr
+  have hrc : renewalCount T' t ω = renewalCount T t ω := by
+    simp only [renewalCount_def, harr]
+  rw [renewalCountNat_def, renewalCountNat_def, funext harr, hrc]
+
 /-- For nondegenerate i.i.d. increments, the natural and extended counts agree almost surely
 on one event for all times. -/
-theorem ae_natCast_renewalCountNat (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
+theorem ae_natCast_renewalCountNat (hindep : iIndepFun T P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (hzero : P {ω | T 0 ω = 0} < 1) :
     ∀ᵐ ω ∂P, ∀ t, (renewalCountNat T t ω : ℝ≥0∞) = renewalCount T t ω := by
-  filter_upwards [ae_tendsto_arrival_atTop hT hindep hid hzero] with ω hω
+  filter_upwards [ae_tendsto_arrival_atTop hindep hid hzero] with ω hω
   exact natCast_renewalCountNat hω
 
 /-- Changing the natural-valued count on explosive paths does not change its process law

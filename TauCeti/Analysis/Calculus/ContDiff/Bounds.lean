@@ -6,9 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
-# Uniform derivative bounds for a linear change of variables
+# Uniform derivative bounds on compact sets
+
+This file collects bounds on iterated derivatives that follow from their continuity on compact
+sets: a uniform bound for a linear change of variables, and a bound by any power of the Japanese
+bracket near the zero frequency.
 
 Fix maps `τ : E → F` and `L : E → (G →L H)` that are `C^n` on `s`. The operator
 `φ ↦ (z ↦ L z (φ (τ z)))` is linear in `φ`, and by the Leibniz and Faà di Bruno bounds its
@@ -21,14 +27,26 @@ This is the estimate behind continuity of such operators for topologies of unifo
 derivatives on compact sets: a bilinear form read in one chart is of this shape in any other
 chart, with `τ` the transition map and `L z` the pullback along its derivative.
 
+A `C^k` function of a position `x` and a frequency `ξ` has bounded derivatives for `x` in a compact
+set and `ξ` in a ball, and the Japanese bracket `(1 + ‖ξ‖ ^ 2) ^ (1 / 2)` is bounded above and
+below on a ball. So these derivatives are bounded by every power of the Japanese bracket, which is
+how symbol estimates are proved near the zero frequency, where no decay is needed.
+
 ## Main results
 
 * `ContDiffOn.exists_bound_iteratedFDerivWithin`: on a compact subset, the derivatives of order at
   most `n` of a `C^n` map are bounded by one constant.
+* `ContDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen`: the same for the derivatives of a
+  map that is `C^n` on an open set, with a nonnegative constant.
 * `ContDiffOn.exists_norm_iteratedFDerivWithin_clm_apply_comp_le`: the linear bound on the
   derivatives of `z ↦ L z (φ (τ z))`.
 * `ContDiffOn.tendstoUniformlyOn_iteratedFDerivWithin_clm_apply_comp`: its consequence for uniform
   convergence to zero.
+* `ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le`: for `x` in a compact set
+  and `ξ` in a ball, the derivatives of a `C^k` function of `(x, ξ)` are bounded by every power of
+  the Japanese bracket `(1 + ‖ξ‖ ^ 2) ^ (1 / 2)`.
+* `ContDiff.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm`: a smooth map which agrees outside a
+  ball with a map of bounded order-`n` derivative has a bounded order-`n` derivative.
 -/
 
 public section
@@ -53,6 +71,16 @@ theorem ContDiffOn.exists_bound_iteratedFDerivWithin {u : E → F} {s K : Set E}
   refine ⟨A, fun i hi z hz ↦ ((Finset.single_le_sum (f := fun i ↦ ‖iteratedFDerivWithin 𝕜 i u s z‖)
     (fun _ _ ↦ norm_nonneg _) (Finset.mem_range_succ_iff.mpr hi)).trans (le_abs_self _)).trans ?_⟩
   simpa only [Real.norm_eq_abs] using hA z hz
+
+/-- On a compact subset `K` of an open set `s`, the derivatives of order at most `n` of a map that
+is `C^n` on `s` are bounded by a single nonnegative constant. -/
+theorem ContDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen {u : E → F} {s K : Set E} {n : ℕ}
+    (hu : ContDiffOn 𝕜 n u s) (hs : IsOpen s) (hK : IsCompact K) (hKs : K ⊆ s) :
+    ∃ A, 0 ≤ A ∧ ∀ i ≤ n, ∀ z ∈ K, ‖iteratedFDeriv 𝕜 i u z‖ ≤ A := by
+  obtain ⟨A, hA⟩ := hu.exists_bound_iteratedFDerivWithin hs.uniqueDiffOn hK hKs
+  refine ⟨max A 0, le_max_right _ _, fun i hi z hz ↦ ?_⟩
+  rw [← iteratedFDerivWithin_of_isOpen i hs (hKs hz)]
+  exact (hA i hi z hz).trans (le_max_left _ _)
 
 /-- On a compact set `K`, the order-`n` derivative of `z ↦ L z (φ (τ z))` is bounded by a constant
 multiple of any common bound `δ` for the derivatives of `φ` of order at most `n` along `τ '' K`.
@@ -115,3 +143,42 @@ theorem ContDiffOn.tendstoUniformlyOn_iteratedFDerivWithin_clm_apply_comp {ι : 
     _ < ε := by
       rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
       nlinarith [abs_nonneg C]
+
+/-- A `C^k` function on `E × F` satisfies, for `x` in a compact set and `ξ` in a ball, the
+estimate `‖D^k f(x, ξ)‖ ≤ C (1 + ‖ξ‖ ^ 2) ^ (r / 2)` for every real `r`: the derivative is bounded
+there, and the weight is bounded below. -/
+theorem ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le {E F G : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [ProperSpace F] [NormedAddCommGroup G] [NormedSpace ℝ G] {k : ℕ}
+    {f : E × F → G} (hf : ContDiff ℝ k f) {K : Set E} (hK : IsCompact K) (R r : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ : F, ‖ξ‖ ≤ R →
+      ‖iteratedFDeriv ℝ k f (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
+  obtain ⟨C, hC⟩ := (hK.prod (isCompact_closedBall (0 : F) R)).exists_bound_of_continuousOn
+    (hf.continuous_iteratedFDeriv le_rfl).continuousOn
+  have hw : (0 : ℝ) < (1 + R ^ 2) ^ (-|r| / 2) := by positivity
+  refine ⟨max C 0 / (1 + R ^ 2) ^ (-|r| / 2), by positivity, fun x hx ξ hξ ↦ ?_⟩
+  calc ‖iteratedFDeriv ℝ k f (x, ξ)‖ ≤ max C 0 :=
+        (hC (x, ξ) ⟨hx, by simpa using hξ⟩).trans (le_max_left _ _)
+    _ = max C 0 / (1 + R ^ 2) ^ (-|r| / 2) * (1 + R ^ 2) ^ (-|r| / 2) := by field_simp
+    _ ≤ max C 0 / (1 + R ^ 2) ^ (-|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
+        mul_le_mul_of_nonneg_left (TauCeti.one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow hξ r)
+          (by positivity)
+
+/-- A `C^n` map which agrees outside a ball with a map whose order-`n` derivative is bounded
+there has a bounded order-`n` derivative: on the closed ball the derivative is continuous, and
+outside it the two derivatives coincide. -/
+theorem ContDiff.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm [ProperSpace E] {n : ℕ}
+    {f g : E → F} (hf : ContDiff 𝕜 n f) {R C : ℝ} (hfg : ∀ x, R < ‖x‖ → f x = g x)
+    (hg : ∀ x, R < ‖x‖ → ‖iteratedFDeriv 𝕜 n g x‖ ≤ C) :
+    ∃ C', ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ C' := by
+  obtain ⟨C₀, hC₀⟩ := (isCompact_closedBall (0 : E) R).exists_bound_of_continuousOn
+    (hf.continuous_iteratedFDeriv le_rfl).continuousOn
+  refine ⟨max C₀ C, fun x ↦ ?_⟩
+  by_cases hx : ‖x‖ ≤ R
+  · exact (hC₀ x (mem_closedBall_zero_iff.2 hx)).trans (le_max_left _ _)
+  rw [not_le] at hx
+  have hfg' : f =ᶠ[nhds x] g := by
+    filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hx] with y hy
+    exact hfg y hy
+  rw [(hfg'.iteratedFDeriv 𝕜 n).eq_of_nhds]
+  exact (hg x hx).trans (le_max_right _ _)

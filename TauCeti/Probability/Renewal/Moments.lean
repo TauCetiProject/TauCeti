@@ -100,7 +100,7 @@ private theorem lintegral_renewalCount_pow_le_add_tsum (hT : ∀ n, Measurable (
     measurableSet_le (measurable_arrival hT n) measurable_const
   have hle : ∀ᵐ ω ∂P, renewalCount T t ω ^ p ≤ (M : ℝ≥0∞) ^ p +
       ∑' j : ℕ, {ω | arrival T (M + j) ω ≤ t}.indicator (fun _ ↦ ((M + j : ℕ) : ℝ≥0∞) ^ p) ω := by
-    filter_upwards [ae_renewalCount_lt_top hT hindep hid hzero] with ω hω
+    filter_upwards [ae_renewalCount_lt_top hindep hid hzero] with ω hω
     obtain ⟨m, hm⟩ := exists_renewalCount_eq_natCast (hω t).ne
     rw [hm]
     rcases lt_or_ge m M with h | h

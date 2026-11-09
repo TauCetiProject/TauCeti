@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 public import TauCeti.RingTheory.FormalGroup.ExponentTwo.Basic
 import TauCeti.RingTheory.FormalGroup.AdditiveSeries
 import TauCeti.RingTheory.FormalGroup.ExponentTwo.Iso
-import TauCeti.RingTheory.FormalGroup.Hom
+import TauCeti.RingTheory.FormalGroup.Hom.Basic
 import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 
 /-!
@@ -47,6 +47,29 @@ open MvPowerSeries TauCeti
 namespace FormalGroup
 
 variable {R : Type*} [CommRing R] (F : FormalGroup R) [F.IsComm]
+
+/-- Composing a series supported on the powers of two with the normalized logarithm of an
+exponent-two formal group law gives an additive series. -/
+private theorem subst_toPowerSeries_subst_exponentTwoLog_eq_add (hF : F.nsmulSeries 2 = 0)
+    {a : PowerSeries R} (ha : ∀ n, (∀ k, n ≠ 2 ^ k) → PowerSeries.coeff n a = 0) :
+    PowerSeries.subst F.toPowerSeries (PowerSeries.subst (F.exponentTwoLog hF) a) =
+      PowerSeries.subst (X 0) (PowerSeries.subst (F.exponentTwoLog hF) a) +
+        PowerSeries.subst (X 1) (PowerSeries.subst (F.exponentTwoLog hF) a) := by
+  have h2 : (2 : R) = 0 := by
+    exact_mod_cast F.natCast_eq_zero_of_nsmulSeries_eq_zero hF
+  let l : FormalCoordinate R :=
+    ⟨F.exponentTwoLog hF, F.constantCoeff_exponentTwoLog hF,
+      (F.coeff_one_exponentTwoLog hF).symm ▸ isUnit_one⟩
+  have ha' :=
+    (PowerSeries.subst_X_add_X_eq_add_iff_of_natCast_eq_zero Nat.prime_two h2 a).2 ha
+  rw [PowerSeries.subst_comp_subst_apply l.hasSubst
+    (PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff),
+    F.subst_toPowerSeries_exponentTwoLog hF,
+    PowerSeries.subst_add_of_subst_X_add_X_eq_add ha'
+      (l.hasSubst_subst (PowerSeries.HasSubst.X 0))
+      (l.hasSubst_subst (PowerSeries.HasSubst.X 1)),
+    PowerSeries.subst_comp_subst_apply l.hasSubst (PowerSeries.HasSubst.X 0),
+    PowerSeries.subst_comp_subst_apply l.hasSubst (PowerSeries.HasSubst.X 1)]
 
 /-- A strict series `g` is additive along an exponent-two formal group law exactly when it is
 the composite of its normalized logarithm with a unique strict additive automorphism. The
@@ -111,17 +134,8 @@ theorem subst_toPowerSeries_eq_add_iff_existsUnique_subst_exponentTwoLog
         simp only [FormalCoordinate.substAlgEquiv_apply, hl]
         exact hb.2.2.symm.trans hga)
   · rintro ⟨a, ⟨-, ha, hga⟩, -⟩
-    -- Conversely, composing additive series with the normalized logarithm preserves additivity.
-    have ha' :=
-      (PowerSeries.subst_X_add_X_eq_add_iff_of_natCast_eq_zero Nat.prime_two h2 a).2 ha
-    rw [hga, PowerSeries.subst_comp_subst_apply l.hasSubst
-      (PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff),
-      F.subst_toPowerSeries_exponentTwoLog hF,
-      PowerSeries.subst_add_of_subst_X_add_X_eq_add ha'
-        (l.hasSubst_subst (PowerSeries.HasSubst.X 0))
-        (l.hasSubst_subst (PowerSeries.HasSubst.X 1)),
-      PowerSeries.subst_comp_subst_apply l.hasSubst (PowerSeries.HasSubst.X 0),
-      PowerSeries.subst_comp_subst_apply l.hasSubst (PowerSeries.HasSubst.X 1)]
+    rw [hga]
+    exact subst_toPowerSeries_subst_exponentTwoLog_eq_add F hF ha
 
 /-- **A formal group law of exponent two is determined by its normalized logarithm**: if the
 formal coordinate `φ` has series the normalized logarithm `g` of `F`, then

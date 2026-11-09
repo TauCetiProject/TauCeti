@@ -136,6 +136,15 @@ theorem exists_forall_mem_moreauYosidaResolvent_and_eq
   · simpa [hr.1, hrτ] using (hJ n r ⟨hr.1, hrτ⟩).some_mem
   · simpa using hU n
 
+/-- **The nodes are resolvent steps.** If the resolvent steps `V n r ∈ J_r (U n)` for
+`r ∈ (0, τ]` agree with the nodes at `r = τ`, then `U` is a minimizing movement sequence with time
+step `τ`. This is the converse of `TauCeti.exists_forall_mem_moreauYosidaResolvent_and_eq`. -/
+theorem mem_moreauYosidaResolvent_of_forall_mem_Ioc_of_eq (hτ : 0 < τ)
+    (hV : ∀ n, ∀ r ∈ Ioc 0 (τ : ℝ), V n r ∈ moreauYosidaResolvent φ r.toNNReal (U n))
+    (hVU : ∀ n, V n τ = U (n + 1)) (n : ℕ) :
+    U (n + 1) ∈ moreauYosidaResolvent φ τ (U n) := by
+  simpa [hVU n] using hV n τ ⟨by exact_mod_cast hτ, le_rfl⟩
+
 /-- **Energy along the variational interpolant.** On the time interval `(n τ, (n + 1) τ]`, the
 variational interpolant has energy at most `φ (U n)`. -/
 theorem apply_deGiorgiInterpolant_le (hτ : 0 < τ) {n : ℕ}
@@ -200,12 +209,12 @@ the selections is needed for this pointwise assertion. -/
 theorem tendsto_deGiorgiInterpolant_of_forall_mem_moreauYosidaResolvent
     (hL : ∀ x, (L : EReal) ≤ φ x) (hS : ∀ k, φ (U k 0) ≤ S)
     (hτ : ∀ k, 0 < τ k) (hτ0 : Tendsto τ atTop (𝓝 0))
-    (hU : ∀ k n, U k (n + 1) ∈ moreauYosidaResolvent φ (τ k) (U k n))
     (hV : ∀ k n, ∀ r ∈ Ioc 0 (τ k : ℝ),
       V k n r ∈ moreauYosidaResolvent φ r.toNNReal (U k n))
     (hVU : ∀ k n, V k n (τ k) = U k (n + 1)) {t : ℝ} (ht : 0 < t)
     (hu : Tendsto (fun k ↦ U k ⌈t / τ k⌉₊) atTop (𝓝 (u t))) :
     Tendsto (fun k ↦ deGiorgiInterpolant (τ k) (V k) t) atTop (𝓝 (u t)) := by
+  have hU k := mem_moreauYosidaResolvent_of_forall_mem_Ioc_of_eq (hτ k) (hV k) (hVU k)
   have htop k n : φ (U k n) ≠ ⊤ := ne_top_of_le_ne_top (EReal.coe_ne_top S)
     ((antitone_comp_of_forall_mem_moreauYosidaResolvent (hU k) (Nat.zero_le n)).trans (hS k))
   have hbot x : φ x ≠ ⊥ := ne_bot_of_le_ne_bot (EReal.coe_ne_bot L) (hL x)

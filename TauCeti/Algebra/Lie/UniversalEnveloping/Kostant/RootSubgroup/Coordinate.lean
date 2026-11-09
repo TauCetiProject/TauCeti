@@ -89,6 +89,16 @@ action on a base-changed basis vector. -/
   exact LinearMap.toMatrixAlgEquiv_apply (b.baseChange A)
     (kostantRootSubgroupPoints e h ρ M hM i hnil f).val r s
 
+/-- The underlying root-subgroup matrix is the matrix of its scalar-extended action. -/
+theorem coe_kostantRootSubgroupMatrix
+    (f : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
+    (kostantRootSubgroupMatrix e h ρ M hM i hnil b f).val =
+      LinearMap.toMatrix (b.baseChange A) (b.baseChange A)
+        (kostantRootSubgroupPoints e h ρ M hM i hnil f).val := by
+  ext r s
+  rw [LinearMap.toMatrix_apply]
+  exact kostantRootSubgroupMatrix_apply e h ρ M hM i hnil b f r s
+
 end Pointwise
 
 section Naturality

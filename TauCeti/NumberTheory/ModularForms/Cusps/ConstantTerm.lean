@@ -100,7 +100,7 @@ public section
 
 noncomputable section
 
-open Complex CongruenceSubgroup Filter Matrix Matrix.SpecialLinearGroup ModularForm OnePoint
+open Complex CongruenceSubgroup Filter Matrix Matrix.SpecialLinearGroup ModularForm OnePoint TauCeti
   UpperHalfPlane
 open scoped CongruenceSubgroup MatrixGroups Pointwise Topology
 

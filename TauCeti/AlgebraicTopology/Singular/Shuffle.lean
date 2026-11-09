@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Shuffle
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
-public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney
+public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.Basic
 
 /-!
 # The shuffle map on singular chains
@@ -53,7 +53,7 @@ open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory AlgebraicT
   HomologicalComplex
 open scoped Simplicial
 open Functor.LaxMonoidal Functor.Monoidal Functor.OplaxMonoidal
-open TauCeti.SSet (chainComplexMap_f_comp)
+open SSet (chainComplexMap_f_comp)
 
 universe w v u
 

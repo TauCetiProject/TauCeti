@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.DualLattice
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.Algebra.Module.Lattice
 
 /-!
@@ -28,15 +29,71 @@ nondegenerate bilinear form over a fraction field.
   full lattices with `B.flip` on the outside.
 * `LinearMap.BilinForm.fg_of_le_dualSubmodule`: over a Noetherian ring, a submodule which spans
   the ambient finite-dimensional space and lies in its own dual is finitely generated.
+
+* `LinearMap.BilinForm.dualSubmodule_anti`: dualizing reverses inclusions.
+* `LinearMap.BilinForm.det_toMatrix_smul_mem_span`: Cramer's rule for dual lattices; if the Gram
+  matrix of a basis `b` has entries in `R`, then its determinant times any element of the dual of
+  `span R b` lies in `span R b`.
 -/
 
 public section
 
-open Module
+open Module Matrix
 
 namespace TauCeti
 
 universe u
+
+section Cramer
+
+variable {R K V : Type*} [CommRing R] [Field K] [Algebra R K]
+variable [AddCommGroup V] [Module R V] [Module K V] [IsScalarTower R K V]
+
+/-- Taking dual submodules with respect to a bilinear form reverses inclusions. -/
+theorem _root_.LinearMap.BilinForm.dualSubmodule_anti (B : LinearMap.BilinForm K V) :
+    Antitone (B.dualSubmodule (R := R)) :=
+  fun _ _ h _ hx y hy => hx y (h hy)
+
+/-- **Cramer's rule for dual lattices.** Let `b` be a basis of `V` over the field `K` such that
+every Gram matrix entry `B (b i) (b j)` lies in `R`. Then the Gram determinant
+`r = det (B (b i) (b j))` multiplies the dual of the `R`-span of `b` into that span: `r • x` lies in
+the `R`-span of `b` whenever every `B x (b j)` lies in `R`. When `B` is nondegenerate, `r ≠ 0`
+(`LinearMap.BilinForm.nondegenerate_iff_det_ne_zero`), so the dual lattice lies in
+`r⁻¹ • span R (Set.range b)`.
+
+The adjugate argument is adapted from Mathlib's `Algebra.discr_mul_isIntegral_mem_adjoin`, which
+treats the trace form of a separable field extension and a power basis; here it is stated for an
+arbitrary bilinear form and basis. -/
+theorem _root_.LinearMap.BilinForm.det_toMatrix_smul_mem_span (B : LinearMap.BilinForm K V)
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι K V)
+    (hb : ∀ i j, B (b i) (b j) ∈ (1 : Submodule R K)) {x : V}
+    (hx : x ∈ B.dualSubmodule (Submodule.span R (Set.range b))) :
+    (LinearMap.BilinForm.toMatrix b B).det • x ∈ Submodule.span R (Set.range b) := by
+  choose G hG using fun i j => Submodule.mem_one.1 (hb i j)
+  choose t ht using fun j => Submodule.mem_one.1 (hx (b j) (Submodule.subset_span ⟨j, rfl⟩))
+  have hGmap : LinearMap.BilinForm.toMatrix b B = (algebraMap R K).mapMatrix (Matrix.of G) := by
+    ext i j
+    simp [hG, LinearMap.BilinForm.toMatrix_apply]
+  -- the coordinates `c` of `x` satisfy `c ᵥ* (Gram matrix) = t`
+  have hc : b.equivFun x ᵥ* LinearMap.BilinForm.toMatrix b B = fun j => algebraMap R K (t j) := by
+    ext j
+    rw [ht]
+    conv_rhs => rw [← b.sum_repr x]
+    simp only [vecMul, dotProduct, LinearMap.BilinForm.toMatrix_apply, Basis.equivFun_apply,
+      map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul]
+  -- multiplying by the adjugate gives `det • c = t ᵥ* adjugate G`, whose entries lie in `R`
+  have hdet : (LinearMap.BilinForm.toMatrix b B).det • b.equivFun x =
+      fun j => algebraMap R K ((t ᵥ* (Matrix.of G).adjugate) j) := by
+    rw [← vecMul_one (b.equivFun x), ← vecMul_smul, ← mul_adjugate, ← vecMul_vecMul, hc, hGmap,
+      ← RingHom.map_adjugate]
+    ext j
+    simp [vecMul, dotProduct]
+  rw [← b.sum_equivFun x, Finset.smul_sum]
+  refine sum_mem fun i _ => ?_
+  rw [smul_smul, ← smul_eq_mul, ← Pi.smul_apply _ (b.equivFun x), hdet, algebraMap_smul]
+  exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
+
+end Cramer
 
 variable {R K V : Type*} [CommRing R] [IsDomain R]
 variable [Field K] [Algebra R K] [IsFractionRing R K] [Module.IsTorsionFree R K]

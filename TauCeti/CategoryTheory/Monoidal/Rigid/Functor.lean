@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Closed.Functor
+public import TauCeti.CategoryTheory.Monoidal.Rigid.DualFunctor
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
 public import TauCeti.CategoryTheory.Monoidal.Rigid.OfClosed
 
@@ -24,7 +25,17 @@ Since right duals are unique up to unique isomorphism, the image `F.obj Xᘁ` of
 (`CategoryTheory.Functor.mapRightDualIso`). These comparisons are natural with respect to adjoint
 mates, are identities for the identity functor, and compose along a composite of functors. They
 are the comparisons against which a monoidal functor between pivotal categories is required to
-preserve the pivotal structure.
+preserve the pivotal structure. They are also natural in the functor: a monoidal natural
+transformation `τ : F ⟶ G` satisfies `τ_{Xᘁ} ≫ δ^G_X ≫ (τ_X)ᘁ = δ^F_X`.
+
+Between right rigid categories, applying the comparison twice gives the bidual comparison
+`κ_X = δ_{Xᘁ} ≫ ((δ_X)ᘁ)⁻¹ : F.obj Xᘁᘁ ≅ (F.obj X)ᘁᘁ`
+(`CategoryTheory.Functor.mapDoubleRightDualIso`). It is natural in `X`, so it assembles into a
+natural isomorphism `doubleRightDualFunctor C ⋙ F ≅ F ⋙ doubleRightDualFunctor D`. It is the
+identity for the identity functor, satisfies `κ^{F ⋙ G}_X = G.map κ^F_X ≫ κ^G_{F X}` for a
+composite, and commutes with monoidal natural isomorphisms. It is the comparison along which a
+braided functor preserves Drinfeld isomorphisms and a pivotal functor preserves pivotal
+structures.
 
 Consequently, if `Y` has a left dual `X` and both `Y` and `F.obj Y` are closed, then the
 internal Hom comparison `F.obj (Y ⟶[C] B) ⟶ (F.obj Y ⟶[D] F.obj B)` of `F` is an isomorphism
@@ -59,6 +70,18 @@ equivalence.
   `CategoryTheory.Functor.mapRightDualIso_hom_naturality`, and computed for identities and
   composites by `CategoryTheory.Functor.mapRightDualIso_id` and
   `CategoryTheory.Functor.mapRightDualIso_comp`;
+* `CategoryTheory.NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate` and
+  `CategoryTheory.Iso.hom_app_comp_mapRightDualIso_hom`: the comparison is natural with respect to
+  monoidal natural transformations and isomorphisms;
+* `CategoryTheory.Functor.mapDoubleRightDualIso`: the bidual comparison
+  `F.obj Xᘁᘁ ≅ (F.obj X)ᘁᘁ`, characterized by
+  `CategoryTheory.Functor.mapDoubleRightDualIso_hom_whiskerRight_evaluation`, natural by
+  `CategoryTheory.Functor.mapDoubleRightDualIso_hom_naturality` and
+  `CategoryTheory.Iso.hom_app_comp_mapDoubleRightDualIso_hom`, and computed for identities and
+  composites by `CategoryTheory.Functor.mapDoubleRightDualIso_id` and
+  `CategoryTheory.Functor.mapDoubleRightDualIso_comp`;
+* `CategoryTheory.Functor.mapDoubleRightDualNatIso`: the bidual comparisons as a natural
+  isomorphism `doubleRightDualFunctor C ⋙ F ≅ F ⋙ doubleRightDualFunctor D`;
 * `CategoryTheory.Functor.ihomComparison_isIso_of_exactPairing`: the internal Hom comparison of
   a strong monoidal functor is invertible at an object with a left dual;
 * `CategoryTheory.Functor.map_dualTensorIhom_app_comp_ihomComparison` and
@@ -296,5 +319,164 @@ theorem isIso_map_dualTensorIhom_app (Y Z : C) [Closed Y] [Closed (F.obj Y)]
     rw [map_dualTensorIhom_app_comp_ihomComparison]
     infer_instance
   exact IsIso.of_isIso_comp_right _ ((F.ihomComparison Y).app Z)
+
+end CategoryTheory.Functor
+
+/-! ### Naturality of the dual comparison in the functor -/
+
+namespace CategoryTheory
+
+universe v₁ v₂ u₁ u₂
+
+variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
+variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
+variable {F G : C ⥤ D} [F.Monoidal] [G.Monoidal]
+
+/-- A monoidal natural transformation `τ : F ⟶ G` between strong monoidal functors is compatible
+with the comparisons between images of duals and duals of images:
+`τ_{Xᘁ} ≫ δ^G_X ≫ (τ_X)ᘁ = δ^F_X` as morphisms `F.obj Xᘁ ⟶ (F.obj X)ᘁ`. -/
+@[reassoc]
+theorem NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate (τ : F ⟶ G) [τ.IsMonoidal]
+    (X : C) [HasRightDual X] [HasRightDual (F.obj X)] [HasRightDual (G.obj X)] :
+    τ.app Xᘁ ≫ (G.mapRightDualIso X).hom ≫ (τ.app X)ᘁ = (F.mapRightDualIso X).hom := by
+  have hη : τ.app (𝟙_ C) ≫ η G = η F := by
+    rw [← cancel_epi (ε F), IsMonoidal.unit_assoc, ε_η, ε_η]
+  refine ExactPairing.rightHom_ext (X := F.obj X) ?_
+  -- Both sides evaluate to the image under `F` of the evaluation of `(X, Xᘁ)`; on the left, move
+  -- `τ` past the evaluation through its compatibility with the tensor and unit comparisons.
+  rw [Functor.mapRightDualIso_hom_whiskerRight_evaluation]
+  simp only [comp_whiskerRight, Category.assoc, rightAdjointMate_comp_evaluation]
+  rw [← whisker_exchange_assoc, Functor.mapRightDualIso_hom_whiskerRight_evaluation,
+    ← tensorHom_def_assoc, ← IsMonoidal.tensor_assoc, ← τ.naturality_assoc, hη]
+
+/-- A monoidal natural isomorphism `α : F ≅ G` intertwines the comparisons between images of
+duals and duals of images: `α_{Xᘁ} ≫ δ^G_X = δ^F_X ≫ (α_X⁻¹)ᘁ`. -/
+@[reassoc]
+theorem Iso.hom_app_comp_mapRightDualIso_hom (α : F ≅ G) [α.hom.IsMonoidal] (X : C)
+    [HasRightDual X] [HasRightDual (F.obj X)] [HasRightDual (G.obj X)] :
+    α.hom.app Xᘁ ≫ (G.mapRightDualIso X).hom = (F.mapRightDualIso X).hom ≫ (α.inv.app X)ᘁ := by
+  rw [← NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate α.hom X, Category.assoc,
+    Category.assoc, ← comp_rightAdjointMate, Iso.inv_hom_id_app, rightAdjointMate_id,
+    Category.comp_id]
+
+end CategoryTheory
+
+namespace CategoryTheory.Functor
+
+open TauCeti
+
+universe v₁ v₂ u₁ u₂
+
+variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
+variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
+
+/-! ### The bidual comparison -/
+
+section DoubleRightDual
+
+variable [RightRigidCategory C] [RightRigidCategory D] (F : C ⥤ D) [F.Monoidal]
+
+/-- The bidual comparison `κ_X : F.obj Xᘁᘁ ≅ (F.obj X)ᘁᘁ` of a strong monoidal functor between
+right rigid categories: the comparison `δ_{Xᘁ} : F.obj Xᘁᘁ ≅ (F.obj Xᘁ)ᘁ`, followed by the
+inverse of the right dual `(δ_X)ᘁ : (F.obj X)ᘁᘁ ≅ (F.obj Xᘁ)ᘁ` of `δ_X : F.obj Xᘁ ≅ (F.obj X)ᘁ`. -/
+noncomputable def mapDoubleRightDualIso (X : C) :
+    F.obj ((Xᘁ : C)ᘁ) ≅ (((F.obj X)ᘁ : D)ᘁ : D) :=
+  F.mapRightDualIso Xᘁ ≪≫ (F.mapRightDualIso X).symm.rightAdjointMate
+
+variable {F}
+
+/-- The bidual comparison is `κ_X = δ_{Xᘁ} ≫ (δ_X⁻¹)ᘁ`. -/
+theorem mapDoubleRightDualIso_hom (X : C) :
+    (F.mapDoubleRightDualIso X).hom =
+      (F.mapRightDualIso Xᘁ).hom ≫ ((F.mapRightDualIso X).inv)ᘁ := by
+  simp [mapDoubleRightDualIso]
+
+/-- The inverse of the bidual comparison is `κ_X⁻¹ = (δ_X)ᘁ ≫ δ_{Xᘁ}⁻¹`. -/
+theorem mapDoubleRightDualIso_inv (X : C) :
+    (F.mapDoubleRightDualIso X).inv =
+      ((F.mapRightDualIso X).hom)ᘁ ≫ (F.mapRightDualIso Xᘁ).inv := by
+  simp [mapDoubleRightDualIso]
+
+/-- Through the bidual comparison `κ_X`, the evaluation of `((F.obj X)ᘁ, (F.obj X)ᘁᘁ)` is the image
+of the evaluation of `(Xᘁ, Xᘁᘁ)`, after identifying `(F.obj X)ᘁ` with `F.obj Xᘁ` along `δ_X`. -/
+@[reassoc]
+theorem mapDoubleRightDualIso_hom_whiskerRight_evaluation (X : C) :
+    (F.mapDoubleRightDualIso X).hom ▷ (F.obj X)ᘁ ≫ ε_ (F.obj X)ᘁ (F.obj X)ᘁᘁ =
+      F.obj Xᘁᘁ ◁ (F.mapRightDualIso X).inv ≫ μ F Xᘁᘁ Xᘁ ≫ F.map (ε_ Xᘁ Xᘁᘁ) ≫ η F := by
+  rw [mapDoubleRightDualIso_hom, comp_whiskerRight, Category.assoc,
+    rightAdjointMate_comp_evaluation, ← whisker_exchange_assoc,
+    mapRightDualIso_hom_whiskerRight_evaluation]
+
+/-- Naturality of the bidual comparison: it intertwines the image of the double mate of `f` with
+the double mate of the image of `f`. -/
+@[reassoc]
+theorem mapDoubleRightDualIso_hom_naturality {X Y : C} (f : X ⟶ Y) :
+    F.map (fᘁᘁ) ≫ (F.mapDoubleRightDualIso Y).hom =
+      (F.mapDoubleRightDualIso X).hom ≫ (F.map f)ᘁᘁ := by
+  rw [mapDoubleRightDualIso_hom, mapDoubleRightDualIso_hom, mapRightDualIso_hom_naturality_assoc,
+    Category.assoc, ← comp_rightAdjointMate, ← comp_rightAdjointMate,
+    mapRightDualIso_inv_naturality]
+
+/-- For the identity functor, the bidual comparison is the identity. -/
+@[simp]
+theorem mapDoubleRightDualIso_id (X : C) : (𝟭 C).mapDoubleRightDualIso X = Iso.refl _ := by
+  ext
+  simp [mapDoubleRightDualIso_hom]
+
+/-- For a composite `F ⋙ G`, the bidual comparison is the image under `G` of the bidual comparison
+for `F`, followed by the bidual comparison for `G`: `κ^{F ⋙ G}_X = G.map κ^F_X ≫ κ^G_{F X}`. -/
+@[simp]
+theorem mapDoubleRightDualIso_comp {E : Type*} [Category* E] [MonoidalCategory E]
+    [RightRigidCategory E] (G : D ⥤ E) [G.Monoidal] (X : C) :
+    (F ⋙ G).mapDoubleRightDualIso X =
+      G.mapIso (F.mapDoubleRightDualIso X) ≪≫ G.mapDoubleRightDualIso (F.obj X) := by
+  ext
+  simp only [mapDoubleRightDualIso_hom, mapRightDualIso_comp, Iso.trans_hom, Iso.trans_inv,
+    mapIso_hom, mapIso_inv, comp_rightAdjointMate, Functor.map_comp, Category.assoc]
+  -- The comparison `δ` of `G` slides past the image of the inverse of that of `F`.
+  rw [mapRightDualIso_hom_naturality_assoc]
+
+/-- A monoidal natural isomorphism `α : F ≅ G` intertwines the bidual comparisons:
+`α_{Xᘁᘁ} ≫ κ^G_X = κ^F_X ≫ (α_X)ᘁᘁ`. -/
+@[reassoc]
+theorem _root_.CategoryTheory.Iso.hom_app_comp_mapDoubleRightDualIso_hom {G : C ⥤ D}
+    [G.Monoidal] (α : F ≅ G) [α.hom.IsMonoidal] (X : C) :
+    α.hom.app Xᘁᘁ ≫ (G.mapDoubleRightDualIso X).hom =
+      (F.mapDoubleRightDualIso X).hom ≫ (α.hom.app X)ᘁᘁ := by
+  -- The inverse of a monoidal natural isomorphism is monoidal; this instance is stated for
+  -- `α.inv`, which instance search does not identify with `α.symm.hom`.
+  have : α.symm.hom.IsMonoidal := inferInstanceAs α.inv.IsMonoidal
+  have h : (α.hom.app X)ᘁ ≫ (F.mapRightDualIso X).inv =
+      (G.mapRightDualIso X).inv ≫ α.inv.app Xᘁ := by
+    rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp]
+    exact (Iso.hom_app_comp_mapRightDualIso_hom α.symm X).symm
+  rw [mapDoubleRightDualIso_hom, mapDoubleRightDualIso_hom, Category.assoc,
+    ← comp_rightAdjointMate, h, comp_rightAdjointMate,
+    ← Iso.hom_app_comp_mapRightDualIso_hom_assoc]
+
+variable (F)
+
+/-- The bidual comparisons of a strong monoidal functor `F` between right rigid categories, as a
+natural isomorphism `doubleRightDualFunctor C ⋙ F ≅ F ⋙ doubleRightDualFunctor D`. -/
+noncomputable def mapDoubleRightDualNatIso :
+    doubleRightDualFunctor C ⋙ F ≅ F ⋙ doubleRightDualFunctor D :=
+  NatIso.ofComponents F.mapDoubleRightDualIso fun f => mapDoubleRightDualIso_hom_naturality f
+
+variable {F}
+
+/-- The components of `F.mapDoubleRightDualNatIso` are the bidual comparisons. -/
+@[simp]
+theorem mapDoubleRightDualNatIso_hom_app (X : C) :
+    F.mapDoubleRightDualNatIso.hom.app X = (F.mapDoubleRightDualIso X).hom :=
+  (rfl)
+
+/-- The components of the inverse of `F.mapDoubleRightDualNatIso` are the inverse bidual
+comparisons. -/
+@[simp]
+theorem mapDoubleRightDualNatIso_inv_app (X : C) :
+    F.mapDoubleRightDualNatIso.inv.app X = (F.mapDoubleRightDualIso X).inv :=
+  (rfl)
+
+end DoubleRightDual
 
 end CategoryTheory.Functor

@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Multinomial.Measurability
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.StdSimplex
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import Mathlib.Probability.HasLaw
 public import TauCeti.Probability.Cdf
 import TauCeti.Geometry.Convex.ConvexSpace.Defs
 import TauCeti.Probability.Distributions.Multinomial.Transforms
@@ -131,15 +132,22 @@ end Measurability
 
 section Continuity
 
-variable [Fintype I] [MeasurableSpace I] [MeasurableSingletonClass I]
-  [TopologicalSpace I] [OpensMeasurableSpace I]
+variable [Fintype I] [MeasurableSpace I] [TopologicalSpace I] [OpensMeasurableSpace I]
 
 /-- Categorical laws vary weakly continuously with all their weights, including zero weights. -/
 theorem continuous_categoricalMeasure :
     Continuous (fun p : StdSimplex ℝ≥0 I ↦ (categoricalMeasure p).toProbabilityMeasure) := by
   apply ProbabilityMeasure.continuous_iff_forall_continuous_integral.2
   intro f
-  simp only [Measure.coe_toProbabilityMeasure, integral_categoricalMeasure, smul_eq_mul]
+  have hf : StronglyMeasurable f := f.continuous.stronglyMeasurable
+  have hint (p : StdSimplex ℝ≥0 I) :
+      ∫ i, f i ∂categoricalMeasure p = ∑ i, (p.weights i : ℝ) * f i := by
+    have hI : Integrable f (categoricalMeasure p) := f.integrable _
+    rw [categoricalMeasure_def, ← Measure.sum_fintype] at hI ⊢
+    rw [integral_sum_measure hI, tsum_fintype]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [integral_smul_measure, integral_dirac' _ _ hf, ENNReal.coe_toReal, smul_eq_mul]
+  simp only [Measure.coe_toProbabilityMeasure, hint]
   fun_prop
 
 /-- A continuous probability vector gives a weakly continuous categorical family. -/
@@ -176,12 +184,11 @@ theorem map_categoricalMeasure (f : I → J) (p : StdSimplex NNReal I) :
 
 end Aggregation
 
+
+
 section Multinomial
 
-variable [Fintype I] [MeasurableSpace I] [MeasurableSingletonClass I]
-
-/-- Classical decidable equality used to form one-hot vectors on a finite category type. -/
-local instance categoricalDecidableEq : DecidableEq I := Classical.decEq I
+variable [Fintype I] [DecidableEq I] [MeasurableSpace I] [MeasurableSingletonClass I]
 
 /-- Encoding a categorical outcome as the one-hot vector `Pi.single i 1` gives the multinomial
 law with one trial. -/
@@ -209,6 +216,12 @@ theorem map_piSingle_categoricalMeasure (p : StdSimplex NNReal I) :
   · intro j _ hji
     simp [hji]
   · simp
+
+/-- The one-hot encoding of a categorical outcome has the one-trial multinomial law. -/
+theorem hasLaw_piSingle_categoricalMeasure (p : StdSimplex NNReal I) :
+    HasLaw (fun i : I ↦ Pi.single i (1 : ℕ))
+      (multinomialMeasure 1 p) (categoricalMeasure p) :=
+  ⟨(measurable_of_countable _).aemeasurable, map_piSingle_categoricalMeasure p⟩
 
 end Multinomial
 
@@ -281,7 +294,7 @@ theorem cdf_map_categoricalMeasure (p : StdSimplex NNReal I) (label : I → ℝ)
     cdf ((categoricalMeasure p).map label) x =
       ∑ i with label i ≤ x, (p.weights i : ℝ) := by
   classical
-  rw [Measure.cdf_map _ label (measurable_of_finite label)]
+  rw [Measure.cdf_map _ label (measurable_of_finite label).aemeasurable]
   have hpreimage : label ⁻¹' Iic x = (Finset.univ.filter fun i ↦ label i ≤ x : Finset I) := by
     ext i
     simp

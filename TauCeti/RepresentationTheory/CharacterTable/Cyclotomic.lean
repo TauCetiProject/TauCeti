@@ -15,7 +15,8 @@ public import TauCeti.RingTheory.Cyclotomic.Integral
 # Exact cyclotomic representatives of character-table entries
 
 Both the ordinary and central character tables of a finite group have entries in the image of
-the distinguished embedding of `TauCeti.Cyclotomic e`, where `e` is the group exponent.
+the distinguished embedding of `TauCeti.Cyclotomic e`, where `e` is a multiple of the group
+exponent.
 Ordinary character values are sums of roots of unity. Central-character values are integral
 and are rational multiples of ordinary values, so they belong to the ring of integers of the
 same cyclotomic field. These representatives supply the exact tables needed for reconstruction
@@ -51,7 +52,7 @@ theorem natCard_mul_rootCoeffBound_le_centralCoefficientBound {G : Type*} [Group
   rw [centralCoefficientBound_def, ← Nat.card_eq_fintype_card]
   exact Nat.mul_le_mul_right _ (Finite.card_subtype_le _)
 
-variable {G : Type*} [Group G] (e : ℕ) [NeZero e] (he : e = Monoid.exponent G)
+variable {G : Type*} [Group G] (e : ℕ) [NeZero e] (he : Monoid.exponent G ∣ e)
 
 include he
 
@@ -59,8 +60,8 @@ section Finite
 
 variable [Finite G]
 
-/-- Every ordinary character-table entry has an exact cyclotomic representative at the group
-exponent. -/
+/-- Every ordinary character-table entry has an exact cyclotomic representative at any multiple
+of the group exponent. -/
 theorem characterTable_mem_range_complexEmbedding
     (i : Fin (Nat.card (ConjClasses G))) (C : ConjClasses G) :
     characterTable ℂ G i C ∈ Set.range (Cyclotomic.complexEmbedding (e := e)) := by
@@ -68,15 +69,15 @@ theorem characterTable_mem_range_complexEmbedding
   rw [Cyclotomic.mem_range_complexEmbedding_iff, characterTable_apply,
     ← character_irreducibleRepresentation]
   exact Representation.char_mem_adjoin_of_isPrimitiveRoot (irreducibleRepresentation ℂ i)
-    Cyclotomic.isPrimitiveRoot_complexRoot (he ▸ Monoid.pow_exponent_eq_one g)
+    Cyclotomic.isPrimitiveRoot_complexRoot (Monoid.exponent_dvd_iff_forall_pow_eq_one.mp he g)
 
 end Finite
 
 variable [Fintype G] [DecidableEq G]
 
-/-- Every central character-table entry has an exact cyclotomic representative at the group
-exponent, including when its expression in terms of ordinary values involves division by the
-character degree. -/
+/-- Every central character-table entry has an exact cyclotomic representative at any multiple
+of the group exponent, including when its expression in terms of ordinary values involves division
+by the character degree. -/
 theorem centralCharacterTable_mem_range_complexEmbedding
     (i : Fin (Nat.card (ConjClasses G))) (C : ConjClasses G) :
     centralCharacterTable ℂ G i C ∈ Set.range (Cyclotomic.complexEmbedding (e := e)) := by
@@ -116,7 +117,7 @@ theorem exists_exact_character_and_central_values
     intro j
     obtain ⟨g, rfl⟩ := C.exists_rep
     apply Representation.coeff_natAbs_le_of_finrank_mul_complexEmbedding_eq_natCast_mul_char
-      (irreducibleRepresentation ℂ i) (he ▸ Monoid.pow_exponent_eq_one g)
+      (irreducibleRepresentation ℂ i) (Monoid.exponent_dvd_iff_forall_pow_eq_one.mp he g)
       (by simpa using characterDegree_pos ℂ i)
     simpa only [Module.finrank_fintype_fun_eq_card, Fintype.card_fin, hw,
       character_irreducibleRepresentation, characterTable_apply] using hmul

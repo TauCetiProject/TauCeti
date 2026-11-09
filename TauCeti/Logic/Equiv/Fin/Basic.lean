@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.End
 public import Mathlib.Logic.Equiv.Fin.Basic
+public import Mathlib.Logic.Equiv.Fin.Rotate
 import Mathlib.Tactic.Ring
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Equivalences for finite indices and consecutive blocks of natural numbers
@@ -17,6 +20,11 @@ position inside that block. This file records the induced block permutations and
 of nested blocks with the finite-product indexing equivalence.
 It also concatenates two finite blocks with the second block read in reverse order, and splits
 the first pair off a doubly indexed family listed pair by pair through `finProdFinEquiv`.
+
+It also concatenates two finite blocks with the second block read in reverse order. For two
+blocks of equal length, laid out as the bottom and the top row of a rectangle and read
+counterclockwise around it, exchanging the two blocks reverses the concatenated order, and
+reversing each block is reversing the concatenated order followed by a rotation by one block.
 -/
 
 public section
@@ -47,6 +55,37 @@ theorem finSumFinRevEquiv_inr_val (p q n : ℕ) (hpq : p + q = n) (i : Fin q) :
   simp [finSumFinRevEquiv, Fin.rev]
   omega
 
+/-- Every index of the first block precedes every index of the second. -/
+@[simp]
+theorem finSumFinRevEquiv_inl_lt_inr (p q n : ℕ) (hpq : p + q = n) (i : Fin p) (j : Fin q) :
+    finSumFinRevEquiv p q n hpq (Sum.inl i) < finSumFinRevEquiv p q n hpq (Sum.inr j) := by
+  have := i.isLt
+  rw [Fin.lt_def, finSumFinRevEquiv_inl_val, finSumFinRevEquiv_inr_val]
+  omega
+
+/-- No index of the second block precedes an index of the first. -/
+@[simp]
+theorem not_finSumFinRevEquiv_inr_lt_inl (p q n : ℕ) (hpq : p + q = n) (i : Fin p) (j : Fin q) :
+    ¬finSumFinRevEquiv p q n hpq (Sum.inr j) < finSumFinRevEquiv p q n hpq (Sum.inl i) :=
+  (finSumFinRevEquiv_inl_lt_inr p q n hpq i j).not_gt
+
+/-- The first block is kept in order. -/
+@[simp]
+theorem finSumFinRevEquiv_inl_lt_inl_iff (p q n : ℕ) (hpq : p + q = n) {i i' : Fin p} :
+    finSumFinRevEquiv p q n hpq (Sum.inl i) < finSumFinRevEquiv p q n hpq (Sum.inl i') ↔
+      i < i' := by
+  rw [Fin.lt_def, finSumFinRevEquiv_inl_val, finSumFinRevEquiv_inl_val, Fin.lt_def]
+
+/-- The second block is read in reverse order. -/
+@[simp]
+theorem finSumFinRevEquiv_inr_lt_inr_iff (p q n : ℕ) (hpq : p + q = n) {j j' : Fin q} :
+    finSumFinRevEquiv p q n hpq (Sum.inr j) < finSumFinRevEquiv p q n hpq (Sum.inr j') ↔
+      j' < j := by
+  have := j.isLt
+  have := j'.isLt
+  rw [Fin.lt_def, finSumFinRevEquiv_inr_val, finSumFinRevEquiv_inr_val, Fin.lt_def]
+  omega
+
 /-- The family `(b (0, 0), b (0, 1), b (1, 0), b (1, 1), …)` of a doubly indexed family, listed
 pair by pair through `finProdFinEquiv`, splits off its first pair. -/
 theorem comp_finProdFinEquiv_symm_succ {α : Type*} {m : ℕ} (b : Fin (m + 1) × Fin 2 → α) :
@@ -63,6 +102,33 @@ theorem comp_finProdFinEquiv_symm_succ {α : Type*} {m : ℕ} (b : Fin (m + 1) �
   · simp only [Matrix.cons_val_succ]
     congr 1
     ext <;> simp [Fin.coe_divNat, Fin.coe_modNat] <;> omega
+
+/-- For two blocks of equal length, exchanging the blocks reverses the concatenated order. -/
+theorem finSumFinRevEquiv_swap {k n : ℕ} (h : k + k = n) (x : Fin k ⊕ Fin k) :
+    finSumFinRevEquiv k k n h x.swap = (finSumFinRevEquiv k k n h x).rev := by
+  subst h
+  rcases x with i | j <;>
+  · ext
+    simp only [Sum.swap_inl, Sum.swap_inr, finSumFinRevEquiv_inl_val, finSumFinRevEquiv_inr_val,
+      Fin.val_rev]
+    omega
+
+/-- For two blocks of equal length, reversing each block is reversing the concatenated order and
+then rotating by the length of one block. -/
+theorem finSumFinRevEquiv_map_rev {k n : ℕ} (h : k + k = n) (x : Fin k ⊕ Fin k) :
+    finSumFinRevEquiv k k n h (Sum.map Fin.rev Fin.rev x) =
+      (finRotate n ^ k) (finSumFinRevEquiv k k n h x).rev := by
+  subst h
+  ext
+  rcases x with i | j
+  · have := i.isLt
+    simp only [Sum.map_inl, finSumFinRevEquiv_inl_val, Fin.coe_finRotate_pow, Fin.val_rev]
+    rw [show k + k - (i + 1) + k = (k - (i + 1)) + (k + k) by omega, Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega)]
+  · have := j.isLt
+    simp only [Sum.map_inr, finSumFinRevEquiv_inr_val, Fin.coe_finRotate_pow, Fin.val_rev]
+    rw [Nat.mod_eq_of_lt (by omega)]
+    omega
 
 end TauCeti
 

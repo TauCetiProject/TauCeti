@@ -159,8 +159,7 @@ def unitaryTransvectionHom (v : Fin (r + 1) → GaloisField d.characteristic (d.
   map_one' := Subtype.ext <| Subtype.ext <| by
     simp [unitaryTransvectionFun]
   map_mul' a b := Subtype.ext <| Subtype.ext <| by
-    simp only [unitaryTransvectionFun, toAdd_mul, AddSubgroup.coe_add, Subgroup.coe_mul,
-      SpecialLinearGroup.coe_mk]
+    simp only [unitaryTransvectionFun, toAdd_mul, AddSubgroup.coe_add, Subgroup.coe_mul]
     exact (unitaryTransvection_mul_unitaryTransvection
       ((unitaryForm_apply v v).symm.trans hv) _ _).symm
 
@@ -194,7 +193,7 @@ theorem mul_unitaryTransvectionHom_mul_inv (g : fixedSubgroup (d.galoisFieldTwis
       d.unitaryTransvectionHom ((g : Matrix (Fin (r + 1)) (Fin (r + 1)) _) *ᵥ v) hgv a := by
   rw [mul_inv_eq_iff_eq_mul]
   refine Subtype.ext <| Subtype.ext ?_
-  simp only [Subgroup.coe_mul, SpecialLinearGroup.coe_mul, coe_unitaryTransvectionHom]
+  simp only [Subgroup.coe_mul]
   exact mul_unitaryTransvection (transpose_map_mul_mul_self_of_mem g) _
 
 /-- **The transvection subgroups are permuted by conjugation.** Conjugation by an element `g` of

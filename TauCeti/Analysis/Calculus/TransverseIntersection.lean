@@ -62,6 +62,18 @@ namespace TauCeti
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
 
+omit [CompleteSpace E] in
+/-- Composing a continuous linear equivalence with the projection onto a topological complement
+`C` along `L` gives a surjection whose kernel is the preimage of `L`. -/
+private theorem ker_range_projectionOntoL_comp {L C : Submodule 𝕜 E} (h : Submodule.IsTopCompl C L)
+    (A : E ≃L[𝕜] E) :
+    ((C.projectionOntoL L h).comp (A : E →L[𝕜] E)).ker = L.comap (A : E →ₗ[𝕜] E) ∧
+      ((C.projectionOntoL L h).comp (A : E →L[𝕜] E)).range = ⊤ := by
+  refine ⟨?_, LinearMap.range_eq_top.2 <|
+    (Submodule.projectionOntoL_surjective h).comp A.surjective⟩
+  ext v
+  simp
+
 -- One normal equation supplies both the slice chart and the intrinsic tangent-cone formula.
 private theorem exists_isSliceChart_inter_and_tangentConeAt {n : ℕ∞ω} (hn : n ≠ 0)
     {S₁ S₂ : Set E} {L₁ L₂ : Submodule 𝕜 E} {e₁ e₂ : OpenPartialHomeomorph E E} {y : E}
@@ -107,16 +119,10 @@ private theorem exists_isSliceChart_inter_and_tangentConeAt {n : ℕ∞ω} (hn :
   have hg : HasStrictFDerivAt g g' y :=
     (hgC y ⟨hy₁, hy₂⟩).hasStrictFDerivAt
       ((P₁.hasFDerivAt.comp y hA₁).prodMk (P₂.hasFDerivAt.comp y hA₂)) hn
-  have hker₁ : (P₁.comp (A₁ : E →L[𝕜] E)).ker = L₁.comap (A₁ : E →ₗ[𝕜] E) := by
-    ext v; simp [hP₁]
-  have hker₂ : (P₂.comp (A₂ : E →L[𝕜] E)).ker = L₂.comap (A₂ : E →ₗ[𝕜] E) := by
-    ext v; simp [hP₂]
+  obtain ⟨hker₁, hsurj₁⟩ := ker_range_projectionOntoL_comp hC₁.symm A₁
+  obtain ⟨hker₂, hsurj₂⟩ := ker_range_projectionOntoL_comp hC₂.symm A₂
   -- Transversality is the surjectivity of the derivative of `g`.
   have hrange : g'.range = ⊤ := by
-    have hsurj₁ : (P₁.comp (A₁ : E →L[𝕜] E)).range = ⊤ :=
-      LinearMap.range_eq_top.2 <| (Submodule.projectionOntoL_surjective hC₁.symm).comp A₁.surjective
-    have hsurj₂ : (P₂.comp (A₂ : E →L[𝕜] E)).range = ⊤ :=
-      LinearMap.range_eq_top.2 <| (Submodule.projectionOntoL_surjective hC₂.symm).comp A₂.surjective
     rw [ContinuousLinearMap.range_prod_eq (by rw [hker₁, hker₂]; exact htr), hsurj₁, hsurj₂,
       Submodule.prod_top]
   have hker : g'.ker = L₁.comap (A₁ : E →ₗ[𝕜] E) ⊓ L₂.comap (A₂ : E →ₗ[𝕜] E) := by
@@ -126,7 +132,7 @@ private theorem exists_isSliceChart_inter_and_tangentConeAt {n : ℕ∞ω} (hn :
   have hmem (z : E) (hz : z ∈ e₁.source ∩ e₂.source) : z ∈ S₁ ∩ S₂ ↔ g z = 0 := by
     simp [g, hP₁, hP₂, h₁.mem_iff hz.1, h₂.mem_iff hz.2]
   have hgy : g y = 0 := (hmem y ⟨hy₁, hy₂⟩).1 ⟨hyS₁, hyS₂⟩
-  obtain ⟨e, hye, hes, hC, hCs, he⟩ := hg.exists_isSliceChart_preimage_zero hn hrange hkerC
+  obtain ⟨e, hye, hes, hC, hCs, he⟩ := hg.exists_isSliceChart_preimage_zero hrange hkerC
     (e₁.open_source.inter e₂.open_source) ⟨hy₁, hy₂⟩ hgC
   refine ⟨⟨e, hye, hC, hCs, isSliceChart_iff.2 fun z hz ↦ ?_⟩, ?_⟩
   · rw [← hker, ← he.mem_iff hz]
@@ -230,7 +236,7 @@ theorem exists_isSliceChart_inter_preimage_zero {n : ℕ∞ω} (hn : n ≠ 0) {S
       IsSliceChart e ((Submodule.span 𝕜 (tangentConeAt 𝕜 S y) ⊓ g'.ker : Submodule 𝕜 E) : Set E)
         (S ∩ g ⁻¹' {0}) := by
   obtain ⟨e₂, hy₂, -, hc₂, hs₂, h₂⟩ :=
-    hg.exists_isSliceChart_preimage_zero hn hg' hker hU hyU hC
+    hg.exists_isSliceChart_preimage_zero hg' hker hU hyU hC
   have hlevel := hg.span_tangentConeAt_preimage_singleton hg' hker
   rw [hgy] at hlevel
   rw [← hlevel] at htr hI ⊢
@@ -252,7 +258,7 @@ theorem tangentConeAt_inter_preimage_zero {n : ℕ∞ω} (hn : n ≠ 0) {S : Set
     tangentConeAt 𝕜 (S ∩ g ⁻¹' {0}) y =
       ((Submodule.span 𝕜 (tangentConeAt 𝕜 S y) ⊓ g'.ker : Submodule 𝕜 E) : Set E) := by
   obtain ⟨e₂, hy₂, -, hc₂, hs₂, h₂⟩ :=
-    hg.exists_isSliceChart_preimage_zero hn hg' hker hU hyU hC
+    hg.exists_isSliceChart_preimage_zero hg' hker hU hyU hC
   have hlevel := hg.span_tangentConeAt_preimage_singleton hg' hker
   rw [hgy] at hlevel
   rw [← hlevel] at htr hI ⊢

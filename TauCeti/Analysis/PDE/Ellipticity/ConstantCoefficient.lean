@@ -14,6 +14,7 @@ import Mathlib.Analysis.Matrix.Order
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Deriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
 import TauCeti.Analysis.PDE.Ellipticity.Basic
 
 /-!
@@ -110,18 +111,8 @@ theorem exists_continuousLinearEquiv_laplacian_comp_eq {A : Matrix ι ι ℝ} {l
     simpa [Matrix.toQuadraticForm'_apply, EuclideanSpace.inner_eq_star_dotProduct, hTt,
       dotProduct_comm] using h
   refine ⟨e, fun x => ?_, fun y => ?_, fun u y hu => ?_⟩
-  · -- `√λ ‖y‖ ≤ ‖e y‖`, applied to `y = e⁻¹ x`.
-    have h := hA (e.symm x)
-    rw [← hnorm, e.apply_symm_apply] at h
-    have hl : √lam * ‖e.symm x‖ ≤ ‖x‖ := by
-      rw [← Real.sqrt_sq (norm_nonneg x), ← Real.sqrt_sq (norm_nonneg (e.symm x)),
-        ← Real.sqrt_mul hlam.le]
-      exact Real.sqrt_le_sqrt h
-    rw [inv_mul_eq_div, le_div_iff₀' (Real.sqrt_pos.2 hlam)]
-    exact hl
-  · rw [← Real.sqrt_sq (norm_nonneg (e y)), hnorm, ← Real.sqrt_sq (norm_nonneg y),
-      ← Real.sqrt_mul' _ (sq_nonneg _)]
-    exact Real.sqrt_le_sqrt (hA' y)
+  · exact e.norm_symm_apply_le_inv_sqrt_mul_norm hlam (fun y => (hnorm y).symm ▸ hA y) x
+  · exact Real.le_sqrt_mul_of_sq_le_mul (norm_nonneg y) ((hnorm y).le.trans (hA' y))
   · -- Only the symmetric part of `A` enters, because the second derivative is symmetric.
     have hsymm := hu.isSymmSndFDerivAt (by simp)
     rw [laplacian_comp_toEuclideanCLE_apply, hTt, hTT]
@@ -161,7 +152,8 @@ theorem harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero
 continuous linear automorphism with `Δ (u ∘ e) = (∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu) ∘ e` for every scalar `u` that is
 `C²` at the relevant point, as provided by `exists_continuousLinearEquiv_laplacian_comp_eq`, and
 `u` is a scalar `C²` solution of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = 0` on an open set `s`, then `∇u ∘ e` is
-harmonic on `e ⁻¹' s`. Its coordinates are directional derivatives of the harmonic `u ∘ e`. -/
+harmonic on `e ⁻¹' s`: it is the image of the gradient of the harmonic `u ∘ e` under the
+adjoint of `e⁻¹`. -/
 theorem harmonicOnNhd_gradient_comp_of_sum_smul_fderiv_fderiv_eq_zero
     {e : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι}
     (he : ∀ (u : EuclideanSpace ℝ ι → ℝ) (y : EuclideanSpace ℝ ι), ContDiffAt ℝ 2 u (e y) →
@@ -172,20 +164,18 @@ theorem harmonicOnNhd_gradient_comp_of_sum_smul_fderiv_fderiv_eq_zero
     (hLu : ∀ x ∈ s, ∑ i, ∑ j, A i j •
       fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) = 0) :
     HarmonicOnNhd (∇ u ∘ e) (e ⁻¹' s) := by
-  set b := EuclideanSpace.basisFun ι ℝ
-  have hh := harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero he hs hu hLu
-  have hH : HarmonicOnNhd (fun y => ∑ i, fderiv ℝ (u ∘ e) y (e.symm (b i)) • b i) (e ⁻¹' s) :=
-    HarmonicOnNhd.sum _ fun i _ =>
-      (hh.fderiv_apply (e.symm (b i))).comp_CLM ((1 : ℝ →L[ℝ] ℝ).smulRight (b i))
+  have hh := (harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero he hs hu hLu).gradient
   intro y hy
-  refine (harmonicAt_congr_nhds ?_).2 (hH y hy)
+  refine (harmonicAt_congr_nhds ?_).2 ((hh y hy).comp_CLM
+    (ContinuousLinearMap.adjoint (e.symm : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι)))
   filter_upwards [(hs.preimage e.continuous).mem_nhds hy] with z hz
   have hdz : DifferentiableAt ℝ u (e z) :=
     (hu.differentiableOn (by norm_num)).differentiableAt (hs.mem_nhds hz)
-  rw [Function.comp_apply, ← b.sum_repr' (∇ u (e z))]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [fderiv_comp z hdz e.differentiableAt, e.fderiv, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, e.apply_symm_apply, real_inner_comm, inner_gradient_left]
+  refine ext_inner_right ℝ fun v => ?_
+  rw [Function.comp_apply, Function.comp_apply, ContinuousLinearMap.adjoint_inner_left,
+    inner_gradient_left, inner_gradient_left, fderiv_comp z hdz e.differentiableAt, e.fderiv,
+    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe,
+    e.apply_symm_apply]
 
 end PDE
 

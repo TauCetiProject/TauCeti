@@ -8,7 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Analysis.Calculus.Morse.Prod
-public import TauCeti.Geometry.Manifold.MFDeriv.Chart
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Manifold.Morse.Index
 
 /-!
@@ -38,6 +39,8 @@ of the set.
   are the pairs of critical points.
 * `TauCeti.IsMorseOn.comp_fst_add_comp_snd` and `TauCeti.IsMorse.comp_fst_add_comp_snd`: the
   separated sum of two Morse functions is Morse.
+* `TauCeti.criticalHessian_comp_fst_add_comp_snd_apply`: the critical Hessian of the separated
+  sum is block diagonal.
 * `TauCeti.manifoldMorseIndex_comp_fst_add_comp_snd` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_comp_fst_add_comp_snd`: the
   Morse index of the separated sum is the sum of the indices.
@@ -106,10 +109,8 @@ theorem mvfderiv_comp_fst_add_comp_snd_eq_zero_iff [I.Boundaryless] [I'.Boundary
     (hf : MDifferentiableAt I 𝓘(ℝ) f x) (hg : MDifferentiableAt I' 𝓘(ℝ) g y) :
     mvfderiv (I.prod I') (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) = 0 ↔
       mvfderiv I f x = 0 ∧ mvfderiv I' g y = 0 := by
-  have hsum : MDifferentiableAt (I.prod I') 𝓘(ℝ) (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) :=
-    (hf.comp (x, y) mdifferentiableAt_fst).add (hg.comp (x, y) mdifferentiableAt_snd)
-  rw [hsum.mvfderiv_eq_fderiv_comp_extChartAt_symm, hf.mvfderiv_eq_fderiv_comp_extChartAt_symm,
-    hg.mvfderiv_eq_fderiv_comp_extChartAt_symm, comp_fst_add_comp_snd_comp_extChartAt_prod_symm]
+  rw [mvfderiv_eq_fderiv_comp_extChartAt_symm, mvfderiv_eq_fderiv_comp_extChartAt_symm,
+    mvfderiv_eq_fderiv_comp_extChartAt_symm, comp_fst_add_comp_snd_comp_extChartAt_prod_symm]
   simp only [extChartAt_prod, PartialEquiv.prod_coe]
   exact fderiv_comp_fst_add_comp_snd_eq_zero_iff hf.differentiableAt_comp_extChartAt_symm
     hg.differentiableAt_comp_extChartAt_symm
@@ -135,6 +136,25 @@ theorem IsMorse.comp_fst_add_comp_snd (hf : IsMorse I f) (hg : IsMorse I' g) :
     IsMorse (I.prod I') (f ∘ Prod.fst + g ∘ Prod.snd) := by
   rw [← isMorseOn_univ, ← univ_prod_univ]
   exact (hf.isMorseOn univ).comp_fst_add_comp_snd (hg.isMorseOn univ)
+
+/-- **The critical Hessian of a separated sum is block diagonal.** When the coordinate expressions
+of `f` at `x` and of `g` at `y` are twice continuously differentiable, the critical Hessian of
+`f ∘ Prod.fst + g ∘ Prod.snd` at `(x, y)` pairs the `M`-components through the critical Hessian of
+`f` and the `N`-components through that of `g`. -/
+theorem criticalHessian_comp_fst_add_comp_snd_apply
+    (hf : ContDiffAt ℝ 2 (f ∘ (extChartAt I x).symm) (extChartAt I x x))
+    (hg : ContDiffAt ℝ 2 (g ∘ (extChartAt I' y).symm) (extChartAt I' y y)) (v w : E × E') :
+    criticalHessian (I.prod I') (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) v w =
+      criticalHessian I f x v.1 w.1 + criticalHessian I' g y v.2 w.2 := by
+  have hD := congr($(fderiv_fderiv_comp_fst_add_comp_snd hf hg) v w)
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearMap.coe_prodMap', Prod.map_fst, Prod.map_snd,
+    ContinuousLinearMap.coprodEquivL_apply_apply] at hD
+  rw [criticalHessian_def, criticalHessian_def, criticalHessian_def,
+    comp_fst_add_comp_snd_comp_extChartAt_prod_symm]
+  simp only [extChartAt_prod, PartialEquiv.prod_coe]
+  -- The tangent spaces at `(x, y)`, `x` and `y` are the model spaces `E × E'`, `E` and `E'`.
+  exact hD
 
 /-- **The Morse index of a separated sum is additive.** When the coordinate expressions of `f` at
 `x` and of `g` at `y` are twice continuously differentiable, the index of

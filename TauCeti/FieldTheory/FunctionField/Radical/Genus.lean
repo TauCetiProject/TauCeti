@@ -253,7 +253,7 @@ private theorem finrank_eq_and_isSeparable_of_pow_eq_of_gcd_ord_eq_one (hgen : F
     rintro rfl
     exact hn Nat.cast_zero
   have hfin : Module.finrank F F' = n :=
-    P.valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one hgen hy hn0
+    P.valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one hgen hy
       (by rwa [Valuation.ord_def, ← Place.ord_def])
   have hnF : (n : F) ≠ 0 := by
     rwa [← map_natCast (algebraMap k F), ne_eq, map_eq_zero]

@@ -5,20 +5,24 @@ Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.Compression
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Adjoints of linear maps
 
+An endomorphism and its adjoint have the same real quadratic form
+(`ContinuousLinearMap.re_inner_star_apply_self`).
 For bounded operators between complete inner product spaces, the adjoint takes values in the
 orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`).
 An operator on a Hilbert space is invertible exactly when its adjoint is
 (`ContinuousLinearMap.isUnit_adjoint_iff`), and inversion commutes with the adjoint
 (`ContinuousLinearMap.ringInverse_adjoint`). An operator on a Hilbert space that is bounded below
 by `M⁻¹` and has injective adjoint is invertible with `‖T⁻¹‖ ≤ M`
-(`ContinuousLinearMap.isUnit_and_norm_ringInverse_le_of_forall_norm_le`).
+(`ContinuousLinearMap.isUnit_and_norm_ringInverse_le_of_forall_norm_le`). If an invertible
+operator satisfies `‖x‖ ≤ M ‖T x‖`, every vector is `T† z` with `‖z‖ ≤ M ‖y‖`
+(`ContinuousLinearMap.exists_adjoint_apply_eq_and_norm_le`).
 For a continuous linear equivalence between complete inner product spaces, the adjoint is
 bijective (`ContinuousLinearEquiv.adjoint_bijective`).
 Its adjoint gives an equivalence in the reverse direction (`ContinuousLinearEquiv.adjointEquiv`),
@@ -75,81 +79,11 @@ namespace ContinuousLinearMap
 
 open scoped InnerProduct
 
-/-! ### Compressions -/
-
-noncomputable section Compression
-
-open scoped InnerProductSpace
-
-variable [CompleteSpace E] [CompleteSpace F]
-variable (A : E →L[𝕜] E) (X : F →L[𝕜] E)
-
-/-- The *compression* `X† A X` of an operator `A` on `E` along an operator `X : F →L[𝕜] E`. When
-`X` is an isometry, it is `A` cut down to the trial subspace `range X`, in the coordinates of
-`F`. -/
-def compression : F →L[𝕜] F :=
-  adjoint X ∘L A ∘L X
-
-theorem compression_def : A.compression X = adjoint X ∘L A ∘L X :=
-  (rfl)
-
-@[simp]
-theorem compression_apply (x : F) : A.compression X x = adjoint X (A (X x)) :=
-  (rfl)
-
-/-- Compression sends the zero operator to zero. -/
-@[simp]
-theorem compression_zero : (0 : E →L[𝕜] E).compression X = 0 := by
-  ext x
-  simp
-
-/-- Compression preserves addition in the operator argument. -/
-@[simp]
-theorem compression_add (B : E →L[𝕜] E) :
-    (A + B).compression X = A.compression X + B.compression X := by
-  ext x
-  simp
-
-/-- Compression preserves subtraction in the operator argument. -/
-@[simp]
-theorem compression_sub (B : E →L[𝕜] E) :
-    (A - B).compression X = A.compression X - B.compression X := by
-  ext x
-  simp
-
-/-- Compression preserves scalar multiplication in the operator argument. -/
-@[simp]
-theorem compression_smul (c : 𝕜) : (c • A).compression X = c • A.compression X := by
-  ext x
-  simp
-
-/-- The matrix coefficients of the compression are those of `A` on the images under `X`. -/
-theorem inner_compression_apply (x y : F) :
-    ⟪x, A.compression X y⟫_𝕜 = ⟪X x, A (X y)⟫_𝕜 :=
-  adjoint_inner_right X x (A (X y))
-
-@[simp]
-theorem compression_id : A.compression (ContinuousLinearMap.id 𝕜 E) = A := by
-  ext x
-  simp [compression_def, adjoint_id]
-
-/-- Compressing in two steps is compressing along the composite. -/
-theorem compression_comp {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
-    [CompleteSpace G] (Y : G →L[𝕜] F) :
-    A.compression (X ∘L Y) = (A.compression X).compression Y := by
-  simp only [compression_def, adjoint_comp, comp_assoc]
-
-/-- The adjoint of the compression is the compression of the adjoint. -/
-@[simp]
-theorem adjoint_compression : adjoint (A.compression X) = (adjoint A).compression X := by
-  simp only [compression_def, adjoint_comp, adjoint_adjoint, comp_assoc]
-
-/-- The compression of a symmetric operator is symmetric. -/
-theorem isSymmetric_compression {A : E →L[𝕜] E} (hA : (A : E →ₗ[𝕜] E).IsSymmetric) :
-    (A.compression X : F →ₗ[𝕜] F).IsSymmetric :=
-  isSelfAdjoint_iff_isSymmetric.1 <| (isSelfAdjoint_iff_isSymmetric.2 hA).adjoint_conj X
-
-end Compression
+/-- An operator and its adjoint have the same real quadratic form. -/
+@[simp] theorem re_inner_star_apply_self [CompleteSpace E] (T : E →L[𝕜] E) (x : E) :
+    RCLike.re (inner 𝕜 (star T x) x) = RCLike.re (inner 𝕜 (T x) x) := by
+  rw [star_eq_adjoint, adjoint_inner_left]
+  exact inner_re_symm x (T x)
 
 /-- The adjoint of a bounded operator takes values in the orthogonal complement of its kernel. -/
 theorem adjoint_apply_mem_orthogonal_ker [CompleteSpace E] [CompleteSpace F]
@@ -185,6 +119,16 @@ theorem isUnit_adjoint_iff {A : E →L[𝕜] E} : IsUnit (adjoint A) ↔ IsUnit 
 theorem ringInverse_adjoint (A : E →L[𝕜] E) :
     Ring.inverse (adjoint A) = adjoint (Ring.inverse A) := by
   simpa only [star_eq_adjoint] using Ring.inverse_star A
+
+/-- If an invertible operator `T` on a Hilbert space is bounded below, `‖x‖ ≤ M * ‖T x‖`, then
+every vector `y` is `T† z` for some `z` with `‖z‖ ≤ M * ‖y‖`, namely `z = (T⁻¹)† y`. -/
+theorem exists_adjoint_apply_eq_and_norm_le {T : E →L[𝕜] E} (hT : IsUnit T) {M : ℝ}
+    (hM : 0 ≤ M) (h : ∀ x, ‖x‖ ≤ M * ‖T x‖) (y : E) :
+    ∃ z, adjoint T z = y ∧ ‖z‖ ≤ M * ‖y‖ := by
+  refine ⟨adjoint (Ring.inverse T) y, ?_, le_of_opNorm_le _ ?_ y⟩
+  · rw [← ringInverse_adjoint, apply_ringInverse_apply (isUnit_adjoint_iff.2 hT)]
+  · rw [LinearIsometryEquiv.norm_map]
+    exact norm_ringInverse_le_of_forall_norm_le hT hM h
 
 end Inverse
 
@@ -425,10 +369,12 @@ end WithLp
 
 namespace LinearMap
 
+omit [FiniteDimensional 𝕜 F] in
 /-- The orthogonal complement of the kernel of a surjective linear map has the dimension of the
 codomain. -/
 theorem finrank_orthogonal_ker_of_surjective (f : E →ₗ[𝕜] F) (hf : Function.Surjective f) :
     Module.finrank 𝕜 (ker f)ᗮ = Module.finrank 𝕜 F := by
+  have := Module.Finite.of_surjective f hf
   rw [orthogonal_ker, finrank_range_adjoint, range_eq_top.mpr hf, finrank_top]
 
 /-- The determinant of the adjoint of an endomorphism is the conjugate of its determinant. -/

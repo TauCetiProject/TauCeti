@@ -29,13 +29,11 @@ namespace HomologicalComplex
 variable {R : Type*} [Semiring R] {C : Type*} [Category* C] [Preadditive C]
   [CategoryTheory.Linear R C] {ι : Type*} {c : ComplexShape ι}
 
-/-- The short complex attached to a degree sends a scalar multiple of a chain map to the scalar
-multiple of the induced morphism of short complexes. -/
-@[simp]
-lemma shortComplexFunctor_map_smul (i : ι) (a : R) {K L : HomologicalComplex C c} (φ : K ⟶ L) :
-    (shortComplexFunctor C c i).map (a • φ) = a • (shortComplexFunctor C c i).map φ := by
-  -- Each component is `smul_f_apply`, stated for the `SMul` instance of the complexes.
-  ext <;> exact smul_f_apply _ _ _
+/-- Taking the short complex attached to a degree is a linear functor. -/
+instance (i : ι) : (shortComplexFunctor C c i).Linear R where
+  map_smul φ a := by
+    -- Each component is `smul_f_apply`, stated for the `SMul` instance of the complexes.
+    ext <;> exact smul_f_apply _ _ _
 
 /-- The map induced on homology by a scalar multiple of a chain map is the scalar multiple of the
 induced map. -/
@@ -43,7 +41,7 @@ induced map. -/
 lemma homologyMap_smul (a : R) {K L : HomologicalComplex C c} (φ : K ⟶ L) (i : ι)
     [K.HasHomology i] [L.HasHomology i] :
     homologyMap (a • φ) i = a • homologyMap φ i := by
-  rw [homologyMap, shortComplexFunctor_map_smul]
+  rw [homologyMap, Functor.map_smul]
   exact ShortComplex.homologyMap_smul _ _
 
 /-- Taking homology in a fixed degree is a linear functor. -/

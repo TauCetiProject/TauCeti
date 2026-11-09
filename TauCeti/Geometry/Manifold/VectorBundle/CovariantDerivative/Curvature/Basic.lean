@@ -8,7 +8,9 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.SecondCovariantDerivative
 import TauCeti.Geometry.Manifold.VectorBundle.Tensoriality
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -363,64 +365,23 @@ theorem curvatureOperator_smul_section
   funext x
   -- The pointwise `Pi` action on the right hides the applied curvature operator from `rw`.
   change curvatureOperator cov X Y (f • σ) x = f x • curvatureOperator cov X Y σ x
-  let gX : M → ℝ := fun y ↦ d% f y (X y)
-  let gY : M → ℝ := fun y ↦ d% f y (Y y)
   have hfd : MDiff f := hf.mdifferentiable (by simp)
   have hXd : MDiff (T% X) := hX.mdifferentiable (by simp)
   have hYd : MDiff (T% Y) := hY.mdifferentiable (by simp)
   have hσd : MDiff (T% σ) := hσ.mdifferentiable (by simp)
-  have hXσ := cov.contMDiff_apply hX hσ
-  have hYσ := cov.contMDiff_apply hY hσ
-  have hXσd : MDiff (T% (fun y ↦ cov σ y (X y))) := hXσ.mdifferentiable (by simp)
-  have hYσd : MDiff (T% (fun y ↦ cov σ y (Y y))) := hYσ.mdifferentiable (by simp)
-  have hgX : ContMDiff I 𝓘(ℝ) ∞ gX := by
-    exact (_root_.ContMDiff.contMDiff_mvfderiv_apply hf
-      (m := (⊤ : ℕ∞)) (n := (⊤ : ℕ∞)) (by simp)).comp hX
-  have hgY : ContMDiff I 𝓘(ℝ) ∞ gY := by
-    exact (_root_.ContMDiff.contMDiff_mvfderiv_apply hf
-      (m := (⊤ : ℕ∞)) (n := (⊤ : ℕ∞)) (by simp)).comp hY
-  have hgXd : MDiff gX := hgX.mdifferentiable (by simp)
-  have hgYd : MDiff gY := hgY.mdifferentiable (by simp)
-  have hinnerX : (fun y ↦ cov (f • σ) y (X y)) =
-      f • (fun y ↦ cov σ y (X y)) + gX • σ := by
-    funext y
-    have h := cov.isCovariantDerivativeOnUniv.leibniz (hσd y) (hfd y)
-    -- `h` is an equality of continuous linear maps; expose its value at `X y` through the
-    -- pointwise `Pi` operations before rewriting by it.
-    change cov (f • σ) y (X y) = f y • cov σ y (X y) + gX y • σ y
-    rw [h]
-    simp [gX, add_apply, ContinuousLinearMap.smulRight_apply]
-  have hinnerY : (fun y ↦ cov (f • σ) y (Y y)) =
-      f • (fun y ↦ cov σ y (Y y)) + gY • σ := by
-    funext y
-    have h := cov.isCovariantDerivativeOnUniv.leibniz (hσd y) (hfd y)
-    -- `h` is an equality of continuous linear maps; expose its value at `Y y` through the
-    -- pointwise `Pi` operations before rewriting by it.
-    change cov (f • σ) y (Y y) = f y • cov σ y (Y y) + gY y • σ y
-    rw [h]
-    simp [gY, add_apply, ContinuousLinearMap.smulRight_apply]
-  have hfXσd : MDiff (T% (f • fun y ↦ cov σ y (X y))) :=
-    (hf.smul_section hXσ).mdifferentiable (by simp)
-  have hfYσd : MDiff (T% (f • fun y ↦ cov σ y (Y y))) :=
-    (hf.smul_section hYσ).mdifferentiable (by simp)
-  have hgXσd : MDiff (T% (gX • σ)) := (hgX.smul_section hσ).mdifferentiable (by simp)
-  have hgYσd : MDiff (T% (gY • σ)) := (hgY.smul_section hσ).mdifferentiable (by simp)
   let _ : IsManifold I (minSmoothness ℝ 2) M :=
     IsManifold.of_le (m := minSmoothness ℝ 2) (n := ∞) (by simp)
   -- The commutator identity below cancels the second-derivative terms.
   have hcomm := mvfderiv_mlieBracket (f := f) (V := X) (W := Y) (x := x)
     (hf.contMDiffAt) (by simp) (hXd x) (hYd x)
-  rw [curvatureOperator_apply, curvatureOperator_apply, hinnerY, hinnerX,
-    cov.isCovariantDerivativeOnUniv.add (hfYσd x) (hgYσd x),
-    cov.isCovariantDerivativeOnUniv.add (hfXσd x) (hgXσd x),
-    cov.isCovariantDerivativeOnUniv.leibniz (hYσd x) (hfd x),
-    cov.isCovariantDerivativeOnUniv.leibniz (hσd x) (hgYd x),
-    cov.isCovariantDerivativeOnUniv.leibniz (hXσd x) (hfd x),
-    cov.isCovariantDerivativeOnUniv.leibniz (hσd x) (hgXd x),
+  rw [curvatureOperator_apply, curvatureOperator_apply,
+    covariantDerivative_covariantDerivative_smul_section (k := ∞) (by simp) cov (X := X)
+      (by simpa using hf) hY (by simpa using hσ) x,
+    covariantDerivative_covariantDerivative_smul_section (k := ∞) (by simp) cov (X := Y)
+      (by simpa using hf) hX (by simpa using hσ) x,
     cov.isCovariantDerivativeOnUniv.leibniz (hσd x) (hfd x)]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply]
   rw [hcomm]
-  simp only [gX, gY]
   simp only [sub_smul, smul_sub]
   -- Fold the expanded vector expressions into local names: rewriting cannot target these
   -- abbreviations, while `change` recognizes their definitional equality before `abel`.

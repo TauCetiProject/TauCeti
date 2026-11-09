@@ -14,6 +14,10 @@ import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 -- interval integral of `t ^ s`, used only inside the proof of
 -- `TauCeti.lintegral_ofReal_rpow_Ioo`.
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+-- `TauCeti.MeasureTheory.Integral.Average` is imported privately: it supplies
+-- `setLIntegral_comp_preimage_of_map_eq_smul`, used only inside the proof of
+-- `TauCeti.setLIntegral_comp_mul_left_mul_rpow`.
+import TauCeti.MeasureTheory.Integral.Average
 
 /-!
 # Lower integrals of a real power, and the layer cake formula in `ℝ≥0∞`
@@ -60,6 +64,8 @@ used, and it is why the statement needs no finiteness hypothesis on `u`.
 
 * `TauCeti.lintegral_ofReal_rpow_Ioo`: `∫⁻ t in (0, a), t ^ s = a ^ (s + 1) / (s + 1)` for
   `-1 < s` and `0 ≤ a`.
+* `TauCeti.lintegral_ofReal_pow_Ioo`: `∫⁻ t in (0, a), t ^ k = a ^ (k + 1) / (k + 1)` for a natural
+  number `k` and `0 ≤ a`.
 * `TauCeti.lintegral_ofReal_rpow_Ioi`: `∫⁻ t in (0, ∞), t ^ s = ∞`, for every `s`.
 * `TauCeti.lintegral_indicator_ofReal_rpow_Ioi`: the same integral truncated at the height where
   `c * t` reaches `a : ℝ≥0∞`, evaluated to `c ^ (-(s + 1)) / (s + 1) * a ^ (s + 1)`.
@@ -68,6 +74,14 @@ used, and it is why the statement needs no finiteness hypothesis on `u`.
   `s < -1`.
 * `TauCeti.setLIntegral_Ioi_rpow_mul_ite_le`: an upper bound for the kernel `t ^ (-s - 1)`
   restricted by a linear threshold, with constant and linear weights.
+
+* `TauCeti.setLIntegral_Ioo_mul_rpow_le_inv_two_mul_add`: the rescaling step of a good-`λ`
+  estimate, bounding `∫₀ᴺ m(t) t^(p-1) dt` by half of itself plus a layer cake integral.
+* `TauCeti.setLIntegral_Ioc_ite_rpow_le`: an upper-tail bound for a negative power restricted by
+  a linear threshold.
+* `TauCeti.setLIntegral_Ioc_rpow_mul_ite_le`: the same bound with constant and linear weights.
+* `TauCeti.setLIntegral_comp_mul_left_mul_rpow`: the substitution `t = c s` in a lower integral
+  against the weight `t ^ q`.
 * `TauCeti.lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul`: the layer cake formula for an
   `ℝ≥0∞`-valued function.
 * `TauCeti.sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top`: a function with finite positive
@@ -105,6 +119,16 @@ theorem lintegral_ofReal_rpow_Ioo (hs : -1 < s) {a : ℝ} (ha : 0 ≤ a) :
   rw [← ofReal_integral_eq_lintegral_ofReal hint hnn, ← integral_Ioc_eq_integral_Ioo,
     ← intervalIntegral.integral_of_le ha, integral_rpow (Or.inl hs), Real.zero_rpow hs1.ne',
     sub_zero]
+
+/-- The lower integral of `t ^ k` over `(0, a)` for a natural exponent `k` is
+`a ^ (k + 1) / (k + 1)`: the natural-exponent case of `TauCeti.lintegral_ofReal_rpow_Ioo`. -/
+theorem lintegral_ofReal_pow_Ioo (k : ℕ) {a : ℝ} (ha : 0 ≤ a) :
+    ∫⁻ t in Ioo (0 : ℝ) a, ENNReal.ofReal (t ^ k) =
+      ENNReal.ofReal (a ^ (k + 1) / (k + 1)) := by
+  have h := lintegral_ofReal_rpow_Ioo (s := k) (by linarith [k.cast_nonneg (α := ℝ)]) ha
+  have ha' : a ^ ((k : ℝ) + 1) = a ^ (k + 1) := by exact_mod_cast Real.rpow_natCast a (k + 1)
+  simp_rw [Real.rpow_natCast] at h
+  rw [h, ha']
 
 /-- The lower integral of `t ^ s` over `(0, ∞)` diverges, for every exponent `s`: the power fails
 to be integrable at the origin or at infinity, according as `s ≤ -1` or `-1 < s`. -/
@@ -277,6 +301,101 @@ theorem setLIntegral_Ioi_rpow_mul_ite_le (hs : 0 < s) (a : ℝ≥0∞) {r : ℝ}
       ENNReal.rpow_one]
   simp only [sub_add_cancel, neg_neg, hsplit]
   exact le_of_eq (by ring)
+
+/-- Substituting `t = c s`, for `c > 0`, in a lower integral against the weight `t ^ q` over a set
+of nonnegative reals: the weight is homogeneous of degree `q`, so the substitution costs the factor
+`c ^ (-(q + 1))`. Here `T` is the preimage of `S` under `s ↦ c s`. -/
+theorem setLIntegral_comp_mul_left_mul_rpow (g : ℝ → ℝ≥0∞) {c : ℝ} (hc : 0 < c)
+    {S T : Set ℝ} (hT : MeasurableSet T) (hST : ∀ s, s ∈ T ↔ c * s ∈ S) (hT0 : T ⊆ Ici 0)
+    (q : ℝ) :
+    ∫⁻ s in T, g (c * s) * ENNReal.ofReal (s ^ q) =
+      ENNReal.ofReal (c ^ (-(q + 1))) * ∫⁻ t in S, g t * ENNReal.ofReal (t ^ q) := by
+  set e := (Homeomorph.mulLeft₀ c hc.ne').toMeasurableEquiv
+  set G : ℝ → ℝ≥0∞ := fun t => g t * ENNReal.ofReal (t ^ q)
+  have he : volume.map e = ENNReal.ofReal |c⁻¹| • volume := Real.map_volume_mul_left hc.ne'
+  have h : ∫⁻ s in e ⁻¹' S, G (e s) = ENNReal.ofReal |c⁻¹| * ∫⁻ t in S, G t :=
+    setLIntegral_comp_preimage_of_map_eq_smul he G S
+  have hT' : e ⁻¹' S = T := by
+    ext s
+    exact (hST s).symm
+  rw [hT'] at h
+  simp only [e, G, Homeomorph.toMeasurableEquiv_coe, Homeomorph.coe_mulLeft₀, abs_inv,
+    abs_of_pos hc] at h
+  have hcongr : ∫⁻ s in T, g (c * s) * ENNReal.ofReal ((c * s) ^ q) =
+      ∫⁻ s in T, ENNReal.ofReal (c ^ q) * (g (c * s) * ENNReal.ofReal (s ^ q)) :=
+    setLIntegral_congr_fun hT fun s hs => by
+      rw [Real.mul_rpow hc.le (hT0 hs), ENNReal.ofReal_mul (Real.rpow_nonneg hc.le q)]
+      ring
+  rw [hcongr, lintegral_const_mul' _ _ ENNReal.ofReal_ne_top] at h
+  have hinv : ENNReal.ofReal (c ^ (-q)) * ENNReal.ofReal (c ^ q) = 1 := by
+    rw [← ENNReal.ofReal_mul (by positivity), ← Real.rpow_add hc]
+    simp
+  calc ∫⁻ s in T, g (c * s) * ENNReal.ofReal (s ^ q)
+      = ENNReal.ofReal (c ^ (-q)) *
+          (ENNReal.ofReal (c ^ q) * ∫⁻ s in T, g (c * s) * ENNReal.ofReal (s ^ q)) := by
+        rw [← mul_assoc, hinv, one_mul]
+    _ = ENNReal.ofReal (c ^ (-q)) * ENNReal.ofReal c⁻¹ *
+          ∫⁻ t in S, g t * ENNReal.ofReal (t ^ q) := by
+        rw [h, mul_assoc]
+    _ = ENNReal.ofReal (c ^ (-(q + 1))) * ∫⁻ t in S, g t * ENNReal.ofReal (t ^ q) := by
+        rw [← ENNReal.ofReal_mul (by positivity), ← Real.rpow_neg_one, ← Real.rpow_add hc,
+          neg_add]
+
+/-- The rescaling step of the truncated Fefferman–Stein estimate. If `m (2 s)` is bounded by the
+good-`λ` inequality `K γ m s + σ (γ s)`, with `2^p K γ = 1 / 2` and `σ` measurable, then
+substituting `t = 2 s` bounds `∫₀ᴺ m(t) t^(p-1) dt` by half of itself plus `2^p γ^(-p) J`,
+where `J` is the layer cake integral of `σ`. -/
+theorem setLIntegral_Ioo_mul_rpow_le_inv_two_mul_add
+    {m σ : ℝ → ℝ≥0∞} {p γ N : ℝ} (hγ : 0 < γ)
+    (hN : 0 ≤ N) {K J : ℝ≥0∞} (hσ : Measurable σ)
+    (hlevel : ∀ s : ℝ, 0 < s → m (2 * s) ≤ K * ENNReal.ofReal γ * m s + σ (γ * s))
+    (hJ : ∫⁻ s in Ioi (0 : ℝ), σ (γ * s) * ENNReal.ofReal (s ^ (p - 1)) =
+      ENNReal.ofReal (γ ^ (-p)) * J)
+    (hconst : ENNReal.ofReal (2 ^ p) * (K * ENNReal.ofReal γ) = 2⁻¹) :
+    ∫⁻ t in Ioo 0 N, m t * ENNReal.ofReal (t ^ (p - 1)) ≤
+      2⁻¹ * (∫⁻ t in Ioo 0 N, m t * ENNReal.ofReal (t ^ (p - 1))) +
+        ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J) := by
+  set w : ℝ → ℝ≥0∞ := fun t => ENNReal.ofReal (t ^ (p - 1))
+  set I : ℝ → ℝ≥0∞ := fun N => ∫⁻ t in Ioo 0 N, m t * w t
+  have hw : Measurable w := ENNReal.measurable_ofReal.comp (measurable_id.pow_const _)
+  have hscale := setLIntegral_comp_mul_left_mul_rpow m two_pos measurableSet_Ioo
+    (S := Ioo 0 N) (T := Ioo 0 (N / 2)) (fun s => by
+      simp only [mem_Ioo]
+      constructor <;> rintro ⟨h1, h2⟩ <;> constructor <;> linarith)
+    (fun s hs => le_of_lt hs.1) (p - 1)
+  rw [sub_add_cancel] at hscale
+  have h2p : ENNReal.ofReal (2 ^ p) * ENNReal.ofReal (2 ^ (-p)) = 1 := by
+    rw [← ENNReal.ofReal_mul (by positivity), ← Real.rpow_add two_pos]
+    simp
+  have hK : K ≠ ∞ := by
+    rintro rfl
+    rw [ENNReal.top_mul (ENNReal.ofReal_pos.2 hγ).ne',
+      ENNReal.mul_top (ENNReal.ofReal_pos.2 (by positivity)).ne'] at hconst
+    exact ENNReal.inv_ne_top.2 two_ne_zero hconst.symm
+  have hσw : Measurable fun s => σ (γ * s) * w s :=
+    (hσ.comp (measurable_id.const_mul γ)).mul hw
+  -- fold the `set` abbreviations `I`, `w` in the goal; `set` cannot abstract under the binder
+  change I N ≤ 2⁻¹ * I N + ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J)
+  calc I N = ENNReal.ofReal (2 ^ p) * ∫⁻ s in Ioo 0 (N / 2), m (2 * s) * w s := by
+        rw [hscale, ← mul_assoc, h2p, one_mul]
+    _ ≤ ENNReal.ofReal (2 ^ p) * ∫⁻ s in Ioo 0 (N / 2),
+          (K * ENNReal.ofReal γ * (m s * w s) + σ (γ * s) * w s) := by
+        refine mul_le_mul' le_rfl (setLIntegral_mono' measurableSet_Ioo fun s hs => ?_)
+        rw [← mul_assoc, ← add_mul]
+        gcongr
+        exact hlevel s hs.1
+    _ = ENNReal.ofReal (2 ^ p) * (K * ENNReal.ofReal γ * I (N / 2) +
+          ∫⁻ s in Ioo 0 (N / 2), σ (γ * s) * w s) := by
+        rw [lintegral_add_right' _ hσw.aemeasurable,
+          lintegral_const_mul' _ _ (ENNReal.mul_ne_top hK ENNReal.ofReal_ne_top)]
+    _ ≤ ENNReal.ofReal (2 ^ p) * (K * ENNReal.ofReal γ * I N +
+          ∫⁻ s in Ioi (0 : ℝ), σ (γ * s) * w s) := by
+        gcongr
+        · exact lintegral_mono_set (Ioo_subset_Ioo_right (by linarith))
+        · exact Ioo_subset_Ioi_self
+    _ = 2⁻¹ * I N + ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J) := by
+        rw [hJ, mul_add, ← mul_assoc, ← mul_assoc, ← hconst]
+        ring
 
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {f : α → ℝ≥0∞} {p : ℝ}
 

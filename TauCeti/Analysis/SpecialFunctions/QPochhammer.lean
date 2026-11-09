@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
 public import TauCeti.Algebra.Ring.Parity
 public import TauCeti.Analysis.Normed.Ring.InfiniteProd
 public import TauCeti.Analysis.Normed.Ring.Basic
+import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
 # The infinite q-Pochhammer products `∏_{n ≥ 1} (1 - qⁿ w)`
@@ -22,7 +23,9 @@ obtained by splitting off the first factor, and its nonvanishing. It also introd
 product `θ_q(w) = (w; q)_∞ (q w⁻¹; q)_∞ = (1 - w) ∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)` and proves its
 convergence, its nonvanishing and its quasi-periodicity `θ_q(q w) = -w⁻¹ θ_q(w)`, and evaluates it
 at `w = -1` and at `q = w²`. These evaluations, together with Euler's identity
-`∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 0} (1 - q^{2n+1}) = 1`, compute the Siegel functions of level two. When
+`∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 0} (1 - q^{2n+1}) = 1`, compute the Siegel functions of level two. Its
+evaluations at `q = w³` and at a primitive cube root of unity `w`, multiplied by an Euler function,
+compute those of level three. When
 `q` and
 `w` depend continuously on `τ` in an open set `U ⊆ ℂ` with `‖q‖ < 1` on `U`, the product converges
 locally uniformly on `U`, and is holomorphic there when `q` and `w` are; for example
@@ -54,8 +57,18 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
   `θ_q(w)` converges, and `θ_q(w) ≠ 0` when `w` is not an integral power of `q`.
 * `TauCeti.qTheta_mul_left`: its quasi-periodicity `θ_q(q w) = -w⁻¹ θ_q(w)` for
   `0 < ‖q‖ < 1` and `w ≠ 0`.
+* `TauCeti.qTheta_one`, `TauCeti.differentiableOn_qTheta`, `TauCeti.hasDerivAt_qTheta_one`:
+  `θ_q(1) = 0`, and for `‖q‖ < 1` the theta product is holomorphic on `ℂ \ {0}` with derivative
+  `-(∏_{n ≥ 1} (1 - qⁿ))²` at `w = 1`.
+* `TauCeti.qTheta_eq_mul_tprod_mul_tprod`: `θ_q(w)` is `1 - w` times its two half products.
+* `TauCeti.differentiable_qTheta_exp`, `TauCeti.hasDerivAt_qTheta_exp_zero`: for `‖q‖ < 1`,
+  `z ↦ θ_q(e^{2π i z})` is entire, with derivative `-2π i (∏_{n ≥ 1} (1 - qⁿ))²` at `z = 0`.
 * `TauCeti.qTheta_neg_one`, `TauCeti.qTheta_sq_self`: `θ_q(-1) = 2 (∏_{n ≥ 1} (1 + qⁿ))²` and
   `θ_{s²}(s) = (∏_{n ≥ 0} (1 - s^{2n+1}))²`.
+* `TauCeti.qTheta_pow_three_self_mul`, `TauCeti.qTheta_mul_tprod_of_sq_add_add_one_eq_zero`:
+  `θ_{s³}(s) ∏_{n ≥ 1} (1 - s^{3n}) = ∏_{n ≥ 1} (1 - sⁿ)`, and
+  `θ_q(ω) ∏_{n ≥ 1} (1 - qⁿ) = (1 - ω) ∏_{n ≥ 1} (1 - q^{3n})` for a primitive cube root of
+  unity `ω`.
 * `TauCeti.tprod_one_sub_pow_eq_tprod_one_sub_pow_odd_mul`,
   `TauCeti.tprod_one_add_pow_mul_tprod_one_sub_pow`: the Euler function `∏_{n ≥ 1} (1 - qⁿ)` is
   `∏_{n ≥ 0} (1 - q^{2n+1}) ∏_{n ≥ 1} (1 - q^{2n})`, and multiplying it by `∏_{n ≥ 1} (1 + qⁿ)`
@@ -142,6 +155,11 @@ theorem qTheta_def (q w : 𝕜) :
     qTheta q w = (1 - w) * ∏' n : ℕ, (1 - q ^ (n + 1) * w) * (1 - q ^ (n + 1) * w⁻¹) :=
   (rfl)
 
+/-- The theta product vanishes at `w = 1`. -/
+@[simp]
+theorem qTheta_one (q : 𝕜) : qTheta q 1 = 0 := by
+  simp [qTheta_def]
+
 variable [CompleteSpace 𝕜]
 
 /-- For `‖q‖ < 1` the product `∏_{n ≥ 1} (1 - qⁿ w)` converges. -/
@@ -220,6 +238,13 @@ converges. -/
 theorem multipliable_qTheta {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
     Multipliable fun n : ℕ ↦ (1 - q ^ (n + 1) * w) * (1 - q ^ (n + 1) * w⁻¹) :=
   (multipliable_one_sub_pow_mul hq w).mul (multipliable_one_sub_pow_mul hq w⁻¹)
+
+/-- For `‖q‖ < 1` the theta product `θ_q(w)` is `1 - w` times its two half products
+`∏_{n ≥ 1} (1 - qⁿ w)` and `∏_{n ≥ 1} (1 - qⁿ w⁻¹)`. -/
+theorem qTheta_eq_mul_tprod_mul_tprod {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
+    qTheta q w = (1 - w) *
+      ((∏' n : ℕ, (1 - q ^ (n + 1) * w)) * ∏' n : ℕ, (1 - q ^ (n + 1) * w⁻¹)) := by
+  rw [qTheta_def, (multipliable_one_sub_pow_mul hq _).tprod_mul (multipliable_one_sub_pow_mul hq _)]
 
 /-- For `‖q‖ < 1` the theta product is bounded by
 `‖θ_q(w)‖ ≤ ‖1 - w‖ exp (‖q‖ (‖w‖ + ‖w‖⁻¹) / (1 - ‖q‖))`. -/
@@ -339,6 +364,59 @@ theorem qTheta_sq_self {s : 𝕜} (hs : ‖s‖ < 1) :
       field_simp
       ring
   rw [h₁, h₂, sq]
+
+/-- The theta product with nome the cube of its argument, times the Euler function of the nome, is
+the Euler function of the argument: `θ_{s³}(s) ∏_{n ≥ 1} (1 - s^{3n}) = ∏_{n ≥ 1} (1 - sⁿ)` for
+`‖s‖ < 1`. -/
+theorem qTheta_pow_three_self_mul {s : 𝕜} (hs : ‖s‖ < 1) :
+    qTheta (s ^ 3) s * ∏' n : ℕ, (1 - (s ^ 3) ^ (n + 1)) = ∏' n : ℕ, (1 - s ^ (n + 1)) := by
+  rcases eq_or_ne s 0 with rfl | hs₀
+  · simp [qTheta_def]
+  have hs3 := norm_pow_lt_one hs three_ne_zero
+  -- The factors `1 - sᵐ` sorted by the residue of `m` modulo `3`.
+  have h₁ : Multipliable fun n : ℕ ↦ 1 - s ^ (3 * n + 1) :=
+    (multipliable_one_sub_pow_mul hs3 (s ^ 2)⁻¹).congr fun n ↦ by
+      rw [← pow_mul, show 3 * (n + 1) = 3 * n + 1 + 2 by ring, pow_add,
+        mul_inv_cancel_right₀ (pow_ne_zero 2 hs₀)]
+  have h₂ : ∀ n : ℕ, 1 - (s ^ 3) ^ (n + 1) * s⁻¹ = 1 - s ^ (3 * n + 2) := fun n ↦ by
+    rw [← pow_mul, show 3 * (n + 1) = 3 * n + 2 + 1 by ring, pow_succ, mul_inv_cancel_right₀ hs₀]
+  have h₃ : ∀ n : ℕ, 1 - (s ^ 3) ^ (n + 1) = 1 - s ^ (3 * n + 3) := fun n ↦ by ring
+  have hsplit : ∏' n : ℕ, (1 - s ^ (n + 1)) =
+      ∏' n : ℕ, (1 - s ^ (3 * n + 1)) * (1 - s ^ (3 * n + 2)) * (1 - s ^ (3 * n + 3)) := by
+    have hf : Multipliable fun n : ℕ ↦ 1 - s ^ (n + 1) := by
+      simpa using multipliable_one_sub_pow_mul hs 1
+    rw [← (hf.hasProd.prod_fin_mul_add_nat 3).tprod_eq]
+    exact tprod_congr fun n ↦ by
+      simp only [Fin.prod_univ_three, Fin.val_zero, Fin.val_one, Fin.val_two]
+      ring_nf
+  -- `(1 - s) ∏_{n ≥ 1} (1 - s^{3n+1}) = ∏_{n ≥ 0} (1 - s^{3n+1})`.
+  have h₄ : (1 - s) * ∏' n : ℕ, (1 - (s ^ 3) ^ (n + 1) * s) = ∏' n : ℕ, (1 - s ^ (3 * n + 1)) := by
+    rw [tprod_eq_zero_mul' (f := fun n ↦ 1 - s ^ (3 * n + 1))
+      (by simpa only [← pow_mul, ← pow_succ] using multipliable_one_sub_pow_mul hs3 s)]
+    exact congrArg₂ (· * ·) (by norm_num) (tprod_congr fun n ↦ by ring)
+  -- The three residue-class products multiply to the product of the blockwise factors.
+  have hgroup : (∏' n : ℕ, (1 - s ^ (3 * n + 1))) * (∏' n : ℕ, (1 - s ^ (3 * n + 2))) *
+      ∏' n : ℕ, (1 - s ^ (3 * n + 3)) =
+      ∏' n : ℕ, (1 - s ^ (3 * n + 1)) * (1 - s ^ (3 * n + 2)) * (1 - s ^ (3 * n + 3)) := by
+    have hm₂ := (multipliable_one_sub_pow_mul hs3 s⁻¹).congr h₂
+    have hm₃ := (multipliable_one_sub_pow_mul hs3 1).congr fun n ↦ by rw [mul_one, h₃]
+    rw [← h₁.tprod_mul hm₂, ← (h₁.mul hm₂).tprod_mul hm₃]
+  rw [hsplit, ← hgroup, qTheta_def, (multipliable_one_sub_pow_mul hs3 _).tprod_mul
+    (multipliable_one_sub_pow_mul hs3 _), ← mul_assoc, h₄, tprod_congr h₂, tprod_congr h₃]
+
+/-- The theta product at a primitive cube root of unity, times the Euler function of the nome: if
+`ω² + ω + 1 = 0` then `θ_q(ω) ∏_{n ≥ 1} (1 - qⁿ) = (1 - ω) ∏_{n ≥ 1} (1 - q^{3n})` for
+`‖q‖ < 1`. -/
+theorem qTheta_mul_tprod_of_sq_add_add_one_eq_zero {q ω : 𝕜} (hq : ‖q‖ < 1)
+    (hω : ω ^ 2 + ω + 1 = 0) :
+    qTheta q ω * ∏' n : ℕ, (1 - q ^ (n + 1)) = (1 - ω) * ∏' n : ℕ, (1 - (q ^ 3) ^ (n + 1)) := by
+  have hinv : ω⁻¹ = -1 - ω := inv_eq_of_mul_eq_one_right (by linear_combination -hω)
+  rw [qTheta_def, mul_assoc, ← (multipliable_qTheta hq ω).tprod_mul
+    (by simpa using multipliable_one_sub_pow_mul hq 1)]
+  -- Each factor is `(1 - x ω)(1 - x ω²)(1 - x) = 1 - x³` with `x = qⁿ`.
+  exact congrArg₂ (· * ·) rfl (tprod_congr fun n ↦ by
+    rw [hinv]
+    linear_combination (-(1 - q ^ (n + 1)) * (q ^ (n + 1)) ^ 2) * hω)
 
 end NormedField
 
@@ -464,5 +542,63 @@ theorem differentiableOn_tprod_one_sub_pow_mul (hU : IsOpen U) (hq : Differentia
       simpa [Finset.prod_fn] using DifferentiableOn.finsetProd fun _ _ ↦ by fun_prop) hU
 
 end LocallyUniform
+
+section Holomorphic
+
+variable {q : ℂ}
+
+/-- The product of the two half products of `θ_q(w)` is holomorphic on `ℂ \ {0}`. -/
+private theorem differentiableOn_tprod_mul_tprod (hq : ‖q‖ < 1) :
+    DifferentiableOn ℂ (fun w : ℂ ↦
+      (∏' n : ℕ, (1 - q ^ (n + 1) * w)) * ∏' n : ℕ, (1 - q ^ (n + 1) * w⁻¹)) {0}ᶜ :=
+  (differentiableOn_tprod_one_sub_pow_mul (q := fun _ ↦ q) isOpen_compl_singleton
+    (differentiableOn_const q) (fun _ _ ↦ hq) differentiableOn_id).mul
+    (differentiableOn_tprod_one_sub_pow_mul (q := fun _ ↦ q) isOpen_compl_singleton
+      (differentiableOn_const q) (fun _ _ ↦ hq) (differentiableOn_inv.mono fun _ h ↦ h))
+
+/-- For `‖q‖ < 1` the theta product `w ↦ θ_q(w)` is holomorphic on `ℂ \ {0}`. -/
+theorem differentiableOn_qTheta (hq : ‖q‖ < 1) : DifferentiableOn ℂ (qTheta q) {0}ᶜ := by
+  rw [show qTheta q = _ from funext (qTheta_eq_mul_tprod_mul_tprod hq)]
+  exact (differentiableOn_const 1 |>.sub differentiableOn_id).mul
+    (differentiableOn_tprod_mul_tprod hq)
+
+/-- For `‖q‖ < 1` the theta product has a simple zero at `w = 1`: its derivative there is
+`-(∏_{n ≥ 1} (1 - qⁿ))²`. -/
+theorem hasDerivAt_qTheta_one (hq : ‖q‖ < 1) :
+    HasDerivAt (qTheta q) (-(∏' n : ℕ, (1 - q ^ (n + 1))) ^ 2) 1 := by
+  have h := ((hasDerivAt_id (1 : ℂ)).const_sub 1).mul
+    (((differentiableOn_tprod_mul_tprod hq).differentiableAt
+      (isOpen_compl_singleton.mem_nhds one_ne_zero)).hasDerivAt)
+  rw [show qTheta q = _ from funext (qTheta_eq_mul_tprod_mul_tprod hq)]
+  convert h using 1
+  · funext w
+    simp
+  · simp [sq]
+
+open Complex in
+open scoped Real in
+/-- For `‖q‖ < 1`, `z ↦ θ_q(e^{2π i z})` is an entire function. -/
+theorem differentiable_qTheta_exp (hq : ‖q‖ < 1) :
+    Differentiable ℂ fun z : ℂ ↦ qTheta q (cexp (2 * π * I * z)) := fun z ↦
+  ((differentiableOn_qTheta hq).differentiableAt
+    (isOpen_compl_singleton.mem_nhds (exp_ne_zero _))).comp (f := fun z ↦ cexp (2 * π * I * z)) z
+    (by fun_prop)
+
+open Complex in
+open scoped Real in
+/-- For `‖q‖ < 1` the derivative of `z ↦ θ_q(e^{2π i z})` at `z = 0` is
+`-2π i (∏_{n ≥ 1} (1 - qⁿ))²`. -/
+theorem hasDerivAt_qTheta_exp_zero (hq : ‖q‖ < 1) :
+    HasDerivAt (fun z : ℂ ↦ qTheta q (cexp (2 * π * I * z)))
+      (-(2 * π * I) * (∏' n : ℕ, (1 - q ^ (n + 1))) ^ 2) 0 := by
+  have h := (hasDerivAt_qTheta_one hq).comp_of_eq (0 : ℂ)
+    ((hasDerivAt_id (0 : ℂ)).const_mul (2 * π * I)).cexp (by simp)
+  convert h using 1
+  · funext z
+    simp
+  · simp only [id, mul_zero, Complex.exp_zero, mul_one]
+    ring
+
+end Holomorphic
 
 end TauCeti

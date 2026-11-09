@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Basic
 public import TauCeti.Analysis.CStarAlgebra.Action.Generator.Basic
-public import TauCeti.Analysis.CStarAlgebra.GNS
+public import TauCeti.Analysis.CStarAlgebra.GNS.Basic
 public import TauCeti.RepresentationTheory.Continuous.Unitary.OneParameter
 import Mathlib.Topology.UniformSpace.UniformApproximation
 import TauCeti.Analysis.CStarAlgebra.Action.Generator.Resolvent

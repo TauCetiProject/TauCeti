@@ -19,6 +19,7 @@ This file supplements Mathlib's `IsInvariant` predicate and `Flow` API from
   inverses is unchanged by each map.
 * `Flow.apply_comm`: the maps of a flow by a commutative time monoid commute.
 * `Flow.orbit_apply`: flowing a point does not change its orbit.
+* `Flow.orbit_reverse`: reversing time does not change the orbits.
 -/
 
 public section
@@ -47,5 +48,13 @@ theorem apply_comm [AddCommMonoid τ] (ϕ : Flow τ α) (s t : τ) (x : α) :
 @[simp]
 theorem orbit_apply [AddGroup τ] (ϕ : Flow τ α) (s : τ) (x : α) : orbit ϕ (ϕ s x) = orbit ϕ x :=
   @AddAction.orbit_vadd τ α _ ϕ.toAddAction s x
+
+/-- Reversing time does not change the orbits of a flow. -/
+@[simp]
+theorem _root_.Flow.orbit_reverse [SubtractionCommMonoid τ] [ContinuousNeg τ] (ϕ : Flow τ α)
+    (x : α) : ϕ.reverse.orbit x = ϕ.orbit x := by
+  ext y
+  simp only [Flow.mem_orbit_iff, Flow.reverse_apply]
+  exact ⟨fun ⟨t, ht⟩ ↦ ⟨-t, ht⟩, fun ⟨t, ht⟩ ↦ ⟨-t, by rwa [neg_neg]⟩⟩
 
 end Flow

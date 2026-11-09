@@ -44,6 +44,8 @@ defined from it.
 ## Main definitions
 
 * `ZLattice.dual L`: the dual of `L : Submodule ℤ E` with respect to the inner product.
+* `ZLattice.basisSpanOrthonormalBasis b`: an orthonormal basis `b` as a `ℤ`-basis of its
+  `ℤ`-span.
 * `ZLattice.dualComapEquiv L e`: the `ℤ`-linear equivalence `(e⁻¹ L)^∨ ≃ₗ[ℤ] L^∨` induced by a
   linear isometry equivalence `e`.
 
@@ -117,6 +119,33 @@ theorem dual_span_basis {ι : Type*} [Finite ι] [DecidableEq ι] (b : Basis ι 
     dual (span ℤ (Set.range b)) =
       span ℤ (Set.range (BilinForm.dualBasis (innerₗ E) TauCeti.nondegenerate_inner b)) :=
   BilinForm.dualSubmodule_span_of_basis (innerₗ E) TauCeti.nondegenerate_inner b
+
+/-- The `ℤ`-span of an orthonormal basis is discrete, as the `ℤ`-span of the underlying basis
+`b.toBasis` is. -/
+instance instDiscreteTopologySpanOrthonormalBasis {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) : DiscreteTopology (span ℤ (Set.range b)) := by
+  rw [← b.coe_toBasis]
+  infer_instance
+
+/-- The `ℤ`-span of an orthonormal basis is a full lattice, a copy of `ℤⁿ ⊆ ℝⁿ`. -/
+instance instIsZLatticeSpanOrthonormalBasis {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) : IsZLattice ℝ (span ℤ (Set.range b)) where
+  span_top := by
+    rw [← b.coe_toBasis]
+    exact IsZLattice.span_top
+
+/-- An orthonormal basis `b` is a `ℤ`-basis of its `ℤ`-span `ℤ b`. -/
+noncomputable def basisSpanOrthonormalBasis {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) : Basis ι ℤ (span ℤ (Set.range b)) :=
+  (b.toBasis.restrictScalars ℤ).map (LinearEquiv.ofEq _ _ (by rw [b.coe_toBasis]))
+
+/-- The `i`-th vector of the `ℤ`-basis `basisSpanOrthonormalBasis b` of `ℤ b` is `b i`. -/
+@[simp]
+theorem coe_basisSpanOrthonormalBasis_apply {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) (i : ι) : (basisSpanOrthonormalBasis b i : E) = b i := by
+  simp only [basisSpanOrthonormalBasis, Basis.map_apply, LinearEquiv.coe_ofEq_apply,
+    Basis.restrictScalars_apply]
+  exact congrFun b.coe_toBasis i
 
 /-- The `ℤ`-span of an orthonormal basis is its own dual. -/
 @[simp]
