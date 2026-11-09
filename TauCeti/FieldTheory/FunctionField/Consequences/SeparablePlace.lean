@@ -142,7 +142,7 @@ theorem exists_finrank_adjoin_le_two_and_isSeparable_of_genus_eq_zero (hF : IsFu
   have hindex (u : F) (huB : u ∈ riemannRochSpace B) (hu : u ∉ k ∙ (1 : F)) :
       ∃ hu0 : u ≠ 0, Transcendental k u ∧ Divisor.poles hF (Units.mk0 u hu0) ≤ B ∧
         Module.finrank k⟮u⟯ F ≤ 2 := by
-    have hut := transcendental_of_notMem_span_one hex hu
+    have hut := hex.transcendental_of_notMem_span_one hu
     refine ⟨hut.ne_zero, hut,
       (poles_le_iff_mem_riemannRochSpace hF hB _).mpr huB, ?_⟩
     have hd := Divisor.finrank_adjoin_le_degree_of_mem_riemannRochSpace hF hB huB hut
