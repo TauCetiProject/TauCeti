@@ -34,7 +34,7 @@ change-of-variables inequality bounds the measure of the gradient image, and
 for every additive Haar measure `μ`. On the upper contact set the Hessian is negative
 semidefinite, which is what turns this measure estimate into a bound on `u` in terms of an
 elliptic operator applied to it, in
-`TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci`.
+`TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Basic`.
 
 ## Main declarations
 
