@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.Divergence
 import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.InnerProductSpace.Trace
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The weak divergence of a weakly differentiable vector field
@@ -64,7 +65,7 @@ public section
 
 namespace TauCeti
 
-open InnerProductSpace Laplacian MeasureTheory TopologicalSpace
+open InnerProductSpace Laplacian _root_.MeasureTheory TopologicalSpace
 open scoped Distributions Gradient InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] {μ : Measure E} {Ω : Opens E}
@@ -158,22 +159,6 @@ theorem _root_.TestFunction.integral_divergenceCLM_eq_zero [BorelSpace E] [μ.Is
     simpa using hasWeakLineDerivOn_const (μ := μ) (Ω := Ω) (v := v) (1 : ℝ)
   simpa using h.integral_divergenceCLM_smul_eq_neg_integral φ
 
-/-- If `F - G` is integrable and bounded by an integrable `b`, then `‖∫ F - ∫ G‖ ≤ ∫ b`, whether
-or not `F` and `G` are integrable: if one of them is not, neither is the other, and both integrals
-are `0` by convention. -/
-private theorem norm_integral_sub_le_integral_of_norm_sub_le {α : Type*} [MeasurableSpace α]
-    {ν : Measure α} {F G b : α → ℝ} (hFG : Integrable (fun x => F x - G x) ν)
-    (hb : Integrable b ν) (h : ∀ x, ‖F x - G x‖ ≤ b x) :
-    ‖∫ x, F x ∂ν - ∫ x, G x ∂ν‖ ≤ ∫ x, b x ∂ν := by
-  by_cases hF : Integrable F ν
-  · have hG : Integrable G ν := (hF.sub hFG).congr (ae_of_all _ fun x => by simp)
-    rw [← integral_sub hF hG]
-    exact norm_integral_le_of_norm_le hb (ae_of_all _ h)
-  · have hG : ¬ Integrable G ν := fun hG =>
-      hF ((hG.add hFG).congr (ae_of_all _ fun x => by simp))
-    rw [integral_undef hF, integral_undef hG, sub_zero, norm_zero]
-    exact integral_nonneg fun x => (norm_nonneg _).trans (h x)
-
 /-- Vector fields supported in a fixed set `K` whose derivatives are uniformly close have
 close divergence pairings `∫ div φ * u dμ` with a function `u` integrable on `K`. The constant is
 the norm of the trace times `∫_K |u| dμ`. (If the two pairings are not integrable, both are `0`.) -/
@@ -212,7 +197,8 @@ theorem dist_integral_trace_fderiv_mul_le [OpensMeasurableSpace E] {u : E → �
       (((hdiv hf).sub (hdiv hg)).aestronglyMeasurable.mul hu.aestronglyMeasurable)
       (Filter.Eventually.of_forall hbound)
   rw [← integral_const_mul]
-  refine norm_integral_sub_le_integral_of_norm_sub_le ?_ (hu.norm.const_mul _) fun x => ?_
+  refine TauCeti.MeasureTheory.norm_integral_sub_le_integral_of_norm_sub_le ?_
+    (hu.norm.const_mul _) fun x => ?_
   · simp only [← sub_mul]
     exact hH
   · simpa only [sub_mul] using hbound x
