@@ -135,10 +135,8 @@ theorem translatePairing_zero (ρ : 𝓓(V, ℝ)) :
 theorem translatePairing_zero_kernel (T : 𝓓'(Ω, F)) :
     T.translatePairing (0 : 𝓓(V, ℝ)) = 0 := by
   funext x
-  by_cases hx : MapsTo (· + x) (tsupport (0 : 𝓓(V, ℝ))) Ω
-  · rw [translatePairing_eq T (φ := 0) fun y => by simp]
-    simp
-  · exact translatePairing_eq_zero_of_not_mapsTo T hx
+  rw [translatePairing_eq T (φ := 0) fun y => by simp]
+  simp
 
 /-- Regularization is additive in the distribution. -/
 @[simp]
