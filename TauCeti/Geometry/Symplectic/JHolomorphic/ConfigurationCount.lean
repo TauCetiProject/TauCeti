@@ -57,7 +57,7 @@ and which counts only with multiplicity one, then the count vanishes in every cl
 virtual dimension `d(c) = c · c - κ · c` and only candidates of nonnegative square count with
 higher multiplicity, then `d(A) = ∑ l c (d(c) + (l c - 1) c · c)`, so the count vanishes in
 classes of negative virtual dimension
-(`TauCeti.configurationCount_eq_zero_of_apply_self_sub_apply_neg`).
+(`TauCeti.configurationCount_eq_zero_of_apply_self_sub_apply_canonical_neg`).
 
 On the ray of a class `A₀` that is not torsion, let `T` be a set of tori with classes
 `m c • A₀`. If `A₀ · A₀ = 0`, then distinct images of `T` have intersection number zero, so
@@ -92,11 +92,11 @@ intersections are inputs here; the geometric theorems supplying them are separat
   `TauCeti.apply_eq_sum_of_mem_compatibleConfigurations'`: the pairing of the class of a
   configuration with any class, in either slot, expanded over the components.
 * `TauCeti.apply_eq_mul_apply_self_of_mem_compatibleConfigurations`,
-  `TauCeti.apply_self_sub_apply_eq_sum_of_mem_compatibleConfigurations`: intersection numbers and
-  virtual dimension of the class of a configuration.
+  `TauCeti.apply_self_sub_apply_canonical_eq_sum_of_mem_compatibleConfigurations`: intersection
+  numbers and virtual dimension of the class of a configuration.
 * `TauCeti.configurationCount_eq_zero_of_apply_lt_neg_one`: vanishing in a class that is not
   good.
-* `TauCeti.configurationCount_eq_zero_of_apply_self_sub_apply_neg`: vanishing in negative
+* `TauCeti.configurationCount_eq_zero_of_apply_self_sub_apply_canonical_neg`: vanishing in negative
   virtual dimension.
 * `TauCeti.configurationCount_eq_of_area_lt`: candidates of area larger than `ω A` do not
   contribute.
@@ -393,7 +393,7 @@ theorem apply_nonneg_of_mem_compatibleConfigurations {S : ι}
 /-- The virtual dimension `d(A) = A · A - κ · A` of the class of a configuration whose compatible
 components have intersection number zero, as for disjoint images, is
 `∑ l c (l c (c · c) - κ · c)`. -/
-theorem apply_self_sub_apply_eq_sum_of_mem_compatibleConfigurations
+theorem apply_self_sub_apply_canonical_eq_sum_of_mem_compatibleConfigurations
     (hr : ∀ a ∈ s, ∀ b ∈ s, a ≠ b → r a b → B (cls a) (cls b) = 0)
     (hl : l ∈ compatibleConfigurations r cls s A) (κ : H) :
     B A A - B κ A =
@@ -441,7 +441,7 @@ number zero, as for disjoint images, every candidate has nonnegative virtual dim
 `d(c) = c · c - κ · c`, as for the simple curves of a generic almost complex structure, and only
 candidates of nonnegative square are counted with multiplicity at least two, such as square-zero
 tori. If `d(A) = A · A - κ · A < 0`, then the count in class `A` vanishes. -/
-theorem configurationCount_eq_zero_of_apply_self_sub_apply_neg {κ : H}
+theorem configurationCount_eq_zero_of_apply_self_sub_apply_canonical_neg {κ : H}
     (hr : ∀ a ∈ s, ∀ b ∈ s, a ≠ b → r a b → B (cls a) (cls b) = 0)
     (hind : ∀ c ∈ s, 0 ≤ B (cls c) (cls c) - B κ (cls c))
     (hmult : ∀ c ∈ s, ∀ k, 2 ≤ k → w c k ≠ 0 → 0 ≤ B (cls c) (cls c))
@@ -451,7 +451,7 @@ theorem configurationCount_eq_zero_of_apply_self_sub_apply_neg {κ : H}
   rw [Finsupp.prod]
   by_contra hne
   refine hA.not_ge ?_
-  rw [apply_self_sub_apply_eq_sum_of_mem_compatibleConfigurations hr hl]
+  rw [apply_self_sub_apply_canonical_eq_sum_of_mem_compatibleConfigurations hr hl]
   refine Finset.sum_nonneg fun c hc ↦ mul_nonneg (Int.natCast_nonneg _) ?_
   have hd := hind c (hl.1 hc)
   have hl0 := Finsupp.mem_support_iff.1 hc
