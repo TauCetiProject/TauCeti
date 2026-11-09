@@ -183,16 +183,9 @@ private theorem valuation_sum_aeval_mul_eq_one {x : F} (hx : 0 < P.ord x) {N : �
     intro h
     obtain ⟨j, hj⟩ := hc
     exact hj (Fintype.linearIndependent_iff.mp hu _ h j)
-  have hYne : (Y : F) ≠ 0 := fun h ↦ hresYne (by
-    have hYzero : Y = 0 := Subtype.ext h
-    rw [hYzero]
-    exact map_zero _)
   rw [← hYcoe]
-  have h1 : 0 ≤ P.ord (Y : F) := P.mem_integers_iff_ord_nonneg.mp Y.2
-  have h2 : ¬ 0 < P.ord (Y : F) := fun h ↦ hresYne ((P.residue_eq_zero_iff_ord_pos hYne).mpr h)
-  have hordY : P.ord (Y : F) = 0 := by omega
-  rw [P.valuation_eq_exp_neg_ord hYne, hordY]
-  simp
+  exact P.isUnit_iff_valuation_eq_one.mp
+    (by_contra fun h ↦ hresYne ((IsLocalRing.residue_eq_zero_iff Y).mpr h))
 
 /-- **The local computation of Stichtenoth, Proposition 1.3.3.** Let `x` have positive order at
 `P`, let `t` be a prime element at `P`, and let `u_1, …, u_N` be elements of `𝒪_P` whose
