@@ -26,6 +26,8 @@ plus half of itself is at most `2 b`.
 * `ENNReal.toNNReal_one_sub_div_pos`: `0 < (1 - a / b).toNNReal` for `a < b`.
 * `ENNReal.exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one`: for `r > 1` and `n > 0` with
   `n (2 - r) < 2 r`, a finite exponent `t ≥ 2` with `1/2 - 1/t < 1/n` and `1/r + 1/t ≤ 1`.
+* `ENNReal.toReal_of_inv_add_inv_eq`: the real exponents of Young's inequality
+  `1/p + 1/r = 1 + 1/q` with `1 ≤ p, r` and `q < ∞` are finite, with `1 ≤ p ≤ q`.
 * `ENNReal.le_mul_two_of_le_add_div_two`: the absorption step `a ≤ b + a / 2 → a ≤ 2 b` for
   finite `a`, as used in elliptic estimates.
 -/
@@ -75,5 +77,43 @@ theorem exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one {n : ℝ} (hn : 0 < n
     exact_mod_cast this
   · linarith [inv_pos.2 hn]
   · linarith
+
+/-- The real exponents of Young's inequality: if `1 ≤ p`, `1 ≤ r` and `1/p + 1/r = 1 + 1/q` with
+`q < ∞`, then `p` and `r` are finite, `q` is positive, and the relation holds between the real
+exponents, with `1 ≤ p ≤ q`. -/
+theorem toReal_of_inv_add_inv_eq {p q r : ℝ≥0∞} (hp : 1 ≤ p) (hr : 1 ≤ r)
+    (hpqr : p⁻¹ + r⁻¹ = 1 + q⁻¹) (hq : q ≠ ∞) :
+    p ≠ ∞ ∧ r ≠ ∞ ∧ q ≠ 0 ∧ 1 ≤ p.toReal ∧ p.toReal ≤ q.toReal ∧
+      p.toReal⁻¹ + r.toReal⁻¹ = 1 + q.toReal⁻¹ := by
+  have hp1 : p⁻¹ ≤ 1 := ENNReal.inv_le_one.2 hp
+  have hr1 : r⁻¹ ≤ 1 := ENNReal.inv_le_one.2 hr
+  have hq0 : q⁻¹ ≠ 0 := ENNReal.inv_ne_zero.2 hq
+  have hp_top : p ≠ ∞ := by
+    rintro rfl
+    rw [ENNReal.inv_top, zero_add] at hpqr
+    have : 1 + q⁻¹ ≤ 1 + 0 := by rw [add_zero, ← hpqr]; exact hr1
+    exact hq0 (nonpos_iff_eq_zero.1 ((ENNReal.add_le_add_iff_left ENNReal.one_ne_top).1 this))
+  have hr_top : r ≠ ∞ := by
+    rintro rfl
+    rw [ENNReal.inv_top, add_zero] at hpqr
+    have : 1 + q⁻¹ ≤ 1 + 0 := by rw [add_zero, ← hpqr]; exact hp1
+    exact hq0 (nonpos_iff_eq_zero.1 ((ENNReal.add_le_add_iff_left ENNReal.one_ne_top).1 this))
+  have hqp : q⁻¹ ≤ p⁻¹ := by
+    have : 1 + q⁻¹ ≤ 1 + p⁻¹ := by
+      rw [← hpqr, add_comm]
+      gcongr
+    exact (ENNReal.add_le_add_iff_left ENNReal.one_ne_top).1 this
+  have hq_ne : q ≠ 0 := by
+    rintro rfl
+    rw [ENNReal.inv_zero] at hpqr
+    exact ENNReal.add_ne_top.2 ⟨(hp1.trans_lt ENNReal.one_lt_top).ne,
+      (hr1.trans_lt ENNReal.one_lt_top).ne⟩ (hpqr.trans (by simp))
+  refine ⟨hp_top, hr_top, hq_ne, by simpa using ENNReal.toReal_mono hp_top hp,
+    ENNReal.toReal_mono hq (ENNReal.inv_le_inv.1 hqp), ?_⟩
+  have h := congrArg ENNReal.toReal hpqr
+  rwa [ENNReal.toReal_add (ENNReal.inv_ne_top.2 (zero_lt_one.trans_le hp).ne')
+      (ENNReal.inv_ne_top.2 (zero_lt_one.trans_le hr).ne'),
+    ENNReal.toReal_add ENNReal.one_ne_top (ENNReal.inv_ne_top.2 hq_ne), ENNReal.toReal_inv,
+    ENNReal.toReal_inv, ENNReal.toReal_inv, ENNReal.toReal_one] at h
 
 end ENNReal

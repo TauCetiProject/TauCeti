@@ -21,8 +21,10 @@ functions (Mathlib's `SchwartzMap.fourierMultiplierCLM`) is convolution with the
 This is the convolution theorem `SchwartzMap.fourier_convolution` read backwards. It identifies
 the kernel of a multiplier whose symbol is smooth and rapidly decreasing, which is the form taken
 by the truncated symbols in the Littlewood–Paley proof of the Mihlin–Hörmander multiplier theorem.
-By Young's inequality (`MeasureTheory.eLpNorm_convolution_le`), such a multiplier is bounded in
-every `Lᵖ` norm, `1 ≤ p ≤ ∞`, by the `L¹` norm of its kernel: `‖T_σ φ‖_p ≤ ‖𝓕⁻ σ‖₁ ‖φ‖_p`.
+By Young's inequality (`MeasureTheory.eLpNorm_convolution_le_of_inv_add_inv_eq`), such a
+multiplier is bounded from `Lᵖ` to `L^q` by the `Lʳ` norm of its kernel,
+`‖T_σ φ‖_q ≤ ‖𝓕⁻ σ‖_r ‖φ‖_p` for `1/p + 1/r = 1 + 1/q`; in particular it is bounded in every `Lᵖ`
+norm, `1 ≤ p ≤ ∞`, by the `L¹` norm of its kernel.
 
 Dually, the Fourier transform turns pointwise products into convolutions: for Schwartz functions
 `f`, `g` and a continuous bilinear map `B`,
@@ -38,6 +40,8 @@ starting point of the estimates for multiplication operators on Sobolev spaces.
 * `SchwartzMap.fourierMultiplierCLM_eq_convolution`: the multiplier with symbol `σ` is
   `SchwartzMap.convolution` with `𝓕⁻ σ`.
 * `SchwartzMap.fourierMultiplierCLM_apply_eq_integral`: the same, pointwise, as an integral.
+* `SchwartzMap.eLpNorm_fourierMultiplierCLM_le_of_inv_add_inv_eq`: the `Lᵖ → L^q` bound
+  `‖T_σ φ‖_q ≤ ‖𝓕⁻ σ‖_r ‖φ‖_p` for `1/p + 1/r = 1 + 1/q`.
 * `SchwartzMap.eLpNorm_fourierMultiplierCLM_le`: the `Lᵖ` bound `‖T_σ φ‖_p ≤ ‖𝓕⁻ σ‖₁ ‖φ‖_p`.
 * `SchwartzMap.fourierInv_convolution`: the inverse Fourier transform of a convolution is the
   pairing of the inverse Fourier transforms.
@@ -81,17 +85,26 @@ theorem fourierMultiplierCLM_apply_eq_integral (σ : 𝓢(E, ℂ)) (φ : 𝓢(E,
   rw [fourierMultiplierCLM_eq_convolution, convolution_apply, MeasureTheory.convolution_eq_swap]
   simp only [lsmul_apply]
 
-/-- **`Lᵖ` bound for a multiplier with Schwartz symbol.** For `1 ≤ p ≤ ∞` the multiplier with a
-Schwartz symbol `σ` satisfies `‖T_σ φ‖_p ≤ ‖𝓕⁻ σ‖₁ ‖φ‖_p` on Schwartz functions. -/
-theorem eLpNorm_fourierMultiplierCLM_le (σ : 𝓢(E, ℂ)) (φ : 𝓢(E, F)) {p : ℝ≥0∞} (hp : 1 ≤ p) :
-    eLpNorm (fourierMultiplierCLM F σ φ) p ≤ eLpNorm (𝓕⁻ (σ : E → ℂ)) 1 * eLpNorm φ p := by
+/-- **`Lᵖ → L^q` bound for a multiplier with Schwartz symbol.** For `1 ≤ p, r ≤ ∞` and
+`1/p + 1/r = 1 + 1/q`, the multiplier with a Schwartz symbol `σ` satisfies
+`‖T_σ φ‖_q ≤ ‖𝓕⁻ σ‖_r ‖φ‖_p` on Schwartz functions. -/
+theorem eLpNorm_fourierMultiplierCLM_le_of_inv_add_inv_eq (σ : 𝓢(E, ℂ)) (φ : 𝓢(E, F))
+    {p q r : ℝ≥0∞} (hp : 1 ≤ p) (hr : 1 ≤ r) (hpqr : p⁻¹ + r⁻¹ = 1 + q⁻¹) :
+    eLpNorm (fourierMultiplierCLM F σ φ) q ≤ eLpNorm (𝓕⁻ (σ : E → ℂ)) r * eLpNorm φ p := by
   have h : (fourierMultiplierCLM F σ φ : E → F) = ⇑(𝓕⁻ σ : 𝓢(E, ℂ)) ⋆[lsmul ℂ ℂ] φ := by
     funext x
     rw [fourierMultiplierCLM_eq_convolution, convolution_apply]
   rw [h, ← fourierInv_coe]
-  refine (eLpNorm_convolution_le _ (𝓕⁻ σ : 𝓢(E, ℂ)).continuous.aestronglyMeasurable
-    φ.continuous.aestronglyMeasurable hp).trans ?_
+  refine (eLpNorm_convolution_le_of_inv_add_inv_eq _
+    (𝓕⁻ σ : 𝓢(E, ℂ)).continuous.aestronglyMeasurable φ.continuous.aestronglyMeasurable hp hr
+    hpqr).trans ?_
   grw [opENorm_lsmul_le, one_mul]
+
+/-- **`Lᵖ` bound for a multiplier with Schwartz symbol.** For `1 ≤ p ≤ ∞` the multiplier with a
+Schwartz symbol `σ` satisfies `‖T_σ φ‖_p ≤ ‖𝓕⁻ σ‖₁ ‖φ‖_p` on Schwartz functions. -/
+theorem eLpNorm_fourierMultiplierCLM_le (σ : 𝓢(E, ℂ)) (φ : 𝓢(E, F)) {p : ℝ≥0∞} (hp : 1 ≤ p) :
+    eLpNorm (fourierMultiplierCLM F σ φ) p ≤ eLpNorm (𝓕⁻ (σ : E → ℂ)) 1 * eLpNorm φ p :=
+  eLpNorm_fourierMultiplierCLM_le_of_inv_add_inv_eq σ φ hp le_rfl (by rw [inv_one, add_comm])
 
 section Bilinear
 
