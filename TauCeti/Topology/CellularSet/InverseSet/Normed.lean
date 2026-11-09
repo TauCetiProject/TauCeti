@@ -36,7 +36,7 @@ identity on `M`, is a continuous injection of `B` into `U` which is the identity
 image is a closed cell in `U` with `M` in its interior
 (`TauCeti.exists_cell_subset_of_injOn_closedBall_diff`).
 
-For maps of a cell into a sphere of one dimension higher, see
+For maps of an `n`-cell with `n ≥ 2` into a space of dimension `n + 1`, see
 `TauCeti.isCellularSet_closedBall_inter_preimage` in `TauCeti.Topology.CellularSet.InverseSet`.
 
 These are steps in Brown's proof of the generalized Schoenflies theorem. There, the map of the
@@ -70,34 +70,21 @@ namespace TauCeti
 omit [NormedSpace ℝ F] [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 /-- If the fibre `M = closedBall 0 1 ∩ f ⁻¹' {p}` of a map continuous on the closed unit ball is
 nonempty and lies in the open unit ball, then some point of `M` is a limit of points of the open
-unit ball outside `M`: otherwise `M` would be clopen in the connected open ball, so `f` would be
-constant on the closed ball and `M` would contain the unit sphere. -/
+unit ball outside `M`: missing the unit sphere, the closed set `M` is a nonempty proper subset of
+the connected space `E`, so it has a frontier point, which lies in the open ball. -/
 private theorem exists_mem_closure_ball_diff [Nontrivial E] (hf : ContinuousOn f (closedBall 0 1))
     (hM : closedBall 0 1 ∩ f ⁻¹' {p} ⊆ ball 0 1)
     (hne : (closedBall (0 : E) 1 ∩ f ⁻¹' {p}).Nonempty) :
     ∃ m ∈ closedBall (0 : E) 1 ∩ f ⁻¹' {p},
       m ∈ closure (ball 0 1 \ (closedBall 0 1 ∩ f ⁻¹' {p})) := by
   set M := closedBall (0 : E) 1 ∩ f ⁻¹' {p}
-  by_contra! hcon
-  have hMopen : IsOpen M := by
-    refine isOpen_iff_mem_nhds.2 fun m hm ↦ ?_
-    filter_upwards [isClosed_closure.isOpen_compl.mem_nhds (hcon m hm),
-      isOpen_ball.mem_nhds (hM hm)] with y hy hyb
-    by_contra hyM
-    exact hy (subset_closure ⟨hyb, hyM⟩)
   have hMclosed : IsClosed M := hf.preimage_isClosed_of_isClosed isClosed_closedBall
     isClosed_singleton
-  obtain ⟨m, hm⟩ := hne
-  have hball : ball (0 : E) 1 ⊆ M :=
-    (convex_ball 0 1).isPreconnected.subset_isClopen ⟨hMclosed, hMopen⟩ ⟨m, hM hm, hm⟩
-  -- So `f = p` on the open ball, hence on the closed ball, which then lies in `M`.
-  have heq : EqOn f (fun _ ↦ p) (closedBall 0 1) :=
-    EqOn.of_subset_closure (fun x hx ↦ (hball hx).2) hf continuousOn_const ball_subset_closedBall
-      (closure_ball (0 : E) one_ne_zero).symm.subset
   obtain ⟨x, hx⟩ := (NormedSpace.sphere_nonempty (x := (0 : E))).2 zero_le_one
-  have hxM := hM ⟨sphere_subset_closedBall hx, heq (sphere_subset_closedBall hx)⟩
-  rw [mem_ball, mem_sphere.1 hx] at hxM
-  exact lt_irrefl _ hxM
+  have hxM : x ∉ M := fun hxM ↦ (mem_ball.1 (hM hxM)).ne (mem_sphere.1 hx)
+  obtain ⟨m, hm⟩ := nonempty_frontier_iff.2 ⟨hne, (ne_univ_iff_exists_notMem M).2 ⟨x, hxM⟩⟩
+  rw [frontier_eq_closure_inter_closure, hMclosed.closure_eq] at hm
+  exact ⟨m, hm.1, isOpen_ball.inter_closure ⟨hM hm.1, hm.2⟩⟩
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 /-- Let `m ∈ U ⊆ ball 0 1` with `f m = p`, and leave `m` along a direction `w` on which `φ ∘ f`
@@ -126,13 +113,7 @@ private theorem exists_segment_Ioc_subset (hf : ContinuousOn f (closedBall 0 1))
   refine ⟨δ / 2, half_pos hδ, fun s hs ↦ (hmem s hs).1,
     hlt _ (half_pos hδ) (hmem _ ⟨(half_pos hδ).le, le_rfl⟩).1 (hmem _ ⟨(half_pos hδ).le, le_rfl⟩).2,
     fun v hv ↦ ?_⟩
-  -- The intermediate value theorem on `[0, δ / 2]`; the value `v > φ p` is not taken at `0`.
-  obtain ⟨s, hs, hsv⟩ := intermediate_value_Icc (half_pos hδ).le hcont
-    ⟨by simpa [hfm] using hv.1.le, hv.2⟩
-  refine ⟨s, ⟨lt_of_le_of_ne hs.1 fun h ↦ ?_, hs.2⟩, hsv⟩
-  subst h
-  simp only [zero_smul, add_zero, hfm] at hsv
-  exact hv.1.ne hsv
+  exact intermediate_value_Ioc (half_pos hδ).le hcont (by simpa only [zero_smul, add_zero, hfm])
 
 omit [FiniteDimensional ℝ F] in
 /-- **The one-dimensional case of Brown's Theorem 0.** Let `M = closedBall 0 1 ∩ f ⁻¹' {p}` be a
@@ -176,7 +157,8 @@ private theorem false_of_forall_lt (hf : ContinuousOn f (closedBall 0 1))
     have := isMinOn_iff.1 hmin _ hm₂
     linarith [hs₁.1, hs₂.1]
   have hout (y : E) (hyU : y ∈ U) (hy : φ (f y) = v) : y ∈ closedBall 0 1 \ f ⁻¹' {p} :=
-    ⟨hUB hyU, fun hyp ↦ (lt_min hlt₁ hlt₂).ne ((congrArg φ (show f y = p from hyp)).symm.trans hy)⟩
+    ⟨hUB hyU, fun hyp ↦
+      (lt_min hlt₁ hlt₂).ne ((congrArg φ (mem_singleton_iff.1 hyp)).symm.trans hy)⟩
   exact hne₁₂ (hinj (hout _ (hU₁ s₁ (Ioc_subset_Icc_self hs₁)) hv₁)
     (hout _ (hU₂ s₂ (Ioc_subset_Icc_self hs₂)) hv₂) (hφ (hv₁.trans hv₂.symm)))
 
@@ -282,13 +264,11 @@ theorem isOpen_image_of_injOn_closedBall_diff (hEF : finrank ℝ E = finrank ℝ
   -- `S` accumulates at `p`, because `M` has a point in the closure of `U \ M`.
   have hpcl : p ∈ closure S := by
     obtain ⟨m, hm, hmc⟩ := exists_mem_closure_ball_diff hf (hMU.trans hUb) hne
-    have hmU : m ∈ closure (U \ M) := by
-      rw [mem_closure_iff_nhds] at hmc ⊢
-      intro t ht
-      obtain ⟨y, hyt, -, hyM⟩ := hmc (t ∩ U) (inter_mem ht (hU.mem_nhds (hMU hm)))
-      exact ⟨y, hyt.1, hyt.2, hyM⟩
+    have hmU : m ∈ closure (U \ M) :=
+      closure_mono (s := U ∩ (ball 0 1 \ M)) (t := U \ M) (fun _ hy ↦ ⟨hy.1, hy.2.2⟩)
+        (hU.inter_closure ⟨hMU hm, hmc⟩)
     have := ((hf m hm.1).mono (sdiff_subset.trans hUB)).mem_closure_image hmU
-    rwa [show f m = p from hm.2] at this
+    rwa [mem_singleton_iff.1 hm.2] at this
   have hSnear (ε : ℝ) (hε : 0 < ε) : ∃ y ∈ S, y ∈ ball p ε := by
     obtain ⟨y, hyS, hy⟩ := Metric.mem_closure_iff.1 hpcl ε hε
     exact ⟨y, hyS, by rwa [mem_ball, dist_comm]⟩
@@ -336,16 +316,18 @@ theorem exists_cell_subset_of_injOn_closedBall_diff (hEF : finrank ℝ E = finra
   -- `ball p ε`.
   obtain ⟨R, hR⟩ := ((isCompact_closedBall (0 : E) 1).image_of_continuousOn hf).isBounded
     |>.subset_closedBall p
+  have hε34 : ε / 2 < 3 * ε / 4 := by linarith
   obtain ⟨ρ, hρ_fix, hρ_maps⟩ := exists_homeomorph_eqOn_closedBall_mapsTo_closedBall (E := F)
-    (r := R) (half_pos hε).le (show ε / 2 < 3 * ε / 4 by linarith)
+    (r := R) (half_pos hε).le hε34
   set h : F ≃ₜ F := (Homeomorph.subRight p).trans (ρ.trans (Homeomorph.addRight p))
   have hh_fix : EqOn h id (closedBall p (ε / 2)) := fun y hy ↦ by
     have hy' : y - p ∈ closedBall (0 : F) (ε / 2) := by
       rwa [mem_closedBall_zero_iff, ← mem_closedBall_iff_norm]
     simp [h, hρ_fix hy']
   have hh_maps : MapsTo h (closedBall p R) (ball p ε) := fun y hy ↦ by
-    have hy' := hρ_maps (show y - p ∈ closedBall (0 : F) R by
-      rwa [mem_closedBall_zero_iff, ← mem_closedBall_iff_norm])
+    have hyR : y - p ∈ closedBall (0 : F) R := by
+      rwa [mem_closedBall_zero_iff, ← mem_closedBall_iff_norm]
+    have hy' := hρ_maps hyR
     rw [mem_closedBall_zero_iff] at hy'
     rw [mem_ball_iff_norm]
     simp only [h, Homeomorph.trans_apply, Homeomorph.coe_subRight, Homeomorph.coe_addRight,
@@ -375,7 +357,7 @@ theorem exists_cell_subset_of_injOn_closedBall_diff (hEF : finrank ℝ E = finra
     · exact ball_subset_closedBall (hg_spec x hx hxM).1.2
   have hfg (x : E) (hx : x ∈ B) : f (g x) = h (f x) := by
     by_cases hxM : x ∈ M
-    · rw [hgM x hxM, show f x = p from hxM.2, hhp]
+    · rw [hgM x hxM, mem_singleton_iff.1 hxM.2, hhp]
     · exact (hg_spec x hx hxM).2
   -- Near `M`, where `h` is the identity, so is `g`.
   have hg_id (x : E) (hx : x ∈ B) (hxV : f x ∈ ball p (ε / 2)) : g x = x := by
@@ -392,7 +374,7 @@ theorem exists_cell_subset_of_injOn_closedBall_diff (hEF : finrank ℝ E = finra
       exact hg_id y hyB hyV
     /- Away from `M`, `g y` is the unique point of the compact ball `B` with `f (g y) = h (f y)`,
     and this characterization passes to cluster points. -/
-    have hxM : x ∉ M := fun hxM ↦ hxV (by rw [show f x = p from hxM.2]; exact mem_ball_self (by
+    have hxM : x ∉ M := fun hxM ↦ hxV (by rw [mem_singleton_iff.1 hxM.2]; exact mem_ball_self (by
       positivity))
     have hgBev : ∀ᶠ y in 𝓝[B] x, g y ∈ B := eventually_mem_nhdsWithin.mono fun y hy ↦ hgB hy
     refine (isCompact_closedBall 0 1).tendsto_nhds_of_unique_mapClusterPt hgBev
@@ -408,14 +390,14 @@ theorem exists_cell_subset_of_injOn_closedBall_diff (hEF : finrank ℝ E = finra
       ⟨hgB hx, fun hgp ↦ hne ((hfg x hx).symm.trans hgp)⟩ (hfz.trans (hfg x hx).symm)
   · have hfxy : f x = f y := h.injective (by rw [← hfg x hx, ← hfg y hy, hxy])
     by_cases hxM : x ∈ M
-    · have hyM : y ∈ M := ⟨hy, show f y = p from hfxy ▸ hxM.2⟩
+    · have hyM : y ∈ M := ⟨hy, mem_singleton_iff.2 (hfxy.symm.trans (mem_singleton_iff.1 hxM.2))⟩
       rwa [hgM x hxM, hgM y hyM] at hxy
     · exact hinj ⟨hx, hfp x hx hxM⟩ ⟨hy, fun hyp ↦ hfp x hx hxM (hfxy.trans hyp)⟩ hfxy
   · -- `g` is the identity on the open neighbourhood `ball 0 1 ∩ f ⁻¹' ball p (ε / 2)` of `M`.
     have hNo : IsOpen (ball (0 : E) 1 ∩ f ⁻¹' ball p (ε / 2)) :=
       (hf.mono ball_subset_closedBall).isOpen_inter_preimage isOpen_ball isOpen_ball
     have hMN : M ⊆ ball (0 : E) 1 ∩ f ⁻¹' ball p (ε / 2) := fun m hm ↦
-      ⟨hM hm, by rw [mem_preimage, show f m = p from hm.2]; exact mem_ball_self (by positivity)⟩
+      ⟨hM hm, by rw [mem_preimage, mem_singleton_iff.1 hm.2]; exact mem_ball_self (by positivity)⟩
     have hNg : ball (0 : E) 1 ∩ f ⁻¹' ball p (ε / 2) ⊆ g '' ball 0 1 := fun y hy ↦
       ⟨y, hy.1, hg_id y (ball_subset_closedBall hy.1) hy.2⟩
     exact hMN.trans (interior_maximal hNg hNo)
