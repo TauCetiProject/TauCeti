@@ -29,8 +29,8 @@ equivariant maps into the construction of principal-bundle charts, using Mathlib
 Dually, for a single orbit: if `G` acts on `X` with continuous orbit map `g ↦ g • x₀`, a section
 `s` of the orbit map, continuous on an open set `U`, trivializes the orbit map over `U` with fibre
 the stabilizer of `x₀`, by `g ↦ (g • x₀, s (g • x₀)⁻¹ * g)` with inverse `(z, h) ↦ s z * h`. This
-is `Subgroup.trivializationOfLocalSection` for the orbit map, whose fibres are the left cosets of
-the stabilizer; see Steenrod, *The Topology of Fibre Bundles*, §7.
+is `Subgroup.localSectionTrivializationOfCosetFibers` for the orbit map, whose fibres are the left
+cosets of the stabilizer; see Steenrod, *The Topology of Fibre Bundles*, §7.
 
 ## Main definitions and results
 
@@ -154,7 +154,7 @@ noncomputable def orbitMapTrivialization (x₀ : X) (hx₀ : Continuous fun g : 
     (U : Set X) (hU : IsOpen U) (s : X → G) (hs : ContinuousOn s U)
     (hsec : ∀ z ∈ U, s z • x₀ = z) :
     Trivialization (stabilizer G x₀) fun g : G ↦ g • x₀ :=
-  (stabilizer G x₀).trivializationOfLocalSection hx₀
+  (stabilizer G x₀).localSectionTrivializationOfCosetFibers hx₀
     (smul_eq_smul_iff_inv_mul_mem_stabilizer x₀) U hU s hs hsec
 
 variable {x₀ : X} {hx₀ : Continuous fun g : G ↦ g • x₀} {U : Set X} {hU : IsOpen U} {s : X → G}
@@ -164,14 +164,14 @@ variable {x₀ : X} {hx₀ : Continuous fun g : G ↦ g • x₀} {U : Set X} {h
 @[simp]
 theorem orbitMapTrivialization_baseSet :
     (orbitMapTrivialization x₀ hx₀ U hU s hs hsec).baseSet = U :=
-  Subgroup.trivializationOfLocalSection_baseSet
+  Subgroup.localSectionTrivializationOfCosetFibers_baseSet
 
 /-- On the chart source, the fiber coordinate of `orbitMapTrivialization` is
 `s (g • x₀)⁻¹ * g`. -/
 @[simp]
 theorem orbitMapTrivialization_fiberCoordinate {g : G} (hg : g • x₀ ∈ U) :
     ((orbitMapTrivialization x₀ hx₀ U hU s hs hsec g).2 : G) = (s (g • x₀))⁻¹ * g :=
-  Subgroup.trivializationOfLocalSection_fiberCoordinate (K := stabilizer G x₀) hg
+  Subgroup.localSectionTrivializationOfCosetFibers_fiberCoordinate (K := stabilizer G x₀) hg
 
 /-- The inverse of `orbitMapTrivialization` reconstructs a group element by multiplying the
 section by the fiber. -/
@@ -179,7 +179,7 @@ section by the fiber. -/
 theorem orbitMapTrivialization_symm_apply (p : X × stabilizer G x₀) :
     (orbitMapTrivialization x₀ hx₀ U hU s hs hsec).toOpenPartialHomeomorph.symm p =
       s p.1 * p.2 :=
-  Subgroup.trivializationOfLocalSection_symm_apply p
+  Subgroup.localSectionTrivializationOfCosetFibers_symm_apply p
 
 /-- `orbitMapTrivialization` intertwines right multiplication by the stabilizer of `x₀` on `G`
 with right multiplication on the fibre. -/
@@ -187,6 +187,6 @@ theorem orbitMapTrivialization_apply_mul {g : G} (hg : g • x₀ ∈ U) (h : st
     orbitMapTrivialization x₀ hx₀ U hU s hs hsec (g * h) =
       ((orbitMapTrivialization x₀ hx₀ U hU s hs hsec g).1,
         (orbitMapTrivialization x₀ hx₀ U hU s hs hsec g).2 * h) :=
-  Subgroup.trivializationOfLocalSection_apply_mul (K := stabilizer G x₀) hg h
+  Subgroup.localSectionTrivializationOfCosetFibers_apply_mul (K := stabilizer G x₀) hg h
 
 end TauCeti
