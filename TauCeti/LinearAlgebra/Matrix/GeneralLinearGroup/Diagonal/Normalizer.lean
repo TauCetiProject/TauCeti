@@ -188,48 +188,45 @@ instance [Semiring k] [Subsingleton (Fin n)] :
 
 section Monomial
 
-variable [CommSemiring k]
+variable [Semiring k]
 
-/-- An invertible matrix over a commutative semiring is monomial, a diagonal matrix
-followed by a permutation matrix, as soon as every row has at most one nonzero entry. -/
-theorem exists_eq_diagGL_mul_permutationGL_of_row {g : GL (Fin n) k}
+/-- Every row of a matrix with a right inverse over a nontrivial semiring has a nonzero entry. -/
+private theorem exists_ne_zero_of_mul_eq_one [Nontrivial k] {G Ginv : Matrix (Fin n) (Fin n) k}
+    (hGGinv : G * Ginv = 1) (i : Fin n) : ∃ j, G i j ≠ 0 := by
+  by_contra h
+  push Not at h
+  have hii := congrArg (fun M : Matrix (Fin n) (Fin n) k ↦ M i i) hGGinv
+  simp [Matrix.mul_apply, h] at hii
+
+/-- An invertible matrix over a semiring is monomial, a diagonal matrix followed by a permutation
+matrix, as soon as every row has at most one nonzero entry. -/
+theorem exists_eq_diagGL_mul_permutationGL_of_forall_eq_of_ne_zero_of_ne_zero {g : GL (Fin n) k}
     (hrow : ∀ i j l, (g : Matrix (Fin n) (Fin n) k) i j ≠ 0 →
       (g : Matrix (Fin n) (Fin n) k) i l ≠ 0 → j = l) :
     ∃ d : Fin n → kˣ, ∃ σ : Equiv.Perm (Fin n),
       g = diagGL d * permutationGL (k := k) σ := by
   classical
-  by_cases hk : Subsingleton k
-  · let _ := hk
-    exact ⟨fun _ ↦ 1, 1, Subsingleton.elim _ _⟩
-  let _ : Nontrivial k := not_subsingleton_iff_nontrivial.mp hk
+  rcases subsingleton_or_nontrivial k with _ | _
+  · exact ⟨fun _ ↦ 1, 1, Subsingleton.elim _ _⟩
   let G : Matrix (Fin n) (Fin n) k := g
   let Ginv : Matrix (Fin n) (Fin n) k := (g⁻¹ : GL (Fin n) k)
   have hGGinv : G * Ginv = 1 := by
     simpa only [G, Ginv, ← Units.inv_eq_val_inv] using g.mul_inv
   have hGinvG : Ginv * G = 1 := by
     simpa only [G, Ginv, ← Units.inv_eq_val_inv] using g.inv_mul
-  -- Every row of an invertible matrix has a nonzero entry.
-  have hex : ∀ i, ∃ j, G i j ≠ 0 := by
-    intro i
-    by_contra h
-    push Not at h
-    have hii := congrArg (fun M : Matrix (Fin n) (Fin n) k ↦ M i i) hGGinv
-    simp [Matrix.mul_apply, h] at hii
-  choose f hf using hex
+  choose f hf using exists_ne_zero_of_mul_eq_one hGGinv
   have hf_iff (i j : Fin n) : G i j ≠ 0 ↔ j = f i :=
     ⟨fun h ↦ hrow i j (f i) h (hf i), by rintro rfl; exact hf i⟩
+  have hzero (i j : Fin n) (hj : j ≠ f i) : G i j = 0 := not_not.mp (mt (hf_iff i j).mp hj)
   -- A column missed by `f` would vanish, which is impossible for an invertible matrix.
   have hsurj : Function.Surjective f := by
     intro l
     by_contra h
     push Not at h
-    have hcol (r : Fin n) : G r l = 0 := by
-      by_contra hne
-      exact h r ((hf_iff r l).mp hne).symm
     have hll := congrArg (fun M : Matrix (Fin n) (Fin n) k ↦ M l l) hGinvG
-    simp [Matrix.mul_apply, hcol] at hll
-  let e : Equiv.Perm (Fin n) :=
-    Equiv.ofBijective f ⟨Finite.injective_iff_surjective.mpr hsurj, hsurj⟩
+    simp [Matrix.mul_apply, fun r ↦ hzero r l (Ne.symm (h r))] at hll
+  have hinj : Function.Injective f := Finite.injective_iff_surjective.mpr hsurj
+  let e : Equiv.Perm (Fin n) := Equiv.ofBijective f ⟨hinj, hsurj⟩
   have he (i : Fin n) : e i = f i := Equiv.ofBijective_apply _ _ i
   -- The sole nonzero entry of each row has its inverse in the inverse matrix.
   have hunit (i : Fin n) : G i (f i) * Ginv (f i) i = 1 := by
@@ -237,23 +234,23 @@ theorem exists_eq_diagGL_mul_permutationGL_of_row {g : GL (Fin n) k}
     rw [Matrix.mul_apply, Finset.sum_eq_single (f i)] at hii
     · simpa using hii
     · intro j _ hj
-      have hzero : G i j = 0 := by
-        by_contra h
-        exact hj ((hf_iff i j).mp h)
-      simp [hzero]
+      simp [hzero i j hj]
     · simp
-  refine ⟨fun i ↦ Units.mkOfMulEqOne _ _ (hunit i), e.symm, ?_⟩
+  have hunit' (i : Fin n) : Ginv (f i) i * G i (f i) = 1 := by
+    have hii := congrArg (fun M : Matrix (Fin n) (Fin n) k ↦ M (f i) (f i)) hGinvG
+    rw [Matrix.mul_apply, Finset.sum_eq_single i] at hii
+    · simpa using hii
+    · intro r _ hr
+      simp [hzero r (f i) fun h ↦ hr (hinj h).symm]
+    · simp
+  refine ⟨fun i ↦ ⟨G i (f i), Ginv (f i) i, hunit i, hunit' i⟩, e.symm, ?_⟩
   apply Units.ext
   ext i j
-  simp only [Units.val_mul, diagGL_coe, permutationGL_coe, Matrix.diagonal_mul,
-    Units.val_mkOfMulEqOne]
+  simp only [Units.val_mul, diagGL_coe, permutationGL_coe, Matrix.diagonal_mul]
   by_cases hj : j = f i
   · subst j
     simp [Equiv.Perm.permMatrix, PEquiv.toMatrix_apply, he, G]
-  · have hzero : G i j = 0 := by
-      by_contra h
-      exact hj ((hf_iff i j).mp h)
-    simpa [Equiv.Perm.permMatrix, PEquiv.toMatrix_apply, he, Ne.symm hj, G] using hzero
+  · simpa [Equiv.Perm.permMatrix, PEquiv.toMatrix_apply, he, Ne.symm hj, G] using hzero i j hj
 
 end Monomial
 
@@ -288,7 +285,7 @@ theorem exists_eq_diagGL_mul_permutationGL_of_forall_ne {g : GL (Fin n) k}
       g * diagGL t * g⁻¹ ∈ diagonalTorus k n ∧ t i ≠ t j) :
     ∃ d : Fin n → kˣ, ∃ σ : Equiv.Perm (Fin n),
       g = diagGL d * permutationGL (k := k) σ := by
-  refine exists_eq_diagGL_mul_permutationGL_of_row fun i j l hj hl ↦ ?_
+  refine exists_eq_diagGL_mul_permutationGL_of_forall_eq_of_ne_zero_of_ne_zero fun i j l hj hl ↦ ?_
   by_contra hjl
   obtain ⟨t, ht, htjl⟩ := hsep j l hjl
   exact htjl (apply_eq_apply_of_conj_mem_diagonalTorus ht hj hl)
