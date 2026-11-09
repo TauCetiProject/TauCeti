@@ -5,7 +5,7 @@ Authors: Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
-public import TauCeti.RingTheory.MvPolynomial.Quotient
+public import TauCeti.RingTheory.MvPolynomial.Quotient.Basic
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
@@ -15,8 +15,9 @@ public import TauCeti.RingTheory.Support.BaseChange
 /-!
 # Spanning loci for polynomial quotients
 
-A family of polynomial classes spans after coefficient extension exactly when its cokernel
-annihilator generates the unit ideal after that extension. For finitely presented flat
+For a polynomial quotient finite over its coefficient ring, a family of polynomial classes
+spans after coefficient extension exactly when its cokernel annihilator generates the unit ideal
+after that extension. For finitely presented flat
 quotients, monomial spanning loci cover the base. These results supply the open basis loci
 for affine Hilbert charts.
 -/
@@ -85,43 +86,18 @@ theorem _root_.RingHom.span_range_mk_map_eq_top_iff (φ : A →+* B) (I : Ideal 
       | zero => simp
       | add x y _ _ hx hy => simpa using add_mem hx hy
       | smul a x _ hx => simpa [hψ] using S.smul_mem (φ a) hx
+    let ψₗ : (MvPolynomial n A ⧸ I) →ₛₗ[φ]
+        (MvPolynomial n B ⧸ I.map (map φ)) :=
+      { ψ.toAddMonoidHom with map_smul' := hψ }
     have key (f : MvPolynomial n A) : Ideal.Quotient.mk _ (map φ f) ∈ S := by
-      have h1 : (1 : B) ∈ (Module.annihilator A ((MvPolynomial n A ⧸ I) ⧸ N)).map φ :=
-        hJ ▸ Submodule.mem_top
-      suffices ∀ b ∈ (Module.annihilator A ((MvPolynomial n A ⧸ I) ⧸ N)).map φ,
-          ∀ f, b • Ideal.Quotient.mk (I.map (map φ)) (map φ f) ∈ S by
-        simpa using this 1 h1 f
-      intro b hb
-      induction hb using Submodule.span_induction with
-      | mem b hb =>
-        obtain ⟨a, ha, rfl⟩ := hb
-        intro f
-        rw [← hψmk, ← hψ]
-        refine hN _ ?_
-        have := Module.mem_annihilator.mp ha (Submodule.Quotient.mk (Ideal.Quotient.mk I f))
-        rwa [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at this
-      | zero => simp
-      | add x y _ _ hx hy => simpa [add_smul] using fun f ↦ add_mem (hx f) (hy f)
-      | smul c x _ hx => simpa [mul_smul] using fun f ↦ S.smul_mem c (hx f)
-    rw [eq_top_iff]
-    rintro y -
-    obtain ⟨g, rfl⟩ := Ideal.Quotient.mk_surjective y
-    induction g using MvPolynomial.induction_on' with
-    | monomial m b =>
-      have h := S.smul_mem b (key (monomial m 1))
-      rw [map_monomial, map_one] at h
-      have hsmul : b • Ideal.Quotient.mk (I.map (map φ)) (monomial m 1) =
-          Ideal.Quotient.mk (I.map (map φ)) (monomial m b) := by
-        calc
-          b • Ideal.Quotient.mk (I.map (map φ)) (monomial m 1) =
-              Ideal.Quotient.mk (I.map (map φ)) (C b * monomial m 1) := by
-            rw [C_mul', ← Ideal.Quotient.mkₐ_eq_mk B]
-            exact (map_smul (Ideal.Quotient.mkₐ B (I.map (map φ))) b
-              (monomial m 1)).symm
-          _ = Ideal.Quotient.mk (I.map (map φ)) (monomial m b) := by
-            rw [C_mul_monomial, mul_one]
-      rwa [hsmul] at h
-    | add g h hg hh => simpa using add_mem hg hh
+      exact ψₗ.apply_mem_of_annihilator_quotient_map_eq_top N S hN hJ
+        (Ideal.Quotient.mk I f)
+    apply top_unique
+    rw [← Ideal.span_range_mk_monomial_eq_top (I.map (map φ)), Submodule.span_le]
+    rintro _ ⟨m, rfl⟩
+    have h := key (monomial m 1)
+    rw [map_monomial, map_one] at h
+    exact h
 
 attribute [local instance] Module.free_of_flat_of_isLocalRing in
 /-- Monomial bases exist locally. If `A[n] ⧸ I` is a finitely presented flat `A`-module of rank `d`
