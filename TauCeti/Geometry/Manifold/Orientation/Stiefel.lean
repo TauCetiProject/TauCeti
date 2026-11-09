@@ -130,9 +130,20 @@ theorem linearIndependent_stiefelTwo_normal_cons (w : stiefel E 2)
     have h : ι t ∈ LinearMap.range ι.toLinearMap := ⟨t, rfl⟩
     rwa [range_mfderiv_coe_stiefel] at h
   have hvu : ⟪w.1 1, w.1 0⟫ = 0 := by rw [real_inner_comm, huv]
-  refine linearIndependent_finCons_finCons_finCons_of_map (gramSym2Deriv E 2 w.1).toLinearMap
+  have hli := linearIndependent_sumElim_of_map (gramSym2Deriv E 2 w.1).toLinearMap
+    (u := ![![w.1 0, 0], ![w.1 1, w.1 0], ![0, w.1 1]]) ?_
     ((b.linearIndependent.map' _ (LinearMap.ker_eq_bot.2 (injective_mfderiv_coe_stiefel w))))
-    (fun i ↦ hker (b i)) ?_
+    (fun i ↦ hker (b i))
+  · -- Reindex the normals followed by the tangent frame along `Fin 3 ⊕ Fin (2 * m + 1)`.
+    refine (linearIndependent_equiv' (finSumFinEquiv.trans (finCongr (by omega))) ?_).1 hli
+    funext i
+    rcases i with i | i
+    · fin_cases i <;> rfl
+    · have : (finCongr (by omega) (Fin.natAdd 3 i) : Fin (2 * m + 1 + 1 + 1 + 1)) =
+          i.succ.succ.succ := by
+        ext; simp
+      simp only [Function.comp_apply, Equiv.trans_apply, finSumFinEquiv_apply_right, this]
+      rfl
   -- The images of the normals take the values `2, 0, 0`, `0, 2, 0` and `0, 0, 2` at the pairs
   -- `s(0, 0)`, `s(0, 1)` and `s(1, 1)`.
   rw [Fintype.linearIndependent_iff]
