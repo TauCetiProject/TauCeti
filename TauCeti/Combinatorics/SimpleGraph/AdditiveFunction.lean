@@ -50,6 +50,9 @@ That classification is not proved here; the results below take `δ` as given.
 * `SimpleGraph.posSemidef_graphCartanMatrix`: `2I - A` is positive semidefinite.
 * `SimpleGraph.ker_mulVecLin_graphCartanMatrix`: on a preconnected graph the null space of
   `2I - A` is the span of the additive function.
+* `SimpleGraph.Preconnected.pos_of_graphCartanMatrix_mulVec_nonneg`: a nonzero nonnegative
+  vector with nonnegative Cartan image is strictly positive on a preconnected graph. In particular
+  this applies to nonnegative null vectors; a zero coefficient propagates along every edge.
 * `SimpleGraph.Connected.exists_pos_smul_le_sum`: on a connected graph, a nonzero nonnegative
   weight with `c • δ i ≤ ∑_{j ∼ i} δ j` can be replaced by a positive one. In particular this
   applies to superadditive weights, for which `c • δ i = 2 * δ i`.
@@ -298,6 +301,46 @@ theorem ker_mulVecLin_graphCartanMatrix (hG : G.Preconnected) (hpos : ∀ i, 0 <
     exact graphCartanMatrix_mulVec_eq_zero G hδ
 
 end Ordered
+
+/-! ### Zero propagation for subadditive weights -/
+
+section Subadditive
+
+variable [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+
+/-- For a nonnegative vector with nonnegative Cartan image, a zero coefficient forces every
+neighbouring coefficient to vanish. -/
+theorem eq_zero_of_adj_of_graphCartanMatrix_mulVec_nonneg {a : V → R}
+    (ha : 0 ≤ a) (hCa : 0 ≤ G.graphCartanMatrix R *ᵥ a)
+    {i j : V} (hij : G.Adj i j) (hi : a i = 0) : a j = 0 := by
+  have hs : (∑ j ∈ G.neighborFinset i, a j) ≤ 0 := by
+    have h := hCa i
+    rw [graphCartanMatrix_mulVec_apply, hi, mul_zero] at h
+    simpa using h
+  exact le_antisymm ((single_le_sum (fun j _ ↦ ha j)
+    ((mem_neighborFinset G i j).2 hij)).trans hs) (ha j)
+
+/-- On a preconnected graph, a nonnegative vector with nonnegative Cartan image either has no
+zero coefficient or is identically zero. -/
+theorem Preconnected.eq_zero_of_graphCartanMatrix_mulVec_nonneg {G : SimpleGraph V}
+    [DecidableRel G.Adj] (hG : G.Preconnected) {a : V → R}
+    (ha : 0 ≤ a) (hCa : 0 ≤ G.graphCartanMatrix R *ᵥ a) {i : V} (hi : a i = 0) : a = 0 := by
+  funext j
+  obtain ⟨p⟩ := hG i j
+  induction p with
+  | nil => exact hi
+  | cons hij p ih =>
+    exact ih (G.eq_zero_of_adj_of_graphCartanMatrix_mulVec_nonneg ha hCa hij hi)
+
+/-- Every nonzero nonnegative vector with nonnegative Cartan image on a preconnected graph is
+strictly positive. In particular this applies to nonnegative null vectors. -/
+theorem Preconnected.pos_of_graphCartanMatrix_mulVec_nonneg {G : SimpleGraph V}
+    [DecidableRel G.Adj] (hG : G.Preconnected) {a : V → R}
+    (ha : 0 ≤ a) (hCa : 0 ≤ G.graphCartanMatrix R *ᵥ a) (hne : a ≠ 0) (i : V) : 0 < a i := by
+  exact lt_of_le_of_ne (ha i) fun hi ↦
+    hne (hG.eq_zero_of_graphCartanMatrix_mulVec_nonneg ha hCa hi.symm)
+
+end Subadditive
 
 /-! ### Superadditive weights -/
 
