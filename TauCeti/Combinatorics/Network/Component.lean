@@ -32,34 +32,6 @@ universe u v w
 
 variable {V : Type u} {Q : V → V → Type v} {K : Type w}
 
-namespace Quiver
-
-/-- The vertices in a fixed weakly connected component of an explicit arrow family. -/
-abbrev ComponentVertex (Q : V → V → Type v)
-    (C : @_root_.Quiver.WeaklyConnectedComponent V ⟨Q⟩) :=
-  {x : V // @_root_.Quiver.WeaklyConnectedComponent.mk V ⟨Q⟩ x = C}
-
-/-- The restriction of an explicit arrow family to a fixed weakly connected component. -/
-abbrev ComponentHom (Q : V → V → Type v)
-    (C : @_root_.Quiver.WeaklyConnectedComponent V ⟨Q⟩) :
-    ComponentVertex Q C → ComponentVertex Q C → Type v :=
-  fun x y ↦ Q x.1 y.1
-
-/-- A component of a finite vertex type has finitely many vertices. -/
-noncomputable instance instFintypeComponentVertex [Fintype V]
-    (C : @_root_.Quiver.WeaklyConnectedComponent V ⟨Q⟩) :
-    Fintype (ComponentVertex Q C) :=
-  Fintype.ofFinite _
-
-/-- The endpoints of an arrow lie in the same weakly connected component. -/
-theorem weaklyConnectedComponent_mk_eq_of_hom {x y : V} (e : Q x y) :
-    @_root_.Quiver.WeaklyConnectedComponent.mk V ⟨Q⟩ x =
-      @_root_.Quiver.WeaklyConnectedComponent.mk V ⟨Q⟩ y :=
-  (@_root_.Quiver.WeaklyConnectedComponent.eq V ⟨Q⟩ x y).2
-    ⟨@Hom.toPath (Symmetrify V) (@symmetrifyQuiver V ⟨Q⟩) x y (.inl e)⟩
-
-end Quiver
-
 namespace Assignment
 
 variable (C : @_root_.Quiver.WeaklyConnectedComponent V ⟨Q⟩)
@@ -72,26 +44,6 @@ def restrictComponent (f : Assignment Q K) : Assignment (Quiver.ComponentHom Q C
 theorem restrictComponent_apply (f : Assignment Q K) {x y : Quiver.ComponentVertex Q C}
     (e : Q x.1 y.1) : f.restrictComponent C e = f e :=
   (rfl)
-
-/-- The arrows entering a vertex from within its component are exactly all arrows entering that
-vertex. -/
-private def componentIncomingEquiv (x : Quiver.ComponentVertex Q C) :
-    (Σ y : Quiver.ComponentVertex Q C, Q y.1 x.1) ≃ (Σ y : V, Q y x.1) where
-  toFun a := ⟨a.1.1, a.2⟩
-  invFun a :=
-    ⟨⟨a.1, (Quiver.weaklyConnectedComponent_mk_eq_of_hom a.2).trans x.2⟩, a.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-/-- The arrows leaving a vertex for vertices within its component are exactly all arrows leaving
-that vertex. -/
-private def componentOutgoingEquiv (x : Quiver.ComponentVertex Q C) :
-    (Σ y : Quiver.ComponentVertex Q C, Q x.1 y.1) ≃ (Σ y : V, Q x.1 y) where
-  toFun a := ⟨a.1.1, a.2⟩
-  invFun a :=
-    ⟨⟨a.1, (Quiver.weaklyConnectedComponent_mk_eq_of_hom a.2).symm.trans x.2⟩, a.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
 
 variable [Fintype V] [∀ x y, Fintype (Q x y)] [AddCommGroup K]
 
@@ -108,7 +60,12 @@ theorem excessAt_restrictComponent (f : Assignment Q K) (x : Quiver.ComponentVer
         (Fintype.sum_sigma' fun (y : Quiver.ComponentVertex Q C) (e : Q y.1 x.1) ↦
           f e).symm
       _ = ∑ a : Σ y : V, Q y x.1, f a.2 :=
-        (componentIncomingEquiv C x).sum_comp fun a ↦ f a.2
+        by
+          have h (a : Σ y : Quiver.ComponentVertex Q C, Q y.1 x.1) :
+              f (Quiver.componentIncomingEquiv C x a).2 = f a.2 := by
+            rw [Quiver.componentIncomingEquiv_apply]
+          simpa only [h] using
+            (Quiver.componentIncomingEquiv C x).sum_comp fun a ↦ f a.2
       _ = _ := Fintype.sum_sigma' fun y e ↦ f (x := y) (y := x.1) e
   have hout : (∑ y : Quiver.ComponentVertex Q C, ∑ e : Q x.1 y.1, f e) =
       ∑ y : V, ∑ e : Q x.1 y, f e := by
@@ -117,7 +74,12 @@ theorem excessAt_restrictComponent (f : Assignment Q K) (x : Quiver.ComponentVer
         (Fintype.sum_sigma' fun (y : Quiver.ComponentVertex Q C) (e : Q x.1 y.1) ↦
           f e).symm
       _ = ∑ a : Σ y : V, Q x.1 y, f a.2 :=
-        (componentOutgoingEquiv C x).sum_comp fun a ↦ f a.2
+        by
+          have h (a : Σ y : Quiver.ComponentVertex Q C, Q x.1 y.1) :
+              f (Quiver.componentOutgoingEquiv C x a).2 = f a.2 := by
+            rw [Quiver.componentOutgoingEquiv_apply]
+          simpa only [h] using
+            (Quiver.componentOutgoingEquiv C x).sum_comp fun a ↦ f a.2
       _ = _ := Fintype.sum_sigma' fun y e ↦ f (x := x.1) (y := y) e
   simp only [excessAt_def, restrictComponent_apply]
   rw [hin, hout]
