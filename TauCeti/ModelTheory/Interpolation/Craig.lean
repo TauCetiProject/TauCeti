@@ -5,60 +5,74 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.Infinitary.ConstantAbstraction
+public import TauCeti.ModelTheory.Infinitary.GraphTranslation.BackTranslate
+public import TauCeti.ModelTheory.Infinitary.GraphTranslation.Reconstruction
+public import TauCeti.ModelTheory.Interpolation.ConstantElimination
 public import TauCeti.ModelTheory.Interpolation.PCClass
 public import TauCeti.ModelTheory.ModelExistence.ModelExistence
 
 /-!
-# Relational Craig interpolation and projective-class separation for `L_{ω₁ω}`
+# Craig interpolation and projective-class separation for `L_{ω₁ω}`
 
 López-Escobar's interpolation theorem gives a Craig interpolant for every valid implication
-`φ ⊨ ψ` between sentences of `L_{ω₁ω}`. This file establishes the **relational core** of Craig
-interpolation for relational languages `L : Language.{u, v}` of arbitrary cardinality and in
-arbitrary universes, together with its countable-theory form and the relational projective-class
-separation theorems.
+`φ ⊨ ψ` between sentences of `L_{ω₁ω}`. This file proves it for languages `L : Language.{u, v}`
+of arbitrary cardinality, with function symbols, in arbitrary universes, together with its
+countable-theory form and projective-class separation. The proof has two stages: a **relational
+core**, and its transfer to arbitrary languages through the graph translation.
 
-The engine is a paired-inseparability consistency property over the Henkin expansion `L[[ℕ]]`
-which itself requires **no** relational hypothesis on `L`. Given two relation-symbol budgets
-`R₁, R₂ : Set (Σ n, L.Relations n)`, a member is a union `Γ ∪ Δ` of two finite sets of `L[[ℕ]]`
-sentences whose occurring relation symbols lie in the images of `R₁` and `R₂` and whose constant
-supports are finite, such that no `L[[ℕ]]` sentence `θ` in the shared relation symbols `R₁ ∩ R₂`
-with constant support inside the combined constant support of `Γ` and `Δ` is entailed by `Γ` and
-refuted on `Δ`. Bounding the separator's constant support by that of the pair makes two parts of
-the proof immediate: countable disjunctions and negated countable conjunctions keep the bound when
-joining countably many separators, and at the root `({φ'}, {¬ψ'})` any separator has empty
-constant support and therefore descends to `L`. Clauses that temporarily introduce constants
-outside the pair's support (`all`, `not_all`, `eq_refl`, `eq_name`) eliminate those constants from
-a putative separator through `BoundedFormulaInf.abstractConst` followed by universal or
-existential quantification; the mixed equality cases of `eq_subst` use that equality is logical
-(`relationsIn_equal = ∅`).
+The engine of the relational core is a paired-inseparability consistency property over the
+Henkin expansion `L[[ℕ]]` which itself requires **no** relational hypothesis on `L`. Given two
+relation-symbol budgets `R₁, R₂ : Set (Σ n, L.Relations n)`, a member is a union `Γ ∪ Δ` of two
+finite sets of `L[[ℕ]]` sentences whose occurring relation symbols lie in the images of `R₁` and
+`R₂` and whose constant supports are finite, such that no `L[[ℕ]]` sentence `θ` in the shared
+relation symbols `R₁ ∩ R₂` with constant support inside the combined constant support of `Γ` and
+`Δ` is entailed by `Γ` and refuted on `Δ`. Bounding the separator's constant support by that of
+the pair makes two parts of the proof immediate: countable disjunctions and negated countable
+conjunctions keep the bound when joining countably many separators, and at the root
+`({φ'}, {¬ψ'})` any separator has empty constant support and therefore descends to `L`. Clauses
+that temporarily introduce constants outside the pair's support (`all`, `not_all`, `eq_refl`,
+`eq_name`) eliminate those constants from a putative separator through
+`BoundedFormulaInf.abstractConst` followed by universal or existential quantification; the mixed
+equality cases of `eq_subst` use that equality is logical (`relationsIn_equal = ∅`).
 
 For a relational language `L` with countably many relation symbols,
 `ConsistencyProperty.model_existence` applied to `({φ'}, {¬ψ'})` refutes the absence of an
 interpolant. Passing to the countable symbol sublanguage
 `symbSublang ∅ (φ.relationsIn ∪ ψ.relationsIn)` removes all countability assumptions on `L`.
-Replacing a countable theory `T` by `T.conjunction` gives interpolation for `T ⊨ ψ`.
 
-Combining relational Craig interpolation in `L.sum (L₁.sum L₂)` with downward Löwenheim–Skolem
-(`Sentenceω.entails_iff_countable`) and `LHom.PCMem.realize_of_entails` yields relational
-projective-class separation: if two `PC_{ω₁ω}` classes over relational `L`, `L₁`, `L₂` have no
-common countable nonempty member in `Type w₀`, a single `L`-sentence separates them on nonempty
-structures of every cardinality and universe.
+For an arbitrary language, `Sentenceω.entails_iff_graphTranslation` turns `φ ⊨ ψ` into an
+entailment in the relational graph language `L.graphLanguage`, between the graph axioms of the
+function symbols of `φ` conjoined with the translation of `φ`, and the graph axioms of the
+function symbols of `ψ` implying the translation of `ψ`. The relational core gives an interpolant
+there. By the exact occurrence identity `relationsIn_relationalize` and the shared-vocabulary
+identity `relSym_inter`, its relation symbols are the graph-language symbols of the shared
+function and relation symbols of `φ` and `ψ`, so its back-translation is a Craig interpolant in
+`L`: both entailments pass along the graph expansion of a model of `L`, where the graph axioms
+hold, the translation is realized exactly when the original sentence is
+(`realize_relationalize`), and so is the back-translation (`realize_backTranslate`). Replacing a
+countable theory `T` by `T.conjunction` gives interpolation for `T ⊨ ψ`.
+
+Combining Craig interpolation in `L.sum (L₁.sum L₂)` with downward Löwenheim–Skolem
+(`Sentenceω.entails_iff_countable`) and `LHom.PCMem.realize_of_entails` yields projective-class
+separation: if two `PC_{ω₁ω}` classes over `L`, `L₁`, `L₂` have no common countable nonempty
+member in `Type w₀`, a single `L`-sentence separates them on nonempty structures of every
+cardinality and universe.
 
 ## Main results
 
 * `FirstOrder.Language.craig_interpolation_relational`: relational Craig interpolation for
   `L_{ω₁ω}` sentences over a relational language of arbitrary cardinality.
-* `FirstOrder.Language.Theoryω.craig_interpolation_relational`: relational Craig interpolation for
-  a countable theory `T` entailing a sentence `ψ`.
-* `FirstOrder.Language.craig_pcSeparation_relational`: separating the reducts of models of two
-  mutually inconsistent sentences in their shared symbol sublanguage.
-* `FirstOrder.Language.pcSeparation_entails_relational` and
-  `FirstOrder.Language.pcSeparation_relational`: relational `PC_{ω₁ω}` separation from countable
-  disjointness in `Type w₀` to arbitrary nonempty structures in `Type w`.
-* `FirstOrder.Language.pcComplement_iff_realize_relational`: a `PC_{ω₁ω}` class over relational
-  languages whose countable complement is also `PC_{ω₁ω}` is the class of countable nonempty
-  models of a single `L_{ω₁ω}` sentence.
+* `FirstOrder.Language.craig_interpolation`: Craig interpolation for `L_{ω₁ω}` sentences over an
+  arbitrary language, bounding both the function and the relation symbols of the interpolant.
+* `FirstOrder.Language.Theoryω.craig_interpolation`: Craig interpolation for a countable theory
+  `T` entailing a sentence `ψ`.
+* `FirstOrder.Language.craig_pcSeparation`: separating the reducts of models of two mutually
+  inconsistent sentences in their shared symbol sublanguage.
+* `FirstOrder.Language.pcSeparation_entails` and `FirstOrder.Language.pcSeparation`:
+  `PC_{ω₁ω}` separation from countable disjointness in `Type w₀` to arbitrary nonempty
+  structures in `Type w`.
+* `FirstOrder.Language.pcComplement_iff_realize`: a `PC_{ω₁ω}` class whose countable complement
+  is also `PC_{ω₁ω}` is the class of countable nonempty models of a single `L_{ω₁ω}` sentence.
 
 ## References
 
@@ -68,14 +82,16 @@ structures of every cardinality and universe.
 * D. Marker, *Lectures on Infinitary Model Theory*, Lecture Notes in Logic 46, Cambridge
   University Press, 2016, §4.2.
 * `cameronfreer/infinitary-logic` at commit `518a366cba97b1ae8c4dc64a297a396939bc3e0b`,
-  `InfinitaryLogic/Methods/Interpolation/{Craig,ConstantElimination,PCSeparation}.lean`.
-  Divergences from that source: the paired-inseparability consistency property is formulated over
-  `L[[ℕ]]` for arbitrary `L : Language.{u, v}` without assuming `[L.IsRelational]`, tracking
-  explicit constant-support bounds and eliminating extra constants via
-  `BoundedFormulaInf.abstractConst`; arbitrary-cardinality relational languages are handled by
-  symbol-sublanguage restriction rather than restricting to countable `Language.{0, 0}`; and
-  projective-class separation transfers countable disjointness in any universe `w₀` to models of
-  arbitrary cardinality and universe `w`.
+  `InfinitaryLogic/Methods/Interpolation/{Craig,ConstantElimination,PCSeparation,
+  CraigArbitrary}.lean`. Divergences from that source: the paired-inseparability consistency
+  property is formulated over `L[[ℕ]]` for arbitrary `L : Language.{u, v}` without assuming
+  `[L.IsRelational]`, tracking explicit constant-support bounds and eliminating extra constants
+  via `BoundedFormulaInf.abstractConst`; arbitrary-cardinality languages are handled by
+  symbol-sublanguage restriction rather than restricting to countable `Language.{0, 0}`; the
+  transfer to function symbols bounds the interpolant's symbols through the exact occurrence
+  identity of the graph translation; and projective-class separation is proved for arbitrary
+  languages `L`, `L₁`, `L₂`, transferring countable disjointness in any universe `w₀` to models
+  of arbitrary cardinality and universe `w`.
 -/
 
 public section
@@ -153,12 +169,6 @@ private def updateStructure {M : Type w} [L[[ℕ]].Structure M] (c : ℕ) (m : M
   @withConstantsStructure L M ((L.lhomWithConstants ℕ).reduct M) ℕ
     (constantsOn.structure (Function.update (fun d => (L.con d : M)) c m))
 
-private theorem updateStructure_con {M : Type w} [iM : L[[ℕ]].Structure M] (c : ℕ) :
-    updateStructure c (L.con c : M) = iM := by
-  unfold updateStructure
-  rw [Function.update_eq_self]
-  exact withConstantsStructure_reduct_eq (L := L) (γ := ℕ) M
-
 private theorem realize_con_updateStructure_self {M : Type w} [L[[ℕ]].Structure M] {α : Type*}
     (c : ℕ) (m : M) (v : α → M) :
     @Term.realize _ M (updateStructure c m) _ v (L.con c).term = m := by
@@ -190,13 +200,15 @@ private theorem realize_updateStructure_of_notMem {M : Type w} [iM : L[[ℕ]].St
     (fun d hd => Function.update_of_ne (by rintro rfl; exact hc hd : d ≠ c) m
       (fun d => (L.con d : M))) v xs, ← hS]
 
-private theorem model_updateStructure {M : Type w} [L[[ℕ]].Structure M]
+private theorem model_updateStructure {M : Type w} [iM : L[[ℕ]].Structure M]
     {Γ : L[[ℕ]].Theoryω} {c : ℕ} (hc : ∀ χ ∈ Γ, c ∉ χ.constantSupport) (m : M)
-    (hM : Γ.Model M) : @Theoryω.Model _ Γ M (updateStructure c m) :=
-  (@Theoryω.model_iff _ Γ M (updateStructure c m)).2 fun χ hχ => by
-    have h₀ := hM.realize_of_mem hχ
-    simp only [SentenceInf.realize_def, FormulaInf.realize_def] at h₀ ⊢
-    exact (realize_updateStructure_of_notMem (hc χ hχ) m Empty.elim default).2 h₀
+    (hM : Γ.Model M) : @Theoryω.Model _ Γ M (updateStructure c m) := by
+  let S : L.Structure M := (L.lhomWithConstants ℕ).reduct M
+  have hS : iM = @withConstantsStructure L M S ℕ
+      (constantsOn.structure fun d => (L.con d : M)) :=
+    (withConstantsStructure_reduct_eq (L := L) (γ := ℕ) M).symm
+  unfold updateStructure
+  exact (Theoryω.model_constantsOn_update_iff _ m hc).2 (hS ▸ hM)
 
 private theorem realize_abstractConst_snoc {M : Type w} [iM : L[[ℕ]].Structure M]
     (c : ℕ) (θ : L[[ℕ]].Sentenceω) (m : M) :
@@ -215,33 +227,13 @@ already lie in `K`. -/
 private theorem hasSep_of_finite_extra {R : Set (Σ n, L[[ℕ]].Relations n)} {K E : Set ℕ}
     (hE : E.Finite) {Γ Δ : L[[ℕ]].Theoryω} (hΓK : ∀ χ ∈ Γ, χ.constantSupport ⊆ K)
     (hsep : HasSep R (K ∪ E) Γ Δ) : HasSep R K Γ Δ := by
-  classical
-  have hfin : (E \ K).Finite := hE.subset Set.sdiff_subset
-  suffices ∀ S : Finset ℕ, (∀ c ∈ S, c ∉ K) → HasSep R (K ∪ ↑S) Γ Δ → HasSep R K Γ Δ from
-    this hfin.toFinset (fun _ hc => (hfin.mem_toFinset.1 hc).2) <| by
-      obtain ⟨θ, hr, hs, hΓ, hΔ⟩ := hsep
-      refine ⟨θ, hr, hs.trans fun c hc => ?_, hΓ, hΔ⟩
-      exact if hcK : c ∈ K then .inl hcK else .inr (hfin.mem_toFinset.2 ⟨hc.resolve_left hcK, hcK⟩)
-  intro S
-  induction S using Finset.induction_on with
-  | empty => intro _ h; simpa using h
-  | @insert c S _ ih =>
-    intro hSK ⟨θ, hrel, hsupp, hΓ, hΔ⟩
-    have hcK : c ∉ K := hSK c (Finset.mem_insert_self c S)
-    refine ih (fun d hd => hSK d (Finset.mem_insert_of_mem hd))
-      ⟨(abstractConst c θ).all, by simpa using hrel, ?_, ?_, ?_⟩
-    · rw [constantSupport_all, constantSupport_abstractConst]
-      exact fun d hd => (hsupp hd.1).imp_right fun h => (Finset.mem_insert.1 h).resolve_left hd.2
-    · refine Theoryω.entails_iff.2 fun M _ _ hM => ?_
-      rw [SentenceInf.realize_def, FormulaInf.realize_def, realize_all]
-      exact fun m => (realize_abstractConst_snoc c θ m).2 <|
-        @entails_realize L Γ θ hΓ M (updateStructure c m) ‹_›
-          (model_updateStructure (fun χ hχ h => hcK (hΓK χ hχ h)) m hM)
-    · refine Theoryω.entails_iff.2 fun M _ _ hM => SentenceInf.realize_not.2 fun hall => ?_
-      rw [SentenceInf.realize_def, FormulaInf.realize_def, realize_all] at hall
-      have hcon := (realize_abstractConst_snoc c θ (L.con c : M)).1 (hall (L.con c))
-      rw [updateStructure_con (L := L)] at hcon
-      exact SentenceInf.realize_not.1 (entails_realize hΔ M hM) hcon
+  obtain ⟨θ, hrel, hsupp, hΓ, hΔ⟩ := hsep
+  obtain ⟨χ, hr, -, hk, hΓχ, hΔχ⟩ :=
+    Theoryω.exists_separator_constantSupport_subset hE hΓK hsupp hΓ hΔ
+  refine ⟨χ, ?_, hk, hΓχ, hΔχ⟩
+  rw [← relationsInSigned_union_not true χ, hr true, hr (!true),
+    relationsInSigned_union_not]
+  exact hrel
 
 /-- Existential witness elimination: if `c ∉ pairSupport Γ Δ` and every model of `Γ` admits an
 interpretation of `c` satisfying `ψ`, any separator of `(insert ψ Γ, Δ)` with constant budget
@@ -262,13 +254,7 @@ private theorem hasSep_elim_witness {R : Set (Σ n, L[[ℕ]].Relations n)} {K : 
       @entails_realize L _ θ hΓθ M (updateStructure c m) ‹_›
         ((@Theoryω.model_insert_iff _ _ M (updateStructure c m) _).2
           ⟨hm, model_updateStructure (fun _ hχ h => hc (subset_pairSupport_left hχ h)) m hM⟩)⟩
-  · refine Theoryω.entails_iff.2 fun M _ _ hM => SentenceInf.realize_not.2 ?_
-    rw [SentenceInf.realize_def, FormulaInf.realize_def, realize_ex]
-    rintro ⟨m, hm⟩
-    exact (@SentenceInf.realize_not _ _ M (updateStructure c m)).1
-      (@entails_realize L Δ θ.not hΔθ M (updateStructure c m) ‹_›
-        (model_updateStructure (fun _ hχ h => hc (subset_pairSupport_right hχ h)) m hM))
-      ((realize_abstractConst_snoc c θ m).1 hm)
+  · exact hΔθ.not_ex_abstractConst (fun _ hχ h => hc (subset_pairSupport_right hχ h))
 
 /-- A valid `(R₁, R₂)`-inseparable finite pair `(Γ, Δ)`. -/
 private structure InsepPair (R₁ R₂ : Set (Σ n, L.Relations n)) (Γ Δ : L[[ℕ]].Theoryω) : Prop where
@@ -647,7 +633,7 @@ private def insepConsistencyProperty (R₁ R₂ : Set (Σ n, L.Relations n)) :
 
 end Engine
 
-/-! ### Relational Craig interpolation -/
+/-! ### Craig interpolation -/
 
 section Craig
 
@@ -729,27 +715,65 @@ theorem craig_interpolation_relational [L.IsRelational] (φ ψ : L.Sentenceω)
   refine ((Set.image_mono hrel₀).trans (Set.image_inter_subset _ _ _)).trans ?_
   rw [← LHom.relationsIn_onBoundedFormulaInf, ← LHom.relationsIn_onBoundedFormulaInf, hφ₀, hψ₀]
 
-/-- **Countable-theory relational Craig interpolation.** Over a relational language `L`, if a
-countable `L_{ω₁ω}` theory `T` entails `ψ`, there is an interpolant `θ` whose occurring relation
-symbols appear both in some sentence of `T` and in `ψ`, with `T ⊨ θ` and `θ ⊨ ψ`. -/
-theorem Theoryω.craig_interpolation_relational [L.IsRelational] {T : L.Theoryω}
-    (hT : T.Countable) (ψ : L.Sentenceω) (h : T.Entails ψ) :
-    ∃ θ : L.Sentenceω, θ.relationsIn ⊆ (⋃ φ ∈ T, φ.relationsIn) ∩ ψ.relationsIn ∧
-      T.Entails θ ∧ Sentenceω.Entails θ ψ := by
-  obtain ⟨θ, hrel, hTθ, hθψ⟩ := Language.craig_interpolation_relational (T.conjunction hT) ψ
-    ((Theoryω.entails_iff_conjunction_entails hT).1 h)
-  refine ⟨θ, hrel.trans (Set.inter_subset_inter_left _ ?_),
-    (Theoryω.entails_iff_conjunction_entails hT).2 hTθ, hθψ⟩
-  rw [Theoryω.conjunction_def, relationsIn_iInfAlong]
-  exact Set.iUnion_subset fun φ => Set.subset_biUnion_of_mem φ.2
+/-- **Craig interpolation for `L_{ω₁ω}`.** In any language `L` (of any cardinality, with function
+symbols, and in any universes), if an `L_{ω₁ω}` sentence `φ` entails `ψ`, there is an `L_{ω₁ω}`
+sentence `θ` whose function symbols lie in `φ.functionsIn ∩ ψ.functionsIn` and whose relation
+symbols lie in `φ.relationsIn ∩ ψ.relationsIn` such that `φ` entails `θ` and `θ` entails `ψ`.
+Equality is logical, so `θ` may use it freely. -/
+theorem craig_interpolation (φ ψ : L.Sentenceω) (h : φ.Entails ψ) :
+    ∃ θ : L.Sentenceω, θ.functionsIn ⊆ φ.functionsIn ∩ ψ.functionsIn ∧
+      θ.relationsIn ⊆ φ.relationsIn ∩ ψ.relationsIn ∧ φ.Entails θ ∧ θ.Entails ψ := by
+  obtain ⟨θ, hrel, hφθ, hθψ⟩ := craig_interpolation_relational _ _
+    (Sentenceω.entails_iff_graphTranslation.1 h)
+  -- The interpolant in the graph language mentions only graph-language symbols of shared symbols.
+  have hsym : θ.relationsIn ⊆
+      relSym (φ.functionsIn ∩ ψ.functionsIn) (φ.relationsIn ∩ ψ.relationsIn) := by
+    rw [← relSym_inter]
+    refine hrel.trans (Set.inter_subset_inter ?_ ?_) <;> simp [relSym_def]
+  refine ⟨θ.backTranslate, ?_, ?_, ?_, ?_⟩
+  · simpa using Set.preimage_mono (f := graphRelSym) hsym
+  · simpa using Set.preimage_mono (f := baseRelSym) hsym
+  · refine Sentenceω.entails_iff.2 fun M _ _ hφ => ?_
+    let := graphExpansion L M
+    have := Sentenceω.entails_iff.1 hφθ M (SentenceInf.realize_inf.2
+      ⟨realize_graphAxiomsSentence_graphExpansion _ _ M, by
+        simpa only [SentenceInf.realize_def, FormulaInf.realize_def, realize_relationalize]
+          using hφ⟩)
+    simpa only [SentenceInf.realize_def, FormulaInf.realize_def, realize_backTranslate] using this
+  · refine Sentenceω.entails_iff.2 fun M _ _ hθ => ?_
+    let := graphExpansion L M
+    have := Sentenceω.entails_iff.1 hθψ M (by
+      simpa only [SentenceInf.realize_def, FormulaInf.realize_def, realize_backTranslate]
+        using hθ)
+    simp only [SentenceInf.realize_def, FormulaInf.realize_def, realize_imp,
+      realize_relationalize] at this ⊢
+    exact this (by simpa only [SentenceInf.realize_def, FormulaInf.realize_def] using
+      realize_graphAxiomsSentence_graphExpansion _ _ M)
 
-/-- **Relational projective-class separation from mutual inconsistency.** Over a relational
-language `L`, if `ψ₁ ⊨ ¬ψ₂`, some sentence `θ` of the shared symbol sublanguage
+/-- **Countable-theory Craig interpolation.** If a countable `L_{ω₁ω}` theory `T` entails `ψ`,
+there is an interpolant `θ` whose occurring function and relation symbols appear both in some
+sentence of `T` and in `ψ`, with `T ⊨ θ` and `θ ⊨ ψ`. -/
+theorem Theoryω.craig_interpolation {T : L.Theoryω} (hT : T.Countable) (ψ : L.Sentenceω)
+    (h : T.Entails ψ) :
+    ∃ θ : L.Sentenceω, θ.functionsIn ⊆ (⋃ φ ∈ T, φ.functionsIn) ∩ ψ.functionsIn ∧
+      θ.relationsIn ⊆ (⋃ φ ∈ T, φ.relationsIn) ∩ ψ.relationsIn ∧
+      T.Entails θ ∧ Sentenceω.Entails θ ψ := by
+  obtain ⟨θ, hfun, hrel, hTθ, hθψ⟩ := Language.craig_interpolation (T.conjunction hT) ψ
+    ((Theoryω.entails_iff_conjunction_entails hT).1 h)
+  refine ⟨θ, hfun.trans (Set.inter_subset_inter_left _ ?_),
+    hrel.trans (Set.inter_subset_inter_left _ ?_),
+    (Theoryω.entails_iff_conjunction_entails hT).2 hTθ, hθψ⟩
+  · rw [Theoryω.conjunction_def, functionsIn_iInfAlong]
+    exact Set.iUnion_subset fun φ => Set.subset_biUnion_of_mem φ.2
+  · rw [Theoryω.conjunction_def, relationsIn_iInfAlong]
+    exact Set.iUnion_subset fun φ => Set.subset_biUnion_of_mem φ.2
+
+/-- **Projective-class separation from mutual inconsistency.** If `ψ₁ ⊨ ¬ψ₂`, some sentence `θ` of
+the shared symbol sublanguage
 `symbSublang (ψ₁.functionsIn ∩ ψ₂.functionsIn) (ψ₁.relationsIn ∩ ψ₂.relationsIn)` holds in the
 reduct of every nonempty model of `ψ₁` and fails in the reduct of every nonempty model of `ψ₂`,
 across arbitrary universes `w` and `w'`. -/
-theorem craig_pcSeparation_relational [L.IsRelational] (ψ₁ ψ₂ : L.Sentenceω)
-    (h : Sentenceω.Entails ψ₁ ψ₂.not) :
+theorem craig_pcSeparation (ψ₁ ψ₂ : L.Sentenceω) (h : Sentenceω.Entails ψ₁ ψ₂.not) :
     ∃ θ : (symbSublang (ψ₁.functionsIn ∩ ψ₂.functionsIn)
         (ψ₁.relationsIn ∩ ψ₂.relationsIn)).Sentenceω,
       (∀ (M : Type w) [L.Structure M] [Nonempty M], SentenceInf.Realize ψ₁ M →
@@ -760,17 +784,17 @@ theorem craig_pcSeparation_relational [L.IsRelational] (ψ₁ ψ₂ : L.Sentence
         ¬ @SentenceInf.Realize _ ℕ θ M
           ((symbSublangIncl (ψ₁.functionsIn ∩ ψ₂.functionsIn)
             (ψ₁.relationsIn ∩ ψ₂.relationsIn)).reduct M)) := by
-  obtain ⟨θ₀, hrel, h₁, h₂⟩ := craig_interpolation_relational ψ₁ ψ₂.not h
+  obtain ⟨θ₀, hfun, hrel, h₁, h₂⟩ := craig_interpolation ψ₁ ψ₂.not h
+  rw [functionsIn_not] at hfun
   rw [relationsIn_not] at hrel
-  have hF : θ₀.functionsIn ⊆ ψ₁.functionsIn ∩ ψ₂.functionsIn := fun s _ => isEmptyElim s.2
-  refine ⟨θ₀.restrictSymbols hF hrel, ?_, ?_⟩
+  refine ⟨θ₀.restrictSymbols hfun hrel, ?_, ?_⟩
   · intro M _ _ hM₁
     let : (symbSublang (ψ₁.functionsIn ∩ ψ₂.functionsIn)
         (ψ₁.relationsIn ∩ ψ₂.relationsIn)).Structure M :=
       (symbSublangIncl _ _).reduct M
     have hM := h₁.realize M hM₁
     rw [SentenceInf.realize_def, FormulaInf.realize_def] at hM ⊢
-    exact (realize_restrictSymbols θ₀ hF hrel Empty.elim default).2 hM
+    exact (realize_restrictSymbols θ₀ hfun hrel Empty.elim default).2 hM
   · intro M _ _ hM₂ hθM
     let : (symbSublang (ψ₁.functionsIn ∩ ψ₂.functionsIn)
         (ψ₁.relationsIn ∩ ψ₂.relationsIn)).Structure M :=
@@ -778,23 +802,21 @@ theorem craig_pcSeparation_relational [L.IsRelational] (ψ₁ ψ₂ : L.Sentence
     rw [SentenceInf.realize_def, FormulaInf.realize_def] at hθM
     exact SentenceInf.realize_not.1 (h₂.realize M <| by
       rw [SentenceInf.realize_def, FormulaInf.realize_def]
-      exact (realize_restrictSymbols θ₀ hF hrel Empty.elim default).1 hθM) hM₂
+      exact (realize_restrictSymbols θ₀ hfun hrel Empty.elim default).1 hθM) hM₂
 
 end Craig
 
-/-! ### Relational projective-class separation -/
+/-! ### Projective-class separation -/
 
 section PCSeparation
 
 variable {L : Language.{u, v}} {L₁ : Language.{u₁, v₁}} {L₂ : Language.{u₂, v₂}}
 
-/-- **Entailment form of relational `PC_{ω₁ω}` separation.** For relational languages `L`, `L₁`,
-`L₂`, if no countable nonempty `L`-structure in `Type w₀` lies in both
-`LHom.sumInl.PCMem Θ₁` and `LHom.sumInl.PCMem Θ₂`, there is a single sentence `θ : L.Sentenceω`
-whose image in `L.sum L₁` is entailed by `Θ₁` and whose negated image in `L.sum L₂` is entailed
-by `Θ₂`. -/
-theorem pcSeparation_entails_relational [L.IsRelational] [L₁.IsRelational] [L₂.IsRelational]
-    (Θ₁ : (L.sum L₁).Sentenceω) (Θ₂ : (L.sum L₂).Sentenceω)
+/-- **Entailment form of `PC_{ω₁ω}` separation.** For arbitrary languages `L`, `L₁`, `L₂`, if no
+countable nonempty `L`-structure in `Type w₀` lies in both `LHom.sumInl.PCMem Θ₁` and
+`LHom.sumInl.PCMem Θ₂`, there is a single sentence `θ : L.Sentenceω` whose image in `L.sum L₁` is
+entailed by `Θ₁` and whose negated image in `L.sum L₂` is entailed by `Θ₂`. -/
+theorem pcSeparation_entails (Θ₁ : (L.sum L₁).Sentenceω) (Θ₂ : (L.sum L₂).Sentenceω)
     (h : ∀ (M : Type w₀) [L.Structure M] [Nonempty M] [Countable M],
       LHom.sumInl.PCMem Θ₁ M → ¬ LHom.sumInl.PCMem Θ₂ M) :
     ∃ θ : L.Sentenceω,
@@ -818,21 +840,17 @@ theorem pcSeparation_entails_relational [L.IsRelational] [L₁.IsRelational] [L�
     obtain ⟨h₁, h₂⟩ := LHom.pcMem_sumInl_inf_iff.1
       (LHom.pcMem_of_isExpansionOn (SentenceInf.realize_inf.2 ⟨hM₁, hM₂⟩))
     exact h M h₁ h₂
-  obtain ⟨θ', hrel, h₁, h₂⟩ := craig_interpolation_relational Θ₁' Θ₂'.not hent
-  have hR : θ'.relationsIn ⊆ Set.range fun s : Σ n, L.Relations n =>
-      (⟨s.1, (LHom.sumInl : L →ᴸ L.sum (L₁.sum L₂)).onRelation s.2⟩ :
-        Σ k, (L.sum (L₁.sum L₂)).Relations k) := by
-    intro _ hR'
-    obtain ⟨hR₁, hR₂⟩ := hrel hR'
-    rw [relationsIn_not] at hR₂
-    rw [LHom.relationsIn_onBoundedFormulaInf] at hR₁ hR₂
-    obtain ⟨⟨k₁, r₁ | r₁⟩, -, rfl⟩ := hR₁
-    · exact ⟨⟨k₁, r₁⟩, rfl⟩
-    · obtain ⟨⟨k₂, r₂ | r₂⟩, -, hr₂⟩ := hR₂ <;> obtain ⟨rfl, heq⟩ := Sigma.mk.inj_iff.1 hr₂
-      · exact (Sum.inl_ne_inr (eq_of_heq heq)).elim
-      · exact (Sum.inr_ne_inl (Sum.inr.inj (eq_of_heq heq))).elim
+  obtain ⟨θ', hfun, hrel, h₁, h₂⟩ := craig_interpolation Θ₁' Θ₂'.not hent
+  rw [functionsIn_not, LHom.functionsIn_onBoundedFormulaInf,
+    LHom.functionsIn_onBoundedFormulaInf] at hfun
+  rw [relationsIn_not, LHom.relationsIn_onBoundedFormulaInf,
+    LHom.relationsIn_onBoundedFormulaInf] at hrel
   obtain ⟨θ, hθ⟩ := LHom.exists_eq_onBoundedFormulaInf_of_subset_range
-    (LHom.sumInl : L →ᴸ L.sum (L₁.sum L₂)) θ' (fun s _ => isEmptyElim s.2) hR
+    (LHom.sumInl : L →ᴸ L.sum (L₁.sum L₂)) θ'
+    (fun _ hs => LHom.mem_range_sumInl_onFunction_of_mem_range_sumMap
+      (Set.mem_range_of_mem_image _ _ (hfun hs).1) (Set.mem_range_of_mem_image _ _ (hfun hs).2))
+    (fun _ hs => LHom.mem_range_sumInl_onRelation_of_mem_range_sumMap
+      (Set.mem_range_of_mem_image _ _ (hrel hs).1) (Set.mem_range_of_mem_image _ _ (hrel hs).2))
   have hcomp₁ : g₁.onBoundedFormulaInf (LHom.sumInl.onBoundedFormulaInf θ) = θ' := by
     rw [← LHom.comp_onBoundedFormulaInf, LHom.sumMap_comp_inl, LHom.comp_id, hθ]
   have hcomp₂ : g₂.onBoundedFormulaInf (LHom.sumInl.onBoundedFormulaInf θ) = θ' := by
@@ -843,13 +861,12 @@ theorem pcSeparation_entails_relational [L.IsRelational] [L₁.IsRelational] [L�
   exact Sentenceω.entails_iff.2 fun M _ _ hM₂ =>
     SentenceInf.realize_not.2 fun hθ'M => SentenceInf.realize_not.1 (h₂.realize M hθ'M) hM₂
 
-/-- **Relational projective-class separation.** For relational languages `L`, `L₁`, `L₂` (of any
-cardinality and in any universes), if two `PC_{ω₁ω}` classes `LHom.sumInl.PCMem Θ₁` and
+/-- **Projective-class separation.** For arbitrary languages `L`, `L₁`, `L₂` (of any cardinality,
+with function symbols, and in any universes), if two `PC_{ω₁ω}` classes `LHom.sumInl.PCMem Θ₁` and
 `LHom.sumInl.PCMem Θ₂` have no common countable nonempty member in `Type w₀`, there is a single
 `L_{ω₁ω}` sentence `θ` over `L` that holds in every nonempty member of the first class and fails in
 every nonempty member of the second class, in any universe `w`. -/
-theorem pcSeparation_relational [L.IsRelational] [L₁.IsRelational] [L₂.IsRelational]
-    (Θ₁ : (L.sum L₁).Sentenceω) (Θ₂ : (L.sum L₂).Sentenceω)
+theorem pcSeparation (Θ₁ : (L.sum L₁).Sentenceω) (Θ₂ : (L.sum L₂).Sentenceω)
     (h : ∀ (M : Type w₀) [L.Structure M] [Nonempty M] [Countable M],
       LHom.sumInl.PCMem Θ₁ M → ¬ LHom.sumInl.PCMem Θ₂ M) :
     ∃ θ : L.Sentenceω,
@@ -857,22 +874,21 @@ theorem pcSeparation_relational [L.IsRelational] [L₁.IsRelational] [L₂.IsRel
         SentenceInf.Realize θ M) ∧
       (∀ (M : Type w) [L.Structure M] [Nonempty M], LHom.sumInl.PCMem Θ₂ M →
         ¬ SentenceInf.Realize θ M) := by
-  obtain ⟨θ, h₁, h₂⟩ := pcSeparation_entails_relational Θ₁ Θ₂ h
+  obtain ⟨θ, h₁, h₂⟩ := pcSeparation_entails Θ₁ Θ₂ h
   refine ⟨θ, fun M _ _ hM => hM.realize_of_entails h₁, fun M _ _ hM => ?_⟩
   simpa only [SentenceInf.realize_not] using
     hM.realize_of_entails (φ := θ.not) (by simpa using h₂)
 
-/-- **Suslin–Kleene characterization for relational `PC_{ω₁ω}` classes.** If every countable
-nonempty `L`-structure in `Type w₀` lies in exactly one of `LHom.sumInl.PCMem Θ₁` and
-`LHom.sumInl.PCMem Θ₂` (with `L`, `L₁`, `L₂` relational), then `LHom.sumInl.PCMem Θ₁` on countable
-nonempty structures is the model class of a single `L_{ω₁ω}` sentence `θ`. -/
-theorem pcComplement_iff_realize_relational [L.IsRelational] [L₁.IsRelational] [L₂.IsRelational]
-    (Θ₁ : (L.sum L₁).Sentenceω) (Θ₂ : (L.sum L₂).Sentenceω)
+/-- **Suslin–Kleene characterization for `PC_{ω₁ω}` classes.** If every countable nonempty
+`L`-structure in `Type w₀` lies in exactly one of `LHom.sumInl.PCMem Θ₁` and
+`LHom.sumInl.PCMem Θ₂`, then `LHom.sumInl.PCMem Θ₁` on countable nonempty structures is the model
+class of a single `L_{ω₁ω}` sentence `θ`. -/
+theorem pcComplement_iff_realize (Θ₁ : (L.sum L₁).Sentenceω) (Θ₂ : (L.sum L₂).Sentenceω)
     (h : ∀ (M : Type w₀) [L.Structure M] [Nonempty M] [Countable M],
       LHom.sumInl.PCMem Θ₁ M ↔ ¬ LHom.sumInl.PCMem Θ₂ M) :
     ∃ θ : L.Sentenceω, ∀ (M : Type w₀) [L.Structure M] [Nonempty M] [Countable M],
       LHom.sumInl.PCMem Θ₁ M ↔ SentenceInf.Realize θ M := by
-  obtain ⟨θ, h₁, h₂⟩ := pcSeparation_relational.{u, v, u₁, v₁, u₂, v₂, w₀, w₀} Θ₁ Θ₂
+  obtain ⟨θ, h₁, h₂⟩ := pcSeparation.{u, v, u₁, v₁, u₂, v₂, w₀, w₀} Θ₁ Θ₂
     fun M _ _ _ hM₁ => (h M).1 hM₁
   exact ⟨θ, fun M _ _ _ => ⟨h₁ M, fun hθM => by_contra fun hM₁ => h₂ M ((h M).not_left.1 hM₁) hθM⟩⟩
 

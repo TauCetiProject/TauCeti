@@ -68,6 +68,7 @@ namespace NumberField
 variable (K L : Type*) [Field K] [Field L] [NumberField K] [NumberField L] [Algebra K L]
   [IsGalois K L]
 
+omit [NumberField K] [NumberField L] in
 /-- In a Galois extension of number fields, the number of primes over a prime ideal of a
 Dedekind base equals the relative degree iff the common ramification index and inertia degree
 are both `1`. -/

@@ -14,7 +14,7 @@ import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Metabolic
 /-!
 # Van der Blij's characteristic-norm congruence
 
-In a nondegenerate unimodular integral lattice, every characteristic vector has integral norm
+In a unimodular integral lattice, every characteristic vector has integral norm
 congruent to the signature difference modulo eight. The statement applies to all signatures
 and to both even and odd lattices.
 
@@ -136,11 +136,12 @@ private theorem gaussSum_evenSublattice_of_characteristic [L.IsNondegenerate]
     hqa, ← hcard,
     Nat.cast_pow, Real.sqrt_sq (Nat.cast_nonneg _), Complex.ofReal_natCast]
 
-/-- **Van der Blij's congruence:** the signature difference of a nondegenerate unimodular
+/-- **Van der Blij's congruence:** the signature difference of a unimodular
 integral lattice is congruent modulo eight to the norm of any characteristic vector. -/
-theorem vanDerBlij [L.IsNondegenerate] (hL : L.IsUnimodular) {w : L}
+theorem vanDerBlij (hL : L.IsUnimodular) {w : L}
     (hw : L.IsCharacteristicVector w) :
     ((L.sigPos : ℤ) - L.sigNeg) ≡ L.integralNorm w [ZMOD 8] := by
+  have : L.IsNondegenerate := ⟨hL.nondegenerate⟩
   have := L.finiteDimensional
   have hg := FiniteQuadraticModule.gaussSign_eq_of_gaussSum_eq
     (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice)
