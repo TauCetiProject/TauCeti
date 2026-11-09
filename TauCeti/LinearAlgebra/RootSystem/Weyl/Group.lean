@@ -37,6 +37,9 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   the coroot functional of its image.
 * `RootPairing.weylGroupToPerm_ofIdx_apply` evaluates the action of a simple reflection.
 * `RootPairing.weylGroupToPerm_neg` says the action commutes with root negation.
+* `RootPairing.Equiv.reflection_indexEquiv_eq_conj` says conjugating a reflection by an
+  automorphism gives the reflection in the image root, so that the Weyl group is normal in the
+  automorphism group (`RootPairing.weylGroup_normal`).
 * `RootPairing.reflection_indexNeg_neg` says the reflection in `-β` is the reflection in `β`.
 * `RootPairing.root_weylGroupToPerm_eq_add` says the action preserves decompositions of roots as
   sums of two roots.
@@ -316,25 +319,41 @@ theorem weylGroup.ext
   refine weylGroup.eq_one_of_smul_eq_self fun x ↦ ?_
   rw [mul_smul, h, smul_inv_smul]
 
+/-- **Conjugating a reflection by an automorphism gives the reflection in the image root**: for
+`g` an automorphism of the root pairing, `g sᵢ g⁻¹ = s_{g i}`. -/
+theorem Equiv.reflection_indexEquiv_eq_conj (g : P.Aut) (i : ι) :
+    Equiv.reflection P (g.indexEquiv i) = g * Equiv.reflection P i * g⁻¹ := by
+  apply Equiv.weightHom_injective P
+  refine LinearEquiv.ext fun x ↦ ?_
+  -- Both sides send `x` to `x - ⟨g⁻¹ x, αᵢ^∨⟩ • g αᵢ`, the right-hand side after undoing `g`.
+  have hcoroot : P.coroot' (g.indexEquiv i) x = P.coroot' i (g⁻¹ • x) := by
+    conv_lhs => rw [← smul_inv_smul g x]
+    rw [coroot'_smul, _root_.Equiv.symm_apply_apply]
+  -- The weight-space action of `P.Aut` is `RootPairing.Equiv.weightHom`, by definition.
+  have hsmul (u : P.Aut) : Equiv.weightHom P u x = u • x := rfl
+  rw [hsmul, hsmul, mul_smul, mul_smul, Equiv.reflection_smul, Equiv.reflection_smul,
+    reflection_apply, reflection_apply, smul_sub, smul_inv_smul, smul_comm,
+    Equiv.root_indexEquiv_eq_smul, hcoroot]
+
 /-- **Conjugating a simple reflection transports it along the permutation action**: the reflection
 in the image of a root index is the conjugate of the reflection in that root index. -/
 theorem weylGroup.ofIdx_weylGroupToPerm_eq_conj (w : P.weylGroup) (i : ι) :
     weylGroup.ofIdx P (P.weylGroupToPerm w i) =
-      w * weylGroup.ofIdx P i * w⁻¹ := by
-  refine weylGroup.ext fun x ↦ ?_
-  -- Both sides send `x` to `x - ⟨x, αᵢ^∨⟩ • w αᵢ`, the right-hand side after undoing `w`.
-  have hcoroot : P.coroot' i (w⁻¹ • x) = P.coroot' (P.weylGroupToPerm w i) x := by
-    conv_rhs => rw [← smul_inv_smul w x]
-    exact (coroot'_weylGroupToPerm_smul P w i (w⁻¹ • x)).symm
-  have hroot : w • P.root i = P.root (P.weylGroupToPerm w i) := P.weylGroup_apply_root w i
-  calc
-    weylGroup.ofIdx P (P.weylGroupToPerm w i) • x
-        = x - P.coroot' (P.weylGroupToPerm w i) x • P.root (P.weylGroupToPerm w i) := by
-      simp [reflection_apply]
-    _ = w • (w⁻¹ • x - P.coroot' i (w⁻¹ • x) • P.root i) := by
-      rw [smul_sub, smul_inv_smul, smul_comm, hroot, hcoroot]
-    _ = (w * weylGroup.ofIdx P i * w⁻¹) • x := by
-      simp [mul_smul, reflection_apply]
+      w * weylGroup.ofIdx P i * w⁻¹ :=
+  Subtype.ext <| by
+    simp only [weylGroup.coe_ofIdx, Subgroup.coe_mul, Subgroup.coe_inv, weylGroupToPerm_apply,
+      Equiv.reflection_indexEquiv_eq_conj]
+
+/-- **The Weyl group is a normal subgroup of the automorphism group**: conjugation by an
+automorphism permutes the generating reflections. -/
+instance weylGroup_normal : P.weylGroup.Normal where
+  conj_mem w hw g := by
+    induction hw using weylGroup.induction with
+    | mem i =>
+      rw [← Equiv.reflection_indexEquiv_eq_conj]
+      exact P.reflection_mem_weylGroup _
+    | one => simp
+    | mul x y _ _ hx hy => simpa only [mul_assoc, inv_mul_cancel_left] using mul_mem hx hy
 
 variable {P} in
 /-- **Transporting a reflection by the Weyl group.** The reflection in the image `w β` of a root
