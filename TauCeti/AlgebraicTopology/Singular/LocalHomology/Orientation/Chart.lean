@@ -174,6 +174,17 @@ def _root_.OpenPartialHomeomorph.localOrientationOfOrientedChart
       φ hx o hE).inv 1,
     isLocalOrientation_inv_one _⟩
 
+/-- The local orientation selected by an oriented chart is the preimage of `1` under the oriented
+local homology isomorphism. -/
+theorem _root_.OpenPartialHomeomorph.coe_localOrientationOfOrientedChart
+    (φ : OpenPartialHomeomorph M E) {x : M}
+    (hx : x ∈ φ.source) {n : ℕ} (o : Orientation ℝ E (Fin (n + 1)))
+    (hE : finrank ℝ E = n + 1) :
+    (φ.localOrientationOfOrientedChart hx o hE).val =
+      (singularHomologyComplSingletonIsoOfOrientation (ModuleCat.of ℤ (ULift.{w} ℤ))
+        φ hx o hE).inv 1 :=
+  (rfl)
+
 /-- Reversing the chart-model orientation reverses the selected local orientation. -/
 @[simp]
 theorem _root_.OpenPartialHomeomorph.localOrientationOfOrientedChart_neg
