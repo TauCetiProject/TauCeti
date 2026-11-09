@@ -539,8 +539,9 @@ variable {R : Type*} [CommRing R] (W : WeierstrassCurve R)
 `[q : -1 : v]` is equivalent to the `w`-equation
 `v = q ^ 3 + a₁ q v + a₂ q ^ 2 v + a₃ v ^ 2 + a₄ q v ^ 2 + a₆ v ^ 3` (`wEquationRHS`).
 `wEquation_of_equation` is the implication from left to right for a solution `(x, y)` of the
-affine Weierstrass equation over a field, where
-`[x : y : 1] = [-x / y : -1 : -1 / y]`. -/
+affine Weierstrass equation over a field, where for `y ≠ 0` we have
+`[x : y : 1] = [-x / y : -1 : -1 / y]`; for `y = 0` the implication holds only because
+`q = v = 0` under `y⁻¹ = 0`. -/
 theorem Projective.equation_neg_one_iff_wEquation (W' : Projective R) {S : Type*} [CommRing S]
     [Algebra R S] (q v : S) :
     (W'.map (algebraMap R S)).Equation ![q, -1, v] ↔ v = wEquationRHS W' q v := by
