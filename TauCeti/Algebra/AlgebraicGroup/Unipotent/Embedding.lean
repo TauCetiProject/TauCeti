@@ -114,24 +114,11 @@ theorem hasNonzeroFixedVector_of_forall_isNilpotent_endOfPoint_sub_one
   have : FiniteDimensional k N := hNfin
   have : Nontrivial N := ⟨⟨⟨m, hmN⟩, 0, fun h ↦ hm0 (congrArg Subtype.val h)⟩⟩
   -- the points act unipotently on `N`, since `k ⊗ N → k ⊗ M` is injective and intertwines them
-  have hN (g : WithConv (H →ₐ[k] k)) : IsNilpotent (endOfPoint N g.ofConv - 1) := by
-    obtain ⟨n, hn⟩ := hM g
-    let f := (Subcomodule.subtype N).toLinearMap.baseChange k
-    have hf : Function.Injective f :=
-      Module.Flat.lTensor_preserves_injective_linearMap _ (by
+  have hN (g : WithConv (H →ₐ[k] k)) : IsNilpotent (endOfPoint N g.ofConv - 1) :=
+    isNilpotent_endOfPoint_sub_one_of_injective (Subcomodule.subtype N) g.ofConv
+      (Module.Flat.lTensor_preserves_injective_linearMap _ (by
         rw [Subcomodule.subtype_toLinearMap]
-        exact Subtype.val_injective)
-    have hnat : f ∘ₗ endOfPoint N g.ofConv = endOfPoint M g.ofConv ∘ₗ f :=
-      baseChange_comp_endOfPoint (Subcomodule.subtype N) g.ofConv
-    have hnat' : f ∘ₗ (endOfPoint N g.ofConv - 1) = (endOfPoint M g.ofConv - 1) ∘ₗ f := by
-      rw [LinearMap.comp_sub, LinearMap.sub_comp, hnat]
-      rfl
-    have hpow (j : ℕ) :
-        f ∘ₗ ((endOfPoint N g.ofConv - 1) ^ j) = ((endOfPoint M g.ofConv - 1) ^ j) ∘ₗ f :=
-      (Module.End.commute_pow_left_of_commute hnat'.symm j).symm
-    refine ⟨n, LinearMap.ext fun x ↦ hf ?_⟩
-    have := congr($(hpow n) x)
-    simpa [hn] using this
+        exact Subtype.val_injective)) (hM g)
   obtain ⟨v, hv0, hvc⟩ := (hasNonzeroFixedVector_iff (k := k) (H := H) (M := N)).mp
     (hasNonzeroFixedVector_of_finiteDimensional_of_forall_isNilpotent_endOfPoint_sub_one hN)
   exact (hasNonzeroFixedVector_iff (k := k) (H := H) (M := M)).mpr
