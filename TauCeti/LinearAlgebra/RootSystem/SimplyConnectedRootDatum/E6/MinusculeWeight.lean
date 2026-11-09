@@ -36,6 +36,11 @@ a symmetry of its numbered data only when its weight family is equivariant, the 
 `TauCeti.UniversalEnvelopingAlgebra.kostantToralNumberedSymmetryIso`, which the doubled family
 meets and the minuscule family alone does not.
 
+Three times the inverse Cartan matrix defines an integral quadratic form on the weight lattice.
+Every weight with coordinates in `[-1, 1]` and quadratic value `4` under this form is one of the
+fifty-four doubled weights; this is the finite input identifying the shortest dual vectors of the
+`E₆` root lattice.
+
 No representation or group scheme is constructed here. This is the pinned weight-diagram input
 for the type-`E₆` full-weight Chevalley--Demazure carrier in Layer 9 of
 `TauCetiRoadmap/ReductiveGroups/README.md`, consumed by milestone L0 of the CFSG statement roadmap,
@@ -60,6 +65,10 @@ the doubled family being what its graph-twisted family `²E₆(q)` needs where `
   `TauCeti.DynkinType.span_range_e6DoubledMinusculeWeight_eq_top` and
   `TauCeti.DynkinType.e6DoubledMinusculeWeight_e6DoubledMinusculeGraphPerm`, its equivariance for
   the diagram symmetry.
+* `TauCeti.DynkinType.e6ThriceInverse`: the integral thrice-inverse Cartan matrix, with
+  `TauCeti.DynkinType.cartanMatrix_E6_mul_e6ThriceInverse` its product with the Cartan matrix.
+* `TauCeti.DynkinType.mem_range_e6DoubledMinusculeWeight_of_bounded_of_quadratic_eq_four`: weights
+  with coordinates in `[-1, 1]` and quadratic value `4` are doubled minuscule weights.
 
 ## References
 
@@ -531,5 +540,46 @@ theorem e6DoubledMinusculeWeight_e6DoubledMinusculeGraphPerm (x : Fin 27 ⊕ Fin
     e6DoubledMinusculeWeight (e6DoubledMinusculeGraphPerm x) i =
       e6DoubledMinusculeWeight x (graphPermE6 i) := by
   cases x <;> simp [e6MinusculeWeight_e6MinusculeGraphDualPerm_apply]
+
+/-! ## The weight-lattice quadratic form -/
+
+/-- Three times the inverse of the type-`E₆` Cartan matrix in Bourbaki node order (Plate V).
+Its rows are the simple-root coordinates of `3ϖ₁, …, 3ϖ₆`, so its integral entries allow finite
+checks of the weight-lattice quadratic form. -/
+def e6ThriceInverse : Matrix (Fin 6) (Fin 6) ℤ := !![
+  4, 3, 5, 6, 4, 2;
+  3, 6, 6, 9, 6, 3;
+  5, 6, 10, 12, 8, 4;
+  6, 9, 12, 18, 12, 6;
+  4, 6, 8, 12, 10, 5;
+  2, 3, 4, 6, 5, 4]
+
+/-- The E₆ Cartan matrix times its integral thrice-inverse is three times the identity. -/
+theorem cartanMatrix_E6_mul_e6ThriceInverse : CartanMatrix.E 6 * e6ThriceInverse = 3 := by
+  rw [CartanMatrix.E_six_eq]
+  decide
+
+private theorem bounded_weights_exhaustion : ∀ w : Fin 6 → Fin 3,
+    (∑ i, (∑ j, e6ThriceInverse i j * ((w j : ℤ) - 1)) * ((w i : ℤ) - 1)) = 4 →
+      ∃ x, e6DoubledMinusculeWeight x = fun j ↦ (w j : ℤ) - 1 := by
+  unfold e6ThriceInverse
+  simp only [Fin.forall_fin_succ_pi, Fin.forall_fin_zero_pi]
+  decide +kernel
+
+/-- An integral weight with simple-coroot coordinates in `[-1, 1]` and quadratic value `4`
+under three times the inverse Cartan matrix is one of the fifty-four doubled minuscule weights,
+that is, a minuscule weight or the negative of one. -/
+theorem mem_range_e6DoubledMinusculeWeight_of_bounded_of_quadratic_eq_four (w : Fin 6 → ℤ)
+    (hw : ∀ i, -1 ≤ w i ∧ w i ≤ 1)
+    (hn : (∑ i, (∑ j, e6ThriceInverse i j * w j) * w i) = 4) :
+    w ∈ range e6DoubledMinusculeWeight := by
+  let v : Fin 6 → Fin 3 := fun i ↦ ⟨(w i + 1).toNat, by have := hw i; omega⟩
+  have hv : (fun i ↦ (v i : ℤ) - 1) = w := by
+    funext i
+    have := hw i
+    simp only [v]
+    omega
+  obtain ⟨x, hx⟩ := bounded_weights_exhaustion v (by simpa only [← hv] using hn)
+  exact ⟨x, hx.trans hv⟩
 
 end TauCeti.DynkinType
