@@ -91,26 +91,32 @@ theorem convex_epigraph_ite (hu : ConvexOn ℝ Ω u) :
 
 end Ite
 
+/-- Rescaling the height coordinate by a positive real `r` transfers convexity from a subset of
+`V × ℝ` to any subset that corresponds to it under that rescaling. -/
+private theorem convex_of_height_scale {V : Type*} [AddCommMonoid V] [SMul ℝ V]
+    {s t : Set (V × ℝ)} {r : ℝ} (hr : 0 < r) (hst : ∀ x τ, (x, τ) ∈ s ↔ (x, r * τ) ∈ t)
+    (h : Convex ℝ s) : Convex ℝ t := by
+  intro p hp q hq a b ha hb hab
+  have hp' : (p.1, r⁻¹ * p.2) ∈ s := (hst _ _).2 (by simpa [mul_inv_cancel_left₀ hr.ne'] using hp)
+  have hq' : (q.1, r⁻¹ * q.2) ∈ s := (hst _ _).2 (by simpa [mul_inv_cancel_left₀ hr.ne'] using hq)
+  have := (hst _ _).1 (h hp' hq' ha hb hab)
+  convert this using 1
+  ext
+  · rfl
+  · simp only [Prod.snd_add, Prod.smul_snd, smul_eq_mul]
+    field_simp
+
 /-- Scaling an extended-real potential by a positive real number `c` does not change convexity of
-its real epigraph: the two epigraphs differ by the linear map scaling the height coordinate. -/
-theorem convex_epigraph_coe_mul_iff {V : Type*} [AddCommMonoid V] [Module ℝ V] {c : ℝ}
+its real epigraph: the two epigraphs differ by scaling the height coordinate. -/
+theorem convex_epigraph_coe_mul_iff {V : Type*} [AddCommMonoid V] [SMul ℝ V] {c : ℝ}
     (hc : 0 < c) (f : V → EReal) :
     Convex ℝ {p : V × ℝ | (c : EReal) * f p.1 ≤ p.2} ↔ Convex ℝ {p : V × ℝ | f p.1 ≤ p.2} := by
-  let scaleHeight (a : ℝ) : V × ℝ →ₗ[ℝ] V × ℝ :=
-    LinearMap.prodMap LinearMap.id (a • LinearMap.id)
   have hheight (x : V) (t : ℝ) :
       (c : EReal) * f x ≤ ((c * t : ℝ) : EReal) ↔ f x ≤ (t : EReal) := by
     simp only [EReal.coe_mul, EReal.coe_mul_le_coe_mul_iff hc]
-  have hpreimage : scaleHeight c ⁻¹' {p : V × ℝ | (c : EReal) * f p.1 ≤ p.2} =
-      {p : V × ℝ | f p.1 ≤ p.2} :=
-    Set.ext fun p ↦ hheight p.1 p.2
-  have hpreimageInv : scaleHeight c⁻¹ ⁻¹' {p : V × ℝ | f p.1 ≤ p.2} =
-      {p : V × ℝ | (c : EReal) * f p.1 ≤ p.2} := by
-    ext p
-    simp only [mem_preimage, mem_ofPred_eq, scaleHeight, LinearMap.prodMap_apply,
-      LinearMap.id_apply, LinearMap.smul_apply, smul_eq_mul]
-    rw [← hheight, mul_inv_cancel_left₀ hc.ne']
-  exact ⟨fun h ↦ hpreimage ▸ h.linear_preimage (scaleHeight c),
-    fun h ↦ hpreimageInv ▸ h.linear_preimage (scaleHeight c⁻¹)⟩
+  refine ⟨convex_of_height_scale (inv_pos.2 hc) fun x τ ↦ ?_,
+    convex_of_height_scale hc fun x τ ↦ (hheight x τ).symm⟩
+  simp only [mem_ofPred_eq]
+  rw [← hheight, mul_inv_cancel_left₀ hc.ne']
 
 end TauCeti
