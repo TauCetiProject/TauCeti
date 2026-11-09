@@ -14,6 +14,7 @@ import TauCeti.Analysis.Calculus.ContDiff.Approximation
 import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.NullHomologous
 import TauCeti.Analysis.Contour.Winding.Proximity
+import TauCeti.Analysis.Contour.Winding.Number.Affine
 import Mathlib.Analysis.SpecialFunctions.Bernstein
 
 /-!
@@ -22,12 +23,16 @@ import Mathlib.Analysis.SpecialFunctions.Bernstein
 Two piecewise-`C¹` paths with the same endpoints, joined by an arbitrary continuous fixed-endpoint
 homotopy through `ℂ \ {w}`, have the same winding number about `w`. The proof regularizes finitely
 many horizontal slices of the homotopy by endpoint-preserving smooth approximations, then chains
-the resulting smooth paths with proximity invariance of the winding number.
+the resulting smooth paths with proximity invariance of the winding number. For closed paths the
+endpoints may move: a homotopy through closed loops in `ℂ \ {w}` becomes a fixed-endpoint homotopy
+after dividing each loop `γ` by `γ 0 - w`, which does not change its winding number.
 
 ## Main results
 
 * `windingNumber_eq_of_pathHomotopy` proves homotopy invariance without any
   regularity hypothesis on the homotopy.
+* `windingNumber_eq_of_homotopy` is the invariance of the winding number of closed paths under
+  homotopies through closed loops, whose basepoint may move.
 * `curveIntegral_inv_sub_smul_id_eq_of_pathHomotopy` is its curve-integral form: such a homotopy
   preserves the integral of the Cauchy-kernel `1`-form.
 * `isNullHomologous_iff_of_pathHomotopy` transfers null-homology across a homotopy in the ambient
@@ -186,6 +191,59 @@ theorem windingNumber_eq_of_pathHomotopy {x y w : ℂ} {p q : Path x y} (φ : p.
       (fun t => by simpa [bernstein.z_last hN] using hγclose (Fin.last N) t)
       fun t => by simpa using hρle (1, t)
   exact hstart.symm.trans ((hchain (Fin.last N)).symm.trans hend)
+
+/-- **Free homotopy invariance of the winding number.** Two closed piecewise-`C¹` paths joined by
+a continuous homotopy `F` through closed loops in `ℂ \ {w}` have the same winding number about
+`w`. The basepoint `F (s, 0) = F (s, 1)` may move, and no regularity of the intermediate loops is
+required. -/
+theorem windingNumber_eq_of_homotopy {x y w : ℂ} {p : Path x x} {q : Path y y}
+    (F : C(I × I, ℂ)) (h₀ : ∀ t, F (0, t) = p t) (h₁ : ∀ t, F (1, t) = q t)
+    (hF : ∀ s, F (s, 0) = F (s, 1)) (havoid : ∀ st, F st ≠ w)
+    (hp : IsPiecewiseC1On p.extend 0 1) (hq : IsPiecewiseC1On q.extend 0 1) :
+    windingNumber p.extend 0 1 w = windingNumber q.extend 0 1 w := by
+  have hF₀ (s : I) : F (s, 0) - w ≠ 0 := sub_ne_zero.mpr (havoid (s, 0))
+  have hx : x - w ≠ 0 := by simpa only [h₀, Path.source] using hF₀ 0
+  have hy : y - w ≠ 0 := by simpa only [h₁, Path.source] using hF₀ 1
+  let P : Path (1 : ℂ) 1 :=
+    { toFun := fun t ↦ (x - w)⁻¹ * (p t - w)
+      continuous_toFun := continuous_const.mul (p.continuous.sub continuous_const)
+      source' := by simp [hx]
+      target' := by simp [hx] }
+  let Q : Path (1 : ℂ) 1 :=
+    { toFun := fun t ↦ (y - w)⁻¹ * (q t - w)
+      continuous_toFun := continuous_const.mul (q.continuous.sub continuous_const)
+      source' := by simp [hy]
+      target' := by simp [hy] }
+  let H : P.Homotopy Q :=
+    { toFun := fun st ↦ (F (st.1, 0) - w)⁻¹ * (F st - w)
+      continuous_toFun :=
+        (((F.continuous.comp (continuous_fst.prodMk continuous_const)).sub
+          continuous_const).inv₀ fun st ↦ hF₀ st.1).mul (F.continuous.sub continuous_const)
+      map_zero_left := fun t ↦ by simp only [h₀, Path.source]; rfl
+      map_one_left := fun t ↦ by simp only [h₁, Path.source]; rfl
+      prop' := by
+        intro s t ht
+        rcases ht with rfl | ht
+        · simp [P, hF₀ s, hx]
+        · rw [Set.mem_singleton_iff] at ht
+          subst t
+          simp [← hF s, P, hF₀ s, hx] }
+  have hP : P.extend = fun t ↦ (x - w)⁻¹ * (p.extend t - w) := rfl
+  have hQ : Q.extend = fun t ↦ (y - w)⁻¹ * (q.extend t - w) := rfl
+  have hconst : IsPiecewiseC1On (fun _ ↦ w) 0 1 := .of_contDiffOn contDiffOn_const
+  have hw := windingNumber_eq_of_pathHomotopy H
+    (by simpa only [hP, smul_eq_mul] using (hp.sub hconst).const_smul (x - w)⁻¹)
+    (by simpa only [hQ, smul_eq_mul] using (hq.sub hconst).const_smul (y - w)⁻¹)
+    fun st ↦ mul_ne_zero (inv_ne_zero (hF₀ st.1)) (sub_ne_zero.mpr (havoid st))
+  have hnorm {z : ℂ} {r : Path z z} (hz : z - w ≠ 0) :
+      windingNumber (fun t ↦ (z - w)⁻¹ * (r.extend t - w)) 0 1 0 =
+        windingNumber r.extend 0 1 w := by
+    have h := windingNumber_affine (γ := r.extend) (a := 0) (b := 1) (z₀ := w)
+      (d := -((z - w)⁻¹ * w)) (inv_ne_zero hz)
+    rw [add_neg_cancel] at h
+    simpa only [sub_eq_add_neg, mul_add, mul_neg] using h
+  rw [hP, hQ] at hw
+  exact (hnorm hx).symm.trans (hw.trans (hnorm hy))
 
 /-- **A path homotopy avoiding `w` preserves the curve integral of the Cauchy kernel.** Two
 piecewise-`C¹` paths with the same endpoints, joined by an arbitrary continuous homotopy through
