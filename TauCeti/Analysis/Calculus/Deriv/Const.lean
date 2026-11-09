@@ -10,13 +10,13 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 /-!
 # Vanishing derivative of a function constant on two rays
 
-A real function that is constant on `(-∞, a]` and on `[b, ∞)` has vanishing derivative at every
-point outside `(a, b)`, with no regularity assumption.
+A function from `ℝ` to a normed space that is constant on `(-∞, a]` and on `[b, ∞)` has vanishing
+(total) derivative at every point outside `(a, b)`, with no regularity assumption.
 
 ## Main results
 
-* `TauCeti.deriv_eq_zero_of_not_mem_Ioo`: a function constant on `(-∞, a]` and on `[b, ∞)` has
-  zero derivative outside `(a, b)`.
+* `TauCeti.deriv_eq_zero_of_not_mem_Ioo`: a function `ℝ → E` constant on `(-∞, a]` and on `[b, ∞)`
+  has zero derivative outside `(a, b)`.
 -/
 
 public section
@@ -25,11 +25,13 @@ open Set
 
 namespace TauCeti
 
-/-- A function that is constant on `(-∞, a]` and on `[b, ∞)` has vanishing derivative outside
-`(a, b)`, with no regularity assumption. At a point of either closed ray the derivative
-along that ray is zero, and Mathlib's `HasDerivWithinAt.deriv_eq_zero` turns this into the
-vanishing of `deriv`. -/
-theorem deriv_eq_zero_of_not_mem_Ioo {μ : ℝ → ℝ} {a b c : ℝ}
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- A function `ℝ → E` that is constant on `(-∞, a]` and on `[b, ∞)` has vanishing derivative
+outside `(a, b)`. This is a statement about Lean's total `deriv`, which is zero wherever the
+function is not differentiable; it does not assert that the function is differentiable at the
+endpoints `a` and `b`. -/
+theorem deriv_eq_zero_of_not_mem_Ioo {μ : ℝ → E} {a b : ℝ} {c : E}
     (hlow : ∀ r ≤ a, μ r = μ a) (hhigh : ∀ r, b ≤ r → μ r = c) :
     ∀ r ∉ Ioo a b, deriv μ r = 0 := by
   intro r hr
