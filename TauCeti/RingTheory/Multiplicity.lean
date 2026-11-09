@@ -28,11 +28,7 @@ variable {α : Type*} [CommMonoidWithZero α] [IsCancelMulZero α]
 multiplicity of `p` in `x ^ n` is `n` times that in `x`. -/
 theorem Prime.pow_succ_dvd_of_pow_mul_add_one_dvd_pow {p x : α} (hp : Prime p) {n k : ℕ}
     (h : p ^ (n * k + 1) ∣ x ^ n) : p ^ (k + 1) ∣ x := by
-  rw [pow_dvd_iff_le_emultiplicity, emultiplicity_pow hp] at h
-  rw [pow_dvd_iff_le_emultiplicity]
-  generalize emultiplicity p x = a at h ⊢
-  induction a using ENat.recTopCoe with
-  | top => exact le_top
-  | coe m =>
-    norm_cast at h ⊢
-    exact Nat.lt_of_mul_lt_mul_left (a := n) (by omega)
+  rw [pow_dvd_iff_le_emultiplicity, emultiplicity_pow hp, Nat.cast_add_one,
+    ENat.natCast_add_one_le_iff, Nat.cast_mul] at h
+  rw [pow_dvd_iff_le_emultiplicity, Nat.cast_add_one, ENat.natCast_add_one_le_iff]
+  exact lt_of_mul_lt_mul_left' h

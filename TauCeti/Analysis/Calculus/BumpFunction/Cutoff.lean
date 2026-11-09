@@ -42,7 +42,9 @@ It also provides radial cutoffs between two concentric closed balls of radii `r 
 gradient is at most `c / (R - r)` and whose second derivative is at most `c / (R - r)²` for a
 universal constant `c`, the quantitative form needed by iteration arguments over families of balls
 with shrinking gaps. On the line, a smooth cutoff of the identity equals `s` on `[-r, r]` and
-vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`), and smooth plateaus supported
+vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`). On an inner product space, a
+smooth, even, compactly supported cutoff equals one on the annulus `r ≤ ‖ξ‖ ≤ R` and vanishes on
+the ball of radius `r / 2` (`TauCeti.exists_contDiff_cutoff_annulus`). Smooth plateaus supported
 in `[c - r - 1, c + r + 1]` have `L²` mass at least `2 r` and derivative energy bounded
 independently of `c` and `r` (`TauCeti.exists_forall_contDiff_plateau`). The squared gradient of a
 function supported in a closed ball with bounded gradient there has integral at most the squared
@@ -99,6 +101,20 @@ theorem _root_.IsCompact.exists_contDiff_cutoff [NormedSpace ℝ E] [FiniteDimen
     rintro y ⟨x, rfl⟩
     exact hf_range x
   exact ⟨ψ, hψ_smooth, hψ_range, hψ_eq_one_nhds, hψ_compact, hψ_tsupp⟩
+
+/-- A compact set contained in an open set admits a smooth cutoff that is eventually equal to one
+near every point of the compact set: the form of `IsCompact.exists_contDiff_cutoff` that is used
+pointwise.
+
+The cutoff takes values in `[0, 1]`, has compact support, and its topological support is contained
+in the prescribed open set. -/
+theorem _root_.IsCompact.exists_contDiff_cutoff_eventuallyEq_one [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] {K U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) :
+    ∃ ψ : E → ℝ,
+      ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧
+        (∀ x ∈ K, ∀ᶠ y in 𝓝 x, ψ y = 1) ∧ HasCompactSupport ψ ∧ tsupport ψ ⊆ U := by
+  obtain ⟨ψ, hψ, hr, h1, hc, hs⟩ := hK.exists_contDiff_cutoff hU hKU
+  exact ⟨ψ, hψ, hr, fun x hx => mem_interior_iff_mem_nhds.1 (h1 hx), hc, hs⟩
 
 /-- A compact set contained in an open set admits a smooth cutoff whose value and gradient are
 bounded by a common nonnegative constant. -/
@@ -196,17 +212,15 @@ theorem _root_.ContDiffOn.exists_contDiff_eventually_eq_prod_univ [NormedSpace �
     [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ∞} {f : E × G → F} {K U : Set E}
     (hf : ContDiffOn ℝ k f (U ×ˢ univ)) (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) :
     ∃ g : E × G → F, ContDiff ℝ k g ∧ ∀ x ∈ K, ∀ᶠ y in 𝓝 x, ∀ η, g (y, η) = f (y, η) := by
-  obtain ⟨ψ, hψ, -, hψone, -, hψU⟩ := hK.exists_contDiff_cutoff hU hKU
+  obtain ⟨ψ, hψ, -, hψone, -, hψU⟩ := hK.exists_contDiff_cutoff_eventuallyEq_one hU hKU
   have hψU' : tsupport (fun p : E × G => ψ p.1) ⊆ U ×ˢ univ :=
     (closure_minimal (t := tsupport ψ ×ˢ (univ : Set G))
       (fun p hp => ⟨subset_tsupport ψ hp, mem_univ p.2⟩)
       ((isClosed_tsupport ψ).prod isClosed_univ)).trans (prod_mono hψU subset_rfl)
   refine ⟨fun p => ψ p.1 • f p, hf.contDiff_smul_of_tsupport_subset (hU.prod isOpen_univ)
     ((hψ.of_le (by simp)).comp contDiff_fst).contDiffOn hψU', fun x hx => ?_⟩
-  filter_upwards [isOpen_interior.mem_nhds (hψone hx)] with y hy η
-  have hone : ψ y = 1 := by
-    simpa only [mem_preimage, mem_singleton_iff] using interior_subset hy
-  rw [hone, one_smul]
+  filter_upwards [hψone x hx] with y hy η
+  rw [hy, one_smul]
 
 /-- On a measurable set `K` where the cutoff `χ` is one nearby, `D u = D (χ u)`, so the `Lᵖ` norm
 of `D u` on `K` is at most that of `D (χ u)` on the whole space. -/
@@ -541,6 +555,49 @@ theorem exists_contDiff_cutoff_id {r R : ℝ} (hr : 0 < r) (hrR : r < R) :
   · refine (hasDerivAt_id s).congr_of_eventuallyEq ?_
     filter_upwards [(isOpen_lt continuous_abs continuous_const).mem_nhds hs] with x hx
     exact hsmall x hx.le
+
+open Metric in
+/-- **A smooth cutoff of an annulus.** For `0 < r` and any `R`, some smooth, even, compactly
+supported `χ : E → ℝ` equals `1` on the annulus `r ≤ ‖ξ‖ ≤ R` and vanishes on the ball of radius
+`r / 2`. It is a bump function of `‖ξ‖²`. -/
+theorem exists_contDiff_cutoff_annulus [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] {r : ℝ}
+    (hr : 0 < r) (R : ℝ) :
+    ∃ χ : E → ℝ, ContDiff ℝ ∞ χ ∧ HasCompactSupport χ ∧ (∀ ξ, ‖ξ‖ < r / 2 → χ ξ = 0) ∧
+      (∀ ξ, χ (-ξ) = χ ξ) ∧ ∀ ξ, r ≤ ‖ξ‖ → ‖ξ‖ ≤ R → χ ξ = 1 := by
+  set a : ℝ := r ^ 2
+  set b : ℝ := (|R| + 2 * r) ^ 2
+  have ha : 0 < a := by positivity
+  have hab : a < b := pow_lt_pow_left₀ (by linarith [abs_nonneg R]) hr.le two_ne_zero
+  let ρ : ContDiffBump ((a + b) / 2) := ⟨(b - a) / 2, b / 2, by linarith, by linarith⟩
+  refine ⟨fun ξ ↦ ρ (‖ξ‖ ^ 2), ρ.contDiff.comp (contDiff_norm_sq ℝ), ?_, fun ξ hξ ↦ ?_,
+    fun ξ ↦ by simp, fun ξ h₁ h₂ ↦ ?_⟩
+  · refine HasCompactSupport.intro (isCompact_closedBall (0 : E) (2 * (|R| + 2 * r)))
+      fun ξ hξ ↦ ρ.zero_of_le_dist ?_
+    have hξ' : 2 * (|R| + 2 * r) < ‖ξ‖ := by simpa using hξ
+    have : 4 * b < ‖ξ‖ ^ 2 := by
+      have := pow_lt_pow_left₀ hξ' (by positivity) two_ne_zero
+      simp only [b]
+      nlinarith
+    rw [Real.dist_eq, le_abs]
+    left
+    simp only [ρ]
+    linarith
+  · refine ρ.zero_of_le_dist ?_
+    have : ‖ξ‖ ^ 2 < a / 4 := by
+      have := pow_lt_pow_left₀ hξ (norm_nonneg _) two_ne_zero
+      simp only [a]
+      nlinarith
+    rw [Real.dist_eq, le_abs]
+    right
+    simp only [ρ]
+    nlinarith [sq_nonneg ‖ξ‖]
+  · refine ρ.one_of_mem_closedBall ?_
+    have hlo : a ≤ ‖ξ‖ ^ 2 := pow_le_pow_left₀ hr.le h₁ 2
+    have hhi : ‖ξ‖ ^ 2 ≤ b :=
+      pow_le_pow_left₀ (norm_nonneg _) (h₂.trans ((le_abs_self R).trans (by linarith))) 2
+    rw [mem_closedBall, Real.dist_eq, abs_le]
+    simp only [ρ]
+    constructor <;> linarith
 
 
 open MeasureTheory Metric in

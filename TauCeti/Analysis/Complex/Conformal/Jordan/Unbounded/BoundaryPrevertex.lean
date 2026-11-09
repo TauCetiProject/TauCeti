@@ -248,9 +248,9 @@ theorem injOn_inverted_boundary_of_isPreconnectedApproachAt {U : Set ℂ}
 an unbounded open set with `q ∉ closure U`, and let `f`, `g = (f - q)⁻¹` be as supplied by
 `TauCeti.exists_bijOn_upperHalfPlaneSet_of_locallyConnectedSpace_frontier_image_inv_sub`. Suppose
 that `U` coincides near each frontier point other than the vertices `v i` with an open half-plane,
-and near `v i` with the open sector of opening `(e i + 1) * π ≤ 2 * π`. Then `g` is injective on
+and near `v i` with the open sector of opening `(e i + 1) * π`. Then `g` is injective on
 the closed upper half-plane with its zeros, the prevertices of the vertices at infinity, removed. -/
-theorem injOn_inverted_boundary_of_polygonal {ι : Type*} {e : ι → ℝ} (he : ∀ i, e i ≤ 1)
+theorem injOn_inverted_boundary_of_polygonal {ι : Type*} {e : ι → ℝ}
     {U : Set ℂ} (hUo : IsOpen U) (hq : q ∉ closure U) (hUb : ¬IsBounded U)
     (hgc : ContinuousOn g {z : ℂ | 0 ≤ z.im}) (hgd : DifferentiableOn ℂ g upperHalfPlaneSet)
     (hgf : EqOn g (fun z => (f z - q)⁻¹) upperHalfPlaneSet) (hfU : BijOn f upperHalfPlaneSet U)
@@ -267,8 +267,7 @@ theorem injOn_inverted_boundary_of_polygonal {ι : Type*} {e : ι → ℝ} (he :
   by_cases hv : ∃ i, w = v i
   · obtain ⟨i, rfl⟩ := hv
     obtain ⟨ρ, hρ, b, hb, hU⟩ := hcorner i
-    exact isPreconnectedApproachAt_of_forall_mem_iff_abs_arg_lt hρ hb
-      (by nlinarith [Real.pi_pos, he i]) hU
+    exact isPreconnectedApproachAt_of_forall_mem_iff_abs_arg_lt hρ hb hU
   · obtain ⟨ρ, hρ, p, b, -, hU⟩ := hside w hw fun i hi => hv ⟨i, hi⟩
     exact isPreconnectedApproachAt_of_forall_mem_iff_im_div_pos hρ hU
 

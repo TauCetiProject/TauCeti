@@ -22,6 +22,11 @@ compute the structure map of an `R`-linear category, `(algebraMap R (End X) r).a
 The native precomposition action of `(End X)ᵐᵒᵖ` on `X ⟶ Y` respects the ground
 scalar tower.
 
+When a scalar multiple `r • 𝟙` of the identity is invertible, its inverse commutes with every
+morphism (`CategoryTheory.Linear.comp_inv_smul_id`), and an `R`-linear functor keeps it
+invertible (`CategoryTheory.Functor.isIso_smul_id_obj`). For `r` a natural number or an integer
+these apply in every preadditive category, through Mathlib's `ℕ`- and `ℤ`-linear structures.
+
 An additive linear functor induces an algebra homomorphism on endomorphisms,
 `Functor.mapEndAlgHom`, which is injective when the functor is faithful and bijective
 when the functor is bijective on the object's endomorphisms.
@@ -90,6 +95,27 @@ instance hom_isScalarTower_opEnd {R : Type w} [Semiring R] [Linear R C] (Y : C) 
 end Preadditive
 
 end CategoryTheory.End
+
+namespace CategoryTheory
+
+variable {C : Type*} [Category C] [Preadditive C] {R : Type*} [Semiring R]
+  [CategoryTheory.Linear R C]
+
+/-- The inverse of multiplication by a scalar `r` commutes with every morphism. -/
+lemma Linear.comp_inv_smul_id {X Y : C} (f : X ⟶ Y) (r : R) [IsIso (r • 𝟙 X)]
+    [IsIso (r • 𝟙 Y)] : f ≫ inv (r • 𝟙 Y) = inv (r • 𝟙 X) ≫ f := by
+  rw [IsIso.eq_inv_comp, ← Category.assoc, IsIso.comp_inv_eq]
+  simp
+
+/-- If multiplication by a scalar `r` is invertible on `X`, then it is invertible on the image of
+`X` under any `R`-linear functor. -/
+lemma Functor.isIso_smul_id_obj {D : Type*} [Category D] [Preadditive D]
+    [CategoryTheory.Linear R D] (F : C ⥤ D) [F.Linear R] (r : R) (X : C) [IsIso (r • 𝟙 X)] :
+    IsIso (r • 𝟙 (F.obj X)) := by
+  rw [← F.map_id, ← F.map_smul]
+  infer_instance
+
+end CategoryTheory
 
 namespace CategoryTheory.Functor
 

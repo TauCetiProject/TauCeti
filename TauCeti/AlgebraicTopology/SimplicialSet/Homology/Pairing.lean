@@ -147,7 +147,7 @@ lemma whiskerLeft_ιChainComplex_chainComplexPairing_f (X : SSet.{w}) (μ : M �
     (((chainComplexFunctor C).map μ).app X |>.f n)
   dsimp at this
   rw [chainComplexPairing, HomologicalComplex.comp_f, this,
-    TauCeti.SSet.ιChainComplex_chainComplexFunctor_map_app_f]
+    SSet.ιChainComplex_chainComplexFunctor_map_app_f]
 
 /-- The chain map induced by a coefficient pairing is natural in the simplicial set. -/
 @[reassoc]
