@@ -45,9 +45,13 @@ class of continuous maps with Sobolev coordinate expressions.
   derivative order or the integrability exponent.
 * `ContMDiffOn.memWkpLocMapOn`, `ContMDiff.memWkpLocMap`: `C^k` maps belong to the class of
   order `k`, for every exponent.
-* `TauCeti.memWkpLocMap_id_complex`, `Differentiable.memWkpLocMap`,
-  `DifferentiableOn.memWkpLocMapOn`: for `X = M = ℂ`, the identity and every holomorphic function
-  belong to the class for every `k` and `p`.
+* `TauCeti.memWkpLocMapOn_iff`, `TauCeti.memWkpLocMap_iff`,
+  `TauCeti.MemWkpLocMapOn.memWkpLoc_chart`, `TauCeti.MemWkpLocMap.memWkpLoc_chart`: unfolding the
+  definitions and reading off the coordinate expressions.
+* `TauCeti.memWkpLocMap_id_complex`: for `X = M = ℂ`, the identity belongs to the class for every
+  `k` and `p`.
+* `Differentiable.memWkpLocMap`, `DifferentiableOn.memWkpLocMapOn`: for `X = ℂ` and `M` a complex
+  Banach space, every holomorphic function belongs to the class for every `k` and `p`.
 
 ## Implementation notes
 
@@ -97,6 +101,37 @@ def MemWkpLocMap (p : ENNReal) (k : ℕ) (u : X → M) : Prop :=
   Continuous u ∧
     ∀ φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X, ∀ ψ ∈ IsManifold.maximalAtlas 𝓘(ℝ, F) ∞ M,
       MemWkpLoc p (φ.target ∩ φ.symm ⁻¹' (u ⁻¹' ψ.source)) k (ψ ∘ u ∘ φ.symm)
+
+/-- Unfolding the definition of the relative local Sobolev class. -/
+theorem memWkpLocMapOn_iff : MemWkpLocMapOn F p k u s ↔ ContinuousOn u s ∧
+    ∀ φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X, ∀ ψ ∈ IsManifold.maximalAtlas 𝓘(ℝ, F) ∞ M,
+      MemWkpLoc p (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) k (ψ ∘ u ∘ φ.symm) :=
+  Iff.rfl
+
+/-- Unfolding the definition of the local Sobolev class. -/
+theorem memWkpLocMap_iff : MemWkpLocMap F p k u ↔ Continuous u ∧
+    ∀ φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X, ∀ ψ ∈ IsManifold.maximalAtlas 𝓘(ℝ, F) ∞ M,
+      MemWkpLoc p (φ.target ∩ φ.symm ⁻¹' (u ⁻¹' ψ.source)) k (ψ ∘ u ∘ φ.symm) :=
+  Iff.rfl
+
+/-- The coordinate expression of a local Sobolev map on `s` in a holomorphic chart `φ` and a
+smooth chart `ψ` is in the planar class on the part of the target of `φ` over `s` where `u` maps
+into the source of `ψ`. -/
+theorem MemWkpLocMapOn.memWkpLoc_chart (hu : MemWkpLocMapOn F p k u s)
+    {φ : OpenPartialHomeomorph X ℂ} (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
+    {ψ : OpenPartialHomeomorph M F}
+    (hψ : ψ ∈ IsManifold.maximalAtlas 𝓘(ℝ, F) ∞ M) :
+    MemWkpLoc p (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) k (ψ ∘ u ∘ φ.symm) :=
+  hu.2 φ hφ ψ hψ
+
+/-- The coordinate expression of a local Sobolev map in a holomorphic chart `φ` and a smooth
+chart `ψ` is in the planar class on the part of the target of `φ` where `u` maps into the source
+of `ψ`. -/
+theorem MemWkpLocMap.memWkpLoc_chart (hu : MemWkpLocMap F p k u) {φ : OpenPartialHomeomorph X ℂ}
+    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X) {ψ : OpenPartialHomeomorph M F}
+    (hψ : ψ ∈ IsManifold.maximalAtlas 𝓘(ℝ, F) ∞ M) :
+    MemWkpLoc p (φ.target ∩ φ.symm ⁻¹' (u ⁻¹' ψ.source)) k (ψ ∘ u ∘ φ.symm) :=
+  hu.2 φ hφ ψ hψ
 
 /-- On the whole surface, the relative class is the class of maps from the surface. -/
 @[simp]
@@ -172,16 +207,17 @@ theorem _root_.ContMDiff.memWkpLocMap [IsManifold 𝓘(ℂ) 1 X] [CompleteSpace 
 theorem memWkpLocMap_id_complex : MemWkpLocMap ℂ p k (id : ℂ → ℂ) :=
   contMDiff_id.memWkpLocMap
 
-/-- For `X = M = ℂ`, every entire function is a local Sobolev map for every order and
-exponent. -/
-theorem _root_.Differentiable.memWkpLocMap {f : ℂ → ℂ} (hf : Differentiable ℂ f) :
-    MemWkpLocMap ℂ p k f :=
+/-- For `X = ℂ` and `M` a complex Banach space, every entire function is a local Sobolev map
+for every order and exponent. -/
+theorem _root_.Differentiable.memWkpLocMap {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [CompleteSpace E] {f : ℂ → E} (hf : Differentiable ℂ f) : MemWkpLocMap E p k f :=
   ((hf.contDiff (n := k)).restrict_scalars ℝ).contMDiff.memWkpLocMap
 
-/-- For `X = M = ℂ`, a function holomorphic on an open set is a local Sobolev map on that set for
-every order and exponent. -/
-theorem _root_.DifferentiableOn.memWkpLocMapOn {f : ℂ → ℂ} {s : Set ℂ}
-    (hf : DifferentiableOn ℂ f s) (hs : IsOpen s) : MemWkpLocMapOn ℂ p k f s :=
+/-- For `X = ℂ` and `M` a complex Banach space, a function holomorphic on an open set is a local
+Sobolev map on that set for every order and exponent. -/
+theorem _root_.DifferentiableOn.memWkpLocMapOn {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [CompleteSpace E] {f : ℂ → E} {s : Set ℂ} (hf : DifferentiableOn ℂ f s)
+    (hs : IsOpen s) : MemWkpLocMapOn E p k f s :=
   (contMDiffOn_iff_contDiffOn.mpr
     ((hf.contDiffOn (n := k) hs).restrict_scalars ℝ)).memWkpLocMapOn hs
 
