@@ -34,6 +34,8 @@ integrability hypotheses on `Ω`.
   `TauCeti.PDE.energyFormH1_restrictL_add_const_nonneg`: the restriction of a weak subsolution
   or supersolution with no mass term, shifted by a constant, is again one.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_setIntegral`: weak solutions restrict to weak solutions.
+* `TauCeti.PDE.energyFormH1_restrictL_eq_neg_setIntegral_inner`: weak solutions of `L u = div F`
+  restrict to weak solutions of the same equation.
 * `TauCeti.PDE.forall_energyFormH1_restrictL_eq_inner`: if `u` solves `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G`
   weakly on `Ω`, tested against test functions, then on every open `B ⊆ Ω` on which `a` is
   essentially bounded it satisfies `a(u, v) = ⟪G - c, ∇v⟫_{L²(B)}` for every `v ∈ H¹₀(B)` and
@@ -203,6 +205,35 @@ theorem energyFormH1_restrictL_eq_setIntegral {a : EuclideanSpace ℝ ι → Mat
         · rw [indicator_of_mem hxU, indicator_of_mem hxU]
         · rw [indicator_of_notMem hxU, indicator_of_notMem hxU, mul_zero]
     _ = ∫ x in U, f x * W1p.value (v : W1p mu U 2) x ∂mu := by
+        rw [integral_indicator hUm, Measure.restrict_restrict hUm, inter_eq_left.2 hUO]
+
+open scoped InnerProductSpace in
+/-- **Weak solutions with a datum in divergence form restrict to weak solutions.** If
+`u ∈ H¹(Ω)` satisfies `a(u, v) = -∫_Ω ⟪F, ∇v⟫` for every `v ∈ H¹₀(Ω)`, that is, `u` solves
+`L u = div F` weakly, then for every open `U ⊆ Ω` its restriction `u|_U` satisfies
+`a(u|_U, v) = -∫_U ⟪F, ∇v⟫` for every `v ∈ H¹₀(U)`. -/
+theorem energyFormH1_restrictL_eq_neg_setIntegral_inner {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ} (hU : U ≤ Omega)
+    {u : W1p mu Omega 2} {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
+      -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu)
+    (v : W1p0 mu U 2) :
+    energyFormH1 a b c (W1p.restrictL hU u) (v : W1p mu U 2) =
+      -∫ x in U, ⟪F x, W1p.gradient (v : W1p mu U 2) x⟫_ℝ ∂mu := by
+  have hUm := U.isOpen.measurableSet
+  have hUO : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hU
+  rw [energyFormH1_restrictL, hu, W1p0.gradient_extendByZeroL, neg_inj]
+  calc ∫ x in Omega, ⟪F x, extendByZeroLpₗᵢ ℝ mu hUm hUO (W1p.gradient (v : W1p mu U 2)) x⟫_ℝ ∂mu
+      = ∫ x in Omega, (U : Set (EuclideanSpace ℝ ι)).indicator
+          (fun x => ⟪F x, W1p.gradient (v : W1p mu U 2) x⟫_ℝ) x ∂mu := by
+        refine integral_congr_ae ?_
+        filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hUm hUO (W1p.gradient (v : W1p mu U 2))]
+          with x hx
+        rw [hx]
+        by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
+        · rw [indicator_of_mem hxU, indicator_of_mem hxU]
+        · rw [indicator_of_notMem hxU, indicator_of_notMem hxU, inner_zero_right]
+    _ = ∫ x in U, ⟪F x, W1p.gradient (v : W1p mu U 2) x⟫_ℝ ∂mu := by
         rw [integral_indicator hUm, Measure.restrict_restrict hUm, inter_eq_left.2 hUO]
 
 section Transfer

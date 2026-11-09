@@ -37,6 +37,10 @@ divergence-form equation with bounded measurable coefficients, Caccioppoli's ine
 with the Sobolev–Poincaré inequality is a reverse Hölder inequality for a power of `‖∇u‖`, and
 Gehring's lemma then gives Meyers' estimate `∇u ∈ L^{2 + ε}_loc`.
 
+The same conclusion for a reverse Hölder inequality between two exponents `s < p`, the form in
+which it arises for gradients of weak solutions, is
+`TauCeti.exists_setLAverage_rpow_add_le_of_rpow`.
+
 ## The argument
 
 * `setLIntegral_indicator_rpow_le`: the level-set estimate. For every height `t` above a threshold,
@@ -873,6 +877,66 @@ theorem exists_setLAverage_rpow_add_le {q : ℝ} (hq : 1 < q) (b : ℝ≥0) :
     exact hRH y ρ hρ hsub
   rwa [← hav (ball_subset_ball (by linarith)) (hgp (q + δ)), ← hav subset_rfl (hgp q),
     ← hav subset_rfl (hhp (q + δ))] at key
+
+/-- **Gehring's lemma for a reverse Hölder inequality between two exponents.** Let `0 < s < p`
+and `b ≥ 0`. There is `ε₀ > 0` such that for every `0 < ε ≤ ε₀` there is a constant `C`,
+independent of the functions, the centre and the radius, with the following property. Let `f`
+and `φ` be nonnegative and a.e. measurable on `B(x₀, R)`, and suppose that
+
+`⨍_{B(y, ρ)} f ^ p ≤ b (⨍_{B(y, 2ρ)} f ^ s) ^ (p/s) + b ⨍_{B(y, 2ρ)} φ ^ p`
+
+on every ball with `B(y, 2ρ) ⊆ B(x₀, R)`. Then
+
+`⨍_{B(x₀, R/2)} f ^ (p + ε) ≤ C ((⨍_{B(x₀, R)} f ^ p) ^ ((p + ε)/p) + ⨍_{B(x₀, R)} φ ^ (p + ε))`.
+
+This is `TauCeti.exists_setLAverage_rpow_add_le` for `f ^ s` at the exponent `p/s > 1`. -/
+theorem exists_setLAverage_rpow_add_le_of_rpow {s p : ℝ} (hs : 0 < s) (hsp : s < p) (b : ℝ≥0) :
+    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ∀ ε, 0 < ε → ε ≤ ε₀ → ∃ C : ℝ≥0, ∀ {f φ : E → ℝ≥0∞} {x₀ : E} {R : ℝ},
+      AEMeasurable f (μ.restrict (ball x₀ R)) → AEMeasurable φ (μ.restrict (ball x₀ R)) →
+      (∀ y ρ, 0 < ρ → ball y (2 * ρ) ⊆ ball x₀ R →
+        ⨍⁻ x in ball y ρ, f x ^ p ∂μ ≤
+          b * (⨍⁻ x in ball y (2 * ρ), f x ^ s ∂μ) ^ (p / s) +
+            b * ⨍⁻ x in ball y (2 * ρ), φ x ^ p ∂μ) →
+      ⨍⁻ x in ball x₀ (R / 2), f x ^ (p + ε) ∂μ ≤
+        C * ((⨍⁻ x in ball x₀ R, f x ^ p ∂μ) ^ ((p + ε) / p) +
+          ⨍⁻ x in ball x₀ R, φ x ^ (p + ε) ∂μ) := by
+  set q : ℝ := p / s
+  have hq : 1 < q := (one_lt_div hs).2 hsp
+  have hsq : s * q = p := mul_div_cancel₀ _ hs.ne'
+  obtain ⟨δ₀, hδ₀, hG⟩ := exists_setLAverage_rpow_add_le (μ := μ) hq b
+  refine ⟨s * δ₀, by positivity, fun ε hε hεle => ?_⟩
+  have hδle : ε / s ≤ δ₀ := by
+    rw [div_le_iff₀ hs]
+    linarith
+  obtain ⟨C, hC⟩ := hG (ε / s) (div_pos hε hs) hδle
+  have hexp : s * (q + ε / s) = p + ε := by rw [mul_add, hsq, mul_div_cancel₀ _ hs.ne']
+  have hexp' : (q + ε / s) / q = (p + ε) / p := by
+    rw [← hexp, ← hsq, mul_div_mul_left _ _ hs.ne']
+  refine ⟨C * (1 + b ^ ((p + ε) / p)), fun {f φ x₀ R} hf hφ hRH => ?_⟩
+  -- Gehring's lemma for `g = f ^ s` and `h = b ^ (1/q) φ ^ s`.
+  have hg : ∀ x r, (f x ^ s) ^ r = f x ^ (s * r) := fun x r => (ENNReal.rpow_mul _ _ _).symm
+  have hk : ∀ x r, 0 ≤ r → ((b : ℝ≥0∞) ^ q⁻¹ * φ x ^ s) ^ r =
+      (b : ℝ≥0∞) ^ (r / q) * φ x ^ (s * r) := fun x r hr => by
+    rw [ENNReal.mul_rpow_of_nonneg _ _ hr, ← ENNReal.rpow_mul, ← ENNReal.rpow_mul, inv_mul_eq_div]
+  have key := hC (g := fun x => f x ^ s) (h := fun x => (b : ℝ≥0∞) ^ q⁻¹ * φ x ^ s)
+    (hf.pow_const s) ((hφ.pow_const s).const_mul _) fun y ρ hρ hsub => by
+      simp only [hg, hk _ q (by linarith), hsq, div_self (by linarith : q ≠ 0), ENNReal.rpow_one]
+      rw [laverage_const_mul ENNReal.coe_ne_top]
+      exact hRH y ρ hρ hsub
+  have hr : 0 ≤ (p + ε) / p := div_nonneg (by linarith) (by linarith)
+  simp only [hg, hk _ (q + ε / s) (add_pos (by linarith) (div_pos hε hs)).le, hsq, hexp,
+    hexp'] at key
+  rw [laverage_const_mul (ENNReal.rpow_ne_top_of_nonneg hr ENNReal.coe_ne_top)] at key
+  refine key.trans ?_
+  rw [ENNReal.coe_mul, ENNReal.coe_add, ENNReal.coe_one, ENNReal.coe_rpow_of_nonneg _ hr,
+    mul_assoc]
+  gcongr
+  set X := (⨍⁻ x in ball x₀ R, f x ^ p ∂μ) ^ ((p + ε) / p)
+  set Y := ⨍⁻ x in ball x₀ R, φ x ^ (p + ε) ∂μ
+  calc X + (b : ℝ≥0∞) ^ ((p + ε) / p) * Y
+      ≤ (X + Y) + (b : ℝ≥0∞) ^ ((p + ε) / p) * (X + Y) :=
+        add_le_add le_self_add (by gcongr; exact le_add_self)
+    _ = (1 + (b : ℝ≥0∞) ^ ((p + ε) / p)) * (X + Y) := by ring
 
 end Euclidean
 

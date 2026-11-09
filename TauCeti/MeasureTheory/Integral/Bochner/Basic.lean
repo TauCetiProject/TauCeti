@@ -47,6 +47,8 @@ for set and probability integrals.
   integrands sum, almost everywhere, to at most a third integrable function.
 * `integral_min_le_left` and `integral_le_integral_max` compare the integral of an integrable
   function with that of its pointwise minimum or maximum with another integrable function.
+* `ofReal_setIntegral_norm_sq_eq` reads the set integral of `‖f‖²` in `ℝ≥0∞` as the lower
+  integral of `‖f‖ₑ ^ 2`.
 * `toReal_lintegral_coe_eq_integral` identifies `(∫⁻ ω, (f ω : ℝ≥0∞) ∂μ).toReal` with
   `∫ ω, (f ω : ℝ) ∂μ` for any almost-everywhere measurable `f : Ω → ℝ≥0`.
 
@@ -401,6 +403,15 @@ theorem ofReal_integral_add_ofReal_integral_le {Ω : Type*} [MeasurableSpace Ω]
     exact ENNReal.ofReal_le_ofReal (integral_mono_ae (hF.add hG) hN hFG)
   · rw [ENNReal.ofReal_of_nonpos hG0, add_zero]
     exact ENNReal.ofReal_le_ofReal (integral_mono_ae hF hN hFN)
+
+/-- The set integral of `‖f‖²`, read in `ℝ≥0∞`, is the lower integral of `‖f‖ₑ ^ 2`. -/
+theorem ofReal_setIntegral_norm_sq_eq {X V : Type*} [MeasurableSpace X] {μ : Measure X}
+    [NormedAddCommGroup V] {f : X → V} {S : Set X}
+    (hf : IntegrableOn (fun x => ‖f x‖ ^ 2) S μ) :
+    ENNReal.ofReal (∫ x in S, ‖f x‖ ^ 2 ∂μ) = ∫⁻ x in S, ‖f x‖ₑ ^ (2 : ℝ) ∂μ := by
+  rw [ofReal_integral_eq_lintegral_ofReal hf (ae_of_all _ fun _ => sq_nonneg _)]
+  refine lintegral_congr fun x => ?_
+  rw [ENNReal.rpow_two, ← ofReal_norm, ENNReal.ofReal_pow (norm_nonneg _)]
 
 /-- The real value of the extended Lebesgue integral of an almost-everywhere measurable
 `ℝ≥0`-valued function equals its Bochner integral. Neither finiteness of the measure nor
