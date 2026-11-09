@@ -147,10 +147,6 @@ theorem period_eq_period_of_pos {a b : ℕ} (hxy : 0 < (κ ^ a) x {y})
     (hyx : 0 < (κ ^ b) y {x}) : κ.period x = κ.period y :=
   Nat.dvd_antisymm (period_dvd_period_of_pos hxy hyx) (period_dvd_period_of_pos hyx hxy)
 
-section MeasurableSingletonClass
-
-variable [MeasurableSingletonClass α]
-
 /-- The chain returns to `x` with positive probability at every sufficiently large multiple of
 the period of `x`. For a state of period zero this only says `0 < (κ ^ 0) x {x}`. -/
 theorem eventually_pos_pow_period_mul_apply_singleton (κ : Kernel α α) (x : α) :
@@ -183,8 +179,16 @@ theorem eventually_pos_pow_apply_singleton_of_period_eq_one {a : ℕ} (hx : κ.p
 
 /-- Under counting-measure irreducibility every state reaches every other state. -/
 theorem exists_pos_pow_apply_singleton [IsIrreducible Measure.count κ] (x y : α) :
-    ∃ n, 0 < (κ ^ n) x {y} :=
-  IsIrreducible.irreducible (φ := Measure.count) (measurableSet_singleton y) (by simp) x
+    ∃ n, 0 < (κ ^ n) x {y} := by
+  by_contra! h
+  -- Without measurable singletons, intersect measurable null supersets of `{y}`.
+  choose B hyB hBm hB0 using fun n => exists_measurable_superset_of_null
+    (nonpos_iff_eq_zero.mp (h n))
+  have hA : MeasurableSet (⋂ n, B n) := MeasurableSet.iInter hBm
+  have hy : y ∈ ⋂ n, B n := Set.mem_iInter.mpr fun n => hyB n rfl
+  obtain ⟨n, hn⟩ := IsIrreducible.irreducible (φ := Measure.count) (κ := κ) hA
+    (pos_iff_ne_zero.mpr (Measure.count_ne_zero_iff.mpr ⟨y, hy⟩)) x
+  exact hn.not_ge ((measure_mono (Set.iInter_subset B n)).trans_eq (hB0 n))
 
 /-- All states of an irreducible kernel have the same period. -/
 theorem period_eq_period [IsIrreducible Measure.count κ] (x y : α) :
@@ -204,6 +208,10 @@ theorem IsAperiodic.eventually_pos_pow_apply_singleton [IsIrreducible Measure.co
     (h : κ.IsAperiodic) (x y : α) : ∀ᶠ n in atTop, 0 < (κ ^ n) x {y} :=
   have ⟨_, hxy⟩ := exists_pos_pow_apply_singleton (κ := κ) x y
   eventually_pos_pow_apply_singleton_of_period_eq_one (h x) hxy
+
+section MeasurableSingletonClass
+
+variable [MeasurableSingletonClass α]
 
 /-- The return lengths of `x` under a deterministic kernel are the positive periods of `x`. -/
 @[simp]
