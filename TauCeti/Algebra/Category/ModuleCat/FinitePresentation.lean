@@ -96,10 +96,18 @@ noncomputable def finitePresentationEquivalenceMod :
   ObjectProperty.equivalenceMod (finiteProjectiveModules_le_categoryTheory_isProjective R)
     (presented_finiteProjectiveModules R).symm
 
-/-- The regular module `R`, as a finitely generated projective `R`-module. -/
-def finiteProjectiveModulesRegular : (finiteProjectiveModules R).FullSubcategory :=
+/-- The regular module `R`, as a finitely generated projective `R`-module. It is exposed so that a
+morphism out of it is a morphism out of `ModuleCat.of R R`, which is what the component lemmas of
+`finitePresentationEquivalenceModCompEvaluationIso` are about. -/
+@[expose] def finiteProjectiveModulesRegular : (finiteProjectiveModules R).FullSubcategory :=
   ⟨ModuleCat.of R R, finiteProjectiveModules_iff.2
     ⟨inferInstanceAs (Module.Finite R R), inferInstanceAs (Module.Projective R R)⟩⟩
+
+/-- The underlying module of `finiteProjectiveModulesRegular R` is `R`. -/
+@[simp]
+theorem finiteProjectiveModulesRegular_obj :
+    (finiteProjectiveModulesRegular R).obj = ModuleCat.of R R :=
+  rfl
 
 /-- The functor of `finitePresentationEquivalenceMod` is `M ↦ (-, M)|_{proj R}`. -/
 noncomputable def finitePresentationEquivalenceModCompιIso :
@@ -119,5 +127,34 @@ noncomputable def finitePresentationEquivalenceModCompEvaluationIso :
       ext (g : ModuleCat.of R R ⟶ M.obj)
       -- Both sides are `f (g 1)`.
       rfl
+
+variable {R} in
+/-- The comparison `finitePresentationEquivalenceModCompEvaluationIso` sends `g : R ⟶ M` to
+`g 1`. -/
+theorem finitePresentationEquivalenceModCompEvaluationIso_hom_app_apply
+    (M : (finitePresentationModules R).FullSubcategory) (g : ModuleCat.of R R ⟶ M.obj) :
+    (finitePresentationEquivalenceModCompEvaluationIso R).hom.app M
+        (((finitePresentationEquivalenceModCompιIso R).inv.app M).app _ g) = g.hom 1 := by
+  have h : ((finitePresentationEquivalenceModCompιIso R).inv.app M).app _ ≫
+      (finitePresentationEquivalenceModCompEvaluationIso R).hom.app M =
+        (ModuleCat.homAddEquiv.trans
+          (LinearMap.ringLmapEquivSelf R ℕ M.obj).toAddEquiv).toAddCommGrpIso.hom := by
+    simp [finitePresentationEquivalenceModCompEvaluationIso]
+  exact ConcreteCategory.congr_hom h g
+
+variable {R} in
+/-- The inverse of `finitePresentationEquivalenceModCompEvaluationIso` sends `m : M` to the map
+`R ⟶ M` taking `1` to `m`. -/
+theorem finitePresentationEquivalenceModCompEvaluationIso_inv_app_apply
+    (M : (finitePresentationModules R).FullSubcategory) (m : M.obj) :
+    ((finitePresentationEquivalenceModCompιIso R).hom.app M).app _
+        ((finitePresentationEquivalenceModCompEvaluationIso R).inv.app M m) =
+      ModuleCat.ofHom (LinearMap.toSpanSingleton R M.obj m) := by
+  have h : (finitePresentationEquivalenceModCompEvaluationIso R).inv.app M ≫
+      ((finitePresentationEquivalenceModCompιIso R).hom.app M).app _ =
+        (ModuleCat.homAddEquiv.trans
+          (LinearMap.ringLmapEquivSelf R ℕ M.obj).toAddEquiv).toAddCommGrpIso.inv := by
+    simp [finitePresentationEquivalenceModCompEvaluationIso]
+  exact ConcreteCategory.congr_hom h m
 
 end TauCeti
