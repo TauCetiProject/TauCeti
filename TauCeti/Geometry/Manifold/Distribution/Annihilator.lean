@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
-import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.LeftInverse
 
