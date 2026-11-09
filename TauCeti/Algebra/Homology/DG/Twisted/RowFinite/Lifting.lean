@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Equivalence
-public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Hom
 public import TauCeti.Algebra.Module.GradedModule.Internal
 
 /-!

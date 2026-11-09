@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Coefficients
+public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Hom
 public import TauCeti.Algebra.Homology.DG.Twisted.Continuation
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 import TauCeti.Algebra.Ring.NegOnePow
@@ -28,6 +29,12 @@ The theorem `RowFiniteContinuationCocycle.continuation_iff` expands it into the 
 continuation equation. For finite bases, the induced coefficient map is the existing
 `continuationMap` through the finite-support/function equivalence.
 
+In the complex of graded maps `K_mP → K_mQ` of `TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Hom`,
+the cycles of degree `0` are the continuation cocycles
+(`TauCeti.RowFiniteContinuationCocycle.ofRowFiniteHomDifferential`), and precomposition with a
+continuation cocycle commutes with the differential
+(`TauCeti.RowFiniteContinuationCocycle.rowFiniteHomDifferential_comp`).
+
 ## References
 
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
@@ -41,7 +48,7 @@ open DirectSum MulOpposite
 
 namespace TauCeti
 
-universe uR uA uM uP uQ uS uT
+universe uR uA uM uN uP uQ uS uT
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
@@ -179,6 +186,57 @@ theorem comp_assoc (μ : RowFiniteContinuationCocycle mQ mS)
   -- so the pointwise comp_ν rewrite needs function extensionality here.
   rw [show (μ.comp κ hA).ν = fun z ↦ Finsupp.linearCombination A κ.ν (μ.ν z) from
     funext fun z ↦ comp_ν μ κ hA z]
+
+/-! ### Continuation cocycles in the complex of graded maps -/
+
+/-- The rows of a continuation cocycle are a cycle of degree `0` of the complex of graded maps
+`K_mP → K_mQ`. -/
+theorem rowFiniteHomDifferential_ν :
+    rowFiniteHomDifferential 𝒜 mP.m (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m) 0
+      ν.ν = 0 :=
+  (forall_linearCombination_eq_iff_rowFiniteHomDifferential_eq_zero _ _).mp
+    fun x ↦ (ν.continuation x).symm
+
+/-- A cycle of degree `0` of the complex of graded maps `K_mP → K_mQ`, whose row at each `x` has
+total degree `-indP x`, is a continuation cocycle. -/
+def ofRowFiniteHomDifferential (ν : P → Q →₀ A)
+    (hν : ∀ x, ν x ∈ rowFiniteTotalGrading 𝒜 indQ (-indP x))
+    (hδ : rowFiniteHomDifferential 𝒜 mP.m (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m)
+      0 ν = 0) :
+    RowFiniteContinuationCocycle mP mQ where
+  ν := ν
+  mem_graded x y := by
+    simpa only [neg_add_eq_sub] using (mem_rowFiniteTotalGrading_iff _ _).mp (hν x) y
+  continuation x :=
+    ((forall_linearCombination_eq_iff_rowFiniteHomDifferential_eq_zero _ _).mpr hδ x).symm
+
+@[simp]
+theorem ofRowFiniteHomDifferential_ν (ν : P → Q →₀ A)
+    (hν : ∀ x, ν x ∈ rowFiniteTotalGrading 𝒜 indQ (-indP x))
+    (hδ : rowFiniteHomDifferential 𝒜 mP.m (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m)
+      0 ν = 0) :
+    (ofRowFiniteHomDifferential ν hν hδ).ν = ν :=
+  (rfl)
+
+section HomDifferential
+
+variable {hA : IsDGAlgebra 𝒜 d}
+  {N : Type uN} [AddCommGroup N] [Module R N] [Module A N] [IsScalarTower R A N]
+  {𝒩 : ℤ → Submodule R N} [SetLike.GradedSMul 𝒜 𝒩] [DirectSum.Decomposition 𝒩]
+  {dN : N →ₗ[R] N}
+
+/-- **Precomposition with a continuation cocycle commutes with the differential of graded
+maps**: for a continuation cocycle `ν` from `mP` to `mQ`, the differential of the generator
+values `x ↦ Ψ_u (ν x)` of `Ψ_u ∘ ν` is `x ↦ Ψ_(δ u) (ν x)`. -/
+theorem rowFiniteHomDifferential_comp (hN : IsDGLeftModule hA 𝒩 dN) (j : ℤ) (u : Q → N) :
+    rowFiniteHomDifferential 𝒜 mP.m dN j (fun x ↦ rowFiniteSignedMap 𝒜 j u (ν.ν x)) =
+      fun x ↦ rowFiniteSignedMap 𝒜 (j + 1) (rowFiniteHomDifferential 𝒜 mQ.m dN j u)
+        (ν.ν x) := by
+  funext x
+  rw [rowFiniteSignedMap_rowFiniteHomDifferential hN, ν.continuation,
+    rowFiniteSignedMap_linearCombination, rowFiniteHomDifferential_apply]
+
+end HomDifferential
 
 section Coefficients
 

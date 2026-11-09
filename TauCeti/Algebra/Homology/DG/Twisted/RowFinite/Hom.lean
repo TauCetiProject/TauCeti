@@ -82,6 +82,13 @@ theorem rowFiniteHomDifferential_apply (m : P → P →₀ A) (dN : N →ₗ[R] 
       dN (u x) - j.negOnePow • rowFiniteSignedMap 𝒜 j u (m x) :=
   (rfl)
 
+/-- The differential of graded maps vanishes on the zero family. -/
+@[simp]
+theorem rowFiniteHomDifferential_zero (m : P → P →₀ A) (dN : N →ₗ[R] N) (j : ℤ) :
+    rowFiniteHomDifferential 𝒜 m dN j (0 : P → N) = 0 := by
+  funext x
+  simp [rowFiniteHomDifferential_apply]
+
 /-- The differential of graded maps is additive. -/
 theorem rowFiniteHomDifferential_add (m : P → P →₀ A) (dN : N →ₗ[R] N) (j : ℤ) (u u' : P → N) :
     rowFiniteHomDifferential 𝒜 m dN j (u + u') =
@@ -101,6 +108,7 @@ theorem rowFiniteHomDifferential_sub (m : P → P →₀ A) (dN : N →ₗ[R] N)
   abel
 
 /-- The differential of graded maps commutes with negation. -/
+@[simp]
 theorem rowFiniteHomDifferential_neg (m : P → P →₀ A) (dN : N →ₗ[R] N) (j : ℤ) (u : P → N) :
     rowFiniteHomDifferential 𝒜 m dN j (-u) = -rowFiniteHomDifferential 𝒜 m dN j u := by
   funext x
