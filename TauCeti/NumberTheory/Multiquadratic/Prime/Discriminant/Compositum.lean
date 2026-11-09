@@ -8,8 +8,10 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.Galois.Basic
 public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Field
 public import Mathlib.NumberTheory.NumberField.Discriminant.Different
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Independence
 import Mathlib.Algebra.BigOperators.Option
+import TauCeti.Algebra.BigOperators.ZPow
 
 /-!
 # Discriminants of prime-discriminant composita
@@ -45,6 +47,96 @@ open scoped NumberField
 namespace TauCeti.Multiquadratic
 
 universe u v
+
+/-- The compositum of the roots indexed by `some i` has discriminant coprime to that of the
+quadratic field of the root indexed by `none`. -/
+private lemma isCoprime_discr_adjoin_range_comp_some {α : Type u} [Fintype α] {M : Type v}
+    [Field M] [NumberField M] (D : Option α → ℤ) (hD : ∀ i, IsPrimeDiscriminant (D i))
+    (hinj : Function.Injective D)
+    (heven : ∀ i j, IsEvenPrimeDiscriminant (D i) →
+      IsEvenPrimeDiscriminant (D j) → D i = D j)
+    (r : Option α → M)
+    (hr : ∀ i, r i ^ 2 = algebraMap ℤ M (primeDiscriminantRadicand (D i)))
+    (hdisc : (NumberField.discr (adjoin ℚ (Set.range (r ∘ some)))).natAbs =
+      ∏ i : α, (D (some i)).natAbs ^ (2 ^ (Fintype.card α - 1))) :
+    IsCoprime (NumberField.discr (adjoin ℚ (Set.range (r ∘ some))))
+      (NumberField.discr (adjoin ℚ {r none})) := by
+  have hdisc₂ : NumberField.discr (adjoin ℚ {r none}) = D none :=
+    discr_adjoin_singleton_eq_primeDiscriminant (hD none) (hr none)
+  -- Distinct prime discriminants are pairwise coprime; multiplying the old factors gives
+  -- coprime discriminants for the two fields.
+  have hcoprime_factor (i : α) : IsCoprime (D (some i)) (D none) :=
+    isCoprime_primeDiscriminant_of_ne_of_not_both_even (hD (some i)) (hD none)
+      (fun h ↦ Option.some_ne_none i (hinj h))
+      (by
+        rintro ⟨hi, hn⟩
+        exact Option.some_ne_none i (hinj (heven (some i) none hi hn)))
+  rw [Int.isCoprime_iff_nat_coprime, hdisc, hdisc₂]
+  exact Nat.Coprime.prod_left fun i _ ↦
+    (Int.isCoprime_iff_nat_coprime.mp (hcoprime_factor i)).pow_left _
+
+/-- The inductive step of `natAbs_discr_adjoin_range_primeDiscriminantRadicands`: adjoining one
+more root to a family whose compositum has the predicted discriminant. -/
+private lemma natAbs_discr_adjoin_range_option {α : Type u} [Fintype α] {L : Type v} [Field L]
+    [NumberField L] (D : Option α → ℤ) (hD : ∀ i, IsPrimeDiscriminant (D i))
+    (hinj : Function.Injective D)
+    (heven : ∀ i j, IsEvenPrimeDiscriminant (D i) →
+      IsEvenPrimeDiscriminant (D j) → D i = D j)
+    (root : Option α → L)
+    (hroot : ∀ i, root i ^ 2 = algebraMap ℚ L (((primeDiscriminantRadicand (D i) : ℤ) : ℚ)))
+    (hdisc₁ : (NumberField.discr
+      (adjoin ℚ (Set.range (gen (K := ℚ) root ∘ some)))).natAbs =
+        ∏ i : α, (D (some i)).natAbs ^ (2 ^ (Fintype.card α - 1))) :
+    (NumberField.discr (adjoin ℚ (Set.range root))).natAbs =
+      ∏ i, (D i).natAbs ^ (2 ^ (Fintype.card (Option α) - 1)) := by
+  classical
+  let M : IntermediateField ℚ L := adjoin ℚ (Set.range root)
+  let rootM : Option α → M := gen (K := ℚ) root
+  let K₁ : IntermediateField ℚ M := adjoin ℚ (Set.range (rootM ∘ some))
+  let K₂ : IntermediateField ℚ M := adjoin ℚ {rootM none}
+  have hrootM_int (i : Option α) : rootM i ^ 2 =
+      algebraMap ℤ M (primeDiscriminantRadicand (D i)) := by
+    rw [gen_sq (d := fun i ↦ ((primeDiscriminantRadicand (D i) : ℤ) : ℚ)) hroot i,
+      IsScalarTower.algebraMap_apply ℤ ℚ M]
+    norm_num
+  have hdisc₂ : NumberField.discr K₂ = D none :=
+    discr_adjoin_singleton_eq_primeDiscriminant (hD none) (hrootM_int none)
+  have hcoprime : IsCoprime (NumberField.discr K₁) (NumberField.discr K₂) :=
+    isCoprime_discr_adjoin_range_comp_some D hD hinj heven rootM hrootM_int hdisc₁
+  have : IsGalois ℚ K₁ :=
+    isGalois (d := fun i : α ↦ ((primeDiscriminantRadicand (D (some i)) : ℤ) : ℚ))
+      (root := rootM ∘ some)
+      (fun i ↦ gen_sq (d := fun i ↦ ((primeDiscriminantRadicand (D i) : ℤ) : ℚ)) hroot (some i))
+  have htop : K₁ ⊔ K₂ = ⊤ := by
+    rw [IntermediateField.adjoin_range_comp_some_sup_adjoin_singleton]
+    exact adjoin_gen_eq_top
+  have hformula := NumberField.natAbs_discr_eq_natAbs_discr_pow_mul_natAbs_discr_pow
+    M K₁ K₂ (NumberField.linearDisjoint_of_isGalois_isCoprime_discr M K₁ K₂ hcoprime) htop
+      (NumberField.isCoprime_differentIdeal_of_isCoprime_discr M hcoprime)
+  -- Compute the two degrees needed as exponents in the compositum discriminant formula.
+  have hfinrank₁ : Module.finrank ℚ K₁ = 2 ^ Fintype.card α := by
+    have h :=
+      finrank_adjoin_roots_primeDiscriminantRadicands_of_forall_isEvenPrimeDiscriminant_eq
+      (fun i : α ↦ D (some i)) (fun i ↦ hD (some i))
+      (hinj.comp (Option.some_injective α))
+      (fun i j hi hj ↦ heven (some i) (some j) hi hj)
+      (rootM ∘ some) (fun i ↦ gen_sq (d := fun i ↦ ((primeDiscriminantRadicand (D i) : ℤ) : ℚ))
+        hroot (some i))
+    simpa only [K₁, Nat.card_eq_fintype_card] using h
+  have hfinrank₂ : Module.finrank ℚ K₂ = 2 := by
+    have h :=
+      finrank_adjoin_roots_primeDiscriminantRadicands_of_forall_isEvenPrimeDiscriminant_eq
+      (fun _ : Unit ↦ D none) (fun _ ↦ hD none) (fun _ _ _ ↦ Subsingleton.elim _ _)
+      (fun _ _ _ _ ↦ rfl) (fun _ : Unit ↦ rootM none)
+      (fun _ ↦ gen_sq (d := fun i ↦ ((primeDiscriminantRadicand (D i) : ℤ) : ℚ)) hroot none)
+    have hrange : Set.range (fun _ : Unit ↦ rootM none) = {rootM none} := by
+      ext x
+      simp
+    rw [hrange] at h
+    simpa only [K₂, Nat.card_unique, pow_one] using h
+  rw [hdisc₁, hdisc₂, hfinrank₁, hfinrank₂, Fintype.sq_prod_pow_two_pow_card_pred] at hformula
+  simpa only [M, Fintype.card_option, Fintype.prod_option, Function.comp_apply,
+    Nat.add_sub_cancel, mul_comm] using hformula
 
 /-- **Discriminant of a prime-discriminant compositum.** Let `D : ι → ℤ` be an injective
 family of prime discriminants containing at most one even member, and let `root i` square to the
@@ -98,107 +190,11 @@ theorem natAbs_discr_adjoin_range_primeDiscriminantRadicands
   · intro α _ ih
     exact by
       intro L _ _ D hD hinj heven root hroot
-      -- In the option step, split the full field into the compositum `K₁` generated by the
-      -- old roots and the singleton field `K₂` generated by the new root.  The intermediate
-      -- facts below depend on this local presentation, so keeping them in the induction step
-      -- makes their hypotheses and ambient-field instances explicit.
-      let M : IntermediateField ℚ L := adjoin ℚ (Set.range root)
-      let rootM : Option α → M := gen (K := ℚ) root
-      let K₁ : IntermediateField ℚ M := adjoin ℚ (Set.range (rootM ∘ some))
-      let K₂ : IntermediateField ℚ M := adjoin ℚ {rootM none}
-      have hrootM (i : Option α) : rootM i ^ 2 =
-          algebraMap ℚ M (((primeDiscriminantRadicand (D i) : ℤ) : ℚ)) := by
-        exact gen_sq (d := fun i ↦ ((primeDiscriminantRadicand (D i) : ℤ) : ℚ)) hroot i
-      have hdisc₁ : (NumberField.discr K₁).natAbs =
-          ∏ i : α, (D (some i)).natAbs ^ (2 ^ (Fintype.card α - 1)) := by
-        exact ih (L := M) (D := D ∘ some) (fun i ↦ hD (some i))
-          (hinj.comp (Option.some_injective α))
-          (fun i j hi hj ↦ heven (some i) (some j) hi hj)
-          (rootM ∘ some) (fun i ↦ hrootM (some i))
-      have hrootM_int (i : Option α) : rootM i ^ 2 =
-          algebraMap ℤ M (primeDiscriminantRadicand (D i)) := by
-        rw [hrootM, IsScalarTower.algebraMap_apply ℤ ℚ M]
-        norm_num
-      have hdisc₂ : NumberField.discr K₂ = D none :=
-        discr_adjoin_singleton_eq_primeDiscriminant (hD none) (hrootM_int none)
-      -- Distinct prime discriminants are pairwise coprime; multiplying the old factors gives
-      -- coprime discriminants for `K₁` and `K₂`, hence linear disjointness.
-      have hcoprime_factor (i : α) : IsCoprime (D (some i)) (D none) := by
-        have hnot_even : ¬ (IsEvenPrimeDiscriminant (D (some i)) ∧
-            IsEvenPrimeDiscriminant (D none)) := by
-          rintro ⟨hi, hn⟩
-          exact Option.some_ne_none i (hinj (heven (some i) none hi hn))
-        have h := isCoprime_discr_adjoin_singleton_of_primeDiscriminant
-          (L := M) (hD (some i)) (hD none)
-          (fun h ↦ Option.some_ne_none i (hinj h)) hnot_even
-          (hrootM_int (some i)) (hrootM_int none)
-        simpa only [K₂, discr_adjoin_singleton_eq_primeDiscriminant (hD (some i))
-          (hrootM_int (some i)), discr_adjoin_singleton_eq_primeDiscriminant (hD none)
-          (hrootM_int none)] using h
-      have hcoprime : IsCoprime (NumberField.discr K₁) (NumberField.discr K₂) := by
-        rw [Int.isCoprime_iff_nat_coprime, hdisc₁, hdisc₂]
-        exact Nat.Coprime.prod_left fun i _ ↦
-          (Int.isCoprime_iff_nat_coprime.mp (hcoprime_factor i)).pow_left _
-      have : IsGalois ℚ K₁ :=
-        isGalois (d := fun i : α ↦ ((primeDiscriminantRadicand (D (some i)) : ℤ) : ℚ))
-          (root := rootM ∘ some) (fun i ↦ hrootM (some i))
-      have hdisjoint : K₁.LinearDisjoint K₂ :=
-        NumberField.linearDisjoint_of_isGalois_isCoprime_discr M K₁ K₂ hcoprime
-      -- The two subfields generate all of `M`: unfolding the local definitions of `K₁` and
-      -- `K₂` exposes the union of the old roots with the new `none` root.
-      have htop : K₁ ⊔ K₂ = ⊤ := by
-        change adjoin ℚ (Set.range (rootM ∘ some)) ⊔ adjoin ℚ {rootM none} = ⊤
-        rw [← adjoin_union]
-        have hrange : Set.range (rootM ∘ some) ∪ {rootM none} = Set.range rootM := by
-          ext x
-          simp only [Set.mem_union, Set.mem_range, Set.mem_singleton_iff, Function.comp_apply]
-          constructor
-          · rintro (⟨i, rfl⟩ | rfl)
-            · exact ⟨some i, rfl⟩
-            · exact ⟨none, rfl⟩
-          · rintro ⟨i, rfl⟩
-            cases i with
-            | none => exact Or.inr rfl
-            | some i => exact Or.inl ⟨i, rfl⟩
-        rw [hrange]
-        exact adjoin_gen_eq_top
-      have hformula := NumberField.natAbs_discr_eq_natAbs_discr_pow_mul_natAbs_discr_pow
-        M K₁ K₂ hdisjoint htop
-          (NumberField.isCoprime_differentIdeal_of_isCoprime_discr M hcoprime)
-      -- Compute the two degrees needed as exponents in the compositum discriminant formula.
-      have hfinrank₁ : Module.finrank ℚ K₁ = 2 ^ Fintype.card α := by
-        have h :=
-          finrank_adjoin_roots_primeDiscriminantRadicands_of_forall_isEvenPrimeDiscriminant_eq
-          (fun i : α ↦ D (some i)) (fun i ↦ hD (some i))
-          (hinj.comp (Option.some_injective α))
-          (fun i j hi hj ↦ heven (some i) (some j) hi hj)
-          (rootM ∘ some) (fun i ↦ hrootM (some i))
-        simpa only [K₁, Nat.card_eq_fintype_card] using h
-      have hfinrank₂ : Module.finrank ℚ K₂ = 2 := by
-        have h :=
-          finrank_adjoin_roots_primeDiscriminantRadicands_of_forall_isEvenPrimeDiscriminant_eq
-          (fun _ : Unit ↦ D none) (fun _ ↦ hD none) (fun _ _ _ ↦ Subsingleton.elim _ _)
-          (fun _ _ _ _ ↦ rfl) (fun _ : Unit ↦ rootM none) (fun _ ↦ hrootM none)
-        have hrange : Set.range (fun _ : Unit ↦ rootM none) = {rootM none} := by
-          ext x
-          simp
-        rw [hrange] at h
-        simpa only [K₂, Nat.card_unique, pow_one] using h
-      -- Substitute the discriminants and degrees, then combine the squared old product with
-      -- the singleton factor to obtain the product indexed by `Option α`.
-      rw [hdisc₁, hdisc₂, hfinrank₁, hfinrank₂] at hformula
-      have hprod : (Finset.univ.prod (fun i : α ↦
-          (D (some i)).natAbs ^ (2 ^ (Fintype.card α - 1)))) ^ 2 =
-          Finset.univ.prod (fun i : α ↦
-            (D (some i)).natAbs ^ (2 ^ Fintype.card α)) := by
-        rw [← Finset.prod_pow]
-        apply Finset.prod_congr rfl
-        intro i _
-        rw [← pow_mul, ← pow_succ]
-        congr 2
-        exact Nat.sub_add_cancel (Fintype.card_pos_iff.mpr ⟨i⟩)
-      rw [hprod] at hformula
-      simpa only [M, Fintype.card_option, Fintype.prod_option, Function.comp_apply,
-        Nat.add_sub_cancel, mul_comm] using hformula
+      refine natAbs_discr_adjoin_range_option D hD hinj heven root hroot ?_
+      exact ih (L := adjoin ℚ (Set.range root)) (D := D ∘ some) (fun i ↦ hD (some i))
+        (hinj.comp (Option.some_injective α))
+        (fun i j hi hj ↦ heven (some i) (some j) hi hj)
+        (gen (K := ℚ) root ∘ some)
+        (fun i ↦ gen_sq (d := fun i ↦ ((primeDiscriminantRadicand (D i) : ℤ) : ℚ)) hroot (some i))
 
 end TauCeti.Multiquadratic
