@@ -22,7 +22,7 @@ continuity assertion.
 ## References
 
 * I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
-  Chapter 3, for time integrals in stochastic differential equations.
+  Chapter 1, for progressive measurability.
 -/
 
 public section
