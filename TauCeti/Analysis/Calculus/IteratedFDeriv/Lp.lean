@@ -23,9 +23,9 @@ the composite must be a.e. strongly measurable on the preimage.
 
 For a finite-dimensional real normed space it also records the consequence for second derivatives
 of a `C²` function on a thickening: the `L²` norm of `D²u` on a thickening of a bounded set is
-finite (`TauCeti.eLpNorm_iteratedFDeriv_two_thickening_ne_top`), and `D²(u ∘ e)` on the preimage
-thickening is controlled by `D²u` through the ellipticity constants of `e`
-(`TauCeti.toReal_eLpNorm_iteratedFDeriv_two_comp_le`).
+finite (`MeasureTheory.Measure.eLpNorm_iteratedFDeriv_two_thickening_ne_top`), and `D²(u ∘ e)` on
+the preimage thickening is controlled by `D²u` through the ellipticity constants of `e`
+(`MeasureTheory.Measure.toReal_eLpNorm_iteratedFDeriv_two_comp_le`).
 -/
 
 public section
@@ -55,20 +55,21 @@ theorem eLpNorm_iteratedFDeriv_comp_right_restrict_preimage_le (e : E ≃L[ℝ] 
 
 end ContinuousLinearEquiv
 
-namespace TauCeti
+namespace MeasureTheory.Measure
 
-open MeasureTheory Metric Set
+open Metric Set
 open scoped ENNReal
 
 section Thickening
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] (μ : Measure E) [μ.IsAddHaarMeasure]
+  [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] (μ : Measure E)
 
 /-- The `L²` norm of `D²u` on the open `R`-thickening of a bounded set `S` is finite when `u` is
 `C²` on an open set containing the closed `R`-thickening. -/
-theorem eLpNorm_iteratedFDeriv_two_thickening_ne_top {U S : Set E} {u : E → ℝ} {R : ℝ}
-    (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hS : Bornology.IsBounded S)
+theorem eLpNorm_iteratedFDeriv_two_thickening_ne_top [IsFiniteMeasureOnCompacts μ]
+    {U S : Set E} {u : E → ℝ} {R : ℝ} (hU : IsOpen U)
+    (hu : ContDiffOn ℝ 2 u U) (hS : Bornology.IsBounded S)
     (hSU : cthickening R S ⊆ U) :
     eLpNorm (iteratedFDeriv ℝ 2 u) 2 (μ.restrict (thickening R S)) ≠ ∞ :=
   (((ContinuousOn.continuousOn_iteratedFDeriv hu hU le_rfl).mono
@@ -79,8 +80,8 @@ theorem eLpNorm_iteratedFDeriv_two_thickening_ne_top {U S : Set E} {u : E → �
 /-- The `L²` norm of `D²(u ∘ e)` on the `R / √Λ`-thickening of `e ⁻¹' S` is at most
 `Λ λ^{-d/4}` times the `L²` norm of `D²u` on the `R`-thickening of `S`, where `d` is the dimension
 of `E`. -/
-theorem toReal_eLpNorm_iteratedFDeriv_two_comp_le {e : E ≃L[ℝ] E} {lam Lam R : ℝ}
-    {U S : Set E} {u : E → ℝ} (hlam : 0 < lam) (hLam : 0 < Lam)
+theorem toReal_eLpNorm_iteratedFDeriv_two_comp_le [μ.IsAddHaarMeasure]
+    {e : E ≃L[ℝ] E} {lam Lam R : ℝ} {U S : Set E} {u : E → ℝ} (hlam : 0 < lam) (hLam : 0 < Lam)
     (he' : ∀ ξ, ‖e ξ‖ ≤ √Lam * ‖ξ‖) (hesn : ‖(e.symm : E →L[ℝ] E)‖ ≤ (√lam)⁻¹)
     (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hS : Bornology.IsBounded S)
     (hSU : cthickening R S ⊆ U) :
@@ -133,4 +134,4 @@ theorem toReal_eLpNorm_iteratedFDeriv_two_comp_le {e : E ≃L[ℝ] E} {lam Lam R
 
 end Thickening
 
-end TauCeti
+end MeasureTheory.Measure

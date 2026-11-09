@@ -171,7 +171,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_laplacian {α : ℝ≥0} (hα 
   have hvV : W1p.value v =ᵐ[volume.restrict V] u :=
     ae_restrict_of_ae_restrict_of_subset (hVT ▸ subset_closure.trans hTW) hv
   -- The `L²` norm of `D²u` on `S_R` is finite.
-  have hfin := TauCeti.eLpNorm_iteratedFDeriv_two_thickening_ne_top volume hU hu hS hSU
+  have hfin := Measure.eLpNorm_iteratedFDeriv_two_thickening_ne_top volume hU hu hS hSU
   have hdiff : ∀ x ∈ U, DifferentiableAt ℝ (fderiv ℝ u) x := fun x hx =>
     ((hu.contDiffAt (hU.mem_nhds hx)).fderiv_right (m := 1) (by norm_num)).differentiableAt
       one_ne_zero
@@ -356,7 +356,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv {α : �
         (volume.restrict (thickening R' (e ⁻¹' S)))).toReal ≤
       Lam * lam ^ (-(((n : ℝ) + 1) / 4)) *
         (eLpNorm (iteratedFDeriv ℝ 2 u) 2 (volume.restrict (thickening R S))).toReal := by
-    have h2 := TauCeti.toReal_eLpNorm_iteratedFDeriv_two_comp_le (volume : Measure E) hlam hLam
+    have h2 := Measure.toReal_eLpNorm_iteratedFDeriv_two_comp_le (volume : Measure E) hlam hLam
       he' hesn hU hu hS hSU
     rwa [finrank_euclideanSpace_fin, Nat.cast_add, Nat.cast_one] at h2
   -- Transfer the Hölder bound for `D²v` on `e⁻¹ S` back to `D²u` on `S`, at the cost of
