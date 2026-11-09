@@ -30,6 +30,8 @@ The polynomial input is Mathlib's `Polynomial.isEquivalent_cobounded_leading_mon
 ## Main results
 
 * `Polynomial.Monic.tendsto_eval_div_pow_natDegree_cocompact`: `P z / z ^ m → 1`.
+* `Polynomial.exists_forall_notMem_closedBall_le_norm_eval`: a nonconstant polynomial exceeds
+  every bound outside a large disc.
 * `Polynomial.integrable_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq`:
   `‖P'‖² / (1 + ‖P‖²)²` is integrable.
 * `Polynomial.memLp_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq`: it is also square
@@ -55,6 +57,17 @@ theorem Monic.tendsto_eval_div_pow_natDegree_cocompact (hP : P.Monic) :
   have he := Polynomial.isEquivalent_cobounded_leading_monomial (P := P)
   simp only [hP.leadingCoeff, one_mul, Metric.cobounded_eq_cocompact] at he
   exact (isEquivalent_iff_tendsto_one (hz.mono fun z hz ↦ pow_ne_zero _ hz)).mp he
+
+/-- A nonconstant complex polynomial exceeds every bound outside a large closed disc. -/
+theorem exists_forall_notMem_closedBall_le_norm_eval (hm : 0 < P.natDegree) (c : ℝ) :
+    ∃ R : ℝ, ∀ z ∉ Metric.closedBall (0 : ℂ) R, c ≤ ‖P.eval z‖ := by
+  obtain ⟨R, -, hR⟩ := (Metric.hasBasis_cobounded_compl_closedBall (0 : ℂ)).eventually_iff.mp
+    (by
+      rw [Metric.cobounded_eq_cocompact]
+      exact (P.tendsto_norm_atTop (natDegree_pos_iff_degree_pos.mp hm)
+        tendsto_norm_cocompact_atTop).eventually_ge_atTop c :
+      ∀ᶠ z in Bornology.cobounded ℂ, c ≤ ‖P.eval z‖)
+  exact ⟨R, hR⟩
 
 -- Polynomial growth bounds at infinity, in the form used below: `‖z‖ ^ m ≤ c ‖P z‖` gives
 -- `(‖z‖ ^ m) ^ 4 ≤ c ^ 4 (1 + ‖P z‖²)²`, and `‖P' z‖ ≤ c ‖z‖ ^ (m - 1)` is squared.

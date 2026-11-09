@@ -31,6 +31,9 @@ positive operators close to the identity. The file also records that the square 
 * `Real.one_le_sqrt_one_add_sq`: for every real `t`, `1 ≤ √(1 + t²)`.
 * `Real.abs_div_sqrt_one_add_sq_le_one`: for every real `t`, `|t / √(1 + t²)| ≤ 1`.
 * `Real.sqrt_one_add_sq_sub_one_le_abs`: for every real `t`, `√(1 + t²) - 1 ≤ |t|`.
+* `Real.sqrt_one_add_sq_sub_one_le_sq_div_two`: for every real `t`, `√(1 + t²) - 1 ≤ t² / 2`.
+* `Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le`: for all reals `a` and `b`,
+  `|√(1 + a²) - √(1 + b²)| ≤ |a - b| (|a| + |b|) / 2`.
 * `Real.abs_mul_inv_sqrt_sq_mul_mul`: for `d ≠ 0` and `0 ≤ c`,
   `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`.
 * `Real.tendsto_mul_sqrt_nhds_zero`: `c √u → 0` as `u → 0`.
@@ -144,6 +147,35 @@ theorem abs_div_sqrt_one_add_sq_le_one (t : ℝ) : |t / √(1 + t ^ 2)| ≤ 1 :=
 theorem sqrt_one_add_sq_sub_one_le_abs (t : ℝ) : √(1 + t ^ 2) - 1 ≤ |t| := by
   rw [sub_le_iff_le_add', sqrt_le_left (by positivity)]
   nlinarith [abs_nonneg t, sq_abs t]
+
+/-- The modular `√(1 + t²) - 1` is at most quadratic: `√(1 + t²) - 1 ≤ t² / 2`. -/
+theorem sqrt_one_add_sq_sub_one_le_sq_div_two (t : ℝ) : √(1 + t ^ 2) - 1 ≤ t ^ 2 / 2 := by
+  have : √(1 + t ^ 2) ≤ 1 + t ^ 2 / 2 :=
+    sqrt_le_iff.mpr ⟨by positivity, by nlinarith [sq_nonneg (t ^ 2)]⟩
+  linarith
+
+/-- The modular `√(1 + t²)` is locally Lipschitz with a linear modulus:
+`|√(1 + a²) - √(1 + b²)| ≤ |a - b| (|a| + |b|) / 2`. -/
+theorem abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le (a b : ℝ) :
+    |√(1 + a ^ 2) - √(1 + b ^ 2)| ≤ |a - b| * (|a| + |b|) / 2 := by
+  have ha := one_le_sqrt_one_add_sq a
+  have hb := one_le_sqrt_one_add_sq b
+  have hA : √(1 + a ^ 2) ^ 2 = 1 + a ^ 2 := sq_sqrt (by positivity)
+  have hB : √(1 + b ^ 2) ^ 2 = 1 + b ^ 2 := sq_sqrt (by positivity)
+  have hpos : 0 < √(1 + a ^ 2) + √(1 + b ^ 2) := by linarith
+  -- `(√(1 + a²) - √(1 + b²)) (√(1 + a²) + √(1 + b²)) = (a - b) (a + b)`, and the second factor
+  -- on the left is at least `2`.
+  have key : |√(1 + a ^ 2) - √(1 + b ^ 2)| * (√(1 + a ^ 2) + √(1 + b ^ 2)) =
+      |a - b| * |a + b| := by
+    rw [← abs_of_pos hpos, ← abs_mul, ← abs_mul]
+    congr 1
+    linear_combination hA - hB
+  have h2 : |√(1 + a ^ 2) - √(1 + b ^ 2)| * 2 ≤
+      |√(1 + a ^ 2) - √(1 + b ^ 2)| * (√(1 + a ^ 2) + √(1 + b ^ 2)) :=
+    mul_le_mul_of_nonneg_left (by linarith) (abs_nonneg _)
+  have h3 : |a - b| * |a + b| ≤ |a - b| * (|a| + |b|) :=
+    mul_le_mul_of_nonneg_left (abs_add_le a b) (abs_nonneg _)
+  linarith
 
 /-- **A square factor cancels against its absolute value.** For `d ≠ 0` and `0 ≤ c`,
 `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`. This is the cancellation of the Jacobian `|d|` of a change

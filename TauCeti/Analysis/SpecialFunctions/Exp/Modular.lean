@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Exponential
+public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!
@@ -26,6 +28,7 @@ vortices.
 ## Main results
 
 * `Real.exp_two_mul_sub_one_sub_two_mul_nonneg`: for every real `t`, `0 ≤ exp (2t) - 1 - 2t`.
+* `Real.convexOn_exp_two_mul_sub_one_sub_two_mul`: the potential `exp (2t) - 1 - 2t` is convex.
 * `Real.sqrt_one_add_sq_sub_one_le_exp_two_mul_sub_one_sub_two_mul`: for every real `t`,
   `√(1 + t²) - 1 ≤ exp (2t) - 1 - 2t`.
 -/
@@ -38,11 +41,18 @@ namespace Real
 theorem exp_two_mul_sub_one_sub_two_mul_nonneg (t : ℝ) : 0 ≤ exp (2 * t) - 1 - 2 * t := by
   linarith [add_one_le_exp (2 * t)]
 
+/-- The potential `exp (2t) - 1 - 2t` is convex. -/
+theorem convexOn_exp_two_mul_sub_one_sub_two_mul :
+    ConvexOn ℝ Set.univ fun t : ℝ ↦ exp (2 * t) - 1 - 2 * t := by
+  have hlin := (LinearMap.mulLeft ℝ (2 : ℝ)).concaveOn (convex_univ : Convex ℝ (Set.univ : Set ℝ))
+  simpa only [Set.preimage_univ, Pi.sub_def, Function.comp_def, LinearMap.mulLeft_apply] using
+    ((convexOn_exp.comp_linearMap (LinearMap.mulLeft ℝ (2 : ℝ))).sub
+      (concaveOn_const (1 : ℝ) convex_univ)).sub hlin
+
 /-- The potential `exp (2t) - 1 - 2t` dominates the modular `√(1 + t²) - 1`. -/
 theorem sqrt_one_add_sq_sub_one_le_exp_two_mul_sub_one_sub_two_mul (t : ℝ) :
     √(1 + t ^ 2) - 1 ≤ exp (2 * t) - 1 - 2 * t := by
-  have hsq : √(1 + t ^ 2) ≤ 1 + t ^ 2 / 2 :=
-    sqrt_le_iff.mpr ⟨by positivity, by nlinarith [sq_nonneg (t ^ 2)]⟩
+  have hsq := sqrt_one_add_sq_sub_one_le_sq_div_two t
   rcases le_total 0 t with ht | ht
   · have := quadratic_le_exp_of_nonneg (by linarith : 0 ≤ 2 * t)
     nlinarith

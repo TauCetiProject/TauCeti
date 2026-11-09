@@ -11,6 +11,7 @@ import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The Sobolev space `W^{1,p}_0(Ω)`
@@ -42,6 +43,8 @@ subspace under a suitable geometric hypothesis but not on all of `W^{1,p}(Ω)`.
 
 * `TauCeti.W1p.ofTestFunctionₗ` and `TauCeti.W1p.ofTestFunctionₗ_injective`: the linear embedding
   `C_c^∞(Ω) → W^{1,p}(Ω)`, and its injectivity.
+* `TauCeti.W1p.norm_gradient_ofTestFunctionₗ_sq`: the squared `L²` norm of the weak gradient of a
+  test function is its Dirichlet energy `∫ ‖Dφ‖²`.
 * `TauCeti.w1p0Submodule` and `TauCeti.W1p0`: the space `W^{1,p}_0(Ω)`, complete for the graph
   norm.
 * `TauCeti.W1p0.valueL`: the canonical continuous value map into `Lᵖ(Ω)`.
@@ -115,6 +118,20 @@ theorem W1p.value_ofTestFunctionₗ_ae (phi : 𝓓(Omega, ℝ)) :
 theorem W1p.gradient_ofTestFunctionₗ (phi : 𝓓(Omega, ℝ)) :
     W1p.gradient (W1p.ofTestFunctionₗ mu Omega p phi) = gradientTestFunctionLp p phi :=
   W1p.gradient_mk _ _ _
+
+/-- The squared norm of the weak gradient of an embedded test function is its Dirichlet energy
+`∫ ‖Dφ‖²` for the ambient measure. -/
+theorem W1p.norm_gradient_ofTestFunctionₗ_sq (phi : 𝓓(Omega, ℝ)) :
+    ‖W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 phi)‖ ^ 2 =
+      ∫ x, ‖fderiv ℝ (phi : E → ℝ) x‖ ^ 2 ∂mu := by
+  have hm : MemLp (fderiv ℝ (phi : E → ℝ)) 2 mu :=
+    (contDiff_infty_iff_fderiv.mp phi.contDiff).2.continuous.memLp_of_hasCompactSupport
+      (phi.hasCompactSupport.fderiv ℝ)
+  have hn : ‖W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 phi)‖ = ‖hm.toLp _‖ := by
+    rw [W1p.gradient_ofTestFunctionₗ, Lp.norm_def, ← Lp.enorm_def,
+      enorm_gradientTestFunctionLp_eq_eLpNorm_fderiv, Lp.norm_toLp]
+  rw [hn, ← Lp.integral_norm_sq_eq_norm_sq]
+  exact integral_congr_ae (hm.coeFn_toLp.fun_comp fun v ↦ ‖v‖ ^ 2)
 
 /-- The embedding of the test functions is **injective**: two test functions with the same jet
 agree almost everywhere on `Ω`, hence everywhere, being continuous, supported in `Ω`, and measured

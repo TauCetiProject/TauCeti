@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.FunctionalSpaces.SobolevInequality
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import TauCeti.Analysis.Sobolev.W1p.Density
 import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
@@ -42,6 +44,12 @@ gives `∫ w² ≤ k ∫ g(w)`. Finally `g(t) ≤ |t|` bounds the part of `∫ g
 * `TauCeti.integral_sq_le_mul_sq_integral_norm_fderiv`: the Gagliardo–Nirenberg–Sobolev
   inequality `∫ f² ≤ G (∫ ‖Df‖)²` in dimension two, for Bochner integrals.
 * `TauCeti.exists_integral_sq_le_of_finrank_eq_two`: the `L²` bound above.
+* `TauCeti.W1p.exists_integral_value_sq_le_of_finrank_eq_two`: the same bound for every
+  `u ∈ W^{1,2}(E)`, with `‖∇u‖₂` in place of `(∫ ‖Dw‖²) ^ (1/2)`. It follows by density of the
+  test functions, since the modular `∫_{sᶜ} (√(1 + u²) - 1)` is continuous on `L²`
+  (by `Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le`).
+* `MeasureTheory.MemLp.integrable_sqrt_one_add_sq_sub_one`: the modular of a square-integrable
+  function is integrable.
 
 ## References
 
@@ -318,5 +326,133 @@ theorem exists_integral_sq_le_of_finrank_eq_two (hE : finrank ℝ E = 2) :
   have hW := (integral_sq_le_mul_integral_modular μ hE hw hws).trans
     (mul_le_mul_of_nonneg_left hsplit hk)
   exact le_two_mul_add_sq_mul_of_le_mul_add hk hQ measureReal_nonneg hW hZ
+
+/-! ### Sobolev functions -/
+
+section Lp
+
+variable {α : Type*} [MeasurableSpace α] {ν : Measure α}
+
+/-- The modular `√(1 + f²) - 1` of a square-integrable function is integrable. -/
+theorem _root_.MeasureTheory.MemLp.integrable_sqrt_one_add_sq_sub_one {f : α → ℝ}
+    (hf : MemLp f 2 ν) : Integrable (fun x ↦ √(1 + f x ^ 2) - 1) ν := by
+  have hf2 : Integrable (fun x ↦ f x ^ 2 / 2) ν :=
+    ((memLp_two_iff_integrable_sq hf.aestronglyMeasurable).1 hf).div_const 2
+  refine hf2.mono' ?_ (Eventually.of_forall fun x ↦ ?_)
+  · exact (hf.aestronglyMeasurable.aemeasurable.pow_const 2 |>.const_add 1
+      |>.sqrt.sub_const 1).aestronglyMeasurable
+  · rw [Real.norm_eq_abs, abs_of_nonneg (sub_nonneg.2 (Real.one_le_sqrt_one_add_sq _))]
+    exact Real.sqrt_one_add_sq_sub_one_le_sq_div_two _
+
+private theorem integrable_abs_mul_abs (a b : Lp ℝ 2 ν) :
+    Integrable (fun x ↦ |a x| * |b x|) ν := by
+  simpa only [Real.norm_eq_abs, Pi.mul_def] using
+    (Lp.memLp a).norm.integrable_mul (Lp.memLp b).norm
+
+/-- The modular is locally Lipschitz on `L²`:
+`|∫_t (√(1 + f²) - 1) - ∫_t (√(1 + g²) - 1)| ≤ ‖f - g‖ (‖f‖ + ‖g‖)`. -/
+private theorem abs_setIntegral_sqrt_one_add_sq_sub_le (t : Set α) (f g : Lp ℝ 2 ν) :
+    |∫ x in t, (√(1 + f x ^ 2) - 1) ∂ν - ∫ x in t, (√(1 + g x ^ 2) - 1) ∂ν| ≤
+      ‖f - g‖ * (‖f‖ + ‖g‖) := by
+  have hfi := (Lp.memLp f).integrable_sqrt_one_add_sq_sub_one
+  have hgi := (Lp.memLp g).integrable_sqrt_one_add_sq_sub_one
+  have hk : Integrable (fun x ↦ |(f - g) x| * |f x| + |(f - g) x| * |g x|) ν :=
+    (integrable_abs_mul_abs (f - g) f).add (integrable_abs_mul_abs (f - g) g)
+  rw [← integral_sub hfi.integrableOn hgi.integrableOn]
+  calc |∫ x in t, ((√(1 + f x ^ 2) - 1) - (√(1 + g x ^ 2) - 1)) ∂ν|
+      ≤ ∫ x in t, |(√(1 + f x ^ 2) - 1) - (√(1 + g x ^ 2) - 1)| ∂ν :=
+        abs_integral_le_integral_abs
+    _ ≤ ∫ x in t, (|(f - g) x| * |f x| + |(f - g) x| * |g x|) ∂ν := by
+        refine setIntegral_mono_ae (hfi.sub hgi).abs.integrableOn hk.integrableOn ?_
+        filter_upwards [Lp.coeFn_sub f g] with x hx
+        have := Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le (f x) (g x)
+        rw [hx, Pi.sub_apply]
+        have h0 : 0 ≤ |f x - g x| * (|f x| + |g x|) := by positivity
+        rw [sub_sub_sub_cancel_right]
+        nlinarith
+    _ ≤ ∫ x, (|(f - g) x| * |f x| + |(f - g) x| * |g x|) ∂ν :=
+        setIntegral_le_integral hk (Eventually.of_forall fun x ↦ by positivity)
+    _ ≤ ‖f - g‖ * ‖f‖ + ‖f - g‖ * ‖g‖ := by
+        rw [integral_add (integrable_abs_mul_abs (f - g) f) (integrable_abs_mul_abs (f - g) g)]
+        exact add_le_add (integral_abs_mul_abs_le_norm_mul_norm (f - g) f)
+          (integral_abs_mul_abs_le_norm_mul_norm (f - g) g)
+    _ = ‖f - g‖ * (‖f‖ + ‖g‖) := by ring
+
+/-- The modular `∫_t (√(1 + f²) - 1)` is continuous on `L²`. -/
+private theorem continuous_setIntegral_sqrt_one_add_sq_sub_one (t : Set α) :
+    Continuous fun f : Lp ℝ 2 ν ↦ ∫ x in t, (√(1 + f x ^ 2) - 1) ∂ν := by
+  refine continuous_iff_continuousAt.2 fun f₀ ↦ ?_
+  rw [ContinuousAt, tendsto_iff_dist_tendsto_zero]
+  refine squeeze_zero (fun _ ↦ dist_nonneg) (fun f ↦ ?_) (?_ : Tendsto
+    (fun f : Lp ℝ 2 ν ↦ ‖f - f₀‖ * (‖f‖ + ‖f₀‖)) (nhds f₀) (nhds 0))
+  · rw [Real.dist_eq]
+    exact abs_setIntegral_sqrt_one_add_sq_sub_le t f f₀
+  · have : Continuous fun f : Lp ℝ 2 ν ↦ ‖f - f₀‖ * (‖f‖ + ‖f₀‖) := by fun_prop
+    simpa using this.tendsto f₀
+
+end Lp
+
+section W1p
+
+open TopologicalSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+
+/-- **The planar `L²` bound for Sobolev functions.** In dimension two there is a constant `C`,
+depending only on the Haar measure `μ`, such that for every `u ∈ W^{1,2}(E)` and every measurable
+set `s` of finite measure,
+
+`∫ u² ≤ 2 k ∫_{sᶜ} (√(1 + u²) - 1) + k² μ(s)`,    `k = 2 + C ‖∇u‖₂`.
+
+This extends `TauCeti.exists_integral_sq_le_of_finrank_eq_two` from compactly supported `C¹`
+functions to `W^{1,2}(E)`. -/
+theorem W1p.exists_integral_value_sq_le_of_finrank_eq_two (hE : finrank ℝ E = 2) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ u : W1p μ ⊤ 2, ∀ s : Set E, MeasurableSet s → μ s ≠ ∞ →
+      ∫ x, W1p.value u x ^ 2 ∂μ ≤
+        2 * (2 + C * ‖W1p.gradient u‖) * ∫ x in sᶜ, (√(1 + W1p.value u x ^ 2) - 1) ∂μ +
+          (2 + C * ‖W1p.gradient u‖) ^ 2 * μ.real s := by
+  obtain ⟨C, hC, h⟩ := exists_integral_sq_le_of_finrank_eq_two μ hE
+  refine ⟨C, hC, fun u s hs hμs ↦ ?_⟩
+  have hμ : μ.restrict ((⊤ : Opens E) : Set E) = μ := by simp
+  have hae : ae (μ.restrict ((⊤ : Opens E) : Set E)) = ae μ := by rw [hμ]
+  have hint (f : E → ℝ) (t : Set E) :
+      ∫ x in t, f x ∂μ.restrict ((⊤ : Opens E) : Set E) = ∫ x in t, f x ∂μ := by rw [hμ]
+  have hsq (v : W1p μ ⊤ 2) : ∫ x, W1p.value v x ^ 2 ∂μ = ‖W1p.value v‖ ^ 2 := by
+    rw [← W1p.integral_value_sq_eq_norm_value_sq]
+    simp
+  simp only [hsq, ← hint _ sᶜ]
+  refine (W1p.denseRange_ofTestFunctionₗ_top (mu := μ) (p := 2) ENNReal.ofNat_ne_top).induction_on
+    u (isClosed_le ?_ ?_) fun φ ↦ ?_
+  · have hV : Continuous fun v : W1p μ ⊤ 2 ↦ ‖W1p.value v‖ := by
+      simpa only [W1p.valueL_apply] using
+        (W1p.valueL (mu := μ) (Omega := ⊤) (p := 2)).continuous.norm
+    exact hV.pow 2
+  · have hM : Continuous fun v : W1p μ ⊤ 2 ↦
+        ∫ x in sᶜ, (√(1 + W1p.value v x ^ 2) - 1) ∂μ.restrict ((⊤ : Opens E) : Set E) := by
+      simpa only [Function.comp_def, W1p.valueL_apply] using
+        (continuous_setIntegral_sqrt_one_add_sq_sub_one sᶜ).comp
+          (W1p.valueL (mu := μ) (Omega := ⊤) (p := 2)).continuous
+    have hG : Continuous fun v : W1p μ ⊤ 2 ↦ ‖W1p.gradient v‖ := by
+      simpa only [W1p.gradientL_apply] using
+        (W1p.gradientL (mu := μ) (Omega := ⊤) (p := 2)).continuous.norm
+    exact ((continuous_const.mul (continuous_const.add (continuous_const.mul hG))).mul hM).add
+      (((continuous_const.add (continuous_const.mul hG)).pow 2).mul continuous_const)
+  · have hval := W1p.value_ofTestFunctionₗ_ae (mu := μ) (Omega := ⊤) (p := 2) φ
+    have hgrad : ‖W1p.gradient (W1p.ofTestFunctionₗ μ ⊤ 2 φ)‖ =
+        √(∫ x, ‖fderiv ℝ (φ : E → ℝ) x‖ ^ 2 ∂μ) := by
+      rw [← Real.sqrt_sq (norm_nonneg _), W1p.norm_gradient_ofTestFunctionₗ_sq]
+    have h1 : ‖W1p.value (W1p.ofTestFunctionₗ μ ⊤ 2 φ)‖ ^ 2 = ∫ x, φ x ^ 2 ∂μ := by
+      rw [← hsq]
+      exact integral_congr_ae ((hval.fun_comp (· ^ 2)).filter_mono hae.ge)
+    have h2 : ∫ x in sᶜ, (√(1 + W1p.value (W1p.ofTestFunctionₗ μ ⊤ 2 φ) x ^ 2) - 1)
+          ∂μ.restrict ((⊤ : Opens E) : Set E) = ∫ x in sᶜ, (√(1 + φ x ^ 2) - 1) ∂μ := by
+      rw [hint]
+      exact integral_congr_ae (ae_restrict_of_ae
+        ((hval.fun_comp fun t ↦ √(1 + t ^ 2) - 1).filter_mono hae.ge))
+    rw [h1, h2, hgrad]
+    exact h φ (φ.contDiff.of_le (by simp)) φ.hasCompactSupport s hs hμs
+
+end W1p
 
 end TauCeti
