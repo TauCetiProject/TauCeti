@@ -31,6 +31,11 @@ This turns lower frame bounds into Gram-spectrum bounds and back: the inequality
 For two finite families `u` and `v`, analysis by `u` after synthesis by `v` is their *overlap
 operator*, whose matrix is `(⟪uᵢ, vⱼ⟫)ᵢⱼ`; on the diagonal it is the Gram operator.
 
+A *Parseval frame* is a family whose frame operator is the identity. Its analysis map is an
+isometry and its synthesis map a contraction. A weighted decomposition `∑ᵢ cᵢ ⟪uᵢ, x⟫ uᵢ = x` with
+nonnegative weights, such as the contact-point decomposition of John's theorem, makes `√cᵢ • uᵢ` a
+Parseval frame, which gives the synthesis bound `‖∑ᵢ cᵢ bᵢ uᵢ‖ ≤ (∑ᵢ cᵢ ‖bᵢ‖²)^(1/2)`.
+
 The definitions and the algebraic identities need no finiteness of `E`; the comparisons with
 adjoints and eigenvalues assume `E` finite-dimensional.
 
@@ -50,6 +55,13 @@ adjoints and eigenvalues assume `E` finite-dimensional.
 * `OrthonormalBasis.frameOperator_eq_id`: an orthonormal basis has the identity as frame
   operator.
 * `TauCeti.norm_analysisMap_sq`: `‖analysis x‖² = ∑ᵢ ‖⟪vᵢ, x⟫‖²`.
+* `TauCeti.norm_analysisMap_of_frameOperator_eq_id`,
+  `TauCeti.norm_synthesisMap_le_of_frameOperator_eq_id`: for a Parseval frame, analysis is an
+  isometry and synthesis a contraction.
+* `TauCeti.frameOperator_sqrt_smul_eq_id`: a weighted decomposition of the identity gives a
+  Parseval frame.
+* `TauCeti.norm_sum_mul_smul_le_sqrt`, `TauCeti.norm_sum_mul_smul_le_sqrt_mul`: the resulting
+  bounds on weighted combinations.
 * `TauCeti.eigenvalues_frameOperator_eq_eigenvalues_gramOperator`: the two sorted spectra agree
   through the smaller dimension.
 * `TauCeti.le_eigenvalues_gramOperator`: a lower frame bound `a` bounds the Gram eigenvalues
@@ -258,6 +270,71 @@ theorem adjoint_overlapOperator (u : ι → E) (v : κ → E) :
   ((LinearMap.eq_adjoint_iff _ _).mpr (inner_overlapOperator_left u v)).symm
 
 end Overlap
+
+/-! ### Parseval frames -/
+
+/-- A family whose frame operator is the identity, a *Parseval frame*, has an isometric analysis
+map: `‖(⟪vᵢ, x⟫)ᵢ‖ = ‖x‖`. -/
+theorem norm_analysisMap_of_frameOperator_eq_id {v : ι → E}
+    (hv : frameOperator 𝕜 v = LinearMap.id) (x : E) : ‖analysisMap 𝕜 v x‖ = ‖x‖ := by
+  have h := re_inner_frameOperator_apply_self (𝕜 := 𝕜) v x
+  rw [hv, LinearMap.id_apply, inner_self_eq_norm_sq, ← norm_analysisMap_sq] at h
+  exact (pow_left_inj₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 h.symm
+
+/-- The synthesis map of a Parseval frame is a contraction: `‖∑ᵢ aᵢ vᵢ‖ ≤ ‖a‖`. -/
+theorem norm_synthesisMap_le_of_frameOperator_eq_id {v : ι → E}
+    (hv : frameOperator 𝕜 v = LinearMap.id) (a : EuclideanSpace 𝕜 ι) :
+    ‖synthesisMap 𝕜 v a‖ ≤ ‖a‖ := by
+  set y := synthesisMap 𝕜 v a
+  have h : ‖y‖ ^ 2 ≤ ‖a‖ * ‖y‖ :=
+    calc ‖y‖ ^ 2 = RCLike.re ⟪y, y⟫_𝕜 := (inner_self_eq_norm_sq y).symm
+      _ = RCLike.re ⟪a, analysisMap 𝕜 v y⟫_𝕜 := by rw [inner_synthesisMap_left]
+      _ ≤ ‖a‖ * ‖analysisMap 𝕜 v y‖ := (RCLike.re_le_norm _).trans (norm_inner_le_norm _ _)
+      _ = ‖a‖ * ‖y‖ := by rw [norm_analysisMap_of_frameOperator_eq_id hv]
+  nlinarith [norm_nonneg y, norm_nonneg a]
+
+/-- A decomposition `∑ᵢ cᵢ ⟪uᵢ, x⟫ uᵢ = x` of every vector, with nonnegative weights `cᵢ`, makes
+the rescaled family `√cᵢ • uᵢ` a Parseval frame. -/
+theorem frameOperator_sqrt_smul_eq_id {u : ι → E} {c : ι → ℝ} (hc : ∀ i, 0 ≤ c i)
+    (h : ∀ x, ∑ i, (c i : 𝕜) • ⟪u i, x⟫_𝕜 • u i = x) :
+    frameOperator 𝕜 (fun i ↦ (√(c i) : 𝕜) • u i) = LinearMap.id := by
+  ext x
+  rw [frameOperator_apply, LinearMap.id_apply]
+  conv_rhs => rw [← h x]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [inner_smul_left, RCLike.conj_ofReal, smul_smul, smul_smul, mul_right_comm,
+    ← RCLike.ofReal_mul, Real.mul_self_sqrt (hc i)]
+
+/-- **Synthesis bound for a weighted Parseval decomposition.** If `∑ᵢ cᵢ ⟪uᵢ, x⟫ uᵢ = x` for every
+`x`, with nonnegative weights `cᵢ`, then `‖∑ᵢ cᵢ bᵢ uᵢ‖ ≤ (∑ᵢ cᵢ ‖bᵢ‖²)^(1/2)` for all
+coefficients `bᵢ`. -/
+theorem norm_sum_mul_smul_le_sqrt {u : ι → E} {c : ι → ℝ} (hc : ∀ i, 0 ≤ c i)
+    (h : ∀ x, ∑ i, (c i : 𝕜) • ⟪u i, x⟫_𝕜 • u i = x) (b : ι → 𝕜) :
+    ‖∑ i, ((c i : 𝕜) * b i) • u i‖ ≤ √(∑ i, c i * ‖b i‖ ^ 2) := by
+  have hS := norm_synthesisMap_le_of_frameOperator_eq_id (frameOperator_sqrt_smul_eq_id hc h)
+    (WithLp.toLp 2 fun i ↦ (√(c i) : 𝕜) * b i)
+  convert hS using 2
+  · rw [synthesisMap_apply]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [PiLp.toLp_apply, smul_smul, mul_right_comm, ← RCLike.ofReal_mul,
+      Real.mul_self_sqrt (hc i)]
+  · rw [EuclideanSpace.norm_eq]
+    refine congrArg _ (Finset.sum_congr rfl fun i _ ↦ ?_)
+    rw [PiLp.toLp_apply, norm_mul, RCLike.norm_ofReal, abs_of_nonneg (Real.sqrt_nonneg _),
+      mul_pow, Real.sq_sqrt (hc i)]
+
+/-- If `∑ᵢ cᵢ ⟪uᵢ, x⟫ uᵢ = x` for every `x`, with nonnegative weights `cᵢ`, then combinations
+with coefficients of norm at most `B` satisfy `‖∑ᵢ cᵢ bᵢ uᵢ‖ ≤ √(∑ᵢ cᵢ) B`. -/
+theorem norm_sum_mul_smul_le_sqrt_mul {u : ι → E} {c : ι → ℝ} (hc : ∀ i, 0 ≤ c i)
+    (h : ∀ x, ∑ i, (c i : 𝕜) • ⟪u i, x⟫_𝕜 • u i = x) {b : ι → 𝕜} {B : ℝ}
+    (hb : ∀ i, ‖b i‖ ≤ B) : ‖∑ i, ((c i : 𝕜) * b i) • u i‖ ≤ √(∑ i, c i) * B := by
+  rcases isEmpty_or_nonempty ι with _ | ⟨⟨i₀⟩⟩
+  · simp
+  have hB : 0 ≤ B := (norm_nonneg _).trans (hb i₀)
+  refine (norm_sum_mul_smul_le_sqrt hc h b).trans ?_
+  rw [← Real.sqrt_sq hB, ← Real.sqrt_mul (Finset.sum_nonneg fun i _ ↦ hc i), Finset.sum_mul]
+  exact Real.sqrt_le_sqrt (Finset.sum_le_sum fun i _ ↦
+    mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _) (hb i) 2) (hc i))
 
 /-! ### Adjoints in finite dimension -/
 

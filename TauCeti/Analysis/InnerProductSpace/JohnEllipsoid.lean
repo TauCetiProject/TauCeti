@@ -67,6 +67,8 @@ is at Banach–Mazur distance at most `√n` from the Euclidean space of the sam
   decomposition `∑ cᵢ • rankOne uᵢ uᵢ = 1` of the identity over contact points `uᵢ` with positive
   weights `cᵢ` summing to the dimension.
 * `ContinuousLinearEquiv.IsMaxVolumeEllipsoid.norm_symm_le_sqrt_finrank`: `‖T⁻¹‖ ≤ √n`.
+* `ContinuousLinearEquiv.IsMaxVolumeEllipsoid.norm_innerSL_comp_symm_le_one`: at a contact point
+  `u`, the functional `y ↦ ⟪u, T⁻¹ y⟫` on `F` has norm at most one.
 * `TauCeti.banachMazurDist_le_sqrt_finrank` and
   `TauCeti.banachMazurDist_euclideanSpace_le_sqrt_finrank`: an `n`-dimensional normed space is at
   Banach–Mazur distance at most `√n` from an `n`-dimensional inner product space, in particular
@@ -445,6 +447,15 @@ theorem norm_symm_le_sqrt_finrank (hT : T.IsMaxVolumeEllipsoid) :
     ‖(T.symm : F →L[𝕜] E)‖ ≤ √(finrank 𝕜 E) :=
   ContinuousLinearMap.opNorm_le_bound _ (Real.sqrt_nonneg _) fun y ↦ by
     simpa using hT.norm_le_sqrt_finrank_mul_norm_apply (T.symm y)
+
+/-- At a contact point `u` of a maximal-volume ellipsoid `T`, the *contact functional*
+`y ↦ ⟪u, T⁻¹ y⟫` on `F` has norm at most one, since `‖⟪u, x⟫‖ ≤ ‖T x‖`. -/
+theorem norm_innerSL_comp_symm_le_one (hT : T.IsMaxVolumeEllipsoid) {u : E} (hu : ‖u‖ = 1)
+    (hTu : ‖T u‖ = 1) : ‖(innerSL 𝕜 u).comp (T.symm : F →L[𝕜] E)‖ ≤ 1 := by
+  refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun y ↦ ?_
+  have := (T : E →L[𝕜] F).norm_inner_le_norm_mul_norm_apply hT.norm_le_one (u := u)
+    (by simp [hu, hTu]) (T.symm y)
+  simpa [hu] using this
 
 end ContinuousLinearEquiv.IsMaxVolumeEllipsoid
 
