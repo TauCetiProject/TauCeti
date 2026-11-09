@@ -177,7 +177,7 @@ end Module.Basis
 
 namespace LinearMap
 
-variable {R : Type*} [CommRing R] [NoZeroDivisors R] [CharZero R]
+variable {R : Type*} [Ring R] [HasUniqueDiv R]
 
 /-- A linear endomorphism of `R × R × R` that preserves the third coordinate and intertwines the
 map `(x, y, z) ↦ (x, -y, 0)` with itself preserves the first two coordinate axes and fixes the
