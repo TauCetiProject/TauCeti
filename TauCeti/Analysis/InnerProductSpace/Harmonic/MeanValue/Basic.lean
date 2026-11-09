@@ -247,8 +247,7 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.setIntegral_ball_eq {x₀ : E}
 
 omit [Nontrivial E] [CompleteSpace F] in
 /-- A harmonic value is bounded by the `L¹` norm on any containing open set, using a ball
-of fixed radius around the evaluation point. Completeness of `F` is not needed: the statement
-transfers to the completion. -/
+of fixed radius around the evaluation point. Completeness of `F` is not needed. -/
 theorem _root_.InnerProductSpace.HarmonicOnNhd.norm_le_inv_measureReal_mul_integral_norm
     {s : Set E} (hu : HarmonicOnNhd u s) (hi : IntegrableOn u s μ) {x : E} {ρ : ℝ}
     (hρ : 0 < ρ) (hx : closedBall x ρ ⊆ s) :
