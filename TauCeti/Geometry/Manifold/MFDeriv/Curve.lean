@@ -174,18 +174,16 @@ theorem curveVelocityWithin_apply :
 value `0`. -/
 theorem curveVelocityWithin_eq_zero_of_not_uniqueDiffWithinAt
     (hu : ¬ UniqueDiffWithinAt 𝕜 s t) : curveVelocityWithin I γ s t = 0 := by
-  rw [curveVelocityWithin_apply]
-  by_cases hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t
-  · have h : mfderivWithin 𝓘(𝕜, 𝕜) I γ s t = 0 := by
-      classical
-      simp only [mfderivWithin, hγ, ↓reduceIte, extChartAt_model_space_eq_id,
-        PartialEquiv.refl_symm, PartialEquiv.refl_coe, Set.preimage_id_eq, id_eq,
-        ModelWithCorners.range_eq_univ, Set.inter_univ]
-      exact fderivWithin_zero_of_not_uniqueDiffWithinAt hu
-    rw [h]
-    rfl
-  · rw [mfderivWithin_zero_of_not_mdifferentiableWithinAt hγ]
-    rfl
+  have h : mfderivWithin 𝓘(𝕜, 𝕜) I γ s t = 0 := by
+    by_cases hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t
+    · have hf : fderivWithin 𝕜 (writtenInExtChartAt 𝓘(𝕜, 𝕜) I t γ)
+          ((extChartAt 𝓘(𝕜, 𝕜) t).symm ⁻¹' s ∩ Set.range 𝓘(𝕜, 𝕜)) ((extChartAt 𝓘(𝕜, 𝕜) t) t) = 0 :=
+        fderivWithin_zero_of_not_uniqueDiffWithinAt (by simpa using hu)
+      rw [hγ.mfderivWithin, hf]
+      simp
+    · exact mfderivWithin_zero_of_not_mdifferentiableWithinAt hγ
+  rw [curveVelocityWithin_apply, h]
+  exact zero_apply _
 
 /-- The unrestricted velocity is the unrestricted derivative evaluated at the unit tangent
 vector. -/
