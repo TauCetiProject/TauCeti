@@ -10,7 +10,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.LinearAlgebra.Dual.Lemmas
-import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
+import TauCeti.Analysis.Fredholm.LevelSet.Smooth
 
 /-!
 # The intermediate strata in Sard's theorem
@@ -30,9 +30,10 @@ proving that the images of the intermediate strata `Σ_i \ Σ_{i+1}` are null.
 
 The scalar component is `ℓ ∘ iteratedFDeriv 𝕜 i f` for a continuous linear functional `ℓ`,
 supplied by Hahn--Banach through `SeparatingDual`, that does not vanish on a nonzero value of the
-derivative of `iteratedFDeriv 𝕜 i f` at `a`. The parametrization is Mathlib's implicit function
-for that scalar component. The statement holds over any `RCLike` field `𝕜`; Sard's theorem uses
-the real case. This is the second stratification step following the flat-stratum estimate in
+derivative of `iteratedFDeriv 𝕜 i f` at `a`. The parametrization is the inverse of the
+regular-level-set chart `TauCeti.levelSetChart` of that scalar component. The statement holds
+over any `RCLike` field `𝕜`; Sard's theorem uses the real case. This is the second
+stratification step following the flat-stratum estimate in
 `TauCeti.Analysis.Calculus.Sard.FlatStratum`.
 
 ## Main result
@@ -88,6 +89,7 @@ theorem exists_parametrization_iteratedFDeriv_eq_zero
       (∀ᶠ z in 𝓝 0, g (θ z) = 0) ∧
       (∀ V ∈ 𝓝 (0 : ↥g'.ker), ∀ᶠ x in 𝓝 a, iteratedFDeriv 𝕜 i f x = 0 → x ∈ θ '' V) ∧
       finrank 𝕜 ↥g'.ker + 1 = finrank 𝕜 E := by
+  have := FiniteDimensional.complete 𝕜 E
   -- A scalar component `g = ℓ ∘ iteratedFDeriv 𝕜 i f` with nonzero derivative at `a`.
   have hD : fderiv 𝕜 (iteratedFDeriv 𝕜 i f) a ≠ 0 := by
     rw [← norm_ne_zero_iff (a := fderiv 𝕜 (iteratedFDeriv 𝕜 i f) a)]
@@ -104,12 +106,35 @@ theorem exists_parametrization_iteratedFDeriv_eq_zero
   have hstrict : HasStrictFDerivAt g g' a :=
     hg.hasStrictFDerivAt (ℓ.hasFDerivAt.comp a (hiter.differentiableAt hr).hasFDerivAt) hr
   have hzero : ∀ x, iteratedFDeriv 𝕜 i f x = 0 → g x = 0 := fun x hx ↦ by simp [g, hx]
-  have := FiniteDimensional.complete 𝕜 E
-  obtain ⟨θ, hθa, hθ, hθg, hcover⟩ := hg.exists_parametrization_of_hasStrictFDerivAt hstrict hsurj
-    g'.ker_closedComplemented_of_finiteDimensional_range (hzero a hi)
-  refine ⟨g, g', θ, hg, hstrict, hsurj, hzero, hθa, hθ, hθg, fun V hV ↦ ?_,
+  -- The regular-level-set chart of `g` at `a`; `θ` is its inverse, included into `E`.
+  have hker : g'.ker.ClosedComplemented := g'.ker_closedComplemented_of_finiteDimensional_range
+  have ha : g a = 0 := hzero a hi
+  let θ : ↥g'.ker → E := fun k ↦ ((levelSetChart hstrict hsurj hker ha).symm k : ↥{x | g x = 0})
+  have hθa : θ 0 = a := by simp [θ, levelSetChart_symm_zero hstrict hsurj hker ha]
+  have hcover : ∀ V ∈ 𝓝 (0 : ↥g'.ker),
+      ∀ᶠ x in 𝓝 a, iteratedFDeriv 𝕜 i f x = 0 → x ∈ θ '' V := by
+    intro V hV
+    -- Near `⟨a, ha⟩`, the chart is defined and takes values in `V`; it is inverted by the
+    -- inverse chart.
+    have hsrc : ∀ᶠ y in 𝓝 (⟨a, ha⟩ : ↥{x | g x = 0}),
+        y ∈ (levelSetChart hstrict hsurj hker ha).source :=
+      (levelSetChart hstrict hsurj hker ha).open_source.mem_nhds
+        (mem_levelSetChart_source hstrict hsurj hker ha)
+    have hchart : ∀ᶠ y in 𝓝 (⟨a, ha⟩ : ↥{x | g x = 0}),
+        y ∈ (levelSetChart hstrict hsurj hker ha).source ∧
+          levelSetChart hstrict hsurj hker ha y ∈ V := by
+      refine hsrc.and ?_
+      have hcont := (levelSetChart hstrict hsurj hker ha).continuousAt
+        (mem_levelSetChart_source hstrict hsurj hker ha)
+      exact hcont.eventually_mem (by rwa [levelSetChart_apply_self])
+    rw [Topology.IsInducing.subtypeVal.nhds_eq_comap, eventually_comap] at hchart
+    filter_upwards [hchart] with x hx hxi
+    obtain ⟨hxs, hxV⟩ := hx ⟨x, hzero x hxi⟩ rfl
+    exact ⟨_, hxV, congrArg Subtype.val ((levelSetChart hstrict hsurj hker ha).left_inv hxs)⟩
+  refine ⟨g, g', θ, hg, hstrict, hsurj, hzero, hθa,
+    contDiffAt_coe_levelSetChart_symm hstrict hg hsurj hker ha,
+    Eventually.of_forall fun z ↦ ((levelSetChart hstrict hsurj hker ha).symm z).2, hcover,
     Module.Dual.finrank_ker_add_one_of_ne_zero hg'⟩
-  filter_upwards [hcover V hV] with x hx hxi using hx (hzero x hxi)
 
 end TauCeti
 

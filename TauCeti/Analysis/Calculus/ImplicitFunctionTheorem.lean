@@ -77,8 +77,6 @@ and `h` is as smooth as `f` and `g`.
 * `HasStrictFDerivAt.exists_isSliceChart_preimage_zero`: near a point where a `C^n` map has
   surjective derivative with complemented kernel, a `C^n` ambient chart flattens its zero set onto
   that kernel.
-* `ContDiffAt.exists_parametrization_of_hasStrictFDerivAt`: the regular level set `g = 0` of a `C^r`
-  function with surjective strict derivative is locally parametrized by a `C^r` map from `ker g'`.
 * `ContDiffAt.exists_eventuallyEq_comp_of_ker_fderiv_le`: near such a point, a `C^n` function
   whose derivative vanishes on the kernel of the derivative of `f` is `h ∘ f` for a function `h`
   which is `C^n` at `f a`.
@@ -561,60 +559,6 @@ theorem exists_eventuallyEq_comp_of_ker_fderiv_le (hf : ContDiffAt 𝕜 n f a)
     rw [Set.mem_preimage, ← ball_prod_same, hΦx] at hxb
     calc g x = g (Φ.symm (f x, (Φ x).2)) := by rw [← hΦx, Φ.left_inv hx]
       _ = g (Φ.symm (f x, 0)) := hslice _ hxb.1 _ hxb.2
-
-end ContDiffAt
-
-namespace ContDiffAt
-
-variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F] {a : E} {r : ℕ∞ω}
-
-/-- **Parametrizing a regular level set.** Let `g` be `C^r` at `a` with strict derivative `g'` of
-full range and complemented kernel, and `g a = 0`. Then there is a `C^r` map `θ` from `ker g'` with
-`θ 0 = a`, taking values in the level set `g = 0` near the origin, and such that, locally at `a`,
-every zero of `g` lies in the image under `θ` of any prescribed neighbourhood of the origin. -/
-theorem exists_parametrization_of_hasStrictFDerivAt {g : E → F} {g' : E →L[𝕜] F}
-    (hg : ContDiffAt 𝕜 r g a) (hstrict : HasStrictFDerivAt g g' a) (hsurj : g'.range = ⊤)
-    (hker : g'.ker.ClosedComplemented) (ha : g a = 0) :
-    ∃ θ : ↥g'.ker → E, θ 0 = a ∧ ContDiffAt 𝕜 r θ 0 ∧ (∀ᶠ z in 𝓝 0, g (θ z) = 0) ∧
-      ∀ V ∈ 𝓝 (0 : ↥g'.ker), ∀ᶠ x in 𝓝 a, g x = 0 → x ∈ θ '' V := by
-  -- Parametrize by the inverse of the implicit-function homeomorphism `x ↦ (g x, P (x - a))`
-  -- along the slice `{0} × ker g'`.
-  let Φ := hstrict.implicitToOpenPartialHomeomorphOfComplemented g g' hsurj hker
-  have hsrc : a ∈ Φ.source :=
-    hstrict.mem_implicitToOpenPartialHomeomorphOfComplemented_source hsurj hker
-  have hself : Φ a = (g a, 0) :=
-    hstrict.implicitToOpenPartialHomeomorphOfComplemented_self hsurj hker
-  have hslice : ContDiffAt 𝕜 r (fun k : ↥g'.ker ↦ ((0 : F), k)) 0 :=
-    contDiffAt_const.prodMk contDiffAt_id
-  refine ⟨fun k ↦ Φ.symm (0, k), ?_, ?_, ?_, ?_⟩
-  · simpa only [ha] using
-      hstrict.implicitToOpenPartialHomeomorphOfComplemented_symm_self hsurj hker
-  · have hsymm :=
-      hstrict.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm hg hsurj hker
-    rw [ha] at hsymm
-    exact hsymm.comp 0 hslice
-  · have htarget : (0, (0 : ↥g'.ker)) ∈ Φ.target := by
-      simpa only [ha] using
-        hstrict.mem_implicitToOpenPartialHomeomorphOfComplemented_target hsurj hker
-    filter_upwards [hslice.continuousAt.preimage_mem_nhds (Φ.open_target.mem_nhds htarget)]
-      with z hz
-    calc g (Φ.symm (0, z))
-        = (Φ (Φ.symm (0, z))).1 :=
-          (hstrict.implicitToOpenPartialHomeomorphOfComplemented_fst hsurj hker _).symm
-      _ = 0 := congrArg Prod.fst (Φ.right_inv hz)
-  · intro V hV
-    -- Near `a`, `Φ x = (g x, P (x - a))` with second component tending to `0`.
-    have hcont : Tendsto Φ (𝓝 a) (𝓝 (g a, 0)) := hself ▸ Φ.continuousAt hsrc
-    have hV' : ∀ᶠ x in 𝓝 a, (Φ x).2 ∈ V :=
-      (continuous_snd.continuousAt.tendsto.comp hcont).eventually hV
-    filter_upwards [Φ.open_source.mem_nhds hsrc, hV'] with x hx hxV hxg
-    have hΦx : Φ x = (0, (Φ x).2) :=
-      Prod.ext ((hstrict.implicitToOpenPartialHomeomorphOfComplemented_fst hsurj hker x).trans hxg)
-        rfl
-    refine ⟨(Φ x).2, hxV, ?_⟩
-    change Φ.symm (0, (Φ x).2) = x
-    rw [← hΦx, Φ.left_inv hx]
 
 end ContDiffAt
 
