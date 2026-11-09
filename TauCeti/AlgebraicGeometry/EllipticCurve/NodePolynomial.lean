@@ -99,7 +99,7 @@ theorem nodePolynomial_eq_of_isSingular_zero (W : WeierstrassCurve A)
   simpa using W.nodePolynomial_eq_C_mul hn
 
 /-- The discriminant of the node polynomial is `-c₄ c₆`. Hence — away from residue characteristic
-two, and provided `c₄` survives the reduction — the tangent directions at the node are rational
+two — the tangent directions at the node are rational
 over the residue field exactly when the image of `-c₄ c₆` is a square there
 (`splits_nodePolynomial_map_iff_isSquare`); twisting by `(t, n)` multiplies `-c₄ c₆` by
 `(t² - 4n)⁵ = (t² - 4n)⁴ · (t² - 4n)`, i.e. by the twisting parameter up to a square. -/
@@ -208,16 +208,8 @@ turns nonsplit reduction into split reduction. -/
 lemma splits_nodePolynomial_map_iff_isSquare [NeZero (2 : k)] (φ : A →+* k)
     (W : WeierstrassCurve A) :
     (W.nodePolynomial.map φ).Splits ↔ IsSquare (φ (-(W.c₄ * W.c₆))) := by
-  by_cases hc₄ : φ W.c₄ = 0
-  · have hsplit : (W.nodePolynomial.map φ).Splits := by
-      rw [nodePolynomial_map_eq_quadratic]
-      simp only [map_mul, hc₄, mul_zero, Polynomial.C_0, zero_mul, zero_add]
-      exact Polynomial.Splits.C _
-    refine iff_of_true hsplit ?_
-    rw [map_neg, map_mul, hc₄, zero_mul, neg_zero]
-    exact IsSquare.zero
-  · rw [nodePolynomial_map_eq_quadratic, Polynomial.splits_quadratic_iff_isSquare hc₄,
-      discrim_map_nodePolynomial]
+  rw [nodePolynomial_map_eq_quadratic, Polynomial.splits_quadratic_iff_isSquare,
+    discrim_map_nodePolynomial]
 
 /-- **Split criterion in residue characteristic two.** Over a field `k` of characteristic `2`,
 where the square-class criterion `splits_nodePolynomial_map_iff_isSquare` says nothing, the node
@@ -243,7 +235,7 @@ lemma splits_nodePolynomial_map_iff_exists_artinSchreier_of_two_eq_zero (h2 : (2
     rw [map_mul]
     exact mul_ne_zero ha₁ hc₄
   rw [nodePolynomial_map_eq_quadratic,
-    Polynomial.splits_quadratic_iff_exists_artinSchreier_of_two_eq_zero h2 hc₄ hb]
+    Polynomial.splits_quadratic_iff_exists_artinSchreier_of_two_eq_zero h2 hb]
 
 end WeierstrassCurve
 
