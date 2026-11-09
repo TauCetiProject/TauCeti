@@ -16,6 +16,10 @@ arguments and localizing sequences when augmenting a filtration.
 Stopping preserves right continuity at each time, including when the stopping time is infinite.
 This pathwise fact requires no measurability or stopping-time hypothesis and lets local-martingale
 arguments retain the right continuity of their native stopped stages.
+
+Simultaneous almost-sure nonnegativity controls random-time evaluations, including stopped
+processes restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`). No
+stopping-time or measurability assumption is needed.
 -/
 
 public section
@@ -53,3 +57,22 @@ theorem ContinuousWithinAt.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [No
         (fun s hs => ?_) ?_
       · exact MeasureTheory.stoppedProcess_eq_of_ge (by simpa [hτ] using hut.trans hs.le)
       · exact MeasureTheory.stoppedProcess_eq_of_ge (by simpa [hτ] using hut)
+
+namespace MeasureTheory
+
+variable {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι] [Zero E] [Preorder E]
+  {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : ι → Ω → E} {s : Set Ω}
+
+/-- A simultaneously almost-surely nonnegative process, stopped and restricted by an indicator,
+is almost surely nonnegative at each fixed time. The random time need not be a stopping time. -/
+theorem ae_nonneg_stoppedProcess_indicator
+    (hpos : ∀ᵐ ω ∂P, ∀ t, 0 ≤ X t ω) (τ : Ω → WithTop ι) (t : ι) :
+    0 ≤ᵐ[P] stoppedProcess (fun u ↦ s.indicator (X u)) τ t := by
+  filter_upwards [hpos] with ω hω
+  by_cases ht : (t : WithTop ι) ≤ τ ω
+  · rw [stoppedProcess_eq_of_le ht]
+    exact Set.indicator_apply_nonneg (fun _ ↦ hω t)
+  · rw [stoppedProcess_eq_of_ge (le_of_not_ge ht)]
+    exact Set.indicator_apply_nonneg (fun _ ↦ hω _)
+
+end MeasureTheory

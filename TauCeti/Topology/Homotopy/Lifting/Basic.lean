@@ -18,8 +18,10 @@ spaces in arbitrary universes.  Covering maps have it for every space
 (`TauCeti.hasHomotopyLiftingProperty_fst`) and homeomorphisms
 (`Homeomorph.hasHomotopyLiftingProperty`); it is closed under composition
 (`TauCeti.HasHomotopyLiftingProperty.comp`), base change
-(`TauCeti.HasHomotopyLiftingProperty.pullback`) and restriction over a subset of the base
-(`TauCeti.HasHomotopyLiftingProperty.restrictPreimage`), and homotopy lifting of
+(`TauCeti.HasHomotopyLiftingProperty.pullback`), restriction over a subset of the base
+(`TauCeti.HasHomotopyLiftingProperty.restrictPreimage`) and restriction to a subset of the total
+space closed under joining by paths (`TauCeti.HasHomotopyLiftingProperty.comp_subtypeVal`), and
+homotopy lifting of
 `U.restrictPreimage p` lifts homotopies valued in `U`
 (`TauCeti.HasHomotopyLiftingProperty.exists_lift_of_mem`); it depends on the space only up to
 homeomorphism (`Homeomorph.hasHomotopyLiftingProperty_iff`), passes from open subsets along open
@@ -121,6 +123,24 @@ theorem HasHomotopyLiftingProperty.restrictPreimage (hp : HasHomotopyLiftingProp
     exact (H x).2
   exact ⟨⟨fun x ↦ ⟨G x, hGt x⟩, by fun_prop⟩, funext fun x ↦ Subtype.ext (congrFun hG x),
     fun a ↦ Subtype.ext (hG₀ a)⟩
+
+/-- The homotopy lifting property passes to the restriction `S → B` of `p` to a subset `S` of the
+total space that is closed under joining by paths, for instance a union of path components: each
+value of a lift is joined to the starting point of its track. -/
+theorem HasHomotopyLiftingProperty.comp_subtypeVal (hp : HasHomotopyLiftingProperty p A)
+    {S : Set E} (hS : ∀ ⦃e e' : E⦄, e ∈ S → Joined e e' → e' ∈ S) :
+    HasHomotopyLiftingProperty (p ∘ Subtype.val : S → B) A := by
+  intro f H hH
+  obtain ⟨G, hG, hG₀⟩ :=
+    hp ((⟨Subtype.val, continuous_subtype_val⟩ : C(S, E)).comp f) H hH
+  have hGS (x : I × A) : G x ∈ S := by
+    have : PathConnectedSpace I :=
+      (Set.projIcc_surjective (zero_le_one : (0 : ℝ) ≤ 1)).pathConnectedSpace continuous_projIcc
+    have h : Joined ((0 : I), x.2) x := (PathConnectedSpace.joined _ _).prod (Joined.refl x.2)
+    have h' := h.map G.continuous
+    rw [hG₀] at h'
+    exact hS (f x.2).2 h'
+  exact ⟨⟨fun x ↦ ⟨G x, hGS x⟩, by fun_prop⟩, hG, fun a ↦ Subtype.ext (hG₀ a)⟩
 
 /-- If the restriction `U.restrictPreimage p : p ⁻¹' U → U` over `U : Set B` has the homotopy
 lifting property with respect to `A`, then every homotopy `H : C(I × A, B)` valued in `U` whose

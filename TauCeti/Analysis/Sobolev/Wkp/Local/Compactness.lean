@@ -13,7 +13,7 @@ public import TauCeti.Analysis.Normed.Operator.Compact.Basic
 # Local Rellich compactness at every Sobolev order
 
 Restriction to a relatively compact open subdomain, followed by forgetting one derivative,
-is compact from `W^{k+1,p}` to `W^{k,p}` for every natural `k` and `1 ≤ p < ∞`. Neither
+is compact from `W^{k+1,p}` to `W^{k,p}` for every natural `k` and `1 ≤ p ≤ ∞`. Neither
 boundedness nor boundary regularity of the ambient open domain is required.
 
 The first-order theorem supplies compactness of the values. At every further graph step,
@@ -78,8 +78,8 @@ private theorem isCompactOperator_of_components {X : Type*}
     hJT.totallyBounded_image_closedBall 1
 
 /-- **Higher-order local Rellich compactness.** Restriction loses one derivative compactly
-on every relatively compact open subdomain for every `1 ≤ p < ∞`. -/
-theorem isCompactOperator_restrictL_lowerOrderL (hp : p ≠ ∞)
+on every relatively compact open subdomain for every `1 ≤ p ≤ ∞`. -/
+theorem isCompactOperator_restrictL_lowerOrderL
     (hVc : IsCompact (closure (V : Set E))) (hVO : closure (V : Set E) ⊆ Omega) :
     ∀ k : ℕ, IsCompactOperator
       ((restrictL (mu := mu) (p := p) (SetLike.coe_subset_coe.mp
@@ -99,7 +99,7 @@ theorem isCompactOperator_restrictL_lowerOrderL (hp : p ≠ ∞)
         rw [ContinuousLinearMap.comp_apply, lowerOrderL_apply 0 u, lowerOrder_zero u,
           restrictL_zero]
       rw [heq]
-      exact W1p.isCompactOperator_valueL_restrictL hp hVc hVO
+      exact W1p.isCompactOperator_valueL_restrictL hVc hVO
   | succ k ih =>
       let T := (restrictL (mu := mu) (p := p) hV (k + 1)).comp (lowerOrderL (k + 1))
       apply isCompactOperator_of_components k T
@@ -127,18 +127,18 @@ theorem isCompactOperator_restrictL_lowerOrderL (hp : p ≠ ∞)
             lowerOrder_succ k u]
           exact (WeakDerivStep.restrictBaseL_apply_ae base hV u).symm
         rw [heq]
-        exact WeakDerivStep.isCompactOperator_restrictBaseL base hp hVc hVO
+        exact WeakDerivStep.isCompactOperator_restrictBaseL base hVc hVO
 
 /-- A bounded sequence in `W^{k+1,p}(Ω)` has a subsequence whose restrictions converge in the
 actual `W^{k,p}(V)` norm on every fixed relatively compact open subdomain `V`. -/
-theorem exists_subseq_tendsto_restrict_lowerOrder (hp : p ≠ ∞)
+theorem exists_subseq_tendsto_restrict_lowerOrder
     (hVc : IsCompact (closure (V : Set E))) (hVO : closure (V : Set E) ⊆ Omega)
     (k : ℕ) {u : ℕ → Wkp mu Omega p (k + 1)} {R : ℝ} (hu : ∀ n, ‖u n‖ ≤ R) :
     ∃ w : Wkp mu V p k, ∃ φ : ℕ → ℕ, StrictMono φ ∧
       Tendsto (fun n => restrictL (SetLike.coe_subset_coe.mp (subset_closure.trans hVO)) k
         (lowerOrder k (u (φ n)))) atTop (𝓝 w) := by
   obtain ⟨w, φ, hφ, hw⟩ :=
-    (isCompactOperator_restrictL_lowerOrderL hp hVc hVO k).exists_subseq_tendsto hu
+    (isCompactOperator_restrictL_lowerOrderL hVc hVO k).exists_subseq_tendsto hu
   refine ⟨w, φ, hφ, ?_⟩
   simpa only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
     lowerOrderL_apply k (u (φ _))] using hw
