@@ -50,16 +50,12 @@ theorem twoRank_eq_one_of_minpoly_eq_X_sq_add_five
     · exact isPrimeDiscriminant_neg_four
     · simpa [oddPrimeDiscriminant_of_mod_four_eq_one (by norm_num : 5 % 4 = 1)]
         using isPrimeDiscriminant_oddPrimeDiscriminant (p := 5) (by decide) (by decide)
-  have heven : ∀ P ∈ ({-4, 5} : Finset ℤ), ∀ Q ∈ ({-4, 5} : Finset ℤ),
-      IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q := by
-    intro P hP Q hQ
-    fin_cases hP <;> fin_cases hQ <;> simp only [IsEvenPrimeDiscriminant] <;> decide
   have hprod : ∏ P ∈ ({-4, 5} : Finset ℤ), P = fundamentalDiscriminant (-5 : ℤ) := by
     rw [Finset.prod_insert (by decide : (-4 : ℤ) ∉ ({5} : Finset ℤ)), Finset.prod_singleton,
       fundamentalDiscriminant_of_mod_four_ne_one (by decide : (-5 : ℤ) % 4 ≠ 1)]
     ring
   have hncard : (ramifiedPrimes K).ncard = 2 := by
-    rw [ncard_ramifiedPrimes_eq_card hmin hgen hsf hs heven hprod,
+    rw [ncard_ramifiedPrimes_eq_card hmin hgen hsf hs hprod,
       Finset.card_pair (show (-4 : ℤ) ≠ 5 by decide)]
   rw [twoRank_eq_ncard_ramifiedPrimes_sub_one hmin hgen hsf (by norm_num), hncard]
 

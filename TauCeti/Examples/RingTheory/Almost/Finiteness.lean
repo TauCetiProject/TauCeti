@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.RingTheory.Almost.Finiteness
+import TauCeti.RingTheory.Almost.Finiteness.Approximation
 import TauCeti.RingTheory.Almost.ValuationRing
 import TauCeti.NumberTheory.Padics.Complex.MaximalIdeal
 import Mathlib.LinearAlgebra.Dimension.Constructions
@@ -24,7 +24,9 @@ These examples test `TauCeti.Almost.BasicSetup.AlmostFG`, `UniformlyAlmostFG` an
 * the uniform bound `0` holds for `V ⧸ m` in every setup but not for `ℤ ⧸ 2` classically;
 * through the almost isomorphism `m → V`, the ideal `m` of every setup is almost finitely
   generated; for a valuation domain with non-finitely-generated maximal ideal, such as
-  `𝓞_ℂ_[p]`, it has uniform bound `1` although it is not a finitely generated module.
+  `𝓞_ℂ_[p]`, it has uniform bound `1` although it is not a finitely generated module;
+* the epsilon criterion shows that the same maximal ideal is almost finitely presented,
+  although it is not finitely presented. Multiplication by `ε` gives its finite approximation.
 
 ## References
 
@@ -120,6 +122,32 @@ example : S.AlmostFG S.ideal :=
 section ValuationRing
 
 variable {O : Type*} [CommRing O] [IsDomain O] [ValuationRing O] (h : ¬ (maximalIdeal O).FG)
+
+-- Multiplication by `ε` maps `O` to its maximal ideal, with kernel and cokernel killed by `ε`.
+-- Thus this non-finitely-generated module is nevertheless almost finitely presented.
+example : (ofValuationRing h).AlmostFP (ofValuationRing h).ideal ∧
+    ¬ Module.FinitePresentation O (ofValuationRing h).ideal := by
+  constructor
+  · rw [almostFP_iff_forall_mem_exists_finitePresentation
+      (isFilteredPrincipal_of_preValuationRing _)]
+    intro ε hε
+    let f := LinearMap.toSpanSingleton O (ofValuationRing h).ideal ⟨ε, hε⟩
+    refine ⟨O, inferInstance, inferInstance, inferInstance, f, ?_, ?_⟩
+    · apply Module.mem_annihilator.mpr
+      rintro ⟨x, hx⟩
+      apply Subtype.ext
+      simpa [f, mul_comm] using congrArg Subtype.val (LinearMap.mem_ker.mp hx)
+    · apply Module.mem_annihilator.mpr
+      intro x
+      obtain ⟨x, rfl⟩ := (LinearMap.range f).mkQ_surjective x
+      rw [← map_smul, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
+      refine ⟨(x : O), ?_⟩
+      apply Subtype.ext
+      simp [f, mul_comm]
+  · intro hfp
+    have hnot : ¬ Module.Finite O (ofValuationRing h).ideal := by
+      rwa [Module.Finite.iff_fg, ofValuationRing_ideal]
+    exact hnot inferInstance
 
 -- For a valuation domain whose maximal ideal `m` is not finitely generated, `m` has uniform
 -- bound `1`, like `O`, but it is not a finitely generated `O`-module.

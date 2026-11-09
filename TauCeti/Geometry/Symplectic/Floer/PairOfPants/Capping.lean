@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Basic
 import TauCeti.Analysis.Complex.ThricePuncturedSphere.Exchange
-import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 
 /-!
 # Capping the ends of the pair of pants with PSS planes
@@ -85,6 +85,8 @@ negative planes and the output by a positive plane.
   radius `exp (-2π(L - 1)) / 2` about the capped puncture.
 * `TauCeti.Floer.contMDiffAt_plumbedPerturbation_single_inf`: for `L > 4` the capped datum is of
   class `C^n` on the cylinder obtained by capping.
+* `TauCeti.Floer.contDiffAt_uncurry_plumbedPerturbation_single_inf`: the same for a vector space
+  target, in real coordinates on the domain.
 * `TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_inf_le`:
   the integrated curvature of the capping family along any map into a manifold is bounded uniformly
   in the neck length, and so is its vector-space case
@@ -427,6 +429,34 @@ theorem contMDiffAt_plumbedPerturbation_single_inf {n : ℕ∞} (hq : q ≠ inf)
       (forall_single inf (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f))
         contMDiff_const (hHbs q)) hHbs (by simp) hL ⟨hw.resolve_left hc, h₁⟩ x
 
+section VectorSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {Hb : Puncture → ℝ → V → ℝ}
+
+/-- **The capped datum is smooth**, for a vector space target, in real coordinates. For period-one
+Hamiltonians `Hb` of class `C^n` on `ℝ × V` and neck length `L > 4`, every component of the
+perturbation obtained by plumbing the negative plane with Hamiltonian `Hb q` into the input end
+`q` of the pair of pants with Hamiltonians `Hb` is `C^n` at every point whose domain point is the
+capped puncture `c_q` or a point of `ℂ ∖ {0, 1}`. -/
+theorem contDiffAt_uncurry_plumbedPerturbation_single_inf {n : ℕ∞} (hq : q ≠ inf)
+    (hHb : ∀ r, Periodic (Hb r) 1) (hHbs : ∀ r, ContDiff ℝ n (uncurry (Hb r))) (hL : 4 < L)
+    {y : ℝ × ℝ} (hw : Complex.equivRealProdCLM.symm y = q.endCenter ∨
+      Complex.equivRealProdCLM.symm y ≠ 0 ∧ Complex.equivRealProdCLM.symm y ≠ 1)
+    (x : V) (v : ℂ) :
+    ContDiffAt ℝ n (uncurry fun y x => plumbedPerturbation (Pi.single inf (Hb q)) Hb q L
+      (Complex.equivRealProdCLM.symm y) x v) (y, x) := by
+  have hK : ContMDiffAt 𝓘(ℝ, ℂ × V) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
+      (fun p : ℂ × V => plumbedPerturbation (Pi.single inf (Hb q)) Hb q L p.1 p.2)
+      (Complex.equivRealProdCLM.symm y, x) := by
+    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+    exact contMDiffAt_plumbedPerturbation_single_inf hq hHb
+      (fun r => contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hL hw x
+  exact (hK.contDiffAt.comp (f := fun p : (ℝ × ℝ) × V => (Complex.equivRealProdCLM.symm p.1, p.2))
+    (y, x) ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
+      contDiff_snd).contDiffAt).clm_apply contDiffAt_const
+
+end VectorSpace
+
 /-! ### Capping the output of the pair of pants -/
 
 variable {Ha : Puncture → ℝ → M → ℝ}
@@ -676,8 +706,7 @@ theorem integral_floerEnergyDensity_negativePlanePerturbation_closedBall (ω : S
     exact (contDiff_negativePlanePerturbation_apply hH hHs v).contDiffOn
   have h := ω.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero (D := D) (T := T)
     isOpen_univ hu.contDiffOn (hK 1) (hK Complex.I) hD (subset_univ D)
-    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-      (isCompact_truncation R)).isClosed.measurableSet hTD (hK₀ 1) (hK₀ Complex.I)
+    hTD (hK₀ 1) (hK₀ Complex.I)
   beta_reduce at h
   linarith
 
@@ -876,10 +905,10 @@ theorem integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_b
     lt_norm_of_mem_truncation_of_notMem_annulus hρ (hz.1.resolve_left hz.2) hz.2
   have hP : IsOpen P := isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const
   have h₁ := ω.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero (D := D ∪ T) (T := T)
-    hP hu (hK 1) (hK Complex.I) (hDc.union hTc) hDP hTc.isClosed.measurableSet
+    hP hu (hK 1) (hK Complex.I) (hDc.union hTc) hDP
     subset_union_right (fun z hz => hK₀ 1 (hDT hz)) (fun z hz => hK₀ Complex.I (hDT hz))
   have h₂ := ω.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero (D := D ∪ T) (T := D)
-    hP hu (hK 1) (hK Complex.I) (hDc.union hTc) hDP hDc.isClosed.measurableSet
+    hP hu (hK 1) (hK Complex.I) (hDc.union hTc) hDP
     subset_union_left (fun z hz => hK₀ 1 (hTD hz)) (fun z hz => hK₀ Complex.I (hTD hz))
   beta_reduce at h₁ h₂
   linarith

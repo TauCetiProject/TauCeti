@@ -38,40 +38,30 @@ variable {P : Subsemiring K}
 /-- Adjoining an element whose negative is absent preserves properness. -/
 theorem isPreordering_adjoin (hP : P.IsPreordering) {a : K} (ha : -a ∉ P) :
     (hP.adjoin a).IsPreordering where
-  mem_of_isSquare := by
-    rintro x ⟨y, rfl⟩
-    rw [mem_adjoin]
-    exact ⟨y * y, hP.mul_self_mem y, 0, P.zero_mem, by simp⟩
+  mem_of_isSquare hx := hP.le_adjoin a (hP.mem_of_isSquare hx)
   neg_one_notMem := by
     intro hx
-    rw [mem_adjoin] at hx
-    obtain ⟨u, hu, v, hv, heq⟩ := hx
-    by_cases hv0 : v = 0
-    · apply hP.neg_one_notMem
-      have heq' : -1 = u := by simpa only [hv0, mul_zero, add_zero] using heq
-      exact heq' ▸ hu
-    · apply ha
-      have hmem : (1 + u) * v⁻¹ ∈ P :=
-        P.mul_mem (P.add_mem P.one_mem hu) (hP.inv_mem hv)
-      have hval : -a = (1 + u) * v⁻¹ := by
+    obtain ⟨u, hu, v, hv, heq⟩ := (hP.mem_adjoin a _).1 hx
+    rcases eq_or_ne v 0 with rfl | hv0
+    · exact hP.neg_one_notMem (by simpa [heq] using hu)
+    · have hval : -a = (1 + u) * v⁻¹ := by
         field_simp
         linear_combination heq
-      rwa [← hval] at hmem
+      exact ha (hval ▸ P.mul_mem (P.add_mem P.one_mem hu) (hP.inv_mem hv))
 
-/-- A field preordering extends to an ordering, retaining every prescribed sign. -/
+/-- Every preordering of a field is contained in an ordering. -/
 theorem exists_le_isOrdering (hP : P.IsPreordering) :
     ∃ Q : Subsemiring K, P ≤ Q ∧ Q.IsOrdering := by
   obtain ⟨Q, hPQ, hQ, hmax⟩ := zorn_le_nonempty₀ {Q : Subsemiring K | Q.IsPreordering}
     (fun c hpre hc y hy => by
-      let : Nonempty c := ⟨⟨y, hy⟩⟩
-      refine ⟨⨆ P : c, P.val, ?_, fun z hz => le_iSup (fun P : c => P.val) ⟨z, hz⟩⟩
-      exact Subsemiring.IsPreordering.iSup (fun P : c => hpre P.property) hc.directed) P hP
-  have htotal (a : K) : a ∈ Q ∨ -a ∈ Q := by
-    by_cases ha : -a ∈ Q
-    · exact Or.inr ha
-    · exact Or.inl ((hmax (hQ.isPreordering_adjoin ha) (hQ.le_adjoin a))
-        (hQ.self_mem_adjoin a))
-  exact ⟨Q, hPQ, hQ.isOrdering_of_isSpanning (Subsemiring.isSpanning_def.mpr htotal)⟩
+      have : Nonempty c := ⟨⟨y, hy⟩⟩
+      exact ⟨⨆ P : c, P.val, .iSup (fun P : c => hpre P.property) hc.directed,
+        fun z hz => le_iSup (fun P : c => P.val) ⟨z, hz⟩⟩) P hP
+  -- A maximal preordering contains one sign of every element, since adjoining `a` when
+  -- `-a` is absent yields another preordering.
+  refine ⟨Q, hPQ, hQ.isOrdering_of_isSpanning (Subsemiring.isSpanning_def.mpr fun a => ?_)⟩
+  exact or_iff_not_imp_right.mpr fun ha =>
+    hmax (hQ.isPreordering_adjoin ha) (hQ.le_adjoin a) (hQ.self_mem_adjoin a)
 
 /-- An element whose negative is absent can be made nonnegative in an extending ordering. -/
 theorem exists_le_isOrdering_mem (hP : P.IsPreordering) {a : K} (ha : -a ∉ P) :
@@ -79,7 +69,8 @@ theorem exists_le_isOrdering_mem (hP : P.IsPreordering) {a : K} (ha : -a ∉ P) 
   obtain ⟨Q, hQ, horder⟩ := (hP.isPreordering_adjoin ha).exists_le_isOrdering
   exact ⟨Q, (hP.le_adjoin a).trans hQ, horder, hQ (hP.self_mem_adjoin a)⟩
 
-/-- Order a field while respecting all signs in a specified preordering. -/
+/-- A field with a preordering `P` admits a linear order making it a strictly ordered ring
+in which every element of `P` is nonnegative. -/
 theorem exists_linearOrder (hP : P.IsPreordering) :
     ∃ o : LinearOrder K, letI := o
       IsStrictOrderedRing K ∧ ∀ x ∈ P, 0 ≤ x := by
@@ -87,9 +78,7 @@ theorem exists_linearOrder (hP : P.IsPreordering) :
   obtain ⟨Q, hPQ, hQ⟩ := hP.exists_le_isOrdering
   let := LinearOrder.ofAddSubmonoid hQ.isPreordering.isPointed hQ.isSpanning
   have : IsOrderedRing K := IsOrderedRing.ofSubsemiring hQ.isPreordering.isPointed
-  refine ⟨inferInstance, inferInstance, fun x hx => ?_⟩
-  -- The order just constructed defines `a ≤ b` by `b - a ∈ Q`; expose it before `sub_zero`.
-  change x - 0 ∈ Q
-  simpa only [sub_zero] using hPQ hx
+  exact ⟨inferInstance, inferInstance, fun x hx =>
+    PartialOrder.ofAddSubmonoid_le_iff.mpr (by simpa using hPQ hx)⟩
 
 end Subsemiring.IsPreordering

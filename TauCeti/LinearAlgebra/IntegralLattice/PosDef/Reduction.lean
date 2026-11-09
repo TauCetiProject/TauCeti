@@ -294,7 +294,8 @@ private theorem two_mul_integralNorm_le (hL : L.IsPosSemidef)
     rw [integralNorm_neg, map_neg, ← sub_eq_add_neg] at h₂
     linarith [hL.integralNorm_nonneg (y + S)]
   have hS : L.integralNorm S ≤ i * ∑ j ∈ s, σ j ^ 2 * L.integralNorm (b j) := by
-    have h := hL.isPosSemidef_integralForm.apply_sum_sum_le_card_mul_sum s fun j ↦ σ j • b j
+    have h :=
+      hL.isPosSemidef_integralForm.isNonneg.apply_sum_sum_le_card_mul_sum s fun j ↦ σ j • b j
     simp only [← integralNorm_apply, integralNorm_zsmul, s, Fin.card_Iio] at h
     exact h
   have hσK : 4 * ∑ j ∈ s, σ j ^ 2 * L.integralNorm (b j) ≤ i * (d ^ 2 * K) := by
