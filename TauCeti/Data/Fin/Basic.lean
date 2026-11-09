@@ -88,6 +88,8 @@ range, so the value is a `dite` rather than a plain application.
   successor of `Fin (n + 1)` against the embeddings `Fin.succ` and `i.succ.succAbove` of `Fin n`,
   as used when a new entry is inserted into a cyclic sequence.
 * `Fin.finRotate_castSucc`: the cyclic successor of a non-last index `i.castSucc` is `i.succ`.
+* `Fin.eq_succ_or_eq_castSucc_or_eq_succAbove`: every index of `Fin (n + 1)` is `i.succ`,
+  `i.castSucc`, or a value `i.succ.succAbove k` with `k ≠ i`.
 * `Fin.ite_even_comp_finRotate_symm`: rotating a tuple of even length alternating between two
   entries swaps the two entries.
 * `Fin.succAbove_adjacent_cases`: the positions `p` of `Fin (n + 1)` cyclically adjacent to
@@ -413,8 +415,8 @@ theorem finRotate_castSucc {n : ℕ} (i : Fin n) : finRotate (n + 1) i.castSucc 
   finRotate_of_lt i.isLt
 
 /-- An index of `Fin (n + 1)` is `i.succ`, `i.castSucc`, or `i.succ.succAbove k` for some
-`k ≠ i`: the values of `i.succ.succAbove`, together with the two indices around the skipped
-`i.succ`. -/
+`k ≠ i`: the skipped index `i.succ`, its predecessor `i.castSucc = i.succ.succAbove i`, and the
+values of `i.succ.succAbove` away from `i`. -/
 theorem eq_succ_or_eq_castSucc_or_eq_succAbove {n : ℕ} (i : Fin n) (j : Fin (n + 1)) :
     j = i.succ ∨ j = i.castSucc ∨ ∃ k, k ≠ i ∧ j = i.succ.succAbove k := by
   obtain rfl | ⟨k, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ j

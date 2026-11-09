@@ -657,25 +657,26 @@ private theorem IsSimple.exists_segments (h : poly.IsSimple ℝ) {z : P}
     exact h.exists_segments_of_vertex k
   -- Inside an edge `i`: the two pieces of that edge on either side of `z`.
   push Not at hv
-  obtain ⟨i, s, hs, rfl⟩ := mem_iUnion.1 hz
-  set f : ℝ →ᵃ[ℝ] P := AffineMap.lineMap (poly i) (poly (finRotate n i))
-  have hf : Injective f := AffineMap.lineMap_injective ℝ (h.hasNondegenerateEdges i)
-  have hseg (t u : ℝ) (htu : t ≤ u) : affineSegment ℝ (f t) (f u) = f '' Icc t u := by
+  obtain ⟨i, s, hs, rfl⟩ := mem_boundary_iff.1 hz
+  have hf : Injective (poly.edgePath ℝ i) :=
+    AffineMap.lineMap_injective ℝ (h.hasNondegenerateEdges i)
+  have hseg (t u : ℝ) (htu : t ≤ u) : affineSegment ℝ (poly.edgePath ℝ i t)
+      (poly.edgePath ℝ i u) = poly.edgePath ℝ i '' Icc t u := by
     rw [← affineSegment_image, affineSegment_eq_segment, segment_eq_Icc htu]
-  have hsa : affineSegment ℝ (f s) (poly i) = f '' Icc 0 s := by
-    rw [affineSegment_comm, ← hseg 0 s hs.1, AffineMap.lineMap_apply_zero]
-  have hsb : affineSegment ℝ (f s) (poly (finRotate n i)) = f '' Icc s 1 := by
-    rw [← hseg s 1 hs.2, AffineMap.lineMap_apply_one]
-  have hedge : poly.edgeSet ℝ i = affineSegment ℝ (f s) (poly i) ∪
-      affineSegment ℝ (f s) (poly (finRotate n i)) := by
-    rw [hsa, hsb, ← image_union, Icc_union_Icc_eq_Icc hs.1 hs.2]
-    rfl
+  have hsa : affineSegment ℝ (poly.edgePath ℝ i s) (poly i) = poly.edgePath ℝ i '' Icc 0 s := by
+    rw [affineSegment_comm, ← hseg 0 s hs.1, edgePath, AffineMap.lineMap_apply_zero]
+  have hsb : affineSegment ℝ (poly.edgePath ℝ i s) (poly (finRotate n i)) =
+      poly.edgePath ℝ i '' Icc s 1 := by
+    rw [← hseg s 1 hs.2, edgePath, AffineMap.lineMap_apply_one]
+  have hedge : poly.edgeSet ℝ i = affineSegment ℝ (poly.edgePath ℝ i s) (poly i) ∪
+      affineSegment ℝ (poly.edgePath ℝ i s) (poly (finRotate n i)) := by
+    rw [edgeSet_eq_affineSegment_union poly i hs, affineSegment_comm ℝ (poly i)]
   refine ⟨poly i, poly (finRotate n i), hv i, hv _, ?_, fun j hj => ?_, ?_⟩
   · rw [hsa, hsb, ← image_inter hf, Icc_inter_Icc, max_eq_right hs.1, min_eq_left hs.2,
       Icc_self, image_singleton]
   · by_cases hji : j = i
     · rw [hji, hedge]
-    rcases h.eq_vertex_of_mem_edgeSet hji hj ⟨s, hs, rfl⟩ with ⟨-, hx⟩ | ⟨-, hx⟩
+    rcases h.eq_vertex_of_mem_edgeSet hji hj (poly.edgePath_mem_edgeSet i hs) with ⟨-, hx⟩ | ⟨-, hx⟩
     · exact absurd hx.symm (hv i)
     · exact absurd hx.symm (hv j)
   · rw [← hedge]
