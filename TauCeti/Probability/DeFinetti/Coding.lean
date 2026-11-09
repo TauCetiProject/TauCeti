@@ -180,39 +180,6 @@ theorem exists_pathLaw_eq_map_unitIntervalCoding {μ : Measure Ω} [IsProbabilit
     infer_instance
   exact ((exchangeable_iff_exchangeableLaw_pathLaw hX_meas).mp hX).exists_eq_map_unitIntervalCoding
 
-omit [StandardBorelSpace α] [Nonempty α] in
-/-- The directing measure together with the path is almost everywhere measurable. -/
-private lemma ConditionallyIIDWith.aemeasurable_directing_path {μ : Measure Ω}
-    {X : ℕ → Ω → α} {ν : Ω → ProbabilityMeasure α} (h : ConditionallyIIDWith μ X ν) :
-    AEMeasurable (fun ω => (ν ω, fun n => X n ω)) μ :=
-  h.measurable_directing.aemeasurable.prodMk (AEMeasurable.of_eval h.aemeasurable)
-
-/-- Coding a family of noise coordinates by the parameter, keeping the parameter, is
-measurable. -/
-private lemma measurable_coding_single {ι : Type*} :
-    Measurable fun p : ProbabilityMeasure α × (ι → I) =>
-      (p.1, fun a => unitIntervalCoding α p.1 (p.2 a)) :=
-  measurable_fst.prodMk
-    (measurable_pi_uncurry_prod fun _ => measurable_uncurry_unitIntervalCoding α)
-
-/-- Coding the noise coordinates by the parameter inside a pair, keeping the pair, is
-measurable. -/
-private lemma measurable_prodMk_unitIntervalCoding {ι κ : Type*} :
-    Measurable fun q : (ProbabilityMeasure α × (ι → α)) × (κ → I) =>
-      (q.1, fun b => unitIntervalCoding α q.1.1 (q.2 b)) :=
-  measurable_fst.prodMk (measurable_snd.comp (measurable_coding_single.comp
-    ((measurable_fst.comp measurable_fst).prodMk measurable_snd)))
-
-/-- Coding two noise families by a common parameter, keeping the parameter, is measurable. -/
-private lemma measurable_coding_pair {ι κ : Type*} :
-    Measurable fun p : ProbabilityMeasure α × ((ι → I) × (κ → I)) =>
-      ((p.1, fun a => unitIntervalCoding α p.1 (p.2.1 a)),
-        fun b => unitIntervalCoding α p.1 (p.2.2 b)) :=
-  (measurable_coding_single.comp
-    (measurable_fst.prodMk (measurable_fst.comp measurable_snd))).prodMk
-    (measurable_snd.comp (measurable_coding_single.comp
-      (measurable_fst.prodMk (measurable_snd.comp measurable_snd))))
-
 /-- **Coding a selection of the path.** If a measurable function `Φ` of the directing measure and
 a measurable selection `F` of the path agrees, after coding noise by the parameter, with a
 measurable function `K` of the parameter and a selection `s` of the noise, then the law of `Φ` is
