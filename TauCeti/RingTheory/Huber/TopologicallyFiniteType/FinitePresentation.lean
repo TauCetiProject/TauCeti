@@ -54,10 +54,10 @@ presentation (`TauCeti.Huber.isAdmissibleAlgebra_iff_flat`).
   `O⟨ξ₁, …, ξₙ⟩` itself is topologically of finite presentation, hence so is every
   `O⟨ξ⟩ ⧸ (f₁, …, fₘ)`; `TauCeti.Huber.isTopologicallyFinitePresentation_self` is the case of
   no variables over a complete adic ring.
-* `TauCeti.Huber.isOpenQuotientMap_of_surjective_restrictedMvPowerSeriesCompletion` and
-  `TauCeti.Huber.IsTopologicallyFinitePresentation.isStrictlyTopologicallyFiniteType`: for the
+* `TauCeti.Huber.IsTopologicallyFinitePresentation.isStrictlyTopologicallyFiniteType`: for the
   adic topology on `A` of an ideal of definition of `O`, every presentation is an open quotient
-  map, so `A` is strictly topologically of finite type over `O`.
+  map (`TauCeti.Huber.isOpenQuotientMap_of_surjective_restrictedMvPowerSeriesCompletion`), so `A`
+  is strictly topologically of finite type over `O`.
 * `TauCeti.Huber.IsTopologicallyFinitePresentation.finitePresentation_quotient`: for a finitely
   generated ideal of definition `I` of a complete adic ring `O`, the reduction `A ⧸ I·A` is a
   finitely presented `O ⧸ I`-algebra; in particular every `A ⧸ ϖᵐA` is finitely presented over
@@ -162,21 +162,6 @@ theorem isTopologicallyFinitePresentation_self [IsAdicRing O] :
   exact (isTopologicallyFinitePresentation_restrictedMvPowerSeriesCompletion O 0).of_algEquiv e
 
 /-! ### The adic topology of a presentation -/
-
-/-- **Presentations are open quotient maps.** Let `I` be a finitely generated ideal of definition
-of `O`. If `A` carries the adic topology of `I·A`, then every surjective `O`-algebra homomorphism
-`O⟨ξ₁, …, ξₙ⟩ → A` is an open quotient map. -/
-theorem isOpenQuotientMap_of_surjective_restrictedMvPowerSeriesCompletion [TopologicalSpace A]
-    {I : Ideal O} (hI : IsAdic I) (hfg : I.FG) (hA : IsAdic (I.map (algebraMap O A))) {n : ℕ}
-    {π : restrictedMvPowerSeriesCompletion n O →ₐ[O] A} (hπ : Function.Surjective π) :
-    IsOpenQuotientMap π := by
-  have hmap : (I.map (algebraMap O (restrictedMvPowerSeriesCompletion n O))).map π.toRingHom =
-      I.map (algebraMap O A) := by
-    rw [Ideal.map_map]
-    exact congrArg (Ideal.map · I) (RingHom.ext π.commutes)
-  exact IsAdic.isOpenQuotientMap_of_surjective
-    (isAdic_map_algebraMap_restrictedMvPowerSeriesCompletion n hI hfg) (f := π.toRingHom) hπ
-    (hmap ▸ hA)
 
 /-- **An algebra topologically of finite presentation is strictly topologically of finite type.**
 If `A` is topologically of finite presentation over `O` and carries the adic topology of `I·A`
