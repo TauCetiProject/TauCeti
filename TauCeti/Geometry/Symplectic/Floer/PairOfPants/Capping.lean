@@ -778,8 +778,7 @@ theorem integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_b
   set T := Complex.equivRealProdCLM.symm ⁻¹' truncation R
   have hDc : IsCompact D := Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
     ((isCompact_closedBall _ _).diff Metric.isOpen_ball)
-  have hTc : IsCompact T :=
-    Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
+  have hTc : IsCompact T := isCompact_preimage_truncation R
   -- Both the annulus and the truncation avoid the puncture `0`.
   have hDP : D ∪ T ⊆ P := by
     rintro z (hz | hz) h₀

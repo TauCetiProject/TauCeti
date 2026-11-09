@@ -70,6 +70,10 @@ form they recover the vector-space definitions.
 * `SmoothTwoForm.hamiltonianCurvature_congr_of_eventuallyEq`,
   `SmoothTwoForm.hamiltonianCurvature_continuation`: the curvature is local in the domain, and a
   continuation perturbation `K = β(s) H_t dt` has curvature `β'(s) H_t`.
+* `SmoothTwoForm.floerEnergyDensity_zero`: the energy density of the zero datum is the symplectic
+  area density.
+* `SmoothTwoForm.continuousOn_eval₂_mfderiv`: the symplectic area density of a map `C¹` on an
+  open set is continuous there.
 * `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_eq`: the pointwise energy identity.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity`: the energy identity on a
   rectangle.
@@ -212,6 +216,27 @@ theorem floerEnergyDensity_zero (ω : SmoothTwoForm I M) (u : ℝ × ℝ → M) 
       SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) := by
   simp [floerEnergyDensity_def]
+
+/-- The symplectic area density `ω(∂_s u, ∂_t u)` of a map which is `C¹` on an open set `U` is
+continuous on `U`: it is the pullback `u^*ω` within `U`, evaluated on the coordinate vectors. -/
+theorem continuousOn_eval₂_mfderiv (ω : SmoothTwoForm I M) {U : Set (ℝ × ℝ)} (hU : IsOpen U)
+    {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) :
+    ContinuousOn (fun z ↦ SmoothBundleForm.eval₂ ω (u z)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag)) U := by
+  have hpb := (ω.contMDiff.of_le (by simp)).contMDiffOn.mpullbackWithin_form (m := 0) hu
+    (by simp) (Set.mapsTo_univ _ _) hU.uniqueMDiffOn
+  have hc : ContinuousOn _ U := fun z hz ↦
+    (RoughForm.contDiffWithinAt_of_contMDiffWithinAt_modelSpace (hpb z hz)).continuousWithinAt
+  refine ((ContinuousAlternatingMap.apply ℝ (ℝ × ℝ) ℝ
+    ![stdComplexLineReal, stdComplexLineImag]).continuous.comp_continuousOn hc).congr
+      fun z hz ↦ ?_
+  have h := mpullback_apply_pair (I := 𝓘(ℝ, ℝ × ℝ)) (I' := I) u ω.1 z stdComplexLineReal
+    stdComplexLineImag
+  rw [← mpullbackWithin_eq_mpullback (hU.uniqueMDiffOn z hz)
+    ((hu.contMDiffAt (hU.mem_nhds hz)).mdifferentiableAt one_ne_zero)] at h
+  rw [SmoothBundleForm.eval₂_apply]
+  exact h.symm
 
 variable {ω : SmoothTwoForm I M} {Ks Kt : ℝ × ℝ → M → ℝ}
   {u : ℝ × ℝ → M} {z : ℝ × ℝ}
