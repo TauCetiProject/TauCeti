@@ -47,12 +47,12 @@ theorem exists_formula_iff_exists_constants (hA : A.FormationClosed)
   let := hσ.fintype
   choose k χ d hχ hd using fun x : σ => mem_instances.1 (hσA x.property)
   -- Enumerate all constants in the instances and in the prescribed tuple without repetitions.
-  obtain ⟨m, b, e, he⟩ := TauCeti.exists_embedding_fin_comp_eq
+  obtain ⟨m, b, s, hs⟩ := TauCeti.exists_embedding_fin_comp_eq
     (Sum.elim c fun p : (x : σ) × Fin (k x) => d p.1 p.2)
-  let f : Fin n → Fin m := e ∘ Sum.inl
-  let g (x : σ) (i : Fin (k x)) : Fin m := e (Sum.inr ⟨x, i⟩)
-  have hf (i : Fin n) : b (f i) = c i := congrFun he (Sum.inl i)
-  have hg (x : σ) (i : Fin (k x)) : b (g x i) = d x i := congrFun he (Sum.inr ⟨x, i⟩)
+  let f : Fin n → Fin m := s ∘ Sum.inl
+  let g (x : σ) (i : Fin (k x)) : Fin m := s (Sum.inr ⟨x, i⟩)
+  have hf (i : Fin n) : b (f i) = c i := congrFun hs (Sum.inl i)
+  have hg (x : σ) (i : Fin (k x)) : b (g x i) = d x i := congrFun hs (Sum.inr ⟨x, i⟩)
   -- The last slots hold one value for each distinct constant; link the first slots to them.
   -- In particular, repeated entries of `c` must have equal values.
   let ψ (x : σ) : L.BoundedFormulaω Empty (n + m) :=
@@ -91,14 +91,11 @@ theorem exists_formula_iff_exists_constants (hA : A.FormationClosed)
     · let x : σ := ⟨δ, hδ⟩
       have hδ' : (χ x).instConstants (d x) = δ := hd x
       rw [← hδ', SentenceInf.realize_def, realize_instConstants_constantsOn]
-      have hed : e ∘ d x = z ∘ g x := funext fun i =>
-        (congrArg e (hg x i)).symm.trans (he _)
-      rw [hed]
+      rw [(funext fun i => (congrArg e (hg x i)).symm.trans (he _) : e ∘ d x = z ∘ g x)]
       exact hzχ x
   · rintro ⟨e, hec, heσ⟩
     refine ⟨e ∘ b, (hθr _).2 ⟨fun x => ?_, fun i => ?_⟩⟩
-    · have hed : (e ∘ b) ∘ g x = e ∘ d x := funext fun i => congrArg e (hg x i)
-      rw [hed]
+    · rw [(funext fun i => congrArg e (hg x i) : (e ∘ b) ∘ g x = e ∘ d x)]
       exact heσ.realize_of_instConstants_mem (hd x ▸ x.property)
     · exact (congrFun hec i).symm.trans (congrArg e (hf i)).symm
 
