@@ -342,7 +342,7 @@ theorem deformationComplexStructure_zero_smul_sub :
     simp
   · -- `D_J (e₀ ∧ e₂ - e₁ ∧ e₃) = 2 (e₀ ∧ e₃ + e₁ ∧ e₂)`.
     have hneg₀ (u w : V) : ιMulti ℝ 2 ![-u, w] = -ιMulti ℝ 2 ![u, w] := by
-      convert (ιMulti ℝ 2).map_update_neg ![u, w] 0 u using 3 <;> ext i <;> fin_cases i <;> rfl
+      rw [← neg_one_smul ℝ u, ιMulti_two_smul_left, neg_one_smul]
     have hneg₁ (u w : V) : ιMulti ℝ 2 ![u, -w] = -ιMulti ℝ 2 ![u, w] := by
       rw [← neg_one_smul ℝ w, ιMulti_two_smul_right, neg_one_smul]
     simp only [deformationComplexStructure_apply_snd, map_smul, map_sub, lieMap_two_apply_ιMulti]

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 public import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 -- Private: orthonormal coordinates and the `4 × 4` determinant are used only in proofs.
+import TauCeti.Analysis.InnerProductSpace.Orientation
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.LinearAlgebra.Matrix.Determinant.FinFour
@@ -277,7 +278,7 @@ theorem exists_orthonormalBasis_apply_zero_eq {ξ : V} (hξ : ‖ξ‖ = 1) :
   have hJξη : ⟪J ξ, η⟫ = 0 := hηK (J ξ) (by simp)
   have hξJη : ⟪ξ, J η⟫ = 0 := by rw [← neg_eq_zero, ← inner_apply_left hJ, hJξη]
   have hηη : ⟪η, η⟫ = 1 := by rw [real_inner_self_eq_norm_sq, hη, one_pow]
-  set v : Fin 4 → V := ![ξ, J ξ, η, J η] with hv
+  set v : Fin 4 → V := ![ξ, J ξ, η, J η]
   have hon : Orthonormal ℝ v := by
     rw [orthonormal_iff_ite]
     intro i j
@@ -302,14 +303,7 @@ theorem exists_orthonormalBasis_apply_zero_eq {ξ : V} (hξ : ‖ξ‖ = 1) :
     o.inner_hodgeStar_ιMulti_two hkl] at h1
   simp only [he', v, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
     Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons, h0, add_zero] at h1
-  by_contra hne
-  have h2 : o.volumeForm v = -1 := by
-    have := congrArg (fun f ↦ f ⇑e'.toBasis) (o.volumeForm_robust_neg e' hne)
-    have hdet := e'.toBasis.det_self
-    simp only [_root_.neg_apply, OrthonormalBasis.coe_toBasis, he'] at this hdet
-    rwa [hdet] at this
-  rw [hv] at h2
-  linarith
+  exact Orientation.volumeForm_apply_pos_iff.mp (by simp [he', v, h1])
 
 include he h₀ h₂ in
 /-- **The Kähler form is orthogonal to the anti-self-dual forms**: `⟪ω, μ⟫ = 0` when `⋆μ = -μ`,
