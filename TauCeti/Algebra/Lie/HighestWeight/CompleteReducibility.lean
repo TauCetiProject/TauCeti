@@ -250,7 +250,6 @@ variable (K L) in
 nontrivially somewhere, the module has an invariant vector outside `N`. -/
 theorem hasInvariantOutsideIrreducible_of_isKilling :
     HasInvariantOutsideIrreducible.{w} K L :=
-  have := finite_of_isKilling (R := K) (L := L)
   fun N hN htriv _ _ ↦ exists_invariant_notMem_of_isKilling N hN htriv
 
 /-- **Weyl's complete reducibility theorem.** Over a field of characteristic zero, every Lie
