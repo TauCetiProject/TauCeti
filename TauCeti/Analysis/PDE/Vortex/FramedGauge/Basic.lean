@@ -263,9 +263,11 @@ theorem framedGaugeGroup_smul (u : framedGaugeGroup) (x : ℂ → EuclideanSpace
 
 /-- The differential of a circle-valued map is its imaginary logarithmic derivative times
 `i u`. This identity includes all tangent-vector factors. -/
-theorem fderiv_coe_eq_mul_gaugeForm {u : ℂ → Circle} {z : ℂ}
-    (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z) (v : ℂ) :
+theorem fderiv_coe_eq_mul_gaugeForm {u : ℂ → Circle} {z : ℂ} (v : ℂ) :
     fderiv ℝ (fun w ↦ (u w : ℂ)) z v = (u z : ℂ) * I * gaugeForm u z v := by
+  by_cases hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z
+  swap
+  · simp [fderiv_zero_of_not_differentiableAt hu]
   have h := congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L v) hu.hasFDerivAt.norm_sq.fderiv
   simp [Circle.norm_coe, Complex.inner, mul_re] at h
   have hn := Circle.re_sq_add_im_sq (u z)
@@ -285,7 +287,7 @@ theorem fderiv_re_coe_eq_neg_im_mul_gaugeForm {u : ℂ → Circle} {z : ℂ}
       congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L v)
         (reCLM.hasFDerivAt.comp z hu.hasFDerivAt).fderiv
     _ = _ := by
-      rw [fderiv_coe_eq_mul_gaugeForm hu v]
+      rw [fderiv_coe_eq_mul_gaugeForm v]
       simp only [mul_re, mul_im, I_re, I_im, ofReal_re, ofReal_im,
         mul_zero, mul_one, sub_zero, zero_sub, neg_mul]
 
@@ -299,7 +301,7 @@ theorem fderiv_im_coe_eq_re_mul_gaugeForm {u : ℂ → Circle} {z : ℂ}
       congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L v)
         (imCLM.hasFDerivAt.comp z hu.hasFDerivAt).fderiv
     _ = _ := by
-      rw [fderiv_coe_eq_mul_gaugeForm hu v]
+      rw [fderiv_coe_eq_mul_gaugeForm v]
       simp only [mul_re, mul_im, I_re, I_im, ofReal_re, ofReal_im,
         mul_zero, mul_one, zero_add, add_zero]
 
@@ -375,7 +377,7 @@ instance : IsCancelSMul framedGaugeGroup (ℂ → EuclideanSpace ℝ (Fin 4)) :=
       ext v
       exact LinearMap.congr_fun hlin v
     ext v
-    simp [fderiv_coe_eq_mul_gaugeForm (hud z) v, hform]
+    simp [fderiv_coe_eq_mul_gaugeForm v, hform]
   have hconst (z : ℂ) : u.val z = u.val 0 := by
     apply Subtype.ext
     exact is_const_of_fderiv_eq_zero hud hzero z 0
@@ -452,7 +454,7 @@ theorem fderiv_gaugeForm_symm {u : ℂ → Circle} {z : ℂ}
       fderiv ℝ (fun w ↦ (u w : ℂ)) z a =
       conj (fderiv ℝ (fun w ↦ (u w : ℂ)) z a) *
         fderiv ℝ (fun w ↦ (u w : ℂ)) z b := by
-    rw [fderiv_coe_eq_mul_gaugeForm hu' a, fderiv_coe_eq_mul_gaugeForm hu' b]
+    rw [fderiv_coe_eq_mul_gaugeForm a, fderiv_coe_eq_mul_gaugeForm b]
     simp only [map_mul, Complex.conj_I, Complex.conj_ofReal]
     ring
   rw [hprod]
@@ -533,7 +535,7 @@ theorem covariantDerivative_gaugeTransform {u : ℂ → Circle} {z : ℂ}
   simp only [covariantDerivative_apply, heq, fderiv_fun_mul hu hs, add_apply, smul_apply,
     smul_eq_mul, sectionValue_gaugeTransform, gaugeTransform, PiLp.toLp_apply,
     Matrix.cons_val_zero, Matrix.cons_val_one, ofReal_add, ofReal_sub, ofReal_mul,
-    fderiv_coe_eq_mul_gaugeForm hu, hg]
+    fderiv_coe_eq_mul_gaugeForm, hg]
   ring
 
 /-- Curvature is unchanged by `C²` gauge transformations. -/
