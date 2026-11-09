@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Shor
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.UnboundedEdge
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Boundary
 import TauCeti.Analysis.Complex.PlaneSeparation.Segment
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.TurningChain
 
 /-!
 # Separation of Schwarz--Christoffel sides from the closing side
@@ -160,38 +161,15 @@ theorem im_schwarzChristoffelVertex_zero_lt (a e : Fin (n + 1) → ℝ) (z₀ : 
   rw [← hW, ← hW]
   simp only [Fin.val_zero]
   by_cases hθk : θ k ≤ -Real.pi
-  · -- Every earlier side points upward.
-    have htel := Finset.sum_Ico_sub W (Nat.zero_le k.val)
-    rw [← sub_pos, ← htel]
-    refine Finset.sum_pos (fun l hl ↦ ?_) (Finset.nonempty_Ico.mpr hkval)
-    rw [Finset.mem_Ico] at hl
-    obtain ⟨d, hd, h⟩ := hstep l (hl.2.trans hkn')
-    rw [h]
-    have hlt : θ ⟨l, by omega⟩ < θ k := hθmono (Fin.mk_lt_mk.mpr hl.2)
-    refine mul_pos hd ?_
-    rw [← Real.sin_add_two_pi]
-    exact Real.sin_pos_of_pos_of_lt_pi (by linarith [hθlow ⟨l, by omega⟩]) (by linarith)
-  · -- Every later side points downward, and the total height change is zero.
-    have htel := Finset.sum_Ico_sub W hkn'.le
-    have hWn : W n = W 0 := by
+  · exact height_lt_of_monotone_turning_of_le_neg_pi W θ hθmono hθlow hkval hθk hstep
+  · have hWn : W n = W 0 := by
       have h1 := hW (Fin.last n)
       have h0 := hW 0
       rw [Fin.val_last] at h1
       rw [Fin.val_zero] at h0
       rw [h1, h0, hends]
-    have hneg : ∑ l ∈ Finset.Ico k.val n, (W (l + 1) - W l) < 0 := by
-      refine Finset.sum_neg (fun l hl ↦ ?_) (Finset.nonempty_Ico.mpr hkn')
-      rw [Finset.mem_Ico] at hl
-      obtain ⟨d, hd, h⟩ := hstep l hl.2
-      rw [h]
-      have hle : θ k ≤ θ ⟨l, by omega⟩ := hθmono.monotone (Fin.mk_le_mk.mpr hl.1)
-      have hlt : θ ⟨l, by omega⟩ < θ (Fin.last n) :=
-        hθmono (Fin.mk_lt_mk.mpr (by simpa using hl.2))
-      rw [hθlast] at hlt
-      exact mul_neg_of_pos_of_neg hd
-        (Real.sin_neg_of_neg_of_neg_pi_lt hlt (by linarith))
-    rw [htel, hWn] at hneg
-    linarith
+    exact height_lt_of_monotone_turning_of_neg_pi_lt W θ hθmono hθlast hkn' (not_le.1 hθk) hstep
+      hWn
 
 /-- **Every finite Schwarz--Christoffel vertex lies on or above the closing line.** The line is
 identified by the imaginary part of the first finite vertex. -/

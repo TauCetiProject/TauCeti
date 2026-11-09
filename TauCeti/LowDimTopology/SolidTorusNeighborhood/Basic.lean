@@ -54,6 +54,7 @@ lets the orientation of a solid torus neighbourhood be read off its derivative a
   the loop `f`.
 * `TauCeti.SolidTorus.boundaryInclusion`: the inclusion of the boundary torus `S¹ × S¹` into the
   solid torus.
+* `TauCeti.SolidTorus.twist`: the meridian-disc twist `(w, z) ↦ (w zⁿ, z)`.
 * `TauCeti.SolidTorus.coreReading Φ`: a map `Φ` from the solid torus read near the core point
   `(0, 1)` as `(u, t) ↦ Φ (u, exp (t i))` on `ℂ × ℝ`.
 * `TauCeti.SolidTorus.conjDisc`: the reflection `(u, w) ↦ (conj u, w)` of the solid torus.
@@ -153,6 +154,66 @@ theorem SolidTorus.range_boundaryInclusion :
     simp
   · intro hp
     exact ⟨(⟨p.1, mem_sphere_zero_iff_norm.mpr hp⟩, p.2), rfl⟩
+
+/-- The underlying map `(w, z) ↦ (w zⁿ, z)` of `TauCeti.SolidTorus.twist`. -/
+private noncomputable def SolidTorus.twistMap (n : ℤ) (p : SolidTorus) : SolidTorus :=
+  (⟨(p.1 : ℂ) * ((p.2 ^ n : Circle) : ℂ), by
+    rw [mem_closedBall_zero_iff, norm_mul, Circle.norm_coe, mul_one]
+    exact mem_closedBall_zero_iff.mp p.1.2⟩, p.2)
+
+private theorem SolidTorus.twistMap_twistMap (m n : ℤ) (p : SolidTorus) :
+    twistMap n (twistMap m p) = twistMap (m + n) p :=
+  Prod.ext (Subtype.ext (by simp only [twistMap, mul_assoc, ← Circle.coe_mul, ← zpow_add])) rfl
+
+private theorem SolidTorus.twistMap_zero (p : SolidTorus) : twistMap 0 p = p :=
+  Prod.ext (Subtype.ext (by simp [twistMap])) rfl
+
+private theorem SolidTorus.continuous_twistMap (n : ℤ) : Continuous (twistMap n) :=
+  (((continuous_subtype_val.comp continuous_fst).mul (continuous_subtype_val.comp
+    ((continuous_zpow (G := Circle) n).comp continuous_snd))).subtype_mk _).prodMk continuous_snd
+
+/-- The twist `(w, z) ↦ (w zⁿ, z)` of the solid torus `D² × S¹` along its meridian discs. -/
+noncomputable def SolidTorus.twist (n : ℤ) : SolidTorus ≃ₜ SolidTorus where
+  toFun := twistMap n
+  invFun := twistMap (-n)
+  left_inv p := by rw [twistMap_twistMap, add_neg_cancel, twistMap_zero]
+  right_inv p := by rw [twistMap_twistMap, neg_add_cancel, twistMap_zero]
+  continuous_toFun := continuous_twistMap n
+  continuous_invFun := continuous_twistMap (-n)
+
+/-- The meridian-disc twist multiplies the disc coordinate by `zⁿ`. -/
+@[simp]
+theorem SolidTorus.coe_twist_apply_fst (n : ℤ) (p : SolidTorus) :
+    ((twist n p).1 : ℂ) = p.1 * ((p.2 ^ n : Circle) : ℂ) :=
+  (rfl)
+
+/-- The meridian-disc twist preserves the circle coordinate. -/
+@[simp]
+theorem SolidTorus.twist_apply_snd (n : ℤ) (p : SolidTorus) : (twist n p).2 = p.2 :=
+  (rfl)
+
+/-- The zero twist is the identity homeomorphism. -/
+@[simp]
+theorem SolidTorus.twist_zero : twist 0 = Homeomorph.refl SolidTorus := by
+  ext1 p
+  exact twistMap_zero p
+
+/-- Successive meridian-disc twists add their twisting numbers. -/
+theorem SolidTorus.twist_add (m n : ℤ) : twist (m + n) = (twist m).trans (twist n) := by
+  ext1 p
+  exact (twistMap_twistMap m n p).symm
+
+/-- The inverse meridian-disc twist has the opposite twisting number. -/
+@[simp]
+theorem SolidTorus.twist_symm (n : ℤ) : (twist n).symm = twist (-n) := by
+  ext1 p
+  rfl
+
+/-- The twist restricts on the boundary torus to `(a, b) ↦ (a bⁿ, b)`. -/
+@[simp]
+theorem SolidTorus.twist_boundaryInclusion (n : ℤ) (q : Circle × Circle) :
+    twist n (boundaryInclusion q) = boundaryInclusion (q.1 * q.2 ^ n, q.2) := by
+  exact Prod.ext (Subtype.ext (by simp [boundaryInclusion])) rfl
 
 /-- The open solid torus is dense in the closed solid torus. -/
 theorem SolidTorus.closure_setOf_norm_lt_one :
@@ -504,10 +565,8 @@ private theorem exists_normalFrame {f : Circle → ℝ³} (hf : ContMDiff (𝓡 
   refine ⟨n₁, fun z => toLp 2 (ofLp (u z) ⨯₃ ofLp (n₁ z)), hcn₁, ?_, fun z => ?_⟩
   · refine (PiLp.continuous_toLp 2 _).comp (continuous_pi fun i => ?_)
     fin_cases i <;> simp only [cross_apply] <;> fun_prop
-  · obtain ⟨hc, huc, hnc, hdecomp⟩ := cross_orthonormal (hu z) (hn₁ z) (hun₁ z)
-    refine ⟨hn₁ z, hc, hnc, fun v => ⟨fun hv => hdecomp v ((hnormal z v).mp hv), fun hv => ?_⟩⟩
-    rw [hnormal, hv, inner_add_right, real_inner_smul_right, real_inner_smul_right, hun₁, huc]
-    ring
+  · obtain ⟨hc, -, hnc, hdecomp⟩ := cross_orthonormal (hu z) (hn₁ z) (hun₁ z)
+    exact ⟨hn₁ z, hc, hnc, fun v => (hnormal z v).trans (hdecomp v)⟩
 
 /-- A `C²` immersed circle in `ℝ³` has a family of linear isometries `ψ z : ℂ →ₗᵢ[ℝ] ℝ³` onto
 its normal planes, continuous as a family of continuous linear maps:
@@ -582,6 +641,35 @@ private theorem exists_hasFDerivAt_tube {f : Circle → V} (hf : ContMDiff (𝓡
   rw [ht, zero_smul, zero_add, smul_eq_zero] at hx
   exact Prod.ext (hψinj ((hx.resolve_left hr).trans (map_zero _).symm)) ht
 
+/-- The open solid torus is mapped by `(w, z) ↦ f z + r • ψ z w` onto an open set: it is the image
+under a tubular open embedding of the normal vectors of length less than `r`. -/
+private theorem isOpen_image_normalDisc {f : Circle → ℝ³} {ε r : ℝ} (hr : 0 < r)
+    {ψ : Circle → ℂ →ₗᵢ[ℝ] ℝ³}
+    (hψ : ∀ z, ∀ v ∈ normalSubspace (𝓡 1) f z, ∃ w, ψ z w = v)
+    (hemb : IsOpenEmbedding ((normalTube (𝓡 1) f ε).domRestrict fun p : Circle × ℝ³ =>
+      f p.1 + p.2))
+    (hmem : ∀ q : SolidTorus, (q.2, r • ψ q.2 q.1) ∈ normalTube (𝓡 1) f ε) :
+    IsOpen ((fun q : SolidTorus => f q.2 + r • ψ q.2 q.1) '' {p | ‖(p.1 : ℂ)‖ < 1}) := by
+  have hnorm : ∀ q : SolidTorus, ‖r • ψ q.2 q.1‖ = r * ‖(q.1 : ℂ)‖ := fun q => by
+    rw [norm_smul, (ψ q.2).norm_map, Real.norm_of_nonneg hr.le]
+  convert hemb.isOpenMap {q | ‖(q : Circle × ℝ³).2‖ < r}
+    (isOpen_lt (continuous_norm.comp (continuous_snd.comp continuous_subtype_val))
+      continuous_const) using 1
+  ext x
+  constructor
+  · rintro ⟨q, hq, rfl⟩
+    refine ⟨⟨_, hmem q⟩, ?_, rfl⟩
+    rw [mem_ofPred_eq, hnorm]
+    exact mul_lt_of_lt_one_right hr hq
+  · rintro ⟨⟨⟨z, v⟩, hzv⟩, hvr, rfl⟩
+    rw [mem_ofPred_eq] at hvr
+    obtain ⟨w, hw⟩ := hψ z _ (Submodule.smul_mem _ r⁻¹ (mem_normalTube.mp hzv).1)
+    have hwn : ‖w‖ < 1 := by
+      rw [← (ψ z).norm_map, hw, norm_smul, norm_inv, Real.norm_of_nonneg hr.le]
+      exact (inv_mul_lt_one₀ hr).mpr hvr
+    refine ⟨(⟨w, mem_closedBall_zero_iff.mpr hwn.le⟩, z), hwn, ?_⟩
+    simp [hw, smul_smul, mul_inv_cancel₀ hr.ne']
+
 /-- **Solid torus neighbourhoods of knots in `ℝ³`, with their derivative at the core.** A `C²`
 embedded circle `f` in `ℝ³` has a solid torus neighbourhood `Φ` inside any neighbourhood of its
 image, whose reading `(u, t) ↦ Φ (u, exp (t i))` at the core point `(0, 1)`
@@ -618,24 +706,7 @@ theorem exists_isSolidTorusNeighborhood_hasFDerivAt_coreReading {f : Circle → 
     (hψc'.const_smul r)).isClosedEmbedding hinj |>.isEmbedding, fun z => ?_, ?_⟩, ?_, ?_⟩
   · dsimp only
     rw [Metric.unitClosedBall.coe_zero, map_zero, smul_zero, add_zero]
-  · -- The open solid torus is mapped onto the normal vectors of length less than `r`.
-    convert hemb.isOpenMap {q | ‖(q : Circle × ℝ³).2‖ < r}
-      (isOpen_lt (continuous_norm.comp (continuous_snd.comp continuous_subtype_val))
-        continuous_const) using 1
-    ext x
-    constructor
-    · rintro ⟨q, hq, rfl⟩
-      refine ⟨⟨_, hmem q⟩, ?_, rfl⟩
-      rw [mem_ofPred_eq, hnorm]
-      exact mul_lt_of_lt_one_right hr hq
-    · rintro ⟨⟨⟨z, v⟩, hzv⟩, hvr, rfl⟩
-      rw [mem_ofPred_eq] at hvr
-      obtain ⟨w, hw⟩ := (hψ z).2 _ (Submodule.smul_mem _ r⁻¹ (mem_normalTube.mp hzv).1)
-      have hwn : ‖w‖ < 1 := by
-        rw [← (ψ z).norm_map, hw, norm_smul, norm_inv, Real.norm_of_nonneg hr.le]
-        exact (inv_mul_lt_one₀ hr).mpr hvr
-      refine ⟨(⟨w, mem_closedBall_zero_iff.mpr hwn.le⟩, z), hwn, ?_⟩
-      simp [hw, smul_smul, mul_inv_cancel₀ hr.ne']
+  · exact isOpen_image_normalDisc hr (fun z => (hψ z).2) hemb hmem
   · rintro _ ⟨q, rfl⟩
     refine interior_subset (hδU (mem_thickening_iff.mpr ⟨f q.2, mem_range_self _, ?_⟩))
     rw [dist_eq_norm, add_sub_cancel_left]

@@ -26,8 +26,8 @@ The estimates of `SchwartzMap.exists_setIntegral_norm_fourierInv_le` and
 `SchwartzMap.exists_integral_norm_fourierInv_le` then become scale-invariant bounds on the kernel
 `𝓕⁻ σ`, with constants independent of `σ`, `t` and `A`:
 
-* the `L¹` bound `∫ ‖𝓕⁻ σ x‖ dx ≤ C A`, when `σ` is moreover bounded by `A`;
 * the tail bound `∫_{‖x‖ > R} ‖𝓕⁻ σ x‖ dx ≤ C A (t R) ^ (n/2 - N)`;
+* the `L¹` bound `∫ ‖𝓕⁻ σ x‖ dx ≤ C A`, which only needs the derivatives of orders `0` and `N`;
 * the smoothness bound `∫ ‖𝓕⁻ σ (x + h) - 𝓕⁻ σ x‖ dx ≤ C A t ‖h‖`. Translating the kernel by
   `h` is controlled by the symbol `⟪h, ξ⟫ σ ξ`, whose derivatives the Leibniz rule
   `SchwartzMap.iterate_lineDerivOp_smulLeftCLM_clm` bounds.
@@ -46,8 +46,8 @@ of a Mihlin symbol have kernels satisfying Hörmander's condition uniformly in t
 
 * `SchwartzMap.norm_toLp_two_le_of_support_subset_closedBall`: the `L²` norm of a bounded
   Schwartz function vanishing outside a ball.
-* `SchwartzMap.exists_integral_norm_fourierInv_le_of_support_subset`: the `L¹` bound.
 * `SchwartzMap.exists_setIntegral_norm_fourierInv_le_of_support_subset`: the tail bound.
+* `SchwartzMap.exists_integral_norm_fourierInv_le_of_support_subset`: the `L¹` bound.
 * `SchwartzMap.exists_integral_norm_fourierInv_add_sub_le_of_support_subset`: the smoothness
   bound.
 * `SchwartzMap.exists_setIntegral_norm_fourierInv_sub_sub_le_of_support_subset`: Hörmander's
@@ -215,15 +215,12 @@ theorem exists_setIntegral_norm_fourierInv_le_of_support_subset {ι : Type*} [Fi
   rw [Real.mul_rpow ht.le hR.le, hte]
   ring
 
-/-- **The kernel of a band-limited symbol in `L¹`.** Let `b` be an orthonormal basis of the
-`n`-dimensional space `V` and `2N > n`. There is a constant `C ≥ 0` such that, whenever a
-Schwartz function `σ` bounded by `A` vanishes outside `closedBall 0 t` and its `N`-th derivatives
-along `b` are bounded by `A t ^ (-N)`,
+/-- **The `L¹` norm of the kernel of a band-limited symbol.** Let `b` be an orthonormal basis of
+the `n`-dimensional space `V` and `2N > n`. There is a constant `C ≥ 0` such that, whenever a
+Schwartz function `σ` vanishes outside `closedBall 0 t`, is bounded by `A` and its `N`-th
+derivatives along `b` are bounded by `A t ^ (-N)`,
 
-`∫ ‖𝓕⁻ σ x‖ dx ≤ C A`.
-
-The constant does not depend on the scale `t`: the `L¹` norm of the kernel is invariant under
-the dilations `σ ↦ σ (λ⁻¹ ·)`, which preserve these hypotheses with `t` replaced by `λ t`. -/
+`∫ ‖𝓕⁻ σ x‖ dx ≤ C A`. -/
 theorem exists_integral_norm_fourierInv_le_of_support_subset {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ V) {N : ℕ} (hN : finrank ℝ V < 2 * N) :
     ∃ C, 0 ≤ C ∧ ∀ (σ : 𝓢(V, H)) {t A : ℝ}, 0 < t → support σ ⊆ closedBall 0 t →
@@ -233,18 +230,17 @@ theorem exists_integral_norm_fourierInv_le_of_support_subset {ι : Type*} [Finty
   refine ⟨C₀ * √(volume.real (ball (0 : V) 1)) * (1 + √(Fintype.card ι)), by positivity,
     fun σ t A ht hσ hσA hσN ↦ ?_⟩
   have hA : 0 ≤ A := (norm_nonneg _).trans (hσA 0)
-  -- At the scale `R = t⁻¹`, the `L²` norms of `σ` and of its `N`-th derivatives, which are
-  -- `O(A t ^ (n/2))` and `O(A t ^ (n/2 - N))`, exactly compensate the powers of `R`.
-  have hσ2 := norm_toLp_two_le_of_support_subset_closedBall σ ht.le hσ hσA
-  have hsum := sqrt_sum_norm_toLp_iterate_lineDerivOp_sq_le b σ N ht.le (by positivity)
-    (closure_minimal hσ isClosed_closedBall) hσN
+  -- At `R = t⁻¹`, the `L¹` bound `exists_integral_norm_fourierInv_le` is controlled by the `L²`
+  -- norms of `σ` and of its `N`-th derivatives, which the support and the bounds control.
+  have h₀ := norm_toLp_two_le_of_support_subset_closedBall σ ht.le hσ hσA
+  have hsum := sqrt_sum_norm_toLp_iterate_lineDerivOp_sq_le b σ N ht.le
+    (div_nonneg hA (by positivity)) (closure_minimal hσ isClosed_closedBall) hσN
+  have ha : 0 < t ^ ((finrank ℝ V : ℝ) / 2) := by positivity
   have h₁ : t⁻¹ ^ ((finrank ℝ V : ℝ) / 2) = (t ^ ((finrank ℝ V : ℝ) / 2))⁻¹ :=
     Real.inv_rpow ht.le _
   have h₂ : t⁻¹ ^ ((finrank ℝ V : ℝ) / 2 - N) = t ^ N / t ^ ((finrank ℝ V : ℝ) / 2) := by
     rw [Real.inv_rpow ht.le, Real.rpow_sub ht, Real.rpow_natCast, inv_div]
-  have ha : 0 < t ^ ((finrank ℝ V : ℝ) / 2) := by positivity
-  refine (hC σ t⁻¹ (inv_pos.2 ht)).trans ?_
-  grw [h₁, h₂, hσ2, hsum]
+  grw [hC σ t⁻¹ (inv_pos.2 ht), h₁, h₂, h₀, hsum]
   refine le_of_eq ?_
   field_simp
 
