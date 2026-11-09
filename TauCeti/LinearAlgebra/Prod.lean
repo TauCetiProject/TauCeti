@@ -38,6 +38,8 @@ quadratic forms with the subgroup preserving both summands.
   basis `(b × c) × d` to `b × (c × d)`, up to relabelling the index.
 * `LinearEquiv.det_skewProd`: the same determinant formula for block triangular
   automorphisms, independently of the off-diagonal block.
+* `LinearEquiv.nonempty_linearEquiv_of_isUnit_snd_comp_inr`: a linear equivalence `M × P ≃ N × P`
+  whose lower-right block is invertible gives `M ≃ N`.
 * `TauCeti.LinearMap.lsmul_restrictScalars_prodMap`: multiplication by a scalar on a product of
   complex modules is the product map of the two multiplications.
 -/
@@ -123,6 +125,58 @@ theorem det_skewProd (e₁ : M₁ ≃ₗ[R] M₁) (e₂ : M₂ ≃ₗ[R] M₂) (
     LinearMap.det_toMatrix, LinearMap.det_toMatrix]
 
 end CommRing
+
+section Cancellation
+
+variable {A : Type*} [Semiring A] {M N : Type*} [AddCommMonoid M] [Module A M]
+  [AddCommMonoid N] [Module A N] {P : Type*} [AddCommGroup P] [Module A P]
+
+/-- **Cancellation from an invertible lower-right block.** A linear equivalence `M × P ≃ N × P`
+whose lower-right block `P → P` is invertible induces a linear equivalence `M ≃ N`. -/
+theorem nonempty_linearEquiv_of_isUnit_snd_comp_inr (e₁ : (M × P) ≃ₗ[A] (N × P))
+    (he₁ : IsUnit ((LinearMap.snd A N P).comp
+      ((e₁ : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inr A M P)))) :
+    Nonempty (M ≃ₗ[A] N) := by
+  -- Clear the lower-left block. The resulting triangular equivalence restricts to an
+  -- equivalence on pairs with second coordinate zero, so no subtraction in `M` or `N` is needed.
+  let c₁ : M →ₗ[A] P := (LinearMap.snd A N P).comp
+    ((e₁ : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inl A M P))
+  let d₁ : Module.End A P := (LinearMap.snd A N P).comp
+    ((e₁ : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inr A M P))
+  let ed : P ≃ₗ[A] P := LinearEquiv.ofBijective d₁ ((Module.End.isUnit_iff d₁).mp he₁)
+  let sourceShear : (M × P) ≃ₗ[A] (M × P) :=
+    (LinearEquiv.refl A M).skewProd (LinearEquiv.refl A P)
+      (-((ed.symm : P →ₗ[A] P).comp c₁))
+  let triangular := sourceShear.trans e₁
+  let s : M →ₗ[A] N := (LinearMap.fst A N P).comp
+    ((triangular : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inl A M P))
+  have he₁_snd (m : M) (p : P) : (e₁ (m, p)).2 = c₁ m + d₁ p := by
+    rw [← Prod.fst_add_snd (m, p), map_add]
+    rfl
+  have htriangular (m : M) (p : P) : (triangular (m, p)).2 = d₁ p := by
+    simp only [triangular, sourceShear, LinearEquiv.trans_apply,
+      LinearEquiv.skewProd_apply, LinearEquiv.refl_apply, LinearMap.neg_apply,
+      LinearMap.comp_apply]
+    rw [he₁_snd]
+    have hd_inv (x : P) : d₁ (ed.symm x) = x := ed.apply_symm_apply x
+    simp [hd_inv]
+  have hs_injective : Function.Injective s := by
+    intro m m' hmm'
+    have hpair : triangular (m, 0) = triangular (m', 0) := by
+      apply Prod.ext
+      · exact hmm'
+      · rw [htriangular, htriangular]
+    exact congrArg Prod.fst (triangular.injective hpair)
+  have hs_surjective : Function.Surjective s := by
+    intro n
+    obtain ⟨⟨m, p⟩, hmp⟩ := triangular.surjective (n, 0)
+    have hp : d₁ p = 0 := by simpa only [htriangular] using congrArg Prod.snd hmp
+    have hp : p = 0 := ed.injective (hp.trans ed.map_zero.symm)
+    subst p
+    exact ⟨m, congrArg Prod.fst hmp⟩
+  exact ⟨LinearEquiv.ofBijective s ⟨hs_injective, hs_surjective⟩⟩
+
+end Cancellation
 
 end LinearEquiv
 

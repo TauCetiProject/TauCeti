@@ -31,6 +31,9 @@ For the real-valued norm `lpNorm`, monotonicity in the measure needs `f ∈ Lᵖ
 
 * `MeasureTheory.lpNorm_mono_measure`: monotonicity of `lpNorm` in the measure.
 * `MeasureTheory.eLpNorm_add_measure_le`: subadditivity in the measure.
+* `MeasureTheory.eLpNorm_add_measure_rpow_le`: the `p`-th power of the `Lᵖ` seminorm is
+  subadditive in the measure, at every `p : ℝ≥0∞` (a pseudometrizable codomain with an extended
+  norm suffices).
 * `MeasureTheory.eLpNorm_restrict_biUnion_finset_le`: subadditivity over a finite union.
 -/
 
@@ -39,6 +42,29 @@ public section
 open scoped ENNReal
 
 namespace MeasureTheory
+
+/-- The `p`-th power of the `Lᵖ` seminorm is subadditive under adding measures. For `p = 0` or
+`p = ∞`, `p.toReal = 0` and the bound reduces to `1 ≤ 1 + 1`. No measurability is assumed: if the
+function is not almost everywhere strongly measurable for one of the measures, its seminorm there
+is `∞`. The codomain needs a pseudometrizable topology and an extended norm. -/
+theorem eLpNorm_add_measure_rpow_le {α ε : Type*} [MeasurableSpace α] [TopologicalSpace ε]
+    [ENorm ε] [TopologicalSpace.PseudoMetrizableSpace ε] {p : ℝ≥0∞} (f : α → ε)
+    (μ ν : Measure α) :
+    eLpNorm f p (μ + ν) ^ p.toReal ≤ eLpNorm f p μ ^ p.toReal + eLpNorm f p ν ^ p.toReal := by
+  by_cases hp0 : p = 0
+  · simp [hp0]
+  by_cases hp : p = ∞
+  · simp [hp]
+  have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+  have hpow {m : Measure α} (h : AEStronglyMeasurable f m) :
+      eLpNorm f p m ^ p.toReal = ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂m := by
+    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp h, ← ENNReal.rpow_mul, one_div,
+      inv_mul_cancel₀ hr.ne', ENNReal.rpow_one]
+  by_cases hm : AEStronglyMeasurable f μ ∧ AEStronglyMeasurable f ν
+  · rw [hpow (hm.1.add_measure hm.2), lintegral_add_measure, hpow hm.1, hpow hm.2]
+  · rcases not_and_or.1 hm with h | h
+    · simp [eLpNorm_of_not_aestronglyMeasurable h, hr]
+    · simp [eLpNorm_of_not_aestronglyMeasurable h, hr]
 
 variable {α ε : Type*} {m : MeasurableSpace α} [TopologicalSpace ε] [ContinuousENorm ε]
   [TopologicalSpace.PseudoMetrizableSpace ε] {p : ℝ≥0∞} {μ ν : Measure α}
