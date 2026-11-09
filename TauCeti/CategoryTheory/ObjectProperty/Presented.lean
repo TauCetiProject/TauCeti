@@ -11,9 +11,9 @@ public import Mathlib.CategoryTheory.ObjectProperty.Kernels
 /-!
 # Objects presented by a property of objects
 
-For a property `P` of objects of a preadditive category, `P.presented` is the property of being a
-cokernel of a morphism between objects of `P`. In an abelian category in which every object is a
-quotient of an object of `P`, every object is `P`-presented.
+For a property `P` of objects of a category with zero morphisms, `P.presented` is the property of
+being a cokernel of a morphism between objects of `P`. In an abelian category in which every object
+is a quotient of an object of `P`, every object is `P`-presented.
 
 ## Main declarations
 
@@ -34,7 +34,7 @@ namespace CategoryTheory.ObjectProperty
 variable {C : Type u} [Category.{v} C]
 
 /-- The objects of `C` that are cokernels of morphisms between objects of `P`. -/
-abbrev presented [Preadditive C] (P : ObjectProperty C) : ObjectProperty C :=
+abbrev presented [HasZeroMorphisms C] (P : ObjectProperty C) : ObjectProperty C :=
   (MorphismProperty.ofObjectProperty P P).cokernels
 
 /-- If every object of `C` is a quotient of an object of `P`, then every object of `C` is a
