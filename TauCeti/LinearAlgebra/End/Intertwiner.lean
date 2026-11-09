@@ -23,7 +23,8 @@ isomorphism `T : M ≃ N` with
 
   `T (ρ b x) = σ b (T x)`,
 
-and every linear map `M → N` intertwining `ρ` with `σ` is a scalar multiple of `T`.
+and every linear map `M → N` intertwining `ρ` with `σ` is a scalar multiple of `T`. The latter
+only uses that `ρ` maps `B` onto `Module.End K M`.
 
 Existence is the Skolem–Noether theorem for endomorphism algebras. The composite
 `σ ∘ ρ⁻¹ : Module.End K M → Module.End K N` is injective because `Module.End K M` is a simple
@@ -36,8 +37,8 @@ that is with all of `Module.End K M`, so it is a scalar (`Module.End.mem_center_
 
 * `AlgEquiv.exists_linearEquiv_apply_eq_apply`: a representation of the same dimension as a
   full endomorphism representation is isomorphic to it.
-* `AlgEquiv.exists_eq_smul_of_apply_eq_apply`: intertwiners out of a full endomorphism
-  representation are unique up to a scalar.
+* `AlgHom.exists_eq_smul_of_apply_eq_apply`: intertwiners out of a representation onto a full
+  endomorphism algebra are unique up to a scalar.
 -/
 
 public section
@@ -75,17 +76,24 @@ theorem exists_linearEquiv_apply_eq_apply [FiniteDimensional K M] [FiniteDimensi
   rw [hf] at hb
   simpa using hb.symm
 
-/-- **Schur's lemma for a full endomorphism representation.** If `ρ` identifies `B` with the
+end AlgEquiv
+
+namespace AlgHom
+
+variable {K B M N : Type*} [Field K] [Ring B] [Algebra K B] [AddCommGroup M] [Module K M]
+  [AddCommGroup N] [Module K N]
+
+/-- **Schur's lemma for a full endomorphism representation.** If `ρ` maps `B` onto the
 endomorphism algebra of `M` and `T : M ≃ N` intertwines `ρ` with a representation `σ`, then every
 linear map `U : M → N` intertwining `ρ` with `σ` is a scalar multiple of `T`. -/
-theorem exists_eq_smul_of_apply_eq_apply (ρ : B ≃ₐ[K] Module.End K M)
-    (σ : B →ₐ[K] Module.End K N) {T : M ≃ₗ[K] N} (hT : ∀ b x, T (ρ b x) = σ b (T x))
-    {U : M →ₗ[K] N} (hU : ∀ b x, U (ρ b x) = σ b (U x)) :
+theorem exists_eq_smul_of_apply_eq_apply {ρ : B →ₐ[K] Module.End K M}
+    (hρ : Function.Surjective ρ) (σ : B →ₐ[K] Module.End K N) {T : M ≃ₗ[K] N}
+    (hT : ∀ b x, T (ρ b x) = σ b (T x)) {U : M →ₗ[K] N} (hU : ∀ b x, U (ρ b x) = σ b (U x)) :
     ∃ c : K, U = c • T.toLinearMap := by
   -- `T⁻¹ ∘ U` commutes with every `ρ b`, that is with every endomorphism of `M`.
   have hcenter : T.symm.toLinearMap ∘ₗ U ∈ Set.center (Module.End K M) := by
     refine Semigroup.mem_center_iff.2 fun g ↦ LinearMap.ext fun x ↦ ?_
-    obtain ⟨b, rfl⟩ := ρ.surjective g
+    obtain ⟨b, rfl⟩ := hρ g
     simp only [Module.End.mul_eq_comp, LinearMap.comp_apply, LinearEquiv.coe_coe, hU]
     rw [T.eq_symm_apply, hT, T.apply_symm_apply]
   obtain ⟨c, hc', hc⟩ := Module.End.mem_center_iff.1 hcenter
@@ -93,4 +101,4 @@ theorem exists_eq_smul_of_apply_eq_apply (ρ : B ≃ₐ[K] Module.End K M)
   have hx := congr(T ($hc x))
   simpa using hx
 
-end AlgEquiv
+end AlgHom

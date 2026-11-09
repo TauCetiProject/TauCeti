@@ -27,7 +27,7 @@ same label is isomorphic to `M` as a Clifford module
 (`CliffordAlgebra.exists_linearEquiv_apply_eq_apply_of_mem_odd`), and the isomorphism is unique up
 to a scalar (`CliffordAlgebra.exists_eq_smul_of_apply_eq_apply`). Both come from the
 corresponding statements for representations through a full endomorphism algebra,
-`AlgEquiv.exists_linearEquiv_apply_eq_apply` and `AlgEquiv.exists_eq_smul_of_apply_eq_apply`.
+`AlgEquiv.exists_linearEquiv_apply_eq_apply` and `AlgHom.exists_eq_smul_of_apply_eq_apply`.
 
 ## Main results
 
@@ -98,14 +98,14 @@ theorem exists_linearEquiv_apply_eq_apply_of_mem_odd [FiniteDimensional K M]
   refine ⟨T, apply_eq_apply_of_forall_mem_even hω h₁ h₂ (T := T.toLinearMap) fun x hx m ↦ ?_⟩
   simpa using hT ⟨x, hx⟩ m
 
-/-- **Isomorphisms of Clifford modules are unique up to a scalar** when the even subalgebra acts
-on the source `M` as the whole of `Module.End K M`: if `T : M ≃ N` intertwines two Clifford
-actions, every linear map `U : M → N` intertwining them is a scalar multiple of `T`. -/
-theorem exists_eq_smul_of_apply_eq_apply (hρ₁ : Function.Bijective (ρ₁.comp (even Q).val))
+/-- **Isomorphisms of Clifford modules are unique up to a scalar** when the even subalgebra maps
+onto `Module.End K M` for the source `M`: if `T : M ≃ N` intertwines two Clifford actions, every
+linear map `U : M → N` intertwining them is a scalar multiple of `T`. -/
+theorem exists_eq_smul_of_apply_eq_apply (hρ₁ : Function.Surjective (ρ₁.comp (even Q).val))
     {T : M ≃ₗ[K] N} (hT : ∀ x m, T (ρ₁ x m) = ρ₂ x (T m)) {U : M →ₗ[K] N}
     (hU : ∀ x m, U (ρ₁ x m) = ρ₂ x (U m)) :
     ∃ c : K, U = c • T.toLinearMap :=
-  (AlgEquiv.ofBijective _ hρ₁).exists_eq_smul_of_apply_eq_apply (ρ₂.comp (even Q).val)
+  AlgHom.exists_eq_smul_of_apply_eq_apply hρ₁ (ρ₂.comp (even Q).val)
     (fun x m ↦ by simpa using hT x m) (fun x m ↦ by simpa using hU x m)
 
 end Field

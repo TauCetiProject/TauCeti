@@ -134,7 +134,7 @@ private theorem exists_linearEquiv_of_eigenspaceComplexVolumeAction_complexVolum
     congr 1
     omega
   obtain ⟨T, hT⟩ := exists_linearEquiv_apply_eq_apply_of_mem_odd hρ hω h₁ h₂ hdim
-  exact ⟨T, hT, fun U hU ↦ exists_eq_smul_of_apply_eq_apply hρ hT hU⟩
+  exact ⟨T, hT, fun U hU ↦ exists_eq_smul_of_apply_eq_apply hρ.2 hT hU⟩
 
 /-- **The odd spinor modules are the restricted half-spinors of `V ⊕ ℝ`.** Let
 `(e₁, f₁, …, e_ℓ, f_ℓ, u)` be a positively oriented orthonormal basis of `V` adapted to the
