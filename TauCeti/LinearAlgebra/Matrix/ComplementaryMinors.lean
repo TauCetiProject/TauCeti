@@ -26,10 +26,6 @@ For a split complex, the homology dimension is the rank of the middle term minus
 the two differentials (`Matrix.rank_splitIdempotent_map`). These are the linear algebra
 prerequisites for local splitting and cohomology-and-base-change criteria.
 
-## Source
-
-Adapted from `Jacobian/LinearAlgebra/Matrix/ComplementaryMinors.lean` in the Jacobian library,
-accepted release `baef7723da528551b7d2f93bd9a9a53303b04dbc`.
 -/
 
 public section
@@ -110,32 +106,6 @@ theorem exists_isSplitFactorization_of_isUnit_det_submatrix
 
 end Ring
 
-section Field
-
-variable {K : Type*} [Field K] {ι₀ ι₁ ι₂ : Type*} [Fintype ι₀] [Fintype ι₁] [Fintype ι₂]
-
-/-- **Ranks in a split complex over a field.** Let `B * A = 0` over a field, and suppose that the
-middle term `K^{ι₁}` is split by matrices `I`, `P` with `P I = 1`, `B I = 0`, `P A = 0` and
-`I P + A σ + τ B = 1`. Then `rank A + rank B + |k| = |ι₁|`: the cohomology has dimension `|k|`. -/
-theorem rank_add_rank_add_card_eq {k : Type*} [Fintype k] [DecidableEq k] [DecidableEq ι₁]
-    (A : Matrix ι₁ ι₀ K) (B : Matrix ι₂ ι₁ K) (I : Matrix ι₁ k K) (P : Matrix k ι₁ K)
-    (σ : Matrix ι₀ ι₁ K) (τ : Matrix ι₁ ι₂ K) (hBA : B * A = 0) (hPI : P * I = 1)
-    (hBI : B * I = 0) (hPA : P * A = 0) (h : I * P + A * σ + τ * B = 1) :
-    A.rank + B.rank + Fintype.card k = Fintype.card ι₁ := by
-  have hk : (I * P).rank = Fintype.card k := by
-    refine le_antisymm ((rank_mul_le_right _ _).trans (rank_le_card_height P)) ?_
-    calc Fintype.card k = (1 : Matrix k k K).rank := (rank_one).symm
-      _ = (P * (I * P) * I).rank := by
-        rw [← Matrix.mul_assoc, hPI, Matrix.one_mul, hPI]
-      _ ≤ (I * P).rank := (rank_mul_le_left _ _).trans (rank_mul_le_right _ _)
-  have hrank := rank_add_rank_add_rank_eq_card (I * P) A B σ τ
-    (by rw [Matrix.mul_assoc, ← Matrix.mul_assoc P, hPI, Matrix.one_mul])
-    (by rw [Matrix.mul_assoc, hPA, Matrix.mul_zero])
-    (by rw [← Matrix.mul_assoc, hBI, Matrix.zero_mul]) hBA h
-  omega
-
-end Field
-
 section Exact
 
 variable {S K : Type*} [CommRing S] [Field K] (ψ : S →+* K)
@@ -163,84 +133,6 @@ theorem exists_isSplitFactorization_of_rank_map_add_eq [DecidableEq ι₁]
   exact exists_isSplitFactorization_of_isUnit_det_submatrix A B hBA e₁ e₀ (hψ _ h₁) f₂ f₁ (hψ _ h₂)
     (by simpa using h)
 
-/-- The rank at `ψ` of a matrix with a split rank factorisation through `ρ` is `|ρ|`. -/
-lemma rank_map_eq_of_isSplitFactorization {ρ : Type*} [Fintype ρ] [DecidableEq ρ]
-    {B : Matrix ι₂ ι₁ S}
-    {L : Matrix ι₂ ρ S} {M : Matrix ρ ι₁ S} {L' : Matrix ρ ι₂ S} {M' : Matrix ι₁ ρ S}
-    (hB : IsSplitFactorization B L M L' M') : (B.map ψ).rank = Fintype.card ρ := by
-  obtain ⟨k, kL, kM⟩ := hB.map ψ
-  refine le_antisymm ?_ ?_
-  · rw [k]
-    exact (rank_mul_le_left _ _).trans (rank_le_card_width _)
-  · have : L'.map ψ * B.map ψ * M'.map ψ = 1 := by
-      rw [k, Matrix.mul_assoc, Matrix.mul_assoc, kM, Matrix.mul_one, kL]
-    calc Fintype.card ρ = (1 : Matrix ρ ρ K).rank := rank_one.symm
-      _ ≤ (B.map ψ).rank := by
-        rw [← this]
-        exact (rank_mul_le_left _ _).trans (rank_mul_le_right _ _)
-
-/-- **Ranks at a point of an exact complex.** Let `B * A = 0`, where `B = L M` has a split rank
-factorisation, and suppose that the complex is exact at `S^{ι₁}`: every square matrix `X` with
-`B X = 0` is of the form `A V`. Then for every ring homomorphism `ψ` to a field, the ranks of `A`
-and `B` at `ψ` add up to `|ι₁|`. -/
-theorem rank_map_add_rank_map_eq_of_exact (A : Matrix ι₁ ι₀ S) (B : Matrix ι₂ ι₁ S)
-    (hBA : B * A = 0) {ρ : Type*} [Fintype ρ] [DecidableEq ρ] {L : Matrix ι₂ ρ S}
-    {M : Matrix ρ ι₁ S} {L' : Matrix ρ ι₂ S} {M' : Matrix ι₁ ρ S}
-    (hB : IsSplitFactorization B L M L' M')
-    (hex : ∀ X : Matrix ι₁ ι₁ S, B * X = 0 → ∃ V : Matrix ι₀ ι₁ S, A * V = X) :
-    (A.map ψ).rank + (B.map ψ).rank = Fintype.card ι₁ := by
-  classical
-  have rB := rank_map_eq_of_isSplitFactorization ψ hB
-  obtain ⟨V, hV⟩ := hex (1 - M' * M) (by
-    rw [hB.eq_mul, Matrix.mul_sub, Matrix.mul_one, Matrix.mul_assoc, ← Matrix.mul_assoc M M',
-      hB.right_inv, Matrix.one_mul, sub_self])
-  have h₁ : ((1 - M' * M).map ψ).rank ≤ (A.map ψ).rank := by
-    rw [← hV, Matrix.map_mul]
-    exact rank_mul_le_left _ _
-  have h₂ : Fintype.card ι₁ ≤ ((1 - M' * M).map ψ).rank + ((M' * M).map ψ).rank := by
-    rw [← rank_one (R := K) (n := ι₁)]
-    refine le_of_eq_of_le ?_ (rank_add_le _ _)
-    rw [← Matrix.map_add _ (map_add ψ), sub_add_cancel, Matrix.map_one _ (map_zero ψ) (map_one ψ)]
-  have h₃ : ((M' * M).map ψ).rank ≤ Fintype.card ρ := by
-    rw [Matrix.map_mul]
-    exact (rank_mul_le_left _ _).trans (rank_le_card_width _)
-  have h₄ := rank_add_rank_le_card_of_mul_eq_zero (A := B.map ψ) (B := A.map ψ)
-    (by rw [← Matrix.map_mul, hBA, Matrix.map_zero _ (map_zero ψ)])
-  omega
-
 end Exact
-
-/-- After mapping to a field, the split homology idempotent has rank equal to the
-middle dimension minus the ranks of the two split differentials. -/
-lemma rank_splitIdempotent_map {R K : Type*} [CommRing R] [Field K]
-    {a b c : Type*} [Fintype a] [Fintype b] [Fintype c] [DecidableEq b]
-    {ρ₁ ρ₂ : Type*} [Fintype ρ₁] [Fintype ρ₂] [DecidableEq ρ₁] [DecidableEq ρ₂]
-    {A₁ : Matrix b a R} {A₂ : Matrix c b R}
-    {L₁ : Matrix b ρ₁ R} {M₁ : Matrix ρ₁ a R}
-    {L₁' : Matrix ρ₁ b R} {M₁' : Matrix a ρ₁ R}
-    {L₂ : Matrix c ρ₂ R} {M₂ : Matrix ρ₂ b R}
-    {L₂' : Matrix ρ₂ c R} {M₂' : Matrix b ρ₂ R}
-    (h : A₂ * A₁ = 0)
-    (h₁ : IsSplitFactorization A₁ L₁ M₁ L₁' M₁')
-    (h₂ : IsSplitFactorization A₂ L₂ M₂ L₂' M₂') (φ : R →+* K) :
-    ((splitIdempotent L₁ L₁' M₂ M₂').map φ).rank =
-      Fintype.card b - Fintype.card ρ₁ - Fintype.card ρ₂ := by
-  have hML := mul_eq_zero_of_isSplitFactorization h h₁ h₂
-  obtain ⟨k₁, kL₁, -⟩ := h₁.map φ
-  obtain ⟨k₂, -, kM₂⟩ := h₂.map φ
-  have kML : M₂.map φ * L₁.map φ = 0 := by
-    rw [← Matrix.map_mul, hML, Matrix.map_zero _ (map_zero φ)]
-  have kA : A₂.map φ * A₁.map φ = 0 := by
-    rw [← Matrix.map_mul, h, Matrix.map_zero _ (map_zero φ)]
-  rw [splitIdempotent_map]
-  have r₁ := rank_map_eq_of_isSplitFactorization φ h₁
-  have r₂ := rank_map_eq_of_isSplitFactorization φ h₂
-  have hdecomp := splitIdempotent_add_add_eq_one
-    (L₁' := L₁'.map φ) (M₂' := M₂'.map φ) k₁ (h₁.map φ).right_inv k₂
-    (h₂.map φ).left_inv
-  have hrank := rank_add_rank_add_rank_eq_card _ (A₁.map φ) (A₂.map φ) _ _
-    (splitIdempotent_mul_self kL₁ kM₂ kML) (splitIdempotent_mul k₁ kL₁ kML)
-    (mul_splitIdempotent k₂ kM₂ kML) kA hdecomp
-  omega
 
 end Matrix

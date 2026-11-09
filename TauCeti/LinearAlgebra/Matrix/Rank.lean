@@ -346,6 +346,32 @@ lemma rank_add_rank_add_rank_eq_card [Fintype m] [DecidableEq m]
   have hτ := rank_mul_le_right τ A₂
   omega
 
+section Field
+
+variable {K : Type*} [Field K] {ι₀ ι₁ ι₂ : Type*} [Fintype ι₀] [Fintype ι₁] [Fintype ι₂]
+
+/-- **Ranks in a split complex over a field.** Let `B * A = 0` over a field, and suppose that the
+middle term `K^{ι₁}` is split by matrices `I`, `P` with `P I = 1`, `B I = 0`, `P A = 0` and
+`I P + A σ + τ B = 1`. Then `rank A + rank B + |k| = |ι₁|`: the cohomology has dimension `|k|`. -/
+theorem rank_add_rank_add_card_eq {k : Type*} [Fintype k] [DecidableEq k] [DecidableEq ι₁]
+    (A : Matrix ι₁ ι₀ K) (B : Matrix ι₂ ι₁ K) (I : Matrix ι₁ k K) (P : Matrix k ι₁ K)
+    (σ : Matrix ι₀ ι₁ K) (τ : Matrix ι₁ ι₂ K) (hBA : B * A = 0) (hPI : P * I = 1)
+    (hBI : B * I = 0) (hPA : P * A = 0) (h : I * P + A * σ + τ * B = 1) :
+    A.rank + B.rank + Fintype.card k = Fintype.card ι₁ := by
+  have hk : (I * P).rank = Fintype.card k := by
+    refine le_antisymm ((rank_mul_le_right _ _).trans (rank_le_card_height P)) ?_
+    calc Fintype.card k = (1 : Matrix k k K).rank := (rank_one).symm
+      _ = (P * (I * P) * I).rank := by
+        rw [← Matrix.mul_assoc, hPI, Matrix.one_mul, hPI]
+      _ ≤ (I * P).rank := (rank_mul_le_left _ _).trans (rank_mul_le_right _ _)
+  have hrank := rank_add_rank_add_rank_eq_card (I * P) A B σ τ
+    (by rw [Matrix.mul_assoc, ← Matrix.mul_assoc P, hPI, Matrix.one_mul])
+    (by rw [Matrix.mul_assoc, hPA, Matrix.mul_zero])
+    (by rw [← Matrix.mul_assoc, hBI, Matrix.zero_mul]) hBA h
+  omega
+
+end Field
+
 /-- The column space of a matrix over a field `K` has `|K| ^ rank` elements. Over an infinite
 field both sides are `0` unless the rank is `0`. -/
 theorem natCard_range_mulVec_eq_pow_rank (A : Matrix m n K) :
