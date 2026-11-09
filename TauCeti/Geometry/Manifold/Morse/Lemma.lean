@@ -349,18 +349,21 @@ noncomputable def neg (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x
     simp only [Pi.neg_apply, neg_mul, Finset.sum_neg_distrib]
     ring
 
+omit [FiniteDimensional ℝ E] in
 /-- The negated Morse chart has the same chart. -/
 @[simp]
 theorem neg_toChart (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
     (φ.neg h).toChart = φ.toChart := by
   rw [neg]
 
+omit [FiniteDimensional ℝ E] in
 /-- The negated Morse chart has the same coordinates. -/
 @[simp]
 theorem neg_coord (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
     (φ.neg h).coord = φ.coord := by
   rw [neg]
 
+omit [FiniteDimensional ℝ E] in
 /-- The negated Morse chart has the opposite weights. -/
 @[simp]
 theorem neg_weight (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
