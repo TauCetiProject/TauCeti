@@ -14,7 +14,7 @@ import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 # The cut-off inverse of a symbol
 
 Let `a ∈ S^m_{1,0}` be a symbol of order `m` whose values `a(x, ξ) : V →L[ℂ] W` are invertible at
-all large frequencies `R ≤ ‖ξ‖`, with the inverse bound `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)` there (the
+all large frequencies `|R| ≤ ‖ξ‖`, with the inverse bound `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)` there (the
 constant `C` may depend on a compact set of positions). Such a symbol is elliptic in the sense of
 the full-symbol calculus. For a frequency cutoff `χ`, the function
 
@@ -225,13 +225,13 @@ section Cutoff
 
 /-! ### The rescaled frequency cutoff -/
 
-/-- If `‖ξ / R‖ ≥ 1`, then `R ≤ ‖ξ‖`. -/
-private theorem le_norm_of_one_le_norm_inv_smul {R : ℝ} {ξ : CoordinateSpace n}
-    (h : 1 ≤ ‖R⁻¹ • ξ‖) : R ≤ ‖ξ‖ := by
-  rcases le_or_gt R 0 with hR | hR
-  · exact hR.trans (norm_nonneg ξ)
-  · rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR] at h
-    simpa using (le_inv_mul_iff₀ hR).1 h
+/-- If `‖ξ / R‖ ≥ 1`, then `|R| ≤ ‖ξ‖`. -/
+private theorem abs_le_norm_of_one_le_norm_inv_smul {R : ℝ} {ξ : CoordinateSpace n}
+    (h : 1 ≤ ‖R⁻¹ • ξ‖) : |R| ≤ ‖ξ‖ := by
+  rcases eq_or_ne R 0 with rfl | hR
+  · norm_num at h
+  · rw [norm_smul, norm_inv, Real.norm_eq_abs] at h
+    simpa using (le_inv_mul_iff₀ (abs_pos.2 hR)).1 h
 
 variable (χ : FrequencyCutoff (CoordinateSpace n)) (R : ℝ)
 
@@ -270,11 +270,11 @@ and satisfies the estimate of order `-m` itself. -/
 private theorem wordBounds_inverse (a : Symbol n V W m) {T : Set (CoordinateSpace n)} {R : ℝ}
     (ha : ∀ α β : List (Fin n), ∃ C, ∀ x ∈ T, ∀ ξ,
       ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2))
-    (hinv : ∀ x ∈ T, ∀ ξ, R ≤ ‖ξ‖ → (a.coefficient (x, ξ)).IsInvertible)
-    (hC : ∃ C, ∀ x ∈ T, ∀ ξ, R ≤ ‖ξ‖ →
+    (hinv : ∀ x ∈ T, ∀ ξ, |R| ≤ ‖ξ‖ → (a.coefficient (x, ξ)).IsInvertible)
+    (hC : ∃ C, ∀ x ∈ T, ∀ ξ, |R| ≤ ‖ξ‖ →
       ‖(a.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2)) (k : ℕ) :
-    WordBounds {p | p.1 ∈ T ∧ R ≤ ‖p.2‖} (-m) k fun p => (a.coefficient p).inverse := by
-  set S : Set (CoordinateSpace n × CoordinateSpace n) := {p | p.1 ∈ T ∧ R ≤ ‖p.2‖}
+    WordBounds {p | p.1 ∈ T ∧ |R| ≤ ‖p.2‖} (-m) k fun p => (a.coefficient p).inverse := by
+  set S : Set (CoordinateSpace n × CoordinateSpace n) := {p | p.1 ∈ T ∧ |R| ≤ ‖p.2‖}
   have hU := isOpen_setOf_isInvertible a
   have hSU : S ⊆ {p | (a.coefficient p).IsInvertible} := fun p hp => hinv p.1 hp.1 p.2 hp.2
   have hinvU := contDiffOn_inverse a
@@ -337,14 +337,14 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace
 the symbol is invertible. -/
 private theorem contDiff_cutoffInverse (a : Symbol n V W m)
     (χ : FrequencyCutoff (CoordinateSpace n)) (R : ℝ)
-    (hinv : ∀ x ξ, R ≤ ‖ξ‖ → (a.coefficient (x, ξ)).IsInvertible) :
+    (hinv : ∀ x ξ, |R| ≤ ‖ξ‖ → (a.coefficient (x, ξ)).IsInvertible) :
     ContDiff ℝ ∞ fun p => χ (R⁻¹ • p.2) • (a.coefficient p).inverse := by
   refine contDiff_iff_contDiffAt.2 fun p => ?_
   by_cases hp : ‖R⁻¹ • p.2‖ < 1
   · exact contDiffAt_const.congr_of_eventuallyEq
       (χ.comp_inv_smul_snd_smul_eventuallyEq_zero R (fun p => (a.coefficient p).inverse) hp)
   · have hq : (a.coefficient p).IsInvertible :=
-      hinv p.1 p.2 (le_norm_of_one_le_norm_inv_smul (not_lt.1 hp))
+      hinv p.1 p.2 (abs_le_norm_of_one_le_norm_inv_smul (not_lt.1 hp))
     exact (χ.contDiff_comp_inv_smul_snd R).contDiffAt.smul
       (a.contDiff_coefficient.contDiffAt.clm_inverse hq)
 
@@ -352,15 +352,15 @@ private theorem contDiff_cutoffInverse (a : Symbol n V W m)
 and of its inverse there. -/
 private theorem exists_bound_cutoffInverse (a : Symbol n V W m)
     (χ : FrequencyCutoff (CoordinateSpace n)) (R : ℝ)
-    (hinv : ∀ x ξ, R ≤ ‖ξ‖ → (a.coefficient (x, ξ)).IsInvertible) {T : Set (CoordinateSpace n)}
+    (hinv : ∀ x ξ, |R| ≤ ‖ξ‖ → (a.coefficient (x, ξ)).IsInvertible) {T : Set (CoordinateSpace n)}
     (ha : ∀ α β : List (Fin n), ∃ C, ∀ x ∈ T, ∀ ξ,
       ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2))
-    (hC : ∃ C, ∀ x ∈ T, ∀ ξ, R ≤ ‖ξ‖ →
+    (hC : ∃ C, ∀ x ∈ T, ∀ ξ, |R| ≤ ‖ξ‖ →
       ‖(a.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2)) (α β : List (Fin n)) :
     ∃ C, 0 ≤ C ∧ ∀ x ∈ T, ∀ ξ,
       ‖mixedDeriv α β (fun p => χ (R⁻¹ • p.2) • (a.coefficient p).inverse) x ξ‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ ((-m - β.length) / 2) := by
-  have hSU : {p : CoordinateSpace n × CoordinateSpace n | p.1 ∈ T ∧ R ≤ ‖p.2‖} ⊆
+  have hSU : {p : CoordinateSpace n × CoordinateSpace n | p.1 ∈ T ∧ |R| ≤ ‖p.2‖} ⊆
       {p | (a.coefficient p).IsInvertible} := fun p hp => hinv p.1 p.2 hp.2
   have hb := WordBounds.bilinear (ContinuousLinearMap.lsmul ℝ ℝ) (isOpen_setOf_isInvertible a)
     hSU (χ.contDiff_comp_inv_smul_snd R).contDiffOn (contDiffOn_inverse a)
@@ -375,7 +375,7 @@ private theorem exists_bound_cutoffInverse (a : Symbol n V W m)
       (χ.comp_inv_smul_snd_smul_eventuallyEq_zero R (fun p => (a.coefficient p).inverse)
         (p := (x, ξ)) hξ), norm_zero]
     positivity
-  · have h := hC (x, ξ) ⟨hx, le_norm_of_one_le_norm_inv_smul (not_lt.1 hξ)⟩
+  · have h := hC (x, ξ) ⟨hx, abs_le_norm_of_one_le_norm_inv_smul (not_lt.1 hξ)⟩
     simp only [ContinuousLinearMap.lsmul_apply, zero_add, List.map_append, List.map_map,
       Function.comp_def, mixedDirection_inl, mixedDirection_inr, ← mixedDirections_def] at h
     have hβ : freqLetters (α.map Sum.inl ++ β.map Sum.inr) = β := by
@@ -384,12 +384,12 @@ private theorem exists_bound_cutoffInverse (a : Symbol n V W m)
     exact h.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))
 
 /-- The cut-off inverse `χ(ξ / R) a(x, ξ)⁻¹` of a symbol `a` of order `m` that is invertible at
-all frequencies `R ≤ ‖ξ‖`, with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)` there for a constant `C` depending on
+all frequencies `|R| ≤ ‖ξ‖`, with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)` there for a constant `C` depending on
 a compact set of positions. It is a symbol of order `-m`, inverse to `a` wherever `χ(ξ / R) = 1`.
 -/
 def cutoffInverse (a : Symbol n V W m) (χ : FrequencyCutoff (CoordinateSpace n)) (R : ℝ)
-    (hinv : ∀ x ξ, R ≤ ‖ξ‖ → (a.coefficient (x, ξ)).IsInvertible)
-    (hbound : ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C, ∀ x ∈ K, ∀ ξ, R ≤ ‖ξ‖ →
+    (hinv : ∀ x ξ, |R| ≤ ‖ξ‖ → (a.coefficient (x, ξ)).IsInvertible)
+    (hbound : ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C, ∀ x ∈ K, ∀ ξ, |R| ≤ ‖ξ‖ →
       ‖(a.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2)) :
     Symbol n W V (-m) where
   coefficient p := χ (R⁻¹ • p.2) • (a.coefficient p).inverse
@@ -398,8 +398,8 @@ def cutoffInverse (a : Symbol n V W m) (χ : FrequencyCutoff (CoordinateSpace n)
     (fun α β => (a.exists_bound K hK α β).imp fun _ h => h.2) (hbound K hK)
 
 variable (a : Symbol n V W m) (χ : FrequencyCutoff (CoordinateSpace n)) (R : ℝ)
-  (hinv : ∀ x ξ, R ≤ ‖ξ‖ → (a.coefficient (x, ξ)).IsInvertible)
-  (hbound : ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C, ∀ x ∈ K, ∀ ξ, R ≤ ‖ξ‖ →
+  (hinv : ∀ x ξ, |R| ≤ ‖ξ‖ → (a.coefficient (x, ξ)).IsInvertible)
+  (hbound : ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C, ∀ x ∈ K, ∀ ξ, |R| ≤ ‖ξ‖ →
     ‖(a.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2))
 
 @[simp]
@@ -413,7 +413,7 @@ theorem coefficient_comp_coefficient_cutoffInverse (x ξ : CoordinateSpace n) :
       χ (R⁻¹ • ξ) • ContinuousLinearMap.id ℂ W := by
   rcases le_or_gt ‖R⁻¹ • ξ‖ 1 with hξ | hξ
   · simp [χ.apply_eq_zero_of_norm_le_one hξ]
-  · simp [(hinv x ξ (le_norm_of_one_le_norm_inv_smul hξ.le)).self_comp_inverse]
+  · simp [(hinv x ξ (abs_le_norm_of_one_le_norm_inv_smul hξ.le)).self_comp_inverse]
 
 /-- The cut-off inverse composed with the symbol is the cutoff `χ(ξ / R)` times the identity. -/
 theorem coefficient_cutoffInverse_comp_coefficient (x ξ : CoordinateSpace n) :
@@ -421,7 +421,7 @@ theorem coefficient_cutoffInverse_comp_coefficient (x ξ : CoordinateSpace n) :
       χ (R⁻¹ • ξ) • ContinuousLinearMap.id ℂ V := by
   rcases le_or_gt ‖R⁻¹ • ξ‖ 1 with hξ | hξ
   · simp [χ.apply_eq_zero_of_norm_le_one hξ]
-  · simp [(hinv x ξ (le_norm_of_one_le_norm_inv_smul hξ.le)).inverse_comp_self]
+  · simp [(hinv x ξ (abs_le_norm_of_one_le_norm_inv_smul hξ.le)).inverse_comp_self]
 
 /-- For a nonzero radius `R`, at frequencies `‖ξ‖ ≥ 2 |R|` the cut-off inverse is the pointwise
 inverse of the symbol. -/
@@ -437,10 +437,10 @@ theorem coefficient_cutoffInverse_of_two_mul_abs_le (hR : R ≠ 0) {ξ : Coordin
 a constant independent of the position, the cut-off inverse satisfies uniform estimates. -/
 theorem IsUniform.cutoffInverse {a : Symbol n V W m} (ha : a.IsUniform)
     (χ : FrequencyCutoff (CoordinateSpace n)) (R : ℝ)
-    (hinv : ∀ x ξ, R ≤ ‖ξ‖ → (a.coefficient (x, ξ)).IsInvertible)
-    (hbound : ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C, ∀ x ∈ K, ∀ ξ, R ≤ ‖ξ‖ →
+    (hinv : ∀ x ξ, |R| ≤ ‖ξ‖ → (a.coefficient (x, ξ)).IsInvertible)
+    (hbound : ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C, ∀ x ∈ K, ∀ ξ, |R| ≤ ‖ξ‖ →
       ‖(a.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2))
-    (hC : ∃ C, ∀ x ξ, R ≤ ‖ξ‖ →
+    (hC : ∃ C, ∀ x ξ, |R| ≤ ‖ξ‖ →
       ‖(a.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2)) :
     (a.cutoffInverse χ R hinv hbound).IsUniform := by
   rw [isUniform_iff]

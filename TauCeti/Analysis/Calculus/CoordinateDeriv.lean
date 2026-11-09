@@ -67,6 +67,8 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
   smooth functions.
 * `TauCeti.mixedDeriv_eq_iteratedFDeriv`, `TauCeti.mixedDeriv_eq_iteratedFDeriv_append`: its
   comparison with `iteratedFDeriv` on the directions `TauCeti.mixedDirections`.
+* `TauCeti.exists_bound_mixedDeriv_comp_snd`: symbol-type estimates for a position-independent
+  function from estimates of the Fréchet derivatives of its profile.
 * `ContinuousLinearMap.coordinateDeriv_of_bilinear`, `ContinuousLinearMap.mixedDeriv_of_bilinear`:
   the Leibniz rules.
 * `ContinuousLinearMap.apply_eq_sum_single`, `ContinuousLinearMap.opNorm_le_of_apply_eq_sum`:
@@ -605,6 +607,27 @@ theorem mixedDeriv_nil_comp_snd (f : CoordinateSpace n → A) (β : List (Fin n)
     (x ξ : CoordinateSpace n) :
     mixedDeriv [] β (fun p => f p.2) x ξ = coordinateDeriv β f ξ := by
   simp only [mixedDeriv_def, coordinateDeriv_nil]
+
+/-- Frequency-only symbol estimates: if the `|β|`-th derivative of a `C^|β|` function `f` on `ℝⁿ`
+satisfies `‖D^|β| f(ξ)‖ ≤ C ⟨ξ⟩^(m - |β|)`, then the mixed derivative `∂_x^α ∂_ξ^β` of the
+position-independent function `(x, ξ) ↦ f ξ` satisfies the same estimate, with a nonnegative
+constant independent of the position. -/
+theorem exists_bound_mixedDeriv_comp_snd {f : CoordinateSpace n → A} {β : List (Fin n)}
+    (hf : ContDiff ℝ β.length f) {m : ℝ}
+    (hbound : ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ β.length f ξ‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) (α : List (Fin n)) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ξ,
+      ‖mixedDeriv α β (fun p => f p.2) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+  rcases eq_or_ne α [] with rfl | hα
+  · obtain ⟨C, hC⟩ := hbound
+    refine ⟨max C 0, le_max_right _ _, fun x ξ => ?_⟩
+    rw [mixedDeriv_nil_comp_snd]
+    calc ‖coordinateDeriv β f ξ‖ ≤ ‖iteratedFDeriv ℝ β.length f ξ‖ :=
+          norm_coordinateDeriv_le β hf ξ
+      _ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := hC ξ
+      _ ≤ max C 0 * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) :=
+          mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
+  · exact ⟨0, le_rfl, fun x ξ => by simp [mixedDeriv_comp_snd f hα]⟩
 
 section IteratedFDerivAlong
 

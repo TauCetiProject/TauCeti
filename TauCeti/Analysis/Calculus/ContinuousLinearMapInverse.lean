@@ -36,16 +36,18 @@ curve through `1` with the constant `C`; the latter involves no inversion.
   continuity.
 * `HasDerivAt.clm_inverse`: differentiates `(A t)⁻¹`.
 * `HasDerivAt.clm_inverse_apply`: differentiates `(A t)⁻¹ (w t)`.
-* `DifferentiableAt.clm_inverse_of_completeSpace`: the inverse of a differentiable family between
-  Banach spaces is differentiable at an invertible base point.
-* `HasDerivAt.clm_inverse_of_completeSpace`: the Banach-space specialization for an inverse family.
-* `HasDerivAt.clm_inverse_apply_of_completeSpace`: the Banach-space specialization acting on a
-  vector curve.
 * `ContDiffWithinAt.clm_inverse`, `ContDiffAt.clm_inverse`, `ContDiffOn.clm_inverse`: the
   inverse of a `C^n` family of maps between Banach spaces, on any domain, is `C^n` where the
   family is invertible.
-* `HasFDerivAt.clm_inverse`, `DifferentiableAt.fderiv_clm_inverse`: the derivative
-  `∂ᵥ(f⁻¹) = -f⁻¹ (∂ᵥ f) f⁻¹` of such an inverse family along a direction.
+* `DifferentiableAt.clm_inverse_of_completeSpace`: the inverse of a differentiable family between
+  Banach spaces, on any domain, is differentiable at an invertible base point.
+* `HasFDerivAt.clm_inverse`, `HasFDerivAt.clm_inverse_of_completeSpace`,
+  `DifferentiableAt.fderiv_clm_inverse`: the derivative `∂ᵥ(f⁻¹) = -f⁻¹ (∂ᵥ f) f⁻¹` of an inverse
+  family along a direction.
+* `HasDerivAt.clm_inverse_of_completeSpace`: the Banach-space specialization for a one-variable
+  inverse family.
+* `HasDerivAt.clm_inverse_apply_of_completeSpace`: the Banach-space specialization acting on a
+  vector curve.
 * `ContDiffAt.inverse` and `ContDiff.inverse`: the ring inverse of a `C^n` family of units
   is `C^n`.
 * `DifferentiableAt.deriv_eq_mul_sub_mul_of_mul_eq_mul`: a family `K` with `K t * P t = P t * C`
@@ -196,14 +198,31 @@ theorem HasFDerivAt.clm_inverse {f' : E →L[𝕜] G →L[𝕜'] H} (hf : HasFDe
         rw [ContinuousLinearMap.comp_assoc, h1, ContinuousLinearMap.comp_neg]
     _ = _ := by rw [hx.inverse_comp_self, ContinuousLinearMap.id_comp]
 
+/-- The inverse of a differentiable family of continuous linear maps between Banach spaces is
+differentiable at an invertible base point. -/
+theorem DifferentiableAt.clm_inverse_of_completeSpace [CompleteSpace G]
+    (hf : DifferentiableAt 𝕜 f x) (hx : (f x).IsInvertible) :
+    DifferentiableAt 𝕜 (fun y => (f y).inverse) x :=
+  ((hx.contDiffAt_map_inverse (𝕜 := 𝕜') (n := 1)).differentiableAt one_ne_zero).restrictScalars 𝕜
+    |>.comp x hf
+
+/-- The derivative of the inverse of a differentiable family of continuous linear maps between
+Banach spaces at an invertible base point: `D(f⁻¹)(v) = -f⁻¹ (f' v) f⁻¹`. -/
+theorem HasFDerivAt.clm_inverse_of_completeSpace [CompleteSpace G] {f' : E →L[𝕜] G →L[𝕜'] H}
+    (hf : HasFDerivAt f f' x) (hx : (f x).IsInvertible) :
+    HasFDerivAt (fun y => (f y).inverse)
+      (-(((ContinuousLinearMap.compL 𝕜' H H G).bilinearRestrictScalars 𝕜 (f x).inverse).comp
+        ((((ContinuousLinearMap.compL 𝕜' H G H).bilinearRestrictScalars 𝕜).flip
+          (f x).inverse).comp f'))) x :=
+  hf.clm_inverse hx (hf.differentiableAt.clm_inverse_of_completeSpace hx)
+
 /-- The derivative of the inverse of a family of continuous linear maps between Banach spaces at
 an invertible base point, along a direction `v`: `∂ᵥ(f⁻¹) = -f⁻¹ (∂ᵥ f) f⁻¹`. -/
 theorem DifferentiableAt.fderiv_clm_inverse [CompleteSpace G] (hf : DifferentiableAt 𝕜 f x)
     (hx : (f x).IsInvertible) (v : E) :
     fderiv 𝕜 (fun y => (f y).inverse) x v =
       -((f x).inverse.comp ((fderiv 𝕜 f x v).comp (f x).inverse)) := by
-  simp [(hf.hasFDerivAt.clm_inverse hx (((hx.contDiffAt_map_inverse (𝕜 := 𝕜')
-    (n := 1)).differentiableAt one_ne_zero).restrictScalars 𝕜 |>.comp x hf)).fderiv]
+  simp [(hf.hasFDerivAt.clm_inverse_of_completeSpace hx).fderiv]
 
 end ScalarTower
 
@@ -230,20 +249,12 @@ theorem HasDerivAt.clm_inverse_apply (hA : HasDerivAt A A' t₀)
   simpa only [neg_apply, ContinuousLinearMap.comp_apply, sub_eq_neg_add] using
     (hA.clm_inverse hA0Inv hInvDiff).clm_apply hw
 
-/-- In a Banach space, the inverse of a differentiable family is differentiable at an invertible
-base point. -/
-theorem DifferentiableAt.clm_inverse_of_completeSpace [CompleteSpace E]
-    (hA : DifferentiableAt 𝕜 A t₀) (hA0Inv : (A t₀).IsInvertible) :
-    DifferentiableAt 𝕜 (fun t => (A t).inverse) t₀ :=
-  (hA0Inv.contDiffAt_map_inverse (n := 1)).differentiableAt one_ne_zero |>.comp t₀ hA
-
 /-- The derivative of an inverse family of continuous linear maps between Banach spaces. -/
 theorem HasDerivAt.clm_inverse_of_completeSpace [CompleteSpace E]
     (hA : HasDerivAt A A' t₀) (hA0Inv : (A t₀).IsInvertible) :
     HasDerivAt (fun t => (A t).inverse)
       (-((A t₀).inverse.comp (A'.comp (A t₀).inverse))) t₀ := by
-  apply hA.clm_inverse hA0Inv
-  exact DifferentiableAt.clm_inverse_of_completeSpace hA.differentiableAt hA0Inv
+  simpa using (hA.hasFDerivAt.clm_inverse_of_completeSpace hA0Inv).hasDerivAt
 
 /-- The derivative of an inverse family of continuous linear maps between Banach spaces, acting
 on a differentiable vector curve. -/
