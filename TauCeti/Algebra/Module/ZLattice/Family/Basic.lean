@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.Covering.Quotient
 
+import TauCeti.Algebra.Module.ZLattice.Basic
 import TauCeti.Analysis.Normed.Group.Int
 
 /-!
@@ -136,27 +137,6 @@ theorem periodBasis_equivFun_period {ι : Type*} [Finite ι] (b : Basis ι ℤ �
     (periodBasis P b hinj y).equivFun (P y l) = fun i ↦ (b.repr l i : ℝ) :=
   funext fun i ↦ by simp
 
-omit [TopologicalSpace Y] [FiniteDimensional ℝ E] in
-include P in
-/-- A finite `ℤ`-basis of `Λ` whose periods at some `y` span a full lattice forces `E` to be
-finite-dimensional: the finitely many periods span `E` over `ℝ`. -/
-theorem finiteDimensional_of_basis {ι : Type*} [Finite ι] (b : Basis ι ℤ Λ) (y : Y) :
-    FiniteDimensional ℝ E := by
-  have h : Submodule.span ℝ (range fun i ↦ P y (b i)) = ⊤ := by
-    rw [← (inferInstance : IsZLattice ℝ (LinearMap.range (P y))).span_top,
-      LinearMap.range_eq_map, ← b.span_eq, Submodule.map_span, ← range_comp,
-      Submodule.span_span_of_tower]
-    rfl
-  have := FiniteDimensional.span_of_finite ℝ (finite_range fun i ↦ P y (b i))
-  rw [h] at this
-  exact Module.Finite.equiv Submodule.topEquiv
-
-omit [TopologicalSpace Y] [∀ y, IsZLattice ℝ (LinearMap.range (P y))] in
-/-- An injective period map at some `y` identifies `Λ` with the full lattice of periods at `y`,
-so `Λ` is a free `ℤ`-module. -/
-theorem module_free_of_injective (y : Y) (hinj : Injective (P y)) : Module.Free ℤ Λ :=
-  Module.Free.of_equiv (LinearEquiv.ofInjective (P y) hinj).symm
-
 omit [FiniteDimensional ℝ E] in
 /-- **Uniform bound for inverse period maps.** For a basis `b` of `Λ`, the real linear maps
 `x ↦ ∑ i, x i • P y (b i)` are bounded below by one constant `c > 0` as `y` ranges over a
@@ -167,7 +147,8 @@ theorem exists_pos_mul_norm_le_norm_sum_smul_period_of_isCompact {ι : Type*} [F
     ∃ c > 0, ∀ y ∈ K, ∀ x : ι → ℝ, c * ‖x‖ ≤ ‖∑ i, x i • P y (b i)‖ := by
   rcases K.eq_empty_or_nonempty with rfl | ⟨y₀, -⟩
   · exact ⟨1, one_pos, fun y hy ↦ absurd hy (Set.notMem_empty y)⟩
-  have := finiteDimensional_of_basis P b y₀
+  have : Module.Finite ℤ Λ := .of_basis b
+  have := ZLattice.finiteDimensional_of_isZLattice (LinearMap.range (P y₀))
   set f : Y × (ι → ℝ) → E := fun p ↦ ∑ i, p.2 i • P p.1 (b i) with hf_def
   have hf : Continuous f := continuous_finsetSum _ fun i _ ↦
     ((continuous_apply i).comp continuous_snd).smul ((hcont (b i)).comp continuous_fst)
@@ -210,8 +191,6 @@ theorem exists_pos_mul_norm_equivFun_le_norm_period_of_isCompact {ι : Type*} [F
   have := h y hy fun i ↦ (b.equivFun l i : ℝ)
   rwa [hn, ← hl] at this
 
-variable [Module.Finite ℤ Λ]
-
 /-- **Uniform period separation on compact sets.** On a compact set `K` of parameters there is
 a single `c > 0` bounding below the norm of every nonzero period at every point of `K`. -/
 theorem exists_pos_le_norm_period_of_isCompact (hcont : ∀ l, Continuous fun y ↦ P y l)
@@ -219,7 +198,9 @@ theorem exists_pos_le_norm_period_of_isCompact (hcont : ∀ l, Continuous fun y 
     ∃ c > 0, ∀ y ∈ K, ∀ l ≠ 0, c ≤ ‖P y l‖ := by
   rcases K.eq_empty_or_nonempty with rfl | ⟨y₀, -⟩
   · exact ⟨1, one_pos, fun y hy ↦ absurd hy (Set.notMem_empty y)⟩
-  have := module_free_of_injective P y₀ (hinj y₀)
+  have e := (LinearEquiv.ofInjective (P y₀) (hinj y₀)).symm
+  have : Module.Free ℤ Λ := .of_equiv e
+  have : Module.Finite ℤ Λ := .equiv e
   let b := Free.chooseBasis ℤ Λ
   obtain ⟨c, hc, h⟩ :=
     exists_pos_mul_norm_equivFun_le_norm_period_of_isCompact P b hcont hinj hK
@@ -240,7 +221,9 @@ theorem finite_setOf_exists_norm_period_le (hcont : ∀ l, Continuous fun y ↦ 
     {l : Λ | ∃ y ∈ K, ‖P y l‖ ≤ R}.Finite := by
   rcases K.eq_empty_or_nonempty with rfl | ⟨y₀, -⟩
   · simp
-  have := module_free_of_injective P y₀ (hinj y₀)
+  have e := (LinearEquiv.ofInjective (P y₀) (hinj y₀)).symm
+  have : Module.Free ℤ Λ := .of_equiv e
+  have : Module.Finite ℤ Λ := .equiv e
   let b := Free.chooseBasis ℤ Λ
   obtain ⟨c, hc, h⟩ :=
     exists_pos_mul_norm_equivFun_le_norm_period_of_isCompact P b hcont hinj hK
@@ -360,15 +343,12 @@ end Action
 lattices is properly discontinuous. -/
 theorem properlyDiscontinuousVAdd_periodAddAction [FiniteDimensional ℝ E]
     [∀ y, DiscreteTopology (LinearMap.range (P y))] [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
-    [Module.Finite ℤ Λ] (hcont : ∀ l, Continuous fun y ↦ P y l)
+    (hcont : ∀ l, Continuous fun y ↦ P y l)
     (hinj : ∀ y, Injective (P y)) :
     letI := periodAddAction P
     ProperlyDiscontinuousVAdd Λ (Y × E) := by
   let _ := periodAddAction P
   refine ⟨fun {K₁ K₂} hK₁ hK₂ ↦ ?_⟩
-  rcases isEmpty_or_nonempty Y with hY | ⟨⟨y₀⟩⟩
-  · simp [eq_empty_of_isEmpty K₁, eq_empty_of_isEmpty K₂]
-  have := module_free_of_injective P y₀ (hinj y₀)
   obtain ⟨R₁, hR₁⟩ := (hK₁.image continuous_snd).isBounded.exists_norm_le
   obtain ⟨R₂, hR₂⟩ := (hK₂.image continuous_snd).isBounded.exists_norm_le
   refine (finite_setOf_exists_norm_period_le P hcont hinj (hK₁.image continuous_fst)
@@ -387,7 +367,7 @@ theorem properlyDiscontinuousVAdd_periodAddAction [FiniteDimensional ℝ E]
 quotient by the free action of `Λ`. -/
 theorem isAddQuotientCoveringMap_torusFamily_mk [FiniteDimensional ℝ E]
     [∀ y, DiscreteTopology (LinearMap.range (P y))] [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
-    [Module.Finite ℤ Λ] [T2Space Y] [LocallyCompactSpace Y]
+    [T2Space Y] [LocallyCompactSpace Y]
     (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y)) :
     letI := periodAddAction P
     IsAddQuotientCoveringMap (Quotient.mk (AddAction.orbitRel Λ (Y × E))) Λ := by
@@ -402,7 +382,7 @@ theorem isAddQuotientCoveringMap_torusFamily_mk [FiniteDimensional ℝ E]
 is one `l : Λ` with `S z = P (f z) l` for every `z`. -/
 theorem exists_eq_period_of_mem_range [FiniteDimensional ℝ E]
     [∀ y, DiscreteTopology (LinearMap.range (P y))] [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
-    [Module.Finite ℤ Λ] [T2Space Y] [LocallyCompactSpace Y]
+    [T2Space Y] [LocallyCompactSpace Y]
     (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y)) {Z : Type*}
     [TopologicalSpace Z] [PreconnectedSpace Z] {f : Z → Y} (hf : Continuous f) {S : Z → E}
     (hS : Continuous S) (hmem : ∀ z, S z ∈ LinearMap.range (P (f z))) :

@@ -127,7 +127,7 @@ section ContinuousLifts
 
 variable {Y Λ E : Type*} [TopologicalSpace Y] [PreconnectedSpace Y] [Nonempty Y]
   [T2Space Y] [LocallyCompactSpace Y] [AddCommGroup Λ]
-  [Module.Finite ℤ Λ] [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
   [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
   (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Function.Injective (P y))
