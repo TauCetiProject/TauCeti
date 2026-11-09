@@ -28,27 +28,31 @@ Both results also hold for additive subgroups.
 
 public section
 
-namespace TauCeti
-
 variable {G : Type*} [Group G] {H K : Subgroup G}
+
+namespace Subgroup
 
 /-- For `H ≤ K`, `H` is covered by `K` in the subgroup lattice of `G` if and only if `H`,
 regarded as a subgroup of `K`, is a maximal subgroup of `K`. -/
 @[to_additive /-- For `H ≤ K`, `H` is covered by `K` in the additive subgroup lattice of `G` if
 and only if `H`, regarded as an additive subgroup of `K`, is a maximal additive subgroup of `K`. -/]
-theorem _root_.Subgroup.covBy_iff_isCoatom_subgroupOf (hHK : H ≤ K) :
+theorem covBy_iff_isCoatom_subgroupOf (hHK : H ≤ K) :
     H ⋖ K ↔ IsCoatom (H.subgroupOf K) :=
   -- The codomain `{H' // H' ≤ K}` of `MapSubtype.orderIso K` is definitionally `Set.Iic K`;
   -- reading it as `Set.Iic K` supplies its `OrderTop` instance.
   (covBy_iff_coatom_Iic hHK).trans
     ((Subgroup.MapSubtype.orderIso K).symm.isCoatom_iff (α := Set.Iic K) _).symm
 
+end Subgroup
+
+namespace CovBy
+
 /-- If `H` is covered by `K` in the subgroup lattice of `G`, then `H`, regarded as a subgroup of
 `K`, is a maximal subgroup of `K`. -/
 @[to_additive /-- If `H` is covered by `K` in the additive subgroup lattice of `G`, then `H`,
 regarded as an additive subgroup of `K`, is a maximal additive subgroup of `K`. -/]
-theorem _root_.CovBy.isCoatom_subgroupOf (hHK : H ⋖ K) :
+theorem isCoatom_subgroupOf (hHK : H ⋖ K) :
     IsCoatom (H.subgroupOf K) :=
   (Subgroup.covBy_iff_isCoatom_subgroupOf hHK.le).mp hHK
 
-end TauCeti
+end CovBy
