@@ -218,7 +218,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 variable (H) in
 /-- The domain of the preferred chart at `x`, as an open subset of the manifold. -/
-@[expose]
 def chartSourceOpens (x : M) : Opens M :=
   ⟨(chartAt H x).source, (chartAt H x).open_source⟩
 
@@ -226,10 +225,13 @@ def chartSourceOpens (x : M) : Opens M :=
 theorem coe_chartSourceOpens (x : M) : (chartSourceOpens H x : Set M) = (chartAt H x).source :=
   (rfl)
 
+@[simp]
+theorem mem_chartSourceOpens {x y : M} : y ∈ chartSourceOpens H x ↔ y ∈ (chartAt H x).source :=
+  Iff.rfl
+
 variable (I) in
 /-- On a boundaryless model, the target of the extended chart at `x`, as an open subset of the
 model vector space. -/
-@[expose]
 def extChartTargetOpens [I.Boundaryless] (x : M) : Opens E :=
   ⟨(extChartAt I x).target, isOpen_extChartAt_target x⟩
 
@@ -237,6 +239,11 @@ def extChartTargetOpens [I.Boundaryless] (x : M) : Opens E :=
 theorem coe_extChartTargetOpens [I.Boundaryless] (x : M) :
     (extChartTargetOpens I x : Set E) = (extChartAt I x).target :=
   (rfl)
+
+@[simp]
+theorem mem_extChartTargetOpens [I.Boundaryless] {x : M} {z : E} :
+    z ∈ extChartTargetOpens I x ↔ z ∈ (extChartAt I x).target :=
+  Iff.rfl
 
 variable (n) in
 /-- On a boundaryless model, the extended chart at `x` is a native `C^n` diffeomorphism from the

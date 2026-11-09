@@ -120,8 +120,8 @@ variable [I.Boundaryless]
 /-- The chart target, as a subtype of the model space, is its own open-set form. -/
 private def chartTargetHomeomorph (x₀ : M) :
     (extChartAt I x₀).target ≃ₜ extChartTargetOpens I x₀ where
-  toFun z := ⟨z, z.2⟩
-  invFun z := ⟨z, z.2⟩
+  toFun z := ⟨z, mem_extChartTargetOpens.mpr z.2⟩
+  invFun z := ⟨z, mem_extChartTargetOpens.mp z.2⟩
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := continuous_subtype_val.subtype_mk _
@@ -152,7 +152,7 @@ private theorem coe_symChartMetric_apply
     (z : extChartTargetOpens I x₀) :
     (symChartMetric g x₀ z : E →L[ℝ] E →L[ℝ] ℝ) = g.toNondegenerateMetric.chartMetric x₀ z := by
   have hz : (extChartAt I x₀).symm z ∈ (chartAt H x₀).source := by
-    simpa using (extChartAt I x₀).map_target z.2
+    simpa using (extChartAt I x₀).map_target (mem_extChartTargetOpens.mp z.2)
   simp only [symChartMetric, symFrameCoordinates, ContMDiffMap.comp_apply,
     Trivialization.frameCoordinates_apply]
   rw [ContMDiffNondegenerateMetric.chartMetric_def, Diffeomorph.coe_coe,
@@ -195,7 +195,7 @@ private theorem chartMetricDerivative_eq
         C((extChartAt I x₀).target, extChartTargetOpens I x₀)) := by
   ext1 z
   have hT : IsOpen ((extChartTargetOpens I x₀ : Set E)) := (extChartTargetOpens I x₀).isOpen
-  have hz : (z : E) ∈ (extChartTargetOpens I x₀ : Set E) := z.2
+  have hz : (z : E) ∈ (extChartTargetOpens I x₀ : Set E) := mem_extChartTargetOpens.mpr z.2
   refine (chartMetricDerivative_apply g x₀ m z).trans ?_
   simp only [ContinuousMap.comp_apply, ContinuousMap.coe_ofClass, coe_chartTargetHomeomorph_apply,
     ContMDiffMap.openIteratedFDerivContinuousMap_apply, symInclusion_apply]
@@ -256,7 +256,7 @@ theorem chartCInftyTopology_eq_frameTopology [LocallyCompactSpace E]
     chartCInftyTopology (I := I) (M := M) = frameTopology I ∞ e U hU := by
   rw [frameTopology_eq_induced, ContMDiffSection.frameTopology_eq_of_covers e U hU hcover
     (symTriv (I := I) (M := M)) (chartSourceOpens H) chartSourceOpens_subset_baseSet
-    fun x ↦ ⟨x, mem_chart_source H x⟩]
+    fun x ↦ ⟨x, mem_chartSourceOpens.mpr (mem_chart_source H x)⟩]
   apply le_antisymm
   · -- In the chart C∞ topology, each frame coordinate is the chart metric composed with a chart.
     rw [← continuous_iff_le_induced]
