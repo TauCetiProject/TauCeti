@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.RCLike
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Calculus.Deriv.AffineMap
@@ -52,6 +53,12 @@ against a fixed derivative `φ` (`Convex.norm_image_sub_le_of_norm_hasDerivWithi
 For a function on the real line with derivative of norm at most `D r ^ (β - 1)` at every `r > 0`,
 where `0 ≤ β ≤ 1`, the increments satisfy `‖u b - u a‖ ≤ 2 D |b - a| a ^ (β - 1)` for `a > 0` and
 `a / 2 ≤ b` (`TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt`).
+
+## Space-time functions vanishing outside a time interval
+
+A function of time and space with derivative bounded by `C` that vanishes outside the time
+interval `(a, b)` is bounded by `C (b - a)`, by the mean value inequality from its value at the
+time `a` (`TauCeti.norm_le_mul_sub_of_forall_notMem_Ioo_eq_zero`).
 
 ## Comparing maps with nearby derivatives
 
@@ -282,6 +289,26 @@ theorem apply_proj_eq_of_fderiv_apply_eq_zero {g : F → G} {π : F →L[𝕂] F
 
 end Direction
 
+/-- A function with derivative bounded by `C` that vanishes outside the time interval `(a, b)` is
+bounded by `C * (b - a)`, by the mean value inequality from its value at the time `a`. -/
+theorem norm_le_mul_sub_of_forall_notMem_Ioo_eq_zero {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {a b : ℝ} {φ : ℝ × E → ℝ} (hφd : Differentiable ℝ φ) {C : ℝ}
+    (hC : ∀ q, ‖fderiv ℝ φ q‖ ≤ C) (hzero : ∀ q : ℝ × E, q.1 ∉ Ioo a b → φ q = 0) (hab : a ≤ b)
+    (q : ℝ × E) : ‖φ q‖ ≤ C * (b - a) := by
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
+  by_cases hq : q.1 ∈ Ioo a b
+  · have hq' : q - (a, q.2) = (q.1 - a, 0) := by ext <;> simp
+    have hn : ‖q - (a, q.2)‖ ≤ b - a := by
+      rw [hq', Prod.norm_def, norm_zero, Real.norm_eq_abs, max_eq_left (abs_nonneg _),
+        abs_of_pos (sub_pos.2 hq.1)]
+      linarith [hq.2]
+    have := convex_univ.norm_image_sub_le_of_norm_fderiv_le (fun p _ ↦ hφd p) (fun p _ ↦ hC p)
+      (mem_univ (a, q.2)) (mem_univ q)
+    rw [hzero (a, q.2) (by simp), sub_zero] at this
+    exact this.trans (mul_le_mul_of_nonneg_left hn hC0)
+  · rw [hzero q hq, norm_zero]
+    exact mul_nonneg hC0 (sub_nonneg.2 hab)
+
 end TauCeti
 
 /-- **The outer shell of a thickening of a superlevel set lies in a level band.** Let `w` be
@@ -388,3 +415,25 @@ theorem Differentiable.abs_sub_le_of_basis_bound {P : Type*}
   have hmain := norm_image_sub_le_of_norm_deriv_le_segment'
     (fun t _ ↦ (hgd t).hasDerivWithinAt) hderiv s (right_mem_Icc.mpr hs.1)
   simpa only [g, zero_smul, add_zero, sub_zero, Real.norm_eq_abs] using hmain
+
+namespace ContDiff
+
+open Function
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **Lipschitz bound for a jointly `C¹` family on a box.** If `Γ t s` is `C¹` in `(t, s)`, there is
+a constant `B` such that `‖Γ t₁ s₁ - Γ t₂ s₂‖ ≤ B * max |t₁ - t₂| |s₁ - s₂|` for all `t₁, t₂` in
+`[t₀, t₁']` and all `s₁, s₂` in `[a, b]`. -/
+theorem exists_norm_sub_le_mul_max_uncurry {Γ : ℝ → ℝ → E} (hΓ : ContDiff ℝ 1 (uncurry Γ))
+    (t₀ t₀' a b : ℝ) :
+    ∃ B : NNReal, ∀ ⦃x₁ y₁ x₂ y₂ : ℝ⦄, x₁ ∈ Icc t₀ t₀' → y₁ ∈ Icc a b → x₂ ∈ Icc t₀ t₀' →
+      y₂ ∈ Icc a b → ‖Γ x₁ y₁ - Γ x₂ y₂‖ ≤ B * max |x₁ - x₂| |y₁ - y₂| := by
+  have hQc : IsCompact (Icc t₀ t₀' ×ˢ Icc a b) := isCompact_Icc.prod isCompact_Icc
+  have hQv : Convex ℝ (Icc t₀ t₀' ×ˢ Icc a b) := (convex_Icc _ _).prod (convex_Icc _ _)
+  obtain ⟨B, hB⟩ := hΓ.contDiffOn.exists_lipschitzOnWith one_ne_zero hQv hQc
+  refine ⟨B, fun x₁ y₁ x₂ y₂ hx₁ hy₁ hx₂ hy₂ ↦ ?_⟩
+  have := hB.dist_le_mul (x := (x₁, y₁)) (y := (x₂, y₂)) ⟨hx₁, hy₁⟩ ⟨hx₂, hy₂⟩
+  simpa [dist_eq_norm, Prod.dist_eq, Real.dist_eq] using this
+
+end ContDiff
