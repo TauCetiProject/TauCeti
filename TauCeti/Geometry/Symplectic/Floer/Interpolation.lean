@@ -105,8 +105,9 @@ theorem hamiltonianCurvature_sum_mul (ω : SymplecticForm V) {β : ι → ℝ ×
           fderiv ℝ (β i) z stdComplexLineImag * Ks i z x) := by
   -- The Poisson bracket terms, in terms of `Bᵢⱼ = {Kⁱ_s, Kʲ_t}`: the bracket of the combination is
   -- `∑ᵢ ∑ⱼ βᵢ βⱼ Bᵢⱼ`, and its defect from `∑ βᵢ Bᵢᵢ` is the variance term.
-  have hvar := Finset.sum_sum_mul_sub_sub_add_eq s hsum
+  have hvar := Finset.sum_sum_mul_smul_sub_sub_add_eq s hsum
     (fun i j ↦ ω.poissonBracket (Ks i z) (Kt j z) x)
+  simp only [smul_eq_mul] at hvar
   have hcomb : ω.poissonBracket (fun y ↦ ∑ i ∈ s, β i z * Ks i z y)
       (fun y ↦ ∑ i ∈ s, β i z * Kt i z y) x =
         ∑ i ∈ s, ∑ j ∈ s, β i z * β j z * ω.poissonBracket (Ks i z) (Kt j z) x := by

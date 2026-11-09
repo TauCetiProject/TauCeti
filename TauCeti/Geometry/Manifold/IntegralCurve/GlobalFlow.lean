@@ -24,9 +24,7 @@ boundaryless manifold is complete (`isCompleteVectorField_of_compactSpace`).
 ## Main declarations
 
 * `TauCeti.globalFlow`: the flow of a complete `C¹` vector field;
-  `TauCeti.flowOf_eq_globalFlow`: it agrees with the maximal flow `flowOf`;
-  `TauCeti.flowOf_flowOf_neg`: the time-`(-t)` map inverts the time-`t` map, so
-  (`TauCeti.flowOf_surjective`) the time-`t` map is surjective.
+  `TauCeti.flowOf_eq_globalFlow`: it agrees with the maximal flow `flowOf`.
 * `TauCeti.isMIntegralCurve_globalFlow`: its orbits are integral curves of the field.
 * `TauCeti.apply_globalFlow_eq_sub`: a function `f` with `df(v) = -1` on a band decreases at unit
   speed along the flow while the flow stays in the band;
@@ -35,6 +33,8 @@ boundaryless manifold is complete (`isCompleteVectorField_of_compactSpace`).
   (`TauCeti.isRegularValue_of_apply_globalFlow_eq_add`) the values it is translated through are
   regular.
 * `TauCeti.globalFlow_eq_of_isMIntegralCurve`: every integral curve is an orbit.
+* `TauCeti.forall_globalFlow_eq_self_iff`: a point is fixed at all times exactly when the field
+  vanishes there.
 * `TauCeti.contMDiff_globalFlow_uncurry`: for a complete `C^n` field, the flow is jointly `C^n` in
   time and space.
 * `TauCeti.mfderiv_globalFlow_apply_self`: the differential of the time-`t` map preserves the
@@ -93,22 +93,12 @@ theorem flowOf_eq_globalFlow : flowOf v = globalFlow v hv hcomplete := by
   funext t x
   rw [flowOf_apply, globalFlow_apply]
 
-/-- For a complete `C¹` vector field, the time-`(-t)` map of the maximal flow inverts the time-`t`
-map. -/
-theorem flowOf_flowOf_neg (t : ℝ) (x : M) : flowOf v t (flowOf v (-t) x) = x := by
-  rw [flowOf_eq_globalFlow hv hcomplete, ← Flow.map_add, add_neg_cancel, Flow.map_zero_apply]
-
-/-- For a complete `C¹` vector field, the time-`t` map of the maximal flow is surjective. -/
-theorem flowOf_surjective (t : ℝ) : Function.Surjective (flowOf v t) :=
-  fun x ↦ ⟨flowOf v (-t) x, flowOf_flowOf_neg hv hcomplete t x⟩
-
 /-- The orbits of the flow are integral curves of the field. -/
 theorem isMIntegralCurve_globalFlow (x : M) :
     IsMIntegralCurve (fun t ↦ globalFlow v hv hcomplete t x) v := by
   simp only [globalFlow_apply]
-  rw [isMIntegralCurve_iff_isMIntegralCurveOn,
-    ← hcomplete.maximalIntegralCurveInterval_eq_univ x]
-  exact isMIntegralCurveOn_maximalIntegralCurve hv
+  exact isMIntegralCurve_maximalIntegralCurve_of_eq_univ hv
+    (hcomplete.maximalIntegralCurveInterval_eq_univ x)
 
 /-- **Unit-speed descent along a flow.** Let `v` be a complete `C¹` vector field with
 `df(v) = -1` on an open set `U` containing the band `a ≤ f ≤ b`. If `f x ≤ b`, then `f` decreases
@@ -190,6 +180,25 @@ theorem globalFlow_eq_of_isMIntegralCurve {γ : ℝ → M} (hγ : IsMIntegralCur
     globalFlow v hv hcomplete t (γ 0) = γ t := by
   rw [← flowOf_eq_globalFlow hv hcomplete]
   exact flowOf_eq_of_isMIntegralCurve hv hγ t
+
+/-- A point is stationary under the complete flow exactly when the vector field vanishes there.
+
+This is not a simp lemma: `globalFlow_apply` already rewrites flow evaluations to the maximal
+integral curve. -/
+theorem forall_globalFlow_eq_self_iff (x : M) :
+    (∀ t, globalFlow v hv hcomplete t x = x) ↔ v x = 0 := by
+  constructor
+  · intro h
+    have hγ : IsMIntegralCurve (fun _ : ℝ ↦ x) v := by
+      rw [← funext h]
+      exact isMIntegralCurve_globalFlow hv hcomplete x
+    calc
+      v x = Manifold.curveVelocityWithin I (fun _ : ℝ ↦ x) univ 0 :=
+        (Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt
+          (hγ 0).hasMFDerivWithinAt uniqueDiffWithinAt_univ).symm
+      _ = 0 := Manifold.curveVelocityWithin_const x
+  · intro h t
+    exact globalFlow_eq_of_isMIntegralCurve hv hcomplete (isMIntegralCurve_const h) t
 
 omit hv in
 /-- The flow of a complete `C^n` vector field, `1 ≤ n`, is jointly `C^n` in time and space. -/
