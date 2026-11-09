@@ -12,6 +12,7 @@ import TauCeti.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.InnerProductSpace.Spectral.Inertia
 import TauCeti.Analysis.InnerProductSpace.Spectral.Projection
 import TauCeti.Analysis.Normed.Operator.Bilinear
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Synthesis
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import Mathlib.Geometry.Manifold.VectorBundle.Hom
 
@@ -43,7 +44,8 @@ the metric. The positive case is the negative case for `-Q`
 No smooth choice of eigenvectors is made. Over the base set of a trivialization, the normalized
 Gram–Schmidt orthonormal basis `Bundle.Trivialization.orthonormalBasis` is a smooth orthonormal
 frame (`Bundle.Trivialization.contMDiffOn_orthonormalBasis`). Read in this frame, `Q` becomes a
-smooth family of self-adjoint invertible operators on a fixed Euclidean space, whose spectral
+smooth family of self-adjoint invertible operators on a fixed Euclidean space
+(`TauCeti.contMDiffOn_continuousLinearMapOfBilin_bilinearComp_synthesisMap`), whose spectral
 subspaces are those of `Q` in coordinates
 (`InnerProductSpace.pointSpectralSubspace_continuousLinearMapOfBilin_eq_map_synthesisMap`) and whose
 negative spectral projections are smooth
@@ -85,30 +87,6 @@ variable {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
 
 omit [FiniteDimensional ℝ F] [∀ x, CompleteSpace (V x)] [ContMDiffVectorBundle n F V IB]
   [IsContMDiffRiemannianBundle IB n F V] in
-/-- Read through the synthesis maps of a `C^n` family of sections, a `C^n` field of bilinear forms
-has a `C^n` Riesz operator in coordinates. -/
-private theorem contMDiffOn_continuousLinearMapOfBilin_synthesisMap {d : ℕ}
-    (hQ : ContMDiff IB (IB.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) n
-      (fun x ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) x (Q x)))
-    {ε : Fin d → Π x, V x} {U : Set B} (hε : ∀ i, CMDiff[U] n (T% (ε i))) :
-    ContMDiffOn IB 𝓘(ℝ, EuclideanSpace ℝ (Fin d) →L[ℝ] EuclideanSpace ℝ (Fin d)) n
-      (fun y ↦ continuousLinearMapOfBilin ((Q y).bilinearComp
-        (synthesisMap ℝ (ε · y)).toContinuousLinearMap
-        (synthesisMap ℝ (ε · y)).toContinuousLinearMap)) U := by
-  have hc (i j : Fin d) : ContMDiffOn IB 𝓘(ℝ) n (fun y ↦ Q y (ε i y) (ε j y)) U := fun y hy ↦ by
-    have h := ContMDiffWithinAt.clm_bundle_apply₂ (F₃ := ℝ) (E₃ := Bundle.Trivial B ℝ)
-      (b := id) (hQ y).contMDiffWithinAt (hε i y hy) (hε j y hy)
-    exact (contMDiffWithinAt_totalSpace.mp h).2
-  have hsum : ContMDiffOn IB 𝓘(ℝ, EuclideanSpace ℝ (Fin d) →L[ℝ] EuclideanSpace ℝ (Fin d) →L[ℝ] ℝ)
-      n (fun y ↦ (Q y).bilinearComp (synthesisMap ℝ (ε · y)).toContinuousLinearMap
-        (synthesisMap ℝ (ε · y)).toContinuousLinearMap) U := by
-    simp_rw [bilinearComp_synthesisMap_eq_sum]
-    exact contMDiffOn_finsetSum fun i _ ↦ contMDiffOn_finsetSum fun j _ ↦
-      (hc i j).smul contMDiffOn_const
-  exact contDiff_continuousLinearMapOfBilin.contMDiff.comp_contMDiffOn hsum
-
-omit [FiniteDimensional ℝ F] [∀ x, CompleteSpace (V x)] [ContMDiffVectorBundle n F V IB]
-  [IsContMDiffRiemannianBundle IB n F V] in
 /-- Read through the synthesis maps of a `C^n` family of orthonormal bases, the negative spectral
 projections of a `C^n` field of nondegenerate symmetric forms are `C^n`. -/
 private theorem contMDiffOn_starProjection_synthesisMap {d : ℕ}
@@ -126,7 +104,7 @@ private theorem contMDiffOn_starProjection_synthesisMap {d : ℕ}
   ((contDiffOn_id (s := {A | IsSelfAdjoint A ∧ IsUnit A})
     ).starProjection_pointSpectralSubspace_Iio_zero (fun A hA ↦ hA.1)
     (fun A hA ↦ hA.2)).contMDiffOn.comp
-    (contMDiffOn_continuousLinearMapOfBilin_synthesisMap hQ hε) fun y hy ↦
+    (contMDiffOn_continuousLinearMapOfBilin_bilinearComp_synthesisMap hQ hε) fun y hy ↦
       ⟨isSelfAdjoint_continuousLinearMapOfBilin fun v w ↦ hsymm y _ _,
         isUnit_continuousLinearMapOfBilin (ContinuousLinearMap.injective_bilinearComp (hnd y)
           (by simpa using bijective_synthesisMap (hon y hy).linearIndependent (hsp y hy)))⟩
