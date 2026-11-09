@@ -37,12 +37,13 @@ representative is not proved here.
 The base point of the affine space is the smooth reference field `x_m`, equal to
 `(-i m dθ, (z / |z|)^m)` outside a disc. There it solves the vortex equation
 (`TauCeti.Vortex.equation_referenceField_eq_zero`), so its defect is smooth with compact
-support (`TauCeti.Vortex.hasCompactSupport_equation_referenceField`). For `x = x_m + y` the equation expands exactly as
-`equation x = equation x_m + d₁ y + quadraticTerm y` (`TauCeti.Vortex.equation_add_smul`). The
-linear term involves the derivatives of `y` and the products of the coordinates of `x_m` with
-those of `y`. These coordinates do not decay, but all their derivatives are bounded, so they
-multiply `H^k` into itself. The products of two Sobolev coordinates are controlled by the algebra
-property of `H^s(ℂ)`, `s > 1`; this is where `k ≥ 1` is used.
+support (`TauCeti.Vortex.hasCompactSupport_equation_referenceField`). For `x = x_m + y` the
+equation expands exactly as `equation x = equation x_m + d₁ y + quadraticTerm y`
+(`TauCeti.Vortex.equation_add_smul`). The linear term involves the derivatives of `y` and the
+products of the coordinates of `x_m` with those of `y`. These coordinates do not decay, but all
+their derivatives are bounded, so they multiply `H^k` into itself. The products of two Sobolev
+coordinates are controlled by the algebra property of `H^s(ℂ)`, `s > 1`; this is where `k ≥ 1`
+is used.
 
 All statements are memberships. Boundedness and smoothness of the completed maps, the weak
 equation and elliptic regularity are not treated here.
@@ -72,7 +73,7 @@ theorem equation_referenceField_apply_mem_realSobolevFunctions (f : ContDiffBump
     (m : ℕ) (i : Fin 3) (s : ℝ) :
     (fun z ↦ equation (referenceField f m) z i) ∈ realSobolevFunctions ℂ s 2 :=
   mem_realSobolevFunctions_of_hasCompactSupport
-    (contDiff_euclidean.1 (contDiff_equation (contDiff_referenceField f m) le_top) i)
+    (contDiff_euclidean.1 (contDiff_equation (contDiff_referenceField f m) (by simp)) i)
     ((hasCompactSupport_equation_referenceField f m).comp_left
       (g := fun v : EuclideanSpace ℝ (Fin 3) ↦ v i) rfl) s
 
