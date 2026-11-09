@@ -17,12 +17,6 @@ changes be used only on their chart overlaps, without conditions on their total 
 The source set can have boundary: it need only have unique derivatives and accumulate at the
 point from its interior. The latter condition guarantees symmetry of the second derivative.
 
-Pulling a form back along a continuous linear map `A` preserves regularity on the preimage of the
-domain (`TauCeti.contDiffOn_pullback_continuousLinearMap`) and commutes with exterior
-differentiation at each point where the form is differentiable
-(`TauCeti.extDeriv_pullback_continuousLinearMap`), so it preserves closedness
-(`TauCeti.extDeriv_pullback_continuousLinearMap_eq_zero`).
-
 ## References
 
 * John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Chapter 14.
@@ -73,45 +67,5 @@ theorem extDerivWithin_pullback_of_preimage_mem_nhdsWithin
     hxc' ⟨hxs, hxu⟩ (fun y hy ↦ hut ⟨hy.2, hy.1⟩)
   rw [extDerivWithin_congr_set heq, fderivWithin_inter hux] at hlocal
   exact hpull.extDerivWithin_eq (by rw [fderivWithin_inter hux]) |>.symm.trans hlocal
-
-end TauCeti
-
-namespace TauCeti
-
-section ContinuousLinearMap
-
-variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-  {k : ℕ} {r : WithTop ℕ∞} {ω : F → F [⋀^Fin k]→L[𝕜] G} {t : Set F}
-
-/-- Pulling a `C^r` form on `t` back along a continuous linear map `A` gives a `C^r` form on
-`A ⁻¹' t`. -/
-theorem contDiffOn_pullback_continuousLinearMap (hω : ContDiffOn 𝕜 r ω t) (A : E →L[𝕜] F) :
-    ContDiffOn 𝕜 r (fun x ↦ (ω (A x)).compContinuousLinearMap A) (A ⁻¹' t) := by
-  have h := (ContinuousAlternatingMap.compContinuousLinearMapCLM (ι := Fin k) (F := G)
-    A).contDiff.comp_contDiffOn (hω.comp A.contDiff.contDiffOn fun x (hx : x ∈ A ⁻¹' t) ↦ hx)
-  exact h.congr fun x _ ↦ (ContinuousAlternatingMap.compContinuousLinearMapCLM_apply _ _).symm
-
-/-- Exterior differentiation commutes with pullback along a continuous linear map `A`, for a form
-differentiable at `A x`. -/
-theorem extDeriv_pullback_continuousLinearMap (A : E →L[𝕜] F) {x : E}
-    (hω : DifferentiableAt 𝕜 ω (A x)) :
-    extDeriv (fun x ↦ (ω (A x)).compContinuousLinearMap A) x =
-      (extDeriv ω (A x)).compContinuousLinearMap A := by
-  rw [← extDerivWithin_univ, A.extDerivWithin_pullback uniqueDiffWithinAt_univ
-    hω.differentiableWithinAt (mapsTo_univ _ _), extDerivWithin_univ]
-
-/-- Pulling back along a continuous linear map `A` a form that is differentiable and closed at
-`A x` gives a form closed at `x`. -/
-theorem extDeriv_pullback_continuousLinearMap_eq_zero (A : E →L[𝕜] F) {x : E}
-    (hω : DifferentiableAt 𝕜 ω (A x)) (hdω : extDeriv ω (A x) = 0) :
-    extDeriv (fun x ↦ (ω (A x)).compContinuousLinearMap A) x = 0 := by
-  rw [extDeriv_pullback_continuousLinearMap A hω, hdω]
-  ext v
-  simp
-
-end ContinuousLinearMap
 
 end TauCeti

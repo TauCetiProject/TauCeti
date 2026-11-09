@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Geometry.Manifold.Diffeomorph
-import TauCeti.Analysis.Calculus.DifferentialForm.Pullback
+import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Relative
 import TauCeti.Geometry.Symplectic.ContinuousAlternatingMap
 import TauCeti.Geometry.Symplectic.Darboux.Basic
@@ -160,7 +160,7 @@ theorem exists_diffeomorph_fix_zeroSection_eventually_compContinuousLinearMap_fd
     (contDiffOn_pullback_continuousLinearMap (r := r) hω₁
       (A : (E × N) →L[ℝ] (E × N))).mono inter_subset_right
   have hdω₁' : ∀ x ∈ W ∩ A ⁻¹' W, extDeriv ω₁' x = 0 := fun x hx ↦
-    extDeriv_pullback_continuousLinearMap_eq_zero (A : (E × N) →L[ℝ] (E × N))
+    (A : (E × N) →L[ℝ] (E × N)).extDeriv_pullback_eq_zero
       ((hω₁.differentiableOn hr0).differentiableAt (hW.mem_nhds hx.2)) (hdω₁ _ hx.2)
   have htan' : ∀ q : E, (q, (0 : N)) ∈ W ∩ A ⁻¹' W →
       (ω₁' (q, 0)).compContinuousLinearMap (.inl ℝ E N) =

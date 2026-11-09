@@ -89,6 +89,7 @@ variable {R M M' M'' F ι : Type*} [Semiring R]
   [AddCommMonoid F] [Module R F] [TopologicalSpace F]
 
 /-- Pulling a form back along `A` and then along `B` is pulling it back along `A.comp B`. -/
+@[simp]
 theorem compContinuousLinearMap_compContinuousLinearMap (a : M'' [⋀^ι]→L[R] F)
     (A : M →L[R] M'') (B : M' →L[R] M) :
     (a.compContinuousLinearMap A).compContinuousLinearMap B =
