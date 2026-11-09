@@ -12,10 +12,9 @@ import TauCeti.Analysis.Calculus.FDeriv.WithLp
 /-!
 # Compactness of Floer solutions over a compact parameter window
 
-The moduli problems of Floer theory come in families: continuation homotopies, the input-exchange
-family, the cutoff and neck-stretching comparison family, and the two-parameter families comparing
-choices. A parameter `p` ranges over a set `Q` of a real inner product space `P`, and the data of
-the inhomogeneous Cauchy–Riemann equation
+The moduli problems of Floer theory come in families, such as continuation homotopies and other
+parametrised moduli problems. A parameter `p` ranges over a set `Q` of a real inner product space
+`P`, and the data of the inhomogeneous Cauchy–Riemann equation
 
 `∂ₜu - X(p, z, u) i = J(p, z, u) (∂ₛu - X(p, z, u) 1)`
 
@@ -32,7 +31,7 @@ of bubbling points, with `#Z * δ ≤ E`, energy at least `δ` concentrating at 
 derivatives bounded on compact subsets of `Ω \ Z`. The same uniformity holds for the mean-value
 inequality
 (`TauCeti.Floer.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy_parametric`),
-whose threshold depends only on the data over `Q × D × K`.
+whose threshold is uniform over the parameters `p ∈ Q`.
 
 The parameter becomes a target coordinate. A solution `u` for the parameter `p` is the same as
 the map `z ↦ ((p, 0), u z)` into the Euclidean product of the complexification `P × P` of the
@@ -162,6 +161,27 @@ private theorem paramStructure_paramStructure {J : P × ℂ × V → V →L[ℝ]
   rw [paramStructure_toLp, paramStructure_toLp, paramRot_paramRot, paramCoord_apply, hJ,
     ← Prod.neg_mk, WithLp.toLp_neg]
 
+/-- The lift `z ↦ ((p, 0), u z)` to the extended target of a map `u` for the parameter `p`. -/
+private noncomputable def paramLift (p : P) (u : ℂ → V) : ℂ → WithLp 2 (WithLp 2 (P × P) × V) :=
+  fun w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p, 0), u w)
+
+private theorem fderiv_paramLift_apply (p : P) (u : ℂ → V) (y v : ℂ) :
+    fderiv ℝ (paramLift p u) y v = WithLp.toLp 2 (0, fderiv ℝ u y v) :=
+  fderiv_toLp_const_prodMk_apply _ u y v
+
+private theorem norm_fderiv_paramLift_apply (p : P) (u : ℂ → V) (y v : ℂ) :
+    ‖fderiv ℝ (paramLift p u) y v‖ = ‖fderiv ℝ u y v‖ :=
+  norm_fderiv_toLp_const_prodMk_apply _ u y v
+
+/-- The set of points `((p, 0), x)`, `p ∈ Q`, `x ∈ K`, of the extended target. -/
+private def paramImage (Q : Set P) (K : Set V) : Set (WithLp 2 (WithLp 2 (P × P) × V)) :=
+  (fun r : P × V ↦ WithLp.toLp 2 (WithLp.toLp 2 (r.1, 0), r.2)) '' Q ×ˢ K
+
+omit [InnerProductSpace ℝ P] [NormedAddCommGroup V] [InnerProductSpace ℝ V] in
+private theorem paramLift_mem_paramImage {Q : Set P} {K : Set V} {p : P} {u : ℂ → V} {y : ℂ}
+    (hp : p ∈ Q) (hy : u y ∈ K) : paramLift p u y ∈ paramImage Q K :=
+  ⟨(p, u y), ⟨hp, hy⟩, rfl⟩
+
 end Extension
 
 /-! ### Uniform estimates over the parameter window -/
@@ -172,9 +192,9 @@ variable {J : P × ℂ × V → V →L[ℝ] V} {X : P × ℂ × V → ℂ →L[�
   {Q : Set P} {D : Set ℂ} {K : Set V}
 
 omit [InnerProductSpace ℝ P] [InnerProductSpace ℝ V] in
-/-- The compact set of points `((p, 0), x)`, `p ∈ Q`, `x ∈ K`, of the extended target. -/
+/-- The set of points `((p, 0), x)`, `p ∈ Q`, `x ∈ K`, of the extended target is compact. -/
 private theorem isCompact_paramImage (hQ : IsCompact Q) (hK : IsCompact K) :
-    IsCompact ((fun r : P × V ↦ WithLp.toLp 2 (WithLp.toLp 2 (r.1, (0 : P)), r.2)) '' Q ×ˢ K) :=
+    IsCompact (paramImage Q K) :=
   (hQ.prod hK).image (by fun_prop)
 
 /-- The data of the extended problem are `C²` near the compact set `D × {((p, 0), x)}`, and its
@@ -185,10 +205,9 @@ private theorem paramData_hyp (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hX : 
     IsOpen (paramCoord (P := P) (V := V) ⁻¹' W) ∧
       ContDiffOn ℝ 2 (paramStructure J) (paramCoord (P := P) (V := V) ⁻¹' W) ∧
       ContDiffOn ℝ 2 (paramOneForm X) (paramCoord (P := P) (V := V) ⁻¹' W) ∧
-      D ×ˢ ((fun r : P × V ↦ WithLp.toLp 2 (WithLp.toLp 2 (r.1, (0 : P)), r.2)) '' Q ×ˢ K) ⊆
-        paramCoord (P := P) (V := V) ⁻¹' W ∧
-      ∀ z ∈ D, ∀ y ∈ (fun r : P × V ↦ WithLp.toLp 2 (WithLp.toLp 2 (r.1, (0 : P)), r.2)) '' Q ×ˢ K,
-        ∀ w, paramStructure J (z, y) (paramStructure J (z, y) w) = -w := by
+      D ×ˢ paramImage Q K ⊆ paramCoord (P := P) (V := V) ⁻¹' W ∧
+      ∀ z ∈ D, ∀ y ∈ paramImage Q K, ∀ w,
+        paramStructure J (z, y) (paramStructure J (z, y) w) = -w := by
   refine ⟨hW.preimage (paramCoord (P := P) (V := V)).continuous, contDiffOn_paramStructure hJ,
     contDiffOn_paramOneForm hX, ?_, ?_⟩
   · rintro ⟨z, _⟩ ⟨hz, ⟨p, x⟩, ⟨hp, hx⟩, rfl⟩
@@ -200,14 +219,11 @@ private theorem paramData_hyp (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hX : 
 problem. -/
 private theorem fderiv_paramLift_I_eq {p : P} {u : ℂ → V} {y : ℂ}
     (hCR : fderiv ℝ u y I - X (p, y, u y) I = J (p, y, u y) (fderiv ℝ u y 1 - X (p, y, u y) 1)) :
-    fderiv ℝ (fun w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p, (0 : P)), u w)) y I -
-        paramOneForm X (y, WithLp.toLp 2 (WithLp.toLp 2 (p, (0 : P)), u y)) I =
-      paramStructure J (y, WithLp.toLp 2 (WithLp.toLp 2 (p, (0 : P)), u y))
-        (fderiv ℝ (fun w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p, (0 : P)), u w)) y 1 -
-          paramOneForm X (y, WithLp.toLp 2 (WithLp.toLp 2 (p, (0 : P)), u y)) 1) := by
-  rw [fderiv_toLp_const_prodMk_apply, fderiv_toLp_const_prodMk_apply, paramOneForm_apply,
-    paramOneForm_apply, ← WithLp.toLp_sub, ← WithLp.toLp_sub, Prod.mk_sub_mk, Prod.mk_sub_mk,
-    sub_zero, paramStructure_toLp, paramCoord_apply, map_zero, hCR]
+    fderiv ℝ (paramLift p u) y I - paramOneForm X (y, paramLift p u y) I =
+      paramStructure J (y, paramLift p u y)
+        (fderiv ℝ (paramLift p u) y 1 - paramOneForm X (y, paramLift p u y) 1) := by
+  simp [fderiv_paramLift_apply, paramOneForm_apply, paramLift, ← WithLp.toLp_sub,
+    paramStructure_toLp, paramCoord_apply, hCR]
 
 /-- **The mean-value inequality over a compact parameter window.** Let `J` and `X` be `C²` on an
 open set `W ⊆ P × ℂ × V` containing `Q × D × K` for compact `Q ⊆ P`, `D ⊆ ℂ` and `K ⊆ V`, with
@@ -233,18 +249,17 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy_pa
     hW' hJ' hX' hD (isCompact_paramImage hQ hK) hDKW' hJsq'
   refine ⟨δ, hδ, fun p u z₀ r hp hr hrD hu hu' hCR huK hE ↦ ?_⟩
   -- The lift `z ↦ ((p, 0), u z)` solves the extended problem with the same energy density.
-  have hint : ∫ y in ball z₀ r,
-      ‖fderiv ℝ (fun w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p, (0 : P)), u w)) y 1‖ ^ 2 =
-        ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
-    simp only [norm_fderiv_toLp_const_prodMk_apply]
-  have h := hmean (u := fun w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p, (0 : P)), u w)) hr hrD
+  have hint : ∫ y in ball z₀ r, ‖fderiv ℝ (paramLift p u) y 1‖ ^ 2 =
+      ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
+    simp only [norm_fderiv_paramLift_apply]
+  have h := hmean (u := paramLift p u) hr hrD
     (WithLp.contDiff_toLp.comp_contDiffOn (contDiffOn_const.prodMk hu))
     (((WithLp.prod_continuous_toLp 2 (WithLp 2 (P × P)) V).comp_continuousOn
       ((continuousOn_const (c := (0 : WithLp 2 (P × P)))).prodMk hu')).congr fun y _ ↦
-        fderiv_toLp_const_prodMk_apply _ u y 1)
+        fderiv_paramLift_apply p u y 1)
     (fun y hy ↦ fderiv_paramLift_I_eq (hCR y hy))
-    (fun y hy ↦ ⟨(p, u y), ⟨hp, huK y hy⟩, rfl⟩) (by rwa [hint])
-  rwa [hint, norm_fderiv_toLp_const_prodMk_apply] at h
+    (fun y hy ↦ paramLift_mem_paramImage hp (huK y hy)) (by rwa [hint])
+  rwa [hint, norm_fderiv_paramLift_apply] at h
 
 /-- **Floer solutions over a compact parameter window converge off finitely many bubbling
 points.** Let `J` and `X` be `C²` on an open set `W ⊆ P × ℂ × V` containing `Q × D × K` for
@@ -283,16 +298,15 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_parametric
   obtain ⟨p₀, hp₀, ψ, hψ, hpψ⟩ := hQ.tendsto_subseq hp
   -- Along `ψ`, the lifts `z ↦ ((p, 0), u z)` solve the extended problem with the same energy
   -- density.
-  set U : ℕ → ℂ → WithLp 2 (WithLp 2 (P × P) × V) :=
-    fun k w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p (ψ k), (0 : P)), u (ψ k) w)
+  set U : ℕ → ℂ → WithLp 2 (WithLp 2 (P × P) × V) := fun k ↦ paramLift (p (ψ k)) (u (ψ k))
   have hnorm : ∀ k y, ‖fderiv ℝ (U k) y 1‖ = ‖fderiv ℝ (u (ψ k)) y 1‖ := fun k y ↦
-    norm_fderiv_toLp_const_prodMk_apply _ _ y 1
+    norm_fderiv_paramLift_apply _ _ y 1
   have henergy : ∀ k S, ∫ y in S, ‖fderiv ℝ (U k) y 1‖ ^ 2 =
       ∫ y in S, ‖fderiv ℝ (u (ψ k)) y 1‖ ^ 2 := fun k S ↦ by simp only [hnorm]
   obtain ⟨φ, Z, w, hφ, hZΩ, hcard, hconc, hbd, hwcont, hwK, hlim⟩ := hconv hΩ hΩD (u := U)
     (fun k ↦ WithLp.contDiff_toLp.comp_contDiffOn (contDiffOn_const.prodMk (hu (ψ k))))
     (fun k y hy ↦ fderiv_paramLift_I_eq (hCR (ψ k) y hy))
-    (fun k y hy ↦ ⟨(p (ψ k), u (ψ k) y), ⟨hp (ψ k), huK (ψ k) hy⟩, rfl⟩)
+    (fun k y hy ↦ paramLift_mem_paramImage (hp (ψ k)) (huK (ψ k) hy))
     (fun k ↦ by simpa only [hnorm] using hint (ψ k))
     (fun k ↦ (henergy k Ω).trans_le (hE (ψ k)))
   refine ⟨ψ ∘ φ, p₀, Z, fun z ↦ (w z).snd, hψ.comp hφ, hp₀, hpψ.comp hφ.tendsto_atTop, hZΩ,
@@ -306,7 +320,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_parametric
   · rintro z hz
     obtain ⟨⟨q, x⟩, ⟨-, hx⟩, hqx⟩ := hwK hz
     simpa [← hqx] using hx
-  · simpa [Function.comp_def, U] using
+  · simpa [Function.comp_def, U, paramLift] using
       (WithLp.sndL 2 ℝ (WithLp 2 (P × P)) V).uniformContinuous.comp_tendstoLocallyUniformlyOn hlim
 
 end Window
