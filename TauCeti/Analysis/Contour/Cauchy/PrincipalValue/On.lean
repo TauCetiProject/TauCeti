@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Contour.Cauchy.PrincipalValue.Basic
 import TauCeti.Analysis.Contour.Curve.ExcisionMeasure
-import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Calculus.Deriv.CountableLevels
 
@@ -53,11 +52,9 @@ of `f` (which fails at an on-curve singularity), never silently identifying the 
 * `HasCauchyPVAt.hasCauchyPV`, `CauchyPVExistsAt.cauchyPVExists` — the single-point principal value
   at `z₀` is the set-level principal value with `S = {z₀}`: the excision `‖γ t − z₀‖ > ε` is exactly
   the `S = {z₀}` case of the set excision.
-* `HasCauchyPVWith.of_integrable_of_crossings_measure_zero` and its finite-crossings wrapper
-  `HasCauchyPVWith.of_integrable_of_finite_crossings` — where
-  the integrand is integrable and the curve meets the excised points on a null set of parameters
-  (in particular, finitely often), the principal value is the ordinary integral **for any
-  prescribed excision set**
+* `HasCauchyPVWith.of_integrable` — where the integrand is interval-integrable, the principal value
+  is the ordinary integral **for any prescribed excision set**, with no hypothesis on how often the
+  curve meets the excised points
 * `HasCauchyPV.of_integrable` — if the ordinary contour integrand is interval-integrable, the empty
   excision witnesses that the principal value is the ordinary integral (as when no on-curve
   singularity of `f` obstructs integrability).
@@ -235,45 +232,23 @@ private theorem eventually_not_exists_mem_le (z : ℂ) (S : Finset ℂ) (h : ∀
   rintro ⟨s, hs, hle⟩
   exact absurd hle (not_le.mpr (hε s hs))
 
-/-- **Excising a curve's `ε`-neighbourhood of finitely many points keeps a.e.-strong
-measurability, if the integrand is supported where the curve is differentiable.** Off the set of
-differentiability the integrand vanishes, and on it the curve is continuous, hence measurable, so
-the excised parameter set is null-measurable for the restricted measure. -/
-private theorem aestronglyMeasurable_indicator_excision {γ : ℝ → ℂ} {a b : ℝ} {G : ℝ → ℂ}
-    (hG : MeasureTheory.AEStronglyMeasurable G (MeasureTheory.volume.restrict (Set.uIoc a b)))
-    (hG0 : ∀ t, ¬ DifferentiableAt ℝ γ t → G t = 0) (S : Finset ℂ) (ε : ℝ) :
-    MeasureTheory.AEStronglyMeasurable ({t | ∃ s ∈ S, ‖γ t - s‖ ≤ ε}ᶜ.indicator G)
-      (MeasureTheory.volume.restrict (Set.uIoc a b)) := by
-  have hD : MeasurableSet {t | DifferentiableAt ℝ γ t} := measurableSet_of_differentiableAt ℝ γ
-  have hγD : AEMeasurable γ
-      ((MeasureTheory.volume.restrict (Set.uIoc a b)).restrict {t | DifferentiableAt ℝ γ t}) :=
-    (ContinuousOn.aemeasurable (s := {t | DifferentiableAt ℝ γ t})
-      (fun t (ht : DifferentiableAt ℝ γ t) => ht.continuousAt.continuousWithinAt) hD).mono_measure
-      (MeasureTheory.Measure.restrict_mono_measure MeasureTheory.Measure.restrict_le_self _)
-  have hsupp : Function.support ({t | ∃ s ∈ S, ‖γ t - s‖ ≤ ε}ᶜ.indicator G) ⊆
-      {t | DifferentiableAt ℝ γ t} := fun t ht => by
-    by_contra hdiff
-    exact ht (by simp [hG0 t hdiff])
-  rw [← Set.indicator_eq_self.mpr hsupp]
-  exact (aestronglyMeasurable_indicator_iff hD).mpr
-    ((hG.mono_measure MeasureTheory.Measure.restrict_le_self).indicator₀
-      (nullMeasurableSet_excision hγD S ε).compl)
-
 /-- **An integrable integrand has principal value the ordinary integral, for *any* prescribed
 excision set.** Where the contour integrand is interval-integrable and the curve meets the excised
 points only on a null set of parameters, shrinking the excised neighbourhoods recovers the ordinary
 integral: for each fixed `ε` the excision may perturb the integrand on a set of positive measure,
-but as `ε → 0⁺` the excised integrands converge almost everywhere to the original one, since the
-limiting crossing set is null.
+but as `ε → 0⁺` the excised integrands converge almost everywhere to the original one. No
+hypothesis on the crossings is needed: on the (possibly non-null) set of parameters at which the
+curve sits at an excised point, the derivative vanishes almost everywhere
+(`Set.Countable.ae_deriv_eq_zero_on_preimage`), so the integrand vanishes there and the excision
+does not change it.
 
 The strength here is that `S` is arbitrary: the conclusion holds for whatever excision set another
 principal value happens to be witnessed by, which is what lets an arc carrying no singularity be
 subtracted off via `HasCauchyPVWith.sub_right` without knowing that witness. Compare
 `HasCauchyPV.of_integrable`, which proves the weaker existential form by exhibiting `S = ∅`. -/
-theorem HasCauchyPVWith.of_integrable_of_crossings_measure_zero {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ}
+theorem HasCauchyPVWith.of_integrable {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ}
     (S : Finset ℂ)
-    (h_int : IntervalIntegrable (fun t => f (γ t) * deriv γ t) MeasureTheory.volume a b)
-    (h_null : MeasureTheory.volume (⋃ s ∈ S, Set.uIoc a b ∩ γ ⁻¹' {s}) = 0) :
+    (h_int : IntervalIntegrable (fun t => f (γ t) * deriv γ t) MeasureTheory.volume a b) :
     HasCauchyPVWith γ a b f S (∫ t in a..b, f (γ t) * deriv γ t) := by
   classical
   set g : ℝ → ℂ := fun t => f (γ t) * deriv γ t with _hg
@@ -293,31 +268,23 @@ theorem HasCauchyPVWith.of_integrable_of_crossings_measure_zero {γ : ℝ → �
   have hae : ∀ᵐ t ∂MeasureTheory.volume, t ∈ Set.uIoc a b →
       Filter.Tendsto (fun ε : ℝ => if ∃ s ∈ S, ‖γ t - s‖ ≤ ε then 0 else g t)
         (𝓝[>] 0) (𝓝 (g t)) := by
-    filter_upwards [MeasureTheory.measure_eq_zero_iff_ae_notMem.mp h_null] with t ht htI
-    have hne : ∀ s ∈ S, γ t ≠ s := fun s hs hst =>
-      ht (Set.mem_biUnion hs ⟨htI, hst⟩)
-    refine Filter.Tendsto.congr' ?_ tendsto_const_nhds
-    filter_upwards [eventually_not_exists_mem_le (γ t) S hne] with ε hε
-    exact (ite_eq_right hε).symm
+    filter_upwards [S.countable_toSet.ae_deriv_eq_zero_on_preimage
+      (measurableReal := inferInstance) γ MeasureTheory.volume] with t ht _
+    by_cases hS : γ t ∈ S
+    · have hg0 : g t = 0 := by simp [_hg, ht hS]
+      refine Filter.Tendsto.congr' ?_ tendsto_const_nhds
+      exact Filter.Eventually.of_forall fun ε => by
+        by_cases h : ∃ s ∈ S, ‖γ t - s‖ ≤ ε <;> simp [h, hg0]
+    · have hne : ∀ s ∈ S, γ t ≠ s := fun s hs hst => hS (hst ▸ hs)
+      refine Filter.Tendsto.congr' ?_ tendsto_const_nhds
+      filter_upwards [eventually_not_exists_mem_le (γ t) S hne] with ε hε
+      exact (ite_eq_right hε).symm
   refine ⟨Filter.Eventually.of_forall fun ε =>
       h_int.mono_fun (hsm ε) (Filter.Eventually.of_forall (hle ε)), ?_⟩
   exact intervalIntegral.tendsto_integral_filter_of_dominated_convergence (fun t => ‖g t‖)
     (Filter.Eventually.of_forall hsm)
     (Filter.Eventually.of_forall fun ε => Filter.Eventually.of_forall fun t _ => hle ε t)
     h_int.norm hae
-
-/-- Finite-crossings form of `HasCauchyPVWith.of_integrable_of_crossings_measure_zero`: a curve
-meeting each excised point only finitely often meets them on a null set of parameters. This is
-the form contour arguments consume: `IsPwC1ImmersionOn.finite_crossings` (HW Prop 2.2) supplies
-finiteness on the closed interval, from which this follows by `Set.Finite.subset` along
-`Set.uIoc_subset_uIcc`. -/
-theorem HasCauchyPVWith.of_integrable_of_finite_crossings {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ}
-    (S : Finset ℂ)
-    (h_int : IntervalIntegrable (fun t => f (γ t) * deriv γ t) MeasureTheory.volume a b)
-    (h_fin : ∀ s ∈ S, (Set.uIoc a b ∩ γ ⁻¹' {s}).Finite) :
-    HasCauchyPVWith γ a b f S (∫ t in a..b, f (γ t) * deriv γ t) :=
-  .of_integrable_of_crossings_measure_zero S h_int
-    ((S.finite_toSet.biUnion fun s hs => h_fin s hs).measure_zero _)
 
 /-- **Zero integrand.** The principal value of the zero integrand is `0`, witnessed by the empty
 excision: the truncated integrand is identically `0`, hence integrable with vanishing integral. -/
