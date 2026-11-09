@@ -211,11 +211,8 @@ coordinates. -/
 @[simp]
 theorem UnitaryGroup.toLinearIsometryEquiv_apply (A : unitaryGroup ι 𝕜)
     (x : EuclideanSpace 𝕜 ι) :
-    UnitaryGroup.toLinearIsometryEquiv A x = WithLp.toLp 2 ((A : Matrix ι ι 𝕜) *ᵥ x.ofLp) := by
-  rw [UnitaryGroup.toLinearIsometryEquiv, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    ← LinearIsometryEquiv.coe_coe'', Unitary.coe_linearIsometryEquiv_apply,
-    StarMonoidHom.coe_toMonoidHom, Unitary.coe_map, StarMonoidHom.ofClass_coe,
-    toEuclideanCLM_apply, toLpLin_apply]
+    UnitaryGroup.toLinearIsometryEquiv A x = WithLp.toLp 2 ((A : Matrix ι ι 𝕜) *ᵥ x.ofLp) :=
+  (rfl)
 
 /-- The linear isometry of a unitary matrix sends the standard basis vector `e_j` to the column
 `j` of the matrix. -/

@@ -74,20 +74,11 @@ namespace ComplexProjectiveSpace
 
 variable {n : ℕ}
 
-/-- A unitary matrix maps unit complex multiples of a unit vector to unit complex multiples of its
-image: it commutes with the action of the circle on the unit sphere. -/
-private theorem toLinearIsometryEquiv_smul_smul (A : unitaryGroup (Fin (n + 1)) ℂ)
-    (c : sphere (0 : ℂ) 1) (x : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
-    UnitaryGroup.toLinearIsometryEquiv A • (c • x) =
-      c • (UnitaryGroup.toLinearIsometryEquiv A • x) :=
-  Subtype.ext <| by
-    simp only [LinearIsometryEquiv.coe_smul_unitSphere, Sphere.coe_sphere_smul, map_smul]
-
 /-- A unitary matrix acts on `CPⁿ` by `A • [x] = [A x]`. -/
 instance instSMulUnitaryGroup : SMul (unitaryGroup (Fin (n + 1)) ℂ) (ComplexProjectiveSpace n) where
   smul A := ComplexProjectiveSpace.lift n
     (fun x ↦ mk n (UnitaryGroup.toLinearIsometryEquiv A • x)) fun c x ↦ by
-      rw [toLinearIsometryEquiv_smul_smul, mk_smul]
+      rw [smul_comm, mk_smul]
 
 /-- A unitary matrix acts on `CPⁿ` by acting on representatives in the unit sphere. -/
 @[simp]

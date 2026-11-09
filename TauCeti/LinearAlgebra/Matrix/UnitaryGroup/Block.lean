@@ -42,8 +42,9 @@ spanned by `e₀`.
 
 ## Main results
 
-* `Matrix.fromBlocks_zero_zero_mem_unitaryGroup_iff`: `diag(A, B)` is unitary exactly when both
-  `A` and `B` are.
+* `Matrix.fromBlocks_zero_zero_mem_unitaryGroup_iff`,
+  `Matrix.reindex_fromBlocks_zero_zero_mem_unitaryGroup_iff`: `diag(A, B)`, possibly reindexed,
+  is unitary exactly when both `A` and `B` are.
 * `Matrix.UnitaryGroup.mem_range_fromBlocksOne_iff`,
   `Matrix.SpecialOrthogonalGroup.mem_range_fromBlocksOne_iff`: the image of the embedding is the
   subgroup fixing the first `r` standard basis vectors.
@@ -69,6 +70,15 @@ theorem fromBlocks_zero_zero_mem_unitaryGroup_iff {l n : Type*} [Fintype l] [Dec
   simp only [mem_unitaryGroup_iff', star_eq_conjTranspose, fromBlocks_conjTranspose,
     conjTranspose_zero, fromBlocks_multiply, Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add,
     ← fromBlocks_one, fromBlocks_inj, true_and]
+
+/-- A reindexed block-diagonal matrix `diag(A, B)` is unitary exactly when both blocks are
+unitary. -/
+theorem reindex_fromBlocks_zero_zero_mem_unitaryGroup_iff {l n p : Type*} [Fintype l]
+    [DecidableEq l] [Fintype n] [DecidableEq n] [Fintype p] [DecidableEq p] (e : l ⊕ n ≃ p)
+    {A : Matrix l l α} {B : Matrix n n α} :
+    reindex e e (fromBlocks A 0 0 B) ∈ unitaryGroup p α ↔
+      A ∈ unitaryGroup l α ∧ B ∈ unitaryGroup n α := by
+  rw [reindex_apply, submatrix_equiv_mem_unitary, fromBlocks_zero_zero_mem_unitaryGroup_iff]
 
 namespace UnitaryGroup
 
@@ -166,11 +176,8 @@ theorem mem_range_fromBlocksOne_iff {A : unitaryGroup (Fin (r + m)) α} :
       simpa [Pi.single_apply, hk] using hcol (natAdd r k) j
     · simp only [reindex_apply, submatrix_apply, finSumFinEquiv_symm_apply_natAdd]
       rfl
-  have hB : B ∈ unitaryGroup (Fin m) α := by
-    have h := A.2
-    rw [hAB, reindex_apply, submatrix_equiv_mem_unitary,
-      fromBlocks_zero_zero_mem_unitaryGroup_iff] at h
-    exact h.2
+  have hB : B ∈ unitaryGroup (Fin m) α :=
+    ((reindex_fromBlocks_zero_zero_mem_unitaryGroup_iff _).1 (hAB ▸ A.2)).2
   exact ⟨⟨B, hB⟩, Subtype.ext hAB.symm⟩
 
 section Succ
@@ -282,11 +289,8 @@ theorem mem_range_prodBlockSucc_iff {A : unitaryGroup (Fin (m + 1)) α} :
         finSumFinEquiv_trans_finCongr_symm_succ, fromBlocks_apply₁₁, fromBlocks_apply₁₂,
         fromBlocks_apply₂₁, fromBlocks_apply₂₂, diagonal_apply_eq] <;>
       first | rfl | exact hrow j | exact hA i
-  have hB : B ∈ unitaryGroup (Fin m) α := by
-    have h := A.2
-    rw [hAB, reindex_apply, submatrix_equiv_mem_unitary,
-      fromBlocks_zero_zero_mem_unitaryGroup_iff] at h
-    exact h.2
+  have hB : B ∈ unitaryGroup (Fin m) α :=
+    ((reindex_fromBlocks_zero_zero_mem_unitaryGroup_iff _).1 (hAB ▸ A.2)).2
   exact ⟨(⟨A.1 0 0, Unitary.mem_iff_star_mul_self.2 hc⟩, ⟨B, hB⟩), Subtype.ext hAB.symm⟩
 
 end Succ
