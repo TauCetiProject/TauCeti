@@ -8,9 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Geometry.Manifold.Distribution.Submersion
 public import TauCeti.Geometry.Manifold.VectorField.MappingTorus
-import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
-import TauCeti.Topology.MappingTorus.LocalProduct
 
 /-!
 # The mapping torus fibres over the circle
@@ -18,25 +17,26 @@ import TauCeti.Topology.MappingTorus.LocalProduct
 Let `φ : M ≃ₘ^n⟮I, I⟯ M` be a `C^n` diffeomorphism of a locally compact Hausdorff manifold and let
 `Y_φ = (ℝ × M) / ((t, x) ∼ (t + 1, φ⁻¹ x))` be its smooth mapping torus, with projection
 `p : Y_φ → ℝ / ℤ`, `[t, x] ↦ [t]` (`TauCeti.SmoothMappingTorus.proj`). This file shows that `p`
-is a smooth fibration in the sense used by the tangent splitting and the vertical bundle of `Y_φ`.
+is a `C^n` submersion whose kernels form the smooth vertical bundle of `Y_φ`, and that the fibre
+inclusions are smooth embeddings.
 
 * `p` is a `C^n` submersion, with the model space `E` of `M` as complement
   (`TauCeti.SmoothMappingTorus.isSubmersionOfComplement_proj`). In the coordinates `(t, x)` it is
   the first projection `ℝ × M → ℝ` followed by the local diffeomorphism `ℝ → ℝ / ℤ`, and the
   quotient map `ℝ × M → Y_φ` is a surjective local diffeomorphism.
-* Hence, for a diffeomorphism of a finite-dimensional smooth manifold, the vertical tangent spaces
-  `V_y = ker dp_y` form a smooth distribution of rank `dim M`
+* Hence, for a `C^n` diffeomorphism of a finite-dimensional manifold and `m + 1 ≤ n`, the
+  vertical tangent spaces `V_y = ker dp_y` form a `C^m` distribution of rank `dim M`
   (`TauCeti.SmoothMappingTorus.isContMDiffDistribution_ker_mfderiv_proj`), the kernel distribution
   of the submersion `p`. Through `TauCeti.IsContMDiffDistribution.contMDiffVectorBundle` it is the
-  vertical tangent bundle `V` of `Y_φ`. The line field spanned by the suspension vector field
-  `T = ∂_t` is a smooth distribution of rank one
+  vertical tangent bundle `V` of `Y_φ`. For a smooth diffeomorphism, the line field spanned by
+  the suspension vector field `T = ∂_t` is a smooth distribution of rank one
   (`TauCeti.SmoothMappingTorus.isContMDiffDistribution_span_timeVectorField`), and the two split
   the tangent bundle as `T Y_φ = ℝ T ⊕ V`
   (`TauCeti.SmoothMappingTorus.isCompl_span_timeVectorField_ker_mfderiv_proj`).
-* For each real `t`, the fibre inclusion `x ↦ [t, x]` is a closed embedding of `M` onto the fibre
-  `p⁻¹ [t]` (`TauCeti.SmoothMappingTorus.isClosedEmbedding_mk`), and a `C^n` smooth embedding when
-  `M` is finite-dimensional and boundaryless
-  (`TauCeti.SmoothMappingTorus.isSmoothEmbedding_mk`). The inclusions for two lifts `t` and
+* For each real `t`, the fibre inclusion `x ↦ [t, x]` is a `C^n` smooth embedding of `M` onto the
+  fibre `p⁻¹ [t]` (`TauCeti.SmoothMappingTorus.isSmoothEmbedding_mk`): in product charts the
+  slice `x ↦ (0, x)` is the inclusion `u ↦ (0, u)`, and it is a closed embedding by
+  `TauCeti.SmoothMappingTorus.isClosedEmbedding_mk`. The inclusions for two lifts `t` and
   `t + k` of the same point of the circle differ by `φ ^ k`
   (`TauCeti.SmoothMappingTorus.mk_add_intCast`).
 
@@ -48,10 +48,8 @@ No compactness of `M` is needed.
   `TauCeti.SmoothMappingTorus.isSubmersion_proj`: the projection to the circle is a submersion.
 * `TauCeti.SmoothMappingTorus.isContMDiffDistribution_ker_mfderiv_proj`,
   `TauCeti.SmoothMappingTorus.isContMDiffDistribution_span_timeVectorField`: its kernels form a
-  smooth distribution of rank `dim M`, complementary to the smooth line field `ℝ T`.
-* `TauCeti.SmoothMappingTorus.isClosedEmbedding_mk`,
-  `TauCeti.SmoothMappingTorus.isSmoothEmbedding_mk`: the fibre inclusions are closed embeddings,
-  and smooth embeddings.
+  distribution of rank `dim M`, complementary to the smooth line field `ℝ T`.
+* `TauCeti.SmoothMappingTorus.isSmoothEmbedding_mk`: the fibre inclusions are smooth embeddings.
 
 ## References
 
@@ -95,21 +93,24 @@ theorem isSubmersionOfComplement_proj :
 theorem isSubmersion_proj : IsSubmersion (𝓘(ℝ).prod I) 𝓘(ℝ) n (proj φ) :=
   (isSubmersionOfComplement_proj φ).isSubmersion
 
+/-- **The vertical distribution of the mapping torus.** For a `C^n` diffeomorphism of a
+finite-dimensional manifold `M` and `m + 1 ≤ n`, the vertical tangent spaces `V_y = ker dp_y` of
+the mapping torus form a `C^m` distribution of rank `dim M`: they are the kernels of the derivative
+of the submersion `p`. As for `Manifold.IsSubmersion.isContMDiffDistribution_ker_mfderiv`, the
+`C^1` structure on `Y_φ`, which follows from `m + 1 ≤ n`, is an instance argument because the
+statement needs it. -/
+theorem isContMDiffDistribution_ker_mfderiv_proj [FiniteDimensional ℝ E]
+    [IsManifold (𝓘(ℝ).prod I) 1 (SmoothMappingTorus φ)] {m : ℕ∞ω} (hmn : m + 1 ≤ n) :
+    IsContMDiffDistribution (𝓘(ℝ).prod I) m (finrank ℝ E)
+      (fun y : SmoothMappingTorus φ ↦ (mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y).ker) := by
+  have h := (isSubmersion_proj φ).isContMDiffDistribution_ker_mfderiv hmn
+  rwa [finrank_prod, finrank_self, Nat.add_sub_cancel_left] at h
+
 end Submersion
 
 section Vertical
 
 variable [T2Space M] [LocallyCompactSpace M] [IsManifold I ∞ M] (ψ : M ≃ₘ⟮I, I⟯ M)
-
-/-- **The vertical distribution of the mapping torus.** For a diffeomorphism of a
-finite-dimensional smooth manifold `M`, the vertical tangent spaces `V_y = ker dp_y` of the
-mapping torus form a smooth distribution of rank `dim M`: they are the kernels of the derivative of
-the submersion `p`. -/
-theorem isContMDiffDistribution_ker_mfderiv_proj [FiniteDimensional ℝ E] :
-    IsContMDiffDistribution (𝓘(ℝ).prod I) ∞ (finrank ℝ E)
-      (fun y : SmoothMappingTorus ψ ↦ (mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj ψ) y).ker) := by
-  have h := (isSubmersion_proj ψ).isContMDiffDistribution_ker_mfderiv (m := ∞) le_rfl
-  rwa [finrank_prod, finrank_self, Nat.add_sub_cancel_left] at h
 
 /-- The line field `ℝ T` spanned by the suspension vector field `T = ∂_t` is a smooth distribution
 of rank one, with global frame `T`. Together with
@@ -135,63 +136,31 @@ end Vertical
 
 section Fibre
 
-/-- The fibre inclusion at height zero is a topological embedding: through the homeomorphism with
-the topological mapping torus, it is the inclusion of the fibre over `0`. -/
-private theorem isEmbedding_mk_zero : IsEmbedding (mk φ 0) := by
-  have h : mk φ 0 = (homeomorphMappingTorus φ).symm ∘ MappingTorus.incl φ.toHomeomorph.symm :=
-    funext fun x ↦ by
-      rw [comp_apply, MappingTorus.incl_apply, homeomorphMappingTorus_symm_mk]
-  rw [h]
-  exact (homeomorphMappingTorus φ).symm.isEmbedding.comp
-    (MappingTorus.isEmbedding_incl φ.toHomeomorph.symm)
-
-/-- For each real `t`, the fibre inclusion `x ↦ [t, x]` is a closed embedding of `M` onto the
-fibre over the class of `t`. -/
-theorem isClosedEmbedding_mk (t : ℝ) : IsClosedEmbedding (mk φ t) := by
-  refine ⟨?_, ?_⟩
-  · -- The fibre inclusion at height `t` is the one at height `0` followed by the time-`t` map.
-    have h : (flow φ).toHomeomorph t ∘ mk φ 0 = mk φ t :=
-      funext fun x ↦ by rw [comp_apply, Flow.toHomeomorph_apply, flow_mk, zero_add]
-    rw [← h]
-    exact ((flow φ).toHomeomorph t).isEmbedding.comp (isEmbedding_mk_zero φ)
-  · rw [range_mk]
-    exact isClosed_singleton.preimage (continuous_proj φ)
+/-- The slice `x ↦ (0, x)` of `ℝ × M` is an immersion with complement `ℝ`: in the product charts
+it is the inclusion `u ↦ (0, u)`. -/
+private theorem isImmersion_prodMk_zero [IsManifold I n M] :
+    IsImmersion I (𝓘(ℝ).prod I) n (Prod.mk (0 : ℝ) : M → ℝ × M) :=
+  IsImmersionOfComplement.isImmersion (F := ℝ) fun x ↦
+    IsImmersionAtOfComplement.mk_of_continuousAt_of_extChartAt
+      (continuous_const.prodMk continuous_id).continuousAt
+      (ContinuousLinearEquiv.prodComm ℝ E ℝ) fun u hu ↦ by
+        rw [extChartAt_prod, extChartAt_model_space_eq_id]
+        -- In the chart of `M`, the second component is `u` itself.
+        simpa using (extChartAt I x).right_inv hu
 
 variable [T2Space M] [LocallyCompactSpace M] [IsManifold I n M]
 
-/-- The differential of the fibre inclusion `x ↦ [t, x]` is injective: it is `v ↦ (0, v)` followed
-by the invertible differential of the quotient map `(t, x) ↦ [t, x]`. -/
-theorem injective_mfderiv_mk (hn : n ≠ 0) (t : ℝ) (x : M) :
-    Injective (mfderiv I (𝓘(ℝ).prod I) (mk φ t) x) := by
-  have hincl : HasMFDerivAt I (𝓘(ℝ).prod I) (fun x : M ↦ (t, x)) x
-      ((0 : TangentSpace I x →L[ℝ] ℝ).prod (ContinuousLinearMap.id ℝ (TangentSpace I x))) :=
-    (hasMFDerivAt_const t x).prodMk (hasMFDerivAt_id x)
-  have h := mfderiv_comp x ((contMDiff_uncurry_mk φ (t, x)).mdifferentiableAt hn)
-    hincl.mdifferentiableAt
-  -- `mk φ t` is the quotient map `(t, x) ↦ [t, x]` composed with `x ↦ (t, x)`, so its differential
-  -- sends `u` to the differential of the quotient map applied to `(0, u)`.
-  have hcomp : uncurry (mk φ) ∘ Prod.mk t = mk φ t := rfl
-  rw [hcomp, hincl.mfderiv] at h
-  have hu (u : TangentSpace I x) : mfderiv I (𝓘(ℝ).prod I) (mk φ t) x u =
-      mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
-        ((Manifold.tangentSpaceProdEquiv (t, x)).symm (0, u)) := by
-    rw [h, Manifold.tangentSpaceProdEquiv_symm_apply]
-    -- The model of `TangentSpace I x` is `E`, so `ContinuousLinearMap.prod` cannot be rewritten
-    -- here; the composite sends `u` to the image of `(0 u, u)` by definition.
-    rfl
-  intro v w hvw
-  rw [hu, hu] at hvw
-  exact congrArg Prod.snd ((Manifold.tangentSpaceProdEquiv (t, x)).symm.injective
-    (((isLocalDiffeomorph_uncurry_mk φ).isInvertible_mfderiv hn (t, x)).injective hvw))
-
-/-- **The fibre inclusions are smooth embeddings.** For a finite-dimensional boundaryless fibre
-`M` and `1 ≤ n`, the fibre inclusion `x ↦ [t, x]` is a `C^n` smooth embedding of `M` onto the
-fibre over the class of `t`. -/
-theorem isSmoothEmbedding_mk [I.Boundaryless] [FiniteDimensional ℝ E] (hn : 1 ≤ n) (t : ℝ) :
-    IsSmoothEmbedding I (𝓘(ℝ).prod I) n (mk φ t) := by
-  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
-  exact ⟨(contMDiff_mk φ t).isImmersion_of_injective_mfderiv hn (injective_mfderiv_mk φ hn0 t),
-    (isClosedEmbedding_mk φ t).isEmbedding⟩
+/-- **The fibre inclusions are smooth embeddings.** For each real `t`, the fibre inclusion
+`x ↦ [t, x]` is a `C^n` smooth embedding of `M` onto the fibre over the class of `t`. -/
+theorem isSmoothEmbedding_mk (t : ℝ) : IsSmoothEmbedding I (𝓘(ℝ).prod I) n (mk φ t) := by
+  refine ⟨?_, (isClosedEmbedding_mk φ t).isEmbedding⟩
+  -- The fibre inclusion at height `t` is the slice `x ↦ (0, x)`, followed by the quotient map and
+  -- the time-`t` map of the suspension flow.
+  have h : flowDiffeomorph φ t ∘ (uncurry (mk φ) ∘ Prod.mk 0) = mk φ t :=
+    funext fun x ↦ by simp [flow_mk]
+  rw [← h, isImmersion_diffeomorph_comp_iff]
+  exact isImmersion_isLocalDiffeomorphAt_comp (fun x ↦ isLocalDiffeomorph_uncurry_mk φ _)
+    isImmersion_prodMk_zero
 
 end Fibre
 
