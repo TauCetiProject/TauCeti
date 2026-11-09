@@ -29,8 +29,9 @@ neighbourhoods keeps nearby fibres from having any further points. Over a connec
 sum is therefore the same at every point, and this common value is the **degree**
 `TauCeti.RiemannSurface.degree f`. The degree dominates every local multiplicity and is
 multiplicative under composition; when `X` is nonempty (so that some fibre sum is nonzero) it is
-positive and forces `f` to be surjective. Nonconstancy of the composite of two such maps comes
-from the open mapping theorem for Riemann surfaces,
+positive. Surjectivity of such a map onto a connected target, and nonconstancy of the composite of
+two such maps, come from the open mapping theorem for Riemann surfaces:
+`TauCeti.RiemannSurface.surjective_of_forall_not_eventuallyConst` and
 `TauCeti.RiemannSurface.not_eventuallyConst_comp` in
 `TauCeti.Analysis.Complex.RiemannSurface.OpenMapping`.
 
@@ -53,9 +54,8 @@ identity theorem (`TauCeti.RiemannSurface.not_eventuallyConst_of_ne` in
   `TauCeti.RiemannSurface.eventually_fiberMultiplicitySum_eq`, its local constancy.
 * `TauCeti.RiemannSurface.degree`: the degree, with
   `TauCeti.RiemannSurface.fiberMultiplicitySum_eq_degree` saying that every fibre sum over a
-  connected target equals it, `TauCeti.RiemannSurface.degree_pos_of_forall_not_eventuallyConst`,
-  `TauCeti.RiemannSurface.surjective_of_forall_not_eventuallyConst` and
-  `TauCeti.RiemannSurface.degree_comp_of_forall_not_eventuallyConst`, for maps carrying the
+  connected target equals it, `TauCeti.RiemannSurface.degree_pos_of_forall_not_eventuallyConst`
+  and `TauCeti.RiemannSurface.degree_comp_of_forall_not_eventuallyConst`, for maps carrying the
   pointwise nonconstancy hypothesis.
 * `TauCeti.RiemannSurface.FiniteHolomorphicMap`: the bundled finite holomorphic maps, with
   `TauCeti.RiemannSurface.FiniteHolomorphicMap.ofMDifferentiable` and
@@ -295,16 +295,6 @@ connected Riemann surface which is constant near no point has positive degree. -
 theorem degree_pos_of_forall_not_eventuallyConst [Nonempty X] : 0 < degree f :=
   ((localMultiplicity_pos_iff (.of_forall fun z ↦ hf z)).2 (hne (Classical.arbitrary X))).trans_le
     (localMultiplicity_le_degree_of_forall_not_eventuallyConst hf hne _)
-
-omit [T2Space X] in
-/-- **Surjectivity.** A holomorphic map from a nonempty compact Riemann surface to a connected
-Riemann surface which is constant near no point is surjective: its range is open by the open
-mapping theorem, closed because it is compact, and nonempty, hence everything. -/
-theorem surjective_of_forall_not_eventuallyConst [Nonempty X] : Surjective f := by
-  have hopen : IsOpen (range f) := (isOpenMap_of_forall_not_eventuallyConst hf hne).isOpen_range
-  have hclosed : IsClosed (range f) := (isCompact_range hf.continuous).isClosed
-  exact range_eq_univ.1
-    ((isClopen_iff.1 ⟨hclosed, hopen⟩).resolve_left (range_nonempty f).ne_empty)
 
 end Degree
 

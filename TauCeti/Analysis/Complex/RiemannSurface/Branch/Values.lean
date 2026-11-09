@@ -117,12 +117,12 @@ theorem finite_branchValues (f : FiniteHolomorphicMap X Y) : f.branchValues.Fini
   f.finite_setOf_one_lt_localMultiplicity.image f
 
 /-- The branch values form a closed set. -/
-theorem isClosed_branchValues [T1Space Y] (f : FiniteHolomorphicMap X Y) :
-    IsClosed f.branchValues :=
+theorem isClosed_branchValues (f : FiniteHolomorphicMap X Y) : IsClosed f.branchValues :=
+  have : T1Space Y := 𝓘(ℂ).t1Space Y
   f.finite_branchValues.isClosed
 
 /-- The complement of the branch values is open. -/
-theorem isOpen_branchValues_compl [T1Space Y] (f : FiniteHolomorphicMap X Y) :
+theorem isOpen_branchValues_compl (f : FiniteHolomorphicMap X Y) :
     IsOpen f.branchValuesᶜ :=
   f.isClosed_branchValues.isOpen_compl
 
