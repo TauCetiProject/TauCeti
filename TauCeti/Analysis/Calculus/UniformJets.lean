@@ -5,7 +5,7 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Bounds
+public import TauCeti.Analysis.Calculus.ContDiff.Bounds
 
 /-!
 # Uniform bounds for derivatives of families
@@ -40,6 +40,17 @@ def HasUniformJetBoundsOn (𝕜 : Type*) [NontriviallyNormedField 𝕜]
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [NormedSpace 𝕜 E] [NormedSpace 𝕜 F] [NormedSpace 𝕜 G]
+
+/-- Characterize uniform jet bounds by bounds at each derivative order. -/
+theorem hasUniformJetBoundsOn_iff {n : ℕ} {s : Set E} {f : ι → E → F} :
+    HasUniformJetBoundsOn 𝕜 n s f ↔ ∀ m : ℕ, m ≤ n → ∃ C : ℝ,
+      ∀ i x, x ∈ s → ‖iteratedFDeriv 𝕜 m (f i) x‖ ≤ C := Iff.rfl
+
+/-- Order-zero jet bounds are uniform bounds on the values. -/
+@[simp]
+theorem hasUniformJetBoundsOn_zero_iff {s : Set E} {f : ι → E → F} :
+    HasUniformJetBoundsOn 𝕜 0 s f ↔ ∃ C : ℝ, ∀ i x, x ∈ s → ‖f i x‖ ≤ C := by
+  simp only [hasUniformJetBoundsOn_iff, Nat.le_zero, forall_eq, norm_iteratedFDeriv_zero]
 
 /-- Restrict a uniformly bounded jet family to a smaller evaluation set. -/
 theorem HasUniformJetBoundsOn.mono {n : ℕ} {s t : Set E} {f : ι → E → F} (hst : s ⊆ t)
@@ -78,37 +89,6 @@ theorem HasUniformJetBoundsOn.bound_all {n : ℕ} {s : Set E} {f : ι → E → 
   have hs : max (c ⟨j, hj'⟩) 0 ≤ C :=
     Finset.single_le_sum (fun k _ ↦ le_max_right _ _) (Finset.mem_univ _)
   exact (hc ⟨j, hj'⟩ i x hx).trans ((le_max_left _ _).trans hs)
-
-private lemma le_pow_of_le_max_one {A D : ℝ} (hD : D = max A 1)
-    {m : ℕ} (hm : 1 ≤ m) : A ≤ D ^ m := by
-  have hAD : A ≤ D := by rw [hD]; exact le_max_left _ _
-  have hD1 : 1 ≤ D := by rw [hD]; exact le_max_right _ _
-  exact hAD.trans (le_self_pow₀ hD1 (Nat.ne_of_gt hm))
-
-/-- The composition norm estimate depends only on smoothness near the two evaluation points. -/
-theorem norm_iteratedFDeriv_comp_le_of_contDiffAt {n : ℕ} {f : E → F}
-    {g : F → G} {x : E} {C D : ℝ}
-    (hg : ContDiffAt 𝕜 n g (f x)) (hf : ContDiffAt 𝕜 n f x)
-    (hC : ∀ j, j ≤ n → ‖iteratedFDeriv 𝕜 j g (f x)‖ ≤ C)
-    (hD : ∀ j, 1 ≤ j → j ≤ n → ‖iteratedFDeriv 𝕜 j f x‖ ≤ D ^ j) :
-    ‖iteratedFDeriv 𝕜 n (g ∘ f) x‖ ≤ Nat.factorial n * C * D ^ n := by
-  obtain ⟨t, ht, hgt⟩ := hg.contDiffOn (m := n) le_rfl (by simp)
-  obtain ⟨V, hVt, hV, hfxV⟩ := mem_nhds_iff.mp ht
-  obtain ⟨s, hs, hfs⟩ := hf.contDiffOn (m := n) le_rfl (by simp)
-  have hsV : s ∩ f ⁻¹' V ∈ 𝓝 x :=
-    inter_mem hs (hf.continuousAt.preimage_mem_nhds (hV.mem_nhds hfxV))
-  obtain ⟨U, hUs, hU, hxU⟩ := mem_nhds_iff.mp hsV
-  have hUV : MapsTo f U V := fun y hy ↦ (hUs hy).2
-  have H := norm_iteratedFDerivWithin_comp_le (hgt.mono hVt)
-    (hfs.mono (hUs.trans inter_subset_left)) (le_refl (n : ℕ∞ω))
-    hV.uniqueDiffOn hU.uniqueDiffOn hUV hxU (C := C) (D := D) ?_ ?_
-  · rwa [iteratedFDerivWithin_of_isOpen n hU hxU] at H
-  · intro j hj
-    rw [iteratedFDerivWithin_of_isOpen j hV hfxV]
-    exact hC j hj
-  · intro j hj₁ hj
-    rw [iteratedFDerivWithin_of_isOpen j hU hxU]
-    exact hD j hj₁ hj
 
 /-- A value bound and derivative jets give one additional order on any set. -/
 theorem HasUniformJetBoundsOn.succ_of_fderiv {n : ℕ} {s : Set E} {f : ι → E → F}
@@ -169,7 +149,8 @@ theorem HasUniformJetBoundsOn.comp {n : ℕ} {U : Set E} {V : Set F}
   · intro j hj
     exact hAg' j hj i (f i x) (hmap i hx)
   · intro j hj₁ hj
-    exact (hAf' j hj i x hx).trans (le_pow_of_le_max_one rfl hj₁)
+    exact (hAf' j hj i x hx).trans ((le_max_left Af 1).trans
+      (le_self_pow₀ (le_max_right Af 1) (Nat.ne_of_gt hj₁)))
 
 /-- Reindexing a family preserves its uniform derivative bounds. -/
 theorem HasUniformJetBoundsOn.comp_index {n : ℕ} {s : Set E} {f : ι → E → F}
