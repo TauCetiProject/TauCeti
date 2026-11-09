@@ -13,6 +13,7 @@ import Mathlib.Analysis.Complex.Exponential
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.SpecialFunctions.Exp.Modular
+import TauCeti.Analysis.PDE.Vortex.Potential
 import TauCeti.Analysis.Sobolev.Poincare.Planar
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
@@ -140,31 +141,12 @@ private theorem le_div_two_add_of_pow_four_le {x D M : ℝ} (hD : 0 ≤ D) (hM :
 
 variable {P : Polynomial ℂ}
 
-/-- For a compactly supported continuous `w`, the potential term `h (exp (2w) - 1 - 2w)` is
-integrable. -/
-private theorem integrable_potential {w : ℂ → ℝ} (hw : Continuous w)
-    (hws : HasCompactSupport w) : Integrable fun z ↦
-      ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z) := by
-  have hP := P.continuous
-  have hc : Continuous fun z ↦
-      ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z) :=
-    ((hP.norm.pow 2).div (continuous_const.add (hP.norm.pow 2))
-      fun z ↦ (by positivity : (0 : ℝ) < 1 + ‖P.eval z‖ ^ 2).ne').mul
-      (by fun_prop)
-  exact hc.integrable_of_hasCompactSupport (hws.mono fun z hz h0 ↦ hz (by simp [h0]))
-
-/-- The potential integral `∫ h (exp (2w) - 1 - 2w)` is nonnegative. -/
-theorem integral_potential_nonneg (w : ℂ → ℝ) :
-    0 ≤ ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z) :=
-  integral_nonneg fun z ↦
-    mul_nonneg (by positivity) (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)
-
 /-- The energy `∫ ‖Dw‖² / 2 + (1 / 16) ∫ h (exp (2w) - 1 - 2w)` is nonnegative. -/
 private theorem energy_nonneg (w : ℂ → ℝ) :
     0 ≤ (∫ z, ‖fderiv ℝ w z‖ ^ 2) / 2 +
       (∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z)) / 16 := by
   have hA : 0 ≤ ∫ z, ‖fderiv ℝ w z‖ ^ 2 := integral_nonneg fun z ↦ by positivity
-  have hE := integral_potential_nonneg (P := P) w
+  have hE := integral_mul_exp_sub_one_sub_nonneg P w
   positivity
 
 /-- Outside a disc where `‖P‖ ≥ 1`, so that `h ≥ 1 / 2`, the modular `√(1 + w²) - 1` is at most
@@ -174,7 +156,7 @@ private theorem setIntegral_compl_closedBall_le {R : ℝ}
     (hws : HasCompactSupport w) :
     ∫ z in (closedBall (0 : ℂ) R)ᶜ, (√(1 + w z ^ 2) - 1) ≤
       2 * ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z) := by
-  have hpint := integrable_potential (P := P) hw hws
+  have hpint := integrable_mul_exp_sub_one_sub P hw hws
   have hmod : Integrable fun z ↦ √(1 + w z ^ 2) - 1 :=
     (by fun_prop : Continuous fun z ↦ √(1 + w z ^ 2) - 1).integrable_of_hasCompactSupport
       (hws.mono fun z hz h0 ↦ hz (by simp [h0]))
@@ -223,7 +205,7 @@ private theorem exists_sq_integral_sq_le (hm : 0 < P.natDegree) :
   set M := A / 2 + E / 16
   set k := 2 + C₀ * √A
   have hA : 0 ≤ A := integral_nonneg fun z ↦ by positivity
-  have hE : 0 ≤ E := integral_potential_nonneg w
+  have hE : 0 ≤ E := integral_mul_exp_sub_one_sub_nonneg P w
   have hk : 0 ≤ k := by positivity
   -- The planar estimate with `s` the disc: `∫ w² ≤ 2 k (2 E) + k² S ≤ 64 k M + k² S`.
   have hW1 : ∫ z, w z ^ 2 ≤ 64 * k * M + k ^ 2 * S := by
@@ -308,7 +290,7 @@ theorem exists_integral_le_of_reducedFunctional_le (hm : 0 < P.natDegree) (t : �
   set E := ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z)
   set W := ∫ z, w z ^ 2
   have hA : 0 ≤ A := integral_nonneg fun z ↦ by positivity
-  have hE : 0 ≤ E := integral_potential_nonneg w
+  have hE : 0 ≤ E := integral_mul_exp_sub_one_sub_nonneg P w
   have hMB : A / 2 + E / 16 ≤ B := by
     have := hC₁ w hw hws
     simp only [B]

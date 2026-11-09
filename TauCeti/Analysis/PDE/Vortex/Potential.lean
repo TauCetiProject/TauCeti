@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Function.Lp.IntegralFunctional
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.MeasureTheory.Measure.WithDensity
+import TauCeti.Analysis.SpecialFunctions.Exp.Modular
 
 /-!
 # Weak lower semicontinuity of the reduced vortex potential
@@ -82,5 +83,12 @@ theorem integrable_mul_exp_sub_one_sub (P : Polynomial ℂ) {w : ℂ → ℝ}
   intro z hz hwz
   apply hz
   simp [hwz]
+
+/-- The nonlinear vortex potential `∫ h (exp (2w) - 1 - 2w)`, `h = ‖P‖² / (1 + ‖P‖²)`, is
+nonnegative as a real integral. -/
+theorem integral_mul_exp_sub_one_sub_nonneg (P : Polynomial ℂ) (w : ℂ → ℝ) :
+    0 ≤ ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z) :=
+  integral_nonneg fun z ↦
+    mul_nonneg (by positivity) (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)
 
 end TauCeti.Vortex

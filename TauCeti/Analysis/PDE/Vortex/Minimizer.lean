@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.ReducedFunctional
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 public import Mathlib.Data.EReal.Basic
+public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 import Mathlib.Analysis.InnerProductSpace.Convex
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
@@ -57,8 +58,9 @@ The proof is the direct method.
   weakly.
 * **Lower semicontinuity.** The Dirichlet energy is weakly lower semicontinuous because norm
   balls are convex and closed, the potential by
-  `TauCeti.Vortex.lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub`, and the linear term
-  is weakly continuous.
+  `TauCeti.Vortex.lowerSemicontinuous_sobolevReducedPotential` (from its `L²` counterpart
+  `TauCeti.Vortex.lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub`), and the linear term
+  `TauCeti.Vortex.sobolevReducedLinearTerm` is weakly continuous.
 
 Hence the weak limit `w` has finite potential and `I(w) ≤ I(v)` for every `v ∈ W^{1,2}(ℂ)`
 (`TauCeti.Vortex.exists_forall_sobolevReducedFunctional_le`). The Euler–Lagrange equation of
@@ -139,7 +141,7 @@ private theorem lintegral_restrict_top (f : ℂ → ℝ≥0∞) :
 /-! ### Sobolev representatives of compactly supported functions -/
 
 /-- The potential of a compactly supported `C¹` function is the real integral. -/
-private theorem sobolevReducedPotential_eq_ofReal {w : ℂ → ℝ} (hw : ContDiff ℝ 1 w)
+theorem sobolevReducedPotential_eq_ofReal {w : ℂ → ℝ} (hw : ContDiff ℝ 1 w)
     (hws : HasCompactSupport w) {u : W1p (volume : Measure ℂ) ⊤ 2}
     (hv : W1p.value u =ᵐ[volume] w) :
     sobolevReducedPotential P u = ENNReal.ofReal
@@ -149,6 +151,87 @@ private theorem sobolevReducedPotential_eq_ofReal {w : ℂ → ℝ} (hw : ContDi
     (Eventually.of_forall fun z ↦ mul_nonneg (weight_nonneg P z)
       (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)), sobolevReducedPotential_def]
   exact lintegral_congr_ae (hv.mono fun z hz ↦ by simp only [hz])
+
+/-! ### The real value of the functional -/
+
+/-- Taubes's functional on `W^{1,2}(ℂ)` never takes the value `⊥`. -/
+theorem sobolevReducedFunctional_ne_bot (P : Polynomial ℂ) (u : W1p (volume : Measure ℂ) ⊤ 2) :
+    sobolevReducedFunctional P u ≠ ⊥ := by
+  rw [sobolevReducedFunctional_def]
+  exact EReal.add_ne_bot_iff.2 ⟨EReal.coe_ne_bot _, EReal.coe_ennreal_ne_bot _⟩
+
+/-- When the potential is finite, Taubes's functional on `W^{1,2}(ℂ)` is the real number
+`‖∇u‖₂² / 2 + ∫ c u + (1 / 16) ∫ h (exp (2u) - 1 - 2u)`. -/
+theorem sobolevReducedFunctional_eq_coe_of_ne_top {u : W1p (volume : Measure ℂ) ⊤ 2}
+    (hu : sobolevReducedPotential P u ≠ ⊤) :
+    sobolevReducedFunctional P u = ((‖W1p.gradient u‖ ^ 2 / 2 +
+      (∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
+        (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value u z) +
+      (sobolevReducedPotential P u).toReal / 16 : ℝ) : EReal) := by
+  have hQ : ((sobolevReducedPotential P u / 16 : ℝ≥0∞) : EReal) =
+      (((sobolevReducedPotential P u).toReal / 16 : ℝ) : EReal) := by
+    rw [← ENNReal.ofReal_toReal (ENNReal.div_ne_top hu (by norm_num)),
+      EReal.coe_ennreal_ofReal, ENNReal.toReal_div, max_eq_left (by positivity)]
+    norm_num
+  rw [sobolevReducedFunctional_def, hQ, ← EReal.coe_add]
+
+/-- Taubes's functional on `W^{1,2}(ℂ)` is finite exactly where the potential is finite. -/
+theorem sobolevReducedFunctional_ne_top_iff {u : W1p (volume : Measure ℂ) ⊤ 2} :
+    sobolevReducedFunctional P u ≠ ⊤ ↔ sobolevReducedPotential P u ≠ ⊤ := by
+  refine ⟨fun hu htop ↦ hu ?_, fun hu ↦ ?_⟩
+  · rw [sobolevReducedFunctional_def, htop, ENNReal.top_div_of_ne_top (by norm_num),
+      EReal.coe_ennreal_top, EReal.add_top_of_ne_bot (EReal.coe_ne_bot _)]
+  · rw [sobolevReducedFunctional_eq_coe_of_ne_top hu]
+    exact EReal.coe_ne_top _
+
+/-! ### The linear term -/
+
+/-- The linear term `v ↦ ∫ c v`, `c = 2 ‖P'‖² / (1 + ‖P‖²)² - (1 + ‖P‖²)⁻¹ / 8`, of Taubes's
+functional as a continuous linear functional on `W^{1,2}(ℂ)`, for `P` of degree at least one. -/
+def sobolevReducedLinearTerm (P : Polynomial ℂ) (hm : 0 < P.natDegree) :
+    StrongDual ℝ (W1p (volume : Measure ℂ) ⊤ 2) :=
+  (innerSL ℝ ((memLp_reducedFunctional_coeff hm).restrict ((⊤ : Opens ℂ) : Set ℂ)).toLp).comp
+    W1p.valueL
+
+/-- The value of the linear term of Taubes's functional on `W^{1,2}(ℂ)` is the integral
+`∫ c v`. -/
+theorem sobolevReducedLinearTerm_apply (P : Polynomial ℂ) (hm : 0 < P.natDegree)
+    (v : W1p (volume : Measure ℂ) ⊤ 2) :
+    sobolevReducedLinearTerm P hm v =
+      ∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
+        (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value v z := by
+  have hc := (memLp_reducedFunctional_coeff hm).restrict ((⊤ : Opens ℂ) : Set ℂ)
+  rw [sobolevReducedLinearTerm, ContinuousLinearMap.comp_apply, innerSL_apply_apply,
+    W1p.valueL_apply, L2.inner_def, integral_restrict_top]
+  refine integral_congr_ae (ae_restrict_top_iff.1 (hc.coeFn_toLp.mono fun z hz ↦ ?_))
+  simp only [hz, RCLike.inner_apply, conj_trivial, mul_comm]
+
+/-! ### Weak lower semicontinuity of the potential -/
+
+/-- The potential `TauCeti.Vortex.sobolevReducedPotential P` is weakly lower semicontinuous on
+`W^{1,2}(ℂ)`. -/
+theorem lowerSemicontinuous_sobolevReducedPotential (P : Polynomial ℂ) :
+    LowerSemicontinuous (fun v : WeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2) ↦
+      sobolevReducedPotential P ((toWeakSpace ℝ _).symm v)) := by
+  -- `W1p.value` takes values in `L²` for `volume.restrict ⊤`, a measure equal to `volume` but
+  -- not definitionally, so the lower semicontinuity on `L²(volume)` is transported along this
+  -- equality by generalizing the measure.
+  have hL2 : ∀ μ : Measure ℂ, μ = volume → LowerSemicontinuous
+      (fun u : WeakSpace ℝ (Lp ℝ 2 μ) ↦ ∫⁻ z, ENNReal.ofReal (‖P.eval z‖ ^ 2 /
+        (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * ((toWeakSpace ℝ (Lp ℝ 2 μ)).symm u z)) - 1 -
+          2 * ((toWeakSpace ℝ (Lp ℝ 2 μ)).symm u z))) ∂μ) := by
+    rintro μ rfl
+    exact lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub P
+  have hlsc := (hL2 ((volume : Measure ℂ).restrict ((⊤ : Opens ℂ) : Set ℂ))
+    (by simp)).comp (WeakSpace.map W1p.valueL).continuous
+  -- Composing with `W1p.valueL` gives the potential.
+  convert hlsc using 1
+  funext v
+  have hval : (toWeakSpace ℝ _).symm (WeakSpace.map W1p.valueL v) =
+      W1p.value ((toWeakSpace ℝ _).symm v) := by
+    rw [LinearEquiv.symm_apply_eq, ← W1p.valueL_apply]
+    exact WeakSpace.map_apply W1p.valueL _
+  simp only [Function.comp_apply, hval, lintegral_restrict_top, sobolevReducedPotential_def]
 
 /-! ### Agreement with the functional on test functions -/
 
@@ -164,7 +247,7 @@ theorem sobolevReducedFunctional_eq_reducedFunctional {w : ℂ → ℝ} (hw : Co
         (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * w z :=
     integral_congr_ae (hv.mono fun z hz ↦ by simp only [hz])
   have hD := W1p.integral_norm_fderiv_sq_eq_norm_gradient_sq (ae_restrict_top_iff.2 hg)
-  have hE := integral_potential_nonneg (P := P) w
+  have hE := integral_mul_exp_sub_one_sub_nonneg P w
   rw [integral_restrict_top] at hD
   rw [sobolevReducedFunctional_def, ← hD, hlin,
     sobolevReducedPotential_eq_ofReal hw hws hv, ofReal_div_sixteen, EReal.coe_ennreal_ofReal,
@@ -416,22 +499,14 @@ at most `sobolevReducedFunctional P u`. -/
 theorem exists_reducedFunctional_lt_of_sobolevReducedFunctional_lt (hm : 0 < P.natDegree)
     {u : W1p (volume : Measure ℂ) ⊤ 2} {t : ℝ} (hu : sobolevReducedFunctional P u < t) :
     ∃ w : ℂ → ℝ, ContDiff ℝ (⊤ : ℕ∞) w ∧ HasCompactSupport w ∧ reducedFunctional P w < t := by
-  have hfin : sobolevReducedPotential P u ≠ ⊤ := by
-    intro htop
-    rw [sobolevReducedFunctional_def, htop, ENNReal.top_div_of_ne_top (by norm_num),
-      EReal.coe_ennreal_top, EReal.add_top_of_ne_bot (EReal.coe_ne_bot _)] at hu
-    exact not_top_lt hu
+  have hfin : sobolevReducedPotential P u ≠ ⊤ :=
+    sobolevReducedFunctional_ne_top_iff.1 hu.ne_top
   have hf : MemLp (W1p.value u : ℂ → ℝ) 2 := by simpa using Lp.memLp (W1p.value u)
   -- The real form `A + L + Q / 16 < t` of the hypothesis.
   have hreal : ‖W1p.gradient u‖ ^ 2 / 2 + (∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 /
       (1 + ‖P.eval z‖ ^ 2) ^ 2 - (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value u z) +
       (sobolevReducedPotential P u).toReal / 16 < t := by
-    have hQ : ((sobolevReducedPotential P u / 16 : ℝ≥0∞) : EReal) =
-        (((sobolevReducedPotential P u).toReal / 16 : ℝ) : EReal) := by
-      rw [← ENNReal.ofReal_toReal (ENNReal.div_ne_top hfin (by norm_num)),
-        EReal.coe_ennreal_ofReal, ENNReal.toReal_div, max_eq_left (by positivity)]
-      norm_num
-    rwa [sobolevReducedFunctional_def, hQ, ← EReal.coe_add, EReal.coe_lt_coe_iff] at hu
+    rwa [sobolevReducedFunctional_eq_coe_of_ne_top hfin, EReal.coe_lt_coe_iff] at hu
   obtain ⟨K, hK, hKlt⟩ := exists_integral_coeff_mul_trunc_lt hm hf
     (half_pos (sub_pos.2 hreal))
   -- A sequence of test functions converging to `u` in `W^{1,2}(ℂ)`.
@@ -476,18 +551,6 @@ theorem exists_reducedFunctional_lt_of_sobolevReducedFunctional_lt (hm : 0 < P.n
 
 /-! ### Existence of a minimizer -/
 
-/-- The linear term of Taubes's functional as a continuous linear functional on `W^{1,2}(ℂ)`. -/
-private theorem exists_strongDual_eq_integral (hm : 0 < P.natDegree) :
-    ∃ Λ : StrongDual ℝ (W1p (volume : Measure ℂ) ⊤ 2), ∀ v, Λ v =
-      ∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
-        (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value v z := by
-  have hc := (memLp_reducedFunctional_coeff hm).restrict ((⊤ : Opens ℂ) : Set ℂ)
-  refine ⟨(innerSL ℝ hc.toLp).comp W1p.valueL, fun v ↦ ?_⟩
-  rw [ContinuousLinearMap.comp_apply, innerSL_apply_apply, W1p.valueL_apply, L2.inner_def,
-    integral_restrict_top]
-  refine integral_congr_ae (ae_restrict_top_iff.1 (hc.coeFn_toLp.mono fun z hz ↦ ?_))
-  simp only [hz, RCLike.inner_apply, conj_trivial, mul_comm]
-
 /-- Weak lower semicontinuity of the potential on `W^{1,2}(ℂ)`. -/
 private theorem sobolevReducedPotential_le_of_tendsto_weak
     {U : ℕ → W1p (volume : Measure ℂ) ⊤ 2} {w : W1p (volume : Measure ℂ) ⊤ 2} {b : ℕ → ℝ}
@@ -495,31 +558,13 @@ private theorem sobolevReducedPotential_le_of_tendsto_weak
     (hb : Tendsto b atTop (𝓝 B))
     (hU : ∀ n, sobolevReducedPotential P (U n) = ENNReal.ofReal (b n)) :
     sobolevReducedPotential P w ≤ ENNReal.ofReal B := by
-  have hlsc0 : ∀ μ : Measure ℂ, μ = volume → LowerSemicontinuous
-      (fun u : WeakSpace ℝ (Lp ℝ 2 μ) ↦ ∫⁻ z, ENNReal.ofReal (‖P.eval z‖ ^ 2 /
-        (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * ((toWeakSpace ℝ (Lp ℝ 2 μ)).symm u z)) - 1 -
-          2 * ((toWeakSpace ℝ (Lp ℝ 2 μ)).symm u z))) ∂μ) := by
-    rintro μ rfl
-    exact lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub P
-  have hlsc := (hlsc0 ((volume : Measure ℂ).restrict ((⊤ : Opens ℂ) : Set ℂ))
-    (by simp)).comp (WeakSpace.map W1p.valueL).continuous
-  have heq (v : W1p (volume : Measure ℂ) ⊤ 2) :
-      ((fun u : WeakSpace ℝ (Lp ℝ 2 ((volume : Measure ℂ).restrict ((⊤ : Opens ℂ) : Set ℂ))) ↦
-        ∫⁻ z in ((⊤ : Opens ℂ) : Set ℂ), ENNReal.ofReal (‖P.eval z‖ ^ 2 /
-          (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * ((toWeakSpace ℝ _).symm u z)) - 1 -
-            2 * ((toWeakSpace ℝ _).symm u z)))) ∘ WeakSpace.map W1p.valueL) (toWeakSpace ℝ _ v) =
-        sobolevReducedPotential P v := by
-    have hval : (toWeakSpace ℝ _).symm (WeakSpace.map W1p.valueL (toWeakSpace ℝ _ v)) =
-        W1p.value v := by
-      rw [LinearEquiv.symm_apply_eq, ← W1p.valueL_apply]
-      exact WeakSpace.map_apply W1p.valueL v
-    simp only [Function.comp_apply, hval, lintegral_restrict_top, sobolevReducedPotential_def]
+  have hlsc := lowerSemicontinuous_sobolevReducedPotential P
   refine ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_
   have hmem := (hlsc.isClosed_preimage (ENNReal.ofReal (B + ε))).mem_of_tendsto hlim
     ((hb.eventually_lt_const (lt_add_of_pos_right B (by exact_mod_cast hε))).mono fun n hn ↦ by
-      rw [mem_preimage, heq, mem_Iic, hU]
+      rw [mem_preimage, LinearEquiv.symm_apply_apply, mem_Iic, hU]
       exact ENNReal.ofReal_le_ofReal hn.le)
-  rw [mem_preimage, heq, mem_Iic] at hmem
+  rw [mem_preimage, LinearEquiv.symm_apply_apply, mem_Iic] at hmem
   exact hmem.trans (ENNReal.ofReal_add_le.trans_eq (by rw [ENNReal.ofReal_coe_nnreal]))
 
 /-- A minimizing sequence: a lower bound `m` of `reducedFunctional P` on compactly supported `C¹`
@@ -592,7 +637,8 @@ private theorem exists_sobolevReducedFunctional_le_of_tendsto (hm : 0 < P.natDeg
       sobolevReducedFunctional P u₀ ≤ m := by
   obtain ⟨u, u₀, A, k, huv, hug, hk, hlim, hA⟩ := exists_subseq_tendsto_weak hm hw hws htend
   -- The linear term converges weakly, hence so does the potential.
-  obtain ⟨Λ, hΛ⟩ := exists_strongDual_eq_integral hm
+  set Λ := sobolevReducedLinearTerm P hm
+  have hΛ := sobolevReducedLinearTerm_apply P hm
   have hΛlim := tendsto_toWeakSpace_iff_forall_eval_tendsto.1 hlim Λ
   obtain ⟨b, hb_def⟩ : ∃ b : ℕ → ℝ, b = fun n ↦ ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
       (Real.exp (2 * w (k n) z) - 1 - 2 * w (k n) z) := ⟨_, rfl⟩
@@ -608,7 +654,7 @@ private theorem exists_sobolevReducedFunctional_le_of_tendsto (hm : 0 < P.natDeg
     simp only [Function.comp_apply, hsplit]
     ring
   have hB : 0 ≤ 16 * (m - A ^ 2 / 2 - Λ u₀) :=
-    ge_of_tendsto' hb fun n ↦ hb_def ▸ integral_potential_nonneg _
+    ge_of_tendsto' hb fun n ↦ hb_def ▸ integral_mul_exp_sub_one_sub_nonneg P _
   -- Weak lower semicontinuity of the Dirichlet energy and of the potential.
   have hgrad : ‖W1p.gradient u₀‖ ≤ A := by
     simpa only [W1p.gradientL_apply] using norm_apply_le_of_tendsto_weak
