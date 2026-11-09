@@ -102,7 +102,7 @@ private theorem dist_sq_le (h : IsEVISolution lam φ u) (hφ : LowerSemicontinuo
     (le_add_of_nonneg_right hτ) (c := Δ) (by
       rw [← h.coe_toReal hs, ← h.coe_toReal (add_pos_of_pos_of_nonneg hs hτ), ← EReal.coe_sub])
   rw [add_sub_cancel_left, dist_self, zero_pow two_ne_zero, zero_div, sub_zero] at hint
-  have hE := integral_exp_mul_le lam hτ
+  have hE := integral_exp_mul_le lam τ
   have hAB : 1 ≤ exp (lam * τ) * exp (|lam| * τ) := by
     rw [← exp_add]
     exact one_le_exp (by nlinarith [neg_abs_le lam])

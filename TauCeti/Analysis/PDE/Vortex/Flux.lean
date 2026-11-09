@@ -155,7 +155,7 @@ private theorem exists_contDiff_laplacian_eq_log_normSq_add
     mul_ne_zero four_ne_zero (mt (sectionValue_eq_zero_iff x _).mpr hw)
   -- Off the zeros every kernel term is harmonic.
   have hKh : ∀ w, sectionValue x w ≠ 0 → HarmonicAt (fun y ↦ 4 * π * K y) w := fun w hw ↦
-    (HarmonicAt.sum _ (f := fun z y ↦ (n z : ℝ) * planarNewtonianKernel (y - z))
+    (HarmonicAt.sum (f := fun z y ↦ (n z : ℝ) * planarNewtonianKernel (y - z))
       fun z hz ↦ (harmonicAt_planarNewtonianKernel_sub fun h ↦ hw <| by
         rw [h]; exact (Set.Finite.mem_toFinset hfin).mp hz).const_smul
           (c := (n z : ℝ))).const_smul (c := 4 * π)

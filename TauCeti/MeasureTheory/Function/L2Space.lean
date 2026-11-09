@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
+public import TauCeti.MeasureTheory.Integral.PiSystem
 
 /-!
 # Inner products of square-integrable functions
@@ -20,6 +22,8 @@ For counting measure, singleton-supported vectors separate L² functions and det
 continuous linear maps out of L². On a compact space with a finite measure, the L² pairing of an
 L² function with a continuous function is an integral
 (`MeasureTheory.L2.inner_toLp_continuousMap`), extending Mathlib's `ContinuousMap.inner_toLp`.
+Indicators of any countably spanning generating π-system of finite-measure sets have
+dense real linear span in L².
 -/
 
 public section
@@ -96,3 +100,33 @@ theorem eq_zero_of_apply_indicatorConstLp_singleton
     _ = 0 := by rw [ht, map_zero]
 
 end ContinuousLinearMap
+
+namespace TauCeti
+
+open MeasureTheory
+open scoped ENNReal
+
+/-- Indicators of a countably spanning generating π-system of finite-measure sets have
+dense real linear span in L². -/
+theorem topologicalClosure_span_indicatorConstLp_eq_top_of_isPiSystem
+    {X : Type*} {m : MeasurableSpace X} {μ : Measure X}
+    {S : Set (Set X)} (hgen : m = MeasurableSpace.generateFrom S)
+    (hpi : IsPiSystem S) (hcover : IsCountablySpanning S) (hfin : ∀ s ∈ S, μ s ≠ ∞) :
+    (Submodule.span ℝ {g : Lp ℝ 2 μ | ∃ (s : Set X) (hs : s ∈ S),
+      g = indicatorConstLp 2 (hgen ▸ MeasurableSpace.measurableSet_generateFrom hs)
+        (hfin s hs) 1}).topologicalClosure = ⊤ := by
+  rw [← Submodule.orthogonal_eq_bot_iff, Submodule.orthogonal_closure]
+  apply bot_unique
+  intro f hf
+  apply Lp.ext
+  have hfi : ∀ s ∈ S, IntegrableOn f s μ := fun s hs =>
+    integrableOn_Lp_of_measure_ne_top f (by norm_num) (hfin s hs)
+  refine (ae_eq_zero_of_setIntegral_eq_zero_of_isPiSystem hgen hpi hcover hfi ?_).trans
+    (Lp.coeFn_zero ℝ 2 μ).symm
+  intro s hs
+  rw [← L2.inner_indicatorConstLp_one
+    (hgen ▸ MeasurableSpace.measurableSet_generateFrom hs) (hfin s hs) f]
+  exact (Submodule.mem_orthogonal _ f).mp hf _
+    (Submodule.subset_span ⟨s, hs, rfl⟩)
+
+end TauCeti
