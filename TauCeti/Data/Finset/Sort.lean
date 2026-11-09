@@ -31,6 +31,9 @@ pairs.
 The `m`-th element of a finset `s` in increasing order, `s.orderEmbOfFin h m`, has exactly `m`
 elements of `s` below it.
 
+The product of a word along `s` in increasing order is unchanged by adjoining indices whose
+factors are one, and by swapping two consecutive indices of `s` carrying commuting factors.
+
 Mapping the sorted list of `s` along an embedding that is strictly antitone on `s` gives the
 sorted list of the image in reversed order; in particular, sorting the points of a finset of
 `Fin n` moved along the reversal `Fin.rev` reverses the list of their images.
@@ -250,6 +253,68 @@ theorem removeNth_orderEmbOfFin_symm_eq {I : Type*} [LinearOrder I]
     exact Finset.mem_erase.mpr ⟨fun h ↦ k.succAbove_ne j (e.injective (h.trans hek.symm)),
       Finset.orderEmbOfFin_mem s hsCard _⟩
   · exact e.strictMono.comp (Fin.strictMono_succAbove k)
+
+/-- Enlarging an index set by indices whose factors are one does not change the product of a word
+along it in increasing order. -/
+theorem prod_map_sort_subset {M : Type*} [Monoid M] {s t : Finset α} (hst : s ⊆ t) (a : α → M)
+    (ha : ∀ i ∈ t, i ∉ s → a i = 1) :
+    (s.sort.map a).prod = (t.sort.map a).prod := by
+  classical
+  have hfilter : (s.sort.filter fun i => a i != 1) = (t.sort.filter fun i => a i != 1) := by
+    refine List.Pairwise.eq_of_mem_iff ((sortedLT_sort s).pairwise.filter _)
+      ((sortedLT_sort t).pairwise.filter _) fun i => ?_
+    simp only [List.mem_filter, mem_sort, bne_iff_ne]
+    exact ⟨fun h => ⟨hst h.1, h.2⟩, fun h => ⟨by_contra fun hi => h.2 (ha i h.1 hi), h.2⟩⟩
+  calc
+    _ = ((s.sort.filter fun i => a i != 1).map a).prod := by
+      simpa only [List.filter_map, Function.comp_def, bne_iff_ne] using
+        (List.prod_filter_bne_one (s.sort.map a)).symm
+    _ = ((t.sort.filter fun i => a i != 1).map a).prod := by rw [hfilter]
+    _ = _ := by
+      simpa only [List.filter_map, Function.comp_def, bne_iff_ne] using
+        List.prod_filter_bne_one (t.sort.map a)
+
+/-- Swapping two consecutive indices `a < b` of `s` in a word whose product along `s` is taken in
+increasing order does not change the product when the two factors commute. -/
+theorem prod_map_sort_swap {M : Type*} [Monoid M] (s : Finset α) (w : α → M) {a b : α}
+    (hab : a < b) (ha : a ∈ s) (hb : b ∈ s) (hgap : ∀ i ∈ s, ¬(a < i ∧ i < b))
+    (hcomm : Commute (w a) (w b)) :
+    (s.sort.map fun i => w (Equiv.swap a b i)).prod = (s.sort.map w).prod := by
+  classical
+  let l := (s.filter (· < a)).sort
+  let r := (s.filter (b < ·)).sort
+  have hl : ∀ i ∈ l, i < a := by simp [l]
+  have hr : ∀ i ∈ r, b < i := by simp [r]
+  -- Isolate the two consecutive indices between an unchanged prefix and suffix.
+  have hsort : s.sort = l ++ [a, b] ++ r := by
+    refine (sortedLT_sort s).eq_of_mem_iff ?_ fun i => ?_
+    · refine List.sortedLT_append.mpr ⟨?_, sortedLT_sort _, fun i hi j hj => ?_⟩
+      · refine List.sortedLT_append.mpr ⟨sortedLT_sort _, by simp [hab, List.sortedLT_nil],
+          fun i hi j hj => ?_⟩
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+        rcases hj with rfl | rfl
+        · exact hl i hi
+        · exact (hl i hi).trans hab
+      · simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hi
+        rcases hi with hi | rfl | rfl
+        · exact (hl i hi).trans (hab.trans (hr j hj))
+        · exact hab.trans (hr j hj)
+        · exact hr j hj
+    · simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, l, r, mem_sort,
+        mem_filter]
+      refine ⟨fun hi => ?_, by grind⟩
+      have := hgap i hi
+      by_cases hia : i = a <;> by_cases hib : i = b <;> grind
+  have hleft : l.map (fun i => w (Equiv.swap a b i)) = l.map w :=
+    List.map_congr_left fun i hi => by
+      rw [Equiv.swap_apply_of_ne_of_ne (ne_of_lt (hl i hi)) (ne_of_lt ((hl i hi).trans hab))]
+  have hright : r.map (fun i => w (Equiv.swap a b i)) = r.map w :=
+    List.map_congr_left fun i hi => by
+      rw [Equiv.swap_apply_of_ne_of_ne (ne_of_gt (hab.trans (hr i hi))) (ne_of_gt (hr i hi))]
+  simp only [hsort, List.map_append, List.prod_append, hleft, hright, List.map_cons,
+    List.map_nil, List.prod_cons, List.prod_nil, mul_one, Equiv.swap_apply_left,
+    Equiv.swap_apply_right]
+  rw [hcomm.eq]
 
 end LinearOrder
 
