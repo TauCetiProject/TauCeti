@@ -134,14 +134,31 @@ theorem range_localCyclotomicCharacter_le_unitsPrincipal_iff [NeZero (p : K)] (n
   rw [IsScalarTower.algebraMap_apply K (perfectClosure K (AlgebraicClosure K)), hζ]
   exact hξ
 
-/-- **The cyclotomic character of a field containing `√-2`.** If `2 ≠ 0` in `K` and `s ^ 2 = -2`
-for some `s ∈ K`, every value of the `2`-adic cyclotomic character of `K` is `1` or `3` modulo `8`.
-Equivalently, `σ ζ = ζ` or `σ ζ = ζ ^ 3` for every primitive eighth root of unity `ζ` of the
-algebraic closure. -/
-theorem toZModPow_three_localCyclotomicCharacter_eq_one_or_eq_three [NeZero (2 : K)] {s : K}
+/-- **The cyclotomic character of a field containing `√-2`.** If `s ^ 2 = -2` for some `s ∈ K`,
+every value of the `2`-adic cyclotomic character of `K` is `1` or `3` modulo `8`. Equivalently,
+`σ ζ = ζ` or `σ ζ = ζ ^ 3` for every primitive eighth root of unity `ζ` of the algebraic closure.
+In characteristic `2` the algebraic closure has no primitive `2`-nd root of unity, so Mathlib's
+cyclotomic character is the trivial character there and the statement holds with the value `1`. -/
+theorem toZModPow_three_localCyclotomicCharacter_eq_one_or_eq_three {s : K}
     (hs : s ^ 2 = -2) (σ : Field.absoluteGaloisGroup K) :
     PadicInt.toZModPow 3 (localCyclotomicCharacter 2 K σ : ℤ_[2]) = 1 ∨
       PadicInt.toZModPow 3 (localCyclotomicCharacter 2 K σ : ℤ_[2]) = 3 := by
+  rcases eq_or_ne (2 : K) 0 with hK2 | hK2
+  · -- In characteristic `2` there is no primitive square root of unity: the character is trivial.
+    have hH : ¬ ∀ i : ℕ, ∃ ζ : AlgebraicClosure K, IsPrimitiveRoot ζ (2 ^ i) := by
+      intro H
+      obtain ⟨ζ, hζ⟩ := H 1
+      have hz2 : (2 : AlgebraicClosure K) = 0 := by
+        rw [← map_ofNat (algebraMap K (AlgebraicClosure K)) 2, hK2, map_zero]
+      have hζ2 : ζ ^ 2 = 1 := by simpa using hζ.pow_eq_one
+      have hsq : (ζ - 1) ^ 2 = 0 := by linear_combination hζ2 + (1 - ζ) * hz2
+      exact hζ.ne_one (by norm_num)
+        (sub_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp hsq))
+    have hχ : (localCyclotomicCharacter 2 K σ : ℤ_[2]) = 1 := by
+      simp [localCyclotomicCharacter_apply, cyclotomicCharacter, cyclotomicCharacter.toFun,
+        dite_eq_right hH]
+    exact Or.inl (by rw [hχ, map_one])
+  have : NeZero (2 : K) := ⟨hK2⟩
   have h2 : (2 : AlgebraicClosure K) ≠ 0 := by
     rw [← map_ofNat (algebraMap K (AlgebraicClosure K)) 2]
     exact (_root_.map_ne_zero _).2 (NeZero.ne 2)
