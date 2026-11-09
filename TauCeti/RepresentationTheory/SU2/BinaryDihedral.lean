@@ -75,12 +75,10 @@ variable (n : ℕ) [NeZero n]
 /-- The square of the inverse quarter turn is the torus element at index `n` of `ZMod (2n)`. -/
 private theorem weylElement_inv_sq_eq_torusHom :
     weylElement⁻¹ ^ 2 = torusHom (ZMod.toCircle ((n : ℕ) : ZMod (2 * n))) := by
-  refine Subtype.ext ?_
-  rw [coe_weylElement_inv_sq, coe_torusHom]
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [torusMatrix_apply_zero_zero, torusMatrix_apply_one_one, torusMatrix_apply_zero_one,
-      torusMatrix_apply_one_zero, ZMod.coe_toCircle_natCast_self]
+  rw [weylElement_inv_sq_eq_torusHom_neg_one]
+  congr 1
+  ext
+  rw [ZMod.coe_toCircle_natCast_self, Circle.coe_neg, Circle.coe_one]
 
 /-- The values of the binary dihedral homomorphism on the two cosets of the rotations. -/
 private noncomputable def binaryDihedralFun : QuaternionGroup n → SU2
@@ -150,6 +148,16 @@ noncomputable def binaryDihedralRotation : SU2 := binaryDihedralHom n (a 1)
 theorem binaryDihedralRotation_def :
     binaryDihedralRotation n = torusHom (ZMod.toCircle (1 : ZMod (2 * n))) := (rfl)
 
+/-- The powers `r ^ m` of the rotation generator are the images of the rotations `a m`. -/
+theorem binaryDihedralRotation_pow (m : ℕ) :
+    binaryDihedralRotation n ^ m = binaryDihedralHom n (a m) := by
+  rw [binaryDihedralRotation, ← map_pow, a_one_pow]
+
+/-- The elements `s r ^ m` are the images of `xa m`. -/
+theorem weylElement_inv_mul_binaryDihedralRotation_pow (m : ℕ) :
+    weylElement⁻¹ * binaryDihedralRotation n ^ m = binaryDihedralHom n (xa m) := by
+  rw [binaryDihedralRotation_pow, binaryDihedralHom_a, binaryDihedralHom_xa]
+
 /-- The diagonal entries of the rotation generator are `exp (πi/n)` and `exp (-πi/n)`. -/
 theorem coe_binaryDihedralRotation :
     (binaryDihedralRotation n : Matrix (Fin 2) (Fin 2) ℂ) =
@@ -189,12 +197,12 @@ theorem coe_binaryDihedralRotation_eq_toComplexMatrix :
 /-- The rotations of the binary dihedral group are the powers of the rotation generator. -/
 theorem binaryDihedralHom_a_eq_pow (i : ZMod (2 * n)) :
     binaryDihedralHom n (a i) = binaryDihedralRotation n ^ i.val := by
-  rw [binaryDihedralRotation, ← map_pow, a_one_pow, ZMod.natCast_zmod_val]
+  rw [binaryDihedralRotation_pow, ZMod.natCast_zmod_val]
 
 /-- The elements of the second coset are `s r ^ i`. -/
 theorem binaryDihedralHom_xa_eq_mul_pow (i : ZMod (2 * n)) :
     binaryDihedralHom n (xa i) = weylElement⁻¹ * binaryDihedralRotation n ^ i.val := by
-  rw [← binaryDihedralHom_a_eq_pow, binaryDihedralHom_xa, binaryDihedralHom_a]
+  rw [weylElement_inv_mul_binaryDihedralRotation_pow, ZMod.natCast_zmod_val]
 
 /-- The rotation generator has exact order `2n`. -/
 @[simp]
@@ -203,13 +211,12 @@ theorem orderOf_binaryDihedralRotation : orderOf (binaryDihedralRotation n) = 2 
 
 /-- The rotation generator satisfies `r ^ (2n) = 1`. -/
 theorem binaryDihedralRotation_pow_two_mul : binaryDihedralRotation n ^ (2 * n) = 1 := by
-  rw [binaryDihedralRotation, ← map_pow, a_one_pow_n, map_one]
+  rw [binaryDihedralRotation_pow, ZMod.natCast_self, a_zero, map_one]
 
 /-- The two generators satisfy `s² = r ^ n`. -/
 theorem weylElement_inv_sq_eq_binaryDihedralRotation_pow :
     weylElement⁻¹ ^ 2 = binaryDihedralRotation n ^ n := by
-  rw [weylElement_inv_sq_eq_torusHom n, ← binaryDihedralHom_a, binaryDihedralRotation, ← map_pow,
-    a_one_pow]
+  rw [weylElement_inv_sq_eq_torusHom n, binaryDihedralRotation_pow, binaryDihedralHom_a]
 
 /-- The rotation generator satisfies `r ^ n = -1`. -/
 theorem coe_binaryDihedralRotation_pow_self :
@@ -229,6 +236,16 @@ theorem weylElement_inv_conj_binaryDihedralRotation :
 representation `TauCeti.SU2.binaryDihedralHom` of the dicyclic group. -/
 noncomputable def binaryDihedralSubgroup : Subgroup SU2 := (binaryDihedralHom n).range
 
+/-- The binary dihedral subgroup is the range of the binary dihedral representation. -/
+theorem binaryDihedralSubgroup_eq_range :
+    binaryDihedralSubgroup n = (binaryDihedralHom n).range := (rfl)
+
+/-- Every image of the binary dihedral representation lies in the binary dihedral subgroup. -/
+@[simp]
+theorem binaryDihedralHom_mem_binaryDihedralSubgroup (g : QuaternionGroup n) :
+    binaryDihedralHom n g ∈ binaryDihedralSubgroup n :=
+  ⟨g, rfl⟩
+
 /-- The binary dihedral subgroup is isomorphic to the dicyclic group `QuaternionGroup n`. -/
 noncomputable def binaryDihedralEquiv : QuaternionGroup n ≃* binaryDihedralSubgroup n :=
   MonoidHom.ofInjective (binaryDihedralHom_injective n)
@@ -247,11 +264,11 @@ theorem natCard_binaryDihedralSubgroup : Nat.card (binaryDihedralSubgroup n) = 4
 @[simp]
 theorem binaryDihedralRotation_mem_binaryDihedralSubgroup :
     binaryDihedralRotation n ∈ binaryDihedralSubgroup n :=
-  ⟨a 1, rfl⟩
+  binaryDihedralHom_mem_binaryDihedralSubgroup n (a 1)
 
 @[simp]
 theorem weylElement_mem_binaryDihedralSubgroup : weylElement ∈ binaryDihedralSubgroup n :=
-  inv_mem_iff.mp ⟨xa 0, by simp⟩
+  inv_mem_iff.mp (by simpa using binaryDihedralHom_mem_binaryDihedralSubgroup n (xa 0))
 
 /-- **Normal forms in the binary dihedral subgroup.** Every element is `r ^ j` or `s r ^ j` for
 some `j < 2n`. -/
@@ -271,11 +288,7 @@ theorem mem_binaryDihedralSubgroup_iff {g : SU2} :
 /-- A rotation `r ^ j` is never of the form `s r ^ k`. -/
 theorem binaryDihedralRotation_pow_ne_weylElement_inv_mul (j k : ℕ) :
     binaryDihedralRotation n ^ j ≠ weylElement⁻¹ * binaryDihedralRotation n ^ k := by
-  have hr (m : ℕ) : binaryDihedralRotation n ^ m = binaryDihedralHom n (a m) := by
-    rw [binaryDihedralRotation, ← map_pow, a_one_pow]
-  have hs (m : ℕ) : weylElement⁻¹ * binaryDihedralRotation n ^ m = binaryDihedralHom n (xa m) := by
-    rw [hr, binaryDihedralHom_a, binaryDihedralHom_xa]
-  rw [hr, hs]
+  rw [binaryDihedralRotation_pow, weylElement_inv_mul_binaryDihedralRotation_pow]
   exact fun h => by cases binaryDihedralHom_injective n h
 
 /-- **The binary dihedral subgroup is generated by `r` and `s`.** -/
