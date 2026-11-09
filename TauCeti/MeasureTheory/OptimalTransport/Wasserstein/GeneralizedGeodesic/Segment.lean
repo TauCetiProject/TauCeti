@@ -181,41 +181,6 @@ section InnerProductSpace
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E]
   [BorelSpace E] [SecondCountableTopology E] {γ : Measure (E × E × E)} {μ ν₀ ν₁ : Measure E}
 
-/-- An optimal coupling for squared distance between laws with finite second moments has a
-cyclically monotone support for the half-squared cost. -/
-private theorem isCyclicallyMonotone_support_of_eLpNorm_eq [IsFiniteMeasure μ] {ν : Measure E}
-    {π : Measure (E × E)} (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) (hπ : IsCoupling π μ ν)
-    (hW : eLpNorm (fun z : E × E ↦ edist z.1 z.2) 2 π = wassersteinEDist 2 μ ν) :
-    IsCyclicallyMonotone (fun z : E × E ↦ ‖z.1 - z.2‖ ^ 2 / 2) π.support := by
-  have hopt : IsOptimalCoupling (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν :=
-    isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two (by
-      simpa only [ENNReal.toReal_ofNat] using
-        (isOptimalCoupling_edist_rpow_iff measurable_edist two_ne_zero ENNReal.ofNat_ne_top).2
-          ⟨hπ, hW⟩)
-  refine (isCyclicallyMonotone_ofReal_iff fun _ ↦ by positivity).1
-    (hopt.isCyclicallyMonotone_support continuous_ofReal_norm_sub_sq_div_two ?_)
-  refine ne_top_of_le_ne_top ?_ (transportCost_le_lintegral hπ _)
-  rw [hπ.lintegral_norm_sub_sq_div_two hμ hν]
-  exact ENNReal.ofReal_ne_top
-
-/-- The generalized geodesic of a plan whose middle and last coordinates have laws `ν₀` and `ν₁`
-with finite second moments has finite second moment at every time. -/
-private theorem memLp_id_generalizedGeodesic (hγ : IsGeneralizedGeodesicPlan 2 γ μ ν₀ ν₁)
-    (hν₀ : MemLp id 2 ν₀) (hν₁ : MemLp id 2 ν₁) (s : ℝ) :
-    MemLp id 2 (generalizedGeodesic γ s) := by
-  have h₀ : γ.map (fun w ↦ w.2.1) = ν₀ := by
-    rw [← hγ.isCoupling_snd.fst_eq, Measure.fst, Measure.snd,
-      Measure.map_map measurable_fst measurable_snd]
-    rfl
-  have h₁ : γ.map (fun w ↦ w.2.2) = ν₁ := by
-    rw [← hγ.isCoupling_snd.snd_eq, Measure.snd, Measure.snd,
-      Measure.map_map measurable_snd measurable_snd]
-    rfl
-  have hm₀ : MemLp (fun w : E × E × E ↦ w.2.1) 2 γ := (h₀ ▸ hν₀).comp_of_map (by fun_prop)
-  have hm₁ : MemLp (fun w : E × E × E ↦ w.2.2) 2 γ := (h₁ ▸ hν₁).comp_of_map (by fun_prop)
-  rw [generalizedGeodesic_def, memLp_map_measure_iff aestronglyMeasurable_id (by fun_prop)]
-  exact (hm₀.const_smul (1 - s)).add (hm₁.const_smul s)
-
 /-- **Interpolated targets of a generalized-geodesic plan are optimally coupled with the base.**
 Let `γ` be a quadratic generalized-geodesic plan from `ν₀` to `ν₁` based at a finite measure `μ`,
 the three measures having finite second moments. For `s ∈ [0, 1]`, the law of
@@ -254,8 +219,18 @@ theorem IsGeneralizedGeodesicPlan.isOptimalCoupling_map [IsFiniteMeasure μ]
       rfl
     · rw [generalizedGeodesic_def, Measure.snd, Measure.map_map measurable_snd (by fun_prop)]
       rfl
-  exact hcoup.isOptimalCoupling_of_isCyclicallyMonotone_norm_sub_sq_div_two hμ
-    (memLp_id_generalizedGeodesic hγ hν₀ hν₁ s) hS hae
+  have : IsFiniteMeasure γ := ⟨by rw [← Measure.fst_univ, hγ.fst_eq]; exact measure_lt_top _ _⟩
+  have hm {ν : Measure E} (h : MemLp id 2 ν) : HasFiniteMoment 2 ν :=
+    hasFiniteMoment_def.2 ⟨0, (memLp_congr_enorm aestronglyMeasurable_id
+      measurable_edist_right.aestronglyMeasurable
+      (.of_forall fun x ↦ by simp [edist_eq_enorm_sub])).1 h⟩
+  have hνs : HasFiniteMoment 2 (generalizedGeodesic γ s) := hasFiniteMoment_generalizedGeodesic
+    (hγ.isCoupling_snd.fst_eq ▸ hm hν₀) (hγ.isCoupling_snd.snd_eq ▸ hm hν₁) s
+  have : IsFiniteMeasure (generalizedGeodesic γ s) := by
+    rw [generalizedGeodesic_def]
+    infer_instance
+  exact hcoup.isOptimalCoupling_of_isCyclicallyMonotone_norm_sub_sq_div_two hμ hνs.memLp_id hS
+    hae
 
 /-- **Segments of generalized geodesics are generalized geodesics.** Let `γ` be a quadratic
 generalized-geodesic plan from `ν₀` to `ν₁` based at a finite measure `μ`, the three measures

@@ -70,6 +70,9 @@ are those of `‖x - y‖ ^ 2`, whose transport cost is twice as large
 * `TauCeti.IsOptimalCoupling.exists_support_subset_subdifferential` — on any real inner product
   space, the support of an optimal quadratic plan of finite cost lies in the subdifferential graph
   of a proper lower semicontinuous convex function;
+* `TauCeti.isCyclicallyMonotone_support_of_eLpNorm_eq` — a coupling realizing the quadratic
+  Wasserstein distance between laws with finite second moments has cyclically monotone support for
+  the cost `‖x - y‖ ^ 2 / 2`;
 * `TauCeti.eq_graphPlan_gradient_of_ae_mem_subdifferential` — for an absolutely continuous
   source, a plan concentrated on the subdifferential graph of a proper lower
   semicontinuous convex function is the graph plan of its gradient, differentiable almost
@@ -182,6 +185,25 @@ theorem IsOptimalCoupling.exists_support_subset_subdifferential [IsFiniteMeasure
         ne_top_of_mem_subdifferential (innerₗ E) (hg hz)⟩
   exact ⟨_, convex_epigraph_fenchelConjugate (innerₗ E) g,
     lowerSemicontinuous_fenchelConjugate_innerₗ g, hbot, htop, hsub⟩
+
+/-- **Optimal quadratic Wasserstein plans have cyclically monotone support.** If `π` is a coupling
+of a finite measure `μ` and a measure `ν`, both with finite second moments, whose quadratic cost
+realizes the quadratic Wasserstein distance, then its support is cyclically monotone for the cost
+`‖x - y‖ ^ 2 / 2`. -/
+theorem isCyclicallyMonotone_support_of_eLpNorm_eq [BorelSpace E] [SecondCountableTopology E]
+    [IsFiniteMeasure μ] (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) (hπ : IsCoupling π μ ν)
+    (hW : eLpNorm (fun z : E × E ↦ edist z.1 z.2) 2 π = wassersteinEDist 2 μ ν) :
+    IsCyclicallyMonotone (fun z : E × E ↦ ‖z.1 - z.2‖ ^ 2 / 2) π.support := by
+  have hopt : IsOptimalCoupling (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν :=
+    isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two (by
+      simpa only [ENNReal.toReal_ofNat] using
+        (isOptimalCoupling_edist_rpow_iff measurable_edist two_ne_zero ENNReal.ofNat_ne_top).2
+          ⟨hπ, hW⟩)
+  refine (isCyclicallyMonotone_ofReal_iff fun _ ↦ by positivity).1
+    (hopt.isCyclicallyMonotone_support continuous_ofReal_norm_sub_sq_div_two ?_)
+  refine ne_top_of_le_ne_top ?_ (transportCost_le_lintegral hπ _)
+  rw [hπ.lintegral_norm_sub_sq_div_two hμ hν]
+  exact ENNReal.ofReal_ne_top
 
 omit [OpensMeasurableSpace (E × E)] in
 /-- **Reciprocity along a plan.** If `y ∈ ∂u(x)` for `π`-almost every `(x, y)`, then
