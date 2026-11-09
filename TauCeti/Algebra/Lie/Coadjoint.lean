@@ -88,6 +88,8 @@ structure.
   and the KKS form of a product functional.
 * `Module.Dual.finrank_quotient_lieAnnihilator_coprod`: the dimensions of the tangent models add
   over products.
+* `Module.Dual.kirillovForm_eq_coadjointTangentMap_mk_neg`: the Lie–Poisson sharp image `π♯α` is
+  the orbit derivative of `[-α]`.
 * `Module.Dual.kksForm_eq_kirillovForm_of_coadjointTangentMap_eq`: the KKS form inverts the
   Lie–Poisson sharp map.
 
@@ -397,11 +399,18 @@ theorem finrank_quotient_lieAnnihilator_coprod [StrongRankCondition R]
     finrank R ((L₁ × L₂) ⧸ (lieAnnihilator R (L₁ × L₂) (ν₁.coprod ν₂)).toSubmodule) =
       finrank R (L₁ ⧸ (lieAnnihilator R L₁ ν₁).toSubmodule) +
         finrank R (L₂ ⧸ (lieAnnihilator R L₂ ν₂).toSubmodule) := by
-  rw [(ν₁.quotientLieAnnihilatorProdEquiv ν₂).finrank_eq, Module.finrank_prod]
+  rw [toSubmodule_lieAnnihilator_coprod, Submodule.finrank_quotient_prod]
 
 end Prod
 
 /-! ### The Lie–Poisson sharp map -/
+
+/-- The Lie–Poisson sharp image `π♯α = ν.kirillovForm α = -⁅α, ν⁆` is the orbit derivative of
+`[-α] ∈ L ⧸ L_ν`. -/
+theorem kirillovForm_eq_coadjointTangentMap_mk_neg (α : L) :
+    ν.kirillovForm α = ν.coadjointTangentMap (Submodule.Quotient.mk (-α)) := by
+  ext η
+  rw [kirillovForm_eq_neg_lie_apply, coadjointTangentMap_mk, neg_lie, LinearMap.neg_apply]
 
 /-- **The Kirillov–Kostant–Souriau form inverts the Lie–Poisson sharp map.** The positive
 Lie–Poisson tensor of `L*` at `ν`, `{ℓ_α, ℓ_β}(ν) = ν ⁅α, β⁆`, is the Kirillov form on covectors
@@ -412,10 +421,7 @@ theorem kksForm_eq_kirillovForm_of_coadjointTangentMap_eq {α β : L}
     (hx : ν.coadjointTangentMap x = ν.kirillovForm α)
     (hy : ν.coadjointTangentMap y = ν.kirillovForm β) :
     ν.kksForm x y = ν.kirillovForm α β := by
-  have sharp (γ : L) : ν.kirillovForm γ = ν.coadjointTangentMap (Submodule.Quotient.mk (-γ)) := by
-    ext η
-    rw [kirillovForm_eq_neg_lie_apply, coadjointTangentMap_mk, neg_lie, LinearMap.neg_apply]
-  rw [sharp] at hx hy
+  rw [kirillovForm_eq_coadjointTangentMap_mk_neg] at hx hy
   rw [ν.coadjointTangentMap_injective hx, ν.coadjointTangentMap_injective hy, kksForm_mk,
     kirillovForm_apply, neg_lie, lie_neg, neg_neg]
 

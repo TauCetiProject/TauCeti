@@ -60,20 +60,6 @@ local instance : LieGroup I 1 G :=
   LieGroup.of_le (I := I) (G := G) (m := 1) (n := minSmoothness 𝕜 3)
     ((by norm_num : (1 : ℕ∞ω) ≤ 3).trans le_minSmoothness)
 
-/-- The translate `Ad*_g ν = ν ∘ Ad_{g⁻¹}` pulls back along the adjoint automorphism `Ad_g` to
-`ν`. -/
-@[simp]
-theorem coadjointRepresentation_apply_comp_tangentAd (g : G)
-    (ν : Dual 𝕜 (GroupLieAlgebra I G)) :
-    (coadjointRepresentation 𝕜 I G g ν).comp
-        ((tangentAd (I := I) g : GroupLieAlgebra I G →ₗ⁅𝕜⁆ GroupLieAlgebra I G) :
-          GroupLieAlgebra I G →ₗ[𝕜] GroupLieAlgebra I G) = ν := by
-  ext X
-  simp only [LinearMap.comp_apply, LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom, tangentAd_apply,
-    coadjointRepresentation_apply]
-  rw [← ContinuousLinearMap.comp_apply, ← adjointContinuousLinearMap_mul, inv_mul_cancel,
-    adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply]
-
 /-- **The infinitesimal stabilizer of a translate.** `ξ` stabilizes `Ad*_g ν` exactly when
 `Ad_{g⁻¹} ξ` stabilizes `ν`, that is, `𝔤_{Ad*_g ν} = Ad_g 𝔤_ν`. -/
 theorem lieAnnihilator_coadjointRepresentation_apply (g : G)
