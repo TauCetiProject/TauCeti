@@ -38,9 +38,11 @@ M / (lambda - ω)` into the *resolvent-range inequality*
 `‖x‖ ≤ M / (lambda - ω) * ‖lambda • x - A x‖` for `x ∈ D(A)`,
 
 so that `lambda • I - A : D(A) → X` is bijective for every `lambda > ω` — that is,
-`(ω, ∞)` lies in the resolvent set of the generator. Specializing to `(ω, M) = (0, 1)` gives the
-**converse of the Lumer--Phillips theorem**: the generator of a contraction semigroup is
-dissipative.
+`(ω, ∞)` lies in the resolvent set of the generator. For a contraction semigroup, the
+**converse of the Lumer--Phillips theorem** — the generator is dissipative — follows from the
+elementary estimate `‖lambda • x - t⁻¹ • (S t x - x)‖ ≥ lambda * ‖x‖` as `t → 0⁺`, with no
+completeness needed; the resolvent route is used for `isMDissipative_generator`, whose range
+condition does need completeness.
 
 ## Main results
 
