@@ -194,8 +194,10 @@ open Measure
 variable {Ω X : Type*} [MeasurableSpace Ω] [MeasurableSpace X] {π σ : Measure Ω} {f : Ω → X}
   {μ : Measure X}
 
-/-- Along the projection, the log-likelihood ratio of `σ` against `π` splits as that of the law
-`μ` of `f` against `f₊π`, evaluated at `f`, plus that of `σ` against the projection. -/
+/-- Along the projection, the log-likelihood ratio of `σ` against `π` splits as that of the target
+measure `μ` against `f₊π`, evaluated at `f`, plus that of `σ` against the projection. This needs
+only `σ ≪ π.fitLaw f μ`: `f` need not have law `μ` under `σ`, and `μ` need not be absolutely
+continuous with respect to `f₊π`. -/
 private theorem llr_ae_eq_llr_comp_add [IsFiniteMeasure π] [IsFiniteMeasure σ]
     [IsFiniteMeasure μ] (hf : Measurable f) (h : σ ≪ π.fitLaw f μ) :
     llr σ π =ᵐ[σ] fun ω ↦ llr μ (π.map f) (f ω) + llr σ (π.fitLaw f μ) ω := by
