@@ -47,6 +47,8 @@ conversely a nondegenerate critical point lies on no critical submanifold of pos
 * `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`: Morse–Bott critical submanifolds.
 * `TauCeti.SmoothEmbedding.IsCriticalSubmanifold.isNondegenerateCriticalSubmanifold_iff`:
   nondegeneracy of the submanifold is nondegeneracy of the normal Hessian.
+* `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.injective_of_normalHessian_eq`: a
+  bilinear form representing the normal Hessian through a linear equivalence is nondegenerate.
 * `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.sigNeg_normalHessian`: the Morse
   index is the negative index of inertia of the normal Hessian.
 * `IsNondegenerateCriticalSubmanifold.manifoldMorseIndex_add_manifoldMorseIndex_neg_add_finrank`:
@@ -226,6 +228,20 @@ theorem radical_criticalHessian (s : S) :
 /-- The normal Hessian of a nondegenerate critical submanifold has trivial kernel. -/
 theorem ker_normalHessian (s : S) : LinearMap.ker (h.normalHessian hn s) = ⊥ :=
   (h.toIsCriticalSubmanifold.ker_normalHessian_eq_bot_iff hn s).mpr (h.ker_criticalHessian_le s)
+
+/-- A bilinear form `Q` representing the normal Hessian of a Morse–Bott critical submanifold at `s`
+through a linear equivalence `L` is nondegenerate: `u ↦ Q u` is injective. -/
+theorem injective_of_normalHessian_eq {s : S} {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] (L : P ≃ₗ[ℝ] i.NormalSpace s hn) {Q : P →L[ℝ] P →L[ℝ] ℝ}
+    (hQ : ∀ u v, h.normalHessian hn s (L u) (L v) = Q u v) : Injective Q := by
+  refine (injective_iff_map_eq_zero Q).mpr fun u hu ↦ ?_
+  -- `L u` pairs to zero with every normal vector, so it lies in the trivial kernel.
+  have hker : L u ∈ LinearMap.ker (h.normalHessian hn s) := by
+    rw [LinearMap.mem_ker]
+    ext p
+    obtain ⟨v, rfl⟩ := L.surjective p
+    rw [hQ, hu, zero_apply, LinearMap.zero_apply]
+  rwa [h.ker_normalHessian hn s, Submodule.mem_bot, map_eq_zero_iff _ L.injective] at hker
 
 /-- The quadratic form of the normal Hessian is the quadratic form of the critical Hessian
 descended to the quotient by its radical, the tangent space of the submanifold. -/

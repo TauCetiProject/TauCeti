@@ -45,9 +45,6 @@ In the namespace `TauCeti.SmoothEmbedding`:
 * `IsCriticalSubmanifold.exists_contMDiffOn_normalHessian_normalSpaceTrivialization`: in each
   normal-bundle trivialization, the normal Hessian is a `C^k` family of symmetric bilinear forms
   on the fibre model.
-* `IsNondegenerateCriticalSubmanifold.injective_of_normalHessian_eq`: a bilinear form
-  representing the normal Hessian of a Morse–Bott submanifold through a linear equivalence is
-  nondegenerate.
 * `IsNondegenerateCriticalSubmanifold.exists_contMDiffOn_normalHessian_normalSpaceTrivialization`:
   for a Morse–Bott submanifold these bilinear forms are nondegenerate.
 
@@ -140,21 +137,6 @@ theorem exists_contMDiffOn_normalHessian_normalSpaceTrivialization {k : ℕ∞ω
 end IsCriticalSubmanifold
 
 namespace IsNondegenerateCriticalSubmanifold
-
-/-- A bilinear form `Q` representing the normal Hessian of a Morse–Bott critical submanifold at `s`
-through a linear equivalence `L` is nondegenerate: `u ↦ Q u` is injective. -/
-theorem injective_of_normalHessian_eq [I.Boundaryless] [IsManifold I 2 M]
-    (h : i.IsNondegenerateCriticalSubmanifold f) {s : S} {P : Type*} [NormedAddCommGroup P]
-    [NormedSpace ℝ P] (L : P ≃ₗ[ℝ] i.NormalSpace s hn) {Q : P →L[ℝ] P →L[ℝ] ℝ}
-    (hQ : ∀ u v, h.normalHessian hn s (L u) (L v) = Q u v) : Injective Q := by
-  refine (injective_iff_map_eq_zero Q).mpr fun u hu ↦ ?_
-  -- `L u` pairs to zero with every normal vector, so it lies in the trivial kernel.
-  have hker : L u ∈ LinearMap.ker (h.normalHessian hn s) := by
-    rw [LinearMap.mem_ker]
-    ext p
-    obtain ⟨v, rfl⟩ := L.surjective p
-    rw [hQ, hu, zero_apply, LinearMap.zero_apply]
-  rwa [h.ker_normalHessian hn s, Submodule.mem_bot, map_eq_zero_iff _ L.injective] at hker
 
 variable [I.Boundaryless] [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [IsManifold J 1 S]
   {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
