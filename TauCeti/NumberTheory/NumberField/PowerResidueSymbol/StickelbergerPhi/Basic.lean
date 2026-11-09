@@ -461,7 +461,7 @@ private theorem powerResidueSymbol_stickelbergerPhi_of_comap (P P' : Ideal (𝓞
   -- The Frobenius: `gbar ^ q = (q / P)_m gbar`, so `gbar ^ (q - 1) = (q / P)_m` in `S`.
   have hχq : χ.ringHomComp π ^ p ^ (n : ℕ) = χ.ringHomComp π := by
     rw [← hqn]
-    exact ringHomComp_inv_powerResidueSymbol_pow_eq_self hP f π hmq hq₀
+    exact ringHomComp_inv_powerResidueSymbol_pow_eq_self f π hmq hq₀
   have hval : (χ.ringHomComp π)⁻¹ ((p : 𝓞 K ⧸ P) ^ (n : ℕ)) =
       π (f (powerResidueSymbol P m (Quotient.mk P (absNorm P' : 𝓞 K)))) := by
     rw [MulChar.ringHomComp_inv, MulChar.ringHomComp_inv, inv_inv, MulChar.ringHomComp_apply,
