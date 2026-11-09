@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.RingTheory.IntegralDomain
 public import TauCeti.Algebra.Group.Coprime
-public import TauCeti.Analysis.Complex.RootsOfUnity.Circle
 public import TauCeti.Topology.Algebra.Projectivization
 
 /-!
@@ -234,7 +234,7 @@ theorem nat_card_stabilizer_weightedEllipsoid_of_snd_eq_zero (ha : 0 < a)
     Nat.card (MulAction.stabilizer Circle z) = a := by
   have : NeZero a := ⟨ha.ne'⟩
   refine (Nat.card_congr <| toUnits.toEquiv.subtypeEquiv fun u ↦ ?_).trans
-    (Circle.nat_card_rootsOfUnity a)
+    (HasEnoughRootsOfUnity.natCard_rootsOfUnity Circle a)
   simp [mem_stabilizer_weightedEllipsoid_iff_of_snd_eq_zero h₁ h₂, mem_rootsOfUnity, ← map_pow]
 
 /-- **The stabilizer on the axis `z₁ = 0` has order `b`.** -/
@@ -243,7 +243,7 @@ theorem nat_card_stabilizer_weightedEllipsoid_of_fst_eq_zero (hb : 0 < b)
     Nat.card (MulAction.stabilizer Circle z) = b := by
   have : NeZero b := ⟨hb.ne'⟩
   refine (Nat.card_congr <| toUnits.toEquiv.subtypeEquiv fun u ↦ ?_).trans
-    (Circle.nat_card_rootsOfUnity b)
+    (HasEnoughRootsOfUnity.natCard_rootsOfUnity Circle b)
   simp [mem_stabilizer_weightedEllipsoid_iff_of_fst_eq_zero h₁ h₂, mem_rootsOfUnity, ← map_pow]
 
 /-- **Every stabilizer on the ellipsoid is finite** for positive weights and `ε > 0`: it is
@@ -259,9 +259,6 @@ theorem finite_stabilizer_weightedEllipsoid (ha : 0 < a) (hb : 0 < b) (hε : 0 <
       rw [nat_card_stabilizer_weightedEllipsoid_of_fst_eq_zero hb h₁ h₂]
       exact hb.ne'
   · have : NeZero a := ⟨ha.ne'⟩
-    have : Finite (rootsOfUnity a Circle) := Nat.finite_of_card_ne_zero <| by
-      rw [Circle.nat_card_rootsOfUnity]
-      exact ha.ne'
     refine Finite.of_injective (β := rootsOfUnity a Circle)
       (fun u ↦ ⟨toUnits (u : Circle), ?_⟩) fun u v h ↦ ?_
     · simp [mem_rootsOfUnity, ← map_pow, (mem_stabilizer_weightedEllipsoid_iff.1 u.2).1 h₁]
@@ -377,10 +374,13 @@ theorem exists_weightedRotation_eq_of_weightedHopfVector_eq_smul (ha : 0 < a) (h
       · simp [hw₂, norm_eq_zero.1 (n₂.trans (by simp [hw₂]))]
       · simp [← Circle.coe_pow, hv₂ hw₂, coe_circleDiv, div_mul_cancel₀ _ hw₂]
   obtain hw₁ | hw₁ := eq_or_ne w.1 0
-  · obtain ⟨v, hv⟩ := (Circle.exists_pow_eq hb.ne') (if hw₂ : w.2 = 0 then 1 else circleDiv hw₂ n₂)
+  · have : NeZero b := ⟨hb.ne'⟩
+    obtain ⟨v, hv⟩ := (Circle.isQuotientCoveringMap_npow b).surjective
+      (if hw₂ : w.2 = 0 then 1 else circleDiv hw₂ n₂)
     exact ⟨v, hrot (fun h ↦ absurd hw₁ h) fun hw₂ ↦ by simpa [hw₂] using hv⟩
   obtain hw₂ | hw₂ := eq_or_ne w.2 0
-  · obtain ⟨v, hv⟩ := (Circle.exists_pow_eq ha.ne') (circleDiv hw₁ n₁)
+  · have : NeZero a := ⟨ha.ne'⟩
+    obtain ⟨v, hv⟩ := (Circle.isQuotientCoveringMap_npow a).surjective (circleDiv hw₁ n₁)
     exact ⟨v, hrot (fun _ ↦ hv) fun h ↦ absurd hw₂ h⟩
   -- Both coordinates of `w` are nonzero: `(z₁ / w₁) ^ b = c = (z₂ / w₂) ^ a`.
   have hpow : circleDiv hw₁ n₁ ^ b = circleDiv hw₂ n₂ ^ a := by
