@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Constructions.DoubleAlong.Basic
-public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
-public import Mathlib.Analysis.Complex.Basic
+public import TauCeti.Topology.Compactification.OnePoint.UnitCircleInversion
 
 /-!
 # The double of the closed disc is the Riemann sphere
@@ -19,21 +18,23 @@ Under this homeomorphism the sheet exchange of the double becomes the inversion 
 circle, an orientation-reversing involution of the sphere whose fixed set is the unit circle, the
 image of the boundary.
 
-The file also records the sign check for the Schottky double. Gluing the second sheet along the
-boundary by `z ↦ -conj z` rather than by the identity is the same as reparametrizing the second
-sheet of `DoubleAlong` by that map; the resulting sheet exchange fixes only the two boundary
-points `I` and `-I`, not the whole boundary circle.
+The file also records a topological analogue of the sign check for the Schottky double. Gluing
+the second sheet along the boundary by `z ↦ -conj z` rather than by the identity is the same as
+reparametrizing the second sheet of `DoubleAlong` by that map; the resulting sheet exchange fixes
+only the two boundary points `I` and `-I`, not the whole boundary circle.
 
-This is the topological part of the Schottky double check of the pseudoholomorphic curve analysis
-roadmap; the analytic atlas on the double is not constructed here.
+This identifies the topological Schottky double of the closed disc. The analytic atlas on the
+double is not constructed here, so neither is the antiholomorphy of the sheet exchange, nor the
+analytic sign check that gluing the boundary charts by `z ↦ -conj z` fails to match the complex
+structures of the two sheets.
 
 ## Main declarations
 
-* `OnePoint.unitCircleInversion`: the inversion `w ↦ (conj w)⁻¹` of `OnePoint ℂ`, exchanging `0`
-  and `∞`.
 * `TauCeti.DoubleAlong.discDoubleHomeomorph`: the doubled closed disc is `OnePoint ℂ`.
-* `TauCeti.DoubleAlong.discDoubleHomeomorph_swap`: the sheet exchange is the inversion.
-* `TauCeti.DoubleAlong.discDoubleHomeomorph_image_fixed`: the fixed set is the unit circle.
+* `TauCeti.DoubleAlong.discDoubleHomeomorph_swap`: the sheet exchange is the inversion
+  `OnePoint.unitCircleInversion`.
+* `TauCeti.DoubleAlong.discDoubleHomeomorph_image_fixed_eq_sphere`: the fixed set is the unit
+  circle.
 * `TauCeti.DoubleAlong.discNegConjSwap`: the sheet exchange for the gluing by `z ↦ -conj z`,
   whose fixed set is `{I, -I}` (`TauCeti.DoubleAlong.discNegConjSwap_fixed`).
 
@@ -47,99 +48,6 @@ public section
 
 open Complex ComplexConjugate Function Metric Set Topology
 
-namespace OnePoint
-
-/-- The function underlying `OnePoint.unitCircleInversion`. -/
-private noncomputable def unitCircleInversionFun (x : OnePoint ℂ) : OnePoint ℂ :=
-  x.elim ((0 : ℂ) : OnePoint ℂ) fun z ↦ invChart.symm (conj z)
-
-private theorem unitCircleInversionFun_involutive : Involutive unitCircleInversionFun := by
-  intro x
-  induction x using OnePoint.rec with
-  | infty => simp [unitCircleInversionFun]
-  | coe z =>
-    rcases eq_or_ne z 0 with rfl | hz
-    · simp [unitCircleInversionFun]
-    · simp [unitCircleInversionFun, hz]
-
-private theorem continuous_unitCircleInversionFun : Continuous unitCircleInversionFun := by
-  refine continuous_iff_continuousAt.2 fun x ↦ ?_
-  induction x using OnePoint.rec with
-  | infty =>
-    -- Near `∞` the inversion reads `conj` in the inverted chart.
-    have h : ContinuousAt (fun x : OnePoint ℂ ↦ ((conj (invChart x) : ℂ) : OnePoint ℂ)) ∞ :=
-      continuous_coe.continuousAt.comp ((continuous_conj.continuousAt).comp
-        (invChart.continuousAt (by simp)))
-    refine h.congr ?_
-    filter_upwards [isOpen_compl_singleton.mem_nhds (infty_ne_coe (0 : ℂ))] with x hx
-    induction x using OnePoint.rec with
-    | infty => simp [unitCircleInversionFun]
-    | coe z =>
-      have hz : z ≠ 0 := fun h ↦ hx (congrArg _ h)
-      simp [unitCircleInversionFun, hz]
-  | coe z =>
-    -- Near a finite point the inversion reads `conj` in the affine chart.
-    have h : ContinuousAt (fun x : OnePoint ℂ ↦ invChart.symm (conj (affineChart x)))
-        (z : OnePoint ℂ) :=
-      (invChart.continuousOn_symm.continuousAt (by simp)).comp
-        ((continuous_conj.continuousAt).comp (affineChart.continuousAt (by simp)))
-    refine h.congr ?_
-    filter_upwards [isOpen_compl_singleton.mem_nhds (coe_ne_infty z)] with x hx
-    induction x using OnePoint.rec with
-    | infty => exact (hx rfl).elim
-    | coe w => simp [unitCircleInversionFun]
-
-/-- The inversion of the Riemann sphere in the unit circle, `w ↦ (conj w)⁻¹`, exchanging `0` and
-`∞`. -/
-noncomputable def unitCircleInversion : OnePoint ℂ ≃ₜ OnePoint ℂ where
-  toFun := unitCircleInversionFun
-  invFun := unitCircleInversionFun
-  left_inv := unitCircleInversionFun_involutive
-  right_inv := unitCircleInversionFun_involutive
-  continuous_toFun := continuous_unitCircleInversionFun
-  continuous_invFun := continuous_unitCircleInversionFun
-
-private theorem unitCircleInversion_apply (x : OnePoint ℂ) :
-    unitCircleInversion x = unitCircleInversionFun x :=
-  (rfl)
-
-@[simp]
-theorem unitCircleInversion_infty : unitCircleInversion ∞ = ((0 : ℂ) : OnePoint ℂ) := by
-  simp [unitCircleInversion_apply, unitCircleInversionFun]
-
-@[simp]
-theorem unitCircleInversion_zero : unitCircleInversion ((0 : ℂ) : OnePoint ℂ) = ∞ := by
-  simp [unitCircleInversion_apply, unitCircleInversionFun]
-
-theorem unitCircleInversion_coe {z : ℂ} (hz : z ≠ 0) :
-    unitCircleInversion (z : OnePoint ℂ) = (((conj z)⁻¹ : ℂ) : OnePoint ℂ) := by
-  simp [unitCircleInversion_apply, unitCircleInversionFun, hz]
-
-@[simp]
-theorem unitCircleInversion_unitCircleInversion (x : OnePoint ℂ) :
-    unitCircleInversion (unitCircleInversion x) = x :=
-  unitCircleInversion.left_inv x
-
-@[simp]
-theorem unitCircleInversion_symm : unitCircleInversion.symm = unitCircleInversion := by
-  ext x
-  rw [Homeomorph.symm_apply_eq, unitCircleInversion_unitCircleInversion]
-
-/-- The inversion fixes exactly the unit circle. -/
-theorem unitCircleInversion_eq_self_iff (x : OnePoint ℂ) :
-    unitCircleInversion x = x ↔ ∃ z : ℂ, ‖z‖ = 1 ∧ (z : OnePoint ℂ) = x := by
-  induction x using OnePoint.rec with
-  | infty => simp
-  | coe z =>
-    rcases eq_or_ne z 0 with rfl | hz
-    · simp
-    · rw [unitCircleInversion_coe hz, coe_eq_coe]
-      simp only [coe_eq_coe, exists_eq_right]
-      rw [inv_eq_iff_eq_inv, ← mul_eq_one_iff_eq_inv₀ hz, mul_comm, mul_conj',
-        ← ofReal_pow, ofReal_eq_one, pow_eq_one_iff_of_nonneg (norm_nonneg z) two_ne_zero]
-
-end OnePoint
-
 namespace TauCeti.DoubleAlong
 
 open OnePoint
@@ -147,6 +55,10 @@ open OnePoint
 /-- The boundary circle of the closed unit disc, as a subset of the disc. -/
 def discBoundary : Set (closedBall (0 : ℂ) 1) :=
   {z | ‖(z : ℂ)‖ = 1}
+
+@[simp]
+theorem mem_discBoundary {z : closedBall (0 : ℂ) 1} : z ∈ discBoundary ↔ ‖(z : ℂ)‖ = 1 :=
+  Iff.rfl
 
 private theorem norm_le_one (z : closedBall (0 : ℂ) 1) : ‖(z : ℂ)‖ ≤ 1 :=
   mem_closedBall_zero_iff.1 z.2
@@ -198,7 +110,7 @@ private theorem discDoubleMap_injective : Injective discDoubleMap := by
     | hr w =>
       rw [discDoubleMap_inl, discDoubleMap_inr] at hpq
       obtain ⟨hw, h⟩ := unitCircleInversion_coe_eq_coe (norm_le_one z) (norm_le_one w) hpq.symm
-      exact (inl_eq_inr_iff _).2 ⟨Subtype.ext h, show ‖(z : ℂ)‖ = 1 from h ▸ hw⟩
+      exact (inl_eq_inr_iff _).2 ⟨Subtype.ext h, mem_discBoundary.2 (h ▸ hw)⟩
   | hr z =>
     induction q using induction_on with
     | hl w =>
@@ -251,7 +163,7 @@ theorem discDoubleHomeomorph_swap (p : DoubleAlong discBoundary) :
   | hr z => simp
 
 /-- The fixed set of the sheet exchange is carried onto the unit circle of the sphere. -/
-theorem discDoubleHomeomorph_image_fixed :
+theorem discDoubleHomeomorph_image_fixed_eq_sphere :
     discDoubleHomeomorph '' {p | swap discBoundary p = p} =
       (↑) '' sphere (0 : ℂ) 1 := by
   rw [fixed_locus, image_image]
@@ -264,15 +176,15 @@ theorem discDoubleHomeomorph_image_fixed :
     exact ⟨⟨z, mem_closedBall_zero_iff.2 hz.le⟩, hz, rfl⟩
 
 /-- The fixed set of the sheet exchange is carried onto the fixed set of the inversion. -/
-theorem discDoubleHomeomorph_image_fixed_eq :
+theorem discDoubleHomeomorph_image_fixed_eq_unitCircleInversion_fixed :
     discDoubleHomeomorph '' {p | swap discBoundary p = p} =
       {x | unitCircleInversion x = x} := by
-  rw [discDoubleHomeomorph_image_fixed]
+  rw [discDoubleHomeomorph_image_fixed_eq_sphere]
   ext x
   simp only [mem_image, mem_sphere_zero_iff_norm, mem_ofPred_eq,
     unitCircleInversion_eq_self_iff]
 
-/-! ### The sign check -/
+/-! ### A topological analogue of the sign check -/
 
 /-- The boundary reflection `z ↦ -conj z` of the closed unit disc. -/
 def discNegConj (z : closedBall (0 : ℂ) 1) : closedBall (0 : ℂ) 1 :=
@@ -282,19 +194,23 @@ def discNegConj (z : closedBall (0 : ℂ) 1) : closedBall (0 : ℂ) 1 :=
 theorem coe_discNegConj (z : closedBall (0 : ℂ) 1) : (discNegConj z : ℂ) = -conj (z : ℂ) :=
   (rfl)
 
+@[simp]
+theorem discNegConj_discNegConj (z : closedBall (0 : ℂ) 1) : discNegConj (discNegConj z) = z :=
+  Subtype.ext (by simp)
+
 theorem continuous_discNegConj : Continuous discNegConj :=
   (continuous_conj.comp continuous_subtype_val).neg.subtype_mk _
 
 theorem discNegConj_mem_discBoundary {z : closedBall (0 : ℂ) 1} (hz : z ∈ discBoundary) :
     discNegConj z ∈ discBoundary := by
-  change ‖-conj (z : ℂ)‖ = 1
-  rw [norm_neg, norm_conj]
+  rw [mem_discBoundary, coe_discNegConj, norm_neg, norm_conj]
   exact hz
 
 /-- The sheet exchange for the double glued along the boundary by `z ↦ -conj z` instead of the
 identity. Reparametrizing the second sheet of that double by `z ↦ -conj z` identifies it with
 `DoubleAlong discBoundary`, and its sheet exchange becomes `inl z ↦ inr (-conj z)` and
-`inr z ↦ inl (-conj z)`. -/
+`inr z ↦ inl (-conj z)`. This is only the topological sheet exchange: no complex structure on the
+double is involved. -/
 noncomputable def discNegConjSwap : C(DoubleAlong discBoundary, DoubleAlong discBoundary) :=
   desc discBoundary ((inr _).comp ⟨discNegConj, continuous_discNegConj⟩)
     ((inl _).comp ⟨discNegConj, continuous_discNegConj⟩)
@@ -310,12 +226,18 @@ theorem discNegConjSwap_inr (z : closedBall (0 : ℂ) 1) :
     discNegConjSwap (inr _ z) = inl _ (discNegConj z) :=
   desc_inr _ _ _ _ z
 
+/-- The sheet exchange for the gluing by `z ↦ -conj z` is an involution. -/
+@[simp]
+theorem discNegConjSwap_discNegConjSwap (p : DoubleAlong discBoundary) :
+    discNegConjSwap (discNegConjSwap p) = p := by
+  induction p using induction_on with
+  | hl z => simp
+  | hr z => simp
+
 /-- The boundary points fixed by `z ↦ -conj z` are `I` and `-I`. -/
 private theorem discNegConj_eq_self_and_mem_iff (z : closedBall (0 : ℂ) 1) :
     (discNegConj z = z ∧ discNegConj z ∈ discBoundary) ↔ (z : ℂ) = I ∨ (z : ℂ) = -I := by
-  rw [Subtype.ext_iff, coe_discNegConj]
-  change -conj (z : ℂ) = z ∧ ‖-conj (z : ℂ)‖ = 1 ↔ _
-  rw [norm_neg, norm_conj]
+  rw [Subtype.ext_iff, mem_discBoundary, coe_discNegConj, norm_neg, norm_conj]
   generalize (z : ℂ) = w
   constructor
   · rintro ⟨h1, h2⟩
@@ -334,7 +256,8 @@ private theorem discNegConj_eq_self_and_mem_iff (z : closedBall (0 : ℂ) 1) :
   · rintro (rfl | rfl) <;> simp
 
 /-- The gluing by `z ↦ -conj z` gives a sheet exchange fixing only the two boundary points `I`
-and `-I`, unlike the identity gluing, whose sheet exchange fixes the whole boundary circle. -/
+and `-I`, unlike the identity gluing, whose sheet exchange fixes the whole boundary circle. This
+is a topological statement about fixed sets; it does not concern complex structures. -/
 theorem discNegConjSwap_fixed :
     {p | discNegConjSwap p = p} =
       inl discBoundary '' {z | (z : ℂ) = I ∨ (z : ℂ) = -I} := by
