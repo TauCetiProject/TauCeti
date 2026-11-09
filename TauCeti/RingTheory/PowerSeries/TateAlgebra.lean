@@ -242,6 +242,15 @@ noncomputable instance instNormedCommRingIsRestrictedSubring :
   inferInstanceAs (NormedCommRing
     (MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Unit ↦ c)))
 
+/-- Coefficients act boundedly on the restricted algebra with its Gauss norm. -/
+instance : IsBoundedSMul R (PowerSeries.IsRestricted.subring (R := R) c) :=
+  IsBoundedSMul.of_norm_smul_le fun a f ↦ by
+    have ha : algebraMap R (PowerSeries.IsRestricted.subring (R := R) c) a =
+        ⟨PowerSeries.C a, PowerSeries.isRestricted_C c a⟩ :=
+      Subtype.ext (MvPowerSeries.coe_algebraMap_isRestrictedSubring a)
+    simpa only [Algebra.smul_def, ha, norm_C] using
+      norm_mul_le (algebraMap R (PowerSeries.IsRestricted.subring (R := R) c) a) f
+
 variable {c} in
 /-- In the Gauss norm at a radius `c > 0`, the linear polynomial `a + d X` has weighted norm at
 most `M` once both `‖a‖` and `‖d‖ c` do. -/

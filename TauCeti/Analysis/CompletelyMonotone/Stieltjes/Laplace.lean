@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.CompletelyMonotone.Stieltjes.Basic
 public import TauCeti.Analysis.CompletelyMonotone.Bernstein.OpenHalfLine
-import TauCeti.MeasureTheory.Integral.ExpDecay
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # Stieltjes functions are the Laplace transforms of completely monotone functions

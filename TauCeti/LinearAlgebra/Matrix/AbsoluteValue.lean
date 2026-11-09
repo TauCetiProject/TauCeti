@@ -38,6 +38,8 @@ the bound on the regulator.
 * `Matrix.abv_det_le_prod_of_le` and `Matrix.abv_det_le_prod_of_le'`: for nonarchimedean `abv`,
   entrywise row bounds `b i` or column bounds `b j` give `abv A.det ≤ ∏ i, b i` and
   `abv A.det ≤ ∏ j, b j`.
+* `Matrix.abv_det_le_factorial_mul_of_forall_perm`: a bound on each permutation product gives
+  the same bound on the determinant, multiplied by the factorial of the matrix size.
 -/
 
 public section
@@ -101,5 +103,20 @@ theorem abv_det_le_prod_of_le (A : Matrix n n R) {abv : AbsoluteValue R S}
     abv A.det ≤ ∏ i, b i := by
   simpa only [det_transpose, transpose_apply] using
     abv_det_le_prod_of_le' Aᵀ habv fun i j => hA j i
+
+/-- A uniform bound on the absolute values of all permutation products bounds the determinant
+by the same bound times the factorial of the matrix size. Unlike an entrywise bound, this can
+retain correlations between the factors in each permutation product. -/
+theorem abv_det_le_factorial_mul_of_forall_perm (A : Matrix n n R) (abv : AbsoluteValue R S)
+    {B : S} (hA : ∀ σ : Perm n, ∏ i, abv (A (σ i) i) ≤ B) :
+    abv A.det ≤ (Fintype.card n).factorial * B := by
+  calc
+    abv A.det ≤ ∑ σ : Perm n, abv (Perm.sign σ • ∏ i, A (σ i) i) := by
+      rw [det_apply]
+      exact abv.sum_le _ _
+    _ = ∑ σ : Perm n, ∏ i, abv (A (σ i) i) :=
+      sum_congr rfl fun σ _ ↦ by rw [abv.map_units_int_smul, abv.map_prod]
+    _ ≤ ∑ _σ : Perm n, B := sum_le_sum fun σ _ ↦ hA σ
+    _ = (Fintype.card n).factorial * B := by simp [Fintype.card_perm]
 
 end Matrix

@@ -154,13 +154,14 @@ theorem valuation_infty_lt_one_iff {f : RatFunc k} (hf : f ≠ 0) :
 
 /-! ### The residue field at infinity -/
 
-/-- A nonzero rational function of degree `0` agrees at infinity, to first order, with the ratio
+/-- A rational function of degree `0` agrees at infinity, to first order, with the ratio
 of the leading coefficients of its numerator and denominator: `deg (f - c) < 0` for
 `c = lc(f.num) / lc(f.denom)`. This is the value of `f` at the place at infinity. -/
-theorem valuation_infty_sub_leadingCoeff_div_lt_one {x : RatFunc k} (hx0 : x ≠ 0)
-    (hx : x.intDegree = 0) :
+theorem valuation_infty_sub_leadingCoeff_div_lt_one {x : RatFunc k} (hx : x.intDegree = 0) :
     (infty k).valuation
         (x - algebraMap k (RatFunc k) (x.num.leadingCoeff / x.denom.leadingCoeff)) < 1 := by
+  rcases eq_or_ne x 0 with rfl | hx0
+  · simp
   set P := x.num with hP
   set Q := x.denom with hQ
   have hP0 : P ≠ 0 := RatFunc.num_ne_zero hx0
@@ -209,7 +210,7 @@ theorem exists_valuation_infty_sub_lt_one {x : RatFunc k} (hx : (infty k).valuat
   rw [valuation_infty_apply hx0, ← WithZero.exp_zero, WithZero.exp_le_exp] at hx
   rcases lt_or_eq_of_le hx with hlt | heq
   · exact ⟨0, by simpa [valuation_infty_lt_one_iff hx0] using hlt⟩
-  · exact ⟨_, valuation_infty_sub_leadingCoeff_div_lt_one hx0 heq⟩
+  · exact ⟨_, valuation_infty_sub_leadingCoeff_div_lt_one heq⟩
 
 variable (k)
 

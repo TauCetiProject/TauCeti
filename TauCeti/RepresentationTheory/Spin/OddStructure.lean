@@ -114,7 +114,7 @@ This is the odd-dimensional analogue of
 `TauCeti.SpinPolarizationData.finrank_cliffordAlgebra_eq_finrank_end`, and the shift of one power
 of two is exactly the difference between the two parities: in even dimension the *whole* Clifford
 algebra matches the operator algebra of `⋀·W`, while in odd dimension only its even half does. -/
-theorem finrank_even_eq_finrank_end_of_odd_finrank [Invertible (2 : F)]
+theorem finrank_even_eq_finrank_end_of_odd_finrank
     (hodd : Odd (finrank F V)) :
     finrank F ↥(CliffordAlgebra.even Q) =
       finrank F (Module.End F (ExteriorAlgebra F P.W)) := by

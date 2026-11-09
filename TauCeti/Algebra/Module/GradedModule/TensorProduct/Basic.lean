@@ -126,17 +126,11 @@ variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 noncomputable def tensorProduct (G : InternalGrading R M) (H : InternalGrading R N) :
     InternalGrading R (M ⊗[R] N) where
   piece := tensorProductPiece G H
-  isInternal := by
-    classical
-    apply DirectSum.IsInternal.iSup_fiber
-    -- Unfold the private bidegree wrapper to match the tensor-product decomposition.
-    change DirectSum.IsInternal fun d : ℤ × ℤ ↦
-      Submodule.map₂ (TensorProduct.mk R M N) (G.piece d.1) (H.piece d.2)
-    -- The reused theorem uses classical decidable equality; `convert` transports the
-    -- decompositions across the proof-irrelevant choice of decidable equality on `ℤ`.
-    convert DirectSum.IsInternal.tensorProduct G.piece H.piece ?_ ?_ using 1
-    · convert G.isInternal
-    · convert H.isInternal
+  -- `tensorProductPiece` is by definition the supremum of the bidegree pieces over each fiber of
+  -- the total-degree map, which is the form produced by `DirectSum.IsInternal.iSup_fiber`.
+  isInternal :=
+    (DirectSum.IsInternal.tensorProduct G.piece H.piece G.isInternal H.isInternal).iSup_fiber
+      fun d ↦ d.1 + d.2
 
 /-- The degree-`n` piece of the tensor-product grading is the sum of the tensor-product images
 whose first degree is `p` and whose second degree is `n - p`. -/
