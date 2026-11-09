@@ -30,7 +30,8 @@ of norm at most `1` come from `ℤ_[p]`-valued measures.
 For a normed `ℚ_[p]`-algebra `K`, the composite structure map
 `TauCeti.padicIntAlgebraMap p K : ℤ_[p] →+* K` is continuous. When `‖1‖ = 1` in `K` it is an
 isometry, so it maps `ℤ_[p]` into the closed unit ball of `K`, and it is injective when `K` is
-nontrivial.
+nontrivial. When `‖1‖ = 1` in `K`, the norm of a natural number in `K` is also its `p`-adic norm
+(`TauCeti.norm_natCast_eq_norm_padic`).
 -/
 
 public section
@@ -104,6 +105,10 @@ theorem norm_padicIntAlgebraMap [NormOneClass K] (a : ℤ_[p]) :
 theorem norm_padicIntAlgebraMap_le_one [NormOneClass K] (a : ℤ_[p]) :
     ‖padicIntAlgebraMap p K a‖ ≤ 1 :=
   (norm_padicIntAlgebraMap a).trans_le a.norm_le_one
+
+/-- The norm of a natural number in a normed `ℚ_p`-algebra with `‖1‖ = 1` is its `p`-adic norm. -/
+theorem norm_natCast_eq_norm_padic [NormOneClass K] (m : ℕ) : ‖(m : K)‖ = ‖(m : ℚ_[p])‖ := by
+  rw [← map_natCast (algebraMap ℚ_[p] K), norm_algebraMap']
 
 theorem padicIntAlgebraMap_injective [Nontrivial K] : Function.Injective (padicIntAlgebraMap p K) :=
   (algebraMap ℚ_[p] K).injective.comp PadicInt.isEmbedding_coe_ringHom.injective

@@ -528,7 +528,8 @@ theorem SmoothAlmostComplexStructure.mpullback_typeProjection (hu : ContMDiff I 
       J.typeProjection p q (SmoothForm.mpullback u hu φ) :=
   Subtype.ext <| funext fun x ↦ by
     simp only [SmoothForm.coe_mpullback, coe_typeProjection,
-      mpullback_eq_compContinuousLinearMap_mfderiv]
+      mpullback_apply_eq_compContinuousLinearMapCLM,
+      ContinuousAlternatingMap.compContinuousLinearMapCLM_apply]
     exact (ContinuousLinearMap.typeProjection_compContinuousLinearMap
       (fun w ↦ ((isPseudoholomorphic_iff.1 hJ x).mfderiv_apply_commute w).symm) _).symm
 
@@ -537,7 +538,8 @@ theorem SmoothForm.IsOfType.mpullback {φ : SmoothForm I' M' F k} (hu : ContMDif
     (hJ : IsPseudoholomorphic J J' u) (h : φ.IsOfType J' p q) :
     (SmoothForm.mpullback u hu φ).IsOfType J p q :=
   SmoothForm.isOfType_iff_forall.2 ⟨h.1, fun x ↦ by
-    rw [SmoothForm.coe_mpullback, mpullback_eq_compContinuousLinearMap_mfderiv]
+    rw [SmoothForm.coe_mpullback, mpullback_apply_eq_compContinuousLinearMapCLM,
+      ContinuousAlternatingMap.compContinuousLinearMapCLM_apply]
     exact (h.apply (u x)).compContinuousLinearMap fun w ↦
       ((isPseudoholomorphic_iff.1 hJ x).mfderiv_apply_commute w).symm⟩
 

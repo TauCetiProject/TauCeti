@@ -195,6 +195,24 @@ theorem sub_endCenter_div_plumbingFactor_ne_zero (q : Puncture) (L : ℝ) {w : �
     (hw : w ≠ q.endCenter) : (w - q.endCenter) / q.plumbingFactor L ≠ 0 :=
   div_ne_zero (sub_ne_zero.2 hw) (q.plumbingFactor_ne_zero L)
 
+/-- The point `(w - c_q) / ψ'` undoing the plumbing map is the puncture `1` exactly when `w` is the
+image `ψ(1)` of that puncture. -/
+theorem sub_endCenter_div_plumbingFactor_eq_one_iff (q : Puncture) (L : ℝ) {w : ℂ} :
+    (w - q.endCenter) / q.plumbingFactor L = 1 ↔ w = q.plumbingMap L 1 := by
+  constructor
+  · intro h
+    rw [← h, plumbingMap_sub_endCenter_div]
+  · rintro rfl
+    exact plumbingMap_sub_endCenter_div_plumbingFactor q L 1
+
+/-- Away from the punctures `0`, `1` and `ψ(1)` of the four-punctured sphere, the point
+`(w - c_q) / ψ'` undoing the plumbing map lies in the thrice-punctured sphere. -/
+theorem sub_endCenter_div_plumbingFactor_ne_zero_and_ne_one (q : Puncture) (L : ℝ) {w : ℂ}
+    (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1) :
+    (w - q.endCenter) / q.plumbingFactor L ≠ 0 ∧ (w - q.endCenter) / q.plumbingFactor L ≠ 1 :=
+  ⟨q.sub_endCenter_div_plumbingFactor_ne_zero L (ne_endCenter hw.1 q),
+    fun h => hw.2 ((q.sub_endCenter_div_plumbingFactor_eq_one_iff L).mp h)⟩
+
 /-- Undoing the plumbing map lowers the longitudinal coordinate by `L`: the end coordinate at `∞`
 of `(w - c_q) / ψ'` is that of `w` on the end `q`, minus `L`. -/
 theorem re_endCoord_inf_sub_endCenter_div (q : Puncture) (L : ℝ) {w : ℂ}

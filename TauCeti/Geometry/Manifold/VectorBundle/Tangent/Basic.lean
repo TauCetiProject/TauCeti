@@ -44,6 +44,9 @@ are those of its summands, so its tangent coordinate changes are those of the su
 
 * `TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet`: the inverse of the extended
   chart at `x` maps its target into the base set of the canonical trivialization at `x`.
+* `TangentBundle.mdifferentiableAt_trivializationAt_symm_apply` and
+  `TangentBundle.trivializationAt_symm_apply_self`: a vector field with constant coordinates in
+  the canonical trivialization at `x` is differentiable at `x` and takes the value `u` there.
 * `TauCeti.Manifold.mfderiv_atlas_eq_continuousLinearMapAt`: the derivative of an atlas chart
   is the actual continuous linear map of its tangent-core trivialization.
 * `TauCeti.Manifold.continuousLinearMapAt_trivializationAt_self` and
@@ -163,6 +166,33 @@ theorem trivializationAt_chartSource_baseSet [IsManifold I 1 M] (x : M) :
     OpenPartialHomeomorph.subtypeRestr_source, Set.mem_preimage, Set.mem_univ, iff_true]
   exact y.property
 
+/-- The vector field with constant coordinates `u` in the trivialization of the tangent bundle at
+`x` is differentiable at `x`. -/
+theorem mdifferentiableAt_trivializationAt_symm_apply [IsManifold I 1 M] (x : M) (u : E) :
+    MDiffAt (T% (fun y ↦ (trivializationAt E (TangentSpace I) x).symm y u :
+      Π y : M, TangentSpace I y)) x := by
+  have hx : x ∈ (trivializationAt E (TangentSpace I) x).baseSet :=
+    FiberBundle.mem_baseSet_trivializationAt' x
+  have hext : (fun y ↦ (trivializationAt E (TangentSpace I) x).symm y u :
+      Π y : M, TangentSpace I y) =
+      FiberBundle.extend E ((trivializationAt E (TangentSpace I) x).symm x u) := by
+    funext y
+    simp only [FiberBundle.extend, Bundle.Trivialization.apply_mk_symm _ hx]
+  have h := FiberBundle.mdifferentiableAt_extend (I := I) E
+    ((trivializationAt E (TangentSpace I) x).symm x u)
+  rwa [← hext] at h
+
+/-- The second component of the chart of a tangent bundle at `q`, read at a point with base point
+in the chart source.  Together with `TangentBundle.coe_chartAt_fst` this describes the
+tangent-bundle charts completely. -/
+@[simp, mfld_simps]
+theorem coe_chartAt_snd [IsManifold I 1 M] {p q : TangentBundle I M} :
+    (chartAt (ModelProd H E) q p).2 =
+      tangentCoordChange I p.1 q.1 p.1 p.2 := by
+  -- After unfolding the tangent-bundle chart, the fibre-to-model-space conversion is
+  -- definitionally the tangent coordinate change; no separate conversion lemma is needed.
+  rw [TangentBundle.chartAt]
+  rfl
 
 end TangentBundle
 
@@ -210,6 +240,15 @@ theorem symmL_trivializationAt_self (x : M) (v : E) :
     (trivializationAt E (TangentSpace I) x).symmL 𝕜 x v = v := by
   rw [TangentBundle.symmL_trivializationAt_eq_core (mem_chart_source H x)]
   exact (tangentBundleCore I M).coordChange_self (achart H x) x (mem_chart_source H x) v
+
+/-- The vector field with constant coordinates `u` in the trivialization of the tangent bundle at
+`x` takes the value `u` at `x`. -/
+@[simp]
+theorem _root_.TangentBundle.trivializationAt_symm_apply_self (x : M) (u : E) :
+    (trivializationAt E (TangentSpace I) x).symm x u = u := by
+  rw [← (trivializationAt E (TangentSpace I) x).symmL_apply (R := 𝕜)
+    (FiberBundle.mem_baseSet_trivializationAt' x) u]
+  exact symmL_trivializationAt_self x u
 
 /-- At a point `x` whose base points `f x` and `g x` agree with those of `x₀`, reading `ϕ x` in the
 tangent coordinates of `x₀` changes nothing: both coordinate changes are from a chart to itself. -/
@@ -288,28 +327,6 @@ theorem mvfderiv_extend_eventuallyEq (hf : ContMDiffAt I 𝓘(𝕜, F) 1 f x)
 end Extend
 
 section TangentChart
-
-section TangentBundleChart
-
-variable [IsManifold I 1 M]
-
-namespace TangentBundle
-
-/-- The second component of the chart of a tangent bundle at `q`, read at a point with base point
-in the chart source.  Together with `TangentBundle.coe_chartAt_fst` this describes the
-tangent-bundle charts completely. -/
-@[simp, mfld_simps]
-theorem coe_chartAt_snd {p q : TangentBundle I M} :
-    (chartAt (ModelProd H E) q p).2 =
-      tangentCoordChange I p.1 q.1 p.1 p.2 := by
-  -- After unfolding the tangent-bundle chart, the fibre-to-model-space conversion is
-  -- definitionally the tangent coordinate change; no separate conversion lemma is needed.
-  rw [TangentBundle.chartAt]
-  rfl
-
-end TangentBundle
-
-end TangentBundleChart
 
 /-- The tangent coordinate change between the charts at `x` and `y` is `C^n` on the overlap of
 the two chart sources, read in the chart at `x`.  This is Mathlib's
@@ -752,10 +769,16 @@ theorem tangentSpaceOpenEquiv_mfderiv_apply
     {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
     {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
     {U : Opens M} {V : Opens M'} {f : U → V} {A : M → M'} {x : U}
-    (hf : MDifferentiableAt I I' f x) (hA : MDifferentiableAt I I' A x)
+    (hf : MDifferentiableAt I I' f x)
     (hcomp : Subtype.val ∘ f = A ∘ Subtype.val) (v : TangentSpace I x) :
     tangentSpaceOpenEquiv (I := I') (f x) (mfderiv I I' f x v) =
       mfderiv I I' A x (tangentSpaceOpenEquiv (I := I) x v) := by
+  have hA : MDifferentiableAt I I' A x := by
+    have h1 : MDifferentiableAt I I' (Subtype.val ∘ f) x :=
+      (contMDiff_subtype_val.mdifferentiableAt one_ne_zero).comp x hf
+    rw [hcomp] at h1
+    exact ((differentiableWithinAt_localInvariantProp (I := I)
+      (I' := I')).liftPropAt_iff_comp_subtype_val (U := U) A x).2 h1
   have h := mfderiv_comp_apply x
     (contMDiff_subtype_val.mdifferentiableAt one_ne_zero (x := f x)) hf v
   rw [hcomp, mfderiv_comp_apply x hA (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) v,
@@ -768,7 +791,7 @@ model vector space. -/
 theorem mfderiv_inclusion_apply {U V : Opens M} (h : U ≤ V) (x : U)
     (v : TangentSpace I x) : mfderiv I I (Opens.inclusion h) x v = v := by
   have h' := tangentSpaceOpenEquiv_mfderiv_apply (A := id)
-    ((contMDiff_inclusion h).mdifferentiableAt one_ne_zero) mdifferentiableAt_id rfl v
+    ((contMDiff_inclusion h).mdifferentiableAt one_ne_zero) rfl v
   rw [tangentSpaceOpenEquiv_apply, tangentSpaceOpenEquiv_apply, mfderiv_id] at h'
   exact h'
 

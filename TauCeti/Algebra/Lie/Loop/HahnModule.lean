@@ -24,6 +24,7 @@ loop algebra `L[t, t⁻¹]` into the formal loop algebra `L((t))`.
   `LieAlgebra.LoopAlgebra.toFinsupp`.
 * `LieAlgebra.LoopAlgebra.toHahnModule_single_tmul`: `t ^ a ⊗ x` goes to the monomial `x t ^ a`.
 * `LieAlgebra.LoopAlgebra.toHahnModule_injective`: the embedding is injective.
+* `LieHom.hahnModuleMap_toHahnModule`: the embedding is natural in the Lie algebra `L`.
 -/
 
 public section
@@ -84,5 +85,17 @@ theorem toHahnModule_single_tmul (a : Γ) (x : L) :
 theorem toHahnModule_injective : Function.Injective (toHahnModule R Γ L) := fun p q h ↦
   (toFinsupp R Γ L).injective <| Finsupp.ext fun a ↦ by
     rw [← coeff_toHahnModule, ← coeff_toHahnModule, h]
+
+/-- The embedding is natural in the Lie algebra: applying a morphism `f : L → L'` to the
+coefficients of the image of a polynomial loop gives the image of the loop transformed by `f`. -/
+theorem _root_.LieHom.hahnModuleMap_toHahnModule {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (f : L →ₗ⁅R⁆ L') (p : loopAlgebra R Γ L) :
+    f.hahnModuleMap Γ (toHahnModule R Γ L p) =
+      toHahnModule R Γ L' (ExtendScalars.map (AlgHom.id R (AddMonoidAlgebra R Γ)) f p) := by
+  obtain ⟨g, rfl⟩ := (toFinsupp R Γ L).symm.surjective p
+  induction g using Finsupp.induction_linear with
+  | zero => simp
+  | add g₁ g₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+  | single a x => simp
 
 end LieAlgebra.LoopAlgebra
