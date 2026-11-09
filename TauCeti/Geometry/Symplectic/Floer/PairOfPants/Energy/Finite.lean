@@ -107,10 +107,8 @@ private theorem floerEnergyDensity_endChart_nonneg (ω : SymplecticForm V)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
       stdComplexLineImag ζ = H q ζ.2 := by
-    funext x
     rw [perturbationPullback_endChart, equivRealProdCLM_symm_stdComplexLineImag,
-      pairOfPantsEndComponent_I_of_pos (hH q) hpos,
-      smoothTransition.one_of_one_le (by linarith), one_mul]
+      pairOfPantsEndComponent_I_of_two_le (hH q) hζ]
   have heq : ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H q w.2) (u ∘ endChart q) ζ =
       ω.floerEnergyDensity
         (perturbationPullback (endChart q)
@@ -143,31 +141,16 @@ theorem monotoneOn_hamiltonianAction_endChart (ω : SymplecticForm V)
     MonotoneOn (fun s ↦ ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (s, t))))
       {s | 2 ≤ q.endSign * s} := by
   intro c hc d hd hcd
-  set U : Set (ℝ × ℝ) := {ζ | 1 < q.endSign * ζ.1}
-  have hUo : IsOpen U := isOpen_lt continuous_const (continuous_const.mul continuous_fst)
   -- Every point of the rectangle `[c, d] × [0, 1]` lies in the part `±s ≥ 2` of the end.
   have hmem {s : ℝ} (hs : s ∈ Icc c d) : 2 ≤ q.endSign * s := by
     rw [mem_ofPred_eq] at hc hd
     rcases endSign_eq_one_or_eq_neg_one q with h | h <;> rw [h] at hc hd ⊢ <;> linarith [hs.1, hs.2]
-  have hRU : Icc c d ×ˢ Icc 0 1 ⊆ U := fun ζ hζ ↦ by
-    simp only [U, mem_ofPred_eq]
-    linarith [hmem hζ.1]
-  have hv : ContDiffOn ℝ 2 (u ∘ endChart q) U :=
-    hu.comp (contDiff_endChart q 2).contDiffOn fun ζ hζ ↦
-      endChart_mem_thricePuncturedSphereReal (by
-        simp only [U, mem_ofPred_eq] at hζ
-        linarith)
-  have hper (s : ℝ) : (u ∘ endChart q) (s, 1) = (u ∘ endChart q) (s, 0) := by
-    simp only [comp_apply, endChart_mk]
-    simpa using congrArg (fun w ↦ u (Complex.equivRealProdCLM w))
-      (q.periodic_cylindricalEndLift s 0)
   -- The energy over the rectangle is the change of action, and it is nonnegative.
-  have h := ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub (hHs q) hUo hv hcd hRU
-    fun s _ ↦ hper s
+  have h := ω.integral_floerEnergyDensity_endChart_eq_hamiltonianAction_sub (hHs q) hu q hcd
+    fun s hs ↦ by linarith [hmem hs]
   have hnonneg := setIntegral_nonneg (μ := volume) (measurableSet_Icc.prod measurableSet_Icc)
     fun ζ (hζ : ζ ∈ Icc c d ×ˢ Icc 0 1) ↦ floerEnergyDensity_endChart_nonneg ω hH hHs hu (hmem hζ.1)
       (hJ ζ (hmem hζ.1)) (hfloer ζ (hmem hζ.1))
-  simp only [comp_apply] at h
   linarith
 
 /-- In the parametrization `R ↦ ±R` of the ends by their signed longitudinal coordinate, the

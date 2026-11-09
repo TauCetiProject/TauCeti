@@ -39,7 +39,8 @@ along an end lift `φ` are its values on `φ'(z)` and `φ'(z) i`. The results ar
 * `TauCeti.Floer.pairOfPantsEndComponent H q v`: the component of the pullback along the tangent
   vector `v` of the cylinder, in the end coordinates of the end `q`, so that `K_s` and `K_t` are
   its components along `v = 1` and `v = i`; `TauCeti.Floer.pairOfPantsEndComponent_of_pos`
-  computes them on the part `±s > 0` of the end.
+  computes them on the part `±s > 0` of the end, and
+  `TauCeti.Floer.pairOfPantsEndComponent_I_of_two_le` gives `K_t = H_q(t)` where `±s ≥ 2`.
 * `TauCeti.Floer.exists_cylindricalEndLift_of_pairOfPantsPerturbation_ne_zero`: it is supported
   in the parts `±s > 1` of the three ends, so it vanishes off the ends;
   `TauCeti.Floer.pairOfPantsPerturbation_eq_zero_of_forall_le` states this in end coordinates.
@@ -114,6 +115,14 @@ theorem pairOfPantsPerturbation_eq_zero_of_forall_le {w : ℂ}
   rw [pairOfPantsPerturbation_def]
   refine Finset.sum_eq_zero fun q _ => ?_
   rw [smoothTransition.zero_of_nonpos (by linarith [h q]), zero_mul, zero_smul]
+
+/-- The pair-of-pants datum of a single end is the summand of that end. -/
+theorem pairOfPantsPerturbation_single (q : Puncture) (G : ℝ → M → ℝ) (w : ℂ) (x : M) :
+    pairOfPantsPerturbation (Pi.single q G) w x =
+      (smoothTransition (q.endSign * (q.endCoord w).re - 1) * G (q.endCoord w).im x) •
+        q.endAngularForm w := by
+  rw [pairOfPantsPerturbation_def, Fintype.sum_eq_single q fun r hr => by
+    simp [Pi.single_eq_of_ne hr], Pi.single_eq_same]
 
 /-- The perturbation vanishes at the center of every end. The centers are the punctures `0` and
 `1`, where every signed longitudinal coordinate is at most `0`. -/
@@ -222,6 +231,14 @@ theorem pairOfPantsEndComponent_I_of_pos (hH : Function.Periodic (H q) 1) {z : �
     pairOfPantsEndComponent H q Complex.I z x =
       smoothTransition (q.endSign * z.1 - 1) * H q z.2 x := by
   simp [pairOfPantsEndComponent_of_pos hH hz]
+
+/-- On the part `±s ≥ 2` of the end `q`, where the cutoff is `1`, the `dt` component of the
+perturbation is `H_q(t)`. -/
+theorem pairOfPantsEndComponent_I_of_two_le (hH : Function.Periodic (H q) 1) {z : ℝ × ℝ}
+    (hz : 2 ≤ q.endSign * z.1) : pairOfPantsEndComponent H q Complex.I z = H q z.2 := by
+  funext x
+  rw [pairOfPantsEndComponent_I_of_pos hH (by linarith),
+    smoothTransition.one_of_one_le (by linarith), one_mul]
 
 /-- The part `±s > 0` of the end `q`, in end coordinates, is open. -/
 private theorem isOpen_endSign_mul_fst_pos (q : Puncture) :

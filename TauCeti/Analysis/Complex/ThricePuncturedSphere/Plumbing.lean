@@ -57,9 +57,8 @@ maps on the plumbed sphere is computed.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbingMap_image_inter`: the two pieces overlap
   exactly in the image of the neck `-L < Re z < 0`.
 * `TauCeti.ThricePuncturedSphere.Puncture.contDiff_plumbingMap`,
-  `TauCeti.ThricePuncturedSphere.Puncture.contDiff_realChart_plumbingMap`,
-  `TauCeti.ThricePuncturedSphere.Puncture.injective_realChart_plumbingMap`: the plumbing map is
-  smooth, and a smooth injection in the real coordinates.
+  `TauCeti.ThricePuncturedSphere.Puncture.contDiff_realChart_plumbingMap`: the plumbing map is
+  smooth, also in the real coordinates.
 * `TauCeti.ThricePuncturedSphere.Puncture.mem_plumbedTruncation_iff`: membership in the
   truncation `Σ_R`.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation_subset`,
@@ -85,7 +84,7 @@ maps on the plumbed sphere is computed.
 public noncomputable section
 
 open Set Real
-open TauCeti.Complex (realChart realChart_apply contDiff_realChart equivRealProdCLM_symm_realChart
+open TauCeti.Complex (realChart contDiff_realChart equivRealProdCLM_symm_realChart
   realChart_equivRealProdCLM)
 
 namespace TauCeti.ThricePuncturedSphere.Puncture
@@ -157,13 +156,6 @@ theorem contDiff_plumbingMap (q : Puncture) (L : ℝ) {n : WithTop ℕ∞} :
 theorem contDiff_realChart_plumbingMap (q : Puncture) (L : ℝ) {n : WithTop ℕ∞} :
     ContDiff ℝ n (realChart (q.plumbingMap L)) :=
   contDiff_realChart (q.contDiff_plumbingMap L)
-
-/-- The plumbing map is injective in the real coordinates. -/
-theorem injective_realChart_plumbingMap (q : Puncture) (L : ℝ) :
-    Function.Injective (realChart (q.plumbingMap L)) := fun a b h ↦ by
-  rw [realChart_apply, realChart_apply] at h
-  exact Complex.equivRealProdCLM.symm.injective
-    (q.plumbingMap_injective L (Complex.equivRealProdCLM.injective h))
 
 /-- The plumbing map is affine with derivative the plumbing factor. -/
 theorem hasDerivAt_plumbingMap (q : Puncture) (L : ℝ) (w : ℂ) :
@@ -380,8 +372,9 @@ theorem plumbedTruncation_subset {q : Puncture} (hq : q ≠ inf) {L : ℝ} (hL :
   rw [← plumbingMap_image_union hq hL, plumbedTruncation_def, union_comm]
   refine union_subset_union (image_mono fun w hw => ?_) fun w hw => ?_ <;>
     obtain ⟨⟨hw0, hw1, -⟩, hwL⟩ := And.imp_left mem_truncation.1 hw
-  · exact ⟨⟨hw0, hw1⟩, by linarith [show -(L / 2) ≤ (inf.endCoord w).re from hwL]⟩
-  · exact ⟨⟨hw0, hw1⟩, by linarith [show (q.endCoord w).re ≤ L / 2 from hwL]⟩
+  all_goals
+    rw [mem_ofPred_eq] at hwL
+    exact ⟨⟨hw0, hw1⟩, by linarith⟩
 
 /-- The plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ_{q,L}(1)}` is open in the real
 coordinates. -/

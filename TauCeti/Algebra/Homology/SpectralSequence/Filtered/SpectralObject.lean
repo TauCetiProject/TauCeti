@@ -118,7 +118,7 @@ noncomputable def triangulatedSpectralObjectMap (α : F ⟶ G) :
     (spectralObjectMappingCone C).ω₁
   comm {i j k} f g := by
     rw [precomp_spectralObjectMappingCone_δ, precomp_spectralObjectMappingCone_δ]
-    exact quotient_mappingConeCompTriangle_mor₃_naturality (F.map f) (F.map g) (G.map f)
+    exact mappingConeCompTriangleh_mor₃_naturality (F.map f) (F.map g) (G.map f)
       (G.map g) (α.app i) (α.app j) (α.app k) (α.naturality f) (α.naturality g)
 
 @[simp]

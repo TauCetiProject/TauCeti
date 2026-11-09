@@ -62,7 +62,7 @@ public noncomputable section
 open Set Real Function
 open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
 open TauCeti.Complex (realChart det_fderiv_realChart_nonneg equivRealProdCLM_symm_realChart
-  realChart_equivRealProdCLM)
+  realChart_equivRealProdCLM realChart_injective)
 
 namespace TauCeti.Floer
 
@@ -173,7 +173,7 @@ private theorem integral_floerEnergyDensity_plumbedPerturbation_receiving (ω : 
         z (u z) :=
     setIntegral_congr_fun hAm fun z hz ↦ by
       rw [← hamiltonianCurvature_constSmooth, ← hamiltonianCurvature_constSmooth,
-        ω.constSmooth.hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_le hq hab
+        ω.constSmooth.hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_lt hq hab
           (ne_endCenter (truncation_subset _ hz.1) q)
           (by linarith [hAre hz])]
   rw [hAE, hAR, h]
@@ -252,7 +252,8 @@ private theorem integral_floerEnergyDensity_plumbedPerturbation_inserted (ω : S
         (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
         (u ∘ realChart (q.plumbingMap L)) w := by
-    rw [ω.integral_floerEnergyDensity_image hBm (injective_realChart_plumbingMap q L).injOn
+    rw [ω.integral_floerEnergyDensity_image hBm
+      (realChart_injective (q.plumbingMap_injective L)).injOn
       (fun w _ ↦ (contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w)
       (fun w _ ↦ det_fderiv_realChart_nonneg (q.hasDerivAt_plumbingMap L _))
       (fun w hw ↦ (hu.differentiableOn two_ne_zero _ (hBψ hw)).differentiableAt
@@ -271,7 +272,8 @@ private theorem integral_floerEnergyDensity_plumbedPerturbation_inserted (ω : S
         (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
         w ((u ∘ realChart (q.plumbingMap L)) w) := by
-    rw [ω.integral_hamiltonianCurvature_image hBm (injective_realChart_plumbingMap q L).injOn
+    rw [ω.integral_hamiltonianCurvature_image hBm
+      (realChart_injective (q.plumbingMap_injective L)).injOn
       (fun w _ ↦ (contDiff_realChart_plumbingMap q L).contDiffAt)
       (fun w _ ↦ det_fderiv_realChart_nonneg (q.hasDerivAt_plumbingMap L _))
       (fun w hw ↦ hdom hw _ 1) (fun w hw ↦ hdom hw _ Complex.I)
@@ -377,7 +379,8 @@ theorem integral_floerEnergyDensity_plumbedPerturbation_eq_sum_hamiltonianAction
         {z | inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2})) :=
     measurable_image_of_fderivWithin (measurableSet_preimage_truncation_inter inf R _)
       (fun w _ ↦ ((contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero
-        w).hasFDerivAt.hasFDerivWithinAt) (injective_realChart_plumbingMap q L).injOn
+        w).hasFDerivAt.hasFDerivWithinAt)
+      (realChart_injective (q.plumbingMap_injective L)).injOn
   have hsplit (f : ℝ × ℝ → ℝ)
       (hf : IntegrableOn f (Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R)) :=
     setIntegral_union₀ (volume_inter_image_realChart_plumbingMap hq (by linarith) R)

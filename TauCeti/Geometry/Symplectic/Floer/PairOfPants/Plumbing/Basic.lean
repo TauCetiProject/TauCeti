@@ -61,7 +61,7 @@ does not depend on `L`. The curvature of the neck itself vanishes, as the datum 
 * `TauCeti.Floer.contMDiffAt_plumbedPerturbation`: for `L > 4` and period-one Hamiltonians of
   class `C^n`, the glued datum is of class `C^n` on the four-punctured sphere; smooth Hamiltonians
   give a smooth datum.
-* `TauCeti.SmoothTwoForm.hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_le`,
+* `TauCeti.SmoothTwoForm.hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_lt`,
   `TauCeti.SmoothTwoForm.hamiltonianCurvature_perturbationPullback_plumbedPerturbation`: away
   from the collars where the two data are glued, the curvature of the glued datum, or of its
   pullback along the plumbing chart, is the curvature of the corresponding pair-of-pants datum.
@@ -87,7 +87,7 @@ public noncomputable section
 
 open Set Real Manifold Topology Function
 open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
-open TauCeti.Complex (realChart realChart_apply contDiff_realChart)
+open TauCeti.Complex (realChart realChart_apply contDiff_realChart realChart_injective)
 
 namespace TauCeti.Floer
 
@@ -179,7 +179,7 @@ variable [IsManifold I ⊤ M]
 
 /-- Off the collar `Re z ≥ L - 2` of the end `q`, the curvature of the plumbed perturbation is
 the curvature of the perturbation of the receiving pair of pants. -/
-theorem hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_le (ω : SmoothTwoForm I M)
+theorem hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_lt (ω : SmoothTwoForm I M)
     (hq : q ≠ inf) (hab : Hb q = Ha inf) {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter)
     (hre : (q.endCoord (Complex.equivRealProdCLM.symm z)).re < L - 2) :
@@ -255,7 +255,7 @@ private theorem setLIntegral_enorm_hamiltonianCurvature_plumbedPerturbation_le_r
           (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z)‖ₑ :=
         setLIntegral_mono' hAm fun z hz ↦ by
-          rw [hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_le ω hq hab hz.1
+          rw [hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_lt ω hq hab hz.1
             (by linarith [hz.2])]
     _ ≤ _ := setLIntegral_le_lintegral _ _
     _ ≤ _ := lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le ω hHb hHbs hBb u
@@ -302,7 +302,8 @@ private theorem setLIntegral_enorm_hamiltonianCurvature_plumbedPerturbation_le_i
     differentiableAt_plumbedPerturbation_domain hq hHa hHb hHas hHbs hab hL (hS₄ hw) y v
   have htgt {w : ℝ × ℝ} (hw : w ∈ S) (y : M) (v : ℂ) :=
     mdifferentiableAt_plumbedPerturbation_target hq hHa hHb hHas hHbs hab hL (hS₄ hw) y v
-  rw [ω.lintegral_enorm_hamiltonianCurvature_image hSm (injective_realChart_plumbingMap q L).injOn
+  rw [ω.lintegral_enorm_hamiltonianCurvature_image hSm
+    (realChart_injective (q.plumbingMap_injective L)).injOn
     (fun w _ ↦ (contDiff_realChart_plumbingMap q L).contDiffAt)
     (fun w hw ↦ hdom hw _ 1) (fun w hw ↦ hdom hw _ Complex.I)
     (fun w hw ↦ htgt hw _ 1) (fun w hw ↦ htgt hw _ Complex.I)]

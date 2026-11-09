@@ -326,11 +326,7 @@ private theorem detLineFourTermEquiv_detLineShortExactCancelEquiv_ιMulti
       (exteriorPower.ιMulti K _ (g.rangeRestrict ∘ v) ⊗ₜ exteriorPower.ιMulti K _ (h ∘ z)) :
         ExteriorAlgebra K C) = ExteriorAlgebra.ιMulti K _ (Fin.append (g ∘ v) z) :=
     coe_detLineShortExactEquiv_tmul _ _ _ _ _
-  have hr : finrank K (LinearMap.range g') = finrank K (LinearMap.range g) + finrank K W := by
-    have e₁ := hfg.rangeRestrict.finrank_eq_add hf g.surjective_rangeRestrict
-    have e₂ := hfg'.rangeRestrict.finrank_eq_add hf' g'.surjective_rangeRestrict
-    have e₃ := hjπ.finrank_eq_add hj hπg
-    omega
+  have hr := finrank_range_eq_finrank_range_add_of_exact_comp hf hfg hf' hfg' hj hjπ hπg
   have hjfu : ⇑j ∘ (⇑f ∘ u) = ⇑f' ∘ u := funext fun i ↦ LinearMap.congr_fun hjf (u i)
   have hgjv : ⇑g' ∘ (⇑j ∘ v) = ⇑ι ∘ (⇑g ∘ v) := funext fun i ↦ LinearMap.congr_fun hgj (v i)
   have hz' : ⇑h' ∘ (⇑ι ∘ z) = ⇑h ∘ z := funext fun i ↦ LinearMap.congr_fun hhι (z i)

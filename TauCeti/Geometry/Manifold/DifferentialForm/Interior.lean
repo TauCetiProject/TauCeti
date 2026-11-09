@@ -362,10 +362,10 @@ theorem RoughForm.mdifferentiableAt_interior {F : Type*} [NormedAddCommGroup F]
       (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (ω.interior X y)) x := by
   refine mdifferentiableAt_form_of_differentiableWithinAt_inChartAt_self ?_
   -- In the chart at `x`, the interior product is `curryLeft` of the two coordinate expressions.
-  have hω' := ω.differentiableWithinAt_inChartAt (s := Set.univ) hω.mdifferentiableWithinAt
+  have hω' := ω.differentiableWithinAt_range_inChartAt_of_mdifferentiableAt hω
   have hX' := (hX.mdifferentiableWithinAt (s := Set.univ)
     ).differentiableWithinAt_mpullbackWithin_extChartAt_symm
-  simp only [Set.preimage_univ, Set.univ_inter] at hω' hX'
+  simp only [Set.preimage_univ, Set.univ_inter] at hX'
   refine (((ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F) (n := k)
     ).toContinuousLinearMap.differentiableAt.comp_differentiableWithinAt _ hω').clm_apply
       hX').congr_of_eventuallyEq ?_ (RoughForm.inChartAt_interior X ω (mem_extChartAt_target x))

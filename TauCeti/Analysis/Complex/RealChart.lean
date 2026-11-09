@@ -23,6 +23,7 @@ A map `f : ℂ → ℂ` of the plane, read in the real coordinates `ℝ × ℝ �
 determinant is `|f'|²`, so the Jacobian determinant of the real chart is nonnegative
 (`TauCeti.Complex.det_fderiv_realChart`, `TauCeti.Complex.det_fderiv_realChart_nonneg`), and a map
 that is `C^n` over `ℂ` is `C^n` over `ℝ` in real coordinates (`TauCeti.Complex.contDiff_realChart`).
+The real chart of an injective map is injective (`TauCeti.Complex.realChart_injective`).
 -/
 
 public section
@@ -87,5 +88,10 @@ theorem contDiff_realChart {f : ℂ → ℂ} {n : WithTop ℕ∞} (hf : ContDiff
     ContDiff ℝ n (realChart f) :=
   Complex.equivRealProdCLM.contDiff.comp
     ((hf.restrict_scalars ℝ).comp Complex.equivRealProdCLM.symm.contDiff)
+
+/-- The real chart of an injective map is injective. -/
+theorem realChart_injective {f : ℂ → ℂ} (hf : Function.Injective f) :
+    Function.Injective (realChart f) :=
+  Complex.equivRealProdCLM.injective.comp (hf.comp Complex.equivRealProdCLM.symm.injective)
 
 end TauCeti.Complex
