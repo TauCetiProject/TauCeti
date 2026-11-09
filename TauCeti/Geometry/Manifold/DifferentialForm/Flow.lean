@@ -34,7 +34,9 @@ needed.
 Integrating it along the open interval of times at which the flow through `x` is defined: if
 `L_Z α = g • α` for a continuous function `g`, then `(φₜ^* α)ₓ = exp (∫₀ᵗ g (φₛ x) ds) • αₓ`
 (`TauCeti.mpullback_flowOf_apply_eq_exp_integral_smul`). This is how the local flow of a contact
-Hamiltonian vector field rescales the contact form.
+Hamiltonian vector field rescales the contact form. For a closed form `β` with closed contraction
+`ι_Z β`, Cartan's formula gives `L_Z β = 0`, so `(φₜ^* β)ₓ = βₓ` wherever the flow through `x` is
+defined at time `t` (`TauCeti.mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero`).
 
 When `Z` is complete its maximal flow is the global flow `ψ` (`TauCeti.globalFlow`), and these
 statements hold at every time and point (`TauCeti.hasDerivAt_mpullback_globalFlow`,
@@ -64,6 +66,8 @@ flows are the other instance (`TauCeti.Geometry.Manifold.DifferentialForm.Flow.T
   of `φₜ^* α` is `φₜ^* L_Z α`.
 * `TauCeti.mpullback_flowOf_apply_eq_exp_integral_smul`: if `L_Z α = g • α`, then
   `(φₜ^* α)ₓ = exp (∫₀ᵗ g (φₛ x) ds) • αₓ` wherever the maximal flow is defined.
+* `TauCeti.mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero`: if `β` is closed and `ι_Z β` is
+  closed, then `(φₜ^* β)ₓ = βₓ` wherever the maximal flow is defined.
 * `TauCeti.hasDerivAt_mpullback_globalFlow`: the time derivative of `ψₜ^* α` is `ψₜ^* L_Z α`.
 * `TauCeti.mpullback_globalFlow_apply_eq_exp_integral_smul`: if `L_Z α = g • α`, then
   `(ψₜ^* α)ₓ = exp (∫₀ᵗ g (ψₛ x) ds) • αₓ`.
@@ -326,6 +330,22 @@ theorem mpullback_flowOf_apply_eq_exp_integral_smul {g : M → ℝ} (hg : Contin
   -- The value at `x` of the pulled-back form is `P t`.
   exact hPt
 
+/-- **Maximal flows preserve closed forms with closed contraction.** For a closed smooth form `β`
+whose contraction `ι_Z β` with a `C²` vector field `Z` is closed, the time-`t` map of the maximal
+flow `φ` of `Z` satisfies `(φₜ^* β)ₓ = βₓ` wherever the flow through `x` is defined at time `t`,
+because Cartan's formula gives `L_Z β = d(ι_Z β) = 0`. The field need not be complete. -/
+theorem mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero {β : SmoothForm I M F (k + 1)}
+    (hβ : β.IsClosed) (hZβ : mextDeriv (RoughForm.interior Z β.1) = 0) {t : ℝ} {x : M}
+    (hx : (t, x) ∈ flowDomain Z) :
+    mpullback (F := F) I I (flowOf Z t) β.1 x = β.1 x := by
+  -- Cartan's formula: `L_Z β = d(ι_Z β) = 0`, a zero multiple of `β`.
+  have hL : mlieDerivForm Z β.1 = fun y ↦ (fun _ : M ↦ (0 : ℝ)) y • β.1 y := by
+    rw [SmoothForm.mlieDerivForm_eq_mextDeriv_interior (hZ.mdifferentiable two_ne_zero) hβ, hZβ]
+    simp only [zero_smul]
+    rfl
+  simpa only [intervalIntegral.integral_zero, Real.exp_zero, one_smul] using
+    mpullback_flowOf_apply_eq_exp_integral_smul hZ continuous_const β.mdifferentiable hL hx
+
 end MaximalFlow
 
 /-! ### Complete vector fields -/
@@ -389,11 +409,8 @@ contraction `ι_Z β` with a complete `C²` vector field `Z` is closed, the flow
 theorem mpullback_globalFlow_of_mextDeriv_interior_eq_zero {β : SmoothForm I M F (k + 1)}
     (hβ : β.IsClosed) (hZβ : mextDeriv (RoughForm.interior Z β.1) = 0) (t : ℝ) :
     mpullback (F := F) I I (globalFlow Z (hZ.of_le one_le_two) hc t) β.1 = β.1 := by
-  -- Cartan's formula: `L_Z β = d(ι_Z β) = 0`.
-  have hL : mlieDerivForm Z β.1 = (0 : ℝ) • β.1 := by
-    rw [zero_smul, SmoothForm.mlieDerivForm_eq_mextDeriv_interior
-      (hZ.mdifferentiable two_ne_zero) hβ, hZβ]
-  simpa only [zero_mul, Real.exp_zero, one_smul] using
-    mpullback_globalFlow_eq_exp_smul hc hZ β.mdifferentiable hL t
+  funext x
+  rw [← flowOf_eq_globalFlow (hZ.of_le one_le_two) hc]
+  exact mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero hZ hβ hZβ (hc.mem_flowDomain t x)
 
 end TauCeti
