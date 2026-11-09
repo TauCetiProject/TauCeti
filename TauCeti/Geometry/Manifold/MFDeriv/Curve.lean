@@ -78,6 +78,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   family `f : 𝕜 → 𝕜 → M` are the differential of the uncurried family in the coordinate
   directions, and `TauCeti.Manifold.hasMFDerivAt_apply_fst` gives the corresponding derivative
   of the curve `q ↦ w (q, t)` of a map `w : 𝕜 × 𝕜 → M`.
+* `TauCeti.Manifold.curveVelocity_apply_curve`: the velocity of a curve `u ↦ f u (γ u)` carried by
+  a moving family is the velocity of the family plus the image of the velocity of `γ`.
 * `TauCeti.Manifold.mfderiv_comp_snd_apply_one_zero` and
   `TauCeti.Manifold.mfderiv_comp_snd_apply_zero_one`: the coordinate derivatives of a map
   `(a, b) ↦ x b` are `0` and the velocity of `x`.
@@ -326,6 +328,41 @@ theorem hasMFDerivAt_apply_fst {w : 𝕜 × 𝕜 → M}
   rwa [curveVelocity_eq_mfderiv_fst (f := fun a b ↦ w (a, b)) hw] at h
 
 end Surface
+
+section Family
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] {f : 𝕜 → M → N}
+
+/-- **The velocity of a curve carried by a moving family.** If the uncurried family
+`(u, x) ↦ f u x` is differentiable at `(t, γ t)` and the curve `γ` is differentiable at `t`, then
+the velocity of `u ↦ f u (γ u)` at `t` is the velocity of the family at the fixed point `γ t` plus
+the image of the velocity of `γ` under the differential of `f t`. -/
+theorem curveVelocity_apply_curve
+    (hf : MDifferentiableAt (𝓘(𝕜, 𝕜).prod I) I' (fun p : 𝕜 × M ↦ f p.1 p.2) (t, γ t))
+    (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ t) :
+    curveVelocity I' (fun u ↦ f u (γ u)) t =
+      curveVelocity I' (fun u ↦ f u (γ t)) t +
+        mfderiv I I' (f t) (γ t) (curveVelocity I γ t) := by
+  have h : HasMFDerivAt 𝓘(𝕜, 𝕜) I' (fun u ↦ f u (γ u)) t
+      ((mfderiv (𝓘(𝕜, 𝕜).prod I) I' (fun p : 𝕜 × M ↦ f p.1 p.2) (t, γ t)).comp
+        ((ContinuousLinearMap.id 𝕜 𝕜).prod
+          ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (curveVelocity I γ t)))) :=
+    hf.hasMFDerivAt.comp t ((hasMFDerivAt_id t).prodMk (hasMFDerivAt_curveVelocity hγ))
+  have hv : ((ContinuousLinearMap.id 𝕜 𝕜).prod
+      ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (curveVelocity I γ t)) : 𝕜 →L[𝕜] 𝕜 × E) (1 : 𝕜) =
+        ((1 : 𝕜), (curveVelocity I γ t : E)) :=
+    Prod.ext rfl (one_smul 𝕜 (curveVelocity I γ t : E))
+  calc curveVelocity I' (fun u ↦ f u (γ u)) t
+      = mfderiv (𝓘(𝕜, 𝕜).prod I) I' (fun p : 𝕜 × M ↦ f p.1 p.2) (t, γ t)
+          ((1 : 𝕜), curveVelocity I γ t) := by
+        rw [curveVelocity_apply, h.mfderiv]
+        exact congrArg _ hv
+    _ = _ := mfderiv_prod_eq_add_apply hf
+    _ = _ := by rw [curveVelocity_apply (γ := fun u ↦ f u (γ t))]
+
+end Family
 
 /-- The velocity of a reparametrized curve is the velocity of the original curve multiplied by
 the derivative of the reparametrization. -/
