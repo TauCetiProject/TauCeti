@@ -46,7 +46,7 @@ is the special case that matters downstream.
 * `TauCeti.IsRiemannianManifold.lipschitzOnWith_of_norm_curveVelocity_le`: a `C¹` curve whose speed
   is bounded by `K` on an interval is `K`-Lipschitz there.
 * `TauCeti.IsRiemannianManifold.exists_lipschitzOnWith_of_contMDiffAt`: a map from a
-  finite-dimensional normed space into a manifold with continuous Riemannian metric is Lipschitz
+  real normed space into a manifold with continuous Riemannian metric is Lipschitz
   on a ball around each point where it is `C¹`.
 * `TauCeti.Manifold.le_riemannianEDist_of_forall_le_pathELength`: the extended distance is bounded
   below by any bound valid for the lengths of *all* `C¹` curves joining two points, since it is the
@@ -230,11 +230,14 @@ theorem lipschitzOnWith_of_norm_curveVelocity_le {γ : ℝ → M} {s : Set ℝ} 
     exact hs.uIcc_subset hu hv
   calc edist (γ u) (γ v) ≤ ENNReal.ofReal (K * dist u v) := by
         refine edist_le_of_norm_mfderiv_le (fun z hz ↦ hγ z (hsub hz)) fun z hz ↦ ?_
+        -- `L` is the differential retyped with source `ℝ` instead of `TangentSpace 𝓘(ℝ) z`, which
+        -- unfolds to `ℝ`; this lets real scalars act on its arguments.
         let L : ℝ →L[ℝ] TangentSpace I (γ z) := mfderiv 𝓘(ℝ) I γ z
         have hL : L (v - u) = (v - u) • Manifold.curveVelocity I γ z := by
-          rw [Manifold.curveVelocity_apply]
-          change L (v - u) = (v - u) • L 1
-          simpa only [smul_eq_mul, mul_one] using L.map_smul (v - u) (1 : ℝ)
+          have h := L.map_smul (v - u) (1 : ℝ)
+          rw [smul_eq_mul, mul_one] at h
+          rwa [Manifold.curveVelocity_apply]
+        -- Restate the goal through the `let`-bound `L`, so that `hL` can rewrite it.
         change ‖L (v - u)‖ ≤ K * dist u v
         rw [hL, norm_smul, Real.norm_eq_abs, ← Real.dist_eq, dist_comm, mul_comm]
         exact mul_le_mul_of_nonneg_right (hK z (hsub hz)) dist_nonneg
@@ -244,9 +247,9 @@ theorem lipschitzOnWith_of_norm_curveVelocity_le {γ : ℝ → M} {s : Set ℝ} 
 section LocalLipschitz
 
 variable [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- A map from a finite-dimensional normed space into a manifold with a continuous Riemannian
+/-- A map from a real normed space into a manifold with a continuous Riemannian
 metric is Lipschitz, for the ambient extended distance, on a ball around each point at which it is
 `C¹`. -/
 theorem exists_lipschitzOnWith_of_contMDiffAt {f : F → M} {x : F}
@@ -257,22 +260,28 @@ theorem exists_lipschitzOnWith_of_contMDiffAt {f : F → M} {x : F}
   have hUx : ∀ᶠ y in 𝓝 x, y ∈ U := hU.mem_nhds hf
   have hcont := ContMDiffOn.continuousOn_norm_mfderiv_apply
     (fun y (hy : y ∈ U) ↦ hy.contMDiffWithinAt) le_rfl hU
+  -- `L y` is the differential retyped with source `F` instead of `TangentSpace 𝓘(ℝ, F) y`, which
+  -- unfolds to `F`; this gives it an operator norm.
   let L (y : F) : F →L[ℝ] TangentSpace I (f y) := mfderiv 𝓘(ℝ, F) I f y
-  let C : ℝ≥0 := ‖L x‖₊ + 1
-  have hC : ‖L x‖ < C := by
-    change ‖L x‖ < ((‖L x‖₊ + 1 : ℝ≥0) : ℝ)
-    rw [NNReal.coe_add, coe_nnnorm, NNReal.coe_one]
-    exact lt_add_one _
-  have hunit : ∀ᶠ y in 𝓝 x, ∀ w ∈ Metric.sphere (0 : F) 1, ‖L y w‖ < C := by
-    refine (isCompact_sphere (0 : F) 1).eventually_forall_of_forall_eventually fun w hw ↦ ?_
-    refine (hcont.continuousAt ((hU.prod isOpen_univ).mem_nhds ⟨hf, mem_univ w⟩)).eventually
-      (gt_mem_nhds ?_)
-    change ‖L x w‖ < C
-    calc ‖L x w‖ ≤ ‖L x‖ * ‖w‖ := (L x).le_opNorm w
-      _ < C := by rwa [mem_sphere_zero_iff_norm.1 hw, mul_one]
+  have hL0 : ‖L x 0‖ < 1 := by
+    rw [map_zero, norm_zero]
+    exact one_pos
+  -- Joint continuity at `(x, 0)` gives `‖L y w‖ < 1` for `y` near `x` and `‖w‖ < δ`.
+  have hsmall : ∀ᶠ p : F × F in 𝓝 x ×ˢ 𝓝 0, ‖L p.1 p.2‖ < 1 := by
+    rw [← nhds_prod_eq]
+    exact (hcont.continuousAt ((hU.prod isOpen_univ).mem_nhds ⟨hf, mem_univ 0⟩)).eventually
+      (gt_mem_nhds hL0)
+  obtain ⟨P, hP, Q, hQ, hPQ⟩ := Filter.eventually_prod_iff.1 hsmall
+  obtain ⟨δ, hδ, hδQ⟩ := Metric.eventually_nhds_iff_ball.1 hQ
+  obtain ⟨C, hC⟩ : ∃ C : ℝ≥0, (C : ℝ) = 2 / δ := ⟨⟨2 / δ, by positivity⟩, rfl⟩
+  -- Rescaling vectors of norm in `[δ / 2, δ)` bounds the operator norm by `2 / δ`.
   have hbound : ∀ᶠ y in 𝓝 x, ‖L y‖ ≤ C :=
-    hunit.mono fun y hy ↦ ContinuousLinearMap.opNorm_le_of_unit_norm C.coe_nonneg
-      fun w hw ↦ (hy w (mem_sphere_zero_iff_norm.2 hw)).le
+    hP.mono fun y hy ↦ ContinuousLinearMap.opNorm_le_of_shell (c := (2 : ℝ)) hδ C.coe_nonneg
+      (by norm_num) fun w hw₁ hw₂ ↦ by
+        rw [Real.norm_ofNat] at hw₁
+        refine (hPQ hy (hδQ w (mem_ball_zero_iff.2 hw₂))).le.trans ?_
+        calc (1 : ℝ) = 2 / δ * (δ / 2) := by field_simp
+          _ ≤ C * ‖w‖ := by rw [hC]; gcongr
   obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff_ball.mp (hUx.and hbound)
   refine ⟨r, hr, C, fun a ha b hb ↦ ?_⟩
   have hseg := (convex_ball x r).segment_subset ha hb
