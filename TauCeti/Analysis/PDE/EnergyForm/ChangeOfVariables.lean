@@ -478,12 +478,12 @@ theorem memLp_pullbackDensity (hΦ : DifferentiableOn ℝ Φ U) (hinj : InjOn Φ
   rw [finrank_euclideanSpace]
   exact pow_le_pow_left₀ (norm_nonneg _) (hL x hx) _
 
-/-- **The transformed drift stays in `Lᵖ`.** Let `Φ` map `U` injectively into `V`, with
-`‖DΦ‖ ≤ L` and `c₀ ≤ |det DΦ|` on `U` for some `c₀ > 0`, and let `Ψ` be an inverse of `Φ`,
-differentiable on `V` with `‖DΨ‖ ≤ L'` there. If `b ∈ Lᵖ(V)`, then the transformed drift
+/-- **The transformed drift stays in `Lᵖ`.** Let `Φ` map `U` into `V`, with `‖DΦ‖ ≤ L` and
+`c₀ ≤ |det DΦ|` on `U` for some `c₀ > 0`, and let `Ψ` be an inverse of `Φ`, differentiable on
+`V` with `‖DΨ‖ ≤ L'` there. If `b ∈ Lᵖ(V)`, then the transformed drift
 `b' = |det DΦ| DΦ⁻¹ (b ∘ Φ) ∈ Lᵖ(U)`. With `p = ∞`, a bounded drift stays bounded. -/
-theorem memLp_pullbackDrift (hΦ : DifferentiableOn ℝ Φ U) (hinj : InjOn Φ U)
-    (hmaps : MapsTo Φ U V) (hL : ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)), ‖fderiv ℝ Φ x‖ ≤ L)
+theorem memLp_pullbackDrift (hΦ : DifferentiableOn ℝ Φ U) (hmaps : MapsTo Φ U V)
+    (hL : ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)), ‖fderiv ℝ Φ x‖ ≤ L)
     (hc₀ : 0 < c₀) (hdet : ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)), c₀ ≤ |(fderiv ℝ Φ x).det|)
     (hΨ : DifferentiableOn ℝ Ψ V) (hΨL : ∀ y ∈ (V : Set (EuclideanSpace ℝ ι)), ‖fderiv ℝ Ψ y‖ ≤ L')
     (hΨΦ : LeftInvOn Ψ Φ U) (hΦΨ : RightInvOn Ψ Φ V) {p : ENNReal}
@@ -491,7 +491,7 @@ theorem memLp_pullbackDrift (hΦ : DifferentiableOn ℝ Φ U) (hinj : InjOn Φ U
     MemLp (pullbackDrift Φ b) p (mu.restrict U) := by
   have hbΦ : MemLp (b ∘ Φ) p (mu.restrict U) :=
     (hb.of_measure_le_smul (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 hc₀).ne')
-      (map_restrict_le_smul_restrict_of_differentiableOn mu U.isOpen hΦ hinj hmaps hc₀
+      (map_restrict_le_smul_restrict_of_differentiableOn mu U.isOpen hΦ hΨΦ.injOn hmaps hc₀
         hdet)).comp_of_map (hΦ.continuousOn.aemeasurable U.isOpen.measurableSet)
   have hJ : AEStronglyMeasurable (fun x => |(fderiv ℝ Φ x).det|) (mu.restrict U) :=
     (continuous_abs.measurable.comp (ContinuousLinearMap.continuous_det.measurable.comp
