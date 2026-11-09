@@ -140,15 +140,11 @@ theorem matchedSetoid_swapHorizontal (hab : M a = M b) :
 pairwise unmatched starting points and pairwise unmatched end points. -/
 theorem injOn_source_and_target_iff_of_matchedSetoid (h : matchedSetoid M φ ψ) :
     Set.InjOn M (φ.source : Set α) ∧ Set.InjOn M (φ.target : Set α) ↔
-      Set.InjOn M (ψ.source : Set α) ∧ Set.InjOn M (ψ.target : Set α) := by
-  rw [matchedSetoid_iff] at h
-  induction h with
-  | rel φ ψ h =>
-    obtain ⟨a, b, hab, rfl⟩ := h
-    rw [injOn_source_swapHorizontal_iff hab, injOn_target_swapHorizontal_iff hab]
-  | refl => rfl
-  | symm _ _ _ ih => exact ih.symm
-  | trans _ _ _ _ _ ih ih' => exact ih.trans ih'
+      Set.InjOn M (ψ.source : Set α) ∧ Set.InjOn M (ψ.target : Set α) :=
+  (Setoid.ker_def.1 <| Setoid.le_def.1 (Setoid.eqvGen_le (s := Setoid.ker fun φ : StrandDiagram α ↦
+    Set.InjOn M (φ.source : Set α) ∧ Set.InjOn M (φ.target : Set α))
+      fun φ _ ⟨_, _, hab, e⟩ ↦ Setoid.ker_def.2 <| e ▸ propext (by
+        rw [injOn_source_swapHorizontal_iff hab, injOn_target_swapHorizontal_iff hab])) h).to_iff
 
 end StrandDiagram
 
@@ -383,15 +379,10 @@ variable {M : α → β}
 horizontal strands to matched points. -/
 theorem repr_eq_of_matchedSetoid {x : StrandsAlgebra R α} (hx : x ∈ matchedSubalgebra R M)
     {φ ψ : StrandDiagram α} (h : matchedSetoid M φ ψ) :
-    (basis R α).repr x φ = (basis R α).repr x ψ := by
-  rw [matchedSetoid_iff] at h
-  induction h with
-  | rel φ ψ h =>
-    obtain ⟨a, b, hab, rfl⟩ := h
-    exact ((mem_matchedSubalgebra.1 hx).2 φ a b hab).symm
-  | refl => rfl
-  | symm _ _ _ ih => exact ih.symm
-  | trans _ _ _ _ _ ih ih' => exact ih.trans ih'
+    (basis R α).repr x φ = (basis R α).repr x ψ :=
+  Setoid.ker_def.1 <| Setoid.le_def.1 (Setoid.eqvGen_le (s := Setoid.ker ((basis R α).repr x))
+    fun φ _ ⟨a, b, hab, e⟩ ↦
+      Setoid.ker_def.2 <| e ▸ ((mem_matchedSubalgebra.1 hx).2 φ a b hab).symm) h
 
 variable (R M) in
 /-- The **matched completion sum** of a strand diagram `φ`: the sum of the diagrams obtained from
