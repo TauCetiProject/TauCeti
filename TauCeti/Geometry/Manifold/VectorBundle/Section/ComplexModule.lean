@@ -29,7 +29,7 @@ inclusion. Writing `J s = I • s` for fibrewise multiplication by `i`, a functi
 real bundle `E`, the real and imaginary parts of `(u + i v) • σ` are `u Re σ - v Im σ` and
 `u Im σ + v Re σ`. On a real section `s`, this reads
 `(u + i v) • (1 ⊗ s) = 1 ⊗ (u • s) + i ⊗ (v • s)`
-(`ContMDiffSection.smul_function_of_normedAlgebra_oneTmulLinearMap`). The identification of
+(`ContMDiffSection.smul_function_oneTmulLinearMap_of_normedAlgebra`). The identification of
 `ℂ ⊗[ℝ] Γ(E)` with the sections of `ℂ ⊗[ℝ] E` intertwines the real function actions.
 
 ## References
@@ -147,7 +147,7 @@ theorem ITmulLinearMap_smul_function (f : C^n⟮IB, B; ℝ⟯) (s : Cₛ^n⟮IB;
 
 /-- Multiplying the complexification `1 ⊗ s` of a real section by `u + i v` gives
 `1 ⊗ (u • s) + i ⊗ (v • s)`. -/
-theorem smul_function_of_normedAlgebra_oneTmulLinearMap (f : C^n⟮IB, B; 𝓘(ℝ, ℂ), ℂ⟯)
+theorem smul_function_oneTmulLinearMap_of_normedAlgebra (f : C^n⟮IB, B; 𝓘(ℝ, ℂ), ℂ⟯)
     (s : Cₛ^n⟮IB; F, E⟯) :
     f • oneTmulLinearMap IB F n E s =
       oneTmulLinearMap IB F n E (f.re • s) + ITmulLinearMap IB F n E (f.im • s) := by
