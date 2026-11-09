@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.InnerProductSpace.Adjoint.RightInverse
 public import TauCeti.Analysis.Distribution.TestFunction.Lp
 public import TauCeti.Analysis.PDE.Vortex.SpectralGap
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -92,38 +93,15 @@ private def adjointToLp (hx : Continuous x) :
 
 variable {μ}
 
-private theorem coeFn_adjointToLp (hx : Continuous x)
-    (η : 𝓓^{2}((⊤ : Opens ℂ), EuclideanSpace ℝ (Fin 4))) :
-    adjointToLp μ hx η =ᵐ[μ] gaugeFixedAdjoint x η :=
-  MemLp.coeFn_toLp (memLp_gaugeFixedAdjoint μ hx η)
-
-private theorem inner_adjointToLp (hx : Continuous x) (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ)
-    (η : 𝓓^{2}((⊤ : Opens ℂ), EuclideanSpace ℝ (Fin 4))) :
-    ⟪u, adjointToLp μ hx η⟫ = ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ := by
-  rw [L2.inner_def]
-  refine integral_congr_ae ?_
-  filter_upwards [coeFn_adjointToLp hx η] with z hz
-  rw [hz]
-
 /-- A spectral gap for `L_x*` bounds test fields by their image, in `L²`. -/
 private theorem norm_ambientToLp_le (hx : Continuous x) {c : ℝ} (hc : 0 < c)
     (hgap : ∀ η : 𝓓^{2}((⊤ : Opens ℂ), EuclideanSpace ℝ (Fin 4)),
       c * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ)
     (η : 𝓓^{2}((⊤ : Opens ℂ), EuclideanSpace ℝ (Fin 4))) :
     ‖TestFunction.ambientToLp 2 μ η‖ ≤ (√c)⁻¹ * ‖adjointToLp μ hx η‖ := by
-  have hη : ‖TestFunction.ambientToLp 2 μ η‖ ^ 2 = ∫ z, ‖η z‖ ^ 2 ∂μ := by
-    rw [← Lp.integral_norm_sq_eq_norm_sq]
-    refine integral_congr_ae ?_
-    filter_upwards [TestFunction.coeFn_ambientToLp (p := 2) (ν := μ) η] with z hz
-    rw [hz]
-  have hL : ‖adjointToLp μ hx η‖ ^ 2 = ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ := by
-    rw [← Lp.integral_norm_sq_eq_norm_sq]
-    refine integral_congr_ae ?_
-    filter_upwards [coeFn_adjointToLp hx η] with z hz
-    rw [hz]
   have hsq : (√c * ‖TestFunction.ambientToLp 2 μ η‖) ^ 2 ≤ ‖adjointToLp μ hx η‖ ^ 2 := by
-    rw [mul_pow, Real.sq_sqrt hc.le, hη, hL]
-    exact hgap η
+    rw [mul_pow, Real.sq_sqrt hc.le, TestFunction.norm_ambientToLp_sq]
+    exact (hgap η).trans_eq (memLp_gaugeFixedAdjoint μ hx η).norm_toLp_sq.symm
   have hle := (pow_le_pow_iff_left₀ (by positivity) (norm_nonneg _) two_ne_zero).mp hsq
   rw [inv_mul_eq_div, le_div_iff₀ (Real.sqrt_pos.mpr hc), mul_comm]
   exact hle
@@ -166,7 +144,8 @@ theorem integral_inner_gaugeFixedRightInverse (hx : Continuous x)
     (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ)
     (η : 𝓓^{2}((⊤ : Opens ℂ), EuclideanSpace ℝ (Fin 4))) :
     ∫ z, ⟪gaugeFixedRightInverse μ x f z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ := by
-  rw [← inner_adjointToLp hx, ← TestFunction.inner_ambientToLp, gaugeFixedRightInverse_eq hx]
+  rw [← L2.inner_toLp_right _ (memLp_gaugeFixedAdjoint μ hx η), ← TestFunction.inner_ambientToLp,
+    gaugeFixedRightInverse_eq hx]
   exact LinearMap.inner_adjointRightInverse_apply (exists_norm_ambientToLp_le hx hgap) f η
 
 /-- **The norm bound.** A spectral gap `c ∫ |η|² ≤ ∫ |L_x* η|²` bounds the right inverse by
@@ -190,7 +169,8 @@ theorem gaugeFixedRightInverse_apply_eq_iff (hx : Continuous x)
       ∀ v : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
         (∀ η : 𝓓^{2}((⊤ : Opens ℂ), EuclideanSpace ℝ (Fin 4)),
           ∫ z, ⟪v z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) → ‖u‖ ≤ ‖v‖ := by
-  simp only [← inner_adjointToLp hx, ← TestFunction.inner_ambientToLp]
+  simp only [← fun u η ↦ L2.inner_toLp_right (𝕜 := ℝ) u (memLp_gaugeFixedAdjoint μ hx η),
+    ← TestFunction.inner_ambientToLp]
   rw [gaugeFixedRightInverse_eq hx]
   exact LinearMap.adjointRightInverse_apply_eq_iff (exists_norm_ambientToLp_le hx hgap)
 

@@ -28,6 +28,7 @@ bounds.
   its integral.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
+* `MeasureTheory.MemLp.norm_toLp_sq`: the same for the class of a square-integrable function.
 * `MeasureTheory.lpNorm_congr_ae`: the `Lᵖ` norm of a function depends only on its almost
   everywhere class.
 * `MeasureTheory.Lp.norm_eq_lpNorm_of_ae_eq`: the norm of an element of `Lᵖ(ν)` is the `Lᵖ` norm of
@@ -172,6 +173,16 @@ theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
     ∫ x, ‖f x‖ ^ 2 ∂m = ‖f‖ ^ 2 := by
   simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using
     Lp.integral_norm_rpow_eq_norm_rpow (by norm_num) (by norm_num) f
+
+/-- The squared `L²` norm of the class of a square-integrable function is the integral of its
+squared pointwise norm. -/
+theorem MemLp.norm_toLp_sq {alpha F : Type*} [MeasurableSpace alpha] {m : Measure alpha}
+    [NormedAddCommGroup F] {f : alpha → F} (hf : MemLp f 2 m) :
+    ‖hf.toLp f‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂m := by
+  rw [← Lp.integral_norm_sq_eq_norm_sq]
+  refine integral_congr_ae ?_
+  filter_upwards [hf.coeFn_toLp] with x hx
+  rw [hx]
 
 /-- On a finite measure space, the `L¹` norm of an `Lᵖ` function, `1 ≤ p`, is at most
 `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm. -/

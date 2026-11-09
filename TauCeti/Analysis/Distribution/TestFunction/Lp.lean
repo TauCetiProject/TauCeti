@@ -11,6 +11,8 @@ public import TauCeti.Analysis.Distribution.Mass.Basic
 import Mathlib.MeasureTheory.Function.ContinuousMapDense
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 
 /-!
@@ -278,6 +280,12 @@ theorem coeFn_ambientToLp (φ : 𝓓^{n}(Ω, F)) : ambientToLp p ν φ =ᵐ[ν] 
   rw [ambientToLp_apply]
   exact MemLp.coeFn_toLp _
 
+/-- The squared `L²(ν)` norm of the class of a test function is the integral of its squared
+pointwise norm. -/
+theorem norm_ambientToLp_sq (φ : 𝓓^{n}(Ω, F)) : ‖ambientToLp 2 ν φ‖ ^ 2 = ∫ x, ‖φ x‖ ^ 2 ∂ν := by
+  rw [ambientToLp_apply]
+  exact MemLp.norm_toLp_sq _
+
 end Ambient
 
 /-- The `L²(ν)` inner product with the class of a test function is the integral of the pointwise
@@ -285,10 +293,8 @@ inner product. -/
 theorem inner_ambientToLp {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G]
     {ν : Measure E} [IsFiniteMeasureOnCompacts ν] (u : Lp G 2 ν) (φ : 𝓓^{n}(Ω, G)) :
     ⟪u, ambientToLp 2 ν φ⟫_ℝ = ∫ x, ⟪u x, φ x⟫_ℝ ∂ν := by
-  rw [L2.inner_def]
-  refine integral_congr_ae ?_
-  filter_upwards [coeFn_ambientToLp (p := 2) φ] with x hx
-  rw [hx]
+  rw [ambientToLp_apply]
+  exact L2.inner_toLp_right u _
 
 /-- **Density of test functions in `Lᵖ`.** For `1 ≤ p < ∞` and a regular measure `μ` on an open
 set `Ω` of a finite-dimensional space, the classes of test functions are dense in `Lᵖ(μ; F)`. -/
