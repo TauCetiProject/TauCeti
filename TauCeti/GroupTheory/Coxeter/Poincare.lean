@@ -20,9 +20,10 @@ of `W`, its constant term is `1`, and its degree is the largest length occurring
 
 The theorem with content beyond bookkeeping is the value at `-1`. Left multiplication by a fixed
 simple reflection is a sign-reversing involution of `W`
-(`TauCeti.length_simple_mul_mod_two`), so the alternating sum `∑_{w ∈ W} (-1)^{ℓ(w)}` vanishes as
-soon as there is at least one simple reflection. The parity bookkeeping itself, together with the
-equivalence between the two parity classes, lives in `TauCeti/GroupTheory/Coxeter/Length.lean`.
+(`CoxeterSystem.length_simple_mul_mod_two`), so the alternating sum `∑_{w ∈ W} (-1)^{ℓ(w)}`
+vanishes as soon as there is at least one simple reflection. The parity bookkeeping itself,
+together with the equivalence between the two parity classes, lives in
+`TauCeti/GroupTheory/Coxeter/Length.lean`.
 
 At the other extreme, a Coxeter system indexed by an empty type has a trivial group -- every
 element is the product of a word in the generators, and there are no generators -- so its Poincaré
@@ -153,7 +154,7 @@ theorem eval_one_poincarePolynomial [Finite W] :
 alternating sum. -/
 private theorem neg_one_pow_length_simple_mul (i : B) (w : W) :
     (-1 : ℤ) ^ cs.length (cs.simple i * w) = -((-1 : ℤ) ^ cs.length w) := by
-  rw [neg_one_pow_eq_pow_mod_two, length_simple_mul_mod_two, ← neg_one_pow_eq_pow_mod_two,
+  rw [neg_one_pow_eq_pow_mod_two, cs.length_simple_mul_mod_two, ← neg_one_pow_eq_pow_mod_two,
     pow_succ]
   ring
 
@@ -165,12 +166,10 @@ theorem eval_neg_one_poincarePolynomial [Finite W] [Nonempty B] :
     (poincarePolynomial cs).eval (-1) = 0 := by
   obtain ⟨i⟩ := ‹Nonempty B›
   have : Fintype W := Fintype.ofFinite W
-  have hne : cs.simple i ≠ 1 := fun h => by simpa [h] using cs.length_simple i
   rw [eval_poincarePolynomial]
   refine Finset.sum_ninvolution (fun w => cs.simple i * w)
-    (fun w => by rw [neg_one_pow_length_simple_mul]; ring) (fun w _ hw => hne ?_)
+    (fun w => by rw [neg_one_pow_length_simple_mul]; ring) (fun w _ hw => by simp at hw)
     (fun w => Finset.mem_univ _) fun w => cs.simple_mul_simple_cancel_left i
-  simpa using hw
 
 /-! ### Degree -/
 
@@ -206,17 +205,17 @@ section Transport
 variable {B' H : Type*} [Group H]
 
 /-- **The Poincaré polynomial only depends on the Coxeter system up to relabelling the simple
-reflections**, since the length function does (`TauCeti.length_reindex`). -/
+reflections**, since the length function does (`CoxeterSystem.length_reindex`). -/
 @[simp]
 theorem poincarePolynomial_reindex [Finite W] (e : B ≃ B') :
     poincarePolynomial (cs.reindex e) = poincarePolynomial cs := by
   have : Fintype W := Fintype.ofFinite W
   rw [poincarePolynomial_eq_sum, poincarePolynomial_eq_sum]
-  exact Finset.sum_congr rfl fun w _ => by rw [length_reindex]
+  exact Finset.sum_congr rfl fun w _ => by rw [cs.length_reindex]
 
 /-- **The Poincaré polynomial is invariant under transporting the Coxeter system along a group
-isomorphism**, since the length function is (`TauCeti.length_map`). The hypothesis `[Finite H]`
-follows from `[Finite W]`, but is needed to state the left-hand side. -/
+isomorphism**, since the length function is (`CoxeterSystem.length_map`). The hypothesis
+`[Finite H]` follows from `[Finite W]`, but is needed to state the left-hand side. -/
 @[simp]
 theorem poincarePolynomial_map [Finite W] [Finite H] (e : W ≃* H) :
     poincarePolynomial (cs.map e) = poincarePolynomial cs := by
@@ -224,7 +223,7 @@ theorem poincarePolynomial_map [Finite W] [Finite H] (e : W ≃* H) :
   have : Fintype H := Fintype.ofFinite H
   rw [poincarePolynomial_eq_sum, poincarePolynomial_eq_sum]
   exact (Fintype.sum_bijective e e.bijective (fun w => Polynomial.X ^ cs.length w)
-    (fun h => Polynomial.X ^ (cs.map e).length h) fun w => by rw [length_map]).symm
+    (fun h => Polynomial.X ^ (cs.map e).length h) fun w => by rw [cs.length_map]).symm
 
 end Transport
 

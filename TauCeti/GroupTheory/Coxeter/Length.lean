@@ -11,41 +11,46 @@ import Mathlib.Data.Fintype.Lattice
 /-!
 # The parity and the functoriality of the length function of a Coxeter system
 
-Let `cs : CoxeterSystem M W` be a Coxeter system. Left multiplication by a fixed simple reflection
-changes the length of an element by exactly one (`CoxeterSystem.length_mul_mod_two`), so it flips
-the parity of the length. This file packages that pairing as an explicit equivalence
-`TauCeti.lengthParityEquiv` between the elements of even length and the elements of odd length, and
-records its two immediate consequences: the two parity classes are equinumerous, and a Coxeter
-group with at least one simple reflection has even order. The same fact shows that an element of
-maximal length in a finite Coxeter group has every simple reflection as a left descent.
+Let `cs : CoxeterSystem M W` be a Coxeter system. A simple reflection has length one, so it is not
+the identity and has order exactly two (`CoxeterSystem.orderOf_simple`).
+
+Left multiplication by a fixed simple reflection changes the length of an element by exactly one
+(`CoxeterSystem.length_mul_mod_two`), so it flips the parity of the length. This file packages
+that pairing as an explicit equivalence `CoxeterSystem.lengthParityEquiv` between the elements of
+even length and the elements of odd length, and records its two immediate consequences: the two
+parity classes are equinumerous, and a Coxeter group with at least one simple reflection has even
+order. The same fact shows that an element of maximal length in a finite Coxeter group has every
+simple reflection as a left descent.
 
 Finally, the length function is transported along the two canonical constructions on Coxeter
 systems, `CoxeterSystem.reindex` and `CoxeterSystem.map`: relabelling the simple reflections or
-pushing the system through a group isomorphism leaves lengths unchanged.
+pushing the system through a group isomorphism leaves lengths unchanged. Both follow from the
+fact that a homomorphism carrying simple reflections to simple reflections does not increase
+length. These facts feed the Poincaré polynomial in `TauCeti/GroupTheory/Coxeter/Poincare.lean`.
 
 ## Main definitions
 
-* `TauCeti.lengthParityEquiv`: left multiplication by a simple reflection, as an equivalence
-  between the even-length and the odd-length elements.
+* `CoxeterSystem.lengthParityEquiv`: left multiplication by a simple reflection, as an
+  equivalence between the even-length and the odd-length elements.
 
 ## Main results
 
-* `TauCeti.natCard_length_even_eq_natCard_length_odd`: as many elements have even length as odd
-  length, provided there is at least one simple reflection.
-* `TauCeti.even_natCard_of_nonempty_index`: hence a Coxeter group of positive rank has even order.
-* `TauCeti.exists_forall_isLeftDescent`: a finite Coxeter group has an element of which every simple
-  reflection is a left descent.
+* `CoxeterSystem.simple_ne_one` and `CoxeterSystem.orderOf_simple`: a simple reflection has
+  order exactly two.
+* `CoxeterSystem.natCard_length_even_eq_natCard_length_odd`: as many elements have even length
+  as odd length, provided there is at least one simple reflection.
+* `CoxeterSystem.even_natCard_of_nonempty_index`: hence a Coxeter group of positive rank has even
+  order.
+* `CoxeterSystem.exists_forall_isLeftDescent`: a finite Coxeter group has an element of which
+  every simple reflection is a left descent.
+* `CoxeterSystem.length_apply_le_of_map_simple`: a homomorphism carrying simple reflections to
+  simple reflections does not increase length.
 * `CoxeterSystem.wordProd_map`: a word for `CoxeterSystem.map` is the image of the word for the
   original system.
-* `TauCeti.length_reindex` and `TauCeti.length_map`: the length function is unchanged by
-  `CoxeterSystem.reindex` and by `CoxeterSystem.map`.
+* `CoxeterSystem.length_reindex` and `CoxeterSystem.length_map`: the length function is unchanged
+  by `CoxeterSystem.reindex` and by `CoxeterSystem.map`.
 
 ## References
-
-These are the ingredients of the "length generating function ... the Poincaré polynomial" item
-among the consequences of Layer 3 ("the missing Coxeter combinatorics") in
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`; see
-`TauCeti/GroupTheory/Coxeter/Poincare.lean`.
 
 * A. Björner and F. Brenti, *Combinatorics of Coxeter Groups*, Springer GTM 231 (2005),
   Section 1.4.
@@ -54,9 +59,21 @@ among the consequences of Layer 3 ("the missing Coxeter combinatorics") in
 
 public section
 
-namespace TauCeti
+namespace CoxeterSystem
 
 variable {B W : Type*} [Group W] {M : CoxeterMatrix B} (cs : CoxeterSystem M W)
+
+/-! ### Simple reflections are involutions -/
+
+/-- **A simple reflection is not the identity**: it has length one. -/
+@[simp]
+theorem simple_ne_one (i : B) : cs.simple i ≠ 1 := fun h => by
+  simpa [h] using cs.length_simple i
+
+/-- **Each simple reflection has order exactly two.** -/
+@[simp]
+theorem orderOf_simple (i : B) : orderOf (cs.simple i) = 2 :=
+  orderOf_eq_prime (cs.simple_sq i) (cs.simple_ne_one i)
 
 /-! ### Left multiplication by a simple reflection flips the parity of the length -/
 
@@ -86,38 +103,35 @@ theorem even_length_simple_mul_iff (i : B) (w : W) :
 involution of `W` exchanging the elements of even length with those of odd length. -/
 def lengthParityEquiv (i : B) :
     {w : W // Even (cs.length w)} ≃ {w : W // Odd (cs.length w)} :=
-  (Equiv.mulLeft (cs.simple i)).subtypeEquiv fun w => (odd_length_simple_mul_iff cs i w).symm
+  (Equiv.mulLeft (cs.simple i)).subtypeEquiv fun w => (cs.odd_length_simple_mul_iff i w).symm
 
 /-- `lengthParityEquiv` is left multiplication by the simple reflection. -/
 @[simp]
 theorem lengthParityEquiv_apply_coe (i : B) (x : {w : W // Even (cs.length w)}) :
-    (lengthParityEquiv cs i x : W) = cs.simple i * (x : W) := (rfl)
+    (cs.lengthParityEquiv i x : W) = cs.simple i * (x : W) := (rfl)
 
 /-- The inverse of `lengthParityEquiv` is again left multiplication by the simple reflection: the
 simple reflection is its own inverse. -/
 @[simp]
 theorem lengthParityEquiv_symm_apply_coe (i : B) (x : {w : W // Odd (cs.length w)}) :
-    ((lengthParityEquiv cs i).symm x : W) = cs.simple i * (x : W) := by
-  have h := congrArg Subtype.val ((lengthParityEquiv cs i).apply_symm_apply x)
-  rw [lengthParityEquiv_apply_coe] at h
-  rw [← h, ← mul_assoc, cs.simple_mul_simple_self, one_mul]
+    ((cs.lengthParityEquiv i).symm x : W) = cs.simple i * (x : W) := by
+  conv_rhs => rw [← (cs.lengthParityEquiv i).apply_symm_apply x, lengthParityEquiv_apply_coe,
+    simple_mul_simple_cancel_left]
 
 /-- **The two parity classes of a Coxeter group of positive rank are equinumerous**: there are as
 many elements of even length as of odd length. No finiteness is needed, since the two classes are
 matched by an explicit bijection. -/
 theorem natCard_length_even_eq_natCard_length_odd [Nonempty B] :
     Nat.card {w : W // Even (cs.length w)} = Nat.card {w : W // Odd (cs.length w)} :=
-  Nat.card_congr (lengthParityEquiv cs (Classical.arbitrary B))
+  Nat.card_congr (cs.lengthParityEquiv (Classical.arbitrary B))
 
 include cs in
 /-- **A Coxeter group of positive rank has even order**: a simple reflection is an element of order
 two, so two divides the order of the group. (For infinite `W` this reads `Even 0`, since
 `Nat.card W = 0`; the content is the finite case.) -/
-theorem even_natCard_of_nonempty_index [Nonempty B] : Even (Nat.card W) := by
-  obtain ⟨i⟩ := ‹Nonempty B›
-  have hne : cs.simple i ≠ 1 := fun h => by simpa [h] using cs.length_simple i
-  obtain ⟨k, hk⟩ := orderOf_eq_prime (cs.simple_sq i) hne ▸ orderOf_dvd_natCard (cs.simple i)
-  exact ⟨k, by omega⟩
+theorem even_natCard_of_nonempty_index [Nonempty B] : Even (Nat.card W) :=
+  even_iff_two_dvd.mpr <|
+    cs.orderOf_simple (Classical.arbitrary B) ▸ orderOf_dvd_natCard _
 
 /-! ### An element with every simple reflection as a left descent -/
 
@@ -137,62 +151,43 @@ theorem exists_forall_isLeftDescent [Finite W] : ∃ w : W, ∀ i, cs.IsLeftDesc
 
 section Transport
 
-variable {B' H : Type*} [Group H]
+variable {B' H : Type*} [Group H] {M' : CoxeterMatrix B'}
 
-/-- A word in the reindexed simple reflections is the corresponding word in the original ones. -/
-private theorem wordProd_reindex (e : B ≃ B') (ω : List B') :
-    (cs.reindex e).wordProd ω = cs.wordProd (ω.map e.symm) := by
-  induction ω with
-  | nil => simp
-  | cons i ω ih =>
-    rw [CoxeterSystem.wordProd_cons, ih, List.map_cons, CoxeterSystem.wordProd_cons,
-      CoxeterSystem.reindex_simple]
+/-- **Length does not increase along a homomorphism matching simple reflections**: if
+`φ : W →* H` carries each simple reflection of `cs` to a simple reflection of `cs'`, then it
+carries a word for `w` to a word of the same length for `φ w`. -/
+theorem length_apply_le_of_map_simple (cs' : CoxeterSystem M' H) (φ : W →* H) (f : B → B')
+    (hφ : ∀ i, φ (cs.simple i) = cs'.simple (f i)) (w : W) :
+    cs'.length (φ w) ≤ cs.length w := by
+  obtain ⟨ω, hω, rfl⟩ := cs.exists_isReduced w
+  have hmap : φ (cs.wordProd ω) = cs'.wordProd (ω.map f) := by
+    simp only [wordProd, map_list_prod, List.map_map]
+    exact congrArg List.prod (List.map_congr_left fun i _ => hφ i)
+  rw [hmap, hω.eq, ← List.length_map f]
+  exact cs'.length_wordProd_le _
 
 /-- Pushing a word through the isomorphism computes the corresponding word for the transported
 Coxeter system. -/
 @[simp]
-theorem _root_.CoxeterSystem.wordProd_map (e : W ≃* H) (ω : List B) :
+theorem wordProd_map (e : W ≃* H) (ω : List B) :
     (cs.map e).wordProd ω = e (cs.wordProd ω) := by
-  induction ω with
-  | nil => simp
-  | cons i ω ih =>
-    rw [CoxeterSystem.wordProd_cons, ih, CoxeterSystem.wordProd_cons, map_mul,
-      CoxeterSystem.map_simple]
+  rw [wordProd, wordProd, map_list_prod, List.map_map]
+  exact congrArg List.prod (List.map_congr_left fun i _ => cs.map_simple e i)
 
 /-- **The length function is unchanged by reindexing the simple reflections**: a bijection of the
 indexing set carries words to words of the same length. -/
 @[simp]
-theorem length_reindex (e : B ≃ B') (w : W) : (cs.reindex e).length w = cs.length w := by
-  refine le_antisymm ?_ ?_
-  · obtain ⟨ω, hω, rfl⟩ := cs.exists_isReduced w
-    calc (cs.reindex e).length (cs.wordProd ω)
-        = (cs.reindex e).length ((cs.reindex e).wordProd (ω.map e)) := by
-          rw [wordProd_reindex]; simp
-      _ ≤ (ω.map e).length := CoxeterSystem.length_wordProd_le _ _
-      _ = cs.length (cs.wordProd ω) := by rw [List.length_map, hω.eq]
-  · obtain ⟨ω, hω, rfl⟩ := (cs.reindex e).exists_isReduced w
-    calc cs.length ((cs.reindex e).wordProd ω)
-        = cs.length (cs.wordProd (ω.map e.symm)) := by rw [wordProd_reindex]
-      _ ≤ (ω.map e.symm).length := CoxeterSystem.length_wordProd_le _ _
-      _ = (cs.reindex e).length ((cs.reindex e).wordProd ω) := by
-          rw [List.length_map, hω.eq]
+theorem length_reindex (e : B ≃ B') (w : W) : (cs.reindex e).length w = cs.length w :=
+  le_antisymm (by simpa using cs.length_apply_le_of_map_simple (cs.reindex e) (.id W) e (by simp) w)
+    (by simpa using (cs.reindex e).length_apply_le_of_map_simple cs (.id W) e.symm (by simp) w)
 
 /-- **The length function is transported by a group isomorphism**: an isomorphism `e : W ≃* H`
 matches the simple reflections of `cs` with those of `cs.map e`, hence their lengths. -/
 @[simp]
-theorem length_map (e : W ≃* H) (w : W) : (cs.map e).length (e w) = cs.length w := by
-  refine le_antisymm ?_ ?_
-  · obtain ⟨ω, hω, rfl⟩ := cs.exists_isReduced w
-    calc (cs.map e).length (e (cs.wordProd ω))
-        = (cs.map e).length ((cs.map e).wordProd ω) := by rw [CoxeterSystem.wordProd_map]
-      _ ≤ ω.length := CoxeterSystem.length_wordProd_le _ _
-      _ = cs.length (cs.wordProd ω) := hω.eq.symm
-  · obtain ⟨ω, hω, hw⟩ := (cs.map e).exists_isReduced (e w)
-    have hw' : w = cs.wordProd ω := e.injective (by rw [hw, CoxeterSystem.wordProd_map])
-    calc cs.length w = cs.length (cs.wordProd ω) := by rw [hw']
-      _ ≤ ω.length := CoxeterSystem.length_wordProd_le _ _
-      _ = (cs.map e).length (e w) := by rw [hw, hω.eq]
+theorem length_map (e : W ≃* H) (w : W) : (cs.map e).length (e w) = cs.length w :=
+  le_antisymm (by simpa using cs.length_apply_le_of_map_simple (cs.map e) e id (by simp) w)
+    (by simpa using (cs.map e).length_apply_le_of_map_simple cs e.symm id (by simp) (e w))
 
 end Transport
 
-end TauCeti
+end CoxeterSystem
