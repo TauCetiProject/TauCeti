@@ -28,7 +28,8 @@ of fibre maps as the composite of their coordinate expressions, and
 identity map and scalar multiples in a compatible target vector-bundle structure.
 `ContinuousLinearMap.mem_ker_inCoordinates_iff`, `ContinuousLinearMap.mem_range_inCoordinates_iff`
 and `ContinuousLinearMap.finrank_range_inCoordinates` read the kernel, the range and the rank of
-a fibre map off its coordinate expression.
+a fibre map off its coordinate expression, and `ContinuousLinearMap.range_inCoordinates`
+identifies the coordinate range with the trivialized range.
 
 `VectorBundleCore.localTriv_coordChangeL` and
 `VectorBundleCore.trivializationAt_coordChangeL` identify transitions between actual
@@ -305,19 +306,24 @@ theorem mem_range_inCoordinates_iff (hx : x ∈ (trivializationAt F V x₀).base
   exact (((trivializationAt F V x₀).continuousLinearEquivAt 𝕜 x hx).symm.surjective.exists
     (p := fun u ↦ ϕ u = ((trivializationAt F' W y₀).continuousLinearEquivAt 𝕜 y hy).symm w)).symm
 
+/-- In trivializations whose base sets contain the two fibre base points, the range of the
+coordinate expression of a fibre map is the image of its range under the trivialization of the
+target bundle at the target base point. -/
+theorem range_inCoordinates (hx : x ∈ (trivializationAt F V x₀).baseSet)
+    (hy : y ∈ (trivializationAt F' W y₀).baseSet) :
+    (inCoordinates F V F' W x₀ x y₀ y ϕ).range =
+      ϕ.range.map (((trivializationAt F' W y₀).continuousLinearEquivAt 𝕜 y hy).toLinearEquiv :
+        W y →ₗ[𝕜] F') := by
+  ext w
+  rw [mem_range_inCoordinates_iff hx hy, Submodule.mem_map_equiv]
+  simp [Trivialization.continuousLinearEquivAt_symm_apply]
+
 /-- In trivializations whose base sets contain the two fibre base points, the coordinate
 expression of a fibre map has the rank of the map. -/
 theorem finrank_range_inCoordinates (hx : x ∈ (trivializationAt F V x₀).baseSet)
     (hy : y ∈ (trivializationAt F' W y₀).baseSet) :
     Module.finrank 𝕜 (inCoordinates F V F' W x₀ x y₀ y ϕ).range = Module.finrank 𝕜 ϕ.range := by
-  let Ly := (trivializationAt F' W y₀).continuousLinearEquivAt 𝕜 y hy
-  -- The coordinate range is the image of `range ϕ` under the trivialization of `W` at `y`.
-  have h : (inCoordinates F V F' W x₀ x y₀ y ϕ).range =
-      ϕ.range.map (Ly.toLinearEquiv : W y →ₗ[𝕜] F') := by
-    ext w
-    rw [mem_range_inCoordinates_iff hx hy, Submodule.mem_map_equiv]
-    simp [Ly, Trivialization.continuousLinearEquivAt_symm_apply]
-  rw [h, LinearEquiv.finrank_map_eq]
+  rw [range_inCoordinates hx hy, LinearEquiv.finrank_map_eq]
 
 end KerRange
 

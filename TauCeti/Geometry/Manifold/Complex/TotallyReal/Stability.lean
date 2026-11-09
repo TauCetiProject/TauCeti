@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Family
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.LinearAlgebra.TotallyReal.Finrank
+import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # Stability of totally real embeddings
@@ -74,20 +75,10 @@ theorem isMaximalTotallyReal_inCoordinates_iff {x₀ x : B₁} {y₀ y : B₂}
         (LinearMap.range (inCoordinates F₁ E₁ F₂ E₂ x₀ x y₀ y A).toLinearMap) ↔
       IsMaximalTotallyReal K.toLinearMap (LinearMap.range A.toLinearMap) := by
   set e := (trivializationAt F₂ E₂ y₀).continuousLinearEquivAt ℝ y hy
-  set e' := (trivializationAt F₁ E₁ x₀).continuousLinearEquivAt ℝ x hx
-  have hA : inCoordinates F₁ E₁ F₂ E₂ x₀ x y₀ y A =
-      (e : E₂ y →L[ℝ] F₂).comp (A.comp (e'.symm : F₁ →L[ℝ] E₁ x)) :=
-    ContinuousLinearMap.inCoordinates_eq hx hy
   have hK : inCoordinates F₂ E₂ F₂ E₂ y₀ y y₀ y K =
       (e : E₂ y →L[ℝ] F₂).comp (K.comp (e.symm : F₂ →L[ℝ] E₂ y)) :=
     ContinuousLinearMap.inCoordinates_eq hy hy
-  have hr : LinearMap.range (inCoordinates F₁ E₁ F₂ E₂ x₀ x y₀ y A).toLinearMap =
-      (LinearMap.range A.toLinearMap).map e.toLinearEquiv.toLinearMap := by
-    rw [hA, ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp,
-      ContinuousLinearMap.toLinearMap_comp,
-      LinearMap.range_comp_of_range_eq_top, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
-    · exact LinearMap.range_eq_top.mpr e'.symm.surjective
-  rw [hr]
+  rw [ContinuousLinearMap.range_inCoordinates hx hy]
   refine isMaximalTotallyReal_map_linearEquiv_iff e.toLinearEquiv ?_
   ext v
   rw [hK]
@@ -105,9 +96,10 @@ variable {E H M F H' N : Type*}
   {ι : N → M}
 
 /-- The local chart form of stability. If `ι` is `C¹` at `x₀` with injective differential and
-`im dι_{x₀}` is maximal totally real for an injective `J₀`, then near `x₀` every operator on
-`T_{ι x}M` whose expression in the chart at `ι x₀` is within a fixed `ε` of `J₀` keeps
-`im dι_x` maximal totally real. The operators need not square to minus the identity. -/
+`im dι_{x₀}` is maximal totally real for a `J₀` that is injective on `im dι_{x₀}`, then near
+`x₀` every operator on `T_{ι x}M` whose expression in the chart at `ι x₀` is within a fixed `ε`
+of `J₀` keeps `im dι_x` maximal totally real. The operators need not square to minus the
+identity. -/
 theorem exists_pos_eventually_isMaximalTotallyReal_range_mfderiv {x₀ : N}
     (hι : ContMDiffAt I' I 1 ι x₀) (hinj : Injective (mfderiv I' I ι x₀))
     {J₀ : TangentSpace I (ι x₀) →L[ℝ] TangentSpace I (ι x₀)}
