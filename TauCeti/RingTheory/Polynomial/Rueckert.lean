@@ -39,10 +39,10 @@ to a quotient of some `A[X] ⧸ (w)`, which is finite over `A` because `w` is mo
   because a monic factorisation of `w` in the factorial ring `A[X]` stays in `W`, and an
   irreducible `w ∈ W` generates a prime ideal whose quotient is identified with `B ⧸ (φ w)`;
 * `RingHom.IsRueckert.isJacobsonRing`: if `A` is a Jacobson ring and the Jacobson radical of `B`
-  is zero, then `B` is a Jacobson ring. Indeed every nonzero prime of `B` is the intersection of
-  the maximal ideals containing it (`RingHom.IsRueckert.jacobson_eq_self`): it contains some
-  nonzero `b`, and `B ⧸ (b)` is isomorphic to the Jacobson ring `A[X] ⧸ (w)`. The condition on
-  the Jacobson radical cannot be dropped: for a domain `B` it is necessary
+  is zero, then `B` is a Jacobson ring. Indeed every nonzero radical ideal of `B` is the
+  intersection of the maximal ideals containing it (`RingHom.IsRueckert.jacobson_eq_self`): it
+  contains some nonzero `b`, and `B ⧸ (b)` is isomorphic to the Jacobson ring `A[X] ⧸ (w)`. The
+  condition on the Jacobson radical cannot be dropped: for a reduced ring `B` it is necessary
   (`RingHom.IsRueckert.isJacobsonRing_iff_jacobson_eq_bot`).
 
 ## Main definitions
@@ -204,9 +204,9 @@ theorem uniqueFactorizationMonoid [IsDomain A] [UniqueFactorizationMonoid A] [Is
     rw [← hu, map_mul, RingEquiv.symm_apply_apply]
     exact associated_unit_mul_left b _ (u.isUnit.map α.symm)
 
-/-- Over a Jacobson ring `A`, every nonzero prime ideal of `B` is the intersection of the maximal
-ideals containing it. -/
-theorem jacobson_eq_self [IsJacobsonRing A] {P : Ideal B} (hP : P.IsPrime) (hP0 : P ≠ ⊥) :
+/-- Over a Jacobson ring `A`, every nonzero radical ideal of `B` is the intersection of the
+maximal ideals containing it. -/
+theorem jacobson_eq_self [IsJacobsonRing A] {P : Ideal B} (hP : P.IsRadical) (hP0 : P ≠ ⊥) :
     P.jacobson = P := by
   obtain ⟨b, hbP, hb⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hP0
   obtain ⟨w, -, ⟨e⟩⟩ := h.exists_nonempty_ringEquiv_quotient_span_singleton hb
@@ -215,9 +215,9 @@ theorem jacobson_eq_self [IsJacobsonRing A] {P : Ideal B} (hP : P.IsPrime) (hP0 
   have hle : Ideal.span {b} ≤ P := (Ideal.span_singleton_le_iff_mem _).mpr hbP
   have : IsJacobsonRing (B ⧸ P) :=
     isJacobsonRing_of_surjective ⟨_, Ideal.Quotient.factor_surjective hle⟩
-  have : IsDomain (B ⧸ P) := (Ideal.Quotient.isDomain_iff_prime P).mpr hP
+  have : IsReduced (B ⧸ P) := (Ideal.isRadical_iff_quotient_reduced P).mp hP
   rw [Ideal.jacobson_eq_iff_jacobson_quotient_eq_bot, ← Ideal.jacobson_bot]
-  exact IsJacobsonRing.out' ⊥ Ideal.isPrime_bot.isRadical
+  exact IsJacobsonRing.out' ⊥ Ideal.isRadical_bot
 
 /-- **Rückert's Jacobson descent.** If `A` is a Jacobson ring and the Jacobson radical of `B` is
 zero, then `B` is a Jacobson ring. -/
@@ -226,13 +226,13 @@ theorem isJacobsonRing [IsJacobsonRing A] (hB : Ring.jacobson B = ⊥) : IsJacob
   intro P hP
   rcases eq_or_ne P ⊥ with rfl | hP0
   · rw [Ideal.jacobson_bot, hB]
-  · exact h.jacobson_eq_self hP hP0
+  · exact h.jacobson_eq_self hP.isRadical hP0
 
-/-- For a domain `B` over a Jacobson ring `A`, the ring `B` is Jacobson exactly when its Jacobson
-radical is zero. -/
-theorem isJacobsonRing_iff_jacobson_eq_bot [IsJacobsonRing A] [IsDomain B] :
+/-- For a reduced ring `B` over a Jacobson ring `A`, the ring `B` is Jacobson exactly when its
+Jacobson radical is zero. -/
+theorem isJacobsonRing_iff_jacobson_eq_bot [IsJacobsonRing A] [IsReduced B] :
     IsJacobsonRing B ↔ Ring.jacobson B = ⊥ :=
-  ⟨fun _ ↦ by rw [← Ideal.jacobson_bot]; exact IsJacobsonRing.out' ⊥ Ideal.isPrime_bot.isRadical,
+  ⟨fun _ ↦ by rw [← Ideal.jacobson_bot]; exact IsJacobsonRing.out' ⊥ Ideal.isRadical_bot,
     h.isJacobsonRing⟩
 
 end IsRueckert
