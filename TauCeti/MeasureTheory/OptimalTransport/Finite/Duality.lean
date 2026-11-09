@@ -134,12 +134,6 @@ theorem finiteDualValue_mono {φ φ' : ι → ℝ} {ψ ψ' : κ → ℝ} (hφ : 
   · exact mul_le_mul_of_nonneg_left (hφ i) ENNReal.toReal_nonneg
   · exact mul_le_mul_of_nonneg_left (hψ j) ENNReal.toReal_nonneg
 
-/-- The dual value is monotone up to the opposite additive shifts of the two potentials. -/
-theorem finiteDualValue_le_of_le_add_const {φ φ' : ι → ℝ} {ψ ψ' : κ → ℝ} (a : ℝ)
-    (hφ : ∀ i, φ i ≤ φ' i + a) (hψ : ∀ j, ψ j ≤ ψ' j - a) :
-    finiteDualValue μ ν φ ψ ≤ finiteDualValue μ ν φ' ψ' :=
-  (finiteDualValue_mono hφ hψ).trans_eq (finiteDualValue_add_const_sub_const μ ν φ' ψ' a)
-
 /-! ### The standard-simplex picture
 
 Convexity and compactness arguments are run on real-valued plans, which form a closed subset of
@@ -356,7 +350,8 @@ private theorem exists_bounded_of_feasible [Nonempty ι] [Nonempty κ] {M : ℝ}
       (ciInf_le (Finite.bddBelow_range _) i₀).trans ?_⟩
     rw [hφ₂i₀, sub_zero]
     linarith [hub (i₀, j), hM0]
-  · refine finiteDualValue_le_of_le_add_const (φ₁ i₀) (fun i ↦ ?_) (fun j ↦ ?_)
+  · refine (finiteDualValue_mono (φ' := fun i ↦ φ₂ i + φ₁ i₀) (ψ' := fun j ↦ ψ₃ j - φ₁ i₀)
+      (fun i ↦ ?_) (fun j ↦ ?_)).trans_eq (finiteDualValue_add_const_sub_const μ ν φ₂ ψ₃ (φ₁ i₀))
     · linarith [hmonoφ i, hφ₂ i]
     · linarith [hmonoψ j, hψ₂ j, hmonoψ₃ j]
 
