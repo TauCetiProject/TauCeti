@@ -214,6 +214,7 @@ theorem SL_slash_neg (k : ℤ) (f : ℍ → ℂ) (A : SL(2, ℤ)) :
 
 /-- The inversion `S` of `SL(2, ℤ)` acts twice by `S² = -I`, hence on the weight-`k` slash action
 by the scalar `(-1)^k`. -/
+@[simp]
 theorem SL_slash_S_slash_S (k : ℤ) (f : ℍ → ℂ) :
     (f ∣[k] ModularGroup.S) ∣[k] ModularGroup.S = (-1 : ℂ) ^ k • f := by
   have hS : ModularGroup.S * ModularGroup.S = (-1 : SL(2, ℤ)) :=

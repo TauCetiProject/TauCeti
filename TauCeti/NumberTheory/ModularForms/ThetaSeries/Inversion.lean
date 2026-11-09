@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.ModularForms.ThetaSeries.FiniteFourier
 import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 import TauCeti.Analysis.Fourier.PoissonSummation
 import TauCeti.Analysis.SpecialFunctions.Gaussian.FourierTransform
-import TauCeti.NumberTheory.ModularForms.Basic
 
 /-!
 # The inversion law of theta series
@@ -36,8 +35,6 @@ also holds with the opposite phase (`ZLattice.IsIntegral.sum_discriminantPairing
 
 * `ZLattice.thetaCoset_S_smul`: the inversion law at a general translate.
 * `ZLattice.thetaSeries_S_smul`, `ZLattice.thetaSeries_slash_S`: the scalar inversion law.
-* `ZLattice.thetaSeries_slash_S_slash_S`: `(Θ_L ∣[k] S) ∣[k] S = (-1)^k Θ_L` in every weight `k`,
-  the action of `S² = -1`, independent of the inversion law.
 * `ZLattice.IsUnimodular.thetaSeries_slash_S`: the scalar inversion law of a unimodular lattice.
 * `ZLattice.IsIntegral.thetaCoset_S_smul`, `ZLattice.IsIntegral.thetaCoset_slash_S`: the
   vector-valued inversion law, pointwise and in slash form.
@@ -119,17 +116,6 @@ theorem thetaSeries_slash_S (hk : finrank ℝ E = 2 * k) :
   rw [ModularForm.SL_slash_apply, thetaSeries_S_smul L hk, ModularGroup.denom_S, Pi.smul_apply,
     smul_eq_mul, zpow_neg, zpow_natCast]
   field_simp
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-  [DiscreteTopology L] [IsZLattice ℝ L] in
-/-- **The action of `S² = -1` on `Θ_L`**: in every weight `k`, with no relation between `k` and
-`dim E`, `(Θ_L ∣[k] S) ∣[k] S = (-1)^k Θ_L`. This is the general slash action of `S²`
-(`TauCeti.ModularForm.SL_slash_S_slash_S`); in odd weight it is not trivial, as for the lattice
-`ℤ²` in weight one. -/
-theorem thetaSeries_slash_S_slash_S :
-    (thetaSeries L ∣[(k : ℤ)] ModularGroup.S) ∣[(k : ℤ)] ModularGroup.S =
-      (-1 : ℂ) ^ k • thetaSeries L := by
-  simpa using TauCeti.ModularForm.SL_slash_S_slash_S (k : ℤ) (thetaSeries L)
 
 omit [MeasurableSpace E] [BorelSpace E] in
 variable {L} in
