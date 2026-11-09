@@ -413,7 +413,7 @@ private theorem neg_le_sum_toReal_mul {M : ℝ} (hM0 : 0 ≤ M) {ψ : ∀ i, X i
     (hψ_le : ∀ i x, ψ i x ≤ M) (hval : -M ≤ finiteMultiDualValue μ ψ) (i : ι) :
     -((Fintype.card ι : ℝ) * M + M) ≤ ∑ x, ((μ i) x).toReal * ψ i x := by
   have hle := sum_le_apply_add_card_mul (f := fun j ↦ ∑ x, ((μ j) x).toReal * ψ j x) hM0
-    (fun j ↦ PMF.sum_toReal_mul_le (μ j) Finset.univ hM0 (hψ_le j)) i
+    (fun j ↦ PMF.sum_toReal_mul_le (μ j) Finset.univ hM0 fun y _ ↦ hψ_le j y) i
   beta_reduce at hle
   rw [finiteMultiDualValue_def] at hval
   linarith
@@ -427,7 +427,7 @@ private theorem neg_le_of_toReal_ne_zero {M B : ℝ} (hM0 : 0 ≤ M) {ψ : ∀ i
     (hx : ((μ i) x).toReal ≠ 0) (hquot : (Fintype.card ι + 2 : ℝ) * M / ((μ i) x).toReal ≤ B) :
     -B ≤ ψ i x := by
   have hw : 0 < ((μ i) x).toReal := lt_of_le_of_ne ENNReal.toReal_nonneg (Ne.symm hx)
-  have hothers := PMF.sum_toReal_mul_le (μ i) (Finset.univ.erase x) hM0 (hψ_le i)
+  have hothers := PMF.sum_toReal_mul_le (μ i) (Finset.univ.erase x) hM0 fun y _ ↦ hψ_le i y
   rw [← Finset.add_sum_erase _ _ (Finset.mem_univ x)] at hE
   have hprod : -((Fintype.card ι + 2 : ℝ) * M) ≤ ((μ i) x).toReal * ψ i x := by linarith
   have := (div_le_iff₀ hw).1 hquot

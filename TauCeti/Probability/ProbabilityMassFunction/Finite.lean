@@ -17,8 +17,8 @@ marginal formulas of `TauCeti.Probability.ProbabilityMassFunction.Marginal`.
 ## Main results
 
 * `PMF.sum_toReal_eq_one`: the real values of a PMF on a finite type sum to one.
-* `PMF.sum_toReal_mul_le`: a weighted partial sum of a function bounded above by `M ≥ 0` is at most
-  `M`.
+* `PMF.sum_toReal_mul_le`: a weighted sum over a finset of a function bounded above by `M ≥ 0`
+  on that finset is at most `M`.
 * `PMF.map_fst_apply_fintype`, `PMF.map_snd_apply_fintype`: the two marginals of a product PMF are
   its row and column sums whenever the factor being summed over is finite.
 * `PMF.map_fst_eq_iff_fintype`, `PMF.map_snd_eq_iff_fintype`: characterizations of prescribed
@@ -43,15 +43,16 @@ theorem sum_toReal_eq_one [Fintype ι] (μ : PMF ι) : ∑ i, (μ i).toReal = 1 
   have h : ∑ i, μ i = 1 := (tsum_fintype fun i ↦ μ i).symm.trans μ.tsum_coe
   rw [← ENNReal.toReal_sum fun i _ ↦ μ.apply_ne_top i, h, ENNReal.toReal_one]
 
-/-- A `p`-weighted partial sum of a function bounded above by `M ≥ 0` is at most `M`. -/
+/-- A `p`-weighted sum over a finset `s` of a function bounded above by `M ≥ 0` on `s` is at
+most `M`. -/
 theorem sum_toReal_mul_le (p : PMF ι) (s : Finset ι) {ψ : ι → ℝ} {M : ℝ}
-    (hM0 : 0 ≤ M) (hψ : ∀ y, ψ y ≤ M) : ∑ y ∈ s, (p y).toReal * ψ y ≤ M := by
+    (hM0 : 0 ≤ M) (hψ : ∀ y ∈ s, ψ y ≤ M) : ∑ y ∈ s, (p y).toReal * ψ y ≤ M := by
   have hs : ∑ y ∈ s, (p y).toReal ≤ 1 := by
     rw [← ENNReal.toReal_sum fun y _ ↦ p.apply_ne_top y, ← ENNReal.toReal_one]
     exact ENNReal.toReal_mono ENNReal.one_ne_top (p.tsum_coe ▸ sum_le_tsum s)
   calc
     ∑ y ∈ s, (p y).toReal * ψ y ≤ ∑ y ∈ s, (p y).toReal * M :=
-      Finset.sum_le_sum fun y _ ↦ mul_le_mul_of_nonneg_left (hψ y) ENNReal.toReal_nonneg
+      Finset.sum_le_sum fun y hy ↦ mul_le_mul_of_nonneg_left (hψ y hy) ENNReal.toReal_nonneg
     _ = (∑ y ∈ s, (p y).toReal) * M := by rw [Finset.sum_mul]
     _ ≤ 1 * M := mul_le_mul_of_nonneg_right hs hM0
     _ = M := one_mul M
