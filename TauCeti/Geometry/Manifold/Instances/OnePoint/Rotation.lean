@@ -187,17 +187,17 @@ theorem mpullback_smul_fubiniStudyForm_eq_self_iff_exists_star_mul_self_eq_scala
       OnePoint ℂ → OnePoint ℂ) = (A • ·) := by
     funext x
     rw [mul_smul, scalar_smul_onePoint_eq_self]
+  -- `A` lies in `SL(2, ℂ)`, so the unimodular characterization applies to it.
+  have hSL : Matrix.SpecialLinearGroup.toGL ⟨(A : Matrix (Fin 2) (Fin 2) ℂ), hdet⟩ = A :=
+    Units.ext rfl
+  have hU := mpullback_smul_fubiniStudyForm_eq_self_iff_mem_unitaryGroup ⟨_, hdet⟩
+  rw [hSL] at hU
   simp only [hact]
-  rw [show SmoothForm.mpullback (A • ·) _ fubiniStudyForm = fubiniStudyForm ↔
-      (A : Matrix (Fin 2) (Fin 2) ℂ) ∈ Matrix.unitaryGroup (Fin 2) ℂ by
-    rw [← Matrix.forall_sq_norm_add_sq_norm_eq_iff_mem_unitaryGroup]
-    exact ⟨sq_norm_add_sq_norm_eq_of_mpullback_eq _ hdet,
-      mpullback_eq_of_sq_norm_add_sq_norm_eq _ hdet⟩, hM]
+  rw [hU, hM]
   -- `(s A)ᴴ (s A) = |s|² Aᴴ A`, and `A` is unitary exactly when `Aᴴ A` is scalar.
   have hstar : star (s • (A : Matrix (Fin 2) (Fin 2) ℂ)) * (s • A) =
       ((‖s‖ ^ 2 : ℝ) : ℂ) • (star (A : Matrix (Fin 2) (Fin 2) ℂ) * A) := by
-    rw [star_smul, smul_mul_smul_comm, Complex.ofReal_pow, ← Complex.conj_mul']
-    rfl
+    rw [star_smul, smul_mul_smul_comm, Complex.ofReal_pow, ← Complex.conj_mul', Complex.star_def]
   have hs2 : ((‖s‖ ^ 2 : ℝ) : ℂ) ≠ 0 := by exact_mod_cast pow_ne_zero 2 (norm_ne_zero_iff.2 hs0)
   rw [hstar]
   refine ⟨fun h ↦ ⟨‖s‖ ^ 2, ?_⟩, fun ⟨r, hr⟩ ↦ ?_⟩
@@ -208,6 +208,6 @@ theorem mpullback_smul_fubiniStudyForm_eq_self_iff_exists_star_mul_self_eq_scala
     refine Matrix.mem_unitaryGroup_of_star_mul_self_eq_scalar (u := ((‖s‖ ^ 2 : ℝ) : ℂ)⁻¹ * r)
       (by rw [hdet, norm_one]) (hA.trans ?_)
     rw [Matrix.scalar_apply, Matrix.scalar_apply, ← Matrix.diagonal_smul]
-    rfl
+    simp only [Pi.smul_def, smul_eq_mul]
 
 end OnePoint
