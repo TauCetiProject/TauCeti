@@ -63,6 +63,19 @@ theorem contDiffWithinAt_extChartAt (f : C^n⟮I, M; J, N⟯) {x : M} {y : N} {w
     ((map_continuous f).continuousAt.eventually_mem_extChartAt_source hw hf)).mp
     ((contMDiff_iff.mp f.contMDiff).2 x y w ⟨hw, hf⟩)
 
+/-- The Taylor coefficients of order `k ≤ n` of the chart transition
+`extChartAt y ∘ (extChartAt x).symm` are continuous within the chart target `(extChartAt x).target`
+at any point `z` of it whose preimage lies in the source of the chart at `y`. -/
+theorem _root_.TauCeti.continuousWithinAt_ftaylorSeriesWithin_extChartAt_comp_symm (x y : M)
+    {z : E} (hz : z ∈ (extChartAt I x).target)
+    (hys : (extChartAt I x).symm z ∈ (extChartAt I y).source)
+    {k : ℕ} (hk : k ≤ n) :
+    ContinuousWithinAt (fun w : E ↦ ftaylorSeriesWithin 𝕜
+      (extChartAt I y ∘ (extChartAt I x).symm) (extChartAt I x).target w k)
+      (extChartAt I x).target z :=
+  ((ContMDiffMap.id : C^n⟮I, M; I, M⟯).contDiffWithinAt_extChartAt hz
+    hys).continuousWithinAt_iteratedFDerivWithin (uniqueDiffOn_extChartAt_target x) hk hz
+
 section LocallyCompact
 
 variable [LocallyCompactSpace E]
