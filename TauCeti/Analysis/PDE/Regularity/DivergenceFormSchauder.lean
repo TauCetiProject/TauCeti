@@ -199,11 +199,11 @@ private theorem le_mul_add_mul_rpow_of_le_of_mul_rpow_le {A lam θ M Ka KG R V r
   have hrθR : (r / R) ^ (2 * a) ≤ θ ^ (2 * a) :=
     Real.rpow_le_rpow (by positivity) ((div_le_iff₀ hR).2 hrθ) (by positivity)
   have k1 : r ^ (2 * a) * Ka ^ 2 * Φr ≤ θ ^ (2 * a) * M ^ 2 * Φr :=
-    mul_le_mul_of_nonneg_right ((Real.rpow_mul_sq_le hr hR hKa hM).trans
+    mul_le_mul_of_nonneg_right ((Real.rpow_mul_sq_le hr.le hR hKa hM).trans
       (mul_le_mul_of_nonneg_right hrθR (sq_nonneg M))) hΦr
   have k2 : r ^ (2 * a) * (KG ^ 2 * r ^ d) ≤ V * R ^ (-β) * r ^ β := by
     have hq : (r / R) ^ β = R ^ (-β) * r ^ β :=
-      Real.div_rpow_eq_rpow_neg_mul_rpow hr.le hR
+      Real.div_rpow_eq_rpow_neg_mul_rpow hr.le hR.le
     refine (Real.rpow_mul_mul_rpow_le hr hR hV).trans ?_
     rw [mul_assoc, ← hq]
     exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_ge (div_pos hr hR)
@@ -226,12 +226,12 @@ private theorem le_mul_add_mul_rpow_of_le_of_le_mul_rpow
     ψρ ≤ A * (q + 0) * ψr +
       A * (M ^ 2 * L + 1) * V * R ^ (-(2 * a + β)) / lam ^ 2 * r ^ (2 * a + β) := by
   have hq : (r / R) ^ (2 * a + β) = R ^ (-(2 * a + β)) * r ^ (2 * a + β) :=
-    Real.div_rpow_eq_rpow_neg_mul_rpow hr.le hR
+    Real.div_rpow_eq_rpow_neg_mul_rpow hr.le hR.le
   have hsplit : (r / R) ^ (2 * a) * (r / R) ^ β = (r / R) ^ (2 * a + β) := by
     rw [← Real.rpow_add (div_pos hr hR)]
   have k1 : r ^ (2 * a) * Ka ^ 2 * Φr ≤ M ^ 2 * L * V * (R ^ (-(2 * a + β)) * r ^ (2 * a + β)) := by
     calc _ ≤ (r / R) ^ (2 * a) * M ^ 2 * (L * V * (r / R) ^ β) :=
-          mul_le_mul (Real.rpow_mul_sq_le hr hR hKa hM) hΦr hΦr0 (by positivity)
+          mul_le_mul (Real.rpow_mul_sq_le hr.le hR hKa hM) hΦr hΦr0 (by positivity)
       _ = M ^ 2 * L * V * ((r / R) ^ (2 * a) * (r / R) ^ β) := by ring
       _ = _ := by rw [hsplit, hq]
   have k2 : r ^ (2 * a) * (KG ^ 2 * r ^ d) ≤ V * (R ^ (-(2 * a + β)) * r ^ (2 * a + β)) := by
@@ -270,7 +270,7 @@ elliptic with constants `λ`, `Λ`, and let `a` and `G` be `α`-Hölder on `ball
 `K_a`, `K_G`, where `K_a R^α ≤ M`. If `K_G² R^{n+1+2α} ≤ V` and `∫_{B_R} ‖∇u‖² ≤ V`, then
 `∫_{B_ρ} ‖∇u‖² ≤ C V (ρ / R)^{n+1-α}` for `0 < ρ ≤ θ R`. -/
 private theorem exists_setIntegral_norm_gradient_sq_le_rpow {α : ℝ≥0} (hα : 0 < α)
-    {lam Lam M : ℝ} (hlam : 0 < lam) :
+    {lam Lam M : ℝ} :
     ∃ θ C : ℝ, 0 < θ ∧ θ ≤ 1 ∧ 0 ≤ C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
       {u : W1p volume Omega 2}
       {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
@@ -323,9 +323,9 @@ private theorem exists_setIntegral_norm_gradient_sq_le_rpow {α : ℝ≥0} (hα 
     (monotoneOn_setIntegral_norm_gradient_sq u hball ⟨by positivity, hθR⟩ ⟨hR, le_rfl⟩ hθR).trans
       hΦR
   have hq : (ρ / R) ^ β = R ^ (-β) * ρ ^ β :=
-    Real.div_rpow_eq_rpow_neg_mul_rpow hρ.le hR
+    Real.div_rpow_eq_rpow_neg_mul_rpow hρ.le hR.le
   refine hit'.trans ?_
-  rw [Real.div_mul_rpow_eq hρ.le hθ hR]
+  rw [Real.div_mul_rpow_eq hρ.le hθ.le hR.le]
   have h1 := mul_le_mul_of_nonneg_left hΦθR (by positivity : (0 : ℝ) ≤ θ ^ (-β) * (ρ / R) ^ β)
   calc C₀ * (θ ^ (-β) * (ρ / R) ^ β * (∫ x in ball z (θ * R), ‖W1p.gradient u x‖ ^ 2) +
         A * V * R ^ (-β) / lam ^ 2 * ρ ^ β)
@@ -372,7 +372,7 @@ elliptic with constants `λ`, `Λ`, and let `a` and `G` be `α`-Hölder on `ball
 `∫_{B_ρ} ‖∇u - (∇u)_{B_ρ}‖² ≤ C V (ρ / R)^{2α+β}` for `0 < ρ ≤ θ R`. -/
 private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le_rpow {α : ℝ≥0} (hα : 0 < α)
     {β : ℝ} (hβ : β ≤ (n : ℝ) + 1) (hγ : 2 * (α : ℝ) + β < (n : ℝ) + 3) {lam Lam M θ L : ℝ}
-    (hlam : 0 < lam) (hθ : 0 < θ) (hθ1 : θ ≤ 1) (hL : 0 ≤ L) :
+    (hθ : 0 < θ) (hθ1 : θ ≤ 1) (hL : 0 ≤ L) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
       {u : W1p volume Omega 2}
       {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
@@ -426,9 +426,9 @@ private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le_rpow {α :
       ((monotoneOn_setIntegral_norm_gradient_sq u hball ⟨by positivity, hθR⟩ ⟨hR, le_rfl⟩
         hθR).trans hΦR)
   have hq : (ρ / R) ^ γ = R ^ (-γ) * ρ ^ γ :=
-    Real.div_rpow_eq_rpow_neg_mul_rpow hρ.le hR
+    Real.div_rpow_eq_rpow_neg_mul_rpow hρ.le hR.le
   refine hit'.trans ?_
-  rw [Real.div_mul_rpow_eq hρ.le hθ hR]
+  rw [Real.div_mul_rpow_eq hρ.le hθ.le hR.le]
   calc C₀ * (θ ^ (-γ) * (ρ / R) ^ γ *
           (∫ x in ball z (θ * R),
             ‖W1p.gradient u x - ⨍ y in ball z (θ * R), W1p.gradient u y‖ ^ 2) +
@@ -527,7 +527,7 @@ private theorem setAverage_closedBall_norm_gradient_sub_le
       ← Real.sqrt_sq (by positivity : (0 : ℝ) ≤ (r / R) ^ κ), ← Real.sqrt_mul' _ (by positivity)]
     exact Real.sqrt_le_sqrt h3
   refine h4.trans_eq ?_
-  rw [Real.div_rpow_eq_rpow_neg_mul_rpow hr.le hR]
+  rw [Real.div_rpow_eq_rpow_neg_mul_rpow hr.le hR.le]
   ring
 
 /-- **Bounded averages from Campanato decay.** Let `κ > 0` and `θ ∈ (0, 1]`. If
@@ -719,7 +719,7 @@ elliptic with constants `λ`, `Λ`, and let `a` and `G` be `α`-Hölder on `ball
 `K_a`, `K_G`, where `K_a R^α ≤ M`. If `K_G² R^{n+1+2α} ≤ V` and `∫_{B_R} ‖∇u‖² ≤ V`, then
 `∫_{B_ρ} ‖∇u - (∇u)_{B_ρ}‖² ≤ C V (ρ / R)^{n+1+2α}` for `0 < ρ ≤ θ R`. -/
 private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le_of_holderOnWith
-    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {lam Lam M : ℝ} (hlam : 0 < lam) :
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {lam Lam M : ℝ} :
     ∃ θ C : ℝ, 0 < θ ∧ θ ≤ 1 ∧ 0 ≤ C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
       {u : W1p volume Omega 2}
       {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
@@ -741,16 +741,16 @@ private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le_of_holderO
   have hα1' : (α : ℝ) < 1 := hα1
   -- Morrey decay with exponent `n + 1 - α`.
   obtain ⟨θ, C₁, hθ, hθ1, hC₁, hΦ1⟩ :=
-    exists_setIntegral_norm_gradient_sq_le_rpow (n := n) hα (Lam := Lam) (M := M) hlam
+    exists_setIntegral_norm_gradient_sq_le_rpow (n := n) hα (Lam := Lam) (M := M)
   -- Campanato decay with exponent `n + 1 + α`.
   obtain ⟨C₂, hC₂, hψ2⟩ := exists_setIntegral_norm_gradient_sub_setAverage_sq_le_rpow (n := n) hα
-    (β := (n : ℝ) + 1 - α) (by linarith) (by linarith) (Lam := Lam) (M := M) hlam hθ hθ1 hC₁
+    (β := (n : ℝ) + 1 - α) (by linarith) (by linarith) (Lam := Lam) (M := M) hθ hθ1 hC₁
   -- Bounded averages, hence Morrey decay with exponent `n + 1`.
   obtain ⟨C₃, hC₃, hΦ3⟩ := exists_setIntegral_norm_gradient_sq_le_pow (n := n) (κ := α / 2)
     (by positivity) hθ hθ1 hC₂
   -- Campanato decay with exponent `n + 1 + 2α`.
   obtain ⟨C₄, hC₄, hψ4⟩ := exists_setIntegral_norm_gradient_sub_setAverage_sq_le_rpow (n := n) hα
-    (β := (n : ℝ) + 1) le_rfl (by linarith) (Lam := Lam) (M := M) hlam hθ hθ1 hC₃
+    (β := (n : ℝ) + 1) le_rfl (by linarith) (Lam := Lam) (M := M) hθ hθ1 hC₃
   refine ⟨θ, C₄, hθ, hθ1, hC₄, ?_⟩
   intro Omega u a G s z R V Ka KG h hz haK hGK hu hball hR hM hV hΦR
   have hΦ1z := hΦ1 h hz haK hGK hu hball hR hM hV hΦR
@@ -796,15 +796,10 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matri
           (preciseRepresentative volume
             (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))))
           S := by
-  by_cases hlam : 0 < lam
-  swap
-  · refine ⟨0, le_rfl, ?_⟩
-    intro Omega u a G Ka KG S R h
-    exact absurd h.pos hlam
   have hα' : (0 : ℝ) < α := hα
   obtain ⟨θ, C₀, hθ, hθ1, hC₀, hdec⟩ :=
     exists_setIntegral_norm_gradient_sub_setAverage_sq_le_of_holderOnWith (n := n) hα hα1
-      (Lam := Lam) (M := M) hlam
+      (Lam := Lam) (M := M)
   obtain ⟨ω, hωdef⟩ : ∃ ω, ω = volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
     ⟨_, rfl⟩
   have hω : 0 < ω := hωdef ▸ measureReal_ball_pos volume _ one_pos
@@ -826,7 +821,7 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matri
     rw [Real.rpow_div_two_add_mul_sq Q hR]
     norm_cast
   have hV1 : (KG : ℝ) ^ 2 * R ^ ((n : ℝ) + 1 + 2 * α) ≤ (R ^ (((n : ℝ) + 1) / 2 + α) * Q) ^ 2 :=
-    Real.sq_mul_rpow_add_two_mul_le hR KG.2 (hQ ▸ le_add_of_nonneg_right (by positivity))
+    Real.sq_mul_rpow_add_two_mul_le hR.le KG.2 (hQ ▸ le_add_of_nonneg_right (by positivity))
   have hX : ‖W1p.gradient u‖ ≤ R ^ (((n : ℝ) + 1) / 2 + α) * Q := by
     rw [hQ, mul_add, ← mul_assoc, ← Real.rpow_add hR, add_neg_cancel, Real.rpow_zero, one_mul]
     exact le_add_of_nonneg_left (by positivity)

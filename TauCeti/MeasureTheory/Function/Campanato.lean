@@ -491,8 +491,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 /-- **Averages over concentric balls.** Let `α > 0`. If `f` is integrable on `closedBall x ρ`
 and its mean oscillation on `closedBall x r` is at most `M r^α` for `0 < r ≤ ρ`, then the averages
 of `f` over `closedBall x ε` and `closedBall x r`, `0 < ε ≤ r ≤ ρ`, differ by at most
-`2ⁿ / (1 - 2^(-α)) · M r^α`, where `n` is the dimension. The proof telescopes over dyadic
-radii. -/
+`2ⁿ / (1 - 2^(-α)) · M r^α`, where `n` is the dimension. -/
 theorem norm_setAverage_closedBall_sub_setAverage_closedBall_le (hα : 0 < α)
     (hf : IntegrableOn f (closedBall x ρ) μ)
     (hosc : ∀ r, 0 < r → r ≤ ρ →

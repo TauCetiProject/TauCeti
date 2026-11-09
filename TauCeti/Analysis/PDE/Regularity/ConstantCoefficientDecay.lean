@@ -91,12 +91,12 @@ classically, whose gradient is the weak gradient almost everywhere
 * `TauCeti.PDE.setIntegral_ball_norm_gradient_sub_setAverage_sq_le_of_forall_energyFormH1_eq_zero`:
   decay of the `L²` mean oscillation of the weak gradient of a weak solution in `H¹(Ω)`, with
   exponent `n + 2`.
-* `TauCeti.PDE.setIntegral_ball_norm_gradient_sub_setAverage_sq_le_add_of_forall_energyFormH1_eq`:
-  the comparison with the frozen problem for `-div(A ∇u) = -div G` with `G ∈ L²`.
 * `TauCeti.PDE.setIntegral_norm_gradient_sq_le_add_of_frozen` and
   `TauCeti.PDE.setIntegral_norm_gradient_sub_setAverage_sq_le_add_of_frozen`: decay of the `L²`
   mass and of the `L²` mean oscillation of the weak gradient of any `u ∈ H¹(Ω)`, up to its
   energy distance from a weak solution `w` of the constant-coefficient problem on `B_r`.
+* `TauCeti.PDE.setIntegral_ball_norm_gradient_sub_setAverage_sq_le_add_of_forall_energyFormH1_eq`:
+  the comparison with the frozen problem for `-div(A ∇u) = -div G` with `G ∈ L²`.
 
 ## References
 
@@ -394,76 +394,6 @@ private theorem exists_forall_energyFormH1_eq_zero_setIntegral_norm_gradient_sub
           exact pow_le_pow_left₀ (by positivity) hest 2
   exact ⟨w, hw0, hE'⟩
 
-/-- **Comparison with the frozen problem for constant coefficients.** Let `A` be a constant
-coefficient matrix, uniformly elliptic with constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` solve
-`-div(A ∇u) = -div G` weakly on an open set `Ω ⊆ ℝ^{n+1}`, that is
-`∫_Ω ⟨A ∇u, ∇φ⟩ = ∫_Ω ⟨G, ∇φ⟩` for every test function `φ`. Let `ball x₀ r ⊆ Ω` and let `c` be a
-constant vector with `G - c` square integrable on `ball x₀ r`. Then for `0 < ρ ≤ r` the square mean
-oscillation `ψ(t) = ∫_{B_t} ‖∇u - (∇u)_{B_t}‖²` of the gradient satisfies
-
-`ψ(ρ) ≤ 4 D (ρ / r)^(n + 3) ψ(r) + ((4 D + 2) / λ²) ∫_{B_r} ‖G - c‖²`,
-
-with `D = 2^(3n + 13) (n + 2)² (Λ / λ)^((n + 3) / 2)`. No regularity of `G` and no boundary
-condition on `u` is assumed. -/
-theorem setIntegral_ball_norm_gradient_sub_setAverage_sq_le_add_of_forall_energyFormH1_eq
-    {lam Lam : ℝ} (hA : UniformlyEllipticOn (ball x₀ r) (fun _ => A) lam Lam)
-    {u : W1p volume Omega 2}
-    {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
-    (hu : ∀ φ : 𝓓(Omega, ℝ),
-      energyFormH1 (fun _ => A) 0 0 u (W1p.ofTestFunctionₗ volume Omega 2 φ) =
-        ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ)
-    (hball : ball x₀ r ⊆ Omega) {c : EuclideanSpace ℝ (Fin (n + 1))}
-    (hGc : MemLp (fun x => G x - c) 2 (volume.restrict (ball x₀ r))) (hρ : 0 < ρ)
-    (hρr : ρ ≤ r) :
-    ∫ x in ball x₀ ρ, ‖W1p.gradient u x - ⨍ y in ball x₀ ρ, W1p.gradient u y‖ ^ 2 ≤
-      4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) * (ρ / r) ^ (n + 3) *
-          (∫ x in ball x₀ r, ‖W1p.gradient u x - ⨍ y in ball x₀ r, W1p.gradient u y‖ ^ 2) +
-        (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) + 2) / lam ^ 2 *
-          ∫ x in ball x₀ r, ‖G x - c‖ ^ 2 := by
-  have hr : 0 < r := hρ.trans_le hρr
-  have hlam : 0 < lam := hA.pos
-  have hx₀ : x₀ ∈ ball x₀ r := mem_ball_self hr
-  have hAu : ∀ ξ : EuclideanSpace ℝ (Fin (n + 1)), A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2 :=
-    fun ξ => (le_abs_self _).trans
-      (abs_toQuadraticForm'_le_of_abs_dotProduct_mulVec_le (hA.upper_bound hx₀) ξ)
-  obtain ⟨w, hw0, hE'⟩ :=
-    exists_forall_energyFormH1_eq_zero_setIntegral_norm_gradient_sub_sq_le hA hu hball hGc
-  -- The gradient of the replacement decays from `B_r` to `B_ρ`.
-  have hdec := setIntegral_ball_norm_gradient_sub_setAverage_sq_le_of_forall_energyFormH1_eq_zero
-    hlam (hA.lower_bound hx₀) hAu hw0 (x₀ := x₀) (R := r) subset_rfl
-    (⨍ y in ball x₀ r, W1p.gradient u y) hρ.le hρr
-  have hfm : MemLp
-      (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) 2
-      (volume.restrict (ball x₀ r)) :=
-    (Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono hball le_rfl)
-  have hHm : MemLp
-      (W1p.gradient w : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) 2
-      (volume.restrict (ball x₀ r)) := Lp.memLp (W1p.gradient w)
-  have hcomp := setIntegral_norm_sub_setAverage_sq_le_add_of_subset (ball_subset_ball hρr)
-    measure_ball_lt_top.ne hfm hHm (by positivity) hdec
-  obtain ⟨D, hDdef⟩ : ∃ D : ℝ, D = 2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3) :=
-    ⟨_, rfl⟩
-  obtain ⟨q, hqdef⟩ : ∃ q : ℝ, q = (ρ / r) ^ (n + 3) := ⟨_, rfl⟩
-  have hK : 2 ^ (3 * Fintype.card (Fin (n + 1)) + 10) * ((Fintype.card (Fin (n + 1)) : ℝ) + 1) ^ 2 *
-      √(Lam / lam) ^ (Fintype.card (Fin (n + 1)) + 2) * (ρ / r) ^ (Fintype.card (Fin (n + 1)) + 2) =
-        D * q := by
-    rw [hDdef, hqdef, Fintype.card_fin]
-    push_cast
-    ring
-  rw [hK] at hcomp
-  have hq1 : q ≤ 1 := hqdef ▸ pow_le_one₀ (by positivity) ((div_le_one hr).2 hρr)
-  have hD : 0 ≤ D := hDdef ▸ by positivity
-  have hE0 : 0 ≤ ∫ x in ball x₀ r, ‖W1p.gradient u x - W1p.gradient w x‖ ^ 2 :=
-    integral_nonneg fun _ => by positivity
-  have h1 : (4 * (D * q) + 2) * ∫ x in ball x₀ r, ‖W1p.gradient u x - W1p.gradient w x‖ ^ 2 ≤
-      (4 * D + 2) / lam ^ 2 * ∫ x in ball x₀ r, ‖G x - c‖ ^ 2 := by
-    rw [div_mul_eq_mul_div, mul_div_assoc]
-    exact mul_le_mul (by nlinarith) hE' hE0 (by positivity)
-  rw [← hDdef, ← hqdef]
-  refine hcomp.trans (add_le_add (le_of_eq ?_) h1)
-  ring
-
-
 /-- **Decay of the `L²` mass of the gradient, by comparison.** Let `u ∈ H¹(Ω)`, let
 `ball x₀ r ⊆ Ω`, and let `w ∈ H¹(B_r)` solve `-∂ᵢ(Aⁱʲ ∂ⱼw) = 0` weakly on `B_r` for a constant
 matrix `A` with `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²`, `λ > 0`. Then for `0 < ρ ≤ r`
@@ -550,6 +480,50 @@ theorem setIntegral_norm_gradient_sub_setAverage_sq_le_add_of_frozen
     (setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq measure_ball_lt_top.ne
       (hfm.integrableOn_of_subset one_le_two hρs measure_ball_lt_top.ne)
       (hfm.integrableOn_norm_sub_sq_of_subset hρs measure_ball_lt_top.ne _)) hdec
+
+/-- **Comparison with the frozen problem for constant coefficients.** Let `A` be a constant
+coefficient matrix, uniformly elliptic with constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` solve
+`-div(A ∇u) = -div G` weakly on an open set `Ω ⊆ ℝ^{n+1}`, that is
+`∫_Ω ⟨A ∇u, ∇φ⟩ = ∫_Ω ⟨G, ∇φ⟩` for every test function `φ`. Let `ball x₀ r ⊆ Ω` and let `c` be a
+constant vector with `G - c` square integrable on `ball x₀ r`. Then for `0 < ρ ≤ r` the square mean
+oscillation `ψ(t) = ∫_{B_t} ‖∇u - (∇u)_{B_t}‖²` of the gradient satisfies
+
+`ψ(ρ) ≤ 4 D (ρ / r)^(n + 3) ψ(r) + ((4 D + 2) / λ²) ∫_{B_r} ‖G - c‖²`,
+
+with `D = 2^(3n + 13) (n + 2)² (Λ / λ)^((n + 3) / 2)`. No regularity of `G` and no boundary
+condition on `u` is assumed. -/
+theorem setIntegral_ball_norm_gradient_sub_setAverage_sq_le_add_of_forall_energyFormH1_eq
+    {lam Lam : ℝ} (hA : UniformlyEllipticOn (ball x₀ r) (fun _ => A) lam Lam)
+    {u : W1p volume Omega 2}
+    {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
+    (hu : ∀ φ : 𝓓(Omega, ℝ),
+      energyFormH1 (fun _ => A) 0 0 u (W1p.ofTestFunctionₗ volume Omega 2 φ) =
+        ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ)
+    (hball : ball x₀ r ⊆ Omega) {c : EuclideanSpace ℝ (Fin (n + 1))}
+    (hGc : MemLp (fun x => G x - c) 2 (volume.restrict (ball x₀ r))) (hρ : 0 < ρ)
+    (hρr : ρ ≤ r) :
+    ∫ x in ball x₀ ρ, ‖W1p.gradient u x - ⨍ y in ball x₀ ρ, W1p.gradient u y‖ ^ 2 ≤
+      4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) * (ρ / r) ^ (n + 3) *
+          (∫ x in ball x₀ r, ‖W1p.gradient u x - ⨍ y in ball x₀ r, W1p.gradient u y‖ ^ 2) +
+        (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) + 2) / lam ^ 2 *
+          ∫ x in ball x₀ r, ‖G x - c‖ ^ 2 := by
+  have hr : 0 < r := hρ.trans_le hρr
+  have hx₀ : x₀ ∈ ball x₀ r := mem_ball_self hr
+  have hAu : ∀ ξ : EuclideanSpace ℝ (Fin (n + 1)), A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2 :=
+    fun ξ => (le_abs_self _).trans
+      (abs_toQuadraticForm'_le_of_abs_dotProduct_mulVec_le (hA.upper_bound hx₀) ξ)
+  obtain ⟨w, hw0, hE'⟩ :=
+    exists_forall_energyFormH1_eq_zero_setIntegral_norm_gradient_sub_sq_le hA hu hball hGc
+  have hD : (2 : ℝ) ^ (3 * (n + 1) + 10) * ((n + 1 : ℕ) + 1) ^ 2 * √(Lam / lam) ^ (n + 1 + 2) =
+      2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3) := by
+    push_cast
+    ring
+  have h := setIntegral_norm_gradient_sub_setAverage_sq_le_add_of_frozen (u := u) hA.pos
+    (hA.lower_bound hx₀) hAu hw0 hball hρ hρr
+  rw [hD] at h
+  refine h.trans (add_le_add le_rfl ?_)
+  rw [div_mul_eq_mul_div, mul_div_assoc]
+  exact mul_le_mul_of_nonneg_left hE' (by positivity)
 
 end Comparison
 

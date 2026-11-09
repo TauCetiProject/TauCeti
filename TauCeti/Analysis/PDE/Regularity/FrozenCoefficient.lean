@@ -279,9 +279,9 @@ constant `λ`, and let `a` and `G` be `α`-Hölder on `ball x₀ r` with constan
 Then there is `w ∈ H¹(B_r)` solving the homogeneous problem `-∂ᵢ(a(x₀)ⁱʲ ∂ⱼw) = 0` frozen at `x₀`
 weakly on `B_r` with
 `∫_{B_r} ‖∇u - ∇w‖² ≤ 2 (1 + ω) r^{2α} (K_a² ∫_{B_r} ‖∇u‖² + K_G² r^{n+1}) / λ²`, where `ω` is the
-volume of the unit ball. The proof takes for `w` the frozen replacement of
-`UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_le`, which has the
-boundary values of `u`; that boundary condition is not part of the conclusion. -/
+volume of the unit ball. The conclusion does not record the boundary values of `w`; see
+`UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_le` for a variant that
+does. -/
 theorem UniformlyEllipticOn.exists_frozen_setIntegral_norm_gradient_sub_sq_le {n : ℕ}
     {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {u : W1p volume Omega 2}
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}

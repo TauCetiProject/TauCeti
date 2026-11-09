@@ -29,10 +29,10 @@ public section
 namespace Real
 
 /-- `r^{2a} c² ≤ (r / R)^{2a} M²` when `c R^a ≤ M`. -/
-theorem rpow_mul_sq_le {r R c M a : ℝ} (hr : 0 < r) (hR : 0 < R) (hc : 0 ≤ c)
+theorem rpow_mul_sq_le {r R c M a : ℝ} (hr : 0 ≤ r) (hR : 0 < R) (hc : 0 ≤ c)
     (hM : c * R ^ a ≤ M) : r ^ (2 * a) * c ^ 2 ≤ (r / R) ^ (2 * a) * M ^ 2 := by
   have h1 : r ^ (2 * a) = (r / R) ^ (2 * a) * (R ^ a) ^ 2 := by
-    rw [div_rpow hr.le hR.le, ← rpow_natCast, ← rpow_mul hR.le, Nat.cast_two,
+    rw [div_rpow hr hR.le, ← rpow_natCast, ← rpow_mul hR.le, Nat.cast_two,
       mul_comm a 2, div_mul_cancel₀ _ (rpow_pos_of_pos hR _).ne']
   rw [h1, mul_assoc, ← mul_pow, mul_comm (R ^ a)]
   gcongr
@@ -49,15 +49,15 @@ theorem rpow_mul_mul_rpow_le {r R c V a d : ℝ} (hr : 0 < r) (hR : 0 < R)
   gcongr
 
 /-- `(r / R)^γ = R^{-γ} r^γ`. -/
-theorem div_rpow_eq_rpow_neg_mul_rpow {r R γ : ℝ} (hr : 0 ≤ r) (hR : 0 < R) :
+theorem div_rpow_eq_rpow_neg_mul_rpow {r R γ : ℝ} (hr : 0 ≤ r) (hR : 0 ≤ R) :
     (r / R) ^ γ = R ^ (-γ) * r ^ γ := by
-  rw [div_rpow hr hR.le, rpow_neg hR.le, div_eq_inv_mul]
+  rw [div_rpow hr hR, rpow_neg hR, div_eq_inv_mul]
 
 /-- `(r / (θ R))^γ = θ^{-γ} (r / R)^γ`. -/
-theorem div_mul_rpow_eq {r θ R γ : ℝ} (hr : 0 ≤ r) (hθ : 0 < θ) (hR : 0 < R) :
+theorem div_mul_rpow_eq {r θ R γ : ℝ} (hr : 0 ≤ r) (hθ : 0 ≤ θ) (hR : 0 ≤ R) :
     (r / (θ * R)) ^ γ = θ ^ (-γ) * (r / R) ^ γ := by
-  rw [div_mul_eq_div_div_swap, div_eq_inv_mul (r / R), mul_rpow (inv_nonneg.2 hθ.le)
-    (div_nonneg hr hR.le), inv_rpow hθ.le, rpow_neg hθ.le]
+  rw [div_mul_eq_div_div_swap, div_eq_inv_mul (r / R), mul_rpow (inv_nonneg.2 hθ)
+    (div_nonneg hr hR), inv_rpow hθ, rpow_neg hθ]
 
 /-- `(R^{d/2+a} Q)² = R^d (R^a Q)²`. -/
 theorem rpow_div_two_add_mul_sq {R d a : ℝ} (Q : ℝ) (hR : 0 < R) :
@@ -67,10 +67,10 @@ theorem rpow_div_two_add_mul_sq {R d a : ℝ} (Q : ℝ) (hR : 0 < R) :
   ring
 
 /-- `c² R^{d+2a} ≤ (R^{d/2+a} Q)²` when `0 ≤ c ≤ Q`. -/
-theorem sq_mul_rpow_add_two_mul_le {R c Q d a : ℝ} (hR : 0 < R) (hc : 0 ≤ c) (hcQ : c ≤ Q) :
+theorem sq_mul_rpow_add_two_mul_le {R c Q d a : ℝ} (hR : 0 ≤ R) (hc : 0 ≤ c) (hcQ : c ≤ Q) :
     c ^ 2 * R ^ (d + 2 * a) ≤ (R ^ (d / 2 + a) * Q) ^ 2 := by
   have h : R ^ (d + 2 * a) = (R ^ (d / 2 + a)) ^ 2 := by
-    rw [← rpow_mul_natCast hR.le, Nat.cast_two, add_mul, div_mul_cancel₀ _ two_ne_zero, mul_comm]
+    rw [← rpow_mul_natCast hR, Nat.cast_two, add_mul, div_mul_cancel₀ _ two_ne_zero, mul_comm]
   rw [h, mul_pow, mul_comm]
   gcongr
 
