@@ -56,6 +56,7 @@ theorem exists_subseq_tendsto_eLpNorm_sub_of_isCompact_closure (hΩ : IsOpen Ω)
     ∃ v : X → F, (∀ K, IsCompact K → K ⊆ Ω → MemLp v p (μ.restrict K)) ∧
       ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ K, IsCompact K → K ⊆ Ω →
         Tendsto (fun j => eLpNorm (u (φ j) - v) p (μ.restrict K)) atTop (𝓝 0) := by
+  have : LocallyCompactSpace Ω := hΩ.locallyCompactSpace
   obtain ⟨L, hLc, hLΩ, hLmono, hLsup⟩ :=
     hΩ.exists_monotone_isCompact_subset_forall_isCompact_subset_exists_subset
   have hLm (m : ℕ) : MeasurableSet (L m) := (hLc m).isClosed.measurableSet

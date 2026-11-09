@@ -11,7 +11,7 @@ public import Mathlib.Topology.Compactness.SigmaCompact
 /-!
 # Compact exhaustions of open sets
 
-An open subset of a second-countable locally compact space has a monotone sequence of compact
+A sigma-compact open subset of a locally compact space has a monotone sequence of compact
 subsets that exhausts it in the sense that every compact subset lies in one of them
 (`IsOpen.exists_monotone_isCompact_subset_forall_isCompact_subset_exists_subset`).
 -/
@@ -20,11 +20,11 @@ public section
 
 open Set
 
-/-- An open subset `Ω` of a second-countable locally compact space has a monotone sequence of
+/-- A sigma-compact open subset `Ω` of a locally compact space has a monotone sequence of
 compact subsets of `Ω` such that every compact subset of `Ω` lies in one of them. -/
 theorem IsOpen.exists_monotone_isCompact_subset_forall_isCompact_subset_exists_subset
-    {X : Type*} [TopologicalSpace X] [LocallyCompactSpace X] [SecondCountableTopology X]
-    {Ω : Set X} (hΩ : IsOpen Ω) :
+    {X : Type*} [TopologicalSpace X] [LocallyCompactSpace X]
+    {Ω : Set X} [SigmaCompactSpace Ω] (hΩ : IsOpen Ω) :
     ∃ L : ℕ → Set X, (∀ m, IsCompact (L m)) ∧ (∀ m, L m ⊆ Ω) ∧ Monotone L ∧
       ∀ K, IsCompact K → K ⊆ Ω → ∃ m, K ⊆ L m := by
   have : LocallyCompactSpace Ω := hΩ.locallyCompactSpace
