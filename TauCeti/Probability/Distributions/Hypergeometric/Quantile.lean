@@ -56,7 +56,7 @@ theorem quantile_map_cast_hypergeometricMeasure_eq_iff (hK : K ≤ N) (hn : n �
           if j ≤ n then
             (K.choose j : ℝ) * ((N - K).choose (n - j) : ℝ) / (N.choose n : ℝ)
           else 0 := by
-    rw [← Set.Iic_def, hypergeometricMeasure_real_Iic_eq_sum hK hn]
+    rw [← Set.Iic_def, hypergeometricMeasure_real_Iic_eq_sum hK]
   constructor <;> intro h
   · simpa only [hcumulative] using h
   · simpa only [hcumulative] using h
@@ -64,7 +64,7 @@ theorem quantile_map_cast_hypergeometricMeasure_eq_iff (hK : K ≤ N) (hn : n �
 private theorem hypergeometricMeasure_real_singleton_pos (hK : K ≤ N) (hn : n ≤ N)
     {k : ℕ} (hk : k ≤ K ∧ k ≤ n ∧ n - k ≤ N - K) :
     0 < (hypergeometricMeasure N K n).real {k} := by
-  rw [measureReal_def, hypergeometricMeasure_singleton hK hn]
+  rw [measureReal_def, hypergeometricMeasure_singleton hK]
   exact ENNReal.toReal_pos ((hypergeometricWeight_ne_zero_iff N K n k).2 hk)
     (hypergeometricWeight_ne_top N K n k hn)
 

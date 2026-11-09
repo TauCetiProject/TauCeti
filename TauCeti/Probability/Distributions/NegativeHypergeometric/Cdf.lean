@@ -103,7 +103,7 @@ private theorem negativeHypergeometricMeasure_real_Iic_eq_hypergeometric_tail_of
     have hjK : j ≤ K := by
       have := Finset.mem_range.mp hj
       omega
-    rw [hypergeometricMeasure_real_singleton hk hK, ite_eq_left hjK]
+    rw [hypergeometricMeasure_real_singleton hk, ite_eq_left hjK]
     simp only [Nat.sub_sub]
   have hsum := congrArg (Nat.cast : ℕ → ℝ)
     (Nat.sum_range_choose_mul_choose_add_sum_range_choose_mul_choose hr hrK hk)
