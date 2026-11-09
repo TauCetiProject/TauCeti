@@ -279,14 +279,14 @@ section Topology
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
 /-- Generic points of a finite exceptional arrangement form an open set. -/
-theorem isOpen_isGeneric (E : ExceptionalArrangement V) : IsOpen {x | E.IsGeneric x} := by
+theorem isOpen_isGeneric (E : ExceptionalArrangement ℝ V) : IsOpen {x | E.IsGeneric x} := by
   convert
     AffineSubspace.isOpen_genericLocus (fun S : E.exceptions => S.1) using 1
   ext x
   simp [isGeneric_iff]
 
 /-- Generic points of a finite exceptional arrangement form a dense set. -/
-theorem dense_isGeneric (E : ExceptionalArrangement V) : Dense {x | E.IsGeneric x} := by
+theorem dense_isGeneric (E : ExceptionalArrangement ℝ V) : Dense {x | E.IsGeneric x} := by
   convert
     AffineSubspace.dense_genericLocus (fun S : E.exceptions => S.1)
       (fun S => E.proper S.1 S.2) using 1
@@ -295,7 +295,7 @@ theorem dense_isGeneric (E : ExceptionalArrangement V) : Dense {x | E.IsGeneric 
 
 /-- A countable family of finite arrangements has dense common generic locus. -/
 theorem dense_iInter_isGeneric {ι : Type*} [Countable ι]
-    (E : ι → ExceptionalArrangement V) : Dense {x | ∀ i, (E i).IsGeneric x} := by
+    (E : ι → ExceptionalArrangement ℝ V) : Dense {x | ∀ i, (E i).IsGeneric x} := by
   convert
     AffineSubspace.dense_genericLocus
       (fun p : Σ i, (E i).exceptions => p.2.1)
@@ -305,7 +305,7 @@ theorem dense_iInter_isGeneric {ι : Type*} [Countable ι]
 
 /-- The common generic locus of countably many finite arrangements is a Gδ set. -/
 theorem isGδ_iInter_isGeneric {ι : Type*} [Countable ι]
-    (E : ι → ExceptionalArrangement V) : IsGδ {x | ∀ i, (E i).IsGeneric x} := by
+    (E : ι → ExceptionalArrangement ℝ V) : IsGδ {x | ∀ i, (E i).IsGeneric x} := by
   convert
     AffineSubspace.isGδ_genericLocus (fun p : Σ i, (E i).exceptions => p.2.1) using 1
   ext x
