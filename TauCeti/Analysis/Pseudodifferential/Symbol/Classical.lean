@@ -43,6 +43,10 @@ The homogeneous terms enter the expansion through their cut-off terms
   smoothing symbol classical;
 * `TauCeti.ClassicalSymbol.ofHomogeneous`: the classical symbol `χ(ξ) a(x, ξ)` of a single
   homogeneous term, whose principal symbol is `a`.
+* `TauCeti.ClassicalSymbol.comp`, the **product rule**: the pointwise composition of classical
+  symbols of orders `m'` and `m` is classical of order `m' + m`, with homogeneous terms
+  `∑_{i+k=j} b_{m'-i} ∘ a_{m-k}`, so orders add within their classes modulo `ℤ`; and
+  `TauCeti.ClassicalSymbol.principal_comp`: the principal symbol is multiplicative.
 
 ## References
 
@@ -103,11 +107,8 @@ theorem exists_remainder (N : ℕ) :
   choose s hs using fun j =>
     Symbol.isSmoothing_iff.1 (isSmoothing_cutoffSymbol_sub_cutoffSymbol χ₀ χ (a.term j)) (m - N)
   refine ⟨r₀ + ∑ j ∈ Finset.range N, s j, fun p => ?_⟩
-  have hsum : (∑ j ∈ Finset.range N, s j).coefficient p =
-      ∑ j ∈ Finset.range N, (s j).coefficient p :=
-    map_sum (AddMonoidHom.mk' (fun b : Symbol n V W (m - N) => b.coefficient p) fun _ _ => rfl) _ _
-  simp only [Symbol.coefficient_add, Pi.add_apply, hsum, hr₀, hs, Symbol.coefficient_sub,
-    Pi.sub_apply, coefficient_cutoffSymbol, Finset.sum_sub_distrib]
+  simp only [Symbol.coefficient_add, Pi.add_apply, Symbol.coefficient_sum, Finset.sum_apply, hr₀,
+    hs, Symbol.coefficient_sub, Pi.sub_apply, coefficient_cutoffSymbol, Finset.sum_sub_distrib]
   abel
 
 /-- The remainder `a - ∑_{j<N} χ(ξ) a_{m-j}` of a classical symbol after `N` terms, a symbol of
@@ -387,6 +388,150 @@ theorem principal_surjective :
   fun a ↦ ⟨ofHomogeneous default a, principal_ofHomogeneous default a⟩
 
 end PrincipalKernel
+
+/-! ### The product rule -/
+
+section Comp
+
+variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {m' : ℝ}
+
+/-- The product of the cut-off expansions of `b` and `a`, for cutoffs `χ` and `χ'`: the remainder
+`b ∘ a - ∑_{j<N} χ(ξ) χ'(ξ) ∑_{i+k=j} b_{m'-i} ∘ a_{m-k}` is a symbol of order `m' + m - N`. -/
+private theorem exists_remainder_comp (b : ClassicalSymbol n W U m') (a : ClassicalSymbol n V W m)
+    (χ χ' : FrequencyCutoff (CoordinateSpace n)) (N : ℕ) :
+    ∃ r : Symbol n V U (m' + m - N), ∀ p, r.coefficient p =
+      (b.toSymbol.coefficient p).comp (a.toSymbol.coefficient p) -
+        ∑ j ∈ Finset.range N, (χ p.2 * χ' p.2) • ∑ x ∈ Finset.antidiagonal j,
+          ((b.term x.1).coefficient p).comp ((a.term x.2).coefficient p) := by
+  -- Write `b = ∑_{i<N} χ b_{m'-i} + r^b_N` and, for each `i < N`,
+  -- `a = ∑_{k<N-i} χ' a_{m-k} + r^a_{N-i}`. The remainder of `b ∘ a` is then
+  -- `∑_{i<N} χ b_{m'-i} ∘ r^a_{N-i} + r^b_N ∘ a`, whose terms have order `m' + m - N`.
+  have hle : ∀ i : ℕ, m' - i + (m - (N - i : ℕ)) ≤ m' + m - N := fun i => by
+    rcases le_total i N with h | h
+    · rw [Nat.cast_sub h]
+      linarith
+    · rw [Nat.sub_eq_zero_of_le h, Nat.cast_zero]
+      linarith [(Nat.cast_le (α := ℝ)).2 h]
+  refine ⟨∑ i ∈ Finset.range N, Symbol.inclusion (hle i)
+      ((cutoffSymbol χ (b.term i)).comp (a.remainder χ' (N - i))) +
+    Symbol.inclusion (by linarith) ((b.remainder χ N).comp a.toSymbol), fun p => ?_⟩
+  -- Reindex the truncated product over `i + k = j < N` as a sum over `i < N` and `k < N - i`.
+  have hprod : ∑ j ∈ Finset.range N, (χ p.2 * χ' p.2) • ∑ x ∈ Finset.antidiagonal j,
+        ((b.term x.1).coefficient p).comp ((a.term x.2).coefficient p) =
+      ∑ i ∈ Finset.range N, (χ p.2 • (b.term i).coefficient p).comp
+        (∑ k ∈ Finset.range (N - i), χ' p.2 • (a.term k).coefficient p) := by
+    simp_rw [ContinuousLinearMap.comp_finsetSum, Finset.smul_sum]
+    rw [← Finset.sum_range_diag_flip]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    rw [Finset.Nat.sum_antidiagonal_eq_sum_range_succ (fun i k => (χ p.2 * χ' p.2) •
+      ((b.term i).coefficient p).comp ((a.term k).coefficient p))]
+    simp [smul_smul, mul_comm]
+  rw [hprod]
+  simp only [Symbol.coefficient_add, Pi.add_apply, Symbol.coefficient_sum, Finset.sum_apply,
+    Symbol.coefficient_inclusion, Symbol.coefficient_comp, coefficient_cutoffSymbol,
+    coefficient_remainder, ContinuousLinearMap.comp_sub, ContinuousLinearMap.sub_comp,
+    ContinuousLinearMap.finsetSum_comp, Finset.sum_sub_distrib]
+  abel
+
+/-- **Product rule.** The pointwise composition `b ∘ a` of classical symbols of orders `m'` and `m`
+is a classical symbol of order `m' + m`. Its homogeneous term of degree `m' + m - j` is
+`∑_{i+k=j} b_{m'-i} ∘ a_{m-k}` (`TauCeti.ClassicalSymbol.coefficient_term_comp`), so the principal
+symbol of the composition is the composition of the principal symbols
+(`TauCeti.ClassicalSymbol.principal_comp`). For matrix-valued symbols this is the matrix
+product. -/
+def comp (b : ClassicalSymbol n W U m') (a : ClassicalSymbol n V W m) :
+    ClassicalSymbol n V U (m' + m) where
+  toSymbol := b.toSymbol.comp a.toSymbol
+  term j := ∑ x ∈ (Finset.antidiagonal j).attach,
+    ((b.term x.1.1).comp (a.term x.1.2)).castDegree (by
+      have h : ((x.1.1 + x.1.2 : ℕ) : ℝ) = j := mod_cast Finset.mem_antidiagonal.1 x.2
+      push_cast at h
+      linarith)
+  exists_remainder' := ⟨default * default, fun N => by
+    obtain ⟨r, hr⟩ := exists_remainder_comp b a default default N
+    refine ⟨r, fun p => ?_⟩
+    simp [hr, Finset.sum_attach (Finset.antidiagonal _) fun x =>
+      ((b.term x.1).coefficient p).comp ((a.term x.2).coefficient p)]⟩
+
+variable (b b₁ b₂ : ClassicalSymbol n W U m') (a a₁ a₂ : ClassicalSymbol n V W m)
+
+@[simp]
+theorem toSymbol_comp : (b.comp a).toSymbol = b.toSymbol.comp a.toSymbol :=
+  (rfl)
+
+/-- The homogeneous term of degree `m' + m - j` of `b ∘ a` is `∑_{i+k=j} b_{m'-i} ∘ a_{m-k}`. -/
+@[simp]
+theorem coefficient_term_comp (j : ℕ) (p : CoordinateSpace n × CoordinateSpace n) :
+    ((b.comp a).term j).coefficient p = ∑ x ∈ Finset.antidiagonal j,
+      ((b.term x.1).coefficient p).comp ((a.term x.2).coefficient p) := by
+  simp [comp, Finset.sum_attach (Finset.antidiagonal j) fun x =>
+    ((b.term x.1).coefficient p).comp ((a.term x.2).coefficient p)]
+
+/-- The principal symbol is multiplicative: the principal symbol of `b ∘ a` is the composition of
+the principal symbols of `b` and `a`. -/
+@[simp]
+theorem principal_comp : (b.comp a).principal = b.principal.comp a.principal := by
+  ext1
+  funext p
+  simp
+
+theorem comp_add : b.comp (a₁ + a₂) = b.comp a₁ + b.comp a₂ := by
+  ext
+  simp [Symbol.comp_add]
+
+theorem add_comp : (b₁ + b₂).comp a = b₁.comp a + b₂.comp a := by
+  ext
+  simp [Symbol.add_comp]
+
+@[simp]
+theorem comp_smul (c : ℂ) : b.comp (c • a) = c • b.comp a := by
+  ext
+  simp
+
+@[simp]
+theorem smul_comp (c : ℂ) : (c • b).comp a = c • b.comp a := by
+  ext
+  simp
+
+@[simp]
+theorem comp_zero : b.comp (0 : ClassicalSymbol n V W m) = 0 := by
+  ext
+  simp
+
+@[simp]
+theorem zero_comp : (0 : ClassicalSymbol n W U m').comp a = 0 := by
+  ext
+  simp
+
+@[simp]
+theorem comp_neg : b.comp (-a) = -b.comp a := by
+  ext
+  simp
+
+@[simp]
+theorem neg_comp : (-b).comp a = -b.comp a := by
+  ext
+  simp
+
+theorem comp_sub : b.comp (a₁ - a₂) = b.comp a₁ - b.comp a₂ := by
+  ext
+  simp [Symbol.comp_sub]
+
+theorem sub_comp : (b₁ - b₂).comp a = b₁.comp a - b₂.comp a := by
+  ext
+  simp [Symbol.sub_comp]
+
+/-- The product of two cut-off homogeneous terms is the cut-off composition of the terms, for the
+product cutoff. -/
+theorem ofHomogeneous_comp_ofHomogeneous (χ χ' : FrequencyCutoff (CoordinateSpace n))
+    (b : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) W U m')
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
+    (ofHomogeneous χ b).comp (ofHomogeneous χ' a) = ofHomogeneous (χ * χ') (b.comp a) := by
+  ext : 2
+  funext p
+  simp [smul_smul, mul_comm]
+
+end Comp
 
 end ClassicalSymbol
 

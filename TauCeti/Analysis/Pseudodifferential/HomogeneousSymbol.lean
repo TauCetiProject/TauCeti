@@ -226,6 +226,12 @@ instance {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)] [SMulCommClass ℝ 
     { toFun := coefficient, map_zero' := coefficient_zero, map_add' := coefficient_add }
     coefficient_smul
 
+@[simp]
+theorem coefficient_sum {ι : Type*} (s : Finset ι) (a : ι → HomogeneousSymbol X E V W m) :
+    (∑ i ∈ s, a i).coefficient = ∑ i ∈ s, (a i).coefficient :=
+  map_sum ({ toFun := coefficient, map_zero' := coefficient_zero, map_add' := coefficient_add } :
+    HomogeneousSymbol X E V W m →+ _) a s
+
 /-! ### Changing the degree -/
 
 /-- Transport a homogeneous symbol along an equality of degrees, for instance to identify the
