@@ -25,8 +25,11 @@ its two boundary loops `γ_a = u(a, ·)` and `γ_b = u(b, ·)`:
 
 `E(u) = ∫ u^* ω + ∫₀¹ H(t, γ_b(t)) dt - ∫₀¹ H(t, γ_a(t)) dt`
 
-(`TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_cylindrical`). This file
-rewrites the right-hand side as a difference of actions of the two loops, in two settings.
+(`TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_cylindrical`); the energy
+density of a `C¹` map for this perturbation is continuous
+(`TauCeti.SmoothTwoForm.IsNondegenerate.continuous_floerEnergyDensity_cylindrical`), so it is
+integrable over the rectangle. This file rewrites the right-hand side as a difference of actions
+of the two loops, in two settings.
 
 * For a weakly exact form (`TauCeti.IsWeaklyExact`, the area half of symplectic asphericity) and
   a `C²` cylinder whose loop `γ_b` bounds a cap, the energy is `A_H(γ_a) - A_H(γ_b)` for the
@@ -86,6 +89,14 @@ section Energy
 
 variable [FiniteDimensional ℝ E]
 
+/-- For a `C¹` time-dependent Hamiltonian `H` and a `C¹` map `u`, the Floer energy density of `u`
+for the cylindrical perturbation `K = H_t dt` is continuous. -/
+theorem IsNondegenerate.continuous_floerEnergyDensity_cylindrical (hω : ω.IsNondegenerate)
+    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) :
+    Continuous (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u) :=
+  hω.continuous_floerEnergyDensity_zero_left
+    (hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)) hu
+
 /-- **The energy identity for a cylindrical perturbation.** Let `H` be a `C¹` time-dependent
 Hamiltonian and `u` a `C¹` map, for a nondegenerate two-form on a finite-dimensional manifold.
 For the cylindrical perturbation `K = H_t dt`, the Floer energy of `u` over `[a, b] × [0, 1]` is
@@ -103,7 +114,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cylindrical (hω : ω.IsNond
   have hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
     hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
   have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
-  have hE := hω.continuous_floerEnergyDensity_zero_left hKt hu
+  have hE := hω.continuous_floerEnergyDensity_cylindrical hH hu
   have h := hω.integral_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2) isOpen_univ
     hu.contMDiffOn contMDiffOn_const hKt.contMDiffOn hab' (subset_univ _)
     (hE.continuousOn.integrableOn_compact isCompact_Icc)

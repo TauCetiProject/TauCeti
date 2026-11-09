@@ -36,7 +36,7 @@ Conversely, for almost complex structures tamed by `ω`, the energy density of a
 exactly where `∂_s u` does
 (`SmoothTwoForm.IsNondegenerate.floerEnergyDensity_cylindrical_eq_zero_iff`). The energy density
 of a `C¹` map is continuous
-(`SmoothTwoForm.IsNondegenerate.continuous_floerEnergyDensity_zero_left`), so a `C¹` solution
+(`SmoothTwoForm.IsNondegenerate.continuous_floerEnergyDensity_cylindrical`), so a `C¹` solution
 on the strip `ℝ × [0, 1]` has zero energy exactly when it is stationary there
 (`SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_eq_zero_iff`).
 
@@ -167,16 +167,6 @@ theorem IsNondegenerate.floerEnergyDensity_cylindrical_eq_zero_iff (hω : ω.IsN
 
 variable {J : (z : ℝ × ℝ) → AlmostComplexStructure (TangentSpace I (u z))}
 
-/-- The open strip `ℝ × (0, 1)` lies in the closed strip `ℝ × [0, 1]`. -/
-private theorem strip_Ioo_subset_Icc :
-    (univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1 ⊆ (univ : Set ℝ) ×ˢ Icc 0 1 :=
-  prod_mono subset_rfl Ioo_subset_Icc_self
-
-/-- The closed strip `ℝ × [0, 1]` is the closure of the open strip `ℝ × (0, 1)`. -/
-private theorem closure_univ_prod_Ioo :
-    closure ((univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1) = (univ : Set ℝ) ×ˢ Icc 0 1 := by
-  rw [closure_prod_eq, closure_univ, closure_Ioo zero_ne_one]
-
 variable [FiniteDimensional ℝ E]
 
 /-- For a `C¹` solution with tamed almost complex structures, zero energy over the open strip
@@ -190,9 +180,7 @@ private theorem IsNondegenerate.eqOn_floerEnergyDensity_zero (hω : ω.IsNondege
     (hE : ∫⁻ z in (univ : Set ℝ) ×ˢ Ioo 0 1,
       ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) = 0) :
     EqOn (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u) 0 ((univ : Set ℝ) ×ˢ Icc 0 1) := by
-  have hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
-    hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
-  have hρ := hω.continuous_floerEnergyDensity_zero_left hKt hu
+  have hρ := hω.continuous_floerEnergyDensity_cylindrical hH hu
   -- A continuous function with zero integral over the open strip vanishes there.
   have hc := ENNReal.continuous_ofReal.comp hρ
   have hae := (lintegral_eq_zero_iff' hc.measurable.aemeasurable).1 hE
@@ -200,12 +188,12 @@ private theorem IsNondegenerate.eqOn_floerEnergyDensity_zero (hω : ω.IsNondege
       ((univ : Set ℝ) ×ˢ Ioo 0 1) := fun z hz ↦ by
     have h := Measure.eqOn_open_of_ae_eq hae (isOpen_univ.prod isOpen_Ioo) hc.continuousOn
       continuous_zero.continuousOn hz
+    have hz' := univ_prod_Ioo_subset_univ_prod_Icc hz
     exact le_antisymm (ENNReal.ofReal_eq_zero.1 h)
-      (hω.floerEnergyDensity_zero_left_nonneg (Kt := fun w ↦ H w.2)
-        (hJ z (strip_Ioo_subset_Icc hz)) (hfloer z (strip_Ioo_subset_Icc hz)))
+      (hω.floerEnergyDensity_zero_left_nonneg (Kt := fun w ↦ H w.2) (hJ z hz') (hfloer z hz'))
   -- By continuity it vanishes on the closed strip.
-  exact h0.of_subset_closure hρ.continuousOn continuous_zero.continuousOn strip_Ioo_subset_Icc
-    closure_univ_prod_Ioo.ge
+  exact h0.of_subset_closure hρ.continuousOn continuous_zero.continuousOn
+    univ_prod_Ioo_subset_univ_prod_Icc (closure_univ_prod_Ioo zero_ne_one).ge
 
 /-- **Zero energy characterizes stationary Floer cylinders.** Let `H` be a jointly `C¹`
 time-dependent Hamiltonian and let `u` be a `C¹` map solving the Floer equation for the
@@ -229,7 +217,7 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_eq_zero_iff (hω : ω.IsNon
   constructor
   · intro hE
     have h0 := hω.eqOn_floerEnergyDensity_zero hH hu hJ hfloer
-      (le_antisymm (hE ▸ lintegral_mono_set strip_Ioo_subset_Icc) zero_le)
+      (le_antisymm (hE ▸ lintegral_mono_set univ_prod_Ioo_subset_univ_prod_Icc) zero_le)
     intro s t ht
     refine Manifold.apply_eq_of_mfderiv_apply_one_zero_eq_zero
       (fun r ↦ (hu (r, t)).mdifferentiableAt one_ne_zero) (fun r ↦ ?_) s 0
@@ -261,11 +249,7 @@ theorem lintegral_floerEnergyDensity_eq_zero_of_periodic (hu : MDifferentiable �
   set f : ℝ × ℝ → ENNReal := fun z ↦
     ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z)
   -- `u` is also invariant under the translation by the positive period `|c|`.
-  have hper' : ∀ s, ∀ t ∈ Icc (0 : ℝ) 1, u (s + |c|, t) = u (s, t) := by
-    intro s t ht
-    rcases abs_cases c with ⟨hc', -⟩ | ⟨hc', -⟩
-    · rw [hc', hper s t ht]
-    · rw [hc', ← hper (s + -c) t ht, neg_add_cancel_right]
+  have hper' := apply_add_abs_eq_of_apply_add_eq hper
   -- So is its energy density on the open strip, where the translate agrees with `u` nearby.
   have hf : ∀ s, ∀ t ∈ Ioo (0 : ℝ) 1, f (s + |c|, t) = f (s, t) := by
     intro s t ht
@@ -298,7 +282,7 @@ theorem lintegral_floerEnergyDensity_eq_zero_of_periodic (hu : MDifferentiable �
   -- The energy over the open strip vanishes, and the open and closed strips differ by the null
   -- set `ℝ × {0, 1}`.
   have hE := setLIntegral_univ_prod_eq_zero_of_periodic measurableSet_Ioo (abs_pos.2 hc) hμ hf
-    (ne_top_of_le_ne_top hfin (lintegral_mono_set strip_Ioo_subset_Icc))
+    (ne_top_of_le_ne_top hfin (lintegral_mono_set univ_prod_Ioo_subset_univ_prod_Icc))
   have hae : (univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1 =ᵐ[volume] (univ : Set ℝ) ×ˢ Icc 0 1 := by
     rw [Measure.volume_eq_prod]
     exact Measure.set_prod_ae_eq (ae_eq_refl _) Ioo_ae_eq_Icc

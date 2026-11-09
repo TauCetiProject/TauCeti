@@ -144,16 +144,6 @@ section Stationary
 
 variable {H : ℝ → V → ℝ} {u : ℝ × ℝ → V} {U : Set (ℝ × ℝ)}
 
-/-- The open strip `ℝ × (0, 1)` lies in the closed strip `ℝ × [0, 1]`. -/
-private theorem strip_Ioo_subset_Icc :
-    (univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1 ⊆ (univ : Set ℝ) ×ˢ Icc 0 1 :=
-  prod_mono subset_rfl Ioo_subset_Icc_self
-
-/-- The closed strip `ℝ × [0, 1]` is the closure of the open strip `ℝ × (0, 1)`. -/
-private theorem closure_univ_prod_Ioo :
-    closure ((univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1) = (univ : Set ℝ) ×ˢ Icc 0 1 := by
-  rw [closure_prod_eq, closure_univ, closure_Ioo zero_ne_one]
-
 /-- A map that is `C¹` on a neighbourhood of the closed strip `ℝ × [0, 1]`, solves the Floer
 equation for `K = H_t dt` and tamed almost complex structures there, and has zero energy density
 on the open strip `ℝ × (0, 1)`, is stationary on the closed strip. -/
@@ -169,14 +159,15 @@ private theorem eq_of_forall_floerEnergyDensity_eq_zero (ω : SymplecticForm V)
   -- The `s`-derivative vanishes on the open strip, since the perturbed derivative does.
   have hds : EqOn (fun z ↦ fderiv ℝ u z stdComplexLineReal) 0 ((univ : Set ℝ) ×ˢ Ioo 0 1) := by
     intro z hz
-    have hz' := strip_Ioo_subset_Icc hz
+    have hz' := univ_prod_Ioo_subset_univ_prod_Icc hz
     have h := (ω.floerEnergyDensity_eq_zero_iff (hJ z hz') (hfloer z hz')).1 (h0 z hz)
     simpa using congrArg (· stdComplexLineReal) h
   -- By continuity it vanishes on the closed strip.
   have hds' : EqOn (fun z ↦ fderiv ℝ u z stdComplexLineReal) 0 ((univ : Set ℝ) ×ˢ Icc 0 1) :=
     hds.of_subset_closure
       (((hu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const).mono hRU)
-      continuous_zero.continuousOn strip_Ioo_subset_Icc closure_univ_prod_Ioo.ge
+      continuous_zero.continuousOn univ_prod_Ioo_subset_univ_prod_Icc
+      (closure_univ_prod_Ioo zero_ne_one).ge
   -- Along each horizontal line of the closed strip `u` has zero derivative, so it is constant.
   intro s t ht
   have hline (r : ℝ) : HasDerivAt (fun r ↦ u (r, t)) 0 r := by
@@ -207,12 +198,13 @@ private theorem floerEnergyDensity_eq_zero_of_lintegral_eq_zero (ω : Symplectic
       (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z)) ((univ : Set ℝ) ×ˢ Ioo 0 1) :=
     ENNReal.continuous_ofReal.comp_continuousOn
       ((ω.continuousOn_floerEnergyDensity hU hu contDiffOn_const
-        (contDiff_uncurry_cylindrical hH).contDiffOn).mono (strip_Ioo_subset_Icc.trans hRU))
+        (contDiff_uncurry_cylindrical hH).contDiffOn).mono
+          (univ_prod_Ioo_subset_univ_prod_Icc.trans hRU))
   -- A continuous function with zero integral over an open set vanishes there.
   have hae := (lintegral_eq_zero_iff' (hc.aemeasurable hopen.measurableSet)).1 hE
   intro z hz
   have h := Measure.eqOn_open_of_ae_eq hae hopen hc continuous_zero.continuousOn hz
-  have hz' := strip_Ioo_subset_Icc hz
+  have hz' := univ_prod_Ioo_subset_univ_prod_Icc hz
   exact le_antisymm (ENNReal.ofReal_eq_zero.1 h)
     (ω.floerEnergyDensity_nonneg (hJ z hz') (hfloer z hz'))
 
@@ -233,7 +225,8 @@ theorem lintegral_floerEnergyDensity_eq_zero_iff (ω : SymplecticForm V)
       ∀ s, ∀ t ∈ Icc (0 : ℝ) 1, u (s, t) = u (0, t) := by
   refine ⟨fun hE ↦ eq_of_forall_floerEnergyDensity_eq_zero ω hU hu hRU hJ hfloer
     (floerEnergyDensity_eq_zero_of_lintegral_eq_zero ω hH hU hu hRU hJ hfloer
-      (le_antisymm (hE ▸ lintegral_mono_set strip_Ioo_subset_Icc) zero_le)), fun hst ↦ ?_⟩
+      (le_antisymm (hE ▸ lintegral_mono_set univ_prod_Ioo_subset_univ_prod_Icc) zero_le)),
+    fun hst ↦ ?_⟩
   -- Near a point of the open strip `u` agrees with the stationary map `(s, t) ↦ u(0, t)`.
   have h0 : EqOn (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u) 0
       ((univ : Set ℝ) ×ˢ Ioo 0 1) := by
@@ -252,7 +245,8 @@ theorem lintegral_floerEnergyDensity_eq_zero_iff (ω : SymplecticForm V)
       ((univ : Set ℝ) ×ˢ Icc 0 1) :=
     h0.of_subset_closure ((ω.continuousOn_floerEnergyDensity hU hu contDiffOn_const
         (contDiff_uncurry_cylindrical hH).contDiffOn).mono hRU)
-      continuous_zero.continuousOn strip_Ioo_subset_Icc closure_univ_prod_Ioo.ge
+      continuous_zero.continuousOn univ_prod_Ioo_subset_univ_prod_Icc
+      (closure_univ_prod_Ioo zero_ne_one).ge
   rw [setLIntegral_congr_fun (MeasurableSet.univ.prod measurableSet_Icc) fun z hz ↦ by
     rw [h0' hz, Pi.zero_apply, ENNReal.ofReal_zero]]
   exact lintegral_zero
@@ -277,11 +271,7 @@ theorem lintegral_floerEnergyDensity_eq_zero_of_periodic (ω : SymplecticForm V)
   set f : ℝ × ℝ → ENNReal := fun z ↦
     ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z)
   -- `u` is also invariant under the translation by the positive period `|c|`.
-  have hper' : ∀ s, ∀ t ∈ Icc (0 : ℝ) 1, u (s + |c|, t) = u (s, t) := by
-    intro s t ht
-    rcases abs_cases c with ⟨hc', -⟩ | ⟨hc', -⟩
-    · rw [hc', hper s t ht]
-    · rw [hc', ← hper (s + -c) t ht, neg_add_cancel_right]
+  have hper' := apply_add_abs_eq_of_apply_add_eq hper
   -- So is its energy density on the open strip, where the translate agrees with `u` nearby.
   have hf : ∀ s, ∀ t ∈ Ioo (0 : ℝ) 1, f (s + |c|, t) = f (s, t) := by
     intro s t ht
@@ -295,7 +285,7 @@ theorem lintegral_floerEnergyDensity_eq_zero_of_periodic (ω : SymplecticForm V)
     (measurePreserving_add_right volume |c|).prod (MeasurePreserving.id volume)
   -- The energy over the open strip vanishes, so `u` is stationary.
   have hE := setLIntegral_univ_prod_eq_zero_of_periodic measurableSet_Ioo (abs_pos.2 hc) hμ hf
-    (ne_top_of_le_ne_top hfin (lintegral_mono_set strip_Ioo_subset_Icc))
+    (ne_top_of_le_ne_top hfin (lintegral_mono_set univ_prod_Ioo_subset_univ_prod_Icc))
   exact (ω.lintegral_floerEnergyDensity_eq_zero_iff hH hU hu hRU hJ hfloer).2
     (eq_of_forall_floerEnergyDensity_eq_zero ω hU hu hRU hJ hfloer
       (floerEnergyDensity_eq_zero_of_lintegral_eq_zero ω hH hU hu hRU hJ hfloer hE))

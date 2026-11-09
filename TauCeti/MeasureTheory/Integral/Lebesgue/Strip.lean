@@ -44,7 +44,9 @@ integral over each translate, so if its integral over the strip is finite, then 
 each period rectangle vanishes, and hence so does its integral over the whole strip
 (`TauCeti.setLIntegral_univ_prod_eq_zero_of_periodic`). For the energy density of a Floer cylinder
 this says that a finite-energy cylinder invariant under a nontrivial translation has zero
-energy.
+energy. A map invariant under the translation by `c` is also invariant under the translation by
+the nonnegative period `|c|` (`TauCeti.apply_add_abs_eq_of_apply_add_eq`), and the open strip
+`ℝ × (a, b)` is dense in the closed strip `ℝ × [a, b]` (`TauCeti.closure_univ_prod_Ioo`).
 
 Finally, a function with finite integral over a set `E` has small integral over the parts of `E`
 far out along the strip: its integrals over sets that eventually lie in `E` and outside every band
@@ -153,6 +155,26 @@ theorem setLIntegral_Ici_prod_eq_ofReal_of_tendsto {β : Type*} [MeasurableSpace
   simp only [R, hE]
   exact (ENNReal.continuous_ofReal.tendsto _).comp
     ((htop.comp (tendsto_atTop_add_const_left _ b tendsto_natCast_atTop_atTop)).sub_const _)
+
+/-- The open strip `ℝ × (a, b)` lies in the closed strip `ℝ × [a, b]`. -/
+theorem univ_prod_Ioo_subset_univ_prod_Icc {a b : ℝ} :
+    (univ : Set ℝ) ×ˢ Ioo a b ⊆ (univ : Set ℝ) ×ˢ Icc a b :=
+  prod_mono subset_rfl Ioo_subset_Icc_self
+
+/-- For `a ≠ b`, the closed strip `ℝ × [a, b]` is the closure of the open strip `ℝ × (a, b)`. -/
+theorem closure_univ_prod_Ioo {a b : ℝ} (hab : a ≠ b) :
+    closure ((univ : Set ℝ) ×ˢ Ioo a b) = (univ : Set ℝ) ×ˢ Icc a b := by
+  rw [closure_prod_eq, closure_univ, closure_Ioo hab]
+
+/-- A map on the strip `ℝ × T` invariant under the translation `(s, t) ↦ (s + c, t)` is also
+invariant under the translation by the nonnegative period `|c|`. -/
+theorem apply_add_abs_eq_of_apply_add_eq {β γ : Type*} {T : Set β} {u : ℝ × β → γ} {c : ℝ}
+    (hper : ∀ s, ∀ t ∈ T, u (s + c, t) = u (s, t)) :
+    ∀ s, ∀ t ∈ T, u (s + |c|, t) = u (s, t) := by
+  intro s t ht
+  rcases abs_cases c with ⟨hc, -⟩ | ⟨hc, -⟩
+  · rw [hc, hper s t ht]
+  · rw [hc, ← hper (s + -c) t ht, neg_add_cancel_right]
 
 /-- A function on the strip `ℝ × T`, periodic in the first variable with period `c` and with
 finite integral over the strip, has zero integral over each period rectangle `(a, a + c] × T`:
