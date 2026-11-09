@@ -8,6 +8,7 @@ import json
 import os
 import subprocess
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -21,7 +22,7 @@ MODERN = any(step.get("run") == "python3 scripts/fleet_runner.py --route"
              for job in PICKER["jobs"].values() for step in job.get("steps", []))
 
 
-def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"', event="pull_request_target", action="opened", staging=False, maintenance=False, author_type="User", head_repo="TauCetiProject/TauCeti", head_ref="feature", hosted_picker=False, labels=(), label="unrelated", hosted_slot="0", staging_target=""):
+def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"', event="pull_request_target", action="opened", staging=False, maintenance=False, author_type="User", head_repo="TauCetiProject/TauCeti", head_ref="feature", hosted_picker=False, labels=(), label="unrelated", hosted_slot="0", staging_target="", pool="github"):
     """Evaluate the actual YAML expression's boolean/format/JSON subset."""
     source = source.removeprefix("${{").removesuffix("}}").strip()
     source = source.replace("\n", " ").replace("&&", " and ").replace("||", " or ")
@@ -31,7 +32,7 @@ def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"'
             head=SimpleNamespace(sha="a" * 40, ref=head_ref, repo=SimpleNamespace(full_name=head_repo))),
         client_payload=SimpleNamespace(pr=7, head_sha="a" * 40, base_sha="b" * 40, base_ref="main", batch_id=12),
         merge_group=SimpleNamespace(head_sha="c" * 40)))
-    needs = SimpleNamespace(picker=SimpleNamespace(outputs=SimpleNamespace(attempt=picker_attempt, runner=target, hosted_slot=hosted_slot)))
+    needs = SimpleNamespace(picker=SimpleNamespace(outputs=SimpleNamespace(attempt=picker_attempt, runner=target, hosted_slot=hosted_slot, pool=pool)))
     source = source.replace("needs.pick-runner", "needs.picker").replace("inputs.fleet-staging", "inputs.staging").replace("outputs.hosted-slot", "outputs.hosted_slot")
     return eval(source, {"__builtins__": {}, "github": github, "needs": needs,
                          "inputs": SimpleNamespace(pr="7", staging=staging, maintenance=maintenance), "fromJSON": json.loads,
@@ -124,6 +125,27 @@ class PickerWorkflow(unittest.TestCase):
                 self.assertTrue(expression(condition, action=action, label=label, labels=("self-tested",)))
             self.assertEqual(expression(BUILD["run-name"], action=action), "Ignored label event 42")
         self.assertTrue(expression(condition))
+
+    def test_staging_uses_only_the_two_fast_hosts_and_waits_locally(self):
+        source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
+        group = BUILD["jobs"]["sandboxed-build"]["concurrency"]["group"]
+        config = tomllib.loads((ROOT / "tauceti.toml").read_text())["services"]["fleet"]
+        self.assertEqual(config["staging_order"], ["chungus2", "tauchonki2"])
+        fallback = ["self-hosted", "linux", "x64", "tauceti-fleet-staging",
+                    "fleet-" + config["machines"]["chungus2"]["machine_id"]]
+        common = dict(event="repository_dispatch", action="tauceti-bors-staging",
+                      staging_target='["nscloud-ubuntu-24.04-amd64-16x32-with-features"]')
+        for pool in ("chungus2", "tauchonki2"):
+            target = dict(group="TauCetiFleet", labels=["self-hosted", "tauceti-fleet-staging",
+                          "fleet-" + config["machines"][pool]["machine_id"], "fleet-instance-" + "b" * 16])
+            self.assertEqual(expression(source, pool=pool, target=json.dumps(target), **common), target)
+            self.assertEqual(expression(source, pool=pool, target=json.dumps(target), attempt=2, **common), fallback)
+        for pool, target in (("namespace", '["nscloud-old"]'), ("github", '"ubuntu-24.04"'),
+                             ("chris", '["self-hosted"]'), ("", "")):
+            self.assertEqual(expression(source, pool=pool, target=target, **common), fallback)
+            self.assertFalse(expression(group, pool=pool, target=target, **common).startswith("tauceti-hosted-bulk-"))
+        self.assertEqual(expression(source, picker_attempt="", target="", **common), fallback)
+        self.assertNotIn("fleet-instance-", " ".join(fallback))
 
     def test_maintenance_build_keeps_its_explicit_namespace_runner(self):
         source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
