@@ -241,27 +241,6 @@ theorem exists_eLpNorm_le_of_support_fourier_subset {p q : ℝ≥0∞} (hp : 1 �
 
 /-! ### The reverse Bernstein inequality on an annulus -/
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- A function `m` smooth away from the origin agrees on the annulus `1 ≤ ‖ξ‖ ≤ θ` with a Schwartz
-function, namely a finite sum of its Littlewood–Paley pieces. -/
-private theorem exists_eqOn_annulus_of_contDiffOn {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] {m : E → G} (hm : ContDiffOn ℝ (⊤ : ℕ∞) m {0}ᶜ) (θ : ℝ) :
-    ∃ σ : 𝓢(E, G), Set.EqOn σ m {ξ | 1 ≤ ‖ξ‖ ∧ ‖ξ‖ ≤ θ} := by
-  let φ : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
-  have hφ : φ.rOut = 2 := rfl
-  obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt θ (one_lt_two : (1 : ℝ) < 2)
-  refine ⟨∑ j ∈ Finset.Ioc (-1 : ℤ) N, φ.littlewoodPaleyPiece hm j, fun ξ hξ => ?_⟩
-  -- On the annulus the cutoff `φ (2^{-N} ·) - φ (2 ·)` is `1`.
-  have h1 : φ (((2 : ℝ) ^ (N : ℤ))⁻¹ • ξ) = 1 := by
-    refine φ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 ?_)
-    rw [norm_smul, zpow_natCast, norm_inv, norm_pow, Real.norm_two]
-    exact inv_mul_le_one_of_le₀ (hξ.2.trans hN.le) (by positivity)
-  have h0 : φ (((2 : ℝ) ^ (-1 : ℤ))⁻¹ • ξ) = 0 := by
-    refine φ.zero_of_le_dist ?_
-    rw [dist_zero_right, norm_smul, zpow_neg_one, inv_inv, Real.norm_two, hφ]
-    linarith [hξ.1]
-  rw [sum_apply, φ.sum_littlewoodPaleyPiece_Ioc hm (by omega), h1, h0, sub_zero, one_smul]
-
 /-- A Schwartz function with frequencies in the annulus `1 ≤ ‖ξ‖ ≤ θ` is a sum of Fourier
 multipliers with Schwartz symbols applied to its partial derivatives: on the annulus, the
 symbols agree with `⟪bᵢ, ξ⟫ / (2πi ‖ξ‖²)`, and `∑ᵢ ⟪bᵢ, ξ⟫ ⟪ξ, bᵢ⟫ / ‖ξ‖² = 1`. -/
