@@ -22,8 +22,8 @@ finite free algebra over any commutative ring is étale iff the discriminant of 
 
 ## Main results
 
-* `TauCeti.Algebra.etale_iff_traceForm_nondegenerate`: a finite-dimensional algebra over a field is
-  étale iff its trace form is nondegenerate.
+* `TauCeti.Algebra.etale_iff_traceForm_nondegenerate`: an algebra over a field is étale iff its
+  trace form is nondegenerate.
 * `TauCeti.Algebra.algebraMap_discr_ne_zero_iff_etale_baseChange`: the discriminant of a basis has
   nonzero image in a field `K` iff the fibre `K ⊗[A] B` is étale over `K`.
 * `TauCeti.Algebra.etale_of_isUnit_discr`: a finite free algebra over any ring whose basis has unit
@@ -59,11 +59,11 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-/-- A finite-dimensional algebra over a field is étale iff its trace form is nondegenerate. The
-fibre case in the proof of Stacks, Lemma 49.3.1 (0BJF). -/
+/-- An algebra over a field is étale iff its trace form is nondegenerate. The fibre case in the
+proof of Stacks, Lemma 49.3.1 (0BJF). -/
 @[stacks 0BJF "the case of a field"]
 theorem Algebra.etale_iff_traceForm_nondegenerate (K B : Type*) [Field K] [CommRing B]
-    [Algebra K B] [FiniteDimensional K B] :
+    [Algebra K B] :
     Algebra.Etale K B ↔ (Algebra.traceForm K B).Nondegenerate := by
   constructor
   · intro hB
@@ -73,6 +73,15 @@ theorem Algebra.etale_iff_traceForm_nondegenerate (K B : Type*) [Field K] [CommR
     exact (Algebra.traceForm_nondegenerate_congr e).mpr
       ((Algebra.traceForm_pi_nondegenerate_iff Ai).mpr fun i ↦ traceForm_nondegenerate K (Ai i))
   · intro h
+    have : FiniteDimensional K B := by
+      by_contra hfd
+      have htr : Algebra.trace K B = 0 := Algebra.trace_eq_zero_of_not_exists_basis K
+        fun ⟨_, ⟨b⟩⟩ ↦ hfd (Module.Finite.of_basis b)
+      have hsub : Subsingleton B := ⟨fun x y ↦ by
+        have hz : ∀ z : B, z = 0 := fun z ↦ h.1 z fun w ↦ by
+          simp [Algebra.traceForm_apply, htr]
+        rw [hz x, hz y]⟩
+      exact hfd inferInstance
     have : IsReduced B := Algebra.isReduced_of_traceForm_nondegenerate h
     have : IsArtinianRing B := isArtinian_of_tower K inferInstance
     let F (m : MaximalSpectrum B) : Type _ := B ⧸ m.asIdeal
