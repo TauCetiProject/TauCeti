@@ -53,7 +53,7 @@ both the coupling and the reference measure move.
 * `TauCeti.lowerSemicontinuous_klDiv_finiteMeasure` and
   `TauCeti.lowerSemicontinuous_klDiv_probabilityMeasure`: joint weak lower semicontinuity.
 * `TauCeti.ofReal_mul_measureReal_sub_le_klDiv`: the entropy inequality
-  `t μ(s) - (exp t - 1) ν(s) ≤ klDiv μ ν` for measurable sets.
+  `t μ(s) - (exp t - 1) ν(s) ≤ klDiv μ ν` for arbitrary sets.
 * `TauCeti.isTightMeasureSet_setOf_klDiv_le`: sublevel sets of `klDiv · ν` are tight when `ν` is.
 
 ## References
