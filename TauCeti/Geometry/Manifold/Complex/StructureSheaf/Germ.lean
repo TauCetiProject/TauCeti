@@ -33,7 +33,7 @@ homomorphism `TauCeti.holomorphicStructureSheaf.toFilterGerm I X x l hl` and pro
 * `toFilterGerm_stalkPrecomp`: pulling a holomorphic germ back along a complex analytic map `f`
   is composition of germs with `f`;
 * `quotientMk_comp_stalkPrecomp_bijective`: if an ideal of germs at `p` on a normed space consists
-  of the germs vanishing along a local holomorphic section `σ` through `p` of a holomorphic map
+  of the germs vanishing along a local holomorphic section `σ` of a holomorphic map
   `π`, then pulling back along `π` identifies the germs at `π p` with the quotient by that ideal.
   This computes local rings of analytic subsets that are locally graphs.
   The inverse is composition with `σ` (`toFilterGerm_eq_comp_of_quotientMk_stalkPrecomp_eq`).
@@ -325,17 +325,31 @@ theorem toFilterGerm_eq_comp_of_quotientMk_stalkPrecomp_eq {π : V → W}
   rwa [Pi.sub_apply, Function.comp_apply, hπw, sub_eq_zero] at hw
 
 /-- **Germs on the image of a holomorphic section.** Let `π : V → W` be holomorphic and `σ` a
-local holomorphic section of `π` near `π p` through `p`. If an ideal `J` of the holomorphic germs
+local holomorphic section of `π` near `π p`. If an ideal `J` of the holomorphic germs
 at `p` consists exactly of the germs vanishing along `σ`, then pulling back along `π` identifies
 the holomorphic germs at `π p` with the germs at `p` modulo `J`. -/
 theorem quotientMk_comp_stalkPrecomp_bijective {π : V → W} (hπ : ContMDiff 𝓘(ℂ, V) 𝓘(ℂ, W) ω π)
-    {σ : W → V} {p : V} (hσ : ContDiffAt ℂ ω σ (π p)) (hσp : σ (π p) = p)
+    {σ : W → V} {p : V} (hσ : ContDiffAt ℂ ω σ (π p))
     (hπσ : ∀ᶠ w in 𝓝 (π p), π (σ w) = w)
     (J : Ideal ((holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk p))
     (hJ : ∀ (g : (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk p) (G : V → ℂ),
       toFilterGerm 𝓘(ℂ, V) V p (𝓝 p) le_rfl g = G →
         (g ∈ J ↔ ∀ᶠ w in 𝓝 (π p), G (σ w) = 0)) :
     Bijective ((Ideal.Quotient.mk J).comp (stalkPrecomp 𝓘(ℂ, V) V π hπ p)) := by
+  -- The section passes through `p`: otherwise the indicator of a neighbourhood of `σ (π p)`
+  -- away from `p` is a germ at `p` vanishing along `σ`, yet equal to `1` along `σ` near `π p`.
+  have hσp : σ (π p) = p := by
+    by_contra hne
+    obtain ⟨U, U', hU, hU', hpU, hqU', hdisj⟩ := t2_separation (Ne.symm hne)
+    classical
+    have h0 := (hJ 0 (U'.indicator fun _ ↦ 1) (by
+      rw [map_zero, ← Germ.coe_zero]
+      refine Germ.coe_eq.2 ?_
+      filter_upwards [hU.mem_nhds hpU] with x hx
+      exact (Set.indicator_of_notMem (fun h ↦ hdisj.le_bot ⟨hx, h⟩) _).symm)).1 (zero_mem J)
+    have h1 : ∀ᶠ w in 𝓝 (π p), σ w ∈ U' := hσ.continuousAt.eventually (hU'.mem_nhds hqU')
+    obtain ⟨w, hw0, hw1⟩ := (h0.and h1).exists
+    simp [hw1] at hw0
   constructor
   · -- A germ at `π p` whose pullback vanishes along `σ` vanishes, since `π ∘ σ = id`.
     rw [injective_iff_map_eq_zero]
