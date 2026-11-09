@@ -7,10 +7,15 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Geometry.Manifold.Algebra.SMul
+public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 public import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
+public import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 public import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
-import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
+import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Geometry.Manifold.MFDeriv.Basic
 
 /-!
 # Möbius transformations of the projective line are analytic
@@ -32,11 +37,13 @@ the numerator `a * z₀ + b` being nonzero there because the matrix is invertibl
 Möbius transformation precomposed with the inverse of the inverted chart is again a Möbius
 transformation restricted to `𝕜`.
 
-Hence `GL (Fin 2) 𝕜` acts on `OnePoint 𝕜` by analytic maps (`OnePoint.instContMDiffConstSMul`).
+Hence `GL (Fin 2) 𝕜` acts on `OnePoint 𝕜` by analytic maps (`OnePoint.instContMDiffConstSMul`),
+and so does `PSL(2, 𝕜)`, which acts through representatives (`OnePoint.instContMDiffConstSMulPSL`).
 For `𝕜 = ℂ`, each Möbius transformation is therefore a biholomorphism of the Riemann sphere, with
 inverse the transformation of the inverse matrix: this is `Diffeomorph.constSmul 𝓘(ℂ) ω g`.
-Restricting scalars, Möbius transformations of `GL(2, ℂ)` and `PSL(2, ℂ)` are also smooth for the
-real structure of the Riemann sphere.
+Restricting scalars, the Möbius transformations are also smooth maps of the underlying real
+surface, and in the affine coordinate the transformation of `!![a, b; c, d]` has derivative
+`det / (c * z + d) ^ 2`.
 
 ## Main results
 
@@ -47,9 +54,11 @@ real structure of the Riemann sphere.
   analytic.
 * `OnePoint.instContMDiffConstSMul`: `GL (Fin 2) 𝕜` acts on `OnePoint 𝕜` by analytic maps.
 * `OnePoint.instContinuousConstSMul`: in particular it acts by homeomorphisms.
-* `Matrix.GeneralLinearGroup.contMDiff_smul_real`,
-  `Matrix.ProjectiveSpecialLinearGroup.contMDiff_smul_real`: Möbius transformations are smooth for
-  the real structure of the Riemann sphere.
+* `OnePoint.instContMDiffConstSMulPSL`: `PSL(2, 𝕜)` acts on `OnePoint 𝕜` by analytic maps.
+* `OnePoint.instContMDiffConstSMulGLReal`, `OnePoint.instContMDiffConstSMulPSLReal`: `GL(2, ℂ)`
+  and `PSL(2, ℂ)` act on the Riemann sphere by smooth maps of the underlying real surface.
+* `OnePoint.mfderiv_smul_coe_apply`: the derivative of a Möbius transformation in the affine
+  coordinate.
 
 ## References
 
@@ -61,7 +70,7 @@ public noncomputable section
 
 open Filter Matrix Set Topology
 
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold MatrixGroups
 
 namespace OnePoint
 
@@ -199,29 +208,62 @@ instance instContMDiffConstSMul : ContMDiffConstSMul 𝓘(𝕜) ω (GL (Fin 2) �
 instance instContinuousConstSMul : ContinuousConstSMul (GL (Fin 2) 𝕜) (OnePoint 𝕜) :=
   ContMDiffConstSMul.continuousConstSMul (I := 𝓘(𝕜)) ω
 
+/-- `PSL(2, 𝕜)` acts on the projective line by analytic maps, through representatives. -/
+instance instContMDiffConstSMulPSL : ContMDiffConstSMul 𝓘(𝕜) ω PSL(2, 𝕜) (OnePoint 𝕜) where
+  contMDiff_const_smul g := by
+    induction g using QuotientGroup.induction_on with
+    | H A =>
+      simpa only [pslMk_smul] using contMDiff_const_smul (I := 𝓘(𝕜)) (n := ω) (A : GL (Fin 2) 𝕜)
+
+/-! ### Möbius transformations as smooth maps of the real surface -/
+
+/-- `GL(2, ℂ)` acts on the Riemann sphere, regarded as a real surface, by smooth (indeed
+real-analytic) maps: each Möbius transformation is holomorphic. -/
+instance instContMDiffConstSMulGLReal {n : WithTop ℕ∞} :
+    ContMDiffConstSMul 𝓘(ℝ, ℂ) n (GL (Fin 2) ℂ) (OnePoint ℂ) where
+  contMDiff_const_smul g := by
+    simpa only [modelWithCornersSelf_restrictScalars] using
+      ((contMDiff_const_smul (I := 𝓘(ℂ)) (n := ω) g).restrictScalars ℝ).of_le le_top
+
+/-- `PSL(2, ℂ)` acts on the Riemann sphere, regarded as a real surface, by smooth (indeed
+real-analytic) maps. -/
+instance instContMDiffConstSMulPSLReal {n : WithTop ℕ∞} :
+    ContMDiffConstSMul 𝓘(ℝ, ℂ) n PSL(2, ℂ) (OnePoint ℂ) where
+  contMDiff_const_smul g := by
+    simpa only [modelWithCornersSelf_restrictScalars] using
+      ((contMDiff_const_smul (I := 𝓘(ℂ)) (n := ω) g).restrictScalars ℝ).of_le le_top
+
+/-- **The derivative of a Möbius transformation in the affine coordinate.** At a finite point `z`
+which `g = !![a, b; c, d]` does not send to `∞`, the derivative of `g` on the Riemann sphere,
+read in the affine charts, is multiplication by `det g / (c * z + d) ^ 2`. -/
+theorem mfderiv_smul_coe_apply (g : GL (Fin 2) ℂ) {z : ℂ} (hz : g 1 0 * z + g 1 1 ≠ 0)
+    (v : ℂ) :
+    mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (g • · : OnePoint ℂ → OnePoint ℂ) z v =
+      (g : Matrix (Fin 2) (Fin 2) ℂ).det / (g 1 0 * z + g 1 1) ^ 2 * v := by
+  -- Near `z`, the transformation read in the affine charts is `w ↦ (a w + b) / (c w + d)`.
+  have hq : ContinuousAt (fun w : ℂ ↦ g 1 0 * w + g 1 1) z := by fun_prop
+  have hev : (fun w : ℂ ↦ affineChart (g • (w : OnePoint ℂ)))
+      =ᶠ[𝓝 z] fun w ↦ (g 0 0 * w + g 0 1) / (g 1 0 * w + g 1 1) := by
+    filter_upwards [hq.eventually_ne hz] with w hw
+    simp [smul_some_eq_ite, hw]
+  have hd : HasDerivAt (fun w ↦ (g 0 0 * w + g 0 1) / (g 1 0 * w + g 1 1))
+      ((g : Matrix (Fin 2) (Fin 2) ℂ).det / (g 1 0 * z + g 1 1) ^ 2) z := by
+    refine ((((hasDerivAt_id' z).const_mul (g 0 0)).add_const (g 0 1)).div
+      (((hasDerivAt_id' z).const_mul (g 1 0)).add_const (g 1 1)) hz).congr_deriv ?_
+    rw [det_fin_two]
+    ring
+  have hF := (hd.hasFDerivAt.restrictScalars ℝ).congr_of_eventuallyEq hev
+  have hgz : g • (z : OnePoint ℂ) =
+      (((g 0 0 * z + g 0 1) / (g 1 0 * z + g 1 1) : ℂ) : OnePoint ℂ) := by
+    simp [smul_some_eq_ite, hz]
+  have hmd : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (g • · : OnePoint ℂ → OnePoint ℂ) z :=
+    (contMDiff_const_smul (I := 𝓘(ℝ, ℂ)) (n := 1) g).mdifferentiableAt one_ne_zero
+  rw [hmd.mfderiv]
+  simp only [writtenInExtChartAt, hgz, chartAt_coe, affineChart_symm_apply, affineChart_coe,
+    fderivWithin_univ, Function.comp_def, mfld_simps]
+  rw [hF.fderiv]
+  -- The casts `tangentSpaceCastModel` between the tangent spaces and `ℂ` are identities.
+  change ContinuousLinearMap.toSpanSingleton ℂ (_ : ℂ) v = _
+  rw [ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul, mul_comm]
+
 end OnePoint
-
-open scoped MatrixGroups
-
-namespace Matrix.GeneralLinearGroup
-
-/-- Möbius transformations are smooth for the real structure of the Riemann sphere: they are
-analytic for its complex structure (`OnePoint.instContMDiffConstSMul`). -/
-theorem contMDiff_smul_real (M : GL (Fin 2) ℂ) {n : ℕ∞ω} :
-    ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) n fun x : OnePoint ℂ ↦ M • x := by
-  simpa using ((ContMDiffConstSMul.contMDiff_const_smul (I := 𝓘(ℂ)) (n := ω) M).restrictScalars
-    ℝ).of_le le_top
-
-end Matrix.GeneralLinearGroup
-
-namespace Matrix.ProjectiveSpecialLinearGroup
-
-/-- Möbius transformations of `PSL(2, ℂ)` are smooth for the real structure of the Riemann
-sphere. -/
-theorem contMDiff_smul_real (g : PSL(2, ℂ)) {n : ℕ∞ω} :
-    ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) n fun x : OnePoint ℂ ↦ g • x := by
-  obtain ⟨A, rfl⟩ := QuotientGroup.mk_surjective g
-  -- The class of `A` acts as `A` does (`OnePoint.pslMk_smul`, which holds by definition).
-  exact GeneralLinearGroup.contMDiff_smul_real (SpecialLinearGroup.toGL A)
-
-end Matrix.ProjectiveSpecialLinearGroup
