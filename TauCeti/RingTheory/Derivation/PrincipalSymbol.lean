@@ -44,6 +44,10 @@ at `x`, a symmetric multilinear map `T_x*M × ⋯ × T_x*M → Hom(E_x, F_x)`.
   `m + 1` vanishes if and only if the operator has order at most `m`.
 * `TauCeti.commutatorSymbol_comp_perm`: the commutator symbol is symmetric.
 * `TauCeti.commutatorSymbol_update_mul`: the Leibniz rule in each slot.
+* `TauCeti.commutatorSymbol_add_algebraMap`: adding scalars to the entries does not change the
+  commutator symbol.
+* `TauCeti.commutatorSymbol_conjDifferentialOperators`: the commutator symbol is natural under
+  conjugation by algebra isomorphisms.
 * `TauCeti.commutatorSymbol_comp_const`: on the diagonal, commutator symbols multiply under
   composition, up to the binomial coefficient `(m + k).choose m`.
 * `Derivation.commutatorSymbol_derivation`: the commutator symbol of a derivation `δ` at `f` is
@@ -226,6 +230,16 @@ theorem commutatorSymbol_update_algebraMap {m : ℕ} (D : differentialOperators 
   ext x
   simp [List.ofFn_succ]
 
+/-- Adding scalars to the entries does not change the commutator symbol: the commutator with
+multiplication by a scalar vanishes. -/
+@[simp]
+theorem commutatorSymbol_add_algebraMap {m : ℕ} (D : differentialOperators R A M N m)
+    (a : Fin m → A) (r : Fin m → R) :
+    commutatorSymbol R A M N m D (fun i ↦ a i + algebraMap R A (r i)) =
+      commutatorSymbol R A M N m D a := by
+  ext x
+  simp [smulCommutator_add]
+
 /-- The commutator symbol, as a derivation in the slot `i` with the other entries of `a` fixed. -/
 def commutatorSymbolDerivation {m : ℕ} (D : differentialOperators R A M N m) (a : Fin m → A)
     (i : Fin m) : Derivation R A (M →ₗ[A] N) :=
@@ -281,6 +295,37 @@ theorem _root_.Derivation.commutatorSymbol_derivation (δ : Derivation R A N) (f
   simp
 
 end CommSemiring
+
+/-! ### Transport along algebra isomorphisms -/
+
+section Conj
+
+variable {R A B : Type*} [CommSemiring R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
+  (e : A ≃ₐ[R] B)
+
+/-- Iterated commutators commute with conjugation by an algebra isomorphism `e`, the entries
+being transported by `e`. -/
+private theorem list_prod_smulCommutator_conj {m : ℕ} (a : Fin m → A) (D : A →ₗ[R] A) :
+    (List.ofFn fun i ↦ smulCommutator R (e (a i))).prod
+        (e.toLinearMap ∘ₗ D ∘ₗ e.symm.toLinearMap) =
+      e.toLinearMap ∘ₗ (List.ofFn fun i ↦ smulCommutator R (a i)).prod D ∘ₗ e.symm.toLinearMap := by
+  induction m generalizing D with
+  | zero => rfl
+  | succ m ih =>
+    simp only [List.ofFn_succ, List.prod_cons, mul_apply_eq_comp]
+    rw [ih (fun i ↦ a i.succ), smulCommutator_conj]
+
+/-- The commutator symbol of the conjugate `e ∘ D ∘ e⁻¹` of `D` by an algebra isomorphism `e`, at
+the images `e aᵢ`, is the conjugate of the commutator symbol of `D` at the `aᵢ`. -/
+theorem commutatorSymbol_conjDifferentialOperators {m : ℕ} (D : differentialOperators R A A A m)
+    (a : Fin m → A) (y : B) :
+    commutatorSymbol R B B B m (e.conjDifferentialOperators m D) (fun i ↦ e (a i)) y =
+      e (commutatorSymbol R A A A m D a (e.symm y)) := by
+  rw [commutatorSymbol_apply_apply, AlgEquiv.coe_conjDifferentialOperators,
+    list_prod_smulCommutator_conj, commutatorSymbol_apply_apply]
+  rfl
+
+end Conj
 
 /-! ### Descent to the cotangent module of an ideal -/
 

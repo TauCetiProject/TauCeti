@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
+public import Mathlib.Geometry.Manifold.Diffeomorph
 
 /-!
 # Algebraic operations on smooth maps
@@ -18,8 +19,12 @@ algebra of smooth functions.
 ## Main results
 
 * `ContMDiffMap.coe_sum`: the coercion of a finite sum of smooth maps is the sum of the coercions.
+* `ContMDiffMap.algebraMap_apply`: the scalars of the algebra of `C^n` functions are the constant
+  functions.
 * `ContMDiffMap.compRightAlgHom`: precomposition with a smooth map `φ : N → M`, as an algebra
   homomorphism `C^n⟮I, M; 𝓘(𝕜, A), A⟯ →ₐ[𝕜] C^n⟮J, N; 𝓘(𝕜, A), A⟯`.
+* `Diffeomorph.compRightAlgEquiv`: precomposition with a diffeomorphism, as an algebra
+  isomorphism.
 * `TauCeti.sub_algebraMap_eq_sum_mul_sub_algebraMap`: the bundled form of a pointwise
   factorization of `g - g x` in the algebra of smooth functions.
 -/
@@ -43,6 +48,17 @@ theorem coe_sum {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     {ι : Type*} (s : Finset ι) (f : ι → C^n⟮I, N; I', G⟯) :
     ⇑(∑ i ∈ s, f i) = ∑ i ∈ s, ⇑(f i) :=
   map_sum coeFnAddMonoidHom f s
+
+/-- The image of a scalar `c` in the algebra of `C^n` functions is the constant function with
+value `algebraMap 𝕜 A c`. -/
+@[simp]
+theorem algebraMap_apply {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H N] {n : ℕ∞ω}
+    {A : Type*} [NormedRing A] [NormedAlgebra 𝕜 A] [ContMDiffRing 𝓘(𝕜, A) n A] (c : 𝕜) (x : N) :
+    algebraMap 𝕜 C^n⟮I, N; 𝓘(𝕜, A), A⟯ c x = algebraMap 𝕜 A c :=
+  (rfl)
 
 section CompRight
 
@@ -88,6 +104,45 @@ theorem compRightAlgHom_comp (φ : C^n⟮J, N; I, M⟯) (ψ : C^n⟮K, P; J, N�
 end CompRight
 
 end ContMDiffMap
+
+namespace Diffeomorph
+
+open ContMDiffMap
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] {n : ℕ∞ω}
+  (A : Type*) [NormedRing A] [NormedAlgebra 𝕜 A] [ContMDiffRing 𝓘(𝕜, A) n A]
+
+variable (𝕜) in
+/-- Precomposition with a `C^n` diffeomorphism `φ : N → M`, as an algebra isomorphism from the
+`C^n` functions on `M` to the `C^n` functions on `N`, with inverse the precomposition with
+`φ⁻¹`. -/
+def compRightAlgEquiv (φ : N ≃ₘ^n⟮J, I⟯ M) : C^n⟮I, M; 𝓘(𝕜, A), A⟯ ≃ₐ[𝕜] C^n⟮J, N; 𝓘(𝕜, A), A⟯ :=
+  AlgEquiv.ofAlgHom (compRightAlgHom 𝕜 A φ.toContMDiffMap)
+    (compRightAlgHom 𝕜 A φ.symm.toContMDiffMap)
+    (AlgHom.ext fun f ↦ ContMDiffMap.ext fun x ↦ congrArg f (φ.symm_apply_apply x))
+    (AlgHom.ext fun f ↦ ContMDiffMap.ext fun x ↦ congrArg f (φ.apply_symm_apply x))
+
+theorem coe_compRightAlgEquiv_apply (φ : N ≃ₘ^n⟮J, I⟯ M) (f : C^n⟮I, M; 𝓘(𝕜, A), A⟯) :
+    ⇑(compRightAlgEquiv 𝕜 A φ f) = f ∘ φ :=
+  (rfl)
+
+@[simp]
+theorem compRightAlgEquiv_apply (φ : N ≃ₘ^n⟮J, I⟯ M) (f : C^n⟮I, M; 𝓘(𝕜, A), A⟯) (x : N) :
+    compRightAlgEquiv 𝕜 A φ f x = f (φ x) :=
+  (rfl)
+
+@[simp]
+theorem compRightAlgEquiv_symm_apply (φ : N ≃ₘ^n⟮J, I⟯ M) (f : C^n⟮J, N; 𝓘(𝕜, A), A⟯) (x : M) :
+    (compRightAlgEquiv 𝕜 A φ).symm f x = f (φ.symm x) :=
+  (rfl)
+
+end Diffeomorph
 
 namespace TauCeti
 

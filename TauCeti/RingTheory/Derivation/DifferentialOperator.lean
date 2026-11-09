@@ -35,6 +35,8 @@ symbol of `P` evaluated at `df`. This file develops the algebraic theory:
 * `Derivation.mem_differentialOperators_one` and `differentialOperatorsOneEquiv`: an operator
   `D : A →ₗ[R] M` has order at most one exactly when `D = δ + (· • m)` for a derivation `δ` and
   `m : M`, and this splitting is unique, with `m = D 1`.
+* `AlgEquiv.conjDifferentialOperators`: conjugation `D ↦ e ∘ D ∘ e⁻¹` by an algebra isomorphism
+  `e : A ≃ B` preserves the order of operators on the algebra itself.
 * `apply_mem_smul_top_of_mem_pow_smul_top`: an operator of order at most `m` sends
   `I ^ (m + 1) • M` into `I • N` for every ideal `I`, so the value of `D x` modulo `I` depends
   only on `x` modulo `I ^ (m + 1)`. For the vanishing ideal of a point this is the statement
@@ -464,6 +466,64 @@ theorem mem_differentialOperators_one_iff {D : A →ₗ[R] M} :
   exact this ▸ Subtype.prop _
 
 end FirstOrder
+
+/-! ### Transport along algebra isomorphisms -/
+
+section Conj
+
+variable {R A B : Type*} [CommSemiring R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
+  (e : A ≃ₐ[R] B)
+
+/-- Conjugating an operator `D` on `A` by an algebra isomorphism `e : A ≃ B` carries its commutator
+with `a` to the commutator of the conjugate with `e a`. -/
+theorem smulCommutator_conj (a : A) (D : A →ₗ[R] A) :
+    smulCommutator R (e a) (e.toLinearMap ∘ₗ D ∘ₗ e.symm.toLinearMap) =
+      e.toLinearMap ∘ₗ smulCommutator R a D ∘ₗ e.symm.toLinearMap := by
+  ext y
+  simp
+
+/-- Conjugation by an algebra isomorphism preserves the order of a differential operator. -/
+theorem conj_mem_differentialOperators {D : A →ₗ[R] A} {m : ℕ}
+    (hD : D ∈ differentialOperators R A A A m) :
+    e.toLinearMap ∘ₗ D ∘ₗ e.symm.toLinearMap ∈ differentialOperators R B B B m := by
+  induction m generalizing D with
+  | zero =>
+    rw [mem_differentialOperators_zero_iff_smulCommutator] at hD ⊢
+    intro b
+    rw [← e.apply_symm_apply b, smulCommutator_conj, hD]
+    simp
+  | succ m ih =>
+    rw [mem_differentialOperators_succ_iff] at hD ⊢
+    intro b
+    rw [← e.apply_symm_apply b, smulCommutator_conj]
+    exact ih (hD _)
+
+/-- Conjugation `D ↦ e ∘ D ∘ e⁻¹` by an algebra isomorphism `e : A ≃ B`, as a linear equivalence
+between the differential operators of order at most `m` on `A` and on `B`. -/
+def _root_.AlgEquiv.conjDifferentialOperators (m : ℕ) :
+    differentialOperators R A A A m ≃ₗ[R] differentialOperators R B B B m where
+  toFun D := ⟨e.toLinearMap ∘ₗ (D : A →ₗ[R] A) ∘ₗ e.symm.toLinearMap,
+    conj_mem_differentialOperators e D.2⟩
+  invFun D := ⟨e.symm.toLinearMap ∘ₗ (D : B →ₗ[R] B) ∘ₗ e.toLinearMap,
+    by simpa using conj_mem_differentialOperators e.symm D.2⟩
+  map_add' D₁ D₂ := by ext; simp
+  map_smul' c D := by ext; simp
+  left_inv D := by ext; simp
+  right_inv D := by ext; simp
+
+@[simp]
+theorem _root_.AlgEquiv.coe_conjDifferentialOperators {m : ℕ}
+    (D : differentialOperators R A A A m) :
+    (e.conjDifferentialOperators m D : B →ₗ[R] B) =
+      e.toLinearMap ∘ₗ (D : A →ₗ[R] A) ∘ₗ e.symm.toLinearMap :=
+  (rfl)
+
+@[simp]
+theorem _root_.AlgEquiv.conjDifferentialOperators_symm {m : ℕ} :
+    (e.conjDifferentialOperators m).symm = e.symm.conjDifferentialOperators m :=
+  (rfl)
+
+end Conj
 
 /-! ### The second derivative on polynomials -/
 
