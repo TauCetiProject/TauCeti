@@ -28,7 +28,7 @@ underlying scalar module with the double dual, and `LinearMap.nakayamaMap` compu
 * M. Auslander, I. Reiten, S. O. Smalø, *Representation Theory of Artin Algebras*,
   Cambridge University Press (1995), Section IV.1.
 
-The action uses `TauCeti.dualRightAction`; injectivity uses the opposite dual of a finite
+The action uses `TauCeti.linearMapRightAction`; injectivity uses the opposite dual of a finite
 projective module and `LinearEquiv.moduleInjective_of_dual_projective`.
 -/
 
@@ -58,7 +58,7 @@ instance : Module k (NakayamaModule k A P) :=
   inferInstanceAs (Module k (Module.Dual k (Module.Dual A P)))
 
 instance : Module A (NakayamaModule k A P) :=
-  Module.compHom (Module.Dual k (Module.Dual A P)) (dualRightAction k (Module.Dual A P))
+  Module.compHom (Module.Dual k (Module.Dual A P)) (linearMapRightAction k (Module.Dual A P) k)
 
 /-- The underlying scalar module of `ν(P)` is the scalar dual of its algebra-valued dual. -/
 def equivDual : NakayamaModule k A P ≃ₗ[k] Module.Dual k (Module.Dual A P) :=
@@ -74,7 +74,7 @@ theorem ext {φ χ : NakayamaModule k A P}
 @[simp]
 theorem smul_apply (a : A) (φ : NakayamaModule k A P) (ψ : Module.Dual A P) :
     equivDual k A P (a • φ) ψ = equivDual k A P φ (MulOpposite.op a • ψ) :=
-  dualRightAction_apply_apply k (Module.Dual A P) a (equivDual k A P φ) ψ
+  linearMapRightAction_apply_apply k (Module.Dual A P) k a (equivDual k A P φ) ψ
 
 instance : IsScalarTower k A (NakayamaModule k A P) :=
   IsScalarTower.of_algebraMap_smul fun c φ ↦ by

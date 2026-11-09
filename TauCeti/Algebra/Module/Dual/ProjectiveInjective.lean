@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.Injective.Dual
 import TauCeti.Algebra.Module.Injective.SelfInjective
+import TauCeti.Algebra.Module.Opposite
 public import TauCeti.LinearAlgebra.Dual.RightAction
 import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 
@@ -209,11 +210,12 @@ theorem moduleProjective_of_dual_injective [FiniteDimensional k A] [FiniteDimens
     (he : ∀ (a : A) (q : Q) (x : N), e (a • q) x = e q (MulOpposite.op a • x)) :
     Module.Projective A Q := by
   have : FiniteDimensional k Q := LinearEquiv.finiteDimensional e.symm
-  have := e.isScalarTower_of_moduleDual he
+  have := e.isScalarTower_of_linearMap he
   have : Module.Finite A Q := Module.Finite.of_restrictScalars_finite k A Q
   exact e.moduleProjective_of_dual_injective_of_bijective he (Module.bijective_dual_eval k A)
     (Module.eval_apply_injective k)
 
+attribute [local instance] RingHomInvPair.of_ringEquiv in
 /-- Over a finite-dimensional algebra, a finite-dimensional right module is projective
 exactly when its left scalar dual is injective. The dual action is specified by the pairing. -/
 theorem moduleInjective_iff_projective_of_dual [FiniteDimensional k A]
@@ -223,28 +225,15 @@ theorem moduleInjective_iff_projective_of_dual [FiniteDimensional k A]
     Module.Injective A Q ↔ Module.Projective Aᵐᵒᵖ N := by
   constructor
   · intro hQ
-    let : RingHomInvPair (RingEquiv.opOp A : A →+* Aᵐᵒᵖᵐᵒᵖ)
-        ((RingEquiv.opOp A).symm : Aᵐᵒᵖᵐᵒᵖ →+* A) :=
-      RingHomInvPair.of_ringEquiv (RingEquiv.opOp A)
-    let : RingHomInvPair ((RingEquiv.opOp A).symm : Aᵐᵒᵖᵐᵒᵖ →+* A)
-        (RingEquiv.opOp A : A →+* Aᵐᵒᵖᵐᵒᵖ) :=
-      RingHomInvPair.of_ringEquiv (RingEquiv.opOp A).symm
-    let : Module Aᵐᵒᵖᵐᵒᵖ Q := Module.compHom Q ((RingEquiv.opOp A).symm : Aᵐᵒᵖᵐᵒᵖ →+* A)
-    let i : Q ≃ₛₗ[(RingEquiv.opOp A : A →+* Aᵐᵒᵖᵐᵒᵖ)] Q :=
-      { Equiv.refl Q with
-        map_add' := fun _ _ ↦ rfl
-        map_smul' := fun _ _ ↦ rfl }
+    let := opOpModule A Q
     let := hQ
-    let : Module.Injective Aᵐᵒᵖᵐᵒᵖ Q := Module.Injective.of_ringEquiv (RingEquiv.opOp A) i
+    let : Module.Injective Aᵐᵒᵖᵐᵒᵖ Q :=
+      Module.Injective.of_ringEquiv (RingEquiv.opOp A) (opOpSemilinearEquiv (A := A))
     -- Record the transported action explicitly before reversing the evaluation pairing.
     have hsmul (a : Aᵐᵒᵖ) (q : Q) : MulOpposite.op a • q = a.unop • q := (rfl)
     let : Small.{z} Aᵐᵒᵖᵐᵒᵖ := small_of_injective (RingEquiv.opOp A).symm.injective
-    let : IsScalarTower k Aᵐᵒᵖᵐᵒᵖ Q := IsScalarTower.of_algebraMap_smul fun c q ↦ by
-      rw [MulOpposite.algebraMap_apply, hsmul, MulOpposite.algebraMap_apply,
-        MulOpposite.unop_op]
-      apply e.injective
-      ext x
-      simp [he, ← MulOpposite.algebraMap_apply]
+    have := e.isScalarTower_of_linearMap he
+    have : IsScalarTower k Aᵐᵒᵖᵐᵒᵖ Q := isScalarTower_opOpModule
     have : FiniteDimensional k Q := e.symm.finiteDimensional
     let d : N ≃ₗ[k] Module.Dual k Q := (Module.evalEquiv k N).trans e.dualMap
     have hd (x : N) (q : Q) : d x q = e q x := by simp [d]

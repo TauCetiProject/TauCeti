@@ -13,9 +13,9 @@ public import TauCeti.LinearAlgebra.Dual.RightAction
 # Scalar duals as right modules
 
 The scalar dual of a left module `M` over a `k`-algebra `A` is a right module, with action
-`(a • φ)(x) = φ(a.unop • x)`: this is `TauCeti.dualRightAction` for `M` viewed as a right
-`Aᵐᵒᵖ`-module. Bundling this action in `ModuleCat` avoids installing a competing module instance
-on every linear dual. The construction is a contravariant functor,
+`(a • φ)(x) = φ(a.unop • x)`: this is `TauCeti.linearMapOpAction` with values in `k`. Bundling this
+action in `ModuleCat` avoids installing a competing module instance on every linear dual. The
+construction is a contravariant functor,
 `ModuleCat.rightScalarDualFunctor`, acting on morphisms by precomposition. Evaluation identifies a
 finite-dimensional module with the scalar dual of this right module. This pairing is used to form
 `Tr D`.
@@ -38,29 +38,17 @@ variable (k : Type u) {A : Type v} [Field k] [Ring A] [Algebra k A]
 
 attribute [local instance] moduleOfAlgebraModule isScalarTower_of_algebra_moduleCat
 
-/-- A left `A`-module, viewed as a right `Aᵐᵒᵖ`-module. -/
-private abbrev opOpModule (M : ModuleCat.{w} A) : Module Aᵐᵒᵖᵐᵒᵖ M :=
-  Module.compHom M (RingEquiv.opOp A).symm.toRingHom
-
-attribute [local instance] opOpModule
-
-/-- The left `A`-action on `M` commutes with the `k`-action. -/
-private theorem smulCommClass_opOp (M : ModuleCat.{w} A) : SMulCommClass Aᵐᵒᵖᵐᵒᵖ k M :=
-  ⟨fun a c x ↦ smul_comm a.unop.unop c x⟩
-
-attribute [local instance] smulCommClass_opOp
-
 /-- The `k`-linear dual of a left `A`-module, carrying its right `A`-action
 `(a • φ)(x) = φ(a.unop • x)`. -/
 def rightScalarDual (M : ModuleCat.{w} A) : ModuleCat.{max u w} Aᵐᵒᵖ := by
-  let : Module Aᵐᵒᵖ (Module.Dual k M) := Module.compHom _ (TauCeti.dualRightAction k M)
+  let : Module Aᵐᵒᵖ (Module.Dual k M) := Module.compHom _ (TauCeti.linearMapOpAction k M k)
   exact ModuleCat.of Aᵐᵒᵖ (Module.Dual k M)
 
 /-- The right action on the scalar dual, before identifying its carrier with the linear dual. -/
 private theorem rightScalarDual_smul_apply (M : ModuleCat.{w} A) (a : Aᵐᵒᵖ)
     (φ : rightScalarDual k M) (x : M) :
     (show Module.Dual k M from a • φ) x = (show Module.Dual k M from φ) (a.unop • x) :=
-  TauCeti.dualRightAction_apply_apply k M a φ x
+  TauCeti.linearMapOpAction_apply_apply k M k a φ x
 
 /-- The underlying scalar space of the right dual is the ordinary linear dual. -/
 -- Compiling this identity map would need the body of `rightScalarDual`, which stays unexposed.
