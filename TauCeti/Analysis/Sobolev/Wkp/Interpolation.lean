@@ -47,6 +47,10 @@ derivatives falling on `ζ` produce the terms `‖∇u‖_p` that this inequalit
 * `TauCeti.Wkp.exists_lpNorm_gradient_ball_le`: the local form between concentric balls
   `B_s ⊆ B_t ⊆ Ω` for `u ∈ W^{2,p}(Ω)`, with the extra terms `(t - s)⁻¹ ‖∇u‖` and
   `(t - s)⁻² ‖u‖` on `B_t` produced by a cutoff.
+* `TauCeti.Wkp.lpNorm_gradient_le_of_cutoff`: the interpolation on an open set `S` for an
+  arbitrary smooth cutoff `η` that is one on `S` and supported in a general open `Ω`, with the
+  cutoff's gradient and Hessian bounds `c₁, c₂` as parameters; the Hessian of the product is
+  estimated by `TauCeti.Wkp.norm_iteratedGradient_one_le_of_value_ae_eq_mul`.
 
 ## The argument
 
@@ -339,6 +343,49 @@ theorem Wkp.norm_iteratedGradient_lowerOrder_le (hp : p ≠ ∞) (u : Wkp mu ⊤
   Wkp.norm_iteratedGradient_lowerOrder_le_of_mem_wkp0Submodule
     (by rw [wkp0Submodule_top_eq_top hp]; trivial) hε
 
+open scoped ContDiff in
+/-- **Interpolation on an open set, in terms of a cutoff.** Let `S` be open and `η` a smooth
+compactly supported function with `tsupport η ⊆ Ω`, `|η| ≤ 1`, equal to `1` on `S`, `‖∇η‖ ≤ c₁`
+and `‖D²η‖ ≤ c₂`. Then for `1 ≤ p < ∞`, `u ∈ W^{2,p}(Ω)` and `ε > 0`,
+
+`‖∇u‖_{Lᵖ(S)} ≤ ε (‖D²u‖_{Lᵖ(Ω)} + 2 c₁ ‖∇u‖_{Lᵖ(Ω)} + c₂ ‖u‖_{Lᵖ(Ω)})
+  + (n² / ε) ‖u‖_{Lᵖ(Ω)}`, `n = dim E`. -/
+theorem Wkp.lpNorm_gradient_le_of_cutoff (hp_top : p ≠ ⊤) {u : Wkp mu Omega p 2}
+    {η : E → ℝ} {c₁ c₂ ε : ℝ} {S : Set E} (hS : IsOpen S) (hη : ContDiff ℝ ∞ η)
+    (hcpt : HasCompactSupport η)
+    (hts : tsupport η ⊆ Omega) (habs : ∀ x, |η x| ≤ 1) (hη1 : Set.EqOn η 1 S)
+    (hg : ∀ x, ‖gradient η x‖ ≤ c₁) (hh : ∀ x, ‖fderiv ℝ (gradient η) x‖ ≤ c₂)
+    (hε : 0 < ε) :
+    lpNorm (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)) p (mu.restrict S) ≤
+      ε * (‖Wkp.iteratedGradient 1 u‖ +
+        (2 * c₁ * ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)‖ + c₂ * ‖Wkp.value 2 u‖)) +
+      finrank ℝ E ^ 2 / ε * ‖Wkp.value 2 u‖ := by
+  have hsU : S ⊆ Omega := fun y hy =>
+    hts (subset_tsupport η (by simp [hη1 hy]))
+  obtain ⟨w, hw0, hwv⟩ := Wkp.exists_mem_wkp0Submodule_value_ae_eq_mul hp_top hη hcpt hts 2 u
+  have hint := Wkp.norm_iteratedGradient_lowerOrder_le_of_mem_wkp0Submodule hw0 hε
+  -- On `S` the cutoff is one, so `∇w = ∇u` there.
+  have hwg := Wkp.iteratedGradient_zero_ae_eq_of_value_ae_eq_mul (u := Wkp.lowerOrder 1 u)
+    (w := Wkp.lowerOrder 1 w) hη (by simpa only [Wkp.value_succ] using hwv)
+  have hgs : (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) : E → E) =ᵐ[mu.restrict S]
+      Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 w) := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset hsU hwg,
+      ae_restrict_mem hS.measurableSet] with x h2 hx
+    have hev : η =ᶠ[nhds x] fun _ => 1 :=
+      Filter.eventually_of_mem (hS.mem_nhds hx) fun y hy => hη1 hy
+    rw [h2, hη1 hx, hev.gradient_eq, gradient_fun_const]
+    simp
+  have hstep1 := lpNorm_le_norm_of_ae_eq_of_le (Measure.restrict_mono hsU le_rfl) hgs
+  have hstep2 := Wkp.norm_iteratedGradient_one_le_of_value_ae_eq_mul hη habs hg hh hwv
+  have hstep3 : ‖Wkp.value 2 w‖ ≤ ‖Wkp.value 2 u‖ := by
+    refine Lp.norm_le_norm_of_ae_le ?_
+    filter_upwards [hwv] with x hx
+    rw [hx, norm_mul, Real.norm_eq_abs]
+    exact mul_le_of_le_one_left (norm_nonneg _) (habs x)
+  calc _ ≤ _ := hstep1
+    _ ≤ _ := hint
+    _ ≤ _ := by gcongr
+
 open Metric in
 /-- **Interpolation between concentric balls.** There is a universal constant `c` such that, for
 `1 ≤ p < ∞`, every `u ∈ W^{2,p}(Ω)`, every pair of radii `0 < s < t` with `B(x₀, t) ⊆ Ω`, and every
@@ -347,8 +394,8 @@ open Metric in
 `‖∇u‖_{Lᵖ(B_s)} ≤ ε (‖D²u‖_{Lᵖ(B_t)} + c (t - s)⁻¹ ‖∇u‖_{Lᵖ(B_t)} + c (t - s)⁻² ‖u‖_{Lᵖ(B_t)})
   + (n² / ε) ‖u‖_{Lᵖ(B_t)}`, `n = dim E`.
 
-This is `TauCeti.Wkp.norm_iteratedGradient_lowerOrder_le_of_mem_wkp0Submodule` applied to a cutoff
-of `u` between the two balls; the terms with `c` come from the derivatives of the cutoff. -/
+Here `B_t` carries the `Lᵖ(B_t)` norms and the terms with `c` come from the derivatives of a cutoff
+between the two balls; see `TauCeti.Wkp.lpNorm_gradient_le_of_cutoff`. -/
 theorem Wkp.exists_lpNorm_gradient_ball_le (hp_top : p ≠ ⊤) :
     ∃ c : ℝ, 0 ≤ c ∧ ∀ {Omega : Opens E} (u : Wkp mu Omega p 2) {x₀ : E} {s t : ℝ}, 0 < s →
       s < t → ball x₀ t ⊆ Omega → ∀ {ε : ℝ}, 0 < ε →
@@ -369,8 +416,6 @@ theorem Wkp.exists_lpNorm_gradient_ball_le (hp_top : p ≠ ⊤) :
   have hcpt : HasCompactSupport η :=
     (isCompact_closedBall x₀ m).of_isClosed_subset (isClosed_tsupport η) hηts
   have hηU : tsupport η ⊆ U := hηts.trans (closedBall_subset_ball (by linarith))
-  obtain ⟨w, hw0, hwv⟩ := Wkp.exists_mem_wkp0Submodule_value_ae_eq_mul hp_top hη hcpt hηU 2 v
-  have hint := Wkp.norm_iteratedGradient_lowerOrder_le_of_mem_wkp0Submodule hw0 hε
   have hηabs : ∀ x, |η x| ≤ 1 := fun x =>
     abs_le.2 ⟨by linarith [(hηr ⟨x, rfl⟩).1], (hηr ⟨x, rfl⟩).2⟩
   -- The restriction `v` of `u` to `B_t` has the same value and weak derivatives there.
@@ -378,85 +423,24 @@ theorem Wkp.exists_lpNorm_gradient_ball_le (hp_top : p ≠ ⊤) :
       Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) := by
     rw [hv, Wkp.lowerOrder_restrictL]
     exact Wkp.iteratedGradient_restrictL_ae hU 0 (Wkp.lowerOrder 1 u)
-  have hnv : ‖Wkp.value 2 v‖ = lpNorm (Wkp.value 2 u) p (mu.restrict (ball x₀ t)) := by
-    rw [Lp.norm_def, eLpNorm_congr_ae (Wkp.value_restrictL_ae hU 2 u), toReal_eLpNorm]
-    rfl
-  have hngv : ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 v)‖ =
-      lpNorm (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)) p (mu.restrict (ball x₀ t)) := by
-    rw [Lp.norm_def, eLpNorm_congr_ae hvg, toReal_eLpNorm]
-    rfl
-  have hnHv : ‖Wkp.iteratedGradient 1 v‖ =
-      lpNorm (Wkp.iteratedGradient 1 u) p (mu.restrict (ball x₀ t)) := by
-    rw [Lp.norm_def, eLpNorm_congr_ae (Wkp.iteratedGradient_restrictL_ae hU 1 u), toReal_eLpNorm]
-    rfl
-  -- On `B_s` the cutoff is one, so `∇w = ∇u` there.
-  have hwg := Wkp.iteratedGradient_zero_ae_eq_of_value_ae_eq_mul (u := Wkp.lowerOrder 1 v)
-    (w := Wkp.lowerOrder 1 w) hη (by simpa only [Wkp.value_succ] using hwv)
-  have hgs : (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) : E → E) =ᵐ[mu.restrict (ball x₀ s)]
-      Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 w) := by
-    filter_upwards [ae_restrict_of_ae_restrict_of_subset hsU hvg,
-      ae_restrict_of_ae_restrict_of_subset hsU hwg, ae_restrict_mem measurableSet_ball]
-      with x h1 h2 hx
-    have hev : η =ᶠ[nhds x] fun _ => 1 :=
-      Filter.eventually_of_mem (isOpen_ball.mem_nhds hx) fun y hy =>
-        hη1 (ball_subset_closedBall hy)
-    rw [h2, hη1 (ball_subset_closedBall hx), hev.gradient_eq, gradient_fun_const, h1]
-    simp
-  have hstep1 : lpNorm (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)) p (mu.restrict (ball x₀ s)) ≤
-      ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 w)‖ := by
-    rw [← toReal_eLpNorm, eLpNorm_congr_ae hgs, Lp.norm_def]
-    exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top _)
-      (eLpNorm_mono_measure _ (Measure.restrict_mono hsU le_rfl))
-  -- The weak Hessian of `w = η v` is `η D²v` plus the Leibniz remainder.
-  set M₁ := c / (m - s)
-  set M₂ := c / (m - s) ^ 2
-  have hM₁0 : 0 ≤ M₁ := div_nonneg hc0 (by linarith)
-  have hM₂0 : 0 ≤ M₂ := div_nonneg hc0 (by positivity)
-  have hD := Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_mul hη hwv
-  have hηH : MemLp (fun x => η x • Wkp.iteratedGradient 1 v x) p (mu.restrict U) :=
-    (hη.continuous.memLp_top_of_hasCompactSupport hcpt (mu.restrict U)).smul (Lp.memLp _)
-  set TL := Wkp.iteratedGradient 1 w - hηH.toLp _ with hTL_def
-  have hTL : ‖TL‖ ≤ 2 * M₁ * ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 v)‖ +
-      M₂ * ‖Wkp.value 2 v‖ := by
-    refine TauCeti.Lp.norm_le_add_of_ae_norm_le (by positivity) hM₂0 ?_
-    filter_upwards [Lp.coeFn_sub (Wkp.iteratedGradient 1 w) (hηH.toLp _), hD,
-      hηH.coeFn_toLp] with x h1 h2 h3
-    rw [h1, Pi.sub_apply, h2, h3, add_assoc, add_assoc, add_sub_cancel_left, ← add_assoc]
-    refine (norm_leibnizRemainder_le η _ _ x).trans ?_
-    gcongr
-    · exact hηg x
-    · exact hηh x
-  have hηHn : ‖hηH.toLp _‖ ≤ ‖Wkp.iteratedGradient 1 v‖ := by
-    refine Lp.norm_le_norm_of_ae_le ?_
-    filter_upwards [hηH.coeFn_toLp] with x hx
-    rw [hx, norm_smul, Real.norm_eq_abs]
-    exact mul_le_of_le_one_left (norm_nonneg _) (hηabs x)
-  have hstep2 : ‖Wkp.iteratedGradient 1 w‖ ≤ ‖Wkp.iteratedGradient 1 v‖ +
-      (2 * M₁ * ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 v)‖ + M₂ * ‖Wkp.value 2 v‖) := by
-    rw [show Wkp.iteratedGradient 1 w = hηH.toLp _ + TL by rw [hTL_def, add_sub_cancel]]
-    exact (norm_add_le _ _).trans (add_le_add hηHn hTL)
-  have hstep3 : ‖Wkp.value 2 w‖ ≤ ‖Wkp.value 2 v‖ := by
-    refine Lp.norm_le_norm_of_ae_le ?_
-    filter_upwards [hwv] with x hx
-    rw [hx, norm_mul, Real.norm_eq_abs]
-    exact mul_le_of_le_one_left (norm_nonneg _) (hηabs x)
   have hms : m - s = (t - s) / 2 := by rw [hm]; ring
   have hts : t - s ≠ 0 := sub_ne_zero.2 hst.ne'
-  have hm1 : 2 * M₁ = 4 * c / (t - s) := by
-    simp only [M₁, hms]
+  have hm1 : 2 * (c / (m - s)) = 4 * c / (t - s) := by
+    rw [hms]
     field_simp
     ring
-  have hm2 : M₂ = 4 * c / (t - s) ^ 2 := by
-    simp only [M₂, hms]
+  have hm2 : c / (m - s) ^ 2 = 4 * c / (t - s) ^ 2 := by
+    rw [hms]
     field_simp
     ring
-  rw [hm1, hm2, hngv, hnv, hnHv] at hstep2
-  rw [hnv] at hstep3
-  calc _ ≤ _ := hstep1
-    _ ≤ _ := hint
-    _ ≤ _ := by
-        gcongr
-        linarith
+  have key := Wkp.lpNorm_gradient_le_of_cutoff hp_top (u := v) isOpen_ball hη hcpt hηU hηabs
+    (hη1.mono ball_subset_closedBall) hηg hηh hε
+  rw [hm1, hm2, Lp.norm_eq_lpNorm_of_ae_eq (Wkp.value_restrictL_ae hU 2 u),
+    Lp.norm_eq_lpNorm_of_ae_eq hvg,
+    Lp.norm_eq_lpNorm_of_ae_eq (Wkp.iteratedGradient_restrictL_ae hU 1 u)] at key
+  rw [← lpNorm_congr_ae (ae_restrict_of_ae_restrict_of_subset hsU hvg)]
+  rw [add_assoc]
+  exact key
 
 end Sobolev
 

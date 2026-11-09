@@ -11,6 +11,7 @@ public import TauCeti.GroupTheory.DoubleCoset.Map
 public import TauCeti.RepresentationTheory.Induction.Mackey.Subgroup
 public import TauCeti.RingTheory.Ideal.Pointwise
 public import TauCeti.RingTheory.Invariant.Basic
+import TauCeti.NumberTheory.RamificationInertia.Galois
 
 /-!
 # The double-coset splitting law over invariant rings
@@ -175,7 +176,7 @@ section LocalDegree
 
 variable (Q : Ideal B) [Q.IsMaximal] (H : Subgroup G) (C : Type*) [CommRing C]
   [Algebra A C] [Algebra C B] [IsScalarTower A C B]
-  [Finite G] [IsDomain A] [IsDomain B] [IsDomain C]
+  [IsDomain A] [IsDomain B] [IsDomain C]
   [Module.Finite A B] [Module.Flat A B] [Module.Flat C B]
   [IsGaloisGroup G A B] [IsGaloisGroup H C B]
 

@@ -12,8 +12,8 @@ public import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 /-!
 # Regularity under almost everywhere continuous maps, finite sums and absolute continuity
 
-A measurable map that is continuous on a measurable set of full measure sends an inner regular
-measure to an inner regular measure. Global continuity is unnecessary: compact approximation
+An almost everywhere measurable map that is continuous on a set of full measure sends an inner
+regular measure to an inner regular measure. Global continuity is unnecessary: compact approximation
 can be performed inside the set where the map is continuous. This applies, for example, to
 spectral character assignments whose exceptional set has measure zero.
 
@@ -42,8 +42,8 @@ measures given only through a domination bound, such as the variation of a sum o
 
 ## Main results
 
-* `TauCeti.innerRegular_map_of_continuousOn`: pushforward of an inner regular measure along a
-  map continuous on a set of full measure.
+* `MeasureTheory.Measure.InnerRegular.map_of_continuousOn`: pushforward of an inner regular
+  measure along an almost everywhere measurable map continuous on a set of full measure.
 * `MeasureTheory.Measure.AbsolutelyContinuous.innerRegularWRT`: transfer of inner regularity with
   respect to measurable approximating sets.
 * `MeasureTheory.Measure.AbsolutelyContinuous.outerRegular`,
@@ -79,30 +79,27 @@ public section
 open MeasureTheory Set
 open scoped ENNReal
 
-namespace TauCeti
-
-variable {α β : Type*} [MeasurableSpace α] [TopologicalSpace α]
-  [MeasurableSpace β] [TopologicalSpace β]
-
-/-- A measurable map continuous on a measurable set of full measure preserves inner regularity.
-No separation, countability or finiteness assumption is required. -/
-theorem innerRegular_map_of_continuousOn {μ : Measure α} [μ.InnerRegular]
-    {f : α → β} {s : Set α} (hf : Measurable f) (hs : MeasurableSet s)
-    (hcont : ContinuousOn f s) (hmem : ∀ᵐ x ∂μ, x ∈ s) :
-    (Measure.map f μ).InnerRegular := by
-  have hreg : μ.InnerRegularWRT (fun K ↦ IsCompact K ∧ K ⊆ s) MeasurableSet := by
-    intro t ht r hr
-    rw [← μ.measure_inter_eq_of_ae hmem, inter_comm] at hr
-    obtain ⟨K, hKsub, hK, hrK⟩ := (ht.inter hs).exists_lt_isCompact hr
-    exact ⟨K, hKsub.trans inter_subset_left, ⟨hK, hKsub.trans inter_subset_right⟩, hrK⟩
-  exact ⟨hreg.map hf.aemeasurable (fun _ ht ↦ hf ht)
-    (fun _ hK ↦ hK.1.image_of_continuousOn (hcont.mono hK.2)) (fun _ ht ↦ ht)⟩
-
-end TauCeti
-
 namespace MeasureTheory.Measure
 
 variable {α : Type*} [MeasurableSpace α] {μ ν : Measure α}
+
+/-- An almost everywhere measurable map that is continuous on a set of full measure preserves
+inner regularity. Unlike `Measure.InnerRegular.map_of_continuous`, no Borel, separation,
+countability or finiteness assumption is required. -/
+protected theorem InnerRegular.map_of_continuousOn [TopologicalSpace α] {β : Type*}
+    [MeasurableSpace β] [TopologicalSpace β] [μ.InnerRegular] {f : α → β} {s : Set α}
+    (hf : AEMeasurable f μ) (hcont : ContinuousOn f s) (hmem : ∀ᵐ x ∂μ, x ∈ s) :
+    (μ.map f).InnerRegular := by
+  have hreg : μ.InnerRegularWRT (fun K ↦ IsCompact K ∧ K ⊆ s) (NullMeasurableSet · μ) := by
+    intro t ht r hr
+    have hs : NullMeasurableSet s μ := (NullMeasurableSet.of_null hmem).of_compl
+    obtain ⟨u, hut, hu, hμu⟩ := (ht.inter hs).exists_measurable_subset_ae_eq
+    rw [← μ.measure_inter_eq_of_ae hmem, inter_comm, ← measure_congr hμu] at hr
+    obtain ⟨K, hKu, hK, hrK⟩ := hu.exists_lt_isCompact hr
+    exact ⟨K, (hKu.trans hut).trans inter_subset_left,
+      ⟨hK, (hKu.trans hut).trans inter_subset_right⟩, hrK⟩
+  exact ⟨hreg.map hf (fun _ ht ↦ hf.nullMeasurableSet_preimage ht)
+    (fun _ hK ↦ hK.1.image_of_continuousOn (hcont.mono hK.2)) (fun _ ht ↦ ht)⟩
 
 /-- If two measures are inner regular for a property `p` of sets stable under binary unions, then
 so is their sum. The proof is adapted from Mathlib's `InnerRegular (μ + ν)` instance. -/
@@ -200,17 +197,10 @@ theorem innerRegularWRT [IsFiniteMeasure ν] (h : ν ≪ μ) {p q : Set α → P
   obtain ⟨δ, hδ, hδν⟩ := h.exists_pos_measure_lt_of_measure_lt (tsub_pos_of_lt hr).ne'
   have hμU : μ U ≠ 0 := fun h0 ↦ (pos_of_gt hr).ne' (h h0)
   obtain ⟨K, hKU, hpK, hK⟩ := H hU _ (ENNReal.sub_lt_self (hq U hU) hμU hδ.ne')
-  have hdiff : ν (U \ K) < ν U - r := hδν _ <| measure_sdiff_lt_of_lt_add (hp K hpK) hKU
+  refine ⟨K, hKU, hpK, lt_of_tsub_lt_tsub_left (le_measure_sdiff.trans_lt (hδν _ ?_))⟩
+  exact measure_sdiff_lt_of_lt_add (hp K hpK) hKU
     (ne_top_of_le_ne_top (hq U hU) (measure_mono hKU))
     (ENNReal.lt_add_of_sub_lt_right (Or.inl (hq U hU)) hK)
-  refine ⟨K, hKU, hpK, ?_⟩
-  calc r = ν U - (ν U - r) := (ENNReal.sub_sub_cancel (measure_ne_top _ _) hr.le).symm
-    _ < ν K := by
-      rw [ENNReal.sub_lt_iff_lt_right (by finiteness) tsub_le_self]
-      calc ν U ≤ ν (U ∩ K) + ν (U \ K) := measure_le_inter_add_sdiff ν U K
-        _ < ν K + (ν U - r) := by
-          rw [inter_eq_right.2 hKU]
-          exact ENNReal.add_lt_add_left (measure_ne_top _ _) hdiff
 
 variable [TopologicalSpace α] [IsFiniteMeasure μ] [IsFiniteMeasure ν]
 
@@ -220,12 +210,7 @@ theorem outerRegular [μ.OuterRegular] (h : ν ≪ μ) : ν.OuterRegular := by
   refine ⟨fun A hA r hr ↦ ?_⟩
   obtain ⟨δ, hδ, hδν⟩ := h.exists_pos_measure_lt_of_measure_lt (tsub_pos_of_lt hr).ne'
   obtain ⟨U, hAU, hU, -, hμU⟩ := hA.exists_isOpen_sdiff_lt (measure_ne_top μ A) hδ.ne'
-  refine ⟨U, hAU, hU, ?_⟩
-  calc ν U ≤ ν (U ∩ A) + ν (U \ A) := measure_le_inter_add_sdiff ν U A
-    _ < ν A + (r - ν A) := by
-      rw [inter_eq_right.2 hAU]
-      exact ENNReal.add_lt_add_left (measure_ne_top _ _) (hδν _ hμU)
-    _ = r := add_tsub_cancel_of_le hr.le
+  exact ⟨U, hAU, hU, lt_of_tsub_lt_tsub_right (le_measure_sdiff.trans_lt (hδν _ hμU))⟩
 
 /-- A finite measure absolutely continuous with respect to a finite weakly regular measure is
 weakly regular. -/

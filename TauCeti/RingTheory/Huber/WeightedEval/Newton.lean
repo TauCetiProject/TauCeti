@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.RingTheory.Huber.WeightedEval.Map
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PDeriv
 public import TauCeti.RingTheory.MvPowerSeries.Derivative
-import TauCeti.RingTheory.Subring.SpanSingleton
+import TauCeti.RingTheory.Subsemiring.SpanSingleton
 
 /-!
 # Newton's method for restricted power series with integral coefficients
@@ -155,7 +155,7 @@ private theorem pow_dvd_evalOD_sub
     (hn : k + 1 ≤ n) (hxx' : ∀ i, ϖ ^ n ∣ x' i - x i) (i : Fin N) :
     ϖ ^ (n + k + 1) ∣ evalOD P hF hF₀ x' i - evalOD P hF hF₀ x i -
       (jacobianOD P hF hF₀ t *ᵥ (x' - x)) i := by
-  refine P.ringOfDefinition.coe_mem_smul_iff_dvd.mp ?_
+  refine (SubsemiringClass.coe_mem_smul_iff_dvd P.ringOfDefinition).mp ?_
   convert weightedEval_sub_weightedEval_sub_sum_mem_pow_smul P hϖ (hF i) (hF₀ i) hn hx hxx'
     using 1
   · congr 1
@@ -202,7 +202,7 @@ theorem pow_dvd_sub_of_weightedEval_eq_zero (hϖ : IsUnit (ϖ : C))
     (fun _ _ h ↦ Subtype.ext (hϖ.mul_left_cancel (congrArg Subtype.val h)))
     (evalOD P hF hF₀) (mul_jacobianOD_eq P hF hF₀ hM) t
     (fun x x' hx _ n hn hxx' ↦ pow_dvd_evalOD_sub P hF hF₀ hϖ x x' hx n hn hxx')
-    (fun i ↦ P.ringOfDefinition.coe_mem_smul_iff_dvd.mp (ht i)) hu
+    (fun i ↦ (SubsemiringClass.coe_mem_smul_iff_dvd P.ringOfDefinition).mp (ht i)) hu
     ((evalOD_eq_zero_iff P hF hF₀ u).mpr hFu) i
 
 /-- **Newton's method for restricted series with integral coefficients.** Let `C` be Hausdorff,
@@ -224,7 +224,7 @@ theorem existsUnique_weightedEval_eq_zero [T0Space C] (hϖ : IsPseudoUniformizer
   simpa only [evalOD_eq_zero_iff] using IsAdicComplete.existsUnique_eq_zero_of_mul_eq_pow_smul
     (fun _ _ h ↦ Subtype.ext (hϖ.isUnit.mul_left_cancel (congrArg Subtype.val h)))
     (evalOD P hF hF₀) (mul_jacobianOD_eq P hF hF₀ hM) t
-    (fun i ↦ P.ringOfDefinition.coe_mem_smul_iff_dvd.mp (ht i))
+    (fun i ↦ (SubsemiringClass.coe_mem_smul_iff_dvd P.ringOfDefinition).mp (ht i))
     fun x x' hx _ n hn hxx' ↦ pow_dvd_evalOD_sub P hF hF₀ hϖ.isUnit x x' hx n hn hxx'
 
 end Newton

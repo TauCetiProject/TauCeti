@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Compactification
+public import TauCeti.Analysis.Convex.PolygonalRange
 public import TauCeti.Data.Fin.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.UnboundedEdge
@@ -23,10 +24,15 @@ Consequently the range of the compactified boundary map is exactly the boundary 
 polygon.  This identification does not require the polygon to be simple; proving that distinct
 nonadjacent sides do not meet is the separate global injectivity problem.
 
-## Main result
+## Main results
 
 * `TauCeti.range_schwarzChristoffelCompactifiedBoundary` -- the compactified boundary map traces
   exactly the boundary of `schwarzChristoffelPolygon`.
+* `TauCeti.exists_mem_edgeSet_schwarzChristoffelBoundary_of_mem_Icc`,
+  `TauCeti.schwarzChristoffelBoundary_mem_edgeSet_last_of_le` and
+  `TauCeti.schwarzChristoffelBoundary_mem_edgeSet_last_prevertex_of_ge` -- each finite parameter is
+  sent to the bounded side over its prevertex interval or to the closing side adjacent to the
+  nearest end prevertex.
 
 ## References
 
@@ -58,86 +64,67 @@ theorem range_schwarzChristoffelCompactifiedBoundary (a e : Fin (n + 1) → ℝ)
     (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) (hinfty : ∑ i, e i < -1) :
     Set.range (schwarzChristoffelCompactifiedBoundary a e z₀) =
       (schwarzChristoffelPolygon a e z₀).boundary ℝ := by
-  classical
-  let B : ℝ → ℂ := schwarzChristoffelBoundary a e z₀
-  let V : ℂ := schwarzChristoffelVertexAtInfinity a e z₀
-  have hfree (i : Fin n) :
-      ∀ j, e j ≠ 0 → a j ∉ Ioo (a i.castSucc) (a i.succ) :=
+  have hfinite' (i : Fin n) : ∀ j, e j ≠ 0 → a j ∉ Ioo (a i.castSucc) (a i.succ) :=
     fun j _ ↦ not_mem_Ioo_castSucc_succ a ha i j
-  have hright : ∀ i, e i ≠ 0 → a i ≤ a (Fin.last n) := by
-    intro i _
-    exact ha i.le_last
-  have hleft : ∀ i, e i ≠ 0 → a 0 ≤ a i := by
-    intro i _
-    exact ha i.zero_le
-  have hbounded (i : Fin n) :
-      B '' Icc (a i.castSucc) (a i.succ) =
-        segment ℝ (schwarzChristoffelVertex a e z₀ i.castSucc)
-          (schwarzChristoffelVertex a e z₀ i.succ) := by
-    exact schwarzChristoffelBoundary_image_Icc_prevertex a e z₀
-      (ha i.castSucc_le_succ) (hfree i) (hfinite i.castSucc) (hfinite i.succ)
-  have hrightImage :
-      B '' Ici (a (Fin.last n)) =
-        segment ℝ (schwarzChristoffelVertex a e z₀ (Fin.last n)) V \ {V} := by
-    exact schwarzChristoffelBoundary_image_Ici_prevertex a e z₀ (Fin.last n)
-      (hfinite (Fin.last n)) hright hinfty
-  have hleftImage :
-      B '' Iic (a 0) =
-        segment ℝ (schwarzChristoffelVertex a e z₀ 0) V \ {V} := by
-    exact schwarzChristoffelBoundary_image_Iic_prevertex a e z₀ 0
-      (hfinite 0) hleft hinfty
+  have hb := fun i : Fin n ↦ schwarzChristoffelBoundary_image_Icc_prevertex a e z₀
+    (ha i.castSucc_le_succ) (hfinite' i) (hfinite i.castSucc) (hfinite i.succ)
+  have hr := schwarzChristoffelBoundary_image_Ici_prevertex a e z₀ (Fin.last n)
+    (hfinite (Fin.last n)) (fun i _ ↦ ha i.le_last) hinfty
+  have hl := schwarzChristoffelBoundary_image_Iic_prevertex a e z₀ 0
+    (hfinite 0) (fun i _ ↦ ha i.zero_le) hinfty
   rw [schwarzChristoffelPolygon_boundary]
-  ext z
-  constructor
-  · rintro ⟨x, rfl⟩
-    induction x using OnePoint.rec with
-    | infty =>
-        simp only [schwarzChristoffelCompactifiedBoundary_infty]
-        exact Or.inr (left_mem_segment ℝ _ _)
-    | coe x =>
-        simp only [schwarzChristoffelCompactifiedBoundary_coe]
-        by_cases hxleft : x ≤ a 0
-        · have himage : B x ∈ B '' Iic (a 0) := ⟨x, hxleft, rfl⟩
-          rw [hleftImage] at himage
-          exact Or.inr
-            (segment_symm ℝ (schwarzChristoffelVertex a e z₀ 0) V ▸ himage.1)
-        · by_cases hxright : a (Fin.last n) ≤ x
-          · have himage : B x ∈ B '' Ici (a (Fin.last n)) := ⟨x, hxright, rfl⟩
-            rw [hrightImage] at himage
-            exact Or.inl (Or.inr himage.1)
-          · have hn : n ≠ 0 := by
-              intro h
-              subst n
-              simp only [Fin.last_zero] at hxright
-              exact hxright (le_of_lt (lt_of_not_ge hxleft))
-            obtain ⟨i, hi⟩ := exists_mem_Icc_castSucc_succ a hn
-              ⟨(lt_of_not_ge hxleft).le, (lt_of_not_ge hxright).le⟩
-            have himage : B x ∈ B '' Icc (a i.castSucc) (a i.succ) := ⟨x, hi, rfl⟩
-            rw [hbounded i] at himage
-            exact Or.inl (Or.inl (Set.mem_iUnion.mpr ⟨i, himage⟩))
-  · intro hz
-    rcases hz with (hz | hzleft)
-    · rcases hz with (hzbounded | hzright)
-      · obtain ⟨i, hi⟩ := Set.mem_iUnion.mp hzbounded
-        rw [← hbounded i] at hi
-        obtain ⟨x, _, rfl⟩ := hi
-        exact ⟨(x : OnePoint ℝ), by simp [B]⟩
-      · by_cases hzeq : z = V
-        · subst z
-          exact ⟨∞, by simp [V]⟩
-        · have hi' : z ∈ segment ℝ (schwarzChristoffelVertex a e z₀ (Fin.last n)) V \ {V} :=
-            ⟨hzright, by simpa using hzeq⟩
-          rw [← hrightImage] at hi'
-          obtain ⟨x, _, rfl⟩ := hi'
-          exact ⟨(x : OnePoint ℝ), by simp [B]⟩
-    · by_cases hzeq : z = V
-      · subst z
-        exact ⟨∞, by simp [V]⟩
-      · have hi' : z ∈ segment ℝ (schwarzChristoffelVertex a e z₀ 0) V \ {V} :=
-          ⟨segment_symm ℝ V (schwarzChristoffelVertex a e z₀ 0) ▸ hzleft,
-            by simpa using hzeq⟩
-        rw [← hleftImage] at hi'
-        obtain ⟨x, _, rfl⟩ := hi'
-        exact ⟨(x : OnePoint ℝ), by simp [B]⟩
+  exact (range_subset_union_segments a _ _ _ _
+    (schwarzChristoffelCompactifiedBoundary_infty a e z₀)
+    (schwarzChristoffelCompactifiedBoundary_coe a e z₀) (fun i ↦ (hb i).subset)
+    (hr.subset.trans sdiff_subset) (hl.subset.trans sdiff_subset)).antisymm
+    (union_segments_subset_range a _ _ _ _
+      (schwarzChristoffelCompactifiedBoundary_infty a e z₀)
+      (schwarzChristoffelCompactifiedBoundary_coe a e z₀) (fun i ↦ (hb i).superset)
+      hr.superset hl.superset)
+
+/-- Every point of the boundary arc over the bounded parameter interval lies on one of the
+finite sides. -/
+theorem exists_mem_edgeSet_schwarzChristoffelBoundary_of_mem_Icc
+    (a e : Fin (n + 2) → ℝ) (z₀ : UpperHalfPlane) (ha : Monotone a)
+    (hfinite : ∀ k, -1 < ∑ l with a l = a k, e l) {x : ℝ}
+    (hx : x ∈ Icc (a 0) (a (Fin.last (n + 1)))) :
+    ∃ i : Fin (n + 1), schwarzChristoffelBoundary a e z₀ x ∈
+      (schwarzChristoffelPolygon a e z₀).edgeSet ℝ i.castSucc.castSucc := by
+  obtain ⟨i, hi⟩ := exists_mem_Icc_castSucc_succ a (Nat.succ_ne_zero n) hx
+  refine ⟨i, ?_⟩
+  rw [schwarzChristoffelPolygon_edgeSet_castSucc_castSucc,
+    ← schwarzChristoffelBoundary_image_Icc_prevertex a e z₀
+      (ha i.castSucc_le_succ) (fun k _ ↦ not_mem_Ioo_castSucc_succ a ha i k)
+      (hfinite _) (hfinite _)]
+  exact ⟨x, hi, rfl⟩
+
+/-- Parameters left of the first prevertex are sent to the closing side at infinity. -/
+theorem schwarzChristoffelBoundary_mem_edgeSet_last_of_le
+    (a e : Fin (n + 2) → ℝ) (z₀ : UpperHalfPlane) (ha : Monotone a)
+    (h0 : -1 < ∑ l with a l = a 0, e l) (hS : ∑ k, e k < -1) {x : ℝ}
+    (hx : x ≤ a 0) :
+    schwarzChristoffelBoundary a e z₀ x ∈
+      (schwarzChristoffelPolygon a e z₀).edgeSet ℝ (Fin.last (n + 2)) := by
+  rw [schwarzChristoffelPolygon_edgeSet_last]
+  have hm : schwarzChristoffelBoundary a e z₀ x ∈
+      schwarzChristoffelBoundary a e z₀ '' Iic (a 0) := ⟨x, hx, rfl⟩
+  rw [schwarzChristoffelBoundary_image_Iic_prevertex a e z₀ 0 h0
+    (fun k _ ↦ ha k.zero_le) hS] at hm
+  rw [segment_symm]
+  exact hm.1
+
+/-- Parameters right of the last prevertex are sent to the closing side at the last vertex. -/
+theorem schwarzChristoffelBoundary_mem_edgeSet_last_prevertex_of_ge
+    (a e : Fin (n + 2) → ℝ) (z₀ : UpperHalfPlane) (ha : Monotone a)
+    (hlast : -1 < ∑ l with a l = a (Fin.last (n + 1)), e l) (hS : ∑ k, e k < -1) {x : ℝ}
+    (hx : a (Fin.last (n + 1)) ≤ x) :
+    schwarzChristoffelBoundary a e z₀ x ∈
+      (schwarzChristoffelPolygon a e z₀).edgeSet ℝ (Fin.last (n + 1)).castSucc := by
+  rw [schwarzChristoffelPolygon_edgeSet_last_prevertex]
+  have hm : schwarzChristoffelBoundary a e z₀ x ∈
+      schwarzChristoffelBoundary a e z₀ '' Ici (a (Fin.last (n + 1))) := ⟨x, hx, rfl⟩
+  rw [schwarzChristoffelBoundary_image_Ici_prevertex a e z₀ (Fin.last (n + 1)) hlast
+    (fun k _ ↦ ha k.le_last) hS] at hm
+  exact hm.1
 
 end TauCeti

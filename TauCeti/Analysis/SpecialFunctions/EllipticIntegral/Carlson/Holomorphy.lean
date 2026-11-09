@@ -510,6 +510,137 @@ private theorem carlsonRG_eq_add_of_mem_slitPlane {x y w : ℂ} (hx : x ∈ slit
     integral_add (integrableOn_carlsonRGWeight₁_mul_cpow hx hy hw)
       ((integrableOn_carlsonRGWeight₂_mul_cpow hx hy hw).const_mul w), integral_const_mul]
 
+/-- Pointwise derivative on `(0, ∞)` of `K(t) = -t² (t + x)^(-1/2) (t + y)^(-1/2) (t + z)^(-3/2)`,
+the function whose derivative integrates to the correction term in `∂R_G/∂z`. -/
+private lemma hasDerivAt_carlsonRG_antiderivative_aux {x y z : ℂ} (hx : x ∈ slitPlane ∪ {0})
+    (hy : y ∈ slitPlane ∪ {0}) (hz : z ∈ slitPlane) {t : ℝ}
+    (ht : t ∈ Ioi (0 : ℝ)) :
+    HasDerivAt (fun t : ℝ => -(t : ℂ) ^ 2 * ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) *
+      ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + z) ^ (-(3 / 2) : ℂ))
+      ((1 / 2 : ℂ) * (carlsonRGWeight₂ x y t * ((t : ℂ) + z) ^ (-(3 / 2) : ℂ)) -
+        (1 / 2 : ℂ) * (carlsonRGWeight₁ x y t * ((t : ℂ) + z) ^ (-(3 / 2) : ℂ)) -
+        (3 / 2 : ℂ) * z * (carlsonRGWeight₂ x y t * ((t : ℂ) + z) ^ (-(5 / 2) : ℂ))) t := by
+  set K : ℝ → ℂ := fun t => -(t : ℂ) ^ 2 * ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) *
+    ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + z) ^ (-(3 / 2) : ℂ) with hKdef
+  have htx : (t : ℂ) + x ∈ slitPlane := TauCeti.ofReal_add_mem_slitPlane_of_mem_union hx ht
+  have hty : (t : ℂ) + y ∈ slitPlane := TauCeti.ofReal_add_mem_slitPlane_of_mem_union hy ht
+  have htz : (t : ℂ) + z ∈ slitPlane := TauCeti.ofReal_add_mem_slitPlane hz (le_of_lt ht)
+  have htx_ne : (t : ℂ) + x ≠ 0 := slitPlane_ne_zero htx
+  have hty_ne : (t : ℂ) + y ≠ 0 := slitPlane_ne_zero hty
+  have htz_ne : (t : ℂ) + z ≠ 0 := slitPlane_ne_zero htz
+  have hd_t : HasDerivAt (fun s : ℝ => -(s : ℂ) ^ 2) (-2 * (t : ℂ)) t := by
+    simpa using (((hasDerivAt_pow 2 (t : ℂ)).neg).comp_ofReal)
+  have hd_x : HasDerivAt (fun s : ℝ => ((s : ℂ) + x) ^ (-(1 / 2) : ℂ))
+      (-(1 / 2 : ℂ) * ((t : ℂ) + x) ^ (-(1 / 2 : ℂ) - 1) * 1) t := by
+    simpa using (((hasDerivAt_id (t : ℂ)).add_const x).cpow_const (c := -(1 / 2 : ℂ))
+      htx).comp_ofReal
+  have hd_y : HasDerivAt (fun s : ℝ => ((s : ℂ) + y) ^ (-(1 / 2) : ℂ))
+      (-(1 / 2 : ℂ) * ((t : ℂ) + y) ^ (-(1 / 2 : ℂ) - 1) * 1) t := by
+    simpa using (((hasDerivAt_id (t : ℂ)).add_const y).cpow_const (c := -(1 / 2 : ℂ))
+      hty).comp_ofReal
+  have hd_z : HasDerivAt (fun s : ℝ => ((s : ℂ) + z) ^ (-(3 / 2) : ℂ))
+      (-(3 / 2 : ℂ) * ((t : ℂ) + z) ^ (-(3 / 2 : ℂ) - 1) * 1) t := by
+    simpa using (((hasDerivAt_id (t : ℂ)).add_const z).cpow_const (c := -(3 / 2 : ℂ))
+      htz).comp_ofReal
+  refine (((hd_t.fun_mul hd_x).fun_mul hd_y).fun_mul hd_z).congr_deriv ?_
+  simp only [mul_one, carlsonRGWeight₁, carlsonRGWeight₂]
+  -- Express `(t + w)^(c - 1)` as `(t + w)^c * (t + w)⁻¹` and use `(t + w) * (t + w)⁻¹ = 1`.
+  have hx_sub : ((t : ℂ) + x) ^ (-(1 / 2 : ℂ) - 1) =
+      ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + x)⁻¹ := by
+    rw [cpow_sub _ _ htx_ne, cpow_one, div_eq_mul_inv]
+  have hy_sub : ((t : ℂ) + y) ^ (-(1 / 2 : ℂ) - 1) =
+      ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + y)⁻¹ := by
+    rw [cpow_sub _ _ hty_ne, cpow_one, div_eq_mul_inv]
+  have hz_sub : ((t : ℂ) + z) ^ (-(3 / 2 : ℂ) - 1) = ((t : ℂ) + z) ^ (-(5 / 2) : ℂ) := by
+    norm_num
+  have hz_inv : ((t : ℂ) + z) ^ (-(3 / 2) : ℂ) * ((t : ℂ) + z)⁻¹ =
+      ((t : ℂ) + z) ^ (-(5 / 2) : ℂ) := by
+    rw [TauCeti.cpow_mul_inv (by norm_num)]; norm_num
+  have hx_inv : ((t : ℂ) + x) * ((t : ℂ) + x)⁻¹ = 1 := mul_inv_cancel₀ htx_ne
+  have hy_inv : ((t : ℂ) + y) * ((t : ℂ) + y)⁻¹ = 1 := mul_inv_cancel₀ hty_ne
+  have htz_inv : ((t : ℂ) + z) * ((t : ℂ) + z)⁻¹ = 1 := mul_inv_cancel₀ htz_ne
+  rw [hx_sub, hy_sub, hz_sub, ← hz_inv, div_eq_mul_inv x ((t : ℂ) + x),
+    div_eq_mul_inv y ((t : ℂ) + y)]
+  set ux : ℂ := ((t : ℂ) + x) ^ (-(1 / 2) : ℂ)
+  set uy : ℂ := ((t : ℂ) + y) ^ (-(1 / 2) : ℂ)
+  set uz : ℂ := ((t : ℂ) + z) ^ (-(3 / 2) : ℂ)
+  linear_combination
+    ((1 / 2 : ℂ) * (t : ℂ) * ux * uy * uz) * hx_inv +
+      ((1 / 2 : ℂ) * (t : ℂ) * ux * uy * uz) * hy_inv +
+      ((3 / 2 : ℂ) * (t : ℂ) * ux * uy * uz) * htz_inv
+
+/-- `K(t) = -t² (t + x)^(-1/2) (t + y)^(-1/2) (t + z)^(-3/2)` is continuous at `0` from the right,
+since `‖K(t)‖ = O(t)` as `t → 0⁺`. -/
+private lemma continuousWithinAt_carlsonRG_antiderivative_aux {x y z : ℂ} (hx : x ∈ slitPlane ∪ {0})
+    (hy : y ∈ slitPlane ∪ {0}) (hz : z ∈ slitPlane) :
+    ContinuousWithinAt (fun t : ℝ => -(t : ℂ) ^ 2 * ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) *
+      ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + z) ^ (-(3 / 2) : ℂ)) (Ici 0) 0 := by
+  set K : ℝ → ℂ := fun t => -(t : ℂ) ^ 2 * ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) *
+    ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + z) ^ (-(3 / 2) : ℂ) with hKdef
+  have hK_zero : K 0 = 0 := by simp [K]
+  have hr : (-(1 / 2) : ℝ) ≤ 0 := by norm_num
+  obtain ⟨Cx, hCx⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hx hr
+  obtain ⟨Cy, hCy⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hy hr
+  obtain ⟨Cz, hCz⟩ := TauCeti.exists_norm_ofReal_add_cpow_le hz (r := -(3 / 2)) (by norm_num)
+  have hCx0 : 0 ≤ Cx := by simpa using (norm_nonneg _).trans (hCx 1 one_pos)
+  have hCy0 : 0 ≤ Cy := by simpa using (norm_nonneg _).trans (hCy 1 one_pos)
+  push_cast at hCx hCy hCz
+  rw [ContinuousWithinAt, hK_zero]
+  have h0 : Tendsto (fun t : ℝ => Cx * Cy * Cz * t) (𝓝[Ici 0] 0) (𝓝 0) := by
+    simpa using ((continuous_id.continuousWithinAt (s := Ici (0 : ℝ)) (x := 0)).const_mul
+      (Cx * Cy * Cz)).tendsto
+  refine squeeze_zero_norm' ?_ h0
+  filter_upwards [self_mem_nhdsWithin] with t ht
+  rcases (ht : 0 ≤ t).eq_or_lt with rfl | ht0
+  · simp [K]
+  · have ht_sq : t ^ 2 * t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ) = t := by
+      have h1 : t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ) = t⁻¹ := by
+        rw [← Real.rpow_add ht0]; norm_num [Real.rpow_neg_one]
+      rw [mul_assoc, h1, sq, mul_assoc, mul_inv_cancel₀ ht0.ne', mul_one]
+    have hcz0 : 0 ≤ Cz := (norm_nonneg _).trans (hCz t ht0.le)
+    simp only [K, norm_mul, norm_neg, norm_pow, norm_real, Real.norm_of_nonneg ht0.le]
+    calc t ^ 2 * ‖((t : ℂ) + x) ^ (-(1 / 2) : ℂ)‖ * ‖((t : ℂ) + y) ^ (-(1 / 2) : ℂ)‖ *
+          ‖((t : ℂ) + z) ^ (-(3 / 2) : ℂ)‖
+        ≤ t ^ 2 * (Cx * t ^ (-(1 / 2) : ℝ)) * (Cy * t ^ (-(1 / 2) : ℝ)) * Cz := by
+          gcongr; exacts [hCx t ht0, hCy t ht0, hCz t ht0.le]
+      _ = Cx * Cy * Cz * (t ^ 2 * t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ)) := by ring
+      _ = Cx * Cy * Cz * t := by rw [ht_sq]
+
+/-- `K(t) = -t² (t + x)^(-1/2) (t + y)^(-1/2) (t + z)^(-3/2)` tends to `0` at `+∞`, since
+`‖K(t)‖ = O(t^(-1/2))`. -/
+private lemma tendsto_carlsonRG_antiderivative_aux {x y z : ℂ} (hx : x ∈ slitPlane ∪ {0})
+    (hy : y ∈ slitPlane ∪ {0}) (hz : z ∈ slitPlane) :
+    Tendsto (fun t : ℝ => -(t : ℂ) ^ 2 * ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) *
+      ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + z) ^ (-(3 / 2) : ℂ)) atTop (𝓝 0) := by
+  set K : ℝ → ℂ := fun t => -(t : ℂ) ^ 2 * ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) *
+    ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + z) ^ (-(3 / 2) : ℂ) with hKdef
+  have hr : (-(1 / 2) : ℝ) ≤ 0 := by norm_num
+  obtain ⟨Cx, hCx⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hx hr
+  obtain ⟨Cy, hCy⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hy hr
+  obtain ⟨Cz', hCz'⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow (Or.inl hz)
+    (r := -(3 / 2)) (by norm_num)
+  have hCx0 : 0 ≤ Cx := by simpa using (norm_nonneg _).trans (hCx 1 one_pos)
+  have hCy0 : 0 ≤ Cy := by simpa using (norm_nonneg _).trans (hCy 1 one_pos)
+  push_cast at hCx hCy hCz'
+  have h0 : Tendsto (fun t : ℝ => Cx * Cy * Cz' * t ^ (-(1 / 2) : ℝ)) atTop (𝓝 0) := by
+    simpa using (tendsto_rpow_neg_atTop (by norm_num : (0 : ℝ) < 1 / 2)).const_mul
+      (Cx * Cy * Cz')
+  refine squeeze_zero_norm' ?_ h0
+  filter_upwards [eventually_gt_atTop (0 : ℝ)] with t ht0
+  have hcz'0 : 0 ≤ Cz' := by simpa using (norm_nonneg _).trans (hCz' 1 one_pos)
+  have ht_pow : t ^ 2 * t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ) * t ^ (-(3 / 2) : ℝ) =
+      t ^ (-(1 / 2) : ℝ) := by
+    rw [← Real.rpow_natCast t 2, ← Real.rpow_add ht0, ← Real.rpow_add ht0, ← Real.rpow_add ht0]
+    norm_num
+  simp only [K, norm_mul, norm_neg, norm_pow, norm_real, Real.norm_of_nonneg ht0.le]
+  calc t ^ 2 * ‖((t : ℂ) + x) ^ (-(1 / 2) : ℂ)‖ * ‖((t : ℂ) + y) ^ (-(1 / 2) : ℂ)‖ *
+        ‖((t : ℂ) + z) ^ (-(3 / 2) : ℂ)‖
+      ≤ t ^ 2 * (Cx * t ^ (-(1 / 2) : ℝ)) * (Cy * t ^ (-(1 / 2) : ℝ)) *
+          (Cz' * t ^ (-(3 / 2) : ℝ)) := by gcongr; exacts [hCx t ht0, hCy t ht0, hCz' t ht0]
+    _ = Cx * Cy * Cz' *
+        (t ^ 2 * t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ) * t ^ (-(3 / 2) : ℝ)) := by ring
+    _ = Cx * Cy * Cz' * t ^ (-(1 / 2) : ℝ) := by rw [ht_pow]
+
 /-- **Third partial derivative of `R_G`, integral form.** Valid for all `x, y ∈ slitPlane ∪ {0}`
 and `z ∈ slitPlane` (even when both `x` and `y` vanish):
 `∂R_G(x, y, z)/∂z = (1/8) ∫₀^∞ (t + x)^(-1/2) (t + y)^(-1/2) (t + z)^(-3/2) t dt`. -/
@@ -534,86 +665,10 @@ theorem hasDerivAt_carlsonRG_right_integral {x y z : ℂ} (hx : x ∈ slitPlane 
       (1 / 2 : ℂ) * (carlsonRGWeight₁ x y t * ((t : ℂ) + z) ^ (-(3 / 2) : ℂ)) -
       (3 / 2 : ℂ) * z * (carlsonRGWeight₂ x y t * ((t : ℂ) + z) ^ (-(5 / 2) : ℂ))
   have hK_zero : K 0 = 0 := by simp [K]
-  have hr : (-(1 / 2) : ℝ) ≤ 0 := by norm_num
-  obtain ⟨Cx, hCx⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hx hr
-  obtain ⟨Cy, hCy⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hy hr
-  obtain ⟨Cz, hCz⟩ := TauCeti.exists_norm_ofReal_add_cpow_le hz (r := -(3 / 2)) (by norm_num)
-  obtain ⟨Cz', hCz'⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow (Or.inl hz)
-    (r := -(3 / 2)) (by norm_num)
-  have hCx0 : 0 ≤ Cx := by simpa using (norm_nonneg _).trans (hCx 1 one_pos)
-  have hCy0 : 0 ≤ Cy := by simpa using (norm_nonneg _).trans (hCy 1 one_pos)
-  push_cast at hCx hCy hCz hCz'
-  -- Continuity of `K` at `0`: `‖K(t)‖ = O(t)` as `t → 0⁺`.
-  have hK0 : ContinuousWithinAt K (Ici 0) 0 := by
-    rw [ContinuousWithinAt, hK_zero]
-    have h0 : Tendsto (fun t : ℝ => Cx * Cy * Cz * t) (𝓝[Ici 0] 0) (𝓝 0) := by
-      simpa using ((continuous_id.continuousWithinAt (s := Ici (0 : ℝ)) (x := 0)).const_mul
-        (Cx * Cy * Cz)).tendsto
-    refine squeeze_zero_norm' ?_ h0
-    filter_upwards [self_mem_nhdsWithin] with t ht
-    rcases (ht : 0 ≤ t).eq_or_lt with rfl | ht0
-    · simp [K]
-    · have ht_sq : t ^ 2 * t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ) = t := by
-        have h1 : t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ) = t⁻¹ := by
-          rw [← Real.rpow_add ht0]; norm_num [Real.rpow_neg_one]
-        rw [mul_assoc, h1, sq, mul_assoc, mul_inv_cancel₀ ht0.ne', mul_one]
-      have hcz0 : 0 ≤ Cz := (norm_nonneg _).trans (hCz t ht0.le)
-      simp only [K, norm_mul, norm_neg, norm_pow, norm_real, Real.norm_of_nonneg ht0.le]
-      calc t ^ 2 * ‖((t : ℂ) + x) ^ (-(1 / 2) : ℂ)‖ * ‖((t : ℂ) + y) ^ (-(1 / 2) : ℂ)‖ *
-            ‖((t : ℂ) + z) ^ (-(3 / 2) : ℂ)‖
-          ≤ t ^ 2 * (Cx * t ^ (-(1 / 2) : ℝ)) * (Cy * t ^ (-(1 / 2) : ℝ)) * Cz := by
-            gcongr; exacts [hCx t ht0, hCy t ht0, hCz t ht0.le]
-        _ = Cx * Cy * Cz * (t ^ 2 * t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ)) := by ring
-        _ = Cx * Cy * Cz * t := by rw [ht_sq]
-  -- Pointwise derivative `HasDerivAt K (K' t) t` on `(0, ∞)`.
-  have hK_deriv : ∀ t ∈ Ioi (0 : ℝ), HasDerivAt K (K' t) t := by
-    intro t ht
-    have htx : (t : ℂ) + x ∈ slitPlane := TauCeti.ofReal_add_mem_slitPlane_of_mem_union hx ht
-    have hty : (t : ℂ) + y ∈ slitPlane := TauCeti.ofReal_add_mem_slitPlane_of_mem_union hy ht
-    have htz : (t : ℂ) + z ∈ slitPlane := TauCeti.ofReal_add_mem_slitPlane hz (le_of_lt ht)
-    have htx_ne : (t : ℂ) + x ≠ 0 := slitPlane_ne_zero htx
-    have hty_ne : (t : ℂ) + y ≠ 0 := slitPlane_ne_zero hty
-    have htz_ne : (t : ℂ) + z ≠ 0 := slitPlane_ne_zero htz
-    have hd_t : HasDerivAt (fun s : ℝ => -(s : ℂ) ^ 2) (-2 * (t : ℂ)) t := by
-      simpa using (((hasDerivAt_pow 2 (t : ℂ)).neg).comp_ofReal)
-    have hd_x : HasDerivAt (fun s : ℝ => ((s : ℂ) + x) ^ (-(1 / 2) : ℂ))
-        (-(1 / 2 : ℂ) * ((t : ℂ) + x) ^ (-(1 / 2 : ℂ) - 1) * 1) t := by
-      simpa using (((hasDerivAt_id (t : ℂ)).add_const x).cpow_const (c := -(1 / 2 : ℂ))
-        htx).comp_ofReal
-    have hd_y : HasDerivAt (fun s : ℝ => ((s : ℂ) + y) ^ (-(1 / 2) : ℂ))
-        (-(1 / 2 : ℂ) * ((t : ℂ) + y) ^ (-(1 / 2 : ℂ) - 1) * 1) t := by
-      simpa using (((hasDerivAt_id (t : ℂ)).add_const y).cpow_const (c := -(1 / 2 : ℂ))
-        hty).comp_ofReal
-    have hd_z : HasDerivAt (fun s : ℝ => ((s : ℂ) + z) ^ (-(3 / 2) : ℂ))
-        (-(3 / 2 : ℂ) * ((t : ℂ) + z) ^ (-(3 / 2 : ℂ) - 1) * 1) t := by
-      simpa using (((hasDerivAt_id (t : ℂ)).add_const z).cpow_const (c := -(3 / 2 : ℂ))
-        htz).comp_ofReal
-    refine (((hd_t.fun_mul hd_x).fun_mul hd_y).fun_mul hd_z).congr_deriv ?_
-    simp only [mul_one, K', carlsonRGWeight₁, carlsonRGWeight₂]
-    -- Express `(t + w)^(c - 1)` as `(t + w)^c * (t + w)⁻¹` and use `(t + w) * (t + w)⁻¹ = 1`.
-    have hx_sub : ((t : ℂ) + x) ^ (-(1 / 2 : ℂ) - 1) =
-        ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + x)⁻¹ := by
-      rw [cpow_sub _ _ htx_ne, cpow_one, div_eq_mul_inv]
-    have hy_sub : ((t : ℂ) + y) ^ (-(1 / 2 : ℂ) - 1) =
-        ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + y)⁻¹ := by
-      rw [cpow_sub _ _ hty_ne, cpow_one, div_eq_mul_inv]
-    have hz_sub : ((t : ℂ) + z) ^ (-(3 / 2 : ℂ) - 1) = ((t : ℂ) + z) ^ (-(5 / 2) : ℂ) := by
-      norm_num
-    have hz_inv : ((t : ℂ) + z) ^ (-(3 / 2) : ℂ) * ((t : ℂ) + z)⁻¹ =
-        ((t : ℂ) + z) ^ (-(5 / 2) : ℂ) := by
-      rw [TauCeti.cpow_mul_inv (by norm_num)]; norm_num
-    have hx_inv : ((t : ℂ) + x) * ((t : ℂ) + x)⁻¹ = 1 := mul_inv_cancel₀ htx_ne
-    have hy_inv : ((t : ℂ) + y) * ((t : ℂ) + y)⁻¹ = 1 := mul_inv_cancel₀ hty_ne
-    have htz_inv : ((t : ℂ) + z) * ((t : ℂ) + z)⁻¹ = 1 := mul_inv_cancel₀ htz_ne
-    rw [hx_sub, hy_sub, hz_sub, ← hz_inv, div_eq_mul_inv x ((t : ℂ) + x),
-      div_eq_mul_inv y ((t : ℂ) + y)]
-    set ux : ℂ := ((t : ℂ) + x) ^ (-(1 / 2) : ℂ)
-    set uy : ℂ := ((t : ℂ) + y) ^ (-(1 / 2) : ℂ)
-    set uz : ℂ := ((t : ℂ) + z) ^ (-(3 / 2) : ℂ)
-    linear_combination
-      ((1 / 2 : ℂ) * (t : ℂ) * ux * uy * uz) * hx_inv +
-        ((1 / 2 : ℂ) * (t : ℂ) * ux * uy * uz) * hy_inv +
-        ((3 / 2 : ℂ) * (t : ℂ) * ux * uy * uz) * htz_inv
+  have hK0 : ContinuousWithinAt K (Ici 0) 0 :=
+    continuousWithinAt_carlsonRG_antiderivative_aux hx hy hz
+  have hK_deriv : ∀ t ∈ Ioi (0 : ℝ), HasDerivAt K (K' t) t := fun t ht =>
+    hasDerivAt_carlsonRG_antiderivative_aux hx hy hz ht
   -- Integrability of `K'` and decay `‖K(t)‖ = O(t^(-1/2)) → 0` as `t → ∞`.
   have hint₁' : IntegrableOn
       (fun t : ℝ => carlsonRGWeight₁ x y t * ((t : ℂ) + z) ^ (-(3 / 2) : ℂ)) (Ioi 0) :=
@@ -626,25 +681,7 @@ theorem hasDerivAt_carlsonRG_right_integral {x y z : ℂ} (hx : x ∈ slitPlane 
         (1 / 2 : ℂ) * (carlsonRGWeight₁ x y t * ((t : ℂ) + z) ^ (-(3 / 2) : ℂ))) (Ioi 0) :=
     (hint₂.const_mul (1 / 2 : ℂ)).sub (hint₁'.const_mul (1 / 2 : ℂ))
   have hintK' : IntegrableOn K' (Ioi 0) := h12.sub (hint₂'.const_mul ((3 / 2 : ℂ) * z))
-  have hK_lim : Tendsto K atTop (𝓝 0) := by
-    have h0 : Tendsto (fun t : ℝ => Cx * Cy * Cz' * t ^ (-(1 / 2) : ℝ)) atTop (𝓝 0) := by
-      simpa using (tendsto_rpow_neg_atTop (by norm_num : (0 : ℝ) < 1 / 2)).const_mul
-        (Cx * Cy * Cz')
-    refine squeeze_zero_norm' ?_ h0
-    filter_upwards [eventually_gt_atTop (0 : ℝ)] with t ht0
-    have hcz'0 : 0 ≤ Cz' := by simpa using (norm_nonneg _).trans (hCz' 1 one_pos)
-    have ht_pow : t ^ 2 * t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ) * t ^ (-(3 / 2) : ℝ) =
-        t ^ (-(1 / 2) : ℝ) := by
-      rw [← Real.rpow_natCast t 2, ← Real.rpow_add ht0, ← Real.rpow_add ht0, ← Real.rpow_add ht0]
-      norm_num
-    simp only [K, norm_mul, norm_neg, norm_pow, norm_real, Real.norm_of_nonneg ht0.le]
-    calc t ^ 2 * ‖((t : ℂ) + x) ^ (-(1 / 2) : ℂ)‖ * ‖((t : ℂ) + y) ^ (-(1 / 2) : ℂ)‖ *
-          ‖((t : ℂ) + z) ^ (-(3 / 2) : ℂ)‖
-        ≤ t ^ 2 * (Cx * t ^ (-(1 / 2) : ℝ)) * (Cy * t ^ (-(1 / 2) : ℝ)) *
-            (Cz' * t ^ (-(3 / 2) : ℝ)) := by gcongr; exacts [hCx t ht0, hCy t ht0, hCz' t ht0]
-      _ = Cx * Cy * Cz' *
-          (t ^ 2 * t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ) * t ^ (-(3 / 2) : ℝ)) := by ring
-      _ = Cx * Cy * Cz' * t ^ (-(1 / 2) : ℝ) := by rw [ht_pow]
+  have hK_lim : Tendsto K atTop (𝓝 0) := tendsto_carlsonRG_antiderivative_aux hx hy hz
   -- Apply FTC on `(0, ∞)` (`∫ K' = 0 - K(0) = 0`) to collapse `hd_raw` to the integral form.
   have hftc := integral_Ioi_of_hasDerivAt_of_tendsto hK0 hK_deriv hintK' hK_lim
   rw [hK_zero, sub_zero] at hftc

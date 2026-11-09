@@ -210,16 +210,18 @@ lemma mayerVietoris_exact₃ (n m : ℕ) (h : m + 1 = n := by lia) :
   (shortExact_mayerVietoris R sq).biprod_homology_exact₃ n m h
 
 include sq in
+omit [Mono t] in
 /-- The map `H₀(X₂) ⊞ H₀(X₃) ⟶ H₀(X₄)` at the end of the Mayer–Vietoris sequence is an
 epimorphism. -/
 lemma epi_mayerVietorisFromBiprod_zero : Epi (mayerVietorisFromBiprod R r b 0) := by
   have : Epi ((biprod.desc (chainComplexMap r R) (chainComplexMap b R)).f 0) :=
-    ((HomologicalComplex.shortExact_iff_degreewise_shortExact _).1
-      (shortExact_mayerVietorisShortComplex R sq) 0).epi_g
+    have : Epi (biprod.desc (chainComplexMap r R) (chainComplexMap b R)) :=
+      (sq.map ((chainComplexFunctor C).obj R)).epi_shortComplex_g
+    inferInstance
   have : Epi (HomologicalComplex.homologyMap
       (biprod.desc (chainComplexMap r R) (chainComplexMap b R)) 0) :=
     HomologicalComplex.epi_homologyMap_of_epi_of_not_rel _ _ (by simp)
-  exact HomologicalComplex.epi_biprod_desc_homologyMap 0
+  exact (HomologicalComplex.epi_biprod_desc_homologyMap_iff 0).2 inferInstance
 
 /-- **Naturality of the Mayer–Vietoris connecting morphism** in maps of pushout squares. -/
 @[reassoc]
