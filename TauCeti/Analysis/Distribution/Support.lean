@@ -118,8 +118,13 @@ theorem dsupport_eq_empty_iff : dsupport T = ∅ ↔ ⇑T = 0 :=
     fun h ↦ univ_disjoint.1 <|
       (isVanishingOn_iff_disjoint_dsupport T isOpen_univ).1 fun φ _ ↦ congrFun h φ⟩
 
-omit [FiniteDimensional ℝ E] [AddMonoidHomClass 𝓕 𝓓^{n}(Ω, F) V]
-  [AddMonoidHomClass 𝓖 𝓓^{n}(Ω, F) V] in
+end Localization
+
+section Add
+
+variable [AddZeroClass V] [FunLike 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕) {𝓖 : Type*}
+  [FunLike 𝓖 𝓓^{n}(Ω, F) V]
+
 /-- The support of a sum of maps on test functions lies in the union of their supports. -/
 theorem dsupport_add_subset (S : 𝓖) : dsupport (⇑T + ⇑S) ⊆ dsupport T ∪ dsupport S := by
   refine compl_subset_compl.1 fun x hx ↦ ?_
@@ -129,7 +134,7 @@ theorem dsupport_add_subset (S : 𝓖) : dsupport (⇑T + ⇑S) ⊆ dsupport T �
   refine ⟨s ∩ t, fun φ hφ ↦ ?_, hso.inter hto, hxs, hxt⟩
   simp [hs φ (hφ.trans inter_subset_left), ht φ (hφ.trans inter_subset_right)]
 
-end Localization
+end Add
 
 section Group
 
