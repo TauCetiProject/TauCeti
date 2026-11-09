@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
+import TauCeti.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 
 /-!
@@ -230,12 +231,6 @@ private theorem memWkpLoc_iff_exists_chain (n : ℕ) : ∀ (j : ℕ) (g : ℂ �
         (ih (j + 1) (G (j + 1))).2 ⟨G, rfl, fun i hji hi => hG i (by omega) (by omega),
           fun i hji hi => hGp i (by omega) (by omega)⟩⟩
 
-/-- The Riesz isometry identifies `innerSL ℝ` with its own inverse on real linear functionals. -/
-private theorem innerSL_toDual_symm (f : ℂ →L[ℝ] ℝ) :
-    innerSL ℝ ((InnerProductSpace.toDual ℝ ℂ).symm f) = f := by
-  ext w
-  rw [innerSL_apply_apply, InnerProductSpace.toDual_symm_apply]
-
 /-- **`MemWkpLoc` through iterated gradients.** A real function `u` lies in
 `MemWkpLoc p Ω (n + 1)` exactly when it is locally `Lᵖ` on `Ω` and has locally `Lᵖ` iterated weak
 gradients `G 0, …, G n` on `Ω`: the weak derivative of `u` is `innerSL ℝ ∘ G 0`, and each
@@ -250,12 +245,11 @@ theorem memWkpLoc_succ_iff_exists_iteratedGradient (n : ℕ) {u : ℂ → ℝ} :
   rw [memWkpLoc_succ_iff_of_isOpen]
   refine and_congr_right fun _ => ⟨fun ⟨D, hD, hDn⟩ => ?_, fun ⟨G, h0, hG, hGp⟩ => ?_⟩
   · obtain ⟨G, hG0, hG, hGp⟩ := (memWkpLoc_iff_exists_chain n 0
-      (fun z => (InnerProductSpace.toDual ℝ ℂ).symm (D z))).1
-      (hDn.clm_comp
-        (InnerProductSpace.toDual ℝ ℂ).symm.toContinuousLinearEquiv.toContinuousLinearMap)
+      (fun z => InnerProductSpace.toDualSymmL (D z))).1 (hDn.clm_comp InnerProductSpace.toDualSymmL)
     refine ⟨G, ?_, fun i hi => hG i (Nat.zero_le i) (by omega),
       fun i hi => hGp i (Nat.zero_le i) (by omega)⟩
-    simpa only [hG0, innerSL_toDual_symm] using hD
+    simpa only [hG0, InnerProductSpace.toDualSymmL_apply,
+      InnerProductSpace.innerSL_toDual_symm] using hD
   · have hG0 := (memWkpLoc_iff_exists_chain n 0 (G 0)).2
       ⟨G, rfl, fun i _ hi => hG i (by omega), fun i _ hi => hGp i (by omega)⟩
     exact ⟨_, h0, hG0.clm_comp (innerSL ℝ (E := ℂ))⟩
@@ -367,10 +361,10 @@ theorem memWkpLoc_of_forall_wkp {u : ℂ → ℝ}
         obtain ⟨G, h0, hG, hGp⟩ := hloc W hWc hWΩ
         refine ⟨G, ?_, fun i _ hi => hG i (by omega), fun i _ hi => hGp i (by omega)⟩
         filter_upwards [h0.ae_eq (hD.mono (opens_le_of_closure_subset hWΩ))] with z hz
-        exact innerSL_inj.1 (hz.trans (innerSL_toDual_symm (D z)).symm)
+        exact innerSL_inj.1 (hz.trans (InnerProductSpace.innerSL_toDual_symm (D z)).symm)
     refine memWkpLoc_succ_iff_of_isOpen.2 ⟨hup, D, hD, ?_⟩
     have hDeq : (fun z => innerSL ℝ ((InnerProductSpace.toDual ℝ ℂ).symm (D z))) = D :=
-      funext fun z => innerSL_toDual_symm (D z)
+      funext fun z => InnerProductSpace.innerSL_toDual_symm (D z)
     simpa only [hDeq] using hD'.clm_comp (innerSL ℝ (E := ℂ))
 
 /-- **Comparison with `Wkp`.** A real function lies in `MemWkpLoc p Ω k` exactly when its
