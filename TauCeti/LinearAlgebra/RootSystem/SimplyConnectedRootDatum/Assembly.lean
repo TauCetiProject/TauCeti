@@ -132,6 +132,14 @@ def simplyConnectedBase (t : DynkinType) (ht : t.Valid) :
 @[simp] theorem simplyConnectedRootDatum_G2 (ht : G2.Valid) :
     G2.simplyConnectedRootDatum ht = g2SimplyConnectedRootDatum := (rfl)
 
+/-- A root-sum equation in the assembled G₂ datum is equivalent to its coordinate equation. -/
+theorem g2_root_add_iff {ht : G2.Valid} (i j k : Fin G2.numRoots) :
+    (G2.simplyConnectedRootDatum ht).root k =
+        (G2.simplyConnectedRootDatum ht).root i + (G2.simplyConnectedRootDatum ht).root j ↔
+      g2Root k = g2Root i + g2Root j := by
+  simp +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
+    rank, numRoots]
+
 -- A base is indexed by its datum, so each base equation explicitly transports along the
 -- corresponding datum equation instead of exposing either dispatcher's implementation.
 @[simp] theorem simplyConnectedBase_A (n : ℕ) (ht : (A n).Valid) :
