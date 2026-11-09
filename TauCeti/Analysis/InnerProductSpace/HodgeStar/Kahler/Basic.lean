@@ -55,7 +55,6 @@ computations at `e₀` hold at every unit vector.
 In the namespace `TauCeti.AlmostComplexStructure`:
 
 * `inner_apply_left`: an orthogonal `J` is skew-adjoint.
-* `inner_apply_self`: `⟪J v, v⟫ = 0`.
 * `inner_kahlerForm_ιMulti`: `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`.
 * `inner_kahlerForm_self`: `⟪ω, ω⟫ = dim V / 2`.
 * `norm_ιMulti_apply_sq`: `‖v ∧ J v‖² = ‖v‖⁴`.
@@ -117,12 +116,6 @@ omit [FiniteDimensional ℝ V] in
 /-- An orthogonal almost complex structure is skew-adjoint, `⟪J v, w⟫ = -⟪v, J w⟫`. -/
 theorem inner_apply_left (v w : V) : ⟪J v, w⟫ = -⟪v, J w⟫ :=
   J.bilinForm_apply_left_eq_neg_apply_right (g := innerₗ V) hJ v w
-
-omit [FiniteDimensional ℝ V] in
-/-- An orthogonal almost complex structure turns every vector by a right angle, `⟪J v, v⟫ = 0`. -/
-theorem inner_apply_self (v : V) : ⟪J v, v⟫ = 0 := by
-  rw [real_inner_comm]
-  exact J.bilinForm_apply_apply_self_eq_zero (g := innerₗ V) ⟨fun x y ↦ real_inner_comm y x⟩ hJ v
 
 /-- **The Kähler two-vector represents the Kähler form**: `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`. -/
 @[simp]

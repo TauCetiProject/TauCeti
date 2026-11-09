@@ -139,11 +139,10 @@ theorem deformationSymbol_fst_mul_add_inner_snd (ξ a b : V) :
   have hyx : ⟪o.hodgeStar hkl (ιMulti ℝ 2 ![ξ, a]), ιMulti ℝ 2 ![ξ, b]⟫ = 0 := by
     rw [o.inner_hodgeStar_ιMulti_two hkl]
     exact o.volumeForm.map_eq_zero_of_eq ![ξ, a, ξ, b] (i := 0) (j := 2) rfl (by decide)
-  rw [deformationSymbol_apply_fst, deformationSymbol_apply_fst, deformationSymbol_apply_snd,
-    deformationSymbol_apply_snd, real_inner_smul_left, real_inner_smul_right, inner_add_left,
-    inner_add_right, inner_add_right, hxy, hyx, o.inner_hodgeStar_hodgeStar, inner_ιMulti_two,
-    real_inner_comm a ξ, real_inner_self_eq_norm_sq]
-  linear_combination (‖ξ‖ ^ 2 * ⟪a, b⟫ - ⟪ξ, b⟫ * ⟪a, ξ⟫) / 2 * Real.mul_self_sqrt zero_le_two
+  simp only [deformationSymbol_apply_fst, deformationSymbol_apply_snd, real_inner_smul_left,
+    real_inner_smul_right, inner_add_left, inner_add_right, hxy, hyx, o.inner_hodgeStar_hodgeStar,
+    inner_ιMulti_two, real_inner_comm ξ a, real_inner_self_eq_norm_sq]
+  linear_combination (‖ξ‖ ^ 2 * ⟪a, b⟫ - ⟪ξ, b⟫ * ⟪ξ, a⟫) / 2 * Real.mul_self_sqrt zero_le_two
 
 /-- **Ellipticity of `δ₀`**: `⟪ξ, a⟫² + ‖√2 (ξ ∧ a)⁺‖² = ‖ξ‖² ‖a‖²`. Thus `σ_ξ` is `‖ξ‖` times an
 isometry into `ℝ ⊕ Λ⁺` with its Euclidean norm. -/
@@ -322,7 +321,7 @@ theorem deformationSymbol_toLinearMap_self (ξ : V) :
     LinearMap.comp_apply, deformationSymbol_self]
   refine Prod.ext ?_ ?_ <;> simp
 
-include hkl in
+omit he in
 /-- **`J′ ρ₁ = ρ₂`**: `J′ (0, ρ₁) = (0, ρ₂)` for `ρ₁ = (√2 / 2) (e₀ ∧ e₂ - e₁ ∧ e₃)` and
 `ρ₂ = (√2 / 2) (e₀ ∧ e₃ + e₁ ∧ e₂)`, the images of `e₂` and `e₃ = J e₂` under the symbol at `e₀`.
 With `J′ (1, 0) = (0, ω_u)` (`deformationComplexStructure_one_zero`), the symbol at `e₀` thus sends
@@ -331,9 +330,24 @@ theorem deformationComplexStructure_zero_smul_sub :
     deformationComplexStructure J
         (0, (√2 / 2) • (ιMulti ℝ 2 ![e 0, e 2] - ιMulti ℝ 2 ![e 1, e 3])) =
       (0, (√2 / 2) • (ιMulti ℝ 2 ![e 0, e 3] + ιMulti ℝ 2 ![e 1, e 2])) := by
-  rw [← deformationSymbol_apply_two hkl he, ← deformationSymbol_apply_three hkl he, ← h₂,
-    ← LinearMap.comp_apply (deformationComplexStructure J),
-    ← deformationSymbol_comp_toLinearMap hkl he h₀ h₂, LinearMap.comp_apply]
+  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂
+  have h₁ : J (e 1) = -e 0 := by rw [← h₀, J.apply_apply]
+  have h₃ : J (e 3) = -e 2 := by rw [← h₂, J.apply_apply]
+  refine Prod.ext ?_ ?_
+  · -- `⟪ω, e₀ ∧ e₂⟫ = ⟪e₁, e₂⟫ = 0` and `⟪ω, e₁ ∧ e₃⟫ = -⟪e₀, e₃⟫ = 0`.
+    simp only [deformationComplexStructure_apply_fst, real_inner_smul_right, inner_sub_right,
+      AlmostComplexStructure.inner_kahlerForm_ιMulti hJ, h₀, h₁, inner_neg_left,
+      e.orthonormal.inner_eq_zero (by decide : (1 : Fin 4) ≠ 2),
+      e.orthonormal.inner_eq_zero (by decide : (0 : Fin 4) ≠ 3)]
+    simp
+  · -- `D_J (e₀ ∧ e₂ - e₁ ∧ e₃) = 2 (e₀ ∧ e₃ + e₁ ∧ e₂)`.
+    have hneg₀ (u w : V) : ιMulti ℝ 2 ![-u, w] = -ιMulti ℝ 2 ![u, w] := by
+      convert (ιMulti ℝ 2).map_update_neg ![u, w] 0 u using 3 <;> ext i <;> fin_cases i <;> rfl
+    have hneg₁ (u w : V) : ιMulti ℝ 2 ![u, -w] = -ιMulti ℝ 2 ![u, w] := by
+      rw [← neg_one_smul ℝ w, ιMulti_two_smul_right, neg_one_smul]
+    simp only [deformationComplexStructure_apply_snd, map_smul, map_sub, lieMap_two_apply_ιMulti]
+    rw [h₀, h₁, h₂, h₃, hneg₀, hneg₁]
+    module
 
 /-- **The complex-linear part of `δ₀` has the same principal symbol as `δ₀`**: the symbol of
 `δ_ω = (δ₀ - J′ δ₀ J) / 2` at `ξ`, namely `(σ_ξ - J′ σ_ξ J) / 2`, equals `σ_ξ`. Hence `δ₀` and
