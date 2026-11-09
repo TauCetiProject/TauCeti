@@ -74,6 +74,16 @@ theorem repr_map_eq_of_map_basis
       ((c.repr_self i).trans (b.repr_self i).symm)
   exact DFunLike.congr_fun h x
 
+/-- A coefficient of a composite is the sum of products of coefficients through a finite
+intermediate basis. The multiplication order also applies over noncommutative semirings. -/
+theorem repr_comp_apply_apply {κ W : Type*} [Fintype κ] [AddCommMonoid W] [Module K W]
+    (b : Basis ι K V) (c : Basis κ K W) (f : V →ₗ[K] W) (g : W →ₗ[K] V) (i k : ι) :
+    b.repr ((g ∘ₗ f) (b i)) k =
+      ∑ j, c.repr (f (b i)) j * b.repr (g (c j)) k := by
+  conv_lhs => rw [LinearMap.comp_apply, ← c.sum_repr (f (b i))]
+  simp only [map_sum, map_smul, Finsupp.coe_finsetSum, Finset.sum_apply,
+    Finsupp.smul_apply, smul_eq_mul]
+
 /-- A linear map intertwines two endomorphisms if it does so on every vector of a basis. -/
 theorem intertwines_of_apply {W : Type*} [AddCommMonoid W] [Module K W]
     (b : Module.Basis ι K V) (e : V →ₗ[K] W) (f : Module.End K V) (g : Module.End K W)
