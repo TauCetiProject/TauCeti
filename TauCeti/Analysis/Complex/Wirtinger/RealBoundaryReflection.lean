@@ -81,9 +81,11 @@ coefficients: `ξ z` on the closed upper half-plane and `star (ξ (conj z))` bel
 def starSchwarzReflection (ξ : ℂ → F) (z : ℂ) : F :=
   if 0 ≤ z.im then ξ z else star (ξ (conj z))
 
+@[simp]
 theorem starSchwarzReflection_of_im_nonneg {z : ℂ} (hz : 0 ≤ z.im) :
     starSchwarzReflection ξ z = ξ z := ite_eq_left_iff.2 fun h ↦ (h hz).elim
 
+@[simp]
 theorem starSchwarzReflection_of_im_neg {z : ℂ} (hz : z.im < 0) :
     starSchwarzReflection ξ z = star (ξ (conj z)) := ite_eq_right_iff.2 fun h ↦ (hz.not_ge h).elim
 
