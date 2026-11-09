@@ -439,8 +439,9 @@ theorem mpullback_comp {f : M → M'} {g : M' → M''}
   bundleMpullback_comp hf hg ω
 
 /-- Pullback reverses composition with a differentiable map `g` that does not change where the
-inner map `f` is differentiable. At points where `f` is not differentiable both pullbacks vanish,
-as the derivative is taken to be zero there. -/
+inner map `f` is differentiable. At points where `f` is not differentiable, the pullbacks of a
+form of positive degree both vanish, as the derivative is taken to be zero there; for a form of
+degree zero the pullbacks agree by composition of functions. -/
 theorem mpullback_comp_of_mdifferentiableAt_comp_iff {f : M → M'} {g : M' → M''}
     (hg : MDifferentiable I' I'' g)
     (hfg : ∀ x, MDifferentiableAt I I'' (g ∘ f) x ↔ MDifferentiableAt I I' f x)
