@@ -241,7 +241,6 @@ theorem _root_.ContDiffOn.enorm_integral_lineDeriv_smul_le {u : E → F}
   have hD : ContinuousOn (fderiv ℝ u) Omega :=
     hu.continuousOn_fderiv_of_isOpen Omega.isOpen le_rfl
   have hw : HasWeakFDerivOn mu Omega u (fderiv ℝ u) := hasWeakFDerivOn_of_differentiableOn
-    (hu.continuousOn.locallyIntegrableOn Omega.isOpen.measurableSet)
     (hD.locallyIntegrableOn Omega.isOpen.measurableSet) (fun x hx =>
       (hu.differentiableOn one_ne_zero x hx).differentiableAt (Omega.isOpen.mem_nhds hx))
   rw [(hw.hasWeakLineDerivOn v).integral_lineDeriv_smul_eq_neg_integral_smul phi, enorm_neg,

@@ -92,9 +92,6 @@ theorem map_tilted {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
     (μ.tilted (g ∘ f)).map f = (μ.map f).tilted g := by
   rw [Measure.tilted, Measure.tilted, integral_map hf.aemeasurable
     (hg.exp.stronglyMeasurable.aestronglyMeasurable)]
-  apply map_withDensity_eq_withDensity (jac := fun _ ↦ 1) hf measurable_const
-    ((hg.exp.div_const _).ennreal_ofReal)
-  · simp
-  · exact ae_of_all _ fun _ ↦ by simp
+  exact map_withDensity_comp hf ((hg.exp.div_const _).ennreal_ofReal)
 
 end MeasureTheory.Measure

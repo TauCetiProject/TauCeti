@@ -202,8 +202,8 @@ theorem exists_mem_range_schwarzChristoffelBoundary_iff_of_sum_eq_neg_one_or_eq_
           w.im = (schwarzChristoffelBoundary a e z₀ p).im) := by
   let B := schwarzChristoffelBoundary a e z₀
   have hS : -1 ≤ ∑ i, e i := by rcases hsum with h | h <;> linarith
-  have hp := lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite p
-  have hq := lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite q
+  have hp := forall_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite p
+  have hq := forall_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite q
   have hexp : Complex.exp ((Real.pi * ∑ i, e i) * Complex.I) = -1 := by
     rcases hsum with h | h <;> simp [h, neg_mul, Complex.exp_neg, Complex.exp_pi_mul_I]
   have hleftRay : B '' Iic p = (fun t : ℝ => B p + (t : ℂ)) '' Ici 0 := by

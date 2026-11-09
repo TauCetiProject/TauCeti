@@ -17,6 +17,7 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Dilation
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Potential estimates for `C¹` functions
@@ -273,8 +274,7 @@ theorem enorm_le_lintegral_enorm_fderiv_mul_enorm_sub_rpow [Nontrivial E] (hu : 
   set ω := μ.real (ball (0 : E) 1)
   set P := ∫⁻ y, ‖fderiv ℝ u y‖ₑ * ‖x - y‖ₑ ^ (1 - (n : ℝ)) ∂μ
   have hn0 : n ≠ 0 := finrank_pos.ne'
-  have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne'
-    measure_ball_lt_top.ne
+  have hω : 0 < ω := Metric.measureReal_ball_pos μ 0 one_pos
   obtain ⟨ρ₀, hρ₀⟩ := h2u.isBounded.subset_closedBall x
   set ρ := max ρ₀ 0
   have hρ : 0 ≤ ρ := le_max_right _ _
