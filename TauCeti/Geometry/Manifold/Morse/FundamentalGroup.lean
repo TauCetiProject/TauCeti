@@ -139,7 +139,7 @@ theorem IsMorse.subsingleton_fundamentalGroup_of_manifoldMorseIndex_ne_one (hf :
   have hx : x ∈ {x | f x ≤ c j} := γ.source ▸ hmem 0
   have := hf.subsingleton_fundamentalGroup_sublevel_of_manifoldMorseIndex_ne_one
     (hKj ▸ K.isCompact j) (hreg j) (fun p hp _ ↦ hd p hp) ⟨x, hx⟩
-  exact Path.Homotopic.refl_of_forall_mem_of_subsingleton (x := ⟨x, hx⟩) γ hmem
+  exact Path.homotopic_refl_of_forall_mem_of_subsingleton (x := ⟨x, hx⟩) γ hmem
 
 /-- **A proper Morse function without critical points of index one forces simple connectivity.**
 A connected manifold carrying a proper Morse function, bounded below, with no critical point of

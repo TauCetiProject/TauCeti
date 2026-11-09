@@ -78,6 +78,8 @@ theorem subsingleton_fundamentalGroup_of_isEmpty_cell_one (h₁ : IsEmpty (cell 
   obtain ⟨γ', hγ'⟩ := exists_path_homotopic_skeletonLT one_pos rfl hAC γ
   have hγ'₁ (t : I) : ((γ' t : A) : X) ∈ skeletonLT C 1 := hA₁ (γ' t).2
   let γ'X : C(I, X) := ⟨fun t ↦ γ' t, by fun_prop⟩
+  -- `γ'X` is the compressed loop read in `X`, pointwise the loop `γ'` pushed into `C`.
+  have hγ'X (t : I) : ((γ'.map (continuous_inclusion hAC) t : C) : X) = γ'X t := rfl
   by_cases haD : (a : X) ∈ D
   · -- The compressed loop stays in `D`, where it is nullhomotopic.
     have hmem := forall_mem_of_subset_skeletonLT_one hD₁ (by simpa using isClosedBase C)
@@ -88,8 +90,8 @@ theorem subsingleton_fundamentalGroup_of_isEmpty_cell_one (h₁ : IsEmpty (cell 
     have := hD (e.symm b)
     have : Subsingleton (FundamentalGroup (range (inclusion hDC)) b) :=
       (e.symm.toHomotopyEquiv.fundamentalGroupMulEquiv b).injective.subsingleton
-    exact hγ'.symm.trans (Path.Homotopic.refl_of_forall_mem_of_subsingleton (x := b) _
-      fun t ↦ ⟨⟨_, hmem t⟩, rfl⟩)
+    exact hγ'.symm.trans (Path.homotopic_refl_of_forall_mem_of_subsingleton (x := b) _
+      fun t ↦ ⟨⟨_, hmem t⟩, Subtype.ext (hγ'X t).symm⟩)
   · -- The basepoint is a `0`-cell, an isolated point of the `1`-skeleton.
     have hD' : ((skeletonLT C 1 : Set X) \ {↑a}) ∩ D = D :=
       inter_eq_right.2 fun y hy ↦ ⟨hD₁ hy, fun h ↦ haD (h ▸ hy)⟩
@@ -98,7 +100,7 @@ theorem subsingleton_fundamentalGroup_of_isEmpty_cell_one (h₁ : IsEmpty (cell 
       γ'X hγ'₁ (y₀ := 0) (by simp [γ'X])
     have hconst : γ'.map (continuous_inclusion hAC) = Path.refl _ := by
       ext t
-      exact hmem t
+      exact (hγ'X t).trans (mem_singleton_iff.1 (hmem t))
     exact hγ'.symm.trans (by rw [hconst])
 
 end TauCeti

@@ -54,7 +54,7 @@ drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
   basepoint-transported induced map `FundamentalGroup.mapOfEq`.
 * `TauCeti.subsingleton_fundamentalGroup_iff`: the fundamental group at a basepoint is trivial
   exactly when every loop there is nullhomotopic.
-* `Path.Homotopic.refl_of_forall_mem_of_subsingleton`: a loop lying in a set whose fundamental
+* `Path.homotopic_refl_of_forall_mem_of_subsingleton`: a loop lying in a set whose fundamental
   group at the basepoint is trivial is nullhomotopic.
 * `TauCeti.simplyConnectedSpace_of_subsingleton_fundamentalGroup`: a path-connected space whose
   fundamental group at one basepoint is trivial is simply connected.
@@ -273,7 +273,7 @@ theorem subsingleton_fundamentalGroup_iff {x : X} :
 /-- **A loop in a set with trivial fundamental group is nullhomotopic.** If a loop `γ` at `x` lies
 in a set `s` whose fundamental group at `x` is trivial, then `γ` is homotopic, relative to its
 endpoints, to the constant loop. -/
-theorem _root_.Path.Homotopic.refl_of_forall_mem_of_subsingleton {s : Set X} {x : s}
+theorem _root_.Path.homotopic_refl_of_forall_mem_of_subsingleton {s : Set X} {x : s}
     [Subsingleton (_root_.FundamentalGroup s x)] (γ : Path x.val x.val) (hγ : ∀ t, γ t ∈ s) :
     γ.Homotopic (Path.refl x.val) := by
   have h := (subsingleton_fundamentalGroup_iff.1 ‹_› (γ.codRestrict hγ)).map
