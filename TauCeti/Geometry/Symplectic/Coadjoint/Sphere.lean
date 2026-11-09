@@ -9,8 +9,7 @@ public import TauCeti.Algebra.Lie.Orthogonal.CrossProduct
 public import TauCeti.Geometry.Manifold.Orientation.Sphere
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Comoment
 import TauCeti.Analysis.InnerProductSpace.Euclidean.CrossProduct
-import TauCeti.Geometry.Symplectic.Manifold.Surface
-import TauCeti.LinearAlgebra.Matrix.CrossProduct
+import TauCeti.Geometry.Symplectic.Manifold.Sphere
 
 /-!
 # The two-sphere as a coadjoint orbit of `SO(3)`
@@ -55,7 +54,6 @@ along `x ↦ r x`. The total area `4π r` is not computed here.
 
 ## Main results
 
-* `Orientation.isSymplectic_sphereVolumeForm`: the volume form of a two-sphere is symplectic.
 * `TauCeti.mvfderiv_hamiltonianVectorField_sphereAreaForm`: the Hamiltonian vector field of the
   height `h_ξ` is the rotation field `x ↦ ξ × x`.
 * `TauCeti.sphereAreaForm_poissonBracket`: `{h_ξ, h_η} = h_{ξ × η}`.
@@ -89,22 +87,6 @@ local notation "S²" => sphere (0 : ℝ³) 1
 
 /-- The inclusion of the unit sphere into `ℝ³`. -/
 local notation "ι" => ((↑) : S² → ℝ³)
-
-/-! ### The volume form of a two-sphere is symplectic -/
-
-section TwoSphere
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fact (finrank ℝ E = 2 + 1)]
-
-/-- **The volume form of a two-sphere is symplectic.** On the unit sphere of an oriented
-three-dimensional real inner product space, the volume form `vol(u, ·, ·)` is a nowhere-vanishing
-two-form on a surface, hence closed and nondegenerate. -/
-theorem _root_.Orientation.isSymplectic_sphereVolumeForm (o : Orientation ℝ E (Fin (2 + 1))) :
-    SmoothTwoForm.IsSymplectic o.sphereVolumeForm :=
-  (SmoothTwoForm.isSymplectic_iff_forall_ne_zero_of_finrank_eq_two finrank_euclideanSpace_fin).2
-    o.sphereVolumeForm_apply_ne_zero
-
-end TwoSphere
 
 /-! ### The area form of the unit sphere of `ℝ³` -/
 

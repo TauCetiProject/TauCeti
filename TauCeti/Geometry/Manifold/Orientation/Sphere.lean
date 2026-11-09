@@ -46,6 +46,8 @@ antipodal preimage, the antipodal map has degree `(-1)^(n+1)` at every value.
 ## Main declarations
 
 * `Orientation.sphereVolumeForm`: the nowhere-vanishing top form `vol(u, ·)` of the unit sphere.
+* `Orientation.mpullback_neg_sphereVolumeForm`: the antipodal map pulls the volume form of `Sⁿ`
+  back to `(-1)^(n+1)` times itself.
 * `Orientation.sphereOrientation`: the outward-normal orientation of the unit sphere.
 * `Orientation.orientation_eq_orientationAt_sphereOrientation_iff`: a tangent basis at `u` is
   positive exactly when `u` followed by its image in `E` has positive volume, and
@@ -186,9 +188,9 @@ theorem _root_.Orientation.sphereOrientation_neg (o : Orientation ℝ E (Fin (n 
     rw [← hpos, hv]
     exact (neg_neg (G := Orientation ℝ (TangentSpace (𝓡 n) u) (Fin n)) _).symm
 
-/-- The antipodal map `u ↦ -u` pulls the top form `(v₁, …, vₙ) ↦ vol(u, v₁, …, vₙ)` of the sphere
-back to `(-1)^(n+1)` times itself: it negates both the point and the tangent vectors. -/
-private theorem mpullback_neg_sphereVolumeForm (o : Orientation ℝ E (Fin (n + 1)))
+/-- The antipodal map `u ↦ -u` pulls the volume form `(v₁, …, vₙ) ↦ vol(u, v₁, …, vₙ)` of the
+sphere back to `(-1)^(n+1)` times itself: it negates both the point and the tangent vectors. -/
+theorem _root_.Orientation.mpullback_neg_sphereVolumeForm (o : Orientation ℝ E (Fin (n + 1)))
     (u : sphere (0 : E) 1) :
     mpullback (𝓡 n) (𝓡 n) (fun y : sphere (0 : E) 1 ↦ -y) o.sphereVolumeForm.1 u =
       ((-1 : ℝ) ^ (n + 1)) • o.sphereVolumeForm.1 u := by
@@ -223,7 +225,7 @@ theorem _root_.Orientation.isOrientationPreservingAt_neg_sphere
       (fun y ↦ -y) u := by
   rw [Orientation.sphereOrientation]
   refine Manifold.Orientation.isOrientationPreservingAt_ofTopForm_of_mpullback_eq_smul _ _ _ _ _ _
-    ?_ (mpullback_neg_sphereVolumeForm o u)
+    ?_ (o.mpullback_neg_sphereVolumeForm u)
   rw [hn.add_one.neg_one_pow]
   exact one_pos
 
@@ -235,7 +237,7 @@ theorem _root_.Orientation.isOrientationReversingAt_neg_sphere
       (fun y ↦ -y) u := by
   rw [Orientation.sphereOrientation]
   refine Manifold.Orientation.isOrientationReversingAt_ofTopForm_of_mpullback_eq_smul _ _ _ _ _ _
-    ?_ (mpullback_neg_sphereVolumeForm o u)
+    ?_ (o.mpullback_neg_sphereVolumeForm u)
   rw [hn.add_one.neg_one_pow]
   exact neg_one_lt_zero
 
