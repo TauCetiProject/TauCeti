@@ -97,11 +97,10 @@ theorem mul_mul_inv_mem_sp {A : GL (l ⊕ l) R} (hA : A ∈ GLSymplectic l R)
     {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX : X ∈ sp l R) :
     (A : Matrix (l ⊕ l) (l ⊕ l) R) * X * ((A⁻¹ : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R) ∈
       sp l R := by
-  rw [sp, mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule,
-    Matrix.IsSkewAdjoint] at hX ⊢
+  rw [mem_sp] at hX ⊢
   -- Mathlib's `Matrix.isAdjointPair_equiv` with `P = A`, using `Aᵀ J A = J`.
-  rw [← mem_iff'.mp hA] at hX
-  simpa only [coe_units_inv, Matrix.mul_neg, Matrix.neg_mul] using
+  rw [← mem_iff'.mp hA, ← Matrix.mul_neg] at hX
+  simpa only [Matrix.IsAdjointPair, coe_units_inv, Matrix.mul_neg, Matrix.neg_mul] using
     (isAdjointPair_equiv (J l R) X (-X) _ A.isUnit).mp hX
 
 /-- The conjugation `X ↦ A X A⁻¹` of `sp l R` by a symplectic matrix, as a Lie automorphism:
