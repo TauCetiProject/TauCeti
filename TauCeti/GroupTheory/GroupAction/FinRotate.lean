@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Jordan
 public import Mathlib.GroupTheory.Perm.Fin
+import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Perm.MultipleTransitivity
 import TauCeti.GroupTheory.Perm.PermCongr
 
@@ -47,10 +48,8 @@ theorem isPretransitive_zpowers_iff_isConj_finRotate {n : ℕ} {σ : Perm (Fin n
       obtain ⟨⟨g, hg⟩, hxy⟩ := hσ.exists_smul_eq x y
       obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.1 hg
       exact ⟨k, by simpa [Subgroup.smul_def] using hxy⟩⟩
-    have hsupp : σ.support = Finset.univ := Finset.eq_univ_of_forall fun x =>
-      mem_support.2 (hc.apply_ne Set.nontrivial_univ (Set.mem_univ x))
-    exact (isCycle_iff_exists_isCycleOn.2 ⟨_, Set.nontrivial_univ, hc, fun _ _ => Set.mem_univ _⟩
-      ).isConj (isCycle_finRotate_of_le hn) (by rw [hsupp, support_finRotate_of_le hn])
+    obtain ⟨hcyc, hsupp⟩ := isCycleOn_univ_iff.1 hc
+    exact hcyc.isConj (isCycle_finRotate_of_le hn) (by rw [hsupp, support_finRotate_of_le hn])
   · -- Transport the transitivity of the powers of rotation along the conjugation.
     obtain ⟨c, rfl⟩ := isConj_iff.1 h.symm
     rw [← MulAut.conj_apply, ← MulEquiv.coe_toMonoidHom, ← MonoidHom.map_zpowers,
