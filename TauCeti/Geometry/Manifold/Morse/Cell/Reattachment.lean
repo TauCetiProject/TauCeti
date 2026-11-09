@@ -190,6 +190,11 @@ private def reattachmentInner (i : ι) :
     C(I × TopCat.disk.{u} (k i), morseCellAttachment φ₀ k hk hε hball₀ hf₀) :=
   (morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i).hom.comp ((h i).hom.comp ContinuousMap.snd)
 
+private theorem reattachmentInner_apply (i : ι) (p : I × TopCat.disk.{u} (k i)) :
+    reattachmentInner φ₀ k hk hε hball₀ hf₀ h i p =
+      morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i (h i p.2) :=
+  rfl
+
 /-- The outer piece of the reattachment map on the disc of `i`: the map `(s, θ) ↦ K i (1 - s, θ)`
 of the annulus `I × ∂D^{k i}`, read in the lower sublevel, as a homotopy constant in time. -/
 private def reattachmentOuter (i : ι) :
@@ -223,8 +228,8 @@ private theorem reattachmentOuter_zero (i : ι) (t : I) (θ : TopCat.diskBoundar
     exact OpenPartialHomeomorph.coe_morseCharacteristicMap_diskBoundaryInclusion
       (hball₀ i) (hf₀ i) (hk i) hε s
   rw [reattachmentOuter_apply, hseam, ← ConcreteCategory.comp_apply,
-    morseAttachingMap_comp_morseCellAttachmentIncl, ConcreteCategory.comp_apply, hs]
-  rfl
+    morseAttachingMap_comp_morseCellAttachmentIncl, ConcreteCategory.comp_apply, hs,
+    reattachmentInner_apply]
 
 /-- The reattachment map on the disc of the chart index `i`: the inner piece on the disc of radius
 `1/2` glued to the outer piece on the collar `1/2 ≤ ‖x‖`. -/
@@ -298,8 +303,8 @@ theorem morseCellReattachment_morseCellAttachmentCell_of_norm_le (i : ι)
     rw [hv, smul_smul]
     norm_num
   rw [morseCellReattachment_morseCellAttachmentCell, morseCellReattachmentCell,
-    ContinuousMap.curry_apply, TopCat.diskCollar_apply_of_eq_smul _ _ _ _ hwv]
-  rfl
+    ContinuousMap.curry_apply, TopCat.diskCollar_apply_of_eq_smul _ _ _ _ hwv,
+    reattachmentInner_apply]
 
 /-- Outside the disc of radius `1/2` of the cell of `i`, the reattachment map is
 `x ↦ K i (2 - 2‖x‖, x/‖x‖)`, read in the lower sublevel. -/
