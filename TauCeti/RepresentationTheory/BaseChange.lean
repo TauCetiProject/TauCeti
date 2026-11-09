@@ -311,6 +311,7 @@ open TensorProduct
 variable {K : Type*} {L : Type*} [Field K] [Field L] [Algebra K L]
 variable {V : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
+omit [FiniteDimensional K V] in
 /-- **The character is unchanged by base change**, read through the structure map: the character of
 `L ⊗[K] V` at `g` is the image in `L` of the character of `V` at `g`, because the trace of a
 base-changed endomorphism is the image of its trace. -/
@@ -318,8 +319,19 @@ base-changed endomorphism is the image of its trace. -/
 theorem _root_.Representation.character_baseChange {G : Type*} [Monoid G]
     (ρ : _root_.Representation K G V) (g : G) :
     (_root_.Representation.baseChange L ρ).character g = algebraMap K L (ρ.character g) := by
-  simp [_root_.Representation.character, _root_.Representation.baseChange_apply,
-    LinearMap.trace_baseChange]
+  by_cases hV : FiniteDimensional K V
+  · simp [_root_.Representation.character, _root_.Representation.baseChange_apply,
+      LinearMap.trace_baseChange]
+  · -- Both traces are `0`: `L ⊗[K] V` is finite-dimensional over `L` only if `V` is over `K`.
+    have hL : ¬ FiniteDimensional L (L ⊗[K] V) := fun h => hV (by
+      have h' := Module.rank_lt_aleph0_iff.2 h
+      rw [Module.rank_baseChange, Cardinal.lift_lt_aleph0] at h'
+      exact Module.rank_lt_aleph0_iff.1 h')
+    have hK : ¬ ∃ s : Finset V, Nonempty (Module.Basis s K V) :=
+      fun ⟨_, ⟨b⟩⟩ => hV (Module.Finite.of_basis b)
+    have hL' : ¬ ∃ s : Finset (L ⊗[K] V), Nonempty (Module.Basis s L (L ⊗[K] V)) :=
+      fun ⟨_, ⟨b⟩⟩ => hL (Module.Finite.of_basis b)
+    simp [_root_.Representation.character, LinearMap.trace, hK, hL']
 
 /-- **The character of a scalar extension in `FDRep`** is the character of the original
 representation read in the larger field: `χ_{L ⊗[K] V} = algebraMap K L ∘ χ_V`.

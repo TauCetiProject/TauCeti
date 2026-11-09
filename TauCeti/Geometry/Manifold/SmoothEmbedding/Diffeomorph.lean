@@ -160,6 +160,7 @@ variable {𝕜 : Type*} [RCLike 𝕜]
   [TopologicalSpace P] [ChartedSpace G' P]
   {n : ℕ∞ω} [IsManifold I n M] [IsManifold J n N] [IsManifold K n P] {f : M → N}
 
+omit [IsManifold J n N] in
 /-- Transporting a smooth embedding from a boundaryless manifold by a diffeomorphism of the target
 onto a boundaryless manifold gives a smooth embedding, also when the new target has a different
 finite-dimensional model. -/
