@@ -15,6 +15,7 @@ public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
+import TauCeti.Analysis.RCLike.Sum
 
 /-!
 # Endomorphisms of finite order
@@ -241,58 +242,15 @@ theorem exists_eq_smul_of_norm_trace_eq_finrank {f : End ℂ V} {n : ℕ}
   have hnormμ₀ : ‖μ₀‖ = 1 := by
     rw [hμ₀def, norm_div, h, Complex.norm_natCast]
     exact div_self (Nat.cast_ne_zero.2 hV.ne')
-  have hμ₀ne : μ₀ ≠ 0 := by
-    intro h0
-    rw [h0, norm_zero] at hnormμ₀
-    exact zero_ne_one hnormμ₀
-  have hconj : (starRingEnd ℂ) μ₀ * μ₀ = 1 := by
-    rw [← Complex.inv_eq_conj hnormμ₀]
-    exact inv_mul_cancel₀ hμ₀ne
-  -- rotating the trace back by that phase recovers the dimension exactly
-  have hkey : ∑ μ ∈ E, (finrank ℂ (f.eigenspace μ) : ℂ) * ((starRingEnd ℂ) μ₀ * μ)
-      = (finrank ℂ V : ℂ) := by
-    calc ∑ μ ∈ E, (finrank ℂ (f.eigenspace μ) : ℂ) * ((starRingEnd ℂ) μ₀ * μ)
-        = (starRingEnd ℂ) μ₀ * ∑ μ ∈ E, (finrank ℂ (f.eigenspace μ) : ℂ) * μ := by
-          rw [Finset.mul_sum]
-          exact Finset.sum_congr rfl fun _ _ => by ring
-      _ = (starRingEnd ℂ) μ₀ * (μ₀ * (finrank ℂ V : ℂ)) := by rw [htrace, htμ₀]
-      _ = (finrank ℂ V : ℂ) := by rw [← mul_assoc, hconj, one_mul]
-  have hzero : ∑ μ ∈ E, (finrank ℂ (f.eigenspace μ) : ℂ) * (1 - (starRingEnd ℂ) μ₀ * μ) = 0 := by
-    simp only [mul_sub, mul_one, Finset.sum_sub_distrib, hdim, hkey, sub_self]
-  have hreal : ∑ μ ∈ E, (finrank ℂ (f.eigenspace μ) : ℝ) * (1 - ((starRingEnd ℂ) μ₀ * μ).re)
-      = 0 := by
-    have := congrArg Complex.re hzero
-    simpa [Complex.re_sum, Complex.mul_re] using this
-  have hnormE : ∀ μ ∈ E, ‖(starRingEnd ℂ) μ₀ * μ‖ = 1 := by
-    intro μ hμ
-    have hpow : μ ^ n = 1 :=
-      pow_eq_one_of_hasEigenvalue hf ((End.finite_hasEigenvalue f).mem_toFinset.1 hμ)
-    rw [norm_mul, Complex.norm_conj, hnormμ₀, Complex.norm_eq_one_of_pow_eq_one hpow hn, one_mul]
-  -- every summand is nonnegative, a rotated eigenvalue having real part at most its norm `1`
-  have hnonneg : ∀ μ ∈ E,
-      0 ≤ (finrank ℂ (f.eigenspace μ) : ℝ) * (1 - ((starRingEnd ℂ) μ₀ * μ).re) := by
-    intro μ hμ
-    have := (Complex.re_le_norm ((starRingEnd ℂ) μ₀ * μ)).trans_eq (hnormE μ hμ)
-    exact mul_nonneg (Nat.cast_nonneg _) (by linarith)
-  have hall : ∀ μ ∈ E, μ = μ₀ := by
-    intro μ hμ
-    have hev : f.HasEigenvalue μ := (End.finite_hasEigenvalue f).mem_toFinset.1 hμ
-    have hz := (Finset.sum_eq_zero_iff_of_nonneg hnonneg).1 hreal μ hμ
-    have hdpos : (finrank ℂ (f.eigenspace μ) : ℝ) ≠ 0 := by
-      have : f.eigenspace μ ≠ ⊥ := hev
-      simpa [Submodule.finrank_eq_zero] using this
-    have hre : ((starRingEnd ℂ) μ₀ * μ).re = 1 := by
-      rcases mul_eq_zero.1 hz with h' | h'
-      · exact absurd h' hdpos
-      · linarith
-    -- a real part of `1` already exhausts the norm `1`, so the imaginary part vanishes
-    have him : ((starRingEnd ℂ) μ₀ * μ).im = 0 :=
-      Complex.abs_re_eq_norm.mp (by rw [hre, hnormE μ hμ, abs_one])
-    have h1 : (starRingEnd ℂ) μ₀ * μ = 1 :=
-      Complex.ext (by simpa using hre) (by simpa using him)
-    calc μ = ((starRingEnd ℂ) μ₀ * μ₀) * μ := by rw [hconj, one_mul]
-      _ = μ₀ * ((starRingEnd ℂ) μ₀ * μ) := by ring
-      _ = μ₀ := by rw [h1, mul_one]
+  have hall : ∀ μ ∈ E, μ = μ₀ :=
+    Complex.eq_of_sum_mul_eq_of_norm_eq_one (z := id)
+      (d := fun μ => (finrank ℂ (f.eigenspace μ) : ℝ)) hnormμ₀
+      (fun μ hμ => by
+        have := hasEigenvalue_iff.1 ((End.finite_hasEigenvalue f).mem_toFinset.1 hμ)
+        exact Nat.cast_pos.2 (Nat.pos_of_ne_zero (by simpa [Submodule.finrank_eq_zero] using this)))
+      (fun μ hμ => Complex.norm_eq_one_of_pow_eq_one
+        (pow_eq_one_of_hasEigenvalue hf ((End.finite_hasEigenvalue f).mem_toFinset.1 hμ)) hn)
+      (by simpa only [Complex.ofReal_natCast, id, hdim] using htrace.trans htμ₀)
   have hEne : E.Nonempty := by
     rcases Finset.eq_empty_or_nonempty E with hEmp | hne
     · rw [hEmp, Finset.sum_empty] at hdim
