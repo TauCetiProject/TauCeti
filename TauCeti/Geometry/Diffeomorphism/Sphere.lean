@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Diffeomorphism.Group
 public import TauCeti.Geometry.Diffeomorphism.Topology
 public import TauCeti.Geometry.Sphere.LinearIsometry
-public import TauCeti.LinearAlgebra.OrthogonalGroup
+public import TauCeti.Analysis.Matrix.EuclideanLin
 import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
@@ -284,7 +284,7 @@ noncomputable def orthogonalToDiffSphere (n : ℕ) (m : ℕ∞ω) :
     Matrix.orthogonalGroup (Fin (n + 1)) ℝ →*
       Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m :=
   (LinearIsometryEquiv.unitSphereDiffHom m).comp
-    orthogonalGroupToLinearIsometryEquiv
+    Matrix.UnitaryGroup.toLinearIsometryEquiv
 
 /-- The reference inclusion `O(n + 1) → Diff(Sⁿ)` sends an orthogonal transformation to its
 restriction to the unit sphere. -/
@@ -292,7 +292,7 @@ restriction to the unit sphere. -/
 theorem orthogonalToDiffSphere_apply (n : ℕ) (m : ℕ∞ω)
     (A : Matrix.orthogonalGroup (Fin (n + 1)) ℝ) :
     orthogonalToDiffSphere n m A =
-      LinearIsometryEquiv.unitSphereDiffHom m (orthogonalGroupToLinearIsometryEquiv A) :=
+      LinearIsometryEquiv.unitSphereDiffHom m (Matrix.UnitaryGroup.toLinearIsometryEquiv A) :=
   (rfl)
 
 /-- The reference inclusion `O(n + 1) → Diff(Sⁿ)` is injective, so `O(n + 1)` is realised as a
@@ -300,7 +300,7 @@ subgroup of `Diff(Sⁿ)`. -/
 theorem orthogonalToDiffSphere_injective (n : ℕ) (m : ℕ∞ω) :
     Function.Injective (orthogonalToDiffSphere n m) := by
   exact LinearIsometryEquiv.unitSphereDiffHom_injective.comp
-    orthogonalGroupToLinearIsometryEquiv_injective
+    Matrix.UnitaryGroup.toLinearIsometryEquiv_injective
 
 open scoped TauCeti.DiffeomorphWeakWhitney in
 /-- The reference inclusion `O(n + 1) → Diff(Sⁿ)` is continuous, for the subspace topology on
@@ -309,7 +309,7 @@ theorem continuous_orthogonalToDiffSphere (n : ℕ) (m : ℕ∞ω) :
     Continuous (orthogonalToDiffSphere n m) := by
   refine Diffeomorph.continuous_weakWhitney_iff.mpr ?_
   simpa only [orthogonalToDiffSphere_apply, LinearIsometryEquiv.unitSphereDiffHom_apply] using
-    continuous_orthogonalGroupToLinearIsometryEquiv.toContMDiffMap_unitSphereDiffeomorph
+    Matrix.UnitaryGroup.continuous_toLinearIsometryEquiv.toContMDiffMap_unitSphereDiffeomorph
 
 /-- The reference inclusion `O(n + 1) → Diff(Sⁿ)`, packaged as a continuous map. -/
 noncomputable def continuousOrthogonalToDiffSphere (n : ℕ) (m : ℕ∞ω) :
