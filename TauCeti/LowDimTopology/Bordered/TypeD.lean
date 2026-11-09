@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Group.Idempotent
 public import TauCeti.Algebra.CharP.Two
 public import TauCeti.Algebra.Homology.DG.Ungraded
-public import Mathlib.LinearAlgebra.Multilinear.Curry
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
 import Mathlib.Tactic.Abel
 import TauCeti.Data.Fin.StrictMono
