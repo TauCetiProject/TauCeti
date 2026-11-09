@@ -35,6 +35,8 @@ the summation index. The weighted sum is again a single binomial coefficient,
 * `Nat.pow_three_sub_self_eq_mul_choose_two`: `g³ - g = (2g + 2) · C(g, 2)`.
 * `Nat.even_choose_two_iff`, `Nat.neg_one_pow_choose_two`: `C(m, 2)` and `⌊m / 2⌋` have the same
   parity, so `(-1) ^ C(m, 2) = (-1) ^ ⌊m / 2⌋`.
+* `Nat.neg_one_pow_succ_choose_two_mul_neg_one_pow`: the step
+  `(-1) ^ C(m + 1, 2) * (-1) ^ m = (-1) ^ C(m, 2)`.
 * `Nat.sum_Icc_choose_eq_two_pow_sub_two`: the binomial coefficients `C(n, i)`, `0 < i < n`,
   sum to `2ⁿ - 2`.
 * `Nat.descFactorial_mul_choose`: a falling factorial of the lower index lowers both indices,
@@ -118,6 +120,13 @@ theorem even_choose_two_iff (m : ℕ) : Even (m.choose 2) ↔ Even (m / 2) := by
 theorem neg_one_pow_choose_two {R : Type*} [Monoid R] [HasDistribNeg R] (m : ℕ) :
     (-1 : R) ^ m.choose 2 = (-1) ^ (m / 2) :=
   neg_one_pow_congr (even_choose_two_iff m)
+
+/-- Raising `m` to `m + 1` multiplies the sign `(-1) ^ C(m, 2)` by `(-1) ^ m`, since
+`C(m + 1, 2) = C(m, 2) + m`; equivalently `(-1) ^ C(m + 1, 2) * (-1) ^ m = (-1) ^ C(m, 2)`. -/
+theorem neg_one_pow_succ_choose_two_mul_neg_one_pow {R : Type*} [Monoid R] [HasDistribNeg R]
+    (m : ℕ) : (-1 : R) ^ (m + 1).choose 2 * (-1) ^ m = (-1) ^ m.choose 2 := by
+  rw [choose_succ_succ', choose_one_right, add_comm, pow_add, mul_assoc, ← pow_add,
+    Even.neg_one_pow ⟨m, rfl⟩, mul_one]
 
 /-- The binomial coefficients `C(n, i)` with `0 < i < n` sum to `2ⁿ - 2`. -/
 theorem sum_Icc_choose_eq_two_pow_sub_two (n : ℕ) :

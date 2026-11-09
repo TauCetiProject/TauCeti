@@ -33,6 +33,8 @@ independence in both σ-algebras.
   generate independent σ-algebras;
 * `TauCeti.Probability.indepFun_of_measurable_blockSigma` — two random elements measurable for the
   σ-algebras of disjoint blocks of an independent family are independent;
+* `ProbabilityTheory.iIndepFun.indepFun_prefix` — the finite prefix of an independent sequence
+  is independent of the next coordinate;
 * `ProbabilityTheory.iIndepFun.indepFun_fun_sumElim` — if `Sum.elim X X'` is independent, the
   vectors `(Xᵢ)ᵢ` and `(X'ᵢ)ᵢ` are independent.
 -/
@@ -130,6 +132,17 @@ theorem indepFun_of_measurable_blockSigma {μ : Measure Ω} {Z : ∀ i, Ω → �
 end TauCeti.Probability
 
 namespace ProbabilityTheory
+
+/-- The completed prefix of an independent sequence is independent of its next coordinate. -/
+theorem iIndepFun.indepFun_prefix {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    {β : ℕ → Type*} [∀ i, MeasurableSpace (β i)] {X : ∀ i, Ω → β i}
+    (hindep : iIndepFun X μ) (hX : ∀ i, Measurable (X i)) (n : ℕ) :
+    IndepFun (fun ω (i : Fin n) ↦ X i ω) (X n) μ := by
+  have h := hindep.indepFun_set (Set.Iio n) {n}
+    (by simp only [Set.disjoint_left, Set.mem_Iio, Set.mem_singleton_iff]; omega) hX
+  exact h.comp
+    (by fun_prop : Measurable (fun (z : ∀ i : Set.Iio n, β i) (i : Fin n) ↦ z ⟨i, i.isLt⟩))
+    (by fun_prop : Measurable (fun (z : ∀ i : ({n} : Set ℕ), β i) ↦ z ⟨n, by simp⟩))
 
 variable {Ω ι E : Type*} [MeasurableSpace Ω] [MeasurableSpace E] {μ : Measure Ω}
   {X X' : ι → Ω → E}
