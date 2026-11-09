@@ -107,9 +107,14 @@ private theorem neg_one_le_of_zero_le_one_add {x : WithTop ℤ} (h : 0 ≤ 1 + x
 product converges, the order of `(z − z₀) · f z` is nonnegative, hence the order of `f` is at
 least `−1` — the hypothesis the Hungerbühler–Wasem half-residue theorem consumes. The same limit
 also computes the residue, via `residue_eq_of_tendsto_sub_mul`. -/
-theorem neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul {L : ℂ} (hf : MeromorphicAt f z₀)
+theorem neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul {L : ℂ}
     (h : Tendsto (fun z => (z - z₀) * f z) (𝓝[≠] z₀) (𝓝 L)) :
     ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f z₀ := by
+  -- a function that is not meromorphic has order `0` by convention
+  by_cases hf : MeromorphicAt f z₀
+  swap
+  · rw [meromorphicOrderAt_of_not_meromorphicAt hf]
+    exact_mod_cast (by norm_num : (-1 : ℤ) ≤ 0)
   have hg : MeromorphicAt (fun z : ℂ => (z - z₀) * f z) z₀ :=
     ((analyticAt_id.sub analyticAt_const).meromorphicAt).mul hf
   have hgnn : 0 ≤ meromorphicOrderAt (fun z => (z - z₀) * f z) z₀ :=
@@ -153,7 +158,7 @@ theorem residue_eq_of_tendsto_sub_mul {L : ℂ} (hf : MeromorphicAt f z₀)
     (h : Tendsto (fun z => (z - z₀) * f z) (𝓝[≠] z₀) (𝓝 L)) :
     residue f z₀ = L := by
   exact tendsto_nhds_unique
-    (tendsto_sub_mul_nhds_residue hf (neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul hf h)) h
+    (tendsto_sub_mul_nhds_residue hf (neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul h)) h
 
 /-- The reciprocal `(· − z₀)⁻¹` of the simple factor `(· − z₀)` is meromorphic at `z₀`. -/
 theorem meromorphicAt_sub_inv (z₀ : ℂ) : MeromorphicAt (fun z => (z - z₀)⁻¹) z₀ :=
