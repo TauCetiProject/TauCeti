@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Calculus.TangentCone.Graph
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
-import TauCeti.Analysis.Calculus.FDeriv.ImageCone
 
 /-!
 # Approximate tangency of differentiable normal graphs
@@ -56,12 +55,7 @@ theorem tendsto_euclideanHausdorffMeasure_normalGraphEmbedding_outside_cone_div
               (LinearMap.range A.normalGraphL.toLinearMap : Set (WithLp 2 (ℝ × E)))} /
         volume (closedBall (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) r))
       (𝓝[>] 0) (𝓝 0) := by
-  -- Inserting the base point preserves relative differentiability and lets the inverse bound
-  -- compare every parameter with the base point, even when the latter is not in the set.
-  have hi := (TauCeti.antilipschitzWith_normalGraphEmbedding φ).domRestrict (insert x s)
-  obtain ⟨δ, hδ, hcone⟩ :=
-    hφ.insert.normalGraphEmbedding.exists_pos_forall_infDist_range_le
-      (mem_insert x s) hi hε
+  obtain ⟨δ, hδ, hcone⟩ := hφ.exists_pos_forall_infDist_range_normalGraphL_le hε
   apply tendsto_const_nhds.congr'
   filter_upwards [eventually_nhdsWithin_of_eventually_nhds (eventually_lt_nhds hδ)] with r hr
   have hempty :
@@ -72,7 +66,7 @@ theorem tendsto_euclideanHausdorffMeasure_normalGraphEmbedding_outside_cone_div
             (LinearMap.range A.normalGraphL.toLinearMap : Set (WithLp 2 (ℝ × E)))} = ∅ := by
     apply eq_empty_of_forall_notMem
     intro z hz
-    exact (not_lt_of_ge (hcone z (image_mono (subset_insert x s) hz.1.1)
+    exact (not_lt_of_ge (hcone z hz.1.1
       ((mem_closedBall.mp hz.1.2).trans_lt hr))) hz.2
   rw [hempty, measure_empty, ENNReal.zero_div]
 

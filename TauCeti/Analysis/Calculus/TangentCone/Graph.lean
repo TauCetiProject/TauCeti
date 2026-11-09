@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.TangentCone.Embedding
 public import TauCeti.Analysis.Calculus.FDeriv.WithLp
+import TauCeti.Analysis.Calculus.FDeriv.ImageCone
 
 /-!
 # Tangent spaces of normal graphs
@@ -20,12 +21,14 @@ derivative is needed.
 
 The parametrization is `TauCeti.normalGraphEmbedding` in the Euclidean product
 `WithLp 2 (ℝ × E)`. Its Jacobian is computed in `Analysis.Calculus.FDeriv.WithLp`; the results
-here identify the actual tangent space with the range used in that computation.
+here identify the actual tangent space with the range used in that computation. Relative
+differentiability also gives local pointwise containment in every cone about that range,
+without finite-dimensionality or measure assumptions.
 -/
 
 public section
 
-open Set Filter
+open Set Filter Metric
 open scoped Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -40,6 +43,23 @@ theorem HasFDerivWithinAt.tangentConeAt_normalGraphEmbedding_image
   (hφ.normalGraphEmbedding.image_tangentConeAt_of_leftInverse
     (WithLp.sndL 2 ℝ ℝ E).hasFDerivAt.hasFDerivWithinAt
     (TauCeti.normalGraphEmbedding_snd φ)).symm
+
+/-- Near the base point, a relatively differentiable normal graph lies in every cone about
+the range of the derivative's linear graph. This holds in arbitrary real normed spaces,
+without requiring the base point to belong to the parameter set. -/
+theorem HasFDerivWithinAt.exists_pos_forall_infDist_range_normalGraphL_le
+    (hφ : HasFDerivWithinAt φ A s x) {ε : ℝ} (hε : 0 < ε) :
+    ∃ r > 0, ∀ z ∈ TauCeti.normalGraphEmbedding φ '' s,
+      dist z (TauCeti.normalGraphEmbedding φ x) < r →
+        infDist (z - TauCeti.normalGraphEmbedding φ x)
+            (LinearMap.range A.normalGraphL.toLinearMap : Set (WithLp 2 (ℝ × E))) ≤
+          ε * dist z (TauCeti.normalGraphEmbedding φ x) := by
+  -- Inserting the base point lets the inverse bound compare every parameter with it.
+  have hi := (TauCeti.antilipschitzWith_normalGraphEmbedding φ).domRestrict (insert x s)
+  obtain ⟨r, hr, hcone⟩ :=
+    hφ.insert.normalGraphEmbedding.exists_pos_forall_infDist_range_le
+      (mem_insert x s) hi hε
+  exact ⟨r, hr, fun z hz => hcone z (image_mono (subset_insert x s) hz)⟩
 
 namespace HasFDerivAt
 
