@@ -154,11 +154,12 @@ theorem sum_singularValues_mul_le_kyFanSum (A : E →ₗ[𝕜] F) {k : ℕ} {c :
   rw [hsum]
   refine le_trans ?_ ((kyFanSum_def A _).symm.trans_le
     (A.kyFanSum_mono (min_le_left k (finrank 𝕜 E))))
-  refine TauCeti.sum_range_mul_le_sum_range_of_sum_le (min_le_right _ _) (fun j hj ↦ ?_)
+  refine TauCeti.sum_range_mul_le_sum_range_of_sum_le (min_le_right _ _) (fun j _ hj ↦ ?_)
     (fun j hj ↦ ?_) ?_ (fun i _ ↦ A.singularValues_antitone (Nat.le_succ i))
     (A.singularValues_nonneg _)
   · simpa [hj] using hc0 ⟨j, hj⟩
-  · simpa [hj] using hc1 ⟨j, hj⟩
+  · have hj := hj.trans_le (min_le_right _ _)
+    simpa [hj] using hc1 ⟨j, hj⟩
   · have h1 := hsum fun _ ↦ 1
     simp only [one_mul] at h1
     rw [← h1, Nat.cast_min]
@@ -310,7 +311,8 @@ theorem sum_antitone_mul_re_inner_le_sum_mul_singularValues (B : E →ₗ[𝕜] 
             (fun i ↦ u (Fin.castLE hk i)) (fun i ↦ v (Fin.castLE hk i))
             (hu.comp _ (Fin.castLE_injective hk)) (hv.comp _ (Fin.castLE_injective hk))
     simpa [LinearMap.kyFanSum_def, g] using hreal
-  have hcross := TauCeti.sum_range_mul_le_sum_range_mul (w := w) hfg hw hw0
+  have hcross := TauCeti.sum_range_smul_le_sum_range_smul (w := w) hfg hw hw0
+  simp only [smul_eq_mul] at hcross
   rw [← Fin.sum_univ_eq_sum_range (fun i ↦ w i * f i),
     ← Fin.sum_univ_eq_sum_range (fun i ↦ w i * g i)] at hcross
   simpa [f, g] using hcross
@@ -524,8 +526,9 @@ theorem sum_re_inner_apply_self_le_sum_eigenvalues (hT : T.IsSymmetric) (hn : fi
         sum_congr rfl fun j hj ↦ by simp [Finset.mem_range.mp hj]
     _ ≤ ∑ j ∈ Finset.range (Fintype.card ι), if h : j < n then hT.eigenvalues hn ⟨j, h⟩ else 0 :=
         TauCeti.sum_range_mul_le_sum_range_of_sum_eq hk
-          (fun j hj ↦ by simp only [hj, dite_true, hc]; positivity)
+          (fun j _ hj ↦ by simp only [hj, dite_true, hc]; positivity)
           (fun j hj ↦ by
+            have hj : j < n := hj.trans_le hk
             simpa [hj, hc, norm_inner_symm] using
               hw.sum_inner_products_le (s := univ) (hT.eigenvectorBasis hn ⟨j, hj⟩))
           hmass fun j hj ↦ by
