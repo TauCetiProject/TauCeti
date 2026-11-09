@@ -6,6 +6,8 @@ Authors: Claude Fable 5, Claude Opus 4.8, Claude Opus 5
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Tactic.FieldSimp
 
 /-!
 # Square-root displacement estimates and limits at zero
@@ -13,10 +15,11 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 Two estimates comparing the real square-root and inverse-square-root functions
 with the identity near `1`. These bounds control scalar spectral factors of
 positive operators close to the identity. The file also records that the square root is
-`1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, that `c √u` tends to `0` as `u → 0`, and through
-positive values as `u → 0⁺` when `c > 0`, and the cancellation `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`
-used in changes of variables, and that the radial profile `t ↦ ψ (√t) / (√t) ^ n` of a `C^k`
-function supported in `(0, ∞)` is `C^k`.
+`1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, that `1 ≤ √(1 + t²)`, `|t / √(1 + t²)| ≤ 1` and
+`√(1 + t²) - 1 ≤ |t|`, that `c √u` tends to `0` as
+`u → 0`, and through positive values as `u → 0⁺` when `c > 0`, and the cancellation
+`|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹` used in changes of variables, and that the radial profile
+`t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`.
 
 ## Main results
 
@@ -25,11 +28,18 @@ function supported in `(0, ∞)` is `C^k`.
 * `Real.abs_one_sub_inv_sqrt_le`: if `|μ - 1| ≤ δ ≤ 1/2`,
   `|1 - (√μ)⁻¹| ≤ δ`.
 * `Real.abs_sqrt_sub_sqrt_le`: for all reals `t` and `s`, `|√t - √s| ≤ √|t - s|`.
+* `Real.one_le_sqrt_one_add_sq`: for every real `t`, `1 ≤ √(1 + t²)`.
+* `Real.abs_div_sqrt_one_add_sq_le_one`: for every real `t`, `|t / √(1 + t²)| ≤ 1`.
+* `Real.sqrt_one_add_sq_sub_one_le_abs`: for every real `t`, `√(1 + t²) - 1 ≤ |t|`.
+* `Real.le_sqrt_mul_of_sq_le_mul`: if `0 ≤ b` and `a² ≤ c b²` then `a ≤ √c * b`.
 * `Real.abs_mul_inv_sqrt_sq_mul_mul`: for `d ≠ 0` and `0 ≤ c`,
   `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`.
 * `Real.tendsto_mul_sqrt_nhds_zero`: `c √u → 0` as `u → 0`.
 * `Real.tendsto_mul_sqrt_nhdsGT_zero`, `Real.tendsto_sqrt_nhdsGT_zero`: for `c > 0`,
   `c √u → 0⁺` as `u → 0⁺`.
+* `Real.add_sqrt_sq_add_pos`, `Real.hasDerivAt_add_sqrt_sq_add`,
+  `Real.image_add_sqrt_sq_add_eq_Ioi`: the substitution `t ↦ t + √(t² + p)`
+  is positive, has an explicit derivative, and maps `ℝ` onto `(0, ∞)` for `p > 0`.
 * `Real.contDiff_div_sqrt_pow`: if `ψ` is `C^k` with support in `(0, ∞)`, then
   `t ↦ ψ (√t) / (√t) ^ n` is `C^k`.
 
@@ -37,6 +47,11 @@ function supported in `(0, ∞)` is `C^k`.
 
 [AIQ DKPS formalization](https://github.com/AIQ-Kitware/aiq-dkps-formalization),
 `ForTauCeti/Analysis/SpecialFunctions/Sqrt.lean`.
+
+`Real.add_sqrt_sq_add_pos`, `Real.hasDerivAt_add_sqrt_sq_add` and
+`Real.image_add_sqrt_sq_add_eq_Ioi` are extracted from, and their proofs adapted from, Jeremy
+Tan's [Mathlib PR #34397](https://github.com/leanprover-community/mathlib4/pull/34397),
+commit `376352b6e080265bc0380074baaf9aafa0b70a80`.
 -/
 
 public section
@@ -116,6 +131,29 @@ theorem abs_sqrt_sub_sqrt_le (t s : ℝ) : |√t - √s| ≤ √|t - s| := by
   rw [abs_sub_comm s t] at h₂
   exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
 
+/-- For every real `t`, `1 ≤ √(1 + t²)`. -/
+theorem one_le_sqrt_one_add_sq (t : ℝ) : 1 ≤ √(1 + t ^ 2) :=
+  one_le_sqrt.mpr (by nlinarith [sq_nonneg t])
+
+/-- For every real `t`, `|t / √(1 + t²)| ≤ 1`. -/
+theorem abs_div_sqrt_one_add_sq_le_one (t : ℝ) : |t / √(1 + t ^ 2)| ≤ 1 := by
+  have hpos : 0 < √(1 + t ^ 2) := by linarith [one_le_sqrt_one_add_sq t]
+  rw [abs_div, abs_of_pos hpos, div_le_one₀ hpos]
+  exact abs_le_sqrt (by linarith)
+
+/-- The modular `√(1 + t²) - 1` grows at most linearly: `√(1 + t²) - 1 ≤ |t|`. -/
+theorem sqrt_one_add_sq_sub_one_le_abs (t : ℝ) : √(1 + t ^ 2) - 1 ≤ |t| := by
+  rw [sub_le_iff_le_add', sqrt_le_left (by positivity)]
+  nlinarith [abs_nonneg t, sq_abs t]
+
+/-- If `a² ≤ c b²` with `0 ≤ b`, then `a ≤ √c * b`. -/
+theorem le_sqrt_mul_of_sq_le_mul {a b c : ℝ} (hb : 0 ≤ b) (h : a ^ 2 ≤ c * b ^ 2) :
+    a ≤ √c * b :=
+  calc a ≤ |a| := le_abs_self a
+    _ = √(a ^ 2) := (sqrt_sq_eq_abs a).symm
+    _ ≤ √(c * b ^ 2) := sqrt_le_sqrt h
+    _ = √c * b := by rw [sqrt_mul' _ (sq_nonneg b), sqrt_sq hb]
+
 /-- **A square factor cancels against its absolute value.** For `d ≠ 0` and `0 ≤ c`,
 `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`. This is the cancellation of the Jacobian `|d|` of a change
 of variables against the square root of an integrand that has acquired the factor `d²`. -/
@@ -157,6 +195,39 @@ lemma contDiff_div_sqrt_pow {k : WithTop ℕ∞} {ψ : ℝ → ℝ} (hψ : ContD
       filter_upwards [this] with s hs
       simp [image_eq_zero_of_notMem_tsupport hs]
     exact (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq hev
+
+/-- For `0 < p`, `t + √(t² + p)` is positive. -/
+theorem add_sqrt_sq_add_pos {p : ℝ} (hp : 0 < p) (t : ℝ) : 0 < t + √(t ^ 2 + p) := by
+  rcases le_or_gt 0 t with ht | ht; · positivity
+  rw [← neg_lt_iff_pos_add']
+  nth_rw 1 [← abs_of_nonpos ht.le, ← sqrt_sq_eq_abs, ← add_zero (t ^ 2)]
+  gcongr
+
+/-- The derivative of `t ↦ t + √(t² + p)` for `0 < p`. -/
+theorem hasDerivAt_add_sqrt_sq_add {p : ℝ} (hp : 0 < p) (t : ℝ) :
+    HasDerivAt (fun t : ℝ ↦ t + √(t ^ 2 + p)) ((t + √(t ^ 2 + p)) / √(t ^ 2 + p)) t := by
+  rw [← div_add_one (by positivity), add_comm]
+  apply (hasDerivAt_id' _).fun_add
+  rw [← mul_div_mul_left _ _ two_ne_zero]
+  refine ((HasDerivAt.add_const _) ?_).sqrt (by positivity)
+  convert hasDerivAt_pow 2 t using 1
+  ring
+
+/-- For `0 < p`, the map `t ↦ t + √(t² + p)` sends `ℝ` onto `(0, ∞)`. -/
+theorem image_add_sqrt_sq_add_eq_Ioi {p : ℝ} (hp : 0 < p) :
+    (fun t : ℝ ↦ t + √(t ^ 2 + p)) '' Set.univ = Set.Ioi 0 := by
+  ext x
+  rw [Set.image_univ, Set.mem_range, Set.mem_Ioi]
+  refine ⟨fun ⟨t, ht⟩ ↦ ht.symm ▸ add_sqrt_sq_add_pos hp t, fun hx ↦ ?_⟩
+  use (x ^ 2 - p) / (2 * x)
+  have hradicand : ((x ^ 2 - p) / (2 * x)) ^ 2 + p = ((x ^ 2 + p) / (2 * x)) ^ 2 := by
+    field_simp
+    ring
+  have hsqrt : √(((x ^ 2 - p) / (2 * x)) ^ 2 + p) = (x ^ 2 + p) / (2 * x) := by
+    rw [hradicand, Real.sqrt_sq (by positivity)]
+  rw [hsqrt]
+  field_simp
+  ring
 
 end Real
 

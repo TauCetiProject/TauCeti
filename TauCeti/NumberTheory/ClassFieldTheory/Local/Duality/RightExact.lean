@@ -53,10 +53,11 @@ variable {n : ℕ} {F : Type} [Field F] [ValuativeRel F] [TopologicalSpace F]
 induces a surjection on second continuous cohomology when the coefficient exponent is invertible
 in the local field. The target is automatically finite and smooth. -/
 theorem coeffMap_two_surjective (hn : IsUnit (n : F)) {B C : GalRep n F}
-    [DiscreteTopology B.V] [DiscreteTopology C.V] [Finite B.V]
+    [DiscreteTopology C.V] [Finite B.V]
     [Fact (IsSmoothDiscrete (ZMod n) B)]
     (f : B ⟶ C) (hf : Function.Surjective f.hom) :
     Function.Surjective (ContinuousCohomology.coeffMap f 2).hom := by
+  have := (Fact.out : IsSmoothDiscrete (ZMod n) B).discreteTopology
   have : NeZero n := NeZero.of_neZero_natCast F (h := ⟨hn.ne_zero⟩)
   have : Finite C.V := Finite.of_surjective f.hom hf
   have : Fact (IsSmoothDiscrete (ZMod n) C) :=

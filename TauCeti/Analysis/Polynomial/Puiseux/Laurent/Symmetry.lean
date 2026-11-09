@@ -131,29 +131,21 @@ theorem exists_analyticOnNhd_nonmonic_laurent_conj
     (fun b hb ↦ Prod.ext (hττ b.1 hb.1) (Complex.conj_conj b.2))
     (fun b hb ↦ by simpa only [q, κ, map_pow] using hconj _ (hq hb))
     ⟨(x₀, t₀), x₀.2, t₀.2⟩
-  have hgfull (i : Fin d) : EqOn (g (σ i)) (fun b ↦ conj (g i (κ b))) T := by
-    refine TauCeti.eqOn_prod_of_eqOn_prod_diff_singleton (c := (0 : ℂ)) isOpen_ball
-      (hg (σ i)).1.continuousOn
-      (Complex.continuous_conj.comp_continuousOn ((hg i).1.continuousOn.comp hκ hκT)) ?_
-    intro b hb
-    simp only [(hg (σ i)).2 hb, (hg i).2 (hκS hb), hσ i b hb,
-      κ, map_mul, map_pow, Complex.conj_conj]
+  have hgfull (i : Fin d) : EqOn (g (σ i)) (fun b ↦ conj (g i (κ b))) T :=
+    TauCeti.eqOn_conj_extension (τ := τ) (fun i ↦ (hg i).1.continuousOn) (fun i ↦ (hg i).2) hσ
+      hκ hκT i
   -- Compare units at `x` and `τ x`; a fixed point of `τ` is unnecessary.
   have hcompat (x : U) (i : Fin d) : e (σ i) = e i ∧
       ∀ᶠ b in 𝓝 (x.1, (0 : ℂ)),
         w x (σ i) b = conj (w ⟨τ x.1, hτU x.2⟩ i (τ b.1, conj b.2)) := by
-    have hκt : Tendsto κ (𝓝 (x.1, (0 : ℂ))) (𝓝 (τ x.1, (0 : ℂ))) := by
-      simpa only [κ, Prod.map_def, map_zero] using
-        (hτ.continuousAt (hU.mem_nhds x.2)).tendsto.prodMap_nhds
-          (Complex.continuous_conj.tendsto (0 : ℂ))
-    apply ((hwa x (σ i)).restrictScalars (𝕜 := ℝ)).laurent_eq_of_conj (hw0 x (σ i))
-      ((hwa ⟨τ x.1, hτU x.2⟩ i).restrictScalars (𝕜 := ℝ)) (hw0 ⟨τ x.1, hτU x.2⟩ i)
+    refine AnalyticAt.laurent_eq_of_conj_of_forms ((hwa x (σ i)).restrictScalars (𝕜 := ℝ))
+      (hw0 x (σ i)) ((hwa ⟨τ x.1, hτU x.2⟩ i).restrictScalars (𝕜 := ℝ)) (hw0 ⟨τ x.1, hτU x.2⟩ i)
       (hτ.continuousAt (hU.mem_nhds x.2))
-    filter_upwards [hwform x, hκt.eventually (hwform ⟨τ x.1, hτU x.2⟩),
-      (hU.prod isOpen_ball).mem_nhds (x := (x.1, (0 : ℂ))) ⟨x.2, mem_ball_self hR'⟩]
-      with b hb hκb hbT hb0
-    rw [← hb.2 hb0 (σ i), hσ i b ⟨hbT.1, hbT.2, hb0⟩,
-      hκb.2 (by simpa only [κ, ne_eq, map_eq_zero] using hb0) i]
+      ((hwform x).mono fun b hb h ↦ hb.2 h (σ i))
+      ((hwform ⟨τ x.1, hτU x.2⟩).mono fun b hb h ↦ hb.2 h i) ?_
+    filter_upwards [(hU.prod isOpen_ball).mem_nhds (x := (x.1, (0 : ℂ)))
+      ⟨x.2, mem_ball_self hR'⟩] with b hbT hb0
+    exact hσ i b ⟨hbT.1, hbT.2, hb0⟩
   exact ⟨R', hR', hfit, r, g, hra, hg, hr, σ, hσσ, hσ, hgfull,
     e, w, hbound, fun i ↦ (hcompat x₀ i).1,
     fun x i ↦ ⟨hwa x i, hw0 x i⟩, hwform, fun x i ↦ (hcompat x i).2⟩

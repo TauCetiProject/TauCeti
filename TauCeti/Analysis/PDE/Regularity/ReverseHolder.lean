@@ -554,7 +554,7 @@ theorem exists_eLpNorm_le_mul_rpow_mul_eLpNorm [Nonempty ι] {p s : ℝ} (hp : 0
     field_simp
     ring
   rw [hrM, hpkM, show pk 0 = p₀ by simp [pk]] at hfinal
-  have hholder := Measure.eLpNorm_ball_le_mul_rpow mu hR
+  have hholder := Measure.eLpNorm_ball_le_mul_rpow mu
     (div_pos hs (pow_pos hχ0 M)) hp₀p
     ((Lp.aestronglyMeasurable (W1p.value u)).mono_measure
       (Measure.restrict_mono hball le_rfl))
