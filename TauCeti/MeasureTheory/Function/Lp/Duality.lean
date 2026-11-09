@@ -115,6 +115,11 @@ variable {α 𝕜 : Type*} {mα : MeasurableSpace α} {μ : Measure α} [RCLike 
 
 open TauCeti
 
+/-- The extended norm of the integral of a nonnegative real function cast into `𝕜`. -/
+private theorem enorm_integral_ofReal {g : α → ℝ} (hg : ∀ x, 0 ≤ g x) :
+    ‖∫ x, (g x : 𝕜) ∂μ‖ₑ = ENNReal.ofReal (∫ x, g x ∂μ) := by
+  rw [integral_ofReal, ← ofReal_norm, RCLike.norm_ofReal, abs_of_nonneg (integral_nonneg hg)]
+
 /-- **Norming by simple functions, `q < ∞`.** Let `q < ∞` and `q'` be Hölder conjugate. If
 `h ∈ L^q` satisfies `‖∫ h g‖ ≤ C ‖g‖_{q'}` for every simple function `g ∈ L^{q'}`, then
 `‖h‖_q ≤ C`. -/
@@ -147,7 +152,8 @@ theorem MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top {q q' : ℝ�
   -- The pairing of `φ` with its extremal function is `‖φ‖_q ^ q`.
   have hXr : X ^ r ≤ ‖∫ x, φ x * g x ∂μ‖ₑ := by
     simp_rw [hφg]
-    exact (hφmem.eLpNorm_rpow_toReal_eq_enorm_integral (𝕜 := 𝕜) hq0 hq).le
+    rw [enorm_integral_ofReal (𝕜 := 𝕜) fun x => Real.rpow_nonneg (norm_nonneg _) _]
+    exact (hφmem.eLpNorm_rpow_toReal_eq_ofReal_integral hq0 hq).le
   -- Replacing `φ` by `h` costs at most `‖h - φ‖_q ‖g‖_{q'}`.
   have hsplit : ‖∫ x, φ x * g x ∂μ‖ₑ ≤ (C + ε / 2) * X ^ (r - 1) := by
     have hint₁ : Integrable (fun x => h x * g x) μ := hh.integrable_mul hgmem
@@ -327,8 +333,9 @@ private theorem eLpNorm_indicator_spanningSets_inter_norm_le_of_forall_enorm_int
   have hXr : X ^ r = ‖∫ x, ⟪h x, g x⟫_𝕜 ∂μ‖ₑ := by
     have hcongr : ∀ᵐ x ∂μ, ((‖u x‖ ^ r : ℝ) : 𝕜) = ⟪h x, g x⟫_𝕜 :=
       hae.mono fun x hx => by rw [hx, hinner]
-    rw [hX_def, huLq.eLpNorm_rpow_toReal_eq_enorm_integral (𝕜 := 𝕜) hq0 hq,
-      integral_congr_ae hcongr]
+    rw [hX_def, huLq.eLpNorm_rpow_toReal_eq_ofReal_integral hq0 hq, ← integral_congr_ae hcongr,
+      enorm_integral_ofReal (𝕜 := 𝕜) (g := fun x => ‖u x‖ ^ r)
+        fun x => Real.rpow_nonneg (norm_nonneg _) _]
   refine ENNReal.le_of_rpow_le_mul_rpow_sub_one (r := r) hX ?_
   calc X ^ r = ‖∫ x, ⟪h x, g x⟫_𝕜 ∂μ‖ₑ := hXr
     _ ≤ C * eLpNorm g q' μ :=

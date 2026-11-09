@@ -54,8 +54,8 @@ bounds.
   to any constant.
 * `MeasureTheory.MemLp.norm_toLp_le_measureReal_rpow_mul`: on a set `s` of finite measure, a
   function bounded by `M` has `Lᵖ(s)` norm at most `μ(s)^{1/p} M`, `1 ≤ p < ∞`.
-* `MeasureTheory.MemLp.eLpNorm_rpow_toReal_eq_enorm_integral`: for `0 < q < ∞`, the `q`-th power of
-  the `L^q` norm of `f` is the norm of the integral of `‖f‖ ^ q`.
+* `MeasureTheory.MemLp.eLpNorm_rpow_toReal_eq_ofReal_integral`: for `0 < q < ∞`, the `q`-th power
+  of the `L^q` norm of `f` is the integral of `‖f‖ ^ q`.
 -/
 
 public section
@@ -271,19 +271,17 @@ end Restrict
 
 section IntegralRpow
 
-variable {α 𝕜 : Type*} {mα : MeasurableSpace α} {μ : Measure α} [RCLike 𝕜]
+variable {α : Type*} {mα : MeasurableSpace α} {μ : Measure α}
 
-/-- For `0 < q < ∞`, the `q`-th power of the `L^q` norm of `f` is the norm of the integral of
-`‖f‖ ^ q`. -/
-theorem MemLp.eLpNorm_rpow_toReal_eq_enorm_integral {V : Type*} [NormedAddCommGroup V]
+/-- For `0 < q < ∞`, the `q`-th power of the `L^q` norm of `f` is the integral of `‖f‖ ^ q`. -/
+theorem MemLp.eLpNorm_rpow_toReal_eq_ofReal_integral {V : Type*} [NormedAddCommGroup V]
     {f : α → V} {q : ℝ≥0∞} (hf : MemLp f q μ) (hq0 : q ≠ 0) (hq : q ≠ ∞) :
-    eLpNorm f q μ ^ q.toReal = ‖∫ x, ((‖f x‖ ^ q.toReal : ℝ) : 𝕜) ∂μ‖ₑ := by
+    eLpNorm f q μ ^ q.toReal = ENNReal.ofReal (∫ x, ‖f x‖ ^ q.toReal ∂μ) := by
   have hr := ENNReal.toReal_pos hq0 hq
   have hI : 0 ≤ ∫ x, ‖f x‖ ^ q.toReal ∂μ :=
     integral_nonneg fun x => Real.rpow_nonneg (norm_nonneg _) _
   rw [hf.eLpNorm_eq_integral_rpow_norm hq0 hq, ENNReal.ofReal_rpow_of_nonneg
-    (Real.rpow_nonneg hI _) hr.le, Real.rpow_inv_rpow hI hr.ne', integral_ofReal, ← ofReal_norm,
-    RCLike.norm_ofReal, abs_of_nonneg hI]
+    (Real.rpow_nonneg hI _) hr.le, Real.rpow_inv_rpow hI hr.ne']
 
 end IntegralRpow
 
