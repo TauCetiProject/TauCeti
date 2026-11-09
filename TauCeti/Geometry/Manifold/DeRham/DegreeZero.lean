@@ -37,7 +37,8 @@ separation or completeness hypotheses on the model.
   distinct degree-zero classes.
 * `TauCeti.finrank_deRhamCohomology_zero`: `H⁰_dR(M)` has dimension one when `M` is connected.
 * `TauCeti.finrank_deRhamCohomology_zero_of_discreteTopology`: on a discrete manifold,
-  `H⁰_dR(M)` has dimension the number of points.
+  `finrank ℝ H⁰_dR(M) = Nat.card M`, so `H⁰_dR(M)` has dimension the number of points when `M` is
+  finite (both sides are `0` when `M` is infinite).
 * `TauCeti.subsingleton_compactlySupportedDeRhamCohomology_zero`: `H⁰_c(M) = 0` when `M` is
   preconnected and noncompact.
 
