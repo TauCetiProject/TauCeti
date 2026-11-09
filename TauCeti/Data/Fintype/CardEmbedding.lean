@@ -12,6 +12,8 @@ public import Mathlib.Data.Finset.Sort
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Finset.Pairwise
 import Mathlib.Combinatorics.Enumerative.DoubleCounting
+import Mathlib.Data.Fin.VecNotation
+import Mathlib.Logic.Equiv.Fintype
 
 /-! # Counting embeddings
 
@@ -275,14 +277,10 @@ theorem card_filter_injective_mem_range_and_mem_range_eq {c d : κ} (hab : a ≠
       #{k : ι → κ | Injective k ∧ (a ∈ Set.range k ∧ b ∈ Set.range k)} := by
   classical
   -- A permutation sending `a` to `c` and `b` to `d`.
-  let σ : Equiv.Perm κ := (Equiv.swap a c).trans (Equiv.swap (Equiv.swap a c b) d)
-  have hσa : σ a = c := by
-    have : c ≠ Equiv.swap a c b := fun h => hab (by
-      rw [eq_comm, Equiv.swap_apply_eq_iff, Equiv.swap_apply_right] at h
-      exact h.symm)
-    simp only [σ, Equiv.trans_apply, Equiv.swap_apply_left]
-    exact Equiv.swap_apply_of_ne_of_ne this hcd
-  have hσb : σ b = d := by simp [σ]
+  obtain ⟨σ, hσ⟩ := Equiv.Perm.exists_extending_pair ![a, b] ![c, d]
+    (Matrix.injective_pair_iff_ne.2 hab) (Matrix.injective_pair_iff_ne.2 hcd)
+  have hσa : σ a = c := by simpa using hσ 0
+  have hσb : σ b = d := by simpa using hσ 1
   -- Postcomposition with `σ` carries the maps hitting `a` and `b` to those hitting `c` and `d`.
   refine card_nbij' (σ.symm ∘ ·) (σ ∘ ·) (fun k hk => ?_) (fun k hk => ?_)
     (fun k _ => by ext; simp) (fun k _ => by ext; simp)

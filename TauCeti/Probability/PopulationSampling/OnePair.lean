@@ -37,8 +37,8 @@ one embedding if `r = 0` and by two (namely `f` and `Equiv.swap a b ∘ f`) othe
   injective index map meets `{a, b}` at most twice, and twice exactly when it hits both;
 * `natCard_update_id_comp_eq_update_id_comp`: the number of index maps with the same word is
   `2 ^ r`;
-* `embedding_update_id_comp_eq_update_id_comp_iff`: the embeddings with the same word as an
-  embedding `f` are `f` and `Equiv.swap a b ∘ f`;
+* `Function.Embedding.update_id_comp_eq_update_id_comp_iff`: the embeddings with the same word
+  as an embedding `f` are `f` and `Equiv.swap a b ∘ f`;
 * `natCard_embedding_update_id_comp_eq_update_id_comp`: the number of embeddings with the same
   word is `1` if `r = 0` and `2` otherwise.
 -/
@@ -135,7 +135,7 @@ theorem natCard_update_id_comp_eq_update_id_comp [Fintype ι] (hab : a ≠ b) (f
 
 /-- The embeddings with the same one-pair word as an embedding `f` are `f` and
 `Equiv.swap a b ∘ f`. -/
-theorem embedding_update_id_comp_eq_update_id_comp_iff (f g : ι ↪ κ) :
+theorem _root_.Function.Embedding.update_id_comp_eq_update_id_comp_iff (f g : ι ↪ κ) :
     update id b a ∘ g = update id b a ∘ f ↔ g = f ∨ g = f.trans (Equiv.swap a b).toEmbedding := by
   constructor
   · intro h
@@ -177,7 +177,7 @@ theorem natCard_embedding_update_id_comp_eq_update_id_comp [Fintype ι] (hab : a
   have hset : {g : ι ↪ κ | update id b a ∘ g = update id b a ∘ f} =
       ({f, f.trans (Equiv.swap a b).toEmbedding} : Set (ι ↪ κ)) := by
     ext g
-    simp [embedding_update_id_comp_eq_update_id_comp_iff]
+    simp [Embedding.update_id_comp_eq_update_id_comp_iff]
   have hfix : f.trans (Equiv.swap a b).toEmbedding = f ↔ #{i | update id b a (f i) = a} = 0 := by
     simp only [DFunLike.ext_iff, Embedding.trans_apply, Equiv.coe_toEmbedding, card_eq_zero,
       filter_eq_empty_iff, mem_univ, true_implies, update_id_apply_eq_iff, not_or]
