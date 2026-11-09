@@ -6,46 +6,49 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
-import Mathlib.Analysis.Calculus.BumpFunction.Convolution
-import Mathlib.Topology.UniformSpace.HeineCantor
+import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Sobolev.Mollification.Interior
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
+import TauCeti.MeasureTheory.Function.LpSeminorm.CLMComp
+import TauCeti.MeasureTheory.Integral.Lebesgue.UniformConvergence
+import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
 # The chain rule for continuous local Sobolev maps
 
-Let `u` be continuous on an open set `Ω` of a finite-dimensional space, with weak derivative `Du`,
-and let `g` be `C¹` on an open set containing the image of `u`. Then `g ∘ u` has weak derivative
-`z ↦ Dg(u z) ∘ Du z` on `Ω`. In particular, a continuous member of `W^{1,p}_loc` composes with a
-`C¹` map to give a member of `W^{1,p}_loc`, with the local bound
-`‖D(g ∘ u)‖_{Lᵖ(K)} ≤ (sup_{u(K)} ‖Dg‖) ‖Du‖_{Lᵖ(K)}` on compact sets `K`. The domain-dependent
-form `z ↦ G(z, u z)` follows by composing with the graph map `z ↦ (z, u z)`.
+Let `u` be continuous on an open set `Ω` of a finite-dimensional space, with weak derivative `Du`
+and values in a Banach space, and let `g` be `C¹` on an open set containing the image of `u`.
+Then `g ∘ u` has weak derivative `z ↦ Dg(u z) ∘ Du z` on `Ω`. In particular, a continuous member
+of `W^{1,p}_loc` on a planar set composes with a `C¹` map to give a member of `W^{1,p}_loc`, and
+on compact sets `K` its derivative obeys `‖D(g ∘ u)‖_{Lᵖ(K)} ≤ (sup_{u(K)} ‖Dg‖) ‖Du‖_{Lᵖ(K)}`
+(`TauCeti.eLpNorm_clm_comp_le_of_ae_nnnorm_le`). The domain-dependent form `z ↦ g(z, u z)`
+follows by composing with the graph map `z ↦ (z, u z)`.
 
-Continuity of `u` is a hypothesis here. For `p > 2` it is automatic after changing `u` on a null
-set, by Morrey's embedding; without continuity, and below that exponent, the statement fails:
-for `p = 4/3` the function `u = |z|^{-2/5}` lies in `W^{1,4/3}` near `0`, but `u²` does not,
-since its derivative has size `|z|^{-9/5}` and `(9/5)(4/3) > 2`.
+Continuity of `u` is a hypothesis here. On a planar set, where `TauCeti.MemWkpLoc` lives, it is
+automatic for `p > 2` after changing `u` on a null set, by Morrey's embedding. Without continuity,
+and below that exponent, the planar statement fails: for `p = 4/3` the function `u = |z|^{-2/5}`
+lies in `W^{1,4/3}` near `0`, but `u²` does not, since its derivative has size `|z|^{-9/5}` and
+`(9/5)(4/3) > 2`. In dimension `d` the corresponding threshold is `p > d`.
 
 ## Proof
 
 On an open set `V` with compact closure in `Ω`, mollify the zero extension of `u` from a slightly
-larger open set. The mollifications converge to `u` uniformly on `V`, by uniform continuity of `u`
-on a compact neighbourhood of `closure V`, and their derivatives, the mollifications of `Du`,
-converge to `Du` in `L¹(V)`. The classical chain rule applies to each mollification. Uniform
-convergence carries `g` and `Dg` along, and the weak derivatives pass to the `L¹(V)` limit.
-Locality of weak derivatives returns the statement to `Ω`.
+larger open set. The mollifications converge to `u` uniformly on `closure V`
+(`ContDiffBump.tendstoUniformlyOn_normed_convolution`), and their derivatives, the mollifications
+of `Du`, converge to `Du` in `L¹(V)`. The classical chain rule applies to each mollification.
+Since `u '' closure V` is compact, uniform convergence carries `g` and `Dg` along
+(`IsCompact.comp_tendstoUniformlyOn`), and the compositions converge in `L¹(V)`
+(`TauCeti.tendsto_setLIntegral_enorm_clm_comp_sub`). The weak derivatives pass to that limit, and
+locality of weak derivatives returns the statement to `Ω`.
 
 ## Main declarations
 
 * `TauCeti.HasWeakFDerivOn.comp_contDiffOn`: the weak chain rule for continuous `u`.
-* `TauCeti.HasWeakFDerivOn.prodMk`: the weak derivative of a pair.
-* `TauCeti.HasWeakFDerivOn.comp_graph_contDiffOn`: the weak chain rule for `z ↦ G(z, u z)`.
-* `TauCeti.eLpNorm_fderiv_comp_le`: the local `Lᵖ` bound for the chain-rule derivative.
+* `TauCeti.HasWeakFDerivOn.comp_graph_contDiffOn`: the weak chain rule for `z ↦ g(z, u z)`.
 * `TauCeti.MemWkpLoc.comp_contDiffOn`: continuous `W^{1,p}_loc` maps compose with `C¹` maps.
-* `TauCeti.MemWkpLoc.prodMk`: pairs of local Sobolev maps, at every order.
-* `TauCeti.MemWkpLoc.comp_graph_contDiffOn`: the domain-dependent composition `z ↦ G(z, u z)`.
+* `TauCeti.MemWkpLoc.comp_graph_contDiffOn`: the domain-dependent composition `z ↦ g(z, u z)`.
 * `TauCeti.HasWeakFDerivOn.sq`: the check `D(u²) = 2u Du` for continuous real `u`.
 
 ## References
@@ -71,59 +74,97 @@ variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G]
   {Ω : Opens E} {u : E → F} {Du : E → E →L[ℝ] F} {g : F → G} {W : Set F}
 
-/-- Uniform convergence on `s` makes the supremum over `s` of the pointwise distance tend to
-zero. -/
-private theorem tendsto_iSup_enorm_sub_of_tendstoUniformlyOn {ι α X : Type*}
-    [NormedAddCommGroup X] {l : Filter ι} {f : ι → α → X} {f₀ : α → X} {s : Set α}
-    (h : TendstoUniformlyOn f f₀ l s) :
-    Tendsto (fun i => ⨆ x ∈ s, ‖f i x - f₀ x‖ₑ) l (𝓝 0) := by
-  refine ENNReal.tendsto_nhds_zero.2 fun ε hε => ?_
-  filter_upwards [EMetric.tendstoUniformlyOn_iff.1 h ε hε] with i hi
-  refine iSup₂_le fun x hx => ?_
-  rw [← edist_eq_enorm_sub, edist_comm]
-  exact (hi x hx).le
+/-- **Smooth approximation on a relatively compact subset.** On an open set `V` with compact
+closure in `Ω`, a continuous `u` with weak derivative `Du` is the uniform limit on `closure V` of
+continuous maps `uₙ` that are differentiable on `V` with continuous derivatives `Duₙ` converging
+to `Du` in `L¹(V)`. The maps are mollifications of the zero extension of `u` from a neighbourhood
+of `closure V`. -/
+private theorem exists_smooth_approx_of_isCompact_closure (hu : HasWeakFDerivOn μ Ω u Du)
+    (huc : ContinuousOn u Ω) (V : Opens E) (hVc : IsCompact (closure (V : Set E)))
+    (hVΩ : closure (V : Set E) ⊆ Ω) :
+    ∃ (un : ℕ → E → F) (Dn : ℕ → E → E →L[ℝ] F), (∀ n, Continuous (un n)) ∧
+      (∀ n, Continuous (Dn n)) ∧ (∀ n, ∀ x ∈ (V : Set E), HasFDerivAt (un n) (Dn n x) x) ∧
+      TendstoUniformlyOn un u atTop (closure (V : Set E)) ∧
+      Tendsto (fun n => ∫⁻ x in V, ‖Dn n x - Du x‖ₑ ∂μ) atTop (𝓝 0) := by
+  have : CompleteSpace F := hu.completeSpace
+  set S := closure (V : Set E)
+  -- A compact neighbourhood of `S` inside `Ω`, and an open set `Ω'` between them.
+  obtain ⟨δ, hδ, hδΩ⟩ := hVc.exists_cthickening_subset_open Ω.isOpen hVΩ
+  have hK : IsCompact (cthickening δ S) := hVc.cthickening
+  let Ω' : Opens E := ⟨thickening δ S, isOpen_thickening⟩
+  have hΩ'K : (Ω' : Set E) ⊆ cthickening δ S := thickening_subset_cthickening δ S
+  have hSΩ' : S ⊆ Ω' := self_subset_thickening hδ S
+  have huK : IntegrableOn u (cthickening δ S) μ :=
+    hu.locallyIntegrableOn.integrableOn_compact_subset hδΩ hK
+  have hDuK : IntegrableOn Du (cthickening δ S) μ :=
+    hu.locallyIntegrableOn_deriv.integrableOn_compact_subset hδΩ hK
+  -- Mollifiers of outer radius `δ / 2 / (n + 1) < δ`.
+  let φ : ℕ → ContDiffBump (0 : E) := ContDiffBump.shrinking (half_pos hδ)
+  have hφ : Tendsto (fun n => (φ n).rOut) atTop (𝓝 0) :=
+    ContDiffBump.tendsto_rOut_shrinking (half_pos hδ)
+  have hball (n : ℕ) (x : E) (hx : x ∈ S) : closedBall x (φ n).rOut ⊆ Ω' := fun y hy => by
+    have hr : (φ n).rOut < δ := by
+      simp only [φ, ContDiffBump.rOut_shrinking]
+      exact (div_le_self (half_pos hδ).le (by linarith [n.cast_nonneg' (α := ℝ)])).trans_lt
+        (half_lt_self hδ)
+    exact mem_thickening_iff.2 ⟨x, hx, (mem_closedBall.1 hy).trans_lt hr⟩
+  set uext := (Ω' : Set E).indicator u
+  set Dext := (Ω' : Set E).indicator Du
+  have huext : Integrable uext μ :=
+    (huK.mono_set hΩ'K).integrable_indicator Ω'.isOpen.measurableSet
+  have hDext : Integrable Dext μ :=
+    (hDuK.mono_set hΩ'K).integrable_indicator Ω'.isOpen.measurableSet
+  refine ⟨fun n => (φ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] uext,
+    fun n => (φ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] Dext,
+    fun n => (φ n).hasCompactSupport_normed.continuous_convolution_left _ (φ n).continuous_normed
+      huext.locallyIntegrable,
+    fun n => (φ n).hasCompactSupport_normed.continuous_convolution_left _ (φ n).continuous_normed
+      hDext.locallyIntegrable, fun n x hx => ?_, ?_, ?_⟩
+  · -- The classical derivative of a mollification is the mollified weak derivative.
+    have h := (hu.mono (hΩ'K.trans hδΩ)).hasFDerivAt_indicator_convolution_normed (p := 1)
+      (q := 1) (memLp_one_iff_integrable.2 (huK.mono_set hΩ'K))
+      (memLp_one_iff_integrable.2 (hDuK.mono_set hΩ'K)) le_rfl le_rfl (φ n) x
+      (hball n x (subset_closure hx))
+    simpa only [convolution_flip] using h
+  · -- Uniform convergence on `S`, from uniform continuity of `u` on `cthickening δ S`.
+    have hUC : UniformContinuousOn uext Ω' := by
+      refine Metric.uniformContinuousOn_iff.2 fun ε hε =>
+        (Metric.uniformContinuousOn_iff.1 (hK.uniformContinuousOn_of_continuous
+          (huc.mono hδΩ)) ε hε).imp fun η ⟨hη, h⟩ => ⟨hη, fun x hx y hy hxy => ?_⟩
+      simpa only [uext, indicator_of_mem hx, indicator_of_mem hy] using
+        h x (hΩ'K hx) y (hΩ'K hy) hxy
+    refine (ContDiffBump.tendstoUniformlyOn_normed_convolution
+      hφ hδ hUC huext.aestronglyMeasurable).congr_right
+      fun x hx => ?_
+    simp only [uext, indicator_of_mem (hSΩ' hx)]
+  · -- `L¹(V)` convergence of the derivatives.
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+      (tendsto_setLIntegral_enorm_normed_convolution_sub hφ
+        hDext.locallyIntegrable hVc) (fun _ => zero_le) fun n => ?_
+    calc ∫⁻ x in V, ‖((φ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] Dext) x - Du x‖ₑ ∂μ
+        = ∫⁻ x in V, ‖((φ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] Dext) x - Dext x‖ₑ ∂μ :=
+          setLIntegral_congr_fun V.isOpen.measurableSet fun x hx => by
+            simp only [Dext, indicator_of_mem (hSΩ' (subset_closure hx))]
+      _ ≤ _ := lintegral_mono_set subset_closure
 
-omit [μ.IsAddHaarMeasure] in
-/-- The chain-rule derivative is almost everywhere strongly measurable on a measurable set where
-`Dg ∘ u` is continuous. -/
-private theorem aestronglyMeasurable_fderiv_comp {K : Set E} (hK : MeasurableSet K)
-    (hgu : ContinuousOn (fun x => fderiv ℝ g (u x)) K)
-    (hDu : AEStronglyMeasurable Du (μ.restrict K)) :
-    AEStronglyMeasurable (fun x => (fderiv ℝ g (u x)).comp (Du x)) (μ.restrict K) :=
-  (ContinuousLinearMap.compL ℝ E F G).continuous₂.comp_aestronglyMeasurable₂
-    (hgu.aestronglyMeasurable hK) hDu
+variable [CompleteSpace G]
 
-omit [μ.IsAddHaarMeasure] in
-/-- **The local bound for the chain rule.** On a measurable set `K` where `Dg ∘ u` is continuous
-and bounded by `C`, the `Lᵖ(K)` norm of `Dg(u) ∘ Du` is at most `C` times that of `Du`, for every
-exponent. -/
-theorem eLpNorm_fderiv_comp_le {K : Set E} (hK : MeasurableSet K)
-    (hgu : ContinuousOn (fun x => fderiv ℝ g (u x)) K)
-    (hDu : AEStronglyMeasurable Du (μ.restrict K)) {C : ℝ≥0}
-    (hC : ∀ x ∈ K, ‖fderiv ℝ g (u x)‖₊ ≤ C) (p : ℝ≥0∞) :
-    eLpNorm (fun x => (fderiv ℝ g (u x)).comp (Du x)) p (μ.restrict K) ≤
-      C * eLpNorm Du p (μ.restrict K) := by
-  refine eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul
-    (aestronglyMeasurable_fderiv_comp hK hgu hDu) ?_ p
-  filter_upwards [ae_restrict_mem hK] with x hx
-  exact (ContinuousLinearMap.opNNNorm_comp_le _ _).trans
-    (mul_le_mul_of_nonneg_right (hC x hx) zero_le)
-
-omit [μ.IsAddHaarMeasure] in
-/-- On a compact set where `Dg ∘ u` is continuous, `Dg(u) ∘ Du` inherits `Lᵖ` membership from
-`Du`, by `TauCeti.eLpNorm_fderiv_comp_le`. -/
-private theorem memLp_fderiv_comp {K : Set E} (hK : IsCompact K)
-    (hgu : ContinuousOn (fun x => fderiv ℝ g (u x)) K) {p : ℝ≥0∞}
-    (hDu : MemLp Du p (μ.restrict K)) :
-    MemLp (fun x => (fderiv ℝ g (u x)).comp (Du x)) p (μ.restrict K) := by
-  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hgu
-  have hC' : ∀ x ∈ K, ‖fderiv ℝ g (u x)‖₊ ≤ C.toNNReal := fun x hx => by
-    rw [← NNReal.coe_le_coe, coe_nnnorm]
-    exact (hC x hx).trans (Real.le_coe_toNNReal C)
-  exact memLp_iff.2 <| (eLpNorm_fderiv_comp_le hK.measurableSet hgu hDu.aestronglyMeasurable
-    hC' p).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top (memLp_iff.1 hDu))
-
-variable [FiniteDimensional ℝ F] [CompleteSpace G]
+/-- The classical chain rule for a continuous map `v` that is differentiable on `V` with
+continuous derivative and values in `W`, read as a weak derivative on `V`. -/
+private theorem hasWeakFDerivOn_comp_of_hasFDerivAt {V : Opens E} {v : E → F}
+    {Dv : E → E →L[ℝ] F} (hv : Continuous v) (hDv : Continuous Dv)
+    (hderiv : ∀ x ∈ (V : Set E), HasFDerivAt v (Dv x) x) (hW : IsOpen W)
+    (hg : ContDiffOn ℝ 1 g W) (hmem : ∀ x ∈ (V : Set E), v x ∈ W) :
+    HasWeakFDerivOn μ V (fun x => g (v x)) fun x => (fderiv ℝ g (v x)).comp (Dv x) := by
+  have hcont : ContinuousOn (fun x => (fderiv ℝ g (v x)).comp (Dv x)) V :=
+    ((hg.continuousOn_fderiv_of_isOpen hW le_rfl).comp hv.continuousOn hmem).clm_comp
+      hDv.continuousOn
+  refine hasWeakFDerivOn_iff.2 fun w => hasWeakLineDerivOn_of_hasLineDerivAt
+    ((hg.continuousOn.comp hv.continuousOn hmem).locallyIntegrableOn V.isOpen.measurableSet)
+    ((hcont.clm_apply continuousOn_const).locallyIntegrableOn V.isOpen.measurableSet)
+    fun x hx => ?_
+  exact ((((hg.differentiableOn one_ne_zero _ (hmem x hx)).differentiableAt
+    (hW.mem_nhds (hmem x hx))).hasFDerivAt).comp x (hderiv x hx)).hasLineDerivAt w
 
 /-- The weak chain rule on an open set with compact closure inside the domain. -/
 private theorem hasWeakFDerivOn_comp_of_isCompact_closure
@@ -131,197 +172,52 @@ private theorem hasWeakFDerivOn_comp_of_isCompact_closure
     (hg : ContDiffOn ℝ 1 g W) (huW : MapsTo u Ω W) (V : Opens E)
     (hVc : IsCompact (closure (V : Set E))) (hVΩ : closure (V : Set E) ⊆ Ω) :
     HasWeakFDerivOn μ V (fun x => g (u x)) fun x => (fderiv ℝ g (u x)).comp (Du x) := by
-  have : CompleteSpace F := hu.completeSpace
   set S := closure (V : Set E)
   have hVS : (V : Set E) ⊆ S := subset_closure
-  -- A compact neighbourhood `K` of `S` inside `Ω`, and an open set `Ω'` between them.
-  obtain ⟨δ, hδ, hδΩ⟩ := hVc.exists_cthickening_subset_open Ω.isOpen hVΩ
-  have hK : IsCompact (cthickening δ S) := hVc.cthickening
-  let Ω' : Opens E := ⟨thickening δ S, isOpen_thickening⟩
-  have hΩ'K : (Ω' : Set E) ⊆ cthickening δ S := thickening_subset_cthickening δ S
-  have hΩ'Ω : Ω' ≤ Ω := hΩ'K.trans hδΩ
-  have hVΩ' : (V : Set E) ⊆ Ω' := hVS.trans (self_subset_thickening hδ S)
-  have huK : IntegrableOn u (cthickening δ S) μ :=
-    hu.locallyIntegrableOn.integrableOn_compact_subset hδΩ hK
-  have hDuK : IntegrableOn Du (cthickening δ S) μ :=
-    hu.locallyIntegrableOn_deriv.integrableOn_compact_subset hδΩ hK
-  have hDuV : IntegrableOn Du V μ := hDuK.mono_set (hVΩ'.trans hΩ'K)
-  have hμV : μ V ≠ ∞ := (measure_mono hVS).trans_lt hVc.measure_lt_top |>.ne
-  -- Mollifiers whose radii shrink to zero and stay below `δ`.
-  let φ : ℕ → ContDiffBump (0 : E) := fun n =>
-    { rIn := δ / 2 / (n + 1) / 2
-      rOut := δ / 2 / (n + 1)
-      rIn_pos := by positivity
-      rIn_lt_rOut := half_lt_self (by positivity) }
-  have hφ : Tendsto (fun n => (φ n).rOut) atTop (𝓝 0) := by
-    have := (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).const_mul (δ / 2)
-    simpa only [mul_zero, mul_one_div] using this
-  have hφδ (n : ℕ) : (φ n).rOut < δ := by
-    change δ / 2 / (n + 1) < δ
-    calc δ / 2 / (n + 1) ≤ δ / 2 :=
-          div_le_self (by positivity) (by linarith [n.cast_nonneg' (α := ℝ)])
-      _ < δ := half_lt_self hδ
-  have hball (n : ℕ) (x : E) (hx : x ∈ S) : closedBall x (φ n).rOut ⊆ Ω' := fun y hy =>
-    mem_thickening_iff.2 ⟨x, hx, (mem_closedBall.1 hy).trans_lt (hφδ n)⟩
-  -- The zero extensions from `Ω'` and their mollifications.
-  set uext := (Ω' : Set E).indicator u
-  set Dext := (Ω' : Set E).indicator Du
-  have huext : Integrable uext μ :=
-    (huK.mono_set hΩ'K).integrable_indicator Ω'.isOpen.measurableSet
-  have hDext : Integrable Dext μ :=
-    (hDuK.mono_set hΩ'K).integrable_indicator Ω'.isOpen.measurableSet
-  let un : ℕ → E → F := fun n => (φ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] uext
-  let Dn : ℕ → E → E →L[ℝ] F := fun n => (φ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] Dext
-  have hun_cont (n : ℕ) : Continuous (un n) :=
-    (φ n).hasCompactSupport_normed.continuous_convolution_left _ (φ n).continuous_normed
-      huext.locallyIntegrable
-  have hDn_cont (n : ℕ) : Continuous (Dn n) :=
-    (φ n).hasCompactSupport_normed.continuous_convolution_left _ (φ n).continuous_normed
-      hDext.locallyIntegrable
-  have hderiv (n : ℕ) (x : E) (hx : x ∈ (V : Set E)) : HasFDerivAt (un n) (Dn n x) x := by
-    have h := (hu.mono hΩ'Ω).hasFDerivAt_indicator_convolution_normed (p := 1) (q := 1)
-      (memLp_one_iff_integrable.2 (huK.mono_set hΩ'K))
-      (memLp_one_iff_integrable.2 (hDuK.mono_set hΩ'K)) le_rfl le_rfl (φ n) x
-      (hball n x (hVS hx))
-    simpa only [convolution_flip] using h
-  -- The mollifications converge to `u` uniformly on `V`.
-  have huu : TendstoUniformlyOn un u atTop V := by
-    have hUC : UniformContinuousOn u (cthickening δ S) :=
-      hK.uniformContinuousOn_of_continuous (huc.mono hδΩ)
-    refine Metric.tendstoUniformlyOn_iff.2 fun ε hε => ?_
-    obtain ⟨η, hη, hηu⟩ := Metric.uniformContinuousOn_iff.1 hUC (ε / 2) (by positivity)
-    filter_upwards [hφ.eventually (gt_mem_nhds hη)] with n hn x hx
-    have hx' : x ∈ (Ω' : Set E) := hVΩ' hx
-    rw [dist_comm]
-    refine lt_of_le_of_lt ?_ (half_lt_self hε)
-    have h := (φ n).dist_normed_convolution_le (μ := μ) (x₀ := x) (ε := ε / 2)
-      huext.aestronglyMeasurable fun y hy => by
-        have hy' : y ∈ (Ω' : Set E) := hball n x (hVS hx) (ball_subset_closedBall hy)
-        simp only [uext, indicator_of_mem hy', indicator_of_mem hx']
-        exact (hηu y (hΩ'K hy') x (hΩ'K hx') ((mem_ball.1 hy).trans hn)).le
-    simpa only [uext, indicator_of_mem hx'] using h
-  -- The derivatives converge to `Du` in `L¹(V)`.
-  have hDD : Tendsto (fun n => ∫⁻ x in V, ‖Dn n x - Du x‖ₑ ∂μ) atTop (𝓝 0) := by
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-      (tendsto_setLIntegral_enorm_normed_convolution_sub hφ hDext.locallyIntegrable hVc)
-      (fun _ => zero_le) fun n => ?_
-    calc ∫⁻ x in V, ‖Dn n x - Du x‖ₑ ∂μ = ∫⁻ x in V, ‖Dn n x - Dext x‖ₑ ∂μ :=
-          setLIntegral_congr_fun V.isOpen.measurableSet fun x hx => by
-            simp only [Dext, indicator_of_mem (hVΩ' hx)]
-      _ ≤ ∫⁻ x in S, ‖Dn n x - Dext x‖ₑ ∂μ := lintegral_mono_set hVS
-  -- A compact neighbourhood `T` of `u '' S` inside `W`, on which `g` and `Dg` are uniformly
-  -- continuous, and which eventually contains the values of the mollifications on `V`.
-  have huS : IsCompact (u '' S) := hVc.image_of_continuousOn (huc.mono hVΩ)
-  obtain ⟨η, hη, hηW⟩ := huS.exists_cthickening_subset_open hW (huW.mono_left hVΩ).image_subset
-  have hT : IsCompact (cthickening η (u '' S)) := huS.cthickening
+  obtain ⟨un, Dn, hun, hDn, hderiv, huu, hDD⟩ :=
+    exists_smooth_approx_of_isCompact_closure hu huc V hVc hVΩ
+  have hDuS : IntegrableOn Du S μ :=
+    hu.locallyIntegrableOn_deriv.integrableOn_compact_subset hVΩ hVc
   have hgc : ContinuousOn g W := hg.continuousOn
   have hDgc : ContinuousOn (fderiv ℝ g) W := hg.continuousOn_fderiv_of_isOpen hW le_rfl
-  have huT : ∀ x ∈ (V : Set E), u x ∈ cthickening η (u '' S) := fun x hx =>
-    self_subset_cthickening _ (mem_image_of_mem u (hVS hx))
-  have hunT : ∀ᶠ n in atTop, ∀ x ∈ (V : Set E), un n x ∈ cthickening η (u '' S) := by
-    filter_upwards [Metric.tendstoUniformlyOn_iff.1 huu η hη] with n hn x hx
-    exact mem_cthickening_of_dist_le _ (u x) _ _ (mem_image_of_mem u (hVS hx))
-      (by rw [dist_comm]; exact (hn x hx).le)
-  have hgu : TendstoUniformlyOn (fun n x => g (un n x)) (fun x => g (u x)) atTop V :=
-    (hT.uniformContinuousOn_of_continuous (hgc.mono hηW)).comp_tendstoUniformlyOn_eventually
-      hunT huT huu
-  have hDgu : TendstoUniformlyOn (fun n x => fderiv ℝ g (un n x)) (fun x => fderiv ℝ g (u x))
-      atTop V :=
-    (hT.uniformContinuousOn_of_continuous (hDgc.mono hηW)).comp_tendstoUniformlyOn_eventually
-      hunT huT huu
-  obtain ⟨N, hN⟩ := eventually_atTop.1 hunT
-  -- `Dg ∘ u` is continuous and bounded on `S`.
-  have hDguS : ContinuousOn (fun x => fderiv ℝ g (u x)) S :=
-    hDgc.comp (huc.mono hVΩ) ((huW.mono_left hVΩ))
+  have huSW : u '' S ⊆ W := (huW.mono_left hVΩ).image_subset
+  have huS : IsCompact (u '' S) := hVc.image_of_continuousOn (huc.mono hVΩ)
+  have hDguS : ContinuousOn (fun x => fderiv ℝ g (u x)) S := hDgc.comp (huc.mono hVΩ)
+    (huW.mono_left hVΩ)
+  -- Eventually the approximations take values in `W` on `V`.
+  obtain ⟨η, hη, hηW⟩ := huS.exists_thickening_subset_open hW huSW
+  obtain ⟨N, hN⟩ := eventually_atTop.1 <| (Metric.tendstoUniformlyOn_iff.1 huu η hη).mono
+    fun n hn x (hx : x ∈ (V : Set E)) => hηW <| mem_thickening_iff.2
+      ⟨u x, mem_image_of_mem u (hVS hx), by rw [dist_comm]; exact hn x (hVS hx)⟩
+  have happrox (n : ℕ) := hasWeakFDerivOn_comp_of_hasFDerivAt (μ := μ) (hun (n + N))
+    (hDn (n + N)) (hderiv (n + N)) hW hg (hN (n + N) (Nat.le_add_left N n))
+  -- `Dg ∘ u` is bounded on `S`, and `Dg(u) ∘ Du` is integrable there.
   obtain ⟨C, hC⟩ := hVc.exists_bound_of_continuousOn hDguS
-  have hCe : ∀ x ∈ (V : Set E), ‖fderiv ℝ g (u x)‖ₑ ≤ ENNReal.ofReal C := fun x hx => by
-    rw [← ofReal_norm]
-    exact ENNReal.ofReal_le_ofReal (hC x (hVS hx))
-  -- The limit derivative is integrable on `S`, hence on `V`.
   have hWint : IntegrableOn (fun x => (fderiv ℝ g (u x)).comp (Du x)) V μ :=
-    IntegrableOn.mono_set (memLp_one_iff_integrable.1 (memLp_fderiv_comp hVc hDguS
-      (memLp_one_iff_integrable.2 (hDuK.mono_set (self_subset_cthickening S))))) hVS
-  -- The approximating compositions have the classical chain-rule derivative.
-  have happrox (n : ℕ) : HasWeakFDerivOn μ V (fun x => g (un (n + N) x))
-      (fun x => (fderiv ℝ g (un (n + N) x)).comp (Dn (n + N) x)) := by
-    have hmem : ∀ x ∈ (V : Set E), un (n + N) x ∈ W := fun x hx =>
-      hηW (hN (n + N) (Nat.le_add_left N n) x hx)
-    have hcont : ContinuousOn (fun x => (fderiv ℝ g (un (n + N) x)).comp (Dn (n + N) x)) V :=
-      (hDgc.comp (hun_cont _).continuousOn hmem).clm_comp (hDn_cont _).continuousOn
-    refine hasWeakFDerivOn_iff.2 fun v => hasWeakLineDerivOn_of_hasLineDerivAt
-      ((hgc.comp (hun_cont _).continuousOn hmem).locallyIntegrableOn V.isOpen.measurableSet)
-      ((hcont.clm_apply continuousOn_const).locallyIntegrableOn V.isOpen.measurableSet)
-      fun x hx => ?_
-    have hgx : HasFDerivAt g (fderiv ℝ g (un (n + N) x)) (un (n + N) x) :=
-      ((hg.differentiableOn one_ne_zero _ (hmem x hx)).differentiableAt
-        (hW.mem_nhds (hmem x hx))).hasFDerivAt
-    exact (hgx.comp x (hderiv _ x hx)).hasLineDerivAt v
+    IntegrableOn.mono_set (memLp_one_iff_integrable.1 (MemLp.clm_comp_of_continuousOn hVc
+      isClosed_closure.measurableSet hDguS (memLp_one_iff_integrable.2 hDuS))) hVS
+  have hgAt : ∀ y ∈ u '' S, ContinuousAt g y := fun y hy =>
+    hgc.continuousAt (hW.mem_nhds (huSW hy))
+  have hDgAt : ∀ y ∈ u '' S, ContinuousAt (fderiv ℝ g) y := fun y hy =>
+    hDgc.continuousAt (hW.mem_nhds (huSW hy))
   refine hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub (l := atTop)
-    ((hgc.comp (huc.mono (hVΩ'.trans hΩ'Ω)) (huW.mono_left (hVΩ'.trans hΩ'Ω))).locallyIntegrableOn
+    ((hgc.comp (huc.mono (hVS.trans hVΩ)) (huW.mono_left (hVS.trans hVΩ))).locallyIntegrableOn
       V.isOpen.measurableSet)
     (fun v => IntegrableOn.locallyIntegrableOn
       ((ContinuousLinearMap.apply ℝ G v).integrable_comp hWint))
     happrox ?_ ?_
-  · -- The compositions converge uniformly, hence in `L¹(V)`.
-    refine (tendsto_add_atTop_iff_nat
+  · refine (tendsto_add_atTop_iff_nat
       (f := fun n => ∫⁻ x in V, ‖g (un n x) - g (u x)‖ₑ ∂μ) N).2 ?_
-    have h0 := ENNReal.Tendsto.mul_const (b := μ V)
-      (tendsto_iSup_enorm_sub_of_tendstoUniformlyOn hgu) (Or.inr hμV)
-    rw [zero_mul] at h0
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h0
-      (fun _ => zero_le) fun n => ?_
-    calc ∫⁻ x in V, ‖g (un n x) - g (u x)‖ₑ ∂μ
-        ≤ ∫⁻ _ in V, ⨆ x ∈ (V : Set E), ‖g (un n x) - g (u x)‖ₑ ∂μ :=
-          setLIntegral_mono' V.isOpen.measurableSet fun x hx =>
-            le_iSup₂ (f := fun x (_ : x ∈ (V : Set E)) => ‖g (un n x) - g (u x)‖ₑ) x hx
-      _ = _ := setLIntegral_const _ _
-  · -- The derivatives converge in `L¹(V)`: split off the uniform error of `Dg`.
-    refine (tendsto_add_atTop_iff_nat (f := fun n => ∫⁻ x in V,
+    exact ((huS.comp_tendstoUniformlyOn hgAt huu).mono hVS).tendsto_setLIntegral_enorm_sub
+      V.isOpen.measurableSet ((measure_mono hVS).trans_lt hVc.measure_lt_top).ne
+  · refine (tendsto_add_atTop_iff_nat (f := fun n => ∫⁻ x in V,
       ‖(fderiv ℝ g (un n x)).comp (Dn n x) - (fderiv ℝ g (u x)).comp (Du x)‖ₑ ∂μ) N).2 ?_
-    set e := fun n => ⨆ x ∈ (V : Set E), ‖fderiv ℝ g (un n x) - fderiv ℝ g (u x)‖ₑ
-    have he : Tendsto e atTop (𝓝 0) := tendsto_iSup_enorm_sub_of_tendstoUniformlyOn hDgu
-    set J := ∫⁻ x in V, ‖Du x‖ₑ ∂μ
-    have hJ : J ≠ ∞ := hDuV.hasFiniteIntegral.ne
-    have hlim : Tendsto (fun n => (e n + ENNReal.ofReal C) * ∫⁻ x in V, ‖Dn n x - Du x‖ₑ ∂μ +
-        e n * J) atTop (𝓝 0) := by
-      have h1 := ENNReal.Tendsto.mul (he.add_const (ENNReal.ofReal C))
-        (Or.inr (by simp)) hDD (Or.inr (by simp))
-      have h2 := ENNReal.Tendsto.mul_const (b := J) he (Or.inr hJ)
-      simpa only [zero_add, mul_zero, zero_mul, add_zero] using h1.add h2
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
-      (fun _ => zero_le) fun n => ?_
-    have hmeas : AEMeasurable (fun x => ‖Dn n x - Du x‖ₑ) (μ.restrict V) :=
-      ((hDn_cont n).aestronglyMeasurable.sub hDuV.aestronglyMeasurable).enorm
-    calc ∫⁻ x in V, ‖(fderiv ℝ g (un n x)).comp (Dn n x) - (fderiv ℝ g (u x)).comp (Du x)‖ₑ ∂μ
-        ≤ ∫⁻ x in V, ((e n + ENNReal.ofReal C) * ‖Dn n x - Du x‖ₑ + e n * ‖Du x‖ₑ) ∂μ := by
-          refine setLIntegral_mono' V.isOpen.measurableSet fun x hx => ?_
-          have hex : ‖fderiv ℝ g (un n x) - fderiv ℝ g (u x)‖ₑ ≤ e n :=
-            le_iSup₂ (f := fun x (_ : x ∈ (V : Set E)) =>
-              ‖fderiv ℝ g (un n x) - fderiv ℝ g (u x)‖ₑ) x hx
-          have hsplit : (fderiv ℝ g (un n x)).comp (Dn n x) - (fderiv ℝ g (u x)).comp (Du x) =
-              (fderiv ℝ g (un n x) - fderiv ℝ g (u x)).comp (Dn n x - Du x) +
-                (fderiv ℝ g (un n x) - fderiv ℝ g (u x)).comp (Du x) +
-                (fderiv ℝ g (u x)).comp (Dn n x - Du x) := by
-            ext v
-            simp only [add_apply, sub_apply,
-              ContinuousLinearMap.coe_comp, Function.comp_apply, map_sub]
-            abel
-          rw [hsplit]
-          calc _ ≤ ‖(fderiv ℝ g (un n x) - fderiv ℝ g (u x)).comp (Dn n x - Du x)‖ₑ +
-                ‖(fderiv ℝ g (un n x) - fderiv ℝ g (u x)).comp (Du x)‖ₑ +
-                ‖(fderiv ℝ g (u x)).comp (Dn n x - Du x)‖ₑ :=
-                (enorm_add_le _ _).trans (add_le_add_left (enorm_add_le _ _) _)
-            _ ≤ e n * ‖Dn n x - Du x‖ₑ + e n * ‖Du x‖ₑ +
-                ENNReal.ofReal C * ‖Dn n x - Du x‖ₑ := by
-                gcongr
-                · exact (ContinuousLinearMap.opENorm_comp_le _ _).trans (mul_le_mul_left hex _)
-                · exact (ContinuousLinearMap.opENorm_comp_le _ _).trans (mul_le_mul_left hex _)
-                · exact (ContinuousLinearMap.opENorm_comp_le _ _).trans
-                    (mul_le_mul_left (hCe x hx) _)
-            _ = _ := by ring
-      _ = (e n + ENNReal.ofReal C) * ∫⁻ x in V, ‖Dn n x - Du x‖ₑ ∂μ + e n * J := by
-          rw [lintegral_add_left' (hmeas.const_mul _), lintegral_const_mul'' _ hmeas,
-            lintegral_const_mul'' _ hDuV.aestronglyMeasurable.enorm]
+    refine tendsto_setLIntegral_enorm_clm_comp_sub
+      ((huS.comp_tendstoUniformlyOn hDgAt huu).mono hVS) V.isOpen.measurableSet
+      (C := C.toNNReal) (fun x hx => ?_) (fun n => (hDn n).aestronglyMeasurable)
+      (hDuS.mono_set hVS).aestronglyMeasurable hDD (hDuS.mono_set hVS).hasFiniteIntegral.ne
+    rw [← NNReal.coe_le_coe, coe_nnnorm]
+    exact (hC x (hVS hx)).trans (Real.le_coe_toNNReal C)
 
 /-- **The weak chain rule for continuous maps.** If `u` is continuous on `Ω` with weak derivative
 `Du`, and `g` is `C¹` on an open set `W` containing `u '' Ω`, then `g ∘ u` has weak derivative
@@ -349,25 +245,11 @@ variable {E F G H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Measurabl
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G]
   [NormedAddCommGroup H] [NormedSpace ℝ H]
 
-/-- **Weak derivatives of pairs.** The pair of two weakly differentiable maps is weakly
-differentiable, with the paired derivative. -/
-theorem HasWeakFDerivOn.prodMk {f : E → F} {g : E → G} {Df : E → E →L[ℝ] F}
-    {Dg : E → E →L[ℝ] G} (hf : HasWeakFDerivOn μ Ω f Df) (hg : HasWeakFDerivOn μ Ω g Dg) :
-    HasWeakFDerivOn μ Ω (fun x => (f x, g x)) fun x => (Df x).prod (Dg x) := by
-  have : CompleteSpace F := hf.completeSpace
-  have : CompleteSpace G := hg.completeSpace
-  have h := (hf.clm_comp (ContinuousLinearMap.inl ℝ F G)).add
-    (hg.clm_comp (ContinuousLinearMap.inr ℝ F G))
-  convert h using 1
-  · ext x <;> simp
-  · ext x v <;> simp
-
-variable [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] [FiniteDimensional ℝ F]
-  [CompleteSpace H]
+variable [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] [CompleteSpace H]
 
 /-- **The weak chain rule with domain dependence.** If `u` is continuous on `Ω` with weak
-derivative `Du`, and `G` is `C¹` on an open set `W` containing the graph of `u` over `Ω`, then
-`x ↦ G(x, u x)` has weak derivative `x ↦ DG(x, u x) ∘ (id, Du x)` on `Ω`. -/
+derivative `Du`, and `g` is `C¹` on an open set `W` containing the graph of `u` over `Ω`, then
+`x ↦ g (x, u x)` has weak derivative `x ↦ Dg(x, u x) ∘ (id, Du x)` on `Ω`. -/
 theorem HasWeakFDerivOn.comp_graph_contDiffOn {u : E → F}
     {Du : E → E →L[ℝ] F} {g : E × F → H} {W : Set (E × F)} (hu : HasWeakFDerivOn μ Ω u Du)
     (huc : ContinuousOn u Ω) (hW : IsOpen W) (hg : ContDiffOn ℝ 1 g W)
@@ -392,23 +274,13 @@ section MemWkpLoc
 variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G]
   [NormedSpace ℝ G] [NormedAddCommGroup H] [NormedSpace ℝ H] {p : ℝ≥0∞} {U : Set ℂ} {k : ℕ}
 
-/-- **Pairs of local Sobolev maps.** Two maps in the local Sobolev class of order `k` pair to a map
-in the same class, with values in the product. -/
-theorem MemWkpLoc.prodMk [CompleteSpace F] [CompleteSpace G] {f : ℂ → F} {g : ℂ → G}
-    (hf : MemWkpLoc p U k f) (hg : MemWkpLoc p U k g) :
-    MemWkpLoc p U k (fun z => (f z, g z)) := by
-  have h := (hf.clm_comp (ContinuousLinearMap.inl ℝ F G)).add
-    (hg.clm_comp (ContinuousLinearMap.inr ℝ F G))
-  convert h using 1
-  ext z <;> simp
-
-variable [FiniteDimensional ℝ F] [CompleteSpace G]
+variable [CompleteSpace G]
 
 /-- **Composition of continuous `W^{1,p}_loc` maps with `C¹` maps.** If `u` is continuous on `U`
 and belongs to `W^{1,p}_loc(U)`, and `g` is `C¹` on an open set containing `u '' U`, then
 `g ∘ u` belongs to `W^{1,p}_loc(U)`. Its weak derivative on `interior U` is given by
 `TauCeti.HasWeakFDerivOn.comp_contDiffOn`, and its `Lᵖ` bound on compact sets by
-`TauCeti.eLpNorm_fderiv_comp_le`. -/
+`TauCeti.eLpNorm_clm_comp_le_of_ae_nnnorm_le`. -/
 theorem MemWkpLoc.comp_contDiffOn {u : ℂ → F} {g : F → G} {W : Set F}
     (hu : MemWkpLoc p U 1 u) (huc : ContinuousOn u U) (hW : IsOpen W) (hg : ContDiffOn ℝ 1 g W)
     (huW : MapsTo u U W) : MemWkpLoc p U 1 (fun z => g (u z)) := by
@@ -420,7 +292,7 @@ theorem MemWkpLoc.comp_contDiffOn {u : ℂ → F} {g : F → G} {W : Set F}
   intro K hKU hK
   have hgu : ContinuousOn (fun x => fderiv ℝ g (u x)) K :=
     hDgc.comp (huc.mono hKU) (huW.mono_left hKU)
-  exact memLp_fderiv_comp hK hgu (hDup K hKU hK)
+  exact MemLp.clm_comp_of_continuousOn hK hK.measurableSet hgu (hDup K hKU hK)
 
 /-- **Composition of continuous `W^{1,p}_loc` maps with globally `C¹` maps.** -/
 theorem MemWkpLoc.comp_contDiff {u : ℂ → F} {g : F → G} (hu : MemWkpLoc p U 1 u)
@@ -429,8 +301,8 @@ theorem MemWkpLoc.comp_contDiff {u : ℂ → F} {g : F → G} (hu : MemWkpLoc p 
 
 variable [CompleteSpace H] in
 /-- **Composition with domain dependence.** If `u` is continuous on `U` and belongs to
-`W^{1,p}_loc(U)`, and `G` is `C¹` on an open set containing the graph of `u` over `U`, then
-`z ↦ G(z, u z)` belongs to `W^{1,p}_loc(U)`. Its weak derivative on `interior U` is given by
+`W^{1,p}_loc(U)`, and `g` is `C¹` on an open set containing the graph of `u` over `U`, then
+`z ↦ g (z, u z)` belongs to `W^{1,p}_loc(U)`. Its weak derivative on `interior U` is given by
 `TauCeti.HasWeakFDerivOn.comp_graph_contDiffOn`. -/
 theorem MemWkpLoc.comp_graph_contDiffOn {u : ℂ → F} {g : ℂ × F → H} {W : Set (ℂ × F)}
     (hu : MemWkpLoc p U 1 u) (huc : ContinuousOn u U) (hW : IsOpen W) (hg : ContDiffOn ℝ 1 g W)

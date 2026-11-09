@@ -14,7 +14,8 @@ import TauCeti.Analysis.Convolution.Basic
 # Uniform approximation by normalized bumps
 
 Convolution with normalized smooth bumps whose radii tend to zero converges uniformly to
-any uniformly continuous Banach-valued function. For uniformly continuous functions, this
+any uniformly continuous Banach-valued function, and uniformly on a set `s` to a function that is
+uniformly continuous on a neighbourhood of `s`. For uniformly continuous functions, this
 upgrades the pointwise convergence of Mathlib's
 `ContDiffBump.convolution_tendsto_right_of_continuous` to uniform convergence, and allows
 simultaneous approximation of the derivatives of a compactly supported smooth function.
@@ -166,6 +167,24 @@ theorem tendstoUniformly_normed_convolution {ι : Type*} {l : Filter ι}
   refine ((ρ i).dist_normed_convolution_le (μ := μ) hg.continuous.aestronglyMeasurable
     (fun y hy => (hgδ ((mem_ball.1 hy).trans hi)).le)).trans_lt ?_
   exact half_lt_self hε
+
+/-- Normalized bumps of shrinking radius approximate a function uniformly on a set `s` when the
+function is uniformly continuous on a `δ`-neighbourhood of `s`. Only the values on that
+neighbourhood matter, so the function need not be continuous elsewhere. -/
+theorem tendstoUniformlyOn_normed_convolution {ι : Type*} {l : Filter ι}
+    {ρ : ι → ContDiffBump (0 : G)} (hρ : Tendsto (fun i => (ρ i).rOut) l (𝓝 0)) {s : Set G}
+    {δ : ℝ} (hδ : 0 < δ) (hg : UniformContinuousOn g (thickening δ s))
+    (hmg : AEStronglyMeasurable g μ) :
+    TendstoUniformlyOn (fun i => (ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] g) g l s := by
+  refine Metric.tendstoUniformlyOn_iff.2 fun ε hε => ?_
+  obtain ⟨η, hη, hgη⟩ := Metric.uniformContinuousOn_iff.1 hg (ε / 2) (by positivity)
+  filter_upwards [hρ.eventually (gt_mem_nhds (lt_min hη hδ))] with i hi x hx
+  rw [dist_comm]
+  refine ((ρ i).dist_normed_convolution_le (μ := μ) hmg fun y hy => ?_).trans_lt
+    (half_lt_self hε)
+  have hyx : dist y x < min η δ := (mem_ball.1 hy).trans hi
+  exact (hgη y (mem_thickening_iff.2 ⟨x, hx, hyx.trans_le (min_le_right _ _)⟩) x
+    (self_subset_thickening hδ s hx) (hyx.trans_le (min_le_left _ _))).le
 
 /-- Mollifying a locally integrable function with values in `[a, b]` by a normalized bump keeps
 its values in `[a, b]`. -/

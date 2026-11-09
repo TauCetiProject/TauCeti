@@ -25,8 +25,8 @@ These predicates concern actual functions; almost-everywhere changes do not affe
 They impose no global integrability condition on the possibly unbounded domain.
 
 This file supplies restriction to arbitrary subsets, linearity, continuous-linear composition,
-decreasing the integrability exponent, and decreasing the derivative order. Smoothness on an
-open neighbourhood gives membership, without requiring a global smooth extension.
+pairing, decreasing the integrability exponent, and decreasing the derivative order. Smoothness
+on an open neighbourhood gives membership, without requiring a global smooth extension.
 No boundary trace or extension across the boundary is asserted. On open domains, local `L¹`
 membership is identified with local integrability, supplying the native weak-derivative hypotheses.
 In positive order, completeness is inherited from the native weak-derivative predicate; the
@@ -272,6 +272,16 @@ theorem MemWkpLoc.clm_comp [CompleteSpace G] (hf : MemWkpLoc p U k f)
     obtain ⟨hp, D, hD, hk⟩ := hf
     exact ⟨hp.clm_comp A, fun z => A.comp (D z), hD.clm_comp A,
       ih hk ((ContinuousLinearMap.compL ℝ ℂ F G) A)⟩
+
+/-- **Pairs of local Sobolev maps.** Two maps in the local Sobolev class of order `k` pair to a map
+in the same class, with values in the product. -/
+theorem MemWkpLoc.prodMk [CompleteSpace F] [CompleteSpace G] {g : ℂ → G}
+    (hf : MemWkpLoc p U k f) (hg : MemWkpLoc p U k g) :
+    MemWkpLoc p U k (fun z => (f z, g z)) := by
+  have h := (hf.clm_comp (ContinuousLinearMap.inl ℝ F G)).add
+    (hg.clm_comp (ContinuousLinearMap.inr ℝ F G))
+  convert h using 1
+  ext z <;> simp
 
 /-- Constant functions belong to every local Sobolev class. -/
 @[simp]
