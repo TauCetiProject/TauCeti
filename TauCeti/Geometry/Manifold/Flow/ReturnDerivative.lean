@@ -22,11 +22,11 @@ The derivative of a transition kills the field (`TauCeti.mfderiv_flowTransition_
 since a transition is constant along flow lines, and lands in the kernel of the derivative of the
 function cutting out the target section (`TauCeti.mvfderiv_comp_mfderiv_flowTransition`). For a
 return branch, `DP_p` is therefore zero on the line spanned by `v p` and maps the tangent space
-`ker dg_p` of the section into itself. Informally, its restriction to `ker dg_p` is the normal
-return derivative, the derivative of the return map of the section, and as
-`T_p M = ker dg_p ⊕ ℝ v p` the characteristic polynomial of `DP_p` should be `X` times that of the
-normal return derivative. This file neither defines the normal return derivative nor proves that
-identity: all its statements are about the full derivative `DP_p` on `T_p M`.
+`ker dg_p` of the section into itself. Its restriction to `ker dg_p`, the normal return
+derivative, is studied in `TauCeti.Geometry.Manifold.Flow.NormalReturnDerivative`; all statements
+here are about the full derivative `DP_p` on `T_p M`. Differentiating `z ↦ flowOf v (τ z) z`, with
+`τ` the hitting time, gives `Dh w = dτ_p w • v + DΦ_T w` for the transition `h` and the time-`T` map
+`Φ_T` of the flow (`TauCeti.mfderiv_flowTransition_apply`).
 
 Derivatives of transitions compose as the transitions do (`TauCeti.mfderiv_flowTransition_comp`).
 If the flow carries `p` to `q` at time `T`, the transition `h` from the section through `p` to a
@@ -52,6 +52,8 @@ return branch need not be the first return to the section.
 * `TauCeti.mfderiv_flowTransition_apply_eq_zero`: the derivative of a transition kills the field.
 * `TauCeti.mvfderiv_comp_mfderiv_flowTransition`: the derivative of a transition lands in the
   tangent space of the target section.
+* `TauCeti.mfderiv_flowTransition_apply`: the derivative of a transition in terms of the hitting
+  time and the flow.
 * `TauCeti.mfderiv_flowTransition_comp`: derivatives of transitions compose.
 * `TauCeti.mfderiv_flowTransition_semiconj`: transitions intertwine the derivatives of
   return germs.
@@ -130,6 +132,34 @@ theorem mvfderiv_comp_mfderiv_flowTransition :
     simp [mvfderiv, hconst.mfderiv_eq]
   exact (mvfderiv_comp_apply_of_eq p (hg.mdifferentiableAt one_ne_zero)
     (mdifferentiableAt_flowTransition hv hT hg hgv) (flowTransition_self ..) w).symm.trans hzero
+
+/-- **The derivative of a transition.** The transition `z ↦ flowOf v (τ z) z` to a section
+through `flowOf v T p`, with `τ` the hitting time, has derivative
+`w ↦ dτ_p w • v (flowOf v T p) + DΦ_T w` at `p`, where `Φ_T = flowOf v T` is the time-`T` map. -/
+theorem mfderiv_flowTransition_apply (w : TangentSpace I p) :
+    mfderiv I I (flowTransition v g T p) p w =
+      mvfderiv I (flowHittingTime v g T p) p w • v (flowOf v T p) +
+        mfderiv I I (flowOf v T) p w := by
+  have hτ : MDifferentiableAt I 𝓘(ℝ) (flowHittingTime v g T p) p :=
+    (contMDiffAt_flowHittingTime le_rfl hv hT hg hgv).mdifferentiableAt one_ne_zero
+  have hF : MDifferentiableAt (𝓘(ℝ).prod I) I (fun q : ℝ × M ↦ flowOf v q.1 q.2) (T, p) :=
+    ((contMDiffOn_flowOf le_rfl hv).contMDiffAt
+      ((isOpen_flowDomain hv).mem_nhds hT)).mdifferentiableAt one_ne_zero
+  have hpair : MDifferentiableAt I (𝓘(ℝ).prod I) (fun z ↦ (flowHittingTime v g T p z, z)) p :=
+    hτ.prodMk mdifferentiableAt_id
+  -- The transition is the joint flow composed with `z ↦ (τ z, z)`; split the derivative of the
+  -- joint flow into its time and space parts.
+  have key := mfderiv_comp_apply_of_eq p hF hpair (by rw [flowHittingTime_self]) w
+  rw [mfderiv_prodMk (g := fun z ↦ z) hτ mdifferentiableAt_id] at key
+  rw [flowTransition_def]
+  refine key.trans <| (mfderiv_prod_eq_add_apply hF).trans ?_
+  rw [mfderiv_flowOf_trajectory_apply hv hT]
+  congr 1
+  -- The second component of the derivative of `z ↦ (τ z, z)` is the identity.
+  have hid : mfderiv I I (fun z : M ↦ z) p w = w := by
+    rw [show (fun z : M ↦ z) = id from rfl, mfderiv_id]
+    rfl
+  exact congrArg (mfderiv I I (flowOf v T) p) hid
 
 end Transition
 
@@ -224,9 +254,7 @@ theorem charpoly_mfderiv_flowTransition_eq :
 point.** If the flow carries `p` to `q` at time `T` and `p` returns to itself at time `T₀`, then
 `μ` is an eigenvalue of the derivative at `p` of the return branch of a section through `p` exactly
 when it is one at `q` for a section through `q`. For `μ = 1`, whether `1` is an eigenvalue of the
-full derivative `DP_p` on `T_p M` is independent of these choices; relating this to the
-nondegeneracy test, which concerns the normal return derivative on the section, is not done
-here. -/
+full derivative `DP_p` on `T_p M` is independent of these choices. -/
 theorem hasEigenvalue_mfderiv_flowTransition_iff (μ : ℝ) :
     Module.End.HasEigenvalue (mfderiv I I (flowTransition v g T₀ p) p).toLinearMap μ ↔
       Module.End.HasEigenvalue (mfderiv I I (flowTransition v g' T₀ q) q).toLinearMap μ := by

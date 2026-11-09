@@ -31,6 +31,9 @@ maximal trajectory approaching a finite right endpoint eventually leaves every c
 * `TauCeti.contMDiffOn_flowOf`: joint regularity of the flow for complete model spaces.
 * `TauCeti.contMDiffAt_flowOf_comp`: flowing `C^n` families of points for `C^n` families of times.
 * `TauCeti.hasDerivAt_comp_flowOf`: the time derivative of a function along a trajectory.
+* `TauCeti.mfderiv_flowOf_trajectory_apply`: the derivative of a trajectory is the field.
+* `TauCeti.mfderiv_flowOf_apply_self`: the differential of the time-`t` map carries the field to
+  itself.
 * `TauCeti.flowOf_add`: the domain-aware group law.
 * `TauCeti.flowOf_neg_flowOf`: flowing backwards undoes flowing forwards.
 * `TauCeti.eventually_flowOf_notMem`: escape from compact sets at a finite right endpoint.
@@ -151,6 +154,20 @@ theorem mdifferentiableAt_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpac
       isOpen_maximalIntegralCurveInterval.mem_nhds (mem_flowDomain.mp ht)
   exact ((isMIntegralCurveOn_flowOf hv x).isMIntegralCurveAt hdom).hasMFDerivAt.mdifferentiableAt
 
+omit [CompleteSpace E] in
+/-- **The derivative of a trajectory.** At every time in its domain, the derivative of
+`s ↦ flowOf v s x` sends `a` to `a • v (flowOf v t x)`. -/
+theorem mfderiv_flowOf_trajectory_apply [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) (a : ℝ) :
+    mfderiv 𝓘(ℝ) I (fun s ↦ flowOf v s x) t a = a • v (flowOf v t x) := by
+  have hdom : {s | (s, x) ∈ flowDomain v} ∈ 𝓝 t := by
+    simpa only [mem_flowDomain, ofPred_mem_eq] using
+      isOpen_maximalIntegralCurveInterval.mem_nhds (mem_flowDomain.mp ht)
+  rw [((isMIntegralCurveOn_flowOf hv x).isMIntegralCurveAt hdom).hasMFDerivAt.mfderiv]
+  -- `smulRight 1 w` sends `a` to `a • w`, reading `TangentSpace 𝓘(ℝ) t` as `ℝ`.
+  rfl
+
 /-- On a complete normed model space, the domain of the maximal flow is jointly open in time
 and initial point. -/
 theorem isOpen_flowDomain [IsManifold I 1 M]
@@ -266,6 +283,51 @@ theorem flowOf_flowOf_of_flowOf_eq [IsManifold I 1 M] {v : (x : M) → TangentSp
     exact hst
   refine ⟨hs', ?_⟩
   rw [(flowOf_add hv ht hs').2, add_comm, ← heq, hx]
+
+/-- **The flow preserves its generating field.** If time `t` is defined at `x`, the derivative of
+the time-`t` map of the flow carries `v x` to `v (flowOf v t x)`. -/
+theorem mfderiv_flowOf_apply_self [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) :
+    mfderiv I I (flowOf v t) x (v x) = v (flowOf v t x) := by
+  have hopen := isOpen_flowDomain hv
+  -- The velocity at time `0` of the trajectory through `y` is `v y`.
+  have hvel : ∀ y, mfderiv 𝓘(ℝ) I (fun s ↦ flowOf v s y) 0 (1 : ℝ) = v y := fun y ↦ by
+    rw [mfderiv_flowOf_trajectory_apply hv (mem_flowDomain_zero hv y), one_smul]
+    -- The tangent spaces at `flowOf v 0 y` and at `y` are both the model space, so this
+    -- equation is well typed; it holds by substituting `flowOf v 0 y = y`.
+    have hvy : ∀ z, z = y → v z = v y := by
+      rintro z rfl
+      rfl
+    exact hvy _ (flowOf_zero hv y)
+  have hcurve : ContinuousAt (fun s ↦ flowOf v s x) 0 :=
+    (mdifferentiableAt_flowOf hv (mem_flowDomain_zero hv x)).continuousAt
+  -- Near `s = 0`, flowing for time `s` and then `t` is flowing for time `t` and then `s`.
+  have hcomm : (flowOf v t ∘ fun s ↦ flowOf v s x) =ᶠ[𝓝 0]
+      fun s ↦ flowOf v s (flowOf v t x) := by
+    have h₁ : ∀ᶠ s in 𝓝 (0 : ℝ), (s, x) ∈ flowDomain v :=
+      (continuous_id.prodMk continuous_const).continuousAt.preimage_mem_nhds
+        (hopen.mem_nhds (mem_flowDomain_zero hv x))
+    have h₂ : ∀ᶠ s in 𝓝 (0 : ℝ), (t, flowOf v s x) ∈ flowDomain v :=
+      (continuousAt_const.prodMk hcurve).preimage_mem_nhds
+        (hopen.mem_nhds (by simpa only [flowOf_zero hv x] using ht))
+    have h₃ : ∀ᶠ s in 𝓝 (0 : ℝ), (s, flowOf v t x) ∈ flowDomain v :=
+      (continuous_id.prodMk continuous_const).continuousAt.preimage_mem_nhds
+        (hopen.mem_nhds (mem_flowDomain_zero hv _))
+    filter_upwards [h₁, h₂, h₃] with s hs hts hst
+    rw [comp_apply, (flowOf_add hv hs hts).2, (flowOf_add hv ht hst).2, add_comm]
+  have hΦ : MDifferentiableAt I I (flowOf v t) x :=
+    (contMDiffAt_flowOf_comp le_rfl hv contMDiffAt_const contMDiffAt_id ht).mdifferentiableAt
+      one_ne_zero
+  have key := mfderiv_comp_apply_of_eq (0 : ℝ) hΦ
+    (mdifferentiableAt_flowOf hv (mem_flowDomain_zero hv x)) (flowOf_zero hv x) (1 : ℝ)
+  have hvel' : mfderiv 𝓘(ℝ) I (flowOf v t ∘ fun s ↦ flowOf v s x) 0 (1 : ℝ) =
+      v (flowOf v t x) := by
+    rw [hcomm.mfderiv_eq]
+    -- `tangentSpaceCast` is the identity of the model space.
+    exact hvel _
+  rw [hvel] at key
+  exact key.symm.trans hvel'
 
 /-- At a finite right endpoint of a maximal interval, the trajectory eventually leaves every
 compact set. -/

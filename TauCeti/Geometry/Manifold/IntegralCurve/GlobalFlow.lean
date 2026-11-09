@@ -236,23 +236,8 @@ theorem contMDiff_globalFlow_apply {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M
 of a complete `C¹` vector field `v` carries `v` at `x` to `v` at the image of `x`. -/
 theorem mfderiv_globalFlow_apply_self (t : ℝ) (x : M) :
     mfderiv I I (globalFlow v hv hcomplete t) x (v x) = v (globalFlow v hv hcomplete t x) := by
-  set ψ := globalFlow v hv hcomplete
-  -- The velocity of an orbit at time `0` is the field at its starting point.
-  have hvel : ∀ y, Manifold.curveVelocityWithin I (fun τ ↦ ψ τ y) univ 0 = v y := fun y ↦ by
-    rw [Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt
-      (isMIntegralCurve_globalFlow hv hcomplete y 0).hasMFDerivWithinAt uniqueDiffWithinAt_univ]
-    exact congrArg v (ψ.map_zero_apply y)
-  -- The curve `τ ↦ ψ_t (ψ_τ x)` is the orbit `τ ↦ ψ_τ (ψ_t x)`, so at `τ = 0` its velocity is
-  -- both `dψ_t (v x)`, by the chain rule, and `v (ψ_t x)`.
-  have hcomp : (ψ t ∘ fun τ ↦ ψ τ x) = fun τ ↦ ψ τ (ψ t x) := by
-    funext τ
-    simp only [comp_apply, ← Flow.map_add, add_comm]
-  have key := Manifold.curveVelocityWithin_map (s := univ) (t := 0)
-    ((contMDiff_globalFlow_apply hcomplete le_rfl hv t).mdifferentiableAt one_ne_zero)
-    uniqueDiffWithinAt_univ
-    (isMIntegralCurve_globalFlow hv hcomplete x 0).mdifferentiableAt.mdifferentiableWithinAt
-  rw [hcomp, hvel, hvel, Flow.map_zero_apply] at key
-  exact key.symm
+  rw [← flowOf_eq_globalFlow hv hcomplete]
+  exact mfderiv_flowOf_apply_self hv (hcomplete.mem_flowDomain t x)
 
 omit hv in
 /-- The time-`t` map of the flow of a complete `C^n` vector field, `1 ≤ n`, as a `C^n`
