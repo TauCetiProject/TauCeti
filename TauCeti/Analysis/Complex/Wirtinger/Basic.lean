@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Complex.Basic
+public import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
 public import TauCeti.LinearAlgebra.Complex.LinearPart
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Mul
@@ -97,20 +98,13 @@ section Wirtinger
 variable (g : V → W) (x : V)
 
 /-- The **Wirtinger derivative** `∂g(x)` of a function into a complex normed space: the
-complex-linear part `v ↦ (Dg(x) v - I • Dg(x)(I • v)) / 2` of its real derivative. On a coordinate
-vector `e_j` it is `∂g / ∂z_j`. Like `fderiv ℝ g x`, from which it is built, it is the junk value
-`0` at points where `g` is not real-differentiable, so results that need a genuine derivative
-assume differentiability of `g` at `x`. -/
-noncomputable def wirtingerDeriv : V →L[ℂ] W where
-  toFun v := (2 : ℂ)⁻¹ • (fderiv ℝ g x v - I • fderiv ℝ g x (I • v))
-  map_add' v w := by simp only [smul_add, map_add]; module
-  map_smul' c v := by
-    -- Split `c • v` into real multiples of `v` and `I • v`.
-    rw [← re_smul_add_im_smul c v]
-    simp only [smul_add, smul_comm I, smul_smul, I_mul_I, neg_smul, one_smul, map_add,
-      map_smul, map_neg, RingHom.id_apply]
-    match_scalars <;> apply Complex.ext <;> simp <;> ring
-  cont := by fun_prop
+complex-linear part `v ↦ (Dg(x) v - I • Dg(x)(I • v)) / 2` of its real derivative
+(`ContinuousLinearMap.complexLinearPart`). On a coordinate vector `e_j` it is `∂g / ∂z_j`. Like
+`fderiv ℝ g x`, from which it is built, it is the junk value `0` at points where `g` is not
+real-differentiable, so results that need a genuine derivative assume differentiability of `g`
+at `x`. -/
+noncomputable def wirtingerDeriv : V →L[ℂ] W :=
+  (fderiv ℝ g x).complexLinearPart
 
 /-- The **conjugate Wirtinger derivative** `\bar∂g(x)` of a function into a complex normed space:
 the complex-antilinear part `v ↦ (Dg(x) v + I • Dg(x)(I • v)) / 2` of its real derivative. On a
@@ -129,8 +123,9 @@ noncomputable def conjWirtingerDeriv : V →L⋆[ℂ] W where
 
 /-- The defining formula of the Wirtinger derivative. -/
 theorem wirtingerDeriv_apply (v : V) :
-    wirtingerDeriv g x v = (2 : ℂ)⁻¹ • (fderiv ℝ g x v - I • fderiv ℝ g x (I • v)) :=
-  (rfl)
+    wirtingerDeriv g x v = (2 : ℂ)⁻¹ • (fderiv ℝ g x v - I • fderiv ℝ g x (I • v)) := by
+  rw [wirtingerDeriv, ContinuousLinearMap.complexLinearPart_apply, ← ofReal_ofNat, ← ofReal_inv,
+    Complex.coe_smul]
 
 /-- The defining formula of the conjugate Wirtinger derivative. -/
 theorem conjWirtingerDeriv_apply (v : V) :

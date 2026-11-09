@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.LinearAlgebra.Complex.LinearPart
 public import TauCeti.LinearAlgebra.Complex.Module
+public import TauCeti.Topology.Algebra.Module.ComplexSmulI
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.Tactic.LinearCombination
@@ -46,6 +47,8 @@ is moved into place by complex-linear automorphisms in
 ## Main declarations
 
 * `ContinuousLinearMap.complexLinearPart`: the complex-linear part of a real-linear operator.
+* `ContinuousLinearMap.complexLinearPart_add`, `ContinuousLinearMap.complexLinearPart_smul`, …:
+  real-linearity in the operator.
 * `ContinuousLinearMap.complexLinearPart_restrictScalars`: a complex-linear operator is its own
   complex-linear part.
 * `ContinuousLinearMap.complexLinearPart_restrictScalars_comp`,
@@ -78,29 +81,18 @@ namespace ContinuousLinearMap
 variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [NormedAddCommGroup F] [NormedSpace ℂ F] [NormedAddCommGroup G] [NormedSpace ℂ G]
 
-/-- Multiplication by `i`, as a real-linear map, squares to `-1`. -/
-private theorem lsmul_I_comp_lsmul_I (V : Type*) [NormedAddCommGroup V] [NormedSpace ℂ V] :
-    ((LinearMap.lsmul ℂ V Complex.I).restrictScalars ℝ) ∘ₗ
-        ((LinearMap.lsmul ℂ V Complex.I).restrictScalars ℝ) = -LinearMap.id := by
-  ext v
-  simp [smul_smul]
-
 /-- The **complex-linear part** `z ↦ ½ (Ψ z - i Ψ (i z))` of a continuous real-linear operator
 between complex normed spaces, as a continuous complex-linear operator. -/
-def complexLinearPart (Ψ : E →L[ℝ] F) : E →L[ℂ] F where
-  toLinearMap := LinearMap.complexOfMapISmul
-    (TauCeti.complexLinearPart ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ)
-      ((LinearMap.lsmul ℂ F Complex.I).restrictScalars ℝ) (Ψ : E →ₗ[ℝ] F))
+def complexLinearPart (Ψ : E →L[ℝ] F) : E →L[ℂ] F :=
+  complexOfMapISmul
+    ((2⁻¹ : ℝ) • (Ψ - (Complex.smulIEquiv F : F →L[ℝ] F).comp
+      (Ψ.comp (Complex.smulIEquiv E : E →L[ℝ] E))))
     fun v => by
-      have h := (TauCeti.complexLinearPart_isComplexLinear (lsmul_I_comp_lsmul_I E)
-        (lsmul_I_comp_lsmul_I F) (Ψ : E →ₗ[ℝ] F)).apply v
-      simp only [TauCeti.complexLinearPart_apply, LinearMap.coe_restrictScalars,
-        LinearMap.lsmul_apply] at h ⊢
-      rw [h]
-  cont := by
-    refine Continuous.congr (f := fun v => (2⁻¹ : ℝ) • (Ψ v - Complex.I • Ψ (Complex.I • v)))
-      (by fun_prop) fun v => ?_
-    simp
+      have hI : Complex.I • Complex.I • Ψ (Complex.I • v) = -Ψ (Complex.I • v) := by
+        rw [smul_smul, Complex.I_mul_I, neg_one_smul]
+      simp only [smul_apply, sub_apply, comp_apply, ContinuousLinearEquiv.coe_coe,
+        Complex.smulIEquiv_apply, smul_smul, Complex.I_mul_I, neg_one_smul, map_neg]
+      linear_combination (norm := module) (2⁻¹ : ℝ) • hI
 
 /-- The defining formula of the complex-linear part. -/
 @[simp]
@@ -140,14 +132,52 @@ theorem complexLinearPart_comp_restrictScalars (Ψ : F →L[ℝ] G) (f : E →L[
   ext v
   simp [map_smul]
 
+/-- The complex-linear part of `0` is `0`. -/
+@[simp]
+theorem complexLinearPart_zero : (0 : E →L[ℝ] F).complexLinearPart = 0 := by
+  ext v
+  simp
+
+/-- The complex-linear part is additive. -/
+@[simp]
+theorem complexLinearPart_add (Ψ Φ : E →L[ℝ] F) :
+    (Ψ + Φ).complexLinearPart = Ψ.complexLinearPart + Φ.complexLinearPart := by
+  ext v
+  simp only [complexLinearPart_apply, add_apply]
+  module
+
+/-- The complex-linear part commutes with negation. -/
+@[simp]
+theorem complexLinearPart_neg (Ψ : E →L[ℝ] F) :
+    (-Ψ).complexLinearPart = -Ψ.complexLinearPart := by
+  ext v
+  simp only [complexLinearPart_apply, neg_apply]
+  module
+
+/-- The complex-linear part commutes with subtraction. -/
+@[simp]
+theorem complexLinearPart_sub (Ψ Φ : E →L[ℝ] F) :
+    (Ψ - Φ).complexLinearPart = Ψ.complexLinearPart - Φ.complexLinearPart := by
+  ext v
+  simp only [complexLinearPart_apply, sub_apply]
+  module
+
+/-- The complex-linear part commutes with real scalar multiplication. -/
+@[simp]
+theorem complexLinearPart_smul (c : ℝ) (Ψ : E →L[ℝ] F) :
+    (c • Ψ).complexLinearPart = c • Ψ.complexLinearPart := by
+  ext v
+  simp only [complexLinearPart_apply, smul_apply]
+  rw [smul_comm Complex.I c]
+  module
+
 /-- The real-linear operator underlying the complex-linear part is
 `½ (Ψ - i ∘ Ψ ∘ i)`. -/
 theorem restrictScalars_complexLinearPart (Ψ : E →L[ℝ] F) :
     Ψ.complexLinearPart.restrictScalars ℝ =
-      (2⁻¹ : ℝ) • (Ψ - (Complex.I • ContinuousLinearMap.id ℝ F).comp
-        (Ψ.comp (Complex.I • ContinuousLinearMap.id ℝ E))) := by
-  ext v
-  simp
+      (2⁻¹ : ℝ) • (Ψ - (Complex.smulIEquiv F : F →L[ℝ] F).comp
+        (Ψ.comp (Complex.smulIEquiv E : E →L[ℝ] E))) :=
+  restrictScalars_complexOfMapISmul _ _
 
 /-- **The complex-linear part depends continuously on the operator.** -/
 theorem continuous_complexLinearPart :
@@ -155,9 +185,9 @@ theorem continuous_complexLinearPart :
   refine (restrictScalarsIsometry ℂ E F ℝ ℝ).isometry.isUniformInducing.isInducing.continuous_iff.2
     ?_
   simp only [Function.comp_def, coe_restrictScalarsIsometry, restrictScalars_complexLinearPart]
-  have hJE : Continuous fun _ : E →L[ℝ] F => Complex.I • ContinuousLinearMap.id ℝ E :=
+  have hJE : Continuous fun _ : E →L[ℝ] F => (Complex.smulIEquiv E : E →L[ℝ] E) :=
     continuous_const
-  have hJF : Continuous fun _ : E →L[ℝ] F => Complex.I • ContinuousLinearMap.id ℝ F :=
+  have hJF : Continuous fun _ : E →L[ℝ] F => (Complex.smulIEquiv F : F →L[ℝ] F) :=
     continuous_const
   exact (continuous_id.sub (hJF.clm_comp (continuous_id.clm_comp hJE))).const_smul (2⁻¹ : ℝ)
 

@@ -47,8 +47,8 @@ by the automorphisms `id × P t`. Consequences:
   (`TauCeti.maslovIndex_symplecticGraphLoop_comp_left`,
   `TauCeti.maslovIndex_symplecticGraphLoop_comp_right`), which is how the index changes with a
   unitary trivialization;
-* the full rotation `t ↦ e^{2πit}` of an `n`-dimensional space has index `2n`
-  (`TauCeti.maslovIndex_symplecticGraphLoop_rotation`);
+* the full rotation `t ↦ e^{2πit}` of an `n`-dimensional space (`TauCeti.rotationLoop`) has
+  index `2n` (`TauCeti.maslovIndex_symplecticGraphLoop_rotationLoop`);
 * homotopic loops of linear symplectic maps have the same index
   (`TauCeti.maslovIndex_symplecticGraphLoop_eq_of_homotopy`).
 
@@ -68,6 +68,46 @@ open Module Real
 open scoped InnerProductSpace unitInterval
 
 namespace TauCeti
+
+/-! ### The full rotation -/
+
+section Rotation
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
+
+variable (E) in
+/-- The **full rotation** `t ↦ e^{2πit}` of a complex inner product space, as a loop of
+real-linear maps. -/
+def rotationLoop (t : I) : E →L[ℝ] E :=
+  (Complex.exp ((2 * π * t : ℝ) * Complex.I) • ContinuousLinearMap.id ℂ E).restrictScalars ℝ
+
+/-- The full rotation at time `t` is multiplication by `e^{2πit}`. -/
+@[simp]
+theorem rotationLoop_apply (t : I) (z : E) :
+    rotationLoop E t z = Complex.exp ((2 * π * t : ℝ) * Complex.I) • z :=
+  (rfl)
+
+variable (E) in
+/-- The full rotation is a continuous family of operators. -/
+theorem continuous_rotationLoop : Continuous (rotationLoop E) :=
+  (ContinuousLinearMap.restrictScalarsIsometry ℂ E E ℝ ℝ).continuous.comp (by fun_prop)
+
+/-- The full rotation preserves the inner product, so in particular the symplectic form
+`Im ⟪·, ·⟫`. -/
+theorem inner_rotationLoop_apply (t : I) (x y : E) :
+    ⟪rotationLoop E t x, rotationLoop E t y⟫_ℂ = ⟪x, y⟫_ℂ := by
+  rw [rotationLoop_apply, rotationLoop_apply, inner_smul_left, inner_smul_right, ← mul_assoc,
+    Complex.conj_mul', Complex.norm_exp_ofReal_mul_I, Complex.ofReal_one, one_pow, one_mul]
+
+variable (E) in
+/-- The full rotation is a closed loop. -/
+theorem rotationLoop_zero_eq_one : rotationLoop E 0 = rotationLoop E 1 := by
+  ext z
+  simp only [rotationLoop_apply, Set.Icc.coe_zero, Set.Icc.coe_one, mul_zero, mul_one,
+    Complex.ofReal_zero, zero_mul, Complex.exp_zero]
+  rw [Complex.ofReal_mul, Complex.ofReal_ofNat, Complex.exp_two_pi_mul_I]
+
+end Rotation
 
 /-! ### The graph loop of a loop of linear symplectic maps -/
 
@@ -270,12 +310,11 @@ theorem maslovIndex_symplecticGraphLoop_comp_right
 
 /-- **Normalization.** The full rotation `t ↦ e^{2πit}` of a complex inner product space of
 dimension `n` has graph loop of Maslov index `2n`. -/
-theorem maslovIndex_symplecticGraphLoop_rotation
-    (hK : ∀ z, K (Complex.I • z) = -(Complex.I • K z)) (Ψ : I → E →L[ℝ] E) (hΨ : Continuous Ψ)
-    (hsymp : ∀ t x y, (⟪Ψ t x, Ψ t y⟫_ℂ).im = (⟪x, y⟫_ℂ).im) (hΨ01 : Ψ 0 = Ψ 1)
-    (hrot : ∀ t, Ψ t =
-      (Complex.exp ((2 * π * t : ℝ) * Complex.I) • ContinuousLinearMap.id ℂ E).restrictScalars ℝ) :
-    (symplecticGraphLoop K hK Ψ hΨ hsymp hΨ01).maslovIndex = 2 * finrank ℂ E := by
+theorem maslovIndex_symplecticGraphLoop_rotationLoop
+    (hK : ∀ z, K (Complex.I • z) = -(Complex.I • K z)) :
+    (symplecticGraphLoop K hK (rotationLoop E) (continuous_rotationLoop E)
+      (fun t x y => by rw [inner_rotationLoop_apply]) (rotationLoop_zero_eq_one E)).maslovIndex =
+      2 * finrank ℂ E := by
   -- The determinant `e^{2πint}` of the complex-linear part winds `n` times.
   let δ : Path (1 : Circle) 1 :=
     { toFun := fun t => Circle.exp (finrank ℂ E * (2 * π * t))
@@ -285,10 +324,10 @@ theorem maslovIndex_symplecticGraphLoop_rotation
   have hδ : Circle.degree δ = finrank ℂ E :=
     Circle.degree_eq_of_sub_eq δ (θ := fun t => finrank ℂ E * (2 * π * t)) (by fun_prop)
       (fun _ => rfl) (by simp)
-  rw [maslovIndex_symplecticGraphLoop hK Ψ hΨ hsymp hΨ01 δ fun t => ?_, hδ]
-  have hdet : LinearMap.det ((Ψ t).complexLinearPart : E →ₗ[ℂ] E) =
+  rw [maslovIndex_symplecticGraphLoop hK _ _ _ _ δ fun t => ?_, hδ]
+  have hdet : LinearMap.det ((rotationLoop E t).complexLinearPart : E →ₗ[ℂ] E) =
       Complex.exp ((finrank ℂ E * (2 * π * t) : ℝ) * Complex.I) := by
-    rw [hrot t, ContinuousLinearMap.complexLinearPart_restrictScalars,
+    rw [rotationLoop, ContinuousLinearMap.complexLinearPart_restrictScalars,
       ContinuousLinearMap.toLinearMap_smul, ContinuousLinearMap.coe_id, LinearMap.det_smul,
       LinearMap.det_id, mul_one, ← Complex.exp_nat_mul]
     push_cast
