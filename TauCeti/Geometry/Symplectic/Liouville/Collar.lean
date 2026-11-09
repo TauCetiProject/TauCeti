@@ -46,8 +46,6 @@ noncompact embedded hypersurface is not treated here.
 
 ## Main results
 
-* `TauCeti.mfderiv_flowOf_comp_apply`: the differential of `Φ` sends `(r, w)` to
-  `r Z + dφₜ(dι w)`.
 * `TauCeti.mpullback_flowOf_comp_apply_eq_symplectization`: `Φ^* α = eᵗ ι^* α` on `D`.
 * `TauCeti.mpullback_flowOf_comp_mextDeriv_apply`: `Φ^* dα = d(eᵗ ι^* α)` on `D`.
 * `TauCeti.injective_mfderiv_flowOf_comp`: for a contact form `ι^* α`, `Φ` is an immersion on `D`.
@@ -90,34 +88,6 @@ private theorem contMDiffAt_flowOf_comp_uncurry {p : ℝ × S} (hp : (p.1, ι p.
     ContMDiffAt (𝓘(ℝ).prod J) I ∞ (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) p :=
   contMDiffAt_flowOf_comp le_top hZ contMDiffAt_fst (hι.contMDiffAt.comp p contMDiffAt_snd) hp
 
-/-- **The differential of the local flow map.** At a point `(t, s)` of its domain, the differential
-of `(t, s) ↦ φₜ(ι s)` sends a tangent vector `(r, w)` to `r Z + dφₜ(dι w)`. -/
-theorem mfderiv_flowOf_comp_apply {p : ℝ × S} (hp : (p.1, ι p.2) ∈ flowDomain Z)
-    (w : TangentSpace (𝓘(ℝ).prod J) p) :
-    mfderiv (𝓘(ℝ).prod J) I (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) p w =
-      w.1 • Z (flowOf Z p.1 (ι p.2)) +
-        mfderiv I I (flowOf Z p.1) (ι p.2)
-          (mfderiv J I ι p.2 (Manifold.tangentSpaceProdEquiv p w).2) := by
-  have hZ1 : ContMDiff I I.tangent 1 (T% Z) := hZ.of_le (by simp)
-  -- The trajectory through `ι s` has velocity `Z` at time `t`.
-  have hcurve : HasMFDerivAt 𝓘(ℝ) I (fun r ↦ flowOf Z r (ι p.2)) p.1
-      ((1 : ℝ →L[ℝ] ℝ).smulRight (Z (flowOf Z p.1 (ι p.2)))) := by
-    have hdom : {r | (r, ι p.2) ∈ flowDomain Z} ∈ 𝓝 p.1 :=
-      ((isOpen_flowDomain hZ1).preimage (continuous_id.prodMk continuous_const)).mem_nhds hp
-    exact ((isMIntegralCurveOn_flowOf hZ1 (ι p.2)).isMIntegralCurveAt hdom).hasMFDerivAt
-  -- The time-`t` map is differentiable at `ι s`.
-  have hflow : MDifferentiableAt I I (flowOf Z p.1) (ι p.2) :=
-    ((contMDiffAt_flowOf_comp le_top hZ contMDiffAt_const contMDiffAt_id hp).mdifferentiableAt
-      (by simp))
-  have hcomp : mfderiv J I (flowOf Z p.1 ∘ ι) p.2 =
-      (mfderiv I I (flowOf Z p.1) (ι p.2)).comp (mfderiv J I ι p.2) :=
-    mfderiv_comp p.2 hflow ((hι p.2).mdifferentiableAt (by simp))
-  rw [mfderiv_prod_eq_add_apply
-      ((contMDiffAt_flowOf_comp_uncurry hZ hι hp).mdifferentiableAt (by simp)),
-    hcurve.mfderiv, Manifold.tangentSpaceProdEquiv_apply, ← ContinuousLinearMap.comp_apply, ← hcomp]
-  -- `smulRight 1 Z` sends `r` to `r • Z`, reading `TangentSpace 𝓘(ℝ) t` as `ℝ`.
-  rfl
-
 variable [IsManifold J ∞ S] {α : SmoothForm I M ℝ 1}
 
 /-- **The local Liouville flow map pulls the primitive back to the symplectization form.** Let the
@@ -138,15 +108,15 @@ theorem mpullback_flowOf_comp_apply_eq_symplectization (hZα : (mextDeriv α.1).
     α.mdifferentiable rfl hZα hp
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
   obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
-  have hs := congrArg (fun β ↦ β fun _ ↦ mfderiv J I ι p.2 (Manifold.tangentSpaceProdEquiv p w).2)
-    hscale
-  simp only [mpullback_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul] at hs
+  have hs := congrArg (fun β ↦ β ![mfderiv J I ι p.2 w.2]) hscale
+  simp only [mpullback_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
+    Matrix.cons_val_fin_one, ← Matrix.vec_single_eq_const] at hs
+  -- Differentiate the flow map, then use that `α` is linear and vanishes on `Z`.
   rw [mpullback_apply, SmoothForm.symplectization_apply, SmoothForm.mpullback_apply]
-  simp only [Matrix.cons_val_fin_one]
-  rw [← Matrix.vec_single_eq_const, ← SmoothForm.degreeOneEquiv_apply_apply_vec,
-    mfderiv_flowOf_comp_apply hZ hι hp, map_add, map_smul,
-    SmoothForm.degreeOneEquiv_apply_apply_vec, hαZ, smul_zero, zero_add,
-    SmoothForm.degreeOneEquiv_apply_apply, hs]
+  simp only [Matrix.cons_val_fin_one, ← Matrix.vec_single_eq_const,
+    mfderiv_flowOf_comp_apply (hZ.of_le (by simp)) (hι.contMDiffAt.of_le (by simp)) hp,
+    ContinuousAlternatingMap.vecCons_add, ContinuousAlternatingMap.vecCons_smul, hαZ, smul_zero,
+    zero_add, Manifold.tangentSpaceProdEquiv_apply, hs]
 
 /-- **The local Liouville flow map pulls `dα` back to `d(eᵗ ι^* α)`.** Let the smooth vector field
 `Z` be the Liouville field of the one-form `α`, `ι_Z dα = α`, and let `ι : S → M` be smooth. At

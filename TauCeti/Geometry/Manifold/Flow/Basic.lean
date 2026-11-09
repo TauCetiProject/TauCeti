@@ -30,6 +30,7 @@ maximal trajectory approaching a finite right endpoint eventually leaves every c
 * `TauCeti.isOpen_flowDomain`: openness of the domain for complete model spaces.
 * `TauCeti.contMDiffOn_flowOf`: joint regularity of the flow for complete model spaces.
 * `TauCeti.contMDiffAt_flowOf_comp`: flowing `C^n` families of points for `C^n` families of times.
+* `TauCeti.mfderiv_flowOf_comp_apply`: the differential of `(t, s) ↦ φₜ(f s)`.
 * `TauCeti.hasDerivAt_comp_flowOf`: the time derivative of a function along a trajectory.
 * `TauCeti.flowOf_add`: the domain-aware group law.
 * `TauCeti.flowOf_neg_flowOf`: flowing backwards undoes flowing forwards.
@@ -192,6 +193,39 @@ theorem contMDiffAt_flowOf_comp {n : ℕ∞} (hn : 1 ≤ n)
     ContMDiffAt J I n (fun y ↦ flowOf v (τ y) (f y)) z :=
   ((contMDiffOn_flowOf hn hv).contMDiffAt
     ((isOpen_flowDomain (hv.of_le (by exact_mod_cast hn))).mem_nhds hz)).comp z (hτ.prodMk hf)
+
+/-- **The differential of a flow out of a map.** On a complete normed model space, at a point
+`(t, s)` where `φₜ(f s)` is defined, the differential of `(t, s) ↦ φₜ(f s)` sends a tangent vector
+`(r, w)` to `r v + dφₜ(df w)`. -/
+theorem mfderiv_flowOf_comp_apply [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] {f : N → M}
+    {p : ℝ × N} (hf : ContMDiffAt J I 1 f p.2) (hp : (p.1, f p.2) ∈ flowDomain v)
+    (w : TangentSpace (𝓘(ℝ).prod J) p) :
+    mfderiv (𝓘(ℝ).prod J) I (fun q : ℝ × N ↦ flowOf v q.1 (f q.2)) p w =
+      w.1 • v (flowOf v p.1 (f p.2)) +
+        mfderiv I I (flowOf v p.1) (f p.2) (mfderiv J I f p.2 w.2) := by
+  -- The trajectory through `f s` has velocity `v` at time `t`.
+  have hcurve : HasMFDerivAt 𝓘(ℝ) I (fun r ↦ flowOf v r (f p.2)) p.1
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (v (flowOf v p.1 (f p.2)))) := by
+    have hdom : {r | (r, f p.2) ∈ flowDomain v} ∈ 𝓝 p.1 :=
+      ((isOpen_flowDomain hv).preimage (continuous_id.prodMk continuous_const)).mem_nhds hp
+    exact ((isMIntegralCurveOn_flowOf hv (f p.2)).isMIntegralCurveAt hdom).hasMFDerivAt
+  -- The time-`t` map is differentiable at `f s`.
+  have hflow : MDifferentiableAt I I (flowOf v p.1) (f p.2) :=
+    (contMDiffAt_flowOf_comp le_rfl hv contMDiffAt_const contMDiffAt_id hp).mdifferentiableAt
+      one_ne_zero
+  have hcomp : mfderiv J I (flowOf v p.1 ∘ f) p.2 =
+      (mfderiv I I (flowOf v p.1) (f p.2)).comp (mfderiv J I f p.2) :=
+    mfderiv_comp p.2 hflow (hf.mdifferentiableAt one_ne_zero)
+  have hΦ : MDifferentiableAt (𝓘(ℝ).prod J) I (fun q : ℝ × N ↦ flowOf v q.1 (f q.2)) p :=
+    (contMDiffAt_flowOf_comp le_rfl hv contMDiffAt_fst (hf.comp p contMDiffAt_snd)
+      hp).mdifferentiableAt one_ne_zero
+  refine (mfderiv_prod_eq_add_apply hΦ).trans ?_
+  rw [hcurve.mfderiv]
+  -- `smulRight 1 v` sends `r` to `r • v`, reading `TangentSpace 𝓘(ℝ) t` as `ℝ`.
+  exact congrArg₂ (· + ·) rfl (DFunLike.congr_fun hcomp w.2)
 
 omit [CompleteSpace E] in
 /-- **Derivative along a flow line.** The derivative in time of a function `g` along the
