@@ -118,7 +118,7 @@ theorem linearIndependent_pow_of_map_eq_ratCast
     have h0 := Int.eq_zero_of_dvd_of_natAbs_lt_natAbs hdvd hlt
     exact hij (Fin.ext (by omega))
 
-variable [Nontrivial K] [Module.Finite K L]
+variable [Module.Finite K L]
 
 /-- If `w` restricts to a valuation `v` taking integer values on nonzero elements, the denominator
 of a rational value of `w` is at most the degree `[L : K]`. -/
@@ -126,6 +126,10 @@ theorem den_le_finrank_of_map_eq_ratCast
     (hint : ∀ x : K, x ≠ 0 → ∃ n : ℤ, v x = ((n : ℝ) : WithTop ℝ))
     (hw : ∀ x, w (algebraMap K L x) = v x) {α : L} {q : ℚ} (hα : w α = ((q : ℝ) : WithTop ℝ)) :
     q.den ≤ Module.finrank K L := by
+  rcases subsingleton_or_nontrivial K with hK | hK
+  · -- the hypotheses are contradictory: `L` is trivial, so `α = 0` has value `⊤`
+    rw [← one_smul K α, Subsingleton.elim (1 : K) 0, zero_smul, AddValuation.map_zero] at hα
+    exact absurd hα (WithTop.top_ne_coe)
   simpa using (linearIndependent_pow_of_map_eq_ratCast hint hw hα).fintype_card_le_finrank
 
 /-- **The ramification index is at most the degree.** If `w` restricts to a valuation `v` taking

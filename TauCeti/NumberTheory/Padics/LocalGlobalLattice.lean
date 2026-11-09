@@ -286,6 +286,92 @@ theorem IsLattice.exists_forall_pow_smul_mem (p : ℕ) [Fact p.Prime] {W : Type*
 
 variable {N : Submodule ℤ V} [N.IsLattice ℚ]
 
+/-- At each prime a power `p ^ k p` multiplies `X p` into `N_p` and `N_p` into `X p`, and `k p`
+vanishes at almost every prime. -/
+private theorem exists_pow_smul_mem_padicLocalization
+    (X : ∀ p : Nat.Primes, Submodule ℤ_[p] (ℚ_[p] ⊗[ℚ] V)) [∀ p, (X p).IsLattice ℚ_[p]]
+    (hX : ∀ᶠ p : Nat.Primes in cofinite, X p = N.padicLocalization p) :
+    ∃ k : Nat.Primes → ℕ, (∀ᶠ p in cofinite, k p = 0) ∧
+      (∀ (p : Nat.Primes) {x}, x ∈ X p → (p : ℤ_[p]) ^ k p • x ∈ N.padicLocalization p) ∧
+      ∀ (p : Nat.Primes) {x}, x ∈ N.padicLocalization p → (p : ℤ_[p]) ^ k p • x ∈ X p := by
+  classical
+  choose k₁ hk₁ using fun p : Nat.Primes ↦ IsLattice.exists_forall_pow_smul_mem p
+    (N.padicLocalization p) (IsLattice.fg (A := ℚ_[p]) (M := X p))
+  choose k₂ hk₂ using fun p : Nat.Primes ↦ IsLattice.exists_forall_pow_smul_mem p (X p)
+    (IsLattice.fg (A := ℚ_[p]) (M := N.padicLocalization p))
+  refine ⟨fun p ↦ if X p = N.padicLocalization p then 0 else k₁ p + k₂ p,
+    hX.mono fun p h ↦ by simp [h], fun p x hx ↦ ?_, fun p x hx ↦ ?_⟩
+  · by_cases h : X p = N.padicLocalization p
+    · simpa [h] using h ▸ hx
+    · simp only [h, ite_false, add_comm (k₁ p), pow_add, mul_smul]
+      exact smul_mem _ _ (hk₁ p x hx)
+  · by_cases h : X p = N.padicLocalization p
+    · simpa [h] using hx
+    · simp only [h, ite_false, pow_add, mul_smul]
+      exact smul_mem _ _ (hk₂ p x hx)
+
+omit [N.IsLattice ℚ] in
+/-- Away from `p`, the rational number `r = D' p / p ^ k p` is `q ^ k q` times a `q`-adic integer,
+so `r • w` stays in `X q` for `w ∈ N`; at `p` it lies in `X p` by hypothesis. -/
+private theorem one_tmul_smul_mem {X : ∀ p : Nat.Primes, Submodule ℤ_[p] (ℚ_[p] ⊗[ℚ] V)}
+    {k D' : Nat.Primes → ℕ}
+    (hkN : ∀ (p : Nat.Primes) {x}, x ∈ N.padicLocalization p → (p : ℤ_[p]) ^ k p • x ∈ X p)
+    (hD'q : ∀ {p q : Nat.Primes}, q ≠ p → (q : ℕ) ^ k q ∣ D' p) {p : Nat.Primes} {r : ℚ}
+    (hr : r = (D' p : ℚ) / (p : ℚ) ^ k p) {w : V} (hw : w ∈ N)
+    (hpX : (1 : ℚ_[p]) ⊗ₜ[ℚ] (r • w) ∈ X p) (q : Nat.Primes) :
+    (1 : ℚ_[q]) ⊗ₜ[ℚ] (r • w) ∈ X q := by
+  by_cases hqp : q = p
+  · subst hqp
+    exact hpX
+  · obtain ⟨m, hm⟩ := hD'q hqp
+    have hpq : ‖(p : ℚ_[q])‖ = 1 := Padic.norm_natCast_eq_one_iff.mpr
+      ((Nat.coprime_primes q.2 p.2).mpr fun h ↦ hqp (Subtype.ext h))
+    have hc : ‖(m : ℚ_[q]) / (p : ℚ_[q]) ^ k p‖ ≤ 1 := by
+      rw [norm_div, norm_pow, hpq, one_pow, div_one]
+      simpa using Padic.norm_int_le_one (p := q) m
+    obtain ⟨c, hc'⟩ : ∃ c : ℤ_[q], (c : ℚ_[q]) = (m : ℚ_[q]) / (p : ℚ_[q]) ^ k p :=
+      ⟨⟨_, hc⟩, rfl⟩
+    have hrq : (r : ℚ_[q]) = (q : ℚ_[q]) ^ k q * c := by
+      rw [hr, hm, hc']
+      push_cast
+      ring
+    have h : (1 : ℚ_[q]) ⊗ₜ[ℚ] (r • w) = (q : ℤ_[q]) ^ k q • c • (1 : ℚ_[q]) ⊗ₜ[ℚ] w := by
+      rw [algebra_compatible_smul ℚ_[q] ((q : ℤ_[q]) ^ k q), algebra_compatible_smul ℚ_[q] c,
+        PadicInt.algebraMap_apply, PadicInt.algebraMap_apply, tmul_smul,
+        ← algebraMap_smul ℚ_[q] r, eq_ratCast, hrq, smul_smul]
+      simp
+    rw [h]
+    exact hkN q (smul_mem _ _ (one_tmul_mem_padicLocalization hw))
+
+omit [N.IsLattice ℚ] in
+/-- The local step of `exists_isLattice_padicLocalization_eq`: every `y ∈ X p` has `D' p • y` of
+the form `1 ⊗ v + D' p • p ^ k p • t` with `t ∈ N_p` and `v ∈ V` such that `1 ⊗ v ∈ X q` at
+every prime `q`. -/
+private theorem exists_forall_one_tmul_mem_add
+    {X : ∀ p : Nat.Primes, Submodule ℤ_[p] (ℚ_[p] ⊗[ℚ] V)} {k D' : Nat.Primes → ℕ}
+    (hkX : ∀ (p : Nat.Primes) {x}, x ∈ X p → (p : ℤ_[p]) ^ k p • x ∈ N.padicLocalization p)
+    (hkN : ∀ (p : Nat.Primes) {x}, x ∈ N.padicLocalization p → (p : ℤ_[p]) ^ k p • x ∈ X p)
+    (hD'q : ∀ {p q : Nat.Primes}, q ≠ p → (q : ℕ) ^ k q ∣ D' p) {p : Nat.Primes} {y}
+    (hy : y ∈ X p) :
+    ∃ v : V, (∀ q : Nat.Primes, (1 : ℚ_[q]) ⊗ₜ[ℚ] v ∈ X q) ∧ ∃ t ∈ N.padicLocalization p,
+      (D' p : ℤ_[p]) • y = (1 : ℚ_[p]) ⊗ₜ[ℚ] v + (D' p : ℤ_[p]) • (p : ℤ_[p]) ^ k p • t := by
+  obtain ⟨w, hw, t, ht, hwt⟩ := exists_eq_one_tmul_add_pow_smul (hkX p hy) (2 * k p)
+  obtain ⟨r, hr⟩ : ∃ r : ℚ, r = (D' p : ℚ) / (p : ℚ) ^ k p := ⟨_, rfl⟩
+  have hy' : (D' p : ℤ_[p]) • y =
+      (1 : ℚ_[p]) ⊗ₜ[ℚ] (r • w) + (D' p : ℤ_[p]) • (p : ℤ_[p]) ^ k p • t := by
+    have hrp : (r : ℚ_[p]) * (p : ℚ_[p]) ^ k p = D' p := by
+      rw [hr, Rat.cast_div, Rat.cast_pow, Rat.cast_natCast, Rat.cast_natCast,
+        div_mul_cancel₀ _ (pow_ne_zero _ (Nat.cast_ne_zero.mpr p.2.ne_zero))]
+    rw [tmul_smul, ← algebraMap_smul ℚ_[p] r, eq_sub_of_add_eq hwt.symm, eq_ratCast]
+    simp only [algebra_compatible_smul ℚ_[p] (D' p : ℤ_[p]),
+      algebra_compatible_smul ℚ_[p] ((p : ℤ_[p]) ^ k p),
+      algebra_compatible_smul ℚ_[p] ((p : ℤ_[p]) ^ (2 * k p)), PadicInt.algebraMap_apply,
+      PadicInt.coe_pow, PadicInt.coe_natCast, ← hrp]
+    module
+  refine ⟨r • w, one_tmul_smul_mem hkN hD'q hr hw ?_, t, ht, hy'⟩
+  rw [eq_sub_of_add_eq hy'.symm]
+  exact sub_mem (smul_mem _ _ hy) (smul_mem _ _ (hkN p ht))
+
 open scoped Pointwise in
 /-- The existence half of `Submodule.existsUnique_isLattice_padicLocalization_eq`: the lattice
 `M = {v ∈ V | 1 ⊗ v ∈ X p for every p}` has `M_p = X p` at every prime. -/
@@ -293,128 +379,41 @@ private theorem exists_isLattice_padicLocalization_eq
     (X : ∀ p : Nat.Primes, Submodule ℤ_[p] (ℚ_[p] ⊗[ℚ] V)) [∀ p, (X p).IsLattice ℚ_[p]]
     (hX : ∀ᶠ p : Nat.Primes in cofinite, X p = N.padicLocalization p) :
     ∃ M : Submodule ℤ V, M.IsLattice ℚ ∧ ∀ p : Nat.Primes, M.padicLocalization p = X p := by
-  classical
-  -- Step 1: at each prime, a power `p ^ k p` multiplies `X p` into `N_p` and `N_p` into `X p`,
-  -- and `k p = 0` wherever `X p = N_p`.
-  choose k₁ hk₁ using fun p : Nat.Primes ↦ IsLattice.exists_forall_pow_smul_mem p
-    (N.padicLocalization p) (IsLattice.fg (A := ℚ_[p]) (M := X p))
-  choose k₂ hk₂ using fun p : Nat.Primes ↦ IsLattice.exists_forall_pow_smul_mem p (X p)
-    (IsLattice.fg (A := ℚ_[p]) (M := N.padicLocalization p))
-  let k : Nat.Primes → ℕ := fun p ↦ if X p = N.padicLocalization p then 0 else k₁ p + k₂ p
-  have hkX (p : Nat.Primes) {x} (hx : x ∈ X p) : (p : ℤ_[p]) ^ k p • x ∈ N.padicLocalization p := by
-    by_cases h : X p = N.padicLocalization p
-    · simpa [k, h] using h ▸ hx
-    · simp only [k, h, ite_false, add_comm (k₁ p), pow_add, mul_smul]
-      exact smul_mem _ _ (hk₁ p x hx)
-  have hkN (p : Nat.Primes) {x} (hx : x ∈ N.padicLocalization p) : (p : ℤ_[p]) ^ k p • x ∈ X p := by
-    by_cases h : X p = N.padicLocalization p
-    · simpa [k, h] using hx
-    · simp only [k, h, ite_false, pow_add, mul_smul]
-      exact smul_mem _ _ (hk₂ p x hx)
-  -- Step 2: the integer `D = ∏_p p ^ k p` and its parts `D' p` prime to `p`.
-  have hS : {p | k p ≠ 0}.Finite :=
-    (eventually_cofinite.mp hX).subset fun p hp h ↦ hp (by simp [k, h])
-  let S := hS.toFinset
-  let D' : Nat.Primes → ℕ := fun p ↦ ∏ q ∈ S.erase p, (q : ℕ) ^ k q
-  let D : ℕ := ∏ q ∈ S, (q : ℕ) ^ k q
-  have hkS {q : Nat.Primes} (hq : q ∉ S) : k q = 0 := by simpa [S] using hq
-  have hD (p : Nat.Primes) : D = (p : ℕ) ^ k p * D' p := by
-    by_cases hp : p ∈ S
-    · exact (Finset.mul_prod_erase S _ hp).symm
-    · simp [D, D', hkS hp, Finset.erase_eq_of_notMem hp]
-  have hD0 : D ≠ 0 := Finset.prod_ne_zero_iff.mpr fun q _ ↦ pow_ne_zero _ q.2.ne_zero
-  have hD'q {p q : Nat.Primes} (hqp : q ≠ p) : (q : ℕ) ^ k q ∣ D' p := by
-    by_cases hq : q ∈ S
-    · exact Finset.dvd_prod_of_mem _ (Finset.mem_erase.mpr ⟨hqp, hq⟩)
-    · simp [hkS hq]
-  have hD'u (p : Nat.Primes) : IsUnit (D' p : ℤ_[p]) := by
-    rw [PadicInt.isUnit_iff, PadicInt.norm_natCast_eq_one_iff,
-      Nat.Prime.coprime_iff_not_dvd p.2, Prime.dvd_finsetProd_iff p.2.prime]
-    rintro ⟨q, hq, hpq⟩
-    exact (Finset.mem_erase.mp hq).1
-      (Subtype.ext ((Nat.prime_dvd_prime_iff_eq p.2 q.2).mp (p.2.dvd_of_dvd_pow hpq))).symm
-  have hsmul (p : Nat.Primes) (c : ℕ) (v : V) :
-      (1 : ℚ_[p]) ⊗ₜ[ℚ] (c • v) = (c : ℤ_[p]) • (1 : ℚ_[p]) ⊗ₜ[ℚ] v := by
-    rw [tmul_smul, Nat.cast_smul_eq_nsmul]
+  obtain ⟨k, hk, hkX, hkN⟩ := exists_pow_smul_mem_padicLocalization X hX
+  obtain ⟨D, D', hD0, hD, hD'q, hD'u⟩ := Padic.exists_nat_eq_pow_mul k hk
   have hDsmul (p : Nat.Primes) (x : ℚ_[p] ⊗[ℚ] V) :
       (D : ℤ_[p]) • x = (D' p : ℤ_[p]) • (p : ℤ_[p]) ^ k p • x := by
     rw [hD p, smul_smul, Nat.cast_mul, Nat.cast_pow, mul_comm]
-  -- Step 3: the candidate `M = {v | 1 ⊗ v ∈ X p for every p}` lies between `D • N` and `D⁻¹ • N`.
+  -- The candidate `M = {v | 1 ⊗ v ∈ X p for every p}` lies between `D • N` and `D⁻¹ • N`.
   let M : Submodule ℤ V :=
     { carrier := {v | ∀ p : Nat.Primes, (1 : ℚ_[p]) ⊗ₜ[ℚ] v ∈ X p}
       add_mem' := fun ha hb p ↦ by simpa only [tmul_add] using add_mem (ha p) (hb p)
       zero_mem' := fun p ↦ by simp
       smul_mem' := fun n v hv p ↦ by simpa only [tmul_smul] using zsmul_mem (hv p) n }
   have hNM {v : V} (hv : v ∈ N) : D • v ∈ M := fun p ↦ by
-    rw [hsmul, hDsmul]
+    rw [tmul_smul, ← Nat.cast_smul_eq_nsmul ℤ_[p], hDsmul]
     exact smul_mem _ _ (hkN p (one_tmul_mem_padicLocalization hv))
   have hMN {v : V} (hv : v ∈ M) : D • v ∈ N := by
     refine (mem_iff_forall_one_tmul_mem_padicLocalization _).mpr fun p ↦ ?_
-    rw [hsmul, hDsmul]
+    rw [tmul_smul, ← Nat.cast_smul_eq_nsmul ℤ_[p], hDsmul]
     exact smul_mem _ _ (hkX p (hv p))
-  have hMlat : M.IsLattice ℚ := by
-    have hinj : Function.Injective (DistribSMul.toLinearMap ℤ V (D : ℤ)) := fun x y h ↦ by
-      simp only [DistribSMul.toLinearMap_apply, natCast_zsmul, ← Nat.cast_smul_eq_nsmul ℚ] at h
-      exact smul_right_injective V (Nat.cast_ne_zero.mpr hD0) h
-    have hfg : M.FG := fg_of_fg_map_injective _ hinj
-      (FG.of_le_of_isNoetherian (T := N) (map_le_iff_le_comap.mpr fun v hv ↦ by
-        simpa using hMN hv))
-    let a : ℚˣ := Units.mk0 (D : ℚ) (Nat.cast_ne_zero.mpr hD0)
-    refine IsLattice.of_le_of_isLattice_of_fg ℚ (M := a • N) (fun x hx ↦ ?_) hfg
-    obtain ⟨v, hv, rfl⟩ := mem_smul_pointwise_iff_exists _ _ _ |>.mp hx
-    simpa [a, Units.smul_def, Nat.cast_smul_eq_nsmul] using hNM hv
-  refine ⟨M, hMlat, fun p ↦ le_antisymm (padicLocalization_le_iff.mpr fun v hv ↦ hv p)
-    fun y hy ↦ ?_⟩
-  -- Step 4: `M_p ⊇ X p`. First, `p ^ k p • N_p ⊆ M_p`, because `D • N ⊆ M` and `D' p` is a unit.
+  refine ⟨M, IsLattice.of_nsmul_mem_of_nsmul_mem hD0 (fun v hv ↦ hNM hv) fun v hv ↦ hMN hv,
+    fun p ↦ le_antisymm (padicLocalization_le_iff.mpr fun v hv ↦ hv p) fun y hy ↦ ?_⟩
+  -- `M_p ⊇ X p`. First, `p ^ k p • N_p ⊆ M_p`, because `D • N ⊆ M` and `D' p` is a unit.
   have hNMp {x} (hx : x ∈ N.padicLocalization p) :
       (p : ℤ_[p]) ^ k p • x ∈ M.padicLocalization p := by
     have hle : N.padicLocalization p ≤
         (M.padicLocalization p).comap (DistribSMul.toLinearMap ℤ_[p] _ (D : ℤ_[p])) :=
       padicLocalization_le_iff.mpr fun v hv ↦ by
-        simpa [hsmul] using one_tmul_mem_padicLocalization (p := p) (hNM hv)
+        rw [mem_comap, DistribSMul.toLinearMap_apply, Nat.cast_smul_eq_nsmul, ← tmul_smul]
+        exact one_tmul_mem_padicLocalization (hNM hv)
     have h := hle hx
     rw [mem_comap, DistribSMul.toLinearMap_apply, hDsmul] at h
     exact (smul_mem_iff_of_isUnit _ (hD'u p)).mp h
-  -- Approximate `p ^ k p • y ∈ N_p` by `1 ⊗ w`, `w ∈ N`, modulo `p ^ (2 k p) • N_p`; then
-  -- `v = (D' p / p ^ k p) • w` lies in `M` and `D' p • y = 1 ⊗ v + D' p • p ^ k p • t`.
-  obtain ⟨w, hw, t, ht, hwt⟩ := exists_eq_one_tmul_add_pow_smul (hkX p hy) (2 * k p)
-  obtain ⟨r, hr⟩ : ∃ r : ℚ, r = (D' p : ℚ) / (p : ℚ) ^ k p := ⟨_, rfl⟩
-  have hcast (q : Nat.Primes) (c : ℤ_[q]) (x : ℚ_[q] ⊗[ℚ] V) : c • x = (c : ℚ_[q]) • x :=
-    (algebraMap_smul ℚ_[q] c x).symm
-  have hy' : (D' p : ℤ_[p]) • y =
-      (1 : ℚ_[p]) ⊗ₜ[ℚ] (r • w) + (D' p : ℤ_[p]) • (p : ℤ_[p]) ^ k p • t := by
-    have hrp : (r : ℚ_[p]) * (p : ℚ_[p]) ^ k p = D' p := by
-      rw [hr, Rat.cast_div, Rat.cast_pow, Rat.cast_natCast, Rat.cast_natCast,
-        div_mul_cancel₀ _ (pow_ne_zero _ (Nat.cast_ne_zero.mpr p.2.ne_zero))]
-    rw [tmul_smul, ← algebraMap_smul ℚ_[p] r, eq_sub_of_add_eq hwt.symm, eq_ratCast]
-    simp only [hcast, PadicInt.coe_pow, PadicInt.coe_natCast, ← hrp]
-    module
-  have hv : r • w ∈ M := fun q ↦ by
-    by_cases hqp : q = p
-    · subst hqp
-      rw [eq_sub_of_add_eq hy'.symm]
-      exact sub_mem (smul_mem _ _ hy) (smul_mem _ _ (hkN q ht))
-    · -- Away from `p`, `r` is `q ^ k q` times a `q`-adic integer `c`.
-      obtain ⟨m, hm⟩ := hD'q hqp
-      have hpq : ‖(p : ℚ_[q])‖ = 1 := Padic.norm_natCast_eq_one_iff.mpr
-        ((Nat.coprime_primes q.2 p.2).mpr fun h ↦ hqp (Subtype.ext h))
-      have hc : ‖(m : ℚ_[q]) / (p : ℚ_[q]) ^ k p‖ ≤ 1 := by
-        rw [norm_div, norm_pow, hpq, one_pow, div_one]
-        simpa using Padic.norm_int_le_one (p := q) m
-      obtain ⟨c, hc'⟩ : ∃ c : ℤ_[q], (c : ℚ_[q]) = (m : ℚ_[q]) / (p : ℚ_[q]) ^ k p :=
-        ⟨⟨_, hc⟩, rfl⟩
-      have hrq : (r : ℚ_[q]) = (q : ℚ_[q]) ^ k q * c := by
-        rw [hr, hm, hc']
-        push_cast
-        ring
-      have h : (1 : ℚ_[q]) ⊗ₜ[ℚ] (r • w) = (q : ℤ_[q]) ^ k q • c • (1 : ℚ_[q]) ⊗ₜ[ℚ] w := by
-        rw [hcast q c, hcast q, tmul_smul, ← algebraMap_smul ℚ_[q] r, eq_ratCast, hrq, smul_smul]
-        simp
-      rw [h]
-      exact hkN q (smul_mem _ _ (one_tmul_mem_padicLocalization hw))
+  obtain ⟨v, hv, t, ht, hy'⟩ := exists_forall_one_tmul_mem_add hkX hkN hD'q hy
   refine (smul_mem_iff_of_isUnit _ (hD'u p)).mp ?_
   rw [hy']
-  exact add_mem (one_tmul_mem_padicLocalization hv) (smul_mem _ _ (hNMp ht))
+  exact add_mem (one_tmul_mem_padicLocalization (N := M) hv) (smul_mem _ _ (hNMp ht))
 
 /-- **The local–global correspondence for lattices.** Let `N` be a full lattice in `V` and, for
 every prime `p`, let `X p` be a full `ℤ_p`-lattice in `ℚ_p ⊗[ℚ] V`, with `X p = N_p` at almost

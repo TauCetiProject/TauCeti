@@ -302,7 +302,7 @@ namespace ContinuousAffineMap
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E]
-  [Module 𝕜 E] [ContinuousSMul 𝕜 E] [T2Space E] [FiniteDimensional 𝕜 E]
+  [Module 𝕜 E] [ContinuousSMul 𝕜 E] [FiniteDimensional 𝕜 E]
   [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F]
   [Module 𝕜 F] [ContinuousSMul 𝕜 F] [T2Space F]
 
@@ -311,6 +311,7 @@ the translate of its linear part, which is an injective linear map, by `f 0`. Th
 companion of `LinearMap.isClosedEmbedding_of_injective`. -/
 theorem isClosedEmbedding_of_injective {f : E →ᴬ[𝕜] F} (hf : Function.Injective f) :
     Topology.IsClosedEmbedding f := by
+  have : T2Space E := T2Space.of_injective_continuous hf f.cont
   have hker : LinearMap.ker (f.contLinear : E →ₗ[𝕜] F) = ⊥ :=
     LinearMap.ker_eq_bot.2 (f.toAffineMap.linear_injective_iff.2 hf)
   have hf' : ⇑f = (· + f 0) ∘ f.contLinear := by

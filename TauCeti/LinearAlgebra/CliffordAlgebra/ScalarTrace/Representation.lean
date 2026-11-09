@@ -165,7 +165,7 @@ theorem scalarTrace_eq_inv_two_pow_mul_trace (a : CliffordAlgebra (Q.baseChange 
       CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S) := by
     rw [hlsmul]
     exact ρ.bijective
-  have hdim := finrank_eq_two_pow_of_bijective_lsmul (Q.baseChange ℂ) hbij heven
+  have hdim := finrank_eq_two_pow_of_bijective_lsmul (Q.baseChange ℂ) hbij
   rw [finrank_baseChange] at hdim
   have htrace := trace_map_eq_finrank_mul_scalarTrace hQ hevenR ρ.toAlgHom a
   simp only [AlgEquiv.toAlgHom_apply] at htrace
