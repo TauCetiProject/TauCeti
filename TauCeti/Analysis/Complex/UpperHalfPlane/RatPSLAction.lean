@@ -60,7 +60,7 @@ underlying `GL (Fin 2) ℝ` matrix is that map applied to `g` definitionally, so
 the two spellings closes by `rfl`. -/
 noncomputable def ratPosToRealPos : GL(2, ℚ)⁺ →* GL(2, ℝ)⁺ :=
   (Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ)).restrict fun _ ↦
-    Matrix.GeneralLinearGroup.map_mem_glpos Rat.cast_strictMono
+    (Matrix.GeneralLinearGroup.map_mem_glpos_iff Rat.cast_strictMono).mpr
 
 /-- The underlying `GL (Fin 2) ℝ` matrix of `ratPosToRealPos g` is the entrywise change of
 scalars `ℚ → ℝ` applied to `g`. -/
