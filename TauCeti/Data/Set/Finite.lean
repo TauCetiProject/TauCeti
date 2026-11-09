@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Set.Card
 public import Mathlib.Basic.Finite.Sigma
+public import Mathlib.Data.Fin.Tuple.Basic
 
 /-!
 # Finite subsets of a set as finsets of the subtype
@@ -15,7 +16,8 @@ A finite set `s ⊆ S` is the image under `Subtype.val` of a finset of the subty
 number of elements (`Set.Finite.exists_finset_subtype_image_val_eq`). This is the reading of a
 finite set of elements of a subgroup, a submodule or any other set-like structure as a `Finset` of
 that structure, which is the form the generation and rank statements over a `Finset` of a subgroup
-take.
+take. Every entry of a concatenation `Fin.append u v` of tuples of finite sets is finite
+(`Fin.finite_append_apply`).
 -/
 
 public section
@@ -48,3 +50,12 @@ theorem Set.exists_enumeration_finite_family {ι A : Type*} [Finite ι] (T : ι 
   exact ⟨m, fun j ↦ (e.symm j).1, fun j ↦ (e.symm j).2, fun j ↦ (e.symm j).2.2,
     fun i a ha ↦ ⟨e ⟨i, a, ha⟩, by simp,
       congrArg (fun x : (i : ι) × T i ↦ (x.2 : A)) (e.symm_apply_apply _)⟩⟩
+
+namespace Fin
+
+/-- Every entry of the concatenation of two tuples of finite sets is finite. -/
+theorem finite_append_apply {α : Type*} {k m : ℕ} {u : Fin k → Set α} {v : Fin m → Set α}
+    (hu : ∀ i, (u i).Finite) (hv : ∀ j, (v j).Finite) : ∀ i, (Fin.append u v i).Finite :=
+  Fin.addCases (fun j ↦ by simpa using hu j) fun j ↦ by simpa using hv j
+
+end Fin
