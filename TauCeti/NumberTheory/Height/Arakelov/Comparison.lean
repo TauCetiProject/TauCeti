@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Height.Arakelov.Basic
 public import TauCeti.NumberTheory.Height.ProjectiveTuple
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Comparison of Euclidean and sup heights
@@ -93,10 +94,7 @@ private theorem rpow_sum_sq_eq_sqrt_pow (w : InfinitePlace K) (y : ι → K) :
     (∑ i, ‖w.embedding (y i)‖ ^ 2) ^ ((w.mult : ℝ) / 2) =
       √(∑ i, ‖w.embedding (y i)‖ ^ 2) ^ w.mult := by
   let _ := Fintype.ofFinite ι
-  rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast,
-    ← Real.rpow_mul (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)]
-  congr 1
-  ring
+  rw [Real.pow_sqrt_eq_rpow (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)]
 
 variable [NumberField K]
 
@@ -173,7 +171,7 @@ theorem arakelovMulHeight_le_pow_finrank_of_forall_le [Fintype ι] {y : ι → �
   have hy' : (fun i ↦ (y i : K)) ≠ 0 := mt RingOfIntegers.coe_tuple_eq_zero_iff.mp hy
   rw [arakelovMulHeight_eq hy', ← InfinitePlace.sum_mult_eq, ← Finset.prod_pow_eq_pow_sum]
   refine (mul_le_of_le_one_right (Finset.prod_nonneg fun w _ ↦ by positivity)
-    (NumberField.finprod_iSup_finitePlace_le_one hy)).trans ?_
+    (NumberField.finprod_iSup_finitePlace_le_one y)).trans ?_
   refine Finset.prod_le_prod₀ (fun w _ ↦ by positivity) fun w _ ↦ ?_
   rw [rpow_sum_sq_eq_sqrt_pow]
   exact pow_le_pow_left₀ (Real.sqrt_nonneg _) (hc w) _

@@ -36,6 +36,45 @@ open Function Filter Metric Polynomial Set Topology
 
 namespace TauCeti.Polynomial
 
+/-- A continuous family of degree `d`, separable over a punctured disc, has `d` pointwise
+distinct continuous root functions after a power substitution of exponent divisible by `d !`.
+The parameter space can be any simply connected, locally path connected space. -/
+theorem exists_continuousMap_isRoot_powerSubstitution
+    {U : Type*} [TopologicalSpace U] [SimplyConnectedSpace U] [LocallyPathConnectedSpace U]
+    {d n : ℕ} {R R' : ℝ} {F : U × ↥(ball (0 : ℂ) R \ {0}) → ℂ[X]}
+    (hF : ∀ i ≤ d, Continuous fun b => (F b).coeff i)
+    (hdeg : ∀ b, (F b).natDegree = d) (hsep : ∀ b, (F b).Separable)
+    (hn : n ≠ 0) (hR : R' ^ n ≤ R) (hdvd : d.factorial ∣ n) :
+    ∃ r : Fin d → C(U × ↥(ball (0 : ℂ) R' \ {0}), ℂ), ∀ b,
+      Injective (fun i => r i b) ∧ ∀ i, (F (powerSubstitution U hn hR b)).IsRoot (r i b) := by
+  classical
+  obtain hempty | ⟨⟨a⟩⟩ := isEmpty_or_nonempty (U × ↥(ball (0 : ℂ) R' \ {0}))
+  · let := hempty
+    exact ⟨fun _ => 0, fun b => isEmptyElim b⟩
+  let B := U × ↥(ball (0 : ℂ) R \ {0})
+  let Z := {q : B × ℂ // (F q.1).IsRoot q.2}
+  let p : Z → B := fun q => q.1.1
+  let q := powerSubstitution U hn hR
+  -- Lift all points of one fibre, then use their root coordinates as the global labels.
+  have hp : IsCoveringMap p := isCoveringMap_fst_isRoot hF hdeg hsep
+  let : Finite (p ⁻¹' {q a}) := finite_preimage_fst_isRoot (hsep _).ne_zero
+  have hcard : Nat.card (p ⁻¹' {q a}) = d := natCard_preimage_fst_isRoot (hdeg _) (hsep _)
+  obtain ⟨L, hL, hinj⟩ := hp.exists_continuousMap_lifts_powerSubstitution hn hR a
+    (by rwa [hcard])
+  let := Fintype.ofFinite (p ⁻¹' {q a})
+  let e : Fin d ≃ p ⁻¹' {q a} :=
+    (Fintype.equivFinOfCardEq (by rwa [← Nat.card_eq_fintype_card])).symm
+  let r : Fin d → C(U × ↥(ball (0 : ℂ) R' \ {0}), ℂ) := fun i =>
+    ⟨fun b => (L (e i) b).1.2,
+      ((continuous_snd : Continuous (Prod.snd : B × ℂ → ℂ)).comp
+        (continuous_subtype_val : Continuous (Subtype.val : Z → B × ℂ))).comp (L (e i)).continuous⟩
+  have hbase : ∀ i b, p (L (e i) b) = q b := fun i b => congrFun (hL (e i)).2 b
+  refine ⟨r, fun b => ⟨?_, fun i => (hbase i b) ▸ (L (e i) b).2⟩⟩
+  intro i j hij
+  apply e.injective
+  apply hinj b
+  exact Subtype.ext (Prod.ext ((hbase i b).trans (hbase j b).symm) hij)
+
 /-- A continuous monic family of degree `d`, separable over a punctured disc, splits into `d`
 pointwise distinct continuous linear factors after a power substitution of exponent divisible by
 `d !`. The parameter space can be any simply connected, locally path connected space. -/
@@ -48,39 +87,9 @@ theorem exists_continuousMap_prod_X_sub_C_powerSubstitution
     ∃ r : Fin d → C(U × ↥(ball (0 : ℂ) R' \ {0}), ℂ), ∀ b,
       Injective (fun i => r i b) ∧
       F (powerSubstitution U hn hR b) = ∏ i, (X - C (r i b)) := by
-  classical
-  obtain hempty | ⟨⟨a⟩⟩ := isEmpty_or_nonempty (U × ↥(ball (0 : ℂ) R' \ {0}))
-  · let := hempty
-    exact ⟨fun _ => 0, fun b => isEmptyElim b⟩
-  let B := U × ↥(ball (0 : ℂ) R \ {0})
-  let Z := {q : B × ℂ // (F q.1).IsRoot q.2}
-  let p : Z → B := fun q => q.1.1
-  let q := powerSubstitution U hn hR
-  -- Lift all points of one fibre, then use their root coordinates as the global labels.
-  have hp : IsCoveringMap p := isCoveringMap_fst_isRoot hF hdeg hsep
-  let : Finite (p ⁻¹' {q a}) := finite_preimage_fst_isRoot (hmonic (q a)).ne_zero
-  have hcard : Nat.card (p ⁻¹' {q a}) = d := natCard_preimage_fst_isRoot (hdeg _) (hsep _)
-  obtain ⟨L, hL, hinj⟩ := hp.exists_continuousMap_lifts_powerSubstitution hn hR a
-    (by rwa [hcard])
-  let := Fintype.ofFinite (p ⁻¹' {q a})
-  let e : Fin d ≃ p ⁻¹' {q a} :=
-    (Fintype.equivFinOfCardEq (by rwa [← Nat.card_eq_fintype_card])).symm
-  let r : Fin d → C(U × ↥(ball (0 : ℂ) R' \ {0}), ℂ) := fun i =>
-    ⟨fun b => (L (e i) b).1.2,
-      ((continuous_snd : Continuous (Prod.snd : B × ℂ → ℂ)).comp
-        (continuous_subtype_val : Continuous (Subtype.val : Z → B × ℂ))).comp (L (e i)).continuous⟩
-  have hbase : ∀ i b, p (L (e i) b) = q b := fun i b => congrFun (hL (e i)).2 b
-  have hroot : ∀ b i, (F (q b)).IsRoot (r i b) := by
-    intro b i
-    exact (hbase i b) ▸ (L (e i) b).2
-  refine ⟨r, fun b => ?_⟩
-  have hrinj : Injective (fun i => r i b) := by
-    intro i j hij
-    apply e.injective
-    apply hinj b
-    exact Subtype.ext (Prod.ext ((hbase i b).trans (hbase j b).symm) hij)
-  exact ⟨hrinj, (Sym.toMonic_ofFn_eq_of_forall_isRoot (hmonic _) (hdeg _)
-    hrinj (hroot b)).symm.trans (Sym.toMonic_ofFn _)⟩
+  obtain ⟨r, hr⟩ := exists_continuousMap_isRoot_powerSubstitution hF hdeg hsep hn hR hdvd
+  exact ⟨r, fun b => ⟨(hr b).1, (Sym.toMonic_ofFn_eq_of_forall_isRoot (hmonic _) (hdeg _)
+    (hr b).1 (hr b).2).symm.trans (Sym.toMonic_ofFn _)⟩⟩
 
 /-- A monic family with analytic coefficients and simple roots on an open simply connected
 parameter domain times a punctured disc splits into pointwise distinct analytic linear factors

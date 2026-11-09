@@ -218,7 +218,7 @@ theorem hasDirichletDensity_iff_of_card_fiber_of_negligible {Z : Set (HeightOneS
     T.HasDirichletDensity δ ↔ S.HasDirichletDensity (δ / c) := by
   -- Remove the exceptional primes on both sides; away from them the fibre count is exact.
   have hcore := hasDirichletDensity_iff_of_card_fiber hmaps hnorm hc
-    (fun 𝔭 h𝔭 ↦ (TauCeti.natCard_fiber_sdiff_preimage π h𝔭.2).trans (hfiber 𝔭 h𝔭)) (δ := δ)
+    (fun 𝔭 h𝔭 ↦ (Set.natCard_fiber_sdiff_preimage π h𝔭.2).trans (hfiber 𝔭 h𝔭)) (δ := δ)
   -- The primes of `T` over `Z` are negligible, since `π` has bounded fibres over `Z`.
   have hTZ : (T \ π ⁻¹' Z) ∆ T = T ∩ π ⁻¹' Z := by
     ext 𝔓
@@ -411,7 +411,7 @@ theorem hasNaturalDensity_iff_of_card_fiber_of_negligible {Z : Set (HeightOneSpe
   -- Away from the exceptional primes the fibre count is exact.
   rw [← hasNaturalDensity_iff_of_symmDiff hT,
     hasNaturalDensity_iff_of_card_fiber hmaps hnorm hc
-      fun 𝔭 h𝔭 ↦ (TauCeti.natCard_fiber_sdiff_preimage π h𝔭.2).trans (hfiber 𝔭 h𝔭),
+      fun 𝔭 h𝔭 ↦ (Set.natCard_fiber_sdiff_preimage π h𝔭.2).trans (hfiber 𝔭 h𝔭),
     hasNaturalDensity_iff_of_symmDiff hS]
 
 /-- **Natural densities along contraction.** Let `E / K` be an extension of number fields, `T` a

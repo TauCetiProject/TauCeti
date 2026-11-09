@@ -75,7 +75,7 @@ theorem IsMaximalTotallyRealMap.existsUnique_add (h : IsMaximalTotallyRealMap I'
   (h x).existsUnique_add v
 
 /-- A maximal totally real tangent image has half the ambient dimension. -/
-theorem IsMaximalTotallyRealMap.two_mul_finrank_range [FiniteDimensional ℝ E]
+theorem IsMaximalTotallyRealMap.two_mul_finrank_range
     (h : IsMaximalTotallyRealMap I' I A f) (x : N) :
     2 * finrank ℝ (LinearMap.range (mfderiv I' I f x).toLinearMap) = finrank ℝ E := by
   have hd := (h x).two_mul_finrank_eq
@@ -84,7 +84,7 @@ theorem IsMaximalTotallyRealMap.two_mul_finrank_range [FiniteDimensional ℝ E]
 
 /-- If the differential is injective at a point of a maximal totally real map, its source has
 half the ambient dimension. -/
-theorem IsMaximalTotallyRealMap.two_mul_finrank [FiniteDimensional ℝ E]
+theorem IsMaximalTotallyRealMap.two_mul_finrank
     (h : IsMaximalTotallyRealMap I' I A f) {x : N}
     (hx : Function.Injective (mfderiv I' I f x)) : 2 * finrank ℝ F = finrank ℝ E := by
   simpa only [LinearMap.finrank_range_of_inj hx, finrank_tangentSpace] using
@@ -92,7 +92,7 @@ theorem IsMaximalTotallyRealMap.two_mul_finrank [FiniteDimensional ℝ E]
 
 /-- Maximal total reality and half-dimensionality force the differential to be injective;
 no separate injectivity assumption is needed. -/
-theorem IsMaximalTotallyRealMap.mfderiv_injective [FiniteDimensional ℝ E]
+theorem IsMaximalTotallyRealMap.mfderiv_injective
     [FiniteDimensional ℝ F] (h : IsMaximalTotallyRealMap I' I A f)
     (hdim : 2 * finrank ℝ F = finrank ℝ E) (x : N) :
     Function.Injective (mfderiv I' I f x) := by

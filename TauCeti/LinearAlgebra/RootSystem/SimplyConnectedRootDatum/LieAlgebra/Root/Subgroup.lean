@@ -56,9 +56,10 @@ nilpotently.
 
 ## Main results
 
-* `TauCeti.DynkinType.isNilpotent_apply_ι_chevalleySystem` and
-  `TauCeti.DynkinType.dividedPower_chevalleySystem_smul_mem`: every root vector acts nilpotently,
-  with divided powers preserving the lattice.
+* `TauCeti.DynkinType.isNilpotent_apply_ι_chevalleySystem`,
+  `TauCeti.DynkinType.dividedPower_chevalleySystem_smul_mem` and
+  `TauCeti.DynkinType.dividedPower_zsmul_chevalleySystem_smul_mem`: every root vector acts
+  nilpotently, with divided powers of its integer multiples preserving the lattice.
 * `TauCeti.DynkinType.chevalleyRootSubgroup_simpleIndex` and
   `TauCeti.DynkinType.chevalleyRootSubgroup_reflectionPerm_simpleIndex`: at `±αᵢ` these are the
   simple root subgroups of the Kostant data.
@@ -140,6 +141,31 @@ theorem dividedPower_chevalleySystem_smul_mem (γ : Fin t.numRoots) (n : ℕ) :
       (isNilpotent_ad_rootGenerator_inl i) (isNilpotent_ad_rootGenerator_inr i)]
     exact dividedPower_weylAut_smul_mem _ _ ρ M hM (hnil (.inl i)) (hnil (.inr i)) _ _ _ n (hz n)
 
+include hM hnil in
+/-- The all-root Kostant form preserves any subgroup stable under the simple-generator form
+in a representation in which the simple root generators act nilpotently.
+The Cartan generators are unchanged. -/
+theorem kostantForm_chevalleySystem_smul_mem :
+    ∀ u ∈ kostantForm (t.chevalleySystem ht) (t.lieBasis ht).h,
+      ∀ v ∈ M, ρ u • v ∈ M := by
+  apply kostantForm_apply_mem
+    (t.chevalleySystem ht) (t.lieBasis ht).h ρ M.toIntSubmodule
+  · intro γ n v hv
+    rw [Associative.map_dividedPower]
+    exact dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ n v hv
+  · intro i n v hv
+    exact hM _ (ringChoose_mem_kostantForm _ _ i n) v hv
+
+include hM hnil in
+/-- Integer multiples of every root vector also act on a Kostant-stable lattice with integral
+divided powers: `(z • ρ(e_γ))ⁿ / n! = zⁿ • ρ(e_γ)ⁿ / n!` preserves `M`. -/
+theorem dividedPower_zsmul_chevalleySystem_smul_mem (z : ℤ) (γ : Fin t.numRoots) (n : ℕ) :
+    ∀ v ∈ M, Associative.dividedPower n
+      (z • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht γ))) • v ∈ M := by
+  intro v hv
+  rw [Associative.dividedPower_zsmul, smul_assoc]
+  exact M.zsmul_mem (dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ n v hv) _
+
 /-! ## The root subgroups -/
 
 -- Match tensor products to the `ℤ`-algebra instance stored by `CommAlgCat` objects.
@@ -168,6 +194,30 @@ theorem chevalleyRootSubgroup_val (γ : Fin t.numRoots) (A : CommAlgCat ℤ) (u 
     ← LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap, MulEquiv.apply_symm_apply,
     baseChangeExpHom_apply, baseChangeExpLinearEquiv_toLinearMap]
 
+/-- The all-root Kostant parameter is the Chevalley root subgroup on any lattice stable under
+both Kostant forms. -/
+theorem kostantRootSubgroupParam_chevalleySystem
+    (hAll : ∀ u ∈ kostantForm (t.chevalleySystem ht) (t.lieBasis ht).h,
+      ∀ v ∈ M, ρ u v ∈ M)
+    (γ : Fin t.numRoots) (A : CommAlgCat ℤ) :
+    kostantRootSubgroupParam (t.chevalleySystem ht) (t.lieBasis ht).h ρ M hAll γ
+        (isNilpotent_apply_ι_chevalleySystem ρ hnil γ) A =
+      chevalleyRootSubgroup ρ M hM hnil γ A := by
+  refine MonoidHom.ext fun u => Units.ext <| LinearMap.ext fun z => ?_
+  rw [kostantRootSubgroupParam_val_apply, chevalleyRootSubgroup_val]
+
+/-- Root-subgroup points commute when their Chevalley root vectors have zero bracket. -/
+theorem commute_chevalleyRootSubgroup_of_lie_eq_zero {α β : Fin t.numRoots}
+    (hαβ : ⁅t.chevalleySystem ht α, t.chevalleySystem ht β⁆ = 0)
+    (A : CommAlgCat ℤ) (u v : A) :
+    Commute (chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u))
+      (chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v)) := by
+  apply Units.ext
+  simpa only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd] using
+    (commute_baseChangeExp M (commute_of_lie_eq_zero ρ hαβ)
+      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil α)
+      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil β) u v).eq
+
 /-- A bracket `⁅e_α, e_β⁆ = c • e_γ` with `e_γ` commuting with both root vectors gives the
 one-factor Chevalley commutator formula over every commutative value ring. -/
 theorem commutatorElement_chevalleyRootSubgroup_of_lie_eq {α β γ : Fin t.numRoots} {c : ℤ}
@@ -185,11 +235,7 @@ theorem commutatorElement_chevalleyRootSubgroup_of_lie_eq {α β γ : Fin t.numR
   have hxz := commute_of_lie_eq_zero ρ hαγ
   have hyz := commute_of_lie_eq_zero ρ hβγ
   have hdp := dividedPower_chevalleySystem_smul_mem ρ M hM hnil
-  have hscaled (n : ℕ) (z : V) (hz : z ∈ M) :
-      Associative.dividedPower n
-        (c • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht γ))) • z ∈ M := by
-    rw [Associative.dividedPower_zsmul, smul_assoc]
-    exact M.zsmul_mem (hdp γ n z hz) _
+  have hscaled := dividedPower_zsmul_chevalleySystem_smul_mem ρ M hM hnil c γ
   have hprod :
       chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) *
         chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) =
@@ -205,13 +251,8 @@ theorem commutatorElement_chevalleyRootSubgroup_of_lie_eq {α β γ : Fin t.numR
       (hxz.smul_right c) (hyz.smul_right c)
       (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
       (isNilpotent_apply_ι_chevalleySystem ρ hnil β) (hdp α) (hdp β) hscaled u v
-  have hcomm (w : A) : Commute
-      (chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v))
-      (chevalleyRootSubgroup ρ M hM hnil γ A (Multiplicative.ofAdd w)) := by
-    apply Units.ext
-    simpa only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd] using
-      (commute_baseChangeExp M hyz (hdp β) (hdp γ) v w).eq
-  rw [commutatorElement_def, hprod, mul_inv_cancel_right, (hcomm _).eq]
+  rw [commutatorElement_def, hprod, mul_inv_cancel_right,
+    (commute_chevalleyRootSubgroup_of_lie_eq_zero ρ M hM hnil hβγ A v _).eq]
   simp
 
 /-- **At a simple root the root subgroup is the simple root subgroup** `xᵢ` of the Kostant data. -/

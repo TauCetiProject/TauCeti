@@ -97,11 +97,9 @@ def basisCoverage (hB : Opens.IsBasis B) : Coverage (Opens X) where
   coverings U := {R | IsBasisCover B R}
   pullback := by
     rintro U V f R ⟨_, hcov⟩
-    refine ⟨fun W _ ↦ W ∈ B ∧ ∃ (W' : Opens X) (e : W' ⟶ U), R e ∧ W ≤ W', ⟨?_, ?_⟩, ?_⟩
-    · rintro W _ ⟨hW, -⟩
-      exact hW
-    · intro x hx
-      obtain ⟨W', e, he, hxW'⟩ := hcov x (f.le hx)
+    refine ⟨fun W _ ↦ W ∈ B ∧ ∃ (W' : Opens X) (e : W' ⟶ U), R e ∧ W ≤ W',
+      ⟨fun _ _ h ↦ h.1, fun x hx ↦ ?_⟩, ?_⟩
+    · obtain ⟨W', e, he, hxW'⟩ := hcov x (f.le hx)
       obtain ⟨W, hWB, hxW, hWle⟩ := Opens.isBasis_iff_nbhd.mp hB (U := W' ⊓ V) ⟨hxW', hx⟩
       exact ⟨W, homOfLE (hWle.trans inf_le_right), ⟨hWB, W', e, he, hWle.trans inf_le_left⟩, hxW⟩
     · rintro W g ⟨-, W', e, he, hWle⟩
@@ -124,13 +122,11 @@ theorem basisCoverage_toGrothendieck (hB : Opens.IsBasis B) :
     obtain ⟨V, f, hf, hxV⟩ := hcov x hx
     exact ⟨V, f, ⟨V, 𝟙 V, f, hf, Category.id_comp f⟩, hxV⟩
   · -- conversely, shrink each member of a covering sieve to basis elements
-    refine Coverage.saturate_of_superset _ ?_ (Coverage.Saturate.of U
-      (fun V (f : V ⟶ U) ↦ V ∈ B ∧ S f) ⟨fun _ _ h ↦ h.1, fun x hx ↦ ?_⟩)
-    · rintro V f ⟨W, i, e, ⟨-, he⟩, rfl⟩
-      exact S.downward_closed he i
-    · obtain ⟨W, e, he, hxW⟩ := hS x hx
-      obtain ⟨V, hVB, hxV, hVle⟩ := Opens.isBasis_iff_nbhd.mp hB (U := W) hxW
-      exact ⟨V, homOfLE (hVle.trans e.le), ⟨hVB, S.downward_closed he (homOfLE hVle)⟩, hxV⟩
+    refine Coverage.mem_toGrothendieck_sieves_of_superset _ (R := fun V _ ↦ V ∈ B ∧ S _)
+      (fun _ _ h ↦ h.2) ⟨fun _ _ h ↦ h.1, fun x hx ↦ ?_⟩
+    obtain ⟨W, e, he, hxW⟩ := hS x hx
+    obtain ⟨V, hVB, hxV, hVle⟩ := Opens.isBasis_iff_nbhd.mp hB (U := W) hxW
+    exact ⟨V, homOfLE (hVle.trans e.le), ⟨hVB, S.downward_closed he (homOfLE hVle)⟩, hxV⟩
 
 /-- **The basis sheaf criterion.** A presheaf on `X` is a sheaf exactly when it satisfies the sheaf
 condition for covers by basis elements. This is the criterion the structure presheaf of an adic
@@ -140,7 +136,7 @@ theorem isSheaf_iff_isSheafFor_basisCoverage (hB : Opens.IsBasis B)
     Presieve.IsSheaf (Opens.grothendieckTopology X) P ↔
       ∀ ⦃U : Opens X⦄ (R : Presieve U), IsBasisCover B R → Presieve.IsSheafFor P R := by
   rw [← basisCoverage_toGrothendieck hB, Presieve.isSheaf_coverage]
-  rfl
+  simp only [mem_basisCoverage]
 
 /-- **The basis sheaf criterion in an arbitrary target category.** `Presheaf.IsSheaf` is by
 definition the `Type`-valued condition on `P ⋙ coyoneda.obj (op E)` for every object `E`, so the
@@ -153,10 +149,8 @@ theorem isSheaf_iff_isSheafFor_basisCoverage_comp (hB : Opens.IsBasis B) {C : Ty
     (P : (Opens X)ᵒᵖ ⥤ C) :
     Presheaf.IsSheaf (Opens.grothendieckTopology X) P ↔
       ∀ (E : C) ⦃U : Opens X⦄ (R : Presieve U), IsBasisCover B R →
-        Presieve.IsSheafFor (P ⋙ coyoneda.obj (Opposite.op E)) R := by
-  constructor
-  · exact fun h E _ R hR ↦ (isSheaf_iff_isSheafFor_basisCoverage hB _).mp (h E) R hR
-  · exact fun h E ↦ (isSheaf_iff_isSheafFor_basisCoverage hB _).mpr fun _ R hR ↦ h E R hR
+        Presieve.IsSheafFor (P ⋙ coyoneda.obj (Opposite.op E)) R :=
+  forall_congr' fun _ ↦ isSheaf_iff_isSheafFor_basisCoverage hB _
 
 /-- The inclusion of a basis `B`, given as a set of opens, into `Opens X` is cover-dense for the
 Grothendieck topology of `X`: every open is covered by the members of `B` it contains. This is

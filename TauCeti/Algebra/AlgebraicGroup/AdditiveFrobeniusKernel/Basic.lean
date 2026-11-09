@@ -112,7 +112,7 @@ private theorem antipode_gen_mem :
   have hpow : HopfAlgebra.antipode R ((ι R R 1 : SymmetricAlgebra R R) ^ p) =
       (HopfAlgebra.antipode R (ι R R 1 : SymmetricAlgebra R R)) ^ p :=
     map_pow (HopfAlgebra.antipodeAlgHom R _) _ _
-  rw [hpow, TauCeti.SymmetricAlgebra.antipode_ι, neg_pow]
+  rw [hpow, SymmetricAlgebra.antipode_ι, neg_pow]
   exact Ideal.mul_mem_left _ _ (Ideal.mem_span_singleton_self _)
 
 /-- **The Hopf ideal `(xᵖ)` of the additive group.** For `R` of prime characteristic `p`, the

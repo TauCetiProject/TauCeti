@@ -299,4 +299,29 @@ theorem exists_eq_sum_tmul_of_span_eq_top {κ : Type*} [Fintype κ] {n : κ → 
     obtain ⟨m', rfl⟩ := hy
     exact ⟨m + m', by simp [add_tmul, Finset.sum_add_distrib]⟩
 
+/-- Splitting `F ⊗ F - id - (D ⊗ id + id ⊗ D)` into the terms in which one factor is the defect
+`F - id - D` and the term `(F - id) ⊗ (F - id)` in which both factors move. -/
+theorem map_sub_sub_add_eq {R : Type*} [CommSemiring R] {P : Type*} [AddCommGroup P] [Module R P]
+    (F D : P →ₗ[R] P) (w : P ⊗[R] P) :
+    TensorProduct.map F F w - w - (LinearMap.rTensor _ D w + LinearMap.lTensor _ D w) =
+      TensorProduct.map (F - LinearMap.id - D) LinearMap.id w +
+        TensorProduct.map LinearMap.id (F - LinearMap.id - D) w +
+        TensorProduct.map (F - LinearMap.id) (F - LinearMap.id) w := by
+  have hr : TensorProduct.map (F - LinearMap.id) (LinearMap.id (M := P)) =
+      TensorProduct.map (F - LinearMap.id - D) LinearMap.id + TensorProduct.map D LinearMap.id := by
+    rw [← TensorProduct.map_add_left]
+    congr 1
+    abel
+  have hl : TensorProduct.map (LinearMap.id (M := P)) (F - LinearMap.id) =
+      TensorProduct.map LinearMap.id (F - LinearMap.id - D) + TensorProduct.map LinearMap.id D := by
+    rw [← TensorProduct.map_add_right]
+    congr 1
+    abel
+  conv_lhs => rw [← add_sub_cancel LinearMap.id F]
+  rw [TensorProduct.map_add_left, TensorProduct.map_add_right, TensorProduct.map_add_right,
+    TensorProduct.map_id, hr, hl]
+  simp only [LinearMap.add_apply, LinearMap.id_apply, LinearMap.rTensor_def,
+    LinearMap.lTensor_def]
+  abel
+
 end TensorProduct
