@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Homological
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.TopHomology
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coefficients
@@ -19,6 +20,9 @@ a topological `n`-manifold without boundary, and let `o` be an orientation of `M
 For a compact subset `A ⊆ M`, the local orientations of `o` glue to a unique class
 `o.fundamentalClassOn hn hA` of `Hₙ(M, M ∖ A; ℤ)` restricting to the local orientation `o x` at
 each point `x ∈ A`. These classes are compatible with restriction to smaller compact subsets.
+Along a finite set `Z`, the fundamental class is the sum over `z ∈ Z` of the local orientations
+`o z`, each read through excision in an open neighbourhood of `z` containing no other point of
+`Z` and pushed into `Hₙ(M, M ∖ Z; ℤ)`.
 
 For `M` compact, there is a unique class `o.fundamentalClass hn` of `Hₙ(M; ℤ)`, the *fundamental
 class* of `M` for the orientation `o`, whose image in `Hₙ(M, M ∖ {x}; ℤ)` is `o x` for every
@@ -37,6 +41,9 @@ The fundamental class is what cohomology classes are evaluated on, through the K
 
 * `TauCeti.HomologicalOrientation.fundamentalClassOn`: the fundamental class `μ_A` of `M` along a
   compact subset `A`.
+* `TauCeti.HomologicalOrientation.localOrientationAlong`: the local orientation at `z`, read
+  through excision in an open neighbourhood `U` of `z` and pushed into `Hₙ(M, M ∖ Z; ℤ)` for a set
+  `Z` meeting `U` at most in `z`.
 * `TauCeti.HomologicalOrientation.fundamentalClass`: the fundamental class of a compact oriented
   manifold.
 * `TauCeti.HomologicalOrientation.realFundamentalClass`: the image of the fundamental class in
@@ -57,6 +64,8 @@ homology isomorphism directly, without requiring Poincaré duality.
 
 * `TauCeti.HomologicalOrientation.rationalFundamentalClassEquiv`: the normalized equivalence
   `ℚ ≃ₗ[ℚ] Hₙ(M; ℚ)` on a compact connected oriented manifold.
+* `TauCeti.HomologicalOrientation.fundamentalClassOn_eq_sum_localOrientationAlong`: the
+  fundamental class along a finite set is the sum of the local orientations at its points.
 * `TauCeti.HomologicalOrientation.eq_fundamentalClass`: the fundamental class is the only class
   restricting to the orientation at every point.
 * `TauCeti.HomologicalOrientation.fundamentalClass_neg`: the fundamental class of the reversed
@@ -195,6 +204,78 @@ theorem fundamentalClassOn_neg :
 
 end Compact
 
+section Finite
+
+variable {Z : Set M}
+
+/-- The local orientation `o z ∈ Hₙ(M, M ∖ {z}; ℤ)`, read in `Hₙ(U, U ∖ {z}; ℤ)` through excision
+for an open neighbourhood `U` of `z`, and pushed into `Hₙ(M, M ∖ Z; ℤ)` along the inclusion of
+`U`, for a set `Z` meeting `U` at most in `z`. -/
+def localOrientationAlong {z : M} {U : Set M} (hU : IsOpen U) (hz : z ∈ U)
+    (hUZ : ∀ x ∈ U, x ∈ Z → x = z) :
+    localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) Z n :=
+  localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨Subtype.val, continuous_subtype_val⟩
+    (S := {(⟨z, hz⟩ : U)}) (fun x hx ↦ Subtype.ext (hUZ x.1 x.2 hx)) n
+    ((localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ))
+      hU.isOpenEmbedding_subtypeVal ⟨z, hz⟩ n).inv (o z).val)
+
+/-- The class `o.localOrientationAlong` is the image of the local orientation `o z` under the
+inverse of the excision isomorphism of `U`, followed by the map induced by the inclusion of `U`. -/
+theorem localOrientationAlong_def {z : M} {U : Set M} (hU : IsOpen U) (hz : z ∈ U)
+    (hUZ : ∀ x ∈ U, x ∈ Z → x = z) :
+    o.localOrientationAlong hU hz hUZ =
+      localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨Subtype.val, continuous_subtype_val⟩
+        (S := {(⟨z, hz⟩ : U)}) (fun x hx ↦ Subtype.ext (hUZ x.1 x.2 hx)) n
+        ((localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ))
+          hU.isOpenEmbedding_subtypeVal ⟨z, hz⟩ n).inv (o z).val) :=
+  (rfl)
+
+/-- The class `o.localOrientationAlong` at `z ∈ Z` restricts to the local orientation at `z`. -/
+@[simp]
+theorem localHomologyRestriction_localOrientationAlong_self {z : M} {U : Set M} (hU : IsOpen U)
+    (hz : z ∈ U) (hUZ : ∀ x ∈ U, x ∈ Z → x = z) (hzZ : z ∈ Z) :
+    localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) (singleton_subset_iff.2 hzZ) n
+      (o.localOrientationAlong hU hz hUZ) = (o z).val := by
+  have h := localHomologyMap_comp_localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ))
+    ⟨Subtype.val, continuous_subtype_val⟩ (S := {(⟨z, hz⟩ : U)}) (singleton_subset_iff.2 hzZ)
+    (fun x hx ↦ Subtype.ext (hUZ x.1 x.2 hx)) n
+  rw [localOrientationAlong, ← ConcreteCategory.comp_apply, h]
+  exact localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap_apply
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) hU.isOpenEmbedding_subtypeVal ⟨z, hz⟩ _ n (o z).val
+
+/-- The class `o.localOrientationAlong` at `z` restricts to `0` at every point of `Z` other than
+`z`. -/
+theorem localHomologyRestriction_localOrientationAlong_of_ne {z : M} {U : Set M} (hU : IsOpen U)
+    (hz : z ∈ U) (hUZ : ∀ x ∈ U, x ∈ Z → x = z) {x : M} (hx : x ∈ Z) (hxz : x ≠ z) :
+    localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) (singleton_subset_iff.2 hx) n
+      (o.localOrientationAlong hU hz hUZ) = 0 := by
+  let R := ModuleCat.of ℤ (ULift.{0} ℤ)
+  -- No point of `U` lies over `x ≠ z`, so the map factors through `Hₙ(U, U) = 0`.
+  have h : (Subtype.val : U → M) ⁻¹' {x} ⊆ ∅ := fun y (hy : y.1 = x) ↦
+    hxz (hy.symm.trans (hUZ y.1 y.2 (hy ▸ hx)))
+  have h₁ := localHomologyMap_comp_localHomologyRestriction R ⟨Subtype.val, continuous_subtype_val⟩
+    (S := {(⟨z, hz⟩ : U)}) (singleton_subset_iff.2 hx) (fun x hx ↦ Subtype.ext (hUZ x.1 x.2 hx)) n
+  have h₂ := localHomologyRestriction_comp_localHomologyMap R ⟨Subtype.val, continuous_subtype_val⟩
+    (empty_subset {(⟨z, hz⟩ : U)}) h n
+  rw [localOrientationAlong, ← ConcreteCategory.comp_apply, h₁, ← h₂, ConcreteCategory.comp_apply,
+    (isZero_localHomology_empty R n).eq_zero_of_tgt (localHomologyRestriction R _ _)]
+  simp
+
+/-- **The fundamental class along a finite set is a sum of local orientations.** For a finite set
+`Z` and open neighbourhoods `U z ∋ z` with `U z ∩ Z ⊆ {z}`, the fundamental class along `Z` is the
+sum over `z ∈ Z` of the local orientations `o z`, read through excision in `U z` and pushed into
+`Hₙ(M, M ∖ Z; ℤ)`. -/
+theorem fundamentalClassOn_eq_sum_localOrientationAlong (hZ : Z.Finite) {U : M → Set M}
+    (hU : ∀ z, IsOpen (U z)) (hzU : ∀ z, z ∈ U z) (hUZ : ∀ z, ∀ x ∈ U z, x ∈ Z → x = z) :
+    o.fundamentalClassOn hn hZ.isCompact =
+      ∑ z ∈ hZ.toFinset, o.localOrientationAlong (hU z) (hzU z) (hUZ z) := by
+  refine (o.eq_fundamentalClassOn hn hZ.isCompact fun x hx ↦ ?_).symm
+  rw [map_sum, Finset.sum_eq_single_of_mem x (hZ.mem_toFinset.2 hx)]
+  · exact o.localHomologyRestriction_localOrientationAlong_self _ _ _ hx
+  · exact fun z _ hzx ↦ o.localHomologyRestriction_localOrientationAlong_of_ne _ _ _ hx hzx.symm
+
+end Finite
+
 section CompactSpace
 
 variable [CompactSpace M]
@@ -238,14 +319,22 @@ theorem eq_fundamentalClass
   (o.existsUnique_fundamentalClass hn).unique hγ
     (o.localHomologyRestriction_singularHomologyπ_fundamentalClass hn)
 
-/-- The image of the fundamental class in `Hₙ(M, M ∖ M; ℤ)` is the fundamental class along the
-whole of `M`. -/
-theorem singularHomologyπ_fundamentalClass :
-    ((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
+/-- The image of the fundamental class in `Hₙ(M, M ∖ A; ℤ)` is the fundamental class along the
+compact set `A`. -/
+theorem singularHomologyπ_fundamentalClass {A : Set M} (hA : IsCompact A) :
+    ((TopPair.ofSubset (Aᶜ : Set (TopCat.of M))).singularHomologyπ
       (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) n).hom (o.fundamentalClass hn) =
-      o.fundamentalClassOn hn isCompact_univ :=
-  o.eq_fundamentalClassOn hn isCompact_univ fun x _ ↦
-    o.localHomologyRestriction_singularHomologyπ_fundamentalClass hn x
+      o.fundamentalClassOn hn hA := by
+  refine o.eq_fundamentalClassOn hn hA fun x hx ↦ ?_
+  -- `Hₙ(M) ⟶ Hₙ(M, M ∖ A)` is `Hₙ(M) ⟶ Hₙ(M, M ∖ M)` followed by restriction from `M` to `A`.
+  have h := TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id_assoc
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) (X := TopCat.of M) (S := Aᶜ) (S' := univᶜ)
+    (compl_subset_compl.2 (subset_univ A)) n
+    (localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) (singleton_subset_iff.2 hx) n)
+  rw [← localHomologyRestriction_def _ (subset_univ A), localHomologyRestriction_comp] at h
+  exact ((ConcreteCategory.comp_apply _ _ _).symm.trans (ConcreteCategory.congr_hom h.symm _)).trans
+    ((ConcreteCategory.comp_apply _ _ _).trans
+      (o.localHomologyRestriction_singularHomologyπ_fundamentalClass hn x))
 
 /-- Reversing the orientation negates the fundamental class. -/
 @[simp]
