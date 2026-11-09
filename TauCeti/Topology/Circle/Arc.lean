@@ -258,17 +258,14 @@ private theorem exists_homeomorph_closure_connectedComponentIn_compl_pair_of_mem
     ∃ φ : closure (connectedComponentIn {x, y}ᶜ z) ≃ₜ unitInterval,
       ∀ w : closure (connectedComponentIn {x, y}ᶜ z),
         (w : Circle) ∈ ({x, y} : Set Circle) ↔ φ w = 0 ∨ φ w = 1 := by
-  have hc (w : Circle) :
-      w ∈ closure (connectedComponentIn {x, y}ᶜ z) ↔ (Homeomorph.refl _) w ∈ range (x.path y) := by
-    rw [connectedComponentIn_compl_pair h hz, closure_path_image_Ioo, Homeomorph.refl_apply, id_eq]
+  have hc : closure (connectedComponentIn {x, y}ᶜ z) = range (x.path y) := by
+    rw [connectedComponentIn_compl_pair h hz, closure_path_image_Ioo]
   -- The arc is parametrized by `Circle.path x y`, a closed embedding of the unit interval.
   let ψ : unitInterval ≃ₜ range (x.path y) :=
     ((x.path y).continuous.isClosedEmbedding (path_injective_of_ne h)).isEmbedding.toHomeomorph
-  refine ⟨((Homeomorph.refl _).subtype hc).trans ψ.symm, fun w => ?_⟩
-  have hw : x.path y (((Homeomorph.refl _).subtype hc).trans ψ.symm w) = w := by
-    have := congrArg Subtype.val (ψ.apply_symm_apply ((Homeomorph.refl _).subtype hc w))
-    rwa [Topology.IsEmbedding.toHomeomorph_apply_coe, Homeomorph.subtype_apply_coe,
-      Homeomorph.refl_apply, id_eq, ← Homeomorph.trans_apply] at this
+  refine ⟨(Homeomorph.setCongr hc).trans ψ.symm, fun w => ?_⟩
+  have hw : x.path y ((Homeomorph.setCongr hc).trans ψ.symm w) = w :=
+    congrArg Subtype.val (ψ.apply_symm_apply (Homeomorph.setCongr hc w))
   rw [← hw, mem_insert_iff, mem_singleton_iff, (path_injective_of_ne h).eq_iff' (x.path y).source,
     (path_injective_of_ne h).eq_iff' (x.path y).target]
 

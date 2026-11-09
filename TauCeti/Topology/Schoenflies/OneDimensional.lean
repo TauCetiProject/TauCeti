@@ -74,24 +74,30 @@ open Metric Module Set Topology
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F] {σ : sphere (0 : E) 1 → sphere (0 : F) 1} {x : sphere (0 : F) 1}
 
+/-- Read through `TauCeti.sphereHomeomorphCircleOfFinrankEqTwo`, the image of an injective map of
+the `0`-sphere into the circle is a pair of distinct points of `Circle`. -/
+private lemma exists_image_range_eq_pair_circle (hE : finrank ℝ E = 1) (hF : finrank ℝ F = 2)
+    (hσ : Function.Injective σ) :
+    ∃ a b : Circle, a ≠ b ∧ sphereHomeomorphCircleOfFinrankEqTwo hF '' range σ = {a, b} := by
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
+  obtain ⟨u, hu⟩ := (NormedSpace.sphere_nonempty (x := (0 : E))).mpr zero_le_one
+  exact ⟨_, _, (sphereHomeomorphCircleOfFinrankEqTwo hF).injective.ne
+    (hσ.ne (ne_neg_of_mem_unit_sphere ℝ ⟨u, hu⟩)),
+    by rw [range_eq_pair_of_finrank_eq_one hE σ ⟨u, hu⟩, image_pair]⟩
+
 /-- **The one-dimensional Schoenflies theorem, frontier form.** For an injective map `σ` of the
 `0`-sphere into the circle, each component of the complement of the image of `σ` has that image as
 its frontier. -/
 theorem frontier_connectedComponentIn_compl_range_sphere_of_finrank_eq_one
     (hE : finrank ℝ E = 1) (hF : finrank ℝ F = 2) (hσ : Function.Injective σ)
     (hx : x ∉ range σ) : frontier (connectedComponentIn (range σ)ᶜ x) = range σ := by
-  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
-  obtain ⟨u, hu⟩ := (NormedSpace.sphere_nonempty (x := (0 : E))).mpr zero_le_one
-  rw [range_eq_pair_of_finrank_eq_one hE σ ⟨u, hu⟩] at hx ⊢
   -- Read the circle as Mathlib's `Circle`.
   let e := sphereHomeomorphCircleOfFinrankEqTwo hF
-  have hne : e (σ ⟨u, hu⟩) ≠ e (σ (-⟨u, hu⟩)) :=
-    e.injective.ne (hσ.ne (ne_neg_of_mem_unit_sphere ℝ _))
-  have hx' : e x ∉ ({e (σ ⟨u, hu⟩), e (σ (-⟨u, hu⟩))} : Set Circle) := by
-    rwa [← image_pair, e.injective.mem_set_image]
+  obtain ⟨a, b, hab, hr⟩ := exists_image_range_eq_pair_circle hE hF hσ
+  have hx' : e x ∉ ({a, b} : Set Circle) := by rwa [← hr, e.injective.mem_set_image]
   apply e.injective.image_injective
-  rw [e.image_frontier, e.image_connectedComponentIn hx, e.image_compl, image_pair,
-    Circle.frontier_connectedComponentIn_compl_pair hne hx']
+  rw [e.image_frontier, e.image_connectedComponentIn hx, e.image_compl, hr,
+    Circle.frontier_connectedComponentIn_compl_pair hab hx']
 
 /-- **The one-dimensional Schoenflies theorem.** For an injective map `σ` of the `0`-sphere `S⁰`,
 the unit sphere of a one-dimensional real normed space `E`, into the circle, the closure of each
@@ -103,23 +109,18 @@ theorem exists_homeomorph_closure_connectedComponentIn_compl_range_sphere_of_fin
     ∃ h : closure (connectedComponentIn (range σ)ᶜ x) ≃ₜ closedBall (0 : E) 1,
       ∀ y : closure (connectedComponentIn (range σ)ᶜ x),
         (y : sphere (0 : F) 1) ∈ range σ ↔ ‖(h y : E)‖ = 1 := by
-  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
-  obtain ⟨u, hu⟩ := (NormedSpace.sphere_nonempty (x := (0 : E))).mpr zero_le_one
-  rw [range_eq_pair_of_finrank_eq_one hE σ ⟨u, hu⟩] at hx ⊢
   -- Read the circle as Mathlib's `Circle`, where the closure of the component is an arc.
   let e := sphereHomeomorphCircleOfFinrankEqTwo hF
-  have hne : e (σ ⟨u, hu⟩) ≠ e (σ (-⟨u, hu⟩)) :=
-    e.injective.ne (hσ.ne (ne_neg_of_mem_unit_sphere ℝ _))
-  have key (w : sphere (0 : F) 1) : w ∈ ({σ ⟨u, hu⟩, σ (-⟨u, hu⟩)} : Set (sphere (0 : F) 1)) ↔
-      e w ∈ ({e (σ ⟨u, hu⟩), e (σ (-⟨u, hu⟩))} : Set Circle) := by
-    rw [← image_pair e, e.injective.mem_set_image]
-  have hx' : e x ∉ ({e (σ ⟨u, hu⟩), e (σ (-⟨u, hu⟩))} : Set Circle) := (key x).not.mp hx
+  obtain ⟨a, b, hab, hr⟩ := exists_image_range_eq_pair_circle hE hF hσ
+  have key (w : sphere (0 : F) 1) : w ∈ range σ ↔ e w ∈ ({a, b} : Set Circle) := by
+    rw [← hr, e.injective.mem_set_image]
   have hcl (w : sphere (0 : F) 1) :
-      w ∈ closure (connectedComponentIn {σ ⟨u, hu⟩, σ (-⟨u, hu⟩)}ᶜ x) ↔
-        e w ∈ closure (connectedComponentIn {e (σ ⟨u, hu⟩), e (σ (-⟨u, hu⟩))}ᶜ (e x)) := by
+      w ∈ closure (connectedComponentIn (range σ)ᶜ x) ↔
+        e w ∈ closure (connectedComponentIn {a, b}ᶜ (e x)) := by
     rw [← e.injective.mem_set_image, e.image_closure, e.image_connectedComponentIn hx,
-      e.image_compl, image_pair]
-  obtain ⟨φ, hφ⟩ := Circle.exists_homeomorph_closure_connectedComponentIn_compl_pair hne hx'
+      e.image_compl, hr]
+  obtain ⟨φ, hφ⟩ :=
+    Circle.exists_homeomorph_closure_connectedComponentIn_compl_pair hab ((key x).not.mp hx)
   obtain ⟨ι, hι⟩ := exists_homeomorph_unitInterval_closedBall hE
   refine ⟨(e.subtype hcl).trans (φ.trans ι), fun y => ?_⟩
   rw [Homeomorph.trans_apply, Homeomorph.trans_apply, hι, ← hφ, Homeomorph.subtype_apply_coe,
@@ -133,15 +134,11 @@ theorem IsBicollar.connectedComponentIn_compl_range_ne_of_finrank_eq_one
     (hE : finrank ℝ E = 1) (hF : finrank ℝ F = 2) {b : sphere (0 : E) 1 × ℝ → sphere (0 : F) 1}
     (hb : IsBicollar σ b) (u : sphere (0 : E) 1) {s t : ℝ} (hs : 0 < s) (ht : t < 0) :
     connectedComponentIn (range σ)ᶜ (b (u, s)) ≠ connectedComponentIn (range σ)ᶜ (b (u, t)) := by
-  have hσ : Function.Injective σ := fun v w h => by
-    simpa using hb.isOpenEmbedding.injective
-      (by rw [hb.apply_zero, hb.apply_zero, h] : b (v, 0) = b (w, 0))
+  have hσ := hb.injective
   -- Off the zero slice the bicollar misses the image of `σ`, so each half of the collar line
   -- through `u` lies in a single component.
-  have hoff {r : ℝ} (hr : r ≠ 0) : b (u, r) ∉ range σ := by
-    rintro ⟨v, hv⟩
-    rw [← hb.apply_zero] at hv
-    exact hr (congrArg Prod.snd (hb.isOpenEmbedding.injective hv)).symm
+  have hoff {r : ℝ} (hr : r ≠ 0) : b (u, r) ∉ range σ := fun h =>
+    hr (hb.preimage_range ▸ h : (u, r) ∈ univ ×ˢ ({0} : Set ℝ)).2
   have hray {I : Set ℝ} (hI : IsPreconnected I) (h0 : (0 : ℝ) ∉ I) {r : ℝ} (hr : r ∈ I) :
       b '' ({u} ×ˢ I) ⊆ connectedComponentIn (range σ)ᶜ (b (u, r)) := by
     refine (isPreconnected_singleton.prod hI).image _ hb.isOpenEmbedding.continuous.continuousOn

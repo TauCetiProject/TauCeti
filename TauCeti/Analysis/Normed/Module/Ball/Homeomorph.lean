@@ -317,15 +317,15 @@ theorem exists_homeomorph_unitInterval_closedBall {E : Type*} [NormedAddCommGrou
     ∃ h : I ≃ₜ closedBall (0 : E) 1, ∀ t, ‖(h t : E)‖ = 1 ↔ t = 0 ∨ t = 1 := by
   have : FiniteDimensional ℝ E := .of_finrank_pos (by omega)
   let i : I ≃ₜ closedBall (0 : ℝ) 1 := (iccHomeoI (-1 : ℝ) 1 (by norm_num)).symm.trans
-    ((Homeomorph.refl ℝ).subtype fun x => by rw [Real.closedBall_eq_Icc]; norm_num)
+    (Homeomorph.setCongr (by rw [Real.closedBall_eq_Icc]; norm_num))
   refine ⟨i.trans (closedBallHomeomorphOfFinrankEq (by simp [hE])), fun t => ?_⟩
   have hi : ((i t : closedBall (0 : ℝ) 1) : ℝ) = 2 * t - 1 := by
-    simp only [i, Homeomorph.trans_apply, Homeomorph.subtype_apply_coe, Homeomorph.refl_apply,
-      id_eq, iccHomeoI_symm_apply_coe]
+    change (((iccHomeoI (-1 : ℝ) 1 (by norm_num)).symm t : Icc (-1 : ℝ) 1) : ℝ) = _
+    rw [iccHomeoI_symm_apply_coe]
     ring
   simp only [Homeomorph.trans_apply, coe_closedBallHomeomorphOfFinrankEq_apply,
     ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff, hi, Real.norm_eq_abs,
     abs_eq zero_le_one, Subtype.ext_iff, Set.Icc.coe_zero, Set.Icc.coe_one]
-  constructor <;> rintro (h | h) <;> [right; left; right; left] <;> linarith
+  grind
 
 end TauCeti

@@ -104,8 +104,8 @@ lemma zerothHomotopySphereUnique_default (h : finrank ℝ E = 1) (p : sphere (0 
   rfl
 
 
-/-- A map out of the unit sphere of a one-dimensional real normed space takes exactly two values:
-its values at any point `p` of the sphere and at the antipode `-p`. -/
+/-- A map out of the unit sphere of a one-dimensional real normed space takes only the values
+`f p` and `f (-p)`, for any point `p` of the sphere. -/
 theorem range_eq_pair_of_finrank_eq_one {Y : Type*} (h : finrank ℝ E = 1)
     (f : sphere (0 : E) 1 → Y) (p : sphere (0 : E) 1) : Set.range f = {f p, f (-p)} := by
   refine Set.Subset.antisymm ?_ (Set.pair_subset (Set.mem_range_self _) (Set.mem_range_self _))

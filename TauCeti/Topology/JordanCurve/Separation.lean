@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.JordanCurve.Basic
+import TauCeti.Topology.Circle.Arc
 
 /-!
 # Two points cut a Jordan curve into two arcs
@@ -115,17 +116,10 @@ of a path is compact; and the two closed arcs meet in `{z, w}` by
 `Circle.range_path_inter_range_path`, which is the union statement. -/
 theorem exists_isOpen_isPathConnected_union_eq_compl_pair_circle {z w : Circle} (hzw : z ≠ w) :
     ∃ A B : Set Circle, IsOpen A ∧ IsOpen B ∧ IsPathConnected A ∧ IsPathConnected B ∧
-      Disjoint A B ∧ A ∪ B = ({z, w} : Set Circle)ᶜ := by
-  have hA : Circle.path z w '' Ioo 0 1 = (range (Circle.path w z))ᶜ :=
-    (Circle.compl_range_path hzw.symm).symm
-  have hB : Circle.path w z '' Ioo 0 1 = (range (Circle.path z w))ᶜ :=
-    (Circle.compl_range_path hzw).symm
-  refine ⟨_, _, ?_, ?_, isPathConnected_path_image_Ioo z w, isPathConnected_path_image_Ioo w z,
-    ?_, ?_⟩
-  · rw [hA]; exact (isCompact_range (Circle.path w z).continuous).isClosed.isOpen_compl
-  · rw [hB]; exact (isCompact_range (Circle.path z w).continuous).isClosed.isOpen_compl
-  · rw [hA]; exact disjoint_compl_left_iff_subset.mpr (image_subset_range _ _)
-  · rw [hA, hB, ← compl_inter, Circle.range_path_inter_range_path hzw.symm, pair_comm w z]
+      Disjoint A B ∧ A ∪ B = ({z, w} : Set Circle)ᶜ :=
+  ⟨_, _, Circle.isOpen_path_image_Ioo hzw, Circle.isOpen_path_image_Ioo hzw.symm,
+    isPathConnected_path_image_Ioo z w, isPathConnected_path_image_Ioo w z,
+    Circle.disjoint_path_image_Ioo hzw, Circle.path_image_Ioo_union_path_image_Ioo hzw⟩
 
 /-! ## Cutting a Jordan curve
 
