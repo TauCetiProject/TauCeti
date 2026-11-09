@@ -6,6 +6,7 @@ Authors: Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
+public import Mathlib.AlgebraicGeometry.Morphisms.OpenImmersion
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
 public import TauCeti.AlgebraicGeometry.Scheme.LocallyDirected
 
@@ -28,6 +29,14 @@ universe u
 open CategoryTheory Limits
 
 namespace AlgebraicGeometry.Scheme
+
+/-- In a cartesian square, the preimage of an open immersion's range is the range of its
+base change. -/
+lemma preimage_opensRange_of_isPullback {P X Y S : Scheme.{u}}
+    {c : P ⟶ X} {g' : P ⟶ Y} {g : X ⟶ S} {b : Y ⟶ S}
+    [IsOpenImmersion g] [IsOpenImmersion g'] (h : IsPullback c g' g b) :
+    b ⁻¹ᵁ g.opensRange = g'.opensRange := by
+  simpa using (IsOpenImmersion.image_preimage_eq_preimage_image_of_isPullback h ⊤).symm
 
 variable {U X Y : Scheme.{u}} (f : U ⟶ X) (g : U ⟶ Y)
   [IsOpenImmersion f] [IsOpenImmersion g]
@@ -101,6 +110,18 @@ lemma preimage_opensRange_pushout_inr :
     exact ⟨g intersectionPoint, ((pushout_inl_eq_inr_iff f g _ _).mpr
       ⟨intersectionPoint, rfl, rfl⟩).symm⟩
 
+/-- The overlap image in the second chart lies in the first chart's range. -/
+lemma image_pushout_inr_opensRange_le :
+    pushout.inr f g ''ᵁ g.opensRange ≤ (pushout.inl f g).opensRange := by
+  rw [← preimage_opensRange_pushout_inl f g]
+  exact (pushout.inr f g).image_preimage_le _
+
+/-- The overlap image in the first chart lies in the second chart's range. -/
+lemma image_pushout_inl_opensRange_le :
+    pushout.inl f g ''ᵁ f.opensRange ≤ (pushout.inr f g).opensRange := by
+  rw [← preimage_opensRange_pushout_inr f g]
+  exact (pushout.inl f g).image_preimage_le _
+
 /-- The preimage under a pushout descent map is the union of its preimages on the charts. -/
 lemma preimage_pushout_desc {S : Scheme.{u}} (α : X ⟶ S) (β : Y ⟶ S)
     (h : f ≫ α = g ≫ β) (V : S.Opens) :
@@ -129,15 +150,12 @@ include hf hg in
 lemma preimage_opensRange_pushout_inl_of_isPullback (square : IsPullback c g' g b) :
     pushout.map f' g' f g a b c hf.symm hg.symm ⁻¹ᵁ (pushout.inl f g).opensRange =
       (pushout.inl f' g').opensRange := by
-  have overlap : b ⁻¹ᵁ g.opensRange = g'.opensRange := by
-    simpa using (IsOpenImmersion.image_preimage_eq_preimage_image_of_isPullback square ⊤).symm
+  have overlap : b ⁻¹ᵁ g.opensRange = g'.opensRange := preimage_opensRange_of_isPullback square
   rw [pushout.map, preimage_pushout_desc]
   simp only [Scheme.Hom.comp_preimage, Scheme.Hom.preimage_opensRange,
     Scheme.Hom.preimage_top, preimage_opensRange_pushout_inl, overlap,
     Scheme.Hom.image_top_eq_opensRange]
-  apply sup_eq_left.mpr
-  rw [← preimage_opensRange_pushout_inl f' g']
-  exact (pushout.inr f' g').image_preimage_le _
+  exact sup_eq_left.mpr (image_pushout_inr_opensRange_le f' g')
 
 include hf hg in
 /-- A cartesian overlap square makes the first chart square of the pushout map cartesian. -/
@@ -153,15 +171,12 @@ include hf hg in
 lemma preimage_opensRange_pushout_inr_of_isPullback (square : IsPullback c f' f a) :
     pushout.map f' g' f g a b c hf.symm hg.symm ⁻¹ᵁ (pushout.inr f g).opensRange =
       (pushout.inr f' g').opensRange := by
-  have overlap : a ⁻¹ᵁ f.opensRange = f'.opensRange := by
-    simpa using (IsOpenImmersion.image_preimage_eq_preimage_image_of_isPullback square ⊤).symm
+  have overlap : a ⁻¹ᵁ f.opensRange = f'.opensRange := preimage_opensRange_of_isPullback square
   rw [pushout.map, preimage_pushout_desc]
   simp only [Scheme.Hom.comp_preimage, Scheme.Hom.preimage_opensRange,
     Scheme.Hom.preimage_top, preimage_opensRange_pushout_inr, overlap,
     Scheme.Hom.image_top_eq_opensRange]
-  apply sup_eq_right.mpr
-  rw [← preimage_opensRange_pushout_inr f' g']
-  exact (pushout.inl f' g').image_preimage_le _
+  exact sup_eq_right.mpr (image_pushout_inl_opensRange_le f' g')
 
 include hf hg in
 /-- A cartesian overlap square makes the second chart square of the pushout map cartesian. -/
@@ -240,26 +255,20 @@ omit [IsOpenImmersion β] in
 @[simp]
 lemma preimage_opensRange_pushout_desc_inl :
     pushout.desc α β h.w ⁻¹ᵁ α.opensRange = (pushout.inl f g).opensRange := by
-  have overlap : β ⁻¹ᵁ α.opensRange = g.opensRange := by
-    simpa using (IsOpenImmersion.image_preimage_eq_preimage_image_of_isPullback h ⊤).symm
+  have overlap : β ⁻¹ᵁ α.opensRange = g.opensRange := preimage_opensRange_of_isPullback h
   rw [preimage_pushout_desc, Scheme.Hom.preimage_opensRange, overlap,
     Scheme.Hom.image_top_eq_opensRange]
-  apply sup_eq_left.mpr
-  rw [← preimage_opensRange_pushout_inl f g]
-  exact (pushout.inr f g).image_preimage_le _
+  exact sup_eq_left.mpr (image_pushout_inr_opensRange_le f g)
 
 omit [IsOpenImmersion α] in
 /-- The second chart of a cartesian open span pulls back to the second pushout chart. -/
 @[simp]
 lemma preimage_opensRange_pushout_desc_inr :
     pushout.desc α β h.w ⁻¹ᵁ β.opensRange = (pushout.inr f g).opensRange := by
-  have overlap : α ⁻¹ᵁ β.opensRange = f.opensRange := by
-    simpa using (IsOpenImmersion.image_preimage_eq_preimage_image_of_isPullback h.flip ⊤).symm
+  have overlap : α ⁻¹ᵁ β.opensRange = f.opensRange := preimage_opensRange_of_isPullback h.flip
   rw [preimage_pushout_desc, Scheme.Hom.preimage_opensRange, overlap,
     Scheme.Hom.image_top_eq_opensRange]
-  apply sup_eq_right.mpr
-  rw [← preimage_opensRange_pushout_inr f g]
-  exact (pushout.inl f g).image_preimage_le _
+  exact sup_eq_right.mpr (image_pushout_inl_opensRange_le f g)
 
 omit [IsOpenImmersion β] in
 /-- The first chart square of descent from a cartesian open span is cartesian. -/
@@ -274,6 +283,61 @@ lemma isPullback_pushout_desc_inr :
     IsPullback (𝟙 Y) (pushout.inr f g) β (pushout.desc α β h.w) :=
   IsOpenImmersion.isPullback _ _ _ _ (by simp)
     (preimage_opensRange_pushout_desc_inr f g α β h)
+
+/-- Descent from a cartesian span of open immersions is an open immersion. -/
+lemma isOpenImmersion_pushout_desc :
+    IsOpenImmersion (pushout.desc α β h.w : pushout f g ⟶ S) := by
+  have cover (x : ↑(pushout f g)) :
+      x ∈ Set.range (pushout.inl f g) ∨ x ∈ Set.range (pushout.inr f g) := by
+    rw [← Set.mem_union, range_pushout_inl_union_range_pushout_inr]
+    trivial
+  apply IsOpenImmersion.of_forall_source_exists
+  · intro x y hxy
+    rcases cover x with ⟨x, rfl⟩ | ⟨x, rfl⟩ <;>
+      rcases cover y with ⟨y, rfl⟩ | ⟨y, rfl⟩
+    · apply congrArg (pushout.inl f g)
+      apply α.isOpenEmbedding.injective
+      simpa only [← Scheme.Hom.comp_apply, pushout.inl_desc] using hxy
+    · have heq : α x = β y := by
+        simpa only [← Scheme.Hom.comp_apply, pushout.inl_desc, pushout.inr_desc] using hxy
+      obtain ⟨z, hz, hz'⟩ := exists_preimage_of_isPullback h x y heq
+      exact (pushout_inl_eq_inr_iff f g x y).mpr ⟨z, hz, hz'⟩
+    · have heq : α y = β x := by
+        simpa only [← Scheme.Hom.comp_apply, pushout.inl_desc, pushout.inr_desc] using hxy.symm
+      obtain ⟨z, hz, hz'⟩ := exists_preimage_of_isPullback h y x heq
+      exact ((pushout_inl_eq_inr_iff f g y x).mpr ⟨z, hz, hz'⟩).symm
+    · apply congrArg (pushout.inr f g)
+      apply β.isOpenEmbedding.injective
+      simpa only [← Scheme.Hom.comp_apply, pushout.inr_desc] using hxy
+  · intro x
+    rcases cover x with hx | hx
+    · refine ⟨X, pushout.inl f g, inferInstance, hx, ?_⟩
+      simpa only [pushout.inl_desc] using (inferInstance : IsOpenImmersion α)
+    · refine ⟨Y, pushout.inr f g, inferInstance, hx, ?_⟩
+      simpa only [pushout.inr_desc] using (inferInstance : IsOpenImmersion β)
+
+/-- The range of descent from a cartesian open span is the union of its chart ranges. -/
+lemma opensRange_pushout_desc
+    [IsOpenImmersion (pushout.desc α β h.w : pushout f g ⟶ S)] :
+    (pushout.desc α β h.w : pushout f g ⟶ S).opensRange = α.opensRange ⊔ β.opensRange := by
+  apply TopologicalSpace.Opens.ext
+  change Set.range (pushout.desc α β h.w) = Set.range α ∪ Set.range β
+  calc
+    _ = pushout.desc α β h.w ''
+        (Set.range (pushout.inl f g) ∪ Set.range (pushout.inr f g)) := by
+      rw [range_pushout_inl_union_range_pushout_inr, Set.image_univ]
+    _ = Set.range (pushout.inl f g ≫ pushout.desc α β h.w) ∪
+        Set.range (pushout.inr f g ≫ pushout.desc α β h.w) := by
+      rw [Set.image_union, ← Set.range_comp, ← Set.range_comp]
+      rfl
+    _ = _ := by rw [pushout.inl_desc, pushout.inr_desc]
+
+/-- Descent from a covering cartesian open span is an isomorphism. -/
+lemma isIso_pushout_desc (hcover : α.opensRange ⊔ β.opensRange = ⊤) :
+    IsIso (pushout.desc α β h.w : pushout f g ⟶ S) := by
+  have : IsOpenImmersion (pushout.desc α β h.w) := isOpenImmersion_pushout_desc f g α β h
+  exact isIso_of_isOpenImmersion_of_opensRange_eq_top _
+    ((opensRange_pushout_desc f g α β h).trans hcover)
 
 end CartesianDesc
 
@@ -297,14 +361,14 @@ lemma inr_pushoutOpensDesc : pushout.inr iV iW ≫ pushoutOpensDesc V W = W.ι :
 
 /-- The preimage of the first open is the first pushout chart. -/
 @[simp]
-lemma preimage_opensRange_inl_pushoutOpensDesc :
+lemma preimage_pushoutOpensDesc_left :
     pushoutOpensDesc V W ⁻¹ᵁ V = (pushout.inl iV iW).opensRange := by
   simpa only [pushoutOpensDesc, Scheme.Opens.opensRange_ι] using
     preimage_opensRange_pushout_desc_inl iV iW V.ι W.ι (isPullback_opens_inf V W)
 
 /-- The preimage of the second open is the second pushout chart. -/
 @[simp]
-lemma preimage_opensRange_inr_pushoutOpensDesc :
+lemma preimage_pushoutOpensDesc_right :
     pushoutOpensDesc V W ⁻¹ᵁ W = (pushout.inr iV iW).opensRange := by
   simpa only [pushoutOpensDesc, Scheme.Opens.opensRange_ι] using
     preimage_opensRange_pushout_desc_inr iV iW V.ι W.ι (isPullback_opens_inf V W)
@@ -319,24 +383,23 @@ lemma isPullback_inr_pushoutOpensDesc :
     IsPullback (𝟙 W.toScheme) (pushout.inr iV iW) W.ι (pushoutOpensDesc V W) := by
   exact isPullback_pushout_desc_inr iV iW V.ι W.ι (isPullback_opens_inf V W)
 
+/-- The pushout of two opens maps by an open immersion to the ambient scheme. -/
+instance isOpenImmersion_pushoutOpensDesc : IsOpenImmersion (pushoutOpensDesc V W) := by
+  unfold pushoutOpensDesc
+  exact isOpenImmersion_pushout_desc iV iW V.ι W.ι (isPullback_opens_inf V W)
+
+/-- The image of the pushout of two opens is their union. -/
+@[simp]
+lemma opensRange_pushoutOpensDesc : (pushoutOpensDesc V W).opensRange = V ⊔ W := by
+  have : IsOpenImmersion (pushout.desc V.ι W.ι (isPullback_opens_inf V W).w) :=
+    isOpenImmersion_pushout_desc iV iW V.ι W.ι (isPullback_opens_inf V W)
+  simpa only [pushoutOpensDesc, Scheme.Opens.opensRange_ι] using
+    opensRange_pushout_desc iV iW V.ι W.ι (isPullback_opens_inf V W)
+
 /-- A scheme covered by two opens is their pushout along the intersection. -/
-lemma isIso_pushoutOpensDesc (hVW : V ⊔ W = ⊤) : IsIso (pushoutOpensDesc V W) := by
-  rw [← MorphismProperty.isomorphisms.iff]
-  refine IsZariskiLocalAtTarget.of_openCover
-    (S.openCoverOfIsOpenCover (fun i : Bool ↦ cond i V W) ?_) fun i ↦ ?_
-  · exact TopologicalSpace.IsOpenCover.mk
-      (by simpa only [iSup_bool_eq, Bool.cond_true, Bool.cond_false] using hVW)
-  · rw [MorphismProperty.isomorphisms.iff]
-    -- For this cover, `Cover.pullbackHom` is the pullback projection to the chosen open.
-    cases i
-    · change IsIso (pullback.snd (pushoutOpensDesc V W) W.ι)
-      rw [← (isPullback_inr_pushoutOpensDesc V W).flip.isoPullback_inv_snd,
-        Category.comp_id]
-      infer_instance
-    · change IsIso (pullback.snd (pushoutOpensDesc V W) V.ι)
-      rw [← (isPullback_inl_pushoutOpensDesc V W).flip.isoPullback_inv_snd,
-        Category.comp_id]
-      infer_instance
+lemma isIso_pushoutOpensDesc (hVW : V ⊔ W = ⊤) : IsIso (pushoutOpensDesc V W) :=
+  isIso_of_isOpenImmersion_of_opensRange_eq_top _
+    ((opensRange_pushoutOpensDesc V W).trans hVW)
 
 end TwoOpens
 
