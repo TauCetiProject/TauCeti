@@ -32,11 +32,11 @@ kernels of `Hᵢ(K) ⊗ Bⱼ(L) ⟶ Hᵢ(K) ⊗ Zⱼ(L)`.
 These are the specializations to `X ⊗ -` of the computation of left derived functors in
 `TauCeti.CategoryTheory.Abelian.LeftDerived`.
 
-In its underived first variable, `Torₙ₊₁(𝟙_ C, Y)` vanishes
-(`CategoryTheory.isZero_Tor_succ_tensorUnit`), since `𝟙_ C ⊗ -` is isomorphic to the identity
-functor, and if `e • 𝟙 X = 0` for a natural number `e`, then `e` kills every `Torₙ(X, Y)`
-(`CategoryTheory.nsmul_id_Tor_eq_zero`): the objects killed by `e` are closed under subobjects and
-quotients and contain every `X ⊗ P`.
+If `e • 𝟙 X = 0` for a natural number `e`, then `e` kills every `X ⊗ Z` and `Z ⊗ X`
+(`CategoryTheory.nsmul_id_tensor_eq_zero_of_left` and
+`CategoryTheory.nsmul_id_tensor_eq_zero_of_right`), since whiskering is an additive functor, and
+`e` kills every `Torₙ(X, Y)` (`CategoryTheory.nsmul_id_Tor_eq_zero`): the objects killed by `e` are
+closed under subobjects and quotients and contain every `X ⊗ P`.
 
 For Mathlib's `CategoryTheory.Tor' C n`, which derives the first variable instead,
 `((Tor' C n).obj X).obj Y` is `Lₙ(- ⊗ Y)(X)`. The file records two facts about it in the
@@ -60,6 +60,24 @@ namespace CategoryTheory
 open Limits MonoidalCategory
 
 universe v u
+
+section Preadditive
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [MonoidalCategory C]
+  [MonoidalPreadditive C]
+
+/-- If a natural number `e` kills `X`, in the sense that `e • 𝟙 X = 0`, then it kills `X ⊗ Y`. -/
+lemma nsmul_id_tensor_eq_zero_of_left {X : C} {e : ℕ} (hX : e • 𝟙 X = 0) (Y : C) :
+    e • 𝟙 (X ⊗ Y) = 0 := by
+  rw [← id_whiskerRight, ← curriedTensor_map_app, ← NatTrans.app_nsmul, ← Functor.map_nsmul, hX,
+    Functor.map_zero, NatTrans.app_zero]
+
+/-- If a natural number `e` kills `Y`, in the sense that `e • 𝟙 Y = 0`, then it kills `X ⊗ Y`. -/
+lemma nsmul_id_tensor_eq_zero_of_right {Y : C} {e : ℕ} (hY : e • 𝟙 Y = 0) (X : C) :
+    e • 𝟙 (X ⊗ Y) = 0 := by
+  rw [← whiskerLeft_id, ← curriedTensor_obj_map, ← Functor.map_nsmul, hY, Functor.map_zero]
+
+end Preadditive
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [Abelian C] [MonoidalPreadditive C]
   [HasProjectiveResolutions C] {S S' : ShortComplex C}
@@ -110,15 +128,6 @@ lemma Tor_obj_map_comp_torOneIsoKernel_hom (X : C) (φ : S ⟶ S') :
 
 end ShortComplex.ShortExact
 
-/-- The higher `Tor` groups with the tensor unit as first variable vanish: `𝟙_ C ⊗ -` is
-isomorphic to the identity functor, so it is exact. -/
-lemma isZero_Tor_succ_tensorUnit (Y : C) (n : ℕ) :
-    IsZero (((Tor C (n + 1)).obj (𝟙_ C)).obj Y) := by
-  have : ((tensoringLeft C).obj (𝟙_ C)).PreservesHomology :=
-    Functor.preservesHomology_of_map_exact _ fun S hS ↦
-      ShortComplex.exact_of_iso (S.mapNatIso (leftUnitorNatIso C)).symm hS
-  exact Functor.isZero_leftDerived_succ _ Y n
-
 /-- If a natural number `e` kills `X`, in the sense that `e • 𝟙 X = 0`, then it kills every
 `Torₙ(X, Y)`. -/
 lemma nsmul_id_Tor_eq_zero {X : C} {e : ℕ} (hX : e • 𝟙 X = 0) (Y : C) (n : ℕ) :
@@ -132,11 +141,8 @@ lemma nsmul_id_Tor_eq_zero {X : C} {e : ℕ} (hX : e • 𝟙 X = 0) (Y : C) (n 
   have : P.IsClosedUnderQuotients := ⟨fun {Z W} f _ hZ ↦ (hP W).2 (by
     rw [← cancel_epi f, Preadditive.comp_nsmul, Category.comp_id, comp_zero,
       ← Category.id_comp f, ← Preadditive.nsmul_comp, (hP Z).1 hZ, zero_comp])⟩
-  refine P.prop_leftDerived_obj ((tensoringLeft C).obj X) (fun Z _ ↦ (hP (X ⊗ Z)).2 ?_) Y n
-  -- whiskering by `Z` is by definition the additive functor `tensorRight Z`
-  rw [← id_whiskerRight]
-  change e • (tensorRight Z).map (𝟙 X) = 0
-  rw [← Functor.map_nsmul, hX, Functor.map_zero]
+  exact P.prop_leftDerived_obj ((tensoringLeft C).obj X)
+    (fun Z _ ↦ (hP (X ⊗ Z)).2 (nsmul_id_tensor_eq_zero_of_left hX Z)) Y n
 
 /-- `Tor'` is additive in its second variable, the one that is not derived. -/
 instance (X : C) (n : ℕ) : ((Tor' C n).obj X).Additive where
