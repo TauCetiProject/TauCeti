@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Complex.ClosedUpperHalfPlane
 public import TauCeti.Analysis.Complex.RealDeriv
+public import TauCeti.Geometry.Manifold.StructureGroupoid
 public import Mathlib.Analysis.Complex.CauchyIntegral
 
 /-!
@@ -140,13 +141,6 @@ def borderedHolomorphicGroupoid : StructureGroupoid ClosedUpperHalfPlane :=
   contDiffGroupoid ∞ closedUpperHalfPlaneModel ⊓
     ClosedUpperHalfPlane.interiorHolomorphicPregroupoid.groupoid
 
-/-- Membership in the infimum of two structure groupoids. This holds by `Iff.rfl`: Mathlib's `⊓`
-on structure groupoids is the intersection of their members. -/
-private theorem mem_inf_structureGroupoid {G G' : StructureGroupoid ClosedUpperHalfPlane}
-    {e : OpenPartialHomeomorph ClosedUpperHalfPlane ClosedUpperHalfPlane} :
-    e ∈ G ⊓ G' ↔ e ∈ G ∧ e ∈ G' :=
-  Iff.rfl
-
 /-- Membership in the smooth groupoid of the closed upper half-plane, read in the ambient
 coordinate. This holds by `Iff.rfl`: `contDiffGroupoid` is the groupoid of
 `contDiffPregroupoid`, whose property is smoothness of the coordinate expression on the model
@@ -175,7 +169,7 @@ theorem mem_borderedHolomorphicGroupoid_iff
         (closedUpperHalfPlaneModel.symm ⁻¹' e.source ∩ {z | 0 < z.im}) ∧
       DifferentiableOn ℂ (closedUpperHalfPlaneModel ∘ e.symm ∘ closedUpperHalfPlaneModel.symm)
         (closedUpperHalfPlaneModel.symm ⁻¹' e.target ∩ {z | 0 < z.im}) := by
-  rw [borderedHolomorphicGroupoid, mem_inf_structureGroupoid, mem_groupoid_of_pregroupoid]
+  rw [borderedHolomorphicGroupoid, StructureGroupoid.mem_inf, mem_groupoid_of_pregroupoid]
   constructor
   · rintro ⟨hc, h₁, h₂⟩
     exact ⟨hc, (ClosedUpperHalfPlane.interiorHolomorphicPregroupoid_property_source_iff hc).1 h₁,
@@ -283,7 +277,7 @@ theorem negConj_notMem_borderedHolomorphicGroupoid :
     negConj.toOpenPartialHomeomorph ∉ borderedHolomorphicGroupoid := by
   intro hmem
   -- The interior condition, evaluated at the point `I`, gives differentiability there.
-  have hprop := (mem_groupoid_of_pregroupoid.1 (mem_inf_structureGroupoid.1 hmem).2).1
+  have hprop := (mem_groupoid_of_pregroupoid.1 (StructureGroupoid.mem_inf.1 hmem).2).1
   have hat : DifferentiableAt ℂ
       (closedUpperHalfPlaneModel ∘ negConj ∘ closedUpperHalfPlaneModel.symm) I :=
     (interiorHolomorphicPregroupoid_property_iff.1 hprop ⟨I, by simp⟩ (by simp) (by simp)).2
