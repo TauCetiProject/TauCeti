@@ -16,7 +16,8 @@ function `σ k`.
 
 ## Main definitions
 
-* `TauCeti.divisorSumSeries k`: the power series with `n`-th coefficient `σ k n`.
+* `TauCeti.divisorSumSeries k`: the power series over a semiring with `n`-th coefficient
+  `σ k n`.
 -/
 
 public section
@@ -26,17 +27,22 @@ open scoped ArithmeticFunction.sigma
 
 namespace TauCeti
 
-/-- The divisor-sum series `s_k(q) = ∑_{n ≥ 1} σ_k(n) qⁿ` in `ℤ⟦q⟧`, the power series expansion of
-the Lambert series `∑_{n ≥ 1} nᵏ qⁿ / (1 - qⁿ)`. Its constant coefficient is `σ_k(0) = 0`. -/
-noncomputable def divisorSumSeries (k : ℕ) : ℤ⟦X⟧ :=
-  PowerSeries.mk fun n ↦ (σ k n : ℤ)
+variable {R : Type*} [Semiring R]
+
+/-- The divisor-sum series `s_k(q) = ∑_{n ≥ 1} σ_k(n) qⁿ` in `R⟦q⟧`, which over any semiring
+equals `∑_{n ≥ 1} nᵏ ∑_{m ≥ 1} q^{nm}`; over a ring this is the expansion of the Lambert series
+`∑_{n ≥ 1} nᵏ qⁿ / (1 - qⁿ)`. Its constant coefficient is `σ_k(0) = 0`. The coefficient
+semiring `R` is implicit, determined by the expected type, as for `PowerSeries.X`. -/
+noncomputable def divisorSumSeries (k : ℕ) : R⟦X⟧ :=
+  PowerSeries.mk fun n ↦ (σ k n : R)
 
 @[simp]
-theorem coeff_divisorSumSeries (k n : ℕ) : coeff n (divisorSumSeries k) = σ k n := by
-  simp [divisorSumSeries]
+theorem coeff_divisorSumSeries (k n : ℕ) : coeff n (divisorSumSeries k : R⟦X⟧) = σ k n :=
+  coeff_mk _ _
 
 @[simp]
-theorem constantCoeff_divisorSumSeries (k : ℕ) : constantCoeff (divisorSumSeries k) = 0 := by
+theorem constantCoeff_divisorSumSeries (k : ℕ) :
+    constantCoeff (divisorSumSeries k : R⟦X⟧) = 0 := by
   simp [← coeff_zero_eq_constantCoeff_apply]
 
 end TauCeti

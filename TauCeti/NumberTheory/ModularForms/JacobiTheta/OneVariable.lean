@@ -5,14 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Order
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
+import TauCeti.Analysis.SpecialFunctions.Gaussian.PoissonSummation
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
 # Transformation identities and estimates for the one-variable Jacobi theta function
 
-Two identities and two estimates for Mathlib's `jacobiTheta`, `θ(τ) = ∑_n e^{πi n² τ}`,
-complementing the transformation laws in
+Three identities, a positivity statement and two estimates for Mathlib's `jacobiTheta`,
+`θ(τ) = ∑_n e^{πi n² τ}`, complementing the transformation laws in
 `Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable`.
 
 ## Main results
@@ -21,6 +23,10 @@ complementing the transformation laws in
   `θ(τ - N/2) = e^{-πiN/2} θ(τ) + (1 - e^{-πiN/2}) θ(4τ)` for every natural number `N`.
 * `TauCeti.jacobiTheta_I_mul`: the functional equation on the imaginary axis,
   `θ(iy) = θ(i/y) / √y` for `y > 0`.
+* `TauCeti.jacobiTheta_one_add_I_mul`: the functional equation on the line `re τ = 1`,
+  `θ(1 + iy) = ∑_n e^{-π (n - 1/2)² / y} / √y` for `y > 0`.
+* `TauCeti.jacobiTheta_one_add_I_mul_pos`: hence `θ(1 + iy)` is a positive real number, although
+  its terms `(-1)^n e^{-π n² y}` alternate in sign.
 * `TauCeti.norm_jacobiTheta₂_sub_one_le`: for real `z`, `‖θ₂(z, τ) - 1‖ ≤ ‖θ(i im τ) - 1‖`.
 * `TauCeti.tendsto_jacobiTheta_comap_im_atTop`: `θ(τ) → 1` as `im τ → ∞`.
 -/
@@ -28,7 +34,7 @@ complementing the transformation laws in
 public section
 
 open Complex Filter Topology
-open scoped Real
+open scoped Real ComplexOrder
 
 namespace TauCeti
 
@@ -83,6 +89,52 @@ theorem jacobiTheta_I_mul {y : ℝ} (hy : 0 < y) :
     norm_num
   rw [h1, h2, h3]
   simp [div_eq_inv_mul]
+
+/-- The series `∑_n e^{-π (n - 1/2)² / y}` is the Gaussian lattice sum `Z(1/2, s)` of width
+`s = √(y / (2π))`. -/
+private theorem tsum_exp_sub_half_sq_eq_gaussianLatticeSum {y : ℝ} (hy : 0 < y) :
+    ∑' n : ℤ, Real.exp (-π * (n - 1 / 2) ^ 2 / y) =
+      Real.gaussianLatticeSum (1 / 2) √(y / (2 * π)) := by
+  rw [Real.gaussianLatticeSum_def, Real.sq_sqrt (by positivity)]
+  refine tsum_congr fun n ↦ ?_
+  congr 1
+  field_simp
+
+/-- The functional equation on the line `re τ = 1`: `θ(1 + iy) = ∑_n e^{-π (n - 1/2)² / y} / √y`
+for `y > 0`. The shift by `1` multiplies the `n`-th term of `θ(iy)` by `(-1)^n`, and the series
+`√y ∑_n (-1)^n e^{-π n² y}` is the Fourier expansion of the Gaussian lattice sum
+`∑_n e^{-π (n - 1/2)² / y}` (`Real.gaussianLatticeSum_eq_fourier`). -/
+theorem jacobiTheta_one_add_I_mul {y : ℝ} (hy : 0 < y) :
+    jacobiTheta (1 + I * y) = ((∑' n : ℤ, Real.exp (-π * (n - 1 / 2) ^ 2 / y)) / √y : ℝ) := by
+  have hroot : √(2 * π) * |√(y / (2 * π))| = √y := by
+    rw [abs_of_nonneg (Real.sqrt_nonneg _), ← Real.sqrt_mul (by positivity)]
+    congr 1
+    field_simp
+  rw [tsum_exp_sub_half_sq_eq_gaussianLatticeSum hy, Real.gaussianLatticeSum_eq_fourier, hroot,
+    mul_div_cancel_left₀ _ (Real.sqrt_ne_zero'.mpr hy), Real.sq_sqrt (by positivity), ofReal_tsum]
+  refine tsum_congr fun n ↦ ?_
+  -- Since `n² ≡ n (mod 2)`, the `n`-th term of `θ(1 + iy)` is `(-1)^n e^{-π n² y}`.
+  obtain ⟨m, hm⟩ := Int.even_mul_pred_self n
+  have hm' : (n : ℂ) * (n - 1) = m + m := by exact_mod_cast hm
+  have hcos : Real.cos (2 * π * n * (1 / 2)) = (-1) ^ n := by
+    rw [← Real.cos_int_mul_pi]
+    ring_nf
+  have harg : -2 * π ^ 2 * (y / (2 * π)) * (n : ℝ) ^ 2 = -π * n ^ 2 * y := by
+    field_simp
+  rw [hcos, harg, show π * I * (n : ℂ) ^ 2 * (1 + I * y) =
+      n * (π * I) + m * (2 * π * I) + ((-π * n ^ 2 * y : ℝ) : ℂ) by
+        push_cast
+        linear_combination (π * I) * hm' + π * n ^ 2 * y * I_sq,
+    Complex.exp_add, Complex.exp_add, Complex.exp_int_mul, exp_pi_mul_I, exp_int_mul_two_pi_mul_I]
+  push_cast
+  ring
+
+/-- **`θ(1 + iy)` is a positive real number** for `y > 0`, although its terms
+`(-1)^n e^{-π n² y}` alternate in sign: by the functional equation
+`jacobiTheta_one_add_I_mul` it is a Gaussian lattice sum divided by `√y`. -/
+theorem jacobiTheta_one_add_I_mul_pos {y : ℝ} (hy : 0 < y) : 0 < jacobiTheta (1 + I * y) := by
+  rw [jacobiTheta_one_add_I_mul hy, zero_lt_real, tsum_exp_sub_half_sq_eq_gaussianLatticeSum hy]
+  exact div_pos (Real.gaussianLatticeSum_pos _ (by positivity)) (Real.sqrt_pos.mpr hy)
 
 /-- For real `z`, the two-variable theta function `θ₂(z, τ)` is at least as close to `1` as
 `θ(i im τ)`: its terms have the absolute values `e^{-π n² im τ}` of the terms of `θ(i im τ)`. -/

@@ -15,7 +15,7 @@ import TauCeti.Topology.EMetricSpace.Lipschitz
 # Eilenberg's inequality
 
 Let `f : X → Y` be `K`-Lipschitz on a set `A` of an extended metric space, where `Y` is a real
-normed space of finite dimension `m` carrying an additive Haar measure `μ`. For `t ≥ 0`,
+normed space of finite dimension `m` carrying an additive Haar measure `μ`. For every real `t`,
 **Eilenberg's inequality** (the coarea inequality) bounds the Hausdorff measures of the fibers
 of `f` on average:
 
@@ -44,6 +44,10 @@ so its `δ`-approximate `t`-dimensional Hausdorff content is at most
 `μ (ball 0 1) * (K * ediam (c i ∩ A)) ^ m`, so the integral of this majorant is at most
 `μ (ball 0 1) * K ^ m * ∑ i, ediam (c i) ^ (m + t)`. Letting `δ → 0`, Fatou's lemma bounds the
 integral of the lower limit of the majorants.
+
+For `t < 0` the inequality is degenerate: `μH[t]` is infinite on every nonempty set, and either
+`μH[m + t] A = ∞` or `μH[m] A = 0`. In the second case the majorant for `t = 0` has integral zero
+and is positive on the image of `A`, so `∞` times it is a majorant with integral zero.
 
 ## Main declarations
 
@@ -169,17 +173,38 @@ private lemma exists_measurable_of_ne_top (hf : LipschitzOnWith K f A) (ht : 0 �
           (tendsto_const_nhds.add ENNReal.tendsto_inv_nat_nhds_zero)
           (Or.inr (constant_ne_top μ K))
 
+/-- Eilenberg's inequality when `t < 0` and `μH[m + t] A` is finite. Then `μH[m] A = 0`, so the
+majorant `G` for `t = 0` has integral zero; it is at least `1` on the image of `A`, so `∞ * G`
+dominates the fiber measures, which are infinite on nonempty fibers. -/
+private lemma exists_measurable_of_neg (hf : LipschitzOnWith K f A) (ht : t < 0)
+    (hA : μH[finrank ℝ Y + t] A ≠ ∞) :
+    ∃ G : Y → ℝ≥0∞, Measurable G ∧ (∀ y, μH[t] (A ∩ f ⁻¹' {y}) ≤ G y) ∧
+      ∫⁻ y, G y ∂μ ≤ μ (ball 0 1) * K ^ finrank ℝ Y * μH[finrank ℝ Y + t] A := by
+  have h0 : μH[finrank ℝ Y + 0] A = 0 := by
+    rw [add_zero]
+    exact (hausdorffMeasure_zero_or_top (by linarith) A).resolve_right hA
+  obtain ⟨G, hGm, hle, hint⟩ :=
+    exists_measurable_of_ne_top (t := 0) μ hf le_rfl (h0.trans_ne ENNReal.zero_ne_top)
+  rw [h0, mul_zero, nonpos_iff_eq_zero] at hint
+  refine ⟨fun y ↦ ∞ * G y, hGm.const_mul _, fun y ↦ ?_, by simp [lintegral_const_mul _ hGm, hint]⟩
+  rcases (A ∩ f ⁻¹' {y}).eq_empty_or_nonempty with h | ⟨x, hx⟩
+  · simp [h]
+  have hG : G y ≠ 0 := (zero_lt_one.trans_le <| (hausdorffMeasure_zero_singleton x).symm.le.trans <|
+    (measure_mono (singleton_subset_iff.2 hx)).trans (hle y)).ne'
+  simp [ENNReal.top_mul hG]
+
 /-- **Eilenberg's inequality**, in its strong form. If `f` is `K`-Lipschitz on a set `A` with
-values in an `m`-dimensional real normed space with additive Haar measure `μ`, and `t ≥ 0`, then
-the fiber measures `y ↦ μH[t] (A ∩ f ⁻¹' {y})` have a measurable majorant whose integral is at
+values in an `m`-dimensional real normed space with additive Haar measure `μ`, and `t` is real,
+then the fiber measures `y ↦ μH[t] (A ∩ f ⁻¹' {y})` have a measurable majorant whose integral is at
 most `μ (ball 0 1) * K ^ m * μH[m + t] A`. In other words, the upper integral of the fiber
 measures obeys this bound. Neither `A` nor the fibers need be measurable. -/
-theorem exists_measurable_hausdorffMeasure_inter_preimage_le (hf : LipschitzOnWith K f A)
-    (ht : 0 ≤ t) :
+theorem exists_measurable_hausdorffMeasure_inter_preimage_le (hf : LipschitzOnWith K f A) :
     ∃ G : Y → ℝ≥0∞, Measurable G ∧ (∀ y, μH[t] (A ∩ f ⁻¹' {y}) ≤ G y) ∧
       ∫⁻ y, G y ∂μ ≤ μ (ball 0 1) * K ^ finrank ℝ Y * μH[finrank ℝ Y + t] A := by
   by_cases hA : μH[finrank ℝ Y + t] A ≠ ∞
-  · exact exists_measurable_of_ne_top μ hf ht hA
+  · rcases le_or_gt 0 t with ht | ht
+    · exact exists_measurable_of_ne_top μ hf ht hA
+    · exact exists_measurable_of_neg μ hf ht hA
   rw [not_ne_iff] at hA
   -- Infinite measure: dominate by `∞` on the closure of the image, which is null when the
   -- constant vanishes, that is, when `f` is constant on `A` and `m ≠ 0`.
@@ -198,22 +223,28 @@ theorem exists_measurable_hausdorffMeasure_inter_preimage_le (hf : LipschitzOnWi
       simp [h0]
     · rw [ENNReal.mul_top hC]
       exact le_top
-/-- **Eilenberg's inequality**: for `f` `K`-Lipschitz on `A` with values in an `m`-dimensional
-real normed space with additive Haar measure `μ`, and `t ≥ 0`,
+
+/-- **Eilenberg's inequality**, integral form: for `f` `K`-Lipschitz on `A` with values in an
+`m`-dimensional real normed space with additive Haar measure `μ`, and `t` real,
 `∫⁻ y, μH[t] (A ∩ f ⁻¹' {y}) ∂μ ≤ μ (ball 0 1) * K ^ m * μH[m + t] A`.
-See `LipschitzOnWith.exists_measurable_hausdorffMeasure_inter_preimage_le` for the stronger
-upper-integral form, which does not require measurability of the integrand. -/
-theorem lintegral_hausdorffMeasure_inter_preimage_le (hf : LipschitzOnWith K f A) (ht : 0 ≤ t) :
+
+The fiber-measure function `y ↦ μH[t] (A ∩ f ⁻¹' {y})` need not be measurable, and for a
+non-measurable integrand `∫⁻` is the *lower* Lebesgue integral (the supremum of the integrals of
+the measurable functions below it). So this bounds the lower integral of the fiber measures. The
+upper-integral form is `LipschitzOnWith.exists_measurable_hausdorffMeasure_inter_preimage_le`: a
+measurable `G` dominating the fiber measures with
+`∫⁻ y, G y ∂μ ≤ μ (ball 0 1) * K ^ m * μH[m + t] A`. -/
+theorem lintegral_hausdorffMeasure_inter_preimage_le (hf : LipschitzOnWith K f A) :
     ∫⁻ y, μH[t] (A ∩ f ⁻¹' {y}) ∂μ ≤
       μ (ball 0 1) * K ^ finrank ℝ Y * μH[finrank ℝ Y + t] A := by
-  obtain ⟨G, -, hle, hint⟩ := hf.exists_measurable_hausdorffMeasure_inter_preimage_le μ ht
+  obtain ⟨G, -, hle, hint⟩ := hf.exists_measurable_hausdorffMeasure_inter_preimage_le μ
   exact (lintegral_mono hle).trans hint
 
 /-- If `f` is Lipschitz on `A` with values in an `m`-dimensional real normed space and
 `μH[m + t] A = 0`, then for almost every `y` the fiber `A ∩ f ⁻¹' {y}` is `μH[t]`-null. -/
-theorem ae_hausdorffMeasure_inter_preimage_eq_zero (hf : LipschitzOnWith K f A) (ht : 0 ≤ t)
+theorem ae_hausdorffMeasure_inter_preimage_eq_zero (hf : LipschitzOnWith K f A)
     (hA : μH[finrank ℝ Y + t] A = 0) : ∀ᵐ y ∂μ, μH[t] (A ∩ f ⁻¹' {y}) = 0 := by
-  obtain ⟨G, hGm, hle, hint⟩ := hf.exists_measurable_hausdorffMeasure_inter_preimage_le μ ht
+  obtain ⟨G, hGm, hle, hint⟩ := hf.exists_measurable_hausdorffMeasure_inter_preimage_le μ
   rw [hA, mul_zero, nonpos_iff_eq_zero, lintegral_eq_zero_iff hGm] at hint
   filter_upwards [hint] with y hy
   exact nonpos_iff_eq_zero.1 ((hle y).trans_eq hy)
@@ -221,9 +252,9 @@ theorem ae_hausdorffMeasure_inter_preimage_eq_zero (hf : LipschitzOnWith K f A) 
 /-- If `f` is Lipschitz on `A` with values in an `m`-dimensional real normed space and
 `μH[m + t] A < ∞`, then for almost every `y` the fiber `A ∩ f ⁻¹' {y}` has finite `μH[t]`
 measure. -/
-theorem ae_hausdorffMeasure_inter_preimage_lt_top (hf : LipschitzOnWith K f A) (ht : 0 ≤ t)
+theorem ae_hausdorffMeasure_inter_preimage_lt_top (hf : LipschitzOnWith K f A)
     (hA : μH[finrank ℝ Y + t] A ≠ ∞) : ∀ᵐ y ∂μ, μH[t] (A ∩ f ⁻¹' {y}) < ∞ := by
-  obtain ⟨G, hGm, hle, hint⟩ := hf.exists_measurable_hausdorffMeasure_inter_preimage_le μ ht
+  obtain ⟨G, hGm, hle, hint⟩ := hf.exists_measurable_hausdorffMeasure_inter_preimage_le μ
   filter_upwards [ae_lt_top hGm
     (hint.trans_lt (ENNReal.mul_lt_top (constant_ne_top μ K).lt_top hA.lt_top)).ne]
     with y hy
@@ -234,7 +265,7 @@ theorem ae_hausdorffMeasure_inter_preimage_lt_top (hf : LipschitzOnWith K f A) (
 theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero (hf : LipschitzOnWith K f A)
     {k : ℕ} (hA : μHE[finrank ℝ Y + k] A = 0) : ∀ᵐ y ∂μ, μHE[k] (A ∩ f ⁻¹' {y}) = 0 := by
   rw [euclideanHausdorffMeasure_eq_zero_iff, Nat.cast_add] at hA
-  filter_upwards [hf.ae_hausdorffMeasure_inter_preimage_eq_zero μ k.cast_nonneg hA] with y hy
+  filter_upwards [hf.ae_hausdorffMeasure_inter_preimage_eq_zero μ hA] with y hy
   exact euclideanHausdorffMeasure_eq_zero_iff.2 hy
 
 /-- If `f` is Lipschitz on `A` with values in an `m`-dimensional real normed space and
@@ -244,7 +275,7 @@ theorem ae_euclideanHausdorffMeasure_inter_preimage_lt_top (hf : LipschitzOnWith
     {k : ℕ} (hA : μHE[finrank ℝ Y + k] A ≠ ∞) : ∀ᵐ y ∂μ, μHE[k] (A ∩ f ⁻¹' {y}) < ∞ := by
   rw [← lt_top_iff_ne_top, euclideanHausdorffMeasure_lt_top_iff, Nat.cast_add,
     lt_top_iff_ne_top] at hA
-  filter_upwards [hf.ae_hausdorffMeasure_inter_preimage_lt_top μ k.cast_nonneg hA] with y hy
+  filter_upwards [hf.ae_hausdorffMeasure_inter_preimage_lt_top μ hA] with y hy
   exact euclideanHausdorffMeasure_lt_top_iff.2 hy
 
 end LipschitzOnWith
@@ -256,18 +287,15 @@ variable [SecondCountableTopology X] [MeasurableSpace X] [BorelSpace X]
 /-- If `f` is locally Lipschitz on `A` in a second-countable domain with values in an
 `m`-dimensional real normed space and `μH[m + t] A = 0`, then for almost every `y` the fiber
 `A ∩ f ⁻¹' {y}` is `μH[t]`-null. -/
-theorem ae_hausdorffMeasure_inter_preimage_eq_zero (hf : LocallyLipschitzOn A f) (ht : 0 ≤ t)
+theorem ae_hausdorffMeasure_inter_preimage_eq_zero (hf : LocallyLipschitzOn A f)
     (hA : μH[finrank ℝ Y + t] A = 0) : ∀ᵐ y ∂μ, μH[t] (A ∩ f ⁻¹' {y}) = 0 := by
   obtain ⟨U, K, -, hcov, hK⟩ := hf.exists_open_cover_lipschitzOnWith
   have hpiece : ∀ᵐ y ∂μ, ∀ n, μH[t] ((A ∩ U n) ∩ f ⁻¹' {y}) = 0 :=
-    ae_all_iff.2 fun n ↦ (hK n).ae_hausdorffMeasure_inter_preimage_eq_zero μ ht
+    ae_all_iff.2 fun n ↦ (hK n).ae_hausdorffMeasure_inter_preimage_eq_zero μ
       (measure_mono_null inter_subset_left hA)
   filter_upwards [hpiece] with y hy
-  exact measure_mono_null
-    (fun x hx ↦ by
-      obtain ⟨n, hn⟩ := mem_iUnion.1 (hcov hx.1)
-      exact mem_iUnion.2 ⟨n, ⟨hx.1, hn⟩, hx.2⟩)
-    (measure_iUnion_null hy)
+  rw [← inter_eq_left.2 hcov, inter_iUnion, iUnion_inter]
+  exact measure_iUnion_null hy
 
 /-- If `f` is locally Lipschitz on `A` in a second-countable domain with values in an
 `m`-dimensional real normed space and `μHE[m + k] A = 0`, then for almost every `y` the fiber
@@ -275,7 +303,7 @@ theorem ae_hausdorffMeasure_inter_preimage_eq_zero (hf : LocallyLipschitzOn A f)
 theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero (hf : LocallyLipschitzOn A f)
     {k : ℕ} (hA : μHE[finrank ℝ Y + k] A = 0) : ∀ᵐ y ∂μ, μHE[k] (A ∩ f ⁻¹' {y}) = 0 := by
   rw [euclideanHausdorffMeasure_eq_zero_iff, Nat.cast_add] at hA
-  filter_upwards [hf.ae_hausdorffMeasure_inter_preimage_eq_zero μ k.cast_nonneg hA] with y hy
+  filter_upwards [hf.ae_hausdorffMeasure_inter_preimage_eq_zero μ hA] with y hy
   exact euclideanHausdorffMeasure_eq_zero_iff.2 hy
 
 /-- For a map `f` locally Lipschitz on a Lebesgue measurable subset `A` of an `n`-dimensional real
@@ -292,12 +320,8 @@ theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_iff_forall_isCompact
   refine ⟨fun h K hKA _ ↦ h.mono fun _ ↦ measure_mono_null (inter_subset_inter_left _ hKA),
     fun hK ↦ ?_⟩
   obtain ⟨S, hSA, ⟨K, hKc, rfl⟩, hSA'⟩ := hA.exists_isSigmaCompact_subset_ae_eq
-  have hvol : μHE[finrank ℝ Y + k] (A \ ⋃ m, K m) = 0 := by
-    have h : μHE[finrank ℝ E] (A \ ⋃ m, K m) = 0 := by
-      rw [InnerProductSpace.euclideanHausdorffMeasure_eq_volume]
-      exact (ae_eq_set.1 hSA').2
-    rw [euclideanHausdorffMeasure_eq_zero_iff] at h ⊢
-    exact nonpos_iff_eq_zero.1 ((hausdorffMeasure_mono (by exact_mod_cast hk) _).trans h.le)
+  have hvol : μHE[finrank ℝ Y + k] (A \ ⋃ m, K m) = 0 :=
+    TauCeti.euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero (ae_eq_set.1 hSA').2 hk
   have hrem := (hf.mono sdiff_subset).ae_euclideanHausdorffMeasure_inter_preimage_eq_zero μ hvol
   have hcomp := ae_all_iff.2 fun m ↦ hK (K m) ((subset_iUnion K m).trans hSA) (hKc m)
   filter_upwards [hrem, hcomp] with y hy_rem hy_comp

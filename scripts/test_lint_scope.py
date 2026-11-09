@@ -107,7 +107,11 @@ class LintScopeTest(unittest.TestCase):
                 if entry["status"] == "renamed":
                     (checkout / entry.get("previous_filename", f"TauCeti/OldName{index}.lean")).unlink()
             git("add", ".")
-            git("commit", "-qm", "head", "--allow-empty")
+            metadata = next((value for key, value in responses.items() if "/compare/" in key), {})
+            messages = [c["commit"]["message"] for c in metadata.get("commits", [])] or ["head"]
+            git("commit", "-qm", messages[0], "--allow-empty")
+            for message in messages[1:]:
+                git("commit", "-qm", message, "--allow-empty")
             head = git("rev-parse", "HEAD")
             # Snapshot endpoints before any simulated force-push/base movement.
             responses = {key.replace(SHA_A, base).replace(SHA_B, head):
@@ -149,6 +153,7 @@ class LintScopeTest(unittest.TestCase):
                           .replace("${{ github.event_name }}", event)
                           .replace("${{ github.event.action }}", "tauceti-bors-staging" if event == "repository_dispatch" else "")
                           .replace("${{ github.repository }}", "o/r")
+                          .replace("${{ inputs.lean_root }}", "TauCeti")
                           .replace("${{ steps.pr.outputs.num }}", "12"))
                 (d / "gate").symlink_to(ROOT, target_is_directory=True)
                 (d / "pr").symlink_to(checkout, target_is_directory=True)
@@ -253,9 +258,14 @@ class LintScopeTest(unittest.TestCase):
                         "total_commits": 1}}))
 
     def test_pull_request_without_commits_lints_everything(self):
-        for missing in ("BASE", "HEAD", "HEAD_REPO"):
+        for missing in ("BASE", "HEAD"):
             with self.subTest(missing=missing):
                 self.assertIsNone(self.run_scope(dict(self.PR_ENV, **{missing: ""}), {}))
+
+    def test_pull_request_needs_no_remote_head_repository_for_local_scope(self):
+        self.assertEqual(self.run_scope(dict(self.PR_ENV, HEAD_REPO=""),
+            {self.PR_COMPARE: {"files": [f("added", "TauCeti/A.lean")]},
+             "repos/o/r/pulls/12": pr()}), ["TauCeti.A"])
 
     def test_more_than_300_files_use_the_complete_local_diff(self):
         files = [f("added", f"TauCeti/M{i}.lean") for i in range(350)]
@@ -307,16 +317,17 @@ class LintScopeTest(unittest.TestCase):
                         {"EVENT": event, "BASE": SHA_A, "HEAD": SHA_B},
                         {f"repos/o/r/compare/{SHA_A}...{SHA_B}": compare}))
 
-    def test_truncated_or_missing_batch_commit_count_lints_everything(self):
+    def test_stale_rest_batch_metadata_cannot_override_local_history(self):
         for event in self.BATCH_EVENTS:
             for count in (None, 251):
                 with self.subTest(event=event, count=count):
                     compare = {"total_commits": count,
                                "commits": [{"commit": {"message": "feat: x (#7)"}}],
                                "files": [f("modified", "TauCeti/X.lean")]}
-                    self.assertIsNone(self.run_scope(
+                    self.assertEqual(self.run_scope(
                         {"EVENT": event, "BASE": SHA_A, "HEAD": SHA_B},
-                        {f"repos/o/r/compare/{SHA_A}...{SHA_B}": compare}))
+                        {f"repos/o/r/compare/{SHA_A}...{SHA_B}": compare,
+                         "repos/o/r/pulls/7": pr()}), ["TauCeti.X"])
 
     def test_batch_compare_cap_does_not_limit_local_files(self):
         compare = {"total_commits": 1, "commits": [{"commit": {"message": "feat: x (#7)"}}],
@@ -330,17 +341,20 @@ class LintScopeTest(unittest.TestCase):
                     files=[f("added", f"TauCeti/M{i}.lean") for i in range(350)]),
                                  sorted(f"TauCeti.M{i}" for i in range(350)))
 
-    def test_compare_api_failure_lints_everything(self):
-        # Reproduce the bors failure: GitHub can reject compare metadata before the
-        # complete local diff is read. An API outage must widen scope, not abort CI.
-        error = {"_error": "gh: too many files changed (HTTP 422)"}
+    def test_compare_quota_failure_keeps_the_complete_local_scope(self):
+        # Production batch 1584 widened to whole-library lint after REST quota
+        # exhaustion, despite already having both exact commits locally.
+        error = {"_error": "gh: API rate limit exceeded (HTTP 403)",
+                 "commits": [{"commit": {"message": "change (#12)"}}]}
         for event in ("pull_request_target", "workflow_dispatch", *self.BATCH_EVENTS):
             with self.subTest(event=event):
                 env = dict(self.PR_ENV, EVENT=event)
                 endpoint = (self.PR_COMPARE if event not in self.BATCH_EVENTS else
                             f"repos/o/r/compare/{SHA_A}...{SHA_B}")
-                self.assertIsNone(self.run_scope(
-                    env, {endpoint: error}, files=[f("added", "TauCeti/A.lean")]))
+                self.assertEqual(self.run_scope(
+                    env, {endpoint: error, "repos/o/r/pulls/12": pr()},
+                    files=[f("added", "TauCeti/A.lean")]), ["TauCeti.A"])
+                self.assertFalse(any("/compare/" in call[1] for call in self.last_calls))
 
     def test_unavailable_pr_lint_policy_lints_everything(self):
         # Without label/branch metadata we cannot rule out a full-lint request.
@@ -425,13 +439,14 @@ class LintScopeTest(unittest.TestCase):
     def test_missing_objects_or_merge_base_fall_back_to_full_lint(self):
         for problem in ("missing-checkout", "missing-object", "missing-merge-base"):
             def break_diff(checkout, git, base, head, env, responses):
-                compare = next(v for k, v in responses.items() if "/compare/" in k)
                 if problem == "missing-checkout":
                     env["SCOPE_REPO"] = str(checkout / "absent")
                 elif problem == "missing-object":
-                    compare["merge_base_commit"]["sha"] = "0" * 40
+                    env["HEAD"] = "0" * 40
                 else:
-                    compare.pop("merge_base_commit")
+                    git("checkout", "--orphan", "unrelated")
+                    git("commit", "-qm", "unrelated root", "--allow-empty")
+                    env["BASE"] = git("rev-parse", "HEAD")
             with self.subTest(problem=problem):
                 self.assertIsNone(self.run_scope(self.PR_ENV,
                     {self.PR_COMPARE: {"files": []}, "repos/o/r/pulls/12": pr()},
@@ -649,25 +664,42 @@ class PrBuildWiringTest(unittest.TestCase):
         run = job["steps"][sandbox]["run"]
         self.assertIn('--ro-bind "$LINT_SCOPE_DIR" "$LINT_SCOPE_DIR"', run)
         self.assertIn('--setenv LINT_ONLY_MODULES "${LINT_ONLY_MODULES:-}"', run)
+        self.assertIn('--setenv LINT_CHANGED_ONLY "${LINT_CHANGED_ONLY:-0}"', run)
 
-    def test_batch_audits_stay_whole_library_with_scoped_environment_lint(self):
-        wf = yaml.safe_load((ROOT / ".github" / "workflows" / "pr-build.yml").read_text())
+    def test_pr_preflight_and_staging_scope_fallbacks(self):
+        wf = yaml.safe_load((ROOT / ".github/workflows/pr-build.yml").read_text())
         self.assertIn("github.event_name == 'repository_dispatch'", wf["env"]["IS_BATCH"])
         self.assertIn("github.event_name == 'merge_group'", wf["env"]["IS_BATCH"])
-        job = wf["jobs"]["sandboxed-build"]
-        run = next(s["run"] for s in job["steps"] if s.get("name") == "Decide the audit scope")
-        with tempfile.TemporaryDirectory() as d:
-            d = pathlib.Path(d)
-            (d / "modules.txt").write_text("TauCeti.X\n")
-            (d / "unmatched.txt").write_text("")
-            github_env = d / "env"
-            out = subprocess.run(
-                ["bash", "-c", run.replace("${{ env.IS_BATCH }}", "true")],
-                env={**os.environ, "GITHUB_ENV": str(github_env), "LINT_SCOPE_DIR": str(d),
-                     "LINT_ONLY_MODULES": str(d / "modules.txt"), "BUMP": "0"},
-                capture_output=True, text=True)
-            self.assertEqual(out.returncode, 0, out.stderr)
-            self.assertEqual(github_env.read_text(), "AXIOMS_ONLY_MODULES=\nDOT_ONLY_MODULES=\n")
+        run = next(s["run"] for s in wf["jobs"]["sandboxed-build"]["steps"]
+                   if s.get("name") == "Decide the audit scope")
+        for batch, bump, scoped, unmatched in [
+            (False, False, True, ""), (True, False, True, ""),
+            (False, True, True, ""), (False, False, False, ""),
+            (False, False, True, "web/Main.lean\n"),
+            (False, False, True, None),
+        ]:
+            with self.subTest(batch=batch, bump=bump, scoped=scoped, unmatched=unmatched):
+                with tempfile.TemporaryDirectory() as temp:
+                    root = pathlib.Path(temp)
+                    modules = root / "modules"
+                    modules.write_text("TauCeti.Changed\n")
+                    if unmatched is not None:
+                        (root / "unmatched.txt").write_text(unmatched)
+                    envfile = root / "env"
+                    shell = run.replace(
+                        "${{ env.IS_BATCH }}", "true" if batch else "false")
+                    out = subprocess.run(["bash", "-euo", "pipefail", "-c", shell],
+                        text=True, capture_output=True, env={**os.environ,
+                        "GITHUB_ENV": str(envfile), "LINT_SCOPE_DIR": str(root),
+                        "LINT_ONLY_MODULES": str(modules) if scoped else "",
+                        "BUMP": "1" if bump else "0"})
+                    self.assertEqual(out.returncode, 0, out.stderr)
+                    values = dict(line.split("=", 1) for line in envfile.read_text().splitlines())
+                    fast = not batch and not bump and scoped and unmatched == ""
+                    self.assertEqual(values["LINT_CHANGED_ONLY"], "1" if fast else "0")
+                    self.assertEqual(values["AXIOMS_ONLY_MODULES"], str(modules) if fast else "")
+                    self.assertEqual(values["DOT_ONLY_MODULES"], str(modules) if fast else "")
+                    self.assertNotIn("LINT_ONLY_MODULES", values)
 
     def repair_exemption(self, event, files, env=None, api=None):
         """Run pr-build's empty-repair-PR exemption, extracted from the Scope guard step, with a fake
@@ -727,9 +759,15 @@ class PrBuildWiringTest(unittest.TestCase):
             (False, False))
 
     def test_only_the_full_lint_label_rebuilds(self):
-        # pr-build does not run on label changes; a separate workflow dispatches it for full-lint.
+        # A separate workflow dispatches ordinary full-lint requests; self-tested has its own label route.
         pr_build = yaml.safe_load((ROOT / ".github" / "workflows" / "pr-build.yml").read_text())
-        self.assertNotIn("labeled", pr_build[True]["pull_request_target"]["types"])
+        self.assertIn("labeled", pr_build[True]["pull_request_target"]["types"])
+        # Ordinary full-lint labeling still only starts the full-lint workflow;
+        # pr-build label routing is limited to manual self-tested assertions.
+        condition = pr_build["jobs"]["pick-runner"]["if"]
+        self.assertIn("github.event.label.name == 'self-tested'", condition)
+        self.assertIn("contains(github.event.pull_request.labels.*.name, 'self-tested')", condition)
+        self.assertIn('contains(fromJSON(', condition)
         self.assertIn("workflow_dispatch", pr_build[True])
         wf = yaml.safe_load((ROOT / ".github" / "workflows" / "full-lint-label.yml").read_text())
         self.assertEqual(wf[True]["pull_request_target"]["types"], ["labeled"])

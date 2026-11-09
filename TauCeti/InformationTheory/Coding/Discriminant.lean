@@ -9,7 +9,7 @@ public import TauCeti.Data.ZMod.Two
 public import TauCeti.InformationTheory.Coding.Binary.Basic
 public import TauCeti.InformationTheory.Coding.Weight.Euclidean
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.CoordinatePower
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.ZModStandard
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.ZMod.Standard
 
 import Mathlib.Algebra.BigOperators.Field
 

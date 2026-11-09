@@ -11,6 +11,7 @@ import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
 import TauCeti.Analysis.Sobolev.W1p.ChainRule
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # The logarithmic Caccioppoli inequality for positive supersolutions
@@ -144,6 +145,82 @@ private theorem mul_sq_mul_norm_sq_div_sq_le_neg_matrixBilinearForm_add {A : Mat
   rw [hB, neg_neg]
   exact hkey
 
+omit [DecidableEq ι] in
+/-- The reciprocal `1 / u`, cut off below `m > 0`, is an element `z = F ∘ u` of `H¹(Ω)` with
+`F = positiveCutoff m (·⁻¹)`, whose value and weak gradient are `F(u)` and `F'(u) ∇u`. -/
+private theorem exists_value_gradient_positiveCutoff_inv {u : W1p mu Omega 2} {m : ℝ}
+    (hm : 0 < m) :
+    ∃ z : W1p mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega,
+        W1p.value z x = positiveCutoff m (fun t : ℝ => t⁻¹) (W1p.value u x)) ∧
+      ∀ᵐ x ∂mu.restrict Omega,
+        W1p.gradient z x = deriv (positiveCutoff m fun t : ℝ => t⁻¹) (W1p.value u x) •
+          W1p.gradient u x := by
+  set F := positiveCutoff m fun t : ℝ => t⁻¹
+  have hgC : ∀ t : ℝ, 0 < t → ContDiffAt ℝ 1 (fun t : ℝ => t⁻¹) t :=
+    fun t ht => contDiffAt_inv ℝ ht.ne'
+  have hFC : ContDiff ℝ 1 F := contDiff_positiveCutoff hm hgC
+  obtain ⟨MF, hMF⟩ := exists_nnnorm_deriv_positiveCutoff_le hm hgC (K := (m ^ 2)⁻¹)
+    fun t ht => by
+      rw [deriv_inv, abs_neg, abs_inv, abs_pow, abs_of_pos (hm.trans_le ht)]
+      gcongr
+  have hF0 : F 0 = 0 := positiveCutoff_of_le hm _ (by linarith)
+  exact ⟨W1p.contDiffComp (by norm_num) hFC hMF hF0 u,
+    W1p.value_contDiffComp_ae (by norm_num) hFC hMF hF0 u,
+    W1p.gradient_contDiffComp_ae (by norm_num) hFC hMF hF0 u⟩
+
+/-- The test function `v = ψ² / u` of the logarithmic Caccioppoli inequality: it lies in `H¹₀(Ω)`,
+is nonnegative, and its energy density satisfies the pointwise estimate
+
+`λ ψ² ‖∇u‖² / u² ≤ -e(u, v) + (λ/2) ψ² ‖∇u‖² / u² + (2Λ²/λ) ‖∇ψ‖²`,
+
+obtained from `mul_sq_mul_norm_sq_div_sq_le_neg_matrixBilinearForm_add` where `ψ ≠ 0`. -/
+private theorem exists_nonneg_mem_w1p0Submodule_energyIntegrand_le
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    {u : W1p mu Omega 2} {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (hcpt : HasCompactSupport ψ) (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι)))
+    {m : ℝ} (hm : 0 < m)
+    (hum : ∀ᵐ x ∂mu.restrict Omega, x ∈ tsupport ψ → m ≤ W1p.value u x) {M : ℝ} (hM : 0 ≤ M)
+    (hψM : ∀ x ∈ Omega, |ψ x| ≤ M) (hgradM : ∀ x ∈ Omega, ‖∇ ψ x‖ ≤ M) :
+    ∃ v : W1p mu Omega 2, v ∈ w1p0Submodule mu Omega 2 ∧
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value v x) ∧
+      ∀ᵐ x ∂mu.restrict Omega,
+        lam * (ψ x ^ 2 * ‖W1p.gradient u x‖ ^ 2 / W1p.value u x ^ 2) ≤
+          -energyIntegrand (a x) ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x)
+              ((0 : EuclideanSpace ℝ ι → ℝ) x) (jetField u x) (jetField v x)
+            + lam / 2 * (ψ x ^ 2 * ‖W1p.gradient u x‖ ^ 2 / W1p.value u x ^ 2)
+            + 2 * Lam ^ 2 / lam * ‖∇ ψ x‖ ^ 2 := by
+  have hlam := h.pos
+  obtain ⟨z, hzv, hzg⟩ := exists_value_gradient_positiveCutoff_inv (u := u) hm
+  set F := positiveCutoff m fun t : ℝ => t⁻¹
+  set y := W1p.contDiffSMul ψ hψ hM hψM hgradM z
+  have hmem : ∀ᵐ x ∂mu.restrict Omega, x ∈ (Omega : Set (EuclideanSpace ℝ ι)) :=
+    ae_restrict_mem Omega.isOpen.measurableSet
+  refine ⟨W1p.contDiffSMul ψ hψ hM hψM hgradM y,
+    W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by norm_num) hψ hM hψM hgradM
+      hcpt hts y, ?_, ?_⟩
+  · filter_upwards [W1p.value_contDiffSMul_ae hψ hM hψM hgradM y,
+      W1p.value_contDiffSMul_ae hψ hM hψM hgradM z, hzv] with x hvx hyx hzx
+    rw [hvx, hyx, hzx, smul_eq_mul, smul_eq_mul, ← mul_assoc]
+    exact mul_nonneg (mul_self_nonneg _)
+      (positiveCutoff_nonneg hm (fun t ht => (inv_pos.2 ht).le) _)
+  filter_upwards [hmem, hum, W1p.gradient_contDiffSMul_ae hψ hM hψM hgradM y,
+    W1p.gradient_contDiffSMul_ae hψ hM hψM hgradM z,
+    W1p.value_contDiffSMul_ae hψ hM hψM hgradM z, hzv, hzg] with
+      x hx hux hgv hgy hyv hzv hzg
+  rw [energyIntegrand_apply, jetField_apply, jetField_apply, hgv, hgy, hyv, hzv, hzg]
+  simp only [driftForm_apply, massForm_apply, Pi.zero_apply, inner_zero_left, zero_mul, add_zero]
+  by_cases hxs : x ∈ tsupport ψ
+  · have hu0 : 0 < W1p.value u x := hm.trans_le (hux hxs)
+    have hhalf : m / 2 < W1p.value u x := by linarith [hux hxs]
+    have hFu : F (W1p.value u x) = (W1p.value u x)⁻¹ := positiveCutoff_of_ge hm _ hhalf.le
+    have hdFu : deriv F (W1p.value u x) = -(W1p.value u x ^ 2)⁻¹ := by
+      rw [deriv_positiveCutoff hm _ hhalf, deriv_inv]
+    rw [hFu, hdFu]
+    exact mul_sq_mul_norm_sq_div_sq_le_neg_matrixBilinearForm_add hlam (h.lower_bound hx)
+      (h.upper_bound hx) hu0 _ _ _
+  · simp [image_eq_zero_of_notMem_tsupport hxs, gradient_of_notMem_tsupport hxs]
+
 /-- **The logarithmic Caccioppoli inequality.** Let `a` be measurable and uniformly elliptic on
 `Ω` with constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak supersolution of
 `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`. Let `ψ` be smooth
@@ -167,86 +244,23 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_div_sq_le
       (2 * Lam / lam) ^ 2 * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 ∂mu := by
   have hlam := h.pos
   obtain ⟨M, hM, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
-  have hψM' : ∀ x ∈ Omega, |ψ x| ≤ M := fun x _ => hψM x
-  have hgradM' : ∀ x ∈ Omega, ‖∇ ψ x‖ ≤ M := fun x _ => hgradM x
-  -- The reciprocal `1/u` on the support of `ψ`, as an element `z = F ∘ u` of `H¹(Ω)`.
-  set F := positiveCutoff m fun t : ℝ => t⁻¹
-  have hgC : ∀ t : ℝ, 0 < t → ContDiffAt ℝ 1 (fun t : ℝ => t⁻¹) t :=
-    fun t ht => contDiffAt_inv ℝ ht.ne'
-  have hFC : ContDiff ℝ 1 F := contDiff_positiveCutoff hm hgC
-  obtain ⟨MF, hMF⟩ := exists_nnnorm_deriv_positiveCutoff_le hm hgC (K := (m ^ 2)⁻¹)
-    fun t ht => by
-      rw [deriv_inv, abs_neg, abs_inv, abs_pow, abs_of_pos (hm.trans_le ht)]
-      gcongr
-  have hF0 : F 0 = 0 := positiveCutoff_of_le hm _ (by linarith)
-  set z := W1p.contDiffComp (by norm_num) hFC hMF hF0 u
-  -- The test function `v = ψ (ψ z) = ψ² / u`, nonnegative and in `H¹₀(Ω)`.
-  set y := W1p.contDiffSMul ψ hψ hM hψM' hgradM' z
-  set v := W1p.contDiffSMul ψ hψ hM hψM' hgradM' y
-  have hv : v ∈ w1p0Submodule mu Omega 2 :=
-    W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by norm_num) hψ hM hψM' hgradM'
-      hcpt hts y
-  have hnonneg : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value v x := by
-    filter_upwards [W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' y,
-      W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' z,
-      W1p.value_contDiffComp_ae (by norm_num) hFC hMF hF0 u] with x hvx hyx hzx
-    rw [hvx, hyx, hzx, smul_eq_mul, smul_eq_mul, ← mul_assoc]
-    exact mul_nonneg (mul_self_nonneg _)
-      (positiveCutoff_nonneg hm (fun t ht => (inv_pos.2 ht).le) _)
-  have hsup := hu ⟨v, hv⟩ hnonneg
-  simp only at hsup
-  -- The lower bound `u ≥ m` on the support of `ψ`, almost everywhere on `Ω`.
   have hum' : ∀ᵐ x ∂mu.restrict Omega, x ∈ tsupport ψ → m ≤ W1p.value u x :=
     ae_restrict_of_ae ((ae_restrict_iff' (isClosed_tsupport ψ).measurableSet).1 hum)
-  have hmem : ∀ᵐ x ∂mu.restrict Omega, x ∈ (Omega : Set (EuclideanSpace ℝ ι)) :=
-    ae_restrict_mem Omega.isOpen.measurableSet
+  obtain ⟨v, hv, hnonneg, hpt⟩ := exists_nonneg_mem_w1p0Submodule_energyIntegrand_le h hψ hcpt
+    hts hm hum' hM (fun x _ => hψM x) (fun x _ => hgradM x)
+  have hsup := hu ⟨v, hv⟩ hnonneg
+  simp only at hsup
   have hE := h.integrable_energyIntegrand_jetField (b := 0) (c := 0) (beta := 0) (gamma := 0)
     ha aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
     (fun _ _ => by simp) u v
   set X : EuclideanSpace ℝ ι → ℝ := fun x => ψ x ^ 2 * ‖W1p.gradient u x‖ ^ 2 / W1p.value u x ^ 2
-  -- Off the support of `ψ` both `ψ` and `∇ψ` vanish.
-  have hψ0 : ∀ x, x ∉ tsupport ψ → ψ x = 0 ∧ ∇ ψ x = 0 := fun x hx => by
-    refine ⟨image_eq_zero_of_notMem_tsupport hx, ?_⟩
-    have hfd : fderiv ℝ ψ x = 0 := Function.notMem_support.1 fun hx' =>
-      hx (support_fderiv_subset ℝ hx')
-    simp [_root_.gradient, hfd]
   have hXint : Integrable X (mu.restrict Omega) :=
     integrable_sq_mul_norm_gradient_sq_div_sq hψ.continuous hψM hm hum'
-  have hYint : Integrable (fun x => ‖∇ ψ x‖ ^ 2) (mu.restrict Omega) := by
-    have hcs : HasCompactSupport fun x => ‖∇ ψ x‖ ^ 2 := by
-      refine hcpt.mono' fun x hx => ?_
-      by_contra hxs
-      exact hx (by simp [(hψ0 x hxs).2])
-    exact (((ContDiff.continuous_gradient hψ).norm.pow 2).integrable_of_hasCompactSupport
-      hcs).restrict
-  -- The pointwise estimate: with `G = ∇u / u` and `q = ∇ψ`, the energy density of the test
-  -- function is `-ψ² aG·G + 2ψ aG·q`, and Young's inequality absorbs the cross term.
-  have hpt : ∀ᵐ x ∂mu.restrict Omega,
-      lam * X x ≤
-        -energyIntegrand (a x) ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x)
-            ((0 : EuclideanSpace ℝ ι → ℝ) x) (jetField u x) (jetField v x)
-          + lam / 2 * X x + 2 * Lam ^ 2 / lam * ‖∇ ψ x‖ ^ 2 := by
-    filter_upwards [hmem, hum', W1p.gradient_contDiffSMul_ae hψ hM hψM' hgradM' y,
-      W1p.gradient_contDiffSMul_ae hψ hM hψM' hgradM' z,
-      W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' z,
-      W1p.value_contDiffComp_ae (by norm_num) hFC hMF hF0 u,
-      W1p.gradient_contDiffComp_ae (by norm_num) hFC hMF hF0 u] with
-        x hx hux hgv hgy hyv hzv hzg
-    rw [energyIntegrand_apply, jetField_apply, jetField_apply, hgv, hgy, hyv, hzv, hzg]
-    simp only [driftForm_apply, massForm_apply, Pi.zero_apply, inner_zero_left, zero_mul,
-      add_zero]
-    by_cases hxs : x ∈ tsupport ψ
-    · have hu0 : 0 < W1p.value u x := hm.trans_le (hux hxs)
-      have hhalf : m / 2 < W1p.value u x := by linarith [hux hxs]
-      have hFu : F (W1p.value u x) = (W1p.value u x)⁻¹ := positiveCutoff_of_ge hm _ hhalf.le
-      have hdFu : deriv F (W1p.value u x) = -(W1p.value u x ^ 2)⁻¹ := by
-        rw [deriv_positiveCutoff hm _ hhalf, deriv_inv]
-      rw [hFu, hdFu]
-      exact mul_sq_mul_norm_sq_div_sq_le_neg_matrixBilinearForm_add hlam (h.lower_bound hx)
-        (h.upper_bound hx) hu0 _ _ _
-    · obtain ⟨hψx, hqx⟩ := hψ0 x hxs
-      simp [X, hψx, hqx]
-  -- Integrate, and absorb half of the left side.
+  have hYint : Integrable (fun x => ‖∇ ψ x‖ ^ 2) (mu.restrict Omega) :=
+    ((by have := ContDiff.continuous_gradient hψ; fun_prop :
+        Continuous fun x => ‖∇ ψ x‖ ^ 2).integrable_of_hasCompactSupport
+      (hcpt.gradient.comp_left (g := fun w => ‖w‖ ^ 2) (by simp))).restrict
+  -- Integrate the pointwise estimate, and absorb half of the left side.
   have hint : ∫ x in Omega, lam * X x ∂mu ≤ ∫ x in Omega, (-energyIntegrand (a x)
         ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)
           (jetField u x) (jetField v x) + lam / 2 * X x + 2 * Lam ^ 2 / lam * ‖∇ ψ x‖ ^ 2) ∂mu :=
@@ -271,6 +285,31 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_div_sq_le
   calc I = 2 / lam * (lam / 2 * I) := by field_simp
     _ ≤ 2 / lam * (2 * Lam ^ 2 / lam * Y) := by gcongr
     _ = (2 * Lam / lam) ^ 2 * Y := by field_simp
+
+omit [DecidableEq ι] in
+/-- If `u ≥ m > 0` almost everywhere on the ball `B(x₀, R) ⊆ Ω`, then `log u` is an element `w` of
+`H¹(B(x₀, R))` with value `log u` and `‖∇w‖² = ‖∇u‖² / u²` almost everywhere on the ball: the
+restriction of `W1p.exists_value_gradient_ae_eq_log` to the ball. -/
+private theorem exists_w1p_value_log_gradient_sq {u : W1p mu Omega 2} {x₀ : EuclideanSpace ℝ ι}
+    {R m : ℝ} (hball : ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι))) (hm : 0 < m)
+    (hum : ∀ᵐ x ∂mu.restrict (ball x₀ R), m ≤ W1p.value u x) :
+    ∃ w : W1p mu (⟨ball x₀ R, isOpen_ball⟩ : Opens (EuclideanSpace ℝ ι)) 2,
+      (⇑(W1p.value w) =ᵐ[mu.restrict (ball x₀ R)] fun x => Real.log (W1p.value u x)) ∧
+      ∀ᵐ x ∂mu.restrict (ball x₀ R),
+        ‖W1p.gradient w x‖ ^ 2 = ‖W1p.gradient u x‖ ^ 2 / W1p.value u x ^ 2 := by
+  set U : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ R, isOpen_ball⟩
+  have hU : U ≤ Omega := hball
+  obtain ⟨w, hwv, hwg⟩ := W1p.exists_value_gradient_ae_eq_log (p := 2) (by norm_num) hm
+    (u := W1p.restrictL hU u) (by
+      filter_upwards [W1p.value_restrictL_ae hU u, hum] with x hx h
+      rwa [hx])
+  refine ⟨w, ?_, ?_⟩
+  · filter_upwards [hwv, W1p.value_restrictL_ae hU u] with x hx hux
+    rw [hx, hux]
+  · filter_upwards [hwg, W1p.value_restrictL_ae hU u, W1p.gradient_restrictL_ae hU u, hum] with
+      x hx hux hgx hmx
+    rw [hx, hux, hgx, norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos (hm.trans_le hmx)]
+    ring
 
 /-- **The logarithmic Caccioppoli inequality on concentric balls.** There is a constant `c > 0`,
 depending only on the dimension, such that the following holds for every additive Haar measure
@@ -372,40 +411,20 @@ theorem exists_setIntegral_ball_log_sub_setAverage_sq_le :
   refine ⟨(2 ^ (n + 1)) ^ 2 * 4 * c ^ 2 * 2 ^ n, by positivity, ?_⟩
   intro mu _ Omega a lam Lam u x₀ R m h ha hu hR hball hm hum
   have hlam := h.pos
-  -- `log u` as an element `w` of `H¹(B(x₀, R))`, with weak gradient `∇u / u`.
-  set U : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ R, isOpen_ball⟩
-  have hU : U ≤ Omega := (ball_subset_ball (by linarith)).trans hball
-  set F := positiveCutoff m Real.log
-  have hgC : ∀ t : ℝ, 0 < t → ContDiffAt ℝ 1 Real.log t :=
-    fun t ht => Real.contDiffAt_log.2 ht.ne'
-  have hFC : ContDiff ℝ 1 F := contDiff_positiveCutoff hm hgC
-  obtain ⟨MF, hMF⟩ := exists_nnnorm_deriv_positiveCutoff_le hm hgC (K := m⁻¹) fun t ht => by
-    rw [Real.deriv_log, abs_inv, abs_of_pos (hm.trans_le ht)]
-    gcongr
-  have hF0 : F 0 = 0 := positiveCutoff_of_le hm _ (by linarith)
-  set w := W1p.contDiffComp (by norm_num) hFC hMF hF0 (W1p.restrictL hU u)
+  have hballR : ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
+    (ball_subset_ball (by linarith)).trans hball
   have humR : ∀ᵐ x ∂mu.restrict (ball x₀ R), m ≤ W1p.value u x :=
     ae_restrict_of_ae_restrict_of_subset (ball_subset_ball (by linarith)) hum
-  have hwv : ⇑(W1p.value w) =ᵐ[mu.restrict (ball x₀ R)] fun x => Real.log (W1p.value u x) := by
-    filter_upwards [W1p.value_contDiffComp_ae (by norm_num) hFC hMF hF0 (W1p.restrictL hU u),
-      W1p.value_restrictL_ae hU u, humR] with x hx hux hmx
-    rw [hx, hux]
-    exact positiveCutoff_of_ge hm _ (by linarith)
-  have hwg : ∀ᵐ x ∂mu.restrict (ball x₀ R),
-      ‖W1p.gradient w x‖ ^ 2 = ‖W1p.gradient u x‖ ^ 2 / W1p.value u x ^ 2 := by
-    filter_upwards [W1p.gradient_contDiffComp_ae (by norm_num) hFC hMF hF0 (W1p.restrictL hU u),
-      W1p.value_restrictL_ae hU u, W1p.gradient_restrictL_ae hU u, humR] with x hx hux hgx hmx
-    rw [hx, hux, hgx, deriv_positiveCutoff hm _ (by linarith), Real.deriv_log, norm_smul,
-      Real.norm_eq_abs, abs_inv, abs_of_pos (hm.trans_le hmx)]
-    ring
+  -- `log u` as an element `w` of `H¹(B(x₀, R))`, with weak gradient `∇u / u`.
+  obtain ⟨w, hwv, hwg⟩ := exists_w1p_value_log_gradient_sq hballR hm humR
   -- The Poincaré–Wirtinger inequality for `w` on `B(x₀, R)`, then the logarithmic Caccioppoli
   -- inequality on the balls `B(x₀, R) ⊆ B(x₀, 2R)`, whose volume is `2ⁿ |B(x₀, R)|`.
-  have hP := W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset (Omega := U) hR subset_rfl w
+  have hP := W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset
+    (Omega := ⟨ball x₀ R, isOpen_ball⟩) hR subset_rfl w
   have hcacc := hc h ha hu hR (by linarith : R < 2 * R) hball hm hum
   have hvol : mu.real (ball x₀ (2 * R)) = 2 ^ n * mu.real (ball x₀ R) := by
-    have hb : ∀ ρ : ℝ, 0 < ρ → mu.real (ball x₀ ρ) = ρ ^ n * mu.real (ball 0 1) := fun ρ hρ => by
-      rw [measureReal_def, Measure.addHaar_ball_of_pos mu x₀ hρ, ENNReal.toReal_mul,
-        ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
+    have hb : ∀ ρ : ℝ, 0 < ρ → mu.real (ball x₀ ρ) = ρ ^ n * mu.real (ball 0 1) := fun ρ hρ =>
+      mu.addHaar_real_ball_of_pos x₀ hρ
     rw [hb _ (by linarith), hb _ hR]
     ring
   calc ∫ x in ball x₀ R,

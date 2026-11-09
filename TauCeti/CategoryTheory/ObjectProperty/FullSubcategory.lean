@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.ObjectProperty.Equivalence
 public import Mathlib.CategoryTheory.Linear.LinearFunctor
+public import Mathlib.CategoryTheory.Groupoid
 
 /-!
 # Successive full-subcategory restrictions
@@ -24,6 +25,10 @@ public section
 namespace CategoryTheory.ObjectProperty
 
 variable {C : Type*} [Category* C] (P Q : ObjectProperty C)
+
+/-- A full subcategory of a groupoid is a groupoid, without any closure condition on objects. -/
+instance FullSubcategory.isGroupoid [IsGroupoid C] : IsGroupoid P.FullSubcategory :=
+  isGroupoid_of_reflects_iso P.ι
 
 /-- Two successive full-subcategory restrictions agree with restriction to the intersection.
 The comparison and its inverse leave the underlying objects and morphisms unchanged. -/

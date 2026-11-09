@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.FiniteRank.Basic
+public import TauCeti.Topology.VectorBundle.FiniteRank.Biproduct
 public import Mathlib.Topology.VectorBundle.Constructions
 
 /-!
@@ -18,8 +18,11 @@ presenting bundles in the universe of their base.
 
 `FiniteRankBundleCore.pullbackFunctor` pulls back both bundles and continuous linear
 bundle maps, and preserves addition. Identity and composition of base maps give
-strict equalities of functors, not just equality of bundle classes. The reconstructed bundle is
-identified with Mathlib's actual pullback by `pullbackHomeomorph`.
+strict equalities of functors, not just equality of bundle classes. Pullback is also strictly
+compatible with trivial cores and Whitney sums (`pullback_trivial`, `pullback_whitneySum`).
+The reconstructed bundle is identified with Mathlib's actual pullback by `pullbackHomeomorph`,
+which carries each core chart to Mathlib's pulled-back trivialization
+(`pullbackHomeomorph_localTriv`).
 
 The construction uses Mathlib's vector-bundle cores and native pullback topology,
 and `VectorBundleCore.CoordinateHom` for descent of continuous linear bundle maps.
@@ -68,6 +71,14 @@ def pullback (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) : FiniteRankBundleC
 @[simp] theorem coordChange_pullback (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
     (i j x : X) :
     (A.pullback f).core.coordChange i j x = A.core.coordChange (f i) (f j) (f x) := (rfl)
+
+/-- Pulling back a trivial core gives the trivial core of the same rank. -/
+@[simp] theorem pullback_trivial (f : C(X, Y)) (n : ℕ) :
+    (trivial 𝕜 Y n).pullback f = trivial 𝕜 X n := (rfl)
+
+/-- Pulling back commutes strictly with Whitney sums. -/
+@[simp] theorem pullback_whitneySum (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+    (whitneySum A D).pullback f = whitneySum (A.pullback f) (D.pullback f) := (rfl)
 
 /-- Pull back compatible chart operators. Their continuity is inherited by composition
 with the map between the actual chart intersections. -/
@@ -245,6 +256,16 @@ def pullbackHomeomorph (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
 @[simp] theorem pullbackHomeomorph_symm_apply (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
     (p : TotalSpace (Fin A.rank → 𝕜) ((⇑f) *ᵖ A.core.Fiber)) :
     (A.pullbackHomeomorph f).symm p = ⟨p.proj, p.2⟩ := (rfl)
+
+/-- The comparison carries the chart at `i` to Mathlib's pullback of the chart at `f i`. -/
+theorem pullbackHomeomorph_localTriv (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) (i : X)
+    (p : (A.pullback f).core.TotalSpace) :
+    (A.core.localTriv (f i)).pullback f (A.pullbackHomeomorph f p) =
+      (A.pullback f).core.localTriv i p := by
+  simp only [Trivialization.pullback_apply, pullbackHomeomorph_apply,
+    localTriv_apply, A.indexAt_eq, coordChange_pullback]
+  -- Both sides are `(p.proj, A.core.coordChange (f p.proj) (f i) (f p.proj) p.2)`.
+  rfl
 
 /-- Pulling back a bundle morphism commutes with the native map to the original total space. -/
 theorem pullbackHomeomorph_naturality {A D : FiniteRankBundleCore 𝕜 Y} (a : A ⟶ D)

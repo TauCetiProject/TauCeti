@@ -58,33 +58,24 @@ theorem units_map_quotient_factor_surjective {I J : Ideal R} (h : J ≤ I) (hJ :
   have haB : mk B a = 1 := by
     simpa [e] using congrArg Prod.snd hq
   have ha (P : Ideal R) (hP : P ∈ UniqueFactorizationMonoid.factors J) : a ∉ P := by
-    let := hmax P hP
-    let : Field (R ⧸ P) := Ideal.Quotient.field P
-    by_cases hIP : I ≤ P
-    · have hu : IsUnit (mk P a) := by
-        rw [← factor_mk hIP, haI]
+    have := hmax P hP
+    -- Modulo `P`, the residue of `a` is a unit: it is `u` if `I ≤ P` and `1` otherwise.
+    have hu : IsUnit (mk P a) := by
+      by_cases hIP : I ≤ P
+      · rw [← factor_mk hIP, haI]
         exact u.isUnit.map (factor hIP)
-      exact fun haP => (isUnit_iff_ne_zero.mp hu) (eq_zero_iff_mem.mpr haP)
-    · have hPB : P ∣ B := Finset.dvd_prod_of_mem (f := id)
-        (Finset.mem_filter.mpr ⟨Multiset.mem_toFinset.mpr hP, hIP⟩)
-      have hab : a - 1 ∈ B := by
-        apply Ideal.Quotient.eq.mp
-        simpa using haB
-      intro haP
-      apply (hmax P hP).ne_top
-      apply (Ideal.eq_top_iff_one _).mpr
-      have hone : (1 : R) = a - (a - 1) := by ring
-      rw [hone]
-      exact P.sub_mem haP (Ideal.le_of_dvd hPB hab)
+      · have hBP : B ≤ P := Ideal.le_of_dvd <| Finset.dvd_prod_of_mem (f := id) <|
+          Finset.mem_filter.mpr ⟨Multiset.mem_toFinset.mpr hP, hIP⟩
+        rw [← factor_mk hBP, haB, map_one]
+        exact isUnit_one
+    exact fun haP => hu.ne_zero (eq_zero_iff_mem.mpr haP)
   -- The prime-power factors of J detect whether a residue class is a unit.
   have haUnit : IsUnit (mk J a) := by
     apply (MulEquiv.isUnit_map (IsDedekindDomain.quotientEquivPiFactors hJ)).mp
-    rw [IsDedekindDomain.quotientEquivPiFactors_mk]
-    apply Pi.isUnit_iff.mpr
+    rw [IsDedekindDomain.quotientEquivPiFactors_mk, Pi.isUnit_iff]
     intro P
-    let : (P : Ideal R).IsMaximal := hmax P (Multiset.mem_toFinset.mp P.2)
-    exact isUnit_mk_pow_of_notMem (P : Ideal R)
-      (ha P (Multiset.mem_toFinset.mp P.2))
+    have := hmax P (Multiset.mem_toFinset.mp P.2)
+    exact isUnit_mk_pow_of_notMem _ (ha P (Multiset.mem_toFinset.mp P.2))
   refine ⟨haUnit.unit, Units.ext ?_⟩
   simpa using haI
 

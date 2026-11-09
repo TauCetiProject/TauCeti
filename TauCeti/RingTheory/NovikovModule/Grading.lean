@@ -89,6 +89,12 @@ theorem gradeBy_sub [AddCommGroup D] (d : S → D) (n k : D) :
   · simpa only [sub_sub_cancel] using congrArg (fun x => n - x) (ha s hs)
   · rw [ha s hs, sub_sub_cancel]
 
+/-- Homogeneous combinations of degree `k` lie in the piece of degree `f k` for the degree
+`f ∘ d`; for instance integer-homogeneous combinations lie in the piece of their residue. -/
+theorem gradeBy_le_gradeBy_comp {D' : Type*} {d : S → D} (f : D → D') (k : D) :
+    gradeBy R F d k ≤ gradeBy R F (f ∘ d) (f k) :=
+  fun _ ha => mem_gradeBy_iff.2 fun s hs => congrArg f (mem_gradeBy_iff.1 ha s hs)
+
 section Coordinates
 
 variable {H ι : Type*} [AddGroup H] [Finite ι] {P : ι → Type*}

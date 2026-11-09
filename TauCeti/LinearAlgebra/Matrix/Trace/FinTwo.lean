@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Sign.Defs
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.Trace
@@ -52,12 +53,17 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
 * `Matrix.exists_pow_eq_smul_sub_smul_one_fin_two`, `Matrix.discr_smul_sub_smul_one_fin_two`,
   `Matrix.exists_discr_pow_eq_sq_mul_fin_two`: the powers of a `2 × 2` matrix are combinations of
   the matrix and `1`, and their discriminants are square multiples of its discriminant.
+* `Matrix.det_one_sub_eq_two_sub_trace_of_det_eq_one`,
+  `Matrix.det_one_add_eq_two_add_trace_of_det_eq_one`: `det (1 ∓ A) = 2 ∓ trace A` for a
+  determinant-one matrix `A`.
 * `Matrix.abs_trace_pow_le_two`: the powers of a determinant-one matrix of trace at most `2` in
   absolute value again have this property.
 * `Matrix.det_one_sub_pow_neg_of_two_lt_trace`, `Matrix.det_one_sub_pow_neg_of_trace_lt_neg_two`,
   `Matrix.det_one_sub_pow_pos_of_trace_lt_neg_two`,
   `Matrix.det_one_sub_pow_nonneg_of_abs_trace_le_two`: the sign of `det (1 - A ^ n)` for a
   determinant-one matrix `A`, according to its trace.
+* `Matrix.sign_det_one_sub_pow_succ_of_det_eq_one`: for a determinant-one matrix all of whose
+  nonzero powers are nondegenerate, the signs of `det (1 - A ^ n)` form a geometric sequence.
 * `Matrix.isHyperbolic_iff_two_lt_abs_trace`: a determinant-one matrix is hyperbolic exactly when
   its trace has absolute value greater than `2`.
 * `Matrix.isElliptic_iff_abs_trace_lt_two`: a determinant-one matrix is elliptic exactly when its
@@ -129,6 +135,18 @@ theorem exists_discr_pow_eq_sq_mul_fin_two (A : Matrix (Fin 2) (Fin 2) R) (n : �
     ∃ a : R, (A ^ n).discr = a ^ 2 * A.discr := by
   obtain ⟨a, b, h⟩ := exists_pow_eq_smul_sub_smul_one_fin_two A n
   exact ⟨a, by rw [h, discr_smul_sub_smul_one_fin_two]⟩
+
+/-- For a `2 × 2` matrix `A` of determinant one, `det (1 - A) = 2 - trace A`. -/
+theorem det_one_sub_eq_two_sub_trace_of_det_eq_one {A : Matrix (Fin 2) (Fin 2) R}
+    (hdet : A.det = 1) : (1 - A).det = 2 - A.trace := by
+  rw [det_one_sub_fin_two, hdet]
+  ring
+
+/-- For a `2 × 2` matrix `A` of determinant one, `det (1 + A) = 2 + trace A`. -/
+theorem det_one_add_eq_two_add_trace_of_det_eq_one {A : Matrix (Fin 2) (Fin 2) R}
+    (hdet : A.det = 1) : (1 + A).det = 2 + A.trace := by
+  rw [det_one_add_fin_two, hdet]
+  ring
 
 end CommRing
 
@@ -222,6 +240,37 @@ theorem det_one_sub_pow_nonneg_of_abs_trace_le_two {A : Matrix (Fin 2) (Fin 2) R
     (hdet : A.det = 1) (htr : |A.trace| ≤ 2) (n : ℕ) : 0 ≤ (1 - A ^ n).det := by
   rw [det_one_sub_fin_two, det_pow, hdet, one_pow]
   linarith [(abs_le.1 (abs_trace_pow_le_two hdet htr n)).2]
+
+/-- For a `2 × 2` matrix `A` of determinant one all of whose nonzero powers are nondegenerate,
+`det (1 - A ^ n) ≠ 0` for `n ≠ 0`, the signs of `det (1 - A ^ n)` form a geometric sequence:
+`sgn det (1 - A ^ (k + 1)) = sgn det (1 - A) * σ ^ k`, where `σ = -1` if `det (1 + A) < 0` (that
+is, if `trace A < -2`) and `σ = 1` otherwise. -/
+theorem sign_det_one_sub_pow_succ_of_det_eq_one {A : Matrix (Fin 2) (Fin 2) R}
+    (hdet : A.det = 1) (hA : ∀ n ≠ 0, (1 - A ^ n).det ≠ 0) (k : ℕ) :
+    (SignType.sign (1 - A ^ (k + 1)).det : ℤ) =
+      SignType.sign (1 - A).det * (if (1 + A).det < 0 then -1 else 1) ^ k := by
+  rw [det_one_add_eq_two_add_trace_of_det_eq_one hdet]
+  rcases lt_or_ge 2 A.trace with htr | htr
+  · rw [ite_eq_right (by linarith), one_pow, mul_one,
+      sign_neg (det_one_sub_pow_neg_of_two_lt_trace hdet htr k.succ_ne_zero),
+      sign_neg (a := (1 - A).det)
+        (by simpa using det_one_sub_pow_neg_of_two_lt_trace hdet htr one_ne_zero)]
+  rcases lt_or_ge A.trace (-2) with htr' | htr'
+  · rw [ite_eq_left (by linarith), sign_pos (a := (1 - A).det)
+      (by simpa using det_one_sub_pow_pos_of_trace_lt_neg_two hdet htr' odd_one)]
+    rcases k.even_or_odd with he | ho
+    · rw [sign_pos (det_one_sub_pow_pos_of_trace_lt_neg_two hdet htr' he.add_one),
+        he.neg_one_pow]
+      simp
+    · rw [sign_neg (det_one_sub_pow_neg_of_trace_lt_neg_two hdet htr' ho.add_one
+        k.succ_ne_zero), ho.neg_one_pow]
+      simp
+  have hpos (n : ℕ) (hn : n ≠ 0) : 0 < (1 - A ^ n).det :=
+    (det_one_sub_pow_nonneg_of_abs_trace_le_two hdet (abs_le.2 ⟨htr', htr⟩) n).lt_of_ne'
+      (hA n hn)
+  rw [ite_eq_right (by linarith), sign_pos (hpos _ k.succ_ne_zero),
+    sign_pos (a := (1 - A).det) (by simpa using hpos 1 one_ne_zero)]
+  simp
 
 end Ordered
 

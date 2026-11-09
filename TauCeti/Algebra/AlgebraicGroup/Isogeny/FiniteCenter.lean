@@ -63,12 +63,9 @@ theorem IsIsogeny.map_centerDefiningIdeal_eq {f : H ⟶ K} (hf : IsIsogeny f)
       (by rw [hJ]; exact le_rfl) inferInstance
   let _ : Algebra.Smooth k K :=
     (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k K)
-  let _ : Algebra.IsGeometricallyReduced k K := isGeometricallyReduced_of_smooth k K
   let _ : Algebra.Smooth k (_root_.CommHopfAlgCat.quotient K J) :=
     (smoothCommHopfAlgProperty_iff _).mp
       (smoothCommHopfAlgProperty_of_charZero k (_root_.CommHopfAlgCat.quotient K J))
-  let _ : Algebra.IsGeometricallyReduced k (_root_.CommHopfAlgCat.quotient K J) :=
-    isGeometricallyReduced_of_smooth k (_root_.CommHopfAlgCat.quotient K J)
   have hcentral : J.IsCentral :=
     hnormal.isCentral_of_finite_of_isGeometricallyReduced (H := FiniteTypeCommHopfAlgCat.of k K) hK
   exact le_antisymm

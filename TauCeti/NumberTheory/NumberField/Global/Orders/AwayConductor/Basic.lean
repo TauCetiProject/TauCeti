@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.NumberField.Global.RayClass.Modulus
 public import TauCeti.RingTheory.Ideal.Conductor
 import Mathlib.LinearAlgebra.FreeModule.IdealQuotient
 import TauCeti.RingTheory.ClassGroup.CoprimeRepresentative
-import TauCeti.RingTheory.Ideal.Quotient.Artinian
+import TauCeti.RingTheory.Ideal.Quotient.Semilocal
 
 /-!
 # Ideals of an order away from its conductor
@@ -93,6 +93,12 @@ theorem conductorModulus_maximalNumberFieldOrder :
     (maximalNumberFieldOrder K).conductorModulus = Modulus.one K :=
   Modulus.ext (by simp) (by simp)
 
+/-- Enlarging an order makes its conductor modulus a divisor of the conductor modulus of the
+smaller order. -/
+theorem conductorModulus_dvd_conductorModulus {O O' : NumberFieldOrder K}
+    (h : O.toSubalgebra ≤ O'.toSubalgebra) : O'.conductorModulus ∣ O.conductorModulus :=
+  Modulus.dvd_iff.mpr ⟨Ideal.dvd_iff_le.mpr (conductor_mono h), by simp⟩
+
 /-- An ideal of `𝓞 K` is prime to the conductor modulus exactly when it is nonzero and coprime
 to the conductor. -/
 theorem mem_integralIdealsPrimeTo_conductorModulus_iff {J : Ideal (𝓞 K)} :
@@ -124,15 +130,15 @@ def integralIdealsAwayConductorEquiv :
   toFun I := ⟨I.1.map (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K), by
     rw [mem_integralIdealsPrimeTo_conductorModulus_iff]
     refine ⟨fun h => I.2.1 ?_,
-      map_sup_eq_top_of_coprime_comap (S := O.toRingOfIntegers.toSubring) I.2.2⟩
+      Ideal.map_sup_eq_top_of_coprime_comap I.2.2⟩
     exact (comap_map_of_coprime_comap (S := O.toRingOfIntegers.toSubring)
       O.conductor_le_toRingOfIntegers I.2.2).symm.trans
         ((congrArg (Ideal.comap O.toRingOfIntegers.toSubring.subtype) h).trans
           (Ideal.comap_bot_of_injective _ Subtype.val_injective))⟩
   invFun J := ⟨J.1.comap (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K), by
     have hJ := (O.mem_integralIdealsPrimeTo_conductorModulus_iff).mp J.2
-    refine ⟨fun h => hJ.1 ?_, comap_sup_eq_top_of_le (S := O.toRingOfIntegers.toSubring)
-      O.conductor_le_toRingOfIntegers hJ.2⟩
+    refine ⟨fun h => hJ.1 ?_, (comap_sup_comap_eq_top_iff (S := O.toRingOfIntegers.toSubring)
+      O.conductor_le_toRingOfIntegers).mpr hJ.2⟩
     exact (map_comap_of_coprime (S := O.toRingOfIntegers.toSubring)
       O.conductor_le_toRingOfIntegers hJ.2).symm.trans
         ((congrArg (Ideal.map O.toRingOfIntegers.toSubring.subtype) h).trans Ideal.map_bot)⟩

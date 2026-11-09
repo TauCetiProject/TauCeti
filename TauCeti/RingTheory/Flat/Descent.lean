@@ -11,8 +11,9 @@ public import Mathlib.RingTheory.RingHom.Flat
 /-!
 # Descent of flatness and faithful flatness
 
-Flatness and faithful flatness of an algebra descend along a faithfully flat extension of the
-base. Thus both can be established after extending scalars to a faithfully flat algebra. The
+Faithful flatness of a module descends along a faithfully flat extension of the base,
+complementing Mathlib's descent of flatness (`Module.Flat.of_flat_tensorProduct`). Thus both
+can be established after extending scalars to a faithfully flat algebra. The
 ring-homomorphism formulations supply the descent properties used to descend flat morphisms of
 schemes along fpqc covers, and finite faithfully flat morphisms such as isogenies of affine
 group schemes.
@@ -22,30 +23,21 @@ public section
 
 open TensorProduct
 
-/-- Faithful flatness of an algebra descends along faithfully flat scalar extension. -/
-theorem Module.FaithfullyFlat.of_tensorProduct
-    (R S T : Type*) [CommRing R] [CommRing S] [CommRing T]
-    [Algebra R S] [Algebra R T] [Module.FaithfullyFlat R S]
-    [Module.FaithfullyFlat S (S ⊗[R] T)] : Module.FaithfullyFlat R T := by
-  let : Module.Flat R T := Module.Flat.of_flat_tensorProduct R T S
-  apply Module.FaithfullyFlat.of_comap_surjective
-  intro p
-  obtain ⟨q, hq⟩ := PrimeSpectrum.comap_surjective_of_faithfullyFlat (A := R) (B := S) p
-  obtain ⟨r, hr⟩ :=
-    PrimeSpectrum.comap_surjective_of_faithfullyFlat (A := S) (B := S ⊗[R] T) q
-  refine ⟨r.comap Algebra.TensorProduct.includeRight.toRingHom, ?_⟩
-  rw [← hq, ← hr, ← PrimeSpectrum.comap_comp_apply, ← PrimeSpectrum.comap_comp_apply]
-  congr 1
-  ext x
-  simp [Algebra.TensorProduct.includeRight, Algebra.algebraMap_eq_smul_one,
-    TensorProduct.tmul_smul, TensorProduct.smul_tmul', Algebra.TensorProduct.one_def]
+/-- Faithful flatness of a module descends along faithfully flat scalar extension. -/
+theorem Module.FaithfullyFlat.of_faithfullyFlat_tensorProduct
+    (R M S : Type*) [CommRing R] [AddCommGroup M] [Module R M] [CommRing S] [Algebra R S]
+    [Module.FaithfullyFlat R S] [Module.FaithfullyFlat S (S ⊗[R] M)] :
+    Module.FaithfullyFlat R M := by
+  refine (iff_flat_and_rTensor_reflects_triviality R M).2
+    ⟨Module.Flat.of_flat_tensorProduct R M S, fun N _ _ _ ↦ ?_⟩
+  simpa using (AlgebraTensorModule.distribBaseChange R S N M).symm.subsingleton
 
 /-- Faithfully flat ring maps descend along faithfully flat base change. -/
 theorem RingHom.FaithfullyFlat.codescendsAlong_faithfullyFlat :
     RingHom.CodescendsAlong RingHom.FaithfullyFlat RingHom.FaithfullyFlat := by
   refine .mk _ RingHom.FaithfullyFlat.respectsIso fun R S T _ _ _ _ _ h h' ↦ ?_
   rw [RingHom.faithfullyFlat_algebraMap_iff] at h h' ⊢
-  exact Module.FaithfullyFlat.of_tensorProduct R S T
+  exact Module.FaithfullyFlat.of_faithfullyFlat_tensorProduct R T S
 
 /-- Flat ring maps descend along faithfully flat base change. -/
 theorem RingHom.Flat.codescendsAlong_faithfullyFlat :

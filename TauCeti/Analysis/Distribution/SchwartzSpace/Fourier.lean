@@ -48,6 +48,8 @@ Plancherel's theorem `‖𝓕⁻ f‖_{L²} = ‖f‖_{L²}`.
 * `SchwartzMap.norm_fourierInv_iterate_lineDerivOp_sq`: its consequence for squared norms,
   `‖𝓕⁻ (∂_m^N σ) x‖² = (2π) ^ (2N) ⟪x, m⟫ ^ (2N) ‖𝓕⁻ σ x‖²`.
 * `SchwartzMap.norm_fourierInv_toL2_eq`: Plancherel's theorem for the inverse Fourier transform.
+* `SchwartzMap.norm_toLp_fourierMultiplierCLM_eq`: Plancherel's theorem for Fourier multipliers,
+  `‖𝓕⁻ (w • 𝓕 f)‖_{L²} = ‖w • 𝓕 f‖_{L²}`.
 * `SchwartzMap.sum_sum_norm_toLp_lineDerivOp_lineDerivOp_sq`: the squared `L²` norms of the
   second derivatives along an orthonormal basis sum to the squared `L²` norm of the Laplacian.
 
@@ -111,6 +113,17 @@ theorem fourier_lineDerivOp_apply (u : 𝓢(E, F)) (v ξ : E) :
   rw [fourier_lineDerivOp_eq, smul_apply, smulLeftCLM_apply_apply hv, ← Complex.coe_smul,
     smul_smul]
 
+/-- The Fourier transform of an iterated directional derivative is multiplication by the
+product of the corresponding linear Fourier symbols. -/
+theorem fourier_iteratedLineDerivOp_apply (u : 𝓢(E, F)) {k : ℕ} (v : Fin k → E) (ξ : E) :
+    𝓕 (∂^{v} u) ξ = (∏ j, ((2 * π * Complex.I) * ⟪ξ, v j⟫)) • 𝓕 u ξ := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [LineDeriv.iteratedLineDerivOp_succ_left, fourier_lineDerivOp_apply, ih,
+      smul_smul, Fin.prod_univ_succ]
+    simp only [Fin.tail_def]
+
 /-- The Fourier transform of the second directional derivative `∂_v ∂_w u` of a Schwartz function
 is `𝓕 u` multiplied by `-(2π)² ⟪ξ, v⟫ ⟪ξ, w⟫`. -/
 theorem fourier_lineDerivOp_lineDerivOp_apply (u : 𝓢(E, F)) (v w ξ : E) :
@@ -164,6 +177,16 @@ variable [InnerProductSpace ℂ F] [CompleteSpace F]
 @[simp]
 theorem norm_fourierInv_toL2_eq (f : 𝓢(E, F)) : ‖(𝓕⁻ f).toLp 2‖ = ‖f.toLp 2‖ := by
   rw [← norm_fourier_toL2_eq (𝓕⁻ f), FourierTransform.fourier_fourierInv_eq]
+
+/-- **Plancherel for Fourier multipliers.** For a symbol `w` of temperate growth, the `L²` norm
+of the Fourier multiplier `𝓕⁻ (w • 𝓕 f)` of a Schwartz function is the `L²` norm of `w • 𝓕 f`. -/
+theorem norm_toLp_fourierMultiplierCLM_eq {w : E → ℂ} (hw : w.HasTemperateGrowth)
+    (f : 𝓢(E, F)) :
+    ‖(fourierMultiplierCLM F w f).toLp 2‖ = (eLpNorm (fun ξ ↦ w ξ • 𝓕 f ξ) 2 volume).toReal := by
+  rw [← norm_fourier_toL2_eq, fourierMultiplierCLM_apply, fourier_fourierInv_eq, norm_toLp]
+  congr 2
+  ext ξ
+  rw [smulLeftCLM_apply_apply hw]
 
 /-- The Laplacian controls the Hessian in `L²`: for a Schwartz function `u` and an orthonormal
 basis `b`, `∑ᵢ ∑ⱼ ‖∂_{bᵢ} ∂_{bⱼ} u‖²_{L²} = ‖Δ u‖²_{L²}`. -/

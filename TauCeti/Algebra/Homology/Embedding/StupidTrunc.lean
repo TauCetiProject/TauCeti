@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Homology.Embedding.StupidTrunc
 public import Mathlib.Algebra.Homology.Embedding.CochainComplex
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
-public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
+public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.CategoryTheory.Limits.Constructions.EventuallyConstant
 import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Kernels
 
@@ -19,22 +19,23 @@ For a cochain complex `K` over a category with zero morphisms and a zero object,
 truncation `K.stupidTrunc (ComplexShape.embeddingUpIntLE n)` keeps the terms of `K` in degrees
 `≤ n` and replaces the others by zero. The differentials of `K` go up in degree, so this truncation
 is a quotient complex of `K`: Mathlib's projection
-`K.πStupidTrunc (ComplexShape.embeddingUpIntLE n)` is an isomorphism in every degree `≤ n`.
+`K.πStupidTrunc (ComplexShape.embeddingUpIntLE n)` is an isomorphism in every degree `≤ n` and
+zero in every degree `> n`.
 
 When `K` vanishes in degrees `> n + 1`, its top term `K.X (n + 1)` placed in degree `n + 1` is a
-subcomplex, and in the preadditive setting the two maps form the short complex
-`CochainComplex.topShortComplex K n`
+subcomplex, and the two maps form the short complex `CochainComplex.topShortComplex K n`
 
 ```text
 K.X (n + 1)[-(n + 1)] ⟶ K ⟶ K.stupidTrunc (embeddingUpIntLE n),
 ```
 
-which is split in each degree (`CochainComplex.topShortComplexSplitting`). Degreewise split short
-exact sequences of complexes give distinguished triangles in the homotopy category, so this is the
-step of an induction on the length of a bounded complex: it expresses a bounded complex as an
-extension of a shorter one by a complex concentrated in a single degree.
+which, in the preadditive setting, is split in each degree
+(`CochainComplex.topShortComplexSplitting`). Degreewise split short exact sequences of complexes
+give distinguished triangles in the homotopy category, so this is the step of an induction on the
+length of a bounded complex: it expresses a bounded complex as an extension of a shorter one by a
+complex concentrated in a single degree.
 
-In an abelian category, the kernel of `K ⟶ σ^{≤ n} K` is the brutal truncation `σ^{≥ n + 1} K`,
+When `C` has equalizers, the kernel of `K ⟶ σ^{≤ n} K` is the brutal truncation `σ^{≥ n + 1} K`,
 the subcomplex of the terms of `K` in degrees `> n`. These subcomplexes exhaust `K`: the
 sequence `σ^{≥ 0} K ⟶ σ^{≥ -1} K ⟶ σ^{≥ -2} K ⟶ ⋯` has colimit `K`, because in each degree its
 inclusions into `K` are eventually isomorphisms. This writes a complex which is bounded above as a
@@ -102,6 +103,8 @@ lemma πStupidTruncLE_f_of_lt {i : ℤ} (hi : n < i) :
     (K.πStupidTrunc (ComplexShape.embeddingUpIntLE n)).f i = 0 :=
   (K.isZero_stupidTrunc_embeddingUpIntLE_X n hi).eq_of_tgt _ _
 
+section Top
+
 variable [K.IsStrictlyLE n]
 
 /-- The inclusion of the top term `K.X n`, placed in degree `n`, into a cochain complex `K`
@@ -120,11 +123,11 @@ lemma ιTop_f : (K.ιTop n).f n = (singleObjXSelf (.up ℤ) n (K.X n)).hom := by
 lemma ιTop_f_of_ne {i : ℤ} (hi : i ≠ n) : (K.ιTop n).f i = 0 :=
   (isZero_single_obj_X (.up ℤ) _ _ _ hi).eq_of_src _ _
 
-end HasZeroMorphisms
+end Top
 
-section Preadditive
+section TopShortComplex
 
-variable [Preadditive C] [HasZeroObject C] (K : CochainComplex C ℤ) (n : ℤ) [K.IsStrictlyLE (n + 1)]
+variable [K.IsStrictlyLE (n + 1)]
 
 /-- The inclusion of the top term followed by the projection onto the brutal truncation below it
 is zero. -/
@@ -184,49 +187,26 @@ lemma topShortComplex_g : HEq (K.topShortComplex n).g
   dsimp [topShortComplex]
   rfl
 
-/-- The short complex splitting off the top term is split in each degree: in degree `n + 1` its
-first map is an isomorphism and its third term vanishes, and in every other degree its first term
-vanishes and its second map is an isomorphism. -/
-noncomputable def topShortComplexSplitting (i : ℤ) :
-    ((K.topShortComplex n).map (eval C _ i)).Splitting := by
-  by_cases hi : i = n + 1
-  · subst hi
-    refine .ofIsIsoOfIsZero _ ?_ (K.isZero_stupidTrunc_embeddingUpIntLE_X n (by omega))
-    dsimp [topShortComplex]
-    rw [ιTop_f]
-    infer_instance
-  · refine .ofIsZeroOfIsIso _ (isZero_single_obj_X (.up ℤ) _ _ _ hi) ?_
-    dsimp [topShortComplex]
-    by_cases hin : i ≤ n
-    · exact K.isIso_πStupidTrunc_f (ComplexShape.embeddingUpIntLE n)
-        (i := (n - i).natAbs) (i' := i) (by
-          simp [Int.natAbs_of_nonneg (sub_nonneg.mpr hin)])
-    · exact isIso_of_source_target_iso_zero _
-        (K.isZero_of_isStrictlyLE (n + 1) i (by omega)).isoZero
-        (K.isZero_stupidTrunc_embeddingUpIntLE_X n (by omega)).isoZero
+end TopShortComplex
 
-end Preadditive
+section Kernel
 
-section Abelian
+variable [HasEqualizers C]
 
-variable [Abelian C] (K : CochainComplex C ℤ) (n : ℤ)
+/-- The kernel of `K ⟶ σ^{≤ n} K` vanishes in degrees `≤ n`. -/
+lemma isZero_kernel_πStupidTruncLE_X {i : ℤ} (hi : i ≤ n) :
+    IsZero ((kernel (K.πStupidTrunc (ComplexShape.embeddingUpIntLE n))).X i) :=
+  have : IsIso ((eval C (.up ℤ) i).map (K.πStupidTrunc (ComplexShape.embeddingUpIntLE n))) :=
+    K.isIso_πStupidTrunc_f (ComplexShape.embeddingUpIntLE n) (i := (n - i).natAbs) (i' := i)
+      (by simp [Int.natAbs_of_nonneg (sub_nonneg.mpr hi)])
+  KernelFork.IsLimit.isZero_of_mono
+    (KernelFork.mapIsLimit _ (kernelIsKernel _) (eval C (.up ℤ) i))
 
 /-- In degrees `≤ n`, the inclusion of the kernel of `K ⟶ σ^{≤ n} K` vanishes. -/
 @[simp]
 lemma kernel_ι_πStupidTruncLE_f_eq_zero {i : ℤ} (hi : i ≤ n) :
-    (kernel.ι (K.πStupidTrunc (ComplexShape.embeddingUpIntLE n))).f i = 0 := by
-  have := K.isIso_πStupidTrunc_f (ComplexShape.embeddingUpIntLE n)
-    (i := (n - i).natAbs) (i' := i)
-    (by simp [Int.natAbs_of_nonneg (sub_nonneg.mpr hi)])
-  rw [← cancel_mono ((K.πStupidTrunc (ComplexShape.embeddingUpIntLE n)).f i), zero_comp,
-    ← comp_f, kernel.condition, zero_f]
-
-/-- The kernel of `K ⟶ σ^{≤ n} K` vanishes in degrees `≤ n`. -/
-lemma isZero_kernel_πStupidTruncLE_X {i : ℤ} (hi : i ≤ n) :
-    IsZero ((kernel (K.πStupidTrunc (ComplexShape.embeddingUpIntLE n))).X i) := by
-  rw [IsZero.iff_id_eq_zero,
-    ← cancel_mono ((kernel.ι (K.πStupidTrunc (ComplexShape.embeddingUpIntLE n))).f i),
-    K.kernel_ι_πStupidTruncLE_f_eq_zero n hi, comp_zero, zero_comp]
+    (kernel.ι (K.πStupidTrunc (ComplexShape.embeddingUpIntLE n))).f i = 0 :=
+  (K.isZero_kernel_πStupidTruncLE_X n hi).eq_of_src _ _
 
 /-- In degrees `> n`, the kernel of `K ⟶ σ^{≤ n} K` is the term of `K`. -/
 lemma isIso_kernel_ι_πStupidTruncLE_f {i : ℤ} (hi : n < i) :
@@ -238,6 +218,8 @@ lemma isIso_kernel_ι_πStupidTruncLE_f {i : ℤ} (hi : n < i) :
 instance (b : ℤ) [K.IsStrictlyLE b] : CochainComplex.IsStrictlyLE
     (kernel (K.πStupidTrunc (ComplexShape.embeddingUpIntLE n))) b :=
   (isStrictlyLE_iff _ _).2 fun i hi ↦ by
+    have : Mono ((kernel.ι (K.πStupidTrunc (ComplexShape.embeddingUpIntLE n))).f i) :=
+      Fork.IsLimit.mono (KernelFork.mapIsLimit _ (kernelIsKernel _) (eval C (.up ℤ) i))
     rw [IsZero.iff_id_eq_zero,
       ← cancel_mono ((kernel.ι (K.πStupidTrunc (ComplexShape.embeddingUpIntLE n))).f i)]
     exact (K.isZero_of_isStrictlyLE b i hi).eq_of_tgt _ _
@@ -308,6 +290,35 @@ noncomputable def isColimitStupidTruncGESequenceCocone :
       hι _ le_rfl
     exact h.isColimitOfIsIso _
 
-end Abelian
+end Kernel
+
+end HasZeroMorphisms
+
+section Preadditive
+
+variable [Preadditive C] [HasZeroObject C] (K : CochainComplex C ℤ) (n : ℤ) [K.IsStrictlyLE (n + 1)]
+
+/-- The short complex splitting off the top term is split in each degree: in degree `n + 1` its
+first map is an isomorphism and its third term vanishes, and in every other degree its first term
+vanishes and its second map is an isomorphism. -/
+noncomputable def topShortComplexSplitting (i : ℤ) :
+    ((K.topShortComplex n).map (eval C _ i)).Splitting := by
+  by_cases hi : i = n + 1
+  · subst hi
+    refine .ofIsIsoOfIsZero _ ?_ (K.isZero_stupidTrunc_embeddingUpIntLE_X n (by omega))
+    dsimp [topShortComplex]
+    rw [ιTop_f]
+    infer_instance
+  · refine .ofIsZeroOfIsIso _ (isZero_single_obj_X (.up ℤ) _ _ _ hi) ?_
+    dsimp [topShortComplex]
+    by_cases hin : i ≤ n
+    · exact K.isIso_πStupidTrunc_f (ComplexShape.embeddingUpIntLE n)
+        (i := (n - i).natAbs) (i' := i) (by
+          simp [Int.natAbs_of_nonneg (sub_nonneg.mpr hin)])
+    · exact isIso_of_source_target_iso_zero _
+        (K.isZero_of_isStrictlyLE (n + 1) i (by omega)).isoZero
+        (K.isZero_stupidTrunc_embeddingUpIntLE_X n (by omega)).isoZero
+
+end Preadditive
 
 end CochainComplex

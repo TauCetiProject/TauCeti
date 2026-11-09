@@ -219,9 +219,9 @@ instance IsStronglyNoetherian.of_discreteTopology [DiscreteTopology A] [IsNoethe
     have : DiscreteTopology (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
         isWeightFamily_one_weight) := discreteTopology_weightedRestrictedSubring
     have : DiscreteUniformity (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
-        isWeightFamily_one_weight) := DiscreteUniformity.of_discreteTopology
+        isWeightFamily_one_weight) := IsRightUniformAddGroup.discreteUniformity
     exact isNoetherianRing_of_ringEquiv _
-      ((weightedPolynomialEquiv _ isWeightFamily_one_weight).trans
+      ((weightedPolynomialEquivOfDiscrete _ isWeightFamily_one_weight).trans
         (restrictedMvPowerSeriesCompletionEquiv k A).symm)
 
 /-! ### The completed polynomial algebra -/

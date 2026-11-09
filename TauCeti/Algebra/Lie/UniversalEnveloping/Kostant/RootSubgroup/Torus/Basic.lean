@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Elementary.Basic
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
 import TauCeti.Algebra.Lie.UniversalEnveloping.Module
@@ -77,6 +77,8 @@ subgroup is the root rather than a difference `εᵢ - εⱼ` of coordinates.
   index.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantTorusPoints_injective`: weights generating the whole
   character lattice make the torus a monomorphism on points.
+* `TauCeti.UniversalEnvelopingAlgebra.basisMatrix_kostantTorusPoints_mem_upperTriangular`: a
+  torus point is diagonal, hence upper triangular, in every ordering of a weight basis.
 * `TauCeti.UniversalEnvelopingAlgebra.map_kostantTorusPoints`: naturality in the value ring.
 * `TauCeti.UniversalEnvelopingAlgebra.mapScalarExtensionAutomorphisms_kostantTorusPoints`:
   scalar extension of a torus point is the torus point with mapped parameter.
@@ -84,6 +86,8 @@ subgroup is the root rather than a difference `εᵢ - εⱼ` of coordinates.
   the same for a coroot value.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantTorusPoints_conj_kostantRootSubgroupParam`: the
   pinning equation `t(s) xᵢ(u) t(s)⁻¹ = xᵢ(α(s) u)`.
+* `TauCeti.UniversalEnvelopingAlgebra.torusCharacter_eq_one_of_commute_kostantRootSubgroupParam`:
+  a torus point commuting with a faithful root subgroup is killed by its root.
 * `TauCeti.UniversalEnvelopingAlgebra.isCartanWeightVector_coe_kostantRootOperator`: the root
   operator raises weights by the root `α`.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantTorusPoints_mul_baseChange_kostantRootOperator`: the
@@ -307,6 +311,103 @@ noncomputable def kostantRootOperator : Module.End ℤ M :=
     ((kostantRootOperator e h ρ M hM i v : M) : V) =
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (v : V) := by
   rw [kostantRootOperator, coe_integralDividedPower_one_apply, Module.End.smul_def]
+
+/-- The integral root operators compute the ambient action on a product. -/
+theorem coe_kostantRootOperator_mul_apply (k l : ι) (v : M) :
+    (((kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l) v : M) : V) =
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))
+        (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l)) (v : V)) := by
+  rw [mul_apply_eq_comp, coe_kostantRootOperator_apply, coe_kostantRootOperator_apply]
+
+/-- The integral root operators compute the ambient action on a triple product. -/
+theorem coe_kostantRootOperator_mul_mul_apply (k l n : ι) (v : M) :
+    (((kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l *
+        kostantRootOperator e h ρ M hM n) v : M) : V) =
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))
+        (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))
+          (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e n)) (v : V))) := by
+  rw [mul_apply_eq_comp, coe_kostantRootOperator_mul_apply, coe_kostantRootOperator_apply]
+
+/-- A vanishing product of ambient root vectors makes the product of integral root operators
+vanish. -/
+theorem kostantRootOperator_mul_eq_zero {k l : ι}
+    (hkl : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)) *
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l)) = 0) :
+    kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l = 0 := by
+  refine LinearMap.ext fun v => Subtype.ext ?_
+  rw [coe_kostantRootOperator_mul_apply, ← mul_apply_eq_comp, hkl]
+  simp
+
+/-- A triple-product identity of ambient root vectors transfers to the integral root
+operators. -/
+theorem kostantRootOperator_mul_mul_eq {k l n p : ι}
+    (hkl : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)) *
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l)) *
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e n)) =
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e p))) :
+    kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l *
+        kostantRootOperator e h ρ M hM n = kostantRootOperator e h ρ M hM p := by
+  refine LinearMap.ext fun v => Subtype.ext ?_
+  rw [coe_kostantRootOperator_mul_mul_apply, coe_kostantRootOperator_apply,
+    ← mul_apply_eq_comp, ← mul_apply_eq_comp, hkl]
+
+/-- The bracket of integral root operators acts by the bracket of the ambient operators. -/
+theorem coe_kostantRootOperator_lie_apply (k l : ι) (v : M) :
+    ((⁅kostantRootOperator e h ρ M hM k, kostantRootOperator e h ρ M hM l⁆ v : M) : V) =
+      ⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)),
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))⁆ (v : V) := by
+  simp only [Ring.lie_def, LinearMap.sub_apply, AddSubgroup.coe_sub,
+    mul_apply_eq_comp, coe_kostantRootOperator_apply]
+
+/-- A nested bracket of integral root operators acts by the ambient nested bracket. -/
+theorem coe_kostantRootOperator_lie_lie_apply (k l n : ι) (v : M) :
+    ((⁅⁅kostantRootOperator e h ρ M hM k, kostantRootOperator e h ρ M hM l⁆,
+        kostantRootOperator e h ρ M hM n⁆ v : M) : V) =
+      ⁅⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)),
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))⁆,
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e n))⁆ (v : V) := by
+  simp only [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, AddSubgroup.coe_sub,
+    coe_kostantRootOperator_apply, map_sub]
+
+/-- A vanishing ambient bracket transfers to the integral root operators. -/
+theorem kostantRootOperator_lie_eq_zero {k l : ι}
+    (hkl : ⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)),
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))⁆ = 0) :
+    ⁅kostantRootOperator e h ρ M hM k, kostantRootOperator e h ρ M hM l⁆ = 0 := by
+  refine LinearMap.ext fun v => Subtype.ext ?_
+  simp only [coe_kostantRootOperator_lie_apply, hkl, LinearMap.zero_apply,
+    ZeroMemClass.coe_zero]
+
+/-- A vanishing right-nested ambient bracket transfers to the integral root operators. -/
+theorem kostantRootOperator_lie_lie_eq_zero {k l n : ι}
+    (hkln : ⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)),
+      ⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l)),
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e n))⁆⁆ = 0) :
+    ⁅kostantRootOperator e h ρ M hM k,
+      ⁅kostantRootOperator e h ρ M hM l, kostantRootOperator e h ρ M hM n⁆⁆ = 0 := by
+  rw [← lie_skew, neg_eq_zero]
+  refine LinearMap.ext fun v => Subtype.ext ?_
+  rw [coe_kostantRootOperator_lie_lie_apply, ← lie_skew, hkln, neg_zero]
+  simp
+
+/-- A nested ambient bracket equal to a root operator transfers to the integral operators. -/
+theorem kostantRootOperator_lie_lie_eq {k l n p : ι}
+    (hkln : ⁅⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)),
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))⁆,
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e n))⁆ =
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e p))) :
+    ⁅⁅kostantRootOperator e h ρ M hM k, kostantRootOperator e h ρ M hM l⁆,
+        kostantRootOperator e h ρ M hM n⁆ = kostantRootOperator e h ρ M hM p := by
+  refine LinearMap.ext fun v => Subtype.ext ?_
+  rw [coe_kostantRootOperator_lie_lie_apply, hkln, coe_kostantRootOperator_apply]
+
+/-- The public unfolding equation of the integral root operator: it is the first restricted
+divided power of `ρ(eᵢ)`, the linear coefficient of the divided-power exponential. -/
+theorem kostantRootOperator_def :
+    kostantRootOperator e h ρ M hM i =
+      integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M 1
+        (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i 1 hv) := by
+  rw [kostantRootOperator]
 
 include e hM in
 /-- The integral root operator raises weights by the root: it is the first divided power of a
@@ -581,6 +682,28 @@ theorem map_kostantTorusMatrix {B : Type*} [CommRing B] [Algebra ℤ B] (φ : A 
 
 end Matrix
 
+section Triangular
+
+variable {κ : Type*} [Fintype κ]
+variable {V : Type v} [AddCommGroup V]
+variable (M : AddSubgroup V)
+variable {η : Type*} [Fintype η] [LinearOrder η] (b : Module.Basis η ℤ M) (wt : η → κ → ℤ)
+
+/-- A torus point acts diagonally on a weight basis, so its matrix is upper triangular for every
+order on the basis. -/
+theorem basisMatrix_kostantTorusPoints_mem_upperTriangular (A : Type*) [CommRing A]
+    (s : κ → Aˣ) :
+    Units.map (LinearMap.toMatrixAlgEquiv (b.baseChange A)).toMulEquiv
+        (kostantTorusPoints M b wt A s) ∈ upperTriangularGroup η A := by
+  rw [UpperTriangularGroup.mem_iff]
+  intro r s' (hsr : s' < r)
+  simp only [Units.coe_map, MonoidHom.coe_ofClass, MulEquiv.coe_mk, AlgEquiv.toEquiv_eq_coe,
+    EquivLike.coe_coe, LinearMap.toMatrixAlgEquiv_apply, Module.Basis.baseChange_apply,
+    kostantTorusPoints_tmul_basis, Module.Basis.baseChange_repr_tmul, Module.Basis.repr_self]
+  simp [hsr.ne]
+
+end Triangular
+
 section Representation
 
 variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
@@ -722,6 +845,25 @@ theorem kostantTorusPoints_conj_kostantRootSubgroupParam
   rw [mul_inv_eq_iff_eq_mul, kostantRootSubgroupParam_apply, kostantRootSubgroupParam_apply]
   refine kostantTorusPoints_mul_kostantRootSubgroupPoints e h ρ M hM b wt hwt hα hnil s _ _ ?_
   simp
+
+/-- **A torus point commuting with a faithful root subgroup is killed by its root.** If the root
+vector `eᵢ` has weight `α`, the root subgroup `xᵢ` is injective over `A`, and `t(s)` commutes
+with `xᵢ(1)`, then the root character `α` takes the value one at `s`. -/
+theorem torusCharacter_eq_one_of_commute_kostantRootSubgroupParam
+    (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
+    {i : ι} {α : κ → ℤ} (hα : ∀ j, ⁅h j, e i⁆ = (α j : ℚ) • e i)
+    (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    (A : CommAlgCat.{w} ℤ)
+    (hinj : Function.Injective (kostantRootSubgroupParam e h ρ M hM i hnil A)) {s : κ → Aˣ}
+    (hcomm : Commute (kostantTorusPoints M b wt A s)
+      (kostantRootSubgroupParam e h ρ M hM i hnil A (Multiplicative.ofAdd 1))) :
+    torusCharacter s α = 1 := by
+  have hconj := kostantTorusPoints_conj_kostantRootSubgroupParam e h ρ M hM b wt hwt hα hnil
+    A s (Multiplicative.ofAdd 1)
+  rw [hcomm.eq, mul_inv_cancel_right] at hconj
+  have hval := congrArg Multiplicative.toAdd (hinj hconj)
+  rw [toAdd_ofAdd, toAdd_ofAdd, mul_one] at hval
+  exact Units.ext hval.symm
 
 include e hM in
 /-- **The torus normalizes the elementary group.** Conjugation by a torus point permutes the root

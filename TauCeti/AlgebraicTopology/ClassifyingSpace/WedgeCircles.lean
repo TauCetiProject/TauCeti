@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.ClassifyingSpace.FirstHomology
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Homology
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Uniqueness
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.OneDimensional
+public import TauCeti.RepresentationTheory.Homological.GroupHomology.DirectedUnion
 import TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv
 
 /-!
@@ -44,9 +45,12 @@ dimension at least `2`, so its homology vanishes in those degrees
 (`TauCeti.WedgeSum.isZero_singularHomology_circle`). Therefore so does the singular homology of
 `classifyingSpace (FreeGroup S)`, with coefficients in any abelian category with exact coproducts
 (`TauCeti.isZero_classifyingSpace_singularHomology_freeGroup`), and the group homology
-`Hₙ(FreeGroup S, k)` for `n ≥ 2` (`TauCeti.isZero_groupHomology_freeGroup`). In degree one, the
-Hurewicz class of a loop corresponds to the class of the element of the free group it represents,
-both in the abelianization of the free group and in its first group homology
+`Hₙ(FreeGroup S, k)` for `n ≥ 2` (`TauCeti.isZero_groupHomology_freeGroup`). The same holds for
+an infinite cyclic subgroup of any group (`TauCeti.isZero_groupHomology_res_zpowers`), and hence,
+since every class of a directed union of subgroups comes from a member, for a group which is the
+directed union of infinite cyclic subgroups (`TauCeti.isZero_groupHomology_of_directed_zpowers`).
+In degree one, the Hurewicz class of a loop corresponds to the class of the element of the free
+group it represents, both in the abelianization of the free group and in its first group homology
 (`FundamentalGroup.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles`); in
 particular the loop around the `i`-th circle corresponds to the generator `i`
 (`TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles_expLoop`). The
@@ -76,6 +80,8 @@ statements are for `S : Type`, the universe in which the wedge of circles is a `
   classifying space of a free group vanishes in every degree at least `2`.
 * `TauCeti.isZero_groupHomology_freeGroup`: the group homology of a free group with trivial
   coefficients in a commutative ring vanishes in every degree at least `2`.
+* `TauCeti.isZero_groupHomology_of_directed_zpowers`: so does that of a directed union of
+  infinite cyclic subgroups.
 * `TauCeti.classifyingSpaceFirstHomologyAddEquiv_map_wedgeCirclesHomotopyEquivClassifyingSpace`,
   `FundamentalGroup.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles`: on first
   homology, the equivalence sends the class of a loop to the class of the element of the free
@@ -254,6 +260,31 @@ theorem isZero_groupHomology_freeGroup (k : Type) [CommRing k] {n : ℕ} (hn : 2
     IsZero (groupHomology (Rep.trivial k (FreeGroup S) k) n) :=
   (isZero_classifyingSpace_singularHomology_freeGroup S (ModuleCat.of k k) hn).of_iso
     (classifyingSpaceSingularHomologyIsoGroupHomology k (FreeGroup S) n).symm
+
+/-- An infinite cyclic subgroup has no group homology with trivial coefficients in degrees
+`n ≥ 2`, since it is free on one generator. -/
+theorem isZero_groupHomology_res_zpowers (k : Type) [CommRing k] {G : Type} [Group G] {g : G}
+    (hg : ¬IsOfFinOrder g) {n : ℕ} (hn : 2 ≤ n) :
+    IsZero (groupHomology (Rep.res (Subgroup.zpowers g).subtype (Rep.trivial k G k)) n) := by
+  have hinj : Function.Injective (zpowersHom G g) :=
+    injective_zpow_iff_not_isOfFinOrder.2 hg
+  let e : FreeGroup Unit ≃* Subgroup.zpowers g :=
+    FreeGroup.mulEquivIntOfUnique.trans (MonoidHom.ofInjective hinj)
+  refine (isZero_groupHomology_freeGroup Unit k hn).of_iso
+    (groupHomology.mapIso e (LinearEquiv.refl k k) (fun _ ↦ ?_) n).symm
+  ext
+  simp
+
+/-- **Homology of a directed union of infinite cyclic subgroups.** If `G` is the union of a
+directed family of infinite cyclic subgroups, then its group homology with trivial coefficients
+vanishes in degrees `n ≥ 2`. -/
+theorem isZero_groupHomology_of_directed_zpowers (k : Type) [CommRing k] {G : Type} [Group G]
+    {ι : Type*} [Nonempty ι] {g : ι → G} (hg : ∀ i, ¬IsOfFinOrder (g i))
+    (hS : Directed (· ≤ ·) fun i ↦ Subgroup.zpowers (g i))
+    (hG : ⨆ i, Subgroup.zpowers (g i) = ⊤) {n : ℕ} (hn : 2 ≤ n) :
+    IsZero (groupHomology (Rep.trivial k G k) n) :=
+  groupHomology.isZero_groupHomology_of_directed hS hG fun i ↦
+    isZero_groupHomology_res_zpowers k (hg i) hn
 
 variable {S}
 

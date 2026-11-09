@@ -6,11 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Rank
+import Mathlib.Algebra.CharZero.Infinite
 import Mathlib.Algebra.Module.Submodule.Union
-public import Mathlib.Algebra.Lie.Weights.Killing
+public import Mathlib.Algebra.Lie.Weights.RootSystem
+public import Mathlib.LinearAlgebra.RootSystem.Base
+import TauCeti.Algebra.Lie.AdjointAction.RootExponential
+import TauCeti.Algebra.Lie.Basic
+import TauCeti.Algebra.Lie.Subalgebra.Engel
+import TauCeti.Algebra.Lie.Weights.Dimension
 
 /-!
-# A Cartan subalgebra contains a generic element
+# The rank of a Lie algebra and the dimension of a Cartan subalgebra
 
 Let `L` be a finite-dimensional Lie algebra over an infinite field, and let `H` be a Cartan
 subalgebra whose action on `L` is triangularizable with linear weights. This file chooses an
@@ -25,6 +31,18 @@ Second, the generalized Cartan weight spaces span `L`. The generalized zero eige
 therefore receives only the zero weight space: every nonzero weight is a root, and its value at `h`
 is nonzero by construction. The zero root space is the Cartan subalgebra.
 
+When the Killing form is non-degenerate and the characteristic is zero the two numbers are equal.
+The coefficient of index `LieAlgebra.rank K L` of the characteristic polynomial of `ad x` is a
+nonzero polynomial function of `x` that is invariant under inner automorphisms, and the conjugates
+of `H` under inner automorphisms are Zariski dense
+(`LieSubalgebra.polynomial_eq_zero_of_intCartan`). So this coefficient is nonzero at some element
+of `H`, whereas for `h ∈ H` the characteristic polynomial of `ad h` is divisible by
+`X ^ finrank K H`.
+
+The equality turns quantities phrased through the rank into root-system data: the exponents
+`(dim L ± rank L) / 2` in Kostant's description of the Clifford algebra of the Killing form are
+exact divisions by the parity identity `dim L = rank L + 2 · #Δ⁺`.
+
 ## Main results
 
 * `LieSubalgebra.exists_forall_root_apply_ne_zero`: some element of `H` is nonzero under every root.
@@ -33,14 +51,20 @@ is nonzero by construction. The zero root space is the Cartan subalgebra.
 * `LieSubalgebra.exists_engel_eq_cartan`: a Cartan subalgebra is the Engel subalgebra of one of its
   elements.
 * `LieSubalgebra.rank_le_finrank_cartan`: the rank of `L` is at most the dimension of `H`.
-
-It supplies only the `rank ≤ dim H` direction; the reverse inequality, which needs a separate
-minimal-centralizer or Cartan-dimension argument, is not asserted here.
+* `LieSubalgebra.engel_eq_cartan_of_isRegular`: a regular element of `H` has Engel subalgebra `H`.
+* `LieSubalgebra.engel_eq_map_of_isRegular`: if the image `e h` of `h ∈ H` under an automorphism
+  `e` is regular, then its Engel subalgebra is `e H`.
+* `LieSubalgebra.rank_eq_finrank_cartan`: for non-degenerate Killing form in characteristic zero,
+  the rank of `L` is the dimension of every splitting Cartan subalgebra.
+* `LieSubalgebra.finrank_eq_rank_add_two_mul_card_isPos`: the parity identity
+  `dim L = rank L + 2 · #Δ⁺`.
 
 ## References
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Springer GTM 9
-  (1972), §15.1--15.3.
+  (1972), §15.1--15.3, and §23.1 for the density of the conjugates of a Cartan subalgebra.
+* B. Kostant, *Clifford algebra analogue of the Hopf-Koszul-Samelson theorem, the ρ-decomposition
+  C(g) = End V_ρ ⊗ C(P), and the g-module structure of ⋀g*, Adv. Math. 125 (1997).
 -/
 
 public section
@@ -116,5 +140,68 @@ theorem rank_le_finrank_cartan [Infinite K] [LieModule.LinearWeights K H L]
   obtain ⟨h, hh⟩ := exists_engel_eq_cartan H
   rw [← hh]
   exact LieAlgebra.rank_le_finrank_engel K (h : L)
+
+/-- **A regular element of a Cartan subalgebra has Engel subalgebra equal to it.** If `h ∈ H` is
+regular in `L`, in the sense of `LieAlgebra.IsRegular`, then the Engel subalgebra of `h` is `H`. -/
+theorem engel_eq_cartan_of_isRegular [Infinite K] [LieModule.LinearWeights K H L]
+    [LieModule.IsTriangularizable K H L] {h : H} (hh : LieAlgebra.IsRegular K (h : L)) :
+    LieSubalgebra.engel K (h : L) = H := by
+  refine (LieSubalgebra.toSubmodule_injective
+    (Submodule.eq_of_le_of_finrank_le (H.le_engel_of_isNilpotent h) ?_)).symm
+  exact ((LieAlgebra.isRegular_iff_finrank_engel_eq_rank K _).mp hh).trans_le
+    (rank_le_finrank_cartan H)
+
+/-- **Transport of Cartan subalgebras along regular elements.** If the image `e h` of an element
+`h` of a Cartan subalgebra `H` under a Lie algebra automorphism `e` is regular, then its Engel
+subalgebra is `e H`. -/
+theorem engel_eq_map_of_isRegular [Infinite K] [LieModule.LinearWeights K H L]
+    [LieModule.IsTriangularizable K H L] (e : L ≃ₗ⁅K⁆ L) {h : L} (hh : h ∈ H)
+    (hx : LieAlgebra.IsRegular K (e h)) :
+    LieSubalgebra.engel K (e h) = H.map e.toLieHom := by
+  rw [LieAlgebra.isRegular_iff_finrank_engel_eq_rank, ← e.map_engel] at hx
+  -- `h` is regular too: its Engel subalgebra is isomorphic to that of `e h`
+  have hreg : LieAlgebra.IsRegular K ((⟨h, hh⟩ : H) : L) := by
+    rw [LieAlgebra.isRegular_iff_finrank_engel_eq_rank, ← hx]
+    exact (LieSubalgebra.equivMapOfInjective _ _ e.injective).toLinearEquiv.finrank_eq
+  rw [← e.map_engel, engel_eq_cartan_of_isRegular H hreg]
+
+/-- **The dimension of a splitting Cartan subalgebra is at most the rank**, for a Lie algebra with
+non-degenerate Killing form over a field of characteristic zero. This is the converse of
+`LieSubalgebra.rank_le_finrank_cartan`. -/
+theorem finrank_cartan_le_rank [CharZero K] [IsKilling K L] [LieModule.IsTriangularizable K H L] :
+    finrank K H ≤ LieAlgebra.rank K L := by
+  classical
+  let _ := TauCeti.ratLieAlgebra K L
+  by_contra! hlt
+  -- The rank coefficient of the characteristic polynomial would vanish on all conjugates of `H`.
+  let b := finBasis K L
+  refine polyCharpoly_coeff_rank_ne_zero K L b <|
+    H.polynomial_eq_zero_of_intCartan b fun g hg h hh ↦ ?_
+  have hH : finrank K H ≤ (ad K L h).charpoly.natTrailingDegree :=
+    (Submodule.finrank_mono (LieSubalgebra.toSubmodule_le_toSubmodule _ _ |>.mpr
+      (H.le_engel_of_isNilpotent ⟨h, hh⟩))).trans_eq (finrank_engel K h)
+  have hconj : (ad K L (g • h)).charpoly = (ad K L h).charpoly := by
+    rw [← TauCeti.intLieAlgebraLieEquiv_apply ⟨g, hg⟩, ← conj_ad_apply, LinearEquiv.charpoly_conj]
+  rw [Module.Basis.equivFun_apply, LinearMap.polyCharpoly_coeff_eval]
+  simp only [LieHom.coe_toLinearMap, hconj]
+  exact Polynomial.coeff_eq_zero_of_lt_natTrailingDegree (hlt.trans_le hH)
+
+/-- **The rank is the dimension of a splitting Cartan subalgebra.** For a Lie algebra with
+non-degenerate Killing form over a field of characteristic zero, `LieAlgebra.rank K L`, which is
+defined through the characteristic polynomial of a generic `ad x`, equals `finrank K H` for every
+splitting Cartan subalgebra `H`. In particular all such `H` have the same dimension. -/
+theorem rank_eq_finrank_cartan [CharZero K] [IsKilling K L] [LieModule.IsTriangularizable K H L] :
+    LieAlgebra.rank K L = finrank K H :=
+  (H.rank_le_finrank_cartan).antisymm H.finrank_cartan_le_rank
+
+/-- **The parity identity `d = l + 2 · #Δ⁺` in terms of the rank.** It makes the divisions in the
+exponents `(dim L ± rank L) / 2` exact. -/
+theorem finrank_eq_rank_add_two_mul_card_isPos [CharZero K] [IsKilling K L]
+    [LieModule.IsTriangularizable K H L] (b : (IsKilling.rootSystem H).Base)
+    [DecidablePred b.IsPos] :
+    finrank K L
+      = LieAlgebra.rank K L + 2 * (Finset.univ.filter fun i : H.root ↦ b.IsPos i).card := by
+  rw [H.rank_eq_finrank_cartan]
+  exact TauCeti.finrank_eq_finrank_cartan_add_two_mul_card_isPos H b
 
 end LieSubalgebra

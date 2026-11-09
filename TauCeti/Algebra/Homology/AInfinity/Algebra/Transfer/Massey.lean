@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.Massey
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Massey.Higher
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Transfer.Cohomology
 
 /-!
-# The ternary operation of the minimal model and triple Massey products
+# The higher operations of the minimal model and Massey products
 
 Over a field, let `i`, `p`, `h` be the inclusion, projection and homotopy of the contraction of
 an `A∞` algebra onto its cohomology, and let `m₃^H` be the ternary operation of the transferred
@@ -26,6 +26,14 @@ homogeneous defining system, and May's triple Massey product is its coset by
 The element selected depends on the chosen contraction; only its coset is intrinsic.  The minimal
 model therefore refines, but does not replace, the multivalued Massey product.
 
+The same holds in every arity.  If the suspended Taylor map of the minimal model vanishes on every
+proper block `x_a ⋯ x_{a+b-1}` of length at least two of the classes `x₀, …, x_{n+1}`, then its
+value on the whole word, which is `m_{n+2}` with the Koszul twists of
+`TauCeti.AInfinityAlgebra.taylor_of_tprod`, lies in the higher Massey product
+`⟨x₀, …, x_{n+1}⟩` of `TauCeti.Algebra.Homology.AInfinity.Algebra.Massey.Higher`.  The defining
+system consists of the Taylor components of the inclusion of the minimal model on the proper
+blocks.
+
 ## Main results
 
 * `TauCeti.AInfinityAlgebra.minimalModel_m_three_mem_tripleMasseyProduct`: the ternary operation of
@@ -37,6 +45,9 @@ model therefore refines, but does not replace, the multivalued Massey product.
 * `TauCeti.AInfinityAlgebra.exists_isHomogeneous_value_eq_iff_sub_minimalModel_m_three`: May's
   triple Massey product is the coset of the ternary operation of the minimal model by the classical
   indeterminacy.
+* `TauCeti.AInfinityAlgebra.minimalModel_taylor_subword_mem_masseyProduct`: the higher operations
+  of the minimal model lie in the higher Massey products, once the lower operations vanish on the
+  proper blocks.
 
 ## References
 
@@ -126,5 +137,33 @@ theorem exists_isHomogeneous_value_eq_iff_sub_minimalModel_m_three {x y z w : �
         x * s + t * z = w - 𝒜.minimalModel.m 3 ![x, y, z] :=
   exists_isHomogeneous_value_eq_iff_sub_mem hx hy hz
     (𝒜.exists_isHomogeneous_value_eq_minimalModel_m_three hx hy hz hxy hyz)
+
+/-- **The higher operations of the minimal model select elements of higher Massey products.**
+If the suspended Taylor map of the minimal model vanishes on every proper block of length at least
+two of the classes `x₀, …, x_{n+1}`, then its value on the whole word `x₀ ⋯ x_{n+1}` lies in the
+Massey product `⟨x₀, …, x_{n+1}⟩`. -/
+theorem minimalModel_taylor_subword_mem_masseyProduct {n : ℕ} {x : Fin (n + 2) → 𝒜.Cohomology}
+    (hx : ∀ a b, 2 ≤ b → b ≤ n + 1 → a + b ≤ n + 2 →
+      𝒜.minimalModel.taylor (ReducedTensorWords.subword K x a b) = 0) :
+    𝒜.minimalModel.taylor (ReducedTensorWords.subword K x 0 (n + 2)) ∈ 𝒜.masseyProduct x := by
+  -- On blocks of length one the Taylor map is the unary operation, which vanishes.
+  have hy : ∀ a b, 0 < b → b ≤ n + 1 → a + b ≤ n + 2 →
+      𝒜.minimalModel.taylor (ReducedTensorWords.subword K x a b) = 0 := by
+    intro a b hb hbn hab
+    rcases Nat.lt_or_ge b 2 with h | h
+    · obtain rfl : b = 1 := by omega
+      rw [ReducedTensorWords.subword_one K _ x (by omega), taylor_ofLetter]
+      exact 𝒜.isMinimal_minimalModel.m_one _
+    · exact hx a b h hbn hab
+  have hincl : ∀ z, 𝒜.minimalModelInclusion.linearPart z ∈ 𝒜.cycles := fun z ↦ by
+    rw [linearPart_minimalModelInclusion]
+    exact 𝒜.cohomologyContraction_incl_mem_cycles z
+  -- The inclusion of the minimal model induces the identity on cohomology.
+  have hclass : ∀ z, 𝒜.cohomologyClass (hincl z) = z := fun z ↦
+    (𝒜.cohomologyClass_congr _ (𝒜.cohomologyContraction_incl_mem_cycles z)
+      (by rw [linearPart_minimalModelInclusion])).trans
+        (𝒜.cohomologyClass_cohomologyContraction_incl z)
+  simpa only [hclass] using
+    𝒜.minimalModelInclusion.cohomologyClass_mem_masseyProduct hy
 
 end TauCeti.AInfinityAlgebra

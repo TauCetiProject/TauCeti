@@ -8,7 +8,9 @@ module
 public import Mathlib.GroupTheory.DoubleCoset
 public import Mathlib.GroupTheory.Solvable
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 import TauCeti.GroupTheory.DoubleCoset.Generation
+import TauCeti.GroupTheory.DoubleCoset.Map
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Solvable
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Solvable
@@ -28,12 +30,23 @@ field has a nonzero element whose square is not one is used only to rule out sol
 `SL₂`; the Bruhat decomposition itself holds over every field. Entrywise mapping makes the
 construction functorial in the coefficient ring.
 
+Both Bruhat cells transport along a group homomorphism out of `SL₂`: the range is covered by
+the image of the Borel and the double coset of the image of `ModularGroup.S`, and the two cells
+stay disjoint when the homomorphism is injective. This is how a rank-one subgroup of a larger
+group inherits the rank-one Bruhat calculus.
+
 ## Main declarations
 
 * `TauCeti.SL2Borel`: the upper-triangular subgroup of `SL₂`.
 * `TauCeti.SL2Borel.map`: entrywise mapping along a ring homomorphism.
+* `TauCeti.SL2Borel.coe_mk_eq_diag2nUnit_mul_transvection`: an upper-triangular matrix is the
+  diagonal matrix of its unit times an upper transvection.
 * `TauCeti.SL2Borel.mem_doubleCoset_modularGroup_S_iff`: over any commutative ring, the big cell
   of the rank-one Bruhat decomposition consists of the elements whose lower-left entry is a unit.
+* `TauCeti.SL2Borel.disjoint_map_doubleCoset_modularGroup_S`: along an injective homomorphism out
+  of `SL₂` over a nontrivial commutative ring, the image of the Borel and the big cell are disjoint.
+* `TauCeti.SL2Borel.mem_range_iff_mem_map_or_mem_doubleCoset_modularGroup_S`: along any
+  homomorphism out of `SL₂` over a field, the range is the union of the two cells.
 * `TauCeti.SL2Borel.closure_insert_modularGroup_S_eq_top`: the Borel and the Weyl element generate
   `SL₂`.
 * `TauCeti.SL2Borel.le_of_isSolvable`: a solvable subgroup containing the Borel is contained in it
@@ -205,6 +218,19 @@ theorem mk_diag_upperRight (g : SL2Borel R) : mk (diag g) (upperRight g) = g := 
   ext i j
   fin_cases i <;> fin_cases j <;> simp [upperRight, hinv]
 
+/-- An upper-triangular determinant-one matrix is the diagonal matrix `diag(a, a⁻¹)` times the
+upper transvection with parameter `a⁻¹ b`. -/
+theorem coe_mk_eq_diag2nUnit_mul_transvection (a : Rˣ) (b : R) :
+    (mk a b : SL(2, R)) =
+      Matrix.SpecialLinearGroup.diag2nUnit (by decide : (0 : Fin 2) ≠ 1) a *
+        Matrix.SpecialLinearGroup.transvection (by decide : (0 : Fin 2) ≠ 1)
+          (((a⁻¹ : Rˣ) : R) * b) := by
+  apply Subtype.ext
+  rw [Matrix.SpecialLinearGroup.coe_mul, coe_mk, Matrix.SpecialLinearGroup.diag2nUnit_coe,
+    Matrix.SpecialLinearGroup.transvection_coe]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.single_apply]
+
 /-- An `SL₂` Borel matrix is equivalently a diagonal unit and a free upper-right entry. -/
 def equivProd : SL2Borel R ≃ Rˣ × R where
   toFun g := (diag g, upperRight g)
@@ -295,6 +321,22 @@ theorem mem_doubleCoset_modularGroup_S_iff {g : SL(2, R)} :
   ⟨isUnit_apply_one_zero_of_mem_doubleCoset_modularGroup_S,
     mem_doubleCoset_modularGroup_S_of_isUnit_apply_one_zero⟩
 
+variable {G : Type v} [Group G]
+
+/-- Along an injective homomorphism out of `SL₂` over a nontrivial commutative ring, the image
+of the upper-triangular subgroup is disjoint from the big cell of the image of
+`ModularGroup.S`. -/
+theorem disjoint_map_doubleCoset_modularGroup_S [Nontrivial R] {f : SL(2, R) →* G}
+    (hf : Function.Injective f) :
+    Disjoint ((SL2Borel R).map f : Set G)
+      (DoubleCoset.doubleCoset (f ((ModularGroup.S : SL(2, ℤ)) : SL(2, R)))
+        ((SL2Borel R).map f : Set G) ((SL2Borel R).map f : Set G)) := by
+  rw [Set.disjoint_left]
+  rintro _ ⟨g, hg, rfl⟩ hcell
+  rw [Subgroup.coe_map, DoubleCoset.mem_doubleCoset_image_iff hf,
+    mem_doubleCoset_modularGroup_S_iff] at hcell
+  exact hcell.ne_zero (mem_iff.mp hg)
+
 end CommRing
 
 section Field
@@ -309,6 +351,26 @@ theorem mem_doubleCoset_modularGroup_S_of_notMem {g : SL(2, F)} (hg : g ∉ SL2B
   mem_doubleCoset_modularGroup_S_of_isUnit_apply_one_zero
     (isUnit_iff_ne_zero.mpr (mem_iff.not.mp hg))
 
+variable {G : Type v} [Group G]
+
+/-- **The rank-one Bruhat cover along a homomorphism.** The range of a homomorphism out of
+`SL₂(F)` is the union of the image of the upper-triangular subgroup and the double coset of the
+image of `ModularGroup.S` by that image. -/
+theorem mem_range_iff_mem_map_or_mem_doubleCoset_modularGroup_S (f : SL(2, F) →* G) {g : G} :
+    g ∈ f.range ↔ g ∈ (SL2Borel F).map f ∨
+      g ∈ DoubleCoset.doubleCoset (f ((ModularGroup.S : SL(2, ℤ)) : SL(2, F)))
+        ((SL2Borel F).map f : Set G) ((SL2Borel F).map f : Set G) := by
+  constructor
+  · rintro ⟨h, rfl⟩
+    by_cases hh : h ∈ SL2Borel F
+    · exact Or.inl (Subgroup.mem_map_of_mem f hh)
+    · rw [Subgroup.coe_map, ← DoubleCoset.image_doubleCoset]
+      exact Or.inr (Set.mem_image_of_mem f (mem_doubleCoset_modularGroup_S_of_notMem hh))
+  · rintro (hg | hg)
+    · exact Subgroup.map_le_range f (SL2Borel F) hg
+    · rw [Subgroup.coe_map, ← DoubleCoset.image_doubleCoset] at hg
+      exact MonoidHom.mem_range.mpr (Set.mem_range.mp (Set.image_subset_range f _ hg))
+
 /-- The upper-triangular subgroup and the Weyl element `ModularGroup.S` generate `SL₂(F)`. -/
 theorem closure_insert_modularGroup_S_eq_top :
     Subgroup.closure
@@ -322,20 +384,20 @@ theorem closure_insert_modularGroup_S_eq_top :
 theorem le_of_isSolvable (hF : ∃ a : F, a ≠ 0 ∧ a ^ 2 ≠ 1)
     (P : Subgroup SL(2, F)) [Group.IsSolvable P]
     (hBP : SL2Borel F ≤ P) : P ≤ SL2Borel F :=
-  Subgroup.le_of_isSolvable_of_not_isSolvable_of_notMem_imp_mem_doubleCoset
+  (Subgroup.eq_of_isSolvable_of_not_isSolvable_of_notMem_imp_mem_doubleCoset
     (SL2Borel F) P ((ModularGroup.S : SL(2, ℤ)) : SL(2, F))
     (Matrix.SpecialLinearGroup.not_isSolvable_fin_two F hF)
-    mem_doubleCoset_modularGroup_S_of_notMem hBP
+    mem_doubleCoset_modularGroup_S_of_notMem hBP).le
 
 /-- Every solvable subgroup of `SL₂` over an infinite field that contains the standard Borel
 is contained in it. -/
 theorem le_of_isSolvable_of_infinite [Infinite F]
     (P : Subgroup SL(2, F)) [Group.IsSolvable P]
     (hBP : SL2Borel F ≤ P) : P ≤ SL2Borel F :=
-  Subgroup.le_of_isSolvable_of_not_isSolvable_of_notMem_imp_mem_doubleCoset
+  (Subgroup.eq_of_isSolvable_of_not_isSolvable_of_notMem_imp_mem_doubleCoset
     (SL2Borel F) P ((ModularGroup.S : SL(2, ℤ)) : SL(2, F))
     (Matrix.SpecialLinearGroup.not_isSolvable_fin_two_of_infinite F)
-    mem_doubleCoset_modularGroup_S_of_notMem hBP
+    mem_doubleCoset_modularGroup_S_of_notMem hBP).le
 
 end Field
 

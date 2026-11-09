@@ -41,7 +41,8 @@ manifold.
 * `IsOpen.image_of_continuousOn_of_injOn`: **invariance of domain** for manifolds without
   boundary modelled on finite-dimensional real normed spaces of the same dimension.
 * `Continuous.isOpenEmbedding_of_injective`: a continuous injection between such manifolds is an
-  open embedding.
+  open embedding, and `IsOpen.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn` is its form for
+  a map continuous and injective on an open set.
 * `Continuous.surjective_of_injective`: a continuous injection of a compact manifold into a
   connected manifold of the same dimension is surjective.
 * `Homeomorph.coe_apply_mem_interior_iff` and `Homeomorph.coe_apply_mem_frontier_iff`: a
@@ -65,86 +66,87 @@ namespace TauCeti
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
 
-/-- **Invariance of domain, local form.** If `f` is continuous and injective on a closed ball of
-positive radius in a finite-dimensional real normed space, with values in a normed space of the
-same dimension, then the image of the open ball is open. -/
-private theorem isOpen_image_ball (hEF : finrank ℝ E = finrank ℝ F) {f : E → F} {x : E} {r : ℝ}
-    (hr : 0 < r) (hf : ContinuousOn f (closedBall x r)) (hinj : InjOn f (closedBall x r)) :
-    IsOpen (f '' ball x r) := by
+/-- **Invariance of domain, local form on the unit ball.** If `f` is continuous and injective on
+the closed unit ball of a finite-dimensional real normed space, with values in a normed space of
+the same dimension, then the image of the open unit ball is open. -/
+private theorem isOpen_image_ball_zero_one (hEF : finrank ℝ E = finrank ℝ F) {f : E → F}
+    (hf : ContinuousOn f (closedBall 0 1)) (hinj : InjOn f (closedBall 0 1)) :
+    IsOpen (f '' ball 0 1) := by
   set n := finrank ℝ F
   -- Embed `F` in the sphere `Sⁿ` as the complement of a point.
   let Φ : OnePoint F ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 :=
     onePointEquivSphereOfFinrankEq (by simp [n])
   let j : F → sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 := Φ ∘ (↑)
   have hj : IsOpenEmbedding j := Φ.isOpenEmbedding.comp OnePoint.isOpenEmbedding_coe
-  -- Parametrize the closed ball of radius `r` about `x` by the closed unit ball.
-  let a : E → E := fun y ↦ x + r • y
-  have ha_norm (y : E) : dist (a y) x = r * ‖y‖ := by
-    simp [a, dist_eq_norm, norm_smul, abs_of_pos hr]
-  have ha_closedBall {y : E} (hy : y ∈ closedBall (0 : E) 1) : a y ∈ closedBall x r := by
-    rw [mem_closedBall, ha_norm]
-    simpa using mul_le_of_le_one_right hr.le (mem_closedBall_zero_iff.1 hy)
-  have ha_inj : Injective a := fun y z h ↦ smul_right_injective E hr.ne' (add_left_cancel h)
-  have hcont {s : Set E} (hs : s ⊆ closedBall (0 : E) 1) :
-      Continuous fun y : s ↦ j (f (a y)) :=
-    hj.continuous.comp (hf.comp_continuous (by fun_prop) fun y ↦ ha_closedBall (hs y.2))
-  have hinj' {s : Set E} (hs : s ⊆ closedBall (0 : E) 1) : Injective fun y : s ↦ j (f (a y)) :=
-    fun y z h ↦ Subtype.ext <| ha_inj <|
-      hinj (ha_closedBall (hs y.2)) (ha_closedBall (hs z.2)) (hj.injective h)
-  let hD : closedBall (0 : E) 1 → sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 :=
-    fun y ↦ j (f (a y))
-  let hS : sphere (0 : E) 1 → sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 :=
-    fun y ↦ j (f (a y))
-  -- `A` is the complement of the image of the sphere of radius `r`, `B` the image of the open
-  -- ball and `C` the complement of the image of the closed ball.
-  set A := (range hS)ᶜ
-  set B := j '' (f '' ball x r) with hBdef
-  set C := (range hD)ᶜ
-  have hBA : B ⊆ A := by
-    rintro _ ⟨_, ⟨z, hz, rfl⟩, rfl⟩ ⟨y, hy⟩
-    have hzy : z = a y :=
-      hinj (ball_subset_closedBall hz) (ha_closedBall (sphere_subset_closedBall y.2))
-        (hj.injective hy).symm
-    rw [hzy, mem_ball, ha_norm, mem_sphere_zero_iff_norm.1 y.2, mul_one] at hz
-    exact hz.false
-  have hABC : A ⊆ B ∪ C := by
-    rintro p hpA
-    by_contra hp
-    obtain ⟨hpB, hpC⟩ := not_or.1 hp
-    obtain ⟨y, rfl⟩ := not_not.1 hpC
-    rcases (mem_closedBall_zero_iff.1 y.2).lt_or_eq with hy | hy
-    · refine hpB ⟨f (a y), ⟨a y, ?_, rfl⟩, rfl⟩
-      rw [mem_ball, ha_norm]
-      simpa using mul_lt_of_lt_one_right hr hy
-    · exact hpA ⟨⟨y, mem_sphere_zero_iff_norm.2 hy⟩, rfl⟩
-  have hCA : C ⊆ A := compl_subset_compl.2 <| by
-    rintro _ ⟨y, rfl⟩
-    exact ⟨⟨y, sphere_subset_closedBall y.2⟩, rfl⟩
-  have hfx : j (f x) ∈ B := ⟨f x, ⟨x, mem_ball_self hr, rfl⟩, rfl⟩
+  have hcont {s : Set E} (hs : s ⊆ closedBall (0 : E) 1) : Continuous fun y : s ↦ j (f y) :=
+    hj.continuous.comp (hf.comp_continuous continuous_subtype_val fun y ↦ hs y.2)
+  have hinj' {s : Set E} (hs : s ⊆ closedBall (0 : E) 1) : Injective fun y : s ↦ j (f y) :=
+    fun y z h ↦ Subtype.ext <| hinj (hs y.2) (hs z.2) (hj.injective h)
+  have hjf : InjOn (j ∘ f) (closedBall 0 1) := hj.injective.injOn.comp hinj (mapsTo_univ _ _)
+  have hAeq : ((j ∘ f) '' sphere 0 1)ᶜ = (range fun y : sphere (0 : E) 1 ↦ j (f y))ᶜ :=
+    congrArg compl (image_eq_range _ _)
+  have hCeq : ((j ∘ f) '' closedBall 0 1)ᶜ = (range fun y : closedBall (0 : E) 1 ↦ j (f y))ᶜ :=
+    congrArg compl (image_eq_range _ _)
+  -- `A` is the complement of the image of the unit sphere, `B` the image of the open ball and
+  -- `C` the complement of the image of the closed ball.
+  set A := ((j ∘ f) '' sphere 0 1)ᶜ
+  set B := (j ∘ f) '' ball 0 1
+  set C := ((j ∘ f) '' closedBall 0 1)ᶜ
   -- `B` and `C` are path connected, and `C` is nonempty: it contains the point at infinity.
-  have hB : IsPathConnected B := by
-    rw [hBdef, ← image_comp]
-    exact ((convex_ball x r).isPathConnected (nonempty_ball.2 hr)).image'
+  have hB : IsPathConnected B :=
+    ((convex_ball (0 : E) 1).isPathConnected (nonempty_ball.2 one_pos)).image'
       (hj.continuous.comp_continuousOn (hf.mono ball_subset_closedBall))
   have hC : IsPathConnected C := by
+    rw [hCeq]
     refine isPathConnected_sphere_compl_range_closedBall (hcont subset_rfl) (hinj' subset_rfl)
       ⟨Φ OnePoint.infty, ?_⟩
     rintro ⟨y, hy⟩
     exact OnePoint.coe_ne_infty _ (Φ.injective hy)
   -- By the Jordan–Brouwer separation theorem `A` is not path connected, so `B` is a path
   -- component of `A`.
-  have hcomp : pathComponentIn A (j (f x)) = B :=
-    hB.pathComponentIn_eq_of_not_isPathConnected hC hBA hCA hABC hfx fun hA ↦
+  have hAB : A ⊆ B ∪ C := fun p hp ↦ by
+    by_cases hpC : p ∈ (j ∘ f) '' closedBall 0 1
+    · exact .inl <| (subset_image_sdiff _ _ _).trans
+        (image_mono closedBall_sdiff_sphere.subset) ⟨hpC, hp⟩
+    · exact .inr hpC
+  have hcomp : pathComponentIn A (j (f 0)) = B :=
+    hB.pathComponentIn_eq_of_not_isPathConnected hC
+      (sphere_disjoint_ball.symm.image hjf ball_subset_closedBall
+        sphere_subset_closedBall).subset_compl_right
+      (compl_subset_compl.2 (image_mono sphere_subset_closedBall)) hAB
+      ⟨0, mem_ball_self one_pos, rfl⟩ fun hA ↦
       not_isPreconnected_compl_range_sphere (by simp [hEF]) (hcont sphere_subset_closedBall)
-        (hinj' sphere_subset_closedBall) hA.isConnected.isPreconnected
+        (hinj' sphere_subset_closedBall) (by rw [← hAeq]; exact hA.isConnected.isPreconnected)
   -- A path component of an open subset of a manifold is open.
   have : Fact (finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) = n + 1) := ⟨by simp⟩
   have := ChartedSpace.locallyPathConnectedSpace (EuclideanSpace ℝ (Fin n))
     (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
-  have hA : IsOpen A := (isCompact_range (hcont sphere_subset_closedBall)).isClosed.isOpen_compl
-  have hBo : IsOpen B := hcomp ▸ hA.pathComponentIn _
-  rw [← preimage_image_eq (f '' ball x r) hj.injective]
-  exact hBo.preimage hj.continuous
+  have hA : IsOpen A := by
+    rw [hAeq]
+    exact (isCompact_range (hcont sphere_subset_closedBall)).isClosed.isOpen_compl
+  rw [← preimage_image_eq (f '' ball 0 1) hj.injective, ← image_comp]
+  exact (hcomp ▸ hA.pathComponentIn _ : IsOpen B).preimage hj.continuous
+
+/-- **Invariance of domain, local form.** If `f` is continuous and injective on a closed ball of
+positive radius in a finite-dimensional real normed space, with values in a normed space of the
+same dimension, then the image of the open ball is open. -/
+private theorem isOpen_image_ball (hEF : finrank ℝ E = finrank ℝ F) {f : E → F} {x : E} {r : ℝ}
+    (hr : 0 < r) (hf : ContinuousOn f (closedBall x r)) (hinj : InjOn f (closedBall x r)) :
+    IsOpen (f '' ball x r) := by
+  -- Reparametrize the closed ball of radius `r` about `x` by the closed unit ball.
+  let a : E → E := fun y ↦ x + r • y
+  have ha_comp : a = (x +ᵥ ·) ∘ (r • ·) := rfl
+  have ha_ball : a '' ball 0 1 = ball x r := by
+    rw [ha_comp, image_comp, Set.image_smul, Set.image_vadd]
+    exact affinity_unitBall hr x
+  have ha_closedBall : a '' closedBall 0 1 = closedBall x r := by
+    rw [ha_comp, image_comp, Set.image_smul, Set.image_vadd]
+    exact affinity_unitClosedBall hr.le x
+  have ha_maps : MapsTo a (closedBall 0 1) (closedBall x r) := ha_closedBall ▸ mapsTo_image _ _
+  have ha_inj : Injective a := fun y z h ↦ smul_right_injective E hr.ne' (add_left_cancel h)
+  have := isOpen_image_ball_zero_one hEF (f := f ∘ a) (hf.comp (by fun_prop) ha_maps)
+    (hinj.comp ha_inj.injOn ha_maps)
+  rwa [image_comp, ha_ball] at this
 
 end TauCeti
 
@@ -202,6 +204,22 @@ theorem Continuous.isOpenEmbedding_of_injective {f : M → N} (hf : Continuous f
     (hinj : Injective f) (hEF : finrank ℝ E = finrank ℝ F) : IsOpenEmbedding f :=
   .of_continuous_injective_isOpenMap hf hinj fun _ hU ↦
     hU.image_of_continuousOn_of_injOn hf.continuousOn hinj.injOn hEF
+
+/-- **Invariance of domain, restricted to an open set.** Let `M` and `N` be topological manifolds
+without boundary, charted on finite-dimensional real normed spaces of the same dimension. If
+`f : M → N` is continuous and injective on an open set `U`, then its restriction to `U` is an open
+embedding. -/
+theorem IsOpen.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn {f : M → N} {U : Set M}
+    (hU : IsOpen U) (hf : ContinuousOn f U) (hinj : InjOn f U)
+    (hEF : finrank ℝ E = finrank ℝ F) : IsOpenEmbedding (U.domRestrict f) := by
+  refine .of_continuous_injective_isOpenMap (continuousOn_iff_continuous_domRestrict.1 hf)
+    hinj.injective fun s hs ↦ ?_
+  have hsU : ((↑) '' s : Set M) ⊆ U := by
+    rintro _ ⟨y, -, rfl⟩
+    exact y.2
+  rw [domRestrict_eq, image_comp]
+  exact (hU.isOpenMap_subtype_val s hs).image_of_continuousOn_of_injOn (hf.mono hsU)
+    (hinj.mono hsU) hEF
 
 /-- **A continuous injection of a compact manifold into a connected one is onto.** Let `M` and `N`
 be topological manifolds without boundary, charted on finite-dimensional real normed spaces of the

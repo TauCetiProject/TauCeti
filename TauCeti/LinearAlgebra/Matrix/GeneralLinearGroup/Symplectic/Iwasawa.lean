@@ -31,7 +31,8 @@ the symplectic transvections do. These are exactly the axioms of Mathlib's
 Applying the criterion to the projective symplectic group needs three further inputs: perfectness
 of `Sp_{2m}(K)` (`TauCeti.GLSymplecticFin.commutator_eq_top` gives it when `K` has an element
 `a ≠ 0` with `a² ≠ 1`), quasiprimitivity of the action on projective space, and the identification
-of the kernel of that action with the centre `{±1}`. The last two are not proved here.
+of the kernel of that action with the centre `{±1}`. The last two are proved in
+`Symplectic/Primitive` and `Symplectic/Projective`, and `Symplectic/Simple` assembles the criterion.
 
 ## Main declarations
 

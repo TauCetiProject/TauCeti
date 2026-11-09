@@ -19,10 +19,15 @@ the constant that makes it agree with Lebesgue measure on `d`-dimensional Euclid
 constant is positive and finite, so the two normalizations have the same null sets and the same
 sets of finite measure, and lower Lebesgue integrals pull out this finite scalar factor
 (`TauCeti.lintegral_euclideanHausdorffMeasure`); statements of either kind may be proved with
-either normalization. In dimension zero, Hausdorff measure is counting measure
-(`TauCeti.hausdorffMeasure_zero_eq_count`). In dimension one the normalizing constant is `1`,
-because `μH[1]` already agrees with Lebesgue measure on `ℝ`. Hence `μHE[1] = μH[1]` on every
-extended metric space, so length statements may be proved with either normalization.
+either normalization. Since `μHE[finrank ℝ E]` is Lebesgue volume on a finite-dimensional real
+inner product space `E` and Hausdorff measure decreases with the dimension parameter, every
+Lebesgue-null set in `E` is `μH[d]`- and `μHE[d]`-null for `d ≥ finrank ℝ E`
+(`TauCeti.hausdorffMeasure_eq_zero_of_volume_eq_zero`,
+`TauCeti.euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero`). In dimension zero, Hausdorff
+measure is counting measure (`TauCeti.hausdorffMeasure_zero_eq_count`). In dimension one the
+normalizing constant is `1`, because `μH[1]` already agrees with Lebesgue measure on `ℝ`. Hence
+`μHE[1] = μH[1]` on every extended metric space, so length statements may be proved with either
+normalization.
 
 In every dimension `k` the normalizing constant is `ω_k / 2 ^ k`, where `ω_k` is the volume of the
 unit ball of `EuclideanSpace ℝ (Fin k)`: `μHE[k] = (ω_k / 2 ^ k) • μH[k]` on every extended metric
@@ -31,17 +36,26 @@ itself, the density comparison of `TauCeti.MeasureTheory.Covering.HausdorffDensi
 volume gives one inequality, and the isodiametric inequality the other
 (`EuclideanSpace.volume_eq_smul_hausdorffMeasure`). In this normalization the density comparison
 reads `c * μHE[k] A ≤ μ U` whenever `μ (closedBall x r) ≥ c ω_k r ^ k` along arbitrarily small radii
-at every `x ∈ A` (`MeasureTheory.Measure.mul_euclideanHausdorffMeasure_le_measure_of_isOpen`), and a
+at every `x ∈ A` (`MeasureTheory.Measure.mul_euclideanHausdorffMeasure_le_measure_of_isOpen`),
+conversely `μ A ≤ 2 ^ k c μHE[k] A` whenever `μ (closedBall x r) ≤ c ω_k r ^ k` for all small radii
+at every `x ∈ A` (`MeasureTheory.Measure.measure_le_mul_euclideanHausdorffMeasure`), and a
 null-measurable set `A` of finite `μHE[k]` measure satisfies
 `μHE[k] (A ∩ closedBall x r) / (ω_k r ^ k) → 0` for `μHE[k]`-almost every `x ∉ A`
-(`TauCeti.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div`).
+(`TauCeti.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div`). In a proper metric space,
+local finiteness of the restricted measure suffices for this zero-density assertion
+(`TauCeti.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div_of_isLocallyFiniteMeasure`).
 
 On a nonempty affine subspace `s` of a Euclidean affine space, volume on the direction of `s`,
 transported to `s` by adding a base point, is the Euclidean Hausdorff measure of the dimension
 of `s` (`AffineSubspace.volume_preimage_coe_vadd`). These coordinates `v ↦ v +ᵥ q` are Mathlib's
 `IsometryEquiv.vaddConst q` followed by the inclusion of `s`
 (`AffineSubspace.val_comp_vaddConst`), so they form an isometry onto `s`
-(`AffineSubspace.isometry_coe_vadd`, `AffineSubspace.range_coe_vadd`).
+(`AffineSubspace.isometry_coe_vadd`, `AffineSubspace.range_coe_vadd`). In particular, for a unit
+vector `ν` of a finite-dimensional real inner product space of dimension `n`, the restriction of
+`μHE[n - 1]` to the hyperplane `{x | ⟪x, ν⟫ = c}` is the image of the Lebesgue measure of the
+orthogonal complement `(ℝ ∙ ν)ᗮ` under `y ↦ c • ν + y`
+(`TauCeti.euclideanHausdorffMeasure_restrict_setOf_inner_eq`), so integrals over the hyperplane
+are integrals over `(ℝ ∙ ν)ᗮ` (`TauCeti.setIntegral_setOf_inner_eq`).
 
 ## References
 
@@ -111,6 +125,25 @@ theorem lintegral_euclideanHausdorffMeasure {α X : Type*} [MeasurableSpace α] 
   refine lintegral_congr fun y ↦ ?_
   rw [euclideanHausdorffMeasure_def, smul_apply, ENNReal.smul_def, smul_eq_mul]
 
+/-- A Lebesgue-null subset of a finite-dimensional real inner product space `E` is `μH[d]`-null in
+every dimension `d ≥ finrank ℝ E`. -/
+theorem hausdorffMeasure_eq_zero_of_volume_eq_zero {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {s : Set E} (hs : volume s = 0) {d : ℝ} (hd : (finrank ℝ E : ℝ) ≤ d) :
+    μH[d] s = 0 := by
+  rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume,
+    Measure.euclideanHausdorffMeasure_eq_zero_iff] at hs
+  exact nonpos_iff_eq_zero.1 ((Measure.hausdorffMeasure_mono hd s).trans hs.le)
+
+/-- A Lebesgue-null subset of a finite-dimensional real inner product space `E` is `μHE[d]`-null in
+every dimension `d ≥ finrank ℝ E`. -/
+theorem euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {s : Set E} (hs : volume s = 0) {d : ℕ} (hd : finrank ℝ E ≤ d) :
+    μHE[d] s = 0 :=
+  Measure.euclideanHausdorffMeasure_eq_zero_iff.2
+    (hausdorffMeasure_eq_zero_of_volume_eq_zero hs (Nat.cast_le.2 hd))
+
 end TauCeti
 
 section Normalization
@@ -158,7 +191,7 @@ theorem volume_eq_smul_hausdorffMeasure (k : ℕ) :
     have hle : ω'⁻¹ • (volume : Measure (EuclideanSpace ℝ (Fin k))) ≤ μH[k] :=
       le_hausdorffMeasure _ _ 1 one_pos fun t _ => by
         rw [_root_.smul_apply, smul_eq_mul, ENNReal.inv_mul_le_iff hω0 hωtop, ENNReal.rpow_natCast]
-        refine (TauCeti.volume_le_ediam_div_two_pow_mul_volume_ball t).trans_eq ?_
+        refine (Measure.addHaar_le_ediam_div_two_pow_mul_addHaar_ball volume t).trans_eq ?_
         simp only [finrank_euclideanSpace_fin, ω', div_eq_mul_inv, mul_pow, ENNReal.inv_pow]
         ring
     rw [_root_.smul_apply, smul_eq_mul, ← ENNReal.inv_mul_le_iff hω0 hωtop]
@@ -232,6 +265,26 @@ theorem mul_euclideanHausdorffMeasure_le_measure (μ : Measure X) [μ.OuterRegul
   obtain ⟨U, hAU, hU, hUb⟩ := A.exists_isOpen_lt_of_lt b hb
   exact (mul_euclideanHausdorffMeasure_le_measure_of_isOpen μ k hU hAU h).trans_lt hUb
 
+/-- **Upper density comparison for Euclidean Hausdorff measure.** If at every point `x` of `A`
+all small closed balls satisfy `μ (closedBall x r) ≤ c ω_k r ^ k`, where `c ≠ 0, ∞` and
+`ω_k r ^ k` is the volume of a ball of radius `r` in `EuclideanSpace ℝ (Fin k)`, then
+`μ A ≤ 2 ^ k * c * μHE[k] A`. -/
+theorem measure_le_mul_euclideanHausdorffMeasure (μ : Measure X) (k : ℕ) {c : ℝ≥0∞}
+    (hc0 : c ≠ 0) (hc : c ≠ ∞) {A : Set X}
+    (h : ∀ x ∈ A, ∀ᶠ r in 𝓝[>] 0,
+      μ (closedBall x r) ≤ c * volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) :
+    μ A ≤ 2 ^ k * c * μHE[k] A := by
+  set ω' := volume (ball (0 : EuclideanSpace ℝ (Fin k)) 1) / 2 ^ k
+  have hω0 : ω' ≠ 0 := EuclideanSpace.volume_ball_div_two_pow_ne_zero k
+  have hωtop : ω' ≠ ∞ := EuclideanSpace.volume_ball_div_two_pow_ne_top k
+  have key := measure_le_mul_hausdorffMeasure μ (d := k) (mul_ne_zero hc0 hω0)
+    (ENNReal.mul_ne_top hc hωtop) fun x hx => (h x hx).mp
+      (eventually_mem_nhdsWithin.mono fun r (hr : 0 < r) hle => ?_)
+  · rw [TauCeti.euclideanHausdorffMeasure_eq_smul_hausdorffMeasure, smul_apply, smul_eq_mul]
+    rw [ENNReal.rpow_natCast] at key
+    exact key.trans_eq (by ring)
+  · rwa [EuclideanSpace.volume_closedBall_eq_div_mul 0 hr.le, ← mul_assoc] at hle
+
 end MeasureTheory.Measure
 
 namespace TauCeti
@@ -259,6 +312,31 @@ theorem ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div (k : ℕ) {A :
   dsimp only
   rw [_root_.smul_apply, smul_eq_mul, EuclideanSpace.volume_closedBall_eq_div_mul 0 hr.le,
     ENNReal.mul_div_mul_left _ _ hω0 hωtop]
+
+/-- **Zero density outside a locally finite set**, Euclidean normalization. In a proper
+metric space, local finiteness of the restricted Hausdorff measure suffices; the set may
+have infinite total measure. -/
+theorem ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div_of_isLocallyFiniteMeasure
+    [ProperSpace X] (k : ℕ) {A : Set X} (hA : NullMeasurableSet A μHE[k])
+    [IsLocallyFiniteMeasure (μHE[k].restrict A)] :
+    ∀ᵐ x ∂μHE[k], x ∉ A → Tendsto (fun r ↦ μHE[k] (A ∩ closedBall x r) /
+      volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) := by
+  classical
+  rcases isEmpty_or_nonempty X with hX | hX
+  · exact Eventually.of_forall fun x ↦ isEmptyElim x
+  let x₀ := Classical.choice hX
+  have hfin (j : ℕ) : μHE[k] (A ∩ ball x₀ j) ≠ ∞ := by
+    rw [inter_comm, ← Measure.restrict_apply measurableSet_ball]
+    exact measure_ball_lt_top.ne
+  have hzero (j : ℕ) := ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div k
+    (hA.inter measurableSet_ball.nullMeasurableSet) (hfin j)
+  filter_upwards [ae_all_iff.mpr hzero] with x hx hxA
+  obtain ⟨j, hj⟩ := exists_nat_gt (dist x x₀)
+  have hxj : x ∈ ball x₀ j := mem_ball.mpr hj
+  refine (hx j (fun h ↦ hxA h.1)).congr' ?_
+  filter_upwards [eventually_nhdsWithin_of_eventually_nhds
+    (eventually_closedBall_subset (isOpen_ball.mem_nhds hxj))] with r hr
+  rw [inter_assoc, inter_eq_right.mpr hr]
 
 end TauCeti
 
@@ -301,3 +379,63 @@ theorem volume_preimage_coe_vadd (s : AffineSubspace ℝ P) [Nonempty s] (q : s)
     (IsometryEquiv.vaddConst q).range_eq_univ, inter_univ, euclideanHausdorffMeasure_preimage_coe]
 
 end AffineSubspace
+
+namespace TauCeti
+
+open scoped RealInnerProductSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {ν : F}
+
+/-- The translated inclusion `y ↦ c • ν + y` of the orthogonal complement `(ℝ ∙ ν)ᗮ` is an
+isometry. When `‖ν‖ = 1`, its range is the hyperplane `{x | ⟪x, ν⟫ = c}`. -/
+theorem isometry_smul_add_coe (c : ℝ) :
+    Isometry fun y : (ℝ ∙ ν)ᗮ => c • ν + (y : F) :=
+  (isometry_add_left (c • ν)).comp isometry_subtype_coe
+
+variable [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
+
+/-- **Hausdorff measure on a hyperplane.** For a unit vector `ν`, the `(n - 1)`-dimensional
+Hausdorff measure of the hyperplane `{x | ⟪x, ν⟫ = c}` is the image of the Lebesgue measure of
+the orthogonal complement `(ℝ ∙ ν)ᗮ` under `y ↦ c • ν + y`. -/
+theorem euclideanHausdorffMeasure_restrict_setOf_inner_eq (hν : ‖ν‖ = 1) (c : ℝ) :
+    μHE[finrank ℝ F - 1].restrict {x | ⟪x, ν⟫ = c} =
+      (volume : Measure (ℝ ∙ ν)ᗮ).map fun y : (ℝ ∙ ν)ᗮ => c • ν + (y : F) := by
+  have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (hν ▸ one_ne_zero)
+  have : Nontrivial F := ⟨⟨ν, 0, hν0⟩⟩
+  have : Fact (finrank ℝ F = finrank ℝ F - 1 + 1) := ⟨(Nat.sub_add_cancel finrank_pos).symm⟩
+  have hrange : range (fun y : (ℝ ∙ ν)ᗮ => c • ν + (y : F)) = {x | ⟪x, ν⟫ = c} := by
+    ext x
+    refine ⟨?_, fun hx => ?_⟩
+    · rintro ⟨y, rfl⟩
+      have hy : ⟪(y : F), ν⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1 y.2
+      simp [inner_add_left, real_inner_smul_left, hν, hy]
+    · have hy : x - c • ν ∈ (ℝ ∙ ν)ᗮ := by
+        rw [Submodule.mem_orthogonal_singleton_iff_inner_left, inner_sub_left,
+          real_inner_smul_left, real_inner_self_eq_norm_sq, hν, hx.out]
+        ring
+      exact ⟨⟨x - c • ν, hy⟩, by simp⟩
+  rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume,
+    Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0,
+    (isometry_smul_add_coe c).map_euclideanHausdorffMeasure]
+  exact congrArg _ hrange.symm
+
+/-- Integrals over the hyperplane `{x | ⟪x, ν⟫ = c}` against Hausdorff measure are integrals over
+`(ℝ ∙ ν)ᗮ` against Lebesgue measure. -/
+theorem setIntegral_setOf_inner_eq (hν : ‖ν‖ = 1) (c : ℝ) {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] (g : F → G) :
+    ∫ x in {x | ⟪x, ν⟫ = c}, g x ∂μHE[finrank ℝ F - 1] = ∫ y : (ℝ ∙ ν)ᗮ, g (c • ν + y) := by
+  rw [euclideanHausdorffMeasure_restrict_setOf_inner_eq hν,
+    (isometry_smul_add_coe c).isClosedEmbedding.measurableEmbedding.integral_map]
+
+/-- A continuous compactly supported function is integrable on the hyperplane
+`{x | ⟪x, ν⟫ = c}` against Hausdorff measure. -/
+theorem integrableOn_setOf_inner_eq (hν : ‖ν‖ = 1) (c : ℝ) {G : Type*}
+    [NormedAddCommGroup G] {g : F → G}
+    (hg : Continuous g) (hgc : HasCompactSupport g) :
+    IntegrableOn g {x | ⟪x, ν⟫ = c} μHE[finrank ℝ F - 1] := by
+  have he := (isometry_smul_add_coe (ν := ν) c).isClosedEmbedding
+  rw [IntegrableOn, euclideanHausdorffMeasure_restrict_setOf_inner_eq hν,
+    he.measurableEmbedding.integrable_map_iff]
+  exact (hg.comp he.continuous).integrable_of_hasCompactSupport (hgc.comp_isClosedEmbedding he)
+
+end TauCeti

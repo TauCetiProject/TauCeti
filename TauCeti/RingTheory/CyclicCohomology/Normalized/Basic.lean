@@ -18,6 +18,8 @@ complex structure. The underlying cochain complex and its inclusion into the ful
 complex use the native `CochainComplex` API. On normalized cochains the formula for `B` reduces
 to the signed cyclic sum of `φ(1, a₀, …, aₙ)`.
 
+On the ground ring every normalized cochain of positive degree vanishes.
+
 Normalization leaves all degree-zero cochains in place. It is different from requiring
 vanishing on the scalar subalgebra in every degree, and does not assert that cyclic cochains
 are normalized.
@@ -87,6 +89,25 @@ theorem _root_.LinearMap.compLinearMap_mem_normalizedHochschildCochains
   exact hφ _ i hi (by simpa only [ha] using hf)
 
 end Normalized
+
+section GroundRing
+
+variable (R M : Type*) [CommSemiring R] [AddCommMonoid M] [Module R M]
+
+/-- On the ground ring every normalized cochain of positive degree vanishes: it is the product
+cochain of its value on `(1, …, 1)`, and that value is zero. -/
+theorem normalizedHochschildCochains_self_succ (n : ℕ) :
+    normalizedHochschildCochains R R M (n + 1) = ⊥ := by
+  refine eq_bot_iff.2 fun φ hφ ↦ ?_
+  rw [Submodule.mem_bot, ← MultilinearMap.mkPiRing_apply_one_eq_self φ,
+    mem_normalizedHochschildCochains_iff.1 hφ (fun _ ↦ 1) (0 : Fin (n + 1)).succ
+      (Fin.succ_ne_zero _) rfl, MultilinearMap.mkPiRing_zero]
+
+/-- On the ground ring there are no nonzero normalized cochains of positive degree. -/
+instance (n : ℕ) : Subsingleton (normalizedHochschildCochains R R M (n + 1)) :=
+  Submodule.subsingleton_iff_eq_bot.2 (normalizedHochschildCochains_self_succ R M n)
+
+end GroundRing
 
 section Hochschild
 
@@ -199,6 +220,13 @@ theorem coe_normalizedConnesB (φ : normalizedHochschildCochains R A M (n + 1)) 
     (normalizedConnesB R A M n φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) =
       connesB R A M n φ := (rfl)
 
+/-- A cyclic normalized cochain of positive degree is killed by `B`. -/
+theorem normalizedConnesB_eq_zero_of_mem_cyclicCochains
+    {φ : normalizedHochschildCochains R A M (n + 1)}
+    (hφ : (φ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M) ∈ cyclicCochains R A M (n + 1)) :
+    normalizedConnesB R A M n φ = 0 :=
+  Subtype.ext ((coe_normalizedConnesB φ).trans (connesB_eq_zero_of_mem_cyclicCochains hφ))
+
 /-- The normalized Connes operator squares to zero. -/
 @[simp]
 theorem normalizedConnesB_normalizedConnesB
@@ -229,6 +257,11 @@ variable {R A M} {n : ℕ}
 theorem coe_normalizedHochschildCoboundary (φ : normalizedHochschildCochains R A M n) :
     (normalizedHochschildCoboundary R A M n φ :
       MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M) = hochschildCoboundary R A M n φ := (rfl)
+
+/-- A normalized cochain is a normalized cocycle exactly when it is a Hochschild cocycle. -/
+theorem normalizedHochschildCoboundary_eq_zero_iff {φ : normalizedHochschildCochains R A M n} :
+    normalizedHochschildCoboundary R A M n φ = 0 ↔ hochschildCoboundary R A M n φ = 0 :=
+  Submodule.coe_eq_zero.symm
 
 /-- The normalized Hochschild coboundary and Connes operator anticommute in positive degrees. -/
 theorem normalizedHochschildCoboundary_normalizedConnesB_add

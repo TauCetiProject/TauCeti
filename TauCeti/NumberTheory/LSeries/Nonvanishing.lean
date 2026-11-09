@@ -29,7 +29,7 @@ lower bound. This file proves the second step for arbitrary functions, so that e
 
 The growth condition on `f₀` is the one-sided bound `f₀(σ) = O((σ - 1)⁻¹)` as real `σ → 1⁺`.
 It follows from a limit of `(σ - 1) f₀(σ)` as `σ → 1⁺`, which is how such a bound is usually
-available for a Dedekind zeta function; `TauCeti.isBigO_inv_sub_one_of_tendsto_sub_one_mul`
+available for a Dedekind zeta function; `Asymptotics.isBigO_inv_sub_of_tendsto_sub_smul`
 records that implication.
 
 ## Main results

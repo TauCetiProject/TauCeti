@@ -56,7 +56,7 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
   `TauCeti.Dagger.washnitzerAlgebra_toSubring_lt`: over a nontrivially normed field it is a
   proper subring as soon as there is a variable, while `W` is everything when there is none
   (`TauCeti.Dagger.washnitzerAlgebra_eq_top`), and then every series is a constant
-  (`TauCeti.Dagger.algebraMap_washnitzerAlgebra_surjective`).
+  (`TauCeti.Dagger.washnitzerAlgebra.algebraMap_surjective`).
 * `TauCeti.Dagger.eventually_isRestricted_of_mem_washnitzerAlgebra`: an overconvergent series is
   restricted at every radius `ρ > 1` close enough to `1`, so finitely many overconvergent series
   share such a radius.
@@ -192,12 +192,6 @@ theorem mem_washnitzerAlgebra_iff_norm_coeff_le [Finite σ] {f : MvPowerSeries �
 theorem washnitzerAlgebra_eq_top [IsEmpty σ] : washnitzerAlgebra σ R = ⊤ :=
   eq_top_iff.2 fun _ _ ↦ ⟨2, one_lt_two, isRestricted_of_finite_support _ (Set.toFinite _)⟩
 
-/-- Without variables every overconvergent series is a constant. -/
-theorem algebraMap_washnitzerAlgebra_surjective [IsEmpty σ] :
-    Function.Surjective (algebraMap R (washnitzerAlgebra σ R)) := fun f ↦
-  let ⟨r, hr⟩ := C_surjective (f : MvPowerSeries σ R)
-  ⟨r, Subtype.ext hr⟩
-
 /-- The Monsky–Washnitzer algebra lies in the unit-radius Tate algebra. -/
 theorem washnitzerAlgebra_toSubring_le :
     (washnitzerAlgebra σ R).toSubring ≤ IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ)) :=
@@ -329,10 +323,11 @@ theorem denseRange_toTate : DenseRange (toTate σ R) := by
 /-- For a polyradius `c` bounded below by some `ρ > 1`, the inclusion of the series restricted at
 `c` into the Monsky–Washnitzer algebra. -/
 noncomputable def ofRestricted {c : σ → ℝ} {ρ : ℝ} (hρ : 1 < ρ) (hc : ∀ i, ρ ≤ c i) :
-    IsRestricted.subring (R := R) c →+* washnitzerAlgebra σ R :=
-  (IsRestricted.subring (R := R) c).subtype.codRestrict (washnitzerAlgebra σ R).toSubring
-    fun f ↦ mem_washnitzerAlgebra.mpr
+    IsRestricted.subring (R := R) c →ₐ[R] washnitzerAlgebra σ R where
+  toRingHom := (IsRestricted.subring (R := R) c).subtype.codRestrict
+    (washnitzerAlgebra σ R).toSubring fun f ↦ mem_washnitzerAlgebra.mpr
       ⟨ρ, hρ, isRestricted_of_le f.2 (fun _ ↦ (zero_lt_one.trans hρ).le) hc⟩
+  commutes' _ := (rfl)
 
 /-- The inclusion of a restricted subring does not change the underlying series. -/
 @[simp]

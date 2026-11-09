@@ -50,6 +50,26 @@ theorem ofReal_realPart_add_I_smul_ofReal_imaginaryPart (ω : SmoothForm I M ℂ
   simpa [RoughForm.mapCoeff_apply, smul_eq_mul, mul_comm] using
     Complex.re_add_im (ω.1 x v)
 
+/-- The real part of `α + i β`, for real-valued smooth forms `α` and `β`, is `α`. -/
+@[simp]
+theorem realPart_ofReal_add_I_smul_ofReal (α β : SmoothForm I M ℝ k) :
+    mapCoeff Complex.reCLM
+      (mapCoeff Complex.ofRealCLM α + Complex.I • mapCoeff Complex.ofRealCLM β) = α := by
+  apply Subtype.ext
+  funext x
+  ext v
+  simp [RoughForm.mapCoeff_apply]
+
+/-- The imaginary part of `α + i β`, for real-valued smooth forms `α` and `β`, is `β`. -/
+@[simp]
+theorem imaginaryPart_ofReal_add_I_smul_ofReal (α β : SmoothForm I M ℝ k) :
+    mapCoeff Complex.imCLM
+      (mapCoeff Complex.ofRealCLM α + Complex.I • mapCoeff Complex.ofRealCLM β) = β := by
+  apply Subtype.ext
+  funext x
+  ext v
+  simp [RoughForm.mapCoeff_apply]
+
 private theorem liftBaseChange_ofReal_bijective :
     Function.Bijective
       ((mapCoeff (I := I) (M := M) (k := k) Complex.ofRealCLM).liftBaseChange ℂ) := by
@@ -61,19 +81,10 @@ private theorem liftBaseChange_ofReal_bijective :
     have h : mapCoeff Complex.ofRealCLM α +
         Complex.I • mapCoeff Complex.ofRealCLM β = 0 := by
       simpa using hu
-    have hα : α = 0 := by
-      apply Subtype.ext
-      funext x
-      ext v
-      have := congrArg (fun η : SmoothForm I M ℂ k ↦ (η.1 x v).re) h
-      simpa [RoughForm.mapCoeff_apply, smul_eq_mul] using this
-    have hβ : β = 0 := by
-      apply Subtype.ext
-      funext x
-      ext v
-      have := congrArg (fun η : SmoothForm I M ℂ k ↦ (η.1 x v).im) h
-      simpa [RoughForm.mapCoeff_apply, smul_eq_mul] using this
-    simp [hα, hβ]
+    have hα := realPart_ofReal_add_I_smul_ofReal α β
+    have hβ := imaginaryPart_ofReal_add_I_smul_ofReal α β
+    rw [h, map_zero] at hα hβ
+    simp [← hα, ← hβ]
   · intro ω
     refine ⟨1 ⊗ₜ[ℝ] mapCoeff Complex.reCLM ω +
       Complex.I ⊗ₜ[ℝ] mapCoeff Complex.imCLM ω, ?_⟩

@@ -15,7 +15,8 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 A test function can be written as a finite sum of tests subordinate to any open cover of its
 support. Consequently, an additive map on test functions which vanishes locally vanishes globally;
 continuity of the additive map is not required. Every compact subset of the domain also has a
-cutoff test function equal to one on a neighbourhood of it.
+cutoff test function equal to one on a neighbourhood of it, and every point of the domain has a
+test function with a prescribed value there, supported in a given neighbourhood of the point.
 
 Multiplication by a smooth function `χ` whose closed support meets `Ω` only inside an open set `U`
 sends tests on `Ω` to tests on `U`. This is `TestFunction.cutoffCLM`, a continuous linear map
@@ -119,13 +120,30 @@ theorem exists_sum_subordinate (φ : 𝓓^{n}(Ω, F)) {ι : Type*} (U : ι → S
     simpa [ψ, norm_smul, abs_of_nonneg (ρ.nonneg i x)] using
       mul_le_of_le_one_left (norm_nonneg (φ x)) (ρ.le_one i x)
 
+/-- A compact subset `K` of an open set `W` contained in the domain has a test function with values
+in `[0, 1]`, equal to one on a neighbourhood of `K`, whose topological support lies in `W`. -/
+theorem exists_cutoff_tsupport_subset {K W : Set E} (hK : IsCompact K) (hW : IsOpen W)
+    (hKW : K ⊆ W) (hWΩ : W ⊆ Ω) :
+    ∃ χ : 𝓓^{n}(Ω, ℝ), (∀ x, χ x ∈ Icc 0 1) ∧ (∀ᶠ x in 𝓝ˢ K, χ x = 1) ∧ tsupport χ ⊆ W := by
+  obtain ⟨χ, hχ, hχ01, hχ1, hχc, hχW⟩ := hK.exists_contDiff_cutoff hW hKW
+  exact ⟨⟨χ, hχ.of_le (by simp), hχc, hχW.trans hWΩ⟩, fun x ↦ hχ01 ⟨x, rfl⟩,
+    subset_interior_iff_mem_nhdsSet.1 hχ1, hχW⟩
+
 /-- Every compact subset of the domain has a test function with values in `[0, 1]` that is equal
 to one on a neighbourhood of it. -/
 theorem exists_eventually_eq_one {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     ∃ χ : 𝓓^{n}(Ω, ℝ), (∀ᶠ x in 𝓝ˢ K, χ x = 1) ∧ ∀ x, χ x ∈ Icc 0 1 := by
-  obtain ⟨χ, hχ, hχ01, hχ1, hχc, hχΩ⟩ := hK.exists_contDiff_cutoff Ω.isOpen hKΩ
-  exact ⟨⟨χ, hχ.of_le (by simp), hχc, hχΩ⟩,
-    subset_interior_iff_mem_nhdsSet.1 hχ1, fun x ↦ hχ01 ⟨x, rfl⟩⟩
+  obtain ⟨χ, hχ01, hχ1, -⟩ := exists_cutoff_tsupport_subset (n := n) hK Ω.isOpen hKΩ subset_rfl
+  exact ⟨χ, hχ1, hχ01⟩
+
+/-- Every point of the domain has a test function taking a prescribed value at it and supported
+in a given neighbourhood of it. -/
+theorem exists_tsupport_subset_apply_eq {x : E} {s : Set E} (hs : s ∈ 𝓝 x) (hsΩ : s ⊆ Ω)
+    (v : F) : ∃ φ : 𝓓^{n}(Ω, F), tsupport φ ⊆ s ∧ φ x = v := by
+  obtain ⟨u, hus, hu, hud, -, hux⟩ := exists_contDiff_tsupport_subset (n := n) hs
+  have hsupp : tsupport (fun y ↦ u y • v) ⊆ s := (tsupport_smul_subset_left _ _).trans hus
+  exact ⟨⟨fun y ↦ u y • v, hud.smul contDiff_const, hu.smul_right, hsupp.trans hsΩ⟩, hsupp,
+    by simp [hux]⟩
 
 /-- A real test function bounded in norm by one can realize the signs of arbitrary coefficients
 on a finite subset of its domain. -/

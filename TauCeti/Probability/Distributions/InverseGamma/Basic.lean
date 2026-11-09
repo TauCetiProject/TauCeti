@@ -266,7 +266,7 @@ theorem inverseGammaMeasure_eq_withDensity (a r : ℝ) :
       exact (ofReal_abs_inv_deriv_mul_inverseGammaPDF ha hr hy).symm
     rw [inverseGammaMeasure_of_pos ha hr, gammaMeasure_eq_withDensity_restrict_Ioi,
       withDensity_congr_ae hweight,
-      MeasureTheory.map_withDensity_abs_deriv_mul measurableSet_Ioi measurable_inv
+      MeasureTheory.map_withDensity_abs_deriv_mul measurableSet_Ioi
         (fun y hy ↦ (hasDerivAt_inv (ne_of_gt hy)).hasDerivWithinAt) inv_injective.injOn,
       himage, ← withDensity_indicator measurableSet_Ioi, indicator_Ioi_inverseGammaPDF]
   · rw [inverseGammaMeasure_of_not_pos h]

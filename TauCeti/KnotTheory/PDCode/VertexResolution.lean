@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.KnotTheory.PDCode.Planar
 public import TauCeti.KnotTheory.PDCode.ResolvedCircle.Saddle
+import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.Logic.Equiv.Fin.Basic
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.GroupTheory.Perm.SumCongr
+import TauCeti.GroupTheory.Perm.SwapFactors
 
 /-!
 # Resolving a crossing of a PD-code
@@ -55,6 +59,11 @@ of resolved circles behind the identification of the two faces of the cube of re
 in the direction of `c` with the cubes of resolutions of its two resolutions, from which the
 Khovanov skein exact sequence is built.
 
+Both resolutions of a planar code are planar (`TauCeti.PDCode.IsPlanar.resolveCrossing`), so
+they have cubes of resolutions of their own. In the underlying ribbon graph, smoothing `c`
+replaces the vertex `c` by two vertices of degree two, one on each smoothing arc, and cutting off
+the smoothing arcs suppresses them; neither step raises the genus.
+
 ## Main definitions
 
 * `TauCeti.PDCode.detachedCircleCount D c t`: the circles of the smoothing of `c` that meet no
@@ -81,6 +90,7 @@ Khovanov skein exact sequence is built.
   circles as the corresponding crossing of `D`.
 * `TauCeti.PDCode.resolveCrossingResolvedCircleEquiv_saddleResolvedCircleMap`: the circle
   correspondence commutes with the saddles at the other crossings.
+* `TauCeti.PDCode.IsPlanar.resolveCrossing`: the resolutions of a planar code are planar.
 
 ## References
 
@@ -89,6 +99,8 @@ Khovanov skein exact sequence is built.
   Definition 3.1 (the skein relation defining the bracket).
 * M. Khovanov, *A categorification of the Jones polynomial*, Duke Math. J. 101 (2000), 359-426,
   §3 (the cube of resolutions).
+* S. K. Lando, A. K. Zvonkin, *Graphs on Surfaces and Their Applications*, Encyclopaedia of
+  Mathematical Sciences 141, Springer 2004, §1.3 (rotation systems and their faces).
 -/
 
 public section
@@ -586,6 +598,157 @@ theorem resolveCrossing_edgePair_val_of_edgePair_val_eq_crossing_twice {i j : Fi
   · -- The second reconnection continues the arc to `S m`, and the first continues it to `S m'`.
     rw [D.pinchedTwice_val_of_val_eq_inr c (D.pinchedOnce_val_inl_of_val_eq_inr_two c hM₁ hB) hB,
       D.pinchedOnce_val_of_val_eq_inr c hM₂ hA, hM₃]
+
+/-! ### Planarity of a resolution
+
+On the positions `Fin (4 * n) ⊕ Fin 4`, the crossing rotation of `D` is the crossing rotation of
+the resolution beside the rotation of the four slots of `c`. Exchanging two opposite slots after
+that rotation gives the local smoothing: in the underlying ribbon graph, the vertex `c` is
+smoothed into two vertices of degree two. Cutting off the two smoothing arcs then suppresses these
+vertices, leaving the resolution beside two loops. Each step keeps the Euler bound
+`Equiv.Perm.orbitCount_add_orbitCount_add_orbitCount_mul_le` attained, so a planar code has planar
+resolutions. -/
+
+section Planar
+
+/-- On the positions, the crossing rotation of `D` is the crossing rotation of a resolution
+beside the rotation of the slots of `c`. -/
+private theorem permCongr_crossingRotation :
+    (D.slotEquiv c).symm.permCongr D.crossingRotation =
+      Perm.sumCongr (D.resolveCrossing c t).crossingRotation (finRotate 4) := by
+  ext x : 1
+  rcases x with y | k
+  · obtain ⟨⟨i, k⟩, rfl⟩ := (crossingSlotEquiv n).surjective y
+    have hR : (D.resolveCrossing c t).crossingRotation (crossingSlotEquiv n (i, k)) =
+        crossingSlotEquiv n (i, k + 1) := by
+      simpa [crossing_resolveCrossing] using (D.resolveCrossing c t).crossingRotation_crossing i k
+    simp [Equiv.symm_apply_eq, hR, slotEquiv_inl, crossing_apply]
+  · simp [Equiv.symm_apply_eq, slotEquiv_inr, crossing_apply]
+
+/-- The local smoothing at `c` is the rotation of its slots followed by the transposition of two
+opposite slots. -/
+private theorem exists_localSmoothing_eq_swap_mul_finRotate :
+    ∃ p q : Fin 4, p ≠ q ∧ (finRotate 4).SameCycle p q ∧
+      D.localSmoothing c t = swap p q * finRotate 4 := by
+  have hcycle (p q : Fin 4) (hp : finRotate 4 p ≠ p) (hq : finRotate 4 q ≠ q) :
+      (finRotate 4).SameCycle p q :=
+    (isCycle_finRotate (n := 2)).sameCycle hp hq
+  rw [localSmoothing]
+  generalize (bif t then D.overPair c else !D.overPair c) = b
+  cases b
+  · refine ⟨1, 3, by decide, hcycle 1 3 (by decide) (by decide), ?_⟩
+    ext k : 1
+    revert k
+    simp only [slotSmoothing_false]
+    decide
+  · refine ⟨0, 2, by decide, hcycle 0 2 (by decide) (by decide), ?_⟩
+    ext k : 1
+    revert k
+    simp only [slotSmoothing_true]
+    decide
+
+/-- The crossings, arcs and faces of a code are the orbits of its crossing rotation, of its arc
+involution and of their product. -/
+private theorem orbitCount_crossingRotation_add_orbitCount_edgePair_add_orbitCount_mul {m : ℕ}
+    (R : PDCode m) :
+    orbitCount R.crossingRotation + orbitCount R.edgePair.val +
+        orbitCount (R.edgePair.val * R.crossingRotation) = 3 * m + R.faceCount := by
+  rw [orbitCount_crossingRotation, orbitCount_edgePair, faceCount_def, facePerm_def]
+  omega
+
+/-- For a planar code the Euler bound is attained by the crossing rotation and the arcs on the
+positions. -/
+private theorem orbitCount_add_orbitCount_add_orbitCount_mul_slot_eq (hD : D.IsPlanar) :
+    orbitCount ((D.slotEquiv c).symm.permCongr D.crossingRotation) +
+        orbitCount (D.slotMatching c).val +
+        orbitCount ((D.slotMatching c).val * (D.slotEquiv c).symm.permCongr D.crossingRotation) =
+      Nat.card (Fin (4 * n) ⊕ Fin 4) + 2 * Nat.card (MulAction.orbitRel.Quotient
+        (Subgroup.closure {(D.slotEquiv c).symm.permCongr D.crossingRotation,
+          (D.slotMatching c).val}) (Fin (4 * n) ⊕ Fin 4)) := by
+  have hbound := Equiv.Perm.orbitCount_add_orbitCount_add_orbitCount_mul_le
+    ((D.slotEquiv c).symm.permCongr D.crossingRotation) (D.slotMatching c).val
+  set G := Subgroup.closure {(D.slotEquiv c).symm.permCongr D.crossingRotation,
+    (D.slotMatching c).val}
+  -- Each component on the positions is the image of a component of the underlying graph of `D`.
+  have hcomp : Nat.card (MulAction.orbitRel.Quotient G (Fin (4 * n) ⊕ Fin 4)) ≤
+      Nat.card D.toPermutationTriple.MonodromyOrbit := by
+    let mk : Fin (4 * n) ⊕ Fin 4 → MulAction.orbitRel.Quotient G (Fin (4 * n) ⊕ Fin 4) :=
+      Quotient.mk _
+    have hG (g : Perm (Fin (4 * n) ⊕ Fin 4)) (hg : g ∈ G) (z) : mk (g z) = mk z :=
+      Quotient.sound (MulAction.mem_orbit z (⟨g, hg⟩ : G))
+    have hρ : (D.slotEquiv c).symm.permCongr D.crossingRotation ∈ G :=
+      Subgroup.subset_closure (by simp)
+    have hα : (D.slotMatching c).val ∈ G := Subgroup.subset_closure (by simp)
+    rw [PermutationTriple.MonodromyOrbit, ← PermutationTriple.closure_pair_eq_monodromyGroup]
+    refine MulAction.card_le_card_orbitRelQuotient_closure_of_surjective
+      (f := fun h ↦ mk ((D.slotEquiv c).symm h)) ?_
+      (Quotient.mk_surjective.comp (D.slotEquiv c).symm.surjective)
+    rintro g (rfl | rfl) h
+    · simpa [Perm.smul_def, permCongr_apply] using hG _ hρ ((D.slotEquiv c).symm h)
+    · simpa [Perm.smul_def, slotMatching_val, permCongr_apply] using
+        hG _ hα ((D.slotEquiv c).symm h)
+  have hface := (D.isPlanar_iff_faceCount_eq).mp hD
+  have heuler := orbitCount_crossingRotation_add_orbitCount_edgePair_add_orbitCount_mul D
+  rw [slotMatching_val, ← permCongr_mul] at hbound ⊢
+  simp only [orbitCount_permCongr, Nat.card_sum, Nat.card_fin] at hbound ⊢
+  omega
+
+/-- The code `R` beside four slots permuted by `S`, on the positions `Fin (4 * m) ⊕ Fin 4`, has at
+least as many components as `R` has graph components and `S` has cycles: each of these is a union
+of components. -/
+private theorem card_monodromyOrbit_add_orbitCount_le {m : ℕ} (R : PDCode m) (S : Perm (Fin 4)) :
+    Nat.card R.toPermutationTriple.MonodromyOrbit + orbitCount S ≤
+      Nat.card (MulAction.orbitRel.Quotient
+        (Subgroup.closure {Perm.sumCongr R.crossingRotation S, Perm.sumCongr R.edgePair.val S})
+        (Fin (4 * m) ⊕ Fin 4)) := by
+  let f : Fin (4 * m) ⊕ Fin 4 →
+      R.toPermutationTriple.MonodromyOrbit ⊕ Quotient (SameCycle.setoid S) :=
+    Sum.map (Quotient.mk _) (Quotient.mk _)
+  have hS (k : Fin 4) : (Quotient.mk _ (S k) : Quotient (SameCycle.setoid S)) = Quotient.mk _ k :=
+    Quotient.sound (sameCycle_apply_left.mpr (SameCycle.refl S k))
+  have hf : ∀ g ∈ ({Perm.sumCongr R.crossingRotation S, Perm.sumCongr R.edgePair.val S} :
+      Set (Perm (Fin (4 * m) ⊕ Fin 4))), ∀ z, f (g z) = f z := by
+    rintro g (rfl | rfl) (z | k)
+    · simpa [f] using R.toPermutationTriple.mk_σ0_apply z
+    · simpa [f] using hS k
+    · simpa [f] using R.toPermutationTriple.mk_σ1_apply z
+    · simpa [f] using hS k
+  rw [orbitCount_def, ← Nat.card_sum]
+  exact MulAction.card_le_card_orbitRelQuotient_closure_of_surjective (f := f) hf
+    (Sum.map_surjective.2 ⟨Quotient.mk_surjective, Quotient.mk_surjective⟩)
+
+/-- **Resolving a crossing keeps a code planar.** Smoothing one crossing of a planar PD-code, by
+either of its two smoothings, gives a planar code. -/
+theorem IsPlanar.resolveCrossing (hD : D.IsPlanar) : (D.resolveCrossing c t).IsPlanar := by
+  obtain ⟨p, q, hpq, hcyc, hS⟩ := D.exists_localSmoothing_eq_swap_mul_finRotate c t
+  have hSS (k : Fin 4) : D.localSmoothing c t (D.localSmoothing c t k) = k :=
+    D.localSmoothing_apply_apply c t k
+  have hSk (k : Fin 4) : D.localSmoothing c t k ≠ k := slotSmoothing_ne _ k
+  -- Smooth the vertex `c` of the underlying ribbon graph.
+  have h₁ := orbitCount_swap_mul_add_orbitCount_add_orbitCount_mul_swap_mul_eq
+    (a := .inr p) (b := .inr q) (by simpa using hpq)
+    (by rw [D.permCongr_crossingRotation c t]; simpa using hcyc)
+    (D.orbitCount_add_orbitCount_add_orbitCount_mul_slot_eq c hD)
+  rw [D.permCongr_crossingRotation c t, ← sumCongr_one_swap, Perm.sumCongr_mul, one_mul,
+    ← hS] at h₁
+  -- Cut off the two smoothing arcs, suppressing the two vertices of degree two.
+  have h₂ := (D.slotMatching c).orbitCount_add_orbitCount_reconnect_add_orbitCount_reconnect_mul_eq
+    (a := .inr 0) (by simp [hSS]) (by simpa using hSk 0) h₁
+  rw [Perm.sumCongr_apply, Sum.map_inr, ← pinchedOnce] at h₂
+  have h₃ := (D.pinchedOnce c t).orbitCount_add_orbitCount_reconnect_add_orbitCount_reconnect_mul_eq
+    (a := .inr 2) (by simp [hSS]) (by simpa using hSk 2) h₂
+  rw [Perm.sumCongr_apply, Sum.map_inr, ← pinchedTwice, pinchedTwice_val, Perm.sumCongr_mul,
+    D.localSmoothing_mul_self c t] at h₃
+  simp only [Perm.orbitCount_sumCongr, orbitCount_one, Nat.card_sum, Nat.card_fin] at h₃
+  -- What remains is the resolution beside two loops.
+  have heuler :=
+    orbitCount_crossingRotation_add_orbitCount_edgePair_add_orbitCount_mul (D.resolveCrossing c t)
+  have hcomp := card_monodromyOrbit_add_orbitCount_le (D.resolveCrossing c t) (D.localSmoothing c t)
+  have hle := (D.resolveCrossing c t).faceCount_le
+  rw [isPlanar_iff_faceCount_eq]
+  omega
+
+end Planar
 
 /-! ### The circles of a resolution
 

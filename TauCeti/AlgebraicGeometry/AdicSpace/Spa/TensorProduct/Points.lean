@@ -45,19 +45,20 @@ variable (A : Type*) {B C : Type*} [CommRing A] [CommRing B] [CommRing C]
   [Huber.IsAdicHom (algebraMap A B)] [Huber.IsAdicHom (algebraMap A C)]
 
 open Huber in
-/-- Compatible points over a Tate base lift to the completed tensor product of Huber pairs.
-Neither completeness of the inputs nor sheafiness is required. -/
-theorem exists_spaPoint_completedTensor (S : Pair B) (T : Pair C)
+/-- Compatible points of two Huber pairs over a Tate base amalgamate to a point of the tensor
+product whose valuation is `< 1` on a neighbourhood of zero for the tensor topology; both factor
+restrictions of the amalgam are continuous. -/
+private lemma exists_amalgam_lt_one_mem_nhds (S : Pair B) (T : Pair C)
     (y : spa S.plus) (x : spa T.plus)
     (h : comap (algebraMap A B) y.1 = comap (algebraMap A C) x.1) :
-    ∃ z : spa (S.completedTensor A T).plus,
-      comap (CompletedTensor.inl A B C) z.1 = y.1 ∧
-      comap (CompletedTensor.inr A B C) z.1 = x.1 := by
+    ∃ v : Spv (B ⊗[A] C), comap includeLeftRingHom v = y.1 ∧
+      comap (includeRight : C →ₐ[A] B ⊗[A] C).toRingHom v = x.1 ∧
+      (v.valuation.comap includeLeftRingHom).IsContinuous ∧
+      (v.valuation.comap (includeRight : C →ₐ[A] B ⊗[A] C).toRingHom).IsContinuous ∧
+      letI := tensorTopology A B C; {a : B ⊗[A] C | v.valuation a < 1} ∈ 𝓝 0 := by
   let := tensorTopology A B C
   have := isTopologicalRing_tensorTopology A B C
   have := isHuberRing_tensorTopology A B C
-  let : UniformSpace (B ⊗[A] C) := IsTopologicalAddGroup.rightUniformSpace _
-  have : IsUniformAddGroup (B ⊗[A] C) := isUniformAddGroup_of_addCommGroup
   let Q : Subring (B ⊗[A] C) := S.plus.map includeLeftRingHom ⊔
     T.plus.map (includeRight : C →ₐ[A] B ⊗[A] C).toRingHom
   -- First amalgamate algebraically and bound the valuation on the open tensor plus subring.
@@ -96,6 +97,26 @@ theorem exists_spaPoint_completedTensor (S : Pair B) (T : Pair C)
     have hb' : v.valuation b ≤ 1 := (Valuation.mem_integer_iff _ _).mp (hQ hb)
     simpa only [smul_eq_mul, map_mul] using
       (mul_le_of_le_one_right' hb' (a := v.valuation t)).trans_lt htlt
+  exact ⟨v, hy, hx, hcy, hcx, hU⟩
+
+open Huber in
+/-- An amalgam with continuous factor restrictions whose valuation is `< 1` near zero for the
+tensor topology has a continuous horizontal restriction with the same two restrictions. -/
+private lemma exists_isContinuous_amalgam (S : Pair B) (T : Pair C)
+    (y : spa S.plus) (x : spa T.plus) (v : Spv (B ⊗[A] C))
+    (hy : comap includeLeftRingHom v = y.1)
+    (hx : comap (includeRight : C →ₐ[A] B ⊗[A] C).toRingHom v = x.1)
+    (hcy : (v.valuation.comap includeLeftRingHom).IsContinuous)
+    (hcx : (v.valuation.comap (includeRight : C →ₐ[A] B ⊗[A] C).toRingHom).IsContinuous)
+    (hU : letI := tensorTopology A B C; {a : B ⊗[A] C | v.valuation a < 1} ∈ 𝓝 0) :
+    ∃ w : Spv (B ⊗[A] C), (letI := tensorTopology A B C; w.IsContinuous) ∧
+      comap includeLeftRingHom w = y.1 ∧
+      comap (includeRight : C →ₐ[A] B ⊗[A] C).toRingHom w = x.1 := by
+  let := tensorTopology A B C
+  have := isTopologicalRing_tensorTopology A B C
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+  have hϖB := hϖ.map (φ := algebraMap A B) (IsAdicHom.continuous inferInstance)
+  have hϖC := hϖ.map (φ := algebraMap A C) (IsAdicHom.continuous inferInstance)
   -- Horizontal restriction makes the amalgam continuous without altering either factor.
   let w := v.valuation.restrictToIdeal ⊤ ⟨⊤, Ideal.fg_top _, rfl⟩
   have hw : w.IsContinuous := v.valuation.isContinuous_restrictToIdeal_top hU
@@ -109,13 +130,30 @@ theorem exists_spaPoint_completedTensor (S : Pair B) (T : Pair C)
     exact (ofValuation_eq_of_isEquiv (v.valuation.isEquiv_restrictToIdeal_comap _ _ _ hcx
       hϖC.isUnit hϖC.isTopologicallyNilpotent)).trans (by
         simpa only [← comap_ofValuation, ofValuation_valuation] using hx)
+  exact ⟨ofValuation w, (isContinuous_ofValuation_iff w).mpr hw, hwy, hwx⟩
+
+open Huber in
+/-- Compatible points over a Tate base lift to the completed tensor product of Huber pairs.
+Neither completeness of the inputs nor sheafiness is required. -/
+theorem exists_spaPoint_completedTensor (S : Pair B) (T : Pair C)
+    (y : spa S.plus) (x : spa T.plus)
+    (h : comap (algebraMap A B) y.1 = comap (algebraMap A C) x.1) :
+    ∃ z : spa (S.completedTensor A T).plus,
+      comap (CompletedTensor.inl A B C) z.1 = y.1 ∧
+      comap (CompletedTensor.inr A B C) z.1 = x.1 := by
+  let := tensorTopology A B C
+  have := isTopologicalRing_tensorTopology A B C
+  have := isHuberRing_tensorTopology A B C
+  let : UniformSpace (B ⊗[A] C) := IsTopologicalAddGroup.rightUniformSpace _
+  have : IsUniformAddGroup (B ⊗[A] C) := isUniformAddGroup_of_addCommGroup
+  obtain ⟨v, hy, hx, hcy, hcx, hU⟩ := exists_amalgam_lt_one_mem_nhds A S T y x h
+  obtain ⟨w, hwc, hwy, hwx⟩ := exists_isContinuous_amalgam A S T y x v hy hx hcy hcx hU
   -- Extend to the completion; the factor criterion recovers the specified tensor plus ring.
-  obtain ⟨z, hzcont, hz⟩ := exists_isContinuous_comap_coeRingHom_eq
-    ((isContinuous_ofValuation_iff w).mpr hw)
+  obtain ⟨z, hzcont, hz⟩ := exists_isContinuous_comap_coeRingHom_eq hwc
   let z' := comap (CompletedTensor.equivCompletion A B C).toRingHom z
   have hz'cont : z'.IsContinuous := hzcont.comap
     (CompletedTensor.isHomeomorph_equivCompletion A B C).continuous
-  have hcomp : comap (CompletedTensor.toCompletion A B C) z' = ofValuation w := by
+  have hcomp : comap (CompletedTensor.toCompletion A B C) z' = w := by
     have he : (CompletedTensor.equivCompletion A B C).toRingHom.comp
         (CompletedTensor.toCompletion A B C) = Completion.coeRingHom :=
       RingHom.ext (CompletedTensor.equivCompletion_toCompletion A B C)

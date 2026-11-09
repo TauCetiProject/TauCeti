@@ -11,6 +11,7 @@ public import TauCeti.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.Variational.Fredholm
 public import TauCeti.Analysis.Normed.Operator.Compact.Eigenspace
 public import TauCeti.Analysis.Normed.Operator.NormedAddGroupHom
+import TauCeti.Analysis.Normed.Operator.Coercive
 
 /-!
 # The spectrum of a coercive variational problem
@@ -296,9 +297,7 @@ variable {V H : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 below by a positive multiple of its squared norm. -/
 theorem pos_of_forall_apply_eq_smul_inner (hB : IsCoercive B) (J : V →L[ℝ] H) {kappa : ℝ}
     {u : V} (hu : u ≠ 0) (heq : ∀ v : V, B u v = kappa * ⟪J u, J v⟫_ℝ) : 0 < kappa := by
-  obtain ⟨C, hC, hle⟩ := id hB
-  have hpos : 0 < ‖u‖ := norm_pos_iff.mpr hu
-  have henergy : 0 < B u u := lt_of_lt_of_le (by positivity) (hle u)
+  have henergy := hB.apply_self_pos hu
   rw [heq u] at henergy
   exact pos_of_mul_pos_left henergy real_inner_self_nonneg
 

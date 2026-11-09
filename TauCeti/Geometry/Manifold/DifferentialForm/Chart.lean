@@ -82,27 +82,25 @@ theorem inChartAt_eq_compContinuousLinearMap [IsManifold I 1 M]
     φ.inChartAt x₀ z =
       (φ.inChartAt x (extChartAt I x ((extChartAt I x₀).symm z))).compContinuousLinearMap
         (fderivWithin ℝ (extChartAt I x ∘ (extChartAt I x₀).symm) (range I) z) := by
-  let y : M := (extChartAt I x₀).symm z
-  let q : E := extChartAt I x y
-  have hq : q ∈ (extChartAt I x).target := (extChartAt I x).map_source hx
-  have hpre : (extChartAt I x₀).symm ⁻¹' (extChartAt I x).source ∈ 𝓝[range I] z := by
-    exact (continuousAt_extChartAt_symm'' hz).continuousWithinAt.preimage_mem_nhdsWithin
+  have hleft : (extChartAt I x).symm (extChartAt I x ((extChartAt I x₀).symm z)) =
+      (extChartAt I x₀).symm z := (extChartAt I x).left_inv hx
+  have hpre : (extChartAt I x₀).symm ⁻¹' (extChartAt I x).source ∈ 𝓝[range I] z :=
+    (continuousAt_extChartAt_symm'' hz).continuousWithinAt.preimage_mem_nhdsWithin
       (extChartAt_source_mem_nhds' hx)
-  have hcoord :
-      ((extChartAt I x).symm ∘
-        (extChartAt I x ∘ (extChartAt I x₀).symm)) =ᶠ[𝓝[range I] z]
-        (extChartAt I x₀).symm := by
+  have hcoord : ((extChartAt I x).symm ∘ (extChartAt I x ∘ (extChartAt I x₀).symm))
+      =ᶠ[𝓝[range I] z] (extChartAt I x₀).symm := by
     filter_upwards [hpre] with a ha
     exact (extChartAt I x).left_inv ha
   have hcomp :
       mfderivWithin 𝓘(ℝ, E) I ((extChartAt I x).symm ∘
         (extChartAt I x ∘ (extChartAt I x₀).symm)) (range I) z =
-        (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (range I) q).comp
+        (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (range I)
+          (extChartAt I x ((extChartAt I x₀).symm z))).comp
           (mfderivWithin 𝓘(ℝ, E) 𝓘(ℝ, E)
             (extChartAt I x ∘ (extChartAt I x₀).symm) (range I) z) := by
     apply mfderivWithin_comp_of_preimage_mem_nhdsWithin_of_eq
       (I' := 𝓘(ℝ, E)) (I'' := I) (u := range I) z
-    · exact mdifferentiableWithinAt_extChartAt_symm hq
+    · exact mdifferentiableWithinAt_extChartAt_symm ((extChartAt I x).map_source hx)
     · exact ((contDiffWithinAt_ext_coord_change (𝕜 := ℝ) (n := 1) x x₀ (by
         rw [PartialEquiv.trans_source]
         exact ⟨by simpa only [PartialEquiv.symm_source] using hz, hx⟩)).differentiableWithinAt
@@ -111,37 +109,16 @@ theorem inChartAt_eq_compContinuousLinearMap [IsManifold I 1 M]
       exact extChartAt_target_subset_range x ((extChartAt I x).map_source ha)
     · exact I.uniqueDiffOn.uniqueDiffWithinAt (extChartAt_target_subset_range x₀ hz)
         |>.uniqueMDiffWithinAt
-    -- The composition sends `z` to the chart point `q` by the definition of `q`.
+    -- The composition sends `z` to the chart point by definition.
     · rfl
-  have hderiv :
-      (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (range I) q).comp
-          (fderivWithin ℝ (extChartAt I x ∘ (extChartAt I x₀).symm) (range I) z) =
-        mfderivWithin 𝓘(ℝ, E) I (extChartAt I x₀).symm (range I) z := by
-    have hcomp' := hcomp
-    have hpoint :
-        ((extChartAt I x).symm ∘
-          (extChartAt I x ∘ (extChartAt I x₀).symm)) z =
-          (extChartAt I x₀).symm z := by
-      -- `left_inv` is stated for the partial equivalence, so expose the composition.
-      change (extChartAt I x).symm ((extChartAt I x) ((extChartAt I x₀).symm z)) =
-        (extChartAt I x₀).symm z
-      exact (extChartAt I x).left_inv hx
-    rw [hcoord.mfderivWithin_eq hpoint] at hcomp'
-    rw [mfderivWithin_eq_fderivWithin] at hcomp'
-    -- The model-space tangent identifications are canonical but not definitionally transparent.
-    change _ = _ at hcomp'
-    exact hcomp'.symm
+  rw [hcoord.mfderivWithin_eq hleft, mfderivWithin_eq_fderivWithin] at hcomp
   ext v
-  rw [inChartAt_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    inChartAt_apply]
-  have hxy :
-      (extChartAt I x).symm ((extChartAt I x) ((extChartAt I x₀).symm z)) =
-        (extChartAt I x₀).symm z :=
-    (extChartAt I x).left_inv hx
-  rw [hxy]
+  rw [inChartAt_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply, inChartAt_apply,
+    hleft]
   congr 1
   funext i
-  exact congrArg (fun L ↦ L (v i)) hderiv.symm
+  -- The model-space tangent identifications are canonical but not definitionally transparent.
+  exact congrArg (fun L ↦ L (v i)) hcomp
 
 /-- Change of preferred chart for exterior differentiation within a manifold subset. The subset
 has unique derivatives and accumulates from its interior at the point; it need not be open.

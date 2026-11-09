@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.QuadraticForm.Global.FiniteHasse
+public import TauCeti.NumberTheory.QuadraticForm.Global.FormInvariants
 import TauCeti.NumberTheory.HilbertSymbol.Binary
 import TauCeti.NumberTheory.QuadraticForm.Global.ArchimedeanSymbol
 
@@ -75,6 +76,20 @@ theorem nondegenerate_weightedSumSquares_neg_self_mul (a b : Kˣ) :
     (weightedSumSquares K ![(a : K), -(a * b : K)]).Nondegenerate :=
   nondegenerate_weightedSumSquares fun i => by fin_cases i <;> simp [isRegular_iff_ne_zero]
 
+/-- The plain discriminant of the norm plane `⟨1, -β⟩` is the square class of `-β`. -/
+@[simp]
+theorem discr_formClass_weightedSumSquares_one_neg (b : Kˣ) :
+    RegularFormClass.discr
+        (formClass _ (nondegenerate_weightedSumSquares_one_neg b)) = squareClass (-b) := by
+  have hc : ![1, -(b : K)] = fun i => ((![1, -b] : Fin 2 → Kˣ) i : K) := by
+    ext i
+    fin_cases i <;> simp
+  have hequiv : (weightedSumSquares K ![1, -(b : K)]).Equivalent
+      (presentedForm ⟨2, ![1, -b]⟩) := by
+    rw [presentedForm_eq_weightedSumSquares_coe, ← hc]
+  rw [discr_formClass _ _ ⟨2, ![1, -b]⟩ hequiv, Fin.prod_univ_two]
+  simp
+
 /-- The planes `⟨α, -αβ⟩` and `⟨1, -β⟩` have the same discriminant, since `-α²β` and `-β`
 differ by a square. -/
 theorem discr_formClass_weightedSumSquares_neg_self_mul (a b : Kˣ) :
@@ -122,6 +137,29 @@ theorem finiteHasse_weightedSumSquares_neg_self_mul (a b : Kˣ)
   have := finiteHasse_weightedSumSquares_binary a (-(a * b)) (by simpa using h) v
   rw [hneg, hilbertSymbol_neg_self_mul two_ne_zero] at this
   simpa using this
+
+/-- The real Hasse sign of the scaled norm plane `⟨α, -αβ⟩` at a real place `w` is the
+Hilbert symbol `(α, β)_w`. -/
+theorem globalInvariants_realHasse_weightedSumSquares_neg_self_mul (a b : Kˣ)
+    (h : (weightedSumSquares K ![(a : K), -(a * b : K)]).Nondegenerate)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    (globalInvariants (weightedSumSquares K ![(a : K), -(a * b : K)]) h).realHasse w =
+      hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) := by
+  have hc : ![(a : K), -(a * b : K)] =
+      fun i => ((![a, -(a * b)] : Fin 2 → Kˣ) i : K) := by
+    ext i
+    fin_cases i <;> simp
+  have hdiag : (weightedSumSquares K ![(a : K), -(a * b : K)]).Equivalent
+      (weightedSumSquares K fun i => ((![a, -(a * b)] : Fin 2 → Kˣ) i : K)) := by
+    rw [hc]
+  have hhasse := globalInvariants_realHasse_eq_prod_hilbertSymbol _ h hdiag w
+  have hneg : unitAtRealPlace w (-(a * b)) =
+      -(unitAtRealPlace w a) * unitAtRealPlace w b := Units.ext (by simp)
+  have hIoi0 : Finset.Ioi (0 : Fin 2) = {1} := by decide
+  have hIoi1 : Finset.Ioi (1 : Fin 2) = ∅ := by decide
+  simpa only [Fin.prod_univ_two, hIoi0, hIoi1, Finset.prod_singleton, Finset.prod_empty,
+    mul_one, Matrix.cons_val_zero, Matrix.cons_val_one, hneg, hilbertSymbol_real_mul_right,
+    hilbertSymbol_neg_self, one_mul] using hhasse
 
 /-- **The correction planes at a finite place.** Over the completion `K_v`, the planes
 `⟨1, -β⟩` and `⟨α, -αβ⟩` are isometric exactly when the Hilbert symbol `(α, β)_v` is `1`. -/

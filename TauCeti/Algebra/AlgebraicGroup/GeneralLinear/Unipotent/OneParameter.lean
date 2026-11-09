@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Basic
 public import TauCeti.RingTheory.Nilpotent.Log
+public import TauCeti.Algebra.AlgebraicGroup.OneParameter.Basic
 import Mathlib.Algebra.Polynomial.Roots
 
 /-!
@@ -144,9 +145,37 @@ theorem aeval_zero_comp_nilpotentOneParameterCoordinateMap (hX : IsNilpotent X) 
   rw [AlgHom.convOne_apply, Bialgebra.counitAlgHom_apply, Algebra.algebraMap_self,
     RingHom.id_apply]
 
-section ClosedSubgroup
+/-- The polynomial exponential curve satisfies the additive parameter law on base points. -/
+theorem aeval_comp_nilpotentOneParameterCoordinateMap_add (hX : IsNilpotent X) (s t : R) :
+    toConv ((Polynomial.aeval (s + t)).comp (nilpotentOneParameterCoordinateMap n hX)) =
+      toConv ((Polynomial.aeval s).comp (nilpotentOneParameterCoordinateMap n hX)) *
+        toConv ((Polynomial.aeval t).comp (nilpotentOneParameterCoordinateMap n hX)) := by
+  simp only [aeval_comp_nilpotentOneParameterCoordinateMap, toConv_ofConv]
+  simp only [← pointsMulEquiv_symm_apply, ← map_mul, ← ofAdd_add]
 
 variable [IsDomain R]
+
+/-- A polynomial one-parameter subgroup of `GLₙ` through a unipotent matrix `g` is the
+finite exponential curve of `log g`. The conclusion identifies regular maps, not only points. -/
+theorem eq_nilpotentOneParameterCoordinateMap_log
+    (γ : coordinateHopfAlgebra R n →ₐ[R] R[X])
+    (hγ : ∀ s t : R, toConv ((Polynomial.aeval (s + t)).comp γ) =
+      toConv ((Polynomial.aeval s).comp γ) * toConv ((Polynomial.aeval t).comp γ))
+    (g : Matrix.GeneralLinearGroup (Fin n) R)
+    (hg : IsNilpotent ((g : Matrix (Fin n) (Fin n) R) - 1))
+    (h : toConv ((Polynomial.aeval (1 : R)).comp γ) = generalLinearToPoint n g) :
+    γ = nilpotentOneParameterCoordinateMap n (IsNilpotent.isNilpotent_log hg) := by
+  have : CharZero R := Algebra.charZero_of_charZero ℚ R
+  apply γ.eq_of_aeval_one_comp_eq _ hγ
+    (aeval_comp_nilpotentOneParameterCoordinateMap_add n _)
+  apply toConv_injective
+  rw [h, aeval_comp_nilpotentOneParameterCoordinateMap, toConv_ofConv]
+  congr 1
+  ext i j
+  simp [IsNilpotent.exp_log hg]
+
+section ClosedSubgroup
+
 variable {Y : Matrix (Fin n) (Fin n) R}
 
 /-- The polynomial exponential curve through a point of a closed subgroup is itself a

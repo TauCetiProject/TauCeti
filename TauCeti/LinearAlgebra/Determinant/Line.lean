@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
+public import TauCeti.LinearAlgebra.ExteriorPower.Invertible
 public import TauCeti.LinearAlgebra.LinearMap.Ker
 public import TauCeti.LinearAlgebra.LinearMap.Range
 
@@ -44,6 +45,8 @@ carried out here. This file sets up the pointwise object:
 ## Main results
 
 * `TauCeti.finrank_detLine`: the determinant line of a finite free module has rank one.
+* `TauCeti.instInvertibleDetLine`: the determinant line of a finite free module is an invertible
+  module.
 * `LinearEquiv.detLineCongr_refl`, `LinearEquiv.detLineCongr_trans`,
   `LinearEquiv.detLineCongr_symm`: the induced isomorphisms are functorial.
 * `LinearMap.finrank_detLine`: the determinant line of a linear map between vector spaces with
@@ -77,6 +80,12 @@ abbrev detLine : Type _ := ⋀[R]^(finrank R V) V
 theorem finrank_detLine [Nontrivial R] [Module.Free R V] [Module.Finite R V] :
     finrank R (detLine R V) = 1 := by
   simp [detLine]
+
+/-- The determinant line of a finite free module is an invertible module, so that it cancels
+against its dual: `det V ⊗ (det V)^* ≃ R` (`Module.Invertible.linearEquiv`). -/
+instance instInvertibleDetLine [Module.Free R V] [Module.Finite R V] :
+    Module.Invertible R (detLine R V) :=
+  exteriorPower.invertible_of_rankAtStalk_eq fun p ↦ by simp
 
 end TauCeti
 
@@ -213,18 +222,21 @@ determinant lines induced by `e₂` (`LinearMap.detLineCongr_tmul`). -/
 def detLineCongr (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} (e₁ : M ≃ₗ[R] M') (e₂ : N ≃ₗ[R] N')
     (h : g ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f) : f.detLine ≃ₗ[R] g.detLine :=
   TensorProduct.congr
-    (LinearEquiv.detLineCongr (e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq e₁ e₂ h)))
     (LinearEquiv.detLineCongr
-      (Submodule.Quotient.equiv _ _ e₂ (f.map_range_eq_range_of_comp_eq e₁ e₂ h))).symm.dualMap
+      (e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq e₁.surjective e₂.injective h)))
+    (LinearEquiv.detLineCongr
+      (Submodule.Quotient.equiv _ _ e₂
+        (f.map_range_eq_range_of_comp_eq e₁.surjective h))).symm.dualMap
 
 @[simp]
 theorem detLineCongr_tmul (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} (e₁ : M ≃ₗ[R] M')
     (e₂ : N ≃ₗ[R] N') (h : g ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f)
     (x : TauCeti.detLine R (ker f)) (φ : Dual R (TauCeti.detLine R (N ⧸ range f))) :
     f.detLineCongr e₁ e₂ h (x ⊗ₜ φ) =
-      LinearEquiv.detLineCongr (e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq e₁ e₂ h)) x ⊗ₜ
+      LinearEquiv.detLineCongr
+          (e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq e₁.surjective e₂.injective h)) x ⊗ₜ
         (φ ∘ₗ (LinearEquiv.detLineCongr (Submodule.Quotient.equiv _ _ e₂
-          (f.map_range_eq_range_of_comp_eq e₁ e₂ h))).symm.toLinearMap) :=
+          (f.map_range_eq_range_of_comp_eq e₁.surjective h))).symm.toLinearMap) :=
   (rfl)
 
 /-- Transport along the identity square is the identity. -/
@@ -234,13 +246,14 @@ theorem detLineCongr_refl :
       (by rw [LinearEquiv.refl_toLinearMap, LinearEquiv.refl_toLinearMap, comp_id, id_comp]) =
       LinearEquiv.refl R _ := by
   have hk : (LinearEquiv.refl R M).ofSubmodules (ker f) (ker f)
-      (f.map_ker_eq_ker_of_comp_eq (LinearEquiv.refl R M) (LinearEquiv.refl R N) (by simp)) =
+      (f.map_ker_eq_ker_of_comp_eq (LinearEquiv.refl R M).surjective
+        (LinearEquiv.refl R N).injective (by simp)) =
         LinearEquiv.refl R _ := by
     ext x
     simp only [LinearEquiv.ofSubmodules_apply, LinearEquiv.refl_apply]
   have hc : Submodule.Quotient.equiv (range f) (range f) (LinearEquiv.refl R N)
-      (f.map_range_eq_range_of_comp_eq (LinearEquiv.refl R M) (LinearEquiv.refl R N)
-        (by simp)) = LinearEquiv.refl R _ := by
+      (f.map_range_eq_range_of_comp_eq (LinearEquiv.refl R M).surjective (by simp)) =
+        LinearEquiv.refl R _ := by
     rw [Submodule.Quotient.equiv_refl]
     exact LinearEquiv.toLinearMap_injective (Submodule.linearMap_qext _ (by ext; simp))
   refine LinearEquiv.ext fun z ↦ ?_
@@ -257,13 +270,16 @@ theorem detLineCongr_trans (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} {k : M'' �
     f.detLineCongr (e₁.trans e₁') (e₂.trans e₂') (comp_trans_eq_of_comp_eq h h') =
       (f.detLineCongr e₁ e₂ h).trans (g.detLineCongr e₁' e₂' h') := by
   have h'' := comp_trans_eq_of_comp_eq h h'
-  have hk : (e₁.trans e₁').ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq _ _ h'') =
-      (e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq _ _ h)).trans
-        (e₁'.ofSubmodules _ _ (g.map_ker_eq_ker_of_comp_eq _ _ h')) := by
+  have hk : (e₁.trans e₁').ofSubmodules _ _
+      (f.map_ker_eq_ker_of_comp_eq (e₁.trans e₁').surjective (e₂.trans e₂').injective h'') =
+      (e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq e₁.surjective e₂.injective h)).trans
+        (e₁'.ofSubmodules _ _ (g.map_ker_eq_ker_of_comp_eq e₁'.surjective e₂'.injective h')) := by
     ext x
     simp only [LinearEquiv.ofSubmodules_apply, LinearEquiv.trans_apply]
-  have hc := Submodule.Quotient.equiv_trans _ _ _ e₂ e₂' (f.map_range_eq_range_of_comp_eq _ _ h)
-    (g.map_range_eq_range_of_comp_eq _ _ h') (f.map_range_eq_range_of_comp_eq _ _ h'')
+  have hc := Submodule.Quotient.equiv_trans _ _ _ e₂ e₂'
+    (f.map_range_eq_range_of_comp_eq e₁.surjective h)
+    (g.map_range_eq_range_of_comp_eq e₁'.surjective h')
+    (f.map_range_eq_range_of_comp_eq (e₁.trans e₁').surjective h'')
   refine LinearEquiv.ext fun z ↦ ?_
   induction z using TensorProduct.inductionOn with
   | tmul x φ =>

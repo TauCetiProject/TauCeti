@@ -58,6 +58,8 @@ a dominant top row `λ₁ ≤ λ₀` is `λ₀ - λ₁ + 1`, the dimension of th
   decreasing, so the top row is a dominant weight.
 * `TauCeti.GTPattern.entry_nonneg`: a pattern with a nonnegative top row has nonnegative entries,
   so the polynomial patterns are cut out by the top row alone.
+* `TauCeti.GTPattern.abs_le_sum_abs`: every entry is bounded in absolute value by the sum of the
+  absolute values of the finitely many informative entries.
 * `TauCeti.Interlaces.antitone`: an interlacing sequence is weakly decreasing, so a sequence
   interlacing a dominant weight is dominant.
 * `TauCeti.GTPattern.truncateEquiv`: patterns with `n + 1` rows and top row `l` correspond to
@@ -240,6 +242,21 @@ theorem entry_mem_Icc (P : GTPattern n) {i j : ℕ} (hij : i < j) (hj : j ≤ n)
     simp only [Fin.le_def]; omega
   exact ⟨(P.topRow_antitone hlast).trans (P.topRow_le_entry hij hj),
     (P.entry_le_topRow hij hj).trans (P.topRow_antitone hfirst)⟩
+
+/-- Every entry of a pattern is bounded in absolute value by the sum of the absolute values of
+the entries `λ_{i,j}` with `i, j ≤ n`, which contain all the informative ones. -/
+theorem abs_le_sum_abs (P : GTPattern n) (i j : ℕ) :
+    |P i j| ≤ ∑ i' ∈ Finset.range (n + 1), ∑ j' ∈ Finset.range (n + 1), |P i' j'| := by
+  have hnn : ∀ i', 0 ≤ ∑ j' ∈ Finset.range (n + 1), |P i' j'| := fun _ =>
+    Finset.sum_nonneg fun _ _ => abs_nonneg _
+  by_cases h : i < j ∧ j ≤ n
+  · calc |P i j| ≤ ∑ j' ∈ Finset.range (n + 1), |P i j'| :=
+          Finset.single_le_sum (f := fun j' => |P i j'|) (fun _ _ => abs_nonneg _)
+            (Finset.mem_range.2 (by omega))
+      _ ≤ _ := Finset.single_le_sum (f := fun i' => ∑ j' ∈ Finset.range (n + 1), |P i' j'|)
+            (fun i' _ => hnn i') (Finset.mem_range.2 (by omega))
+  · rw [P.entry_eq_zero (by omega), abs_zero]
+    exact Finset.sum_nonneg fun i' _ => hnn i'
 
 /-- There is exactly one empty pattern. -/
 instance : Unique (GTPattern 0) where

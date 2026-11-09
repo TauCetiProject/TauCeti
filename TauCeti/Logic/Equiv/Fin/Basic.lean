@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.End
 public import Mathlib.Logic.Equiv.Fin.Basic
+public import Mathlib.Logic.Equiv.Fin.Rotate
 import Mathlib.Tactic.Ring
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Equivalences for finite indices and consecutive blocks of natural numbers
@@ -15,7 +18,13 @@ The equivalence omitting the last finite index embeds preceding indices by `Fin.
 The quotient-remainder equivalence identifies a natural number with a block number and a
 position inside that block. This file records the induced block permutations and compatibility
 of nested blocks with the finite-product indexing equivalence.
-It also concatenates two finite blocks with the second block read in reverse order.
+It also concatenates two finite blocks with the second block read in reverse order, and splits
+the first pair off a doubly indexed family listed pair by pair through `finProdFinEquiv`.
+
+It also concatenates two finite blocks with the second block read in reverse order. For two
+blocks of equal length, laid out as the bottom and the top row of a rectangle and read
+counterclockwise around it, exchanging the two blocks reverses the concatenated order, and
+reversing each block is reversing the concatenated order followed by a rotation by one block.
 -/
 
 public section
@@ -45,6 +54,50 @@ theorem finSumFinRevEquiv_inr_val (p q n : ℕ) (hpq : p + q = n) (i : Fin q) :
     (finSumFinRevEquiv p q n hpq (Sum.inr i) : ℕ) = p + (q - 1 - i) := by
   simp [finSumFinRevEquiv, Fin.rev]
   omega
+
+/-- The family `(b (0, 0), b (0, 1), b (1, 0), b (1, 1), …)` of a doubly indexed family, listed
+pair by pair through `finProdFinEquiv`, splits off its first pair. -/
+theorem comp_finProdFinEquiv_symm_succ {α : Type*} {m : ℕ} (b : Fin (m + 1) × Fin 2 → α) :
+    (fun r : Fin (2 * (m + 1)) ↦ b (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 (m + 1)) r))) =
+      Matrix.vecCons (b (0, 0)) (Matrix.vecCons (b (0, 1))
+        (fun r : Fin (2 * m) ↦
+          (b ∘ Prod.map Fin.succ id) (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 m) r)))) := by
+  ext r
+  refine Fin.cases ?_ (fun r ↦ Fin.cases ?_ (fun r ↦ ?_) r) r
+  · congr 1
+    ext <;> simp [Fin.coe_divNat, Fin.coe_modNat]
+  · congr 1
+    ext <;> simp [Fin.coe_divNat, Fin.coe_modNat, fun k ↦ Nat.lt_succ_of_le (Nat.mod_le 1 k)]
+  · simp only [Matrix.cons_val_succ]
+    congr 1
+    ext <;> simp [Fin.coe_divNat, Fin.coe_modNat] <;> omega
+
+/-- For two blocks of equal length, exchanging the blocks reverses the concatenated order. -/
+theorem finSumFinRevEquiv_swap {k n : ℕ} (h : k + k = n) (x : Fin k ⊕ Fin k) :
+    finSumFinRevEquiv k k n h x.swap = (finSumFinRevEquiv k k n h x).rev := by
+  subst h
+  rcases x with i | j <;>
+  · ext
+    simp only [Sum.swap_inl, Sum.swap_inr, finSumFinRevEquiv_inl_val, finSumFinRevEquiv_inr_val,
+      Fin.val_rev]
+    omega
+
+/-- For two blocks of equal length, reversing each block is reversing the concatenated order and
+then rotating by the length of one block. -/
+theorem finSumFinRevEquiv_map_rev {k n : ℕ} (h : k + k = n) (x : Fin k ⊕ Fin k) :
+    finSumFinRevEquiv k k n h (Sum.map Fin.rev Fin.rev x) =
+      (finRotate n ^ k) (finSumFinRevEquiv k k n h x).rev := by
+  subst h
+  ext
+  rcases x with i | j
+  · have := i.isLt
+    simp only [Sum.map_inl, finSumFinRevEquiv_inl_val, Fin.coe_finRotate_pow, Fin.val_rev]
+    rw [show k + k - (i + 1) + k = (k - (i + 1)) + (k + k) by omega, Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega)]
+  · have := j.isLt
+    simp only [Sum.map_inr, finSumFinRevEquiv_inr_val, Fin.coe_finRotate_pow, Fin.val_rev]
+    rw [Nat.mod_eq_of_lt (by omega)]
+    omega
 
 end TauCeti
 

@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
 public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.Basic
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.GradedMap
+import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -19,6 +21,9 @@ the powers `n ↦ Jⁿ`, and it is generated over `C` by the elements `f T` with
 is the blowup of the submodule `J`, `TauCeti.AlgebraicGeometry.submoduleBlowup` in
 `TauCeti/AlgebraicGeometry/Blowup/Submodule/Basic.lean`. This file contains the ring theory of
 the blowup, which needs no scheme theory; the declarations live in the namespace of that scheme.
+The surjective graded map `presentation` from the symmetric algebra on the free coordinates `F`
+sends each coordinate to `f T`; it uses `SymmetricAlgebra.gradedLift` and supplies the closed
+projective embedding of the blowup.
 
 If `F` generates the unit ideal of `B`, then the image of the irrelevant ideal of `R(J)` under
 evaluation at `T = 1` generates the unit ideal of `B`.
@@ -45,6 +50,8 @@ description `mem_fractionSubalgebra_iff` of the elements of `C[F/S]` parallels
   of `R(J)`, for `a ∈ J`.
 * `TauCeti.AlgebraicGeometry.submoduleBlowup.monomialDegreeOne C hf`: the element `f T` of
   `R(J)`, for `f ∈ F`.
+* `TauCeti.AlgebraicGeometry.submoduleBlowup.presentation C F`: the surjection from the
+  symmetric algebra on the free module with basis `F` to `R(J)`.
 * `TauCeti.AlgebraicGeometry.submoduleBlowup.fractionSubalgebra C F S L`: the chart ring
   `C[F/S]`, inside a `B`-algebra `L`.
 * `TauCeti.AlgebraicGeometry.submoduleBlowup.monomialProd C hS`: the element `t T^{#S}` of `R(J)`,
@@ -133,6 +140,43 @@ theorem adjoin_monomialDegreeOne_eq_top :
     exact Algebra.mem_top
   exact Algebra.adjoin_le (S := (Algebra.adjoin (gradedRing C F 0)
     (Set.range fun f : F ↦ monomialDegreeOne C f.2)).restrictScalars C) Algebra.subset_adjoin hx
+
+variable (F) in
+/-- The graded presentation of `R(J)` by the symmetric algebra on the free module with basis
+`F`. The coordinate indexed by `f ∈ F` maps to `f T`. No finiteness or unit-ideal hypothesis is
+needed. -/
+noncomputable def presentation :
+    TauCeti.SymmetricAlgebra.homogeneousSubmodule C (F →₀ C) →+*ᵍ gradedRing C F :=
+  _root_.SymmetricAlgebra.gradedLift C (gradedRing C F)
+    (Finsupp.linearCombination C fun f : F ↦
+      ⟨monomialDegreeOne C f.2, monomialDegreeOne_mem_gradedRing C f.2⟩)
+
+/-- Each free coordinate maps to the corresponding degree-one monomial. -/
+@[simp]
+theorem presentation_ι_single (f : F) (c : C) :
+    presentation C F (_root_.SymmetricAlgebra.ι C (F →₀ C) (Finsupp.single f c)) =
+      c • monomialDegreeOne C f.2 := by
+  simp [presentation, Finsupp.linearCombination_single]
+
+/-- The graded presentation preserves the coefficient ring in degree zero. -/
+@[simp]
+theorem presentation_gradedZeroRingHom_algebraMap (c : C) :
+    (presentation C F).gradedZeroRingHom
+        (algebraMap C (TauCeti.SymmetricAlgebra.homogeneousSubmodule C (F →₀ C) 0) c) =
+      algebraMap C (gradedRing C F 0) c := by
+  simp [presentation]
+
+/-- The free coordinates generate the entire graded ring of the submodule blowup. -/
+theorem presentation_surjective : Function.Surjective (presentation C F) := by
+  apply _root_.SymmetricAlgebra.gradedLift_surjective
+  apply top_unique
+  rw [← coeffSubalgebra.adjoin_monomial_one_eq_top (R := C) F]
+  apply Algebra.adjoin_mono
+  rintro _ ⟨f, rfl⟩
+  refine ⟨Finsupp.single f 1, ?_⟩
+  simp only [Finsupp.linearCombination_single, one_smul, Submodule.coe_mk]
+  apply Subtype.ext
+  simp only [coe_monomialDegreeOne, coeffSubalgebra.coe_monomial]
 
 /-- Evaluation of `R(J) ⊆ B[T]` at `T = 1` sends `f T` to `f`. -/
 @[simp]

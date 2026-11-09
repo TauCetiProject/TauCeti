@@ -20,7 +20,9 @@ hypothesis on the ambient space, where the adjoint of a bounded operator need no
 A map `T P_U` that factors through the projection onto a finite-dimensional `U` has rank at most
 `dim U`. For subspaces `U` and `V` of the same finite dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the
 same dimension. The orthogonal complement of a nonzero vector has codimension one, and fewer than
-`dim E` vectors have a common nonzero orthogonal vector, which may be taken of norm one.
+`dim E` vectors have a common nonzero orthogonal vector, which may be taken of norm one. A nonzero
+vector followed by a linearly independent family in its orthogonal complement is linearly
+independent.
 
 For finite-dimensional `U` and `V` with `dim V ≤ dim U`, a lower bound `k ‖u‖² ≤ ‖P_V u‖²` for
 `u ∈ U` transfers to the same lower bound `k ‖v‖² ≤ ‖P_U v‖²` for `v ∈ V`.
@@ -60,9 +62,13 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `TauCeti.exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank`: fewer than `dim E` vectors
   have a common nonzero, and hence a common unit, orthogonal vector.
 * `TauCeti.ne_neg_of_inner_eq_zero`: a vector orthogonal to a nonzero vector `b` is not `-b`.
-* `Submodule.mul_norm_sq_le_norm_starProjection_sq_of_finrank_le`: for finite-dimensional
-  subspaces with `dim V ≤ dim U`, a lower bound on `‖P_V u‖²` over `U` transfers to the same
-  bound on `‖P_U v‖²` over `V`.
+* `LinearIndependent.finCons_orthogonal_span_singleton`: a nonzero vector `p` followed by a
+  linearly independent family in `(𝕜 ∙ p)ᗮ` is linearly independent.
+* `LinearIsometry.exists_mem_sphere_inner_eq_zero`: a linear isometry into a space of larger
+  finite dimension has a unit vector orthogonal to its range.
+* `Submodule.mul_norm_sq_le_norm_starProjection_sq_of_finrank_le`: for a finite-dimensional
+  subspace `V` and a subspace `U` with `dim V ≤ dim U`, a lower bound on `‖P_V u‖²` over `U`
+  transfers to the same bound on `‖P_U v‖²` over `V`.
 * `Submodule.eq_starProjection_of_norm_le`: a vector whose norm is at most that of its projection
   is its projection.
 * `Submodule.mem_iff_forall_mem_orthogonal_norm_le_norm_add`: `v ∈ U` if and only if
@@ -163,14 +169,22 @@ theorem finrank_orthogonal_span_singleton_eq_finrank_sub_one [FiniteDimensional 
   have := Module.finrank_pos_iff_exists_ne_zero (R := 𝕜).2 ⟨v, hv⟩
   exact finrank_add_finrank_orthogonal' <| by rw [finrank_span_singleton hv]; omega
 
-/-- For finite-dimensional subspaces with `dim V ≤ dim U`, a lower bound `k ‖u‖² ≤ ‖P_V u‖²` on
-the cosines of `U` towards `V` transfers to the same lower bound for `V` towards `U`. -/
-theorem mul_norm_sq_le_norm_starProjection_sq_of_finrank_le [FiniteDimensional 𝕜 U]
-    [FiniteDimensional 𝕜 V] (h : Module.finrank 𝕜 V ≤ Module.finrank 𝕜 U) {k : ℝ}
+/-- For a finite-dimensional subspace `V` and a subspace `U` with `dim V ≤ dim U`, a lower bound
+`k ‖u‖² ≤ ‖P_V u‖²` on the cosines of `U` towards `V` transfers to the same lower bound for `V`
+towards `U`. -/
+theorem mul_norm_sq_le_norm_starProjection_sq_of_finrank_le [FiniteDimensional 𝕜 V]
+    (h : Module.finrank 𝕜 V ≤ Module.finrank 𝕜 U) {k : ℝ}
     (hU : ∀ u ∈ U, k * ‖u‖ ^ 2 ≤ ‖V.starProjection u‖ ^ 2) {v : E} (hv : v ∈ V) :
     k * ‖v‖ ^ 2 ≤ ‖U.starProjection v‖ ^ 2 := by
   rcases le_or_gt k 0 with hk | hk
   · exact (mul_nonpos_of_nonpos_of_nonneg hk (sq_nonneg _)).trans (sq_nonneg _)
+  -- If `V` is trivial then `v = 0`. Otherwise `U` has positive dimension, so it is
+  -- finite-dimensional.
+  rcases Nat.eq_zero_or_pos (Module.finrank 𝕜 V) with h0 | hpos
+  · have hV := Submodule.finrank_eq_zero.1 h0
+    rw [hV, Submodule.mem_bot] at hv
+    simp [hv]
+  have : FiniteDimensional 𝕜 U := Module.finite_of_finrank_pos (by omega)
   -- For `k > 0`, `P_V` maps `U` injectively, so `dim U ≤ dim V`; by the dimension hypothesis the
   -- dimensions agree and `P_V` maps `U` onto `V`.
   let T : U →ₗ[𝕜] V := V.orthogonalProjectionOnto.toLinearMap ∘ₗ U.subtype
@@ -333,6 +347,46 @@ theorem ne_neg_of_inner_eq_zero {a b : E} (hb : b ≠ 0) (hab : ⟪a, b⟫_𝕜 
   exact hb hab
 
 end TauCeti
+
+namespace LinearIndependent
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {m : ℕ}
+
+/-- A nonzero vector followed by a linearly independent family in its orthogonal complement is
+linearly independent. -/
+theorem finCons_orthogonal_span_singleton {p : E} (hp : p ≠ 0) {w : Fin m → E}
+    (hw : LinearIndependent 𝕜 w) (hwp : ∀ i, w i ∈ (𝕜 ∙ p)ᗮ) :
+    LinearIndependent 𝕜 (Fin.cons p w) := by
+  refine linearIndependent_finCons.2 ⟨hw, fun h ↦ hp ?_⟩
+  have hle : Submodule.span 𝕜 (Set.range w) ≤ (𝕜 ∙ p)ᗮ :=
+    Submodule.span_le.2 (Set.range_subset_iff.2 hwp)
+  exact inner_self_eq_zero.1 (Submodule.mem_orthogonal_singleton_iff_inner_right.1 (hle h))
+
+end LinearIndependent
+
+namespace LinearIsometry
+
+open scoped InnerProductSpace
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [NormedAddCommGroup F]
+  [InnerProductSpace ℝ F]
+
+/-- A linear isometry into a space of larger finite dimension has a unit vector orthogonal to its
+range. The hypothesis on the dimensions forces the target to be finite-dimensional. -/
+theorem exists_mem_sphere_inner_eq_zero (ι : F →ₗᵢ[ℝ] E)
+    (h : Module.finrank ℝ F < Module.finrank ℝ E) :
+    ∃ v : Metric.sphere (0 : E) 1, ∀ x, ⟪(v : E), ι x⟫_ℝ = 0 := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
+  have hW : LinearMap.range ι.toLinearMap ≠ ⊤ := fun hW ↦ by
+    have := LinearMap.finrank_range_of_inj ι.injective
+    rw [hW, finrank_top] at this
+    omega
+  obtain ⟨w, hw, hw0⟩ :=
+    Submodule.exists_mem_ne_zero_of_ne_bot (Submodule.orthogonal_eq_bot_iff.not.2 hW)
+  refine ⟨⟨‖w‖⁻¹ • w, by simp [norm_smul, norm_ne_zero_iff.2 hw0]⟩, fun x ↦ ?_⟩
+  rw [inner_smul_left, (Submodule.mem_orthogonal' _ w).1 hw (ι x) ⟨x, rfl⟩, mul_zero]
+
+end LinearIsometry
 
 namespace LinearMap
 

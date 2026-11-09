@@ -15,7 +15,11 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
 
 /-!
-# The planar Newtonian potential solves Poisson's equation
+# Differentiation and the Poisson equation for planar Newtonian potentials
+
+The first derivative of a smooth real-data potential is convolution with the locally integrable
+first derivative of the singular kernel
+(`HasCompactSupport.fderiv_planarNewtonianKernel_convolution_apply`).
 
 For `f : ℂ → F` with compact support, the **Newtonian potential** of `f` in the plane is the
 convolution `u = G ⋆ f`, `u z = ∫ G(z - w) f(w) dw`, of `f` with the logarithmic kernel
@@ -182,5 +186,31 @@ theorem eq_planarNewtonianKernel_convolution_of_laplacian_eq_neg [CompleteSpace 
   refine sub_eq_zero.1 (hw.eq_zero_of_tendsto_cocompact ?_)
   refine hw₀.congr fun z => ?_
   simp
+
+variable {f : ℂ → ℝ}
+
+/-- The derivative of a smooth-data Newtonian potential can be taken on the weak derivative
+of the logarithmic kernel, although that kernel is singular at zero. -/
+theorem _root_.HasCompactSupport.fderiv_planarNewtonianKernel_convolution_apply
+    (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) (w v : ℂ) :
+    fderiv ℝ (planarNewtonianKernel ⋆ f) w v =
+      ∫ z, fderiv ℝ planarNewtonianKernel z v * f (w - z) := by
+  have hD := hc.hasFDerivAt_convolution_right (ContinuousLinearMap.lsmul ℝ ℝ)
+    locallyIntegrable_planarNewtonianKernel hf w
+  rw [hD.fderiv, convolution_precompR_apply _ locallyIntegrable_planarNewtonianKernel
+    (hc.fderiv ℝ) (hf.continuous_fderiv one_ne_zero), convolution_def]
+  simp only [lsmul_apply, smul_eq_mul]
+  let g : ℂ → ℝ := fun z ↦ f (w - z)
+  have hg : ContDiff ℝ 1 g := hf.comp (contDiff_const.sub contDiff_id)
+  have hcg : HasCompactSupport g := hc.comp_homeomorph (Homeomorph.subLeft w)
+  have hderiv (z : ℂ) : fderiv ℝ g z v = -fderiv ℝ f (w - z) v := by
+    have h := ((hf.differentiable one_ne_zero (w - z)).hasFDerivAt.comp z
+      ((hasFDerivAt_const w z).sub (hasFDerivAt_id z))).fderiv
+    simpa only [g, Function.comp_def, zero_sub, ContinuousLinearMap.comp_neg,
+      ContinuousLinearMap.comp_id, neg_apply] using congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L v) h
+  have h := integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul hg hcg v
+  simp_rw [hderiv, mul_neg] at h
+  rw [integral_neg] at h
+  exact neg_injective h
 
 end TauCeti

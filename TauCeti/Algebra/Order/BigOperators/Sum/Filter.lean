@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
-public import Mathlib.Order.Interval.Set.UnorderedInterval
 
 /-!
 # Finite sums over filters
@@ -21,9 +20,6 @@ index type has at least two elements.
 
 public section
 
-open Set
-open scoped BigOperators
-
 namespace Finset
 
 /-- For a positive family on a finite type with at least two elements, the sum over all indices
@@ -34,33 +30,25 @@ theorem sum_filter_ne_pos {ι M : Type*} [Fintype ι] [DecidableEq ι] [Nontrivi
   obtain ⟨j, hj⟩ := exists_ne i
   exact Finset.sum_pos (fun k _ ↦ ha k) ⟨j, by simpa using hj⟩
 
-variable {ι α M : Type*} [Preorder α] [AddCommMonoid M]
+variable {ι α M : Type*} [DecidableEq α] [AddCommMonoid M] {a : ι → α} {e : ι → M} {p q : α}
 
-open scoped Classical in
 /-- If all nonzero terms of a finite family have indices at or to the left of `p`, then its sum
-over the terms indexed by `q` vanishes whenever `p < q`. -/
-theorem sum_filter_eq_zero_of_forall_ne_zero_le (s : Finset ι) {a : ι → α}
-    {e : ι → M} {p q : α} (hpq : p < q) (ha : ∀ i ∈ s, e i ≠ 0 → a i ≤ p) :
-    Finset.sum (s.filter (fun i => a i = q)) e = 0 := by
-  apply Finset.sum_eq_zero
-  intro i hi
-  by_contra hei
-  have hai := ha i (Finset.mem_filter.mp hi).1 hei
-  exact (not_lt_of_ge hai) ((Finset.mem_filter.mp hi).2 ▸ hpq)
-
-open scoped Classical in
-/-- If all nonzero terms of a finite family have indices at or to the left of `p`, then a filtered
-sum beyond `p` is bounded below by any negative `c` that also bounds the sum at `p` from below. -/
-theorem lt_sum_filter_of_lt_zero_of_forall_ne_zero_le {γ β : Type*} [PartialOrder γ]
-    [LT β] [AddCommMonoid β] (s : Finset ι) {a : ι → γ} {e : ι → β}
-    {p : γ} {c : β} (hc : c < 0)
-    (hp : c < Finset.sum (s.filter (fun i => a i = p)) e)
+over the terms indexed by `q` vanishes whenever `q ≤ p` fails, for instance when `p < q`. -/
+theorem sum_filter_eq_zero_of_forall_ne_zero_le [LE α] (s : Finset ι) (hqp : ¬q ≤ p)
     (ha : ∀ i ∈ s, e i ≠ 0 → a i ≤ p) :
-    ∀ {q : γ}, p ≤ q → c < Finset.sum (s.filter (fun i => a i = q)) e := by
-  intro q hpq
-  rcases eq_or_lt_of_le hpq with rfl | hpq
+    ∑ i ∈ s with a i = q, e i = 0 :=
+  sum_eq_zero fun i hi ↦ by_contra fun hei ↦
+    hqp <| (mem_filter.1 hi).2 ▸ ha i (mem_filter.1 hi).1 hei
+
+/-- If all nonzero terms of a finite family have indices at or to the left of `p`, then a filtered
+sum at or beyond `p` is bounded below by any negative `c` that also bounds the sum at `p` from
+below. -/
+theorem lt_sum_filter_of_lt_zero_of_forall_ne_zero_le [PartialOrder α] [LT M] (s : Finset ι)
+    {c : M} (hc : c < 0) (hp : c < ∑ i ∈ s with a i = p, e i)
+    (ha : ∀ i ∈ s, e i ≠ 0 → a i ≤ p) (hpq : p ≤ q) :
+    c < ∑ i ∈ s with a i = q, e i := by
+  obtain rfl | hpq := hpq.eq_or_lt
   · exact hp
-  · rw [sum_filter_eq_zero_of_forall_ne_zero_le s hpq ha]
-    exact hc
+  · rwa [sum_filter_eq_zero_of_forall_ne_zero_le s hpq.not_ge ha]
 
 end Finset

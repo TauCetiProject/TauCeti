@@ -248,6 +248,16 @@ theorem lower_ofSegments_shiftTimed (p : List (𝕜 × V)) {f : Module.Dual 𝕜
       (congrArg (Option.map (fun q ↦ q.map (LinearMap.snd 𝕜 𝕜 V)))
         (lower_shiftGraph (ofSegments 𝕜 p) hχ x))
 
+/-- **The lowering operator may be computed on the time–weight graph.** Lowering the path
+presented by `p`, a list of `(duration, segment)` pairs, is lowering the path presented by `p` in
+`𝕜 × V` along the lifted root `(0, x)` and coroot form `f ∘ snd`, and then forgetting time. This
+is the case `χ = 0` of `TauCeti.PLPath.lower_ofSegments_shiftTimed`. -/
+theorem lower_ofSegments_map_snd (p : List (𝕜 × V)) {f : Module.Dual 𝕜 V} {x : V} :
+    lower f x (ofSegments 𝕜 (p.map Prod.snd)) =
+      (lower (f.comp (LinearMap.snd 𝕜 𝕜 V)) (0, x) (ofSegments 𝕜 p)).map
+        (·.map (LinearMap.snd 𝕜 𝕜 V)) := by
+  simpa using lower_ofSegments_shiftTimed p (map_zero f) x
+
 /-- The analogous computation for raising a shifted timed path, retaining time until after
 the root operation. -/
 theorem raise_ofSegments_shiftTimed (p : List (𝕜 × V)) {f : Module.Dual 𝕜 V}

@@ -196,7 +196,7 @@ private theorem setLIntegral_ball_hausdorffMeasure_inter_preimage_le
         setLIntegral_le_lintegral _ _
     _ ≤ volume (ball (0 : F) 1) * 1 ^ finrank ℝ F * μH[(finrank ℝ F : ℝ) + (k : ℝ)]
           (coareaPerturbSlab F K ∩ (fun w ↦ f w.fst + ε • w.snd) ⁻¹' {y}) :=
-        hsnd_lip.lipschitzOnWith.lintegral_hausdorffMeasure_inter_preimage_le volume k.cast_nonneg
+        hsnd_lip.lipschitzOnWith.lintegral_hausdorffMeasure_inter_preimage_le volume
     _ = volume (ball (0 : F) 1) * μH[(finrank ℝ E : ℝ)]
           (coareaPerturbSlab F K ∩ (fun w ↦ f w.fst + ε • w.snd) ⁻¹' {y}) := by
         simp [hdim_add]
@@ -386,13 +386,14 @@ theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_normDet_adjoint_f
       ((hTm p.1).inter (ht_meas p.1 p.2)).nullMeasurableSet le_add_tsub).2 fun K hKP hKc ↦
         ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_isCompact hKc p.1 hEF
           (fun x hx ↦ (hKP hx).1.1.1) (fun x hx ↦ (hKP hx).1.1.2) (fun x hx ↦ (hKP hx).1.2)
+  have hsP : s ⊆ ⋃ p, P p := fun x hxs ↦ by
+    obtain ⟨r, hr⟩ := exists_nat_ge ‖fderiv ℝ f x‖
+    have hxT : x ∈ T r := ⟨⟨hd x hxs, h0 x hxs⟩, hr⟩
+    obtain ⟨j, hj⟩ := mem_iUnion.1 (ht_cover r hxT)
+    exact mem_iUnion.2 ⟨(r, j), hxT, hj⟩
   filter_upwards [ae_all_iff.2 hPnull] with y hy
-  refine measure_mono_null (t := ⋃ p, P p ∩ f ⁻¹' {y}) (fun x ⟨hxs, hxy⟩ ↦ ?_)
+  exact measure_mono_null ((inter_subset_inter_left _ hsP).trans_eq (iUnion_inter _ _))
     (measure_iUnion_null hy)
-  obtain ⟨r, hr⟩ := exists_nat_ge ‖fderiv ℝ f x‖
-  have hxT : x ∈ T r := ⟨⟨hd x hxs, h0 x hxs⟩, hr⟩
-  obtain ⟨j, hj⟩ := mem_iUnion.1 (ht_cover r hxT)
-  exact mem_iUnion.2 ⟨(r, j), ⟨hxT, hj⟩, hxy⟩
 
 /-- If `f` is differentiable at every point of `s` with nonsurjective derivative, then almost every
 fibre `s ∩ f ⁻¹' {y}` is null for `μHE[dim E - dim F]`. -/
@@ -429,17 +430,11 @@ theorem ae_euclideanHausdorffMeasure_sdiff_setOf_regular_inter_preimage_eq_zero
       ((U \ {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)}) ∩ f ⁻¹' {y}) = 0 := by
   let N := {x ∈ U | ¬DifferentiableAt ℝ f x}
   let C := {x ∈ U | DifferentiableAt ℝ f x ∧ ¬Surjective (fderiv ℝ f x)}
-  have hN_vol : μHE[finrank ℝ F + (finrank ℝ E - finrank ℝ F)] N = 0 := by
-    have hvol : volume N = 0 := by
-      have hae : ∀ᵐ x : E, x ∉ N := by
-        filter_upwards [hf.ae_differentiableAt_of_mem hU] with x hx hxN
-        exact hxN.2 (hx hxN.1)
-      exact measure_eq_zero_iff_ae_notMem.2 hae
-    rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume,
-      euclideanHausdorffMeasure_eq_zero_iff] at hvol
-    rw [euclideanHausdorffMeasure_eq_zero_iff]
-    exact nonpos_iff_eq_zero.1
-      ((hausdorffMeasure_mono (by exact_mod_cast le_add_tsub) _).trans hvol.le)
+  have hvol : volume N = 0 :=
+    measure_eq_zero_iff_ae_notMem.2 <|
+      (hf.ae_differentiableAt_of_mem hU).mono fun _ hx hxN ↦ hxN.2 (hx hxN.1)
+  have hN_vol : μHE[finrank ℝ F + (finrank ℝ E - finrank ℝ F)] N = 0 :=
+    euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero hvol le_add_tsub
   have hN_fib : ∀ᵐ y : F, μHE[finrank ℝ E - finrank ℝ F] (N ∩ f ⁻¹' {y}) = 0 :=
     (hf.mono fun _ (hx : _ ∈ N) ↦ hx.1).ae_euclideanHausdorffMeasure_inter_preimage_eq_zero
       volume hN_vol
@@ -606,7 +601,7 @@ theorem integrableOn_normDet_adjoint_fderiv {E F : Type*} [NormedAddCommGroup E]
     rw [TauCeti.lintegral_euclideanHausdorffMeasure]
     refine ENNReal.mul_ne_top ENNReal.coe_ne_top ?_
     refine ((hf.mono inter_subset_right).lintegral_hausdorffMeasure_inter_preimage_le volume
-      k.cast_nonneg).trans_lt ?_ |>.ne
+      |>.trans_lt ?_).ne
     exact ENNReal.mul_lt_top
       (ENNReal.mul_lt_top measure_ball_lt_top (ENNReal.pow_ne_top ENNReal.coe_ne_top).lt_top) htH
   exact ht_int.mono_set (subset_inter (subset_toMeasurable volume s) hsU)

@@ -8,6 +8,8 @@ module
 public import TauCeti.Data.Setoid.Basic
 public import TauCeti.Data.Setoid.Countable
 public import TauCeti.ModelTheory.Counting.Stratification
+public import TauCeti.SetTheory.Descriptive.Antichain
+import TauCeti.ModelTheory.Counting.Levels
 
 /-!
 # Back-and-forth scattered sets of configurations
@@ -27,7 +29,12 @@ countable. Hence a scattered set meets at most `ℵ₁` isomorphism classes (the
 countably many exactly when the rank is bounded below `ω₁` on it. In particular, whether a rank is
 bounded on a scattered set does not depend on which isolating rank is used.
 
-No definability or invariance of `K`, and no countability of the language, is assumed.
+The definition, observation criterion, and rank-counting results assume no definability or
+invariance of `K` and no countability of the language. In a language with countably many relation
+symbols of each arity, any thin Borel set `K` of configurations on `ℕ`—one containing no nonempty
+perfect set of pairwise non-isomorphic configurations—is back-and-forth scattered
+(`TauCeti.BFScattered.of_isThinOn`), still without assuming isomorphism invariance of `K`, by the
+one-level Silver dichotomy.
 
 ## Main definitions
 
@@ -40,6 +47,7 @@ No definability or invariance of `K`, and no countability of the language, is as
 * `TauCeti.BFScattered.of_countable_isoClasses`: countably many isomorphism classes give a
   scattered set.
 * `TauCeti.bfScattered_of_observation`: scatteredness from observations at each level.
+* `TauCeti.BFScattered.of_isThinOn`: a thin Borel set of configurations on `ℕ` is scattered.
 * `TauCeti.IsIsolatingRank.countable_rankOnIsoClasses_preimage`: on a scattered set, every rank
   stratum of the isomorphism classes is countable.
 * `TauCeti.IsIsolatingRank.mk_isoClasses_eq_aleph_one`: a scattered set meeting uncountably many
@@ -51,14 +59,18 @@ No definability or invariance of `K`, and no countability of the language, is as
 
 ## References
 
+* J. H. Silver, *Counting the number of equivalence classes of Borel and coanalytic equivalence
+  relations*, Annals of Mathematical Logic 18 (1980), 1–28.
 * David Marker, *Lectures on Infinitary Model Theory*, Cambridge University Press, 2016, the
   chapter on Vaught counterexamples (scattered sentences).
 * Antonio Montalbán, *Computable Structure Theory: Beyond the Arithmetic*, Part 2, Chapter XII,
   §XII.1 (scattered and unbounded sentences).
 * Back-and-forth scatteredness and the counting of scattered classes are also formalized in
-  Cameron Freer's `cameronfreer/infinitary-logic`, `InfinitaryLogic/Descriptive/BFScattered.lean`
-  and `InfinitaryLogic/Descriptive/ScatteredCounting.lean` (checkpoint `518a366`, Apache-2.0).
-  The statements here are for an arbitrary isolating rank.
+  Cameron Freer's `cameronfreer/infinitary-logic`, `InfinitaryLogic/Descriptive/BFScattered.lean`,
+  `InfinitaryLogic/Descriptive/ScatteredCounting.lean`, and
+  `InfinitaryLogic/Conditional/MorleyPerfect.lean` (checkpoint `518a366`, Apache-2.0).
+  The statements here are for an arbitrary isolating rank and discharge Silver's theorem
+  unconditionally.
 -/
 
 public section
@@ -124,6 +136,16 @@ theorem bfScattered_of_observation {β : Ordinal.{0} → Type*} (obs : ∀ α, K
       Quotient.inductionOn q fun c =>
         ⟨⟨obs α c, c, rfl⟩,
           Quotient.sound (hobs α hα _ _ (⟨c, rfl⟩ : ∃ d, obs α d = obs α c).choose_spec)⟩
+
+/-- **Thin Borel sets are back-and-forth scattered.** In a relational language with countably many
+relation symbols of each arity, any Borel set `K` of configurations on `ℕ` that carries no nonempty
+perfect set of pairwise non-isomorphic configurations is back-and-forth scattered. No isomorphism
+invariance of `K` is required. -/
+theorem BFScattered.of_isThinOn [∀ n, Countable (L.Relations n)] (hK : MeasurableSet K)
+    (h : (isoSetoid L ℕ).IsThinOn K) : BFScattered K :=
+  bfScattered_iff.2 fun _ hα =>
+    (countable_quotient_comap_bfEquivSetoid_or_hasPerfectAntichainOn hK hα).resolve_right
+      (Setoid.isThinOn_iff.1 h)
 
 namespace IsIsolatingRank
 

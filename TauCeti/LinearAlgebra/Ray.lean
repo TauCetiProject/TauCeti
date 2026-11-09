@@ -9,7 +9,22 @@ public import Mathlib.LinearAlgebra.Ray
 import Mathlib.Order.Preorder.Finite
 
 /-!
-# Vectors in the same ray: sums, finite orbits, and durations of segments
+# Vectors in the same ray: partitions, sums, finite orbits, and durations of segments
+
+Mathlib's `SameRay.trans` chains two ray relations `SameRay R x y` and `SameRay R y z` into
+`SameRay R x z`, provided the middle vector `y` vanishes only when `x` or `z` does.
+`TauCeti.sameRay_of_partition` iterates this step along a finite ordered partition of an interval
+in a linear order: if a map `w` into an ordered scalar module lies, on each piece of the
+partition, on the ray of its value at the end of that piece, and `w` vanishes at a point of the
+interval only if it vanishes at every earlier point, then every value of `w` lies on the ray of
+the final value. The explicit-partition induction follows the pattern of the Apache-2.0
+[`frenzymath/Poincare-Conjecture`](https://github.com/frenzymath/Poincare-Conjecture)
+formalization, revision `24f32e4d600878bfaac6bc2f2f9324175571c321`, as used in
+`TauCeti/Geometry/Manifold/Riemannian/EDistComparison.lean`.
+
+Scaling a ray by a unit commutes with negating it (`Module.Ray.units_smul_neg`), complementing
+Mathlib's `Module.Ray.neg_units_smul`, and with transporting it along a linear equivalence
+(`Module.Ray.map_units_smul`).
 
 Two nonzero vectors in the same ray cannot cancel: their sum is again nonzero. This is the
 non-degeneracy needed to merge adjacent segments of a piecewise-linear path that point in the same
@@ -21,7 +36,9 @@ what makes the velocity of each segment of a path with velocities in a Weyl orbi
 the segment alone: if no two distinct points of a set `S ∌ 0` lie in the same ray, a segment `v`
 traversed in a positive time `d` at a velocity `d⁻¹ • v ∈ S` determines `d`
 (`Set.Pairwise.eq_of_snd_eq_of_inv_smul_mem`), and a list of such segments determines its list
-of durations (`Set.Pairwise.eq_of_map_snd_eq_of_inv_smul_mem`).
+of durations (`Set.Pairwise.eq_of_map_snd_eq_of_inv_smul_mem`). Two pairs `(d, v)` and `(e, w)`
+of positive durations lie in the same ray exactly when they have the same velocity
+(`Prod.sameRay_iff_inv_fst_smul_snd_eq`).
 -/
 
 public section
@@ -38,7 +55,72 @@ theorem SameRay.trans_of_ne_zero (hxy : SameRay R x y) (hyz : SameRay R y z) (hy
     SameRay R x z :=
   hxy.trans hyz fun h ↦ absurd h hy
 
+/-- Transporting a ray along a linear equivalence commutes with scaling it by a unit. -/
+@[simp]
+theorem Module.Ray.map_units_smul {N : Type*} [AddCommMonoid N] [Module R N] (f : M ≃ₗ[R] N)
+    (u : Rˣ) (v : Module.Ray R M) : Module.Ray.map f (u • v) = u • Module.Ray.map f v := by
+  induction v using Module.Ray.ind with | h v hv =>
+    simp only [smul_rayOfNeZero, Module.Ray.map_apply, Units.smul_def, map_smul]
+
 end Semiring
+
+section Partition
+
+open Set
+
+namespace TauCeti
+
+variable {R α M : Type*} [CommSemiring R] [PartialOrder R] [IsStrictOrderedRing R]
+  [LinearOrder α] [AddCommMonoid M] [Module R M] {w : α → M}
+
+/-- **Rays chain through a partition.** If a map `w` into an ordered scalar module lies, on each
+piece of an ordered partition, on the ray of its value at the end of that piece, and `w` vanishes
+at a point of the interval only if it vanishes at every earlier point of the interval, then every
+value lies on the ray of the final value. -/
+theorem sameRay_of_partition {k : ℕ} (τ : Fin (k + 2) → α)
+    (hτ : ∀ i : Fin (k + 1), τ i.castSucc ≤ τ i.succ)
+    (hpiece : ∀ i : Fin (k + 1), ∀ t ∈ Icc (τ i.castSucc) (τ i.succ),
+      SameRay R (w t) (w (τ i.succ)))
+    (hzero : ∀ ⦃s⦄, s ∈ Icc (τ 0) (τ (Fin.last (k + 1))) →
+      ∀ ⦃u⦄, u ∈ Icc (τ 0) (τ (Fin.last (k + 1))) → s ≤ u → w u = 0 → w s = 0)
+    {t : α} (ht : t ∈ Icc (τ 0) (τ (Fin.last (k + 1)))) :
+    SameRay R (w t) (w (τ (Fin.last (k + 1)))) := by
+  induction k generalizing t with
+  | zero => simpa using hpiece 0 t (by simpa using ht)
+  | succ k ih =>
+      have hτmono : Monotone τ := Fin.monotone_iff_le_succ.mpr hτ
+      have hlast : τ (Fin.last (k + 1)).succ = τ (Fin.last (k + 2)) := by rw [Fin.succ_last]
+      rcases le_or_gt (τ (Fin.last (k + 1)).castSucc) t with hmt | htm
+      · simpa only [hlast] using hpiece (Fin.last (k + 1)) t ⟨hmt, hlast ▸ ht.2⟩
+      · have hml : τ (Fin.last (k + 1)).castSucc ≤ τ (Fin.last (k + 2)) :=
+          hτmono (Fin.le_last _)
+        have hm : τ (Fin.last (k + 1)).castSucc ∈ Icc (τ 0) (τ (Fin.last (k + 2))) :=
+          ⟨hτmono (Fin.zero_le _), hml⟩
+        have h₁ : SameRay R (w t) (w (τ (Fin.last (k + 1)).castSucc)) :=
+          ih (fun i ↦ τ i.castSucc)
+            (fun i ↦ by simpa only [Fin.succ_castSucc] using hτ i.castSucc)
+            (fun i u hu ↦ by simpa only [Fin.succ_castSucc] using hpiece i.castSucc u hu)
+            (fun _ hs _ hu ↦ hzero ⟨hs.1, hs.2.trans hml⟩ ⟨hu.1, hu.2.trans hml⟩)
+            ⟨ht.1, htm.le⟩
+        have h₂ : SameRay R (w (τ (Fin.last (k + 1)).castSucc)) (w (τ (Fin.last (k + 2)))) := by
+          simpa only [hlast] using hpiece (Fin.last (k + 1)) _ ⟨le_rfl, hτ _⟩
+        exact h₁.trans h₂ fun hm0 ↦ Or.inl (hzero ht hm htm.le hm0)
+
+end TauCeti
+
+end Partition
+
+section Neg
+
+variable {R M : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R]
+  [AddCommGroup M] [Module R M]
+
+/-- Scaling a ray by a unit commutes with negating it. -/
+theorem Module.Ray.units_smul_neg (u : Rˣ) (v : Module.Ray R M) : u • -v = -(u • v) := by
+  induction v using Module.Ray.ind with | h v hv =>
+    simp only [neg_rayOfNeZero, smul_rayOfNeZero, Units.smul_def, smul_neg]
+
+end Neg
 
 variable {R M : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R] [IsDomain R]
   [AddCommGroup M] [Module R M] [IsTorsionFree R M] {x y z : M}
@@ -137,5 +219,30 @@ theorem Set.Pairwise.eq_of_map_snd_eq_of_inv_smul_mem
       rw [List.map_cons, List.map_cons, List.cons.injEq] at h
       rw [List.forall_mem_cons] at hp hq
       rw [hS.eq_of_snd_eq_of_inv_smul_mem h0 hp.1 hq.1 h.1, ih hp.2 hq.2 h.2]
+
+omit [LinearOrder R] [IsStrictOrderedRing R] in
+/-- Rescaling a pair `(d, v)` by a nonzero factor does not change the velocity `d⁻¹ • v`. -/
+theorem Prod.inv_fst_smul_snd_smul {a : R} (ha : a ≠ 0) (z : R × M) :
+    (a • z).1⁻¹ • (a • z).2 = z.1⁻¹ • z.2 := by
+  rw [Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_inv_rev, mul_smul, inv_smul_smul₀ ha]
+
+/-- Two pairs `(d, v)` and `(e, w)` with `0 < d` and `0 < e` lie in the same ray exactly when they
+have the same velocity, `d⁻¹ • v = e⁻¹ • w`. -/
+theorem Prod.sameRay_iff_inv_fst_smul_snd_eq {y z : R × M} (hy : 0 < y.1) (hz : 0 < z.1) :
+    SameRay R y z ↔ y.1⁻¹ • y.2 = z.1⁻¹ • z.2 := by
+  constructor
+  · intro h
+    obtain ⟨r, hr, rfl⟩ := h.exists_pos_left (fun h0 ↦ hy.ne' (by simp [h0]))
+      (fun h0 ↦ hz.ne' (by simp [h0]))
+    exact (inv_fst_smul_snd_smul hr.ne' y).symm
+  · intro h
+    -- Both pairs are positive multiples of `(1, u)`, where `u` is their common velocity.
+    have hy' : y = y.1 • ((1 : R), z.1⁻¹ • z.2) := by
+      ext <;> simp [← h, smul_inv_smul₀ hy.ne']
+    have hz' : z = z.1 • ((1 : R), z.1⁻¹ • z.2) := by
+      ext <;> simp [smul_inv_smul₀ hz.ne']
+    have h := ((SameRay.refl (R := R) ((1 : R), z.1⁻¹ • z.2)).nonneg_smul_left
+      hy.le).nonneg_smul_right hz.le
+    rwa [← hy', ← hz'] at h
 
 end Duration

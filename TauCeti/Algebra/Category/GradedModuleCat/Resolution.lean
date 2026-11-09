@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.Projective.Resolution
 public import TauCeti.Algebra.Category.GradedModuleCat.Projective
+public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
 public import TauCeti.Algebra.Module.GradedModule.Resolution
 
 /-!
@@ -21,6 +22,10 @@ The resulting resolution can be used directly with Mathlib's comparison maps, un
 chain homotopy, and computation of Ext from projective resolutions. No enough-projectives
 hypothesis is needed to bundle a given resolution. The construction imposes neither linearity,
 minimality, finite generation, nor boundedness.
+
+Forgetting the grading turns the same data into a projective resolution of the underlying
+`A`-module. Hence a graded resolution whose terms vanish from homological degree `n` on bounds the
+ungraded projective dimension (`TauCeti.GradedProjectiveResolution.hasProjectiveDimensionLT`).
 
 ## References
 
@@ -141,6 +146,28 @@ theorem toProjectiveResolution_π_f_zero :
   change r.complexπ.f 0 = 𝟙 (r.termObj 0) ≫ r.augmentation
   rw [Category.id_comp]
   exact r.complexπ_f_zero
+
+/-- **A graded resolution with vanishing tail bounds the projective dimension.** If the terms of
+a graded projective resolution of `M` vanish from homological degree `n` on, then the underlying
+`A`-module of `M` has projective dimension less than `n`. -/
+theorem hasProjectiveDimensionLT (n : ℕ) (h : ∀ i, n ≤ i → Subsingleton (r.X i)) :
+    HasProjectiveDimensionLT (GradedModuleCat.toModuleCat.obj M) n := by
+  -- The image of `r.toProjectiveResolution` under the exact forgetful functor, built as in
+  -- `CategoryTheory.Functor.mapProjectiveResolution`. That construction needs the forgetful
+  -- functor to preserve all projective objects; here projectivity of each term is instead
+  -- read off from `r.projective`.
+  let R : ProjectiveResolution (GradedModuleCat.toModuleCat.obj M) :=
+    { complex := (GradedModuleCat.toModuleCat.mapHomologicalComplex _).obj
+        r.toProjectiveResolution.complex
+      projective i := by
+        have := r.projective i
+        exact ModuleCat.projective_of_categoryTheory_projective (ModuleCat.of A (r.X i))
+      π := (GradedModuleCat.toModuleCat.mapHomologicalComplex _).map r.toProjectiveResolution.π ≫
+        (HomologicalComplex.singleMapHomologicalComplex _ _ _).hom.app _
+      quasiIso := inferInstance }
+  refine R.hasProjectiveDimensionLT n fun i hi ↦ ?_
+  have := h i hi
+  exact ModuleCat.isZero_of_subsingleton (ModuleCat.of A (r.X i))
 
 end GradedProjectiveResolution
 

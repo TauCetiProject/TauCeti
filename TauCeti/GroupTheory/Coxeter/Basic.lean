@@ -10,10 +10,10 @@ public import Mathlib.GroupTheory.Coxeter.Basic
 /-!
 # Elementary facts about Coxeter words
 
-This file evaluates Mathlib's alternating words through an arbitrary family, and specialises that
-evaluation to the lengths the braid relations are read off at. It also records the degenerate
-rank-zero case: a Coxeter system whose simple reflections are indexed by an empty type has a
-trivial group.
+This file evaluates Mathlib's alternating words through an arbitrary family, specialises that
+evaluation to the lengths the braid relations are read off at, and computes the reversal of an
+alternating word. It also records the degenerate rank-zero case: a Coxeter system whose simple
+reflections are indexed by an empty type has a trivial group.
 
 ## Main results
 
@@ -22,9 +22,9 @@ trivial group.
   yet known to satisfy it, so it cannot be routed through
   `CoxeterSystem.prod_alternatingWord_eq_mul_pow`, which evaluates only the simple reflections
   themselves. The evaluations at lengths `2` and `3` are special cases.
-* `TauCeti.reverse_alternatingWord_two_mul`: reversing an alternating word of even length swaps its
-  two letters.
-* `TauCeti.subsingleton_of_isEmpty_index`: a Coxeter system of rank zero has a trivial group.
+* `TauCeti.reverse_alternatingWord`: reversing an alternating word swaps its two letters when
+  its length is even, and leaves it unchanged when its length is odd.
+* `CoxeterSystem.subsingleton_of_isEmpty`: a Coxeter system of rank zero has a trivial group.
 * `CoxeterSystem.commute_simple_of_eq_two`: two simple reflections commute when their entry of the
   Coxeter matrix is `2`.
 -/
@@ -46,13 +46,8 @@ theorem prod_map_alternatingWord (f : B → N) (i i' : B) (m : ℕ) :
   | zero => simp [CoxeterSystem.alternatingWord]
   | succ m ih =>
     rw [CoxeterSystem.alternatingWord_succ', List.map_cons, List.prod_cons, ih]
-    by_cases hm : Even m
-    · have h₁ : ¬ Even (m + 1) := by simp [hm, parity_simps]
-      have h₂ : (m + 1) / 2 = m / 2 := Nat.succ_div_of_not_dvd <| by rwa [← even_iff_two_dvd]
-      simp [hm, h₁, h₂]
-    · have h₁ : Even (m + 1) := by simp [hm, parity_simps]
-      have h₂ : (m + 1) / 2 = m / 2 + 1 := Nat.succ_div_of_dvd h₁.two_dvd
-      simp [hm, h₁, h₂, ← pow_succ', ← mul_assoc]
+    rcases Nat.even_or_odd' m with ⟨k, rfl | rfl⟩ <;>
+      simp [parity_simps, ← pow_succ', ← mul_assoc, add_assoc, Nat.mul_add_div]
 
 /-- An alternating word of length `2`, evaluated through any family `f`. -/
 theorem prod_map_alternatingWord_two (f : B → N) (i i' : B) :
@@ -64,44 +59,20 @@ theorem prod_map_alternatingWord_three (f : B → N) (i i' : B) :
     ((CoxeterSystem.alternatingWord i i' 3).map f).prod = f i' * f i * f i' := by
   simp [prod_map_alternatingWord, Nat.even_iff, mul_assoc]
 
-/-! ### Alternating words of even length -/
+/-! ### Reversing alternating words -/
 
-/-- The alternating word of length `2 * (m + 1)` is the two letters `i`, `i'` followed by the
-alternating word of length `2 * m`. -/
-private theorem alternatingWord_two_mul_succ (i i' : B) (m : ℕ) :
-    CoxeterSystem.alternatingWord i i' (2 * (m + 1))
-      = i :: i' :: CoxeterSystem.alternatingWord i i' (2 * m) := by
-  have h : 2 * (m + 1) = 2 * m + 1 + 1 := by ring
-  rw [h, CoxeterSystem.alternatingWord_succ', CoxeterSystem.alternatingWord_succ']
-  simp
-
-/-- The same word read from the other end: the alternating word of length `2 * (m + 1)` is the
-alternating word of length `2 * m` followed by the two letters `i`, `i'`. -/
-private theorem alternatingWord_two_mul_succ' (i i' : B) (m : ℕ) :
-    CoxeterSystem.alternatingWord i i' (2 * (m + 1))
-      = CoxeterSystem.alternatingWord i i' (2 * m) ++ [i, i'] := by
-  have h : 2 * (m + 1) = 2 * m + 1 + 1 := by ring
-  rw [h, CoxeterSystem.alternatingWord_succ, CoxeterSystem.alternatingWord_succ]
-  simp
-
-/-- Reversing an alternating word of even length swaps its two letters. -/
-theorem reverse_alternatingWord_two_mul (i i' : B) (m : ℕ) :
-    (CoxeterSystem.alternatingWord i i' (2 * m)).reverse
-      = CoxeterSystem.alternatingWord i' i (2 * m) := by
-  induction m with
+/-- Reversing an alternating word swaps its two letters when its length is even, and fixes it when
+its length is odd (an odd alternating word is a palindrome). -/
+theorem reverse_alternatingWord (i i' : B) (m : ℕ) :
+    (CoxeterSystem.alternatingWord i i' m).reverse
+      = if Even m then CoxeterSystem.alternatingWord i' i m
+        else CoxeterSystem.alternatingWord i i' m := by
+  induction m generalizing i i' with
   | zero => simp [CoxeterSystem.alternatingWord]
   | succ m ih =>
-    rw [alternatingWord_two_mul_succ' i i' m, alternatingWord_two_mul_succ i' i m]
-    simp [ih]
-
-/-! ### Rank zero -/
-
-variable {W : Type*} [Group W] {M : CoxeterMatrix B}
-
-/-- A Coxeter system whose simple reflections are indexed by an empty type has a trivial group:
-every element is the product of a word in the generators, and the only such word is empty. -/
-theorem subsingleton_of_isEmpty_index (cs : CoxeterSystem M W) [IsEmpty B] : Subsingleton W :=
-  cs.wordProd_surjective.subsingleton
+    conv_lhs => rw [CoxeterSystem.alternatingWord_succ, List.concat_eq_append,
+      List.reverse_append, ih]
+    by_cases hm : Even m <;> simp [hm, CoxeterSystem.alternatingWord_succ', parity_simps]
 
 end TauCeti
 
@@ -109,11 +80,15 @@ namespace CoxeterSystem
 
 variable {B W : Type*} [Group W] {M : CoxeterMatrix B} (cs : CoxeterSystem M W)
 
+include cs in
+/-- A Coxeter system whose simple reflections are indexed by an empty type has a trivial group:
+every element is the product of a word in the generators, and the only such word is empty. -/
+theorem subsingleton_of_isEmpty [IsEmpty B] : Subsingleton W :=
+  cs.wordProd_surjective.subsingleton
+
 /-- Two simple reflections commute when their entry of the Coxeter matrix is `2`. -/
 theorem commute_simple_of_eq_two {i i' : B} (h : M i i' = 2) :
     Commute (cs.simple i) (cs.simple i') := by
-  have h2 := cs.simple_mul_simple_pow i i'
-  rw [h, pow_two, ← eq_inv_iff_mul_eq_one, mul_inv_rev, inv_simple, inv_simple] at h2
-  exact (commute_iff_eq _ _).mpr h2
+  simpa [h, pow_two, ← eq_inv_iff_mul_eq_one, commute_iff_eq] using cs.simple_mul_simple_pow i i'
 
 end CoxeterSystem

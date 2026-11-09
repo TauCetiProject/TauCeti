@@ -6,21 +6,28 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
-public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Centralizer.Basic
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Centralizer.Functorial
+import TauCeti.LinearAlgebra.Matrix.MonoidAlgebra
 
 /-!
-# Schematic centralizers of multiplicity-free weight tori
+# Schematic centralizers of weight tori
 
-If the weights of a diagonal torus representation are distinct, its schematic centralizer
-in the general linear group consists exactly of diagonal matrices. This holds over every
-commutative base ring and every value algebra: comparison with the universal torus point,
-not merely the rational points, separates the weights even over finite fields.
+The schematic centralizer of a diagonal torus representation consists exactly of matrices
+whose entries between distinct weights vanish. Repeated weights give full matrix blocks;
+when the weights are distinct, the centralizer consists of diagonal matrices. These results
+hold over every commutative base ring and every value algebra: comparison with the universal
+torus point, not merely rational points, separates weights even over finite fields.
+
+For a closed subgroup of the general linear group containing this weight torus, the same
+criterion identifies its schematic centralizer with the inverse image of the diagonal torus.
 
 ## References
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §§16 and 26.
 * The universal-point coefficient argument is adapted from
   `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Centralizer`.
+* The closed-immersion criteria generalize the computation in
+  `TauCeti.Algebra.Lie.E7.Minuscule.Generated.TorusCentralizer`.
 -/
 
 public section
@@ -29,16 +36,15 @@ open TensorProduct WithConv
 
 namespace TauCeti.GeneralLinear
 
-universe u v w
+universe u v w x
 
 variable {R : Type u} [CommRing R] {X : Type v} [CommGroup X] {n : ℕ}
 
-/-- A diagonal representation with distinct characters has exactly the diagonal matrices as
-its schematic centralizer, over every value algebra. The displayed coordinate equations specify
-its diagonal representation without requiring the character group to be free. -/
-theorem _root_.BialgHom.centralizerHopfIdeal_le_ker_iff_isDiag_of_coordinates
+/-- The schematic centralizer of a diagonal representation preserves its character blocks over
+every value algebra. The character group need not be free, and characters may repeat. -/
+theorem _root_.BialgHom.centralizerHopfIdeal_le_ker_iff_apply_eq_zero_of_coordinates
     (π : coordinateHopfAlgebra R n →ₐc[R] MonoidAlgebra R X)
-    (e : Fin n → X) (he : Function.Injective e)
+    (e : Fin n → X)
     (hπ : ∀ i j, π (coordinateHopfAlgebraAlgEquiv R n
         (coordinateRingMap R n (MvPolynomial.X (i, j)))) =
       if i = j then MonoidAlgebra.single (e i) 1 else 0)
@@ -46,12 +52,12 @@ theorem _root_.BialgHom.centralizerHopfIdeal_le_ker_iff_isDiag_of_coordinates
     (g : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     (BialgHom.centralizerHopfIdeal π).toIdeal ≤
         RingHom.ker g.ofConv ↔
-      (pointsMulEquiv n g : Matrix (Fin n) (Fin n) A).IsDiag := by
+      ∀ i j, e i ≠ e j → (pointsMulEquiv n g : Matrix (Fin n) (Fin n) A) i j = 0 := by
   classical
   let B := A ⊗[R] MonoidAlgebra R X
   let u : WithConv (MonoidAlgebra R X →ₐ[R] B) := toConv Algebra.TensorProduct.includeRight
   let φ : A →ₐ[R] B := Algebra.TensorProduct.includeLeft
-  -- The universal torus point has distinct monomials on its diagonal.
+  -- The universal torus point records the characters as monomials on its diagonal.
   have hD : (pointsMulEquiv n (BialgHom.mapDomain π u) : Matrix (Fin n) (Fin n) B) =
       Matrix.diagonal fun a ↦ (1 : A) ⊗ₜ[R] MonoidAlgebra.single (e a) (1 : R) := by
     ext a b
@@ -72,31 +78,61 @@ theorem _root_.BialgHom.centralizerHopfIdeal_le_ker_iff_isDiag_of_coordinates
     (AlgHom.id R B) Function.injective_id, AlgHom.id_comp, AlgHom.id_comp]
   constructor
   · intro hcomm i j hij
-    have hentry := congrArg (fun h ↦
-      (pointsMulEquiv n h : Matrix (Fin n) (Fin n) B) i j) hcomm.eq
-    simp only [map_mul, Units.val_mul] at hentry
-    rw [hD, Matrix.mul_diagonal, Matrix.diagonal_mul, hM,
-      Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul,
-      mul_one, one_mul, one_mul, mul_one] at hentry
+    have hm := congrArg (fun h ↦
+      (pointsMulEquiv n h : Matrix (Fin n) (Fin n) B)) hcomm.eq
+    simp only [map_mul, Units.val_mul] at hm
+    have hmap : (pointsMulEquiv n (AlgHom.mapValue φ g) : Matrix (Fin n) (Fin n) B) =
+        (pointsMulEquiv n g : Matrix (Fin n) (Fin n) A).map φ := by
+      ext a b
+      exact hM a b
+    rw [hD, hmap] at hm
     -- Coefficients of distinct character monomials force the off-diagonal entry to vanish.
-    have hcoeff := congrArg
-      (LinearMap.tensorComponent (R := R) (M := A) (Comodule.monoidCoeff R X (e i))) hentry
-    have hne : e j ≠ e i := fun h ↦ hij (he h).symm
-    simpa [MonoidAlgebra.coeff_single, hne] using hcoeff.symm
+    exact Matrix.apply_eq_zero_of_commute_diagonal_monomial _ e hm hij.symm
   · intro hg
-    -- Conversely, a diagonal matrix commutes with the universal diagonal torus point.
+    -- A character-block matrix commutes with the universal diagonal torus point.
     apply (pointsMulEquiv n).injective
     apply Units.ext
     simp only [map_mul, Units.val_mul]
     rw [hD]
-    have hdiag : (pointsMulEquiv n (AlgHom.mapValue φ g) :
-        Matrix (Fin n) (Fin n) B).IsDiag := by
-      intro i j hij
-      rw [hM, hg hij, zero_tmul]
-    rw [← hdiag.diagonal_diag, Matrix.diagonal_mul_diagonal, Matrix.diagonal_mul_diagonal]
-    congr 1
-    funext i
-    exact mul_comm _ _
+    ext i j
+    rw [Matrix.mul_diagonal, Matrix.diagonal_mul, hM]
+    by_cases hij : e i = e j
+    · rw [hij, mul_comm]
+    · rw [hg i j hij, zero_tmul, zero_mul, mul_zero]
+
+/-- A diagonal representation with distinct characters has exactly the diagonal matrices as
+its schematic centralizer, over every value algebra. The displayed coordinate equations specify
+its diagonal representation without requiring the character group to be free. -/
+theorem _root_.BialgHom.centralizerHopfIdeal_le_ker_iff_isDiag_of_coordinates
+    (π : coordinateHopfAlgebra R n →ₐc[R] MonoidAlgebra R X)
+    (e : Fin n → X) (he : Function.Injective e)
+    (hπ : ∀ i j, π (coordinateHopfAlgebraAlgEquiv R n
+        (coordinateRingMap R n (MvPolynomial.X (i, j)))) =
+      if i = j then MonoidAlgebra.single (e i) 1 else 0)
+    {A : Type w} [CommRing A] [Algebra R A]
+    (g : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
+    (BialgHom.centralizerHopfIdeal π).toIdeal ≤
+        RingHom.ker g.ofConv ↔
+      (pointsMulEquiv n g : Matrix (Fin n) (Fin n) A).IsDiag := by
+  rw [BialgHom.centralizerHopfIdeal_le_ker_iff_apply_eq_zero_of_coordinates π e hπ]
+  exact ⟨fun h i j hij ↦ h i j (he.ne hij),
+    fun h i j hij ↦ h (ne_of_apply_ne e hij)⟩
+
+/-- The schematic centralizer of any weight torus consists of matrices preserving the weight
+blocks, over arbitrary value algebras. There is no restriction on weight multiplicities. -/
+theorem centralizerHopfIdeal_weightTorus_le_ker_iff_apply_eq_zero
+    {σ : Type v} [Finite σ] (wt : Fin n → σ → ℤ)
+    {A : Type w} [CommRing A] [Algebra R A]
+    (g : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
+    (BialgHom.centralizerHopfIdeal (weightTorusCoordinateBialgHom (S := R) wt)).toIdeal ≤
+        RingHom.ker g.ofConv ↔
+      ∀ i j, wt i ≠ wt j → (pointsMulEquiv n g : Matrix (Fin n) (Fin n) A) i j = 0 := by
+  classical
+  rw [BialgHom.centralizerHopfIdeal_le_ker_iff_apply_eq_zero_of_coordinates
+    (weightTorusCoordinateBialgHom (S := R) wt)
+    (fun i ↦ .ofAdd (Finsupp.equivFunOnFinite.symm (wt i)))
+    (weightTorusCoordinateBialgHom_X wt)]
+  simp only [ne_eq, EmbeddingLike.apply_eq_iff_eq]
 
 /-- The schematic centralizer of a weight torus with distinct weights consists of diagonal
 matrices, over arbitrary value algebras, without infinitude, reducedness or field assumptions. -/
@@ -113,5 +149,38 @@ theorem centralizerHopfIdeal_weightTorus_le_ker_iff_isDiag
     (fun i ↦ .ofAdd (Finsupp.equivFunOnFinite.symm (wt i)))
     (Multiplicative.ofAdd.injective.comp (Finsupp.equivFunOnFinite.symm.injective.comp hwt))
     (weightTorusCoordinateBialgHom_X wt) g
+
+variable {K : Type x} [CommRing K] [HopfAlgebra R K]
+
+/-- In a closed matrix subgroup containing a torus with distinct weights, schematic
+centralization of that torus is equivalent to diagonality of the matrix, over every value
+algebra. The composite equation specifies the torus representation in the ambient group. -/
+theorem _root_.BialgHom.mem_centralizerPointsSubgroup_iff_isDiag_of_comp
+    (ρ : coordinateHopfAlgebra R n →ₐc[R] K) (hρ : Function.Surjective ρ)
+    {σ : Type v} [Finite σ] (π : K →ₐc[R] MonoidAlgebra R (Multiplicative (σ →₀ ℤ)))
+    (wt : Fin n → σ → ℤ) (hwt : Function.Injective wt)
+    (hcomp : π.comp ρ = weightTorusCoordinateBialgHom wt)
+    (A : CommAlgCat.{w} R) (g : HopfAlgebra.points (R := R) (H := K) A) :
+    g ∈ BialgHom.centralizerPointsSubgroup π A ↔
+      (pointsMulEquiv n (BialgHom.mapDomain ρ g) : Matrix (Fin n) (Fin n) A).IsDiag := by
+  have h := BialgHom.centralizerHopfIdeal_comp_le_ker_iff ρ hρ π g
+  rw [hcomp, centralizerHopfIdeal_weightTorus_le_ker_iff_isDiag _ hwt] at h
+  rw [BialgHom.centralizerPointsSubgroup, CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
+  simpa only [IsConcreteLE.le_iff, RingHom.mem_ker, HopfIdeal.mem_toIdeal] using h.symm
+
+/-- The schematic centralizer of a multiplicity-free weight torus in a closed matrix subgroup
+is the inverse image of the ambient diagonal torus, over every value algebra. -/
+theorem _root_.BialgHom.centralizerPointsSubgroup_eq_comap_diagonalTorus_of_comp
+    (ρ : coordinateHopfAlgebra R n →ₐc[R] K) (hρ : Function.Surjective ρ)
+    {σ : Type v} [Finite σ] (π : K →ₐc[R] MonoidAlgebra R (Multiplicative (σ →₀ ℤ)))
+    (wt : Fin n → σ → ℤ) (hwt : Function.Injective wt)
+    (hcomp : π.comp ρ = weightTorusCoordinateBialgHom wt) (A : CommAlgCat.{w} R) :
+    BialgHom.centralizerPointsSubgroup π A =
+      (TauCeti.diagonalTorus A n).comap
+        ((pointsMulEquiv (R := R) n).toMonoidHom.comp (BialgHom.mapDomain ρ)) := by
+  ext g
+  simp only [Subgroup.mem_comap, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    mem_diagonalTorus_iff]
+  exact BialgHom.mem_centralizerPointsSubgroup_iff_isDiag_of_comp ρ hρ π wt hwt hcomp A g
 
 end TauCeti.GeneralLinear

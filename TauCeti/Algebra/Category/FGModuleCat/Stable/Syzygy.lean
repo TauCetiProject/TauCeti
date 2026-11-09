@@ -219,22 +219,24 @@ open Polynomial
 
 variable (R : Type u) [CommRing R] [IsNoetherianRing R] {n i : ℕ}
 
+variable (n i) in
 /-- Over `R[X]/(X ^ n)`, with `x` the class of `X` and `M_i = A ⧸ (x ^ i)`, the stable syzygy
-`Ω M_i` is `M_(n - i)` for `i ≤ n`. -/
-noncomputable def stableModuleLoopCyclicModuleRootPowIso (hi : i ≤ n) :
+`Ω M_i` is `M_(n - i)`. -/
+noncomputable def stableModuleLoopCyclicModuleRootPowIso :
     (stableModuleLoop (AdjoinRoot (X ^ n : R[X]))).obj
         ((stableModuleFunctor _).obj (cyclicModule (AdjoinRoot.root (X ^ n : R[X]) ^ i))) ≅
       (stableModuleFunctor _).obj (cyclicModule (AdjoinRoot.root (X ^ n : R[X]) ^ (n - i))) :=
-  stableModuleLoopCyclicModuleIso (AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff hi)
+  stableModuleLoopCyclicModuleIso AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff
 
+variable (n i) in
 /-- Over `R[X]/(X ^ n)`, with `x` the class of `X` and `M_i = A ⧸ (x ^ i)`, the module `M_i` is
-periodic of period at most two in the stable module category: `Ω² M_i ≅ M_i` for `i ≤ n`. -/
-noncomputable def stableModuleLoopLoopCyclicModuleRootPowIso (hi : i ≤ n) :
+periodic of period at most two in the stable module category: `Ω² M_i ≅ M_i`. -/
+noncomputable def stableModuleLoopLoopCyclicModuleRootPowIso :
     (stableModuleLoop (AdjoinRoot (X ^ n : R[X]))).obj ((stableModuleLoop _).obj
         ((stableModuleFunctor _).obj (cyclicModule (AdjoinRoot.root (X ^ n : R[X]) ^ i)))) ≅
       (stableModuleFunctor _).obj (cyclicModule (AdjoinRoot.root (X ^ n : R[X]) ^ i)) :=
-  stableModuleLoopLoopCyclicModuleIso (AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff hi)
-    (AdjoinRoot.root_X_pow_sub_pow_mul_eq_zero_iff hi)
+  stableModuleLoopLoopCyclicModuleIso AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff
+    AdjoinRoot.root_X_pow_sub_pow_mul_eq_zero_iff
 
 variable (n) in
 /-- Over `R[X]/(X ^ n)`, the module `M_n = A ⧸ (x ^ n)`, which is the free module `A` since

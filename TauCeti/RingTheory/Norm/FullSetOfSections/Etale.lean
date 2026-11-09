@@ -69,7 +69,7 @@ private theorem IsFullSetOfSections.bijective_pi_of_basis [Algebra.Etale A B]
   classical
   let M := Matrix.of fun i j ↦ s i (b j)
   have hd : IsUnit M.det := by
-    have := (Algebra.etale_iff_isUnit_discr A B b).mp inferInstance
+    have := (Algebra.etale_iff_isUnit_discr b).mp inferInstance
     rw [h.discr_eq_det_pi_sq b] at this
     exact (isUnit_pow_iff two_ne_zero).mp this
   let e := b.equivFun.trans (Matrix.toLinearEquiv (Pi.basisFun A ι) M hd)

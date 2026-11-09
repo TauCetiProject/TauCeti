@@ -17,13 +17,16 @@ import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
 both index types to be finite.  This file records the `finprod` analogue, which only needs the two
 restricted families to have finite multiplicative support. Regrouping by the fibers of an
 arbitrary map is also available, without finiteness assumptions on the fibers, as is cancelling a
-finitely supported factor whose product is `1`. Shifting the index of an alternating product over
+finitely supported factor whose product is `1`. A finitely supported telescoping product
+`∏ᶠ i : ℕ, f i / f (i + 1)` equals `f 0`, and a family indexed by `S × ℕ` telescopes along each
+ray `{i} × ℕ` to its starting values. Shifting the index of an alternating product over
 `ℤ` by one inverts it, so multiplying each factor `f j` by `δ (j + 1) * δ j` does not change the
 product; this is how changes of boundary bases cancel in Reidemeister torsion.
 A sum weighted by a finitely supported family of scalars, such as the translates of a cutoff
 function, is a finite sum over the support of the weights.
-Finally, a product over a finset is compared with the `finprod` of a finitely supported family
-whose factors off the finset are all at least `1`, or all at most `1`.
+A product over a finset is compared with the `finprod` of a finitely supported family whose
+factors off the finset are all at least `1`, or all at most `1`. Finally, left multiplication by a
+left-regular element commutes with `finsum` even when the support is infinite.
 
 ## Main results
 
@@ -31,12 +34,18 @@ whose factors off the finset are all at least `1`, or all at most `1`.
   soon as its two restrictions do.
 * `TauCeti.finprod_sum_type`: `∏ᶠ v : α ⊕ β, f v = (∏ᶠ a, f (.inl a)) * ∏ᶠ b, f (.inr b)`.
 * `TauCeti.finprod_fiberwise`: regroup a finitely supported product by the fibers of a map.
+* `TauCeti.finprod_mem_fiberwise`: regroup a product over a preimage `g ⁻¹' t` by the fibers of
+  `g` over `t`.
 * `TauCeti.finprod_mul_eq_right_of_finprod_eq_one`: multiplying by a finitely supported family
   with product `1` preserves a product, without any finiteness assumption on the other factor.
 * `TauCeti.finprod_comm`: the two iterated products of a family of two variables agree when the
   family has finite multiplicative support jointly in both variables.
 * `TauCeti.finprod_mem_eq_prod_filter_of_mulSupport_subset`: a product over `s` of a family
   supported in a finset `t` is the product over the elements of `t` that lie in `s`.
+* `TauCeti.finprod_div_add_one` and `TauCeti.finsum_sub_add_one`: a finitely supported
+  telescoping product `∏ᶠ i : ℕ, f i / f (i + 1)` is `f 0`, and likewise for sums.
+  `TauCeti.finprod_div_add_one_prod` and `TauCeti.finsum_sub_add_one_prod` telescope a family
+  indexed by `S × ℕ` along each ray `{i} × ℕ`.
 * `TauCeti.finprod_zpow_negOnePow_add_one`: `∏ᶠ j, f (j + 1) ^ (-1) ^ j` is the inverse of
   `∏ᶠ j, f j ^ (-1) ^ j`.
 * `TauCeti.finprod_mul_mul_add_one_zpow_negOnePow`: multiplying each factor `f j` of
@@ -49,6 +58,8 @@ whose factors off the finset are all at least `1`, or all at most `1`.
 * `Finset.prod_le_finprod_of_one_le₀` and `Finset.finprod_le_prod_of_le_one₀`: a product over a
   finset is at most, respectively at least, the `finprod` when the factors off the finset are at
   least, respectively at most, `1`.
+* `IsLeftRegular.mul_finsum`: left multiplication by a left-regular element commutes with
+  `finsum`, whatever the support.
 -/
 
 public section
@@ -113,6 +124,29 @@ theorem finprod_fiberwise {α β M : Type*} [CommMonoid M] (g : α → β) (f : 
     _ = ∏ a ∈ hf.toFinset, f a := finprod_prod_filter g hf.toFinset f
     _ = ∏ᶠ a, f a := (finprod_eq_prod f hf).symm
 
+/-- Regroup a product over a preimage `g ⁻¹' t` by the fibers of `g` over the points of `t`, when
+only finitely many factors over `t` differ from `1`. -/
+@[to_additive /-- Regroup a sum over a preimage `g ⁻¹' t` by the fibers of `g` over the points of
+`t`, when only finitely many terms over `t` are nonzero. -/]
+theorem finprod_mem_fiberwise {α β M : Type*} [CommMonoid M] (g : α → β) (t : Set β) (f : α → M)
+    (hf : (g ⁻¹' t ∩ mulSupport f).Finite) :
+    ∏ᶠ b ∈ t, ∏ᶠ a ∈ g ⁻¹' {b}, f a = ∏ᶠ a ∈ g ⁻¹' t, f a := by
+  classical
+  rw [finprod_mem_def (s := g ⁻¹' t), ← finprod_fiberwise g _ (by rwa [mulSupport_mulIndicator]),
+    finprod_mem_def]
+  refine finprod_congr fun b ↦ ?_
+  rw [finprod_subtype_eq_finprod_cond]
+  by_cases hb : b ∈ t
+  · rw [mulIndicator_of_mem hb]
+    refine finprod_congr fun a ↦ finprod_congr fun ha ↦ (mulIndicator_of_mem ?_ f).symm
+    simp_all
+  · rw [mulIndicator_of_notMem hb, eq_comm]
+    refine finprod_eq_one_of_forall_eq_one fun a ↦ ?_
+    rw [finprod_eq_if]
+    split_ifs with ha
+    · exact mulIndicator_of_notMem (by simp_all) f
+    · rfl
+
 /-- Multiplying a family by a finitely supported family whose product is `1` does not change its
 product. The other family need not have finite multiplicative support: if it does not, neither
 does the product family, and both products are `1`. -/
@@ -156,6 +190,34 @@ theorem finprod_mem_eq_prod_filter_of_mulSupport_subset (f : α → M) (s : Set 
     ext x
     simp only [mem_inter_iff, Finset.coe_filter, mem_ofPred_eq]
     exact ⟨fun h ↦ ⟨⟨ht h.2, h.1⟩, h.2⟩, fun h ↦ ⟨h.1.2, h.2⟩⟩
+
+/-- A finitely supported telescoping product over `ℕ` equals `f 0`: the factors
+`f i / f (i + 1)` multiply to `f 0`. This is the `finprod` analogue of `Finset.prod_range_div'`. -/
+@[to_additive finsum_sub_add_one /-- A finitely supported telescoping sum over `ℕ` equals
+`f 0`: the terms `f i - f (i + 1)` add up to `f 0`. This is the `finsum` analogue of
+`Finset.sum_range_sub'`. -/]
+theorem finprod_div_add_one {G : Type*} [CommGroup G] {f : ℕ → G} (hf : HasFiniteMulSupport f) :
+    ∏ᶠ i, f i / f (i + 1) = f 0 := by
+  obtain ⟨N, hN⟩ := hf.bddAbove
+  have hf₁ {i : ℕ} (hi : N < i) : f i = 1 := notMem_mulSupport.1 fun h ↦ (hN h).not_gt hi
+  rw [finprod_eq_prod_of_mulSupport_subset (s := Finset.range (N + 1)) _ fun i hi ↦ ?_,
+    Finset.prod_range_div', hf₁ (Nat.lt_succ_self N), div_one]
+  exact Finset.mem_range.2 (lt_of_not_ge fun h ↦ hi <| by
+    simp [hf₁ (show N < i by omega), hf₁ (show N < i + 1 by omega)])
+
+/-- A finitely supported family indexed by `S × ℕ` telescopes along each ray `{i} × ℕ`: the factors
+`f (i, k) / f (i, k + 1)` multiply to the product of the starting values `f (i, 0)`. -/
+@[to_additive finsum_sub_add_one_prod /-- A finitely supported family indexed by `S × ℕ`
+telescopes along each ray `{i} × ℕ`: the terms `f (i, k) - f (i, k + 1)` add up to the sum of the
+starting values `f (i, 0)`. -/]
+theorem finprod_div_add_one_prod {S G : Type*} [CommGroup G] {f : S × ℕ → G}
+    (hf : HasFiniteMulSupport f) :
+    ∏ᶠ ik, f ik / f (ik.1, ik.2 + 1) = ∏ᶠ i, f (i, 0) := by
+  have hf' : HasFiniteMulSupport fun ik : S × ℕ ↦ f (ik.1, ik.2 + 1) :=
+    hf.preimage (f := fun ik : S × ℕ ↦ (ik.1, ik.2 + 1)) fun a _ b _ h ↦ by
+      simpa [Prod.ext_iff] using h
+  rw [finprod_curry _ ((hf.union hf').subset (mulSupport_div _ _))]
+  exact finprod_congr fun i ↦ finprod_div_add_one (hf.preimage (Prod.mk_right_injective i).injOn)
 
 /-- Shifting the index of an alternating product over `ℤ` by one inverts it: the factor `f (j + 1)`
 enters `∏ᶠ j, f (j + 1) ^ (-1) ^ j` with the exponent opposite to its exponent `(-1) ^ (j + 1)` in
@@ -226,6 +288,7 @@ theorem prod_le_finprod_of_one_le₀ (s : Finset ι) (hf : HasFiniteMulSupport f
   exact Finset.prod_le_prod_of_subset_of_one_le₀ Finset.subset_union_left hf₀
     fun i _ hi ↦ hf₁ i hi
 
+omit [ZeroLEOneClass M₀] in
 /-- The `finprod` of a finitely supported nonnegative family whose factors off a finset are at
 most `1` is at most the product over that finset. This is the `finprod` analogue of
 `Finset.prod_le_prod_of_subset_of_le_one₀`. -/
@@ -234,9 +297,20 @@ theorem finprod_le_prod_of_le_one₀ (s : Finset ι) (hf : HasFiniteMulSupport f
   classical
   rw [finprod_eq_finsetProd_of_mulSupport_subset f (s := s ∪ hf.toFinset)
     fun i hi ↦ Finset.mem_union_right s (hf.mem_toFinset.mpr hi)]
-  exact Finset.prod_le_prod_of_subset_of_le_one₀ Finset.subset_union_left (fun i _ ↦ hf₀ i)
-    fun i _ hi ↦ hf₁ i hi
+  by_cases hsub : hf.toFinset ⊆ s
+  · rw [Finset.union_eq_left.mpr hsub]
+  · obtain ⟨i, -, his⟩ := Finset.not_subset.mp hsub
+    have : ZeroLEOneClass M₀ := ⟨(hf₀ i).trans (hf₁ i his)⟩
+    exact Finset.prod_le_prod_of_subset_of_le_one₀ Finset.subset_union_left (fun i _ ↦ hf₀ i)
+      fun i _ hi ↦ hf₁ i hi
 
 end OrderedWithZero
 
 end Finset
+
+/-- Multiplication on the left by a left-regular element commutes with `finsum`, without any
+finiteness assumption on the support. This generalizes `mul_finsum`, which assumes that the ring
+has no zero divisors. -/
+theorem IsLeftRegular.mul_finsum {ι R : Type*} [NonUnitalNonAssocSemiring R] {r : R}
+    (hr : IsLeftRegular r) (f : ι → R) : r * ∑ᶠ i, f i = ∑ᶠ i, r * f i :=
+  (AddMonoidHom.mulLeft r).map_finsum_of_injective hr f

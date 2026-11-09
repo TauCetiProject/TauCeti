@@ -49,16 +49,18 @@ Deleting every bridge leaves a graph without bridges
 A multigraph is a forest, `Graph.IsForest`, when it has no cycles; since loops and pairs of
 parallel edges are cycles of multigraphs, a forest has neither.
 `Graph.isForest_iff_forall_isBridge` shows that a multigraph is a forest exactly when every actual
-edge is a bridge.  Only the component counts assume finiteness: of the components when deleting
-one bridge or finitely many bridges, and of the actual vertices when deleting all bridges; the
-other statements need no finiteness assumptions.
+edge is a bridge.  In a forest, a walk is a path exactly when it is a trail
+(`Graph.IsForest.isPath_iff_isTrail`).  Only the component counts assume finiteness: of the
+components when deleting one bridge or finitely many bridges, and of the actual vertices when
+deleting all bridges; the other statements need no finiteness assumptions.
 
 The statements follow the corresponding results for simple graphs in Mathlib,
 `SimpleGraph.isBridge_iff`, `SimpleGraph.isBridge_iff_forall_walk_mem_edges`,
 `SimpleGraph.isBridge_iff_forall_cycle_notMem`, `SimpleGraph.IsBridge.notMem_edges_of_isCycle`,
-`SimpleGraph.isAcyclic_iff_forall_isBridge`, and `SimpleGraph.IsAcyclic.anti`, adapted to
-multigraphs whose walks record edge identities. The proof of `Graph.isForest_iff_forall_isBridge`
-is adapted from Mathlib's proof of `SimpleGraph.isAcyclic_iff_forall_isBridge`.
+`SimpleGraph.isAcyclic_iff_forall_isBridge`, `SimpleGraph.IsAcyclic.isPath_iff_isTrail`, and
+`SimpleGraph.IsAcyclic.anti`, adapted to multigraphs whose walks record edge identities. The proof
+of `Graph.isForest_iff_forall_isBridge` is adapted from Mathlib's proof of
+`SimpleGraph.isAcyclic_iff_forall_isBridge`.
 -/
 
 public section
@@ -295,6 +297,24 @@ theorem isBridge_iff_forall_cycle_notMem (he : e ∈ E(G)) :
   exact (Walk.cons_isCycle_iff ..).mpr
     ⟨q.bypass_isPath, fun hm ↦ hq e (q.edges_bypass_subset_edges hm) rfl⟩
 
+/-- An edge on a cycle in a subgraph is not a bridge in the containing graph. -/
+theorem Walk.IsCycle.not_isBridge_of_le {K : Graph α β} (hKG : K ≤ G)
+    {p : K.Walk x x} (hp : p.IsCycle) (he : e ∈ p.edges) : ¬ G.IsBridge e := by
+  intro hbridge
+  exact hbridge.notMem_edges_of_isCycle (hp.mapLe hKG) (by
+    simpa only [Walk.edges_mapLe_eq_edges] using he)
+
+/-- No edge of the graph traced by a cycle is a bridge. -/
+theorem Walk.IsCycle.not_isBridge_walkGraph {p : G.Walk x x} (hp : p.IsCycle)
+    (e : β) : ¬ (G.walkGraph p).IsBridge e := by
+  intro he
+  have hpos : 0 < p.length := Nat.pos_of_ne_zero fun h ↦ hp.not_nil (Walk.length_eq_zero_iff.mp h)
+  let q := p.transfer (p.walkGraph_le_of_pos hpos) fun f hf ↦
+    (p.mem_edgeSet_walkGraph f).mpr hf
+  have hq : q.IsCycle := (Walk.isCycle_transfer (p.walkGraph_le_of_pos hpos) p _).mpr hp
+  exact hq.not_isBridge_of_le le_rfl (by
+    simpa only [q, Walk.edges_transfer] using (p.mem_edgeSet_walkGraph e).mp he.mem_edgeSet) he
+
 /-- Deleting all bridges leaves a graph without bridges. -/
 theorem not_isBridge_deleteEdges_bridgeSet (G : Graph α β) (e : β) :
     ¬ (G.deleteEdges G.bridgeSet).IsBridge e := by
@@ -340,6 +360,64 @@ theorem IsForest.eq_of_isLink (hG : G.IsForest) (he : G.IsLink e x y) (hf : G.Is
     f = e := by
   by_contra hfe
   exact he.not_isBridge_of_isLink_of_ne hf hfe (hG.isBridge he.edge_mem)
+
+/-- In a forest, a walk is a path exactly when it traverses no edge identity more than once. -/
+theorem IsForest.isPath_iff_isTrail (hG : G.IsForest) (p : G.Walk x y) :
+    p.IsPath ↔ p.IsTrail := by
+  refine ⟨Walk.IsPath.isTrail, fun hp ↦ ?_⟩
+  induction p with
+  | nil => simp
+  | @cons x y z e h p ih =>
+      rw [Walk.isTrail_cons] at hp
+      rw [Walk.isPath_cons]
+      refine ⟨ih hp.1, fun hx ↦ ?_⟩
+      classical
+      let q := p.takeUntil x hx
+      have hq : q.IsPath := (ih hp.1).takeUntil hx
+      have heq : e ∉ q.edges := fun he ↦ hp.2 (p.edges_takeUntil_subset_edges hx he)
+      exact hG (Walk.cons e h q) ((Walk.cons_isCycle_iff ..).2 ⟨hq, heq⟩)
+
+/-- Every walk between the endpoints of a path in a forest traverses every edge of that path. -/
+theorem IsForest.edges_subset_of_isPath (hG : G.IsForest) {p : G.Walk x y} (hp : p.IsPath)
+    (q : G.Walk x y) : p.edges ⊆ q.edges := by
+  induction p with
+  | nil => simp
+  | @cons x y z e h p ih =>
+      have hp' : p.IsPath := ((Walk.isPath_cons e h p).1 hp).1
+      have hep : e ∉ p.edges := ((Walk.isTrail_cons e h p).1 hp.isTrail).2
+      intro f hf
+      simp only [Walk.edges_cons, List.mem_cons] at hf
+      rcases hf with rfl | hf
+      · have heq := (h.isBridge_iff_forall_walk_mem_edges.1 (hG.isBridge h.edge_mem))
+          (q.append p.reverse)
+        simp only [Walk.edges_append, Walk.edges_reverse, List.mem_append, List.mem_reverse] at heq
+        exact heq.resolve_right hep
+      · have hfq := ih hp' (h.toWalk.reverse.append q) hf
+        simp only [Walk.edges_append, Walk.edges_reverse, IsLink.edges_toWalk,
+          List.reverse_singleton, List.mem_append, List.mem_singleton] at hfq
+        exact hfq.resolve_left fun hfe ↦ hep (hfe ▸ hf)
+
+/-- Two paths in a forest with the same endpoints are equal. -/
+theorem IsForest.eq_of_isPath (hG : G.IsForest) {p q : G.Walk x y}
+    (hp : p.IsPath) (hq : q.IsPath) : p = q := by
+  induction p with
+  | nil =>
+      cases q with
+      | nil => rfl
+      | cons e h q => exact ((Walk.isPath_cons e h q).mp hq).2 q.end_mem_support |>.elim
+  | @cons x z y e h p ih =>
+      cases q with
+      | nil => exact ((Walk.isPath_cons e h p).mp hp).2 p.end_mem_support |>.elim
+      | @cons _ w _ f hf q =>
+          have he : e ∈ (Walk.cons f hf q).edges :=
+            hG.edges_subset_of_isPath hp (Walk.cons f hf q) (by simp)
+          simp only [Walk.edges_cons, List.mem_cons] at he
+          have hef : e = f := he.resolve_right fun heq ↦
+            ((Walk.isPath_cons f hf q).mp hq).2 (q.mem_support_of_isLink_of_mem_edges h heq)
+          subst f
+          obtain rfl := h.right_unique hf
+          exact congrArg (Walk.cons e h)
+            (ih ((Walk.isPath_cons e h p).mp hp).1 ((Walk.isPath_cons e hf q).mp hq).1)
 
 /-- A graph with no edges is a forest. -/
 @[simp]

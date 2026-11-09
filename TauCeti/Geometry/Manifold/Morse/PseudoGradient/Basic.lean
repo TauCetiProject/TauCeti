@@ -44,9 +44,10 @@ stable and unstable sets are exactly the coordinate planes, and the remaining an
   exactly the critical points of `f`.
 * `TauCeti.IsAdaptedPseudoGradient.antitone_comp`: `f` is antitone along every integral curve
   along which it is differentiable.
+* `TauCeti.MorseChart.coord_mfderiv_neg`: in the negated Morse chart, `-X` is the linear field.
 * `TauCeti.IsAdaptedPseudoGradient.neg`: `-X` is a pseudo-gradient adapted to `-f`.
 * `TauCeti.IsAdaptedPseudoGradient.strictAnti_comp`: `f` is strictly antitone along an integral
-  curve along which it is differentiable and that never meets a critical point.
+  curve that never meets a critical point.
 
 ## References
 
@@ -77,6 +78,23 @@ structure IsAdaptedPseudoGradient (f : M → ℝ) (X : (x : M) → TangentSpace 
     ∃ φ : MorseChart E f x, ∀ y ∈ φ.toChart.source,
       φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
         fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i)
+
+omit [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- In a Morse chart for `f` in which `X` is the linear field `z ↦ (-wᵢ zᵢ)ᵢ`, the reversed field
+`-X` is the linear field of the negated Morse chart for `-f`. -/
+theorem MorseChart.coord_mfderiv_neg [FiniteDimensional ℝ E] {x : M} (φ : MorseChart E f x)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
+    ∀ y ∈ (φ.neg h).toChart.source,
+      (φ.neg h).coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.neg h).toChart y ((-X) y)) =
+        fun i ↦ -((φ.neg h).weight i * (φ.neg h).coord ((φ.neg h).toChart y) i) := by
+  intro y hy
+  rw [MorseChart.neg_toChart] at hy
+  rw [MorseChart.neg_coord, MorseChart.neg_toChart, MorseChart.neg_weight, Pi.neg_apply, map_neg]
+  refine (φ.coord.map_neg _).trans ((congrArg Neg.neg (hφ y hy)).trans ?_)
+  ext i
+  simp
 
 namespace IsAdaptedPseudoGradient
 
@@ -120,12 +138,14 @@ theorem antitone_comp (hX : IsAdaptedPseudoGradient f X)
     Antitone (f ∘ γ) :=
   hγ.antitone_comp hf fun t ↦ hX.mvfderiv_apply_nonpos (γ t)
 
-/-- **`f` is strictly antitone along an integral curve of an adapted pseudo-gradient** along which
-`f` is differentiable and that never meets a critical point. -/
-theorem strictAnti_comp (hX : IsAdaptedPseudoGradient f X)
-    (hf : ∀ t, MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f (γ t)) (hγ : IsMIntegralCurve γ X)
+/-- **`f` is strictly antitone along an integral curve of an adapted pseudo-gradient** that never
+meets a critical point. Differentiability of `f` along the curve is automatic, since `mfderiv`
+vanishes where `f` is not differentiable. -/
+theorem strictAnti_comp (hX : IsAdaptedPseudoGradient f X) (hγ : IsMIntegralCurve γ X)
     (hcrit : ∀ t, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (γ t) ≠ 0) : StrictAnti (f ∘ γ) :=
-  strictAnti_of_hasDerivAt_neg (fun t ↦ Manifold.hasDerivAt_comp_curve (hf t) (hγ t))
+  strictAnti_of_hasDerivAt_neg
+    (fun t ↦ Manifold.hasDerivAt_comp_curve
+      (by_contra fun h ↦ hcrit t (mfderiv_zero_of_not_mdifferentiableAt h)) (hγ t))
     fun t ↦ hX.mvfderiv_apply_lt_zero _ (hcrit t)
 
 variable [FiniteDimensional ℝ E]
@@ -142,13 +162,8 @@ theorem neg (hX : IsAdaptedPseudoGradient f X) (hf : IsMorse 𝓘(ℝ, E) f) :
   exists_morseChart y hy := by
     replace hy := mfderiv_neg_eq_zero_iff.1 hy
     obtain ⟨φ, hφ⟩ := hX.exists_morseChart y hy
-    refine ⟨φ.neg (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hy),
-      fun z hz ↦ ?_⟩
-    rw [MorseChart.neg_toChart] at hz
-    rw [MorseChart.neg_coord, MorseChart.neg_toChart, MorseChart.neg_weight, Pi.neg_apply, map_neg]
-    refine (φ.coord.map_neg _).trans ((congrArg Neg.neg (hφ z hz)).trans ?_)
-    ext i
-    simp
+    exact ⟨_, φ.coord_mfderiv_neg hφ
+      (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hy)⟩
 
 end IsAdaptedPseudoGradient
 

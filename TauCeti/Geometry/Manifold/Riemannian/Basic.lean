@@ -13,8 +13,8 @@ import TauCeti.Geometry.Manifold.VectorField.Regularity
 # Basic Riemannian bundle constructions
 
 This file provides conversions between Mathlib's Riemannian bundle classes and bundled
-Riemannian metrics, and records that the Riemannian norm of the differential of a `C¹` map, applied
-to a fixed vector, depends continuously on the base point.
+Riemannian metrics, and records that the Riemannian norm of the differential of a `C¹` map
+depends continuously on both the base point and the tangent vector.
 
 ## Main definitions
 
@@ -30,6 +30,8 @@ to a fixed vector, depends continuously on the base point.
   a `C^0` Riemannian bundle.
 * `IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle`: conversely, view a `C^n`
   Riemannian bundle as a continuous Riemannian bundle.
+* `ContMDiffOn.continuousOn_norm_mfderiv_apply`: the norm `‖df_z ξ‖` is jointly continuous
+  in `z` and `ξ` on an open domain.
 * `ContMDiffOn.continuousOn_norm_mfderiv`: for a `C¹` map `f` from an open subset of a normed space
   to a Riemannian manifold, `z ↦ ‖df_z ξ‖` is continuous.
 * `ContMDiffOn.contDiffOn_inner_mfderiv`: for a `C^(m+1)` map `f` from an open subset of a normed
@@ -179,6 +181,21 @@ variable
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
+/-- The Riemannian norm of the differential of a `C¹` map on an open subset of a normed
+space is jointly continuous in the base point and the tangent vector. -/
+theorem ContMDiffOn.continuousOn_norm_mfderiv_apply
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+    {f : F → M} {U : Set F} {n : ℕ∞ω}
+    (hf : ContMDiffOn 𝓘(ℝ, F) I n f U) (hn : 1 ≤ n) (hU : IsOpen U) :
+    ContinuousOn (fun z : F × F ↦ ‖mfderiv 𝓘(ℝ, F) I f z.1 z.2‖) (U ×ˢ Set.univ) := by
+  intro z hz
+  have hmap : ContinuousAt (tangentMap 𝓘(ℝ, F) I f)
+      ((tangentBundleModelSpaceHomeomorph 𝓘(ℝ, F)).symm z) :=
+    (hf.contMDiffAt (hU.mem_nhds hz.1)).continuousAt_tangentMap hn
+  have h := hmap.comp (tangentBundleModelSpaceHomeomorph 𝓘(ℝ, F)).symm.continuous.continuousAt
+  exact ((TauCeti.continuous_norm_bundle E (fun x : M ↦ TangentSpace I x)).continuousAt.comp
+    h).continuousWithinAt
+
 /-- Let `f` be a `C^n` map, `1 ≤ n`, from an open subset `U` of a real normed space to a manifold
 whose tangent spaces carry a continuous Riemannian metric. For each fixed vector `ξ`, the
 Riemannian norm of `df_z ξ` depends continuously on `z ∈ U`. -/
@@ -187,10 +204,9 @@ theorem ContMDiffOn.continuousOn_norm_mfderiv
     {f : F → M} {U : Set F} {n : ℕ∞ω}
     (hf : ContMDiffOn 𝓘(ℝ, F) I n f U) (hn : 1 ≤ n) (hU : IsOpen U) (ξ : F) :
     ContinuousOn (fun z ↦ ‖mfderiv 𝓘(ℝ, F) I f z ξ‖) U :=
-  -- the lifted directional derivative `z ↦ (f z, df_z ξ)` is continuous into `TM`, and the
-  -- Riemannian norm is continuous on `TM`
-  (TauCeti.continuous_norm_bundle E (fun x : M ↦ TangentSpace I x)).comp_continuousOn
-    (hf.contMDiffOn_totalSpaceMk_mfderiv_apply (m := 0) (by simpa using hn) hU ξ).continuousOn
+  (hf.continuousOn_norm_mfderiv_apply hn hU).comp
+    (continuous_id.prodMk (continuous_const (y := ξ))).continuousOn
+    (fun _ hz ↦ ⟨hz, Set.mem_univ _⟩)
 
 /-- Let `f` be a `C^n` map from an open subset `U` of a real normed space to a manifold whose
 tangent spaces carry a `C^m` Riemannian metric, with `m + 1 ≤ n`. For fixed vectors `ξ` and `η`,

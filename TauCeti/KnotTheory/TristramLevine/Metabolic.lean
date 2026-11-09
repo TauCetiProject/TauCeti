@@ -63,6 +63,23 @@ theorem tristramLevineSignature_eq_zero_of_zero_block
   convert hs using 2
 
 /-- If a change of basis puts the Seifert pairing in metabolic block form, its
+Tristram--Levine signature vanishes at every parameter for which its Hermitian form is
+nonsingular. -/
+theorem tristramLevineSignature_eq_zero_of_congr_zero_block_of_det_ne_zero
+    (V P : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) (hP : IsUnit P.det)
+    (hzero : (P * V * Pᵀ).toBlocks₁₁ = 0) (ω : ℂ)
+    (hdet : (tristramLevineForm V ω).det ≠ 0) :
+    tristramLevineSignature V ω = 0 := by
+  have hPC : IsUnit (P.map ((↑) : ℝ → ℂ)).det :=
+    RingHom.map_det Complex.ofRealHom P ▸ hP.map Complex.ofRealHom
+  have hdet' : (tristramLevineForm (P * V * Pᵀ) ω).det ≠ 0 := by
+    rw [tristramLevineForm_congr, det_mul, det_mul, det_conjTranspose]
+    exact mul_ne_zero (mul_ne_zero (isUnit_iff_ne_zero.mp hPC) hdet)
+      (by simpa only [star_ne_zero] using isUnit_iff_ne_zero.mp hPC)
+  rw [← tristramLevineSignature_congr hP V ω]
+  exact tristramLevineSignature_eq_zero_of_zero_block _ hzero ω hdet'
+
+/-- If a change of basis puts the Seifert pairing in metabolic block form, its
 Tristram--Levine signature vanishes away from the Alexander roots, including at `1`. -/
 theorem tristramLevineSignature_eq_zero_of_congr_zero_block
     (V P : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) (hP : IsUnit P.det)
@@ -72,14 +89,7 @@ theorem tristramLevineSignature_eq_zero_of_congr_zero_block
   by_cases hω : ω = 1
   · subst ω
     exact tristramLevineSignature_one V
-  have hdet := (det_tristramLevineForm_ne_zero_iff V ω hω).mpr hΔ
-  have hPC : IsUnit (P.map ((↑) : ℝ → ℂ)).det :=
-    RingHom.map_det Complex.ofRealHom P ▸ hP.map Complex.ofRealHom
-  have hdet' : (tristramLevineForm (P * V * Pᵀ) ω).det ≠ 0 := by
-    rw [tristramLevineForm_congr, det_mul, det_mul, det_conjTranspose]
-    exact mul_ne_zero (mul_ne_zero (isUnit_iff_ne_zero.mp hPC) hdet)
-      (by simpa only [star_ne_zero] using isUnit_iff_ne_zero.mp hPC)
-  rw [← tristramLevineSignature_congr hP V ω]
-  exact tristramLevineSignature_eq_zero_of_zero_block _ hzero ω hdet'
+  exact tristramLevineSignature_eq_zero_of_congr_zero_block_of_det_ne_zero V P hP hzero ω
+    ((det_tristramLevineForm_ne_zero_iff V ω hω).mpr hΔ)
 
 end Matrix

@@ -10,15 +10,15 @@ public import TauCeti.RepresentationTheory.Quiver.Preprojective.CyclicQuotient
 import all TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeE.Basic
 
 /-!
-# The cyclic quotients of the `E₆` and `E₈` preprojective algebras
+# The cyclic quotients of the `E₆`, `E₇` and `E₈` preprojective algebras
 
 The cyclic quotient `Π / [Π, Π]` of an algebra is its zeroth Hochschild homology. For the
 preprojective algebra `Π(Q)` of a quiver `Q` whose underlying graph is a tree, Liu and Wang
 identify its degree-`(q + 2)` piece with the second Hochschild cohomology `HH^{2,q}` of the
 two-dimensional Ginzburg algebra `Π₂(Q)`, which controls the `A∞` deformations of the zigzag
-algebra of the tree. This file shows that for `E₆` and `E₈` the cyclic quotient is concentrated in
-path degree zero, where it is free on the vertices, over every commutative ring in which `2` and
-`3`, respectively `2`, `3` and `5`, are units.
+algebra of the tree. This file shows that for `E₆`, `E₇` and `E₈` the cyclic quotient is
+concentrated in path degree zero, where it is free on the vertices, over every commutative ring in
+which `2` and `3`, respectively `2`, `3` and `5` for `E₈`, are units.
 
 ## The argument
 
@@ -40,18 +40,21 @@ So for every `n ≥ 4`, every path of positive length in the signless algebra of
 commutators as soon as every nonempty word in `x` and `y` is. For `E₆` the long arm has two nodes,
 so `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 3 = (-z) ^ 3 = 0`, and the words in `x` and `y` are
 sums of commutators when `2` and `3` are units
-(`TauCeti.mem_commutatorSubmodule_of_mem_span_pair_pow`). For `E₈` the long arm has four nodes,
-so `(x + y) ^ 5 = z ^ 5 = 0`, and the words in `x` and `y` are sums of commutators when `2`, `3` and
-`5` are units (`TauCeti.mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_five`). These are
-the bad characteristics of `E₆` and of `E₈` in Liu and Wang's intrinsic formality theorem; the
-nonvanishing of the cyclic quotient in positive degrees in the bad characteristics is not proved
-here, and neither is the corresponding statement for `E₇`.
+(`TauCeti.mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_three`). For `E₇` the long arm
+has three nodes, so `(x + y) ^ 4 = z ^ 4 = 0`, and the same holds when `2` and `3` are units
+(`TauCeti.mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_four`). For `E₈` the long arm
+has four nodes, so `(x + y) ^ 5 = z ^ 5 = 0`, and the words in `x` and `y` are sums of commutators
+when `2`, `3` and `5` are units
+(`TauCeti.mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_five`).
+These are the bad characteristics of `E₆`, `E₇` and `E₈` in Liu and Wang's intrinsic formality
+theorem; the nonvanishing of the cyclic quotient in positive degrees in the bad characteristics is
+not proved here.
 
-Consequently the commutator submodule of `Π⁺(E₆)`, respectively `Π⁺(E₈)`, is exactly the kernel of
-the augmentation onto the vertex coefficients, and the augmentation induces
-`Π⁺(E₆) / [Π⁺(E₆), Π⁺(E₆)] ≃ k^{E₆}`, respectively `Π⁺(E₈) / [Π⁺(E₈), Π⁺(E₈)] ≃ k^{E₈}`. Through
-the bipartite sign rescaling, the same vanishing holds for the additive preprojective algebra of
-every orientation of `E₆` and of `E₈`. The `E₈` statements are about the graph
+Consequently the commutator submodule of `Π⁺(Eₙ)` for `n = 6, 7, 8` is exactly the kernel of the
+augmentation onto the vertex coefficients, and the augmentation induces
+`Π⁺(Eₙ) / [Π⁺(Eₙ), Π⁺(Eₙ)] ≃ k^{Eₙ}`. Through the bipartite sign rescaling, the same vanishing
+holds for the additive preprojective algebra of every orientation of `E₆`, `E₇` and `E₈`. The `E₈`
+statements are about the graph
 `TauCeti.zigzagE8Graph`, whose preprojective algebras the finite-dimensionality results of
 `TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeE.Basic` also concern.
 
@@ -68,6 +71,13 @@ every orientation of `E₆` and of `E₈`. The `E₈` statements are about the g
 * `TauCeti.preprojectiveMk_E6_ofPath_mem_commutatorSubmodule` and
   `TauCeti.preprojectiveGrade_E6_le_commutatorSubmodule`: the same vanishing in positive degrees
   for the preprojective algebra `Π(Q)` of every orientation `Q` of `E₆`.
+* `TauCeti.signlessPreprojectiveMk_E7_ofPath_mem_commutatorSubmodule`,
+  `TauCeti.signlessPreprojectiveGrade_E7_le_commutatorSubmodule`,
+  `TauCeti.commutatorSubmodule_signlessPreprojectiveAlgebra_E7_eq_ker`,
+  `TauCeti.finrank_cyclicQuotient_signlessPreprojectiveAlgebra_E7`,
+  `TauCeti.preprojectiveMk_E7_ofPath_mem_commutatorSubmodule` and
+  `TauCeti.preprojectiveGrade_E7_le_commutatorSubmodule`: the corresponding statements for `E₇`,
+  whose cyclic quotient has dimension `7`.
 * `TauCeti.signlessPreprojectiveMk_E8_ofPath_mem_commutatorSubmodule`,
   `TauCeti.signlessPreprojectiveGrade_E8_le_commutatorSubmodule`,
   `TauCeti.commutatorSubmodule_signlessPreprojectiveAlgebra_E8_eq_ker`,
@@ -190,6 +200,24 @@ private theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_eSpan
       mul_assoc, heX, hYX, mul_smul_comm]
     exact zsmul_mem (zsmul_mem (hspan _ _ hlow) _) ε
 
+/-- **Every path of positive length in the signless algebra of `Eₙ` is a sum of commutators**,
+once every nonempty word in the backtracks at the branch node is, on any graph equal to the
+diagram of `Eₙ`. -/
+private theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_eSpan_of_eq
+    (hspan : ∀ t, ∀ w ∈ eSpan k n ^ (t + 1), w ∈ commutatorSubmodule k Π) {G' : SimpleGraph (Fin n)}
+    (hG : G' = G) (x : Quiver.TotalPath (DoubledQuiver G')) (hx : 0 < x.2.2.length) :
+    signlessPreprojectiveMk k _ (ofPath x) ∈
+      commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G')) := by
+  subst hG
+  obtain ⟨a', b', p⟩ := x
+  obtain ⟨a, rfl⟩ := exists_eq_vertex _ a'
+  obtain ⟨b, rfl⟩ := exists_eq_vertex _ b'
+  by_cases hab : a = b
+  · subst hab
+    exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_eSpan k hn hspan p hx
+  · exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_ne k p
+      fun h => hab (vertex_injective _ h)
+
 end EGraph
 
 variable (k : Type*) [CommRing k]
@@ -209,7 +237,7 @@ private theorem mem_commutatorSubmodule_of_mem_eSpan_six_pow (h2 : IsUnit (2 : k
   have hn : 4 ≤ 6 := by norm_num
   have hsum : eTurn k 6 0 + eTurn k 6 1 = -eTurn k 6 2 :=
     eq_neg_of_add_eq_zero_left (eTurn_add_eTurn_add_eTurn k hn)
-  refine mem_commutatorSubmodule_of_mem_span_pair_pow h2 h3 (eTurn_zero_sq k hn)
+  refine mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_three h2 h3 (eTurn_zero_sq k hn)
     (eTurn_one_pow_three k hn) ?_ ?_ ?_ (eTurn_pow_mem_commutatorSubmodule k hn 1 two_pos) ?_ hw
   · rw [hsum, neg_pow, eTurn_two_pow k (n := 6) hn, mul_zero]
   · simpa using eTurn_pow_mem_commutatorSubmodule k hn 0 one_pos
@@ -229,20 +257,9 @@ theorem signlessPreprojectiveMk_E6_ofPath_mem_commutatorSubmodule (h2 : IsUnit (
     (h3 : IsUnit (3 : k)) (x : Quiver.TotalPath Q) (hx : 0 < x.2.2.length) :
     σ (ofPath x) ∈ commutatorSubmodule k Π := by
   -- The `E₆` Cartan matrix is `CartanMatrix.E 6`, for which the normal forms are proved.
-  have key : ∀ C : Matrix (Fin 6) (Fin 6) ℤ, C = CartanMatrix.E 6 →
-      ∀ x : Quiver.TotalPath (DoubledQuiver (diagramGraph C)), 0 < x.2.2.length →
-        signlessPreprojectiveMk k _ (ofPath x) ∈ commutatorSubmodule k
-          (signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph C))) := by
-    rintro C rfl ⟨a', b', p⟩ hx
-    obtain ⟨a, rfl⟩ := exists_eq_vertex _ a'
-    obtain ⟨b, rfl⟩ := exists_eq_vertex _ b'
-    by_cases hab : a = b
-    · subst hab
-      exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_eSpan k (n := 6)
-        (by norm_num) (mem_commutatorSubmodule_of_mem_eSpan_six_pow k h2 h3) p hx
-    · exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_ne k p
-        fun h => hab (vertex_injective _ h)
-  exact key _ DynkinType.cartanMatrix_E6 x hx
+  exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_eSpan_of_eq k (n := 6)
+    (by norm_num) (mem_commutatorSubmodule_of_mem_eSpan_six_pow k h2 h3)
+    (by rw [DynkinType.cartanMatrix_E6]; rfl) x hx
 
 /-- **The cyclic quotient of the signless algebra of `E₆` vanishes in positive degrees** when `2`
 and `3` are units: every homogeneous piece of positive path degree lies in the commutator
@@ -297,6 +314,100 @@ theorem preprojectiveGrade_E6_le_commutatorSubmodule (h2 : IsUnit (2 : k)) (h3 :
 
 end E6
 
+/-! ### The `E₇` diagram -/
+
+section E7
+
+/-- If `2` and `3` are units, every nonempty word in the backtracks at the branch node of `E₇` is
+a sum of commutators. -/
+private theorem mem_commutatorSubmodule_of_mem_eSpan_seven_pow (h2 : IsUnit (2 : k))
+    (h3 : IsUnit (3 : k)) (t : ℕ) (w : signlessPreprojectiveAlgebra k
+      (DoubledQuiver (diagramGraph (CartanMatrix.E 7))))
+    (hw : w ∈ eSpan k 7 ^ (t + 1)) :
+    w ∈ commutatorSubmodule k
+      (signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph (CartanMatrix.E 7)))) := by
+  have hn : 4 ≤ 7 := by norm_num
+  have hsum : eTurn k 7 0 + eTurn k 7 1 = -eTurn k 7 2 :=
+    eq_neg_of_add_eq_zero_left (eTurn_add_eTurn_add_eTurn k hn)
+  have hpow {j : ℕ} (hj : 0 < j) : (eTurn k 7 0 + eTurn k 7 1) ^ j ∈ commutatorSubmodule k
+      (signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph (CartanMatrix.E 7)))) := by
+    rw [hsum, neg_pow]
+    exact neg_one_pow_mul_mem_commutatorSubmodule (eTurn_pow_mem_commutatorSubmodule k hn 2 hj) j
+  refine mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_four h2 h3 (eTurn_zero_sq k hn)
+    (eTurn_one_pow_three k hn) ?_ ?_ ?_ (eTurn_pow_mem_commutatorSubmodule k hn 1 two_pos)
+    (hpow two_pos) (hpow three_pos) hw
+  · rw [hsum, neg_pow, eTurn_two_pow k (n := 7) hn, mul_zero]
+  · simpa using eTurn_pow_mem_commutatorSubmodule k hn 0 one_pos
+  · simpa using eTurn_pow_mem_commutatorSubmodule k hn 1 one_pos
+
+local notation "EG" => diagramGraph DynkinType.E7.cartanMatrix
+local notation "Q" => DoubledQuiver EG
+local notation "Π" => signlessPreprojectiveAlgebra k Q
+local notation "σ" => signlessPreprojectiveMk k Q
+
+/-- **Every path of positive length in the signless algebra of `E₇` is a sum of commutators**,
+over every commutative ring in which `2` and `3` are units. -/
+theorem signlessPreprojectiveMk_E7_ofPath_mem_commutatorSubmodule (h2 : IsUnit (2 : k))
+    (h3 : IsUnit (3 : k)) (x : Quiver.TotalPath Q) (hx : 0 < x.2.2.length) :
+    σ (ofPath x) ∈ commutatorSubmodule k Π := by
+  -- The `E₇` Cartan matrix is `CartanMatrix.E 7`, for which the normal forms are proved.
+  exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_eSpan_of_eq k (n := 7)
+    (by norm_num) (mem_commutatorSubmodule_of_mem_eSpan_seven_pow k h2 h3)
+    (by rw [DynkinType.cartanMatrix_E7]; rfl) x hx
+
+/-- **The cyclic quotient of the signless algebra of `E₇` vanishes in positive degrees** when `2`
+and `3` are units: every homogeneous piece of positive path degree lies in the commutator
+submodule. -/
+theorem signlessPreprojectiveGrade_E7_le_commutatorSubmodule (h2 : IsUnit (2 : k))
+    (h3 : IsUnit (3 : k)) {d : ℕ} (hd : 0 < d) :
+    signlessPreprojectiveGrade k Q d ≤ commutatorSubmodule k Π :=
+  signlessPreprojectiveGrade_le_commutatorSubmodule k
+    (signlessPreprojectiveMk_E7_ofPath_mem_commutatorSubmodule k h2 h3) hd
+
+/-- **The commutator submodule of the signless algebra of `E₇` is the augmentation kernel** when
+`2` and `3` are units. The augmentation onto the commutative algebra of vertex coefficients kills
+commutators, and every element of its kernel is a combination of paths of positive length. -/
+theorem commutatorSubmodule_signlessPreprojectiveAlgebra_E7_eq_ker (h2 : IsUnit (2 : k))
+    (h3 : IsUnit (3 : k)) :
+    commutatorSubmodule k Π =
+      LinearMap.ker (signlessPreprojectiveAugmentation (R := Q) k).toLinearMap :=
+  commutatorSubmodule_signlessPreprojectiveAlgebra_eq_ker k
+    (signlessPreprojectiveMk_E7_ofPath_mem_commutatorSubmodule k h2 h3)
+
+/-- **The cyclic quotient of the signless algebra of `E₇` has dimension `7`** over every
+nontrivial commutative ring in which `2` and `3` are units, one for each vertex. -/
+theorem finrank_cyclicQuotient_signlessPreprojectiveAlgebra_E7 [Nontrivial k]
+    (h2 : IsUnit (2 : k)) (h3 : IsUnit (3 : k)) : Module.finrank k (cyclicQuotient k Π) = 7 := by
+  rw [finrank_cyclicQuotient_signlessPreprojectiveAlgebra k
+      (signlessPreprojectiveMk_E7_ofPath_mem_commutatorSubmodule k h2 h3),
+    ← Nat.card_congr (vertexEquiv EG), Nat.card_fin, DynkinType.rank_E7]
+
+/-! #### Orientations of `E₇` -/
+
+variable (o : Orientation EG)
+
+/-- **Every path of positive length in the preprojective algebra of an orientation of `E₇` is a
+sum of commutators**, over every commutative ring in which `2` and `3` are units. -/
+theorem preprojectiveMk_E7_ofPath_mem_commutatorSubmodule (h2 : IsUnit (2 : k))
+    (h3 : IsUnit (3 : k)) (x : Quiver.TotalPath (Symmetrify (OrientedQuiver EG o)))
+    (hx : 0 < x.2.2.length) :
+    preprojectiveMk k (OrientedQuiver EG o) (ofPath x) ∈
+      commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver EG o)) :=
+  e7Coloring.preprojectiveMk_ofPath_mem_commutatorSubmodule k o
+    (signlessPreprojectiveMk_E7_ofPath_mem_commutatorSubmodule k h2 h3) x hx
+
+/-- **The cyclic quotient of the preprojective algebra of an orientation of `E₇` vanishes in
+positive degrees** when `2` and `3` are units: every homogeneous piece of positive path degree lies
+in the commutator submodule. -/
+theorem preprojectiveGrade_E7_le_commutatorSubmodule (h2 : IsUnit (2 : k)) (h3 : IsUnit (3 : k))
+    {d : ℕ} (hd : 0 < d) :
+    preprojectiveGrade k (OrientedQuiver EG o) d ≤
+      commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver EG o)) :=
+  preprojectiveGrade_le_commutatorSubmodule k
+    (preprojectiveMk_E7_ofPath_mem_commutatorSubmodule k o h2 h3) hd
+
+end E7
+
 /-! ### The `E₈` diagram -/
 
 section E8
@@ -336,20 +447,9 @@ theorem signlessPreprojectiveMk_E8_ofPath_mem_commutatorSubmodule (h2 : IsUnit (
     (hx : 0 < x.2.2.length) :
     σ (ofPath x) ∈ commutatorSubmodule k Π := by
   -- The `E₈` graph is the diagram of `CartanMatrix.E 8`, for which the normal forms are proved.
-  have key : ∀ G : SimpleGraph (Fin 8), G = diagramGraph (CartanMatrix.E 8) →
-      ∀ x : Quiver.TotalPath (DoubledQuiver G), 0 < x.2.2.length →
-        signlessPreprojectiveMk k _ (ofPath x) ∈ commutatorSubmodule k
-          (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
-    rintro G rfl ⟨a', b', p⟩ hx
-    obtain ⟨a, rfl⟩ := exists_eq_vertex _ a'
-    obtain ⟨b, rfl⟩ := exists_eq_vertex _ b'
-    by_cases hab : a = b
-    · subst hab
-      exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_eSpan k (n := 8)
-        (by norm_num) (mem_commutatorSubmodule_of_mem_eSpan_eight_pow k h2 h3 h5) p hx
-    · exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_ne k p
-        fun h => hab (vertex_injective _ h)
-  exact key _ (by rw [zigzagE8Graph_eq_diagramGraph, DynkinType.cartanMatrix_E8]; rfl) x hx
+  exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_eSpan_of_eq k (n := 8)
+    (by norm_num) (mem_commutatorSubmodule_of_mem_eSpan_eight_pow k h2 h3 h5)
+    (by rw [zigzagE8Graph_eq_diagramGraph, DynkinType.cartanMatrix_E8]; rfl) x hx
 
 /-- **The cyclic quotient of the signless algebra of `E₈` vanishes in positive degrees** when `2`,
 `3` and `5` are units: every homogeneous piece of positive path degree lies in the commutator

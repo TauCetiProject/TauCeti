@@ -64,17 +64,20 @@ theorem IsFiniteEtaleSplit.of_forall_finitePresentation {R : Type u} [CommRing R
         ψ.comp φ = g) :
     IsFiniteEtaleSplit R where
   isTotallySplit T _ _ _ _ := by
-    -- `T` is the base change of a finite étale algebra `T₀` over a subring `R₀` of finite type.
-    obtain ⟨R₀, T₀, _, _, hR₀, _, _, ⟨e⟩⟩ := Algebra.Etale.exists_subalgebra_fg_of_finite ℤ R T
-    have : Algebra.FinitePresentation ℤ R₀ :=
-      Algebra.FinitePresentation.of_finiteType.1 (Subalgebra.fg_iff_finiteType R₀ |>.1 hR₀)
-    obtain ⟨A, _, _, φ, ψ, hφψ⟩ := h R₀ (algebraMap R₀ R)
-    let : Algebra R₀ A := φ.toAlgebra
-    let : Algebra A R := ψ.toAlgebra
-    have : IsScalarTower R₀ A R := .of_algebraMap_eq fun x ↦ congr($hφψ x).symm
-    -- `A ⊗[R₀] T₀` is totally split over `A`, hence so is its base change to `R`.
-    exact ((Algebra.IsTotallySplit.of_isFiniteEtaleSplit (A ⊗[R₀] T₀)).baseChange R).of_algEquiv
-      ((Algebra.TensorProduct.cancelBaseChange R₀ A R R T₀).trans e.symm)
+    -- Index the possible factorizations by split rings and their maps to `R`.
+    let I := Σ (A : Type w) (_ : CommRing A), {ψ : A →+* R // IsFiniteEtaleSplit A}
+    let A (i : I) := i.1
+    let (i : I) : CommRing (A i) := i.2.1
+    let ψ (i : I) : A i →+* R := i.2.2.1
+    have hfactor (P : Type u) [CommRing P] [Algebra.FinitePresentation ℤ P] (g : P →+* R) :
+        ∃ i, ∃ φ : P →+* A i, (ψ i).comp φ = g := by
+      obtain ⟨A, _, hA, φ, ψ, hφψ⟩ := h P g
+      exact ⟨⟨A, inferInstance, ψ, hA⟩, φ, hφψ⟩
+    obtain ⟨i, Tᵢ, _, _, _, _, ⟨e⟩⟩ :=
+      Algebra.exists_etale_finite_algEquiv_tensorProduct_of_factorization A ψ hfactor T
+    let : IsFiniteEtaleSplit (A i) := i.2.2.2
+    let := (ψ i).toAlgebra
+    exact ((Algebra.IsTotallySplit.of_isFiniteEtaleSplit Tᵢ).baseChange R).of_algEquiv e.symm
 
 end TauCeti
 

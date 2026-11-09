@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.OpenPos
@@ -46,11 +47,12 @@ its limit at `x₀` provides.
 
 * `TauCeti.norm_integral_smul_sub_le`: the approximate-identity estimate
   `‖∫ x, f x • φ x ∂μ - y‖ ≤ ε * ‖f‖` when `∫ f = 1`, `f` vanishes off `U`, and `φ` stays within `ε`
-  of `y` on `U`.
+  of `y` almost everywhere on `U`.
 * `TauCeti.tendsto_integral_smul_of_tendsto`: a net of `L¹` peak functions concentrating at
   `x₀` integrates `φ` to its limit at `x₀`.
-* `TauCeti.exists_integral_eq_one_norm_eq_one`: peak functions of unit integral and unit
-  `L¹` norm exist inside every neighbourhood of a point.
+* `TauCeti.exists_nonneg_integral_eq_one_norm_eq_one`,
+  `TauCeti.exists_integral_eq_one_norm_eq_one`: nonnegative real and `RCLike`-valued peak functions
+  of unit integral and unit `L¹` norm exist inside every neighbourhood of a point.
 * `TauCeti.exists_nonneg_tsupport_subset_integral_eq_one`: on a locally compact space, they can
   be taken continuous, compactly supported and nonnegative.
 
@@ -70,21 +72,21 @@ variable {α 𝕜 E : Type*} [MeasurableSpace α] [RCLike 𝕜]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace 𝕜 E] [CompleteSpace E] {μ : Measure α}
 
 /-- **The approximate-identity estimate.** If an `L¹` class `f` has unit integral and vanishes
-almost everywhere outside `U`, and `φ` stays within `ε` of `y` on `U`, then the integral of `φ`
-against `f` is within `ε * ‖f‖` of `y`. The integrand `f • φ` is assumed almost everywhere
-strongly measurable. -/
+almost everywhere outside `U`, and `φ` stays within `ε` of `y` almost everywhere on `U`, then the
+integral of `φ` against `f` is within `ε * ‖f‖` of `y`. The integrand `f • φ` is assumed almost
+everywhere strongly measurable. -/
 theorem norm_integral_smul_sub_le {f : α →₁[μ] 𝕜} (hf : ∫ x, f x ∂μ = 1) {U : Set α}
     (hfU : ∀ᵐ x ∂μ, x ∉ U → f x = 0) {φ : α → E}
     (hφ : AEStronglyMeasurable (fun x ↦ f x • φ x) μ) {y : E}
-    {ε : ℝ} (hφU : ∀ x ∈ U, ‖φ x - y‖ ≤ ε) :
+    {ε : ℝ} (hφU : ∀ᵐ x ∂μ, x ∈ U → ‖φ x - y‖ ≤ ε) :
     ‖(∫ x, f x • φ x ∂μ) - y‖ ≤ ε * ‖f‖ := by
   have hfi : Integrable (fun x ↦ f x) μ := L1.integrable_coeFn f
   -- Pointwise, `‖f x • (φ x - y)‖ ≤ ‖f x‖ * ε`, since `f x = 0` off `U`.
   have hbound : ∀ᵐ x ∂μ, ‖f x • (φ x - y)‖ ≤ ‖f x‖ * ε := by
-    filter_upwards [hfU] with x hx
+    filter_upwards [hfU, hφU] with x hx hxφ
     rw [norm_smul]
     by_cases hxU : x ∈ U
-    · exact mul_le_mul_of_nonneg_left (hφU x hxU) (norm_nonneg _)
+    · exact mul_le_mul_of_nonneg_left (hxφ hxU) (norm_nonneg _)
     · simp [hx hxU]
   have hint : Integrable (fun x ↦ f x • (φ x - y)) μ :=
     (hfi.norm.mul_const ε).mono'
@@ -110,18 +112,44 @@ theorem tendsto_integral_smul_of_tendsto {ι : Type*} {l : Filter ι} {f : ι �
     (hφa : Tendsto φ (𝓝 x₀) (𝓝 a)) :
     Tendsto (fun i ↦ ∫ x, f i x • φ x ∂μ) l (𝓝 a) := by
   refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
-  -- Ask `φ` to stay within `δ` of `a`, where `δ * |C| < ε`.
-  set δ : ℝ := ε / (|C| + 1) with hδ
-  have hδpos : 0 < δ := div_pos hε (by positivity)
-  have hδC : δ * |C| < ε := by
-    rw [hδ, div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
-    exact mul_lt_mul_of_pos_left (lt_add_one _) hε
+  -- Ask `φ` to stay within `δ` of `a`, where `C * δ < ε`.
+  obtain ⟨δ, hδpos, hδC⟩ := exists_pos_mul_lt hε C
   filter_upwards [hf, hfC, hfx₀ _ (hφa (closedBall_mem_nhds a hδpos)), hφ] with i hi hiC hiU hiφ
   rw [dist_eq_norm]
   calc ‖(∫ x, f i x • φ x ∂μ) - a‖ ≤ δ * ‖f i‖ :=
-        norm_integral_smul_sub_le hi hiU hiφ fun x hx ↦ by simpa [dist_eq_norm] using hx
-    _ ≤ δ * |C| := mul_le_mul_of_nonneg_left (hiC.trans (le_abs_self C)) hδpos.le
+        norm_integral_smul_sub_le hi hiU hiφ <| .of_forall fun x hx ↦ by
+          simpa [dist_eq_norm] using hx
+    _ ≤ C * δ := (mul_le_mul_of_nonneg_left hiC hδpos.le).trans_eq (mul_comm _ _)
     _ < ε := hδC
+
+variable (μ) in
+/-- **Nonnegative `L¹` peak functions exist.** For a measure positive on nonempty open sets and
+finite on some neighbourhood of each point, every neighbourhood `U` of a point carries a
+nonnegative real `L¹` class of unit integral and unit `L¹` norm vanishing almost everywhere
+outside `U`: the indicator of a neighbourhood of finite measure inside `U`, normalized by that
+measure. -/
+theorem exists_nonneg_integral_eq_one_norm_eq_one [TopologicalSpace α] [OpensMeasurableSpace α]
+    [μ.IsOpenPosMeasure] [IsLocallyFiniteMeasure μ] {x₀ : α} {U : Set α} (hU : U ∈ 𝓝 x₀) :
+    ∃ f : α →₁[μ] ℝ, 0 ≤ f ∧ ∫ x, f x ∂μ = 1 ∧ ‖f‖ = 1 ∧ ∀ᵐ x ∂μ, x ∉ U → f x = 0 := by
+  -- An open neighbourhood `V ⊆ U` of `x₀` of positive, finite measure.
+  obtain ⟨W, hW, hWμ⟩ := μ.finiteAt_nhds x₀
+  set V := interior (U ∩ W)
+  have hVμ : μ V ≠ ⊤ :=
+    ((measure_mono (interior_subset.trans inter_subset_right)).trans_lt hWμ).ne
+  have hVpos : 0 < μ.real V :=
+    ENNReal.toReal_pos (isOpen_interior.measure_ne_zero μ
+      ⟨x₀, mem_interior_iff_mem_nhds.2 (inter_mem hU hW)⟩) hVμ
+  refine ⟨indicatorConstLp 1 isOpen_interior.measurableSet hVμ (μ.real V)⁻¹, ?_, ?_, ?_, ?_⟩
+  · rw [← Lp.coeFn_nonneg]
+    filter_upwards [indicatorConstLp_coeFn (p := 1) (hs := isOpen_interior.measurableSet)
+      (hμs := hVμ) (c := (μ.real V)⁻¹)] with x hx
+    exact hx.symm ▸ indicator_nonneg (fun _ _ ↦ inv_nonneg.2 hVpos.le) x
+  · rw [integral_indicatorConstLp, smul_eq_mul, mul_inv_cancel₀ hVpos.ne']
+  · rw [norm_indicatorConstLp one_ne_zero ENNReal.one_ne_top, ENNReal.toReal_one, div_one,
+      Real.rpow_one, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hVpos), inv_mul_cancel₀ hVpos.ne']
+  · filter_upwards [indicatorConstLp_coeFn_notMem (p := 1) (hs := isOpen_interior.measurableSet)
+      (hμs := hVμ) (c := (μ.real V)⁻¹)] with x hx hxU
+    exact hx fun hxV ↦ hxU (interior_subset hxV).1
 
 variable (𝕜 μ) in
 /-- **`L¹` peak functions exist.** For a measure positive on nonempty open sets and finite on some
@@ -131,23 +159,16 @@ neighbourhood of finite measure inside `U`, normalized by that measure. -/
 theorem exists_integral_eq_one_norm_eq_one [TopologicalSpace α] [OpensMeasurableSpace α]
     [μ.IsOpenPosMeasure] [IsLocallyFiniteMeasure μ] {x₀ : α} {U : Set α} (hU : U ∈ 𝓝 x₀) :
     ∃ f : α →₁[μ] 𝕜, ∫ x, f x ∂μ = 1 ∧ ‖f‖ = 1 ∧ ∀ᵐ x ∂μ, x ∉ U → f x = 0 := by
-  -- An open neighbourhood `V ⊆ U` of `x₀` of positive, finite measure.
-  obtain ⟨W, hW, hWμ⟩ := μ.finiteAt_nhds x₀
-  set V := interior (U ∩ W)
-  have hVμ : μ V ≠ ⊤ :=
-    ((measure_mono (interior_subset.trans inter_subset_right)).trans_lt hWμ).ne
-  have hVpos : 0 < μ.real V :=
-    ENNReal.toReal_pos (isOpen_interior.measure_ne_zero μ
-      ⟨x₀, mem_interior_iff_mem_nhds.2 (inter_mem hU hW)⟩) hVμ
-  refine ⟨indicatorConstLp 1 isOpen_interior.measurableSet hVμ ((μ.real V)⁻¹ : 𝕜), ?_, ?_, ?_⟩
-  · rw [integral_indicatorConstLp, RCLike.real_smul_eq_coe_mul, ← RCLike.ofReal_inv,
-      ← RCLike.ofReal_mul, mul_inv_cancel₀ hVpos.ne', RCLike.ofReal_one]
-  · rw [norm_indicatorConstLp one_ne_zero ENNReal.one_ne_top, ENNReal.toReal_one, div_one,
-      Real.rpow_one, ← RCLike.ofReal_inv, RCLike.norm_ofReal, abs_of_pos (inv_pos.2 hVpos),
-      inv_mul_cancel₀ hVpos.ne']
-  · filter_upwards [indicatorConstLp_coeFn_notMem (p := 1) (hs := isOpen_interior.measurableSet)
-      (hμs := hVμ) (c := ((μ.real V)⁻¹ : 𝕜))] with x hx hxU
-    exact hx fun hxV ↦ hxU (interior_subset hxV).1
+  obtain ⟨f, _, hf1, hfn, hfU⟩ := exists_nonneg_integral_eq_one_norm_eq_one μ hU
+  have hae := (RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).coeFn_compLp f
+  refine ⟨(RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).compLp f, ?_, ?_, ?_⟩
+  · simp [integral_congr_ae hae, RCLike.ofRealCLM_apply, integral_ofReal, hf1]
+  · rw [L1.norm_eq_integral_norm] at hfn ⊢
+    refine (integral_congr_ae ?_).trans hfn
+    filter_upwards [hae] with x hx
+    simp [hx, RCLike.ofRealCLM_apply]
+  · filter_upwards [hae, hfU] with x hx hxU hnotU
+    simp [hx, hxU hnotU]
 
 variable (μ) in
 /-- **Continuous peak functions exist.** On a locally compact space with a measure positive on

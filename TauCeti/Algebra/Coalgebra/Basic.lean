@@ -8,7 +8,9 @@ module
 public import Mathlib.RingTheory.Coalgebra.Basic
 
 /-!
-# Elements whose comultiplication is a pure tensor
+# Counit identities
+
+The counit recovers an element from either leg of a finite representation of its coproduct.
 
 If the comultiplication of an element `a` of a coalgebra is a pure tensor `b ⊗ c`, then the
 counit law `(ε ⊗ id) ∘ Δ = id` determines `a` from it: applying it to `Δ a = b ⊗ c` gives
@@ -17,6 +19,7 @@ fixed by the regular coaction, `Δ a = a ⊗ 1`, is the scalar multiple `ε(a) �
 
 ## Main declarations
 
+* `Coalgebra.sum_smul_counit`: the right counit identity in a finite coproduct representation.
 * `TauCeti.Coalgebra.eq_counit_smul_of_comul_eq_tmul`: `Δ a = b ⊗ c` implies `a = ε(b) • c`.
 
 ## References
@@ -27,6 +30,19 @@ fixed by the regular coaction, `Δ a = a ⊗ 1`, is the scalar multiple `ε(a) �
 public section
 
 open scoped TensorProduct
+
+namespace Coalgebra
+
+variable {R A ι : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [Coalgebra R A]
+
+/-- Applying the counit to the second leg of a finite coproduct representation recovers
+its represented element. -/
+lemma sum_smul_counit {a : A} (𝓡 : Repr R a ι) :
+    ∑ i ∈ 𝓡.index, counit (R := R) (𝓡.right i) • 𝓡.left i = a := by
+  simpa only [map_sum, TensorProduct.rid_tmul, one_smul] using
+    congrArg (TensorProduct.rid R A) (sum_tmul_counit_eq 𝓡)
+
+end Coalgebra
 
 namespace TauCeti.Coalgebra
 

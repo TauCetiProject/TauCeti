@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.ZLattice.Shell
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Cusp
+public import TauCeti.NumberTheory.ModularForms.ThetaSeries.DiscriminantGroup
 import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
 /-!
@@ -31,12 +31,13 @@ The three cases of interest are the following.
   modular forms.
 * For an **integral** lattice `L` (`h = 2`), in `q^{1/2} = exp (π i τ)`,
   `Θ_L(τ) = ∑_{m ≥ 0} r_L(m) q^{m/2}`, the shape of the expansion of `jacobiTheta`.
-* For an even lattice `L`, `γ ∈ L^∨` and a positive integer `N` with `N ‖γ‖² / 2 ∈ ℤ` (`h = N`;
-  when `L` is a full lattice, the level of `L` is such an `N` for every `γ ∈ L^∨`), in
-  `q_N = exp (2 π i τ / N)`, `θ_{γ+L}(τ) = ∑_{m ≥ 0} r_{γ+L}(2m / N) q_N^m`. The coefficient
-  of `q_N^m` vanishes unless `m ≡ N ‖γ‖² / 2 (mod N)`, because `‖γ + v‖² ≡ ‖γ‖² (mod 2)` for
-  `v ∈ L` (`ZLattice.IsEven.cosetShell_eq_empty`,
-  `ZLattice.IsEven.cosetRepresentationNumber_div_eq_zero_of_not_modEq`). This support condition
+* For an even lattice `L`, `γ ∈ L^∨` and a positive multiple `N` of `level L` (in particular
+  `N = level L` when `L` is a full lattice), in `q_N = exp (2 π i τ / N)`,
+  `θ_{γ+L}(τ) = ∑_{m ≥ 0} r_{γ+L}(2m / N) q_N^m`, and on the discriminant group `A_L`,
+  `θ_δ(τ) = ∑_{m ≥ 0} r_δ(2m / N) q_N^m`. For an even full lattice, the coefficient of `q_N^m`
+  vanishes unless `m mod N` maps to `q_L(δ)` under `ZMod.toRatAddCircle N`
+  (`ZLattice.IsEven.qExpansion_level_thetaCoset_coeff_eq_zero`,
+  `ZLattice.IsEven.qExpansion_level_thetaCosetClass_coeff_eq_zero`). This support condition
   describes the expansion at the cusp `∞` only; the analysis at the other cusps also needs the
   theta transformation formulas.
 
@@ -49,10 +50,14 @@ The three cases of interest are the following.
 * `ZLattice.IsIntegral.hasSum_thetaSeries_qParam_two`,
   `ZLattice.IsIntegral.qExpansion_two_thetaSeries_coeff`: `Θ_L = ∑ r_L(m) q^{m/2}` for integral
   `L`.
-* `ZLattice.IsEven.hasSum_thetaCoset_qParam`, `ZLattice.IsEven.qExpansion_thetaCoset_coeff`:
-  `θ_{γ+L} = ∑ r_{γ+L}(2m / N) q_N^m` for even `L` and `γ ∈ L^∨`.
-* `ZLattice.IsEven.qExpansion_thetaCoset_coeff_eq_zero`: that coefficient vanishes unless
-  `m ≡ N ‖γ‖² / 2 (mod N)`.
+* `ZLattice.IsEven.hasSum_thetaCoset_qParam`, `ZLattice.IsEven.qExpansion_thetaCoset_coeff`,
+  `ZLattice.IsEven.hasSum_thetaCoset_level_qParam`,
+  `ZLattice.IsEven.qExpansion_level_thetaCoset_coeff`: `θ_{γ+L} = ∑ r_{γ+L}(2m / N) q_N^m` for
+  even `L` and `γ ∈ L^∨`, including at `N = level L` and on `DiscriminantGroup L`.
+* `ZLattice.IsEven.qExpansion_thetaCoset_coeff_eq_zero`,
+  `ZLattice.IsEven.qExpansion_level_thetaCoset_coeff_eq_zero`,
+  `ZLattice.IsEven.qExpansion_level_thetaCosetClass_coeff_eq_zero`: that coefficient vanishes
+  outside the residue class of `q_L(γ)` modulo `N`.
 
 ## References
 
@@ -229,6 +234,147 @@ theorem qExpansion_thetaCoset_coeff_eq_zero (hL : IsEven L) (hγ : γ ∈ dual L
     (qExpansion N (thetaCoset L γ)).coeff m = 0 := by
   rw [hL.qExpansion_thetaCoset_coeff hγ hN ⟨n, hn⟩, Nat.cast_eq_zero]
   simpa using hL.cosetRepresentationNumber_div_eq_zero_of_not_modEq hγ hN hn hm
+
+/-- For an even lattice `L`, `γ ∈ L^∨` and a positive multiple `N` of `level L`,
+`θ_{γ+L}(τ) = ∑_{m ≥ 0} r_{γ+L}(2m / N) q_N^m`. -/
+theorem hasSum_thetaCoset_qParam_of_level_dvd (hL : IsEven L) (hγ : γ ∈ dual L) {N : ℕ}
+    (hN : 0 < N) (hdvd : level L ∣ N) (τ : ℍ) :
+    HasSum (fun m : ℕ ↦ (cosetRepresentationNumber L γ (2 * m / N) : ℂ) •
+      Periodic.qParam N τ ^ m) (thetaCoset L γ τ) :=
+  hL.hasSum_thetaCoset_qParam hγ hN (level_dvd_iff.mp hdvd γ hγ) τ
+
+/-- For an even lattice `L`, `γ ∈ L^∨` and a positive multiple `N` of `level L`, the `m`-th
+coefficient of `qExpansion N (θ_{γ+L})` is `r_{γ+L}(2m / N)`. -/
+theorem qExpansion_thetaCoset_coeff_of_level_dvd (hL : IsEven L) (hγ : γ ∈ dual L) {N : ℕ}
+    (hN : 0 < N) (hdvd : level L ∣ N) (m : ℕ) :
+    (qExpansion N (thetaCoset L γ)).coeff m = cosetRepresentationNumber L γ (2 * m / N) :=
+  hL.qExpansion_thetaCoset_coeff hγ hN (level_dvd_iff.mp hdvd γ hγ) m
+
+/-- For an even lattice `L`, `δ : DiscriminantGroup L` and a positive multiple `N` of `level L`,
+`θ_δ(τ) = ∑_{m ≥ 0} r_δ(2m / N) q_N^m`. -/
+theorem hasSum_thetaCosetClass_qParam_of_level_dvd (hL : IsEven L) (δ : DiscriminantGroup L)
+    {N : ℕ} (hN : 0 < N) (hdvd : level L ∣ N) (τ : ℍ) :
+    HasSum (fun m : ℕ ↦ (cosetRepresentationNumberClass L δ (2 * m / N) : ℂ) •
+      Periodic.qParam N τ ^ m) (thetaCosetClass L δ τ) := by
+  induction δ using Submodule.Quotient.induction_on with
+  | H x =>
+    simpa only [thetaCosetClass_mk, cosetRepresentationNumberClass_mk] using
+      hL.hasSum_thetaCoset_qParam_of_level_dvd x.2 hN hdvd τ
+
+/-- For an even lattice `L`, `δ : DiscriminantGroup L` and a positive multiple `N` of `level L`,
+the `m`-th coefficient of `qExpansion N (θ_δ)` is `r_δ(2m / N)`. -/
+theorem qExpansion_thetaCosetClass_coeff_of_level_dvd (hL : IsEven L) (δ : DiscriminantGroup L)
+    {N : ℕ} (hN : 0 < N) (hdvd : level L ∣ N) (m : ℕ) :
+    (qExpansion N (thetaCosetClass L δ)).coeff m =
+      cosetRepresentationNumberClass L δ (2 * m / N) := by
+  induction δ using Submodule.Quotient.induction_on with
+  | H x =>
+    rw [thetaCosetClass_mk, cosetRepresentationNumberClass_mk]
+    exact hL.qExpansion_thetaCoset_coeff_of_level_dvd x.2 hN hdvd m
+
+/-- For an even lattice `L`, a nonzero class `δ : DiscriminantGroup L`, and a positive multiple `N`
+of `level L`, the constant term of `qExpansion N (θ_δ)` is `0`. -/
+theorem qExpansion_thetaCosetClass_coeff_zero_of_level_dvd (hL : IsEven L)
+    {δ : DiscriminantGroup L} (hδ : δ ≠ 0) {N : ℕ} (hN : 0 < N) (hdvd : level L ∣ N) :
+    (qExpansion N (thetaCosetClass L δ)).coeff 0 = 0 := by
+  simpa [cosetRepresentationNumberClass_zero_right_of_ne_zero L hδ] using
+    hL.qExpansion_thetaCosetClass_coeff_of_level_dvd δ hN hdvd 0
+
+section FullLattice
+
+variable [IsZLattice ℝ L]
+
+/-- **The `q_N`-expansion of a coset theta series at the level.** For an even full lattice `L` of
+level `N = level L` and `γ ∈ L^∨`, `θ_{γ+L}(τ) = ∑_{m ≥ 0} r_{γ+L}(2m / N) q_N^m`. -/
+theorem hasSum_thetaCoset_level_qParam (hL : IsEven L) (hγ : γ ∈ dual L) (τ : ℍ) :
+    HasSum (fun m : ℕ ↦ (cosetRepresentationNumber L γ (2 * m / level L) : ℂ) •
+      Periodic.qParam (level L) τ ^ m) (thetaCoset L γ τ) :=
+  hL.hasSum_thetaCoset_qParam_of_level_dvd hγ hL.isIntegral.level_pos dvd_rfl τ
+
+/-- For an even full lattice `L` and `γ ∈ L^∨`, the `m`-th coefficient of the
+`q_{level L}`-expansion of `θ_{γ+L}` is `r_{γ+L}(2m / level L)`. -/
+theorem qExpansion_level_thetaCoset_coeff (hL : IsEven L) (hγ : γ ∈ dual L) (m : ℕ) :
+    (qExpansion (level L) (thetaCoset L γ)).coeff m =
+      cosetRepresentationNumber L γ (2 * m / level L) :=
+  hL.qExpansion_thetaCoset_coeff_of_level_dvd hγ hL.isIntegral.level_pos dvd_rfl m
+
+/-- **The `q_N`-expansion of a discriminant-class theta series at the level.** For an even full
+lattice `L` of level `N = level L` and `δ : DiscriminantGroup L`,
+`θ_δ(τ) = ∑_{m ≥ 0} r_δ(2m / N) q_N^m`. -/
+theorem hasSum_thetaCosetClass_level_qParam (hL : IsEven L) (δ : DiscriminantGroup L) (τ : ℍ) :
+    HasSum (fun m : ℕ ↦ (cosetRepresentationNumberClass L δ (2 * m / level L) : ℂ) •
+      Periodic.qParam (level L) τ ^ m) (thetaCosetClass L δ τ) :=
+  hL.hasSum_thetaCosetClass_qParam_of_level_dvd δ hL.isIntegral.level_pos dvd_rfl τ
+
+/-- For an even full lattice `L` and `δ : DiscriminantGroup L`, the `m`-th coefficient of the
+`q_{level L}`-expansion of `θ_δ` is `r_δ(2m / level L)`. -/
+theorem qExpansion_level_thetaCosetClass_coeff (hL : IsEven L) (δ : DiscriminantGroup L)
+    (m : ℕ) :
+    (qExpansion (level L) (thetaCosetClass L δ)).coeff m =
+      cosetRepresentationNumberClass L δ (2 * m / level L) :=
+  hL.qExpansion_thetaCosetClass_coeff_of_level_dvd δ hL.isIntegral.level_pos dvd_rfl m
+
+/-- For an even full lattice `L` and a nonzero class `δ : DiscriminantGroup L`, the constant term
+of `qExpansion (level L) (θ_δ)` is `0` (even when `q_L(δ) = 0`). -/
+theorem qExpansion_level_thetaCosetClass_coeff_zero (hL : IsEven L)
+    {δ : DiscriminantGroup L} (hδ : δ ≠ 0) :
+    (qExpansion (level L) (thetaCosetClass L δ)).coeff 0 = 0 :=
+  hL.qExpansion_thetaCosetClass_coeff_zero_of_level_dvd hδ hL.isIntegral.level_pos dvd_rfl
+
+/-- For an even full lattice `L`, `x ∈ L^∨`, and a positive multiple `N` of `level L`, the `m`-th
+coefficient of `qExpansion N (θ_{x+L})` vanishes unless `m mod N` maps to `q_L(x + L)` under
+`ZMod.toRatAddCircle N`. -/
+theorem qExpansion_thetaCoset_coeff_eq_zero_of_toRatAddCircle_ne (hL : IsEven L) (x : dual L)
+    {N : ℕ} (hN : 0 < N) (hdvd : level L ∣ N) {m : ℕ}
+    (hm : ZMod.toRatAddCircle N (m : ZMod N) ≠
+      (ratModel hL.isIntegral).discriminantQuadraticMap
+        ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+        (ratModelDiscriminantGroupEquiv hL.isIntegral (Submodule.Quotient.mk x))) :
+    (qExpansion N (thetaCoset L (x : E))).coeff m = 0 := by
+  rw [hL.qExpansion_thetaCoset_coeff_of_level_dvd x.2 hN hdvd m, Nat.cast_eq_zero]
+  simpa using hL.cosetRepresentationNumber_div_eq_zero_of_toRatAddCircle_ne x (N := N) (m := m)
+    (by simpa using hm)
+
+/-- **Support congruence for `q_{level L}`-expansions of coset theta series.** For an even full
+lattice `L` and `x ∈ L^∨`, the `m`-th coefficient of `qExpansion (level L) (θ_{x+L})` vanishes
+unless `m mod level L` maps to `q_L(x + L)` under `ZMod.toRatAddCircle (level L)`. -/
+theorem qExpansion_level_thetaCoset_coeff_eq_zero (hL : IsEven L) (x : dual L) {m : ℕ}
+    (hm : ZMod.toRatAddCircle (level L) (m : ZMod (level L)) ≠
+      (ratModel hL.isIntegral).discriminantQuadraticMap
+        ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+        (ratModelDiscriminantGroupEquiv hL.isIntegral (Submodule.Quotient.mk x))) :
+    (qExpansion (level L) (thetaCoset L (x : E))).coeff m = 0 :=
+  hL.qExpansion_thetaCoset_coeff_eq_zero_of_toRatAddCircle_ne x hL.isIntegral.level_pos dvd_rfl hm
+
+/-- For an even full lattice `L`, `δ : DiscriminantGroup L`, and a positive multiple `N` of
+`level L`, the `m`-th coefficient of `qExpansion N (θ_δ)` vanishes unless `m mod N` maps to
+`q_L(δ)` under `ZMod.toRatAddCircle N`. -/
+theorem qExpansion_thetaCosetClass_coeff_eq_zero_of_toRatAddCircle_ne (hL : IsEven L)
+    (δ : DiscriminantGroup L) {N : ℕ} (hN : 0 < N) (hdvd : level L ∣ N) {m : ℕ}
+    (hm : ZMod.toRatAddCircle N (m : ZMod N) ≠
+      (ratModel hL.isIntegral).discriminantQuadraticMap
+        ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+        (ratModelDiscriminantGroupEquiv hL.isIntegral δ)) :
+    (qExpansion N (thetaCosetClass L δ)).coeff m = 0 := by
+  induction δ using Submodule.Quotient.induction_on with
+  | H x =>
+    rw [thetaCosetClass_mk]
+    exact hL.qExpansion_thetaCoset_coeff_eq_zero_of_toRatAddCircle_ne x hN hdvd hm
+
+/-- **Support congruence for `q_{level L}`-expansions on the discriminant group.** For an even full
+lattice `L` and `δ : DiscriminantGroup L`, the `m`-th coefficient of `qExpansion (level L) (θ_δ)`
+vanishes unless `m mod level L` maps to `q_L(δ)` under `ZMod.toRatAddCircle (level L)`. -/
+theorem qExpansion_level_thetaCosetClass_coeff_eq_zero (hL : IsEven L)
+    (δ : DiscriminantGroup L) {m : ℕ}
+    (hm : ZMod.toRatAddCircle (level L) (m : ZMod (level L)) ≠
+      (ratModel hL.isIntegral).discriminantQuadraticMap
+        ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+        (ratModelDiscriminantGroupEquiv hL.isIntegral δ)) :
+    (qExpansion (level L) (thetaCosetClass L δ)).coeff m = 0 :=
+  hL.qExpansion_thetaCosetClass_coeff_eq_zero_of_toRatAddCircle_ne δ hL.isIntegral.level_pos
+    dvd_rfl hm
+
+end FullLattice
 
 end IsEven
 

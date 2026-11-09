@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.NormPow

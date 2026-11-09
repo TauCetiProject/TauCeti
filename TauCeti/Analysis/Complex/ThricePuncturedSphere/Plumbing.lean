@@ -89,6 +89,28 @@ theorem plumbingFactor_eq_mul_ofReal (q : Puncture) (L : ℝ) :
   push_cast
   ring_nf
 
+/-- The plumbing scale depends smoothly on the real neck length. -/
+theorem contDiff_plumbingFactor (q : Puncture) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (fun l : ℝ => q.plumbingFactor l) := by
+  have hr : ContDiff ℝ n (fun l : ℝ => Real.exp (-(2 * π * l)) / 2) := by fun_prop
+  simpa only [plumbingFactor_eq_mul_ofReal, Function.comp_apply, Complex.ofRealCLM_apply] using
+    (contDiff_const (𝕜 := ℝ) (c := q.endScale)).mul (Complex.ofRealCLM.contDiff.comp hr)
+
+/-- The inverse affine plumbing coordinate is smooth jointly in length and domain point.
+The plumbing scale never vanishes at a finite length. -/
+theorem contDiff_inverse_plumbingMap (q : Puncture) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (fun p : ℝ × ℂ => (p.2 - q.endCenter) / q.plumbingFactor p.1) := by
+  simpa only [div_eq_mul_inv, Function.comp_apply, Pi.inv_apply] using
+    ((contDiff_snd (𝕜 := ℝ)).sub (contDiff_const (c := q.endCenter))).mul
+      ((q.contDiff_plumbingFactor.comp contDiff_fst).inv
+        (fun p => q.plumbingFactor_ne_zero p.1))
+
+/-- The plumbing map scales distances by `‖b_q‖ e^{-2πL} / 2`. -/
+theorem norm_plumbingFactor (q : Puncture) (L : ℝ) :
+    ‖q.plumbingFactor L‖ = ‖q.endScale‖ * Real.exp (-(2 * π * L)) / 2 := by
+  rw [plumbingFactor_eq_mul_ofReal, norm_mul, Complex.norm_real,
+    Real.norm_of_nonneg (by positivity), mul_div_assoc]
+
 /-- The first input of the inserted sphere sits at the center of the end it is plumbed into. -/
 @[simp]
 theorem plumbingMap_zero (q : Puncture) (L : ℝ) : q.plumbingMap L 0 = q.endCenter := by
@@ -181,6 +203,30 @@ theorem re_endCoord_inf_sub_endCenter_div (q : Puncture) (L : ℝ) {w : ℂ}
   have h := re_endCoord_plumbingMap q L (q.sub_endCenter_div_plumbingFactor_ne_zero L hw)
   rw [plumbingMap_sub_endCenter_div] at h
   linarith
+
+/-- **The plumbing map on discs.** At a positive end `q`, undoing the plumbing map of neck length
+`L` sends `w` into the disc `‖·‖ ≤ 2 exp (2πR)` bounded by the circle `s = -R` of the end at `∞`
+exactly when `w` lies in the disc `‖w - c_q‖ ≤ exp (-2π(L - R)) / 2` bounded by the circle
+`s = L - R` of the end `q`. -/
+theorem norm_sub_endCenter_div_plumbingFactor_le_iff {q : Puncture} (hq : q ≠ inf) (L R : ℝ)
+    {w : ℂ} :
+    ‖(w - q.endCenter) / q.plumbingFactor L‖ ≤ 2 * Real.exp (2 * π * R) ↔
+      ‖w - q.endCenter‖ ≤ Real.exp (-(2 * π * (L - R))) / 2 := by
+  have hexp : Real.exp (-(2 * π * (L - R))) =
+      Real.exp (2 * π * R) * Real.exp (-(2 * π * L)) := by
+    rw [← Real.exp_add]
+    ring_nf
+  rw [norm_div, norm_plumbingFactor, norm_endScale hq, div_le_iff₀ (by positivity), hexp]
+  constructor <;> intro h <;> linarith
+
+/-- At a positive end `q`, the image of the point `1` under the plumbing map of neck length `L`
+lies in the open disc `‖· - c_q‖ < exp (-2π(L - 1)) / 2` bounded by the circle `s = L - 1` of the
+end `q`. -/
+theorem norm_plumbingMap_one_sub_endCenter_lt {q : Puncture} (hq : q ≠ inf) (L : ℝ) :
+    ‖q.plumbingMap L 1 - q.endCenter‖ < Real.exp (-(2 * π * (L - 1))) / 2 := by
+  rw [plumbingMap_apply, add_sub_cancel_left, mul_one, norm_plumbingFactor, norm_endScale hq]
+  have := Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos] : -(2 * π * L) < -(2 * π * (L - 1)))
+  linarith [Real.exp_pos (-(2 * π * L))]
 
 /-- **The plumbing map preserves the angular forms.** It pulls the angular form `dt` of the end
 `q` back to the angular form `dt` of the end at `∞`. -/

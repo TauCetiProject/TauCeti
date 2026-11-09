@@ -9,25 +9,35 @@ public import Mathlib.Algebra.Module.Submodule.Union
 public import Mathlib.FieldTheory.PrimitiveElement
 
 /-!
-# Primitive elements inside a generating subspace
+# Criteria for primitive elements
 
-Let `E / F` be a finite separable extension and let `k` be an infinite subfield of `F`. If a
-`k`-subspace `V` of `E` generates `E` over `F`, then some element of `V` alone generates `E` over
-`F`: the primitive element can be chosen in `V`.
+Let `E / F` be an extension with only finitely many intermediate fields (for instance a finite
+separable extension, by the primitive element theorem) and let `k` be an infinite subfield of
+`F`. If a `k`-subspace `V` of `E` generates `E` over `F`, then some element of `V` alone generates
+`E` over `F`: the primitive element can be chosen in `V`.
 
-Indeed `E / F` has only finitely many intermediate fields, by the primitive element theorem. Each
-proper one meets `V` in a proper `k`-subspace, since `V` generates `E`, and a vector space over an
-infinite field is not a finite union of proper subspaces
+Indeed each proper intermediate field meets `V` in a proper `k`-subspace, since `V` generates
+`E`, and a vector space over an infinite field is not a finite union of proper subspaces
 (`Submodule.exists_forall_notMem_of_forall_ne_top`). An element of `V` outside all of them
 generates `E`.
 
 The typical use is a compositum `E = F F₂` of two subfields over a common infinite subfield `k`,
 with `V` the image of `F₂`: some element of `F₂` is then a primitive element of `E / F`.
 
+A second criterion needs no prior finite-dimensionality assumption: in a separable algebraic
+extension, an element generates the entire extension exactly when its minimal-polynomial degree
+is maximal.
+Apply the primitive element theorem to each two-generated subextension and compare its degree
+with that of the proposed generator. This turns an attained uniform bound on element degrees
+into a generation statement.
+
 ## Main results
 
 * `Field.exists_mem_adjoin_simple_eq_top`: a primitive element of `E / F` can be chosen in any
   `k`-subspace that generates `E` over `F`.
+* `Field.adjoin_simple_eq_top_iff_forall_natDegree_minpoly_le`: in a separable algebraic
+  extension, an element generates the extension if and only if its minimal-polynomial degree is
+  maximal.
 -/
 
 public section
@@ -39,25 +49,40 @@ namespace Field
 variable (k : Type*) {F E : Type*} [Field k] [Field F] [Field E]
 variable [Algebra k F] [Algebra k E] [Algebra F E] [IsScalarTower k F E]
 
-/-- **A primitive element inside a generating subspace.** If `E / F` is finite separable, `k ⊆ F`
-is infinite, and the `k`-subspace `V` of `E` generates `E` over `F`, then `F⟮α⟯ = E` for some
-`α ∈ V`. -/
-theorem exists_mem_adjoin_simple_eq_top [Infinite k] [FiniteDimensional F E]
-    [Algebra.IsSeparable F E] {V : Submodule k E} (hV : adjoin F (V : Set E) = ⊤) :
+/-- **A primitive element inside a generating subspace.** If `E / F` has only finitely many
+intermediate fields (for instance if it is finite separable, by the primitive element theorem),
+`k ⊆ F` is infinite, and the `k`-subspace `V` of `E` generates `E` over `F`, then `F⟮α⟯ = E` for
+some `α ∈ V`. -/
+theorem exists_mem_adjoin_simple_eq_top [Infinite k] [Finite (IntermediateField F E)]
+    {V : Submodule k E} (hV : adjoin F (V : Set E) = ⊤) :
     ∃ α ∈ V, F⟮α⟯ = ⊤ := by
-  have : Finite (IntermediateField F E) :=
-    finite_intermediateField_of_exists_primitive_element F E (exists_primitive_element F E)
   -- Each proper intermediate field meets `V` in a proper subspace.
   let p : {K : IntermediateField F E // K ≠ ⊤} → Submodule k V := fun K ↦
     ((K.1.restrictScalars k).toSubalgebra.toSubmodule).comap V.subtype
-  have hp : ∀ K, p K ≠ ⊤ := fun K hK ↦ by
-    refine K.2 (eq_top_iff.mpr (le_of_eq_of_le hV.symm (adjoin_le_iff.mpr fun x hx ↦ ?_)))
-    have : (⟨x, hx⟩ : V) ∈ p K := by
-      rw [hK]
-      exact Submodule.mem_top
-    exact this
+  have hp : ∀ K, p K ≠ ⊤ := fun K hK ↦ K.2 <| top_unique <| hV.ge.trans <| adjoin_le_iff.mpr
+    fun x hx ↦ by simpa [p] using (hK ▸ Submodule.mem_top : (⟨x, hx⟩ : V) ∈ p K)
   obtain ⟨α, hα⟩ := Submodule.exists_forall_notMem_of_forall_ne_top p hp
-  refine ⟨α, α.2, by_contra fun hne ↦ hα ⟨F⟮(α : E)⟯, hne⟩ ?_⟩
-  exact mem_adjoin_simple_self F (α : E)
+  exact ⟨α, α.2, by_contra fun hne ↦ hα ⟨F⟮(α : E)⟯, hne⟩ (mem_adjoin_simple_self F (α : E))⟩
+
+/-- In a separable algebraic extension, an element generates the whole extension if and only if
+its minimal-polynomial degree bounds those of all elements. No finite-dimensionality assumption
+on the extension is needed. -/
+theorem adjoin_simple_eq_top_iff_forall_natDegree_minpoly_le
+    {F E : Type*} [Field F] [Field E] [Algebra F E] [Algebra.IsSeparable F E] (α : E) :
+    F⟮α⟯ = ⊤ ↔ ∀ β : E, (minpoly F β).natDegree ≤ (minpoly F α).natDegree := by
+  have hαint := Algebra.IsSeparable.isIntegral F α
+  refine ⟨fun h β ↦ ?_, fun hα ↦ eq_top_iff.mpr fun β _ ↦ ?_⟩
+  · have := adjoin.finiteDimensional hαint
+    rw [← adjoin.finrank hαint, ← adjoin.finrank (Algebra.IsSeparable.isIntegral F β)]
+    exact finrank_le_of_le_right (h ▸ le_top)
+  -- Compare with a primitive element of the finite subextension generated by `α` and `β`.
+  have := finiteDimensional_adjoin_pair hαint (Algebra.IsSeparable.isIntegral F β)
+  obtain ⟨γ, hγ⟩ := exists_primitive_element F F⟮α, β⟯
+  have hle : F⟮α⟯ ≤ F⟮α, β⟯ := adjoin_simple_le_iff.mpr (mem_adjoin_pair_left F α β)
+  rw [eq_of_le_of_finrank_le hle ?_]
+  · exact mem_adjoin_pair_right F α β
+  rw [adjoin.finrank hαint, ← (primitive_element_iff_minpoly_natDegree_eq F γ).mp hγ,
+    minpoly_eq γ]
+  exact hα γ
 
 end Field

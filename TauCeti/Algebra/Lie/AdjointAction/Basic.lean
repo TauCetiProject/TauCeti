@@ -31,6 +31,9 @@ in particular a scalar plus a nilpotent element has nilpotent adjoint action.
 Over an algebra of exponential characteristic `p` the expansion collapses at `n = p ^ e`, which is
 the subject of `TauCeti.Algebra.Lie.AdjointAction.Frobenius`.
 
+In a center-free Lie algebra, an element whose adjoint is polynomial in `ad x` centralizes
+every element centralizing `x` (`TauCeti.LieAlgebra.lie_eq_zero_of_ad_mem_adjoin`).
+
 Adjoint semisimplicity, like adjoint nilpotence, passes from a Lie algebra to its Lie subalgebras
 (`LieSubalgebra.isSemisimple_ad_of_isSemisimple_ad`, over any commutative ring).
 
@@ -121,3 +124,26 @@ theorem isSemisimple_ad_of_isSemisimple_ad {R L : Type*} [CommRing R] [LieRing L
   exact (LinearEquiv.isSemisimple_iff _ _ (LinearEquiv.refl R L') (by ext; rfl)).1 (h.restrict hp)
 
 end LieSubalgebra
+
+namespace TauCeti.LieAlgebra
+
+open _root_.LieAlgebra
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-- In a center-free Lie algebra, an element whose adjoint is polynomial in `ad x` commutes
+with every element commuting with `x`. -/
+theorem lie_eq_zero_of_ad_mem_adjoin {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    [LieModule.IsFaithful R L L] {x y z : L}
+    (hz : ad R L z ∈ Algebra.adjoin R {ad R L x}) (hxy : ⁅x, y⁆ = 0) :
+    ⁅z, y⁆ = 0 := by
+  have hcomm : Commute (ad R L x) (ad R L y) := by
+    ext w
+    simp [leibniz_lie x y w, hxy]
+  have hzy := Algebra.commute_of_mem_adjoin_singleton_of_commute hz hcomm.symm
+  apply (LieModule.toEnd_eq_iff R L L).mp
+  rw [map_zero, LieHom.map_lie]
+  -- The bracket on endomorphisms is the commutator.
+  exact sub_eq_zero.mpr hzy.symm.eq
+
+end TauCeti.LieAlgebra

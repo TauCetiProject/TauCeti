@@ -128,9 +128,8 @@ theorem countablyRectifiable_inter_preimage_of_hasFDerivWithinAt {f' : E → E �
     obtain ⟨x₁, hx₁, hAx₁⟩ := hAt ⟨x₀, hx₀.1⟩ n
     obtain ⟨hM, hδM⟩ := hδ (A n) (hAx₁ ▸ hsurj x₁ hx₁)
     exact (happrox n).countablyRectifiable_inter_preimage hM hδM y
-  refine (CountablyRectifiable.iUnion hpiece).mono fun x ⟨hxs, hxy⟩ ↦ ?_
-  obtain ⟨n, hn⟩ := mem_iUnion.1 (hcover hxs)
-  exact mem_iUnion.2 ⟨n, ⟨hxs, hn⟩, hxy⟩
+  rw [← inter_eq_left.2 hcover, inter_iUnion, iUnion_inter]
+  exact CountablyRectifiable.iUnion hpiece
 
 /-- If `f` is differentiable at every point of `s` with surjective derivative, then every fibre
 `s ∩ f ⁻¹' {y}` is countably `(dim E - dim F)`-rectifiable. -/
@@ -271,9 +270,8 @@ theorem ae_countablyRectifiable_inter_preimage {f : E → F} {s : Set E}
     ∀ᵐ y ∂μ, CountablyRectifiable (finrank ℝ E - finrank ℝ F) (s ∩ f ⁻¹' {y}) := by
   obtain ⟨U, K, -, hcov, hK⟩ := hf.exists_open_cover_lipschitzOnWith
   filter_upwards [ae_all_iff.2 fun n ↦ (hK n).ae_countablyRectifiable_inter_preimage μ] with y hy
-  refine (CountablyRectifiable.iUnion hy).mono fun z ⟨hzs, hzy⟩ ↦ ?_
-  obtain ⟨n, hn⟩ := mem_iUnion.1 (hcov hzs)
-  exact mem_iUnion.2 ⟨n, ⟨hzs, hn⟩, hzy⟩
+  rw [← inter_eq_left.2 hcov, inter_iUnion, iUnion_inter]
+  exact CountablyRectifiable.iUnion hy
 
 end LocallyLipschitzOn
 

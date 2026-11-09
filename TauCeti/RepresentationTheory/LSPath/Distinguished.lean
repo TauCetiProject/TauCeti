@@ -30,6 +30,12 @@ applies to `S = W λ` for every weight `λ`, including `λ = 0`
 (`RootPairing.pairwise_not_sameRay_orbit_weylGroup`, in
 `TauCeti/LinearAlgebra/RootSystem/Weyl/Orbit/Ray.lean`).
 
+A presentation becomes distinguished by normalizing it as a segment list in `𝕜 × V`: two segments
+of positive duration lie in the same ray exactly when they have the same velocity, so
+`TauCeti.PLPath.normalize` drops the stationary segments and merges exactly the adjacent segments
+of equal velocity (`TauCeti.PLPath.isDistinguished_normalize`). Reversing a distinguished
+presentation for `S` gives a distinguished presentation for `-S` of the reversed path.
+
 Adding the linear path `t ↦ t χ` to a timed presentation (`TauCeti.PLPath.shiftTimed`) is not
 well defined on reparametrization classes (`TauCeti.PLPath.not_exists_shiftTimed_on_paths`).
 Applied to the distinguished presentation it is: `TauCeti.PLPath.shiftDistinguished S χ π` shifts
@@ -59,8 +65,16 @@ same minimum height.
 * `TauCeti.LSPath.isDistinguished_timed`: for dominant `λ` and a realization `f` injective on
   the Weyl orbit `W λ`, the presentation of an LS path by its directions and breaks is
   distinguished for the realized orbit.
+* `TauCeti.LSPath.hasDistinguished_toPLPath`: for any shape `λ` and realization `f`, a realized
+  LS path has a distinguished presentation for the realized orbit.
 * `TauCeti.PLPath.distinguished_ofSegments`: the distinguished presentation of the path presented
   by a distinguished `p` is `p`.
+* `TauCeti.PLPath.isDistinguished_normalize`, `TauCeti.PLPath.hasDistinguished_ofSegments`:
+  normalizing a duration-one presentation whose nonstationary segments have positive duration and
+  velocity in `S` merges adjacent segments of equal velocity and gives a distinguished
+  presentation for `S`.
+* `TauCeti.PLPath.HasDistinguished.reverse`: the reverse of a path with a distinguished
+  presentation for `S` has one for `-S`.
 * `TauCeti.PLPath.shiftDistinguished_ofSegments`: the central shift may be computed on any
   distinguished presentation.
 * `TauCeti.PLPath.shiftDistinguished_shiftDistinguished`,
@@ -226,6 +240,38 @@ theorem HasDistinguished.eq_straight_zero (h : HasDistinguished S π)
   rw [← ofSegments_distinguished h, distinguished_of_zero_mem h hS h0, straight_def]
   rfl
 
+/-! ### Distinguished presentations by normalization -/
+
+/-- Normalizing a presentation whose nonstationary segments have positive duration and velocity in
+`S`, of total duration `1`, gives a distinguished presentation for `S`. Normalization removes the
+stationary segments and merges the adjacent segments of equal velocity. -/
+theorem isDistinguished_normalize (hp : ∀ z ∈ p, z ≠ 0 → 0 < z.1 ∧ z.1⁻¹ • z.2 ∈ S)
+    (hd : duration p = 1) : IsDistinguished S (normalize 𝕜 p) := by
+  -- Positive multiples of a segment in `{z | 0 < z.1 ∧ z.1⁻¹ • z.2 ∈ S}` stay in it, and so do
+  -- sums of two of its segments in the same ray.
+  have hT : ∀ z ∈ normalize 𝕜 p, 0 < z.1 ∧ z.1⁻¹ • z.2 ∈ S := by
+    refine fun z hz ↦ mem_of_mem_normalize (T := {z | 0 < z.1 ∧ z.1⁻¹ • z.2 ∈ S}) ?_ hp hz
+    rintro y ⟨hy, -⟩ z ⟨hz, hzS⟩ hyz
+    obtain ⟨r, hr, rfl⟩ := hyz.exists_pos_right (fun h0 ↦ hy.ne' (by simp [h0]))
+      (fun h0 ↦ hz.ne' (by simp [h0]))
+    have hsum : r • z + z = (r + 1) • z := by rw [add_smul, one_smul]
+    have hr1 : (0 : 𝕜) < r + 1 := add_pos hr one_pos
+    rw [hsum]
+    exact ⟨by simpa using mul_pos hr1 hz, by rwa [Prod.inv_fst_smul_snd_smul hr1.ne']⟩
+  refine ⟨isTimed_iff.2 fun z hz ↦ (hT z hz).1, ?_, fun z hz ↦ (hT z hz).2, ?_⟩
+  · rw [duration_eq_fst_sum, sum_normalize, ← duration_eq_fst_sum, hd]
+  · rw [List.isChain_map]
+    exact (isReduced_normalize (𝕜 := 𝕜) p).isChain.imp_of_mem_imp fun y z hy hz hyz h ↦
+      hyz ((Prod.sameRay_iff_inv_fst_smul_snd_eq (hT y hy).1 (hT z hz).1).2 h)
+
+/-- A presentation whose nonstationary segments have positive duration and velocity in `S`, of
+total duration `1`, presents a path with a distinguished presentation for `S`, namely its
+normalization. -/
+theorem hasDistinguished_ofSegments (hp : ∀ z ∈ p, z ≠ 0 → 0 < z.1 ∧ z.1⁻¹ • z.2 ∈ S)
+    (hd : duration p = 1) : HasDistinguished S (ofSegments 𝕜 (p.map Prod.snd)) := by
+  have h := (isDistinguished_normalize hp hd).hasDistinguished
+  simpa using ofSegments_map_normalize (LinearMap.snd 𝕜 𝕜 V) p ▸ h
+
 /-! ### The central shift -/
 
 omit [IsStrictOrderedRing 𝕜] in
@@ -316,6 +362,32 @@ theorem minHeight_shiftDistinguished {f : Module.Dual 𝕜 V} {χ : V} (hχ : f 
     (h : HasDistinguished S π) : (shiftDistinguished S χ π).minHeight f = π.minHeight f := by
   rw [shiftDistinguished, minHeight_ofSegments_shiftTimed hχ, ofSegments_distinguished h]
 
+/-! ### Reversal -/
+
+open scoped Pointwise
+
+omit [IsStrictOrderedRing 𝕜] in
+/-- Reversing a distinguished presentation for `S` gives a distinguished presentation for `-S`
+of the reversed path. -/
+theorem IsDistinguished.reverseTimed (hp : IsDistinguished S p) :
+    IsDistinguished (-S) (reverseTimed p) := by
+  have hslope (z : 𝕜 × V) : (fun y : 𝕜 × V ↦ y.1⁻¹ • y.2) (z.1, -z.2) = -(z.1⁻¹ • z.2) :=
+    smul_neg _ _
+  refine ⟨isTimed_reverseTimed.2 hp.isTimed, ?_, fun z hz ↦ ?_, ?_⟩
+  · rw [duration_reverseTimed, hp.duration_eq_one]
+  · rw [Set.mem_neg, ← smul_neg]
+    exact hp.slope_mem (z.1, -z.2) (mem_reverseTimed.1 hz)
+  · rw [reverseTimed_def, List.map_reverse, List.map_map, List.isChain_reverse]
+    have := hp.isChain_slope
+    rw [List.isChain_map] at this ⊢
+    exact this.imp fun y z hyz ↦ by simpa [Function.comp_def, hslope] using hyz.symm
+
+/-- A path with a distinguished presentation for `S` has reverse with a distinguished
+presentation for `-S`. -/
+theorem HasDistinguished.reverse (h : HasDistinguished S π) : HasDistinguished (-S) π.reverse := by
+  obtain ⟨p, hp, rfl⟩ := hasDistinguished_iff.1 h
+  exact hasDistinguished_iff.2 ⟨_, hp.reverseTimed, ofSegments_map_snd_reverseTimed p⟩
+
 end TauCeti.PLPath
 
 namespace TauCeti.LSPath
@@ -345,5 +417,17 @@ theorem isDistinguished_timed (hlam : lam ∈ dominantChamber P b)
   have hj := eq_of_isMinimalCosetRep_of_smul_eq hlam (π.dir ⟨i, by omega⟩).2
     (π.dir ⟨i + 1, hi⟩).2 (hf ⟨_, rfl⟩ ⟨_, rfl⟩ heq)
   exact π.dir_succ_ne ⟨i, by omega⟩ (Subtype.ext hj.symm)
+
+omit [P.flip.IsReduced] in
+/-- **A realized LS path has a distinguished presentation for the realized orbit.** For any shape
+`λ` and realization `f`, normalizing the presentation by directions and breaks gives a
+distinguished presentation of `π` for `f (W λ)`. -/
+theorem hasDistinguished_toPLPath :
+    PLPath.HasDistinguished (Set.range fun w : P.weylGroup ↦ f (w • lam)) (π.toPLPath 𝕜 f) := by
+  rw [toPLPath_def]
+  exact PLPath.hasDistinguished_ofSegments
+    (fun _ hy _ ↦ ⟨PLPath.isTimed_iff.1 (π.isTimed_timed 𝕜 f) _ hy,
+      π.inv_smul_mem_range_of_mem_timed 𝕜 f hy⟩)
+    (π.duration_timed 𝕜 f)
 
 end TauCeti.LSPath

@@ -15,7 +15,8 @@ expansion in the simple roots. This file records that height respects every inte
 among the roots: a vanishing integral combination of roots has a vanishing combination of heights,
 so two integral combinations with the same value have the same combination of heights. When the
 roots span the weight space, it also extends height to the linear functional which sums the
-coordinates in the simple-root basis. Ahead of all this, it records the extensionality of bases:
+coordinates in the simple-root basis, and then an automorphism permuting the simple roots preserves
+heights. Ahead of all this, it records the extensionality of bases:
 a base is determined by the indices of its simple roots.
 
 ## Main definitions
@@ -35,6 +36,8 @@ a base is determined by the indices of its simple roots.
   relations among roots.
 * `TauCeti.sum_mul_height_eq_of_sum_zsmul_root_eq` compares the heights of two integral
   combinations of roots with the same value.
+* `RootPairing.Base.height_indexEquiv` says that an automorphism of a root system permuting the
+  simple roots preserves heights.
 
 ## References
 
@@ -191,3 +194,27 @@ theorem sum_mul_height_eq_of_sum_zsmul_root_eq (b : P.Base) {s t : Finset ι} {e
       Finset.union_inter_cancel_left, Finset.union_inter_cancel_right, h, sub_self]
 
 end TauCeti
+
+namespace RootPairing.Base
+
+variable {ι R M N : Type*} [CommRing R] [CharZero R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} [P.IsRootSystem]
+
+/-- **An automorphism permuting the simple roots preserves heights.** If an automorphism `u` of a
+root system carries every simple root of the base `b` to a simple root, then `u α` has the same
+height as `α` for every root `α`. -/
+theorem height_indexEquiv (b : P.Base) (u : P.Aut)
+    (hu : ∀ j ∈ b.support, u.indexEquiv j ∈ b.support) (i : ι) :
+    b.height (u.indexEquiv i) = b.height i := by
+  have key (k : ι) :
+      TauCeti.heightLinearMap P b (u.weightMap (P.root k)) = b.height (u.indexEquiv k) := by
+    rw [Hom.root_weightMap_apply P P k u.toHom, TauCeti.heightLinearMap_root]
+  have h := TauCeti.apply_root_eq_height_zsmul P b
+    ((TauCeti.heightLinearMap P b).toAddMonoidHom.comp u.weightMap.toAddMonoidHom) (c := (1 : R))
+    (fun j hj ↦ by simpa [b.height_one_of_mem_support (hu j hj)] using key j) i
+  have h' : (b.height (u.indexEquiv i) : R) = b.height i := by
+    rw [← key]
+    simpa using h
+  exact_mod_cast h'
+
+end RootPairing.Base

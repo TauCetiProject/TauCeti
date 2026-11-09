@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Injective
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import TauCeti.LinearAlgebra.Dual.RightAction
 
 /-!
 # The dual regular module is injective
@@ -19,6 +20,11 @@ The action on the dual is specified through an equivariant linear equivalence, r
 installed as a global instance on all duals. This follows the convention of
 `TauCeti.LinearAlgebra.Dual.RightAction`.
 
+## Main results
+
+* `LinearEquiv.moduleInjective_of_dual_regular`: the dual of the right regular module is
+  injective.
+
 ## References
 
 * I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
@@ -27,23 +33,18 @@ installed as a global instance on all duals. This follows the convention of
 
 public section
 
-namespace TauCeti
+namespace LinearEquiv
 
-variable {k A Q : Type*} [Field k] [Ring A] [Algebra k A]
-  [AddCommGroup Q] [Module A Q] [Module k Q]
+variable {k A Q : Type*}
 
-variable (k) in
+variable [Field k] [Ring A] [Algebra k A] [AddCommGroup Q] [Module A Q] [Module k Q]
+
 /-- The dual of the right regular module, with action `(a • φ) x = φ (x * a)`, is an
 injective left module over any algebra over a field. -/
-theorem moduleInjective_of_equiv_dual_regular
-    (e : Q ≃ₗ[k] Module.Dual k A)
+theorem moduleInjective_of_dual_regular (e : Q ≃ₗ[k] Module.Dual k A)
     (he : ∀ (a : A) (q : Q) (x : A), e (a • q) x = e q (x * a)) :
     Module.Injective A Q := by
-  let : IsScalarTower k A Q := IsScalarTower.of_algebraMap_smul fun c q => by
-    apply e.injective
-    ext x
-    rw [he, ← Algebra.commutes, ← Algebra.smul_def]
-    simp
+  have := e.isScalarTower_of_dual_regular he
   apply Module.Baer.injective
   intro I f
   -- Extend the functional obtained by evaluation at the unit from the ideal to the algebra.
@@ -60,9 +61,7 @@ theorem moduleInjective_of_equiv_dual_regular
       map_smul' := fun a b => by apply e.injective; ext x; simp [he, mul_assoc] }
   refine ⟨g, fun a ha => e.injective (LinearMap.ext fun x => ?_)⟩
   have hx : x * a ∈ I := I.mul_mem_left x ha
-  have hf : f ⟨x * a, hx⟩ = x • f ⟨a, ha⟩ :=
-    f.map_smul x ⟨a, ha⟩
-  have hψx := LinearMap.congr_fun hψ (⟨x * a, hx⟩ : I.restrictScalars k)
-  simpa [g, l, eI, hf, he] using hψx
+  have hf : f ⟨x * a, hx⟩ = x • f ⟨a, ha⟩ := f.map_smul x ⟨a, ha⟩
+  simpa [g, l, eI, hf, he] using LinearMap.congr_fun hψ ⟨x * a, hx⟩
 
-end TauCeti
+end LinearEquiv

@@ -69,6 +69,15 @@ theorem generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap :
   rw [generatedWeightTorusCoordinateMap, generatedCoordinateMap_comp_generatedCoordinateLift,
     generatorCoordinateMap_inr]
 
+/-- The composite restriction to the generated weight torus, as a bialgebra homomorphism. -/
+@[simp]
+theorem hom_generatedWeightTorusCoordinateMap_comp_generatedCoordinateMap :
+    (generatedWeightTorusCoordinateMap R).hom.comp (generatedCoordinateMap R).hom =
+      GeneralLinear.weightTorusCoordinateBialgHom (S := R) d4TripledWeight := by
+  rw [← _root_.CommHopfAlgCat.hom_comp,
+    generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap,
+    GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
+
 /-- A point induced by a generated root-subgroup lift maps to the numbered tripled root matrix
 with the same parameter. -/
 @[simp↓]
@@ -149,9 +158,7 @@ theorem generatedTorusCorestrict_eq_ofWeights :
   rw [← hchar]
   apply GeneralLinear.corestrict_corestrict_standardComodule_eq_ofWeights
     (generatedCoordinateMap R).hom (generatedWeightTorusCoordinateMap R).hom d4TripledWeight
-  rw [← _root_.CommHopfAlgCat.hom_comp,
-    generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap,
-    GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
+  exact hom_generatedWeightTorusCoordinateMap_comp_generatedCoordinateMap R
 
 /-- The standard matrix coefficients of the generated subgroup do not mix its three summands. -/
 theorem generatedCoefficientMatrix_eq_zero_of_summand_ne (a b : Fin 24)

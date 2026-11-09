@@ -81,15 +81,6 @@ variable (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)
 variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M)
 variable {B : Type*} [CommRing B] [Algebra ℤ B]
 
-/-- The linear term of the divided-power expansion is the root operator. -/
-private theorem integralDividedPower_one_eq_kostantRootOperator
-    (hv : ∀ v ∈ M, Associative.dividedPower 1
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) • v ∈ M) (v : M) :
-    integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M 1 hv v =
-      kostantRootOperator e h ρ M hM i v :=
-  Subtype.ext <| by
-    rw [coe_integralDividedPower_one_apply, coe_kostantRootOperator_apply, Module.End.smul_def]
-
 /-- A root vector acting nilpotently with nilpotency class at most one acts as zero, so the
 degenerate branch of the divided-power expansion carries no linear term. -/
 private theorem kostantRootOperator_eq_zero_of_pow_eq_zero
@@ -137,8 +128,7 @@ private theorem derivation_coefficientMatrix
     · intro k _ hk
       rw [map_zsmul, AdditiveGroup.tangent_ι_pow_eq_zero d 1 hk]
       simp
-    · rw [map_zsmul, pow_one,
-        integralDividedPower_one_eq_kostantRootOperator e h ρ M hM i _ (b s)]
+    · rw [map_zsmul, pow_one, kostantRootOperator_def]
   · -- Below nilpotency class two the root vector already acts as zero, and no linear term
     -- occurs in the expansion.
     have hz : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) ^ 1 = 0 :=

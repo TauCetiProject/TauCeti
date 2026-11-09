@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Linear
 public import Mathlib.CategoryTheory.Abelian.Ext
+public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import Mathlib.CategoryTheory.Abelian.Projective.Ext
 public import TauCeti.Algebra.Homology.Opposite
 
@@ -31,6 +32,9 @@ over the coefficient ring.
 Degree `0` is deliberately excluded: there `Ext⁰(X, Y)` is `Hom(X, Y)`, which need not be
 `Hom(R₀, Y)`.
 
+At the other extreme, a resolution whose terms vanish from degree `n` on bounds the projective
+dimension of `X` by `n`.
+
 ## Main definitions
 
 * `CategoryTheory.ProjectiveResolution.extLinearEquiv`: the linear equivalence
@@ -40,6 +44,8 @@ Degree `0` is deliberately excluded: there `Ext⁰(X, Y)` is `Hom(X, Y)`, which 
 
 * `CategoryTheory.ProjectiveResolution.isoExt_hom_comp_homologyMap`: computing `Ext` from two
   resolutions related by a chain map agrees with the induced map on cohomology.
+* `CategoryTheory.ProjectiveResolution.hasProjectiveDimensionLT`: a projective resolution whose
+  terms vanish from degree `n` on gives `HasProjectiveDimensionLT X n`.
 
 ## References
 
@@ -100,6 +106,17 @@ theorem subsingleton_ext_of_subsingleton_hom (R : ProjectiveResolution X) (n : �
   obtain ⟨f, hf, rfl⟩ := R.extMk_surjective α (n + 1) rfl
   obtain rfl : f = 0 := Subsingleton.elim _ _
   simp
+
+omit [HasExt.{w} C] in
+/-- A projective resolution of `X` whose terms vanish from degree `n` on shows that `X` has
+projective dimension less than `n`. -/
+theorem hasProjectiveDimensionLT (R : ProjectiveResolution X) (n : ℕ)
+    (h : ∀ i, n ≤ i → Limits.IsZero (R.complex.X i)) : HasProjectiveDimensionLT X n := by
+  let := HasExt.standard C
+  refine HasProjectiveDimensionLT.mk fun i hi Y e ↦ ?_
+  have : Subsingleton (R.complex.X i ⟶ Y) := ⟨fun f g ↦ (h i hi).eq_of_src f g⟩
+  have := R.subsingleton_ext_of_subsingleton_hom (Y := Y) i
+  exact Subsingleton.elim _ _
 
 /-- If the two differentials of a projective resolution `R` of `X` adjacent to degree `n + 1`
 become zero after applying `Hom(-, Y)`, then `Extⁿ⁺¹(X, Y)` is the degree `n + 1` term of that

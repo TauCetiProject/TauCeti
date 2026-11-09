@@ -43,6 +43,8 @@ The specialization to discrete subgroups, whose point stabilizers are finite, is
 * `Subgroup.stabilizerRotation` and `Subgroup.stabilizerRotationEquiv`: the derivative character
   of a point stabilizer, and, for a finite stabilizer of order `m`, the isomorphism it gives onto
   the `m`-th roots of unity.
+* `Subgroup.positiveStabilizerGenerator`: the generator of a finite stabilizer whose derivative
+  is `exp (2πi/m)`, together with its order, generation, and disc-coordinate formulas.
 * `Subgroup.coe_stabilizerRotation_eq_denom_zpow` and `Subgroup.smul_eq_self_of_coe_eq`: a lift
   `g ∈ SL(2, ℝ)` of an element of the stabilizer fixes `z`, and its rotation is
   `denom g z ^ (-2)`.
@@ -346,6 +348,53 @@ noncomputable def stabilizerRotationEquiv (Γ : Subgroup PSL(2, ℝ)) (z : ℍ)
 theorem coe_stabilizerRotationEquiv (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) [Finite (stabilizer Γ z)] :
     ⇑(stabilizerRotationEquiv Γ z) = stabilizerRotation Γ z :=
   (rfl)
+
+section PositiveGenerator
+
+variable (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) [Finite (stabilizer Γ z)]
+
+/-- The generator of a finite point stabilizer whose rotation in the disc coordinate is
+`exp (2πi/m)`, where `m` is the order of the stabilizer. -/
+def positiveStabilizerGenerator : stabilizer Γ z :=
+  (stabilizerRotationEquiv Γ z).symm
+    (Complex.isPrimitiveRoot_exp (Nat.card (stabilizer Γ z)) (NeZero.ne _)).toRootsOfUnity
+
+/-- The derivative of the positive generator is the counterclockwise primitive root. -/
+@[simp]
+theorem smulDeriv_positiveStabilizerGenerator :
+    ((positiveStabilizerGenerator Γ z : Γ) : PSL(2, ℝ)).smulDeriv z =
+      Complex.exp (2 * Real.pi * Complex.I / Nat.card (stabilizer Γ z)) := by
+  rw [← stabilizerDeriv_apply Γ z (positiveStabilizerGenerator Γ z),
+    ← coe_stabilizerRotation, ← coe_stabilizerRotationEquiv]
+  simp [positiveStabilizerGenerator]
+
+/-- The positive generator has exactly the order of the point stabilizer. -/
+@[simp]
+theorem orderOf_positiveStabilizerGenerator :
+    orderOf (positiveStabilizerGenerator Γ z) = Nat.card (stabilizer Γ z) := by
+  rw [← orderOf_injective (stabilizerDeriv Γ z) (stabilizerDeriv_injective Γ z),
+    stabilizerDeriv_apply, smulDeriv_positiveStabilizerGenerator]
+  exact (Complex.isPrimitiveRoot_exp _ (NeZero.ne _)).eq_orderOf.symm
+
+/-- The powers of the positive generator exhaust the full stabilizer. -/
+@[simp]
+theorem zpowers_positiveStabilizerGenerator : zpowers (positiveStabilizerGenerator Γ z) = ⊤ := by
+  rw [← card_eq_iff_eq_top, Nat.card_zpowers, orderOf_positiveStabilizerGenerator]
+
+/-- Signed powers of the positive generator rotate the disc coordinate through `2πn/m`. -/
+theorem discCoordinate_positiveStabilizerGenerator_zpow (n : ℤ) (τ : ℍ) :
+    discCoordinate z (positiveStabilizerGenerator Γ z ^ n • τ) =
+      discCoordinate z τ * Complex.exp
+        (((2 * Real.pi * n / Nat.card (stabilizer Γ z) : ℝ) : ℂ) * Complex.I) := by
+  have hangle : (n : ℂ) * (2 * Real.pi * Complex.I / Nat.card (stabilizer Γ z)) =
+      ((2 * Real.pi * n / Nat.card (stabilizer Γ z) : ℝ) : ℂ) * Complex.I := by
+    push_cast
+    ring
+  rw [discCoordinate_stabilizer_smul]
+  simp only [map_zpow, stabilizerDeriv_apply, smulDeriv_positiveStabilizerGenerator]
+  rw [← Complex.exp_int_mul, hangle, mul_comm]
+
+end PositiveGenerator
 
 /-- **The disc coordinate conjugates a point stabilizer into the roots of unity**: an element of
 the stabilizer of `z` acts, in the disc coordinate centred at `z`, by its rotation. -/

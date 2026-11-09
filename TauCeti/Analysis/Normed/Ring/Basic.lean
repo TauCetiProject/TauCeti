@@ -48,6 +48,17 @@ theorem norm_pow_lt_one {R : Type*} [SeminormedRing R] {q : R} (hq : ‖q‖ < 1
     (hn : n ≠ 0) : ‖q ^ n‖ < 1 :=
   (norm_pow_le' q (Nat.pos_of_ne_zero hn)).trans_lt (pow_lt_one₀ (norm_nonneg q) hq hn)
 
+/-- Multiplying by further powers of an element of norm at most one does not increase the norm:
+`‖qⁿ⁺¹ w‖ ≤ ‖q w‖` when `‖q‖ ≤ 1`. -/
+theorem norm_pow_succ_mul_le {R : Type*} [SeminormedRing R] {q : R} (hq : ‖q‖ ≤ 1) (w : R)
+    (n : ℕ) : ‖q ^ (n + 1) * w‖ ≤ ‖q * w‖ := by
+  induction n with
+  | zero => rw [zero_add, pow_one]
+  | succ n ih =>
+    calc ‖q ^ (n + 1 + 1) * w‖ = ‖q * (q ^ (n + 1) * w)‖ := by rw [pow_succ', mul_assoc]
+      _ ≤ ‖q‖ * ‖q ^ (n + 1) * w‖ := norm_mul_le _ _
+      _ ≤ ‖q * w‖ := mul_le_of_le_one_left (norm_nonneg _) hq |>.trans ih
+
 /-- Without the normalisation `‖1‖ = 1`, powers are still bounded by `‖xⁿ‖ ≤ max ‖1‖ 1 * ‖x‖ⁿ`,
 including the power `x⁰ = 1`. -/
 theorem norm_pow_le_max_mul {R : Type*} [SeminormedRing R] (x : R) (n : ℕ) :
@@ -56,6 +67,15 @@ theorem norm_pow_le_max_mul {R : Type*} [SeminormedRing R] (x : R) (n : ℕ) :
   · simp
   · exact (norm_pow_le' x n.succ_pos).trans
       (le_mul_of_one_le_left (by positivity) (le_max_right _ _))
+
+/-- Without the normalisation `‖1‖ = 1`, a product with a power still satisfies
+`‖x * yⁿ‖ ≤ ‖x‖ * ‖y‖ⁿ`, including the case `n = 0`, where `x * y⁰ = x`. -/
+theorem norm_mul_pow_le {R : Type*} [SeminormedRing R] (x y : R) (n : ℕ) :
+    ‖x * y ^ n‖ ≤ ‖x‖ * ‖y‖ ^ n := by
+  rcases n with _ | n
+  · simp
+  · exact (norm_mul_le _ _).trans
+      (mul_le_mul_of_nonneg_left (norm_pow_le' y n.succ_pos) (norm_nonneg x))
 
 end TauCeti
 

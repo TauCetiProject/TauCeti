@@ -22,6 +22,8 @@ The uniform checks establish total rank 24, the displayed root counts from the e
 `DynkinType.numRoots`, and the numerical identity `numRoots = rank * h` for every component.
 The displayed component multisets are pairwise distinct. These are facts about the finite
 root-system descriptions; no overlattices or classification of lattices are asserted here.
+The finite eliminator `RootfulNiemeierType.forall` splits a statement over the table into its 23
+rows.
 
 The data definitions are exposed to support proof-producing finite computation. In particular,
 the ordered lists must compute when used in the dependent carriers of the component alphabets
@@ -93,6 +95,20 @@ inductive RootfulNiemeierType where
 instance : Fintype RootfulNiemeierType := derive_fintype% _
 
 namespace RootfulNiemeierType
+
+/-- **Finite elimination over the table**: a statement holds for every row exactly when it holds
+for each of the 23 rows, in source order.  This specializes a theorem stated uniformly over the
+table to all rows at once, and conversely assembles a uniform theorem from row-by-row proofs. -/
+protected theorem «forall» {P : RootfulNiemeierType → Prop} :
+    (∀ r, P r) ↔
+      P d24 ∧ P d16e8 ∧ P e8Cubed ∧ P a24 ∧ P d12Squared ∧ P a17e7 ∧ P d10e7Squared ∧ P a15d9 ∧
+        P d8Cubed ∧ P a12Squared ∧ P a11d7e6 ∧ P e6Fourth ∧ P a9SquaredD6 ∧ P d6Fourth ∧
+        P a8Cubed ∧ P a7SquaredD5Squared ∧ P a6Fourth ∧ P a5FourthD4 ∧ P d4Sixth ∧ P a4Sixth ∧
+        P a3Eighth ∧ P a2Twelfth ∧ P a1TwentyFourth := by
+  refine ⟨fun h ↦ ⟨h _, h _, h _, h _, h _, h _, h _, h _, h _, h _, h _, h _, h _, h _, h _, h _,
+    h _, h _, h _, h _, h _, h _, h _⟩, fun h r ↦ ?_⟩
+  obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _⟩ := h
+  cases r <;> assumption
 
 /-- The zero-based source index. Adding one gives the printed row number, from 1 to 23. -/
 @[expose] def sourceIndex : RootfulNiemeierType → Fin 23

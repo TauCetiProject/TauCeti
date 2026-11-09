@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Opposite
+public import Mathlib.Algebra.Algebra.Tower
 public import Mathlib.Algebra.Module.LinearMap.Basic
 public import Mathlib.LinearAlgebra.Dual.Defs
 
@@ -20,9 +22,9 @@ This file records that action as the ring homomorphism `TauCeti.dualRightAction`
 
 On the other side, a semiring `A` with a `k`-module structure commuting with left multiplication
 acts on the right of the dual of its left regular module by
-`(ψ · c) b = ψ (c * b)`, which Mathlib writes as the domain action `DomMulAct.mk c • ψ`. A
-`k`-linear map `A → Module.Dual k A` that is right `A`-linear for this action is determined by its
-value at `1`; this is `TauCeti.dualLinearMap_apply_apply`.
+`(ψ · c) b = ψ (c * b)`, which Mathlib writes as the domain action `DomMulAct.mk c • ψ`. A map
+`A → Module.Dual k A` that is equivariant for the right `A`-actions is determined by its value at
+`1`; this is `TauCeti.apply_apply_eq_apply_one_mul`.
 
 ## Main definitions
 
@@ -31,8 +33,12 @@ value at `1`; this is `TauCeti.dualLinearMap_apply_apply`.
 
 ## Main results
 
-* `TauCeti.dualLinearMap_apply_apply`: a right `A`-linear map from `A` to its dual is determined by
-  its value at `1`.
+* `TauCeti.apply_apply_eq_apply_one_mul`: a map from `A` to its dual that is equivariant for the
+  right `A`-actions is determined by its value at `1`; additivity is not assumed.
+* `LinearEquiv.isScalarTower_of_moduleDual`: an equivariant identification with the dual of a
+  right module gives compatible actions of `k` and `A`.
+* `LinearEquiv.isScalarTower_of_dual_regular`: a left `A`-module identified with the dual of the
+  right regular module, with action `(a • φ) x = φ (x * a)`, has compatible actions of `k` and `A`.
 
 ## Implementation notes
 
@@ -70,21 +76,48 @@ def dualRightAction : A →+* Module.End k (Module.Dual k N) where
 
 @[simp]
 theorem dualRightAction_apply_apply (a : A) (φ : Module.Dual k N) (x : N) :
-    dualRightAction k N a φ x = φ (MulOpposite.op a • x) := by
-  -- unfolding `dualRightAction` leaves `LinearMap.dualMap` of multiplication by `a`, evaluated by
-  -- `LinearMap.dualMap_apply`
-  simp [dualRightAction, LinearMap.dualMap_apply]
+    dualRightAction k N a φ x = φ (MulOpposite.op a • x) :=
+  (rfl)
 
 section DomMulAct
 
 variable {k} [Module k A] [SMulCommClass k A A]
 
-/-- A `k`-linear map from `A` to its dual that is right `A`-linear, for the action
-`DomMulAct.mk c • ψ = ψ (c * ·)` on the dual, is determined by its value at `1`. -/
-theorem dualLinearMap_apply_apply {e : A →ₗ[k] Module.Dual k A}
+/-- A map from `A` to its dual that is equivariant for the right `A`-actions, using the action
+`DomMulAct.mk c • ψ = ψ (c * ·)` on the dual, is determined by its value at `1`. The map need not
+be additive. -/
+theorem apply_apply_eq_apply_one_mul {e : A → Module.Dual k A}
     (he : ∀ a c : A, e (a * c) = DomMulAct.mk c • e a) (a b : A) : e a b = e 1 (a * b) := by
   simpa using LinearMap.congr_fun (he 1 a) b
 
 end DomMulAct
 
 end TauCeti
+
+/-- The `A`-action on a module identified equivariantly with the `k`-dual of a right module
+commutes with the `k`-action. -/
+theorem LinearEquiv.isScalarTower_of_moduleDual {k : Type*} {A : Type*} {M : Type*} {N : Type*}
+    [CommSemiring k] [Semiring A] [Algebra k A] [AddCommMonoid M] [Module Aᵐᵒᵖ M] [Module k M]
+    [IsScalarTower k Aᵐᵒᵖ M] [AddCommMonoid N] [Module A N] [Module k N]
+    (eM : N ≃ₗ[k] Module.Dual k M)
+    (heM : ∀ (a : A) (n : N) (m : M), eM (a • n) m = eM n (MulOpposite.op a • m)) :
+    IsScalarTower k A N :=
+  IsScalarTower.of_algebraMap_smul fun c n ↦ by
+    apply eM.injective
+    ext m
+    simp [heM, ← MulOpposite.algebraMap_apply]
+
+namespace LinearEquiv
+
+variable {k A Q : Type*} [CommSemiring k] [Semiring A] [Algebra k A] [AddCommMonoid Q]
+  [Module A Q] [Module k Q]
+
+/-- A left `A`-module identified with the dual of the right regular module, with action
+`(a • φ) x = φ (x * a)`, has compatible actions of `k` and `A`. -/
+theorem isScalarTower_of_dual_regular (e : Q ≃ₗ[k] Module.Dual k A)
+    (he : ∀ (a : A) (q : Q) (x : A), e (a • q) x = e q (x * a)) :
+    IsScalarTower k A Q :=
+  IsScalarTower.of_algebraMap_smul fun c q => e.injective <| LinearMap.ext fun x => by
+    simp [he, ← Algebra.commutes, ← Algebra.smul_def]
+
+end LinearEquiv

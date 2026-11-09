@@ -31,7 +31,11 @@ automorphism: an automorphism whose class is the Artin symbol of the class of th
 uniformizer of `K_v` at `v` and `1` at every other place is an arithmetic Frobenius at every prime
 of `L` above `v` (`isArithFrobAt_of_globalArtinMap_ofAdicCompletion_eq`), in particular for the
 prime idele class (`globalArtinMap_isArithFrobAt`). This is the arithmetic, rather than geometric,
-normalization of the global Artin map.
+normalization of the global Artin map. Since a Frobenius at an unramified prime has order the
+residue degree, so does the Artin symbol of the prime idele class
+(`addOrderOf_globalArtinMap_primeIdeleClass`); in particular the symbol is trivial exactly when `v`
+splits completely. In a quadratic extension the symbol is the nontrivial automorphism exactly
+when `v` is inert (`globalArtinMap_quadratic_prime`).
 
 Consequently the global Artin map agrees with the ideal-theoretic Artin map
 `TauCeti.NumberFieldArithmetic.artinHomAway` on the primes outside a finite set `S` containing
@@ -56,6 +60,12 @@ homomorphism whose prime values are the global Artin symbols of the prime idele 
   uniformizer at an unramified `v` and `1` elsewhere is an arithmetic Frobenius at every prime of
   `L` above `v`.
 * `TauCeti.ClassFieldTheory.globalArtinMap_isArithFrobAt`: the same for the prime idele class.
+* `TauCeti.ClassFieldTheory.addOrderOf_globalArtinMap_primeIdeleClass` and
+  `globalArtinMap_primeIdeleClass_eq_zero_iff_inertiaDeg_eq_one`: for `L/K` abelian and `v`
+  unramified, the Artin symbol of the prime idele class has order the residue degree, and is
+  trivial exactly when the residue degree is `1`.
+* `TauCeti.ClassFieldTheory.globalArtinMap_quadratic_prime`: in a quadratic extension, the Artin
+  symbol of an unramified prime is the nontrivial automorphism exactly when the prime is inert.
 * `TauCeti.ClassFieldTheory.globalArtinMap_ideal`: for `L/K` abelian, the global Artin symbol of
   the prime idele class at `v ∉ S` is the class of the ideal-theoretic Artin symbol of `v`.
 * `TauCeti.ClassFieldTheory.eq_artinHomAway_of_globalArtinMap`: a homomorphism on the ideals
@@ -152,6 +162,49 @@ theorem globalArtinMap_isArithFrobAt [IsMulCommutative Gal(L/K)] {σ : Gal(L/K)}
     IsArithFrobAt (𝓞 K) σ Q := by
   obtain ⟨π, hπ, h⟩ := exists_isUniformizer_primeIdeleClass_eq K v
   exact isArithFrobAt_of_globalArtinMap_ofAdicCompletion_eq L ι v Q hπ (h ▸ hσ)
+
+/-- **The order of the Artin symbol of a prime is its residue degree.** For a finite abelian
+extension `L/K` of number fields and a finite place `v` of `K` unramified at a prime `Q` of `L`
+above it, the global Artin symbol of the prime idele class at `v` has order the residue degree
+`f(Q | v)`. -/
+theorem addOrderOf_globalArtinMap_primeIdeleClass [IsMulCommutative Gal(L/K)] :
+    addOrderOf (globalArtinMap K L ι (.ofMul (primeIdeleClass K v))) = Q.inertiaDeg (𝓞 K) := by
+  have hQ := Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q
+  obtain ⟨σ, hσ⟩ := NumberField.exists_isArithFrobAt K Q hQ
+  rw [globalArtinMap_primeIdeleClass_eq_of_isArithFrobAt L ι v Q hσ, addOrderOf_ofMul_eq_orderOf,
+    orderOf_injective _ Abelianization.of_injective,
+    Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q hσ]
+
+/-- **Splitting criterion through the Artin symbol.** For a finite abelian extension `L/K` of
+number fields and a finite place `v` of `K` unramified at a prime `Q` of `L` above it, the global
+Artin symbol of the prime idele class at `v` is trivial exactly when `Q` has residue degree `1`,
+that is, when `v` splits completely in `L`. -/
+theorem globalArtinMap_primeIdeleClass_eq_zero_iff_inertiaDeg_eq_one [IsMulCommutative Gal(L/K)] :
+    globalArtinMap K L ι (.ofMul (primeIdeleClass K v)) = 0 ↔ Q.inertiaDeg (𝓞 K) = 1 := by
+  rw [← addOrderOf_globalArtinMap_primeIdeleClass L ι v Q,
+    AddMonoid.addOrderOf_eq_one_iff]
+
+/-- **Artin symbols in a quadratic extension.** Let `L/K` be a quadratic extension of number
+fields with nontrivial automorphism `τ`, and let `v` be a finite place of `K` unramified at a prime
+`Q` of `L` above it. The global Artin symbol of the prime idele class at `v` is the class of `τ`
+exactly when `Q` has residue degree `2`, that is, when `v` is inert in `L`. Otherwise it is trivial
+(`globalArtinMap_primeIdeleClass_eq_zero_iff_inertiaDeg_eq_one`). -/
+theorem globalArtinMap_quadratic_prime (hL : Module.finrank K L = 2) {τ : Gal(L/K)} (hτ : τ ≠ 1) :
+    globalArtinMap K L ι (.ofMul (primeIdeleClass K v)) = .ofMul (Abelianization.of τ) ↔
+      Q.inertiaDeg (𝓞 K) = 2 := by
+  have hcard : Nat.card Gal(L/K) = 2 := by rw [IsGalois.card_aut_eq_finrank, hL]
+  have : Fact (Nat.card Gal(L/K)).Prime := ⟨hcard ▸ Nat.prime_two⟩
+  have : IsCyclic Gal(L/K) := isCyclic_of_prime_card rfl
+  have hQ := Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q
+  obtain ⟨σ, hσ⟩ := NumberField.exists_isArithFrobAt K Q hQ
+  rw [globalArtinMap_primeIdeleClass_eq_of_isArithFrobAt L ι v Q hσ,
+    Additive.ofMul.injective.eq_iff, Abelianization.of_injective.eq_iff,
+    ← Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q hσ]
+  -- In a group of order two, the nontrivial element is the unique element of order two.
+  obtain ⟨u, -, hu⟩ := (Nat.card_eq_two_iff' (1 : Gal(L/K))).mp hcard
+  refine ⟨fun h ↦ h ▸ orderOf_eq_prime (hcard ▸ pow_card_eq_one') hτ, fun h ↦ ?_⟩
+  have hσ1 : σ ≠ 1 := fun h1 ↦ by simp [h1] at h
+  exact (hu σ hσ1).trans (hu τ hτ).symm
 
 end Unramified
 

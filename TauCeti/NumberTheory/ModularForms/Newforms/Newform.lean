@@ -9,6 +9,8 @@ public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.Diagonal.Composite
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Action
 public import TauCeti.NumberTheory.ModularForms.Newforms.Basic
+import TauCeti.NumberTheory.ModularForms.Cusps.Basic
+import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
 /-!
 # Good Hecke eigenforms and newforms, as bundled forms
@@ -47,6 +49,8 @@ that the character, the eigenvalue system and the analytic invariants travel wit
 * `HeckeRing.GL2.EigenformAwayFromLevel.ext`, `HeckeRing.GL2.Newform.ext`: the bundled data is
   determined by the underlying cusp form.
 * `HeckeRing.GL2.Newform.qExpansion_coeff_one`: the normalisation `a₁ = 1` as a simp lemma.
+* `HeckeRing.GL2.Newform.injective_qExpansion_coeff_pnat`: a newform is determined by its
+  Fourier coefficients `aₙ`, `n ≥ 1`.
 
 ## Provenance
 
@@ -68,7 +72,7 @@ classical eigenvalue `Eigenform.eigenvalue` (which in its convention carries a d
 
 public section
 
-open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup HeckeRing.GLn
+open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup HeckeRing.GLn TauCeti
 
 open scoped MatrixGroups ModularForm HeckeCosetModule
 
@@ -145,6 +149,17 @@ theorem dirichletLift_equivToUnitHom (f : Newform N k) :
   rw [dirichletLift_def]
   exact MulChar.equivToUnitHom.apply_symm_apply f.χ
 
+/-- The zero-extended nebentypus, read on units through `MulChar.toUnitHom`, is the character of
+the newform. -/
+theorem dirichletLift_toUnitHom (f : Newform N k) : f.dirichletLift.toUnitHom = f.χ := by
+  rw [MulChar.toUnitHom_eq, dirichletLift_equivToUnitHom]
+
+/-- Raising the level of the zero-extended nebentypus along `N ∣ L` gives, on units, the character
+of the newform composed with reduction modulo `N`. -/
+theorem changeLevel_dirichletLift_toUnitHom {L : ℕ} (f : Newform N k) (h : N ∣ L) :
+    (DirichletCharacter.changeLevel h f.dirichletLift).toUnitHom = f.χ.comp (ZMod.unitsMap h) := by
+  rw [DirichletCharacter.changeLevel_toUnitHom, dirichletLift_toUnitHom]
+
 /-- The zero-extended nebentypus vanishes at indices not coprime to the level. -/
 @[simp]
 theorem dirichletLift_apply_eq_zero (f : Newform N k) (n : ℕ) (hn : ¬ n.Coprime N) :
@@ -172,6 +187,18 @@ theorem ext {f g : Newform N k} (h : f.toCuspForm = g.toCuspForm) : f = g := by
   have : f = g := EigenformAwayFromLevel.ext h
   subst this
   rfl
+
+/-- A newform is determined by its Fourier coefficients `aₙ`, `n ≥ 1`, its constant term being
+zero. -/
+theorem injective_qExpansion_coeff_pnat :
+    Function.Injective fun (g : Newform N k) (n : ℕ+) ↦ (qExpansion 1 g.toCuspForm).coeff n := by
+  have h1 := TauCeti.one_mem_strictPeriods_Gamma1_map N
+  refine fun g h hgh ↦ Newform.ext <| CuspForm.qExpansion_injective one_pos h1
+    (PowerSeries.ext fun m ↦ ?_)
+  rcases Nat.eq_zero_or_pos m with rfl | hm
+  · rw [CuspFormClass.qExpansion_coeff_zero _ one_pos h1,
+      CuspFormClass.qExpansion_coeff_zero _ one_pos h1]
+  · exact congrFun hgh ⟨m, hm⟩
 
 end Newform
 

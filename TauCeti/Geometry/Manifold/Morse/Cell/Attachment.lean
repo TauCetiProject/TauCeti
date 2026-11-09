@@ -9,12 +9,13 @@ public import TauCeti.Geometry.Manifold.Morse.AdmissibleCharts
 public import TauCeti.Geometry.Manifold.Morse.Deformation
 public import TauCeti.Geometry.Manifold.Morse.HandleRetraction
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Analysis.Calculus.Morse.QuadraticHandle
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Topology.Homotopy.DeformationRetract
 
 /-!
-# Cell attachment across a critical level
+# Cell and handle attachment across a critical level
 
 Let `f` be a smooth function on a boundaryless finite-dimensional manifold, and let `c` be a
 critical value at which `f` has finitely many critical points, all nondegenerate, such that the
@@ -42,6 +43,16 @@ retracts onto `{F ≤ c - ε}` (`TauCeti.exists_sublevelDeformation`), which in 
 `M_{c-ε}` with the cells attached (`TauCeti.exists_inter_sublevel_union_cells_deformation`), since
 lowering the positive coordinates lowers `F`. The two retractions compose.
 
+Milnor's Remark 3.3 refines this to a handle attachment, up to a diffeomorphism rather than a
+homotopy. Since `F` has no critical points in the compact band, the descending flow of
+`TauCeti.exists_diffeomorph_sublevel` is a diffeomorphism of `M` carrying `M_{c+ε} = {F ≤ c + ε}`
+onto `{F ≤ c - ε}`, and the level `f⁻¹(c + ε)` onto `F⁻¹(c - ε)`. For a cutoff positive on
+`(-∞, 2ε)`, the sublevel `{F ≤ c - ε}` is `M_{c-ε}` together with one handle in each chart, the
+points of `{F ≤ c - ε}` on or above the level `f = c - ε` in Milnor's ellipsoid
+`‖u‖² + 2‖v‖² ≤ 2ε`. In the coordinates `(u, v)` it is
+Milnor's handle `TauCeti.quadraticHandle ε μ`, which is homeomorphic to `D^λ × D^(m-λ)` with its
+attaching region `{f = c - ε}` carried onto `∂D^λ × D^(m-λ)` (`TauCeti.quadraticHandleHomeomorph`).
+
 ## Main results
 
 * `TauCeti.exists_sublevel_union_cells_deformation`: for normal-form charts with disjoint sources
@@ -49,7 +60,13 @@ lowering the positive coordinates lowers `F`. The two retractions compose.
   strong deformation retracts onto `M_{c-ε}` with the cells of the charts attached.
 * `TauCeti.IsMorse.exists_sublevel_union_cells_deformation`: **Milnor's cell attachment
   theorem** for a Morse function with a compact band around a critical value, with the charts and
-  the width `ε` supplied by `TauCeti.IsMorse.exists_admissible_morseCharts`.
+  the width `ε₀` supplied by `TauCeti.IsMorse.exists_admissible_morseCharts`, valid for all
+  smaller widths too.
+* `TauCeti.exists_diffeomorph_sublevel_eq_union_handles`: for such charts, a diffeomorphism of `M`
+  carries `M_{c+ε}` onto `M_{c-ε}` with one handle `D^λ × D^(m-λ)` attached in each chart, along
+  `∂D^λ × D^(m-λ)`.
+* `TauCeti.IsMorse.exists_diffeomorph_sublevel_eq_union_handles`: **Milnor's handle attachment
+  theorem** for a Morse function with a compact band around a critical value.
 
 ## References
 
@@ -83,6 +100,15 @@ private def milnorFunction [Fintype ι]
     (ψ : ι → PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) ∞)
     (f : M → ℝ) (c : ℝ) (μ : ℝ → ℝ) (x : M) : ℝ :=
   f x - ∑ i, (ψ i).source.indicator (fun y ↦ μ ((3 * ‖ψ i y‖ ^ 2 + (f y - c)) / 2)) x
+
+/-- The handle of the chart `ψ i`: the points of its source whose coordinates `(u, v)`, split into
+the first `k i` and the remaining coordinates, lie in Milnor's handle
+`TauCeti.quadraticHandle ε μ`. -/
+private def milnorHandle
+    (ψ : ι → PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) ∞)
+    (k : ι → ℕ) (ε : ℝ) (μ : ℝ → ℝ) (i : ι) : Set M :=
+  (ψ i).source ∩ ψ i ⁻¹'
+    (EuclideanSpace.sumComplEquivProd ℝ (fun j : Fin n ↦ j.val < k i) ⁻¹' quadraticHandle ε μ)
 
 variable [Fintype ι]
 
@@ -227,7 +253,7 @@ private theorem milnorFunction_symm_scale_le (hμa : Antitone μ)
 
 /-- Milnor's function lies below `c - ε` on the cell `{‖y‖² ≤ ε, yⱼ = 0 for j ≥ k i}` of a
 chart. -/
-private theorem milnorFunction_le_of_mem_cell (hε : 0 < ε) (hμ_eq : ∀ r ≤ ε, μ r = 2 * ε)
+private theorem milnorFunction_le_of_mem_cell (hμ_eq : ∀ r ≤ ε, μ r = 2 * ε)
     (hx : x ∈ (ψ i).source) (hxε : ‖ψ i x‖ ^ 2 ≤ ε)
     (hxv : ∀ j : Fin n, k i ≤ j.val → ψ i x j = 0) :
     milnorFunction ψ f c μ x ≤ c - ε := by
@@ -270,6 +296,86 @@ private theorem indicator_eq_zero_of_notMem_image [Finite ι] (i : ι) {y : M}
     rwa [indicator_of_mem hys]
   · exact indicator_of_notMem hys _
 
+/-- **The sublevel `{F ≤ c - ε}` is the lower sublevel with the handles attached.** A point with
+`F ≤ c - ε` and `f > c - ε` lies in a chart, where its coordinates satisfy the inequalities of
+Milnor's handle. -/
+private theorem setOf_milnorFunction_le_sub (hμ_nonneg : ∀ r, 0 ≤ μ r) :
+    {x | milnorFunction ψ f c μ x ≤ c - ε} =
+      {x | f x ≤ c - ε} ∪ ⋃ i, milnorHandle ψ k ε μ i := by
+  ext x
+  simp only [mem_union, mem_ofPred_eq, mem_iUnion]
+  constructor
+  · intro hx
+    by_cases hxs : ∃ i, x ∈ (ψ i).source
+    · obtain ⟨i, hi⟩ := hxs
+      obtain ⟨hfx, hFx⟩ := milnorFunction_of_mem_source hψ hf (μ := μ) hi
+      refine or_iff_not_imp_left.2 fun hlt ↦ ⟨i, hi, ?_⟩
+      rcases mem_quadraticHandle_or_eq_of_le hμ₀ (by rw [hfx] at hlt; linarith)
+        (by rw [hFx] at hx; linarith) with h | h
+      · exact h
+      · rw [hfx, h] at hlt
+        exact absurd (le_of_eq (by ring)) hlt
+    · rw [milnorFunction_of_forall_notMem (not_exists.1 hxs)] at hx
+      exact .inl hx
+  · rintro (hx | ⟨i, hi, hz⟩)
+    · exact (milnorFunction_le hμ_nonneg x).trans hx
+    · rw [(milnorFunction_of_mem_source hψ hf (μ := μ) hi).2]
+      linarith [(mem_quadraticHandle.1 hz).2.1]
+
+/-- **The boundary of `{F ≤ c - ε}`.** A point lies on the level `F = c - ε` exactly when it lies
+on the top of every handle containing it, and on the level `f = c - ε` if it lies in no handle. -/
+private theorem milnorFunction_eq_sub_iff (hμ_nonneg : ∀ r, 0 ≤ μ r) {y : M} :
+    milnorFunction ψ f c μ y = c - ε ↔
+      (∀ i, y ∈ milnorHandle ψ k ε μ i →
+        -‖(EuclideanSpace.sumComplEquivProd ℝ (fun j : Fin n ↦ j.val < k i) (ψ i y)).1‖ ^ 2 +
+          ‖(EuclideanSpace.sumComplEquivProd ℝ (fun j : Fin n ↦ j.val < k i) (ψ i y)).2‖ ^ 2 -
+          μ (‖(EuclideanSpace.sumComplEquivProd ℝ (fun j : Fin n ↦ j.val < k i) (ψ i y)).1‖ ^ 2 +
+            2 * ‖(EuclideanSpace.sumComplEquivProd ℝ (fun j : Fin n ↦ j.val < k i)
+              (ψ i y)).2‖ ^ 2) = -ε) ∧
+      (y ∉ ⋃ i, milnorHandle ψ k ε μ i → f y = c - ε) := by
+  have hle := setOf_milnorFunction_le_sub hψ hf hμ₀ (k := k) hμ_nonneg
+  constructor
+  · intro hy
+    refine ⟨fun i hi ↦ ?_, fun hy' ↦ ?_⟩
+    · rw [(milnorFunction_of_mem_source hψ hf (μ := μ) hi.1).2] at hy
+      linarith
+    · have hmem : y ∈ {x | milnorFunction ψ f c μ x ≤ c - ε} := hy.le
+      rw [hle] at hmem
+      exact le_antisymm (hmem.resolve_right hy') (hy ▸ milnorFunction_le hμ_nonneg y)
+  · rintro ⟨h₁, h₂⟩
+    by_cases hy : ∃ i, y ∈ milnorHandle ψ k ε μ i
+    · obtain ⟨i, hi⟩ := hy
+      rw [(milnorFunction_of_mem_source hψ hf (μ := μ) hi.1).2]
+      linarith [h₁ i hi]
+    · have hfy := h₂ fun h ↦ hy (mem_iUnion.1 h)
+      by_cases hys : ∃ i, y ∈ (ψ i).source
+      · obtain ⟨i, hi⟩ := hys
+        obtain ⟨hfx, hFx⟩ := milnorFunction_of_mem_source hψ hf (μ := μ) hi
+        set e := EuclideanSpace.sumComplEquivProd ℝ fun j : Fin n ↦ j.val < k i
+        rcases le_or_gt (2 * ε) (‖(e (ψ i y)).1‖ ^ 2 + 2 * ‖(e (ψ i y)).2‖ ^ 2) with h | h
+        · rw [hFx, hμ₀ _ h, sub_zero, ← hfx, hfy]
+        · -- Inside the ellipsoid, a point of the level `f = c - ε` lies in the handle.
+          refine absurd ⟨i, hi, mem_quadraticHandle.2 ⟨?_, ?_, h.le⟩⟩ hy <;> linarith [hμ_nonneg
+            (‖(e (ψ i y)).1‖ ^ 2 + 2 * ‖(e (ψ i y)).2‖ ^ 2)]
+      · rwa [milnorFunction_of_forall_notMem (not_exists.1 hys)]
+
+/-- Milnor's function and `f` have the same level `c + ε`: inside Milnor's ellipsoid
+`‖u‖² + 2‖v‖² < 2ε` of a chart, `F ≤ f = c - ‖u‖² + ‖v‖² < c + ε`, and outside the ellipsoids
+`F = f`. -/
+private theorem milnorFunction_eq_add_iff (hμ_nonneg : ∀ r, 0 ≤ μ r) :
+    milnorFunction ψ f c μ x = c + ε ↔ f x = c + ε := by
+  by_cases hxs : ∃ i, x ∈ (ψ i).source
+  · obtain ⟨i, hi⟩ := hxs
+    obtain ⟨hfx, hFx⟩ := milnorFunction_of_mem_source hψ hf (μ := μ) hi
+    set e := EuclideanSpace.sumComplEquivProd ℝ fun j : Fin n ↦ j.val < k i
+    rcases le_or_gt (2 * ε) (‖(e (ψ i x)).1‖ ^ 2 + 2 * ‖(e (ψ i x)).2‖ ^ 2) with h | h
+    · rw [hFx, hμ₀ _ h, sub_zero, ← hfx]
+    · have hu := sq_nonneg ‖(e (ψ i x)).1‖
+      have hμx := hμ_nonneg (‖(e (ψ i x)).1‖ ^ 2 + 2 * ‖(e (ψ i x)).2‖ ^ 2)
+      rw [hFx, hfx]
+      constructor <;> intro h' <;> nlinarith
+  · rw [milnorFunction_of_forall_notMem (not_exists.1 hxs)]
+
 variable (hball : ∀ i, closedBall 0 √(2 * ε) ⊆ (ψ i).target)
 include hball
 
@@ -283,7 +389,7 @@ variable [T2Space M]
 
 /-- Away from the images of the closed balls of radius `√(2ε)`, Milnor's function agrees with `f`
 on a neighbourhood. -/
-private theorem milnorFunction_eventuallyEq [Finite ι]
+private theorem milnorFunction_eventuallyEq
     (hx : x ∉ ⋃ i, (ψ i).toOpenPartialHomeomorph.symm '' closedBall 0 √(2 * ε)) :
     milnorFunction ψ f c μ =ᶠ[𝓝 x] f := by
   have hclosed : IsClosed (⋃ i, (ψ i).toOpenPartialHomeomorph.symm '' closedBall 0 √(2 * ε)) :=
@@ -350,7 +456,7 @@ private theorem le_of_milnorFunction_le (hx : milnorFunction ψ f c μ x ≤ c -
 
 /-- Milnor's function has no critical points in the band `F⁻¹[c - ε, c + ε]`, provided the
 critical points of `f` in the band `f⁻¹[c - ε, c + ε]` lie in the chart sources. -/
-private theorem mfderiv_milnorFunction_ne_zero_of_mem_Icc [Finite ι]
+private theorem mfderiv_milnorFunction_ne_zero_of_mem_Icc
     (hε : 0 < ε) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hμ : ContDiff ℝ ∞ μ) (hμa : Antitone μ)
     (hμ_nonneg : ∀ r, 0 ≤ μ r) (hμ_eq : ∀ r ≤ ε, μ r = 2 * ε)
     (hcrit : criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ ⋃ i, (ψ i).source)
@@ -373,6 +479,40 @@ private theorem mfderiv_milnorFunction_ne_zero_of_mem_Icc [Finite ι]
     exact hxs i hi
 
 end MilnorFunction
+
+/-- **The handle of a chart is a product of discs.** In the coordinates of the chart `ψ i`, split
+into the first `k i` and the remaining coordinates, the handle `milnorHandle ψ k ε μ i` is Milnor's
+handle `TauCeti.quadraticHandle ε μ`, which the rescaling `TauCeti.quadraticHandleMap` identifies
+with the product of the closed unit balls. -/
+private theorem exists_milnorHandle_homeomorph
+    {ψ : ι → PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) ∞}
+    {k : ι → ℕ} {μ : ℝ → ℝ} (hε : 0 < ε) (hμ : Continuous μ) (hμa : Antitone μ) (hμε : ε < μ ε)
+    (hμ₀ : ∀ r, 2 * ε ≤ r → μ r = 0) (hμ_pos : ∀ r < 2 * ε, 0 < μ r)
+    (hball : ∀ i, closedBall 0 √(2 * ε) ⊆ (ψ i).target) (i : ι) :
+    ∃ e : milnorHandle ψ k ε μ i ≃ₜ closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k i}) 1 ×
+        closedBall (0 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k i}) 1,
+      ∀ x, ((e x).1 : EuclideanSpace ℝ {j : Fin n // j.val < k i}) = (quadraticHandleMap ε μ
+          (EuclideanSpace.sumComplEquivProd ℝ (fun j : Fin n ↦ j.val < k i) (ψ i x))).1 ∧
+        ((e x).2 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k i}) = (quadraticHandleMap ε μ
+          (EuclideanSpace.sumComplEquivProd ℝ (fun j : Fin n ↦ j.val < k i) (ψ i x))).2 := by
+  set L := EuclideanSpace.sumComplEquivProd ℝ fun j : Fin n ↦ j.val < k i
+  -- Milnor's handle lies in the ellipsoid `‖u‖² + 2‖v‖² ≤ 2ε`, inside the chart target.
+  have htarget : L ⁻¹' quadraticHandle ε μ ⊆ (ψ i).target := fun z hz ↦ by
+    have h := EuclideanSpace.norm_fst_sumComplEquivProd_sq_add_norm_snd_sq
+      (p := fun j : Fin n ↦ j.val < k i) z
+    refine hball i (mem_closedBall_zero_iff.2 (Real.le_sqrt_of_sq_le ?_))
+    nlinarith [(mem_quadraticHandle.1 hz).2.2, sq_nonneg ‖(L z).2‖]
+  have himage : (ψ i).toOpenPartialHomeomorph '' milnorHandle ψ k ε μ i =
+      L ⁻¹' quadraticHandle ε μ := by
+    rw [milnorHandle]
+    exact ((ψ i).toOpenPartialHomeomorph.image_source_inter_eq' _).trans <|
+      ((ψ i).toOpenPartialHomeomorph.target_inter_inv_preimage_preimage _).trans <|
+        inter_eq_right.2 htarget
+  exact ⟨((ψ i).toOpenPartialHomeomorph.homeomorphOfImageSubsetSource inter_subset_left
+      himage).trans ((L.toHomeomorph.subtype fun _ ↦ Iff.rfl).trans
+        (quadraticHandleHomeomorph hε hμa hμε hμ hμ₀ hμ_pos)),
+    fun x ↦ ⟨coe_fst_quadraticHandleHomeomorph hε hμa hμε hμ hμ₀ hμ_pos _,
+      coe_snd_quadraticHandleHomeomorph hε hμa hμε hμ hμ₀ hμ_pos _⟩⟩
 
 section CellAttachment
 
@@ -404,7 +544,7 @@ theorem exists_sublevel_union_cells_deformation [Finite ι] (hfs : ContMDiff I �
           ⋃ i, (ψ i).source ∩ ψ i ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, k i ≤ j.val → y j = 0}}) := by
   have := Fintype.ofFinite ι
   -- Milnor's cutoff, equal to `2ε` on `(-∞, ε]` and to `0` on `[2ε, ∞)`.
-  obtain ⟨μ, hμ, hμa, hμ_nonneg, hμ₀, hμ_eq⟩ :=
+  obtain ⟨μ, hμ, hμa, hμ_nonneg, hμ₀, hμ_eq, -⟩ :=
     exists_contDiff_antitone_cutoff (by linarith : ε < 2 * ε) (by positivity : 0 ≤ 2 * ε)
   set F := milnorFunction ψ f c μ
   set S := {x | f x ≤ c - ε} ∪
@@ -413,10 +553,9 @@ theorem exists_sublevel_union_cells_deformation [Finite ι] (hfs : ContMDiff I �
   have hX : {x | F x ≤ c + ε} = {x | f x ≤ c + ε} := setOf_milnorFunction_le hψ hf hμ₀ hμ_nonneg
   have hSY : S ⊆ {x | F x ≤ c - ε} :=
     union_subset (fun x hx ↦ (milnorFunction_le hμ_nonneg x).trans hx) <| iUnion_subset
-      fun i x ⟨hxi, hxε, hxv⟩ ↦ milnorFunction_le_of_mem_cell hψ hf hε hμ_eq hxi hxε hxv
+      fun i x ⟨hxi, hxε, hxv⟩ ↦ milnorFunction_le_of_mem_cell hψ hf hμ_eq hxi hxε hxv
   have hab : c - ε ≤ c + ε := by linarith
   have hYX : {x | F x ≤ c - ε} ⊆ {x | F x ≤ c + ε} := fun _ hx ↦ le_trans hx hab
-  have e : sublevelInclusion F (c - ε) (c + ε) hab = .inclusion hYX := by ext; simp
   have hFcompact : IsCompact (F ⁻¹' Icc (c - ε) (c + ε)) :=
     hcompact.of_isClosed_subset (isClosed_Icc.preimage hFs.continuous) fun x hx ↦
       ⟨hx.1.trans (milnorFunction_le hμ_nonneg x), (Set.ext_iff.1 hX x).1 hx.2⟩
@@ -425,7 +564,7 @@ theorem exists_sublevel_union_cells_deformation [Finite ι] (hfs : ContMDiff I �
   -- enter through their open partial homeomorphisms, with the same source and forward map.
   exact hX ▸ ContinuousMap.HomotopicRel.exists_inter_deformation_trans hYX
     (inter_subset_right.trans hSY)
-    (e ▸ exists_sublevelDeformation hFs hab hFcompact fun _ ↦
+    (sublevelInclusion_eq_inclusion F hab ▸ exists_sublevelDeformation hFs hab hFcompact fun _ ↦
       mfderiv_milnorFunction_ne_zero_of_mem_Icc hψ hf hμ₀ hball hε hfs hμ hμa hμ_nonneg hμ_eq hcrit)
     (exists_inter_sublevel_union_cells_deformation
       (fun i ↦ (ψ i).toOpenPartialHomeomorph) hψ k hball hf (X := {x | F x ≤ c - ε})
@@ -433,27 +572,101 @@ theorem exists_sublevel_union_cells_deformation [Finite ι] (hfs : ContMDiff I �
       (fun i x hx hxε s hs ↦
         (milnorFunction_symm_scale_le hψ hf hμa (hball i) hx.2 hxε hs).trans hx.1))
 
+/-- **Handle attachment in disjoint Morse charts** (Milnor, Remark 3.3). Let `f` be smooth, and let
+`ψ i` be charts of `M` with pairwise disjoint sources, each containing the closed ball of radius
+`√(2ε)` about `0` in its target, in which `f = c - Σ_{j < k i} yⱼ² + Σ_{j ≥ k i} yⱼ²`. Suppose the
+band `f⁻¹[c - ε, c + ε]` is compact and its critical points lie in the chart sources.
+
+Then there are handles `H i` in the chart sources and a diffeomorphism `Φ` of `M` carrying
+the upper sublevel `{f ≤ c + ε}` onto the lower sublevel `{f ≤ c - ε}` with the handles attached.
+Each handle is homeomorphic to the product `D^{k i} × D^{n - k i}` of closed unit balls in the
+first `k i` and in the remaining coordinates, by a homeomorphism `e i` carrying:
+* its intersection with `{f ≤ c - ε}` onto `∂D^{k i} × D^{n - k i}`;
+* its core, the points whose coordinates beyond the first `k i` vanish, onto `D^{k i} × 0`.
+
+`Φ` carries the level `f⁻¹(c + ε)` onto the boundary of the attached space: the points on the top
+`D^{k i} × ∂D^{n - k i}` of every handle containing them, and on the level `f⁻¹(c - ε)` outside the
+handles. -/
+theorem exists_diffeomorph_sublevel_eq_union_handles [Finite ι] (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
+    (ψ : ι → PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) ∞)
+    (hψ : Pairwise (Disjoint on fun i ↦ (ψ i).source)) (k : ι → ℕ) (hε : 0 < ε)
+    (hball : ∀ i, closedBall 0 √(2 * ε) ⊆ (ψ i).target)
+    (hf : ∀ i, ∀ y ∈ (ψ i).source, f y = c + ∑ j, (if j.val < k i then -1 else 1) * ψ i y j ^ 2)
+    (hcompact : IsCompact (f ⁻¹' Icc (c - ε) (c + ε)))
+    (hcrit : criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ ⋃ i, (ψ i).source) :
+    ∃ (H : ι → Set M)
+      (e : ∀ i, H i ≃ₜ closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k i}) 1 ×
+        closedBall (0 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k i}) 1) (Φ : M ≃ₘ⟮I, I⟯ M),
+      (∀ i, H i ⊆ (ψ i).source) ∧
+      (∀ i (x : H i),
+        f x ≤ c - ε ↔ ‖((e i x).1 : EuclideanSpace ℝ {j : Fin n // j.val < k i})‖ = 1) ∧
+      (∀ i (x : H i), ((e i x).2 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k i}) = 0 ↔
+        ∀ j : Fin n, k i ≤ j.val → ψ i x j = 0) ∧
+      (∀ x, Φ x ∈ {x | f x ≤ c - ε} ∪ ⋃ i, H i ↔ f x ≤ c + ε) ∧
+      ∀ x, f x = c + ε ↔
+        (∀ i (h : Φ x ∈ H i),
+          ‖((e i ⟨Φ x, h⟩).2 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k i})‖ = 1) ∧
+        (Φ x ∉ ⋃ i, H i → f (Φ x) = c - ε) := by
+  have := Fintype.ofFinite ι
+  -- Milnor's cutoff, equal to `2ε` on `(-∞, ε]`, positive on `(-∞, 2ε)` and `0` on `[2ε, ∞)`.
+  obtain ⟨μ, hμ, hμa, hμ_nonneg, hμ₀, hμ_eq, hμ_pos⟩ :=
+    exists_contDiff_antitone_cutoff (by linarith : ε < 2 * ε) (by positivity : 0 ≤ 2 * ε)
+  have hμε : ε < μ ε := by rw [hμ_eq ε le_rfl]; linarith
+  set F := milnorFunction ψ f c μ
+  have hFs : ContMDiff I 𝓘(ℝ) ∞ F := contMDiff_milnorFunction hψ hf hμ₀ hball hfs hμ
+  have hX : {x | F x ≤ c + ε} = {x | f x ≤ c + ε} := setOf_milnorFunction_le hψ hf hμ₀ hμ_nonneg
+  have hab : c - ε ≤ c + ε := by linarith
+  have hFcompact : IsCompact (F ⁻¹' Icc (c - ε) (c + ε)) :=
+    hcompact.of_isClosed_subset (isClosed_Icc.preimage hFs.continuous) fun x hx ↦
+      ⟨hx.1.trans (milnorFunction_le hμ_nonneg x), (Set.ext_iff.1 hX x).1 hx.2⟩
+  obtain ⟨Φ, hΦ⟩ := exists_diffeomorph_sublevel hFs hab hFcompact fun _ ↦
+    mfderiv_milnorFunction_ne_zero_of_mem_Icc hψ hf hμ₀ hball hε hfs hμ hμa hμ_nonneg hμ_eq hcrit
+  -- In the coordinates of the chart `ψ i`, its handle is Milnor's handle, a product of discs.
+  choose e he using fun i ↦ exists_milnorHandle_homeomorph (k := k) hε hμ.continuous hμa hμε hμ₀
+    (hμ_pos (by positivity)) hball i
+  refine ⟨milnorHandle ψ k ε μ, e, Φ, fun i ↦ inter_subset_left, fun i x ↦ ?_, fun i x ↦ ?_,
+    fun x ↦ ?_, fun x ↦ ?_⟩
+  · -- The handle meets the lower sublevel in its attaching region.
+    have hfx := (milnorFunction_of_mem_source hψ hf (μ := μ) x.2.1).1
+    rw [(he i x).1, norm_fst_quadraticHandleMap_eq_one_iff hε, hfx]
+    have := (mem_quadraticHandle.1 x.2.2).1
+    constructor <;> intro h <;> linarith
+  · -- The core of the handle is the set where the coordinates beyond the first `k i` vanish.
+    rw [(he i x).2, quadraticHandleMap_snd_eq_zero_iff hμa hμε x.2.2,
+      EuclideanSpace.snd_sumComplEquivProd_eq_zero_iff]
+    simp only [not_lt]
+  · rw [← setOf_milnorFunction_le_sub hψ hf hμ₀ hμ_nonneg, mem_ofPred_eq, (hΦ x).1,
+      ← mem_ofPred_eq (p := fun x ↦ F x ≤ c + ε), hX, mem_ofPred_eq]
+  · rw [← milnorFunction_eq_add_iff hψ hf hμ₀ hμ_nonneg, ← (hΦ x).2,
+      milnorFunction_eq_sub_iff hψ hf hμ₀ hμ_nonneg]
+    refine and_congr_left' (forall_congr' fun i ↦ ⟨fun h hi ↦ ?_, fun h hi ↦ ?_⟩)
+    · rw [(he i ⟨Φ x, hi⟩).2, norm_snd_quadraticHandleMap_eq_one_iff hμa hμε hi.2]
+      exact h hi
+    · have h' := h hi
+      rwa [(he i ⟨Φ x, hi⟩).2, norm_snd_quadraticHandleMap_eq_one_iff hμa hμε hi.2] at h'
+
 /-- **Milnor's cell attachment theorem.** Let `f` be a Morse function on a Hausdorff manifold whose
-band `f⁻¹[c - δ, c + δ]` is compact, for some `0 < δ`. Then there are a width `0 < ε ≤ δ` and
+band `f⁻¹[c - δ, c + δ]` is compact, for some `0 < δ`. Then there are a width `0 < ε₀ ≤ δ` and
 normalized Morse charts `ψ p` with pairwise disjoint sources, indexed by the critical points `p`
-on the level `f⁻¹(c)`, with `ψ p p = 0`, with the closed ball of radius `√(2ε)` in the target of
+on the level `f⁻¹(c)`, with `ψ p p = 0`, with the closed ball of radius `√(2ε₀)` in the target of
 `ψ p`, and in which `f = c - Σ_{i < λ} yᵢ² + Σ_{i ≥ λ} yᵢ²`, where `λ` is the Morse index of `f`
-at `p`. The cell at `p` is the disc `{‖y‖² ≤ ε, yᵢ = 0 for i ≥ λ}` of its negative coordinates,
-read in `M` through `ψ p`.
+at `p`. For every width `0 < ε ≤ ε₀`, the cell at `p` is the disc
+`{‖y‖² ≤ ε, yᵢ = 0 for i ≥ λ}` of its negative coordinates, read in `M` through `ψ p`.
 
 The lower sublevel `{f ≤ c - ε}` with these cells attached is a strong deformation retract of
-`{f ≤ c + ε}`: there is a retraction of `{f ≤ c + ε}` onto it, and a homotopy in `{f ≤ c + ε}`
-from this retraction to the identity which fixes it pointwise. -/
+`{f ≤ c + ε}`, for every such `ε`: there is a retraction of `{f ≤ c + ε}` onto it, and a
+homotopy in `{f ≤ c + ε}` from this retraction to the identity which fixes it pointwise. -/
 theorem IsMorse.exists_sublevel_union_cells_deformation (hf : IsMorse I f) {δ : ℝ} (hδ : 0 < δ)
     (hcompact : IsCompact (f ⁻¹' Icc (c - δ) (c + δ))) :
-    ∃ ε, 0 < ε ∧ ε ≤ δ ∧
+    ∃ ε₀, 0 < ε₀ ∧ ε₀ ≤ δ ∧
       ∃ ψ : ↥(criticalPoints I f ∩ f ⁻¹' {c}) →
           PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) M
             (EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) ∞,
         Pairwise (Disjoint on fun p ↦ (ψ p).source) ∧
-        (∀ p, ↑p ∈ (ψ p).source ∧ ψ p p = 0 ∧ closedBall 0 √(2 * ε) ⊆ (ψ p).target ∧
+        (∀ p, ↑p ∈ (ψ p).source ∧ ψ p p = 0 ∧ closedBall 0 √(2 * ε₀) ⊆ (ψ p).target ∧
           ∀ y ∈ (ψ p).source,
             f y = c + ∑ i, (if i.val < manifoldMorseIndex I f p then -1 else 1) * ψ p y i ^ 2) ∧
+        ∀ ε, 0 < ε → ε ≤ ε₀ →
         ∃ r : C({x | f x ≤ c + ε}, ↥({x | f x ≤ c + ε} ∩ ({x | f x ≤ c - ε} ∪
             ⋃ p, (ψ p).source ∩ ψ p ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧
               ∀ i : Fin (Module.finrank ℝ E), manifoldMorseIndex I f p ≤ i.val → y i = 0}))),
@@ -462,13 +675,64 @@ theorem IsMorse.exists_sublevel_union_cells_deformation (hf : IsMorse I f) {δ :
             (ContinuousMap.id _) {x | (x : M) ∈ {x | f x ≤ c - ε} ∪
               ⋃ p, (ψ p).source ∩ ψ p ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧
                 ∀ i : Fin (Module.finrank ℝ E), manifoldMorseIndex I f p ≤ i.val → y i = 0}}) := by
+  obtain ⟨ε₀, hε₀, hε₀δ, hband, ψ, hψ, hψp⟩ :=
+    hf.exists_admissible_morseCharts hδ hcompact (U := fun _ ↦ univ) fun _ _ ↦ univ_mem
+  have : Finite ↥(criticalPoints I f ∩ f ⁻¹' {c}) :=
+    ((hf.finite_criticalPoints_inter hcompact).subset
+      (inter_subset_inter_right _ (preimage_mono (by simp [hδ.le])))).to_subtype
+  refine ⟨ε₀, hε₀, hε₀δ, ψ, hψ, fun p ↦ ⟨(hψp p).1, (hψp p).2.2.1, (hψp p).2.2.2⟩,
+    fun ε hε hεε₀ ↦ TauCeti.exists_sublevel_union_cells_deformation hf.contMDiff ψ hψ _ hε
+      (fun p ↦ (closedBall_subset_closedBall (Real.sqrt_le_sqrt (by linarith))).trans
+        (hψp p).2.2.2.1) (fun p ↦ (hψp p).2.2.2.2)
+      (hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
+        (preimage_mono (Icc_subset_Icc (by linarith) (by linarith))))
+      fun x hx ↦ mem_iUnion.2 ⟨⟨x, hx.1, hband ⟨hx.1, Icc_subset_Icc (by linarith) (by linarith)
+        hx.2⟩⟩, (hψp _).1⟩⟩
+
+/-- **Milnor's handle attachment theorem** (Milnor, Remark 3.3). Let `f` be a Morse function on a
+Hausdorff manifold of dimension `m` whose band `f⁻¹[c - δ, c + δ]` is compact, for some `0 < δ`.
+Then there are a width `0 < ε ≤ δ` and normalized Morse charts `ψ p` with pairwise disjoint sources,
+indexed by the critical points `p` on the level `f⁻¹(c)`, with `ψ p p = 0`, with the closed ball of
+radius `√(2ε)` in the target of `ψ p`, and in which `f = c - Σ_{i < λ} yᵢ² + Σ_{i ≥ λ} yᵢ²`, where
+`λ` is the Morse index of `f` at `p`.
+
+Attaching one handle `D^λ × D^(m-λ)` at each critical point turns the lower sublevel
+`{f ≤ c - ε}` into the upper one `{f ≤ c + ε}`, up to a diffeomorphism `Φ` of `M`: the conclusion
+of `TauCeti.exists_diffeomorph_sublevel_eq_union_handles` holds for these charts. -/
+theorem IsMorse.exists_diffeomorph_sublevel_eq_union_handles (hf : IsMorse I f) {δ : ℝ}
+    (hδ : 0 < δ) (hcompact : IsCompact (f ⁻¹' Icc (c - δ) (c + δ))) :
+    ∃ ε, 0 < ε ∧ ε ≤ δ ∧
+      ∃ ψ : ↥(criticalPoints I f ∩ f ⁻¹' {c}) →
+          PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) M
+            (EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) ∞,
+        Pairwise (Disjoint on fun p ↦ (ψ p).source) ∧
+        (∀ p, ↑p ∈ (ψ p).source ∧ ψ p p = 0 ∧ closedBall 0 √(2 * ε) ⊆ (ψ p).target ∧
+          ∀ y ∈ (ψ p).source,
+            f y = c + ∑ i, (if i.val < manifoldMorseIndex I f p then -1 else 1) * ψ p y i ^ 2) ∧
+        ∃ (H : ↥(criticalPoints I f ∩ f ⁻¹' {c}) → Set M)
+          (e : ∀ p, H p ≃ₜ closedBall (0 : EuclideanSpace ℝ
+              {i : Fin (Module.finrank ℝ E) // i.val < manifoldMorseIndex I f p}) 1 ×
+            closedBall (0 : EuclideanSpace ℝ
+              {i : Fin (Module.finrank ℝ E) // ¬i.val < manifoldMorseIndex I f p}) 1)
+          (Φ : M ≃ₘ⟮I, I⟯ M),
+          (∀ p, H p ⊆ (ψ p).source) ∧
+          (∀ p (x : H p), f x ≤ c - ε ↔ ‖((e p x).1 : EuclideanSpace ℝ
+            {i : Fin (Module.finrank ℝ E) // i.val < manifoldMorseIndex I f p})‖ = 1) ∧
+          (∀ p (x : H p), ((e p x).2 : EuclideanSpace ℝ
+              {i : Fin (Module.finrank ℝ E) // ¬i.val < manifoldMorseIndex I f p}) = 0 ↔
+            ∀ i : Fin (Module.finrank ℝ E), manifoldMorseIndex I f p ≤ i.val → ψ p x i = 0) ∧
+          (∀ x, Φ x ∈ {x | f x ≤ c - ε} ∪ ⋃ p, H p ↔ f x ≤ c + ε) ∧
+          ∀ x, f x = c + ε ↔
+            (∀ p (h : Φ x ∈ H p), ‖((e p ⟨Φ x, h⟩).2 : EuclideanSpace ℝ
+              {i : Fin (Module.finrank ℝ E) // ¬i.val < manifoldMorseIndex I f p})‖ = 1) ∧
+            (Φ x ∉ ⋃ p, H p → f (Φ x) = c - ε) := by
   obtain ⟨ε, hε, hεδ, hband, ψ, hψ, hψp⟩ :=
     hf.exists_admissible_morseCharts hδ hcompact (U := fun _ ↦ univ) fun _ _ ↦ univ_mem
   have : Finite ↥(criticalPoints I f ∩ f ⁻¹' {c}) :=
     ((hf.finite_criticalPoints_inter hcompact).subset
       (inter_subset_inter_right _ (preimage_mono (by simp [hδ.le])))).to_subtype
-  refine ⟨ε, hε, hεδ, ψ, hψ, fun p ↦ ⟨(hψp p).1, (hψp p).2.2.1, (hψp p).2.2.2⟩,
-    TauCeti.exists_sublevel_union_cells_deformation hf.contMDiff ψ hψ _ hε
+  exact ⟨ε, hε, hεδ, ψ, hψ, fun p ↦ ⟨(hψp p).1, (hψp p).2.2.1, (hψp p).2.2.2⟩,
+    TauCeti.exists_diffeomorph_sublevel_eq_union_handles hf.contMDiff ψ hψ _ hε
       (fun p ↦ (hψp p).2.2.2.1) (fun p ↦ (hψp p).2.2.2.2)
       (hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
         (preimage_mono (Icc_subset_Icc (by linarith) (by linarith))))

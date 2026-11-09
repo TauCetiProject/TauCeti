@@ -19,8 +19,10 @@ with `q^* β = α`. At the orbit of `x` it is `α_x` read through the inverse of
 `q` at `x`; invariance makes this independent of the representative.
 
 The descended form `TauCeti.RoughForm.descend G α` is defined for any form, through a chosen
-representative of each orbit, and `TauCeti.RoughForm.mpullback_quotientMk_descend` shows that it
-pulls back to `α` when `α` is invariant. For a smooth action, the descent of an invariant smooth
+representative of each orbit. An invariant form is basic for the orbit projection
+(`TauCeti.RoughForm.isBasic_quotientMk`), so `TauCeti.RoughForm.mpullback_quotientMk_descend`
+shows that its descent pulls back to `α`, with the values given by
+`TauCeti.RoughForm.descend_apply_mfderiv`. For a smooth action, the descent of an invariant smooth
 form is smooth, which gives `TauCeti.SmoothForm.descend`. It is the unique form pulling back to
 `α`, it commutes with the exterior derivative, and it is closed exactly when `α` is.
 
@@ -34,6 +36,7 @@ diffeomorphism, whose forms are the forms on `ℝ × M` invariant under the deck
 
 ## Main results
 
+* `TauCeti.RoughForm.isBasic_quotientMk`: an invariant form is basic for the orbit projection.
 * `TauCeti.RoughForm.mpullback_quotientMk_descend`: an invariant form is the pullback of its
   descent along the orbit projection.
 * `TauCeti.SmoothForm.eq_descend_iff`: the descent is the unique form pulling back to `α`.
@@ -67,35 +70,41 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
 namespace RoughForm
 
 variable (G) in
-/-- The descent of a form `α` on `M` to the orbit space of `G`. At an orbit `y` it is the form `α`
-at the chosen representative `y.out`, read through the inverse of the derivative of the orbit
-projection there: it is `TauCeti.RoughForm.descendAlong` along the orbit projection through
-`Quotient.out`. When `α` is invariant under `G` this does not depend on the choice of
-representatives, and the descent pulls back to `α` along the orbit projection
-(`TauCeti.RoughForm.mpullback_quotientMk_descend`). -/
+/-- The descent of a form `α` on `M` to the orbit space of `G`: the descent
+`TauCeti.RoughForm.descendedForm` along the orbit projection. At an orbit it is `α` at a chosen
+representative, read through the inverse of the derivative of the orbit projection there. When `α`
+is invariant under `G` this does not depend on the choice of representatives, and the descent pulls
+back to `α` along the orbit projection (`TauCeti.RoughForm.mpullback_quotientMk_descend`). -/
 def descend (α : RoughForm I M F k) : RoughForm I (MulAction.orbitRel.Quotient G M) F k :=
-  descendAlong I I (Quotient.mk (MulAction.orbitRel G M)) Quotient.out α
-
-/-- Evaluation of the descent of a form: tangent vectors at the orbit `y` are sent through the
-inverse of the derivative of the orbit projection at the chosen representative `y.out`. -/
-theorem descend_apply (α : RoughForm I M F k) (y : MulAction.orbitRel.Quotient G M)
-    (v : Fin k → TangentSpace I y) :
-    descend G α y v = α y.out fun i ↦
-      (mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) y.out).inverse
-        (tangentSpaceCast I y (Quotient.mk (MulAction.orbitRel G M) y.out) (v i)) :=
-  descendAlong_apply _ α y v
+  descendedForm I I (Quotient.mk (MulAction.orbitRel G M)) α
 
 variable {n : WithTop ℕ∞} [IsManifold I n M] [ContMDiffConstSMul I n G M]
+
+/-- A form invariant under `G` is basic for the orbit projection. -/
+theorem isBasic_quotientMk (hn : n ≠ 0) {α : RoughForm I M F k}
+    (hα : ∀ g : G, mpullback I I (g • ·) α = α) :
+    IsBasic I (Quotient.mk (MulAction.orbitRel G M)) α :=
+  (isLocalDiffeomorph_quotientMk (n := n)).isBasic_of_mpullback_eq hn (σ := fun g : G ↦ (g • ·))
+    (fun g ↦ (contMDiff_const_smul g).mdifferentiable hn)
+    (fun g ↦ funext fun x ↦ Quotient.sound (MulAction.mem_orbit x g))
+    (fun _ _ h ↦ Or.inr (MulAction.mem_orbit_iff.mp (Quotient.exact h.symm))) hα
 
 /-- A form invariant under `G` is the pullback of its descent along the orbit projection. -/
 theorem mpullback_quotientMk_descend (hn : n ≠ 0) {α : RoughForm I M F k}
     (hα : ∀ g : G, mpullback I I (g • ·) α = α) :
     mpullback I I (Quotient.mk (MulAction.orbitRel G M)) (descend G α) = α :=
-  (isLocalDiffeomorph_quotientMk (n := n)).mpullback_descendAlong hn (σ := fun g : G ↦ (g • ·))
-    (fun g ↦ (contMDiff_const_smul g).mdifferentiable hn)
-    (fun g ↦ funext fun x ↦ Quotient.sound (MulAction.mem_orbit x g))
-    (fun _ _ h ↦ Or.inr (MulAction.mem_orbit_iff.mp (Quotient.exact h.symm)))
-    (fun _ ↦ Quotient.out_eq _) hα
+  (isBasic_quotientMk hn hα).mpullback_descendedForm fun x ↦
+    .of_isInvertible ((isLocalDiffeomorph_quotientMk (n := n)).isInvertible_mfderiv hn x)
+
+/-- The descent of a form `α` invariant under `G` evaluates on images under the derivative of the
+orbit projection `q` as `α`: `(descend G α)_(q x)(dq_x v₁, …, dq_x vₖ) = α_x(v₁, …, vₖ)`. -/
+theorem descend_apply_mfderiv (hn : n ≠ 0) {α : RoughForm I M F k}
+    (hα : ∀ g : G, mpullback I I (g • ·) α = α) (x : M) (v : Fin k → TangentSpace I x) :
+    descend G α (Quotient.mk (MulAction.orbitRel G M) x)
+        (fun i ↦ mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) x (v i)) = α x v :=
+  (isBasic_quotientMk hn hα).descendedForm_apply_mfderiv
+    (fun x ↦ .of_isInvertible ((isLocalDiffeomorph_quotientMk (n := n)).isInvertible_mfderiv hn x))
+    x v
 
 end RoughForm
 
@@ -143,9 +152,8 @@ theorem mpullback_quotientMk_descend :
 theorem mpullback_quotientMk_injective :
     Function.Injective (mpullback (F := F) (k := k)
       (Quotient.mk (MulAction.orbitRel G M)) (isLocalDiffeomorph_quotientMk (I := I)).contMDiff) :=
-  fun _ _ h ↦
-  Subtype.ext <| (isLocalDiffeomorph_quotientMk (n := ∞)).mpullback_injective (by simp)
-    Quotient.mk_surjective (by simpa only [coe_mpullback] using congrArg Subtype.val h)
+  mpullback_injective_of_surjective _ Quotient.mk_surjective fun x ↦
+    ((isLocalDiffeomorph_quotientMk (n := ∞)).isInvertible_mfderiv (by simp) x).surjective
 
 /-- The descent of an invariant smooth form `α` is the unique smooth form on the orbit space whose
 pullback along the orbit projection is `α`. -/

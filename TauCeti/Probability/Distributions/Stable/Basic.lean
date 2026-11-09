@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Distributions.Stable.Approximation
+public import TauCeti.Probability.Distributions.Stable.Approximation.Basic
 public import Mathlib.Probability.Distributions.Gaussian.Real
 import TauCeti.MeasureTheory.Measure.LevyConvergence
 import TauCeti.Probability.Distributions.Affine

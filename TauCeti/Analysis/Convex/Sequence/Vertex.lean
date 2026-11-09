@@ -86,12 +86,31 @@ theorem eq_of_unitSlope_lt (hh : IsLowerConvexEnvelope a h) {n : ℕ}
     exact False.elim ((ne_of_lt hstrict) heq)
 
 /-- At a noncontact interior index the two neighboring finite slopes agree.
-This also applies when the original point height is infinite. -/
+This also applies when the original point height is infinite. The neighbors of a noncontact
+index are automatically finite. -/
 theorem unitSlope_eq_of_lt (hh : IsLowerConvexEnvelope a h) {n : ℕ}
-    (hn : h n ≠ ⊤) (hn₂ : h (n + 2) ≠ ⊤)
     (ha : h (n + 1) < a (n + 1)) : unitSlope h n = unitSlope h (n + 1) := by
-  have hn₁ : h (n + 1) ≠ ⊤ :=
-    hh.isConvexSeq.ne_top_of_le_of_le hn hn₂ (by omega) (by omega)
+  have hn₁ : h (n + 1) ≠ ⊤ := ne_top_of_lt (ha.trans_le le_top)
+  have hn : h n ≠ ⊤ := by
+    intro hn
+    refine ha.ne ?_
+    have hfirst : ∀ k < n + 1, a k = ⊤ := by
+      intro k hkl
+      by_contra hk
+      exact (hh.isConvexSeq.ne_top_of_le_of_le (j := n) (ne_top_of_le_ne_top hk (hh.le k)) hn₁
+        (by omega) (by omega)) hn
+    rw [hh.eq_lowerConvexEnvelope]
+    exact lowerConvexEnvelope_eq_of_forall_lt hh.isAdmissible hfirst
+  have hn₂ : h (n + 2) ≠ ⊤ := by
+    intro hn₂
+    refine ha.ne ?_
+    have hlast : ∀ k, n + 1 < k → a k = ⊤ := by
+      intro k hlk
+      by_contra hk
+      exact (hh.isConvexSeq.ne_top_of_le_of_le (j := n + 2) hn₁ (ne_top_of_le_ne_top hk (hh.le k))
+        (by omega) (by omega)) hn₂
+    rw [hh.eq_lowerConvexEnvelope]
+    exact lowerConvexEnvelope_eq_of_forall_gt hlast
   have hmono := hh.isConvexSeq.monotoneOn (a := n) (b := n + 1)
     (mem_finiteEdges.mpr ⟨hn, hn₁⟩) (mem_finiteEdges.mpr ⟨hn₁, hn₂⟩) (by omega)
   exact hmono.eq_of_not_lt fun hs => (ne_of_lt ha) (hh.eq_of_unitSlope_lt hn hn₂ hs)
@@ -147,6 +166,24 @@ theorem eq_right_of_isFiniteFace (hh : IsLowerConvexEnvelope a h) {σ : ℝ} {l 
   · have hs := hf.lt_unitSlope hh.isConvexSeq (mem_finiteEdges.mpr ⟨hu, hnext⟩) le_rfl
     have heq := hf.unitSlope_eq (by omega) (Nat.lt_succ_self i)
     exact hh.eq_of_unitSlope_lt hi hnext (by simpa only [heq] using hs)
+
+/-- The absolute endpoints of a finite envelope face are the first and last original
+points touching its supporting line. Interior original points need not lie on the line. -/
+theorem exists_isSupportingLine_isLeast_isGreatest_of_isFiniteFace
+    (hh : IsLowerConvexEnvelope a h) {σ : ℝ} {l u : ℕ}
+    (hf : IsFiniteFace h σ l u) :
+    ∃ c : ℝ, IsSupportingLine a σ c ∧
+      IsLeast (supportingFace a σ c) l ∧ IsGreatest (supportingFace a σ c) u := by
+  obtain ⟨c, hc, hface⟩ := hf.exists_intercept
+  have hac : IsSupportingLine a σ c := isSupportingLine_iff_forall.mpr
+    fun n => (isSupportingLine_iff_forall.mp hc n).trans (hh.le n)
+  have hsub : supportingFace a σ c ⊆ Set.Icc l u :=
+    (hh.supportingFace_subset hac).trans hface.subset
+  refine ⟨c, hac, ⟨?_, fun n hn => (hsub hn).1⟩, ⟨?_, fun n hn => (hsub hn).2⟩⟩
+  · rw [mem_supportingFace, ← hh.eq_left_of_isFiniteFace hf]
+    exact mem_supportingFace.mp (hface.symm.subset ⟨le_rfl, hf.left_le_right⟩)
+  · rw [mem_supportingFace, ← hh.eq_right_of_isFiniteFace hf]
+    exact mem_supportingFace.mp (hface.symm.subset ⟨hf.left_le_right, le_rfl⟩)
 
 end IsLowerConvexEnvelope
 

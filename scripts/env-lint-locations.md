@@ -9,8 +9,9 @@ from its existing candidate environment and structured linter results. It does n
 elaborate the library again, search sources for declaration names, or substitute
 parent ranges for generated declarations. Every declaration with a listed defining
 module gets that module, including private and generated declarations; a
-selection range is added only when the declaration has its own. Unsupported
-modules, unresolvable origins and unsupported report names remain unknown.
+selection range is added only when the declaration has its own. A finding in any module of the linted package gets its module, including modules
+linted only as transitive importers of the changed ones. Modules outside the package,
+unresolvable origins and unsupported report names remain unknown.
 
 `LINT-ENV-ORIGINS` is internal driver output, before the existing report region.
 Only after the existing nonce, report-count, default-linter, baseline and allowlist

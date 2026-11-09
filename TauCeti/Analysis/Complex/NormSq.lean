@@ -19,6 +19,7 @@ real points of such a circle and on which side of a second circle its points lie
 ## Main results
 
 * `Complex.normSq_sub_ofReal_sub_normSq_sub_ofReal`: the radical-line identity.
+* `Complex.norm_sq_add_I_mul_div_sqrt_two`: the squared norm of a normalized complex pair.
 * `Complex.norm_sub_eq_of_normSq_sub_eq`: a point at squared distance `ρ ^ 2` is at distance `ρ`.
 * `Complex.eq_sub_of_normSq_eq_of_lt_re`, `Complex.eq_add_of_normSq_eq_of_re_lt`: a real point of
   the circle of centre `m` and radius `ρ` is `m - ρ` or `m + ρ`, according to its side.
@@ -35,6 +36,13 @@ real points of such a circle and on which side of a second circle its points lie
 public section
 
 namespace Complex
+
+/-- The squared norm of a complex number with real part `x` and imaginary part `y`, divided by
+`√2`, is `(x ^ 2 + y ^ 2) / 2`. -/
+theorem norm_sq_add_I_mul_div_sqrt_two (x y : ℝ) :
+    ‖((x : ℂ) + Complex.I * y) / (Real.sqrt 2 : ℝ)‖ ^ 2 = (x ^ 2 + y ^ 2) / 2 := by
+  rw [Complex.sq_norm, map_div₀, Complex.normSq_ofReal, mul_comm Complex.I,
+    Complex.normSq_add_mul_I, Real.mul_self_sqrt (by norm_num)]
 
 /-- The "radical line" identity: for real centres `c₁` and `c₂`, the difference of the two power
 functions `|z - c|² - |C - c|²` of `z` is affine in `z.re` and vanishes at `C.re`. -/

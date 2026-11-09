@@ -56,6 +56,8 @@ orbits of the action.
   all of `G`.
 * `CategoryTheory.ActionCategory.orbitQuotientEquivIsomorphismClasses`: orbits are isomorphism
   classes.
+* `CategoryTheory.ActionCategory.commSq_inl_inr`: for a semidirect product `N ⋊[φ] K`, arrows
+  labelled `n` then `k` compose to the same arrow as arrows labelled `k` then `φ k n`.
 
 ## References
 
@@ -252,6 +254,15 @@ theorem isIsomorphic_iff_orbitRel {x y : X} :
   rw [Groupoid.isIsomorphic_iff_nonempty_hom, nonempty_hom_iff, (orbitRel G X).comm',
     orbitRel_apply, mem_orbit_iff]
 
+/-- If a functor out of the action groupoid is full, two points lie in the same orbit exactly
+when the images of the corresponding objects are isomorphic. -/
+theorem orbitRel_iff_isIsomorphic_obj_of_full {C : Type*} [Category C]
+    (F : ActionCategory G X ⥤ C) [F.Full] {x y : X} :
+    orbitRel G X x y ↔ IsIsomorphic (F.obj (objEquiv G X x)) (F.obj (objEquiv G X y)) := by
+  rw [← isIsomorphic_iff_orbitRel]
+  exact ⟨fun ⟨e⟩ => ⟨F.mapIso e⟩, fun ⟨e⟩ => (Groupoid.isIsomorphic_iff_nonempty_hom).mpr
+    ⟨F.preimage e.hom⟩⟩
+
 variable (G X)
 
 /-- The orbit space of the action is the set of isomorphism classes of its action groupoid. -/
@@ -267,5 +278,26 @@ theorem orbitQuotientEquivIsomorphismClasses_mk (x : X) :
       _root_.Quotient.mk _ (objEquiv G X x) := (rfl)
 
 end Orbits
+
+section SemidirectProduct
+
+open SemidirectProduct
+
+variable {N K : Type*} [Group N] [Group K] {φ : K →* MulAut N} {X : Type*}
+  [MulAction (N ⋊[φ] K) X]
+
+/-- In the action category of a semidirect product `N ⋊[φ] K`, an arrow labelled `n` followed by
+an arrow labelled `k` is the arrow labelled `k` followed by an arrow labelled `φ k n`, because
+`inr k * inl n = inl (φ k n) * inr k`. This is the covariance of the two kinds of arrows. -/
+theorem commSq_inl_inr {x y y' z : ActionCategory (N ⋊[φ] K) X} {t : x ⟶ y} {r : y ⟶ z}
+    {l : x ⟶ y'} {b : y' ⟶ z} {n : N} {k : K} (ht : t.hom = inl n) (hr : r.hom = inr k)
+    (hl : l.hom = inr k) (hb : b.hom = inl (φ k n)) : CommSq t l r b := by
+  have h : (inr k : N ⋊[φ] K) * inl n = inl (φ k n) * inr k := by
+    rw [inl_aut, map_inv, inv_mul_cancel_right]
+  refine ⟨Functor.Elements.hom_ext ?_⟩
+  rw [ActionCategory.comp_hom, ActionCategory.comp_hom, ht, hr, hl, hb]
+  exact h
+
+end SemidirectProduct
 
 end CategoryTheory.ActionCategory

@@ -38,15 +38,22 @@ first statement does not extend to `|c| < 1`.
 ## Main statements
 
 * `ZLattice.smul_eq_comap`: for `c ≠ 0`, `c • L` is the pullback of `L` along `c⁻¹ • ·`.
+* `ZLattice.basisSmul`: for `c ≠ 0`, a `ℤ`-basis `b` of `L` gives the `ℤ`-basis `c • b` of `c • L`.
+* `ZLattice.exists_forall_ne_zero_lt_norm`: scaling up the integer span of a basis gives full
+  lattices all of whose nonzero vectors are longer than a prescribed bound.
+* `ZLattice.exists_forall_add_mem_eq_zero_of_isBounded`: a bounded set meets none of its
+  translates by the nonzero vectors of such a lattice.
 * `ZLattice.dual_smul`: `(c • L)^∨ = c⁻¹ • L^∨` for `c ≠ 0`.
 * `ZLattice.covolume_smul`, `ZLattice.det_smul`: `covolume (c • L) = |c|ⁿ covolume L` and
   `det (c • L) = c²ⁿ det L` for `c ≠ 0`.
+* `ZLattice.covolume_natCast_smul`: `covolume (c • L) = cⁿ covolume L` for a positive integer `c`.
 * `ZLattice.isIntegral_smul_iff`, `ZLattice.isEven_smul_iff`: the exact criteria for `c • L` to be
   integral or even.
 * `ZLattice.IsIntegral.sqrt_smul`, `ZLattice.IsEven.sqrt_smul`,
   `ZLattice.IsIntegral.isEven_sqrt_smul`: `√m • L` is integral when `L` is, and even when `L` is
   even or when `L` is integral and `m` is even.
-* `ZLattice.det_sqrt_smul`: `det (√m • L) = mⁿ det L` for `m ≠ 0`, and
+* `ZLattice.det_sqrt_smul`, `ZLattice.IsIntegral.card_discriminantGroup_sqrt_smul`:
+  `det (√m • L) = mⁿ det L` for `m ≠ 0` (and `|A_{√m • L}| = mⁿ |A_L|` for integral `L`), and
   `ZLattice.det_sqrt_smul_span_orthonormalBasis`: `det (√m • ℤⁿ) = mⁿ`.
 * `ZLattice.IsIntegral.not_isUnimodular_smul`, `ZLattice.IsIntegral.not_isUnimodular_sqrt_smul`,
   `ZLattice.IsUnimodular.not_isUnimodular_smul`: in positive dimension, scaling an integral lattice
@@ -121,6 +128,65 @@ instance [DiscreteTopology L] [IsZLattice ℝ L] (c : ℝ) [NeZero c] : IsZLatti
     rw [smul_eq_comap L (NeZero.ne c)]
     exact IsZLattice.span_top
 
+section Basis
+
+variable {L} {ι : Type*}
+
+/-- For `c ≠ 0`, a `ℤ`-basis `b` of `L` scales to the `ℤ`-basis `c • b` of `c • L`. -/
+noncomputable def basisSmul (b : Basis ι ℤ L) {c : ℝ} (hc : c ≠ 0) :
+    Basis ι ℤ (c • L : Submodule ℤ E) :=
+  b.map ((L.equivMapOfInjective _ (smul_right_injective E hc)).trans
+    (LinearEquiv.ofEq _ _ pointwise_smul_def.symm))
+
+/-- The `i`-th vector of the scaled basis `basisSmul b hc` is `c • b i`. -/
+@[simp]
+theorem coe_basisSmul_apply (b : Basis ι ℤ L) {c : ℝ} (hc : c ≠ 0) (i : ι) :
+    (basisSmul b hc i : E) = c • (b i : E) := by
+  simp only [basisSmul, Basis.map_apply, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
+  -- `c • L` is by definition the image of `L` under `c • ·` (`Submodule.pointwise_smul_def`).
+  exact coe_equivMapOfInjective_apply _ _ _ _
+
+end Basis
+
+/-! ### Lattices with long nonzero vectors -/
+
+/-- A finite-dimensional real normed space has full lattices whose nonzero vectors are all longer
+than any prescribed `R`. -/
+theorem exists_forall_ne_zero_lt_norm [FiniteDimensional ℝ E] (R : ℝ) :
+    ∃ (L : Submodule ℤ E) (_ : DiscreteTopology L) (_ : IsZLattice ℝ L),
+      ∀ ℓ ∈ L, ℓ ≠ 0 → R < ‖ℓ‖ := by
+  -- Scale up the integer span of a basis, whose nonzero vectors have norm at least some `δ`.
+  set L₀ := span ℤ (Set.range (Module.finBasis ℝ E))
+  obtain ⟨δ, hδ, hL₀⟩ := Metric.isOpen_singleton_iff.1 (isOpen_discrete ({0} : Set L₀))
+  set c : ℝ := (|R| + 1) / δ
+  have hc : 0 < c := by positivity
+  have : NeZero c := ⟨hc.ne'⟩
+  refine ⟨c • L₀, inferInstance, inferInstance, fun ℓ hℓ hne ↦ ?_⟩
+  obtain ⟨y, hy, rfl⟩ := (mem_smul_pointwise_iff_exists _ _ _).1 hℓ
+  have hδy : δ ≤ ‖y‖ := by
+    by_contra! h
+    have h0 := hL₀ ⟨y, hy⟩ (by simpa [dist_eq_norm] using h)
+    exact hne (by rw [show y = 0 from congrArg Subtype.val h0, smul_zero])
+  rw [norm_smul, Real.norm_of_nonneg hc.le]
+  calc R < |R| + 1 := by linarith [le_abs_self R]
+    _ = c * δ := (div_mul_cancel₀ _ hδ.ne').symm
+    _ ≤ c * ‖y‖ := by gcongr
+
+/-- A bounded subset `s` of a finite-dimensional real normed space meets none of its translates by
+the nonzero vectors of some full lattice `L`. -/
+theorem exists_forall_add_mem_eq_zero_of_isBounded [FiniteDimensional ℝ E] {s : Set E}
+    (hs : Bornology.IsBounded s) :
+    ∃ (L : Submodule ℤ E) (_ : DiscreteTopology L) (_ : IsZLattice ℝ L),
+      ∀ x ∈ s, ∀ ℓ ∈ L, x + ℓ ∈ s → ℓ = 0 := by
+  obtain ⟨R, hR⟩ := hs.subset_closedBall 0
+  obtain ⟨L, hd, hz, hL⟩ := exists_forall_ne_zero_lt_norm (E := E) (2 * R)
+  refine ⟨L, hd, hz, fun x hx ℓ hℓ hxℓ ↦ by_contra fun hne ↦ ?_⟩
+  have hx' := mem_closedBall_zero_iff.1 (hR hx)
+  have hxℓ' := mem_closedBall_zero_iff.1 (hR hxℓ)
+  have h := norm_sub_le (x + ℓ) x
+  rw [add_sub_cancel_left] at h
+  linarith [hL ℓ hℓ hne]
+
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L]
   [IsZLattice ℝ L]
 
@@ -136,6 +202,13 @@ theorem covolume_smul {c : ℝ} (hc : c ≠ 0) (μ : Measure E := by volume_tac)
     simp [Units.smul_def]
   rw [smul_eq_comap L hc, covolume_comap_continuousLinearEquiv L _ μ, hA, LinearMap.det_smul,
     LinearMap.det_id, mul_one, abs_pow, abs_inv, inv_pow, inv_inv]
+
+/-- Scaling a full lattice by a positive integer `c` multiplies its covolume by `cⁿ`, where `n` is
+the dimension of the space, for any Haar measure. -/
+theorem covolume_natCast_smul (c : ℕ) [NeZero c] (μ : Measure E := by volume_tac)
+    [μ.IsAddHaarMeasure] :
+    covolume ((c : ℝ) • L) μ = (c : ℝ) ^ finrank ℝ E * covolume L μ := by
+  rw [covolume_smul L (NeZero.ne _) μ, Nat.abs_cast]
 
 end Normed
 
@@ -205,7 +278,35 @@ theorem det_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι] (b : Ortho
   rw [← b.coe_toBasis] at hu ⊢
   rw [det_sqrt_smul _ hm, hu.det_eq_one, mul_one]
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L]
+  [IsZLattice ℝ L] in
+/-- For an orthonormal basis `b` and a nonzero natural number `m`, the discriminant group of the
+scaled cubic lattice `√m • ℤ b` has order `det (√m • ℤ b) = mⁿ`, where `n` is the dimension of the
+space. For instance the discriminant group `(ℤ/2)²` of `√2 ℤ²` has order `4`. -/
+theorem natCard_discriminantGroup_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) {m : ℕ} (hm : m ≠ 0) :
+    Nat.card (DiscriminantGroup (√(m : ℝ) • span ℤ (Set.range b))) = m ^ finrank ℝ E := by
+  have := b.toBasis.finiteDimensional_of_finite
+  borelize E
+  have : NeZero √(m : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (by positivity)⟩
+  have h :=
+    ((isUnimodular_span_orthonormalBasis b).isIntegral.sqrt_smul m).det_eq_card_discriminantGroup
+  rw [det_sqrt_smul_span_orthonormalBasis b hm] at h
+  exact_mod_cast h.symm
+
 variable {L}
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- Scaling an integral full lattice `L` of rank `n` by `√m` (`m ≠ 0`) multiplies the order of its
+discriminant group by `mⁿ`. -/
+theorem IsIntegral.card_discriminantGroup_sqrt_smul (h : IsIntegral L) {m : ℕ} (hm : m ≠ 0) :
+    Nat.card (DiscriminantGroup (√(m : ℝ) • L)) =
+      m ^ finrank ℝ E * Nat.card (DiscriminantGroup L) := by
+  borelize E
+  have : NeZero √(m : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hm))⟩
+  refine Nat.cast_injective (R := ℝ) ?_
+  rw [← (h.sqrt_smul m).det_eq_card_discriminantGroup, det_sqrt_smul L hm,
+    h.det_eq_card_discriminantGroup, Nat.cast_mul, Nat.cast_pow]
 
 /-- In positive dimension, scaling a full integral lattice by `c` with `1 < |c|` never gives a
 unimodular lattice: the determinant becomes `c²ⁿ det L > 1`. -/

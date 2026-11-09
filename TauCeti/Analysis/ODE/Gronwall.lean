@@ -8,8 +8,11 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Analysis.ODE.Gronwall
+import Mathlib.Analysis.Calculus.Monotone
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
@@ -24,9 +27,14 @@ some `K ≥ 0`. This file proves that such a `φ` satisfies `φ t ≤ c exp (K (
 The hypothesis `K ≥ 0` cannot be dropped: a very negative stretch of `φ` makes `c + K ∫ₐᵗ φ`
 large when `K < 0`.
 
+For a monotone `g` the differential form needs neither continuity nor differentiability: if
+`k g ≤ g'` at almost every point of `[s, t]` and `g s ≥ 0`, then `g s exp (∫ₛᵗ k) ≤ g t`
+(`TauCeti.mul_exp_integral_le_of_mul_le_deriv`), because the derivative of the monotone function
+`log g` integrates to at most its increment.
+
 It also writes Mathlib's `gronwallBound` with a negative rate `-λ` in terms of the exponential
 integral `E_λ(T) = ∫₀ᵀ e^{λr} dr` (`TauCeti.exp_mul_gronwallBound_neg`), and records that
-`E_λ(T) > 0` for `T > 0` (`TauCeti.integral_exp_mul_pos`) and `E_λ(T) ≤ T e^{|λ|T}` for `T ≥ 0`
+`E_λ(T) > 0` for `T > 0` (`TauCeti.integral_exp_mul_pos`) and `E_λ(T) ≤ T e^{|λ|T}`
 (`TauCeti.integral_exp_mul_le`).
 
 Finally, it specializes Mathlib's inequality to exponential decay: a function whose derivative
@@ -93,6 +101,44 @@ theorem le_mul_exp_of_le_add_mul_integral {φ : ℝ → ℝ} {a b c K : ℝ}
           field_simp
           ring
 
+/-- **Grönwall's inequality for monotone functions, almost-everywhere form.** Let `g` be monotone
+on `[s, t]` with `g s ≥ 0`. If `k g ≤ g'` at almost every point of `(s, t)`, for an interval
+integrable `k`, then `g s · exp (∫ₛᵗ k) ≤ g t`. No continuity of `g` is needed. -/
+theorem mul_exp_integral_le_of_mul_le_deriv {g k : ℝ → ℝ} {s t : ℝ} (hst : s ≤ t)
+    (hg : MonotoneOn g (Icc s t)) (hgs : 0 ≤ g s) (hk : IntervalIntegrable k volume s t)
+    (h : ∀ᵐ σ, σ ∈ Ioo s t → k σ * g σ ≤ deriv g σ) :
+    g s * Real.exp (∫ σ in s..t, k σ) ≤ g t := by
+  have hgst : g s ≤ g t := hg ⟨le_rfl, hst⟩ ⟨hst, le_rfl⟩ hst
+  rcases hgs.eq_or_lt with hgs0 | hgs0
+  · rw [← hgs0, zero_mul]
+    exact hgs.trans hgst
+  have hpos (σ : ℝ) (hσ : σ ∈ Icc s t) : 0 < g σ := hgs0.trans_le (hg ⟨le_rfl, hst⟩ hσ hσ.1)
+  set L : ℝ → ℝ := fun σ => Real.log (g σ)
+  have hL : MonotoneOn L (uIcc s t) := by
+    rw [uIcc_of_le hst]
+    exact fun x hx y hy hxy => Real.log_le_log (hpos x hx) (hg hx hy hxy)
+  -- `k ≤ (log g)' = g' / g` at almost every point of `[s, t]`.
+  have hlow : k ≤ᵐ[volume.restrict (Icc s t)] deriv L := by
+    rw [Filter.EventuallyLE, Measure.restrict_congr_set Ioo_ae_eq_Icc.symm,
+      ae_restrict_iff' measurableSet_Ioo]
+    filter_upwards [h, (hg.mono Ioo_subset_Icc_self).ae_differentiableWithinAt_of_mem]
+      with σ hσ hd hσI
+    have hgσ := hpos σ (Ioo_subset_Icc_self hσI)
+    have hd' := (hd hσI).differentiableAt (Ioo_mem_nhds hσI.1 hσI.2)
+    rw [(hd'.hasDerivAt.log hgσ.ne').deriv, le_div_iff₀ hgσ]
+    exact hσ hσI
+  -- Integrating, `∫ₛᵗ k ≤ ∫ₛᵗ (log g)' ≤ log (g t) - log (g s)`.
+  have hint := intervalIntegral.integral_mono_ae_restrict hst hk hL.intervalIntegrable_deriv hlow
+  have hup := hL.intervalIntegral_deriv_mem_uIcc
+  rw [uIcc_of_le (sub_nonneg.2 (Real.log_le_log hgs0 hgst))] at hup
+  calc g s * Real.exp (∫ σ in s..t, k σ) ≤ g s * Real.exp (L t - L s) := by
+        gcongr
+        exact hint.trans hup.2
+    _ = g t := by
+        rw [Real.exp_sub, Real.exp_log (hpos s ⟨le_rfl, hst⟩),
+          Real.exp_log (hpos t ⟨hst, le_rfl⟩)]
+        field_simp
+
 /-- The closed form of `e^{λT}` times the Grönwall bound with rate `-λ`:
 `e^{λT} gronwallBound δ (-λ) c T = δ + E_λ(T) c`, where `E_λ(T) = ∫₀ᵀ e^{λr} dr`. -/
 theorem exp_mul_gronwallBound_neg (δ lam c T : ℝ) :
@@ -114,14 +160,25 @@ theorem integral_exp_mul_pos (lam : ℝ) {T : ℝ} (hT : 0 < T) :
     ((by fun_prop : Continuous fun r ↦ exp (lam * r)).intervalIntegrable _ _)
     (fun _ _ ↦ exp_pos _) hT
 
-/-- The function `E_λ(T) = ∫₀ᵀ e^{λr} dr` satisfies `E_λ(T) ≤ T e^{|λ|T}` for `T ≥ 0`. -/
-theorem integral_exp_mul_le (lam : ℝ) {T : ℝ} (hT : 0 ≤ T) :
+/-- The function `E_λ(T) = ∫₀ᵀ e^{λr} dr` satisfies `E_λ(T) ≤ T e^{|λ|T}`. -/
+theorem integral_exp_mul_le (lam T : ℝ) :
     ∫ r in 0..T, exp (lam * r) ≤ T * exp (|lam| * T) := by
-  have := intervalIntegral.integral_mono_on (g := fun _ ↦ exp (|lam| * T)) hT
-    ((by fun_prop : Continuous fun r ↦ exp (lam * r)).intervalIntegrable _ _)
-    (intervalIntegrable_const (μ := volume)) fun r hr ↦ exp_le_exp.2 <| by
-      nlinarith [le_abs_self lam, abs_nonneg lam, hr.1, hr.2]
-  simpa using this
+  have hc : Continuous fun r ↦ exp (lam * r) := by fun_prop
+  rcases le_total 0 T with hT | hT
+  · have := intervalIntegral.integral_mono_on (g := fun _ ↦ exp (|lam| * T)) hT
+      (hc.intervalIntegrable _ _) (intervalIntegrable_const (μ := volume))
+      fun r hr ↦ exp_le_exp.2 <| by
+        nlinarith [le_abs_self lam, abs_nonneg lam, hr.1, hr.2]
+    simpa using this
+  · rw [intervalIntegral.integral_symm]
+    have := intervalIntegral.integral_mono_on (f := fun _ ↦ exp (|lam| * T)) hT
+      (intervalIntegrable_const (μ := volume)) (hc.intervalIntegrable _ _)
+      fun r hr ↦ exp_le_exp.2 <| by
+        rcases le_total 0 lam with h | h
+        · rw [abs_of_nonneg h]; nlinarith [hr.1, hr.2]
+        · rw [abs_of_nonpos h]; nlinarith [hr.1, hr.2]
+    simp only [intervalIntegral.integral_const, smul_eq_mul, zero_sub] at this
+    linarith
 
 /-- **Exponential decay from a differential inequality.** If `g' ≤ -lam * g` on `[T, ∞)`, then
 `g t ≤ g T * exp (-(lam * (t - T)))` for every `t ≥ T`. -/

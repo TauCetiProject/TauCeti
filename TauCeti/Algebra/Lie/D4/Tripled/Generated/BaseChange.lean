@@ -51,7 +51,7 @@ noncomputable def generatorCoordinateAlgebraBaseChangeIso :
 
 /-- Each root or torus generator over `K` is the scalar extension of the corresponding generator
 over `k`, under the coordinate identifications of `GL₂₄` and the generator's domain. -/
-private theorem generatorCoordinateMap_baseChange (j : Sum (Fin 4 ⊕ Fin 4) Unit) :
+theorem generatorCoordinateMap_baseChange (j : Sum (Fin 4 ⊕ Fin 4) Unit) :
     ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 24).inv ≫
         CommHopfAlgCat.baseChangeMap (generatorCoordinateMap k j)) ≫
         (generatorCoordinateAlgebraBaseChangeIso k K j).hom =
@@ -63,6 +63,12 @@ private theorem generatorCoordinateMap_baseChange (j : Sum (Fin 4 ⊕ Fin 4) Uni
         _ _ _ _ _ _ _ k K j
   · rw [Category.assoc, generatorCoordinateMap_inr, generatorCoordinateMap_inr]
     exact GeneralLinear.weightTorusBaseChangeCoordinateMap_baseChange ℤ k K _
+
+/-- Scalar extension preserves the epimorphism from ambient coordinates to generated coordinates. -/
+instance baseChangeMap_generatedCoordinateMap_epi :
+    Epi (CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateMap k)) :=
+  ConcreteCategory.epi_of_surjective _ (CommHopfAlgCat.baseChangeMap_surjective
+    (generatedCoordinateMap k) (generatedCoordinateMap_surjective k))
 
 /-- For a free algebra extension `K / k`, the transported defining ideal of the generated
 subgroup over `k` is the defining ideal of the subgroup generated over `K`. -/
@@ -100,27 +106,6 @@ theorem baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebra
         generatedCoordinateMap K :=
   CommHopfAlgCat.baseChangeMap_comp_baseChangeIsoOfEqQuotient_hom _ _ _ _ _ _ _ _
     (generatedCoordinateMap_comp_eqToIso_hom k) (generatedCoordinateMap_comp_eqToIso_hom K)
-
-/-- The full generated-carrier comparison intertwines each factored root or torus generator
-with its scalar extension. -/
-@[reassoc (attr := simp)]
-theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom
-    [Module.Free k K] (j : Sum (Fin 4 ⊕ Fin 4) Unit) :
-    CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateLift k j) ≫
-        (generatorCoordinateAlgebraBaseChangeIso k K j).hom =
-      (generatedCoordinateHopfAlgebraBaseChangeIso k K).hom ≫ generatedCoordinateLift K j := by
-  let _ : Epi (CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateMap k)) :=
-    ConcreteCategory.epi_of_surjective _ (CommHopfAlgCat.baseChangeMap_surjective
-      (generatedCoordinateMap k) (generatedCoordinateMap_surjective k))
-  apply (cancel_epi (CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateMap k))).mp
-  rw [← Category.assoc, ← (CommHopfAlgCat.baseChangeFunctor (K := K)).map_comp,
-    generatedCoordinateMap_comp_generatedCoordinateLift]
-  rw [← Category.assoc,
-    baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeIso_hom,
-    Category.assoc, generatedCoordinateMap_comp_generatedCoordinateLift]
-  apply (Iso.inv_comp_eq (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 24)).mp
-  rw [← Category.assoc]
-  exact generatorCoordinateMap_baseChange k K j
 
 end BaseChange
 

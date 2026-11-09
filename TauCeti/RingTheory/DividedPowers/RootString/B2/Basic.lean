@@ -97,22 +97,18 @@ theorem dividedPower_mul_orderedMonomial
   have hzw := hxw.of_commutator_eq_of_commutator_eq_smul (R := ℚ) (c := 2) hxy
     (by simpa only [← Nat.cast_smul_eq_nsmul ℚ, Nat.cast_ofNat] using hxz) hyz
     (isUnit_iff_ne_zero.mpr (by norm_num))
-  have hscale (k : ℕ) : dividedPower k (2 • w) = (2 ^ k : ℕ) • dividedPower k w := by
-    simpa only [← Nat.cast_smul_eq_nsmul ℚ, Nat.cast_pow, Nat.cast_ofNat] using
-      dividedPower_smul (2 : ℚ) k w
   -- First cross the long simple-root factor, releasing the two root-string factors.
   rw [orderedMonomial_def, ← mul_assoc, ← mul_assoc, ← mul_assoc,
     dividedPower_mul_dividedPower_of_commutator_eq_two_nsmul hxy hxz hxw hyz,
     sum_mul, sum_mul, sum_mul]
   refine sum_congr rfl fun p _ => ?_
   -- The remaining crossing has central commutator `2w`, accounting for `2 ^ k`.
-  have hmove := dividedPower_mul_dividedPower_of_commutator_eq hxz
-    (hxw.smul_right 2) (hzw.smul_right 2) (n - p.1 - 2 * p.2) b
+  have hmove := dividedPower_mul_dividedPower_of_commutator_eq_nsmul hxz hxw hzw
+    (n - p.1 - 2 * p.2) b
   simp only [mul_assoc] at ⊢
   rw [← mul_assoc (dividedPower (n - p.1 - 2 * p.2) x), hmove]
   simp only [mul_sum, sum_mul]
   refine sum_congr rfl fun k _ => ?_
-  rw [hscale]
   simp only [mul_smul_comm, smul_mul_assoc]
   have hzw' := commute_dividedPower_dividedPower hzw.symm p.2 (b - k)
   have hxw' := commute_dividedPower_dividedPower hxw (n - p.1 - 2 * p.2 - k) c

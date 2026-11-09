@@ -10,6 +10,8 @@ public import TauCeti.Analysis.Sobolev.W1p.ChainRule
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.Mul
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # The logarithm of a positive weak supersolution
@@ -110,6 +112,34 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_div_value_sq_le
     ring
   · simp only [Real.rpow_zero, mul_one]
 
+omit [DecidableEq ι] in
+/-- Poincaré–Wirtinger for `log u` on a ball inside `Ω`, given `w ∈ H¹(Ω)` representing `log u`
+with gradient `u⁻¹ ∇u`: the mean oscillation of `log u` is controlled by `‖∇u‖ / u`. -/
+private lemma setIntegral_log_sub_setAverage_sq_le {u w : W1p mu Omega 2} {ε : ℝ} (hε : 0 < ε)
+    (hεu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) {x₀ : EuclideanSpace ℝ ι} {r : ℝ}
+    (hr : 0 < r) (hBsub : Metric.ball x₀ r ⊆ (Omega : Set (EuclideanSpace ℝ ι)))
+    (hwv : W1p.value w =ᵐ[mu.restrict Omega] fun x => Real.log (W1p.value u x))
+    (hwg : W1p.gradient w =ᵐ[mu.restrict Omega] fun x => (W1p.value u x)⁻¹ • W1p.gradient u x) :
+    ∫ x in Metric.ball x₀ r, (Real.log (W1p.value u x) -
+        ⨍ y in Metric.ball x₀ r, Real.log (W1p.value u y) ∂mu) ^ 2 ∂mu ≤
+      (2 ^ (Fintype.card ι + 1) * r) ^ 2 *
+        ∫ x in Metric.ball x₀ r, (‖W1p.gradient u x‖ / W1p.value u x) ^ 2 ∂mu := by
+  have hwvB : W1p.value w =ᵐ[mu.restrict (Metric.ball x₀ r)] fun x => Real.log (W1p.value u x) :=
+    ae_restrict_of_ae_restrict_of_subset hBsub hwv
+  have hP := W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset hr hBsub w
+  rw [average_congr hwvB, finrank_euclideanSpace] at hP
+  calc _ = ∫ x in Metric.ball x₀ r, (W1p.value w x -
+          ⨍ y in Metric.ball x₀ r, Real.log (W1p.value u y) ∂mu) ^ 2 ∂mu :=
+        integral_congr_ae (hwvB.mono fun x hx => by simp only [hx])
+    _ ≤ _ := hP
+    _ = _ := by
+        congr 1
+        refine integral_congr_ae ?_
+        filter_upwards [ae_restrict_of_ae_restrict_of_subset hBsub hwg,
+          ae_restrict_of_ae_restrict_of_subset hBsub hεu] with x h1 h2
+        rw [h1, norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos (hε.trans_le h2),
+          inv_mul_eq_div]
+
 /-- **The gradient of `log u` on balls.** There is a constant `C ≥ 0`, depending only on the
 dimension, with the following property. Let `a` be measurable and uniformly elliptic on `Ω` with
 constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0` with
@@ -147,30 +177,12 @@ theorem exists_setIntegral_ball_norm_gradient_div_value_sq_le :
       (subset_tsupport ψ |>.trans hψts)
   have hcacc := h.setIntegral_sq_mul_norm_gradient_div_value_sq_le ha hu hε hεu hψ hcpt
     (hψts.trans hclosed)
-  have hmeasB : MeasurableSet (Metric.closedBall x₀ (3 * r / 2)) := measurableSet_closedBall
   -- The gradient of the cutoff is supported in `closedBall x₀ (3r/2)`, where it is at most `2c/r`.
   have hgrad : ∫ x in Omega, ‖∇ ψ x‖ ^ 2 ∂mu ≤
-      (2 * c / r) ^ 2 * mu.real (Metric.closedBall x₀ (3 * r / 2)) := by
-    calc ∫ x in Omega, ‖∇ ψ x‖ ^ 2 ∂mu
-        ≤ ∫ x in Omega, (Metric.closedBall x₀ (3 * r / 2)).indicator
-            (fun _ => (2 * c / r) ^ 2) x ∂mu := by
-          refine integral_mono_of_nonneg (Filter.Eventually.of_forall fun x => by positivity)
-            ((integrableOn_const measure_closedBall_lt_top.ne).integrable_indicator
-              hmeasB).restrict
-            (Filter.Eventually.of_forall fun x => ?_)
-          by_cases hx : x ∈ Metric.closedBall x₀ (3 * r / 2)
-          · rw [indicator_of_mem hx]
-            have := hψg x
-            rw [div_div_eq_mul_div, mul_comm c 2] at this
-            exact pow_le_pow_left₀ (norm_nonneg _) this 2
-          · have hfd : fderiv ℝ ψ x = 0 := Function.notMem_support.1 fun hx' =>
-              hx (hψts (support_fderiv_subset ℝ hx'))
-            simp [indicator_of_notMem hx, _root_.gradient, hfd]
-      _ ≤ (2 * c / r) ^ 2 * mu.real (Metric.closedBall x₀ (3 * r / 2)) := by
-          rw [integral_indicator_const _ hmeasB, smul_eq_mul, mul_comm]
-          gcongr
-          rw [measureReal_restrict_apply hmeasB]
-          exact measureReal_mono inter_subset_left measure_closedBall_lt_top.ne
+      (2 * c / r) ^ 2 * mu.real (Metric.closedBall x₀ (3 * r / 2)) :=
+    setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall hψts fun x _ => by
+      have := hψg x
+      rwa [div_div_eq_mul_div, mul_comm c 2] at this
   -- On `B(x₀, r)` the cutoff is `1`, so the integral there is dominated by the weighted one.
   have hweighted : Integrable (fun x => ψ x ^ 2 * (‖W1p.gradient u x‖ / W1p.value u x) ^ 2)
       (mu.restrict Omega) :=
@@ -190,14 +202,11 @@ theorem exists_setIntegral_ball_norm_gradient_div_value_sq_le :
       _ ≤ ∫ x in Omega, ψ x ^ 2 * (‖W1p.gradient u x‖ / W1p.value u x) ^ 2 ∂mu :=
           setIntegral_mono_set hweighted (Filter.Eventually.of_forall fun x => by positivity)
             ((Metric.ball_subset_ball (by linarith)).trans hball).eventuallyLE
-  -- Both balls have measure proportional to the `n`-th power of the radius.
   have hvol : mu.real (Metric.closedBall x₀ (3 * r / 2)) =
       (3 / 2) ^ Fintype.card ι * mu.real (Metric.ball x₀ r) := by
-    have hb : mu.real (Metric.ball x₀ r) = r ^ Fintype.card ι * mu.real (Metric.ball 0 1) := by
-      rw [measureReal_def, Measure.addHaar_ball_of_pos mu x₀ hr, ENNReal.toReal_mul,
-        ENNReal.toReal_ofReal (by positivity), measureReal_def, finrank_euclideanSpace]
-    rw [Measure.addHaar_real_closedBall mu x₀ (by positivity), hb, finrank_euclideanSpace]
-    ring
+    rw [show 3 * r / 2 = 3 / 2 * r by ring,
+      mu.addHaar_real_closedBall_mul_eq_pow_mul_addHaar_real_ball x₀ (by norm_num) hr,
+      finrank_euclideanSpace]
   calc ∫ x in Metric.ball x₀ r, (‖W1p.gradient u x‖ / W1p.value u x) ^ 2 ∂mu
       ≤ (2 * Lam / lam) ^ 2 * ((2 * c / r) ^ 2 * mu.real (Metric.closedBall x₀ (3 * r / 2))) :=
         hleft.trans (hcacc.trans (by gcongr))
@@ -242,27 +251,11 @@ theorem exists_setAverage_abs_log_sub_setAverage_le :
   have hBpos : 0 < mu.real (Metric.ball x₀ r) := ENNReal.toReal_pos hB0 hBtop
   have : IsFiniteMeasure (mu.restrict (Metric.ball x₀ r)) := isFiniteMeasure_restrict.2 hBtop
   obtain ⟨w, hwv, hwg⟩ := W1p.exists_value_gradient_ae_eq_log (by simp) hε hεu
-  have hwvB : W1p.value w =ᵐ[mu.restrict (Metric.ball x₀ r)] f :=
-    ae_restrict_of_ae_restrict_of_subset hBsub hwv
   have hmem : MemLp (fun x => f x - m) 2 (mu.restrict (Metric.ball x₀ r)) :=
     (((Lp.memLp (W1p.value w)).ae_eq hwv).mono_measure
       (Measure.restrict_mono hBsub le_rfl)).sub (memLp_const m)
   -- The Poincaré–Wirtinger inequality on the ball, for `log u`.
-  have hP : ∫ x in Metric.ball x₀ r, (f x - m) ^ 2 ∂mu ≤ (2 ^ (Fintype.card ι + 1) * r) ^ 2 *
-      ∫ x in Metric.ball x₀ r, (‖W1p.gradient u x‖ / W1p.value u x) ^ 2 ∂mu := by
-    have hP := W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset hr hBsub w
-    rw [average_congr hwvB, finrank_euclideanSpace] at hP
-    calc ∫ x in Metric.ball x₀ r, (f x - m) ^ 2 ∂mu
-        = ∫ x in Metric.ball x₀ r, (W1p.value w x - m) ^ 2 ∂mu :=
-          integral_congr_ae (hwvB.mono fun x hx => by simp only [hx])
-      _ ≤ _ := hP
-      _ = _ := by
-          congr 1
-          refine integral_congr_ae ?_
-          filter_upwards [ae_restrict_of_ae_restrict_of_subset hBsub hwg,
-            ae_restrict_of_ae_restrict_of_subset hBsub hεu] with x h1 h2
-          rw [h1, norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos (hε.trans_le h2),
-            inv_mul_eq_div]
+  have hP := setIntegral_log_sub_setAverage_sq_le hε hεu hr hBsub hwv hwg
   -- Jensen's inequality bounds the `L¹` mean oscillation by the `L²` one.
   have hgi : Integrable (fun x => |f x - m| ^ 2) (mu.restrict (Metric.ball x₀ r)) := by
     simpa only [sq_abs] using hmem.integrable_sq

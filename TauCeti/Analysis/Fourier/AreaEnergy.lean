@@ -330,10 +330,13 @@ plane curve traversed at constant speed on `[a, b]`, the square of its length eq
 `4π |signedArea γ a b|` exactly when the curve is constant or traverses a circle once, in either
 orientation. -/
 theorem _root_.HasConstantSpeedOnWith.eVariationOn_toReal_sq_eq_four_pi_mul_abs_signedArea_iff
-    (hγ : HasConstantSpeedOnWith γ (Icc a b) l) (hab : a < b) (hγab : γ a = γ b) :
+    (hγ : HasConstantSpeedOnWith γ (Icc a b) l) (hab : a ≤ b) (hγab : γ a = γ b) :
     (eVariationOn γ (Icc a b)).toReal ^ 2 = 4 * π * |signedArea γ a b| ↔
       ∃ c w : ℂ, (∀ t ∈ Icc a b, γ t = c + w * exp (2 * π * I * t / (b - a))) ∨
         ∀ t ∈ Icc a b, γ t = c + w * exp (-(2 * π * I * t / (b - a))) := by
+  rcases hab.eq_or_lt with rfl | hab
+  · exact iff_of_true (by simp) ⟨γ a, 0, Or.inl fun t ht ↦ by
+      rw [show t = a from le_antisymm ht.2 ht.1]; simp⟩
   obtain ⟨hAC, hderiv, hL2, henergy⟩ :=
     areaEnergy_hypotheses_of_hasConstantSpeedOnWith hγ hab.le
   rw [← henergy]
@@ -392,15 +395,8 @@ theorem eVariationOn_toReal_sq_eq_four_pi_mul_abs_rectifiableSignedArea_iff
     rw [hγ.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo
       (left_mem_Icc.2 hab) ht]
   rw [rectifiableSignedArea_eq_signedArea_naturalParameterization]
-  rcases (ENNReal.toReal_nonneg : 0 ≤ (eVariationOn γ (Icc a b)).toReal).eq_or_lt with hL0 | hLpos
-  · -- A curve of length zero is constant, and both sides hold.
-    have hvar0 : eVariationOn γ (Icc a b) = 0 :=
-      ((ENNReal.toReal_eq_zero_iff _).1 hL0.symm).resolve_right hγ
-    refine iff_of_true (by simp [← hL0]) ⟨γ a, 0, Or.inl fun t ht ↦ ?_⟩
-    rw [zero_mul, add_zero]
-    exact edist_eq_zero.1 ((eVariationOn.eq_zero_iff γ).1 hvar0 t ht a (left_mem_Icc.2 hab))
   have key := (hγ.hasUnitSpeedOn_naturalParameterization hcont
-    hab).eVariationOn_toReal_sq_eq_four_pi_mul_abs_signedArea_iff hLpos
+    hab).eVariationOn_toReal_sq_eq_four_pi_mul_abs_signedArea_iff ENNReal.toReal_nonneg
     (by rw [hγ.locallyBoundedVariationOn.naturalParameterization_zero (left_mem_Icc.2 hab),
       hγ.naturalParameterization_toReal_eVariationOn hab, hγab])
   rw [hγ.eVariationOn_naturalParameterization hcont hab] at key

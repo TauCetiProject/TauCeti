@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Module.ZLattice.OrthSum
 public import TauCeti.Algebra.Module.ZLattice.RealModel
 public import TauCeti.Algebra.Module.ZLattice.Scaling
 public import TauCeti.LinearAlgebra.IntegralLattice.Level
-public import TauCeti.LinearAlgebra.Matrix.NonsingularInverse
+public import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 import Mathlib.GroupTheory.Schreier
 
 /-!
@@ -54,7 +54,13 @@ Conversely the real model `TauCeti.IntegralLattice.realModel` of a positive defi
 lattice `M` has the level of `M` (`TauCeti.IntegralLattice.level_realModel`), so the levels computed
 on the rational side, such as those of the root lattices, hold verbatim for their real models.
 For even `L` the level divides `N` exactly when `N` kills the discriminant quadratic form
-(`TauCeti.IntegralLattice.IsEven.level_dvd_iff`). For a `ℤ`-basis `b` of `L` with real Gram matrix
+(`ZLattice.IsEven.level_dvd_iff_discriminantQuadraticMap`), so it is the least `N > 0` with this
+property (`ZLattice.IsEven.isLeast_level_discriminantQuadraticMap`), and when `A_L` is cyclic it is
+the additive order or rational denominator of the quadratic value of a generator. Consequently, for
+an even full lattice of level dividing `N > 0` and `x ∈ L^∨`, the coset shell `cosetShell L x t` is
+empty unless `t = 2m / N` for some `m : ℕ` whose residue modulo `N` maps to `q_L(x + L)` under
+`ZMod.toRatAddCircle N` (`ZLattice.IsEven.cosetShell_eq_empty_of_level_dvd`,
+`ZLattice.IsEven.cosetShell_eq_empty_of_level`). For a `ℤ`-basis `b` of `L` with real Gram matrix
 `G = (⟪b i, b j⟫)`, the level divides `N` exactly when `N • G⁻¹` is an integral matrix with even
 diagonal (`ZLattice.level_dvd_iff_gram`), so it is the least `N > 0` with this property
 (`ZLattice.isLeast_level`). Indeed `G⁻¹` is the Gram matrix of the basis of `L^∨` dual to `b`.
@@ -76,7 +82,9 @@ by tauceti-ai-for-science in
 * `ZLattice.level_nsmul_mem`: `level L • x ∈ L` for `x ∈ L^∨`.
 * `ZLattice.exponent_discriminantGroup_dvd_level`: the exponent of `A_L` divides the level.
 * `ZLattice.card_discriminantGroup_dvd_level_pow`: for a full lattice `|A_L|` divides
-  `level L ^ n`, and `ZLattice.prime_dvd_level`: every prime dividing `|A_L|` divides the level.
+  `level L ^ n`, `ZLattice.prime_dvd_level`: every prime dividing `|A_L|` divides the level, and
+  `ZLattice.coprime_card_discriminantGroup_of_coprime_level`: every natural number coprime to
+  `level L` is coprime to `|A_L|`.
 * `ZLattice.IsEven.level_eq_one_iff`: an even lattice has level one exactly when it is unimodular.
 * `ZLattice.level_comap`: the level is invariant under linear isometry equivalences.
 * `ZLattice.level_orthSum`: the level of an orthogonal direct sum `L ⊕ M` is
@@ -84,9 +92,14 @@ by tauceti-ai-for-science in
 * `ZLattice.level_ratModel`: the level of a full integral lattice is the level of its rational
   model, and `TauCeti.IntegralLattice.level_realModel`: the level of the real model of a positive
   definite rational lattice is the level of that lattice.
-* `ZLattice.level_dvd_iff_gram`, `ZLattice.isLeast_level`: for a full integral lattice with a
-  `ℤ`-basis of real Gram matrix `G`, the level is the least `N > 0` for which `N • G⁻¹` is an
-  integral matrix with even diagonal.
+* `ZLattice.IsIntegral.isLeast_level_norm_sq`, `ZLattice.level_dvd_iff_gram`,
+  `ZLattice.isLeast_level`, `ZLattice.IsEven.level_dvd_iff_discriminantQuadraticMap`,
+  `ZLattice.IsEven.isLeast_level_discriminantQuadraticMap`: the three equivalent `IsLeast`
+  characterizations of `level L` (via dual norms, inverse Gram matrices, and the discriminant
+  quadratic form).
+* `ZLattice.IsEven.cosetShell_eq_empty_of_level`,
+  `ZLattice.IsEven.cosetRepresentationNumber_div_eq_zero_of_toRatAddCircle_ne`: coset shells and
+  coset representation numbers vanish outside the residue class of `q_L(γ)`.
 * `ZLattice.level_sqrt_smul_span_orthonormalBasis`: the lattice `√m • ℤⁿ`, `n > 0`, has level `2 m`.
 
 ## References
@@ -196,6 +209,39 @@ theorem level_dvd_two_mul_card_discriminantGroup :
   push_cast
   linear_combination 2 * hm
 
+/-! ### Coset shells at multiples of the level -/
+
+/-- For an even lattice `L`, `γ ∈ L^∨`, `v ∈ L` and a multiple `N` of `level L`, `N ‖γ + v‖²` is an
+even integer. -/
+theorem IsEven.exists_natCast_mul_norm_add_sq_eq_of_level_dvd (hL : IsEven L) {γ : E}
+    (hγ : γ ∈ dual L) {N : ℕ} (hdvd : level L ∣ N) {v : E} (hv : v ∈ L) :
+    ∃ m : ℤ, (N : ℝ) * ‖γ + v‖ ^ 2 = 2 * m :=
+  hL.exists_natCast_mul_norm_add_sq_eq hγ (level_dvd_iff.mp hdvd γ hγ) hv
+
+/-- For an even lattice `L`, `γ ∈ L^∨` and a positive multiple `N` of `level L`, every squared norm
+represented by `γ + L` has the form `2m / N` with `m : ℕ`. -/
+theorem IsEven.cosetShell_eq_empty_of_not_exists_div_of_level_dvd (hL : IsEven L) {γ : E}
+    (hγ : γ ∈ dual L) {N : ℕ} (hN : 0 < N) (hdvd : level L ∣ N) {t : ℝ}
+    (ht : ¬ ∃ m : ℕ, t = 2 * m / N) : cosetShell L γ t = ∅ := by
+  refine Set.eq_empty_of_forall_notMem fun v hv ↦ ht ?_
+  obtain ⟨hv, hvt⟩ := mem_cosetShell.mp hv
+  obtain ⟨m, hm⟩ := hL.exists_natCast_mul_norm_add_sq_eq_of_level_dvd hγ hdvd hv
+  have hm0 : 0 ≤ m := by
+    have : (0 : ℝ) ≤ 2 * m := hm ▸ by positivity
+    exact_mod_cast (by linarith : (0 : ℝ) ≤ m)
+  lift m to ℕ using hm0
+  refine ⟨m, ?_⟩
+  rw [← hvt, eq_div_iff (Nat.cast_ne_zero.mpr hN.ne'), mul_comm, hm]
+  norm_cast
+
+/-- For an even lattice `L`, `γ ∈ L^∨` and a positive multiple `N` of `level L`, `r_{γ+L}(t)`
+vanishes unless `t = 2m / N` for some `m : ℕ`. -/
+theorem IsEven.cosetRepresentationNumber_eq_zero_of_not_exists_div_of_level_dvd (hL : IsEven L)
+    {γ : E} (hγ : γ ∈ dual L) {N : ℕ} (hN : 0 < N) (hdvd : level L ∣ N) {t : ℝ}
+    (ht : ¬ ∃ m : ℕ, t = 2 * m / N) : cosetRepresentationNumber L γ t = 0 := by
+  rw [cosetRepresentationNumber_def,
+    hL.cosetShell_eq_empty_of_not_exists_div_of_level_dvd hγ hN hdvd ht, Set.ncard_empty]
+
 /-! ### Full lattices -/
 
 section FiniteDimensional
@@ -231,6 +277,13 @@ theorem IsIntegral.level_pos (h : IsIntegral L) : 0 < level L := by
   exact Nat.pos_of_dvd_of_pos level_dvd_two_mul_card_discriminantGroup
     (Nat.mul_pos two_pos Nat.card_pos)
 
+/-- For a full integral lattice `L`, the level is the least `N > 0` such that `N ‖x‖² / 2` is an
+integer for every `x` in the dual lattice. -/
+theorem IsIntegral.isLeast_level_norm_sq (hL : IsIntegral L) :
+    IsLeast {N : ℕ | 0 < N ∧ ∀ x ∈ dual L, ∃ m : ℤ, (N : ℝ) * ‖x‖ ^ 2 = 2 * m} (level L) :=
+  ⟨⟨hL.level_pos, level_dvd_iff.mp dvd_rfl⟩,
+    fun _ ⟨hN, hx⟩ ↦ Nat.le_of_dvd hN (level_dvd_iff.mpr hx)⟩
+
 /-- The order of the discriminant group of a full lattice of rank `n` divides `level L ^ n`. For an
 integral lattice this order is `det L`. -/
 theorem card_discriminantGroup_dvd_level_pow :
@@ -244,6 +297,11 @@ For an integral lattice this order is `det L`. -/
 theorem prime_dvd_level {p : ℕ} (hp : p.Prime) (hpd : p ∣ Nat.card (DiscriminantGroup L)) :
     p ∣ level L :=
   hp.dvd_of_dvd_pow (hpd.trans card_discriminantGroup_dvd_level_pow)
+
+/-- Any natural number coprime to `level L` is coprime to the order of `DiscriminantGroup L`. -/
+theorem coprime_card_discriminantGroup_of_coprime_level {a : ℕ} (ha : a.Coprime (level L)) :
+    a.Coprime (Nat.card (DiscriminantGroup L)) :=
+  (ha.pow_right (finrank ℝ E)).coprime_dvd_right card_discriminantGroup_dvd_level_pow
 
 /-- An even full lattice has level one exactly when it is unimodular. -/
 theorem IsEven.level_eq_one_iff (h : IsEven L) : level L = 1 ↔ IsUnimodular L := by
@@ -307,6 +365,239 @@ theorem isLeast_level (hL : IsIntegral L) {ι : Type*} [Fintype ι] [DecidableEq
       M.map (Int.cast : ℤ → ℝ) = (N : ℝ) • (Matrix.gram ℝ fun i ↦ (b i : E))⁻¹} (level L) :=
   ⟨⟨hL.level_pos, (level_dvd_iff_gram hL b _).mp dvd_rfl⟩,
     fun _ ⟨hN, hM⟩ ↦ Nat.le_of_dvd hN ((level_dvd_iff_gram hL b _).mpr hM)⟩
+
+/-! ### The discriminant quadratic form and coset shells of an even lattice -/
+
+/-- **The level of an even full lattice is the annihilator of its discriminant quadratic form**:
+`level L ∣ N` if and only if `N • q_L(γ) = 0` for every `γ ∈ L^∨ ⧸ L`, where `q_L` is read on the
+rational model. -/
+theorem IsEven.level_dvd_iff_discriminantQuadraticMap (hL : IsEven L) {N : ℕ} :
+    level L ∣ N ↔ ∀ γ : DiscriminantGroup L,
+      N • (ratModel hL.isIntegral).discriminantQuadraticMap
+        ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+        (ratModelDiscriminantGroupEquiv hL.isIntegral γ) = 0 := by
+  rw [← level_ratModel hL.isIntegral, ← Int.natCast_dvd_natCast,
+    ((isEven_ratModel_iff hL.isIntegral).mpr hL).level_dvd_iff,
+    (ratModelDiscriminantGroupEquiv hL.isIntegral).toEquiv.forall_congr_left]
+  simp [natCast_zsmul]
+
+/-- The level of an even full lattice annihilates its discriminant quadratic form. -/
+@[simp]
+theorem IsEven.level_nsmul_discriminantQuadraticMap (hL : IsEven L)
+    (γ : DiscriminantGroup L) :
+    level L • (ratModel hL.isIntegral).discriminantQuadraticMap
+      ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+      (ratModelDiscriminantGroupEquiv hL.isIntegral γ) = 0 :=
+  hL.level_dvd_iff_discriminantQuadraticMap.mp dvd_rfl γ
+
+/-- For an even full lattice `L`, the level is the least `N > 0` that annihilates the discriminant
+quadratic form on `L^∨ ⧸ L`. -/
+theorem IsEven.isLeast_level_discriminantQuadraticMap (hL : IsEven L) :
+    IsLeast {N : ℕ | 0 < N ∧ ∀ γ : DiscriminantGroup L,
+      N • (ratModel hL.isIntegral).discriminantQuadraticMap
+        ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+        (ratModelDiscriminantGroupEquiv hL.isIntegral γ) = 0} (level L) :=
+  ⟨⟨hL.isIntegral.level_pos, hL.level_dvd_iff_discriminantQuadraticMap.mp dvd_rfl⟩,
+    fun _ ⟨hN, hq⟩ ↦ Nat.le_of_dvd hN (hL.level_dvd_iff_discriminantQuadraticMap.mpr hq)⟩
+
+/-- If `γ` generates the discriminant group of an even full lattice `L`, the level of `L` is the
+additive order of `q_L(γ)` in `ℚ/ℤ`. -/
+theorem IsEven.level_eq_addOrderOf_discriminantQuadraticMap (hL : IsEven L)
+    (γ : DiscriminantGroup L) (hγ : AddSubgroup.zmultiples γ = ⊤) :
+    level L = addOrderOf ((ratModel hL.isIntegral).discriminantQuadraticMap
+      ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+      (ratModelDiscriminantGroupEquiv hL.isIntegral γ)) := by
+  rw [← level_ratModel hL.isIntegral]
+  refine ((isEven_ratModel_iff hL.isIntegral).mpr hL).level_eq_addOrderOf _ ?_
+  rw [eq_top_iff]
+  rintro a -
+  obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.mp
+    (hγ ▸ AddSubgroup.mem_top ((ratModelDiscriminantGroupEquiv hL.isIntegral).symm a))
+  refine AddSubgroup.mem_zmultiples_iff.mpr ⟨k, ?_⟩
+  have h := congrArg (ratModelDiscriminantGroupEquiv hL.isIntegral) hk
+  rwa [map_zsmul, LinearEquiv.apply_symm_apply] at h
+
+/-- If `γ` generates the discriminant group of an even full lattice `L` and `q_L(γ)` is the class
+of `r : ℚ` in `ℚ/ℤ`, the level of `L` is the denominator `r.den`. -/
+theorem IsEven.level_eq_den_discriminantQuadraticMap (hL : IsEven L)
+    (γ : DiscriminantGroup L) (hγ : AddSubgroup.zmultiples γ = ⊤) {r : ℚ}
+    (hr : (ratModel hL.isIntegral).discriminantQuadraticMap
+      ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+      (ratModelDiscriminantGroupEquiv hL.isIntegral γ) = (r : AddCircle (1 : ℚ))) :
+    level L = r.den := by
+  rw [hL.level_eq_addOrderOf_discriminantQuadraticMap γ hγ, hr]
+  simpa only [Rat.cast_id, mul_one] using AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := r)
+
+/-- When `0 < N` and `level L ∣ N`, every discriminant quadratic value `q_L(γ)` is the image under
+`ZMod.toRatAddCircle N` of a unique residue class modulo `N` (representing `N q_L(γ) mod N`). -/
+theorem IsEven.existsUnique_toRatAddCircle_eq_discriminantQuadraticMap (hL : IsEven L)
+    {N : ℕ} (hN : 0 < N) (hdvd : level L ∣ N) (γ : DiscriminantGroup L) :
+    ∃! a : ZMod N, ZMod.toRatAddCircle N a =
+      (ratModel hL.isIntegral).discriminantQuadraticMap
+        ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+        (ratModelDiscriminantGroupEquiv hL.isIntegral γ) := by
+  have : NeZero N := ⟨hN.ne'⟩
+  obtain ⟨a, ha⟩ := ZMod.exists_toRatAddCircle_eq_of_nsmul_eq_zero N
+    (hL.level_dvd_iff_discriminantQuadraticMap.mp hdvd γ)
+  exact ⟨a, ha, fun _ hb ↦ ZMod.toRatAddCircle_injective N (hb.trans ha.symm)⟩
+
+/-- Every discriminant quadratic value `q_L(γ)` of an even full lattice is the image under
+`ZMod.toRatAddCircle (level L)` of a unique residue class modulo `level L`. -/
+theorem IsEven.existsUnique_toRatAddCircle_level_eq_discriminantQuadraticMap (hL : IsEven L)
+    (γ : DiscriminantGroup L) :
+    ∃! a : ZMod (level L), ZMod.toRatAddCircle (level L) a =
+      (ratModel hL.isIntegral).discriminantQuadraticMap
+        ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+        (ratModelDiscriminantGroupEquiv hL.isIntegral γ) :=
+  hL.existsUnique_toRatAddCircle_eq_discriminantQuadraticMap hL.isIntegral.level_pos dvd_rfl γ
+
+/-- If `v` belongs to the coset shell of `x + L` of squared norm `2m / N`, then the residue of `m`
+modulo `N` maps to `q_L(x + L)` under `ZMod.toRatAddCircle N`. -/
+theorem IsEven.toRatAddCircle_eq_discriminantQuadraticMap_of_mem_cosetShell (hL : IsEven L)
+    (x : dual L) {N : ℕ} {m : ℤ} {v : E} (hv : v ∈ cosetShell L (x : E) (2 * m / N)) :
+    ZMod.toRatAddCircle N (m : ZMod N) =
+      (ratModel hL.isIntegral).discriminantQuadraticMap
+        ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+        (ratModelDiscriminantGroupEquiv hL.isIntegral (Submodule.Quotient.mk x)) := by
+  obtain ⟨hv, hvt⟩ := mem_cosetShell.mp hv
+  rw [ZMod.toRatAddCircle_intCast, eq_comm,
+    discriminantQuadraticMap_ratModelDiscriminantGroupEquiv_mk_eq_coe_iff hL.isIntegral hL]
+  obtain ⟨j, hj⟩ := hL.exists_norm_add_sq_sub_norm_sq_eq x.2 hv
+  refine ⟨-j, ?_⟩
+  push_cast
+  linear_combination (hvt - hj) / 2
+
+/-- For an even full lattice `L` and `x ∈ L^∨`, the coset shell of `x + L` of squared norm `2m / N`
+is empty whenever `m mod N` does not map to `q_L(x + L)` under `ZMod.toRatAddCircle N`. -/
+theorem IsEven.cosetShell_div_eq_empty_of_toRatAddCircle_ne (hL : IsEven L) (x : dual L)
+    {N : ℕ} {m : ℤ}
+    (hm : ZMod.toRatAddCircle N (m : ZMod N) ≠
+      (ratModel hL.isIntegral).discriminantQuadraticMap
+        ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+        (ratModelDiscriminantGroupEquiv hL.isIntegral (Submodule.Quotient.mk x))) :
+    cosetShell L (x : E) (2 * m / N) = ∅ :=
+  Set.eq_empty_of_forall_notMem fun _ hv ↦
+    hm (hL.toRatAddCircle_eq_discriminantQuadraticMap_of_mem_cosetShell x hv)
+
+/-- For an even full lattice `L` and `x ∈ L^∨`, `r_{x+L}(2m / N)` vanishes whenever `m mod N` does
+not map to `q_L(x + L)` under `ZMod.toRatAddCircle N`. -/
+theorem IsEven.cosetRepresentationNumber_div_eq_zero_of_toRatAddCircle_ne (hL : IsEven L)
+    (x : dual L) {N : ℕ} {m : ℤ}
+    (hm : ZMod.toRatAddCircle N (m : ZMod N) ≠
+      (ratModel hL.isIntegral).discriminantQuadraticMap
+        ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+        (ratModelDiscriminantGroupEquiv hL.isIntegral (Submodule.Quotient.mk x))) :
+    cosetRepresentationNumber L (x : E) (2 * m / N) = 0 := by
+  rw [cosetRepresentationNumber_def, hL.cosetShell_div_eq_empty_of_toRatAddCircle_ne x hm,
+    Set.ncard_empty]
+
+/-- For an even full lattice `L` and `γ : DiscriminantGroup L`, `r_γ(2m / N)` vanishes whenever
+`m mod N` does not map to `q_L(γ)` under `ZMod.toRatAddCircle N`. -/
+theorem IsEven.cosetRepresentationNumberClass_div_eq_zero_of_toRatAddCircle_ne (hL : IsEven L)
+    (γ : DiscriminantGroup L) {N : ℕ} {m : ℤ}
+    (hm : ZMod.toRatAddCircle N (m : ZMod N) ≠
+      (ratModel hL.isIntegral).discriminantQuadraticMap
+        ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+        (ratModelDiscriminantGroupEquiv hL.isIntegral γ)) :
+    cosetRepresentationNumberClass L γ (2 * m / N) = 0 := by
+  induction γ using Submodule.Quotient.induction_on with
+  | H x =>
+    rw [cosetRepresentationNumberClass_mk]
+    exact hL.cosetRepresentationNumber_div_eq_zero_of_toRatAddCircle_ne x hm
+
+/-- For an even full lattice `L` and `γ : DiscriminantGroup L`, `r_γ(2m / level L)` vanishes
+whenever `m mod level L` does not map to `q_L(γ)` under `ZMod.toRatAddCircle (level L)`. -/
+theorem IsEven.cosetRepresentationNumberClass_div_level_eq_zero_of_toRatAddCircle_ne
+    (hL : IsEven L) (γ : DiscriminantGroup L) {m : ℤ}
+    (hm : ZMod.toRatAddCircle (level L) (m : ZMod (level L)) ≠
+      (ratModel hL.isIntegral).discriminantQuadraticMap
+        ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+        (ratModelDiscriminantGroupEquiv hL.isIntegral γ)) :
+    cosetRepresentationNumberClass L γ (2 * m / level L) = 0 :=
+  hL.cosetRepresentationNumberClass_div_eq_zero_of_toRatAddCircle_ne γ hm
+
+/-- **Coset shell support at a multiple of the level.** For an even full lattice `L`, `x ∈ L^∨`,
+and a positive multiple `N` of `level L`, `cosetShell L x t` is empty unless `t = 2m / N` for some
+`m : ℕ` with `ZMod.toRatAddCircle N (m : ZMod N) = q_L(x + L)`. -/
+theorem IsEven.cosetShell_eq_empty_of_level_dvd (hL : IsEven L) (x : dual L)
+    {N : ℕ} (hN : 0 < N) (hdvd : level L ∣ N) {t : ℝ}
+    (ht : ¬ ∃ m : ℕ, t = 2 * m / N ∧ ZMod.toRatAddCircle N (m : ZMod N) =
+      (ratModel hL.isIntegral).discriminantQuadraticMap
+        ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+        (ratModelDiscriminantGroupEquiv hL.isIntegral (Submodule.Quotient.mk x))) :
+    cosetShell L (x : E) t = ∅ := by
+  refine Set.eq_empty_of_forall_notMem fun v hv ↦ ht ?_
+  obtain ⟨m, rfl⟩ : ∃ m : ℕ, t = 2 * m / N := by
+    by_contra hdiv
+    exact Set.notMem_empty v
+      (hL.cosetShell_eq_empty_of_not_exists_div_of_level_dvd x.2 hN hdvd hdiv ▸ hv)
+  have hv' : v ∈ cosetShell L (x : E) (2 * (m : ℤ) / N) := by simpa using hv
+  exact ⟨m, rfl,
+    by simpa using hL.toRatAddCircle_eq_discriminantQuadraticMap_of_mem_cosetShell x hv'⟩
+
+/-- **Coset shell support at the level.** For an even full lattice `L` and `x ∈ L^∨`,
+`cosetShell L x t` is empty unless `t = 2m / level L` for some `m : ℕ` with
+`ZMod.toRatAddCircle (level L) (m : ZMod (level L)) = q_L(x + L)`. -/
+theorem IsEven.cosetShell_eq_empty_of_level (hL : IsEven L) (x : dual L) {t : ℝ}
+    (ht : ¬ ∃ m : ℕ, t = 2 * m / level L ∧
+      ZMod.toRatAddCircle (level L) (m : ZMod (level L)) =
+        (ratModel hL.isIntegral).discriminantQuadraticMap
+          ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+          (ratModelDiscriminantGroupEquiv hL.isIntegral (Submodule.Quotient.mk x))) :
+    cosetShell L (x : E) t = ∅ :=
+  hL.cosetShell_eq_empty_of_level_dvd x hL.isIntegral.level_pos dvd_rfl ht
+
+/-- For an even full lattice `L`, `x ∈ L^∨` and a positive multiple `N` of `level L`, `r_{x+L}(t)`
+vanishes unless `t = 2m / N` for some `m : ℕ` with
+`ZMod.toRatAddCircle N (m : ZMod N) = q_L(x + L)`. -/
+theorem IsEven.cosetRepresentationNumber_eq_zero_of_level_dvd (hL : IsEven L) (x : dual L)
+    {N : ℕ} (hN : 0 < N) (hdvd : level L ∣ N) {t : ℝ}
+    (ht : ¬ ∃ m : ℕ, t = 2 * m / N ∧ ZMod.toRatAddCircle N (m : ZMod N) =
+      (ratModel hL.isIntegral).discriminantQuadraticMap
+        ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+        (ratModelDiscriminantGroupEquiv hL.isIntegral (Submodule.Quotient.mk x))) :
+    cosetRepresentationNumber L (x : E) t = 0 := by
+  rw [cosetRepresentationNumber_def, hL.cosetShell_eq_empty_of_level_dvd x hN hdvd ht,
+    Set.ncard_empty]
+
+/-- For an even full lattice `L` and `x ∈ L^∨`, `r_{x+L}(t)` vanishes unless `t = 2m / level L` for
+some `m : ℕ` with `ZMod.toRatAddCircle (level L) (m : ZMod (level L)) = q_L(x + L)`. -/
+theorem IsEven.cosetRepresentationNumber_eq_zero_of_level (hL : IsEven L) (x : dual L) {t : ℝ}
+    (ht : ¬ ∃ m : ℕ, t = 2 * m / level L ∧
+      ZMod.toRatAddCircle (level L) (m : ZMod (level L)) =
+        (ratModel hL.isIntegral).discriminantQuadraticMap
+          ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+          (ratModelDiscriminantGroupEquiv hL.isIntegral (Submodule.Quotient.mk x))) :
+    cosetRepresentationNumber L (x : E) t = 0 :=
+  hL.cosetRepresentationNumber_eq_zero_of_level_dvd x hL.isIntegral.level_pos dvd_rfl ht
+
+/-- For an even full lattice `L`, `γ : DiscriminantGroup L` and a positive multiple `N` of
+`level L`, `r_γ(t)` vanishes unless `t = 2m / N` for some `m : ℕ` with
+`ZMod.toRatAddCircle N (m : ZMod N) = q_L(γ)`. -/
+theorem IsEven.cosetRepresentationNumberClass_eq_zero_of_level_dvd (hL : IsEven L)
+    (γ : DiscriminantGroup L) {N : ℕ} (hN : 0 < N) (hdvd : level L ∣ N) {t : ℝ}
+    (ht : ¬ ∃ m : ℕ, t = 2 * m / N ∧ ZMod.toRatAddCircle N (m : ZMod N) =
+      (ratModel hL.isIntegral).discriminantQuadraticMap
+        ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+        (ratModelDiscriminantGroupEquiv hL.isIntegral γ)) :
+    cosetRepresentationNumberClass L γ t = 0 := by
+  induction γ using Submodule.Quotient.induction_on with
+  | H x =>
+    rw [cosetRepresentationNumberClass_mk]
+    exact hL.cosetRepresentationNumber_eq_zero_of_level_dvd x hN hdvd ht
+
+/-- For an even full lattice `L` and `γ : DiscriminantGroup L`, `r_γ(t)` vanishes unless
+`t = 2m / level L` for some `m : ℕ` with
+`ZMod.toRatAddCircle (level L) (m : ZMod (level L)) = q_L(γ)`. -/
+theorem IsEven.cosetRepresentationNumberClass_eq_zero_of_level (hL : IsEven L)
+    (γ : DiscriminantGroup L) {t : ℝ}
+    (ht : ¬ ∃ m : ℕ, t = 2 * m / level L ∧
+      ZMod.toRatAddCircle (level L) (m : ZMod (level L)) =
+        (ratModel hL.isIntegral).discriminantQuadraticMap
+          ((isEven_ratModel_iff hL.isIntegral).mpr hL)
+          (ratModelDiscriminantGroupEquiv hL.isIntegral γ)) :
+    cosetRepresentationNumberClass L γ t = 0 :=
+  hL.cosetRepresentationNumberClass_eq_zero_of_level_dvd γ hL.isIntegral.level_pos dvd_rfl ht
 
 end FiniteDimensional
 

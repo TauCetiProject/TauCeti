@@ -251,6 +251,13 @@ theorem isEdgeConnected_two_iff_connected_and_forall_not_isBridge (hV : V(G).Non
     connected_iff_forall_reachable, and_iff_right hV]
   exact and_congr_left' ⟨fun h _ _ hx hy ↦ h hx hy, fun h _ hx _ hy ↦ h hx hy⟩
 
+/-- The graph traced by a cycle is `2`-edge-connected. -/
+theorem Walk.IsCycle.isEdgeConnected_two_walkGraph {p : G.Walk x x} (hp : p.IsCycle) :
+    (G.walkGraph p).IsEdgeConnected 2 := by
+  rw [isEdgeConnected_two_iff_connected_and_forall_not_isBridge (by
+    exact ⟨x, by simp⟩)]
+  exact ⟨p.connected_walkGraph, hp.not_isBridge_walkGraph⟩
+
 /-! ### Graphs from simple graphs -/
 
 /-- Edge reachability in `Graph.ofSimpleGraph H` is simple-graph edge reachability in `H`. -/
@@ -340,13 +347,13 @@ theorem edgeConnectivity_eq_top_of_subsingleton (hG : V(G).Subsingleton) :
 /-! ### Bounds by incident edges -/
 
 /-- If distinct points are `k`-edge-reachable, then the first one has at least `k` incident
-nonloop edges, provided it has finitely many incident edges. -/
+nonloop edges, provided it has finitely many nonloop incident edges. -/
 theorem IsEdgeReachable.le_nonloopIncidenceCount (h : G.IsEdgeReachable k x y) (hxy : x ≠ y)
-    (hfin : (G.incidenceSet x).Finite) : k ≤ G.nonloopIncidenceCount x := by
+    (hfin : (G.incidenceSet x \ G.loopSet x).Finite) : k ≤ G.nonloopIncidenceCount x := by
   by_contra! hlt
   set F := G.incidenceSet x \ G.loopSet x
   have hF : F.encard < k := by
-    rw [← (hfin.sdiff (t := G.loopSet x)).cast_ncard_eq, ← nonloopIncidenceCount_def]
+    rw [← hfin.cast_ncard_eq, ← nonloopIncidenceCount_def]
     exact Nat.cast_lt.mpr hlt
   obtain ⟨p, hp⟩ := (h hF).exists_isPath
   cases p with
@@ -359,17 +366,17 @@ theorem IsEdgeReachable.le_nonloopIncidenceCount (h : G.IsEdgeReachable k x y) (
     exact hp.2 ((hf.right_unique hloop) ▸ q.start_mem_support)
 
 /-- The local edge reachability between distinct points is at most the number of nonloop edges
-incident with the first, provided it has finitely many incident edges. -/
+incident with the first, provided it has finitely many nonloop incident edges. -/
 theorem edgeReachability_le_nonloopIncidenceCount (hxy : x ≠ y)
-    (hfin : (G.incidenceSet x).Finite) :
+    (hfin : (G.incidenceSet x \ G.loopSet x).Finite) :
     G.edgeReachability x y ≤ G.nonloopIncidenceCount x :=
   ENat.forall_natCast_le_iff_le.mp fun _ hk ↦ Nat.cast_le.mpr
     (((isEdgeReachable_iff_le_edgeReachability _).mpr hk).le_nonloopIncidenceCount hxy hfin)
 
 /-- The edge connectivity of a multigraph with two distinct actual vertices is at most the number
-of nonloop edges at the first, provided it has finitely many incident edges. -/
+of nonloop edges at the first, provided it has finitely many nonloop incident edges. -/
 theorem edgeConnectivity_le_nonloopIncidenceCount (hx : x ∈ V(G)) (hy : y ∈ V(G)) (hxy : x ≠ y)
-    (hfin : (G.incidenceSet x).Finite) :
+    (hfin : (G.incidenceSet x \ G.loopSet x).Finite) :
     G.edgeConnectivity ≤ G.nonloopIncidenceCount x :=
   (edgeConnectivity_le_edgeReachability hx hy).trans
     (edgeReachability_le_nonloopIncidenceCount hxy hfin)
@@ -380,7 +387,8 @@ theorem edgeConnectivity_eq_top_iff [Finite E(G)] :
     G.edgeConnectivity = ⊤ ↔ V(G).Subsingleton := by
   refine ⟨fun h x hx y hy ↦ ?_, edgeConnectivity_eq_top_of_subsingleton⟩
   by_contra hxy
-  have hle := edgeConnectivity_le_nonloopIncidenceCount hx hy hxy (G.finite_incidenceSet x)
+  have hle := edgeConnectivity_le_nonloopIncidenceCount hx hy hxy
+    ((G.finite_incidenceSet x).sdiff (t := G.loopSet x))
   rw [h, top_le_iff] at hle
   exact ENat.natCast_ne_top _ hle
 

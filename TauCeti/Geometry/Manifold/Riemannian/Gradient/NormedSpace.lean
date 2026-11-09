@@ -9,12 +9,16 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # The gradient on a normed space
 
 On a flat inner product space with its standard Riemannian metric, the manifold gradient agrees
-with Mathlib's `gradient`; the squared norm therefore has the expected radial gradient.
+with Mathlib's `gradient`; the squared norm therefore has the expected radial gradient. For an
+arbitrary Riemannian metric on a normed space, the gradient is read in linear coordinates through
+its pairing with constant vectors, and its squared length is `|dφ|² = dφ(g⁻¹ dφ)` for the metric
+coefficient field `g`.
 -/
 
 public section
@@ -107,5 +111,36 @@ theorem mgradient_norm_sq_model_space {F : Type*} [NormedAddCommGroup F]
   rw [mgradient_eq_gradient]
   simp [gradient, fderiv_norm_sq_apply, hx]
   rfl
+
+/-- On a normed space with any Riemannian metric, pairing the gradient with a constant vector `v`
+gives the Fréchet derivative in the direction `v`. -/
+theorem inner_mgradient_model_space {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [FiniteDimensional ℝ F] [RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x)]
+    (f : F → ℝ) (x v : F) :
+    inner ℝ (mgradient 𝓘(ℝ, F) f x) ((tangentSpaceCastModel 𝓘(ℝ, F) x).symm v) =
+      fderiv ℝ f x v := by
+  rw [inner_mgradient, mvfderiv_eq_fderiv]
+  -- `NormedSpace.fromTangentSpace x` is `tangentSpaceCastModel 𝓘(ℝ, F) x` by definition.
+  simp [NormedSpace.fromTangentSpace]
+
+/-- On a normed space whose Riemannian metric at `x` is the bilinear form `g x` in linear
+coordinates, the squared length of the gradient is `|df|² = df(g⁻¹ df)`. -/
+theorem norm_mgradient_sq_model_space {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [FiniteDimensional ℝ F] [RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x)]
+    {g : F → F →L[ℝ] F →L[ℝ] ℝ} {x : F}
+    (hg : ∀ v w : TangentSpace 𝓘(ℝ, F) x, inner ℝ v w =
+      g x (tangentSpaceCastModel 𝓘(ℝ, F) x v) (tangentSpaceCastModel 𝓘(ℝ, F) x w))
+    (f : F → ℝ) :
+    ‖mgradient 𝓘(ℝ, F) f x‖ ^ 2 = fderiv ℝ f x ((g x).inverse (fderiv ℝ f x)) := by
+  have hinv : (g x).IsInvertible := ContinuousLinearMap.isInvertible_of_pos fun v hv ↦ by
+    have h := hg ((tangentSpaceCastModel 𝓘(ℝ, F) x).symm v)
+      ((tangentSpaceCastModel 𝓘(ℝ, F) x).symm v)
+    simp only [ContinuousLinearEquiv.apply_symm_apply] at h
+    exact h ▸ real_inner_self_pos.2 (by simpa using hv)
+  have h : g x (tangentSpaceCastModel 𝓘(ℝ, F) x (mgradient 𝓘(ℝ, F) f x)) = fderiv ℝ f x := by
+    ext v
+    rw [← inner_mgradient_model_space f x v, hg]
+    simp
+  rw [← h, hinv.inverse_apply_self, ← real_inner_self_eq_norm_sq, hg]
 
 end TauCeti.Manifold

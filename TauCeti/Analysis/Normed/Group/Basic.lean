@@ -13,20 +13,28 @@ import Mathlib.Topology.MetricSpace.Bounded
 
 In a seminormed additive group, the squared distance between two points is at most twice the sum
 of their squared distances to any third point: the triangle inequality through `c`, squared with
-`(x + y) ^ 2 ≤ 2 (x ^ 2 + y ^ 2)`.
+`(x + y) ^ 2 ≤ 2 (x ^ 2 + y ^ 2)`. The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of a squared
+distance is at most `1`.
 
 An unbounded set stays unbounded after removing a closed ball, since a closed ball is bounded.
 
 A bound on the norms of a set with two distinct points is positive, since one of the points is
 nonzero.
 
+A map bounded by `M` on a set sends it into the closed ball of radius `2 * M` around any of its
+values there.
+
 ## Main declarations
 
 * `TauCeti.norm_sub_sq_le_two_mul` -- the squared triangle inequality through an intermediate
   point.
+* `TauCeti.inv_one_add_norm_sub_sq_le_one` -- the reciprocal transform of a squared distance is at
+  most `1`.
 * `TauCeti.not_isBounded_inter_lt_norm_sub` -- the part of an unbounded set outside a closed ball
   is unbounded.
 * `Set.Nontrivial.pos_of_forall_norm_le` -- a bound on the norms of a nontrivial set is positive.
+* `TauCeti.mapsTo_closedBall_of_forall_norm_le` -- a map bounded by `M` on `s` sends `s` into the
+  closed ball of radius `2 * M` around any of its values on `s`.
 -/
 
 public section
@@ -43,6 +51,11 @@ theorem norm_sub_sq_le_two_mul {E : Type*} [SeminormedAddCommGroup E] (a b c : E
     ((norm_sub_le_norm_sub_add_norm_sub a c b).trans_eq (by rw [norm_sub_rev c b])) 2).trans
     add_sq_le
 
+/-- The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of the squared distance is at most `1`. -/
+theorem inv_one_add_norm_sub_sq_le_one {E : Type*} [SeminormedAddCommGroup E] (x a : E) :
+    (1 + ‖x - a‖ ^ 2)⁻¹ ≤ 1 :=
+  inv_le_one_of_one_le₀ (le_add_of_nonneg_right (by positivity))
+
 /-- An unbounded set stays unbounded after removing a closed ball: its far part
 `s ∩ {w | ρ < ‖w - c‖}` is unbounded. -/
 theorem not_isBounded_inter_lt_norm_sub {E : Type*} [SeminormedAddCommGroup E] {s : Set E}
@@ -57,5 +70,13 @@ theorem _root_.Set.Nontrivial.pos_of_forall_norm_le {E : Type*} [NormedAddGroup 
     (hs : s.Nontrivial) {r : ℝ} (hr : ∀ x ∈ s, ‖x‖ ≤ r) : 0 < r := by
   obtain ⟨x, hxs, hx0⟩ := hs.exists_ne 0
   exact (norm_pos_iff.mpr hx0).trans_le (hr x hxs)
+
+/-- A map bounded by `M` on a set `s` sends `s` into the closed ball of radius `2 * M` around its
+value at any point `c ∈ s`. -/
+theorem mapsTo_closedBall_of_forall_norm_le {α F : Type*} [SeminormedAddCommGroup F] {f : α → F}
+    {s : Set α} {c : α} {M : ℝ} (hM : ∀ y ∈ s, ‖f y‖ ≤ M) (hc : c ∈ s) :
+    Set.MapsTo f s (closedBall (f c) (2 * M)) := fun y hy => by
+  rw [mem_closedBall]
+  linarith [dist_le_norm_add_norm (f y) (f c), hM y hy, hM c hc]
 
 end TauCeti

@@ -48,10 +48,15 @@ both sides, in order to apply the rule to `e.symm` as well.
   `Manifold.IsImmersionAtOfComplement` counterparts: precomposing a map on a vector space with a
   continuous linear equivalence `E₀ ≃L E` preserves immersions, although the source model changes
   from `E` to `E₀`.
+* `ContinuousLinearMap.HasLeftInverse.isImmersion`: a continuous linear map with a continuous
+  linear left inverse is an immersion.
 * `TauCeti.isImmersion_iff_forall_isImmersionAt`: for a finite-dimensional target model, a map is
   an immersion exactly when it is an immersion at every point.
 * `Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv`: for nonempty manifolds
   modelled on `ℝᵏ` and `ℝᵐ`, the complement of an immersion is a copy of `ℝᵐ⁻ᵏ`.
+* `Manifold.IsImmersion.of_le`, together with its `Manifold.IsImmersionAt`,
+  `Manifold.IsImmersionAtOfComplement`, and `Manifold.IsImmersionOfComplement` counterparts:
+  lowering the regularity order preserves immersions.
 
 `Manifold.IsImmersion` asks for one complement serving every point, so it is not obviously a
 local property; Mathlib's docstring of `Manifold.IsImmersion.isImmersionAt` explains that the
@@ -286,6 +291,20 @@ theorem isImmersion_comp_continuousLinearEquiv (e : E₀ ≃L[𝕜] E)
 
 end LinearEquiv
 
+/-! ### Linear maps with a continuous left inverse -/
+
+/-- A continuous linear map `f : E →L F` with a continuous linear left inverse `g` is a `C^n`
+immersion, with complement `ker g`: the continuous linear equivalence `F ≃L E × ker g` sending `y`
+to `(g y, y - f (g y))` carries `f` to the inclusion `u ↦ (u, 0)`. For instance, the inclusion
+of a closed complemented subspace is an immersion. -/
+theorem _root_.ContinuousLinearMap.HasLeftInverse.isImmersion {f : E →L[𝕜] E'}
+    (hf : f.HasLeftInverse) : IsImmersion 𝓘(𝕜, E) 𝓘(𝕜, E') n f := by
+  let e := ContinuousLinearEquiv.equivOfRightInverse hf.leftInverse f hf.leftInverse_leftInverse
+  refine IsImmersionOfComplement.isImmersion (F := LinearMap.ker (hf.leftInverse : E' →ₗ[𝕜] E))
+    fun x ↦ IsImmersionAtOfComplement.mk_of_continuousAt_of_extChartAt f.continuous.continuousAt
+      e.symm fun u _ ↦ ?_
+  simp [e]
+
 /-! ### Immersions into finite-dimensional models -/
 
 section FiniteDimensional
@@ -333,5 +352,42 @@ theorem _root_.Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv [N
   omega
 
 end Euclidean
+
+/-! ### Monotonicity in the regularity order -/
+
+section OfLe
+
+variable {m : ℕ∞ω}
+
+/-- Lowering the regularity order preserves the immersion normal form at a point, with the same
+complement. -/
+theorem _root_.Manifold.IsImmersionAtOfComplement.of_le {x : M}
+    (h : IsImmersionAtOfComplement F I J m f x) (hnm : n ≤ m) :
+    IsImmersionAtOfComplement F I J n f x :=
+  IsImmersionAtOfComplement.mk_of_charts h.equiv h.domChart h.codChart
+    h.mem_domChart_source h.mem_codChart_source
+    (IsManifold.maximalAtlas_subset_of_le hnm h.domChart_mem_maximalAtlas)
+    (IsManifold.maximalAtlas_subset_of_le hnm h.codChart_mem_maximalAtlas)
+    h.source_subset_preimage_source h.writtenInCharts
+
+/-- Lowering the regularity order preserves being an immersion at a point. -/
+theorem _root_.Manifold.IsImmersionAt.of_le {x : M}
+    (h : IsImmersionAt I J m f x) (hnm : n ≤ m) :
+    IsImmersionAt I J n f x :=
+  (h.isImmersionAtOfComplement_complement.of_le hnm).isImmersionAt
+
+/-- Lowering the regularity order preserves immersions with a fixed complement. -/
+theorem _root_.Manifold.IsImmersionOfComplement.of_le
+    (h : IsImmersionOfComplement F I J m f) (hnm : n ≤ m) :
+    IsImmersionOfComplement F I J n f :=
+  fun x ↦ (h x).of_le hnm
+
+/-- Lowering the regularity order preserves immersions. -/
+theorem _root_.Manifold.IsImmersion.of_le
+    (h : IsImmersion I J m f) (hnm : n ≤ m) :
+    IsImmersion I J n f :=
+  (h.isImmersionOfComplement_complement.of_le hnm).isImmersion
+
+end OfLe
 
 end TauCeti

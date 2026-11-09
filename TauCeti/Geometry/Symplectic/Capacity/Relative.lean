@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Capacity.HoferZehnder
 import TauCeti.Basic.ENNReal.Real
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Symplectic.Manifold.Rescale
 
 /-!
@@ -61,6 +62,10 @@ relative capacity gives closed characteristics, contractible in `W`, on almost e
 ## Main results
 
 * `TauCeti.SmoothTwoForm.relContractibleHZCapacity_mono`: monotonicity in the pair.
+* `TauCeti.SmoothTwoForm.relContractibleHZCapacity_le_contractibleHZCapacity`: when `Z` has
+  nonempty interior, `c°_HZ(V, Z) ≤ c°_HZ(V)`.
+* `TauCeti.SmoothTwoForm.exists_isRelContractibleHZAdmissible_lt_iSup`: a finite capacity is
+  approximated by the maxima of admissible Hamiltonians.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.relContractibleHZCapacity_smul`: conformality.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.relContractibleHZCapacity_image`: invariance under
   symplectomorphisms.
@@ -151,6 +156,66 @@ theorem relContractibleHZCapacity_mono {V' Z' : Set M} (hV : V' ⊆ V) (hZ : Z �
     σ.relContractibleHZCapacity V' Z' ≤ σ.relContractibleHZCapacity V Z :=
   relContractibleHZCapacity_le_iff.2 fun _ hF ↦
     (hF.mono hV hZ).ofReal_iSup_le_relContractibleHZCapacity
+
+/-- A `(V, Z)`-admissible Hamiltonian is `HZ°`-admissible for `V` as soon as `Z` has nonempty
+interior: it attains its maximum on the interior of `Z`, and its loops contractible in `V` are
+contractible in `M`. -/
+theorem IsRelContractibleHZAdmissible.isContractibleHZAdmissible
+    (hF : σ.IsRelContractibleHZAdmissible V Z F) (hZ : (interior Z).Nonempty) :
+    σ.IsContractibleHZAdmissible V F where
+  toIsHZNormalized := hF.toIsHZNormalized
+  exists_isOpen_isMaxOn :=
+    ⟨interior Z, isOpen_interior, hZ, fun z hz ↦ hF.isMaxOn z (interior_subset hz)⟩
+  eq_of_isMIntegralCurve T γ hT hT1 hγ hper := fun ⟨g, hg, hgγ⟩ ↦
+    hF.eq_of_isMIntegralCurve T γ hT hT1 hγ hper
+      ⟨(⟨Subtype.val, continuous_subtype_val⟩ : C(V, M)).comp g, hg.comp_right _, hgγ⟩
+
+/-- **The relative capacity is bounded by the absolute one.** If `Z` has nonempty interior, then
+`c°_HZ(V, Z) ≤ c°_HZ(V)`. -/
+theorem relContractibleHZCapacity_le_contractibleHZCapacity (hZ : (interior Z).Nonempty) :
+    σ.relContractibleHZCapacity V Z ≤ σ.contractibleHZCapacity V :=
+  relContractibleHZCapacity_le_iff.2 fun _ hF ↦
+    (hF.isContractibleHZAdmissible hZ).ofReal_iSup_le_contractibleHZCapacity
+
+/-- The zero Hamiltonian is `(V, Z)`-admissible as soon as `V` contains a nonempty open set: its
+Hamiltonian vector field vanishes, so its periodic orbits are constant. In particular the
+admissible Hamiltonians of such a pair form a nonempty family. -/
+theorem isRelContractibleHZAdmissible_zero (hV : ∃ U : Set M, IsOpen U ∧ U.Nonempty ∧ U ⊆ V) :
+    σ.IsRelContractibleHZAdmissible V Z 0 where
+  contMDiff := contMDiff_const
+  isCompact_tsupport := by simp
+  tsupport_subset_interior := by simp
+  tsupport_subset_interior_manifold := by simp
+  nonneg _ := le_rfl
+  exists_isOpen_eqOn_zero := by
+    obtain ⟨U, hU, hUne, hUV⟩ := hV
+    exact ⟨U, hU, hUne, hUV, fun _ _ ↦ rfl⟩
+  isMaxOn _ _ := isMaxOn_iff.2 fun _ _ ↦ le_rfl
+  eq_of_isMIntegralCurve T γ _ _ hγ _ _ t := by
+    have hX : σ.hamiltonianVectorField (0 : M → ℝ) = 0 := hamiltonianVectorField_const σ 0
+    exact hγ.apply_eq_of_forall_eq_zero (fun u ↦ by rw [hX]; rfl) 0 t
+
+/-- **Approximating a finite relative capacity.** If `V` contains a nonempty open set and
+`c°_HZ(V, Z)` is finite, then for every `ε > 0` some `(V, Z)`-admissible Hamiltonian has maximum
+greater than `c°_HZ(V, Z) - ε`. -/
+theorem exists_isRelContractibleHZAdmissible_lt_iSup
+    (hV : ∃ U : Set M, IsOpen U ∧ U.Nonempty ∧ U ⊆ V)
+    (hc : σ.relContractibleHZCapacity V Z ≠ (∞ : ℝ≥0∞))
+    {ε : ℝ} (hε : 0 < ε) :
+    ∃ G, σ.IsRelContractibleHZAdmissible V Z G ∧
+      (σ.relContractibleHZCapacity V Z).toReal - ε < ⨆ x, G x := by
+  by_cases hneg : (σ.relContractibleHZCapacity V Z).toReal - ε < 0
+  · exact ⟨0, isRelContractibleHZAdmissible_zero hV, by simpa using hneg⟩
+  have hlt : ENNReal.ofReal ((σ.relContractibleHZCapacity V Z).toReal - ε) <
+      σ.relContractibleHZCapacity V Z := by
+    calc ENNReal.ofReal ((σ.relContractibleHZCapacity V Z).toReal - ε)
+        < ENNReal.ofReal (σ.relContractibleHZCapacity V Z).toReal :=
+          (ENNReal.ofReal_lt_ofReal_iff (by linarith)).2 (by linarith)
+      _ = σ.relContractibleHZCapacity V Z := ENNReal.ofReal_toReal hc
+  rw [relContractibleHZCapacity_def] at hlt
+  obtain ⟨G, hG⟩ := lt_iSup_iff.1 hlt
+  obtain ⟨hGadm, hGlt⟩ := lt_iSup_iff.1 hG
+  exact ⟨G, hGadm, (ENNReal.ofReal_lt_ofReal_iff'.1 hGlt).1⟩
 
 /-! ### Conformality -/
 

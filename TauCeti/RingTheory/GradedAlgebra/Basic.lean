@@ -149,10 +149,11 @@ end Regular
 
 section GradeZero
 
-variable {R A ι : Type*} [DecidableEq ι] [AddMonoid ι] [CommSemiring R] [CommSemiring A]
-  [Algebra R A] (𝒜 : ι → Submodule R A) [GradedAlgebra 𝒜]
+variable {R A ι : Type*} [AddMonoid ι] [CommSemiring R] [CommSemiring A] [Algebra R A]
+  (𝒜 : ι → Submodule R A) [SetLike.GradedMonoid 𝒜]
 
-/-- The scalars of a graded algebra act on it through its degree-zero part. -/
+/-- The scalars of an algebra with a graded monoid of submodules act on it through its degree-zero
+part. Only the multiplicative structure of the grading is used, not a decomposition. -/
 instance isScalarTower_gradeZero : IsScalarTower R (𝒜 0) A :=
   ⟨fun r a b ↦ by
     simp only [Algebra.smul_def (A := A) (R := 𝒜 0), SetLike.GradeZero.algebraMap_apply,

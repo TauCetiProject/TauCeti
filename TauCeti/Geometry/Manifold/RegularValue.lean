@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.MFDeriv.Chart
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -35,7 +36,13 @@ to manifolds, including manifolds with boundary or corners.
 
 * `TauCeti.isRegularValue_iff_notMem_image`: the regular values are the complement of the image
   of the set of non-regular points.
+* `TauCeti.IsRegularValue.restrict`: restricting the source to an open subset preserves regular
+  values.
+* `TauCeti.exists_isRegularValue_forall_mem_Ioc`: a continuous real function on a compact
+  manifold takes all its values strictly above one regular value and at most another.
 * `TauCeti.isRegularPoint_iff_surjective_fderivWithin`: regularity read in arbitrary charts.
+* `TauCeti.isRegularPoint_iff_surjective_fderiv_extChartAt`: the same on a boundaryless source,
+  with the Fréchet derivative of the coordinate expression.
 * `TauCeti.isRegularPoint_iff_surjective_fderiv`: for maps between normed spaces, regularity is
   surjectivity of the Fréchet derivative.
 * `TauCeti.isRegularPoint_iff_injective_mfderiv`: between models of the same finite dimension,
@@ -214,15 +221,44 @@ variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
   {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 E'' H''}
   {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P] {g : P → M} {p : P}
 
-/-- A composite is regular at a point if both maps are differentiable and regular at the
-corresponding points. -/
+/-- A composite is regular at a point if both maps are regular at the corresponding points. Where
+a map is not differentiable its manifold derivative is `0`, so regularity then forces the target
+tangent space to be trivial and the composite is regular for that reason. -/
 theorem IsRegularPoint.comp (hf : IsRegularPoint I J f (g p))
-    (hg : IsRegularPoint K I g p) (hfd : MDifferentiableAt I J f (g p))
-    (hgd : MDifferentiableAt K I g p) : IsRegularPoint K J (f ∘ g) p := by
-  rw [isRegularPoint_iff, mfderiv_comp p hfd hgd]
-  exact (isRegularPoint_iff.1 hf).comp (isRegularPoint_iff.1 hg)
+    (hg : IsRegularPoint K I g p) : IsRegularPoint K J (f ∘ g) p := by
+  by_cases hfd : MDifferentiableAt I J f (g p)
+  · by_cases hgd : MDifferentiableAt K I g p
+    · rw [isRegularPoint_iff, mfderiv_comp p hfd hgd]
+      exact (isRegularPoint_iff.1 hf).comp (isRegularPoint_iff.1 hg)
+    · -- The domain of `f`'s derivative is the zero space, hence so is its image.
+      rw [isRegularPoint_iff, mfderiv_zero_of_not_mdifferentiableAt hgd] at hg
+      have : Subsingleton (TangentSpace I (g p)) := ⟨fun a b ↦ by
+        obtain ⟨_, ha⟩ := hg a
+        obtain ⟨_, hb⟩ := hg b
+        exact ha.symm.trans hb⟩
+      have : Subsingleton (TangentSpace J (f (g p))) :=
+        (isRegularPoint_iff.1 hf).subsingleton
+      exact isRegularPoint_iff.2
+        (Function.surjective_to_subsingleton (β := TangentSpace J (f (g p))) _)
+  · -- Without differentiability of `f`, regularity makes the target tangent space trivial.
+    rw [isRegularPoint_iff, mfderiv_zero_of_not_mdifferentiableAt hfd] at hf
+    have : Subsingleton (TangentSpace J (f (g p))) := ⟨fun a b ↦ by
+      obtain ⟨_, ha⟩ := hf a
+      obtain ⟨_, hb⟩ := hf b
+      exact ha.symm.trans hb⟩
+    exact isRegularPoint_iff.2
+      (Function.surjective_to_subsingleton (β := TangentSpace J (f (g p))) _)
 
 end Composition
+
+/-- Restricting the source to an open subset preserves regular values. -/
+theorem IsRegularValue.restrict (hreg : IsRegularValue I J f y) (U : TopologicalSpace.Opens M) :
+    IsRegularValue I J (fun x : U ↦ f x) y := by
+  rw [isRegularValue_iff]
+  intro x hx
+  have hi := isLocalDiffeomorph_subtype_val (I := I) (n := 1) (U := U) x
+  exact (hreg.isRegularPoint hx).comp
+    (isRegularPoint_iff.2 (hi.isInvertible_mfderiv one_ne_zero).surjective)
 
 section Level
 
@@ -274,6 +310,17 @@ section Boundaryless
 
 variable [I.Boundaryless]
 
+/-- On a boundaryless source, read in the extended charts at `x₀` and `y₀`, whose sources contain
+`x` and `f x`, a point `x` at which `f` is differentiable is regular exactly when the Fréchet
+derivative of the coordinate expression of `f` is surjective at the chart image of `x`. -/
+theorem isRegularPoint_iff_surjective_fderiv_extChartAt [IsManifold I 1 M] [IsManifold J 1 N]
+    {x₀ : M} {y₀ : N} (hf : MDifferentiableAt I J f x) (hx : x ∈ (chartAt H x₀).source)
+    (hfx : f x ∈ (chartAt H' y₀).source) :
+    IsRegularPoint I J f x ↔ Surjective (fderiv 𝕜
+      (extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm) (extChartAt I x₀ x)) := by
+  simpa only [I.range_eq_univ, fderivWithin_univ] using
+    isRegularPoint_iff_surjective_fderivWithin hf hx hfx
+
 /-- At a regular point of a map into a normed space on a boundaryless manifold, the coordinate
 expression in the preferred extended chart has surjective derivative. -/
 theorem IsRegularPoint.surjective_fderiv_comp_extChartAt_symm {g : M → E'}
@@ -311,5 +358,21 @@ theorem IsRegularPoint.finrank_ker_fderiv_comp_extChartAt_symm [FiniteDimensiona
   omega
 
 end Boundaryless
+
+/-- On a compact manifold, a continuous real function `f` has values `a < f ≤ b` everywhere that
+are regular values, lying outside its range, so that the band `f⁻¹[a, b]` is all of `M`. -/
+theorem exists_isRegularValue_forall_mem_Ioc {E H M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
+    [ChartedSpace H M] [CompactSpace M] {f : M → ℝ} (hf : Continuous f) :
+    ∃ a b : ℝ, a ≤ b ∧ IsCompact (f ⁻¹' Icc a b) ∧ IsRegularValue I 𝓘(ℝ) f a ∧
+      IsRegularValue I 𝓘(ℝ) f b ∧ ∀ x, f x ∈ Ioc a b := by
+  obtain ⟨l, hl⟩ := (isCompact_range hf).bddBelow
+  obtain ⟨t, ht⟩ := (isCompact_range hf).bddAbove
+  have ha (x : M) : l - 1 < f x := by linarith [hl (mem_range_self x)]
+  have hb (x : M) : f x < max (t + 1) (l - 1) :=
+    lt_max_of_lt_left (by linarith [ht (mem_range_self x)])
+  exact ⟨l - 1, max (t + 1) (l - 1), le_max_right _ _, (isClosed_Icc.preimage hf).isCompact,
+    isRegularValue_of_notMem_range fun ⟨x, hx⟩ ↦ (ha x).ne' hx,
+    isRegularValue_of_notMem_range fun ⟨x, hx⟩ ↦ (hb x).ne hx, fun x ↦ ⟨ha x, (hb x).le⟩⟩
 
 end TauCeti

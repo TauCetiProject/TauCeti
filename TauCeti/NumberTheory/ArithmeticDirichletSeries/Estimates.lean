@@ -49,6 +49,8 @@ of a convergent series of nonnegative terms must become arbitrarily small.
   `NumberField.dedekindZeta` is the `LSeries` of.  That system counts *all* integral ideals, so it
   differs from the trivial norm coefficients at `n = 0` and the two statements are related only
   through the `n ≠ 0` congruence `LSeries.abscissaOfAbsConv_congr`.
+* `TauCeti.analyticOnNhd_dedekindZeta`: Mathlib's `NumberField.dedekindZeta` is holomorphic on
+  `Re s > 1`.
 * `TauCeti.summable_idealTerm_of_bounded_of_one_lt_re`: a uniformly bounded weight has an
   absolutely convergent ideal-indexed Dirichlet series on `Re s > 1`, and
   `TauCeti.summable_idealTerm_of_unitary_of_one_lt_re` is its unitary specialization.
@@ -560,5 +562,13 @@ theorem LSeriesSummable_dedekindZetaCoeff_iff {s : ℂ} :
     LSeriesSummable (fun n ↦ (dedekindZetaCoeff K n : ℂ)) s ↔ 1 < s.re := by
   rw [← LSeriesSummable_normCoeff_one_iff K]
   exact LSeriesSummable_congr s fun {n} hn ↦ by rw [normCoeff_one_apply, ite_eq_right hn]
+
+/-- **The Dedekind zeta function is holomorphic on `Re s > 1`**, the half-plane on which it is the
+sum of its Dirichlet series. -/
+theorem analyticOnNhd_dedekindZeta :
+    AnalyticOnNhd ℂ (NumberField.dedekindZeta K) {s | 1 < s.re} := by
+  rw [funext (dedekindZeta_eq_LSeries_dedekindZetaCoeff K)]
+  exact (LSeries_analyticOnNhd _).mono fun s (hs : 1 < s.re) ↦ by
+    simpa [abscissaOfAbsConv_dedekindZetaCoeff] using EReal.coe_lt_coe_iff.mpr hs
 
 end TauCeti

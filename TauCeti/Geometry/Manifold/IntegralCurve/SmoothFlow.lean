@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.ODE.InitialCondition
+public import TauCeti.Analysis.ODE.LocalFlow
 public import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 

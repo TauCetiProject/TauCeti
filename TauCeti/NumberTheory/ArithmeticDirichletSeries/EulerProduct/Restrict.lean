@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LSeries.Deriv
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
@@ -243,10 +242,8 @@ theorem logDeriv_LSeries_ofBadPrimes (S : Finset (HeightOneSpectrum (𝓞 K))) {
         ∏ P ∈ S, (1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-z)) :=
     Filter.mem_of_superset ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds hs)
       fun z hz ↦ LSeries_ofBadPrimes S hz
-  have hζ : DifferentiableAt ℂ (NumberField.dedekindZeta K) s := by
-    rw [funext (dedekindZeta_eq_LSeries_dedekindZetaCoeff K)]
-    exact (LSeries_hasDerivAt (by rw [abscissaOfAbsConv_dedekindZetaCoeff]; exact_mod_cast hs))
-      |>.differentiableAt
+  have hζ : DifferentiableAt ℂ (NumberField.dedekindZeta K) s :=
+    (analyticOnNhd_dedekindZeta K s hs).differentiableAt
   have hfac : ∀ P ∈ S, DifferentiableAt ℂ
       (fun z : ℂ ↦ 1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-z)) s := fun P _ ↦
     (differentiableAt_neg_iff.mpr differentiableAt_id).const_cpow

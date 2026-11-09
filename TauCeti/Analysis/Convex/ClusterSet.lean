@@ -28,6 +28,7 @@ continuum is a singleton when the image is a Jordan domain.
 
 ## Main results
 
+* `Convex.isPreconnectedApproachAt`: a convex set has preconnected approach regions at every point.
 * `Convex.isPreconnected_clusterSetOn` and `Convex.isConnected_clusterSetOn`: on a convex domain
   the cluster set is preconnected, and is connected at a point of the closure.
 * `Convex.isConnected_clusterSetOn_of_isBounded`: the form for a
@@ -48,6 +49,14 @@ open Set Topology TauCeti
 variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [ContinuousAdd E]
   [ContinuousSMul ℝ E] [LocallyConvexSpace ℝ E]
 
+/-- A convex set in a real locally convex space has preconnected approach regions at every point,
+including points outside the set. -/
+theorem isPreconnectedApproachAt {U : Set E} (hU : Convex ℝ U) (x : E) :
+    IsPreconnectedApproachAt U x := by
+  refine isPreconnectedApproachAt_def.mpr fun s hs ↦ ?_
+  obtain ⟨t, ⟨ht, htc⟩, hts⟩ := (LocallyConvexSpace.convex_basis (𝕜 := ℝ) x).mem_iff.mp hs
+  exact ⟨t, ht, hts, (hU.inter htc).isPreconnected⟩
+
 section Compact
 
 variable {Y : Type*} [TopologicalSpace Y] [T2Space Y]
@@ -57,9 +66,8 @@ variable {Y : Type*} [TopologicalSpace Y] [T2Space Y]
 Hausdorff set, has a preconnected cluster set at every approach point. -/
 theorem isPreconnected_clusterSetOn (hUc : Convex ℝ U) (hK : IsCompact K)
     (hfK : MapsTo f U K) (hfc : ContinuousOn f U) : IsPreconnected (clusterSetOn f U w) :=
-  TauCeti.isPreconnected_clusterSetOn hK hfK hfc fun s hs => by
-    obtain ⟨t, ⟨ht, htc⟩, hts⟩ := (LocallyConvexSpace.convex_basis (𝕜 := ℝ) w).mem_iff.mp hs
-    exact ⟨t, ht, hts, (hUc.inter htc).isPreconnected⟩
+  TauCeti.isPreconnected_clusterSetOn hK hfK hfc
+    (isPreconnectedApproachAt_def.mp (hUc.isPreconnectedApproachAt w))
 
 /-- A continuous map on a convex domain in a real locally convex space, with values in a compact
 Hausdorff set, has a connected cluster set at each point of the closure of its domain.

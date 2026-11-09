@@ -46,6 +46,8 @@ ones, so the public `LinearMap.baseChange` API applies.
   `Algebra.TensorProduct.map (AlgHom.id R S) f`.
 * `AlgHom.rTensor_toLinearMap_apply`: `f.toLinearMap.rTensor S` is
   `Algebra.TensorProduct.map f (AlgHom.id R S)`.
+* `AlgHom.lTensor_rTensor_comm`: scalar extension of an algebra map commutes with changing the
+  coefficient algebra.
 * `LinearMap.tensorProduct_tmul`, `LinearMap.tensorProductEnd_tmul`: the extension of linear maps
   and of endomorphisms sends `a ⊗ f` to `a • f.baseChange A`.
 * `Algebra.TensorProduct.mulLeft`, `Algebra.TensorProduct.mulRight`: the
@@ -58,6 +60,8 @@ ones, so the public `LinearMap.baseChange` API applies.
   then `productMap f g e ∈ J` for every such `e`.
 * `Algebra.TensorProduct.mulLeft_map`, `Algebra.TensorProduct.mulLeft_map_includeRight`:
   naturality of tensor multiplication and cancellation of an inserted middle factor `1`.
+* `Algebra.TensorProduct.map_rTensor_eq_rTensor_lTensor`: `g ⊗ φ` after `f ⊗ id` is
+  `(g ∘ f) ⊗ id` after `id ⊗ φ`, for algebra maps `g, φ` and a linear map `f`.
 * `Algebra.TensorProduct.map_assoc_tmul_one`: applying `f : B ⊗[R] C → D` after
   reassociating `y ⊗ 1` is the base change of `b ↦ f (b ⊗ 1)`.
 * `Algebra.TensorProduct.assoc_comp_includeLeft_comp_includeLeft`,
@@ -117,6 +121,21 @@ theorem LinearMap.tensorProductEnd_tmul {R A M : Type*} [CommSemiring R] [CommSe
     LinearMap.tensorProductEnd R A M (a ⊗ₜ f) = a • f.baseChange A :=
   LinearMap.tensorProduct_tmul a f
 
+/-- Extension of scalars of an algebra map commutes with changing the coefficient algebra. -/
+theorem AlgHom.lTensor_rTensor_comm {R B C D E : Type*} [CommSemiring R]
+    [CommSemiring B] [Algebra R B] [CommSemiring C] [Algebra R C]
+    [Semiring D] [Algebra R D] [Semiring E] [Algebra R E]
+    (φ : D →ₐ[R] E) (ρ : B →ₐ[R] C) (x : B ⊗[R] D) :
+    Algebra.TensorProduct.lTensor (S := C) C φ (Algebra.TensorProduct.rTensor D ρ x) =
+      Algebra.TensorProduct.rTensor E ρ (Algebra.TensorProduct.lTensor (S := B) B φ x) := by
+  have h : (Algebra.TensorProduct.map (AlgHom.id R C) φ).comp
+        (Algebra.TensorProduct.rTensor D ρ) =
+      (Algebra.TensorProduct.rTensor E ρ).comp (Algebra.TensorProduct.map (AlgHom.id R B) φ) := by
+    simp only [Algebra.TensorProduct.rTensor, ← Algebra.TensorProduct.map_comp,
+      AlgHom.id_comp, AlgHom.comp_id]
+  -- Restricting the scalar ring of the left tensor maps does not change their functions.
+  exact congr($h x)
+
 namespace Algebra.TensorProduct
 
 section LiftRingHom
@@ -165,6 +184,17 @@ theorem map_assoc_tmul_one {C D : Type*} [Semiring C] [Algebra R C] [Semiring D]
   induction y using TensorProduct.inductionOn with
   | tmul a b => simp
   | add x y hx hy => simp only [TensorProduct.add_tmul, map_add, hx, hy]
+
+/-- Applying `g ⊗ φ` after `f ⊗ id`, for algebra maps `g, φ` and a linear map `f` into the source
+of `g`, is applying `id ⊗ φ` and then `(g ∘ f) ⊗ id`. For `g` the identity this lets tensor
+constructions on the image of `f` pass through a change of the coefficient algebra. -/
+theorem map_rTensor_eq_rTensor_lTensor {M C D : Type*} [AddCommMonoid M] [Module R M]
+    [Semiring C] [Algebra R C] [Semiring D] [Algebra R D] (g : A →ₐ[R] C) (φ : B →ₐ[R] D)
+    (f : M →ₗ[R] A) (z : M ⊗[R] B) :
+    map g φ (f.rTensor B z) = (g.toLinearMap ∘ₗ f).rTensor D (φ.toLinearMap.lTensor M z) := by
+  induction z using TensorProduct.inductionOn with
+  | tmul m b => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 section AssocInclude
 

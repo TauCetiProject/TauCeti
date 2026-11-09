@@ -8,6 +8,9 @@ module
 public import Mathlib.Algebra.Polynomial.Taylor
 public import TauCeti.Analysis.MvPolynomial.Deriv
 public import TauCeti.RingTheory.MvPolynomial.RestrictTotalDegree
+import Mathlib.Algebra.Polynomial.Eval.SMul
+import TauCeti.Algebra.MvPolynomial.PDeriv
+import TauCeti.Algebra.MvPolynomial.Polynomial
 
 /-!
 # The interpolation data of Waldschmidt's linear forms estimate
@@ -75,12 +78,22 @@ rows and columns of the interpolation matrix, hence its rank, unchanged.
   sent to `-β₀ e₀`.
 * `TauCeti.add_sum_mul_eq_neg_mul_waldschmidtLinearForm`: a linear form with nonzero last
   coefficient `cₘ` is `-cₘ` times the normalized linear form.
+* `TauCeti.add_sum_mul_eq_neg_mul_waldschmidtLinearForm_comp_swap`: normalization at an
+  arbitrary nonzero coefficient `c_k`, after exchanging `λ_k` and `λₘ`.
+* `TauCeti.waldschmidtNormalize_map`, `TauCeti.waldschmidtNormalize_mem`: the normalized
+  coefficients commute with ring homomorphisms and lie in every subfield containing the `cᵢ`.
+* `TauCeti.mul_waldschmidtNormalize_mem`,
+  `TauCeti.intCast_mul_waldschmidtNormalize_intCast_mem_range_intCast`: the products `cₘ βᵢ`
+  lie in every subring containing `c₀, …, c_{m-1}`; for integer coefficients they are integers.
+* `TauCeti.snoc_waldschmidtNormalize_neg_one`: `(β₀, …, β_{m-1}, -1) = (-cₘ)⁻¹ (c₀, …, cₘ)`.
 * `TauCeti.iteratedDeriv_waldschmidtFunction`: the entry identity
   `∂^σ/∂z₀^σ (F(z) exp(t ⟨λ, z⟩))|_{z = s · y} = γ exp(t sₘ Λ)`.
 * `TauCeti.waldschmidtOperatorEntry_eq_sum_hasseDeriv`: the Leibniz formula
   `γ_P = (∑ₖ P^{[k]}(t) (∂ᵏF/∂z₀ᵏ)(s · y)) α^(t s)`.
 * `TauCeti.sum_mul_iteratedDeriv_waldschmidtFunction`: the entry identity for the operator
   `P(∂/∂z₀)`.
+* `TauCeti.waldschmidtOperatorEntry_prod_aeval_X`: the entry of a separated row `∏ᵢ Qᵢ(zᵢ)`,
+  in which the derivatives in `z₀` only see the first factor.
 * `TauCeti.span_image_waldschmidtOperatorEntry_sequence`: on the derivative side, the columns for
   the operators `P₀(∂), …, P_{N-1}(∂)` of a polynomial sequence span the same space as those for
   `1, ∂, …, ∂^{N-1}`.
@@ -146,6 +159,93 @@ theorem add_sum_mul_eq_neg_mul_waldschmidtLinearForm {K : Type*} [Field K] (ι :
   rw [hsum]
   field_simp
   ring
+
+section Normalize
+
+variable {K : Type*} [Field K]
+
+/-- **Normalization at an arbitrary coefficient.** If the coefficient `c_k` of the linear form
+`c₀ + c₁ λ₁ + ⋯ + cₘ λₘ` is nonzero, then after exchanging `λ_k` and `λₘ` (and their
+coefficients) the linear form is `-c_k` times the normalized linear form `Λ`, whose coefficients
+are `-cᵢ / c_k`. -/
+theorem add_sum_mul_eq_neg_mul_waldschmidtLinearForm_comp_swap (ι : K →+* ℂ)
+    (l : Fin (n + 1) → ℂ) (c₀ : K) (c : Fin (n + 1) → K) {k : Fin (n + 1)} (hc : c k ≠ 0) :
+    ι c₀ + ∑ j, ι (c j) * l j =
+      -ι (c k) * waldschmidtLinearForm (l ∘ Equiv.swap k (Fin.last n))
+        fun i ↦ ι (waldschmidtNormalize c₀ (c ∘ Equiv.swap k (Fin.last n)) i) := by
+  rw [← Equiv.sum_comp (Equiv.swap k (Fin.last n))]
+  simpa using add_sum_mul_eq_neg_mul_waldschmidtLinearForm ι (l ∘ Equiv.swap k (Fin.last n)) c₀
+    (c ∘ Equiv.swap k (Fin.last n)) (by simpa using hc)
+
+/-- Normalization commutes with ring homomorphisms: the normalized coefficients of the images of
+the `cᵢ` are the images of the normalized coefficients. -/
+theorem waldschmidtNormalize_map {L : Type*} [Field L] (f : K →+* L) (c₀ : K)
+    (c : Fin (n + 1) → K) :
+    waldschmidtNormalize (f c₀) (fun j ↦ f (c j)) = fun i ↦ f (waldschmidtNormalize c₀ c i) := by
+  ext i
+  cases i using Fin.cases <;> simp
+
+/-- The normalized coefficients lie in every subfield containing the coefficients `cᵢ`. -/
+theorem waldschmidtNormalize_mem {S : Type*} [SetLike S K] [SubfieldClass S K] (L : S) {c₀ : K}
+    {c : Fin (n + 1) → K} (hc₀ : c₀ ∈ L) (hc : ∀ j, c j ∈ L) (i : Fin (n + 1)) :
+    waldschmidtNormalize c₀ c i ∈ L := by
+  cases i using Fin.cases with
+  | zero =>
+    rw [waldschmidtNormalize_zero]
+    exact div_mem (neg_mem hc₀) (hc _)
+  | succ k =>
+    rw [waldschmidtNormalize_succ]
+    exact div_mem (neg_mem (hc _)) (hc _)
+
+/-- If the numerator coefficients `c₀, …, c_{m-1}` lie in a subring `A`, then so do the products
+`cₘ βᵢ`, without requiring `cₘ ∈ A`. When `cₘ ≠ 0` these products are `-cᵢ`, so `cₘ` is a
+common denominator of the `βᵢ`; when `cₘ = 0` they are all `0`. -/
+theorem mul_waldschmidtNormalize_mem {S : Type*} [SetLike S K] [SubringClass S K] (A : S)
+    {c₀ : K} {c : Fin (n + 1) → K} (hc₀ : c₀ ∈ A) (hc : ∀ j : Fin n, c j.castSucc ∈ A)
+    (i : Fin (n + 1)) :
+    c (Fin.last n) * waldschmidtNormalize c₀ c i ∈ A := by
+  rcases eq_or_ne (c (Fin.last n)) 0 with h | h
+  · rw [h, zero_mul]
+    exact zero_mem A
+  cases i using Fin.cases with
+  | zero =>
+    rw [waldschmidtNormalize_zero, mul_div_cancel₀ _ h]
+    exact neg_mem hc₀
+  | succ k =>
+    rw [waldschmidtNormalize_succ, mul_div_cancel₀ _ h]
+    exact neg_mem (hc _)
+
+/-- **Denominators in the homogeneous rational case.** If the coefficients are integers `aᵢ`,
+then `aₘ βᵢ` is an integer for every normalized coefficient `βᵢ`. -/
+theorem intCast_mul_waldschmidtNormalize_intCast_mem_range_intCast (a₀ : ℤ)
+    (a : Fin (n + 1) → ℤ) (i : Fin (n + 1)) :
+    (a (Fin.last n) : K) * waldschmidtNormalize (a₀ : K) (fun j ↦ (a j : K)) i ∈
+      Set.range (Int.cast : ℤ → K) :=
+  Subring.mem_bot.1 <| mul_waldschmidtNormalize_mem (⊥ : Subring K)
+    (c := fun j ↦ (a j : K)) (intCast_mem _ a₀) (fun j ↦ intCast_mem _ (a j.castSucc)) i
+
+/-- The coefficient vector `(β₀, β₁, …, β_{m-1}, -1)` of the normalized linear form is the
+coefficient vector `(c₀, c₁, …, cₘ)` of the original linear form divided by `-cₘ`. -/
+theorem snoc_waldschmidtNormalize_neg_one (c₀ : K) (c : Fin (n + 1) → K)
+    (hc : c (Fin.last n) ≠ 0) :
+    (Fin.snoc (waldschmidtNormalize c₀ c) (-1) : Fin (n + 2) → K) =
+      (-c (Fin.last n))⁻¹ • Fin.cons c₀ c := by
+  ext i
+  cases i using Fin.lastCases with
+  | last =>
+    rw [Fin.snoc_last, Pi.smul_apply, ← Fin.succ_last, Fin.cons_succ, smul_eq_mul, inv_neg,
+      neg_mul, inv_mul_cancel₀ hc]
+  | cast i =>
+    rw [Fin.snoc_castSucc, Pi.smul_apply, smul_eq_mul]
+    cases i using Fin.cases with
+    | zero =>
+      rw [waldschmidtNormalize_zero, Fin.castSucc_zero, Fin.cons_zero]
+      field_simp
+    | succ k =>
+      rw [waldschmidtNormalize_succ, ← Fin.succ_castSucc, Fin.cons_succ]
+      field_simp
+
+end Normalize
 
 /-- The grid point `s · y = s₁ y₁ + ⋯ + sₘ yₘ` of Waldschmidt's interpolation, where
 `yⱼ = e_j` for `1 ≤ j < m` and `yₘ = b = (β₀, β₁, …, β_{m-1})`. Its `z₀`-coordinate is `sₘ β₀`
@@ -460,5 +560,32 @@ theorem span_image_waldschmidtOperatorEntry_prod_sequence {K : Type*} [Field K] 
     S.span_prod_aeval_X_eq_restrictTotalDegree fun i _ ↦
       isUnit_iff_ne_zero.2 (Polynomial.leadingCoeff_ne_zero.2 (S.ne_zero i)),
     restrictTotalDegree_eq_span]
+
+
+/-- **The entry of a separated row.** For one-variable polynomials `Q₀, …, Q_{m-1}`, the entry of
+the operator `P(∂/∂z₀)` on the row `∏ᵢ Qᵢ(zᵢ)` at the grid point `x = s · y` is
+`(∑ₖ P⁽ᵏ⁾(t) Q₀^{[k]}(x₀)) Q₁(x₁) ⋯ Q_{m-1}(x_{m-1}) α₁^(t s₁) ⋯ αₘ^(t sₘ)`, where `P⁽ᵏ⁾` is the
+`k`-th derivative of `P` and `Q₀^{[k]}` the `k`-th Hasse derivative of `Q₀`. -/
+theorem waldschmidtOperatorEntry_prod_aeval_X {K : Type*} [Field K] (α b : Fin (n + 1) → K)
+    (t : ℤ) (s : Fin (n + 1) → ℤ) (Q : Fin (n + 1) → Polynomial K) (P : Polynomial K) :
+    waldschmidtOperatorEntry α b t s (∏ i, Polynomial.aeval (X i) (Q i)) P =
+      (∑ k ∈ range (P.natDegree + 1), (Polynomial.derivative^[k] P).eval (t : K) *
+          (Polynomial.hasseDeriv k (Q 0)).eval (waldschmidtPoint b s 0)) *
+        (∏ i : Fin n, (Q i.succ).eval (waldschmidtPoint b s i.succ)) * ∏ j, α j ^ (t * s j) := by
+  classical
+  have herase : ∏ i ∈ univ.erase (0 : Fin (n + 1)), (Q i).eval (waldschmidtPoint b s i) =
+      ∏ i : Fin n, (Q i.succ).eval (waldschmidtPoint b s i.succ) := by
+    simp only [Fin.univ_succ, erase_cons, prod_map, Function.Embedding.coeFn_mk]
+  rw [waldschmidtOperatorEntry_eq_sum_hasseDeriv]
+  congr 1
+  rw [sum_mul]
+  refine sum_congr rfl fun k _ ↦ ?_
+  have hd (p : Polynomial K) (x : K) :
+      (Polynomial.derivative^[k] p).eval x = k.factorial * (Polynomial.hasseDeriv k p).eval x := by
+    rw [← Polynomial.factorial_smul_hasseDeriv, LinearMap.smul_apply, Polynomial.eval_smul,
+      nsmul_eq_mul]
+  rw [iterate_pderiv_prod_aeval_X (mem_univ (0 : Fin (n + 1)))]
+  simp only [map_mul, map_prod, eval_polynomial_aeval, eval_X, hd, ← herase]
+  ring
 
 end TauCeti

@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+public import TauCeti.RingTheory.DiscreteValuationRing.Basic
+public import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Uniformizer coordinates on maximal-ideal graded pieces
@@ -19,7 +21,7 @@ computes how it changes when the uniformizer is replaced.
 
 If `π' = π * a` for a unit `a` of `R`, then the identification for `π'` is the identification
 for `π` precomposed with multiplication by the residue of `a ^ m`.  Thus it is independent of
-the uniformizer up to the additive automorphism of the residue field induced by that residue.
+the uniformizer up to multiplication by a unit of the residue field.
 
 The explicit principal-power equivalence below follows the construction of Mathlib's
 `Ideal.quotEquivPowQuotPowSucc`, retaining a specified generator in order to expose the
@@ -30,7 +32,7 @@ change-of-uniformizer formula.
 * `TauCeti.residueFieldEquivMaximalIdealGradedOfUniformizer`: the identification of the residue
   field with a maximal-ideal graded piece determined by a uniformizer.
 * `TauCeti.residueFieldEquivMaximalIdealGradedOfUniformizer_change`: changing the uniformizer
-  scales the residue coordinate by the corresponding residue-field unit.
+  scales the residue coordinate by the residue of the `m`th power of the change unit.
 
 ## References
 
@@ -77,110 +79,43 @@ theorem uniformizerChangeUnit_mul (π₁ π₂ π₃ : R) (h₁ : Irreducible π
   rw [Units.val_mul, ← mul_assoc, mul_uniformizerChangeUnit, mul_uniformizerChangeUnit,
     mul_uniformizerChangeUnit]
 
-/-- Multiplication by the `m`th power of the change unit, acting on the residue field.  This is
-the additive coordinate change between the degree-`m` coordinates associated to two
-uniformizers. -/
-noncomputable def uniformizerChangeResidueAddEquiv (π π' : R) (hπ : Irreducible π)
-    (hπ' : Irreducible π') (m : ℕ) : ResidueField R ≃+ ResidueField R :=
-  DistribMulAction.toAddEquiv (ResidueField R)
-    (Units.map (residue R).toMonoidHom (uniformizerChangeUnit π π' hπ hπ') ^ m)
-
-/-- The coordinate-change automorphism acts by multiplication by the residue of the change
-unit to the indicated power. -/
-@[simp]
-theorem uniformizerChangeResidueAddEquiv_apply (π π' : R) (hπ : Irreducible π)
-    (hπ' : Irreducible π') (m : ℕ) (x : ResidueField R) :
-    uniformizerChangeResidueAddEquiv π π' hπ hπ' m x =
-      (residue R (uniformizerChangeUnit π π' hπ hπ' : R)) ^ m * x := by
-  simp [uniformizerChangeResidueAddEquiv, Units.smul_def]
-
 private noncomputable def uniformizerPowToMaximalIdealGraded (π : R)
     (hπ : Irreducible π) (m : ℕ) :
     R →ₗ[R] (maximalIdeal R ^ m : Ideal R) ⧸
       (maximalIdeal R • ⊤ : Submodule R (maximalIdeal R ^ m : Ideal R)) :=
   (Submodule.mkQ _).comp <|
-    (LinearMap.mulRight R π ^ m).codRestrict _ fun x ↦ by
-      simpa only [LinearMap.pow_mulRight, LinearMap.mulRight_apply] using
-        (maximalIdeal R ^ m).mul_mem_left x (by
-          rw [hπ.maximalIdeal_eq]
-          exact Ideal.pow_mem_pow (Ideal.mem_span_singleton_self π) m)
+    (LinearMap.mulRight R (π ^ m)).codRestrict _
+      (Ideal.mul_pow_mem_pow
+        ((mem_maximalIdeal π).2 hπ.not_isUnit) m)
 
-@[simp]
 private theorem uniformizerPowToMaximalIdealGraded_apply (π : R)
     (hπ : Irreducible π) (m : ℕ) (x : R) :
     uniformizerPowToMaximalIdealGraded π hπ m x =
       Submodule.Quotient.mk
-        (⟨x * π ^ m, by
-          apply (maximalIdeal R ^ m).mul_mem_left x
-          rw [hπ.maximalIdeal_eq]
-          exact Ideal.pow_mem_pow (Ideal.mem_span_singleton_self π) m⟩ :
-          (maximalIdeal R ^ m : Ideal R)) := by
-  simp [uniformizerPowToMaximalIdealGraded, LinearMap.pow_mulRight]
-  congr 1
+        ⟨x * π ^ m, Ideal.mul_pow_mem_pow
+        ((mem_maximalIdeal π).2 hπ.not_isUnit) m x⟩ :=
+  rfl
 
 private theorem ker_uniformizerPowToMaximalIdealGraded (π : R)
     (hπ : Irreducible π) (m : ℕ) :
     LinearMap.ker (uniformizerPowToMaximalIdealGraded π hπ m) = maximalIdeal R := by
   ext x
-  rw [LinearMap.mem_ker, uniformizerPowToMaximalIdealGraded_apply,
+  -- The class of `x * π ^ m` vanishes iff `x * π ^ m ∈ 𝔪 * 𝔪 ^ m`.
+  simp only [LinearMap.mem_ker, uniformizerPowToMaximalIdealGraded_apply,
     Submodule.Quotient.mk_eq_zero, Submodule.mem_smul_top_iff, smul_eq_mul]
-  -- Strip the ideal-subtype coercion introduced by the displayed representative.
-  change x * π ^ m ∈ maximalIdeal R * maximalIdeal R ^ m ↔ x ∈ maximalIdeal R
-  constructor
-  · intro hx
-    rw [← pow_succ', hπ.maximalIdeal_eq, Ideal.span_singleton_pow,
-      Ideal.mem_span_singleton] at hx
-    obtain ⟨y, hy⟩ := hx
-    rw [mul_comm, pow_succ, mul_assoc, mul_right_inj' (pow_ne_zero m hπ.ne_zero)] at hy
-    rw [hπ.maximalIdeal_eq, Ideal.mem_span_singleton]
-    exact ⟨y, hy⟩
-  · intro hx
-    have hπm : π ^ m ∈ maximalIdeal R ^ m := by
-      rw [hπ.maximalIdeal_eq]
-      exact Ideal.pow_mem_pow (Ideal.mem_span_singleton_self π) m
-    exact Submodule.mul_mem_mul hx hπm
+  -- Cancel the uniformizer power `π ^ m`.
+  refine ⟨fun h ↦ ?_, fun hx ↦ Ideal.mul_mem_mul hx <|
+    Ideal.pow_mem_pow ((mem_maximalIdeal π).2 hπ.not_isUnit) m⟩
+  rw [← pow_succ'] at h
+  exact IsDiscreteValuationRing.mem_maximalIdeal_of_mul_pow_mem_maximalIdeal_pow_succ hπ h
 
 private theorem uniformizerPowToMaximalIdealGraded_surjective (π : R)
     (hπ : Irreducible π) (m : ℕ) :
     Function.Surjective (uniformizerPowToMaximalIdealGraded π hπ m) := by
-  intro z
-  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ z
-  obtain ⟨x, hx⟩ := x
+  rintro ⟨x, hx⟩
   rw [hπ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton] at hx
   obtain ⟨y, rfl⟩ := hx
-  refine ⟨y, ?_⟩
-  rw [uniformizerPowToMaximalIdealGraded_apply]
-  congr 2
-  simp only [mul_comm]
-
-private noncomputable def residueToMaximalIdealGradedOfUniformizer (π : R)
-    (hπ : Irreducible π) (m : ℕ) :
-    ResidueField R →ₗ[R] (maximalIdeal R ^ m : Ideal R) ⧸
-      (maximalIdeal R • ⊤ : Submodule R (maximalIdeal R ^ m : Ideal R)) :=
-  (maximalIdeal R).liftQ (uniformizerPowToMaximalIdealGraded π hπ m) <| by
-    rw [ker_uniformizerPowToMaximalIdealGraded]
-
-@[simp]
-private theorem residueToMaximalIdealGradedOfUniformizer_mk (π : R)
-    (hπ : Irreducible π) (m : ℕ) (x : R) :
-    residueToMaximalIdealGradedOfUniformizer π hπ m (residue R x) =
-      uniformizerPowToMaximalIdealGraded π hπ m x := by
-  rw [residueToMaximalIdealGradedOfUniformizer]
-  -- The ideal-quotient constructor is the module-quotient constructor used by `liftQ`.
-  change (maximalIdeal R).liftQ (uniformizerPowToMaximalIdealGraded π hπ m) _
-      (Submodule.Quotient.mk x) = _
-  rw [Submodule.liftQ_apply]
-
-private theorem residueToMaximalIdealGradedOfUniformizer_bijective (π : R)
-    (hπ : Irreducible π) (m : ℕ) :
-    Function.Bijective (residueToMaximalIdealGradedOfUniformizer π hπ m) := by
-  constructor
-  · rw [← LinearMap.ker_eq_bot]
-    exact Submodule.ker_liftQ_eq_bot' _ _
-      (ker_uniformizerPowToMaximalIdealGraded π hπ m).symm
-  · intro z
-    obtain ⟨x, rfl⟩ := uniformizerPowToMaximalIdealGraded_surjective π hπ m z
-    exact ⟨Submodule.Quotient.mk x, residueToMaximalIdealGradedOfUniformizer_mk π hπ m x⟩
+  exact ⟨y, congrArg Submodule.Quotient.mk (Subtype.ext (mul_comm y _))⟩
 
 /-- Multiplication by a chosen uniformizer to the `m`th power identifies the residue field with
 the `m`th graded piece `𝔪^m / 𝔪^(m+1)` of the maximal-ideal filtration. -/
@@ -188,8 +123,9 @@ noncomputable def residueFieldEquivMaximalIdealGradedOfUniformizer (π : R)
     (hπ : Irreducible π) (m : ℕ) :
     ResidueField R ≃ₗ[R] (maximalIdeal R ^ m : Ideal R) ⧸
       (maximalIdeal R • ⊤ : Submodule R (maximalIdeal R ^ m : Ideal R)) :=
-  LinearEquiv.ofBijective (residueToMaximalIdealGradedOfUniformizer π hπ m)
-    (residueToMaximalIdealGradedOfUniformizer_bijective π hπ m)
+  (Submodule.quotEquivOfEq _ _ (ker_uniformizerPowToMaximalIdealGraded π hπ m).symm).trans <|
+    (uniformizerPowToMaximalIdealGraded π hπ m).quotKerEquivOfSurjective
+      (uniformizerPowToMaximalIdealGraded_surjective π hπ m)
 
 /-- The explicit principal-power equivalence sends the residue of `x` to the class of
 `x * π ^ m`. -/
@@ -198,14 +134,16 @@ theorem residueFieldEquivMaximalIdealGradedOfUniformizer_mk (π : R)
     (hπ : Irreducible π) (m : ℕ) (x : R) :
     residueFieldEquivMaximalIdealGradedOfUniformizer π hπ m (residue R x) =
       Submodule.Quotient.mk
-        (⟨x * π ^ m, by
-          exact (maximalIdeal R ^ m).mul_mem_left x (by
-            rw [hπ.maximalIdeal_eq]
-            exact Ideal.pow_mem_pow (Ideal.mem_span_singleton_self π) m)⟩ :
-          (maximalIdeal R ^ m : Ideal R)) := by
-  rw [residueFieldEquivMaximalIdealGradedOfUniformizer, LinearEquiv.ofBijective_apply,
-    residueToMaximalIdealGradedOfUniformizer_mk,
-    uniformizerPowToMaximalIdealGraded_apply]
+        ⟨x * π ^ m, Ideal.mul_pow_mem_pow
+        ((mem_maximalIdeal π).2 hπ.not_isUnit) m x⟩ := by
+  -- `residue R x` is the class of `x` in `R ⧸ 𝔪`.
+  rw [residue_def, ← Ideal.Quotient.mk_eq_mk]
+  -- The equivalence is a composite out of `R ⧸ 𝔪`, while its stated domain is the definition
+  -- `ResidueField R`; `rw [LinearEquiv.trans_apply]` cannot see through that definition, so the
+  -- composite is split by unification and each factor is computed by its `_mk` lemma.
+  exact (LinearEquiv.trans_apply ..).trans <| (congrArg _ (Submodule.quotEquivOfEq_mk ..)).trans <|
+    (LinearMap.quotKerEquivOfSurjective_apply_mk ..).trans
+      (uniformizerPowToMaximalIdealGraded_apply π hπ m x)
 
 /-- Replacing `π` by `π' = π * a` in the principal-power equivalence is the same as first
 multiplying the residue coordinate by `a ^ m`. -/
@@ -214,21 +152,14 @@ theorem residueFieldEquivMaximalIdealGradedOfUniformizer_change (π π' : R)
     (x : ResidueField R) :
     residueFieldEquivMaximalIdealGradedOfUniformizer π' hπ' m x =
       residueFieldEquivMaximalIdealGradedOfUniformizer π hπ m
-        (uniformizerChangeResidueAddEquiv π π' hπ hπ' m x) := by
+        (residue R (uniformizerChangeUnit π π' hπ hπ' : R) ^ m * x) := by
   obtain ⟨x, rfl⟩ := residue_surjective x
-  rw [uniformizerChangeResidueAddEquiv_apply, ← map_pow, ← map_mul,
-    residueFieldEquivMaximalIdealGradedOfUniformizer_mk,
+  rw [← map_pow, ← map_mul, residueFieldEquivMaximalIdealGradedOfUniformizer_mk,
     residueFieldEquivMaximalIdealGradedOfUniformizer_mk]
-  have heq : x * π' ^ m =
-      (uniformizerChangeUnit π π' hπ hπ' : R) ^ m * x * π ^ m := by
-    calc
-      x * π' ^ m = x *
-          (π * (uniformizerChangeUnit π π' hπ hπ' : R)) ^ m :=
-        congrArg (fun z : R ↦ x * z ^ m)
-          (mul_uniformizerChangeUnit π π' hπ hπ').symm
-      _ = (uniformizerChangeUnit π π' hπ hπ' : R) ^ m * x * π ^ m := by
-        ring
-  exact congrArg Submodule.Quotient.mk (Subtype.ext heq)
+  refine congrArg Submodule.Quotient.mk (Subtype.ext ?_)
+  dsimp only
+  conv_lhs => rw [← mul_uniformizerChangeUnit π π' hπ hπ']
+  ring
 
 /-- In inverse coordinates, when `π' = π * a`, the coordinate relative to `π` equals the
 residue of `a ^ m` times the coordinate relative to `π'`. -/
@@ -237,8 +168,8 @@ theorem residueFieldEquivMaximalIdealGradedOfUniformizer_symm_change (π π' : R
     (z : (maximalIdeal R ^ m : Ideal R) ⧸
       (maximalIdeal R • ⊤ : Submodule R (maximalIdeal R ^ m : Ideal R))) :
     (residueFieldEquivMaximalIdealGradedOfUniformizer π hπ m).symm z =
-      uniformizerChangeResidueAddEquiv π π' hπ hπ' m
-        ((residueFieldEquivMaximalIdealGradedOfUniformizer π' hπ' m).symm z) := by
+      residue R (uniformizerChangeUnit π π' hπ hπ' : R) ^ m *
+        (residueFieldEquivMaximalIdealGradedOfUniformizer π' hπ' m).symm z := by
   apply (residueFieldEquivMaximalIdealGradedOfUniformizer π hπ m).injective
   rw [← residueFieldEquivMaximalIdealGradedOfUniformizer_change]
   simp

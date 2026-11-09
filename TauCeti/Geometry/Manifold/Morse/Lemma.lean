@@ -35,8 +35,14 @@ stable and unstable manifolds are then studied.
   centre.
 * `TauCeti.MorseChart.splitCoord`: the coordinates of a Morse chart, split by the sign of the
   weight.
+* `TauCeti.MorseChart.splitCoordL`: the split coordinates as a continuous linear equivalence of
+  the model.
 * `TauCeti.MorseChart.max_norm_fst_norm_snd_splitCoord`: the sup norm of the coordinates is the
   larger of the norms of the two factors of the split coordinates.
+* `TauCeti.MorseChart.finrank_snd_splitCoord` and
+  `TauCeti.MorseChart.finrank_fst_splitCoord_add_manifoldMorseIndex`: the expanding factor of the
+  split coordinates has dimension the Morse index, and the contracting factor the complementary
+  dimension.
 * `TauCeti.MorseChart.neg`: a Morse chart for `f` is a Morse chart for `-f`, with the opposite
   weights.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.nonempty_morseChart`: the Morse lemma on a
@@ -148,6 +154,15 @@ theorem mdifferentiableAt_toChart {y : M} (hy : y ∈ φ.toChart.source) :
     MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y :=
   mdifferentiableAt_of_mem_maximalAtlas φ.mem_maximalAtlas_one hy
 
+/-- A coordinate of a Morse chart has weight different from `1` exactly when it has negative
+weight. -/
+theorem weight_ne_one_iff (i : Fin (Module.finrank ℝ E)) : ¬φ.weight i = 1 ↔ φ.weight i < 0 := by
+  rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi <;> norm_num [hi]
+
+/-- A coordinate of a Morse chart has weight `1` exactly when it has positive weight. -/
+theorem weight_eq_one_iff (i : Fin (Module.finrank ℝ E)) : φ.weight i = 1 ↔ 0 < φ.weight i := by
+  rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi <;> norm_num [hi]
+
 /-- The **split coordinates** of a Morse chart: the pair formed by the coordinates of positive
 weight and the remaining coordinates, of weight `-1`. Each factor carries the sup norm. -/
 noncomputable def splitCoord :
@@ -191,7 +206,44 @@ theorem max_norm_fst_norm_snd_splitCoord (z : Fin (Module.finrank ℝ E) → ℝ
     · exact le_max_of_le_left (by simpa using norm_le_pi_norm (φ.splitCoord z).fst ⟨i, hi⟩)
     · exact le_max_of_le_right (by simpa using norm_le_pi_norm (φ.splitCoord z).snd ⟨i, hi⟩)
 
+/-- The expanding factor of the split coordinates of a Morse chart has dimension the Morse index. -/
+theorem finrank_snd_splitCoord :
+    Module.finrank ℝ ({i // ¬φ.weight i = 1} → ℝ) = manifoldMorseIndex 𝓘(ℝ, E) f x := by
+  rw [Module.finrank_fintype_fun_eq_card, ← φ.ncard_weight_neg, ← Nat.card_eq_fintype_card,
+    ← Nat.card_coe_set_eq]
+  refine Nat.card_congr (Equiv.subtypeEquivRight fun i ↦ ?_)
+  rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi <;> norm_num [hi]
+
+/-- The contracting and expanding factors of the split coordinates of a Morse chart have
+complementary dimensions. -/
+theorem finrank_fst_splitCoord_add_manifoldMorseIndex :
+    Module.finrank ℝ ({i // φ.weight i = 1} → ℝ) + manifoldMorseIndex 𝓘(ℝ, E) f x =
+      Module.finrank ℝ E := by
+  rw [← φ.finrank_snd_splitCoord, Module.finrank_fintype_fun_eq_card,
+    Module.finrank_fintype_fun_eq_card, Fintype.card_subtype_compl, Fintype.card_fin]
+  have := Fintype.card_subtype_le fun i ↦ φ.weight i = 1
+  rw [Fintype.card_fin] at this
+  omega
+
 variable [FiniteDimensional ℝ E]
+
+/-- The split coordinates of a Morse chart, as a continuous linear equivalence of the model. -/
+noncomputable def splitCoordL :
+    E ≃L[ℝ] WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) :=
+  (φ.coord.trans φ.splitCoord).toContinuousLinearEquiv
+
+/-- The continuous split coordinates of a point of the model are the split coordinates of its
+coordinates. -/
+@[simp]
+theorem splitCoordL_apply (z : E) : φ.splitCoordL z = φ.splitCoord (φ.coord z) :=
+  (rfl)
+
+/-- The point of the model with given continuous split coordinates. -/
+@[simp]
+theorem splitCoordL_symm_apply
+    (w : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))) :
+    φ.splitCoordL.symm w = φ.coord.symm (φ.splitCoord.symm w) :=
+  (rfl)
 
 /-- A Morse chart for `f` at a nondegenerate critical point is a Morse chart for `-f`, with the
 opposite weights. -/

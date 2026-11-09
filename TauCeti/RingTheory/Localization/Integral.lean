@@ -37,12 +37,18 @@ Mathlib's `IsLocalization.integralClosure` states this for the literal subalgebr
   `isScalarTower_integralClosureMapAlgebra_left` and
   `isScalarTower_integralClosureMapAlgebra_right`; this is the structure Mathlib's
   `IsLocalization.integralClosure` asks its caller to supply.
+* `TauCeti.exists_isIntegral_pow_smul_of_isLocalization`: if `R_x` is integral over `A_x` for an
+  `A`-algebra `R`, every element of `R` becomes integral over `A` after multiplication by a power
+  of `x`.
 * `TauCeti.IsLocalization.isIntegrallyClosedIn`: if `R` is integrally closed in `S`, then `M⁻¹R` is
   integrally closed in `M⁻¹S`. Ported from T. Dupuy, T. Tucker and Z. Wang,
   [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
   `9a20b3f351446d64e6015d704198bc71c7002008` (Apache-2.0),
   `lean/Pcf/Stacks/Common/EtaleNormal.lean`, where it is
   `Pcf.Stacks.isIntegrallyClosedIn_of_isLocalization`.
+* `TauCeti.IsLocalization.exists_mul_eq_mul_of_isIntegral_mk'`: an element of a localization of
+  `R` at nonzerodivisors which is integral over `R` lies in `R_q` for every prime `q` with `R_q`
+  an integrally closed domain.
 -/
 
 public section
@@ -257,6 +263,69 @@ theorem IsLocalization.isIntegrallyClosedIn (M : Submonoid R) [IsLocalization M 
     exact e'.symm
 
 end IsIntegrallyClosedIn
+
+section PowSMul
+
+variable {A R : Type*} [CommRing A] [CommRing R] [Algebra A R] {x : A}
+  (Ax Rx : Type*) [CommRing Ax] [CommRing Rx] [Algebra A Ax] [Algebra Ax Rx]
+  [Algebra A Rx] [Algebra R Rx] [IsScalarTower A Ax Rx] [IsScalarTower A R Rx]
+  [IsLocalization.Away x Ax] [IsLocalization.Away (algebraMap A R x) Rx]
+
+/-- If the localization `R_x` is integral over `A_x`, every element of `R` becomes integral over
+`A` after multiplication by a power of `x`. -/
+theorem exists_isIntegral_pow_smul_of_isLocalization [Algebra.IsIntegral Ax Rx] (r : R) :
+    ∃ n : ℕ, IsIntegral A (x ^ n • r) := by
+  obtain ⟨⟨_, n, rfl⟩, hn⟩ := IsIntegral.exists_multiple_integral_of_isLocalization
+    (.powers x) (Rₘ := Ax) (algebraMap R Rx r) (Algebra.IsIntegral.isIntegral _)
+  have : IsLocalization (Algebra.algebraMapSubmonoid R (.powers x)) Rx := by
+    rwa [Algebra.algebraMapSubmonoid_powers]
+  -- Descend integrality from `R_x` to `R` at the cost of another power of `x`.
+  obtain ⟨_, ⟨m, rfl⟩, hm⟩ := IsLocalization.exists_isIntegral_smul_of_isIntegral_map (Sₘ := Rx)
+    (.powers x) (x := x ^ n • r) <| by
+      simpa [Submonoid.smul_def, Algebra.smul_def, IsScalarTower.algebraMap_apply A R Rx] using hn
+  exact ⟨m + n, by rwa [pow_add, mul_smul]⟩
+
+end PowSMul
+
+section IsIntegral
+
+open scoped nonZeroDivisors
+
+variable {B : Type*} [CommRing B] {T : Submonoid B} {E : Type*} [CommRing E] [Algebra B E]
+  [IsLocalization T E]
+
+/-- Let `q` be a prime of `B` with `B_q` an integrally closed domain, and `x / t` an element of a
+localization of `B` at nonzerodivisors which is integral over `B`. Then `x / t` lies in `B_q`:
+there are `b, u, w ∈ B` with `u, w ∉ q` and `w b t = w u x`. -/
+theorem IsLocalization.exists_mul_eq_mul_of_isIntegral_mk' (hT : T ≤ B⁰) (x : B) (t : T)
+    (hx : IsIntegral B (IsLocalization.mk' E x t)) (q : Ideal B) [q.IsPrime]
+    [IsDomain (Localization.AtPrime q)] [IsIntegrallyClosed (Localization.AtPrime q)] :
+    ∃ b u w : B, u ∉ q ∧ w ∉ q ∧ w * (b * t) = w * (u * x) := by
+  let Bq := Localization.AtPrime q
+  let K := FractionRing Bq
+  -- Elements of `T` stay nonzero in the domain `B_q`, so they become units in its fraction field.
+  have hunit (s : T) : IsUnit (algebraMap B K s) := by
+    rw [IsScalarTower.algebraMap_apply B Bq K, isUnit_iff_ne_zero,
+      map_ne_zero_iff _ (IsFractionRing.injective Bq K)]
+    intro h
+    obtain ⟨c, hc⟩ := (IsLocalization.map_eq_zero_iff q.primeCompl Bq _).mp h
+    exact c.2 (by rw [(mem_nonZeroDivisors_iff_right.mp (hT s.2)) c hc]; exact q.zero_mem)
+  let φ : E →ₐ[B] K := IsLocalization.liftAlgHom (M := T) (f := Algebra.ofId B K) hunit
+  -- The image of `x / t` in the fraction field of `B_q` is integral, hence lies in `B_q`.
+  obtain ⟨y, hy⟩ := (IsIntegrallyClosed.isIntegral_iff (R := Bq) (K := K)).mp
+    ((hx.map φ).tower_top (A := Bq))
+  obtain ⟨⟨b, u⟩, rfl⟩ := IsLocalization.mk'_surjective q.primeCompl y
+  have hxt : φ (IsLocalization.mk' E x t) * algebraMap B K t = algebraMap B K x := by
+    rw [← φ.commutes, ← map_mul, IsLocalization.mk'_spec, φ.commutes]
+  rw [← hy, IsScalarTower.algebraMap_apply B Bq K, IsScalarTower.algebraMap_apply B Bq K,
+    ← map_mul, (IsFractionRing.injective Bq K).eq_iff] at hxt
+  have hbt : algebraMap B Bq (b * t) = algebraMap B Bq (u * x) := by
+    rw [map_mul, map_mul, ← hxt, ← mul_assoc, mul_comm (algebraMap B Bq u),
+      IsLocalization.mk'_spec_mk]
+  obtain ⟨w, hw⟩ := (IsLocalization.eq_iff_exists q.primeCompl Bq).mp hbt
+  exact ⟨b, u, w, u.2, w.2, hw⟩
+
+end IsIntegral
 
 end TauCeti
 
