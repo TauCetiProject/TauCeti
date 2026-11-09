@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
+public import TauCeti.Geometry.Manifold.DeRham.Integration.Connected
 import TauCeti.Geometry.Manifold.ContMDiff.Parametrization
-import TauCeti.Geometry.Manifold.DeRham.Integration.Localization
 
 /-!
 # Top compactly supported cohomology of a connected oriented manifold
@@ -25,13 +24,10 @@ has an open neighbourhood `U` diffeomorphic to `ℝⁿ`
 (`TauCeti.exists_opens_diffeomorph_euclideanSpace`), on which integration `H^n_c(U) → ℝ` is
 injective because `H^n_c(ℝⁿ)` is a line
 (`TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_of_diffeomorph_normedSpace`).
-Hence two compactly supported top forms supported in `U` with the same integral have the same
-class in `H^n_c(M)`. Fix a class `e₀` of integral one. The points having an open neighbourhood
-all of whose compactly supported classes `y` satisfy `y = (∫_M y) • e₀` form an open set; its
-complement is open too, since two such Euclidean neighbourhoods that meet share a localized class
-of integral one. By connectedness every point has such a neighbourhood, and a partition of unity
-splits every compactly supported top form into finitely many forms supported in them. So every
-class is `(∫_M y) • e₀`.
+The connected-cover theorem
+(`TauCeti.compactlySupportedDeRhamCohomology.injective_integral_of_cover`) compares normalized
+classes on overlapping coordinate domains and uses connectedness and a finite decomposition to
+prove injectivity. Applying it to the Euclidean coordinate cover of `M` gives the global result.
 
 The connectedness hypothesis cannot be dropped: on a disjoint union of two copies of `ℝⁿ`,
 `H^n_c` is two-dimensional.
@@ -67,100 +63,35 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 
 namespace compactlySupportedDeRhamCohomology
 
-/-- If integration is injective on `H^n_c(U)` and `e` is a class from `U` of integral one, then
-every class `y` from `U` is `(∫_M y) • e`. -/
-private theorem range_extendByZeroTop_le_eqLocus (o : Manifold.Orientation I M (Fin n))
-    (U : Opens M) [SigmaCompactSpace U] (hU : Injective (integral (o.restrict U)))
-    {e : compactlySupportedDeRhamCohomology I M n}
-    (he : e ∈ LinearMap.range (extendByZeroTop U n)) (he₁ : integral o e = 1) :
-    LinearMap.range (extendByZeroTop U n) ≤
-      LinearMap.eqLocus LinearMap.id ((integral o).smulRight e) := by
-  obtain ⟨a, rfl⟩ := he
-  rintro _ ⟨b, rfl⟩
-  have h : b - integral o (extendByZeroTop U n b) • a = 0 := hU <| by
-    rw [map_sub, map_smul, ← integral_extendByZeroTop o, ← integral_extendByZeroTop o, he₁,
-      smul_eq_mul, mul_one, sub_self, map_zero]
-  rw [LinearMap.mem_eqLocus, LinearMap.id_apply, LinearMap.smulRight_apply, ← map_smul,
-    ← sub_eq_zero, ← map_sub, h, map_zero]
-
-/-- Let `V` be an open subset all of whose classes are their integrals times `e`, and let `U` be
-an open subset meeting `V` on which integration is injective. Then all classes from `U` are their
-integrals times `e`: a class of integral one supported in `U ∩ V` comes from both. -/
-private theorem range_extendByZeroTop_le_eqLocus_of_inter_nonempty
-    (o : Manifold.Orientation I M (Fin n)) {e : compactlySupportedDeRhamCohomology I M n}
-    (U : Opens M) [SigmaCompactSpace U] (hU : Injective (integral (o.restrict U))) {V : Opens M}
-    (hV : LinearMap.range (extendByZeroTop V n) ≤
-      LinearMap.eqLocus LinearMap.id ((integral o).smulRight e))
-    (hUV : ((U : Set M) ∩ V).Nonempty) :
-    LinearMap.range (extendByZeroTop U n) ≤
-      LinearMap.eqLocus LinearMap.id ((integral o).smulRight e) := by
-  obtain ⟨p, hpU, hpV⟩ := hUV
-  obtain ⟨τ, hτ, hτ₁⟩ := exists_compactlySupportedClosedForms_integralTopForm_eq_one o p
-    (Filter.inter_mem (U.isOpen.mem_nhds hpU) (V.isOpen.mem_nhds hpV))
-  have h₁ : integral o (mk I n τ) = 1 := by rw [integral_mk, hτ₁]
-  have he : mk I n τ = e := by
-    have := hV (mk_mem_range_extendByZeroTop V τ (hτ.trans inter_subset_right))
-    rwa [LinearMap.mem_eqLocus, LinearMap.id_apply, LinearMap.smulRight_apply, h₁, one_smul] at this
-  exact he ▸ range_extendByZeroTop_le_eqLocus o U hU
-    (mk_mem_range_extendByZeroTop U τ (hτ.trans inter_subset_left)) h₁
-
-omit [SigmaCompactSpace M] in
-/-- Every point has an open neighbourhood `U` on which integration `H^n_c(U) → ℝ` is injective:
-a neighbourhood diffeomorphic to `ℝⁿ`. -/
-private theorem exists_opens_injective_integral (o : Manifold.Orientation I M (Fin n)) (x : M) :
-    ∃ U : Opens M, x ∈ U ∧
-      ∃ _ : SigmaCompactSpace U, Injective (integral (o.restrict U)) := by
-  obtain ⟨U, hxU, ⟨Ψ⟩⟩ := exists_opens_diffeomorph_euclideanSpace (n := ⊤)
-    (BoundarylessManifold.isInteriorPoint (I := I) (x := x))
-  have : SigmaCompactSpace U := Ψ.toHomeomorph.isClosedEmbedding.sigmaCompactSpace
-  exact ⟨U, hxU, ‹_›, (bijective_integral_of_diffeomorph_normedSpace (o.restrict U)
-    ((toEuclidean (E := E)).toDiffeomorph.trans Ψ.symm)).injective⟩
-
 /-- **The top compactly supported cohomology of a preconnected manifold.** On a preconnected,
 oriented, boundaryless, Hausdorff, σ-compact finite-dimensional smooth manifold, integration
 `H^n_c(M) → ℝ` is injective. The empty manifold is included. -/
 theorem injective_integral [PreconnectedSpace M] (o : Manifold.Orientation I M (Fin n)) :
     Injective (integral o) := by
   classical
-  by_cases hM : Nonempty M
-  swap
-  · have : IsEmpty M := not_nonempty_iff.mp hM
-    intro a b _
-    obtain ⟨α, rfl⟩ := mk_surjective I n a
-    obtain ⟨β, rfl⟩ := mk_surjective I n b
-    congr 1
-    apply Subtype.ext
-    apply SmoothBundleForm.ext
-    intro x
-    exact isEmptyElim x
-  have : ConnectedSpace M := { toNonempty := hM }
-  have hn : finrank ℝ E ≤ n := by simpa using o.card_eq.ge
-  -- A class `e₀` of integral one, supported in a neighbourhood `U₀` on which integration is
-  -- injective; `K` consists of the classes which are their integrals times `e₀`.
-  obtain ⟨x₀⟩ : Nonempty M := inferInstance
-  obtain ⟨U₀, hx₀, _, hU₀⟩ := exists_opens_injective_integral o x₀
-  obtain ⟨τ₀, hτ₀U, hτ₀⟩ :=
-    exists_compactlySupportedClosedForms_integralTopForm_eq_one o x₀ (U₀.isOpen.mem_nhds hx₀)
-  have he₀ : integral o (mk I n τ₀) = 1 := by rw [integral_mk, hτ₀]
-  let K := LinearMap.eqLocus LinearMap.id ((integral o).smulRight (mk I n τ₀))
-  -- By connectedness, every point has a neighbourhood all of whose classes lie in `K`.
-  let S : Set M := {x | ∃ V : Opens M, x ∈ V ∧ LinearMap.range (extendByZeroTop V n) ≤ K}
-  have hS : S = univ := by
-    refine IsClopen.eq_univ ⟨?_, ?_⟩ ⟨x₀, U₀, hx₀,
-      range_extendByZeroTop_le_eqLocus o U₀ hU₀ (mk_mem_range_extendByZeroTop U₀ τ₀ hτ₀U) he₀⟩
-    · rw [← isOpen_compl_iff, isOpen_iff_forall_mem_open]
-      intro x hx
-      obtain ⟨U, hxU, _, hU⟩ := exists_opens_injective_integral o x
-      exact ⟨U, fun y hyU ⟨V, hyV, hV⟩ ↦ hx ⟨U, hxU,
-        range_extendByZeroTop_le_eqLocus_of_inter_nonempty o U hU hV ⟨y, hyU, hyV⟩⟩, U.isOpen, hxU⟩
-    · rw [isOpen_iff_forall_mem_open]
-      rintro x ⟨V, hxV, hV⟩
-      exact ⟨V, fun y hy ↦ ⟨V, hy, hV⟩, V.isOpen, hxV⟩
-  choose V hxV hV using fun x ↦ (hS ▸ mem_univ x : x ∈ S)
-  have hK : K = ⊤ := eq_top_of_forall_range_extendByZeroTop_le hn V hxV hV
+  -- Choose a Euclidean coordinate domain about each point, including when `M` is empty.
+  have hcoord (x : M) := exists_opens_diffeomorph_euclideanSpace (n := ⊤)
+    (BoundarylessManifold.isInteriorPoint (I := I) (x := x))
+  choose U hxU Ψ using hcoord
+  let Φ (x : M) : E ≃ₘ⟮𝓘(ℝ, E), I⟯ U x :=
+    (toEuclidean (E := E)).toDiffeomorph.trans (Ψ x).some.symm
+  have (x : M) : SigmaCompactSpace (U x) :=
+    (Φ x).toHomeomorph.symm.isClosedEmbedding.sigmaCompactSpace
+  have hcover : (⊤ : Opens M) ≤ iSup U := by
+    intro x _
+    exact Opens.mem_iSup.mpr ⟨x, hxU x⟩
+  -- The cover theorem concerns an open subset; identify `⊤` with the ambient manifold.
+  let T : (⊤ : Opens M) ≃ₘ⟮I, I⟯ M := Diffeomorph.ofTop ⊤ rfl
+  have : SigmaCompactSpace (⊤ : Opens M) := isClosed_univ.sigmaCompactSpace
+  have : PreconnectedSpace (⊤ : Opens M) := Subtype.preconnectedSpace isPreconnected_univ
+  have hi := injective_integral_of_cover o U (fun _ ↦ le_top) hcover Φ
+  have hint (c : compactlySupportedDeRhamCohomology I M n) :
+      integral (o.restrict ⊤) (equivOfDiffeomorph T n c) = integral o c := by
+    rw [equivOfDiffeomorph_apply]
+    exact integral_map_diffeomorph (o.restrict ⊤) o T
+      (by simpa only [T, Diffeomorph.coe_ofTop] using o.isOrientationPreservingAt_restrict ⊤) c
   intro a b hab
-  have key (y) : y = integral o y • mk I n τ₀ := LinearMap.mem_eqLocus.mp (hK ▸ Submodule.mem_top)
-  rw [key a, key b, hab]
+  exact (equivOfDiffeomorph T n).injective (hi (by simpa only [hint] using hab))
 
 /-- **The top compactly supported cohomology of a connected manifold.** On a connected, oriented,
 boundaryless, Hausdorff, σ-compact finite-dimensional smooth manifold, integration
