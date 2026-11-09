@@ -359,19 +359,33 @@ theorem IsIntegral.not_isUnimodular_smul [Nontrivial E] (h : IsIntegral L) {c : 
     one_lt_pow₀ hc (mul_ne_zero two_ne_zero finrank_pos.ne')
   nlinarith [h.one_le_det]
 
+omit [MeasurableSpace E] [BorelSpace E] in
 /-- In positive dimension, scaling a full integral lattice by `√m` for a natural number `m > 1`
 never gives a unimodular lattice. For instance `√2 • E₈` is even and integral but not
 unimodular. -/
 theorem IsIntegral.not_isUnimodular_sqrt_smul [Nontrivial E] (h : IsIntegral L) {m : ℕ}
-    (hm : 1 < m) : ¬ IsUnimodular (√(m : ℝ) • L) :=
-  h.not_isUnimodular_smul <| by
-    rw [abs_of_nonneg (Real.sqrt_nonneg _), Real.lt_sqrt zero_le_one, one_pow]
-    exact_mod_cast hm
+    (hm : 1 < m) : ¬ IsUnimodular (√(m : ℝ) • L) := by
+  borelize E
+  refine h.not_isUnimodular_smul ?_
+  rw [abs_of_nonneg (Real.sqrt_nonneg _), Real.lt_sqrt zero_le_one, one_pow]
+  exact_mod_cast hm
 
+omit [MeasurableSpace E] [BorelSpace E] [IsZLattice ℝ L] in
 /-- In positive dimension, scaling a unimodular lattice by `c` with `|c| ≠ 1` never gives a
 unimodular lattice. -/
 theorem IsUnimodular.not_isUnimodular_smul [Nontrivial E] (h : IsUnimodular L) {c : ℝ}
     (hc : |c| ≠ 1) : ¬ IsUnimodular (c • L) := by
+  borelize E
+  -- A unimodular lattice is full: a vector orthogonal to it lies in its dual, which is the lattice
+  -- itself, so it is orthogonal to itself.
+  have : IsZLattice ℝ L := by
+    refine ⟨(Submodule.orthogonal_eq_bot_iff).1 (eq_bot_iff.2 fun x hx ↦ ?_)⟩
+    have hx' : ∀ y ∈ L, ⟪y, x⟫ = 0 := fun y hy ↦
+      Submodule.mem_orthogonal _ _ |>.1 hx y (Submodule.subset_span hy)
+    have hxL : x ∈ L := h.dual_eq ▸ mem_dual.2 fun y hy ↦
+      ⟨0, by rw [real_inner_comm, hx' y hy, Int.cast_zero]⟩
+    have := hx' x hxL
+    simpa using this
   intro hu
   rcases eq_or_ne c 0 with rfl | hc0
   · -- The lattice `0 • L` is zero, and the dual of the zero lattice is the whole space.
