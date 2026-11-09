@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
-import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Tactic.NormNum
 
 /-!
@@ -56,14 +56,23 @@ theorem integrable_smul_iff_abs_smul {X F : Type*} [MeasurableSpace X]
   exact ⟨fun h ↦ (h.bdd_smul 1 hu hb).congr hmul,
     fun h ↦ (h.bdd_smul 1 hu hb).congr hinv⟩
 
-/-- Integrability with respect to a measure on a countable type with measurable singletons implies
+/-- Integrability with respect to a measure on a type with measurable singletons implies
 summability of the singleton masses weighted by the norms of the function values. -/
 theorem summable_measureReal_mul_norm_of_integrable {X E : Type*} [MeasurableSpace X]
-    [Countable X] [MeasurableSingletonClass X] [NormedAddCommGroup E]
+    [MeasurableSingletonClass X] [NormedAddCommGroup E]
     {ν : Measure X} {f : X → E} (hf : Integrable f ν) :
     Summable (fun x : X ↦ ν.real {x} * ‖f x‖) := by
-  rw [← Measure.sum_smul_dirac ν] at hf
-  simpa only [measureReal_def] using hf.summable_of_dirac
+  refine summable_of_sum_le (c := ∫ x, ‖f x‖ ∂ν) (fun x ↦ by positivity) fun S ↦ ?_
+  calc ∑ x ∈ S, ν.real {x} * ‖f x‖
+      = ∑ x ∈ S, ∫ y in {x}, ‖f y‖ ∂ν := by
+        refine Finset.sum_congr rfl fun x _ ↦ ?_
+        rw [integral_singleton, smul_eq_mul]
+    _ = ∫ y in ⋃ x ∈ S, {x}, ‖f y‖ ∂ν := by
+        rw [integral_biUnion_finset S (fun x _ ↦ measurableSet_singleton x)
+          (fun x _ y _ hxy ↦ by simpa using hxy)
+          (fun x _ ↦ hf.norm.integrableOn)]
+    _ ≤ ∫ y, ‖f y‖ ∂ν :=
+        setIntegral_le_integral hf.norm (Filter.Eventually.of_forall fun y ↦ norm_nonneg _)
 
 /-- An integrable function whose norm is almost everywhere at least one can only be carried by a
 finite measure. -/
