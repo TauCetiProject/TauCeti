@@ -338,7 +338,8 @@ private theorem exists_hexagon_natCard {S : ShortComplex (Rep R G)} (hS : S.Shor
     rw [← (hT.homology_exact₃ i j hij).moduleCat_range_eq_ker] at h
     exact h
   -- naturality of the periodicity closes the sequence into a hexagon
-  have hs13 := S.natCard_range_homologyMap_periodic_three_eq_one g
+  have hs13 := (natCard_range_homologyMap_periodic_odd g S.g (j := 3) (by decide)).trans
+    (natCard_range_homologyMap_periodic_odd g S.g (j := 1) (by decide)).symm
   exact ⟨_, _, _, _, _, _,
     (natCard_periodicHomology_odd S.X₁ g hg (j := 1) (by decide)).symm.trans (ha 2 1 rfl),
     (natCard_periodicHomology_even S.X₁ g hg (j := 2) (by decide) (by decide)).symm.trans
