@@ -136,6 +136,7 @@ private theorem exists_nativeStructure :
 
 /-- The native atlas of the unitary group, induced by its closed embedding into the units. -/
 instance instChartedSpace : ChartedSpace 𝔩 (unitary R) :=
+  -- The typed proof keeps the private existence theorem in proof position in this public instance.
   Classical.choose (show ∃ c : ChartedSpace 𝔩 (unitary R), IsLieGroupAtlas c from by
     exact exists_nativeStructure (R := R))
 
