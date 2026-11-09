@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.Sobolev
+public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 import TauCeti.Analysis.Convolution.Weighted
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.Convolution
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Lp
 
 /-!
 # The Sobolev spaces `H^s(ℝⁿ)`, `s > n / 2`, are algebras
@@ -17,21 +19,32 @@ import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 Let `E` be a finite-dimensional real inner product space of dimension `n` and let `s > n / 2`.
 The pointwise product of two functions in the Bessel-potential space `H^s(E)` (Mathlib's
 `TemperedDistribution.MemSobolev s 2`) is again in `H^s(E)`
-(`TemperedDistribution.MemSobolev.mul`). Already the product of an `H^s` function with any `Lᵖ`
+(`TemperedDistribution.MemSobolev.mul`), and there is a constant `C`, depending only on `s` and
+`E`, with
+
+`‖u v‖_{H^s} ≤ C ‖u‖_{H^s} ‖v‖_{H^s}`
+
+(`TemperedDistribution.exists_norm_toBesselPotentialSpace_mul_le`). Already the product of an
+`H^s` function with any `Lᵖ`
 function is an `Lᵖ` function, since the first factor is bounded by the Sobolev embedding
 (`TemperedDistribution.MemSobolev.memLp_mul`). The same holds for real-valued functions
 (`TemperedDistribution.exists_mem_realSobolevSubmodule_ae_eq_mul`).
 
 This is the basic input for nonlinear analysis on the scale `H^s`, `s > n / 2`: polynomial
 expressions without constant term in `H^s` fields stay in `H^s`, and the functions `1 + h`,
-`h ∈ H^s`, are closed under multiplication, which is the closure step towards a gauge group.
+`h ∈ H^s`, are closed under multiplication, which is the closure step towards a gauge group. The
+estimate makes the product a bounded bilinear operation for the `H^s` norm, so that polynomial
+expressions depend continuously on `H^s` fields and multiplication `(1 + h)(1 + g)` is continuous
+for the distance `‖h - g‖_{H^s}`.
 
 ## The Fourier argument
 
 Write `⟨ξ⟩ = (1 + ‖ξ‖ ^ 2) ^ (1 / 2)`. A function `u ∈ L²` lies in `H^s` exactly when
 `⟨ξ⟩ ^ s 𝓕u ∈ L²`, and for `s > n / 2` Cauchy–Schwarz against `⟨ξ⟩ ^ (-s) ∈ L²` makes `𝓕u` an
-`L¹` function `v` (`TemperedDistribution.MemSobolev.fourier_memL1`), with `⟨ξ⟩ ^ s v ∈ L²`
-(`TemperedDistribution.MemSobolev.fourier_memL1_and_memLp`). So `u = 𝓕⁻ v` almost
+`L¹` function `v` (`TemperedDistribution.MemSobolev.fourier_memL1`), with
+`‖v‖₁ ≤ ‖⟨·⟩ ^ (-s)‖₂ ‖u‖_{H^s}` and `‖⟨·⟩ ^ s v‖₂ = ‖u‖_{H^s}`
+(`TauCeti.eLpNorm_one_le_eLpNorm_mul_eLpNorm_rpow_one_add_norm_sq_smul`,
+`TemperedDistribution.MemSobolev.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm`). So `u = 𝓕⁻ v` almost
 everywhere and the product of two such functions is
 
 `u₁ u₂ = 𝓕⁻ v₁ · 𝓕⁻ v₂ = 𝓕⁻ (v₁ ⋆ v₂)`
@@ -43,9 +56,11 @@ tempered distributions, and it remains to show `⟨ξ⟩ ^ s (v₁ ⋆ v₂) ∈
 `⟨ξ⟩ ^ s |v₁ ⋆ v₂| ≤ 2 ^ s ((⟨·⟩ ^ s |v₁|) ⋆ |v₂| + |v₁| ⋆ (⟨·⟩ ^ s |v₂|))`,
 
 and each convolution on the right is that of an `L²` function with an `L¹` function, which lies
-in `L²` by Young's inequality (`MeasureTheory.lintegral_lconvolution_sq_le`). This weighted
-convolution estimate is `TauCeti.memLp_one_add_norm_sq_rpow_mul_convolution`, in
-`TauCeti.Analysis.Convolution.Weighted`.
+in `L²` by Young's inequality (`MeasureTheory.eLpNorm_lconvolution_le`). This weighted
+convolution estimate is `TauCeti.eLpNorm_one_add_norm_sq_rpow_mul_convolution_le`, in
+`TauCeti.Analysis.Convolution.Weighted`; it bounds `‖u₁ u₂‖_{H^s}` by
+`2 ^ s (‖v₂‖₁ ‖u₁‖_{H^s} + ‖v₁‖₁ ‖u₂‖_{H^s})`, and the `L¹` bounds above give the algebra
+estimate with `C = 2 ^ (s + 1) ‖⟨·⟩ ^ (-s)‖₂`.
 
 ## Main declarations
 
@@ -53,6 +68,8 @@ convolution estimate is `TauCeti.memLp_one_add_norm_sq_rpow_mul_convolution`, in
   with an `Lᵖ` function is an `Lᵖ` function.
 * `TemperedDistribution.MemSobolev.mul`: the product of two `H^s` functions, `s > n / 2`, lies in
   `H^s`.
+* `TemperedDistribution.exists_norm_toBesselPotentialSpace_mul_le`: the algebra estimate
+  `‖u v‖_{H^s} ≤ C ‖u‖_{H^s} ‖v‖_{H^s}`.
 * `TemperedDistribution.exists_mem_realSobolevSubmodule_ae_eq_mul`: the real form of
   `TemperedDistribution.MemSobolev.mul`.
 * `TemperedDistribution.mul_mem_realSobolevFunctions`: the same for pointwise representatives.
@@ -88,6 +105,32 @@ theorem MemSobolev.memLp_mul {s : ℝ} (hs : finrank ℝ E < 2 * s)
   filter_upwards [hg] with x hx
   simp [hx]
 
+/-- The Fourier transform of the product of two `L²` functions in `H^s`, `s > dim E / 2`, is the
+convolution of their Fourier transforms, which are `L¹` functions. -/
+private theorem fourier_toLp_mul_eq {s : ℝ} (hs : finrank ℝ E < 2 * s)
+    {u v : Lp ℂ 2 (volume : Measure E)} (hu : MemSobolev s 2 (u : 𝓢'(E, ℂ)))
+    {v₁ v₂ : Lp ℂ 1 (volume : Measure E)} (h₁ : 𝓕 (u : 𝓢'(E, ℂ)) = v₁)
+    (h₂ : 𝓕 (v : 𝓢'(E, ℂ)) = v₂) :
+    𝓕 ((hu.memLp_mul hs v).toLp _ : 𝓢'(E, ℂ)) =
+      ((((L1.integrable_coeFn v₁).integrable_convolution (ContinuousLinearMap.mul ℂ ℂ)
+        (L1.integrable_coeFn v₂)).toL1 _ : Lp ℂ 1 (volume : Measure E)) : 𝓢'(E, ℂ)) := by
+  have hi₁ := L1.integrable_coeFn v₁
+  have hi₂ := L1.integrable_coeFn v₂
+  set W : E → ℂ := (v₁ : E → ℂ) ⋆[ContinuousLinearMap.mul ℂ ℂ] (v₂ : E → ℂ)
+  have hW : Integrable W := hi₁.integrable_convolution (ContinuousLinearMap.mul ℂ ℂ) hi₂
+  have hR : 𝓕⁻ ((hW.toL1 W : Lp ℂ 1 (volume : Measure E)) : E → ℂ) = 𝓕⁻ W :=
+    funext (Real.fourierInv_congr_ae hW.coeFn_toL1)
+  -- The product is the inverse Fourier transform of the integrable convolution `v₁ ⋆ v₂`.
+  have hP : ((hu.memLp_mul hs v).toLp _ : 𝓢'(E, ℂ)) =
+      𝓕⁻ ((hW.toL1 W : Lp ℂ 1 (volume : Measure E)) : 𝓢'(E, ℂ)) := by
+    ext φ
+    rw [Lp.fourierInv_toTemperedDistribution_apply, Lp.toTemperedDistribution_apply, hR]
+    refine integral_congr_ae ?_
+    filter_upwards [(hu.memLp_mul hs v).coeFn_toLp, Lp.ae_eq_fourierInv_of_fourier_eq h₁,
+      Lp.ae_eq_fourierInv_of_fourier_eq h₂] with x hx hx₁ hx₂
+    rw [hx, hx₁, hx₂, Real.fourierInv_mul_convolution_eq hi₁ hi₂]
+  rw [hP, FourierTransform.fourier_fourierInv_eq]
+
 /-- **The Sobolev spaces `H^s(E)`, `s > dim E / 2`, are algebras.** The pointwise product of two
 `L²` functions in `H^s`, `s > dim E / 2`, lies in `H^s`. -/
 theorem MemSobolev.mul {s : ℝ} (hs : finrank ℝ E < 2 * s)
@@ -97,38 +140,82 @@ theorem MemSobolev.mul {s : ℝ} (hs : finrank ℝ E < 2 * s)
   have hs0 : 0 ≤ s := by
     have := (finrank ℝ E).cast_nonneg (α := ℝ)
     linarith
-  obtain ⟨v₁, hFu, hw₁⟩ := hu.fourier_memL1_and_memLp hs
-  obtain ⟨v₂, hFv, hw₂⟩ := hv.fourier_memL1_and_memLp hs
-  have hi₁ := L1.integrable_coeFn v₁
-  have hi₂ := L1.integrable_coeFn v₂
-  -- The product is the inverse Fourier transform of the integrable convolution `v₁ ⋆ v₂`.
-  set W : E → ℂ := (v₁ : E → ℂ) ⋆[ContinuousLinearMap.mul ℂ ℂ] (v₂ : E → ℂ)
-  have hW : Integrable W := hi₁.integrable_convolution (ContinuousLinearMap.mul ℂ ℂ) hi₂
-  set P := (hu.memLp_mul hs v).toLp _
-  set R : Lp ℂ 1 (volume : Measure E) := hW.toL1 W
-  have hR : 𝓕⁻ (R : E → ℂ) = 𝓕⁻ W := funext (Real.fourierInv_congr_ae hW.coeFn_toL1)
-  have hP : (P : 𝓢'(E, ℂ)) = 𝓕⁻ (R : 𝓢'(E, ℂ)) := by
-    ext φ
-    rw [Lp.fourierInv_toTemperedDistribution_apply, Lp.toTemperedDistribution_apply, hR]
-    refine integral_congr_ae ?_
-    filter_upwards [(hu.memLp_mul hs v).coeFn_toLp, Lp.ae_eq_fourierInv_of_fourier_eq hFu,
-      Lp.ae_eq_fourierInv_of_fourier_eq hFv] with x hx h₁ h₂
-    rw [hx, h₁, h₂, Real.fourierInv_mul_convolution_eq hi₁ hi₂]
-  have hFP : 𝓕 (P : 𝓢'(E, ℂ)) = R := by
-    rw [hP, FourierTransform.fourier_fourierInv_eq]
-  -- The weighted convolution estimate puts the weight times `𝓕 P` in `L²`.
+  obtain ⟨v₁, h₁⟩ := hu.fourier_memL1 hs
+  obtain ⟨v₂, h₂⟩ := hv.fourier_memL1 hs
+  -- The weight times each Fourier transform is square integrable, with norm the `H^s` norm.
+  have hw {f : 𝓢'(E, ℂ)} (hf : MemSobolev s 2 f) {w : Lp ℂ 1 (volume : Measure E)}
+      (h : 𝓕 f = w) : MemLp (fun ξ => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * w ξ) 2 := by
+    have he := hf.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm h
+    simp only [Complex.real_smul] at he
+    exact memLp_iff.2 (he ▸ enorm_lt_top)
+  have hW := (L1.integrable_coeFn v₁).integrable_convolution (ContinuousLinearMap.mul ℂ ℂ)
+    (L1.integrable_coeFn v₂)
+  set R := hW.toL1 _
+  -- The weighted convolution estimate puts the weight times `𝓕 (u v) = v₁ ⋆ v₂` in `L²`.
   have hmem : MemLp (fun ξ => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * R ξ) 2 := by
-    refine (TauCeti.memLp_one_add_norm_sq_rpow_mul_convolution hs0 hi₁ hi₂ hw₁ hw₂).ae_eq ?_
+    refine (TauCeti.memLp_one_add_norm_sq_rpow_mul_convolution hs0 (L1.integrable_coeFn v₁)
+      (L1.integrable_coeFn v₂) (hw hu h₁) (hw hv h₂)).ae_eq ?_
     filter_upwards [hW.coeFn_toL1] with ξ hξ
     rw [hξ]
   have hwg : (fun ξ : E => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
   refine memSobolev_iff_exists_smulLeftCLM_fourier.2 ⟨hmem.toLp _, ?_⟩
   ext φ
-  rw [hFP, Lp.smulLeftCLM_toTemperedDistribution_apply hwg, Lp.toTemperedDistribution_apply]
+  rw [fourier_toLp_mul_eq hs hu h₁ h₂, Lp.smulLeftCLM_toTemperedDistribution_apply hwg,
+    Lp.toTemperedDistribution_apply]
   refine integral_congr_ae ?_
   filter_upwards [hmem.coeFn_toLp] with ξ hξ
-  rw [hξ]
-  simp only [smul_eq_mul]
+  simp only [hξ, smul_eq_mul, R]
+
+/-- **The algebra estimate on `H^s(E)`, `s > dim E / 2`.** There is a constant `C`, depending
+only on `s` and `E`, such that the pointwise product of two `L²` functions `u, v ∈ H^s` satisfies
+`‖u v‖_{H^s} ≤ C ‖u‖_{H^s} ‖v‖_{H^s}`. -/
+theorem exists_norm_toBesselPotentialSpace_mul_le {s : ℝ} (hs : finrank ℝ E < 2 * s) :
+    ∃ C, 0 ≤ C ∧ ∀ {u v : Lp ℂ 2 (volume : Measure E)} (hu : MemSobolev s 2 (u : 𝓢'(E, ℂ)))
+      (hv : MemSobolev s 2 (v : 𝓢'(E, ℂ))),
+      ‖(hu.mul hs hv).toBesselPotentialSpace‖ ≤
+        C * ‖hu.toBesselPotentialSpace‖ * ‖hv.toBesselPotentialSpace‖ := by
+  have hs0 : 0 ≤ s := by
+    have := (finrank ℝ E).cast_nonneg (α := ℝ)
+    linarith
+  have hHolder := TauCeti.eLpNorm_one_le_eLpNorm_mul_eLpNorm_rpow_one_add_norm_sq_smul
+    (F := ℂ) (volume : Measure E) s
+  set K := eLpNorm (fun ξ : E => (1 + ‖ξ‖ ^ 2) ^ (-s / 2)) 2 volume
+  have hK : K ≠ ∞ := (TauCeti.memLp_rpow_neg_one_add_norm_sq volume hs).ne
+  refine ⟨2 ^ s * (2 * K.toReal), by positivity, fun {u v} hu hv => ?_⟩
+  obtain ⟨v₁, h₁⟩ := hu.fourier_memL1 hs
+  obtain ⟨v₂, h₂⟩ := hv.fourier_memL1 hs
+  -- The three `H^s` norms on the Fourier side, with complex multiplication by the weight.
+  have hnorm {f : 𝓢'(E, ℂ)} (hf : MemSobolev s 2 f) {w : Lp ℂ 1 (volume : Measure E)}
+      (h : 𝓕 f = w) : eLpNorm (fun ξ => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * w ξ) 2 volume =
+        ‖hf.toBesselPotentialSpace‖ₑ := by
+    simpa only [Complex.real_smul] using hf.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm h
+  -- Each Fourier transform has `L¹` norm at most `K` times the `H^s` norm.
+  have hL1 {f : 𝓢'(E, ℂ)} (hf : MemSobolev s 2 f) {w : Lp ℂ 1 (volume : Measure E)}
+      (h : 𝓕 f = w) : eLpNorm w 1 volume ≤ K * ‖hf.toBesselPotentialSpace‖ₑ := by
+    have := hHolder w
+    rwa [hf.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm h] at this
+  have hW := (L1.integrable_coeFn v₁).integrable_convolution (ContinuousLinearMap.mul ℂ ℂ)
+    (L1.integrable_coeFn v₂)
+  have hP := hnorm (hu.mul hs hv) (fourier_toLp_mul_eq hs hu h₁ h₂)
+  rw [eLpNorm_congr_ae (by filter_upwards [hW.coeFn_toL1] with ξ hξ; rw [hξ])] at hP
+  have hconv := TauCeti.eLpNorm_one_add_norm_sq_rpow_mul_convolution_le hs0
+    (Lp.aestronglyMeasurable v₁) (Lp.aestronglyMeasurable v₂)
+  rw [hnorm hu h₁, hnorm hv h₂, hP] at hconv
+  -- Combine in `ℝ≥0∞`, then pass to real norms.
+  rw [← ENNReal.ofReal_le_ofReal_iff (by positivity), ofReal_norm]
+  calc ‖(hu.mul hs hv).toBesselPotentialSpace‖ₑ
+      ≤ ENNReal.ofReal (2 ^ s) * (K * ‖hv.toBesselPotentialSpace‖ₑ * ‖hu.toBesselPotentialSpace‖ₑ +
+          K * ‖hu.toBesselPotentialSpace‖ₑ * ‖hv.toBesselPotentialSpace‖ₑ) := by
+        refine hconv.trans ?_
+        gcongr
+        · exact hL1 hv h₂
+        · exact hL1 hu h₁
+    _ = ENNReal.ofReal (2 ^ s * (2 * K.toReal) * ‖hu.toBesselPotentialSpace‖ *
+          ‖hv.toBesselPotentialSpace‖) := by
+        rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (by positivity),
+          ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (by positivity),
+          ENNReal.ofReal_toReal hK, ofReal_norm, ofReal_norm, ENNReal.ofReal_ofNat]
+        ring
 
 /-- **Products of real `H^s` functions, `s > n / 2`.** The real `L²` functions whose
 complexification lies in `H^s`, `s > dim E / 2`, are closed under pointwise multiplication. -/

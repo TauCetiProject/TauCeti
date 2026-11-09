@@ -27,7 +27,8 @@ Let `μ` be a left-invariant measure on a measurable additive group and let
 
 `∫⁻ (f ⋆ₗ[μ] g) ^ 2 ≤ (∫⁻ f) ^ 2 * ∫⁻ g ^ 2`
 
-(`MeasureTheory.lintegral_lconvolution_sq_le`). It follows from the pointwise Cauchy–Schwarz
+(`MeasureTheory.lintegral_lconvolution_sq_le`), that is `‖f ⋆ₗ[μ] g‖₂ ≤ (∫⁻ f) ‖g‖₂`
+(`MeasureTheory.eLpNorm_lconvolution_le`). It follows from the pointwise Cauchy–Schwarz
 inequality for the measure with density `f`,
 
 `(f ⋆ₗ[μ] g) x ^ 2 ≤ (∫⁻ f) * ∫⁻ y, f y * g (-y + x) ^ 2`
@@ -60,7 +61,8 @@ kernel `𝓕⁻ σ` of a Fourier multiplier with Schwartz symbol `σ`.
 ## Main declarations
 
 * `MeasureTheory.lconvolution_sq_le`: pointwise Cauchy–Schwarz for `f ⋆ₗ[μ] g`.
-* `MeasureTheory.lintegral_lconvolution_sq_le`: Young's inequality `L¹ ⋆ L² ⊆ L²`.
+* `MeasureTheory.lintegral_lconvolution_sq_le`, `MeasureTheory.eLpNorm_lconvolution_le`: Young's
+  inequality `L¹ ⋆ L² ⊆ L²`.
 * `MeasureTheory.enorm_convolution_le_lintegral`: the pointwise bound for `f ⋆[L, μ] g`.
 * `MeasureTheory.eLpNorm_convolution_le`: Young's inequality `‖f ⋆[L] g‖_p ≤ ‖L‖ ‖f‖₁ ‖g‖_p`.
 
@@ -121,6 +123,22 @@ theorem lintegral_lconvolution_sq_le (hf : AEMeasurable f μ) (hg : AEMeasurable
         lintegral_const_mul'' _ (hg.pow_const 2)]
     _ = (∫⁻ y, f y ∂μ) ^ 2 * ∫⁻ x, g x ^ 2 ∂μ := by
       rw [lintegral_mul_const'' _ hf, sq, mul_assoc]
+
+/-- **Young's inequality `L¹ ⋆ L² ⊆ L²`** in norm form: `‖f ⋆ₗ[μ] g‖₂ ≤ (∫⁻ f) ‖g‖₂`. -/
+theorem eLpNorm_lconvolution_le (hf : AEMeasurable f μ) (hg : AEMeasurable g μ) :
+    eLpNorm (f ⋆ₗ[μ] g) 2 μ ≤ (∫⁻ y, f y ∂μ) * eLpNorm g 2 μ := by
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal two_ne_zero ENNReal.ofNat_ne_top
+      (aemeasurable_lconvolution hf hg).aestronglyMeasurable,
+    eLpNorm_eq_lintegral_rpow_enorm_toReal two_ne_zero ENNReal.ofNat_ne_top hg.aestronglyMeasurable]
+  simp only [enorm_eq_self, ENNReal.toReal_ofNat, ENNReal.rpow_two]
+  calc (∫⁻ x, (f ⋆ₗ[μ] g) x ^ 2 ∂μ) ^ (1 / 2 : ℝ)
+      ≤ ((∫⁻ y, f y ∂μ) ^ 2 * ∫⁻ x, g x ^ 2 ∂μ) ^ (1 / 2 : ℝ) := by
+        gcongr
+        exact lintegral_lconvolution_sq_le hf hg
+    _ = (∫⁻ y, f y ∂μ) * (∫⁻ x, g x ^ 2 ∂μ) ^ (1 / 2 : ℝ) := by
+        rw [ENNReal.mul_rpow_of_nonneg _ _ (by norm_num), ← ENNReal.rpow_natCast,
+          ← ENNReal.rpow_mul]
+        norm_num
 
 end LConvolution
 

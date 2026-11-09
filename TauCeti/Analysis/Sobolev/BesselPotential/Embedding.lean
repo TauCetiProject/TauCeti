@@ -7,20 +7,27 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
+public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Lp
 
 /-!
 # The Sobolev embedding `H^k(ℝⁿ) ⊆ C₀(ℝⁿ)` for `k > n / 2`
 
 Let `E` be a finite-dimensional real inner product space of dimension `n`. A function in the
 `L²` Sobolev space of order `s > n / 2` on `E` agrees almost everywhere with a continuous function
-vanishing at infinity. For the weak-derivative space `W^{k,2}(ℝⁿ)` with `2k > n` this
-representative depends linearly and boundedly on the function, so that
+vanishing at infinity, and
+
+`|u(x)| ≤ C ‖u‖_{H^s}` for almost every `x`,
+
+with `C` the `L²` norm of `(1 + ‖ξ‖ ^ 2) ^ (-s / 2)`. For the weak-derivative space
+`W^{k,2}(ℝⁿ)` with `2k > n` this representative depends linearly and boundedly on the function,
+so that
 
 `sup_x |u(x)| ≤ C ‖u‖_{W^{k,2}}`.
 
@@ -33,7 +40,11 @@ inversion on `𝓢'` gives `u = 𝓕⁻ v`, and for `v ∈ L¹` the distribution
 `x ↦ ∫ e^{2πi⟪ξ, x⟫} v(ξ) dξ` (`MeasureTheory.Lp.fourierInv_toTemperedDistribution_apply`). This
 function is continuous by dominated convergence and vanishes at infinity by the Riemann–Lebesgue
 lemma, and it represents `u` almost everywhere because both have the same pairings with Schwartz
-functions (`MeasureTheory.Lp.ae_eq_of_toTemperedDistribution_apply_eq`).
+functions (`MeasureTheory.Lp.ae_eq_of_toTemperedDistribution_apply_eq`). Quantitatively,
+`|𝓕⁻ v (x)| ≤ ‖v‖₁`, and by Plancherel the `H^s` norm of `u` is the `L²` norm of
+`(1 + |ξ|²)^{s/2} v`, so Cauchy–Schwarz gives `‖v‖₁ ≤ ‖(1 + |ξ|²)^{-s/2}‖₂ ‖u‖_{H^s}`
+(`TauCeti.eLpNorm_one_le_eLpNorm_mul_eLpNorm_rpow_one_add_norm_sq_smul`,
+`TauCeti.memLp_rpow_neg_one_add_norm_sq`).
 
 On the whole space the weak-derivative space `W^{k,2}` is the Bessel-potential space `H^{k,2}`
 (`MeasureTheory.Lp.memSobolev_natCast_iff_exists_wkp_value_eq`), so every `u ∈ W^{k,2}(ℝⁿ)` has a
@@ -49,6 +60,11 @@ spaces.
 
 * `TemperedDistribution.MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq`: an `L²` function in
   `H^s`, `2s > n`, agrees almost everywhere with a continuous function vanishing at infinity.
+* `TemperedDistribution.MemSobolev.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm`: the `H^s` norm of
+  a distribution whose Fourier transform is an `L¹` function `v` is the `L²` norm of
+  `(1 + ‖ξ‖ ^ 2) ^ (s / 2) v`.
+* `TemperedDistribution.exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace`: the bound
+  `|u(x)| ≤ C ‖u‖_{H^s}`, `2s > n`, almost everywhere.
 * `TemperedDistribution.tendsto_cocompact_of_mem_realSobolevFunctions`: a continuous real
   function in `H^s`, `2s > n`, tends to zero at infinity.
 * `TauCeti.Wkp.toZeroAtInfty`: the Sobolev embedding `W^{k,2}(ℝⁿ) →L[ℝ] C₀(ℝⁿ)` for `2k > n`.
@@ -69,7 +85,7 @@ public section
 noncomputable section
 
 open MeasureTheory Filter Module Topology TopologicalSpace
-open scoped FourierTransform SchwartzMap ZeroAtInfty
+open scoped FourierTransform SchwartzMap ZeroAtInfty ENNReal
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E]
@@ -100,6 +116,62 @@ theorem MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq {s : ℝ} (hs : finrank
   refine ⟨g, ?_⟩
   rw [ZeroAtInftyContinuousMap.coe_mk]
   exact Lp.ae_eq_fourierInv_of_fourier_eq hv
+
+/-- **The `H^s` norm on the Fourier side.** If the Fourier transform of `f ∈ H^s` is an `L¹`
+function `v`, then `‖f‖_{H^s}` is the `L²` norm of `(1 + ‖ξ‖ ^ 2) ^ (s / 2) v`. -/
+theorem MemSobolev.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm {s : ℝ} {f : 𝓢'(E, F)}
+    (hf : MemSobolev s 2 f) {v : Lp F 1 (volume : Measure E)} (hv : 𝓕 f = v) :
+    eLpNorm (fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ) 2 volume =
+      ‖hf.toBesselPotentialSpace‖ₑ := by
+  set U := hf.toBesselPotentialSpace.toLp
+  have hU : besselPotential E F s f = U := by
+    simpa using hf.toBesselPotentialSpace.bessel_toDistr_eq_toLp
+  have hwg : (fun ξ : E => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth := by
+    fun_prop
+  have hwc : Continuous fun ξ : E => (1 + ‖ξ‖ ^ 2) ^ (s / 2) :=
+    (by fun_prop : Continuous fun ξ : E => 1 + ‖ξ‖ ^ 2).rpow_const fun ξ =>
+      Or.inl (by positivity : (0 : ℝ) < 1 + ‖ξ‖ ^ 2).ne'
+  -- The `L²` function `𝓕 U` represents the weight times `v`.
+  have hae : ((𝓕 U : Lp F 2 (volume : Measure E)) : E → F) =ᵐ[volume]
+      fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ := by
+    refine Lp.ae_eq_of_toTemperedDistribution_apply_eq (𝓕 U) ?_ fun φ => ?_
+    · refine locallyIntegrable_iff.2 fun K hK => ?_
+      exact (L1.integrable_coeFn v).integrableOn.continuousOn_smul hwc.continuousOn hK
+    · rw [← Lp.fourier_toTemperedDistribution_eq U, ← hU,
+        fourier_besselPotential_eq_smulLeftCLM_fourier_apply, hv,
+        Lp.smulLeftCLM_toTemperedDistribution_apply hwg]
+      simp only [Complex.coe_smul]
+  rw [eLpNorm_congr_ae hae.symm, ← Lp.enorm_def, ← ofReal_norm, ← ofReal_norm,
+    BesselPotentialSpace.norm_fourier_toLp_eq]
+
+/-- **The quantitative Sobolev embedding `H^s ⊆ L^∞`, `s > n / 2`.** There is a constant `C`,
+depending only on `s` and `E`, such that every `L²` function `u ∈ H^s` satisfies
+`|u(x)| ≤ C ‖u‖_{H^s}` for almost every `x`. -/
+theorem exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace {s : ℝ}
+    (hs : finrank ℝ E < 2 * s) :
+    ∃ C, 0 ≤ C ∧ ∀ {u : Lp F 2 (volume : Measure E)} (hu : MemSobolev s 2 (u : 𝓢'(E, F))),
+      ∀ᵐ x ∂volume, ‖u x‖ ≤ C * ‖hu.toBesselPotentialSpace‖ := by
+  have hHolder := TauCeti.eLpNorm_one_le_eLpNorm_mul_eLpNorm_rpow_one_add_norm_sq_smul
+    (F := F) (volume : Measure E) s
+  set K := eLpNorm (fun ξ : E => (1 + ‖ξ‖ ^ 2) ^ (-s / 2)) 2 volume
+  have hK : K ≠ ∞ := (TauCeti.memLp_rpow_neg_one_add_norm_sq volume hs).ne
+  refine ⟨K.toReal, ENNReal.toReal_nonneg, fun {u} hu => ?_⟩
+  obtain ⟨v, hv⟩ := hu.fourier_memL1 hs
+  have hi := L1.integrable_coeFn v
+  -- `‖v‖₁ ≤ K ‖u‖_{H^s}` by Cauchy–Schwarz and the Fourier form of the `H^s` norm.
+  have hL1 : ∫ ξ, ‖v ξ‖ ≤ K.toReal * ‖hu.toBesselPotentialSpace‖ := by
+    have h := hHolder v
+    rw [hu.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm hv,
+      eLpNorm_one_eq_lintegral_enorm hi.aestronglyMeasurable,
+      ← ofReal_norm, ← ENNReal.ofReal_toReal hK,
+      ← ENNReal.ofReal_mul ENNReal.toReal_nonneg] at h
+    rw [integral_norm_eq_lintegral_enorm hi.aestronglyMeasurable]
+    exact ENNReal.toReal_le_of_le_ofReal (by positivity) h
+  filter_upwards [Lp.ae_eq_fourierInv_of_fourier_eq hv] with x hx
+  rw [hx, Real.fourierInv_eq_fourier_comp_neg]
+  refine (Real.norm_fourier_le_integral_norm _ x).trans ?_
+  rw [integral_neg_eq_self (fun ξ => ‖(v : E → F) ξ‖)]
+  exact hL1
 
 /-- **Continuous Sobolev functions vanish at infinity.** A continuous real function in `H^s`,
 `s > dim E / 2`, tends to zero at infinity: it agrees almost everywhere, hence everywhere, with
