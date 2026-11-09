@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cellular.ComplexProjective
+public import TauCeti.AlgebraicTopology.Cellular.ComplexProjective.Basic
+public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.ComplexProjective
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 
 /-!
@@ -81,6 +82,7 @@ def singularCohomologyEquiv {i : ℕ} (hi : i ≤ n) :
 
 /-- `TauCeti.ComplexProjectiveSpace.singularCohomologyEquiv` evaluates a class on homology and
 reads the result on `R` through the inverse of `singularHomologyIso`. -/
+@[simp]
 theorem singularCohomologyEquiv_apply {i : ℕ} (hi : i ≤ n)
     (α : (TopCat.of (ComplexProjectiveSpace n)).singularCohomology R k M (2 * i)) :
     singularCohomologyEquiv R M hi α =
@@ -123,6 +125,7 @@ def singularCohomologyEquivSelf {i : ℕ} (hi : i ≤ n) :
 variable (k) in
 /-- `TauCeti.ComplexProjectiveSpace.singularCohomologyEquivSelf` evaluates a class on the
 homology class corresponding to `1` under `singularHomologyIso`. -/
+@[simp]
 theorem singularCohomologyEquivSelf_apply {i : ℕ} (hi : i ≤ n)
     (α : (TopCat.of (ComplexProjectiveSpace n)).singularCohomology (ModuleCat.of k k) k M
       (2 * i)) :
@@ -131,7 +134,8 @@ theorem singularCohomologyEquivSelf_apply {i : ℕ} (hi : i ≤ n)
         ((singularHomologyIso (ModuleCat.of k k) hi).inv (1 : k)) := by
   simp only [singularCohomologyEquivSelf, LinearEquiv.trans_apply, singularCohomologyEquiv_apply,
     LinearMap.ringLmapEquivSelf_apply]
-  rfl
+  rw [ModuleCat.homLinearEquiv_apply]
+  exact ModuleCat.comp_apply _ _ _
 
 variable (k) in
 /-- **The ranks of the cohomology of complex projective space.** Over a nontrivial commutative
@@ -158,23 +162,8 @@ with `TauCeti.eulerChar_complexProjectiveSpace`. -/
 theorem finsum_finrank_singularCohomology [Nontrivial k] :
     ∑ᶠ m : ℕ, (-1 : ℤ) ^ m * finrank k ((TopCat.of (ComplexProjectiveSpace n)).singularCohomology
       (ModuleCat.of k k) k (ModuleCat.of k k) m) = n + 1 := by
-  simp_rw [finrank_singularCohomology]
-  rw [finsum_eq_sum_of_support_subset (s := Finset.range (2 * n + 1)) _ fun m hm ↦ by
-    by_contra h
-    simp_all [Function.mem_support]]
-  have hEven (N : ℕ) :
-      ∑ m ∈ Finset.range (2 * N + 1), (if Even m then (1 : ℤ) else 0) = N + 1 := by
-    induction N with
-    | zero => rw [Finset.sum_range_one]; simp
-    | succ N ih =>
-      rw [show 2 * (N + 1) + 1 = 2 * N + 1 + 1 + 1 by ring, Finset.sum_range_succ,
-        Finset.sum_range_succ, ih]
-      simp [Nat.even_add_one, parity_simps]
-  rw [← hEven n]
-  refine Finset.sum_congr rfl fun m hm ↦ ?_
-  have hm : m ≤ 2 * n := Nat.lt_succ_iff.1 (Finset.mem_range.1 hm)
-  by_cases he : Even m
-  · simp [he, hm, he.neg_one_pow]
-  · simp [he]
+  let := cwComplex n
+  rw [← cwEulerChar_cwComplex, cwEulerChar_def]
+  simp_rw [finrank_singularCohomology, nat_card_cell_cwComplex]
 
 end TauCeti.ComplexProjectiveSpace
