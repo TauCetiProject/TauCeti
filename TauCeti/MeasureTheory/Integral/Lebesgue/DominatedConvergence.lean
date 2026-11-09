@@ -7,8 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
-public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
-import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 
 /-!
 # Uniformly small tails of a function of finite Lebesgue integral
@@ -21,7 +19,7 @@ The file also records a squeeze principle: if `f n ≤ g n + h n` and the integr
 `h n` tend to `0`, so does the integral of `f n`; and the reverse Fatou lemma for integrals over
 sets: the integrals of a function of finite integral over measurable sets `s n` have limit
 superior at most its integral over `limsup s n`, the set of points lying in infinitely many
-`s n`, and its counterpart for `Lᵖ` seminorms.
+`s n`.
 
 ## Main statements
 
@@ -31,8 +29,6 @@ superior at most its integral over `limsup s n`, the set of points lying in infi
   two functions with integrals tending to `0` tends to `0`.
 * `TauCeti.limsup_setLIntegral_le`: `limsup ∫⁻_{s n} f ≤ ∫⁻_{limsup s n} f` when the `s n` lie
   in a set over which `f` has finite integral.
-* `TauCeti.limsup_eLpNorm_restrict_le`: `limsup ‖g‖_{Lᵖ(s n)} ≤ ‖g‖_{Lᵖ(limsup s n)}` for
-  `0 < p < ∞` when the `s n` lie in a set `t` with `g ∈ Lᵖ(t)`.
 -/
 
 public section
@@ -96,34 +92,5 @@ theorem limsup_setLIntegral_le {f : α → ℝ≥0∞} {s : ℕ → Set α} {t :
   · rw [not_frequently] at hx
     rw [limsup_congr (hx.mono fun n hn ↦ Set.indicator_of_notMem hn f)]
     simp
-
-/-- **The reverse Fatou lemma for `Lᵖ` seminorms over sets.** Let `0 < p < ∞`, let the sets `s n`
-be measurable and contained in `t`, and let `g ∈ Lᵖ(t)`. Then the limit superior of the `Lᵖ`
-seminorms of `g` over `s n` is at most its `Lᵖ` seminorm over `limsup s n`. -/
-theorem limsup_eLpNorm_restrict_le {E : Type*} [NormedAddCommGroup E] {g : α → E} {p : ℝ≥0∞}
-    (hp0 : p ≠ 0) (hptop : p ≠ ∞) {s : ℕ → Set α} {t : Set α} (hg : MemLp g p (μ.restrict t))
-    (hs : ∀ n, MeasurableSet (s n)) (hst : ∀ n, s n ⊆ t) :
-    limsup (fun n ↦ eLpNorm g p (μ.restrict (s n))) atTop ≤
-      eLpNorm g p (μ.restrict (limsup s atTop)) := by
-  -- Replace `g` by a strongly measurable function equal to it almost everywhere on `t`.
-  set h := hg.aestronglyMeasurable.mk g
-  have hlim : limsup s atTop ⊆ t := fun x hx ↦
-    (Filter.mem_limsup_iff_frequently_mem.1 hx).exists.elim fun n hn ↦ hst n hn
-  have hgh {u : Set α} (hu : u ⊆ t) : eLpNorm g p (μ.restrict u) = eLpNorm h p (μ.restrict u) :=
-    eLpNorm_congr_ae (ae_restrict_of_ae_restrict_of_subset hu hg.aestronglyMeasurable.ae_eq_mk)
-  have hmeas : StronglyMeasurable h := hg.aestronglyMeasurable.stronglyMeasurable_mk
-  have heq {u : Set α} (hu : u ⊆ t) : eLpNorm g p (μ.restrict u) =
-      (∫⁻ x in u, ‖h x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) := by
-    rw [hgh hu, eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop hmeas.aestronglyMeasurable]
-  simp_rw [heq (hst _), heq hlim]
-  have hpos : 0 ≤ 1 / p.toReal := by positivity
-  have hmap := (ENNReal.monotone_rpow_of_nonneg hpos).map_limsup_of_continuousAt (F := atTop)
-    (fun n ↦ ∫⁻ x in s n, ‖h x‖ₑ ^ p.toReal ∂μ) ENNReal.continuous_rpow_const.continuousAt
-  rw [Function.comp_def] at hmap
-  rw [← hmap]
-  refine ENNReal.rpow_le_rpow (limsup_setLIntegral_le
-    (hmeas.enorm.pow_const _) hs hst ?_) hpos
-  exact (lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top hp0 hptop
-    ((hgh le_rfl).symm.trans_lt hg.eLpNorm_lt_top)).ne
 
 end TauCeti

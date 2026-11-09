@@ -11,7 +11,7 @@ import Mathlib.Algebra.Order.Star.Real
 import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.Sobolev.Wkp.Mollification
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
-import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
+import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 
 /-!
 # The Aleksandrov–Bakelman–Pucci estimate for strong solutions

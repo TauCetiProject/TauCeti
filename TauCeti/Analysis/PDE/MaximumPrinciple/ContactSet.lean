@@ -43,7 +43,7 @@ elliptic operator applied to it, in
 * `TauCeti.PDE.norm_le_of_forall_le_add_inner`: supporting slopes of a bounded function at a
   point with a ball around it are bounded.
 * `TauCeti.PDE.mem_upperContactSet_of_frequently`: upper contact sets are upper semicontinuous
-  along pointwise convergent, locally uniformly bounded sequences of functions on growing sets,
+  along pointwise convergent sequences of functions uniformly bounded on growing sets `Vₖ`,
   which is how the estimate passes from smooth approximations to their limit.
 * `TauCeti.PDE.mem_upperContactSet_iff_gradient`: on an open set where `u` is differentiable,
   the supporting slope at a contact point is the gradient.

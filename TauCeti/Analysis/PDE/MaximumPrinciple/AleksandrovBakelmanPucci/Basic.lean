@@ -12,6 +12,7 @@ public import TauCeti.Analysis.PDE.MaximumPrinciple.ContactSet
 import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Matrix.Contraction
+import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.Matrix.PosSemidef.Determinant
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
 
@@ -266,12 +267,7 @@ theorem le_add_mul_eLpNorm_negPart_div_det_rpow_of_volume_ball_le [Nonempty ι]
   have hN : 0 ≤ N := ENNReal.toReal_nonneg
   rcases le_or_gt t m with hux | hux
   · exact le_add_of_le_of_nonneg hux (mul_nonneg (div_nonneg diam_nonneg (by positivity)) hN)
-  -- `Ω` is a nonempty open set, so it has positive diameter.
-  have hd : 0 < diam Ω := by
-    obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 hΩ x hx
-    calc 0 < 2 * ε := by positivity
-      _ = diam (ball x ε) := (diam_ball_eq x hε.le).symm
-      _ ≤ diam Ω := diam_mono hball hΩb
+  have hd : 0 < diam Ω := hΩ.diam_pos hΩb hx
   set r := (t - m) / diam Ω with hr_def
   have hr : 0 < r := div_pos (sub_pos.2 hux) hd
   have hux' : t - m = r * diam Ω := by
