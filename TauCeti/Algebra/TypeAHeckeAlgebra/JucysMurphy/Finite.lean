@@ -110,6 +110,16 @@ theorem additiveJucysMurphy_succ (k : ℕ) (hk : k + 1 < n) :
   simp only [map_add, map_mul, map_smul, toInfinite_additiveJucysMurphy, toInfinite_T,
     InfiniteTypeAHeckeAlgebra.additiveJucysMurphy_succ]
 
+/-- The finite additive recursion in the normalization `g_k = q • T k`, `Q = q²`. -/
+theorem additiveJucysMurphy_succ_eq_smul (k : ℕ) (hk : k + 1 < n) :
+    additiveJucysMurphy q ⟨k + 1, hk⟩ =
+      ((↑q⁻¹ : R) ^ 2) •
+        (((q : R) • T q ⟨k, by omega⟩) * additiveJucysMurphy q ⟨k, by omega⟩ *
+          ((q : R) • T q ⟨k, by omega⟩) + (q : R) • T q ⟨k, by omega⟩) := by
+  apply toInfinite_injective R q n
+  simpa only [map_smul, map_add, map_mul, toInfinite_additiveJucysMurphy, toInfinite_T,
+    smul_add] using InfiniteTypeAHeckeAlgebra.additiveJucysMurphy_succ_eq_smul k
+
 /-- The normalized and additive finite elements satisfy `J_i = 1 + (q² - 1) L_i`. -/
 theorem jucysMurphy_eq_one_add_smul_additiveJucysMurphy (i : Fin n) :
     jucysMurphy q i = 1 + ((q : R) ^ 2 - 1) • additiveJucysMurphy q i := by
