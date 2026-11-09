@@ -231,6 +231,18 @@ section Classical
 
 variable [CompleteSpace V]
 
+/-- A `C¹` map satisfying the classical equation at every point of `Ω` is a weak solution for
+every exponent. No regularity of `J` or `η` is needed: the classical derivative is a weak one. -/
+theorem isWeakCauchyRiemannOn_of_contDiffOn (hu : ContDiffOn ℝ 1 u Ω)
+    (h : ∀ z ∈ (Ω : Set ℂ), fderiv ℝ u z 1 + J z (u z) (fderiv ℝ u z I) = η z (u z)) :
+    IsWeakCauchyRiemannOn p Ω J η u := by
+  have hdu : ContinuousOn (fderiv ℝ u) Ω := hu.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl
+  refine ⟨hu.continuousOn, hu.continuousOn.memLpLoc, fderiv ℝ u,
+    hasWeakFDerivOn_of_differentiableOn (hdu.locallyIntegrableOn Ω.isOpen.measurableSet)
+      fun z hz => (hu.differentiableOn one_ne_zero).differentiableAt (Ω.isOpen.mem_nhds hz),
+    hdu.memLpLoc, ?_⟩
+  exact (ae_restrict_iff' Ω.isOpen.measurableSet).2 (Filter.Eventually.of_forall h)
+
 /-- **The `C¹` comparison.** For `u` of class `C¹` on `Ω`, with `J` and `η` continuous along `u`,
 the weak equation for any exponent is the pointwise equation for the classical derivative at
 every point of `Ω`. Continuity turns the almost-everywhere identity into an everywhere one. -/
@@ -238,26 +250,14 @@ theorem isWeakCauchyRiemannOn_iff_of_contDiffOn (hu : ContDiffOn ℝ 1 u Ω)
     (hJ : ContinuousOn (fun z => J z (u z)) Ω) (hη : ContinuousOn (fun z => η z (u z)) Ω) :
     IsWeakCauchyRiemannOn p Ω J η u ↔
       ∀ z ∈ (Ω : Set ℂ), fderiv ℝ u z 1 + J z (u z) (fderiv ℝ u z I) = η z (u z) := by
+  refine ⟨fun h => ?_, isWeakCauchyRiemannOn_of_contDiffOn hu⟩
   have hdu : ContinuousOn (fderiv ℝ u) Ω := hu.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl
-  have hdiff : ∀ z ∈ (Ω : Set ℂ), DifferentiableAt ℝ u z := fun z hz =>
-    (hu.differentiableOn one_ne_zero).differentiableAt (Ω.isOpen.mem_nhds hz)
   have hweak : HasWeakFDerivOn volume Ω u (fderiv ℝ u) :=
-    hasWeakFDerivOn_of_differentiableOn (hdu.locallyIntegrableOn Ω.isOpen.measurableSet) hdiff
+    hasWeakFDerivOn_of_differentiableOn (hdu.locallyIntegrableOn Ω.isOpen.measurableSet)
+      fun z hz => (hu.differentiableOn one_ne_zero).differentiableAt (Ω.isOpen.mem_nhds hz)
   have hlhs : ContinuousOn (fun z => fderiv ℝ u z 1 + J z (u z) (fderiv ℝ u z I)) Ω :=
     (hdu.clm_apply continuousOn_const).add (hJ.clm_apply (hdu.clm_apply continuousOn_const))
-  constructor
-  · intro h
-    exact Measure.eqOn_open_of_ae_eq (h.ae_eq_of_hasWeakFDerivOn hweak) Ω.isOpen hlhs hη
-  · intro h
-    refine ⟨hu.continuousOn, hu.continuousOn.memLpLoc, fderiv ℝ u, hweak, hdu.memLpLoc, ?_⟩
-    exact (ae_restrict_iff' Ω.isOpen.measurableSet).2 (Filter.Eventually.of_forall h)
-
-/-- A `C¹` map satisfying the classical equation on `Ω` is a weak solution for every exponent. -/
-theorem isWeakCauchyRiemannOn_of_contDiffOn (hu : ContDiffOn ℝ 1 u Ω)
-    (hJ : ContinuousOn (fun z => J z (u z)) Ω) (hη : ContinuousOn (fun z => η z (u z)) Ω)
-    (h : ∀ z ∈ (Ω : Set ℂ), fderiv ℝ u z 1 + J z (u z) (fderiv ℝ u z I) = η z (u z)) :
-    IsWeakCauchyRiemannOn p Ω J η u :=
-  (isWeakCauchyRiemannOn_iff_of_contDiffOn hu hJ hη).2 h
+  exact Measure.eqOn_open_of_ae_eq (h.ae_eq_of_hasWeakFDerivOn hweak) Ω.isOpen hlhs hη
 
 /-- **Constant maps.** A constant map is a weak solution exactly when the inhomogeneous term
 vanishes at its value for almost every point of `Ω`. No hypothesis on `J` is needed, since the
@@ -345,8 +345,7 @@ private theorem fderiv_conj_eq (z : ℂ) : fderiv ℝ conj z = conjCLE.toContinu
 `1 + i·i = 0`. -/
 theorem isWeakCauchyRiemannOn_id :
     IsWeakCauchyRiemannOn p Ω (fun _ _ => I • ContinuousLinearMap.id ℝ ℂ) (fun _ _ => 0) id :=
-  isWeakCauchyRiemannOn_of_contDiffOn contDiff_id.contDiffOn continuousOn_const
-    continuousOn_const fun z _ => by simp
+  isWeakCauchyRiemannOn_of_contDiffOn contDiff_id.contDiffOn fun z _ => by simp
 
 /-- Conjugation does not solve the homogeneous equation for `J = i` on a nonempty open set: its
 derivative is conjugation, and `1 + i·(-i) = 2 ≠ 0`. -/
