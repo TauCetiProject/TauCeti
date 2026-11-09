@@ -75,8 +75,6 @@ variable {n : ℕ}
 
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
-/-- The product of a globally Hölder factor `c` vanishing off `s` with a factor `g` which is
-bounded and Hölder on `s` is globally Hölder, and bounded by the product of the bounds. -/
 /-- Translating a cutoff keeps the global Hölder constant and the uniform bound of the cutoff and
 of its first and second derivatives in the directions `e i`. -/
 private theorem holderWith_translate_cutoff {ι : Type*} (e : ι → E) {α Z : ℝ≥0}
@@ -104,6 +102,8 @@ private theorem holderWith_translate_cutoff {ι : Type*} (e : ι → E) {α Z : 
   · rw [hD2]
     exact htr (hZ2 i j)
 
+/-- The product of a globally Hölder factor `c` vanishing off `s` with a factor `g` which is
+bounded and Hölder on `s` is globally Hölder, and bounded by the product of the bounds. -/
 private theorem holderWith_mul_and_abs_le {c g : E → ℝ} {s : Set E} {α Kc Mc Kg Mg : ℝ≥0}
     (hc : HolderWith Kc α c) (hcM : ∀ x, |c x| ≤ Mc) (hc0 : ∀ x ∉ s, c x = 0)
     (hg : HolderOnWith Kg α g s) (hgM : ∀ x ∈ s, |g x| ≤ Mg) :
@@ -413,7 +413,8 @@ private theorem cutoff_mul_data {ζ u : E → ℝ} {x₀ : E} {R : ℝ} {α Z N 
     (holderWith_sum_smul_fderiv_fderiv_cutoff_mul isOpen_ball hζ2 hζs hZ0 hZ1 hZ2 hu hN0 hdu hd2u
       hHu hHdu (fun i j => (hL i j).mono hsR) (fun x hx => hM x (hsR hx)) hK).mono
       (le_of_eq (by ring)), hsupp, ?_⟩
-  exact (toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall volume (EuclideanSpace.basisFun _ ℝ) hw hsupp
+  exact (toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall volume
+    (EuclideanSpace.basisFun _ ℝ) hw hsupp
     (B := 4 * Z * N) fun x i j => by simpa using (hWH i j).2 x).trans_eq
     (by simp only [Fintype.card_fin]; push_cast; ring)
 
