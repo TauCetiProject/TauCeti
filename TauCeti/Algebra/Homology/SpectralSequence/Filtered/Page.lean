@@ -38,6 +38,10 @@ Concretely, for a filtration of a complex of modules and a representative given 
 with `dx ∈ G_{q-r+2}`, the image is represented by the class of `dx`. For `r = 2` the quotients are
 the graded pieces and `δ` is the connecting map of
 `CochainComplex.spectralSequence_first_page_d_eq`.
+Dually, `d_r` followed by `CochainComplex.fromSpectralSequencePageX` is
+`CochainComplex.fromSpectralSequencePageX` followed by the connecting map
+`H^{p+q}(G_{q+r-1}/G_q) ⟶ H^{p+q+1}(G_q/G_{q-r+1})`
+(`CochainComplex.d_fromSpectralSequencePageX`).
 
 The indices of the quotients are given as integers together with equations, so that the
 statements apply to any expressions for them.
@@ -55,7 +59,10 @@ statements apply to any expressions for them.
 
 * `CochainComplex.toSpectralSequencePageX_fromSpectralSequencePageX`: the two maps compose to the
   map induced by the inclusions.
-* `CochainComplex.toSpectralSequencePageX_d`: the differentials on representatives.
+* `CochainComplex.toSpectralSequencePageX_eq`, `CochainComplex.fromSpectralSequencePageX_eq`: the
+  two maps through the spectral object, with any expressions for the indices and degrees.
+* `CochainComplex.toSpectralSequencePageX_d`, `CochainComplex.d_fromSpectralSequencePageX`: the
+  differentials on representatives.
 
 ## References
 
@@ -178,7 +185,7 @@ lemma spectralSequencePageXIsoImage_hom_ι (r : ℤ) (hr : 2 ≤ r) (pq : ℤ ×
 
 /-- `toSpectralSequencePageX` computed with other expressions `j₁`, `j₃`, `m₀` and `m₂` for the
 indices `q` and `q + r - 1` of the page object and for the degrees `n - 1` and `n + 1`. -/
-private lemma toSpectralSequencePageX_eq (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (i₀ i₂ : ℤ)
+lemma toSpectralSequencePageX_eq (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (i₀ i₂ : ℤ)
     (h₀ : i₀ = pq.2 - r + 2) (h₂ : i₂ = pq.2 + 1) (n : ℤ) (hn : n = pq.1 + pq.2) (j₁ j₃ : ℤ)
     (h₁ : j₁ = pq.2) (h₃ : j₃ = pq.2 + r - 1) (m₀ m₂ : ℤ) (hm₀ : m₀ = n - 1)
     (hm₂ : m₂ = n + 1) :
@@ -193,11 +200,29 @@ private lemma toSpectralSequencePageX_eq (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × �
   subst h₁ h₃ hm₀ hm₂
   rfl
 
+/-- `fromSpectralSequencePageX` computed with other expressions `j₀`, `j₂`, `m₀` and `m₂` for the
+indices `q - r + 2` and `q + 1` of the page object and for the degrees `n - 1` and `n + 1`. -/
+lemma fromSpectralSequencePageX_eq (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (i₁ i₃ : ℤ)
+    (h₁ : i₁ = pq.2) (h₃ : i₃ = pq.2 + r - 1) (n : ℤ) (hn : n = pq.1 + pq.2) (j₀ j₂ : ℤ)
+    (h₀ : j₀ = pq.2 - r + 2) (h₂ : j₂ = pq.2 + 1) (m₀ m₂ : ℤ) (hm₀ : m₀ = n - 1)
+    (hm₂ : m₂ = n + 1) :
+    fromSpectralSequencePageX G r hr pq i₁ i₃ h₁ h₃ n hn =
+      ((spectralObject G).spectralSequencePageXIso Abelian.SpectralObject.coreE₂Cohomological
+          r hr pq j₀ i₁ j₂ i₃ (by rw [h₀]; rfl) (by rw [h₁]; rfl) (by rw [h₂]; rfl)
+          (by rw [h₃]; rfl) m₀ n m₂ hn).hom ≫
+        (spectralObject G).fromE (eIntHomOfLE (show j₀ ≤ i₁ by lia))
+          (eIntHomOfLE (show i₁ ≤ j₂ by lia)) (eIntHomOfLE (show j₂ ≤ i₃ by lia))
+          (eIntHomOfLE (show i₁ ≤ i₃ by lia)) rfl m₀ n m₂ ≫
+        (spectralObjectHIsoCokernel G _ n).hom := by
+  subst h₀ h₂ hm₀ hm₂
+  rfl
+
 /-- **The differentials of the spectral sequence of `G` on representatives.** On page `r ≥ 2`, the
 differential from `(p, q)` to `(p + r, q - r + 1)` sends the element represented by
 `x ∈ H^n(G_c/G_b)` to the element represented by `δ x ∈ H^{n+1}(G_b/G_a)`, where `a = q - 2r + 3`,
 `b = q - r + 2`, `c = q + 1`, `n = p + q`, and `δ` is the connecting map of the short exact
 sequence `G_b/G_a ⟶ G_c/G_a ⟶ G_c/G_b`. -/
+@[reassoc]
 theorem toSpectralSequencePageX_d (r : ℤ) (hr : 2 ≤ r) (p q a b c : ℤ) (ha : a = q - 2 * r + 3)
     (hb : b = q - r + 2) (hc : c = q + 1) (n : ℤ) (hn : n = p + q) :
     toSpectralSequencePageX G r hr (p, q) b c hb hc n hn ≫
@@ -225,5 +250,43 @@ theorem toSpectralSequencePageX_d (r : ℤ) (hr : 2 ≤ r) (p q a b c : ℤ) (ha
   -- The target of the connecting map of the cokernels is the cohomology of `G_b/G_a` only up to
   -- unfolding `kernelCokernelCompSequence.snakeInput`, so `simp` cannot reassociate this composite.
   exact Category.assoc _ _ _
+
+/-- **The differentials of the spectral sequence of `G`, dually.** On page `r ≥ 2`, the
+differential from `(p, q)` to `(p + r, q - r + 1)` followed by
+`fromSpectralSequencePageX : E_r^{p+r,q-r+1} ⟶ H^{n+1}(G_b/G_a)` is
+`fromSpectralSequencePageX : E_r^{p,q} ⟶ H^n(G_c/G_b)` followed by the connecting map `δ` of the
+short exact sequence `G_b/G_a ⟶ G_c/G_a ⟶ G_c/G_b`, where `a = q - r + 1`, `b = q`,
+`c = q + r - 1` and `n = p + q`. -/
+@[reassoc]
+theorem d_fromSpectralSequencePageX (r : ℤ) (hr : 2 ≤ r) (p q a b c : ℤ) (ha : a = q - r + 1)
+    (hb : b = q) (hc : c = q + r - 1) (n : ℤ) (hn : n = p + q) :
+    ((spectralSequence G).page r).d (p, q) (p + r, q - r + 1) ≫
+        fromSpectralSequencePageX G r hr (p + r, q - r + 1) a b (by dsimp; lia) (by dsimp; lia)
+          (n + 1) (by dsimp; lia) =
+      fromSpectralSequencePageX G r hr (p, q) b c hb hc n hn ≫
+        (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact
+          (G.map (eIntHomOfLE (show a ≤ b by lia))) (G.map (eIntHomOfLE (show b ≤ c by lia)))).δ
+          n (n + 1) rfl := by
+  subst a b c n
+  rw [fromSpectralSequencePageX_eq G r hr (p + r, q - r + 1) _ _ _ _ _ _ (q - 2 * r + 3)
+    (q - r + 2) (by dsimp; lia) (by dsimp; lia) (p + q) (p + q + 2) (by lia) (by lia),
+    fromSpectralSequencePageX]
+  have h := congrArg (· ≫ (spectralObjectHIsoCokernel G
+      (eIntHomOfLE (show q - r + 1 ≤ q by lia)) (p + q + 1)).hom)
+    ((spectralObject G).spectralSequence_page_d_fromE
+      Abelian.SpectralObject.coreE₂Cohomological r hr (p, q) (p + r, q - r + 1)
+      (by simp [ComplexShape.up']; lia) (eIntHomOfLE (show q - 2 * r + 3 ≤ q - r + 1 by lia))
+      (eIntHomOfLE (show q - r + 1 ≤ q - r + 2 by lia))
+      (eIntHomOfLE (show q - r + 2 ≤ (p, q).2 by dsimp; lia))
+      (eIntHomOfLE (show (p, q).2 ≤ (p, q).2 + 1 by dsimp; lia))
+      (eIntHomOfLE (show (p, q).2 + 1 ≤ (p, q).2 + r - 1 by dsimp; lia))
+      (eIntHomOfLE (show q - r + 1 ≤ q by lia))
+      (eIntHomOfLE (show q ≤ q + r - 1 by lia)) (by simp; lia) (by simp) (by simp) rfl rfl rfl
+      (p + q - 1) (p + q) (p + q + 1) (p + q + 2) rfl)
+  simp only [Category.assoc] at h
+  rw [h, spectralObject_δ_comp_spectralObjectHIsoCokernel_hom]
+  -- The source of the connecting map of the cokernels is the cohomology of `G_c/G_b` only up to
+  -- unfolding `kernelCokernelCompSequence.snakeInput`, so `simp` cannot reassociate this composite.
+  exact ((Category.assoc _ _ _).trans (congrArg _ (Category.assoc _ _ _))).symm
 
 end CochainComplex

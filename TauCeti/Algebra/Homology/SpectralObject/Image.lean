@@ -28,7 +28,8 @@ sends the element represented by `x ∈ H^n(f₃ ≫ f₄)` to the element repre
 `X.fromE` through `δ : H^n(f₄ ≫ f₅) ⟶ H^{n+1}(f₂ ≫ f₃)`.
 
 The same descriptions hold for the pages of the spectral sequence of `X` attached to any
-`SpectralSequenceDataCore` (`X.spectralSequencePageXIsoImage`, `X.toE_spectralSequence_page_d`).
+`SpectralSequenceDataCore` (`X.spectralSequencePageXIsoImage`, `X.toE_spectralSequence_page_d`,
+`X.spectralSequence_page_d_fromE`).
 For the spectral object of a filtered complex, `H^n(f₁₂)` and `H^n(f₂₃)` are the cohomology of the
 quotients `F_{i₂}/F_{i₀}` and `F_{i₃}/F_{i₁}`, and this is the classical description of the page
 objects as images and of the differentials as connecting maps on representatives.
@@ -44,11 +45,15 @@ objects as images and of the differentials as connecting maps on representatives
 
 ## Main results
 
+* `CategoryTheory.Abelian.SpectralObject.toCycles_πE`,
+  `CategoryTheory.Abelian.SpectralObject.ιE_fromOpcycles`: `X.toE` and `X.fromE` through Mathlib's
+  `toCycles`, `πE`, `ιE` and `fromOpcycles`.
 * `CategoryTheory.Abelian.SpectralObject.toE_fromE`: `X.toE ≫ X.fromE` is the map
   `H^n(f₁ ≫ f₂) ⟶ H^n(f₂ ≫ f₃)`.
 * `CategoryTheory.Abelian.SpectralObject.toE_d`, `CategoryTheory.Abelian.SpectralObject.d_fromE`:
   the differentials on representatives.
-* `CategoryTheory.Abelian.SpectralObject.toE_spectralSequence_page_d`: the differentials of the
+* `CategoryTheory.Abelian.SpectralObject.toE_spectralSequence_page_d`,
+  `CategoryTheory.Abelian.SpectralObject.spectralSequence_page_d_fromE`: the differentials of the
   pages of the spectral sequence on representatives.
 
 ## References
@@ -74,20 +79,36 @@ variable {ι : Type*} [Category* ι] (X : SpectralObject C ι)
   (n₀ n₁ n₂ : ℤ)
 
 /-- The epimorphism `H^{n₁}(f₁₂) ⟶ E^{n₁}(f₁, f₂, f₃)` for `f₁₂ = f₁ ≫ f₂`: the elements of
-`H^{n₁}(f₁₂)` represent the elements of `E^{n₁}(f₁, f₂, f₃)`. -/
+`H^{n₁}(f₁₂)` represent the elements of `E^{n₁}(f₁, f₂, f₃)`. It is the second map of Mathlib's
+exact sequence `X.cokernelSequenceE`, named here as a morphism in its own right. -/
 noncomputable def toE (hn₁ : n₀ + 1 = n₁ := by lia) (hn₂ : n₁ + 1 = n₂ := by lia) :
     (X.H n₁).obj (mk₁ f₁₂) ⟶ X.E f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ :=
   X.toCycles f₁ f₂ f₁₂ h₁₂ n₁ ≫ X.πE f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂
+
+/-- The composite `X.toCycles ≫ X.πE` of Mathlib's API is the epimorphism `X.toE`. -/
+@[reassoc]
+lemma toCycles_πE (hn₁ : n₀ + 1 = n₁ := by lia) (hn₂ : n₁ + 1 = n₂ := by lia) :
+    X.toCycles f₁ f₂ f₁₂ h₁₂ n₁ ≫ X.πE f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ =
+      X.toE f₁ f₂ f₃ f₁₂ h₁₂ n₀ n₁ n₂ hn₁ hn₂ :=
+  (rfl)
 
 instance (hn₁ : n₀ + 1 = n₁) (hn₂ : n₁ + 1 = n₂) :
     Epi (X.toE f₁ f₂ f₃ f₁₂ h₁₂ n₀ n₁ n₂ hn₁ hn₂) := by
   rw [toE]
   infer_instance
 
-/-- The monomorphism `E^{n₁}(f₁, f₂, f₃) ⟶ H^{n₁}(f₂₃)` for `f₂₃ = f₂ ≫ f₃`. -/
+/-- The monomorphism `E^{n₁}(f₁, f₂, f₃) ⟶ H^{n₁}(f₂₃)` for `f₂₃ = f₂ ≫ f₃`. It is the first map
+of Mathlib's exact sequence `X.kernelSequenceE`, named here as a morphism in its own right. -/
 noncomputable def fromE (hn₁ : n₀ + 1 = n₁ := by lia) (hn₂ : n₁ + 1 = n₂ := by lia) :
     X.E f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ ⟶ (X.H n₁).obj (mk₁ f₂₃) :=
   X.ιE f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ ≫ X.fromOpcycles f₂ f₃ f₂₃ h₂₃ n₁
+
+/-- The composite `X.ιE ≫ X.fromOpcycles` of Mathlib's API is the monomorphism `X.fromE`. -/
+@[reassoc]
+lemma ιE_fromOpcycles (hn₁ : n₀ + 1 = n₁ := by lia) (hn₂ : n₁ + 1 = n₂ := by lia) :
+    X.ιE f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ ≫ X.fromOpcycles f₂ f₃ f₂₃ h₂₃ n₁ =
+      X.fromE f₁ f₂ f₃ f₂₃ h₂₃ n₀ n₁ n₂ hn₁ hn₂ :=
+  (rfl)
 
 instance (hn₁ : n₀ + 1 = n₁) (hn₂ : n₁ + 1 = n₂) :
     Mono (X.fromE f₁ f₂ f₃ f₂₃ h₂₃ n₀ n₁ n₂ hn₁ hn₂) := by
@@ -222,6 +243,41 @@ lemma toE_spectralSequence_page_d (r : ℤ) (hr : r₀ ≤ r) (pq pq' : κ) (hpq
     (homOfLE (data.le₂₃' r hr pq h₄ h₅)) h₀ h₁ h₂ h₃ h₄ h₅ n₀ n₁ n₂ n₃ hn₁' hn₁ hn₂ hn₃,
     Iso.inv_hom_id_assoc]
   exact X.toE_d_assoc f₁ f₂ _ _ _ f₁₂ _ f₃₄ _ n₀ n₁ n₂ n₃ hn₁ hn₂ hn₃ _
+
+/-- **The differentials of the pages of the spectral sequence, dually.** With the indices of
+`toE_spectralSequence_page_d`, the differential from `pq` to `pq'` followed by
+`X.fromE : E^{n+1}(i₀ ≤ i₁ ≤ i₂ ≤ i₃) ⟶ H^{n+1}(i₁ ≤ i₃)` is `X.fromE` followed by the connecting
+map `δ : H^n(i₃ ≤ i₅) ⟶ H^{n+1}(i₁ ≤ i₃)` of `X`. -/
+@[reassoc]
+lemma spectralSequence_page_d_fromE (r : ℤ) (hr : r₀ ≤ r) (pq pq' : κ)
+    (hpq : (c r).Rel pq pq') {i₀ i₁ i₂ i₃ i₄ i₅ : ι} (f₁ : i₀ ⟶ i₁) (f₂ : i₁ ⟶ i₂)
+    (f₃ : i₂ ⟶ i₃) (f₄ : i₃ ⟶ i₄) (f₅ : i₄ ⟶ i₅) (f₂₃ : i₁ ⟶ i₃) (f₄₅ : i₃ ⟶ i₅)
+    (h₀ : i₀ = data.i₀ r pq') (h₁ : i₁ = data.i₁ pq') (h₂ : i₂ = data.i₀ r pq)
+    (h₃ : i₃ = data.i₁ pq) (h₄ : i₄ = data.i₂ pq) (h₅ : i₅ = data.i₃ r pq)
+    (n₀ n₁ n₂ n₃ : ℤ) (hn₁' : n₁ = data.deg pq) (hn₁ : n₀ + 1 = n₁ := by lia)
+    (hn₂ : n₁ + 1 = n₂ := by lia) (hn₃ : n₂ + 1 = n₃ := by lia) :
+    ((X.spectralSequence data).page r).d pq pq' ≫
+        (X.spectralSequencePageXIso data r hr _ _ _ _ _ h₀ h₁
+          (by rw [h₂, ← data.hc₀₂ r pq pq' hpq]) (by rw [h₃, data.hc₁₃ r pq pq' hpq]) _ _ _
+            (by simpa only [← hn₂, hn₁'] using data.hc r pq pq' hpq)).hom ≫
+        X.fromE f₁ f₂ f₃ f₂₃ (Subsingleton.elim _ _) n₁ n₂ n₃ hn₂ hn₃ =
+      (X.spectralSequencePageXIso data r hr _ _ _ _ _ h₂ h₃ h₄ h₅ _ _ _ hn₁').hom ≫
+        X.fromE f₃ f₄ f₅ f₄₅ (Subsingleton.elim _ _) n₀ n₁ n₂ hn₁ hn₂ ≫
+          X.δ f₂₃ f₄₅ n₁ n₂ hn₂ := by
+  -- As in `toE_spectralSequence_page_d`, we replace `f₁`, …, `f₅` by the morphisms in the
+  -- identifications of the page objects at `pq'` and `pq`, so that the identification at `pq'`
+  -- cancels syntactically.
+  obtain rfl : f₁ = homOfLE (data.le₀₁' r hr pq' h₀ h₁) := Subsingleton.elim _ _
+  obtain rfl : f₂ = homOfLE (data.le₁₂' pq' h₁ (by rw [h₂, ← data.hc₀₂ r pq pq' hpq])) :=
+    Subsingleton.elim _ _
+  obtain rfl : f₃ = homOfLE (data.le₀₁' r hr pq h₂ h₃) := Subsingleton.elim _ _
+  obtain rfl : f₄ = homOfLE (data.le₁₂' pq h₃ h₄) := Subsingleton.elim _ _
+  obtain rfl : f₅ = homOfLE (data.le₂₃' r hr pq h₄ h₅) := Subsingleton.elim _ _
+  rw [X.spectralSequence_page_d_eq data r hr pq pq' hpq _ _
+    (homOfLE (data.le₀₁' r hr pq h₂ h₃)) (homOfLE (data.le₁₂' pq h₃ h₄))
+    (homOfLE (data.le₂₃' r hr pq h₄ h₅)) h₀ h₁ h₂ h₃ h₄ h₅ n₀ n₁ n₂ n₃ hn₁' hn₁ hn₂ hn₃,
+    Category.assoc, Category.assoc, Iso.inv_hom_id_assoc]
+  exact congrArg _ (X.d_fromE _ _ _ _ _ f₂₃ _ f₄₅ _ n₀ n₁ n₂ n₃ hn₁ hn₂ hn₃)
 
 end SpectralSequence
 
