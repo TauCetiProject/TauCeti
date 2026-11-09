@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Matching.Capacitated
+public import TauCeti.Combinatorics.Graph.Bipartition
 public import TauCeti.Combinatorics.Network.AuxiliaryTerminals
 
 /-!
@@ -75,13 +75,13 @@ theorem bipartiteLargeCapacity_def (L : Finset V(G)) (b : V(G) → ℕ) :
 def bipartiteCapacity (L R : Finset V(G)) (b : V(G) → ℕ) :
     Assignment (AuxTerminalHom (G.BipartiteHom L) L R) ℤ :=
   auxTerminalCapacity (A := L) (B := R)
-    (fun _ ↦ bipartiteLargeCapacity L b) (fun x ↦ (b x : ℤ)) fun x ↦ (b x : ℤ)
+    (fun {_ _} _ ↦ bipartiteLargeCapacity L b) (fun x ↦ (b x : ℤ)) fun x ↦ (b x : ℤ)
 
 /-- The bipartite capacity as an auxiliary-terminal capacity. -/
 theorem bipartiteCapacity_def (L R : Finset V(G)) (b : V(G) → ℕ) :
     bipartiteCapacity L R b =
       auxTerminalCapacity (A := L) (B := R)
-        (fun _ ↦ bipartiteLargeCapacity L b) (fun x ↦ (b x : ℤ)) fun x ↦ (b x : ℤ) :=
+        (fun {_ _} _ ↦ bipartiteLargeCapacity L b) (fun x ↦ (b x : ℤ)) fun x ↦ (b x : ℤ) :=
   (rfl)
 
 /-- Every capacity in the bipartite network is nonnegative. -/
@@ -232,7 +232,7 @@ theorem IsVertexCover.arrowSum_bipartiteCapacity_bipartiteCoverSourceSide
   classical
   rw [bipartiteCapacity_def]
   rw [arrowSum_auxTerminalCapacity (S := bipartiteCoverSourceSide L R C)
-    (fun _ ↦ bipartiteLargeCapacity L b) (fun x ↦ (b x : ℤ)) (fun x ↦ (b x : ℤ))
+    (fun {_ _} _ ↦ bipartiteLargeCapacity L b) (fun x ↦ (b x : ℤ)) (fun x ↦ (b x : ℤ))
     (by simp) (by simp)]
   rw [arrowSum_compl_eq_zero_of_forall_mem]
   · simpa only [bipartiteCoverSourceSide_toLeft, add_zero] using
@@ -261,7 +261,7 @@ theorem IsBipartition.arrowSum_bipartiteCapacity_eq_sum_bipartiteCutCover
       x ∈ S.toLeft → y ∈ S.toLeft :=
     bipartiteHom_closed_of_arrowSum_lt b hsmall
   rw [bipartiteCapacity_def]
-  rw [arrowSum_auxTerminalCapacity (S := S) (fun _ ↦ bipartiteLargeCapacity L b)
+  rw [arrowSum_auxTerminalCapacity (S := S) (fun {_ _} _ ↦ bipartiteLargeCapacity L b)
     (fun x ↦ (b x : ℤ)) (fun x ↦ (b x : ℤ)) hsource hsink]
   rw [arrowSum_compl_eq_zero_of_forall_mem]
   · simpa only [add_zero] using sum_bipartiteCutCover hLR b S
