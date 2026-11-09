@@ -31,7 +31,7 @@ At the identity its model-valued derivative is the trace, with no completeness a
 
 ## Main declarations
 
-* `TauCeti.mvfderiv_det_apply`: Jacobi's formula along a manifold-valued map.
+* `TauCeti.mvfderiv_det_apply`: Jacobi's formula for a matrix-valued map on a manifold.
 * `Matrix.mvfderiv_det_one`: the trace formula at the identity.
 * `Matrix.isRegularValue_det`: nonzero values of the determinant are regular.
 

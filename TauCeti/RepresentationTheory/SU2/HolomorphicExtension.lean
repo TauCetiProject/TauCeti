@@ -21,7 +21,6 @@ Lie-group structure of units.
 ## Main declarations
 
 * `TauCeti.SU2.symPowerSLHolomorphicExtension`: the native holomorphic `SL₂(ℂ)` action.
-* `TauCeti.SU2.symPowerSLHolomorphicExtension_def`: restriction of the general-linear action.
 * `TauCeti.SU2.symPowerSLHolomorphicExtension_apply`: its action in the weight basis.
 * `TauCeti.SU2.symPowerSLHolomorphicExtension_comp_toSL`: agreement with the `SU(2)` model.
 * `TauCeti.SU2.contMDiff_symPowerSLHolomorphicExtension`: complex analyticity.
@@ -107,17 +106,12 @@ theorem contMDiff_symPowerHolomorphicExtension :
 def symPowerSLHolomorphicExtension : SpecialLinearGroup (Fin 2) ℂ →* (V →L[ℂ] V)ˣ :=
   (symPowerHolomorphicExtension d).comp SpecialLinearGroup.toGL
 
-/-- The special-linear action is the restriction of the general-linear action. -/
-theorem symPowerSLHolomorphicExtension_def :
-    symPowerSLHolomorphicExtension d =
-      (symPowerHolomorphicExtension d).comp SpecialLinearGroup.toGL := (rfl)
-
 /-- The special-linear extension acts by the symmetric power in the model's weight basis. -/
 @[simp]
 theorem symPowerSLHolomorphicExtension_apply (g : SpecialLinearGroup (Fin 2) ℂ) (v : V) :
     (symPowerSLHolomorphicExtension d g : V →L[ℂ] V) v =
       weightEquiv d (symPowerRep ℂ 2 d (SpecialLinearGroup.toGL g) ((weightEquiv d).symm v)) := by
-  simp only [symPowerSLHolomorphicExtension_def, MonoidHom.comp_apply,
+  simp only [symPowerSLHolomorphicExtension, MonoidHom.comp_apply,
     symPowerHolomorphicExtension_apply]
 
 /-- Restricting the holomorphic special-linear action to `SU(2)` gives the original model. -/
@@ -125,14 +119,14 @@ theorem symPowerSLHolomorphicExtension_apply (g : SpecialLinearGroup (Fin 2) ℂ
 theorem symPowerSLHolomorphicExtension_comp_toSL :
     (symPowerSLHolomorphicExtension d).comp Matrix.specialUnitaryGroup.toSL =
       (symPowerModel d).toMonoidHom.toHomUnits := by
-  rw [symPowerSLHolomorphicExtension_def, MonoidHom.comp_assoc, toGL_comp_toSL,
+  rw [symPowerSLHolomorphicExtension, MonoidHom.comp_assoc, toGL_comp_toSL,
     symPowerHolomorphicExtension_comp_toGL]
 
 /-- The symmetric-power special-linear action is complex analytic. -/
 theorem contMDiff_symPowerSLHolomorphicExtension :
     ContMDiff 𝓘(ℂ, SpecialLinearGroup.Model (Fin 2) ℂ) 𝓘(ℂ, V →L[ℂ] V) ω
       (symPowerSLHolomorphicExtension d) := by
-  rw [symPowerSLHolomorphicExtension_def]
+  rw [symPowerSLHolomorphicExtension]
   exact (contMDiff_symPowerHolomorphicExtension d).comp SpecialLinearGroup.contMDiff_toGL
 
 end TauCeti.SU2
