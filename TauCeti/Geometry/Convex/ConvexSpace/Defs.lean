@@ -93,25 +93,31 @@ theorem weights_map_succAbove_of_eq {n : ℕ} {j k : Fin (n + 1)} {i : Fin n}
     (x.map j.succAbove).weights k = x.weights i :=
   h ▸ weights_map_apply_of_injective Fin.succAbove_right_injective x i
 
+omit [IsStrictOrderedRing R] in
 /-- The facet of the standard simplex on `Fin (n + 1)` opposite its last vertex, the points with
 vanishing last weight, is the standard simplex on `Fin n` with a zero last weight appended. -/
 theorem range_snoc_weights_zero (n : ℕ) :
     (Set.range fun s : StdSimplex R (Fin n) => (Fin.snoc ⇑s.weights 0 : Fin (n + 1) → R)) =
       {y ∈ Set.range fun s : StdSimplex R (Fin (n + 1)) => ⇑s.weights | y (Fin.last n) = 0} := by
-  -- Appending a zero weight is the face map onto the facet opposite the last vertex.
-  have hsnoc (s : StdSimplex R (Fin n)) :
-      ⇑(s.map (Fin.last n).succAbove).weights = Fin.snoc ⇑s.weights 0 := by
-    funext k
-    induction k using Fin.lastCases with
-    | last => rw [weights_map_succAbove_self, Fin.snoc_last]
-    | cast j => rw [weights_map_succAbove_of_eq (Fin.succAbove_last_apply j), Fin.snoc_castSucc]
+  -- Both sides are described by the nonnegativity and total of the weight functions.
+  have h : (Set.range fun s : StdSimplex R (Fin n) => (Fin.snoc ⇑s.weights 0 : Fin (n + 1) → R)) =
+      (fun f : Fin n → R => (Fin.snoc f 0 : Fin (n + 1) → R)) ''
+        Set.range fun s : StdSimplex R (Fin n) => ⇑s.weights := by
+    rw [← Set.range_comp]; rfl
+  rw [h, StdSimplex.range_toFun_comp_weights, StdSimplex.range_toFun_comp_weights]
   ext y
+  simp only [Set.mem_image, Set.mem_inter_iff, Set.mem_iInter, Set.mem_ofPred_eq]
   constructor
-  · rintro ⟨s, rfl⟩
-    exact ⟨⟨_, hsnoc s⟩, by simp⟩
-  · rintro ⟨⟨t, rfl⟩, ht⟩
-    obtain ⟨s, rfl⟩ := (mem_range_map_succAbove_iff _ t).2 ht
-    exact ⟨s, (hsnoc s).symm⟩
+  · rintro ⟨f, ⟨hf₁, hf₂⟩, rfl⟩
+    refine ⟨⟨fun k ↦ ?_, ?_⟩, by simp⟩
+    · induction k using Fin.lastCases with
+      | last => simp
+      | cast j => simpa using hf₁ j
+    · simpa [Fin.sum_univ_castSucc] using hf₂
+  · rintro ⟨⟨h₁, h₂⟩, ht⟩
+    refine ⟨Fin.init y, ⟨fun k ↦ h₁ k.castSucc, ?_⟩, ?_⟩
+    · simpa [Fin.sum_univ_castSucc, Fin.init, ht] using h₂
+    · simpa [ht] using Fin.snoc_init_self y
 
 /-- A function on a standard simplex which takes the value `z` on every facet takes the value `z`
 at every point with a vanishing weight. -/
