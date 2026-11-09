@@ -183,11 +183,7 @@ theorem idealCharacter_apply_prime (χ : HeckeCharacter K)
       apply Units.ext
       simp only [HeightOneSpectrum.coe_ideleFiniteCoord, IdeleGroup.coe_ofFiniteIdele,
         IdeleGroup.coe_toFiniteIdele]
-  have hv : v ∉ 𝔣.support := by
-    intro hv
-    have hzero := (NumberFieldArithmetic.mem_idealsAway_iff.mp I.property) v hv
-    rw [hI, FractionalIdeal.count_self] at hzero
-    exact one_ne_zero hzero
+  have hv : v ∉ 𝔣.support := NumberFieldArithmetic.notMem_of_coe_eq_asIdeal I.property hI
   rw [← hI', idealCharacter_apply_toIdealsAway_of_eq_one χ a]
   · rw [hxfin]
     exact (χ.finiteComponent_apply v u).symm
