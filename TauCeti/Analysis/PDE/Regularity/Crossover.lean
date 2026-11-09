@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Logarithm
 public import TauCeti.MeasureTheory.Integral.JohnNirenberg
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
@@ -60,23 +61,6 @@ namespace TauCeti
 namespace PDE
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-- The elementary estimate behind the choice of the exponent range in Moser's crossover
-estimate: if `|p| ≤ A / (C₀ + 1) * (λ / Λ)` then `|p| * (C₀ Λ / λ) ≤ A`. -/
-private lemma abs_mul_le_of_le_div_mul {A C₀ lam Lam p : ℝ} (hA : 0 < A) (hC₀ : 0 ≤ C₀)
-    (hlam : 0 < lam) (hLam : 0 ≤ Lam) (hp : |p| ≤ A / (C₀ + 1) * (lam / Lam)) :
-    |p| * (C₀ * (Lam / lam)) ≤ A := by
-  have hratio : lam / Lam * (Lam / lam) ≤ 1 := by
-    rw [div_mul_div_comm, mul_comm lam]
-    exact div_self_le_one _
-  calc |p| * (C₀ * (Lam / lam))
-      ≤ A / (C₀ + 1) * (lam / Lam) * (C₀ * (Lam / lam)) := by gcongr
-    _ = A * (C₀ / (C₀ + 1)) * (lam / Lam * (Lam / lam)) := by field_simp
-    _ ≤ A * 1 * 1 :=
-        mul_le_mul (mul_le_mul_of_nonneg_left
-          (div_le_one_of_le₀ (by linarith) (by linarith)) hA.le) hratio (by positivity)
-          (by positivity)
-    _ = A := by rw [mul_one, mul_one]
 
 /-- **Moser's crossover estimate.** There are constants `c > 0` and `K`, depending only on the
 dimension `n ≥ 1`, with the following property. Let `a` be measurable and uniformly elliptic on
@@ -141,7 +125,7 @@ theorem exists_setAverage_rpow_mul_setAverage_rpow_neg_le [Nonempty ι] :
   -- For `|p| ≤ c λ/Λ` the John–Nirenberg crossover estimate applies to `log u` with `σ = p`.
   have hσ : |p| * M ≤ A := by
     rw [hMc]
-    exact abs_mul_le_of_le_div_mul hA hC₀ hlam h.upper_nonneg hp
+    exact TauCeti.abs_mul_le_of_le_div_mul hA hC₀ hlam h.upper_nonneg hp
   have hJ := hJN (W1p.integrableOn_log_value (by simp) hε hεu
     ((ball_subset_ball (by linarith)).trans hball') measure_ball_lt_top.ne) hM hσ
   rw [hRr] at hJ
