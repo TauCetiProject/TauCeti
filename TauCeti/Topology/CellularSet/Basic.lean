@@ -61,6 +61,8 @@ of compact sets with diameters tending to `0`. The collapse is their pointwise l
   by a continuous surjection, supported in any of its neighbourhoods, whose other fibres are
   singletons.
 * `TauCeti.isCellularSet_closedBall`: closed balls are cellular.
+* `TauCeti.IsCellularSet.image`: the image of a cellular set under a continuous injection is
+  cellular.
 
 ## References
 
@@ -226,6 +228,19 @@ theorem IsCellularSet.nonempty {E : Type*} [NormedAddCommGroup E] [ProperSpace E
     (fun i ↦ (hsub i).trans (image_mono ball_subset_closedBall))
     (fun i ↦ ⟨e i 0, mem_image_of_mem _ (mem_closedBall_self zero_le_one)⟩) (hQc 0)
     fun i ↦ (hQc i).isClosed
+
+/-- The image of a cellular set under a continuous injection is cellular: the images of its cells
+are cells exhibiting it. -/
+theorem IsCellularSet.image {E : Type*} [NormedAddCommGroup E] {M N : Type*} [TopologicalSpace M]
+    [TopologicalSpace N] {X : Set M} (hX : IsCellularSet E X) {θ : M → N} (hθc : Continuous θ)
+    (hθi : Injective θ) : IsCellularSet E (θ '' X) := by
+  obtain ⟨e, hec, hei, hsub, rfl⟩ := (isCellularSet_iff E).1 hX
+  refine (isCellularSet_iff E).2 ⟨fun i ↦ θ ∘ e i, fun i ↦ hθc.comp_continuousOn (hec i),
+    fun i ↦ hθi.comp_injOn (hei i), fun i ↦ ?_, ?_⟩
+  · rw [image_comp, image_comp]
+    exact image_mono (hsub i)
+  · simp_rw [image_comp]
+    exact hθi.injOn.image_iInter_eq.symm
 
 /-- **Collapsing a cellular set.** Let `M` be a metric space which is a topological manifold
 modelled on a finite-dimensional real normed space `E`, and `X ⊆ M` a cellular set. For every open
