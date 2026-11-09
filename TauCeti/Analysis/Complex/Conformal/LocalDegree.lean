@@ -43,8 +43,8 @@ converse is Mathlib's inverse function theorem
 
 * `TauCeti.localDegree` — the count form, with the radius supplied by the caller.
 * `TauCeti.localDegree_card` — the distinct-and-simple form.
-* `TauCeti.exists_localDegree` — the textbook form: if `z₀` is an isolated solution of `f z = f z₀`,
-  suitable radii exist.
+* `TauCeti.exists_localDegree` — the textbook form: for `f` analytic at `z₀`, suitable radii
+  exist; the degree count is meaningful when `z₀` is an isolated solution of `f z = f z₀`.
 * `TauCeti.not_injOn_of_deriv_eq_zero` — a critical point destroys injectivity on *every*
   neighbourhood of `z₀`.
 * `TauCeti.exists_injOn_nhds_iff_deriv_ne_zero` — the local injectivity criterion.
@@ -181,15 +181,43 @@ theorem localDegree_card {f : ℂ → ℂ} {z₀ : ℂ} {r : ℝ} (hr : 0 < r)
     fun z hz hfz => hsimple z hz (by rw [hfz, sub_self])⟩
   rw [← hcount w hwδ, count_eq_ncard hA hsimple, hset]
 
-/-- **The open-mapping degree**, textbook form. If `f` is analytic at `z₀` and `z₀` is an isolated
-solution of `f z = f z₀` — equivalently, `f` is not constant near `z₀` — then there are radii `r`
-and `δ` for which `localDegree` applies. -/
-theorem exists_localDegree {f : ℂ → ℂ} {z₀ : ℂ} (hf : AnalyticAt ℂ f z₀)
-    (hisol : ∀ᶠ z in 𝓝[≠] z₀, f z ≠ f z₀) :
+/-- **The open-mapping degree**, textbook form. If `f` is analytic at `z₀`, then there are radii `r`
+and `δ` such that, for every `w` with `‖w - f z₀‖ < δ`, the sum of the orders of `f - w` over
+`ball z₀ r` equals the order of `f - f z₀` at `z₀`. If `z₀` is an isolated solution of
+`f z = f z₀` — equivalently, `f` is not constant near `z₀` — then `localDegree` applies and this is
+the degree count; if `f` is constant near `z₀`, every order involved is `0` by convention. -/
+theorem exists_localDegree {f : ℂ → ℂ} {z₀ : ℂ} (hf : AnalyticAt ℂ f z₀) :
     ∃ r > 0, AnalyticOnNhd ℂ f (closedBall z₀ r) ∧
       ∃ δ > 0, ∀ w : ℂ, ‖w - f z₀‖ < δ →
         (∑ᶠ z ∈ ball z₀ r, analyticOrderNatAt (fun ζ => f ζ - w) z)
           = analyticOrderNatAt (fun ζ => f ζ - f z₀) z₀ := by
+  by_cases hisol : ∀ᶠ z in 𝓝[≠] z₀, f z ≠ f z₀
+  swap
+  · -- `f` is constant near `z₀`, so all the orders vanish by convention.
+    have hc : ∀ᶠ z in 𝓝 z₀, f z = f z₀ :=
+      (hf.eventually_eq_or_eventually_ne analyticAt_const).resolve_right hisol
+    obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff.mp hc
+    have hev (w z : ℂ) (hz : z ∈ ball z₀ ε) :
+        (fun ζ => f ζ - w) =ᶠ[𝓝 z] fun _ => f z₀ - w := by
+      filter_upwards [isOpen_ball.mem_nhds hz] with ζ hζ
+      simp [hball (mem_ball.mp hζ)]
+    have hord (w z : ℂ) (hz : z ∈ ball z₀ ε) : analyticOrderNatAt (fun ζ => f ζ - w) z = 0 := by
+      by_cases h0 : f z₀ - w = 0
+      · have : analyticOrderAt (fun ζ => f ζ - w) z = ⊤ :=
+          analyticOrderAt_eq_top.2 ((hev w z hz).mono fun ζ h ↦ by simp [h, h0])
+        simp [analyticOrderNatAt, this]
+      · have : analyticOrderAt (fun ζ => f ζ - w) z = 0 :=
+          (analyticAt_const.congr (hev w z hz).symm).analyticOrderAt_eq_zero.2
+            (by simpa [(hev w z hz).self_of_nhds] using h0)
+        simp [analyticOrderNatAt, this]
+    refine ⟨ε / 2, half_pos hε, fun z hz ↦ ?_, 1, one_pos, fun w _ ↦ ?_⟩
+    · have hz' : z ∈ ball z₀ ε := lt_of_le_of_lt (mem_closedBall.mp hz) (half_lt_self hε)
+      exact analyticAt_const.congr (by
+        filter_upwards [isOpen_ball.mem_nhds hz'] with ζ hζ using
+          (hball (mem_ball.mp hζ)).symm)
+    · rw [hord (f z₀) z₀ (mem_ball_self hε)]
+      exact finsum_mem_eq_zero_of_forall_eq_zero fun z hz ↦
+        hord w z (ball_subset_ball (half_le_self hε.le) hz)
   obtain ⟨ε₁, hε₁, hA₁⟩ := Metric.eventually_nhds_iff.mp hf.eventually_analyticAt
   obtain ⟨ε₂, hε₂, hI₂⟩ := Metric.eventually_nhds_iff.mp (eventually_nhdsWithin_iff.mp hisol)
   refine ⟨min (ε₁ / 2) (ε₂ / 2), lt_min (by linarith) (by linarith), fun z hz => ?_, ?_⟩
