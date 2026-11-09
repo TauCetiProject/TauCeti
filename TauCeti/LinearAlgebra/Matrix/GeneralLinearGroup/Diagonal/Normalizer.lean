@@ -188,15 +188,20 @@ instance [Semiring k] [Subsingleton (Fin n)] :
 
 section Monomial
 
-variable [CommSemiring k] [Nontrivial k]
+variable [CommSemiring k]
 
-/-- An invertible matrix over a nontrivial commutative semiring is monomial, a diagonal matrix
+/-- An invertible matrix over a commutative semiring is monomial, a diagonal matrix
 followed by a permutation matrix, as soon as every row has at most one nonzero entry. -/
 theorem exists_eq_diagGL_mul_permutationGL_of_row {g : GL (Fin n) k}
     (hrow : ∀ i j l, (g : Matrix (Fin n) (Fin n) k) i j ≠ 0 →
       (g : Matrix (Fin n) (Fin n) k) i l ≠ 0 → j = l) :
     ∃ d : Fin n → kˣ, ∃ σ : Equiv.Perm (Fin n),
       g = diagGL d * permutationGL (k := k) σ := by
+  classical
+  by_cases hk : Subsingleton k
+  · let _ := hk
+    exact ⟨fun _ ↦ 1, 1, Subsingleton.elim _ _⟩
+  let _ : Nontrivial k := not_subsingleton_iff_nontrivial.mp hk
   let G : Matrix (Fin n) (Fin n) k := g
   let Ginv : Matrix (Fin n) (Fin n) k := (g⁻¹ : GL (Fin n) k)
   have hGGinv : G * Ginv = 1 := by
@@ -283,11 +288,6 @@ theorem exists_eq_diagGL_mul_permutationGL_of_forall_ne {g : GL (Fin n) k}
       g * diagGL t * g⁻¹ ∈ diagonalTorus k n ∧ t i ≠ t j) :
     ∃ d : Fin n → kˣ, ∃ σ : Equiv.Perm (Fin n),
       g = diagGL d * permutationGL (k := k) σ := by
-  classical
-  by_cases hk : Subsingleton k
-  · let _ := hk
-    exact ⟨fun _ ↦ 1, 1, Subsingleton.elim _ _⟩
-  let _ : Nontrivial k := not_subsingleton_iff_nontrivial.mp hk
   refine exists_eq_diagGL_mul_permutationGL_of_row fun i j l hj hl ↦ ?_
   by_contra hjl
   obtain ⟨t, ht, htjl⟩ := hsep j l hjl
