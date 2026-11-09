@@ -11,6 +11,7 @@ import Mathlib.RingTheory.Finiteness.Cardinality
 import Mathlib.RingTheory.Finiteness.Ideal
 import TauCeti.Algebra.Module.Projective.Schanuel
 import TauCeti.RingTheory.Ideal.IdempotentFG
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Almost finite presentation: Schanuel's lemma, invariance and exact sequences
@@ -70,44 +71,7 @@ variable {V : Type u} [CommRing V] {S : BasicSetup V}
   {M N P : Type*} [AddCommGroup M] [Module V M] [AddCommGroup N] [Module V N]
   [AddCommGroup P] [Module V P]
 
-/-! ### Auxiliary submodule estimates -/
-
-/-- The ideal spanned by `s` multiplies `p` into `q` as soon as every element of `s` does. -/
-private theorem span_smul_le {s : Set V} {p q : Submodule V M}
-    (h : ∀ r ∈ s, ∀ x ∈ p, r • x ∈ q) : Ideal.span s • p ≤ q := by
-  rw [← p.span_eq, span_smul_span, span_le]
-  rintro _ ⟨r, hr, x, hx, rfl⟩
-  exact h r hr x hx
-
-/-- A triple product `span s * span t * K` multiplies `p` into `q` as soon as `j • k • k' • x ∈ q`
-for all generators `j ∈ s`, `k ∈ t` and all `k' ∈ K`, `x ∈ p`. -/
-private theorem span_mul_span_mul_smul_le {s t : Set V} {K : Ideal V} {p q : Submodule V M}
-    (h : ∀ j ∈ s, ∀ k ∈ t, ∀ k' ∈ K, ∀ x ∈ p, j • k • k' • x ∈ q) :
-    (Ideal.span s * (Ideal.span t * K)) • p ≤ q := by
-  rw [Submodule.mul_smul, Submodule.mul_smul]
-  refine span_smul_le fun j hj y hy ↦ ?_
-  suffices h' : Ideal.span t • K • p ≤ q.comap (j • LinearMap.id) from mem_comap.mp (h' hy)
-  refine span_smul_le fun k hk y hy ↦ ?_
-  suffices h' : K • p ≤ q.comap ((j * k) • LinearMap.id) by
-    simpa only [mem_comap, LinearMap.smul_apply, LinearMap.id_apply, mul_smul] using h' hy
-  exact smul_le.mpr fun k' hk' x hx ↦ by
-    simpa only [mem_comap, LinearMap.smul_apply, LinearMap.id_apply, mul_smul] using
-      h j hj k hk k' hk' x hx
-
-/-- If the cokernel of `φ` is killed by `K`, then `K` multiplies `ker l` into the image of
-`ker (l ∘ φ)`. -/
-private theorem smul_ker_le_map_ker_comp {φ : P →ₗ[V] M} {K : Ideal V}
-    (hφ : K • (⊤ : Submodule V M) ≤ range φ) (l : M →ₗ[V] N) :
-    K • ker l ≤ (ker (l ∘ₗ φ)).map φ := by
-  rw [ker_comp, map_comap_eq]
-  exact le_inf ((smul_mono_right K le_top).trans hφ) smul_le_right
-
-/-- Composing with a surjection keeps the cokernel killed by `K`. -/
-private theorem smul_top_le_range_comp {φ : P →ₗ[V] M} {K : Ideal V}
-    (hφ : K • (⊤ : Submodule V M) ≤ range φ) {l : M →ₗ[V] N} (hl : Function.Surjective l) :
-    K • (⊤ : Submodule V N) ≤ range (l ∘ₗ φ) := by
-  rw [range_comp, ← range_eq_top.mpr hl, range_eq_map l, ← map_smul'']
-  exact map_mono hφ
+/-! ### Auxiliary kernel estimate -/
 
 /-- If `f` has almost zero kernel and `K ≤ m`, then `K` multiplies `ker (f ∘ φ)` into `ker φ`. -/
 private theorem smul_ker_comp_le_ker {f : M →ₗ[V] N} (hf : S.IsAlmostZero (ker f))
