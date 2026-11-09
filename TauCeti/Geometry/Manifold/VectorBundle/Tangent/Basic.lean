@@ -326,6 +326,45 @@ theorem mvfderiv_extend_eventuallyEq (hf : ContMDiffAt I 𝓘(𝕜, F) 1 f x)
 
 end Extend
 
+section TrivializationCoordinates
+
+/-- If a tangent vector field is `C^n` on `V`, then its coordinate expression in the preferred
+trivialization of the tangent bundle at `a`, read through the inverse extended chart, is `C^n` on
+the interior points of the chart target which lie over `V`. -/
+theorem contDiffOn_trivializationAt_extChartAt_symm {n : ℕ∞ω} [IsManifold I (n + 1) M]
+    (v : (x : M) → TangentSpace I x) (a : M) {V : Set M} :
+    haveI : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
+    ContMDiffOn I I.tangent n (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) V →
+    ContDiffOn 𝕜 n (fun z ↦ (trivializationAt E (TangentSpace I) a
+      (⟨(extChartAt I a).symm z, v ((extChartAt I a).symm z)⟩ : TangentBundle I M)).2)
+      (interior (extChartAt I a).target ∩ (extChartAt I a).symm ⁻¹' V) := by
+  have _ : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
+  have _ : IsManifold I n M := IsManifold.of_le (n := n + 1) le_self_add
+  have _ : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  intro hv
+  let e := trivializationAt E (TangentSpace I) a
+  let W := interior (extChartAt I a).target ∩ (extChartAt I a).symm ⁻¹' V
+  have hsection : ContMDiffOn (modelWithCornersSelf 𝕜 E) I.tangent n
+      ((fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) ∘ (extChartAt I a).symm)
+      W := hv.comp
+    ((contMDiffOn_extChartAt_symm a).mono (inter_subset_left.trans interior_subset))
+    (fun _ hz ↦ hz.2)
+  have hmap : MapsTo
+      ((fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) ∘ (extChartAt I a).symm)
+      W e.source := by
+    intro z hz
+    rw [TangentBundle.trivializationAt_source]
+    -- Membership in this preimage reduces definitionally by projecting the displayed
+    -- tangent-bundle point to its base point; there is no separate projection lemma to apply.
+    change (extChartAt I a).symm z ∈ (chartAt H a).source
+    simpa only [extChartAt_source] using
+      (extChartAt I a).map_target (interior_subset hz.1)
+  have hcoord := ((e.contMDiffOn_iff hmap).mp hsection).2
+  simpa only [Function.comp_apply] using hcoord.contDiffOn
+
+end TrivializationCoordinates
+
 section TangentChart
 
 /-- The tangent coordinate change between the charts at `x` and `y` is `C^n` on the overlap of
