@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Diamond
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Gamma0
 
 import TauCeti.NumberTheory.ModularForms.AtkinLehner.DoubleCoset
+import TauCeti.Data.ZMod.Units
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 import TauCeti.NumberTheory.ModularForms.HeckeSlash.Conjugation
 
@@ -171,6 +172,30 @@ local notation "φ" => Matrix.GeneralLinearGroup.map (n := Fin 2) (algebraMap �
 variable {n : ℕ} [NeZero n]
 
 omit [NeZero N] in
+/-- The integral matrix identity `diag(1, n) · W = W · A · diag(1, n) · B` gives the same identity
+for the corresponding elements of `GL(2, ℝ)`. -/
+private lemma natDiagGL_mul_atkinLehnerGL_eq_of_mul_eq (hQ : 0 < Q)
+    {W : Matrix (Fin 2) (Fin 2) ℤ} (hW : IsAtkinLehnerMatrix N Q W) {A B : SL(2, ℤ)}
+    (key : !![1, 0; 0, (n : ℤ)] * W = W * (A : Matrix (Fin 2) (Fin 2) ℤ) * !![1, 0; 0, (n : ℤ)] *
+      (B : Matrix (Fin 2) (Fin 2) ℤ)) :
+    φ (natDiagGL 2 ![1, n]) * atkinLehnerGL hQ hW =
+      atkinLehnerGL hQ hW * mapGL ℝ A * φ (natDiagGL 2 ![1, n] * mapGL ℚ B) := by
+  have hX : (↑(φ (natDiagGL 2 ![1, n])) : Matrix (Fin 2) (Fin 2) ℝ) =
+      (!![1, 0; 0, (n : ℤ)] : Matrix (Fin 2) (Fin 2) ℤ).map (↑) := by
+    rw [Matrix.GeneralLinearGroup.val_map_apply, coe_map_natDiagGL_one]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp
+  have hφB : (↑(φ (natDiagGL 2 ![1, n] * mapGL ℚ B)) : Matrix (Fin 2) (Fin 2) ℝ) =
+      (!![1, 0; 0, (n : ℤ)] * (B : Matrix (Fin 2) (Fin 2) ℤ)).map (↑) := by
+    rw [map_mul, Units.val_mul, hX, Matrix.map_mul_intCast, map_mapGL,
+      coe_mapGL_int]
+  refine Units.ext ?_
+  rw [Units.val_mul, Units.val_mul, Units.val_mul, hX, hφB, coe_atkinLehnerGL,
+    coe_mapGL_int,
+    ← Matrix.map_mul_intCast, ← Matrix.map_mul_intCast, ← Matrix.map_mul_intCast, key]
+  simp only [Matrix.mul_assoc]
+
+omit [NeZero N] in
 /-- **`diag(1, n)` moves across an Atkin–Lehner matrix of Atkin–Li shape.** For `n` coprime to
 `N` there are an Atkin–Lehner matrix `W` for `Q`, `A ∈ Γ₀(N)` and `B ∈ Γ₁(N)` with
 `diag(1, n) · W = W · A · diag(1, n) · B`, where the diamond label of `A` is `n⁻¹` modulo `Q` and
@@ -226,41 +251,17 @@ private lemma exists_natDiagGL_mul_atkinLehnerGL_eq (h : Q ∥ N) (hn : n.Coprim
   have hlabel : (((Gamma0Map N).toHomUnits ⟨A, hA⟩ : (ZMod N)ˣ) : ZMod N) =
       ((Q * a + j * (Q * m) * b + m * b * l : ℤ) : ZMod N) := by
     simp [A, Am, Gamma0Map_apply]
-  refine ⟨W, hW, A, hA, eq_inv_of_mul_eq_one_left (Units.ext ?_), Units.ext ?_, B,
-    mem_Gamma1_of_dvd_lowerRow (by simp [B, Bm]) (by simp [B, Bm]), Units.ext ?_⟩
-  · -- modulo `Q`, the label times `n` is `1`
-    rw [Units.val_mul, ZMod.unitsMap_val, hlabel, ZMod.cast_intCast h.dvd,
-      ZMod.coe_unitOfCoprime, Units.val_one]
-    have hmod : (Q * a + j * (Q * m) * b + m * b * l) * (n : ℤ) =
-        1 + Q * (n * a + n * j * m * b - n * l * a - j) := by
-      linear_combination ((n : ℤ) * l) * hred + hjl
-    have := congrArg (Int.cast : ℤ → ZMod Q) hmod
-    push_cast [ZMod.natCast_self] at this
-    simpa using this
-  · -- modulo `N / Q`, the label is `1`
-    rw [ZMod.unitsMap_val, hlabel, ZMod.cast_intCast (Nat.div_dvd_of_dvd h.dvd), Units.val_one]
-    have hmod : Q * a + j * (Q * m) * b + m * b * l = 1 + m * (b * (j * Q + l - 1)) := by
-      linear_combination hred
-    rw [hmod]
-    push_cast [← hm, ZMod.natCast_self]
-    ring
-  · -- the matrix identity, read in `GL (Fin 2) ℝ`
-    have hX : (↑(φ (natDiagGL 2 ![1, n])) : Matrix (Fin 2) (Fin 2) ℝ) = X.map (↑) := by
-      rw [Matrix.GeneralLinearGroup.val_map_apply, coe_map_natDiagGL_one]
-      ext i j
-      fin_cases i <;> fin_cases j <;> simp [X]
-    have hφB : (↑(φ (natDiagGL 2 ![1, n] * mapGL ℚ B)) : Matrix (Fin 2) (Fin 2) ℝ) =
-        (X * Bm).map (↑) := by
-      -- `mapGL` of the literal `B = ⟨Bm, _⟩` is `Bm` with its entries cast, by definition
-      rw [map_mul, Units.val_mul, hX, Matrix.map_mul_intCast, map_mapGL]
-      rfl
-    -- likewise for the literal `A = ⟨Am, _⟩`
-    have hAm : (↑(mapGL ℝ A) : Matrix (Fin 2) (Fin 2) ℝ) = Am.map (↑) := by
-      rw [mapGL_coe_matrix]
-      rfl
-    rw [Units.val_mul, Units.val_mul, Units.val_mul, hX, hφB, coe_atkinLehnerGL, hAm,
-      ← Matrix.map_mul_intCast, ← Matrix.map_mul_intCast, ← Matrix.map_mul_intCast, key]
-    simp only [Matrix.mul_assoc]
+  have hmodQ : (Q * a + j * (Q * m) * b + m * b * l) * (n : ℤ) =
+      1 + Q * (n * a + n * j * m * b - n * l * a - j) := by
+    linear_combination ((n : ℤ) * l) * hred + hjl
+  have hmodm : Q * a + j * (Q * m) * b + m * b * l = 1 + m * (b * (j * Q + l - 1)) := by
+    linear_combination hred
+  exact ⟨W, hW, A, hA,
+    ZMod.unitsMap_eq_inv_unitOfCoprime_of_intCast_mul_eq h.dvd (hn.coprime_dvd_right h.dvd) hlabel
+      hmodQ,
+    ZMod.unitsMap_eq_one_of_intCast_eq (Nat.div_dvd_of_dvd h.dvd) hlabel hmodm, B,
+    mem_Gamma1_of_dvd_lowerRow (by simp [B, Bm]) (by simp [B, Bm]),
+    natDiagGL_mul_atkinLehnerGL_eq_of_mul_eq h.pos hW key⟩
 
 /-- The trace argument behind `atkinLehnerOperatorGamma1_heckeTNat`: a factorization
 `diag(1, n) · W = W · A · diag(1, n) · B` with `A ∈ Γ₀(N)` and `B ∈ Γ₁(N)` gives
