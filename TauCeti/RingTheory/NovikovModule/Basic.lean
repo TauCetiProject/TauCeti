@@ -74,6 +74,11 @@ theorem mem_of_finite_support {a : S → R} (ha : (Function.support a).Finite) :
     a ∈ NovikovModule R F :=
   fun _ => ha.subset fun _ hs => hs.1
 
+/-- With finitely many generators no completion is needed: every coefficient function is a
+completed combination. -/
+theorem eq_top_of_finite [Finite S] : NovikovModule R F = ⊤ :=
+  eq_top_iff.2 fun _ _ => mem_of_finite_support (Set.toFinite _)
+
 /-- A point mass at a generator is a completed combination. -/
 theorem pi_single_mem [DecidableEq S] (s : S) (r : R) : Pi.single s r ∈ NovikovModule R F :=
   mem_of_finite_support ((Set.finite_singleton s).subset Pi.support_single_subset)

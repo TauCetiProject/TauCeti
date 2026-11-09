@@ -55,6 +55,8 @@ design of the additive API follows that of Mathlib's `HahnSeries` in
 * `TauCeti.NovikovSeries.bddBelow_image_support` and
   `TauCeti.NovikovSeries.exists_isLeast_image_support`: the periods of the support are bounded
   below, and a nonzero series attains a least period on its support.
+* `TauCeti.NovikovSeries.finite_support_of_bddAbove`: if the periods are bounded above, every
+  Novikov series has finite support.
 * `TauCeti.NovikovSeries.isLeast_order`: the order of a nonzero series is the least period of its
   support.
 * `TauCeti.NovikovSeries.min_order_le_order_add`: the order of a nonzero sum is at least the
@@ -127,6 +129,13 @@ theorem forall_finite_lt_iff_forall_finite_le (f : H → R) :
 theorem finite_le (a : NovikovSeries R H N) (C : ℝ) :
     {h | a.coeff h ≠ 0 ∧ N h ≤ C}.Finite :=
   (forall_finite_lt_iff_forall_finite_le a.coeff).1 a.finite_lt C
+
+/-- If the periods are bounded above, for instance if they vanish, every Novikov series has finite
+support: a single period cutoff lies above all of its exponents. -/
+theorem finite_support_of_bddAbove (hN : BddAbove (range N)) (a : NovikovSeries R H N) :
+    a.support.Finite := by
+  obtain ⟨C, hC⟩ := hN
+  exact (a.finite_le C).subset fun h hh => ⟨hh, hC ⟨h, rfl⟩⟩
 
 /-- The periods of the support of a Novikov series are bounded below. -/
 theorem bddBelow_image_support (a : NovikovSeries R H N) : BddBelow (N '' a.support) := by
