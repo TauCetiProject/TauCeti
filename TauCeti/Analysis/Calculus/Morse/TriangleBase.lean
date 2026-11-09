@@ -16,7 +16,8 @@ two-parameter family over the ordered triangle `0 ≤ v ≤ u ≤ 1` (`TauCeti.t
 field is `(a(u), a(v))`, the field `a(t) = C t (1 - t²)` of the interval base
 (`TauCeti.intervalBasePotential`) in each coordinate: the negative gradient of the separated sum
 `C h(u) + C h(v)` (`TauCeti.triangleBasePotential`) on the `L²` plane. This file describes its
-dynamics on the triangle.
+dynamics on the triangle. The overview below assumes that the rate `C` is positive; each declaration
+states its own hypothesis on `C`.
 
 * **Vertices.** The zeros of the field in the triangle are its three vertices `(0, 0)`, `(1, 0)`
   and `(1, 1)`, nondegenerate critical points of Morse index `2`, `1` and `0`.
@@ -141,7 +142,7 @@ theorem gradient_triangleBasePotential_eq_zero_iff (hC : C ≠ 0) {z : WithLp 2 
     · exact Or.inr (Or.inr ⟨hu, hv⟩)
   · rintro (⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩) <;> simp [hu, hv]
 
-/-- For `C ≠ 0` the source `(0, 0)` is a nondegenerate critical point. -/
+/-- For `C ≠ 0` the vertex `(0, 0)`, the source when `C > 0`, is a nondegenerate critical point. -/
 theorem isNondegenerateCriticalPoint_triangleBasePotential_toLp_zero_zero (hC : C ≠ 0) :
     IsNondegenerateCriticalPoint (triangleBasePotential C) (WithLp.toLp 2 (0, 0)) :=
   (isNondegenerateCriticalPoint_intervalBasePotential_zero hC).separatedSum
@@ -153,7 +154,7 @@ theorem isNondegenerateCriticalPoint_triangleBasePotential_toLp_one_zero (hC : C
   (isNondegenerateCriticalPoint_intervalBasePotential_one hC).separatedSum
     (isNondegenerateCriticalPoint_intervalBasePotential_zero hC)
 
-/-- For `C ≠ 0` the sink `(1, 1)` is a nondegenerate critical point. -/
+/-- For `C ≠ 0` the vertex `(1, 1)`, the sink when `C > 0`, is a nondegenerate critical point. -/
 theorem isNondegenerateCriticalPoint_triangleBasePotential_toLp_one_one (hC : C ≠ 0) :
     IsNondegenerateCriticalPoint (triangleBasePotential C) (WithLp.toLp 2 (1, 1)) :=
   (isNondegenerateCriticalPoint_intervalBasePotential_one hC).separatedSum
@@ -206,7 +207,7 @@ theorem snd_triangleBaseFlow (C s : ℝ) (z : WithLp 2 (ℝ × ℝ)) :
 theorem triangleBaseFlow_zero (C : ℝ) (z : WithLp 2 (ℝ × ℝ)) : triangleBaseFlow C 0 z = z := by
   simp [triangleBaseFlow, WithLp.ext_iff, Prod.ext_iff]
 
-/-- The flow fixes the source `(0, 0)`. -/
+/-- The flow fixes the vertex `(0, 0)`. -/
 @[simp]
 theorem triangleBaseFlow_toLp_zero_zero (C s : ℝ) :
     triangleBaseFlow C s (WithLp.toLp 2 (0, 0)) = WithLp.toLp 2 (0, 0) := by
@@ -218,7 +219,7 @@ theorem triangleBaseFlow_toLp_one_zero (C s : ℝ) :
     triangleBaseFlow C s (WithLp.toLp 2 (1, 0)) = WithLp.toLp 2 (1, 0) := by
   simp [triangleBaseFlow]
 
-/-- The flow fixes the sink `(1, 1)`. -/
+/-- The flow fixes the vertex `(1, 1)`. -/
 @[simp]
 theorem triangleBaseFlow_toLp_one_one (C s : ℝ) :
     triangleBaseFlow C s (WithLp.toLp 2 (1, 1)) = WithLp.toLp 2 (1, 1) := by
@@ -312,7 +313,7 @@ theorem tendsto_triangleBaseFlow_atBot_toLp_one_zero (hC : 0 < C) {z : WithLp 2 
 /-- The parameter `U(u) - U(v)` of the orbits of the triangle base through the open square
 `(0, 1)²`, where `U(t) = log t - (1 / 2) log (1 - t²)` is the time coordinate of the interval base
 (`TauCeti.intervalBaseTimeCoordinate`). It is constant along the flow
-(`TauCeti.triangleBaseOrbitParameter_triangleBaseFlow`) and classifies the orbits
+(`TauCeti.triangleBaseOrbitParameter_triangleBaseFlow`) and, for `C ≠ 0`, classifies the orbits
 (`TauCeti.exists_triangleBaseFlow_eq_iff`). On the part of the triangle in the open square
 `(0, 1)²` it is nonnegative and vanishes exactly on the diagonal. Its values off `(0, 1)²` are
 meaningless. -/
@@ -336,12 +337,14 @@ theorem triangleBaseOrbitParameter_triangleBaseFlow (C s : ℝ) {z : WithLp 2 (�
 
 /-- On the open square `(0, 1)²` the orbit parameter is nonnegative exactly on the triangle
 `v ≤ u`. -/
+@[simp]
 theorem triangleBaseOrbitParameter_nonneg_iff {z : WithLp 2 (ℝ × ℝ)} (hu : z.fst ∈ Ioo 0 1)
     (hv : z.snd ∈ Ioo 0 1) : 0 ≤ triangleBaseOrbitParameter z ↔ z.snd ≤ z.fst := by
   rw [triangleBaseOrbitParameter, sub_nonneg]
   exact strictMonoOn_intervalBaseTimeCoordinate.le_iff_le hv hu
 
 /-- On the open square `(0, 1)²` the orbit parameter vanishes exactly on the diagonal. -/
+@[simp]
 theorem triangleBaseOrbitParameter_eq_zero_iff {z : WithLp 2 (ℝ × ℝ)} (hu : z.fst ∈ Ioo 0 1)
     (hv : z.snd ∈ Ioo 0 1) : triangleBaseOrbitParameter z = 0 ↔ z.fst = z.snd := by
   rw [triangleBaseOrbitParameter, sub_eq_zero]

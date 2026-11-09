@@ -406,19 +406,37 @@ theorem _root_.HasDerivAt.intervalBaseTimeCoordinate_comp {x : ℝ → ℝ} {s :
   refine ((hasDerivAt_intervalBaseTimeCoordinate hxs).comp s hx).congr_deriv ?_
   field_simp [hxs.1.ne', h1.ne']
 
+/-- **The time coordinate advances at rate `C` along the flow.** -/
+@[simp]
+theorem intervalBaseTimeCoordinate_intervalBaseFlow (C s : ℝ) {t : ℝ} (ht : t ∈ Ioo 0 1) :
+    intervalBaseTimeCoordinate (intervalBaseFlow C s t) = intervalBaseTimeCoordinate t + C * s := by
+  have ht' : t ∈ Icc (-1) 1 := ⟨by linarith [ht.1], ht.2.le⟩
+  have hD := intervalBaseFlow_denom_pos C s ht'
+  have h1 : 0 < 1 - t ^ 2 := by nlinarith [ht.1, ht.2]
+  have hsub : 1 - intervalBaseFlow C s t ^ 2 =
+      (1 - t ^ 2) * Real.exp (-(2 * C * s)) / (t ^ 2 + (1 - t ^ 2) * Real.exp (-(2 * C * s))) := by
+    rw [intervalBaseFlow_sq C s ht']
+    field_simp
+    ring
+  rw [intervalBaseTimeCoordinate, hsub, intervalBaseFlow, intervalBaseTimeCoordinate,
+    Real.log_div ht.1.ne' (Real.sqrt_pos.2 hD).ne', Real.log_sqrt hD.le,
+    Real.log_div (mul_pos h1 (Real.exp_pos _)).ne' hD.ne', Real.log_mul h1.ne' (Real.exp_pos _).ne',
+    Real.log_exp]
+  ring
+
+private theorem intervalBaseTimeCoordinate_inv_sqrt_two :
+    intervalBaseTimeCoordinate (√2)⁻¹ = 0 := by
+  rw [intervalBaseTimeCoordinate, inv_pow, Real.sq_sqrt zero_le_two,
+    show (1 : ℝ) - 2⁻¹ = 2⁻¹ by norm_num, Real.log_inv, Real.log_inv, Real.log_sqrt zero_le_two]
+  ring
+
 /-- Along the trajectory `q` the time coordinate is exactly `C s`. -/
 @[simp]
 theorem intervalBaseTimeCoordinate_intervalBaseOrbit (C s : ℝ) :
     intervalBaseTimeCoordinate (intervalBaseOrbit C s) = C * s := by
-  have hw0 : 0 < 1 + Real.exp (-(2 * C * s)) := by positivity
-  have h1 : 1 - intervalBaseOrbit C s ^ 2 =
-      Real.exp (-(2 * C * s)) * (1 + Real.exp (-(2 * C * s)))⁻¹ := by
-    rw [intervalBaseOrbit_sq]
-    field_simp
-    ring
-  rw [intervalBaseTimeCoordinate, h1, intervalBaseOrbit, Real.log_inv, Real.log_sqrt hw0.le,
-    Real.log_mul (Real.exp_pos _).ne' (inv_ne_zero hw0.ne'), Real.log_exp, Real.log_inv]
-  ring
+  rw [intervalBaseOrbit_eq_intervalBaseFlow,
+    intervalBaseTimeCoordinate_intervalBaseFlow C s inv_sqrt_two_mem_Ioo,
+    intervalBaseTimeCoordinate_inv_sqrt_two, zero_add]
 
 /-- The time coordinate is strictly increasing on `(0, 1)`. -/
 theorem strictMonoOn_intervalBaseTimeCoordinate :
@@ -458,24 +476,6 @@ theorem tendsto_nhds_one_of_tendsto_intervalBaseTimeCoordinate_atTop {α : Type*
     intervalBaseOrbit_one_intervalBaseTimeCoordinate hi
 
 /-! ### The flow and the time coordinate -/
-
-/-- **The time coordinate advances at rate `C` along the flow.** -/
-@[simp]
-theorem intervalBaseTimeCoordinate_intervalBaseFlow (C s : ℝ) {t : ℝ} (ht : t ∈ Ioo 0 1) :
-    intervalBaseTimeCoordinate (intervalBaseFlow C s t) = intervalBaseTimeCoordinate t + C * s := by
-  have ht' : t ∈ Icc (-1) 1 := ⟨by linarith [ht.1], ht.2.le⟩
-  have hD := intervalBaseFlow_denom_pos C s ht'
-  have h1 : 0 < 1 - t ^ 2 := by nlinarith [ht.1, ht.2]
-  have hsub : 1 - intervalBaseFlow C s t ^ 2 =
-      (1 - t ^ 2) * Real.exp (-(2 * C * s)) / (t ^ 2 + (1 - t ^ 2) * Real.exp (-(2 * C * s))) := by
-    rw [intervalBaseFlow_sq C s ht']
-    field_simp
-    ring
-  rw [intervalBaseTimeCoordinate, hsub, intervalBaseFlow, intervalBaseTimeCoordinate,
-    Real.log_div ht.1.ne' (Real.sqrt_pos.2 hD).ne', Real.log_sqrt hD.le,
-    Real.log_div (mul_pos h1 (Real.exp_pos _)).ne' hD.ne', Real.log_mul h1.ne' (Real.exp_pos _).ne',
-    Real.log_exp]
-  ring
 
 private theorem strictMonoOn_intervalBaseFlow_Icc_zero_one (C s : ℝ) :
     StrictMonoOn (intervalBaseFlow C s) (Icc 0 1) := by
