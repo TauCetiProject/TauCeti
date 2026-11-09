@@ -35,8 +35,7 @@ induced on a finite product is injective as soon as each factor induces an injec
 For any localization, extension also preserves injectivity of a linear map into a module over
 the localized semiring, without requiring its image to span the target.
 
-If a submodule `K'` of an `R'`-algebra `A'` is a base change to `R'` of a submodule `K` of an
-`R`-algebra `A`, compatibly with `A → A'`, then `K'` lies in the `R'`-span of the image of `K`.
+The image of a base change map spans its target over the extended scalars.
 
 ## Main results
 
@@ -54,8 +53,7 @@ If a submodule `K'` of an `R'`-algebra `A'` is a base change to `R'` of a submod
 * `LinearMap.liftBaseChange_pi_injective`: injectivity of the induced map on finite products.
 * `LinearMap.liftBaseChange_injective`: extension to a localization preserves injectivity of a
   map into a module over the localized semiring, without a full-span hypothesis.
-* `Submodule.mem_span_image_of_isBaseChange`: the elements of a base change `K'` of `K` lie in the
-  `R'`-span of the image of `K`.
+* `IsBaseChange.span_range_eq_top`: the image of a base change map spans its target over `R'`.
 -/
 
 public section
@@ -176,20 +174,18 @@ theorem LinearMap.liftBaseChange_injective (f : M →ₗ[R] V) (S : Submonoid R)
 
 end
 
-namespace Submodule
+namespace IsBaseChange
 
-/-- If `h : K →ₗ[R] K'` is a base change to `R'` of a submodule `K` of an `R`-algebra `A` into an
-`R'`-submodule `K'` of `A'`, compatible with `A → A'`, then every element of `K'` lies in the
-`R'`-span of the image of `K`. -/
-theorem mem_span_image_of_isBaseChange {R A R' A' : Type*} [CommSemiring R] [CommSemiring A]
-    [CommSemiring R'] [CommSemiring A'] [Algebra R A] [Algebra R R'] [Algebra R' A']
-    [Algebra A A'] (K : Submodule R A) {K' : Submodule R' A'} [Module R K']
-    [IsScalarTower R R' K'] (h : K →ₗ[R] K') (hbc : IsBaseChange R' h)
-    (hh : ∀ x, (h x : A') = algebraMap A A' x) (n : K') :
-    (n : A') ∈ span R' (algebraMap A A' '' (K : Set A)) := by
-  induction n using hbc.inductionOn with
-  | tmul a => exact hh a ▸ subset_span ⟨a, a.2, rfl⟩
+/-- The image of a base change map `f : M →ₗ[R] M'` spans `M'` over the extended scalars `R'`. -/
+theorem span_range_eq_top {R R' M M' : Type*} [CommSemiring R] [CommSemiring R'] [Algebra R R']
+    [AddCommMonoid M] [Module R M] [AddCommMonoid M'] [Module R M'] [Module R' M']
+    [IsScalarTower R R' M'] {f : M →ₗ[R] M'} (hf : IsBaseChange R' f) :
+    Submodule.span R' (Set.range f) = ⊤ := by
+  refine eq_top_iff.2 fun n _ ↦ ?_
+  clear ‹n ∈ ⊤›
+  induction n using hf.inductionOn with
+  | tmul a => exact Submodule.subset_span ⟨a, rfl⟩
   | smul r n hn => exact Submodule.smul_mem _ r hn
   | add n₁ n₂ h₁ h₂ => exact Submodule.add_mem _ h₁ h₂
 
-end Submodule
+end IsBaseChange

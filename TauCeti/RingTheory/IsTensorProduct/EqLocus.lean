@@ -133,10 +133,17 @@ theorem eqLocus_eq_adjoin_of_isPushout [Module.Flat R R']
   rw [Subalgebra.mem_toSubring]
   refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
   · -- every element of the kernel of `g'` is an `R'`-combination of images of invariants
-    exact adjoin_mono (Set.image_mono fun a ha ↦ sub_eq_zero.mp ha)
-      (Algebra.span_le_adjoin R' _
-        (Submodule.mem_span_image_of_isBaseChange (LinearMap.ker g) h₁ hbc (fun _ ↦ rfl)
-          ⟨x, (hg' x).mp hx⟩))
+    suffices ∀ n : LinearMap.ker g', (n : A') ∈ adjoin R' (algebraMap A A' '' eqLocus _ t) from
+      this ⟨x, (hg' x).mp hx⟩
+    intro n
+    have hn : n ∈ Submodule.span R' (Set.range h₁) := hbc.span_range_eq_top ▸ Submodule.mem_top
+    induction hn using Submodule.span_induction with
+    | mem n hn =>
+      obtain ⟨a, rfl⟩ := hn
+      exact subset_adjoin ⟨a, sub_eq_zero.mp a.2, rfl⟩
+    | zero => exact zero_mem _
+    | add n₁ n₂ _ _ h₁ h₂ => exact add_mem h₁ h₂
+    | smul r n _ hn => exact Subalgebra.smul_mem _ hn r
   · -- the images of the invariants of `A` and of `R'` are invariants of `A'`
     refine adjoin_image_eqLocus_subset (ψ := algebraMap B B') ?_ ht₁ ht₂.symm hx
     ext a
