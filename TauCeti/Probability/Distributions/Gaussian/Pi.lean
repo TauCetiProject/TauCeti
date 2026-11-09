@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.PiWithDensity
 public import TauCeti.Probability.Distributions.Gaussian.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -55,11 +56,8 @@ theorem prod_gaussianPDFReal_zero_one (x : ι → ℝ) :
     ∏ i, gaussianPDFReal 0 1 (x i)
       = (2 * π) ^ (-(Fintype.card ι : ℝ) / 2) * exp (-(∑ i, x i ^ 2) / 2) := by
   have hπ : (0 : ℝ) < 2 * π := by positivity
-  have hconst : (√(2 * π))⁻¹ ^ Fintype.card ι = (2 * π) ^ (-(Fintype.card ι : ℝ) / 2) := by
-    rw [Real.sqrt_eq_rpow, ← Real.rpow_neg hπ.le, ← Real.rpow_natCast _ (Fintype.card ι),
-      ← Real.rpow_mul hπ.le]
-    congr 1
-    ring
+  have hconst : (√(2 * π))⁻¹ ^ Fintype.card ι = (2 * π) ^ (-(Fintype.card ι : ℝ) / 2) :=
+    Real.inv_sqrt_pow_eq_rpow hπ.le _
   have hexp : ∑ i, -(x i ^ 2 / 2) = -(∑ i, x i ^ 2) / 2 := by
     rw [Finset.sum_neg_distrib, ← Finset.sum_div]
     ring

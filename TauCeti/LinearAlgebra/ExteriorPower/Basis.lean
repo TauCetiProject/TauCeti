@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 public import Mathlib.LinearAlgebra.Trace
+public import TauCeti.Order.Hom.PowersetCard
 
 /-!
 # Action and trace formulas in exterior-power bases
@@ -72,12 +73,8 @@ theorem _root_.Module.Basis.map_exteriorPower_of_apply (b : Module.Basis I R M) 
     (a : I → R) (hf : ∀ i, f (b i) = a i • b i) (d : ℕ) (s : Set.powersetCard I d) :
     map d f (b.exteriorPower d s) = (∏ i ∈ (s : Finset I), a i) • b.exteriorPower d s := by
   have hprod : ∏ j : Fin d, a (Set.powersetCard.ofFinEmbEquiv.symm s j)
-      = ∏ i ∈ (s : Finset I), a i := by
-    rw [← Finset.prod_coe_sort s.1 a]
-    apply Fintype.prod_equiv (s.1.orderIsoOfFin s.2).toEquiv
-    intro j
-    rw [Set.powersetCard.ofFinEmbEquiv_symm_apply]
-    exact congrArg a (Finset.coe_orderIsoOfFin_apply s.1 s.2 j)
+      = ∏ i ∈ (s : Finset I), a i :=
+    Set.powersetCard.prod_comp_ofFinEmbEquiv_symm s a
   have hfun :
       (f ∘ b) ∘ Set.powersetCard.ofFinEmbEquiv.symm s =
         fun j => a (Set.powersetCard.ofFinEmbEquiv.symm s j) •

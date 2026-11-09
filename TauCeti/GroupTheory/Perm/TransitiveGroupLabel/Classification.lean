@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
 public import Mathlib.GroupTheory.Sylow
 public import TauCeti.GroupTheory.Perm.SylowFive
 import TauCeti.GroupTheory.GroupAction.Transitive
+import TauCeti.GroupTheory.Perm.FinFour.Matching
 import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Cyclic
 import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.KleinFour
 
@@ -261,22 +262,6 @@ elements are the three double transpositions, and each of them commutes with the
 transposition `finRotate 4 ^ 2`. -/
 theorem referenceSubgroup_four_one_le_referenceSubgroup_four_two :
     referenceSubgroup 4 ⟨1, by simp⟩ ≤ referenceSubgroup 4 ⟨2, by simp⟩ := by
-  -- `Equiv.Perm.cycleType` does not reduce, so `decide` the statement for a fixed-point-free
-  -- involution and read those two properties off the cycle type instead.
-  have hcomm : ∀ σ : Perm (Fin 4), σ.cycleType = {2, 2} →
-      σ * finRotate 4 ^ 2 = finRotate 4 ^ 2 * σ := by
-    have hdec : ∀ σ : Perm (Fin 4), σ ^ 2 = 1 → (∀ x, σ x ≠ x) →
-        σ * finRotate 4 ^ 2 = finRotate 4 ^ 2 * σ := by decide +kernel
-    intro σ hσ
-    refine hdec σ ?_ fun x => ?_
-    · have h2 : orderOf σ = 2 := by rw [← Equiv.Perm.lcm_cycleType, hσ]; simp
-      rw [← h2]
-      exact pow_orderOf_eq_one σ
-    · have hsupp : σ.support = Finset.univ := by
-        refine Finset.eq_univ_of_card _ ?_
-        rw [← Equiv.Perm.sum_cycleType, hσ]; simp
-      rw [← Equiv.Perm.mem_support, hsupp]
-      exact Finset.mem_univ x
   rw [referenceSubgroup_four_one, referenceSubgroup_four_two,
     closure_finRotate_four_swap_eq_centralizer, Subgroup.map_le_iff_le_comap]
   intro g hg
@@ -284,7 +269,12 @@ theorem referenceSubgroup_four_one_le_referenceSubgroup_four_two :
   simp only [Subgroup.mem_comap, Subgroup.subtype_apply, Subgroup.mem_centralizer_singleton_iff]
   rcases hg with hg | hg
   · simp [Set.mem_singleton_iff.1 hg]
-  · exact hcomm _ hg
+  · obtain ⟨m, hm⟩ := cycleType_eq_two_two_iff_exists_symmetricGroupFourMatching.1 hg
+    rw [hm]
+    fin_cases m <;>
+      simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, symmetricGroupFourMatching_zero,
+        symmetricGroupFourMatching_one, symmetricGroupFourMatching_two] <;>
+      decide +kernel
 
 /-- The reference subgroup of `4T3` is not contained in the alternating group: it contains the
 odd permutation `finRotate 4`. -/
@@ -406,16 +396,13 @@ private theorem exists_transitiveGroupLabel_four_of_natCard_eq_four (G : Subgrou
       exact hg1 (congrArg Subtype.val
         (eq_one_of_natCard_eq_of_smul_eq_self (by simpa using hG) hfix))
     -- A fixed-point-free involution of four points is a double transposition.
-    -- `Equiv.Perm.cycleType` does not reduce, so `decide` which permutation `σ` is and read its
-    -- sign and cycle type off that.
     have hklein : ∀ σ : Perm (Fin 4), σ ^ 2 = 1 → (∀ x, σ x ≠ x) →
         sign σ = 1 ∧ σ.cycleType = {2, 2} := by
-      have hdec : ∀ σ : Perm (Fin 4), σ ^ 2 = 1 → (∀ x, σ x ≠ x) →
-          σ = swap 0 1 * swap 2 3 ∨ σ = swap 0 2 * swap 1 3 ∨ σ = swap 0 3 * swap 1 2 := by
-        decide +kernel
       intro σ h2 hfree
-      rcases hdec σ h2 hfree with rfl | rfl | rfl <;>
-        exact ⟨by decide, Equiv.Perm.cycleType_swap_mul_swap_of_nodup (by decide)⟩
+      obtain ⟨m, rfl⟩ :=
+        exists_eq_symmetricGroupFourMatching_of_sq_eq_one_of_forall_apply_ne h2 hfree
+      exact ⟨mem_alternatingGroup.1 (symmetricGroupFourMatching_mem_alternatingGroup m),
+        cycleType_eq_two_two_iff_exists_symmetricGroupFourMatching.2 ⟨m, rfl⟩⟩
     refine ⟨⟨1, by simp⟩, transitiveGroupLabel_of_eq ?_⟩
     refine Subgroup.eq_of_le_of_card_ge (fun g hg => ?_)
       (by rw [hG, natCard_referenceSubgroup_four_one])

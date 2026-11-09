@@ -348,15 +348,19 @@ theorem min_rpow_lt_two_rpow_sub_one_mul {q δ r : ℝ} (hq : 1 < q) (hδ : 0 < 
     have h2 : (2 : ℝ) ^ q / 2 * (1 + 1) = 2 ^ q := by ring
     rwa [one_rpow, h2sub, h2]
 
-/-- **A uniform strict power mean inequality.** For `1 < q` and `0 < δ ≤ 1` there is `κ > 0`
+/-- **A uniform strict power mean inequality.** For `1 < q` and `0 < δ` there is `κ > 0`
 such that `u ^ q ≤ (1 - κ) * 2 ^ (q - 1) * (s ^ q + t ^ q)` whenever
 `0 ≤ t ≤ s` and `0 ≤ u ≤ min (s + t) ((2 - δ) * s)`. After rescaling to `s = 1`, the gap
 between the two sides is a continuous positive function of `t ∈ [0, 1]`, so it has a positive
 minimum. This is the scalar part of `TauCeti.exists_forall_norm_add_rpow_le`. -/
-theorem exists_rpow_le_of_le_add_of_le_two_sub_mul {q δ : ℝ} (hq : 1 < q) (hδ : 0 < δ)
-    (hδ1 : δ ≤ 1) :
+theorem exists_rpow_le_of_le_add_of_le_two_sub_mul {q δ : ℝ} (hq : 1 < q) (hδ : 0 < δ) :
     ∃ κ, 0 < κ ∧ ∀ s t u : ℝ, 0 ≤ t → t ≤ s → 0 ≤ u → u ≤ s + t → u ≤ (2 - δ) * s →
       u ^ q ≤ (1 - κ) * 2 ^ (q - 1) * (s ^ q + t ^ q) := by
+  -- For `δ > 1` the bound `u ≤ (2 - δ) * s` implies the case `δ = 1`.
+  wlog hδ1 : δ ≤ 1 generalizing δ
+  · obtain ⟨κ, hκ, h⟩ := this one_pos le_rfl
+    refine ⟨κ, hκ, fun s t u ht hts hu hus hu2 ↦ h s t u ht hts hu hus ?_⟩
+    nlinarith [ht.trans hts, not_le.1 hδ1]
   have hq0 : 0 < q := by linarith
   have h2sub : (2 : ℝ) ^ (q - 1) = 2 ^ q / 2 := rpow_sub_one two_ne_zero q
   -- The gap between the two sides after rescaling to `s = 1`.
@@ -474,8 +478,9 @@ open Real in
 `a < 0` and every `b`, `‖u b - u a‖ ≤ K |b - a| (-a)^(β - 1)`, where `0 ≤ β ≤ 1`. -/
 theorem norm_sub_le_mul_abs_sub_mul_rpow_of_neg_left {F : Type*} [NormedAddCommGroup F]
     {u : ℝ → F} {c : F} {β K : ℝ} (hβ₀ : 0 ≤ β) (hβ₁ : β - 1 ≤ 0)
-    (hK : 0 ≤ K) (hneg : ∀ r ≤ 0, u r = c) (hrate : ∀ r, 0 ≤ r → ‖u r - c‖ ≤ K * r ^ β)
+    (hneg : ∀ r ≤ 0, u r = c) (hrate : ∀ r, 0 ≤ r → ‖u r - c‖ ≤ K * r ^ β)
     {a : ℝ} (ha : a < 0) (b : ℝ) : ‖u b - u a‖ ≤ K * (|b - a| * (-a) ^ (β - 1)) := by
+  have hK : 0 ≤ K := by simpa using (norm_nonneg _).trans (hrate 1 zero_le_one)
   rw [hneg a ha.le]
   have hd : 0 < -a := neg_pos.2 ha
   rcases le_or_gt b 0 with hb | hb
@@ -500,10 +505,13 @@ open Real in
 /-- If `u` is constant equal to `c` on `(-∞, 0]` and `‖u r - c‖ ≤ K r^β` for `r ≥ 0`, then for
 `a > 0` and `b < a / 2`, `‖u b - u a‖ ≤ 4 K |b - a| a^(β - 1)`. -/
 theorem norm_sub_le_mul_abs_sub_mul_rpow_of_lt_half {F : Type*} [NormedAddCommGroup F]
-    {u : ℝ → F} {c : F} {β K : ℝ} (hβ₀ : 0 ≤ β) (hK : 0 ≤ K)
+    {u : ℝ → F} {c : F} {β K : ℝ} (hβ₀ : 0 ≤ β)
     (hneg : ∀ r ≤ 0, u r = c) (hrate : ∀ r, 0 ≤ r → ‖u r - c‖ ≤ K * r ^ β)
     {a b : ℝ} (ha : 0 < a) (hb : b < a / 2) :
     ‖u b - u a‖ ≤ 4 * K * (|b - a| * a ^ (β - 1)) := by
+  have hK : 0 ≤ K := by
+    have := (norm_nonneg _).trans (hrate a ha.le)
+    exact nonneg_of_mul_nonneg_left this (Real.rpow_pos_of_pos ha β)
   have h1 : ‖u b - c‖ ≤ K * a ^ β := by
     rcases le_or_gt b 0 with hb0 | hb0
     · rw [hneg b hb0, sub_self, norm_zero]
