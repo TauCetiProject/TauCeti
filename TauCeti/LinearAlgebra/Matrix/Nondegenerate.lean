@@ -11,7 +11,7 @@ import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
-# Separating two vectors by a left-separating form
+# Separating vectors by a left- or right-separating form
 
 For a left-separating matrix `M` over a field (for example a nondegenerate one), the linear forms
 `w ↦ v ⬝ᵥ M *ᵥ w` determine `v`. This file records the two-vector form of that statement: if `x`
@@ -21,10 +21,16 @@ is not a multiple of `u`, then some `w` is orthogonal to `u` but not to `x`. Oth
 complements Mathlib's `Matrix.Nondegenerate.exists_not_ortho_of_ne_zero`, the case `u = 0`, and is
 the basic tool for moving vectors by transvections in the classical groups.
 
+For a right-separating matrix `M` over any commutative semiring (for example a nondegenerate one,
+over the field with two elements as well), two nonzero vectors `x` and `y` have a common vector `z`
+pairing nontrivially with both `M *ᵥ x` and `M *ᵥ y`.
+
 ## Main results
 
 * `Matrix.SeparatingLeft.exists_ortho_and_not_ortho_of_notMem_span`: a vector orthogonal to `u` but
   not to `x`, when `x` is not a multiple of `u`.
+* `Matrix.SeparatingRight.exists_not_ortho_and_not_ortho_of_ne_zero_of_ne_zero`: a vector `z` with
+  `z ⬝ᵥ M *ᵥ x ≠ 0` and `z ⬝ᵥ M *ᵥ y ≠ 0`, for nonzero `x` and `y`.
 -/
 
 public section
@@ -55,3 +61,24 @@ theorem exists_ortho_and_not_ortho_of_notMem_span (hM : M.SeparatingLeft) {u x :
     eq_comm] using congr($hc w)
 
 end Matrix.SeparatingLeft
+
+namespace Matrix.SeparatingRight
+
+variable {m n R : Type*} [Fintype m] [Fintype n] [CommSemiring R] {M : Matrix m n R}
+
+/-- If `M` is right-separating (for example nondegenerate) and `x`, `y` are nonzero, then some `z`
+pairs nontrivially with both: `z ⬝ᵥ M *ᵥ x ≠ 0` and `z ⬝ᵥ M *ᵥ y ≠ 0`. This holds over any
+commutative semiring, in particular over the field with two elements. -/
+theorem exists_not_ortho_and_not_ortho_of_ne_zero_of_ne_zero (hM : M.SeparatingRight)
+    {x y : n → R} (hx : x ≠ 0) (hy : y ≠ 0) :
+    ∃ z, z ⬝ᵥ M *ᵥ x ≠ 0 ∧ z ⬝ᵥ M *ᵥ y ≠ 0 := by
+  obtain ⟨v, hv⟩ := not_forall.mp (mt (separatingRight_def.mp hM x) hx)
+  obtain ⟨w, hw⟩ := not_forall.mp (mt (separatingRight_def.mp hM y) hy)
+  by_cases hvy : v ⬝ᵥ M *ᵥ y = 0
+  · by_cases hwx : w ⬝ᵥ M *ᵥ x = 0
+    · exact ⟨v + w, by simpa [add_dotProduct, hwx] using hv,
+        by simpa [add_dotProduct, hvy] using hw⟩
+    · exact ⟨w, hwx, hw⟩
+  · exact ⟨v, hv, hvy⟩
+
+end Matrix.SeparatingRight
