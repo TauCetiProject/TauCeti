@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Toric.Delzant.Basic
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import Mathlib.LinearAlgebra.StdBasis
 import TauCeti.Algebra.Group.Pi.Lemmas
-import TauCeti.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 import Mathlib.LinearAlgebra.Pi
 
 /-!
