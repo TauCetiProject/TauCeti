@@ -35,7 +35,8 @@ Godement resolution `F ⟶ G⁰(F) ⟶ G¹(F) ⟶ ⋯`:
   naturally in `F` (`CategoryTheory.Sheaf.H'.homologyMap_comp_homologyIsoCohomologyPresheaf_hom`);
 * at the whole space the cohomology presheaf is `Hⁿ(X, U F)`
   (`CategoryTheory.Sheaf.cohomologyPresheafEvaluationIsoFunctorH`), and the sections complex of
-  `U G(F)` over `X` is the complex of abelian groups underlying `Γ(G(F))`.
+  `U G(F)` over `X` is the complex of abelian groups underlying `Γ(G(F))`
+  (`CategoryTheory.Sheaf.ΓCompIsoSheafComposeCompΓ`).
 
 No separation, compactness or nonemptiness hypothesis is made on `X`.
 
@@ -131,18 +132,6 @@ private def godementHomologyIso (n : ℕ) :
 end Resolution
 
 variable (X R) in
-/-- Global sections of a sheaf of modules, regarded as an abelian group, are the sections over the
-whole space of its underlying abelian sheaf. -/
-private def ΓCompForget₂Iso :
-    Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R) ⋙
-        forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u} ≅
-      forgetSheaf X R ⋙ sheafToPresheaf _ AddCommGrpCat.{u} ⋙
-        (evaluation (Opens X)ᵒᵖ AddCommGrpCat.{u}).obj (op ⊤) :=
-  Functor.isoWhiskerRight (Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop) _ ≪≫
-    -- the value at `⊤` of the sectionwise composite with `forget₂` is `forget₂` of the sections
-    NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun _ ↦ rfl)
-
-variable (X R) in
 /-- **Derived global sections of module sheaves compute the cohomology of the underlying abelian
 sheaves.** For sheaves of modules over a commutative ring on any topological space, the abelian
 group underlying `RⁿΓ(F)` is naturally isomorphic to the `Ext`-based cohomology `Hⁿ(X, U F)` of
@@ -162,7 +151,10 @@ def moduleCohomologyForgetComparison
         _ n).symm ≪≫
     -- the global sections of the Godement terms are the sections over `⊤` of the abelian terms
     Functor.isoWhiskerLeft (godementResolution (ModuleCat.{u} R) X)
-      (Functor.isoWhiskerRight (Functor.mapHomologicalComplexCompIso (ΓCompForget₂Iso X R) _ ≪≫
+      (Functor.isoWhiskerRight (Functor.mapHomologicalComplexCompIso
+          (Sheaf.ΓCompIsoSheafComposeCompΓ _ _ isTerminalTop ≪≫
+            Functor.isoWhiskerLeft _ (Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop ≪≫
+              sheafSectionsNatIsoEvaluation _ _)) _ ≪≫
           (Functor.mapHomologicalComplexCompIso (Iso.refl _) _).symm ≪≫
           Functor.isoWhiskerLeft _ (Functor.mapHomologicalComplexCompIso (Iso.refl _) _).symm)
         (HomologicalComplex.homologyFunctor _ _ n)) ≪≫
