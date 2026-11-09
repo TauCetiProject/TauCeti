@@ -67,7 +67,14 @@ private theorem surjective_mvfderiv (hgv : mvfderiv I g p (v p) ≠ 0) :
     Surjective (mvfderiv I g p) := fun c ↦
   ⟨(c / mvfderiv I g p (v p)) • v p, by rw [map_smul, smul_eq_mul, div_mul_cancel₀ _ hgv]⟩
 
-omit [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M] in
+/-- The normal return derivative is the restriction of the linearized return map. -/
+private theorem normalReturnDerivative_eq_restrict
+    {h : LinearMap.range (returnDerivative v g T₀ p) ≤
+      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)} :
+    normalReturnDerivative v g T₀ p h =
+      (returnDerivative v g T₀ p).restrict fun w _ ↦ h (LinearMap.mem_range_self _ w) :=
+  LinearMap.ext fun w ↦ Subtype.ext (coe_normalReturnDerivative_apply w)
+
 /-- **The linearized return map splits off the normal return derivative.** If the linearized
 return map of a section transverse to `v` takes values in the tangent space `ker dg_p` of the
 section, its characteristic polynomial is `X` times that of the normal return derivative. -/
@@ -88,9 +95,7 @@ theorem charpoly_returnDerivative_eq_X_mul (hgv : mvfderiv I g p (v p) ≠ 0)
     ((mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ).quotKerEquivOfSurjective
       (surjective_mvfderiv hgv)).finrank_eq.trans (Module.finrank_self ℝ)
   rw [LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ K A hK, hQ, LinearMap.charpoly_zero,
-    hrank, pow_one, mul_comm]
-  -- The normal return derivative is the restriction of `A` to `K`.
-  rfl
+    hrank, pow_one, mul_comm, normalReturnDerivative_eq_restrict]
 
 /-- **The time-`0` transition is the identity on the section to first order.** For a section
 through `p` transverse to `v`, the normal derivative of the time-`0` transition is the identity. -/
@@ -98,9 +103,10 @@ theorem normalReturnDerivative_zero (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : Ta
     (hg : ContMDiffAt I 𝓘(ℝ) 1 g p) (hgv : mvfderiv I g p (v p) ≠ 0)
     {h : LinearMap.range (returnDerivative v g 0 p) ≤
       LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)} :
-    normalReturnDerivative v g 0 p h = 1 :=
-  LinearMap.ext fun w ↦ Subtype.ext <|
-    mfderiv_flowTransition_zero_apply_of_mvfderiv_eq_zero hv hg hgv (LinearMap.mem_ker.1 w.2)
+    normalReturnDerivative v g 0 p h = 1 := by
+  ext w
+  rw [coe_normalReturnDerivative_apply, returnDerivative_apply, one_apply_eq_self]
+  exact mfderiv_flowTransition_zero_apply_of_mvfderiv_eq_zero hv hg hgv (LinearMap.mem_ker.1 w.2)
 
 section Return
 
@@ -119,11 +125,10 @@ theorem normalReturnDerivative_natCast_mul (k : ℕ)
       LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)} :
     normalReturnDerivative v g (k * T₀) p hk = normalReturnDerivative v g T₀ p h ^ k := by
   ext w
-  rw [normalReturnDerivative, Module.End.pow_restrict, LinearMap.restrict_coe_apply,
-    LinearMap.restrict_coe_apply]
+  rw [coe_normalReturnDerivative_apply, normalReturnDerivative_eq_restrict (h := h),
+    Module.End.pow_restrict, LinearMap.coe_restrict_apply]
   rcases eq_or_ne k 0 with rfl | hk0
-  · rw [pow_zero, Module.End.one_apply, returnDerivative_apply]
-    simp only [Nat.cast_zero, zero_mul]
+  · rw [pow_zero, one_apply_eq_self, Nat.cast_zero, zero_mul, returnDerivative_apply]
     exact mfderiv_flowTransition_zero_apply_of_mvfderiv_eq_zero hv hg hgv (LinearMap.mem_ker.1 w.2)
   · rw [returnDerivative_natCast_mul hv hP hp hg hgv hk0]
 
@@ -175,7 +180,7 @@ theorem charpoly_mfderiv_flowOf_eq_X_sub_one_mul
   have hres : Mo.restrict (p := L) (q := L) hL = 1 := by
     ext ⟨x, hx⟩
     obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hx
-    rw [LinearMap.coe_restrict_apply, map_smul, hfix, Module.End.one_apply]
+    rw [LinearMap.coe_restrict_apply, map_smul, hfix, one_apply_eq_self]
   have hcompl : IsCompl L K :=
     ⟨(Submodule.disjoint_span_singleton_of_notMem hgv).symm,
       codisjoint_iff.2 (LinearMap.span_singleton_sup_ker_eq_top _ hgv)⟩
@@ -187,16 +192,17 @@ theorem charpoly_mfderiv_flowOf_eq_X_sub_one_mul
     simp only [e, LinearEquiv.conj_apply, LinearMap.coe_comp, LinearEquiv.coe_coe, comp_apply,
       Submodule.quotientEquivOfIsCompl_symm_apply, Submodule.mapQ_apply,
       Submodule.quotientEquivOfIsCompl_apply_mk]
-    let A := returnDerivative v g T₀ p
-    have hDP : A w ∈ K := h (LinearMap.mem_range_self A w)
+    have hDP : returnDerivative v g T₀ p w ∈ K :=
+      h (LinearMap.mem_range_self _ (w : TangentSpace I p))
     -- `Mo w` differs from the return derivative by a multiple of `v p`, which the projection kills.
-    have hMo : Mo w = A w - mvfderiv I (flowHittingTime v g T₀ p) p w • v p :=
-      eq_sub_of_add_eq' hform.symm
+    have hMo : Mo w =
+        returnDerivative v g T₀ p w - mvfderiv I (flowHittingTime v g T₀ p) p w • v p := by
+      rw [returnDerivative_apply]
+      exact eq_sub_of_add_eq' hform.symm
     rw [hMo, map_sub, map_smul,
       Submodule.projectionOnto_apply_of_mem_right _ (Submodule.mem_span_singleton_self _),
       Submodule.projectionOnto_apply_of_mem_left _ hDP, smul_zero, sub_zero]
-    -- The normal return derivative is the restriction of `A` to `K`.
-    rfl
+    exact (coe_normalReturnDerivative_apply w).symm
   rw [LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ L Mo hL, hres,
     LinearMap.charpoly_one, finrank_span_singleton hv0, pow_one, ← LinearEquiv.charpoly_conj e,
     hconj]
