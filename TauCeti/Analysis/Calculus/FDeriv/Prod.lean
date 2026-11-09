@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.TangentCone.Prod
+import Mathlib.Analysis.Normed.Operator.Prod
 
 /-!
 # Derivative lemmas on products
@@ -33,6 +34,10 @@ For a function of a scalar first variable, the partial derivatives along the coo
 `s ↦ (s, b)` and `t ↦ (a, t)` are its derivative applied to `(1, 0)` and `(0, 1)`. The same holds
 one order higher for the first derivative, and a function whose partial derivative in the first
 variable vanishes everywhere is constant along every horizontal line.
+
+The product `η (t) * u (t, x)` of a function of time and a function of time and space has the
+expected derivative, with a norm bound in terms of bounds on the factors and their derivatives
+(`TauCeti.hasFDerivAt_mul_fst`, `TauCeti.norm_fderiv_mul_fst_le`).
 
 ## Main declarations
 
@@ -318,6 +323,32 @@ theorem fderivWithin_prodMk_fst_clm_apply_snd {s : Set X} {a₀ : X} {F : X → 
   rw [hfst_app, hsnd_app, add_comm]
 
 end FstClmApplySnd
+
+/-- The product `η (t) * u (t, x)` of a `C¹` function of time and a `C¹` function of time and space
+has the expected derivative. -/
+theorem hasFDerivAt_mul_fst {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {η : ℝ → ℝ}
+    {u : ℝ × E → ℝ} {q : ℝ × E} (hηd : DifferentiableAt ℝ η q.1) (hud : DifferentiableAt ℝ u q) :
+    HasFDerivAt (fun p : ℝ × E ↦ η p.1 * u p)
+      (η q.1 • fderiv ℝ u q + u q • (fderiv ℝ η q.1).comp (ContinuousLinearMap.fst ℝ ℝ E)) q :=
+  (hηd.hasFDerivAt.comp q hasFDerivAt_fst).mul hud.hasFDerivAt
+
+/-- A bound for the derivative at `q` of the product `η (t) * u (t, x)` from bounds on `η` and
+`deriv η` at `q.1` and on `u` and `fderiv ℝ u` at `q`. -/
+theorem norm_fderiv_mul_fst_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {η : ℝ → ℝ}
+    {u : ℝ × E → ℝ} {q : ℝ × E} (hηd : DifferentiableAt ℝ η q.1) (hud : DifferentiableAt ℝ u q)
+    {A A' M M' : ℝ} (hA : ‖η q.1‖ ≤ A) (hA' : ‖deriv η q.1‖ ≤ A') (huM : ‖u q‖ ≤ M)
+    (hDu : ‖fderiv ℝ u q‖ ≤ M') :
+    ‖fderiv ℝ (fun p : ℝ × E ↦ η p.1 * u p) q‖ ≤ A * M' + M * A' := by
+  have hA0 : 0 ≤ A := (norm_nonneg _).trans hA
+  have hM : 0 ≤ M := (norm_nonneg _).trans huM
+  rw [(hasFDerivAt_mul_fst hηd hud).fderiv]
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul]
+  · exact mul_le_mul hA hDu (norm_nonneg _) hA0
+  · refine mul_le_mul huM ((ContinuousLinearMap.opNorm_comp_le _ _).trans
+      (mul_le_of_le_one_right (norm_nonneg _) (ContinuousLinearMap.norm_fst_le ℝ ℝ E)) |>.trans ?_)
+      (norm_nonneg _) hM
+    rw [← norm_deriv_eq_norm_fderiv]
+    exact hA'
 
 end TauCeti
 
