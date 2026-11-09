@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Module.Injective
 public import Mathlib.LinearAlgebra.Dual.Lemmas
-public import TauCeti.Algebra.Module.Injective.DivisionRing
 public import TauCeti.LinearAlgebra.Dual.RightAction
 
 /-!

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Category.ModuleCat.MatlisDual
 public import TauCeti.RingTheory.Artinian.FiniteLength
+public import TauCeti.RingTheory.MatlisDuality.ArtinAlgebra
 
 /-!
 # The Matlis duality between left and right modules over an Artin algebra

@@ -17,7 +17,7 @@ injective envelope. No algebraic closedness or self-injectivity is required. The
 applies to finitely generated modules, with their base-field action induced from the algebra.
 
 A finite-dimensional algebra over a field is an Artin algebra, so this is the field case of
-`TauCeti.exists_isInjectiveEnvelope_of_isArtinianRing`.
+`TauCeti.exists_isInjectiveEnvelope_finite`.
 
 ## References
 
@@ -43,7 +43,7 @@ theorem exists_isInjectiveEnvelope_finiteDimensional [Module k M] [IsScalarTower
       (_ : IsScalarTower k A Q) (_ : FiniteDimensional k Q) (i : M →ₗ[A] Q),
       IsInjectiveEnvelope i := by
   have : Module.Finite A M := Module.Finite.of_restrictScalars_finite k A M
-  obtain ⟨Q, _, _, _, i, hi⟩ := exists_isInjectiveEnvelope_of_isArtinianRing k (A := A) M
+  obtain ⟨Q, _, _, _, i, hi⟩ := exists_isInjectiveEnvelope_finite k (A := A) M
   let : Module k Q := Module.compHom Q (algebraMap k A)
   let : IsScalarTower k A Q := IsScalarTower.of_algebraMap_smul fun _ _ => rfl
   exact ⟨Q, _, _, _, ‹_›, Module.Finite.trans A Q, i, hi⟩

@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Dual.RightAction
 public import Mathlib.Algebra.Algebra.Basic
 public import TauCeti.LinearAlgebra.Dual.FiniteProjective
 public import TauCeti.Algebra.Module.Dual.ProjectiveInjective
+import TauCeti.Algebra.Module.Injective.DivisionRing
 
 /-!
 # Nakayama modules

@@ -65,6 +65,16 @@ def opOpSemilinearEquiv {A N : Type*} [Semiring A] [AddCommMonoid N] [Module A N
     map_add' := fun _ _ => rfl
     map_smul' := fun _ _ => rfl }
 
+@[simp]
+theorem opOpSemilinearEquiv_apply {A N : Type*} [Semiring A] [AddCommMonoid N] [Module A N]
+    (x : N) : opOpSemilinearEquiv (A := A) x = x :=
+  (rfl)
+
+@[simp]
+theorem opOpSemilinearEquiv_symm_apply {A N : Type*} [Semiring A] [AddCommMonoid N] [Module A N]
+    (x : N) : (opOpSemilinearEquiv (A := A)).symm x = x :=
+  (rfl)
+
 end OpOp
 
 end TauCeti

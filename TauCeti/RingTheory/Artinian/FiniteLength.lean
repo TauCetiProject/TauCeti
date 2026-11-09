@@ -24,7 +24,7 @@ namespace IsArtinianRing
 /-- A finitely generated module over an Artinian ring has finite length. -/
 theorem isFiniteLength_of_finite (R : Type u) [Ring R] [IsArtinianRing R] (M : Type v)
     [AddCommGroup M] [Module R M] [Module.Finite R M] : IsFiniteLength R M :=
-  ((IsArtinianRing.tfae R M).out 1 4).mp ‹_›
+  isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩
 
 /-- A module that is finitely generated over a finite extension `B` of an Artinian ring `R`, such as
 an Artin `R`-algebra, has finite length over `R`. -/
