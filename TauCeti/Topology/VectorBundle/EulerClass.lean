@@ -15,7 +15,8 @@ import TauCeti.Topology.VectorBundle.Smul
 # Thom classes and Euler classes of vector bundles
 
 Let `E → B` be a real vector bundle with finite-dimensional model fibre `F` of rank `r`, and let
-`E₀ ⊆ E` be the complement of the zero section (`TauCeti.zeroSectionCompl`). The *Thom pair* of
+`E₀ ⊆ E` be the complement of the zero section (`TauCeti.zeroSectionCompl`), an open set
+(`TauCeti.isOpen_zeroSectionCompl`). The *Thom pair* of
 the bundle is the topological pair `(E, E₀)` (`TauCeti.thomPair`). A *Thom class* is a relative
 class `u ∈ Hʳ(E, E₀)` whose restriction to every fibre pair `(E_b, E_b ∖ {0})` generates the
 cohomology of that pair (`TauCeti.IsThomClass`). With ordinary integral coefficients (specified
@@ -184,6 +185,43 @@ theorem thomPairOverMap_comp_thomPairOverMap {W W' W'' : Set B} (h : W ⊆ W') (
 
 end Pair
 
+section Open
+
+variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+
+variable (F E) in
+/-- **The nonzero vectors of a real vector bundle form an open set**: over the base set of a
+linear trivialization, a vector is nonzero exactly when its coordinate in the model fibre is. -/
+theorem isOpen_zeroSectionCompl : IsOpen (zeroSectionCompl F E) := by
+  refine isOpen_iff_forall_mem_open.2 fun v hv ↦ ?_
+  let e := trivializationAt F E v.proj
+  -- Over the base set of `e`, a vector is nonzero exactly when its coordinate in `F` is.
+  have key (w : TotalSpace F E) (hw : w ∈ e.source) : (e w).2 ≠ 0 ↔ w.2 ≠ 0 := by
+    rw [← e.continuousLinearEquivAt_apply' (R := ℝ) w hw]
+    exact map_ne_zero_iff _ (e.continuousLinearEquivAt ℝ _ _).injective
+  refine ⟨e.source ∩ e ⁻¹' (univ ×ˢ {0}ᶜ), fun w ⟨hw, hw'⟩ ↦
+    mem_zeroSectionCompl.2 ((key w hw).1 hw'.2),
+    e.continuousOn.isOpen_inter_preimage e.open_source (isOpen_univ.prod isOpen_compl_singleton),
+    FiberBundle.mem_trivializationAt_proj_source,
+    mem_univ _, (key v FiberBundle.mem_trivializationAt_proj_source).2 (mem_zeroSectionCompl.1 hv)⟩
+
+variable (F) in
+include F in
+/-- The nonzero vectors of a fibre of a real vector bundle form an open set. -/
+theorem isOpen_compl_zero_fiber (b : B) : IsOpen ({0}ᶜ : Set (E b)) := by
+  let e := (trivializationAt F E b).continuousLinearEquivAt ℝ b
+    (FiberBundle.mem_baseSet_trivializationAt' b)
+  have : ({0}ᶜ : Set (E b)) = e ⁻¹' {0}ᶜ := by
+    ext x
+    simp only [mem_compl_singleton_iff, mem_preimage]
+    exact (map_ne_zero_iff _ e.injective).symm
+  rw [this]
+  exact isOpen_compl_singleton.preimage e.continuous
+
+end Open
+
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R : C}
   {k : Type*} [Ring k] [Linear k C] {M : C}
 
@@ -204,6 +242,13 @@ theorem fiberThomPairMap_fst_apply (b : B) (x : E b) :
     TopPair.Hom.fst (fiberThomPairMap F E b) x = TotalSpace.mk b x := by
   unfold fiberThomPairMap
   exact TopPair.ofSubsetMap_fst_apply _ _ _
+
+/-- The fibre inclusion of a Thom pair is the map of pairs induced by `x ↦ (b, x)`. -/
+theorem fiberThomPairMap_eq_ofSubsetMap (b : B) :
+    fiberThomPairMap F E b = TopPair.ofSubsetMap
+      (TopCat.ofHom ⟨TotalSpace.mk b, FiberBundle.continuous_totalSpaceMk F E b⟩)
+      (fun _ hx ↦ mem_zeroSectionCompl.2 hx) :=
+  (rfl)
 
 /-- The projection `π : E ⟶ B` of a fibre bundle, as a morphism of topological spaces out of the
 ambient space of its Thom pair. -/
