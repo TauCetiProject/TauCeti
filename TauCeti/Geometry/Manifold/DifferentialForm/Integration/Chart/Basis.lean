@@ -26,11 +26,11 @@ open scoped Manifold
 
 namespace TauCeti.RoughForm
 
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {k : ℕ}
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+omit [MeasurableSpace E] [BorelSpace E] in
 private def signedChartExpression (φ : RoughForm I M ℝ k) (α : M)
     (σ : {x : M // x ∈ (extChartAt I α).source} → ℤˣ) (y : E) : E [⋀^Fin k]→L[ℝ] ℝ := by
   classical
@@ -38,7 +38,7 @@ private def signedChartExpression (φ : RoughForm I M ℝ k) (α : M)
     (σ ⟨(extChartAt I α).symm y, (extChartAt I α).map_target hy⟩ : ℝ) • φ.inChartAt α y
   else 0
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+omit [MeasurableSpace E] [BorelSpace E] in
 private theorem signedChartExpression_apply (φ : RoughForm I M ℝ k) (α : M)
     (σ : {x : M // x ∈ (extChartAt I α).source} → ℤˣ)
     (b : Module.Basis (Fin k) ℝ E) (y : E) :
@@ -49,7 +49,6 @@ private theorem signedChartExpression_apply (φ : RoughForm I M ℝ k) (α : M)
   split_ifs <;> simp only [ContinuousAlternatingMap.smul_apply, smul_eq_mul,
     ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
 
-omit [FiniteDimensional ℝ E] in
 /-- The actual signed chart integral does not depend on the chosen basis, even if neither
 basis is positively oriented for the model orientation. -/
 theorem integral_signedInChartAt_basis_eq (φ : RoughForm I M ℝ k)
@@ -60,7 +59,6 @@ theorem integral_signedInChartAt_basis_eq (φ : RoughForm I M ℝ k)
   simpa only [signedChartExpression_apply] using
     b.integral_signed_apply_eq o b' (signedChartExpression φ α σ)
 
-omit [FiniteDimensional ℝ E] in
 /-- Genuine signed coefficient integrability is independent of the model basis and its
 normalized Haar measure, without a regularity assumption on the form or chart sign. -/
 theorem integrable_signedInChartAt_basis_iff (φ : RoughForm I M ℝ k)
