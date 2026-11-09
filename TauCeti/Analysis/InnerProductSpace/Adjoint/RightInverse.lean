@@ -92,28 +92,12 @@ theorem adjointRightInverse_apply_mem_topologicalClosure (f : F) :
 
 variable {T ι}
 
-omit [CompleteSpace H] [CompleteSpace F] in
-/-- A lower bound `‖ι φ‖ ≤ C ‖T φ‖` bounds the map `T φ ↦ ι φ` on the range of `T`. -/
-private theorem norm_compLeftInverse_apply_le {C : ℝ} (h : ∀ φ, ‖ι φ‖ ≤ C * ‖T φ‖)
-    (y : range T) : ‖ι.compLeftInverse T y‖ ≤ C * ‖(range T).subtypeL y‖ := by
-  obtain ⟨_, φ, rfl⟩ := y
-  rw [compLeftInverse_apply_of_bdd _ _ ⟨C, h⟩ φ _ rfl]
-  exact h φ
-
-/-- Under a lower bound, the factor defining the right inverse sends `T φ` to `ι φ`. -/
-private theorem factorThru_compLeftInverse_apply (h : ∃ C, ∀ φ, ‖ι φ‖ ≤ C * ‖T φ‖) (φ : Φ) :
-    (ι.compLeftInverse T).factorThru (range T).subtypeL (T φ) = ι φ := by
-  obtain ⟨C, hC⟩ := h
-  have := ContinuousLinearMap.factorThru_apply_apply ⟨C, norm_compLeftInverse_apply_le hC⟩
-    ⟨T φ, mem_range_self T φ⟩
-  rwa [compLeftInverse_apply_of_bdd _ _ ⟨C, hC⟩ φ _ rfl] at this
-
 /-- **The weak equation.** If `‖ι φ‖ ≤ C ‖T φ‖` for every `φ`, then `u = adjointRightInverse T ι f`
 satisfies `⟪u, T φ⟫ = ⟪f, ι φ⟫` for every `φ`, that is, `T* u = ι* f` weakly. -/
 theorem inner_adjointRightInverse_apply (h : ∃ C, ∀ φ, ‖ι φ‖ ≤ C * ‖T φ‖) (f : F) (φ : Φ) :
     ⟪adjointRightInverse T ι f, T φ⟫_𝕜 = ⟪f, ι φ⟫_𝕜 := by
   rw [adjointRightInverse, ContinuousLinearMap.adjoint_inner_left,
-    factorThru_compLeftInverse_apply h]
+    ContinuousLinearMap.factorThru_compLeftInverse_apply h]
 
 /-- **The norm bound.** If `‖ι φ‖ ≤ C ‖T φ‖` for every `φ`, with `C ≥ 0`, the right inverse has
 norm at most `C`. -/
