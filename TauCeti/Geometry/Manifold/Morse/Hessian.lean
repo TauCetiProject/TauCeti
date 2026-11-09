@@ -393,9 +393,10 @@ theorem criticalHessian_comp_snd_apply {q : V → ℝ} {y : V} (hq : ContDiffAt 
   have key := fderiv_fderiv_comp_apply (φ := Prod.snd)
     (b := extChartAt (I.prod 𝓘(ℝ, V)) (x, y) (x, y)) (hsnd ▸ hq) contDiff_snd.contDiffAt v w
   refine key.trans ?_
+  have hfst : fderiv ℝ (Prod.snd : E × V → V) = fun _ ↦ ContinuousLinearMap.snd ℝ E V :=
+    funext fun _ ↦ fderiv_snd
   have hd : fderiv ℝ (fderiv ℝ (Prod.snd : E × V → V)) = 0 := by
-    rw [show fderiv ℝ (Prod.snd : E × V → V) = fun _ ↦ ContinuousLinearMap.snd ℝ E V from
-      funext fun _ ↦ fderiv_snd]
+    rw [hfst]
     exact funext fun z ↦ congrFun (fderiv_fun_const (ContinuousLinearMap.snd ℝ E V)) z
   simp only [fderiv_snd, hd, hsnd, ContinuousLinearMap.coe_snd', Pi.zero_apply]
   exact (congrArg (fderiv ℝ (fderiv ℝ q) y v.2 w.2 + ·) (map_zero (fderiv ℝ q y))).trans
@@ -494,13 +495,6 @@ theorem _root_.Module.Basis.isManifoldNondegenerateCriticalPoint_iff_det_critica
     b.criticalHessian_isInvertible_iff_det_ne_zero]
 
 end Matrix
-
-omit [I.Boundaryless] in
-/-- A function with a nondegenerate critical point is `C²` there. -/
-theorem IsManifoldNondegenerateCriticalPoint.contMDiffAt
-    (h : IsManifoldNondegenerateCriticalPoint I f x) : ContMDiffAt I 𝓘(ℝ) 2 f x :=
-  contMDiffAt_iff_source.2 <| contMDiffWithinAt_iff_contDiffWithinAt.2
-    (((isManifoldNondegenerateCriticalPoint_iff I).mp h).contDiffAt.contDiffWithinAt)
 
 /-- At a critical point, differentiating `df(Y)` in a tangent direction computes the critical
 Hessian against `Y x`. The derivative of the vector field contributes nothing because `df = 0`.
