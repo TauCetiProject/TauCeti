@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 
 /-!
@@ -176,9 +177,9 @@ variable {𝕜 X E V : Type*} [RCLike 𝕜] [TopologicalSpace X]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
   [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [CompleteSpace V]
 
-/-- Orthogonal projection onto the range depends continuously on an operator out of a
-finite-dimensional space at every injective operator. The parameter space is arbitrary. -/
-theorem ContinuousAt.starProjection_range {A : X → E →L[𝕜] V} {x : X}
+/-- The complete-space case of `ContinuousAt.starProjection_range`, by the formula
+`B (B† B)⁻¹ B†`. -/
+private theorem continuousAt_starProjection_range_of_completeSpace {A : X → E →L[𝕜] V} {x : X}
     (hA : ContinuousAt A x) (hinj : Injective (A x)) :
     ContinuousAt (fun y ↦ (A y).range.starProjection) x := by
   -- Use Euclidean coordinates on the source to take adjoints without choosing a metric on `E`.
@@ -207,6 +208,49 @@ theorem ContinuousAt.starProjection_range {A : X → E →L[𝕜] V} {x : X}
   simp only [← hrange y]
   exact ContinuousLinearMap.starProjection_range_eq
     ((ContinuousLinearMap.isUnit_adjoint_comp_self_iff _).2 hy)
+
+omit [CompleteSpace V] in
+/-- The orthogonal projection onto the range of `A`, followed by the embedding into the completion
+of `V`, is the orthogonal projection onto the range of the embedded operator, precomposed with
+the embedding. -/
+private theorem starProjection_range_comp_toComplL (A : E →L[𝕜] V) (v : V) :
+    ((A.range.starProjection v : V) : UniformSpace.Completion V) =
+      ((UniformSpace.Completion.toComplₗᵢ (𝕜 := 𝕜) (E := V)).toContinuousLinearMap
+        ∘L A).range.starProjection (v : UniformSpace.Completion V) := by
+  refine (Submodule.eq_starProjection_of_mem_of_inner_eq_zero ?_ ?_).symm
+  · obtain ⟨a, ha⟩ := A.range.starProjection_apply_mem v
+    exact ⟨a, congrArg (fun w : V ↦ (w : UniformSpace.Completion V)) (show A a = _ from ha)⟩
+  · rintro _ ⟨a, rfl⟩
+    change inner 𝕜 (((v : V) : UniformSpace.Completion V) -
+      ((A.range.starProjection v : V) : UniformSpace.Completion V))
+        ((A a : V) : UniformSpace.Completion V) = 0
+    rw [← UniformSpace.Completion.coe_sub, UniformSpace.Completion.inner_coe]
+    exact Submodule.starProjection_inner_eq_zero v _ ⟨a, rfl⟩
+
+omit [CompleteSpace V] in
+/-- Orthogonal projection onto the range depends continuously on an operator out of a
+finite-dimensional space at every injective operator. The parameter space is arbitrary. The
+inner product space `V` need not be complete: the projections are compared with those of the
+embedded operators into the completion. -/
+theorem ContinuousAt.starProjection_range {A : X → E →L[𝕜] V} {x : X}
+    (hA : ContinuousAt A x) (hinj : Injective (A x)) :
+    ContinuousAt (fun y ↦ (A y).range.starProjection) x := by
+  let ι : V →L[𝕜] UniformSpace.Completion V :=
+    (UniformSpace.Completion.toComplₗᵢ : V →ₗᵢ[𝕜] UniformSpace.Completion V).toContinuousLinearMap
+  have hι : Isometry ι := UniformSpace.Completion.toComplₗᵢ.isometry
+  have hB : ContinuousAt (fun y ↦ ι ∘L A y) x := continuousAt_const.clm_comp hA
+  have hproj := continuousAt_starProjection_range_of_completeSpace (A := fun y ↦ ι ∘L A y) hB
+    (hι.injective.comp hinj)
+  -- Compare the projections after embedding the target into the completion.
+  have hΦ : Isometry (fun T : V →L[𝕜] V ↦ ι ∘L T) :=
+    AddMonoidHomClass.isometry_of_norm (ContinuousLinearMap.compL 𝕜 V V _ ι)
+      fun T ↦ (UniformSpace.Completion.toComplₗᵢ (𝕜 := 𝕜) (E := V)).norm_toContinuousLinearMap_comp
+  refine (hΦ.isEmbedding.isInducing.continuousAt_iff).mpr ?_
+  have hcomp : ContinuousAt (fun y ↦ (ι ∘L A y).range.starProjection ∘L ι) x :=
+    (hproj.clm_comp continuousAt_const)
+  refine hcomp.congr_of_eventuallyEq (Eventually.of_forall fun y ↦ ?_)
+  ext v
+  exact (starProjection_range_comp_toComplL (A y) v)
 
 end ContinuousAt
 
