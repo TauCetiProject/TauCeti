@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import Mathlib.Algebra.DirectSum.Decomposition
-public import Mathlib.Algebra.DirectSum.Module
 
 /-!
 # Linear maps prescribed on homogeneous pieces
