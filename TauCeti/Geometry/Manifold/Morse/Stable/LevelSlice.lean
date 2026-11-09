@@ -439,8 +439,7 @@ theorem finrank_span_mtangentConeAt_unstableSet_inter_stableSet_level_add_manifo
       (hX.surjective_fderiv_comp_chartAt_symm hab hy), finrank_top,
     Module.finrank_self] at hker
   have hW :=
-    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hf ha hb hy
-      htr
+    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hf hy htr
   omega
 
 /-- **Index-difference-one level slices are discrete.** If the Morse indices of critical points `a`

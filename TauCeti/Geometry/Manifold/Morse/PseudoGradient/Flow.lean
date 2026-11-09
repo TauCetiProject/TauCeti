@@ -149,6 +149,16 @@ theorem mfderiv_eq_zero_of_forall_eq {z : M} (hf : MDifferentiableAt 𝓘(ℝ, E
   rw [horbit, Flow.map_zero_apply] at hd
   exact (hX.mvfderiv_apply_lt_zero z hcrit).ne (hd.unique (hasDerivAt_const _ _))
 
+/-- A point with a nonempty stable set is a critical point of `f`: it is fixed by the flow. -/
+theorem mfderiv_eq_zero_of_mem_stableSet {a y : M} (hf : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f a)
+    (hy : y ∈ hX.flow.stableSet a) : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0 :=
+  hX.mfderiv_eq_zero_of_forall_eq hf fun t ↦ by rw [Flow.fixed_of_mem_stableSet hy t]
+
+/-- A point with a nonempty unstable set is a critical point of `f`: it is fixed by the flow. -/
+theorem mfderiv_eq_zero_of_mem_unstableSet {a y : M} (hf : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f a)
+    (hy : y ∈ hX.flow.unstableSet a) : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0 :=
+  hX.mfderiv_eq_zero_of_forall_eq hf fun t ↦ by rw [Flow.fixed_of_mem_unstableSet hy t]
+
 /-- **Every orbit converges forward in time to a critical point.** -/
 theorem exists_tendsto_atTop (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
     ∃ x, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 ∧ Tendsto (fun t ↦ hX.flow t y) atTop (𝓝 x) :=

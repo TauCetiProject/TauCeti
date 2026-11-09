@@ -120,7 +120,7 @@ theorem exists_subseq_tendsto_broken_of_tendsto_mem_stableSet (h : hX.IsMorseSma
     have hbb' : b ≠ b' := by
       rintro rfl
       exact hwb (hX.eq_of_mem_unstableSet_inter_stableSet hdf ⟨hwU, hwb'⟩)
-    have hlt := h.manifoldMorseIndex_lt hf hb hb' hbb' ⟨w, hwU, hwb'⟩
+    have hlt := h.manifoldMorseIndex_lt hf hbb' ⟨w, hwU, hwb'⟩
     obtain ⟨k, x, z, s, n, hn, hx0, hxk, hxc, hxi, hz, hs, hss, hzlim⟩ :=
       ih _ (hm ▸ hlt) hb' hwb' (hlim.comp hψ.tendsto_atTop)
         (fun j ↦ Flow.isInvariant_stableSet _ r _ (hvr _)) rfl

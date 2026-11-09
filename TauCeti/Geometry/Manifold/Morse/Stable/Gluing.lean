@@ -110,7 +110,7 @@ theorem IsMorseSmale.exists_unstableSet_level_param {hX : IsAdaptedPseudoGradien
   obtain ⟨F, ι, ι', hι0, hι, hιs, hd, hinv, hexh⟩ :=
     exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top (by simp) hq hs hyq hy.1 hy.2
       isOpen_univ (mem_univ y) hf.contMDiff.contMDiffOn (h.span_mtangentConeAt_sup_eq_top hp hx hy)
-      (by rw [hX.finrank_span_mtangentConeAt_unstableSet hf hp hy.1, φ.finrank_snd_splitCoord,
+      (by rw [hX.finrank_span_mtangentConeAt_unstableSet hf hy.1, φ.finrank_snd_splitCoord,
         hind]) hX0 hX0'
       (hX.mvfderiv_apply_lt_zero y
         (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hpx hy)).ne

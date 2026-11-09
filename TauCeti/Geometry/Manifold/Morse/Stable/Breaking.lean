@@ -189,7 +189,7 @@ theorem IsMorseSmale.manifoldMorseIndex_lt_of_mem_closure_stableSet_inter_stable
     have hza : z ∈ hX.flow.stableSet a := Flow.mem_stableSet.2 hza
     have hba : b ≠ a := fun hba ↦
       hzb (hX.eq_of_mem_unstableSet_inter_stableSet hdf ⟨hz.2, hba ▸ hza⟩)
-    have hlt := h.manifoldMorseIndex_lt hf hb ha hba ⟨z, hz.2, hza⟩
+    have hlt := h.manifoldMorseIndex_lt hf hba ⟨z, hz.2, hza⟩
     by_cases haq : a = q
     · subst haq
       omega
@@ -218,7 +218,7 @@ theorem IsMorseSmale.manifoldMorseIndex_lt_of_mem_closure_unstableSet_inter_unst
     have hzb : z ∈ hX.flow.unstableSet b := Flow.mem_unstableSet.2 hzb
     have hba : b ≠ a := fun hba ↦
       hza (hX.eq_of_mem_unstableSet_inter_stableSet hdf ⟨hba ▸ hzb, hz.2⟩)
-    have hlt := h.manifoldMorseIndex_lt hf hb ha hba ⟨z, hzb, hz.2⟩
+    have hlt := h.manifoldMorseIndex_lt hf hba ⟨z, hzb, hz.2⟩
     by_cases hbp : b = p
     · subst hbp
       exact hlt
@@ -254,7 +254,7 @@ theorem IsMorseSmale.isClosed_unstableSet_inter_stableSet_inter_level
   have hba : manifoldMorseIndex 𝓘(ℝ, E) f b ≤ manifoldMorseIndex 𝓘(ℝ, E) f a := by
     by_cases hab : a = b
     · rw [hab]
-    · exact (h.manifoldMorseIndex_lt hf ha hb hab ⟨y, hya, hyb⟩).le
+    · exact (h.manifoldMorseIndex_lt hf hab ⟨y, hya, hyb⟩).le
   -- The index of `a` is at most that of `p`, with equality only if `a = p`, and the index of `b`
   -- is at least that of `q`, with equality only if `b = q`. As the two differ by one, `a = p` and
   -- `b = q`: any other configuration forces a constant trajectory through `y` at `p` or `q`.
@@ -272,7 +272,7 @@ theorem IsMorseSmale.isClosed_unstableSet_inter_stableSet_inter_level
     rcases hbq with rfl | hbq
     · exact hne hc.1.ne ⟨hya, hyb⟩
     omega
-  have hlt := h.manifoldMorseIndex_lt hf ha hb hab ⟨y, hya, hyb⟩
+  have hlt := h.manifoldMorseIndex_lt hf hab ⟨y, hya, hyb⟩
   obtain rfl : a = p := by
     rcases hap with hap | hap
     · exact hap
