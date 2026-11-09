@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 
+import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+
 /-!
 # The planar Newtonian kernel away from its pole
 
@@ -19,15 +22,18 @@ each translate `z ↦ G (z - a)` are harmonic away from their poles.  The distri
 `-Δ G = δ₀` is `TauCeti.integral_laplacian_mul_planarNewtonianKernel`, in
 `TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian`.
 
-The harmonicity proof consumes Mathlib's `AnalyticAt.harmonicAt_log_norm`, applied to the identity
-or to `z ↦ z - a`.  The remaining results record the translation, symmetry, and scaling API used
-when the kernel is integrated against a source to form a Newtonian potential.
+Harmonicity follows from Mathlib's `AnalyticAt.harmonicAt_log_norm`: `G ∘ f` is harmonic wherever
+`f` is analytic and nonzero.  The remaining results record the smoothness, translation, symmetry,
+and scaling API used when the kernel is integrated against a source to form a Newtonian potential.
 
 ## Main declarations
 
 * `TauCeti.planarNewtonianKernel`: the logarithmic kernel for `-Δ` on `ℂ`.
 * `TauCeti.harmonicAt_planarNewtonianKernel`: harmonicity away from the origin.
 * `TauCeti.harmonicAt_planarNewtonianKernel_sub`: harmonicity of a kernel with pole `a`.
+* `AnalyticAt.harmonicAt_planarNewtonianKernel`: harmonicity of `G ∘ f` for analytic `f` off the
+  zeros of `f`.
+* `TauCeti.contDiffAt_planarNewtonianKernel`: smoothness away from the origin.
 * `TauCeti.laplacian_planarNewtonianKernel`: the pointwise equation `Δ G = 0` off the pole.
 -/
 
@@ -66,8 +72,8 @@ theorem planarNewtonianKernel_unit_mul {u z : ℂ} (hu : ‖u‖ = 1) :
     planarNewtonianKernel (u * z) = planarNewtonianKernel z := by
   simp [planarNewtonianKernel, hu]
 
-/-- Scaling the argument adds the logarithm of the scale to the planar Newtonian kernel. -/
-theorem planarNewtonianKernel_mul (z w : ℂ) (hz : z ≠ 0) (hw : w ≠ 0) :
+/-- For nonzero factors, the planar Newtonian kernel turns products into sums. -/
+theorem planarNewtonianKernel_mul {z w : ℂ} (hz : z ≠ 0) (hw : w ≠ 0) :
     planarNewtonianKernel (z * w) = planarNewtonianKernel z + planarNewtonianKernel w := by
   rw [planarNewtonianKernel, planarNewtonianKernel, planarNewtonianKernel, norm_mul,
     Real.log_mul (norm_ne_zero_iff.mpr hz) (norm_ne_zero_iff.mpr hw)]
@@ -78,20 +84,21 @@ theorem planarNewtonianKernel_sub_comm (z a : ℂ) :
     planarNewtonianKernel (z - a) = planarNewtonianKernel (a - z) := by
   rw [← neg_sub a z, planarNewtonianKernel_neg]
 
+/-- The planar Newtonian kernel composed with an analytic function `f` is harmonic at every
+point where `f` does not vanish. -/
+theorem _root_.AnalyticAt.harmonicAt_planarNewtonianKernel {f : ℂ → ℂ} {z : ℂ}
+    (hf : AnalyticAt ℂ f z) (hfz : f z ≠ 0) :
+    HarmonicAt (fun w : ℂ ↦ planarNewtonianKernel (f w)) z := by
+  have hkernel : (fun w : ℂ ↦ planarNewtonianKernel (f w)) =
+      (-(2 * Real.pi)⁻¹ : ℝ) • fun w : ℂ ↦ Real.log ‖f w‖ := by
+    ext w
+    simp [planarNewtonianKernel_def]
+  exact hkernel ▸ (hf.harmonicAt_log_norm hfz).const_smul
+
 /-- The translated kernel `z ↦ G(z - a)` is harmonic at every point other than its pole `a`. -/
 theorem harmonicAt_planarNewtonianKernel_sub {z a : ℂ} (hza : z ≠ a) :
-    HarmonicAt (fun w : ℂ ↦ planarNewtonianKernel (w - a)) z := by
-  have hana : AnalyticAt ℂ (fun w : ℂ ↦ w - a) z := analyticAt_id.sub analyticAt_const
-  have hne : z - a ≠ 0 := sub_ne_zero.mpr hza
-  have hlog : HarmonicAt (fun w : ℂ ↦ Real.log ‖w - a‖) z :=
-    hana.harmonicAt_log_norm hne
-  have hkernel :
-      (fun w : ℂ ↦ planarNewtonianKernel (w - a)) =
-        (-(2 * Real.pi)⁻¹ : ℝ) • fun w : ℂ ↦ Real.log ‖w - a‖ := by
-    funext w
-    simp only [planarNewtonianKernel_def, Pi.smul_apply, smul_eq_mul]
-  rw [hkernel]
-  exact hlog.const_smul
+    HarmonicAt (fun w : ℂ ↦ planarNewtonianKernel (w - a)) z :=
+  (analyticAt_id.sub analyticAt_const).harmonicAt_planarNewtonianKernel (sub_ne_zero.mpr hza)
 
 /-- The logarithmic Newtonian kernel is harmonic at every point away from its pole at `0`. -/
 theorem harmonicAt_planarNewtonianKernel {z : ℂ} (hz : z ≠ 0) :
@@ -101,41 +108,42 @@ theorem harmonicAt_planarNewtonianKernel {z : ℂ} (hz : z ≠ 0) :
 
 /-- The planar Newtonian kernel is harmonic on the punctured plane. -/
 theorem harmonicOnNhd_planarNewtonianKernel :
-    HarmonicOnNhd planarNewtonianKernel ({0}ᶜ : Set ℂ) := by
-  intro z hz
-  exact harmonicAt_planarNewtonianKernel (Set.mem_compl_singleton_iff.mp hz)
+    HarmonicOnNhd planarNewtonianKernel ({0}ᶜ : Set ℂ) :=
+  fun _ hz ↦ harmonicAt_planarNewtonianKernel (Set.mem_compl_singleton_iff.mp hz)
 
 /-- A planar Newtonian kernel with pole `a` is harmonic on the complement of that pole. -/
 theorem harmonicOnNhd_planarNewtonianKernel_sub (a : ℂ) :
-    HarmonicOnNhd (fun z : ℂ ↦ planarNewtonianKernel (z - a)) ({a}ᶜ : Set ℂ) := by
-  intro z hz
-  exact harmonicAt_planarNewtonianKernel_sub (Set.mem_compl_singleton_iff.mp hz)
+    HarmonicOnNhd (fun z : ℂ ↦ planarNewtonianKernel (z - a)) ({a}ᶜ : Set ℂ) :=
+  fun _ hz ↦ harmonicAt_planarNewtonianKernel_sub (Set.mem_compl_singleton_iff.mp hz)
 
-/-- Away from its pole, a translated planar Newtonian kernel is twice continuously
-differentiable. -/
-theorem contDiffAt_planarNewtonianKernel_sub {z a : ℂ} (hza : z ≠ a) :
-    ContDiffAt ℝ 2 (fun w : ℂ ↦ planarNewtonianKernel (w - a)) z :=
-  (harmonicAt_planarNewtonianKernel_sub hza).1
+/-- Away from its pole, a translated planar Newtonian kernel is `C^n` for every `n`. -/
+theorem contDiffAt_planarNewtonianKernel_sub {n : WithTop ℕ∞} {z a : ℂ} (hza : z ≠ a) :
+    ContDiffAt ℝ n (fun w : ℂ ↦ planarNewtonianKernel (w - a)) z := by
+  have hne : z - a ≠ 0 := sub_ne_zero.mpr hza
+  have hnorm : ContDiffAt ℝ n (fun w : ℂ ↦ ‖w - a‖) z :=
+    (contDiffAt_id.sub contDiffAt_const).norm ℝ hne
+  simp only [planarNewtonianKernel_def]
+  exact contDiffAt_const.mul (hnorm.log (norm_ne_zero_iff.mpr hne))
 
-/-- Away from its pole, the planar Newtonian kernel is twice continuously differentiable. -/
-theorem contDiffAt_planarNewtonianKernel {z : ℂ} (hz : z ≠ 0) :
-    ContDiffAt ℝ 2 planarNewtonianKernel z := by
+/-- Away from its pole, the planar Newtonian kernel is `C^n` for every `n`. -/
+theorem contDiffAt_planarNewtonianKernel {n : WithTop ℕ∞} {z : ℂ} (hz : z ≠ 0) :
+    ContDiffAt ℝ n planarNewtonianKernel z := by
   simpa only [sub_zero] using
-    (contDiffAt_planarNewtonianKernel_sub (z := z) (a := 0) hz)
+    (contDiffAt_planarNewtonianKernel_sub (n := n) (z := z) (a := 0) hz)
 
 /-- The planar Newtonian kernel solves the homogeneous Laplace equation pointwise away from its
 pole.  Its nonzero distributional Laplacian is concentrated at the omitted pole. -/
 @[simp]
 theorem laplacian_planarNewtonianKernel {z : ℂ} (hz : z ≠ 0) :
-    Δ planarNewtonianKernel z = 0 := by
-  exact (harmonicAt_planarNewtonianKernel hz).2.self_of_nhds
+    Δ planarNewtonianKernel z = 0 :=
+  (harmonicAt_planarNewtonianKernel hz).2.self_of_nhds
 
 /-- A translated planar Newtonian kernel solves the homogeneous Laplace equation away from its
 pole. -/
 @[simp]
 theorem laplacian_planarNewtonianKernel_sub {z a : ℂ} (hza : z ≠ a) :
-    Δ (fun w : ℂ ↦ planarNewtonianKernel (w - a)) z = 0 := by
-  exact (harmonicAt_planarNewtonianKernel_sub hza).2.self_of_nhds
+    Δ (fun w : ℂ ↦ planarNewtonianKernel (w - a)) z = 0 :=
+  (harmonicAt_planarNewtonianKernel_sub hza).2.self_of_nhds
 
 end TauCeti
 
