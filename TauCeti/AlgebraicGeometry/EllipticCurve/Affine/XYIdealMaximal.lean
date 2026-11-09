@@ -263,7 +263,7 @@ theorem _root_.WeierstrassCurve.Affine.CoordinateRing.finrank_quotient_eq_one_if
     -- ideal of that point; and its kernel is `I`.
     have hker := WeierstrassCurve.Affine.CoordinateRing.ker_evalAlgHom_eq_XYIdeal
       (_root_.WeierstrassCurve.Affine.CoordinateRing.equation_of_algHom ρ)
-    rw [_root_.WeierstrassCurve.Affine.CoordinateRing.evalAlgHom_equation_ofAlgHom] at hker
+    rw [_root_.WeierstrassCurve.Affine.CoordinateRing.evalAlgHom_equation_of_algHom] at hker
     have hIker : I = RingHom.ker (ρ : W.CoordinateRing →+* F) :=
       Ideal.ext fun a ↦ by simpa only [RingHom.mem_ker, RingHom.coe_coe] using (hρmem a).symm
     have heq : W.Equation (ρ (AdjoinRoot.of W.polynomial X))

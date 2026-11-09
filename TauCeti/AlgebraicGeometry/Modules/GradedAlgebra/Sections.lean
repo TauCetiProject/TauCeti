@@ -45,6 +45,8 @@ arguments here follow the proofs there.
   `sections_gMul_def`, `sections_gOne_def` and `gAlgebraSections_toFun`;
 * `CategoryTheory.CommMon.gradedSectionsGrading`: the grading of `⨁ n, Γ(Aₙ, U)` by its
   summands, as an internally graded algebra in the sense of `GradedAlgebra`;
+* `CategoryTheory.CommMon.map_gMul_sections`: restriction of sections preserves the homogeneous
+  multiplication;
 * `CategoryTheory.CommMon.restrictGradedSections`: restriction of
   sections along `V ≤ U`, a degree-preserving ring homomorphism, assembled into the presheaf of
   commutative rings `gradedSectionsPresheaf` under the structure presheaf of `X`
@@ -173,7 +175,8 @@ section Restriction
 variable {U V : X.Opens} (f : V ⟶ U)
 
 /-- Restriction of sections along `V ≤ U` preserves the homogeneous multiplication. -/
-private lemma map_gMul_sections {i j : ℕ} (x : Γ(A.X i, U)) (y : Γ(A.X j, U)) :
+lemma _root_.CategoryTheory.CommMon.map_gMul_sections {i j : ℕ} (x : Γ(A.X i, U))
+    (y : Γ(A.X j, U)) :
     (A.X (i + j)).presheaf.map f.op
         (GradedMonoid.GMul.mul (A := fun n ↦ Γ(A.X n, U)) x y) =
       GradedMonoid.GMul.mul (A := fun n ↦ Γ(A.X n, V))
@@ -220,7 +223,7 @@ def _root_.CategoryTheory.CommMon.restrictGradedSections :
   DirectSum.toSemiring
     (fun n ↦ (DirectSum.of (fun n ↦ Γ(A.X n, V)) n).comp ((A.X n).presheaf.map f.op).hom)
     ((congrArg _ (map_gOne_sections A f)).trans (DirectSum.of_zero_one _))
-    (fun x y ↦ (congrArg _ (map_gMul_sections A f x y)).trans (DirectSum.of_mul_of _ _).symm)
+    (fun x y ↦ (congrArg _ (A.map_gMul_sections f x y)).trans (DirectSum.of_mul_of _ _).symm)
 
 /-- Restriction of a homogeneous section is the restriction of the section, in the same
 degree. -/

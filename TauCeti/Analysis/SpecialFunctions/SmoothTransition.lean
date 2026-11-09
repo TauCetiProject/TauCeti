@@ -49,6 +49,7 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
 * `expNegInvGlue.lt_one`: `expNegInvGlue x < 1`.
 * `expNegInvGlue.hasDerivAt`: the derivative of `expNegInvGlue` at `x` is
   `x⁻² expNegInvGlue x`.
+* `Real.smoothTransition.abs_le_one`: `|Real.smoothTransition x| ≤ 1`.
 * `Real.smoothTransition.deriv_of_neg`: `deriv Real.smoothTransition x = 0` for `x < 0`.
 * `Real.smoothTransition.deriv_of_one_lt`: `deriv Real.smoothTransition x = 0` for `1 < x`.
 * `Real.smoothTransition.hasCompactSupport_deriv`: the derivative is compactly supported.
@@ -76,7 +77,7 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
 * `TauCeti.exists_nnnorm_deriv_positiveCutoff_le`: its derivative is bounded when `g'` is bounded
   on `[m, ∞)`.
 * `TauCeti.exists_contDiff_antitone_cutoff`: a smooth nonincreasing step from a value `v ≥ 0` on
-  `(-∞, a]` down to `0` on `[b, ∞)`.
+  `(-∞, a]` down to `0` on `[b, ∞)`, positive on `(-∞, b)` when `v > 0`.
 * `TauCeti.exists_contDiff_plateau`: a smooth function with values in `[0, 1]`, vanishing outside
   `(a, b)` and equal to `1` on `[a + δ, b - δ]`.
 * `TauCeti.exists_contDiff_antitone_cutoff_abs_deriv_le`: such a step whose slope is at most `τ`,
@@ -107,6 +108,10 @@ theorem hasDerivAt (x : ℝ) : HasDerivAt expNegInvGlue (x⁻¹ ^ 2 * expNegInvG
 end expNegInvGlue
 
 namespace Real.smoothTransition
+
+/-- The smooth transition function takes values of absolute value at most one. -/
+theorem abs_le_one (x : ℝ) : |smoothTransition x| ≤ 1 :=
+  (abs_of_nonneg (nonneg x)).trans_le (le_one x)
 
 /-- The smooth transition function has derivative zero to the left of `0`, where it is
 identically zero. -/
@@ -345,6 +350,16 @@ theorem tendsto_add_mul_add_deriv_mul {t d e k : ℝ} :
     filter_upwards [hev] with n hn
     simp [one_of_one_le hn.le, deriv_of_one_lt hn, not_le.2 ht]
 
+/-- `x + (1 - smoothTransition x)` is at least `x`. -/
+theorem le_add_one_sub (x : ℝ) : x ≤ x + (1 - smoothTransition x) := by
+  linarith [le_one x]
+
+/-- `x + (1 - smoothTransition x)` is nonzero for `x ≥ 0`. -/
+theorem add_one_sub_ne_zero {x : ℝ} (hx : 0 ≤ x) : x + (1 - smoothTransition x) ≠ 0 := by
+  rcases hx.eq_or_lt with h | h
+  · simp [← h]
+  · exact (h.trans_le (le_add_one_sub x)).ne'
+
 end Real.smoothTransition
 
 /-- The chain rule for the smooth transition function `ψ`: if `f` has derivative `f'` at `x`,
@@ -454,21 +469,24 @@ theorem exists_nnnorm_deriv_positiveCutoff_le {m : ℝ} (hm : 0 < m) {g : ℝ �
     exact (hK t htm.le).trans (le_max_right _ _)
 
 /-- A smooth nonincreasing step down from a value `v ≥ 0` to `0`: for `a < b` there is a smooth
-antitone function `μ ≥ 0` equal to `v` on `(-∞, a]` and to `0` on `[b, ∞)`. -/
+antitone function `μ ≥ 0` equal to `v` on `(-∞, a]` and to `0` on `[b, ∞)`. When `v > 0` it is
+positive on `(-∞, b)`, so `b` is exactly where it reaches `0`. -/
 theorem exists_contDiff_antitone_cutoff {a b v : ℝ} (hab : a < b) (hv : 0 ≤ v) :
     ∃ μ : ℝ → ℝ, ContDiff ℝ ∞ μ ∧ Antitone μ ∧ (∀ r, 0 ≤ μ r) ∧ (∀ r, b ≤ r → μ r = 0) ∧
-      ∀ r ≤ a, μ r = v := by
+      (∀ r ≤ a, μ r = v) ∧ (0 < v → ∀ r < b, 0 < μ r) := by
   have hba : 0 < b - a := sub_pos.2 hab
   refine ⟨fun r ↦ v * (1 - Real.smoothTransition ((r - a) / (b - a))),
     contDiff_const.mul (contDiff_const.sub (Real.smoothTransition.contDiff.comp (by fun_prop))),
     fun r s hrs ↦ mul_le_mul_of_nonneg_left (sub_le_sub_left (Real.smoothTransition.monotone
       (div_le_div_of_nonneg_right (by linarith) hba.le)) _) hv,
     fun r ↦ mul_nonneg hv (sub_nonneg.2 (Real.smoothTransition.le_one _)),
-    fun r hr ↦ ?_, fun r hr ↦ ?_⟩
+    fun r hr ↦ ?_, fun r hr ↦ ?_, fun hv r hr ↦ ?_⟩
   · have h : 1 ≤ (r - a) / (b - a) := (one_le_div hba).2 (by linarith)
     simp only [Real.smoothTransition.one_of_one_le h, sub_self, mul_zero]
   · have h : (r - a) / (b - a) ≤ 0 := div_nonpos_of_nonpos_of_nonneg (by linarith) hba.le
     simp only [Real.smoothTransition.zero_of_nonpos h, sub_zero, mul_one]
+  · have h : (r - a) / (b - a) < 1 := (div_lt_one hba).2 (by linarith)
+    exact mul_pos hv (sub_pos.2 (Real.smoothTransition.lt_one_of_lt_one h))
 
 /-- A smooth **plateau** on `[a, b]`: for `δ > 0` there is a smooth function with values in
 `[0, 1]`, vanishing outside `(a, b)` and equal to `1` on `[a + δ, b - δ]`. Its integral over

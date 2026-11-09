@@ -36,7 +36,7 @@ equivalences `f₀ : X₀ ≃ₕ Y₀` and `f₁ : X₁ ≃ₕ Y₁`
 (`TauCeti.HasHomotopyExtensionProperty.exists_inverse_extending_homotopy_of_isEmbedding`). Applied
 stage by stage, this produces strictly compatible inverses and compatible left-inverse homotopies
 `g ∘ f ≃ id` along a tower of cofibrations, as used in
-`TauCeti.Topology.Homotopy.Extension.Tower` to compare the colimits of two such towers.
+`TauCeti.Topology.Homotopy.Extension.Tower` to compare the unions or colimits of two such towers.
 
 ## Proof
 

@@ -392,13 +392,14 @@ constant coefficient and `a i - b i` has order at least `n`, then in degrees at 
 coefficients of `H(a) - H(b)` are those of `∑ᵢ hᵢ (a i - b i)`, where `hᵢ` is the coefficient of
 `Xᵢ` in `H`. -/
 theorem coeff_subst_sub_subst_of_degree_le [Fintype σ] (H : MvPowerSeries σ R)
-    {a b : σ → MvPowerSeries τ R} (ha : HasSubst a) (hb : HasSubst b)
+    {a b : σ → MvPowerSeries τ R}
     (ha₀ : ∀ i, constantCoeff (a i) = 0) (hb₀ : ∀ i, constantCoeff (b i) = 0)
     (hab : ∀ i, (n : ℕ∞) ≤ (a i - b i).order) {e : τ →₀ ℕ} (he : e.degree ≤ n) :
     coeff e (H.subst a - H.subst b) =
       ∑ i, coeff (Finsupp.single i 1) H * coeff e (a i - b i) := by
   classical
-  rw [coeff_subst_sub_subst ha hb, finsum_eq_sum_of_support_subset (s := Finset.univ.image
+  rw [coeff_subst_sub_subst (hasSubst_of_constantCoeff_zero ha₀)
+    (hasSubst_of_constantCoeff_zero hb₀), finsum_eq_sum_of_support_subset (s := Finset.univ.image
     fun i ↦ Finsupp.single i 1), Finset.sum_image fun i _ j _ h ↦ by
       simpa using Finsupp.single_left_inj (one_ne_zero (α := ℕ)) |>.mp h]
   · refine Finset.sum_congr rfl fun i _ ↦ ?_
@@ -436,28 +437,17 @@ section Perturbation
 
 variable {σ τ R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 
-/-- **The lowest-order effect of perturbing a substitution.** Let the series `a t` have zero
-constant coefficient, and perturb the entry `a s` by a series `e` of order at least `n ≥ 1`. Then
-`f(a)` changes by `c e`, where `c` is the coefficient of `Xₛ` in `f`, up to terms of degree greater
-than `n`. -/
-theorem le_order_subst_update_add_sub [DecidableEq σ] (f : MvPowerSeries σ R)
-    {a : σ → MvPowerSeries τ S} (ha : HasSubst a) (ha₀ : ∀ t, constantCoeff (a t) = 0) (s : σ)
-    {e : MvPowerSeries τ S} {n : ℕ} (hn : n ≠ 0) (he : n ≤ e.order) :
-    ((n + 1 : ℕ) : ℕ∞) ≤ (f.subst (Function.update a s (a s + e)) - f.subst a -
-      algebraMap R S (coeff (Finsupp.single s 1) f) • e).order := by
-  set b := Function.update a s (a s + e) with hb_def
-  have he₀ : constantCoeff e = 0 := one_le_order_iff_constCoeff_eq_zero.mp <|
-    (Nat.one_le_cast.mpr (Nat.one_le_iff_ne_zero.mpr hn)).trans he
-  have hb₀ (t : σ) : constantCoeff (b t) = 0 := by
-    rcases eq_or_ne t s with rfl | ht
-    · simp [b, ha₀, he₀]
-    · simp [b, ht, ha₀]
-  have hb : HasSubst b := by
-    refine ⟨fun t ↦ by simp [hb₀ t], fun d ↦ ((ha.coeff_zero d).union
-      (Set.finite_singleton s)).subset fun t ht ↦ ?_⟩
-    rcases eq_or_ne t s with rfl | hts
-    · exact Or.inr rfl
-    · exact Or.inl (by simpa [b, hts] using ht)
+/-- **Monomials of a perturbed substitution.** If `b` agrees with `a` except that
+`b s = a s + e`, and all the series `a t` and `b t` have zero constant coefficient, then each
+monomial in `b` differs from the same monomial in `a` by `e * Q d`, where the constant coefficient
+of `Q d` is `1` for the monomial `Xₛ` and `0` otherwise. -/
+private theorem exists_prod_pow_eq_add_mul_constantCoeff [DecidableEq σ]
+    {a b : σ → MvPowerSeries τ S} (ha₀ : ∀ t, constantCoeff (a t) = 0) {s : σ}
+    {e : MvPowerSeries τ S} (hbs : b s = a s + e) (hb : ∀ t ≠ s, b t = a t)
+    (hb₀ : ∀ t, constantCoeff (b t) = 0) :
+    ∃ Q : (σ →₀ ℕ) → MvPowerSeries τ S,
+      (∀ d : σ →₀ ℕ, (d.prod fun t k ↦ b t ^ k) = (d.prod fun t k ↦ a t ^ k) + e * Q d) ∧
+      ∀ d : σ →₀ ℕ, constantCoeff (Q d) = if d = Finsupp.single s 1 then 1 else 0 := by
   -- each monomial splits as a power of the perturbed entry times a factor `c d` not involving it
   set c : (σ →₀ ℕ) → MvPowerSeries τ S := fun d ↦ (d.erase s).prod fun t k ↦ a t ^ k
   have hprod (x : σ → MvPowerSeries τ S) (hx : ∀ t ≠ s, x t = a t) (d : σ →₀ ℕ) :
@@ -469,10 +459,10 @@ theorem le_order_subst_update_add_sub [DecidableEq σ] (f : MvPowerSeries σ R)
   set Q : (σ →₀ ℕ) → MvPowerSeries τ S := fun d ↦
     (∑ i ∈ Finset.range (d s), b s ^ i * a s ^ (d s - 1 - i)) * c d
   have hQ (d : σ →₀ ℕ) : (d.prod fun t k ↦ b t ^ k) = (d.prod fun t k ↦ a t ^ k) + e * Q d := by
-    rw [hprod b (fun t ht ↦ Function.update_of_ne ht _ _) d, hprod a (fun _ _ ↦ rfl) d]
-    have hbs : b s - a s = e := by rw [hb_def, Function.update_self, add_sub_cancel_left]
+    rw [hprod b hb d, hprod a (fun _ _ ↦ rfl) d]
+    have hsub : b s - a s = e := by rw [hbs, add_sub_cancel_left]
     have hpow := geom_sum₂_mul (b s) (a s) (d s)
-    rw [hbs] at hpow
+    rw [hsub] at hpow
     linear_combination -(c d) * hpow
   -- only the monomial `Xₛ` contributes a constant coefficient to `Q`
   have hQ₀ (d : σ →₀ ℕ) : constantCoeff (Q d) = if d = Finsupp.single s 1 then 1 else 0 := by
@@ -494,6 +484,32 @@ theorem le_order_subst_update_add_sub [DecidableEq σ] (f : MvPowerSeries σ R)
           simp only [c, Finsupp.prod, map_prod, map_pow, ha₀]
           exact Finset.prod_eq_zero ht (zero_pow (Finsupp.mem_support_iff.mp ht))
         simp [hc]
+  exact ⟨Q, hQ, hQ₀⟩
+
+/-- **The lowest-order effect of perturbing a substitution.** Let the series `a t` have zero
+constant coefficient, and perturb the entry `a s` by a series `e` of order at least `n ≥ 1`. Then
+`f(a)` changes by `c e`, where `c` is the coefficient of `Xₛ` in `f`, up to terms of degree greater
+than `n`. -/
+theorem le_order_subst_update_add_sub [DecidableEq σ] (f : MvPowerSeries σ R)
+    {a : σ → MvPowerSeries τ S} (ha : HasSubst a) (ha₀ : ∀ t, constantCoeff (a t) = 0) (s : σ)
+    {e : MvPowerSeries τ S} {n : ℕ} (hn : n ≠ 0) (he : n ≤ e.order) :
+    ((n + 1 : ℕ) : ℕ∞) ≤ (f.subst (Function.update a s (a s + e)) - f.subst a -
+      algebraMap R S (coeff (Finsupp.single s 1) f) • e).order := by
+  set b := Function.update a s (a s + e)
+  have he₀ : constantCoeff e = 0 := one_le_order_iff_constCoeff_eq_zero.mp <|
+    (Nat.one_le_cast.mpr (Nat.one_le_iff_ne_zero.mpr hn)).trans he
+  have hb₀ (t : σ) : constantCoeff (b t) = 0 := by
+    rcases eq_or_ne t s with rfl | ht
+    · simp [b, ha₀, he₀]
+    · simp [b, ht, ha₀]
+  have hb : HasSubst b := by
+    refine ⟨fun t ↦ by simp [hb₀ t], fun d ↦ ((ha.coeff_zero d).union
+      (Set.finite_singleton s)).subset fun t ht ↦ ?_⟩
+    rcases eq_or_ne t s with rfl | hts
+    · exact Or.inr rfl
+    · exact Or.inl (by simpa [b, hts] using ht)
+  obtain ⟨Q, hQ, hQ₀⟩ := exists_prod_pow_eq_add_mul_constantCoeff (s := s) (e := e) ha₀
+    (by simp [b]) (fun t ht ↦ by simp [b, ht]) hb₀
   refine nat_le_order fun m hm ↦ ?_
   have hfin := coeff_subst_finite ha f m
   rw [map_sub, map_sub, coeff_subst hb, coeff_subst ha, coeff_smul, sub_eq_zero, sub_eq_iff_eq_add']
