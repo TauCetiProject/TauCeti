@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Units.Elimination.Basic
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+import TauCeti.Algebra.Polynomial.Cubic.Basic
 import TauCeti.NumberTheory.NumberField.WorkedExamples.Cubic23.Invariants
 
 /-!
@@ -368,6 +368,19 @@ private theorem discr_ne_sq_mul_of_pos {g : ℤ[X]} (hK : NumberField.discr K = 
   rw [hK] at heq
   nlinarith [sq_nonneg (n : ℤ)]
 
+/-- The two survivors of the root test, `X³ + X² - 2X - 1` and `X³ + 2X² - 3X - 1`, have positive
+discriminant (`49` and `257`). -/
+private theorem discr_pos_of_survivor {a b c : ℤ}
+    (h : (a = 1 ∧ b = -2 ∧ c = -1) ∨ (a = 2 ∧ b = -3 ∧ c = -1)) :
+    0 < (X ^ 3 + C a * X ^ 2 + C b * X + C c : ℤ[X]).discr := by
+  rcases h with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩
+  · rw [show (X ^ 3 + C 1 * X ^ 2 + C (-2) * X + C (-1) : ℤ[X]) = X ^ 3 + X ^ 2 - 2 * X - 1 by
+      norm_num; ring, discr_X_pow_three_add_X_sq_sub_two_mul_X_sub_one]
+    norm_num
+  · rw [show (X ^ 3 + C 2 * X ^ 2 + C (-3) * X + C (-1) : ℤ[X]) = X ^ 3 + 2 * X ^ 2 - 3 * X - 1 by
+      norm_num; ring, discr_X_pow_three_add_two_mul_X_sq_sub_three_mul_X_sub_one]
+    norm_num
+
 /-- **The 98-candidate elimination certificate.** Every monic cubic with constant coefficient
 `±1` and the coefficient bounds forced by a unit below `θ² - θ` is excluded either by having no
 root in the relevant real interval or by the index--discriminant obstruction. -/
@@ -384,46 +397,24 @@ theorem cubicUnitEliminationCertificate (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 +
   have ha := hk 1 one_pos (by omega)
   have hb := hk 2 (by omega) (by omega)
   norm_num at ha hb
-  have ha4 : -4 < g.coeff 2 ∧ g.coeff 2 < 4 := by
-    rw [abs_le] at ha
-    have ha_lower_real : (-4 : ℝ) < g.coeff 2 := by linarith [hB.2, ha.1]
-    have ha_upper_real : (g.coeff 2 : ℝ) < 4 := by linarith [hB.2, ha.2]
-    constructor
-    · exact_mod_cast ha_lower_real
-    · exact_mod_cast ha_upper_real
-  have hb4 : -4 < g.coeff 1 ∧ g.coeff 1 < 4 := by
-    rw [abs_le] at hb
-    have hb_lower_real : (-4 : ℝ) < g.coeff 1 := by linarith [hB.2, hb.1]
-    have hb_upper_real : (g.coeff 1 : ℝ) < 4 := by linarith [hB.2, hb.2]
-    constructor
-    · exact_mod_cast hb_lower_real
-    · exact_mod_cast hb_upper_real
+  obtain ⟨haL, haU⟩ : -4 < g.coeff 2 ∧ g.coeff 2 < 4 := by
+    exact_mod_cast abs_lt.mp (lt_of_le_of_lt (c := 4) ha (by linarith [hB.2]))
+  obtain ⟨hbL, hbU⟩ : -4 < g.coeff 1 ∧ g.coeff 1 < 4 := by
+    exact_mod_cast abs_lt.mp (lt_of_le_of_lt (c := 4) hb (by linarith [hB.2]))
   have hpoly := Polynomial.Monic.eq_X_pow_three_add hmonic hdeg
   have heval (x : ℝ) : aeval x g = x ^ 3 + g.coeff 2 * x ^ 2 + g.coeff 1 * x + g.coeff 0 := by
     conv_lhs => rw [hpoly]
     simp
-  obtain ⟨haL, haU⟩ := ha4
-  obtain ⟨hbL, hbU⟩ := hb4
   by_cases hroot : ∃ x ∈ Set.Ioo (1 : ℝ) (w u), aeval x g = 0
   · right
     obtain ⟨x, ⟨hx1, hxB⟩, hxroot⟩ := hroot
     rw [heval] at hxroot
-    rcases cubic_candidate_coefficients_of_root (g.coeff 2) (g.coeff 1) (g.coeff 0)
-      haL haU hbL hbU h0
-      (unit_value_pow_three_sub_self_sub_one hmin hw hu) hx1 hxB hxroot with
-      hc | hc
-    · have hg : g = X ^ 3 + X ^ 2 - 2 * X - 1 := by
-        rw [hpoly, hc.1, hc.2.1, hc.2.2]
-        norm_num
-        ring
-      exact fun n _ ↦ discr_ne_sq_mul_of_pos (discr_eq_neg_twenty_three hmin hgen)
-        (by rw [hg, discr_X_pow_three_add_X_sq_sub_two_mul_X_sub_one]; norm_num) n
-    · have hg : g = X ^ 3 + 2 * X ^ 2 - 3 * X - 1 := by
-        rw [hpoly, hc.1, hc.2.1, hc.2.2]
-        norm_num
-        ring
-      exact fun n _ ↦ discr_ne_sq_mul_of_pos (discr_eq_neg_twenty_three hmin hgen)
-        (by rw [hg, discr_X_pow_three_add_two_mul_X_sq_sub_three_mul_X_sub_one]; norm_num) n
+    have hc := cubic_candidate_coefficients_of_root (g.coeff 2) (g.coeff 1) (g.coeff 0)
+      haL haU hbL hbU h0 (unit_value_pow_three_sub_self_sub_one hmin hw hu) hx1 hxB hxroot
+    have hpos : 0 < g.discr := by
+      rw [hpoly]
+      exact discr_pos_of_survivor hc
+    exact fun n _ ↦ discr_ne_sq_mul_of_pos (discr_eq_neg_twenty_three hmin hgen) hpos n
   · left
     simpa only [not_exists, not_and] using hroot
 

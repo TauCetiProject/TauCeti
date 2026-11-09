@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Algebra.Polynomial.Degree.Operations
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Algebra.Polynomial.Monic
@@ -35,9 +34,6 @@ a *free* tuple rather than as the data of a polynomial subtype.
 * `TauCeti.Polynomial.coeff_monicOfCoeff` and `TauCeti.Polynomial.monicOfCoeff_coeff`: the
   coefficients are read back off, and every monic polynomial of degree `n` arises this way, so the
   two constructions are mutually inverse.
-* `Polynomial.eq_cubic_of_natDegree_le_three` and `Polynomial.Monic.eq_X_pow_three_add`: the normal
-  form `a * X ^ 3 + b * X ^ 2 + c * X + d` of a polynomial of degree at most three, and
-  `X ^ 3 + a * X ^ 2 + b * X + c` of a monic cubic.
 * `TauCeti.Polynomial.monicOfCoeff_add_single_zero`: moving the constant coefficient by `t` adds
   the constant `t`.
 
@@ -161,25 +157,3 @@ end OfCoeff
 end Polynomial
 
 end TauCeti
-
-namespace Polynomial
-
-variable {R : Type*} [Semiring R]
-
-/-- A polynomial of degree at most three is `C a * X ^ 3 + C b * X ^ 2 + C c * X + C d` for its own
-coefficients `a`, `b`, `c`, `d`. -/
-theorem eq_cubic_of_natDegree_le_three {p : R[X]} (h : p.natDegree ≤ 3) :
-    p = C (p.coeff 3) * X ^ 3 + C (p.coeff 2) * X ^ 2 + C (p.coeff 1) * X + C (p.coeff 0) := by
-  conv_lhs => rw [p.as_sum_range' 4 (by omega)]
-  simp only [Finset.sum_range_succ, Finset.sum_range_zero, ← C_mul_X_pow_eq_monomial, pow_one,
-    pow_zero, mul_one, zero_add]
-  abel
-
-/-- A monic polynomial of degree three is `X ^ 3 + C a * X ^ 2 + C b * X + C c` for its own
-coefficients `a`, `b`, `c`. -/
-theorem Monic.eq_X_pow_three_add {g : R[X]} (hmonic : g.Monic) (hdeg : g.natDegree = 3) :
-    g = X ^ 3 + C (g.coeff 2) * X ^ 2 + C (g.coeff 1) * X + C (g.coeff 0) := by
-  have h := eq_cubic_of_natDegree_le_three hdeg.le
-  rwa [show g.coeff 3 = 1 from hdeg ▸ hmonic.coeff_natDegree, C_1, one_mul] at h
-
-end Polynomial
