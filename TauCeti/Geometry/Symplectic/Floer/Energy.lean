@@ -72,7 +72,7 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
 * `SymplecticForm.integral_floerEnergyDensity`: the energy identity on a rectangle.
 * `SymplecticForm.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero`: the energy minus
   the symplectic area plus the integrated curvature does not change when a compact domain is shrunk
-  to a measurable part outside which the perturbation vanishes locally.
+  to a part outside which the perturbation vanishes locally.
 * `SymplecticForm.floerEnergyDensity_add_hamiltonianCurvature_eq`: for a `C²` map, the energy
   density plus the curvature is the exterior derivative of the one-form `K(u) + λ(u)`, where
   `λₓ(v) = ½ ω(x, v)` is the primitive of `ω`; this globalizes the energy identity to domains
@@ -87,13 +87,14 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   along a line near which the perturbation is cylindrical.
 * `SymplecticForm.hamiltonianCurvature_congr_of_eventuallyEq`,
   `SymplecticForm.hamiltonianCurvature_comp_add_right`: the curvature is local in the domain and
-  commutes with domain translations, and likewise for the perturbed derivative
+  commutes with domain translations (so data that agree on an open set have the same integrated
+  curvature over it, `SymplecticForm.setLIntegral_enorm_hamiltonianCurvature_congr_of_isOpen`),
+  and likewise for the perturbed derivative
   (`SymplecticForm.perturbedFDeriv_congr_of_eventuallyEq`,
   `SymplecticForm.perturbedFDeriv_comp_add_right`) and the energy density
   (`SymplecticForm.floerEnergyDensity_congr_of_eventuallyEq`,
   `SymplecticForm.floerEnergyDensity_comp_add_right`); hence translations preserve the energy
-  (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`) and the integrated curvature
-  (`SymplecticForm.lintegral_enorm_hamiltonianCurvature_comp_add_right`).
+  (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`).
 
 ## References
 
@@ -205,6 +206,16 @@ theorem hamiltonianCurvature_congr_of_eventuallyEq (ω : SymplecticForm V)
   have ht' : (fun w ↦ Kt w x) =ᶠ[𝓝 z] fun w ↦ Kt' w x := ht.mono fun _ hw ↦ congrFun hw x
   rw [hamiltonianCurvature_def, hamiltonianCurvature_def, hs'.fderiv_eq, ht'.fderiv_eq,
     hs.eq_of_nhds, ht.eq_of_nhds]
+
+/-- Perturbation data that agree on an open set have the same integrated curvature over it. -/
+theorem setLIntegral_enorm_hamiltonianCurvature_congr_of_isOpen (ω : SymplecticForm V)
+    {Ks Kt Ks' Kt' : ℝ × ℝ → V → ℝ} {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hs : EqOn Ks Ks' U)
+    (ht : EqOn Kt Kt' U) (u : ℝ × ℝ → V) :
+    ∫⁻ z in U, ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ =
+      ∫⁻ z in U, ‖ω.hamiltonianCurvature Ks' Kt' z (u z)‖ₑ :=
+  setLIntegral_congr_fun hU.measurableSet fun z hz ↦ by
+    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (hs.eventuallyEq_of_mem (hU.mem_nhds hz))
+      (ht.eventuallyEq_of_mem (hU.mem_nhds hz))]
 
 /-- Curvature commutes with translations of the domain. -/
 theorem hamiltonianCurvature_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
@@ -520,17 +531,6 @@ theorem lintegral_floerEnergyDensity_comp_add_right (ω : SymplecticForm V)
   exact hv.setLIntegral_comp_preimage_emb (measurableEmbedding_addRight v)
     (fun z ↦ ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z)) S
 
-/-- Translations of the domain preserve the integrated curvature along a map. -/
-theorem lintegral_enorm_hamiltonianCurvature_comp_add_right (ω : SymplecticForm V)
-    (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (v : ℝ × ℝ) :
-    ∫⁻ z, ‖ω.hamiltonianCurvature (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) z (u (z + v))‖ₑ =
-      ∫⁻ z, ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ := by
-  have hv : MeasurePreserving (· + v) volume volume :=
-    (measurePreserving_add_right volume v.1).prod (measurePreserving_add_right volume v.2)
-  simp only [hamiltonianCurvature_comp_add_right]
-  exact hv.lintegral_comp_emb (measurableEmbedding_addRight v)
-    (fun z ↦ ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ)
-
 variable {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
 
 /-- For a map and perturbation data that are `C¹` over an open set `U` of the domain, the Floer
@@ -542,9 +542,9 @@ theorem continuousOn_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ ×
   have hdu := hu.continuousOn_fderiv_of_isOpen hU le_rfl
   refine (ω.continuousOn_apply_comp
     ((hdu.clm_apply (continuousOn_const (c := stdComplexLineReal))).sub
-      (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hU hu.continuousOn hKs))
+      (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hu.continuousOn hKs))
     ((hdu.clm_apply (continuousOn_const (c := stdComplexLineImag))).sub
-      (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hU hu.continuousOn hKt))).congr
+      (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hu.continuousOn hKt))).congr
     fun z _ ↦ ?_
   simp only [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
     perturbedFDeriv_apply_stdComplexLineImag, Pi.sub_apply]
@@ -575,8 +575,8 @@ theorem continuousOn_hamiltonianCurvature_comp (ω : SymplecticForm V) {U : Set 
     (((hD Kt hKt).clm_apply continuousOn_const).sub
       ((hD Ks hKs).clm_apply continuousOn_const)).sub
         (ω.continuousOn_apply_comp
-          (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hU hu hKs)
-          (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hU hu hKt))
+          (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hu hKs)
+          (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hu hKt))
   refine h.congr fun z hz ↦ ?_
   simp only [hamiltonianCurvature_def, poissonBracket_def, hslice Ks hKs hz, hslice Kt hKt hz]
 
@@ -637,13 +637,13 @@ theorem integral_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ × ℝ
     stdComplexLineImag_eq, integral_fderiv_sub_fderiv_Icc hU hg hf hab habU]
 
 /-- **Shrinking to where the datum lives.** Let the perturbation data be `C¹` over an open set
-`P` of the domain, let `u` be `C¹` on `P`, and let `T ⊆ D ⊆ P` with `T` measurable and `D`
-compact. If `K_s` and `K_t` vanish near every point of `D \ T`, then the Floer energy minus the
-symplectic area plus the integrated curvature is the same over `D` as over `T`. -/
+`P` of the domain, let `u` be `C¹` on `P`, and let `T ⊆ D ⊆ P` with `D` compact. If `K_s` and
+`K_t` vanish near every point of `D \ T`, then the Floer energy minus the symplectic area plus the
+integrated curvature is the same over `D` as over `T`. -/
 theorem integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero (ω : SymplecticForm V)
     {P D T : Set (ℝ × ℝ)} (hP : IsOpen P) (hu : ContDiffOn ℝ 1 u P)
     (hKs : ContDiffOn ℝ 1 (uncurry Ks) (P ×ˢ univ)) (hKt : ContDiffOn ℝ 1 (uncurry Kt) (P ×ˢ univ))
-    (hD : IsCompact D) (hDP : D ⊆ P) (hT : MeasurableSet T) (hTD : T ⊆ D)
+    (hD : IsCompact D) (hDP : D ⊆ P) (hTD : T ⊆ D)
     (hKsD : ∀ z ∈ D \ T, Ks =ᶠ[𝓝 z] 0) (hKtD : ∀ z ∈ D \ T, Kt =ᶠ[𝓝 z] 0) :
     (∫ z in D, ω.floerEnergyDensity Ks Kt u z) -
       (∫ z in D, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) +
@@ -651,7 +651,6 @@ theorem integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero (ω : Symple
     (∫ z in T, ω.floerEnergyDensity Ks Kt u z) -
       (∫ z in T, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) +
       ∫ z in T, ω.hamiltonianCurvature Ks Kt z (u z) := by
-  have hDTm : MeasurableSet (D \ T) := hD.isClosed.measurableSet.diff hT
   -- The three integrands are continuous on `P`, hence integrable on the compact set `D`.
   have hint (f : ℝ × ℝ → ℝ) (hf : ContinuousOn f P) : IntegrableOn f D :=
     (hf.mono hDP).integrableOn_compact hD
@@ -661,25 +660,27 @@ theorem integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero (ω : Symple
     (fderiv ℝ u z stdComplexLineImag)) (ω.continuousOn_apply_comp
       (hdu.clm_apply continuousOn_const) (hdu.clm_apply continuousOn_const))
   have hcurv := hint _ (ω.continuousOn_hamiltonianCurvature_comp hP hu.continuousOn hKs hKt)
-  have hsplit (f : ℝ × ℝ → ℝ) (hf : IntegrableOn f D) :
-      ∫ z in D, f z = (∫ z in T, f z) + ∫ z in D \ T, f z := by
-    rw [← integral_inter_add_sdiff hT hf, inter_eq_right.2 hTD]
   -- Off `T` the datum vanishes, so the energy is the area and the curvature vanishes.
-  have hKsD' (z : ℝ × ℝ) (hz : z ∈ D \ T) : Ks =ᶠ[𝓝 z] fun _ _ ↦ 0 := hKsD z hz
-  have hKtD' (z : ℝ × ℝ) (hz : z ∈ D \ T) : Kt =ᶠ[𝓝 z] fun _ _ ↦ 0 := hKtD z hz
-  have hED : ∫ z in D \ T, ω.floerEnergyDensity Ks Kt u z =
-      ∫ z in D \ T, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
-    refine setIntegral_congr_fun hDTm fun z hz => ?_
+  have hzero (z : ℝ × ℝ) (hz : z ∈ D \ T) :
+      ω.floerEnergyDensity Ks Kt u z -
+        ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) +
+          ω.hamiltonianCurvature Ks Kt z (u z) = 0 := by
+    have hKs' : Ks =ᶠ[𝓝 z] fun _ _ ↦ 0 := hKsD z hz
+    have hKt' : Kt =ᶠ[𝓝 z] fun _ _ ↦ 0 := hKtD z hz
+    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq hKs' hKt', hamiltonianCurvature_zero_left]
     simp [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
-      perturbedFDeriv_apply_stdComplexLineImag, (hKsD' z hz).self_of_nhds,
-      (hKtD' z hz).self_of_nhds]
-  have hRD : ∫ z in D \ T, ω.hamiltonianCurvature Ks Kt z (u z) = 0 := by
-    refine setIntegral_eq_zero_of_forall_eq_zero fun z hz => ?_
-    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (hKsD' z hz) (hKtD' z hz),
-      hamiltonianCurvature_zero_left]
-    simp
-  rw [hsplit _ hE, hsplit _ harea, hsplit _ hcurv, hED, hRD]
-  ring
+      perturbedFDeriv_apply_stdComplexLineImag, hKs'.self_of_nhds, hKt'.self_of_nhds]
+  have h := setIntegral_eq_of_subset_of_forall_sdiff_eq_zero (μ := volume)
+    hD.isClosed.measurableSet hTD hzero
+  have hET := hE.mono_set hTD
+  have hAT := harea.mono_set hTD
+  have hRT := hcurv.mono_set hTD
+  have e₁ := integral_add (hE.sub harea) hcurv
+  have e₂ := integral_sub hE harea
+  have e₃ := integral_add (hET.sub hAT) hRT
+  have e₄ := integral_sub hET hAT
+  simp only [Pi.sub_apply] at e₁ e₃
+  linarith
 
 /-- **The energy controls the perturbed derivative in `L²`.** Let `u` solve the Floer equation on
 a measurable set `U` for domain-dependent almost complex structures `J z` satisfying

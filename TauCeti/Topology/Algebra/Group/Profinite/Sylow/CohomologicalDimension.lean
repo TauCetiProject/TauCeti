@@ -62,7 +62,7 @@ subgroup `P` of a profinite group `G` and a smooth discrete `p`-primary torsion 
 of `G`, restriction `Hⁿ(G, X) → Hⁿ(P, X)` is injective in every degree `n`. -/
 theorem IsProPSylow.res_injective (hP : IsProPSylow p P) {k : Type w} [Ring k]
     [TopologicalSpace k] {X : TopRep k G} (hX : IsSmoothDiscrete k X)
-    (hX' : IsPPrimaryTorsion p X.V) (n : ℕ) :
+    (hX' : IsAddPGroup p X.V) (n : ℕ) :
     Function.Injective (ContinuousCohomology.res P X n).hom :=
   ContinuousCohomology.res_injective_of_forall_not_dvd_index Fact.out hX hX' hP.isClosed
     hP.not_dvd_index_of_le n

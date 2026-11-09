@@ -274,7 +274,8 @@ theorem markovChainLaw_map_prefix_succ_eq_compProd [SFinite ν] (n : ℕ) :
         · rfl
     _ = (((markovChainLaw ν κ).map (frestrictLe n)) ⊗ₘ markovStep κ n).map
           (Prod.map (iicEquivFin α n) id) := by
-        rw [markovChainLaw, Kernel.map_frestrictLe_trajMeasure_compProd_of_sFinite]
+        rw [markovChainLaw,
+          Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure_of_sFinite]
     _ = ((markovChainLaw ν κ).map (frestrictLe n)).map (iicEquivFin α n) ⊗ₘ
           κ.comap (fun w : Fin (n + 1) → α => w (Fin.last n))
             (measurable_pi_apply (Fin.last n)) := by

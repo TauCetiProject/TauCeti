@@ -132,7 +132,7 @@ private theorem exists_isSliceChart_inter_and_tangentConeAt {n : ℕ∞ω} (hn :
   have hmem (z : E) (hz : z ∈ e₁.source ∩ e₂.source) : z ∈ S₁ ∩ S₂ ↔ g z = 0 := by
     simp [g, hP₁, hP₂, h₁.mem_iff hz.1, h₂.mem_iff hz.2]
   have hgy : g y = 0 := (hmem y ⟨hy₁, hy₂⟩).1 ⟨hyS₁, hyS₂⟩
-  obtain ⟨e, hye, hes, hC, hCs, he⟩ := hg.exists_isSliceChart_preimage_zero hn hrange hkerC
+  obtain ⟨e, hye, hes, hC, hCs, he⟩ := hg.exists_isSliceChart_preimage_zero hrange hkerC
     (e₁.open_source.inter e₂.open_source) ⟨hy₁, hy₂⟩ hgC
   refine ⟨⟨e, hye, hC, hCs, isSliceChart_iff.2 fun z hz ↦ ?_⟩, ?_⟩
   · rw [← hker, ← he.mem_iff hz]
@@ -236,7 +236,7 @@ theorem exists_isSliceChart_inter_preimage_zero {n : ℕ∞ω} (hn : n ≠ 0) {S
       IsSliceChart e ((Submodule.span 𝕜 (tangentConeAt 𝕜 S y) ⊓ g'.ker : Submodule 𝕜 E) : Set E)
         (S ∩ g ⁻¹' {0}) := by
   obtain ⟨e₂, hy₂, -, hc₂, hs₂, h₂⟩ :=
-    hg.exists_isSliceChart_preimage_zero hn hg' hker hU hyU hC
+    hg.exists_isSliceChart_preimage_zero hg' hker hU hyU hC
   have hlevel := hg.span_tangentConeAt_preimage_singleton hg' hker
   rw [hgy] at hlevel
   rw [← hlevel] at htr hI ⊢
@@ -258,7 +258,7 @@ theorem tangentConeAt_inter_preimage_zero {n : ℕ∞ω} (hn : n ≠ 0) {S : Set
     tangentConeAt 𝕜 (S ∩ g ⁻¹' {0}) y =
       ((Submodule.span 𝕜 (tangentConeAt 𝕜 S y) ⊓ g'.ker : Submodule 𝕜 E) : Set E) := by
   obtain ⟨e₂, hy₂, -, hc₂, hs₂, h₂⟩ :=
-    hg.exists_isSliceChart_preimage_zero hn hg' hker hU hyU hC
+    hg.exists_isSliceChart_preimage_zero hg' hker hU hyU hC
   have hlevel := hg.span_tangentConeAt_preimage_singleton hg' hker
   rw [hgy] at hlevel
   rw [← hlevel] at htr hI ⊢

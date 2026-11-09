@@ -166,6 +166,49 @@ end Curve
 
 variable {L : ℝ → E × E → ℝ} {Q : ℝ → ℝ → E} {a b : ℝ}
 
+/-- **The pointwise derivative of the action integrand.** If `ι` is the first prolongation of the
+family `Q` (position, curve parameter and velocity written through the partial derivative of the
+family in the curve parameter), and `L ∘ ι` is `C¹` at `(0, t)`, then its derivative in the
+variation parameter is the derivative of `L` along the prolongation `(η, η')` of the variation
+field. -/
+private theorem fderiv_uncurry_comp_apply_one_zero {ι : ℝ × ℝ → ℝ × (E × E)} {t : ℝ}
+    (hι : ι = fun z ↦ (z.2, (uncurry Q z, fderiv ℝ (uncurry Q) z (0, 1))))
+    (hQt : ContDiffAt ℝ 2 (uncurry Q) (0, t))
+    (hLt : ContDiffAt ℝ 1 (uncurry L) (t, (Q 0 t, deriv (Q 0) t)))
+    (hGt : ContDiffAt ℝ 1 (uncurry L ∘ ι) (0, t))
+    (hιt : ι (0, t) = (t, (Q 0 t, deriv (Q 0) t))) :
+    fderiv ℝ (uncurry L ∘ ι) (0, t) (1, 0) = fderiv ℝ (L t) (Q 0 t, deriv (Q 0) t)
+      (deriv (fun s ↦ Q s t) 0, deriv (fun r ↦ deriv (fun s ↦ Q s r) 0) t) := by
+  have hD : DifferentiableAt ℝ (fderiv ℝ (uncurry Q)) (0, t) :=
+    (hQt.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero
+  have hpath : HasDerivAt (fun s : ℝ ↦ (s, t)) ((1 : ℝ), (0 : ℝ)) 0 := hasDerivAt_prodMk_left 0 t
+  have hη : HasDerivAt (fun s ↦ Q s t) (fderiv ℝ (uncurry Q) (0, t) (1, 0)) 0 := by
+    simpa only [timeFDeriv_apply, uncurry_apply_pair] using
+      hasDerivAt_parameterCurve (hQt.differentiableAt two_ne_zero)
+  have hcurve : HasDerivAt (fun s ↦ ι (s, t))
+      ((0 : ℝ), (fderiv ℝ (uncurry Q) (0, t) (1, 0),
+        fderiv ℝ (fderiv ℝ (uncurry Q)) (0, t) (1, 0) (0, 1))) 0 := by
+    have hΦ := hasDerivAt_fderiv_apply_fst hD ((0 : ℝ), (1 : ℝ))
+    rw [hι]
+    exact HasDerivAt.prodMk (hasDerivAt_const 0 t) (HasDerivAt.prodMk hη hΦ)
+  have hLd : DifferentiableAt ℝ (uncurry L) (t, (Q 0 t, deriv (Q 0) t)) :=
+    hLt.differentiableAt one_ne_zero
+  have hGs : HasDerivAt (fun s ↦ (uncurry L ∘ ι) (s, t))
+      (fderiv ℝ (uncurry L) (ι (0, t)) ((0 : ℝ), (fderiv ℝ (uncurry Q) (0, t) (1, 0),
+        fderiv ℝ (fderiv ℝ (uncurry Q)) (0, t) (1, 0) (0, 1)))) 0 :=
+    (hιt ▸ hLd).hasFDerivAt.comp_hasDerivAt 0 hcurve
+  have hGs' : HasDerivAt (fun s ↦ (uncurry L ∘ ι) (s, t))
+      (fderiv ℝ (uncurry L ∘ ι) (0, t) (1, 0)) 0 :=
+    HasFDerivAt.comp_hasDerivAt (f := fun s : ℝ ↦ (s, t)) 0
+      ((hGt).differentiableAt one_ne_zero).hasFDerivAt hpath
+  have hslice : fderiv ℝ (L t) (Q 0 t, deriv (Q 0) t) =
+      (fderiv ℝ (uncurry L) (t, (Q 0 t, deriv (Q 0) t))).comp (inr ℝ ℝ (E × E)) :=
+    fderiv_slice_right hLd
+  have hη' : deriv (fun r ↦ deriv (fun s ↦ Q s r) 0) t =
+      fderiv ℝ (fderiv ℝ (uncurry Q)) (0, t) (1, 0) (0, 1) :=
+    deriv_deriv_slice_left hQt (by simp)
+  rw [hGs'.unique hGs, hslice, hιt, hη.deriv, hη', coe_comp, Function.comp_apply, inr_apply]
+
 /-- **The derivative of the action along a variation.** Let the uncurried family
 `(s, t) ↦ Q s t` be `C²` at every point of `{0} × [a, b]`, and let `L` be jointly `C¹` in time,
 position and velocity along the central curve `Q 0`. Then the action of `Q s` between `a` and `b`
@@ -216,36 +259,7 @@ theorem hasDerivAt_lagrangianAction
     (intervalIntegral.integral_congr fun t ht ↦ ?_)
   -- Pointwise, the derivative of the integrand in `s` is computed by the chain rule along
   -- `s ↦ (s, t)`; the symmetry of the second derivative of the family identifies the result.
-  have hQt := hQ t ht
-  have hD : DifferentiableAt ℝ (fderiv ℝ (uncurry Q)) (0, t) :=
-    (hQt.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero
-  have hpath : HasDerivAt (fun s : ℝ ↦ (s, t)) ((1 : ℝ), (0 : ℝ)) 0 := hasDerivAt_prodMk_left 0 t
-  have hη : HasDerivAt (fun s ↦ Q s t) (fderiv ℝ (uncurry Q) (0, t) (1, 0)) 0 := by
-    simpa only [timeFDeriv_apply, uncurry_apply_pair] using
-      hasDerivAt_parameterCurve (hQt.differentiableAt two_ne_zero)
-  have hcurve : HasDerivAt (fun s ↦ ι (s, t))
-      ((0 : ℝ), (fderiv ℝ (uncurry Q) (0, t) (1, 0),
-        fderiv ℝ (fderiv ℝ (uncurry Q)) (0, t) (1, 0) (0, 1))) 0 := by
-    have hΦ := hasDerivAt_fderiv_apply_fst hD ((0 : ℝ), (1 : ℝ))
-    rw [hι]
-    exact HasDerivAt.prodMk (hasDerivAt_const 0 t) (HasDerivAt.prodMk hη hΦ)
-  have hLd : DifferentiableAt ℝ (uncurry L) (t, (Q 0 t, deriv (Q 0) t)) :=
-    (hL t ht).differentiableAt one_ne_zero
-  have hGs : HasDerivAt (fun s ↦ (uncurry L ∘ ι) (s, t))
-      (fderiv ℝ (uncurry L) (ι (0, t)) ((0 : ℝ), (fderiv ℝ (uncurry Q) (0, t) (1, 0),
-        fderiv ℝ (fderiv ℝ (uncurry Q)) (0, t) (1, 0) (0, 1)))) 0 :=
-    (hιt t ht ▸ hLd).hasFDerivAt.comp_hasDerivAt 0 hcurve
-  have hGs' : HasDerivAt (fun s ↦ (uncurry L ∘ ι) (s, t))
-      (fderiv ℝ (uncurry L ∘ ι) (0, t) (1, 0)) 0 :=
-    HasFDerivAt.comp_hasDerivAt (f := fun s : ℝ ↦ (s, t)) 0
-      ((hG t ht).differentiableAt one_ne_zero).hasFDerivAt hpath
-  have hslice : fderiv ℝ (L t) (Q 0 t, deriv (Q 0) t) =
-      (fderiv ℝ (uncurry L) (t, (Q 0 t, deriv (Q 0) t))).comp (inr ℝ ℝ (E × E)) :=
-    fderiv_slice_right hLd
-  have hη' : deriv (fun r ↦ deriv (fun s ↦ Q s r) 0) t =
-      fderiv ℝ (fderiv ℝ (uncurry Q)) (0, t) (1, 0) (0, 1) :=
-    deriv_deriv_slice_left hQt (by simp)
-  rw [hGs'.unique hGs, hslice, hιt t ht, hη.deriv, hη', coe_comp, Function.comp_apply, inr_apply]
+  exact fderiv_uncurry_comp_apply_one_zero hι (hQ t ht) (hL t ht) (hG t ht) (hιt t ht)
 
 /-- **The first variation formula, with the endpoint boundary term.** Let the uncurried family
 `(s, t) ↦ Q s t` be `C²` at every point of `{0} × [a, b]`, and let `L` be jointly `C²` along the

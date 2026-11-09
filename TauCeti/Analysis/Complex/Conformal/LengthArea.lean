@@ -213,7 +213,8 @@ theorem lintegral_circleImageLength_sq_div_le_volume_image (hUo : IsOpen U)
     (ζ : ℂ) :
     ∫⁻ ρ in Ioi (0 : ℝ), circleImageLength f s ζ ρ ^ 2 / ENNReal.ofReal ρ ≤
       ENNReal.ofReal (2 * π) * volume (f '' s) := by
-  rw [volume_image_eq_lintegral_enorm_deriv_sq hUo hf hs.nullMeasurableSet hsU hinj]
+  rw [volume_image_eq_lintegral_enorm_deriv_sq
+    (fun _ hz => hf.differentiableAt (hUo.mem_nhds (hsU hz))) hs.nullMeasurableSet hinj]
   exact lintegral_circleImageLength_sq_div_le_lintegral_enorm_deriv_sq f hs ζ
 
 /-- **Wolff's lemma.** If `2 π` times the Dirichlet integral of `f` over `s` is smaller than
@@ -241,7 +242,8 @@ theorem exists_circleImageLength_sq_lt_of_volume_image (hUo : IsOpen U)
     (hc : ENNReal.ofReal (2 * π) * volume (f '' s) < c * ENNReal.ofReal (Real.log (R / r))) :
     ∃ ρ ∈ Ioo r R, circleImageLength f s ζ ρ ^ 2 < c := by
   refine exists_circleImageLength_sq_lt f hs ζ hr hrR ?_
-  rwa [volume_image_eq_lintegral_enorm_deriv_sq hUo hf hs.nullMeasurableSet hsU hinj] at hc
+  rwa [volume_image_eq_lintegral_enorm_deriv_sq
+    (fun _ hz => hf.differentiableAt (hUo.mem_nhds (hsU hz))) hs.nullMeasurableSet hinj] at hc
 
 /-! ### Short circles at arbitrarily small radii -/
 

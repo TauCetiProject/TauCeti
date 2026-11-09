@@ -248,11 +248,7 @@ theorem manifoldLeviForm_comp_apply (hu : ContMDiffAt 𝓘(ℝ, F) 𝓘(ℝ) 2 u
   let G : E → F := chartAt F (g x) ∘ g ∘ (chartAt E x).symm
   have hx' : (chartAt E x).symm (chartAt E x x) = x :=
     (chartAt E x).left_inv (mem_chart_source E x)
-  have hG : ContDiffAt ℂ 2 G (chartAt E x x) := by
-    rw [← contDiffWithinAt_univ]
-    simpa only [G, extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
-      modelWithCornersSelf_coe_symm, id_comp, comp_id, Set.range_id] using
-      (contMDiffAt_iff.mp hg).2
+  have hG : ContDiffAt ℂ 2 G (chartAt E x x) := hg.contDiffAt_writtenInExtChartAt
   have hGx : G (chartAt E x x) = chartAt F (g x) (g x) := by
     simp only [G, Function.comp_apply, hx']
   have hD : fderiv ℂ G (chartAt E x x) = mfderiv 𝓘(ℂ, E) 𝓘(ℂ, F) g x := by

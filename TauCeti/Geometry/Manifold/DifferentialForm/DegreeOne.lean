@@ -35,6 +35,8 @@ derivative applies.
   when the corresponding degree-one form does.
 * `TauCeti.SmoothBundleForm.degreeOneEquiv`: the linear equivalence between smooth degree-one
   forms and smooth sections of the bundle of fibrewise linear maps.
+* `TauCeti.SmoothBundleForm.tangentIdentity`: the tangent-valued one-form sending a tangent
+  vector to itself.
 * `TauCeti.isSmoothForm_ofSubsingleton_iff`, `TauCeti.SmoothForm.degreeOneEquiv`: the same
   statements for fixed-coefficient forms. For `F = ℝ` the bundle of fibrewise linear maps is
   `TauCeti.CotangentBundle I M`, so these identify smooth real one-forms with smooth sections of
@@ -152,6 +154,28 @@ theorem degreeOneEquiv_symm_apply_apply
     (v : Fin 1 → TangentSpace I x) :
     (degreeOneEquiv.symm s).1 x v = s x (v 0) :=
   (rfl)
+
+/-- The canonical tangent-valued one-form: the identity on every tangent fibre. -/
+def tangentIdentity : SmoothBundleForm I E (TangentSpace I : M → Type _) 1 :=
+  degreeOneEquiv.symm ⟨fun x ↦ ContinuousLinearMap.id ℝ (TangentSpace I x), by
+    intro x
+    rw [contMDiffAt_hom_bundle]
+    refine ⟨contMDiffAt_id, (contMDiffAt_const (c := ContinuousLinearMap.id ℝ E)
+      (n := ∞)).congr_of_eventuallyEq ?_⟩
+    let e := FiberBundle.trivializationAt E (TangentSpace I : M → Type _) x
+    filter_upwards [e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt E
+      (TangentSpace I : M → Type _) x)] with y hy
+    ext v
+    simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.id_apply]
+    exact e.continuousLinearMapAt_symmL hy v⟩
+
+/-- The tangent identity one-form evaluates to its sole tangent-vector argument. -/
+@[simp]
+theorem tangentIdentity_apply (x : M) (v : Fin 1 → TangentSpace I x) :
+    (tangentIdentity (I := I)).val x v = v 0 := by
+  simp only [tangentIdentity, degreeOneEquiv_symm_apply_apply]
+  rfl
 
 end SmoothBundleForm
 

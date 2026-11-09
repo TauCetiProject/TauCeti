@@ -71,7 +71,7 @@ theorem exists_isSliceChart_of_inter_eq_union_affineSegment (e : V ≃L[ℝ] ℝ
       (e.symm.toLinearMap.comp (LinearMap.inr ℝ ℝ F')).toAddMonoidHom
   obtain ⟨ℓ, h₁, h₂, hℓ⟩ := exists_strongDual_neg_pos_ne_zero
     (zero_notMem_segment_of_affineSegment_inter_eq ha hb hab)
-    ((ContinuousLinearMap.fst ℝ ℝ F').comp e.toContinuousLinearMap) (u := e.symm (1, 0))
+    (u := e.symm (1, 0))
     (by simp)
   obtain ⟨Φ, hΦ⟩ := e.exists_homeomorph_fst_eq ℓ hℓ z
   -- Near `z` the set is the union of the rays through `a` and `b`, a graph over `ℓ`.
