@@ -25,8 +25,9 @@ the constant `3^(-1/2)`.
 * **The fourth moment estimate.** For self-adjoint `x₁, …, xₙ` and `S = ∑ₖ εₖ xₖ`,
   `‖𝔼 S⁴‖ ≤ 3 ‖∑ₖ xₖ²‖²` (`TauCeti.norm_signAverage_rademacherSum_mul_four_le`). The proof expands
   `𝔼 S⁴` over pairings (`TauCeti.signAverage_rademacherSum_mul_four`), bounds each of the three
-  pairing terms by `‖∑ₖ xₖ²‖²`, the crossing term through the row–column inequality
-  `TauCeti.norm_sum_mul_le_sqrt_mul_sqrt`, and discards the nonpositive diagonal correction. The
+  pairing terms by `‖∑ₖ xₖ²‖²` (`TauCeti.norm_sum_mul_sum_mul_self_mul_le`, and for the crossing
+  term `TauCeti.norm_sum_sum_mul_mul_mul_le`, through the row–column inequality
+  `TauCeti.norm_sum_mul_le_sqrt_mul_sqrt`), and discards the nonpositive diagonal correction. The
   constant `3` is optimal: for commuting scalars `xₖ = 1` the ratio is `3 - 2 / n`.
 
 ## References
@@ -78,44 +79,7 @@ end SquareFunction
 
 section FourthMoment
 
-variable {x : ι → A}
-
-/-- The pairing term `B = ∑ᵢ xᵢ (∑ⱼ xⱼ²) xᵢ` of the fourth moment lies between `0` and
-`‖∑ⱼ xⱼ²‖ ∑ⱼ xⱼ²`, so its norm is at most `‖∑ⱼ xⱼ²‖²`. -/
-private theorem norm_sum_mul_sum_mul_self_mul_le (hx : ∀ k, IsSelfAdjoint (x k)) :
-    ‖∑ i, x i * (∑ j, x j * x j) * x i‖ ≤ ‖∑ k, x k * x k‖ ^ 2 := by
-  have hstar (k : ι) : star (x k) = x k := (hx k).star_eq
-  have hT : 0 ≤ ∑ k, x k * x k :=
-    sum_nonneg fun k _ => by simpa only [hstar] using star_mul_self_nonneg (x k)
-  have hB : ∑ i, x i * (∑ j, x j * x j) * x i ≤ ‖∑ k, x k * x k‖ • ∑ k, x k * x k := by
-    rw [Finset.smul_sum]
-    refine sum_le_sum fun i _ => ?_
-    simpa only [hstar] using
-      CStarAlgebra.star_left_conjugate_le_norm_smul (x i) _ hT.isSelfAdjoint
-  have hB₀ : 0 ≤ ∑ i, x i * (∑ j, x j * x j) * x i :=
-    sum_nonneg fun i _ => by simpa only [hstar] using star_left_conjugate_nonneg hT (x i)
-  refine (CStarAlgebra.norm_le_norm_of_le_of_nonneg hB hB₀).trans_eq ?_
-  rw [norm_smul, norm_norm, sq]
-
-/-- The crossing pairing term `C = ∑ᵢ ∑ⱼ xᵢ xⱼ xᵢ xⱼ` of the fourth moment is bounded in norm by
-the pairing term `B = ∑ᵢ xᵢ (∑ⱼ xⱼ²) xᵢ`, by the row–column inequality for the products
-`xᵢ xⱼ`. -/
-private theorem norm_sum_sum_mul_mul_mul_le (hx : ∀ k, IsSelfAdjoint (x k)) :
-    ‖∑ i, ∑ j, x i * x j * x i * x j‖ ≤ ‖∑ i, x i * (∑ j, x j * x j) * x i‖ := by
-  have hstar (k : ι) : star (x k) = x k := (hx k).star_eq
-  have h := norm_sum_mul_le_sqrt_mul_sqrt (fun p : ι × ι => x p.1 * x p.2)
-    (fun p => x p.1 * x p.2)
-  have hrow : ∑ p : ι × ι, x p.1 * x p.2 * star (x p.1 * x p.2) =
-      ∑ i, x i * (∑ j, x j * x j) * x i := by
-    simp only [Fintype.sum_prod_type, star_mul, hstar, Finset.mul_sum, Finset.sum_mul, mul_assoc]
-  have hcol : ∑ p : ι × ι, star (x p.1 * x p.2) * (x p.1 * x p.2) =
-      ∑ i, x i * (∑ j, x j * x j) * x i := by
-    rw [Fintype.sum_prod_type, Finset.sum_comm]
-    simp only [star_mul, hstar, Finset.mul_sum, Finset.sum_mul, mul_assoc]
-  rw [hrow, hcol, Real.mul_self_sqrt (norm_nonneg _), Fintype.sum_prod_type] at h
-  simpa only [mul_assoc] using h
-
-variable [DecidableEq ι]
+variable [DecidableEq ι] {x : ι → A}
 
 /-- **The fourth moment estimate for Rademacher sums.** For self-adjoint `x₁, …, xₙ` in a
 C⋆-algebra and `S = ∑ₖ εₖ xₖ`, the average of `S⁴` over the signs satisfies
