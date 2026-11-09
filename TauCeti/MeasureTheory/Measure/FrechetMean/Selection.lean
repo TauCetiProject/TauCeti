@@ -91,7 +91,7 @@ theorem IsFrechetBarycenter.sum_mul_edist_rpow_eq_iInf (hp0 : p ≠ 0) (hp : p �
       ⨅ z, ∑ j, (w j : ℝ≥0∞) * edist z (x j) ^ p.toReal := by
   have hm (z : X) : AEMeasurable (fun y ↦ edist z y) (∑ j, w j • Measure.dirac (x j)) :=
     (continuous_const.edist continuous_id).measurable.aemeasurable
-  have hb' := ((isFrechetBarycenter_iff_forall_frechetPower_le hp0 hp (hm b) hm).1 hb).2
+  have hb' := ((isFrechetBarycenter_iff_forall_frechetPower_le hp0 hp hm).1 hb).2
   simp only [frechetPower_sum_smul_dirac, ENNReal.smul_def, smul_eq_mul] at hb'
   exact le_antisymm (le_iInf hb') (iInf_le _ b)
 
@@ -186,7 +186,7 @@ theorem isFrechetBarycenter_sum_smul_dirac_iff {p : ℝ≥0∞} (hp₀ : p ≠ 0
   have hm (z : X) : AEMeasurable (fun x ↦ edist z x) (∑ j, w j • Measure.dirac (y j)) :=
     (continuous_const.edist continuous_id).measurable.aemeasurable
   refine ⟨IsFrechetBarycenter.sum_mul_edist_rpow_eq_iInf hp₀ hp_top, fun h ↦ ?_⟩
-  refine (isFrechetBarycenter_iff_forall_frechetPower_le hp₀ hp_top (hm x) hm).2
+  refine (isFrechetBarycenter_iff_forall_frechetPower_le hp₀ hp_top hm).2
     ⟨frechetRadius_sum_smul_dirac_ne_top hp₀ hp_top w y x, fun z ↦ ?_⟩
   simp only [frechetPower_sum_smul_dirac, ENNReal.smul_def, smul_eq_mul, h]
   exact iInf_le _ z
@@ -209,7 +209,7 @@ theorem exists_measurable_isFrechetBarycenter_sum_smul_dirac [ProperSpace X] {p 
   have hbary (y : J → X) (x : X) :
       IsFrechetBarycenter p (∑ j, w j • Measure.dirac (y j)) x ↔
         IsMinOn (frechetPower p (∑ j, w j • Measure.dirac (y j))) univ x := by
-    rw [isFrechetBarycenter_iff_forall_frechetPower_le hp₀ hp_top (hm _ x) (hm _),
+    rw [isFrechetBarycenter_iff_forall_frechetPower_le hp₀ hp_top (hm _),
       isMinOn_univ_iff]
     exact and_iff_right (hradius y x)
   have : Nonempty J := by

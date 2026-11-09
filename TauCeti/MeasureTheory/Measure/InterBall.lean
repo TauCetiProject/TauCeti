@@ -29,6 +29,9 @@ For an arbitrary measure, a bound `μ (closedBall x r) ≤ f r` on concentric cl
 for radii arbitrarily close to `ρ` from the right holds at `ρ` when `f` is right-continuous there
 (`MeasureTheory.Measure.measure_closedBall_le_of_frequently_le`).
 
+The balls about a point `z` have measures tending to `μ {z}` as the radius decreases to `0`,
+once one of them has finite measure (`TauCeti.tendsto_measure_ball_nhdsGT_zero`).
+
 ## Main results
 
 * `TauCeti.monotone_measureReal_inter_ball`: `ρ ↦ μ(s ∩ ball x₀ ρ)` is monotone.
@@ -39,6 +42,8 @@ for radii arbitrarily close to `ρ` from the right holds at `ρ` when `f` is rig
   arbitrarily close to `ρ` from the right extends to `ρ` for a right-continuous gauge.
 * `MeasureTheory.Measure.measure_ball_le_of_forall_lt`: a bound on the measures of the open balls
   of radius less than `ρ` bounds the open ball of radius `ρ`.
+* `TauCeti.tendsto_measure_ball_nhdsGT_zero`: shrinking balls about `z` have measures tending to
+  `μ {z}`.
 -/
 
 public section
@@ -132,3 +137,19 @@ theorem measure_ball_le_of_forall_lt (μ : Measure X) {x : X} {ρ : ℝ} {B : �
     h _ (sub_lt_self _ Nat.one_div_pos_of_nat)
 
 end MeasureTheory.Measure
+
+namespace TauCeti
+
+open MeasureTheory Metric Filter
+open scoped Topology
+
+variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X}
+
+/-- The balls about a point `z`, one of which has finite measure, have measures tending to the
+measure of `{z}` as the radius decreases to `0`. -/
+theorem tendsto_measure_ball_nhdsGT_zero {z : X} (hfin : ∃ R > 0, μ (ball z R) ≠ ⊤) :
+    Tendsto (fun r ↦ μ (ball z r)) (𝓝[>] 0) (𝓝 (μ {z})) := by
+  simpa [thickening_singleton] using
+    tendsto_measure_thickening (μ := μ) (s := {z}) (by simpa [thickening_singleton] using hfin)
+
+end TauCeti
