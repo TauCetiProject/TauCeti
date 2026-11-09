@@ -110,7 +110,8 @@ theorem exists_projection_exponential_bounds (A : E →L[ℝ] E)
           ‖exp (t • A) (z - P z)‖ ≤ K * Real.exp (α * t) * ‖z‖) := by
   -- Split the minimal polynomial `μ = p * q` along the imaginary axis; `P = (v * q)(A)`.
   have hmin : minpoly ℝ (A : E →ₗ[ℝ] E) = minpoly ℝ A := by
-    have h : Module.End.toContinuousLinearMap E (A : E →ₗ[ℝ] E) = A := by ext; rfl
+    have h : Module.End.toContinuousLinearMap E (A : E →ₗ[ℝ] E) = A :=
+      (LinearMap.toContinuousLinearMap_eq_iff_eq_toLinearMap _ A).mpr rfl
     rw [← minpoly.algEquiv_eq (Module.End.toContinuousLinearMap E), h]
   obtain ⟨p, q, hpq, hp, hq⟩ := exists_eq_mul_forall_re_neg_forall_re_pos fun z ↦
     hmin ▸ Module.End.re_ne_zero_of_aeval_minpoly_eq_zero (f := (A : E →ₗ[ℝ] E)) hA

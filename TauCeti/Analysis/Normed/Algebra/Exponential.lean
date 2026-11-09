@@ -36,6 +36,7 @@ Baker--Campbell--Hausdorff expansion.
 * `NormedSpace.isBigO_exp_sub_quadratic`: `exp x - (1 + x + 2⁻¹ • x ^ 2)` is `O(‖x‖ ^ 3)` at the
   origin.
 * `NormedSpace.exp_add_smul`: `exp` is multiplicative on scalar multiples of a fixed element.
+* `NormedSpace.exp_mul_of_mul_eq_zero`: if `x * y = 0`, then `exp x * y = y`.
 * `TauCeti.norm_exp_le_mul_exp_of_norm_pow_le`: if `‖x ^ n‖ ≤ M * r ^ n` for every `n`, then
   `‖exp x‖ ≤ M * Real.exp r`; in particular `‖exp x‖ ≤ Real.exp ‖x‖` when `‖1‖ ≤ 1`
   (`TauCeti.norm_exp_le_exp_norm`, with the scalar-multiple form `TauCeti.norm_exp_smul_le`), and
@@ -104,6 +105,17 @@ theorem exp_add_smul (a : A) (s t : 𝕂) :
   rw [add_smul, exp_add_of_commute (((Commute.refl a).smul_left _).smul_right _)]
 
 end Normed
+
+variable {A : Type*} [NormedRing A] [NormedAlgebra ℚ A] [CompleteSpace A]
+
+/-- If `x * y = 0`, then `exp x * y = y`: every term `x ^ (n + 1) * y` of the exponential series
+of `x` multiplied by `y` vanishes. -/
+theorem exp_mul_of_mul_eq_zero {x y : A} (h : x * y = 0) : exp x * y = y := by
+  refine ((exp_series_hasSum_exp' (𝕂 := ℚ) x).mul_right y).unique ?_
+  convert hasSum_single (f := fun n : ℕ ↦ ((n !⁻¹ : ℚ) • x ^ n) * y) 0 fun n hn ↦ ?_ using 1
+  · simp
+  · obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+    rw [smul_mul_assoc, pow_succ, mul_assoc, h, mul_zero, smul_zero]
 
 end NormedSpace
 

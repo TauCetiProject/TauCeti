@@ -171,11 +171,8 @@ theorem exists_norm_exp_smul_mul_aeval_le {A : E →L[ℝ] E} {p q u v : ℝ[X]}
     let +nondep : NormedAlgebra ℚ (E →L[ℝ] E) := .restrictScalars ℚ ℝ _
     rw [hsD, smul_add, exp_add_of_commute ((hAD.smul_left t).smul_right t)]
   have hexp : exp (t • A) * aeval A (v * q) = exp (t • aeval A s) * aeval A (v * q) := by
-    rw [hsplit, mul_assoc]
-    congr 1
-    ext z
-    rw [mul_apply_eq_comp, (t • D).exp_apply_of_apply_eq_smul (μ := 0), exp_zero, one_smul]
-    rw [zero_smul, ← mul_apply_eq_comp, hDP, zero_apply]
+    let +nondep : NormedAlgebra ℚ (E →L[ℝ] E) := .restrictScalars ℚ ℝ _
+    rw [hsplit, mul_assoc, exp_mul_of_mul_eq_zero hDP]
   rw [hexp]
   calc ‖exp (t • aeval A s) * aeval A (v * q)‖
       ≤ ‖exp (t • aeval A s)‖ * ‖aeval A (v * q)‖ := norm_mul_le _ _
