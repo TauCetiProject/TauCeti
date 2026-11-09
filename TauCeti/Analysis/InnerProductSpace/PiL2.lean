@@ -423,8 +423,10 @@ def finCastLEEquiv (hm : m ≤ n) :
 @[simp]
 theorem finCastLEEquiv_apply (hm : m ≤ n) (w : EuclideanSpace 𝕜 (Fin m))
     (j : {j : Fin n // j.val < m}) : finCastLEEquiv 𝕜 hm w j = w ⟨j.1, j.2⟩ := by
-  simp [finCastLEEquiv, Equiv.piCongrLeft'_apply]
-  rfl
+  simp only [finCastLEEquiv, LinearIsometryEquiv.piLpCongrLeft_apply, Equiv.piCongrLeft'_apply,
+    OrderIso.coe_symm_toEquiv]
+  -- `Fin.castLEOrderIso_symm_apply` is stated with `RelIso.symm`, so `simp` cannot rewrite with it.
+  exact congrArg w (Fin.castLEOrderIso_symm_apply hm j)
 
 @[simp]
 theorem finCastLEEquiv_symm_apply (hm : m ≤ n) (v : EuclideanSpace 𝕜 {j : Fin n // j.val < m})

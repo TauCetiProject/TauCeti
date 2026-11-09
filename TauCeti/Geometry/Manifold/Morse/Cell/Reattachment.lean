@@ -312,9 +312,11 @@ theorem morseCellReattachment_morseCellAttachmentCell_of_le_norm (i : ι)
       morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀
         ⟨K i (t, TopCat.diskBoundaryInclusion (k i) s), hK i t s⟩ := by
   have hws : w.down.1 = (1 / 2 + (1 - 1 / 2) * (σ t : ℝ)) • s.down.1 := by
-    rw [coe_symm_eq, ht, hs, smul_smul]
-    ring_nf
-    rw [mul_inv_cancel₀ (by linarith), one_smul]
+    have hw0 : ‖w.down.1‖ ≠ 0 := by linarith
+    have hscale : (1 / 2 + (1 - 1 / 2) * (1 - (2 - 2 * ‖w.down.1‖))) * ‖w.down.1‖⁻¹ = 1 := by
+      field_simp
+      ring
+    rw [coe_symm_eq, ht, hs, smul_smul, hscale, one_smul]
   rw [morseCellReattachment_morseCellAttachmentCell, morseCellReattachmentCell,
     ContinuousMap.curry_apply, TopCat.diskCollar_apply_of_eq_smul_sphere _ _ _ _ (by norm_num) hws,
     reattachmentOuter_apply]
