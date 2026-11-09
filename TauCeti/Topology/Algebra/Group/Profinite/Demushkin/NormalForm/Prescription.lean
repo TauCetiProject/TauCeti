@@ -491,8 +491,8 @@ theorem existsUnique_hasPrescriptionProperty_presentedProP_demushkinWordNeTwo (h
     refine ⟨orientationNeTwo _ 0 _ hu, ?_, fun χ _ ↦ presentedProP.hom_ext_of fun i ↦ i.elim0⟩
     refine presentedProP.hasPrescriptionProperty_of_forall_isCrossedHom_eq_zero
       fun F _ hF r hr ↦ ?_
-    rw [Set.mem_singleton_iff.mp hr, demushkinWordNeTwo_def, freeProPGen_eq_one_of_le p le_rfl,
-      one_pow, one_mul, Nat.zero_div, List.range_zero, List.map_nil, List.prod_nil, hF.map_one]
+    rw [Set.mem_singleton_iff.mp hr, demushkinWordNeTwo_zero _ (freeProPGen_eq_one_of_le p le_rfl),
+      hF.map_one]
   have hn₁ : 1 < n := by obtain ⟨k, hk⟩ := hn; omega
   refine ⟨orientationNeTwo _ n _ hu, hasPrescriptionProperty_orientationNeTwo _ n hn₁ _ hu hu',
     fun χ hχ ↦ ?_⟩
@@ -802,9 +802,8 @@ theorem hasPrescriptionProperty_orientationTwoOddTop :
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · refine presentedProP.hasPrescriptionProperty_of_forall_isCrossedHom_eq_zero
       fun F _ hF r hr ↦ ?_
-    rw [Set.mem_singleton_iff.mp hr, demushkinWordTwoOddTop_def,
-      freeProPGen_eq_one_of_le 2 le_rfl, one_pow, one_mul, Nat.zero_div, List.range_zero,
-      List.map_nil, List.prod_nil, hF.map_one]
+    rw [Set.mem_singleton_iff.mp hr,
+      demushkinWordTwoOddTop_zero (freeProPGen_eq_one_of_le 2 le_rfl), hF.map_one]
   · exact hasPrescriptionProperty_presentedProP_demushkinWordTwoOddTop_of_apply_eq n _
       (orientationTwoOddTop_presentedProPGen_zero n hn)
       fun _ hi₀ ↦ orientationTwoOddTop_presentedProPGen_of_ne n hi₀
