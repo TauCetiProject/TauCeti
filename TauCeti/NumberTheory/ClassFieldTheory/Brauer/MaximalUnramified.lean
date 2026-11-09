@@ -95,7 +95,7 @@ private def layerInv (f : ℕ+) :
   letI := algebraicExtensionNormedFieldTopology K (𝓤 f)
   haveI := finiteExtension_isNonarchimedeanLocalField K (𝓤 f)
   haveI := algebraicExtension_valuativeExtension K (𝓤 f)
-  haveI : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension f.ne_zero
+  haveI : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension
   unramifiedInv K (𝓤 f)
 
 /-- The unramified invariant of the degree-`f` unramified extension inside `Kˢ` does not depend on
@@ -130,12 +130,12 @@ private theorem exists_relBrInfl_eq_layerInv_eq (f g : ℕ+) (hfg : (f : ℕ) �
     let _ := algebraicExtensionNormedFieldTopology K (𝓤 f)
     have := finiteExtension_isNonarchimedeanLocalField K (𝓤 f)
     have := algebraicExtension_valuativeExtension K (𝓤 f)
-    have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension f.ne_zero
+    have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension
     let _ := algebraicExtensionValuativeRel K (𝓤 g)
     let _ := algebraicExtensionNormedFieldTopology K (𝓤 g)
     have := finiteExtension_isNonarchimedeanLocalField K (𝓤 g)
     have := algebraicExtension_valuativeExtension K (𝓤 g)
-    have : IsUnramified K (𝓤 g) := isUnramified_unramifiedExtension g.ne_zero
+    have : IsUnramified K (𝓤 g) := isUnramified_unramifiedExtension
     have : ValuativeExtension (𝓤 f) (𝓤 g) :=
       algebraicExtension_valuativeExtension_tower K (𝓤 f) (𝓤 g)
     exact unramifiedInv_map K (𝓤 f) (𝓤 g) y
@@ -216,7 +216,7 @@ private theorem layerInv_injective (f : ℕ+) : Function.Injective (layerInv K f
   let _ := algebraicExtensionNormedFieldTopology K (𝓤 f)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 f)
   have := algebraicExtension_valuativeExtension K (𝓤 f)
-  have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension f.ne_zero
+  have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension
   unramifiedInv_injective K (𝓤 f)
 
 /-- The invariant of the degree-`f` layer takes every value of order dividing `f`. -/
@@ -227,7 +227,7 @@ private theorem exists_layerInv_eq (f : ℕ+) {q : AddCircle (1 : ℚ)}
   let _ := algebraicExtensionNormedFieldTopology K (𝓤 f)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 f)
   have := algebraicExtension_valuativeExtension K (𝓤 f)
-  have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension f.ne_zero
+  have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension
   have h := range_unramifiedInv K (𝓤 f)
   rw [finrank_unramifiedExtension f.ne_zero] at h
   exact (Set.ext_iff.1 h q).2 hq
