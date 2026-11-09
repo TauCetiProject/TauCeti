@@ -102,10 +102,10 @@ private theorem mextDeriv_sub_add_smul_eq_nijenhuis {c : ℂ} (hc : c * c = -1)
     ⟨extend E w, mdifferentiableAt_extend I E w, extend_apply_self E w⟩
   have hJX : MDifferentiableAt I I.tangent
       (fun y ↦ ((J y (X y) : TangentSpace I y) : TangentBundle I M)) x :=
-    J.mdifferentiableAt_apply mdifferentiableAt_id hX
+    J.mdifferentiableAt_apply hX
   have hJY : MDifferentiableAt I I.tangent
       (fun y ↦ ((J y (Y y) : TangentSpace I y) : TangentBundle I M)) x :=
-    J.mdifferentiableAt_apply mdifferentiableAt_id hY
+    J.mdifferentiableAt_apply hY
   -- The derivative of `α (J Z)` is `c` times the derivative of `α Z`.
   have hd (Z : (y : M) → TangentSpace I y)
       (hZ : MDifferentiableAt I I.tangent (fun y ↦ (Z y : TangentBundle I M)) x) :
