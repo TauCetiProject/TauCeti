@@ -178,6 +178,12 @@ theorem criticalPoints_neg : criticalPoints I (-f) = criticalPoints I f := by
   ext x
   rw [mem_criticalPoints, mem_criticalPoints, mvfderiv_neg, neg_eq_zero]
 
+/-- A value `c` is regular for `-f` exactly when `-c` is regular for `f`. -/
+theorem isRegularValue_neg_iff {c : ℝ} :
+    IsRegularValue I 𝓘(ℝ) (-f) c ↔ IsRegularValue I 𝓘(ℝ) f (-c) := by
+  simp only [isRegularValue_iff_notMem_image_criticalPoints, criticalPoints_neg, mem_image,
+    Pi.neg_apply, neg_eq_iff_eq_neg]
+
 /-! ### Restriction to an open submanifold -/
 
 /-- A point of an open submanifold `U` is a critical point of the restriction of `f` to `U` exactly
