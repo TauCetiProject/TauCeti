@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Analysis.SpecificLimits.Basic
@@ -44,9 +43,10 @@ asymptotic sum of the `aⱼ` exactly when `b' - b` is smoothing
 
 Summing the cut-off terms `χ(ξ) a_{m-j}(x, ξ)` of homogeneous symbols `a_{m-j}` of degrees `m - j`
 gives a classical symbol of order `m` with exactly these homogeneous terms
-(`TauCeti.ClassicalSymbol.term_surjective`). Together with
-`TauCeti.ClassicalSymbol.isSmoothing_toSymbol_sub_iff`, this identifies the classical symbols of
-order `m` modulo smoothing symbols with the sequences of homogeneous terms. This is how formal
+(`TauCeti.ClassicalSymbol.term_surjective`). By `TauCeti.ClassicalSymbol.isSmoothing_toSymbol_iff`
+applied to the difference `a - b`, two classical symbols differ by a smoothing symbol exactly when
+they have the same homogeneous terms, so this identifies the classical symbols of order `m` modulo
+smoothing symbols with the sequences of homogeneous terms. This is how formal
 classical expansions, such as the inverse-symbol recursion of a parametrix, become symbols.
 
 ## Main declarations
@@ -422,7 +422,8 @@ variable {m : ℝ}
 /-- **Borel summation of classical expansions.** Every sequence of homogeneous terms `a_{m-j}` of
 degrees `m - j` is the sequence of homogeneous terms of a classical symbol of order `m`, namely of
 an asymptotic sum of their cut-off terms `χ(ξ) a_{m-j}(x, ξ)`. This classical symbol is unique up
-to a smoothing symbol (`TauCeti.ClassicalSymbol.isSmoothing_toSymbol_sub_iff`). -/
+to a smoothing symbol (`TauCeti.ClassicalSymbol.isSmoothing_toSymbol_iff` applied to the
+difference of two such symbols). -/
 theorem term_surjective :
     Function.Surjective (term : ClassicalSymbol n V W m →
       (j : ℕ) → HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m - j)) := by
