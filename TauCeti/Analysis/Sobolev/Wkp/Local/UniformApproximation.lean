@@ -26,9 +26,9 @@ transfers the values and boundary values of the solution, and the `Lᵖ` converg
 equation.
 
 The derivative identity behind the `Lᵖ` convergence is
-`TauCeti.Wkp.iteratedGradientChain_normed_convolution_indicator_value`: wherever the support of
-the bump stays inside `Ω`, the classical derivatives of the mollified value are the mollified
-weak derivatives.
+`TauCeti.Wkp.iteratedGradientChain_normed_convolution_indicator_value` from
+`TauCeti.Analysis.Sobolev.Wkp.Mollification`: wherever the support of the bump stays inside `Ω`,
+the classical derivatives of the mollified value are the mollified weak derivatives.
 
 ## References
 
@@ -47,60 +47,6 @@ open scoped Convolution ContDiff ENNReal Gradient Topology
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
-
-private local instance : (mu.restrict (univ : Set E)).IsAddHaarMeasure := by
-  rw [Measure.restrict_univ]
-  infer_instance
-
-/-- **Derivatives of a mollified Sobolev function.** Let `u ∈ W^{k+1,p}(Ω)` and let `φ` be a smooth
-bump whose closed support ball, centred at any point of the open set `U`, lies in `Ω`. On `U`, the
-classical iterated-gradient field of order `k` of the mollified zero extension of the value of `u`
-is the mollified zero extension of the highest weak derivative of `u`. -/
-theorem iteratedGradientChain_normed_convolution_indicator_value (phi : ContDiffBump (0 : E))
-    {U : Set E} (hU : IsOpen U) (hphi : ∀ x ∈ U, closedBall x phi.rOut ⊆ Omega) :
-    ∀ (k : ℕ) (u : Wkp mu Omega p (k + 1)) (x : E), x ∈ U →
-      iteratedGradientChain
-          (phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu]
-            (Omega : Set E).indicator (value (k + 1) u : E → ℝ)) k x =
-        (phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu]
-          (Omega : Set E).indicator (iteratedGradient k u : E → IteratedGradient E k)) x := by
-  intro k
-  induction k with
-  | zero =>
-      intro u x hx
-      rw [iteratedGradientChain_zero]
-      apply (InnerProductSpace.toDual ℝ E).injective
-      rw [toDual_gradient]
-      have hd := (hasFDerivAt_indicator_convolution_normed_value u phi x (hphi x hx)).fderiv
-      rw [convolution_flip, convolution_flip] at hd
-      rw [hd]
-      have hmem := (memLp_indicator_iff_restrict Omega.isOpen.measurableSet.nullMeasurableSet).2
-        (Lp.memLp (iteratedGradient 0 u))
-      have hi := (phi.hasCompactSupport_normed (μ := mu)).convolutionExists_left
-        (ContinuousLinearMap.lsmul ℝ ℝ) phi.continuous_normed
-        (hmem.locallyIntegrable Fact.out) x
-      -- Passing the Riesz map through the integral identifies the vector convolution's dual.
-      symm
-      rw [convolution_def]
-      refine ((InnerProductSpace.toDual ℝ E).toLinearIsometry.toContinuousLinearMap
-        |>.integral_comp_comm hi).symm.trans ?_
-      apply integral_congr_ae
-      filter_upwards with y
-      by_cases hy : x - y ∈ Omega <;> simp [hy, ContinuousLinearMap.lsmul_apply]
-  | succ k ih =>
-      intro u x hx
-      rw [iteratedGradientChain_succ]
-      have heq : iteratedGradientChain
-          (phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu]
-            (Omega : Set E).indicator (value (k + 1 + 1) u : E → ℝ)) k =ᶠ[𝓝 x]
-          phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu]
-            (Omega : Set E).indicator
-              (iteratedGradient k (lowerOrder (k + 1) u) : E → IteratedGradient E k) := by
-        filter_upwards [hU.mem_nhds hx] with y hy
-        simpa only [value_succ (k + 1) u] using ih (lowerOrder (k + 1) u) y hy
-      rw [heq.fderiv_eq]
-      simpa only [convolution_flip] using
-        (hasFDerivAt_indicator_convolution_normed_iteratedGradient k u phi x (hphi x hx)).fderiv
 
 /-- **Mollifiers of a continuous Sobolev function.** Let `1 ≤ p < ∞`, let `u ∈ W^{k+1,p}(Ω)` agree
 almost everywhere on `Ω` with a function `v` continuous on `Ω`, and let `K ⊆ Ω` be compact. There
@@ -173,14 +119,11 @@ theorem exists_contDiff_tendstoUniformlyOn_tendsto_eLpNorm_iteratedGradientChain
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h (fun _ => zero_le)
       fun j => (eLpNorm_mono_measure _ (Measure.restrict_mono hKU le_rfl)).trans
         (eLpNorm_congr_ae ?_).le
-    have he := (normedBumpLp_extendByZero_ae_eq_convolution hp (phi j)
-      Omega.isOpen.measurableSet (iteratedGradient k u)).filter_mono
-        (ae_mono (Measure.restrict_mono_set mu (subset_univ (U : Set E))))
-    simp only [Measure.restrict_univ] at he
-    filter_upwards [Lp.coeFn_LpToLpOfMeasureLeSMul (p := p) (E := IteratedGradient E k) _ _ _, he,
+    filter_upwards [normedBumpLp_extendByZero_restrict_ae_eq_convolution hp (phi j)
+        Omega.isOpen.measurableSet (U : Set E) (iteratedGradient k u),
       iteratedGradient_restrictL_ae hUΩ k u, ae_restrict_mem U.isOpen.measurableSet]
-      with x h₁ h₂ h₃ hx
-    rw [Pi.sub_apply, h₁, h₂, h₃, hw,
+      with x h₁ h₂ hx
+    rw [Pi.sub_apply, h₁, h₂, hw,
       iteratedGradientChain_normed_convolution_indicator_value (phi j) U.isOpen
         (fun y hy => (hball j y hy).trans hδΩ) k u x hx]
 

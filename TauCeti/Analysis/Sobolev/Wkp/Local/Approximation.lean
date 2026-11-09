@@ -60,37 +60,6 @@ private theorem contDiff_smoothField {F : Type*} [NormedAddCommGroup F] [NormedS
   exact phi.hasCompactSupport_normed.contDiff_convolution_left
     (ContinuousLinearMap.lsmul ℝ ℝ) phi.contDiff_normed (hmem.locallyIntegrable Fact.out)
 
-private theorem fderiv_smoothField (k : ℕ) (u : Wkp mu Omega p (k + 2))
-    (phi : ContDiffBump (0 : E)) (x : E)
-    (hx : Metric.closedBall x phi.rOut ⊆ Omega) :
-    fderiv ℝ (smoothField phi (iteratedGradient k (lowerOrder (k + 1) u))) x =
-      smoothField phi (iteratedGradient (k + 1) u) x := by
-  simpa only [smoothField, convolution_flip] using
-    fderiv_indicator_convolution_normed_iteratedGradient k u phi x hx
-
-private theorem gradient_smoothField (u : Wkp mu Omega p 1)
-    (phi : ContDiffBump (0 : E)) (x : E)
-    (hx : Metric.closedBall x phi.rOut ⊆ Omega) :
-    gradient (smoothField phi (value 1 u)) x =
-      smoothField phi (iteratedGradient 0 u) x := by
-  apply (InnerProductSpace.toDual ℝ E).injective
-  rw [toDual_gradient]
-  have hd := fderiv_indicator_convolution_normed_value u phi x hx
-  rw [convolution_flip, convolution_flip] at hd
-  rw [smoothField, hd]
-  have hmem := (memLp_indicator_iff_restrict Omega.isOpen.measurableSet.nullMeasurableSet).2
-    (Lp.memLp (iteratedGradient 0 u))
-  have hi := (phi.hasCompactSupport_normed (μ := mu)).convolutionExists_left
-    (ContinuousLinearMap.lsmul ℝ ℝ) phi.continuous_normed (hmem.locallyIntegrable Fact.out) x
-  -- Passing the Riesz map through the integral identifies the vector convolution's dual.
-  symm
-  rw [smoothField, convolution_def]
-  refine ((InnerProductSpace.toDual ℝ E).toLinearIsometry.toContinuousLinearMap
-    |>.integral_comp_comm hi).symm.trans ?_
-  apply integral_congr_ae
-  filter_upwards with y
-  by_cases hy : x - y ∈ Omega <;> simp [hy, ContinuousLinearMap.lsmul_apply]
-
 /-- A localized smooth representative, with compact support in the original domain. -/
 private def localTest (chi : 𝓓(Omega, ℝ)) (phi : ContDiffBump (0 : E))
     (k : ℕ) (u : Wkp mu Omega p k) : 𝓓(Omega, ℝ) :=
@@ -118,22 +87,25 @@ private theorem iteratedGradient_localTest (chi : 𝓓(Omega, ℝ))
     ∀ (k : ℕ) (u : Wkp mu Omega p (k + 1)) (x : E), x ∈ U →
       iteratedGradientTestFunction (localTest chi phi (k + 1) u) k x =
         smoothField phi (iteratedGradient k u) x := by
-  intro k
-  induction k with
-  | zero =>
-      intro u x hx
-      simp only [iteratedGradientTestFunction_zero]
-      rw [(localTest_eventuallyEq chi hchi phi 1 u x hx).gradient_eq]
-      exact gradient_smoothField u phi x (hphi x hx)
-  | succ k ih =>
-      intro u x hx
-      rw [iteratedGradientTestFunction_succ, ← localTest_lowerOrder chi phi (k + 1) u]
-      have heq : iteratedGradientTestFunction
-          (localTest chi phi (k + 1) (lowerOrder (k + 1) u)) k =ᶠ[𝓝 x]
-          smoothField phi (iteratedGradient k (lowerOrder (k + 1) u)) := by
-        filter_upwards [U.isOpen.mem_nhds hx] with y hy using ih _ y hy
-      rw [heq.fderiv_eq]
-      exact fderiv_smoothField k u phi x (hphi x hx)
+  intro k u x hx
+  -- On the open set `U` the test function is the mollified value, and so are its derivatives.
+  have heq : ∀ j, ∀ y ∈ U, iteratedGradientChain (localTest chi phi (k + 1) u : E → ℝ) j y =
+      iteratedGradientChain (smoothField phi (value (k + 1) u)) j y := by
+    intro j
+    induction j with
+    | zero =>
+        intro y hy
+        simp only [iteratedGradientChain_zero]
+        exact (localTest_eventuallyEq chi hchi phi (k + 1) u y hy).gradient_eq
+    | succ j ih =>
+        intro y hy
+        simp only [iteratedGradientChain_succ]
+        have h : iteratedGradientChain (localTest chi phi (k + 1) u : E → ℝ) j =ᶠ[𝓝 y]
+            iteratedGradientChain (smoothField phi (value (k + 1) u)) j :=
+          Filter.eventually_of_mem (U.isOpen.mem_nhds hy) ih
+        exact h.fderiv_eq
+  rw [iteratedGradientTestFunction_def, heq k x hx]
+  exact iteratedGradientChain_normed_convolution_indicator_value phi U.isOpen hphi k u x hx
 
 /-- The restricted `Lᵖ` class of a mollified zero extension used in the approximation. -/
 private def localAverage {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -147,12 +119,8 @@ private def localAverage {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 private theorem localAverage_ae {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     [CompleteSpace F] (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (f : Lp F p (mu.restrict Omega)) :
-    localAverage (U := U) hp phi f =ᵐ[mu.restrict U] smoothField phi f := by
-  have he := normedBumpLp_extendByZero_ae_eq_convolution hp phi Omega.isOpen.measurableSet f
-  have he' := he.filter_mono
-    (ae_mono (Measure.restrict_mono_set mu (subset_univ (U : Set E))))
-  exact (Lp.coeFn_LpToLpOfMeasureLeSMul _ _ _).trans (by
-    simpa only [Measure.restrict_univ, smoothField] using he')
+    localAverage (U := U) hp phi f =ᵐ[mu.restrict U] smoothField phi f :=
+  normedBumpLp_extendByZero_restrict_ae_eq_convolution hp phi Omega.isOpen.measurableSet U f
 
 /-- The restriction to `U` of the `W^{k,p}(Ω)` element of a test function is represented on `U`
 by that test function. -/

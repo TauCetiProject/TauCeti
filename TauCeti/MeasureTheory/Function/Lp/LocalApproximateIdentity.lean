@@ -29,6 +29,8 @@ through its smooth pointwise representative.
 
 * `TauCeti.normedBumpLp_extendByZero_ae_eq_convolution`: the abstract mollification of a zero
   extension has the classical convolution as a representative.
+* `TauCeti.normedBumpLp_extendByZero_restrict_ae_eq_convolution`: the same identification after
+  restricting the mollification to a subset.
 * `TauCeti.tendsto_normedBumpLp_extendByZero_restrict`: zero-extension mollifications converge
   locally in `Lᵖ`.
 
@@ -74,6 +76,22 @@ theorem normedBumpLp_extendByZero_ae_eq_convolution (hp : p ≠ ∞)
     exact hf₀.coeFn_toLp.trans (coeFn_extendByZeroLpₗᵢ ℝ hs (subset_univ s) f).symm
   rw [← hext]
   simpa only [f₀] using normedBumpLp_ae_eq_convolution hp phi hf₀
+
+/-- Zero-extend an `Lᵖ(s)` field, mollify it, and restrict to `t`: the restricted `Lᵖ(t)` class
+is represented almost everywhere on `t` by the classical convolution of the normalized bump with
+the pointwise zero extension. -/
+theorem normedBumpLp_extendByZero_restrict_ae_eq_convolution (hp : p ≠ ∞)
+    (phi : ContDiffBump (0 : E)) (hs : MeasurableSet s) (t : Set E)
+    (f : Lp F p (mu.restrict s)) :
+    (Lp.LpToLpOfMeasureLeSMul (μ := mu.restrict t) (c := 1) (by simp) (by
+        simpa only [one_smul] using Measure.restrict_mono_set mu (subset_univ t)) <|
+        normedBumpLp hp phi (mu.restrict (univ : Set E))
+          (extendByZeroLpₗᵢ ℝ mu hs (subset_univ s) f) : E → F) =ᵐ[mu.restrict t]
+      phi.normed mu ⋆[lsmul ℝ ℝ, mu] s.indicator (f : E → F) := by
+  have he := (normedBumpLp_extendByZero_ae_eq_convolution hp phi hs f).filter_mono
+    (ae_mono (Measure.restrict_mono_set mu (subset_univ t)))
+  exact (Lp.coeFn_LpToLpOfMeasureLeSMul _ _ _).trans (by
+    simpa only [Measure.restrict_univ] using he)
 
 /-- Zero-extend an `Lᵖ(s)` field, mollify it, and restrict to `t ⊆ s`. For `p < ∞`, this
 converges in `Lᵖ(t)` to the original field restricted to `t`. -/
