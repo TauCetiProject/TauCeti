@@ -36,20 +36,18 @@ theorem indicator_windingWeight_eq_self {γ : ℝ → ℂ} {a b : ℝ} {U : Set 
     · exact windingWeight_eq_zero_of_mem ht
     · rw [windingWeight_eq_of_notMem ht, hindex z hz, Complex.zero_re]
 
-/-- Outside a domain containing every trace, and where the total index vanishes, the total winding
-weight vanishes. -/
+/-- At a point off every trace where the total index vanishes, the total winding weight
+vanishes. -/
 theorem sum_windingWeight_eq_zero_of_notMem {ι : Type*} {s : Finset ι}
-    {γ : ι → ℝ → ℂ} {a b : ι → ℝ} {w : ι → ℤ} {U : Set ℂ}
-    (htrace : ∀ i ∈ s, γ i '' uIcc (a i) (b i) ⊆ U)
-    (hindex : ∀ z ∉ U,
-      ∑ i ∈ s, (w i : ℂ) * Contour.windingNumber (γ i) (a i) (b i) z = 0)
-    {z : ℂ} (hz : z ∉ U) :
+    {γ : ι → ℝ → ℂ} {a b : ι → ℝ} {w : ι → ℤ} {z : ℂ}
+    (hz : ∀ i ∈ s, z ∉ γ i '' uIcc (a i) (b i))
+    (hindex : ∑ i ∈ s, (w i : ℂ) * Contour.windingNumber (γ i) (a i) (b i) z = 0) :
     ∑ i ∈ s, (w i : ℝ) * windingWeight (γ i) (a i) (b i) z = 0 := by
-  have h := congrArg Complex.re (hindex z hz)
+  have h := congrArg Complex.re hindex
   simp only [Complex.re_sum, Complex.mul_re, Complex.intCast_re, Complex.intCast_im,
     zero_mul, sub_zero, Complex.zero_re] at h
   refine Eq.trans (Finset.sum_congr rfl fun i hi ↦ ?_) h
-  rw [windingWeight_eq_of_notMem (fun ht ↦ hz (htrace i hi ht))]
+  rw [windingWeight_eq_of_notMem (hz i hi)]
 
 /-- A total winding weight agrees with its restriction to the field domain under a condition
 on the total index, without requiring each individual index to vanish. -/
@@ -63,6 +61,7 @@ theorem indicator_sum_windingWeight_eq_self {ι : Type*} {s : Finset ι}
   ext z
   by_cases hz : z ∈ U
   · exact indicator_of_mem hz _
-  · rw [indicator_of_notMem hz, sum_windingWeight_eq_zero_of_notMem htrace hindex hz]
+  · rw [indicator_of_notMem hz, sum_windingWeight_eq_zero_of_notMem
+      (fun i hi ht ↦ hz (htrace i hi ht)) (hindex z hz)]
 
 end TauCeti.Green
