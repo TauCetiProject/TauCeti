@@ -10,8 +10,10 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Geometry.Euclidean.Inversion.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
+import TauCeti.Analysis.Calculus.Conformal.InnerProduct
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Analysis.InnerProductSpace.ConformalLinearMap
 import TauCeti.Analysis.InnerProductSpace.KulkarniNomizu
 import TauCeti.Geometry.Euclidean.Inversion
 
@@ -90,45 +92,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
   {f : E → F} {ρ : E → ℝ} {U : Set E}
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
-/-- The reciprocal conformal factor is the reciprocal of the length of the image of any unit
-vector. -/
-private theorem eq_inv_norm_fderiv_apply
-    (hρ : ∀ x ∈ U, ∀ u v, ρ x ^ 2 * ⟪fderiv ℝ f x u, fderiv ℝ f x v⟫ = ⟪u, v⟫)
-    (hρ0 : ∀ x ∈ U, 0 < ρ x) {x : E} (hx : x ∈ U) {e : E} (he : ‖e‖ = 1) :
-    ρ x = ‖fderiv ℝ f x e‖⁻¹ := by
-  have h := hρ x hx e e
-  rw [real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq, he, one_pow, ← mul_pow] at h
-  have h1 : ρ x * ‖fderiv ℝ f x e‖ = 1 :=
-    (pow_eq_one_iff_of_nonneg (mul_nonneg (hρ0 x hx).le (norm_nonneg _)) two_ne_zero).1 h
-  exact eq_inv_of_mul_eq_one_left h1
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
-/-- The reciprocal conformal factor of a `C^(m + 1)` map is `C^m`. -/
-private theorem contDiffOn_of_inner_fderiv [Nontrivial E] {m : ℕ}
-    (hf : ContDiffOn ℝ (m + 1) f U) (hU : IsOpen U)
-    (hρ : ∀ x ∈ U, ∀ u v, ρ x ^ 2 * ⟪fderiv ℝ f x u, fderiv ℝ f x v⟫ = ⟪u, v⟫)
-    (hρ0 : ∀ x ∈ U, 0 < ρ x) : ContDiffOn ℝ m ρ U := by
-  obtain ⟨e, he⟩ := exists_norm_eq E zero_le_one
-  have hne : ∀ x ∈ U, fderiv ℝ f x e ≠ 0 := fun x hx h0 ↦ by
-    have := hρ x hx e e
-    rw [h0, inner_zero_left, mul_zero, real_inner_self_eq_norm_sq, he] at this
-    norm_num at this
-  have hd : ContDiffOn ℝ m (fun y ↦ fderiv ℝ f y e) U :=
-    (hf.fderiv_of_isOpen hU (by simp)).clm_apply contDiffOn_const
-  refine ContDiffOn.congr (fun x hx ↦ ?_) (fun x hx ↦ eq_inv_norm_fderiv_apply hρ hρ0 hx he)
-  exact (((contDiffAt_norm ℝ (hne x hx)).comp x ((hd x hx).contDiffAt (hU.mem_nhds hx))).inv
-    (norm_ne_zero_iff.2 (hne x hx))).contDiffWithinAt
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
-/-- A map whose derivative scales inner products by a nonzero factor has injective derivative. -/
-private theorem injective_fderiv_of_inner
-    (hρ : ∀ x ∈ U, ∀ u v, ρ x ^ 2 * ⟪fderiv ℝ f x u, fderiv ℝ f x v⟫ = ⟪u, v⟫)
-    {x : E} (hx : x ∈ U) : Function.Injective (fderiv ℝ f x) := fun a b hab ↦ by
-  have := hρ x hx (a - b) (a - b)
-  rw [map_sub, hab, sub_self, inner_zero_left, mul_zero] at this
-  exact sub_eq_zero.1 (inner_self_eq_zero.1 this.symm)
-
 omit [FiniteDimensional ℝ F] in
 /-- The derivative of `ρ² ⟪Df u, Df v⟫ = ⟪u, v⟫` in the direction `w`. -/
 private theorem inner_fderiv_fderiv_add_eq_zero (hf : ContDiffOn ℝ 2 f U) (hU : IsOpen U)
@@ -172,7 +135,8 @@ theorem smul_fderiv_fderiv_apply_eq_of_inner_fderiv
     (hf.contDiffAt (hU.mem_nhds hx)).isSymmSndFDerivAt (by simp)
   have hsurj : Function.Surjective (fderiv ℝ f x) :=
     (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hEF
-      (f := (fderiv ℝ f x : E →ₗ[ℝ] F))).1 (injective_fderiv_of_inner hρ hx)
+      (f := (fderiv ℝ f x : E →ₗ[ℝ] F))).1
+      (isConformalMap_of_sq_mul_inner (hρ x hx) (hρ0 x hx).ne').injective
   rw [← sub_eq_zero]
   set X := ρ x • fderiv ℝ (fderiv ℝ f) x u v -
       fderiv ℝ f x (⟪u, v⟫ • ∇ ρ x - ⟪∇ ρ x, u⟫ • v - ⟪∇ ρ x, v⟫ • u) with hX
@@ -284,7 +248,7 @@ private theorem christoffel_comm [Nontrivial E] (hEF : Module.finrank ℝ E = Mo
     congrArg (fun L : E →L[ℝ] F ↦ L v)
       (((hf.contDiffAt (hU.mem_nhds hx)).fderiv_right (m := 2) le_rfl).isSymmSndFDerivAt
         (by simp) w u)
-  apply injective_fderiv_of_inner hρ hx
+  apply (isConformalMap_of_sq_mul_inner (hρ x hx) (hρ0 x hx).ne').injective
   rw [← hD, ← hD, hD3]
 
 /-- **The Hessian equation of the reciprocal conformal factor.** Let `f` be `C³` on an open set
