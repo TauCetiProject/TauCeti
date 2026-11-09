@@ -49,7 +49,7 @@ likewise for `σ_Q`, the external product therefore satisfies `A* A = A A* = ‖
 * `ContinuousLinearMap.norm_externalProductBlock_le`: `‖externalProductBlock A B‖ ≤ 2 (‖A‖ + ‖B‖)`.
   Together with `ContinuousLinearMap.externalProductBlock_add` and
   `ContinuousLinearMap.externalProductBlock_ofReal_smul`, this makes the block a bounded real-linear
-  function of the pair `(A, B)`, hence smooth over `ℝ`
+  function of the pair `(A, B)`. For complex Hilbert spaces it is therefore smooth over `ℝ`
   (`ContinuousLinearMap.contDiff_externalProductBlock`).
 
 ## References
@@ -133,8 +133,8 @@ theorem externalProductBlock_ofReal_smul (r : ℝ) (A : V₀ →L[𝕜] V₁) (B
   · simp [adjoint_ofReal_smul, smul_sub]
   · simp [adjoint_ofReal_smul, smul_add]
 
-/-- The external product block is bounded by `2 (‖A‖ + ‖B‖)`; in particular it depends
-continuously on `(A, B)`. -/
+/-- The external product block is bounded by `2 (‖A‖ + ‖B‖)`. Together with
+`externalProductBlock_add`, this makes it continuous in `(A, B)`. -/
 theorem norm_externalProductBlock_le (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁) :
     ‖externalProductBlock A B‖ ≤ 2 * (‖A‖ + ‖B‖) := by
   refine opNorm_le_bound _ (by positivity) fun w ↦ ?_
