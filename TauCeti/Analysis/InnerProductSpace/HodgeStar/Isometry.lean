@@ -21,7 +21,8 @@ between complementary exterior powers. Combined with the defining identity
 On the top exterior power the inner product is the product of the volumes,
 `⟪x, y⟫ = vol x * vol y`, since `⋆1` is a unit vector representing the volume. In an even
 middle degree the Hodge star is an isometric involution, hence symmetric, so a self-dual or
-anti-self-dual form pairs with `⋆y` as with `±y`.
+anti-self-dual form pairs with `⋆y` as with `±y`; in particular self-dual and anti-self-dual
+forms are orthogonal (`Orientation.inner_eq_zero_of_hodgeStar_eq_self_of_hodgeStar_eq_neg`).
 Reversing the orientation negates the Hodge star, and transporting the orientation along a
 linear isometric equivalence commutes with it. These statements hold also in dimension zero, for
 either orientation.
@@ -137,6 +138,15 @@ theorem inner_hodgeStar_right_of_hodgeStar_eq_neg {k : ℕ} (hk : Even k)
   have h := o.isSymmetric_hodgeStar_of_even hk hkk μ y
   simp only [LinearEquiv.coe_coe, hμ, inner_neg_left] at h
   exact h.symm
+
+/-- **Self-dual and anti-self-dual forms are orthogonal**: in an even middle degree,
+`⟪η, μ⟫ = 0` when `⋆η = η` and `⋆μ = -μ`. -/
+theorem inner_eq_zero_of_hodgeStar_eq_self_of_hodgeStar_eq_neg {k : ℕ} (hk : Even k)
+    (hkk : k + k = finrank ℝ V) {η μ : ⋀[ℝ]^k V} (hη : o.hodgeStar hkk η = η)
+    (hμ : o.hodgeStar hkk μ = -μ) : ⟪η, μ⟫ = 0 := by
+  have h := o.inner_hodgeStar_right_of_hodgeStar_eq_self hk hkk hη μ
+  rw [hμ, inner_neg_right] at h
+  linarith
 
 /-- **The wedge characterization of the Hodge star**: `α ∧ ⋆β = ⟪α, β⟫ vol`, that is, the
 volume of `α ∧ ⋆β` is the inner product of `α` and `β`, for `α β ∈ ⋀ᵏ V`. -/

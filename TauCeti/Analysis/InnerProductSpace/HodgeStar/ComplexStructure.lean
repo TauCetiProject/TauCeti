@@ -91,10 +91,8 @@ theorem hodgeStar_eq_or_eq_neg_of_inner_eq (o : Orientation ℝ V (Fin 4))
     (hkl : 2 + 2 = finrank ℝ V) : o.hodgeStar hkl F = F ∨ o.hodgeStar hkl F = -F := by
   have hJn (v : V) : ‖J v‖ = ‖v‖ := by
     rw [norm_eq_sqrt_real_inner, inner_apply_apply_of_inner_eq hJ, ← norm_eq_sqrt_real_inner]
-  obtain ⟨b, hb⟩ := J.exists_adapted_orthonormalBasis hJn 2 (by rw [(Fact.out : finrank ℝ V = 4)])
   -- A unitary frame `e₀, e₁ = J e₀, e₂, e₃ = J e₂`.
-  have h₀ : J (b 0) = b 1 := (hb 0).symm
-  have h₂ : J (b 2) = b 3 := (hb 1).symm
+  obtain ⟨b, h₀, h₂⟩ := J.exists_adapted_orthonormalBasis_finFour hJn Fact.out
   rw [← kahlerForm_eq_of_inner_eq hJ]
   have hω := hodgeStar_kahlerForm h₀ h₂ hkl rfl
   rcases b.toBasis.orientation_eq_or_eq_neg o with rfl | rfl
