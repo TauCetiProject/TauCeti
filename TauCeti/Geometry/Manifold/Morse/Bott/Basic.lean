@@ -51,6 +51,8 @@ conversely a nondegenerate critical point lies on no critical submanifold of pos
   index is the negative index of inertia of the normal Hessian.
 * `IsNondegenerateCriticalSubmanifold.manifoldMorseIndex_add_manifoldMorseIndex_neg_add_finrank`:
   index plus coindex is the codimension.
+* `IsNondegenerateCriticalSubmanifold.manifoldMorseIndex_add_manifoldMorseIndex_neg`: index plus
+  coindex is the dimension of the normal space.
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_iff_of_subsingleton`: in dimension
   zero, Morse–Bott means Morse.
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd`: the model example, the
@@ -268,6 +270,18 @@ theorem manifoldMorseIndex_add_manifoldMorseIndex_neg_add_finrank (s : S) :
     ← manifoldMorseIndex_neg_eq_sigPos_criticalHessian] at hsig
   -- `TangentSpace I (i s)` is by definition the model space `E`.
   have hE : Module.finrank ℝ (TangentSpace I (i s)) = Module.finrank ℝ E := rfl
+  omega
+
+/-- **Index plus coindex is the normal dimension.** At each point of a Morse–Bott critical
+submanifold, the Morse indices of `f` and `-f` add up to the dimension of the normal space. -/
+theorem manifoldMorseIndex_add_manifoldMorseIndex_neg (s : S) :
+    manifoldMorseIndex I f (i s) + manifoldMorseIndex I (-f) (i s) =
+      Module.finrank ℝ (i.NormalSpace s hn) := by
+  have hsum := h.manifoldMorseIndex_add_manifoldMorseIndex_neg_add_finrank hn s
+  have hnormal := i.finrank_normalSpace_add_finrank s hn
+  -- The tangent spaces of `S` and `M` are by definition the model spaces `E'` and `E`.
+  have hE : Module.finrank ℝ (TangentSpace I (i s)) = Module.finrank ℝ E := rfl
+  have hE' : Module.finrank ℝ (TangentSpace J s) = Module.finrank ℝ E' := rfl
   omega
 
 end IsNondegenerateCriticalSubmanifold

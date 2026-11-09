@@ -14,11 +14,15 @@ public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 Let `A` be a symmetric operator on a finite-dimensional inner product space. Its quadratic form
 `x ↦ re ⟪A x, x⟫` is negative definite on the negative spectral subspace
 `A.pointSpectralSubspace (Iio 0)`, positive definite on the positive spectral subspace
-`A.pointSpectralSubspace (Ioi 0)` and positive semidefinite on `A.pointSpectralSubspace (Ici 0)`,
-the orthogonal complement of the negative spectral subspace. Over `ℝ` this identifies the
+`A.pointSpectralSubspace (Ioi 0)`, positive semidefinite on `A.pointSpectralSubspace (Ici 0)`,
+the orthogonal complement of the negative spectral subspace, and negative semidefinite on
+`A.pointSpectralSubspace (Iic 0)`. When `A` is injective the negative and positive spectral
+subspaces are complementary. Over `ℝ` this identifies the
 indices of inertia of the form with the dimensions of the spectral subspaces: the negative index
 `sigNeg` is the dimension of the negative spectral subspace, and the positive index `sigPos` is
-the dimension of the positive one.
+the dimension of the positive one. For the Riesz operator `B♯` of a real bilinear form `B`, with
+`⟪B♯ u, v⟫ = B u v`, the form `B` itself is negative definite on the negative spectral subspace
+of `B♯` and positive definite on the positive one.
 
 Together with the smooth dependence of the spectral projections on an invertible self-adjoint
 operator (`TauCeti.Analysis.InnerProductSpace.Spectral.Projection`), this splits a smooth family of
@@ -30,12 +34,20 @@ subspaces of the dimensions prescribed by Sylvester's law of inertia.
 * `LinearMap.IsSymmetric.re_inner_apply_self_neg_of_mem_pointSpectralSubspace_Iio`,
   `LinearMap.IsSymmetric.re_inner_apply_self_pos_of_mem_pointSpectralSubspace_Ioi`: the form is
   negative definite on the negative spectral subspace and positive definite on the positive one.
-* `LinearMap.IsSymmetric.re_inner_apply_self_nonneg_of_mem_pointSpectralSubspace_Ici`: the form is
-  positive semidefinite on the spectral subspace of the nonnegative eigenvalues.
+* `LinearMap.IsSymmetric.re_inner_apply_self_nonneg_of_mem_pointSpectralSubspace_Ici`,
+  `LinearMap.IsSymmetric.re_inner_apply_self_nonpos_of_mem_pointSpectralSubspace_Iic`: the form is
+  positive semidefinite on the spectral subspace of the nonnegative eigenvalues and negative
+  semidefinite on that of the nonpositive eigenvalues.
+* `LinearMap.IsSymmetric.isCompl_pointSpectralSubspace_Iio_Ioi`: for an injective symmetric
+  operator the negative and positive spectral subspaces are complementary.
 * `LinearMap.IsSymmetric.sigNeg_eq_finrank_pointSpectralSubspace_Iio`,
   `LinearMap.IsSymmetric.sigPos_eq_finrank_pointSpectralSubspace_Ioi`: the negative and positive
   indices of inertia of the form are the dimensions of the negative and positive spectral
   subspaces.
+* `InnerProductSpace.apply_self_neg_of_mem_pointSpectralSubspace_Iio`,
+  `InnerProductSpace.apply_self_pos_of_mem_pointSpectralSubspace_Ioi`: a real bilinear form with a
+  self-adjoint Riesz operator is negative definite on the negative spectral subspace of that
+  operator and positive definite on the positive one.
 -/
 
 public section
@@ -85,6 +97,23 @@ theorem re_inner_apply_self_nonneg_of_mem_pointSpectralSubspace_Ici (hA : A.IsSy
     (fun y hy ↦ Module.End.map_pointSpectralSubspace_le (Submodule.mem_map_of_mem hy))
     (A.pointSpectrumIn_pointSpectralSubspace (Ici 0)) hx
 
+/-- The quadratic form of a symmetric operator is negative semidefinite on the spectral subspace
+of its nonpositive eigenvalues. -/
+theorem re_inner_apply_self_nonpos_of_mem_pointSpectralSubspace_Iic (hA : A.IsSymmetric) {x : E}
+    (hx : x ∈ A.pointSpectralSubspace (Iic 0)) : RCLike.re ⟪A x, x⟫_𝕜 ≤ 0 := by
+  simpa only [zero_mul] using hA.re_inner_apply_self_le_of_pointSpectrumIn
+    (fun y hy ↦ Module.End.map_pointSpectralSubspace_le (Submodule.mem_map_of_mem hy))
+    (A.pointSpectrumIn_pointSpectralSubspace (Iic 0)) hx
+
+/-- For an injective symmetric operator, the negative and positive spectral subspaces are
+complementary: the space is their direct sum. -/
+theorem isCompl_pointSpectralSubspace_Iio_Ioi (hA : A.IsSymmetric) (hker : LinearMap.ker A = ⊥) :
+    IsCompl (A.pointSpectralSubspace (Iio 0)) (A.pointSpectralSubspace (Ioi 0)) := by
+  refine ⟨(hA.isOrtho_pointSpectralSubspace Ioi_disjoint_Iio_same.symm).disjoint,
+    codisjoint_iff.mpr ?_⟩
+  rw [← Module.End.pointSpectralSubspace_insert_zero (Ω := Ioi 0) hker, Ioi_insert, ← compl_Iio]
+  exact hA.pointSpectralSubspace_sup_compl_eq_top _
+
 end LinearMap.IsSymmetric
 
 namespace LinearMap.IsSymmetric
@@ -123,3 +152,28 @@ theorem sigPos_eq_finrank_pointSpectralSubspace_Ioi (hA : A.IsSymmetric)
   rwa [sigNeg_neg, Module.End.pointSpectralSubspace_neg, neg_Iio, neg_zero] at h
 
 end LinearMap.IsSymmetric
+
+namespace InnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {B : E →L[ℝ] E →L[ℝ] ℝ}
+
+/-- A real bilinear form with a self-adjoint Riesz operator is negative definite on the negative
+spectral subspace of that operator. -/
+theorem apply_self_neg_of_mem_pointSpectralSubspace_Iio
+    (hB : IsSelfAdjoint (continuousLinearMapOfBilin B)) {u : E}
+    (hu : u ∈ Module.End.pointSpectralSubspace (continuousLinearMapOfBilin B).toLinearMap (Iio 0))
+    (hu0 : u ≠ 0) : B u u < 0 := by
+  simpa [continuousLinearMapOfBilin_apply] using
+    hB.isSymmetric.re_inner_apply_self_neg_of_mem_pointSpectralSubspace_Iio hu hu0
+
+/-- A real bilinear form with a self-adjoint Riesz operator is positive definite on the positive
+spectral subspace of that operator. -/
+theorem apply_self_pos_of_mem_pointSpectralSubspace_Ioi
+    (hB : IsSelfAdjoint (continuousLinearMapOfBilin B)) {u : E}
+    (hu : u ∈ Module.End.pointSpectralSubspace (continuousLinearMapOfBilin B).toLinearMap (Ioi 0))
+    (hu0 : u ≠ 0) : 0 < B u u := by
+  simpa [continuousLinearMapOfBilin_apply] using
+    hB.isSymmetric.re_inner_apply_self_pos_of_mem_pointSpectralSubspace_Ioi hu hu0
+
+end InnerProductSpace

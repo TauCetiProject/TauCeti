@@ -44,8 +44,12 @@ No inner product instance on the algebraic dual is installed.
   continuously on the sesquilinear form.
 * `InnerProductSpace.ker_continuousLinearMapOfBilin`: the Riesz operator of a form has the kernel
   of the form.
+* `InnerProductSpace.isUnit_continuousLinearMapOfBilin`: in finite dimension, the Riesz operator
+  of an injective form is invertible.
 * `InnerProductSpace.adjoint_continuousLinearMapOfBilin`: over `ℝ`, the adjoint of the Riesz
   operator represents the transposed form.
+* `InnerProductSpace.isSelfAdjoint_continuousLinearMapOfBilin`: over `ℝ`, the Riesz operator of
+  a symmetric form is self-adjoint.
 * `ContinuousLinearMap.continuousLinearMapOfBilin_bilinearComp`: pulling a real bilinear form back
   along a linear isometry equivalence conjugates its Riesz operator.
 * `InnerProductSpace.dualMetric`: the Hermitian form on the algebraic dual transported by Riesz.
@@ -111,6 +115,14 @@ theorem ker_continuousLinearMapOfBilin (B : E →L⋆[𝕜] E →L[𝕜] 𝕜) :
   ext u
   simp [continuousLinearMapOfBilin]
 
+/-- In finite dimension, the Fréchet–Riesz operator of an injective sesquilinear form is
+invertible. -/
+theorem isUnit_continuousLinearMapOfBilin [FiniteDimensional 𝕜 E] {B : E →L⋆[𝕜] E →L[𝕜] 𝕜}
+    (hB : Function.Injective B) : IsUnit (continuousLinearMapOfBilin B) := by
+  refine ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.mpr
+    ((LinearMap.isUnit_iff_ker_eq_bot _).mpr ?_)
+  exact (ker_continuousLinearMapOfBilin B).trans (LinearMap.ker_eq_bot.mpr hB)
+
 /-- Evaluating functionals at each other's Riesz representatives is conjugate-symmetric:
 `β(α♯) = conj (α(β♯))`. Over `ℝ` this says `β(α♯) = α(β♯)`. -/
 theorem apply_toDual_symm_eq_conj (α β : StrongDual 𝕜 E) :
@@ -153,6 +165,14 @@ theorem adjoint_continuousLinearMapOfBilin (B : F →L[ℝ] F →L[ℝ] ℝ) :
   refine ((ContinuousLinearMap.eq_adjoint_iff _ _).mpr fun w v => ?_).symm
   rw [continuousLinearMapOfBilin_apply, real_inner_comm, continuousLinearMapOfBilin_apply,
     ContinuousLinearMap.flip_apply]
+
+/-- The Fréchet–Riesz operator of a symmetric real bilinear form is self-adjoint. -/
+theorem isSelfAdjoint_continuousLinearMapOfBilin {B : F →L[ℝ] F →L[ℝ] ℝ}
+    (hB : ∀ u v, B u v = B v u) : IsSelfAdjoint (continuousLinearMapOfBilin B) := by
+  rw [IsSelfAdjoint, ContinuousLinearMap.star_eq_adjoint, adjoint_continuousLinearMapOfBilin]
+  congr 1
+  ext u v
+  exact hB v u
 
 end Real
 
