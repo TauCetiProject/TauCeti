@@ -199,6 +199,7 @@ private theorem tanThetaResidualWitness_scalar
   have hσnonneg := (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues_nonneg i
   have hgal := LinearMap.inner_map_ritzResidual_eq_zero A X
     (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i)
+    (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i)
   simp only [← LinearIsometry.coe_toLinearMap, ← LinearMap.comp_apply,
     ← LinearMap.sub_apply] at hgal
   rw [show tanTheta0.singularValues i = (LinearMap.range X.toLinearMap).principalTangents U i from
