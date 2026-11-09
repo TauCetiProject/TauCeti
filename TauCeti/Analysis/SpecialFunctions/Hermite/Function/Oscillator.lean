@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Ladder
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
-import Mathlib.Analysis.Calculus.Deriv.CompMul
+import TauCeti.Analysis.Calculus.Deriv.Second
 
 /-!
 # The harmonic-oscillator eigen-equation for the Hermite functions
@@ -115,12 +115,7 @@ theorem iteratedDeriv_two_hermiteFunction (n : ℕ) (x : ℝ) :
 theorem deriv_deriv_hermiteFunction_comp_mul (n : ℕ) (c x : ℝ) :
     deriv (deriv fun y ↦ hermiteFunction n (c * y)) x =
       c ^ 2 * ((c * x) ^ 2 - (2 * n + 1)) * hermiteFunction n (c * x) := by
-  have h₁ : deriv (fun y ↦ hermiteFunction n (c * y)) =
-      fun y ↦ c * deriv (hermiteFunction n) (c * y) :=
-    funext fun y ↦ by rw [deriv_comp_mul_left, smul_eq_mul]
-  rw [h₁, deriv_const_mul_field']
-  dsimp only
-  rw [deriv_comp_mul_left, smul_eq_mul, deriv_deriv_hermiteFunction]
+  rw [deriv_deriv_comp_mul_left, smul_eq_mul, deriv_deriv_hermiteFunction]
   ring
 
 /-- **The harmonic-oscillator eigen-equation at frequency `ω = c²`.** The dilated Hermite function
