@@ -103,22 +103,30 @@ theorem fderiv_toLp_prodMk_apply {f : G → F} {g : G → E} {y : G}
 /-- The derivative of a map `w ↦ (f w, g w)` into the `L^p` product dominates the derivative
 of `f`. -/
 theorem norm_fderiv_le_norm_fderiv_toLp_prodMk_left {f : G → F} {g : G → E} {y : G}
-    (hf : DifferentiableAt 𝕜 f y) (hg : DifferentiableAt 𝕜 g y) :
-    ‖fderiv 𝕜 f y‖ ≤ ‖fderiv 𝕜 (fun w ↦ WithLp.toLp p (f w, g w)) y‖ :=
-  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ by
-    have h := (WithLp.norm_fst_le (x := fderiv 𝕜 (fun w ↦ WithLp.toLp p (f w, g w)) y v)).trans
-      (ContinuousLinearMap.le_opNorm _ v)
-    rwa [fderiv_toLp_prodMk_apply hf hg, WithLp.toLp_fst] at h
+    (hg : DifferentiableAt 𝕜 g y) :
+    ‖fderiv 𝕜 f y‖ ≤ ‖fderiv 𝕜 (fun w ↦ WithLp.toLp p (f w, g w)) y‖ := by
+  by_cases hf : DifferentiableAt 𝕜 f y
+  swap
+  · rw [fderiv_zero_of_not_differentiableAt hf, norm_zero]
+    exact norm_nonneg _
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ ?_
+  have h := (WithLp.norm_fst_le (x := fderiv 𝕜 (fun w ↦ WithLp.toLp p (f w, g w)) y v)).trans
+    (ContinuousLinearMap.le_opNorm _ v)
+  rwa [fderiv_toLp_prodMk_apply hf hg, WithLp.toLp_fst] at h
 
 /-- The derivative of a map `w ↦ (f w, g w)` into the `L^p` product dominates the derivative
 of `g`. -/
 theorem norm_fderiv_le_norm_fderiv_toLp_prodMk_right {f : G → F} {g : G → E} {y : G}
-    (hf : DifferentiableAt 𝕜 f y) (hg : DifferentiableAt 𝕜 g y) :
-    ‖fderiv 𝕜 g y‖ ≤ ‖fderiv 𝕜 (fun w ↦ WithLp.toLp p (f w, g w)) y‖ :=
-  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ by
-    have h := (WithLp.norm_snd_le (x := fderiv 𝕜 (fun w ↦ WithLp.toLp p (f w, g w)) y v)).trans
-      (ContinuousLinearMap.le_opNorm _ v)
-    rwa [fderiv_toLp_prodMk_apply hf hg, WithLp.toLp_snd] at h
+    (hf : DifferentiableAt 𝕜 f y) :
+    ‖fderiv 𝕜 g y‖ ≤ ‖fderiv 𝕜 (fun w ↦ WithLp.toLp p (f w, g w)) y‖ := by
+  by_cases hg : DifferentiableAt 𝕜 g y
+  swap
+  · rw [fderiv_zero_of_not_differentiableAt hg, norm_zero]
+    exact norm_nonneg _
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ ?_
+  have h := (WithLp.norm_snd_le (x := fderiv 𝕜 (fun w ↦ WithLp.toLp p (f w, g w)) y v)).trans
+    (ContinuousLinearMap.le_opNorm _ v)
+  rwa [fderiv_toLp_prodMk_apply hf hg, WithLp.toLp_snd] at h
 
 /-- In the Euclidean product, the derivative of a map `w ↦ (f w, g w)` in the direction `v` has
 squared length `‖df v‖² + ‖dg v‖²`. -/
