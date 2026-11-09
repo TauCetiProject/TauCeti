@@ -57,6 +57,9 @@ circle is a continuous linear functional on `C(sphere w r, ℂ)`.
 
 * `Polynomial.circleIntegral_mul_derivative_div_eval`: the argument principle for a polynomial,
   weighted by a holomorphic function.
+* `Polynomial.sum_circleIntegral_eq_sum_map_filter_roots`: for roots confined to separated discs,
+  the sum of a holomorphic function over the roots in a region is the sum of the normalised contour
+  integrals about the disc centres lying in the region.
 * `TauCeti.Polynomial.analyticAt_circleIntegral_mul_derivative_div_monicOfCoeff`: such a contour
   integral depends analytically on the coefficients of a monic polynomial not vanishing on the
   circle.
@@ -229,8 +232,6 @@ theorem _root_.Polynomial.circleIntegral_mul_derivative_div_eval (p : ℂ[X]) (h
 
 end Trace
 
-namespace Sym
-
 section Separated
 
 variable {T : Finset ℂ} {r : ℝ}
@@ -278,14 +279,12 @@ private theorem sum_sum_map_filter_mem_ball (g : ℂ → ℂ) {m : Multiset ℂ}
 
 end Separated
 
-variable {n : ℕ}
-
 /-- If every root of the polynomial `p` lies in one of the separated discs `ball w r` about the
 points `w` of `T`, with `g` holomorphic on the open discs centred in `U` and continuous up to
 their boundary, and the open discs centred in `U` inside `U` while the other open discs miss `U`,
 then the sum of `g` over the roots of `p` in `U` is the sum, over the points `w ∈ T ∩ U`, of
 `(2πi)⁻¹` times the contour integral of `g · p' / p` about `w`. -/
-private theorem sum_circleIntegral_eq_sum_map_filter_roots {T : Finset ℂ} {r : ℝ}
+theorem _root_.Polynomial.sum_circleIntegral_eq_sum_map_filter_roots {T : Finset ℂ} {r : ℝ}
     (hsep : ∀ w ∈ T, ∀ w' ∈ T, w ≠ w' → 2 * r < dist w w') {g : ℂ → ℂ} {U : Set ℂ}
     [DecidablePred (· ∈ U)] (hr : 0 < r)
     (hin : ∀ w ∈ T, w ∈ U → ball w r ⊆ U)
@@ -310,6 +309,10 @@ private theorem sum_circleIntegral_eq_sum_map_filter_roots {T : Finset ℂ} {r :
   · rw [Multiset.filter_eq_nil.2 fun z hz hzw =>
       hout w hw hwU hzw (Multiset.mem_filter.1 hz).2]
     simp
+
+namespace Sym
+
+variable {n : ℕ}
 
 /-- **Sums of a holomorphic function over the roots in a region depend analytically on the
 coefficients.** Let `U` be a set of complex numbers whose frontier contains no point of the
@@ -363,7 +366,7 @@ theorem analyticAt_sum_map_filter_coeffEquiv_symm {g : ℂ → ℂ} {U : Set ℂ
       ((((coeffEquiv ℂ n).symm c : Multiset ℂ).filter (· ∈ U)).map g).sum := by
     filter_upwards [hN] with c hc
     rw [coeffEquiv_symm_apply]
-    exact sum_circleIntegral_eq_sum_map_filter_roots hsep hr
+    exact Polynomial.sum_circleIntegral_eq_sum_map_filter_roots hsep hr
       (fun w hw hwU => (ball_subset_closedBall.trans (hin w hw hwU)).trans
         (Set.inter_subset_left.trans interior_subset))
       (fun w hw hwU => (ball_subset_closedBall.trans (hout w hw hwU)).trans
