@@ -63,8 +63,8 @@ theorem _root_.Flow.orbit_reverse [SubtractionCommMonoid τ] [ContinuousNeg τ] 
 /-- **A uniform time to reach an open set.** If the forward orbit of every point of a compact set
 `C` meets an open set `W` at some positive time, then there is one time `T` such that each of these
 orbits meets `W` at some time in `(0, T)`. -/
-theorem exists_forall_exists_mem_Ioo_apply_mem [AddMonoid τ] [ContinuousAdd τ] [LinearOrder τ]
-    [NoMaxOrder τ] (ϕ : Flow τ α) {C W : Set α} (hC : IsCompact C) (hW : IsOpen W)
+theorem exists_forall_exists_mem_Ioo_apply_mem [AddMonoid τ] [LinearOrder τ] [NoMaxOrder τ]
+    (ϕ : Flow τ α) {C W : Set α} (hC : IsCompact C) (hW : IsOpen W)
     (h : ∀ x ∈ C, ∃ t > 0, ϕ t x ∈ W) : ∃ T, ∀ x ∈ C, ∃ σ ∈ Set.Ioo 0 T, ϕ σ x ∈ W := by
   have hU : ∀ T : τ, IsOpen {x | ∃ σ ∈ Set.Ioo 0 T, ϕ σ x ∈ W} := fun T ↦ by
     have hset : {x | ∃ σ ∈ Set.Ioo 0 T, ϕ σ x ∈ W} = ⋃ σ ∈ Set.Ioo 0 T, ϕ σ ⁻¹' W := by
