@@ -38,7 +38,7 @@ entire.
 This is the kernel Check of the Riemann–Roch index formula for `∂bar` on `TS²`: the real index
 `n χ + 2 c₁ = 1 · 2 + 2 · 2 = 6` is the real dimension of the holomorphic vector fields, the Lie
 algebra of `PSL₂(ℂ)`, while the formula with `c₁` in place of `2 c₁` would give `4`
-(`OnePoint.finrank_real_holomorphicVectorFields_eq_index` and
+(`OnePoint.finrank_real_holomorphicVectorFields` and
 `OnePoint.finrank_real_holomorphicVectorFields_ne`).
 
 ## Main declarations
@@ -294,16 +294,13 @@ theorem finrank_holomorphicVectorFields : Module.finrank ℂ holomorphicVectorFi
     Module.finrank_fin_fun]
 
 /-- The holomorphic vector fields on the Riemann sphere form a real vector space of dimension `6`,
-the real dimension of `PSL₂(ℂ)`. -/
+the real dimension of `PSL₂(ℂ)`.
+
+**Index Check on `TS²`.** This space is the kernel of `∂bar` on `TS²` (whose cokernel vanishes),
+and `6` is the Riemann–Roch index `n χ + 2 c₁ = 1 · 2 + 2 · 2` with `n = 1`, `χ(S²) = 2` and
+`c₁(TS²)[S²] = 2`. -/
 theorem finrank_real_holomorphicVectorFields : Module.finrank ℝ holomorphicVectorFields = 6 := by
   rw [finrank_real_of_complex, finrank_holomorphicVectorFields]
-
-/-- **Index Check on `TS²`.** The real dimension of the holomorphic vector fields on the Riemann
-sphere, which is the kernel of `∂bar` on `TS²` (whose cokernel vanishes), is the Riemann–Roch index
-`n χ + 2 c₁` with `n = 1`, `χ(S²) = 2` and `c₁(TS²)[S²] = 2`. -/
-theorem finrank_real_holomorphicVectorFields_eq_index :
-    Module.finrank ℝ holomorphicVectorFields = 1 * 2 + 2 * 2 :=
-  finrank_real_holomorphicVectorFields
 
 /-- **Index Check on `TS²`, wrong formula.** The variant `n χ + c₁` of the index formula, with
 `c₁` in place of `2 c₁`, would predict real dimension `4`, which is wrong. -/
