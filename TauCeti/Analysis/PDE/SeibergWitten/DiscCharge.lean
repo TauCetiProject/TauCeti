@@ -272,7 +272,7 @@ theorem integral_cutoffCurrent_comp_closedBall_eq_of_continuousOn {E : Type*}
       fun x hx ↦ ⟨hx.1, circleMap_mem_sphere z₀ hr x.2⟩))
     (fun p hp ↦ IsPiecewiseC1On.of_contDiffOn
       ((hα.comp ((hσ p hp).comp (contDiff_circleMap z₀ r))).contDiffOn.of_le one_le_two))
-    (fun p _ ↦ by simp [circleMap, Complex.exp_neg])
+    (fun p _ ↦ by simp only [Function.comp_apply, ← periodic_circleMap z₀ r (-π)]; ring_nf)
     (fun p hp θ _ ↦ ne_zero_of_cutoff_eq_one hχ₀ (hbd p hp θ)) hp hq
   rw [hm, hn, Int.cast_inj] at h
   rw [hI₁, hI₂, h]
