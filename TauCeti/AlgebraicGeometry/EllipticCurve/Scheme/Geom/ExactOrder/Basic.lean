@@ -130,12 +130,6 @@ theorem isOfExactOrder_def {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} {N : 
             Over.mk E.structureMap) :=
   Iff.rfl
 
-/-- Over an empty base every object of `Over S` is terminal, so any two parallel morphisms in
-`Over S` are equal. -/
-theorem over_hom_ext_of_isEmpty [IsEmpty S] {X Y : Over S} (f g : X ⟶ Y) : f = g := by
-  have := (isInitialOfIsEmpty (X := S)).isIso_to Y.hom
-  exact (Over.mkIdTerminal.ofIso (Over.isoMk (asIso Y.hom)).symm).hom_ext f g
-
 /-- Over an empty base every object of `Over S` is a group object and every morphism to a group
 object is a monoid homomorphism, so every point has exact order `N`. -/
 theorem isOfExactOrder_of_isEmpty [IsEmpty S]
@@ -151,7 +145,6 @@ theorem isOfExactOrder_of_isEmpty [IsEmpty S]
   let _ : GrpObj X :=
     { inv := (ht _).from _, left_inv := (ht _).hom_ext _ _, right_inv := (ht _).hom_ext _ _ }
   exact ⟨inferInstance, { one_hom := (ht _).hom_ext _ _, mul_hom := (ht _).hom_ext _ _ }⟩
-
 
 /-- **The closed-subgroup criterion for points of exact order `N`.** A point `P` has exact order
 `N` exactly when the ideal sheaf of `D = [P] + ⋯ + [NP]` vanishes on the identity, on the product

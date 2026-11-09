@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Naive
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveExactOrder.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.FiniteSubgroup
+import TauCeti.AlgebraicGeometry.Scheme.Over
 import TauCeti.Data.ZMod.MonoidHomEquiv
 import TauCeti.Data.ZMod.FinEquiv
 
