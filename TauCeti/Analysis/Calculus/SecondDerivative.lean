@@ -73,6 +73,8 @@ Morse-theoretic definitions that use them.
   second derivative along the differential of the inner function.
 * `TauCeti.fderiv_fderiv_slice_right_apply`: the second derivative of the restriction of a map on
   a product to a fibre is its second derivative on fibre directions.
+* `TauCeti.contDiffAt_fderiv_fderiv_slice_right`: the fibre second derivatives of a `C^{n+2}`
+  map on a product form a `C^n` family over the base.
 * `TauCeti.fderiv_fderiv_apply_inl_eq_zero`: along a critical zero section of a map on a
   product, the second derivative vanishes on base directions.
 * `TauCeti.fderiv_fderiv_comp_fst_add_comp_snd`: the second derivative of a separated sum on a
@@ -200,6 +202,19 @@ theorem fderiv_fderiv_slice_right_apply {f : E × F → G} {a : E} {b : F}
     funext fun y ↦ (hasFDerivAt_prodMk_right a y).fderiv
   simpa [Function.comp_def, hD] using fderiv_fderiv_comp_apply (φ := fun y : F ↦ (a, y)) hf
     (contDiffAt_const.prodMk contDiffAt_id) v w
+
+/-- **The fibre second derivatives of a `C^{n+2}` map form a `C^n` family.** If `f` is `C^{n+2}`
+at `(a, b)`, then `x ↦ D²(f (x, ·))(b)`, the second derivative at `b` of the restriction of `f`
+to the fibre over `x`, is `C^n` at `a`. -/
+theorem contDiffAt_fderiv_fderiv_slice_right {n : WithTop ℕ∞} {f : E × F → G} {a : E} {b : F}
+    (hf : ContDiffAt 𝕜 (n + 2) f (a, b)) :
+    ContDiffAt 𝕜 n (fun x ↦ fderiv 𝕜 (fderiv 𝕜 (fun y ↦ f (x, y))) b) a := by
+  -- Differentiate the fibre restrictions in the fibre variable twice, as smooth families.
+  have h1 : ContDiffAt 𝕜 (n + 1) (fun p : E × F ↦ fderiv 𝕜 (fun y ↦ f (p.1, y)) p.2) (a, b) :=
+    ContDiffAt.fderiv (f := fun p y ↦ f (p.1, y))
+      (hf.comp ((a, b), b) ((contDiffAt_fst.comp _ contDiffAt_fst).prodMk contDiffAt_snd))
+      contDiffAt_snd (by rw [add_assoc]; rfl)
+  exact ContDiffAt.fderiv (f := fun x y ↦ fderiv 𝕜 (fun v ↦ f (x, v)) y) h1 contDiffAt_const le_rfl
 
 /-- **Base directions of a critical zero section are null for the second derivative.** If `f` is
 `C²` at `(a, 0)` and every point `(b, 0)` with `b` near `a` is a critical point of `f`, then the
