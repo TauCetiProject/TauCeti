@@ -32,7 +32,7 @@ prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
   vector fields `y ↦ A y` and `y ↦ B y` is `x ↦ B (A x) - A (B x)`.
 * `mvfderiv_mlieBracket`: a differential sends the manifold bracket to the commutator of
   directional derivatives.
-* `mvfderiv_div_mvfderiv_sub_eq_mlieBracket`: the differential `df / f` of the logarithm of a
+* `TauCeti.mvfderiv_div_mvfderiv_sub_eq_mlieBracket`: the logarithmic differential `df / f` of a
   nonvanishing function is closed, i.e. `X (df(Y) / f) - Y (df(X) / f) = df([X, Y]) / f`.
 * `TauCeti.eq_mlieBracket_of_mvfderiv_extChartAt`: tested against the extended chart at a point,
   this identity characterises the manifold bracket at that point.
@@ -205,6 +205,8 @@ theorem mvfderiv_mlieBracket {f : M → F} {V W : ∀ x : M, TangentSpace I x} {
     TauCeti.fderivWithin_fderivWithin_chart_apply_mpullbackWithin hf hn hW,
     TauCeti.fderivWithin_fderivWithin_chart_apply_mpullbackWithin hf hn hV]
 
+namespace TauCeti
+
 /-- The second derivatives of a scalar function `f` cancel in the commutator of the logarithmic
 differentials `df(U) / f`: the logarithmic differential is closed, so
 `X (df(Y) / f) - Y (df(X) / f) = df([X, Y]) / f` at a point `p` where `f` is `C^n` with
@@ -241,8 +243,6 @@ theorem mvfderiv_div_mvfderiv_sub_eq_mlieBracket {n : ℕ∞ω} {f : M → 𝕜}
   rw [hda hdY, hda hdX, hcomm]
   field_simp
   ring
-
-namespace TauCeti
 
 /-- A tangent vector `v` at `x` is the Lie bracket of the differentiable vector fields `V` and `W`
 at `x` as soon as the differential of the extended chart at `x` sends `v` to the commutator of the

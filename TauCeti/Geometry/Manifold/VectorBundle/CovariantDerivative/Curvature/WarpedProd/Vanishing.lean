@@ -171,7 +171,7 @@ private theorem IsWarpedProduct.curvatureOperator_horizontal_horizontal_vertical
       smul_smul, add_smul]
   have hc : a Y p.1 * a X p.1 + mvfderiv I (a Y) p.1 (X p.1) -
       (a X p.1 * a Y p.1 + mvfderiv I (a X) p.1 (Y p.1)) - a (mlieBracket I X Y) p.1 = 0 := by
-    have := mvfderiv_div_mvfderiv_sub_eq_mlieBracket (hf p.1) (by simp)
+    have := TauCeti.mvfderiv_div_mvfderiv_sub_eq_mlieBracket (hf p.1) (by simp)
       (hX.mdifferentiableAt (by simp)) (hY.mdifferentiableAt (by simp)) hp
     simp only [a]
     linear_combination this
