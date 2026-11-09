@@ -16,8 +16,9 @@ map. Then the union `⋃ k, C k` carries a CW structure relative to `D`
 (`Topology.RelCWComplex.towerUnion`) as soon as its topology is the final topology of the stages:
 a subset of the union is closed when it meets every stage in a closed set. The cells of the union
 in dimension `n` are the new `n`-cells of the stages, those whose characteristic map does not
-already occur at an earlier stage (`Topology.RelCWComplex.towerUnionCellEquiv`). Every stage of
-the tower is a subcomplex of the union (`Topology.RelCWComplex.towerUnionSubcomplex`).
+already occur at an earlier stage (`Topology.RelCWComplex.towerUnionCellEquiv`). When `X` is
+Hausdorff, every stage of the tower is a subcomplex of the union
+(`Topology.RelCWComplex.towerUnionSubcomplex`).
 
 No condition is imposed on the dimensions of the cells added at the successive stages: a stage
 may add cells of lower dimension than those of an earlier stage. This is what happens when a CW
@@ -38,7 +39,8 @@ closed, set without being closed in `ℝ`.
 * `Topology.RelCWComplex.towerFirstCell`: the first occurrence of a cell of a stage.
 * `Topology.RelCWComplex.towerUnion`: the relative CW structure on the union of a tower.
 * `Topology.RelCWComplex.towerUnionCell`: the cell of the union given by a cell of a stage.
-* `Topology.RelCWComplex.towerUnionSubcomplex`: a stage, as a subcomplex of the union.
+* `Topology.RelCWComplex.towerUnionSubcomplex`: a stage, as a subcomplex of the union, when `X`
+  is Hausdorff.
 * `Topology.CWComplex.towerUnion`: the absolute CW structure on the union of a tower of absolute
   CW complexes.
 
@@ -315,8 +317,8 @@ theorem closedCell_towerUnion_subset (n : ℕ)
     towerUnionCell_towerUnionCellEquiv]
   exact closedCell_subset_complex _ _
 
-/-- A stage of a tower, as a subcomplex of the union of the tower: its cells are the cells of the
-union given by the cells of the stage. -/
+/-- A stage of a tower, as a subcomplex of the union of the tower when `X` is Hausdorff: its cells
+are the cells of the union given by the cells of the stage. -/
 def towerUnionSubcomplex [T2Space X] (k : ℕ) :
     @Subcomplex _ _ (⋃ k, C k) D (towerUnion C hcell hclosed) :=
   @Subcomplex.mk'' _ _ _ (⋃ k, C k) D (towerUnion C hcell hclosed) (C k)
