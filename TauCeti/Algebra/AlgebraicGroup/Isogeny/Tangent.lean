@@ -143,11 +143,20 @@ theorem lieEquivOfEtaleKernel_apply_apply (hf : IsIsogeny f)
   rw [lieEquivOfEtaleKernel_apply]
   exact algEquivSelf_derivationComp_apply f.hom d a
 
+omit [Algebra.Smooth k K] in
 /-- The differential of a smooth affine isogeny with étale kernel is bijective on
 cotangent duals. -/
 theorem dualCotangentMap_bijective_of_etaleKernel (hf : IsIsogeny f)
     (hker : Algebra.Etale k (K ⧸ (kernelHopfIdeal f).toIdeal)) :
     Function.Bijective (Derivation.dualCotangentMap f.hom) := by
+  -- the coordinate map of an isogeny with étale kernel is étale, so `K` is smooth over `k`
+  have hetale := (CommHopfAlgCat.etale_iff_algebraEtale_quotient_kernelHopfIdeal f
+    hf.faithfullyFlat).mpr hker
+  let _ := f.hom.toAlgHom.toAlgebra
+  have : IsScalarTower k H K :=
+    IsScalarTower.of_algebraMap_eq fun x ↦ (f.hom.toAlgHom.commutes x).symm
+  have : Algebra.Etale H K := hetale
+  have : Algebra.Smooth k K := Algebra.Smooth.comp k H K
   let e := (Derivation.cotangentLinearEquiv (R := k) (A := K) (B := k)).trans
     ((hf.lieEquivOfEtaleKernel hker).toLinearEquiv.trans
       (Derivation.cotangentLinearEquiv (R := k) (A := H) (B := k)).symm)
