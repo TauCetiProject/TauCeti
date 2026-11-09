@@ -30,7 +30,7 @@ half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the 
   `MeasureTheory.Measure.measureReal_eq_sub_of_preimage_Ioo_subset` — for a law without atoms,
   endpoint conventions of an interval with extended bounds do not matter;
 * `MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self` — two symmetric real
-  measures, one of them finite, with the same pushforward after squaring are equal.
+  measures with the same pushforward after squaring are equal.
 * `MeasureTheory.Measure.map_sqrt_map_sq` — on the nonnegative half-line, taking square roots
   undoes squaring.
 -/
@@ -125,57 +125,76 @@ theorem volume_Ioc_inter_Ioo_zero_one {a b : ℝ} (ha : 0 ≤ a) (hb : b ≤ 1) 
   rw [← Real.volume_Ioo]
   exact measure_mono fun t ht ↦ ⟨Ioo_subset_Ioc_self ht, ha.trans_lt ht.1, ht.2.trans_le hb⟩
 
-/-- Two reflection-invariant measures on `ℝ`, one of them finite, are equal if their pushforwards
-under squaring are equal. The other is then finite as well, since squaring preserves total mass. -/
+/-- Two reflection-invariant measures on `ℝ` are equal if their pushforwards under squaring are
+equal. Neither measure needs to be finite. -/
 theorem _root_.MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self (μ ν : Measure ℝ)
-    [IsFiniteMeasure ν]
     (hμneg : μ.map (fun x : ℝ ↦ -x) = μ) (hνneg : ν.map (fun x : ℝ ↦ -x) = ν)
     (hsq : μ.map (fun x : ℝ ↦ x ^ 2) = ν.map (fun x : ℝ ↦ x ^ 2)) :
     μ = ν := by
   have hmeas : Measurable fun x : ℝ ↦ x ^ 2 := by fun_prop
-  have : IsFiniteMeasure μ := by
-    have h : μ univ = ν univ := by
-      simpa [Measure.map_apply hmeas MeasurableSet.univ] using congr_arg (· univ) hsq
-    exact ⟨h ▸ measure_lt_top ν univ⟩
-  apply Measure.ext_of_Iic
-  intro x
-  rw [← measureReal_eq_measureReal_iff]
-  -- For a reflection-invariant finite measure `ρ`, twice the mass of `Iic x` is read off the
-  -- squared law: through the central interval `[-x, x]` when `0 ≤ x`, and through `(x, -x)` when
-  -- `x < 0`, the two complementary tails being equal by symmetry.
-  suffices h : ∀ ρ : Measure ℝ, IsFiniteMeasure ρ → ρ.map (fun y : ℝ ↦ -y) = ρ →
-      2 * ρ.real (Iic x) = if 0 ≤ x then
-        (ρ.map (· ^ 2)).real univ + (ρ.map (· ^ 2)).real (Iic (x ^ 2))
-      else (ρ.map (· ^ 2)).real univ - (ρ.map (· ^ 2)).real (Iio (x ^ 2)) by
-    have h' := h μ inferInstance hμneg
-    rw [hsq, ← h ν inferInstance hνneg] at h'
-    linarith
-  intro ρ _ hρ
-  have : ρ.IsNegInvariant := ⟨hρ⟩
-  rw [map_measureReal_apply (by fun_prop) MeasurableSet.univ, preimage_univ]
-  split_ifs with hx
-  · rw [map_measureReal_apply (by fun_prop) measurableSet_Iic,
-      show (fun y : ℝ ↦ y ^ 2) ⁻¹' Iic (x ^ 2) = Icc (-x) x by
-        ext y; simp [sq_le_sq, abs_of_nonneg hx, abs_le]]
-    have htail : ρ.real (-Ioi x) = ρ.real (Ioi x) := by
-      rw [measureReal_def, Measure.measure_neg, ← measureReal_def]
-    have htot := measureReal_add_measureReal_compl (μ := ρ) (measurableSet_Iic (a := x))
-    rw [Set.neg_Ioi] at htail
-    rw [compl_Iic] at htot
-    rw [← Iio_union_Icc_eq_Iic (by linarith : -x ≤ x), measureReal_union
-      ((Iio_disjoint_Ici le_rfl).mono_right Icc_subset_Ici_self) measurableSet_Icc] at htot ⊢
-    linarith
-  · rw [map_measureReal_apply (by fun_prop) measurableSet_Iio,
-      show (fun y : ℝ ↦ y ^ 2) ⁻¹' Iio (x ^ 2) = Ioo x (-x) by
-        ext y; simp [sq_lt_sq, abs_of_neg (not_le.1 hx), abs_lt]]
-    have htail : ρ.real (-Ici (-x)) = ρ.real (Ici (-x)) := by
-      rw [measureReal_def, Measure.measure_neg, ← measureReal_def]
-    have htot := measureReal_add_measureReal_compl (μ := ρ) (measurableSet_Ici (a := -x))
-    rw [Set.neg_Ici, neg_neg] at htail
-    rw [compl_Ici, ← Iic_union_Ioo_eq_Iio (by linarith : x < -x),
-      measureReal_union ((Iic_disjoint_Ioi le_rfl).mono_right Ioo_subset_Ioi_self)
-        measurableSet_Ioo] at htot
-    linarith
+  -- A reflection-invariant measure is determined by its masses of measurable subsets of the open
+  -- positive half-line and of the origin: the negative half-line is the reflection of the former.
+  have hsplit : ∀ ρ : Measure ℝ, ρ.map (fun x : ℝ ↦ -x) = ρ → ∀ s, MeasurableSet s →
+      ρ s = ρ (s ∩ Ioi 0) + ρ (-s ∩ Ioi 0) + ρ (s ∩ {0}) := by
+    intro ρ hρ s hs
+    have : ρ.IsNegInvariant := ⟨hρ⟩
+    have hneg : ρ (s ∩ Iio 0) = ρ (-s ∩ Ioi 0) := by
+      rw [← Measure.measure_neg (μ := ρ) (s ∩ Iio 0)]
+      congr 1
+      ext x
+      simp
+    have hdiff : s \ Ioi 0 = (s ∩ {0}) ∪ (s ∩ Iio 0) := by
+      ext x
+      simp only [mem_sdiff, mem_Ioi, not_lt, mem_union, mem_inter_iff, mem_singleton_iff, mem_Iio]
+      constructor
+      · rintro ⟨hx, hx0⟩
+        rcases hx0.eq_or_lt with h | h
+        · exact Or.inl ⟨hx, h⟩
+        · exact Or.inr ⟨hx, h⟩
+      · rintro (⟨hx, h⟩ | ⟨hx, h⟩)
+        · exact ⟨hx, h.le⟩
+        · exact ⟨hx, h.le⟩
+    rw [← measure_inter_add_sdiff s (measurableSet_Ioi (a := (0 : ℝ))), hdiff,
+      measure_union (disjoint_left.2 fun x hx hx' ↦ by
+        simp only [mem_inter_iff, mem_singleton_iff, mem_Iio] at hx hx'
+        exact hx'.2.ne hx.2) (hs.inter measurableSet_Iio), hneg]
+    ring
+  -- The mass of a subset of the positive half-line is half the squared mass of its image.
+  have hpos : ∀ ρ : Measure ℝ, ρ.map (fun x : ℝ ↦ -x) = ρ → ∀ t, MeasurableSet t → t ⊆ Ioi 0 →
+      ρ.map (fun x : ℝ ↦ x ^ 2) (Real.sqrt ⁻¹' t) = 2 * ρ t := by
+    intro ρ hρ t ht hts
+    have : ρ.IsNegInvariant := ⟨hρ⟩
+    have hpre : (fun x : ℝ ↦ x ^ 2) ⁻¹' (Real.sqrt ⁻¹' t) = t ∪ -t := by
+      ext x
+      simp only [mem_preimage, Real.sqrt_sq_eq_abs, mem_union, Set.mem_neg]
+      rcases le_or_gt 0 x with hx | hx
+      · rw [abs_of_nonneg hx]
+        exact ⟨Or.inl, fun h ↦ h.elim id fun h' ↦ absurd (hts h') (not_lt.2 (by linarith))⟩
+      · rw [abs_of_neg hx]
+        exact ⟨Or.inr, fun h ↦ h.elim (fun h' ↦ absurd (hts h') (not_lt.2 hx.le)) id⟩
+    rw [Measure.map_apply hmeas (ht.preimage (by fun_prop : Measurable Real.sqrt)), hpre,
+      measure_union (disjoint_left.2 fun x hx hx' ↦ absurd (hts hx) (not_lt.2 (by
+        have := hts hx'
+        rw [Set.mem_neg] at hx'
+        simp only [mem_Ioi] at this
+        linarith))) ht.neg, Measure.measure_neg, two_mul]
+  have hzero : ∀ ρ : Measure ℝ, ρ.map (fun x : ℝ ↦ x ^ 2) {0} = ρ {0} := fun ρ ↦ by
+    rw [Measure.map_apply hmeas (measurableSet_singleton _)]
+    congr 1
+    ext x
+    simp
+  ext s hs
+  have hμν : ∀ t, MeasurableSet t → t ⊆ Ioi 0 → μ t = ν t := fun t ht hts ↦ by
+    refine (ENNReal.mul_right_inj two_ne_zero (by finiteness)).1 ?_
+    rw [← hpos μ hμneg t ht hts, ← hpos ν hνneg t ht hts, hsq]
+  have h0 : μ (s ∩ {0}) = ν (s ∩ {0}) := by
+    by_cases h : (0 : ℝ) ∈ s
+    · rw [inter_singleton_of_mem h, ← hzero μ, ← hzero ν, hsq]
+    · rw [inter_singleton_eq_empty.2 h]
+      simp
+  rw [hsplit μ hμneg s hs, hsplit ν hνneg s hs,
+    hμν _ (hs.inter measurableSet_Ioi) inter_subset_right,
+    hμν _ (hs.neg.inter measurableSet_Ioi) inter_subset_right, h0]
 
 /-- **Square roots undo squaring** for a measure carried by the nonnegative half-line: the
 pushforward of `μ` under `x ↦ x ^ 2` returns to `μ` under `Real.sqrt`. -/
