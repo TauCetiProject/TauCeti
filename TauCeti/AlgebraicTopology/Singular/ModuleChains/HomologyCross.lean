@@ -83,4 +83,16 @@ theorem singularHomologyCrossBilinear_naturality (f : X ⟶ X') (g : Y ⟶ Y')
   convert he using 1
   rfl
 
+/-- Naturality of the bilinear cross product in the second space, with the first space fixed. -/
+theorem singularHomologyCrossBilinear_naturality_right {A B B' : Type w} [TopologicalSpace A]
+    [TopologicalSpace B] [TopologicalSpace B'] (g : C(B, B')) (p q n : ℕ) (h : p + q = n)
+    (a : ((singularChains k).obj (TopCat.of A)).homology p)
+    (b : ((singularChains k).obj (TopCat.of B)).homology q) :
+    ContinuousMap.singularHomologyMap k n ((ContinuousMap.id A).prodMap g)
+        (singularHomologyCrossBilinear k (TopCat.of A) (TopCat.of B) p q n h a b) =
+      singularHomologyCrossBilinear k (TopCat.of A) (TopCat.of B') p q n h a
+        (ContinuousMap.singularHomologyMap k q g b) := by
+  simpa only [TopCat.hom_id, TopCat.hom_ofHom, ContinuousMap.singularHomologyMap_id] using
+    singularHomologyCrossBilinear_naturality k (𝟙 (TopCat.of A)) (TopCat.ofHom g) p q n h a b
+
 end TopCat
