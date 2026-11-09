@@ -21,7 +21,7 @@ slices recover a closed convex base after rescaling. Closure is essential for
 the height-zero directions of an unbounded base. Conversely, a closed cone in
 nonnegative heights meeting height one is the homogenization of that slice.
 Pulling back its lineality to height zero recovers the lineality of the
-recession cone, providing a bridge from cone faces to affine faces.
+recession cone.
 
 Adapted from `Mei/Geometry/Convex/Homogenization.lean` at Mei commit
 `7f1e4c7714fb020473694755ad8748c8f15d0e7f`.
@@ -138,8 +138,19 @@ theorem homogenization_height_nonneg {P : Set V} {z : V × ℝ}
       (PointedCone.positive ℝ ℝ).comap (LinearMap.snd ℝ V ℝ) := by
     apply Submodule.span_le.mpr
     rintro _ ⟨p, hp, rfl⟩
-    exact zero_le_one
-  exact hcone
+    simpa only [SetLike.mem_coe, PointedCone.mem_comap, LinearMap.snd_apply,
+      PointedCone.mem_positive, Set.mem_ofPred_eq]
+      using (zero_le_one : (0 : ℝ) ≤ 1)
+  exact fun z hz => by
+    simpa only [SetLike.mem_coe, PointedCone.mem_comap, LinearMap.snd_apply,
+      PointedCone.mem_positive, Set.mem_ofPred_eq] using hcone hz
+
+/-- A point belongs to homogenization when its positive-height rescaling lies in the base. -/
+theorem mem_homogenization_of_inv_smul_mem {P : Set V} {x : V} {t : ℝ}
+    (ht : 0 < t) (hx : t⁻¹ • x ∈ P) : (x, t) ∈ homogenization P := by
+  have hm := PointedCone.smul_mem (homogenization P) ht.le (mem_homogenization_one hx)
+  convert hm using 1
+  simp [ht.ne']
 
 /-- Positive-height slices recover a closed convex base after rescaling. -/
 theorem _root_.Convex.mem_homogenization_pos_iff {P : Set V} (hconvex : _root_.Convex ℝ P)
@@ -162,9 +173,7 @@ theorem _root_.Convex.mem_homogenization_pos_iff {P : Set V} (hconvex : _root_.C
     · simp [he] at hk
     · simp only [he, inv_smul_smul₀ hs.ne']
       exact hp
-  · intro hx
-    have hm := PointedCone.smul_mem (homogenization P) ht.le (mem_homogenization_one hx)
-    convert hm using 1; simp [ht.ne']
+  · exact mem_homogenization_of_inv_smul_mem ht
 
 /-- The height-one slice of a closed convex base is precisely the original carrier. -/
 @[simp]
@@ -174,7 +183,7 @@ theorem _root_.Convex.mem_homogenization_one_iff {P : Set V} (hconvex : _root_.C
   simpa using hconvex.mem_homogenization_pos_iff hclosed (x := x) zero_lt_one
 
 /-- Every recession direction of a nonempty base occurs at height zero in its
-closed homogenization. The approximants are `(v + ε • p, ε)` for `ε > 0`. -/
+closed homogenization. -/
 theorem mem_homogenization_zero_of_mem_recessionCone {P : Set V} (hne : P.Nonempty)
     {v : V} (hv : v ∈ recessionCone ℝ P) : (v, (0 : ℝ)) ∈ homogenization P := by
   obtain ⟨p, hp⟩ := hne
@@ -253,24 +262,14 @@ theorem homogenization_slice_one (C : PointedCone ℝ (V × ℝ))
     have hbase : (t⁻¹ • x, (1 : ℝ)) ∈ C := by
       have hm := C.smul_mem (inv_nonneg.mpr ht.le) hz
       simpa [ht.ne'] using hm
-    have hm := (Set.homogenization P).smul_mem ht.le
-      (Set.mem_homogenization_one hbase)
-    convert hm using 1; simp [ht.ne']
+    exact Set.mem_homogenization_of_inv_smul_mem ht hbase
   apply le_antisymm
   · exact (Set.homogenization_le_iff hclosed).mpr fun x hx => hx
   · rintro ⟨x, t⟩ hz
     rcases (hheight _ hz).eq_or_lt with rfl | ht
-    · obtain ⟨p, hp⟩ := hne
-      have hlim : Tendsto (fun ε : ℝ => (x + ε • p, ε)) (𝓝[>] 0) (𝓝 (x, (0 : ℝ))) := by
-        have hc : Continuous (fun ε : ℝ => (x + ε • p, ε)) :=
-          (continuous_const.add (continuous_id.smul continuous_const)).prodMk continuous_id
-        simpa only [zero_smul, add_zero] using
-          (hc.tendsto 0).mono_left nhdsWithin_le_nhds
-      apply (Set.isClosed_homogenization P).mem_of_tendsto hlim
-      filter_upwards [self_mem_nhdsWithin] with ε hε
-      have hm := C.add_mem hz (C.smul_mem (le_of_lt hε) hp)
-      apply hpos hε
-      simpa using hm
+    · exact Set.mem_homogenization_zero_of_mem_recessionCone hne
+        (Set.mem_recessionCone.mpr fun p hp s hs => by
+          simpa using C.add_mem hp (C.smul_mem hs hz))
     · exact hpos ht hz
 
 end PointedCone
