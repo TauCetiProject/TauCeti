@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import Mathlib.LinearAlgebra.Matrix.Block
+import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 
 /-!
 # Weight-parabolic subgroup schemes of the general linear group
@@ -163,13 +165,24 @@ theorem weightParabolicDefiningHopfIdeal_toIdeal (w : Fin N → α) :
       Ideal.span (weightParabolicRelationSet R w) := by
   rw [weightParabolicDefiningHopfIdeal, HopfIdeal.ofSpan_toIdeal]
 
+/-- Containment of the strict weight comparisons gives containment of the defining Hopf ideals. -/
+theorem weightParabolicDefiningHopfIdeal_mono {w w' : Fin N → ℤ}
+    (h : ∀ i j, w' i < w' j → w i < w j) :
+    weightParabolicDefiningHopfIdeal R w' ≤ weightParabolicDefiningHopfIdeal R w := by
+  rw [← HopfIdeal.toIdeal_le_toIdeal, weightParabolicDefiningHopfIdeal_toIdeal,
+    weightParabolicDefiningHopfIdeal_toIdeal]
+  apply Ideal.span_mono
+  intro x hx
+  obtain ⟨i, j, hij, rfl⟩ := (mem_weightParabolicRelationSet_iff R _ x).mp hx
+  exact X_mem_weightParabolicRelationSet R w (h i j hij)
+
 /-- A morphism out of the coordinate algebra of `GL_N` kills the weight-parabolic defining Hopf
 ideal as soon as it kills every forbidden matrix coordinate. -/
-theorem weightParabolicDefiningHopfIdeal_toIdeal_le_ker {A : Type*} [CommRing A] [Algebra R A]
-    (w : Fin N → α) (f : coordinateHopfAlgebra R N →ₐ[R] A)
+theorem weightParabolicDefiningHopfIdeal_toIdeal_le_ker {A : Type*} [Semiring A]
+    (w : Fin N → α) (f : coordinateHopfAlgebra R N →+* A)
     (hf : ∀ i j, w i < w j → f (coordinateHopfAlgebraAlgEquiv R N
       (coordinateRingMap R N (MvPolynomial.X (i, j)))) = 0) :
-    (weightParabolicDefiningHopfIdeal R w).toIdeal ≤ RingHom.ker f.toRingHom := by
+    (weightParabolicDefiningHopfIdeal R w).toIdeal ≤ RingHom.ker f := by
   rw [weightParabolicDefiningHopfIdeal_toIdeal, Ideal.span_le]
   intro x hx
   obtain ⟨i, j, hij, rfl⟩ := (mem_weightParabolicRelationSet_iff R w x).mp hx
@@ -296,9 +309,10 @@ theorem mem_weightParabolicDefiningPointsSubgroup_iff_blockTriangular (w : Fin N
       (weightParabolicDefiningHopfIdeal_toIdeal R w).symm ▸
         Ideal.subset_span (X_mem_weightParabolicRelationSet R w hij))
   · intro h x hx
-    refine RingHom.mem_ker.mp (weightParabolicDefiningHopfIdeal_toIdeal_le_ker R w g.ofConv
-      (fun i j hij ↦ ?_) (HopfIdeal.mem_toIdeal.mpr hx))
-    rw [← pointToGeneralLinear_apply, ← pointsMulEquiv_apply]
+    refine RingHom.mem_ker.mp (weightParabolicDefiningHopfIdeal_toIdeal_le_ker R w
+      g.ofConv.toRingHom (fun i j hij ↦ ?_) (HopfIdeal.mem_toIdeal.mpr hx))
+    rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+      ← pointToGeneralLinear_apply, ← pointsMulEquiv_apply]
     exact h hij
 
 variable (w : Fin N → α)
@@ -309,6 +323,16 @@ noncomputable def weightParabolicPoints (A : Type v) [CommRing A] [Algebra R A] 
   (CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R N)
     (weightParabolicDefiningHopfIdeal R w) (CommAlgCat.of R A)).map
       (pointsMulEquiv N).toMonoidHom
+
+/-- The weight-parabolic matrix subgroup is the generic Hopf-ideal point subgroup for
+its defining ideal. This identifies the two public presentations without unfolding them. -/
+theorem weightParabolicPoints_eq_hopfIdealPointsSubgroup
+    (A : Type v) [CommRing A] [Algebra R A] :
+    weightParabolicPoints R w A =
+      hopfIdealPointsSubgroup N (weightParabolicDefiningHopfIdeal R w) A := by
+  ext g
+  rw [weightParabolicPoints, Subgroup.mem_map_equiv,
+    CommHopfAlgCat.mem_quotientPointsSubgroup_iff, mem_hopfIdealPointsSubgroup_iff]
 
 /-- A matrix belongs to the weight parabolic precisely when all entries increasing the
 weight vanish. This holds over nonreduced value algebras as well. -/
@@ -321,5 +345,13 @@ theorem mem_weightParabolicPoints_iff {A : Type v} [CommRing A] [Algebra R A]
     mem_weightParabolicDefiningPointsSubgroup_iff_blockTriangular]
   simp only [MulEquiv.apply_symm_apply, Matrix.BlockTriangular, Function.comp_apply,
     OrderDual.toDual_lt_toDual]
+
+/-- Inclusion of defining ideals reverses the inclusion of matrix point subgroups. -/
+theorem weightParabolicPoints_le_of_weightParabolicDefiningHopfIdeal_le (w' : Fin N → ℤ)
+    (h : weightParabolicDefiningHopfIdeal R w' ≤ weightParabolicDefiningHopfIdeal R w)
+    {A : Type v} [CommRing A] [Algebra R A] :
+    weightParabolicPoints R w A ≤ weightParabolicPoints R w' A := by
+  rw [weightParabolicPoints, weightParabolicPoints]
+  exact Subgroup.map_mono (CommHopfAlgCat.quotientPointsSubgroup_le_of_le _ h _)
 
 end TauCeti.GeneralLinear

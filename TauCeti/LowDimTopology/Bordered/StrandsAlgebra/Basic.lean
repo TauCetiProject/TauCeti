@@ -24,10 +24,11 @@ and the inversion counts add, `inv (ψ ∘ φ) = inv φ + inv ψ`, and zero othe
 diagrams `I(S)` on the subsets `S` are orthogonal idempotents summing to the unit.
 
 This file constructs the underlying associative algebra `TauCeti.StrandsAlgebra R α` of the
-strands algebra of a finite linear order `α`, over an arbitrary commutative semiring `R`, without
-the differential that resolves crossings. Lipshitz, Ozsváth and Thurston work over `𝔽₂`, which is
-the case `R = ZMod 2`, `α = Fin n`; the product of basis elements involves no
-coefficients other than `0` and `1`, so its definition makes sense over any `R`. Associativity
+strands algebra of a finite linear order `α`, over an arbitrary commutative semiring `R`. Its
+differential, which resolves crossings, is `TauCeti.StrandsAlgebra.differential`. Lipshitz, Ozsváth
+and Thurston work over `𝔽₂`, which is the case `R = ZMod 2`, `α = Fin n`; the product of basis
+elements involves no coefficients other than `0` and `1`, so its definition makes sense over any
+`R`. Associativity
 comes from the subadditivity of inversion counts
 (`TauCeti.StrandDiagram.trans_composable_and_composable_iff`).
 
@@ -46,6 +47,8 @@ comes from the subadditivity of inversion counts
   orthogonal idempotents summing to `1`.
 * `TauCeti.StrandsAlgebra.idem_mul_of`, `TauCeti.StrandsAlgebra.of_mul_idem`: `I(s) φ` is `φ` when
   `s` is the source of `φ` and zero otherwise, and `φ I(t)` is `φ` when `t` is its target.
+* `TauCeti.StrandsAlgebra.map_mul_of_basis`: a linear map out of the strands algebra is
+  multiplicative once it is multiplicative on basis elements.
 
 ## References
 
@@ -65,8 +68,8 @@ variable (R α : Type*) [CommSemiring R] [LinearOrder α]
 /-- The strands algebra of a finite linear order `α` over a commutative semiring `R`: the free
 `R`-module on the strand diagrams of `α`, multiplied by concatenating composable diagrams. For
 `α = Fin n` and `R = ZMod 2` it is the algebra underlying the strands algebra `A(n)` of Lipshitz,
-Ozsváth and Thurston, the direct sum of their algebras `A(n, k)` over the number `k` of strands,
-without the differential that resolves crossings. -/
+Ozsváth and Thurston, the direct sum of their algebras `A(n, k)` over the number `k` of strands.
+Its differential, which resolves crossings, is `TauCeti.StrandsAlgebra.differential`. -/
 def StrandsAlgebra : Type _ :=
   StrandDiagram α →₀ R
 
@@ -249,6 +252,21 @@ instance {R : Type*} [CommRing R] : Ring (StrandsAlgebra R α) where
 
 theorem isIdempotentElem_idem (s : Finset α) : IsIdempotentElem (idem s : StrandsAlgebra R α) := by
   simp [IsIdempotentElem, idem_mul_idem]
+
+/-- **Multiplicativity is a basis-level condition.** An `R`-linear map out of the strands
+algebra that is multiplicative on pairs of basis elements is multiplicative. -/
+theorem map_mul_of_basis {A : Type*} [NonUnitalNonAssocSemiring A] [Module R A]
+    [IsScalarTower R A A] [SMulCommClass R A A] (f : StrandsAlgebra R α →ₗ[R] A)
+    (h : ∀ φ ψ, f (of φ * of ψ) = f (of φ) * f (of ψ)) (x y : StrandsAlgebra R α) :
+    f (x * y) = f x * f y := by
+  induction x using induction_on with
+  | zero => simp only [zero_mul, map_zero]
+  | add x x' hx hx' => simp only [add_mul, map_add, hx, hx']
+  | smul_of r φ =>
+    induction y using induction_on with
+    | zero => simp only [mul_zero, map_zero]
+    | add y y' hy hy' => simp only [mul_add, map_add, hy, hy']
+    | smul_of s ψ => simp only [smul_mul_assoc, mul_smul_comm, map_smul, h]
 
 end StrandsAlgebra
 
