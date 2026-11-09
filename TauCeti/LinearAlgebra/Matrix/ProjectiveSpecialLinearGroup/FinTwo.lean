@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+import TauCeti.LinearAlgebra.Matrix.Commute
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
@@ -15,10 +16,11 @@ import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 Mathlib classifies `2 × 2` matrices as parabolic, elliptic or hyperbolic
 (`Matrix.IsParabolic`, with the dot-notation synonym `Matrix.GeneralLinearGroup.IsParabolic`).
-Being parabolic is invariant under negation (`Matrix.isParabolic_neg_iff`), so over a ring without
-zero divisors, where the center of `SL(2, R)` is `{±1}`, it descends to the projective special
-linear group `PSL(2, R) = SL(2, R) ⧸ {±1}`. This is the notion of a parabolic Möbius
-transformation which does not depend on a choice of matrix representative.
+Being parabolic is invariant under multiplication by a central scalar of square one, such as
+negation (`Matrix.isParabolic_neg_iff`), so it descends to the projective special linear group
+`PSL(2, R) = SL(2, R) ⧸ center`, which is `SL(2, R) ⧸ {±1}` over a ring without zero divisors.
+This is the notion of a parabolic Möbius transformation which does not depend on a choice of
+matrix representative.
 
 The model parabolic elements are the translations `upperRightHom x`, the classes of the
 transvections `!![1, x; 0, 1]`, which act on the projective line by `z ↦ z + x`. Over a field
@@ -75,28 +77,29 @@ theorem mk_inv_mul_mul (S Y : SL(2, R)) :
   rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
 
 /-- An element of `PSL(2, R)` is *parabolic* when it is the class of a parabolic matrix of
-`SL(2, R)`. When `R` has no zero divisors every representative is then parabolic
+`SL(2, R)`; then every representative is parabolic
 (`Matrix.ProjectiveSpecialLinearGroup.isParabolic_mk_iff`). -/
 def IsParabolic (g : PSL(2, R)) : Prop :=
   ∃ a : SL(2, R), (a : PSL(2, R)) = g ∧ (a : GL (Fin 2) R).IsParabolic
 
-variable [NoZeroDivisors R]
-
-/-- Two matrices of `SL(2, R)` have the same class in `PSL(2, R)` exactly when they are equal up
-to sign. -/
-theorem mk_eq_mk_iff {a b : SL(2, R)} : (a : PSL(2, R)) = b ↔ b = a ∨ b = -a := by
-  rw [QuotientGroup.eq, SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one, inv_mul_eq_one,
-    inv_mul_eq_iff_eq_mul, mul_neg_one, eq_comm (a := a)]
-
-/-- The class of a matrix of `SL(2, R)` is parabolic exactly when the matrix is: the only other
-representative is its negative, which is parabolic along with it. -/
+/-- The class of a matrix of `SL(2, R)` is parabolic exactly when the matrix is: two
+representatives of a class differ by a central scalar whose square is `1`, which preserves
+parabolicity. -/
 @[simp]
 theorem isParabolic_mk_iff (a : SL(2, R)) :
     IsParabolic (a : PSL(2, R)) ↔ (a : GL (Fin 2) R).IsParabolic := by
   refine ⟨fun ⟨b, hb, hpar⟩ ↦ ?_, fun h ↦ ⟨a, rfl, h⟩⟩
-  rcases mk_eq_mk_iff.1 hb with rfl | rfl
-  · exact hpar
-  · simpa [GeneralLinearGroup.IsParabolic] using hpar
+  rw [QuotientGroup.eq, SpecialLinearGroup.mem_center_iff] at hb
+  obtain ⟨r, hr, hrb⟩ := hb
+  have h1 : ((b * (b⁻¹ * a) : SL(2, R)) : Matrix (Fin 2) (Fin 2) R) = a := by
+    rw [mul_inv_cancel_left]
+  have hab : (a : Matrix (Fin 2) (Fin 2) R) = r • (b : Matrix (Fin 2) (Fin 2) R) := by
+    rw [← h1, SpecialLinearGroup.coe_mul, ← hrb]
+    ext i j
+    simp [Matrix.scalar_apply, Matrix.mul_diagonal, mul_comm]
+  have hr2 : r ^ 2 = 1 := by simpa using hr
+  rw [GeneralLinearGroup.IsParabolic, SpecialLinearGroup.coe_GL_coe_matrix, hab]
+  exact Matrix.isParabolic_smul_of_isUnit (IsUnit.of_mul_eq_one r (by rw [← sq, hr2])) hpar
 
 /-- Parabolicity is invariant under conjugation in `PSL(2, R)`. -/
 @[simp]
@@ -130,17 +133,21 @@ theorem IsParabolic.ne_one {g : PSL(2, R)} (hg : IsParabolic g) : g ≠ 1 := by
 theorem isParabolic_inv_iff {g : PSL(2, R)} : IsParabolic g⁻¹ ↔ IsParabolic g := by
   induction g using QuotientGroup.induction_on with | H a => ?_
   rw [← QuotientGroup.mk_inv, isParabolic_mk_iff, isParabolic_mk_iff]
-  have hscalar (m : Matrix (Fin 2) (Fin 2) R) :
-      m ∈ Set.range (scalar (Fin 2)) ↔ m 0 1 = 0 ∧ m 1 0 = 0 ∧ m 0 0 = m 1 1 := by
-    refine ⟨by rintro ⟨r, rfl⟩; simp, fun ⟨h01, h10, h00⟩ ↦ ⟨m 0 0, ?_⟩⟩
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [h01, h10, h00]
   simp only [GeneralLinearGroup.IsParabolic, SpecialLinearGroup.coe_GL_coe_matrix,
-    SpecialLinearGroup.coe_inv, Matrix.IsParabolic, hscalar, Matrix.discr_fin_two,
+    SpecialLinearGroup.coe_inv, Matrix.IsParabolic,
+    TauCeti.mem_range_scalar_fin_two_iff, Matrix.discr_fin_two,
     Matrix.adjugate_fin_two, Matrix.trace_fin_two, Matrix.det_fin_two]
   simp [eq_comm, and_comm, add_comm, mul_comm]
 
 alias ⟨_, IsParabolic.inv⟩ := isParabolic_inv_iff
+
+variable [NoZeroDivisors R]
+
+/-- Two matrices of `SL(2, R)` have the same class in `PSL(2, R)` exactly when they are equal up
+to sign. -/
+theorem mk_eq_mk_iff {a b : SL(2, R)} : (a : PSL(2, R)) = b ↔ b = a ∨ b = -a := by
+  rw [QuotientGroup.eq, SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one, inv_mul_eq_one,
+    inv_mul_eq_iff_eq_mul, mul_neg_one, eq_comm (a := a)]
 
 /-- The class of a matrix of `SL(2, R)` with `tr² = 4` is the identity or parabolic: the
 discriminant `tr² - 4` vanishes, so the matrix is parabolic unless it is scalar, and a scalar
@@ -287,12 +294,17 @@ theorem exists_eq_upperRightHom_of_commute {g : PSL(2, R)} {x : R}
   have hd : a 0 0 = a 1 1 := mul_left_cancel₀ hx (by linear_combination -h01)
   exact ⟨a 0 0 * a 0 1, mk_eq_upperRightHom a h10 hd⟩
 
+omit [NoZeroDivisors R] in
 /-- A translation is parabolic exactly when it is nontrivial. -/
 @[simp]
 theorem isParabolic_upperRightHom_iff {x : R} : IsParabolic (upperRightHom x) ↔ x ≠ 0 := by
-  rw [upperRightHom_apply, isParabolic_mk_iff, GeneralLinearGroup.IsParabolic,
-    SpecialLinearGroup.coe_GL_coe_matrix, Matrix.isParabolic_iff_of_upperTriangular] <;>
-    simp [SpecialLinearGroup.transvection_coe]
+  refine ⟨?_, fun hx ↦ ⟨_, (upperRightHom_apply x).symm, ?_⟩⟩
+  · exact fun h hx ↦ h.ne_one (by rw [hx, AddChar.map_zero_eq_one])
+  · simp only [GeneralLinearGroup.IsParabolic, SpecialLinearGroup.coe_GL_coe_matrix,
+      Matrix.IsParabolic, Matrix.discr_fin_two, Matrix.trace_fin_two, Matrix.det_fin_two,
+      SpecialLinearGroup.transvection_coe]
+    refine ⟨?_, by norm_num [Matrix.single_apply]⟩
+    exact fun hs ↦ hx (by simpa using (TauCeti.mem_range_scalar_fin_two_iff.1 hs).1)
 
 /-- If `T` represents `upperRightHom x`, that is `T = ±!![1, x; 0, 1]`, then
 `tr ⁅T, X⁆ - 2 = x² c²`, where `c` is the lower-left entry of `X`. -/
