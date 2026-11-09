@@ -25,12 +25,15 @@ and the resulting finite-horizon measure has total mass `T`.
 
 On a finite coordinate space `ι → ℝ`, permuting the coordinates and changing their signs
 preserves Lebesgue measure (`TauCeti.volume_preserving_signedPerm`).
+
+The Lebesgue measure of a finite union of pairwise disjoint intervals `Ι (a i) (b i)` is the sum of
+their lengths (`TauCeti.volume_biUnion_uIoc_eq_ofReal_sum`).
 -/
 
 public section
 
 open MeasureTheory Set
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal Interval
 
 namespace NNReal
 
@@ -82,6 +85,17 @@ theorem volume_preserving_signedPerm {ι : Type*} [Fintype ι] (e : Equiv.Perm �
         abs_inv, hc i, inv_one, ENNReal.ofReal_one, one_smul]⟩
   exact hmul.comp
     (volume_preserving_arrowCongr' e.symm (MeasurableEquiv.refl ℝ) (MeasurePreserving.id _))
+
+/-- The measure of a finite union of pairwise disjoint intervals `Ι (a i) (b i)` is the sum of their
+lengths `max (a i) (b i) - min (a i) (b i)`. -/
+theorem volume_biUnion_uIoc_eq_ofReal_sum {ι : Type*} (I : Finset ι) (a b : ι → ℝ)
+    (h : (I : Set ι).PairwiseDisjoint fun i ↦ Ι (a i) (b i)) :
+    volume (⋃ i ∈ I, Ι (a i) (b i)) =
+      ENNReal.ofReal (∑ i ∈ I, (max (a i) (b i) - min (a i) (b i))) := by
+  rw [measure_biUnion_finset h fun _ _ ↦ measurableSet_uIoc,
+    ENNReal.ofReal_sum_of_nonneg fun i _ ↦ sub_nonneg.2 min_le_max]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Real.volume_uIoc, ← max_sub_min_eq_abs', max_comm, min_comm]
 
 end TauCeti
 
