@@ -304,10 +304,10 @@ variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalS
 open NormalizedCubicalChain
 
 /-- The **push-forward of normalized cubical chains** along a continuous map `f : X → Y`, in all
-dimensions at once. -/
+dimensions at once: the direct sum of the componentwise push-forwards. -/
 def cubicalChainPushforward (f : C(X, Y)) :
     normalizedCubicalChainAlgebra X R →ₗ[R] normalizedCubicalChainAlgebra Y R :=
-  DirectSum.toModule R ℕ _ fun n ↦ cubicalChainLof Y R n ∘ₗ map R f n
+  DirectSum.lmap fun n ↦ map R f n
 
 variable {R}
 
@@ -315,30 +315,22 @@ variable {R}
 @[simp]
 theorem cubicalChainPushforward_lof (f : C(X, Y)) (n : ℕ) (c : NormalizedCubicalChain X R n) :
     cubicalChainPushforward R f (cubicalChainLof X R n c) = cubicalChainLof Y R n (map R f n c) :=
-  DirectSum.toModule_lof R n c
+  DirectSum.lmap_lof _ n c
 
 /-- The push-forward along the identity is the identity. -/
 @[simp]
 theorem cubicalChainPushforward_id (a : normalizedCubicalChainAlgebra X R) :
     cubicalChainPushforward R (ContinuousMap.id X) a = a := by
-  induction a using DirectSum.induction_on with
-  | zero => rw [map_zero]
-  | of n c =>
-    rw [← DirectSum.lof_eq_of R, cubicalChainPushforward_lof, NormalizedCubicalChain.map_id,
-      LinearMap.id_apply]
-  | add a b ha hb => rw [map_add, ha, hb]
+  simp only [cubicalChainPushforward, NormalizedCubicalChain.map_id, DirectSum.lmap_id,
+    LinearMap.id_apply]
 
 /-- The push-forward along a composite is the composite of the push-forwards. -/
 theorem cubicalChainPushforward_comp (g : C(Y, Z)) (f : C(X, Y))
     (a : normalizedCubicalChainAlgebra X R) :
     cubicalChainPushforward R (g.comp f) a =
       cubicalChainPushforward R g (cubicalChainPushforward R f a) := by
-  induction a using DirectSum.induction_on with
-  | zero => rw [map_zero, map_zero, map_zero]
-  | of n c =>
-    rw [← DirectSum.lof_eq_of R, cubicalChainPushforward_lof, cubicalChainPushforward_lof,
-      cubicalChainPushforward_lof, NormalizedCubicalChain.map_comp, LinearMap.comp_apply]
-  | add a b ha hb => rw [map_add, ha, hb, map_add, map_add]
+  simp only [cubicalChainPushforward, NormalizedCubicalChain.map_comp, DirectSum.lmap_comp,
+    LinearMap.comp_apply]
 
 /-- The push-forward preserves the cohomological degree. -/
 theorem cubicalChainPushforward_mem (f : C(X, Y)) {i : ℤ} {a : normalizedCubicalChainAlgebra X R}
