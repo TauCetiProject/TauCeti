@@ -171,7 +171,7 @@ theorem unitaryConj_apply_map (U : H ≃ₗᵢ[𝕜] H') (A : H →ₗ.[𝕜] H)
 
 /-- The domain of a unitary conjugate of a densely defined operator is dense: `U` is a surjective
 isometry, so it carries a dense set to a dense set. -/
-private theorem dense_unitaryConj_domain (U : H ≃ₗᵢ[𝕜] H') (A : H →ₗ.[𝕜] H)
+theorem dense_unitaryConj_domain (U : H ≃ₗᵢ[𝕜] H') (A : H →ₗ.[𝕜] H)
     (hdenseA : Dense (A.domain : Set H)) : Dense ((unitaryConj U A).domain : Set H') := by
   have himg : (U : H ≃ₗᵢ[𝕜] H') '' (A.domain : Set H) ⊆ ((unitaryConj U A).domain : Set H') := by
     rintro _ ⟨w, hw, rfl⟩
