@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
@@ -54,7 +55,7 @@ boundary points.
 
 public section
 
-open Bundle Function Set
+open Bundle Filter Function Set
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti.Manifold
@@ -111,25 +112,59 @@ theorem eventuallyEq_extChartAt_family_of_eq_id [I.Boundaryless] {ψ : 𝕜 → 
   simp only [hz', id_eq]
   exact (extChartAt I x).right_inv hz
 
-variable [IsManifold I 1 M]
-
 /-- **Regularity of the parameter derivative.** If a family `F : 𝕜 → M → F'` is jointly `C^n` at
 `(t, x)`, then its parameter derivative `y ↦ ∂ᵣ F (r, y)` at `r = t` is `C^m` at `x` for every
 `m` with `m + 1 ≤ n`. -/
 theorem contMDiffAt_deriv_of_contMDiffAt_uncurry
     (hF : ContMDiffAt (𝓘(𝕜).prod I) 𝓘(𝕜, F') n (uncurry F) (t, x)) (hmn : m + 1 ≤ n) :
     ContMDiffAt I 𝓘(𝕜, F') m (fun y ↦ deriv (fun r ↦ F r y) t) x := by
-  have hswap : ContMDiffAt (I.prod 𝓘(𝕜)) 𝓘(𝕜, F') n (uncurry fun y r ↦ F r y) (x, t) :=
-    hF.comp (x, t) (contMDiffAt_snd.prodMk contMDiffAt_fst)
-  have h := (hswap.mfderiv (fun y r ↦ F r y) (fun _ ↦ t) contMDiffAt_const hmn).clm_apply
-    (contMDiffAt_const (c := (1 : 𝕜)))
-  refine h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦ ?_)
-  dsimp only
-  -- Between model spaces, tangent coordinates are trivial; `erw` sees through the tangent spaces
-  -- of `𝕜` and `F'`, which are the model spaces themselves.
-  erw [inTangentCoordinates_model_space]
-  rw [mfderiv_eq_fderiv, ← fderiv_apply_one_eq_deriv]
-  rfl
+  set ψ := extChartAt I x
+  have hrange (y : M) : ψ y ∈ range I := ⟨chartAt H x y, rfl⟩
+  set G : 𝕜 × E → F' := fun p ↦ F p.1 (ψ.symm p.2) with hGdef
+  set s : Set (𝕜 × E) := univ ×ˢ range I with hs
+  have hG : ContDiffWithinAt 𝕜 n G s (t, ψ x) :=
+    contDiffWithinAt_extChartAt_symm_of_contMDiffAt_uncurry hF
+  have hsu : UniqueDiffOn 𝕜 s := uniqueDiffOn_univ.prod I.uniqueDiffOn
+  have hmem : (t, ψ x) ∈ s := ⟨mem_univ _, hrange x⟩
+  have hn1 : (1 : WithTop ℕ∞) ≤ n := le_trans le_add_self hmn
+  have hmaps : MapsTo (fun u : E ↦ (t, u)) (range I) s := fun u hu ↦ ⟨mem_univ _, hu⟩
+  -- The parameter derivative, read in the chart, is `u ↦ dG (t, u) (1, 0)`, which is `C^m`.
+  have hlift : ContDiffWithinAt 𝕜 m (fun u : E ↦ fderivWithin 𝕜 G s (t, u) (1, 0)) (range I)
+      (ψ x) :=
+    ((hG.fderivWithin_right hsu hmn hmem).clm_apply contDiffWithinAt_const).comp (ψ x)
+      (contDiffWithinAt_const.prodMk contDiffWithinAt_id) hmaps
+  -- Near `ψ x` in the range, `G` is differentiable, so this is the parameter derivative.
+  have hnear : ∀ᶠ u in 𝓝[range I] (ψ x), DifferentiableWithinAt 𝕜 G s (t, u) := by
+    have h := (hG.of_le hn1).eventually (by simp)
+    rw [insert_eq_of_mem hmem] at h
+    have hlim : Tendsto (fun u : E ↦ (t, u)) (𝓝[range I] (ψ x)) (𝓝[s] (t, ψ x)) :=
+      (continuousWithinAt_const.prodMk continuousWithinAt_id).tendsto_nhdsWithin hmaps
+    exact hlim.eventually (h.mono fun p hp ↦ hp.differentiableWithinAt one_ne_zero)
+  have hderiv : ∀ u ∈ range I, DifferentiableWithinAt 𝕜 G s (t, u) →
+      deriv (fun r ↦ F r (ψ.symm u)) t = fderivWithin 𝕜 G s (t, u) (1, 0) := fun u hu hd ↦ by
+    have h := hd.hasFDerivWithinAt.comp_hasDerivAt (f := fun r : 𝕜 ↦ (r, u)) t
+      (HasDerivAt.prodMk (hasDerivAt_id t) (hasDerivAt_const t u))
+      (Filter.Eventually.of_forall fun r ↦ ⟨mem_univ _, hu⟩)
+    exact h.deriv
+  have hD' : ContDiffWithinAt 𝕜 m (fun u : E ↦ deriv (fun r ↦ F r (ψ.symm u)) t) (range I)
+      (ψ x) := by
+    refine hlift.congr_of_eventuallyEq ?_ ?_
+    · filter_upwards [hnear, self_mem_nhdsWithin] with u hu hur using hderiv u hur hu
+    · exact hderiv _ (hrange x) (hG.differentiableWithinAt (zero_lt_one.trans_le hn1).ne')
+  -- Compose with the chart.
+  have hg : ContMDiffWithinAt 𝓘(𝕜, E) 𝓘(𝕜, F') m
+      (fun u : E ↦ deriv (fun r ↦ F r (ψ.symm u)) t) (range I) (ψ x) :=
+    contMDiffWithinAt_iff_contDiffWithinAt.2 hD'
+  have hψ : ContMDiffWithinAt I 𝓘(𝕜, E) m ψ univ x :=
+    (contMDiffAt_extChartAt : ContMDiffAt I 𝓘(𝕜, E) m (extChartAt I x) x).contMDiffWithinAt
+  have hcomp : ContMDiffAt I 𝓘(𝕜, F') m
+      ((fun u : E ↦ deriv (fun r ↦ F r (ψ.symm u)) t) ∘ ψ) x :=
+    hg.comp x hψ fun y _ ↦ hrange y
+  refine hcomp.congr_of_eventuallyEq ?_
+  filter_upwards [extChartAt_source_mem_nhds (I := I) x] with y hy
+  simp only [Function.comp_apply, ψ, (extChartAt I x).left_inv hy]
+
+variable [IsManifold I 1 M]
 
 /-- **Regularity of the velocity field of a two-parameter family.** If `f : 𝕜 → 𝕜 → M` is jointly
 `C^n` at `(u, v)`, then the velocities of its curves `f q`, as a map of both parameters to the
