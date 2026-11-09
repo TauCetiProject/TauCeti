@@ -248,8 +248,7 @@ theorem isNondegenerateCriticalPoint_comp_iff {φ : F → E} {b : F} (hf : ContD
     (hφ : ContDiffAt ℝ 2 φ b) (hinv : (fderiv ℝ φ b).IsInvertible) :
     IsNondegenerateCriticalPoint (f ∘ φ) b ↔ IsNondegenerateCriticalPoint f (φ b) := by
   have hcrit : fderiv ℝ (f ∘ φ) b = 0 ↔ fderiv ℝ f (φ b) = 0 :=
-    fderiv_comp_eq_zero_iff_of_isInvertible (hf.differentiableAt (by norm_num))
-      (hφ.differentiableAt (by norm_num)) hinv
+    fderiv_comp_eq_zero_iff_of_isInvertible (hf.differentiableAt (by norm_num)) hinv
   obtain ⟨e, he⟩ := hinv
   -- The Hessian pulls back as `ψ ↦ ψ ∘ e` composed with the Hessian composed with `e`, and each of
   -- the three factors is invertible.
@@ -330,8 +329,7 @@ theorem HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const
   -- Criticality passes to `k` at `Φ u`, since the differential of `Φ` there is invertible.
   have hkcrit : fderiv ℝ k (Φ u) = 0 := by
     by_cases hd : DifferentiableAt ℝ k (Φ u)
-    · rw [hev'.fderiv_eq, fderiv_comp_eq_zero_iff_of_isInvertible (hd.add_const r)
-        (hΦu.differentiableAt (by norm_num)) hinv] at hcrit
+    · rw [hev'.fderiv_eq, fderiv_comp_eq_zero_iff_of_isInvertible (hd.add_const r) hinv] at hcrit
       simpa [fderiv_add_const] using hcrit
     · exact fderiv_zero_of_not_differentiableAt hd
   have hnd : IsNondegenerateCriticalPoint (fun w ↦ k w + r) (Φ u) :=
