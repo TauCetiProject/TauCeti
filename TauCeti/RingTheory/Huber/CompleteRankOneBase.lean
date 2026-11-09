@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.KrullDimension.Basic
-public import Mathlib.RingTheory.Valuation.ValuationRing
 public import TauCeti.RingTheory.AdicRing.Basic
+public import TauCeti.RingTheory.Valuation.AdicSeparated
 
 /-!
 # Complete rank-one valuation bases
@@ -30,7 +30,7 @@ separated valuation ring every nonzero element divides a power of `ϖ`
 (`TauCeti.PreValuationRing.exists_dvd_pow_of_isHausdorff`). Consequently a module on which `ϖ` acts
 injectively has no torsion at all (`IsSMulRegular.of_isHausdorff`), which is what identifies
 flatness over `O` with the absence of `ϖ`-torsion for the admissible algebras of
-Bosch–Lütkebohmert.
+Bosch–Lütkebohmert. Both facts are proved in `TauCeti.RingTheory.Valuation.AdicSeparated`.
 
 ## Main definitions
 
@@ -38,10 +38,6 @@ Bosch–Lütkebohmert.
 
 ## Main results
 
-* `TauCeti.PreValuationRing.exists_dvd_pow_of_isHausdorff`: in a valuation ring that is separated
-  for the `ϖ`-adic topology, every nonzero element divides a power of `ϖ`.
-* `IsSMulRegular.of_isHausdorff`: over such a ring, a module on which `ϖ` is regular is
-  torsion-free.
 * `TauCeti.Huber.IsCompleteRankOneBase.isAdicRing`: the base is an adic ring of finite ideal type,
   with ideal of definition `(ϖ)`.
 
@@ -54,28 +50,6 @@ Bosch–Lütkebohmert.
 -/
 
 public section
-
-/-- In a valuation ring that is separated for the `ϖ`-adic topology, every nonzero element
-divides some power of `ϖ`: otherwise it would lie in every `ϖⁿ R`. -/
-theorem TauCeti.PreValuationRing.exists_dvd_pow_of_isHausdorff {R : Type*} [CommRing R]
-    [PreValuationRing R] {ϖ : R} [IsHausdorff (Ideal.span {ϖ}) R] {a : R} (ha : a ≠ 0) :
-    ∃ n : ℕ, a ∣ ϖ ^ n := by
-  by_contra! h
-  refine ha (IsHausdorff.haus (I := Ideal.span {ϖ}) inferInstance a fun n ↦ ?_)
-  rcases ValuationRing.dvd_total a (ϖ ^ n) with hdvd | hdvd
-  · exact absurd hdvd (h n)
-  · rw [SModEq.zero, smul_eq_mul, Ideal.mul_top, Ideal.span_singleton_pow]
-    exact Ideal.mem_span_singleton.mpr hdvd
-
-/-- Over a valuation ring that is separated for the `ϖ`-adic topology, a module on which `ϖ`
-acts injectively has no torsion: multiplication by every nonzero scalar is injective. -/
-theorem IsSMulRegular.of_isHausdorff {R M : Type*} [CommRing R] [PreValuationRing R]
-    [AddCommGroup M] [Module R M] {ϖ : R} [IsHausdorff (Ideal.span {ϖ}) R]
-    (hϖ : IsSMulRegular M ϖ) {a : R} (ha : a ≠ 0) : IsSMulRegular M a := by
-  obtain ⟨n, b, hb⟩ := TauCeti.PreValuationRing.exists_dvd_pow_of_isHausdorff (ϖ := ϖ) ha
-  have h := hϖ.pow n
-  rw [hb, mul_comm] at h
-  exact h.of_mul
 
 namespace TauCeti.Huber
 

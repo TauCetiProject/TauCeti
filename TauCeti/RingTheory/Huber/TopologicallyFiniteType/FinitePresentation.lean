@@ -7,8 +7,9 @@ module
 
 public import Mathlib.RingTheory.FinitePresentation
 public import Mathlib.RingTheory.Flat.TorsionFree
-public import TauCeti.RingTheory.Huber.CompleteRankOneBase
+public import TauCeti.RingTheory.AdicRing.Basic
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
+public import TauCeti.RingTheory.Valuation.AdicSeparated
 
 import TauCeti.RingTheory.Huber.Restricted.Adic
 import TauCeti.RingTheory.Huber.Restricted.Reduction
@@ -234,28 +235,19 @@ theorem IsTopologicallyFinitePresentation.finitePresentation_quotient
     rw [← RingHom.comap_ker, Ideal.comap_coe, Ideal.comap_symm, hgbar, hgker]
     rw [← Ideal.map_coe]
     exact Ideal.FG.map (Ideal.FG.map (Submodule.FG.sup (Ideal.FG.map hfg _) hπker) _) _
+  -- the same map, assembled from `O`-algebra homomorphisms; its scalars extend to `O ⧸ I`
+  let gₐ : P →ₐ[O] A ⧸ IA := (Ideal.Quotient.mkₐ O IA).comp π
   let ψₐ : MvPolynomial (Fin n) (O ⧸ I) →ₐ[O ⧸ I] A ⧸ IA :=
-    { ψ with
-      commutes' := fun r ↦ by
-        obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective r
-        have he : e.symm (algebraMap (O ⧸ I) _ (Ideal.Quotient.mk I a)) =
-            Ideal.Quotient.mk IP (algebraMap O P a) := by
-          rw [← Ideal.Quotient.algebraMap_eq, ← IsScalarTower.algebraMap_apply, AlgEquiv.commutes,
-            Ideal.Quotient.mk_algebraMap]
-        simp only [ψ, RingHom.toFun_eq_coe, RingHom.comp_apply, RingEquiv.coe_toRingHom,
-          AlgEquiv.toRingEquiv_symm, AlgEquiv.coe_toRingEquiv, he, gbar, Ideal.Quotient.lift_mk]
-        simp only [g, π', RingHom.comp_apply, AlgHom.coe_toRingHom, AlgHom.commutes,
-          Ideal.Quotient.mk_algebraMap]
-        rw [IsScalarTower.algebraMap_apply O (O ⧸ I) (A ⧸ IA), Ideal.Quotient.algebraMap_eq] }
+    AlgHom.extendScalarsOfSurjective Ideal.Quotient.mk_surjective
+      ((Ideal.Quotient.liftₐ IP gₐ hle).comp e.symm.toAlgHom)
   exact Algebra.FinitePresentation.of_surjective (f := ψₐ) hψ hψker
 
-end Reduction
-
-/-- **Reductions modulo powers of a pseudouniformiser.** If `O` is a complete rank-one valuation
-base with pseudouniformiser `ϖ` and `A` is topologically of finite presentation over `O`, then
+/-- **Reductions modulo powers of a principal ideal of definition.** If `O` is an adic ring of
+finite ideal type whose topology is the `ϖ`-adic one, for instance a complete rank-one valuation
+base with pseudouniformiser `ϖ`, and `A` is topologically of finite presentation over `O`, then
 each `A ⧸ ϖᵐA` is a finitely presented `O ⧸ ϖᵐ`-algebra (Bosch–Lütkebohmert I, §1). -/
 theorem IsTopologicallyFinitePresentation.finitePresentation_quotient_pow
-    (h : IsTopologicallyFinitePresentation O A) (ϖ : O) [IsCompleteRankOneBase O ϖ] (m : ℕ) :
+    (h : IsTopologicallyFinitePresentation O A) {ϖ : O} (hϖ : IsAdic (Ideal.span {ϖ})) (m : ℕ) :
     Algebra.FinitePresentation (O ⧸ Ideal.span {ϖ ^ m})
       (A ⧸ (Ideal.span {ϖ ^ m}).map (algebraMap O A)) := by
   rcases m.eq_zero_or_pos with rfl | hm
@@ -267,10 +259,11 @@ theorem IsTopologicallyFinitePresentation.finitePresentation_quotient_pow
       (fun _ ↦ ⟨0, Subsingleton.elim _ _⟩) ?_
     rw [Subsingleton.elim (RingHom.ker _) ⊥]
     exact Submodule.fg_bot
-  · have := IsCompleteRankOneBase.isAdicRing ϖ
-    rw [← Ideal.span_singleton_pow]
-    exact h.finitePresentation_quotient (is_ideal_adic_pow IsCompleteRankOneBase.isAdic hm)
+  · rw [← Ideal.span_singleton_pow]
+    exact h.finitePresentation_quotient (is_ideal_adic_pow hϖ hm)
       (Submodule.FG.pow ⟨{ϖ}, by simp⟩ m)
+
+end Reduction
 
 /-! ### Admissible algebras -/
 
@@ -296,32 +289,16 @@ section Restricted
 
 variable [IsDomain O] [IsAdicRing O]
 
-/-- Over a complete adic domain, multiplication by a nonzero scalar is injective on
-`O⟨ξ₁, …, ξₙ⟩`: restricted power series are multiplied by a scalar coefficientwise. -/
-theorem isSMulRegular_restrictedMvPowerSeriesCompletion (n : ℕ) {a : O} (ha : a ≠ 0) :
-    IsSMulRegular (restrictedMvPowerSeriesCompletion n O) a := by
-  let _ : UniformSpace O := IsTopologicalAddGroup.rightUniformSpace O
-  have : IsUniformAddGroup O := isUniformAddGroup_of_addCommGroup
-  let e := restrictedMvPowerSeriesCompletionAlgEquiv n O
-  intro x y hxy
-  apply e.injective
-  ext ν
-  have h' : a • e x = a • e y := by
-    rw [← map_smul, ← map_smul]
-    exact congrArg e hxy
-  have h := congrArg (fun z ↦ MvPowerSeries.coeff ν (Subtype.val z)) h'
-  simp only [Algebra.smul_def, algebraMap_weightedRestrictedSubring, Subring.coe_mul,
-    coe_weightedC, MvPowerSeries.coeff_C_mul] at h
-  exact mul_left_cancel₀ ha h
-
 variable (O) in
 /-- Over a complete adic domain, the restricted power-series algebra `O⟨ξ₁, …, ξₙ⟩` is admissible
 for every nonzero `ϖ`. -/
 theorem isAdmissibleAlgebra_restrictedMvPowerSeriesCompletion {ϖ : O} (hϖ : ϖ ≠ 0) (n : ℕ) :
-    IsAdmissibleAlgebra ϖ (restrictedMvPowerSeriesCompletion n O) :=
-  ⟨isTopologicallyFinitePresentation_restrictedMvPowerSeriesCompletion O n,
+    IsAdmissibleAlgebra ϖ (restrictedMvPowerSeriesCompletion n O) := by
+  let _ : UniformSpace O := IsTopologicalAddGroup.rightUniformSpace O
+  have : IsUniformAddGroup O := isUniformAddGroup_of_addCommGroup
+  exact ⟨isTopologicallyFinitePresentation_restrictedMvPowerSeriesCompletion O n,
     (isSMulRegular_iff_torsionBy_eq_bot _ ϖ).mp
-      (isSMulRegular_restrictedMvPowerSeriesCompletion n hϖ)⟩
+      (isSMulRegular_restrictedMvPowerSeriesCompletion hϖ)⟩
 
 end Restricted
 
