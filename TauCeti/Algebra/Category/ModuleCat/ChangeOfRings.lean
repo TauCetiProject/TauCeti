@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
-public import TauCeti.LinearAlgebra.TensorProduct.Quotient
-public import Mathlib.LinearAlgebra.Matrix.ToLin
-public import Mathlib.LinearAlgebra.TensorProduct.Pi
+public import TauCeti.LinearAlgebra.Matrix.BaseChange
 public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.RingTheory.Localization.BaseChange
 public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
@@ -312,7 +310,7 @@ end Cyclic
 
 end TauCeti
 
-open scoped ChangeOfRings
+open scoped TensorProduct ChangeOfRings
 
 namespace TauCeti
 
@@ -332,50 +330,22 @@ theorem _root_.RingHom.nonempty_extendScalars_cokernel_pi_iso
           (ULift.{v} ((Fin n → S) ⧸ LinearMap.range r))) := by
   classical
   let := φ.toAlgebra
-  let eₙ := TensorProduct.piScalarRight R S S (Fin n)
-  let eₘ := TensorProduct.piScalarRight R S S (Fin m)
-  have hcoord (x : Fin m → R) (row : Fin n) :
-      φ (rᵢ x row) = r (fun col ↦ φ (x col)) row := by
-    have hx : x = ∑ col : Fin m, x col • Pi.single col (1 : R) := by
-      ext col
-      simp [Pi.single_apply]
-    have hy : (fun col ↦ φ (x col)) = ∑ col : Fin m, φ (x col) • Pi.single col (1 : S) := by
-      ext col
-      simp [Pi.single_apply]
-    have hqi : rᵢ x = ∑ col : Fin m, x col • rᵢ (Pi.single col 1) := by
-      conv_lhs => rw [hx]
-      simp only [map_sum, map_smul]
-    rw [hqi, hy]
-    simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, map_sum, map_mul,
-      LinearMap.map_smul]
-    apply Finset.sum_congr rfl
-    intro col _
-    rw [hcoeff row col]
-  have hmatrix : eₙ.toLinearMap ∘ₗ rᵢ.baseChange S = r ∘ₗ eₘ.toLinearMap := by
-    apply TensorProduct.AlgebraTensorModule.ext
-    intro scalar x
-    ext row
-    -- Base change evaluates a pure tensor by tensoring the relation-map value.
-    change eₙ (scalar ⊗ₜ[R] rᵢ x) row = r (eₘ (scalar ⊗ₜ[R] x)) row
-    simp only [eₙ, eₘ, TensorProduct.piScalarRight_apply,
-      TensorProduct.piScalarRightHom_tmul]
-    -- The algebra structure is φ.toAlgebra, so its scalar map is φ.
-    change φ (rᵢ x row) * scalar = r (fun col ↦ φ (x col) * scalar) row
-    have hy : (fun col ↦ φ (x col) * scalar) = scalar • (fun col ↦ φ (x col)) := by
-      ext col
-      simp [mul_comm]
-    rw [hy, map_smul, Pi.smul_apply, smul_eq_mul, hcoord]
-    exact mul_comm _ _
-  have hmap : (LinearMap.range (rᵢ.baseChange S)).map
-      eₙ.toLinearMap = LinearMap.range r := by
-    rw [← LinearMap.range_comp, hmatrix]
-    exact LinearMap.range_comp_of_range_eq_top _
-      (LinearMap.range_eq_top.mpr eₘ.surjective)
-  let eQ := rᵢ.cokernelBaseChangeEquiv (S := S)
-  let eR := Submodule.Quotient.equiv _ _ eₙ hmap
+  have hmatrix : (LinearMap.toMatrix' rᵢ).map (algebraMap R S) =
+      LinearMap.toMatrix' r := by
+    ext row col
+    exact hcoeff row col
+  have hsource : (LinearMap.toMatrix' rᵢ).mulVecLin = rᵢ := Matrix.toLin'_toMatrix' rᵢ
+  have htarget : ((LinearMap.toMatrix' rᵢ).map (algebraMap R S)).mulVecLin = r := by
+    rw [hmatrix]
+    exact Matrix.toLin'_toMatrix' r
+  let eQ : S ⊗[R] ((Fin n → R) ⧸ LinearMap.range rᵢ) ≃ₗ[S]
+      (Fin n → S) ⧸ LinearMap.range r := by
+    have comparison := (LinearMap.toMatrix' rᵢ).cokernelBaseChangeEquiv (S := S)
+    rw [hsource, htarget] at comparison
+    exact comparison
   let eU := (ULift.moduleEquiv : ULift.{v} ((Fin n → R) ⧸ LinearMap.range rᵢ) ≃ₗ[R]
     ((Fin n → R) ⧸ LinearMap.range rᵢ)).baseChange R S _ _
-  let e := eU.trans (eQ.trans (eR.trans ULift.moduleEquiv.symm))
+  let e := eU.trans (eQ.trans ULift.moduleEquiv.symm)
   exact ⟨e.toModuleIso⟩
 
 end TauCeti
