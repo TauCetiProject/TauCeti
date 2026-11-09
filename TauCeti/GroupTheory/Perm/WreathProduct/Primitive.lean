@@ -21,7 +21,7 @@ points: every fibre `{i} × Λ` is a block, and such a fibre is neither a single
 space.  This is the block structure that gives the action its name.
 
 For the product action on `ι → Λ`, let the group `D` act faithfully and primitively, but not
-regularly, on a nontrivial type `Λ`.  When `ι` is finite, `D ≀ Sym(ι)` acts primitively on the
+regularly, on `Λ`.  When `ι` is finite, `D ≀ Sym(ι)` acts primitively on the
 function space `ι → Λ`.  The nonregularity hypothesis is essential.  It provides a nontrivial
 stabilizer of a base point; primitivity and faithfulness then say that this stabilizer moves every
 other point.  Applied in a single coordinate, such an element turns any nonsingleton block
@@ -98,7 +98,7 @@ Here nonregularity is expressed as failure of `IsCancelSMul`: for a pretransitiv
 `IsCancelSMul D Λ` says exactly that every point stabilizer is trivial.  The hypotheses imply the
 usual lower bound of three on the size of a finite `Λ`; stating the theorem this way also covers
 infinite primitive actions. -/
-theorem isPreprimitive_product [Finite ι] [Nontrivial Λ] [FaithfulSMul D Λ]
+theorem isPreprimitive_product [Finite ι] [FaithfulSMul D Λ]
     [IsPreprimitive D Λ] (hnotRegular : ¬ IsCancelSMul D Λ) :
     IsPreprimitive (WreathProduct D ι) (ι → Λ) := by
   classical
