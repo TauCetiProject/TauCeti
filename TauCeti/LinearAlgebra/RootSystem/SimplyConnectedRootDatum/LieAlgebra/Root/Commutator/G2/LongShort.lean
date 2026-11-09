@@ -70,13 +70,6 @@ private theorem long_short_exclusions (i j : Fin 12)
 variable {ht : G2.Valid}
 variable {α β γ δ ε ζ : Fin 12}
 
-private theorem g2_root_eq_add_of_coordinates {i j k : Fin 12}
-    (h : g2Root k = g2Root i + g2Root j) :
-    (G2.simplyConnectedRootDatum ht).root k =
-      (G2.simplyConnectedRootDatum ht).root i + (G2.simplyConnectedRootDatum ht).root j := by
-  rw [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root]
-  exact h
-
 private theorem long_short_coordinates
     (hγ : g2Root γ = g2Root α + g2Root β)
     (hδ : g2Root δ = g2Root α + g2Root γ)
@@ -117,11 +110,11 @@ private theorem long_short_divisibility
     ((long_short_output_lengths α β ζ hα hβ).2 hζcoord)
     (by simpa only [g2SimplyConnectedRootDatum_root] using hζ.trans (add_comm _ _))
   have hc2 := structureConstant_eq_natCast_or_eq_neg_natCast (t := G2) (ht := ht)
-    (α := α) (β := γ) ⟨δ, g2_root_eq_add_of_coordinates hδ⟩
+    (α := α) (β := γ) ⟨δ, (g2_root_add_iff α γ δ).2 hδ⟩
   have hc3 := structureConstant_eq_natCast_or_eq_neg_natCast (t := G2) (ht := ht)
-    (α := α) (β := δ) ⟨ε, g2_root_eq_add_of_coordinates hε⟩
+    (α := α) (β := δ) ⟨ε, (g2_root_add_iff α δ ε).2 hε⟩
   have hc3' := structureConstant_eq_natCast_or_eq_neg_natCast (t := G2) (ht := ht)
-    (α := δ) (β := γ) ⟨ζ, g2_root_eq_add_of_coordinates hζ⟩
+    (α := δ) (β := γ) ⟨ζ, (g2_root_add_iff δ γ ζ).2 hζ⟩
   obtain ⟨hbγ', hbδ', hbζ'⟩ :
       (G2.simplyConnectedRootDatum ht).chainBotCoeff α γ = 1 ∧
         (G2.simplyConnectedRootDatum ht).chainBotCoeff α δ = 2 ∧
@@ -190,17 +183,17 @@ private theorem long_short_scaled_brackets
   obtain ⟨h2, h3, h3'⟩ := long_short_divisibility (ht := ht) hα hβ hγ hδ hε hζ
   dsimp only
   refine ⟨lie_chevalleySystem_eq_structureConstant_zsmul
-    (g2_root_eq_add_of_coordinates hγ), ?_, ?_, ?_⟩
+    ((g2_root_add_iff α β γ).2 hγ), ?_, ?_, ?_⟩
   · rw [lie_chevalleySystem_eq_structureConstant_zsmul
-      (g2_root_eq_add_of_coordinates hδ), smul_smul]
+      ((g2_root_add_iff α γ δ).2 hδ), smul_smul]
     congr 1
     rw [mul_left_comm, Int.mul_ediv_cancel' h2]
   · rw [lie_chevalleySystem_eq_structureConstant_zsmul
-      (g2_root_eq_add_of_coordinates hε), smul_smul]
+      ((g2_root_add_iff α δ ε).2 hε), smul_smul]
     congr 1
     rw [mul_left_comm, Int.mul_ediv_cancel' h3]
   · rw [lie_chevalleySystem_eq_structureConstant_zsmul
-      (g2_root_eq_add_of_coordinates hζ), smul_smul]
+      ((g2_root_add_iff δ γ ζ).2 hζ), smul_smul]
     congr 1
     rw [mul_left_comm, Int.mul_ediv_cancel' h3']
 

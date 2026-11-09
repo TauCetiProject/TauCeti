@@ -28,8 +28,7 @@ The long-sum statement means that the corresponding Chevalley bracket coefficien
 are the integral root-datum input for proving that the span of the short root spaces, together with
 the short coroot directions, is an ideal after base change to characteristic three.
 The short-sum statement gives coefficient `±2`, the first coefficient of the three-factor
-short-pair Chevalley commutator relation. Constructing that Lie ideal and identifying the induced
-exceptional isogeny are later steps.
+short-pair Chevalley commutator relation.
 The absence of higher roots also gives the class-two Chevalley commutator relation at a long
 root sum.
 The four-term long–short string gives the exact factors two and three that occur in the

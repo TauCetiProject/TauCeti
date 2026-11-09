@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.Basic
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.RootString
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.G2.LongSum
 import TauCeti.Algebra.Lie.UniversalEnveloping.Commutator.G2.ShortPair
 
 /-!
@@ -26,8 +25,6 @@ past `x_γ(2cuv)` accounts for this last sign.
 ## Main results
 
 * `TauCeti.DynkinType.chevalleyRootSubgroup_mul_of_g2_short_pair`: the product relation.
-* `TauCeti.DynkinType.chevalleyRootSubgroup_mul_of_g2_long_sum`: the single-term relation
-  for a long root sum.
 * `TauCeti.DynkinType.commutatorElement_chevalleyRootSubgroup_of_g2_short_pair`: the ordered
   element-commutator formula.
 
@@ -49,13 +46,6 @@ noncomputable section
 
 variable {ht : G2.Valid} {i j k l m : Fin G2.numRoots}
 
-private theorem g2_root_add_iff (i j k : Fin G2.numRoots) :
-    (G2.simplyConnectedRootDatum ht).root k =
-        (G2.simplyConnectedRootDatum ht).root i + (G2.simplyConnectedRootDatum ht).root j ↔
-      g2Root k = g2Root i + g2Root j := by
-  simp +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
-    rank, numRoots]
-
 private theorem g2_sum_excluded_iff (i j : Fin G2.numRoots) (a b : ℤ) :
     (a • (G2.simplyConnectedRootDatum ht).root i + b • (G2.simplyConnectedRootDatum ht).root j ∉
         Set.range (G2.simplyConnectedRootDatum ht).root ∧
@@ -74,11 +64,6 @@ private theorem g2_short_pair_last_long {i j k m : Fin 12}
   simp only [g2Length_apply] at hi hj hk ⊢
   revert i j k m
   decide +kernel
-
-private theorem g2_chainBotCoeff_eq (i j : Fin G2.numRoots) :
-    (G2.simplyConnectedRootDatum ht).chainBotCoeff i j =
-      g2SimplyConnectedRootDatum.chainBotCoeff i j := by
-  simp +instances only [simplyConnectedRootDatum_G2, rank, numRoots]
 
 private theorem g2_short_pair_excluded_sums {i j k : Fin 12}
     (hi : g2Length i = 1) (hj : g2Length j = 1) (hk : g2Length k = 1)
@@ -105,31 +90,14 @@ private theorem g2_short_pair_coefficients
     2 * (G2.structureConstant ht i j / 2) = G2.structureConstant ht i j ∧
       3 * (G2.structureConstant ht i k / 3) = G2.structureConstant ht i k ∧
       3 * (G2.structureConstant ht k j / 3) = G2.structureConstant ht k j := by
-  let P := G2.simplyConnectedRootDatum ht
-  let : P.IsReduced := isReduced_simplyConnectedRootDatum G2 ht
-  have hij' : g2SimplyConnectedRootDatum.root k =
-      g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root j := by
-    simpa only [g2SimplyConnectedRootDatum_root] using (g2_root_add_iff i j k).1 hij
-  have hbot : P.chainBotCoeff i j = 1 := by
-    rw [g2_chainBotCoeff_eq]
-    exact g2_chainBotCoeff_eq_one_of_short_add_short_eq_short i j k hi hj hk hij'
-  have hbot' : P.chainBotCoeff j i = 1 := by
-    rw [g2_chainBotCoeff_eq]
-    exact g2_chainBotCoeff_eq_one_of_short_add_short_eq_short j i k hj hi hk
-      (hij'.trans (add_comm _ _))
-  have hli := P.linearIndependent_of_add_mem_range_root' ⟨k, hij⟩
-  have hbotik : P.chainBotCoeff i k = 2 := by
-    rw [P.chainBotCoeff_of_add hli (hij.trans (add_comm _ _)), hbot]
-  have hbotjk : P.chainBotCoeff j k = 2 := by
-    rw [P.chainBotCoeff_of_add
-      (P.linearIndependent_of_add_mem_range_root' ⟨k, hij.trans (add_comm _ _)⟩) hij, hbot']
-  have h₁ := structureConstant_eq_natCast_or_eq_neg_natCast ⟨k, hij⟩
-  have h₂ := structureConstant_eq_natCast_or_eq_neg_natCast ⟨l, hik⟩
-  have h₃ := structureConstant_eq_natCast_or_eq_neg_natCast ⟨m, hkj.trans (add_comm _ _)⟩
-  rw [hbot] at h₁
-  rw [hbotik] at h₂
-  rw [hbotjk] at h₃
-  have hskew := G2.structureConstant_skew (ht := ht) j k
+  have hl := g2_short_pair_last_long hj hi hk
+    ((g2_root_add_iff j i k).1 (hij.trans (add_comm _ _)))
+    ((g2_root_add_iff k i l).1 (hik.trans (add_comm _ _)))
+  have hm := g2_short_pair_last_long hi hj hk
+    ((g2_root_add_iff i j k).1 hij) ((g2_root_add_iff k j m).1 hkj)
+  have h₁ := structureConstant_G2_eq_two_or_eq_neg_two hi hj hk hij
+  have h₂ := structureConstant_G2_eq_three_or_eq_neg_three hi hk hl hik
+  have h₃ := structureConstant_G2_eq_three_or_eq_neg_three hk hj hm hkj
   rcases h₁ with h₁ | h₁ <;> rcases h₂ with h₂ | h₂ <;>
     rcases h₃ with h₃ | h₃ <;> simp_all
 
@@ -243,31 +211,6 @@ theorem chevalleyRootSubgroup_mul_of_g2_short_pair
     (dividedPower_chevalleySystem_smul_mem ρ M hM hnil l)
     (dividedPower_chevalleySystem_smul_mem ρ M hM hnil m) u v
 
-/-- G₂ roots with long sum satisfy the single-term Chevalley product relation.
-The vanishing brackets are derived from the root datum; no auxiliary roots are required. -/
-theorem chevalleyRootSubgroup_mul_of_g2_long_sum
-    (hm : g2Length m = 3)
-    (hjk : (G2.simplyConnectedRootDatum ht).root m =
-      (G2.simplyConnectedRootDatum ht).root j + (G2.simplyConnectedRootDatum ht).root k)
-    (A : CommAlgCat ℤ) (p q : A) :
-    chevalleyRootSubgroup ρ M hM hnil j A (Multiplicative.ofAdd p) *
-        chevalleyRootSubgroup ρ M hM hnil k A (Multiplicative.ofAdd q) =
-      chevalleyRootSubgroup ρ M hM hnil k A (Multiplicative.ofAdd q) *
-        chevalleyRootSubgroup ρ M hM hnil m A
-          (Multiplicative.ofAdd ((G2.structureConstant ht j k : A) * (p * q))) *
-        chevalleyRootSubgroup ρ M hM hnil j A (Multiplicative.ofAdd p) := by
-  have excluded (r s : Fin G2.numRoots)
-      (hrs : (G2.simplyConnectedRootDatum ht).root m =
-        (G2.simplyConnectedRootDatum ht).root r + (G2.simplyConnectedRootDatum ht).root s) :
-      (G2.simplyConnectedRootDatum ht).root r + (G2.simplyConnectedRootDatum ht).root m ∉
-        Set.range (G2.simplyConnectedRootDatum ht).root := by
-    rw [simplyConnectedRootDatum_G2] at hrs ⊢
-    exact g2_root_add_notMem_range_of_add_eq_long r s m hm hrs
-  exact chevalleyRootSubgroup_mul_of_add ρ M hM hnil hjk
-    (lie_chevalleySystem_eq_zero_of_add_eq hjk (excluded j k hjk))
-    (lie_chevalleySystem_eq_zero_of_add_eq (hjk.trans (add_comm _ _))
-      (excluded k j (hjk.trans (add_comm _ _)))) A p q
-
 /-- The Chevalley element-commutator formula for any two short G₂ roots with short sum.
 The factors occur at `i+j`, `2i+j`, `i+2j`, in increasing total degree. The last coefficient
 has the opposite sign from the product relation with an initial `x_j(v)`. -/
@@ -303,7 +246,7 @@ theorem commutatorElement_chevalleyRootSubgroup_of_g2_short_pair
   let t := (G2.structureConstant ht j k : A) * (v * ((c : A) * (2 * u * v)))
   have hswap : x j v * x k ((c : A) * (2 * u * v)) =
       x k ((c : A) * (2 * u * v)) * x m t * x j v :=
-    chevalleyRootSubgroup_mul_of_g2_long_sum ρ M hM hnil hmLong
+    chevalleyRootSubgroup_mul_G2_of_long_sum ρ M hM hnil hmLong
       (hkj.trans (add_comm _ _)) A v ((c : A) * (2 * u * v))
   have hprod := chevalleyRootSubgroup_mul_of_g2_short_pair ρ M hM hnil hi hj hk hij hik hkj A u v
   have hm : x m t * x m ((a : A) * (3 * u * v ^ 2)) =

@@ -9,14 +9,17 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.RootS
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant
 
 /-!
-# Structure constants at long sums in type `G₂`
+# Structure constants for short-root pairs in type `G₂`
 
 For two short roots of the pinned `G₂` datum whose sum is long, the descending root string has
 length two. Thus the native integer Chevalley bracket coefficient is `±3`. This is the
 coefficient-three phenomenon behind commutation of those root subgroups in characteristic three.
+When their sum is short, the descending string has length one and the coefficient is `±2`,
+the first coefficient in the three-factor short-pair Chevalley relation.
 
-The root-string calculation is `g2_chainBotCoeff_eq_two_of_short_add_short_eq_long`, and the
-coefficient formula is `structureConstant_eq_natCast_or_eq_neg_natCast`.
+The root-string calculations are `g2_chainBotCoeff_eq_two_of_short_add_short_eq_long` and
+`g2_chainBotCoeff_eq_one_of_short_add_short_eq_short`; the coefficient formula is
+`structureConstant_eq_natCast_or_eq_neg_natCast`.
 
 ## References
 
@@ -29,6 +32,22 @@ public section
 namespace TauCeti.DynkinType
 
 variable {ht : G2.Valid}
+
+/-- The bracket coefficient of two short `G₂` roots with a short sum is `±2`. -/
+theorem structureConstant_G2_eq_two_or_eq_neg_two {α β γ : Fin G2.numRoots}
+    (hα : g2Length α = 1) (hβ : g2Length β = 1) (hγ : g2Length γ = 1)
+    (hadd : (G2.simplyConnectedRootDatum ht).root γ =
+      (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root β) :
+    G2.structureConstant ht α β = 2 ∨ G2.structureConstant ht α β = -2 := by
+  have hc : (G2.simplyConnectedRootDatum ht).chainBotCoeff α β = 1 := by
+    rw [simplyConnectedRootDatum_G2]
+    apply g2_chainBotCoeff_eq_one_of_short_add_short_eq_short α β γ hα hβ hγ
+    rw [simplyConnectedRootDatum_G2] at hadd
+    exact hadd
+  have h := structureConstant_eq_natCast_or_eq_neg_natCast (t := G2) (ht := ht) ⟨γ, hadd⟩
+  rw [hc] at h
+  norm_num at h
+  exact h
 
 /-- The bracket coefficient of two short `G₂` roots with a long sum is `±3`. -/
 theorem structureConstant_G2_eq_three_or_eq_neg_three {α β γ : Fin G2.numRoots}

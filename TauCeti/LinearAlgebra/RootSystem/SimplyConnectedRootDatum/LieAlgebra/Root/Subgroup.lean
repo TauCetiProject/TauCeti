@@ -208,6 +208,29 @@ theorem kostantRootSubgroupParam_chevalleySystem
   rw [kostantRootSubgroupParam_val_apply, chevalleyRootSubgroup_val]
 
 /-- A bracket `⁅e_α, e_β⁆ = c • e_γ` with `e_γ` commuting with both root vectors gives the
+single-term Chevalley product relation over every commutative value ring. -/
+theorem chevalleyRootSubgroup_mul_of_lie_eq {α β γ : Fin t.numRoots} {c : ℤ}
+    (hαβ : ⁅t.chevalleySystem ht α, t.chevalleySystem ht β⁆ = c • t.chevalleySystem ht γ)
+    (hαγ : ⁅t.chevalleySystem ht α, t.chevalleySystem ht γ⁆ = 0)
+    (hβγ : ⁅t.chevalleySystem ht β, t.chevalleySystem ht γ⁆ = 0)
+    (A : CommAlgCat ℤ) (u v : A) :
+    chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) *
+        chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) =
+      chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) *
+        chevalleyRootSubgroup ρ M hM hnil γ A
+          (Multiplicative.ofAdd ((c : A) * (u * v))) *
+        chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) := by
+  apply Units.ext
+  simp only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd]
+  exact baseChangeExp_mul_baseChangeExp_of_lie_eq ρ M hαβ hαγ hβγ
+    (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
+    (isNilpotent_apply_ι_chevalleySystem ρ hnil β)
+    (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)
+    (dividedPower_chevalleySystem_smul_mem ρ M hM hnil α)
+    (dividedPower_chevalleySystem_smul_mem ρ M hM hnil β)
+    (dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ) u v
+
+/-- A bracket `⁅e_α, e_β⁆ = c • e_γ` with `e_γ` commuting with both root vectors gives the
 one-factor Chevalley commutator formula over every commutative value ring. -/
 theorem commutatorElement_chevalleyRootSubgroup_of_lie_eq {α β γ : Fin t.numRoots} {c : ℤ}
     (hαβ : ⁅t.chevalleySystem ht α, t.chevalleySystem ht β⁆ = c • t.chevalleySystem ht γ)
@@ -218,20 +241,7 @@ theorem commutatorElement_chevalleyRootSubgroup_of_lie_eq {α β γ : Fin t.numR
       chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v)⁆ =
       chevalleyRootSubgroup ρ M hM hnil γ A
         (Multiplicative.ofAdd ((c : A) * (u * v))) := by
-  have hdp := dividedPower_chevalleySystem_smul_mem ρ M hM hnil
-  have hprod :
-      chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) *
-        chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) =
-      chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) *
-        chevalleyRootSubgroup ρ M hM hnil γ A
-          (Multiplicative.ofAdd ((c : A) * (u * v))) *
-        chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) := by
-    apply Units.ext
-    simp only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd]
-    exact baseChangeExp_mul_baseChangeExp_of_lie_eq ρ M hαβ hαγ hβγ
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil β)
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil γ) (hdp α) (hdp β) (hdp γ) u v
+  have hprod := chevalleyRootSubgroup_mul_of_lie_eq ρ M hM hnil hαβ hαγ hβγ A u v
   have hcomm (w : A) : Commute
       (chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v))
       (chevalleyRootSubgroup ρ M hM hnil γ A (Multiplicative.ofAdd w)) :=

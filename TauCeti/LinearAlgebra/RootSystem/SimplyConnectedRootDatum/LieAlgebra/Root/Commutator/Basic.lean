@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant
-import TauCeti.Algebra.Lie.UniversalEnveloping.Commutator.Basic
 
 /-!
 # Single-term Chevalley root-subgroup relations
@@ -55,16 +54,8 @@ theorem chevalleyRootSubgroup_mul_of_add
         chevalleyRootSubgroup ρ M hM hnil k A
           (Multiplicative.ofAdd ((t.structureConstant ht i j : A) * (u * v))) *
         chevalleyRootSubgroup ρ M hM hnil i A (Multiplicative.ofAdd u) := by
-  apply Units.ext
-  simp only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd]
-  exact baseChangeExp_mul_baseChangeExp_of_lie_eq ρ M
-    (lie_chevalleySystem_eq_structureConstant_zsmul hij) hik hjk
-    (isNilpotent_apply_ι_chevalleySystem ρ hnil i)
-    (isNilpotent_apply_ι_chevalleySystem ρ hnil j)
-    (isNilpotent_apply_ι_chevalleySystem ρ hnil k)
-    (dividedPower_chevalleySystem_smul_mem ρ M hM hnil i)
-    (dividedPower_chevalleySystem_smul_mem ρ M hM hnil j)
-    (dividedPower_chevalleySystem_smul_mem ρ M hM hnil k) u v
+  exact chevalleyRootSubgroup_mul_of_lie_eq ρ M hM hnil
+    (lie_chevalleySystem_eq_structureConstant_zsmul hij) hik hjk A u v
 
 end
 
