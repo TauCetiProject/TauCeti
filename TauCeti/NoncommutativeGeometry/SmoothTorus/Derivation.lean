@@ -201,6 +201,14 @@ variable (θ) in
 def derivation₂ : derivationLieAlgebra ℂ (SmoothNoncommutativeTorus θ) :=
   gaugeDerivation θ ((2 * π * I) • (Int.castAddHom ℂ).comp (AddMonoidHom.snd ℤ ℤ))
 
+/-- The first coordinate derivation is the lattice derivation with weight `2πi m`. -/
+theorem derivation₁_def : derivation₁ θ =
+    gaugeDerivation θ ((2 * π * I) • (Int.castAddHom ℂ).comp (AddMonoidHom.fst ℤ ℤ)) := (rfl)
+
+/-- The second coordinate derivation is the lattice derivation with weight `2πi n`. -/
+theorem derivation₂_def : derivation₂ θ =
+    gaugeDerivation θ ((2 * π * I) • (Int.castAddHom ℂ).comp (AddMonoidHom.snd ℤ ℤ)) := (rfl)
+
 @[simp]
 theorem coeff_derivation₁ (a : SmoothNoncommutativeTorus θ) (x : ℤ × ℤ) :
     ((derivation₁ θ : Module.End ℂ (SmoothNoncommutativeTorus θ)) a).coeff x =
