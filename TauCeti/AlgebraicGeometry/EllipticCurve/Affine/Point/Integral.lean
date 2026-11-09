@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
-public import TauCeti.Data.Int.Quadratic
 import Mathlib.Data.Int.Interval
+import TauCeti.Algebra.Order.Ring.Quadratic
 
 /-!
 # Integral points of an integral Weierstrass equation
@@ -161,11 +161,12 @@ theorem abs_yCoord_le_integralYCoordBound {x y : ℤ}
     have := (W.toAffine.equation_iff x y).mp h
     dsimp [b, c]
     nlinarith
-  have hbound := TauCeti.abs_le_of_quadratic_eq heq
   -- Unfold the natural bound as its nonnegative integer cast.
   change |y| ≤ ((|b| + |c| + 1).toNat : ℤ)
   rw [Int.toNat_of_nonneg (by positivity)]
-  exact hbound
+  refine (TauCeti.abs_lt_max_add_one_of_sq_add_mul_eq heq).le.trans ?_
+  gcongr
+  exact max_le_add_of_nonneg (abs_nonneg b) (abs_nonneg c)
 
 /-- Integer coordinate pairs with `|x| ≤ B` that solve the Weierstrass equation. This is a
 computable finite search: the ordinate bound makes each inner interval finite. -/

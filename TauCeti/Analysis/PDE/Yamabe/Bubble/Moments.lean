@@ -345,4 +345,33 @@ theorem abs_setIntegral_ball_norm_sub_rpow_mul_bubble_sq_sub_mul_log_le
     (by push_cast [Nat.cast_sub hn.le]; ring) ht hR b
   simpa only [Nat.sub_sub, Nat.reduceAdd] using h
 
+/-- In dimension six, the truncated scalar second moment of a bubble square is an explicit
+logarithmic term minus a partial logarithmic series. -/
+theorem setIntegral_ball_norm_sub_sq_mul_bubble_sq_of_finrank_eq_six
+    (μ : Measure E) [μ.IsAddHaarMeasure] (hn : finrank ℝ E = 6) {t : ℝ}
+    (ht : 0 < t) {R : ℝ} (hR : 0 ≤ R) (b : E) :
+    ∫ x in ball b R, ‖x - b‖ ^ 2 * bubble t b x ^ 2 ∂μ =
+      48 * μ.real (ball (0 : E) 1) * t ^ 4 *
+        (log (1 + (R / t) ^ 2) - ∑ k ∈ Finset.range 3,
+          (R ^ 2 / (t ^ 2 + R ^ 2)) ^ (k + 1) / (k + 1)) := by
+  have h := setIntegral_ball_norm_sub_rpow_mul_bubble_sq μ (by omega) ht hR b
+  norm_num only [hn, Nat.cast_ofNat, Nat.reduceSub, Real.rpow_two, Nat.reducePow] at h
+  linear_combination h
+
+/-- In dimension six, the scalar second moment differs from its logarithmic leading term
+by at most `48 |B(0,1)| t⁴ H₃`. -/
+theorem abs_setIntegral_ball_norm_sub_sq_mul_bubble_sq_sub_mul_log_le_of_finrank_eq_six
+    (μ : Measure E) [μ.IsAddHaarMeasure] (hn : finrank ℝ E = 6) {t : ℝ}
+    (ht : 0 < t) {R : ℝ} (hR : 0 ≤ R) (b : E) :
+    |∫ x in ball b R, ‖x - b‖ ^ 2 * bubble t b x ^ 2 ∂μ -
+        48 * μ.real (ball (0 : E) 1) * t ^ 4 * log (1 + (R / t) ^ 2)| ≤
+      48 * μ.real (ball (0 : E) 1) * t ^ 4 * harmonic 3 := by
+  have h := abs_setIntegral_ball_norm_sub_rpow_mul_bubble_sq_sub_mul_log_le μ
+    (by omega) ht hR b
+  norm_num only [hn, Nat.cast_ofNat, Nat.reduceSub, Real.rpow_two, Nat.reducePow] at h
+  have hcoeff (y : ℝ) :
+      6 * μ.real (ball (0 : E) 1) * (8 * t ^ 4 * y) =
+        48 * μ.real (ball (0 : E) 1) * t ^ 4 * y := by ring
+  simpa only [hcoeff] using h
+
 end TauCeti.Yamabe

@@ -53,6 +53,11 @@ instance instT2Space [ContinuousMul (CliffordAlgebra Q)] : T2Space (spinCGroup Q
     (finite_spinCKernel Q hQ).isClosed
   infer_instance
 
+/-- The finite diagonal kernel has the discrete topology inherited from `Spin(Q) × Circle`. -/
+instance instDiscreteTopologySpinCKernel :
+    DiscreteTopology (spinCKernel Q hQ) :=
+  isDiscrete_iff_discreteTopology.mp (finite_spinCKernel Q hQ).isDiscrete
+
 /-- The actual quotient map from `Spin(Q) × Circle` to `Spinᶜ(Q)` is a quotient covering map
 by its diagonal order-two kernel. -/
 theorem isQuotientCoveringMap_mk [ContinuousMul (CliffordAlgebra Q)] :

@@ -69,6 +69,9 @@ for a monotone homotopy (`SymplecticForm.hamiltonianAction_le_hamiltonianAction_
 
 * `SymplecticForm.hamiltonianAction_add_const`: adding a function `c` of time to the Hamiltonian
   adds `∫₀¹ c` to the action of every loop.
+* `integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral_hamiltonianCurvature`:
+  the energy of a map over `[a, b] × [0, 1]`, for a perturbation which is `H_a dt` and `H_b dt` on
+  the two boundary circles, is the change of action minus the integrated curvature.
 * `SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub`: the energy of a map over
   `[a, b] × [0, 1]` for a cylindrical perturbation is the change of action.
 * `SymplecticForm.hamiltonianAction_le_hamiltonianAction`: the action increases along Floer
@@ -130,6 +133,52 @@ theorem hamiltonianAction_add_const (ω : SymplecticForm V) {H : ℝ → V → �
 
 end Action
 
+section Curvature
+
+variable [FiniteDimensional ℝ V] {u : ℝ × ℝ → V} {U : Set (ℝ × ℝ)} {a b : ℝ}
+
+/-- **The energy identity between two loops.** Let `u` be `C²` and the perturbation components
+`K_s` and `K_t` be `C¹` on an open neighbourhood `U` of `[a, b] × [0, 1]`, with
+`u(s, 1) = u(s, 0)` and `K_s(s, 1) = K_s(s, 0)` for `s ∈ [a, b]`, so that the bottom and top sides
+of the rectangle are glued into a cylinder. If on the two boundary circles the `dt`-component of
+`K` is a time-dependent Hamiltonian, `K_t(a, t) = H_a(t)` and `K_t(b, t) = H_b(t)`, then the Floer
+energy of `u` over the rectangle is the change of action minus the integrated curvature:
+
+`∫ E = A_{H_b}(u(b, ·)) - A_{H_a}(u(a, ·)) - ∫ R_K(u)`.
+
+No condition is imposed on `K_s` along the two boundary circles or on `K` in the interior. -/
+theorem integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral_hamiltonianCurvature
+    (ω : SymplecticForm V) {Ks Kt : ℝ × ℝ → V → ℝ} {Ha Hb : ℝ → V → ℝ} (hU : IsOpen U)
+    (hu : ContDiffOn ℝ 2 u U) (hKs : ContDiffOn ℝ 1 (uncurry Ks) (U ×ˢ univ))
+    (hKt : ContDiffOn ℝ 1 (uncurry Kt) (U ×ˢ univ)) (hab : a ≤ b)
+    (hRU : Icc a b ×ˢ Icc 0 1 ⊆ U) (hper : ∀ s ∈ Icc a b, u (s, 1) = u (s, 0))
+    (hKper : ∀ s ∈ Icc a b, Ks (s, 1) = Ks (s, 0)) (hKa : ∀ t ∈ Icc (0 : ℝ) 1, Kt (a, t) = Ha t)
+    (hKb : ∀ t ∈ Icc (0 : ℝ) 1, Kt (b, t) = Hb t) :
+    ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt u z =
+      ω.hamiltonianAction Hb (fun t ↦ u (b, t)) - ω.hamiltonianAction Ha (fun t ↦ u (a, t)) -
+        ∫ z in Icc a b ×ˢ Icc 0 1, ω.hamiltonianCurvature Ks Kt z (u z) := by
+  have hR : Icc a b ×ˢ Icc (0 : ℝ) 1 = Icc (a, 0) (b, 1) := (Icc_prod_Icc _ _ _ _)
+  have h := ω.integral_floerEnergyDensity hU (hu.of_le one_le_two) hKs hKt
+    (Prod.mk_le_mk.2 ⟨hab, zero_le_one⟩) (hR ▸ hRU)
+  rw [← hR] at h
+  -- The `ds` terms along the bottom and top sides cancel, since both sides are the same loop.
+  have hbot : ∫ s in a..b, Ks (s, 0) (u (s, 0)) = ∫ s in a..b, Ks (s, 1) (u (s, 1)) :=
+    intervalIntegral.integral_congr fun s hs ↦ by
+      rw [uIcc_of_le hab] at hs
+      rw [hKper s hs, hper s hs]
+  -- The `dt` terms along the two ends are the Hamiltonian terms of the actions.
+  have hend (c : ℝ) (H : ℝ → V → ℝ) (hc : ∀ t ∈ Icc (0 : ℝ) 1, Kt (c, t) = H t) :
+      ∫ t in (0 : ℝ)..1, Kt (c, t) (u (c, t)) = ∫ t in (0 : ℝ)..1, H t (u (c, t)) :=
+    intervalIntegral.integral_congr fun t ht ↦ by
+      rw [uIcc_of_le zero_le_one] at ht
+      rw [hc t ht]
+  rw [h, hbot, hend a Ha hKa, hend b Hb hKb, ω.integral_symplecticForm_fderiv_eq_loopArea_sub hab
+      (fun z hz ↦ hu.contDiffAt (hU.mem_nhds (hRU hz))) hper,
+    hamiltonianAction_def, hamiltonianAction_def]
+  ring
+
+end Curvature
+
 section Homotopy
 
 variable [FiniteDimensional ℝ V] {H : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {U : Set (ℝ × ℝ)}
@@ -147,15 +196,10 @@ theorem integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral (ω : 
       ω.hamiltonianAction (fun t ↦ H (b, t)) (fun t ↦ u (b, t)) -
         ω.hamiltonianAction (fun t ↦ H (a, t)) (fun t ↦ u (a, t)) -
         ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ H w (u z)) z stdComplexLineReal := by
-  have hR : Icc a b ×ˢ Icc (0 : ℝ) 1 = Icc (a, 0) (b, 1) := Icc_prod_Icc _ _ _ _
-  have h := ω.integral_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := H) hU
-    (hu.of_le one_le_two) contDiffOn_const hH.contDiffOn (Prod.mk_le_mk.2 ⟨hab, zero_le_one⟩)
-    (hR ▸ hRU)
-  simp only [hamiltonianCurvature_zero_left, intervalIntegral.integral_zero, ← hR] at h
-  rw [h, ω.integral_symplecticForm_fderiv_eq_loopArea_sub hab
-      (fun z hz ↦ hu.contDiffAt (hU.mem_nhds (hRU hz))) hper,
-    hamiltonianAction_def, hamiltonianAction_def]
-  ring
+  simpa only [hamiltonianCurvature_zero_left] using
+    ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral_hamiltonianCurvature
+      (Ks := fun _ _ ↦ 0) (Kt := H) (Ha := fun t ↦ H (a, t)) (Hb := fun t ↦ H (b, t)) hU hu
+      contDiffOn_const hH.contDiffOn hab hRU hper (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
 
 /-- **The action estimate along a continuation cylinder.** Under the hypotheses of
 `TauCeti.SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral`, if `u`

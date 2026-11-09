@@ -432,14 +432,16 @@ theorem gradedPieceZeroEquiv_gradedMkZero (g : G) :
 /-! ### Transport along an equality of degrees -/
 
 variable (p G) in
-/-- Transport along an equality of degrees. The bracket and the `p`-power operator compose into
-different but equal degree expressions, so the Jacobi identity and the identities relating `π` to
-the bracket are stated through this map. -/
-def gradedCast {j k : ℕ} (h : j = k) : gradedPiece p G j → gradedPiece p G k := fun x => h ▸ x
+/-- Transport along an equality of degrees, as an additive isomorphism of graded pieces
+(Mathlib's `AddEquiv.cast`). The bracket and the `p`-power operator compose into different but
+equal degree expressions, so the Jacobi identity and the identities relating `π` to the bracket are
+stated through this map. -/
+def gradedCast {j k : ℕ} (h : j = k) : gradedPiece p G j ≃+ gradedPiece p G k :=
+  AddEquiv.cast (M := gradedPiece p G) h
 
 @[simp]
 theorem gradedCast_rfl {k : ℕ} (x : gradedPiece p G k) : gradedCast p G rfl x = x := by
-  rw [gradedCast]
+  rw [gradedCast, AddEquiv.cast_apply, cast_eq]
 
 @[simp]
 theorem gradedCast_gradedCast {i j k : ℕ} (hij : i = j) (hjk : j = k) (x : gradedPiece p G i) :
@@ -451,20 +453,6 @@ theorem gradedCast_gradedCast {i j k : ℕ} (hij : i = j) (hjk : j = k) (x : gra
 @[simp]
 theorem gradedCast_gradedMk {j k : ℕ} (h : j = k) (x : pLowerCentralSeries p G j) :
     gradedCast p G h (gradedMk p G j x) = gradedMk p G k ⟨x, h ▸ x.2⟩ := by
-  subst h; rfl
-
-@[simp]
-theorem gradedCast_add {j k : ℕ} (h : j = k) (x y : gradedPiece p G j) :
-    gradedCast p G h (x + y) = gradedCast p G h x + gradedCast p G h y := by
-  subst h; rfl
-
-@[simp]
-theorem gradedCast_neg {j k : ℕ} (h : j = k) (x : gradedPiece p G j) :
-    gradedCast p G h (-x) = -gradedCast p G h x := by
-  subst h; rfl
-
-@[simp]
-theorem gradedCast_zero {j k : ℕ} (h : j = k) : gradedCast p G h (0 : gradedPiece p G j) = 0 := by
   subst h; rfl
 
 /-! ### The bracket -/

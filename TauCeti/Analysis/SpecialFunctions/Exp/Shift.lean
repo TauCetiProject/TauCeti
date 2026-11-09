@@ -11,7 +11,7 @@ import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.Analysis.SpecialFunctions.Exp
 
 /-!
-# Shifting the argument of a decaying real exponential
+# Shifting the argument of a real exponential
 
 The decay profile `exp (-c (t - R))`, normalised to equal `1` at `t = R`, is the radial profile
 `exp (-c t)` rescaled by the constant amplitude `exp (c R)`. This is how exponential decay
@@ -24,6 +24,8 @@ function, after enlarging the constant.
 * `TauCeti.exp_neg_mul_sub`: `exp (-c (t - R)) = exp (c R) exp (-c t)`.
 * `TauCeti.exists_forall_le_mul_exp_of_eventually_le`: an exponential bound outside a compact set
   extends to the whole space for a continuous function, with a larger constant.
+* `TauCeti.abs_exp_mul_sub_le_exp`: a bound `|f x| ≤ M` bounds `|exp (t * (f x - I))|` by
+  `exp (|t| * (M + |I|))`.
 -/
 
 public section
@@ -58,5 +60,17 @@ theorem exists_forall_le_mul_exp_of_eventually_le {E : Type*} [NormedAddCommGrou
           rw [mul_assoc, ← Real.exp_add, add_neg_cancel, Real.exp_zero, mul_one]
       _ ≤ max K M * Real.exp (-(c * ‖x‖)) :=
           mul_le_mul_of_nonneg_right (((le_abs_self _).trans hb).trans (le_max_right _ _)) he.le
+
+/-- A bound on `f` bounds the shifted exponential `exp (t * (f x - I))` for any shift `I`. -/
+theorem abs_exp_mul_sub_le_exp {α : Type*} {f : α → ℝ} {M : ℝ} (hMf : ∀ x, |f x| ≤ M)
+    (I t : ℝ) (x : α) : |Real.exp (t * (f x - I))| ≤ Real.exp (|t| * (M + |I|)) := by
+  rw [Real.abs_exp]
+  apply Real.exp_le_exp.mpr
+  calc
+    t * (f x - I) ≤ |t * (f x - I)| := le_abs_self _
+    _ = |t| * |f x - I| := abs_mul _ _
+    _ ≤ |t| * (M + |I|) :=
+      mul_le_mul_of_nonneg_left ((abs_sub (f x) I).trans (by linarith [hMf x]))
+        (abs_nonneg t)
 
 end TauCeti
