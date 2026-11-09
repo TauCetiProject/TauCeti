@@ -40,6 +40,9 @@ geometric Jacobian is the classical surface factor `sqrt (1 + ‖A‖²)`.
   `TauCeti.norm_fderiv_toLp_prodMk_apply_sq`: the derivative of `w ↦ (f w, g w)` dominates
   those of `f` and `g`, and in the Euclidean product its value on `v` has squared length
   `‖df v‖² + ‖dg v‖²`.
+* `TauCeti.fderiv_toLp_const_prodMk_apply`, `TauCeti.norm_fderiv_toLp_const_prodMk_apply`: with a
+  constant first coordinate the derivative is `v ↦ (0, dg v)`, of the length of `dg v`, at every
+  point.
 * `HasFDerivAt.normalGraphEmbedding`: the derivative of a graph parametrization is the graph of
   the derivative.
 * `DifferentiableAt.fderiv_normalGraphEmbedding`: the Fréchet derivative of a graph
@@ -128,6 +131,27 @@ theorem norm_fderiv_toLp_prodMk_apply_sq {f : G → F} {g : G → E} {y : G}
       ‖fderiv 𝕜 f y v‖ ^ 2 + ‖fderiv 𝕜 g y v‖ ^ 2 := by
   rw [fderiv_toLp_prodMk_apply hf hg, WithLp.prod_norm_sq_eq_of_L2]
   simp
+
+/-- The derivative of a map `w ↦ (c, g w)` into `WithLp p (F × E)` with constant first coordinate,
+applied to a direction `v`, is `(0, dg v)`. This holds at every point: where `g` is not
+differentiable, neither is the map, and both derivatives vanish. -/
+@[simp]
+theorem fderiv_toLp_const_prodMk_apply (c : F) (g : G → E) (y v : G) :
+    fderiv 𝕜 (fun w ↦ WithLp.toLp p (c, g w)) y v = WithLp.toLp p (0, fderiv 𝕜 g y v) := by
+  by_cases hg : DifferentiableAt 𝕜 g y
+  · rw [fderiv_toLp_prodMk_apply (differentiableAt_const c) hg]
+    simp
+  · have h : ¬DifferentiableAt 𝕜 (fun w ↦ WithLp.toLp p (c, g w)) y := fun h ↦
+      hg (by simpa [Function.comp_def] using (WithLp.sndL p 𝕜 F E).differentiableAt.comp y h)
+    rw [fderiv_zero_of_not_differentiableAt h, fderiv_zero_of_not_differentiableAt hg,
+      zero_apply, zero_apply]
+    exact (WithLp.toLp_zero (V := F × E) p).symm
+
+/-- The derivative of a map `w ↦ (c, g w)` into `WithLp p (F × E)` with constant first coordinate
+has, in every direction `v`, the length of `dg v`. -/
+theorem norm_fderiv_toLp_const_prodMk_apply (c : F) (g : G → E) (y v : G) :
+    ‖fderiv 𝕜 (fun w ↦ WithLp.toLp p (c, g w)) y v‖ = ‖fderiv 𝕜 g y v‖ := by
+  rw [fderiv_toLp_const_prodMk_apply, WithLp.norm_toLp_snd]
 
 section NormalGraph
 
