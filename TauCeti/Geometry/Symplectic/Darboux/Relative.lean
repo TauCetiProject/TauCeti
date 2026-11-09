@@ -160,14 +160,15 @@ theorem exists_diffeomorph_fix_zeroSection_eventually_compContinuousLinearMap_fd
     (contDiffOn_pullback_continuousLinearMap (r := r) hω₁
       (A : (E × N) →L[ℝ] (E × N))).mono inter_subset_right
   have hdω₁' : ∀ x ∈ W ∩ A ⁻¹' W, extDeriv ω₁' x = 0 := fun x hx ↦
-    extDeriv_pullback_continuousLinearMap_eq_zero (r := r) hr0 hW hω₁ hdω₁
-      (A : (E × N) →L[ℝ] (E × N)) hx.2
+    extDeriv_pullback_continuousLinearMap_eq_zero (A : (E × N) →L[ℝ] (E × N))
+      ((hω₁.differentiableOn hr0).differentiableAt (hW.mem_nhds hx.2)) (hdω₁ _ hx.2)
   have htan' : ∀ q : E, (q, (0 : N)) ∈ W ∩ A ⁻¹' W →
       (ω₁' (q, 0)).compContinuousLinearMap (.inl ℝ E N) =
         (ω₀ (q, 0)).compContinuousLinearMap (.inl ℝ E N) := fun q hq ↦ by
     rw [← htan q hq.1]
-    exact ContinuousAlternatingMap.compContinuousLinearMap_comp_inl_of_apply_inl_eq
-      (a := ω₁ (A (q, 0))) hAinl |>.trans (by rw [hAinl])
+    exact ContinuousAlternatingMap.compContinuousLinearMap_compContinuousLinearMap_of_comp_eq
+      (a := ω₁ (A (q, 0))) (A := A) (B := .inl ℝ E N) (ContinuousLinearMap.ext hAinl) |>.trans
+        (by rw [hAinl])
   have hW' : IsOpen (W ∩ A ⁻¹' W) := hW.inter (hW.preimage A.continuous)
   have hq₀' : (q₀, (0 : N)) ∈ W ∩ A ⁻¹' W := ⟨hq₀, by rw [mem_preimage, hAinl]; exact hq₀⟩
   have heq' : ω₁' (q₀, 0) = ω₀ (q₀, 0) := by
