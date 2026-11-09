@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.Star.Unitary
-public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
+public import TauCeti.LinearAlgebra.Matrix.CornerBlockSucc
 
 /-!
 # The block-diagonal embedding `U(1) × U(m) → U(m + 1)` over a star semiring
@@ -25,18 +24,15 @@ The entries of row `0` to the right of the corner then vanish too, because the i
 unitary matrix is its conjugate transpose and the corner, a nonzero element of a division ring,
 is invertible on both sides.
 
+The block-diagonal matrix `Matrix.cornerBlockSucc c B = diag(c, B)` itself, with its blockwise
+product and star lemmas, is in `TauCeti/LinearAlgebra/Matrix/CornerBlockSucc.lean`.
+
 ## Main definitions
 
-* `Matrix.cornerBlockSucc`: the block-diagonal matrix `diag(c, B)` of size `m + 1`, with the scalar
-  `c` in the corner indexed by `0`.
 * `Matrix.unitaryProdBlockSucc`: the embedding `(c, B) ↦ diag(c, B)`.
 
 ## Main results
 
-* `Matrix.ext_fin_succ`: matrices indexed by `Fin (m + 1)` and `Fin (n + 1)` are equal when their
-  four blocks agree.
-* `Matrix.cornerBlockSucc_mul_cornerBlockSucc`, `Matrix.star_cornerBlockSucc`: `diag(c, B)` is
-  multiplicative and commutes with the star operation, blockwise.
 * `Matrix.cornerBlockSucc_mem_unitary_iff`: `diag(c, B)` is unitary exactly when `c` and `B` are.
 * `Matrix.coe_unitaryProdBlockSucc`: the embedding sends `(c, B)` to `cornerBlockSucc c B`.
 * `Matrix.unitaryProdBlockSucc_injective`: the embedding is injective.
@@ -58,77 +54,9 @@ namespace Matrix
 
 variable {α : Type*} {m : ℕ}
 
-/-- Two matrices indexed by `Fin (m + 1)` and `Fin (n + 1)` are equal when their four blocks
-agree: the corner `(0, 0)`, the rest of row `0`, the rest of column `0`, and the indices
-`(Fin.succ, Fin.succ)`. -/
-theorem ext_fin_succ {n : ℕ} {M N : Matrix (Fin (m + 1)) (Fin (n + 1)) α}
-    (h₀₀ : M 0 0 = N 0 0) (h₀ₛ : ∀ j : Fin n, M 0 j.succ = N 0 j.succ)
-    (hₛ₀ : ∀ i : Fin m, M i.succ 0 = N i.succ 0)
-    (hₛₛ : ∀ (i : Fin m) (j : Fin n), M i.succ j.succ = N i.succ j.succ) :
-    M = N := by
-  ext p q
-  induction p using Fin.cases <;> induction q using Fin.cases
-  exacts [h₀₀, h₀ₛ _, hₛ₀ _, hₛₛ _ _]
-
 section Semiring
 
-variable [Semiring α]
-
-/-- The block-diagonal matrix `diag(c, B)` of size `m + 1`, with `c` in the corner indexed by `0`
-and `B` on the indices `Fin.succ`. -/
-def cornerBlockSucc (c : α) (B : Matrix (Fin m) (Fin m) α) :
-    Matrix (Fin (m + 1)) (Fin (m + 1)) α :=
-  of (Fin.cons (Fin.cons c 0) fun i ↦ Fin.cons 0 (B i))
-
-@[simp]
-theorem cornerBlockSucc_zero_zero (c : α) (B : Matrix (Fin m) (Fin m) α) :
-    cornerBlockSucc c B 0 0 = c :=
-  (rfl)
-
-@[simp]
-theorem cornerBlockSucc_zero_succ (c : α) (B : Matrix (Fin m) (Fin m) α) (j : Fin m) :
-    cornerBlockSucc c B 0 j.succ = 0 :=
-  (rfl)
-
-@[simp]
-theorem cornerBlockSucc_succ_zero (c : α) (B : Matrix (Fin m) (Fin m) α) (i : Fin m) :
-    cornerBlockSucc c B i.succ 0 = 0 :=
-  (rfl)
-
-@[simp]
-theorem cornerBlockSucc_succ_succ (c : α) (B : Matrix (Fin m) (Fin m) α) (i j : Fin m) :
-    cornerBlockSucc c B i.succ j.succ = B i j :=
-  (rfl)
-
-/-- The block-diagonal matrix `diag(c, B)` determines its blocks `c` and `B`. -/
-@[simp]
-theorem cornerBlockSucc_inj {c c' : α} {B B' : Matrix (Fin m) (Fin m) α} :
-    cornerBlockSucc c B = cornerBlockSucc c' B' ↔ c = c' ∧ B = B' := by
-  refine ⟨fun h ↦ ⟨?_, Matrix.ext fun i j ↦ ?_⟩, fun h ↦ h.1 ▸ h.2 ▸ rfl⟩
-  · simpa using congrFun (congrFun h 0) 0
-  · simpa using congrFun (congrFun h i.succ) j.succ
-
-/-- Block-diagonal matrices `diag(c, B)` multiply blockwise. -/
-@[simp]
-theorem cornerBlockSucc_mul_cornerBlockSucc (c c' : α) (B B' : Matrix (Fin m) (Fin m) α) :
-    cornerBlockSucc c B * cornerBlockSucc c' B' = cornerBlockSucc (c * c') (B * B') := by
-  refine ext_fin_succ ?_ (fun j ↦ ?_) (fun i ↦ ?_) (fun i j ↦ ?_) <;>
-    simp [Matrix.mul_apply, Fin.sum_univ_succ]
-
-/-- The block-diagonal matrix `diag(1, 1)` is the identity matrix. -/
-@[simp]
-theorem cornerBlockSucc_one : cornerBlockSucc (1 : α) (1 : Matrix (Fin m) (Fin m) α) = 1 := by
-  refine ext_fin_succ ?_ (fun j ↦ ?_) (fun i ↦ ?_) (fun i j ↦ ?_) <;>
-    simp [Matrix.one_apply, Fin.succ_ne_zero, (Fin.succ_ne_zero _).symm]
-
-variable [StarRing α]
-
-/-- The conjugate transpose of `diag(c, B)` is `diag(star c, star B)`. -/
-@[simp]
-theorem star_cornerBlockSucc (c : α) (B : Matrix (Fin m) (Fin m) α) :
-    star (cornerBlockSucc c B) = cornerBlockSucc (star c) (star B) := by
-  refine ext_fin_succ ?_ (fun j ↦ ?_) (fun i ↦ ?_) (fun i j ↦ ?_) <;>
-    simp [star_eq_conjTranspose, conjTranspose_apply]
+variable [Semiring α] [StarRing α]
 
 /-- The block-diagonal matrix `diag(c, B)` is unitary exactly when `c` and `B` are. -/
 @[simp]
@@ -160,22 +88,22 @@ theorem coe_unitaryProdBlockSucc (cB : unitary α × unitary (Matrix (Fin m) (Fi
 @[simp]
 theorem unitaryProdBlockSucc_apply_zero_zero (cB : unitary α × unitary (Matrix (Fin m) (Fin m) α)) :
     (unitaryProdBlockSucc α m cB).1 0 0 = cB.1 :=
-  (rfl)
+  cornerBlockSucc_zero_zero _ _
 
 @[simp]
 theorem unitaryProdBlockSucc_apply_zero_succ (cB : unitary α × unitary (Matrix (Fin m) (Fin m) α))
     (j : Fin m) : (unitaryProdBlockSucc α m cB).1 0 j.succ = 0 :=
-  (rfl)
+  cornerBlockSucc_zero_succ _ _ j
 
 @[simp]
 theorem unitaryProdBlockSucc_apply_succ_zero (cB : unitary α × unitary (Matrix (Fin m) (Fin m) α))
     (i : Fin m) : (unitaryProdBlockSucc α m cB).1 i.succ 0 = 0 :=
-  (rfl)
+  cornerBlockSucc_succ_zero _ _ i
 
 @[simp]
 theorem unitaryProdBlockSucc_apply_succ_succ (cB : unitary α × unitary (Matrix (Fin m) (Fin m) α))
     (i j : Fin m) : (unitaryProdBlockSucc α m cB).1 i.succ j.succ = cB.2.1 i j :=
-  (rfl)
+  cornerBlockSucc_succ_succ _ _ i j
 
 /-- The block-diagonal embedding of `unitary α × unitary (Matrix (Fin m) (Fin m) α)` is
 injective. -/
@@ -221,7 +149,9 @@ theorem mem_range_unitaryProdBlockSucc_iff {A : unitary (Matrix (Fin (m + 1)) (F
     calc A.1 0 j.succ = A.1 0 0 * star (A.1 0 0) * A.1 0 j.succ := by rw [hc', one_mul]
       _ = 0 := by rw [mul_assoc, h, mul_zero]
   let B : Matrix (Fin m) (Fin m) α := fun i j ↦ A.1 i.succ j.succ
-  have hAB : A.1 = cornerBlockSucc (A.1 0 0) B := ext_fin_succ rfl hrow hA fun _ _ ↦ rfl
+  have hAB : A.1 = cornerBlockSucc (A.1 0 0) B :=
+    ext_fin_succ (cornerBlockSucc_zero_zero _ _).symm (by simpa using hrow) (by simpa using hA)
+      fun i j ↦ (cornerBlockSucc_succ_succ _ B i j).symm
   have hB : B ∈ unitary (Matrix (Fin m) (Fin m) α) :=
     (cornerBlockSucc_mem_unitary_iff.1 (hAB ▸ A.2)).2
   exact ⟨(⟨A.1 0 0, hc, hc'⟩, ⟨B, hB⟩), Subtype.ext hAB.symm⟩
