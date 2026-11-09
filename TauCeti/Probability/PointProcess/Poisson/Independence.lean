@@ -7,22 +7,21 @@ module
 
 public import TauCeti.Probability.PointProcess.Poisson.Basic
 public import TauCeti.Probability.RandomMeasure.Independence
-import TauCeti.Probability.Independence.DisjointBlocks
+import TauCeti.Probability.RandomMeasure.Law
+import Mathlib.Probability.Independence.InfinitePi
 
 /-!
 # Independent restrictions of Poisson random measures
 
-Restrictions of a Poisson random measure to disjoint measurable sets are independent as
-random measures, not just at individual count coordinates. In particular, the entire past
-and future restrictions of a temporal Poisson measure are independent. No local finiteness,
-atomlessness, or topological structure on the state space is required.
+Restrictions of a Poisson random measure to any pairwise-disjoint measurable family are
+independent as random measures, not just at individual count coordinates. In particular,
+the entire past and future restrictions of a temporal Poisson measure are independent.
+No local finiteness, atomlessness, or topological structure on the state space is required.
 
-First, independent counts extend to arbitrary disjoint families, allowing sets of infinite
-intensity: their counts are almost surely the constant infinity. Finite Boolean partitions
-then reduce overlapping evaluation vectors within each restriction to disjoint counts.
-The evaluation criterion for random-measure independence extends this to the Giry sigma-field.
-The Boolean-partition argument follows the law-determination proof in
-`TauCeti/Probability/RandomMeasure/Law.lean`.
+Finite Boolean partitions reduce overlapping evaluation vectors within each restriction
+to disjoint counts. The evaluation criterion for random-measure independence extends this
+to the Giry sigma-field. The Boolean-partition reconstruction is shared with the
+law-determination proof in `TauCeti/Probability/RandomMeasure/Law.lean`.
 
 ## References
 
@@ -40,99 +39,86 @@ namespace TauCeti.Probability
 variable {Ω X ι : Type*} [MeasurableSpace Ω] [MeasurableSpace X]
   {P : Measure Ω} {N : Ω → Measure X} {Λ : Measure X}
 
-/-- Counts of a Poisson random measure on any disjoint measurable family are independent.
-Sets of infinite intensity are allowed; their counts are almost surely infinite. -/
-theorem IsPoissonRandomMeasure.iIndepFun_eval (h : IsPoissonRandomMeasure P N Λ)
-    {A : ι → Set X} (hA : ∀ i, MeasurableSet (A i))
-    (hd : Pairwise (Disjoint on A)) : ProbabilityTheory.iIndepFun (fun i ω ↦ N ω (A i)) P := by
-  classical
-  apply iIndepFun_iff_finset.mpr
-  intro I
-  let e := Fintype.equivFin I
-  let B (j : Fin (Fintype.card I)) := if Λ (A (e.symm j)) < ∞ then A (e.symm j) else ∅
-  have hB j : MeasurableSet (B j) := by dsimp [B]; split_ifs <;> simp_all
-  have hfin j : Λ (B j) < ∞ := by dsimp [B]; split_ifs <;> simp_all
-  have hsub j : B j ⊆ A (e.symm j) := by dsimp [B]; split_ifs <;> simp
-  have hdB : Pairwise (Disjoint on B) := by
-    intro i j hij
-    exact (hd (by exact_mod_cast e.symm.injective.ne hij)).mono (hsub i) (hsub j)
-  let φ (j : Fin (Fintype.card I)) (x : ℝ≥0∞) :=
-    if Λ (A (e.symm j)) < ∞ then x else ∞
-  have hind := (h.iIndepFun hB hfin hdB).comp φ (fun j ↦ by
-    dsimp [φ]; split_ifs <;> fun_prop)
-  have heq j : (φ j ∘ fun ω ↦ N ω (B j)) =ᵐ[P] fun ω ↦ N ω (A (e.symm j)) := by
-    by_cases hj : Λ (A (e.symm j)) < ∞
-    · simp [φ, B, hj, Function.comp_def]
-    · filter_upwards [h.ae_eq_top (hA _) (not_lt_top_iff.mp hj)] with ω hω
-      simp [φ, hj, hω]
-  exact (hind.congr heq).of_precomp (g := e.symm) e.symm.surjective
-
-private theorem indepFun_inter_fibers (h : IsPoissonRandomMeasure P N Λ)
+private theorem iIndepFun_inter_fibers (h : IsPoissonRandomMeasure P N Λ)
     {B : Type*} [MeasurableSpace B] [MeasurableSingletonClass B] {c : X → B}
-    (hc : Measurable c) {s t : Set X} (hs : MeasurableSet s) (ht : MeasurableSet t)
-    (hst : Disjoint s t) :
-    IndepFun (fun ω b ↦ N ω (c ⁻¹' {b} ∩ s))
-      (fun ω b ↦ N ω (c ⁻¹' {b} ∩ t)) P := by
-  let C (u : Set X) (b : B) := c ⁻¹' {b} ∩ u
-  have hC (u : Set X) (hu : MeasurableSet u) (b : B) : MeasurableSet (C u b) :=
-    (hc (measurableSet_singleton b)).inter hu
-  have hd : Pairwise (Disjoint on Sum.elim (C s) (C t)) := by
-    rintro (a | a) (b | b) hab
-    · exact ((pairwise_disjoint_fiber c) (by simpa using hab)).mono
+    (hc : Measurable c) {A : ι → Set X} (hA : ∀ i, MeasurableSet (A i))
+    (hd : Pairwise (Disjoint on A)) :
+    ProbabilityTheory.iIndepFun (fun i ω b ↦ N ω (c ⁻¹' {b} ∩ A i)) P := by
+  let := h.isProbabilityMeasure
+  let C (p : ι × B) := c ⁻¹' {p.2} ∩ A p.1
+  have hC p : MeasurableSet (C p) := (hc (measurableSet_singleton _)).inter (hA _)
+  have hdC : Pairwise (Disjoint on C) := by
+    rintro ⟨i, b⟩ ⟨j, d⟩ hij
+    by_cases he : i = j
+    · subst j
+      exact ((pairwise_disjoint_fiber c) (fun hb ↦ hij (Prod.ext rfl hb))).mono
         inter_subset_left inter_subset_left
-    · exact hst.mono inter_subset_right inter_subset_right
-    · exact hst.symm.mono inter_subset_right inter_subset_right
-    · exact ((pairwise_disjoint_fiber c) (by simpa using hab)).mono
-        inter_subset_left inter_subset_left
-  have hcounts : ProbabilityTheory.iIndepFun
-      (Sum.elim (fun b ω ↦ N ω (C s b)) (fun b ω ↦ N ω (C t b))) P := by
-    convert h.iIndepFun_eval (A := Sum.elim (C s) (C t))
-      (by rintro (b | b); exacts [hC s hs b, hC t ht b]) hd using 1
-    funext j
-    cases j <;> rfl
-  exact hcounts.indepFun_fun_sumElim
-    (fun b ↦ (Measure.measurable_coe (hC s hs b)).comp h.measurable)
-    (fun b ↦ (Measure.measurable_coe (hC t ht b)).comp h.measurable)
+    · exact (hd he).mono inter_subset_right inter_subset_right
+  let Z (p : ι × B) (ω : Ω) := N ω (C p)
+  have hm p : Measurable (Z p) := (Measure.measurable_coe (hC p)).comp h.measurable
+  have hind := h.iIndepFun_eval hC hdC
+  let μ (i : ι) (b : B) := P.map (Z (i, b))
+  let hμ (i : ι) (b : B) : IsProbabilityMeasure (μ i b) :=
+    (Measure.isProbabilityMeasure_map_iff (hm (i, b)).aemeasurable).mpr inferInstance
+  have hrow i : P.map (fun ω b ↦ Z (i, b) ω) = Measure.infinitePi (μ i) :=
+    (hind.precomp (fun _ _ he ↦ congrArg Prod.snd he)).map_fun_eq_infinitePi_map
+      (fun b ↦ hm (i, b))
+  -- Regroup the independent atom coordinates into one vector for each restriction.
+  have hmap := congrArg (fun Q ↦ Q.map (MeasurableEquiv.curry ι B ℝ≥0∞))
+    (hind.map_fun_eq_infinitePi_map hm)
+  rw [Measure.map_map (MeasurableEquiv.curry ι B ℝ≥0∞).measurable
+    (Measurable.of_eval hm), Measure.infinitePi_map_curry (μ := μ)] at hmap
+  apply (iIndepFun_iff_map_fun_eq_infinitePi_map (X := fun i ω b ↦ Z (i, b) ω)
+    (fun i ↦ Measurable.of_eval fun b ↦ hm (i, b))).mpr
+  simp_rw [hrow]
+  convert hmap using 2
+  funext ω i b
+  rfl
+
+/-- Restrictions of a Poisson random measure to any pairwise-disjoint measurable family are
+independent for the full evaluation sigma-field. Overlapping test sets within a restriction
+and infinite total intensities are permitted. -/
+theorem IsPoissonRandomMeasure.iIndepFun_restrict (h : IsPoissonRandomMeasure P N Λ)
+    {A : ι → Set X} (hA : ∀ i, MeasurableSet (A i)) (hd : Pairwise (Disjoint on A)) :
+    ProbabilityTheory.iIndepFun (fun i ω ↦ (N ω).restrict (A i)) P := by
+  classical
+  apply (iIndepFun_measure_iff (fun i ↦ (h.restrict (hA i)).measurable.aemeasurable)).mpr
+  intro I J
+  -- Encode all test sets at once, even when different restrictions use different tests.
+  let K := (i : I) × J i
+  let D (a : K) : Set X := a.2.val.val
+  have hD a : MeasurableSet (D a) := a.2.val.property
+  let c : X → (K → Bool) := fun x a ↦ decide (x ∈ D a)
+  have hc : Measurable c := TauCeti.measurable_pi_decide_mem hD
+  let B := K → Bool
+  let Φ (i : I) (v : B → ℝ≥0∞) (a : J i) :=
+    ∑ b ∈ Finset.univ.filter (fun b : B ↦ b ⟨i, a⟩ = true), v b
+  have hΦ i : Measurable (Φ i) := Measurable.of_eval fun a ↦
+    Finset.measurable_fun_sum _ fun b _ ↦ measurable_pi_apply b
+  have hrec (μ : Measure X) (i : I) (a : J i) :
+      Φ i (fun b ↦ μ (c ⁻¹' {b} ∩ A i)) a = (μ.restrict (A i)) a.val.val := by
+    simp_rw [Φ, ← Measure.restrict_apply (hc (measurableSet_singleton _))]
+    exact ((μ.restrict (A i)).apply_eq_sum_mem_partition hD ⟨i, a⟩).symm
+  have hind := iIndepFun_inter_fibers h hc (fun i : I ↦ hA i)
+    (fun i j hij ↦ hd (Subtype.val_injective.ne hij))
+  convert hind.comp Φ hΦ using 1
+  funext i ω a
+  exact (hrec (N ω) i a).symm
 
 /-- Restrictions of a Poisson random measure to two disjoint measurable sets are independent
-as random measures for the full evaluation sigma-field. Overlapping test sets within either
-restriction, infinite total intensities, and multiple occurrences are all permitted. -/
+as random measures for the full evaluation sigma-field. -/
 theorem IsPoissonRandomMeasure.indepFun_restrict (h : IsPoissonRandomMeasure P N Λ)
     {s t : Set X} (hs : MeasurableSet s) (ht : MeasurableSet t) (hst : Disjoint s t) :
     IndepFun (fun ω ↦ (N ω).restrict s) (fun ω ↦ (N ω).restrict t) P := by
-  classical
-  let := h.isProbabilityMeasure
-  apply (indepFun_measure_iff (h.restrict hs).measurable.aemeasurable
-    (h.restrict ht).measurable.aemeasurable).mpr
-  intro I J
-  -- Encode all test sets at once; each restriction is reconstructed from the same partition.
-  let A : I ⊕ J → Set X := Sum.elim (fun a ↦ a.val.val) (fun a ↦ a.val.val)
-  have hA : ∀ a, MeasurableSet (A a) := by rintro (a | a) <;> exact a.val.property
-  let c : X → ((I ⊕ J) → Bool) := fun x a ↦ decide (x ∈ A a)
-  have hc : Measurable c := Measurable.of_eval fun a ↦ by
-    simpa [c] using (measurable_const.ite (hA a) measurable_const :
-      Measurable fun x ↦ if x ∈ A a then true else false)
-  let B := (I ⊕ J) → Bool
-  let C (u : Set X) (b : B) := c ⁻¹' {b} ∩ u
-  have hind : IndepFun (fun ω b ↦ N ω (C s b)) (fun ω b ↦ N ω (C t b)) P :=
-    indepFun_inter_fibers h hc hs ht hst
-  let bits (a : I ⊕ J) := Finset.univ.filter fun b : B ↦ b a = true
-  let Φ (a : I ⊕ J) (v : B → ℝ≥0∞) := ∑ b ∈ bits a, v b
-  have hΦ a : Measurable (Φ a) :=
-    Finset.measurable_fun_sum _ fun b _ ↦ measurable_pi_apply b
-  -- Finite additivity recovers each test count, including when some atom has infinite mass.
-  have hrec (μ : Measure X) (u : Set X) (a : I ⊕ J) :
-      Φ a (fun b ↦ μ (C u b)) = (μ.restrict u) (A a) := by
-    simp_rw [Φ, C, ← Measure.restrict_apply (hc (measurableSet_singleton _))]
-    rw [sum_measure_preimage_singleton (bits a) (fun b _ ↦ hc (measurableSet_singleton b))]
-    congr 1
-    ext x
-    simp [bits, c]
-  have hcomp := hind.comp
-    (φ := fun v (a : I) ↦ Φ (.inl a) v)
-    (ψ := fun v (a : J) ↦ Φ (.inr a) v)
-    (Measurable.of_eval fun a ↦ hΦ (.inl a))
-    (Measurable.of_eval fun a ↦ hΦ (.inr a))
-  simpa only [Function.comp_def, hrec, A, Sum.elim_inl, Sum.elim_inr] using hcomp
+  let A : Bool → Set X := fun b ↦ if b then s else t
+  have hA b : MeasurableSet (A b) := by cases b <;> assumption
+  have hd : Pairwise (Disjoint on A) := by
+    intro i j hij
+    cases i <;> cases j
+    · exact (hij rfl).elim
+    · exact hst.symm
+    · exact hst
+    · exact (hij rfl).elim
+  exact (h.iIndepFun_restrict hA hd).indepFun (i := true) (j := false) (by decide)
 
 end TauCeti.Probability
