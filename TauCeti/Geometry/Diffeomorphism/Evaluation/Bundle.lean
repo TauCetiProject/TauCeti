@@ -163,31 +163,45 @@ theorem exists_continuousOn_smul_eq (hn : 1 ≤ n) (g : M ≃ₘ^n⟮I, I⟯ M) 
   · simp only [hs1, one_mul]
 
 /-- **Evaluation at `x₀` is locally trivial over the orbit of `x₀`**, with fibre the stabilizer of
-`x₀`: for `1 ≤ n`, every point `g • x₀` of the orbit lies in the base of a local trivialization of
-`g ↦ g • x₀` which intertwines right multiplication by the stabilizer with right multiplication on
-the fibre. -/
+`x₀`: for `1 ≤ n`, every point `g • x₀` of the orbit lies in the base of a local trivialization `e`
+of `g ↦ g • x₀`, given by a continuous local section `s` of evaluation over `e.baseSet` with
+`s (g • x₀) = g`. The chart sends `g'` to `(g' • x₀, s(g' • x₀)⁻¹ * g')`, its inverse sends `(z, h)`
+to `s z * h`, and it intertwines right multiplication by the stabilizer with right multiplication
+on the fibre. -/
 theorem exists_trivialization_smul (hn : 1 ≤ n) (g : M ≃ₘ^n⟮I, I⟯ M) :
-    ∃ e : Bundle.Trivialization (MulAction.stabilizer (M ≃ₘ^n⟮I, I⟯ M) x₀)
-        (fun g : M ≃ₘ^n⟮I, I⟯ M ↦ g • x₀),
-      g • x₀ ∈ e.baseSet ∧ ∀ g' ∈ e.source, ∀ h : MulAction.stabilizer (M ≃ₘ^n⟮I, I⟯ M) x₀,
+    ∃ (e : Bundle.Trivialization (MulAction.stabilizer (M ≃ₘ^n⟮I, I⟯ M) x₀)
+        (fun g : M ≃ₘ^n⟮I, I⟯ M ↦ g • x₀)) (s : M → M ≃ₘ^n⟮I, I⟯ M),
+      g • x₀ ∈ e.baseSet ∧ ContinuousOn s e.baseSet ∧ (∀ z ∈ e.baseSet, s z • x₀ = z) ∧
+      s (g • x₀) = g ∧ (∀ g' ∈ e.source, ((e g').2 : M ≃ₘ^n⟮I, I⟯ M) = (s (g' • x₀))⁻¹ * g') ∧
+      (∀ z ∈ e.baseSet, ∀ h : MulAction.stabilizer (M ≃ₘ^n⟮I, I⟯ M) x₀,
+        e.toOpenPartialHomeomorph.symm (z, h) = s z * h) ∧
+      ∀ g' ∈ e.source, ∀ h : MulAction.stabilizer (M ≃ₘ^n⟮I, I⟯ M) x₀,
         e (g' * h) = (g' • x₀, (e g').2 * h) := by
-  obtain ⟨U, hU, hgU, s, hs, hsec, -⟩ := exists_continuousOn_smul_eq hn g
-  refine ⟨TauCeti.orbitMapTrivialization (continuous_eval_const x₀) U hU s hs hsec,
-    by rwa [TauCeti.orbitMapTrivialization_baseSet],
-    fun g' hg' h ↦ TauCeti.orbitMapTrivialization_apply_mul ?_ h⟩
-  rwa [Bundle.Trivialization.mem_source, TauCeti.orbitMapTrivialization_baseSet] at hg'
+  obtain ⟨U, hU, hgU, s, hs, hsec, hsg⟩ := exists_continuousOn_smul_eq hn g
+  refine ⟨TauCeti.orbitMapTrivialization (continuous_eval_const x₀) U hU s hs hsec, s, ?_⟩
+  simp only [Bundle.Trivialization.mem_source, TauCeti.orbitMapTrivialization_baseSet]
+  exact ⟨hgU, hs, hsec, hsg, fun g' hg' ↦ TauCeti.orbitMapTrivialization_fiberCoordinate hg',
+    fun z hz h ↦ TauCeti.orbitMapTrivialization_symm_apply hz h,
+    fun g' hg' h ↦ TauCeti.orbitMapTrivialization_apply_mul hg' h⟩
 
 /-- **The evaluation bundle of the diffeomorphism group.** For `1 ≤ n` and a connected compact
 Hausdorff boundaryless `C^n` manifold `M`, evaluation `g ↦ g • x₀` at a point `x₀` is a locally
 trivial bundle over `M` with fibre the stabilizer of `x₀`: every point of `M` lies in the base of
-a local trivialization, which is equivariant for right multiplication by the stabilizer. -/
+a local trivialization `e`, given by a continuous local section `s` of evaluation over
+`e.baseSet`. The chart sends `g` to `(g • x₀, s(g • x₀)⁻¹ * g)`, its inverse sends `(z, h)` to
+`s z * h`, and it is equivariant for right multiplication by the stabilizer. -/
 theorem exists_trivialization_mem_baseSet [ConnectedSpace M] (hn : 1 ≤ n) (y : M) :
-    ∃ e : Bundle.Trivialization (MulAction.stabilizer (M ≃ₘ^n⟮I, I⟯ M) x₀)
-        (fun g : M ≃ₘ^n⟮I, I⟯ M ↦ g • x₀),
-      y ∈ e.baseSet ∧ ∀ g' ∈ e.source, ∀ h : MulAction.stabilizer (M ≃ₘ^n⟮I, I⟯ M) x₀,
-        e (g' * h) = (g' • x₀, (e g').2 * h) := by
+    ∃ (e : Bundle.Trivialization (MulAction.stabilizer (M ≃ₘ^n⟮I, I⟯ M) x₀)
+        (fun g : M ≃ₘ^n⟮I, I⟯ M ↦ g • x₀)) (s : M → M ≃ₘ^n⟮I, I⟯ M),
+      y ∈ e.baseSet ∧ ContinuousOn s e.baseSet ∧ (∀ z ∈ e.baseSet, s z • x₀ = z) ∧
+      (∀ g ∈ e.source, ((e g).2 : M ≃ₘ^n⟮I, I⟯ M) = (s (g • x₀))⁻¹ * g) ∧
+      (∀ z ∈ e.baseSet, ∀ h : MulAction.stabilizer (M ≃ₘ^n⟮I, I⟯ M) x₀,
+        e.toOpenPartialHomeomorph.symm (z, h) = s z * h) ∧
+      ∀ g ∈ e.source, ∀ h : MulAction.stabilizer (M ≃ₘ^n⟮I, I⟯ M) x₀,
+        e (g * h) = (g • x₀, (e g).2 * h) := by
   have := isPretransitive (I := I) (M := M) hn
   obtain ⟨g, rfl⟩ := MulAction.exists_smul_eq (M ≃ₘ^n⟮I, I⟯ M) x₀ y
-  exact exists_trivialization_smul hn g
+  obtain ⟨e, s, hg, hs, hsec, -, hfib, hsymm, hmul⟩ := exists_trivialization_smul hn g
+  exact ⟨e, s, hg, hs, hsec, hfib, hsymm, hmul⟩
 
 end Diffeomorph
