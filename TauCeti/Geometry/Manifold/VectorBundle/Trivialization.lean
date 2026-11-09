@@ -104,7 +104,7 @@ theorem contMDiff_totalSpaceMk (b : B) :
   let e := trivializationAt F E b
   have hb : b ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt F E b
   intro y
-  refine contMDiffAt_totalSpace.2 ⟨contMDiffAt_const, ?_⟩
+  refine contMDiffAt_totalSpace_iff.2 ⟨contMDiffAt_const, ?_⟩
   exact (e.continuousLinearMapAt 𝕜 b).contMDiff.contMDiffAt.congr_of_eventuallyEq
     (Filter.Eventually.of_forall fun y' ↦ (e.continuousLinearMapAt_apply_of_mem 𝕜 hb y').symm)
 

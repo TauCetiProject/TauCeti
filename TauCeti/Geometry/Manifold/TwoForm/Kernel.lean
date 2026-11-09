@@ -116,7 +116,7 @@ private theorem contMDiffOn_trivBilin {n : ℕ∞ω} [ENat.LEInfty n] [IsManifol
       ![e.symm z u, e.symm z w] := by
     funext i
     fin_cases i <;> rfl
-  have h := (contMDiffWithinAt_totalSpace.mp (hv y hy)).2
+  have h := (contMDiffWithinAt_totalSpace_iff.mp (hv y hy)).2
   simp only [hfun] at h
   exact (by simpa using h : ContMDiffWithinAt I 𝓘(ℝ, ℝ) n
     (fun z ↦ σ.1 z ![e.symm z u, e.symm z w]) e.baseSet y).congr heq (heq y hy)
