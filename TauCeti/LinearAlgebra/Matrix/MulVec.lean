@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
+import Mathlib.Algebra.BigOperators.Fin
 import TauCeti.Algebra.Group.Hom.Defs
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 
@@ -150,9 +151,9 @@ theorem mulVec_pos (hA : ∀ i j, 0 < A i j) (hy : 0 ≤ y) (hy0 : y ≠ 0) (i :
 
 end StrictOrderedSemiring
 
-section CommRing
+section Ring
 
-variable {n : ℕ} {R : Type*} [CommRing R]
+variable {n : ℕ} {R : Type*} [Ring R]
 
 /-- If `A *ᵥ u = 0` and `u (Fin.last n)` is a unit, then the submatrix of `A` omitting its last
 column sends `x ∘ castSucc - (u (last))⁻¹ x (last) • u ∘ castSucc` to `A *ᵥ x`. -/
@@ -161,16 +162,20 @@ theorem submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero {m : Type*}
     (huunit : IsUnit (u (Fin.last n))) (x : Fin (n + 1) → R) :
     (A.submatrix id Fin.castSucc) *ᵥ (fun i => x i.castSucc -
       u i.castSucc * ((huunit.unit⁻¹ : Rˣ) : R) * x (Fin.last n)) = A *ᵥ x := by
-  have hcol (i : m) := apply_last_eq_of_dotProduct_eq_zero (w := u) (v := A i)
-    (by rw [dotProduct_comm]; exact congrFun hu i) huunit
+  have hcol (i : m) : A i (Fin.last n) =
+      -(∑ j : Fin n, A i j.castSucc * u j.castSucc) * ((huunit.unit⁻¹ : Rˣ) : R) := by
+    have h := congrFun hu i
+    simp only [mulVec, dotProduct, Pi.zero_apply, Fin.sum_univ_castSucc] at h
+    calc A i (Fin.last n) = A i (Fin.last n) * u (Fin.last n) * ((huunit.unit⁻¹ : Rˣ) : R) := by
+          rw [mul_assoc, huunit.mul_val_inv, mul_one]
+      _ = _ := by rw [eq_neg_of_add_eq_zero_right h]
   ext i
-  simp only [mulVec, dotProduct, submatrix_apply, id_eq,
-    Fin.sum_univ_castSucc, hcol, mul_sub, Finset.sum_sub_distrib]
-  simp only [sub_eq_add_neg, neg_mul, Finset.mul_sum, Finset.sum_mul,
-    ← Finset.sum_neg_distrib]
+  simp only [mulVec, dotProduct, submatrix_apply, id_eq, Fin.sum_univ_castSucc, hcol, mul_sub,
+    Finset.sum_sub_distrib, neg_mul, ← sub_eq_add_neg]
   congr 1
-  exact Finset.sum_congr rfl fun _ _ => by ring
+  rw [Finset.sum_mul, Finset.sum_mul]
+  exact Finset.sum_congr rfl fun _ _ => by simp only [mul_assoc]
 
-end CommRing
+end Ring
 
 end Matrix

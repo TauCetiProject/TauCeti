@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # Dot products
@@ -79,7 +78,7 @@ theorem TauCeti.mul_dotProduct_eq_of_mulVec_eq_smul {m n R : Type*} [Fintype m] 
 
 /-- If `w ⬝ᵥ v = 0` and `w (Fin.last n)` is a unit, then `v (Fin.last n)` is
 `-(w (last))⁻¹ * ∑ i, w i.castSucc * v i.castSucc`. -/
-theorem Matrix.apply_last_eq_of_dotProduct_eq_zero {n : ℕ} {R : Type*} [CommRing R]
+theorem Matrix.apply_last_eq_of_dotProduct_eq_zero {n : ℕ} {R : Type*} [Ring R]
     {w v : Fin (n + 1) → R} (hv : w ⬝ᵥ v = 0)
     (hwunit : IsUnit (w (Fin.last n))) :
     v (Fin.last n) =
@@ -88,4 +87,4 @@ theorem Matrix.apply_last_eq_of_dotProduct_eq_zero {n : ℕ} {R : Type*} [CommRi
   calc v (Fin.last n) =
       ((hwunit.unit⁻¹ : Rˣ) : R) * (w (Fin.last n) * v (Fin.last n)) := by
         rw [← mul_assoc, hwunit.val_inv_mul, one_mul]
-    _ = _ := by linear_combination ((hwunit.unit⁻¹ : Rˣ) : R) * hv
+    _ = _ := by rw [eq_neg_of_add_eq_zero_right hv, mul_neg, neg_mul]
