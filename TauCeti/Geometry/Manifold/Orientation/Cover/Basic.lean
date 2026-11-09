@@ -57,14 +57,14 @@ abbrev OrientationCover : Type _ :=
 
 namespace OrientationCover
 
-variable [FiniteDimensional ℝ E] [IsManifold I 1 M]
+variable [IsManifold I 1 M]
 
 /-- The projection of the orientation double cover of a manifold is a covering map. -/
 theorem isCoveringMap_proj :
     IsCoveringMap (VectorBundleOrientationCover.proj : OrientationCover I M → M) :=
   VectorBundleOrientationCover.isCoveringMap_proj (Fintype.card_fin _)
 
-variable {I M}
+variable [FiniteDimensional ℝ E] {I M}
 
 /-- A manifold is orientable if and only if its orientation double cover has a continuous
 section. -/
