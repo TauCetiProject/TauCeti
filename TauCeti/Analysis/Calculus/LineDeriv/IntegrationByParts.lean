@@ -51,7 +51,9 @@ Lipschitz test function.
 * `TauCeti.integral_fderiv_apply_eq_zero_of_hasCompactSupport`: the integral of a directional
   derivative of a compactly supported `C¹` map vanishes.
   `TauCeti.integral_fderiv_eq_zero_of_hasCompactSupport` is the same statement for the whole
-  derivative.
+  derivative, and `TauCeti.setIntegral_fderiv_apply_sub_fderiv_apply_eq_zero` its form for a
+  difference of two directional derivatives over a set containing both supports.
+  `TauCeti.integrable_fderiv_apply_of_hasCompactSupport` records the integrability.
 * `TauCeti.integral_lineDeriv_mul_eq_neg_of_contDiffOn`: integration by parts between a function
   `C¹` on an open set and a Lipschitz function with compact support in it.
 
@@ -135,6 +137,28 @@ theorem integral_fderiv_apply_eq_zero_of_hasCompactSupport (hu : ContDiff ℝ 1 
     (fun _ _ ↦ differentiableAt_const _)
     (fun _ _ ↦ (hu.differentiable one_ne_zero).differentiableAt)
   simpa using h
+
+omit [FiniteDimensional ℝ E] in
+/-- A directional derivative of a compactly supported `C¹` map is integrable. -/
+theorem integrable_fderiv_apply_of_hasCompactSupport (hu : ContDiff ℝ 1 u)
+    (hsupp : HasCompactSupport u) (v : E) : Integrable (fun x ↦ fderiv ℝ u x v) μ :=
+  ((hu.continuous_fderiv one_ne_zero).clm_apply continuous_const).integrable_of_hasCompactSupport
+    (hsupp.fderiv_apply (𝕜 := ℝ) v)
+
+/-- For compactly supported `C¹` maps `f` and `g` whose supports lie in a set `D`, the integral
+over `D` of the difference of directional derivatives `x ↦ f'(x) v - g'(x) w` vanishes. -/
+theorem setIntegral_fderiv_apply_sub_fderiv_apply_eq_zero {f g : E → V} {D : Set E}
+    (hf : ContDiff ℝ 1 f) (hfc : HasCompactSupport f) (hfD : tsupport f ⊆ D)
+    (hg : ContDiff ℝ 1 g) (hgc : HasCompactSupport g) (hgD : tsupport g ⊆ D) (v w : E) :
+    ∫ x in D, (fderiv ℝ f x v - fderiv ℝ g x w) ∂μ = 0 := by
+  rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ ?_,
+    integral_sub (integrable_fderiv_apply_of_hasCompactSupport hf hfc v)
+      (integrable_fderiv_apply_of_hasCompactSupport hg hgc w),
+    integral_fderiv_apply_eq_zero_of_hasCompactSupport hf hfc,
+    integral_fderiv_apply_eq_zero_of_hasCompactSupport hg hgc, sub_zero]
+  rw [fderiv_of_notMem_tsupport ℝ fun h ↦ hx (hfD h),
+    fderiv_of_notMem_tsupport ℝ fun h ↦ hx (hgD h), zero_apply, zero_apply,
+    sub_zero]
 
 /-- The integral of the derivative of a compactly supported `C¹` map vanishes. -/
 theorem integral_fderiv_eq_zero_of_hasCompactSupport (hu : ContDiff ℝ 1 u)

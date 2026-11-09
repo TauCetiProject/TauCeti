@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 
 /-!
@@ -604,28 +605,6 @@ theorem IsNondegenerate.integral_floerEnergyDensity [FiniteDimensional ℝ E]
     integral_add harea hderiv, stdComplexLineReal_eq, stdComplexLineImag_eq,
     integral_fderiv_sub_fderiv_Icc hU hg hf hab habU]
 
-/-- For a compactly supported `C¹` function `f` on the plane, the derivative `z ↦ f'(z) v` is
-integrable. -/
-private theorem integrable_fderiv_apply_of_hasCompactSupport {f : ℝ × ℝ → ℝ}
-    (hf : ContDiff ℝ 1 f) (hfc : HasCompactSupport f) (v : ℝ × ℝ) :
-    Integrable fun z ↦ fderiv ℝ f z v :=
-  ((hf.continuous_fderiv one_ne_zero).clm_apply continuous_const).integrable_of_hasCompactSupport
-    (hfc.fderiv_apply (𝕜 := ℝ) v)
-
-/-- For compactly supported `C¹` functions `f` and `g` on the plane with supports in `D`, the
-integral over `D` of `z ↦ f'(z) v - g'(z) w` vanishes. -/
-private theorem setIntegral_fderiv_apply_sub_fderiv_apply_eq_zero {f g : ℝ × ℝ → ℝ}
-    {D : Set (ℝ × ℝ)} (hf : ContDiff ℝ 1 f) (hfc : HasCompactSupport f) (hfD : tsupport f ⊆ D)
-    (hg : ContDiff ℝ 1 g) (hgc : HasCompactSupport g) (hgD : tsupport g ⊆ D) (v w : ℝ × ℝ) :
-    ∫ z in D, (fderiv ℝ f z v - fderiv ℝ g z w) = 0 := by
-  rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ ?_,
-    integral_sub (integrable_fderiv_apply_of_hasCompactSupport hf hfc v)
-      (integrable_fderiv_apply_of_hasCompactSupport hg hgc w),
-    integral_fderiv_apply_eq_zero_of_hasCompactSupport hf hfc,
-    integral_fderiv_apply_eq_zero_of_hasCompactSupport hg hgc, sub_zero]
-  rw [fderiv_of_notMem_tsupport ℝ fun h ↦ hz (hfD h),
-    fderiv_of_notMem_tsupport ℝ fun h ↦ hz (hgD h), zero_apply, zero_apply, sub_zero]
-
 /-- **The energy identity on the plane, for a compactly supported perturbation.** Let `u` and the
 perturbation data `K = K_s ds + K_t dt` be `C¹` on the whole plane, for a nondegenerate two-form
 on a finite-dimensional manifold, and suppose that the pulled-back one-form
@@ -931,16 +910,6 @@ theorem floerEnergyDensity_constSmooth (ω : SymplecticForm V)
     fromTangentSpace_constSmooth_apply, fromTangentSpace_perturbedMFDeriv_constSmooth_apply,
     fromTangentSpace_perturbedMFDeriv_constSmooth_apply]
 
-omit [FiniteDimensional ℝ V] in
-/-- A `C¹` function on `(ℝ × ℝ) × V` is `C¹` for the product of the model spaces of `ℝ × ℝ` and
-`V`. -/
-private theorem contMDiffOn_uncurry_of_contDiffOn {K : ℝ × ℝ → V → ℝ} {U : Set (ℝ × ℝ)}
-    (hK : ContDiffOn ℝ 1 (uncurry K) (U ×ˢ Set.univ)) :
-    ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ Set.univ) := by
-  have h := contMDiffOn_iff_contDiffOn.mpr hK
-  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-  exact h
-
 /-- For a constant form, the intrinsic symplectic area density of a map of the plane is the
 vector-space area density `ω(∂_s u, ∂_t u)`. -/
 theorem eval₂_constSmooth_mfderiv_stdComplexLine (ω : SymplecticForm V) (u : ℝ × ℝ → V)
@@ -985,8 +954,10 @@ theorem setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero (ω : Symplectic
     funext fun z ↦ hamiltonianCurvature_constSmooth ω Ks Kt z (u z)
   have h :=
     (isNondegenerate_constSmooth ω).setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero hU
-    (contMDiffOn_iff_contDiffOn.mpr hu) (contMDiffOn_uncurry_of_contDiffOn hKs)
-    (contMDiffOn_uncurry_of_contDiffOn hKt) hC hCU hKsC hKtC hD hCD
+    (contMDiffOn_iff_contDiffOn.mpr hu)
+    (contMDiffOn_prod_modelWithCornersSelf_iff.mpr (contMDiffOn_iff_contDiffOn.mpr hKs))
+    (contMDiffOn_prod_modelWithCornersSelf_iff.mpr (contMDiffOn_iff_contDiffOn.mpr hKt))
+    hC hCU hKsC hKtC hD hCD
     (hE' ▸ hE) (hR' ▸ hR)
   simpa only [hE', hR', eval₂_constSmooth_mfderiv_stdComplexLine] using h
 
@@ -1017,8 +988,11 @@ theorem setIntegral_floerEnergyDensity_add_hamiltonianCurvature_eq_of_eqOn (ω :
     (hf.mono hDU).integrableOn_compact hD
   have h := IsNondegenerate.setIntegral_floerEnergyDensity_add_hamiltonianCurvature_eq_of_eqOn
     (isNondegenerate_constSmooth ω) hU (contMDiffOn_iff_contDiffOn.mpr hu)
-    (contMDiffOn_uncurry_of_contDiffOn hKs) (contMDiffOn_uncurry_of_contDiffOn hKt)
-    (contMDiffOn_uncurry_of_contDiffOn hKs') (contMDiffOn_uncurry_of_contDiffOn hKt') hD hDU hs ht
+    (contMDiffOn_prod_modelWithCornersSelf_iff.mpr (contMDiffOn_iff_contDiffOn.mpr hKs))
+    (contMDiffOn_prod_modelWithCornersSelf_iff.mpr (contMDiffOn_iff_contDiffOn.mpr hKt))
+    (contMDiffOn_prod_modelWithCornersSelf_iff.mpr (contMDiffOn_iff_contDiffOn.mpr hKs'))
+    (contMDiffOn_prod_modelWithCornersSelf_iff.mpr (contMDiffOn_iff_contDiffOn.mpr hKt'))
+    hD hDU hs ht
     (funext (floerEnergyDensity_constSmooth ω Ks Kt u) ▸
       hint (ω.continuousOn_floerEnergyDensity hU hu hKs hKt))
     (by simpa only [hamiltonianCurvature_constSmooth] using
