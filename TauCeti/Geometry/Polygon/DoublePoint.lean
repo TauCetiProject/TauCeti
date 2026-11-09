@@ -242,14 +242,14 @@ theorem doublePointPartner_mem_doublePoints (hx : x ∈ poly.doublePoints R π) 
   exact ⟨doublePointPartner_mem_boundary hx.1, x, hx.1, (doublePointPartner_ne hx).symm,
     (apply_doublePointPartner x).symm⟩
 
-theorem doublePointPartner_mapsTo : MapsTo (poly.doublePointPartner R π) (poly.doublePoints R π)
+theorem mapsTo_doublePointPartner : MapsTo (poly.doublePointPartner R π) (poly.doublePoints R π)
     (poly.doublePoints R π) := fun _ ↦ doublePointPartner_mem_doublePoints
 
 variable (R) in
 /-- The partner map, restricted to the subtype of double points. -/
 noncomputable def doublePointPartnerOnDoublePoints (poly : Polygon P n) (π : P → Q) :
     poly.doublePoints R π → poly.doublePoints R π :=
-  Set.MapsTo.restrict _ _ _ doublePointPartner_mapsTo
+  Set.MapsTo.restrict _ _ _ mapsTo_doublePointPartner
 
 /-- Coercing the restricted partner gives the ambient partner. -/
 @[simp]

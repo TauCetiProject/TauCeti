@@ -133,6 +133,10 @@ private noncomputable def crossingTimesEquivDoublePoints (hs : poly.IsSimple ℝ
   Equiv.Set.imageOfInjOn _ _ (hs.injOn_boundaryParam.mono crossingTimes_subset_Ico) |>.trans
     (Set.equivOfEq image_boundaryParam_crossingTimes)
 
+private theorem crossingTimesEquivDoublePoints_apply (hs : poly.IsSimple ℝ)
+    (t : poly.crossingTimes p₀ d) :
+    (crossingTimesEquivDoublePoints hs t : P) = poly.boundaryParam t := rfl
+
 /-- For a simple polygon, there are as many crossing times as double points. -/
 theorem ncard_crossingTimes (hs : poly.IsSimple ℝ) :
     (poly.crossingTimes p₀ d).ncard = (poly.doublePoints ℝ (projAlong ℝ p₀ d)).ncard :=
@@ -294,8 +298,9 @@ private theorem coe_crossingMatching_apply (hs : poly.IsSimple ℝ)
     (crossingTimes_subset_Ico (e.symm ((hπ.perfectMatchingDoublePoints).val (e t))).2)
     (partnerTime_mem_Ico t)
   rw [boundaryParam_partnerTime]
-  simpa [e, crossingTimesEquivDoublePoints, Equiv.Set.imageOfInjOn] using
-    congr($(Equiv.apply_symm_apply e ((hπ.perfectMatchingDoublePoints).val (e t))).val)
+  rw [← crossingTimesEquivDoublePoints_apply hs (e.symm _), Equiv.apply_symm_apply,
+    ← crossingTimesEquivDoublePoints_apply hs t]
+  simp [e]
 
 private theorem crossingOver_crossingMatching (hs : poly.IsSimple ℝ)
     (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) (t : poly.crossingTimes p₀ d) :
