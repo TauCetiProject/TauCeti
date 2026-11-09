@@ -12,7 +12,7 @@ import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.RingTheory.Finiteness.Finsupp
 import Mathlib.RingTheory.TensorProduct.Finite
-import TauCeti.LinearAlgebra.Exact
+import TauCeti.LinearAlgebra.Basis.Exact
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
@@ -99,20 +99,16 @@ private theorem shortExactWedge_bijective [FiniteDimensional K U] [FiniteDimensi
       hfg.linearMap_ker_eq, LinearMap.finrank_range_of_inj hf, add_comm]
   set bU := Module.finBasis K U
   set bW := Module.finBasis K W
-  -- The images of `bU` followed by the lifts of `bW` are linearly independent.
-  have hli : LinearIndependent K (Fin.append (f ∘ bU) (s ∘ bW)) :=
-    hfg.linearIndependent_append hf bU.linearIndependent
-      (by simpa [Function.comp_def, hs] using bW.linearIndependent)
-  -- Hence they form a basis of `V`, whose exterior product spans the top exterior power.
+  -- The images of `bU` followed by the lifts of `bW` form a basis of `V`, whose exterior product
+  -- spans the top exterior power.
   set b : Basis (Fin (finrank K U + finrank K W)) K V :=
-    basisOfLinearIndependentOfCardEqFinrank' _ hli (by rw [Fintype.card_fin, hdim])
+    (Basis.ofExactLift hf hfg bU bW (s ∘ bW) fun j ↦ hs _).reindex finSumFinEquiv
   have hsurj : Function.Surjective (shortExactWedge f s (finrank K U) (finrank K W)) := by
     intro y
     refine ⟨b.exteriorPowerTopEquiv y • (ιMulti K _ ⇑bU ⊗ₜ ιMulti K _ ⇑bW), ?_⟩
     rw [map_smul, shortExactWedge_tmul_ιMulti hfg hs _ _ (s ∘ ⇑bW) fun j ↦ hs _]
     have hy := b.exteriorPowerTopEquiv.symm_apply_apply y
-    rwa [Module.Basis.exteriorPowerTopEquiv_symm_apply,
-      coe_basisOfLinearIndependentOfCardEqFinrank'] at hy
+    rwa [Module.Basis.exteriorPowerTopEquiv_symm_apply, Basis.coe_reindex_ofExactLift] at hy
   refine OrzechProperty.bijective_of_surjective_of_finrank_le _ hsurj ?_
   simp [Module.finrank_tensorProduct, hdim]
 
