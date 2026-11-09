@@ -38,7 +38,7 @@ open scoped ENNReal Topology
 
 namespace HasFDerivWithinAt
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] {φ : E → ℝ} {A : E →L[ℝ] ℝ} {x : E}
 
 /-- Differentiability within a parameter set makes the normal graph satisfy the cone condition
@@ -76,7 +76,7 @@ end HasFDerivWithinAt
 tangent-plane cone condition. The parameter set is arbitrary, with no surface-measure
 finiteness or measurability hypothesis. This includes dimension zero. -/
 theorem HasFDerivAt.tendsto_euclideanHausdorffMeasure_normalGraphEmbedding_outside_cone_div
-    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [MeasurableSpace E] [BorelSpace E] {φ : E → ℝ} {A : E →L[ℝ] ℝ} {x : E}
     (hφ : HasFDerivAt φ A x) (s : Set E) {ε : ℝ} (hε : 0 < ε) :
     Tendsto (fun r =>

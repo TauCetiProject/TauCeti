@@ -40,9 +40,9 @@ theorem HasFDerivWithinAt.tangentConeAt_normalGraphEmbedding_image
     (hφ : HasFDerivWithinAt φ A s x) :
     tangentConeAt ℝ (TauCeti.normalGraphEmbedding φ '' s) (TauCeti.normalGraphEmbedding φ x) =
       A.normalGraphL '' tangentConeAt ℝ s x :=
-  (hφ.normalGraphEmbedding.image_tangentConeAt_of_leftInverse
+  (hφ.normalGraphEmbedding.image_tangentConeAt_of_leftInvOn
     (WithLp.sndL 2 ℝ ℝ E).hasFDerivAt.hasFDerivWithinAt
-    (TauCeti.normalGraphEmbedding_snd φ)).symm
+    (fun y _ => TauCeti.normalGraphEmbedding_snd φ y)).symm
 
 /-- Near the base point, a relatively differentiable normal graph lies in every cone about
 the range of the derivative's linear graph. This holds in arbitrary real normed spaces,

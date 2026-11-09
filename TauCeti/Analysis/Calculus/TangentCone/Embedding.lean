@@ -17,7 +17,8 @@ differential. Unlike a change of coordinates by a local diffeomorphism, the para
 may take values in a higher-dimensional space. This applies in particular to graph embeddings,
 whose left inverse is coordinate projection.
 
-Only derivatives within the parameter set and its image are needed. Neither openness,
+The left inverse identity is needed only on the parameter set and at the base point, and
+only derivatives within the parameter set and its image are needed. Neither openness,
 finite dimension, nor completeness is required.
 -/
 
@@ -33,26 +34,28 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
 
 /-- A parametrization with a differentiable left inverse carries the tangent cone of its
 parameter set onto the tangent cone of its image. The inverse need only be differentiable
-within that image. -/
-theorem image_tangentConeAt_of_leftInverse (hf : HasFDerivWithinAt f f' s x)
-    (hg : HasFDerivWithinAt g g' (f '' s) (f x)) (hgf : Function.LeftInverse g f) :
+within that image, and the left inverse identity is required only on `insert x s`. -/
+theorem image_tangentConeAt_of_leftInvOn (hf : HasFDerivWithinAt f f' s x)
+    (hg : HasFDerivWithinAt g g' (f '' s) (f x)) (hgf : LeftInvOn g f (insert x s)) :
     f' '' tangentConeAt 𝕜 s x = tangentConeAt 𝕜 (f '' s) (f x) := by
+  have hgfx := hgf (mem_insert x s)
+  have hgfs := hgf.mono (subset_insert x s)
   have hmaps : MapsTo g (f '' s) s := by
     rintro _ ⟨y, hy, rfl⟩
-    simpa only [hgf y] using hy
+    simpa only [hgfs hy] using hy
   have hcomp : HasFDerivWithinAt (fun y => f (g y)) (f'.comp g') (f '' s) (f x) := by
-    have hf' : HasFDerivWithinAt f f' s (g (f x)) := by rwa [hgf x]
+    have hf' : HasFDerivWithinAt f f' s (g (f x)) := by rwa [hgfx]
     exact hf'.comp (f x) hg hmaps
   have hid : HasFDerivWithinAt (fun y => f (g y)) (ContinuousLinearMap.id 𝕜 F)
       (f '' s) (f x) := by
     apply (hasFDerivWithinAt_id (f x) (f '' s)).congr
     · rintro _ ⟨y, hy, rfl⟩
-      simp only [id_eq, hgf y]
-    · simp only [id_eq, hgf x]
+      simp only [id_eq, hgfs hy]
+    · simp only [id_eq, hgfx]
   refine Subset.antisymm hf.mapsTo_tangent_cone.image_subset ?_
   intro v hv
   refine ⟨g' v, ?_, hcomp.unique_on hid hv⟩
   have hcone := hg.mapsTo_tangent_cone hv
-  rwa [hgf.image_image, hgf x] at hcone
+  rwa [hgfs.image_image, hgfx] at hcone
 
 end HasFDerivWithinAt
