@@ -25,10 +25,10 @@ the symplectization form `θ = eᵗ α`
 tautological form `θ_(t, x)(v) = eᵗ α_x (dπ v)` of the covectors in its image. Hence it pulls the
 canonical symplectic form `ω = -dλ` back to `-dθ`, and this is nondegenerate exactly when `α` is
 a contact form (`TauCeti.SmoothForm.isNondegenerate_mpullback_symplectizationToCotangent_iff`). In
-particular, for a contact form `α` the map `ι_α` is an immersion whose tangent images are
-symplectic subspaces of `T*M`
-(`TauCeti.SmoothForm.IsContactForm.injective_mfderiv_symplectizationToCotangent`,
-`TauCeti.SmoothForm.IsContactForm.hasSymplecticTangentImages_symplectizationToCotangent`).
+particular, for a contact form `α` the tangent images of `ι_α` are symplectic subspaces of `T*M`
+(`TauCeti.SmoothForm.IsContactForm.hasSymplecticTangentImages_symplectizationToCotangent`). The map
+`ι_α` is an immersion wherever `α` does not vanish
+(`TauCeti.SmoothForm.injective_mfderiv_symplectizationToCotangent`).
 
 The image of `ι_α` is the half `{c α_x | c > 0}` of the annihilator line `(ker α)⁰ ⊂ T*M`. The
 other half is the image of `ι_(-α)`, the symplectization of the oppositely cooriented form; over
@@ -168,14 +168,41 @@ theorem isSymplectic_mpullback_symplectizationToCotangent_iff {α : SmoothForm I
   rw [mpullback_symplectizationToCotangent_symplecticForm, SmoothTwoForm.isSymplectic_neg_iff,
     isSymplectic_mextDerivₗ_symplectization_iff]
 
-/-- For a contact form `α`, the map `(t, x) ↦ eᵗ α_x` is an immersion. -/
-theorem IsContactForm.injective_mfderiv_symplectizationToCotangent {α : SmoothForm I M ℝ 1}
-    (hα : α.IsContactForm) (p : ℝ × M) :
+/-- At a point `(t, x)` where the one-form `α` does not vanish, the map `(t, x) ↦ eᵗ α_x` has
+injective derivative. So it is an immersion when `α` vanishes nowhere, for instance when `α` is a
+contact form. -/
+theorem injective_mfderiv_symplectizationToCotangent {α : SmoothForm I M ℝ 1} {p : ℝ × M}
+    (hα : α.1 p.2 ≠ 0) :
     Function.Injective
-      (mfderiv (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) α.symplectizationToCotangent p) :=
-  ((CotangentBundle.isSymplectic_symplecticForm.isNondegenerate.isNondegenerate_mpullback_iff
-    α.contMDiff_symplectizationToCotangent).1
-      (isNondegenerate_mpullback_symplectizationToCotangent_iff.2 hα)).2 p
+      (mfderiv (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) α.symplectizationToCotangent p) := by
+  refine (injective_iff_map_eq_zero _).2 fun u hu ↦ ?_
+  -- Since the map lies over the projection to `M`, the component of `u` along `M` vanishes.
+  have hw : (Manifold.tangentSpaceProdEquiv p u).2 = 0 := by
+    have h := mfderiv_comp_apply p
+      ((Bundle.contMDiff_proj (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) _).mdifferentiableAt
+        one_ne_zero)
+      ((α.contMDiff_symplectizationToCotangent p).mdifferentiableAt (by simp)) u
+    rw [hu, map_zero] at h
+    rw [Manifold.tangentSpaceProdEquiv_apply]
+    exact (mfderiv_snd_apply p u).symm.trans h
+  -- Pairing `u` with a vector `(0, v)` under the pullback `-d(eᵗ α)` of `ω` shows that the
+  -- component of `u` along `ℝ` vanishes too.
+  obtain ⟨v, hv⟩ := RoughForm.exists_apply_ne_zero hα
+  set w : TangentSpace (𝓘(ℝ).prod I) p := (Manifold.tangentSpaceProdEquiv p).symm (0, v)
+  have h := eval₂_mpullback _ α.contMDiff_symplectizationToCotangent
+    (CotangentBundle.symplecticForm I M) p u w
+  have hω : (CotangentBundle.symplecticForm I M).eval₂ (α.symplectizationToCotangent p) 0
+      (mfderiv (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) α.symplectizationToCotangent p w) = 0 := by
+    simpa using (CotangentBundle.symplecticForm I M).eval₂_smul_left _ 0 0
+      (mfderiv (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) α.symplectizationToCotangent p w)
+  have hdα : (mextDerivₗ I 1 α).eval₂ p.2 0 v = 0 := by
+    simpa using (mextDerivₗ I 1 α).eval₂_smul_left p.2 0 0 v
+  rw [hu, hω, mpullback_symplectizationToCotangent_symplecticForm, SmoothBundleForm.eval₂_neg,
+    eval₂_mextDerivₗ_symplectization, hw, ContinuousLinearEquiv.apply_symm_apply, hdα] at h
+  simp only [Manifold.tangentSpaceProdEquiv_apply, map_zero, zero_mul, sub_zero, add_zero,
+    neg_eq_zero, mul_eq_zero, Real.exp_ne_zero, EmbeddingLike.map_eq_zero_iff, false_or] at h
+  rw [Manifold.tangentSpaceProdEquiv_apply] at hw
+  exact Prod.ext (h.resolve_right hv) hw
 
 /-- For a contact form `α`, the tangent images of the map `(t, x) ↦ eᵗ α_x` are symplectic
 subspaces of the tangent spaces of `T*M`. -/
