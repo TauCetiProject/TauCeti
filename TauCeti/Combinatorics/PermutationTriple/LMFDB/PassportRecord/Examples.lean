@@ -165,18 +165,9 @@ theorem isValidAt_torusPassportRecord :
     exact isBlock_torusTriple
   primitivizationBlock_nonempty := Finset.insert_nonempty _ _
   deg_eq_one_of_primitivizationBlock_eq_univ h := absurd h (by decide)
-  eq_or_eq_univ_of_primitivizationBlock_subset C hC hsub := by
-    classical
-    -- Every subset of the four sheets containing `{0, 2}` is checked against the finite block
-    -- test.
-    have key : ∀ D : Finset (Fin 4), torusTriple.isBlockBool D = true → {0, 2} ⊆ D →
-        D = {0, 2} ∨ D = Finset.univ := by
-      decide
-    rw [← Set.coe_toFinset C] at hC hsub ⊢
-    simp only [torusPassportRecord, Finset.coe_subset] at hsub ⊢
-    rcases key C.toFinset ((isBlockBool_eq_true_iff _ _).mpr hC) hsub with h | h
-    · exact Or.inl (by rw [h])
-    · exact Or.inr (by rw [h, Finset.coe_univ])
+  -- Every subset of the four sheets containing `{0, 2}` is checked against the finite block test.
+  eq_or_eq_univ_of_primitivizationBlock_subset :=
+    torusTriple.eq_or_eq_univ_of_forall_isBlockBool (by decide)
   closure_autGroupGenerators := by
     simp only [torusPassportRecord, List.mem_singleton, Set.ofPred_eq_eq_singleton,
       automorphismGroup_torusTriple, monodromyGroup_torusTriple, Subgroup.zpowers_eq_closure]

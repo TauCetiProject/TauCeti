@@ -119,6 +119,14 @@ jobs:
     # builds keep the picker's choice. The labels must be served in this organisation
     # before the variable is set: an unserved label queues the required build until
     # it expires. Clear the variable to return staging to the picker.
+    # Nineteen native concurrency groups cap all hosted bulk builds across
+    # workflows, leaving one of the organization's 20 slots for small jobs and
+    # roadmap merge builds. Waiting here consumes no runner. Other pools retain
+    # their existing concurrency; failed pickers share conservative slot zero.
+    concurrency:
+      group: ${{ contains(fromJSON('["ubuntu-latest","ubuntu-24.04","ubuntu-22.04"]'), (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && vars.STAGING_RUNS_ON != '') && fromJSON(vars.STAGING_RUNS_ON) || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"'))) && format('tauceti-hosted-bulk-{0}', needs.pick-runner.outputs.hosted-slot || '0') || format('unlimited-sandboxed-build-{0}', github.run_id) }}
+      queue: max
+      cancel-in-progress: false
     runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && vars.STAGING_RUNS_ON != '') && fromJSON(vars.STAGING_RUNS_ON) || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"')) }}
     outputs:
       status-sha: ${{ steps.pr.outputs.status_sha }}
@@ -173,14 +181,14 @@ jobs:
             /tauceti.toml
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@cc55ea7cbd272d688189c09230497d6a9f9ff101
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: cc55ea7cbd272d688189c09230497d6a9f9ff101
+          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@cc55ea7cbd272d688189c09230497d6a9f9ff101
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@4d2579da7cdb5679ab523d281f61c73ffb502f75
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -660,6 +668,13 @@ jobs:
             echo "BASE_SHIM_REGISTRY=$base_shims" >> "$GITHUB_ENV"
             echo "BASE_SHIM_ROOT=$(realpath base)" >> "$GITHUB_ENV"
             echo "SHIM_CHECK=1" >> "$GITHUB_ENV"
+            # Integration sources outside the ordinary PR's complete diff are the base's, which
+            # passed the full scan, so only changed sources and dropped registry entries are
+            # rescanned. Batches and Lake-pin bumps keep the full scan.
+            if [ "${{ env.IS_BATCH }}" != "true" ] && [ "${BUMP:-0}" != "1" ] \
+               && [ -f "$RUNNER_TEMP/scope-files" ]; then
+              echo "SHIM_SCOPE_FILES=$RUNNER_TEMP/scope-files" >> "$GITHUB_ENV"
+            fi
           elif [ -f pr/TauCeti/mathlib-shims.json ]; then
             # A PR that introduces the registry has no inherited obligations, but its entries are
             # all new and must still be checked. An older PR containing neither copy predates the
@@ -698,6 +713,7 @@ jobs:
           [ -z "${BASE_SHIM_REGISTRY:-}" ] || args+=(
             --base-manifest "$BASE_SHIM_REGISTRY" --base-root "$BASE_SHIM_ROOT"
           )
+          [ -z "${SHIM_SCOPE_FILES:-}" ] || args+=(--changed-paths "$SHIM_SCOPE_FILES")
           python3 gate/scripts/check-expired-mathlib-shims.py \
             --repo-root pr --manifest pr/TauCeti/mathlib-shims.json "${args[@]}"
           rc=$?
@@ -907,14 +923,6 @@ jobs:
               "userns=$host_ns->$sb_ns); refusing to run candidate code"
             exit 1
           fi
-
-      - name: Hydrate optional trusted local dependency prefill
-        if: ${{ env.INFRA != '1' && env.IS_BATCH != 'true' && startsWith(runner.name, 'fleet-') }}
-        # Missing/mismatched payloads leave normal setup intact. Configuration has
-        # already passed the exact-head and integrated attestation above.
-        timeout-minutes: 2
-        continue-on-error: true
-        run: python3 gate/scripts/dependency_prefill.py pr
 
       # Restore only Mathlib's compressed, content-addressed `.ltar` download store from a
       # trusted main publisher. This workflow never writes that GitHub Actions cache. The keys
@@ -1313,6 +1321,7 @@ jobs:
             args+=(--base-manifest "$BASE_SHIM_REGISTRY" --base-root "$BASE_SHIM_ROOT")
             [ "${BUMP:-0}" = "1" ] || args+=(--only-new)
           fi
+          [ -z "${SHIM_SCOPE_FILES:-}" ] || args+=(--changed-paths "$SHIM_SCOPE_FILES")
           # The build can change .lake/package artifacts. Any later Lake/Lean
           # execution stays in a fresh PID/network namespace with no host grants.
           probe_mounts=(--ro-bind "$CI_SOURCE_OBJECTS" "$CI_SOURCE_OBJECTS")
@@ -1324,6 +1333,9 @@ jobs:
           if [ -n "${BASE_SHIM_REGISTRY:-}" ]; then
             probe_mounts+=(--ro-bind "$BASE_SHIM_REGISTRY" "$BASE_SHIM_REGISTRY"
                            --ro-bind "$BASE_SHIM_ROOT" "$BASE_SHIM_ROOT")
+          fi
+          if [ -n "${SHIM_SCOPE_FILES:-}" ]; then
+            probe_mounts+=(--ro-bind "$SHIM_SCOPE_FILES" "$SHIM_SCOPE_FILES")
           fi
           env -i /usr/bin/bwrap --tmpfs / \
             --ro-bind /usr /usr --ro-bind /etc /etc \
@@ -1349,7 +1361,7 @@ jobs:
       - name: Refresh CI reporting credentials after the build
         id: report-ci-api
         if: always()
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@cc55ea7cbd272d688189c09230497d6a9f9ff101
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@4d2579da7cdb5679ab523d281f61c73ffb502f75
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1713,14 +1725,14 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@cc55ea7cbd272d688189c09230497d6a9f9ff101
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: cc55ea7cbd272d688189c09230497d6a9f9ff101
+          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@cc55ea7cbd272d688189c09230497d6a9f9ff101
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@4d2579da7cdb5679ab523d281f61c73ffb502f75
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
