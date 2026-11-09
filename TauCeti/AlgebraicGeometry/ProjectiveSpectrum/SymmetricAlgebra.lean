@@ -100,10 +100,8 @@ theorem iSup_basicOpen_ι_eq_top {κ : Type*} (v : κ → M)
     (top_unique ?_)
   rintro a -
   -- The images of `v` generate over `R` because they span the generators `range ι`.
-  have ha : a ∈ Algebra.adjoin R (Set.range fun j ↦ _root_.SymmetricAlgebra.ι R M (v j)) := by
-    rw [← Algebra.adjoin_span, Set.range_comp', ← Submodule.map_span, hv, Submodule.map_top,
-      LinearMap.coe_range, SymmetricAlgebra.adjoin_range_ι]
-    exact Algebra.mem_top
+  have ha : a ∈ Algebra.adjoin R (Set.range fun j ↦ _root_.SymmetricAlgebra.ι R M (v j)) :=
+    (SymmetricAlgebra.adjoin_range_ι_comp_eq_top_of_span_eq_top v hv).ge Algebra.mem_top
   induction ha using Algebra.adjoin_induction with
   | mem x hx => exact Algebra.subset_adjoin hx
   | algebraMap r => exact Subalgebra.algebraMap_mem _ (algebraMap R (homogeneousSubmodule R M 0) r)
