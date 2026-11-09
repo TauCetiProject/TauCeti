@@ -49,6 +49,18 @@ theorem hasCompactSupport_sum_windingWeight
   ext z
   simp only [Finset.sum_apply]
 
+/-- At a point off every trace where the total index vanishes, the total winding weight
+vanishes. -/
+theorem sum_windingWeight_eq_zero_of_notMem {z : ℂ}
+    (hz : ∀ i ∈ s, z ∉ γ i '' uIcc (a i) (b i))
+    (hindex : ∑ i ∈ s, (w i : ℂ) * Contour.windingNumber (γ i) (a i) (b i) z = 0) :
+    ∑ i ∈ s, (w i : ℝ) * windingWeight (γ i) (a i) (b i) z = 0 := by
+  have h := congrArg Complex.re hindex
+  simp only [Complex.re_sum, Complex.mul_re, Complex.intCast_re, Complex.intCast_im,
+    zero_mul, sub_zero, Complex.zero_re] at h
+  refine Eq.trans (Finset.sum_congr rfl fun i hi ↦ ?_) h
+  rw [windingWeight_eq_of_notMem (hz i hi)]
+
 /-- Vanishing of the total index outside a domain suffices to localize the total winding weight.
 No vanishing condition is imposed on the individual curves. -/
 theorem tsupport_sum_windingWeight_subset
@@ -65,14 +77,7 @@ theorem tsupport_sum_windingWeight_subset
       windingWeight (γ i) (a i) (b i) y = windingWeight (γ i) (a i) (b i) z :=
     (Filter.eventually_all_finset s).mpr fun i hi ↦
       (hγ i hi).windingWeight_eventuallyEq_of_notMem (hclosed i hi) (hzK i hi)
-  have hsum : ∑ i ∈ s, (w i : ℝ) * windingWeight (γ i) (a i) (b i) z = 0 := by
-    have h := congrArg Complex.re (hindex z hzU)
-    simp only [Complex.re_sum, Complex.mul_re, Complex.intCast_re, Complex.intCast_im,
-      zero_mul, sub_zero, Complex.zero_re] at h
-    convert h using 1
-    apply Finset.sum_congr rfl
-    intro i hi
-    rw [windingWeight_eq_of_notMem (hzK i hi)]
+  have hsum := sum_windingWeight_eq_zero_of_notMem hzK (hindex z hzU)
   have hzero : (fun y ↦ ∑ i ∈ s, (w i : ℝ) * windingWeight (γ i) (a i) (b i) y) =ᶠ[nhds z] 0 := by
     filter_upwards [he] with y hy
     simp only [Pi.zero_apply]
