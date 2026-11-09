@@ -66,8 +66,7 @@ instance instIsReducedE8SimplyConnectedRootDatum : e8SimplyConnectedRootDatum.Is
   RootPairing.isReduced_of_pairing_comm _ fun i j => by
     simpa only [e8SimplyConnectedRootDatum_pairing] using e8Root_dotProduct_e8Coroot_comm i j
 
-/-- **The pinned integral datum is reduced**, uniformly in the valid Dynkin type. The simply-laced
-types use the symmetry of the root--coroot pairing, the others the bound on its absolute value. -/
+/-- **The pinned integral datum is reduced**, uniformly in the valid Dynkin type. -/
 theorem isReduced_simplyConnectedRootDatum (t : DynkinType) (ht : t.Valid) :
     (t.simplyConnectedRootDatum ht).IsReduced := by
   cases t with
