@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Convex.Cone.Basic
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Hermitian
 
+import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
+
 /-!
 # The cone of positive `(1,1)`-forms and the distance to it
 
@@ -151,6 +153,15 @@ private theorem two_mul_sub_sq_add_sub_sq (c d r s : ℝ) : 2 * (c - d) ^ 2 + (r
     rw [div_pow, Real.sq_sqrt zero_le_two]; ring
   rw [← h]; ring
 
+/-- In dimension four an orthogonal `J` has a unitary frame `e₀, e₁ = J e₀, e₂, e₃ = J e₂`. -/
+private theorem exists_orthonormalBasis_apply_eq [Fact (finrank ℝ V = 4)]
+    {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) :
+    ∃ e : OrthonormalBasis (Fin 4) ℝ V, J (e 0) = e 1 ∧ J (e 2) = e 3 := by
+  obtain ⟨b, hb⟩ := J.exists_adapted_orthonormalBasis
+    (fun v ↦ by rw [norm_eq_sqrt_real_inner, hJ, ← norm_eq_sqrt_real_inner]) 2
+    (by rw [(Fact.out : finrank ℝ V = 4)])
+  exact ⟨b, (hb 0).symm, (hb 1).symm⟩
+
 section Frame
 
 variable [Fact (finrank ℝ V = 4)] {o : Orientation ℝ V (Fin 4)} (hkl : 2 + 2 = finrank ℝ V)
@@ -227,11 +238,12 @@ private theorem hodgeStar_antiInvariantPart {F μ : ⋀[ℝ]^2 V} (hμ : o.hodge
     inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg h₀ h₂ hkl he hμ]
   ring
 
-omit hkl he in
+omit hkl he h₀ h₂ in
 /-- **Positive forms have norm at most their pairing with `ω`**: `‖F‖ ≤ ⟪ω, F⟫` for `F` in the
 positive cone. -/
-theorem norm_le_inner_kahlerForm_of_mem_positiveCone {F : ⋀[ℝ]^2 V} (hF : F ∈ J.positiveCone) :
-    ‖F‖ ≤ ⟪J.kahlerForm, F⟫ := by
+theorem norm_le_inner_kahlerForm_of_mem_positiveCone (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
+    {F : ⋀[ℝ]^2 V} (hF : F ∈ J.positiveCone) : ‖F‖ ≤ ⟪J.kahlerForm, F⟫ := by
+  obtain ⟨e, h₀, h₂⟩ := exists_orthonormalBasis_apply_eq hJ
   have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
   obtain ⟨o, he⟩ : ∃ o, e.toBasis.orientation = o := ⟨_, rfl⟩
   obtain ⟨μ, hμ, hFμ⟩ := o.exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq even_two hkl F
@@ -249,13 +261,13 @@ theorem norm_le_inner_kahlerForm_of_mem_positiveCone {F : ⋀[ℝ]^2 V} (hF : F 
   calc ‖F‖ ≤ 2 * c := (pow_le_pow_iff_left₀ (norm_nonneg F) (by linarith) two_ne_zero).1 this
     _ = ⟪J.kahlerForm, F⟫ := by ring
 
-omit hkl he in
+omit hkl he h₀ h₂ in
 /-- **Positive forms pair nonnegatively**: `⟪F, G⟫ ≥ 0` for positive `(1,1)`-forms `F` and `G`.
 For `F = a ω + μ` and `G = b ω + ν` this is `2 a b + ⟪μ, ν⟫ ≥ 0`, as `‖μ‖ ≤ √2 a` and
 `‖ν‖ ≤ √2 b`. -/
-theorem inner_nonneg_of_mem_positiveCone {F G : ⋀[ℝ]^2 V} (hF : F ∈ J.positiveCone)
-    (hG : G ∈ J.positiveCone) : 0 ≤ ⟪F, G⟫ := by
-  have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
+theorem inner_nonneg_of_mem_positiveCone (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {F G : ⋀[ℝ]^2 V}
+    (hF : F ∈ J.positiveCone) (hG : G ∈ J.positiveCone) : 0 ≤ ⟪F, G⟫ := by
+  obtain ⟨e, h₀, h₂⟩ := exists_orthonormalBasis_apply_eq hJ
   have hω := inner_kahlerForm_self_eq_two hJ
   have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
   obtain ⟨o, he⟩ : ∃ o, e.toBasis.orientation = o := ⟨_, rfl⟩
@@ -285,14 +297,14 @@ theorem inner_nonneg_of_mem_positiveCone {F G : ⋀[ℝ]^2 V} (hF : F ∈ J.posi
   rw [hFG]
   linarith [neg_abs_le ⟪μ, ν⟫, abs_real_inner_le_norm μ ν]
 
-omit hkl he in
+omit hkl he h₀ h₂ in
 /-- **A taming form controls the pairing with `ω` on the positive cone**: if
 `Ω(v, J v) ≥ ε ‖v‖²` for every `v`, then `ε ⟪ω, F⟫ ≤ ⟪Ω, F⟫` for every positive `(1,1)`-form
 `F`. -/
-theorem mul_inner_kahlerForm_le_inner_of_mem_positiveCone {Ω F : ⋀[ℝ]^2 V} {ε : ℝ}
-    (hΩ : ∀ v, ε * ‖v‖ ^ 2 ≤ ⟪Ω, ιMulti ℝ 2 ![v, J v]⟫) (hF : F ∈ J.positiveCone) :
-    ε * ⟪J.kahlerForm, F⟫ ≤ ⟪Ω, F⟫ := by
-  have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
+theorem mul_inner_kahlerForm_le_inner_of_mem_positiveCone (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
+    {Ω F : ⋀[ℝ]^2 V} {ε : ℝ} (hΩ : ∀ v, ε * ‖v‖ ^ 2 ≤ ⟪Ω, ιMulti ℝ 2 ![v, J v]⟫)
+    (hF : F ∈ J.positiveCone) : ε * ⟪J.kahlerForm, F⟫ ≤ ⟪Ω, F⟫ := by
+  obtain ⟨e, h₀, h₂⟩ := exists_orthonormalBasis_apply_eq hJ
   have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
   obtain ⟨o, he⟩ : ∃ o, e.toBasis.orientation = o := ⟨_, rfl⟩
   obtain ⟨ν, hν, hΩν⟩ := o.exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq even_two hkl Ω
@@ -308,7 +320,7 @@ theorem mul_inner_kahlerForm_le_inner_of_mem_positiveCone {Ω F : ⋀[ℝ]^2 V} 
     rw [← hermitianForm_apply_self, hermitianForm_apply_eq h₀ h₂ hkl he,
       o.smul_sub_hodgeStar_eq hkl hν hΩν, real_inner_self_eq_norm_sq, ← hc] at h
     rw [inner_add_left, real_inner_smul_left, inner_kahlerForm_ιMulti hJ,
-      inner_apply_apply_of_orthonormalBasis h₀ h₂, real_inner_self_eq_norm_sq]
+      hJ, real_inner_self_eq_norm_sq]
     linarith
   -- The anti-`J`-invariant part of `Ω` is orthogonal to `F`.
   obtain ⟨hA, hAω⟩ := hodgeStar_antiInvariantPart hkl he h₀ h₂ hν hΩν
@@ -317,20 +329,20 @@ theorem mul_inner_kahlerForm_le_inner_of_mem_positiveCone {Ω F : ⋀[ℝ]^2 V} 
     rw [eq_smul_kahlerForm_add_of_mem_positiveCone hkl he h₀ h₂ hμ hFμ hF, inner_add_right,
       real_inner_smul_right, real_inner_comm J.kahlerForm, hAω, mul_zero, zero_add]
     exact o.inner_eq_zero_of_hodgeStar_eq_self_of_hodgeStar_eq_neg even_two hkl hA hμ
-  have hGF := inner_nonneg_of_mem_positiveCone h₀ h₂ hG hF
+  have hGF := inner_nonneg_of_mem_positiveCone hJ hG hF
   have hΩF : ⟪Ω, F⟫ = ⟪Ω - ν - c • J.kahlerForm, F⟫ + ⟪G, F⟫ + ε * ⟪J.kahlerForm, F⟫ := by
     simp only [G, inner_sub_left, inner_add_left, real_inner_smul_left]
     ring
   linarith
 
-omit hkl he in
+omit hkl he h₀ h₂ in
 /-- **A taming form controls the norm on the positive cone**: if `Ω(v, J v) ≥ ε ‖v‖²` for every
 `v`, with `ε ≥ 0`, then `ε ‖F‖ ≤ ⟪Ω, F⟫` for every positive `(1,1)`-form `F`. -/
-theorem mul_norm_le_inner_of_mem_positiveCone {Ω F : ⋀[ℝ]^2 V} {ε : ℝ} (hε : 0 ≤ ε)
-    (hΩ : ∀ v, ε * ‖v‖ ^ 2 ≤ ⟪Ω, ιMulti ℝ 2 ![v, J v]⟫) (hF : F ∈ J.positiveCone) :
-    ε * ‖F‖ ≤ ⟪Ω, F⟫ :=
-  (mul_le_mul_of_nonneg_left (norm_le_inner_kahlerForm_of_mem_positiveCone h₀ h₂ hF)
-    hε).trans (mul_inner_kahlerForm_le_inner_of_mem_positiveCone h₀ h₂ hΩ hF)
+theorem mul_norm_le_inner_of_mem_positiveCone (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
+    {Ω F : ⋀[ℝ]^2 V} {ε : ℝ} (hε : 0 ≤ ε) (hΩ : ∀ v, ε * ‖v‖ ^ 2 ≤ ⟪Ω, ιMulti ℝ 2 ![v, J v]⟫)
+    (hF : F ∈ J.positiveCone) : ε * ‖F‖ ≤ ⟪Ω, F⟫ :=
+  (mul_le_mul_of_nonneg_left (norm_le_inner_kahlerForm_of_mem_positiveCone hJ hF)
+    hε).trans (mul_inner_kahlerForm_le_inner_of_mem_positiveCone hJ hΩ hF)
 
 /-- For `G = c' ω + ν` with anti-self-dual `ν`, the squared distance from `F` splits along
 `(ℝ ω)ᗮ ∩ Λ⁺`, `ℝ ω` and `Λ⁻`: it is `‖A‖² + 2 (c - c')² + ‖F⁻ - ν‖²`, where `c = ⟪ω, F⟫ / 2` and
@@ -482,15 +494,15 @@ theorem infDist_positiveCone_le {F μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ 
   nlinarith [hm _ h₁, hm _ h₂', norm_nonneg (F - μ - c • J.kahlerForm),
     mul_nonneg (mul_nonneg hs.le hK₀) (norm_nonneg (F - μ - c • J.kahlerForm))]
 
-omit hkl he in
+omit hkl he h₀ h₂ in
 /-- **Mass control by a taming form and the distance to the positive cone**: if
 `Ω(v, J v) ≥ ε ‖v‖²` for every `v`, with `ε ≥ 0`, then every two-form `F` satisfies
 `ε ‖F‖ ≤ ⟪Ω, F⟫ + (ε + ‖Ω‖) · dist(F, P)`, where `P` is the cone of positive `(1,1)`-forms. -/
-theorem mul_norm_le_inner_add_mul_infDist {Ω : ⋀[ℝ]^2 V} {ε : ℝ} (hε : 0 ≤ ε)
-    (hΩ : ∀ v, ε * ‖v‖ ^ 2 ≤ ⟪Ω, ιMulti ℝ 2 ![v, J v]⟫) (F : ⋀[ℝ]^2 V) :
+theorem mul_norm_le_inner_add_mul_infDist (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {Ω : ⋀[ℝ]^2 V}
+    {ε : ℝ} (hε : 0 ≤ ε) (hΩ : ∀ v, ε * ‖v‖ ^ 2 ≤ ⟪Ω, ιMulti ℝ 2 ![v, J v]⟫) (F : ⋀[ℝ]^2 V) :
     ε * ‖F‖ ≤ ⟪Ω, F⟫ + (ε + ‖Ω‖) * infDist F (J.positiveCone : Set (⋀[ℝ]^2 V)) := by
   obtain ⟨G, hG, hd⟩ := J.positiveCone.isClosed.exists_infDist_eq_dist J.positiveCone.nonempty F
-  have hGn := mul_norm_le_inner_of_mem_positiveCone h₀ h₂ hε hΩ hG
+  have hGn := mul_norm_le_inner_of_mem_positiveCone hJ hε hΩ hG
   rw [hd, dist_eq_norm]
   have h1 : ‖F‖ ≤ ‖G‖ + ‖F - G‖ := norm_le_norm_add_norm_sub' F G
   have h2 : ⟪Ω, G⟫ ≤ ⟪Ω, F⟫ + ‖Ω‖ * ‖F - G‖ := by
