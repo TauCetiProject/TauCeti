@@ -177,7 +177,7 @@ private theorem splitModule_eq_of_cast_eq (s : ℕ) (c d : ℤ)
 /-- A split proper class gives its explicit module over the actual product order;
 composition is multiplication of these modules. -/
 def splitProperClassModule (s : ℕ) [NeZero s] :
-    SplitProperClass s →* Submodule (QuadraticOrder.productSubalgebra s) (ℤ × ℤ) where
+    SplitProperClass s →* Submodule (QuadraticOrder.productSubalgebra (s : ℤ)) (ℤ × ℤ) where
   toFun q := splitModule s (splitProperClassEquivUnits s q : ZMod s).val
   map_one' := by
     rw [map_one, Units.val_one]

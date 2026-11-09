@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Contraction.TensorTrick.Perturbation.Basic
 public import TauCeti.LinearAlgebra.TensorCoalgebra.GradedCoalgHom
-import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.TensorProduct.PerturbedCoLeibniz
 
 /-!
 # The perturbed tensor-trick homotopy
@@ -102,50 +102,14 @@ theorem isGradedCoderivationAlong_reducedTensorWords_perturb_homotopy
       reducedTensorWords_homotopy, ← ReducedTensorWords.map_comp] using
       c.deconcatenation_comp_reducedTensorWordsHomotopy G
   have hΔδ := hδ.deconcatenation_comp_eq
-  have hΔδh : deconcatenation R M ∘ₗ δ ∘ₗ h =
-      ((TensorProduct.map δ LinearMap.id + TensorProduct.map τ δ) ∘ₗ
-        (TensorProduct.map h π + TensorProduct.map τ h)) ∘ₗ deconcatenation R M := by
-    rw [← LinearMap.comp_assoc, hΔδ, LinearMap.comp_assoc, hΔh, LinearMap.comp_assoc]
-  set C := TensorProduct.map h' (i' ∘ₗ p') + TensorProduct.map τ h'
-  have h1 : deconcatenation R M ∘ₗ h' + deconcatenation R M ∘ₗ h' ∘ₗ δ ∘ₗ h =
-      (TensorProduct.map h π + TensorProduct.map τ h) ∘ₗ deconcatenation R M := by
-    rw [← hΔh, ← LinearMap.comp_add, hfix]
-  have h2 : C ∘ₗ deconcatenation R M + C ∘ₗ deconcatenation R M ∘ₗ δ ∘ₗ h =
-      (TensorProduct.map h π + TensorProduct.map τ h) ∘ₗ deconcatenation R M := by
-    -- Of the eight tensor terms, four vanish by the side conditions. The remaining terms
-    -- combine using the fixed-point equations for `h'`, `p'`, and `i'`.
-    rw [hΔδh]
-    simp only [C, LinearMap.add_comp, LinearMap.comp_add, ← LinearMap.comp_assoc,
-      ← TensorProduct.map_comp, LinearMap.id_comp]
-    simp only [LinearMap.comp_assoc, hp'π, hp'h, hh'π, hh'h, hh'τh,
-      hττ, LinearMap.id_comp, LinearMap.comp_id,
-      TensorProduct.map_zero_left, TensorProduct.map_zero_right, LinearMap.zero_comp,
-      LinearMap.comp_zero, add_zero, zero_add]
-    have hpfix : p' + p' ∘ₗ δ ∘ₗ h = p := by
-      simpa only [Module.End.mul_eq_comp, LinearMap.comp_add, Module.End.one_eq_id,
-        LinearMap.comp_id] using T.perturb_proj_comp_one_add_mul δ hsq hU
-    have hπ : i' ∘ₗ p + h' ∘ₗ δ ∘ₗ π = π := by
-      simpa only [LinearMap.add_comp, LinearMap.comp_assoc] using
-        congrArg (· ∘ₗ p) hih
-    have e1 := congrArg (fun f ↦ TensorProduct.map h' (i' ∘ₗ f) ∘ₗ deconcatenation R M) hpfix
-    have e2 := congrArg (fun f ↦ TensorProduct.map f (i' ∘ₗ p) ∘ₗ deconcatenation R M) hfix
-    have e3 := congrArg (fun f ↦ TensorProduct.map τ f ∘ₗ deconcatenation R M) hfix
-    have e4 := congrArg (fun f ↦ TensorProduct.map h f ∘ₗ deconcatenation R M) hπ
-    simp only [LinearMap.comp_add, TensorProduct.map_add_left, TensorProduct.map_add_right,
-      LinearMap.add_comp] at e1 e2 e3 e4
-    linear_combination (norm := abel) e1 + e2 + e3 + e4
-  -- Both candidates agree after `1 + δ h`, so surjectivity gives the co-Leibniz rule.
-  have hsurj := ((Module.End.isUnit_iff _).mp hU).2
-  have heq : deconcatenation R M ∘ₗ h' = C ∘ₗ deconcatenation R M := by
-    refine LinearMap.ext fun z ↦ ?_
-    obtain ⟨w, rfl⟩ := hsurj z
-    have e1 := LinearMap.congr_fun h1 w
-    have e2 := LinearMap.congr_fun h2 w
-    simp only [LinearMap.add_apply, LinearMap.comp_apply] at e1 e2
-    simp only [LinearMap.comp_apply, LinearMap.add_apply, one_apply_eq_self,
-      mul_apply_eq_comp, map_add, e1, e2]
+  have hpfix : p' + p' ∘ₗ δ ∘ₗ h = p := by
+    simpa only [Module.End.mul_eq_comp, LinearMap.comp_add, Module.End.one_eq_id,
+      LinearMap.comp_id] using T.perturb_proj_comp_one_add_mul δ hsq hU
+  -- The co-Leibniz rule follows from the fixed-point equations and the side conditions.
+  have heq := comp_perturbed_homotopy_eq hfix hih hpfix hp'h hp'π hh'h hh'π hh'τh hττ hΔh hΔδ
+    ((Module.End.isUnit_iff _).mp hU).2
   rw [isGradedCoderivationAlong_iff, LinearMap.rTensor_def]
-  simpa only [C, ← LinearMap.comp_assoc, ← TensorProduct.map_comp,
+  simpa only [← LinearMap.comp_assoc, ← TensorProduct.map_comp,
     LinearMap.id_comp, LinearMap.comp_id, LinearMap.add_comp] using heq
 
 end TauCeti.LinearSpecialContraction
