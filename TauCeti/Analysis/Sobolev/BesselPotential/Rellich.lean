@@ -31,9 +31,9 @@ have no convergent subsequence.
 
 ## The Fourier argument
 
-Write `⟨ξ⟩ = (1 + ‖ξ‖ ^ 2) ^ (1 / 2)`. The isometries `u ↦ 𝓕 (J^t u)` identify `H^t` with `L²`,
-and in these coordinates the operator `u ↦ φ u` from `H^s` to `H^r` becomes the integral operator
-with the scalar kernel
+Write `⟨ξ⟩ = (1 + ‖ξ‖ ^ 2) ^ (1 / 2)`. The isometries `u ↦ 𝓕 (J^t u)` identify `H^t` with `L²`
+(`BesselPotentialSpace.fourierWeightedₗᵢ`), and in these coordinates the operator `u ↦ φ u` from
+`H^s` to `H^r` becomes the integral operator with the scalar kernel
 
 `k(ξ, η) = ⟨ξ⟩ ^ r 𝓕 φ (ξ - η) ⟨η⟩ ^ (-s)`,
 
@@ -247,53 +247,26 @@ private theorem isCompactOperator_rellichOperator [FiniteDimensional ℂ F] (h :
       (integral_nonneg rellichBound_nonneg))]
     exact hRε
 
-/-- The isometry `u ↦ 𝓕 (J^t u)` from `H^t` onto `L²`, the weighted Fourier transform. -/
-private def fourierWeighted (t : ℝ) : H^{t}(E, F) ≃L[ℂ] Lp F 2 (volume : Measure E) :=
-  (toLpₗᵢ E F t 2).toContinuousLinearEquiv.trans (Lp.fourierTransformₗᵢ E F).toContinuousLinearEquiv
-
-private theorem fourierWeighted_apply (t : ℝ) (u : H^{t}(E, F)) :
-    fourierWeighted t u = 𝓕 u.toLp := by
-  rw [fourierWeighted, ContinuousLinearEquiv.trans_apply,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv, toLpₗᵢ_apply]
-  -- The Fourier transform on `L²` is by definition `Lp.fourierTransformₗᵢ`.
-  rfl
-
-/-- On a Schwartz function `u`, the weighted Fourier transform is the function `⟨ξ⟩ ^ t 𝓕 u`. -/
-private theorem fourierWeighted_toBesselPotentialSpaceCLM (t : ℝ) (u : 𝓢(E, F)) :
-    fourierWeighted t (SchwartzMap.toBesselPotentialSpaceCLM t 2 u) =ᵐ[volume]
-      fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (t / 2) : ℝ) : ℂ) • 𝓕 u ξ := by
-  have hw : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
-  have h : fourierWeighted t (SchwartzMap.toBesselPotentialSpaceCLM t 2 u) =
-      (SchwartzMap.smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ))
-        (𝓕 u)).toLp 2 := by
-    rw [fourierWeighted_apply, SchwartzMap.toLp_toBesselPotentialSpaceCLM,
-      SchwartzMap.toLp_fourier_eq, SchwartzMap.fourierMultiplierCLM_apply, fourier_fourierInv_eq]
-  rw [h]
-  filter_upwards [SchwartzMap.coeFn_toLp (SchwartzMap.smulLeftCLM F
-    (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) (𝓕 u)) 2 volume] with ξ hξ
-  rw [hξ, SchwartzMap.smulLeftCLM_apply_apply hw]
-
 /-- In weighted Fourier coordinates, `u ↦ φ u` from `H^s` to `H^r` is the integral operator with
 the kernel `⟨ξ⟩ ^ r 𝓕 φ (ξ - η) ⟨η⟩ ^ (-s)`: `𝓕 (φ u) = 𝓕 φ ⋆ 𝓕 u`. -/
-private theorem fourierWeighted_comp_eq (φ : 𝓢(E, ℂ)) (h : r ≤ s) :
-    (fourierWeighted (E := E) (F := F) r : H^{r}(E, F) →L[ℂ] Lp F 2 (volume : Measure E)) ∘L
+private theorem fourierWeightedₗᵢ_comp_eq (φ : 𝓢(E, ℂ)) (h : r ≤ s) :
+    (fourierWeightedₗᵢ E F r).toLinearIsometry.toContinuousLinearMap ∘L
         (inclusion h ∘L smulLeftCLM s φ) =
-      rellichOperator φ h ∘L
-        (fourierWeighted (E := E) (F := F) s : H^{s}(E, F) →L[ℂ] Lp F 2 (volume : Measure E)) := by
+      rellichOperator φ h ∘L (fourierWeightedₗᵢ E F s).toLinearIsometry.toContinuousLinearMap := by
   refine continuousLinearMap_ext ENNReal.ofNat_ne_top fun u ↦ ?_
   -- On a Schwartz function `u`, `φ u` is the Schwartz function `φ • u`.
   have hφu : inclusion h (smulLeftCLM s φ (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)) =
       SchwartzMap.toBesselPotentialSpaceCLM r 2 (SchwartzMap.smulLeftCLM F (φ : E → ℂ) u) :=
     ext (by simp [smulLeftCLM_toTemperedDistributionCLM_eq φ.hasTemperateGrowth])
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, hφu]
+  simp only [ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap,
+    LinearIsometryEquiv.coe_toLinearIsometry, hφu]
   refine (TauCeti.integralOperatorLp_eq_iff.2 ?_).symm
-  filter_upwards [fourierWeighted_toBesselPotentialSpaceCLM r (SchwartzMap.smulLeftCLM F
+  filter_upwards [fourierWeightedₗᵢ_toBesselPotentialSpaceCLM r (SchwartzMap.smulLeftCLM F
     (φ : E → ℂ) u)] with ξ hξ
   rw [hξ, SchwartzMap.fourier_smulLeftCLM_apply, ← integral_sub_left_eq_self
     (fun t ↦ 𝓕 φ t • 𝓕 u (ξ - t)) volume ξ, ← integral_smul]
   refine integral_congr_ae ?_
-  filter_upwards [fourierWeighted_toBesselPotentialSpaceCLM s u] with η hη
+  filter_upwards [fourierWeightedₗᵢ_toBesselPotentialSpaceCLM s u] with η hη
   -- The weights `⟨η⟩ ^ (-s)` and `⟨η⟩ ^ s` cancel.
   have hcancel : (((1 + ‖η‖ ^ 2) ^ (-s / 2) : ℝ) : ℂ) * (((1 + ‖η‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) =
       1 := by
@@ -312,16 +285,17 @@ theorem isCompactOperator_inclusion_comp_smulLeftCLM [FiniteDimensional ℂ F] (
     (h : r < s) :
     IsCompactOperator (inclusion h.le ∘L smulLeftCLM s φ : H^{s}(E, F) →L[ℂ] H^{r}(E, F)) := by
   have heq : (inclusion h.le ∘L smulLeftCLM s φ : H^{s}(E, F) →L[ℂ] H^{r}(E, F)) =
-      ((fourierWeighted (E := E) (F := F) r).symm :
-          Lp F 2 (volume : Measure E) →L[ℂ] H^{r}(E, F)) ∘L rellichOperator φ h.le ∘L
-        (fourierWeighted (E := E) (F := F) s : H^{s}(E, F) →L[ℂ] Lp F 2 (volume : Measure E)) := by
-    rw [← fourierWeighted_comp_eq φ h.le, ← ContinuousLinearMap.comp_assoc]
-    ext u
-    simp
+      (fourierWeightedₗᵢ E F r).symm.toLinearIsometry.toContinuousLinearMap ∘L
+        rellichOperator φ h.le ∘L
+          (fourierWeightedₗᵢ E F s).toLinearIsometry.toContinuousLinearMap := by
+    rw [← fourierWeightedₗᵢ_comp_eq φ h.le, ← ContinuousLinearMap.comp_assoc]
+    ext1 u
+    simp only [ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap,
+      LinearIsometryEquiv.coe_toLinearIsometry, LinearIsometryEquiv.symm_apply_apply]
   rw [heq]
   exact ((isCompactOperator_rellichOperator (F := F) (φ := φ) h).comp_clm
-    (fourierWeighted (E := E) (F := F) s : H^{s}(E, F) →L[ℂ] Lp F 2 (volume : Measure E))).clm_comp
-    ((fourierWeighted (E := E) (F := F) r).symm : Lp F 2 (volume : Measure E) →L[ℂ] H^{r}(E, F))
+    (fourierWeightedₗᵢ E F s).toLinearIsometry.toContinuousLinearMap).clm_comp
+    (fourierWeightedₗᵢ E F r).symm.toLinearIsometry.toContinuousLinearMap
 
 /-- **Rellich's theorem for a common compact support.** For a finite-dimensional complex inner
 product space `F`, a scalar Schwartz function `φ` and real orders `r < s`, a bounded subset `S` of

@@ -63,12 +63,12 @@ private theorem exists_smulLeftCLM_fourier_eq_and_norm_le (h : r ≤ s) (u : H^{
     rw [Complex.norm_real, Real.norm_of_nonneg (by positivity)]
     exact Real.rpow_le_one_of_one_le_of_nonpos (by simp)
       (div_nonpos_of_nonpos_of_nonneg (by linarith) zero_le_two)
-  -- The weighted Fourier transform at order `s` is `𝓕 u.toLp`.
-  set G₀ : Lp F 2 (volume : Measure E) := 𝓕 u.toLp
+  -- The weighted Fourier transform at order `s` is `fourierWeightedₗᵢ E F s u`.
+  set G₀ : Lp F 2 (volume : Measure E) := fourierWeightedₗᵢ E F s u with hG₀_def
   have hG₀ : smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 u.toDistr) =
       G₀ := by
     rw [← fourier_besselPotential_eq_smulLeftCLM_fourier_apply, u.bessel_toDistr_eq_toLp,
-      Lp.fourier_toTemperedDistribution_eq]
+      Lp.fourier_toTemperedDistribution_eq, hG₀_def, fourierWeightedₗᵢ_apply]
   have hmem : MemLp (fun x ↦ w x • G₀ x) 2 (volume : Measure E) :=
     (Lp.memLp G₀).of_le ((hw.1.continuous.aestronglyMeasurable).smul
       (Lp.aestronglyMeasurable G₀)) (.of_forall fun x ↦ by
@@ -88,7 +88,7 @@ private theorem exists_smulLeftCLM_fourier_eq_and_norm_le (h : r ≤ s) (u : H^{
     ext φ
     rw [Lp.smulLeftCLM_toTemperedDistribution_apply hw, Lp.toTemperedDistribution_apply]
     exact integral_congr_ae (hmem.coeFn_toLp.mono fun x hx ↦ by simp only [hx])
-  · rw [← norm_toLp_eq, ← Lp.norm_fourier_eq u.toLp]
+  · rw [← (fourierWeightedₗᵢ E F s).norm_map u]
     refine Lp.norm_le_norm_of_ae_le (hmem.coeFn_toLp.mono fun x hx ↦ ?_)
     rw [hx, norm_smul]
     exact mul_le_of_le_one_left (norm_nonneg _) (hw_le x)

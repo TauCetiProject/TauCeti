@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
-import Mathlib.Analysis.Fourier.LpSpace
+public import Mathlib.Analysis.Fourier.LpSpace
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 
@@ -24,8 +24,9 @@ pseudodifferential operators, therefore extend uniquely to bounded operators on 
 For `p = 2` and values in a complex Hilbert space `F`, the norm is computed on the Fourier side by
 Plancherel's theorem: the `H^s` norm of `u` is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`, and more generally
 an element of `H^s` whose weighted Fourier transform `⟨ξ⟩ ^ s 𝓕 u` is represented by `G ∈ L²`
-has norm `‖G‖`. The weighted Fourier transform of a Schwartz function lies in every `L^q` for any
-normed complex `F`.
+has norm `‖G‖`. The weighted Fourier transform `u ↦ 𝓕 (J^s u)` is thus a linear isometry from
+`H^s` onto `L²`, which on a Schwartz function `u` is `⟨ξ⟩ ^ s 𝓕 u`. The weighted Fourier transform
+of a Schwartz function lies in every `L^q` for any normed complex `F`.
 
 ## Main declarations
 
@@ -38,6 +39,8 @@ normed complex `F`.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM`: for Hilbert-space values, the `H^s` norm of a
   Schwartz function `u` is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`.
 * `SchwartzMap.memLp_one_add_norm_sq_rpow_smul_fourier`: `⟨ξ⟩ ^ s 𝓕 u` lies in every `L^q`.
+* `BesselPotentialSpace.fourierWeightedₗᵢ`: for Hilbert-space values, the weighted Fourier
+  transform `u ↦ 𝓕 (J^s u)`, a linear isometry from `H^s` onto `L²`.
 
 ## References
 
@@ -143,5 +146,36 @@ theorem norm_eq_of_smulLeftCLM_fourier_eq {F : Type*} [NormedAddCommGroup F]
   simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply]
   rw [← Lp.fourier_toTemperedDistribution_eq, ← u.bessel_toDistr_eq_toLp,
     fourier_besselPotential_eq_smulLeftCLM_fourier_apply, h]
+
+variable (E) in
+/-- The weighted Fourier transform `u ↦ 𝓕 (J^t u)`, a linear isometry from `H^t(E, F)` onto
+`L²(E, F)` for a complex Hilbert space `F`. On a Schwartz function `u` it is the function
+`⟨ξ⟩ ^ t 𝓕 u` (`BesselPotentialSpace.fourierWeightedₗᵢ_toBesselPotentialSpaceCLM`). -/
+def fourierWeightedₗᵢ (F : Type*) [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+    [CompleteSpace F] (t : ℝ) : H^{t}(E, F) ≃ₗᵢ[ℂ] Lp F 2 (volume : Measure E) :=
+  (toLpₗᵢ E F t 2).trans (Lp.fourierTransformₗᵢ E F)
+
+@[simp]
+theorem fourierWeightedₗᵢ_apply {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+    [CompleteSpace F] (t : ℝ) (u : H^{t}(E, F)) : fourierWeightedₗᵢ E F t u = 𝓕 u.toLp := by
+  rw [fourierWeightedₗᵢ, LinearIsometryEquiv.trans_apply, toLpₗᵢ_apply]
+  -- The Fourier transform on `L²` is by definition `Lp.fourierTransformₗᵢ`.
+  rfl
+
+/-- On a Schwartz function `u`, the weighted Fourier transform is the function `⟨ξ⟩ ^ t 𝓕 u`. -/
+theorem fourierWeightedₗᵢ_toBesselPotentialSpaceCLM {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℂ F] [CompleteSpace F] (t : ℝ) (u : 𝓢(E, F)) :
+    fourierWeightedₗᵢ E F t (SchwartzMap.toBesselPotentialSpaceCLM t 2 u) =ᵐ[volume]
+      fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (t / 2) : ℝ) : ℂ) • 𝓕 u ξ := by
+  have hw : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
+  have h : fourierWeightedₗᵢ E F t (SchwartzMap.toBesselPotentialSpaceCLM t 2 u) =
+      (SchwartzMap.smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ))
+        (𝓕 u)).toLp 2 := by
+    rw [fourierWeightedₗᵢ_apply, SchwartzMap.toLp_toBesselPotentialSpaceCLM,
+      SchwartzMap.toLp_fourier_eq, SchwartzMap.fourierMultiplierCLM_apply, fourier_fourierInv_eq]
+  rw [h]
+  filter_upwards [SchwartzMap.coeFn_toLp (SchwartzMap.smulLeftCLM F
+    (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) (𝓕 u)) 2 volume] with ξ hξ
+  rw [hξ, SchwartzMap.smulLeftCLM_apply_apply hw]
 
 end BesselPotentialSpace
