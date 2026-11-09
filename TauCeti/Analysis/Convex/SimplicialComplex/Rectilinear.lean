@@ -307,6 +307,20 @@ private theorem finite_image_apply
       mem_closedRegionBetween.2 ⟨hx, le_of_forall_le_of_mem_convexHull hc.2.1 hx,
         le_of_forall_le_of_mem_convexHull hc.2.2 hx⟩⟩, mem_graphOn.2 ⟨hx, rfl⟩⟩
 
+/-- A point above the interior of a face `t ⊆ s` that lies on the graph of a section over `t`
+between two sections over `s` is in the intrinsic interior of a cell contained in the band. -/
+private theorem exists_mem_rectilinearCells_of_graph {s t : Finset E} {a b c : E →ᴬ[ℝ] ℝ} {x : E}
+    {y : ℝ} (hts : t ⊆ s)
+    (hc : (t, c) ∈ S) (hac : ∀ v ∈ t, a v ≤ c v) (hcb : ∀ v ∈ t, c v ≤ b v)
+    (hxt : x ∈ intrinsicInterior ℝ (convexHull ℝ (t : Set E))) (hcy : c x = y) :
+    ∃ D ∈ rectilinearCells S, (x, y) ∈ intrinsicInterior ℝ D ∧
+      D ⊆ closedRegionBetween a b (convexHull ℝ (s : Set E)) := by
+  refine ⟨(convexHull ℝ (t : Set E)).graphOn c, .inl ⟨(t, c), hc, rfl⟩, ?_, ?_⟩
+  · rw [ContinuousAffineMap.intrinsicInterior_graphOn]
+    exact mem_graphOn.2 ⟨hxt, hcy⟩
+  · rw [← closedRegionBetween_self]
+    exact closedRegionBetween_convexHull_subset_of_le (d := c) (Finset.coe_subset.2 hts) hac hcb
+
 /-- **Covering a band by smaller cells.** Every point of the closed band between two ordered
 sections over a face lies in the intrinsic interior of a cell contained in that band. -/
 private theorem exists_mem_intrinsicInterior (hS : ∀ p ∈ S, p.1 ∈ K.faces)
@@ -330,14 +344,6 @@ private theorem exists_mem_intrinsicInterior (hS : ∀ p ∈ S, p.1 ∈ K.faces)
   have habt : ∀ v ∈ t, a v ≤ b v := fun v hv ↦ hab v (hts hv)
   -- the sections over `t` between `a` and `b`
   set T := {c : E →ᴬ[ℝ] ℝ | (t, c) ∈ S ∧ (∀ v ∈ t, a v ≤ c v) ∧ ∀ v ∈ t, c v ≤ b v}
-  have hsub : ∀ {c d : E →ᴬ[ℝ] ℝ}, c ∈ T → d ∈ T →
-      closedRegionBetween c d (convexHull ℝ (t : Set E)) ⊆
-        closedRegionBetween a b (convexHull ℝ (s : Set E)) := by
-    rintro c d hc hd ⟨p, q⟩ hpq
-    obtain ⟨hp, hcq, hqd⟩ := mem_closedRegionBetween.1 hpq
-    exact mem_closedRegionBetween.2 ⟨hts' hp,
-      (le_of_forall_le_of_mem_convexHull hc.2.1 hp).trans hcq,
-      hqd.trans (le_of_forall_le_of_mem_convexHull hd.2.2 hp)⟩
   -- their values at `x` form a finite set
   have hV : ((fun c : E →ᴬ[ℝ] ℝ ↦ c x) '' T).Finite := finite_image_apply hSlf habt hxt'
   -- the largest value at most `y` and the smallest value at least `y`
@@ -348,18 +354,10 @@ private theorem exists_mem_intrinsicInterior (hS : ∀ p ∈ S, p.1 ∈ K.faces)
   replace h₀ : c₀ x ≤ y := h₀
   replace h₁ : y ≤ c₁ x := h₁
   -- if one of them takes the value `y`, the point lies in the open part of its graph
-  have hgraph : ∀ {c : E →ᴬ[ℝ] ℝ}, c ∈ T → c x = y → ∃ D ∈ rectilinearCells S,
-      (x, y) ∈ intrinsicInterior ℝ D ∧ D ⊆ closedRegionBetween a b (convexHull ℝ (s : Set E)) := by
-    intro c hc hcy
-    refine ⟨(convexHull ℝ (t : Set E)).graphOn c, .inl ⟨(t, c), hc.1, rfl⟩, ?_, ?_⟩
-    · rw [ContinuousAffineMap.intrinsicInterior_graphOn]
-      exact mem_graphOn.2 ⟨hxt, hcy⟩
-    · rw [← closedRegionBetween_self]
-      exact hsub hc hc
   rcases h₀.eq_or_lt with h₀ | h₀
-  · exact hgraph hT₀ h₀
+  · exact exists_mem_rectilinearCells_of_graph hts hT₀.1 hT₀.2.1 hT₀.2.2 hxt h₀
   rcases h₁.eq_or_lt with h₁ | h₁
-  · exact hgraph hT₁ h₁.symm
+  · exact exists_mem_rectilinearCells_of_graph hts hT₁.1 hT₁.2.1 hT₁.2.2 hxt h₁.symm
   -- otherwise the two sections are consecutive and the point lies in the open band between them
   have hle : ∀ v ∈ t, c₀ v ≤ c₁ v := le_of_lt hSle hT₀.1 hT₁.1 hxt' (h₀.trans h₁)
   have hlt : ∃ v ∈ t, c₀ v < c₁ v := by
@@ -378,7 +376,8 @@ private theorem exists_mem_intrinsicInterior (hS : ∀ p ∈ S, p.1 ∈ K.faces)
         (le_of_forall_le_of_mem_convexHull hc₁ hxt').antisymm (hmin (c x) ⟨⟨c, hcT, rfl⟩, hcy⟩)
       exact .inr fun v hv ↦ eq_of_le_of_mem_intrinsicInterior hc₁ hxt hcx (subset_convexHull ℝ _ hv)
   refine ⟨closedRegionBetween c₀ c₁ (convexHull ℝ (t : Set E)),
-    .inr ⟨t, c₀, c₁, hT₀.1, hT₁.1, hcons, rfl⟩, ?_, hsub hT₀ hT₁⟩
+    .inr ⟨t, c₀, c₁, hT₀.1, hT₁.1, hcons, rfl⟩, ?_,
+    closedRegionBetween_convexHull_subset_of_le (Finset.coe_subset.2 hts) hT₀.2.1 hT₁.2.2⟩
   rw [intrinsicInterior_closedRegionBetween (fun v hv ↦ le_of_forall_le_of_mem_convexHull hle hv)
     ⟨x, hxt', h₀.trans h₁⟩]
   exact ⟨hxt, h₀, h₁⟩

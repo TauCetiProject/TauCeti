@@ -39,6 +39,12 @@ adjoints and eigenvalues assume `E` finite-dimensional.
 * `TauCeti.analysisMap`, `TauCeti.synthesisMap`: the analysis and synthesis maps of a family.
 * `TauCeti.inner_synthesisMap_left`, `TauCeti.adjoint_analysisMap`: synthesis is the adjoint of
   analysis.
+* `TauCeti.linearIndependent_iff_injective_synthesisMap`: synthesis is injective exactly for a
+  linearly independent family.
+* `TauCeti.bijective_synthesisMap`: synthesis is bijective for a linearly independent spanning
+  family.
+* `TauCeti.bilinearComp_synthesisMap_eq_sum`: a bilinear form read through synthesis, expanded in
+  coordinates.
 * `TauCeti.frameOperator`, `TauCeti.gramOperator`: the frame and Gram operators.
 * `TauCeti.gramOperator_eq_toEuclideanLin_gram`: the Gram operator is the Gram matrix acting on
   coefficient space.
@@ -49,6 +55,8 @@ adjoints and eigenvalues assume `E` finite-dimensional.
 * `TauCeti.isPositive_frameOperator`, `TauCeti.isPositive_gramOperator`: both are positive.
 * `OrthonormalBasis.frameOperator_eq_id`: an orthonormal basis has the identity as frame
   operator.
+* `OrthonormalBasis.synthesisMap_eq_repr_symm`: the synthesis map of an orthonormal basis is the
+  inverse of its coordinate map.
 * `TauCeti.norm_analysisMap_sq`: `‖analysis x‖² = ∑ᵢ ‖⟪vᵢ, x⟫‖²`.
 * `TauCeti.eigenvalues_frameOperator_eq_eigenvalues_gramOperator`: the two sorted spectra agree
   through the smaller dimension.
@@ -105,9 +113,37 @@ theorem synthesisMap_apply (v : ι → E) (a : EuclideanSpace 𝕜 ι) :
     synthesisMap 𝕜 v a = ∑ i, a i • v i := by
   simp [synthesisMap, Fintype.linearCombination_apply]
 
+/-- A finite family is linearly independent exactly when its synthesis map is injective. -/
+theorem linearIndependent_iff_injective_synthesisMap (v : ι → E) :
+    LinearIndependent 𝕜 v ↔ Function.Injective (synthesisMap 𝕜 v) := by
+  rw [linearIndependent_iff_injective_fintypeLinearCombination, synthesisMap, LinearMap.coe_comp,
+    LinearEquiv.coe_coe, EquivLike.injective_comp]
+
 theorem synthesisMap_single [DecidableEq ι] (v : ι → E) (i : ι) (c : 𝕜) :
     synthesisMap 𝕜 v (EuclideanSpace.single i c) = c • v i := by
   simp
+
+/-- The synthesis map of a linearly independent family spanning the space is bijective. -/
+theorem bijective_synthesisMap {v : ι → E} (hv : LinearIndependent 𝕜 v)
+    (hsp : ⊤ ≤ Submodule.span 𝕜 (Set.range v)) : Function.Bijective (synthesisMap 𝕜 v) :=
+  ⟨(linearIndependent_iff_injective_synthesisMap v).mp hv,
+    LinearMap.range_eq_top.mp ((range_synthesisMap v).trans (top_unique hsp))⟩
+
+/-- A bilinear form read through the synthesis map of a family is the sum of its values on pairs
+of members of the family times the elementary bilinear forms. -/
+theorem bilinearComp_synthesisMap_eq_sum (Q : E →L[𝕜] E →L[𝕜] 𝕜) (v : ι → E) :
+    Q.bilinearComp (synthesisMap 𝕜 v).toContinuousLinearMap
+        (synthesisMap 𝕜 v).toContinuousLinearMap =
+      ∑ i, ∑ j, Q (v i) (v j) •
+        (EuclideanSpace.proj i : EuclideanSpace 𝕜 ι →L[𝕜] 𝕜).smulRight
+          (EuclideanSpace.proj j : EuclideanSpace 𝕜 ι →L[𝕜] 𝕜) := by
+  ext u w
+  simp only [LinearMap.coe_toContinuousLinearMap', synthesisMap_apply,
+    ContinuousLinearMap.bilinearComp_apply, map_sum, map_smul, sum_apply,
+    smul_apply, smul_eq_mul, Finset.mul_sum,
+    ContinuousLinearMap.smulRight_apply, PiLp.proj_apply]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
 
 /-- The synthesis map is adjoint to the analysis map:
 `⟪∑ᵢ aᵢ vᵢ, x⟫ = ⟪a, (⟪vᵢ, x⟫)ᵢ⟫`. -/
@@ -363,6 +399,14 @@ theorem analysisMap_eq_repr (b : OrthonormalBasis ι 𝕜 E) :
     analysisMap 𝕜 b = b.repr.toLinearMap := by
   ext x i
   simp [OrthonormalBasis.repr_apply_apply]
+
+/-- The synthesis map of an orthonormal basis is the inverse `b.repr.symm` of its coordinate
+map. -/
+@[simp]
+theorem synthesisMap_eq_repr_symm (b : OrthonormalBasis ι 𝕜 E) :
+    synthesisMap 𝕜 b = b.repr.symm.toLinearMap := by
+  ext a
+  simp [← b.sum_repr_symm]
 
 /-- The frame operator of an orthonormal basis is the identity. -/
 @[simp]
