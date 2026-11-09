@@ -138,7 +138,7 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.measureReal_ball_mul_norm_sq_le_s
         = (μ.real (ball y s) * ‖u y‖) ^ 2 := by ring
       _ ≤ (∫ x in ball y s, ‖u x‖ ∂μ) ^ 2 := pow_le_pow_left₀ (by positivity) h1 2
       _ ≤ _ := MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq _ _
-          measure_ball_lt_top.ne hint.norm hint2
+          measure_ball_lt_top.ne hint2
   rcases hB.eq_or_lt with h0 | hpos
   · rw [← h0, zero_mul]
     exact setIntegral_nonneg measurableSet_ball fun _ _ ↦ by positivity
