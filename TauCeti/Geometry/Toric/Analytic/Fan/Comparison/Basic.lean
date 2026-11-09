@@ -119,8 +119,8 @@ theorem exists_ofAffinePoint_eq (p : Φ.AlgebraicComplexPoint) :
   have hrange : Set.range p.1 ⊆ Set.range (Φ.affineToricChartι σ) := by
     rintro _ ⟨q, rfl⟩
     exact ⟨y, by rw [hy, Subsingleton.elim q default]⟩
-  obtain ⟨x, hx⟩ := exists_spec_map_comp_eq_of_range_subset (R := ℂ) (Φ.affineToricChartι σ) p.1
-    hrange
+  obtain ⟨x, hx, -⟩ := existsUnique_spec_map_comp_eq_of_range_subset (R := ℂ)
+    (Φ.affineToricChartι σ) p.1 hrange
   exact ⟨σ, x, Subtype.ext hx⟩
 
 /-- A complex point of the affine chart of a cone is determined by its complex point of the toric
@@ -158,7 +158,7 @@ theorem ofAffinePoint_eq_ofAffinePoint_iff {σ τ : Φ.cones}
     have : (Φ.affineToricOverlapLeft σ τ).IsOver (Spec (.of ℂ)) := by
       rw [affineToricOverlapLeft_def, faceAffineToricSchemeMap_def]
       infer_instance
-    obtain ⟨z, hz⟩ := exists_spec_map_comp_eq_of_range_subset (R := ℂ)
+    obtain ⟨z, hz, -⟩ := existsUnique_spec_map_comp_eq_of_range_subset (R := ℂ)
       (Φ.affineToricOverlapLeft σ τ) _ hrange
     rw [affineToricOverlapLeft_def, ← spec_map_faceAffinePointMap] at hz
     have hzx : faceAffinePointMap Φ.lattice (Φ.inf_isFaceOf_left σ.2 τ.2) z = x := by
