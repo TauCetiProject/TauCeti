@@ -16,6 +16,8 @@ import Mathlib.Topology.MetricSpace.Pseudo.Basic
 /-!
 # Intervals in order topologies
 
+Every compact real interval admits a finite partition with arbitrarily small consecutive gaps,
+and refinement within its endpoints preserves a bound on those gaps.
 An unordered closed interval is a neighbourhood of each of its points other than its endpoints.
 Each point of the open interval between two endpoints that avoids a closed set is interior to a
 closed subinterval whose interior avoids that set.
@@ -28,11 +30,14 @@ by its value at the finite endpoint and its limit at infinity.  The endpoint at 
 when the limit is finite.
 A continuous strictly increasing real function on a compact interval has a continuous inverse on
 its range, extended to the whole line by clamping.
-Every compact real interval admits a finite partition with arbitrarily small consecutive gaps.
 A path that starts in an open set and leaves it has a first exit time.
 
 ## Main results
 
+* `TauCeti.exists_finset_Icc_gap_le` — a compact real interval has a finite subset containing
+  both endpoints whose consecutive gaps are at most any prescribed positive bound.
+* `TauCeti.consecutive_gap_le_of_subset` — refinement within a finite partition's endpoints
+  preserves a bound on consecutive gaps.
 * `TauCeti.uIcc_mem_nhds_of_ne` — `uIcc a b` is a neighbourhood of each of its points other than
   `a` and `b`.
 * `TauCeti.exists_Icc_subset_uIcc_disjoint` — a point of the open interval between `a` and `b`
@@ -68,31 +73,53 @@ theorem exists_finset_Icc_gap_le {a b ε : ℝ} (hab : a ≤ b) (hε : 0 < ε) :
   classical
   obtain ⟨t, ht, htf, hcover⟩ := (isCompact_Icc : IsCompact (Icc a b)).finite_cover_balls
     (e := ε / 2) (by positivity)
-  refine ⟨insert a (insert b htf.toFinset), ?_, by simp, by simp, ?_⟩
-  · intro x hx
+  have hsub : ((insert a (insert b htf.toFinset) : Finset ℝ) : Set ℝ) ⊆ Icc a b := by
+    intro x hx
     simp only [Finset.mem_coe, Finset.mem_insert, Set.Finite.mem_toFinset] at hx
     rcases hx with rfl | rfl | hx
     · exact left_mem_Icc.mpr hab
     · exact right_mem_Icc.mpr hab
     · exact ht hx
-  · intro x hx y hy hxy hgap
-    by_contra h
-    have hεxy : ε < y - x := lt_of_not_ge h
-    have hxI : x ∈ Icc a b := by
-      simp only [Finset.mem_insert, Set.Finite.mem_toFinset] at hx
-      rcases hx with rfl | rfl | hx <;> grind
-    have hyI : y ∈ Icc a b := by
-      simp only [Finset.mem_insert, Set.Finite.mem_toFinset] at hy
-      rcases hy with rfl | rfl | hy <;> grind
-    have hmid : (x + y) / 2 ∈ Icc a b := by
-      constructor <;> linarith [hxI.1, hyI.2]
-    obtain ⟨z, hz, hball⟩ := mem_iUnion₂.mp (hcover hmid)
-    have hd : |(x + y) / 2 - z| < ε / 2 := by
-      simpa [Metric.mem_ball, Real.dist_eq] using hball
-    have hz' : z ∈ insert a (insert b htf.toFinset) := by simp [hz]
-    have hbounds := abs_lt.mp hd
-    have := hgap z hz' (by linarith)
-    linarith
+  refine ⟨insert a (insert b htf.toFinset), hsub, by simp, by simp, ?_⟩
+  intro x hx y hy hxy hgap
+  by_contra h
+  have hεxy : ε < y - x := lt_of_not_ge h
+  have hxI := hsub hx
+  have hyI := hsub hy
+  have hmid : (x + y) / 2 ∈ Icc a b := by
+    constructor <;> linarith [hxI.1, hyI.2]
+  obtain ⟨z, hz, hball⟩ := mem_iUnion₂.mp (hcover hmid)
+  have hd : |(x + y) / 2 - z| < ε / 2 := by
+    simpa [Metric.mem_ball, Real.dist_eq] using hball
+  have hz' : z ∈ insert a (insert b htf.toFinset) := by simp [hz]
+  have hbounds := abs_lt.mp hd
+  have := hgap z hz' (by linarith)
+  linarith
+
+/-- Refining a finite partition within its endpoints preserves an upper bound on its
+consecutive gaps. -/
+theorem consecutive_gap_le_of_subset {q p : Finset ℝ} {a b ε : ℝ}
+    (hqp : q ⊆ p) (hps : (p : Set ℝ) ⊆ Icc a b) (ha : a ∈ q) (hb : b ∈ q)
+    (hq : ∀ x ∈ q, ∀ y ∈ q, x < y → (∀ z ∈ q, x < z → y ≤ z) → y - x ≤ ε) :
+    ∀ x ∈ p, ∀ y ∈ p, x < y → (∀ z ∈ p, x < z → y ≤ z) → y - x ≤ ε := by
+  classical
+  intro x hx y hy hxy hgap
+  -- Locate the cell of the coarser partition containing this refined gap.
+  let l := q.filter (fun z => z ≤ x)
+  have hl : l.Nonempty := ⟨a, Finset.mem_filter.mpr ⟨ha, (hps hx).1⟩⟩
+  let r := q.filter (fun z => y ≤ z)
+  have hr : r.Nonempty := ⟨b, Finset.mem_filter.mpr ⟨hb, (hps hy).2⟩⟩
+  have hlmem := Finset.mem_filter.mp (Finset.max'_mem l hl)
+  have hrmem := Finset.mem_filter.mp (Finset.min'_mem r hr)
+  have hcell : ∀ z ∈ q, l.max' hl < z → r.min' hr ≤ z := by
+    intro z hz hlz
+    have hxz : x < z := by
+      by_contra h
+      have := Finset.le_max' l z (Finset.mem_filter.mpr ⟨hz, le_of_not_gt h⟩)
+      exact (not_lt_of_ge this) hlz
+    exact Finset.min'_le r z (Finset.mem_filter.mpr ⟨hz, hgap z (hqp hz) hxz⟩)
+  have hbound := hq _ hlmem.1 _ hrmem.1 (by linarith [hlmem.2, hrmem.2]) hcell
+  linarith [hlmem.2, hrmem.2]
 
 /-- An unordered closed interval `uIcc a b` is a neighbourhood of each of its points other than
 its endpoints `a` and `b`. -/

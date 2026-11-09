@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Topology.EMetricSpace.BoundedVariation
 public import Mathlib.Topology.CompactOpen
+public import Mathlib.Topology.Instances.ENNReal.Lemmas
+public import Mathlib.Topology.Order.IsLUB
 
 /-!
 # Limits of total variation bounds
@@ -16,11 +18,16 @@ This file transfers eventual upper bounds on the total variations of a family of
 composition with an antitone map on an interval, and shows that the variation is unchanged by
 postcomposition with a map that preserves the distances between the values of the function.
 Total variation on continuous maps is lower semicontinuous for the compact-open topology,
-allowing measurable path-space applications.
+allowing measurable path-space applications. Total variation is also the supremum over finite
+subsets, and nested finite subsets can recover it while containing prescribed finite sets.
+The selection uses `IsLUB.exists_seq_monotone_tendsto` and `eVariationOn.mono`.
 
 ## Main results
 
 * `ContinuousMap.lowerSemicontinuous_eVariationOn`: lower semicontinuity on continuous path space.
+* `eVariationOn.eq_iSup_finset`: total variation as the supremum over finite subsets.
+* `eVariationOn.exists_monotone_finset_tendsto`: nested finite subsets recovering total variation
+  and containing any prescribed sequence of finite subsets.
 * `TauCeti.eVariationOn_le_liminf_of_eventually_le`: an eventual bound on the total variations of
   a family of maps bounds the total variation of a pointwise limit by the `liminf` of the bounds.
 * `eVariationOn.comp_inter_Icc_eq_of_antitoneOn`: the antitone counterpart of Mathlib's
@@ -40,7 +47,7 @@ theorem ContinuousMap.lowerSemicontinuous_eVariationOn
   exact eVariationOn.lowerSemicontinuous_aux
     (fun x _ => (continuous_eval_const x).continuousAt) hv
 
-open Filter Set
+open Filter Set Topology
 open scoped ENNReal
 
 namespace TauCeti
@@ -78,6 +85,63 @@ namespace eVariationOn
 
 variable {α β E : Type*} [LinearOrder α] [LinearOrder β] [TopologicalSpace E]
   [WeakPseudoEMetricSpace E]
+
+/-- Total variation is the supremum of the variation sums over finite subsets. -/
+theorem eq_iSup_finset (f : α → E) (s : Set α) :
+    eVariationOn f s =
+      ⨆ p : {p : Finset α // (p : Set α) ⊆ s}, eVariationOn f (p : Set α) := by
+  classical
+  apply le_antisymm
+  · refine iSup_le ?_
+    rintro ⟨n, u, hu, hus⟩
+    let p := (Finset.range (n + 1)).image u
+    have hp : (p : Set α) ⊆ s := by
+      intro x hx
+      obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hx
+      exact hus i
+    refine (sum_le_of_monotoneOn_Iic (hu.monotoneOn _) ?_).trans
+      (le_iSup (fun p : {p : Finset α // (p : Set α) ⊆ s} =>
+        eVariationOn f (p : Set α)) ⟨p, hp⟩)
+    intro i hi
+    exact Finset.mem_image.mpr ⟨i, Finset.mem_range.mpr (by omega), rfl⟩
+  · exact iSup_le fun p => mono f p.property
+
+/-- Finite variation sums approaching total variation can be chosen nested and containing
+any prescribed sequence of finite subsets. This includes infinite total variation. -/
+theorem exists_monotone_finset_tendsto (f : α → E) (s : Set α)
+    (q : ℕ → Finset α) (hq : ∀ n, (q n : Set α) ⊆ s) :
+    ∃ p : ℕ → Finset α, Monotone p ∧ (∀ n, (p n : Set α) ⊆ s) ∧
+      (∀ n, q n ⊆ p n) ∧
+      Tendsto (fun n => eVariationOn f (p n : Set α)) atTop (𝓝 (eVariationOn f s)) := by
+  classical
+  let v (p : {p : Finset α // (p : Set α) ⊆ s}) := eVariationOn f (p : Set α)
+  have hsup : IsLUB (range v) (eVariationOn f s) := by
+    rw [eq_iSup_finset]
+    exact isLUB_iSup
+  obtain ⟨w, -, -, hw, hwr⟩ := hsup.exists_seq_monotone_tendsto
+    ⟨v ⟨∅, by simp⟩, mem_range_self _⟩
+  choose u hu using hwr
+  let p (n : ℕ) := (Finset.range (n + 1)).biUnion (fun i => (u i).val ∪ q i)
+  have hsub (n) : (p n : Set α) ⊆ s := by
+    intro x hx
+    obtain ⟨i, -, hi⟩ := Finset.mem_biUnion.mp hx
+    rcases Finset.mem_union.mp hi with hi | hi
+    · exact (u i).property hi
+    · exact hq i hi
+  have hu_le (n) : (u n).val ⊆ p n := by
+    intro x hx
+    exact Finset.mem_biUnion.mpr ⟨n, by simp, Finset.mem_union_left _ hx⟩
+  refine ⟨p, ?_, hsub, ?_, ?_⟩
+  · intro m n hmn
+    exact Finset.biUnion_subset_biUnion_of_subset_left _ (Finset.range_mono (by omega))
+  · intro n x hx
+    exact Finset.mem_biUnion.mpr ⟨n, by simp, Finset.mem_union_right _ hx⟩
+  · apply tendsto_of_tendsto_of_tendsto_of_le_of_le hw tendsto_const_nhds
+    · intro n
+      rw [← hu n]
+      exact mono f (hu_le n)
+    · intro n
+      exact mono f (hsub n)
 
 /-- Postcomposing `f` with a map `g` that preserves the distances between the values of `f` on `s`
 does not change the variation of `f` on `s`. -/
