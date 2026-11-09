@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Coalgebra.Subcomodule.InnerProduct
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Comap
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
+public import TauCeti.Analysis.InnerProductSpace.LinearIsometry.Matrix
 
 /-!
 # Subcomodules of finite unitary comodules
@@ -51,13 +52,12 @@ theorem IsUnitary.of_isometry (hN : IsUnitary 𝕜 A N) (f : Hom 𝕜 A M N)
   let u := coefficientMatrix (C := A) b.toBasis
   let v := coefficientMatrix (C := A) c.toBasis
   have hT : Tᴴ * T = 1 := by
-    let i : M →ₗᵢ[𝕜] N :=
-      { f.toLinearMap with norm_map' := (AddMonoidHomClass.isometry_iff_norm f).mp hf }
-    have hi : f.toLinearMap.adjoint ∘ₗ f.toLinearMap = LinearMap.id :=
-      i.adjoint_comp_self'
-    rw [← Matrix.conjTranspose_map _ algebraMap_star_comm, ← LinearMap.toMatrix_adjoint b c,
-      ← Matrix.map_mul, ← LinearMap.toMatrix_comp, hi, LinearMap.toMatrix_id,
-      Matrix.map_one _ (map_zero _) (map_one _)]
+    let i := f.toLinearMap.toLinearIsometry hf
+    have hi := congrArg (Matrix.map · (algebraMap 𝕜 A))
+      (i.toMatrix_conjTranspose_mul_self b c)
+    simpa only [i, LinearMap.toLinearIsometry, Matrix.map_mul,
+      Matrix.conjTranspose_map _ algebraMap_star_comm,
+      Matrix.map_one _ (map_zero _) (map_one _)] using hi
   have hfv : v * T = T * u := f.coefficientMatrix_mul_toMatrix b.toBasis c.toBasis
   have hleft : uᴴ * u = 1 := by
     calc
@@ -68,10 +68,8 @@ theorem IsUnitary.of_isometry (hN : IsUnitary 𝕜 A N) (f : Hom 𝕜 A M N)
       _ = 1 := by
         have hv := (hN.coefficientMatrix_mem_unitary c).1
         simp only [Matrix.star_eq_conjTranspose] at hv
-        calc
-          (v * T)ᴴ * (v * T) = Tᴴ * (vᴴ * v) * T := by
-            simp only [Matrix.conjTranspose_mul, Matrix.mul_assoc]
-          _ = 1 := by rw [hv, Matrix.mul_one, hT]
+        simp only [Matrix.conjTranspose_mul, Matrix.mul_assoc]
+        rw [← Matrix.mul_assoc vᴴ, hv, Matrix.one_mul, hT]
   have hS : uᴴ = u.map (HopfAlgebra.antipode 𝕜) :=
     left_inv_eq_right_inv hleft (coefficientMatrix_mul_map_antipode b.toBasis)
   exact b.isUnitary_comodule_iff_map_antipode_eq_conjTranspose.mpr hS.symm

@@ -244,10 +244,9 @@ theorem subtype_apply (n : N) : Subcomodule.subtype N n = n :=
 
 /-- The range of the subcomodule inclusion is its underlying submodule. -/
 theorem range_subtype_toLinearMap : LinearMap.range N.subtype.toLinearMap = N.toSubmodule := by
-  ext m
-  rw [LinearMap.mem_range, mem_toSubmodule]
-  simp only [Comodule.Hom.coe_toLinearMap, subtype_apply]
-  exact ⟨fun ⟨n, hn⟩ ↦ hn ▸ n.property, fun hm ↦ ⟨⟨m, hm⟩, rfl⟩⟩
+  rw [subtype_toLinearMap]
+  -- The underlying submodule has the same carrier and linear inclusion.
+  exact Submodule.range_subtype N.toSubmodule
 
 end Subcomodule
 
