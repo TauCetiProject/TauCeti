@@ -368,6 +368,27 @@ theorem continuousLinearEquiv (A : E ≃L[ℝ] E) (hA : MapsTo A U V) :
   pos := abs_pos.2 (LinearEquiv.isUnit_det' A.toLinearEquiv).ne_zero
   le_abs_det x _ := by rw [A.fderiv]
 
+/-- A translation `x ↦ x + a` mapping `U` into `V` is a change of variables of every order, with
+constants `1` and `1`. -/
+theorem add_const (a : E) (hA : MapsTo (· + a) U V) :
+    IsChangeOfVariables k U V (· + a) 1 1 := by
+  have hd : fderiv ℝ (· + a) = fun _ : E ↦ ContinuousLinearMap.id ℝ E :=
+    funext fun x ↦ by simp [fderiv_add_const]
+  exact
+    { contDiffOn := (contDiff_id.add contDiff_const).contDiffOn
+      differentiableOn := (differentiable_id.add_const a).differentiableOn
+      injOn := (add_left_injective a).injOn
+      mapsTo := hA
+      norm_iteratedFDeriv_le := fun i hi _ x _ ↦ by
+        obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hi
+        rw [← norm_iteratedFDeriv_fderiv]
+        rcases n with _ | n
+        · simpa [hd] using ContinuousLinearMap.norm_id_le
+        · rw [hd, iteratedFDeriv_const_of_ne n.succ_ne_zero]
+          simp
+      pos := one_pos
+      le_abs_det := fun x _ ↦ by simp [ContinuousLinearMap.det] }
+
 variable [MeasurableSpace E] [BorelSpace E] {mu : Measure E}
 
 /-- A change of variables is almost everywhere measurable on `U`. -/

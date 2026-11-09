@@ -242,11 +242,11 @@ theorem IsNormalDomain.ofReal_abs_norm_riemannianLog_sub_norm_riemannianLog_le_p
     rw [← contMDiffOn_iff_contDiffOn]
     exact (h.contMDiffOn_riemannianLog.of_le (by simp)).comp hγ hγU
   have hdom : MapsTo w (Icc a b) (expDomain I M p) := fun t ht ↦
-    h.subset_expDomain (h.riemannianLog_mem (hγU ht))
+    h.subset_expDomain (riemannianLog_mem (hγU ht))
   have hpolar := ofReal_abs_norm_sub_norm_le_pathELength_riemannianExp
     (I := I) (M := M) hab hw hdom
   have hc : EqOn (riemannianExp I M p ∘ w) γ (Icc a b) := fun t ht ↦ by
-    exact h.riemannianExp_riemannianLog (hγU ht)
+    exact riemannianExp_riemannianLog (hγU ht)
   rw [Manifold.pathELength_congr hc] at hpolar
   exact hpolar
 

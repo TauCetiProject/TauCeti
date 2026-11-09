@@ -61,8 +61,7 @@ namespace MeasureTheory.ProbabilityMeasure
 
 open TopologicalSpace
 
-variable {T X Y : Type*} [TopologicalSpace T] [MeasurableSpace T] [OpensMeasurableSpace T]
-    [SecondCountableTopology T] [PseudoMetrizableSpace T]
+variable {T X Y : Type*} [TopologicalSpace T] [SecondCountableTopology T] [PseudoMetrizableSpace T]
     [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
     [SecondCountableTopology X] [PseudoMetrizableSpace X]
     [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y]
@@ -72,6 +71,8 @@ parameter and its input probability law. -/
 lemma continuous_map_of_continuous_uncurry {f : T → X → Y}
     (hf : Continuous (Function.uncurry f)) :
     Continuous (fun p : T × ProbabilityMeasure X ↦ p.2.map (f p.1)) := by
+  -- The Borel σ-algebra of `T` is only used to view `T` as a space of Dirac masses.
+  borelize T
   have hprod : Continuous (fun p : T × ProbabilityMeasure X ↦
       (diracProba p.1).prod p.2) :=
     continuous_prod.comp ((continuous_diracProba.comp continuous_fst).prodMk continuous_snd)
