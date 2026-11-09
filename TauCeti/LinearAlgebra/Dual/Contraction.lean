@@ -50,6 +50,7 @@ theorem contractLeftEquivOfFinrankEqOne_tmul (h : finrank k V = 1) (f : Module.D
   simp [contractLeftEquivOfFinrankEqOne, mul_comm]
 
 /-- The contraction equivalence of a line is Mathlib's contraction `contractLeft k V`. -/
+@[simp]
 theorem toLinearMap_contractLeftEquivOfFinrankEqOne (h : finrank k V = 1) :
     (contractLeftEquivOfFinrankEqOne h : TensorProduct k (Module.Dual k V) V →ₗ[k] k) =
       contractLeft k V :=
