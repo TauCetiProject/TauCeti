@@ -218,10 +218,8 @@ theorem finrank_quotient_proPFrattini :
   by_cases hX : Finite X
   · exact Module.finrank_eq_nat_card_basis (frattiniQuotientBasis p X)
   · rw [not_finite_iff_infinite] at hX
-    rw [Nat.card_eq_zero_of_infinite, Module.finrank_of_not_finite]
-    intro h
-    have := (linearIndependent_frattiniQuotient_of p X).finite
-    exact not_finite X
+    simpa only [Nat.card_eq_zero_of_infinite] using
+      (linearIndependent_frattiniQuotient_of p X).finrank_eq_zero_of_infinite
 
 /-! ### The dual basis of the generators -/
 
@@ -408,7 +406,7 @@ theorem mk_lt_topologicalGeneratorRank_freeProP [Infinite X] :
   exact Cardinal.cantor' #X (by exact_mod_cast (Fact.out : p.Prime).one_lt)
 
 /-- **The free pro-`p` group on a type `X` has topological generator rank `Nat.card X`**, in
-natural-number form. -/
+natural-number form, assuming that it is topologically finitely generated. -/
 @[simp]
 theorem topologicalGeneratorRankNat_freeProP (h : IsTopologicallyFinitelyGenerated (freeProP p X)) :
     topologicalGeneratorRankNat (freeProP p X) h = Nat.card X := by
