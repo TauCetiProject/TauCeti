@@ -62,10 +62,10 @@ every type `D` structure, bounded or not (`TauCeti.TypeAModule.boxDifferential_o
 
 Write a word `a₁ ⋯ aₙ` in the free algebra `FreeAlgebra R A`, a bookkeeping device in which
 the letters are not yet multilinear, and let `Δ` split a word into a prefix and a suffix in all
-ways (`TauCeti.FreeAlgebra.deconcat`). The `A∞` relations say that `∑ act (v) ∘ act (u)`, summed
+ways (`FreeAlgebra.deconcat`). The `A∞` relations say that `∑ act (v) ∘ act (u)`, summed
 over the splittings `u ⊗ v` of a word, is the action of the bar differential of the word: its
-letters differentiated one at a time (`TauCeti.FreeAlgebra.diffLetters`) plus adjacent letters
-multiplied (`TauCeti.FreeAlgebra.mergeAdjacent`). For the matrix `δ'` with letter entries
+letters differentiated one at a time (`FreeAlgebra.diffLetters`) plus adjacent letters
+multiplied (`FreeAlgebra.mergeAdjacent`). For the matrix `δ'` with letter entries
 `ι (δ x y)`, splitting `δ'^n` gives `∑_{j + k = n} δ'^j ⊗ δ'^k`, so `∂ ∘ ∂` is the action of the
 bar differential of `∑_{n ≤ 2K} δ'^n`. In the tensor algebra the bar differential of `δ'^{n+1}` is
 `Q_{n+1} + Q_n`, where `Q_n = ∑_{i < n} δ^i (d δ) δ^{n-1-i}`: the type `D` structure equation

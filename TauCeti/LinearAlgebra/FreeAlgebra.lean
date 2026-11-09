@@ -19,23 +19,23 @@ Mathlib's free-monoid basis vector is the ordered product of the generators in i
 products, for instance when proving that word moments determine a linear functional on a free
 algebra.
 
-The words `TauCeti.FreeAlgebra.word R w = ι a₁ * ⋯ * ι aₙ` form a basis of `FreeAlgebra R A`, so a
+The words `FreeAlgebra.word R w = ι a₁ * ⋯ * ι aₙ` form a basis of `FreeAlgebra R A`, so a
 linear map out of the free algebra is determined by, and may be prescribed by, its values on words
-(`TauCeti.FreeAlgebra.linearMap_ext_word`, `TauCeti.FreeAlgebra.ofWords`). In the free algebra
+(`FreeAlgebra.linearMap_ext_word`, `FreeAlgebra.ofWords`). In the free algebra
 the letters of a word are not yet multilinear, so operations on the letters of a word, which are
 not well defined on the tensor algebra, extend linearly from words. This file defines the operations
 of the bar construction of a differential algebra `(A, d)` in this way:
 
-* `TauCeti.FreeAlgebra.deconcat`: the splitting of a word into a prefix and a suffix in all ways,
+* `FreeAlgebra.deconcat`: the splitting of a word into a prefix and a suffix in all ways,
   `a₁ ⋯ aₙ ↦ ∑ᵢ a₁ ⋯ aᵢ ⊗ aᵢ₊₁ ⋯ aₙ`;
-* `TauCeti.FreeAlgebra.diffLetters`: the letters differentiated one at a time,
+* `FreeAlgebra.diffLetters`: the letters differentiated one at a time,
   `a₁ ⋯ aₙ ↦ ∑ᵢ a₁ ⋯ (d aᵢ) ⋯ aₙ`;
-* `TauCeti.FreeAlgebra.mergeAdjacent`: adjacent letters multiplied, one pair at a time,
+* `FreeAlgebra.mergeAdjacent`: adjacent letters multiplied, one pair at a time,
   `a₁ ⋯ aₙ ↦ ∑ᵢ a₁ ⋯ (aᵢ aᵢ₊₁) ⋯ aₙ`.
 
 Each is characterised by its value on the empty word and a recursion for appending letters, for
 instance `Δ (s * ι a) = Δ s * (1 ⊗ ι a) + (s * ι a) ⊗ 1` for the deconcatenation `Δ`
-(`TauCeti.FreeAlgebra.deconcat_mul_ι`).
+(`FreeAlgebra.deconcat_mul_ι`).
 -/
 
 public section
@@ -52,6 +52,8 @@ theorem basisFreeMonoid_apply (R ι : Type*) [CommSemiring R] (w : FreeMonoid ι
     FreeAlgebra.basisFreeMonoid R ι w = (w.toList.map (FreeAlgebra.ι R)).prod := by
   simp [FreeAlgebra.basisFreeMonoid, FreeAlgebra.equivMonoidAlgebraFreeMonoid,
     FreeMonoid.lift_apply]
+
+end TauCeti
 
 namespace FreeAlgebra
 
@@ -87,7 +89,7 @@ variable {R}
 theorem linearMap_ext_word {P : Type*} [AddCommMonoid P] [Module R P]
     {f g : FreeAlgebra R A →ₗ[R] P} (h : ∀ w, f (word R w) = g (word R w)) : f = g :=
   (FreeAlgebra.basisFreeMonoid R A).ext fun w => by
-    rw [basisFreeMonoid_apply]
+    rw [TauCeti.basisFreeMonoid_apply]
     exact h _
 
 variable (R) in
@@ -101,7 +103,7 @@ theorem ofWords_word {P : Type*} [AddCommMonoid P] [Module R P] (f : List A → 
     (w : List A) : ofWords R f (word R w) = f w := by
   have h := (FreeAlgebra.basisFreeMonoid R A).constr_basis R (fun w => f w.toList)
     (FreeMonoid.ofList w)
-  rwa [basisFreeMonoid_apply, FreeMonoid.toList_ofList] at h
+  rwa [TauCeti.basisFreeMonoid_apply, FreeMonoid.toList_ofList] at h
 
 end Words
 
@@ -255,5 +257,3 @@ theorem mergeAdjacent_ι (a : A) : mergeAdjacent R (FreeAlgebra.ι R a) = 0 := b
 end MergeAdjacent
 
 end FreeAlgebra
-
-end TauCeti
