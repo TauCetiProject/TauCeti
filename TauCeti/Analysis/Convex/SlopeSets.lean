@@ -54,8 +54,11 @@ theorem convex_setOf_forall_add_inner_le (s : Set E) (a : ℝ) (x₀ : E) :
 /-- For a bounded set `Ω` containing `x₀`, a set `s ⊆ closure Ω` and a height `a`, every slope of
 norm below `-a / diam Ω` makes the affine function through `(x₀, a)` nonpositive on `s`. -/
 theorem ball_subset_setOf_forall_add_inner_le (hΩ : Bornology.IsBounded Ω) (hx₀ : x₀ ∈ Ω)
-    (hs : s ⊆ closure Ω) (hD : 0 < diam Ω) :
+    (hs : s ⊆ closure Ω) :
     ball (0 : E) (-a / diam Ω) ⊆ {p : E | ∀ x ∈ s, a + inner ℝ (x - x₀) p ≤ 0} := by
+  rcases (diam_nonneg (s := Ω)).eq_or_lt with hD | hD
+  · rw [← hD, div_zero, ball_eq_empty.2 le_rfl]
+    exact empty_subset _
   intro p hp x hx
   rw [mem_ball_zero_iff] at hp
   have hxD : ‖x - x₀‖ ≤ diam Ω := by

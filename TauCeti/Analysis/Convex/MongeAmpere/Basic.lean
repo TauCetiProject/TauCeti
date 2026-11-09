@@ -591,7 +591,7 @@ theorem ofReal_neg_pow_mul_addHaar_ball_le_mul_mongeAmpereMeasure (hΩo : IsOpen
   set P := {p : E | ∀ x ∈ frontier Ω, u x₀ + inner ℝ (x - x₀) p ≤ 0}
   have hPconv : Convex ℝ P := convex_setOf_forall_add_inner_le _ _ _
   have hball : ball 0 (h / D) ⊆ P :=
-    ball_subset_setOf_forall_add_inner_le hΩ hx₀ frontier_subset_closure hD
+    ball_subset_setOf_forall_add_inner_le hΩ hx₀ frontier_subset_closure
   obtain ⟨q, hq, hqn⟩ :=
     exists_mem_setOf_forall_add_inner_le_dist_eq hΩo hu.1 hx₀ frontier_subset_closure hh.le hΩc
   -- Every admissible slope is a subgradient of `u` relative to `Ω` at a point of `Ω`.
