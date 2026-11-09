@@ -25,8 +25,9 @@ its preimage `p ⁻¹' E`, and a component `E'` of `X ×_K Spec L` to its image 
 irreducible components of a geometric fibre do not depend on the chosen algebraically closed
 field.
 
-The file also transports geometric irreducibility through surjective images, dominant maps
-over a field, and nonempty open subschemes, and supplies geometric connectedness.
+The file also transports geometric irreducibility through surjective images and dominant maps
+over a field, and supplies geometric connectedness. Mathlib supplies the corresponding transport
+to nonempty open subschemes.
 
 ## Main results
 
@@ -37,15 +38,13 @@ over a field, and nonempty open subschemes, and supplies geometric connectedness
   instance that geometric irreducibility implies geometric connectedness.
 * `TauCeti.AlgebraicGeometry.GeometricallyIrreducible.of_comp_surjective`: geometric irreducibility
   descends along a surjective morphism.
-* `TauCeti.AlgebraicGeometry.GeometricallyIrreducible.comp_of_isOpenImmersion` and
-  `TauCeti.AlgebraicGeometry.GeometricallyIrreducible.of_comp_isDominant`: geometric irreducibility
-  passes to nonempty opens and extends from dense opens.
+* `TauCeti.AlgebraicGeometry.GeometricallyIrreducible.of_comp_isDominant`: geometric irreducibility
+  descends along a dominant morphism over a field.
 
 The image and dense-open results are adapted from Axel Delaval, Jie Xu, and Shitan Xu's Jacobian
 library, release `baef7723da528551b7d2f93bd9a9a53303b04dbc`,
 `Jacobian/AlgebraicGeometry/Geometrically/Irreducible.lean`, declarations
 `GeometricallyIrreducible.geometricallyConnected`, `GeometricallyIrreducible.of_surjective`,
-`GeometricallyIrreducible.comp_of_isOpenImmersion`, and
 `GeometricallyIrreducible.of_dense_open`.
 
 ## References
@@ -107,17 +106,6 @@ lemma GeometricallyIrreducible.of_comp_surjective {source target base : Scheme.{
       sourceToTarget targetToBase square
   exact Function.Surjective.irreducibleSpace (pullback.snd sourceToTarget first).continuous
     (pullback.snd sourceToTarget first).surjective
-
-/-- A nonempty open subscheme of a geometrically irreducible scheme over a field is again
-geometrically irreducible over that field. -/
-lemma GeometricallyIrreducible.comp_of_isOpenImmersion {field : Type u} [Field field]
-    {source target : Scheme.{u}} (immersion : source ⟶ target) [IsOpenImmersion immersion]
-    [Nonempty source] (structureMap : target ⟶ Spec (.of field))
-    [GeometricallyIrreducible structureMap] :
-    GeometricallyIrreducible (immersion ≫ structureMap) := by
-  have : Surjective (immersion ≫ structureMap) :=
-    ⟨fun point ↦ ⟨Classical.choice ‹Nonempty source›, Subsingleton.elim _ point⟩⟩
-  infer_instance
 
 /-- Geometric irreducibility of a composite over a field descends along a dominant morphism. -/
 lemma GeometricallyIrreducible.of_comp_isDominant {field : Type u} [Field field]
