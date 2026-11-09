@@ -164,6 +164,52 @@ lemma toLiftHom_fiberIso_hom_as_app (p : Γ) (a : LocallyDiscrete (SingleObj H))
 lemma toLiftHom_fiberIso_inv_as_app (p : Γ) (a : LocallyDiscrete (SingleObj H)) :
     (φ.toLiftHom.fiberIso p).inv.as.app a = (λ_ (𝟙 (fiber actions p))).inv := (rfl)
 
+lemma toLiftHom_fiberFunctorIso_hom_app (p : Γ) (x : N.toLift.jointFiber p) :
+    (φ.toLiftHom.fiberFunctorIso p).hom.app x = 𝟙 _ := by
+  rw [EquivariantGroupoidLift.Hom.fiberFunctorIso_hom_app, toLiftHom_fiberIso_hom_as_app,
+    Cat.leftUnitor_hom_toNatTrans]
+  -- The fiber comparison functor of a reconstructed lift is the identity functor.
+  exact Functor.leftUnitor_hom_app _ _
+
+lemma toLiftHom_fiberFunctorIso_inv_app (p : Γ) (x : N.toLift.jointFiber p) :
+    (φ.toLiftHom.fiberFunctorIso p).inv.app x = 𝟙 _ := by
+  rw [EquivariantGroupoidLift.Hom.fiberFunctorIso_inv_app, toLiftHom_fiberIso_inv_as_app,
+    Cat.leftUnitor_inv_toNatTrans]
+  -- The fiber comparison functor of a reconstructed lift is the identity functor.
+  exact Functor.leftUnitor_inv_app _ _
+
+lemma toLiftHom_jointMapIso_hom_app {p q : Γ} (g : p ⟶ q) (x : N.toLift.jointFiber p) :
+    (φ.toLiftHom.jointMapIso g).hom.app x =
+      (φ.transportIso g).hom.app ((act actions p (𝟙 _)).obj x) := by
+  rw [EquivariantGroupoidLift.Hom.jointMapIso_hom_app]
+  exact φ.jointHom_naturality_hom_app _ x
+
+/-- The comparison of chosen inverse fibers of `φ.toLiftHom` is compatible with the counits:
+it is the mate of the identity fiber comparison. -/
+@[reassoc]
+lemma toLiftHom_inverseFiberIso_hom_app_comp_counit (p : Γ) (x : fiber actions p) :
+    (φ.toLiftHom.inverseFiberIso p).hom.app x ≫ (N'.toLift.fiberEquivalence p).counit.app x =
+      (N.toLift.fiberEquivalence p).counit.app x :=
+  -- The fiber comparisons of reconstructed lifts are identity functors with identity
+  -- components, so the general mate equation reduces to this one.
+  (φ.toLiftHom.functor_map_inverseFiberIso_hom_app_comp_counit p x).trans
+    ((congrArg (· ≫ _) (φ.toLiftHom_fiberFunctorIso_hom_app p _)).trans (Category.id_comp _))
+
+/-- On the prescribed fibers, the transport comparison of `φ.toLiftHom` along `g` is the
+transport comparison of `φ` after the identity action, followed by the comparison of chosen
+inverse fibers. -/
+lemma toLiftHom_transportIso_hom_app {p q : Γ} (g : p ⟶ q) (x : fiber actions p) :
+    (φ.toLiftHom.transportIso g).hom.app x =
+      (φ.transportIso g).hom.app
+          ((act actions p (𝟙 _)).obj ((N.toLift.fiberEquivalence p).inverse.obj x)) ≫
+        (N'.transport g).map
+          ((act actions p (𝟙 _)).map ((φ.toLiftHom.inverseFiberIso p).hom.app x)) := by
+  rw [EquivariantGroupoidLift.Hom.transportIso_hom_app, toLiftHom_fiberFunctorIso_inv_app,
+    toLiftHom_jointMapIso_hom_app]
+  -- The fiber comparison functor of `N'.toLift` is the identity, and its joint functor along
+  -- `(g, 1)` is `T_1 ⋙ E_g`.
+  exact Category.id_comp _
+
 /-- Reconstruction preserves the identity comparison up to a compatible invertible
 modification with identity components. -/
 noncomputable def toLiftHomIdIso (N : NormalizedTransport Γ actions) :

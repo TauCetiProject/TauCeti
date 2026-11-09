@@ -109,39 +109,22 @@ lemma toLiftHom_transportIso_hom_app_comp_toLiftTransportIso_hom_app (φ : N ⟶
     (g : p ⟶ q) (x : fiber actions p) :
     (φ.toLiftHom.transportIso g).hom.app x ≫ (N'.toLiftTransportIso g).hom.app x =
       (N.toLiftTransportIso g).hom.app x ≫ (φ.transportIso g).hom.app x := by
-  -- Name the inverse-comparison carriers in the prescribed fibers.
-  let y : fiber actions p := (N.toLift.fiberEquivalence p).inverse.obj x
-  let y' : fiber actions p := (N'.toLift.fiberEquivalence p).inverse.obj x
-  let ε : y ⟶ x := (N.toLift.fiberEquivalence p).counit.app x
-  let ε' : y' ⟶ x := (N'.toLift.fiberEquivalence p).counit.app x
-  let i : y ⟶ y' := ((toLiftHom φ).inverseFiberIso p).hom.app x
   let A := act actions p (𝟙 (SingleObj.star H))
-  let θ := (φ.transportIso g).hom
-  -- The comparison of chosen inverses is the mate of the identity fiber comparison.
-  have hi : i ≫ ε' = ε := by
-    have h := (toLiftHom φ).functor_map_inverseFiberIso_hom_app_comp_counit p x
-    rw [EquivariantGroupoidLift.Hom.fiberFunctorIso_hom_app, toLiftHom_fiberIso_hom_as_app,
-      Cat.leftUnitor_hom_toNatTrans] at h
-    erw [Functor.leftUnitor_hom_app, Category.id_comp] at h
-    -- The fiber comparison functor of a reconstructed lift is the identity functor.
-    exact h
-  have key : (N'.transport g).map (A.map i) ≫ (N'.transport g).map (A.map ε') =
-      (N'.transport g).map (A.map ε) := by
-    rw [← Functor.map_comp, ← Functor.map_comp, hi]
-  rw [EquivariantGroupoidLift.Hom.transportIso_hom_app]
-  simp only [toLiftHom_fiberIso_inv_as_app, EquivariantGroupoidLift.Hom.fiberFunctorIso_inv_app,
-    EquivariantGroupoidLift.Hom.jointMapIso_hom_app, toLiftTransportIso_hom_app]
-  erw [jointHom_naturality_hom_app]
-  -- The fiber comparisons of reconstructed lifts are identity functors, and the joint functor
-  -- along `(g, 1)` is `T_1 ⋙ E_g`; display the remaining cells in the prescribed fibers.
-  change (𝟙 _ ≫ θ.app (A.obj y) ≫ (N'.transport g).map (A.map i)) ≫
-      (N'.transport g).map (A.map ε') ≫ (N'.transport g).map ((actId actions p).hom.app x) =
-    ((N.transport g).map (A.map ε) ≫ (N.transport g).map ((actId actions p).hom.app x)) ≫
-      θ.app x
-  rw [Category.id_comp, Category.assoc, reassoc_of% key, ← θ.naturality_assoc, ← θ.naturality,
-    Category.assoc]
-  -- The remaining difference is the object `(𝟭 _).obj x`, which is `x` by definition.
-  rfl
+  -- A comparison `i` of chosen inverses that cancels against the counits `ε'` and `ε`
+  -- moves across `φ.transportIso g` by naturality.
+  have key {y y' : fiber actions p} (i : y ⟶ y') (ε' : y' ⟶ x) (ε : y ⟶ x) (hi : i ≫ ε' = ε) :
+      (φ.transportIso g).hom.app (A.obj y) ≫ (N'.transport g).map (A.map i) ≫
+          (N'.transport g).map (A.map ε') ≫ (N'.transport g).map ((actId actions p).hom.app x) =
+        (N.transport g).map (A.map ε) ≫ (N.transport g).map ((actId actions p).hom.app x) ≫
+          (φ.transportIso g).hom.app x := by
+    rw [← Functor.map_comp_assoc, ← A.map_comp, hi, ← Functor.map_comp, ← Functor.map_comp_assoc]
+    exact ((φ.transportIso g).hom.naturality _).symm
+  rw [toLiftHom_transportIso_hom_app, toLiftTransportIso_hom_app, toLiftTransportIso_hom_app]
+  -- The reconstructed transport functors are definitionally composites of `A` with the
+  -- prescribed transport functors, so both sides are `key` up to reassociation.
+  exact (Category.assoc _ _ _).trans
+    ((key _ _ _ (φ.toLiftHom_inverseFiberIso_hom_app_comp_counit p x)).trans
+      (Category.assoc _ _ _).symm)
 
 end Hom
 
