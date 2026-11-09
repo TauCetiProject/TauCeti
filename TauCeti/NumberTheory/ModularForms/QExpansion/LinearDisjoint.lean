@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.IntermediateField.LinearDisjoint
+public import Mathlib.FieldTheory.LinearDisjoint
 public import TauCeti.NumberTheory.ModularForms.QExpansion.FunctionField
 
 /-!
@@ -69,7 +69,9 @@ variable {Γ : Subgroup PSL(2, ℝ)} [DiscreteTopology Γ] (D : Γ.CuspDatum) (K
 all its coefficients in the subfield `K` of `ℂ`, as an intermediate field of the function field
 over `K`. Its underlying subfield is `Subgroup.CompactifiedQuotient.coeffSubfield D K`. -/
 def coeffIntermediateField : IntermediateField K (MeromorphicFunction Γ.CompactifiedQuotient) :=
-  (coeffSubfield D K).toIntermediateField fun c ↦ (algebraMap_mem_coeffSubfield D).mpr c.2
+  (coeffSubfield D K).toIntermediateField fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply K ℂ]
+    exact (algebraMap_mem_coeffSubfield D).mpr c.2
 
 variable {D K}
 
@@ -106,8 +108,7 @@ theorem sum_apply_smul_eq_zero_of_mem_coeffSubfield {ι : Type*} (s : Finset ι)
   have hφ (n : ℤ) : ∑ i ∈ s, φ (c i) * a i n = φ (∑ i ∈ s, c i * a i n) := by
     rw [map_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [mul_comm (c i), ← smul_eq_mul (a i n : ℂ), ← Subfield.smul_def, φ.map_smul, smul_eq_mul,
-      mul_comm]
+    simpa [Subfield.smul_def, mul_comm] using (φ.map_smul (a i n) (c i)).symm
   refine laurentQExpansion_injective D ?_
   ext n
   have h := congrArg (fun G ↦ (laurentQExpansion D G).coeff n) hc
@@ -123,7 +124,8 @@ theorem linearDisjoint_coeffIntermediateField : (coeffIntermediateField D K).Lin
   let a := Module.Basis.ofVectorSpace K (coeffIntermediateField D K)
   refine .of_basis_left a (linearIndependent_iff'.mpr fun s c hc i hi ↦ ?_)
   refine (Module.forall_dual_apply_eq_zero_iff K (c i)).mp fun φ ↦ ?_
-  have h := sum_apply_smul_eq_zero_of_mem_coeffSubfield s (fun j ↦ (a j).2) hc φ
+  have h := sum_apply_smul_eq_zero_of_mem_coeffSubfield s
+    (fun j ↦ mem_coeffIntermediateField.mp (a j).2) hc φ
   exact linearIndependent_iff'.mp a.linearIndependent s (φ ∘ c)
     (Subtype.ext (by simpa using h)) i hi
 
@@ -152,7 +154,7 @@ theorem linearIndependent_of_mem_coeffSubfield {ι : Type*}
     {F : ι → MeromorphicFunction Γ.CompactifiedQuotient} (hF : ∀ i, F i ∈ coeffSubfield D K)
     (hli : LinearIndependent K F) : LinearIndependent ℂ F :=
   linearDisjoint_coeffIntermediateField.linearIndependent_left
-    (a := fun i ↦ (⟨F i, hF i⟩ : coeffIntermediateField D K))
+    (a := fun i ↦ (⟨F i, mem_coeffIntermediateField.mpr (hF i)⟩ : coeffIntermediateField D K))
     (.of_comp (coeffIntermediateField D K).val.toLinearMap hli)
 
 end Subgroup.CompactifiedQuotient
