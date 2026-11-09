@@ -15,9 +15,11 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 Let `V` be a vector bundle over `B` and `b : X → B` a map. A family `s x ∈ V (b x)` is a section
 of `V` along `b`, and its total-space map is `x ↦ ⟨b x, s x⟩`. Fibrewise sums of `C^n` sections
 along the same map are `C^n` (`ContMDiff.add_sectionAlong`); for `b = id` this is Mathlib's
-`ContMDiff.add_section`. The general form applies to maps defined on the total space itself, which
-are sections along the projection. Differences of differentiable sections along a common base
-map are differentiable as well (`MDifferentiableWithinAt.sub_sectionAlong`).
+`ContMDiff.add_section`. So are fibrewise differences, and products with `C^n` functions
+(`ContMDiffAt.sub_sectionAlong`, `ContMDiffAt.smul_sectionAlong`). The general form applies to
+maps defined on the total space itself, which are sections along the projection. Differences of
+differentiable sections along a common base map are differentiable as well
+(`MDifferentiableWithinAt.sub_sectionAlong`).
 
 Consequently a `C^n` section `s` of `V` translates the fibres by a `C^n` diffeomorphism
 `p ↦ p + s (π p)` of the total space, with inverse the translation by `-s`
@@ -84,12 +86,50 @@ theorem ContMDiff.add_sectionAlong
     ContMDiff IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (s x + t x)) :=
   fun x ↦ (hs x).add_sectionAlong (ht x)
 
+/-- The fibrewise product of a `C^n` function and a `C^n` section along a map is `C^n`. -/
+theorem ContMDiffWithinAt.smul_sectionAlong {f : X → 𝕜}
+    (hf : ContMDiffWithinAt IX 𝓘(𝕜) n f u x₀)
+    (hs : ContMDiffWithinAt IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (s x)) u x₀) :
+    ContMDiffWithinAt IX (IB.prod 𝓘(𝕜, F)) n
+      (fun x ↦ TotalSpace.mk' F (b x) (f x • s x)) u x₀ := by
+  rw [contMDiffWithinAt_totalSpace] at hs ⊢
+  let e := trivializationAt F V (b x₀)
+  have he : ∀ᶠ x in 𝓝[u] x₀, b x ∈ e.baseSet :=
+    hs.1.continuousWithinAt.preimage_mem_nhdsWithin
+      (e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' (b x₀)))
+  refine ⟨hs.1, (hf.smul hs.2).congr_of_eventuallyEq ?_ ?_⟩
+  · filter_upwards [he] with x hx
+    exact (e.linear 𝕜 hx).map_smul (f x) (s x)
+  · exact (e.linear 𝕜 (FiberBundle.mem_baseSet_trivializationAt' (b x₀))).map_smul (f x₀) (s x₀)
+
+/-- The fibrewise product of a `C^n` function and a `C^n` section along a map is `C^n`. -/
+theorem ContMDiffAt.smul_sectionAlong {f : X → 𝕜} (hf : ContMDiffAt IX 𝓘(𝕜) n f x₀)
+    (hs : ContMDiffAt IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (s x)) x₀) :
+    ContMDiffAt IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (f x • s x)) x₀ :=
+  ContMDiffWithinAt.smul_sectionAlong hf hs
+
 end AddCommMonoid
 
 section AddCommGroup
 
 variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
   {b : X → B} {s t : ∀ x, V (b x)} {u : Set X} {x₀ : X}
+
+/-- The fibrewise difference of two `C^n` sections along the same map is `C^n`. -/
+theorem ContMDiffWithinAt.sub_sectionAlong
+    (hs : ContMDiffWithinAt IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (s x)) u x₀)
+    (ht : ContMDiffWithinAt IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (t x)) u x₀) :
+    ContMDiffWithinAt IX (IB.prod 𝓘(𝕜, F)) n
+      (fun x ↦ TotalSpace.mk' F (b x) (s x - t x)) u x₀ := by
+  simpa only [sub_eq_add_neg, neg_one_smul] using
+    hs.add_sectionAlong (contMDiffWithinAt_const (c := (-1 : 𝕜)).smul_sectionAlong ht)
+
+/-- The fibrewise difference of two `C^n` sections along the same map is `C^n`. -/
+theorem ContMDiffAt.sub_sectionAlong
+    (hs : ContMDiffAt IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (s x)) x₀)
+    (ht : ContMDiffAt IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (t x)) x₀) :
+    ContMDiffAt IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (s x - t x)) x₀ :=
+  ContMDiffWithinAt.sub_sectionAlong hs ht
 
 /-- The difference of differentiable sections along the same base map is differentiable. -/
 theorem MDifferentiableWithinAt.sub_sectionAlong

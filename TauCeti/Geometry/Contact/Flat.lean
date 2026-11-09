@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Contact.Basic
 public import TauCeti.Geometry.Contact.Reeb
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Translate
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
@@ -46,6 +47,8 @@ equivalence `TauCeti.SmoothTwoForm.IsNondegenerate.interiorEquiv` and its accomp
 
 * `TauCeti.SmoothForm.contactFlat`: the contact flat map `v ↦ ι_v dα + α(v) α` at a point.
 * `TauCeti.SmoothForm.contMDiff_contactFlat`: the contact flat maps form a smooth section.
+* `TauCeti.SmoothForm.contMDiffAt_sectionAlong_contactFlat`: the contact flat maps of a smooth
+  family of one-forms depend smoothly on the parameter.
 * `TauCeti.SmoothForm.IsContactForm.isInvertible_contactFlat`: for a contact form in finite
   dimensions the contact flat maps are invertible.
 * `TauCeti.SmoothForm.IsContactForm.contactFlat_apply_eq_iff`: the preimage of `α` is
@@ -55,6 +58,8 @@ equivalence `TauCeti.SmoothTwoForm.IsNondegenerate.interiorEquiv` and its accomp
 * `TauCeti.SmoothForm.IsContactForm.contactFlatEquiv_symm_self`,
   `TauCeti.SmoothForm.IsContactForm.contMDiff_reebVectorField`: the Reeb vector field corresponds
   to `α` under the contact flat equivalence, and is smooth.
+* `TauCeti.SmoothForm.contMDiffAt_sectionAlong_reebVectorField`: the Reeb vector fields of a smooth
+  family of contact forms depend smoothly on the parameter.
 
 ## References
 
@@ -93,27 +98,68 @@ theorem contactFlat_apply (α : SmoothForm I M ℝ 1) (x : M) (v w : TangentSpac
     α.contactFlat x v w = mextDeriv α.1 x ![v, w] + α.1 x ![v] * α.1 x ![w] := by
   simp [contactFlat, SmoothBundleForm.eval₂_apply]
 
+/-- **Contact flat maps of a smooth family of one-forms.** Let `α m` be one-forms on `M` depending
+on a parameter `m ∈ N`, and let `b : N → M`. If the values `(α m)_(b m)` and the exterior
+derivatives `(dα m)_(b m)` depend `C^n` on `m`, as sections along `b`, then so do the contact flat
+maps `(α m)♭_(b m)`, as a section of `Hom(TM, Hom(TM, ℝ))` along `b`. -/
+theorem contMDiffAt_sectionAlong_contactFlat {EN HN N : Type*} [NormedAddCommGroup EN]
+    [NormedSpace ℝ EN] [TopologicalSpace HN] {J : ModelWithCorners ℝ EN HN} [TopologicalSpace N]
+    [ChartedSpace HN N] {n : WithTop ℕ∞} {b : N → M} {α : N → SmoothForm I M ℝ 1} {m₀ : N}
+    (hα : ContMDiffAt J (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) n
+      (fun m ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ)
+        (E := fun x : M ↦ TangentSpace I x [⋀^Fin 1]→L[ℝ] Trivial M ℝ x) (b m) ((α m).1 (b m))) m₀)
+    (hdα : ContMDiffAt J (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] ℝ)) n
+      (fun m ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] ℝ)
+        (E := fun x : M ↦ TangentSpace I x [⋀^Fin 2]→L[ℝ] Trivial M ℝ x) (b m)
+        (mextDeriv (α m).1 (b m))) m₀) :
+    ContMDiffAt J (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
+      (fun m ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (b m)
+        ((α m).contactFlat (b m))) m₀ := by
+  -- The contact flat map is the flat map of `dα` plus the rank-one map `α ⊗ α`.
+  have heq (m : N) : (α m).contactFlat (b m) =
+      (show TangentSpace I (b m) →L[ℝ] TangentSpace I (b m) →L[ℝ] ℝ from
+          ContinuousAlternatingMap.flatL ℝ E ℝ (mextDeriv (α m).1 (b m))) +
+        (degreeOneEquiv (α m) (b m)).smulRight (degreeOneEquiv (α m) (b m)) := by
+    ext v w
+    rw [contactFlat_apply, add_apply, add_apply]
+    exact congrArg₂ (· + ·) (ContinuousAlternatingMap.flatL_apply_apply (E := E) _ v w).symm
+      (by simp)
+  simp only [heq]
+  refine (SmoothTwoForm.contMDiffAt_sectionAlong_flatL hdα).add_sectionAlong ?_
+  -- The values of `α m`, as linear maps.
+  have hα₁ : ContMDiffAt J (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) n
+      (fun m ↦ TotalSpace.mk' (E →L[ℝ] ℝ) (E := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) (b m)
+        (degreeOneEquiv (α m) (b m))) m₀ :=
+    contMDiffAt_sectionAlong_degreeOneEquiv_iff.2 hα
+  rw [contMDiffAt_hom_bundle]
+  have hα₂ := (contMDiffAt_hom_bundle _).1 hα₁
+  refine ⟨hα₂.1, ?_⟩
+  -- In coordinates, `α ⊗ α` is `smulRight` applied twice to the coordinate expression of `α`.
+  refine (((ContinuousLinearMap.smulRightL ℝ E (E →L[ℝ] ℝ)).contDiff.comp_contMDiffAt
+    hα₂.2).clm_apply hα₂.2).congr_of_eventuallyEq ?_
+  filter_upwards [hα₂.1.continuousAt.preimage_mem_nhds
+    ((trivializationAt E (TangentSpace I) (b m₀)).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt E (TangentSpace I) (b m₀)))] with m
+    (hm : b m ∈ (trivializationAt E (TangentSpace I) (b m₀)).baseSet)
+  ext v w
+  rw [inCoordinates_apply_eq₂ (E₃ := Trivial M ℝ) hm hm (Set.mem_univ _)]
+  simp only [Function.comp_apply]
+  rw [ContinuousLinearMap.inCoordinates_eq (E' := Trivial M ℝ) hm
+    (by simp [Trivial.eq_trivialization M ℝ])]
+  simp [Trivial.eq_trivialization M ℝ]
+
 /-- **The contact flat maps form a smooth section** of the bundle `Hom(TM, Hom(TM, ℝ))`. -/
 theorem contMDiff_contactFlat (α : SmoothForm I M ℝ 1) :
     ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) ∞
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) x
-        (α.contactFlat x)) := by
-  refine (SmoothTwoForm.contMDiff_flat _).add_section fun x₀ ↦ ?_
-  rw [contMDiffAt_hom_bundle]
-  refine ⟨contMDiffAt_id, ?_⟩
-  have hα := ((contMDiffAt_hom_bundle _).1 ((degreeOneEquiv α).contMDiff x₀)).2
-  -- In coordinates, `α ⊗ α` is `smulRight` applied twice to the coordinate expression of `α`.
-  refine (((ContinuousLinearMap.smulRightL ℝ E (E →L[ℝ] ℝ)).contDiff.comp_contMDiffAt
-    hα).clm_apply hα).congr_of_eventuallyEq ?_
-  filter_upwards [(trivializationAt E (TangentSpace I) x₀).open_baseSet.mem_nhds
-    (mem_baseSet_trivializationAt E (TangentSpace I) x₀)] with y hy
-  ext v w
-  rw [inCoordinates_apply_eq₂ (E₃ := Trivial M ℝ) hy hy (Set.mem_univ _)]
-  simp only [Function.comp_apply]
-  rw [ContinuousLinearMap.inCoordinates_eq (E' := Trivial M ℝ) hy
-    (by simp [Trivial.eq_trivialization M ℝ])]
-  simp [Trivial.eq_trivialization M ℝ]
+        (α.contactFlat x)) :=
+  fun x₀ ↦ contMDiffAt_sectionAlong_contactFlat (b := id) (α := fun _ ↦ α) (α.contMDiff x₀)
+    (by
+      have h := (mextDerivₗ I 1 α).contMDiff x₀
+      rw [mextDerivₗ_apply] at h
+      exact h)
 
 /-! ### Contact flat maps of contact forms -/
 
@@ -243,6 +289,29 @@ theorem IsContactForm.contMDiff_reebVectorField [FiniteDimensional ℝ E] (hα :
     ContMDiff I I.tangent ∞ (T% α.reebVectorField) := by
   rw [← hα.contactFlatEquiv_symm_self]
   exact (hα.contactFlatEquiv.symm α).contMDiff
+
+/-- **Reeb vector fields of a smooth family of contact forms.** Let `α m` be contact forms on `M`
+depending on a parameter `m ∈ N`, and let `b : N → M`. If the values `(α m)_(b m)` and the exterior
+derivatives `(dα m)_(b m)` depend `C^n` on `m`, as sections along `b`, then so do the Reeb vectors
+`R_(α m)(b m)`, as a map to the tangent bundle. -/
+theorem contMDiffAt_sectionAlong_reebVectorField [FiniteDimensional ℝ E] {EN HN N : Type*}
+    [NormedAddCommGroup EN] [NormedSpace ℝ EN] [TopologicalSpace HN]
+    {J : ModelWithCorners ℝ EN HN} [TopologicalSpace N] [ChartedSpace HN N] {n : WithTop ℕ∞}
+    {b : N → M} {α : N → SmoothForm I M ℝ 1} {m₀ : N} (hc : ∀ m, (α m).IsContactForm)
+    (hα : ContMDiffAt J (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) n
+      (fun m ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ)
+        (E := fun x : M ↦ TangentSpace I x [⋀^Fin 1]→L[ℝ] Trivial M ℝ x) (b m) ((α m).1 (b m))) m₀)
+    (hdα : ContMDiffAt J (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] ℝ)) n
+      (fun m ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] ℝ)
+        (E := fun x : M ↦ TangentSpace I x [⋀^Fin 2]→L[ℝ] Trivial M ℝ x) (b m)
+        (mextDeriv (α m).1 (b m))) m₀) :
+    ContMDiffAt J I.tangent n
+      (fun m ↦ (⟨b m, (α m).reebVectorField (b m)⟩ : TangentBundle I M)) m₀ := by
+  have h := (ContMDiffAt.clm_bundle_inverse (x := m₀) (ϕ := fun m ↦ (α m).contactFlat (b m))
+    (contMDiffAt_sectionAlong_contactFlat hα hdα)
+    ((hc m₀).isInvertible_contactFlat (b m₀))).clm_bundle_apply
+      (contMDiffAt_sectionAlong_degreeOneEquiv_iff.2 hα)
+  simpa only [(hc _).reebVectorField_eq_inverse_contactFlat] using h
 
 end SmoothForm
 
