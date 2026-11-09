@@ -118,16 +118,33 @@ theorem comp_extChartAt_symm_eventuallyEq_of_eventuallyEq_comp
 
 /-- **Smooth chart expressions.** Near an interior point `x`, the chart expression
 `f ∘ (extChartAt I x).symm` of a smooth function agrees with a smooth function on the model
-space. -/
+space. No separation assumption on `M` is needed: the cutoff lives on the model space. -/
 theorem exists_contDiff_comp_extChartAt_symm_eventuallyEq
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
     {x : M} (hx : I.IsInteriorPoint x) (f : C^∞⟮I, M; ℝ⟯) :
     ∃ g : E → ℝ, ContDiff ℝ ∞ g ∧
       (f : M → ℝ) ∘ (extChartAt I x).symm =ᶠ[nhds (extChartAt I x x)] g := by
-  obtain ⟨F, hF⟩ := exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x
-  obtain ⟨g, hg⟩ := exists_contMDiffMap_comp_eventuallyEq hx F hF f
-  exact ⟨g, g.contMDiff.contDiff, comp_extChartAt_symm_eventuallyEq_of_eventuallyEq_comp hx hF hg⟩
+  -- Cut the chart expression of `f` off inside the interior of the chart target.
+  have htarget : interior (extChartAt I x).target ∈ nhds (extChartAt I x x) :=
+    isOpen_interior.mem_nhds ((ModelWithCorners.isInteriorPoint_iff (I := I)).mp hx)
+  obtain ⟨β, hβ, -⟩ :=
+    (SmoothBumpFunction.nhds_basis_support
+      (I := modelWithCornersSelf ℝ E) htarget).mem_iff.mp htarget
+  refine ⟨fun y ↦ β y * f ((extChartAt I x).symm y), ?_, ?_⟩
+  · apply ContMDiff.contDiff
+    refine contMDiff_of_tsupport fun y hy ↦ ?_
+    have hytarget : y ∈ interior (extChartAt I x).target :=
+      hβ (tsupport_mul_subset_left hy)
+    have hsymmWithin :=
+      contMDiffWithinAt_extChartAt_symm_target (n := ∞) x (interior_subset hytarget)
+    have hsymm := hsymmWithin.contMDiffAt
+      (Filter.mem_of_superset (isOpen_interior.mem_nhds hytarget) interior_subset)
+    exact β.contMDiffAt.mul (f.contMDiff.contMDiffAt.comp y hsymm)
+  · filter_upwards [β.eventuallyEq_one] with y hy
+    change β y = 1 at hy
+    change (f : M → ℝ) ((extChartAt I x).symm y) = β y * f ((extChartAt I x).symm y)
+    rw [hy, one_mul]
 
 end TauCeti
