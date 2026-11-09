@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Resolvent
+import Mathlib.RingTheory.Polynomial.Basic
+import TauCeti.Algebra.Polynomial.Coprime
 import TauCeti.Algebra.Ring.Commute
 import TauCeti.Algebra.Ring.SpectralIdempotent
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
@@ -260,6 +262,18 @@ theorem range_eq_ker (hE : IsRieszProjection u a h E) :
   · have := congr($h1 x)
     simp only [sub_apply, one_apply_eq_self, mul_apply_eq_comp, hx, map_zero, sub_eq_zero] at this
     exact this.symm
+
+/-- Spectral summands at parameters separated by a unit have zero intersection.
+Distinctness alone is insufficient over a coefficient ring. -/
+theorem disjoint_range {F : M →L[R] M} {b : R} {k : ℕ}
+    (hE : IsRieszProjection u a h E) (hF : IsRieszProjection u b k F)
+    (hab : IsUnit (a - b)) : Disjoint E.range F.range := by
+  rw [hE.range_eq_ker, hF.range_eq_ker]
+  have hpq := (Polynomial.isCoprime_one_sub_C_mul_X_of_isUnit_sub hab).pow (m := h) (n := k)
+  have hd := Polynomial.disjoint_ker_aeval_of_isCoprime u.toLinearMap hpq
+  simpa only [map_pow, map_sub, map_one, map_mul, Polynomial.aeval_C,
+    Polynomial.aeval_X, Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul,
+    toLinearMap_pow, toLinearMap_sub, toLinearMap_smul, toLinearMap_one] using hd
 
 /-- **Uniqueness of the Riesz projection.** Two Riesz projections of `u` at `a` of the same order
 are equal. -/
