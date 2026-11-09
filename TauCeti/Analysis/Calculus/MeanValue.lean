@@ -320,24 +320,25 @@ theorem Differentiable.abs_sub_le_of_basis_bound {P : Type*}
     (fun t _ ↦ (hgd t).hasDerivWithinAt) hderiv s (right_mem_Icc.mpr hs.1)
   simpa only [g, zero_smul, add_zero, sub_zero, Real.norm_eq_abs] using hmain
 
-namespace ContDiff
+namespace ContDiffOn
 
 open Function
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- **Lipschitz bound for a jointly `C¹` family on a box.** If `Γ t s` is `C¹` in `(t, s)`, there is
-a constant `B` such that `‖Γ t₁ s₁ - Γ t₂ s₂‖ ≤ B * max |t₁ - t₂| |s₁ - s₂|` for all `t₁, t₂` in
-`[t₀, t₁']` and all `s₁, s₂` in `[a, b]`. -/
-theorem exists_norm_sub_le_mul_max_uncurry {Γ : ℝ → ℝ → E} (hΓ : ContDiff ℝ 1 (uncurry Γ))
-    (t₀ t₀' a b : ℝ) :
+/-- **Lipschitz bound for a family jointly `C¹` on a box.** If `Γ t s` is `C¹` in `(t, s)` on
+`[t₀, t₀'] × [a, b]`, there is a constant `B` such that
+`‖Γ t₁ s₁ - Γ t₂ s₂‖ ≤ B * max |t₁ - t₂| |s₁ - s₂|` for all `t₁, t₂` in `[t₀, t₀']` and all
+`s₁, s₂` in `[a, b]`. -/
+theorem exists_norm_sub_le_mul_max_uncurry {Γ : ℝ → ℝ → E} {t₀ t₀' a b : ℝ}
+    (hΓ : ContDiffOn ℝ 1 (uncurry Γ) (Icc t₀ t₀' ×ˢ Icc a b)) :
     ∃ B : NNReal, ∀ ⦃x₁ y₁ x₂ y₂ : ℝ⦄, x₁ ∈ Icc t₀ t₀' → y₁ ∈ Icc a b → x₂ ∈ Icc t₀ t₀' →
       y₂ ∈ Icc a b → ‖Γ x₁ y₁ - Γ x₂ y₂‖ ≤ B * max |x₁ - x₂| |y₁ - y₂| := by
   have hQc : IsCompact (Icc t₀ t₀' ×ˢ Icc a b) := isCompact_Icc.prod isCompact_Icc
   have hQv : Convex ℝ (Icc t₀ t₀' ×ˢ Icc a b) := (convex_Icc _ _).prod (convex_Icc _ _)
-  obtain ⟨B, hB⟩ := hΓ.contDiffOn.exists_lipschitzOnWith one_ne_zero hQv hQc
+  obtain ⟨B, hB⟩ := hΓ.exists_lipschitzOnWith one_ne_zero hQv hQc
   refine ⟨B, fun x₁ y₁ x₂ y₂ hx₁ hy₁ hx₂ hy₂ ↦ ?_⟩
   have := hB.dist_le_mul (x := (x₁, y₁)) (y := (x₂, y₂)) ⟨hx₁, hy₁⟩ ⟨hx₂, hy₂⟩
   simpa [dist_eq_norm, Prod.dist_eq, Real.dist_eq] using this
 
-end ContDiff
+end ContDiffOn

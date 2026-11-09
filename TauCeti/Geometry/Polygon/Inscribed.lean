@@ -354,7 +354,8 @@ private theorem exists_fineFamily {Γ : ℝ → ℝ → E} (hΓ : ContDiff ℝ 1
   -- The constants come from compactness of `[0, 1] × [0, 2T]`: a bound `B` on the derivative of
   -- `Γ`, uniform windows of width `δ₀` along which the loops increase, and the least distance
   -- `η₀` between points of one loop whose parameters are between `δ` and `T - δ` apart.
-  obtain ⟨B, hlipΓ⟩ := hΓ.exists_norm_sub_le_mul_max_uncurry 0 1 0 (2 * T)
+  obtain ⟨B, hlipΓ⟩ :=
+    (hΓ.contDiffOn (s := Set.Icc 0 1 ×ˢ Set.Icc 0 (2 * T))).exists_norm_sub_le_mul_max_uncurry
   obtain ⟨δ₀, hδ₀, lam₀, hlam₀, hmono⟩ :=
     hΓ.exists_strictMonoOn_dual_comp_uncurry hderiv 0 (2 * T)
   set δ := δ₀ / 3 with hδ_def
