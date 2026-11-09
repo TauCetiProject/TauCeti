@@ -70,4 +70,13 @@ theorem coe_mapGermAlgHom (φ : R →+* S) (l : Filter α) {A : Type*} [CommSemi
     ⇑(φ.mapGermAlgHom l h) = φ.mapGerm l := by
   simp [mapGermAlgHom]
 
+/-- On representatives, the induced algebra homomorphism is postcomposition. (Not `@[simp]`:
+`coe_mapGermAlgHom` and `mapGerm_coe` already prove it.) -/
+theorem mapGermAlgHom_coe (φ : R →+* S) (l : Filter α) {A : Type*} [CommSemiring A]
+    [Algebra A (Filter.Germ l R)] [Algebra A (Filter.Germ l S)]
+    (h : ∀ a : A, φ.mapGerm l (algebraMap A (Filter.Germ l R) a) =
+      algebraMap A (Filter.Germ l S) a) (u : α → R) :
+    φ.mapGermAlgHom l h (u : Filter.Germ l R) = (φ ∘ u : α → S) := by
+  rw [coe_mapGermAlgHom, mapGerm_coe]
+
 end RingHom

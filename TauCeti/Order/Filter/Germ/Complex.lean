@@ -124,23 +124,28 @@ theorem exists_real_polynomial_relations {σ : Type*} {l : Filter (σ → ℝ)}
   let g : Germ l ℝ →ₐ[R] B := (algebraMap ℝ ℂ).mapGermAlgHom l fun p ↦ by
     rw [Germ.mvPolynomialAlgebra_algebraMap_apply, hB, RingHom.mapGerm_coe,
       Complex.coe_algebraMap, Function.comp_def]
+  have hg_apply (u : (σ → ℝ) → ℝ) : g (u : Germ l ℝ) = ((fun y ↦ (u y : ℂ) : (σ → ℝ) → ℂ) : B) :=
+    RingHom.mapGermAlgHom_coe _ _ _ _
   have hg : Function.Injective g := by
-    simp only [g, B, RingHom.coe_mapGermAlgHom]
+    rw [show ⇑g = (algebraMap ℝ ℂ).mapGerm l from RingHom.coe_mapGermAlgHom _ _ _]
     exact (algebraMap ℝ ℂ).mapGerm_injective l Complex.ofReal_injective
   let j : B →ₐ[R] B := (starRingEnd ℂ).mapGermAlgHom l fun p ↦ by
     rw [hB, RingHom.mapGerm_coe, Function.comp_def]
     simp only [Complex.conj_ofReal]
+  have hj_apply (u : (σ → ℝ) → ℂ) : j (u : B) = ((fun y ↦ star (u y) : (σ → ℝ) → ℂ) : B) :=
+    RingHom.mapGermAlgHom_coe _ _ _ _
   have hc (z : ℂ) : IsAlgebraic R ((fun _ : σ → ℝ ↦ z) : B) := by
     have hz' : IsIntegral R (MvPolynomial.C z : S) := Algebra.IsIntegral.isIntegral _
     convert hz'.isAlgebraic.algHom (IsScalarTower.toAlgHom R S B) using 1
     simp only [IsScalarTower.toAlgHom_apply, RingHom.algebraMap_toAlgebra, hs,
       MvPolynomial.eval_C]
   -- Recover the two components from f and its conjugate, then reflect along the real inclusion.
-  obtain ⟨hre, him⟩ := Germ.isAlgebraic_re_im halgR
-    (by simpa [j, B, Function.comp_def] using halgR.algHom j) hc
+  have hconj : IsAlgebraic R ((fun y ↦ star (f y) : (σ → ℝ) → ℂ) : B) := by
+    simpa only [hj_apply] using halgR.algHom j
+  obtain ⟨hre, him⟩ := Germ.isAlgebraic_re_im halgR hconj hc
   exact ⟨Germ.isAlgebraic_coe_iff.mp ((isAlgebraic_algHom_iff g hg).mp
-      (by simpa [g, B, Function.comp_def] using hre)),
+      (by rw [hg_apply]; exact hre)),
     Germ.isAlgebraic_coe_iff.mp ((isAlgebraic_algHom_iff g hg).mp
-      (by simpa [g, B, Function.comp_def] using him))⟩
+      (by rw [hg_apply]; exact him))⟩
 
 end Polynomial
