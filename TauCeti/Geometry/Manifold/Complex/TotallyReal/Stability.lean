@@ -79,7 +79,7 @@ theorem isMaximalTotallyReal_inCoordinates_iff {x₀ x : B₁} {y₀ y : B₂}
       (e : E₂ y →L[ℝ] F₂).comp (K.comp (e.symm : F₂ →L[ℝ] E₂ y)) :=
     ContinuousLinearMap.inCoordinates_eq hy hy
   rw [ContinuousLinearMap.range_inCoordinates hx hy]
-  refine isMaximalTotallyReal_map_linearEquiv_iff e.toLinearEquiv ?_
+  refine e.toLinearEquiv.isMaximalTotallyReal_map_iff ?_
   ext v
   rw [hK]
   simp
