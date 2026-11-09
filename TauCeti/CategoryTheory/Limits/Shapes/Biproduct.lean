@@ -31,9 +31,9 @@ In a category with zero morphisms, a zero object and binary biproducts give all 
 `Option J` splits off its `none` summand (`TauCeti.biproductOptionIso`); the latter is the
 inductive step for computing additive invariants of finite biproducts. Similarly,
 `TauCeti.biproductSumIso` splits a sum-indexed biproduct into its two indexed parts.
-In a preadditive category, a biproduct `⨁ f` is the binary biproduct of one summand `f j` and the
-biproduct of the remaining summands (`TauCeti.biproductSubtypeNeIso`), which is the inductive step
-of arguments that peel off one summand at a time; the underlying decomposition of the identity is
+A biproduct `⨁ f` is the binary biproduct of one summand `f j` and the biproduct of the remaining
+summands (`TauCeti.biproductSubtypeNeIso`), which is the inductive step of arguments that peel off
+one summand at a time; in a preadditive category the underlying decomposition of the identity is
 `TauCeti.biproduct_π_ι_add_toSubtype_fromSubtype`. A biproduct over an empty index type is zero
 (`TauCeti.isZero_biproduct_of_isEmpty`).
 An additive functor which
@@ -324,8 +324,11 @@ end IsEmpty
 
 section SubtypeNe
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] {J : Type w} (f : J → C) (j : J)
-  [HasBiproduct f] [HasBiproduct (Subtype.restrict (· ≠ j) f)]
+variable {C : Type u} [Category.{v} C] {J : Type w} (f : J → C) (j : J)
+
+section Additive
+
+variable [Preadditive C] [HasBiproduct f] [HasBiproduct (Subtype.restrict (· ≠ j) f)]
 
 /-- The decomposition `⨁ f = f j ⊕ ⨁_{j' ≠ j} f j'` of the identity: the projection onto the
 summand `f j` followed by its inclusion, plus the projection onto the remaining summands followed
@@ -346,7 +349,10 @@ theorem biproduct_π_ι_add_toSubtype_fromSubtype :
       simp [biproduct.ι_π_ne _ hab, biproduct.ι_π_ne_assoc _ hab]
     · simp [biproduct.ι_π_ne_assoc _ hb, biproduct.ι_π_ne_assoc _ hab, biproduct.ι_π_ne _ hab]
 
-variable [HasBinaryBiproduct (f j) (⨁ Subtype.restrict (· ≠ j) f)]
+end Additive
+
+variable [HasZeroMorphisms C] [HasBiproduct f] [HasBiproduct (Subtype.restrict (· ≠ j) f)]
+  [HasBinaryBiproduct (f j) (⨁ Subtype.restrict (· ≠ j) f)]
 
 /-- A biproduct is the binary biproduct of one summand `f j` and the biproduct of the remaining
 summands. -/
@@ -354,7 +360,20 @@ noncomputable def biproductSubtypeNeIso : ⨁ f ≅ f j ⊞ ⨁ Subtype.restrict
   hom := biprod.lift (biproduct.π f j) (biproduct.toSubtype f (· ≠ j))
   inv := biprod.desc (biproduct.ι f j) (biproduct.fromSubtype f (· ≠ j))
   hom_inv_id := by
-    rw [biprod.lift_desc, biproduct_π_ι_add_toSubtype_fromSubtype]
+    classical
+    refine biproduct.hom_ext' _ _ fun a ↦ ?_
+    by_cases ha : a = j
+    · -- The summand `f j` goes to the first factor.
+      subst ha
+      have : biproduct.ι f a ≫ biprod.lift (biproduct.π f a) (biproduct.toSubtype f (· ≠ a)) =
+          biprod.inl := by
+        apply biprod.hom_ext <;> simp [biproduct.ι_toSubtype]
+      simp [reassoc_of% this]
+    · -- Any other summand goes to the second factor.
+      have : biproduct.ι f a ≫ biprod.lift (biproduct.π f j) (biproduct.toSubtype f (· ≠ j)) =
+          biproduct.ι (Subtype.restrict (· ≠ j) f) ⟨a, ha⟩ ≫ biprod.inr := by
+        apply biprod.hom_ext <;> simp [biproduct.ι_toSubtype, biproduct.ι_π_ne _ ha, ha]
+      simp [reassoc_of% this, biproduct.ι_fromSubtype]
   inv_hom_id := by
     classical
     apply biprod.hom_ext' <;> apply biprod.hom_ext
