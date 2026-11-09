@@ -67,10 +67,16 @@ theorem isTotallyRealEmbedding_realLocus {ι : Type*} [Fintype ι] (n : ℕ∞ω
 
 attribute [local instance] finrank_real_complex_fact'
 
-private theorem isTotallyRealEmbedding_sphere (n : ℕ∞ω) :
+/-- The unit circle is a totally real embedding, with arbitrary finite or analytic regularity. -/
+theorem isTotallyRealEmbedding_circle (n : ℕ∞ω) :
     IsTotallyRealEmbedding (𝓡 1) 𝓘(ℝ, ℂ) n
       (AlmostComplexStructure.ofComplexModule ℂ).constSmooth.almostComplexStructureAt
-      (fun z : Metric.sphere (0 : ℂ) 1 ↦ (z : ℂ)) := by
+      (fun z : Circle ↦ (z : ℂ)) := by
+  -- Mathlib defines `Circle`, its topology and its charts using the unit sphere. Present
+  -- that definitionally identical formulation to use the native sphere differential API.
+  change IsTotallyRealEmbedding (𝓡 1) 𝓘(ℝ, ℂ) n
+    (AlmostComplexStructure.ofComplexModule ℂ).constSmooth.almostComplexStructureAt
+    (fun z : Metric.sphere (0 : ℂ) 1 ↦ (z : ℂ))
   have hmap : IsMaximalTotallyRealMap (𝓡 1) 𝓘(ℝ, ℂ)
       (AlmostComplexStructure.ofComplexModule ℂ).constSmooth.almostComplexStructureAt
       (fun z : Metric.sphere (0 : ℂ) 1 ↦ (z : ℂ)) := by
@@ -96,16 +102,6 @@ private theorem isTotallyRealEmbedding_sphere (n : ℕ∞ω) :
     isTotallyRealEmbedding_of_contMDiff (by simp) contMDiff_coe_sphere
       Topology.IsEmbedding.subtypeVal (by simp) hmap
   exact he.of_le le_top
-
-/-- The unit circle is a totally real embedding, with arbitrary finite or analytic regularity. -/
-theorem isTotallyRealEmbedding_circle (n : ℕ∞ω) :
-    IsTotallyRealEmbedding (𝓡 1) 𝓘(ℝ, ℂ) n
-      (AlmostComplexStructure.ofComplexModule ℂ).constSmooth.almostComplexStructureAt
-      (fun z : Circle ↦ (z : ℂ)) := by
-  -- Mathlib defines `Circle` and its charted-space instance using the unit sphere.
-  -- The subtype, inclusion, topology and charts agree definitionally with those above,
-  -- so their manifold derivatives agree as well.
-  exact isTotallyRealEmbedding_sphere n
 
 /-- A real line in complex dimension two fails the required half-dimensionality. -/
 theorem not_isTotallyRealEmbedding_realLine (n : ℕ∞ω) :
