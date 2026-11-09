@@ -39,6 +39,8 @@ vectors of `k[Fin 4]`, and the sign twist of `V₄`, evaluated at the class repr
   `3 ≠ 0`.
 * `TauCeti.ker_symmetricGroupFourTwoDimensionalRepresentation`: the kernel of `E` is the kernel of
   `q`, the Klein four-group.
+* `TauCeti.character_eq_of_symmetricGroupFourClassData_rep`: a character of `S₄` is determined by
+  its values at the class representatives.
 * `TauCeti.symmetricGroupFourCharacterTable_eq_character`: the rows of the character table of `S₄`
   are the characters of the trivial, sign, two-dimensional, standard and sign-twisted standard
   representations.
@@ -105,6 +107,19 @@ theorem char_symmetricGroupFourTwoDimensionalRepresentation (σ : Perm (Fin 4)) 
     (symmetricGroupFourTwoDimensionalRepresentation k).character σ =
       (standardRepresentation k (Fin 3)).character (symmetricGroupFourMatchingHom σ) :=
   (rfl)
+
+/-- **Characters of `S₄` are determined at the class representatives**
+`1, (01), (01)(23), (012), (0123)` of `TauCeti.symmetricGroupFourClassData`: characters are class
+functions and every permutation is conjugate to one of these. -/
+theorem character_eq_of_symmetricGroupFourClassData_rep {V W : Type*} [AddCommGroup V]
+    [Module k V] [AddCommGroup W] [Module k W] {ρ : Representation k (Perm (Fin 4)) V}
+    {ρ' : Representation k (Perm (Fin 4)) W}
+    (h : ∀ j, ρ.character (symmetricGroupFourClassData.rep j) =
+      ρ'.character (symmetricGroupFourClassData.rep j)) :
+    ρ.character = ρ'.character := by
+  funext σ
+  obtain ⟨τ, hτ⟩ := isConj_iff.mp (symmetricGroupFourClassData.isConj_rep_index σ)
+  rw [← hτ, Representation.char_conj, Representation.char_conj, h]
 
 /-- The sign character at the class representatives `1, (01), (01)(23), (012), (0123)`. -/
 theorem coe_signLinearCharacter_symmetricGroupFourClassData_rep (j : SymmetricGroupFourClassIndex) :

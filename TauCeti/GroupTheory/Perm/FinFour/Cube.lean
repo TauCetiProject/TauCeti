@@ -9,10 +9,12 @@ public import Mathlib.Data.Sym.Sym2
 public import Mathlib.GroupTheory.Perm.Cycle.Concrete
 public import Mathlib.InformationTheory.Hamming
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+public import TauCeti.LinearAlgebra.Monomial
 import Mathlib.Data.Sym.Card
 import Mathlib.GroupTheory.Perm.Closure
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
-import TauCeti.InformationTheory.Hamming
+import Mathlib.LinearAlgebra.Matrix.ToLin
+import TauCeti.InformationTheory.Coding.Equivalence
 
 /-!
 # The symmetric group on four letters as the rotation group of the cube
@@ -74,61 +76,38 @@ open Equiv Matrix
 
 /-! ### The rotation group -/
 
-/-- **The rotation group of the cube** `[-1, 1]³`: the determinant-one signed permutation matrices,
-whose `j`-th column is `ε j • e_{σ j}` for a permutation `σ` of the coordinates and signs
-`ε : Fin 3 → ℤˣ`. The determinant condition is membership in `SL(3, ℤ)`. -/
-def cubeRotationGroup : Subgroup (SpecialLinearGroup (Fin 3) ℤ) where
-  carrier := {A | ∃ σ : Perm (Fin 3), ∃ ε : Fin 3 → ℤˣ,
-    ∀ i j, A i j = if σ j = i then (ε j : ℤ) else 0}
-  mul_mem' := by
-    rintro A B ⟨σ, ε, hA⟩ ⟨τ, δ, hB⟩
-    refine ⟨σ * τ, fun j ↦ ε (τ j) * δ j, fun i j ↦ ?_⟩
-    simp only [SpecialLinearGroup.coe_mul, Matrix.mul_apply, hA, hB, ite_mul, mul_ite, zero_mul,
-      mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ite_true, Perm.mul_apply, Units.val_mul]
-    split_ifs with h <;> simp [h]
-  one_mem' := ⟨1, 1, fun i j ↦ by simp [Matrix.one_apply, eq_comm]⟩
-  inv_mem' := by
-    rintro A ⟨σ, ε, hA⟩
-    set M : Matrix (Fin 3) (Fin 3) ℤ :=
-      Matrix.of fun i j ↦ if σ⁻¹ j = i then ((ε (σ⁻¹ j))⁻¹ : ℤˣ) else 0 with hM
-    have hAM : (A : Matrix (Fin 3) (Fin 3) ℤ) * M = 1 := by
-      ext i j
-      simp only [Matrix.mul_apply, hA, hM, Matrix.of_apply, ite_mul, zero_mul, mul_ite, mul_zero,
-        Finset.sum_ite_eq, Finset.mem_univ, ite_true, Matrix.one_apply]
-      split_ifs <;> simp_all
-    have hinv : ((A⁻¹ : SpecialLinearGroup (Fin 3) ℤ) : Matrix (Fin 3) (Fin 3) ℤ) = M := by
-      calc ((A⁻¹ : SpecialLinearGroup (Fin 3) ℤ) : Matrix (Fin 3) (Fin 3) ℤ)
-          = ((A⁻¹ : SpecialLinearGroup (Fin 3) ℤ) : Matrix (Fin 3) (Fin 3) ℤ) *
-              ((A : Matrix (Fin 3) (Fin 3) ℤ) * M) := by rw [hAM, Matrix.mul_one]
-        _ = M := by
-          rw [← Matrix.mul_assoc, ← SpecialLinearGroup.coe_mul, inv_mul_cancel,
-            SpecialLinearGroup.coe_one, Matrix.one_mul]
-    exact ⟨σ⁻¹, fun j ↦ (ε (σ⁻¹ j))⁻¹, fun i j ↦ by rw [hinv]; rfl⟩
+/-- **The rotation group of the cube** `[-1, 1]³`: the matrices of `SL(3, ℤ)` acting on `ℤ³` as
+monomial transformations, that is, the determinant-one signed permutation matrices, whose `j`-th
+column is `ε j • e_{σ j}` for a permutation `σ` of the coordinates and signs `ε : Fin 3 → ℤˣ`. -/
+def cubeRotationGroup : Subgroup (SpecialLinearGroup (Fin 3) ℤ) :=
+  (monomialGroup ℤ (Fin 3)).comap SpecialLinearGroup.toLin'
 
 /-- A matrix of `SL(3, ℤ)` is a rotation of the cube exactly when it is a signed permutation
 matrix. -/
 theorem mem_cubeRotationGroup_iff {A : SpecialLinearGroup (Fin 3) ℤ} :
     A ∈ cubeRotationGroup ↔ ∃ σ : Perm (Fin 3), ∃ ε : Fin 3 → ℤˣ,
-      ∀ i j, A i j = if σ j = i then (ε j : ℤ) else 0 :=
-  Iff.rfl
-
-/-- A signed permutation matrix moves coordinate `σ⁻¹ i` to coordinate `i`, with sign
-`ε (σ⁻¹ i)`. -/
-private theorem mulVec_apply_of_signedPerm {A : Matrix (Fin 3) (Fin 3) ℤ} {σ : Perm (Fin 3)}
-    {ε : Fin 3 → ℤˣ} (hA : ∀ i j, A i j = if σ j = i then (ε j : ℤ) else 0) (w : Fin 3 → ℤ)
-    (i : Fin 3) : (A *ᵥ w) i = ε (σ⁻¹ i) * w (σ⁻¹ i) := by
-  simp only [mulVec, dotProduct, hA, ite_mul, zero_mul]
-  rw [Finset.sum_eq_single (σ⁻¹ i) (fun j _ hj ↦ ite_eq_right_iff.mpr fun h ↦ by
-    subst h; simp at hj) (by simp)]
-  simp
+      ∀ i j, A i j = if σ j = i then (ε j : ℤ) else 0 := by
+  -- The matrix of the monomial transformation `monomialEquiv ε σ` is the signed permutation
+  -- matrix with signs `ε` and permutation `σ`.
+  have key (ε : Fin 3 → ℤˣ) (σ : Perm (Fin 3)) : monomialEquiv ε σ = SpecialLinearGroup.toLin' A ↔
+      ∀ i j, A i j = if σ j = i then (ε j : ℤ) else 0 := by
+    rw [eq_comm, ← LinearEquiv.toLinearMap_inj, SpecialLinearGroup.toLin'_to_linearMap,
+      ← LinearMap.toMatrix'.injective.eq_iff, LinearMap.toMatrix'_toLin', ← Matrix.ext_iff]
+    refine forall₂_congr fun i j ↦ ?_
+    rw [LinearMap.toMatrix'_apply, LinearEquiv.coe_coe, monomialEquiv_apply]
+    obtain rfl | h := eq_or_ne (σ j) i
+    · simp
+    · simp [h, Equiv.symm_apply_eq, Ne.symm h]
+  simp only [cubeRotationGroup, Subgroup.mem_comap, mem_monomialGroup, key]
+  exact exists_comm
 
 /-- A rotation of the cube sends a vertex to a vertex: the coordinates of `A v` are signs. -/
 theorem mulVec_mul_self_of_mem_cubeRotationGroup {A : SpecialLinearGroup (Fin 3) ℤ}
     (hA : A ∈ cubeRotationGroup) (v : Fin 3 → ℤˣ) (i : Fin 3) :
     (A *ᵥ fun j ↦ (v j : ℤ)) i * (A *ᵥ fun j ↦ (v j : ℤ)) i = 1 := by
-  obtain ⟨σ, ε, h⟩ := hA
-  rw [mulVec_apply_of_signedPerm h, ← Units.val_mul, ← Units.val_mul, Int.units_mul_self,
-    Units.val_one]
+  obtain ⟨ε, σ, h⟩ := mem_monomialGroup.mp (Subgroup.mem_comap.mp hA)
+  rw [← Matrix.toLin'_apply, ← SpecialLinearGroup.toLin'_apply, ← h, monomialEquiv_apply,
+    ← Units.val_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one]
 
 /-- The rotation group of the cube acts on the vertices `{-1, 1}³ = Fin 3 → ℤˣ` by matrix
 multiplication. -/
@@ -145,11 +124,21 @@ theorem coe_cubeRotationGroup_smul_apply (A : cubeRotationGroup) (v : Fin 3 → 
     ((A • v) i : ℤ) = ((A.1 : Matrix (Fin 3) (Fin 3) ℤ) *ᵥ fun j ↦ (v j : ℤ)) i :=
   (rfl)
 
+/-- A rotation acting on `ℤ³` as the monomial transformation with signs `ε` and coordinate
+permutation `σ` moves coordinate `σ⁻¹ i` of a vertex to coordinate `i`, with sign `ε (σ⁻¹ i)`. -/
+theorem cubeRotationGroup_smul_apply_of_monomialEquiv {A : cubeRotationGroup}
+    {ε : Fin 3 → ℤˣ} {σ : Perm (Fin 3)} (h : monomialEquiv ε σ = SpecialLinearGroup.toLin' A.1)
+    (v : Fin 3 → ℤˣ) (i : Fin 3) : (A • v) i = ε (σ.symm i) * v (σ.symm i) :=
+  Units.ext <| by
+    rw [coe_cubeRotationGroup_smul_apply, ← Matrix.toLin'_apply, ← SpecialLinearGroup.toLin'_apply,
+      ← h, monomialEquiv_apply, Units.val_mul]
+
 instance : MulAction cubeRotationGroup (Fin 3 → ℤˣ) where
   one_smul v := funext fun i ↦ Units.ext <| by simp
   mul_smul A B v := funext fun i ↦ Units.ext <| by simp [Matrix.mulVec_mulVec]
 
 /-- A rotation is linear, so it commutes with the antipodal map. -/
+@[simp]
 theorem cubeRotationGroup_smul_neg (A : cubeRotationGroup) (v : Fin 3 → ℤˣ) :
     A • -v = -(A • v) := by
   funext i
@@ -160,14 +149,17 @@ theorem cubeRotationGroup_smul_neg (A : cubeRotationGroup) (v : Fin 3 → ℤˣ)
 
 /-- A rotation preserves the Hamming distance between vertices: it permutes the coordinates and
 changes their signs. -/
+@[simp]
 theorem hammingDist_cubeRotationGroup_smul (A : cubeRotationGroup) (v w : Fin 3 → ℤˣ) :
     hammingDist (A • v) (A • w) = hammingDist v w := by
-  obtain ⟨σ, ε, h⟩ := A.2
-  have hA : ∀ (u : Fin 3 → ℤˣ) i, (A • u) i = ε (σ⁻¹ i) * u (σ⁻¹ i) := fun u i ↦ Units.ext <| by
-    rw [coe_cubeRotationGroup_smul_apply, mulVec_apply_of_signedPerm h, Units.val_mul]
-  rw [funext (hA v), funext (hA w), hammingDist_comp (fun i (x : ℤˣ) ↦ ε (σ⁻¹ i) * x)
-    (fun i ↦ mul_right_injective _) (x := fun i ↦ v (σ⁻¹ i)) (y := fun i ↦ w (σ⁻¹ i))]
-  exact (σ⁻¹).hammingDist_comp v w
+  obtain ⟨ε, σ, h⟩ := mem_monomialGroup.mp (Subgroup.mem_comap.mp A.2)
+  have hval (u : Fin 3 → ℤˣ) :
+      (fun i ↦ ((A • u) i : ℤ)) = monomialEquiv ε σ (fun i ↦ (u i : ℤ)) := by
+    funext i
+    rw [cubeRotationGroup_smul_apply_of_monomialEquiv h, Units.val_mul, monomialEquiv_apply]
+  rw [← hammingDist_comp (fun _ ↦ Units.val) (fun _ ↦ Units.val_injective) (x := A • v),
+    ← hammingDist_comp (fun _ ↦ Units.val) (fun _ ↦ Units.val_injective) (x := v), hval, hval,
+    hammingDist_monomialEquiv]
 
 /-! ### The edges -/
 
@@ -277,46 +269,36 @@ theorem cubeBodyDiagonalHom_apply (A : cubeRotationGroup) (k : Fin 4) :
   (rfl)
 
 /-- A rotation sends the body diagonal through `v` to the body diagonal through `A • v`. -/
+@[simp]
 theorem cubeBodyDiagonalHom_apply_cubeBodyDiagonalIndex (A : cubeRotationGroup)
     (v : Fin 3 → ℤˣ) :
     cubeBodyDiagonalHom A (cubeBodyDiagonalIndex v) = cubeBodyDiagonalIndex (A • v) :=
   (cubeBodyDiagonalIndex_smul A v).symm
 
-/-- The finite check behind `cubeBodyDiagonalHom_injective`: a determinant-one signed
-permutation fixing the four body diagonals is the identity. -/
-private theorem eq_one_of_signedPerm_fix_cubeBodyDiagonal (σ : Perm (Fin 3)) (ε : Fin 3 → ℤˣ)
-    (hdet : (Matrix.of fun i j ↦ if σ j = i then (ε j : ℤ) else 0).det = 1)
-    (hfix : ∀ k, cubeBodyDiagonalIndex (fun i ↦ ε (σ⁻¹ i) * cubeBodyDiagonal k (σ⁻¹ i)) = k) :
-    σ = 1 ∧ ε = 1 := by
-  have key := (by decide : ∀ (σ : Perm (Fin 3)) (ε : Fin 3 → ℤˣ),
-    (∀ k, cubeBodyDiagonalIndex (fun i ↦ ε (σ⁻¹ i) * cubeBodyDiagonal k (σ⁻¹ i)) = k) →
-      σ = 1 ∧ (ε = 1 ∨ ε = -1)) σ ε hfix
-  obtain ⟨rfl, rfl | rfl⟩ := key
-  · exact ⟨rfl, rfl⟩
-  · rw [Matrix.det_fin_three] at hdet
-    simp at hdet
-
 /-- **A rotation fixing every body diagonal is the identity.** The determinant condition is
 needed: the antipodal map `-1` fixes every diagonal. -/
 theorem cubeBodyDiagonalHom_injective : Function.Injective cubeBodyDiagonalHom := by
   refine (injective_iff_map_eq_one _).mpr fun A hA ↦ ?_
-  obtain ⟨σ, ε, h⟩ := A.2
-  have hM : (A.1 : Matrix (Fin 3) (Fin 3) ℤ) =
-      Matrix.of fun i j ↦ if σ j = i then (ε j : ℤ) else 0 :=
-    Matrix.ext h
-  have hdet : (Matrix.of fun i j ↦ if σ j = i then (ε j : ℤ) else 0).det = 1 := hM ▸ A.1.2
-  have hfix : ∀ k, cubeBodyDiagonalIndex (fun i ↦ ε (σ⁻¹ i) * cubeBodyDiagonal k (σ⁻¹ i)) = k :=
-    fun k ↦ by
-      have hk : cubeBodyDiagonalIndex (A • cubeBodyDiagonal k) = k := DFunLike.congr_fun hA k
-      convert hk using 2
-      funext i
-      refine Units.ext ?_
-      rw [coe_cubeRotationGroup_smul_apply, mulVec_apply_of_signedPerm h, Units.val_mul]
-  obtain ⟨rfl, rfl⟩ := eq_one_of_signedPerm_fix_cubeBodyDiagonal σ ε hdet hfix
-  refine Subtype.ext (Subtype.ext ?_)
-  rw [hM]
-  ext i j
-  simp [Matrix.one_apply, eq_comm]
+  obtain ⟨ε, σ, h⟩ := mem_monomialGroup.mp (Subgroup.mem_comap.mp A.2)
+  have hfix : ∀ k, cubeBodyDiagonalIndex (fun i ↦ ε (σ.symm i) * cubeBodyDiagonal k (σ.symm i)) =
+      k := fun k ↦ by
+    rw [← funext (cubeRotationGroup_smul_apply_of_monomialEquiv h (cubeBodyDiagonal k))]
+    exact DFunLike.congr_fun hA k
+  -- A finite check: only the signed permutations `1` and `-1` fix the four body diagonals.
+  obtain ⟨rfl, rfl | rfl⟩ := (by decide : ∀ (σ : Perm (Fin 3)) (ε : Fin 3 → ℤˣ),
+    (∀ k, cubeBodyDiagonalIndex (fun i ↦ ε (σ.symm i) * cubeBodyDiagonal k (σ.symm i)) = k) →
+      σ = 1 ∧ (ε = 1 ∨ ε = -1)) σ ε hfix
+  · refine Subtype.ext (SpecialLinearGroup.toLin'_injective ?_)
+    rw [← h, OneMemClass.coe_one, map_one]
+    exact LinearEquiv.ext fun x ↦ funext fun i ↦ by simp [← Perm.inv_def]
+  · -- The antipodal map `-1` has determinant `-1`, so it is not in `SL(3, ℤ)`.
+    have hA1 : (A.1 : Matrix (Fin 3) (Fin 3) ℤ) = -1 :=
+      Matrix.toLin'.injective <| LinearMap.ext fun w ↦ funext fun i ↦ by
+        rw [← SpecialLinearGroup.toLin'_to_linearMap, LinearEquiv.coe_coe, ← h]
+        simp [← Perm.inv_def]
+    have hdet := A.1.2
+    rw [hA1, Matrix.det_neg, Matrix.det_one] at hdet
+    simp at hdet
 
 /-! ### Four rotations -/
 
@@ -324,25 +306,29 @@ theorem cubeBodyDiagonalHom_injective : Function.Injective cubeBodyDiagonalHom :
 midpoints `±(0, 1, 1)`: `(x, y, z) ↦ (-x, z, y)`. -/
 def cubeEdgeHalfTurn : cubeRotationGroup :=
   ⟨⟨!![-1, 0, 0; 0, 0, 1; 0, 1, 0], by simp [Matrix.det_fin_three]⟩,
-    ⟨swap 1 2, ![-1, 1, 1], fun i j ↦ by fin_cases i <;> fin_cases j <;> rfl⟩⟩
+    mem_cubeRotationGroup_iff.mpr
+      ⟨swap 1 2, ![-1, 1, 1], fun i j ↦ by fin_cases i <;> fin_cases j <;> rfl⟩⟩
 
 /-- **The half-turn about the axis through two opposite face centres**, the first coordinate axis:
 `(x, y, z) ↦ (x, -y, -z)`. -/
 def cubeFaceHalfTurn : cubeRotationGroup :=
   ⟨⟨!![1, 0, 0; 0, -1, 0; 0, 0, -1], by simp [Matrix.det_fin_three]⟩,
-    ⟨1, ![1, -1, -1], fun i j ↦ by fin_cases i <;> fin_cases j <;> rfl⟩⟩
+    mem_cubeRotationGroup_iff.mpr
+      ⟨1, ![1, -1, -1], fun i j ↦ by fin_cases i <;> fin_cases j <;> rfl⟩⟩
 
 /-- **The third-turn about a body diagonal**, the diagonal through `(-1, -1, 1)`:
 `(x, y, z) ↦ (y, -z, -x)`. -/
 def cubeDiagonalThirdTurn : cubeRotationGroup :=
   ⟨⟨!![0, 1, 0; 0, 0, -1; -1, 0, 0], by simp [Matrix.det_fin_three]⟩,
-    ⟨[0, 2, 1].formPerm, ![-1, 1, -1], fun i j ↦ by fin_cases i <;> fin_cases j <;> rfl⟩⟩
+    mem_cubeRotationGroup_iff.mpr
+      ⟨[0, 2, 1].formPerm, ![-1, 1, -1], fun i j ↦ by fin_cases i <;> fin_cases j <;> rfl⟩⟩
 
 /-- **The quarter-turn about the axis through two opposite face centres**, the second coordinate
 axis: `(x, y, z) ↦ (-z, y, x)`. -/
 def cubeFaceQuarterTurn : cubeRotationGroup :=
   ⟨⟨!![0, 0, -1; 0, 1, 0; 1, 0, 0], by simp [Matrix.det_fin_three]⟩,
-    ⟨swap 0 2, ![1, 1, -1], fun i j ↦ by fin_cases i <;> fin_cases j <;> rfl⟩⟩
+    mem_cubeRotationGroup_iff.mpr
+      ⟨swap 0 2, ![1, 1, -1], fun i j ↦ by fin_cases i <;> fin_cases j <;> rfl⟩⟩
 
 /-- The edge half-turn exchanges the diagonals `0` and `1` and fixes the other two. -/
 @[simp]
@@ -401,7 +387,8 @@ theorem cubeRotationEquiv_symm_swap_zero_one :
   cubeRotationEquiv.symm_apply_eq.mpr cubeBodyDiagonalHom_cubeEdgeHalfTurn.symm
 
 /-- The rotation inducing `(01)(23)` is the face half-turn. -/
-theorem cubeRotationEquiv_symm_swap_mul_swap :
+@[simp]
+theorem cubeRotationEquiv_symm_swap_zero_one_mul_swap_two_three :
     cubeRotationEquiv.symm (swap 0 1 * swap 2 3) = cubeFaceHalfTurn :=
   cubeRotationEquiv.symm_apply_eq.mpr cubeBodyDiagonalHom_cubeFaceHalfTurn.symm
 

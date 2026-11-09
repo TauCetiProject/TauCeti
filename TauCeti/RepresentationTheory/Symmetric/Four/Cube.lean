@@ -30,8 +30,10 @@ table of `S₄` this gives, over every field,
 `χ_{k[X]} = 1 + sgn + χ_{V₄} + χ_{sgn ⊗ V₄}` and `χ_{k[Y]} = 1 + χ_E + 2 χ_{V₄} + χ_{sgn ⊗ V₄}`,
 
 where `V₄` is the standard representation on the sum-zero vectors of `k[Fin 4]` and `E` is the
-two-dimensional irreducible representation. Since a representation in characteristic zero is
-determined by its character, `k[X] ≃ 1 ⊕ sgn ⊕ V₄ ⊕ (sgn ⊗ V₄)` and
+two-dimensional representation pulled back from the standard representation of `S₃`
+(`TauCeti.symmetricGroupFourTwoDimensionalRepresentation`). These constituents are irreducible in
+characteristic zero, though not in every characteristic. Since a representation in characteristic
+zero is determined by its character, `k[X] ≃ 1 ⊕ sgn ⊕ V₄ ⊕ (sgn ⊗ V₄)` and
 `k[Y] ≃ 1 ⊕ E ⊕ V₄ ⊕ V₄ ⊕ (sgn ⊗ V₄)` as representations there.
 
 ## Main definitions
@@ -45,10 +47,11 @@ determined by its character, `k[X] ≃ 1 ⊕ sgn ⊕ V₄ ⊕ (sgn ⊗ V₄)` an
   `TauCeti.char_cubeEdgeRepresentation_symmetricGroupFourClassData_rep`: the two characters at the
   class representatives.
 * `TauCeti.char_cubeVertexRepresentation`, `TauCeti.char_cubeEdgeRepresentation`: the two
-  characters as sums of irreducible characters, over every field.
+  characters as sums of the characters of the trivial, sign, two-dimensional, standard and
+  sign-twisted standard representations, over every field.
 * `TauCeti.nonempty_equiv_cubeVertexRepresentation`,
-  `TauCeti.nonempty_equiv_cubeEdgeRepresentation`: the two decompositions into irreducible
-  representations, in characteristic zero.
+  `TauCeti.nonempty_equiv_cubeEdgeRepresentation`: the two decompositions into these
+  representations, irreducible in characteristic zero.
 
 ## References
 
@@ -63,7 +66,11 @@ namespace TauCeti
 
 open Equiv
 
-variable (k : Type*) [Field k]
+variable (k : Type*)
+
+section CommSemiring
+
+variable [CommSemiring k]
 
 /-- **The permutation representation of `S₄` on the vertices of the cube**: `k[X]` for
 `X = {-1, 1}³`, with `σ` acting as the rotation `TauCeti.cubeRotationEquiv.symm σ` that permutes
@@ -92,6 +99,12 @@ theorem cubeEdgeRepresentation_apply (σ : Perm (Fin 4)) :
       Representation.ofMulAction k cubeRotationGroup cubeEdgeSet (cubeRotationEquiv.symm σ) :=
   (rfl)
 
+end CommSemiring
+
+section Field
+
+variable [Field k]
+
 /-- The character of `k[X]` at `σ` is the number of vertices fixed by the rotation inducing `σ`. -/
 theorem char_cubeVertexRepresentation_apply (σ : Perm (Fin 4)) :
     (cubeVertexRepresentation k).character σ =
@@ -114,7 +127,8 @@ theorem char_cubeVertexRepresentation_symmetricGroupFourClassData_rep
   generalize j.cast numClasses_symmetricGroupFourClassData = j
   fin_cases j <;>
     simp only [Fin.reduceFinMk, Matrix.cons_val, map_one, one_smul,
-      cubeRotationEquiv_symm_swap_zero_one, cubeRotationEquiv_symm_swap_mul_swap,
+      cubeRotationEquiv_symm_swap_zero_one,
+      cubeRotationEquiv_symm_swap_zero_one_mul_swap_two_three,
       cubeRotationEquiv_symm_formPerm_zero_one_two,
       cubeRotationEquiv_symm_formPerm_zero_one_two_three, natCard_fixed_cubeVertex_cubeEdgeHalfTurn,
       natCard_fixed_cubeVertex_cubeFaceHalfTurn, natCard_fixed_cubeVertex_cubeDiagonalThirdTurn,
@@ -131,7 +145,8 @@ theorem char_cubeEdgeRepresentation_symmetricGroupFourClassData_rep
   generalize j.cast numClasses_symmetricGroupFourClassData = j
   fin_cases j <;>
     simp only [Fin.reduceFinMk, Matrix.cons_val, map_one, one_smul,
-      cubeRotationEquiv_symm_swap_zero_one, cubeRotationEquiv_symm_swap_mul_swap,
+      cubeRotationEquiv_symm_swap_zero_one,
+      cubeRotationEquiv_symm_swap_zero_one_mul_swap_two_three,
       cubeRotationEquiv_symm_formPerm_zero_one_two,
       cubeRotationEquiv_symm_formPerm_zero_one_two_three,
       natCard_fixed_cubeEdgeSet_cubeEdgeHalfTurn,
@@ -147,16 +162,13 @@ theorem char_cubeVertexRepresentation :
           ((standardRepresentation k (Fin 4)).prod
             (Representation.charTwist (signLinearCharacter k (Fin 4))
               (standardRepresentation k (Fin 4)))))).character := by
-  -- Both sides are class functions, so it suffices to compare them at a class representative.
-  funext σ
-  obtain ⟨τ, hτ⟩ := isConj_iff.mp (symmetricGroupFourClassData.isConj_rep_index σ)
-  rw [← hτ, Representation.char_conj, Representation.char_conj]
+  refine character_eq_of_symmetricGroupFourClassData_rep fun j ↦ ?_
   simp only [Representation.char_prod, Representation.char_trivial,
     Representation.char_ofLinearCharacter, Representation.char_charTwist,
     coe_signLinearCharacter_symmetricGroupFourClassData_rep,
     char_standardRepresentation_symmetricGroupFourClassData_rep,
     char_cubeVertexRepresentation_symmetricGroupFourClassData_rep, Module.finrank_self]
-  generalize (symmetricGroupFourClassData.index σ).cast numClasses_symmetricGroupFourClassData = j
+  generalize j.cast numClasses_symmetricGroupFourClassData = j
   fin_cases j <;> norm_num
 
 /-- **The edge character decomposes** as `1 + χ_E + 2 χ_{V₄} + χ_{sgn ⊗ V₄}`, over every field. -/
@@ -168,16 +180,13 @@ theorem char_cubeEdgeRepresentation :
             ((standardRepresentation k (Fin 4)).prod
               (Representation.charTwist (signLinearCharacter k (Fin 4))
                 (standardRepresentation k (Fin 4))))))).character := by
-  -- Both sides are class functions, so it suffices to compare them at a class representative.
-  funext σ
-  obtain ⟨τ, hτ⟩ := isConj_iff.mp (symmetricGroupFourClassData.isConj_rep_index σ)
-  rw [← hτ, Representation.char_conj, Representation.char_conj]
+  refine character_eq_of_symmetricGroupFourClassData_rep fun j ↦ ?_
   simp only [Representation.char_prod, Representation.char_trivial,
     Representation.char_charTwist, coe_signLinearCharacter_symmetricGroupFourClassData_rep,
     char_standardRepresentation_symmetricGroupFourClassData_rep,
     char_symmetricGroupFourTwoDimensionalRepresentation_symmetricGroupFourClassData_rep,
     char_cubeEdgeRepresentation_symmetricGroupFourClassData_rep, Module.finrank_self]
-  generalize (symmetricGroupFourClassData.index σ).cast numClasses_symmetricGroupFourClassData = j
+  generalize j.cast numClasses_symmetricGroupFourClassData = j
   fin_cases j <;> norm_num
 
 /-- **`k[X] ≃ 1 ⊕ sgn ⊕ V₄ ⊕ (sgn ⊗ V₄)`** in characteristic zero: the vertex representation
@@ -203,5 +212,7 @@ theorem nonempty_equiv_cubeEdgeRepresentation [CharZero k] :
               (Representation.charTwist (signLinearCharacter k (Fin 4))
                 (standardRepresentation k (Fin 4)))))))) :=
   Representation.nonempty_equiv_of_character_eq _ _ (char_cubeEdgeRepresentation k)
+
+end Field
 
 end TauCeti
