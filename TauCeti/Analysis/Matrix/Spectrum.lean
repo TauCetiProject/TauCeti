@@ -63,7 +63,7 @@ for `0 ≤ A ≤ B`.
   kernel of a Hermitian `A`, an eigenvector of `B` with eigenvalue zero is orthogonal to every
   eigenvector of `A` with nonzero eigenvalue.
 * `Matrix.PosSemidef.eigenvalues_mul_sum_inv_mul_le_one` — if `0 ≤ A ≤ B`, a unit eigenvector `u`
-  of `A` with eigenvalue `a > 0` satisfies `a ⟪u, B⁻¹ u⟫ ≤ 1` for the pseudo-inverse of `B`.
+  of `A` with eigenvalue `a` satisfies `a ⟪u, B⁻¹ u⟫ ≤ 1` for the pseudo-inverse of `B`.
 
 ## References
 
@@ -201,12 +201,11 @@ open scoped ComplexOrder
 variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- Let `0 ≤ A ≤ B`, that is `A` and `B - A` positive semidefinite, let `u` be a unit eigenvector
-of `A` with eigenvalue `a > 0`, and let `B` have eigenvalues `bⱼ` and orthonormal eigenvectors `vⱼ`.
+of `A` with eigenvalue `a`, and let `B` have eigenvalues `bⱼ` and orthonormal eigenvectors `vⱼ`.
 Then `a ∑ⱼ bⱼ⁻¹ ‖⟪u, vⱼ⟫‖² ≤ 1`, that is `a ⟪u, B⁻¹ u⟫ ≤ 1` for the pseudo-inverse `B⁻¹` of `B`,
-with the convention `0⁻¹ = 0`. -/
+with the convention `0⁻¹ = 0`. For `a = 0` the bound is trivial. -/
 theorem PosSemidef.eigenvalues_mul_sum_inv_mul_le_one {A B : Matrix ι ι 𝕜}
-    (hA : A.PosSemidef) (hBA : (B - A).PosSemidef) (hB : B.IsHermitian) {i : ι}
-    (hi : 0 < hA.1.eigenvalues i) :
+    (hA : A.PosSemidef) (hBA : (B - A).PosSemidef) (hB : B.IsHermitian) (i : ι) :
     hA.1.eigenvalues i * ∑ j, (hB.eigenvalues j)⁻¹ *
       ‖⟪hA.1.eigenvectorBasis i, hB.eigenvectorBasis j⟫_𝕜‖ ^ 2 ≤ 1 := by
   set a := hA.1.eigenvalues i
@@ -215,6 +214,10 @@ theorem PosSemidef.eigenvalues_mul_sum_inv_mul_le_one {A B : Matrix ι ι 𝕜}
   set b := hB.eigenvalues
   set c : ι → 𝕜 := fun j ↦ ⟪v j, u⟫_𝕜
   set s : ℝ := ∑ j, (b j)⁻¹ * ‖⟪u, v j⟫_𝕜‖ ^ 2
+  rcases (hA.eigenvalues_nonneg i).eq_or_lt with ha | hi
+  · have ha0 : a = 0 := ha.symm
+    rw [ha0, zero_mul]
+    exact zero_le_one
   have hb (j : ι) : 0 ≤ b j := by simpa using (hA.add hBA).eigenvalues_nonneg j
   have hcn (j : ι) : ‖c j‖ = ‖⟪u, v j⟫_𝕜‖ := by
     simp only [c]
