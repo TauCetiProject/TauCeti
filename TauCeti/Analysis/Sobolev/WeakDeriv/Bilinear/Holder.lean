@@ -87,14 +87,17 @@ private theorem hasWeakLineDerivOn_bilin_convolution (B : F →L[ℝ] G →L[ℝ
   exact hud.clm_bilin B hwd
 
 /-- The bilinear weak Leibniz rule at finite Hölder exponents. Neither factor is assumed
-classically differentiable. The exponent conditions include the integrable target `r = 1`. -/
+classically differentiable. Each factor and its derivative may carry their own exponents; only
+the three products in the identity need Hölder triples. The targets include `1`. -/
 private theorem hasWeakLineDerivOn_bilin_of_memLp (B : F →L[ℝ] G →L[ℝ] H)
-    {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)]
-    [ENNReal.HolderTriple p q r] (hp : p ≠ ⊤) (hq : q ≠ ⊤)
+    {p p' q q' r r₁ r₂ : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ p')] [Fact (1 ≤ q)] [Fact (1 ≤ q')]
+    [Fact (1 ≤ r)] [Fact (1 ≤ r₁)] [Fact (1 ≤ r₂)]
+    [ENNReal.HolderTriple p q r] [ENNReal.HolderTriple p' q r₁] [ENNReal.HolderTriple p q' r₂]
+    (hp : p ≠ ⊤) (hp' : p' ≠ ⊤) (hq : q ≠ ⊤) (hq' : q' ≠ ⊤)
     {f f' : E → F} {g g' : E → G}
     (hf : HasWeakLineDerivOn μ Ω f f' v) (hg : HasWeakLineDerivOn μ Ω g g' v)
-    (hfp : MemLp f p (μ.restrict Ω)) (hf'p : MemLp f' p (μ.restrict Ω))
-    (hgq : MemLp g q (μ.restrict Ω)) (hg'q : MemLp g' q (μ.restrict Ω)) :
+    (hfp : MemLp f p (μ.restrict Ω)) (hf'p : MemLp f' p' (μ.restrict Ω))
+    (hgq : MemLp g q (μ.restrict Ω)) (hg'q : MemLp g' q' (μ.restrict Ω)) :
     HasWeakLineDerivOn μ Ω (fun x => B (f x) (g x))
       (fun x => B (f' x) (g x) + B (f x) (g' x)) v := by
   let _ : CompleteSpace F := hf.completeSpace
@@ -106,13 +109,13 @@ private theorem hasWeakLineDerivOn_bilin_of_memLp (B : F →L[ℝ] G →L[ℝ] H
   let V := (Ω : Set E).indicator g
   let V' := (Ω : Set E).indicator g'
   have hU : MemLp U p μ := (memLp_indicator_iff_restrict hΩm).2 hfp
-  have hU' : MemLp U' p μ := (memLp_indicator_iff_restrict hΩm).2 hf'p
+  have hU' : MemLp U' p' μ := (memLp_indicator_iff_restrict hΩm).2 hf'p
   have hV : MemLp V q μ := (memLp_indicator_iff_restrict hΩm).2 hgq
-  have hV' : MemLp V' q μ := (memLp_indicator_iff_restrict hΩm).2 hg'q
+  have hV' : MemLp V' q' μ := (memLp_indicator_iff_restrict hΩm).2 hg'q
   have hUloc := hU.locallyIntegrable (Fact.out : 1 ≤ p)
-  have hU'loc := hU'.locallyIntegrable (Fact.out : 1 ≤ p)
+  have hU'loc := hU'.locallyIntegrable (Fact.out : 1 ≤ p')
   have hVloc := hV.locallyIntegrable (Fact.out : 1 ≤ q)
-  have hV'loc := hV'.locallyIntegrable (Fact.out : 1 ≤ q)
+  have hV'loc := hV'.locallyIntegrable (Fact.out : 1 ≤ q')
   -- Work locally, where the kernels stay inside the domain and the measure is finite.
   rw [hasWeakLineDerivOn_iff_forall_isCompact_closure]
   intro W hWc hWΩ
@@ -120,10 +123,10 @@ private theorem hasWeakLineDerivOn_bilin_of_memLp (B : F →L[ℝ] G →L[ℝ] H
   have hWμ : μ (W : Set E) < ⊤ := lt_of_le_of_lt (measure_mono subset_closure)
     hWc.measure_lt_top
   let _ : IsFiniteMeasure (μ.restrict (W : Set E)) := isFiniteMeasure_restrict.2 hWμ.ne
-  have hlim := ((B.memLp_of_bilin r hfp hgq).mono_measure
-    (Measure.restrict_mono hWΩ' le_rfl)).integrable (Fact.out : 1 ≤ r)
-  have hlim' := (((B.memLp_of_bilin r hf'p hgq).add (B.memLp_of_bilin r hfp hg'q)).mono_measure
-    (Measure.restrict_mono hWΩ' le_rfl)).integrable (Fact.out : 1 ≤ r)
+  have hle : μ.restrict (W : Set E) ≤ μ.restrict (Ω : Set E) := Measure.restrict_mono hWΩ' le_rfl
+  have hlim := ((B.memLp_of_bilin r hfp hgq).mono_measure hle).integrable (Fact.out : 1 ≤ r)
+  have hlim₁ := ((B.memLp_of_bilin r₁ hf'p hgq).mono_measure hle).integrable (Fact.out : 1 ≤ r₁)
+  have hlim₂ := ((B.memLp_of_bilin r₂ hfp hg'q).mono_measure hle).integrable (Fact.out : 1 ≤ r₂)
   obtain ⟨φ, hφ, hsupp⟩ := ContDiffBump.exists_seq_sub_tsupport_subset (μ := μ) hWc hWΩ
   let u := fun n => (φ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U
   let u' := fun n => (φ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U'
@@ -133,41 +136,79 @@ private theorem hasWeakLineDerivOn_bilin_of_memLp (B : F →L[ℝ] G →L[ℝ] H
       (fun x => B (u' n x) (w n x) + B (u n x) (w' n x)) v :=
     hasWeakLineDerivOn_bilin_convolution B hf.indicator hg.indicator
       hUloc hU'loc hVloc hV'loc (φ n).contDiff_normed (φ n).hasCompactSupport_normed (hsupp n)
-  -- Approximate identities converge in the input spaces. Hölder makes both Leibniz
-  -- terms converge in the target space; restriction turns this into L1 convergence.
-  let A := fun n => normedBumpLp hp (φ n) μ (hU.toLp U)
-  let A' := fun n => normedBumpLp hp (φ n) μ (hU'.toLp U')
-  let C := fun n => normedBumpLp hq (φ n) μ (hV.toLp V)
-  let C' := fun n => normedBumpLp hq (φ n) μ (hV'.toLp V')
+  -- Approximate identities converge in the input spaces. Hölder makes each of the three
+  -- products converge in its target space; restriction turns this into L1 convergence.
   have hA := tendsto_normedBumpLp (mu := μ) hp hφ (hU.toLp U)
-  have hA' := tendsto_normedBumpLp (mu := μ) hp hφ (hU'.toLp U')
+  have hA' := tendsto_normedBumpLp (mu := μ) hp' hφ (hU'.toLp U')
   have hC := tendsto_normedBumpLp (mu := μ) hq hφ (hV.toLp V)
-  have hC' := tendsto_normedBumpLp (mu := μ) hq hφ (hV'.toLp V')
-  let T := B.holderL μ p q r
-  have hAae (n : ℕ) : A n =ᵐ[μ] u n := normedBumpLp_ae_eq_convolution hp (φ n) hU
-  have hA'ae (n : ℕ) : A' n =ᵐ[μ] u' n := normedBumpLp_ae_eq_convolution hp (φ n) hU'
-  have hCae (n : ℕ) : C n =ᵐ[μ] w n := normedBumpLp_ae_eq_convolution hq (φ n) hV
-  have hC'ae (n : ℕ) : C' n =ᵐ[μ] w' n := normedBumpLp_ae_eq_convolution hq (φ n) hV'
+  have hC' := tendsto_normedBumpLp (mu := μ) hq' hφ (hV'.toLp V')
+  have hAae (n : ℕ) := normedBumpLp_ae_eq_convolution hp (φ n) hU
+  have hA'ae (n : ℕ) := normedBumpLp_ae_eq_convolution hp' (φ n) hU'
+  have hCae (n : ℕ) := normedBumpLp_ae_eq_convolution hq (φ n) hV
+  have hC'ae (n : ℕ) := normedBumpLp_ae_eq_convolution hq' (φ n) hV'
   have hUae := hU.coeFn_toLp_indicator_restrict W.isOpen.measurableSet hWΩ'
   have hU'ae := hU'.coeFn_toLp_indicator_restrict W.isOpen.measurableSet hWΩ'
   have hVae := hV.coeFn_toLp_indicator_restrict W.isOpen.measurableSet hWΩ'
   have hV'ae := hV'.coeFn_toLp_indicator_restrict W.isOpen.measurableSet hWΩ'
-  have hT₁ := (T.continuous₂.tendsto (hU'.toLp U', hV.toLp V)).comp
-    (hA'.prodMk_nhds hC)
-  have hT₂ := (T.continuous₂.tendsto (hU.toLp U, hV'.toLp V')).comp
-    (hA.prodMk_nhds hC')
+  have h₁ := tendsto_setLIntegral_enorm_bilin_sub (r := r₁) B hWμ hA' hC hA'ae hU'ae hCae hVae
+  have h₂ := tendsto_setLIntegral_enorm_bilin_sub (r := r₂) B hWμ hA hC' hAae hUae hC'ae hV'ae
   refine hasWeakLineDerivOn_of_tendsto_lintegral_enorm_sub (IntegrableOn.locallyIntegrableOn hlim)
-    (IntegrableOn.locallyIntegrableOn hlim') hweak
-    (tendsto_setLIntegral_enorm_bilin_sub (r := r) B hWμ hA hC hAae hUae hCae hVae)
-    (tendsto_setLIntegral_enorm_sub_of_tendsto_Lp hWμ (hT₁.add hT₂) ?_ ?_)
-  · intro n
-    exact (Lp.coeFn_add _ _).trans
-      ((B.holderL_ae_eq_of_measure_le le_rfl (A' n) (C n) (hA'ae n) (hCae n)).add
-        (B.holderL_ae_eq_of_measure_le le_rfl (A n) (C' n) (hAae n) (hC'ae n)))
-  · refine Filter.EventuallyEq.trans (ae_restrict_of_ae (Lp.coeFn_add
-        (T (hU'.toLp U') (hV.toLp V)) (T (hU.toLp U) (hV'.toLp V')))) ?_
-    exact (B.holderL_ae_eq_of_measure_le (r := r) Measure.restrict_le_self _ _ hU'ae hVae).add
-      (B.holderL_ae_eq_of_measure_le (r := r) Measure.restrict_le_self _ _ hUae hV'ae)
+    (IntegrableOn.locallyIntegrableOn (hlim₁.add hlim₂)) hweak
+    (tendsto_setLIntegral_enorm_bilin_sub (r := r) B hWμ hA hC hAae hUae hCae hVae) ?_
+  -- The derivative error is bounded by the sum of the two product errors.
+  have hcont' (n : ℕ) : Continuous (u' n) :=
+    (φ n).hasCompactSupport_normed.continuous_convolution_left
+      _ (φ n).continuous_normed hU'loc
+  have hcontw (n : ℕ) : Continuous (w n) :=
+    (φ n).hasCompactSupport_normed.continuous_convolution_left
+      _ (φ n).continuous_normed hVloc
+  have h₃ := h₁.add h₂
+  rw [add_zero] at h₃
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h₃ (fun _ => zero_le)
+    fun n => ?_
+  have hm₁ : AEMeasurable (fun x => ‖B (u' n x) (w n x) - B (f' x) (g x)‖ₑ)
+      (μ.restrict (W : Set E)) :=
+    ((B.continuous₂.comp ((hcont' n).prodMk (hcontw n))).aestronglyMeasurable.sub
+      hlim₁.aestronglyMeasurable).enorm
+  calc
+    _ ≤ ∫⁻ x in (W : Set E), (‖B (u' n x) (w n x) - B (f' x) (g x)‖ₑ +
+          ‖B (u n x) (w' n x) - B (f x) (g' x)‖ₑ) ∂μ := by
+      refine lintegral_mono fun x => ?_
+      rw [add_sub_add_comm]
+      exact enorm_add_le _ _
+    _ = _ := lintegral_add_left' hm₁ _
+
+/-- The local bilinear weak Leibniz rule with separate finite exponents for each factor and its
+derivative. Only the three products in the identity must be locally integrable by Hölder; this
+covers a rough factor whose derivative is integrable against the other factor but not against its
+derivative. -/
+theorem HasWeakLineDerivOn.bilin_of_memLp_mixed (B : F →L[ℝ] G →L[ℝ] H)
+    {p p' q q' : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ p')] [Fact (1 ≤ q)] [Fact (1 ≤ q')]
+    (hp : p ≠ ⊤) (hp' : p' ≠ ⊤) (hq : q ≠ ⊤) (hq' : q' ≠ ⊤)
+    (hpq : p⁻¹ + q⁻¹ ≤ 1) (hp'q : p'⁻¹ + q⁻¹ ≤ 1) (hpq' : p⁻¹ + q'⁻¹ ≤ 1)
+    {f f' : E → F} {g g' : E → G}
+    (hf : HasWeakLineDerivOn μ Ω f f' v) (hg : HasWeakLineDerivOn μ Ω g g' v)
+    (hfp : ∀ K, IsCompact K → K ⊆ Ω → MemLp f p (μ.restrict K))
+    (hf'p : ∀ K, IsCompact K → K ⊆ Ω → MemLp f' p' (μ.restrict K))
+    (hgq : ∀ K, IsCompact K → K ⊆ Ω → MemLp g q (μ.restrict K))
+    (hg'q : ∀ K, IsCompact K → K ⊆ Ω → MemLp g' q' (μ.restrict K)) :
+    HasWeakLineDerivOn μ Ω (fun x => B (f x) (g x))
+      (fun x => B (f' x) (g x) + B (f x) (g' x)) v := by
+  let _ := ENNReal.HolderTriple.of p q
+  let _ := ENNReal.HolderTriple.of p' q
+  let _ := ENNReal.HolderTriple.of p q'
+  let _ : Fact (1 ≤ (p⁻¹ + q⁻¹)⁻¹) := ⟨ENNReal.one_le_inv.2 hpq⟩
+  let _ : Fact (1 ≤ (p'⁻¹ + q⁻¹)⁻¹) := ⟨ENNReal.one_le_inv.2 hp'q⟩
+  let _ : Fact (1 ≤ (p⁻¹ + q'⁻¹)⁻¹) := ⟨ENNReal.one_le_inv.2 hpq'⟩
+  rw [hasWeakLineDerivOn_iff_forall_isCompact_closure]
+  intro W hWc hWΩ
+  have hWΩ' : (W : Set E) ⊆ Ω := subset_closure.trans hWΩ
+  have hμ : μ.restrict (W : Set E) ≤ μ.restrict (closure (W : Set E)) :=
+    Measure.restrict_mono_set μ subset_closure
+  exact hasWeakLineDerivOn_bilin_of_memLp (r := (p⁻¹ + q⁻¹)⁻¹) (r₁ := (p'⁻¹ + q⁻¹)⁻¹)
+    (r₂ := (p⁻¹ + q'⁻¹)⁻¹) B hp hp' hq hq' (hf.mono hWΩ') (hg.mono hWΩ')
+    ((hfp _ hWc hWΩ).mono_measure hμ) ((hf'p _ hWc hWΩ).mono_measure hμ)
+    ((hgq _ hWc hWΩ).mono_measure hμ) ((hg'q _ hWc hWΩ).mono_measure hμ)
 
 /-- The local bilinear weak Leibniz rule at finite Hölder exponents. Values and derivatives
 need only belong to their input `Lp` spaces on compact subsets of the open domain. -/
@@ -182,14 +223,36 @@ theorem HasWeakLineDerivOn.bilin_of_memLp (B : F →L[ℝ] G →L[ℝ] H)
     (hg'q : ∀ K, IsCompact K → K ⊆ Ω → MemLp g' q (μ.restrict K)) :
     HasWeakLineDerivOn μ Ω (fun x => B (f x) (g x))
       (fun x => B (f' x) (g x) + B (f x) (g' x)) v := by
-  rw [hasWeakLineDerivOn_iff_forall_isCompact_closure]
-  intro W hWc hWΩ
-  have hWΩ' : (W : Set E) ⊆ Ω := subset_closure.trans hWΩ
-  have hμ : μ.restrict (W : Set E) ≤ μ.restrict (closure (W : Set E)) :=
-    Measure.restrict_mono_set μ subset_closure
-  exact hasWeakLineDerivOn_bilin_of_memLp (r := r) B hp hq (hf.mono hWΩ') (hg.mono hWΩ')
-    ((hfp _ hWc hWΩ).mono_measure hμ) ((hf'p _ hWc hWΩ).mono_measure hμ)
-    ((hgq _ hWc hWΩ).mono_measure hμ) ((hg'q _ hWc hWΩ).mono_measure hμ)
+  have hpq : p⁻¹ + q⁻¹ ≤ 1 := by
+    rw [ENNReal.HolderTriple.inv_add_inv_eq_inv p q r]
+    exact ENNReal.inv_le_one.2 Fact.out
+  exact hf.bilin_of_memLp_mixed B hp hp hq hq hpq hpq hpq hg hfp hf'p hgq hg'q
+
+/-- The Fréchet form of the bilinear weak Leibniz rule with separate finite exponents for each
+factor and its derivative, as in `TauCeti.HasWeakLineDerivOn.bilin_of_memLp_mixed`. -/
+theorem HasWeakFDerivOn.bilin_of_memLp_mixed (B : F →L[ℝ] G →L[ℝ] H)
+    {p p' q q' : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ p')] [Fact (1 ≤ q)] [Fact (1 ≤ q')]
+    (hp : p ≠ ⊤) (hp' : p' ≠ ⊤) (hq : q ≠ ⊤) (hq' : q' ≠ ⊤)
+    (hpq : p⁻¹ + q⁻¹ ≤ 1) (hp'q : p'⁻¹ + q⁻¹ ≤ 1) (hpq' : p⁻¹ + q'⁻¹ ≤ 1)
+    {f : E → F} {Df : E → E →L[ℝ] F} {g : E → G} {Dg : E → E →L[ℝ] G}
+    (hf : HasWeakFDerivOn μ Ω f Df) (hg : HasWeakFDerivOn μ Ω g Dg)
+    (hfp : ∀ K, IsCompact K → K ⊆ Ω → MemLp f p (μ.restrict K))
+    (hDfp : ∀ K, IsCompact K → K ⊆ Ω → MemLp Df p' (μ.restrict K))
+    (hgq : ∀ K, IsCompact K → K ⊆ Ω → MemLp g q (μ.restrict K))
+    (hDgq : ∀ K, IsCompact K → K ⊆ Ω → MemLp Dg q' (μ.restrict K)) :
+    HasWeakFDerivOn μ Ω (fun x => B (f x) (g x))
+      (fun x => B.precompL E (Df x) (g x) + B.precompR E (f x) (Dg x)) := by
+  rw [hasWeakFDerivOn_iff]
+  intro v
+  simpa only [add_apply, ContinuousLinearMap.precompL_apply,
+    ContinuousLinearMap.precompR_apply, ContinuousLinearMap.compL_apply,
+    ContinuousLinearMap.comp_apply] using
+    (hf.hasWeakLineDerivOn v).bilin_of_memLp_mixed B hp hp' hq hq' hpq hp'q hpq'
+      (hg.hasWeakLineDerivOn v)
+      hfp (fun K hK hKΩ => (hDfp K hK hKΩ).continuousLinearMap_comp
+        (ContinuousLinearMap.apply ℝ F v))
+      hgq (fun K hK hKΩ => (hDgq K hK hKΩ).continuousLinearMap_comp
+        (ContinuousLinearMap.apply ℝ G v))
 
 /-- The Fréchet form of the bilinear weak Leibniz rule. The derivative field is expressed using
 native continuous bilinear precomposition maps, so its local `Lʳ` membership follows from Hölder. -/
@@ -204,15 +267,9 @@ theorem HasWeakFDerivOn.bilin_of_memLp (B : F →L[ℝ] G →L[ℝ] H)
     (hDgq : ∀ K, IsCompact K → K ⊆ Ω → MemLp Dg q (μ.restrict K)) :
     HasWeakFDerivOn μ Ω (fun x => B (f x) (g x))
       (fun x => B.precompL E (Df x) (g x) + B.precompR E (f x) (Dg x)) := by
-  rw [hasWeakFDerivOn_iff]
-  intro v
-  simpa only [add_apply, ContinuousLinearMap.precompL_apply,
-    ContinuousLinearMap.precompR_apply, ContinuousLinearMap.compL_apply,
-    ContinuousLinearMap.comp_apply] using
-    (hf.hasWeakLineDerivOn v).bilin_of_memLp (r := r) B hp hq (hg.hasWeakLineDerivOn v)
-      hfp (fun K hK hKΩ => (hDfp K hK hKΩ).continuousLinearMap_comp
-        (ContinuousLinearMap.apply ℝ F v))
-      hgq (fun K hK hKΩ => (hDgq K hK hKΩ).continuousLinearMap_comp
-        (ContinuousLinearMap.apply ℝ G v))
+  have hpq : p⁻¹ + q⁻¹ ≤ 1 := by
+    rw [ENNReal.HolderTriple.inv_add_inv_eq_inv p q r]
+    exact ENNReal.inv_le_one.2 Fact.out
+  exact hf.bilin_of_memLp_mixed B hp hp hq hq hpq hpq hpq hg hfp hDfp hgq hDgq
 
 end TauCeti
