@@ -66,17 +66,11 @@ namespace IntermediateField
 
 open scoped IntermediateField
 
-/-- If `L = K(0)` then `[L : K] = 1`. -/
-theorem finrank_eq_one_of_adjoin_zero_eq_top {K L : Type*} [Field K] [Field L] [Algebra K L]
-    (hgen : K⟮(0 : L)⟯ = ⊤) : Module.finrank K L = 1 := by
-  rw [adjoin_zero] at hgen
-  exact bot_eq_top_iff_finrank_eq_one.mp hgen
-
-/-- If `L = K(y)` with `y ^ n = 0`, then `[L : K] = 1`. -/
-theorem finrank_eq_one_of_adjoin_eq_top_of_pow_eq_zero {K L : Type*} [Field K] [Field L]
-    [Algebra K L] {y : L} {n : ℕ} (hgen : K⟮y⟯ = ⊤) (hy : y ^ n = 0) :
+/-- If `L = K(y)` for an element `y` of the bottom intermediate field, then `[L : K] = 1`. -/
+theorem finrank_eq_one_of_adjoin_eq_top_of_mem_bot {K L : Type*} [Field K] [Field L] [Algebra K L]
+    {y : L} (hgen : K⟮y⟯ = ⊤) (hy : y ∈ (⊥ : IntermediateField K L)) :
     Module.finrank K L = 1 := by
-  rw [eq_zero_of_pow_eq_zero hy] at hgen
-  exact finrank_eq_one_of_adjoin_zero_eq_top hgen
+  rw [adjoin_simple_eq_bot_iff.2 hy] at hgen
+  exact bot_eq_top_iff_finrank_eq_one.mp hgen
 
 end IntermediateField
