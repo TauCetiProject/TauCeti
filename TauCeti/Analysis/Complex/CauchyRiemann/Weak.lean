@@ -337,10 +337,6 @@ end IsWeakLinearCauchyRiemannOn
 
 section Standard
 
-/-- Conjugation is real-linear, so it is its own derivative. -/
-private theorem fderiv_conj_eq (z : ℂ) : fderiv ℝ conj z = conjCLE.toContinuousLinearMap :=
-  conjCLE.fderiv
-
 /-- The identity solves the homogeneous equation for `J = i`: its derivative is the identity and
 `1 + i·i = 0`. -/
 theorem isWeakCauchyRiemannOn_id :
@@ -357,7 +353,8 @@ theorem not_isWeakCauchyRiemannOn_conj (hΩ : (Ω : Set ℂ).Nonempty) :
   obtain ⟨z, hz⟩ := hΩ
   intro h
   have h2 := h z hz
-  rw [fderiv_conj_eq] at h2
+  have hd : fderiv ℝ conj z = _ := conjCLE.fderiv
+  rw [hd] at h2
   norm_num [Complex.ext_iff] at h2
 
 -- With the swapped expression `D(i) + J D(1)` in place of `D(1) + J D(i)`, the identity would
@@ -368,7 +365,8 @@ example (z : ℂ) : fderiv ℝ id z I + (I • ContinuousLinearMap.id ℝ ℂ) (
 -- With the swapped expression, conjugation would be a solution, since `-i + i·1 = 0`.
 example (z : ℂ) :
     fderiv ℝ conj z I + (I • ContinuousLinearMap.id ℝ ℂ) (fderiv ℝ conj z 1) = 0 := by
-  rw [fderiv_conj_eq]
+  have hd : fderiv ℝ conj z = _ := conjCLE.fderiv
+  rw [hd]
   norm_num [Complex.ext_iff]
 
 end Standard
