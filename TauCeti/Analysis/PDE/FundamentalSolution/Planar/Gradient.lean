@@ -111,15 +111,18 @@ theorem fderiv_planarNewtonianKernel (z : ℂ) :
     simp
   · exact (hasFDerivAt_planarNewtonianKernel hz).fderiv
 
-/-- The directional derivative of the planar Newtonian kernel is the radial inner-product
-covector scaled by `-(2π ‖z‖²)⁻¹`. -/
+/-- The evaluation of `fderiv` of the planar Newtonian kernel in the direction `v` is the radial
+inner product `⟪z, v⟫` scaled by `-(2π ‖z‖²)⁻¹`. Away from the pole this is the directional
+derivative; at the pole, where the kernel is not differentiable, `fderiv` takes the default
+value `0` and both sides are `0` (it is not an actual directional derivative). -/
 theorem fderiv_planarNewtonianKernel_apply (z v : ℂ) :
     fderiv ℝ planarNewtonianKernel z v =
       (-(2 * Real.pi)⁻¹ * (‖z‖ ^ 2)⁻¹) * ⟪z, v⟫_ℝ := by
   rw [fderiv_planarNewtonianKernel]
   simp only [smul_apply, smul_eq_mul, innerSL_apply_apply]
 
-/-- The derivative of the planar Newtonian kernel has inverse-distance operator norm. -/
+/-- The operator norm of `fderiv` of the planar Newtonian kernel is the inverse distance (at the
+pole `fderiv` is the default `0`). -/
 @[simp]
 theorem norm_fderiv_planarNewtonianKernel (z : ℂ) :
     ‖fderiv ℝ planarNewtonianKernel z‖ = (2 * Real.pi * ‖z‖)⁻¹ := by
@@ -139,21 +142,25 @@ theorem hasFDerivAt_planarNewtonianKernel_sub {z a : ℂ} (hza : z ≠ a) :
   rw [hasFDerivAt_comp_sub]
   exact hasFDerivAt_planarNewtonianKernel (sub_ne_zero.mpr hza)
 
-/-- The Fréchet derivative of a planar Newtonian kernel with pole at `a`. -/
+/-- The formula for `fderiv` of a planar Newtonian kernel with pole at `a`; at the pole it is the
+default value `0`, not an actual derivative. -/
 theorem fderiv_planarNewtonianKernel_sub (z a : ℂ) :
     fderiv ℝ (fun w : ℂ ↦ planarNewtonianKernel (w - a)) z =
       (-(2 * Real.pi)⁻¹ * (‖z - a‖ ^ 2)⁻¹) • innerSL ℝ (z - a) := by
   rw [fderiv_comp_sub]
   exact fderiv_planarNewtonianKernel (z - a)
 
-/-- The directional derivative of a planar Newtonian kernel with pole at `a`. -/
+/-- The evaluation of `fderiv` of a planar Newtonian kernel with pole at `a` in the direction `v`.
+Away from `a` this is the directional derivative; at the pole `fderiv` takes the default value
+`0` and both sides are `0` (it is not an actual directional derivative). -/
 theorem fderiv_planarNewtonianKernel_sub_apply (z a v : ℂ) :
     fderiv ℝ (fun w : ℂ ↦ planarNewtonianKernel (w - a)) z v =
       (-(2 * Real.pi)⁻¹ * (‖z - a‖ ^ 2)⁻¹) * ⟪z - a, v⟫_ℝ := by
   rw [fderiv_planarNewtonianKernel_sub]
   simp only [smul_apply, smul_eq_mul, innerSL_apply_apply]
 
-/-- The derivative of a planar Newtonian kernel with pole at `a` has inverse-distance norm. -/
+/-- The operator norm of `fderiv` of a planar Newtonian kernel with pole at `a` is the inverse
+distance (at the pole `fderiv` is the default `0`). -/
 @[simp]
 theorem norm_fderiv_planarNewtonianKernel_sub (z a : ℂ) :
     ‖fderiv ℝ (fun w : ℂ ↦ planarNewtonianKernel (w - a)) z‖ =

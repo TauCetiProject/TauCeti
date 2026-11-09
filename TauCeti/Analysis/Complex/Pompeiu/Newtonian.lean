@@ -39,11 +39,13 @@ namespace TauCeti
 variable {f : ℂ → ℝ}
 
 /-- The normalized reciprocal is the complex combination of the two real derivatives of the
-logarithmic fundamental solution. -/
-theorem pi_inv_mul_inv_eq_fderiv_planarNewtonianKernel {z : ℂ} (hz : z ≠ 0) :
+logarithmic fundamental solution. At the pole both sides are `0`. -/
+theorem pi_inv_mul_inv_eq_fderiv_planarNewtonianKernel (z : ℂ) :
     (Real.pi : ℂ)⁻¹ * z⁻¹ =
       -2 * ((fderiv ℝ planarNewtonianKernel z 1 : ℂ) -
         Complex.I * (fderiv ℝ planarNewtonianKernel z Complex.I : ℂ)) := by
+  rcases eq_or_ne z 0 with rfl | hz
+  · simp [fderiv_planarNewtonianKernel]
   have hn : ‖z‖ ≠ 0 := norm_ne_zero_iff.mpr hz
   apply Complex.ext <;>
     simp [fderiv_planarNewtonianKernel_apply, Complex.normSq_eq_norm_sq] <;>
@@ -93,8 +95,8 @@ theorem pi_inv_smul_integral_sub_inv_smul_eq_fderiv_planarNewtonianKernel_convol
     _ = ∫ z, -2 * ((fderiv ℝ planarNewtonianKernel z 1 : ℂ) -
         I * (fderiv ℝ planarNewtonianKernel z I : ℂ)) * (f (w - z) : ℂ) := by
       apply integral_congr_ae
-      filter_upwards [volume.ae_ne (0 : ℂ)] with z hz
-      rw [pi_inv_mul_inv_eq_fderiv_planarNewtonianKernel hz]
+      filter_upwards with z
+      rw [pi_inv_mul_inv_eq_fderiv_planarNewtonianKernel z]
     _ = ∫ z, (-2 : ℂ) * ((fderiv ℝ planarNewtonianKernel z 1 : ℂ) * (f (w - z) : ℂ) -
         I * ((fderiv ℝ planarNewtonianKernel z I : ℂ) * (f (w - z) : ℂ))) := by
       congr 1
