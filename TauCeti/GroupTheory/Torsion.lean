@@ -330,33 +330,3 @@ theorem IsMulTorsion.exists_prime_orderOf_mem (hG : IsMulTorsion G) {H : Subgrou
   rwa [orderOf_pow_orderOf_div (hG g).orderOf_pos.ne' hpg]
 
 end PrimeOrder
-
-/-!
-# Elements of infinite order
-
-* `TauCeti.exists_forall_pow_ne_of_not_isOfFinOrder`: an element `H` of infinite order has
-  `H ^ k ≠ a` for all large `k`.
--/
-
-namespace TauCeti
-
-section InfiniteOrder
-
-/-- An element of infinite order has `H ^ k ≠ a` for all large `k`: the equation `H ^ k = a` holds
-for at most one `k`. -/
-@[to_additive]
-theorem exists_forall_pow_ne_of_not_isOfFinOrder {G : Type*} [LeftCancelMonoid G] {H : G}
-    (hH : ¬IsOfFinOrder H) (a : G) :
-    ∃ N : ℕ, ∀ k, N ≤ k → H ^ k ≠ a := by
-  have hinj := injective_pow_iff_not_isOfFinOrder.2 hH
-  by_cases hk : ∃ k : ℕ, H ^ k = a
-  · obtain ⟨k₀, hk₀⟩ := hk
-    refine ⟨k₀ + 1, fun k hk h => ?_⟩
-    have := hinj (h.trans hk₀.symm)
-    omega
-  · push Not at hk
-    exact ⟨0, fun k _ => hk k⟩
-
-end InfiniteOrder
-
-end TauCeti

@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.GroupTheory.OrderOfElement
 public import TauCeti.GroupTheory.CSA
 public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
-public import TauCeti.GroupTheory.Torsion
+public import TauCeti.GroupTheory.OrderOfElement.Basic
 
 /-!
 # The big powers property

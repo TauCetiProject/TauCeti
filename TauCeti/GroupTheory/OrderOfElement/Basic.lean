@@ -64,6 +64,8 @@ the least positive power of `g` lying in `K`; otherwise `d = 0` and `g ^ d = 1`.
   additive counterpart.
 * `TauCeti.eq_one_of_pow_ordCompl_eq_one`, `TauCeti.eq_of_pow_ordCompl_eq`: an element `x` with
   `x ^ n = 1` is determined by its powers `x ^ ordCompl[ℓ] n` at the primes `ℓ ∣ n`.
+* `TauCeti.exists_forall_pow_ne_of_not_isOfFinOrder`, and its additive counterpart: an element `H`
+  of infinite order has `H ^ k ≠ a` for all large `k`.
 * `TauCeti.mul_pow_eq_of_sq_eq_one`: in a commutative monoid, exponents of elements squaring to
   `1` only matter modulo `2`.
 * `TauCeti.coprime_orderOf_of_mul_mul_inv_eq_pow`,
@@ -218,6 +220,16 @@ theorem mul_pow_eq_of_sq_eq_one {G : Type*} [CommMonoid G] {S u v w z : G}
     pow_eq_pow_of_modEq hBC hw, ← pow_one z, pow_eq_pow_of_modEq hB hz]
   simp only [mul_pow, pow_add]
   ac_rfl
+
+/-- An element of infinite order has `H ^ k ≠ a` for all large `k`: the equation `H ^ k = a` holds
+for at most one `k`. -/
+@[to_additive]
+theorem exists_forall_pow_ne_of_not_isOfFinOrder {G : Type*} [LeftCancelMonoid G] {H : G}
+    (hH : ¬IsOfFinOrder H) (a : G) :
+    ∃ N : ℕ, ∀ k, N ≤ k → H ^ k ≠ a := by
+  exact Filter.eventually_atTop.1 (Nat.cofinite_eq_atTop ▸
+    (injective_pow_iff_not_isOfFinOrder.2 hH).tendsto_cofinite.eventually
+      (Filter.eventually_cofinite_ne a))
 
 section Conj
 
