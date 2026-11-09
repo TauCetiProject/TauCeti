@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capped
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Manifold.Basic
-public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.CayleyPath
 
 /-!
 # Almost complex structures on the capped pair of pants in a manifold
@@ -45,10 +44,12 @@ cutoff parameter `3R - 1` and the neck length `TauCeti.Floer.comparisonNeckLengt
 the domain-independent `J₀`, has no necks on the collar `2/3 ≤ R ≤ 3/2`, has necks of length
 `R - 1` for `R ≥ 2`, and is smooth in `R`.
 
-Every property except smoothness holds fiberwise and follows from the linear construction.
-Smoothness away from the poles follows from
-`TauCeti.SmoothTwoForm.Compatible.contMDiffAt_of_cayley_eq_sum`; near the poles `0` and `1` the
-structure is `J₀`, locally uniformly in the neck length.
+The structure is the end-weighted structure
+`TauCeti.SmoothTwoForm.Compatible.endWeightedAlmostComplex` with the weights above, so tameness
+and compatibility come from it, and every other property except smoothness holds fiberwise and
+follows from the linear construction. Smoothness away from the poles follows from
+`TauCeti.SmoothTwoForm.Compatible.contMDiffAt_endWeightedAlmostComplex`; near the poles `0` and
+`1` the structure is `J₀`, locally uniformly in the neck length.
 
 ## References
 
@@ -75,54 +76,40 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   (J : Puncture → ℝ → SmoothAlmostComplexStructure I M)
   (hJ : ∀ q t, σ.Tames (J q t))
 
-/-- The linear capped structure on the tangent space at `x`. -/
-private def cappedAt (r L : ℝ) (w : ℂ) (x : M) : AlmostComplexStructure (TangentSpace I x) :=
-  Floer.cappedAlmostComplex (V := TangentSpace I x) (M := Unit) (h₀.compatibleAt x)
-    (fun q t _ => (J q t).almostComplexStructureAt x)
-    (fun q t _ => h₀.isNondegenerate.tames_iff.mp (hJ q t) x) r L w ()
-
 /-- The weight of the end `q` in the Cayley coordinate of the capped structure. -/
 private def cappedWeight (r L : ℝ) (q : Puncture) (w : ℂ) : ℝ :=
   smoothTransition r * (smoothTransition (q.endSign * (q.endCoord w).re - 1) *
     smoothTransition (L + 3 - q.endSign * (q.endCoord w).re))
 
-private theorem cayley_cappedAt (r L : ℝ) (w : ℂ) (x : M) :
-    (J₀.almostComplexStructureAt x).cayley (cappedAt h₀ J hJ r L w x) =
-      ∑ q, cappedWeight r L q w • (J₀.almostComplexStructureAt x).cayley
-        ((J q (q.endCoord w).im).almostComplexStructureAt x) := by
-  rw [cappedAt, Floer.cayley_cappedAlmostComplex, Finset.smul_sum]
-  simp only [smul_smul, cappedWeight]
+/-- The weights lie in `[0, 1]`. -/
+private theorem cappedWeight_mem_Icc (r L : ℝ) (q : Puncture) (w : ℂ) :
+    cappedWeight r L q w ∈ Icc 0 1 :=
+  unitInterval.mul_mem ⟨smoothTransition.nonneg r, smoothTransition.le_one r⟩
+    (unitInterval.mul_mem ⟨smoothTransition.nonneg _, smoothTransition.le_one _⟩
+      ⟨smoothTransition.nonneg _, smoothTransition.le_one _⟩)
 
-/-- The capped structure is smooth on `M` for fixed parameters and domain point. -/
-private theorem contMDiffAt_cappedAt (r L : ℝ) (w : ℂ) (x : M) :
-    ContMDiffAt I (I.prod 𝓘(ℝ, E →L[ℝ] E)) (⊤ : ℕ∞)
-      (fun y : M => TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
-        y (LinearMap.toContinuousLinearMap (cappedAt h₀ J hJ r L w y).toLinearMap)) x :=
-  h₀.contMDiffAt_of_cayley_eq_sum (b := id) (L := fun q _ => J q (q.endCoord w).im)
-    (a := fun q _ => cappedWeight r L q w)
-    (fun y => Floer.tames_cappedAlmostComplex (h₀.compatibleAt y) r L w ())
-    (fun q _ => hJ q _) (cayley_cappedAt h₀ J hJ r L w) contMDiffAt_id
-    (fun _ => contMDiffAt_const) (fun q => (J q _).toEndomorphism.contMDiff x)
+/-- The weight of the end `q` vanishes off the part `±s > 1` of that end. -/
+private theorem endSign_mul_re_endCoord_pos_of_cappedWeight_ne_zero {r L : ℝ} {q : Puncture}
+    {w : ℂ} (h : cappedWeight r L q w ≠ 0) : 0 < q.endSign * (q.endCoord w).re := by
+  by_contra! h'
+  refine h ?_
+  rw [cappedWeight, smoothTransition.zero_of_nonpos (x := q.endSign * (q.endCoord w).re - 1)
+    (by linarith), zero_mul, mul_zero]
 
 /-- The almost complex structure on `M` of the pair of pants capped by three PSS planes along
 necks of length `L`, moved along the segment from `J₀` by the cutoff `β(r)`, at the point
-`w ∈ ℂ`. On each tangent space it is the linear capped structure `TauCeti.Floer.cappedAlmostComplex`
-of `J₀` and the end structures `J q t`. -/
-def cappedAlmostComplex (r L : ℝ) (w : ℂ) : SmoothAlmostComplexStructure I M where
-  toEndomorphism :=
-    ⟨fun x => LinearMap.toContinuousLinearMap (cappedAt h₀ J hJ r L w x).toLinearMap,
-      contMDiffAt_cappedAt h₀ J hJ r L w⟩
-  square_neg x := by
-    ext v
-    exact AlmostComplexStructure.apply_apply _ v
+`w ∈ ℂ`. It is the end-weighted structure
+`TauCeti.SmoothTwoForm.Compatible.endWeightedAlmostComplex` with the weights
+`β(r) β(σ_q - 1) β(L + 3 - σ_q)`, so on each tangent space it is the linear capped structure
+`TauCeti.Floer.cappedAlmostComplex` of `J₀` and the end structures `J q t`. -/
+def cappedAlmostComplex (r L : ℝ) (w : ℂ) : SmoothAlmostComplexStructure I M :=
+  h₀.endWeightedAlmostComplex J hJ (cappedWeight r L) (cappedWeight_mem_Icc r L)
+    (fun _ _ => endSign_mul_re_endCoord_pos_of_cappedWeight_ne_zero) w
 
-/-- The endomorphism of the capped structure at `x` is the linear capped structure there, read as
-a continuous endomorphism. -/
-private theorem cappedAlmostComplex_toEndomorphism (r L : ℝ) (w : ℂ) (x : M) :
-    (h₀.cappedAlmostComplex J hJ r L w).toEndomorphism x =
-      LinearMap.toContinuousLinearMap (cappedAt h₀ J hJ r L w x).toLinearMap :=
-  (rfl)
+/-- The capped structure is tamed by `σ`. -/
+theorem tames_cappedAlmostComplex (r L : ℝ) (w : ℂ) :
+    σ.Tames (h₀.cappedAlmostComplex J hJ r L w) :=
+  tames_endWeightedAlmostComplex h₀ J hJ _ _ _ w
 
 /-- The value on a tangent fiber is precisely the linear capped structure there. -/
 theorem almostComplexStructureAt_cappedAlmostComplex (r L : ℝ) (w : ℂ) (x : M) :
@@ -130,24 +117,18 @@ theorem almostComplexStructureAt_cappedAlmostComplex (r L : ℝ) (w : ℂ) (x : 
       Floer.cappedAlmostComplex (V := TangentSpace I x) (M := Unit) (h₀.compatibleAt x)
         (fun q t _ => (J q t).almostComplexStructureAt x)
         (fun q t _ => h₀.isNondegenerate.tames_iff.mp (hJ q t) x) r L w () := by
-  apply AlmostComplexStructure.toLinearMap_injective
-  rw [SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
-    cappedAlmostComplex_toEndomorphism, LinearMap.coe_toContinuousLinearMap, cappedAt]
-
-/-- The capped structure is tamed by `σ`. -/
-theorem tames_cappedAlmostComplex (r L : ℝ) (w : ℂ) :
-    σ.Tames (h₀.cappedAlmostComplex J hJ r L w) := by
-  refine h₀.isNondegenerate.tames_iff.mpr fun x => ?_
-  rw [almostComplexStructureAt_cappedAlmostComplex]
-  exact Floer.tames_cappedAlmostComplex (h₀.compatibleAt x) r L w ()
+  -- Both structures are tame and have the same Cayley coordinate relative to `J₀`.
+  refine (h₀.compatibleAt x).eq_of_cayley_eq
+    (h₀.isNondegenerate.tames_iff.mp (tames_cappedAlmostComplex h₀ J hJ r L w) x)
+    (Floer.tames_cappedAlmostComplex (h₀.compatibleAt x) r L w ()) ?_
+  rw [cappedAlmostComplex, cayley_endWeightedAlmostComplex, Floer.cayley_cappedAlmostComplex,
+    Finset.smul_sum]
+  simp only [smul_smul, cappedWeight]
 
 /-- The capped structure is `σ`-compatible when the structures on the ends are. -/
 theorem compatible_cappedAlmostComplex (hJc : ∀ q t, σ.Compatible (J q t)) (r L : ℝ) (w : ℂ) :
-    σ.Compatible (h₀.cappedAlmostComplex J hJ r L w) := by
-  refine h₀.isNondegenerate.compatible_iff.mpr fun x => ?_
-  rw [almostComplexStructureAt_cappedAlmostComplex]
-  exact Floer.compatible_cappedAlmostComplex (h₀.compatibleAt x)
-    (fun q t _ => h₀.isNondegenerate.compatible_iff.mp (hJc q t) x) r L w ()
+    σ.Compatible (h₀.cappedAlmostComplex J hJ r L w) :=
+  compatible_endWeightedAlmostComplex h₀ J hJ _ _ _ hJc w
 
 /-- On every tangent fiber, the Cayley coordinate of the capped structure relative to `J₀` is
 `β(r) • ∑ q, β(σ_q - 1) β(L + 3 - σ_q) • cayley (J q t_q)`. This characterizes the structure,
@@ -238,15 +219,9 @@ theorem cappedAlmostComplex_cylindricalEndLift_add_endSign_mul (hJp : Function.P
 /-- **The structure is the pair-of-pants structure up to the necks.** For `r ≥ 1`, at points of
 the pair of pants where the signed longitudinal coordinate of every end is at most `L + 2`, the
 capped structure is the pair-of-pants structure. -/
-theorem cappedAlmostComplex_eq_pairOfPantsAlmostComplex
-    (hJp : ∀ q, Function.Periodic (J q) 1)
-    (hJs : ∀ q, ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) (⊤ : ℕ∞)
-      (fun p : ℝ × M => TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
-        p.2 ((J q p.1).toEndomorphism p.2)))
-    (hr : 1 ≤ r) {w : ThricePuncturedSphere}
+theorem cappedAlmostComplex_eq_pairOfPantsAlmostComplex (hr : 1 ≤ r) {w : ThricePuncturedSphere}
     (hw : ∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ L + 2) :
-    h₀.cappedAlmostComplex J hJ r L w = h₀.pairOfPantsAlmostComplex J hJ hJp hJs w :=
+    h₀.cappedAlmostComplex J hJ r L w = h₀.pairOfPantsAlmostComplex J hJ w :=
   SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
     rw [almostComplexStructureAt_cappedAlmostComplex,
       almostComplexStructureAt_pairOfPantsAlmostComplex]
@@ -291,33 +266,18 @@ theorem contMDiff_cappedAlmostComplex (hJp : ∀ q, Function.Periodic (J q) 1)
   intro y₀
   by_cases hS : f y₀ = 0 ∨ f y₀ = 1
   · -- Near the poles `0` and `1`, the structure is `J₀`.
-    have hJ₀ : ContMDiffAt I' (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
-        (fun y => TotalSpace.mk' (E →L[ℝ] E)
-          (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
-          (b y) (J₀.toEndomorphism (b y))) y₀ :=
-      ((J₀.toEndomorphism.contMDiff (b y₀)).of_le ENat.LEInfty.out).comp y₀ (hb y₀)
-    refine hJ₀.congr_of_eventuallyEq ?_
     have hp : Tendsto (fun y => (f y, L y)) (𝓝 y₀) (𝓝 (f y₀, L y₀)) :=
       (hf.continuous.prodMk hL.continuous).tendsto y₀
-    filter_upwards [hp.eventually
-      (eventually_cappedAlmostComplex_eq_base_of_eq_zero_or_eq_one h₀ J hJ hS (L y₀))] with y hy
-    rw [hy (r y)]
+    exact SmoothAlmostComplexStructure.contMDiffAt_toEndomorphism_of_eventuallyEq (hb y₀)
+      ((hp.eventually (eventually_cappedAlmostComplex_eq_base_of_eq_zero_or_eq_one h₀ J hJ hS
+        (L y₀))).mono fun y hy => hy (r y))
   -- Away from the poles, the Cayley coordinate is a sum of the end structures read at the
   -- angular coordinates, with weights that are smooth there.
   have hq (q : Puncture) : f y₀ ≠ q.endCenter := ne_endCenter (not_or.mp hS) q
-  simp only [cappedAlmostComplex_toEndomorphism]
-  refine h₀.contMDiffAt_of_cayley_eq_sum
-    (K := fun y => cappedAt h₀ J hJ (r y) (L y) (f y) (b y))
-    (L := fun q y => J q (q.endCoord (f y)).im)
-    (a := fun q y => cappedWeight (r y) (L y) q (f y))
-    (fun y => Floer.tames_cappedAlmostComplex (h₀.compatibleAt (b y)) _ _ _ ())
-    (fun q _ => hJ q _) (fun y => cayley_cappedAt h₀ J hJ _ _ _ _) (hb y₀)
-    (fun q => contMDiffAt_cappedWeight (hr y₀) (hL y₀) (hf y₀) q (hq q)) fun q => ?_
-  have hp : Function.Periodic (fun t (x : M) => TotalSpace.mk' (E →L[ℝ] E)
-      (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
-      x ((J q t).toEndomorphism x)) 1 := fun t => by simp only [hJp q t]
-  exact (q.contMDiffAt_comp_im_endCoord hp (hJs q) (hq q) (b y₀)).comp y₀
-    ((hf y₀).prodMk (hb y₀))
+  simp only [cappedAlmostComplex]
+  exact contMDiffAt_endWeightedAlmostComplex h₀ J hJ (c := fun y => cappedWeight (r y) (L y))
+    (hb y₀) (fun q => contMDiffAt_cappedWeight (hr y₀) (hL y₀) (hf y₀) q (hq q))
+    fun q => q.contMDiffAt_toEndomorphism_comp_im_endCoord (hJp q) (hJs q) (hf y₀) (hb y₀) (hq q)
 
 end Smooth
 

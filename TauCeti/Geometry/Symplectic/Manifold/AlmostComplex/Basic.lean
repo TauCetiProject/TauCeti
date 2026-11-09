@@ -195,6 +195,19 @@ lemma mdifferentiableAt_apply (J : SmoothAlmostComplexStructure I M) {b : N → 
     MDifferentiableAt I' I.tangent (fun y ↦ TotalSpace.mk' E (b y) (J (b y) (V y))) y₀ :=
   ((J.toEndomorphism.contMDiff.mdifferentiableAt (by simp)).comp y₀ hb).clm_bundle_apply hV
 
+/-- A family of smooth almost complex structures which equals a fixed `J` near `y₀`, read along a
+map `b` which is `C^n` at `y₀`, is `C^n` at `y₀` as a section of the tangent endomorphism bundle
+along `b`. -/
+lemma contMDiffAt_toEndomorphism_of_eventuallyEq {n : ℕ∞ω} [ENat.LEInfty n]
+    {J' : N → SmoothAlmostComplexStructure I M} {b : N → M} {y₀ : N}
+    (hb : ContMDiffAt I' I n b y₀) (hJ' : ∀ᶠ y in nhds y₀, J' y = J) :
+    ContMDiffAt I' (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
+        (b y) ((J' y).toEndomorphism (b y))) y₀ :=
+  (((J.toEndomorphism.contMDiff (b y₀)).of_le ENat.LEInfty.out).comp y₀ hb).congr_of_eventuallyEq
+    (hJ'.mono fun y hy ↦ by simp only [hy, Function.comp_apply])
+
 end ContMDiffApply
 
 /-- Negating a smooth almost complex structure gives another smooth almost complex structure. -/

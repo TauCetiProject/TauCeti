@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capping
-public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.CayleyPath
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Manifold.Basic
 
 /-!
 # Almost complex structures on the negative PSS plane in a manifold
@@ -178,14 +178,9 @@ theorem contMDiff_negativePlaneAlmostComplex {F G N : Type*} [NormedAddCommGroup
   intro y₀
   rcases lt_or_ge ‖f y₀‖ (2 * Real.exp (2 * π)) with hlt | hge
   · -- On the open pole disc, the structure is `J₀`.
-    have hJ₀ : ContMDiffAt I' (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
-        (fun y => TotalSpace.mk' (E →L[ℝ] E)
-          (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
-          (b y) (J₀.toEndomorphism (b y))) y₀ :=
-      ((J₀.toEndomorphism.contMDiff (b y₀)).of_le ENat.LEInfty.out).comp y₀ (hb y₀)
-    refine hJ₀.congr_of_eventuallyEq ?_
-    filter_upwards [hf.continuous.norm.continuousAt.eventually (gt_mem_nhds hlt)] with y hy
-    rw [negativePlaneAlmostComplex_eq_of_norm_le h₀ J hJ hy.le]
+    exact SmoothAlmostComplexStructure.contMDiffAt_toEndomorphism_of_eventuallyEq (hb y₀)
+      ((hf.continuous.norm.continuousAt.eventually (gt_mem_nhds hlt)).mono fun y hy =>
+        negativePlaneAlmostComplex_eq_of_norm_le h₀ J hJ hy.le)
   -- Off it, the point is not the center `0` of the end, where the end coordinates are smooth.
   have hw : f y₀ ≠ inf.endCenter := by
     rintro h
@@ -193,9 +188,6 @@ theorem contMDiff_negativePlaneAlmostComplex {F G N : Type*} [NormedAddCommGroup
     linarith [Real.exp_pos (2 * π)]
   have hβ : ContMDiff 𝓘(ℝ) 𝓘(ℝ) n smoothTransition :=
     ((smoothTransition.contDiff (n := ⊤)).of_le ENat.LEInfty.out).contMDiff
-  have hp : Function.Periodic (fun t (x : M) => TotalSpace.mk' (E →L[ℝ] E)
-      (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
-      x ((J t).toEndomorphism x)) 1 := fun t => by simp only [hJp t]
   simp only [negativePlaneAlmostComplex_toEndomorphism]
   exact h₀.contMDiffAt_of_cayley_eq_sum
     (K := fun y => negativePlaneAt h₀ J hJ (f y) (b y))
@@ -205,7 +197,6 @@ theorem contMDiff_negativePlaneAlmostComplex {F G N : Type*} [NormedAddCommGroup
     (fun _ _ => hJ _) (fun y => cayley_negativePlaneAt h₀ J hJ _ _) (hb y₀)
     (fun _ => hβ.contMDiffAt.comp y₀
       (((inf.contDiffAt_re_endCoord hw).neg.sub contDiffAt_const).contMDiffAt.comp y₀ (hf y₀)))
-    fun _ => (inf.contMDiffAt_comp_im_endCoord hp hJs hw (b y₀)).comp y₀
-      ((hf y₀).prodMk (hb y₀))
+    fun _ => inf.contMDiffAt_toEndomorphism_comp_im_endCoord hJp hJs (hf y₀) (hb y₀) hw
 
 end TauCeti.SmoothTwoForm.Compatible
