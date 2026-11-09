@@ -144,8 +144,10 @@ section EuclideanHessian
 
 open MeasureTheory Metric
 
-/-- The `L²` norm of the second derivative of a `C²` function on a Euclidean space supported in a
-closed ball is bounded by the volume of the ball and the bound on its second partial derivatives. -/
+/-- The `L²` norm of the second derivative of a `C²` function `w` on a Euclidean space is at most
+`volume (closedBall 0 R) ^ (1/2) * (card ι) ^ 2 * B`, when the second derivative of `w` is supported
+in the closed ball `closedBall x₀ R` and all its second partial derivatives are bounded by `B`.
+Only the second derivative needs to be supported there, so `w` itself may be nonzero outside. -/
 theorem toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall
     {ι : Type*} [Fintype ι] [Nonempty ι] [DecidableEq ι]
     {w : EuclideanSpace ℝ ι → ℝ} (hw : ContDiff ℝ 2 w)

@@ -12,7 +12,6 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Normed.Operator.Holder
-import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
