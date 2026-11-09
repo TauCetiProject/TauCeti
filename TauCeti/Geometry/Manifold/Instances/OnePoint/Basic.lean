@@ -327,7 +327,9 @@ theorem mfderiv_apply_eq_of_hasDerivAt {f : OnePoint 𝕜 → OnePoint 𝕜} {x 
     ext; simp [writtenInExtChartAt]
   simp only [hw, modelWithCornersSelf_coe, range_id, fderivWithin_univ, extChartAt_coe,
     Function.comp_apply, id_eq, hφ.fderiv_eq, hc.hasFDerivAt.fderiv]
-  exact (ContinuousLinearMap.toSpanSingleton_apply 𝕜 c v).trans (mul_comm v c)
+  -- The casts `tangentSpaceCastModel` between the tangent spaces and `𝕜` are identities.
+  change ContinuousLinearMap.toSpanSingleton 𝕜 c (v : 𝕜) = c * v
+  rw [ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul, mul_comm]
 
 end Proper
 

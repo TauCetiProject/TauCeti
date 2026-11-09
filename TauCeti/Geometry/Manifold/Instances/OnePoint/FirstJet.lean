@@ -158,7 +158,7 @@ theorem mfderiv_mul_pglFixingZeroInftyEquiv_symm_zero_apply (g : PGL(2, 𝕜)) (
   -- The dilation fixes `0`, so the chain rule evaluates the derivative of `g` at `0` itself.
   refine (mfderiv_comp_apply_of_eq ((0 : 𝕜) : OnePoint 𝕜) (y := ((0 : 𝕜) : OnePoint 𝕜))
     (mdifferentiableAt_pgl_smul _ _) (mdifferentiableAt_pgl_smul _ _) (by simp) v).trans ?_
-  rw [mfderiv_pglFixingZeroInftyEquiv_symm_zero_apply]
+  rw [mfderiv_pglFixingZeroInftyEquiv_symm_zero_apply, ← smul_eq_mul (a : 𝕜) v]
   exact (mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ g • x) _).map_smul (a : 𝕜) v
 
 end Matrix.ProjGenLinGroup
