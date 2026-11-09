@@ -239,8 +239,10 @@ theorem sum_sampleIntegrand_inter_eq (A B : Finset (Sym2 (Fin n)))
       have hSsub := Finset.mem_powerset.mp hS
       rw [Finset.mem_filter]
       refine ⟨Finset.mem_univ _, ?_⟩
-      have hset := SimpleGraph.edgeSet_fromEdgeSet_of_subset
-        (Finset.union_subset (hBA.trans hA) (hSsub.trans Finset.sdiff_subset))
+      have hset := SimpleGraph.edgeSet_fromEdgeSet_of_subset fun e he =>
+        SimpleGraph.mem_edgeFinset.1
+          (Finset.union_subset (hBA.trans hA) (hSsub.trans Finset.sdiff_subset)
+            (Finset.mem_coe.1 he))
       ext e
       simp only [Finset.mem_inter, SimpleGraph.mem_edgeFinset, hset, Finset.mem_coe,
         Finset.mem_union]
@@ -256,8 +258,10 @@ theorem sum_sampleIntegrand_inter_eq (A B : Finset (Sym2 (Fin n)))
     -- The edges that `B ∪ S` uses outside `A` are exactly `S`, since `S` avoids `A`.
     · intro S hS
       have hSsub := Finset.mem_powerset.mp hS
-      have hset := SimpleGraph.edgeSet_fromEdgeSet_of_subset
-        (Finset.union_subset (hBA.trans hA) (hSsub.trans Finset.sdiff_subset))
+      have hset := SimpleGraph.edgeSet_fromEdgeSet_of_subset fun e he =>
+        SimpleGraph.mem_edgeFinset.1
+          (Finset.union_subset (hBA.trans hA) (hSsub.trans Finset.sdiff_subset)
+            (Finset.mem_coe.1 he))
       ext e
       simp only [Finset.mem_sdiff, SimpleGraph.mem_edgeFinset, hset, Finset.mem_coe,
         Finset.mem_union]
