@@ -75,9 +75,8 @@ private theorem mvfderiv_height (a : E) (p : sphere (0 : E) 1) (v : TangentSpace
       inner ℝ a (mvfderiv (𝓡 n) ι p v) := by
   have h : (fun q : sphere (0 : E) 1 ↦ inner ℝ a (q : E)) = innerSL ℝ a ∘ ι :=
     funext fun q ↦ (innerSL_apply_apply ℝ a (q : E)).symm
-  rw [h, TauCeti.mvfderiv_comp_apply_of_differentiableAt (innerSL ℝ a).differentiableAt
-    ((contMDiff_coe_sphere (m := 1) p).mdifferentiableAt one_ne_zero),
-    (innerSL ℝ a).fderiv, innerSL_apply_apply]
+  rw [h, (innerSL ℝ a).mvfderiv_comp_apply
+    ((contMDiff_coe_sphere (m := 1) p).mdifferentiableAt one_ne_zero), innerSL_apply_apply]
 
 variable (n) in
 /-- The gradient of the height function `p ↦ ⟪a, p⟫`. -/

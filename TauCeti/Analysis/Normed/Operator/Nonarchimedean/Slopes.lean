@@ -74,6 +74,7 @@ section Ring
 variable {R : Type w} [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R] [CompleteSpace R]
   [TauCeti.NormedRing.IsTate R] (v : AddValuation R (WithTop ℝ))
 
+omit [NormOneClass R] in
 /-- Scaling a row-compact endomorphism by a scalar `a` of finite valuation shifts every slope of
 its Fredholm polygon by `v a`, preserving multiplicities. -/
 theorem IsPrCompact.newtonSlopeMultiplicity_charPowerSeries_smul {M : Type u}

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Analysis.Calculus.FDeriv.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.Congr
 public import Mathlib.Analysis.Calculus.FDeriv.Equiv
@@ -24,8 +25,12 @@ precomposition with the derivative of that map.
 
 * `HasFDerivAt.comp_eq_of_eventuallyEq`: invariance of a germ at a fixed point implies invariance
   of its derivative.
+* `HasFDerivAt.injective_of_eventuallyEq_id`: a map with a differentiable local left inverse has
+  injective derivative.
 * `TauCeti.fderiv_comp_eq_zero_iff_of_isInvertible`: `b` is a critical point of `f ∘ φ` exactly
   when `φ b` is a critical point of `f`, if the differential of `φ` at `b` is invertible.
+* `TauCeti.fderiv_comp_add_smul`: the derivative of `w ↦ f (c + a • w)` is `a` times that of `f`
+  at `c + a • w`.
 -/
 
 public section
@@ -43,6 +48,15 @@ theorem _root_.HasFDerivAt.comp_eq_of_eventuallyEq {f : E → F} {f' : E →L[�
     (hinv : f ∘ φ =ᶠ[nhds x] f) : f'.comp φ' = f' := by
   have hfφ : HasFDerivAt f f' (φ x) := by simpa only [hfix] using hf
   exact (hfφ.comp x hφ).unique (hf.congr_of_eventuallyEq hinv)
+
+/-- If `g ∘ f` is the identity near `x` and `g` is differentiable at `f x`, the derivative of `f`
+at `x` is injective. -/
+theorem _root_.HasFDerivAt.injective_of_eventuallyEq_id {f : E → F} {g : F → E}
+    {f' : E →L[𝕜] F} {g' : F →L[𝕜] E} {x : E} (hf : HasFDerivAt f f' x)
+    (hg : HasFDerivAt g g' (f x)) (hgf : g ∘ f =ᶠ[nhds x] id) : Function.Injective f' := by
+  have hcomp := ((hg.comp x hf).congr_of_eventuallyEq hgf.symm).unique (hasFDerivAt_id x)
+  exact Function.LeftInverse.injective fun a => by
+    simpa using congrArg (fun L : E →L[𝕜] E => L a) hcomp
 
 /-- **Criticality does not depend on the coordinates.** If `f` is differentiable at `φ b`, `φ` is
 differentiable at `b`, and the differential of `φ` at `b` is invertible, then `b` is a critical
@@ -65,5 +79,12 @@ theorem norm_fderiv_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     {f : E → ℝ} (a : ℝ) (x : E) :
     ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ = |a| * ‖fderiv ℝ f (a • x)‖ := by
   rw [_root_.fderiv_comp_smul a, norm_smul, Real.norm_eq_abs]
+
+/-- **The chain rule for an affine change of variables.** The derivative of `w ↦ f (c + a • w)`
+at `w` is `a` times the derivative of `f` at `c + a • w`. Like `fderiv_comp_smul`, this needs no
+differentiability of `f`. -/
+theorem fderiv_comp_add_smul (f : E → F) (c : E) (a : 𝕜) (w : E) :
+    fderiv 𝕜 (fun w ↦ f (c + a • w)) w = a • fderiv 𝕜 f (c + a • w) := by
+  rw [_root_.fderiv_comp_smul (f := fun y ↦ f (c + y)), fderiv_comp_add_left]
 
 end TauCeti

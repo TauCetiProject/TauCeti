@@ -116,6 +116,17 @@ theorem fourier_lineDerivOp_apply (u : 𝓢(E, F)) (v ξ : E) :
   rw [fourier_lineDerivOp_eq, smul_apply, smulLeftCLM_apply_apply hv, ← Complex.coe_smul,
     smul_smul]
 
+/-- The Fourier transform of an iterated directional derivative is multiplication by the
+product of the corresponding linear Fourier symbols. -/
+theorem fourier_iteratedLineDerivOp_apply (u : 𝓢(E, F)) {k : ℕ} (v : Fin k → E) (ξ : E) :
+    𝓕 (∂^{v} u) ξ = (∏ j, ((2 * π * Complex.I) * ⟪ξ, v j⟫)) • 𝓕 u ξ := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [LineDeriv.iteratedLineDerivOp_succ_left, fourier_lineDerivOp_apply, ih,
+      smul_smul, Fin.prod_univ_succ]
+    simp only [Fin.tail_def]
+
 /-- The frequencies of a directional derivative of a Schwartz function are among those of the
 function. -/
 theorem support_fourier_lineDerivOp_subset (u : 𝓢(E, F)) (v : E) :

@@ -616,7 +616,7 @@ theorem hamiltonianVectorField_constSmooth (omegaForm : SymplecticForm V) (f : V
   -- The tangent spaces of the model space are `V` itself, through the identity map
   -- `NormedSpace.fromTangentSpace`.
   refine (fromTangentSpace_constSmooth_apply omegaForm x _ v).trans ?_
-  rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply]
+  rw [TauCeti.mvfderiv_eq_fderiv_apply]
   exact omegaForm.apply_hamiltonianVectorField f x _
 
 /-- For a constant symplectic form on a vector space, the Poisson bracket of the manifold theory
