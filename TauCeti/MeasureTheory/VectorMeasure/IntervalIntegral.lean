@@ -42,7 +42,7 @@ variable {α E F G : Type*} [LinearOrder α] [TopologicalSpace α] [OrderTopolog
 
 /-- The cumulative integral of an L¹ function is continuous at any point with zero variation
 mass. No continuity of the integrand is required. -/
-theorem Integrable.continuousAt_setIntegral_Iic (hf : μ.Integrable f) {t : α}
+theorem Integrable.continuousAt_primitive_Iic (hf : μ.Integrable f) {t : α}
     (ht : μ.variation {t} = 0) :
     ContinuousAt (fun u ↦ ∫ᵛ x in Iic u, f x ∂[B; μ]) t := by
   simp_rw [← integral_indicator measurableSet_Iic]
@@ -59,15 +59,15 @@ theorem Integrable.continuousAt_setIntegral_Iic (hf : μ.Integrable f) {t : α}
       ((eventually_lt_nhds htx).mono fun u hu ↦ by simp [hu.not_ge])
 
 /-- An L¹ function has a continuous cumulative integral against an atomless vector measure. -/
-theorem Integrable.continuous_setIntegral_Iic (hf : μ.Integrable f)
+theorem Integrable.continuous_primitive_Iic (hf : μ.Integrable f)
     [NullSingletonClass μ.variation] :
     Continuous (fun t ↦ ∫ᵛ x in Iic t, f x ∂[B; μ]) :=
-  continuous_iff_continuousAt.2 fun _ ↦ hf.continuousAt_setIntegral_Iic (measure_singleton _)
+  continuous_iff_continuousAt.2 fun _ ↦ hf.continuousAt_primitive_Iic (measure_singleton _)
 
 /-- The indefinite integral of a function integrable only on `(a,b]` is continuous throughout
 `[a,b]` when the variation measure has no atoms in `(a,b]`. Atoms outside the integration
 horizon, including at `a`, are allowed. This includes an empty or zero-length horizon. -/
-theorem IntegrableOn.continuousOn_setIntegral_Ioc {a b : α}
+theorem IntegrableOn.continuousOn_Icc_primitive_Ioc {a b : α}
     (hf : μ.IntegrableOn f (Ioc a b)) (hμ : ∀ t ∈ Ioc a b, μ.variation {t} = 0) :
     ContinuousOn (fun t ↦ ∫ᵛ x in Ioc a t, f x ∂[B; μ]) (Icc a b) := by
   have : NullSingletonClass (μ.restrict (Ioc a b)).variation := by
@@ -77,7 +77,7 @@ theorem IntegrableOn.continuousOn_setIntegral_Ioc {a b : α}
     by_cases ht : t ∈ Ioc a b
     · simpa [Measure.restrict_apply, ht] using hμ t ht
     · simp [Measure.restrict_apply, ht]
-  have hc := hf.continuous_setIntegral_Iic (B := B)
+  have hc := hf.continuous_primitive_Iic (B := B)
   refine hc.continuousOn.congr fun t ht ↦ ?_
   dsimp only
   rw [restrict_restrict _ measurableSet_Iic measurableSet_Ioc]

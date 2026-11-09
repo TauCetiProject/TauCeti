@@ -68,14 +68,14 @@ theorem nullSingletonClass_variation_vectorMeasure (hg : BoundedVariationOn g un
 continuous accumulated integral on the whole closed horizon. Jumps at `a` or outside the horizon
 are allowed. The integrand need only be integrable on `(a,b]`, and need not be continuous or
 bounded. The pairing can in particular be real scalar multiplication. -/
-theorem continuousOn_setIntegral_Ioc_vectorMeasure [NormedSpace ℝ F]
+theorem continuousOn_Icc_primitive_Ioc_vectorMeasure [NormedSpace ℝ F]
     {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [NormedAddCommGroup G] [NormedSpace ℝ G]
     (hg : BoundedVariationOn g univ) {a b : α} (hcont : ∀ t ∈ Ioc a b, ContinuousAt g t)
     {f : α → E} (hf : hg.vectorMeasure.IntegrableOn f (Ioc a b))
     (B : E →L[ℝ] F →L[ℝ] G) :
     ContinuousOn (fun t ↦ ∫ᵛ x in Ioc a t, f x ∂[B; hg.vectorMeasure]) (Icc a b) := by
-  exact hf.continuousOn_setIntegral_Ioc fun t ht ↦
+  exact hf.continuousOn_Icc_primitive_Ioc fun t ht ↦
     hg.variation_vectorMeasure_singleton_eq_zero_of_continuousAt (hcont t ht)
 
 end BoundedVariationOn
