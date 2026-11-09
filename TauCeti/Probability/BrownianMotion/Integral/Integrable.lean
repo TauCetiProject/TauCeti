@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Process.Predictable
+public import TauCeti.Probability.Process.Predictable.Basic
+public import TauCeti.Probability.Process.TimeMeasure
 public import TauCeti.MeasureTheory.Function.Lp.Iterated
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.Prod
@@ -186,7 +187,9 @@ theorem brownianIntegrable_const_iff [SFinite P] {ξ : Ω → ℝ} :
     -- A unit time interval has positive mass, so an a.e. square-integrable section exists.
     have hmass : (volume.restrict (Ioc 0 (1 : ℝ))).comap
         ((↑) : ℝ≥0 → ℝ) univ = 1 := by
-      simpa using NNReal.comap_volume_restrict_Ioc_univ 1
+      rw [← NNReal.coe_one, NNReal.comap_volume_restrict_Ioc]
+      simpa only [Probability.timeMeasure_def, ENNReal.coe_one] using
+        Probability.timeMeasure_univ 1
     have : NeZero ((volume.restrict (Ioc 0 (1 : ℝ))).comap ((↑) : ℝ≥0 → ℝ)) :=
       ⟨fun hz ↦ by simp [hz] at hmass⟩
     have hsec : ∀ᵐ _ ∂(volume.restrict (Ioc 0 (1 : ℝ))).comap
