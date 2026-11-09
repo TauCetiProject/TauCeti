@@ -128,21 +128,13 @@ theorem compatible_plumbedAlmostComplex
   · exact compatible_pairOfPantsAlmostComplex hₐ Ja hJa hJap hJas hJac _
   · exact compatible_pairOfPantsAlmostComplex hᵦ Jb hJb hJbp hJbs hJbc _
 
-omit [FiniteDimensional ℝ E] in
-/-- Two smooth almost complex structures with the same fiber values are equal. -/
-private theorem eq_of_almostComplexStructureAt_eq {J K : SmoothAlmostComplexStructure I M}
-    (h : ∀ x, J.almostComplexStructureAt x = K.almostComplexStructureAt x) : J = K := by
-  ext x v
-  simpa only [SmoothAlmostComplexStructure.almostComplexStructureAt_apply] using
-    congrArg (fun A : AlmostComplexStructure (TangentSpace I x) => A v) (h x)
-
 /-- Outside the width-two collar at the receiving cut, the glued structure is the receiving
 structure. -/
 theorem plumbedAlmostComplex_of_re_endCoord_le (hq : q ≠ inf) (hab : Jb q = Ja inf)
     (hwL : (q.endCoord w).re ≤ L - 2) :
     hₐ.plumbedAlmostComplex hᵦ Ja Jb hJa hJb hJap hJbp hJas hJbs q L w hw =
       hᵦ.pairOfPantsAlmostComplex Jb hJb hJbp hJbs w := by
-  refine eq_of_almostComplexStructureAt_eq fun x => ?_
+  refine SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => ?_
   rw [almostComplexStructureAt_plumbedAlmostComplex,
     almostComplexStructureAt_pairOfPantsAlmostComplex]
   exact Floer.plumbedAlmostComplex_of_re_endCoord_le _ _ hq (by rw [hab]) hwL ()
@@ -154,7 +146,7 @@ theorem plumbedAlmostComplex_eq_inserted (hq : q ≠ inf) (hab : Jb q = Ja inf)
     (hw₂ : 2 < (q.endCoord w).re) :
     hₐ.plumbedAlmostComplex hᵦ Ja Jb hJa hJb hJap hJbp hJas hJbs q L w hw =
       hₐ.pairOfPantsAlmostComplex Ja hJa hJap hJas (q.plumbingPreimage L w hw) := by
-  refine eq_of_almostComplexStructureAt_eq fun x => ?_
+  refine SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => ?_
   rw [almostComplexStructureAt_plumbedAlmostComplex,
     almostComplexStructureAt_pairOfPantsAlmostComplex, coe_plumbingPreimage]
   exact Floer.plumbedAlmostComplex_eq_inserted _ _ hq (by rw [hab]) hw₂ ()
