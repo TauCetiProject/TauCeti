@@ -213,7 +213,7 @@ theorem normalizedLattice_index : normalizedLattice.toAddSubgroup.index = 4 := b
   have hrange : LinearMap.range f = normalizedLattice := by
     rw [Module.Basis.constr_range]
     rfl
-  rw [← hrange, LinearMap.index_range_eq_natAbs_det_toMatrix b b hf]
+  rw [← hrange, LinearMap.index_range_eq_natAbs_det_toMatrix b b f]
   have hm : LinearMap.toMatrix b b f = Matrix.diagonal (![1, 2, 2] : Fin 3 → ℤ) := by
     ext i j
     simp [f, LinearMap.toMatrix_apply, Matrix.diagonal_apply, Finsupp.single_apply,

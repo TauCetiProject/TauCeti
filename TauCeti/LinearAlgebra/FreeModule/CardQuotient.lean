@@ -87,13 +87,21 @@ theorem card_quotient_range_eq_card_quotient_span_det {f : M →ₗ[R] M} (hf : 
         rw [Ideal.prod_span_singleton, ← Ideal.span_singleton_eq_span_singleton.mpr hassoc,
           hnorm hf]
 
-omit [IsPrincipalIdealRing R] in
+omit [IsPrincipalIdealRing R] [Module.Free R M] [Module.Finite R M] in
 /-- **An endomorphism with vanishing determinant has infinite cokernel.** Over an infinite domain,
 if `det f = 0` then `M ⧸ range f` is infinite. Together with
 `card_quotient_range_eq_card_quotient_span_det`, over an infinite principal ideal domain the
 cokernel of `f` is finite exactly when `det f ≠ 0` and `R ⧸ (det f)` is finite. -/
 theorem infinite_quotient_range_of_det_eq_zero [Infinite R] {f : M →ₗ[R] M} (hf : f.det = 0) :
     Infinite (M ⧸ range f) := by
+  -- A nonzero determinant forces `M` to have a finite basis, so `M` is finite and free.
+  have hbasis : ∃ s : Finset M, Nonempty (Basis s R M) := by
+    classical
+    refine LinearMap.det_cases (P := fun d ↦ d = 0 → ∃ s : Finset M, Nonempty (Basis s R M)) f
+      (fun s b _ ↦ ⟨s, ⟨b⟩⟩) (fun h ↦ absurd h one_ne_zero) hf
+  obtain ⟨s, ⟨b⟩⟩ := hbasis
+  have := Module.Finite.of_basis b
+  have := Module.Free.of_basis b
   -- The kernel of `f` is nonzero, so by rank-nullity the cokernel has positive rank, and the
   -- multiples of an element of positive rank are pairwise distinct.
   have hker : 0 < Module.rank R (ker f) := by

@@ -56,8 +56,6 @@ module.
   `φ` is nonzero.
 * `PowerSeries.IsWeierstrassFactorizationAt.natCard_quotSMulTop`: if the norm of `φ` is nonzero,
   `#(N ⧸ φ N) = #(A ⧸ (norm φ))`.
-* `PowerSeries.IsWeierstrassFactorizationAt.infinite_quotSMulTop`: if the norm of `φ` vanishes
-  and `A` is infinite, `N ⧸ φ N` is infinite.
 * `PowerSeries.IsWeierstrassFactorizationAt.finite_quotSMulTop_iff`: over an infinite principal
   ideal domain with finite quotients, such as a discrete valuation ring with finite residue field,
   `N ⧸ φ N` is finite iff the norm of `φ` is nonzero.
@@ -115,15 +113,6 @@ theorem natCard_quotSMulTop [IsDomain A] [IsPrincipalIdealRing A] {φ : A⟦X⟧
   have := H.free_quotient
   have := H.finite_quotient
   exact TauCeti.Algebra.natCard_quotSMulTop_of_norm_ne_zero hφ
-
-/-- **Infinite cokernel on a Weierstrass quotient.** Over an infinite domain, if the norm over `A`
-of the class of a series `φ` vanishes, then `A⟦X⟧ ⧸ (g)` modulo `φ` is infinite. -/
-theorem infinite_quotSMulTop [IsDomain A] [Infinite A] {φ : A⟦X⟧}
-    (hφ : Algebra.norm A (Ideal.Quotient.mk (Ideal.span {g}) φ) = 0) :
-    Infinite (QuotSMulTop φ (A⟦X⟧ ⧸ Ideal.span {g})) := by
-  have := H.free_quotient
-  have := H.finite_quotient
-  exact TauCeti.Algebra.infinite_quotSMulTop_of_norm_eq_zero hφ
 
 /-- **Finite cokernels on a Weierstrass quotient.** If `A` is an infinite principal ideal domain
 whose quotients by nonzero ideals are finite, for instance a discrete valuation ring with finite
@@ -193,9 +182,11 @@ example (p : ℕ) [Fact p.Prime] (n : ℕ) :
     rw [natDegree_X, Nat.lt_one_iff] at hk
     simp [hk]
   have H := hG.isWeierstrassFactorizationAt
-  refine H.infinite_quotSMulTop ?_
+  refine TauCeti.Algebra.infinite_quotSMulTop_of_norm_eq_zero (A := ℤ_[p]) ?_
   have hres := resultant_X_pow_left (((X + 1) ^ p ^ n - 1 : ℤ_[p][X])) 1 _ le_rfl
   rw [pow_one] at hres
+  change Algebra.norm ℤ_[p] (Ideal.Quotient.mk (Ideal.span {((X : ℤ_[p][X]) : ℤ_[p]⟦X⟧)})
+    (((X + 1) ^ p ^ n - 1 : ℤ_[p][X]) : ℤ_[p]⟦X⟧)) = 0
   rw [H.norm_mk_coe_eq_resultant, natDegree_X, hres]
   simp [coeff_zero_eq_eval_zero]
 
