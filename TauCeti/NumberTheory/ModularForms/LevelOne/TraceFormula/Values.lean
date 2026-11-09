@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.Charpoly.FinrankTwo
 public import TauCeti.NumberTheory.ModularForms.LevelOne.DimensionFormula
-public import TauCeti.NumberTheory.ModularForms.LevelOne.Eigenbasis
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.EichlerSelberg
 
 /-!
@@ -106,6 +105,7 @@ theorem neg_sum_hurwitzClassNumber_mul_dickson_one_sub_half {w : ℕ} (hw : Even
 /-- **The trace of `T₂` on `S₁₂(SL(2, ℤ))` is `-24`**, by the Eichler–Selberg trace formula:
 `-½ (H(8) P₁₂(0, 2) + 2 H(7) P₁₂(1, 2) + 2 H(4) P₁₂(2, 2)) - 1 = -½ (-32 + 46 + 32) - 1`. Since
 `S₁₂(SL(2, ℤ)) = ℂ Δ`, this is the eigenvalue `τ(2) = -24` of `T₂` on `Δ`. -/
+@[simp]
 theorem trace_heckeTCuspLevelOne_twelve_two :
     LinearMap.trace ℂ _ (heckeTCuspLevelOne 12 2) = -24 := by
   rw [trace_heckeTCuspLevelOne_eq_neg_hurwitzClassNumber_sub_min (w := 10) (by norm_num)
@@ -121,6 +121,7 @@ theorem trace_heckeTCuspLevelOne_twelve_two :
 /-! ### The characteristic polynomial of `T₂` on `S₂₄` -/
 
 /-- **The trace of `T₂` on `S₂₄(SL(2, ℤ))` is `1080`**, by the Eichler–Selberg trace formula. -/
+@[simp]
 theorem trace_heckeTCuspLevelOne_twentyFour_two :
     LinearMap.trace ℂ _ (heckeTCuspLevelOne 24 2) = 1080 := by
   rw [trace_heckeTCuspLevelOne_eq_neg_hurwitzClassNumber_sub_min (w := 22) (by norm_num)
@@ -134,6 +135,7 @@ theorem trace_heckeTCuspLevelOne_twentyFour_two :
   norm_num
 
 /-- **The trace of `T₄` on `S₂₄(SL(2, ℤ))` is `25326656`**, by the Eichler–Selberg trace formula. -/
+@[simp]
 theorem trace_heckeTCuspLevelOne_twentyFour_four :
     LinearMap.trace ℂ _ (heckeTCuspLevelOne 24 4) = 25326656 := by
   rw [trace_heckeTCuspLevelOne_eq_neg_hurwitzClassNumber_sub_min (w := 22) (by norm_num)
@@ -152,6 +154,7 @@ The space is two-dimensional (`CuspForm.dimension_level_one`), so the characteri
 is `X² - tr(T₂) X + det(T₂)` with `2 det(T₂) = tr(T₂)² - tr(T₂²)`. By the recurrence
 `T₄ = T₂² - 2²³ T₁` and `T₁ = 1`, `tr(T₂²) = tr(T₄) + 2²⁴`, and both traces come from the trace
 formula. -/
+@[simp]
 theorem charpoly_heckeTCuspLevelOne_twentyFour_two :
     (heckeTCuspLevelOne 24 2).charpoly = X ^ 2 - C 1080 * X - C 20468736 := by
   have hdim : finrank ℂ (CuspForm 𝒮ℒ 24) = 2 := by

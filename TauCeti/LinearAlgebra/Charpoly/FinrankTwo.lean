@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
-public import Mathlib.LinearAlgebra.Determinant
-public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import Mathlib.LinearAlgebra.Trace
 
 /-!
