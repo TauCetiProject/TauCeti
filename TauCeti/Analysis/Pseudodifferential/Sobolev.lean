@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Quantization
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
 public import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -163,23 +164,6 @@ private theorem sum_seminorm_ofFn_le (K : Compacts (CoordinateSpace n)) (a : Sym
       obtain ⟨r, -, rfl⟩ := Finset.mem_image.1 hα
       exact ht r
 
-/-- The Fourier transform is continuous on Schwartz space, so each seminorm
-`‖ξ‖ ^ k ‖𝓕 g ξ‖` of `𝓕 g` is bounded by a constant times finitely many seminorms of `g`. -/
-private theorem exists_seminorm_fourier_le_sum_seminorm {E F : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-    [NormedAddCommGroup F] [NormedSpace ℂ F] (k : ℕ) :
-    ∃ (s : Finset (ℕ × ℕ)) (c : ℝ), 0 ≤ c ∧ ∀ g : 𝓢(E, F),
-      SchwartzMap.seminorm ℂ k 0 (𝓕 g) ≤ c * ∑ i ∈ s, SchwartzMap.seminorm ℂ i.1 i.2 g := by
-  have hq : Continuous ((SchwartzMap.seminorm ℂ k 0).comp (fourierCLM ℂ 𝓢(E, F)).toLinearMap) :=
-    ((schwartz_withSeminorms ℂ _ _).continuous_seminorm (k, 0)).comp (fourierCLM ℂ _).continuous
-  obtain ⟨s, c, -, hc⟩ := Seminorm.bound_of_continuous (schwartz_withSeminorms ℂ _ _) _ hq
-  refine ⟨s, c, c.2, fun g ↦ (hc g).trans ?_⟩
-  simp only [smul_apply, NNReal.smul_def, smul_eq_mul]
-  gcongr
-  exact Seminorm.finset_sup_apply_le (Finset.sum_nonneg fun i _ ↦ apply_nonneg _ _)
-    fun i hi ↦ Finset.single_le_sum (f := fun i : ℕ × ℕ ↦ SchwartzMap.seminorm ℂ i.1 i.2 g)
-      (fun j _ ↦ apply_nonneg _ _) hi
-
 /-- **Rapid decay of the Fourier transform in the position, uniformly in the symbol.** For a
 compact set `K` and every `N` there are finitely many words `α` and a constant `C` such that every
 symbol `a` of order `m` vanishing at positions outside `K` satisfies
@@ -196,9 +180,11 @@ theorem exists_one_add_norm_pow_mul_norm_fourier_le_sum_seminorm
   have hKR : ∀ x ∈ K, ‖x‖ ≤ max R 0 := fun x hx ↦
     (mem_closedBall_zero_iff.mp (hR hx)).trans (le_max_left _ _)
   obtain ⟨s₀, c₀, hc₀, h₀⟩ :=
-    exists_seminorm_fourier_le_sum_seminorm (E := CoordinateSpace n) (F := V →L[ℂ] W) 0
+    SchwartzMap.exists_seminorm_fourier_le_sum_seminorm (E := CoordinateSpace n)
+      (F := V →L[ℂ] W) 0
   obtain ⟨s₁, c₁, hc₁, h₁⟩ :=
-    exists_seminorm_fourier_le_sum_seminorm (E := CoordinateSpace n) (F := V →L[ℂ] W) N
+    SchwartzMap.exists_seminorm_fourier_le_sum_seminorm (E := CoordinateSpace n)
+      (F := V →L[ℂ] W) N
   set t := (s₀ ∪ s₁).biUnion fun i ↦ Finset.univ.image fun r : Fin i.2 → Fin n ↦ List.ofFn r
   set D := c₀ * ∑ i ∈ s₀, max R 0 ^ i.1 + c₁ * ∑ i ∈ s₁, max R 0 ^ i.1
   refine ⟨t, 2 ^ N * D, by positivity, fun a haK η ξ ↦ ?_⟩
