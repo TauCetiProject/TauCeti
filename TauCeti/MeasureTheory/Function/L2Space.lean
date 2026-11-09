@@ -18,8 +18,10 @@ form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function.
 For counting measure, singleton-supported vectors separate L² functions. On a compact space with
 a finite measure, the L² pairing of an L² function with a continuous function is an integral
 (`MeasureTheory.L2.inner_toLp_continuousMap`), extending Mathlib's `ContinuousMap.inner_toLp`.
-The second moment of a finite sum of pairwise orthogonal real functions is the sum of their
-second moments (`TauCeti.integral_sq_sum_of_pairwise_integral_mul_eq_zero`).
+The second moment of a finite sum of pairwise orthogonal functions with values in a real inner
+product space is the sum of their second moments
+(`TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero`), with a scalar specialization
+`TauCeti.integral_sq_sum_of_pairwise_integral_mul_eq_zero`.
 -/
 
 public section
@@ -76,6 +78,23 @@ namespace TauCeti
 
 open MeasureTheory Finset
 
+/-- The second moment of a finite sum of square-integrable functions with values in a real
+inner product space and vanishing pairwise inner-product integrals is the sum of their second
+moments. No independence or centering assumption is required. -/
+theorem integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero
+    {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] {X : ι → Ω → E} {s : Finset ι}
+    (hX : ∀ i ∈ s, MemLp (X i) 2 μ)
+    (horth : Set.Pairwise ↑s fun i j ↦ (∫ ω, ⟪X i ω, X j ω⟫_ℝ ∂μ) = 0) :
+    (∫ ω, ‖∑ i ∈ s, X i ω‖ ^ 2 ∂μ) = ∑ i ∈ s, ∫ ω, ‖X i ω‖ ^ 2 ∂μ := by
+  have hint : ∀ i ∈ s, ∀ j ∈ s, Integrable (fun ω ↦ ⟪X i ω, X j ω⟫_ℝ) μ :=
+    fun i hi j hj ↦ (hX i hi).integrable_inner (hX j hj)
+  simp_rw [← real_inner_self_eq_norm_sq, sum_inner, inner_sum]
+  rw [integral_finsetSum _ fun i hi ↦ integrable_finsetSum _ fun j hj ↦ hint i hi j hj]
+  refine sum_congr rfl fun i hi ↦ ?_
+  rw [integral_finsetSum _ fun j hj ↦ hint i hi j hj]
+  exact sum_eq_single_of_mem i hi fun j hj hji ↦ horth hi hj hji.symm
+
 /-- The second moment of a finite sum of square-integrable real functions with vanishing
 pairwise product integrals is the sum of their second moments. No independence or centering
 assumption is required. -/
@@ -84,13 +103,8 @@ theorem integral_sq_sum_of_pairwise_integral_mul_eq_zero
     (hX : ∀ i ∈ s, MemLp (X i) 2 μ)
     (horth : Set.Pairwise ↑s fun i j ↦ (∫ ω, X i ω * X j ω ∂μ) = 0) :
     (∫ ω, (∑ i ∈ s, X i ω) ^ 2 ∂μ) = ∑ i ∈ s, ∫ ω, X i ω ^ 2 ∂μ := by
-  have hint : ∀ i ∈ s, ∀ j ∈ s, Integrable (fun ω ↦ X i ω * X j ω) μ := by
-    intro i hi j hj
-    simpa only [Pi.mul_def] using (hX i hi).integrable_mul (hX j hj)
-  simp_rw [pow_two, sum_mul, mul_sum]
-  rw [integral_finsetSum _ fun i hi ↦ integrable_finsetSum _ fun j hj ↦ hint i hi j hj]
-  refine sum_congr rfl fun i hi ↦ ?_
-  rw [integral_finsetSum _ fun j hj ↦ hint i hi j hj]
-  exact sum_eq_single_of_mem i hi fun j hj hji ↦ horth hi hj hji.symm
+  simpa only [Real.norm_eq_abs, sq_abs] using
+    integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero hX
+      (by simpa only [Real.inner_apply] using horth)
 
 end TauCeti
