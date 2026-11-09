@@ -224,11 +224,8 @@ private theorem exists_ne_mem_rootSet_X_pow_three_sub_two :
     dsimp [f]
     compute_degree
     norm_num
-  let rootsEquiv : f.rootSet f.SplittingField ≃ Fin 3 := Fintype.equivFinOfCardEq hcard
-  refine ⟨(rootsEquiv.symm 0).1, (rootsEquiv.symm 1).1, (rootsEquiv.symm 0).2,
-    (rootsEquiv.symm 1).2, fun h ↦ ?_⟩
-  have : (1 : Fin 3) = 0 := rootsEquiv.symm.injective (Subtype.ext h)
-  simp at this
+  obtain ⟨⟨b, hb⟩, ⟨g, hg⟩, hne⟩ := Fintype.exists_pair_of_one_lt_card (by rw [hcard]; norm_num)
+  exact ⟨b, g, hb, hg, fun h ↦ hne (Subtype.ext h.symm)⟩
 
 /-- The prime `2` has a prime of the cubic root field above it with ramification index three. -/
 private theorem exists_prime_liesOver_two_ramificationIdx_eq_three
