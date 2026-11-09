@@ -295,7 +295,7 @@ theorem exists_continuousLinearMap_of_doubleDual [FiniteDimensional 𝕜 V]
       _ ≤ 1 * ‖T v‖ := by gcongr; exact (hh1 _).le
       _ = ‖T v‖ := one_mul _
   obtain ⟨hTlow, hTup⟩ := T.norm_apply_bounds_of_net hnear hlow
-    (fun v hv ↦ by simpa [hT] using hTu ⟨v, hv⟩) hδ.le hδ1
+    (fun v hv ↦ by simpa [hT] using hTu ⟨v, hv⟩) hδ1
   refine ⟨T, fun v ↦ ⟨?_, ?_⟩, fun v g hg ↦ hTG v g (Submodule.mem_sup_left hg), ?_⟩
   · exact (mul_le_mul_of_nonneg_right (by linarith) (norm_nonneg v)).trans (hTlow v)
   · exact (hTup v).trans (mul_le_mul_of_nonneg_right (by linarith) (norm_nonneg v))

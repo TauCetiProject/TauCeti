@@ -12,7 +12,8 @@ public import Mathlib.Topology.EMetricSpace.BoundedVariation
 
 This file transfers eventual upper bounds on the total variations of a family of maps to a
 `liminf` bound on the total variation of a pointwise limit. It also computes the variation of a
-composition with an antitone map on an interval.
+composition with an antitone map on an interval, and shows that the variation is unchanged by
+postcomposition with a map that preserves the distances between the values of the function.
 
 ## Main results
 
@@ -20,6 +21,8 @@ composition with an antitone map on an interval.
   a family of maps bounds the total variation of a pointwise limit by the `liminf` of the bounds.
 * `eVariationOn.comp_inter_Icc_eq_of_antitoneOn`: the antitone counterpart of Mathlib's
   `eVariationOn.comp_inter_Icc_eq_of_monotoneOn`.
+* `eVariationOn.comp_eq_of_edist_eq`: postcomposition with a map preserving the distances between
+  the values of a function does not change its variation.
 -/
 
 public section
@@ -62,6 +65,15 @@ namespace eVariationOn
 
 variable {α β E : Type*} [LinearOrder α] [LinearOrder β] [TopologicalSpace E]
   [WeakPseudoEMetricSpace E]
+
+/-- Postcomposing `f` with a map `g` that preserves the distances between the values of `f` on `s`
+does not change the variation of `f` on `s`. -/
+theorem comp_eq_of_edist_eq {F : Type*} [TopologicalSpace F] [WeakPseudoEMetricSpace F]
+    {f : α → E} {g : E → F} {s : Set α}
+    (h : ∀ x ∈ s, ∀ y ∈ s, edist (g (f x)) (g (f y)) = edist (f x) (f y)) :
+    eVariationOn (g ∘ f) s = eVariationOn f s := by
+  refine iSup_congr fun p ↦ Finset.sum_congr rfl fun i _ ↦ ?_
+  exact h _ (p.2.2.2 _) _ (p.2.2.2 _)
 
 open OrderDual in
 /-- The variation of `f ∘ φ` on `t ∩ [x, y]` for an antitone `φ` is the variation of `f` on the
