@@ -19,6 +19,9 @@ inverse of the extended product chart at `q = (p, x)`, and in the tangent trivia
 whole extended product chart target, squares to minus the identity there, and equals `J q` at the
 chart centre. Each slice with the domain coordinate fixed is the chart field of the frozen target
 structure, and chart fields at two centres are conjugated by the target tangent transition.
+Conversely, a `Cⁿ` field on the extended product chart target squaring to minus the identity
+there defines a family on the product of the intrinsic chart sources, whose coordinate expression
+is the prescribed field.
 
 ## Main declarations
 
@@ -26,6 +29,8 @@ structure, and chart fields at two centres are conjugated by the target tangent 
 * `ContMDiffAlmostComplexStructureFamily.contDiffOn_inChart`: its joint regularity on the target.
 * `ContMDiffAlmostComplexStructureFamily.inChart_mk`: slices are chart fields of frozen structures.
 * `ContMDiffAlmostComplexStructureFamily.inChart_extChartAt_eq_conj`: conjugation on overlaps.
+* `ContMDiffAlmostComplexStructureFamily.ofChart`, `inChart_ofChart`: reconstruction on the
+  product of the intrinsic chart sources from a field on the product chart target.
 * `ContMDiffAlmostComplexStructureFamily.inChart_ofModel`: on a model target, the coordinate
   expression of `ofModel A` is `A` read in the domain chart.
 
@@ -167,6 +172,127 @@ theorem inChart_const (J : ContMDiffAlmostComplexStructure I n M) (q : P × M) (
     (const (IP := IP) (P := P) J).inChart q z = J.inChart q.2 z.2 := by
   obtain ⟨w, z⟩ := z
   rw [inChart_mk, freeze_const]
+
+section Reconstruction
+
+variable [IsManifold IP ∞ P]
+
+/-- The intrinsic open chart source of a manifold at a point. -/
+abbrev chartSource {H M : Type*} [TopologicalSpace H] [TopologicalSpace M] [ChartedSpace H M]
+    (x : M) : TopologicalSpace.Opens M :=
+  ⟨(chartAt H x).source, (chartAt H x).open_source⟩
+
+/-- The tangent frame of the intrinsic chart source at its centre; it covers the whole source. -/
+abbrev chartFrame (x : M) :=
+  trivializationAt E (TangentSpace I : chartSource (H := H) x → Type _)
+    (⟨x, mem_chart_source H x⟩ : chartSource (H := H) x)
+
+omit [IsManifold I ∞ M] [IsManifold IP ∞ P] in
+private theorem mem_extChartAt_prod_source (q : P × M) (r : chartSource (H := HP) q.1 ×
+    chartSource (H := H) q.2) : ((r.1 : P), (r.2 : M)) ∈ (extChartAt (IP.prod I) q).source := by
+  rw [extChartAt_prod, PartialEquiv.prod_source, extChartAt_source, extChartAt_source]
+  exact ⟨r.1.property, r.2.property⟩
+
+/-- Reconstruct a domain-dependent structure on a product of intrinsic chart sources from a
+normed-space field on the extended product chart target. Its finite regularity and square
+identity are required only on that target. -/
+def ofChart (q : P × M) (A : EP × E → E →L[ℝ] E)
+    (hA : ContDiffOn ℝ n A (extChartAt (IP.prod I) q).target)
+    (hAA : ∀ z ∈ (extChartAt (IP.prod I) q).target, ∀ v, A z (A z v) = -v) :
+    ContMDiffAlmostComplexStructureFamily I (chartSource (H := H) q.2) IP
+      (chartSource (H := HP) q.1) n :=
+  ofContMDiff
+    (fun r ↦ ((chartFrame (I := I) q.2).symmL ℝ r.2).comp
+      ((A (extChartAt (IP.prod I) q ((r.1 : P), (r.2 : M)))).comp
+        ((chartFrame (I := I) q.2).continuousLinearMapAt ℝ r.2)))
+    (by
+      have hmem := mem_extChartAt_prod_source (I := I) (IP := IP) q
+      have hbase := TangentBundle.trivializationAt_chartSource_baseSet (I := I) q.2
+      let eh := trivializationAt (E →L[ℝ] E)
+        (fun y : chartSource (H := H) q.2 ↦ TangentSpace I y →L[ℝ] TangentSpace I y)
+        (⟨q.2, mem_chart_source H q.2⟩ : chartSource (H := H) q.2)
+      refine (eh.contMDiff_iff fun r ↦ eh.mem_source.2 ?_).2 ⟨contMDiff_snd, ?_⟩
+      · exact ⟨hbase.symm ▸ Set.mem_univ _, hbase.symm ▸ Set.mem_univ _⟩
+      have hg : ContMDiff (IP.prod I) 𝓘(ℝ, EP × E) n
+          (fun r : chartSource (H := HP) q.1 × chartSource (H := H) q.2 ↦
+            extChartAt (IP.prod I) q ((r.1 : P), (r.2 : M))) :=
+        (contMDiffOn_extChartAt (I := IP.prod I) (x := q) (n := n)).comp_contMDiff
+          ((contMDiff_subtype_val (I := IP)).prodMap (contMDiff_subtype_val (I := I)))
+          (fun r ↦ by simpa only [extChartAt_source] using hmem r)
+      refine (hA.contMDiffOn.comp_contMDiff hg fun r ↦
+        (extChartAt (IP.prod I) q).map_source (hmem r)).congr fun r ↦ ?_
+      have hr : r.2 ∈ (chartFrame (I := I) q.2).baseSet := hbase.symm ▸ Set.mem_univ _
+      ext v
+      simp only [eh, hom_trivializationAt, Trivialization.continuousLinearMap_apply,
+        Function.comp_apply, ContinuousLinearMap.comp_apply]
+      rw [(chartFrame (I := I) q.2).continuousLinearMapAt_symmL hr,
+        (chartFrame (I := I) q.2).continuousLinearMapAt_symmL hr])
+    (fun r v ↦ by
+      have hr : r.2 ∈ (chartFrame (I := I) q.2).baseSet :=
+        (TangentBundle.trivializationAt_chartSource_baseSet (I := I) q.2).symm ▸ Set.mem_univ _
+      simp only [ContinuousLinearMap.comp_apply]
+      rw [(chartFrame (I := I) q.2).continuousLinearMapAt_symmL hr,
+        hAA _ ((extChartAt (IP.prod I) q).map_source
+          (mem_extChartAt_prod_source (I := I) (IP := IP) q r)), map_neg,
+        (chartFrame (I := I) q.2).symmL_continuousLinearMapAt hr])
+
+/-- The reconstructed family conjugates the prescribed field through the source tangent frame. -/
+theorem ofChart_toEndomorphism_apply (q : P × M) (A : EP × E → E →L[ℝ] E)
+    (hA : ContDiffOn ℝ n A (extChartAt (IP.prod I) q).target)
+    (hAA : ∀ z ∈ (extChartAt (IP.prod I) q).target, ∀ v, A z (A z v) = -v)
+    (r : chartSource (H := HP) q.1 × chartSource (H := H) q.2) :
+    (ofChart q A hA hAA).toEndomorphism r =
+      ((chartFrame (I := I) q.2).symmL ℝ r.2).comp
+        ((A (extChartAt (IP.prod I) q ((r.1 : P), (r.2 : M)))).comp
+          ((chartFrame (I := I) q.2).continuousLinearMapAt ℝ r.2)) := by
+  unfold ofChart
+  exact ofContMDiff_toEndomorphism_apply _ _ _ r
+
+/-- The reconstructed family, read on the original target tangent spaces of the chart source. -/
+theorem ofChart_tangentEndomorphism (q : P × M) (A : EP × E → E →L[ℝ] E)
+    (hA : ContDiffOn ℝ n A (extChartAt (IP.prod I) q).target)
+    (hAA : ∀ z ∈ (extChartAt (IP.prod I) q).target, ∀ v, A z (A z v) = -v)
+    (r : chartSource (H := HP) q.1 × chartSource (H := H) q.2) :
+    (ofChart q A hA hAA).tangentEndomorphism r =
+      ((chartFrame (I := I) q.2).symmL ℝ r.2).comp
+        ((A (extChartAt (IP.prod I) q ((r.1 : P), (r.2 : M)))).comp
+          ((chartFrame (I := I) q.2).continuousLinearMapAt ℝ r.2)) := by
+  ext v
+  rw [tangentEndomorphism_apply]
+  exact DFunLike.congr_fun (ofChart_toEndomorphism_apply q A hA hAA r) v
+
+/-- The centre of the product of intrinsic chart sources. -/
+abbrev chartSourceCentre (q : P × M) : chartSource (H := HP) q.1 × chartSource (H := H) q.2 :=
+  (⟨q.1, mem_chart_source HP q.1⟩, ⟨q.2, mem_chart_source H q.2⟩)
+
+omit [IsManifold I ∞ M] [IsManifold IP ∞ P] in
+private theorem mem_extChartAt_chartSourceCentre_source (q : P × M)
+    (r : chartSource (H := HP) q.1 × chartSource (H := H) q.2) :
+    r ∈ (extChartAt (IP.prod I) (chartSourceCentre q)).source := by
+  rw [extChartAt_prod, PartialEquiv.prod_source, extChartAt_source, extChartAt_source]
+  simp only [TopologicalSpace.Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_source,
+    Set.mem_prod, Set.mem_preimage]
+  exact ⟨r.1.property, r.2.property⟩
+
+/-- Reading the reconstructed family in the product chart at the centre of the chart sources
+recovers the prescribed field at the ambient chart value. -/
+theorem inChart_ofChart (q : P × M) (A : EP × E → E →L[ℝ] E)
+    (hA : ContDiffOn ℝ n A (extChartAt (IP.prod I) q).target)
+    (hAA : ∀ z ∈ (extChartAt (IP.prod I) q).target, ∀ v, A z (A z v) = -v)
+    (r : chartSource (H := HP) q.1 × chartSource (H := H) q.2) :
+    (ofChart q A hA hAA).inChart (chartSourceCentre q)
+        (extChartAt (IP.prod I) (chartSourceCentre q) r) =
+      A (extChartAt (IP.prod I) q ((r.1 : P), (r.2 : M))) := by
+  have hr : r.2 ∈ (chartFrame (I := I) q.2).baseSet :=
+    (TangentBundle.trivializationAt_chartSource_baseSet (I := I) q.2).symm ▸ Set.mem_univ _
+  rw [inChart, (extChartAt (IP.prod I) (chartSourceCentre q)).left_inv
+    (mem_extChartAt_chartSourceCentre_source q r), ofChart_tangentEndomorphism]
+  ext v
+  simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]
+  rw [(chartFrame (I := I) q.2).continuousLinearMapAt_symmL hr,
+    (chartFrame (I := I) q.2).continuousLinearMapAt_symmL hr]
+
+end Reconstruction
 
 section Model
 
