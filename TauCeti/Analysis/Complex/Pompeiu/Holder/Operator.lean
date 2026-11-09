@@ -14,11 +14,14 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 # Bounded value and derivative operators for the actual Cauchy transform
 
 The source is the native bounded Hölder subspace supported in a fixed input disc.
+Values admit arbitrary complex normed targets; the derivative and joint operators use
+finite-dimensional complex targets, with their given norm and compatible real scalar action.
 `cauchyValueCLM` takes values on the output disc with the supremum norm, and
 `cauchyDerivativeCLM` takes actual real derivatives with the supremum-plus-Hölder norm.
 Their product `cauchyTransformCLM` carries the local `C^{1,α}` norm
-`max ‖T f‖_∞ (‖D T f‖_∞ + [D T f]_α)`. All three operators are bounded and real linear, so
-continuous source families remain continuous in the respective complete target norms.
+`max ‖T f‖_∞ (‖D T f‖_∞ + [D T f]_α)`. All three operators are bounded and real linear,
+so continuous source families remain continuous in their target norms. These targets are complete
+when the target of the source functions is complete, in particular for the derivative operators.
 -/
 
 public noncomputable section
@@ -28,40 +31,50 @@ open scoped NNReal ContDiff BoundedContinuousFunction
 
 namespace TauCeti
 
-private def normalizedCauchy {α : ℝ≥0} {c : ℂ} {r : ℝ}
-    (f : supportedHolderSubmodule (Y := ℂ) α (closedBall c r)) : ℂ → ℂ :=
-  fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • (f : HolderSpace α ℂ ℂ) z
+-- Keep the real action explicit: it occurs in the supported source submodule and the
+-- derivative carrier, so replacing it by a local default would change caller presentations.
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [NormedSpace ℝ F]
+  [IsScalarTower ℝ ℂ F]
 
-private theorem source_bound {α : ℝ≥0} (f : HolderSpace α ℂ ℂ) (z : ℂ) :
+private def normalizedCauchy {α : ℝ≥0} {c : ℂ} {r : ℝ}
+    (f : supportedHolderSubmodule (Y := F) α (closedBall c r)) : ℂ → F :=
+  fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • (f : HolderSpace α ℂ F) z
+
+omit [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] in
+private theorem source_bound {α : ℝ≥0} (f : HolderSpace α ℂ F) (z : ℂ) :
     ‖f z‖ ≤ ‖f.toBoundedContinuousFunction‖₊ := by
   simpa only [HolderSpace.toBoundedContinuousFunction_apply, coe_nnnorm] using
     f.toBoundedContinuousFunction.norm_coe_le_norm z
 
-private theorem source_gain {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {c : ℂ} {r R : ℝ}
-    (hr : 0 ≤ r) (hR : 0 ≤ R) (f : supportedHolderSubmodule (Y := ℂ) α (closedBall c r)) :
+private theorem source_gain [FiniteDimensional ℂ F]
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {c : ℂ} {r R : ℝ}
+    (hr : 0 ≤ r) (hR : 0 ≤ R) (f : supportedHolderSubmodule (Y := F) α (closedBall c r)) :
     ContDiffOn ℝ 1 (normalizedCauchy f) (ball c (R + 1)) ∧
       ∃ B : ℝ≥0, HolderOnWith B α (fderiv ℝ (normalizedCauchy f)) (closedBall c R) := by
   obtain ⟨C, hC⟩ :=
-    exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul hα hα1 c hr hR
+    exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul
+      (F := F) hα hα1 c hr hR
   obtain ⟨hcd, hH, -, -⟩ := hC (support_subset_of_mem_supportedHolderSubmodule f.property)
     f.1.holderWith (source_bound f.1)
   exact ⟨hcd, _, hH⟩
 
-private def cauchyDerivativeHolder {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {c : ℂ} {r R : ℝ}
-    (hr : 0 ≤ r) (hR : 0 ≤ R) (f : supportedHolderSubmodule (Y := ℂ) α (closedBall c r)) :
-    HolderSpace α (closedBall c R) (ℂ →L[ℝ] ℂ) := by
+private def cauchyDerivativeHolder [FiniteDimensional ℂ F]
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {c : ℂ} {r R : ℝ}
+    (hr : 0 ≤ r) (hR : 0 ≤ R) (f : supportedHolderSubmodule (Y := F) α (closedBall c r)) :
+    HolderSpace α (closedBall c R) (ℂ →L[ℝ] F) := by
   let B := Classical.choose (source_gain hα hα1 hr hR f).2
   have hB := Classical.choose_spec (source_gain hα hα1 hr hR f).2
-  let F : closedBall c R →ᵇ (ℂ →L[ℝ] ℂ) := BoundedContinuousFunction.mkOfCompact
+  let V : closedBall c R →ᵇ (ℂ →L[ℝ] F) := BoundedContinuousFunction.mkOfCompact
     ⟨(closedBall c R).domRestrict (fderiv ℝ (normalizedCauchy f)),
       (hB.continuousOn hα).domRestrict⟩
-  have hFH : HolderWith B α (F : closedBall c R → (ℂ →L[ℝ] ℂ)) :=
+  have hFH : HolderWith B α (V : closedBall c R → (ℂ →L[ℝ] F)) :=
     fun x y ↦ hB x x.property y y.property
-  exact HolderSpace.ofBoundedContinuousFunction F hFH.memHolder
+  exact HolderSpace.ofBoundedContinuousFunction V hFH.memHolder
 
-private theorem cauchyDerivativeHolder_apply {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
+private theorem cauchyDerivativeHolder_apply [FiniteDimensional ℂ F]
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
     {c : ℂ} {r R : ℝ} (hr : 0 ≤ r) (hR : 0 ≤ R)
-    (f : supportedHolderSubmodule (Y := ℂ) α (closedBall c r)) (x : closedBall c R) :
+    (f : supportedHolderSubmodule (Y := F) α (closedBall c r)) (x : closedBall c R) :
     cauchyDerivativeHolder hα hα1 hr hR f x = fderiv ℝ (normalizedCauchy f) x := by
   unfold cauchyDerivativeHolder
   dsimp only
@@ -70,43 +83,47 @@ private theorem cauchyDerivativeHolder_apply {α : ℝ≥0} (hα : 0 < α) (hα1
     BoundedContinuousFunction.mkOfCompact_apply]
   exact domRestrict_apply _ _ _
 
+omit [IsScalarTower ℝ ℂ F] in
 private theorem integrable_cauchy_source {α : ℝ≥0} {c : ℂ} {r : ℝ}
-    (f : supportedHolderSubmodule (Y := ℂ) α (closedBall c r)) (w : ℂ) :
-    Integrable (fun z ↦ (w - z)⁻¹ • (f : HolderSpace α ℂ ℂ) z) :=
+    (f : supportedHolderSubmodule (Y := F) α (closedBall c r)) (w : ℂ) :
+    Integrable (fun z ↦ (w - z)⁻¹ • (f : HolderSpace α ℂ F) z) :=
   (Complex.locallyIntegrable_sub_inv w).integrable_smul_right_of_hasCompactSupport
     (HolderSpace.continuous f.1)
     (HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall c r)
       (support_subset_of_mem_supportedHolderSubmodule f.property))
 
+omit [IsScalarTower ℝ ℂ F] in
 private theorem normalizedCauchy_add {α : ℝ≥0} {c : ℂ} {r : ℝ}
-    (f g : supportedHolderSubmodule (Y := ℂ) α (closedBall c r)) :
-    normalizedCauchy (f + g : supportedHolderSubmodule (Y := ℂ) α (closedBall c r)) =
+    (f g : supportedHolderSubmodule (Y := F) α (closedBall c r)) :
+    normalizedCauchy (f + g : supportedHolderSubmodule (Y := F) α (closedBall c r)) =
       fun w ↦ normalizedCauchy f w + normalizedCauchy g w := by
   funext w
   simp only [normalizedCauchy, Submodule.coe_add, HolderSpace.add_apply, smul_add]
   rw [integral_add (integrable_cauchy_source f w) (integrable_cauchy_source g w), smul_add]
 
 private theorem normalizedCauchy_smul {α : ℝ≥0} {c : ℂ} {r : ℝ}
-    (a : ℝ) (f : supportedHolderSubmodule (Y := ℂ) α (closedBall c r)) :
-    normalizedCauchy (a • f : supportedHolderSubmodule (Y := ℂ) α (closedBall c r)) =
+    (a : ℝ) (f : supportedHolderSubmodule (Y := F) α (closedBall c r)) :
+    normalizedCauchy (a • f : supportedHolderSubmodule (Y := F) α (closedBall c r)) =
       fun w ↦ a • normalizedCauchy f w := by
   funext w
   simp only [normalizedCauchy, Submodule.coe_smul, HolderSpace.smul_apply]
   simp_rw [smul_comm (w - _)⁻¹ a]
   rw [integral_smul, smul_comm]
 
-private theorem source_differentiableAt {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
+private theorem source_differentiableAt [FiniteDimensional ℂ F]
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
     {c : ℂ} {r R : ℝ} (hr : 0 ≤ r) (hR : 0 ≤ R)
-    (f : supportedHolderSubmodule (Y := ℂ) α (closedBall c r)) (x : closedBall c R) :
+    (f : supportedHolderSubmodule (Y := F) α (closedBall c r)) (x : closedBall c R) :
     DifferentiableAt ℝ (normalizedCauchy f) (x : ℂ) := by
   have h := (source_gain hα hα1 hr hR f).1.contDiffAt
     (isOpen_ball.mem_nhds (closedBall_subset_ball (by linarith) x.property))
   exact h.differentiableAt one_ne_zero
 
-private def cauchyDerivativeLinearMap {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
+private def cauchyDerivativeLinearMap [FiniteDimensional ℂ F]
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
     {c : ℂ} {r R : ℝ} (hr : 0 ≤ r) (hR : 0 ≤ R) :
-    supportedHolderSubmodule (Y := ℂ) α (closedBall c r) →ₗ[ℝ]
-      HolderSpace α (closedBall c R) (ℂ →L[ℝ] ℂ) where
+    supportedHolderSubmodule (Y := F) α (closedBall c r) →ₗ[ℝ]
+      HolderSpace α (closedBall c R) (ℂ →L[ℝ] F) where
   toFun := cauchyDerivativeHolder hα hα1 hr hR
   map_add' f g := by
     apply HolderSpace.ext
@@ -122,16 +139,18 @@ private def cauchyDerivativeLinearMap {α : ℝ≥0} (hα : 0 < α) (hα1 : α <
     rw [normalizedCauchy_smul]
     exact ((source_differentiableAt hα hα1 hr hR f x).hasFDerivAt.const_smul a).fderiv
 
-private theorem exists_norm_cauchyDerivativeLinearMap_le {α : ℝ≥0}
+private theorem exists_norm_cauchyDerivativeLinearMap_le [FiniteDimensional ℂ F]
+    {α : ℝ≥0}
     (hα : 0 < α) (hα1 : α < 1) {c : ℂ} {r R : ℝ} (hr : 0 ≤ r) (hR : 0 ≤ R) :
-    ∃ B : ℝ, ∀ f : supportedHolderSubmodule (Y := ℂ) α (closedBall c r),
+    ∃ B : ℝ, ∀ f : supportedHolderSubmodule (Y := F) α (closedBall c r),
       ‖cauchyDerivativeLinearMap hα hα1 hr hR f‖ ≤ B * ‖f‖ := by
   obtain ⟨C, hC⟩ :=
-    exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul hα hα1 c hr hR
+    exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul
+      (F := F) hα hα1 c hr hR
   refine ⟨2 * C, fun f ↦ ?_⟩
   let u := cauchyDerivativeHolder hα hα1 hr hR f
-  let H := nnHolderNorm α (f : HolderSpace α ℂ ℂ)
-  let M := ‖(f : HolderSpace α ℂ ℂ).toBoundedContinuousFunction‖₊
+  let H := nnHolderNorm α (f : HolderSpace α ℂ F)
+  let M := ‖(f : HolderSpace α ℂ F).toBoundedContinuousFunction‖₊
   obtain ⟨-, hH, hN, -⟩ := hC (support_subset_of_mem_supportedHolderSubmodule f.property)
     f.1.holderWith (source_bound f.1)
   -- Match the integral representative and the local source seminorm abbreviations.
@@ -140,7 +159,7 @@ private theorem exists_norm_cauchyDerivativeLinearMap_le {α : ℝ≥0}
   change ∀ x ∈ closedBall c R, ‖fderiv ℝ (normalizedCauchy f) x‖ ≤
     (C * (H + M) : ℝ≥0) at hN
   have hU : HolderWith (C * (H + M)) α (u.toBoundedContinuousFunction : closedBall c R →
-      (ℂ →L[ℝ] ℂ)) := by
+      (ℂ →L[ℝ] F)) := by
     intro x y
     rw [HolderSpace.toBoundedContinuousFunction_apply,
       HolderSpace.toBoundedContinuousFunction_apply]
@@ -158,7 +177,7 @@ private theorem exists_norm_cauchyDerivativeLinearMap_le {α : ℝ≥0}
     rw [cauchyDerivativeHolder_apply]
     exact hN x x.property
   have hHN : nnHolderNorm α (u.toBoundedContinuousFunction : closedBall c R →
-      (ℂ →L[ℝ] ℂ)) ≤ C * (H + M) :=
+      (ℂ →L[ℝ] F)) ≤ C * (H + M) :=
     ENNReal.coe_le_coe.mp (coe_nnHolderNorm_le_eHolderNorm.trans hU.eHolderNorm_le)
   have hsum : (H + M : ℝ≥0) = ‖f‖ := by
     rw [← Submodule.norm_coe]
@@ -169,7 +188,7 @@ private theorem exists_norm_cauchyDerivativeLinearMap_le {α : ℝ≥0}
   change ‖u‖ ≤ (2 * C) * ‖f‖
   calc
     _ = ‖u.toBoundedContinuousFunction‖ +
-        nnHolderNorm α (u.toBoundedContinuousFunction : closedBall c R → (ℂ →L[ℝ] ℂ)) :=
+        nnHolderNorm α (u.toBoundedContinuousFunction : closedBall c R → (ℂ →L[ℝ] F)) :=
       HolderSpace.norm_def u
     _ ≤ (C * (H + M) : ℝ≥0) + (C * (H + M) : ℝ≥0) :=
       add_le_add hUN (by exact_mod_cast hHN)
@@ -177,47 +196,54 @@ private theorem exists_norm_cauchyDerivativeLinearMap_le {α : ℝ≥0}
 
 /-- The derivative of the actual normalized Cauchy integral, restricted to a fixed output
 disc, is a bounded real-linear operator on the fixed-support Hölder source space. -/
-def cauchyDerivativeCLM {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {c : ℂ} {r R : ℝ}
+def cauchyDerivativeCLM [FiniteDimensional ℂ F]
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {c : ℂ} {r R : ℝ}
     (hr : 0 ≤ r) (hR : 0 ≤ R) :
-    supportedHolderSubmodule (Y := ℂ) α (closedBall c r) →L[ℝ]
-      HolderSpace α (closedBall c R) (ℂ →L[ℝ] ℂ) :=
+    supportedHolderSubmodule (Y := F) α (closedBall c r) →L[ℝ]
+      HolderSpace α (closedBall c R) (ℂ →L[ℝ] F) :=
   (cauchyDerivativeLinearMap hα hα1 hr hR).mkContinuous
     (Classical.choose (exists_norm_cauchyDerivativeLinearMap_le hα hα1 hr hR))
     (Classical.choose_spec (exists_norm_cauchyDerivativeLinearMap_le hα hα1 hr hR))
 
 /-- The bounded operator is the real derivative of the actual `π⁻¹` Cauchy kernel integral. -/
 @[simp]
-theorem cauchyDerivativeCLM_apply {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
+theorem cauchyDerivativeCLM_apply [FiniteDimensional ℂ F]
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
     {c : ℂ} {r R : ℝ} (hr : 0 ≤ r) (hR : 0 ≤ R)
-    (f : supportedHolderSubmodule (Y := ℂ) α (closedBall c r)) (x : closedBall c R) :
+    (f : supportedHolderSubmodule (Y := F) α (closedBall c r)) (x : closedBall c R) :
     cauchyDerivativeCLM hα hα1 hr hR f x =
       fderiv ℝ (fun w : ℂ ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ •
-        (f : HolderSpace α ℂ ℂ) z) (x : ℂ) := by
+        (f : HolderSpace α ℂ F) z) (x : ℂ) := by
   exact cauchyDerivativeHolder_apply hα hα1 hr hR f x
 
 private def cauchyValue {α : ℝ≥0} (hα : 0 < α) {c : ℂ} {r R : ℝ}
-    (hr : 0 ≤ r) (hR : 0 ≤ R) (f : supportedHolderSubmodule (Y := ℂ) α (closedBall c r)) :
-    closedBall c R →ᵇ ℂ := by
-  have h := holderOnWith_pi_inv_smul_integral_sub_inv_smul hα f.1.holderWith
+    (hr : 0 ≤ r) (hR : 0 ≤ R) (f : supportedHolderSubmodule (Y := F) α (closedBall c r)) :
+    closedBall c R →ᵇ F := by
+  -- The native kernel bound uses the induced real action; compatibility identifies it
+  -- with the caller's action without changing the exported source or target carriers.
+  cases NormedSpace.restrictScalars_eq (𝕜 := ℝ) (𝕜' := ℂ) (E := F)
+  have h := holderOnWith_pi_inv_smul_integral_sub_inv_smul
+    (f := fun z ↦ (f : HolderSpace α ℂ F) z) hα f.1.holderWith
     hr hR (support_subset_of_mem_supportedHolderSubmodule f.property)
   exact BoundedContinuousFunction.mkOfCompact
-    ⟨(closedBall c R).domRestrict (normalizedCauchy f), (h.continuousOn hα).domRestrict⟩
+    ⟨(closedBall c R).domRestrict (fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z,
+      (w - z)⁻¹ • (f : HolderSpace α ℂ F) z), (h.continuousOn hα).domRestrict⟩
 
 private theorem cauchyValue_apply {α : ℝ≥0} (hα : 0 < α) {c : ℂ} {r R : ℝ}
-    (hr : 0 ≤ r) (hR : 0 ≤ R) (f : supportedHolderSubmodule (Y := ℂ) α (closedBall c r))
+    (hr : 0 ≤ r) (hR : 0 ≤ R) (f : supportedHolderSubmodule (Y := F) α (closedBall c r))
     (x : closedBall c R) :
     cauchyValue hα hr hR f x = normalizedCauchy f x := by
+  -- Reduce the equality transport used by the value construction's native kernel bound.
+  cases NormedSpace.restrictScalars_eq (𝕜 := ℝ) (𝕜' := ℂ) (E := F)
   unfold cauchyValue
   dsimp only
   rw [BoundedContinuousFunction.mkOfCompact_apply]
-  -- mkOfCompact retains a continuous-map wrapper; expose its underlying restriction so
-  -- the public domRestrict application law matches the goal.
-  change (closedBall c R).domRestrict (normalizedCauchy f) x = _
-  exact domRestrict_apply _ _ _
+  rfl
 
 private def cauchyValueLinearMap {α : ℝ≥0} (hα : 0 < α) {c : ℂ} {r R : ℝ}
     (hr : 0 ≤ r) (hR : 0 ≤ R) :
-    supportedHolderSubmodule (Y := ℂ) α (closedBall c r) →ₗ[ℝ] (closedBall c R →ᵇ ℂ) where
+    supportedHolderSubmodule (Y := F) α (closedBall c r) →ₗ[ℝ]
+      (closedBall c R →ᵇ F) where
   toFun := cauchyValue hα hr hR
   map_add' f g := by
     apply BoundedContinuousFunction.ext
@@ -234,52 +260,59 @@ private def cauchyValueLinearMap {α : ℝ≥0} (hα : 0 < α) {c : ℂ} {r R : 
 linear operator in the source Hölder norm. -/
 def cauchyValueCLM {α : ℝ≥0} (hα : 0 < α) {c : ℂ} {r R : ℝ}
     (hr : 0 ≤ r) (hR : 0 ≤ R) :
-    supportedHolderSubmodule (Y := ℂ) α (closedBall c r) →L[ℝ] (closedBall c R →ᵇ ℂ) :=
+    supportedHolderSubmodule (Y := F) α (closedBall c r) →L[ℝ] (closedBall c R →ᵇ F) :=
   (cauchyValueLinearMap hα hr hR).mkContinuous (2 * (r + R)) fun f ↦ by
     apply (BoundedContinuousFunction.norm_le (by positivity)).mpr
     intro x
     -- Evaluate the linear-map wrapper before applying the representative identity.
     change ‖cauchyValue hα hr hR f x‖ ≤ _
     rw [cauchyValue_apply]
-    exact norm_pi_inv_smul_integral_sub_inv_smul_le hr hR
+    -- The native integral estimate uses the uniquely determined induced real action.
+    cases NormedSpace.restrictScalars_eq (𝕜 := ℝ) (𝕜' := ℂ) (E := F)
+    simpa only [normalizedCauchy, Submodule.norm_coe] using
+      norm_pi_inv_smul_integral_sub_inv_smul_le
+      (f := fun z ↦ (f : HolderSpace α ℂ F) z) hr hR
       (support_subset_of_mem_supportedHolderSubmodule f.property)
-      (fun z ↦ (f : HolderSpace α ℂ ℂ).norm_apply_le z) x.property
+      (fun z ↦ (f : HolderSpace α ℂ F).norm_apply_le z) x.property
 
 /-- Evaluation of the bounded value operator is the actual normalized Cauchy integral. -/
 @[simp]
 theorem cauchyValueCLM_apply {α : ℝ≥0} (hα : 0 < α) {c : ℂ} {r R : ℝ}
     (hr : 0 ≤ r) (hR : 0 ≤ R)
-    (f : supportedHolderSubmodule (Y := ℂ) α (closedBall c r))
+    (f : supportedHolderSubmodule (Y := F) α (closedBall c r))
     (x : closedBall c R) :
     cauchyValueCLM hα hr hR f x =
-      (Real.pi : ℂ)⁻¹ • ∫ z, ((x : ℂ) - z)⁻¹ • (f : HolderSpace α ℂ ℂ) z :=
+      (Real.pi : ℂ)⁻¹ • ∫ z, ((x : ℂ) - z)⁻¹ • (f : HolderSpace α ℂ F) z :=
   cauchyValue_apply hα hr hR f x
 
 /-- The Cauchy transform together with its real derivative, bounded in the local `C^{1,α}`
-norm `max ‖T f‖_∞ (‖D T f‖_∞ + [D T f]_α)` on the output disc. Continuity of parameter families
-in the source Hölder norm therefore gives continuity in this complete target norm. -/
-def cauchyTransformCLM {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {c : ℂ} {r R : ℝ}
-    (hr : 0 ≤ r) (hR : 0 ≤ R) : supportedHolderSubmodule (Y := ℂ) α (closedBall c r) →L[ℝ]
-      (closedBall c R →ᵇ ℂ) × HolderSpace α (closedBall c R) (ℂ →L[ℝ] ℂ) :=
+norm `max ‖T f‖_∞ (‖D T f‖_∞ + [D T f]_α)` on the output disc. Continuity of source
+families in the source Hölder norm therefore gives continuity in this complete target norm. -/
+def cauchyTransformCLM [FiniteDimensional ℂ F]
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {c : ℂ} {r R : ℝ}
+    (hr : 0 ≤ r) (hR : 0 ≤ R) : supportedHolderSubmodule (Y := F) α (closedBall c r) →L[ℝ]
+      (closedBall c R →ᵇ F) × HolderSpace α (closedBall c R) (ℂ →L[ℝ] F) :=
   (cauchyValueCLM hα hr hR).prod (cauchyDerivativeCLM hα hα1 hr hR)
 
 /-- The value component of the bounded `C^{1,α}` operator is the actual Cauchy integral. -/
 @[simp]
-theorem cauchyTransformCLM_apply_fst {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
+theorem cauchyTransformCLM_apply_fst [FiniteDimensional ℂ F]
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
     {c : ℂ} {r R : ℝ} (hr : 0 ≤ r) (hR : 0 ≤ R)
-    (f : supportedHolderSubmodule (Y := ℂ) α (closedBall c r)) (x : closedBall c R) :
+    (f : supportedHolderSubmodule (Y := F) α (closedBall c r)) (x : closedBall c R) :
     (cauchyTransformCLM hα hα1 hr hR f).1 x =
-      (Real.pi : ℂ)⁻¹ • ∫ z, ((x : ℂ) - z)⁻¹ • (f : HolderSpace α ℂ ℂ) z :=
+      (Real.pi : ℂ)⁻¹ • ∫ z, ((x : ℂ) - z)⁻¹ • (f : HolderSpace α ℂ F) z :=
   cauchyValueCLM_apply hα hr hR f x
 
 /-- The derivative component of the bounded `C^{1,α}` operator is the actual real derivative. -/
 @[simp]
-theorem cauchyTransformCLM_apply_snd {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
+theorem cauchyTransformCLM_apply_snd [FiniteDimensional ℂ F]
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
     {c : ℂ} {r R : ℝ} (hr : 0 ≤ r) (hR : 0 ≤ R)
-    (f : supportedHolderSubmodule (Y := ℂ) α (closedBall c r)) (x : closedBall c R) :
+    (f : supportedHolderSubmodule (Y := F) α (closedBall c r)) (x : closedBall c R) :
     (cauchyTransformCLM hα hα1 hr hR f).2 x =
       fderiv ℝ (fun w : ℂ ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ •
-        (f : HolderSpace α ℂ ℂ) z) (x : ℂ) :=
+        (f : HolderSpace α ℂ F) z) (x : ℂ) :=
   cauchyDerivativeCLM_apply hα hα1 hr hR f x
 
 end TauCeti

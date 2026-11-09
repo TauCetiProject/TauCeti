@@ -166,6 +166,58 @@ variable {W E : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteD
   [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
+omit [MeasurableSpace W] [BorelSpace W] [FiniteDimensional ℝ E] [MeasurableSpace E]
+  [BorelSpace E] in
+/-- The derivative of the cone map `(t, w) ↦ t • ψ w` on the Euclidean product `ℝ × W` at a point
+where `ψ` is differentiable sends `(a, u)` to `a • ψ w + t • ψ' w u`. -/
+private theorem hasFDerivAt_smul_ofLp {ψ : W → E} {x : WithLp 2 (ℝ × W)}
+    (hx : DifferentiableAt ℝ ψ (WithLp.ofLp x).2) :
+    HasFDerivAt (fun x : WithLp 2 (ℝ × W) => (WithLp.ofLp x).1 • ψ (WithLp.ofLp x).2)
+      ((LinearMap.toSpanSingleton ℝ E (ψ (WithLp.ofLp x).2)).coprod
+        ((WithLp.ofLp x).1 • (fderiv ℝ ψ (WithLp.ofLp x).2 : W →ₗ[ℝ] E)) ∘ₗ
+        (WithLp.linearEquiv 2 ℝ (ℝ × W)).toLinearMap).toContinuousLinearMap x := by
+  have h := ((WithLp.fstL 2 ℝ ℝ W).hasFDerivAt (x := x)).smul
+    (hx.hasFDerivAt.comp x (WithLp.sndL 2 ℝ ℝ W).hasFDerivAt)
+  refine h.congr_fderiv ?_
+  ext y
+  simp [add_comm]
+
+omit [MeasurableSpace W] [BorelSpace W] [FiniteDimensional ℝ E] [MeasurableSpace E]
+  [BorelSpace E] in
+/-- The Jacobian of the cone map `(t, w) ↦ t • ψ w` at `(t, w)` with `t ≥ 0`, `‖ψ w‖ = 1` and
+`ψ' w` orthogonal to `ψ w` is `t ^ dim W` times the Jacobian of `ψ`. -/
+private theorem normDet_fderiv_smul_ofLp {ψ : W → E} {x : WithLp 2 (ℝ × W)}
+    (hd : DifferentiableAt ℝ ψ (WithLp.ofLp x).2) (ht : 0 ≤ (WithLp.ofLp x).1)
+    (hnorm : ‖ψ (WithLp.ofLp x).2‖ = 1) (horth : ∀ u, ⟪ψ (WithLp.ofLp x).2,
+      fderiv ℝ ψ (WithLp.ofLp x).2 u⟫ = 0) :
+    (fderiv ℝ (fun x : WithLp 2 (ℝ × W) => (WithLp.ofLp x).1 • ψ (WithLp.ofLp x).2) x).normDet =
+      (WithLp.ofLp x).1 ^ finrank ℝ W * (fderiv ℝ ψ (WithLp.ofLp x).2).normDet := by
+  rw [(hasFDerivAt_smul_ofLp hd).fderiv, LinearMap.coe_toContinuousLinearMap,
+    LinearMap.normDet_toSpanSingleton_coprod hnorm, LinearMap.normDet_smul,
+    Real.norm_of_nonneg ht]
+  intro u
+  rw [LinearMap.smul_apply, ContinuousLinearMap.coe_coe, inner_smul_right, horth u, mul_zero]
+
+omit [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] [MeasurableSpace W]
+  [BorelSpace W] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The cone map `(t, w) ↦ t • ψ w` is injective on `Ioo 0 1 × s` when `ψ` is injective on `s`
+and takes unit vectors there. -/
+private theorem injOn_smul_ofLp {ψ : W → E} {s : Set W} (hnorm : ∀ w ∈ s, ‖ψ w‖ = 1)
+    (hψs : InjOn ψ s) :
+    InjOn (fun x : WithLp 2 (ℝ × W) => (WithLp.ofLp x).1 • ψ (WithLp.ofLp x).2)
+      (WithLp.ofLp ⁻¹' (Ioo 0 1 ×ˢ s)) := by
+  intro x hx x' hx' h
+  -- The radius is recovered as the norm, and then the point of `s` by injectivity of `ψ`.
+  have ht : (WithLp.ofLp x).1 = (WithLp.ofLp x').1 := by
+    have h' := congrArg norm h
+    simp only [norm_smul, Real.norm_eq_abs, hnorm _ hx.2, hnorm _ hx'.2, mul_one,
+      abs_of_pos hx.1.1, abs_of_pos hx'.1.1] at h'
+    exact h'
+  have hw : (WithLp.ofLp x).2 = (WithLp.ofLp x').2 := by
+    refine hψs hx.2 hx'.2 (smul_right_injective E hx.1.1.ne' ?_)
+    simpa only [← ht] using h
+  exact WithLp.ofLp_injective 2 (Prod.ext ht hw)
+
 /-- **Cone formula.** Let `ψ : W → E` take values in the unit sphere near a measurable set `s`,
 where `dim W + 1 = dim E`, and let `ψ` be injective on `s` and differentiable on `s` with injective
 derivative. Then the `dim W`-dimensional Hausdorff measure of `ψ '' s` is `dim E` times the
@@ -187,25 +239,10 @@ theorem euclideanHausdorffMeasure_image_eq_finrank_mul_volume_Ioo_smul {ψ : W �
   let S : Set (WithLp 2 (ℝ × W)) := WithLp.ofLp ⁻¹' (Ioo 0 1 ×ˢ s)
   have hS : MeasurableSet S :=
     (measurableSet_Ioo.prod hs).preimage (WithLp.prod_continuous_ofLp 2 ℝ W).measurable
-  -- Its derivative at `(t, w)` sends `(a, u)` to `a • ψ w + t • ψ' w u`.
-  have hΦ : ∀ x ∈ S, HasFDerivAt Φ ((LinearMap.toSpanSingleton ℝ E (ψ (WithLp.ofLp x).2)).coprod
-      ((WithLp.ofLp x).1 • (fderiv ℝ ψ (WithLp.ofLp x).2 : W →ₗ[ℝ] E)) ∘ₗ
-      (WithLp.linearEquiv 2 ℝ (ℝ × W)).toLinearMap).toContinuousLinearMap x := by
-    intro x hx
-    have h := ((WithLp.fstL 2 ℝ ℝ W).hasFDerivAt (x := x)).smul
-      ((hd _ hx.2).hasFDerivAt.comp x (WithLp.sndL 2 ℝ ℝ W).hasFDerivAt)
-    refine h.congr_fderiv ?_
-    ext y
-    simp [add_comm]
+  have hΦ : ∀ x ∈ S, HasFDerivAt Φ _ x := fun x hx => hasFDerivAt_smul_ofLp (hd _ hx.2)
   have hJ : ∀ x ∈ S, (fderiv ℝ Φ x).normDet =
-      (WithLp.ofLp x).1 ^ k * (fderiv ℝ ψ (WithLp.ofLp x).2).normDet := by
-    intro x hx
-    rw [(hΦ x hx).fderiv, LinearMap.coe_toContinuousLinearMap,
-      LinearMap.normDet_toSpanSingleton_coprod (hnorm _ hx.2), LinearMap.normDet_smul,
-      Real.norm_of_nonneg hx.1.1.le]
-    intro u
-    rw [LinearMap.smul_apply, ContinuousLinearMap.coe_coe, inner_smul_right, horth _ hx.2,
-      mul_zero]
+      (WithLp.ofLp x).1 ^ k * (fderiv ℝ ψ (WithLp.ofLp x).2).normDet := fun x hx =>
+    normDet_fderiv_smul_ofLp (hd _ hx.2) hx.1.1.le (hnorm _ hx.2) (horth _ hx.2)
   have hΦinj : ∀ x ∈ S, Injective (fderiv ℝ Φ x) := by
     intro x hx
     have hψ' : (fderiv ℝ ψ (WithLp.ofLp x).2).normDet ≠ 0 := fun h =>
@@ -214,18 +251,7 @@ theorem euclideanHausdorffMeasure_image_eq_finrank_mul_volume_Ioo_smul {ψ : W �
       rw [hJ x hx]
       exact mul_ne_zero (pow_ne_zero _ hx.1.1.ne') hψ'
     exact LinearMap.ker_eq_bot.1 (not_not.1 (mt LinearMap.normDet_eq_zero_iff_ker_ne_bot.2 hne))
-  have hΦs : InjOn Φ S := by
-    intro x hx x' hx' h
-    -- The radius is recovered as the norm, and then the point of `s` by injectivity of `ψ`.
-    have ht : (WithLp.ofLp x).1 = (WithLp.ofLp x').1 := by
-      have h' := congrArg norm h
-      simp only [Φ, norm_smul, Real.norm_eq_abs, hnorm _ hx.2, hnorm _ hx'.2, mul_one,
-        abs_of_pos hx.1.1, abs_of_pos hx'.1.1] at h'
-      exact h'
-    have hw : (WithLp.ofLp x).2 = (WithLp.ofLp x').2 := by
-      refine hψs hx.2 hx'.2 (smul_right_injective E hx.1.1.ne' ?_)
-      simpa only [Φ, ← ht] using h
-    exact WithLp.ofLp_injective 2 (Prod.ext ht hw)
+  have hΦs : InjOn Φ S := injOn_smul_ofLp hnorm hψs
   have himage : Φ '' S = Ioo (0 : ℝ) 1 • (ψ '' s) := by
     rw [show Φ = (fun p : ℝ × W => p.1 • ψ p.2) ∘ WithLp.ofLp from rfl, image_comp,
       image_preimage_eq _ (WithLp.ofLp_surjective 2), image_prod (f := fun t w => t • ψ w),
@@ -239,15 +265,13 @@ theorem euclideanHausdorffMeasure_image_eq_finrank_mul_volume_Ioo_smul {ψ : W �
     (ContinuousLinearMap.continuous_normDet.measurable.comp (measurable_fderiv ℝ ψ)).ennreal_ofReal
   have hpow : Measurable fun t : ℝ => ENNReal.ofReal (t ^ k) :=
     (measurable_id.pow_const k).ennreal_ofReal
-  have hrad : ∫⁻ t in Ioo (0 : ℝ) 1, ENNReal.ofReal (t ^ k) = ((k + 1 : ℕ) : ℝ≥0∞)⁻¹ := by
-    have h := lintegral_ofReal_rpow_Ioo (s := k) (by linarith [k.cast_nonneg (α := ℝ)])
-      zero_le_one
-    simp_rw [Real.rpow_natCast] at h
-    rw [h, Real.one_rpow, one_div, ENNReal.ofReal_inv_of_pos (by positivity)]
-    norm_cast
   have hF : Measurable fun p : ℝ × W =>
       ENNReal.ofReal (p.1 ^ k) * ENNReal.ofReal (fderiv ℝ ψ p.2).normDet :=
     (hpow.comp measurable_fst).mul (hJψ.comp measurable_snd)
+  have hone : ∫⁻ t in Ioo (0 : ℝ) 1, ENNReal.ofReal (t ^ k) = ((k + 1 : ℕ) : ℝ≥0∞)⁻¹ := by
+    rw [lintegral_ofReal_pow_Ioo k zero_le_one, one_pow, one_div,
+      ENNReal.ofReal_inv_of_pos (by positivity)]
+    norm_cast
   -- Separate the radial and spherical variables by Fubini–Tonelli, and apply the area formula
   -- to `ψ`.
   rw [hrank, InnerProductSpace.euclideanHausdorffMeasure_eq_volume, himage,
@@ -256,7 +280,7 @@ theorem euclideanHausdorffMeasure_image_eq_finrank_mul_volume_Ioo_smul {ψ : W �
     (WithLp.volume_preserving_ofLp ℝ W).setLIntegral_comp_preimage
       (measurableSet_Ioo.prod hs) hF,
     Measure.volume_eq_prod, ← Measure.prod_restrict, lintegral_prod_mul hpow.aemeasurable
-      hJψ.aemeasurable, hrad,
+      hJψ.aemeasurable, hone,
     lintegral_normDet_fderiv_eq_euclideanHausdorffMeasure_image hs hd hinj hψs] at harea
   rw [← harea, ← hdim, ← mul_assoc, ENNReal.mul_inv_cancel (by simp) (by simp), one_mul]
 

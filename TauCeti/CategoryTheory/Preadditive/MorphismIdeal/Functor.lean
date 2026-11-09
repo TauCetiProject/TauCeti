@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Basic
+public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Mul
 
 /-!
 # Functoriality of quotients by morphism ideals
@@ -30,6 +31,8 @@ a functor between stable categories.
 
 * `TauCeti.MorphismIdeal.comap_eq_of_iso`: naturally isomorphic functors pull back an ideal to the
   same ideal.
+* `TauCeti.MorphismIdeal.mul_comap_le_comap_mul`: a product of pulled-back ideals lies in the
+  pullback of the product.
 * `TauCeti.MorphismIdeal.map_id` and `TauCeti.MorphismIdeal.map_comp`: quotient functors preserve
   identities and composition.
 * `TauCeti.MorphismIdeal.kerIdeal_comp_quotientFunctor` and
@@ -289,6 +292,16 @@ theorem mapNatIso_inv (I : MorphismIdeal C) (J : MorphismIdeal D) {F G : C ⥤ D
     [F.Additive] [G.Additive] (hF : I ≤ J.comap F) (hG : I ≤ J.comap G) (α : F ≅ G) :
     (I.mapNatIso J hF hG α).inv = I.mapNatTrans J hG hF α.inv :=
   (rfl)
+
+/-- Pulling back along an additive functor is compatible with products of ideals in one
+direction: a composite of pulled-back morphisms maps to a composite in the target. -/
+theorem mul_comap_le_comap_mul (I J : MorphismIdeal D) (F : C ⥤ D) [F.Additive] :
+    I.comap F * J.comap F ≤ (I * J).comap F := by
+  rw [mul_le_iff]
+  intro X Z Y g f hg hf
+  rw [mem_comap_hom] at hg hf ⊢
+  rw [Functor.map_comp]
+  exact comp_mem_mul hg hf
 
 end MorphismIdeal
 

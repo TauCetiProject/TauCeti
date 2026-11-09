@@ -228,7 +228,7 @@ theorem momentSeries_eq_one_add_X_mul_momentSeries_mul_rSeries_subst (hφ : φ 1
     .of_constantCoeff_zero' (by simp)
   conv_lhs => rw [← freeCumulantSeries_subst_X_mul_momentSeries a hφ,
     freeCumulantSeries_eq_one_add_X_mul_rSeries]
-  rw [subst_add hM, subst_mul hM, subst_one hM, subst_X hM]
+  rw [subst_add hM, subst_mul hM, subst_one, subst_X hM]
 
 /-- For a normalised `φ`, the linear coefficient of `z M(z)` is the unit `φ 1 = 1`, so that
 `z M(z)` has a compositional inverse. -/

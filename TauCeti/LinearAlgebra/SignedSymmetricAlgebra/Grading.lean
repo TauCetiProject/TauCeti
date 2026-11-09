@@ -16,8 +16,9 @@ public import TauCeti.RingTheory.TwoSidedIdeal.Homogeneous
 
 The images of the input-degree pieces of the tensor algebra form an internal integer grading
 of `TauCeti.SignedSym G`. Equivalently, its degree-`p` piece is spanned by words of homogeneous
-generators whose degrees sum to `p`. Multiplication adds degrees, and a degree-preserving
-linear map satisfying the Koszul relations extends to a graded algebra map.
+generators whose degrees sum to `p`. Homogeneous induction retains this total input degree.
+Multiplication adds degrees, and a degree-preserving linear map satisfying the Koszul relations
+extends to a graded algebra map.
 
 The construction of the free supercommutative algebra follows J. Pardon,
 *Contact homology and virtual fundamental cycles*, equation (1.1). Grading descent uses
@@ -102,6 +103,35 @@ theorem signedSymPiece_eq_span (p : ℤ) :
   · rintro ⟨n, d, x, hx, hd, rfl⟩
     exact ⟨TensorAlgebra.tprod R V n x, ⟨n, d, x, hx, hd, rfl⟩,
       SignedSym.quotient_tprod G x⟩
+
+namespace SignedSym
+
+/-- Induction on homogeneous expressions in the signed symmetric algebra, keeping track of
+input degree. The zero and addition steps take place in each fixed degree. -/
+@[elab_as_elim]
+theorem homogeneous_induction {P : ℤ → SignedSym G → Prop}
+    (one : P 0 1)
+    (generator : ∀ (p : ℤ) (x : V), x ∈ G.piece p → P p (SignedSym.generator G x))
+    (mul : ∀ (p q : ℤ) (a b : SignedSym G), P p a → P q b → P (p + q) (a * b))
+    (zero : ∀ p, P p 0)
+    (add : ∀ (p : ℤ) (a b : SignedSym G), P p a → P p b → P p (a + b))
+    (smul : ∀ (p : ℤ) (r : R) (a : SignedSym G), P p a → P p (r • a))
+    {p : ℤ} {a : SignedSym G} (ha : a ∈ signedSymPiece G p) : P p a := by
+  rw [signedSymPiece_eq_span] at ha
+  induction ha using Submodule.span_induction with
+  | mem a ha =>
+    obtain ⟨n, d, x, hx, rfl, rfl⟩ := ha
+    induction n with
+    | zero => simpa using one
+    | succ n ih =>
+      simpa only [Fin.sum_univ_succ, List.ofFn_succ, List.prod_cons] using
+        mul (d 0) (∑ i : Fin n, d i.succ) _ _ (generator _ _ (hx 0))
+          (ih (fun i => d i.succ) (fun i => x i.succ) (fun i => hx i.succ))
+  | zero => exact zero p
+  | add a b _ _ ha hb => exact add p a b ha hb
+  | smul r a _ ha => exact smul p r a ha
+
+end SignedSym
 
 /-- The input-degree pieces of the signed symmetric algebra form an internal direct sum. -/
 theorem isInternal_signedSymPiece : DirectSum.IsInternal (signedSymPiece G) := by

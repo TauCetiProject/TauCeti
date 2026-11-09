@@ -55,10 +55,10 @@ private theorem coneToJoin_coneMap_eq
     (f : geometricLink K v → geometricLink L w) (F : (ι → ℝ) → (κ → ℝ))
     (hF : ∀ y : geometricLink K v, F (y.1.1 : ι → ℝ) = (f y).1.1)
     (x : closedStarRealization K {v}) :
-    coneToJoin (Pi.single w 1) (coneMap F (starToCone v (x.1.1 : ι → ℝ))) =
+    coneToJoin (Pi.single w 1) (coneMap ℝ F (starToCone v (x.1.1 : ι → ℝ))) =
       ((closedStarMap f x).1.1 : κ → ℝ) := by
   by_cases hx : x.1.1 v < 1
-  · rw [starToCone_of_lt x hx, coneMap_smul F _ (sub_pos.mpr hx).ne',
+  · rw [starToCone_of_lt x hx, coneMap_smul F _ _,
       coneToJoin_apply, hF]
     ext j
     rw [closedStarMap_apply_of_lt f x hx j]
@@ -81,7 +81,7 @@ theorem exists_isPiecewiseAffineOn_closedStarMap
       ∀ x : closedStarRealization K {v}, G (x.1.1 : ι → ℝ) = (closedStarMap f x).1.1 := by
   let S := range (fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ))
   have hin : MapsTo (starToCone v) S
-      (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))).cone := by
+      ((range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))).cone ℝ) := by
     rintro _ ⟨x, rfl⟩
     exact starToCone_mem x
   have hcone := hf.coneMap.comp
@@ -89,7 +89,7 @@ theorem exists_isPiecewiseAffineOn_closedStarMap
   have hout :=
     (isPiecewiseAffineOn_continuousAffineMap (coneToJoin (Pi.single w 1)) univ).comp
       hcone (mapsTo_univ _ _)
-  exact ⟨(coneToJoin (Pi.single w 1)) ∘ coneMap F ∘ (starToCone v), hout,
+  exact ⟨(coneToJoin (Pi.single w 1)) ∘ coneMap ℝ F ∘ (starToCone v), hout,
     coneToJoin_coneMap_eq f F hF⟩
 
 /-- A PL coordinate formula on a geometric link extends to a PL coordinate formula on

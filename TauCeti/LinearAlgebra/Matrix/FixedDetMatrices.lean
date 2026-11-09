@@ -176,12 +176,14 @@ theorem ncard_reps (n : ℤ) : (reps n).ncard = ArithmeticFunction.sigma 1 n.nat
   simp only [Nat.card_fin]
   rw [Finset.sum_coe_sort]
 
-/-- **The divisor sum over the upper-triangular representatives**: for even `w` and `n ≠ 0`, the
+/-- **The divisor sum over the upper-triangular representatives**: for even `w`, the
 sum of `dʷ` over the representatives `(a b; 0 d)` in `reps n` is `σ_{w+1}(|n|)`, since each factor
 pair `(a, d)` of `|n|` carries `|d|` representatives. -/
-theorem sum_reps_pow {R : Type*} [CommRing R] {w : ℕ} (hn : n ≠ 0) (hw : Even w) :
+theorem sum_reps_pow {R : Type*} [CommRing R] {w : ℕ} (hw : Even w) :
     ∑ A : reps n, ((A.1.1 1 1 : ℤ) : R) ^ w =
       (ArithmeticFunction.sigma (w + 1) n.natAbs : R) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
   have hsign : (n.sign : R) ^ w = 1 := by
     rw [← Int.cast_pow, ← hw.pow_abs, Int.abs_sign_of_ne_zero hn, one_pow, Int.cast_one]
   rw [← (repsEquiv hn).symm.sum_comp, Fintype.sum_sigma]

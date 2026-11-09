@@ -8,13 +8,15 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Analysis.InnerProductSpace.NormPow
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+public import TauCeti.Analysis.Calculus.ContDiff.Homogeneous
+import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Calculus.Gradient
 
 /-!
-# Real powers of the norm away from the origin
+# Real powers of the norm
 
 Mathlib computes the derivative of `x ↦ ‖x‖ ^ p` on the whole inner-product space when
 `1 < p`.  Negative powers, which occur in the Newtonian kernel, are smooth only away from the
@@ -34,6 +36,9 @@ the size and smoothness estimates of a singular integral kernel.
 The first derivative proof adapts Mathlib's `hasFDerivAt_norm_rpow`, retaining its norm-square
 chain-rule argument while replacing the global exponent hypothesis with the local condition
 `x ≠ 0`.
+
+For positive exponents, `contDiff_norm_rpow_of_lt` additionally gives global `Cᵏ` regularity
+whenever `k < p`, including the behavior at the origin, on arbitrary real inner-product spaces.
 
 ## Main declarations
 
@@ -69,6 +74,49 @@ open Filter InnerProductSpace Laplacian Topology
 open scoped RealInnerProductSpace ContDiff Gradient
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+-- Hyperplane reflection identifies equal-radius jets without compactness of the sphere.
+private theorem norm_iteratedFDeriv_eq_of_norm_eq
+    (p : ℝ) (j : ℕ) {x y : E} (hxy : ‖x‖ = ‖y‖) :
+    ‖iteratedFDeriv ℝ j (fun x : E ↦ ‖x‖ ^ p) x‖ =
+      ‖iteratedFDeriv ℝ j (fun x : E ↦ ‖x‖ ^ p) y‖ := by
+  let R := (ℝ ∙ (x - y))ᗮ.reflection
+  have hcomp : (fun x : E ↦ ‖x‖ ^ p) ∘ R = (fun x : E ↦ ‖x‖ ^ p) := by
+    funext z
+    simp
+  have h := R.norm_iteratedFDeriv_comp_right (fun x : E ↦ ‖x‖ ^ p) x j
+  rw [hcomp, Submodule.reflection_sub hxy] at h
+  exact h
+
+/-- Every real power of the norm whose exponent exceeds `k` is `Cᵏ`, including at zero,
+on an arbitrary real inner-product space. -/
+theorem contDiff_norm_rpow_of_lt {k : ℕ} {p : ℝ}
+    (hp : (k : ℝ) < p) : ContDiff ℝ k (fun x : E ↦ ‖x‖ ^ p) := by
+  have hf : ContDiffOn ℝ k (fun x : E ↦ ‖x‖ ^ p) {0}ᶜ := by
+    intro x hx
+    exact ((contDiffAt_norm ℝ hx).rpow_const_of_ne
+      (norm_ne_zero_iff.mpr hx)).contDiffWithinAt
+  apply contDiff_of_iteratedFDeriv_norm_rpow_bound hf
+    (by simp [Real.zero_rpow (lt_of_le_of_lt (Nat.cast_nonneg k) hp).ne']) hp
+  intro j hj
+  by_cases hE : Subsingleton E
+  · let := hE
+    exact ⟨0, fun x hx ↦ (hx (Subsingleton.elim _ _)).elim⟩
+  · have : Nontrivial E := not_subsingleton_iff_nontrivial.mp hE
+    obtain ⟨v, hv⟩ := exists_ne (0 : E)
+    let e : E := ‖v‖⁻¹ • v
+    have he : ‖e‖ = 1 := by simp [e, norm_smul, hv]
+    refine ⟨‖iteratedFDeriv ℝ j (fun x : E ↦ ‖x‖ ^ p) e‖, fun x hx ↦ ?_⟩
+    let θ : E := ‖x‖⁻¹ • x
+    have hθ : ‖θ‖ = 1 := by simp [θ, norm_smul, hx]
+    have hθ0 : θ ≠ 0 := norm_ne_zero_iff.mp (by rw [hθ]; norm_num)
+    have hscale := norm_iteratedFDeriv_smul_of_homogeneous (hf.of_le (by exact_mod_cast hj))
+      (p := p) (fun t ht y ↦ by simp only [norm_smul, Real.norm_of_nonneg ht.le,
+        Real.mul_rpow ht.le (norm_nonneg y), smul_eq_mul])
+      (norm_pos_iff.mpr hx) hθ0
+    have hnorm := norm_iteratedFDeriv_eq_of_norm_eq p j (hθ.trans he.symm)
+    simpa only [θ, smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.mpr hx), one_smul,
+      hnorm, mul_comm] using hscale.le
 
 /-- Away from the origin, the derivative of `x ↦ ‖x‖ ^ p` is
 `p ‖x‖ ^ (p - 2) ⟨x, ·⟩`.  Unlike Mathlib's `hasFDerivAt_norm_rpow`, this local form

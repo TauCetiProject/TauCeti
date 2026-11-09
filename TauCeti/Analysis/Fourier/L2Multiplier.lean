@@ -313,9 +313,9 @@ theorem tendsto_fourierMultiplierCLM_apply {ι : Type*} {l : Filter ι} [l.IsCou
     rw [Lp.enorm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable g)]
     exact ae_le_eLpNormEssSup
   -- Dominated convergence on the Fourier side, with dominating function `‖𝓕 f‖`.
-  refine TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (by simp) (by simp)
-    (Eventually.of_forall fun n ↦ Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _)
-    (Lp.memLp (𝓕 f)) (C := C.toNNReal + ‖m₀‖₊) (hC.mono fun n hn ↦ ?_) ?_
+  refine TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (by simp)
+    (Eventually.of_forall fun n ↦ Lp.aestronglyMeasurable _) (Lp.memLp (𝓕 f))
+    (C := C.toNNReal + ‖m₀‖₊) (hC.mono fun n hn ↦ ?_) ?_
   · filter_upwards [coeFn_lpSMul (r := 2) (m (s n)) (𝓕 f), coeFn_lpSMul (r := 2) m₀ (𝓕 f),
       hmb (m (s n)), hmb m₀] with ξ h₁ h₂ h₃ h₄
     rw [h₁, h₂, Pi.smul_apply', Pi.smul_apply', ← sub_smul, enorm_smul, ENNReal.coe_add,

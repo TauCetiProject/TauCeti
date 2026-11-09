@@ -64,6 +64,8 @@ used, and it is why the statement needs no finiteness hypothesis on `u`.
 
 * `TauCeti.lintegral_ofReal_rpow_Ioo`: `∫⁻ t in (0, a), t ^ s = a ^ (s + 1) / (s + 1)` for
   `-1 < s` and `0 ≤ a`.
+* `TauCeti.lintegral_ofReal_pow_Ioo`: `∫⁻ t in (0, a), t ^ k = a ^ (k + 1) / (k + 1)` for a natural
+  number `k` and `0 ≤ a`.
 * `TauCeti.lintegral_ofReal_rpow_Ioi`: `∫⁻ t in (0, ∞), t ^ s = ∞`, for every `s`.
 * `TauCeti.lintegral_indicator_ofReal_rpow_Ioi`: the same integral truncated at the height where
   `c * t` reaches `a : ℝ≥0∞`, evaluated to `c ^ (-(s + 1)) / (s + 1) * a ^ (s + 1)`.
@@ -115,6 +117,16 @@ theorem lintegral_ofReal_rpow_Ioo (hs : -1 < s) {a : ℝ} (ha : 0 ≤ a) :
   rw [← ofReal_integral_eq_lintegral_ofReal hint hnn, ← integral_Ioc_eq_integral_Ioo,
     ← intervalIntegral.integral_of_le ha, integral_rpow (Or.inl hs), Real.zero_rpow hs1.ne',
     sub_zero]
+
+/-- The lower integral of `t ^ k` over `(0, a)` for a natural exponent `k` is
+`a ^ (k + 1) / (k + 1)`: the natural-exponent case of `TauCeti.lintegral_ofReal_rpow_Ioo`. -/
+theorem lintegral_ofReal_pow_Ioo (k : ℕ) {a : ℝ} (ha : 0 ≤ a) :
+    ∫⁻ t in Ioo (0 : ℝ) a, ENNReal.ofReal (t ^ k) =
+      ENNReal.ofReal (a ^ (k + 1) / (k + 1)) := by
+  have h := lintegral_ofReal_rpow_Ioo (s := k) (by linarith [k.cast_nonneg (α := ℝ)]) ha
+  have ha' : a ^ ((k : ℝ) + 1) = a ^ (k + 1) := by exact_mod_cast Real.rpow_natCast a (k + 1)
+  simp_rw [Real.rpow_natCast] at h
+  rw [h, ha']
 
 /-- The lower integral of `t ^ s` over `(0, ∞)` diverges, for every exponent `s`: the power fails
 to be integrable at the origin or at infinity, according as `s ≤ -1` or `-1 < s`. -/

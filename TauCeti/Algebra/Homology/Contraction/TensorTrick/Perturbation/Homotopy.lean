@@ -101,10 +101,7 @@ theorem isGradedCoderivationAlong_reducedTensorWords_perturb_homotopy
     simpa only [h, π, i, p, T, τ, reducedTensorWords_incl, reducedTensorWords_proj,
       reducedTensorWords_homotopy, ← ReducedTensorWords.map_comp] using
       c.deconcatenation_comp_reducedTensorWordsHomotopy G
-  have hΔδ : deconcatenation R M ∘ₗ δ =
-      (TensorProduct.map δ LinearMap.id + TensorProduct.map τ δ) ∘ₗ deconcatenation R M := by
-    rw [isGradedCoderivation_iff.mp hδ, LinearMap.lTensor_comp_rTensor,
-      LinearMap.rTensor_def, LinearMap.add_comp]
+  have hΔδ := hδ.deconcatenation_comp_eq
   have hΔδh : deconcatenation R M ∘ₗ δ ∘ₗ h =
       ((TensorProduct.map δ LinearMap.id + TensorProduct.map τ δ) ∘ₗ
         (TensorProduct.map h π + TensorProduct.map τ h)) ∘ₗ deconcatenation R M := by
