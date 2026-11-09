@@ -137,6 +137,22 @@ theorem ker_presentationLimitAppTop_le_comp {W : PreAdicSpace.{u}} (h : W ⟶ X)
   rw [presentationLimitAppTop_comp_apply, ha]
   exact map_zero _
 
+/-- Taking the germ of the global pullback of a coefficient is the same as pulling back its
+coefficient germ along the stalk map. This holds for an arbitrary pre-adic source. -/
+theorem presentationLimitAppTop_comp_germ
+    (f : X ⟶ presentationLimitPreAdicSpace P Aplus hAplus hP) (x : X) :
+    (X.toRingPresheafedSpace.presheaf.germ ⊤ x (Opens.mem_top x)).hom.comp
+        (presentationLimitAppTop P Aplus hAplus hP f) =
+      (f.stalkMap x).hom.comp (presentationLimitGlobalGerm P Aplus (f.base x)) := by
+  rw [presentationLimitAppTop_def, ← topIso_inv_comp_germ P Aplus hAplus hP (f.base x),
+    PreAdicSpace.Hom.stalkMap_def]
+  have hg := PresheafedSpace.stalkMap_germ (PreAdicSpace.toRingPresheafedSpaceHom f.toHom)
+    ⊤ x (Opens.mem_top _)
+  exact congrArg CommRingCat.Hom.hom
+    ((Category.assoc _ _ _).trans (congrArg
+      (fun k ↦ (forget₂ _root_.TopCommRingCat CommRingCat).map
+        (presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP).inv ≫ k) hg.symm))
+
 end AppTop
 
 variable {B : Type u} [CommRing B] [UniformSpace B] [IsUniformAddGroup B]
