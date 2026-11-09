@@ -220,9 +220,7 @@ theorem mem_ramifiedPrimes_iff_ramificationIdx_eq_two :
     simp only [Ideal.ramificationIdx_bot_eq_one] at he
     omega
   have hp : p.Prime := by
-    have : (span {(p : ℤ)} : Ideal ℤ).IsPrime := by
-      rw [Ideal.LiesOver.over (p := (span {(p : ℤ)} : Ideal ℤ)) (P := 𝔭)]
-      infer_instance
+    have : (span {(p : ℤ)} : Ideal ℤ).IsPrime := Ideal.isPrime_of_liesOver 𝔭 _
     exact Nat.prime_iff_prime_int.mpr
       ((Ideal.span_singleton_prime (by exact_mod_cast hp0)).mp this)
   refine mem_ramifiedPrimes_iff.mpr ⟨hp, fun hunr => ?_⟩
