@@ -139,7 +139,7 @@ lemma relClass₁_homologyδ :
     (Q.right.ιChainComplex s) rfl _ hx₁ 0 (by simp)
   rw [relClass₁, Category.assoc]
   refine this.trans ?_
-  rw [SSet.ιHomology₀_eq, SSet.ιHomology₀_eq, ← Preadditive.sub_comp]
+  rw [SSet.ιHomology₀_def, SSet.ιHomology₀_def, ← Preadditive.sub_comp]
   congr 1
   rw [← cancel_mono ((Q.left.chainComplex R).iCycles 0)]
   simp
