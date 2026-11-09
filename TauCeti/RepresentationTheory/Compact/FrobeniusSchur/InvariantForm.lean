@@ -41,9 +41,9 @@ Two facts about an irreducible representation supply the rest, and both are cons
 `TauCeti/RepresentationTheory/InvariantForm.lean`: a nonzero invariant form on an irreducible
 representation is automatically nondegenerate
 (`TauCeti.Representation.IsInvariantForm.nondegenerate`), which is why the statements below ask for
-nondegeneracy rather than for nonvanishing; and over an algebraically closed field away from
-characteristic two it carries a nonzero invariant symmetric form, a nonzero invariant alternating
-one, or no nonzero invariant form at all
+nondegeneracy rather than for nonvanishing; and over an algebraically closed field it carries a
+nonzero invariant symmetric form, a nonzero invariant alternating one, or no nonzero invariant form
+at all
 (`TauCeti.Representation.exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot`), which is what
 makes the vanishing case `ν₂ = 0` say that there is no invariant form at all.
 
@@ -168,7 +168,7 @@ theorem frobeniusSchurIndicator_eq_zero_iff (hunitary : IsUnitary π)
   constructor
   · intro h0
     rcases Representation.exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot
-      π.toRepresentation (by norm_num) with
+      π.toRepresentation with
       ⟨B, hB, hB0, hsymm⟩ | ⟨B, hB, hB0, halt⟩ | hbot
     · have h1 := (frobeniusSchurIndicator_eq_one_iff π hπ hunitary hirr).mpr
         ⟨B, hB, hsymm, hB.nondegenerate hB0⟩

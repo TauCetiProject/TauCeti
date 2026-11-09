@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Transvection
+import TauCeti.Algebra.Group.Hom.Defs
 import TauCeti.Algebra.Ring.Hom
 import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
@@ -112,7 +113,7 @@ private theorem exists_mem_specialIsometryGroup_mulVec_eq_smul (hσ : Function.I
   have hσc : σ c = d * b⁻¹ := hσ _
   have hc : c ≠ 0 := (map_ne_zero σ).mpr (mul_ne_zero hd (inv_ne_zero hyx))
   have hcyx : (σ ∘ (c • y)) ⬝ᵥ (Q *ᵥ x) = d := by
-    rw [RingHom.comp_smul, smul_dotProduct, smul_eq_mul, hσc, mul_assoc, inv_mul_cancel₀ hyx,
+    rw [TauCeti.map_comp_smul, smul_dotProduct, smul_eq_mul, hσc, mul_assoc, inv_mul_cancel₀ hyx,
       mul_one]
   have hcy : (σ ∘ (c • y)) ⬝ᵥ (Q *ᵥ (c • y)) = 0 := by
     rw [comp_smul_dotProduct_mulVec_smul, hy, mul_zero]
@@ -167,7 +168,7 @@ theorem isPretransitive_isotropicPoints (hσ : Function.Involutive σ)
       exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero hσ hQ hε htr hp hux
     have hpair (w : n → K) : (σ ∘ (u + c • x)) ⬝ᵥ (Q *ᵥ w) =
         (σ ∘ u) ⬝ᵥ (Q *ᵥ w) + σ c * ((σ ∘ x) ⬝ᵥ (Q *ᵥ w)) := by
-      rw [comp_add_dotProduct_mulVec, RingHom.comp_smul, smul_dotProduct, smul_eq_mul]
+      rw [comp_add_dotProduct_mulVec, TauCeti.map_comp_smul, smul_dotProduct, smul_eq_mul]
     have hzx : (σ ∘ (u + c • x)) ⬝ᵥ (Q *ᵥ x) ≠ 0 := by rwa [hpair, hp, mul_zero, add_zero]
     have hzy : (σ ∘ (u + c • x)) ⬝ᵥ (Q *ᵥ y) ≠ 0 := by rwa [hpair, hxy, mul_zero, add_zero]
     have hyz : (σ ∘ y) ⬝ᵥ (Q *ᵥ (u + c • x)) ≠ 0 := by
