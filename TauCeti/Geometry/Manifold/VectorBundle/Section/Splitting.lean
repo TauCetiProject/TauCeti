@@ -104,7 +104,7 @@ instance instTopologicalSpaceTotalSpaceOrthogonalSpan {F' : Type*} :
 
 /-- For a nowhere-zero section of a bundle of complex rank `k + 1`, its orthogonal complement has
 complex dimension `k` in every fibre. -/
-theorem finrank_orthogonalSpan [FiniteDimensional ℂ F] (hne : ∀ x, s x ≠ 0)
+theorem finrank_orthogonalSpan (hne : ∀ x, s x ≠ 0)
     (hk : finrank ℂ F = k + 1) (x : B) :
     finrank ℂ (g.orthogonalSpan hI s x) = k := by
   let : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
