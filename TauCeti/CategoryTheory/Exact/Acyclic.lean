@@ -283,6 +283,54 @@ theorem acyclic_mappingCone {K L : CochainComplex C ℤ} (φ : K ⟶ L) (hK : E.
     · simp [reassoc_of% (hke (m + 1))]
     · simp [hkv, B.fac]
 
+/-- **The mapping cone of a map built from pushouts of inflations is acyclic.** Let `φ : K ⟶ L`
+come with objects `Bᵐ`, inflations `j : Bᵐ ↣ Lᵐ` and pushout squares
+```text
+Bᵐ ──j──▶ Lᵐ
+│q        │u
+▼         ▼
+Kᵐ⁺¹ ─v─▶ Bᵐ⁺¹
+```
+such that the differential of `L` is `u ≫ j`, `φ` is `v ≫ j`, the differential of `K` is `v ≫ q`
+and `u ≫ q = 0`. Then the cone of `φ` is acyclic, with cycles `Bᵐ`: the pushout conflations
+`Bᵐ ↣ Lᵐ ⊞ Kᵐ⁺¹ ↠ Bᵐ⁺¹` are its degreewise conflations. This is the dual of the last step of
+Bühler's proof of Theorem 12.7, where such data come from a recursive construction. -/
+theorem acyclic_mappingCone_of_isPushout {K L : CochainComplex C ℤ} (φ : K ⟶ L) (B : ℤ → C)
+    (j : ∀ m, B m ⟶ L.X m) (q : ∀ m, B m ⟶ K.X (m + 1)) (u : ∀ m, L.X m ⟶ B (m + 1))
+    (v : ∀ m, K.X m ⟶ B m) (hj : ∀ m, E.IsInflation (j m))
+    (sq : ∀ m, IsPushout (j m) (q m) (u m) (v (m + 1)))
+    (hd : ∀ m, u m ≫ j (m + 1) = L.d m (m + 1)) (hφ : ∀ m, v m ≫ j m = φ.f m)
+    (hq : ∀ m, v m ≫ q m = K.d m (m + 1)) (huq : ∀ m, u m ≫ q (m + 1) = 0) :
+    E.acyclic (CochainComplex.mappingCone φ) := by
+  open CochainComplex.mappingCone in
+  refine ⟨{
+    Z := B
+    i m := j m ≫ (inr φ).f m - q m ≫ (inl φ).v (m + 1) m (by lia)
+    p m := (fst φ).1.v m (m + 1) rfl ≫ v (m + 1) + (snd φ).v m m (add_zero m) ≫ u m
+    zero m := by simp [(sq m).w]
+    conflation m := ?_
+    fac m := ?_ }⟩
+  · refine E.conflation_of_iso ?_
+      (E.conflation_shortComplex_of_isPushout_of_isInflation (hj m) (sq m))
+    exact ShortComplex.isoMk (Iso.refl _)
+      (show L.X m ⊞ K.X (m + 1) ≅ (CochainComplex.mappingCone φ).X m from
+      { hom := biprod.desc ((inr φ).f m) ((inl φ).v (m + 1) m (by lia))
+        inv := biprod.lift ((snd φ).v m m (add_zero m)) ((fst φ).1.v m (m + 1) rfl)
+        hom_inv_id := by apply biprod.hom_ext' <;> apply biprod.hom_ext <;> simp
+        inv_hom_id := by simp [biprod.lift_desc, id_X φ m (m + 1) rfl, add_comm] })
+      (Iso.refl _)
+      (by
+        dsimp only [CommSq.shortComplex]
+        apply ext_to φ m (m + 1) rfl <;> simp [sub_eq_add_neg])
+      (by
+        dsimp only [CommSq.shortComplex]
+        apply biprod.hom_ext' <;> simp)
+  · apply ext_from φ (m + 1) m rfl <;> apply ext_to φ (m + 1) (m + 1 + 1) rfl
+    · simp [d_fst_v φ m (m + 1) (m + 1 + 1) rfl rfl, reassoc_of% (hq (m + 1))]
+    · simp [d_snd_v φ m (m + 1) rfl, hφ]
+    · simp [huq]
+    · simp [hd]
+
 end ExactStructure
 
 end TauCeti
