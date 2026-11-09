@@ -67,12 +67,10 @@ private theorem le_rpow_mul_add_mul_rpow_of_forall_le {φ : ℝ → ℝ} {τ β 
   have hq1 : τ ^ (γ - β) < 1 := Real.rpow_lt_one hτ0.le hτ1 (sub_pos.2 hβγ)
   have hM : 0 ≤ τ ^ (-β) / (1 - τ ^ (γ - β)) := div_nonneg (by positivity) (by linarith)
   induction k with
-  | zero =>
-    simp only [pow_zero, Real.one_rpow, one_mul, le_add_iff_nonneg_right]
-    exact mul_nonneg (mul_nonneg hM hB) (Real.rpow_nonneg hr.1.le _)
+  | zero => simpa using mul_nonneg (mul_nonneg hM hB) (Real.rpow_nonneg hr.1.le _)
   | succ k ih =>
     have hs : τ ^ k * r ∈ Ioc 0 R :=
-      ⟨by have := hr.1; positivity,
+      ⟨mul_pos (pow_pos hτ0 k) hr.1,
         (mul_le_of_le_one_left hr.1.le (pow_le_one₀ hτ0.le hτ1.le)).trans hr.2⟩
     have hk : (0 : ℝ) ≤ τ ^ k := by positivity
     have hkr : 0 ≤ τ ^ k * r := hs.1.le
@@ -83,7 +81,7 @@ private theorem le_rpow_mul_add_mul_rpow_of_forall_le {φ : ℝ → ℝ} {τ β 
     have hββ : τ ^ (-β) * τ ^ β = 1 := by
       rw [← Real.rpow_add hτ0, neg_add_cancel, Real.rpow_zero]
     have hne : 1 - τ ^ (γ - β) ≠ 0 := by linarith
-    calc φ (τ ^ (k + 1) * r) = φ (τ * (τ ^ k * r)) := by rw [pow_succ']; ring_nf
+    calc φ (τ ^ (k + 1) * r) = φ (τ * (τ ^ k * r)) := by rw [pow_succ', mul_assoc]
       _ ≤ τ ^ γ * φ (τ ^ k * r) + B * (τ ^ k * r) ^ β := hstep _ hs
       _ ≤ τ ^ γ * ((τ ^ k) ^ γ * φ r +
             τ ^ (-β) / (1 - τ ^ (γ - β)) * B * (τ ^ k * r) ^ β) +
@@ -117,10 +115,9 @@ theorem exists_le_mul_div_rpow_mul_add_mul_rpow_of_le_mul_add {A α β γ : ℝ}
   -- iterating this along the radii `τᵏ r` bounds `φ (τᵏ r)` by `τ^{kγ'} φ r` plus a geometric
   -- series in `τ^{γ' - β} < 1`. An arbitrary `ρ` lies between two consecutive radii.
   -- The working exponent `γ'` lies strictly between `max β γ` and `α`.
-  set γ' := (max β γ + α) / 2
-  have hβγ' : β < γ' := by have := le_max_left β γ; simp only [γ']; linarith
-  have hγγ' : γ ≤ γ' := by have := le_max_right β γ; simp only [γ']; linarith
-  have hγ'α : 0 < α - γ' := by have := max_lt hβ hγ; simp only [γ']; linarith
+  obtain ⟨γ', hγ', hγ'α⟩ := exists_between (max_lt hβ hγ)
+  obtain ⟨hβγ', hγγ'⟩ := max_lt_iff.1 hγ'
+  replace hγ'α : 0 < α - γ' := sub_pos.2 hγ'α
   -- The ratio `τ` satisfies `τ^{α - γ'} = (2A + 2)⁻¹`, so that `2 A τ^α ≤ τ^γ'`.
   set τ : ℝ := (2 * A + 2) ^ (-(α - γ')⁻¹)
   have hτ0 : 0 < τ := by positivity
@@ -129,10 +126,8 @@ theorem exists_le_mul_div_rpow_mul_add_mul_rpow_of_le_mul_add {A α β γ : ℝ}
   have hτA : 2 * A * τ ^ α ≤ τ ^ γ' := by
     have hτα : τ ^ (α - γ') = (2 * A + 2)⁻¹ := by
       rw [← Real.rpow_mul (by positivity), neg_mul, inv_mul_cancel₀ hγ'α.ne', Real.rpow_neg_one]
-    have hsplit : τ ^ α = τ ^ (α - γ') * τ ^ γ' := by
-      rw [← Real.rpow_add hτ0, sub_add_cancel]
-    rw [hsplit, hτα, ← mul_assoc, ← div_eq_mul_inv]
-    refine mul_le_of_le_one_left (by positivity) ((div_le_one (by positivity)).2 (by linarith))
+    rw [← sub_add_cancel α γ', Real.rpow_add hτ0, hτα, ← mul_assoc]
+    exact mul_le_of_le_one_left (by positivity) (by field_simp; linarith)
   set M := τ ^ (-β) / (1 - τ ^ (γ' - β))
   have hM : 0 ≤ M := div_nonneg (by positivity)
     (by linarith [Real.rpow_lt_one hτ0.le hτ1 (sub_pos.2 hβγ')])
@@ -173,7 +168,7 @@ theorem exists_le_mul_div_rpow_mul_add_mul_rpow_of_le_mul_add {A α β γ : ℝ}
   have h1 : (τ ^ k) ^ γ' ≤ c₁ * (ρ / r) ^ γ := by
     refine (hcmp (div_pos hρ hr) hk2 (by rw [← pow_succ']; exact hk1.le)).trans ?_
     exact mul_le_mul_of_nonneg_left
-      (Real.rpow_le_rpow_of_exponent_ge (div_pos hρ hr) ((div_le_one hr).2 hρr) hγγ')
+      (Real.rpow_le_rpow_of_exponent_ge (div_pos hρ hr) ((div_le_one hr).2 hρr) hγγ'.le)
       (by positivity)
   have h2 : (τ ^ k * r) ^ β ≤ c₂ * ρ ^ β := hcmp hρ hρk hρk'
   have hφr : 0 ≤ φ r := hφ0 r ⟨hr, hrR⟩

@@ -236,14 +236,14 @@ private lemma alt_bdry_single_of_not_injective {b : Fin (n + 2) → ι}
   rw [bdry_single, map_sum, Fintype.sum_eq_add p q hpq fun k hk ↦ ?_]
   · simp only [map_zsmul]
     by_cases hp : Function.Injective (b ∘ p.succAbove)
-    · have hq := Fin.injective_comp_succAbove_of_eq hpq h hp
+    · have hq := Fin.injective_comp_succAbove_of_eq h hp
       rw [alt_single_of_injective hp, alt_single_of_injective hq,
         Tuple.comp_sort_eq_comp_sort_of_range_eq hq hp
           ((Fin.range_comp_succAbove_of_eq hpq.symm h.symm).trans
             (Fin.range_comp_succAbove_of_eq hpq h).symm), smul_smul, smul_smul, ← add_smul,
         neg_one_pow_mul_neg_one_pow_card_inversions_add hlt h hq, zero_smul]
     · have hq : ¬Function.Injective (b ∘ q.succAbove) := fun hq ↦
-        hp (Fin.injective_comp_succAbove_of_eq hpq.symm h.symm hq)
+        hp (Fin.injective_comp_succAbove_of_eq h.symm hq)
       rw [alt_single_of_not_injective hp, alt_single_of_not_injective hq, smul_zero, smul_zero,
         add_zero]
   · rw [map_zsmul, alt_single_of_not_injective, smul_zero]

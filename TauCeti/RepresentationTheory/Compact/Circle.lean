@@ -250,8 +250,8 @@ variable [hT : Fact (0 < T)]
 are Haar probability measures on a compact group, and there is only one such. -/
 theorem haarProb_eq_haarAddCircle :
     haarProb (Multiplicative (AddCircle T)) = haarAddCircle :=
-  (eq_haarProb_of_isHaarMeasure_of_isProbabilityMeasure
-    (G := Multiplicative (AddCircle T)) haarAddCircle).symm
+  (Measure.isHaarMeasure_eq_of_isProbabilityMeasure
+    (G := Multiplicative (AddCircle T)) haarAddCircle _).symm
 
 /-- `Multiplicative.ofAdd` carries Mathlib's Haar measure on `AddCircle T` to the normalized Haar
 measure of the circle group, so it transports `L²` of the circle group to `L²(AddCircle T)`. -/

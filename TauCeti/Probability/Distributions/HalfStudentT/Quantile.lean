@@ -110,7 +110,7 @@ theorem continuousOn_quantile_halfStudentTMeasure (hν : 0 < ν) (hs : 0 < s) :
 /-- Half-Student t quantiles tend to zero as the probability level tends to zero from above. -/
 theorem tendsto_quantile_halfStudentTMeasure_nhdsGT_zero (hν : 0 < ν) (hs : 0 < s) :
     Tendsto (fun u ↦ ((halfStudentTMeasure ν s).quantile u : EReal)) (𝓝[>] 0) (𝓝 0) := by
-  have hcont := Measure.continuousOn_quantile _ (continuous_cdf_studentTMeasure hν)
+  have hcont := Measure.continuousOn_quantile _
     ((strictMono_cdf_studentTMeasure hν).strictMonoOn _)
   have hhalf : (2⁻¹ : ℝ) ∈ Ioo 0 1 := by norm_num
   have hlim : Tendsto (fun u : ℝ ↦ (1 + u) / 2) (𝓝[>] 0) (𝓝 (2⁻¹ : ℝ)) := by

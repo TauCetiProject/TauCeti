@@ -24,10 +24,9 @@ Let `s` be a local section of `F`, `F (s c) = c`, and let `λ` be a smooth famil
 it: `λ c ∈ Λ_{s c}`. This file proves that the **period one-form** `∑ⱼ λⱼ(c) dcⱼ` on the space of
 values of `F` is closed, that is, the derivative of `λ` is symmetric with respect to the dot product
 (`TauCeti.SmoothTwoForm.IsSymplectic.fderiv_dotProduct_comm_of_mem_hamiltonianFlowStabilizer`).
-This comes from differentiating `λ(c) • s(c) = s(c)` and using that the derivative of the action of
-a period `λ(c)` at the fixed point `s(c)` is a linear symplectic map
-(`eval₂_mfderiv_hamiltonianFlowAction_of_mem_hamiltonianFlowStabilizer`, in the namespace
-`TauCeti.SmoothTwoForm.IsSymplectic`).
+This is because moving `s` by `λ` changes `s^* σ` by `∑ᵢ dλᵢ ∧ dcᵢ`
+(`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_hamiltonianFlowAction_section`), while
+`λ(c) • s(c) = s(c)`, so this added form vanishes.
 
 By the Poincaré lemma for one-forms on convex sets
 (`Convex.exists_forall_hasFDerivAt_of_fderiv_symmetric`), a period family on a convex open set
@@ -45,8 +44,8 @@ the space of values of `F`
 Equivalently, the periods of `s c` are exactly the vectors `v` whose one-form `v ⬝ᵥ dc` is
 `2π ∑ᵢ nᵢ dAᵢ` for integers `nᵢ`: the period lattice is `2π (DA)ᵀ ℤⁿ`.
 
-The angle coordinates and the symplectic form `∑ dθᵢ ∧ dAᵢ` in action-angle coordinates are not
-treated here.
+The angle map and its pullback of the symplectic form are treated in
+`TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Action.Angle`.
 
 ## Main results
 
@@ -91,47 +90,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 
 include hσ hF hcomm hc
 
-/-- Differentiating `λ(c) • s(c) = s(c)`: the derivative `P` of the action of `λ(c)` at `s(c)`
-satisfies `P (ds u) = ds u - ∑ᵢ (Dλ u)ᵢ X_{Fᵢ}(s c)`. -/
-private theorem mfderiv_hamiltonianFlowAction_mfderiv_section
-    (hs : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I s c) (hp : DifferentiableAt ℝ p c)
-    (hps : ∀ᶠ c' in 𝓝 c, p c' ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c'))
-    (u : ι → ℝ) :
-    mfderiv I I (hσ.hamiltonianFlowAction hF hcomm hc (p c)).toMul (s c)
-        (mfderiv 𝓘(ℝ, ι → ℝ) I s c u) =
-      mfderiv 𝓘(ℝ, ι → ℝ) I s c u -
-        ∑ i, fderiv ℝ p c u i • σ.hamiltonianVectorField (F · i) (s c) := by
-  set act : (ι → ℝ) → M → M := fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul
-  set y := s c
-  have hy : act (p c) y = y := (hσ.mem_hamiltonianFlowStabilizer hF hcomm hc).1 hps.self_of_nhds
-  set ds : (ι → ℝ) →L[ℝ] TangentSpace I y := mfderiv 𝓘(ℝ, ι → ℝ) I s c
-  set dp := fderiv ℝ p c
-  have hGd : MDifferentiableAt (𝓘(ℝ, ι → ℝ).prod I) I
-      (fun q : (ι → ℝ) × M ↦ act q.1 q.2) (p c, y) :=
-    (hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).mdifferentiableAt (by simp)
-  have hpair : HasMFDerivAt 𝓘(ℝ, ι → ℝ) (𝓘(ℝ, ι → ℝ).prod I) (fun c' ↦ (p c', s c')) c
-      (dp.prod ds) :=
-    (hasMFDerivAt_iff_hasFDerivAt.2 hp.hasFDerivAt).prodMk hs.hasMFDerivAt
-  have hcomp : HasMFDerivAt 𝓘(ℝ, ι → ℝ) I (fun c' ↦ act (p c') (s c')) c _ :=
-    hGd.hasMFDerivAt.comp c hpair
-  -- `c' ↦ λ(c') • s(c')` agrees with `s` near `c`, so the two have the same derivative.
-  have hΦ : (fun c' ↦ act (p c') (s c')) =ᶠ[𝓝 c] s :=
-    hps.mono fun c' h ↦ (hσ.mem_hamiltonianFlowStabilizer hF hcomm hc).1 h
-  have h := hΦ.mfderiv_eq (I := 𝓘(ℝ, ι → ℝ)) (I' := I)
-  rw [hcomp.mfderiv] at h
-  have h' : mfderiv (𝓘(ℝ, ι → ℝ).prod I) I (fun q : (ι → ℝ) × M ↦ act q.1 q.2) (p c, y)
-      (dp u, ds u) = ds u :=
-    congrArg (fun L ↦ L u) h
-  -- Split the derivative of the joint action into its two partial derivatives. The tangent
-  -- vector `ds u` is viewed in the model space `E` of the product tangent space.
-  apply eq_sub_of_add_eq'
-  refine Eq.trans ?_ ((mfderiv_prod_eq_add_apply (v := (dp u, @id E (ds u))) hGd).symm.trans h')
-  congr 1
-  have h1 := hσ.mfderiv_hamiltonianFlowAction_apply hF hcomm hc y (p c) (dp u)
-  have hy' : (hσ.hamiltonianFlowAction hF hcomm hc (p c)).toMul y = y := hy
-  rw [hy'] at h1
-  exact h1.symm
-
 /-- **The period one-forms are closed.** Let `s` be a local section of `F` near `c`, differentiable
 at `c`, and let `λ`, differentiable at `c`, be a family of periods along it: `λ c'` is a period of
 `s c'` for `c'` near `c`. Then the derivative of `λ` at `c` is symmetric for the dot product:
@@ -142,41 +100,26 @@ theorem fderiv_dotProduct_comm_of_mem_hamiltonianFlowStabilizer
     (hps : ∀ᶠ c' in 𝓝 c, p c' ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c'))
     (u w : ι → ℝ) :
     fderiv ℝ p c u ⬝ᵥ w = fderiv ℝ p c w ⬝ᵥ u := by
-  set B : LinearMap.BilinForm ℝ (TangentSpace I (s c)) := SmoothForm.bilinFormAt σ (s c) with hB
-  -- `dF ∘ ds = id`, since `F ∘ s = id` near `c`.
-  have hFds (v : ι → ℝ) :
-      mfderiv I 𝓘(ℝ, ι → ℝ) F (s c) (mfderiv 𝓘(ℝ, ι → ℝ) I s c v) = v := by
-    have hFs' : (F ∘ s) =ᶠ[𝓝 c] id := hFs
-    have h := hFs'.mfderiv_eq (I := 𝓘(ℝ, ι → ℝ)) (I' := 𝓘(ℝ, ι → ℝ))
-    rw [mfderiv_comp c (hF.mdifferentiableAt (by simp)) hs, mfderiv_id] at h
-    exact congrArg (fun L : (ι → ℝ) →L[ℝ] (ι → ℝ) ↦ L v) h
-  -- `σ(X_{Fᵢ}, v) = dFᵢ(v)`, and `σ(X_{Fᵢ}, X_{Fₖ}) = {Fᵢ, Fₖ} = 0`.
-  have hXv (i : ι) (v : TangentSpace I (s c)) :
-      B (σ.hamiltonianVectorField (F · i) (s c)) v = mfderiv I 𝓘(ℝ, ι → ℝ) F (s c) v i := by
-    rw [hB, SmoothForm.bilinFormAt_apply, hσ.isNondegenerate.eval₂_hamiltonianVectorField,
-      mvfderiv_apply (hF.mdifferentiableAt (by simp)) i]
-    simp only [ContinuousLinearMap.comp_apply, mvfderiv_apply_eq_mfderiv_apply]
+  -- Moving `s` by `λ` adds `∑ᵢ dλᵢ ∧ dcᵢ` to `s^* σ`, but `c' ↦ λ(c') • s(c')` agrees with `s`
+  -- near `c`, so this added form vanishes.
+  have h := hσ.eval₂_mfderiv_hamiltonianFlowAction_section hF hcomm hc hs hFs hp u w
+  have hΦ : (fun c' ↦ (hσ.hamiltonianFlowAction hF hcomm hc (p c')).toMul (s c')) =ᶠ[𝓝 c] s :=
+    hps.mono fun c' h ↦ (hσ.mem_hamiltonianFlowStabilizer hF hcomm hc).1 h
+  have hd (v : ι → ℝ) :
+      mfderiv 𝓘(ℝ, ι → ℝ) I
+          (fun c' ↦ (hσ.hamiltonianFlowAction hF hcomm hc (p c')).toMul (s c')) c v =
+        mfderiv 𝓘(ℝ, ι → ℝ) I s c v := by
+    -- `tangentSpaceCast` is the identity on the underlying vectors.
+    rw [hΦ.mfderiv_eq]
     rfl
-  have hvX (i : ι) (v : TangentSpace I (s c)) :
-      B v (σ.hamiltonianVectorField (F · i) (s c)) = -mfderiv I 𝓘(ℝ, ι → ℝ) F (s c) v i := by
-    rw [← hXv, hB, SmoothForm.bilinFormAt_apply, SmoothForm.bilinFormAt_apply,
-      SmoothBundleForm.eval₂_swap]
-  have hFX (i k : ι) :
-      mfderiv I 𝓘(ℝ, ι → ℝ) F (s c) (σ.hamiltonianVectorField (F · k) (s c)) i = 0 := by
-    rw [← hXv, hB, SmoothForm.bilinFormAt_apply, ← poissonBracket_def]
-    exact hcomm i k (s c)
-  -- Pair the identities `P (ds u) = ds u - ∑ᵢ (Dλ u)ᵢ X_{Fᵢ}` for `u` and `w` by `σ_y`, using that
-  -- `P` is symplectic.
-  have h := hσ.eval₂_mfderiv_hamiltonianFlowAction_of_mem_hamiltonianFlowStabilizer hF hcomm hc
-    hps.self_of_nhds (mfderiv 𝓘(ℝ, ι → ℝ) I s c u) (mfderiv 𝓘(ℝ, ι → ℝ) I s c w)
-  rw [hσ.mfderiv_hamiltonianFlowAction_mfderiv_section hF hcomm hc hs hp hps,
-    hσ.mfderiv_hamiltonianFlowAction_mfderiv_section hF hcomm hc hs hp hps,
-    ← SmoothForm.bilinFormAt_apply, ← SmoothForm.bilinFormAt_apply, ← hB] at h
-  simp only [map_sub, LinearMap.sub_apply, map_sum, map_smul, LinearMap.sum_apply,
-    LinearMap.smul_apply, hXv, hvX, hFX, hFds, smul_eq_mul, mul_zero, Finset.sum_const_zero,
-    sub_zero, mul_neg, Finset.sum_neg_distrib] at h
-  simp only [dotProduct]
-  linarith
+  -- Evaluate `σ` at the point `s c` rather than at its other spelling `λ(c) • s(c)`; all tangent
+  -- spaces of `M` are the model space by definition, so the tangent vectors need no transport.
+  have hy : ∀ y, y = s c → ∀ v v' : TangentSpace I y,
+      SmoothBundleForm.eval₂ σ y v v' = SmoothBundleForm.eval₂ σ (s c) v v' := by
+    rintro _ rfl _ _
+    rfl
+  rw [hd, hd] at h
+  linarith [(hy _ hΦ.self_of_nhds _ _).symm.trans h]
 
 /-- **Action functions.** Let `s` be a differentiable section of `F` over a convex open set `D`,
 and let `λ` be a differentiable family of periods along it: `λ c` is a period of `s c` for every

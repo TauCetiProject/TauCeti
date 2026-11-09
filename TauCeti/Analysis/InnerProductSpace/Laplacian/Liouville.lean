@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Integrable nonnegative subharmonic functions
@@ -34,7 +35,7 @@ theorem eq_zero_of_integrable_of_nonneg_of_laplacian_nonneg
   apply le_antisymm _ (hf₀ x)
   by_contra! hx
   have hv : 0 < μ.real (ball (0 : E) 1) :=
-    ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
+    Metric.measureReal_ball_pos μ 0 one_pos
   have ht : Tendsto (fun r : ℝ ↦ r ^ Module.finrank ℝ E * μ.real (ball (0 : E) 1) * f x)
       atTop atTop :=
     ((tendsto_pow_atTop (ne_of_gt Module.finrank_pos)).atTop_mul_const hv).atTop_mul_const hx

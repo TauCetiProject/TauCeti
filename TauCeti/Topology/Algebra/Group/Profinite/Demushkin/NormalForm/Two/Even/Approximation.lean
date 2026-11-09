@@ -78,6 +78,73 @@ open Subgroup
 
 variable {n : ℕ} {χ : freeProP 2 (Fin n) →ₜ* ℤ_[2]ˣ}
 
+/-- The crossed-homomorphism half of the constrained successive approximation at `r_f`: an
+endomorphism `φ` of `F` all of whose generator corrections `xᵢ⁻¹ φ(xᵢ)` lie in `λ₁(F)` and in
+the exponent-sum kernel at `x₄` carries `w = x₁² (x₁, x₂) x₃^(2^f) ⋯` to an element whose
+quotient into `r` is killed by every coordinate crossed homomorphism for `χ` except the one at
+`x₂`. -/
+private theorem inv_apply_demushkinWordTwoEven_mul_mem_of_forall_crossedHom_eq_zero
+    (hn3 : 3 < n) {f : ℕ} (hf : 2 ≤ f)
+    (h₁ : χ (of ⟨1, by omega⟩) = -1)
+    (h₃ : (χ (of ⟨3, hn3⟩) : ℤ_[2]) * (1 - 2 ^ f) = 1)
+    (hχ : ∀ j : Fin n, j ≠ ⟨1, by omega⟩ → j ≠ ⟨3, hn3⟩ → χ (of j) = 1)
+    {r : freeProP 2 (Fin n)} (hrX : r ∈ exponentSumKer 2 (Fin n) ⟨3, hn3⟩)
+    (hrD : ∀ i : Fin n, i ≠ ⟨1, by omega⟩ → crossedHom χ (Pi.single i 1) r = 0)
+    (φ : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n))
+    (hφX : ∀ i, (of i)⁻¹ * φ (of i) ∈
+      exponentSumKer 2 (Fin n) ⟨3, hn3⟩ ⊓ pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1) :
+    (φ (demushkinWordTwoEven 0 f n (freeProPGen 2 n)))⁻¹ * r ∈
+        exponentSumKer 2 (Fin n) ⟨3, hn3⟩ ∧
+      ∀ i : Fin n, i ≠ ⟨1, by omega⟩ →
+        crossedHom χ (Pi.single i 1)
+          ((φ (demushkinWordTwoEven 0 f n (freeProPGen 2 n)))⁻¹ * r) = 0 := by
+  classical
+  let i₁ : Fin n := ⟨1, by omega⟩
+  let i₃ : Fin n := ⟨3, hn3⟩
+  let w : pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1 :=
+    ⟨demushkinWordTwoEven 0 f n (freeProPGen 2 n),
+      demushkinWordTwoEven_mem_pLowerCentralSeries_one (dvd_zero 2) (by omega) n _⟩
+  let X := exponentSumKer 2 (Fin n) i₃
+  let ωφ : Fin n → pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1 := fun i ↦
+      (⟨(of i)⁻¹ * φ (of i), (hφX i).2⟩ :
+        pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1)
+  have hφeq : φ = basisModification ωφ :=
+    hom_ext fun i ↦ by rw [basisModification_of, mul_inv_cancel_left]
+  have hωχ (j : Fin n) : χ (ωφ j) = 1 :=
+    χ.apply_eq_one_of_mem_exponentSumKer_of_mem_pLowerCentralSeries_one
+      (i := i₃) (fun k hk ↦ by
+        by_cases hk₁ : k = i₁
+        · rw [hk₁, h₁, neg_one_sq]
+        · rw [hχ k hk₁ hk, one_pow]) (hφX j).1 (hφX j).2
+  have hφwX : φ w ∈ X :=
+    (φ.apply_mem_exponentSumKer_iff_of_forall_inv_mul_apply_mem (fun i ↦ (hφX i).1) _).2
+      (by simp [w])
+  refine ⟨mul_mem (inv_mem hφwX) hrX, ?_⟩
+  intro i hi
+  have hφw : crossedHom χ (Pi.single i 1)
+      (φ (demushkinWordTwoEven 0 f n (freeProPGen 2 n))) = 0 := by
+    rw [hφeq]
+    let hF := isCrossedHom_crossedHom χ (Pi.single i 1)
+    have hw : crossedHom χ (Pi.single i 1)
+        (demushkinWordTwoEven 0 f n (freeProPGen 2 n)) = 0 :=
+      hF.map_demushkinWordTwoEven_eq_zero (by omega)
+        (by rw [freeProPGen_of_lt 2 (by omega), h₁]; norm_num)
+        (by rw [freeProPGen_of_lt 2 hn3]; exact h₃)
+        fun k hk₁ hk₃ ↦ by
+          by_cases hk : k < n
+          · rw [freeProPGen_of_lt 2 hk]
+            exact hχ _ (fun e ↦ hk₁ (congrArg Fin.val e))
+              (fun e ↦ hk₃ (congrArg Fin.val e))
+          · rw [freeProPGen_eq_one_of_le 2 (not_lt.mp hk), map_one]
+    have := hF.map_inv_mul_basisModification_demushkinWordTwoEven_eq_zero
+      hn3 h₁ h₃ hχ ωφ hωχ
+    rw [TauCeti.map_demushkinWordTwoEven]
+    simpa [hF.map_mul, hF.map_inv, hw] using this
+  generalize φ (demushkinWordTwoEven 0 f n (freeProPGen 2 n)) = u at hφw ⊢
+  simp [(isCrossedHom_crossedHom χ (Pi.single i 1)).map_mul,
+    (isCrossedHom_crossedHom χ (Pi.single i 1)).map_inv, hφw, hrD i hi]
+
+
 /-- **Constrained successive approximation for the second dyadic even-rank family** (Labute,
 §4, Lemmas 3–4 and Theorem 6). Let `n ≥ 4` be even, `f ≥ 2`, and let `χ` take the
 normal-form
@@ -117,64 +184,18 @@ theorem exists_continuousMulEquiv_apply_demushkinWordTwoEven_zero_eq_of_forall_c
   let X := exponentSumKer 2 (Fin n) i₃
   let Z : Set (freeProP 2 (Fin n)) := {z | z ∈ X ∧
     ∀ i : Fin n, i ≠ i₁ → crossedHom χ (Pi.single i 1) z = 0}
-  have hmapX (ω : Fin n → pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1)
-      (hω : ∀ j, (ω j : freeProP 2 (Fin n)) ∈ X) {c : freeProP 2 (Fin n)} (hc : c ∈ X) :
-      basisModification ω c ∈ X := by
-    dsimp only [X] at hc ⊢
-    rw [mem_exponentSumKer_iff] at hc ⊢
-    rw [toAdd_exponentSum_basisModification, Finset.sum_apply]
-    refine Finset.sum_eq_zero fun j _ ↦ ?_
-    rw [Pi.smul_apply, Pi.add_apply, mem_exponentSumKer_iff.mp (hω j), add_zero]
-    by_cases hj : j = i₃
-    · subst j
-      simp [hc]
-    · simp [hj]
   refine exists_continuousMulEquiv_apply_eq Z (fun _ ↦ X ⊓ pLowerCentralSeries 2 _ 1)
     (fun _ ↦ (isClosed_exponentSumKer i₃).inter (isClosed_pLowerCentralSeries 1))
     ?_ w r hρ ?_ ?_
   · intro ω hω _ c hc
     rw [mem_inf] at hc ⊢
-    exact ⟨hmapX ω (fun j ↦ (hω j).1) hc.1,
+    exact ⟨((basisModification ω).apply_mem_exponentSumKer_iff_of_forall_inv_mul_apply_mem
+        (fun j ↦ by rw [basisModification_of, inv_mul_cancel_left]; exact (hω j).1) c).2 hc.1,
       (basisModification ω).toMonoidHom.map_pLowerCentralSeries_le
         (basisModification ω).continuous 1 (mem_map_of_mem _ hc.2)⟩
-  · intro φ hφ hφX
-    replace hφX : ∀ i, (of i)⁻¹ * φ (of i) ∈ X := fun i ↦ (hφX i).1
-    let ωφ : Fin n → pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1 := fun i ↦
-        (⟨(of i)⁻¹ * φ (of i), hφ (of i)⟩ :
-          pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1)
-    have hφeq : φ = basisModification ωφ :=
-      hom_ext fun i ↦ by rw [basisModification_of, mul_inv_cancel_left]
-    have hωχ (j : Fin n) : χ (ωφ j) = 1 :=
-      χ.apply_eq_one_of_mem_exponentSumKer_of_mem_pLowerCentralSeries_one
-        (i := i₃) (fun k hk ↦ by
-          by_cases hk₁ : k = i₁
-          · rw [hk₁, h₁, neg_one_sq]
-          · rw [hχ k hk₁ hk, one_pow]) (hφX j) (hφ (of j))
-    have hφwX : φ w ∈ X := by
-      rw [hφeq]
-      exact hmapX ωφ hφX (by simp [X, w, i₃])
-    refine ⟨mul_mem (inv_mem hφwX) hrX, ?_⟩
-    intro i hi
-    have hφw : crossedHom χ (Pi.single i 1) (φ w) = 0 := by
-      rw [hφeq]
-      let hF := isCrossedHom_crossedHom χ (Pi.single i 1)
-      have hw : crossedHom χ (Pi.single i 1)
-          (demushkinWordTwoEven 0 f n (freeProPGen 2 n)) = 0 :=
-        hF.map_demushkinWordTwoEven_eq_zero (by omega)
-          (by rw [freeProPGen_of_lt 2 (by omega), h₁]; norm_num)
-          (by rw [freeProPGen_of_lt 2 hn3]; exact h₃)
-          fun k hk₁ hk₃ ↦ by
-            by_cases hk : k < n
-            · rw [freeProPGen_of_lt 2 hk]
-              exact hχ _ (fun e ↦ hk₁ (congrArg Fin.val e))
-                (fun e ↦ hk₃ (congrArg Fin.val e))
-            · rw [freeProPGen_eq_one_of_le 2 (not_lt.mp hk), map_one]
-      have := hF.map_inv_mul_basisModification_demushkinWordTwoEven_eq_zero
-        hn3 h₁ h₃ hχ ωφ hωχ
-      rw [TauCeti.map_demushkinWordTwoEven]
-      simpa [hF.map_mul, hF.map_inv, hw] using this
-    simp [(isCrossedHom_crossedHom χ (Pi.single i 1)).map_mul,
-      (isCrossedHom_crossedHom χ (Pi.single i 1)).map_inv, hφw, hrD i hi]
+  · intro φ _ hφX
+    exact inv_apply_demushkinWordTwoEven_mul_mem_of_forall_crossedHom_eq_zero hn3 hf h₁ h₃ hχ hrX
+      hrD φ hφX
   · intro m hm z hz
     have hzX : gradedMk 2 (freeProP 2 (Fin n)) (m + 1) z ∈
         gradedPieceOf 2 X (m + 1) :=

@@ -8,61 +8,72 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Action.Basic
 
 /-!
-# The symplectic form in action-angle coordinates
+# The angle map and its pullback of the symplectic form
 
 Let `σ` be a symplectic form on a boundaryless manifold `M`, and let `F : M → (ι → ℝ)` be a smooth
 family of pairwise Poisson-commuting functions with complete Hamiltonian vector fields, with the
 conventions `ι_{X_f} σ = df` and `{f, g} = σ(X_f, X_g) = df(X_g)`. Their flows generate an action
 `v • y` of `ι → ℝ` on `M` (`TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowAction`).
 
-Let `s` be a local section of `F`, `F (s c) = c`. Sweeping it by the action gives the map
-`P (v, c) = v • s c`, and this file computes the pullback of `σ` along it:
+## Moving a section by the flow action
 
-`P^* σ = ∑ᵢ dvᵢ ∧ dcᵢ + pr^* (s^* σ)`.
+For a section `s` of `F`, so that `F ∘ s = id`, moving `s` by a map `h : (ι → ℝ) → (ι → ℝ)`
+changes `s^* σ` by the exact form `∑ᵢ dhᵢ ∧ dcᵢ`
+(`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_hamiltonianFlowAction_section`); the moved map
+`h • s` is again a section. Choosing `h` with `∑ᵢ dhᵢ ∧ dcᵢ = -s^* σ` therefore turns `s` into an
+isotropic section, `s^* σ = 0`, which is Lagrangian when `M` has dimension `2 |ι|`.
 
-Indeed the `v`-directions are the Hamiltonian vectors `X_{Fᵢ}`, which pair with each other to the
-vanishing brackets `{Fᵢ, Fⱼ}` and with a vector `Y` to `dFᵢ(Y)`, while the action of `v` is
-symplectic and preserves `F`. So the sweep of an isotropic section, `s^* σ = 0`, pulls `σ` back to
-the standard form `∑ᵢ dvᵢ ∧ dcᵢ`.
+## The angle map
 
-Now let `λ⁽ⁱ⁾` be a differentiable family of periods along `s`, `λ⁽ⁱ⁾(c) • s c = s c`, and let
-`Aᵢ` be corresponding action functions, `dAᵢ = (2π)⁻¹ ∑ⱼ λ⁽ⁱ⁾ⱼ dcⱼ`. Near a compact regular
-component of a level, both are provided by
-`TauCeti.SmoothTwoForm.IsSymplectic.exists_isLocalDiffeomorphAt_action_of_isCompact`. The
-*angle map*
+Let `λ⁽ⁱ⁾` be a family of periods along `s`, `λ⁽ⁱ⁾(c) • s(c) = s(c)`, and let `A` be action
+variables for it, `dAᵢ = (2π)⁻¹ ∑ⱼ λ⁽ⁱ⁾ⱼ dcⱼ`
+(`TauCeti.SmoothTwoForm.IsSymplectic.exists_isLocalDiffeomorphAt_action_of_isCompact`). The
+**angle map** (`TauCeti.SmoothTwoForm.IsSymplectic.angleMap`) is
 
-`Q (θ, c) = ((2π)⁻¹ ∑ᵢ θᵢ λ⁽ⁱ⁾(c)) • s c`
+`Ψ(θ, c) = (∑ᵢ (θᵢ / 2π) λ⁽ⁱ⁾(c)) • s(c)`.
 
-is `2π`-periodic in each angle `θᵢ`, and it pulls `σ` back to
+It maps `(θ, c)` into the level `F⁻¹(c)`, and it is `2π`-periodic in each angle `θᵢ`. When the
+`λ⁽ⁱ⁾(c)` are a basis of the period lattice of `s(c)`, two angles have the same image exactly when
+they differ by `2π ℤ^ι`, so `θ ↦ Ψ(θ, c)` descends to an injective map from the torus
+`(ℝ / 2πℤ)^ι`. Since the period one-forms `∑ⱼ λ⁽ⁱ⁾ⱼ dcⱼ` are closed, the pullback of `σ` along
+`Ψ` is
 
-`Q^* σ = ∑ᵢ dθᵢ ∧ dAᵢ + pr^* (s^* σ)`.
+`Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ + s^* σ`
 
-The terms in which `θ` multiplies the derivative of `λ⁽ⁱ⁾` cancel because the period one-forms
-`∑ⱼ λ⁽ⁱ⁾ⱼ dcⱼ` are closed
-(`TauCeti.SmoothTwoForm.IsSymplectic.fderiv_dotProduct_comm_of_mem_hamiltonianFlowStabilizer`).
-Finally, writing the values as `c = g(I)` for a local right inverse `g` of the action map `A`, the
-map `R (θ, I) = Q (θ, g I)` pulls `σ` back to
+(`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_angleMap`), and for an isotropic section `s`
+it is `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ`. This pullback identity is not yet the Liouville–Arnold normal form
+`σ = ∑ᵢ dθᵢ ∧ dIᵢ`: that reading needs `(θ, c) ↦ Ψ(θ, c)` to be a local diffeomorphism, so that
+`(θ, A)` are coordinates, and this is not proved here.
 
-`R^* σ = ∑ᵢ dθᵢ ∧ dIᵢ + pr^* ((s ∘ g)^* σ)`,
+## Action-angle coordinates
 
-which is `∑ᵢ dθᵢ ∧ dIᵢ` when `s` is isotropic: the coordinates `(θ, I)` are canonical. All
-statements are pointwise and need differentiability only at the point considered. The existence of
-an isotropic section and the descent of `θ` to the torus `(ℝ / 2πℤ)^ι` are not treated here.
+Writing the values as `c = g(I)` for a local right inverse `g` of the action map `A`, the map
+`(θ, I) ↦ Ψ(θ, g I)` pulls `σ` back to
+
+`∑ᵢ dθᵢ ∧ dIᵢ + (s ∘ g)^* σ`
+
+(`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_angleMap_comp_prodMap`), which is
+`∑ᵢ dθᵢ ∧ dIᵢ` when `s` is isotropic: in the parameters `(θ, I)` the pullback of `σ` is the
+standard form.
+
+## Main definitions
+
+* `TauCeti.SmoothTwoForm.IsSymplectic.angleMap`: the angle map `(θ, c) ↦ Ψ(θ, c)`.
 
 ## Main results
 
 All in the namespace `TauCeti.SmoothTwoForm.IsSymplectic`:
 
-* `mfderiv_hamiltonianFlowAction_section_apply`: the derivative of the sweep `(v, c) ↦ v • s c`.
-* `eval₂_mfderiv_hamiltonianFlowAction_section`: the sweep pulls `σ` back to
-  `∑ᵢ dvᵢ ∧ dcᵢ + pr^* (s^* σ)`; `eval₂_mfderiv_hamiltonianFlowAction_section_of_isotropic`: for an
-  isotropic section, to `∑ᵢ dvᵢ ∧ dcᵢ`.
-* `eval₂_mfderiv_hamiltonianFlowAction_angle`: the angle map pulls `σ` back to
-  `∑ᵢ dθᵢ ∧ dAᵢ + pr^* (s^* σ)`.
-* `hamiltonianFlowAction_angle_add_two_pi_mul`: the angle map is `2π`-periodic in each angle.
-* `eval₂_mfderiv_hamiltonianFlowAction_actionAngle`: in the coordinates `(θ, I)`, `σ` is
-  `∑ᵢ dθᵢ ∧ dIᵢ + pr^* ((s ∘ g)^* σ)`;
-  `eval₂_mfderiv_hamiltonianFlowAction_actionAngle_of_isotropic`: for an isotropic section, it is
+* `apply_angleMap`, `contMDiffOn_angleMap`, `mdifferentiableAt_angleMap`: the angle map takes
+  values in the levels of `F`, it is smooth, and it is differentiable wherever `s` and the
+  `λ⁽ⁱ⁾` are.
+* `angleMap_add_two_pi_mul_intCast`, `angleMap_eq_angleMap_iff`: the angle map is `2π`-periodic in
+  the angles, and injective modulo `2π ℤ^ι` for a basis of periods.
+* `eval₂_mfderiv_angleMap`: `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ + s^* σ`.
+* `eval₂_mfderiv_angleMap_of_eval₂_eq_zero`: `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ` for an isotropic section.
+* `eval₂_mfderiv_angleMap_comp_prodMap`: in the parameters `(θ, I)`, with `c = g(I)` for a local
+  right inverse `g` of `A`, the pullback of `σ` is `∑ᵢ dθᵢ ∧ dIᵢ + (s ∘ g)^* σ`;
+  `eval₂_mfderiv_angleMap_comp_prodMap_of_eval₂_eq_zero`: for an isotropic section, it is
   `∑ᵢ dθᵢ ∧ dIᵢ`.
 
 ## References
@@ -70,7 +81,7 @@ All in the namespace `TauCeti.SmoothTwoForm.IsSymplectic`:
 * V. I. Arnold, *Mathematical Methods of Classical Mechanics*, 2nd ed., Graduate Texts in
   Mathematics 60, Springer, 1989, Section 50 (action-angle variables).
 * J. J. Duistermaat, *On global action-angle coordinates*, Comm. Pure Appl. Math. 33 (1980),
-  687–706, Section 1.
+  687–706 (Lagrangian sections and the symplectic form in action-angle coordinates).
 * A. Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Mathematics 1764,
   Springer, 2001, Section 18.4.
 -/
@@ -94,285 +105,247 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   {ι : Type*} [Fintype ι] {F : M → ι → ℝ} (hF : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ F)
   (hcomm : ∀ i j x, σ.poissonBracket (F · i) (F · j) x = 0)
   (hc : ∀ i, IsCompleteVectorField (σ.hamiltonianVectorField (F · i)))
-  {s : (ι → ℝ) → M} {p : ι → (ι → ℝ) → ι → ℝ} {A : (ι → ℝ) → ι → ℝ} {c : ι → ℝ}
 
 include hσ hF hcomm hc
 
-/-! ### Sweeping a section by the Hamiltonian flow action -/
+/-! ### The angle map -/
 
-/-- **The derivative of the sweep of a section.** The map `(v, c) ↦ v • s c` has derivative
-`(a, b) ↦ ∑ᵢ aᵢ X_{Fᵢ}(v • s c) + d(v •)(ds b)` at `(v, c)`. -/
-theorem mfderiv_hamiltonianFlowAction_section_apply (hs : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I s c)
-    (v a b : ι → ℝ) :
-    mfderiv (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I
-        (fun q : (ι → ℝ) × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc q.1).toMul (s q.2))
-        (v, c) (a, b) =
-      ∑ i, a i • σ.hamiltonianVectorField (F · i)
-          ((hσ.hamiltonianFlowAction hF hcomm hc v).toMul (s c)) +
-        mfderiv I I (hσ.hamiltonianFlowAction hF hcomm hc v).toMul (s c)
-          (mfderiv 𝓘(ℝ, ι → ℝ) I s c b) := by
-  have hGd : MDifferentiableAt (𝓘(ℝ, ι → ℝ).prod I) I
-      (fun q : (ι → ℝ) × M ↦ (hσ.hamiltonianFlowAction hF hcomm hc q.1).toMul q.2) (v, s c) :=
-    (hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).mdifferentiableAt (by simp)
-  have hPd : MDifferentiableAt (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I
-      (fun q : (ι → ℝ) × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc q.1).toMul (s q.2))
-      (v, c) :=
-    hGd.comp (v, c) (mdifferentiableAt_fst.prodMk (hs.comp (v, c) mdifferentiableAt_snd))
-  have hΦ : MDifferentiableAt I I (hσ.hamiltonianFlowAction hF hcomm hc v).toMul (s c) :=
-    (hσ.hamiltonianFlowAction hF hcomm hc v).toMul.contMDiff.mdifferentiableAt (by simp)
-  rw [mfderiv_prod_eq_add_apply (v := ((a, b) : (ι → ℝ) × (ι → ℝ))) hPd]
-  congr 1
-  · exact hσ.mfderiv_hamiltonianFlowAction_apply hF hcomm hc (s c) v a
-  · exact mfderiv_comp_apply c hΦ hs b
+/-- The **angle map** of a map `s : (ι → ℝ) → M` and a family of vectors `λ⁽ⁱ⁾(c)`, `i : ι`,
+depending on `c : ι → ℝ`:
 
-/-- **The sweep of a section pulls `σ` back to `∑ᵢ dvᵢ ∧ dcᵢ + pr^* (s^* σ)`.** Let `s` be a local
-section of `F` near `c`, differentiable at `c`. The derivative of the sweep `(v, c) ↦ v • s c`
-carries `(a, b)` and `(a', b')` to vectors whose `σ`-pairing is
-`a ⬝ᵥ b' - a' ⬝ᵥ b + σ(ds b, ds b')`. -/
-theorem eval₂_mfderiv_hamiltonianFlowAction_section (hs : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I s c)
-    (hFs : ∀ᶠ c' in 𝓝 c, F (s c') = c') (v a b a' b' : ι → ℝ) :
-    SmoothBundleForm.eval₂ σ ((hσ.hamiltonianFlowAction hF hcomm hc v).toMul (s c))
-        (mfderiv (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I
-          (fun q : (ι → ℝ) × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc q.1).toMul (s q.2))
-          (v, c) (a, b))
-        (mfderiv (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I
-          (fun q : (ι → ℝ) × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc q.1).toMul (s q.2))
-          (v, c) (a', b')) =
-      a ⬝ᵥ b' - a' ⬝ᵥ b +
-        SmoothBundleForm.eval₂ σ (s c) (mfderiv 𝓘(ℝ, ι → ℝ) I s c b)
-          (mfderiv 𝓘(ℝ, ι → ℝ) I s c b') := by
-  rw [hσ.mfderiv_hamiltonianFlowAction_section_apply hF hcomm hc hs,
-    hσ.mfderiv_hamiltonianFlowAction_section_apply hF hcomm hc hs]
-  have hΦ : MDifferentiableAt I I (hσ.hamiltonianFlowAction hF hcomm hc v).toMul (s c) :=
-    (hσ.hamiltonianFlowAction hF hcomm hc v).toMul.contMDiff.mdifferentiableAt (by simp)
-  -- The action of `v` is symplectic: it preserves the pairing of `ds b` and `ds b'`.
-  have hΦσ (u w : TangentSpace I (s c)) :
-      SmoothBundleForm.eval₂ σ ((hσ.hamiltonianFlowAction hF hcomm hc v).toMul (s c))
-          (mfderiv I I (hσ.hamiltonianFlowAction hF hcomm hc v).toMul (s c) u)
-          (mfderiv I I (hσ.hamiltonianFlowAction hF hcomm hc v).toMul (s c) w) =
-        SmoothBundleForm.eval₂ σ (s c) u w := by
-    have h := SmoothForm.eval₂_mpullback _
-      (hσ.hamiltonianFlowAction hF hcomm hc v).toMul.contMDiff σ (s c) u w
-    rw [hσ.mpullback_hamiltonianFlowAction] at h
-    exact h.symm
-  set z := (hσ.hamiltonianFlowAction hF hcomm hc v).toMul (s c) with hz
-  set B : LinearMap.BilinForm ℝ (TangentSpace I z) := SmoothForm.bilinFormAt σ z with hB
-  have hFd : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F z := hF.mdifferentiableAt (by simp)
-  -- `σ(X_{Fᵢ}, w) = dFᵢ(w)`, and `σ(X_{Fᵢ}, X_{Fₖ}) = {Fᵢ, Fₖ} = 0`.
-  have hXv (i : ι) (w : TangentSpace I z) :
-      B (σ.hamiltonianVectorField (F · i) z) w = mfderiv I 𝓘(ℝ, ι → ℝ) F z w i := by
-    rw [hB, SmoothForm.bilinFormAt_apply,
-      hσ.isNondegenerate.eval₂_hamiltonianVectorField_eq_mfderiv_apply hFd]
-  have hvX (i : ι) (w : TangentSpace I z) :
-      B w (σ.hamiltonianVectorField (F · i) z) = -mfderiv I 𝓘(ℝ, ι → ℝ) F z w i := by
-    rw [← hXv, hB, SmoothForm.bilinFormAt_apply, SmoothForm.bilinFormAt_apply,
-      SmoothBundleForm.eval₂_swap]
-  have hFX (i k : ι) :
-      mfderiv I 𝓘(ℝ, ι → ℝ) F z (σ.hamiltonianVectorField (F · k) z) i = 0 := by
-    rw [← hXv, hB, SmoothForm.bilinFormAt_apply, ← poissonBracket_def]
-    exact hcomm i k z
-  -- `dF ∘ d(v •) ∘ ds = id`, since `F (v • s c') = F (s c') = c'` near `c`.
-  have hFΦs (u : ι → ℝ) :
-      mfderiv I 𝓘(ℝ, ι → ℝ) F z
-        (mfderiv I I (hσ.hamiltonianFlowAction hF hcomm hc v).toMul (s c)
-          (mfderiv 𝓘(ℝ, ι → ℝ) I s c u)) = u := by
-    have hid : (F ∘ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul ∘ s) =ᶠ[𝓝 c] id :=
-      hFs.mono fun c' h ↦ by
-        simp only [comp_apply, id, hσ.apply_hamiltonianFlowAction hF hcomm hc, h]
-    have h := hid.mfderiv_eq (I := 𝓘(ℝ, ι → ℝ)) (I' := 𝓘(ℝ, ι → ℝ))
-    rw [mfderiv_comp c hFd (hΦ.comp c hs), mfderiv_comp c hΦ hs, mfderiv_id] at h
-    exact congrArg (fun L : (ι → ℝ) →L[ℝ] (ι → ℝ) ↦ L u) h
-  rw [← SmoothForm.bilinFormAt_apply, ← hB, ← hΦσ]
-  simp only [map_add, map_sum, map_smul, LinearMap.add_apply, LinearMap.sum_apply,
-    LinearMap.smul_apply, hXv, hvX, hFX, hFΦs, smul_eq_mul, mul_zero, Finset.sum_const_zero,
-    zero_add, mul_neg, Finset.sum_neg_distrib, dotProduct]
-  rw [hB, SmoothForm.bilinFormAt_apply]
-  ring
+`(θ, c) ↦ (∑ᵢ (θᵢ / 2π) λ⁽ⁱ⁾(c)) • s(c)`.
 
-/-- **The sweep of an isotropic section pulls `σ` back to `∑ᵢ dvᵢ ∧ dcᵢ`.** If moreover the
-section `s` is isotropic at `c`, the `σ`-pairing of the images of `(a, b)` and `(a', b')` under the
-derivative of the sweep is `a ⬝ᵥ b' - a' ⬝ᵥ b`. -/
-theorem eval₂_mfderiv_hamiltonianFlowAction_section_of_isotropic
+When `s` is a section of `F` and the `λ⁽ⁱ⁾` are periods along it, this map is `2π`-periodic in
+each angle `θᵢ` (`TauCeti.SmoothTwoForm.IsSymplectic.angleMap_add_two_pi_mul_intCast`), and it pulls
+`σ` back to `∑ᵢ dθᵢ ∧ dAᵢ + s^* σ` for action variables `A`
+(`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_angleMap`). -/
+noncomputable def angleMap (s : (ι → ℝ) → M) (p : ι → (ι → ℝ) → ι → ℝ) (q : (ι → ℝ) × (ι → ℝ)) :
+    M :=
+  (hσ.hamiltonianFlowAction hF hcomm hc (∑ i, ((2 * π)⁻¹ * q.1 i) • p i q.2)).toMul (s q.2)
+
+variable {s : (ι → ℝ) → M} {p : ι → (ι → ℝ) → ι → ℝ} {c : ι → ℝ}
+
+theorem angleMap_apply (q : (ι → ℝ) × (ι → ℝ)) :
+    hσ.angleMap hF hcomm hc s p q =
+      (hσ.hamiltonianFlowAction hF hcomm hc (∑ i, ((2 * π)⁻¹ * q.1 i) • p i q.2)).toMul (s q.2) :=
+  (rfl)
+
+/-- The angle map takes values in the levels of `F`: `F (Ψ(θ, c)) = F (s c)`. In particular, for a
+section `s` of `F` near `c`, the angle map sends `(θ, c)` into the level `F⁻¹(c)`. -/
+theorem apply_angleMap (q : (ι → ℝ) × (ι → ℝ)) :
+    F (hσ.angleMap hF hcomm hc s p q) = F (s q.2) :=
+  hσ.apply_hamiltonianFlowAction hF hcomm hc _ _
+
+/-- **The angle map is `2π`-periodic in the angles.** If the `λ⁽ⁱ⁾(c)` are periods of `s c`, then
+shifting the angles by `2π m`, `m ∈ ℤ^ι`, does not change the image. -/
+theorem angleMap_add_two_pi_mul_intCast
+    (hp : ∀ i, p i c ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c)) (θ : ι → ℝ)
+    (m : ι → ℤ) :
+    hσ.angleMap hF hcomm hc s p (θ + fun i ↦ 2 * π * m i, c) =
+      hσ.angleMap hF hcomm hc s p (θ, c) := by
+  have hsum : ∑ i, ((2 * π)⁻¹ * (θ + fun i ↦ 2 * π * m i) i) • p i c =
+      ∑ i, ((2 * π)⁻¹ * θ i) • p i c + ∑ i, m i • p i c := by
+    rw [← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [Pi.add_apply, mul_add, add_smul, ← mul_assoc,
+      inv_mul_cancel₀ (by positivity), one_mul, Int.cast_smul_eq_zsmul]
+  have hmem : ∑ i, m i • p i c ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c) :=
+    AddSubgroup.sum_mem _ fun i _ ↦ AddSubgroup.zsmul_mem _ (hp i) _
+  rw [angleMap_apply, angleMap_apply, hsum, hσ.hamiltonianFlowAction_add_apply hF hcomm hc,
+    (hσ.mem_hamiltonianFlowStabilizer hF hcomm hc).1 hmem]
+
+/-- **The angle map is injective modulo `2π ℤ^ι`.** If the `λ⁽ⁱ⁾(c)` are linearly independent and
+generate the period lattice of `s c`, then two angles have the same image under the angle map
+exactly when they differ by `2π m` for some `m ∈ ℤ^ι`. Thus `θ ↦ Ψ(θ, c)` descends to an injective
+map from the torus `(ℝ / 2πℤ)^ι`. -/
+theorem angleMap_eq_angleMap_iff (hli : LinearIndependent ℝ fun i ↦ p i c)
+    (hcl : hσ.hamiltonianFlowStabilizer hF hcomm hc (s c) =
+      AddSubgroup.closure (range fun i ↦ p i c)) {θ θ' : ι → ℝ} :
+    hσ.angleMap hF hcomm hc s p (θ, c) = hσ.angleMap hF hcomm hc s p (θ', c) ↔
+      ∃ m : ι → ℤ, θ' = θ + fun i ↦ 2 * π * m i := by
+  have hdiff : -∑ i, ((2 * π)⁻¹ * θ i) • p i c + ∑ i, ((2 * π)⁻¹ * θ' i) • p i c =
+      ∑ i, ((2 * π)⁻¹ * (θ' i - θ i)) • p i c := by
+    rw [neg_add_eq_sub, ← Finset.sum_sub_distrib]
+    simp only [mul_sub, sub_smul]
+  rw [angleMap_apply, angleMap_apply, hσ.hamiltonianFlowAction_apply_eq_iff hF hcomm hc, hcl,
+    ← Submodule.span_int_eq_addSubgroupClosure, Submodule.mem_toAddSubgroup,
+    Submodule.mem_span_range_iff_exists_fun, hdiff]
+  have h2π : (2 * π) ≠ 0 := by positivity
+  constructor
+  · rintro ⟨m, hm⟩
+    refine ⟨m, funext fun i ↦ ?_⟩
+    have key := Fintype.linearIndependent_iff.1 hli (fun i ↦ (m i : ℝ) - (2 * π)⁻¹ * (θ' i - θ i))
+      (by simp only [sub_smul, Finset.sum_sub_distrib, Int.cast_smul_eq_zsmul, hm, sub_self]) i
+    rw [sub_eq_zero] at key
+    rw [Pi.add_apply, key]
+    field_simp
+    ring
+  · rintro ⟨m, rfl⟩
+    refine ⟨m, Finset.sum_congr rfl fun i _ ↦ ?_⟩
+    rw [Pi.add_apply, add_sub_cancel_left, ← mul_assoc, inv_mul_cancel₀ h2π, one_mul,
+      Int.cast_smul_eq_zsmul]
+
+/-- **The angle map is smooth.** If `s` and the `λ⁽ⁱ⁾` are smooth on `t`, the angle map is smooth
+on `(ι → ℝ) × t`. -/
+theorem contMDiffOn_angleMap {t : Set (ι → ℝ)} (hs : ContMDiffOn 𝓘(ℝ, ι → ℝ) I ∞ s t)
+    (hp : ∀ i, ContDiffOn ℝ ∞ (p i) t) :
+    ContMDiffOn 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I ∞ (hσ.angleMap hF hcomm hc s p) (univ ×ˢ t) := by
+  have ht : MapsTo Prod.snd (univ ×ˢ t : Set ((ι → ℝ) × (ι → ℝ))) t := fun q hq ↦ (mem_prod.1 hq).2
+  have hu : ContDiffOn ℝ ∞
+      (fun q : (ι → ℝ) × (ι → ℝ) ↦ ∑ i, ((2 * π)⁻¹ * q.1 i) • p i q.2) (univ ×ˢ t) :=
+    ContDiffOn.sum fun i _ ↦
+      (by fun_prop : ContDiff ℝ ∞ fun q : (ι → ℝ) × (ι → ℝ) ↦ (2 * π)⁻¹ * q.1 i).contDiffOn.fun_smul
+        ((hp i).comp contDiffOn_snd ht)
+  have hsn : ContMDiffOn 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I ∞ (s ∘ Prod.snd) (univ ×ˢ t) :=
+    hs.comp contDiffOn_snd.contMDiffOn ht
+  rw [show hσ.angleMap hF hcomm hc s p = _ from funext (hσ.angleMap_apply hF hcomm hc)]
+  exact (hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).comp_contMDiffOn
+    (hu.contMDiffOn.prodMk hsn)
+
+/-- **The pullback of `σ` along the angle map.** Let `s` be a section of `F` near `c`,
+differentiable at `c`, let the `λ⁽ⁱ⁾`, differentiable at `c`, be periods along it near `c`, and
+let `A` be action variables for them at `c`, `dAᵢ = (2π)⁻¹ ∑ⱼ λ⁽ⁱ⁾ⱼ dcⱼ`. Then at `(θ, c)` the
+angle map pulls `σ` back to
+
+`Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ + s^* σ`.
+
+The terms coming from the variation of the periods with `c` cancel because the period one-forms
+`∑ⱼ λ⁽ⁱ⁾ⱼ dcⱼ` are closed
+(`TauCeti.SmoothTwoForm.IsSymplectic.fderiv_dotProduct_comm_of_mem_hamiltonianFlowStabilizer`). -/
+theorem eval₂_mfderiv_angleMap {A : (ι → ℝ) → ι → ℝ}
     (hs : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I s c) (hFs : ∀ᶠ c' in 𝓝 c, F (s c') = c')
-    (hiso : ∀ b b', SmoothBundleForm.eval₂ σ (s c) (mfderiv 𝓘(ℝ, ι → ℝ) I s c b)
-      (mfderiv 𝓘(ℝ, ι → ℝ) I s c b') = 0)
-    (v a b a' b' : ι → ℝ) :
-    SmoothBundleForm.eval₂ σ ((hσ.hamiltonianFlowAction hF hcomm hc v).toMul (s c))
-        (mfderiv (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I
-          (fun q : (ι → ℝ) × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc q.1).toMul (s q.2))
-          (v, c) (a, b))
-        (mfderiv (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I
-          (fun q : (ι → ℝ) × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc q.1).toMul (s q.2))
-          (v, c) (a', b')) =
-      a ⬝ᵥ b' - a' ⬝ᵥ b := by
-  rw [hσ.eval₂_mfderiv_hamiltonianFlowAction_section hF hcomm hc hs hFs, add_eq_left]
-  exact hiso b b'
-
-/-! ### Angle coordinates -/
-
-/-- The derivative of the angle map `(θ, c) ↦ ((2π)⁻¹ ∑ᵢ θᵢ λ⁽ⁱ⁾(c)) • s c` is the derivative of
-the sweep, applied to the derivative `(a, b) ↦ ((2π)⁻¹ ∑ᵢ (aᵢ λ⁽ⁱ⁾(c) + θᵢ Dλ⁽ⁱ⁾(b)), b)` of the
-change of variables `(θ, c) ↦ ((2π)⁻¹ ∑ᵢ θᵢ λ⁽ⁱ⁾(c), c)`. -/
-private theorem mdifferentiableAt_and_mfderiv_hamiltonianFlowAction_angle
-    (hs : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I s c) (hp : ∀ i, DifferentiableAt ℝ (p i) c)
-    (θ : ι → ℝ) :
-    MDifferentiableAt (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I
-        (fun q : (ι → ℝ) × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc
-          ((2 * π)⁻¹ • ∑ i, q.1 i • p i q.2)).toMul (s q.2)) (θ, c) ∧
-      ∀ a b : ι → ℝ, mfderiv (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I
-        (fun q : (ι → ℝ) × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc
-          ((2 * π)⁻¹ • ∑ i, q.1 i • p i q.2)).toMul (s q.2)) (θ, c) (a, b) =
-      mfderiv (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I
-        (fun q : (ι → ℝ) × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc q.1).toMul (s q.2))
-        ((2 * π)⁻¹ • ∑ i, θ i • p i c, c)
-        ((2 * π)⁻¹ • ∑ i, (a i • p i c + θ i • fderiv ℝ (p i) c b), b) := by
-  -- The change of variables `(θ, c) ↦ ((2π)⁻¹ ∑ᵢ θᵢ λ⁽ⁱ⁾(c), c)` and its derivative.
-  set W : (ι → ℝ) × (ι → ℝ) →L[ℝ] ι → ℝ := (2 * π)⁻¹ • ∑ i,
-    (θ i • (fderiv ℝ (p i) c).comp (ContinuousLinearMap.snd ℝ (ι → ℝ) (ι → ℝ)) +
-      ((proj i : (ι → ℝ) →L[ℝ] ℝ).comp (ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ))).smulRight
-        (p i c)) with hW
-  have hw : HasFDerivAt (fun q : (ι → ℝ) × (ι → ℝ) ↦ (2 * π)⁻¹ • ∑ i, q.1 i • p i q.2) W
-      (θ, c) := by
-    have hterm (i : ι) : HasFDerivAt (fun q : (ι → ℝ) × (ι → ℝ) ↦ q.1 i • p i q.2)
-        (θ i • (fderiv ℝ (p i) c).comp (ContinuousLinearMap.snd ℝ (ι → ℝ) (ι → ℝ)) +
-          ((proj i : (ι → ℝ) →L[ℝ] ℝ).comp
-            (ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ))).smulRight (p i c)) (θ, c) :=
-      ((proj i : (ι → ℝ) →L[ℝ] ℝ).hasFDerivAt.comp (θ, c) hasFDerivAt_fst).smul
-        ((hp i).hasFDerivAt.comp (θ, c) hasFDerivAt_snd)
-    exact (HasFDerivAt.fun_sum (u := Finset.univ) fun i _ ↦ hterm i).const_smul ((2 * π)⁻¹ : ℝ)
-  have hg : HasMFDerivAt (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ))
-      (fun q : (ι → ℝ) × (ι → ℝ) ↦ ((2 * π)⁻¹ • ∑ i, q.1 i • p i q.2, q.2)) (θ, c)
-      (W.prod (ContinuousLinearMap.snd ℝ (ι → ℝ) (ι → ℝ))) := by
-    have h := hasMFDerivAt_iff_hasFDerivAt.2 (hw.prodMk hasFDerivAt_snd)
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-    exact h
-  -- The sweep is differentiable, so the angle map is differentiable by the chain rule.
-  have hGd : MDifferentiableAt (𝓘(ℝ, ι → ℝ).prod I) I
-      (fun q : (ι → ℝ) × M ↦ (hσ.hamiltonianFlowAction hF hcomm hc q.1).toMul q.2)
-      ((2 * π)⁻¹ • ∑ i, θ i • p i c, s c) :=
-    (hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).mdifferentiableAt (by simp)
-  have hPd : MDifferentiableAt (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I
-      (fun q : (ι → ℝ) × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc q.1).toMul (s q.2))
-      ((2 * π)⁻¹ • ∑ i, θ i • p i c, c) :=
-    hGd.comp ((2 * π)⁻¹ • ∑ i, θ i • p i c, c)
-      (mdifferentiableAt_fst.prodMk (hs.comp _ mdifferentiableAt_snd))
-  have hQ := hPd.hasMFDerivAt.comp (θ, c) hg
-  refine ⟨hQ.mdifferentiableAt, fun a b ↦ (congrArg (fun L ↦ L (a, b)) hQ.mfderiv).trans ?_⟩
-  have hWab : W (a, b) = (2 * π)⁻¹ • ∑ i, (a i • p i c + θ i • fderiv ℝ (p i) c b) := by
-    simp [hW, add_comm]
-  -- The tangent spaces of the product model are `(ι → ℝ) × (ι → ℝ)` only after unfolding
-  -- `TangentSpace`, so the composite is evaluated with `erw`.
-  erw [ContinuousLinearMap.comp_apply]
-  exact congrArg _ (Prod.ext hWab rfl)
-
-/-- **The angle map pulls `σ` back to `∑ᵢ dθᵢ ∧ dAᵢ + pr^* (s^* σ)`.** Let `s` be a local section of
-`F` near `c`, differentiable at `c`, let `λ⁽ⁱ⁾` be families of periods along `s`, differentiable at
-`c`, and let `Aᵢ` have differential `(2π)⁻¹ ∑ⱼ λ⁽ⁱ⁾ⱼ(c) dcⱼ` at `c`. The derivative of the angle map
-`(θ, c) ↦ ((2π)⁻¹ ∑ᵢ θᵢ λ⁽ⁱ⁾(c)) • s c` carries `(α, β)` and `(α', β')` to vectors whose
-`σ`-pairing is `∑ᵢ (αᵢ dAᵢ(β') - α'ᵢ dAᵢ(β)) + σ(ds β, ds β')`. -/
-theorem eval₂_mfderiv_hamiltonianFlowAction_angle (hs : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I s c)
-    (hFs : ∀ᶠ c' in 𝓝 c, F (s c') = c') (hp : ∀ i, DifferentiableAt ℝ (p i) c)
+    (hp : ∀ i, DifferentiableAt ℝ (p i) c)
     (hps : ∀ i, ∀ᶠ c' in 𝓝 c, p i c' ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c'))
     (hA : ∀ i, HasFDerivAt (fun c ↦ A c i)
       ((2 * π)⁻¹ • ∑ j, p i c j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) c)
-    (θ α β α' β' : ι → ℝ) :
-    SmoothBundleForm.eval₂ σ
-        ((hσ.hamiltonianFlowAction hF hcomm hc ((2 * π)⁻¹ • ∑ i, θ i • p i c)).toMul (s c))
-        (mfderiv (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I
-          (fun q : (ι → ℝ) × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc
-            ((2 * π)⁻¹ • ∑ i, q.1 i • p i q.2)).toMul (s q.2)) (θ, c) (α, β))
-        (mfderiv (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I
-          (fun q : (ι → ℝ) × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc
-            ((2 * π)⁻¹ • ∑ i, q.1 i • p i q.2)).toMul (s q.2)) (θ, c) (α', β')) =
-      ∑ i, (α i * fderiv ℝ (fun c ↦ A c i) c β' - α' i * fderiv ℝ (fun c ↦ A c i) c β) +
-        SmoothBundleForm.eval₂ σ (s c) (mfderiv 𝓘(ℝ, ι → ℝ) I s c β)
-          (mfderiv 𝓘(ℝ, ι → ℝ) I s c β') := by
-  obtain ⟨-, hQ⟩ :=
-    hσ.mdifferentiableAt_and_mfderiv_hamiltonianFlowAction_angle hF hcomm hc hs hp θ
-  rw [hQ, hQ, hσ.eval₂_mfderiv_hamiltonianFlowAction_section hF hcomm hc hs hFs, add_left_inj]
-  -- The terms in which `θ` multiplies `Dλ⁽ⁱ⁾` cancel, since the period one-forms are closed.
-  have hsym (i : ι) : fderiv ℝ (p i) c β' ⬝ᵥ β = fderiv ℝ (p i) c β ⬝ᵥ β' :=
+    (θ a a' b b' : ι → ℝ) :
+    SmoothBundleForm.eval₂ σ (hσ.angleMap hF hcomm hc s p (θ, c))
+        (mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I (hσ.angleMap hF hcomm hc s p) (θ, c) (a, b))
+        (mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I (hσ.angleMap hF hcomm hc s p) (θ, c) (a', b')) =
+      ∑ i, (a i * fderiv ℝ (fun c ↦ A c i) c b' - a' i * fderiv ℝ (fun c ↦ A c i) c b) +
+        SmoothBundleForm.eval₂ σ (s c) (mfderiv 𝓘(ℝ, ι → ℝ) I s c b)
+          (mfderiv 𝓘(ℝ, ι → ℝ) I s c b') := by
+  set u : (ι → ℝ) × (ι → ℝ) → ι → ℝ := fun q ↦ ∑ i, ((2 * π)⁻¹ * q.1 i) • p i q.2
+  -- The derivative of the vector `u (θ, c) = ∑ᵢ (θᵢ / 2π) λ⁽ⁱ⁾(c)` by which `s c` is moved.
+  have hu : HasFDerivAt u (∑ i, (((2 * π)⁻¹ * θ i) •
+      (fderiv ℝ (p i) c).comp (ContinuousLinearMap.snd ℝ (ι → ℝ) (ι → ℝ)) +
+        ((2 * π)⁻¹ • ((proj i : (ι → ℝ) →L[ℝ] ℝ).comp
+          (ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ)))).smulRight (p i c))) (θ, c) :=
+    HasFDerivAt.fun_sum fun i _ ↦
+      ((((proj i : (ι → ℝ) →L[ℝ] ℝ).comp
+        (ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ))).hasFDerivAt).const_mul _).smul
+        ((hp i).hasFDerivAt.comp (θ, c) hasFDerivAt_snd)
+  have hdu (a b : ι → ℝ) : mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) 𝓘(ℝ, ι → ℝ) u (θ, c) (a, b) =
+      ∑ i, ((2 * π)⁻¹ * θ i) • fderiv ℝ (p i) c b + ∑ i, ((2 * π)⁻¹ * a i) • p i c := by
+    have h : fderiv ℝ u (θ, c) (a, b) =
+        ∑ i, ((2 * π)⁻¹ * θ i) • fderiv ℝ (p i) c b + ∑ i, ((2 * π)⁻¹ * a i) • p i c := by
+      rw [hu.fderiv, ← Finset.sum_add_distrib]
+      simp [smul_eq_mul, mul_assoc]
+    exact (congrArg (fun L ↦ L (a, b)) hu.differentiableAt.hasFDerivAt.hasMFDerivAt.mfderiv).trans h
+  -- The moved map is `s ∘ Prod.snd`, and `F ∘ s ∘ Prod.snd = Prod.snd` near `(θ, c)`.
+  have hsd : MDifferentiableAt 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I (fun q ↦ s q.2) (θ, c) :=
+    hs.comp (θ, c) differentiableAt_snd.mdifferentiableAt
+  have hds (a b : ι → ℝ) :
+      mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I (fun q ↦ s q.2) (θ, c) (a, b) =
+        mfderiv 𝓘(ℝ, ι → ℝ) I s c b := by
+    have h := hs.hasMFDerivAt.comp (θ, c) (hasFDerivAt_snd :
+      HasFDerivAt (Prod.snd : (ι → ℝ) × (ι → ℝ) → ι → ℝ) (ContinuousLinearMap.snd ℝ (ι → ℝ) (ι → ℝ))
+        (θ, c)).hasMFDerivAt
+    exact congrArg (fun L ↦ L (a, b)) h.mfderiv
+  have hdFs (a b : ι → ℝ) :
+      mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) 𝓘(ℝ, ι → ℝ) (F ∘ fun q ↦ s q.2) (θ, c) (a, b) = b := by
+    have hev : (F ∘ fun q : (ι → ℝ) × (ι → ℝ) ↦ s q.2) =ᶠ[𝓝 (θ, c)] Prod.snd :=
+      (continuous_snd.tendsto (θ, c)).eventually hFs
+    exact congrArg (fun L ↦ L (a, b)) ((hasFDerivAt_snd :
+      HasFDerivAt (Prod.snd : (ι → ℝ) × (ι → ℝ) → ι → ℝ) (ContinuousLinearMap.snd ℝ (ι → ℝ) (ι → ℝ))
+        (θ, c)).congr_of_eventuallyEq hev).hasMFDerivAt.mfderiv
+  -- The period one-forms are closed.
+  have hsym (i : ι) : fderiv ℝ (p i) c b ⬝ᵥ b' = fderiv ℝ (p i) c b' ⬝ᵥ b :=
     hσ.fderiv_dotProduct_comm_of_mem_hamiltonianFlowStabilizer hF hcomm hc hs hFs (hp i) (hps i)
-      β' β
-  have hdA (i : ι) (u : ι → ℝ) :
-      fderiv ℝ (fun c ↦ A c i) c u = (2 * π)⁻¹ * (p i c ⬝ᵥ u) := by
+      b b'
+  have hdA (i : ι) (w : ι → ℝ) : fderiv ℝ (fun c ↦ A c i) c w = (2 * π)⁻¹ * (p i c ⬝ᵥ w) := by
     rw [(hA i).fderiv]
-    simp [dotProduct, Finset.mul_sum]
-  simp only [hdA, smul_dotProduct, sum_dotProduct, add_dotProduct, smul_eq_mul, hsym]
-  rw [← mul_sub, ← Finset.sum_sub_distrib, Finset.mul_sum]
-  exact Finset.sum_congr rfl fun i _ ↦ by ring
+    simp [dotProduct, Finset.mul_sum, mul_comm]
+  rw [show hσ.angleMap hF hcomm hc s p = fun q ↦
+    (hσ.hamiltonianFlowAction hF hcomm hc (u q)).toMul (s q.2) from
+      funext (hσ.angleMap_apply hF hcomm hc)]
+  refine (hσ.eval₂_mfderiv_hamiltonianFlowAction_comp hF hcomm hc
+    (hu.differentiableAt.mdifferentiableAt) hsd (a, b) (a', b')).trans ?_
+  rw [hdu, hdu, hds, hds, hdFs, hdFs]
+  simp only [add_dotProduct, sum_dotProduct, smul_dotProduct, smul_eq_mul, hsym, hdA]
+  rw [add_sub_add_left_eq_sub, ← Finset.sum_sub_distrib, add_comm]
+  congr 1
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  ring
 
-/-- **The angle map is `2π`-periodic in each angle.** If the `λ⁽ⁱ⁾(c)` are periods of `s c`,
-translating the angles `θ` by `2π n`, for an integer vector `n`, does not change the point
-`((2π)⁻¹ ∑ᵢ θᵢ λ⁽ⁱ⁾(c)) • s c`. -/
-theorem hamiltonianFlowAction_angle_add_two_pi_mul
-    (hpc : ∀ i, p i c ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c)) (θ : ι → ℝ)
-    (n : ι → ℤ) :
-    (hσ.hamiltonianFlowAction hF hcomm hc
-        ((2 * π)⁻¹ • ∑ i, (θ i + 2 * π * n i) • p i c)).toMul (s c) =
-      (hσ.hamiltonianFlowAction hF hcomm hc ((2 * π)⁻¹ • ∑ i, θ i • p i c)).toMul (s c) := by
-  have hsplit : (2 * π)⁻¹ • ∑ i, (θ i + 2 * π * n i) • p i c =
-      (2 * π)⁻¹ • ∑ i, θ i • p i c + ∑ i, n i • p i c := by
-    simp only [add_smul, Finset.sum_add_distrib, smul_add, Finset.smul_sum, smul_smul,
-      ← Int.cast_smul_eq_zsmul ℝ]
-    congr 1
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [← mul_assoc, inv_mul_cancel₀ (by positivity), one_mul]
-  have hn : ∑ i, n i • p i c ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c) :=
-    AddSubgroup.sum_mem _ fun i _ ↦ AddSubgroup.zsmul_mem _ (hpc i) _
-  rw [hsplit, hσ.hamiltonianFlowAction_add_apply hF hcomm hc,
-    (hσ.mem_hamiltonianFlowStabilizer hF hcomm hc).1 hn]
+/-- **The angle map of an isotropic section.** If, in addition to the hypotheses of
+`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_angleMap`, the section `s` is isotropic at `c`,
+`s^* σ = 0`, then the angle map pulls `σ` back to `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ` at `(θ, c)`. Once `Ψ`
+is known to be a local diffeomorphism, so that `(θ, A)` are coordinates, this gives the
+Liouville–Arnold normal form `σ = ∑ᵢ dθᵢ ∧ dIᵢ` in the angles `θᵢ` and the actions `Iᵢ = Aᵢ`. -/
+theorem eval₂_mfderiv_angleMap_of_eval₂_eq_zero {A : (ι → ℝ) → ι → ℝ}
+    (hs : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I s c) (hFs : ∀ᶠ c' in 𝓝 c, F (s c') = c')
+    (hL : ∀ b b', SmoothBundleForm.eval₂ σ (s c) (mfderiv 𝓘(ℝ, ι → ℝ) I s c b)
+      (mfderiv 𝓘(ℝ, ι → ℝ) I s c b') = 0)
+    (hp : ∀ i, DifferentiableAt ℝ (p i) c)
+    (hps : ∀ i, ∀ᶠ c' in 𝓝 c, p i c' ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c'))
+    (hA : ∀ i, HasFDerivAt (fun c ↦ A c i)
+      ((2 * π)⁻¹ • ∑ j, p i c j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) c)
+    (θ a a' b b' : ι → ℝ) :
+    SmoothBundleForm.eval₂ σ (hσ.angleMap hF hcomm hc s p (θ, c))
+        (mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I (hσ.angleMap hF hcomm hc s p) (θ, c) (a, b))
+        (mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I (hσ.angleMap hF hcomm hc s p) (θ, c) (a', b')) =
+      ∑ i, (a i * fderiv ℝ (fun c ↦ A c i) c b' - a' i * fderiv ℝ (fun c ↦ A c i) c b) := by
+  rw [hσ.eval₂_mfderiv_angleMap hF hcomm hc hs hFs hp hps hA]
+  exact add_eq_left.2 (hL b b')
 
-/-! ### Action-angle coordinates -/
+/-- The angle map is differentiable at `(θ, c)` if `s` and the `λ⁽ⁱ⁾` are differentiable at `c`. -/
+theorem mdifferentiableAt_angleMap (hs : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I s c)
+    (hp : ∀ i, DifferentiableAt ℝ (p i) c) (θ : ι → ℝ) :
+    MDifferentiableAt 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I (hσ.angleMap hF hcomm hc s p) (θ, c) := by
+  have hu : DifferentiableAt ℝ
+      (fun q : (ι → ℝ) × (ι → ℝ) ↦ ∑ i, ((2 * π)⁻¹ * q.1 i) • p i q.2) (θ, c) :=
+    DifferentiableAt.fun_sum fun i _ ↦
+      (((differentiableAt_apply i _).comp (θ, c) differentiableAt_fst).const_mul _).smul
+        ((hp i).comp (θ, c) differentiableAt_snd)
+  rw [show hσ.angleMap hF hcomm hc s p = _ from funext (hσ.angleMap_apply hF hcomm hc)]
+  exact ((hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).mdifferentiableAt (by simp)).comp
+    (θ, c) (hu.mdifferentiableAt.prodMk (hs.comp (θ, c) differentiableAt_snd.mdifferentiableAt))
 
-/-- **`σ = ∑ᵢ dθᵢ ∧ dIᵢ + pr^* ((s ∘ g)^* σ)` in the coordinates `(θ, I)`.** In the setting of
-`eval₂_mfderiv_hamiltonianFlowAction_angle`, let `g` be a local right inverse of the action map
-`A` near `y`, with derivative `G` at `y`, and put `c = g y`. The derivative of
-`(θ, I) ↦ ((2π)⁻¹ ∑ᵢ θᵢ λ⁽ⁱ⁾(g I)) • s (g I)` carries `(α, β)` and `(α', β')` to vectors whose
-`σ`-pairing is `α ⬝ᵥ β' - α' ⬝ᵥ β + σ(ds (G β), ds (G β'))`. -/
-theorem eval₂_mfderiv_hamiltonianFlowAction_actionAngle {g : (ι → ℝ) → ι → ℝ}
+/-- **The pullback of `σ` in action-angle coordinates.** In the setting of
+`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_angleMap`, let `g` be a local right inverse of
+the action map `A` near `y`, with derivative `G` at `y`. Then at `(θ, y)` the map
+`(θ, I) ↦ Ψ(θ, g I)` pulls `σ` back to
+
+`∑ᵢ dθᵢ ∧ dIᵢ + (s ∘ g)^* σ`. -/
+theorem eval₂_mfderiv_angleMap_comp_prodMap {A g : (ι → ℝ) → ι → ℝ}
     {G : (ι → ℝ) →L[ℝ] ι → ℝ} {y : ι → ℝ} (hg : HasFDerivAt g G y)
     (hAg : ∀ᶠ y' in 𝓝 y, A (g y') = y') (hs : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I s (g y))
     (hFs : ∀ᶠ c' in 𝓝 (g y), F (s c') = c') (hp : ∀ i, DifferentiableAt ℝ (p i) (g y))
     (hps : ∀ i, ∀ᶠ c' in 𝓝 (g y), p i c' ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c'))
     (hA : ∀ i, HasFDerivAt (fun c ↦ A c i)
       ((2 * π)⁻¹ • ∑ j, p i (g y) j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) (g y))
-    (θ α β α' β' : ι → ℝ) :
-    SmoothBundleForm.eval₂ σ
-        ((hσ.hamiltonianFlowAction hF hcomm hc ((2 * π)⁻¹ • ∑ i, θ i • p i (g y))).toMul (s (g y)))
-        (mfderiv (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I
-          (fun q : (ι → ℝ) × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc
-            ((2 * π)⁻¹ • ∑ i, q.1 i • p i (g q.2))).toMul (s (g q.2))) (θ, y) (α, β))
-        (mfderiv (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I
-          (fun q : (ι → ℝ) × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc
-            ((2 * π)⁻¹ • ∑ i, q.1 i • p i (g q.2))).toMul (s (g q.2))) (θ, y) (α', β')) =
-      α ⬝ᵥ β' - α' ⬝ᵥ β +
-        SmoothBundleForm.eval₂ σ (s (g y)) (mfderiv 𝓘(ℝ, ι → ℝ) I s (g y) (G β))
-          (mfderiv 𝓘(ℝ, ι → ℝ) I s (g y) (G β')) := by
-  -- The coordinates factor as the angle map after `(θ, I) ↦ (θ, g I)`.
-  have hk₀ : HasFDerivAt (fun q : (ι → ℝ) × (ι → ℝ) ↦ (q.1, g q.2))
+    (θ a a' b b' : ι → ℝ) :
+    SmoothBundleForm.eval₂ σ (hσ.angleMap hF hcomm hc s p (θ, g y))
+        (mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I (hσ.angleMap hF hcomm hc s p ∘ Prod.map id g) (θ, y)
+          (a, b))
+        (mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I (hσ.angleMap hF hcomm hc s p ∘ Prod.map id g) (θ, y)
+          (a', b')) =
+      a ⬝ᵥ b' - a' ⬝ᵥ b +
+        SmoothBundleForm.eval₂ σ (s (g y)) (mfderiv 𝓘(ℝ, ι → ℝ) I s (g y) (G b))
+          (mfderiv 𝓘(ℝ, ι → ℝ) I s (g y) (G b')) := by
+  -- The reparametrization `(θ, I) ↦ (θ, g I)` and the chain rule.
+  have hk : HasFDerivAt (Prod.map id g)
       ((ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ)).prod
         (G.comp (ContinuousLinearMap.snd ℝ (ι → ℝ) (ι → ℝ)))) (θ, y) :=
     hasFDerivAt_fst.prodMk (hg.comp (θ, y) hasFDerivAt_snd)
-  have hk : HasMFDerivAt (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ))
-      (fun q : (ι → ℝ) × (ι → ℝ) ↦ (q.1, g q.2)) (θ, y)
-      ((ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ)).prod
-        (G.comp (ContinuousLinearMap.snd ℝ (ι → ℝ) (ι → ℝ)))) := by
-    have h := hasMFDerivAt_iff_hasFDerivAt.2 hk₀
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-    exact h
-  obtain ⟨hQd, -⟩ :=
-    hσ.mdifferentiableAt_and_mfderiv_hamiltonianFlowAction_angle hF hcomm hc hs hp θ
-  have hR (a b : ι → ℝ) :
-      mfderiv (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I
-        (fun q : (ι → ℝ) × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc
-          ((2 * π)⁻¹ • ∑ i, q.1 i • p i (g q.2))).toMul (s (g q.2))) (θ, y) (a, b) =
-      mfderiv (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I
-        (fun q : (ι → ℝ) × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc
-          ((2 * π)⁻¹ • ∑ i, q.1 i • p i q.2)).toMul (s q.2)) (θ, g y) (a, G b) :=
-    congrArg (fun L ↦ L (a, b)) (hQd.hasMFDerivAt.comp (θ, y) hk).mfderiv
-  rw [hR, hR]
-  rw [hσ.eval₂_mfderiv_hamiltonianFlowAction_angle hF hcomm hc hs hFs hp hps hA, add_left_inj]
+  have hR (u v : ι → ℝ) :
+      mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I (hσ.angleMap hF hcomm hc s p ∘ Prod.map id g) (θ, y)
+          (u, v) =
+        mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I (hσ.angleMap hF hcomm hc s p) (θ, g y) (u, G v) :=
+    congrArg (fun L ↦ L (u, v))
+      ((hσ.mdifferentiableAt_angleMap hF hcomm hc hs hp θ).hasMFDerivAt.comp (θ, y)
+        hk.hasMFDerivAt).mfderiv
   -- `dAᵢ ∘ G = dIᵢ`, since `A ∘ g` is the identity near `y`.
   have hAG (i : ι) (u : ι → ℝ) : fderiv ℝ (fun c ↦ A c i) (g y) (G u) = u i := by
     have h₁ : HasFDerivAt (fun y' ↦ A (g y') i) ((proj i : (ι → ℝ) →L[ℝ] ℝ)) y :=
@@ -380,34 +353,32 @@ theorem eval₂_mfderiv_hamiltonianFlowAction_actionAngle {g : (ι → ℝ) → 
         (hAg.mono fun y' h ↦ by simp [h])
     rw [(hA i).fderiv]
     exact congrArg (fun L : (ι → ℝ) →L[ℝ] ℝ ↦ L u) (((hA i).comp y hg).unique h₁)
+  rw [hR, hR, hσ.eval₂_mfderiv_angleMap hF hcomm hc hs hFs hp hps hA]
   simp only [hAG, dotProduct, Finset.sum_sub_distrib]
 
-/-- **`σ = ∑ᵢ dθᵢ ∧ dIᵢ` in action-angle coordinates.** If moreover the section `s` is isotropic
-at `g y`, the coordinates `(θ, I)` of `eval₂_mfderiv_hamiltonianFlowAction_actionAngle` are
-canonical at `(θ, y)`: the `σ`-pairing of the images of `(α, β)` and `(α', β')` under their
-derivative is `α ⬝ᵥ β' - α' ⬝ᵥ β`. -/
-theorem eval₂_mfderiv_hamiltonianFlowAction_actionAngle_of_isotropic {g : (ι → ℝ) → ι → ℝ}
+/-- **The pullback of `σ` in action-angle coordinates for an isotropic section.** If, in addition
+to the hypotheses of `TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_angleMap_comp_prodMap`, the
+section `s` is isotropic at `g y`, then at `(θ, y)` the map `(θ, I) ↦ Ψ(θ, g I)` pulls `σ` back
+to the standard form `∑ᵢ dθᵢ ∧ dIᵢ`. -/
+theorem eval₂_mfderiv_angleMap_comp_prodMap_of_eval₂_eq_zero {A g : (ι → ℝ) → ι → ℝ}
     {G : (ι → ℝ) →L[ℝ] ι → ℝ} {y : ι → ℝ} (hg : HasFDerivAt g G y)
     (hAg : ∀ᶠ y' in 𝓝 y, A (g y') = y') (hs : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I s (g y))
-    (hFs : ∀ᶠ c' in 𝓝 (g y), F (s c') = c') (hp : ∀ i, DifferentiableAt ℝ (p i) (g y))
+    (hFs : ∀ᶠ c' in 𝓝 (g y), F (s c') = c')
+    (hL : ∀ b b', SmoothBundleForm.eval₂ σ (s (g y)) (mfderiv 𝓘(ℝ, ι → ℝ) I s (g y) b)
+      (mfderiv 𝓘(ℝ, ι → ℝ) I s (g y) b') = 0)
+    (hp : ∀ i, DifferentiableAt ℝ (p i) (g y))
     (hps : ∀ i, ∀ᶠ c' in 𝓝 (g y), p i c' ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c'))
     (hA : ∀ i, HasFDerivAt (fun c ↦ A c i)
       ((2 * π)⁻¹ • ∑ j, p i (g y) j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) (g y))
-    (hiso : ∀ b b', SmoothBundleForm.eval₂ σ (s (g y)) (mfderiv 𝓘(ℝ, ι → ℝ) I s (g y) b)
-      (mfderiv 𝓘(ℝ, ι → ℝ) I s (g y) b') = 0)
-    (θ α β α' β' : ι → ℝ) :
-    SmoothBundleForm.eval₂ σ
-        ((hσ.hamiltonianFlowAction hF hcomm hc ((2 * π)⁻¹ • ∑ i, θ i • p i (g y))).toMul (s (g y)))
-        (mfderiv (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I
-          (fun q : (ι → ℝ) × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc
-            ((2 * π)⁻¹ • ∑ i, q.1 i • p i (g q.2))).toMul (s (g q.2))) (θ, y) (α, β))
-        (mfderiv (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I
-          (fun q : (ι → ℝ) × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc
-            ((2 * π)⁻¹ • ∑ i, q.1 i • p i (g q.2))).toMul (s (g q.2))) (θ, y) (α', β')) =
-      α ⬝ᵥ β' - α' ⬝ᵥ β := by
-  rw [hσ.eval₂_mfderiv_hamiltonianFlowAction_actionAngle hF hcomm hc hg hAg hs hFs hp hps hA,
-    add_eq_left]
-  exact hiso (G β) (G β')
+    (θ a a' b b' : ι → ℝ) :
+    SmoothBundleForm.eval₂ σ (hσ.angleMap hF hcomm hc s p (θ, g y))
+        (mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I (hσ.angleMap hF hcomm hc s p ∘ Prod.map id g) (θ, y)
+          (a, b))
+        (mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I (hσ.angleMap hF hcomm hc s p ∘ Prod.map id g) (θ, y)
+          (a', b')) =
+      a ⬝ᵥ b' - a' ⬝ᵥ b := by
+  rw [hσ.eval₂_mfderiv_angleMap_comp_prodMap hF hcomm hc hg hAg hs hFs hp hps hA]
+  exact add_eq_left.2 (hL (G b) (G b'))
 
 end IsSymplectic
 

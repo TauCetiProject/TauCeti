@@ -471,8 +471,7 @@ theorem map_mk (f : A →ₐ[R] B) {n : ℕ} (phi : reducedCyclicCocycles R B M 
     HomologicalComplex.homologyπ_naturality, ConcreteCategory.comp_apply]
   congr 1
   apply (reducedCyclicCochainComplex R A M).moduleCat_iCycles_injective n
-  rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i,
-    ConcreteCategory.comp_apply, iCycles_toCycles, iCycles_toCycles,
+  rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, iCycles_toCycles, iCycles_toCycles,
     -- Insert a `hom ≫ inv` pair so that the elementwise `reducedCyclicCochainComplexMap_f_apply`,
     -- which is stated through `reducedCyclicCochainComplexXIso`, can fire.
     ← Iso.hom_inv_id_apply (reducedCyclicCochainComplexXIso R A M n)

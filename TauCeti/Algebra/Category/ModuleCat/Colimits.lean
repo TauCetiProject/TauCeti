@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Kernels
 public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.CategoryTheory.Functor.OfSequence
+public import Mathlib.RingTheory.Finiteness.Basic
 public import TauCeti.LinearAlgebra.FreeModule.Filtration
 
 /-!
@@ -45,9 +46,13 @@ the homology of a space exhausted by subspaces whose successive relative homolog
 
 * `TauCeti.ModuleCat.iSup_range_eq_top_of_isColimit`: the ranges of the legs of a colimit cocone
   span its point.
+* `TauCeti.ModuleCat.finite_coproduct_of_finite_support`: a coproduct of finite modules is finite if
+  only finitely many summands are nonzero.
 * `TauCeti.ModuleCat.isIso_of_isIso_app_self`: a natural transformation between
   colimit-preserving functors out of `ModuleCat R` whose component at `R` is invertible is an
   isomorphism.
+* `TauCeti.ModuleCat.exists_injective_of_iso_sigma`: a module isomorphic to a nonempty coproduct
+  of copies of `R` receives an injective linear map from `R`.
 * `ModuleCat.telescopeDiff`: the map `⨁ₙ Fₙ → ⨁ₙ Fₙ`, `x ↦ x - φₙ(x)`, which is injective
   (`ModuleCat.telescopeDiff_injective`).
 * `ModuleCat.telescopeShortComplex`: the telescope sequence of a cocone over `F : ℕ ⥤ ModuleCat R`,
@@ -130,6 +135,40 @@ theorem isIso_of_isIso_app_self {F G : ModuleCat.{u} R ⥤ D}
     have : IsIso (Functor.whiskerLeft (parallelPair f 0) α) := NatIso.isIso_of_isIso_app _
     exact isIso_app_coconePt_of_preservesColimit _ α _ hc
   exact NatIso.isIso_of_isIso_app α
+
+/-- A coproduct of finite modules is finite when only finitely many summands are nonzero.
+The index type itself need not be finite. -/
+theorem finite_coproduct_of_finite_support {ι : Type*} (M : ι → ModuleCat.{v} R)
+    [HasCoproduct M] [∀ i, Module.Finite R (M i)]
+    (hM : {i | ¬ IsZero (M i)}.Finite) : Module.Finite R (∐ M : ModuleCat.{v} R) := by
+  have : Finite {i | ¬ IsZero (M i)} := hM
+  have hrange :
+      (⨆ i, LinearMap.range (Sigma.ι M i).hom) =
+        ⨆ i : {i | ¬ IsZero (M i)}, LinearMap.range (Sigma.ι M i.1).hom := by
+    apply le_antisymm
+    · refine iSup_le fun i ↦ ?_
+      by_cases hi : IsZero (M i)
+      · have hz : Sigma.ι M i = 0 := hi.eq_of_src _ _
+        simp [hz]
+      · exact le_iSup_of_le ⟨i, hi⟩ le_rfl
+    · exact iSup_le fun i ↦
+        le_iSup (fun j ↦ LinearMap.range (Sigma.ι M j).hom) i.1
+  have htop : (⨆ i, LinearMap.range (Sigma.ι M i).hom) = ⊤ := by
+    have h := TauCeti.ModuleCat.iSup_range_eq_top_of_isColimit
+      (colimit.isColimit (Discrete.functor M))
+    have hsurj : Function.Surjective (Discrete.mk : ι → Discrete ι) :=
+      fun ⟨i⟩ ↦ ⟨i, rfl⟩
+    exact (hsurj.iSup_comp _).trans h
+  apply Module.Finite.of_fg_top
+  rw [← htop, hrange]
+  exact Submodule.fg_iSup _ fun i ↦ Submodule.fg_range _
+
+/-- A module isomorphic to a coproduct of copies of `R` indexed by a nonempty type receives an
+injective linear map from `R`, through a coproduct inclusion. -/
+theorem exists_injective_of_iso_sigma {M : ModuleCat.{u} R} {J : Type u} [Nonempty J]
+    (e : M ≅ ∐ fun _ : J ↦ ModuleCat.of R R) : ∃ f : R →ₗ[R] M, Function.Injective f :=
+  let g := Sigma.ι (fun _ : J ↦ ModuleCat.of R R) (Classical.arbitrary J) ≫ e.inv
+  ⟨g.hom, (ModuleCat.mono_iff_injective g).1 inferInstance⟩
 
 end ModuleCat
 
@@ -310,27 +349,18 @@ theorem free_of_isColimit {c : Cocone F} (hc : IsColimit c) (h0 : Module.Free R 
     (hfree : ∀ n : ℕ, Module.Free R
       (F.obj (n + 1) ⧸ LinearMap.range (F.map (homOfLE (n.le_add_right 1))).hom)) :
     Module.Free R c.pt := by
-  -- Filter the colimit by `0` followed by the images of the legs.
-  let N : ℕ → Submodule R c.pt
-    | 0 => ⊥
-    | n + 1 => LinearMap.range (c.ι.app n).hom
+  -- Filter the colimit by the images of the legs.
+  let N (n : ℕ) : Submodule R c.pt := LinearMap.range (c.ι.app n).hom
   have hN (n : ℕ) (x : F.obj n) :
       (c.ι.app (n + 1)).hom (F.map (homOfLE (n.le_add_right 1)) x) = (c.ι.app n).hom x := by
     rw [← ModuleCat.comp_apply, c.w]
   have hι (n : ℕ) := injective_ι_app_of_isColimit F hc hinj n
-  refine Module.Free.of_filtration N (monotone_nat_of_le_succ fun n ↦ ?_) rfl
-    (eq_top_iff.2 ((TauCeti.ModuleCat.iSup_range_eq_top_of_isColimit hc).ge.trans
-      (iSup_le fun n ↦ le_iSup N (n + 1)))) fun n ↦ ?_
-  · rcases n with _ | n
-    · exact bot_le
-    · rintro _ ⟨x, rfl⟩
-      exact ⟨_, hN n x⟩
-  rcases n with _ | n
-  · -- The first subquotient is the image of the leg out of `F₀`.
-    refine .of_equiv ((LinearEquiv.ofInjective _ (hι 0)).trans
-      (Submodule.quotEquivOfEqBot _ ?_).symm)
-    exact (Submodule.comap_bot _).trans (Submodule.ker_subtype _)
-  · -- The leg `F (n + 1) ≃ N (n + 2)` carries the image of `F n` onto `N (n + 1)`.
+  refine Module.Free.of_filtration N (monotone_nat_of_le_succ fun n ↦ ?_)
+    (Module.Free.of_equiv (LinearEquiv.ofInjective _ (hι 0)))
+    (TauCeti.ModuleCat.iSup_range_eq_top_of_isColimit hc) fun n ↦ ?_
+  · rintro _ ⟨x, rfl⟩
+    exact ⟨_, hN n x⟩
+  · -- Each leg carries the image of the preceding transition onto the preceding filtration step.
     have := hfree n
     refine .of_equiv (Submodule.Quotient.equiv
       (LinearMap.range (F.map (homOfLE (n.le_add_right 1))).hom) _
