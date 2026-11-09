@@ -23,7 +23,8 @@ The measure agrees with the ambient product measure on predictable sets. In part
 `(s,t] × A`, with `A` known at `s` and `t ≤ T`, has mass `(t-s) P(A)`. The initial-time
 slice has mass zero, and restricting to a shorter horizon commutes with trimming.
 The integral, almost-everywhere equality, and `MemLp` dictionary identifies predictable
-integrands' energies, representatives, and norms with their ambient time-product counterparts.
+integrands' energies, representatives, and `MemLp` membership with their ambient time-product
+counterparts.
 The integral identities require predictable measurability; trimming does not preserve integrals
 of arbitrary ambient-product-measurable functions.
 
@@ -122,8 +123,7 @@ theorem integral_predictableMeasure {E : Type*} [NormedAddCommGroup E] [NormedSp
     ∫ p, f p ∂ℱ.predictableMeasure P T = ∫ p, f p ∂(timeMeasure T).prod P :=
   (integral_trim ℱ.predictable_le_prod hf).symm
 
-/-- Nonnegative predictable integrals can be computed by ordinary time/sample integration.
-Unlike a real Bochner energy, the lower integral records infinite square energy faithfully. -/
+/-- Nonnegative predictable integrals can be computed by ordinary time/sample integration. -/
 theorem lintegral_predictableMeasure [SFinite P] {f : ℝ≥0 × Ω → ℝ≥0∞}
     (hf : Measurable[ℱ.predictable] f) (T : ℝ≥0) :
     ∫⁻ p, f p ∂ℱ.predictableMeasure P T = ∫⁻ t, ∫⁻ ω, f (t, ω) ∂P ∂timeMeasure T := by
