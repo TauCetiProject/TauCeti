@@ -225,9 +225,9 @@ section Invariance
 
 variable {f : M →ₗ[V] N} {K : Ideal V}
 
-/-- Forward transfer: if `K • M ≤ P` and `f` has almost zero cokernel, then
+/-- If `f : M → N` has almost zero cokernel, `K ≤ m` and `K • M ≤ P`, then
 `K ^ 2 • N ≤ f(P)`. -/
-private theorem pow_two_smul_top_le_map (hf : S.IsAlmostZero (N ⧸ range f)) (hK : K ≤ S.ideal)
+theorem pow_two_smul_top_le_map (hf : S.IsAlmostZero (N ⧸ range f)) (hK : K ≤ S.ideal)
     {P : Submodule V M} (hP : K • (⊤ : Submodule V M) ≤ P) :
     (K ^ 2) • (⊤ : Submodule V N) ≤ P.map f := by
   rw [sq, Submodule.mul_smul]
