@@ -48,7 +48,9 @@ noncomputable def toDensity (φ : V [⋀^Fin m]→ₗ[ℝ] ℝ) (o : Orientation
     Density V m :=
   (refBasis V m).density ((o.signBasis (refBasis V m) : ℝ) * φ (refBasis V m))
 
-private theorem toDensity_apply_basis (φ : V [⋀^Fin m]→ₗ[ℝ] ℝ) (o : Orientation ℝ V (Fin m))
+/-- The density of a top form on a basis is the value of the form on that basis, weighted by the
+sign of the basis relative to the orientation. -/
+theorem toDensity_apply_basis (φ : V [⋀^Fin m]→ₗ[ℝ] ℝ) (o : Orientation ℝ V (Fin m))
     (b : Basis (Fin m) ℝ V) : φ.toDensity o b = (o.signBasis b : ℝ) * φ b := by
   rw [toDensity, Basis.density_apply]
   rcases (refBasis V m).orientation_eq_or_eq_neg o with rfl | rfl
@@ -137,11 +139,6 @@ open AlternatingMap
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V] {m : ℕ}
   [Fact (finrank ℝ V = m)]
-
-omit [FiniteDimensional ℝ V] [Fact (finrank ℝ V = m)] in
-private theorem signBasis_cast_mul_self (o : Orientation ℝ V (Fin m)) (b : Basis (Fin m) ℝ V) :
-    (o.signBasis b : ℝ) * o.signBasis b = 1 := by
-  exact_mod_cast Int.isUnit_mul_self (o.signBasis b).isUnit
 
 /-- For a fixed orientation, passing from a top form to its density is a linear equivalence:
 a density is the density of exactly one top form. -/
