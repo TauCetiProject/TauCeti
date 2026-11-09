@@ -17,8 +17,11 @@ import Mathlib.Topology.UniformSpace.HeineCantor
 
 Remainder bounds and identities for Mathlib's Taylor polynomials `taylorWithinEval f n s x₀ x`,
 including a uniform second-order estimate for functions C² near a compact interval.
-Further applications are:
+The file provides:
 
+* **Uniform second-order remainder.** For a function C² near a compact interval, the
+  second-order Taylor remainder is bounded by `ε * (y - x)²` whenever the increment is
+  sufficiently small, uniformly over endpoints in the interval.
 * **Size of the remainder.** From the Lagrange form of the remainder, if `|f⁽ⁿ⁺¹⁾| ≤ M` between
   `x₀` and `x`, then `|f x - T(x)| ≤ M |x - x₀|ⁿ⁺¹ / (n+1)!`, where `T` is the Taylor polynomial
   of order `n` expanded at `x₀`.
@@ -40,6 +43,10 @@ function divided by its parameter is completely monotone.
 
 ## Main declarations
 
+* `TauCeti.taylorWithinEval_univ_two`: the quadratic Taylor polynomial expressed using ordinary
+  derivatives.
+* `TauCeti.exists_pos_forall_abs_sub_taylorWithinEval_two_le`: a uniform small-coefficient
+  second-order remainder estimate on a compact interval.
 * `TauCeti.abs_sub_taylorWithinEval_le`: a bound on the Taylor remainder when the next derivative
   is bounded, with the error proportional to `|x - x₀|^(n+1)`.
 * `TauCeti.le_taylorWithinEval_of_neg_one_pow_mul_iteratedDerivWithin_nonneg`: if
