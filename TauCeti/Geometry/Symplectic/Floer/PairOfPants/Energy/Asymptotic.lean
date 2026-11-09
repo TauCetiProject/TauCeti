@@ -38,7 +38,12 @@ energy differs from this topological part by at most `B₀ + B₁ + B_∞` for b
 For a solution of the Floer equation with tamed almost complex structures the energy is
 nonnegative, so the topological part is at least `-(B₀ + B₁ + B_∞)`. Once the area is expressed
 through the actions of capped orbits and the product class, this becomes the lower bound on the
-valuation of the output monomials of the pair-of-pants product.
+valuation of the output monomials of the pair-of-pants product. By the one-sided curvature bound
+`SmoothTwoForm.sum_mul_integral_le_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation`, the
+constant `-(B₀ + B₁ + B_∞)` may be replaced by `∫₀¹ h_0 + ∫₀¹ h_1 - ∫₀¹ h_∞` for functions of time
+with `h_q ≤ H_q` on the inputs and `H_∞ ≤ h_∞` on the output. Both sides of the resulting bound
+change by `∑ q, ±∫₀¹ c_q` under a change of normalization `H_q ↦ H_q + c_q(t)`,
+`h_q ↦ h_q + c_q(t)`.
 
 The results are stated for a manifold target, and the vector-space statements are their
 specializations to the constant form `SymplecticForm.constSmooth`.
@@ -54,6 +59,10 @@ specializations to the constant form `SymplecticForm.constSmooth`.
 * `SmoothTwoForm.IsNondegenerate.neg_sum_le_integral_add_sum_of_isComplexLinearMap`,
   `SymplecticForm.neg_sum_le_integral_add_sum_of_isComplexLinearMap`: the lower bound on the
   topological energy of a Floer solution.
+* `SmoothTwoForm.IsNondegenerate.sum_mul_integral_le_integral_add_sum_of_isComplexLinearMap`: the
+  lower bound with the one-sided constant `∫₀¹ h_0 + ∫₀¹ h_1 - ∫₀¹ h_∞` for functions of time
+  `h_q ≤ H_q` on the inputs and `H_∞ ≤ h_∞` on the output, which is invariant under a change of
+  normalization `H_q ↦ H_q + c_q(t)`, `h_q ↦ h_q + c_q(t)`.
 
 ## References
 
@@ -249,6 +258,53 @@ theorem IsNondegenerate.neg_sum_le_integral_add_sum_of_isComplexLinearMap
   have h := abs_le.1
     (hω.abs_integral_floerEnergyDensity_pairOfPantsPerturbation_sub_le hH hHs hB hu hx hE hA)
   linarith [h.2]
+
+/-- **The one-sided lower bound on the topological energy of a pair-of-pants solution, for a
+manifold target.** Under the hypotheses of
+`SmoothTwoForm.IsNondegenerate.neg_sum_le_integral_add_sum_of_isComplexLinearMap`, let `h_q` be
+functions of time, integrable over one period, with `h_q ≤ H_q` on the input ends and
+`H_∞ ≤ h_∞` on the output end, that is `±h_q(t) ≤ ±H_q(t, x)`. Then
+
+`∫₀¹ h_0 + ∫₀¹ h_1 - ∫₀¹ h_∞ ≤ ∫_S u^*ω + ∑ q, ±∫₀¹ H_q(t, x_q(t)) dt`.
+
+Unlike the constant `-(B₀ + B₁ + B_∞)`, the left side changes by the same amount
+`∑ q, ±∫₀¹ c_q` as the right side under a change of normalization `H_q ↦ H_q + c_q(t)`,
+`h_q ↦ h_q + c_q(t)`. -/
+theorem IsNondegenerate.sum_mul_integral_le_integral_add_sum_of_isComplexLinearMap
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q)
+    {h : Puncture → ℝ → ℝ} (hh : ∀ q, IntervalIntegrable (h q) volume 0 1)
+    (hhH : ∀ q t x, q.endSign * h q t ≤ q.endSign * H q t x) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {x : Puncture → ℝ → M}
+    (hx : ∀ q t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (x q t)))
+    (hE : IntegrableOn (ω.floerEnergyDensity
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u)
+      thricePuncturedSphereReal)
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal)
+    {J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedMFDeriv
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z).toLinearMap) :
+    ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, h q t ≤
+      (∫ z in thricePuncturedSphereReal,
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (x q t) := by
+  have hpos := setIntegral_nonneg (μ := volume) isOpen_thricePuncturedSphereReal.measurableSet
+    fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
+  have hR := ω.sum_mul_integral_le_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation hH hHs
+    hh hhH hu.continuousOn
+  rw [hω.integral_floerEnergyDensity_pairOfPantsPerturbation hH hHs hB hu hx hE hA] at hpos
+  linarith
 
 end SmoothTwoForm
 

@@ -71,6 +71,11 @@ form they recover the vector-space definitions.
 * `SmoothTwoForm.hamiltonianCurvature_congr_of_eventuallyEq`,
   `SmoothTwoForm.hamiltonianCurvature_continuation`: the curvature is local in the domain, and a
   continuation perturbation `K = β(s) H_t dt` has curvature `β'(s) H_t`.
+* `SmoothTwoForm.perturbedMFDeriv_add_const`, `SmoothTwoForm.floerEnergyDensity_add_const`,
+  `SmoothTwoForm.hamiltonianCurvature_add_const`: adding target-independent data `a ds + b dt`,
+  such as a change of normalization of the Hamiltonians by functions of time, changes neither the
+  perturbed derivative nor the energy density, and adds `∂s b - ∂t a` to the curvature, which is
+  the curvature of the added data (`SmoothTwoForm.hamiltonianCurvature_const_target`).
 * `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_eq`: the pointwise energy identity.
 * `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_zero_left_nonneg`,
   `SmoothTwoForm.continuous_hamiltonianCurvature_zero_left_comp` and
@@ -364,7 +369,57 @@ theorem hamiltonianCurvature_continuation (ω : SmoothTwoForm I M) {β : ℝ →
     zero_apply, sub_zero]
   exact fderiv_mul_apply_stdComplexLineReal (h := fun t ↦ H t x) hβ hH
 
+/-- The curvature of target-independent data `a ds + b dt` is its exterior derivative
+`∂s b - ∂t a`. -/
+theorem hamiltonianCurvature_const_target (ω : SmoothTwoForm I M) (a b : ℝ × ℝ → ℝ)
+    (z : ℝ × ℝ) (x : M) :
+    ω.hamiltonianCurvature (fun w _ ↦ a w) (fun w _ ↦ b w) z x =
+      fderiv ℝ b z stdComplexLineReal - fderiv ℝ a z stdComplexLineImag := by
+  simp only [hamiltonianCurvature_def, poissonBracket_const_left, sub_zero]
+
 end Curvature
+
+section AddConst
+
+/-! ### Adding target-independent data
+
+Adding to `K = Ks ds + Kt dt` a one-form `a ds + b dt` on the domain which does not depend on the
+target point, for instance changing the Hamiltonians of a perturbation by functions of time, does
+not change the Hamiltonian vector fields. So it changes neither the perturbed derivative, nor the
+Floer equation, nor the energy density, and it adds the exterior derivative `∂s b - ∂t a` to the
+curvature. -/
+
+/-- Adding target-independent data does not change the perturbed derivative. -/
+@[simp]
+theorem perturbedMFDeriv_add_const (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (a b : ℝ × ℝ → ℝ) (u : ℝ × ℝ → M) (z : ℝ × ℝ) :
+    ω.perturbedMFDeriv (fun w y ↦ Ks w y + a w) (fun w y ↦ Kt w y + b w) u z =
+      ω.perturbedMFDeriv Ks Kt u z := by
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  simp only [perturbedMFDeriv_apply, hamiltonianVectorField_add_const]
+
+/-- Adding target-independent data does not change the Floer energy density. -/
+@[simp]
+theorem floerEnergyDensity_add_const (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (a b : ℝ × ℝ → ℝ) (u : ℝ × ℝ → M) (z : ℝ × ℝ) :
+    ω.floerEnergyDensity (fun w y ↦ Ks w y + a w) (fun w y ↦ Kt w y + b w) u z =
+      ω.floerEnergyDensity Ks Kt u z := by
+  rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedMFDeriv_add_const]
+
+/-- Adding target-independent data `a ds + b dt` adds its exterior derivative `∂s b - ∂t a` to
+the curvature. -/
+theorem hamiltonianCurvature_add_const (ω : SmoothTwoForm I M) {a b : ℝ × ℝ → ℝ} {z : ℝ × ℝ}
+    {x : M} (hKs : DifferentiableAt ℝ (fun w ↦ Ks w x) z)
+    (hKt : DifferentiableAt ℝ (fun w ↦ Kt w x) z) (ha : DifferentiableAt ℝ a z)
+    (hb : DifferentiableAt ℝ b z) :
+    ω.hamiltonianCurvature (fun w y ↦ Ks w y + a w) (fun w y ↦ Kt w y + b w) z x =
+      ω.hamiltonianCurvature Ks Kt z x +
+        (fderiv ℝ b z stdComplexLineReal - fderiv ℝ a z stdComplexLineImag) := by
+  simp only [hamiltonianCurvature_def, poissonBracket_def, hamiltonianVectorField_add_const,
+    fderiv_fun_add hKs ha, fderiv_fun_add hKt hb, add_apply]
+  ring
+
+end AddConst
 
 /-! ### Changes of domain coordinates -/
 

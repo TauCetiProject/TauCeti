@@ -123,6 +123,26 @@ theorem pairOfPantsPerturbation_single (q : Puncture) (G : ℝ → M → ℝ) (w
   rw [pairOfPantsPerturbation_def, Fintype.sum_eq_single q fun r hr => by
     simp [Pi.single_eq_of_ne hr], Pi.single_eq_same]
 
+/-- The perturbation is additive in the end Hamiltonians. -/
+theorem pairOfPantsPerturbation_add (H G : Puncture → ℝ → M → ℝ) (w : ℂ) (x : M) :
+    pairOfPantsPerturbation (fun q t y => H q t y + G q t y) w x =
+      pairOfPantsPerturbation H w x + pairOfPantsPerturbation G w x := by
+  simp only [pairOfPantsPerturbation_def, mul_add, add_smul, Finset.sum_add_distrib]
+
+/-- The perturbation of the opposite end Hamiltonians is the opposite perturbation. -/
+theorem pairOfPantsPerturbation_neg (H : Puncture → ℝ → M → ℝ) (w : ℂ) (x : M) :
+    pairOfPantsPerturbation (fun q t y => -H q t y) w x = -pairOfPantsPerturbation H w x := by
+  rw [pairOfPantsPerturbation_def, pairOfPantsPerturbation_def, ← Finset.sum_neg_distrib]
+  refine Finset.sum_congr rfl fun q _ => ContinuousLinearMap.ext fun v => ?_
+  simp
+
+/-- The perturbation of end Hamiltonians which only depend on time does not depend on the target
+point. -/
+theorem pairOfPantsPerturbation_const_target (c : Puncture → ℝ → ℝ) (w : ℂ) (x y : M) :
+    pairOfPantsPerturbation (fun q t (_ : M) => c q t) w x =
+      pairOfPantsPerturbation (fun q t (_ : M) => c q t) w y := by
+  simp only [pairOfPantsPerturbation_def]
+
 /-- The perturbation vanishes at the center of every end. The centers are the punctures `0` and
 `1`, where every signed longitudinal coordinate is at most `0`. -/
 theorem pairOfPantsPerturbation_endCenter (q : Puncture) (x : M) :
