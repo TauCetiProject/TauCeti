@@ -309,15 +309,8 @@ omit [CompleteSpace E] in
 theorem curvatureOperator_neg_second
     (hY : CMDiff ∞ (T% Y)) (hσ : CMDiff ∞ (T% σ)) :
     curvatureOperator cov X (-Y) σ = -curvatureOperator cov X Y σ := by
-  funext x
-  have hYσd : MDiff (T% (fun y ↦ cov σ y (Y y))) :=
-    (cov.contMDiff_apply hY hσ).mdifferentiable (by simp)
-  have hinner : (fun y ↦ cov σ y ((-Y) y)) = -fun y ↦ cov σ y (Y y) :=
-    funext fun y ↦ map_neg (cov σ y) (Y y)
-  rw [Pi.neg_apply, curvatureOperator_apply, curvatureOperator_apply, mlieBracket_neg_right, hinner,
-    cov.isCovariantDerivativeOnUniv.neg (hYσd x)]
-  simp only [Pi.neg_apply, map_neg, neg_apply]
-  abel
+  rw [curvatureOperator_antisymm cov X (-Y) σ, curvatureOperator_neg_first hY hσ, neg_neg,
+    curvatureOperator_antisymm cov Y X σ]
 
 omit [CompleteSpace E] in
 /-- Curvature changes sign when its section argument is negated. -/
