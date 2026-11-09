@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.End.FiniteOrder
+public import TauCeti.LinearAlgebra.Trace.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 public import Mathlib.RepresentationTheory.Character
@@ -225,19 +226,15 @@ section ComplexDivisionMonoid
 variable {G : Type v} {V : Type w} [DivisionMonoid G] [AddCommGroup V] [Module ℂ V]
 
 /-- **Over `ℂ`, inversion conjugates character values**: if `g ^ n = 1` with `n ≠ 0`, then
-`conj (χ g) = χ g⁻¹`. The eigenvalues of `ρ g` are `n`-th roots of unity, so conjugating them
-inverts them, and `ρ g⁻¹` is the inverse of `ρ g`. -/
+`conj (χ g) = χ g⁻¹`. For finite-dimensional `V` the eigenvalues of `ρ g` are `n`-th roots of
+unity, so conjugating them inverts them, and `ρ g⁻¹` is the inverse of `ρ g`. If `V` is not
+finite-dimensional, `LinearMap.trace` is `0`, so both sides are `0` and the identity holds
+trivially; it is only meaningful in finite dimension. -/
 theorem conj_char_eq_char_inv (ρ : Representation ℂ G V) {g : G} {n : ℕ} (hn : n ≠ 0)
     (hg : g ^ n = 1) : (starRingEnd ℂ) (ρ.character g) = ρ.character g⁻¹ := by
   by_cases hV : FiniteDimensional ℂ V
   swap
-  · have H : ¬∃ s : Finset V, Nonempty (Module.Basis s ℂ V) := by
-      rintro ⟨s, ⟨b⟩⟩
-      exact hV (Module.Finite.of_basis b)
-    have h0 (x : G) : ρ.character x = 0 := by
-      rw [Representation.character, LinearMap.trace, dite_eq_right H]
-      rfl
-    rw [h0, h0, map_zero]
+  · simp [Representation.character, TauCeti.LinearMap.trace_eq_zero_of_not_finite hV]
   have hf : ρ g ^ n = 1 := by rw [← map_pow, hg, map_one]
   have hinv : g⁻¹ = g ^ (n - 1) :=
     inv_eq_of_mul_eq_one_right (by rw [mul_pow_sub_one hn, hg])
