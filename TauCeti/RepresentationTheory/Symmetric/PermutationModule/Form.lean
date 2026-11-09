@@ -53,7 +53,7 @@ namespace TauCeti
 
 variable {R : Type*} [CommRing R]
 
-open LinearMap (BilinForm)
+open _root_.LinearMap (BilinForm)
 
 variable {n : ℕ} (μ : n.Partition)
 
