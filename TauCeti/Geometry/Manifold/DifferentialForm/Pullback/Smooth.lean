@@ -332,6 +332,24 @@ theorem eval₂_mpullback_snd (φ : SmoothForm I' M' F 2) (p : M × M')
   -- `ContinuousLinearMap.snd` is the projection of the product.
   rfl
 
+/-- **Pullback along a graph.** Along the graph `y ↦ (y, f y)` of a map `f` differentiable at
+`x`, the form `pr₁^*α - pr₂^*β` on `M × M'` pulls back at `x` to `α - f^*β`. -/
+theorem mpullback_graph_mpullback_fst_sub_mpullback_snd (α : SmoothForm I M F k)
+    (β : SmoothForm I' M' F k) (hf : MDifferentiableAt I I' f x) :
+    TauCeti.mpullback I (I.prod I') (fun y ↦ (y, f y))
+        (mpullback Prod.fst contMDiff_fst α - mpullback Prod.snd contMDiff_snd β).1 x =
+      α.1 x - TauCeti.mpullback I I' f β.1 x := by
+  have hd : mfderiv I (I.prod I') (fun y ↦ (y, f y)) x =
+      (ContinuousLinearMap.id ℝ _).prod (mfderiv I I' f x) := by
+    rw [← mfderiv_id]
+    exact mfderiv_prodMk mdifferentiableAt_id hf
+  rw [Submodule.coe_sub, coe_mpullback, coe_mpullback]
+  ext v
+  simp only [TauCeti.mpullback_apply, Pi.sub_apply, ContinuousAlternatingMap.sub_apply, hd,
+    mfderiv_fst, mfderiv_snd]
+  -- The two projections of `(v, df v)` are `v` and `df v`.
+  rfl
+
 /-- Pullback by the identity is the identity linear map. -/
 @[simp]
 theorem mpullback_id :
