@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Orientation.ShortExact
+public import TauCeti.LinearAlgebra.Orientation.Exact
 import TauCeti.LinearAlgebra.Exact
 import TauCeti.LinearAlgebra.Prod
 import TauCeti.LinearAlgebra.Ray
@@ -29,8 +29,8 @@ Orientations of `X`, `Y` and `T` orient `Q` (`Orientation.fiberProduct`) by the 
 `[X][Y] = (-1) ^ (dim Y · dim T) [Q][T]`,
 
 where `[X][Y]` is the product orientation of `X × Y` (`Orientation.prod`) and `[Q][T]` is the
-subspace-first orientation of the short exact sequence (`Orientation.shortExact`)
-(`Orientation.shortExact_fiberProduct`). Informally, `[Q]` is the formal product `[X][T]^∨[Y]`:
+subspace-first orientation of the short exact sequence (`Orientation.ofExact`)
+(`Orientation.ofExact_fiberProduct`). Informally, `[Q]` is the formal product `[X][T]^∨[Y]`:
 the base `T` is cancelled against the first factor. When `T = 0` the sign is trivial and
 `Q = X × Y`.
 
@@ -46,7 +46,7 @@ the two conventions contribute `dim T · (dim X + dim Y)`, and the quotient map
 
 ## Main results
 
-* `Orientation.shortExact_fiberProduct`: the defining identity
+* `Orientation.ofExact_fiberProduct`: the defining identity
   `[X][Y] = (-1) ^ (dim Y · dim T) [Q][T]`.
 * `Orientation.fiberProduct_eq_iff`: the fibre product orientation is the unique orientation
   satisfying that identity.
@@ -84,14 +84,15 @@ private theorem finrank_ker_coprod_neg (h : Function.Surjective (α.coprod (-β)
 `α : X → T` and `β : Y → T`, induced by orientations of `X`, `Y` and `T` through the convention
 `[X][Y] = (-1) ^ (dim Y · dim T) [Q][T]` for the short exact sequence
 `0 → Q → X × Y → T → 0` with quotient map `(ξ, η) ↦ α ξ - β η`
-(`Orientation.shortExact_fiberProduct`). -/
+(`Orientation.ofExact_fiberProduct`). It is the kernel orientation `Orientation.kerOfExact` of
+this sequence. -/
 def fiberProduct (h : Function.Surjective (α.coprod (-β))) (ox : Orientation K X (Fin x))
     (oy : Orientation K Y (Fin y)) (ot : Orientation K T (Fin t)) (hx : finrank K X = x)
     (hy : finrank K Y = y) (ht : finrank K T = t) (hq : q + t = x + y) :
     Orientation K (LinearMap.ker (α.coprod (-β))) (Fin q) :=
-  shortExactLeft (Submodule.injective_subtype _) (LinearMap.exact_subtype_ker_map _) h
-    (finrank_ker_coprod_neg h hx hy ht hq) ht
+  kerOfExact (Submodule.injective_subtype _) (LinearMap.exact_subtype_ker_map _) h
     (reindex K (X × Y) (finCongr hq.symm) ((-1 : Kˣ) ^ (y * t) • prod ox oy hx hy)) ot
+    (finrank_ker_coprod_neg h hx hy ht hq) ht
 
 variable (h : Function.Surjective (α.coprod (-β))) (ox : Orientation K X (Fin x))
   (oy : Orientation K Y (Fin y)) (ot : Orientation K T (Fin t)) (hx : finrank K X = x)
@@ -101,41 +102,40 @@ variable (h : Function.Surjective (α.coprod (-β))) (ox : Orientation K X (Fin 
 `[X][Y] = (-1) ^ (dim Y · dim T) [Q][T]`, where `[Q][T]` is the subspace-first orientation of
 `0 → Q → X × Y → T → 0`. -/
 @[simp]
-theorem shortExact_fiberProduct (hQ : finrank K (LinearMap.ker (α.coprod (-β))) = q) :
-    shortExact (Submodule.injective_subtype _) (LinearMap.exact_subtype_ker_map _) h
+theorem ofExact_fiberProduct (hQ : finrank K (LinearMap.ker (α.coprod (-β))) = q) :
+    ofExact (Submodule.injective_subtype _) (LinearMap.exact_subtype_ker_map _) h
         (fiberProduct h ox oy ot hx hy ht hq) ot hQ ht =
       reindex K (X × Y) (finCongr hq.symm) ((-1 : Kˣ) ^ (y * t) • prod ox oy hx hy) :=
-  shortExact_shortExactLeft _ _ h _ ht _ ot
+  ofExact_kerOfExact _ _ h _ ot _ ht
 
 /-- The fibre product orientation is the unique orientation `oq` of `Q` with
 `[X][Y] = (-1) ^ (dim Y · dim T) [oq][T]`. -/
 theorem fiberProduct_eq_iff (hQ : finrank K (LinearMap.ker (α.coprod (-β))) = q)
     (oq : Orientation K (LinearMap.ker (α.coprod (-β))) (Fin q)) :
     fiberProduct h ox oy ot hx hy ht hq = oq ↔
-      shortExact (Submodule.injective_subtype _) (LinearMap.exact_subtype_ker_map _) h oq ot hQ
-          ht =
+      ofExact (Submodule.injective_subtype _) (LinearMap.exact_subtype_ker_map _) h oq ot hQ ht =
         reindex K (X × Y) (finCongr hq.symm) ((-1 : Kˣ) ^ (y * t) • prod ox oy hx hy) :=
-  shortExactLeft_eq_iff _ _ h hQ ht _ ot oq
+  kerOfExact_eq_iff _ _ h _ oq ot hQ ht
 
 /-- Reversing the orientation of the first factor reverses the fibre product orientation. -/
 @[simp]
 theorem fiberProduct_neg_left :
     fiberProduct h (-ox) oy ot hx hy ht hq = -fiberProduct h ox oy ot hx hy ht hq := by
   simp only [fiberProduct, prod_neg_left, Module.Ray.units_smul_neg, Orientation.reindex_neg,
-    shortExactLeft_neg_left]
+    kerOfExact_neg_left]
 
 /-- Reversing the orientation of the second factor reverses the fibre product orientation. -/
 @[simp]
 theorem fiberProduct_neg_right :
     fiberProduct h ox (-oy) ot hx hy ht hq = -fiberProduct h ox oy ot hx hy ht hq := by
   simp only [fiberProduct, prod_neg_right, Module.Ray.units_smul_neg, Orientation.reindex_neg,
-    shortExactLeft_neg_left]
+    kerOfExact_neg_left]
 
 /-- Reversing the orientation of the base reverses the fibre product orientation. -/
 @[simp]
 theorem fiberProduct_neg_base :
     fiberProduct h ox oy (-ot) hx hy ht hq = -fiberProduct h ox oy ot hx hy ht hq := by
-  simp only [fiberProduct, shortExactLeft_neg_right]
+  simp only [fiberProduct, kerOfExact_neg_right]
 
 /-- Scaling the orientation of the first factor by a unit scales the fibre product orientation. -/
 @[simp]
@@ -177,10 +177,10 @@ theorem map_fiberProduct_comm :
   set oq' := fiberProduct h' oy ox ot hy hx ht (hq.trans (add_comm x y))
   -- Naturality of the subspace-first orientation along the exchange of factors, which restricts
   -- to `σ` on the fibre products and induces the negation of `T` on the quotients.
-  have hnat := map_shortExact (Submodule.injective_subtype _) (LinearMap.exact_subtype_ker_map _)
-    h hQ ht (Submodule.injective_subtype _) (LinearMap.exact_subtype_ker_map _) h' σ
-    (LinearEquiv.prodComm K X Y) (LinearEquiv.neg K) (by ext <;> simp [σ])
-    (by rw [LinearMap.coprod_neg_comp_prodComm]; ext <;> simp) oq ot
+  have hnat := map_ofExact (Submodule.injective_subtype _) (LinearMap.exact_subtype_ker_map _)
+    h (Submodule.injective_subtype _) (LinearMap.exact_subtype_ker_map _) h' σ
+    (LinearEquiv.prodComm K X Y) (LinearEquiv.neg K) (fun _ ↦ rfl)
+    (fun v ↦ (LinearMap.congr_fun (LinearMap.coprod_neg_comp_prodComm α β) v).symm) oq ot hQ ht
   have hfin : (finCongr (add_comm y x)).trans (finCongr hq.symm) =
       finCongr (hq.trans (add_comm x y)).symm := by
     ext; simp
@@ -188,9 +188,11 @@ theorem map_fiberProduct_comm :
     rw [map_linearEquiv_neg ot (by rw [Fintype.card_fin, ht]), ht]
   -- Solve `hnat` for the subspace-first orientation of `σ oq`, then compare with the defining
   -- identity of `oq'`.
-  rw [hneg, shortExact_units_smul_right, eq_comm, smul_eq_iff_eq_inv_smul] at hnat
-  rw [← shortExact_inj_left (Submodule.injective_subtype _) (LinearMap.exact_subtype_ker_map _) h'
-    hQ' ht ot, hnat, shortExact_units_smul_left, shortExact_fiberProduct, shortExact_fiberProduct]
+  rw [hneg, ofExact_units_smul_right, eq_comm, smul_eq_iff_eq_inv_smul] at hnat
+  refine ofExact_left_injective (Submodule.injective_subtype _) (LinearMap.exact_subtype_ker_map _)
+    h' ot hQ' ht ?_
+  dsimp only
+  rw [hnat, ofExact_units_smul_left, ofExact_fiberProduct, ofExact_fiberProduct]
   simp only [map_reindex, map_units_smul, map_prodComm_prod, reindex_units_smul, ← reindex_trans,
     hfin, smul_smul, ← inv_pow, inv_neg_one, ← pow_add]
   -- The two exponents differ by the even number `2 * (x * t)`.

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Basis.Exact
 public import TauCeti.LinearAlgebra.Orientation.Prod
+import TauCeti.LinearAlgebra.Ray
 
 /-!
 # Orientations of short exact sequences
@@ -23,11 +24,12 @@ lifts, since two choices of lifts differ by vectors of `range f`, so the change 
 upper triangular with identity diagonal blocks (`Module.Basis.ofExactLift_det_ofExactLift`).
 
 Reversing either orientation reverses the induced one (`Orientation.ofExact_neg_left`,
-`Orientation.ofExact_neg_right`), so each of the three orientations is determined by the other
-two. This gives the *kernel orientation* `Orientation.kerOfExact` of `A` from orientations of `B`
-and `C`, and the *cokernel orientation* `Orientation.cokerOfExact` of `C` from orientations of `A`
-and `B`, each characterized by `ofExact` (`Orientation.kerOfExact_eq_iff`,
-`Orientation.cokerOfExact_eq_iff`).
+`Orientation.ofExact_neg_right`), and scaling either by a unit scales it
+(`Orientation.ofExact_units_smul_left`, `Orientation.ofExact_units_smul_right`), so each of the
+three orientations is determined by the other two. This gives the *kernel orientation*
+`Orientation.kerOfExact` of `A` from orientations of `B` and `C`, and the *cokernel orientation*
+`Orientation.cokerOfExact` of `C` from orientations of `A` and `B`, each characterized by `ofExact`
+(`Orientation.kerOfExact_eq_iff`, `Orientation.cokerOfExact_eq_iff`).
 
 The construction is natural: an isomorphism of short exact sequences carries the induced
 orientation to the induced orientation of the transported orientations
@@ -58,6 +60,7 @@ Naturality carries these orientations along the flow.
 * `Orientation.ofExact_orientation`: the orientation of a basis made of the image of a basis of
   `A` followed by lifts of a basis of `C` is induced by the orientations of these two bases.
 * `Orientation.ofExact_neg_left`, `Orientation.ofExact_neg_right`: reversal laws.
+* `Orientation.ofExact_units_smul_left`, `Orientation.ofExact_units_smul_right`: scaling laws.
 * `Orientation.kerOfExact_eq_iff`, `Orientation.cokerOfExact_eq_iff`: the characterizations of
   the kernel and cokernel orientations.
 * `Orientation.signBasis_ofExact`: the sign of such a basis relative to the induced orientation.
@@ -144,6 +147,22 @@ theorem ofExact_neg_right (o : Orientation R A (Fin m)) (p : Orientation R C (Fi
     (hm : finrank R A = m) (hn : finrank R C = n) :
     ofExact hf hfg hg o (-p) hm hn = -ofExact hf hfg hg o p hm hn := by
   simp only [ofExact, prod_neg_right, Orientation.map_neg]
+
+/-- Scaling the orientation of the subspace by a unit scales the induced orientation. -/
+@[simp]
+theorem ofExact_units_smul_left (u : Rˣ) (o : Orientation R A (Fin m))
+    (p : Orientation R C (Fin n)) (hm : finrank R A = m) (hn : finrank R C = n) :
+    ofExact hf hfg hg (u • o) p hm hn = u • ofExact hf hfg hg o p hm hn :=
+  Module.Ray.units_smul_of_map_neg (F := (ofExact hf hfg hg · p hm hn))
+    (ofExact_neg_left hf hfg hg · p hm hn) u o
+
+/-- Scaling the orientation of the quotient by a unit scales the induced orientation. -/
+@[simp]
+theorem ofExact_units_smul_right (u : Rˣ) (o : Orientation R A (Fin m))
+    (p : Orientation R C (Fin n)) (hm : finrank R A = m) (hn : finrank R C = n) :
+    ofExact hf hfg hg o (u • p) hm hn = u • ofExact hf hfg hg o p hm hn :=
+  Module.Ray.units_smul_of_map_neg (F := (ofExact hf hfg hg o · hm hn))
+    (ofExact_neg_right hf hfg hg o · hm hn) u p
 
 /-- Simultaneous reversal of both outer orientations preserves the induced orientation. -/
 theorem ofExact_neg_neg (o : Orientation R A (Fin m)) (p : Orientation R C (Fin n))
