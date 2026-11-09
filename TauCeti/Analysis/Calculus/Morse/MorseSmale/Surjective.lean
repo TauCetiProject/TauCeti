@@ -192,7 +192,6 @@ private theorem span_insert_gradient_range_contribution_eq_top {r : ℕ∞} (hr 
             hm))).continuousOn
       hF.continuousOn ((IsIntegralCurve.strictAnti_comp_neg_gradient
         ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve x)
-        (fun _ ↦ (hfs.differentiable (by norm_num)) _)
         (fun t ↦ (gradient_negativeGradientFlow_eq_zero_iff f hf x t).not.2 hx)).strictAntiOn _)
       hσ₀ (hkey (m σ₀))
     have hθz' : θ (φ σ₀ x) = 1 := hθz
