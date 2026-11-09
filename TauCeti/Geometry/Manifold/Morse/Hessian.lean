@@ -292,13 +292,14 @@ theorem finrank_le_manifoldMorseIndex_of_negDef_criticalHessian
   rw [manifoldMorseIndex_eq_sigNeg_criticalHessian]
   exact le_sigNeg_of_negDef _ hW
 
+omit [FiniteDimensional ℝ E] in
 /-- There is a negative-definite tangent subspace whose dimension is the Morse index. -/
 theorem exists_negDef_subspace_finrank_eq_manifoldMorseIndex :
     ∃ W : Submodule ℝ (TangentSpace I x),
       Module.finrank ℝ W = manifoldMorseIndex I f x ∧
         ((-(criticalHessian I f x).toBilinForm.toQuadraticMap).restrict W).PosDef := by
   rw [manifoldMorseIndex_eq_sigNeg_criticalHessian]
-  exact exists_finrank_eq_sigNeg_and_negDef _
+  exact QuadraticForm.exists_submodule_finrank_eq_sigNeg_and_negDef _
 
 /-- A tangent subspace on which the critical Hessian is positive definite has dimension at most
 the Morse index of `-f`. -/
@@ -309,13 +310,14 @@ theorem finrank_le_manifoldMorseIndex_neg_of_posDef_criticalHessian
   rw [manifoldMorseIndex_neg_eq_sigPos_criticalHessian]
   exact le_sigPos_of_posDef _ hW
 
+omit [FiniteDimensional ℝ E] in
 /-- There is a positive-definite tangent subspace whose dimension is the Morse index of `-f`. -/
 theorem exists_posDef_subspace_finrank_eq_manifoldMorseIndex_neg :
     ∃ W : Submodule ℝ (TangentSpace I x),
       Module.finrank ℝ W = manifoldMorseIndex I (-f) x ∧
         ((criticalHessian I f x).toBilinForm.toQuadraticMap.restrict W).PosDef := by
   rw [manifoldMorseIndex_neg_eq_sigPos_criticalHessian]
-  exact exists_finrank_eq_sigPos_and_posDef _
+  exact QuadraticForm.exists_submodule_finrank_eq_sigPos_and_posDef _
 
 /-- A tangent subspace on which the critical Hessian is positive definite has dimension at most the
 dimension of the manifold minus the Morse index. -/
@@ -331,16 +333,23 @@ theorem finrank_add_manifoldMorseIndex_le_of_posDef_criticalHessian
   have : Module.finrank ℝ (TangentSpace I x) = Module.finrank ℝ E := rfl
   lia
 
+omit [FiniteDimensional ℝ E] in
 /-- At a nondegenerate critical point there is a positive-definite tangent subspace of dimension
-the dimension of the manifold minus the Morse index. -/
+the dimension of the manifold minus the Morse index. For an infinite-dimensional model space the
+dimension and the index are both `0` by convention, and the zero subspace works. -/
 theorem IsManifoldNondegenerateCriticalPoint.exists_posDef_subspace_finrank_add_index_eq
     (h : IsManifoldNondegenerateCriticalPoint I f x) :
     ∃ W : Submodule ℝ (TangentSpace I x),
       Module.finrank ℝ W + manifoldMorseIndex I f x = Module.finrank ℝ E ∧
         ((criticalHessian I f x).toBilinForm.toQuadraticMap.restrict W).PosDef := by
-  obtain ⟨W, hWrank, hW⟩ := exists_posDef_subspace_finrank_eq_manifoldMorseIndex_neg (I := I)
-    (f := f) (x := x)
-  exact ⟨W, hWrank ▸ h.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank, hW⟩
+  by_cases hE : FiniteDimensional ℝ E
+  · obtain ⟨W, hWrank, hW⟩ := exists_posDef_subspace_finrank_eq_manifoldMorseIndex_neg (I := I)
+      (f := f) (x := x)
+    exact ⟨W, hWrank ▸ h.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank, hW⟩
+  · have hfin : Module.finrank ℝ E = 0 := Module.finrank_of_not_finite hE
+    refine ⟨⊥, ?_, fun x hx ↦ (hx <| Subsingleton.elim x 0).elim⟩
+    rw [finrank_bot, hfin, zero_add, manifoldMorseIndex_eq_sigNeg_criticalHessian, ← sigPos_neg]
+    exact Nat.le_zero.mp ((sigPos_le_finrank _).trans_eq hfin)
 
 end Subspace
 
