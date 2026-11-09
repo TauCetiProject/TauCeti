@@ -26,11 +26,13 @@ holomorphic derivative at the centre is nonzero, and after subtracting `ψ(c)` a
 centre, in which `J` becomes the standard structure. This is the planar chart step in the
 construction of isothermal coordinates.
 
+The pointwise statements are `TauCeti.Beltrami.isComplexLinear_iff_conjWirtingerDeriv_eq` and
+`TauCeti.Beltrami.coefficientEquiv_eq_zero_iff`.
+
 ## Main results
 
-* `TauCeti.Beltrami.isComplexLinear_iff_conjWirtingerDeriv_eq`: the differential of `f` at `z` is
-  complex linear from `J` to `i` iff `\bar∂f(z) = μ_J ∂f(z)`.
-* `TauCeti.Beltrami.coefficientEquiv_eq_zero_iff`: the coefficient vanishes iff `J = i`.
+* `TauCeti.Beltrami.wirtingerDeriv_normalizedChart_self`: normalizing at `c` gives holomorphic
+  derivative `1` at `c` whenever `∂ψ(c) ≠ 0`.
 * `TauCeti.Beltrami.exists_isComplexLinear_chart`: the normalized Beltrami solution is a
   `C¹` local chart at `c`, `J`-holomorphic on its source, with value `0` and holomorphic derivative
   `1` at `c`.
@@ -52,120 +54,6 @@ open scoped ComplexConjugate NNReal
 
 namespace TauCeti.Beltrami
 
-/-- The coefficient of a tame structure has squared norm different from one. -/
-private theorem normSq_coefficient_ne_one (J : AlmostComplexStructure ℂ)
-    (hJ : stdComplexSymplecticForm.Tames J) :
-    Complex.normSq (coefficientEquiv ⟨J, hJ⟩).val ≠ 1 := by
-  simpa only [Complex.UnitDisc.coe_mk] using
-    (Complex.UnitDisc.normSq_lt_one (Complex.UnitDisc.mk _
-      (coefficientEquiv ⟨J, hJ⟩).property)).ne
-
-/-- A real-linear map intertwining `J` with `i` is a complex multiple of the affine normalizer of
-`J`, and conversely. -/
-private theorem isComplexLinear_iff_exists_eq_mul_linearMap (J : AlmostComplexStructure ℂ)
-    (hJ : stdComplexSymplecticForm.Tames J) (A : ℂ →L[ℝ] ℂ) :
-    IsComplexLinear J.toLinearMap (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
-        A.toLinearMap ↔
-      ∃ β : ℂ, ∀ v, A v = β * linearMap (coefficientEquiv ⟨J, hJ⟩).val v := by
-  set μ := (coefficientEquiv ⟨J, hJ⟩).val
-  have hstd (w : ℂ) : AlmostComplexStructure.ofComplexModule ℂ w = I * w :=
-    AlmostComplexStructure.ofComplexModule_apply w
-  constructor
-  · intro hA
-    have hA' (v : ℂ) : A (J v) = I * A v := by
-      simpa [hstd] using hA.apply v
-    set e := linearEquiv μ (normSq_coefficient_ne_one J hJ)
-    have hJe (w : ℂ) : J (e.symm w) = e.symm (I * w) := by
-      apply e.injective
-      have he (x : ℂ) : e x = linearMap μ x := by simp [e]
-      rw [he, linearMap_intertwines J hJ (e.symm w), ← he, ContinuousLinearEquiv.apply_symm_apply,
-        ContinuousLinearEquiv.apply_symm_apply]
-    have hB (w : ℂ) : A (e.symm w) = w * A (e.symm 1) := by
-      have hI : A (e.symm I) = I * A (e.symm 1) := by
-        have h := hA' (e.symm 1)
-        rwa [hJe, mul_one] at h
-      have hw : w = w.re • (1 : ℂ) + w.im • I := by
-        simp [Complex.real_smul]
-      conv_lhs => rw [hw]
-      rw [map_add, map_smul, map_smul, map_add, map_smul, map_smul, hI]
-      conv_rhs => rw [hw]
-      simp only [Complex.real_smul]
-      ring
-    refine ⟨A (e.symm 1), fun v => ?_⟩
-    have := hB (e v)
-    rw [ContinuousLinearEquiv.symm_apply_apply] at this
-    rw [this, linearEquiv_apply, linearMap_apply]
-    ring
-  · rintro ⟨β, hβ⟩
-    apply isComplexLinear_of_apply
-    intro v
-    simp only [ContinuousLinearMap.coe_coe, hβ, hstd]
-    have h := linearMap_intertwines J hJ v
-    rw [h]
-    ring
-
-/-- **Pointwise Beltrami equation.** A real-linear map of the plane is complex linear from a tame
-structure `J` to `i` iff its antiholomorphic part is `μ_J` times its holomorphic part, in terms of
-the values `A 1` and `A i`: `A 1 + i A i = μ_J (A 1 - i A i)`. -/
-theorem isComplexLinear_iff_apply_one_add_I_mul_apply_I (J : AlmostComplexStructure ℂ)
-    (hJ : stdComplexSymplecticForm.Tames J) (A : ℂ →L[ℝ] ℂ) :
-    IsComplexLinear J.toLinearMap (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
-        A.toLinearMap ↔
-      A 1 + I * A I = (coefficientEquiv ⟨J, hJ⟩).val * (A 1 - I * A I) := by
-  rw [isComplexLinear_iff_exists_eq_mul_linearMap J hJ]
-  set μ := (coefficientEquiv ⟨J, hJ⟩).val
-  constructor
-  · rintro ⟨β, hβ⟩
-    rw [hβ, hβ, linearMap_apply, linearMap_apply, map_one, Complex.conj_I]
-    ring_nf
-    rw [Complex.I_sq]
-    ring
-  · intro h
-    refine ⟨(2 : ℂ)⁻¹ * (A 1 - I * A I), fun v => ?_⟩
-    have hv : v = v.re • (1 : ℂ) + v.im • I := by
-      simp [Complex.real_smul]
-    have hc : conj v = v.re - v.im * I := by
-      apply Complex.ext <;> simp
-    have hAv : A v = v.re * A 1 + v.im * A I := by
-      conv_lhs => rw [hv]
-      rw [map_add, map_smul, map_smul]
-      simp only [Complex.real_smul]
-    rw [hAv, linearMap_apply, hc]
-    linear_combination (norm := (ring_nf; simp only [I_sq]; ring_nf))
-      ((2 : ℂ)⁻¹ * (↑v.re - ↑v.im * I)) * h + ((2 : ℂ)⁻¹ * (A 1 - I * A I)) * Complex.re_add_im v
-
-/-- **Pointwise Beltrami equation for a differential.** The real differential of `f` at `z` is
-complex linear from a tame structure `J` to `i` iff `\bar∂f(z) = μ_J ∂f(z)`. No
-differentiability is needed: both sides use the totalized derivative. -/
-theorem isComplexLinear_iff_conjWirtingerDeriv_eq (J : AlmostComplexStructure ℂ)
-    (hJ : stdComplexSymplecticForm.Tames J) (f : ℂ → ℂ) (z : ℂ) :
-    IsComplexLinear J.toLinearMap (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
-        (fderiv ℝ f z).toLinearMap ↔
-      conjWirtingerDeriv f z 1 = (coefficientEquiv ⟨J, hJ⟩).val * wirtingerDeriv f z 1 := by
-  rw [isComplexLinear_iff_apply_one_add_I_mul_apply_I J hJ, wirtingerDeriv_apply,
-    conjWirtingerDeriv_apply]
-  simp only [smul_eq_mul, mul_one]
-  constructor
-  · intro h
-    rw [h]
-    ring
-  · intro h
-    linear_combination 2 * h
-
-/-- The scalar coefficient of a tame structure vanishes exactly at the standard structure. -/
-theorem coefficientEquiv_eq_zero_iff (J : AlmostComplexStructure ℂ)
-    (hJ : stdComplexSymplecticForm.Tames J) :
-    (coefficientEquiv ⟨J, hJ⟩).val = 0 ↔ J = AlmostComplexStructure.ofComplexModule ℂ := by
-  constructor
-  · intro h
-    have h' : coefficientEquiv ⟨J, hJ⟩ =
-        coefficientEquiv ⟨AlmostComplexStructure.ofComplexModule ℂ,
-          stdComplexSymplecticForm_tames⟩ :=
-      Subtype.ext (h.trans coefficientEquiv_std.symm)
-    exact congrArg Subtype.val (coefficientEquiv.injective h')
-  · rintro rfl
-    exact coefficientEquiv_std
-
 /-- The function `w ↦ w + T h(w)` built from a source `h` through the Cauchy transform `T`. -/
 def cauchySolution (h : ℂ → ℂ) : ℂ → ℂ :=
   fun w ↦ w + (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • h z
@@ -174,6 +62,16 @@ def cauchySolution (h : ℂ → ℂ) : ℂ → ℂ :=
 `∂ψ(c)`. -/
 def normalizedChart (ψ : ℂ → ℂ) (c : ℂ) : ℂ → ℂ :=
   fun w ↦ (wirtingerDeriv ψ c 1)⁻¹ • (ψ w - ψ c)
+
+/-- Unfolding lemma for `cauchySolution`. -/
+theorem cauchySolution_apply (h : ℂ → ℂ) (w : ℂ) :
+    cauchySolution h w = w + (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • h z :=
+  (rfl)
+
+/-- Unfolding lemma for `normalizedChart`. -/
+theorem normalizedChart_apply (ψ : ℂ → ℂ) (c w : ℂ) :
+    normalizedChart ψ c w = (wirtingerDeriv ψ c 1)⁻¹ • (ψ w - ψ c) :=
+  (rfl)
 
 /-- The normalized chart vanishes at the base point. -/
 @[simp]
@@ -191,9 +89,9 @@ theorem normalizedChart_id (c : ℂ) : normalizedChart id c = fun w ↦ w - c :=
   ext w
   simp [normalizedChart]
 
-/-- **Check for `μ = 0`.** The zero source solves the Beltrami equation with zero coefficient,
-the resulting `ψ` is the identity, and its normalized chart at `0` is the identity. -/
-theorem cauchySolution_zero_check :
+/-- **Check for `μ = 0`.** The zero source solves the Beltrami equation with zero coefficient, the
+resulting `ψ` is the identity, and its normalized chart at `0` is the identity. -/
+example :
     cauchySolution 0 = id ∧
       (∀ z, conjWirtingerDeriv (cauchySolution 0) z 1 = 0 * wirtingerDeriv (cauchySolution 0) z 1) ∧
       normalizedChart (cauchySolution 0) 0 = id := by
@@ -203,10 +101,28 @@ theorem cauchySolution_zero_check :
     ext w
     simp
 
-private theorem hasFDerivAt_normalizedChart {ψ : ℂ → ℂ} {c z : ℂ} {L : ℂ →L[ℝ] ℂ}
+/-- The real derivative of the normalized chart is that of `ψ` divided by `∂ψ(c)`. -/
+theorem hasFDerivAt_normalizedChart {ψ : ℂ → ℂ} {c z : ℂ} {L : ℂ →L[ℝ] ℂ}
     (hψ : HasFDerivAt ψ L z) :
     HasFDerivAt (normalizedChart ψ c) ((wirtingerDeriv ψ c 1)⁻¹ • L) z :=
   (hψ.sub_const (ψ c)).const_smul (wirtingerDeriv ψ c 1)⁻¹
+
+/-- The real differential of the normalized chart is that of `ψ` divided by `∂ψ(c)`. -/
+theorem fderiv_normalizedChart {ψ : ℂ → ℂ} {c z : ℂ} (hψ : DifferentiableAt ℝ ψ z) :
+    fderiv ℝ (normalizedChart ψ c) z = (wirtingerDeriv ψ c 1)⁻¹ • fderiv ℝ ψ z :=
+  (hasFDerivAt_normalizedChart hψ.hasFDerivAt).fderiv
+
+/-- The holomorphic derivative of the normalized chart is that of `ψ` divided by `∂ψ(c)`. -/
+theorem wirtingerDeriv_normalizedChart {ψ : ℂ → ℂ} {c z : ℂ} (hψ : DifferentiableAt ℝ ψ z) :
+    wirtingerDeriv (normalizedChart ψ c) z 1 = (wirtingerDeriv ψ c 1)⁻¹ * wirtingerDeriv ψ z 1 := by
+  simp only [wirtingerDeriv_apply, fderiv_normalizedChart hψ, smul_apply, smul_eq_mul]
+  ring
+
+/-- **Normalization at the centre.** If `∂ψ(c) ≠ 0`, the normalized chart has holomorphic
+derivative `1` at `c`. -/
+theorem wirtingerDeriv_normalizedChart_self {ψ : ℂ → ℂ} {c : ℂ} (hψ : DifferentiableAt ℝ ψ c)
+    (hc : wirtingerDeriv ψ c 1 ≠ 0) : wirtingerDeriv (normalizedChart ψ c) c 1 = 1 := by
+  rw [wirtingerDeriv_normalizedChart hψ, inv_mul_cancel₀ hc]
 
 /-- **The planar Beltrami chart.** Let `0 < α < 1` and `0 < r`. There are `δ > 0` and `C` such
 that the following holds. Let `J` be a field of almost complex structures on the plane, tame on
@@ -252,14 +168,10 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
   obtain ⟨δ, hδ, C, hsol⟩ := exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv hα hα1 c hr.le
   refine ⟨δ, hδ, C, fun J hJ μ hμ hμJ hμδ => ?_⟩
   obtain ⟨h, hh, hhμ, hC1, -, hbel, hnear, hhol, hinv⟩ := hsol μ hμ hμδ
-  change ContDiffOn ℝ 1 (cauchySolution h) _ at hC1
-  change ∀ z ∈ ball c (r + 1), conjWirtingerDeriv (cauchySolution h) z 1 =
-    μ z * wirtingerDeriv (cauchySolution h) z 1 at hbel
-  change ∀ z ∈ closedBall c r,
-    ‖fderiv ℝ (cauchySolution h) z - ContinuousLinearMap.id ℝ ℂ‖ ≤ C * ‖μ‖ at hnear
-  change HolderOnWith (C * ‖μ‖₊) α (fderiv ℝ (cauchySolution h)) (closedBall c r) at hhol
-  change ∀ z ∈ closedBall c r, ∃ L : ℂ ≃L[ℝ] ℂ,
-    HasStrictFDerivAt (cauchySolution h) (L : ℂ →L[ℝ] ℂ) z at hinv
+  -- The solver states its conclusions for the explicit map `w ↦ w + T h(w)`; fold it.
+  have hfold : (fun w ↦ w + (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • h z) = cauchySolution h :=
+    funext fun w ↦ (cauchySolution_apply h w).symm
+  rw [hfold] at hC1 hbel hnear hhol hinv
   set ψ := cauchySolution h with hψdef
   have hsub : closedBall c r ⊆ ball c (r + 1) := closedBall_subset_ball (by linarith)
   have hc : c ∈ closedBall c r := mem_closedBall_self hr.le
@@ -283,16 +195,10 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
   set a := wirtingerDeriv ψ c 1
   set φ := normalizedChart ψ c with hφdef
   have hφd : ∀ z ∈ ball c (r + 1), fderiv ℝ φ z = a⁻¹ • fderiv ℝ ψ z := fun z hz ↦
-    (hasFDerivAt_normalizedChart (hd z hz).hasFDerivAt).fderiv
+    fderiv_normalizedChart (hd z hz)
   refine ⟨h, hh, hhμ, hC1, hbel, hnear, hhol, hlin, ha, ?_, normalizedChart_self ψ c, ?_, ?_, ?_⟩
   · exact (hC1.sub contDiffOn_const).const_smul a⁻¹
-  · have haeq : a = (2 : ℂ)⁻¹ * (fderiv ℝ ψ c 1 - I * fderiv ℝ ψ c (I * 1)) := by
-      simp only [a, wirtingerDeriv_apply, smul_eq_mul]
-    rw [wirtingerDeriv_apply, hφd c (hsub hc)]
-    simp only [smul_apply, smul_eq_mul]
-    calc (2 : ℂ)⁻¹ * (a⁻¹ * fderiv ℝ ψ c 1 - I * (a⁻¹ * fderiv ℝ ψ c (I * 1)))
-        = a⁻¹ * ((2 : ℂ)⁻¹ * (fderiv ℝ ψ c 1 - I * fderiv ℝ ψ c (I * 1))) := by ring
-      _ = 1 := by rw [← haeq, inv_mul_cancel₀ ha]
+  · exact wirtingerDeriv_normalizedChart_self (hd c (hsub hc)) ha
   · intro z hz
     rw [hφd z (hsub hz)]
     apply isComplexLinear_of_apply
