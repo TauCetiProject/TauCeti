@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
+public import TauCeti.AlgebraicTopology.Singular.Torus.AddCircle
 public import TauCeti.Geometry.Manifold.Morse.Inequalities
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
+public import TauCeti.Geometry.Manifold.Morse.Torus
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
@@ -40,6 +42,13 @@ Morse function exists depends on the coefficients, as projective spaces show.
   of characteristic other than `2` (`TauCeti.not_isPerfectMorse_projectivization_real`). On `ℝP²`
   the moment function with three distinct weights has three critical points, of indices `0`, `1`
   and `2`; the Betti numbers are `1, 1, 1` over `ℤ/2` but `1, 0, 0` over `ℚ`.
+* **Tori.** On the torus `Tᵐ = ∀ i, AddCircle (p i)` the cosine function
+  `x ↦ ∑ᵢ cos (2π xᵢ / pᵢ)` has `(m choose j)` critical points of index `j`, which is the dimension
+  of `Hⱼ(Tᵐ; k)`. So it is perfect over every field (`TauCeti.isPerfectMorse_torusCos`), although
+  its indices take every value from `0` to `m` and the lacunary principle does not apply. Hence
+  every Morse function on `Tᵐ` has at least `(m choose j)` critical points of index `j`
+  (`TauCeti.IsMorse.choose_card_le_criticalCount_torus`), and at least `2ᵐ` critical points
+  altogether (`TauCeti.IsMorse.two_pow_card_le_totalCriticalCount_torus`).
 
 ## References
 
@@ -182,5 +191,44 @@ theorem not_isPerfectMorse_projectivization_real (hn : Even n) (hn0 : n ≠ 0) {
   exact h rfl
 
 end Projective
+
+/-! ### Tori -/
+
+section Torus
+
+variable {ι : Type} [Fintype ι] (p : ι → ℝ) [∀ i, Fact (0 < p i)]
+
+/-- **The cosine function on a torus is perfect.** For every field `k`, the cosine function
+`TauCeti.torusCos` on the torus `Tᵐ = ∀ i, AddCircle (p i)` is a perfect Morse function: it has
+`(m choose j)` critical points of index `j`, and this is the dimension of `Hⱼ(Tᵐ; k)`. -/
+theorem isPerfectMorse_torusCos (k : Type) [Field k] :
+    IsPerfectMorse (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) k (torusCos p) := by
+  have (i : ι) : NeZero (p i) := ⟨(Fact.out : 0 < p i).ne'⟩
+  refine ⟨isMorse_torusCos p, fun _ ↦ inferInstance, fun j ↦ ?_⟩
+  rw [criticalCount_torusCos, ModuleCat.finrank_singularHomology_pi_addCircle,
+    ModuleCat.finrank_of_self, mul_one, Nat.card_eq_fintype_card]
+
+variable {p}
+
+/-- **Morse functions on a torus have binomially many critical points of each index.** Every
+Morse function on the torus `Tᵐ = ∀ i, AddCircle (p i)` has at least `(m choose j)` critical
+points of index `j`, the number attained by the cosine function `TauCeti.torusCos`. -/
+theorem IsMorse.choose_card_le_criticalCount_torus {f : (∀ i, AddCircle (p i)) → ℝ}
+    (hf : IsMorse (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) f) (j : ℕ) :
+    ((Fintype.card ι).choose j : ℕ∞) ≤
+      criticalCount (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) f j := by
+  rw [← criticalCount_torusCos p]
+  exact (isPerfectMorse_torusCos p ℚ).criticalCount_le hf j
+
+/-- **Morse functions on a torus have at least `2ᵐ` critical points.** Every Morse function on the
+torus `Tᵐ = ∀ i, AddCircle (p i)` has at least `2ᵐ` critical points, the number attained by the
+cosine function `TauCeti.torusCos`. -/
+theorem IsMorse.two_pow_card_le_totalCriticalCount_torus {f : (∀ i, AddCircle (p i)) → ℝ}
+    (hf : IsMorse (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) f) :
+    (2 ^ Fintype.card ι : ℕ∞) ≤ totalCriticalCount (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) f := by
+  rw [← totalCriticalCount_torusCos p]
+  exact (isPerfectMorse_torusCos p ℚ).totalCriticalCount_le hf
+
+end Torus
 
 end TauCeti
