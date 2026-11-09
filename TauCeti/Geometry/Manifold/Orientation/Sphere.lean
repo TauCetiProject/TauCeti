@@ -9,11 +9,11 @@ public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import Mathlib.LinearAlgebra.Complex.Orientation
 public import TauCeti.Analysis.InnerProductSpace.Orientation
 public import TauCeti.Geometry.Manifold.Degree.Basic
+public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
 import Mathlib.Analysis.InnerProductSpace.TwoDim
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
-import TauCeti.Geometry.Manifold.Instances.Sphere
 import TauCeti.Geometry.Sphere.Connected
 
 /-!
@@ -52,7 +52,7 @@ antipodal preimage, the antipodal map has degree `(-1)^(n+1)` at every value.
 * `Complex.orientation_eq_orientationAt_sphereOrientation_iff`: a tangent vector `w` of the unit
   circle of `ℂ` at `z` is positive exactly when it points counterclockwise,
   `Re z Im w - Im z Re w > 0`.
-* `Complex.isOrientationReversingAt_conj_sphere`: complex conjugation reverses the orientation of
+* `Complex.isOrientationReversingAt_conjSphere`: complex conjugation reverses the orientation of
   the unit circle.
 * `Orientation.sphereOrientation_neg`: reversing `o` reverses the outward-normal orientation.
 * `TauCeti.orientable_sphere`: the unit sphere is orientable.
@@ -297,20 +297,20 @@ theorem _root_.Complex.orientation_eq_orientationAt_sphereOrientation_iff
 /-- Complex conjugation, restricted to the unit circle, reverses its orientation. Its derivative,
 read in `ℂ`, is conjugation, which sends a counterclockwise tangent vector at `z` to a clockwise one
 at `conj z`. -/
-theorem _root_.Complex.isOrientationReversingAt_conj_sphere (z : sphere (0 : ℂ) 1) :
+theorem _root_.Complex.isOrientationReversingAt_conjSphere (z : sphere (0 : ℂ) 1) :
     Manifold.Orientation.IsOrientationReversingAt Complex.orientation.sphereOrientation
-      Complex.orientation.sphereOrientation
-      (fun z : sphere (0 : ℂ) 1 ↦ (⟨(starRingEnd ℂ) (z : ℂ), by simp⟩ : sphere (0 : ℂ) 1)) z := by
-  set κ : sphere (0 : ℂ) 1 → sphere (0 : ℂ) 1 := fun z ↦ ⟨(starRingEnd ℂ) (z : ℂ), by simp⟩
+      Complex.orientation.sphereOrientation Complex.conjSphere z := by
+  set κ := Complex.conjSphere
   have hι (w : sphere (0 : ℂ) 1) := (contMDiff_coe_sphere (E := ℂ) (n := 1) (m := 1)
     w).mdifferentiableAt one_ne_zero
-  have hκ : ContMDiff (𝓡 1) (𝓡 1) 1 κ := ContMDiff.codRestrict_sphere
-    ((Complex.conjCLE : ℂ →L[ℝ] ℂ).contMDiff.comp contMDiff_coe_sphere) fun w ↦ (κ w).2
+  have hκ : ContMDiff (𝓡 1) (𝓡 1) 1 κ := Complex.contMDiff_conjSphere
   -- Read in `ℂ`, the derivative of `κ` is conjugation.
   have hd (v : TangentSpace (𝓡 1) z) : mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) (κ z)
       (mfderiv (𝓡 1) (𝓡 1) κ z v) =
       (starRingEnd ℂ) (mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) z v) := by
-    rw [← mvfderiv_comp_apply z (hι _) ((hκ z).mdifferentiableAt one_ne_zero)]
+    rw [← mvfderiv_comp_apply z (hι _) ((hκ z).mdifferentiableAt one_ne_zero),
+      show ((↑) ∘ κ : sphere (0 : ℂ) 1 → ℂ) = (Complex.conjCLE : ℂ →L[ℝ] ℂ) ∘ (↑) from
+        funext Complex.coe_conjSphere]
     exact (Complex.conjCLE : ℂ →L[ℝ] ℂ).mvfderiv_comp_apply (hι z) v
   -- A positively oriented tangent basis at `z` and its image at `conj z`.
   let c : Basis (Fin 1) ℝ (TangentSpace (𝓡 1) z) :=
@@ -337,7 +337,7 @@ theorem _root_.Complex.isOrientationReversingAt_conj_sphere (z : sphere (0 : ℂ
     ← Orientation.ne_iff_eq_neg _ _
       (Complex.orientation.sphereOrientation.finrank_tangentSpace_eq (κ z)).symm,
     Ne, Complex.orientation_eq_orientationAt_sphereOrientation_iff, ← hb', hd, not_lt]
-  simp only [κ, Complex.conj_re, Complex.conj_im]
+  simp only [κ, Complex.coe_conjSphere, Complex.conj_re, Complex.conj_im]
   linarith
 
 

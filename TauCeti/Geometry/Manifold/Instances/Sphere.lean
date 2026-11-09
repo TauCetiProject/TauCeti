@@ -132,6 +132,8 @@ allowing the entire path or loop to be read in one stereographic chart.
   of the unit sphere into the punctured space `E \ {0}` and the radial projection
   `x ↦ x / ‖x‖` back onto the sphere are smooth; `TauCeti.contMDiff_normalize_compl_zero` is the
   radial projection read in `E`.
+* `Complex.conjSphere`, `Complex.contMDiff_conjSphere`: complex conjugation on the unit circle
+  of `ℂ`, a smooth involution.
 -/
 
 public section
@@ -944,3 +946,28 @@ theorem contMDiff_normalize_sphere :
 end Punctured
 
 end TauCeti
+
+/-! ### Complex conjugation on the unit circle -/
+
+namespace Complex
+
+/-- Complex conjugation, restricted to the unit circle of `ℂ`. -/
+def conjSphere (z : sphere (0 : ℂ) 1) : sphere (0 : ℂ) 1 :=
+  ⟨(starRingEnd ℂ) (z : ℂ), by simp⟩
+
+@[simp]
+theorem coe_conjSphere (z : sphere (0 : ℂ) 1) : (conjSphere z : ℂ) = (starRingEnd ℂ) (z : ℂ) :=
+  (rfl)
+
+@[simp]
+theorem conjSphere_conjSphere (z : sphere (0 : ℂ) 1) : conjSphere (conjSphere z) = z :=
+  Subtype.ext (by simp)
+
+attribute [local instance] finrank_real_complex_fact'
+
+/-- Complex conjugation on the unit circle is smooth. -/
+theorem contMDiff_conjSphere {m : ℕ∞ω} : ContMDiff (𝓡 1) (𝓡 1) m conjSphere :=
+  ContMDiff.codRestrict_sphere ((conjCLE : ℂ →L[ℝ] ℂ).contMDiff.comp contMDiff_coe_sphere)
+    fun z ↦ (conjSphere z).2
+
+end Complex

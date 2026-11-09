@@ -313,7 +313,7 @@ theorem isInvertible_mfderiv_stiefelTwoRotation {x : stiefel E 2 × sphere (0 : 
 rotation map is invariant (`TauCeti.stiefelTwoRotation_stiefelTwoRotationInvolution`). -/
 def stiefelTwoRotationInvolution (x : stiefel E 2 × sphere (0 : ℂ) 1) :
     stiefel E 2 × sphere (0 : ℂ) 1 :=
-  (stiefelTwoReflection x.1, ⟨(starRingEnd ℂ) (x.2 : ℂ), by simp⟩)
+  (stiefelTwoReflection x.1, Complex.conjSphere x.2)
 
 omit [FiniteDimensional ℝ E] [Fact (finrank ℝ E = m + 1 + 1)] in
 @[simp]
@@ -325,7 +325,7 @@ omit [FiniteDimensional ℝ E] [Fact (finrank ℝ E = m + 1 + 1)] in
 @[simp]
 theorem coe_snd_stiefelTwoRotationInvolution (x : stiefel E 2 × sphere (0 : ℂ) 1) :
     ((stiefelTwoRotationInvolution x).2 : ℂ) = (starRingEnd ℂ) (x.2 : ℂ) :=
-  (rfl)
+  Complex.coe_conjSphere x.2
 
 omit [FiniteDimensional ℝ E] [Fact (finrank ℝ E = m + 1 + 1)] in
 /-- The map `((u, v), z) ↦ ((u, -v), conj z)` is an involution. -/
@@ -412,9 +412,7 @@ theorem isRegularValue_stiefelTwoRotation {y : sphere (0 : E) 1 × sphere (0 : E
 theorem contMDiff_stiefelTwoRotationInvolution {r : ℕ∞ω} :
     ContMDiff ((𝓢).prod (𝓡 1)) ((𝓢).prod (𝓡 1)) r (stiefelTwoRotationInvolution (E := E)) :=
   (contMDiff_stiefelTwoReflection.comp contMDiff_fst).prodMk
-    (ContMDiff.codRestrict_sphere
-      ((Complex.conjCLE : ℂ →L[ℝ] ℂ).contMDiff.comp (contMDiff_coe_sphere.comp contMDiff_snd))
-      fun x ↦ (stiefelTwoRotationInvolution x).2.2)
+    (Complex.contMDiff_conjSphere.comp contMDiff_snd)
 
 /-- The orientation sign of the involution `((u, v), z) ↦ ((u, -v), conj z)` is `(-1)ᵐ`, that is
 `(-1)ⁿ`: the frame reflection has sign `(-1)ᵐ⁺¹` and conjugation reverses `S¹`. -/
@@ -424,7 +422,7 @@ theorem orientationSign_stiefelTwoRotationInvolution
     orientationSign ((stiefelTwoOrientation Ω hΩ).prod Complex.orientation.sphereOrientation)
       ((stiefelTwoOrientation Ω hΩ).prod Complex.orientation.sphereOrientation)
       stiefelTwoRotationInvolution x = (-1) ^ m := by
-  have hconj := Complex.isOrientationReversingAt_conj_sphere x.2
+  have hconj := Complex.isOrientationReversingAt_conjSphere x.2
   rw [← isOrientationPreservingAt_neg_right] at hconj
   rcases Nat.even_or_odd m with hm | hm
   · have hK := isOrientationReversingAt_stiefelTwoReflection hm Ω hΩ x.1
@@ -458,7 +456,7 @@ theorem degreeAtRegularValue_stiefelTwoRotation
   obtain ⟨x, hxim, rfl⟩ := exists_stiefelTwoRotation_eq hy hy'
   have hne : x ≠ (stiefelTwoRotationInvolution x) := fun h ↦ by
     have h' := congrArg (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ (y.2 : ℂ).im) h
-    simp only [stiefelTwoRotationInvolution, Complex.conj_im] at h'
+    simp only [stiefelTwoRotationInvolution, Complex.coe_conjSphere, Complex.conj_im] at h'
     linarith
   -- The orientation signs at the two preimages differ by the sign `(-1)ᵐ` of the involution.
   have hτ : MDifferentiableAt ((𝓢).prod (𝓡 1)) ((𝓡 (m + 1)).prod (𝓡 (m + 1)))
