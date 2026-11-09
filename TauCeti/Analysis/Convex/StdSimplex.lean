@@ -53,15 +53,16 @@ open Set Finset Convexity
 
 namespace Convexity.StdSimplex
 
-/-- The weight vectors of the standard simplex on a finite type form a convex set. -/
+/-- The weight vectors of the standard simplex form a convex set. -/
 theorem convex_range_toFun_comp_weights (R : Type*) [Semiring R] [PartialOrder R]
-    [IsOrderedRing R] (X : Type*) [Finite X] :
+    [IsOrderedRing R] (X : Type*) :
     Convex R (range fun t : StdSimplex R X => ⇑t.weights) := by
-  have := Fintype.ofFinite X
-  rw [range_toFun_comp_weights]
-  exact (convex_iInter fun i => convex_halfSpace_ge (LinearMap.proj i).isLinear 0).inter
-    (by simpa using
-      convex_hyperplane (∑ i, LinearMap.proj (R := R) (φ := fun _ : X => R) i).isLinear 1)
+  rintro _ ⟨s, rfl⟩ _ ⟨t, rfl⟩ a b ha hb hab
+  refine ⟨⟨a • s.weights + b • t.weights, ?_, ?_⟩, rfl⟩
+  · intro x
+    simpa using add_nonneg (mul_nonneg ha (s.nonneg x)) (mul_nonneg hb (t.nonneg x))
+  · simp [Finsupp.sum_add_index', Finsupp.sum_smul_index', ← Finsupp.mul_sum, s.total, t.total,
+      hab]
 
 end Convexity.StdSimplex
 
