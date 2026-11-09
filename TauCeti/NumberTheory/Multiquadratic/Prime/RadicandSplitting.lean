@@ -51,7 +51,7 @@ variable {K : Type*} [Field K] [NumberField K]
 roots of a finite family of rational primes `p i`. If `q` is an odd rational prime distinct from
 every `p i`, then `q` splits completely in `K` exactly when every `p i` is a quadratic residue
 modulo `q`. -/
-theorem ncard_primesOver_sqrt_primes_iff {ι : Type*} [Finite ι] (p : ι → ℕ)
+theorem ncard_primesOver_sqrt_primes_iff {ι : Type*} (p : ι → ℕ)
     (hp : ∀ i, (p i).Prime) (r : ι → K) (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (p i : ℤ))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤)
     {q : ℕ} [Fact q.Prime] (hodd : q ≠ 2) (hne : ∀ i, q ≠ p i) :
