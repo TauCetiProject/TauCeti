@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 import Mathlib.Analysis.Fourier.LpSpace
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 
 /-!
@@ -138,9 +139,7 @@ theorem norm_eq_of_smulLeftCLM_fourier_eq {F : Type*} [NormedAddCommGroup F]
     ‖u‖ = ‖G‖ := by
   rw [← norm_fourier_toLp_eq]
   congr 1
-  refine LinearMap.ker_eq_bot.mp (Lp.ker_toTemperedDistributionCLM_eq_bot (F := F)
-    (μ := (volume : Measure E)) (p := 2)) ?_
-  simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply]
+  refine Lp.toTemperedDistribution_injective ?_
   rw [← Lp.fourier_toTemperedDistribution_eq, ← u.bessel_toDistr_eq_toLp,
     fourier_besselPotential_eq_smulLeftCLM_fourier_apply, h]
 

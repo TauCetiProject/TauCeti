@@ -200,8 +200,7 @@ theorem ext {u v : BesovSpace F φ s p q} (h : u.toDistr = v.toDistr) : u = v :=
   obtain ⟨v, b, hb⟩ := v
   obtain rfl : u = v := h
   obtain rfl : a = b := lp.ext <| funext fun j ↦
-    LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
-      simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, ha, hb]
+    Lp.toTemperedDistribution_injective <| (ha j).trans (hb j).symm
   rfl
 
 /-- An element of a Besov space is determined by its weighted Littlewood–Paley blocks. -/
@@ -351,8 +350,7 @@ theorem block_smul (c : ℂ) (u : BesovSpace F φ s p q) (j : ℕ) :
 /-- Elements of two Besov spaces with the same tempered distribution have the same blocks. -/
 theorem block_eq_of_toDistr_eq {s' : ℝ} {q' : ℝ≥0∞} {u : BesovSpace F φ s p q}
     {v : BesovSpace F φ s' p q'} (h : u.toDistr = v.toDistr) (j : ℕ) : u.block j = v.block j :=
-  LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
-    simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, coe_block, h]
+  Lp.toTemperedDistribution_injective <| by simp only [coe_block, h]
 
 /-- A tempered distribution in `B^s_{p,q}`, as an element of the bundled Besov space. -/
 def _root_.TemperedDistribution.MemBesov.toBesovSpace {u : 𝓢'(E, F)}
