@@ -86,6 +86,18 @@ theorem isOpen_thricePuncturedSphereReal : IsOpen thricePuncturedSphereReal :=
   (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
     (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
 
+/-- Almost every point of the plane lies in the pair of pants: the two punctures form a null
+set. -/
+theorem ae_mem_thricePuncturedSphereReal : ∀ᵐ z : ℝ × ℝ, z ∈ thricePuncturedSphereReal := by
+  refine measure_mono_null (t := {Complex.equivRealProdCLM 0, Complex.equivRealProdCLM 1})
+    (fun z hz ↦ ?_) ?_
+  · rcases not_and_or.1 (mem_thricePuncturedSphereReal_iff.not.1 hz) with h | h
+    · exact Or.inl (by rw [← not_not.1 h, ContinuousLinearEquiv.apply_symm_apply])
+    · exact Or.inr (by
+        rw [Set.mem_singleton_iff, ← not_not.1 h, ContinuousLinearEquiv.apply_symm_apply])
+  · rw [Measure.volume_eq_prod]
+    exact (Set.toFinite _).measure_zero _
+
 /-- In the real coordinates of `S`, the components of the pair-of-pants perturbation are `Cⁿ`
 jointly in the domain and target points, for `Cⁿ` Hamiltonians. -/
 theorem contDiffAt_uncurry_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
