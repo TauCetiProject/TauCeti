@@ -230,13 +230,11 @@ private theorem aestronglyMeasurable_iteratedFDeriv_heatKernel_convolution
   exact hΦeq s (t - s) M (sub_pos.2 hs.1.2) hs.2
 
 /-- The time slices `K_{t-s} ⋆ f(s, ·)` are smooth for almost every `s ∈ Ι 0 t`. -/
-private theorem ae_contDiff_heatKernel_convolution (hf : StronglyMeasurable (Function.uncurry f))
+private theorem ae_contDiff_heatKernel_convolution
     (hfM : ∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖f s y‖ ≤ M) (ht : 0 < t) (N : ℕ) :
     ∀ᵐ s ∂volume.restrict (Ι 0 t), ContDiff ℝ N (heatKernel (t - s) ⋆ f s) := by
   filter_upwards [ae_mem_Ioo_and_ae_norm_le ht.le hfM] with s hs
-  exact (contDiff_heatKernel_convolution (sub_pos.2 hs.1.2)
-    (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable
-    hs.2).of_le (by exact_mod_cast le_top)
+  exact (contDiff_heatKernel_convolution (sub_pos.2 hs.1.2) hs.2).of_le (by exact_mod_cast le_top)
 
 /-- The time slices are bounded by the essential bound of `f`. -/
 private theorem ae_norm_iteratedFDeriv_heatKernel_convolution_le_zero
@@ -257,9 +255,7 @@ private theorem exists_ae_norm_iteratedFDeriv_heatKernel_convolution_le_one :
   refine ⟨C, fun {f M t} hf hfM ht => ?_⟩
   filter_upwards [ae_mem_Ioo_and_ae_norm_le ht.le hfM] with s hs x
   have hts : 0 < t - s := sub_pos.2 hs.1.2
-  refine (norm_iteratedFDeriv_heatKernel_convolution_le hts
-    (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable
-    hs.2 1 x).trans ?_
+  refine (norm_iteratedFDeriv_heatKernel_convolution_le hts hs.2 1 x).trans ?_
   obtain ⟨y, hy⟩ := hs.2.exists
   have hM : 0 ≤ M := (norm_nonneg _).trans hy
   have := mul_le_mul_of_nonneg_right (hC (t - s) hts) hM
@@ -332,6 +328,7 @@ theorem intervalIntegrable_iteratedFDeriv_heatKernel_convolution
 
 variable [CompleteSpace F]
 
+omit [CompleteSpace F] in
 /-- For forcing `α`-Hölder in space, the derivatives of order `m ≥ 1` of the time slices are
 `O(H (t - s)^((α - m)/2))`. -/
 private theorem exists_ae_norm_iteratedFDeriv_heatKernel_convolution_le {α : ℝ≥0} {m : ℕ}
@@ -355,6 +352,7 @@ private theorem exists_ae_norm_iteratedFDeriv_heatKernel_convolution_le {α : �
   have := mul_le_mul_of_nonneg_left (hC (t - s) hts) H.coe_nonneg
   linarith
 
+omit [CompleteSpace F] in
 /-- Integrable bounds on the time slices and their derivatives up to order two, for forcing
 `α`-Hölder in space with `α > 0`. -/
 private theorem exists_bounds_two (hf : StronglyMeasurable (Function.uncurry f))
@@ -407,7 +405,7 @@ theorem iteratedFDeriv_heatDuhamelPotential (hf : StronglyMeasurable (Function.u
       fun x => ∫ s in 0..t, iteratedFDeriv ℝ k (heatKernel (t - s) ⋆ f s) x := by
   obtain ⟨bound, hb, hub⟩ := exists_bounds_one hf hfM ht
   rw [heatDuhamelPotential_eq_fun]
-  exact iteratedFDeriv_intervalIntegral (ae_contDiff_heatKernel_convolution hf hfM ht 1)
+  exact iteratedFDeriv_intervalIntegral (ae_contDiff_heatKernel_convolution hfM ht 1)
     (fun k _ => aestronglyMeasurable_iteratedFDeriv_heatKernel_convolution hf hfM ht k) hb hub hk
 
 omit [CompleteSpace F] in
@@ -422,7 +420,7 @@ theorem contDiff_heatDuhamelPotential (hf : StronglyMeasurable (Function.uncurry
     exact contDiff_const
   obtain ⟨bound, hb, hub⟩ := exists_bounds_one hf hfM ht
   rw [heatDuhamelPotential_eq_fun]
-  exact contDiff_intervalIntegral (ae_contDiff_heatKernel_convolution hf hfM ht 1)
+  exact contDiff_intervalIntegral (ae_contDiff_heatKernel_convolution hfM ht 1)
     (fun k _ => aestronglyMeasurable_iteratedFDeriv_heatKernel_convolution hf hfM ht k) hb hub
 
 omit [CompleteSpace F] in
@@ -444,7 +442,7 @@ theorem iteratedFDeriv_heatDuhamelPotential_of_holderWith
     simp [convolution_eq_zero_of_not_completeSpace hF]
   obtain ⟨bound, hb, hub⟩ := exists_bounds_two hf hfM hH hα ht
   rw [heatDuhamelPotential_eq_fun]
-  exact iteratedFDeriv_intervalIntegral (ae_contDiff_heatKernel_convolution hf hfM ht 2)
+  exact iteratedFDeriv_intervalIntegral (ae_contDiff_heatKernel_convolution hfM ht 2)
     (fun k _ => aestronglyMeasurable_iteratedFDeriv_heatKernel_convolution hf hfM ht k) hb hub hk
 
 omit [CompleteSpace F] in
@@ -463,7 +461,7 @@ theorem contDiff_heatDuhamelPotential_of_holderWith
     exact contDiff_const
   obtain ⟨bound, hb, hub⟩ := exists_bounds_two hf hfM hH hα ht
   rw [heatDuhamelPotential_eq_fun]
-  exact contDiff_intervalIntegral (ae_contDiff_heatKernel_convolution hf hfM ht 2)
+  exact contDiff_intervalIntegral (ae_contDiff_heatKernel_convolution hfM ht 2)
     (fun k _ => aestronglyMeasurable_iteratedFDeriv_heatKernel_convolution hf hfM ht k) hb hub
 
 /-- **The gradient bound for the Duhamel potential.** There is a constant `C`, depending only on
@@ -484,6 +482,7 @@ theorem exists_norm_fderiv_heatDuhamelPotential_le :
   norm_num
   ring
 
+omit [CompleteSpace F] in
 /-- Near the singular endpoint, the time integral over `[a, t]` of the Hessians of the slices is
 `O(H (t - a)^(α/2))`. -/
 private theorem exists_norm_integral_iteratedFDeriv_two_heatKernel_convolution_le {α : ℝ≥0}
@@ -534,6 +533,7 @@ theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_le {α : ℝ≥0} (h
 
 /-! ### The Hölder estimate of the Hessian -/
 
+omit [CompleteSpace F] in
 /-- For forcing `α`-Hölder in space, the Hessians of the time slices are Lipschitz in space with
 constant `O(H (t - s)^((α - 3)/2))`. -/
 private theorem exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_le {α : ℝ≥0} :
@@ -548,7 +548,7 @@ private theorem exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_le 
     exists_ae_norm_iteratedFDeriv_heatKernel_convolution_le (E := E) (F := F) (α := α)
       (m := 3) three_ne_zero
   refine ⟨C, hC₀, fun {f M t H} hf hfM hH ht => ?_⟩
-  filter_upwards [hC hf hfM hH ht, ae_contDiff_heatKernel_convolution hf hfM ht 3]
+  filter_upwards [hC hf hfM hH ht, ae_contDiff_heatKernel_convolution hfM ht 3]
     with s hs hsd x y
   have hd : Differentiable ℝ (iteratedFDeriv ℝ 2 (heatKernel (t - s) ⋆ f s)) :=
     hsd.differentiable_iteratedFDeriv (by norm_num)
@@ -608,6 +608,7 @@ theorem exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential {α : ℝ≥0}
 
 /-! ### The temporal Hölder estimate of the Hessian -/
 
+omit [CompleteSpace F] in
 /-- Away from the diagonal, the Hessians of the slices at the times `t' < t` differ by
 `O(H (t - t') (t' - s)^((α - 4)/2))`, at almost every `0 < s ≤ t' - (t - t')`. -/
 private theorem exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_time_le {α : ℝ≥0} :

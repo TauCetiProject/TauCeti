@@ -92,7 +92,7 @@ private theorem neg_one_lt_sub_two_div_two (hα : 0 < α) : -1 < ((α : ℝ) - 2
 
 /-- Off the diagonal `σ = s`, the slice `σ ↦ u_s(σ - s, x)` has derivative `laplacianSlice`. -/
 private theorem hasDerivAt_heatCauchyPotential_sub {s σ : ℝ}
-    (hg : AEStronglyMeasurable (f s)) (hM : ∀ᵐ y, ‖f s y‖ ≤ M) (hσ : σ ≠ s) (x : E) :
+    (hM : ∀ᵐ y, ‖f s y‖ ≤ M) (hσ : σ ≠ s) (x : E) :
     HasDerivAt (fun σ => heatCauchyPotential (f s) (σ - s) x) (laplacianSlice f x s σ) σ := by
   rcases hσ.lt_or_gt with hσ | hσ
   · simp only [laplacianSlice, hσ.not_gt, ↓reduceIte]
@@ -100,7 +100,7 @@ private theorem hasDerivAt_heatCauchyPotential_sub {s σ : ℝ}
     filter_upwards [eventually_lt_nhds hσ] with σ' hσ'
     exact heatCauchyPotential_of_nonpos _ (by linarith) x
   · simp only [laplacianSlice, hσ, ↓reduceIte]
-    refine ((hasDerivAt_heatKernel_convolution (sub_pos.2 hσ) hg hM x).comp_sub_const σ s
+    refine ((hasDerivAt_heatKernel_convolution (sub_pos.2 hσ) hM x).comp_sub_const σ s
       ).congr_of_eventuallyEq ?_
     filter_upwards [eventually_gt_nhds hσ] with σ' hσ'
     exact heatCauchyPotential_eq_convolution _ (sub_pos.2 hσ') x
@@ -117,7 +117,7 @@ private theorem intervalIntegrable_laplacianSlice {s : ℝ} (hg : AEStronglyMeas
   · refine (stronglyMeasurable_deriv
       (fun σ => heatCauchyPotential (f s) (σ - s) x)).aestronglyMeasurable.congr ?_
     filter_upwards [ae_restrict_of_ae ((countable_singleton s).ae_notMem volume)] with σ hσ
-    exact (hasDerivAt_heatCauchyPotential_sub hg hM hσ x).deriv
+    exact (hasDerivAt_heatCauchyPotential_sub hM hσ x).deriv
   · simp only [laplacianSlice]
     split_ifs with h
     · exact (hC hg hM hH (sub_pos.2 h) x).trans (le_abs_self _)
@@ -140,7 +140,7 @@ private theorem integral_laplacianSlice {s : ℝ} (hg : AEStronglyMeasurable (f 
   have hc : Continuous fun σ => heatCauchyPotential (f s) (σ - s) x :=
     (continuousOn_univ.1 (hhol.continuousOn (by positivity))).comp (continuous_sub_right s)
   exact integral_eq_of_hasDerivAt_off_countable_of_le _ _ hab (countable_singleton s)
-    hc.continuousOn (fun σ hσ => hasDerivAt_heatCauchyPotential_sub hg hM hσ.2 x)
+    hc.continuousOn (fun σ hσ => hasDerivAt_heatCauchyPotential_sub hM hσ.2 x)
     (intervalIntegrable_laplacianSlice hg hM hH hα x a b)
 
 omit [CompleteSpace F] in

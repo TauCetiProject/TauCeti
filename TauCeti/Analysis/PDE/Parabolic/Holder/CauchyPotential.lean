@@ -123,8 +123,6 @@ end SlabPotential
 
 /-! ### The potential as an order-two parabolic Hölder map -/
 
-variable [CompleteSpace F]
-
 variable (hab : a < b) (ha : 0 ≤ a)
 
 /-- The Cauchy potential of a `C_b^{2,α}` datum, as an element of the order-two parabolic Hölder
@@ -277,7 +275,8 @@ theorem norm_heatCauchyPotentialL_le :
 
 /-- **Attainment of the initial datum.** On the slab `E × [0, b]`, the initial trace of the Cauchy
 potential of `g` is `g`. -/
-theorem spatialTrace_heatCauchyPotentialL_left (hb : 0 < b) (g : CkHolderSpace 2 α E F) :
+theorem spatialTrace_heatCauchyPotentialL_left [CompleteSpace F] (hb : 0 < b)
+    (g : CkHolderSpace 2 α E F) :
     (heatCauchyPotentialL hb le_rfl g).spatialTrace ⟨0, left_mem_Icc.2 hb.le⟩ = g := by
   ext x
   simp

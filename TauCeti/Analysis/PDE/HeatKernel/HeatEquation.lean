@@ -121,12 +121,43 @@ private theorem exists_abs_laplacian_heatKernel_le (ht : 0 < t) :
 
 variable [MeasurableSpace E] [BorelSpace E]
 
-/-- **Smoothing by the heat kernel.** For `t > 0` and `g` measurable and essentially bounded,
-`K_t ⋆ g` is smooth. -/
-theorem contDiff_heatKernel_convolution (ht : 0 < t) (hg : AEStronglyMeasurable g)
-    (hM : ∀ᵐ y, ‖g y‖ ≤ M) : ContDiff ℝ ∞ (heatKernel t ⋆ g) :=
-  contDiff_convolution_left_of_dominated (lsmul ℝ ℝ) (contDiff_heatKernel t)
-    (fun k _ => exists_integrable_norm_iteratedFDeriv_heatKernel_add_le ht k 1) hg hM
+/-- If one of the integrands of `K_t ⋆ g`, `t > 0`, is a.e. strongly measurable, then so is `g`,
+because `K_t` is continuous and positive. -/
+private theorem aestronglyMeasurable_of_aestronglyMeasurable_heatKernel_smul_sub (ht : 0 < t)
+    (x : E) (h : AEStronglyMeasurable fun y => heatKernel t y • g (x - y)) :
+    AEStronglyMeasurable g := by
+  have h1 : AEStronglyMeasurable fun y => g (x - y) := by
+    have hinv : AEStronglyMeasurable fun y : E => (heatKernel t y)⁻¹ :=
+      ((contDiff_heatKernel (k := 0) t).continuous.inv₀
+        fun y => (heatKernel_pos ht y).ne').aestronglyMeasurable
+    refine (hinv.smul h).congr (ae_of_all _ fun y => ?_)
+    simp [smul_smul, inv_mul_cancel₀ (heatKernel_pos ht y).ne']
+  simpa [Function.comp_def] using h1.comp_quasiMeasurePreserving
+    (quasiMeasurePreserving_sub_left_of_right_invariant (volume : Measure E) x)
+
+/-- If `g` is not a.e. strongly measurable, then `K_t ⋆ g = 0` for `t > 0`, by the junk value of
+the Bochner integral. -/
+private theorem heatKernel_convolution_of_not_aestronglyMeasurable (ht : 0 < t)
+    (hg : ¬AEStronglyMeasurable g) : heatKernel t ⋆ g = fun _ => 0 := by
+  funext x
+  refine integral_non_aestronglyMeasurable fun h => hg ?_
+  exact aestronglyMeasurable_of_aestronglyMeasurable_heatKernel_smul_sub ht x (by simpa using h)
+
+/-- If `F` is not complete, `K_t ⋆ g = 0`, by the junk value of the Bochner integral. -/
+private theorem heatKernel_convolution_of_not_completeSpace (hF : ¬CompleteSpace F) (t : ℝ)
+    (g : E → F) : heatKernel t ⋆ g = fun _ => 0 := by
+  funext x
+  exact integral_of_not_completeSpace hF
+
+/-- **Smoothing by the heat kernel.** For `t > 0` and `g` essentially bounded, `K_t ⋆ g` is
+smooth. -/
+theorem contDiff_heatKernel_convolution (ht : 0 < t) (hM : ∀ᵐ y, ‖g y‖ ≤ M) :
+    ContDiff ℝ ∞ (heatKernel t ⋆ g) := by
+  by_cases hg : AEStronglyMeasurable g
+  · exact contDiff_convolution_left_of_dominated (lsmul ℝ ℝ) (contDiff_heatKernel t)
+      (fun k _ => exists_integrable_norm_iteratedFDeriv_heatKernel_add_le ht k 1) hg hM
+  · rw [heatKernel_convolution_of_not_aestronglyMeasurable ht hg]
+    exact contDiff_const
 
 /-- **Derivatives of a heat convolution.** For `t > 0` and `g` measurable and essentially
 bounded, every derivative of `K_t ⋆ g` is computed on the kernel:
@@ -168,10 +199,15 @@ private theorem integrable_smulRight_iteratedFDeriv_heatKernel_sub (ht : 0 < t)
 
 /-- **Bounds on the derivatives of a heat convolution.** If `‖g‖ ≤ M` almost everywhere, then
 `‖D^m (K_t ⋆ g)(x)‖ ≤ ‖D^m K_t‖_{L¹} M` for `t > 0`. -/
-theorem norm_iteratedFDeriv_heatKernel_convolution_le (ht : 0 < t) (hg : AEStronglyMeasurable g)
-    (hM : ∀ᵐ y, ‖g y‖ ≤ M) (m : ℕ) (x : E) :
+theorem norm_iteratedFDeriv_heatKernel_convolution_le (ht : 0 < t) (hM : ∀ᵐ y, ‖g y‖ ≤ M)
+    (m : ℕ) (x : E) :
     ‖iteratedFDeriv ℝ m (heatKernel t ⋆ g) x‖ ≤
       (∫ z, ‖iteratedFDeriv ℝ m (heatKernel t : E → ℝ) z‖) * M := by
+  by_cases hg : AEStronglyMeasurable g
+  swap
+  · rw [heatKernel_convolution_of_not_aestronglyMeasurable ht hg]
+    simpa using mul_nonneg (integral_nonneg fun _ => norm_nonneg _)
+      (hM.exists.elim fun y hy => (norm_nonneg _).trans hy)
   have hqmp := quasiMeasurePreserving_sub_left_of_right_invariant (volume : Measure E) x
   rw [iteratedFDeriv_heatKernel_convolution ht hg hM, ← integral_mul_const]
   refine norm_integral_le_of_norm_le ((integrable_iteratedFDeriv_heatKernel ht m).norm.mul_const M)
@@ -212,10 +248,17 @@ theorem iteratedFDeriv_heatKernel_convolution_eq_smul_integral (ht : 0 < t)
 /-- **Cancellation in the derivatives of a heat convolution.** Since `∫ D^m K_t = 0` for `m ≥ 1`,
 the value of `g` at the base point can be subtracted under the integral:
 `D^m (K_t ⋆ g)(x) = ∫ D^m K_t(z) ⊗ (g(x - z) - g(x)) dz`. -/
-theorem iteratedFDeriv_heatKernel_convolution_eq_integral_sub [CompleteSpace F] (ht : 0 < t)
+theorem iteratedFDeriv_heatKernel_convolution_eq_integral_sub (ht : 0 < t)
     (hg : AEStronglyMeasurable g) (hM : ∀ᵐ y, ‖g y‖ ≤ M) {m : ℕ} (hm : m ≠ 0) (x : E) :
     iteratedFDeriv ℝ m (heatKernel t ⋆ g) x =
       ∫ z, (iteratedFDeriv ℝ m (heatKernel t) z).smulRight (g (x - z) - g x) := by
+  by_cases hF : CompleteSpace F
+  swap
+  · ext v
+    rw [heatKernel_convolution_of_not_completeSpace hF,
+      ContinuousMultilinearMap.integral_apply
+        (integrable_smulRight_iteratedFDeriv_heatKernel_sub ht hg hM m x) v]
+    simp [integral_of_not_completeSpace hF]
   have hL : ∫ z : E, (iteratedFDeriv ℝ m (heatKernel t) z).smulRight (g x) = 0 := by
     have := ((ContinuousMultilinearMap.smulRightL ℝ (fun _ : Fin m => E) F).flip
       (g x)).integral_comp_comm (integrable_iteratedFDeriv_heatKernel (E := E) ht m)
@@ -238,7 +281,7 @@ with constant `H`, then for `m ≥ 1` and `t > 0`,
 `‖D^m (K_t ⋆ g)(x)‖ ≤ H ∫ ‖D^m K_t(z)‖ ‖z‖^α dz`. By
 `TauCeti.exists_integral_norm_iteratedFDeriv_heatKernel_mul_rpow_le` the right side is
 `O(H t^((α - m) / 2))`, which for `m = 2` is integrable in time near `t = 0` when `α > 0`. -/
-theorem norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith [CompleteSpace F] (ht : 0 < t)
+theorem norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith (ht : 0 < t)
     (hg : AEStronglyMeasurable g) (hM : ∀ᵐ y, ‖g y‖ ≤ M) {H α : ℝ≥0} (hH : HolderWith H α g)
     {m : ℕ} (hm : m ≠ 0) (x : E) :
     ‖iteratedFDeriv ℝ m (heatKernel t ⋆ g) x‖ ≤
@@ -251,7 +294,7 @@ theorem norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith [CompleteSpa
 /-- **Hölder bound on the Laplacian of a heat convolution.** The Laplacian of the heat convolution
 of a bounded `α`-Hölder function with constant `H` is `O(H τ^((α - 2)/2))`, uniformly in the
 function. -/
-theorem exists_norm_laplacian_heatKernel_convolution_le [CompleteSpace F] {α : ℝ≥0} :
+theorem exists_norm_laplacian_heatKernel_convolution_le {α : ℝ≥0} :
     ∃ C ≥ 0, ∀ {g : E → F} {M τ : ℝ} {H : ℝ≥0}, AEStronglyMeasurable g → (∀ᵐ y, ‖g y‖ ≤ M) →
       HolderWith H α g → 0 < τ → ∀ x,
         ‖Δ (heatKernel τ ⋆ g) x‖ ≤ C * H * τ ^ (((α : ℝ) - 2) / 2) := by
@@ -277,7 +320,7 @@ theorem exists_norm_laplacian_heatKernel_convolution_le [CompleteSpace F] {α : 
 `‖D^m (K_b ⋆ g)(x) - D^m (K_a ⋆ g)(x)‖ ≤ H ∫ ‖D^m K_b(z) - D^m K_a(z)‖ ‖z‖^α dz`. By
 `TauCeti.exists_integral_norm_iteratedFDeriv_heatKernel_sub_mul_rpow_le` the right side is
 `O(H (b - a) a^((α - m - 2) / 2))` when `a ≤ b ≤ 2a`. -/
-theorem norm_iteratedFDeriv_heatKernel_convolution_sub_le_of_holderWith [CompleteSpace F]
+theorem norm_iteratedFDeriv_heatKernel_convolution_sub_le_of_holderWith
     {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (hg : AEStronglyMeasurable g) (hM : ∀ᵐ y, ‖g y‖ ≤ M)
     {H α : ℝ≥0} (hH : HolderWith H α g) {m : ℕ} (hm : m ≠ 0) (x : E) :
     ‖iteratedFDeriv ℝ m (heatKernel b ⋆ g) x - iteratedFDeriv ℝ m (heatKernel a ⋆ g) x‖ ≤
@@ -309,9 +352,13 @@ theorem norm_iteratedFDeriv_heatKernel_convolution_sub_le_of_holderWith [Complet
 
 /-- **The Laplacian of a heat convolution.** For `t > 0` and `g` measurable and essentially
 bounded, `Δ (K_t ⋆ g) = ΔK_t ⋆ g`. -/
-theorem laplacian_heatKernel_convolution [CompleteSpace F] (ht : 0 < t)
+theorem laplacian_heatKernel_convolution (ht : 0 < t)
     (hg : AEStronglyMeasurable g) (hM : ∀ᵐ y, ‖g y‖ ≤ M) (x : E) :
     Δ (heatKernel t ⋆ g) x = (Δ (heatKernel t : E → ℝ) ⋆ g) x := by
+  by_cases hF : CompleteSpace F
+  swap
+  · rw [heatKernel_convolution_of_not_completeSpace hF, laplacian_const]
+    exact (integral_of_not_completeSpace hF).symm
   have hD₂ := integrable_iteratedFDeriv_heatKernel (E := E) ht 2
   -- The Laplacian is a continuous linear functional of the Hessian.
   rw [laplacian_eq_traceL_iteratedFDeriv, iteratedFDeriv_convolution_left_of_dominated
@@ -323,11 +370,21 @@ theorem laplacian_heatKernel_convolution [CompleteSpace F] (ht : 0 < t)
   rw [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis, lsmul_apply, Finset.sum_smul]
   simp
 
-/-- **The heat equation.** For `t > 0` and `g` measurable and essentially bounded, the function
+/-- **The heat equation.** For `t > 0` and `g` essentially bounded, the function
 `u(s, x) = (K_s ⋆ g)(x)` satisfies `∂ₜu(t, x) = Δu(t, x)`. -/
-theorem hasDerivAt_heatKernel_convolution [CompleteSpace F] (ht : 0 < t)
-    (hg : AEStronglyMeasurable g) (hM : ∀ᵐ y, ‖g y‖ ≤ M) (x : E) :
+theorem hasDerivAt_heatKernel_convolution (ht : 0 < t) (hM : ∀ᵐ y, ‖g y‖ ≤ M) (x : E) :
     HasDerivAt (fun s => (heatKernel s ⋆ g) x) (Δ (heatKernel t ⋆ g) x) t := by
+  by_cases hF : CompleteSpace F
+  swap
+  · simp only [heatKernel_convolution_of_not_completeSpace hF, laplacian_const, Pi.zero_apply]
+    exact hasDerivAt_const t (0 : F)
+  by_cases hg : AEStronglyMeasurable g
+  swap
+  · have h0 : ∀ᶠ s in nhds t, (heatKernel s ⋆ g) x = 0 :=
+      Filter.eventually_of_mem (Ioi_mem_nhds ht) fun s hs => by
+        simp [heatKernel_convolution_of_not_aestronglyMeasurable hs hg]
+    rw [heatKernel_convolution_of_not_aestronglyMeasurable ht hg, laplacian_const]
+    exact (hasDerivAt_const t (0 : F)).congr_of_eventuallyEq h0
   obtain ⟨B, hB₀, hB⟩ := exists_abs_laplacian_heatKernel_le (E := E) ht
   have hg' : ∀ᵐ y, ‖g (x - y)‖ ≤ M :=
     (quasiMeasurePreserving_sub_left_of_right_invariant (volume : Measure E) x).ae hM
@@ -360,12 +417,11 @@ theorem hasDerivAt_heatKernel_convolution [CompleteSpace F] (ht : 0 < t)
 /-- **The heat equation for `C²` data with compact support.** For `t > 0`, the function
 `s ↦ (K_s ⋆ φ)(x)` has derivative `(K_t ⋆ Δ φ)(x)` at `t`: the Laplacian of the solution is the
 heat convolution of the Laplacian of the datum. -/
-theorem hasDerivAt_heatKernel_convolution_of_hasCompactSupport [CompleteSpace F] {φ : E → F}
+theorem hasDerivAt_heatKernel_convolution_of_hasCompactSupport {φ : E → F}
     (hφ : ContDiff ℝ 2 φ) (hc : HasCompactSupport φ) (ht : 0 < t) (x : E) :
     HasDerivAt (fun s => (heatKernel s ⋆ φ) x) ((heatKernel t ⋆ Δ φ) x) t := by
   obtain ⟨C, hC⟩ := hφ.continuous.bounded_above_of_compact_support hc
-  have h := hasDerivAt_heatKernel_convolution ht hφ.continuous.aestronglyMeasurable
-    (ae_of_all _ hC) x
+  have h := hasDerivAt_heatKernel_convolution ht (ae_of_all _ hC) x
   rwa [hc.laplacian_convolution_right _ (integrable_heatKernel ht).locallyIntegrable hφ] at h
 
 /-- **Duhamel's formula for the heat equation.** For `φ` of class `C²` with compact support and
@@ -377,8 +433,7 @@ theorem heatKernel_convolution_sub_eq_integral [CompleteSpace F] {φ : E → F}
   obtain ⟨C₂, hC₂⟩ := hφ.continuous_laplacian.bounded_above_of_compact_support hc.laplacian
   -- The integrand is continuous at positive times, being differentiable there, and bounded.
   have hcont : ContinuousOn (fun s => (heatKernel s ⋆ Δ φ) x) (Ioi 0) := fun s hs =>
-    (hasDerivAt_heatKernel_convolution hs hφ.continuous_laplacian.aestronglyMeasurable
-      (ae_of_all _ hC₂) x).continuousAt.continuousWithinAt
+    (hasDerivAt_heatKernel_convolution hs (ae_of_all _ hC₂) x).continuousAt.continuousWithinAt
   have hint : IntervalIntegrable (fun s => (heatKernel s ⋆ Δ φ) x) volume 0 t := by
     rw [intervalIntegrable_iff_integrableOn_Ioc_of_le ht.le]
     refine (integrableOn_const (C := C₂) measure_Ioc_lt_top.ne).mono'
