@@ -581,9 +581,10 @@ theorem energyFormH1_comm_of_isSymm_ae
 `TauCeti.PDE.UniformlyEllipticOn.mul_norm_sq_le_energyFormH1_self_of_poincare` is positive under the
 smallness condition `βP < λ` relating the drift bound, the Poincaré constant and the ellipticity;
 that is the sufficient condition under which the estimate is coercivity. -/
-theorem energyFormH1_poincare_constant_pos (hlam : 0 < lam) (hbeta : 0 ≤ beta) (hP : 0 ≤ P)
+theorem energyFormH1_poincare_constant_pos (hbeta : 0 ≤ beta) (hP : 0 ≤ P)
     (hsmall : beta * P < lam) :
     0 < (lam ^ 2 - beta ^ 2 * P ^ 2) / (2 * lam * (P ^ 2 + 1)) := by
+  have hlam : 0 < lam := (mul_nonneg hbeta hP).trans_lt hsmall
   have hD : 0 < 2 * lam * (P ^ 2 + 1) := by positivity
   refine div_pos ?_ hD
   nlinarith [mul_nonneg hbeta hP]
@@ -710,11 +711,22 @@ theorem norm_energyFormH1_le_of_bounds
     (ha_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)),
       ∀ eta xi : EuclideanSpace ℝ ι,
         |dotProduct eta (Matrix.mulVec (a x) xi)| ≤ Lam * ‖eta‖ * ‖xi‖)
-    (hbeta : 0 ≤ beta) (hgamma : 0 ≤ gamma)
     (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
     (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
     (u v : W1p mu Omega 2) :
     ‖energyFormH1 a b c u v‖ ≤ (Lam + beta + gamma) * (‖u‖ * ‖v‖) := by
+  rcases (Omega : Set (EuclideanSpace ℝ ι)).eq_empty_or_nonempty with hΩ | ⟨x, hx⟩
+  · have hnorm : ∀ w : W1p mu Omega 2, ‖w‖ = 0 := fun w => by
+      have h0 : ‖W1p.value w‖ = 0 := by
+        simp [Lp.norm_def, hΩ]
+      have h1 : ‖W1p.gradient w‖ = 0 := by
+        simp [Lp.norm_def, hΩ]
+      nlinarith [W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq w, norm_nonneg w]
+    have hform : energyFormH1 a b c u v = 0 := by
+      simp [energyFormH1_def, hΩ]
+    rw [hform, hnorm u, norm_zero, zero_mul, mul_zero]
+  have hbeta : 0 ≤ beta := (norm_nonneg _).trans (hb_bound x hx)
+  have hgamma : 0 ≤ gamma := (norm_nonneg _).trans (hc_bound x hx)
   have hmem := ae_mem_restrict (mu := mu) (Omega := Omega)
   have hconst : 0 ≤ Lam + beta + gamma := by linarith
   have hmul : Integrable (fun x => ‖jetField u x‖ * ‖jetField v x‖) (mu.restrict Omega) :=
@@ -742,7 +754,7 @@ theorem norm_energyFormH1L_le_of_bounds
   refine (energyFormH1L hcoeff).opNorm_le_bound₂ (by linarith) ?_
   intro u v
   rw [energyFormH1L_apply, mul_assoc]
-  exact norm_energyFormH1_le_of_bounds hLam ha_bound hbeta hgamma hb_bound hc_bound u v
+  exact norm_energyFormH1_le_of_bounds hLam ha_bound hb_bound hc_bound u v
 
 /-- The energy form on `H¹₀(Ω)` as a continuous bilinear form, obtained by restricting
 `energyFormH1L` along the closed-subspace inclusion. -/
@@ -888,13 +900,11 @@ Cauchy--Schwarz. Together with `garding_energyFormH1_self` this is the pair of e
 energy method needs. -/
 theorem norm_energyFormH1_le
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (hbeta : 0 ≤ beta) (hgamma : 0 ≤ gamma)
     (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
     (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
     (u v : W1p mu Omega 2) :
     ‖energyFormH1 a b c u v‖ ≤ (Lam + beta + gamma) * (‖u‖ * ‖v‖) :=
   norm_energyFormH1_le_of_bounds h.upper_nonneg (fun _x hx eta xi => h.upper_bound hx eta xi)
-    hbeta hgamma
     hb_bound hc_bound u v
 
 /-- Gårding's inequality with a mass floor and any positive Young parameter `ε`. The
