@@ -27,7 +27,7 @@ scalars (`VectorBundle.restrictScalars`); since a vector bundle structure is a p
 real vector bundle structure on `E` agrees with it.
 
 The canonical orientation is natural under pullback
-(`TauCeti.VectorBundleOrientation.complex_pullback`), is the constant canonical orientation on a
+(`TauCeti.VectorBundleOrientation.pullback_complex`), is the constant canonical orientation on a
 trivial bundle (`TauCeti.VectorBundleOrientation.complex_trivial`), and on a direct sum it is the
 direct-sum orientation of the canonical orientations of the summands, up to the identification of
 index types `2 * r₁ + 2 * r₂ = 2 * (r₁ + r₂)` (`TauCeti.VectorBundleOrientation.prod_complex`).
@@ -40,7 +40,7 @@ index types `2 * r₁ + 2 * r₂ = 2 * (r₁ + r₂)` (`TauCeti.VectorBundleOrie
 
 * `Bundle.Trivialization.mapOrientation_complexOrientation`: a complex-linear trivialization reads
   the canonical orientation of a fibre as the canonical orientation of the model fibre.
-* `TauCeti.VectorBundleOrientation.complex_pullback`: the canonical orientation of a pullback
+* `TauCeti.VectorBundleOrientation.pullback_complex`: the canonical orientation of a pullback
   bundle is the pullback of the canonical orientation.
 * `TauCeti.VectorBundleOrientation.complex_trivial`: the canonical orientation of the trivial
   bundle `B × F` is the constant orientation `complexOrientation F`.
@@ -76,10 +76,11 @@ theorem mapOrientation_complexOrientation (e : Trivialization F (π F E)) [e.IsL
         (Orientation.reindex ℝ (E b) (finCongr hE) (TauCeti.complexOrientation (E b))) =
       Orientation.reindex ℝ F (finCongr hF) (TauCeti.complexOrientation F) := by
   have he : e.linearEquivAt ℝ b hb = (e.linearEquivAt ℂ b hb).restrictScalars ℝ :=
-    LinearEquiv.ext fun _ ↦ rfl
+    LinearEquiv.ext fun _ ↦ by
+      simp only [LinearEquiv.restrictScalars_apply, linearEquivAt_apply]
   rw [mapOrientation_apply, Orientation.map_reindex, he, LinearEquiv.map_complexOrientation,
     ← Orientation.reindex_trans]
-  rfl
+  exact congrArg (Orientation.reindex ℝ F · _) (Equiv.ext fun _ ↦ by simp)
 
 end Bundle.Trivialization
 
@@ -132,10 +133,13 @@ theorem mapOrientation_complex (e : Trivialization F (π F E)) [MemTrivializatio
 a complex vector bundle along a continuous map `f` is the pullback of the canonical orientation
 of `E`. -/
 @[simp]
-theorem complex_pullback {B' : Type*} [TopologicalSpace B'] (f : C(B', B)) :
+theorem pullback_complex {B' : Type*} [TopologicalSpace B'] (f : C(B', B)) :
     (complex F E).pullback f = complex F ((⇑f) *ᵖ E) := by
   ext b
   rw [pullback_apply, complex_apply, complex_apply]
+  -- The fibre `(f *ᵖ E) b` is by definition `E (f b)`, and its group, module and scalar tower
+  -- instances are those of `E (f b)` via `inferInstanceAs`, so both sides are the same reindexed
+  -- canonical orientation.
   rfl
 
 /-- The canonical orientation of the trivial bundle `B × F` is the constant orientation given by
@@ -176,9 +180,11 @@ theorem prod_complex (b : B) :
   have := VectorBundle.finiteDimensional ℂ F₂ E₂ b
   have : Module.Finite ℝ (E₁ b) := Module.Finite.trans ℂ (E₁ b)
   have : Module.Finite ℝ (E₂ b) := Module.Finite.trans ℂ (E₂ b)
+  -- The fibre `(E₁ ×ᵇ E₂) b` is by definition `E₁ b × E₂ b` with the product instances, so after
+  -- rewriting only the composite casts of the index types differ.
   rw [prod_apply, complex_apply, complex_apply, complex_apply, Orientation.prod_reindex_finCongr,
     prod_complexOrientation, ← Orientation.reindex_trans, ← Orientation.reindex_trans]
-  rfl
+  exact congrArg (Orientation.reindex ℝ _ · _) (Equiv.ext fun _ ↦ by simp)
 
 end Prod
 
