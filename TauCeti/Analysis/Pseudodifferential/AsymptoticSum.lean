@@ -367,8 +367,7 @@ theorem exists_asymptoticSum {m : ℕ → ℝ} (hm : Antitone m) (hm' : Tendsto 
     fun j => (ht j).2
   refine ⟨⟨borelSum χ t a, hb, fun K hK α β => ?_⟩, fun N =>
     ⟨⟨borelSum χ t a - ∑ j ∈ Finset.range N, (a j).coefficient,
-      hb.sub (by simpa only [Finset.sum_fn] using
-        ContDiff.sum fun j _ => (a j).contDiff_coefficient),
+      hb.sub (contDiff_sum_coefficient (Finset.range N) a),
       fun K hK α β => hrem N hK α β⟩, rfl⟩⟩
   simpa only [Finset.range_zero, Finset.sum_empty, sub_zero] using hrem 0 hK α β
 
