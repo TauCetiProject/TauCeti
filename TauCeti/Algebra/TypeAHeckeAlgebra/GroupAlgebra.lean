@@ -99,6 +99,23 @@ theorem groupAlgebraEquiv_Tw (hq : q = q⁻¹) (w : W) :
     groupAlgebraEquiv cs hq (Tw q cs w) = MonoidAlgebra.single w 1 :=
   toGroupAlgebra_Tw cs hq w
 
+/-- At a group-algebra parameter, PBW coordinates are the coefficients under the
+canonical group-algebra comparison. -/
+theorem _root_.CoxeterSystem.basisTw_repr_eq_coeff_groupAlgebraEquiv (hq : q = q⁻¹)
+    (x : TypeAHeckeAlgebra R q n) :
+    (basisTw q cs).repr x = (groupAlgebraEquiv cs hq x).coeff := by
+  have h : (basisTw q cs).repr.toLinearMap =
+      (MonoidAlgebra.coeffLinearEquiv R).toLinearMap.comp
+        (groupAlgebraEquiv cs hq).toLinearMap := by
+    apply (basisTw q cs).ext
+    intro w
+    have hw : groupAlgebraEquiv cs hq ((basisTw q cs) w) =
+        MonoidAlgebra.single w 1 := by simp [coe_basisTw]
+    simp only [LinearEquiv.coe_coe, Module.Basis.repr_self, LinearMap.comp_apply,
+      AlgEquiv.toLinearMap_apply, MonoidAlgebra.coeffLinearEquiv_apply, hw,
+      MonoidAlgebra.coeff_single]
+  exact LinearMap.congr_fun h x
+
 /-- The inverse comparison sends a group-algebra monomial to the corresponding multiple of
 `T_w`. -/
 @[simp]
