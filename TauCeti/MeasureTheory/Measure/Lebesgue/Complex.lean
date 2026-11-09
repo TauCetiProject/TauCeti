@@ -13,6 +13,8 @@ import Mathlib.Topology.Order.Compact
 /-!
 # Planar area of coordinate lines and graphs
 
+The set `s ×ℂ t = {z | z.re ∈ s ∧ z.im ∈ t}` is measurable when `s` and `t` are
+(`MeasurableSet.reProdIm`).
 Coordinate lines and continuous graphs over compact intervals have zero planar Lebesgue measure.
 Interchanging the real and imaginary coordinates preserves planar area.
 Splitting complex vectors into real and imaginary blocks preserves product volume, using
@@ -23,6 +25,12 @@ Mathlib's `Complex.volume_preserving_equiv_real_prod` coordinatewise and
 public section
 
 open MeasureTheory Set
+
+/-- The set `s ×ℂ t` is measurable when `s` and `t` are. -/
+theorem MeasurableSet.reProdIm {s t : Set ℝ} (hs : MeasurableSet s) (ht : MeasurableSet t) :
+    MeasurableSet (s ×ℂ t) := by
+  rw [Complex.reProdIm]
+  exact (Complex.continuous_re.measurable hs).inter (Complex.continuous_im.measurable ht)
 
 namespace Complex
 
