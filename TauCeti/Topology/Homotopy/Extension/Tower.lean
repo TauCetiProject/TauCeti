@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Coherent
+public import TauCeti.Topology.Homeomorph.SubtypeSubtype
 public import TauCeti.Topology.Homotopy.Extension.HomotopyEquivRel
 
 /-!
@@ -58,22 +59,6 @@ universe u
 
 variable {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y]
 
-/-- A subset `S` of a larger subset `S'`, read as a subset of `S'`, is homeomorphic to `S`. -/
-private noncomputable def subsetHomeomorph {Z : Type*} [TopologicalSpace Z] {S S' : Set Z}
-    (hS : S ⊆ S') : ((↑) ⁻¹' S : Set S') ≃ₜ S :=
-  IsEmbedding.subtypeVal.homeomorphOfSubsetRange (by rwa [Subtype.range_coe])
-
-@[simp]
-private theorem coe_subsetHomeomorph {Z : Type*} [TopologicalSpace Z] {S S' : Set Z}
-    (hS : S ⊆ S') (a : ((↑) ⁻¹' S : Set S')) : (subsetHomeomorph hS a : Z) = a :=
-  rfl
-
-@[simp]
-private theorem coe_subsetHomeomorph_symm {Z : Type*} [TopologicalSpace Z] {S S' : Set Z}
-    (hS : S ⊆ S') (a : S) : (((subsetHomeomorph hS).symm a : S') : Z) = a :=
-  (IsEmbedding.homeomorphOfSubsetRange_apply_coe _ _ _).symm.trans
-    (congrArg Subtype.val ((subsetHomeomorph hS).apply_symm_apply a))
-
 /-- One stage of the induction: a homotopy inverse `g : T → S` of a homotopy equivalence
 `e : S ≃ₕ T`, with a homotopy `g ∘ e ≃ id`, extends to a homotopy inverse of a homotopy
 equivalence `e' : S' ≃ₕ T'` of larger subsets agreeing with `e` on `S`, with a homotopy which is
@@ -88,26 +73,22 @@ private theorem exists_stage_extension {S S' : Set X} {T T' : Set Y} (hS : S ⊆
       (∀ b : T, (g' (Set.inclusion hT b) : X) = g b) ∧
         ∀ (t : I) (a : S), (H' (t, Set.inclusion hS a) : X) = H (t, a) := by
   -- Read the stages `S` and `T` as subsets of `S'` and `T'`.
-  let iS := subsetHomeomorph hS
-  let iT := subsetHomeomorph hT
-  -- Transport `e`, `g` and `H` to these subsets. Below, `simp` must not rewrite `iT.symm` to an
-  -- inverse homotopy equivalence, which has no evaluation lemma, so that
-  -- `coe_subsetHomeomorph_symm` can evaluate it.
+  let iS : ((↑) ⁻¹' S : Set S') ≃ₜ S := Homeomorph.subtypeSubtypeEquivSubtype fun h ↦ hS h
+  let iT : ((↑) ⁻¹' T : Set T') ≃ₜ T := Homeomorph.subtypeSubtypeEquivSubtype fun h ↦ hT h
+  -- Transport `e`, `g` and `H` to these subsets. The homeomorphisms `iS` and `iT` and their
+  -- inverses only change membership proofs, so the transported data agree with the original
+  -- data definitionally on points.
   let e₀ : ((↑) ⁻¹' S : Set S') ≃ₕ ((↑) ⁻¹' T : Set T') :=
     iS.toHomotopyEquiv.trans (e.trans iT.symm.toHomotopyEquiv)
   have he₀ (a : ((↑) ⁻¹' S : Set S')) : (e₀ a : T') = e' a :=
-    Subtype.ext <| by simp [e₀, he, he', iS, iT, -Homeomorph.symm_toHomotopyEquiv]
+    Subtype.ext <| (he (iS a)).trans (he' a).symm
   let g₀ : C(((↑) ⁻¹' T : Set T'), ((↑) ⁻¹' S : Set S')) :=
     (iS.symm : C(S, _)).comp (g.comp (iT : C(_, T)))
   let H₀ : (g₀.comp e₀.toFun).Homotopy (ContinuousMap.id _) :=
-    ((Homotopy.refl (iS.symm : C(S, _))).comp (H.compContinuousMap (iS : C(_, S)))).cast
-      (by ext x : 1; simp [g₀, e₀, iS, iT, -Homeomorph.symm_toHomotopyEquiv]) (by ext x : 1; simp)
+    ((Homotopy.refl (iS.symm : C(S, _))).comp (H.compContinuousMap (iS : C(_, S)))).cast rfl rfl
   obtain ⟨g', H', hg', hH', -⟩ := hSH.exists_inverse_extending_homotopy hTH e' e₀ he₀ g₀ H₀
-  refine ⟨g', H', fun b => ?_, fun t a => ?_⟩
-  · have hb : (iT.symm b : T') = Set.inclusion hT b := Subtype.ext (coe_subsetHomeomorph_symm hT b)
-    simpa [hb, g₀, iS] using congrArg Subtype.val (hg' (iT.symm b))
-  · have ha : (iS.symm a : S') = Set.inclusion hS a := Subtype.ext (coe_subsetHomeomorph_symm hS a)
-    simpa [ha, H₀, iS] using congrArg Subtype.val (hH' t (iS.symm a))
+  exact ⟨g', H', fun b => congrArg Subtype.val (hg' (iT.symm b)),
+    fun t a => congrArg Subtype.val (hH' t (iS.symm a))⟩
 
 variable {A : ℕ → Set X} {B : ℕ → Set Y}
 
