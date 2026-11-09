@@ -10,11 +10,14 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.ZPow
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Topology.UniformSpace.HeineCantor
 
 /-!
-# Taylor polynomials: sign of the remainder and the derivatives of `f(x) / x`
+# Taylor polynomials and remainder estimates
 
-Two facts about Mathlib's Taylor polynomials `taylorWithinEval f n s x₀ x`.
+Remainder bounds and identities for Mathlib's Taylor polynomials `taylorWithinEval f n s x₀ x`,
+including a uniform second-order estimate for functions C² near a compact interval.
+Two further applications are:
 
 * **Sign of the remainder.** As a function of the expansion point, the derivative of
   `x₀ ↦ taylorWithinEval f n s x₀ x` is `(x - x₀)ⁿ / n! · f⁽ⁿ⁺¹⁾(x₀)`. If `(-1)ⁿ f⁽ⁿ⁺¹⁾ ≥ 0`
@@ -70,6 +73,64 @@ theorem abs_sub_taylorWithinEval_le {f : ℝ → ℝ} {n : ℕ} (hf : ContDiff �
   rw [hy, abs_div, abs_mul, abs_pow, Nat.abs_cast]
   gcongr
   exact hM y
+
+/-- The quadratic Taylor polynomial on the whole line, written using ordinary derivatives.
+No regularity hypothesis is needed for this algebraic identity. -/
+theorem taylorWithinEval_univ_two (f : ℝ → ℝ) (x y : ℝ) :
+    taylorWithinEval f 2 univ x y =
+      f x + deriv f x * (y - x) + 1 / 2 * deriv (deriv f) x * (y - x) ^ 2 := by
+  simp only [taylorWithinEval_succ, taylor_within_zero_eval, iteratedDerivWithin_univ,
+    iteratedDeriv_succ, iteratedDeriv_zero, Nat.factorial_zero, Nat.factorial_one,
+    Nat.cast_one, Nat.cast_zero, zero_add, one_mul, inv_one, pow_one, smul_eq_mul]
+  ring
+
+/-- Uniform second-order Taylor remainder estimate for a function C² near a compact interval.
+The coefficient of the squared increment can be made arbitrarily small. -/
+theorem exists_pos_forall_abs_sub_taylorWithinEval_two_le {f : ℝ → ℝ} {a b : ℝ}
+    (hf : ∀ z ∈ Icc a b, ContDiffAt ℝ 2 f z) {ε : ℝ} (hε : 0 < ε) :
+    ∃ δ > 0, ∀ x ∈ Icc a b, ∀ y ∈ Icc a b, |y - x| < δ →
+      |f y - taylorWithinEval f 2 univ x y| ≤ ε * (y - x) ^ 2 := by
+  have hu : UniformContinuousOn (iteratedDeriv 2 f) (Icc a b) := by
+    apply isCompact_Icc.uniformContinuousOn_of_continuous
+    intro z hz
+    simpa only [iteratedDeriv_succ, iteratedDeriv_zero] using
+      (((hf z hz).derivWithin (m := 1) (by norm_num)).derivWithin
+        (m := 0) (by norm_num)).continuousAt.continuousWithinAt
+  obtain ⟨δ, hδ, hδf⟩ := Metric.uniformContinuousOn_iff.1 hu ε hε
+  refine ⟨δ, hδ, fun x hx y hy hxy ↦ ?_⟩
+  by_cases h : x = y
+  · subst y
+    simp
+  obtain ⟨z, hz, hTaylor⟩ := taylor_mean_remainder_lagrange_iteratedDeriv
+    (n := 1) h (fun t ht ↦ (hf t (uIcc_subset_Icc hx hy ht)).contDiffWithinAt)
+  have hz' : z ∈ Icc a b := uIcc_subset_Icc hx hy (uIoo_subset_uIcc_self hz)
+  have hzx : dist z x < δ := lt_of_le_of_lt
+    (by simpa [Real.dist_eq] using abs_sub_left_of_mem_uIcc (uIoo_subset_uIcc_self hz)) hxy
+  have hd : |iteratedDeriv 2 f z - iteratedDeriv 2 f x| < ε := by
+    simpa [Real.dist_eq] using hδf z hz' x hx hzx
+  have hpoly : taylorWithinEval f 1 (uIcc x y) x y =
+      f x + deriv f x * (y - x) := by
+    rw [taylorWithinEval_succ, taylor_within_zero_eval,
+      iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_uIcc h)
+        ((hf x hx).of_le (by norm_num)) left_mem_uIcc]
+    simp [iteratedDeriv_one, smul_eq_mul, mul_comm]
+  rw [hpoly] at hTaylor
+  have heq : f y - taylorWithinEval f 2 univ x y =
+      (iteratedDeriv 2 f z - iteratedDeriv 2 f x) * (y - x) ^ 2 / 2 := by
+    rw [taylorWithinEval_univ_two]
+    have hTaylor' : f y - (f x + deriv f x * (y - x)) =
+        iteratedDeriv 2 f z * (y - x) ^ 2 / 2 := by
+      simpa only [Nat.reduceAdd, Nat.factorial_two, Nat.cast_ofNat] using hTaylor
+    rw [iteratedDeriv_succ, iteratedDeriv_one] at hTaylor' ⊢
+    linarith
+  rw [heq]
+  calc
+    _ = |iteratedDeriv 2 f z - iteratedDeriv 2 f x| / 2 * (y - x) ^ 2 := by
+      rw [abs_div, abs_mul, abs_pow, sq_abs, abs_of_pos (by norm_num : (0 : ℝ) < 2)]
+      ring
+    _ ≤ ε * (y - x) ^ 2 := by
+      gcongr
+      linarith [abs_nonneg (iteratedDeriv 2 f z - iteratedDeriv 2 f x)]
 
 /-- **The Taylor remainder has a sign.** Let `f` be `C^(n+1)` on an open set `s` containing
 `[x, y]`, with `(-1)ⁿ f⁽ⁿ⁺¹⁾ ≥ 0` on `(x, y)`. Then the Taylor polynomial of order `n` of `f`
