@@ -42,7 +42,6 @@ Baker--Campbell--Hausdorff expansion.
   power-bounded elements satisfy `‖exp (s • b)‖ ≤ M * Real.exp ‖s‖`
   (`TauCeti.norm_exp_smul_le_mul_exp_of_norm_pow_le`).
 * `TauCeti.exp_smul_one`: the exponential of a scalar multiple of the unit.
-* `NormedSpace.exp_mul_of_mul_eq_zero`: if `x * y = 0`, then `exp x * y = y`.
 * `TauCeti.exists_norm_exp_smul_le_of_norm_exp_smul_lt_one`: if `‖exp (τ • x)‖ < 1` for one time
   `τ > 0`, then `‖exp (t • x)‖` decays exponentially as `t → ∞`.
 -/
@@ -105,21 +104,6 @@ theorem exp_add_smul (a : A) (s t : 𝕂) :
   rw [add_smul, exp_add_of_commute (((Commute.refl a).smul_left _).smul_right _)]
 
 end Normed
-
-section Rat
-
-variable {A : Type*} [NormedRing A] [NormedAlgebra ℚ A] [CompleteSpace A]
-
-/-- If `x * y = 0`, then the exponential of `x` fixes `y` from the left: `exp x * y = y`. All
-terms of the exponential series except the first are killed by `y`. -/
-theorem exp_mul_of_mul_eq_zero {x y : A} (h : x * y = 0) : exp x * y = y := by
-  rw [exp_eq_tsum ℚ, ← (expSeries_summable' (𝕂 := ℚ) x).tsum_mul_right,
-    tsum_eq_single 0 fun n hn ↦ ?_]
-  · simp
-  · obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-    rw [smul_mul_assoc, pow_succ, mul_assoc, h, mul_zero, smul_zero]
-
-end Rat
 
 end NormedSpace
 

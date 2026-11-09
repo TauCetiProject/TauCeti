@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Polynomial.Basic
+import TauCeti.Analysis.Polynomial.RealRoots.Quadratic
 
 /-!
 # Splitting real polynomials along the imaginary axis
@@ -24,8 +25,6 @@ a real factor of positive degree whose complex roots all have the real part of `
 
 public section
 
-open ComplexConjugate
-
 namespace Polynomial
 
 /-- A real polynomial vanishing at `z : ℂ` has a factor of positive degree all of whose complex
@@ -39,19 +38,14 @@ theorem exists_dvd_forall_aeval_eq_zero_re_eq {f : ℝ[X]} {z : ℂ} (hz : aeval
       exact dvd_iff_isRoot.mpr hz
     · simp only [map_sub, aeval_X, aeval_C, sub_eq_zero] at hw
       rw [hw, Complex.coe_algebraMap, Complex.ofReal_re]
-  · refine ⟨_, quadratic_dvd_of_aeval_eq_zero_im_ne_zero f hz him, ?_, fun w hw ↦ ?_⟩
-    · have : (X ^ 2 - C (2 * z.re) * X + C (‖z‖ ^ 2)).natDegree = 2 := by compute_degree!
-      lia
-    · -- The quadratic factor is `(X - z) (X - conj z)`, so `w` is `z` or `conj z`.
-      have h : (w - z) * (w - conj z) = 0 := by
-        simp only [map_add, map_sub, map_pow, aeval_X, map_mul, aeval_C] at hw
-        have h1 := Complex.add_conj z
-        have h2 := Complex.mul_conj' z
-        push_cast at hw h1
-        linear_combination hw - w * h1 + h2
-      rcases mul_eq_zero.mp h with h | h
-      · rw [sub_eq_zero.mp h]
-      · rw [sub_eq_zero.mp h, Complex.conj_re]
+  · have hdeg : (X ^ 2 - C (2 * z.re) * X + C (‖z‖ ^ 2)).natDegree = 2 := by compute_degree!
+    refine ⟨_, quadratic_dvd_of_aeval_eq_zero_im_ne_zero f hz him, by lia, fun w hw ↦ ?_⟩
+    -- The complex roots of the quadratic factor are `conj z` and `z`.
+    have hw' := mem_aroots.mpr ⟨ne_zero_of_natDegree_gt (n := 0) (by lia), hw⟩
+    rw [aroots_quadratic_eq_conj_pair] at hw'
+    rcases Multiset.mem_cons.mp hw' with rfl | hw'
+    · exact Complex.conj_re z
+    · rw [Multiset.mem_singleton.mp hw']
 
 /-- **Splitting along the imaginary axis.** A real polynomial without complex roots on the
 imaginary axis is a product `p * q` of real polynomials whose complex roots lie in the open left

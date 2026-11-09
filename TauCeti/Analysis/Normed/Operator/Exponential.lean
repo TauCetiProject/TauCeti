@@ -5,10 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Algebra.Spectrum
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Complex.Polynomial.Basic
+import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Analysis.ODE.ExistUnique
+import Mathlib.LinearAlgebra.Eigenspace.Triangularizable
 import TauCeti.Analysis.Normed.Algebra.Exponential
 
 /-!
@@ -28,6 +33,10 @@ space. The norm bounds for exponentials in a general normed algebra live in
   `exp (-B)`.
 * `ContinuousLinearMap.exp_apply_of_apply_eq_smul`: the exponential of an operator acts on an
   eigenvector by the scalar exponential of the eigenvalue.
+* `ContinuousLinearMap.exists_mem_spectrum_eq_exp_of_mem_spectrum_exp`,
+  `ContinuousLinearMap.spectrum_exp`: in finite dimensions over `ℂ`, the spectrum of `exp T` is
+  the image of the spectrum of `T` under the exponential. `T` commutes with `exp T`, so it
+  preserves an eigenspace of `exp T` and has an eigenvector there.
 * `ContinuousLinearMap.exp_smul_apply_sub_eq_intervalIntegral`: the Duhamel identity
   `exp (t • B) x - x = ∫₀ᵗ exp (u • B) (B x) du` for the orbits of a real bounded operator.
 * `ContinuousLinearMap.eq_exp_smul_apply_of_hasDerivWithinAt`: a continuous function on `[0, ∞)`
@@ -105,6 +114,48 @@ theorem _root_.ContinuousLinearMap.exp_apply_of_apply_eq_smul (B : X →L[𝕜] 
   exact hop.unique hscalar
 
 end Operator
+
+section FiniteDimensional
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℂ F]
+
+/-- In finite dimensions, every point of the spectrum of `exp T` is the exponential of a point of
+the spectrum of `T`. -/
+theorem _root_.ContinuousLinearMap.exists_mem_spectrum_eq_exp_of_mem_spectrum_exp (T : F →L[ℂ] F)
+    {μ : ℂ} (hμ : μ ∈ spectrum ℂ (exp T)) : ∃ z ∈ spectrum ℂ T, μ = exp z := by
+  rw [ContinuousLinearMap.spectrum_eq, ← Module.End.hasEigenvalue_iff_mem_spectrum] at hμ
+  -- `T` preserves the `μ`-eigenspace of `exp T` and has an eigenvector `w` there.
+  have hcomm : Commute ((exp T : F →L[ℂ] F) : F →ₗ[ℂ] F) (T : F →ₗ[ℂ] F) :=
+    ((Commute.refl T).exp_left).map ContinuousLinearMap.toLinearMapRingHom
+  have hmaps := Module.End.mapsTo_genEigenspace_of_comm hcomm μ 1
+  have : Nontrivial (Module.End.eigenspace ((exp T : F →L[ℂ] F) : F →ₗ[ℂ] F) μ) :=
+    Submodule.nontrivial_iff_ne_bot.mpr hμ
+  obtain ⟨z, hz⟩ := Module.End.exists_eigenvalue
+    ((T : F →ₗ[ℂ] F).restrict fun _ hx ↦ hmaps hx)
+  obtain ⟨⟨w, hwW⟩, hw⟩ := hz.exists_hasEigenvector
+  have hTw : T w = z • w := by
+    simpa [LinearMap.coe_restrict_apply] using congrArg Subtype.val hw.apply_eq_smul
+  have hw0 : w ≠ 0 := fun h ↦ hw.2 (Subtype.ext h)
+  refine ⟨z, ?_, ?_⟩
+  · rw [ContinuousLinearMap.spectrum_eq, ← Module.End.hasEigenvalue_iff_mem_spectrum]
+    exact Module.End.hasEigenvalue_of_hasEigenvector
+      ⟨Module.End.mem_eigenspace_iff.mpr hTw, hw0⟩
+  · have h : exp T w = μ • w := Module.End.mem_eigenspace_iff.mp hwW
+    rw [T.exp_apply_of_apply_eq_smul hTw] at h
+    exact (smul_left_injective ℂ hw0 h).symm
+
+/-- **Spectral mapping for the exponential, in finite dimensions.** The spectrum of `exp T` is the
+image of the spectrum of `T` under the exponential. -/
+theorem _root_.ContinuousLinearMap.spectrum_exp (T : F →L[ℂ] F) :
+    spectrum ℂ (exp T) = exp '' spectrum ℂ T := by
+  refine Set.Subset.antisymm (fun μ hμ ↦ ?_) ?_
+  · obtain ⟨z, hz, rfl⟩ := T.exists_mem_spectrum_eq_exp_of_mem_spectrum_exp hμ
+    exact ⟨z, hz, rfl⟩
+  · rintro _ ⟨z, hz, rfl⟩
+    have := FiniteDimensional.complete ℂ F
+    exact spectrum.exp_mem_exp T hz
+
+end FiniteDimensional
 
 section Real
 
