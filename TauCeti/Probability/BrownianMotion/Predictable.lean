@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Filtered
-public import TauCeti.Probability.Process.Predictable
+public import TauCeti.Probability.Process.Predictable.Basic
 
 /-!
 # Predictable versions of filtered Brownian motion
