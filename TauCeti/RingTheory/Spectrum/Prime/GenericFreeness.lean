@@ -91,8 +91,10 @@ private theorem freeLocus_mem_nhds_polynomial {R : Type uR} [CommRing R] [Algebr
     rw [← LinearMap.range_comp, ← hφX]
     exact le_iSup₂_of_le (i + 1) (by omega) le_rfl
   have hFtop : ⨆ j, F j = ⊤ := by
-    rw [eq_top_iff, ← TauCeti.iSup_range_linearCombination_X_pow_smul m hm, iSup_le_iff]
-    exact fun i ↦ le_iSup_of_le (i + 1) (le_iSup₂_of_le i (Nat.lt_succ_self i) le_rfl)
+    rw [eq_top_iff, ← Submodule.restrictScalars_top R R[X] M, ← hm,
+      ← TauCeti.iSup_span_range_X_pow_smul m, iSup_le_iff]
+    exact fun i ↦ (Fintype.range_linearCombination R _).ge.trans
+      (le_iSup_of_le (i + 1) (le_iSup₂_of_le i (Nat.lt_succ_self i) le_rfl))
   -- `K j` is the module of relations of the `j`-th subquotient; it increases with `j`.
   let K : ℕ →o Submodule R (Fin t → R) :=
     ⟨fun j ↦ (F j).comap (φ j), monotone_nat_of_le_succ fun j c hc ↦ by
@@ -105,7 +107,7 @@ private theorem freeLocus_mem_nhds_polynomial {R : Type uR} [CommRing R] [Algebr
   have hsub (j : ℕ) : freeLocus A ((Fin t → R) ⧸ K j) =
       freeLocus A (N (j + 1) ⧸ (N j).submoduleOf (N (j + 1))) := by
     have hFsucc : F j ⊔ LinearMap.range (φ j) = F (j + 1) := (Nat.iSup_lt_succ _ j).symm
-    obtain ⟨e⟩ := Submodule.nonempty_quotient_comap_linearEquiv_sup_quotient (F j) (φ j)
+    have e := Submodule.quotientComapEquivSupQuotient (F j) (φ j)
     generalize F j ⊔ LinearMap.range (φ j) = G at e hFsucc
     subst hFsucc
     exact freeLocus_congr (e.restrictScalars A ≪≫ₗ
@@ -117,17 +119,11 @@ private theorem freeLocus_mem_nhds_polynomial {R : Type uR} [CommRing R] [Algebr
       fun j _ ↦ mem_interior_iff_mem_nhds.mpr (hR ((Fin t → R) ⧸ K j) p hp)
   refine Filter.mem_of_superset hU (subset_trans ?_ (iInter_freeLocus_subquotient_subset_freeLocus
     N hNmono (by simp [N, hF0]) ?_))
-  · intro q hq
-    rw [Set.mem_iInter]
-    intro j
-    rw [← hsub]
-    have hstab := TauCeti.iInf_mem_range_succ_eq_iInf (fun j ↦ freeLocus A ((Fin t → R) ⧸ K j))
-      j₀ (fun j hj ↦ by rw [hj₀ j hj])
-    have hq' : q ∈ ⨅ j ∈ Finset.range (j₀ + 1), freeLocus A ((Fin t → R) ⧸ K j) := by
-      simp only [Set.iInf_eq_iInter, Set.mem_iInter]
-      exact fun i hi ↦ interior_subset (Set.mem_iInter₂.mp hq i hi)
-    rw [hstab] at hq'
-    exact Set.mem_iInter.mp (by simpa only [Set.iInf_eq_iInter] using hq') j
+  · have hstab := TauCeti.iInf_mem_range_succ_eq_iInf (fun j ↦ freeLocus A ((Fin t → R) ⧸ K j))
+      j₀ fun j hj ↦ by rw [hj₀ j hj]
+    simp only [Set.iInf_eq_iInter] at hstab
+    exact ((Set.iInter₂_mono fun _ _ ↦ interior_subset).trans hstab.subset).trans_eq
+      (Set.iInter_congr hsub)
   · simp only [N, ← Submodule.restrictScalars_iSup, hFtop, Submodule.restrictScalars_top]
 
 /-- Freeness of finite modules near the minimal primes of `A` transfers along a surjective
