@@ -19,9 +19,9 @@ nonflat ones. The geometric degree map and the integral normals are unchanged. S
 extension commutes with images along Lie homomorphisms.
 
 We use Mathlib's `Submodule.baseChange`, rather than identifying tensor products with
-submodules, which fails without flatness. If `S` is flat, the equivalence
-`Submodule.toBaseChange S (H.wall n m)` identifies `S ⊗[R] H.wall n m` with the extended
-wall space `(H.baseChange S).wall n m`. Bracket closure is
+submodules, which fails without flatness. If `S` is flat over `R`, the equivalence
+`Submodule.toBaseChange.toLinearEquiv S (H.wall n m)` identifies `S ⊗[R] H.wall n m` with the
+extended wall space `(H.baseChange S).wall n m`. Bracket closure is
 `SetLike.GradedBracket.baseChange`, applied to the pairs of degrees and normals.
 
 ## Attribution
@@ -70,6 +70,7 @@ theorem baseChange_wall (n : Γ) (m : Λ →+ ℤ) :
     (H.baseChange S).wall n m = (H.wall n m).baseChange S := (rfl)
 
 /-- Scalar extension commutes with pushing wall spaces along a Lie homomorphism. -/
+@[simp]
 theorem baseChange_map (f : L →ₗ⁅R⁆ L') (ℒ' : Γ → Submodule R L')
     (hf : ∀ n, (ℒ n).map f.toLinearMap ≤ ℒ' n) :
     (H.map f ℒ' hf).baseChange S =
