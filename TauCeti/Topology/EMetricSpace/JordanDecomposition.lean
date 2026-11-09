@@ -75,7 +75,7 @@ theorem continuousOn_and_locallyBoundedVariationOn_iff
   · rintro ⟨p, q, hp, hq, hpm, hqm, heq⟩
     refine ⟨(hp.sub hq).congr heq, ?_⟩
     intro a b ha hb
-    change eVariationOn f (s ∩ Icc a b) ≠ ⊤
+    unfold BoundedVariationOn
     rw [eVariationOn.congr (heq.mono inter_subset_left)]
     exact (hpm.locallyBoundedVariationOn.sub hqm.locallyBoundedVariationOn) a b ha hb
 

@@ -92,7 +92,7 @@ end LocallyBoundedVariationOn
 namespace LocallyBoundedVariationOn
 
 variable {α X : Type*} [LinearOrder α] [TopologicalSpace α] [OrderTopology α]
-  [PseudoMetricSpace X] {f : α → X} {s : Set α}
+  [PseudoEMetricSpace X] {f : α → X} {s : Set α}
 
 /-- Cumulative variation of a locally bounded-variation function is continuous at exactly the
 points where the original function is continuous, relative to the same set. -/
@@ -101,18 +101,38 @@ theorem continuousWithinAt_variationOnFromTo_iff
     ContinuousWithinAt (variationOnFromTo f s a) s x ↔ ContinuousWithinAt f s x := by
   constructor
   · intro h
-    apply tendsto_iff_dist_tendsto_zero.mpr
-    refine squeeze_zero' (Filter.Eventually.of_forall fun _ ↦ dist_nonneg) ?_
-      (tendsto_iff_dist_tendsto_zero.mp h.tendsto)
+    simp only [ContinuousWithinAt, tendsto_iff_edist_tendsto_0] at h ⊢
+    apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h (by simp)
     filter_upwards [self_mem_nhdsWithin] with y hy
-    simpa only [Real.dist_eq] using hf.dist_le_abs_sub_variationOnFromTo ha hy hx
+    rw [edist_eq_enorm_sub, variationOnFromTo.sub_right hf ha hy hx]
+    rcases le_total x y with hxy | hyx
+    · simpa [variationOnFromTo.eq_of_le _ _ hxy, Real.enorm_toReal (hf x y hx hy)] using
+        eVariationOn.edist_le f (s := s ∩ Icc x y) ⟨hy, hxy, le_rfl⟩ ⟨hx, le_rfl, hxy⟩
+    · simpa [variationOnFromTo.eq_of_ge _ _ hyx, Real.enorm_toReal (hf y x hy hx)] using
+        eVariationOn.edist_le f (s := s ∩ Icc y x) ⟨hy, le_rfl, hyx⟩ ⟨hx, hyx, le_rfl⟩
   · intro h
     apply continuousWithinAt_iff_continuous_left'_right'.mpr
     constructor
-    · simpa only [ContinuousWithinAt, dist_self, sub_zero] using
-        variationOnFromTo.tendsto_left ha hx hf (h.mono inter_subset_left)
-    · simpa only [ContinuousWithinAt, dist_self, add_zero] using
-        variationOnFromTo.tendsto_right ha hx hf (h.mono inter_subset_left)
+    · have hv := hf.tendsto_eVariationOn_Icc_left (h.mono inter_subset_left) hx
+      simp only [edist_self] at hv
+      have H := ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hv).const_sub
+        (variationOnFromTo f s a x)
+      simp only [ENNReal.toReal_zero, sub_zero] at H
+      apply H.congr'
+      filter_upwards [self_mem_nhdsWithin] with y hy
+      simp only [Function.comp_apply]
+      rw [← variationOnFromTo.eq_of_le f s hy.2.le,
+        variationOnFromTo.sub_left hf ha hx hy.1]
+    · have hv := hf.tendsto_eVariationOn_Icc_right (h.mono inter_subset_left) hx
+      simp only [edist_self] at hv
+      have H := ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hv).const_add
+        (variationOnFromTo f s a x)
+      simp only [ENNReal.toReal_zero, add_zero] at H
+      apply H.congr'
+      filter_upwards [self_mem_nhdsWithin] with y hy
+      simp only [Function.comp_apply]
+      rw [← variationOnFromTo.eq_of_le f s hy.2.le,
+        variationOnFromTo.add hf ha hx hy.1]
 
 end LocallyBoundedVariationOn
 
