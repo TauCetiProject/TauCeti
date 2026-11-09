@@ -210,10 +210,16 @@ variable {A B : Matrix n n ℂ}
 open scoped Matrix.Norms.L2Operator
 
 /-- The Cayley expression of a Hermitian resolvent has Euclidean operator norm at most one.
-The inequality, unlike equality with one, includes the empty matrix. -/
+The inequality, unlike equality with one, includes the empty matrix. For real `z` the correction
+term vanishes. -/
 theorem l2_opNorm_one_add_sub_conj_smul_inv_sub_smul_one_le (hA : A.IsHermitian)
-    {z : ℂ} (hz : z.im ≠ 0) :
-    ‖1 + (z - conj z) • (A - z • 1)⁻¹‖ ≤ 1 := by
+    (z : ℂ) : ‖1 + (z - conj z) • (A - z • 1)⁻¹‖ ≤ 1 := by
+  rcases eq_or_ne z.im 0 with hz | hz
+  · rw [Complex.conj_eq_iff_im.2 hz, sub_self, zero_smul, add_zero]
+    rcases subsingleton_or_nontrivial (Matrix n n ℂ) with h | h
+    · rw [Subsingleton.elim (1 : Matrix n n ℂ) 0, norm_zero]
+      exact zero_le_one
+    · exact CStarRing.norm_one.le
   rw [hA.inv_sub_smul_one_eq_conjStarAlgAut_diagonal
     (hA.notMem_spectrum_of_im_ne_zero hz)]
   simp only [RCLike.ofReal_eq_complex_ofReal]
@@ -237,8 +243,8 @@ theorem l2_opNorm_inv_sub_smul_one_sub_le (hA : A.IsHermitian) (hB : B.IsHermiti
     ‖(A - z • 1)⁻¹ - (B - z • 1)⁻¹‖ ≤ |z.im|⁻¹ := by
   have h := (norm_sub_le (1 + (z - conj z) • (A - z • 1)⁻¹)
     (1 + (z - conj z) • (B - z • 1)⁻¹)).trans
-      (add_le_add (hA.l2_opNorm_one_add_sub_conj_smul_inv_sub_smul_one_le hz)
-        (hB.l2_opNorm_one_add_sub_conj_smul_inv_sub_smul_one_le hz))
+      (add_le_add (hA.l2_opNorm_one_add_sub_conj_smul_inv_sub_smul_one_le z)
+        (hB.l2_opNorm_one_add_sub_conj_smul_inv_sub_smul_one_le z))
   rw [add_sub_add_left_eq_sub, ← smul_sub, norm_smul, Complex.sub_conj] at h
   have hn : ‖((2 * z.im : ℝ) : ℂ) * Complex.I‖ = 2 * |z.im| := by
     simp [Real.norm_eq_abs]
