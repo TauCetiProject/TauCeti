@@ -159,7 +159,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [IsAlgClosed 𝕜] {n : �
 formulas its coordinates are, up to sign, the elementary symmetric polynomials of the ordered
 tuple. -/
 theorem analyticAt_coeffEquiv_ofFn (v₀ : Fin n → 𝕜) :
-    AnalyticAt 𝕜 (fun v : Fin n → 𝕜 => coeffEquiv 𝕜 n (ofFn v)) v₀ := by
+    AnalyticAt 𝕜 (fun v : Fin n → 𝕜 => coeffEquiv 𝕜 n (Sym.ofFn v)) v₀ := by
   refine AnalyticAt.pi fun i => ?_
   simp only [coeffEquiv_ofFn_apply]
   exact Polynomial.analyticAt_coeff_prod_X_sub_C _ _ _
@@ -190,7 +190,7 @@ variable {K : Type*} [NormedField K] [IsAlgClosed K] {n : ℕ}
 tuples, is continuous. -/
 @[continuity, fun_prop]
 theorem continuous_coeffEquiv_comp_ofFn :
-    Continuous fun f : Fin n → K => coeffEquiv K n (ofFn f) := by
+    Continuous fun f : Fin n → K => coeffEquiv K n (Sym.ofFn f) := by
   refine continuous_pi fun i => ?_
   simp only [coeffEquiv_ofFn_apply]
   exact Polynomial.continuous_coeff_prod_X_sub_C Finset.univ i
@@ -199,30 +199,30 @@ theorem continuous_coeffEquiv_comp_ofFn :
 more than the sup-norm of its elementary symmetric chart, because each of them is a root of the
 monic polynomial those coordinates present. -/
 theorem norm_le_norm_coeffEquiv_ofFn_add_one (f : Fin n → K) :
-    ‖f‖ ≤ ‖coeffEquiv K n (ofFn f)‖ + 1 := by
-  have hnonneg : (0 : ℝ) ≤ ‖coeffEquiv K n (ofFn f)‖ + 1 := by positivity
+    ‖f‖ ≤ ‖coeffEquiv K n (Sym.ofFn f)‖ + 1 := by
+  have hnonneg : (0 : ℝ) ≤ ‖coeffEquiv K n (Sym.ofFn f)‖ + 1 := by positivity
   refine (pi_norm_le_iff_of_nonneg hnonneg).2 fun j => ?_
-  have hmonic : (toMonic (ofFn f) : K[X]).Monic := monic_toMonic _
-  have hroot : (toMonic (ofFn f) : K[X]).IsRoot (f j) :=
-    mem_iff_isRoot.1 (_root_.Sym.mem_coe.2 (mem_ofFn.2 ⟨j, rfl⟩))
+  have hmonic : (toMonic (Sym.ofFn f) : K[X]).Monic := monic_toMonic _
+  have hroot : (toMonic (Sym.ofFn f) : K[X]).IsRoot (f j) :=
+    mem_iff_isRoot.1 (_root_.Sym.mem_coe.2 (Sym.mem_ofFn.2 ⟨j, rfl⟩))
   have hcauchy := hroot.norm_lt_cauchyBound hmonic.ne_zero
-  have hbound : cauchyBound (toMonic (ofFn f) : K[X]) ≤ ‖coeffEquiv K n (ofFn f)‖₊ + 1 := by
-    have hsup : ((Finset.range n).sup fun i => ‖(toMonic (ofFn f) : K[X]).coeff i‖₊)
-        ≤ ‖coeffEquiv K n (ofFn f)‖₊ := by
+  have hbound : cauchyBound (toMonic (Sym.ofFn f) : K[X]) ≤ ‖coeffEquiv K n (Sym.ofFn f)‖₊ + 1 := by
+    have hsup : ((Finset.range n).sup fun i => ‖(toMonic (Sym.ofFn f) : K[X]).coeff i‖₊)
+        ≤ ‖coeffEquiv K n (Sym.ofFn f)‖₊ := by
       refine Finset.sup_le fun i hi => ?_
       rw [Finset.mem_range] at hi
-      have hcoord := nnnorm_le_pi_nnnorm (coeffEquiv K n (ofFn f)) ⟨i, hi⟩
+      have hcoord := nnnorm_le_pi_nnnorm (coeffEquiv K n (Sym.ofFn f)) ⟨i, hi⟩
       rwa [coeffEquiv_apply_eq_coeff] at hcoord
     rw [cauchyBound, hmonic.leadingCoeff, nnnorm_one, div_one, natDegree_toMonic]
     exact add_le_add hsup le_rfl
-  have : ‖f j‖₊ < ‖coeffEquiv K n (ofFn f)‖₊ + 1 := hcauchy.trans_le hbound
+  have : ‖f j‖₊ < ‖coeffEquiv K n (Sym.ofFn f)‖₊ + 1 := hcauchy.trans_le hbound
   simpa using (NNReal.coe_lt_coe.2 this).le
 
 variable [ProperSpace K]
 
 /-- The coefficient map is proper: bounded coefficients force bounded roots, by Cauchy's bound. -/
 theorem isProperMap_coeffEquiv_comp_ofFn :
-    IsProperMap fun f : Fin n → K => coeffEquiv K n (ofFn f) := by
+    IsProperMap fun f : Fin n → K => coeffEquiv K n (Sym.ofFn f) := by
   rw [isProperMap_iff_tendsto_cocompact]
   refine ⟨continuous_coeffEquiv_comp_ofFn, ?_⟩
   rw [← Metric.cobounded_eq_cocompact, ← tendsto_norm_atTop_iff_cobounded]
@@ -235,9 +235,9 @@ theorem isProperMap_coeffEquiv_comp_ofFn :
 theorem isClosedMap_coeffEquiv : IsClosedMap (coeffEquiv K n) := by
   intro C hC
   have himage : coeffEquiv K n '' C =
-      (fun f : Fin n → K => coeffEquiv K n (ofFn f)) '' (ofFn ⁻¹' C) := by
-    rw [← Set.image_image (coeffEquiv K n) ofFn (ofFn ⁻¹' C),
-      Set.image_preimage_eq _ ofFn_surjective]
+      (fun f : Fin n → K => coeffEquiv K n (Sym.ofFn f)) '' (Sym.ofFn ⁻¹' C) := by
+    rw [← Set.image_image (coeffEquiv K n) Sym.ofFn (Sym.ofFn ⁻¹' C),
+      Set.image_preimage_eq _ Sym.ofFn_surjective]
   rw [himage]
   exact isProperMap_coeffEquiv_comp_ofFn.isClosedMap _ (hC.preimage continuous_ofFn)
 
@@ -271,12 +271,12 @@ variable {K n}
 ordered tuple `a` is the coefficient tuple of an ordered tuple `b` with each `b i` close to `a i`.
 
 This is the continuity of `(coeffHomeomorph K n).symm`, read through the open quotient map
-`TauCeti.Sym.ofFn`: it matches the roots with multiplicity, not merely each root to a nearby one. -/
+`Sym.ofFn`: it matches the roots with multiplicity, not merely each root to a nearby one. -/
 theorem eventually_exists_ofFn_eq_coeffEquiv_symm (a : Fin n → K) {ε : ℝ} (hε : 0 < ε) :
-    ∀ᶠ c in 𝓝 (coeffEquiv K n (ofFn a)),
-      ∃ b : Fin n → K, ofFn b = (coeffEquiv K n).symm c ∧ ∀ i, ‖a i - b i‖ < ε := by
-  have hnhds : ofFn '' Metric.ball a ε ∈
-      𝓝 ((coeffHomeomorph K n).symm (coeffHomeomorph K n (ofFn a))) := by
+    ∀ᶠ c in 𝓝 (coeffEquiv K n (Sym.ofFn a)),
+      ∃ b : Fin n → K, Sym.ofFn b = (coeffEquiv K n).symm c ∧ ∀ i, ‖a i - b i‖ < ε := by
+  have hnhds : Sym.ofFn '' Metric.ball a ε ∈
+      𝓝 ((coeffHomeomorph K n).symm (coeffHomeomorph K n (Sym.ofFn a))) := by
     rw [Homeomorph.symm_apply_apply]
     exact isOpenMap_ofFn.image_mem_nhds (Metric.ball_mem_nhds a hε)
   rw [← coeffHomeomorph_apply]
@@ -310,7 +310,7 @@ theorem isOpenEmbedding_coeffEquiv_comp_ofFn_map {X : Fin n → Type*}
     [∀ i, TopologicalSpace (X i)] (f : ∀ i, X i → K)
     (hf : ∀ i, IsOpenEmbedding (f i))
     (h : Pairwise (Function.onFun Disjoint fun i => Set.range (f i))) :
-    IsOpenEmbedding fun x : ∀ i, X i => coeffEquiv K n (ofFn fun i => f i (x i)) := by
+    IsOpenEmbedding fun x : ∀ i, X i => coeffEquiv K n (Sym.ofFn fun i => f i (x i)) := by
   have hemb := (coeffHomeomorph K n).isOpenEmbedding.comp (isOpenEmbedding_ofFn_map f hf h)
   simpa [Function.comp_def] using hemb
 

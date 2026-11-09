@@ -681,8 +681,12 @@ variable {G : Type u} [Mul G] [TopologicalSpace G] [ContinuousMul G]
   {M : Type v} [AddCommGroup M] [TopologicalSpace M] [DistribSMul G M] [ContinuousSMul G M]
 
 /-- `d¹` preserves continuity. -/
-theorem continuous_d1_apply [ContinuousAdd M] [ContinuousSub M] {f : G → M} (hf : Continuous f) :
+theorem continuous_d1_apply [ContinuousSub M] {f : G → M} (hf : Continuous f) :
     Continuous (d1 G M f) :=
+  have : ContinuousAdd M := ⟨by
+    have h : Continuous fun p : M × M => p.1 - (0 - p.2) :=
+      continuous_fst.sub (continuous_const.sub continuous_snd)
+    simpa using h⟩
   ((continuous_fst.smul (hf.comp continuous_snd)).sub
     (hf.comp (continuous_fst.mul continuous_snd))).add (hf.comp continuous_fst)
 

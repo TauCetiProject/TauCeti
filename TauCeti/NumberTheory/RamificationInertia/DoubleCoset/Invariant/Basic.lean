@@ -176,7 +176,7 @@ section LocalDegree
 
 variable (Q : Ideal B) [Q.IsMaximal] (H : Subgroup G) (C : Type*) [CommRing C]
   [Algebra A C] [Algebra C B] [IsScalarTower A C B]
-  [Finite G] [IsDomain A] [IsDomain B] [IsDomain C]
+  [IsDomain A] [IsDomain B] [IsDomain C]
   [Module.Finite A B] [Module.Flat A B] [Module.Flat C B]
   [IsGaloisGroup G A B] [IsGaloisGroup H C B]
 

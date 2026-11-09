@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.LocalizedModule.Away
+public import TauCeti.Algebra.Module.LocalizedModule.Away.Basic
 public import Mathlib.Algebra.CharP.Two
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
 public import Mathlib.Data.ZMod.Basic
