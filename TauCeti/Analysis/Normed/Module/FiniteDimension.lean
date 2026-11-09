@@ -49,6 +49,8 @@ that depend continuously on the parameter in the operator norm.
   continuously on a parameter has continuously varying frame and coordinate maps.
 * `Module.Basis.isBounded_of_norm_apply_le`: a set of continuous linear maps whose values on a
   finite basis are uniformly bounded is bounded.
+* `ContinuousLinearMap.pi_ext_single`: a continuous linear map out of a coordinate space is
+  determined by its values on the standard basis.
 * `ContinuousLinearEquiv.piRing_apply`, `ContinuousLinearEquiv.piRing_symm_apply`: the
   identification of maps out of a coordinate space with their values on the standard basis.
 * `IsCompact.exists_continuousLinearEquiv_mapsTo_ball`: linear coordinates sending a compact set
@@ -208,6 +210,19 @@ theorem isBounded_of_norm_apply_le {G : Type*} [NormedAddCommGroup G] [NormedSpa
   exact hC (le_max_right _ _) fun i ↦ (h u hu i).trans (le_max_left _ _)
 
 end Module.Basis
+
+namespace ContinuousLinearMap
+
+variable {R M ι : Type*} [Semiring R] [TopologicalSpace R] [AddCommMonoid M] [TopologicalSpace M]
+  [Module R M] [Finite ι] [DecidableEq ι]
+
+/-- A continuous linear map out of a coordinate space `ι → R` is determined by its values on the
+standard basis vectors `Pi.single i 1`. -/
+theorem pi_ext_single {f g : (ι → R) →L[R] M}
+    (h : ∀ i, f (Pi.single i 1) = g (Pi.single i 1)) : f = g :=
+  coe_injective <| (Pi.basisFun R ι).ext fun i ↦ by simpa using h i
+
+end ContinuousLinearMap
 
 namespace ContinuousLinearEquiv
 

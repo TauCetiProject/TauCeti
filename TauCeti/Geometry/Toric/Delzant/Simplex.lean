@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Toric.Delzant.Basic
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import Mathlib.LinearAlgebra.StdBasis
 import TauCeti.Algebra.Group.Pi.Lemmas
+import TauCeti.Analysis.Normed.Module.FiniteDimension
 import Mathlib.LinearAlgebra.Pi
 
 /-!
@@ -152,11 +153,6 @@ private theorem span_simplexNormal_compl [Finite κ] (o : Option κ) :
     refine S.sub_mem (by simpa using S.neg_mem (hmem (o' := none) (by simp))) ?_
     exact S.sum_mem fun m hm ↦ hsingle m (by simpa using Finset.ne_of_mem_erase hm)
   · exact hsingle k hk
-
-/-- A functional on `ℝ^κ` is determined by its values on the coordinate vectors. -/
-private theorem strongDual_ext [Finite κ] {x y : StrongDual ℝ (κ → ℝ)}
-    (h : ∀ k, x (Pi.single k 1) = y (Pi.single k 1)) : x = y :=
-  ContinuousLinearMap.coe_injective <| (Pi.basisFun ℝ κ).ext fun k ↦ by simpa using h k
 
 variable [Fintype κ]
 
@@ -303,12 +299,14 @@ theorem mem_extremePoints_facetPolyhedron_simplex_iff {a : ℝ} (ha : 0 < a)
     have hzero {k : κ} (hk : some k ≠ o) : x (Pi.single k 1) = 0 :=
       some_mem_activeSet_simplex_iff.1 (by rw [ho]; exact hk)
     cases o with
-    | none => exact Or.inl (strongDual_ext fun k ↦ by simpa using hzero (Option.some_ne_none k))
+    | none =>
+      exact Or.inl (ContinuousLinearMap.pi_ext_single fun k ↦ by
+        simpa using hzero (Option.some_ne_none k))
     | some p =>
       -- All values but the `p`-th vanish, and the values sum to `a`.
       have hsum := none_mem_activeSet_simplex_iff.1 (by rw [ho]; simp)
       rw [Fintype.sum_eq_single p fun k hk ↦ hzero fun h ↦ hk (Option.some_injective _ h)] at hsum
-      refine Or.inr ⟨p, strongDual_ext fun k ↦ ?_⟩
+      refine Or.inr ⟨p, ContinuousLinearMap.pi_ext_single fun k ↦ ?_⟩
       by_cases hk : k = p
       · subst hk
         simpa using hsum
@@ -325,7 +323,7 @@ theorem mem_extremePoints_facetPolyhedron_simplex_iff {a : ℝ} (ha : 0 < a)
     -- The active normals span: a functional vanishing on them vanishes on every `e_k`.
     refine mem_extremePoints_facetPolyhedron_iff.2 ⟨hmem, fun w hw ↦ ?_⟩
     rcases hx with rfl | ⟨p, rfl⟩
-    · exact strongDual_ext fun k ↦ by
+    · exact ContinuousLinearMap.pi_ext_single fun k ↦ by
         simpa using hw (some k) (some_mem_activeSet_simplex_iff.2 (by simp))
     · -- The active normals are the `e_k` with `k ≠ p` and `-1`.
       have hk (k : κ) (hk : k ≠ p) : w (Pi.single k 1) = 0 := by
@@ -333,7 +331,7 @@ theorem mem_extremePoints_facetPolyhedron_simplex_iff {a : ℝ} (ha : 0 < a)
       have hp : w (Pi.single p 1) = 0 := by
         have hsum := hw none (none_mem_activeSet_simplex_iff.2 (by simp [Pi.single_apply]))
         simpa [apply_compLeft_one, Fintype.sum_eq_single p hk] using hsum
-      refine strongDual_ext fun k ↦ ?_
+      refine ContinuousLinearMap.pi_ext_single fun k ↦ ?_
       by_cases hkp : k = p
       · simpa [hkp] using hp
       · simpa using hk k hkp
