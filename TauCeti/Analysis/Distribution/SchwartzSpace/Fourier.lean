@@ -40,6 +40,9 @@ Plancherel's theorem `‖𝓕⁻ f‖_{L²} = ‖f‖_{L²}`.
 * `SchwartzMap.fourierMultiplierCLM_laplacian`: Fourier multipliers commute with the Laplacian.
 
 * `SchwartzMap.fourier_lineDerivOp_apply`: the Fourier transform of a directional derivative.
+* `SchwartzMap.support_fourier_lineDerivOp_subset`,
+  `SchwartzMap.support_fourier_iteratedLineDerivOp_subset`: differentiation does not enlarge the
+  support of the Fourier transform.
 * `SchwartzMap.fourier_lineDerivOp_lineDerivOp_apply`: the Fourier transform of a second
   directional derivative.
 * `SchwartzMap.fourier_laplacian_apply`: the Fourier transform of the Laplacian.
@@ -123,6 +126,24 @@ theorem fourier_iteratedLineDerivOp_apply (u : 𝓢(E, F)) {k : ℕ} (v : Fin k 
     rw [LineDeriv.iteratedLineDerivOp_succ_left, fourier_lineDerivOp_apply, ih,
       smul_smul, Fin.prod_univ_succ]
     simp only [Fin.tail_def]
+
+/-- The frequencies of a directional derivative of a Schwartz function are among those of the
+function. -/
+theorem support_fourier_lineDerivOp_subset (u : 𝓢(E, F)) (v : E) :
+    Function.support ⇑(𝓕 (∂_{v} u) : 𝓢(E, F)) ⊆ Function.support ⇑(𝓕 u : 𝓢(E, F)) := by
+  intro ξ hξ h0
+  rw [Function.mem_support, fourier_lineDerivOp_apply, h0, smul_zero] at hξ
+  exact hξ rfl
+
+/-- The frequencies of an iterated directional derivative of a Schwartz function are among those
+of the function. -/
+theorem support_fourier_iteratedLineDerivOp_subset (u : 𝓢(E, F)) {n : ℕ} (m : Fin n → E) :
+    Function.support ⇑(𝓕 (∂^{m} u) : 𝓢(E, F)) ⊆ Function.support ⇑(𝓕 u : 𝓢(E, F)) := by
+  induction n with
+  | zero => rw [LineDeriv.iteratedLineDerivOp_fin_zero]
+  | succ n ih =>
+    rw [LineDeriv.iteratedLineDerivOp_succ_left]
+    exact (support_fourier_lineDerivOp_subset _ _).trans (ih _)
 
 /-- The Fourier transform of the second directional derivative `∂_v ∂_w u` of a Schwartz function
 is `𝓕 u` multiplied by `-(2π)² ⟪ξ, v⟫ ⟪ξ, w⟫`. -/

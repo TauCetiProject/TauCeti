@@ -33,6 +33,8 @@ complex normed space, including Schwartz functions by coercion.
 * `ContinuousLinearEquiv.fourier_comp`: change of variables for the Fourier transform.
 * `ContinuousLinearEquiv.fourierInv_comp`: the corresponding inverse-transform formula.
 * `TauCeti.fourier_comp_smul`, `TauCeti.fourierInv_comp_smul`: the dilation formulas.
+* `TauCeti.support_fourier_comp_smul`: dilating a function by `c` dilates the support of its
+  Fourier transform by `c`.
 * `TauCeti.integral_norm_fourierInv_comp_smul`: dilation preserves the `L¹` norm of the inverse
   Fourier transform.
 * `TauCeti.eLpNorm_fourierInv_comp_inv_smul`: dilation rescales the `Lʳ` norm of the inverse
@@ -42,7 +44,7 @@ complex normed space, including Schwartz functions by coercion.
 public section
 
 open MeasureTheory Module
-open scoped ENNReal FourierTransform RealInnerProductSpace
+open scoped ENNReal FourierTransform RealInnerProductSpace Pointwise
 
 namespace TauCeti
 
@@ -85,6 +87,14 @@ theorem fourier_comp_smul (f : E → F) {c : ℝ} (hc : c ≠ 0) (y : E) :
   simp only [Real.fourier_eq]
   simp_rw [hinner]
   rw [Measure.integral_comp_smul volume (fun x ↦ 𝐞 (-⟪x, c⁻¹ • y⟫) • f x), abs_inv]
+
+/-- **Frequencies of a dilation**: the Fourier transform of `f (c • ·)` is supported on the dilate
+`c • support (𝓕 f)` of the support of `𝓕 f`. -/
+theorem support_fourier_comp_smul (f : E → F) {c : ℝ} (hc : c ≠ 0) :
+    Function.support (𝓕 (fun x ↦ f (c • x))) = c • Function.support (𝓕 f) := by
+  ext y
+  rw [Set.mem_smul_set_iff_inv_smul_mem₀ hc, Function.mem_support, Function.mem_support,
+    fourier_comp_smul f hc, smul_ne_zero_iff_right (by simp [hc])]
 
 /-- **Inverse Fourier transform of a dilation**:
 `𝓕⁻ (f (c • ·)) y = |c ^ n|⁻¹ • 𝓕⁻ f (c⁻¹ • y)`, where `n` is the dimension. -/
