@@ -5,8 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
+
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
+import Mathlib.Topology.Algebra.Polynomial
 
 /-!
 # Determinants of continuous linear maps: relative determinants and the cofactor contraction
@@ -31,6 +36,8 @@ the affine cofactor pullback, `ContinuousLinearEquiv.sum_fderiv_affineFluxPullba
 
 * `ContinuousLinearMap.det_id`, `ContinuousLinearMap.det_smul`: the determinant of the identity
   and of a scalar multiple.
+* `ContinuousLinearMap.exists_le_norm_det_id_sub_smul`: over `ℝ` or `ℂ`, the second-order lower
+  bound `1 - δ re (trace H) - P δ² ≤ ‖det (1 - δ H)‖` for `0 ≤ δ ≤ 1`.
 * `ContinuousLinearEquiv.det_symm_comp_mul_det_symm_comp`: relative determinants multiply.
 * `ContinuousLinearEquiv.sum_cofactor_comp_apply_single`: the cofactor contraction identity.
 -/
@@ -51,6 +58,52 @@ theorem det_id : (ContinuousLinearMap.id R M).det = 1 :=
 theorem det_smul [ContinuousConstSMul R M] [Module.Free R M] (c : R) (f : M →L[R] M) :
     (c • f).det = c ^ Module.finrank R M * f.det :=
   LinearMap.det_smul c (f : M →ₗ[R] M)
+
+section RCLike
+
+open RCLike Set
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [TopologicalSpace E] [AddCommGroup E] [Module 𝕜 E]
+  [IsTopologicalAddGroup E] [ContinuousConstSMul 𝕜 E] [FiniteDimensional 𝕜 E]
+
+/-- A second-order lower bound for `‖det (1 - δ H)‖` on `0 ≤ δ ≤ 1`, from the expansion
+`det (1 + r M) = 1 + r trace M + O(r²)` of `Matrix.det_one_add_smul`. -/
+theorem exists_le_norm_det_id_sub_smul (H : E →L[𝕜] E) :
+    ∃ P : ℝ, ∀ δ ∈ Icc (0 : ℝ) 1,
+      1 - δ * re (LinearMap.trace 𝕜 E H) - P * δ ^ 2 ≤
+        ‖(ContinuousLinearMap.id 𝕜 E - (δ : 𝕜) • H).det‖ := by
+  classical
+  let b := Module.finBasis 𝕜 E
+  set M := LinearMap.toMatrix b b (H : E →ₗ[𝕜] E)
+  set q := (Matrix.det (1 + (Polynomial.X : Polynomial 𝕜) • M.map Polynomial.C)).divX.divX
+  obtain ⟨P, hP⟩ := (isCompact_Icc (a := (-1 : ℝ)) (b := 0)).exists_bound_of_continuousOn
+    ((q.continuous.comp RCLike.continuous_ofReal).continuousOn)
+  refine ⟨P, fun δ hδ ↦ ?_⟩
+  have hM : LinearMap.toMatrix b b
+      ((ContinuousLinearMap.id 𝕜 E - (δ : 𝕜) • H : E →L[𝕜] E) : E →ₗ[𝕜] E) =
+        1 + (-(δ : 𝕜)) • M := by
+    simp [M, sub_eq_add_neg]
+  have hdet : (ContinuousLinearMap.id 𝕜 E - (δ : 𝕜) • H).det =
+      1 + LinearMap.trace 𝕜 E H * (-(δ : 𝕜)) + q.eval (-(δ : 𝕜)) * ((δ ^ 2 : ℝ) : 𝕜) := by
+    rw [ContinuousLinearMap.det, ← LinearMap.det_toMatrix b, hM, Matrix.det_one_add_smul,
+      LinearMap.trace_eq_matrix_trace 𝕜 b]
+    push_cast
+    ring
+  have hq : ‖q.eval (-(δ : 𝕜))‖ ≤ P := by
+    have := hP (-δ) ⟨neg_le_neg hδ.2, neg_nonpos.2 hδ.1⟩
+    simpa only [Function.comp_apply, ofReal_neg] using this
+  have hre : -(P * δ ^ 2) ≤ re (q.eval (-(δ : 𝕜)) * ((δ ^ 2 : ℝ) : 𝕜)) := by
+    rw [mul_comm (q.eval _), re_ofReal_mul]
+    nlinarith [abs_le.1 ((abs_re_le_norm _).trans hq), sq_nonneg δ]
+  have htr : re (LinearMap.trace 𝕜 E H * (-(δ : 𝕜))) = -δ * re (LinearMap.trace 𝕜 E H) := by
+    rw [mul_comm, ← ofReal_neg, re_ofReal_mul]
+  calc 1 - δ * re (LinearMap.trace 𝕜 E H) - P * δ ^ 2
+      ≤ re ((ContinuousLinearMap.id 𝕜 E - (δ : 𝕜) • H).det) := by
+        rw [hdet, AddMonoidHom.map_add re, AddMonoidHom.map_add re, htr, one_re]
+        linarith
+    _ ≤ ‖(ContinuousLinearMap.id 𝕜 E - (δ : 𝕜) • H).det‖ := re_le_norm _
+
+end RCLike
 
 end ContinuousLinearMap
 

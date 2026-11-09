@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Laurent
+public import Mathlib.RingTheory.PowerSeries.Basic
 public import Mathlib.RingTheory.Polynomial.Chebyshev
 
 /-!
@@ -21,6 +22,10 @@ Alexander polynomial to the square of the Conway variable.
 
 The rescaled Chebyshev polynomials of the second kind give the companion identity
 `(T - T⁻¹) Sₙ(T + T⁻¹) = Tⁿ⁺¹ - T⁻ⁿ⁻¹` for the antisymmetric Laurent polynomials.
+
+Finally, a family of symmetric Laurent polynomials whose coefficients are read off a nested power
+series that is symmetric in its two variables consists of constants
+(`LaurentPolynomial.eq_C_coeff_zero_of_coeff_swap`).
 -/
 
 public section
@@ -196,5 +201,50 @@ theorem exists_eval₂_add_T_neg_sub_two {p : R[T;T⁻¹]} (hp : invert p = p) :
   refine ⟨q.comp (Polynomial.X + 2), ?_⟩
   rw [Polynomial.eval₂_comp]
   simpa using hq
+
+end LaurentPolynomial
+
+namespace LaurentPolynomial
+
+section Semiring
+
+variable {R : Type*} [Semiring R]
+
+/-- If the Laurent polynomials `L N` are symmetric, and the coefficient of `uᵏ` in `L N` is the
+coefficient of `vᵏ⁺ᴺ` read off a series `G` that is symmetric in its two variables, then each
+`L N` is constant. This is the induction in the formal Liouville theorem for the Tate curve. -/
+theorem eq_C_coeff_zero_of_coeff_swap {G : PowerSeries (PowerSeries R)} {L : ℕ → R[T;T⁻¹]}
+    (hcoe : ∀ (N : ℕ) (k : ℤ),
+      (L N).coeff k = if k + N < 0 then 0 else
+        PowerSeries.coeff (k + N).natAbs (PowerSeries.coeff N G))
+    (hsymm : ∀ (N : ℕ) (k : ℤ), (L N).coeff (-k) = (L N).coeff k)
+    (hswap : ∀ a b : ℕ,
+      PowerSeries.coeff a (PowerSeries.coeff b G) = PowerSeries.coeff b (PowerSeries.coeff a G))
+    (N : ℕ) :
+    L N = C ((L N).coeff 0) := by
+  have key (N : ℕ) : ∀ m : ℕ, 0 < m → (L N).coeff m = 0 := by
+    induction N using Nat.strong_induction_on with
+    | _ N ih =>
+      intro m hm
+      rw [← hsymm, hcoe]
+      split_ifs with h
+      · rfl
+      · have hmN : m ≤ N := by omega
+        have h' := ih (N - m) (by omega) m hm
+        rw [hcoe, ite_eq_right (by omega)] at h'
+        have e₁ : (-(m : ℤ) + N).natAbs = N - m := by omega
+        have e₂ : ((m : ℤ) + (N - m : ℕ)).natAbs = N := by omega
+        rw [e₁, hswap]
+        rwa [e₂] at h'
+  refine LaurentPolynomial.ext fun k ↦ ?_
+  rw [LaurentPolynomial.C_apply]
+  rcases lt_trichotomy k 0 with hk | rfl | hk
+  · obtain ⟨m, rfl⟩ : ∃ m : ℕ, k = -m := ⟨k.natAbs, by omega⟩
+    rw [hsymm, key N m (by omega), ite_eq_right (by omega)]
+  · simp
+  · obtain ⟨m, rfl⟩ : ∃ m : ℕ, k = m := ⟨k.natAbs, by omega⟩
+    rw [key N m (by omega), ite_eq_right (by omega)]
+
+end Semiring
 
 end LaurentPolynomial
