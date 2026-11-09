@@ -82,8 +82,6 @@ spectrum from that of its orthogonal complement.
   `LinearMap.IsSymmetric.re_inner_apply_self_pos_of_mem_pointSpectralSubspace`: the quadratic form
   of a symmetric operator is negative definite on its point-spectral subspaces selected by negative
   reals, and positive definite on those selected by positive reals.
-* `LinearMap.IsSymmetric.re_inner_apply_self_nonneg_of_mem_pointSpectralSubspace`: it is positive
-  semidefinite on those selected by nonnegative reals.
 * `LinearMap.IsSymmetric.eq_starProjection_pointSpectralSubspace_Iio_zero`: for injective
   symmetric `A`, an idempotent commuting with `A`, with the form of `A` negative definite on its
   range and positive definite on its kernel, is the orthogonal projection onto the negative
@@ -93,6 +91,9 @@ spectrum from that of its orthogonal complement.
 * `LinearMap.IsSymmetric.pointSpectrumIn_Iic_iff`, `LinearMap.IsSymmetric.pointSpectrumIn_Ici_iff`:
   on a finite-dimensional invariant subspace, point-spectral containment in a half-line is a
   quadratic-form bound.
+* `LinearMap.IsSymmetric.re_inner_apply_self_nonneg_of_mem_pointSpectralSubspace`: in finite
+  dimensions, the quadratic form of a symmetric operator is positive semidefinite on its
+  point-spectral subspaces selected by nonnegative reals.
 * `LinearMap.IsSymmetric.norm_apply_sub_smul_le_of_pointSpectrumIn`,
   `LinearMap.IsSymmetric.mul_norm_le_norm_apply_sub_smul_of_pointSpectrumIn`: on a
   finite-dimensional invariant subspace, if every eigenvalue lies within `r` of `c` then
@@ -451,23 +452,6 @@ theorem re_inner_apply_self_lt_zero_of_mem_pointSpectralSubspace (hA : A.IsSymme
   exact Finset.sum_neg' (fun j _ ↦ hterm j) ⟨i, Finset.mem_univ _,
     mul_neg_of_neg_of_pos (hΩ hiΩ) (by positivity)⟩
 
-/-- **The quadratic form of a symmetric operator is positive semidefinite on a point-spectral
-subspace selected by nonnegative reals**, in particular on its nonnegative spectral subspace. -/
-theorem re_inner_apply_self_nonneg_of_mem_pointSpectralSubspace (hA : A.IsSymmetric)
-    {Ω : Set ℝ} (hΩ : Ω ⊆ Set.Ici 0) {v : E} (hv : v ∈ A.pointSpectralSubspace Ω) :
-    0 ≤ RCLike.re ⟪A v, v⟫_𝕜 := by
-  rw [hA.pointSpectralSubspace_eq_eigenvectorSpan rfl, mem_eigenvectorSpan_iff] at hv
-  rw [hA.re_inner_apply_self_eq_sum_eigenvalues_mul_sq rfl]
-  set b := hA.eigenvectorBasis (rfl : Module.finrank 𝕜 E = Module.finrank 𝕜 E)
-  refine Finset.sum_nonneg fun i _ ↦ ?_
-  by_cases hi : hA.eigenvalues rfl i ∈ Ω
-  · exact mul_nonneg (hΩ hi) (sq_nonneg _)
-  · -- Off the selected eigenvalues, the coordinates of `v` vanish.
-    have : i ∉ (b.toBasis.repr v).support := fun hmem ↦ hi (hv hmem)
-    have hcoord : b.repr v i = 0 := by
-      simpa [Finsupp.notMem_support_iff, OrthonormalBasis.coe_toBasis_repr_apply] using this
-    simp [hcoord]
-
 /-- **The quadratic form of a symmetric operator is positive definite on a point-spectral
 subspace selected by positive reals**, in particular on its positive spectral subspace. -/
 theorem re_inner_apply_self_pos_of_mem_pointSpectralSubspace (hA : A.IsSymmetric)
@@ -597,6 +581,16 @@ theorem pointSpectrumIn_Ici_iff (hA : A.IsSymmetric) (hU : ∀ x ∈ U, A x ∈ 
     A.PointSpectrumIn U (Set.Ici a) ↔ ∀ x ∈ U, a * ‖x‖ ^ 2 ≤ RCLike.re ⟪A x, x⟫_𝕜 :=
   ⟨fun h _ hx ↦ hA.le_re_inner_apply_self_of_pointSpectrumIn hU h hx,
     Module.End.pointSpectrumIn_Ici_of_le_re_inner_apply_self⟩
+
+/-- **The quadratic form of a symmetric operator is positive semidefinite on a point-spectral
+subspace selected by nonnegative reals**, in particular on its nonnegative spectral subspace. -/
+theorem re_inner_apply_self_nonneg_of_mem_pointSpectralSubspace [FiniteDimensional 𝕜 E]
+    (hA : A.IsSymmetric) {Ω : Set ℝ} (hΩ : Ω ⊆ Set.Ici 0) {v : E}
+    (hv : v ∈ A.pointSpectralSubspace Ω) :
+    0 ≤ RCLike.re ⟪A v, v⟫_𝕜 := by
+  simpa using hA.le_re_inner_apply_self_of_pointSpectrumIn (a := 0)
+    (fun x hx ↦ Module.End.map_pointSpectralSubspace_le ⟨x, hx, rfl⟩)
+    ((A.pointSpectrumIn_pointSpectralSubspace Ω).mono le_rfl hΩ) hv
 
 end LinearMap.IsSymmetric
 

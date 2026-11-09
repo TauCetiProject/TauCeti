@@ -116,6 +116,13 @@ private theorem inner_continuousLinearMapOfBilin_bilinearComp_apply (u v : E) :
       q (h.metricChangeTransport u) (h.metricChangeTransport v) := by
   rw [continuousLinearMapOfBilin_apply, bilinearComp_apply]
 
+/-- The pullback of a symmetric form along the transport of `h` has a symmetric Riesz
+operator. -/
+private theorem isSymmetric_continuousLinearMapOfBilin_bilinearComp (hq : ∀ u v, q u v = q v u) :
+    ((q.bilinearComp h.metricChangeTransport h.metricChangeTransport)♯ :
+      E →ₗ[ℝ] E).IsSymmetric :=
+  isSymmetric_continuousLinearMapOfBilin fun _ _ ↦ hq _ _
+
 /-- The pullback of a nondegenerate form along the transport of a positive definite `h` has an
 injective Riesz operator. -/
 private theorem ker_continuousLinearMapOfBilin_bilinearComp (hh : IsStrictlyPositive h♯)
@@ -186,8 +193,7 @@ theorem apply_negativeSpectralProjection_apply_self_lt_zero
   simp only [negativeSpectralProjection, mul_apply_eq_comp] at hu ⊢
   rw [← inner_continuousLinearMapOfBilin_bilinearComp_apply]
   have hne : W.starProjection (CFC.sqrt h♯ u) ≠ 0 := fun h0 ↦ hu (by rw [h0, map_zero])
-  have hA := isSymmetric_continuousLinearMapOfBilin
-    (B := q.bilinearComp h.metricChangeTransport h.metricChangeTransport) fun u v ↦ hq _ _
+  have hA := isSymmetric_continuousLinearMapOfBilin_bilinearComp (h := h) hq
   simpa using hA.re_inner_apply_self_lt_zero_of_mem_pointSpectralSubspace subset_rfl
     (W.starProjection_apply_mem _) hne
 
@@ -198,8 +204,7 @@ theorem apply_sub_negativeSpectralProjection_apply_self_nonneg (hh : IsStrictlyP
     0 ≤ q (u - q.negativeSpectralProjection h u) (u - q.negativeSpectralProjection h u) := by
   set A := (q.bilinearComp h.metricChangeTransport h.metricChangeTransport)♯
   set W := Module.End.pointSpectralSubspace A.toLinearMap (Iio 0)
-  have hA := isSymmetric_continuousLinearMapOfBilin
-    (B := q.bilinearComp h.metricChangeTransport h.metricChangeTransport) fun u v ↦ hq _ _
+  have hA := isSymmetric_continuousLinearMapOfBilin_bilinearComp (h := h) hq
   rw [sub_negativeSpectralProjection_apply hh,
     ← inner_continuousLinearMapOfBilin_bilinearComp_apply]
   -- The orthogonal complement of the negative spectral subspace is the nonnegative one.
@@ -217,8 +222,7 @@ theorem apply_sub_negativeSpectralProjection_apply_self_pos (hh : IsStrictlyPosi
     0 < q (u - q.negativeSpectralProjection h u) (u - q.negativeSpectralProjection h u) := by
   set A := (q.bilinearComp h.metricChangeTransport h.metricChangeTransport)♯
   set W := Module.End.pointSpectralSubspace A.toLinearMap (Iio 0)
-  have hA := isSymmetric_continuousLinearMapOfBilin
-    (B := q.bilinearComp h.metricChangeTransport h.metricChangeTransport) fun u v ↦ hq _ _
+  have hA := isSymmetric_continuousLinearMapOfBilin_bilinearComp (h := h) hq
   rw [sub_negativeSpectralProjection_apply hh] at hu ⊢
   rw [← inner_continuousLinearMapOfBilin_bilinearComp_apply]
   set w := CFC.sqrt h♯ u - W.starProjection (CFC.sqrt h♯ u)
@@ -253,7 +257,7 @@ theorem eq_negativeSpectralProjection_iff (hh : IsStrictlyPositive h♯)
   set R := CFC.sqrt h♯
   set A := (q.bilinearComp T T)♯
   set W := Module.End.pointSpectralSubspace A.toLinearMap (Iio 0)
-  have hA := isSymmetric_continuousLinearMapOfBilin (B := q.bilinearComp T T) fun u v ↦ hq _ _
+  have hA := isSymmetric_continuousLinearMapOfBilin_bilinearComp (h := h) hq
   have hTR (x : E) : T (R x) = x := metricChangeTransport_apply_sqrt_apply hh x
   have hRT (x : E) : R (T x) = x := sqrt_apply_metricChangeTransport_apply hh x
   have hT0 {x : E} (hx : T x = 0) : x = 0 := by rw [← hRT x, hx, map_zero]
@@ -307,7 +311,7 @@ private theorem isCompl_range_ker_negativeSpectralProjection (hh : IsStrictlyPos
       (LinearMap.IsIdempotentElem.mem_range_iff hP').mp hx
     rw [← hxP] at hx0 ⊢
     exact apply_negativeSpectralProjection_apply_self_lt_zero hq hx0
-  · have hx' : q.negativeSpectralProjection h x = 0 := hx
+  · have hx' : q.negativeSpectralProjection h x = 0 := LinearMap.mem_ker.mp hx
     have hxP : x - q.negativeSpectralProjection h x = x := by
       rw [hx', sub_zero]
     rw [← hxP]
@@ -335,7 +339,7 @@ theorem finrank_ker_negativeSpectralProjection (hh : IsStrictlyPositive h♯)
     (fun x hx0 ↦ ?_) fun x hx ↦ ?_).symm
   · -- A vector `x` of the kernel is its own complement `x - P x`.
     have hxP : (x : E) - q.negativeSpectralProjection h x = x := by
-      rw [show q.negativeSpectralProjection h x = 0 from x.2, sub_zero]
+      rw [show q.negativeSpectralProjection h x = 0 from LinearMap.mem_ker.mp x.2, sub_zero]
     have := apply_sub_negativeSpectralProjection_apply_self_pos hh hq hq' (u := x)
       (by rw [hxP]; simpa using hx0)
     rw [hxP] at this
@@ -368,7 +372,7 @@ theorem contDiffOn_negativeSpectralProjection {n : ℕ∞ω} :
       (contDiff_fst.contDiffOn.clm_bilinearComp hT hT)
   have hP := hA.starProjection_pointSpectralSubspace_Iio_zero
     (fun p hp ↦ isSelfAdjoint_iff_isSymmetric.mpr
-      (isSymmetric_continuousLinearMapOfBilin fun u v ↦ hp.1 _ _))
+      (isSymmetric_continuousLinearMapOfBilin_bilinearComp hp.1))
     (fun p hp ↦ isUnit_iff_isUnit_toLinearMap.mpr ((LinearMap.isUnit_iff_ker_eq_bot _).mpr
       (ker_continuousLinearMapOfBilin_bilinearComp hp.2.2 hp.2.1)))
   exact (hT.mul hP).mul hS
