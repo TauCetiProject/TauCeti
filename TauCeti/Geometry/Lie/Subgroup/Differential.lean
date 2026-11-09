@@ -8,20 +8,16 @@ module
 public import TauCeti.Geometry.Lie.Functor
 public import TauCeti.Geometry.Lie.Exponential.Units.Compatibility
 public import TauCeti.Geometry.Lie.Subgroup.Embedded
+import TauCeti.Geometry.Lie.Exponential.Classification
 
 /-!
 # The Lie algebra of an embedded subgroup
 
-The differential of the inclusion of an embedded Lie subgroup is an injective Lie-algebra
-homomorphism. Its range is contained in the ambient Lie algebra of the subgroup: naturality of
-the exponential map shows that every one-parameter subgroup tangent to the smaller group stays in
-the subgroup.
-
-For the smooth structure supplied by the closed-subgroup theorem, the model vector space is
-`TauCeti.Lie.lieSubalgebraOfSubgroup K` itself. The differential of inclusion consequently has
-the same finite dimension as that subalgebra, so the containment is an equality. This identifies
-the Lie algebra of the subgroup, formed from its own left-invariant derivations, with the
-one-parameter-subgroup description inside the ambient Lie algebra.
+The differential of the inclusion of a finite-dimensional embedded Lie subgroup is an injective
+Lie-algebra homomorphism whose range is `TauCeti.Lie.lieSubalgebraOfSubgroup K`. It identifies
+the subgroup's native Lie algebra, formed from its own left-invariant derivations, with the
+one-parameter-subgroup description inside the ambient Lie algebra. This identification is
+independent of the choice of finite-dimensional model for the subgroup.
 
 ## Main results
 
@@ -33,13 +29,17 @@ one-parameter-subgroup description inside the ambient Lie algebra.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.injective_lieMapSubtypeVal`: this Lie map is injective.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.range_lieMapSubtypeVal_le`: its range lies in
   `lieSubalgebraOfSubgroup K`.
-* `TauCeti.Lie.EmbeddedLieSubgroupData.lieEquivLieSubalgebraOfSubgroup`: when the subgroup model is
-  `lieSubalgebraOfSubgroup K`, the inclusion differential is a Lie equivalence onto that
-  subalgebra.
+* `TauCeti.Lie.EmbeddedLieSubgroupData.range_lieMapSubtypeVal_eq`: its range equals the
+  ambient subgroup Lie algebra for every finite-dimensional subgroup model.
+* `TauCeti.Lie.EmbeddedLieSubgroupData.lieEquivLieSubalgebraOfSubgroup`: the inclusion differential
+  is a Lie equivalence onto that subalgebra.
+* `TauCeti.Lie.EmbeddedLieSubgroupData.lieEquivLieSubalgebraOfSubgroup_apply`: the equivalence is
+  the inclusion differential on underlying elements.
 
 ## References
 
-* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd edition (2013), Chapter 20.
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013),
+  Theorem 8.46, Proposition 20.3, and Theorem 20.12.
 * J. Hilgert and K.-H. Neeb, *Structure and Geometry of Lie Groups* (2012), Section 9.1.
 -/
 
@@ -216,46 +216,49 @@ theorem range_lieMapSubtypeVal_le (d : EmbeddedLieSubgroupData I K E') :
   change d.subtypeVal k ∈ K
   simpa only [subtypeVal_apply] using k.property
 
-section CanonicalModel
+variable (d : EmbeddedLieSubgroupData I K E')
 
-noncomputable local instance : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
-  finiteDimensional_leftInvariantDerivation
-    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
-
-variable (d : EmbeddedLieSubgroupData I K
-  (lieSubalgebraOfSubgroup (I := I) K).toSubmodule)
-
-/-- When an embedded subgroup is modeled on its ambient Lie subalgebra, the differential of the
-inclusion has exactly that subalgebra as its range. -/
+/-- The differential of an embedded subgroup inclusion has the ambient subgroup Lie algebra as
+its range, independently of the finite-dimensional model chosen for the subgroup. -/
 theorem range_lieMapSubtypeVal_eq :
-    let _ : ChartedSpace (lieSubalgebraOfSubgroup (I := I) K).toSubmodule K := d.chartedSpace
-    let _ : LieGroup 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) ∞ K :=
-      d.lieGroup
+    let _ : ChartedSpace E' K := d.chartedSpace
+    let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
     d.lieMapSubtypeVal.range = lieSubalgebraOfSubgroup (I := I) K := by
-  let _ : ChartedSpace (lieSubalgebraOfSubgroup (I := I) K).toSubmodule K := d.chartedSpace
-  let _ : LieGroup 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) ∞ K :=
-    d.lieGroup
+  let _ : ChartedSpace E' K := d.chartedSpace
+  let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
   dsimp only
-  apply LieSubalgebra.toSubmodule_injective
-  apply Submodule.eq_of_le_of_finrank_eq d.range_lieMapSubtypeVal_le
-  -- `LieHom.range` is definitionally the range of its underlying linear map.
-  change Module.finrank ℝ (LinearMap.range d.lieMapSubtypeVal.toLinearMap) = _
-  rw [LinearMap.finrank_range_of_inj d.injective_lieMapSubtypeVal]
-  exact finrank_leftInvariantDerivation_eq_modelVectorSpace BoundarylessManifold.isInteriorPoint
+  refine le_antisymm d.range_lieMapSubtypeVal_le ?_
+  apply lieSubalgebraOfSubgroup_le_iff.mpr
+  intro X hX
+  have hline (t : Multiplicative ℝ) : oneParameterSubgroup X t ∈ K := by
+    simpa only [← oneParameterSubgroup_apply, ofAdd_toAdd] using hX (Multiplicative.toAdd t)
+  let χ : ContinuousMonoidHom (Multiplicative ℝ) K :=
+    { toMonoidHom := (oneParameterSubgroup X).toMonoidHom.codRestrict K hline
+      continuous_toFun := (oneParameterSubgroup X).continuous.subtype_mk hline }
+  -- Codomain restriction retains the values of the ambient one-parameter subgroup.
+  have hχcoe (t : Multiplicative ℝ) : (χ t : G) = oneParameterSubgroup X t := rfl
+  obtain ⟨Y, hY⟩ := oneParameterSubgroup_surjective (I := 𝓘(ℝ, E')) (G := K) χ
+  refine ⟨Y, ?_⟩
+  apply oneParameterSubgroup_injective (I := I) (G := G)
+  ext t
+  calc
+    oneParameterSubgroup (d.lieMapSubtypeVal Y) t =
+        d.subtypeVal (oneParameterSubgroup Y t) := by
+      simpa only [map_smul, ← oneParameterSubgroup_apply, ofAdd_toAdd,
+        EmbeddedLieSubgroupData.lieMapSubtypeVal_apply] using
+          (map_lieExp d.subtypeVal (Multiplicative.toAdd t • Y)).symm
+    _ = d.subtypeVal (χ t) := congrArg d.subtypeVal (DFunLike.congr_fun hY t)
+    _ = oneParameterSubgroup X t := (d.subtypeVal_apply (χ t)).trans (hχcoe t)
 
-/-- For the smooth structure supplied by the closed-subgroup theorem, the differential of the
-inclusion identifies the subgroup's Lie algebra with its one-parameter-subgroup Lie subalgebra in
-the ambient group. -/
+/-- The differential of an embedded subgroup inclusion identifies its native Lie algebra with
+the one-parameter-subgroup Lie subalgebra in the ambient group. -/
 noncomputable def lieEquivLieSubalgebraOfSubgroup :
-    let _ : ChartedSpace (lieSubalgebraOfSubgroup (I := I) K).toSubmodule K := d.chartedSpace
-    let _ : LieGroup 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) ∞ K :=
-      d.lieGroup
-    LeftInvariantDerivation
-        𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) K ≃ₗ⁅ℝ⁆
+    let _ : ChartedSpace E' K := d.chartedSpace
+    let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
+    LeftInvariantDerivation 𝓘(ℝ, E') K ≃ₗ⁅ℝ⁆
       lieSubalgebraOfSubgroup (I := I) K := by
-  let _ : ChartedSpace (lieSubalgebraOfSubgroup (I := I) K).toSubmodule K := d.chartedSpace
-  let _ : LieGroup 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) ∞ K :=
-    d.lieGroup
+  let _ : ChartedSpace E' K := d.chartedSpace
+  let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
   dsimp only
   exact (d.lieMapSubtypeVal.equivRangeOfInjective d.injective_lieMapSubtypeVal).trans
     (LieEquiv.ofEq _ _ (by rw [d.range_lieMapSubtypeVal_eq]))
@@ -263,20 +266,15 @@ noncomputable def lieEquivLieSubalgebraOfSubgroup :
 /-- The Lie equivalence from the subgroup Lie algebra to the ambient subgroup Lie algebra is the
 differential of inclusion on underlying elements. -/
 @[simp]
-theorem lieEquivLieSubalgebraOfSubgroup_apply
-    :
-    let _ : ChartedSpace (lieSubalgebraOfSubgroup (I := I) K).toSubmodule K := d.chartedSpace
-    let _ : LieGroup 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) ∞ K :=
-      d.lieGroup
-    ∀ X : LeftInvariantDerivation
-      𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) K,
+theorem lieEquivLieSubalgebraOfSubgroup_apply :
+    let _ : ChartedSpace E' K := d.chartedSpace
+    let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
+    ∀ X : LeftInvariantDerivation 𝓘(ℝ, E') K,
       (d.lieEquivLieSubalgebraOfSubgroup X : LeftInvariantDerivation I G) =
         d.lieMapSubtypeVal X := by
   dsimp only
   intro X
   simp only [lieEquivLieSubalgebraOfSubgroup, id_eq, LieEquiv.trans_apply,
     LieHom.equivRangeOfInjective_apply, LieEquiv.ofEq_apply]
-
-end CanonicalModel
 
 end TauCeti.Lie.EmbeddedLieSubgroupData
