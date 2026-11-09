@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Realization
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.WeakConvergence
 
 import TauCeti.MeasureTheory.Measure.LevyProkhorovMetric
 
