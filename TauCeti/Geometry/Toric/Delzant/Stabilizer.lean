@@ -95,7 +95,7 @@ theorem exists_weightRotation_neg_apply_eq_iff_mem_faceSubtorus
       facetTorusHom i u (2 * π) (fun j ↦ (a j : AddCircle _)) -
         facetTorusHom i u (2 * π) (fun j ↦ (b j : AddCircle _)) := by
     rw [← map_sub]
-    exact congrArg _ (funext fun j ↦ QuotientAddGroup.mk_sub _ (a j) (b j))
+    exact congrArg _ (funext fun j ↦ by simp only [Pi.sub_apply, AddCircle.coe_sub])
   simp_rw [weightRotation_neg_apply_eq_iff, mem_faceSubtorus_iff_exists_facetTorusHom_eq,
     AddMonoidHom.mem_ker]
   constructor
@@ -109,7 +109,8 @@ theorem exists_weightRotation_neg_apply_eq_iff_mem_faceSubtorus
     dsimp only
     split_ifs with hj
     · rfl
-    · exact (h j (not_and_or.1 hj)).symm
+    · rw [AddCircle.coe_zero]
+      exact (h j (not_and_or.1 hj)).symm
   · rintro ⟨s, hs, hsθ⟩
     refine ⟨θ - s, ?_, fun j hj ↦ ?_⟩
     · simp only [Pi.sub_apply, hsub, hsθ, sub_self]
