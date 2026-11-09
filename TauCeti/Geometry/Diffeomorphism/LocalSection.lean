@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Geometry.Diffeomorphism.Inversion
 public import TauCeti.Geometry.Manifold.Flow.Complete
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
-public import TauCeti.Geometry.Manifold.VectorField.Chart
+public import TauCeti.Geometry.Manifold.VectorField.Chart.Basic
 public import TauCeti.Topology.Algebra.GroupAction.OrbitTrivialization
 
 /-!

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Flow
-public import TauCeti.Geometry.Manifold.VectorField.Chart
+public import TauCeti.Geometry.Manifold.VectorField.Chart.Basic
 
 /-!
 # Homogeneity of connected manifolds
