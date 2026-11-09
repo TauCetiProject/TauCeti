@@ -145,11 +145,6 @@ theorem posSemidef_charFun_neg_two_pi_smul_sub :
   simpa only [integral_fourierAtom_eq_charFun_neg_two_pi_smul] using
     posSemidef_fourierConventionCharFun_sub (ν := ν)
 
-section Topology
-
-variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W]
-  [MeasurableSpace W] [BorelSpace W] {ν : Measure W} [IsFiniteMeasure ν]
-
 /-- The Fourier-convention transform of a finite measure is continuous. -/
 theorem continuous_fourierConventionCharFun :
     Continuous fun a : W => ∫ q, fourierAtom a q ∂ν :=
@@ -158,8 +153,6 @@ theorem continuous_fourierConventionCharFun :
     (fun a ↦ ae_of_all _ fun q ↦ (norm_fourierAtom a q).le)
     (integrable_const _)
     (ae_of_all _ fun q ↦ (continuous_and_isPositiveDefiniteSub_fourierAtom q).1)
-
-end Topology
 
 section Convolution
 
