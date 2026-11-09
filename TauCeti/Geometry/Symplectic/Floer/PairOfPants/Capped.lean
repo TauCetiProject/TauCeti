@@ -42,7 +42,9 @@ is the single-neck model of the same deformation.
   `TauCeti.Floer.eventually_cocompact_cappedPerturbation_eq_zero`), so it extends by zero across
   the three poles of the capped sphere.
 * It is smooth on `ℂ × M`, jointly with the parameters `a` and `L`
-  (`TauCeti.Floer.contMDiff_cappedPerturbation`); the family `K_R` is smooth in `R`
+  (`TauCeti.Floer.contMDiff_cappedPerturbation`), and so are its components in the real
+  coordinates of `ℂ` (`TauCeti.Floer.contMDiff_cappedPerturbation_apply`,
+  `TauCeti.Floer.contDiff_cappedPerturbation_apply`); the family `K_R` is smooth in `R`
   (`TauCeti.Floer.contMDiff_cappedComparisonPerturbation`).
 * On the part `±s > 0` of the end `q` it pulls back to `a β(σ - 1) β(L + 3 - σ) H_q(t) dt`
   (`TauCeti.Floer.cappedPerturbation_cylindricalEndLift_of_pos`). For `L ≥ 0` it is
@@ -443,6 +445,25 @@ theorem contMDiff_cappedPerturbation_apply {n : ℕ∞} (hH : ∀ q, Periodic (H
   exact ((contMDiff_cappedPerturbation hH hHs).comp hι).clm_apply contMDiff_const
 
 end Smooth
+
+section SmoothNormed
+
+variable [NormedAddCommGroup M] [NormedSpace ℝ M]
+
+/-- The components of the capped perturbation are `C^n` jointly in the real coordinates of `ℂ`
+and the target point, for `C^n` Hamiltonians on a vector space. -/
+theorem contDiff_cappedPerturbation_apply {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ n (uncurry (H q))) (a L : ℝ) (v : ℂ) :
+    ContDiff ℝ n
+      (uncurry fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x v) := by
+  have hHs' (q : Puncture) : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, M)) 𝓘(ℝ, ℝ) n (uncurry (H q)) := by
+    have h := (hHs q).contMDiff
+    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
+    exact h
+  rw [← contMDiff_iff_contDiff, modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+  exact contMDiff_cappedPerturbation_apply hH hHs' a L v
+
+end SmoothNormed
 
 /-! ### The comparison family -/
 

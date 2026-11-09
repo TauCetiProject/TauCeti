@@ -610,6 +610,15 @@ theorem monicNormalize_mem_iff {S : Type*} [SetLike S (MvPolynomial σ k)]
 
 end MonicNormalize
 
+/-- Substituting nonzero polynomials into a coefficient-one monomial gives a nonzero
+polynomial over a nontrivial semiring without zero divisors. -/
+theorem _root_.MvPolynomial.aeval_monomial_one_ne_zero [CommSemiring R] [Nontrivial R]
+    [NoZeroDivisors R] {ι : Type*} {b : ι → MvPolynomial σ R}
+    (hb : ∀ i, b i ≠ 0) (u : ι →₀ ℕ) : aeval b (monomial u (1 : R)) ≠ 0 := by
+  classical
+  simp only [aeval_monomial, map_one, one_mul]
+  exact Finset.prod_ne_zero_iff.2 fun i _ ↦ pow_ne_zero _ (hb i)
+
 /-- Substituting nonzero polynomials into a coefficient-one monomial adds their leading
 exponents, with the multiplicities prescribed by the monomial. -/
 theorem degree_aeval_monomial_one_of_ne_zero [CommSemiring R] [NoZeroDivisors R]

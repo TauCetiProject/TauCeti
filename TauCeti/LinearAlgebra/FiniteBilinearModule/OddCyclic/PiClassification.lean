@@ -111,8 +111,7 @@ private theorem prod_legendreSym_eq_of_isometry_pi_oddCyclic (hp : Odd p) (k : �
       fun i _ ↦ scaledGaussSum_oddCyclic_one_ne_zero hp (k i) j) h)
     simp_rw [mul_pow, Finset.prod_mul_distrib, hθη, ← Finset.prod_mul_distrib, ← mul_pow, ← sq,
       hsq _ (hη _), one_pow, Finset.prod_const_one]
-  have h := Finset.univ.prod_filter_eq_one_of_forall_prod_pow_tsub_eq_one k _
-    (fun i _ _ ↦ by rw [mul_pow, hsq _ (hθ i), hsq _ (hη i), one_mul]) hj hm
+  have h := Finset.univ.prod_filter_eq_one_of_forall_prod_pow_tsub_eq_one k _ hj hm
   rw [Finset.prod_mul_distrib] at h
   calc ∏ i with k i = m, legendreSym p (θ i)
       = (∏ i with k i = m, legendreSym p (θ i)) *
