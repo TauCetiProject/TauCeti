@@ -60,9 +60,14 @@ theorem orbitOfRep_le_iff (N : Submodule ℤ V) :
 
 /-- The represented integral orbit is stable under the subring. -/
 theorem apply_mem_orbitOfRep_of_mem {a : A} (ha : a ∈ S) {v : V}
-    (hv : v ∈ orbitOfRep S ρ X) : ρ a v ∈ orbitOfRep S ρ X :=
-  (orbitOfRep_le_iff S ρ X ((orbitOfRep S ρ X).comap (ρ a).toAddMonoidHom.toIntLinearMap)).2
-    (fun b hb x hx => by simpa using apply_mem_orbitOfRep S ρ X (S.mul_mem ha hb) hx) hv
+    (hv : v ∈ orbitOfRep S ρ X) : ρ a v ∈ orbitOfRep S ρ X := by
+  have hle := (orbitOfRep_le_iff S ρ X
+    ((orbitOfRep S ρ X).comap (ρ a).toAddMonoidHom.toIntLinearMap)).2 fun b hb x hx => by
+      simpa only [Submodule.mem_comap, AddMonoidHom.coe_toIntLinearMap,
+        LinearMap.toAddMonoidHom_coe, map_mul, mul_apply_eq_comp] using
+        apply_mem_orbitOfRep S ρ X (S.mul_mem ha hb) hx
+  simpa only [Submodule.mem_comap, AddMonoidHom.coe_toIntLinearMap,
+    LinearMap.toAddMonoidHom_coe] using hle hv
 
 /-- If the supplied vectors span over `R`, their represented integral orbit is full. -/
 theorem span_orbitOfRep_eq_top (hX : Submodule.span R X = ⊤) :
@@ -74,22 +79,21 @@ all translates through the full algebra. -/
 theorem span_orbitOfRep_eq_span (hS : Submodule.span R (S : Set A) = ⊤) :
     Submodule.span R (orbitOfRep S ρ X : Set V) =
       Submodule.span R {v | ∃ a : A, ∃ x ∈ X, ρ a x = v} := by
-  set W := Submodule.span R {v | ∃ a : A, ∃ x ∈ X, ρ a x = v}
   apply le_antisymm
   · refine Submodule.span_le.2 fun v hv => ?_
     rw [SetLike.mem_coe, orbitOfRep_def, ← Submodule.mem_toAddSubgroup,
       Submodule.span_int_eq_addSubgroupClosure] at hv
     -- An `R`-span need not be closed under negation when `R` is only a semiring, so the
-    -- induction carries membership of `-v` alongside that of `v`.
-    suffices v ∈ W ∧ -v ∈ W from this.1
-    induction hv using AddSubgroup.closure_induction with
+    -- induction treats the negations of the generators as separate cases.
+    induction hv using AddSubgroup.closure_induction'' with
     | mem _ h =>
         obtain ⟨a, -, x, hx, rfl⟩ := h
-        exact ⟨Submodule.subset_span ⟨a, x, hx, rfl⟩,
-          Submodule.subset_span ⟨-a, x, hx, by simp⟩⟩
-    | zero => simp
-    | add _ _ _ _ h₁ h₂ => exact ⟨add_mem h₁.1 h₂.1, by simpa [add_comm] using add_mem h₁.2 h₂.2⟩
-    | neg _ _ h => simpa [and_comm] using h
+        exact Submodule.subset_span ⟨a, x, hx, rfl⟩
+    | neg_mem _ h =>
+        obtain ⟨a, -, x, hx, rfl⟩ := h
+        exact Submodule.subset_span ⟨-a, x, hx, by simp only [map_neg, LinearMap.neg_apply]⟩
+    | zero => exact zero_mem _
+    | add _ _ _ _ h₁ h₂ => exact add_mem h₁ h₂
   · rw [Submodule.span_le]
     rintro - ⟨a, x, hx, rfl⟩
     have ha : a ∈ Submodule.span R (S : Set A) := hS ▸ Submodule.mem_top
