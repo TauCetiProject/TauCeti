@@ -27,10 +27,11 @@ such a `v` for every pair of points, so a complete Riemannian manifold is a geod
 the manifold is a *length* space needs no completeness; it is `TauCeti.Manifold.isLengthSpace`.
 
 Conversely, a curve that realizes distances is a geodesic, with no regularity assumed. If
-`dist (γ s) (γ t) = |s - t|` near `0`, then the logarithms at `γ 0` of the points of `γ` before and
-after `0` point in opposite directions, since a broken radial path through `γ 0` is strictly longer
-than the distance between its endpoints. Hence `γ` agrees near `0` with a unit-speed radial
-geodesic from `γ 0`. In particular a metric geodesic segment is smooth at its interior parameters.
+`dist (γ s) (γ t) = |s - t|` near `0`, then `γ` agrees near `0` with a unit-speed radial geodesic
+from `γ 0`. The proof compares the logarithms at `γ 0` of the points of `γ` before and after `0`:
+a broken radial path through `γ 0` whose two directions are not opposite is strictly longer than
+the distance between its endpoints, so these logarithms must point in opposite directions. In
+particular a metric geodesic segment is smooth at its interior parameters.
 
 ## Main results
 
@@ -118,12 +119,8 @@ theorem isGeodesicSpace_of_completeSpace [CompleteSpace M] : IsGeodesicSpace M :
 
 /-- **A curve realizing distances is locally a radial geodesic.** If
 `dist (γ s) (γ t) = |s - t|` for all `s, t ∈ [-ε, ε]`, then near `0` the curve `γ` agrees with the
-radial geodesic `t ↦ exp_{γ 0} (t • v)` for a unit vector `v` at `γ 0`.
-
-No differentiability of `γ` is assumed. Inside a normal ball at `γ 0`, the logarithms of `γ s` and
-`γ t` for `s ≤ 0 ≤ t` must point in opposite directions: otherwise the strict inequality for
-broken radial paths, `dist_riemannianExp_lt_norm_add_norm`, would make `dist (γ s) (γ t)` smaller
-than `|s| + |t| = |s - t|`. -/
+radial geodesic `t ↦ exp_{γ 0} (t • v)` for a unit vector `v` at `γ 0`. No differentiability
+of `γ` is assumed. -/
 theorem exists_eventuallyEq_riemannianExp_smul_of_dist_eq_abs {γ : ℝ → M} {ε : ℝ} (hε : 0 < ε)
     (hdist : ∀ s ∈ Icc (-ε) ε, ∀ t ∈ Icc (-ε) ε, dist (γ s) (γ t) = |s - t|) :
     ∃ v : TangentSpace I (γ 0), ‖v‖ = 1 ∧
@@ -151,6 +148,10 @@ theorem exists_eventuallyEq_riemannianExp_smul_of_dist_eq_abs {γ : ℝ → M} {
     have h := hU.dist_riemannianExp_eq_of_mem_ball Subset.rfl (hv t ht)
     rw [hexp t ht, hdist0 t ht] at h
     exact h.symm
+  -- Inside the normal ball, the logarithms of `γ s` and `γ t` for `s ≤ 0 ≤ t` point in opposite
+  -- directions: otherwise the strict inequality for broken radial paths with non-opposite
+  -- directions, `dist_riemannianExp_lt_norm_add_norm`, would make `dist (γ s) (γ t)` smaller than
+  -- `|s| + |t| = |s - t|`.
   have hopposite : ∀ s ∈ Icc (-δ) δ, ∀ t ∈ Icc (-δ) δ,
       s ≤ 0 → 0 ≤ t → SameRay ℝ (v s) (-v t) := by
     intro s hs t ht hs0 ht0
@@ -162,11 +163,9 @@ theorem exists_eventuallyEq_riemannianExp_smul_of_dist_eq_abs {γ : ℝ → M} {
     linarith
   have hleft : -δ ∈ Icc (-δ) δ := ⟨le_rfl, by linarith⟩
   have hright : δ ∈ Icc (-δ) δ := ⟨by linarith, le_rfl⟩
-  have hvleft : v (-δ) = -v δ := by
-    have heq := (hopposite (-δ) hleft δ hright (by linarith) hδ.le).norm_smul_eq
-    rw [hnorm (-δ) hleft, norm_neg, hnorm δ hright, abs_neg, abs_of_pos hδ] at heq
-    have h := congrArg (fun w : TangentSpace I (γ 0) ↦ δ⁻¹ • w) heq
-    simpa only [smul_smul, inv_mul_cancel₀ hδ.ne', one_smul] using h.symm
+  have hvleft : v (-δ) = -v δ :=
+    (hopposite (-δ) hleft δ hright (by linarith) hδ.le).eq_of_norm_eq
+      (by rw [hnorm (-δ) hleft, norm_neg, hnorm δ hright, abs_neg])
   have hlinear : ∀ t ∈ Icc (-δ) δ, v t = t • (δ⁻¹ • v δ) := by
     intro t ht
     have heq : δ • v t = t • v δ := by
@@ -201,9 +200,9 @@ theorem norm_curveVelocity_eq_one_of_dist_eq_abs {γ : ℝ → M} {ε : ℝ} (h�
     ‖curveVelocity I γ 0‖ = 1 := by
   obtain ⟨v, hv, heq⟩ := exists_eventuallyEq_riemannianExp_smul_of_dist_eq_abs (I := I) hε hdist
   rw [heq.norm_curveVelocity_eq (I := I), curveVelocity_riemannianExp_smul_zero]
-  have hbase : riemannianExp I M (γ 0) ((0 : ℝ) • v) = γ 0 := by
-    rw [zero_smul, riemannianExp_zero]
-  exact (congrArg (fun x : M ↦ ‖(show TangentSpace I x from v)‖) hbase).trans hv
+  -- The velocity lies in the fibre over `exp_{γ 0} (0 • v)`; rewriting this base point to `γ 0`
+  -- transports the fibre norm back to `T_{γ 0} M`.
+  rw [zero_smul, riemannianExp_zero, hv]
 
 /-- **A curve realizing distances at constant speed is smooth.** If
 `dist (γ s) (γ t) = |s - t| * c` for all `s, t` in `[t₀ - ε, t₀ + ε]`, with `c ≥ 0`, then `γ` is
