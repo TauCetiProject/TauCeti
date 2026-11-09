@@ -102,6 +102,8 @@ and for every letter `(c, v)` of `C_G(u) × ℤⁿ` its exponent vector `v` toge
 `c * g`, where `g` is the product of the letters of `G` up to the next letter of `C_G(u) × ℤⁿ`. -/
 private def bpData : List (Σ b, CentralizerExtFactor u n b) → G × List ((Fin n → ℤ) × G)
   | [] => (1, [])
+  -- `show` retypes the letter `g : CentralizerExtFactor u n false` as `G`: the binop elaborator
+  -- does not unfold the factor type, and an ascription `(g : G)` leaves the type unchanged.
   | ⟨false, g⟩ :: L => ((show G from g) * (bpData L).1, (bpData L).2)
   | ⟨true, p⟩ :: L =>
     (1, ((fun i => (p.2 i).toAdd), (p.1 : G) * (bpData L).1) :: (bpData L).2)
@@ -272,7 +274,7 @@ theorem isDiscriminatedBy (hBP : IsBP G) (hG : IsCSA G) (hu : u ≠ 1) :
   refine (isDiscriminatedBy_def _ _).2 fun s hs => ?_
   choose! V hV h using fun x (hx : x ∈ s) =>
     exists_finset_forall_retraction_smul_ne_one hBP hG hu (hs x hx)
-  obtain ⟨w, hw⟩ := TauCeti.exists_forall_dotProduct_ne_zero (s.biUnion V) fun v hv => by
+  obtain ⟨w, hw⟩ := (s.biUnion V).exists_forall_dotProduct_ne_zero fun v hv => by
     obtain ⟨x, hx, hv⟩ := Finset.mem_biUnion.1 hv
     exact hV x hx v hv
   choose! N hN using fun x (hx : x ∈ s) => h x hx w fun v hv =>

@@ -39,7 +39,7 @@ to the form of the image matrix at the image vectors.
   integer vectors, is the cast of the integer value of the form.
 * `TauCeti.dotProduct_eq_zero_iff_of_pos`: a nonnegative vector is zero if and only if its pairing
   with strictly positive weights vanishes.
-* `TauCeti.exists_forall_dotProduct_ne_zero`: over an infinite domain, some vector has nonzero dot
+* `Finset.exists_forall_dotProduct_ne_zero`: over an infinite domain, some vector has nonzero dot
   product with each of finitely many nonzero vectors.
 -/
 
@@ -102,6 +102,10 @@ theorem dotProduct_eq_zero_iff_of_pos {ι R : Type*} [Fintype ι] [NonUnitalNonA
   simp [dotProduct, Finset.sum_eq_zero_iff_of_nonneg fun j _ ↦ mul_nonneg (hc j).le (hx j),
     (hc _).ne', funext_iff]
 
+end TauCeti
+
+namespace Finset
+
 open Polynomial in
 /-- Over an infinite integral domain, for finitely many nonzero vectors `v` there is a vector `w`
 with `w ⬝ᵥ v ≠ 0` for each of them. -/
@@ -114,7 +118,8 @@ theorem exists_forall_dotProduct_ne_zero {ι R : Type*} [Fintype ι] [CommRing R
   let e := Fintype.equivFin ι
   let P : (ι → R) → R[X] := fun v => ofFn _ (v ∘ e.symm)
   have hP (v : ι → R) (M : R) : (P v).eval M = (fun i => M ^ (e i : ℕ)) ⬝ᵥ v := by
-    rw [show P v = _ from ofFn_eq_sum_monomial _, eval_finsetSum, dotProduct, ← e.symm.sum_comp]
+    simp only [P]
+    rw [ofFn_eq_sum_monomial, eval_finsetSum, dotProduct, ← e.symm.sum_comp]
     simp [mul_comm]
   have hP0 (v : ι → R) (hv : v ≠ 0) : P v ≠ 0 := by
     intro h
@@ -127,4 +132,4 @@ theorem exists_forall_dotProduct_ne_zero {ι R : Type*} [Fintype ι] [CommRing R
   rw [eval_prod, Finset.prod_ne_zero_iff] at hM
   exact ⟨fun i => M ^ (e i : ℕ), fun v hv => by rw [← hP]; exact hM v hv⟩
 
-end TauCeti
+end Finset
