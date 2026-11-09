@@ -65,7 +65,7 @@ private theorem exists_energy_power_bound
         (measurableSet_ball.diff (measurableSet_singleton z₀))] with z hz
       rw [Real.norm_of_nonneg (sq_nonneg _)]
       have hop : ‖fderiv ℝ u z‖ ≤ (1 + max M 0) * ‖fderiv ℝ u z 1‖ :=
-        (fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hz) ((hJ z hz).trans (le_max_left _ _)) le_rfl
+        (fderiv ℝ u z).opNorm_le_of_apply_I_eq (hCR z hz) ((hJ z hz).trans (le_max_left _ _)) le_rfl
       simpa only [mul_pow] using pow_le_pow_left₀ (norm_nonneg _) hop 2
   let b := R / 2
   let α := 2 * c / (1 + M) ^ 2
@@ -159,7 +159,7 @@ theorem exists_pos_norm_fderiv_le_rpow
     nlinarith
   -- The Cauchy--Riemann equation controls the full differential by its real-direction part.
   have hop : ‖fderiv ℝ u z‖ ≤ (1 + M) * ‖fderiv ℝ u z 1‖ :=
-    (fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hzR) (hbound z hzR) le_rfl
+    (fderiv ℝ u z).opNorm_le_of_apply_I_eq (hCR z hzR) (hbound z hzR) le_rfl
   calc
     ‖fderiv ℝ u z‖ ≤ (1 + M) * (Real.sqrt B * d ^ (β - 1)) := by
       exact hop.trans (mul_le_mul_of_nonneg_left hreal (by positivity))

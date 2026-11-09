@@ -175,7 +175,7 @@ theorem tendsto_norm_sub_mul_norm_fderiv_nhdsNE
   have hz' : z ∈ ball z₀ R \ {z₀} := ⟨hzR, hz⟩
   -- The Cauchy--Riemann equation bounds `‖∂ₜu‖ = ‖J(u) ∂ₛu‖` by a multiple of `‖∂ₛu‖`.
   have hop : ‖fderiv ℝ u z‖ ≤ (1 + max a 0) * ‖fderiv ℝ u z 1‖ :=
-    (fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hz') ((ha _ (huK hz')).trans (le_max_left _ _))
+    (fderiv ℝ u z).opNorm_le_of_apply_I_eq (hCR z hz') ((ha _ (huK hz')).trans (le_max_left _ _))
       le_rfl
   calc ‖z - z₀‖ * ‖fderiv ℝ u z‖ ≤ ‖z - z₀‖ * ((1 + max a 0) * ‖fderiv ℝ u z 1‖) := by
         gcongr

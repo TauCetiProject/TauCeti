@@ -66,7 +66,7 @@ theorem exists_hasWeakFDerivOn_update_of_finite_energy
       ‖fderiv ℝ u z‖ ≤ (1 + max M 0) * (1 + ‖fderiv ℝ u z 1‖ ^ 2) := by
     intro z hz
     have hop : ‖fderiv ℝ u z‖ ≤ (1 + max M 0) * ‖fderiv ℝ u z 1‖ :=
-      (fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hz) ((hM _ (huK hz)).trans (le_max_left _ _))
+      (fderiv ℝ u z).opNorm_le_of_apply_I_eq (hCR z hz) ((hM _ (huK hz)).trans (le_max_left _ _))
         le_rfl
     have hs : ‖fderiv ℝ u z 1‖ ≤ 1 + ‖fderiv ℝ u z 1‖ ^ 2 := by
       nlinarith [sq_nonneg (‖fderiv ℝ u z 1‖ - 1)]

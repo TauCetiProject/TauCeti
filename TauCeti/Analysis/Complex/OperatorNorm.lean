@@ -57,7 +57,7 @@ theorem norm_apply_le_of_apply_I_eq {V : Type*} [SeminormedAddCommGroup V] [Norm
 
 /-- **Cauchy--Riemann bound.** If a real-linear map `f : ℂ → V` satisfies `f I = L (f 1)` with
 `‖L‖ ≤ M`, and `‖f 1‖ ≤ B`, then `‖f‖ ≤ (1 + M) * B`. -/
-theorem norm_le_of_apply_I_eq {V : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
+theorem opNorm_le_of_apply_I_eq {V : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
     (f : ℂ →L[ℝ] V) {L : V →L[ℝ] V} {M B : ℝ} (hCR : f Complex.I = L (f 1)) (hL : ‖L‖ ≤ M)
     (hreal : ‖f 1‖ ≤ B) : ‖f‖ ≤ (1 + M) * B := by
   have hB : 0 ≤ B := (norm_nonneg _).trans hreal

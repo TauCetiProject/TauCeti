@@ -157,7 +157,7 @@ theorem exists_pos_forall_eventually_le_setIntegral_norm_fderiv_one_sq_ball
   have hreal : ‖fderiv ℝ (u i) (z i) 1‖ ≤ B := by
     nlinarith [sq_nonneg (‖fderiv ℝ (u i) (z i) 1‖ - 1)]
   have hop : ‖fderiv ℝ (u i) (z i)‖ ≤ (1 + max a 0) * B :=
-    (fderiv ℝ (u i) (z i)).norm_le_of_apply_I_eq (hCR i (z i) hzr)
+    (fderiv ℝ (u i) (z i)).opNorm_le_of_apply_I_eq (hCR i (z i) hzr)
       ((ha _ (huK i hzr)).trans (le_max_left _ _)) hreal
   linarith
 
