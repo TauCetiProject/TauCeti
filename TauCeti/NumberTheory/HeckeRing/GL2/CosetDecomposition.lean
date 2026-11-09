@@ -49,6 +49,8 @@ these representatives are in `GL2/UpperTriangularDelta0.lean`.
 
 * `HeckeRing.GL2.coe_upperTriRep`: the entrywise description of the representative:
   `!![1, b; 0, p]`.
+* `HeckeRing.GL2.pos_of_coe_eq_upperTri`, `HeckeRing.GL2.det_pos_of_coe_eq_upperTri`: a rational
+  invertible matrix `!![1, b; 0, p]` has `0 < p` and positive determinant.
 * `HeckeRing.GL2.upperTriRep_apply_one_zero`: the representatives are upper triangular — the
   hypothesis mathlib's `IsBoundedAtImInfty.slash` asks for.
 * `HeckeRing.GL2.upperTriRep_mul_upperTriRep`: the families at indices `n` and `m` multiply into
@@ -156,6 +158,22 @@ noncomputable def upperTriRep (b : Fin p) : GL (Fin 2) ℚ :=
     simp [upperTriRep, heq]
   · simp [upperTriRep, ha]
   · simp [upperTriRep, ha]
+
+/-- A matrix `!![1, b; 0, p]` in `GL₂(ℚ)` has invertible determinant, so `0 < p`. -/
+lemma pos_of_coe_eq_upperTri {g : GL (Fin 2) ℚ} {b : ℚ}
+    (hg : (g : Matrix (Fin 2) (Fin 2) ℚ) = !![1, b; 0, (p : ℚ)]) : 0 < p := by
+  refine Nat.pos_of_ne_zero ?_
+  rintro rfl
+  have h := g.det.ne_zero
+  rw [Matrix.GeneralLinearGroup.val_det_apply, hg] at h
+  simp at h
+
+/-- A matrix `!![1, b; 0, p]` in `GL₂(ℚ)` has determinant `p > 0`. -/
+lemma det_pos_of_coe_eq_upperTri {g : GL (Fin 2) ℚ} {b : ℚ}
+    (hg : (g : Matrix (Fin 2) (Fin 2) ℚ) = !![1, b; 0, (p : ℚ)]) :
+    0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det := by
+  rw [hg, Matrix.det_fin_two_of]
+  simpa using pos_of_coe_eq_upperTri p hg
 
 /-- The unique upper-triangular representative at index one is the identity matrix. -/
 @[simp] lemma upperTriRep_one (b : Fin 1) : upperTriRep 1 b = 1 := by

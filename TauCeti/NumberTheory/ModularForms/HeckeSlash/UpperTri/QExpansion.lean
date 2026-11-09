@@ -87,21 +87,6 @@ namespace HeckeRing.GL2
 
 variable (k : ℤ) (p : ℕ)
 
-/-- A matrix `!![1, b; 0, p]` in `GL₂(ℚ)` has invertible determinant, so `0 < p`. -/
-private lemma pos_of_coe_eq_upperTri {g : GL (Fin 2) ℚ} {b : ℚ}
-    (hg : (g : Matrix (Fin 2) (Fin 2) ℚ) = !![1, b; 0, (p : ℚ)]) : 0 < p := by
-  refine Nat.pos_of_ne_zero ?_
-  rintro rfl
-  have h := g.det.ne_zero
-  rw [Matrix.GeneralLinearGroup.val_det_apply, hg] at h
-  simp at h
-
-private lemma det_pos_of_coe_eq_upperTri {g : GL (Fin 2) ℚ} {b : ℚ}
-    (hg : (g : Matrix (Fin 2) (Fin 2) ℚ) = !![1, b; 0, (p : ℚ)]) :
-    0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det := by
-  rw [hg, Matrix.det_fin_two_of]
-  simpa using pos_of_coe_eq_upperTri p hg
-
 /-- The Möbius image of `τ` under any rational matrix `!![1, b; 0, p]` is `(τ + b) / p`. -/
 lemma coe_smul_of_coe_eq_upperTri {g : GL (Fin 2) ℚ} {b : ℚ}
     (hg : (g : Matrix (Fin 2) (Fin 2) ℚ) = !![1, b; 0, (p : ℚ)]) (τ : ℍ) :
