@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.EilenbergMacLane.WeakHomotopyEquivalence
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Product
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
+public import TauCeti.AlgebraicTopology.Singular.Kunneth.Sequence
 
 /-!
 # The classifying space of a product of groups
@@ -40,6 +41,11 @@ mod-two acyclic factors to their product in the proof that `K(A, 1) = B(Multipli
 mod-two acyclic for every `ℤ[1/2]`-module `A`: a finitely generated `ℤ[1/2]`-module is a finite
 product of copies of `ℤ[1/2]` and of finite cyclic groups of odd order.
 
+Over a hereditary commutative ring `k`, for instance `ℤ`, the Künneth sequence of `BG × BH` splits,
+so a natural number killing the positive-degree homology of `BG` and of `BH` also kills that of
+`B(G × H)` (`TauCeti.nsmul_classifyingSpace_prod_singularHomology_eq_zero`), with no growth of the
+bound.
+
 ## Main declarations
 
 * `TauCeti.classifyingSpaceProdMap`: the comparison map `B(G × H) ⟶ BG × BH`.
@@ -50,6 +56,8 @@ product of copies of `ℤ[1/2]` and of finite cyclic groups of odd order.
   commutative semisimple ring.
 * `TauCeti.subsingleton_classifyingSpace_prod_singularHomology` and
   `TauCeti.subsingleton_groupHomology_prod`: products of acyclic groups are acyclic.
+* `TauCeti.nsmul_classifyingSpace_prod_singularHomology_eq_zero`: over a hereditary ring, a number
+  killing the positive-degree homology of `BG` and `BH` kills that of `B(G × H)`.
 
 ## References
 
@@ -217,5 +225,35 @@ theorem subsingleton_groupHomology_prod
     |>.toEquiv.subsingleton
 
 end Semisimple
+
+section Hereditary
+
+variable (k : Type u) [CommRing k] [∀ V : ModuleCat.{u} k, HasProjectiveDimensionLE V 1]
+
+/-- **A number killing the homology of two groups kills that of their product.** Over a
+hereditary commutative ring `k`, for instance `ℤ`, if a natural number `e` kills the
+positive-degree homology of `BG` and of `BH`, then it kills that of `B(G × H)`. -/
+theorem nsmul_classifyingSpace_prod_singularHomology_eq_zero {e : ℕ}
+    (hG : ∀ n (x : ((singularChains k).obj (TopCat.of (classifyingSpace G))).homology (n + 1)),
+      e • x = 0)
+    (hH : ∀ n (x : ((singularChains k).obj (TopCat.of (classifyingSpace H))).homology (n + 1)),
+      e • x = 0)
+    (n : ℕ)
+    (x : ((singularChains k).obj (TopCat.of (classifyingSpace (G × H)))).homology (n + 1)) :
+    e • x = 0 := by
+  -- Transport along the comparison map `B(G × H) ⟶ BG × BH`, a homology isomorphism. The
+  -- Künneth statement is phrased with the tensor unit `𝟙_ (ModuleCat k)` and the monoidal product
+  -- of `TopCat`, which are by definition `ModuleCat.of k k` and the product space.
+  let f := @asIso _ _ _ _ _ (isIso_singularHomologyMap_classifyingSpaceProdMap G H k (n + 1))
+  have key : ∀ y : ((singularHomologyFunctor (ModuleCat.{u} k) (n + 1)).obj
+      (ModuleCat.of k k)).obj (TopCat.of (classifyingSpace (G × H))), e • y = 0 := fun y ↦ by
+    have h : e • f.hom y = 0 := TopCat.nsmul_singularHomology_tensor_eq_zero k
+      (TopCat.of (classifyingSpace G)) (TopCat.of (classifyingSpace H)) hG hH n (f.hom y)
+    rw [← Iso.hom_inv_id_apply f y, ← map_nsmul, h, map_zero]
+  -- the homology of `singularChains k` is by definition the singular homology functor at `k`
+  exact key x
+
+
+end Hereditary
 
 end TauCeti

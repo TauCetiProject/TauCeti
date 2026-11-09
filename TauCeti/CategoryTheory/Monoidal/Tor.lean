@@ -125,15 +125,15 @@ lemma nsmul_id_Tor_eq_zero {X : C} {e : ℕ} (hX : e • 𝟙 X = 0) (Y : C) (n 
     e • 𝟙 (((Tor C n).obj X).obj Y) = 0 := by
   -- Objects killed by `e` are closed under subobjects and quotients, and contain each `X ⊗ P`.
   let P : ObjectProperty C := fun Z ↦ e • 𝟙 Z = 0
-  have : P.IsClosedUnderSubobjects := ⟨fun f _ (hZ : _ = 0) ↦ show _ = 0 by
+  have hP (Z : C) : P Z ↔ e • 𝟙 Z = 0 := Iff.rfl
+  have : P.IsClosedUnderSubobjects := ⟨fun {Z W} f _ hW ↦ (hP Z).2 (by
     rw [← cancel_mono f, Preadditive.nsmul_comp, Category.id_comp, zero_comp,
-      ← Category.comp_id f, ← Preadditive.comp_nsmul, hZ, comp_zero]⟩
-  have : P.IsClosedUnderQuotients := ⟨fun f _ (hZ : _ = 0) ↦ show _ = 0 by
+      ← Category.comp_id f, ← Preadditive.comp_nsmul, (hP W).1 hW, comp_zero])⟩
+  have : P.IsClosedUnderQuotients := ⟨fun {Z W} f _ hZ ↦ (hP W).2 (by
     rw [← cancel_epi f, Preadditive.comp_nsmul, Category.comp_id, comp_zero,
-      ← Category.id_comp f, ← Preadditive.nsmul_comp, hZ, zero_comp]⟩
-  refine P.prop_leftDerived_obj ((tensoringLeft C).obj X) (fun Z _ ↦ ?_) Y n
-  -- unfold `P`; whiskering by `Z` is by definition the additive functor `tensorRight Z`
-  change e • 𝟙 (X ⊗ Z) = 0
+      ← Category.id_comp f, ← Preadditive.nsmul_comp, (hP Z).1 hZ, zero_comp])⟩
+  refine P.prop_leftDerived_obj ((tensoringLeft C).obj X) (fun Z _ ↦ (hP (X ⊗ Z)).2 ?_) Y n
+  -- whiskering by `Z` is by definition the additive functor `tensorRight Z`
   rw [← id_whiskerRight]
   change e • (tensorRight Z).map (𝟙 X) = 0
   rw [← Functor.map_nsmul, hX, Functor.map_zero]

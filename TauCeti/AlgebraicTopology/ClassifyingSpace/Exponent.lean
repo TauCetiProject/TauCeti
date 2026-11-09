@@ -8,7 +8,6 @@ module
 public import Mathlib.GroupTheory.Exponent
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Prod
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Torsion
-public import TauCeti.AlgebraicTopology.Singular.Kunneth.Sequence
 import Mathlib.GroupTheory.FiniteAbelian.Basic
 
 /-!
@@ -47,8 +46,6 @@ assumption on `A`.
 
 ## Main results
 
-* `TauCeti.nsmul_classifyingSpace_prod_singularHomology_eq_zero`: a number killing the
-  positive-degree homology of `BG` and `BH` kills that of `B(G × H)`.
 * `groupHomology.exponent_nsmul_trivial_eq_zero`: the exponent of a commutative group `G` kills
   `Hₙ₊₁(G, k)`.
 * `TauCeti.exponent_nsmul_classifyingSpace_singularHomology_eq_zero`: the exponent of a commutative
@@ -86,9 +83,9 @@ private lemma nsmul_classifyingSpace_singularHomology_eq_zero_of_mulEquiv {G H :
     e • x = 0 := by
   let f := (singularChains k).map (TopCat.ofHom φ.toMonoidHom.classifyingSpaceMap)
   let g := (singularChains k).map (TopCat.ofHom φ.symm.toMonoidHom.classifyingSpaceMap)
+  have hφ : φ.toMonoidHom.comp φ.symm.toMonoidHom = MonoidHom.id H := by ext; simp
   have hgf : g ≫ f = 𝟙 _ := by
-    rw [← Functor.map_comp, ← TopCat.ofHom_comp, ← MonoidHom.classifyingSpaceMap_comp,
-      show φ.toMonoidHom.comp φ.symm.toMonoidHom = MonoidHom.id H by ext; simp,
+    rw [← Functor.map_comp, ← TopCat.ofHom_comp, ← MonoidHom.classifyingSpaceMap_comp, hφ,
       MonoidHom.classifyingSpaceMap_id]
     exact (singularChains k).map_id _
   have hx : x = (HomologicalComplex.homologyMap f (n + 1)).hom
@@ -101,30 +98,6 @@ private lemma nsmul_classifyingSpace_singularHomology_eq_zero_of_mulEquiv {G H :
 section Hereditary
 
 variable [∀ V : ModuleCat.{u} k, HasProjectiveDimensionLE V 1]
-
-/-- **A number killing the homology of two groups kills that of their product.** Over a
-hereditary commutative ring `k`, for instance `ℤ`, if a natural number `e` kills the
-positive-degree homology of `BG` and of `BH`, then it kills that of `B(G × H)`. -/
-theorem nsmul_classifyingSpace_prod_singularHomology_eq_zero (G H : Type u) [Group G] [Group H]
-    {e : ℕ}
-    (hG : ∀ n (x : ((singularChains k).obj (TopCat.of (classifyingSpace G))).homology (n + 1)),
-      e • x = 0)
-    (hH : ∀ n (x : ((singularChains k).obj (TopCat.of (classifyingSpace H))).homology (n + 1)),
-      e • x = 0)
-    (n : ℕ)
-    (x : ((singularChains k).obj (TopCat.of (classifyingSpace (G × H)))).homology (n + 1)) :
-    e • x = 0 := by
-  -- Transport along the comparison map `B(G × H) ⟶ BG × BH`, a homology isomorphism. The
-  -- Künneth statement is phrased with the tensor unit `𝟙_ (ModuleCat k)` and the monoidal product
-  -- of `TopCat`, which are by definition `ModuleCat.of k k` and the product space.
-  let f := @asIso _ _ _ _ _ (isIso_singularHomologyMap_classifyingSpaceProdMap G H k (n + 1))
-  have key : ∀ y : ((singularHomologyFunctor (ModuleCat.{u} k) (n + 1)).obj
-      (ModuleCat.of k k)).obj (TopCat.of (classifyingSpace (G × H))), e • y = 0 := fun y ↦ by
-    have h : e • f.hom y = 0 := TopCat.nsmul_singularHomology_tensor_eq_zero k
-      (TopCat.of (classifyingSpace G)) (TopCat.of (classifyingSpace H)) hG hH n (f.hom y)
-    rw [← Iso.hom_inv_id_apply f y, ← map_nsmul, h, map_zero]
-  -- the homology of `singularChains k` is by definition the singular homology functor at `k`
-  exact key x
 
 /-- A number killing the positive-degree homology of the classifying spaces of finitely many
 groups kills that of their product. -/
@@ -157,7 +130,7 @@ private lemma nsmul_classifyingSpace_pi_singularHomology_eq_zero (ι : Type) [Fi
     exact nsmul_classifyingSpace_singularHomology_eq_zero_of_mulEquiv k
       ({ Equiv.piOptionEquivProd with map_mul' := fun _ _ ↦ rfl } :
         (∀ i, G i) ≃* G none × ∀ a, G (some a)).symm
-      (nsmul_classifyingSpace_prod_singularHomology_eq_zero k _ _ (hG none)
+      (nsmul_classifyingSpace_prod_singularHomology_eq_zero _ _ k (hG none)
         (h (fun a ↦ G (some a)) fun a ↦ hG (some a)))
 
 /-- If `gᵉ = 1` for every element of a finite commutative group `G`, then `e` kills the

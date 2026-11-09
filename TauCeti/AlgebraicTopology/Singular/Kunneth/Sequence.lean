@@ -8,7 +8,9 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Sequence
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
+import Mathlib.Algebra.Category.ModuleCat.Projective
 import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
+import Mathlib.RingTheory.Flat.CategoryTheory
 import TauCeti.CategoryTheory.Monoidal.Tor
 
 /-!
@@ -60,11 +62,11 @@ the cycles of the singular chain complexes and need not be natural in `X` and `Y
 splitting exists is not proved here.
 
 Through the splitting, a natural number `e` that kills the positive-degree homology of `X` and of
-`Y`, with coefficients in a hereditary commutative ring, also kills that of `X × Y` when `X` is
-path connected (`TopCat.nsmul_singularHomology_tensor_eq_zero`). Every tensor product
-summand has a factor of positive degree, and so does every `Tor₁` summand except
-`Tor₁(H₀(X; k), H_q(Y; k))`, which vanishes because `H₀(X; k) ≅ k`. The same number `e` works for
-the product; without the splitting the extension would only show that `e²` kills it.
+`Y`, with coefficients in a hereditary commutative ring, also kills that of `X × Y`
+(`TopCat.nsmul_singularHomology_tensor_eq_zero`). Every tensor product summand has a factor of
+positive degree, and so does every `Tor₁` summand except `Tor₁(H₀(X; k), H_q(Y; k))`, which
+vanishes because `H₀(X; k)` is a free `k`-module. The same number `e` works for the product;
+without the splitting the extension would only show that `e²` kills it.
 
 ## Main definitions and results
 
@@ -446,10 +448,9 @@ the Künneth map, preceded by the map induced by the inverse unitor. -/
   (rfl)
 
 /-- **A number killing the homology of two spaces kills that of their product.** Over a
-hereditary commutative ring `k`, if a natural number `e` kills the positive-degree homology of a
-path-connected space `X` and of a space `Y`, then it kills the positive-degree homology of
-`X × Y`. -/
-theorem nsmul_singularHomology_tensor_eq_zero [PathConnectedSpace X] {e : ℕ}
+hereditary commutative ring `k`, if a natural number `e` kills the positive-degree homology of
+spaces `X` and `Y`, then it kills the positive-degree homology of `X × Y`. -/
+theorem nsmul_singularHomology_tensor_eq_zero {e : ℕ}
     (hX : ∀ p (x : ((singularHomologyFunctor _ (p + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj X),
       e • x = 0)
     (hY : ∀ q (y : ((singularHomologyFunctor _ (q + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj Y),
@@ -487,9 +488,15 @@ theorem nsmul_singularHomology_tensor_eq_zero [PathConnectedSpace X] {e : ℕ}
       (GradedObject.ιMapBifunctorMapObj _ _ _ _ p q _ h), ← Preadditive.nsmul_comp]
     convert zero_comp
     rcases p with _ | p
-    · -- `H₀(X; k) ≅ k` for path-connected `X`, and `Tor₁(k, -)` vanishes
-      exact IsZero.eq_of_src (IsZero.of_iso (isZero_Tor_succ_tensorUnit _ 0)
-        (((Tor (ModuleCat.{w} k) 1).mapIso (asIso (X.singularHomology₀ε _))).app _)) _ _
+    · -- `H₀(X; k)` is a free, hence flat, `k`-module, so tensoring with it is exact and
+      -- `Tor₁(H₀(X; k), -)` vanishes.
+      let H₀ := ((singularHomologyFunctor _ 0).obj (𝟙_ (ModuleCat.{w} k))).obj X
+      have : Projective H₀ := Projective.of_iso (X.singularHomology₀Iso _).symm inferInstance
+      have : Module.Projective k H₀ := (IsProjective.iff_projective H₀).2 this
+      have : ((tensoringLeft (ModuleCat.{w} k)).obj H₀).PreservesHomology :=
+        Functor.preservesHomology_of_map_exact _ fun S hS ↦
+          Module.Flat.lTensor_shortComplex_exact H₀ S hS
+      exact IsZero.eq_of_src (Functor.isZero_leftDerived_succ _ _ 0) _ _
     · exact nsmul_id_Tor_eq_zero (hX p) _ 1
   let s := singularHomologyKunnethUnitSplitting k X Y n
   have hf : e • S.f = 0 := by
