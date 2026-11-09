@@ -36,6 +36,7 @@ Two characterizations follow.
 
 * `TauCeti.lieDerivFormWithin`, `TauCeti.lieDerivForm`: the Lie derivative of a form.
 * `TauCeti.lieDerivFormWithin_add`, `TauCeti.lieDerivFormWithin_smul`: linearity in the form.
+* `TauCeti.lieDerivFormWithin_add_left`: additivity in the vector field.
 * `TauCeti.lieDerivFormWithin_apply_vectorField`: the bracket formula.
 * `TauCeti.lieDerivFormWithin_eq_curryLeft_extDerivWithin_add`: Cartan's formula.
 
@@ -151,6 +152,27 @@ theorem lieDerivForm_smul (c : 𝕜) (ω : E → E [⋀^Fin k]→L[𝕜] F) :
   ext x : 1
   simpa only [lieDerivFormWithin_univ, Pi.smul_apply] using
     lieDerivFormWithin_smul (V := V) (x := x) c ω uniqueDiffWithinAt_univ
+
+/-! ### Linearity in the vector field -/
+
+/-- The Lie derivative within a set is additive in the vector field, at a point where both fields
+are differentiable within the set and derivatives within it are unique. No differentiability of
+the form is needed. -/
+theorem lieDerivFormWithin_add_left {W : E → E} (ω : E → E [⋀^Fin k]→L[𝕜] F)
+    (hs : UniqueDiffWithinAt 𝕜 s x) (hV : DifferentiableWithinAt 𝕜 V s x)
+    (hW : DifferentiableWithinAt 𝕜 W s x) :
+    lieDerivFormWithin (V + W) ω s x = lieDerivFormWithin V ω s x + lieDerivFormWithin W ω s x := by
+  simp only [lieDerivFormWithin_def, fderivWithin_add hs hV hW, Pi.add_apply, map_add]
+  abel
+
+/-- The Lie derivative is additive in the vector field, at a point where both fields are
+differentiable. -/
+theorem lieDerivForm_add_left {W : E → E} (ω : E → E [⋀^Fin k]→L[𝕜] F)
+    (hV : DifferentiableAt 𝕜 V x) (hW : DifferentiableAt 𝕜 W x) :
+    lieDerivForm (V + W) ω x = lieDerivForm V ω x + lieDerivForm W ω x := by
+  simpa only [lieDerivFormWithin_univ] using
+    lieDerivFormWithin_add_left ω uniqueDiffWithinAt_univ hV.differentiableWithinAt
+      hW.differentiableWithinAt
 
 /-- **The bracket formula** for the Lie derivative of a form within a set: evaluated on vector
 fields `X₀, …, Xₖ₋₁`, it is the derivative of `ω (X₀, …, Xₖ₋₁)` along `V` minus the evaluations
