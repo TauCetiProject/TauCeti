@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.NumberTheory.PrimeCounting
+import TauCeti.Analysis.SpecificLimits.ReciprocalSeries
 
 /-!
 # Absolute control of the higher prime powers at the boundary
@@ -45,33 +46,8 @@ theorem sum_norm_higher_prime_powers_le_one
   -- Sum a geometric majorant over all integers at least two, not just primes.
   let g : ℕ × ℕ → ℝ := fun q ↦ ((q.1 : ℝ) + 2)⁻¹ ^ (q.2 + 2)
   have hfiber (n : ℕ) : HasSum (fun k : ℕ ↦ g (n, k))
-      (((n : ℝ) + 1)⁻¹ - ((n : ℝ) + 2)⁻¹) := by
-    have h := (hasSum_geometric_of_lt_one
-      (by positivity : 0 ≤ ((n : ℝ) + 2)⁻¹) (by
-        rw [inv_lt_one₀ (by positivity)]
-        have : (0 : ℝ) ≤ n := Nat.cast_nonneg n
-        linarith)).mul_right (((n : ℝ) + 2)⁻¹ ^ 2)
-    simp only [g, pow_add] at ⊢
-    convert h using 1
-    field_simp
-    ring_nf
-    field_simp
-    ring
-  have htelescope : HasSum (fun n : ℕ ↦ ((n : ℝ) + 1)⁻¹ - ((n : ℝ) + 2)⁻¹) 1 := by
-    refine (hasSum_iff_tendsto_nat_of_nonneg (fun n ↦ by
-      apply sub_nonneg.mpr
-      gcongr
-      norm_num) _).mpr ?_
-    have hsum (N : ℕ) :
-        (∑ n ∈ range N, (((n : ℝ) + 1)⁻¹ - ((n : ℝ) + 2)⁻¹)) =
-          1 - ((N : ℝ) + 1)⁻¹ := by
-      simpa [Nat.cast_add, add_assoc, one_add_one_eq_two] using
-        (sum_range_sub' (fun n : ℕ ↦ ((n : ℝ) + 1)⁻¹) N)
-    simp_rw [hsum]
-    simpa using tendsto_const_nhds.sub
-      (tendsto_inv_atTop_zero.comp (tendsto_atTop_mono
-        (fun n : ℕ ↦ le_add_of_nonneg_right (zero_le_one : (0 : ℝ) ≤ 1))
-        tendsto_natCast_atTop_atTop))
+      (((n : ℝ) + 1)⁻¹ - ((n : ℝ) + 2)⁻¹) := hasSum_inv_add_two_pow_add_two n
+  have htelescope := hasSum_inv_add_one_sub_inv_add_two
   have hg : Summable g :=
     (summable_prod_of_nonneg (fun q ↦ by dsimp [g]; positivity)).mpr
       ⟨fun n ↦ (hfiber n).summable, by
