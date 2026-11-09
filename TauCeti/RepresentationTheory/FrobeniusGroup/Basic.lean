@@ -344,7 +344,7 @@ is `N` itself.
 This is what makes the abstract construction checkable on a concrete Frobenius group, which comes
 presented as such a decomposition with `H` acting on `N` without nonidentity fixed points
 (`TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree`). -/
-theorem frobeniusKernelSubgroup_eq_of_isComplement' [N.Normal] (hH : IsTISubgroup H)
+theorem frobeniusKernelSubgroup_eq_of_isComplement' (hH : IsTISubgroup H)
     (hNH : N.IsComplement' H) :
     frobeniusKernelSubgroup hH = N :=
   SetLike.coe_injective <|
