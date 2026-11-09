@@ -59,6 +59,9 @@ If `2 ≤ q ≤ q'` and `q ^ p < q (q + q')`, then `q ^ (p - 1) < 2 q'`, so
 This reads off the growth of consecutive continued-fraction denominators from the lower error
 bound `1 / (q (q + q')) < |ξ - p / q|`.
 
+For `s ≤ 0`, `0 < c` and `c / 2 ≤ z`, `z ^ s ≤ 2 ^ (-s) * c ^ s`. This bounds a negative power
+along a segment on which the base stays at least half its starting value.
+
 For `s ≥ 0` the weight `(1 + ‖x‖) ^ s` on a seminormed group is subadditive up to the constant
 `2 ^ s`. This is the weight inequality behind product estimates in weighted sequence spaces. The
 weight `1 + ‖x‖` itself is submultiplicative: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
@@ -403,6 +406,15 @@ theorem exists_rpow_le_of_le_add_of_le_two_sub_mul {q δ : ℝ} (hq : 1 < q) (h�
     _ = (1 - φ r₀ / 2 ^ q) * 2 ^ (q - 1) * (s ^ q + t ^ q) := by
         rw [hr_def, div_rpow ht hs.le]
         field_simp
+
+/-- If `0 < c` and `c / 2 ≤ z`, then for a nonpositive exponent `s`, `z ^ s` is at most
+`2 ^ (-s) * c ^ s`: the power is largest where the base is smallest. -/
+theorem rpow_le_two_rpow_neg_mul_of_half_le {s c z : ℝ} (hs : s ≤ 0) (hc : 0 < c)
+    (hz : c / 2 ≤ z) : z ^ s ≤ 2 ^ (-s) * c ^ s := by
+  calc z ^ s ≤ (c / 2) ^ s := rpow_le_rpow_of_nonpos (by positivity) hz hs
+    _ = 2 ^ (-s) * c ^ s := by
+        rw [div_rpow hc.le zero_le_two, div_eq_mul_inv, ← rpow_neg zero_le_two]
+        ring_nf
 
 end Real
 
