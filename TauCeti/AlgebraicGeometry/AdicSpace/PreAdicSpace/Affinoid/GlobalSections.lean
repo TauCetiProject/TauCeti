@@ -60,33 +60,6 @@ theorem continuous_presentationLimitAppTop
     TopCommRingCat.isCompleteSeparated.ι.map
       (PresheafedSpace.Γ.map (PreAdicSpace.forgetToPresheafedSpace.map f).op)).2
 
-/-- The image of a point under a morphism into an affinoid spectrum is obtained by pulling its
-stalk valuation back along the global-sections map followed by the germ map. -/
-theorem base_eq_comap_presentationLimitAppTop
-    (f : X ⟶ presentationLimitPreAdicSpace P Aplus hAplus hP) (x : X) :
-    (f.base x : spa Aplus).1 =
-      comap (presentationLimitAppTop P Aplus hAplus hP f)
-        (comap (X.toRingPresheafedSpace.presheaf.germ ⊤ x (Opens.mem_top x)).hom
-          (X.stalkValuation x)) := by
-  calc
-    (f.base x : spa Aplus).1 =
-        comap (presentationLimitGlobalGerm P Aplus (f.base x))
-          ((presentationLimitPreAdicSpace P Aplus hAplus hP).stalkValuation (f.base x)) :=
-      ((congrArg (comap (presentationLimitGlobalGerm P Aplus (f.base x)))
-        (presentationLimitPreAdicSpace_stalkValuation P Aplus hAplus hP (f.base x))).trans
-          (comap_presentationLimitGlobalGerm P Aplus hAplus hP (f.base x))).symm
-    _ = comap ((f.stalkMap x).hom.comp (presentationLimitGlobalGerm P Aplus (f.base x)))
-        (X.stalkValuation x) := by
-      rw [f.stalkValuation_eq_comap]
-      exact (congrFun (comap_comp (presentationLimitGlobalGerm P Aplus (f.base x))
-        (f.stalkMap x).hom) (X.stalkValuation x)).symm
-    _ = comap (presentationLimitAppTop P Aplus hAplus hP f)
-        (comap (X.toRingPresheafedSpace.presheaf.germ ⊤ x (Opens.mem_top x)).hom
-          (X.stalkValuation x)) := by
-      rw [← presentationLimitAppTop_comp_germ]
-      exact congrFun (comap_comp (presentationLimitAppTop P Aplus hAplus hP f)
-        (X.toRingPresheafedSpace.presheaf.germ ⊤ x (Opens.mem_top x)).hom) (X.stalkValuation x)
-
 /-- Pullback on global sections carries the plus ring of the target pair into the integral
 sections of the source. No sheaf condition on either space is required. -/
 theorem presentationLimitAppTop_mem_plus
