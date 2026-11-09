@@ -61,8 +61,6 @@ coercivity estimate, and the regularity and decay of the minimizer.
 * `TauCeti.Vortex.taubesPotential`: the potential `φ(t) = (exp (2t) - 1 - 2t) / 16`.
 * `TauCeti.Vortex.taubesDensity`, `TauCeti.Vortex.taubesFunctional`: the density
   `‖∇w‖² / 2 + h φ(w) + k w` and its integral `𝒜(w)`.
-* `TauCeti.Vortex.backgroundSource`: the coefficient `k` of the reduced vortex equation, whose
-  coefficient `h` is `TauCeti.Vortex.backgroundWeight` from `Vortex/Background.lean`.
 
 ## Main results
 
@@ -477,41 +475,6 @@ end Functional
 section Vortex
 
 variable {f : ℂ → ℂ} {w : ℂ → ℝ}
-
-/-- The source `k = (h - 1) / 8 + 2 ‖f'‖² / (1 + ‖f‖²)²` of the reduced vortex equation, written
-as an Euler–Lagrange equation of Taubes's functional. When `f` is holomorphic,
-`2 ‖f'‖² / (1 + ‖f‖²)² = -Δu₀` for the background amplitude `u₀`
-(`TauCeti.Vortex.laplacian_backgroundAmplitude`). -/
-def backgroundSource (f : ℂ → ℂ) (z : ℂ) : ℝ :=
-  (backgroundWeight f z - 1) / 8 + 2 * ‖deriv f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) ^ 2
-
-/-- The defining formula of `TauCeti.Vortex.backgroundSource`. -/
-theorem backgroundSource_def (f : ℂ → ℂ) (z : ℂ) :
-    backgroundSource f z =
-      (backgroundWeight f z - 1) / 8 + 2 * ‖deriv f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) ^ 2 := (rfl)
-
-theorem continuous_backgroundSource (hf : Differentiable ℂ f) :
-    Continuous (backgroundSource f) := by
-  have hf' : Continuous (deriv f) := hf.contDiff.continuous_deriv le_top
-  have hw := continuous_backgroundWeight hf.continuous
-  have hk : backgroundSource f = fun z ↦
-      (backgroundWeight f z - 1) / 8 + 2 * ‖deriv f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) ^ 2 :=
-    funext (backgroundSource_def f)
-  rw [hk]
-  exact ((hw.sub continuous_const).div_const 8).add
-    ((continuous_const.mul (hf'.norm.pow 2)).div
-      ((continuous_const.add (hf.continuous.norm.pow 2)).pow 2) fun z ↦ by positivity)
-
-/-- **The Euler–Lagrange equation for the background coefficients is the vortex equation.** For a
-holomorphic `f`, the function `w` solves `Δw = h (exp (2w) - 1) / 8 + k` at `z`, with the
-background coefficients `h` and `k`, exactly when the field reconstructed from the amplitude
-`u₀ + w` and the section `f` solves the vortex equation at `z`. -/
-theorem laplacian_eq_iff_equation_amplitudeField_backgroundAmplitude_add_eq_zero {z : ℂ}
-    (hf : AnalyticAt ℂ f z) (hw : ContDiffAt ℝ 2 w z) :
-    Δ w z = backgroundWeight f z * (Real.exp (2 * w z) - 1) / 8 + backgroundSource f z ↔
-      equation (amplitudeField (fun z ↦ backgroundAmplitude f z + w z) f) z = 0 := by
-  rw [equation_amplitudeField_backgroundAmplitude_add_eq_zero_iff hf hw, backgroundSource_def]
-  constructor <;> intro H <;> rw [H] <;> ring
 
 /-- **Vortex amplitudes are the critical points of Taubes's functional.** For an entire function
 `f` and a `C²` function `w` whose density for the background coefficients is integrable, `w` is a

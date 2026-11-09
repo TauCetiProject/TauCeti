@@ -57,6 +57,9 @@ reduced equation is not proved here.
 * `TauCeti.Vortex.equation_amplitudeField_backgroundAmplitude_add_eq_zero_iff`: the field
   reconstructed from `u₀ + w` solves the vortex equation at `z` exactly when `w` solves the
   reduced equation at `z`.
+* `TauCeti.Vortex.laplacian_eq_iff_equation_amplitudeField_backgroundAmplitude_add_eq_zero`: the
+  same equivalence for the reduced equation written as `Δw = h (exp (2w) - 1) / 8 + k`, with the
+  source `k = (h - 1) / 8 + g` (`TauCeti.Vortex.backgroundSource`).
 * `TauCeti.Vortex.tendsto_backgroundAmplitude_add_natDegree_mul_log`: `u₀ + m log |z| → 0`.
 * `TauCeti.Vortex.tendsto_sectionValue_amplitudeField_backgroundAmplitude_add_iff`: the end
   framing of the reconstructed section is equivalent to `w → 0`.
@@ -179,6 +182,42 @@ theorem equation_amplitudeField_backgroundAmplitude_add_eq_zero_iff {w : ℂ →
     contDiffAt_backgroundAmplitude (hf.contDiffAt.restrict_scalars ℝ)
   rw [equation_amplitudeField_eq_zero_iff (hbg.add hw) hf.differentiableAt,
     laplacian_backgroundAmplitude_add_eq_iff hf hw]
+
+/-- The source `k = (h - 1) / 8 + 2 ‖f'‖² / (1 + ‖f‖²)²` of the reduced vortex equation, written
+in the form `Δw = h (exp (2w) - 1) / 8 + k` of the Euler–Lagrange equation of Taubes's functional
+(`Vortex/Variational.lean`). When `f` is holomorphic,
+`2 ‖f'‖² / (1 + ‖f‖²)² = -Δu₀` for the background amplitude `u₀`
+(`TauCeti.Vortex.laplacian_backgroundAmplitude`). -/
+def backgroundSource (f : ℂ → ℂ) (z : ℂ) : ℝ :=
+  (backgroundWeight f z - 1) / 8 + 2 * ‖deriv f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) ^ 2
+
+/-- The defining formula of `TauCeti.Vortex.backgroundSource`. -/
+theorem backgroundSource_def (f : ℂ → ℂ) (z : ℂ) :
+    backgroundSource f z =
+      (backgroundWeight f z - 1) / 8 + 2 * ‖deriv f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) ^ 2 := (rfl)
+
+theorem continuous_backgroundSource (hf : Differentiable ℂ f) :
+    Continuous (backgroundSource f) := by
+  have hf' : Continuous (deriv f) := hf.contDiff.continuous_deriv le_top
+  have hw := continuous_backgroundWeight hf.continuous
+  have hk : backgroundSource f = fun z ↦
+      (backgroundWeight f z - 1) / 8 + 2 * ‖deriv f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) ^ 2 :=
+    funext (backgroundSource_def f)
+  rw [hk]
+  exact ((hw.sub continuous_const).div_const 8).add
+    ((continuous_const.mul (hf'.norm.pow 2)).div
+      ((continuous_const.add (hf.continuous.norm.pow 2)).pow 2) fun z ↦ by positivity)
+
+/-- **The reduced equation with the background coefficients is the vortex equation.** For a
+holomorphic `f`, the function `w` solves `Δw = h (exp (2w) - 1) / 8 + k` at `z`, with the
+background coefficients `h` and `k`, exactly when the field reconstructed from the amplitude
+`u₀ + w` and the section `f` solves the vortex equation at `z`. -/
+theorem laplacian_eq_iff_equation_amplitudeField_backgroundAmplitude_add_eq_zero {w : ℂ → ℝ}
+    (hf : AnalyticAt ℂ f z) (hw : ContDiffAt ℝ 2 w z) :
+    Δ w z = backgroundWeight f z * (Real.exp (2 * w z) - 1) / 8 + backgroundSource f z ↔
+      equation (amplitudeField (fun z ↦ backgroundAmplitude f z + w z) f) z = 0 := by
+  rw [equation_amplitudeField_backgroundAmplitude_add_eq_zero_iff hf hw, backgroundSource_def]
+  constructor <;> intro H <;> rw [H] <;> ring
 
 /-- For a monic polynomial `P` of degree `m ≥ 1`, the background amplitude has the growth of a
 degree-`m` vortex amplitude: `u₀ + m log ‖z‖ → 0` at infinity. -/
