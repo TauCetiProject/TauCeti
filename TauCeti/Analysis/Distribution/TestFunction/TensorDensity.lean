@@ -19,10 +19,10 @@ import TauCeti.Analysis.Normed.Module.FiniteDimension
 Let `Ω ⊆ E` and `O ⊆ D` be open subsets of finite-dimensional real normed spaces. The tensor
 products `(x, t) ↦ ψ t • φ x` of real test functions `φ` on `Ω` and `ψ` on `O`
 (`TestFunction.prodSMulCLM`) span a dense subspace of the real test functions on `Ω × O`, for the
-LF topology. Consequently a continuous linear map on the test functions on `Ω × O`, in particular
-a distribution on `Ω × O`, is determined by its values on these tensor products. This is the
-uniqueness half of the Schwartz kernel theorem: a distributional kernel `K` on `Ω × O` is
-determined by the pairings `K (ψ ⊗ φ)`.
+LF topology. Consequently a continuous linear map on the test functions on `Ω × O` with values in
+a Hausdorff space, in particular a distribution on `Ω × O` with Hausdorff values, is determined by
+its values on these tensor products. This is the uniqueness half of the Schwartz kernel theorem:
+a distributional kernel `K` on `Ω × O` is determined by the pairings `K (ψ ⊗ φ)`.
 
 ## The Fourier argument
 
@@ -50,7 +50,7 @@ Real-valued test functions are the ones on which Mathlib's distributions `𝓓'(
   subspace of the real test functions on a product.
 * `TestFunction.ext_prodSMulCLM`: a continuous linear map on the test functions on a product, with
   Hausdorff target, is determined by its values on tensor products. In particular this applies to
-  distributions on a product.
+  distributions on a product with Hausdorff values.
 
 ## References
 
@@ -285,8 +285,9 @@ theorem dense_span_prodSMulCLM [FiniteDimensional ℝ E] [FiniteDimensional ℝ 
 
 /-- **Uniqueness on tensor products.** A continuous linear map on the real test functions on
 `V = Ω ×ˢ O`, with values in a Hausdorff space, is determined by its values on the tensor products
-`(x, t) ↦ ψ t • φ x`. This applies in particular to distributions `𝓓'(V, F)` on `V`: a
-distributional kernel on a product is determined by its pairings with tensor products. -/
+`(x, t) ↦ ψ t • φ x`. This applies in particular to distributions `𝓓'(V, F)` on `V` with `F`
+Hausdorff: such a distributional kernel on a product is determined by its pairings with tensor
+products. -/
 theorem ext_prodSMulCLM [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] {G 𝓕 : Type*}
     [AddCommMonoid G] [Module ℝ G] [TopologicalSpace G] [T2Space G] [FunLike 𝓕 𝓓(V, ℝ) G]
     [ContinuousLinearMapClass 𝓕 ℝ 𝓓(V, ℝ) G]
