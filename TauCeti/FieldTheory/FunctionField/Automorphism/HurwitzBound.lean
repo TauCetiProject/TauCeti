@@ -94,16 +94,7 @@ theorem natCard_le_eighty_four_mul_genus_sub_one (hF : IsFunctionField k F)
   have hFE : IsFunctionField k ↥E := hF.fixedField G
   have hexE : IsIntegrallyClosedIn k ↥E := E.val.isIntegrallyClosedIn E.val.injective hex
   -- The ramified places of the fixed field form a finite set.
-  have hfinite : {P : Place k ↥E | 1 < P.ramificationIdxIn F}.Finite := by
-    refine (Place.finite_setOf_exists_differentExponent_ne_zero (k' := k) (F' := F)
-      k ↥E hFE).subset ?_
-    intro P hP
-    obtain ⟨P', hP'⟩ := Place.restrict_surjective_of_finiteDimensional (k' := k) hFE hF P
-    refine ⟨P', hP', ?_⟩
-    have he : 1 < Place.ramificationIdx ↥E P' := by
-      rwa [← Place.ramificationIdxIn_eq_ramificationIdx hP']
-    have hdl := Place.ramificationIdx_le_differentExponent_add_one k ↥E P'
-    omega
+  have hfinite := Place.finite_setOf_one_lt_ramificationIdxIn hF hFE
   let s : Finset (Place k ↥E) := hfinite.toFinset
   -- Hurwitz, in its tame form, through the branch data of the extension.
   have hhur : 2 * (genus k F : ℤ) - 2 =
@@ -131,30 +122,13 @@ theorem natCard_le_eighty_four_mul_genus_sub_one (hF : IsFunctionField k F)
     rw [Multiset.map_replicate, Multiset.sum_replicate, nsmul_eq_mul, mul_comm]
   -- The deficit of the branch data is `(2g - 2)/|G|`, which is positive.
   set D : ℚ := 2 * (genus k ↥E : ℚ) - 2 + (e.map fun n : ℕ ↦ 1 - 1 / (n : ℚ)).sum with hD
-  have hGQ : (0 : ℚ) < Nat.card G := by exact_mod_cast hGpos
   have hkey : (Nat.card G : ℚ) * D = 2 * (genus k F : ℚ) - 2 := by
     have hcastQ := congrArg (fun n : ℤ ↦ (n : ℚ)) hhur
     push_cast at hcastQ
     rw [hbranch] at hcastQ
     rw [hD, hsum, ← hcard]
     linarith [hcastQ]
-  have hgQ : (2 : ℚ) ≤ genus k F := by exact_mod_cast hgenus
-  have hDpos : 0 < D := by
-    by_contra hcon
-    have hle : (Nat.card G : ℚ) * D ≤ 0 := mul_nonpos_of_nonneg_of_nonpos hGQ.le (not_lt.mp hcon)
-    rw [hkey] at hle
-    linarith
-  have hdef :=
-    one_div_forty_two_le_hyperbolic_deficit (γ := genus k ↥E) hetwo (by rw [← hD]; exact hDpos)
-  -- `|G| · (1/42) ≤ |G| · D = 2g - 2`.
-  have hfinal : (Nat.card G : ℚ) ≤ 42 * (2 * (genus k F : ℚ) - 2) := by
-    rw [← hkey]
-    nlinarith [hdef, hGQ]
-  have : (Nat.card G : ℚ) ≤ 84 * ((genus k F : ℚ) - 1) := by linarith
-  have hnat : (Nat.card G : ℚ) ≤ ((84 * (genus k F - 1) : ℕ) : ℚ) := by
-    push_cast [Nat.cast_sub (by omega : 1 ≤ genus k F)]
-    linarith
-  exact_mod_cast hnat
+  exact card_le_eighty_four_mul_sub_one hgenus hGpos hetwo hkey
 
 /-- **The Hurwitz bound for a group of order prime to the characteristic** (Stichtenoth,
 Exercise 3.18): over a perfect constant field of characteristic `p`, a finite group `G` of

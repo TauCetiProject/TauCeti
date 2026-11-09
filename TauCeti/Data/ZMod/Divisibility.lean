@@ -72,23 +72,20 @@ theorem natCast_eq_neg_of_dvd_add {n b b' : ℕ} (h : n ∣ b + b') : (b' : ZMod
   exact h
 
 /-- Dividing a residue representative by `d` agrees modulo `m` with dividing the original
-integer, when `d` divides that integer and `m * d` divides the residue modulus. -/
-theorem natCast_val_div_eq_intCast_div {N m d : ℕ} [NeZero N] (hmd : m * d ∣ N)
-    {x : ℤ} (hd : (d : ℤ) ∣ x) :
+integer, when `m * d` divides the residue modulus. -/
+theorem natCast_val_div_eq_intCast_div {N m d : ℕ} [NeZero N] (hmd : m * d ∣ N) (x : ℤ) :
     (((x : ZMod N).val / d : ℕ) : ZMod m) = ((x / d : ℤ) : ZMod m) := by
   have hd0 : (d : ℤ) ≠ 0 := by
     intro hzero
     have hd0 : d = 0 := by exact_mod_cast hzero
     exact NeZero.ne N (by simpa [hd0] using hmd)
   have hmd' : (m : ℤ) * d ∣ N := by exact_mod_cast hmd
-  have hdiff : (m : ℤ) * d ∣ ((x : ZMod N).val : ℤ) - x :=
-    hmd'.trans
-      ((intCast_eq_intCast_iff_dvd_sub _ _ _).mp (by simp))
-  have hquot := Int.ediv_dvd_ediv (dvd_mul_left (d : ℤ) m) hdiff
-  rw [mul_comm (m : ℤ) d, Int.mul_ediv_cancel_left _ hd0,
-    Int.sub_ediv_of_dvd _ hd] at hquot
-  rw [← Int.cast_natCast, Int.natCast_div, intCast_eq_intCast_iff_dvd_sub]
-  exact (dvd_sub_comm).mp hquot
+  obtain ⟨k, hk⟩ : (m : ℤ) * d ∣ ((x : ZMod N).val : ℤ) - x :=
+    hmd'.trans ((intCast_eq_intCast_iff_dvd_sub _ _ _).mp (by simp))
+  have hval : ((x : ZMod N).val : ℤ) = x + d * (m * k) := by linarith
+  rw [← Int.cast_natCast, Int.natCast_div, hval, Int.add_mul_ediv_left _ _ hd0,
+    intCast_eq_intCast_iff_dvd_sub]
+  exact ⟨-k, by ring⟩
 
 /-- **A linear congruence with unit coefficient is solvable.** If `b` is a unit modulo `n`, then
 `n ∣ a - j.val * b` for some `j : ZMod n`, namely `j = a b⁻¹`. -/
@@ -144,9 +141,24 @@ theorem natCast_natAbs_eq_of_mul_nonneg {m : ℕ} {z w : ℤ} (hzw : 0 ≤ z * w
 
 /-- **A residue is determined by its reductions modulo prime powers.** Two residues modulo `n`
 whose reductions modulo every prime power `p ^ k` dividing `n` agree are equal: the Chinese
-remainder theorem in its uniqueness form, along the prime factorization of `n`. -/
-theorem eq_of_forall_cast_eq_of_prime_pow_dvd {n : ℕ} [NeZero n] {x y : ZMod n}
+remainder theorem in its uniqueness form, along the prime factorization of `n`, when `n ≠ 0`.
+For `n = 0`, it says that an integer is determined by its reductions modulo all prime powers. -/
+theorem eq_of_forall_cast_eq_of_prime_pow_dvd {n : ℕ} {x y : ZMod n}
     (h : ∀ p k : ℕ, p.Prime → k ≠ 0 → p ^ k ∣ n → (cast x : ZMod (p ^ k)) = cast y) : x = y := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · -- over `ℤ`, a difference divisible by arbitrarily large powers of `2` vanishes
+    obtain ⟨x, rfl⟩ : ∃ z : ℤ, (z : ZMod 0) = x := ⟨x, rfl⟩
+    obtain ⟨y, rfl⟩ : ∃ z : ℤ, (z : ZMod 0) = y := ⟨y, rfl⟩
+    have h2 : ∀ k : ℕ, k ≠ 0 → (x : ZMod (2 ^ k)) = y := fun k hk ↦
+      h 2 k Nat.prime_two hk (dvd_zero _)
+    suffices x = y by rw [this]
+    refine sub_eq_zero.mp (Int.eq_zero_of_abs_lt_dvd (m := (2 : ℤ) ^ ((x - y).natAbs + 1)) ?_ ?_)
+    · exact (intCast_eq_intCast_iff_dvd_sub _ _ _).mp (by simpa using (h2 _ (by omega)).symm)
+    · rw [Int.abs_eq_natAbs, pow_succ]
+      have : (x - y).natAbs < 2 ^ (x - y).natAbs := Nat.lt_two_pow_self
+      have : ((x - y).natAbs : ℤ) < 2 ^ (x - y).natAbs := by exact_mod_cast this
+      omega
+  have : NeZero n := ⟨hn⟩
   -- The difference is the cast of its value, which `n` divides because every prime power
   -- dividing `n` does.
   rw [← sub_eq_zero, ← natCast_zmod_val (x - y), natCast_eq_zero_iff]
@@ -157,7 +169,7 @@ theorem eq_of_forall_cast_eq_of_prime_pow_dvd {n : ℕ} [NeZero n] {x y : ZMod n
 
 /-- **A unit is determined by its reductions modulo prime powers.** Two units modulo `n` whose
 images under `ZMod.unitsMap` agree for every prime power `p ^ k` dividing `n` are equal. -/
-theorem units_eq_of_forall_unitsMap_eq_of_prime_pow_dvd {n : ℕ} [NeZero n] {u v : (ZMod n)ˣ}
+theorem units_eq_of_forall_unitsMap_eq_of_prime_pow_dvd {n : ℕ} {u v : (ZMod n)ˣ}
     (h : ∀ p k : ℕ, p.Prime → k ≠ 0 → (hpk : p ^ k ∣ n) → unitsMap hpk u = unitsMap hpk v) :
     u = v :=
   Units.ext <| eq_of_forall_cast_eq_of_prime_pow_dvd fun p k hp hk hpk ↦

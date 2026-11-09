@@ -127,7 +127,7 @@ classes of its two vertices in the subcomplex. -/
 @[reassoc (attr := simp)]
 lemma relClass₁_homologyδ :
     relClass₁ R Q s v₀ v₁ h₀ h₁ ≫ Q.homologyδ R 1 0 =
-      TauCeti.SSet.ιHomology₀ R v₁ - TauCeti.SSet.ιHomology₀ R v₀ := by
+      SSet.ιHomology₀ R v₁ - SSet.ιHomology₀ R v₀ := by
   have hx₁ : (Q.left.ιChainComplex (R := R) v₁ - Q.left.ιChainComplex v₀) ≫
       (SSet.chainComplexMap Q.hom R).f 0 =
         Q.right.ιChainComplex s ≫ (Q.right.chainComplex R).d 1 0 := by
@@ -139,7 +139,7 @@ lemma relClass₁_homologyδ :
     (Q.right.ιChainComplex s) rfl _ hx₁ 0 (by simp)
   rw [relClass₁, Category.assoc]
   refine this.trans ?_
-  rw [TauCeti.SSet.ιHomology₀_eq, TauCeti.SSet.ιHomology₀_eq, ← Preadditive.sub_comp]
+  rw [SSet.ιHomology₀_eq, SSet.ιHomology₀_eq, ← Preadditive.sub_comp]
   congr 1
   rw [← cancel_mono ((Q.left.chainComplex R).iCycles 0)]
   simp
