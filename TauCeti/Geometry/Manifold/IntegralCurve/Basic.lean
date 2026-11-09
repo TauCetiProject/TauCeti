@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.ODE.Basic
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import Mathlib.Analysis.ODE.ExistUnique
@@ -30,6 +31,8 @@ the field.
   curve on that set.
 * `isMIntegralCurve_const_iff`: a constant curve is an integral curve exactly at a zero of the
   field.
+* `isMIntegralCurveOn_iff_isIntegralCurveOn`: in a vector space, integral curves of a vector field
+  are the solutions of the autonomous differential equation it defines.
 * `TauCeti.isMIntegralCurve_congr_vectorField`: being an integral curve only depends on the values
   of the vector field along the curve.
 * `IsMIntegralCurveAt.of_extChartAt_symm`: a coordinate solution gives a manifold integral curve.
@@ -110,6 +113,16 @@ theorem isMIntegralCurve_const_iff {M : Type*} [TopologicalSpace M] [ChartedSpac
   rw [mfderiv_const] at h₀
   have h₁ : v x = ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (v x) 1 := by simp
   exact h₁.trans (ContinuousLinearMap.ext_iff.1 h₀ (1 : ℝ)).symm
+
+/-- **Integral curves in a vector space.** For the model `𝓘(ℝ, E)` of `E` on itself, a curve is an
+integral curve of a vector field on a set exactly when it solves, on that set, the autonomous
+differential equation `γ' = v ∘ γ` in the sense of Mathlib's `IsIntegralCurveOn`. -/
+theorem isMIntegralCurveOn_iff_isIntegralCurveOn {γ : ℝ → E}
+    {v : (x : E) → TangentSpace 𝓘(ℝ, E) x} {s : Set ℝ} :
+    IsMIntegralCurveOn γ v s ↔ IsIntegralCurveOn γ (fun _ x ↦ v x) s := by
+  -- `smulRight 1 w` is `toSpanSingleton ℝ w` by definition (`ContinuousLinearMap.smulRight_id`).
+  exact forall₂_congr fun t _ ↦ hasMFDerivWithinAt_iff_hasFDerivWithinAt.trans
+    (hasDerivWithinAt_iff_hasFDerivWithinAt (f := γ) (f' := (v (γ t) : E))).symm
 
 namespace IsMIntegralCurveAt
 

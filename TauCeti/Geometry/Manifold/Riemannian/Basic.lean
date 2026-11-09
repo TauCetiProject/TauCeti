@@ -30,6 +30,8 @@ depends continuously on both the base point and the tangent vector.
   a `C^0` Riemannian bundle.
 * `IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle`: conversely, view a `C^n`
   Riemannian bundle as a continuous Riemannian bundle.
+* `IsContMDiffRiemannianBundle.vectorSpace`: the standard metric of an inner product space is
+  analytic.
 * `ContMDiffOn.continuousOn_norm_mfderiv_apply`: the norm `‖df_z ξ‖` is jointly continuous
   in `z` and `ξ` on an open domain.
 * `ContMDiffOn.continuousOn_norm_mfderiv`: for a `C¹` map `f` from an open subset of a normed space
@@ -145,6 +147,12 @@ theorem toIsContinuousRiemannianBundle [IsContMDiffRiemannianBundle IB n F V] :
   obtain ⟨g, hg, hinner⟩ :=
     IsContMDiffRiemannianBundle.exists_contMDiff (IB := IB) (n := n) (F := F) (E := V)
   exact ⟨⟨g, hg.continuous, hinner⟩⟩
+
+/-- The standard Riemannian metric of a real inner product space, given by its inner product on
+every tangent space (`riemannianMetricVectorSpace`), is analytic, in particular smooth. -/
+instance vectorSpace {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] :
+    IsContMDiffRiemannianBundle 𝓘(ℝ, E) ω E (fun x : E ↦ TangentSpace 𝓘(ℝ, E) x) :=
+  ⟨⟨_, (riemannianMetricVectorSpace E).contMDiff, fun _ _ _ ↦ rfl⟩⟩
 
 end IsContMDiffRiemannianBundle
 
