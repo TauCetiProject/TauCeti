@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Pullback
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.Exchange
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.MeasureTheory.Group.LIntegral
 
 /-!
@@ -49,17 +50,19 @@ rotation of the end at `∞` under `σ`. The main results are:
   the output end, in the end lift `c + φ_∞`.
 * `TauCeti.Floer.contMDiffAt_exchangePerturbation`: the family is jointly smooth in the parameter
   `c`, the domain point of `S` and the target point.
-* `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le`: for a
-  symplectic vector space target, the integrated curvature `∫ |R_K|` of every member with
-  `0 ≤ c ≤ 1` is at most `B₀ + B₁ + B_∞` along any map, where `|H_q| ≤ B_q`; the bound does not
-  depend on `c`.
+* `TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le`: for
+  Hamiltonians on a manifold with a smooth two-form, such as a closed symplectic manifold, the
+  integrated curvature `∫ |R_K|` of every member with `0 ≤ c ≤ 1` is at most `B₀ + B₁ + B_∞`
+  along any map, where `|H_q| ≤ B_q`; the bound does not depend on `c`. The symplectic vector
+  space case (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le`)
+  is the case of the constant form `TauCeti.SymplecticForm.constSmooth`.
 
 The input part is supported in two small discs about `0` and `1`, and the translated plane datum
 vanishes on the disc of radius `2 exp (2π)` about `c`, so for `0 ≤ c ≤ 1` the two parts have
 disjoint supports and the curvature splits into the curvatures of the two parts. The smoothness of
 the translated plane datum (`TauCeti.Floer.contMDiffAt_negativePlanePerturbation_sub`) and this
 splitting for any datum vanishing away from `c`
-(`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_add_negativePlanePerturbation_sub_le`)
+(`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_add_negativePlanePerturbation_sub_le`)
 are stated separately, for reuse by other data with a translated output end.
 
 ## References
@@ -368,12 +371,13 @@ theorem contMDiffAt_exchangePerturbation {n : ℕ∞} (hH : ∀ q, Periodic (H q
 
 end TauCeti.Floer
 
-namespace TauCeti.SymplecticForm
+namespace TauCeti.SmoothTwoForm
 
 open Floer MeasureTheory
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {H : Puncture → ℝ → V → ℝ}
+variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
+  {H : Puncture → ℝ → M → ℝ}
 
 /-- **Curvature of a datum plus a far-away translated plane datum.** Let `K` be a perturbation
 datum on `ℂ` vanishing at distance at least `3` from `c ∈ ℝ`, and let `P` be the negative plane
@@ -382,9 +386,10 @@ vanishes on the disc of radius `2 exp (2π)` about `c`, so the two data have dis
 for every map `u` into the target the integrated curvature of `K + P(· - c)` over the plane is at
 most that of `K` plus `B_p`. -/
 theorem lintegral_enorm_hamiltonianCurvature_add_negativePlanePerturbation_sub_le
-    (ω : SymplecticForm V) {K : ℂ → V → ℂ →L[ℝ] ℝ} {Hp : ℝ → V → ℝ} (hH : Periodic Hp 1)
-    (hHs : ContDiff ℝ 1 (uncurry Hp)) {Bp : ℝ} (hB : ∀ t x, |Hp t x| ≤ Bp) {c : ℝ}
-    (hK : ∀ w : ℂ, 3 ≤ ‖w - c‖ → ∀ x, K w x = 0) (u : ℝ × ℝ → V) :
+    (ω : SmoothTwoForm I M) {K : ℂ → M → ℂ →L[ℝ] ℝ} {Hp : ℝ → M → ℝ} (hH : Periodic Hp 1)
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry Hp)) {Bp : ℝ}
+    (hB : ∀ t x, |Hp t x| ≤ Bp) {c : ℝ} (hK : ∀ w : ℂ, 3 ≤ ‖w - c‖ → ∀ x, K w x = 0)
+    (u : ℝ × ℝ → M) :
     ∫⁻ z, ‖ω.hamiltonianCurvature
         (fun z x ↦ (K (Complex.equivRealProdCLM.symm z) x +
           negativePlanePerturbation Hp (Complex.equivRealProdCLM.symm z - c) x) 1)
@@ -396,8 +401,8 @@ theorem lintegral_enorm_hamiltonianCurvature_add_negativePlanePerturbation_sub_l
         ENNReal.ofReal Bp := by
   set e := Complex.equivRealProdCLM.symm
   -- The two parts of the datum, as components in real coordinates.
-  set Ki : ℂ → ℝ × ℝ → V → ℝ := fun v z x ↦ K (e z) x v
-  set Kp : ℂ → ℝ × ℝ → V → ℝ := fun v z x ↦ negativePlanePerturbation Hp (e z) x v
+  set Ki : ℂ → ℝ × ℝ → M → ℝ := fun v z x ↦ K (e z) x v
+  set Kp : ℂ → ℝ × ℝ → M → ℝ := fun v z x ↦ negativePlanePerturbation Hp (e z) x v
   set a : ℝ × ℝ := ((c : ℝ), (0 : ℝ))
   have he (z : ℝ × ℝ) : e z - c = e (z + -a) := by
     simp only [e, a, map_add, map_neg]
@@ -465,13 +470,15 @@ theorem lintegral_enorm_hamiltonianCurvature_add_negativePlanePerturbation_sub_l
     _ ≤ _ := add_le_add le_rfl hBpl
 
 /-- **The integrated curvature of the input-exchange family is bounded uniformly.** Let `K` be the
-member `c ∈ [0, 1]` of the input-exchange family of period-one `C¹` Hamiltonians `H_q` with
-`|H_q| ≤ B_q`, with components `K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)` in the global coordinate
-`z = s + i t` of `ℂ`. Then for every map `u` into the target, the integral of `|R_K(z, u(z))|` over
-the plane is at most `B₀ + B₁ + B_∞`, which does not depend on `c`. -/
-theorem lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le (ω : SymplecticForm V)
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {B : Puncture → ℝ}
-    (hB : ∀ q t x, |H q t x| ≤ B q) {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) (u : ℝ × ℝ → V) :
+member `c ∈ [0, 1]` of the input-exchange family of period-one `C¹` Hamiltonians `H_q` on a
+manifold `M` with a two-form `ω`, with `|H_q| ≤ B_q`, and write its components in the global
+coordinate `z = s + i t` of `ℂ` as `K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)`. Then for every map
+`u` into `M`, the integral of `|R_K(z, u(z))|` over the plane is at most `B₀ + B₁ + B_∞`, which
+does not depend on `c`. -/
+theorem lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le (ω : SmoothTwoForm I M)
+    (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {B : Puncture → ℝ}
+    (hB : ∀ q t x, |H q t x| ≤ B q) {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) (u : ℝ × ℝ → M) :
     ∫⁻ z, ‖ω.hamiltonianCurvature
         (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -479,7 +486,8 @@ theorem lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le (ω : Sympl
   -- The input part, with bounds `B₀`, `B₁`, `0`, vanishes away from `c`; the plane part has `B_∞`.
   have hBin := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
     (forall_update_inf (P := fun f => Periodic f 1) (fun _ => rfl) hH)
-    (forall_update_inf (P := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
+    (forall_update_inf (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f))
+      contMDiff_const hHs)
     (B := update B inf 0) (fun q t x => by
       rcases eq_or_ne q inf with rfl | hq
       · simp
@@ -493,5 +501,30 @@ theorem lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le (ω : Sympl
         add_le_add hBin le_rfl
     _ = ∑ q, ENNReal.ofReal (B q) := by
         simp [Puncture.sum_univ]
+
+end TauCeti.SmoothTwoForm
+
+namespace TauCeti.SymplecticForm
+
+open Floer MeasureTheory
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {H : Puncture → ℝ → V → ℝ}
+
+/-- **The integrated curvature of the input-exchange family is bounded uniformly.** This is the
+vector-space case of
+`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le`: for the
+member `c ∈ [0, 1]` of the input-exchange family of period-one `C¹` Hamiltonians `H_q` on a
+symplectic vector space with `|H_q| ≤ B_q`, and every map `u` into it, the integral of
+`|R_K(z, u(z))|` over the plane is at most `B₀ + B₁ + B_∞`. -/
+theorem lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {B : Puncture → ℝ}
+    (hB : ∀ q t x, |H q t x| ≤ B q) {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) (u : ℝ × ℝ → V) :
+    ∫⁻ z, ‖ω.hamiltonianCurvature
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)‖ₑ ≤ ∑ q, ENNReal.ofReal (B q) := by
+  simpa using ω.constSmooth.lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le hH
+    (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) hB hc₀ hc₁ u
 
 end TauCeti.SymplecticForm

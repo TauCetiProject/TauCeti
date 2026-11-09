@@ -106,7 +106,7 @@ original ring. The two vanishing criteria use `Module.length_eq_zero_iff` and
 `Submodule.Quotient.subsingleton_iff`, the general form of the fact that `R ⧸ I` is trivial
 exactly when `I = ⊤`. Additivity is `Ring.ord_mul`, the additivity of the order of vanishing over a
 product, read as a length. The finiteness of an `𝔪`-primary pair of equations, and with it the
-natural number it becomes, is `Ideal.isFiniteLength_quotient_of_radical_eq_maximalIdeal` in
+natural number it becomes, is `Ideal.isFiniteLength_quotient_of_isMaximal_radical` in
 `TauCeti.RingTheory.Length`.
 
 The four statements for an irreducible first equation use the dimension drop of
@@ -289,7 +289,7 @@ variable {R : Type u} [CommRing R] [IsNoetherianRing R] [IsLocalRing R]
 length, which is a natural number.** Let `(R, 𝔪)` be a noetherian local ring, and let `f` and `g`
 be two equations generating an ideal with radical `𝔪`. Then the length
 `Module.length R (R ⧸ (f, g))` is finite, by
-`Ideal.isFiniteLength_quotient_of_radical_eq_maximalIdeal`, hence a natural number. No dimension
+`Ideal.isFiniteLength_quotient_of_isMaximal_radical`, hence a natural number. No dimension
 hypothesis is placed on `R`: what the condition says is that the closed point is the only common
 point of the two equations there, and in a two-dimensional local ring it is what says that the two
 curves they define meet properly at the closed point and share no component there. The finite
@@ -312,7 +312,8 @@ theorem exists_nat_length_quotient_span_pair {f g : R}
     (hprim : (Ideal.span {f, g}).radical = maximalIdeal R) :
     ∃ n : ℕ, Module.length R (R ⧸ Ideal.span {f, g}) = n := by
   have hc : Module.length R (R ⧸ Ideal.span {f, g}) ≠ ⊤ :=
-    Module.length_ne_top_iff.mpr (Ideal.isFiniteLength_quotient_of_radical_eq_maximalIdeal _ hprim)
+    Module.length_ne_top_iff.mpr
+      (Ideal.isFiniteLength_quotient_of_isMaximal_radical _ (hprim ▸ maximalIdeal.isMaximal R))
   exact ⟨(Module.length R (R ⧸ Ideal.span {f, g})).toNat, (ENat.natCast_toNat hc).symm⟩
 
 end NoetherianLocalRing
@@ -422,8 +423,9 @@ theorem isFiniteLength_quotient_span_pair_of_prime (hd : ringKrullDim R = 2) {f 
     (hfnd : f ∈ nonZeroDivisors R) (hfprime : (Ideal.span {f}).IsPrime) (hg : g ∉ Ideal.span {f}) :
     IsFiniteLength R (R ⧸ Ideal.span {f, g}) := by
   by_cases hgm : g ∈ maximalIdeal R
-  · exact Ideal.isFiniteLength_quotient_of_radical_eq_maximalIdeal (Ideal.span {f, g})
-      (radical_span_pair_eq_maximalIdeal_of_prime hd hfnd hfprime hgm hg)
+  · exact Ideal.isFiniteLength_quotient_of_isMaximal_radical (Ideal.span {f, g})
+      (radical_span_pair_eq_maximalIdeal_of_prime hd hfnd hfprime hgm hg ▸
+        maximalIdeal.isMaximal R)
   · -- a `g` outside the maximal ideal of the local ring `R` is a unit, so `(f, g)` is the unit
     -- ideal and the quotient is the zero ring, of length zero
     have hfu : IsUnit g := (IsLocalRing.notMem_maximalIdeal (R := R)).mp hgm

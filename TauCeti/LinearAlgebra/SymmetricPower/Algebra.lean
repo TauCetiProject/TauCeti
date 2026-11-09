@@ -205,15 +205,15 @@ theorem toSymmetricAlgebra_symmetricPower_apply {κ : Type w} (b : Module.Basis 
     toSymmetricAlgebra R M n (b.symmetricPower n s) =
       (b.symmetricAlgebraHomogeneous n s : SymmetricAlgebra R M) := by
   classical
-  obtain ⟨f, rfl⟩ := TauCeti.Sym.ofFn_surjective s
+  obtain ⟨f, rfl⟩ := Sym.ofFn_surjective s
   rw [Module.Basis.symmetricPower_apply, tprodOfSym_ofFn, toSymmetricAlgebra_tprod]
   apply (SymmetricAlgebra.equivMvPolynomial b).injective
   rw [map_prod, TauCeti.SymmetricAlgebra.equivMvPolynomial_symmetricAlgebraHomogeneous_apply]
   simp only [SymmetricAlgebra.equivMvPolynomial_ι_apply]
   rw [← List.prod_ofFn]
-  have hexp : (_root_.Sym.equivFinsuppDegree κ n (TauCeti.Sym.ofFn f)).1 =
+  have hexp : (_root_.Sym.equivFinsuppDegree κ n (Sym.ofFn f)).1 =
       (List.ofFn f : Multiset κ).toFinsupp := by
-    rw [_root_.Sym.coe_equivFinsuppDegree_apply, TauCeti.Sym.coe_ofFn]
+    rw [_root_.Sym.coe_equivFinsuppDegree_apply, Sym.coe_ofFn]
   rw [hexp]
   simpa only [Multiset.map_coe, Multiset.prod_coe, List.map_ofFn, Function.comp_def] using
     TauCeti.prod_map_X_eq_monomial (R := R) (List.ofFn f : Multiset κ)

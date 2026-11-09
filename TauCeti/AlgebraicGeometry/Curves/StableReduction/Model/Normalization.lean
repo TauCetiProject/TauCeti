@@ -8,6 +8,8 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import TauCeti.AlgebraicGeometry.Normalization.Basic
 public import TauCeti.AlgebraicGeometry.Normalization.IsIso
+public import TauCeti.AlgebraicGeometry.Normalization.Normal
+public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Isomorphism
 
@@ -55,6 +57,8 @@ and over an arbitrary discrete valuation ring when `C` is smooth over `K`.
 * `TauCeti.Model.isProper_normalization`: the normalization of a proper model is a proper model.
 * `TauCeti.Model.normalizationLift_comp` and `TauCeti.Model.eq_normalizationLift`: the universal
   property of the normalization, in the category of models.
+* `TauCeti.Model.isNormalScheme_normalization_of_smooth`: normalizing a model with smooth
+  generic fibre gives a normal total space, including for disconnected generic fibres.
 
 ## References
 
@@ -97,6 +101,13 @@ generic fibre with `C`. -/
 def normalizationGenericFiberIso :
     genericFiber R K (M.genericι.fromNormalization ≫ M.toBase) ≅ Over.mk toK :=
   Over.isoMk (isPullback_toNormalization_toBase M).isoPullback.symm (by simp)
+
+/-- The normalization of a model with smooth generic fibre is normal, even if that fibre is
+disconnected. No excellence or finiteness of normalization hypothesis is needed. -/
+theorem isNormalScheme_normalization_of_smooth [Smooth toK] :
+    AlgebraicGeometry.IsNormalScheme M.genericι.normalization := by
+  have := AlgebraicGeometry.IsRegular.of_smooth toK
+  exact M.genericι.isNormalScheme_normalization
 
 variable [IsFinite M.genericι.fromNormalization]
 
