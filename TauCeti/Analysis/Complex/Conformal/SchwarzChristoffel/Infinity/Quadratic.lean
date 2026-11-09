@@ -7,15 +7,14 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.EdgeIntersection
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
-import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Asymptotic
 import TauCeti.Analysis.Calculus.DSlope.Continuous
-import TauCeti.Analysis.Complex.UpperHalfPlane.Primitive
+import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Asymptotic
+import TauCeti.Analysis.Complex.HasPrimitives
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Analysis.Complex.RemovableSingularity
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-import TauCeti.Analysis.Complex.HasPrimitives
 
 /-!
 # Quadratic growth of Schwarz--Christoffel primitives and ends of opening `2π`

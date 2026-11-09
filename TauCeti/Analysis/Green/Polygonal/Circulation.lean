@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Green.Polygonal.Basic
 public import TauCeti.Analysis.Green.AbsolutelyContinuous
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.PolygonalApproximation
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
+import TauCeti.Order.Interval.Set.Subdivision
 
 /-!
 # Circulation of raw polygonal curves
@@ -78,9 +79,8 @@ theorem integral_circulationFun_eq_polygon {γ : ℝ → ℂ} {a b : ℝ} {N : �
         (BoundaryChain.polygon (γ ∘ s)) := by
   have hγ := AbsolutelyContinuousOnInterval.of_affine_subdivision hs ha hb hsegments
   have hab : a ≤ b := by rw [← ha, ← hb]; exact hs.monotone (Fin.zero_le _)
-  have hmem (i : Fin (N + 1)) : s i ∈ Icc a b := by
-    rw [← ha, ← hb]
-    exact ⟨hs.monotone (Fin.zero_le _), hs.monotone (Fin.le_last _)⟩
+  have hmem (i : Fin (N + 1)) : s i ∈ Icc a b :=
+    hs.monotone.mem_Icc_of_map_zero_of_map_last ha hb i
   have hint := hγ.intervalIntegrable_circulationFun hP hQ
   let t : ℕ → ℝ := fun k ↦ s (Fin.ofNat (N + 1) k)
   have ht (i : Fin (N + 1)) : t i = s i := by simp [t]
