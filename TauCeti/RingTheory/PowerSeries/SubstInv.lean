@@ -31,7 +31,9 @@ form used to change formal parameters.
 * `PowerSeries.subst_eq_iff_eq_subst_substInvOfIsUnit`: substituting a series `P = u X + ⋯` with
   `u` a unit is undone by substituting its compositional inverse: `f(P) = g ↔ f = g(P⁻¹)`, so `f`
   is determined by `f(P)`.
-* `PowerSeries.map_substInvOfIsUnit`: compositional inverses commute with coefficient maps.
+* `PowerSeries.map_substInvOfIsUnit`: coefficient maps commute with the explicit construction
+  `substInvOfIsUnit` for any series with a unit linear coefficient; it is a compositional inverse
+  when the constant coefficient is zero.
 -/
 
 public section
@@ -73,12 +75,15 @@ theorem subst_eq_iff_eq_subst_substInvOfIsUnit {P : R⟦X⟧} (hP : constantCoef
   · rw [subst_comp_subst_apply hP₀ hQ, P.subst_substInvOfIsUnit_right hP hP', X_subst]
   · rw [subst_comp_subst_apply hQ hP₀, P.subst_substInvOfIsUnit_left hP hP', X_subst]
 
-/-- The coefficients of the compositional inverse commute with ring homomorphisms. -/
+/-- The coefficients of the explicit construction `substInvFun` commute with ring homomorphisms,
+for any series with an invertible linear coefficient. -/
 private theorem map_substInvFun {S : Type*} [CommRing S] (f : R →+* S) (P : R⟦X⟧)
     [Invertible (coeff 1 P)] [Invertible (coeff 1 (P.map f))] (n : ℕ) :
     f (substInvFun P n) = substInvFun (P.map f) n := by
-  have hinv : f (⅟(coeff 1 P)) = ⅟(coeff 1 (P.map f)) :=
-    (invOf_eq_right_inv (by rw [coeff_map, ← map_mul, mul_invOf_self, map_one])).symm
+  have hinv : f (⅟(coeff 1 P)) = ⅟(coeff 1 (P.map f)) := by
+    let _ : Invertible (f (coeff 1 P)) :=
+      ‹Invertible (coeff 1 (P.map f))›.copy _ (coeff_map f 1 P).symm
+    convert map_invOf f (coeff 1 P) using 1
   induction n using Nat.strong_induction_on with
   | _ n ih =>
     match n, ih with
@@ -102,8 +107,10 @@ private theorem map_substInvFun {S : Type*} [CommRing S] (f : R →+* S) (P : R�
       rw [substInvFun, substInvFun, map_mul, map_neg, hinv, ← coeff_map, key, hSm]
       all_goals omega
 
-/-- The compositional inverse of a series `P = u X + ⋯` with `u` a unit commutes with applying a
-ring homomorphism to the coefficients. -/
+/-- Applying a ring homomorphism to the coefficients commutes with the explicit construction
+`substInvOfIsUnit`, for any series `P` whose linear coefficient is a unit; no condition on the
+constant coefficient of `P` is needed. When `constantCoeff P = 0` this construction is the
+compositional inverse of `P`. -/
 @[simp]
 theorem map_substInvOfIsUnit {S : Type*} [CommRing S] (f : R →+* S) {P : R⟦X⟧}
     (hP' : IsUnit (coeff 1 P)) :
