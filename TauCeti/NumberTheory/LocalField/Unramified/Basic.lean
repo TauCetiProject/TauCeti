@@ -284,11 +284,7 @@ omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
   [ValuativeExtension K L] [ValuativeExtension L M] [ValuativeExtension K M] in
 /-- The top step of an unramified tower is unramified. -/
 theorem IsUnramified.tower_top [IsUnramified K M] : IsUnramified L M := by
-  have h : (normalizedValuation M).comp (Units.map (algebraMap K M : K →* M)) =
-      ((normalizedValuation M).comp (Units.map (algebraMap L M : L →* M))).comp
-        (Units.map (algebraMap K L : K →* L)) := by
-    rw [unitsMap_algebraMap_tower K L M]
-    rfl
+  have h := normalizedValuation_comp_unitsMap_tower K L M
   have hs := (isUnramified_iff_normalizedValuation_comp_unitsMap_surjective K M).1 ‹_›
   rw [h, MonoidHom.coe_comp] at hs
   exact (isUnramified_iff_normalizedValuation_comp_unitsMap_surjective L M).2 hs.of_comp

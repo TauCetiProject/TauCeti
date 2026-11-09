@@ -567,15 +567,31 @@ theorem ramificationIndex_eq_ramificationIdx :
     pow_dvd_pow_iff hϖ.ne_zero hϖ.not_isUnit] at hle
   omega
 
-/-- The units map of the composite `K → M` factors through the two steps of a tower `M/L/K`. -/
-theorem unitsMap_algebraMap_tower (K L M : Type*) [CommSemiring K] [CommSemiring L]
-    [CommSemiring M] [Algebra K L] [Algebra L M] [Algebra K M] [IsScalarTower K L M] :
-    Units.map (algebraMap K M : K →* M) =
+/-- In a tower `M/L/K`, the normalized valuation of `M` on the image of `Kˣ` factors through
+the units map of the step `K → L`. -/
+theorem normalizedValuation_comp_unitsMap_tower (K L M : Type*) [Field K] [Field L] [Field M]
+    [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M]
+    [Algebra K L] [Algebra L M] [Algebra K M] [IsScalarTower K L M] :
+    (normalizedValuation M).comp (Units.map (algebraMap K M : K →* M)) =
+      ((normalizedValuation M).comp (Units.map (algebraMap L M : L →* M))).comp
+        (Units.map (algebraMap K L : K →* L)) := by
+  have h : Units.map (algebraMap K M : K →* M) =
       (Units.map (algebraMap L M : L →* M)).comp (Units.map (algebraMap K L : K →* L)) := by
-  rw [← Units.map_comp]
-  congr 1
+    rw [← Units.map_comp]
+    congr 1
+    ext x
+    exact IsScalarTower.algebraMap_apply K L M x
+  rw [h, MonoidHom.comp_assoc]
+
+/-- The normalized valuation of `M` on the image of `Lˣ` is that of `L` composed with the
+ramification-index power map. -/
+theorem normalizedValuation_comp_unitsMap_algebraMap (L M : Type*) [Field L] [ValuativeRel L]
+    [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Field M] [ValuativeRel M]
+    [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra L M] [ValuativeExtension L M] :
+    (normalizedValuation M).comp (Units.map (algebraMap L M : L →* M)) =
+      (powMonoidHom (ramificationIndex L M)).comp (normalizedValuation L) := by
   ext x
-  exact IsScalarTower.algebraMap_apply K L M x
+  simp
 
 omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
   [ValuativeExtension K L] in
@@ -588,16 +604,13 @@ theorem ramificationIndex_tower (M : Type*) [Field M] [ValuativeRel M] [Topologi
   have hcomp : (normalizedValuation M).comp (Units.map (algebraMap K M : K →* M)) =
       (powMonoidHom (ramificationIndex L M)).comp
         ((normalizedValuation L).comp (Units.map (algebraMap K L : K →* L))) := by
-    rw [unitsMap_algebraMap_tower K L M]
-    ext x
-    simp
+    rw [normalizedValuation_comp_unitsMap_tower K L M,
+      normalizedValuation_comp_unitsMap_algebraMap L M, MonoidHom.comp_assoc]
   have hLM : ramificationIndex L M = (powMonoidHom (ramificationIndex L M) :
       Multiplicative ℤ →* Multiplicative ℤ).range.index := by
     refine ramificationIndex_def.trans ?_
-    rw [show (normalizedValuation M).comp (Units.map (algebraMap L M : L →* M)) =
-      (powMonoidHom (ramificationIndex L M)).comp (normalizedValuation L) by
-        ext x; simp, MonoidHom.range_comp, MonoidHom.range_eq_top.2 normalizedValuation_surjective,
-      Subgroup.map_top]
+    rw [normalizedValuation_comp_unitsMap_algebraMap L M, MonoidHom.range_comp,
+      MonoidHom.range_eq_top.2 normalizedValuation_surjective, Subgroup.map_top]
   have hinj : Function.Injective (powMonoidHom (ramificationIndex L M) :
       Multiplicative ℤ →* Multiplicative ℤ) :=
     pow_left_injective ramificationIndex_pos.ne'
