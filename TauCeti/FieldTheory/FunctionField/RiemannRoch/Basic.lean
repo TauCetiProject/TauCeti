@@ -682,4 +682,61 @@ theorem dim_add_le_one_add_dim_add_of_finrank_ker_eq_one (hF : IsFunctionField k
   rw [← Divisor.dim_def B] at hrank
   omega
 
+namespace Place
+
+/-- If the Riemann--Roch dimensions of `(n - 1)P` and `nP` differ, there is a nonzero function
+with order exactly `-n` at `P` that is regular at every other place. -/
+theorem exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_dim_lt
+    (P : Place k F) {n : ℕ}
+    (hdimlt : Divisor.dim (((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P) <
+      Divisor.dim ((n : ℤ) • WeilDivisor.ofPoint P)) :
+    ∃ x : F, x ≠ 0 ∧ P.ord x = -(n : ℤ) ∧ ∀ Q : Place k F, Q ≠ P → 0 ≤ Q.ord x := by
+  -- The strict inequality already forces `n` to be positive: for `n = 0` the two divisors agree.
+  have hnpos : 0 < n := by
+    rcases Nat.eq_zero_or_pos n with rfl | h
+    · simp at hdimlt
+    · exact h
+  let D : Divisor k F := (n : ℤ) • WeilDivisor.ofPoint P
+  let E : Divisor k F := ((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P
+  have hnsub : ((n - 1 : ℕ) : ℤ) = (n : ℤ) - 1 := by
+    omega
+  have hED : E ≤ D := by
+    refine WeilDivisor.le_iff.mpr fun Q ↦ ?_
+    rcases eq_or_ne Q P with rfl | hQP
+    · simp only [E, D, WeilDivisor.coeff_zsmul, WeilDivisor.coeff_ofPoint_self, mul_one,
+        hnsub]
+      omega
+    · simp [E, D, WeilDivisor.coeff_ofPoint_of_ne hQP]
+  have hfinranklt : Module.finrank k (riemannRochSpace E) <
+      Module.finrank k (riemannRochSpace D) := by
+    simpa only [← Divisor.dim_def, E, D] using hdimlt
+  have hlt : riemannRochSpace E < riemannRochSpace D :=
+    Submodule.lt_of_le_of_finrank_lt_finrank (riemannRochSpace_mono hED) hfinranklt
+  obtain ⟨x, hxD, hxE⟩ := IsConcreteLE.exists_of_lt hlt
+  have hx0 : x ≠ 0 := fun hx ↦ hxE (hx ▸ Submodule.zero_mem _)
+  have hxDord := (mem_riemannRochSpace_iff_neg_le_ord hx0).mp hxD
+  have hxnotE : ¬∀ Q : Place k F, -E.coeff Q ≤ Q.ord x := by
+    simpa [mem_riemannRochSpace_iff_neg_le_ord hx0] using hxE
+  push Not at hxnotE
+  obtain ⟨Q, hQ⟩ := hxnotE
+  have hQP : Q = P := by
+    by_contra hne
+    have hxQ := hxDord Q
+    simp only [E, D, WeilDivisor.coeff_zsmul,
+      WeilDivisor.coeff_ofPoint_of_ne hne] at hxQ hQ
+    omega
+  subst Q
+  refine ⟨x, hx0, ?_, fun Q hQP ↦ ?_⟩
+  · have hxP := hxDord P
+    simp only [D, WeilDivisor.coeff_zsmul, WeilDivisor.coeff_ofPoint_self, mul_one] at hxP
+    simp only [E, WeilDivisor.coeff_zsmul, WeilDivisor.coeff_ofPoint_self, mul_one,
+      hnsub] at hQ
+    omega
+  · have hxQ := hxDord Q
+    simp only [D, WeilDivisor.coeff_zsmul, WeilDivisor.coeff_ofPoint_of_ne hQP,
+      mul_zero] at hxQ
+    omega
+
+end Place
+
 end TauCeti
