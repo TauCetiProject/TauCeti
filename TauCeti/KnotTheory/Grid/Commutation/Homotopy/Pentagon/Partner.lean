@@ -577,7 +577,7 @@ private theorem exists_sameSide_of_initial_first
     (by rw [h1b, h1t]; exact hA)
     (by rw [h2b, h2t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_left hlow' hrow hA)
     (by rw [h2b, h2t]; exact hB) hX1 hX2
-  exact ⟨D', hD', hside, by rw [hD'E]; exact hrecut.symm hone h1 h2⟩
+  exact ⟨D', hD', hside, by rw [hD'E]; exact hrecut.symm h1 h2⟩
 
 /-- A rectangle followed by a terminal-side hexagon meeting it away from the replaced line is the
 recut of a counted terminal--terminal pentagon pair, provided its recut has no piece underlying a
@@ -616,7 +616,7 @@ private theorem exists_sameSide_of_terminal_second
       (by rw [h1b, h1t]; exact hA)
       (by rw [h2b, h2t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_right hlow hrow hA)
       (by rw [h2b, h2t]; exact hB) hX1 hX2
-    exact ⟨D', hD', hside, by rw [hD'E]; exact hrecut.symm hone h1 h2⟩
+    exact ⟨D', hD', hside, by rw [hD'E]; exact hrecut.symm h1 h2⟩
   · refine (hfalse _ hrecut (hasHexagonPiece_first_terminal C _ (h1r.trans hr) ?_ ?_)).elim
     · rw [h1b, h1t]
       exact hlow
@@ -664,7 +664,7 @@ private theorem exists_sameSide_of_terminal_first
     (by rw [h1b, h1t]; exact hA)
     (by rw [h2b, h2t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_right hlow hrow hA)
     (by rw [h2b, h2t]; exact hB) hX1 hX2
-  exact ⟨D', hD', hside, by rw [hD'E]; exact hrecut.symm hone h1 h2⟩
+  exact ⟨D', hD', hside, by rw [hD'E]; exact hrecut.symm h1 h2⟩
 
 /-- A rectangle followed by an initial-side hexagon meeting it away from the replaced line is the
 recut of a counted initial--initial pentagon pair, provided its recut has no piece underlying a
@@ -703,7 +703,7 @@ private theorem exists_sameSide_of_initial_second
       (by rw [h1b, h1t]; exact hA)
       (by rw [h2b, h2t]; exact Grid.mem_cIco_of_mem_cIco_of_notMem_cIco_left hlow' hrow hA)
       (by rw [h2b, h2t]; exact hB) hX1 hX2
-    exact ⟨D', hD', hside, by rw [hD'E]; exact hrecut.symm hone h1 h2⟩
+    exact ⟨D', hD', hside, by rw [hD'E]; exact hrecut.symm h1 h2⟩
   · refine (hfalse _ hrecut (hasHexagonPiece_first_initial C _ (h1l.trans hl) ?_ ?_)).elim
     · rw [h1b, h1t]
       exact hlow
