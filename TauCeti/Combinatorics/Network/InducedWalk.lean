@@ -35,11 +35,10 @@ abbrev inducedHom (S : Set V) (Q : V → V → Type v) (x y : S) : Type v :=
   Q x y
 
 /-- The inclusion of the arrow family induced on `S` into its ambient arrow family. -/
-def inducedHomInclusion (S : Set V) (Q : V → V → Type v) :
-    @Prefunctor S (Quiver.mk fun x y ↦ S.inducedHom Q x y) V (Quiver.mk Q) := by
-  letI : Quiver S := Quiver.mk fun x y ↦ S.inducedHom Q x y
-  letI : Quiver V := Quiver.mk Q
-  exact { obj := Subtype.val, map := fun e ↦ e }
+abbrev inducedHomInclusion (S : Set V) (Q : V → V → Type v) :
+    @Prefunctor S (Quiver.mk fun x y ↦ S.inducedHom Q x y) V (Quiver.mk Q) :=
+  @Prefunctor.mk S (Quiver.mk fun x y ↦ S.inducedHom Q x y) V (Quiver.mk Q)
+    Subtype.val fun e ↦ e
 
 @[simp]
 theorem inducedHomInclusion_obj (S : Set V) (Q : V → V → Type v) (x : S) :
@@ -50,9 +49,9 @@ theorem inducedHomInclusion_obj (S : Set V) (Q : V → V → Type v) (x : S) :
 @[simp]
 theorem inducedHomInclusion_map (S : Set V) (Q : V → V → Type v) {x y : S}
     (e : S.inducedHom Q x y) :
-    HEq (@Prefunctor.map S (Quiver.mk fun x y ↦ S.inducedHom Q x y) V (Quiver.mk Q)
-      (S.inducedHomInclusion Q) x y e) e :=
-  by simp [inducedHomInclusion]
+    @Prefunctor.map S (Quiver.mk fun x y ↦ S.inducedHom Q x y) V (Quiver.mk Q)
+      (S.inducedHomInclusion Q) x y e = e :=
+  (rfl)
 
 end Set
 
@@ -64,10 +63,9 @@ namespace ArrowWalk
 
 /-- Forget the subtype witnesses from a walk in an induced arrow family. -/
 def coeInduced {S : Set V} {s t : S} (p : ArrowWalk (S.inducedHom Q) s t) :
-    ArrowWalk Q s t := by
-  letI : Quiver S := Quiver.mk fun x y ↦ S.inducedHom Q x y
-  letI : Quiver V := Quiver.mk Q
-  simpa only [Set.inducedHomInclusion] using (S.inducedHomInclusion Q).mapPath p
+    ArrowWalk Q s t :=
+  @Prefunctor.mapPath S (Quiver.mk fun x y ↦ S.inducedHom Q x y) V (Quiver.mk Q)
+    (S.inducedHomInclusion Q) s t p
 
 @[simp]
 theorem coeInduced_nil {S : Set V} (s : S) :
@@ -83,8 +81,9 @@ theorem coeInduced_cons {S : Set V} {s t x : S} (p : ArrowWalk (S.inducedHom Q) 
 theorem vertices_coeInduced {S : Set V} {s t : S}
     (p : ArrowWalk (S.inducedHom Q) s t) :
     (coeInduced p).vertices = p.vertices.map Subtype.val := by
-  exact @Prefunctor.vertices_mapPath S V
-    (Quiver.mk fun x y ↦ S.inducedHom Q x y) (Quiver.mk Q) (S.inducedHomInclusion Q) s t p
+  induction p with
+  | nil => rfl
+  | cons p e ih => simp [ih]
 
 /-- A walk all of whose vertices lie in `S` lifts to the induced arrow family on `S`, without
 changing its ambient walk. -/

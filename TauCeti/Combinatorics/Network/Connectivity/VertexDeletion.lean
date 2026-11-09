@@ -68,19 +68,13 @@ theorem IsVertexStrong.inducedHom_compl {X : Finset V}
         #Z ≤ #X + #(Y.image Subtype.val) := card_union_le _ _
         _ ≤ #X + #Y := Nat.add_le_add_left card_image_le _
         _ < #X + k := Nat.add_lt_add_left hY _
-    have hsZ : (s : V) ∉ Z := by
+    have hnotMemZ (v : ↑((X : Set V)ᶜ)) (hv : v ∉ Y) : (v : V) ∉ Z := by
       rintro hmem
       rcases mem_union.1 hmem with hmem | hmem
-      · exact s.2 hmem
-      · obtain ⟨y, hy, hys⟩ := mem_image.1 hmem
-        exact hs ((Subtype.ext hys).symm ▸ hy)
-    have htZ : (t : V) ∉ Z := by
-      rintro hmem
-      rcases mem_union.1 hmem with hmem | hmem
-      · exact t.2 hmem
-      · obtain ⟨y, hy, hyt⟩ := mem_image.1 hmem
-        exact ht ((Subtype.ext hyt).symm ▸ hy)
-    have hr := h.2 Z hZ hsZ htZ
+      · exact v.2 hmem
+      · obtain ⟨y, hy, hyv⟩ := mem_image.1 hmem
+        exact hv ((Subtype.ext hyv).symm ▸ hy)
+    have hr := h.2 Z hZ (hnotMemZ s hs) (hnotMemZ t ht)
     exact hr.mono fun x hx ↦ by simpa [Z] using hx
 
 /-- Deleting at most `k` vertices from a `k`-vertex-strong arrow family leaves a
