@@ -45,7 +45,8 @@ first statement does not extend to `|c| < 1`.
   translates by the nonzero vectors of such a lattice.
 * `ZLattice.dual_smul`: `(c • L)^∨ = c⁻¹ • L^∨` for `c ≠ 0`.
 * `ZLattice.covolume_smul`, `ZLattice.det_smul`: `covolume (c • L) = |c|ⁿ covolume L` and
-  `det (c • L) = c²ⁿ det L` (for `c = 0` in positive dimension both sides vanish).
+  `det (c • L) = c²ⁿ det L`. For `c = 0` in positive dimension `c • L` is the zero lattice, whose
+  true covolume is infinite, and both sides vanish only by the convention `ENNReal.toReal ∞ = 0`.
 * `ZLattice.covolume_natCast_smul`: `covolume (c • L) = cⁿ covolume L` for a natural number `c`.
 * `ZLattice.isIntegral_smul_iff`, `ZLattice.isEven_smul_iff`: the exact criteria for `c • L` to be
   integral or even.
@@ -187,12 +188,35 @@ theorem exists_forall_add_mem_eq_zero_of_isBounded [FiniteDimensional ℝ E] {s 
   rw [add_sub_cancel_left] at h
   linarith [hL ℓ hℓ hne]
 
+section Bot
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [Nontrivial E]
+
+/-- The zero lattice of a nontrivial space has covolume `0`. Its fundamental domain is the whole
+space, of infinite measure, so this is the value `ENNReal.toReal ∞ = 0` by convention; the true
+covolume is infinite. -/
+theorem covolume_bot (μ : Measure E) [μ.IsAddHaarMeasure] :
+    covolume (⊥ : Submodule ℤ E) μ = 0 := by
+  have h : IsAddFundamentalDomain (⊥ : Submodule ℤ E) (Set.univ : Set E) μ :=
+    { nullMeasurableSet := .univ
+      ae_covers := .of_forall fun x ↦ ⟨0, Set.mem_univ _⟩
+      aedisjoint := fun g g' hgg' ↦ (hgg' (Subsingleton.elim g g')).elim }
+  -- Typeclass search does not find the invariance of `μ` under the action of the `ℤ`-submodule
+  -- `⊥`; it holds because that action is, by definition, the action of the additive subgroup
+  -- `(⊥ : Submodule ℤ E).toAddSubgroup`, where the instance is found.
+  have : VAddInvariantMeasure (⊥ : Submodule ℤ E) E μ :=
+    (inferInstance : VAddInvariantMeasure (⊥ : Submodule ℤ E).toAddSubgroup E μ)
+  rw [covolume, h.covolume_eq_volume, measure_univ_of_isAddLeftInvariant, ENNReal.toReal_top]
+
+end Bot
+
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L]
   [IsZLattice ℝ L]
 
 /-- Scaling a full lattice by `c` multiplies its covolume by `|c|ⁿ`, where `n` is the dimension of
-the space, for any Haar measure. For `c = 0` in positive dimension both sides vanish: the zero
-lattice has the whole space as a fundamental domain, of infinite measure. -/
+the space, for any Haar measure. For `c = 0` in positive dimension, `c • L` is the zero lattice and
+both sides vanish only by the convention `ENNReal.toReal ∞ = 0`: the true covolume of the zero
+lattice is infinite. -/
 @[simp]
 theorem covolume_smul {c : ℝ} (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] :
     covolume (c • L) μ = |c| ^ finrank ℝ E * covolume L μ := by
@@ -202,14 +226,7 @@ theorem covolume_smul {c : ℝ} (μ : Measure E := by volume_tac) [μ.IsAddHaarM
     · have : Subsingleton E := finrank_zero_iff.mp hE
       rw [hE, pow_zero, one_mul, Subsingleton.elim L 0]
     · have : Nontrivial E := Module.nontrivial_of_finrank_pos hE
-      have h : IsAddFundamentalDomain (⊥ : Submodule ℤ E) (Set.univ : Set E) μ :=
-        { nullMeasurableSet := .univ
-          ae_covers := .of_forall fun x ↦ ⟨0, Set.mem_univ _⟩
-          aedisjoint := fun g g' hgg' ↦ (hgg' (Subsingleton.elim g g')).elim }
-      have : VAddInvariantMeasure (⊥ : Submodule ℤ E) E μ :=
-        (inferInstance : VAddInvariantMeasure (⊥ : Submodule ℤ E).toAddSubgroup E μ)
-      rw [zero_pow hE.ne', zero_mul, zero_eq_bot, covolume, h.covolume_eq_volume,
-        measure_univ_of_isAddLeftInvariant, ENNReal.toReal_top]
+      rw [zero_pow hE.ne', zero_mul, zero_eq_bot, covolume_bot]
   have hA : ((ContinuousLinearEquiv.smulLeft (Units.mk0 c hc)⁻¹ : E ≃L[ℝ] E) : E →ₗ[ℝ] E) =
       c⁻¹ • LinearMap.id := by
     ext x
@@ -269,21 +286,24 @@ variable (L) [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [Discr
   [IsZLattice ℝ L]
 
 /-- Scaling a full lattice by `c` multiplies its determinant by `c²ⁿ`, where `n` is the dimension
-of the space. -/
+of the space. For `c = 0` in positive dimension this is the degenerate value `0` of the zero
+lattice (see `covolume_smul`). -/
 @[simp]
 theorem det_smul {c : ℝ} : det (c • L) = c ^ (2 * finrank ℝ E) * det L := by
   rw [det_def, det_def, covolume_smul L volume, mul_pow, ← pow_mul, mul_comm (finrank ℝ E),
     pow_mul, pow_mul, sq_abs]
 
 /-- Scaling a full lattice by `√m`, for a natural number `m`, multiplies its determinant by `mⁿ`,
-where `n` is the dimension of the space. -/
+where `n` is the dimension of the space. For `m = 0` in positive dimension this is the degenerate
+value `0` of the zero lattice (see `covolume_smul`). -/
 theorem det_sqrt_smul {m : ℕ} : det (√(m : ℝ) • L) = m ^ finrank ℝ E * det L := by
   rw [det_smul L, pow_mul, Real.sq_sqrt m.cast_nonneg]
 
 omit [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- For an orthonormal basis `b` and a natural number `m`, the scaled cubic lattice `√m • ℤ b` has
 determinant `mⁿ`, where `n` is the dimension of the space. For instance `√2 ℤ²` has determinant
-`4`. -/
+`4`. For `m = 0` in positive dimension the lattice is the zero lattice and `0 = 0ⁿ` is its
+degenerate determinant (see `covolume_smul`). -/
 theorem det_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E)
     {m : ℕ} : det (√(m : ℝ) • span ℤ (Set.range b)) = m ^ finrank ℝ E := by
   have hu := isUnimodular_span_orthonormalBasis b

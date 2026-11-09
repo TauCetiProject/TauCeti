@@ -39,7 +39,9 @@ The content and its basic API live in `TauCeti.Algebra.Module.ZLattice.Content`.
 
 * `ZLattice.isEven_sqrt_level_smul_dual`: the Fricke partner `√N • L^∨` is even, for every `L`.
 * `ZLattice.det_sqrt_level_smul_dual`: for a full lattice of rank `n`,
-  `det (√N • L^∨) = Nⁿ / det L`.
+  `det (√N • L^∨) = Nⁿ / det L`. If `L` has no positive level then `N = 0` is a junk value and
+  the formula is degenerate; it is the Fricke-partner determinant when `N > 0`, for instance for
+  integral `L` (`IsIntegral.level_pos`).
 * `ZLattice.IsIntegral.mul_card_discriminantGroup_sqrt_level_smul_dual`: for a full integral
   lattice of rank `n`, `|A_L| * |A_{√N • L^∨}| = Nⁿ`.
 * `ZLattice.IsEven.level_sqrt_level_smul_dual`: for an even full lattice,
@@ -84,7 +86,10 @@ section FiniteDimensional
 variable [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
 
 /-- The Fricke partner of a full lattice `L` of level `N` and rank `n` has determinant
-`det (√N • L^∨) = Nⁿ / det L`. -/
+`det (√N • L^∨) = Nⁿ / det L`. Here `N = level L` may be the junk value `0` when no positive level
+exists (for example `L = ℤ v` with `‖v‖²` irrational), in which case `√N • L^∨` is the zero lattice
+and the formula is the degenerate `0 = 0`. It is the expected Fricke-partner determinant when
+`level L > 0`, for instance for integral `L` (`IsIntegral.level_pos`). -/
 theorem det_sqrt_level_smul_dual [MeasurableSpace E] [BorelSpace E] :
     det (√(level L : ℝ) • dual L) = level L ^ finrank ℝ E / det L := by
   rw [det_sqrt_smul, det_dual, div_eq_mul_inv]
