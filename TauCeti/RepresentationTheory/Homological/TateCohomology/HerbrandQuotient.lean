@@ -148,47 +148,6 @@ theorem finite_tateCohomology_of_herbrandQuotient_ne_zero {M : Rep R G}
   rwa [Ne, herbrandQuotient_eq_zero_iff, not_or, not_infinite_iff_finite,
     not_infinite_iff_finite] at h
 
-/-- For a finite representation of a finite group, the invariants have as many elements as the
-image of the norm times degree zero Tate cohomology. -/
-theorem natCard_invariants_eq_natCard_range_norm_mul_natCard_tateCohomology_zero
-    (M : Rep R G) :
-    Nat.card M.ρ.invariants =
-      Nat.card (range M.ρ.norm) * Nat.card (tateCohomology M 0) := by
-  have hnorm_le : range M.ρ.norm ≤ M.ρ.invariants := by
-    rintro _ ⟨x, rfl⟩
-    exact fun a ↦ M.ρ.self_norm_apply a x
-  calc
-    Nat.card M.ρ.invariants =
-        Nat.card ((range M.ρ.norm).submoduleOf M.ρ.invariants) *
-          Nat.card (M.ρ.invariants ⧸
-            (range M.ρ.norm).submoduleOf M.ρ.invariants) :=
-      Submodule.card_eq_card_quotient_mul_card _
-    _ = Nat.card (range M.ρ.norm) * Nat.card (tateCohomology M 0) := by
-      rw [Nat.card_congr (Submodule.submoduleOfEquivOfLe hnorm_le).toEquiv,
-        ← Nat.card_congr (H0IsoNormQuotient M).toLinearEquiv.toEquiv]
-
-
-/-- For a finite representation of a finite group, the kernel of the norm has as many elements as
-the kernel of the coinvariants projection times degree `-1` Tate cohomology. -/
-theorem natCard_ker_norm_eq_natCard_coinvariantsKer_mul_natCard_tateCohomology_negOne
-    (M : Rep R G) :
-    Nat.card (ker M.ρ.norm) =
-      Nat.card (Representation.Coinvariants.ker M.ρ) *
-        Nat.card (tateCohomology M (-1)) := by
-  calc
-    Nat.card (ker M.ρ.norm) =
-        Nat.card ((Representation.Coinvariants.ker M.ρ).submoduleOf (ker M.ρ.norm)) *
-          Nat.card (ker M.ρ.norm ⧸
-            (Representation.Coinvariants.ker M.ρ).submoduleOf (ker M.ρ.norm)) :=
-      Submodule.card_eq_card_quotient_mul_card _
-    _ = Nat.card (Representation.Coinvariants.ker M.ρ) *
-        Nat.card (tateCohomology M (-1)) := by
-      rw [Nat.card_congr (Submodule.submoduleOfEquivOfLe (by
-        rw [← range_d₁₀_eq_coinvariantsKer]
-        exact LinearMap.range_le_ker_iff.mpr
-          (ModuleCat.hom_ext_iff.mp (Rep.comp_eq_zero M)))).toEquiv,
-        ← Nat.card_congr (HNegOneIsoNormKernelQuotient M).toLinearEquiv.toEquiv]
-
 /-- For a finite representation of a finite cyclic group the two low-degree Tate groups have the
 same order. -/
 theorem natCard_tateCohomology_zero_eq_natCard_tateCohomology_negOne_of_finite [IsCyclic G]
@@ -220,13 +179,13 @@ theorem natCard_tateCohomology_zero_eq_natCard_tateCohomology_negOne_of_finite [
         (Nat.card (range M.ρ.norm) * Nat.card (tateCohomology M 0)) *
           Nat.card (range D) := by ac_rfl
     _ = Nat.card (ker D) * Nat.card (range D) := by
-      rw [← natCard_invariants_eq_natCard_range_norm_mul_natCard_tateCohomology_zero M,
+      rw [← Rep.natCard_invariants_eq_natCard_range_norm_mul_natCard_tateCohomology_zero M,
         hinv]
     _ = Nat.card M := hdiff.symm
     _ = Nat.card (ker M.ρ.norm) * Nat.card (range M.ρ.norm) := hnorm
     _ = (Nat.card (range D) * Nat.card (tateCohomology M (-1))) *
         Nat.card (range M.ρ.norm) := by
-      rw [natCard_ker_norm_eq_natCard_coinvariantsKer_mul_natCard_tateCohomology_negOne M,
+      rw [Rep.natCard_ker_norm_eq_natCard_coinvariantsKer_mul_natCard_tateCohomology_negOne M,
         hcoinv]
     _ = Nat.card (tateCohomology M (-1)) *
         (Nat.card (range M.ρ.norm) * Nat.card (range D)) := by ac_rfl
@@ -329,7 +288,7 @@ variable {R G : Type u} [CommRing R] [CommGroup G] [Fintype G]
 
 /-- Naturality of the periodicity: in degrees `3` and `1`, the maps induced on homology by
 `S.g` have images of the same size. -/
-private theorem natCard_range_homologyMap_periodic_three_eq_one
+private theorem _root_.CategoryTheory.ShortComplex.natCard_range_homologyMap_periodic_three_eq_one
     (S : ShortComplex (Rep R G)) (g : G) :
     Nat.card (range (ModuleCat.Hom.hom
         (HomologicalComplex.homologyMap (S.map (periodicFunctor R g)).g 3))) =
@@ -402,7 +361,7 @@ private theorem exists_hexagon_natCard {S : ShortComplex (Rep R G)} (hS : S.Shor
     rw [← (hT.homology_exact₃ i j hij).moduleCat_range_eq_ker] at h
     exact h
   -- naturality of the periodicity closes the sequence into a hexagon
-  have hs13 := natCard_range_homologyMap_periodic_three_eq_one S g
+  have hs13 := S.natCard_range_homologyMap_periodic_three_eq_one g
   exact ⟨_, _, _, _, _, _,
     (natCard_periodicHomology_odd S.X₁ g hg (j := 1) (by decide)).symm.trans (ha 2 1 rfl),
     (natCard_periodicHomology_even S.X₁ g hg (j := 2) (by decide) (by decide)).symm.trans
