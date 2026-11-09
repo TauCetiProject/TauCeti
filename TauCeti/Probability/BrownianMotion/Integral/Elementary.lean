@@ -31,8 +31,8 @@ endpoints at `T`, while keeping each height measurable at its original left endp
 not yet started contribute zero, so future heights need not be measurable at `T`.
 
 These are the elementary isometry and orthogonality identities used to extend the Brownian
-integral by completion and compute its value at each observation time. No integral for general
-predictable processes is constructed here.
+integral by completion and compute its second moment at each observation time. No integral for
+general predictable processes is constructed here.
 
 ## References
 
@@ -113,6 +113,16 @@ theorem integral_mul_sub_mul_mul_sub_eq_zero (hW : IsFilteredPreBrownianReal ℱ
         (hW.adapted.stronglyAdapted.stronglyMeasurable_le (huv.trans hvs)))).mul hη)
   simpa only [mul_assoc] using hW.integral_mul_sub_eq_zero hst hknown
 
+/-- A finite sum of weighted Brownian increments with square-integrable left-endpoint
+heights lies in `L²`. No disjointness of the intervals is required. -/
+theorem memLp_sum_mul_sub_of_le (hW : IsFilteredPreBrownianReal ℱ W P)
+    {ι : Type*} (I : Finset ι) {s t : ι → ℝ≥0} {X : ι → Ω → ℝ}
+    (hst : ∀ i ∈ I, s i ≤ t i)
+    (hX : ∀ i ∈ I, StronglyMeasurable[ℱ (s i)] (X i))
+    (hXi : ∀ i ∈ I, MemLp (X i) 2 P) :
+    MemLp (fun ω => ∑ i ∈ I, X i ω * (W (t i) ω - W (s i) ω)) 2 P :=
+  memLp_finsetSum _ fun i hi => hW.memLp_mul_sub (hst i hi) (hX i hi) (hXi i hi)
+
 /-- **The elementary Brownian isometry for disjoint interval families.** The second moment
 of a finite sum of weighted increments equals the sum of the expected squared heights times
 the interval lengths. The intervals are pairwise chronologically disjoint, but their index type
@@ -156,11 +166,10 @@ theorem memLp_sum_mul_sub (hW : IsFilteredPreBrownianReal ℱ W P)
     (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i))
     (ha₂ : ∀ i < n, MemLp (a i) 2 P) :
     MemLp (fun ω => ∑ i ∈ range n, a i ω * (W (τ (i + 1)) ω - W (τ i) ω)) 2 P := by
-  exact memLp_finsetSum _ fun i hi =>
-    hW.memLp_mul_sub
-      (hτ (Set.mem_Iic.mpr (mem_range.mp hi).le)
-        (Set.mem_Iic.mpr (Nat.succ_le_of_lt (mem_range.mp hi))) (Nat.le_succ i))
-      (ha i (mem_range.mp hi)) (ha₂ i (mem_range.mp hi))
+  exact hW.memLp_sum_mul_sub_of_le (range n)
+    (fun i hi => hτ (Set.mem_Iic.mpr (mem_range.mp hi).le)
+      (Set.mem_Iic.mpr (Nat.succ_le_of_lt (mem_range.mp hi))) (Nat.le_succ i))
+    (fun i hi => ha i (mem_range.mp hi)) (fun i hi => ha₂ i (mem_range.mp hi))
 
 /-- **The elementary Brownian isometry.** The second moment of a finite predictable
 increment sum is the sum of the expected squared heights times the interval lengths.
@@ -181,6 +190,24 @@ theorem integral_sq_sum_mul_sub (hW : IsFilteredPreBrownianReal ℱ W P)
       (by simpa using (mem_range.mp hj).le) (Nat.succ_le_of_lt hij))
   · exact Or.inr (hτ (by simpa using Nat.succ_le_of_lt (mem_range.mp hj))
       (by simpa using (mem_range.mp hi).le) (Nat.succ_le_of_lt hji))
+
+/-- A finite sum of weighted Brownian increments truncated at an observation time lies in
+`L²`. Heights need only be measurable at their original left endpoints: intervals not yet
+started contribute zero. No disjointness of the intervals is required. -/
+theorem memLp_sum_mul_sub_min (hW : IsFilteredPreBrownianReal ℱ W P)
+    {ι : Type*} (I : Finset ι) {s t : ι → ℝ≥0} {X : ι → Ω → ℝ}
+    (hst : ∀ i ∈ I, s i ≤ t i)
+    (hX : ∀ i ∈ I, StronglyMeasurable[ℱ (s i)] (X i))
+    (hXi : ∀ i ∈ I, MemLp (X i) 2 P) (T : ℝ≥0) :
+    MemLp (fun ω => ∑ i ∈ I,
+      X i ω * (W (min (t i) T) ω - W (min (s i) T) ω)) 2 P := by
+  refine memLp_finsetSum _ fun i hi => ?_
+  by_cases hs : s i ≤ T
+  · simpa only [min_eq_left hs] using
+      hW.memLp_mul_sub (le_min (hst i hi) hs) (hX i hi) (hXi i hi)
+  · have hTs : T ≤ s i := (lt_of_not_ge hs).le
+    simp only [min_eq_right hTs, min_eq_right (hTs.trans (hst i hi)), sub_self, mul_zero]
+    exact MemLp.zero
 
 /-- The elementary Brownian isometry at an arbitrary observation time. Intervals after `T`
 contribute zero and an interval straddling `T` contributes only its elapsed length. The
