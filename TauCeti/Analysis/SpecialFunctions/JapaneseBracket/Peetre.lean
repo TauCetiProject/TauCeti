@@ -44,6 +44,9 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   between its two factors.
 * `TauCeti.one_add_norm_sq_rpow_le_two_pow_mul_one_add_norm_pow`: the comparison
   `⟨x⟩ ^ N ≤ 2 ^ N (1 + ‖x‖ ^ N)` of a natural power of the bracket with a power of the norm.
+* `TauCeti.one_add_norm_sq_rpow_le_one_add_norm_pow`: `⟨x⟩ ^ r ≤ (1 + ‖x‖) ^ N` for `0 ≤ r ≤ N`.
+* `TauCeti.one_add_norm_sq_rpow_le_of_norm_le`: on the ball of radius `R`, every weight
+  `⟨x⟩ ^ t` is at most `⟨R⟩ ^ |t|`.
 
 ## References
 
@@ -180,5 +183,28 @@ theorem one_add_norm_sq_rpow_le_two_pow_mul_one_add_norm_pow (x : E) (N : ℕ) :
         rw [one_pow]
         gcongr
         exacts [one_le_two, N.sub_le 1]
+
+/-- A power of the Japanese bracket is at most the same natural power of `1 + ‖x‖`:
+`(1 + ‖x‖ ^ 2) ^ (r / 2) ≤ (1 + ‖x‖) ^ N` for `0 ≤ r ≤ N`. -/
+theorem one_add_norm_sq_rpow_le_one_add_norm_pow (x : E) {r : ℝ} {N : ℕ} (hr : 0 ≤ r)
+    (hrN : r ≤ N) : (1 + ‖x‖ ^ 2) ^ (r / 2) ≤ (1 + ‖x‖) ^ N := by
+  have hx := norm_nonneg x
+  calc (1 + ‖x‖ ^ 2) ^ (r / 2) ≤ ((1 + ‖x‖) ^ 2) ^ (r / 2) :=
+        Real.rpow_le_rpow (by positivity) (by nlinarith) (by positivity)
+    _ = (1 + ‖x‖) ^ r := by
+        rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
+        congr 1
+        push_cast
+        ring
+    _ ≤ (1 + ‖x‖) ^ (N : ℝ) := Real.rpow_le_rpow_of_exponent_le (by linarith) hrN
+    _ = (1 + ‖x‖) ^ N := Real.rpow_natCast _ _
+
+/-- On a ball every power of the Japanese bracket is bounded:
+`(1 + ‖x‖ ^ 2) ^ (t / 2) ≤ (1 + R ^ 2) ^ (|t| / 2)` for `‖x‖ ≤ R`. -/
+theorem one_add_norm_sq_rpow_le_of_norm_le {x : E} {R : ℝ} (hx : ‖x‖ ≤ R) (t : ℝ) :
+    (1 + ‖x‖ ^ 2) ^ (t / 2) ≤ (1 + R ^ 2) ^ (|t| / 2) :=
+  (Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖x‖])
+    (by linarith [le_abs_self t])).trans
+    (Real.rpow_le_rpow (by positivity) (by nlinarith [norm_nonneg x]) (by positivity))
 
 end TauCeti
