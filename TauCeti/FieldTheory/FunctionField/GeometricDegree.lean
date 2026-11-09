@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Minpoly.IsIntegrallyClosedIn
+import TauCeti.Algebra.Algebra.Subalgebra.Adjoin
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 
 /-!
@@ -411,24 +412,6 @@ section LinearDisjoint
 
 variable [Field k] [Field k'] [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F']
 variable [Algebra F F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] (F k' F')
-
-/-- Adjoining a set `s` to `F` has the same rank over `F` as adjoining it to the image of `F` in
-`F'` has over that image, because the two subalgebras are equal as subsemirings. -/
-private theorem rank_adjoin_eq_rank_adjoin_range (s : Set F') :
-    Module.rank F (Algebra.adjoin F s) =
-      Module.rank (IsScalarTower.toAlgHom k F F').range
-        (Algebra.adjoin (IsScalarTower.toAlgHom k F F').range s) := by
-  have heq : (Algebra.adjoin F s).toSubsemiring =
-      (Algebra.adjoin (IsScalarTower.toAlgHom k F F').range s).toSubsemiring :=
-    congrArg Subalgebra.toSubsemiring
-      (IsScalarTower.adjoin_range_toAlgHom (R := k) (S := F) (A := F') s).symm
-  let i : F ≃ₐ[k] (IsScalarTower.toAlgHom k F F').range :=
-    AlgEquiv.ofInjectiveField (IsScalarTower.toAlgHom k F F')
-  exact rank_eq_of_equiv_equiv i (RingEquiv.subsemiringCongr heq).toAddEquiv
-    i.bijective fun a ⟨x, hx⟩ ↦ by
-      ext
-      simp_rw [Algebra.smul_def]
-      rfl
 
 /-- **Mathlib's linear disjointness implies the degree hypothesis**: if the constants of `F'` and
 the lower function field `F` are linearly disjoint over `k` in the sense of
