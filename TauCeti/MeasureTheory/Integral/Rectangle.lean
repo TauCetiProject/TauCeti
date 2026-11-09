@@ -32,6 +32,8 @@ a doubly (twisted) periodic map are used.
   integral over a nondegenerate rectangle vanishes on it.
 * `TauCeti.setIntegral_Icc_prod_le_of_comp_add_le`: comparison of the integrals of `f` and `M` over
   a translated strip `[c + L, d + L] × I` and the original one, when `f (z + (L, 0)) ≤ M z`.
+* `TauCeti.setIntegral_rect_le_mul_of_forall_setIntegral_le`: an inequality between the integrals
+  over the vertical segments `{s} × [a₂, b₂]` integrates to the same inequality over the rectangle.
 -/
 
 public section
@@ -138,6 +140,25 @@ theorem setIntegral_Icc_prod_le_of_comp_add_le {f M : ℝ × ℝ → ℝ} {c d L
   rw [← he.setIntegral_preimage_emb hemb f, hpre]
   rw [← he.integrableOn_comp_preimage hemb, hpre] at hfi
   exact setIntegral_mono_on hfi hMi (measurableSet_Icc.prod hI) hfM
+
+
+/-- **Integrating a slicewise inequality.** If `f` and `g` are integrable over the rectangle
+`[a₁, b₁] × [a₂, b₂]` and, for every `s ∈ [a₁, b₁]`, the integral of `f (s, ·)` over `[a₂, b₂]` is
+at most `c` times that of `g (s, ·)`, then the integral of `f` over the rectangle is at most `c`
+times that of `g`. -/
+theorem setIntegral_rect_le_mul_of_forall_setIntegral_le {f g : ℝ × ℝ → ℝ} {c : ℝ}
+    (hf : IntegrableOn f (Icc a₁ b₁ ×ˢ Icc a₂ b₂)) (hg : IntegrableOn g (Icc a₁ b₁ ×ˢ Icc a₂ b₂))
+    (h : ∀ s ∈ Icc a₁ b₁, ∫ t in Icc a₂ b₂, f (s, t) ≤ c * ∫ t in Icc a₂ b₂, g (s, t)) :
+    ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, f z ≤ c * ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, g z := by
+  -- The integrals over the vertical segments are integrable functions of `s`, by Fubini.
+  have hslice {k : ℝ × ℝ → ℝ} (hk : IntegrableOn k (Icc a₁ b₁ ×ˢ Icc a₂ b₂)) :
+      IntegrableOn (fun s ↦ ∫ t in Icc a₂ b₂, k (s, t)) (Icc a₁ b₁) := by
+    have h : Integrable k ((volume.restrict (Icc a₁ b₁)).prod (volume.restrict (Icc a₂ b₂))) := by
+      rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
+      exact hk
+    exact h.integral_prod_left
+  rw [Measure.volume_eq_prod, setIntegral_prod _ hf, setIntegral_prod _ hg, ← integral_const_mul]
+  exact setIntegral_mono_on (hslice hf) ((hslice hg).const_mul c) measurableSet_Icc h
 
 end TauCeti
 

@@ -11,6 +11,7 @@ public import TauCeti.Analysis.ODE.DysonSeries
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Topology.Instances.Real.TwistedExtension
 
 /-!
@@ -57,6 +58,15 @@ periodic linear equations. For the normal operator `∂s + J₀ ∂t + S(t)` of 
 operators `∂t - J₀ S(t)` on loops twisted by the sign characters of the orbit are of this form, with
 `P` the linearized return map; their kernels and cokernels are those of `1 - P` and `-1 - P`.
 
+In finite dimension, when `det (ε - P) ≠ 0` the same formula also gives a quantitative form of
+injectivity: every solution of `w' = M w + f` with `w d = ε • w 0` satisfies
+`‖w t‖ ≤ B ∫₀ᵈ ‖f‖` on `[0, d]` and `∫₀ᵈ ‖w‖² ≤ C ∫₀ᵈ ‖f‖²` for constants `B` and `C`
+depending only on `M`, `d` and `ε`
+(`TauCeti.exists_forall_norm_le_mul_integral_norm_of_det_ne_zero`,
+`TauCeti.exists_forall_integral_norm_sq_le_mul_integral_norm_sq`). For `ε = 1` and the
+linearized Hamiltonian equation along a nondegenerate orbit, this is the `L²` lower bound of the
+asymptotic operator of Floer theory.
+
 ## Main definitions
 
 * `TauCeti.twistedContinuous X d ε`, `TauCeti.twistedContDiff X d ε`: the continuous and the `C¹`
@@ -75,6 +85,9 @@ operators `∂t - J₀ S(t)` on loops twisted by the sign characters of the orbi
   and cokernel of `L` are finite-dimensional.
 * `TauCeti.range_twistedLinearOperator_eq_top_iff_det_ne_zero`,
   `TauCeti.ker_twistedLinearOperator_eq_bot_iff_det_ne_zero`: the Fredholm alternative.
+* `TauCeti.exists_forall_norm_le_mul_integral_norm_of_det_ne_zero`,
+  `TauCeti.exists_forall_integral_norm_sq_le_mul_integral_norm_sq`: the uniform and `L²` estimates
+  for twisted solutions when `det (ε - Ψ(d)) ≠ 0`.
 
 ## References
 
@@ -476,6 +489,95 @@ theorem range_twistedLinearOperator_eq_top_iff_det_ne_zero (hM : Continuous M)
   rw [range_twistedLinearOperator_eq_top_iff hM hper hd hε, Ne,
     LinearMap.det_eq_zero_iff_ker_ne_bot, not_not, LinearMap.range_eq_top, LinearMap.ker_eq_bot,
     LinearMap.injective_iff_surjective]
+
+/-- **A uniform bound for twisted solutions.** In finite dimension, if `det (ε - Ψ(d)) ≠ 0` for
+the propagator `Ψ = dysonSeriesLeft M` and `d ≥ 0`, there is a constant `B ≥ 0` such that every
+solution of `w' = M w + f`, with `f` continuous and `w d = ε • w 0`, satisfies
+`‖w t‖ ≤ B ∫₀ᵈ ‖f‖` for `t ∈ [0, d]`. The initial value is recovered from
+`(ε - Ψ(d)) (w 0) = Ψ(d) (∫₀ᵈ Ψ(s)⁻¹ (f s) ds)`, and then `w t` by variation of constants. -/
+theorem exists_forall_norm_le_mul_integral_norm_of_det_ne_zero (hM : Continuous M)
+    (hd : 0 ≤ d) (hdet : LinearMap.det (ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)) ≠ 0) :
+    ∃ B, 0 ≤ B ∧ ∀ ⦃w f : ℝ → X⦄, Continuous f → (∀ t, HasDerivAt w (M t (w t) + f t) t) →
+      w d = ε • w 0 → ∀ t ∈ Icc 0 d, ‖w t‖ ≤ B * ∫ s in 0..d, ‖f s‖ := by
+  set Ψ := dysonSeriesLeft M
+  set Φ := dysonSeries (-M)
+  obtain ⟨K₁, hK₁⟩ := isCompact_Icc.exists_bound_of_continuousOn
+    (continuous_dysonSeriesLeft hM).continuousOn (s := Icc 0 d)
+  obtain ⟨K₂, hK₂⟩ := isCompact_Icc.exists_bound_of_continuousOn
+    (continuous_dysonSeries hM.neg).continuousOn (s := Icc 0 d)
+  have h0 : (0 : ℝ) ∈ Icc 0 d := ⟨le_rfl, hd⟩
+  have hK₁0 : 0 ≤ K₁ := (norm_nonneg _).trans (hK₁ 0 h0)
+  have hK₂0 : 0 ≤ K₂ := (norm_nonneg _).trans (hK₂ 0 h0)
+  -- `ε - Ψ(d)` is injective, hence bounded below.
+  set T : X →ₗ[ℝ] X := ε • 1 - (↑(Ψ d) : X →ₗ[ℝ] X) with hTdef
+  have hinj : Function.Injective T := by
+    rw [← LinearMap.ker_eq_bot]
+    by_contra h
+    exact hdet (LinearMap.det_eq_zero_iff_ker_ne_bot.2 h)
+  obtain ⟨K, -, hK⟩ := (LinearMap.injective_iff_antilipschitz _).1 hinj
+  have hKx (x : X) : ‖x‖ ≤ K * ‖T x‖ := by
+    simpa using hK.le_mul_dist x 0
+  refine ⟨K₁ * (K * K₁ * K₂ + K₂), by positivity, fun w f hf hw hwd t ht ↦ ?_⟩
+  set F := ∫ s in 0..d, ‖f s‖
+  -- The integral `I t = ∫₀ᵗ Ψ(s)⁻¹ (f s) ds` is bounded by `K₂ F` on `[0, d]`.
+  have hI {t : ℝ} (ht : t ∈ Icc 0 d) : ‖∫ s in 0..t, Φ s (f s)‖ ≤ K₂ * F := by
+    have hfi : IntervalIntegrable (fun s ↦ ‖f s‖) MeasureTheory.volume 0 d :=
+      hf.norm.intervalIntegrable _ _
+    calc ‖∫ s in 0..t, Φ s (f s)‖ ≤ ∫ s in 0..t, K₂ * ‖f s‖ := by
+          refine norm_integral_le_of_norm_le ht.1 (Filter.Eventually.of_forall fun s hs ↦ ?_)
+            ((hf.norm.const_smul K₂).intervalIntegrable _ _)
+          exact ((Φ s).le_opNorm _).trans (mul_le_mul_of_nonneg_right
+            (hK₂ s ⟨hs.1.le, hs.2.trans ht.2⟩) (norm_nonneg _))
+      _ = K₂ * ∫ s in 0..t, ‖f s‖ := integral_const_mul _ _
+      _ ≤ K₂ * F := mul_le_mul_of_nonneg_left (integral_mono_interval le_rfl
+          ht.1 ht.2 (Filter.Eventually.of_forall fun _ ↦ norm_nonneg _) hfi) hK₂0
+  -- The twist condition determines the initial value: `(ε - Ψ(d)) (w 0) = Ψ(d) (I d)`.
+  have hw0 : ‖w 0‖ ≤ K * K₁ * K₂ * F := by
+    have hend := apply_eq_dysonSeriesLeft_apply_add hM hf hw d
+    have hT : T (w 0) = Ψ d (∫ s in 0..d, Φ s (f s)) := by
+      rw [hTdef, LinearMap.sub_apply, LinearMap.smul_apply, one_apply_eq_self,
+        ContinuousLinearMap.coe_coe, ← hwd, hend]
+      abel
+    calc ‖w 0‖ ≤ K * ‖Ψ d (∫ s in 0..d, Φ s (f s))‖ := hT ▸ hKx (w 0)
+      _ ≤ K * (K₁ * (K₂ * F)) := by
+          gcongr
+          exact ((Ψ d).le_opNorm _).trans (mul_le_mul (hK₁ d ⟨hd, le_rfl⟩)
+            (hI ⟨hd, le_rfl⟩) (norm_nonneg _) hK₁0)
+      _ = K * K₁ * K₂ * F := by ring
+  -- Variation of constants: `w t = Ψ(t) (w 0 + I t)`.
+  rw [eq_dysonSeriesLeft_apply_add_integral hM hf hw t]
+  calc ‖Ψ t (w 0 + ∫ s in 0..t, Φ s (f s))‖ ≤ K₁ * (K * K₁ * K₂ * F + K₂ * F) :=
+        ((Ψ t).le_opNorm _).trans (mul_le_mul (hK₁ t ht)
+          ((norm_add_le _ _).trans (add_le_add hw0 (hI ht))) (norm_nonneg _) hK₁0)
+    _ = K₁ * (K * K₁ * K₂ + K₂) * F := by ring
+
+/-- **The `L²` estimate for twisted solutions.** In finite dimension, if `det (ε - Ψ(d)) ≠ 0` for
+the propagator `Ψ = dysonSeriesLeft M` and `d ≥ 0`, there is a constant `C ≥ 0` such that every
+solution of `w' = M w + f`, with `f` continuous and `w d = ε • w 0`, satisfies
+`∫₀ᵈ ‖w‖² ≤ C ∫₀ᵈ ‖f‖²`. Neither `M` nor `f` needs to be periodic. This is a quantitative form of
+the injectivity of `w ↦ w' - M w` given by `ker_twistedLinearOperator_eq_bot_iff_det_ne_zero`. -/
+theorem exists_forall_integral_norm_sq_le_mul_integral_norm_sq (hM : Continuous M) (hd : 0 ≤ d)
+    (hdet : LinearMap.det (ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)) ≠ 0) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃w f : ℝ → X⦄, Continuous f → (∀ t, HasDerivAt w (M t (w t) + f t) t) →
+      w d = ε • w 0 → ∫ t in 0..d, ‖w t‖ ^ 2 ≤ C * ∫ t in 0..d, ‖f t‖ ^ 2 := by
+  obtain ⟨B, hB, hle⟩ := exists_forall_norm_le_mul_integral_norm_of_det_ne_zero hM hd hdet
+  refine ⟨d ^ 2 * B ^ 2, by positivity, fun w f hf hw hwd ↦ ?_⟩
+  have hwc : Continuous w := continuous_iff_continuousAt.2 fun t ↦ (hw t).continuousAt
+  set F := ∫ s in 0..d, ‖f s‖
+  have hF : 0 ≤ F := integral_nonneg hd fun _ _ ↦ norm_nonneg _
+  -- Cauchy–Schwarz on `[0, d]`: `F² ≤ d ∫₀ᵈ ‖f‖²`.
+  have hCS : F ^ 2 ≤ d * ∫ s in 0..d, ‖f s‖ ^ 2 := by
+    have h := MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq
+      (μ := MeasureTheory.volume) (fun s ↦ ‖f s‖) (Ioc 0 d) measure_Ioc_lt_top.ne
+      (hf.norm.integrableOn_Icc.mono_set Ioc_subset_Icc_self)
+      ((hf.norm.pow 2).integrableOn_Icc.mono_set Ioc_subset_Icc_self)
+    rwa [Real.volume_real_Ioc_of_le hd, sub_zero, ← integral_of_le hd, ← integral_of_le hd] at h
+  calc ∫ t in 0..d, ‖w t‖ ^ 2 ≤ ∫ _ in 0..d, (B * F) ^ 2 :=
+        integral_mono_on hd ((hwc.norm.pow 2).intervalIntegrable _ _) intervalIntegrable_const
+          fun t ht ↦ pow_le_pow_left₀ (norm_nonneg _) (hle hf hw hwd t ht) 2
+    _ = d * B ^ 2 * F ^ 2 := by rw [integral_const, smul_eq_mul]; ring
+    _ ≤ d * B ^ 2 * (d * ∫ s in 0..d, ‖f s‖ ^ 2) := by gcongr
+    _ = d ^ 2 * B ^ 2 * ∫ s in 0..d, ‖f s‖ ^ 2 := by ring
 
 end FiniteDimensional
 
