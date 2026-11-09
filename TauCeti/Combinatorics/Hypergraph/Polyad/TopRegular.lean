@@ -151,11 +151,7 @@ variable (H P r) in
 /-- Every coloring is top-regular once `1 ≤ δ`, since relative densities lie in `[0, 1]`. -/
 theorem isTopRegularOverPolyad_of_one_le (hδ : 1 ≤ δ) : H.IsTopRegularOverPolyad P δ r := by
   intro c Q _
-  have h₀ : (0 : ℝ) ≤ H.relDensityOn c (unionSupport Q) := mod_cast H.relDensityOn_nonneg c _
-  have h₁ : (H.relDensityOn c (unionSupport Q) : ℝ) ≤ 1 := mod_cast H.relDensityOn_le_one c _
-  have h₀' : (0 : ℝ) ≤ H.relativeDensity c P := mod_cast H.relativeDensity_nonneg c P
-  have h₁' : (H.relativeDensity c P : ℝ) ≤ 1 := mod_cast H.relativeDensity_le_one c P
-  exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
+  exact (H.abs_relDensityOn_sub_relativeDensity_le_one c _ P).trans hδ
 
 /-- Top regularity over a polyad forces a nonnegative parameter when the top palette is
 nonempty: for a negative parameter, every family passes the size threshold. -/
@@ -181,13 +177,8 @@ theorem IsTopRegularOverPolyad.abs_relDensityOn_unionSupport_sub_mul_card_le_of_
           gcongr
           exact h.abs_relDensityOn_sub_le c hι Q hQ
       _ ≤ _ := by gcongr; exact unionSupport_subset Q
-  · have h₀ : (0 : ℝ) ≤ H.relDensityOn c (unionSupport Q) := mod_cast H.relDensityOn_nonneg c _
-    have h₁ : (H.relDensityOn c (unionSupport Q) : ℝ) ≤ 1 := mod_cast H.relDensityOn_le_one c _
-    have h₀' : (0 : ℝ) ≤ H.relativeDensity c P := mod_cast H.relativeDensity_nonneg c P
-    have h₁' : (H.relativeDensity c P : ℝ) ≤ 1 := mod_cast H.relativeDensity_le_one c P
-    have hd : |(H.relDensityOn c (unionSupport Q) : ℝ) - H.relativeDensity c P| ≤ 1 :=
-      abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
-    calc _ ≤ 1 * (#(unionSupport Q) : ℝ) := by gcongr
+  · calc _ ≤ 1 * (#(unionSupport Q) : ℝ) := by
+          gcongr; exact H.abs_relDensityOn_sub_relativeDensity_le_one c _ P
       _ ≤ _ := by simpa using (lt_of_not_ge hQ).le
 
 section inclusion
