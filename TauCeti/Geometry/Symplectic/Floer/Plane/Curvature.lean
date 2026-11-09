@@ -191,6 +191,30 @@ private theorem perturbationPullback_realChart_cylindricalEndLift {X : Type*} (p
   rw [perturbationPullback_realChart _
     (p.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt, endComponent_def, hz]
 
+/-- The pullback of the perturbation along the end lift in real coordinates has vanishing `ds`
+component. -/
+private theorem perturbationPullback_realChart_cylindricalEndLift_stdComplexLineReal {X : Type*}
+    (p : PSSPlane) (H : ℝ → X → ℝ) :
+    perturbationPullback (realChart p.cylindricalEndLift)
+        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        stdComplexLineReal =
+      fun _ _ ↦ 0 := by
+  rw [perturbationPullback_realChart_cylindricalEndLift, equivRealProdCLM_symm_stdComplexLineReal,
+    endComponent_one]
+
+/-- The pullback of the perturbation along the end lift in real coordinates has `dt` component
+`β(ε s - 1) H(t)`. -/
+private theorem perturbationPullback_realChart_cylindricalEndLift_stdComplexLineImag {X : Type*}
+    (p : PSSPlane) {H : ℝ → X → ℝ} (hH : Periodic H 1) :
+    perturbationPullback (realChart p.cylindricalEndLift)
+        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        stdComplexLineImag =
+      fun z x ↦ smoothTransition (p.endSign * z.1 - 1) * H z.2 x := by
+  rw [perturbationPullback_realChart_cylindricalEndLift, equivRealProdCLM_symm_stdComplexLineImag,
+    endComponent_I hH]
+
 omit [FiniteDimensional ℝ V] in
 /-- The components of the perturbation in real coordinates are differentiable in the domain
 point. -/
@@ -566,7 +590,10 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_realChart
     (hu (φ w)).mdifferentiableAt one_ne_zero
   have htgt (w : ℝ × ℝ) (v : ℂ) := mdifferentiableAt_perturbation_target (p := p) hH hHs
     (Complex.equivRealProdCLM.symm (φ w)) (u (φ w)) v
-  have hpull (v : ℝ × ℝ) := SymplecticForm.perturbationPullback_realChart_cylindricalEndLift p H v
+  have hds :=
+    SymplecticForm.perturbationPullback_realChart_cylindricalEndLift_stdComplexLineReal p H
+  have hdt :=
+    SymplecticForm.perturbationPullback_realChart_cylindricalEndLift_stdComplexLineImag p hH
   -- The band and the closed rectangle differ by a null set.
   have hae : s =ᵐ[volume] Icc ((a, -1 / 2) : ℝ × ℝ) (b, 1 / 2) := by
     rw [Icc_prod_eq, Measure.volume_eq_prod]
@@ -580,15 +607,12 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_realChart
       (fun w _ ↦ ?_) hmeas).congr_set_ae hae.symm
     rw [abs_of_nonneg (hdet w), smul_eq_mul, hg']
   have hE' := hint hE fun w ↦ by
-    rw [← ω.floerEnergyDensity_perturbationPullback (hφd w) (hud w) (htgt w 1) (htgt w _), hpull,
-      hpull, equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag,
-      endComponent_one, endComponent_I hH]
+    rw [← ω.floerEnergyDensity_perturbationPullback (hφd w) (hud w) (htgt w 1) (htgt w _), hds, hdt]
   have hR' := hint hR fun w ↦ by
     rw [← ω.hamiltonianCurvature_perturbationPullback hφ.contDiffAt
       (differentiableAt_perturbation_domain hH hHs _ _ 1)
-      (differentiableAt_perturbation_domain hH hHs _ _ Complex.I) (htgt w 1) (htgt w _), hpull,
-      hpull, equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag,
-      endComponent_one, endComponent_I hH]
+      (differentiableAt_perturbation_domain hH hHs _ _ Complex.I) (htgt w 1) (htgt w _), hds,
+      hdt]
   -- Change variables to the end coordinates, in each of the three integrals.
   have harea := ω.integral_floerEnergyDensity_image (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0)
     hmeas hinj (fun w _ ↦ hφd w) (fun w _ ↦ hdet w) (fun w _ ↦ hud w)
@@ -605,8 +629,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_realChart
       (fun w _ ↦ differentiableAt_perturbation_domain hH hHs _ _ 1)
       (fun w _ ↦ differentiableAt_perturbation_domain hH hHs _ _ Complex.I)
       (fun w _ ↦ htgt w 1) (fun w _ ↦ htgt w _),
-    hpull, hpull, equivRealProdCLM_symm_stdComplexLineReal,
-    equivRealProdCLM_symm_stdComplexLineImag, endComponent_one, endComponent_I hH]
+    hds, hdt]
   simp only [setIntegral_congr_set hae]
   exact hω.integral_floerEnergyDensity_endComponent hHs (hu.comp (hφ.of_le one_le_two).contMDiff)
     hab hE' hR'
@@ -692,8 +715,8 @@ boundary circle, minus the integrated curvature:
 `∫_{D_R} E = ∫_{D_R} u^*ω + ε β(R - 1) ∫₀¹ H(t, u(φ(ε R + i t))) dt - ∫_{D_R} R_K(u)`.
 
 Here `φ` is the end lift `z ↦ exp (2π ε z)`, `ε` is the sign of the end and
-`β = smoothTransition`, so `β(R - 1) = 1` for `R ≥ 2`. The three densities are integrable over the
-disc, and closedness of `ω` is not used. -/
+`β = smoothTransition`, so `β(R - 1) = 1` for `R ≥ 2`. No integrability hypotheses are needed, and
+closedness of `ω` is not used. -/
 theorem IsNondegenerate.integral_floerEnergyDensity_pssPlanePerturbation_closedBall
     {ω : SmoothTwoForm I M} (hω : ω.IsNondegenerate) (hH : Periodic H 1)
     (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) {u : ℝ × ℝ → M}
