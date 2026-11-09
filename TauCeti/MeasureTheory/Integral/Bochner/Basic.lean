@@ -41,6 +41,8 @@ for set and probability integrals.
 
 * `ofReal_integral_le_lintegral_ofReal` bounds the positive part of a real-valued
   function's integral by the integral of its pointwise positive part.
+* `ofReal_integral_sq_div_le_lintegral_enorm` bounds `∫ h² / C` by the `L¹` norm `∫⁻ ‖h‖ₑ` of
+  a real-valued function `h` with `|h| ≤ C` almost everywhere.
 * `lintegral_ofReal_eq_one` gives a probability density (almost everywhere nonnegative, with
   integral one) total extended mass one.
 * `ofReal_integral_add_ofReal_integral_le` adds the positive parts of two integrals whose
@@ -373,6 +375,24 @@ theorem ofReal_integral_le_lintegral_ofReal {Ω : Type*} [MeasurableSpace Ω]
       _ = ∫⁻ x, ENNReal.ofReal (f x) ∂μ := by simp
   · rw [integral_undef hf]
     simp
+
+/-- For a real-valued function bounded by `C` almost everywhere, the integral of its square
+divided by `C` is at most its `L¹` norm. No integrability, measurability or sign assumption is
+needed: for `C ≤ 0` the left-hand side vanishes. -/
+theorem ofReal_integral_sq_div_le_lintegral_enorm {Ω : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} {h : Ω → ℝ} {C : ℝ} (hb : ∀ᵐ x ∂μ, |h x| ≤ C) :
+    ENNReal.ofReal ((∫ x, h x ^ 2 ∂μ) / C) ≤ ∫⁻ x, ‖h x‖ₑ ∂μ := by
+  rcases le_or_gt C 0 with hC | hC
+  · rw [ENNReal.ofReal_of_nonpos
+      (div_nonpos_of_nonneg_of_nonpos (integral_nonneg fun x => sq_nonneg _) hC)]
+    exact zero_le
+  rw [← integral_div]
+  refine ofReal_integral_le_lintegral_ofReal.trans (lintegral_mono_ae ?_)
+  filter_upwards [hb] with x hx
+  rw [Real.enorm_eq_ofReal_abs]
+  refine ENNReal.ofReal_le_ofReal ?_
+  rw [div_le_iff₀ hC, ← sq_abs]
+  nlinarith [abs_nonneg (h x)]
 
 /-- The integral of the pointwise minimum of two integrable functions is at most the integral of
 the first one. -/

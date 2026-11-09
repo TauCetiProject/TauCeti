@@ -13,8 +13,9 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 public import TauCeti.Analysis.Sobolev.Local.Basic
 import TauCeti.Analysis.Complex.IteratedDeriv
-import TauCeti.Analysis.SpecialFunctions.Integrals.TrigonometricOscillation
+import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric.Oscillation
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
@@ -59,23 +60,7 @@ open scoped ENNReal
 
 namespace TauCeti.RellichExamples
 
-/-! ### Rectangles and lower bounds for `L¹` norms -/
-
-/-- For a continuous function bounded by `2`, half the integral of its square over `[a, b]` bounds
-its `L¹` norm on `[a, b]`. -/
-private theorem ofReal_integral_sq_div_two_le_lintegral {h : ℝ → ℝ} (hc : Continuous h)
-    (hb : ∀ x, |h x| ≤ 2) {a b : ℝ} (hab : a ≤ b) :
-    ENNReal.ofReal ((∫ x in a..b, h x ^ 2) / 2) ≤ ∫⁻ x in Icc a b, ‖h x‖ₑ := by
-  rw [intervalIntegral.integral_of_le hab, ← integral_div,
-    ofReal_integral_eq_lintegral_ofReal
-      (show Continuous fun x => h x ^ 2 / 2 by fun_prop).integrableOn_Ioc
-      (ae_of_all _ fun x => by positivity)]
-  calc ∫⁻ x in Ioc a b, ENNReal.ofReal (h x ^ 2 / 2) ≤ ∫⁻ x in Ioc a b, ‖h x‖ₑ := by
-        refine lintegral_mono fun x => ?_
-        rw [Real.enorm_eq_ofReal_abs]
-        refine ENNReal.ofReal_le_ofReal ?_
-        nlinarith [abs_nonneg (h x), sq_abs (h x), hb x]
-    _ ≤ ∫⁻ x in Icc a b, ‖h x‖ₑ := lintegral_mono_set Ioc_subset_Icc_self
+/-! ### Rectangles in the unit disc -/
 
 /-- The square `[-1/2, 1/2]²` used to bound integrals over the unit disc from below. -/
 private abbrev centralSquare : Set ℂ := Icc (-1 / 2 : ℝ) (1 / 2) ×ℂ Icc (-1 / 2 : ℝ) (1 / 2)
@@ -135,9 +120,10 @@ private theorem eventually_le_eLpNorm_sineWave_sub (m : ℕ) :
   simp only [volume_Icc_neg_half_half, one_mul] at this
   simp only [Pi.sub_apply, sineWave]
   rw [this]
-  refine le_trans ?_ (ofReal_integral_sq_div_two_le_lintegral (by fun_prop) (fun x => ?_)
-    (by norm_num))
-  · refine ENNReal.ofReal_le_ofReal ?_
+  refine le_trans ?_ (MeasureTheory.ofReal_integral_sq_div_le_lintegral_enorm (C := 2)
+    (ae_of_all _ fun x => ?_))
+  · rw [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le (by norm_num)]
+    refine ENNReal.ofReal_le_ofReal ?_
     simp only [add_zero] at hn
     linarith
   · calc |sin (m * x) - sin (n * x)| ≤ |sin (m * x)| + |sin (n * x)| := abs_sub _ _
@@ -187,9 +173,11 @@ private theorem eventually_le_eLpNorm_fderiv_sineWave :
   simp_rw [enorm_mul, enorm_natCast]
   rw [lintegral_const_mul' _ _ (ENNReal.natCast_ne_top m)]
   gcongr
-  have key := ofReal_integral_sq_div_two_le_lintegral (h := fun x : ℝ => sin (m * x + π / 2))
-    (by fun_prop) (fun x => (abs_sin_le_one _).trans (by norm_num))
-    (by norm_num : (-1 / 2 : ℝ) ≤ 1 / 2)
+  have key := MeasureTheory.ofReal_integral_sq_div_le_lintegral_enorm
+    (μ := volume.restrict (Icc (-1 / 2 : ℝ) (1 / 2))) (h := fun x : ℝ => sin (m * x + π / 2))
+    (C := 2) (ae_of_all _ fun x => (abs_sin_le_one _).trans (by norm_num))
+  rw [integral_Icc_eq_integral_Ioc,
+    ← intervalIntegral.integral_of_le (by norm_num : (-1 / 2 : ℝ) ≤ 1 / 2)] at key
   have hint := integral_sin_mul_add_sq_ge (by positivity : (0 : ℝ) < m) (a := -1 / 2) (b := 1 / 2)
     (π / 2)
   simp only [sin_add_pi_div_two] at key hint
@@ -390,10 +378,13 @@ private theorem eventually_le_eLpNorm_fderiv_halfSine_sub :
   simp only [Pi.sub_apply, hpt]
   rw [Complex.setLIntegral_reProdIm_comp_im _ _ (F := fun y => ‖cos (m * y) - cos (n * y)‖ₑ)
     (by fun_prop), volume_Icc_neg_half_half, one_mul]
-  have key := ofReal_integral_sq_div_two_le_lintegral
-    (h := fun y : ℝ => sin (m * y + π / 2) - sin (n * y + π / 2)) (by fun_prop)
-    (fun y => (abs_sub _ _).trans ((add_le_add (abs_sin_le_one _) (abs_sin_le_one _)).trans
-      (by norm_num))) (by norm_num : (0 : ℝ) ≤ 1 / 2)
+  have key := MeasureTheory.ofReal_integral_sq_div_le_lintegral_enorm
+    (μ := volume.restrict (Icc (0 : ℝ) (1 / 2)))
+    (h := fun y : ℝ => sin (m * y + π / 2) - sin (n * y + π / 2)) (C := 2)
+    (ae_of_all _ fun y => (abs_sub _ _).trans ((add_le_add (abs_sin_le_one _)
+      (abs_sin_le_one _)).trans (by norm_num)))
+  rw [integral_Icc_eq_integral_Ioc,
+    ← intervalIntegral.integral_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2)] at key
   simp only [sin_add_pi_div_two] at key hint
   refine le_trans (ENNReal.ofReal_le_ofReal ?_) key
   linarith
