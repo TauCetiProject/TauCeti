@@ -194,11 +194,9 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne
   have hn : 0 < n := by simpa using hG.card_pos_presentedProP
   have hr₁ : r ∈ pLowerCentralSeries p (freeProP p (Fin n)) 1 :=
     (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr
-  have hpr : ∀ x, (p : ℤ_[p]) ∣ (exponentSum p (Fin n) r).toAdd x :=
-    dvd_exponentSum_of_mem_proPFrattini p (Fin n) hr
   -- `q(G) ≠ p` says that every exponent sum of `r` is divisible by `p ^ 2`.
   have hsq : ∀ x, (p : ℤ_[p]) ^ 2 ∣ (exponentSum p (Fin n) r).toAdd x := fun x ↦
-    by_contra fun hx ↦ hq ((demushkinQ_presentedProP_eq_iff_exists_not_dvd hG hpr).2 ⟨x, hx⟩)
+    by_contra fun hx ↦ hq ((demushkinQ_presentedProP_eq_iff_exists_not_dvd hG).2 ⟨x, hx⟩)
   -- An automorphism `e₁` carries the exponent vector of `r` to `q₀ e₁`, where `q₀` is a coordinate
   -- of that vector dividing all the others.
   obtain ⟨x₁, e₁, hx₁, he₁⟩ := exists_continuousMulEquiv_toAdd_exponentSum_eq_single r ⟨0, hn⟩
@@ -208,9 +206,9 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne
       (u : ℤ_[p]) * (exponentSum p (Fin n) r).toAdd x₁ = (demushkinQ hG : ℤ_[p]) ∧
         p ^ 2 ∣ demushkinQ hG := by
     by_cases hq0 : (exponentSum p (Fin n) r).toAdd x₁ = 0
-    · rw [(demushkinQ_presentedProP_eq_zero_iff hw hv hG (hpr x₁)).2 hq0, hq0]
+    · rw [(demushkinQ_presentedProP_eq_zero_iff hw hv hG).2 hq0, hq0]
       exact ⟨1, by rw [mul_zero, Nat.cast_zero], dvd_zero _⟩
-    · rw [demushkinQ_presentedProP_eq_pow_valuation hw hv hG (hpr x₁) hq0]
+    · rw [demushkinQ_presentedProP_eq_pow_valuation hw hv hG hq0]
       refine ⟨(PadicInt.unitCoeff hq0)⁻¹, ?_, pow_dvd_pow p ?_⟩
       · rw [Nat.cast_pow, Units.inv_mul_eq_iff_eq_mul]
         exact PadicInt.unitCoeff_spec hq0

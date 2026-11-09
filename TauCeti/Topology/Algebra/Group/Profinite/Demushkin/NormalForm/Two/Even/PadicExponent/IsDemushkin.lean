@@ -126,8 +126,7 @@ theorem demushkinQ_presentedProP_demushkinWordTwoEvenPadic (hα : 4 ∣ α) (hq 
     dvd_trans (Dvd.intro 2 (by norm_num) : (2 : ℤ_[2]) ∣ 4) hα
   have hr := demushkinWordTwoEvenPadic_mem_proPFrattini
     (isProP_freeProP 2 (Fin n)) α q n (freeProPGen 2 n) hα2 hq
-  apply (demushkinQ_presentedProP_eq_iff_exists_not_dvd hG
-    (freeProP.dvd_exponentSum_of_mem_proPFrattini 2 (Fin n) hr)).2
+  apply (demushkinQ_presentedProP_eq_iff_exists_not_dvd hG).2
   refine ⟨⟨0, hn⟩, ?_⟩
   have hexp : (freeProP.exponentSum 2 (Fin n)
       (demushkinWordTwoEvenPadic (isProP_freeProP 2 (Fin n)) α q n
