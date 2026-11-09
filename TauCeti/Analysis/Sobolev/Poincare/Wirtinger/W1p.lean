@@ -375,10 +375,12 @@ theorem W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset {c : E} {R : �
 `2 ^ (n + 1) * R` times `∫_{B(c, R)} ‖∇u‖`.  This is
 `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball` at exponent one, for the restriction of
 `u` to the ball, which lies in `W^{1,1}` because the ball has finite measure. -/
-theorem W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset {c : E} {R : ℝ} (hR : 0 < R)
+theorem W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset {c : E} {R : ℝ}
     (hball : ball c R ⊆ (Omega : Set E)) (u : W1p mu Omega p) :
     ∫ x in ball c R, |W1p.value u x - ⨍ y in ball c R, W1p.value u y ∂mu| ∂mu ≤
       2 ^ (finrank ℝ E + 1) * R * ∫ x in ball c R, ‖W1p.gradient u x‖ ∂mu := by
+  rcases le_or_gt R 0 with hR | hR
+  · simp [Metric.ball_eq_empty.2 hR]
   -- Restrict `u` to the ball `B = B(c, R)`, viewed as a domain of its own, and lower the
   -- exponent to one.
   set B : Opens E := ⟨ball c R, isOpen_ball⟩
@@ -419,12 +421,12 @@ theorem W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset {c : E} {R : 
 /-- A Sobolev function with vanishing weak gradient is almost everywhere constant on every ball
 contained in its domain, by the `L¹` Poincaré–Wirtinger inequality on that ball. -/
 private theorem W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero {u : W1p mu Omega p}
-    (hu : W1p.gradient u = 0) {x : E} {r : ℝ} (hr : 0 < r) (hxr : ball x r ⊆ (Omega : Set E)) :
+    (hu : W1p.gradient u = 0) {x : E} {r : ℝ} (hxr : ball x r ⊆ (Omega : Set E)) :
     ∃ c : ℝ, ∀ᵐ y ∂mu.restrict (ball x r), W1p.value u y = c := by
   have : IsFiniteMeasure (mu.restrict (ball x r)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   set m := ⨍ y in ball x r, W1p.value u y ∂mu
-  have hP := W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset hr hxr u
+  have hP := W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset hxr u
   have hgrad : ∫ y in ball x r, ‖W1p.gradient u y‖ ∂mu = 0 := by
     refine integral_eq_zero_of_ae (ae_restrict_of_ae_restrict_of_subset hxr ?_)
     filter_upwards [(Lp.ext_iff.1 hu).trans (Lp.coeFn_zero _ _ _)] with y hy
@@ -445,7 +447,7 @@ theorem W1p.exists_value_ae_eq_const_of_gradient_eq_zero
     ∃ c : ℝ, ∀ᵐ x ∂mu.restrict Omega, W1p.value u x = c := by
   refine hconn.exists_ae_eq_const_of_forall_nhds fun x hx => ?_
   obtain ⟨r, hr, hxr⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
-  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero hu hr hxr
+  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero hu hxr
   exact ⟨c, ball x r, ball_mem_nhds x hr, hc⟩
 
 end TauCeti
