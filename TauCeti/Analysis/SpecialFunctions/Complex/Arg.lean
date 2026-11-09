@@ -17,7 +17,8 @@ of a product exactly when the sum of the arguments lies in `(-π, π]`
 (`Complex.arg_mul_eq_add_arg_iff`). This file records the analogue for quotients, and its most
 common instance: for two points of the open upper half-plane the arguments lie in `(0, π)`, so
 the argument of their quotient is the difference of their arguments. It also records that every
-complex number is rotated onto the nonpositive real axis by the square of a unit complex number.
+complex number is rotated onto the nonpositive real axis by the square of a unit complex number,
+and computes the argument of `-e^{2iφ}` when `φ` is not a multiple of `π`.
 A sector `{|arg ((z - v) / b)| < α}` of half-opening `α ≤ π`, cut off by a punctured ball about its
 vertex, is the image of an open rectangle in polar coordinates. Finally, the argument is smooth on
 the slit plane, and although it jumps across the negative real axis, a smooth `2π`-periodic function
@@ -36,6 +37,8 @@ real scaling, `arg (f x) → arg Q` as soon as some positive real multiple of `f
 * `TauCeti.image_polar_rectangle_eq`: in polar coordinates about `v`, rotated and scaled by `b`,
   the punctured truncated sector `{|arg ((z - v) / b)| < α}`, `α ≤ π`, is the image of an open
   rectangle.
+* `Complex.arg_neg_exp_of_div_pi_ne`: if `φ / π` is not an integer, then
+  `arg (-e^{2iφ}) = 2φ - π - 2π⌊φ / π⌋`.
 * `Complex.inv_exp_arg_mul_le_exp_pi_mul_abs`: `(exp (arg u * r))⁻¹ ≤ exp (π * |r|)`.
 * `Complex.contDiffAt_arg`: the argument is smooth on the slit plane.
 * `Complex.tendsto_arg_of_tendsto_ofReal_mul`: if `c x * f x → Q ∈ slitPlane` with `c x > 0`
@@ -86,6 +89,28 @@ theorem exists_norm_eq_one_mul_sq_eq_neg_norm (c : ℂ) :
     _ = -‖c‖ := by
         rw [h, exp_pi_mul_I]
         ring
+
+/-- If `φ / π` is not an integer, then `-e^{2iφ} = e^{iψ}` for the angle
+`ψ = 2φ - π - 2π⌊φ / π⌋`, which lies in `(-π, π)`, so `ψ` is the argument of `-e^{2iφ}`. -/
+theorem arg_neg_exp_of_div_pi_ne {φ : ℝ} (hφ : ∀ k : ℤ, φ / π ≠ k) :
+    arg (-exp (↑(2 * φ) * I)) = 2 * φ - π - 2 * π * ⌊φ / π⌋ := by
+  set x := φ / π with hx
+  have hlt : (⌊x⌋ : ℝ) < x := lt_of_le_of_ne (Int.floor_le x) fun h => hφ _ h.symm
+  have hlt' : x < ⌊x⌋ + 1 := Int.lt_floor_add_one x
+  set ψ := 2 * φ - π - 2 * π * ⌊x⌋ with hψ
+  have hφx : φ = x * π := by rw [hx]; field_simp
+  have hψlo : -π < ψ := by
+    rw [hψ, hφx]; nlinarith [pi_pos]
+  have hψhi : ψ < π := by
+    rw [hψ, hφx]; nlinarith [pi_pos]
+  have hneg : -exp (↑(2 * φ) * I) = exp (↑ψ * I) := by
+    have h2φ : (2 * φ : ℝ) = ψ + π + ⌊x⌋ * (2 * π) := by rw [hψ]; ring
+    rw [h2φ]
+    push_cast
+    rw [add_mul, add_mul, exp_add, exp_add, exp_pi_mul_I, mul_assoc (⌊x⌋ : ℂ),
+      exp_int_mul_two_pi_mul_I]
+    ring
+  rw [hneg, arg_exp_mul_I, (toIocMod_eq_self _).2 ⟨hψlo, by linarith⟩]
 
 /-- The inverse of `exp (arg u * r)` is at most `exp (π * |r|)`. -/
 theorem inv_exp_arg_mul_le_exp_pi_mul_abs (u : ℂ) (r : ℝ) :
