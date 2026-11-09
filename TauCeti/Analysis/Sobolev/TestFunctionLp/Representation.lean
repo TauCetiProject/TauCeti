@@ -77,8 +77,7 @@ theorem exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le_eLpNo
 
 /-- **Vector-valued `Lᵖ` representation.** For a finite-dimensional real codomain, a
 distributional directional derivative bounded by `M` times the conjugate `Lᵠ` test norm is an
-`Lᵖ` weak derivative of norm at most `C * M`. The constant depends only on the codomain. The
-scalar theorem is applied in the coordinates of a basis. -/
+`Lᵖ` weak derivative of norm at most `C * M`. The constant depends only on the codomain. -/
 theorem exists_eLpNorm_le_hasWeakLineDerivOn_of_enorm_integral_lineDeriv_smul_le {G : Type*}
     [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G] (hq : 1 < q)
     (hq_top : q ≠ ⊤) :

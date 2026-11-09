@@ -19,11 +19,11 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 Let `F` be a finite-dimensional complex inner product space and `1 < p < ∞`. If `u : ℂ → F` is
 locally `Lᵖ` on an open set `Ω` and its distributional derivative `\bar∂u` is locally `Lᵖ`, then
 `u` lies in `W^{1,p}_loc(Ω)`. If `\bar∂u` lies in `W^{k,p}_loc(Ω)`, then `u` lies in
-`W^{k+1,p}_loc(Ω)`. The interior estimate
-`‖u‖_{W^{k+1,p}(K)} ≤ C (‖\bar∂u‖_{W^{k,p}(Ω')} + ‖u‖_{Lᵖ(Ω')})` holds on every compact `K ⊆ Ω`,
-for an open `Ω'` with `K ⊆ Ω'` and compact closure in `Ω`. In the first-order estimate for the
-derivative, the solution may instead be measured in any larger exponent `r ≥ p`, including
-infinity. The `Lᵖ` norm of `u` cannot be dropped from the estimate:
+`W^{k+1,p}_loc(Ω)`. For every compact `K ⊆ Ω` the interior estimate
+`‖u‖_{W^{k+1,p}(V)} ≤ C (‖\bar∂u‖_{W^{k,p}(Ω')} + ‖u‖_{Lᵖ(Ω')})` holds on an open
+neighbourhood `V` of `K`, for an open `Ω'` containing `V` with compact closure in `Ω`. In the
+first-order estimate for the derivative, the solution may instead be measured in any larger
+exponent `r ≥ p`, including infinity. The `Lᵖ` norm of `u` cannot be dropped from the estimate:
 the identity map solves `\bar∂u = 0` and has nonzero derivative.
 
 The first-order statement combines two existing results. The interior test bound for the
@@ -165,8 +165,7 @@ theorem HasWeakConjWirtingerDerivOn.memWkpLoc_one (hp : 1 < p) (hp_top : p ≠ �
 
 /-- **Local `W^{k+1,p}` regularity for `\bar∂`.** For `1 < p < ∞` and every `k`, a locally `Lᵖ`
 function whose distributional `\bar∂` derivative lies in `W^{k,p}_loc` on an open set lies in
-`W^{k+1,p}_loc` there. Each weak derivative of the solution solves the differentiated
-equation, so the order rises by induction. -/
+`W^{k+1,p}_loc` there. -/
 theorem HasWeakConjWirtingerDerivOn.memWkpLoc_succ (hp : 1 < p) (hp_top : p ≠ ⊤) {Ω : Opens ℂ}
     {k : ℕ} {u f : ℂ → F} (hu : MemLpLoc p Ω u) (hf : MemWkpLoc p Ω k f)
     (h : HasWeakConjWirtingerDerivOn volume Ω u f) : MemWkpLoc p Ω (k + 1) u := by
@@ -248,12 +247,10 @@ theorem not_exists_eLpNorm_le_eLpNorm_conjWirtingerDeriv (hp : p ≠ 0) {Ω Ω' 
   have h1 := ContinuousLinearMap.ext_iff.1 hz 1
   simp at h1
 
-/-- **Interior `W^{k+1,p}` estimate for `\bar∂`.** For `1 < p < ∞`, every `k` and a compact
-`K ⊆ Ω`, there are an open `Ω'` with `K ⊆ Ω'` and compact closure in `Ω`, and a constant `C`,
-such that every locally `Lᵖ` solution of `\bar∂u = f` with `f ∈ W^{k,p}_loc(Ω)` satisfies
-`‖u‖_{W^{k+1,p}(K)} ≤ C (‖f‖_{W^{k,p}(Ω')} + ‖u‖_{Lᵖ(Ω')})`. -/
-theorem exists_eLpNormWkp_le_of_hasWeakConjWirtingerDerivOn (hp : 1 < p) (hp_top : p ≠ ⊤)
-    (k : ℕ) {Ω : Opens ℂ} {K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+/-- The interior `W^{k+1,p}` estimate with the norm taken on the compact set itself, whose
+derivatives are only seen on its interior. -/
+private theorem exists_eLpNormWkp_compact_le_of_hasWeakConjWirtingerDerivOn (hp : 1 < p)
+    (hp_top : p ≠ ⊤) (k : ℕ) {Ω : Opens ℂ} {K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     ∃ Ω' : Opens ℂ, K ⊆ Ω' ∧ IsCompact (closure (Ω' : Set ℂ)) ∧ closure (Ω' : Set ℂ) ⊆ Ω ∧
       ∃ C : ℝ≥0, ∀ u f : ℂ → F, MemLpLoc p Ω u → MemWkpLoc p Ω k f →
         HasWeakConjWirtingerDerivOn volume Ω u f →
@@ -350,5 +347,23 @@ theorem exists_eLpNormWkp_le_of_hasWeakConjWirtingerDerivOn (hp : 1 < p) (hp_top
                 ↑‖L₂‖₊ * (↑‖a I‖₊ * (↑C₁ * (1 + ↑C₀) * (X + Y)))) := by
                 gcongr; exact le_add_self
             _ = _ := by ring
+
+/-- **Interior `W^{k+1,p}` estimate for `\bar∂`.** For `1 < p < ∞`, every `k` and a compact
+`K ⊆ Ω`, there are opens `V ⊆ Ω'` with `K ⊆ V`, `Ω'` of compact closure in `Ω`, and a constant
+`C`, such that every locally `Lᵖ` solution of `\bar∂u = f` with `f ∈ W^{k,p}_loc(Ω)` satisfies
+`‖u‖_{W^{k+1,p}(V)} ≤ C (‖f‖_{W^{k,p}(Ω')} + ‖u‖_{Lᵖ(Ω')})`. Since `V` is an open neighbourhood
+of `K`, the weak derivatives are controlled on all of `K`. -/
+theorem exists_eLpNormWkp_le_of_hasWeakConjWirtingerDerivOn (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (k : ℕ) {Ω : Opens ℂ} {K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+    ∃ V Ω' : Opens ℂ, K ⊆ V ∧ (V : Set ℂ) ⊆ Ω' ∧ IsCompact (closure (Ω' : Set ℂ)) ∧
+      closure (Ω' : Set ℂ) ⊆ Ω ∧ ∃ C : ℝ≥0, ∀ u f : ℂ → F, MemLpLoc p Ω u →
+        MemWkpLoc p Ω k f → HasWeakConjWirtingerDerivOn volume Ω u f →
+        eLpNormWkp p V (k + 1) u ≤
+          C * (eLpNormWkp p Ω' k f + eLpNorm u p (volume.restrict Ω')) := by
+  obtain ⟨W, hW, hKW, hWΩ, hWc⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen hKΩ
+  obtain ⟨Ω', hWΩ', hΩ'c, hΩ'Ω, C, hC⟩ :=
+    exists_eLpNormWkp_compact_le_of_hasWeakConjWirtingerDerivOn (F := F) hp hp_top k hWc hWΩ
+  exact ⟨⟨W, hW⟩, Ω', hKW, subset_closure.trans hWΩ', hΩ'c, hΩ'Ω, C,
+    fun u f hu hf h => (eLpNormWkp_mono_set subset_closure).trans (hC u f hu hf h)⟩
 
 end TauCeti
