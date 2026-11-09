@@ -12,22 +12,22 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 # Coarse bounds near the zeros of a large-parameter Seiberg–Witten solution
 
 In the large-parameter analysis of the Seiberg–Witten equations on a symplectic four-manifold,
-a solution at parameter `r` has normalized spinor `χ = α u₀ + β`, where `α` is a section of the
+a solution at parameter `r` has normalized spinor `ψ = α u₀ + β`, where `α` is a section of the
 twisting line and `β` the component orthogonal to the canonical spinor `u₀`. Write
 `w₊ = max (1 - |α|²) 0` for the vacuum defect and `h = (2 r)^(-1/2)` for the length scale, so
 that `1 / r = 2 h²`. Taubes's coarse estimates include, with a constant `C` independent of `r`
 and of the solution,
 
-* the `L¹` defect bound `r ∫ |1 - |χ|²| ≤ C`, where `|χ|² = |α|² + |β|²`;
+* the `L¹` defect bound `r ∫ |1 - |ψ|²| ≤ C`, where `|ψ|² = |α|² + |β|²`;
 * the pointwise bound `|β|² ≤ (C / r) w₊ + C / r²`;
 * the pointwise gradient bound `|∇_a α|² + r |∇β|² ≤ C r w₊ + C`;
 * the pointwise bound `|α|² + |β|² ≤ 1 + C / r`;
 * the `L²` bound `‖∂bar_a α‖₂ ≤ C r^(-1/2) (‖∂_a α‖₂ + 1)`;
 * the projected Dirac equation, which gives `|∂bar_a α| ≤ C (|∇β| + |α| + |β|)`.
 
-This file derives from them the coarse bounds on the region `{|α|² ≤ 1 / 2}` that contains the
-support of the cutoff current `Θ = i F_a + d(χ(|α|²) τ)`
-(`TauCeti.SeibergWitten.tsupport_cutoffCurrent_subset`):
+This file derives from them the coarse bounds on the region `{|α|² ≤ 1 / 2}`. For a cutoff
+function `χ` with `χ = 1` on `(1 / 2, ∞)`, that region contains the support of the cutoff current
+`Θ = i F_a + d(χ(|α|²) τ)` (`TauCeti.SeibergWitten.tsupport_cutoffCurrent_subset`):
 
 * `Vol {|α|² ≤ 1 / 2} ≤ 4 C / r = 8 C h²`
   (`TauCeti.SeibergWitten.measureReal_setOf_norm_sq_le_le`);
@@ -44,7 +44,7 @@ The constants depend only on `C` and the volume of `X`, which is what makes thes
 over a compact family of geometric data and forcing terms. The three integral bounds share one
 estimate, `TauCeti.SeibergWitten.integral_le_of_le_mul_max_one_sub`: a nonnegative function
 bounded pointwise by `C r w₊ + C` has integral at most `2 C (C + Vol X)`. It holds because the
-`β` bound lets the vacuum defect be absorbed into the `L¹` defect, `w₊ ≤ 2 |1 - |χ|²| + 2 C / r²`
+`β` bound lets the vacuum defect be absorbed into the `L¹` defect, `w₊ ≤ 2 |1 - |ψ|²| + 2 C / r²`
 once `2 C ≤ r` (`TauCeti.SeibergWitten.max_one_sub_le_two_mul_abs_sub_add`).
 
 The fields are functions on an arbitrary measure space with values in arbitrary normed groups,
@@ -107,7 +107,7 @@ theorem integral_le_of_le_mul_max_one_sub [IsFiniteMeasure μ] {g : X → ℝ} (
       ≤ ∫ x, (2 * C * r * |1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2| + (2 * C ^ 2 / r + C)) ∂μ := by
         refine integral_mono_of_nonneg hg₀ hint ?_
         filter_upwards [hβ, hg] with x hβx hgx
-        -- Absorb the vacuum defect into the `L¹` defect: `w₊ ≤ 2 |1 - |χ|²| + 2 C / r²`.
+        -- Absorb the vacuum defect into the `L¹` defect: `w₊ ≤ 2 |1 - |ψ|²| + 2 C / r²`.
         have hw := max_one_sub_le_two_mul_abs_sub_add hC hCr hβx
         calc g x ≤ C * r * max (1 - ‖α x‖ ^ 2) 0 + C := hgx
           _ ≤ C * r * (2 * |1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2| + 2 * (C / r ^ 2)) + C := by gcongr
