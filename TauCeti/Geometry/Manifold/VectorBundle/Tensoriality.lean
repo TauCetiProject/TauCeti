@@ -37,7 +37,7 @@ namespace TauCeti.Manifold
 
 /-- An operation on sections which is additive on globally smooth sections takes equal values on
 two finite sums of globally smooth sections whenever it takes equal values on the summands.  The
-sums are again globally smooth.  The target needs only an addition, without any algebraic laws. -/
+target needs only an addition, without any algebraic laws. -/
 theorem map_sum_eq_of_contMDiff_additive
     {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
     {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -53,22 +53,24 @@ theorem map_sum_eq_of_contMDiff_additive
     {ι : Type*} (q : Finset ι) (u v : ι → Π x : M, W x)
     (hu : ∀ i ∈ q, CMDiff n (T% (u i))) (hv : ∀ i ∈ q, CMDiff n (T% (v i)))
     (huv : ∀ i ∈ q, Φ (u i) = Φ (v i)) :
-    CMDiff n (T% (∑ i ∈ q, u i)) ∧ CMDiff n (T% (∑ i ∈ q, v i)) ∧
-      Φ (∑ i ∈ q, u i) = Φ (∑ i ∈ q, v i) := by
+    Φ (∑ i ∈ q, u i) = Φ (∑ i ∈ q, v i) := by
   classical
   induction q using Finset.induction_on with
-  | empty =>
-      simp only [Finset.sum_empty, and_true]
-      exact ⟨contMDiff_zeroSection 𝕜 W, contMDiff_zeroSection 𝕜 W⟩
+  | empty => simp only [Finset.sum_empty]
   | @insert i q hi ih =>
       simp only [Finset.sum_insert hi]
       have hmem (j) (hj : j ∈ q) : j ∈ insert i q := Finset.mem_insert_of_mem hj
-      have ih := ih (fun j hj ↦ hu j (hmem j hj)) (fun j hj ↦ hv j (hmem j hj))
+      have ih' := ih (fun j hj ↦ hu j (hmem j hj)) (fun j hj ↦ hv j (hmem j hj))
         (fun j hj ↦ huv j (hmem j hj))
       have hui := hu i (Finset.mem_insert_self i q)
       have hvi := hv i (Finset.mem_insert_self i q)
-      refine ⟨hui.add_section ih.1, hvi.add_section ih.2.1, ?_⟩
-      rw [hadd hui ih.1, hadd hvi ih.2.1, huv i (Finset.mem_insert_self i q), ih.2.2]
+      have hsu : CMDiff n (T% (∑ j ∈ q, u j)) := by
+        simpa only [Finset.sum_apply] using
+          ContMDiff.sum_section (n := n) (t := fun j x ↦ u j x) fun j hj ↦ hu j (hmem j hj)
+      have hsv : CMDiff n (T% (∑ j ∈ q, v j)) := by
+        simpa only [Finset.sum_apply] using
+          ContMDiff.sum_section (n := n) (t := fun j x ↦ v j x) fun j hj ↦ hv j (hmem j hj)
+      rw [hadd hui hsu, hadd hvi hsv, huv i (Finset.mem_insert_self i q), ih']
 
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -139,7 +141,7 @@ theorem eq_of_contMDiff_tensorial
   refine (map_sum_eq_of_contMDiff_additive Φ hadd Finset.univ (fun i ↦ coeff' s i • frame' i)
     (fun i ↦ coeff' s' i • frame' i)
     (fun i _ ↦ (hcoeff' s hs i).smul_section (hframe i))
-    (fun i _ ↦ (hcoeff' s' hs' i).smul_section (hframe i)) ?_).2.2
+    (fun i _ ↦ (hcoeff' s' hs' i).smul_section (hframe i)) ?_)
   intro i _
   rw [hsmul (hcoeff' s hs i) (hframe i), hsmul (hcoeff' s' hs' i) (hframe i)]
   congr 1
