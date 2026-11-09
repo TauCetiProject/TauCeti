@@ -46,6 +46,9 @@ critical point of a critical level, of dimension its index.
   disjoint union of the boundary spheres `TopCat.diskBoundary (n i)`.
 * `TauCeti.sigmaDiskAttachingMap a`: a family of maps out of the boundary spheres, as a map out of
   the base of `TauCeti.sigmaDiskRelCWComplex n`.
+* `TauCeti.sigmaDiskIso n` and `TauCeti.sigmaDiskBoundaryIso n`: the coproducts in `TopCat` of the
+  disks and of their boundary spheres are the complex and the base of
+  `TauCeti.sigmaDiskRelCWComplex n`.
 
 ## Main results
 
@@ -57,6 +60,8 @@ critical point of a critical level, of dimension its index.
 * `TauCeti.finite_diskRelCWComplex`: the disk is a finite relative CW complex.
 * `TauCeti.sigmaDiskAdjunctionSpaceCellEquiv`: gluing the disjoint union of disks to a space along
   a family of attaching maps attaches one `n i`-cell for each `i`.
+* `TauCeti.isPushout_sigmaDiskAdjunctionSpace`: this adjunction space is also the pushout in
+  `TopCat` of the coproduct of the attaching maps along the coproduct of the boundary inclusions.
 
 ## References
 
@@ -315,6 +320,81 @@ def sigmaDiskAdjunctionSpaceCellEquiv {Y : Type u} [TopologicalSpace Y]
         {i // n i = m} :=
   letI := sigmaDiskRelCWComplex n
   (relativeCWPushoutCellEquiv _ _ m).trans (sigmaDiskRelCWComplexCellEquiv n m)
+
+section Coproduct
+
+open CategoryTheory Limits
+
+variable (n) in
+/-- The coproduct in `TopCat` of the disks `TopCat.disk (n i)` is the disjoint union of the disks
+on which `TauCeti.sigmaDiskRelCWComplex n` lives. -/
+def sigmaDiskIso :
+    ∐ (fun i ↦ TopCat.disk.{u} (n i)) ≅
+      TopCat.of (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i)))) :=
+  TopCat.sigmaIsoSigma _ ≪≫ TopCat.isoOfHomeo
+    (((Homeomorph.Set.univ (Σ i, TopCat.disk.{u} (n i))).symm.trans
+      (Homeomorph.setCongr (by ext; simp))) :
+      (Σ i, TopCat.disk.{u} (n i)) ≃ₜ (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i)))))
+
+variable (n) in
+/-- The coproduct in `TopCat` of the boundary spheres `TopCat.diskBoundary (n i)` is the base of
+`TauCeti.sigmaDiskRelCWComplex n`. -/
+def sigmaDiskBoundaryIso :
+    ∐ (fun i ↦ TopCat.diskBoundary.{u} (n i)) ≅
+      TopCat.of (univ.sigma fun i ↦ range (TopCat.diskBoundaryInclusion.{u} (n i))) :=
+  TopCat.sigmaIsoSigma _ ≪≫ TopCat.isoOfHomeo (sigmaDiskBoundaryHomeomorph n).symm
+
+/-- `TauCeti.sigmaDiskIso` sends the point `x` of the `i`-th disk to `⟨i, x⟩`. -/
+@[simp]
+theorem coe_sigmaDiskIso_hom_ι_apply (i : ι) (x : TopCat.disk.{u} (n i)) :
+    ((sigmaDiskIso n).hom (Sigma.ι (fun i ↦ TopCat.disk.{u} (n i)) i x) :
+      Σ i, TopCat.disk.{u} (n i)) = ⟨i, x⟩ := by
+  rw [sigmaDiskIso, Iso.trans_hom, ConcreteCategory.comp_apply,
+    TopCat.sigmaIsoSigma_hom_ι_apply]
+  rfl
+
+/-- `TauCeti.sigmaDiskBoundaryIso` sends the point `x` of the `i`-th boundary sphere to the point
+of the base corresponding to `⟨i, x⟩`. -/
+@[simp]
+theorem sigmaDiskBoundaryIso_hom_ι_apply (i : ι) (x : TopCat.diskBoundary.{u} (n i)) :
+    (sigmaDiskBoundaryIso n).hom (Sigma.ι (fun i ↦ TopCat.diskBoundary.{u} (n i)) i x) =
+      (sigmaDiskBoundaryHomeomorph n).symm ⟨i, x⟩ := by
+  rw [sigmaDiskBoundaryIso, Iso.trans_hom, ConcreteCategory.comp_apply,
+    TopCat.sigmaIsoSigma_hom_ι_apply]
+  rfl
+
+/-- **Attaching disks along a family of maps, as a pushout of coproducts.** For maps
+`a i : ∂D^{n i} → Y`, the adjunction space `Y ∪_a ⨆ᵢ D^{n i}` of
+`TauCeti.sigmaDiskRelCWComplex n` along `TauCeti.sigmaDiskAttachingMap a` is also the pushout in
+`TopCat` of the coproduct of the maps `a i` along the coproduct of the boundary inclusions
+`∂D^{n i} → D^{n i}`, with the same inclusion of `Y`. -/
+theorem isPushout_sigmaDiskAdjunctionSpace {Y : TopCat.{u}}
+    (a : ∀ i, TopCat.diskBoundary.{u} (n i) ⟶ Y) :
+    letI := sigmaDiskRelCWComplex n
+    IsPushout (Sigma.desc a) (Limits.Sigma.map fun i ↦ TopCat.diskBoundaryInclusion.{u} (n i))
+      (pushout.inr (relCWBaseInclusion _) (TopCat.ofHom (sigmaDiskAttachingMap fun i ↦ (a i).hom)))
+      ((sigmaDiskIso n).hom ≫ pushout.inl _ _) := by
+  let := sigmaDiskRelCWComplex n
+  refine (IsPushout.of_hasPushout (relCWBaseInclusion _)
+    (TopCat.ofHom (sigmaDiskAttachingMap fun i ↦ (a i).hom))).flip.of_iso
+    (sigmaDiskBoundaryIso n).symm (Iso.refl _) (sigmaDiskIso n).symm (Iso.refl _) ?_ ?_ ?_ ?_
+  · rw [Iso.symm_hom, Iso.eq_inv_comp, Iso.refl_hom, Category.comp_id]
+    refine Sigma.hom_ext _ _ fun i ↦ ?_
+    ext x
+    rw [Sigma.ι_comp_desc, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
+      sigmaDiskBoundaryIso_hom_ι_apply]
+    exact sigmaDiskAttachingMap_apply _ i x
+  · rw [Iso.symm_hom, Iso.symm_hom, Iso.eq_inv_comp, ← Category.assoc, Iso.comp_inv_eq]
+    refine Sigma.hom_ext _ _ fun i ↦ ?_
+    refine ConcreteCategory.hom_ext _ _ fun x ↦ Subtype.ext ?_
+    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, sigmaDiskBoundaryIso_hom_ι_apply,
+      ← Category.assoc, Sigma.ι_map, Category.assoc, ConcreteCategory.comp_apply,
+      ConcreteCategory.comp_apply, coe_sigmaDiskIso_hom_ι_apply]
+    rfl
+  · simp
+  · simp
+
+end Coproduct
 
 end Sigma
 
