@@ -142,12 +142,14 @@ theorem mem_traceDual_one_iff_mul_of_differentIdeal_eq_span
   simpa [map_mul, mul_comm, mul_left_comm, Algebra.smul_def] using
     (1 : Submodule S L).smul_mem b h
 
+omit [IsFractionRing S L] in
 /-- Division by a generator of the different identifies the integral closure with its
 complementary module. -/
 noncomputable def equivTraceDualOfDifferentIdealEqSpan
     [IsDedekindDomain S] [IsTorsionFree R S] {δ : S}
     (hδ : differentIdeal R S = Ideal.span {δ}) :
     S ≃ₗ[S] Submodule.traceDual R K (1 : Submodule S L) := by
+  have := IsIntegralClosure.isFractionRing_of_finite_extension R K L S
   have hδL := algebraMap_ne_zero_of_differentIdeal_eq_span (K := K) (L := L) hδ
   let f : S →ₗ[S] Submodule.traceDual R K (1 : Submodule S L) :=
     { toFun := fun b ↦ ⟨algebraMap S L b / algebraMap S L δ,
@@ -166,6 +168,7 @@ noncomputable def equivTraceDualOfDifferentIdealEqSpan
     exact ⟨b, Subtype.ext (by simp only [f, LinearMap.coe_mk, AddHom.coe_mk, hb,
       mul_div_cancel_right₀ _ hδL])⟩
 
+omit [IsFractionRing S L] in
 /-- The complementary-module equivalence divides each integral element by the chosen
 generator of the different. -/
 @[simp]
@@ -175,6 +178,7 @@ theorem equivTraceDualOfDifferentIdealEqSpan_apply
     (equivTraceDualOfDifferentIdealEqSpan (K := K) (L := L) hδ b : L) =
       algebraMap S L b / algebraMap S L δ := (rfl)
 
+omit [IsFractionRing S L] in
 /-- The inverse complementary-module equivalence multiplies by the chosen generator
 of the different. -/
 @[simp]

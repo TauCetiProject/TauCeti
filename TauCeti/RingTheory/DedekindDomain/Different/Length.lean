@@ -40,6 +40,7 @@ variable {A B K L : Type*} [CommRing A] [CommRing B] [Field K] [Field L]
   [IsIntegrallyClosed A] [IsIntegralClosure B A L] [Module.IsTorsionFree A B]
   [FiniteDimensional K L] [Algebra.IsSeparable K L]
 
+omit [IsFractionRing B L] in
 /-- If `δ` generates the different, division by `δ` identifies `B/𝔡` with the
 complementary module modulo the integral elements. -/
 noncomputable def quotientDifferentIdealEquivTraceDualQuotient {δ : B}
@@ -89,6 +90,7 @@ theorem quotientDifferentIdealEquivTraceDualQuotient_symm_mk {δ : B}
   (LinearEquiv.symm_apply_eq _).mpr
     (quotientDifferentIdealEquivTraceDualQuotient_mk hδ b x hx).symm
 
+omit [IsFractionRing B L] in
 /-- The complementary-module quotient and the quotient by the different have the same length
 over the base ring `A` whenever the different is principal. -/
 theorem length_traceDual_quotient_eq_length_quotient_differentIdeal
@@ -102,6 +104,7 @@ theorem length_traceDual_quotient_eq_length_quotient_differentIdeal
   exact ((quotientDifferentIdealEquivTraceDualQuotient (K := K) (L := L) hδ).restrictScalars
     A).length_eq.symm
 
+omit [IsFractionRing B L] in
 /-- **The complementary-module length formula.** Over a local base and a discrete valuation
 ring upstairs, `length_A(C/B) = d * [κ(B) : κ(A)]`, with `d` the multiplicity of the maximal
 ideal in the different. The residue degree is the full degree, not just its separable part. -/
