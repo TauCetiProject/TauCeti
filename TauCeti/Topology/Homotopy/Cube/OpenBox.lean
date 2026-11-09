@@ -203,7 +203,7 @@ omit [Fintype N] in
 /-- For `x` in `{0} × I^(Option N) ∪ I × ∂I^(Option N)`, either `x.2 none ∈ {0, 1}`, or the point
 obtained from `x.2` by replacing its `none` coordinate with `x.1` (via
 `piOptionEquivProdHomeomorph`, after dropping `x.2 none`) lies in `∂I^(Option N)`. -/
-theorem cases_of_mem_cylinderExtensionDomain_boundary
+theorem eq_zero_or_eq_one_or_mem_boundary_of_mem_cylinderExtensionDomain
     {x : I × (Option N → I)} (hx : x ∈ cylinderExtensionDomain (Cube.boundary (Option N))) :
     (x.2 none = 0 ∨ x.2 none = 1) ∨
       (piOptionEquivProdHomeomorph fun _ : Option N => I).symm (x.1, fun i => x.2 (some i)) ∈

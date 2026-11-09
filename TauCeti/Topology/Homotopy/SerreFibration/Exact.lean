@@ -211,14 +211,16 @@ theorem IsBoundaryLift.homotopic_endLoop (hp : serreFibrations p) [Finite N]
     by_cases hu : (x.1.2 none : ℝ) ≤ 2⁻¹
     · rw [ContinuousMap.glueHalves_of_le _ _ _ _ hu, ContinuousMap.comp_apply, hG.proj_apply]
       simp only [H, q', ContinuousMap.coe_mk]
-      rcases cases_of_mem_cylinderExtensionDomain_boundary x.2 with (h0 | h1) | hz
+      rcases eq_zero_or_eq_one_or_mem_boundary_of_mem_cylinderExtensionDomain x.2 with
+        (h0 | h1) | hz
       · rw [h0, K.apply_zero, GenLoop.coe_coe]
       · norm_num [h1] at hu
       · exact (K.eq_fst _ hz).symm
     · rw [ContinuousMap.glueHalves_of_not_le _ _ _ _ hu, ContinuousMap.comp_apply,
         hG'.proj_apply]
       simp only [H, q', ContinuousMap.coe_mk]
-      rcases cases_of_mem_cylinderExtensionDomain_boundary x.2 with (h0 | h1) | hz
+      rcases eq_zero_or_eq_one_or_mem_boundary_of_mem_cylinderExtensionDomain x.2 with
+        (h0 | h1) | hz
       · norm_num [h0] at hu
       · rw [h1, K.apply_one, GenLoop.coe_coe]
       · exact (K.eq_snd _ hz).symm
