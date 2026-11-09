@@ -395,7 +395,7 @@ theorem exists_robinsonSchenstedKnuth_eq_iff {p : List (List β) × List (List �
     rw [← hn, hperm.length_eq, length_append, length_singleton]
     omega
   obtain ⟨ws, hws, hrsk⟩ := ih _ hlen' _ _ (hP.reverseRowInsert hcornerP)
-    (hQ.dropLastOfRow hcornerQ) (length_getD_reverseRowInsert_fst hP hQ hshape hcornerQ) rfl
+    (hQ.dropLastOfRow hcornerQ) (length_getD_reverseRowInsert_fst hP hshape hcornerQ) rfl
   refine ⟨ws ++ [(a, b)], sortedLE_map_toLex_append_singleton_of_forall hws
     (fun x hx => hmax x (hperm.symm.subset (mem_append_left [a] (by rwa [hrsk] at hx))))
     fun i hi => ?_, ?_⟩

@@ -445,6 +445,36 @@ theorem getD_dropLastOfRow [Preorder α] {k : ℕ} {rows : List (List α)}
       | zero => simp [dropLastOfRow]
       | succ i => simpa [dropLastOfRow] using ih h.tail (by simpa using hk) i
 
+/-- **The row lengths of `TauCeti.dropLastOfRow k`** at a corner: row `k` loses one cell and every
+other row keeps its length, provided that deleting row `k` (when it has a single cell) shifts only
+empty rows. Unlike `TauCeti.getD_dropLastOfRow`, this needs no tableau hypothesis. -/
+theorem length_getD_dropLastOfRow {k : ℕ} {rows : List (List α)}
+    (hk : (rows.getD (k + 1) []).length < (rows.getD k []).length)
+    (hz : (rows.getD k []).length = 1 → ∀ i, k < i → (rows.getD i []).length = 0) (i : ℕ) :
+    ((dropLastOfRow k rows).getD i []).length =
+      if i = k then (rows.getD k []).length - 1 else (rows.getD i []).length := by
+  induction rows generalizing k i with
+  | nil => simp at hk
+  | cons row rows ih =>
+    cases k with
+    | zero =>
+      by_cases hd : row.dropLast = []
+      · have h1 : row.length = 1 := by
+          have := congrArg length hd
+          rw [length_dropLast, length_nil] at this
+          simp only [getD_cons_zero, getD_cons_succ] at hk
+          omega
+        have hzero (j : ℕ) : rows[j]?.getD [] = [] := by
+          simpa using hz (by simpa using h1) (j + 1) (by omega)
+        cases i <;> simp [dropLastOfRow, hd, hzero, h1]
+      · cases i <;> simp [dropLastOfRow, hd]
+    | succ k =>
+      cases i with
+      | zero => simp [dropLastOfRow]
+      | succ i =>
+        simpa [dropLastOfRow] using ih (by simpa using hk)
+          (fun h j hj => by simpa using hz (by simpa using h) (j + 1) (by omega)) i
+
 /-- At a corner of a tableau, putting back the last letter of row `k` after removing it recovers
 the tableau. -/
 @[simp]
@@ -1029,19 +1059,29 @@ theorem _root_.List.IsTableauRows.exists_forall_le_getLast?_getD_eq_some {Q : Li
   exact ⟨a, Nat.find hex, hmax, Nat.find_spec hex, fun i hi => Nat.find_min hex hi⟩
 
 /-- Reverse insertion from a corner of `P`, and removal of the last letter of the same row of a
-tableau `Q` of the same shape, give two tableaux of the same shape. -/
-theorem length_getD_reverseRowInsert_fst {α β : Type*} [Preorder α] [LinearOrder β]
-    {P : List (List β)} {Q : List (List α)} (hP : P.IsTableauRows) (hQ : Q.IsTableauRows)
+list of rows `Q` of the same shape, give two lists of rows of the same shape. -/
+theorem length_getD_reverseRowInsert_fst {α β : Type*} [LinearOrder β]
+    {P : List (List β)} {Q : List (List α)} (hP : P.IsTableauRows)
     (hshape : ∀ i, (P.getD i []).length = (Q.getD i []).length) {k : ℕ}
     (hk : (Q.getD (k + 1) []).length < (Q.getD k []).length) (i : ℕ) :
     ((reverseRowInsert k P).1.getD i []).length = ((dropLastOfRow k Q).getD i []).length := by
   obtain ⟨b, -, hins, hidx⟩ := rowInsert_reverseRowInsert hP (by rwa [hshape, hshape])
   have h1 := length_getD_rowInsert b (reverseRowInsert k P).1 i
   rw [hins, hidx, hshape] at h1
-  rw [getD_dropLastOfRow hQ hk i]
+  -- A single-cell row `k` forces all later rows to be empty, because `P` has the same shape.
+  have hz : (Q.getD k []).length = 1 → ∀ j, k < j → (Q.getD j []).length = 0 := fun h j hj ↦ by
+    have hk' : (P.getD (k + 1) []).length < (P.getD k []).length := by
+      rw [hshape, hshape]
+      exact hk
+    have h0 : (P.getD (k + 1) []).length = 0 := by rw [hshape] at hk' ⊢; omega
+    have hj' := antitone_nat_of_succ_le (f := fun i ↦ (P.getD i []).length)
+      hP.length_getD_succ_le (show k + 1 ≤ j by omega)
+    rw [← hshape]
+    simp only at hj'
+    omega
+  rw [length_getD_dropLastOfRow hk hz i]
   split_ifs at h1 ⊢ with hik
   · subst hik
-    rw [length_dropLast]
     omega
   · omega
 
