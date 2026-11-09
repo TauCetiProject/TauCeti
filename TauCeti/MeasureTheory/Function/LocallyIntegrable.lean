@@ -103,9 +103,9 @@ everywhere there with a function that is locally integrable on the whole space a
 * `Continuous.integrable_smul_of_continuousOn`: the same for a scalar multiple of a continuous
   compactly supported function by a function continuous on `U`.
 
-A function locally integrable for a measure `ν` becomes locally integrable for any σ-finite
-measure `ρ` dominating `ν` after multiplication by the Radon–Nikodym derivative `dν/dρ`
-(`locallyIntegrable_toReal_rnDeriv_smul`).
+A function locally integrable for a measure `ν` becomes locally integrable for any measure `ρ`
+dominating `ν`, when `ν` has a Lebesgue decomposition with respect to `ρ`, after multiplication
+by the Radon–Nikodym derivative `dν/dρ` (`locallyIntegrable_toReal_rnDeriv_smul`).
 
 ## Attribution
 
@@ -519,8 +519,8 @@ variable {X F : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurable
 
 /-- If `ν ≪ ρ` and `g` is locally integrable for `ν`, then `(dν/dρ) g` is locally integrable for
 `ρ`. -/
-theorem locallyIntegrable_toReal_rnDeriv_smul {ν ρ : Measure X} [SigmaFinite ν] [SigmaFinite ρ]
-    (hνρ : ν ≪ ρ) {g : X → F} (hg : LocallyIntegrable g ν) :
+theorem locallyIntegrable_toReal_rnDeriv_smul {ν ρ : Measure X} [SigmaFinite ν]
+    [Measure.HaveLebesgueDecomposition ν ρ] (hνρ : ν ≪ ρ) {g : X → F} (hg : LocallyIntegrable g ν) :
     LocallyIntegrable (fun x => (ν.rnDeriv ρ x).toReal • g x) ρ := by
   refine locallyIntegrable_iff.2 fun K hK => ?_
   have hi := (integrable_rnDeriv_smul_iff hνρ).2
