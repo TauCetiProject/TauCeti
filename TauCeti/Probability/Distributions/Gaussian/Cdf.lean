@@ -293,11 +293,7 @@ theorem hasDerivAt_measureReal_gaussianReal {v : ℝ≥0} (hv : v ≠ 0) {l r : 
 function. -/
 theorem measureReal_Ioi_gaussianReal (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
     (gaussianReal m v).real (Ioi x) = Real.erfc ((x - m) / √(2 * (v : ℝ))) / 2 := by
-  have h : (gaussianReal m v).real (Iic x) = (1 + Real.erf ((x - m) / √(2 * (v : ℝ)))) / 2 := by
-    rw [← cdf_eq_real]
-    exact cdf_gaussianReal_eq m hv x
-  rw [← compl_Iic, measureReal_compl measurableSet_Iic, h, Real.erfc_def]
-  simp only [probReal_univ]
+  rw [Measure.measureReal_Ioi_eq_one_sub_cdf, cdf_gaussianReal_eq m hv x, Real.erfc_def]
   ring
 
 /-- The upper tail of a Gaussian law with nonzero variance is a value of the standard Gaussian
@@ -321,9 +317,12 @@ theorem integral_Ioi_gaussianPDFReal_eq_cdf (m : ℝ) {v : ℝ≥0} (hv : v ≠ 
 
 /-- A lower bound for the upper tail of a Gaussian law: beyond a point `s` to the right of the
 mean, the interval `(s, s + t]` alone carries mass at least its length `t` times the density at
-its right end. -/
-theorem mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal {m s t : ℝ} (v : ℝ≥0) (hs : m ≤ s)
-    (ht : 0 ≤ t) : t * gaussianPDFReal m v (s + t) ≤ (gaussianReal m v).real (Ioi s) := by
+its right end (for `t < 0` the left side is nonpositive and the bound is trivial). -/
+theorem mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal {m s t : ℝ} (v : ℝ≥0)
+    (hs : m ≤ s) : t * gaussianPDFReal m v (s + t) ≤ (gaussianReal m v).real (Ioi s) := by
+  rcases lt_or_ge t 0 with ht | ht
+  · exact (mul_nonpos_of_nonpos_of_nonneg ht.le (gaussianPDFReal_nonneg m v _)).trans
+      measureReal_nonneg
   rcases eq_or_ne v 0 with rfl | hv
   · rw [gaussianPDFReal_zero_var, Pi.zero_apply, mul_zero]
     exact measureReal_nonneg
