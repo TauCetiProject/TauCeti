@@ -32,7 +32,8 @@ residues modulo `p`.
 * For an integer `n` prime to `p`, the symbol `(n, p)_p` is the Legendre symbol `(n / p)`: it is `1`
   exactly when `n` is a square modulo `p`. Together with the dyadic value
   `TauCeti.hilbertSymbol_natCast_natCast_padicTwo`, these are the local factors of the product
-  formula behind quadratic reciprocity.
+  formula behind quadratic reciprocity. As the symbol of a unit with the uniformizer detects
+  squares, such an `n` is a square in `ℚ_p` exactly when it is a square modulo `p`.
 * For `p ≡ 3 (mod 4)` the unit `-1` has nonsquare residue in `𝔽_p`, so `(-1, p)_p = -1`: the
   prime `p` is not of the form `x² + y²` in `ℚ_p`. Equivalently, by
   `TauCeti.hilbertSymbol_eq_one_iff_not_anisotropic_weightedSumSquares`, the ternary form
@@ -51,6 +52,8 @@ residues modulo `p`.
   to `p`.
 * `TauCeti.Padic.hilbertSymbol_intCast_self_eq_legendreSym`: `(n, p)_p = (n / p)` for an integer
   `n` prime to `p`.
+* `TauCeti.Padic.isSquare_intCast_iff_legendreSym_eq_one`: an integer prime to `p` is a square in
+  `ℚ_p` exactly when it is a square modulo `p`.
 * `Padic.hilbertSymbol_neg_one_eq_neg_one_of_mod_four_eq_three`: `(-1, p)_p = -1` when
   `p ≡ 3 (mod 4)`.
 
@@ -167,6 +170,20 @@ theorem hilbertSymbol_intCast_self_eq_legendreSym (hp : p ≠ 2) {n : ℤ} (hn :
       legendreSym p n := by
   have h1 : ¬ (p : ℤ) ∣ 1 := by exact_mod_cast (Fact.out : p.Prime).not_dvd_one
   simpa using coe_hilbertSymbol_pow_mul_intCast_pow_mul_intCast hp 0 1 hn h1
+
+variable {p} in
+/-- **Squares in `ℚ_p` of integers prime to `p`.** For an odd prime `p` and an integer `n` prime
+to `p`, the image of `n` in `ℚ_p` is a square exactly when `n` is a square modulo `p`, that is
+`(n / p) = 1`. -/
+theorem isSquare_intCast_iff_legendreSym_eq_one (hp : p ≠ 2) {n : ℤ} (hn : ¬ (p : ℤ) ∣ n) :
+    IsSquare (n : ℚ_[p]) ↔ legendreSym p n = 1 := by
+  have hval := _root_.Padic.toAdd_normalizedValuation_eq_zero_of_coe_eq
+    (a := Units.mk0 (n : ℚ_[p]) (Int.cast_ne_zero.2 fun h ↦ hn (h ▸ dvd_zero _)))
+    (u := (PadicInt.isUnit_intCast_iff.2 hn).unit) (by simp)
+  have h := hilbertSymbol_eq_one_iff_isSquare_of_valuation_zero_of_isUniformizer
+    (_root_.Padic.isUnit_two_integerRing hp) hval (isUniformizer_natCast_self p)
+  rw [← Units.val_eq_one, hilbertSymbol_intCast_self_eq_legendreSym hp hn] at h
+  rw [h, ← Units.isSquare_coe_iff, Units.val_mk0]
 
 end TauCeti.Padic
 
