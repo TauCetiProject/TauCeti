@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Category.Grp.Colimits
 public import Mathlib.Algebra.Category.Grp.EpiMono
+public import Mathlib.Algebra.Homology.ShortComplex.Ab
+public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.CategoryTheory.Preadditive.Yoneda.Basic
@@ -15,7 +17,7 @@ public import Mathlib.CategoryTheory.Preadditive.Yoneda.Basic
 # The preadditive Yoneda and coYoneda functors
 
 For a preadditive category `C`, the preadditive Yoneda embedding sends `Y : C` to the functor
-`(-, Y) : Cᵒᵖ ⥤ AddCommGrpCat`. This file records how it acts on morphisms, and three facts
+`(-, Y) : Cᵒᵖ ⥤ AddCommGrpCat`. This file records how it acts on morphisms, and four facts
 about it.
 
 * The embedding is itself additive: `preadditiveYoneda.map (f + g)` is the sum of the images.
@@ -24,6 +26,9 @@ about it.
 * A morphism `(-, Y) ⟶ F` lifts along every epimorphism `(-, Y') ⟶ F` to the image of a morphism
   `Y ⟶ Y'`. This is the form in which representable functors are projective that is used to
   build presentations of finitely presented functors.
+* A sequence `(-, W) ⟶ (-, Z) ⟶ F` whose first map is `(-, w)` is exact exactly when every
+  morphism `z : V ⟶ Z` killed by the second map factors through `w`. So exactness at a
+  representable functor is a factorization property in `C`.
 
 Dually, for an object `M` with `Γ = End M`, the functor `Hom(M, -)` (Mathlib's
 `CategoryTheory.preadditiveCoyonedaObj M`) takes values in `Γᵐᵒᵖ`-modules. By the Yoneda
@@ -52,6 +57,7 @@ functor by an ideal `I` of `C`, its target is the quotient `(-, X) / I(-, X)`.
   `(-, X) ⟶ (G -, G X)` acts by applying `G`.
 * `CategoryTheory.preadditiveYoneda_map_comp_preadditiveYonedaMap_eq_zero_iff`: the natural
   transformation `(-, X) ⟶ (G -, G X)` kills `(-, f)` exactly when `G` kills `f`.
+* `CategoryTheory.exact_preadditiveYoneda_map_iff`: exactness at a representable functor.
 -/
 
 public section
@@ -162,5 +168,26 @@ theorem preadditiveYoneda_map_comp_preadditiveYonedaMap_eq_zero_iff {Y X : C}
   · exact key.trans (h.trans (hzero _).symm)
 
 end preadditiveYonedaMap
+
+/-- A sequence `(-, W) ⟶ (-, Z) ⟶ F` whose first map is `(-, w)` is exact exactly when every
+morphism `z : V ⟶ Z` killed by `α` factors through `w`. -/
+theorem exact_preadditiveYoneda_map_iff {W Z : C} (w : W ⟶ Z) {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
+    (α : preadditiveYoneda.obj Z ⟶ F) (h : preadditiveYoneda.map w ≫ α = 0) :
+    (ShortComplex.mk _ _ h).Exact ↔
+      ∀ ⦃V : C⦄ (z : V ⟶ Z), α.app (op V) z = 0 → ∃ x : V ⟶ W, x ≫ w = z := by
+  -- Exactness in the functor category is exactness at each object, which in `AddCommGrpCat`
+  -- is the elementwise statement `ShortComplex.ab_exact_iff`; there `(-, w)` sends `x` to
+  -- `x ≫ w` (`preadditiveYoneda_map_app_apply`).
+  have key : ∀ V : C,
+      ((ShortComplex.mk _ _ h).map ((evaluation Cᵒᵖ AddCommGrpCat.{v}).obj (op V))).Exact ↔
+        ∀ z : V ⟶ Z, α.app (op V) z = 0 → ∃ x : V ⟶ W, x ≫ w = z := fun V ↦
+    ShortComplex.ab_exact_iff _
+  refine ⟨fun hS V ↦ (key V).1 (hS.map _), fun H ↦ ?_⟩
+  rw [ShortComplex.exact_iff_isZero_homology, Functor.isZero_iff]
+  intro V
+  refine IsZero.of_iso ?_ ((ShortComplex.mk _ _ h).mapHomologyIso
+    ((evaluation Cᵒᵖ AddCommGrpCat.{v}).obj V)).symm
+  rw [← ShortComplex.exact_iff_isZero_homology]
+  exact (key V.unop).2 (@H V.unop)
 
 end CategoryTheory
