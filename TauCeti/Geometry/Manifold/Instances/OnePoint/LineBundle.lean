@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.ScalarCore
+public import TauCeti.Geometry.Manifold.VectorBundle.Core.Scalar
 
 /-!
 # The line bundles `𝒪(k)` on the projective line
@@ -44,7 +44,7 @@ section `z` of `𝒪(1)` vanishes exactly once, at `0` (`OnePoint.contMDiff_iden
 * `OnePoint.monomialSection k j`: the section `zʲ` of `𝒪(k)` for `j ≤ k`, which is analytic
   (`OnePoint.contMDiff_monomialSection`).
 * `OnePoint.identitySection`: the section `z` of `𝒪(1)`, analytic with a single zero, at `0`.
-* `OnePoint.oneSection_ne_zero`: the section `1` of `𝒪(0)` vanishes nowhere.
+* `OnePoint.monomialSection_zero_zero_ne_zero`: the section `1` of `𝒪(0)` vanishes nowhere.
 
 ## References
 
@@ -64,24 +64,47 @@ variable {𝕜 : Type*}
 
 /-- The frame weight of a chart index: `1` for the inverted chart, preferred at `∞`, and `0` for
 the affine chart, preferred at the finite points. -/
-@[expose] def twistIndex (x : OnePoint 𝕜) : ℤ :=
+def twistIndex (x : OnePoint 𝕜) : ℤ :=
   x.elim 1 fun _ ↦ 0
 
 @[simp]
 theorem twistIndex_infty : twistIndex (∞ : OnePoint 𝕜) = 1 :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem twistIndex_coe (z : 𝕜) : twistIndex (z : OnePoint 𝕜) = 0 :=
-  rfl
+  (rfl)
 
 variable [NontriviallyNormedField 𝕜]
 
 /-- The scalar transition function of `𝒪(k)` from the chart at `x` to the chart at `y`, at the
 point `p`: it is `z⁻ᵏ` from the affine chart to the inverted chart at the finite point `z`, its
 inverse in the other direction, and `1` between charts of the same kind. -/
-@[expose] def twistTransition (k : ℤ) (x y p : OnePoint 𝕜) : 𝕜 :=
+def twistTransition (k : ℤ) (x y p : OnePoint 𝕜) : 𝕜 :=
   affineChart p ^ (k * (twistIndex x - twistIndex y))
+
+/-- The defining formula of the transition of `𝒪(k)`, through the frame weights. -/
+theorem twistTransition_def (k : ℤ) (x y p : OnePoint 𝕜) :
+    twistTransition k x y p = affineChart p ^ (k * (twistIndex x - twistIndex y)) :=
+  (rfl)
+
+/-- Between two affine charts the transition of `𝒪(k)` is `1`. -/
+@[simp]
+theorem twistTransition_coe_coe (k : ℤ) (z w : 𝕜) (p : OnePoint 𝕜) :
+    twistTransition k (z : OnePoint 𝕜) (w : OnePoint 𝕜) p = 1 := by
+  simp [twistTransition]
+
+/-- From the affine chart to the inverted chart the transition of `𝒪(k)` is `z⁻ᵏ`. -/
+@[simp]
+theorem twistTransition_coe_infty (k : ℤ) (z : 𝕜) (p : OnePoint 𝕜) :
+    twistTransition k (z : OnePoint 𝕜) (∞ : OnePoint 𝕜) p = affineChart p ^ (-k) := by
+  simp [twistTransition]
+
+/-- From the inverted chart to the affine chart the transition of `𝒪(k)` is `zᵏ`. -/
+@[simp]
+theorem twistTransition_infty_coe (k : ℤ) (z : 𝕜) (p : OnePoint 𝕜) :
+    twistTransition k (∞ : OnePoint 𝕜) (z : OnePoint 𝕜) p = affineChart p ^ k := by
+  simp [twistTransition]
 
 @[simp]
 theorem twistTransition_self (k : ℤ) (x p : OnePoint 𝕜) : twistTransition k x x p = 1 := by
@@ -166,7 +189,7 @@ theorem contMDiffOn_twistTransition (k : ℤ) (x y : OnePoint 𝕜) :
 with model fibre `𝕜`. Its charts are indexed by the points of `OnePoint 𝕜`; the chart at `x` is
 trivial over the domain of the preferred manifold chart at `x`, and the coordinate change from
 the chart at `x` to the chart at `y` is multiplication by `twistTransition k x y`. -/
-@[expose] def twistCore (k : ℤ) : VectorBundleCore 𝕜 (OnePoint 𝕜) 𝕜 (OnePoint 𝕜) where
+def twistCore (k : ℤ) : VectorBundleCore 𝕜 (OnePoint 𝕜) 𝕜 (OnePoint 𝕜) where
   baseSet x := (chartAt 𝕜 x).source
   isOpen_baseSet x := (chartAt 𝕜 x).open_source
   indexAt := id
@@ -182,21 +205,21 @@ the chart at `x` to the chart at `y` is multiplication by `twistTransition k x y
 
 theorem twistCore_baseSet (k : ℤ) (x : OnePoint 𝕜) :
     (twistCore k).baseSet x = (chartAt 𝕜 x).source :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem twistCore_localTriv_baseSet (k : ℤ) (x : OnePoint 𝕜) :
     ((twistCore k).localTriv x).baseSet = (chartAt 𝕜 x).source :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem twistCore_indexAt (k : ℤ) (x : OnePoint 𝕜) : (twistCore k).indexAt x = x :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem twistCore_coordChange_apply (k : ℤ) (x y p : OnePoint 𝕜) (v : 𝕜) :
     (twistCore k).coordChange x y p v = twistTransition k x y p * v :=
-  rfl
+  (rfl)
 
 /-- **`𝒪(k)` is an analytic line bundle.** Its transition functions are analytic, so for
 `𝕜 = ℂ` it is a holomorphic line bundle on the Riemann sphere. -/
@@ -211,7 +234,7 @@ instance isContMDiff_twistCore (k : ℤ) : (twistCore (𝕜 := 𝕜) k).IsContMD
 theorem twistCore_localTriv_apply (k : ℤ) (y : OnePoint 𝕜) (s : OnePoint 𝕜 → 𝕜)
     (p : OnePoint 𝕜) :
     ((twistCore k).localTriv y ⟨p, s p⟩).2 = twistTransition k p y p * s p :=
-  rfl
+  (rfl)
 
 variable {n : ℕ∞ω}
 
@@ -247,29 +270,29 @@ theorem contMDiff_section_twistCore_iff (k : ℤ) (s : OnePoint 𝕜 → 𝕜) :
     refine contMDiffOn_congr fun p hp ↦ ?_
     induction p using OnePoint.rec with
     | infty => exact absurd rfl hp
-    | coe z => simp [twistTransition]
+    | coe z => rw [twistCore_localTriv_apply, twistTransition_coe_coe, one_mul]
   rw [← contMDiffOn_univ, ← hcov, contMDiffOn_union_iff_of_isOpen isClosed_infty.isOpen_compl
     isClosed_singleton.isOpen_compl, e0, einf, hs0]
-  rfl
+  simp only [s', twistCore_localTriv_apply]
 
 /-! ### Monomial sections -/
 
-/-- The section `zʲ` of `𝒪(k)`: its affine coordinate is `zʲ`, and its value at `∞`, in the
-inverted coordinate `w = z⁻¹`, is the value at `0` of `wᵏ⁻ʲ`. It is a global section when
-`j ≤ k` (`OnePoint.contMDiff_monomialSection`). -/
-@[expose] def monomialSection (k j : ℕ) (p : OnePoint 𝕜) : 𝕜 :=
+/-- The section `zʲ` of `𝒪(k)`: its affine coordinate is `zʲ`, and its value at `∞` is `1` if
+`j = k` and `0` otherwise. For `j ≤ k` this is the value at `0` of `wᵏ⁻ʲ` in the inverted
+coordinate `w = z⁻¹`, and the section is global (`OnePoint.contMDiff_monomialSection`). -/
+def monomialSection (k j : ℕ) (p : OnePoint 𝕜) : 𝕜 :=
   p.elim (if j = k then 1 else 0) (· ^ j)
 
 omit [ProperSpace 𝕜] in
 @[simp]
 theorem monomialSection_coe (k j : ℕ) (z : 𝕜) : monomialSection k j (z : OnePoint 𝕜) = z ^ j :=
-  rfl
+  (rfl)
 
 omit [ProperSpace 𝕜] in
 @[simp]
 theorem monomialSection_infty (k j : ℕ) :
     monomialSection k j (∞ : OnePoint 𝕜) = if j = k then 1 else 0 :=
-  rfl
+  (rfl)
 
 /-- Off `0`, the inverted coordinate of the section `zʲ` of `𝒪(k)` is `wᵏ⁻ʲ` in the inverted
 coordinate `w`. -/
