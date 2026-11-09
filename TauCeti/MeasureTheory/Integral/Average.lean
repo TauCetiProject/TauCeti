@@ -919,13 +919,12 @@ end ContinuousLinearMap
 
 section Product
 
-/-- If two almost everywhere nonnegative, almost everywhere strongly measurable functions on `B`
-have a product of integrals at most `C μ(B)²`, then the product of their averages over `B` is at
-most `C`. -/
+/-- If two almost everywhere nonnegative functions on `B` have a product of integrals at most
+`C μ(B)²`, then the product of their averages over `B` is at most `C`. A function which is not
+almost everywhere strongly measurable on `B` has average zero. -/
 theorem setAverage_mul_setAverage_le_of_setLIntegral_mul_le {α : Type*} [MeasurableSpace α]
     {μ : Measure α} {B : Set α} {f₁ f₂ : α → ℝ} {C : NNReal}
     (h₁ : ∀ᵐ x ∂μ.restrict B, 0 ≤ f₁ x) (h₂ : ∀ᵐ x ∂μ.restrict B, 0 ≤ f₂ x)
-    (hm₁ : AEStronglyMeasurable f₁ (μ.restrict B)) (hm₂ : AEStronglyMeasurable f₂ (μ.restrict B))
     (h : (∫⁻ x in B, ENNReal.ofReal (f₁ x) ∂μ) * ∫⁻ x in B, ENNReal.ofReal (f₂ x) ∂μ ≤
       C * μ B ^ 2) :
     (⨍ x in B, f₁ x ∂μ) * (⨍ x in B, f₂ x ∂μ) ≤ C := by
@@ -933,6 +932,16 @@ theorem setAverage_mul_setAverage_le_of_setLIntegral_mul_le {α : Type*} [Measur
       (hm : AEStronglyMeasurable f (μ.restrict B)) :
       ⨍ x in B, f x ∂μ = (μ.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (f x) ∂μ).toReal := by
     rw [setAverage_eq, smul_eq_mul, integral_eq_lintegral_of_nonneg_ae hf hm]
+  have hzero {f : α → ℝ} (hm : ¬AEStronglyMeasurable f (μ.restrict B)) : ⨍ x in B, f x ∂μ = 0 := by
+    rw [setAverage_eq, integral_non_aestronglyMeasurable hm, smul_zero]
+  by_cases hm₁ : AEStronglyMeasurable f₁ (μ.restrict B)
+  swap
+  · rw [hzero hm₁, zero_mul]
+    exact C.coe_nonneg
+  by_cases hm₂ : AEStronglyMeasurable f₂ (μ.restrict B)
+  swap
+  · rw [hzero hm₂, mul_zero]
+    exact C.coe_nonneg
   by_cases hB : μ B = 0 ∨ μ B = ⊤
   · have hB0 : μ.real B = 0 := by
       rcases hB with hB | hB <;> simp [measureReal_def, hB]
