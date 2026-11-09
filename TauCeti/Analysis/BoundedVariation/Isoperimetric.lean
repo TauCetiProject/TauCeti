@@ -7,15 +7,11 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Analysis.BoundedVariation.Perimeter
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Analysis.BoundedVariation.Calibration
 import TauCeti.Analysis.BoundedVariation.SmoothApproximation
 import TauCeti.Analysis.Calculus.ContDiff.LevelSet
-import TauCeti.Analysis.Calculus.FDeriv.Clamp
-import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.MeanValue
-import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
-import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Basic
 import TauCeti.Topology.Order.Sublevel
@@ -56,7 +52,8 @@ such sets. For these, `w = (u - t) / √(‖∇u‖² + (u - t)²)` is a smooth 
   `n |G|^(1 - 1/n) ω_n^(1/n) η / (1 + ε)`;
 * for a test vector field `ψ` equal to `-∇w / ‖∇w‖` near the boundary, integration by parts against
   the clamped function `max 0 (min w η)` gives the calibration estimate
-  `(1 - ε) |S| ≤ ∫_S ‖∇w‖ ≤ η (∫_F div ψ + ∫_S |div ψ|)`.
+  `(1 - ε) |S| ≤ ∫_S ‖∇w‖ ≤ η (∫_F div ψ + ∫_S |div ψ|)`
+  (`ContDiff.setIntegral_norm_fderiv_le`).
 
 Dividing by `η`, letting `η → 0` and then `ε → 0` gives `n ω_n^(1/n) |F|^(1 - 1/n) ≤ ∫_F div ψ`,
 and the right-hand side is at most `P(F)` by the definition of the perimeter. No identification of
@@ -95,122 +92,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- A smooth function `w` whose derivative does not vanish on its zero level, with `{w ≥ -δ}`
-compact, admits an admissible test vector field equal to `-∇w / ‖∇w‖` near the zero level. Its
-derivative pairing with `w` there is `-‖Dw‖`. -/
-private theorem exists_testFunction_fderiv_apply_eq_neg_norm {w : E → ℝ} (hw : ContDiff ℝ ∞ w)
-    {δ : ℝ} (hδ : 0 < δ) (hK : IsCompact {x | -δ ≤ w x})
-    (hreg : ∀ x, w x = 0 → fderiv ℝ w x ≠ 0) :
-    ∃ η > 0, ∃ ψ : 𝓓(⊤, E), (∀ x, ‖ψ x‖ ≤ 1) ∧
-      ∀ x, |w x| ≤ η → fderiv ℝ w x (ψ x) = -‖fderiv ℝ w x‖ := by
-  obtain ⟨η, hη, hηδ, hηC⟩ := exists_forall_abs_le_notMem hw.continuous hδ hK
-    (isClosed_eq (hw.continuous_fderiv (by simp)) continuous_const) fun x hx h0 => hreg x h0 hx
-  -- `G` is the gradient of `w`, and `ρ ∘ w` cuts off to `{|w| < η}`.
-  let G : E → E := ∇ w
-  have hG : ContDiff ℝ ∞ G := hw.gradient_right le_rfl
-  have hGnorm (x : E) : ‖G x‖ = ‖fderiv ℝ w x‖ := norm_gradient_eq_norm_fderiv w x
-  have hGapp (x : E) : fderiv ℝ w x (G x) = ‖G x‖ ^ 2 := by
-    rw [← toDual_gradient, toDual_apply_apply, real_inner_self_eq_norm_sq]
-  have hG0 {x : E} (hx : |w x| ≤ η) : G x ≠ 0 := by
-    rw [← norm_ne_zero_iff, hGnorm, norm_ne_zero_iff]
-    exact hηC x hx
-  let ρ : ContDiffBump (0 : ℝ) := ⟨η / 2, η, half_pos hη, half_lt_self hη⟩
-  have hρ0 {x : E} (hx : η ≤ |w x|) : ρ (w x) = 0 := by
-    rw [← Function.notMem_support, ρ.support_eq, mem_ball_zero_iff, Real.norm_eq_abs]
-    exact hx.not_gt
-  have hρ1 {x : E} (hx : |w x| ≤ η / 2) : ρ (w x) = 1 :=
-    ρ.one_of_mem_closedBall (by rwa [mem_closedBall_zero_iff, Real.norm_eq_abs])
-  let ψ : E → E := fun x => -((ρ (w x) * ‖G x‖⁻¹) • G x)
-  have hψs : ContDiff ℝ ∞ ψ := by
-    refine contDiff_iff_contDiffAt.2 fun x => ?_
-    by_cases hGx : G x = 0
-    · -- Where the gradient vanishes, `|w| > η`, so `ψ` vanishes nearby.
-      have hx : η < |w x| := lt_of_not_ge fun h => hG0 h hGx
-      refine contDiffAt_const (c := (0 : E)).congr_of_eventuallyEq ?_
-      filter_upwards [(hw.continuous.abs.isOpen_preimage _ isOpen_Ioi).mem_nhds hx] with y hy
-      simp [ψ, hρ0 (le_of_lt hy)]
-    · exact (((ρ.contDiff.comp hw).contDiffAt.mul
-        ((hG.contDiffAt.norm ℝ hGx).inv (norm_ne_zero_iff.2 hGx))).smul hG.contDiffAt).neg
-  have hψc : HasCompactSupport ψ := HasCompactSupport.intro hK fun x hx => by
-    have hx : w x < -δ := not_le.1 hx
-    have : η ≤ |w x| := hηδ.trans (le_abs.2 (Or.inr (by linarith)))
-    simp [ψ, hρ0 this]
-  refine ⟨η / 2, half_pos hη, ⟨ψ, hψs, hψc, by simp⟩, fun x => ?_, fun x hx => ?_⟩
-  · simp only [coe_mk, ψ]
-    by_cases hGx : G x = 0
-    · simp [hGx]
-    rw [norm_neg, norm_smul,
-      Real.norm_of_nonneg (mul_nonneg ρ.nonneg (inv_nonneg.2 (norm_nonneg _))), mul_assoc,
-      inv_mul_cancel₀ (norm_ne_zero_iff.2 hGx), mul_one]
-    exact ρ.le_one
-  · have hGx := hG0 (hx.trans (half_le_self hη.le))
-    simp only [coe_mk, ψ, map_neg, map_smul, smul_eq_mul, hGapp, hρ1 hx, one_mul, ← hGnorm]
-    field_simp [norm_ne_zero_iff.2 hGx]
-
-/-- **The calibration estimate.** If a test vector field `ψ` satisfies `Dw (ψ) = -‖Dw‖` on the
-shell `S = {0 < w < η}`, as `-∇w / ‖∇w‖` does, then
-`∫_S ‖Dw‖ ≤ η (∫_{w > 0} div ψ + ∫_S |div ψ|)`. -/
-private theorem setIntegral_norm_fderiv_le {w : E → ℝ} (hw : ContDiff ℝ 1 w) {η : ℝ} (hη : 0 < η)
-    (ψ : 𝓓(⊤, E)) (hψ : ∀ x, w x ∈ Ioo 0 η → fderiv ℝ w x (ψ x) = -‖fderiv ℝ w x‖) :
-    ∫ x in w ⁻¹' Ioo 0 η, ‖fderiv ℝ w x‖ ≤
-      η * ((∫ x, divergenceCLM ψ x * {x | 0 < w x}.indicator 1 x) +
-        ∫ x in w ⁻¹' Ioo 0 η, |divergenceCLM ψ x|) := by
-  set S := w ⁻¹' Ioo 0 η
-  set F := {x | 0 < w x}
-  let v : E → ℝ := fun y => max 0 (min (w y) η)
-  let D : E → ℝ := divergenceCLM ψ
-  have hS : MeasurableSet S := hw.continuous.measurable measurableSet_Ioo
-  have hF : MeasurableSet F := measurableSet_lt measurable_const hw.continuous.measurable
-  have hD : Integrable D :=
-    (divergenceCLM ψ).continuous.integrable_of_hasCompactSupport (divergenceCLM ψ).hasCompactSupport
-  have hv : LocallyLipschitz v := (hw.locallyLipschitz.min_const η).const_max 0
-  -- Integration by parts against the clamped function `v` gives `∫ D v = ∫_S ‖Dw‖`.
-  have hibp : ∫ x, D x * v x = ∫ x in S, ‖fderiv ℝ w x‖ := by
-    have := (hv.locallyLipschitzOn (s := ((⊤ : Opens E) : Set E))).hasWeakFDerivOn_fderiv
-      (μ := volume) |>.integral_divergenceCLM_smul_eq_neg_integral ψ
-    simp only [smul_eq_mul] at this
-    rw [this, ← integral_indicator hS, ← integral_neg]
-    refine integral_congr_ae (.of_forall fun x => ?_)
-    simp only [v]
-    rw [fderiv_max_min_eq_indicator hw.continuous hη x]
-    by_cases hx : x ∈ S
-    · rw [indicator_of_mem (s := w ⁻¹' Ioo 0 η) hx, indicator_of_mem hx, hψ x hx, neg_neg]
-    · rw [indicator_of_notMem (s := w ⁻¹' Ioo 0 η) hx, indicator_of_notMem hx]
-      simp
-  -- The clamped function agrees with `η 1_F` off `S`, and differs from it by at most `η` on `S`.
-  have hpt (x : E) : ‖D x * (η * F.indicator 1 x - v x)‖ ≤ η * S.indicator (fun x => |D x|) x := by
-    have hcl := abs_mul_indicator_sub_max_min_le (w := w) hη.le x
-    rw [norm_mul, Real.norm_eq_abs, Real.norm_eq_abs]
-    by_cases hxS : x ∈ S
-    · rw [indicator_of_mem (s := w ⁻¹' Ioo 0 η) hxS] at hcl
-      rw [indicator_of_mem hxS, mul_comm η (|D x|)]
-      exact mul_le_mul_of_nonneg_left hcl (abs_nonneg _)
-    · rw [indicator_of_notMem (s := w ⁻¹' Ioo 0 η) hxS] at hcl
-      rw [indicator_of_notMem hxS, mul_zero]
-      exact (mul_nonpos_of_nonneg_of_nonpos (abs_nonneg _) hcl)
-  have hbdd (f : E → ℝ) (hf : Measurable f) (c : ℝ) (hfc : ∀ x, ‖f x‖ ≤ c) :
-      Integrable fun x => D x * f x :=
-    hD.mul_bdd hf.aestronglyMeasurable (.of_forall hfc)
-  have hFm : Measurable (F.indicator (1 : E → ℝ)) := measurable_const.indicator hF
-  have hvm : Measurable v := hv.continuous.measurable
-  have hFb (x : E) : ‖F.indicator (1 : E → ℝ) x‖ ≤ 1 := by
-    by_cases hx : x ∈ F <;> simp [hx]
-  have hvb (x : E) : ‖v x‖ ≤ η := by
-    rw [Real.norm_eq_abs, abs_le]
-    exact ⟨by linarith [le_max_left 0 (min (w x) η)], max_le hη.le (min_le_right _ _)⟩
-  have hdiff : ∫ x, D x * (η * F.indicator 1 x - v x) =
-      η * (∫ x, D x * F.indicator 1 x) - ∫ x, D x * v x := by
-    rw [← integral_const_mul, ← integral_sub ((hbdd _ hFm 1 hFb).const_mul η) (hbdd _ hvm η hvb)]
-    refine integral_congr_ae (.of_forall fun x => ?_)
-    ring
-  have hrem : ‖∫ x, D x * (η * F.indicator 1 x - v x)‖ ≤ η * ∫ x in S, |D x| := by
-    rw [← integral_indicator hS, ← integral_const_mul]
-    exact norm_integral_le_of_norm_le (((hD.abs.indicator hS)).const_mul η) (.of_forall hpt)
-  rw [Real.norm_eq_abs] at hrem
-  rw [← hibp, mul_add]
-  linarith [neg_abs_le (∫ x, D x * (η * F.indicator 1 x - v x))]
 
 /-- **One step of the smooth isoperimetric argument.** Suppose that `‖Dw‖` lies within `ε < 1`
 of `1` on `{0 ≤ w ≤ η}` and that a test vector field `ψ` satisfies `Dw (ψ) = -‖Dw‖` on
@@ -252,7 +133,7 @@ private theorem div_mul_le_integral_add_setIntegral {w : E → ℝ} (hw : ContDi
   have hlow : (1 - ε) * volume.real S ≤ ∫ x in S, ‖fderiv ℝ w x‖ :=
     setIntegral_ge_of_const_le_real hSm hSfin
       (fun x hx => by linarith [(abs_lt.1 (hgrad x hx.1.le hx.2.le)).1]) hint
-  have hcal := setIntegral_norm_fderiv_le hw hη ψ hψ
+  have hcal := hw.setIntegral_norm_fderiv_le hη ψ hψ
   refine le_of_mul_le_mul_left ?_ hη
   calc η * ((1 - ε) / (1 + ε) * (n * volume.real (ball (0 : E) 1) ^ (n : ℝ)⁻¹ *
           (volume.real G ^ (n : ℝ)⁻¹) ^ (n - 1)))
@@ -286,21 +167,16 @@ private theorem div_mul_le_integral_mul_indicator {w : E → ℝ} (hw : ContDiff
       have hx : ε ≤ |‖fderiv ℝ w x‖ - 1| := hx
       rw [hnorm x h0, sub_self, abs_zero] at hx
       linarith
-  -- Along `η k = min η₀ η₁ / (k + 1)`, apply the one-step estimate and let `k → ∞`.
+  -- Along a sequence `η k` decreasing to `0` below `min η₀ η₁`, apply the one-step estimate
+  -- and let `k → ∞`.
   set m := min η₀ η₁
   have hm : 0 < m := lt_min hη₀ hη₁
-  let η : ℕ → ℝ := fun k => m / (k + 1)
-  have hηpos (k : ℕ) : 0 < η k := by positivity
-  have hηm (k : ℕ) : η k ≤ m := div_le_self hm.le (by linarith [k.cast_nonneg (α := ℝ)])
-  have hηanti : Antitone η := fun i j hij =>
-    div_le_div_of_nonneg_left hm.le (by positivity) (by gcongr)
-  have hηlim : Tendsto η atTop (𝓝 0) := by
-    have := (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).const_mul m
-    rw [mul_zero] at this
-    exact this.congr fun k => by simp only [η]; ring
+  obtain ⟨η, hηs, hηmem, hηlim⟩ := exists_seq_strictAnti_tendsto' hm
+  have hηpos (k : ℕ) : 0 < η k := (hηmem k).1
+  have hηm (k : ℕ) : η k ≤ m := (hηmem k).2.le
+  have hηanti : Antitone η := hηs.antitone
   let G : ℕ → Set E := fun k => {x | η k ≤ w x}
-  let S : ℕ → Set E := fun k => w ⁻¹' Ioo 0 (η k)
-  -- The superlevel sets `G k` exhaust `F`, and the shells `S k` shrink to the empty set.
+  -- The superlevel sets `G k` exhaust `F`, and the shells `{0 < w < η k}` shrink to the empty set.
   have hGlim : Tendsto (fun k => volume (G k)) atTop (𝓝 (volume F)) := by
     have hU : (⋃ k, G k) = F := by
       ext x
@@ -310,20 +186,10 @@ private theorem div_mul_le_integral_mul_indicator {w : E → ℝ} (hw : ContDiff
     have hmono : Monotone G := fun i j hij x (hx : η i ≤ w x) => (hηanti hij).trans hx
     have := tendsto_measure_iUnion_atTop (μ := volume) hmono
     rwa [hU] at this
-  have hSlim : Tendsto (fun k => ∫ x in S k, |divergenceCLM ψ x|) atTop (𝓝 0) := by
-    have hI : (⋂ k, S k) = ∅ := by
-      refine eq_empty_of_forall_notMem fun x hx => ?_
-      simp only [mem_iInter] at hx
-      obtain ⟨k, hk⟩ := (hηlim.eventually (gt_mem_nhds (hx 0).1)).exists
-      exact (hx k).2.not_gt hk
-    have hanti : Antitone S := fun i j hij x (hx : w x ∈ Ioo 0 (η j)) =>
-      ⟨hx.1, hx.2.trans_le (hηanti hij)⟩
-    have hDint : Integrable fun x => |divergenceCLM ψ x| :=
-      ((divergenceCLM ψ).continuous.integrable_of_hasCompactSupport
-        (divergenceCLM ψ).hasCompactSupport).abs
-    have := tendsto_setIntegral_of_antitone (μ := volume)
-      (fun k => hw.continuous.measurable measurableSet_Ioo) hanti ⟨0, hDint.integrableOn⟩
-    rwa [hI, setIntegral_empty] at this
+  have hDint : Integrable fun x => |divergenceCLM ψ x| :=
+    ((divergenceCLM ψ).continuous.integrable_of_hasCompactSupport
+      (divergenceCLM ψ).hasCompactSupport).abs
+  have hSlim := tendsto_setIntegral_preimage_Ioo_zero hDint hw.continuous.measurable hηlim
   have hlhs : Tendsto (fun k => (1 - ε) / (1 + ε) * (n * volume.real (ball (0 : E) 1) ^ (n : ℝ)⁻¹ *
       (volume.real (G k) ^ (n : ℝ)⁻¹) ^ (n - 1))) atTop
       (𝓝 ((1 - ε) / (1 + ε) * (n * volume.real (ball (0 : E) 1) ^ (n : ℝ)⁻¹ *
@@ -352,7 +218,7 @@ private theorem ofReal_le_perimeter_setOf_pos {w : E → ℝ} (hw : ContDiff ℝ
         volume.real {x | 0 < w x} ^ (1 - (finrank ℝ E : ℝ)⁻¹)) ≤
       perimeter volume ⊤ {x | 0 < w x} := by
   set n := finrank ℝ E
-  obtain ⟨η₀, hη₀, ψ, hψ1, hψ⟩ := exists_testFunction_fderiv_apply_eq_neg_norm hw hδ hK
+  obtain ⟨η₀, hη₀, ψ, hψ1, hψ⟩ := hw.exists_testFunction_fderiv_apply_eq_neg_norm hδ hK
     fun x hx h0 => by
       have := hnorm x hx
       rw [h0, norm_zero] at this
@@ -388,15 +254,16 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E]
 
 /-- **The sharp isoperimetric inequality for regular superlevel sets.** Let `u` be smooth and
-compactly supported, and let `t > 0` be a regular value of `u`. In dimension `n ≥ 1`, if
-`F = {u > t}` has positive volume, then `n ω_n ^ (1 / n) |F| ^ (1 - 1 / n) ≤ P(F)`. -/
+compactly supported, and let `t > 0` be a regular value of `u`. If `F = {u > t}` has positive
+volume, then `n ω_n ^ (1 / n) |F| ^ (1 - 1 / n) ≤ P(F)`, trivially so in dimension `n = 0`. -/
 theorem ContDiff.ofReal_mul_volume_real_rpow_mul_le_perimeter_setOf_lt {u : E → ℝ}
     (hu : ContDiff ℝ ∞ u) (huc : HasCompactSupport u) {t : ℝ} (ht : 0 < t)
-    (hreg : ∀ x, u x = t → fderiv ℝ u x ≠ 0) (hn : finrank ℝ E ≠ 0)
-    (hV : volume {x | t < u x} ≠ 0) :
+    (hreg : ∀ x, u x = t → fderiv ℝ u x ≠ 0) (hV : volume {x | t < u x} ≠ 0) :
     ENNReal.ofReal (finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
         volume.real {x | t < u x} ^ (1 - (finrank ℝ E : ℝ)⁻¹)) ≤
       perimeter volume ⊤ {x | t < u x} := by
+  rcases eq_or_ne (finrank ℝ E) 0 with hn | hn
+  · simp [hn]
   obtain ⟨w, hw, hK, hnorm, hset⟩ := hu.exists_contDiff_setOf_pos_eq_setOf_lt huc ht hreg
   rw [← hset] at hV ⊢
   exact ofReal_le_perimeter_setOf_pos hw (by norm_num) hK hnorm hn hV
@@ -411,15 +278,16 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E]
 
 /-- **The sharp isoperimetric inequality, extended-real form.** In a Euclidean space of dimension
-`n ≥ 1`, every null-measurable set `s` of finite positive volume satisfies
+`n`, every null-measurable set `s` of finite positive volume satisfies
 `n ω_n ^ (1 / n) |s| ^ (1 - 1 / n) ≤ P(s)`, where `ω_n = volume (ball 0 1)` and `P(s)` is the
 perimeter of `s` in the whole space, finite or infinite. No boundedness or regularity is
-assumed. -/
+assumed, and the case `n = 0` is trivial. -/
 theorem ofReal_mul_volume_real_rpow_mul_le_perimeter
-    {s : Set E} (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤) (hn : finrank ℝ E ≠ 0)
-    (hs0 : volume s ≠ 0) :
+    {s : Set E} (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤) (hs0 : volume s ≠ 0) :
     ENNReal.ofReal (finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
         volume.real s ^ (1 - (finrank ℝ E : ℝ)⁻¹)) ≤ perimeter volume ⊤ s := by
+  rcases eq_or_ne (finrank ℝ E) 0 with hn | hn
+  · simp [hn]
   obtain ⟨u, t, hprop, hsymm, hP⟩ := hs.exists_smooth_perimeter_approximation hμs
   set F : ℕ → Set E := fun k => {x | t k < u k x}
   have hFm (k : ℕ) : NullMeasurableSet (F k) volume := by
@@ -443,7 +311,7 @@ theorem ofReal_mul_volume_real_rpow_mul_le_perimeter
   filter_upwards [hV.eventually (lt_mem_nhds hpos)] with k hk
   obtain ⟨hu, huc, htk, hreg, -⟩ := hprop k
   refine hu.ofReal_mul_volume_real_rpow_mul_le_perimeter_setOf_lt huc htk.1
-    (fun x hx h0 => ?_) hn ?_
+    (fun x hx h0 => ?_) ?_
   · obtain ⟨v, hv⟩ := hreg x hx 1
     simp [h0] at hv
   · intro h
@@ -451,16 +319,17 @@ theorem ofReal_mul_volume_real_rpow_mul_le_perimeter
     exact hk.false
 
 /-- **The sharp isoperimetric inequality, real-valued form.** In a Euclidean space of dimension
-`n ≥ 1`, every null-measurable set `s` of finite positive volume and finite perimeter satisfies
+`n`, every null-measurable set `s` of finite positive volume and finite perimeter satisfies
 `n ω_n ^ (1 / n) |s| ^ (1 - 1 / n) ≤ P(s)`, where `ω_n = volume (ball 0 1)` and `P(s)` is the
-perimeter of `s` in the whole space. No boundedness or regularity is assumed. -/
+perimeter of `s` in the whole space. No boundedness or regularity is assumed, and the case
+`n = 0` is trivial. -/
 theorem mul_volume_real_rpow_mul_le_perimeter_toReal
-    {s : Set E} (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤) (hn : finrank ℝ E ≠ 0)
+    {s : Set E} (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤)
     (hs0 : volume s ≠ 0) (hP : perimeter volume ⊤ s ≠ ⊤) :
     finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
         volume.real s ^ (1 - (finrank ℝ E : ℝ)⁻¹) ≤ (perimeter volume ⊤ s).toReal :=
   (ENNReal.ofReal_le_iff_le_toReal hP).1
-    (hs.ofReal_mul_volume_real_rpow_mul_le_perimeter hμs hn hs0)
+    (hs.ofReal_mul_volume_real_rpow_mul_le_perimeter hμs hs0)
 
 /-- **The sharp isoperimetric inequality.** In a Euclidean space of dimension `n ≥ 1`, every
 null-measurable set `s` of finite positive volume satisfies `P(s)^n ≥ n^n ω_n |s|^(n-1)`, where
@@ -474,7 +343,7 @@ theorem finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow
       perimeter volume ⊤ s ^ finrank ℝ E := by
   rw [finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal hμs hn,
     ENNReal.ofReal_pow (by positivity)]
-  exact pow_le_pow_left₀ zero_le (hs.ofReal_mul_volume_real_rpow_mul_le_perimeter hμs hn hs0) _
+  exact pow_le_pow_left₀ zero_le (hs.ofReal_mul_volume_real_rpow_mul_le_perimeter hμs hs0) _
 
 /-- **The sharp isoperimetric inequality in dimension `n ≥ 2`.** In a Euclidean space of
 dimension `n ≥ 2`, every null-measurable set `s` of finite volume satisfies

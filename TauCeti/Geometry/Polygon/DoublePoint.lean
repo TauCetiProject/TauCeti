@@ -364,6 +364,7 @@ section Finite
 variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup V] [Module R V]
   [AddTorsor V P] [AddCommGroup W] [Module R W] [AddTorsor W Q] {poly : Polygon P n} {π : P →ᵃ[R] Q}
 
+<<<<<<< HEAD
 /-- For two pairs of points on edges with the same projected image, if their first points differ,
 then each pair has identical points. -/
 private theorem IsRegularProjection.eq_of_two_edgePairs (hπ : poly.IsRegularProjection R π)
@@ -406,6 +407,38 @@ private theorem IsRegularProjection.subsingleton_setOf_mem_edgeSet_of_ne
   by_contra hne
   exact hxy_ne (hπ.eq_of_two_edgePairs hx hy hxy hx' hy' hxy' hne).1
 
+||||||| 3a0189695d
+=======
+omit [IsStrictOrderedRing R] in
+/-- If the points of edge `i` at the parameters `h u` lie over the points of edge `j` at the
+parameters `u` under a regular projection, then at a parameter `u` where `u` or `h u` is an end of
+`[0, 1]`, the two points coincide, so they are a common point of the two edges. -/
+private theorem IsRegularProjection.lineMap_mem_edgeSet_inter (hπ : poly.IsRegularProjection R π)
+    {i j : Fin n} {h : R → R}
+    (hrel : ∀ u, π (lineMap (poly i) (poly (finRotate n i)) (h u)) =
+      π (lineMap (poly j) (poly (finRotate n j)) u))
+    {u : R} (hu : u ∈ Icc (0 : R) 1) (hhu : h u ∈ Icc (0 : R) 1)
+    (hend : u = 0 ∨ u = 1 ∨ h u = 0 ∨ h u = 1) :
+    lineMap (poly i) (poly (finRotate n i)) (h u) ∈ poly.edgeSet R i ∩ poly.edgeSet R j := by
+  have hX : lineMap (poly i) (poly (finRotate n i)) (h u) ∈ poly.edgeSet R i := ⟨_, hhu, rfl⟩
+  have hY : lineMap (poly j) (poly (finRotate n j)) u ∈ poly.edgeSet R j := ⟨_, hu, rfl⟩
+  have hXb := mem_iUnion.2 ⟨i, hX⟩
+  have hYb := mem_iUnion.2 ⟨j, hY⟩
+  suffices lineMap (poly i) (poly (finRotate n i)) (h u) =
+      lineMap (poly j) (poly (finRotate n j)) u from ⟨hX, this ▸ hY⟩
+  rcases hend with rfl | rfl | h0 | h1
+  · rw [lineMap_apply_zero]
+    exact hπ.eq_vertex_of_apply_eq j hXb (by simpa only [lineMap_apply_zero] using hrel 0)
+  · rw [lineMap_apply_one]
+    exact hπ.eq_vertex_of_apply_eq _ hXb (by simpa only [lineMap_apply_one] using hrel 1)
+  · rw [h0, lineMap_apply_zero]
+    exact (hπ.eq_vertex_of_apply_eq i hYb
+      ((hrel u).symm.trans (by rw [h0, lineMap_apply_zero]))).symm
+  · rw [h1, lineMap_apply_one]
+    exact (hπ.eq_vertex_of_apply_eq _ hYb
+      ((hrel u).symm.trans (by rw [h1, lineMap_apply_one]))).symm
+
+>>>>>>> upstream/main
 /-- **Two distinct edges cross at most once.** For an affine regular projection `π` of a simple
 polygon, two distinct edges contain at most one pair of points with the same image under `π`. For
 consecutive edges this pair is their common vertex, taken twice. -/
@@ -414,12 +447,122 @@ theorem IsRegularProjection.subsingleton_setOf_mem_edgeSet (hs : poly.IsSimple R
     {p : P × P | p.1 ∈ poly.edgeSet R i ∧ p.2 ∈ poly.edgeSet R j ∧ π p.1 = π p.2}.Subsingleton := by
   rintro ⟨x, y⟩ ⟨hx, hy, hxy⟩ ⟨x', y'⟩ ⟨hx', hy', hxy'⟩
   dsimp only at hx hy hxy hx' hy' hxy'
+<<<<<<< HEAD
   by_cases hxx : x = x'
   · subst x'
     rw [hπ.injOn_edgeSet j hy hy' (hxy.symm.trans hxy')]
   · obtain ⟨hxy₀, hxy₁⟩ := hπ.eq_of_two_edgePairs hx hy hxy hx' hy' hxy' hxx
     exact False.elim (hxx (hs.subsingleton_edgeSet_inter hij
       ⟨hx, hxy₀ ▸ hy⟩ ⟨hx', hxy₁ ▸ hy'⟩))
+||||||| 3a0189695d
+  suffices hxx : x = x' by
+    subst hxx
+    rw [hinj j hy hy' (hxy.symm.trans hxy')]
+  by_contra hne
+  obtain ⟨s, hsI, rfl⟩ := hx
+  obtain ⟨s', hsI', rfl⟩ := hx'
+  obtain ⟨t, ht, rfl⟩ := hy
+  obtain ⟨t', ht', rfl⟩ := hy'
+  have hss' : s ≠ s' := by rintro rfl; exact hne rfl
+  have htt' : t ≠ t' := by
+    rintro rfl
+    exact hne (hinj i ⟨s, hsI, rfl⟩ ⟨s', hsI', rfl⟩ (hxy.trans hxy'.symm))
+  have htt'₀ : t' - t ≠ 0 := sub_ne_zero.2 htt'.symm
+  -- Under `π`, edge `j` at the parameter `u` lies over edge `i` at the parameter `h u`, an
+  -- affine function of `u`.
+  set h : R → R := fun u ↦ lineMap s s' ((u - t) / (t' - t)) with h_def
+  have hh (u : R) : h u = lineMap (h 0) (h 1) u := by
+    simp only [h_def, lineMap_apply_ring']
+    field_simp
+    ring
+  have hrel (u : R) : π (lineMap (poly i) (poly (finRotate n i)) (h u)) =
+      π (lineMap (poly j) (poly (finRotate n j)) u) := by
+    have hu : lineMap t t' ((u - t) / (t' - t)) = u := by
+      rw [lineMap_apply_ring']
+      field_simp
+      ring
+    conv_rhs => rw [← hu]
+    simp only [h_def, AffineMap.apply_lineMap, hxy, hxy']
+  have ht₀ : h t = s := by simp [h_def]
+  have ht₁ : h t' = s' := by simp [h_def, div_self htt'₀]
+  -- The overlap of the two edges under `π` has two distinct ends.
+  obtain ⟨u₁, u₂, hne₁₂, hu⟩ := TauCeti.exists_lineMap_endpoint ht ht'
+    (by rw [← hh, ht₀]; exact hsI) (by rw [← hh, ht₁]; exact hsI')
+    (by rw [← hh, ← hh, ht₀, ht₁]; exact hss')
+  -- By regularity, each end of the overlap is a common point of the two edges.
+  have hcommon (u : R) (hu' : u ∈ ({u₁, u₂} : Set R)) :
+      lineMap (poly i) (poly (finRotate n i)) (h u) ∈ poly.edgeSet R i ∩ poly.edgeSet R j := by
+    obtain ⟨hu, hhu, hend⟩ := hu u hu'
+    rw [← hh] at hhu hend
+    have hX : lineMap (poly i) (poly (finRotate n i)) (h u) ∈ poly.edgeSet R i := ⟨_, hhu, rfl⟩
+    have hY : lineMap (poly j) (poly (finRotate n j)) u ∈ poly.edgeSet R j := ⟨_, hu, rfl⟩
+    have hXb := mem_iUnion.2 ⟨i, hX⟩
+    have hYb := mem_iUnion.2 ⟨j, hY⟩
+    suffices lineMap (poly i) (poly (finRotate n i)) (h u) =
+        lineMap (poly j) (poly (finRotate n j)) u from ⟨hX, this ▸ hY⟩
+    rcases hend with rfl | rfl | h0 | h1
+    · rw [lineMap_apply_zero]
+      exact hπ.eq_vertex_of_apply_eq j hXb (by simpa only [lineMap_apply_zero] using hrel 0)
+    · rw [lineMap_apply_one]
+      exact hπ.eq_vertex_of_apply_eq _ hXb (by simpa only [lineMap_apply_one] using hrel 1)
+    · rw [h0, lineMap_apply_zero]
+      exact (hπ.eq_vertex_of_apply_eq i hYb
+        ((hrel u).symm.trans (by rw [h0, lineMap_apply_zero]))).symm
+    · rw [h1, lineMap_apply_one]
+      exact (hπ.eq_vertex_of_apply_eq _ hYb
+        ((hrel u).symm.trans (by rw [h1, lineMap_apply_one]))).symm
+  -- Two distinct common points of two distinct edges contradict simplicity.
+  refine hne₁₂ ?_
+  rw [← hh, ← hh]
+  exact lineMap_injective R (hs.hasNondegenerateEdges i)
+    (hs.subsingleton_edgeSet_inter hij (hcommon u₁ (.inl rfl)) (hcommon u₂ (.inr rfl)))
+=======
+  suffices hxx : x = x' by
+    subst hxx
+    rw [hinj j hy hy' (hxy.symm.trans hxy')]
+  by_contra hne
+  obtain ⟨s, hsI, rfl⟩ := hx
+  obtain ⟨s', hsI', rfl⟩ := hx'
+  obtain ⟨t, ht, rfl⟩ := hy
+  obtain ⟨t', ht', rfl⟩ := hy'
+  have hss' : s ≠ s' := by rintro rfl; exact hne rfl
+  have htt' : t ≠ t' := by
+    rintro rfl
+    exact hne (hinj i ⟨s, hsI, rfl⟩ ⟨s', hsI', rfl⟩ (hxy.trans hxy'.symm))
+  have htt'₀ : t' - t ≠ 0 := sub_ne_zero.2 htt'.symm
+  -- Under `π`, edge `j` at the parameter `u` lies over edge `i` at the parameter `h u`, an
+  -- affine function of `u`.
+  set h : R → R := fun u ↦ lineMap s s' ((u - t) / (t' - t)) with h_def
+  have hh (u : R) : h u = lineMap (h 0) (h 1) u := by
+    simp only [h_def, lineMap_apply_ring']
+    field_simp
+    ring
+  have hrel (u : R) : π (lineMap (poly i) (poly (finRotate n i)) (h u)) =
+      π (lineMap (poly j) (poly (finRotate n j)) u) := by
+    have hu : lineMap t t' ((u - t) / (t' - t)) = u := by
+      rw [lineMap_apply_ring']
+      field_simp
+      ring
+    conv_rhs => rw [← hu]
+    simp only [h_def, AffineMap.apply_lineMap, hxy, hxy']
+  have ht₀ : h t = s := by simp [h_def]
+  have ht₁ : h t' = s' := by simp [h_def, div_self htt'₀]
+  -- The overlap of the two edges under `π` has two distinct ends.
+  obtain ⟨u₁, u₂, hne₁₂, hu⟩ := TauCeti.exists_lineMap_endpoint ht ht'
+    (by rw [← hh, ht₀]; exact hsI) (by rw [← hh, ht₁]; exact hsI')
+    (by rw [← hh, ← hh, ht₀, ht₁]; exact hss')
+  -- By regularity, each end of the overlap is a common point of the two edges.
+  have hcommon (u : R) (hu' : u ∈ ({u₁, u₂} : Set R)) :
+      lineMap (poly i) (poly (finRotate n i)) (h u) ∈ poly.edgeSet R i ∩ poly.edgeSet R j := by
+    obtain ⟨hu, hhu, hend⟩ := hu u hu'
+    rw [← hh] at hhu hend
+    exact hπ.lineMap_mem_edgeSet_inter hrel hu hhu hend
+  -- Two distinct common points of two distinct edges contradict simplicity.
+  refine hne₁₂ ?_
+  rw [← hh, ← hh]
+  exact lineMap_injective R (hs.hasNondegenerateEdges i)
+    (hs.subsingleton_edgeSet_inter hij (hcommon u₁ (.inl rfl)) (hcommon u₂ (.inr rfl)))
+>>>>>>> upstream/main
 
 /-- **An affine regular projection has finitely many double points.** Each double point has a
 distinct partner, and for any two edges there is at most one pair of distinct points with the same
@@ -441,6 +584,51 @@ open Filter Topology
 
 variable [AddCommGroup V] [Module ℝ V] [AddTorsor V P] {poly : Polygon P n} {p₀ : P} {d : V}
 
+/-- For a simple polygon with a regular projection along `d`, distinct edges `i ≠ j` and interior
+points `s`, `t` of them whose edge points have the same projection, any linear relation
+`g 0 • eᵢ + g 1 • eⱼ + g 2 • d = 0` between the directions `eᵢ`, `eⱼ` of the edges and `d` has
+`g 0 = 0`: the assumption `g 0 ≠ 0` is contradictory. -/
+private theorem false_of_edgePath_move (hs : poly.IsSimple ℝ)
+    (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) {i j : Fin n} (hij : i ≠ j) {s t : ℝ}
+    (hsI : s ∈ Ioo (0 : ℝ) 1) (htI : t ∈ Ioo (0 : ℝ) 1)
+    (h : projAlong ℝ p₀ d (poly.edgePath ℝ i s) = projAlong ℝ p₀ d (poly.edgePath ℝ j t))
+    {a : ℝ} (ha : a • d = poly.edgePath ℝ i s -ᵥ poly.edgePath ℝ j t) {g : Fin 3 → ℝ}
+    (hg : g 0 • (poly (finRotate n i) -ᵥ poly i) + g 1 • (poly (finRotate n j) -ᵥ poly j) +
+      g 2 • d = 0) (h0 : g 0 ≠ 0) : False := by
+  -- Both edges move: for small `l ≠ 0`, the points of the edges at the parameters `s + l * g 0`
+  -- and `t - l * g 1` again have the same projection.
+  have hev : ∀ᶠ l in 𝓝 (0 : ℝ), s + l * g 0 ∈ Ioo (0 : ℝ) 1 ∧ t + -(l * g 1) ∈ Ioo (0 : ℝ) 1 := by
+    refine (Tendsto.eventually_mem ?_ (Ioo_mem_nhds hsI.1 hsI.2)).and
+      (Tendsto.eventually_mem ?_ (Ioo_mem_nhds htI.1 htI.2))
+    · have : Continuous fun l : ℝ ↦ s + l * g 0 := by fun_prop
+      simpa using this.tendsto 0
+    · have : Continuous fun l : ℝ ↦ t + -(l * g 1) := by fun_prop
+      simpa using this.tendsto 0
+  obtain ⟨l, ⟨hl₁, hl₂⟩, hl₀⟩ :=
+    ((hev.filter_mono nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := {0}ᶜ))).exists
+  have hl₀ : l ≠ 0 := hl₀
+  have hproj : projAlong ℝ p₀ d (poly.edgePath ℝ i (s + l * g 0)) =
+      projAlong ℝ p₀ d (poly.edgePath ℝ j (t + -(l * g 1))) := by
+    refine projAlong_eq_projAlong_iff.2 ⟨a - l * g 2, ?_⟩
+    rw [edgePath_add, edgePath_add, vadd_vsub_vadd_comm, ← ha]
+    linear_combination (norm := module) (-l) • hg
+  let S : Set (P × P) := {q | q.1 ∈ poly.edgeSet ℝ i ∧ q.2 ∈ poly.edgeSet ℝ j ∧
+    projAlong ℝ p₀ d q.1 = projAlong ℝ p₀ d q.2}
+  have hq₀ : (poly.edgePath ℝ i s, poly.edgePath ℝ j t) ∈ S :=
+    ⟨edgePath_mem_edgeSet i (Ioo_subset_Icc_self hsI),
+      edgePath_mem_edgeSet j (Ioo_subset_Icc_self htI), h⟩
+  have hq₁ : (poly.edgePath ℝ i (s + l * g 0), poly.edgePath ℝ j (t + -(l * g 1))) ∈ S :=
+    ⟨edgePath_mem_edgeSet i (Ioo_subset_Icc_self hl₁),
+      edgePath_mem_edgeSet j (Ioo_subset_Icc_self hl₂), hproj⟩
+  have hpair := hπ.subsingleton_setOf_mem_edgeSet hs hij hq₀ hq₁
+  have hx := congrArg Prod.fst hpair
+  dsimp only at hx
+  rw [edgePath_add, eq_comm] at hx
+  have hv := (vadd_vsub _ _).symm.trans ((congrArg (· -ᵥ poly.edgePath ℝ i s) hx).trans
+    (vsub_self _))
+  rw [smul_eq_zero, vsub_eq_zero_iff_eq] at hv
+  exact hv.elim (mul_ne_zero hl₀ h0) fun hx ↦ hs.hasNondegenerateEdges i hx.symm
+
 /-- **Crossings of a regular projection are transverse.** Let `x` and `y` be distinct points in
 the interiors of edges `i` and `j` of a simple polygon with the same projection along `d`, a
 regular projection. Then the directions of the two edges and `d` are linearly independent:
@@ -452,17 +640,10 @@ theorem IsRegularProjection.linearIndependent_of_projAlong_eq (hs : poly.IsSimpl
     (hne : poly.edgePath ℝ i s ≠ poly.edgePath ℝ j t)
     (h : projAlong ℝ p₀ d (poly.edgePath ℝ i s) = projAlong ℝ p₀ d (poly.edgePath ℝ j t)) :
     LinearIndependent ℝ ![poly (finRotate n i) -ᵥ poly i, poly (finRotate n j) -ᵥ poly j, d] := by
-  have hmem (k : Fin n) {r : ℝ} (hr : r ∈ Ioo (0 : ℝ) 1) :
-      poly.edgePath ℝ k r ∈ poly.edgeSet ℝ k := by
-    rw [edgeSet_eq_image_edgePath]
-    exact mem_image_of_mem _ (Ioo_subset_Icc_self hr)
   have hij : i ≠ j := by
     rintro rfl
-    exact hne (hπ.injOn_edgeSet i (hmem i hsI) (hmem i htI) h)
-  -- Moving along an edge by `c` translates a point of it by `c` times the edge direction.
-  have hpath (k : Fin n) (r c : ℝ) : poly.edgePath ℝ k (r + c) =
-      c • (poly (finRotate n k) -ᵥ poly k) +ᵥ poly.edgePath ℝ k r := by
-    simp only [edgePath, lineMap_apply, vadd_vadd, ← add_smul, add_comm]
+    exact hne (hπ.injOn_edgeSet i (edgePath_mem_edgeSet i (Ioo_subset_Icc_self hsI))
+      (edgePath_mem_edgeSet i (Ioo_subset_Icc_self htI)) h)
   -- No edge is parallel to `d`, since the projection is injective on the vertices.
   have hnpar (k : Fin n) (a : ℝ) (ha : a • d = poly (finRotate n k) -ᵥ poly k) : False :=
     hs.hasNondegenerateEdges k (hπ.eq_vertex_of_apply_eq k
@@ -496,37 +677,7 @@ theorem IsRegularProjection.linearIndependent_of_projAlong_eq (hs : poly.IsSimpl
     have := congrArg ((g 0)⁻¹ • ·) hg
     simp only [smul_add, smul_smul, inv_mul_cancel₀ h0, one_smul, smul_zero] at this
     rw [neg_smul, neg_eq_iff_eq_neg, eq_neg_iff_add_eq_zero, add_comm, this]
-  -- Both edges move: for small `l ≠ 0`, the points of the edges at the parameters `s + l * g 0`
-  -- and `t - l * g 1` again have the same projection.
-  exfalso
-  have hev : ∀ᶠ l in 𝓝 (0 : ℝ), s + l * g 0 ∈ Ioo (0 : ℝ) 1 ∧ t + -(l * g 1) ∈ Ioo (0 : ℝ) 1 := by
-    refine (Tendsto.eventually_mem ?_ (Ioo_mem_nhds hsI.1 hsI.2)).and
-      (Tendsto.eventually_mem ?_ (Ioo_mem_nhds htI.1 htI.2))
-    · have : Continuous fun l : ℝ ↦ s + l * g 0 := by fun_prop
-      simpa using this.tendsto 0
-    · have : Continuous fun l : ℝ ↦ t + -(l * g 1) := by fun_prop
-      simpa using this.tendsto 0
-  obtain ⟨l, ⟨hl₁, hl₂⟩, hl₀⟩ :=
-    ((hev.filter_mono nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := {0}ᶜ))).exists
-  have hl₀ : l ≠ 0 := hl₀
-  have hproj : projAlong ℝ p₀ d (poly.edgePath ℝ i (s + l * g 0)) =
-      projAlong ℝ p₀ d (poly.edgePath ℝ j (t + -(l * g 1))) := by
-    refine projAlong_eq_projAlong_iff.2 ⟨a - l * g 2, ?_⟩
-    rw [hpath, hpath, vadd_vsub_vadd_comm, ← ha]
-    linear_combination (norm := module) (-l) • hg
-  let S : Set (P × P) := {q | q.1 ∈ poly.edgeSet ℝ i ∧ q.2 ∈ poly.edgeSet ℝ j ∧
-    projAlong ℝ p₀ d q.1 = projAlong ℝ p₀ d q.2}
-  have hq₀ : (poly.edgePath ℝ i s, poly.edgePath ℝ j t) ∈ S := ⟨hmem i hsI, hmem j htI, h⟩
-  have hq₁ : (poly.edgePath ℝ i (s + l * g 0), poly.edgePath ℝ j (t + -(l * g 1))) ∈ S :=
-    ⟨hmem i hl₁, hmem j hl₂, hproj⟩
-  have hpair := hπ.subsingleton_setOf_mem_edgeSet hs hij hq₀ hq₁
-  have hx := congrArg Prod.fst hpair
-  dsimp only at hx
-  rw [hpath, eq_comm] at hx
-  have hv := (vadd_vsub _ _).symm.trans ((congrArg (· -ᵥ poly.edgePath ℝ i s) hx).trans
-    (vsub_self _))
-  rw [smul_eq_zero, vsub_eq_zero_iff_eq] at hv
-  exact hv.elim (mul_ne_zero hl₀ h0) fun hx ↦ hs.hasNondegenerateEdges i hx.symm
+  exact (false_of_edgePath_move hs hπ hij hsI htI h ha hg h0).elim
 
 end Transversality
 
