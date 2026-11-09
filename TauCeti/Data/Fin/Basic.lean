@@ -127,6 +127,8 @@ range, so the value is a `dite` rather than a plain application.
 * `TauCeti.exists_foldl_eq_of_parent`: a decreasing parent table gives paths from its root.
 * `TauCeti.not_mem_Ioo_castSucc_succ`: a monotone `Fin` family has no value strictly between
   consecutive entries.
+* `Fin.exists_succ_lt_lt_castSucc`: a `Fin` family in a linear order that starts above a level,
+  ends below it and never equals it drops below the level at some step.
 * `TauCeti.exists_mem_Icc_castSucc_succ`: consecutive closed intervals cover the interval
   between the first and last values of any `Fin` family with at least two entries.
 -/
@@ -785,6 +787,27 @@ theorem exists_mem_Icc_castSucc_succ {β : Type*} [LinearOrder β] {n : ℕ}
   | succ i =>
     exact (not_le.mp (Fin.find_min h (j := i.castSucc)
       (by rw [hi]; exact i.castSucc_lt_succ))).le
+
+end TauCeti
+
+namespace Fin
+
+/-- A function on `Fin (k + 1)` that avoids the value `c`, starts above it and ends below it, drops
+below `c` at some step: there is `i` with `g i.succ < c < g i.castSucc`. -/
+theorem exists_succ_lt_lt_castSucc {α : Type*} [LinearOrder α] {k : ℕ} {g : Fin (k + 1) → α}
+    {c : α} (hne : ∀ i, g i ≠ c)
+    (h0 : c < g 0) (hl : g (Fin.last k) < c) :
+    ∃ i : Fin k, g i.succ < c ∧ c < g i.castSucc := by
+  have hk : k ≠ 0 := by
+    rintro rfl
+    exact (h0.trans' hl).false
+  obtain ⟨i, hi⟩ := TauCeti.exists_mem_Icc_castSucc_succ (β := αᵒᵈ)
+    (fun j ↦ OrderDual.toDual (g j)) hk (x := OrderDual.toDual c) ⟨h0.le, hl.le⟩
+  exact ⟨i, lt_of_le_of_ne hi.2 (hne _), lt_of_le_of_ne hi.1 (hne _).symm⟩
+
+end Fin
+
+namespace TauCeti
 
 /-- **Adding one in `Fin n` never returns to the same element** when `2 ≤ n`. -/
 theorem add_one_ne_self {n : ℕ} [NeZero n] (hn : 2 ≤ n) (i : Fin n) : i + 1 ≠ i := by
