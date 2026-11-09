@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.QuantumGroups.QuantumInteger.Binomial
-public import TauCeti.QuantumGroups.QuantumInteger.Laurent
+public import TauCeti.QuantumGroups.QuantumInteger.Laurent.Basic
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 
 import Mathlib.Tactic

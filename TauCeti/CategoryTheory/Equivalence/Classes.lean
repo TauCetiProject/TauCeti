@@ -18,9 +18,21 @@ group. Its opposite uses functional composition as multiplication: the product
 of the classes of `F` and `G` is the class of `G ⋙ F`. Every self-equivalence
 defines an element, with its inverse functor representing the inverse element.
 
-This group is the target for the homotopy-category Artin representation.
-For underlying skeleton calculations, activate `endofunctorMonoidalCategory`
-locally, as in Mathlib.
+A group homomorphism into this group is an action by autoequivalences up to
+natural isomorphism; the Artin-group actions on homotopy and derived categories
+take values here. For underlying skeleton calculations, activate
+`endofunctorMonoidalCategory` locally, as in Mathlib.
+
+## Main definitions
+
+* `TauCeti.AutoequivalenceClass`: the group of natural isomorphism classes of
+  autoequivalences.
+* `CategoryTheory.Equivalence.toAutoequivalenceClass`: the class of a self-equivalence.
+
+## Main results
+
+* `CategoryTheory.Equivalence.toAutoequivalenceClass_eq_iff`: two self-equivalences have the
+  same class exactly when their functors are naturally isomorphic.
 -/
 
 public section
@@ -76,14 +88,8 @@ theorem Equivalence.toAutoequivalenceClass_inv_val (e : C ≌ C) :
 are naturally isomorphic. -/
 theorem Equivalence.toAutoequivalenceClass_eq_iff (e e' : C ≌ C) :
     e.toAutoequivalenceClass = e'.toAutoequivalenceClass ↔ Nonempty (e.functor ≅ e'.functor) := by
-  constructor
-  · intro h
-    have hv := congrArg (fun x : AutoequivalenceClass C ↦ x.unop.val) h
-    simpa only [Equivalence.toAutoequivalenceClass_val, toSkeleton_eq_toSkeleton_iff] using hv
-  · rintro ⟨h⟩
-    apply MulOpposite.unop_injective
-    apply Units.ext
-    simpa only [Equivalence.toAutoequivalenceClass_val] using congr_toSkeleton_of_iso h
+  simp only [← MulOpposite.unop_inj, Units.ext_iff, Equivalence.toAutoequivalenceClass_val,
+    toSkeleton_eq_toSkeleton_iff]
 
 /-- The identity equivalence represents the identity group element. -/
 @[simp]
@@ -99,10 +105,9 @@ theorem Equivalence.toAutoequivalenceClass_refl :
 @[simp]
 theorem Equivalence.toAutoequivalenceClass_symm (e : C ≌ C) :
     e.symm.toAutoequivalenceClass = e.toAutoequivalenceClass⁻¹ := by
-  apply MulOpposite.unop_injective
-  apply Units.ext
-  -- Both values are the class of the chosen inverse functor.
-  rfl
+  simp only [← MulOpposite.unop_inj, Units.ext_iff, MulOpposite.unop_inv,
+    Equivalence.toAutoequivalenceClass_val, Equivalence.toAutoequivalenceClass_inv_val,
+    Equivalence.symm_functor]
 
 /-- Equivalence composition is reversed in functional-order multiplication. -/
 @[simp]

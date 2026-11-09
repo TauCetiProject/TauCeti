@@ -26,6 +26,8 @@ representatives over a field. Over a field, the group law also commutes with a c
 for nonsingular point representatives `P` and `Q` of `C • W`, to a representative of
 `add (C.toMatrix *ᵥ P) (C.toMatrix *ᵥ Q)`. This is read off the affine point groups, where the
 change of variables is the group isomorphism `WeierstrassCurve.Affine.Point.addEquivVariableChange`.
+Transported through the projective-affine comparison, that isomorphism is a group isomorphism of
+projective points given by the matrix `C.toMatrix` on homogeneous coordinates.
 
 ## Main results
 
@@ -44,6 +46,9 @@ change of variables is the group isomorphism `WeierstrassCurve.Affine.Point.addE
 * `WeierstrassCurve.Projective.toMatrix_mulVec_add_equiv`: over a field, for nonsingular point
   representatives `P` and `Q` of `C • W`, the image of `add P Q` under `C.toMatrix` is equivalent
   to the sum `add (C.toMatrix *ᵥ P) (C.toMatrix *ᵥ Q)` on `W`.
+* `WeierstrassCurve.Projective.Point.addEquivVariableChange`: over a field, the change of
+  variables `C` as a group isomorphism from the projective points of `C • W` to those of `W`,
+  given on homogeneous coordinates by `C.toMatrix` (`Point.addEquivVariableChange_mk`).
 -/
 
 public section
@@ -169,6 +174,41 @@ theorem toMatrix_mulVec_add_equiv (hP : (C • W).toProjective.Nonsingular P)
     Point.toAffine_add hP' hQ', Point.toAffine_toMatrix_mulVec, Point.toAffine_toMatrix_mulVec,
     Point.toAffine_toMatrix_mulVec, Point.toAffine_add hP hQ,
     ← Affine.Point.coe_addEquivVariableChange, map_add]
+
+variable (W) in
+open Classical in
+/-- Over a field, the change of variables `C` as a group isomorphism from the projective points
+of `C • W` to those of `W`. On homogeneous coordinates it is
+`[X : Y : Z] ↦ [u²X + rZ : u²sX + u³Y + tZ : Z]`, the matrix `C.toMatrix`
+(`Point.addEquivVariableChange_mk`). -/
+noncomputable def Point.addEquivVariableChange :
+    (C • W).toProjective.Point ≃+ W.toProjective.Point :=
+  (Point.toAffineAddEquiv _).trans
+    ((Affine.Point.addEquivVariableChange W C).trans (Point.toAffineAddEquiv _).symm)
+
+/-- The change of variables `C` sends the point with homogeneous coordinates `P` to the point
+with homogeneous coordinates `C.toMatrix *ᵥ P`. -/
+@[simp]
+theorem Point.addEquivVariableChange_mk (hP : (C • W).toProjective.NonsingularLift ⟦P⟧) :
+    Point.addEquivVariableChange W C (Point.mk hP) = Point.mk ((nonsingularLift_iff _).mpr
+      ((nonsingular_variableChange W C P).mp ((nonsingularLift_iff P).mp hP))) := by
+  classical
+  apply (Point.toAffineAddEquiv _).injective
+  rw [Point.addEquivVariableChange, AddEquiv.trans_apply, AddEquiv.trans_apply,
+    AddEquiv.apply_symm_apply, Point.toAffineAddEquiv_apply, Point.toAffineAddEquiv_apply,
+    Point.toAffineLift_eq, Point.toAffineLift_eq, Point.toAffine_toMatrix_mulVec,
+    Affine.Point.coe_addEquivVariableChange]
+
+/-- The inverse of the change of variables `C` sends the point with homogeneous coordinates `P`
+to the point with homogeneous coordinates `C⁻¹.toMatrix *ᵥ P`. -/
+@[simp]
+theorem Point.addEquivVariableChange_symm_mk (hP : W.toProjective.NonsingularLift ⟦P⟧) :
+    (Point.addEquivVariableChange W C).symm (Point.mk hP) = Point.mk ((nonsingularLift_iff _).mpr
+      ((nonsingular_variableChange W C (C⁻¹.toMatrix *ᵥ P)).mpr (by
+        rwa [mulVec_mulVec, VariableChange.toMatrix_mul_toMatrix_inv, one_mulVec,
+          ← nonsingularLift_iff]))) := by
+  rw [AddEquiv.symm_apply_eq, Point.addEquivVariableChange_mk, Point.ext_iff]
+  simp only [mulVec_mulVec, VariableChange.toMatrix_mul_toMatrix_inv, one_mulVec]
 
 end VariableChange
 

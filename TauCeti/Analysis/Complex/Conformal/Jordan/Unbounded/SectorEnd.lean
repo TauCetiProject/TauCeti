@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 
 import TauCeti.Analysis.Complex.Conformal.LocalFrontier
 import TauCeti.Analysis.Complex.Conformal.Reflection.Corner
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # Sector ends of an inverted coordinate
@@ -56,6 +57,48 @@ open Bornology Complex Filter Function Metric Set Topology UpperHalfPlane
 namespace TauCeti
 
 variable {f g : ℂ → ℂ} {q : ℂ}
+
+/-- At a boundary point `z` of the half-plane where `g` does not vanish, the recentered inverted
+coordinate lies on one of the two bounding rays of the sector, provided `f` maps the upper
+half-plane near `z` into the sector and `g` is injective off its zeros. -/
+private theorem abs_arg_recenterInvertedCoordinate_eq_of_im_eq_zero
+    (hgc : ContinuousOn g {z : ℂ | 0 ≤ z.im})
+    (hgf : EqOn g (fun z => (f z - q)⁻¹) upperHalfPlaneSet)
+    (hgi : InjOn g {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0}) {ρ β : ℝ} {c b : ℂ} (hb : b ≠ 0)
+    (hS : {w : ℂ | ρ < ‖w - c‖ ∧ |((w - c) / b).arg| < β * Real.pi / 2} ⊆
+      f '' upperHalfPlaneSet) {x : ℝ} {r : ℝ}
+    (hS₂ : ball (x : ℂ) r ∩ upperHalfPlaneSet ⊆
+      {z | f z ∈ {w : ℂ | ρ < ‖w - c‖ ∧ |((w - c) / b).arg| < β * Real.pi / 2}})
+    {z : ℂ} (hz : z ∈ ball (x : ℂ) r) (hz0 : z.im = 0) (hgz : g z ≠ 0)
+    (hwfar : max ρ 0 < ‖q + (g z)⁻¹ - c‖) :
+    |(recenterInvertedCoordinate q c b g z).arg| = β * Real.pi / 2 := by
+  set S := {w : ℂ | ρ < ‖w - c‖ ∧ |((w - c) / b).arg| < β * Real.pi / 2}
+  set w := q + (g z)⁻¹
+  have hGw : recenterInvertedCoordinate q c b g z = b / (w - c) :=
+    recenterInvertedCoordinate_eq_div (f := fun _ => w) (by simp [w]) (by simpa [w] using hgz)
+  -- `w` is the limit of values of `f` in `S`
+  have hwcl : w ∈ closure S := by
+    have hzcl : z ∈ closure (ball (x : ℂ) r ∩ upperHalfPlaneSet) :=
+      isOpen_ball.inter_closure ⟨hz, by simp [upperHalfPlaneSet, ← hz0]⟩
+    have : (𝓝[ball (x : ℂ) r ∩ upperHalfPlaneSet] z).NeBot :=
+      mem_closure_iff_nhdsWithin_neBot.mp hzcl
+    have hlim : Tendsto (fun y => q + (g y)⁻¹) (𝓝[ball (x : ℂ) r ∩ upperHalfPlaneSet] z)
+        (𝓝 w) :=
+      ((continuousWithinAt_const.add ((hgc z hz0.ge).inv₀ hgz)).mono
+        fun y (hy : y ∈ ball (x : ℂ) r ∩ upperHalfPlaneSet) =>
+          mem_ofPred.mpr (le_of_lt hy.2)).tendsto
+    refine mem_closure_of_tendsto hlim (eventually_nhdsWithin_of_forall fun y hy => ?_)
+    rw [hgf hy.2, inv_inv, add_sub_cancel]
+    exact hS₂ hy
+  -- but not a value of `f` at an interior point, since `g` is injective off its zeros
+  have hwS : w ∉ S := fun hw =>
+    add_inv_notMem_image_of_inverted_coordinate hgf hgi hz0 hgz (hS hw)
+  rw [hGw, Complex.abs_arg_div_comm]
+  exact abs_arg_div_eq_of_mem_frontier (U := S) (V := {y : ℂ | ρ < ‖y - c‖}) hb
+    (isOpen_lt continuous_const (by fun_prop)) (fun y hy _ => and_iff_right hy)
+    (le_max_left ρ 0 |>.trans_lt hwfar)
+    (sub_ne_zero.mp (norm_pos_iff.mp ((le_max_right ρ 0).trans_lt hwfar)))
+    ⟨hwcl, fun h => hwS (interior_subset h)⟩
 
 /-- **The recentered coordinate at a sector end.**  Let `g = (f - q)⁻¹` be the inverted coordinate
 of a map `f` of the upper half-plane: `g` is continuous on the closed upper half-plane, holomorphic
@@ -105,45 +148,16 @@ theorem exists_ball_sector_end_of_inverted_coordinate
   have h₃ : ball (x : ℂ) r₄ ⊆ ball (x : ℂ) r₃ :=
     ball_subset_ball ((min_le_right _ _).trans (min_le_right _ _))
   have hgG {z : ℂ} (hGz : G z ≠ 0) : g z ≠ 0 := fun h => hGz (by simp [G, h])
-  -- inversion about `c` preserves the unoriented angle with the bisector of the sector
-  have harg (w : ℂ) : |(b / (w - c)).arg| = |((w - c) / b).arg| := by
-    rw [← inv_div, abs_arg_inv]
   -- the open upper half-disc is carried into the sector
   have hsector (z : ℂ) (hz : z ∈ ball (x : ℂ) r₄) (hzH : 0 < z.im) :
       |(G z).arg| < β * Real.pi / 2 := by
-    rw [hGf ⟨h₁ hz, hzH⟩, harg]
+    rw [hGf ⟨h₁ hz, hzH⟩, Complex.abs_arg_div_comm]
     exact (hS₂ ⟨h₂ hz, hzH⟩).2
   -- the other boundary values lie on the two bounding rays
   have hrays (z : ℂ) (hz : z ∈ ball (x : ℂ) r₄) (hz0 : z.im = 0) (hGz : G z ≠ 0) :
-      |(G z).arg| = β * Real.pi / 2 := by
-    have hgz := hgG hGz
-    set w := q + (g z)⁻¹
-    have hGw : G z = b / (w - c) :=
-      recenterInvertedCoordinate_eq_div (f := fun _ => w) (by simp [w]) (by simpa [w] using hgz)
-    have hwfar := hfar z (h₃ hz) hz0.ge hgz
-    -- `w` is the limit of values of `f` in `S`
-    have hwcl : w ∈ closure S := by
-      have hzcl : z ∈ closure (ball (x : ℂ) r₂ ∩ upperHalfPlaneSet) :=
-        isOpen_ball.inter_closure ⟨h₂ hz, by simp [upperHalfPlaneSet, ← hz0]⟩
-      have : (𝓝[ball (x : ℂ) r₂ ∩ upperHalfPlaneSet] z).NeBot :=
-        mem_closure_iff_nhdsWithin_neBot.mp hzcl
-      have hlim : Tendsto (fun y => q + (g y)⁻¹) (𝓝[ball (x : ℂ) r₂ ∩ upperHalfPlaneSet] z)
-          (𝓝 w) :=
-        ((continuousWithinAt_const.add ((hgc z hz0.ge).inv₀ hgz)).mono
-          fun y (hy : y ∈ ball (x : ℂ) r₂ ∩ upperHalfPlaneSet) =>
-            mem_ofPred.mpr (le_of_lt hy.2)).tendsto
-      refine mem_closure_of_tendsto hlim (eventually_nhdsWithin_of_forall fun y hy => ?_)
-      rw [hgf hy.2, inv_inv, add_sub_cancel]
-      exact hS₂ hy
-    -- but not a value of `f` at an interior point, since `g` is injective off its zeros
-    have hwS : w ∉ S := fun hw =>
-      add_inv_notMem_image_of_inverted_coordinate hgf hgi hz0 hgz (hS hw)
-    rw [hGw, harg]
-    exact abs_arg_div_eq_of_mem_frontier (U := S) (V := {y : ℂ | ρ < ‖y - c‖}) hb
-      (isOpen_lt continuous_const (by fun_prop)) (fun y hy _ => and_iff_right hy)
-      (le_max_left ρ 0 |>.trans_lt hwfar)
-      (sub_ne_zero.mp (norm_pos_iff.mp ((le_max_right ρ 0).trans_lt hwfar)))
-      ⟨hwcl, fun h => hwS (interior_subset h)⟩
+      |(G z).arg| = β * Real.pi / 2 :=
+    abs_arg_recenterInvertedCoordinate_eq_of_im_eq_zero hgc hgf hgi hb hS hS₂ (h₂ hz) hz0
+      (hgG hGz) (hfar z (h₃ hz) hz0.ge (hgG hGz))
   -- the sector geometry makes `x` an isolated zero
   obtain ⟨r₅, hr₅, hiso⟩ := Metric.mem_nhdsWithin_iff.mp <| eventually_ne_zero_of_sector hβ hr₄
     (hGc.mono (inter_subset_inter_left _ h₁)) (hGd.mono (inter_subset_inter_left _ h₁))

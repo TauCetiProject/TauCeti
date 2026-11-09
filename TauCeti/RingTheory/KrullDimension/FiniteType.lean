@@ -91,7 +91,7 @@ irreducible components `V(q)` through `p`, and each of these satisfies the dimen
 * `MvPolynomial.height_eq_natCard_of_isMaximal`: every maximal ideal of `k[Xᵢ | i ∈ ι]`, for `ι`
   finite, has height the number of variables.
 * `Ideal.height_eq_height_under_of_isIntegral_of_finiteType`: an integral faithful extension of
-  domains preserves prime heights when the base is a finitely generated algebra over a field.
+  domains preserves ideal heights when the base is a finitely generated algebra over a field.
 * `TauCeti.topologicalKrullDim_inter_eq_of_finiteType`: in `Spec A`, a nonempty open part of an
   irreducible closed subset has the dimension of that subset.
 * `Ideal.height_add_ringKrullDim_quotient_of_finiteType`: the dimension formula
@@ -162,12 +162,12 @@ theorem finiteRingKrullDim_of_finiteType (A : Type*) [CommRing A] [Nontrivial A]
     (ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g.toRingHom hinj hint)
 
 variable (k) in
-/-- An integral faithful extension of domains preserves prime heights when the base is a finitely
+/-- An integral faithful extension of domains preserves ideal heights when the base is a finitely
 generated algebra over a field. -/
 theorem _root_.Ideal.height_eq_height_under_of_isIntegral_of_finiteType {R S : Type*}
     [CommRing R] [CommRing S] [IsDomain S] [Algebra k R]
     [Algebra.FiniteType k R] [Algebra R S] [Algebra.IsIntegral R S] [FaithfulSMul R S]
-    (prime : Ideal S) [prime.IsPrime] : prime.height = (prime.under R).height := by
+    (prime : Ideal S) : prime.height = (prime.under R).height := by
   have : IsDomain R := (FaithfulSMul.algebraMap_injective R S).isDomain (algebraMap R S)
   obtain ⟨numVars, embedding, hinj, hint⟩ := exists_integral_inj_algHom_of_fg k R
   let polynomial := MvPolynomial (Fin numVars) k
