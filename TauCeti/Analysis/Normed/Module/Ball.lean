@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.StrictConvexSpace
 public import Mathlib.Analysis.Normed.Group.AddTorsor
 public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.Normed.Module.Basic
@@ -43,6 +44,11 @@ For `t ≥ 0`, the outer parallel set `K + t • closedBall 0 1` of a compact se
 
 A scalar of norm one maps the product of a set with a ball about zero to itself when it acts on the
 ball factor (`TauCeti.mapsTo_prodMk_smul_ball`).
+
+The points `x₀ - t • ν` of the inward normal `ν = R⁻¹ • (x₀ - y)` at `x₀ ∈ sphere y R` lie at
+distance `R - t` from `y` (`TauCeti.norm_sub_smul_sub`). In a strictly convex space, the closed
+ball of radius `R / 2` internally tangent to `ball y R` at `x₀` lies in `ball y R` apart from `x₀`
+(`TauCeti.mem_ball_of_mem_closedBall_sub_smul`).
 
 Half the difference body of a bounded set lies in a ball of half its diameter. A bounded set
 centrally symmetric up to translation lies in a ball of half its diameter about its center.
@@ -204,6 +210,55 @@ theorem ball_subset_ball_iff (hr : 0 < r) :
   linarith [le_max_left t 0, (closedBall_subset_closedBall_iff (le_max_right t 0)).1 hsub]
 
 end Subset
+
+section InwardNormal
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The points `x₀ - t ν` of the inward normal from `x₀ ∈ sphere y R`, `ν = R⁻¹ (x₀ - y)`, lie at
+distance `R - t` from `y` for `t ≤ R`. -/
+theorem norm_sub_smul_sub {y x₀ : E} {R t : ℝ} (hR : 0 < R) (hx₀ : x₀ ∈ Metric.sphere y R)
+    (htR : t ≤ R) :
+    ‖x₀ - t • (R⁻¹ • (x₀ - y)) - y‖ = R - t := by
+  have hx₀y : ‖x₀ - y‖ = R := mem_sphere_iff_norm.mp hx₀
+  have h : x₀ - t • (R⁻¹ • (x₀ - y)) - y = ((R - t) * R⁻¹) • (x₀ - y) := by
+    rw [sub_mul, mul_inv_cancel₀ hR.ne', sub_smul, one_smul, smul_smul]
+    abel
+  rw [h, norm_smul, hx₀y, Real.norm_of_nonneg (mul_nonneg (by linarith) (inv_nonneg.mpr hR.le)),
+    mul_assoc, inv_mul_cancel₀ hR.ne', mul_one]
+
+/-- In a strictly convex real normed space, the closed ball of radius `R / 2` internally tangent at
+`x₀ ∈ sphere y R` to `ball y R` meets the sphere of that ball only at `x₀`. -/
+theorem mem_ball_of_mem_closedBall_sub_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [StrictConvexSpace ℝ E] {y x₀ z : E} {R : ℝ} (hR : 0 < R) (hx₀ : x₀ ∈ Metric.sphere y R)
+    (hz : z ∈ Metric.closedBall (x₀ - (R / 2) • (R⁻¹ • (x₀ - y))) (R / 2)) (hzx₀ : z ≠ x₀) :
+    z ∈ Metric.ball y R := by
+  set ν := R⁻¹ • (x₀ - y)
+  have hν : ‖ν‖ = 1 := by
+    rw [norm_smul, mem_sphere_iff_norm.mp hx₀, norm_inv, Real.norm_of_nonneg hR.le,
+      inv_mul_cancel₀ hR.ne']
+  have hx₀y : x₀ = y + R • ν := by
+    rw [smul_smul, mul_inv_cancel₀ hR.ne', one_smul, add_sub_cancel]
+  set c := x₀ - (R / 2) • ν
+  have hcy : c - y = (R / 2) • ν := by simp only [c]; rw [hx₀y]; module
+  have hcy' : ‖c - y‖ = R / 2 := by
+    rw [hcy, norm_smul, hν, Real.norm_of_nonneg (by positivity), mul_one]
+  have hzc : ‖z - c‖ ≤ R / 2 := by simpa [dist_eq_norm] using hz
+  rw [Metric.mem_ball, dist_eq_norm]
+  by_contra! h
+  -- `‖z - y‖ ≤ ‖z - c‖ + ‖c - y‖ ≤ R`, so equality holds and strict convexity forces
+  -- `z - c = c - y`, that is `z = x₀`.
+  have hsum : z - y = (z - c) + (c - y) := by abel
+  have htri := norm_add_le (z - c) (c - y)
+  rw [← hsum] at htri
+  have heq : z - c = c - y :=
+    eq_of_norm_eq_of_norm_add_eq (by linarith) (by rw [← hsum]; linarith)
+  refine hzx₀ ?_
+  rw [sub_eq_iff_eq_add.mp heq, hcy]
+  simp only [c]
+  module
+
+end InwardNormal
 
 end TauCeti
 

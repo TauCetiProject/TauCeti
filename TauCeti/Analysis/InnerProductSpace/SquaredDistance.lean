@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Orthogonal
 public import TauCeti.Analysis.Complex.Pseudoconvex
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
 # Squared distance along a differentiable map
@@ -23,6 +24,9 @@ with `D²i`. For a holomorphic map between complex normed spaces, the latter ter
 `v` and `I • v`. Consequently the Levi diagonal is exactly `‖Di(v)‖²`, and a holomorphic immersion
 pulls squared distance back to a strictly plurisubharmonic function.
 
+Composing with `s ↦ exp (-κ s)` gives the first and second derivatives of the Gaussian
+`z ↦ exp (-κ ‖z - y‖²)`, the barrier function of Hopf's boundary-point lemma.
+
 These formulas are the local inner-product-space calculation behind squared-distance
 exhaustions of closed complex submanifolds. No immersion hypothesis is needed until strict
 positivity is deduced.
@@ -32,6 +36,9 @@ positivity is deduced.
 * `TauCeti.fderiv_norm_sq_sub_comp`: the first derivative of squared distance along a map.
 * `TauCeti.fderiv_norm_sq_sub_comp_eq_zero_iff`: the critical-point normal-vector test.
 * `TauCeti.fderiv_fderiv_norm_sq_sub_comp_apply`: the full Hessian formula.
+* `TauCeti.fderiv_exp_neg_mul_norm_sub_sq_apply`,
+  `TauCeti.fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply`: the first and second derivatives of the
+  Gaussian `z ↦ exp (-κ ‖z - y‖²)`.
 * `TauCeti.fderiv_fderiv_norm_sq_apply_complex`: the real second derivative of complex squared
   norm is twice the real part of the inner product.
 * `TauCeti.fderiv_fderiv_norm_sq_sub_comp_add_I_smul`: the complex Hessian identity.
@@ -119,6 +126,57 @@ theorem fderiv_fderiv_norm_sq_sub_comp_apply (hi : ContDiffAt ℝ 2 i x) (v w : 
   ring
 
 end Real
+
+section Gaussian
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The first derivative of the Gaussian `z ↦ exp (-κ ‖z - y‖²)`. -/
+theorem fderiv_exp_neg_mul_norm_sub_sq_apply (κ : ℝ) (y x v : E) :
+    fderiv ℝ (fun z : E ↦ Real.exp (-κ * ‖z - y‖ ^ 2)) x v =
+      Real.exp (-κ * ‖x - y‖ ^ 2) * (-2 * κ * ⟪x - y, v⟫) := by
+  have h : HasFDerivAt (fun z : E ↦ ‖z - y‖ ^ 2) (2 • innerSL ℝ (x - y)) x := by
+    simpa using ((hasFDerivAt_id x).sub_const y).norm_sq
+  rw [((h.const_mul (-κ)).exp).fderiv]
+  simp only [smul_apply, smul_eq_mul, innerSL_apply_apply, nsmul_eq_mul]
+  push_cast
+  ring
+
+/-- The second derivative of the Gaussian `z ↦ exp (-κ ‖z - y‖²)`. -/
+theorem fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply (κ : ℝ) (y x v w : E) :
+    fderiv ℝ (fderiv ℝ fun z : E ↦ Real.exp (-κ * ‖z - y‖ ^ 2)) x v w =
+      Real.exp (-κ * ‖x - y‖ ^ 2) * (4 * κ ^ 2 * ⟪x - y, v⟫ * ⟪x - y, w⟫ - 2 * κ * ⟪v, w⟫) := by
+  have hφ : ContDiff ℝ 2 (fun s : ℝ ↦ Real.exp (-κ * s)) := by fun_prop
+  have hf : ContDiff ℝ 2 (fun z : E ↦ ‖z - y‖ ^ 2) :=
+    (contDiff_norm_sq ℝ).comp (contDiff_id.sub contDiff_const)
+  have hd : ∀ s, deriv (fun s : ℝ ↦ Real.exp (-κ * s)) s = -κ * Real.exp (-κ * s) := fun s ↦ by
+    simpa [mul_comm] using (((hasDerivAt_id s).const_mul (-κ)).exp).deriv
+  have hdd : iteratedDeriv 2 (fun s : ℝ ↦ Real.exp (-κ * s)) (‖x - y‖ ^ 2) =
+      κ ^ 2 * Real.exp (-κ * ‖x - y‖ ^ 2) := by
+    rw [iteratedDeriv_succ, iteratedDeriv_one, funext hd]
+    have h := ((((hasDerivAt_id (‖x - y‖ ^ 2)).const_mul (-κ)).exp).const_mul (-κ)).deriv
+    simp only [id] at h
+    rw [h]
+    ring
+  have hcomp : (fun z : E ↦ Real.exp (-κ * ‖z - y‖ ^ 2)) =
+      (fun s : ℝ ↦ Real.exp (-κ * s)) ∘ fun z ↦ ‖z - y‖ ^ 2 := rfl
+  have hDf (u : E) : fderiv ℝ (fun z : E ↦ ‖z - y‖ ^ 2) x u = 2 * ⟪x - y, u⟫ := by
+    have h := fderiv_norm_sq_sub_comp (i := id) (a := y) (x := x) differentiableAt_id
+    simp only [id] at h
+    rw [h]
+    simp [inner_sub_left]
+  have hD2f : fderiv ℝ (fderiv ℝ fun z : E ↦ ‖z - y‖ ^ 2) x v w = 2 * ⟪v, w⟫ := by
+    have hid : fderiv ℝ (id : E → E) = fun _ ↦ ContinuousLinearMap.id ℝ _ :=
+      funext fun _ ↦ fderiv_id
+    have h := fderiv_fderiv_norm_sq_sub_comp_apply (i := id) (a := y) (x := x) contDiffAt_id v w
+    simp only [id] at h
+    rw [h, hid]
+    simp
+  rw [hcomp, fderiv_fderiv_scalar_comp_apply hφ.contDiffAt hf.contDiffAt, hdd, hd, hDf, hDf, hD2f]
+  simp only [smul_eq_mul]
+  ring
+
+end Gaussian
 
 section Complex
 

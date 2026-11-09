@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
-import TauCeti.Analysis.Calculus.SecondDerivative
-import TauCeti.Analysis.InnerProductSpace.SquaredDistance
+import Mathlib.Analysis.InnerProductSpace.Convex
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # Hopf's boundary-point lemma for elliptic operators in non-divergence form
@@ -92,57 +92,6 @@ open scoped RealInnerProductSpace
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-omit [DecidableEq ι] in
-/-- The second derivative of the Gaussian `z ↦ exp (-κ ‖z - y‖²)`. -/
-private theorem fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply (κ : ℝ)
-    (y x v w : EuclideanSpace ℝ ι) :
-    fderiv ℝ (fderiv ℝ fun z : EuclideanSpace ℝ ι ↦ Real.exp (-κ * ‖z - y‖ ^ 2)) x v w =
-      Real.exp (-κ * ‖x - y‖ ^ 2) * (4 * κ ^ 2 * ⟪x - y, v⟫ * ⟪x - y, w⟫ - 2 * κ * ⟪v, w⟫) := by
-  have hφ : ContDiff ℝ 2 (fun s : ℝ ↦ Real.exp (-κ * s)) := by fun_prop
-  have hf : ContDiff ℝ 2 (fun z : EuclideanSpace ℝ ι ↦ ‖z - y‖ ^ 2) :=
-    (contDiff_norm_sq ℝ).comp (contDiff_id.sub contDiff_const)
-  have hd : ∀ s, deriv (fun s : ℝ ↦ Real.exp (-κ * s)) s = -κ * Real.exp (-κ * s) := fun s ↦ by
-    simpa [mul_comm] using (((hasDerivAt_id s).const_mul (-κ)).exp).deriv
-  have hdd : iteratedDeriv 2 (fun s : ℝ ↦ Real.exp (-κ * s)) (‖x - y‖ ^ 2) =
-      κ ^ 2 * Real.exp (-κ * ‖x - y‖ ^ 2) := by
-    rw [iteratedDeriv_succ, iteratedDeriv_one, funext hd]
-    have h := ((((hasDerivAt_id (‖x - y‖ ^ 2)).const_mul (-κ)).exp).const_mul (-κ)).deriv
-    simp only [id] at h
-    rw [h]
-    ring
-  have hcomp : (fun z : EuclideanSpace ℝ ι ↦ Real.exp (-κ * ‖z - y‖ ^ 2)) =
-      (fun s : ℝ ↦ Real.exp (-κ * s)) ∘ fun z ↦ ‖z - y‖ ^ 2 := rfl
-  have hDf (u : EuclideanSpace ℝ ι) : fderiv ℝ (fun z : EuclideanSpace ℝ ι ↦ ‖z - y‖ ^ 2) x u =
-      2 * ⟪x - y, u⟫ := by
-    have h := fderiv_norm_sq_sub_comp (i := id) (a := y) (x := x) differentiableAt_id
-    simp only [id] at h
-    rw [h]
-    simp [inner_sub_left]
-  have hD2f : fderiv ℝ (fderiv ℝ fun z : EuclideanSpace ℝ ι ↦ ‖z - y‖ ^ 2) x v w =
-      2 * ⟪v, w⟫ := by
-    have hid : fderiv ℝ (id : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) =
-        fun _ ↦ ContinuousLinearMap.id ℝ _ := funext fun _ ↦ fderiv_id
-    have h := fderiv_fderiv_norm_sq_sub_comp_apply (i := id) (a := y) (x := x) contDiffAt_id v w
-    simp only [id] at h
-    rw [h, hid]
-    simp
-  rw [hcomp, fderiv_fderiv_scalar_comp_apply hφ.contDiffAt hf.contDiffAt, hdd, hd, hDf, hDf, hD2f]
-  simp only [smul_eq_mul]
-  ring
-
-omit [DecidableEq ι] in
-/-- The first derivative of the Gaussian `z ↦ exp (-κ ‖z - y‖²)`. -/
-private theorem fderiv_exp_neg_mul_norm_sub_sq_apply (κ : ℝ) (y x v : EuclideanSpace ℝ ι) :
-    fderiv ℝ (fun z : EuclideanSpace ℝ ι ↦ Real.exp (-κ * ‖z - y‖ ^ 2)) x v =
-      Real.exp (-κ * ‖x - y‖ ^ 2) * (-2 * κ * ⟪x - y, v⟫) := by
-  have h : HasFDerivAt (fun z : EuclideanSpace ℝ ι ↦ ‖z - y‖ ^ 2)
-      (2 • innerSL ℝ (x - y)) x := by
-    simpa using ((hasFDerivAt_id x).sub_const y).norm_sq
-  rw [((h.const_mul (-κ)).exp).fderiv]
-  simp only [smul_apply, smul_eq_mul, innerSL_apply_apply, nsmul_eq_mul]
-  push_cast
-  ring
-
 /-- The Gaussian barrier under `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`: with `ξ = x - y`, it is
 `exp (-κ ‖ξ‖²) (4 κ² ξᵀ A ξ - 2 κ (tr A + ⟪ξ, v⟫))`. -/
 private theorem sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq (A : Matrix ι ι ℝ)
@@ -223,19 +172,6 @@ private theorem mul_le_exp_neg_mul_sub_sq_sub {κ R t : ℝ} (hκ : 0 ≤ κ) (h
     mul_le_mul_of_nonneg_left (by nlinarith) hκ
   rw [hsplit]
   nlinarith [Real.exp_pos (-κ * R ^ 2)]
-
-omit [DecidableEq ι] in
-/-- The points `x₀ - t ν` of the inward normal from `x₀ ∈ sphere y R`, `ν = R⁻¹ (x₀ - y)`, lie at
-distance `R - t` from `y` for `t ≤ R`. -/
-private theorem norm_sub_smul_sub {y x₀ : EuclideanSpace ℝ ι} {R t : ℝ} (hR : 0 < R)
-    (hx₀ : x₀ ∈ sphere y R) (htR : t ≤ R) :
-    ‖x₀ - t • (R⁻¹ • (x₀ - y)) - y‖ = R - t := by
-  have hx₀y : ‖x₀ - y‖ = R := mem_sphere_iff_norm.mp hx₀
-  have h : x₀ - t • (R⁻¹ • (x₀ - y)) - y = ((R - t) * R⁻¹) • (x₀ - y) := by
-    rw [sub_mul, mul_inv_cancel₀ hR.ne', sub_smul, one_smul, smul_smul]
-    abel
-  rw [h, norm_smul, hx₀y, Real.norm_of_nonneg (mul_nonneg (by linarith) (inv_nonneg.mpr hR.le)),
-    mul_assoc, inv_mul_cancel₀ hR.ne', mul_one]
 
 /-- The core of Hopf's lemma, on a ball on whose closure `u` is continuous and on whose sphere
 `u ≤ u x₀`: the barrier argument on the annulus `R / 2 ≤ ‖x - y‖ ≤ R`. -/
@@ -345,30 +281,6 @@ private theorem exists_pos_mul_le_sub_of_lt_ball_of_le_sphere [Nonempty ι]
   have hgrow := mul_le_exp_neg_mul_sub_sq_sub hκ0 ht.1.le htR
   simp only [hvdef, Pi.add_apply, Pi.smul_apply, smul_eq_mul, hwt] at hv
   nlinarith [mul_le_mul_of_nonneg_left hgrow hδ.le]
-
-omit [DecidableEq ι] in
-/-- The closed ball of radius `R / 2` internally tangent at `x₀ ∈ sphere y R` to `ball y R` meets
-the sphere of that ball only at `x₀`. -/
-private theorem mem_ball_of_mem_closedBall_sub_smul {y x₀ z : EuclideanSpace ℝ ι} {R : ℝ}
-    (hR : 0 < R) (hx₀ : x₀ ∈ sphere y R)
-    (hz : z ∈ closedBall (x₀ - (R / 2) • (R⁻¹ • (x₀ - y))) (R / 2)) (hzx₀ : z ≠ x₀) :
-    z ∈ ball y R := by
-  set ν := R⁻¹ • (x₀ - y)
-  have hν : ‖ν‖ = 1 := by
-    rw [norm_smul, mem_sphere_iff_norm.mp hx₀, norm_inv, Real.norm_of_nonneg hR.le,
-      inv_mul_cancel₀ hR.ne']
-  have hx₀y : x₀ = y + R • ν := by
-    rw [smul_smul, mul_inv_cancel₀ hR.ne', one_smul, add_sub_cancel]
-  set d := z - (x₀ - (R / 2) • ν)
-  have hd : ‖d‖ ≤ R / 2 := by simpa [d, dist_eq_norm] using hz
-  have hzy : z - y = d + (R / 2) • ν := by simp only [d]; rw [hx₀y]; module
-  have hzx : z - x₀ = d - (R / 2) • ν := by simp only [d]; module
-  -- The parallelogram law: `‖z - y‖² + ‖z - x₀‖² = 2 ‖d‖² + R² / 2 ≤ R²`.
-  have hpar := parallelogram_law_with_norm ℝ d ((R / 2) • ν)
-  rw [← hzy, ← hzx, norm_smul, hν, Real.norm_of_nonneg (by positivity), mul_one] at hpar
-  have hpos : 0 < ‖z - x₀‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hzx₀)
-  rw [mem_ball, dist_eq_norm]
-  nlinarith [norm_nonneg d, norm_nonneg (z - y)]
 
 /-- **Hopf's boundary-point lemma for elliptic operators in non-divergence form.** Let `x₀` lie on
 the sphere bounding `B = ball y R`, and on `B` let `λ ‖ξ‖² ≤ ξᵀ a(x) ξ ≤ Λ ‖ξ‖²` with `0 < λ`,
