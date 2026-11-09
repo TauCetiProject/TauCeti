@@ -480,7 +480,7 @@ theorem baseChangePointsMulEquiv_mapPointsFunctor_rootSubgroupToBaseChangeCoordi
       (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
       (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
       (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
-      (latticeBasis n) (basisWeight n) A (definingIdeal_def n) k B q
+      (latticeBasis n) (basisWeight n) A k B q
   rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   unfold baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
   exact h

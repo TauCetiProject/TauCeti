@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Defs
 public import Mathlib.Algebra.Order.Pi
+public import TauCeti.Algebra.Group.AddSubgroup.NonnegativeCoset
 public import TauCeti.GroupTheory.Perm.Basic
 public import TauCeti.LowDimTopology.Heegaard.Generator
 import Mathlib.Tactic.Abel
@@ -386,21 +387,8 @@ def WeaklyAdmissible : Prop :=
 
 /-- A diagram is weakly admissible exactly when its only nonnegative periodic domain is zero. -/
 theorem weaklyAdmissible_iff :
-    H.WeaklyAdmissible ↔ ∀ P ∈ H.periodicDomains, 0 ≤ P → P = 0 := by
-  constructor
-  · intro h P hP hnonneg
-    by_contra hne
-    obtain ⟨r, hr⟩ := (h P hP hne).2
-    exact (hnonneg r).not_gt hr
-  · intro h P hP hne
-    refine ⟨?_, ?_⟩
-    · by_contra hpos
-      push Not at hpos
-      refine hne (neg_eq_zero.mp (h (-P) (neg_mem hP) fun r => ?_))
-      simpa using hpos r
-    · by_contra hneg
-      push Not at hneg
-      exact hne (h P hP hneg)
+    H.WeaklyAdmissible ↔ ∀ P ∈ H.periodicDomains, 0 ≤ P → P = 0 :=
+  H.periodicDomains.forall_exists_pos_and_neg_iff_forall_nonneg_eq_zero
 
 end Domain
 
