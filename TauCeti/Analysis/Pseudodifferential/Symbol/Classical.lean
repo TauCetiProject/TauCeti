@@ -41,6 +41,10 @@ The homogeneous terms enter the expansion through their cut-off terms
 * `TauCeti.ClassicalSymbol.isSmoothing_toSymbol_iff`: a classical symbol is smoothing exactly when
   all of its homogeneous terms vanish; `TauCeti.ClassicalSymbol.ofIsSmoothing` makes every
   smoothing symbol classical;
+* `TauCeti.ClassicalSymbol.termsLinearMap`: the homogeneous terms as a linear map, whose kernel
+  consists of the smoothing classical symbols (`TauCeti.ClassicalSymbol.mem_ker_termsLinearMap`);
+  `TauCeti.ClassicalSymbol.isSmoothing_toSymbol_sub_iff`: two classical symbols differ by a
+  smoothing symbol exactly when their homogeneous terms agree;
 * `TauCeti.ClassicalSymbol.ofHomogeneous`: the classical symbol `χ(ξ) a(x, ξ)` of a single
   homogeneous term, whose principal symbol is `a`.
 
@@ -387,6 +391,38 @@ theorem principal_surjective :
   fun a ↦ ⟨ofHomogeneous default a, principal_ofHomogeneous default a⟩
 
 end PrincipalKernel
+
+/-! ### The homogeneous terms as a linear map -/
+
+section Terms
+
+variable (n V W m) in
+/-- The homogeneous terms `(a_{m-j})ⱼ` of a classical symbol of order `m`, as a linear map to the
+sequences of homogeneous symbols of degrees `m - j`. -/
+def termsLinearMap : ClassicalSymbol n V W m →ₗ[ℂ]
+    ∀ j : ℕ, HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m - j) where
+  toFun a := a.term
+  map_add' a b := funext fun j => term_add a b j
+  map_smul' c a := funext fun j => term_smul a c j
+
+@[simp]
+theorem termsLinearMap_apply (a : ClassicalSymbol n V W m) : termsLinearMap n V W m a = a.term :=
+  (rfl)
+
+/-- The classical symbols with vanishing homogeneous terms are exactly the smoothing ones. -/
+theorem mem_ker_termsLinearMap {a : ClassicalSymbol n V W m} :
+    a ∈ LinearMap.ker (termsLinearMap n V W m) ↔ a.toSymbol.IsSmoothing := by
+  simp only [LinearMap.mem_ker, termsLinearMap_apply, isSmoothing_toSymbol_iff, funext_iff,
+    Pi.zero_apply]
+
+/-- **Uniqueness modulo smoothing.** Two classical symbols of order `m` differ by a smoothing
+symbol exactly when they have the same homogeneous terms. -/
+theorem isSmoothing_toSymbol_sub_iff {a b : ClassicalSymbol n V W m} :
+    (a.toSymbol - b.toSymbol).IsSmoothing ↔ a.term = b.term := by
+  rw [← toSymbol_sub, isSmoothing_toSymbol_iff, funext_iff]
+  simp [sub_eq_zero]
+
+end Terms
 
 end ClassicalSymbol
 
