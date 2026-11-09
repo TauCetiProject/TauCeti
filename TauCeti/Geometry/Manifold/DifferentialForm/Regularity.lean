@@ -575,6 +575,12 @@ theorem ofFunction_apply_zero [IsManifold I 1 M] (f : C^∞⟮I, M; 𝓘(ℝ, F)
     (fun y ↦ (ofFunction f).1 y 0) = f :=
   funext fun y ↦ by rw [coe_ofFunction, RoughForm.ofFunction_apply]
 
+/-- The exterior derivative of a smooth form is a smooth section. -/
+theorem contMDiff_mextDeriv [IsManifold I 2 M] (φ : SmoothForm I M F k) :
+    ContMDiff I (I.prod 𝓘(ℝ, E [⋀^Fin (k + 1)]→L[ℝ] F)) ∞
+      (fun x ↦ TotalSpace.mk' (E [⋀^Fin (k + 1)]→L[ℝ] F) x (mextDeriv φ.1 x)) :=
+  (mextDerivₗ I k φ).contMDiff
+
 /-- The exterior derivative commutes with transport across an equality of degrees. -/
 theorem mextDerivₗ_cast [IsManifold I 2 M]
     {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
