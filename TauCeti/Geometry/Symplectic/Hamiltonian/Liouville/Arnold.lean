@@ -144,14 +144,22 @@ theorem isLocalDiffeomorphAt_hamiltonianFlowAction_section
   let L : (ι → ℝ) × (ι → ℝ) →L[ℝ] E := mfderiv (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I P (0, F x)
   have hL (a b : ι → ℝ) :
       L (a, b) = ∑ i, a i • X i + S b := by
-    have hA : (mfderiv 𝓘(ℝ, ι → ℝ) I (fun z ↦ P (z, F x)) 0 : (ι → ℝ) →L[ℝ] E) a =
-        ∑ i, a i • X i :=
-      hσ.mfderiv_hamiltonianFlowAction_apply hF hcomm hc (s (F x)) 0 a
-    have hB : (mfderiv 𝓘(ℝ, ι → ℝ) I (fun z ↦ P (0, z)) (F x) : (ι → ℝ) →L[ℝ] E) b = S b :=
-      congrArg (fun g : (ι → ℝ) → M ↦ (mfderiv 𝓘(ℝ, ι → ℝ) I g (F x) : (ι → ℝ) →L[ℝ] E) b)
-        (funext fun z ↦ hσ.hamiltonianFlowAction_zero_apply hF hcomm hc (s z))
-    rw [← hA, ← hB]
-    exact mfderiv_prod_eq_add_apply (v := ((a, b) : (ι → ℝ) × (ι → ℝ))) hPd
+    -- `P` moves `c ↦ s c.2` by `Prod.fst`, and the action of `0` is the identity.
+    have hB : mfderiv (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I (fun q : (ι → ℝ) × (ι → ℝ) ↦ s q.2)
+        (0, F x) (a, b) = S b := by
+      have h := hsd.hasMFDerivAt.comp (0, F x) (hasMFDerivAt_snd (I := 𝓘(ℝ, ι → ℝ))
+        (I' := 𝓘(ℝ, ι → ℝ)) ((0 : ι → ℝ), F x))
+      exact congrArg (fun L ↦ L (a, b)) h.mfderiv
+    have hφ (v : E) :
+        mfderiv I I (hσ.hamiltonianFlowAction hF hcomm hc 0).toMul (s (F x)) v = v := by
+      rw [show ((hσ.hamiltonianFlowAction hF hcomm hc 0).toMul : M → M) = id from
+        funext (hσ.hamiltonianFlowAction_zero_apply hF hcomm hc), mfderiv_id]
+      rfl
+    refine (hσ.mfderiv_hamiltonianFlowAction_comp hF hcomm hc (h := Prod.fst)
+      (g := fun q ↦ s q.2) mdifferentiableAt_fst (hsd.comp (0, F x) mdifferentiableAt_snd)
+      (a, b)).trans ?_
+    rw [mfderiv_fst, hB, hφ]
+    rfl
   -- `L` is injective: `dF` recovers `b` from `L (a, b)`, and then `a = 0` by independence.
   have hinj : Injective L := by
     refine (injective_iff_map_eq_zero L).2 fun ⟨a, b⟩ h ↦ ?_
