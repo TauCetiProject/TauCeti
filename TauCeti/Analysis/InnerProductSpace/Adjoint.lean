@@ -12,13 +12,17 @@ public import TauCeti.Analysis.Normed.Operator.Basic
 /-!
 # Adjoints of linear maps
 
+An endomorphism and its adjoint have the same real quadratic form
+(`ContinuousLinearMap.re_inner_star_apply_self`).
 For bounded operators between complete inner product spaces, the adjoint takes values in the
 orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`).
 An operator on a Hilbert space is invertible exactly when its adjoint is
 (`ContinuousLinearMap.isUnit_adjoint_iff`), and inversion commutes with the adjoint
 (`ContinuousLinearMap.ringInverse_adjoint`). An operator on a Hilbert space that is bounded below
 by `M⁻¹` and has injective adjoint is invertible with `‖T⁻¹‖ ≤ M`
-(`ContinuousLinearMap.isUnit_and_norm_ringInverse_le_of_forall_norm_le`).
+(`ContinuousLinearMap.isUnit_and_norm_ringInverse_le_of_forall_norm_le`). If an invertible
+operator satisfies `‖x‖ ≤ M ‖T x‖`, every vector is `T† z` with `‖z‖ ≤ M ‖y‖`
+(`ContinuousLinearMap.exists_adjoint_apply_eq_and_norm_le`).
 For a continuous linear equivalence between complete inner product spaces, the adjoint is
 bijective (`ContinuousLinearEquiv.adjoint_bijective`).
 Its adjoint gives an equivalence in the reverse direction (`ContinuousLinearEquiv.adjointEquiv`),
@@ -75,6 +79,12 @@ namespace ContinuousLinearMap
 
 open scoped InnerProduct
 
+/-- An operator and its adjoint have the same real quadratic form. -/
+@[simp] theorem re_inner_star_apply_self [CompleteSpace E] (T : E →L[𝕜] E) (x : E) :
+    RCLike.re (inner 𝕜 (star T x) x) = RCLike.re (inner 𝕜 (T x) x) := by
+  rw [star_eq_adjoint, adjoint_inner_left]
+  exact inner_re_symm x (T x)
+
 /-- The adjoint of a bounded operator takes values in the orthogonal complement of its kernel. -/
 theorem adjoint_apply_mem_orthogonal_ker [CompleteSpace E] [CompleteSpace F]
     (u : E →L[𝕜] F) (y : F) : (u†) y ∈ u.kerᗮ := by
@@ -109,6 +119,16 @@ theorem isUnit_adjoint_iff {A : E →L[𝕜] E} : IsUnit (adjoint A) ↔ IsUnit 
 theorem ringInverse_adjoint (A : E →L[𝕜] E) :
     Ring.inverse (adjoint A) = adjoint (Ring.inverse A) := by
   simpa only [star_eq_adjoint] using Ring.inverse_star A
+
+/-- If an invertible operator `T` on a Hilbert space is bounded below, `‖x‖ ≤ M * ‖T x‖`, then
+every vector `y` is `T† z` for some `z` with `‖z‖ ≤ M * ‖y‖`, namely `z = (T⁻¹)† y`. -/
+theorem exists_adjoint_apply_eq_and_norm_le {T : E →L[𝕜] E} (hT : IsUnit T) {M : ℝ}
+    (hM : 0 ≤ M) (h : ∀ x, ‖x‖ ≤ M * ‖T x‖) (y : E) :
+    ∃ z, adjoint T z = y ∧ ‖z‖ ≤ M * ‖y‖ := by
+  refine ⟨adjoint (Ring.inverse T) y, ?_, le_of_opNorm_le _ ?_ y⟩
+  · rw [← ringInverse_adjoint, apply_ringInverse_apply (isUnit_adjoint_iff.2 hT)]
+  · rw [LinearIsometryEquiv.norm_map]
+    exact norm_ringInverse_le_of_forall_norm_le hT hM h
 
 end Inverse
 
@@ -349,10 +369,12 @@ end WithLp
 
 namespace LinearMap
 
+omit [FiniteDimensional 𝕜 F] in
 /-- The orthogonal complement of the kernel of a surjective linear map has the dimension of the
 codomain. -/
 theorem finrank_orthogonal_ker_of_surjective (f : E →ₗ[𝕜] F) (hf : Function.Surjective f) :
     Module.finrank 𝕜 (ker f)ᗮ = Module.finrank 𝕜 F := by
+  have := Module.Finite.of_surjective f hf
   rw [orthogonal_ker, finrank_range_adjoint, range_eq_top.mpr hf, finrank_top]
 
 /-- The determinant of the adjoint of an endomorphism is the conjugate of its determinant. -/
