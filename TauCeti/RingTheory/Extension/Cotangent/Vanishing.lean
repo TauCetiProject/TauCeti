@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Extension.Cotangent.Basic
 public import Mathlib.RingTheory.Kaehler.Basic
-import Mathlib.RingTheory.Ideal.IdempotentFG
 import Mathlib.RingTheory.TensorProduct.Free
 
 /-!

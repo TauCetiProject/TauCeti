@@ -176,7 +176,7 @@ namespace BialgHom
 kernel the augmentation ideal of `H`. -/
 theorem ker_algebraMap_residueField_eq_augmentationIdeal {k H K : Type*} [CommRing k]
     [CommRing H] [CommRing K] [Bialgebra k H] [Bialgebra k K] [Algebra H K]
-    [(TauCeti.Bialgebra.AugmentationIdeal k K).IsMaximal] (f : H →ₐc[k] K)
+    [(TauCeti.Bialgebra.AugmentationIdeal k K).IsPrime] (f : H →ₐc[k] K)
     (hf : algebraMap H K = f.toAlgHom.toRingHom) :
     RingHom.ker (algebraMap H (TauCeti.Bialgebra.AugmentationIdeal k K).ResidueField) =
       TauCeti.Bialgebra.AugmentationIdeal k H := by
