@@ -37,10 +37,11 @@ fixes the area convention. Two caps of a loop differ by a sphere, and every sphe
 zero because the symplectic form of a vector space is exact, `ω = dλ`. So the actions do not
 depend on the caps, and the spherical correction `ω(A)` of a product coefficient vanishes.
 
-Nothing is assumed about `K` below the height `T₀`. The identity therefore covers the pair-of-pants
-perturbation `TauCeti.Floer.pairOfPantsPerturbation`, the family obtained from it by inserting
-continuation necks on the ends, and its sums with compactly supported variations of the Hamiltonian
-term in the core of `S`, such as the variations used to achieve transversality.
+Below the height `T₀`, `K` is only required to be `C¹`; beyond `T₀` it must equal `H_q(t) dt`.
+The identity therefore covers the pair-of-pants perturbation
+`TauCeti.Floer.pairOfPantsPerturbation`, the family obtained from it by inserting continuation
+necks on the ends, and its sums with compactly supported variations of the Hamiltonian term in the
+core of `S`, such as the variations used to achieve transversality.
 
 ## Main results
 
@@ -646,6 +647,21 @@ private theorem truncation_le_truncation {T T' : ℝ} (h : T ≤ T') (z : ℝ ×
   · exact Finset.prod_le_prod₀ (fun q _ ↦ sub_nonneg.2 (smoothTransition.le_one _))
       fun q _ ↦ sub_le_sub_left (smoothTransition.monotone (by linarith)) 1
 
+/-- As the height tends to infinity, the integrals of an integrable function against the cutoffs
+tend to its integral, by dominated convergence. -/
+private theorem tendsto_integral_truncation_mul {f : ℝ × ℝ → ℝ} (hf : Integrable f) :
+    Tendsto (fun T ↦ ∫ z, truncation T z * f z) atTop (𝓝 (∫ z, f z)) := by
+  refine tendsto_integral_filter_of_dominated_convergence (fun z ↦ ‖f z‖)
+    (Eventually.of_forall fun T ↦
+      (contDiff_truncation T).continuous.aestronglyMeasurable.mul hf.aestronglyMeasurable)
+    (Eventually.of_forall fun T ↦ ae_of_all _ fun z ↦ ?_) hf.norm ?_
+  · rw [norm_mul]
+    exact mul_le_of_le_one_left (norm_nonneg _) (by
+      rw [Real.norm_of_nonneg (truncation_mem_Icc T z).1]
+      exact (truncation_mem_Icc T z).2)
+  · filter_upwards [ae_mem_thricePuncturedSphereReal] with z hz
+    simpa using (tendsto_truncation hz).mul_const (f z)
+
 /-- The energy density of a `C²` map is continuous on `S` for data which is `C¹` there. -/
 private theorem continuousOn_floerEnergyDensity_thricePuncturedSphereReal (ω : SymplecticForm V)
     (hK : ∀ z ∈ thricePuncturedSphereReal, ∀ x v,
@@ -690,9 +706,9 @@ density and curvature term `R_K(u)` are integrable. Suppose that on each end `q`
 loops `t ↦ u(φ_q(s, t))` tend to `A_q` as `±s → ∞`. Then the energy of `u` is
 `E = A₀ + A₁ - A_∞ - ∫ R_K(u)`.
 
-The datum may be arbitrary on the compact part of `S` below the height `T₀`: this covers the
-pair-of-pants perturbation, its family with continuation necks, and its sums with compactly
-supported variations. -/
+On the compact part of `S` below the height `T₀` the datum is only required to be `C¹`: this
+covers the pair-of-pants perturbation, its family with continuation necks, and its sums with
+compactly supported variations. -/
 theorem integral_floerEnergyDensity_eq_sum_hamiltonianAction_of_eq_smul_endAngularForm
     (ω : SymplecticForm V)
     (hK : ∀ z ∈ thricePuncturedSphereReal, ∀ x v,
@@ -724,17 +740,7 @@ theorem integral_floerEnergyDensity_eq_sum_hamiltonianAction_of_eq_smul_endAngul
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)
   have hf : Integrable f := hE.add hR
   -- As `T → ∞`, the truncated energies tend to the full integral by dominated convergence.
-  have hlhs : Tendsto (fun T ↦ ∫ z, truncation T z * f z) atTop (𝓝 (∫ z, f z)) := by
-    refine tendsto_integral_filter_of_dominated_convergence (fun z ↦ ‖f z‖)
-      (Eventually.of_forall fun T ↦
-        (contDiff_truncation T).continuous.aestronglyMeasurable.mul hf.aestronglyMeasurable)
-      (Eventually.of_forall fun T ↦ ae_of_all _ fun z ↦ ?_) hf.norm ?_
-    · rw [norm_mul]
-      exact mul_le_of_le_one_left (norm_nonneg _) (by
-        rw [Real.norm_of_nonneg (truncation_mem_Icc T z).1]
-        exact (truncation_mem_Icc T z).2)
-    · filter_upwards [ae_mem_thricePuncturedSphereReal] with z hz
-      simpa using (tendsto_truncation hz).mul_const (f z)
+  have hlhs := tendsto_integral_truncation_mul hf
   have heq : ∫ z, f z = ∑ q, q.endSign * A q :=
     tendsto_nhds_unique (hlhs.congr' (eventually_ge_atTop (max 2 T₀) |>.mono fun T hT ↦
       integral_truncation_mul_eq_sum ω hK hKH hH hHc hu (le_of_max_le_left hT)
@@ -840,15 +846,8 @@ theorem lintegral_floerEnergyDensity_eq_of_eq_smul_endAngularForm (ω : Symplect
       ← integral_add (hχe n) (hχr n)]
     simp only [e, r, mul_add]
   -- The weighted curvature integrals converge by dominated convergence.
-  have hrlim : Tendsto (fun n ↦ ∫ z, truncation (T n) z * r z) atTop (𝓝 (∫ z, r z)) := by
-    refine tendsto_integral_of_dominated_convergence (fun z ↦ ‖r z‖)
-      (fun n ↦ (hχr n).aestronglyMeasurable) hR.norm (fun n ↦ ae_of_all _ fun z ↦ ?_) ?_
-    · rw [norm_mul]
-      exact mul_le_of_le_one_left (norm_nonneg _) (by
-        rw [Real.norm_of_nonneg (truncation_mem_Icc _ z).1]
-        exact (truncation_mem_Icc _ z).2)
-    · filter_upwards [ae_mem_thricePuncturedSphereReal] with z hz
-      simpa using ((tendsto_truncation hz).comp hT).mul_const (r z)
+  have hrlim : Tendsto (fun n ↦ ∫ z, truncation (T n) z * r z) atTop (𝓝 (∫ z, r z)) :=
+    (tendsto_integral_truncation_mul hR).comp hT
   -- The weighted energies increase to the energy by monotone convergence.
   have helim : Tendsto (fun n ↦ ∫⁻ z, ENNReal.ofReal (truncation (T n) z * e z)) atTop
       (𝓝 (∫⁻ z, ENNReal.ofReal (e z))) := by

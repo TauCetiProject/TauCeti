@@ -139,14 +139,12 @@ theorem lintegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_le (ω 
     hfloer (integrable_hamiltonianCurvature_pairOfPantsContinuationPerturbation ω hG hH hGs hHs hGB
       hHB hD L hu.continuousOn) ha]
   refine ENNReal.ofReal_le_ofReal (sub_le_iff_le_add.2 ?_)
-  have h := neg_abs_le (∫ z, ω.hamiltonianCurvature
+  linarith [neg_abs_le (∫ z, ω.hamiltonianCurvature
     (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
     (fun z x ↦
       pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
-    z (u z))
-  rw [← setIntegral_univ] at h ⊢
-  linarith [abs_setIntegral_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le ω hG hH hGs
-    hHs hGB hHB hD L u univ]
+    z (u z)), abs_integral_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le ω hG hH hGs
+    hHs hGB hHB hD L u]
 
 /-- **The action bound for the pair of pants with continuation necks.** Under the hypotheses of
 `SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_le`, the limiting
@@ -193,10 +191,9 @@ theorem le_add_add_sum_of_tendsto_hamiltonianAction_pairOfPantsContinuationPertu
       (fun q ↦ (hHs q).continuous) hu he hRi ha) hRi ha
   have hpos := integral_nonneg_of_ae (μ := volume) (by
     filter_upwards [ae_mem_thricePuncturedSphereReal] with z hz using he z hz)
-  have hR : |R| ≤ ∑ q, (B q + D q) := by
-    simpa only [setIntegral_univ] using
-      abs_setIntegral_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le ω hG hH hGs hHs
-        hGB hHB hD L u univ
+  have hR : |R| ≤ ∑ q, (B q + D q) :=
+    abs_integral_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le ω hG hH hGs hHs hGB hHB
+      hD L u
   rw [hEq] at hpos
   simp only [sum_univ, endSign_zero, endSign_one, endSign_inf, one_mul, neg_one_mul] at hpos
   linarith [neg_abs_le R]

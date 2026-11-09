@@ -69,7 +69,8 @@ its topological part plus that constant.
   `TauCeti.Floer.pairOfPantsContinuationPerturbation_eq_smul_endAngularForm_of_le`: beyond the
   single height `2 + ∑ q, |L_q|`, past every neck, it is `H_q(t) dt` on each end.
 * `SymplecticForm.lintegral_enorm_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le`,
-  `SymplecticForm.abs_setIntegral_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le`:
+  `SymplecticForm.abs_setIntegral_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le`,
+  `SymplecticForm.abs_integral_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le`:
   the integrated curvature is at most `∑ q, (B_q + D_q)`, uniformly in the neck positions;
   `SymplecticForm.integrable_hamiltonianCurvature_pairOfPantsContinuationPerturbation`: along a
   map continuous on `S` it is integrable.
@@ -517,6 +518,24 @@ theorem abs_setIntegral_hamiltonianCurvature_pairOfPantsContinuationPerturbation
   exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
     (lintegral_enorm_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le ω hG hH hGs hHs
       hGB hHB hD L u))
+
+/-- The integral over the plane of the curvature of the pair-of-pants perturbation with
+continuation necks along any map has absolute value at most `∑ q, (B_q + D_q)` when
+`|G_q|, |H_q| ≤ B_q` and `|H_q - G_q| ≤ D_q`, for all neck positions. -/
+theorem abs_integral_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le
+    (ω : SymplecticForm V) (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
+    (hGs : ∀ q, ContDiff ℝ 1 (uncurry (G q))) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+    {B D : Puncture → ℝ} (hGB : ∀ q t x, |G q t x| ≤ B q) (hHB : ∀ q t x, |H q t x| ≤ B q)
+    (hD : ∀ q t x, |H q t x - G q t x| ≤ D q) (L : Puncture → ℝ) (u : ℝ × ℝ → V) :
+    |∫ z, ω.hamiltonianCurvature
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)| ≤ ∑ q, (B q + D q) := by
+  simpa only [setIntegral_univ] using
+    abs_setIntegral_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le ω hG hH hGs hHs hGB
+      hHB hD L u univ
 
 end SymplecticForm
 
