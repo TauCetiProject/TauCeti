@@ -719,8 +719,7 @@ theorem hamiltonianAction_le_add_add_sum_of_exchangePerturbation (ω : Symplecti
   have h := hamiltonianAction_le_add_add_sub_sum_of_exchangePerturbation ω hH hHs
     (h := fun q _ ↦ -(q.endSign * B q)) (fun _ ↦ intervalIntegrable_const)
     (endSign_mul_neg_endSign_mul_le hB) hc₀ hc₁ hu hR hJ hfloer
-  simp_rw [intervalIntegral.integral_const, sub_zero, one_smul] at h
-  rwa [sum_endSign_mul_neg_endSign_mul, sub_neg_eq_add] at h
+  rwa [sum_endSign_mul_integral_neg_endSign_mul, sub_neg_eq_add] at h
 
 /-- **The one-sided action bound for the limiting actions along the input-exchange family.**
 Let `u` be a map which is `C²` on `S = ℂ ∖ {0, 1}` and solves the Floer equation for the member
@@ -794,8 +793,7 @@ theorem le_add_add_sum_of_tendsto_hamiltonianAction_exchangePerturbation
   have h := le_add_add_sub_sum_of_tendsto_hamiltonianAction_exchangePerturbation ω hH hHs
     (h := fun q _ ↦ -(q.endSign * B q)) (fun _ ↦ intervalIntegrable_const)
     (endSign_mul_neg_endSign_mul_le hB) hc₀ hc₁ hu hJ hfloer ha₀ ha₁ ha
-  simp_rw [intervalIntegral.integral_const, sub_zero, one_smul] at h
-  rwa [sum_endSign_mul_neg_endSign_mul, sub_neg_eq_add] at h
+  rwa [sum_endSign_mul_integral_neg_endSign_mul, sub_neg_eq_add] at h
 
 end SymplecticForm
 
