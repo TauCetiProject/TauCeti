@@ -35,8 +35,8 @@ is invertible on both sides.
 
 * `Matrix.ext_fin_succ`: matrices indexed by `Fin (m + 1)` and `Fin (n + 1)` are equal when their
   four blocks agree.
-* `Matrix.cornerBlockSucc_mul`, `Matrix.star_cornerBlockSucc`: `diag(c, B)` is multiplicative and
-  commutes with the star operation, blockwise.
+* `Matrix.cornerBlockSucc_mul_cornerBlockSucc`, `Matrix.star_cornerBlockSucc`: `diag(c, B)` is
+  multiplicative and commutes with the star operation, blockwise.
 * `Matrix.cornerBlockSucc_mem_unitary_iff`: `diag(c, B)` is unitary exactly when `c` and `B` are.
 * `Matrix.coe_unitaryProdBlockSucc`: the embedding sends `(c, B)` to `cornerBlockSucc c B`.
 * `Matrix.unitaryProdBlockSucc_injective`: the embedding is injective.
@@ -110,7 +110,7 @@ theorem cornerBlockSucc_inj {c c' : α} {B B' : Matrix (Fin m) (Fin m) α} :
 
 /-- Block-diagonal matrices `diag(c, B)` multiply blockwise. -/
 @[simp]
-theorem cornerBlockSucc_mul (c c' : α) (B B' : Matrix (Fin m) (Fin m) α) :
+theorem cornerBlockSucc_mul_cornerBlockSucc (c c' : α) (B B' : Matrix (Fin m) (Fin m) α) :
     cornerBlockSucc c B * cornerBlockSucc c' B' = cornerBlockSucc (c * c') (B * B') := by
   refine ext_fin_succ ?_ (fun j ↦ ?_) (fun i ↦ ?_) (fun i j ↦ ?_) <;>
     simp [Matrix.mul_apply, Fin.sum_univ_succ]
@@ -135,8 +135,8 @@ theorem star_cornerBlockSucc (c : α) (B : Matrix (Fin m) (Fin m) α) :
 theorem cornerBlockSucc_mem_unitary_iff {c : α} {B : Matrix (Fin m) (Fin m) α} :
     cornerBlockSucc c B ∈ unitary (Matrix (Fin (m + 1)) (Fin (m + 1)) α) ↔
       c ∈ unitary α ∧ B ∈ unitary (Matrix (Fin m) (Fin m) α) := by
-  simp only [Unitary.mem_iff, star_cornerBlockSucc, cornerBlockSucc_mul, ← cornerBlockSucc_one,
-    cornerBlockSucc_inj]
+  simp only [Unitary.mem_iff, star_cornerBlockSucc, cornerBlockSucc_mul_cornerBlockSucc,
+    ← cornerBlockSucc_one, cornerBlockSucc_inj]
   tauto
 
 variable (α m) in
@@ -149,7 +149,7 @@ def unitaryProdBlockSucc :
       unitary (Matrix (Fin (m + 1)) (Fin (m + 1)) α) where
   toFun cB := ⟨cornerBlockSucc cB.1.1 cB.2.1, cornerBlockSucc_mem_unitary_iff.2 ⟨cB.1.2, cB.2.2⟩⟩
   map_one' := Subtype.ext cornerBlockSucc_one
-  map_mul' _ _ := Subtype.ext (cornerBlockSucc_mul _ _ _ _).symm
+  map_mul' _ _ := Subtype.ext (cornerBlockSucc_mul_cornerBlockSucc _ _ _ _).symm
 
 /-- The block-diagonal embedding sends `(c, B)` to the matrix `diag(c, B)`. -/
 theorem coe_unitaryProdBlockSucc (cB : unitary α × unitary (Matrix (Fin m) (Fin m) α)) :
