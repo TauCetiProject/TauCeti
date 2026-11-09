@@ -206,9 +206,9 @@ end Field
 
 section Int
 
-variable {N : Type*} [AddCommGroup N] [Module.Free ℤ N] [Module.Finite ℤ N]
+variable {N : Type*} [AddCommGroup N] [Module.Free ℤ N]
 
-/-- **Tucker's theorem over the integers.** For a finite family of vectors `a j` in a finite free
+/-- **Tucker's theorem over the integers.** For a finite family of vectors `a j` in a free
 `ℤ`-module there are a linear relation `∑ j, x j • a j = 0` with natural-number coefficients and an
 integer-valued additive functional `m` that is nonnegative on every `a j`, such that
 `x j + m (a j) > 0` for every `j`. -/
@@ -218,9 +218,16 @@ theorem exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos [Fintype ι]
       ∀ j, 0 < (x j : ℤ) + m (a j) := by
   classical
   let b := Module.Free.chooseBasis ℤ N
-  -- Rational coordinates of lattice vectors with respect to an integral basis.
-  let e : N →+ (Module.Free.ChooseBasisIndex ℤ N → ℚ) :=
-    (AddMonoidHom.compLeft (Int.castAddHom ℚ) _).comp b.equivFun.toAddMonoidHom
+  -- A finite set of basis indices carrying the coordinates of all the vectors `a j`.
+  let S : Finset (Module.Free.ChooseBasisIndex ℤ N) :=
+    Finset.univ.biUnion fun j ↦ (b.repr (a j)).support
+  have hS : ∀ j k, k ∉ S → b.repr (a j) k = 0 := fun j k hk ↦ by
+    by_contra h
+    exact hk (Finset.mem_biUnion.2 ⟨j, Finset.mem_univ _, Finsupp.mem_support_iff.2 h⟩)
+  -- Rational coordinates (on `S`) of lattice vectors with respect to an integral basis.
+  let e : N →+ (S → ℚ) := AddMonoidHom.mk' (fun n k ↦ (b.repr n k.1 : ℚ)) fun n n' ↦ by
+    ext k
+    simp
   obtain ⟨X, Y, hX, hsum, hY, hpos⟩ :=
     exists_nonneg_sum_smul_eq_zero_and_forall_coeff_add_dual_pos (K := ℚ) fun j ↦ e (a j)
   -- Clear the denominators of the relation and of the values of the functional on the
@@ -238,26 +245,26 @@ theorem exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos [Fintype ι]
     have : (0 : ℚ) ≤ z j := by rw [hz]; exact mul_nonneg hD'.le (hX j)
     rw [← hz]
     exact_mod_cast Int.toNat_of_nonneg (by exact_mod_cast this)
-  let m : N →+ ℤ := (∑ k, w k • b.coord k).toAddMonoidHom
+  let m : N →+ ℤ := (∑ k : S, w k • b.coord k.1).toAddMonoidHom
   have hm : ∀ n, (m n : ℚ) = E * Y (e n) := fun n ↦ by
     conv_rhs => rw [pi_eq_sum_univ' (e n)]
     simp only [m, LinearMap.toAddMonoidHom_coe, LinearMap.sum_apply, LinearMap.smul_apply,
       Int.cast_sum, Int.cast_mul, map_sum, map_smul, smul_eq_mul, Finset.mul_sum]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
     rw [hw k]
-    simp only [e, AddMonoidHom.comp_apply, AddMonoidHom.compLeft_apply,
-      Function.comp_apply, LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_coe,
-      Module.Basis.equivFun_apply, Int.coe_castAddHom, Module.Basis.coord_apply]
+    simp only [e, AddMonoidHom.mk'_apply, Module.Basis.coord_apply]
     ring
   refine ⟨x, m, ?_, fun j ↦ ?_, fun j ↦ ?_⟩
   · apply b.repr.injective
     ext k
-    have h := congrFun hsum k
-    simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply] at h
-    have : ((b.repr (∑ j, x j • a j) k : ℤ) : ℚ) = 0 := by
-      rw [← mul_zero (D : ℚ), ← h]
-      simp [Finset.mul_sum, e, ← mul_assoc, hx]
-    simpa using (by exact_mod_cast this : b.repr (∑ j, x j • a j) k = 0)
+    by_cases hk : k ∈ S
+    · have h := congrFun hsum ⟨k, hk⟩
+      simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply] at h
+      have : ((b.repr (∑ j, x j • a j) k : ℤ) : ℚ) = 0 := by
+        rw [← mul_zero (D : ℚ), ← h]
+        simp [Finset.mul_sum, e, ← mul_assoc, hx]
+      simpa using (by exact_mod_cast this : b.repr (∑ j, x j • a j) k = 0)
+    · simp [hS _ _ hk]
   · have : (0 : ℚ) ≤ m (a j) := by
       rw [hm]
       exact mul_nonneg hE'.le (hY j)
