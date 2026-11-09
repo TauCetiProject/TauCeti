@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Sphere.Gradient
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Immersion
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -70,14 +71,6 @@ private theorem contMDiff_height (a : E) :
     ContMDiff (𝓡 n) 𝓘(ℝ) ω fun q : sphere (0 : E) 1 ↦ inner ℝ a (q : E) :=
   (innerSL ℝ a).contDiff.contMDiff.comp contMDiff_coe_sphere
 
-private theorem mvfderiv_height (a : E) (p : sphere (0 : E) 1) (v : TangentSpace (𝓡 n) p) :
-    mvfderiv (𝓡 n) (fun q : sphere (0 : E) 1 ↦ inner ℝ a (q : E)) p v =
-      inner ℝ a (mvfderiv (𝓡 n) ι p v) := by
-  have h : (fun q : sphere (0 : E) 1 ↦ inner ℝ a (q : E)) = innerSL ℝ a ∘ ι :=
-    funext fun q ↦ (innerSL_apply_apply ℝ a (q : E)).symm
-  rw [h, (innerSL ℝ a).mvfderiv_comp_apply
-    ((contMDiff_coe_sphere (m := 1) p).mdifferentiableAt one_ne_zero), innerSL_apply_apply]
-
 variable (n) in
 /-- The gradient of the height function `p ↦ ⟪a, p⟫`. -/
 private def field (a : E) (p : sphere (0 : E) 1) : TangentSpace (𝓡 n) p :=
@@ -96,33 +89,14 @@ private theorem mdifferentiableAt_field (a : E) (p : sphere (0 : E) 1) :
 /-- The height function differentiates along `v` as the inner product with its gradient. -/
 private theorem inner_mvfderiv_coe (a : E) (p : sphere (0 : E) 1) (v : TangentSpace (𝓡 n) p) :
     inner ℝ a (mvfderiv (𝓡 n) ι p v) = inner ℝ (field n a p) v := by
-  rw [field, Manifold.inner_mgradient, mvfderiv_height]
-
-/-- In ambient coordinates, the gradient of `p ↦ ⟪a, p⟫` is the tangential part of `a`. -/
-private theorem mvfderiv_coe_field (a : E) (p : sphere (0 : E) 1) :
-    mvfderiv (𝓡 n) ι p (field n a p) = a - inner ℝ a (p : E) • (p : E) := by
-  have hp : inner ℝ (p : E) (p : E) = 1 := by
-    rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere p, one_pow]
-  have ht : a - inner ℝ a (p : E) • (p : E) ∈ (ℝ ∙ (p : E))ᗮ := by
-    rw [Submodule.mem_orthogonal_singleton_iff_inner_right, inner_sub_right,
-      real_inner_smul_right, hp, real_inner_comm]
-    ring
-  let u : TangentSpace (𝓡 n) p := (sphereTangentEquiv p).symm ⟨_, ht⟩
-  have hu : mvfderiv (𝓡 n) ι p u = a - inner ℝ a (p : E) • (p : E) := by
-    rw [mvfderiv_apply_eq_mfderiv_apply, ← coe_sphereTangentEquiv_apply,
-      LinearIsometryEquiv.apply_symm_apply]
-  have hfield : field n a p = u := by
-    refine (Manifold.eq_mgradient_iff.2 fun v ↦ ?_).symm
-    rw [inner_tangentSpace_sphere, hu, mvfderiv_height, inner_sub_left, real_inner_smul_left,
-      inner_coe_mvfderiv_subtypeVal_sphere, mul_zero, sub_zero]
-  rw [hfield, hu]
+  rw [field, Manifold.inner_mgradient, mvfderiv_inner_coe_sphere]
 
 /-- Every tangent vector is the value of the gradient of a height function. -/
 private theorem field_mvfderiv_coe (p : sphere (0 : E) 1) (w : TangentSpace (𝓡 n) p) :
     field n (mvfderiv (𝓡 n) ι p w) p = w := by
   apply injective_mvfderiv_subtypeVal_sphere p
-  rw [mvfderiv_coe_field, real_inner_comm, inner_coe_mvfderiv_subtypeVal_sphere, zero_smul,
-    sub_zero]
+  rw [field, mvfderiv_coe_mgradient_inner_coe_sphere, real_inner_comm,
+    inner_coe_mvfderiv_subtypeVal_sphere, zero_smul, sub_zero]
 
 /-- The ambient derivative of the gradient of `p ↦ ⟪b, p⟫`, in ambient coordinates. -/
 private theorem mvfderiv_mvfderiv_coe_field (b : E) (p : sphere (0 : E) 1)
@@ -131,7 +105,7 @@ private theorem mvfderiv_mvfderiv_coe_field (b : E) (p : sphere (0 : E) 1)
       -(inner ℝ (field n b p) v • (p : E) + inner ℝ b (p : E) • mvfderiv (𝓡 n) ι p v) := by
   have heq : (fun y ↦ mvfderiv (𝓡 n) ι y (field n b y)) =
       fun y : sphere (0 : E) 1 ↦ b - inner ℝ b (y : E) • (y : E) :=
-    funext fun y ↦ mvfderiv_coe_field b y
+    funext fun y ↦ mvfderiv_coe_mgradient_inner_coe_sphere b y
   have hι : MDifferentiableAt (𝓡 n) 𝓘(ℝ, E) ι p :=
     (contMDiff_coe_sphere (m := 1) p).mdifferentiableAt one_ne_zero
   have hh : MDifferentiableAt (𝓡 n) 𝓘(ℝ) (fun q : sphere (0 : E) 1 ↦ inner ℝ b (q : E)) p :=
@@ -142,7 +116,7 @@ private theorem mvfderiv_mvfderiv_coe_field (b : E) (p : sphere (0 : E) 1)
   rw [heq, mvfderiv_fun_sub mdifferentiableAt_const hhι, mvfderiv_const,
     mvfderiv_fun_smul hh hι]
   simp only [zero_sub, neg_apply, add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
-    mvfderiv_height, inner_mvfderiv_coe]
+    mvfderiv_inner_coe_sphere, inner_mvfderiv_coe]
   rw [add_comm]
 
 /-- The Levi-Civita connection on gradients of height functions: `∇_{X_a} X_b = -⟪b, p⟫ X_a`. -/
@@ -181,7 +155,7 @@ private theorem leviCivitaConnection_leviCivitaConnection_field (a b c : E)
     ((contMDiff_height (n := n) c).neg p).mdifferentiableAt (by simp)
   rw [hfun, ∇.isCovariantDerivativeOnUniv.leibniz (mdifferentiableAt_field b p) hg]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
-    leviCivitaConnection_field, mvfderiv_fun_neg, neg_apply, mvfderiv_height,
+    leviCivitaConnection_field, mvfderiv_fun_neg, neg_apply, mvfderiv_inner_coe_sphere,
     inner_mvfderiv_coe, smul_smul]
   rw [real_inner_comm (field n c p)]
   module
