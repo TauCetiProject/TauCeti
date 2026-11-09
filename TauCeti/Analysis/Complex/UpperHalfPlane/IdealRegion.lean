@@ -145,7 +145,7 @@ private theorem volume_idealRegion_of_lt {a b : ℝ} (ha : -1 < a) (hb : b < 1) 
     hcont.integrableOn_Icc
     (ae_restrict_of_forall_mem measurableSet_Icc fun x _ ↦ by positivity),
     integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hab,
-    integral_one_div_sqrt_one_sub_sq ⟨ha, hab.trans_lt hb⟩ ⟨ha.trans_le hab, hb⟩,
+    integral_one_div_sqrt_one_sub_sq,
     Real.arccos_eq_pi_div_two_sub_arcsin,
     Real.arccos_eq_pi_div_two_sub_arcsin]
   ring_nf
