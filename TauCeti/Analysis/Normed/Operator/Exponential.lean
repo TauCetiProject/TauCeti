@@ -47,7 +47,7 @@ public section
 
 open NormedSpace
 
-namespace TauCeti
+namespace ContinuousLinearMap
 
 section Operator
 
@@ -55,19 +55,19 @@ variable {𝕜 : Type*} [RCLike 𝕜] {X : Type*} [NormedAddCommGroup X] [Normed
   [CompleteSpace X]
 
 /-- Exponentials of scalar multiples of the same bounded operator split over addition. -/
-theorem _root_.ContinuousLinearMap.exp_add_smul (A : X →L[𝕜] X) (s t : 𝕜) :
+theorem exp_add_smul (A : X →L[𝕜] X) (s t : 𝕜) :
     exp ((s + t) • A) = (exp (s • A)).comp (exp (t • A)) := by
   exact (NormedSpace.exp_add_smul A s t).trans (ContinuousLinearMap.mul_def _ _)
 
 /-- Pointwise form of `ContinuousLinearMap.exp_add_smul`:
 `exp ((s + t) • A) x = exp (s • A) (exp (t • A) x)`. -/
-theorem _root_.ContinuousLinearMap.exp_add_smul_apply (A : X →L[𝕜] X) (s t : 𝕜) (x : X) :
+theorem exp_add_smul_apply (A : X →L[𝕜] X) (s t : 𝕜) (x : X) :
     exp ((s + t) • A) x = exp (s • A) (exp (t • A) x) := by
   rw [ContinuousLinearMap.exp_add_smul, ContinuousLinearMap.comp_apply]
 
 /-- The exponential `exp B` of a continuous endomorphism of a Banach space, as a continuous linear
 automorphism with inverse `exp (-B)`. -/
-noncomputable def _root_.ContinuousLinearMap.expEquiv (B : X →L[𝕜] X) : X ≃L[𝕜] X :=
+noncomputable def expEquiv (B : X →L[𝕜] X) : X ≃L[𝕜] X :=
   .equivOfInverse' (exp B) (exp (-B))
     (by
       let +nondep : NormedAlgebra ℚ (X →L[𝕜] X) := .restrictScalars ℚ 𝕜 _
@@ -79,29 +79,29 @@ noncomputable def _root_.ContinuousLinearMap.expEquiv (B : X →L[𝕜] X) : X �
         neg_add_cancel, exp_zero, ContinuousLinearMap.one_def])
 
 @[simp]
-theorem _root_.ContinuousLinearMap.expEquiv_apply (B : X →L[𝕜] X) (x : X) :
+theorem expEquiv_apply (B : X →L[𝕜] X) (x : X) :
     B.expEquiv x = exp B x :=
   (rfl)
 
 @[simp]
-theorem _root_.ContinuousLinearMap.expEquiv_symm_apply (B : X →L[𝕜] X) (x : X) :
+theorem expEquiv_symm_apply (B : X →L[𝕜] X) (x : X) :
     B.expEquiv.symm x = exp (-B) x :=
   (rfl)
 
 @[simp]
-theorem _root_.ContinuousLinearMap.coe_expEquiv (B : X →L[𝕜] X) :
+theorem coe_expEquiv (B : X →L[𝕜] X) :
     (B.expEquiv : X →L[𝕜] X) = exp B :=
   ContinuousLinearMap.ext B.expEquiv_apply
 
 @[simp]
-theorem _root_.ContinuousLinearMap.coe_expEquiv_symm (B : X →L[𝕜] X) :
+theorem coe_expEquiv_symm (B : X →L[𝕜] X) :
     (B.expEquiv.symm : X →L[𝕜] X) = exp (-B) :=
   ContinuousLinearMap.ext B.expEquiv_symm_apply
 
 /-- **The exponential of an operator acts exponentially on an eigenvector.** If `B x = μ • x`,
 then `exp B x = exp μ • x`. The statement also covers `x = 0`, without requiring a bundled
 `Module.End.HasEigenvector` witness. -/
-theorem _root_.ContinuousLinearMap.exp_apply_of_apply_eq_smul (B : X →L[𝕜] X) {x : X} {μ : 𝕜}
+theorem exp_apply_of_apply_eq_smul (B : X →L[𝕜] X) {x : X} {μ : 𝕜}
     (hx : B x = μ • x) : exp B x = exp μ • x := by
   have hpow (n : ℕ) : (B ^ n) x = μ ^ n • x := by
     induction n with
@@ -123,7 +123,7 @@ open Polynomial in
 /-- **Spectral mapping for the exponential in finite dimension.** For an operator `N` on a
 finite-dimensional complex normed space, the spectrum of `exp N` is the image of the spectrum of
 `N` under the exponential. -/
-theorem _root_.ContinuousLinearMap.spectrum_exp (N : V →L[ℂ] V) :
+theorem spectrum_exp (N : V →L[ℂ] V) :
     spectrum ℂ (exp N) = exp '' spectrum ℂ N := by
   have := FiniteDimensional.complete ℂ V
   -- The inclusion `⊇` is `spectrum.exp_mem_exp`. For `⊆`, `exp N` is a polynomial `P (N)`, so its
@@ -133,7 +133,7 @@ theorem _root_.ContinuousLinearMap.spectrum_exp (N : V →L[ℂ] V) :
     (Set.image_subset_iff.mpr fun μ hμ ↦ spectrum.exp_mem_exp N hμ)
   rcases subsingleton_or_nontrivial V with hV | hV
   · simp [spectrum.of_subsingleton] at hz
-  obtain ⟨P, hP⟩ := exists_aeval_eq_exp (𝕜 := ℂ) N
+  obtain ⟨P, hP⟩ := TauCeti.exists_aeval_eq_exp (𝕜 := ℂ) N
   rw [← hP, spectrum.map_polynomial_aeval_of_nonempty _ _ (spectrum.nonempty N)] at hz
   obtain ⟨μ, hμ, rfl⟩ := hz
   refine ⟨μ, hμ, ?_⟩
@@ -156,7 +156,7 @@ variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X
 
 This is the fundamental theorem of calculus applied to the differentiable orbit
 `u ↦ exp (u B) x`, whose derivative is the continuous function `u ↦ exp (u B) (B x)`. -/
-theorem _root_.ContinuousLinearMap.exp_smul_apply_sub_eq_intervalIntegral
+theorem exp_smul_apply_sub_eq_intervalIntegral
     (B : X →L[ℝ] X) (t : ℝ) (x : X) :
     exp (t • B) x - x = ∫ u in (0 : ℝ)..t, exp (u • B) (B x) := by
   have hderiv : ∀ u : ℝ, HasDerivAt (fun v : ℝ => exp (v • B) x) (exp (u • B) (B x)) u := by
@@ -171,7 +171,7 @@ theorem _root_.ContinuousLinearMap.exp_smul_apply_sub_eq_intervalIntegral
 
 /-- A continuous function on `[0, ∞)` with right derivative `A (z t)` at every `t ≥ 0` is the linear
 flow `t ↦ exp (t • A) (z 0)` of its initial value, by uniqueness for the linear equation. -/
-theorem _root_.ContinuousLinearMap.eq_exp_smul_apply_of_hasDerivWithinAt {A : X →L[ℝ] X}
+theorem eq_exp_smul_apply_of_hasDerivWithinAt {A : X →L[ℝ] X}
     {z : ℝ → X} (hz_cont : ContinuousOn z (Set.Ici 0))
     (hz : ∀ t ∈ Set.Ici (0 : ℝ), HasDerivWithinAt z (A (z t)) (Set.Ici t) t)
     {t : ℝ} (ht : 0 ≤ t) :
@@ -186,6 +186,6 @@ theorem _root_.ContinuousLinearMap.eq_exp_smul_apply_of_hasDerivWithinAt {A : X 
 
 end Real
 
-end TauCeti
+end ContinuousLinearMap
 
 end
