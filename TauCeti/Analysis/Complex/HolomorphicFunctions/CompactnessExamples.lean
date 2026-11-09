@@ -18,8 +18,12 @@ Symplectic Topology*, Theorem B.4.2 and Theorem 4.1.1) extracts a `C^∞`-conver
 from a sequence of solutions whose derivatives are uniformly bounded on compact sets, whose
 images of compact sets stay in a fixed compact set, and, for discs with boundary on a totally
 real `L`, whose boundary values lie in a closed `L`. This file records, for holomorphic maps
-(`J = i`, `η = 0`), that none of these hypotheses can be dropped, and that maps satisfying all of
-them do converge in the expected example.
+(`J = i`, `η = 0`), that dropping the closedness of `L` or the image bound breaks the conclusion,
+that a sequence violating the gradient bound has no convergent subsequence, and that maps
+satisfying all of the hypotheses do converge in the expected example. For holomorphic maps into
+`ℂ` the image bound already implies interior gradient bounds by the Cauchy estimates, so no
+example of this kind isolates the gradient bound: the sequence below violates the gradient and
+image bounds simultaneously.
 
 * Closedness of the boundary condition. Boundary values in a closed set pass to pointwise
   limits (`mapsTo_of_tendsto_of_isClosed`). For `L = (0, 1) ⊆ ℝ ⊆ ℂ` the constant maps
@@ -28,9 +32,9 @@ them do converge in the expected example.
   the limit in `L`.
 * The gradient bound. The maps `u m z = m z` are holomorphic with `‖deriv (u m)‖ = m`, so their
   `L^p` norms on `D_{1/2}` equal `m · vol(D_{1/2})^{1/p}` and are unbounded, and no subsequence
-  converges locally uniformly on `D_1`. The maps `u m z = z / m` satisfy `‖deriv (u m)‖ ≤ 1`,
-  send `D_1` into the closed unit disc, and every iterated derivative tends to `0` locally
-  uniformly on `ℂ`.
+  converges locally uniformly on `D_1`. They send `D_1` onto `D_m`, so they violate the image
+  bound as well. The maps `u m z = z / m` satisfy `‖deriv (u m)‖ ≤ 1`, send `D_1` into the
+  closed unit disc, and every iterated derivative tends to `0` locally uniformly on `ℂ`.
 * The image bound. The constant maps `u m = m` have derivative zero, so the gradient bound
   holds with constant `0`, but no subsequence converges locally uniformly.
 
@@ -46,8 +50,8 @@ point have norms tending to infinity has no subsequence converging pointwise the
   `TauCeti.HolomorphicCompactness.tendstoUniformly_ofReal_inv_add_two`: the closedness witness.
 * `TauCeti.HolomorphicCompactness.eLpNorm_deriv_natCast_mul`,
   `TauCeti.HolomorphicCompactness.not_exists_eLpNorm_deriv_natCast_mul_le`,
-  `TauCeti.HolomorphicCompactness.not_tendstoLocallyUniformlyOn_natCast_mul`: the gradient-bound
-  witness `u m z = m z`.
+  `TauCeti.HolomorphicCompactness.not_tendstoLocallyUniformlyOn_natCast_mul`: the maps
+  `u m z = m z`, which violate the gradient and image bounds simultaneously.
 * `TauCeti.HolomorphicCompactness.tendstoLocallyUniformly_iteratedDeriv_div_natCast`: the maps
   `z / m` converge to `0` with all derivatives.
 * `TauCeti.HolomorphicCompactness.not_tendstoLocallyUniformlyOn_natCast`: the image-bound
