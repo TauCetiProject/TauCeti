@@ -36,6 +36,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
 
 * `ContDiffOn.exists_bound_iteratedFDerivWithin`: on a compact subset, the derivatives of order at
   most `n` of a `C^n` map are bounded by one constant.
+* `HasCompactSupport.exists_bound_iteratedFDeriv_of_contDiff`: the derivatives of order at most `n`
+  of a compactly supported `C^n` map are bounded by one constant.
 * `ContDiffOn.exists_norm_iteratedFDerivWithin_clm_apply_comp_le`: the linear bound on the
   derivatives of `z ↦ L z (φ (τ z))`.
 * `ContDiffOn.tendstoUniformlyOn_iteratedFDerivWithin_clm_apply_comp`: its consequence for uniform
@@ -67,6 +69,28 @@ theorem ContDiffOn.exists_bound_iteratedFDerivWithin {u : E → F} {s K : Set E}
   refine ⟨A, fun i hi z hz ↦ ((Finset.single_le_sum (f := fun i ↦ ‖iteratedFDerivWithin 𝕜 i u s z‖)
     (fun _ _ ↦ norm_nonneg _) (Finset.mem_range_succ_iff.mpr hi)).trans (le_abs_self _)).trans ?_⟩
   simpa only [Real.norm_eq_abs] using hA z hz
+
+/-- The derivatives of order at most `n` of a compactly supported `C^n` map are bounded by a
+single constant. Mathlib's `HasCompactSupport.exists_bound_iteratedFDeriv` assumes the map
+smooth. -/
+theorem HasCompactSupport.exists_bound_iteratedFDeriv_of_contDiff {f : E → F} {n : ℕ}
+    (hf : HasCompactSupport f) (hf' : ContDiff 𝕜 n f) :
+    ∃ C, 0 ≤ C ∧ ∀ i ≤ n, ∀ y, ‖iteratedFDeriv 𝕜 i f y‖ ≤ C := by
+  induction n with
+  | zero =>
+    obtain ⟨C, hC⟩ := (hf'.continuous_iteratedFDeriv le_rfl).bounded_above_of_compact_support
+      (hf.iteratedFDeriv 0)
+    refine ⟨max C 0, le_max_right _ _, fun i hi y ↦ ?_⟩
+    obtain rfl : i = 0 := by omega
+    exact (hC y).trans (le_max_left _ _)
+  | succ n ih =>
+    obtain ⟨N, hN0, hN⟩ := ih (hf'.of_le (by exact_mod_cast n.le_succ))
+    obtain ⟨C, hC⟩ := (hf'.continuous_iteratedFDeriv le_rfl).bounded_above_of_compact_support
+      (hf.iteratedFDeriv (n + 1))
+    refine ⟨max N C, hN0.trans (le_max_left _ _), fun i hi y ↦ ?_⟩
+    rcases Nat.lt_or_eq_of_le hi with hi | rfl
+    · exact (hN i (by omega) y).trans (le_max_left _ _)
+    · exact (hC y).trans (le_max_right _ _)
 
 /-- On a compact set `K`, the order-`n` derivative of `z ↦ L z (φ (τ z))` is bounded by a constant
 multiple of any common bound `δ` for the derivatives of `φ` of order at most `n` along `τ '' K`.
