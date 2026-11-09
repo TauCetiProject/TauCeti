@@ -7,6 +7,7 @@ module
 
 import Mathlib.Data.ZMod.Defs
 import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading
+import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Matched
 
 /-!
 # Products and gradings in small strands algebras
@@ -26,6 +27,15 @@ over `𝔽₂`, and two gradings, with points `1, …, n` written `0, …, n - 1
   `λ gr(2 ↦ 3) gr(1 ↦ 2)`. Both diagrams have Maslov component `-1/2`, and the correction terms
   `L(e₂ - e₁, e₃ - e₂) = 1/2` and `L(e₃ - e₂, e₂ - e₁) = -1/2` differ by one, so the grading group
   is not commutative.
+
+Two products in the algebra `A(T²)` of the genus-one pointed matched circle, whose points
+`1, 2, 3, 4` are matched as `{1, 3}` and `{2, 4}`, encoded by the parity of `0, 1, 2, 3`. Its Reeb
+chords `ρ₁ = (1 ↦ 2)`, `ρ₂ = (2 ↦ 3)` and `ρ₁₂ = (1 ↦ 3)` give the generators `a(ρ)` without
+horizontal strands.
+
+* `ρ₁ ρ₂ = ρ₁₂`.
+* `ρ₂ ρ₁ = 0`, although the end point `3` of `ρ₂` and the starting point `1` of `ρ₁` are matched:
+  the product of generators needs the actual points to agree, not just their pairs.
 -/
 
 open TauCeti StrandsAlgebra StrandDiagram StrandGradingGroup
@@ -66,28 +76,9 @@ example :
   omega
 
 example :
-    let single (i j : Fin 3) (h : i ≤ j) : StrandDiagram (Fin 3) :=
-      ⟨PEquiv.single i j, fun _ _ hk ↦ by
-        obtain ⟨rfl, rfl⟩ := (PEquiv.mem_single_iff _ _ _ _).1 hk
-        exact h⟩
-    (of (single 0 1 (by decide)) * of (single 1 2 (by decide)) :
+    (of (single (0 : Fin 3) 1 (by decide)) * of (single 1 2 (by decide)) :
       StrandsAlgebra (ZMod 2) (Fin 3)) = of (single 0 2 (by decide)) := by
-  intro single
-  have hinv (χ : StrandDiagram (Fin 3))
-      (h : ∀ p : Fin 3 × Fin 3, ¬(p.1 < p.2 ∧ ∃ a ∈ χ p.1, ∃ b ∈ χ p.2, b < a)) :
-      χ.inversionCount = 0 := by
-    rw [inversionCount_def, Finset.card_eq_zero, Finset.eq_empty_iff_forall_notMem]
-    simpa only [mem_inversions] using h
-  have hT : (single 0 1 (by decide)).target = (single 1 2 (by decide)).source := by
-    ext j
-    simp only [mem_target, mem_source]
-    revert j
-    decide
-  rw [of_mul_of_of_composable (composable_iff.2 ⟨hT, ?_⟩)]
-  swap
-  · rw [hinv _ (by simp only [mem_trans]; decide), hinv _ (by decide), hinv _ (by decide)]
-  congr 1
-  exact toPEquiv_injective <| (toPEquiv_trans _ _).trans (PEquiv.single_trans_single _ _ _)
+  rw [of_mul_of_of_composable (composable_single_single _ _), single_trans_single]
 
 example :
     let φ : StrandDiagram (Fin 3) :=
@@ -117,49 +108,49 @@ example :
   · rw [grading_boundary, hb, mk_boundary]
 
 example :
-    let ρ (i j : Fin 3) (h : i ≤ j) : StrandDiagram (Fin 3) :=
-      ⟨PEquiv.single i j, fun _ _ hk ↦ by
-        obtain ⟨rfl, rfl⟩ := (PEquiv.mem_single_iff _ _ _ _).1 hk
-        exact h⟩
-    (ρ 0 1 (by decide)).grading * (ρ 1 2 (by decide)).grading =
-      lambda * ((ρ 1 2 (by decide)).grading * (ρ 0 1 (by decide)).grading) := by
-  intro ρ
-  have hinv (φ : StrandDiagram (Fin 3))
-      (h : ∀ p : Fin 3 × Fin 3, ¬(p.1 < p.2 ∧ ∃ a ∈ φ p.1, ∃ b ∈ φ p.2, b < a)) :
-      φ.inversionCount = 0 := by
-    rw [inversionCount_def, Finset.card_eq_zero, Finset.eq_empty_iff_forall_notMem]
-    simpa only [mem_inversions] using h
-  have hS₁ : (ρ 0 1 (by decide)).source = {0} := by
-    ext j
-    simp only [mem_source, Finset.mem_singleton]
-    revert j
-    decide
-  have hS₂ : (ρ 1 2 (by decide)).source = {1} := by
-    ext j
-    simp only [mem_source, Finset.mem_singleton]
-    revert j
-    decide
-  have hb₁ : (ρ 0 1 (by decide)).boundary = ![-1, 1, 0] := by
+    (single (0 : Fin 3) 1 (by decide)).grading * (single (1 : Fin 3) 2 (by decide)).grading =
+      lambda * ((single (1 : Fin 3) 2 (by decide)).grading *
+        (single (0 : Fin 3) 1 (by decide)).grading) := by
+  have hb₁ : (single (0 : Fin 3) 1 (by decide)).boundary = ![-1, 1, 0] := by
     funext x
-    simp only [boundary_apply, mem_target, mem_source]
+    rw [boundary_apply, source_single, target_single]
     revert x
     decide
-  have hb₂ : (ρ 1 2 (by decide)).boundary = ![0, -1, 1] := by
+  have hb₂ : (single (1 : Fin 3) 2 (by decide)).boundary = ![0, -1, 1] := by
     funext x
-    simp only [boundary_apply, mem_target, mem_source]
+    rw [boundary_apply, source_single, target_single]
     revert x
     decide
   have h₀ : ({y | y < 0} : Finset (Fin 3)) = ∅ := by decide
   have h₁ : ({y | y < 1} : Finset (Fin 3)) = {0} := by decide
   have h₂ : ({y | y < 2} : Finset (Fin 3)) = {0, 1} := by decide
-  have hI₁ := hinv (ρ 0 1 (by decide)) (by decide)
-  have hI₂ := hinv (ρ 1 2 (by decide)) (by decide)
   ext
   · rw [mul_maslov, mul_maslov, mul_maslov, mul_boundary, lambda_maslov, lambda_boundary]
-    rw [grading_maslov, grading_maslov, grading_boundary, grading_boundary, hI₁, hI₂, hS₁, hS₂,
-      hb₁, hb₂, Finset.sum_singleton, Finset.sum_singleton, map_zero, AddMonoidHom.zero_apply,
-      linking_apply, linking_apply, Fin.sum_univ_three, Fin.sum_univ_three]
+    rw [grading_maslov, grading_maslov, grading_boundary, grading_boundary, inversionCount_single,
+      inversionCount_single, source_single, source_single, hb₁, hb₂, Finset.sum_singleton,
+      Finset.sum_singleton, map_zero, AddMonoidHom.zero_apply, linking_apply, linking_apply,
+      Fin.sum_univ_three, Fin.sum_univ_three]
     simp only [pointMultiplicity_apply, h₀, h₁, h₂]
     norm_num
   · simp only [mul_boundary, lambda_boundary, zero_add]
     exact add_comm _ _
+
+example :
+    let M : Fin 4 → ℕ := fun i ↦ i % 2
+    (horizontalCompletion M (single 0 1 (by decide)) ∅ *
+        horizontalCompletion M (single 1 2 (by decide)) ∅ :
+          StrandsAlgebra (ZMod 2) (Fin 4)) = horizontalCompletion M (single 0 2 (by decide)) ∅ ∧
+    (horizontalCompletion M (single 1 2 (by decide)) ∅ *
+        horizontalCompletion M (single 0 1 (by decide)) ∅ :
+          StrandsAlgebra (ZMod 2) (Fin 4)) = 0 := by
+  intro M
+  -- A Reeb chord, with no horizontal strands added, indexes a generator.
+  have hgen (i j : Fin 4) (h : i < j) : IsMatchedGenerator M (single i j h.le) ∅ :=
+    ⟨fun k hk ↦ h.ne ((mem_single.1 hk).1.symm.trans (mem_single.1 hk).2), by simp, by simp,
+      Finset.disjoint_empty_right _, Finset.disjoint_empty_right _⟩
+  refine ⟨?_, ?_⟩
+  · rw [horizontalCompletion_mul_horizontalCompletion (hgen 0 1 (by decide)) (hgen 1 2 (by decide))]
+    simp [composable_single_single]
+  · rw [horizontalCompletion_mul_horizontalCompletion (hgen 1 2 (by decide)) (hgen 0 1 (by decide))]
+    refine ite_eq_right_iff.2 fun hc ↦ absurd hc.2.target_eq ?_
+    simp
