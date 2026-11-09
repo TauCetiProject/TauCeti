@@ -423,15 +423,13 @@ def finCastLEEquiv (hm : m ≤ n) :
 @[simp]
 theorem finCastLEEquiv_apply (hm : m ≤ n) (w : EuclideanSpace 𝕜 (Fin m))
     (j : {j : Fin n // j.val < m}) : finCastLEEquiv 𝕜 hm w j = w ⟨j.1, j.2⟩ := by
-  rw [finCastLEEquiv, LinearIsometryEquiv.piLpCongrLeft_apply, Equiv.piCongrLeft'_apply,
-    ← OrderIso.toEquiv_symm, RelIso.coe_fn_toEquiv, OrderIso.symm, Fin.castLEOrderIso_symm_apply]
+  simp [finCastLEEquiv, Equiv.piCongrLeft'_apply]
+  rfl
 
 @[simp]
 theorem finCastLEEquiv_symm_apply (hm : m ≤ n) (v : EuclideanSpace 𝕜 {j : Fin n // j.val < m})
     (i : Fin m) : (finCastLEEquiv 𝕜 hm).symm v i = v ⟨Fin.castLE hm i, i.2⟩ := by
-  rw [finCastLEEquiv, LinearIsometryEquiv.piLpCongrLeft_symm,
-    LinearIsometryEquiv.piLpCongrLeft_apply, Equiv.piCongrLeft'_apply, Equiv.symm_symm,
-    RelIso.coe_fn_toEquiv, Fin.castLEOrderIso_apply]
+  simp [finCastLEEquiv, Equiv.piCongrLeft'_apply]
 
 /-- Inserting `w : 𝕜ᵐ` as the first factor of the splitting along `j < m`, with zero second
 factor, is the zero extension of `w` along `Fin.castLE`. -/
