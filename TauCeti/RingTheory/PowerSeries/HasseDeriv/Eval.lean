@@ -23,7 +23,9 @@ gives
 ```
 
 This is how vanishing conditions on the Hasse derivatives of `(X - a) * q` pass to `q`, as in the
-Schwarz lemma `PowerSeries.IsRestricted.norm_evalAt_le_gaussNorm_mul_prod`.
+Schwarz lemma `PowerSeries.IsRestricted.norm_evalAt_le_gaussNorm_mul_prod`. Evaluating the
+composition rule `D⁽ᵗ⁾ ∘ D⁽ᵏ⁾ = (t + k).choose t • D⁽ᵗ⁺ᵏ⁾` likewise shows that `D⁽ᵏ⁾ q` vanishes to
+order `T - k` wherever `q` vanishes to order `T`.
 
 The values of Hasse derivatives are also controlled by the coefficients of `q`: if `ε ≥ 0` bounds
 the weighted coefficient norms `‖qₖ‖ cᵏ` in every degree `k ≥ n`, then `‖(D⁽ⁿ⁾ q)(a)‖ cⁿ ≤ ε` at
@@ -35,6 +37,8 @@ every `a` with `‖a‖ ≤ c`. This needs neither completeness nor `‖1‖ = 1
   of `q` in degrees `≥ n` bounds `‖(D⁽ⁿ⁾ q)(a)‖ cⁿ`.
 * `PowerSeries.IsRestricted.evalAt_hasseDeriv_succ_X_sub_C_mul`: the evaluated Leibniz rule for
   `(X - a) * q`.
+* `PowerSeries.IsRestricted.evalAt_hasseDeriv_hasseDeriv`: the evaluated composition rule
+  `(D⁽ᵗ⁾ (D⁽ᵏ⁾ q))(b) = (t + k).choose t • (D⁽ᵗ⁺ᵏ⁾ q)(b)`.
 -/
 
 public section
@@ -80,5 +84,15 @@ theorem IsRestricted.evalAt_hasseDeriv_succ_X_sub_C_mul (hq : q.IsRestricted c) 
   have hX := isRestricted_X_sub_C (c := c) a
   rw [hasseDeriv_succ_X_sub_C_mul, IsRestricted.evalAt_add (hX.mul (hq.hasseDeriv _))
     (hq.hasseDeriv _) hb, hX.evalAt_mul (hq.hasseDeriv _) hb, evalAt_X_sub_C]
+
+/-- **Evaluated composition of Hasse derivatives.** At a point `b` with `‖b‖ ≤ c`, for `q`
+restricted at `c`, `(D⁽ᵗ⁾ (D⁽ᵏ⁾ q))(b) = (t + k).choose t • (D⁽ᵗ⁺ᵏ⁾ q)(b)`. In particular, if `q`
+vanishes at `b` to order `T`, then `D⁽ᵏ⁾ q` vanishes at `b` to order `T - k`. -/
+theorem IsRestricted.evalAt_hasseDeriv_hasseDeriv (hq : q.IsRestricted c) {b : A} (hb : ‖b‖ ≤ c)
+    (t k : ℕ) :
+    (PowerSeries.hasseDeriv t (PowerSeries.hasseDeriv k q)).evalAt b =
+      (t + k).choose t • (PowerSeries.hasseDeriv (t + k) q).evalAt b := by
+  rw [← LinearMap.comp_apply, hasseDeriv_comp, LinearMap.smul_apply, ← Nat.cast_smul_eq_nsmul R,
+    (hq.hasseDeriv _).evalAt_smul _ hb, Nat.cast_smul_eq_nsmul]
 
 end PowerSeries

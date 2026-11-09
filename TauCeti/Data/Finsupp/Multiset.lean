@@ -27,6 +27,8 @@ which it takes each value.
   `a` in `∑ t, single (f t) 1` is the number of indices `t` with `f t = a`;
   `Finsupp.sum_sum_single_one_apply` and `Finsupp.sum_single_one_apply_ne_zero_iff` record that
   these letter counts sum to the number of indices and are nonzero exactly at the values of `f`.
+* `Finsupp.exists_sum_single_eq_iff`: the letter counts of ordered `n`-tuples are exactly the
+  exponent vectors of total degree `n`.
 
 The same unit steps summed along a list, with coefficients in any additive commutative monoid
 with one, count the occurrences of each letter; in characteristic zero these counts determine a
@@ -79,6 +81,23 @@ theorem sum_single_one_apply_ne_zero_iff {α ι : Type*} [Fintype ι] {f : ι �
     (∑ t, single (f t) 1 : α →₀ ℕ) a ≠ 0 ↔ ∃ t, f t = a := by
   classical
   simp [sum_single_one_apply]
+
+/-- The letter counts of ordered `n`-tuples are exactly the exponent vectors of total degree
+`n`. -/
+theorem exists_sum_single_eq_iff {α : Type*} {n : ℕ} (l : α →₀ ℕ) :
+    (∃ f : Fin n → α, ∑ t, single (f t) 1 = l) ↔ (l.sum fun _ k => k) = n := by
+  classical
+  refine ⟨?_, fun hl => ?_⟩
+  · rintro ⟨f, rfl⟩
+    rw [← sum_finsetSum_index (fun _ => rfl) fun _ _ _ => rfl]
+    simp
+  · have hL : (toMultiset l).toList.length = n := by
+      rw [Multiset.length_toList, card_toMultiset]
+      exact hl
+    refine ⟨fun t => (toMultiset l).toList.get (Fin.cast hL.symm t),
+      Function.LeftInverse.injective toMultiset_toFinsupp ?_⟩
+    rw [toMultiset_sum_single_one, Fin.univ_val_map,
+      ← List.ofFn_congr hL (toMultiset l).toList.get, List.ofFn_get, Multiset.coe_toList]
 
 end Finsupp
 

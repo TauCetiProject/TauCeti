@@ -229,7 +229,7 @@ private theorem isHomogeneous_inducedTaylor :
   intro E w hw
   rw [add_zero]
   refine gradedPiece_induction (motive := fun w ↦ inducedTaylor 𝒢 F w ∈ _) hw
-    (fun n hn e x hx hE ↦ ?_) (by simp)
+    (fun n hn e x hx hE ↦ ?_)
     (fun u v _ _ hu hv ↦ by rw [map_add]; exact add_mem hu hv)
     (fun r u _ hu ↦ by rw [map_smul]; exact Submodule.smul_mem _ r hu)
   subst hE
