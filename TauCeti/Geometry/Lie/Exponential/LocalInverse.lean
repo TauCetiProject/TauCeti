@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 public import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
+import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 /-!
@@ -503,54 +504,37 @@ private theorem exists_mulInvariantExpChartPartialDiffeomorph [FiniteDimensional
     exact (ContinuousLinearEquiv.toUnit (ContinuousLinearEquiv.refl ℝ E)).isUnit
   let φ := mulInvariantExpOpenPartialHomeomorph (I := I) (G := G)
   let ψ := φ.restrOpen U hUopen
-  have hψ_apply (x : E) : ψ x = F x := by
-    exact mulInvariantExpOpenPartialHomeomorph_apply (I := I) (G := G) x
+  have hsrc : ψ.source = φ.source ∩ U := OpenPartialHomeomorph.restrOpen_source _ _ hUopen
+  have hψF : (ψ : E → E) = F := funext fun x =>
+    mulInvariantExpOpenPartialHomeomorph_apply (I := I) (G := G) x
   have hzeroψ : (0 : E) ∈ ψ.source := by
-    rw [OpenPartialHomeomorph.restrOpen_source]
+    rw [hsrc]
     exact ⟨zero_mem_mulInvariantExpOpenPartialHomeomorph_source (I := I) (G := G), hzeroU⟩
   have hψsmooth : ContDiffOn ℝ ∞ ψ ψ.source := by
-    rw [show (ψ : E → E) = F by funext x; exact hψ_apply x]
-    apply hF.mono
-    intro x hx
-    rw [OpenPartialHomeomorph.restrOpen_source] at hx
+    rw [hψF]
+    refine hF.mono fun x hx => ?_
+    rw [hsrc] at hx
     exact hx.2.1
-  -- At every target point the derivative is invertible, so smoothness of the global forward map
+  -- At every source point the derivative is invertible, so smoothness of the global forward map
   -- bootstraps the homeomorphism's inverse to `C∞` on the entire fixed target neighborhood.
   have hψsymmSmooth : ContDiffOn ℝ ∞ ψ.symm ψ.target := by
-    intro y hy
-    have hxy := ψ.map_target hy
-    have hxyU : ψ.symm y ∈ U := by
-      rw [OpenPartialHomeomorph.restrOpen_source] at hxy
-      exact hxy.2
-    have hxyS : ψ.symm y ∈ S := hxyU.1
-    have hFxy : ContDiffAt ℝ ∞ F (ψ.symm y) :=
-      (hF (ψ.symm y) hxyS).contDiffAt (hSopen.mem_nhds hxyS)
-    obtain ⟨A, hA⟩ := hxyU.2
-    apply (ψ.contDiffAt_symm hy (f₀' := ContinuousLinearEquiv.ofUnit A) ?_ ?_).contDiffWithinAt
-    · rw [show (ψ : E → E) = F by funext x; exact hψ_apply x]
-      rw [show ((ContinuousLinearEquiv.ofUnit A : E ≃L[ℝ] E) : E →L[ℝ] E) =
-          fderiv ℝ F (ψ.symm y) by exact hA]
-      exact (hFxy.differentiableAt (by simp)).hasFDerivAt
-    · rw [show (ψ : E → E) = F by funext x; exact hψ_apply x]
-      exact hFxy
-  let d : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) E E ∞ := {
-    toPartialEquiv := ψ.toPartialEquiv
-    open_source := ψ.open_source
-    open_target := ψ.open_target
-    contMDiffOn_toFun := by
-      rw [contMDiffOn_iff_contDiffOn]
-      exact hψsmooth
-    contMDiffOn_invFun := by
-      rw [contMDiffOn_iff_contDiffOn]
-      exact hψsymmSmooth
-  }
-  refine ⟨d, hzeroψ, ?_, ?_⟩
-  · intro x hx
-    change x ∈ ψ.source at hx
-    rw [OpenPartialHomeomorph.restrOpen_source] at hx
-    exact hx.2.1
-  · funext x
-    exact (hψ_apply x).symm
+    refine ψ.contDiffOn_symm_of_isInvertible_fderiv hψsmooth (fun x hx => ?_)
+    rw [hsrc] at hx
+    obtain ⟨A, hA⟩ := hx.2.2
+    rw [hψF]
+    exact ⟨ContinuousLinearEquiv.ofUnit A, hA⟩
+  -- The partial diffeomorphism has the underlying partial equivalence of `ψ`, so its source and
+  -- coercion are those of `ψ`.
+  have hd := TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv ψ hψsmooth
+    hψsymmSmooth
+  have hdsrc : (TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph ψ hψsmooth hψsymmSmooth).source
+      = ψ.source := congrArg PartialEquiv.source hd
+  have hdcoe : ⇑(TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph ψ hψsmooth hψsymmSmooth) =
+      ψ := congrArg (⇑) hd
+  refine ⟨TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph ψ hψsmooth hψsymmSmooth,
+    hdsrc ▸ hzeroψ, fun x hx => ?_, hψF.symm.trans hdcoe.symm⟩
+  rw [hdsrc, hsrc] at hx
+  exact hx.2.1
 
 /-- The fully charted exponential is a smooth local diffeomorphism at zero. -/
 theorem isLocalDiffeomorphAt_mulInvariantExpChart_zero [FiniteDimensional ℝ E]

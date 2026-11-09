@@ -29,6 +29,10 @@ closed counterpart of Mathlib's `Metric.mem_thickening_iff_infDist_lt`, and desc
 thickenings as sublevel sets of the distance function, and their complements as strict
 superlevel sets (`TauCeti.compl_cthickening_eq_setOf_lt_infDist`).
 
+A closed set in a pseudometric space is the intersection of an antitone sequence of open sets
+inside any set whose interior contains it, namely the intersections of that interior with
+thickenings of radii `1 / (n + 1)` (`IsClosed.exists_antitone_isOpen_iInter_eq`).
+
 On the real line, the terms of an injective two-sided sequence tending to `-∞` and `+∞` at its two
 ends have pairwise disjoint closed intervals around them forming a locally finite family
 (`TauCeti.exists_closedBall_pairwiseDisjoint_locallyFinite`). An open subset of `X × ℝ` containing
@@ -75,6 +79,25 @@ theorem compl_cthickening_eq_setOf_lt_infDist {X : Type*} [PseudoMetricSpace X] 
   simp [mem_cthickening_iff_infDist_le hs hδ]
 
 end TauCeti
+
+/-- A closed set `K` in a pseudometric space contained in the interior of a set `L` is the
+intersection of an antitone sequence of open sets `W n` with `K ⊆ W n ⊆ L`. -/
+theorem IsClosed.exists_antitone_isOpen_iInter_eq {X : Type*} [PseudoMetricSpace X]
+    {K L : Set X} (hK : IsClosed K) (hKL : K ⊆ interior L) :
+    ∃ W : ℕ → Set X, (∀ n, IsOpen (W n)) ∧ (∀ n, W n ⊆ L) ∧ (∀ n, K ⊆ W n) ∧ Antitone W ∧
+      ⋂ n, W n = K := by
+  set W : ℕ → Set X := fun n => interior L ∩ thickening (1 / ((n : ℝ) + 1)) K
+  have hKW (n : ℕ) : K ⊆ W n := subset_inter hKL (self_subset_thickening (by positivity) K)
+  refine ⟨W, fun n => isOpen_interior.inter isOpen_thickening,
+    fun n => inter_subset_left.trans interior_subset, hKW, fun m n hmn =>
+    inter_subset_inter_right _ (thickening_mono (one_div_le_one_div_of_le (by positivity)
+      (by exact_mod_cast Nat.add_le_add_right hmn 1)) K), ?_⟩
+  refine Subset.antisymm (fun x hx => ?_) (subset_iInter hKW)
+  rw [← hK.closure_eq, Metric.mem_closure_iff]
+  intro ε hε
+  obtain ⟨n, hn⟩ := exists_nat_one_div_lt hε
+  obtain ⟨y, hy, hxy⟩ := mem_thickening_iff.1 (mem_iInter.1 hx n).2
+  exact ⟨y, hy, hxy.trans hn⟩
 
 namespace LocallyFinite
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Height.Arakelov.Basic
 public import TauCeti.NumberTheory.Height.ProjectiveTuple
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Comparison of Euclidean and sup heights
@@ -93,10 +94,7 @@ private theorem rpow_sum_sq_eq_sqrt_pow (w : InfinitePlace K) (y : ι → K) :
     (∑ i, ‖w.embedding (y i)‖ ^ 2) ^ ((w.mult : ℝ) / 2) =
       √(∑ i, ‖w.embedding (y i)‖ ^ 2) ^ w.mult := by
   let _ := Fintype.ofFinite ι
-  rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast,
-    ← Real.rpow_mul (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)]
-  congr 1
-  ring
+  rw [Real.pow_sqrt_eq_rpow (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)]
 
 variable [NumberField K]
 

@@ -163,7 +163,7 @@ private def backtrackHomotopy :
       apply Prod.ext
       · rfl
       · ext t
-        simp [α, Path.subpath_zero_one, Path.cast, Path.trans_apply]
+        simp [α, Path.subpath_zero_one, Path.cast, Path.trans_apply, -Path.coe_subpath]
     prop' _ := by ext; simp [proj_apply] }
 
 /-- Reversing the homotopy gives a left inverse up to a homotopy over the source. -/

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Trace.Reflection
+public import TauCeti.Analysis.Sobolev.Trace.Reflection.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import Mathlib.Analysis.InnerProductSpace.Dual
