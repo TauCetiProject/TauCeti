@@ -70,11 +70,12 @@ theorem f4ShortRootCotangentBaseChangeMatrixEquiv_representedMap
         (f4ShortRootCarrierCotangentRange.subtype.toLinearMap.baseChange A
           (f4ShortRootCarrierRepresentedMap.baseChange A x)) =
       f4ShortRootBaseChangeAdjointMatrixLinearMap
-        (TauCeti.cancelBaseChange ℤ 𝔽₂ A f4ChevalleyLieLattice x) := by
+        (TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ 𝔽₂ A f4ChevalleyLieLattice x) := by
   have hmaps : f4ShortRootCotangentBaseChangeMatrixEquiv.toLinearMap ∘ₗ
         f4ShortRootCarrierCotangentRange.subtype.toLinearMap.baseChange A ∘ₗ
           f4ShortRootCarrierRepresentedMap.baseChange A =
-        f4ShortRootBaseChangeAdjointMatrixLinearMap ∘ₗ (TauCeti.cancelBaseChange ℤ 𝔽₂ A
+        f4ShortRootBaseChangeAdjointMatrixLinearMap ∘ₗ
+          (TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ 𝔽₂ A
             f4ChevalleyLieLattice).toLinearMap := by
     apply TensorProduct.AlgebraTensorModule.ext
     intro a X
@@ -86,7 +87,8 @@ theorem f4ShortRootCotangentBaseChangeMatrixEquiv_representedMap
     -- The cotangent matrix map and scalar extension reduce to the same pure-tensor action.
     change a • (GeneralLinear.cotangentDualMatrixEquiv
         (f4ShortRootCarrierRepresentedMap X : f4ShortRootCotangentDual)).map _ =
-      f4ShortRootBaseChangeAdjointMatrixLinearMap (TauCeti.cancelBaseChange ℤ 𝔽₂ A
+      f4ShortRootBaseChangeAdjointMatrixLinearMap
+        (TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ 𝔽₂ A
           f4ChevalleyLieLattice (a ⊗ₜ[𝔽₂] X))
     calc _ = a • (GeneralLinear.cotangentDualMatrixEquiv
           (f4ShortRootEndEquivCotangentDual (f4ShortRootAdjoint X))).map (algebraMap 𝔽₂ A) :=
@@ -162,11 +164,12 @@ theorem f4ShortRootQuotient_endOfPoint_root
     Comodule.endOfPoint (f4ModularChevalleyLieAlgebra ⧸ f4ShortRootSubspace) g
         (f4ShortRootSubspace.mkQ.baseChange A x) =
       f4ShortRootSubspace.mkQ.baseChange A
-        ((TauCeti.cancelBaseChange ℤ 𝔽₂ A f4ChevalleyLieLattice).symm
+        ((TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ 𝔽₂ A f4ChevalleyLieLattice).symm
           (f4RootExponential k (Multiplicative.toAdd u)
-            (TauCeti.cancelBaseChange ℤ 𝔽₂ A f4ChevalleyLieLattice x))) := by
+            (TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ 𝔽₂ A
+              f4ChevalleyLieLattice x))) := by
   let e := f4ShortRootCotangentBaseChangeMatrixEquiv (A := A)
-  let c := TauCeti.cancelBaseChange ℤ 𝔽₂ A f4ChevalleyLieLattice
+  let c := TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ 𝔽₂ A f4ChevalleyLieLattice
   let C := Matrix.lieConj
     ((F4ShortRoot.rootSubgroupPoints k A u : GL (Fin 26) A) :
       Matrix (Fin 26) (Fin 26) A)

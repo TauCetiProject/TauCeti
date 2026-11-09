@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Linear
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
-public import TauCeti.CategoryTheory.Monoidal.TensorPow
+public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
 
 /-!
 # Duals in a monoidal preadditive category

@@ -1,8 +1,8 @@
 """Ensure TauCeti runs and reads one TauCetiReview commit everywhere.
 
 The policy commit appears in reusable-workflow `uses:` lines and their required
-`review_ref` inputs, and in the checkout-merge-policy action used by the merge batch. Other policy readers
-go through that action; every explicit reference must agree.
+`review_ref` inputs, and in the checkout-merge-policy action used by read-only readiness/reporting consumers.
+Other policy readers go through that action; every explicit reference must agree.
 
 Run with: python3 scripts/test_workflow_pins.py
 """
@@ -16,12 +16,11 @@ import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 WORKFLOW_DIR = ROOT / ".github/workflows"
-CALLERS = ("merge-sweep.yml", "review.yml")
+CALLERS = ("review.yml",)
 ACTION = ROOT / ".github/actions/checkout-merge-policy/action.yml"
 LOCAL_ACTION = "./.github/actions/checkout-merge-policy"
 # Each job that reads the merge policy, with how many times it does so.
 POLICY_READERS = {
-    ("auto-merge.yml", "sweep"): 1,
     ("infrastructure-tests.yml", "python-tests"): 1,
     ("pages.yml", "build-data"): 1,
     ("pr-labels.yml", "label-resolved"): 1,

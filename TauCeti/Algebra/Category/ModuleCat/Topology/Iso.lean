@@ -43,23 +43,10 @@ theorem ofIso_hom {X Y : TopModuleCat R} (e : X ≃L[R] Y) :
 /-- A bijective morphism of topological modules into a discrete module is an isomorphism: the
 inverse is continuous because its source is discrete. -/
 theorem isIso_of_bijective {X Y : TopModuleCat R} [DiscreteTopology Y] (f : X ⟶ Y)
-    (hf : Function.Bijective f) : IsIso f := by
-  let g : Y →L[R] X :=
-    ⟨(LinearEquiv.ofBijective (f.hom : X →ₗ[R] Y) hf).symm.toLinearMap,
-      continuous_of_discreteTopology⟩
-  have hg : ∀ y, g y = (LinearEquiv.ofBijective (f.hom : X →ₗ[R] Y) hf).symm y := fun y => by
-    simp only [g, ContinuousLinearMap.coe_mk', LinearEquiv.coe_coe]
-  have h₁ : Function.LeftInverse g f.hom := fun x => by
-    rw [hg, ← ContinuousLinearMap.coe_coe f.hom, LinearEquiv.ofBijective_symm_apply_apply]
-  have h₂ : Function.RightInverse g f.hom := fun y => by
-    rw [hg, ← ContinuousLinearMap.coe_coe f.hom, ← LinearEquiv.ofBijective_apply _ (hf := hf),
-      LinearEquiv.apply_symm_apply]
-  have hf : f = (ofIso (ContinuousLinearEquiv.equivOfInverse f.hom g h₁ h₂)).hom := by
-    ext x
-    simp only [ofIso_hom, hom_ofHom, ContinuousLinearEquiv.coe_coe,
-      ContinuousLinearEquiv.equivOfInverse_apply]
-  rw [hf]
-  infer_instance
+    (hf : Function.Bijective f) : IsIso f :=
+  have : IsIso ((forget₂ (TopModuleCat R) TopCat).map f) :=
+    TopCat.isIso_of_bijective_of_isOpenMap _ hf fun _ _ ↦ isOpen_discrete (α := Y) _
+  isIso_of_reflects_iso f (forget₂ (TopModuleCat R) TopCat)
 
 /-- A morphism of topological modules into a discrete module is an isomorphism as soon as its
 underlying morphism of modules is one: that morphism is then bijective. -/

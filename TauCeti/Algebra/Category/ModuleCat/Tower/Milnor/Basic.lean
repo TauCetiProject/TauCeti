@@ -88,7 +88,7 @@ Milnor sequences vanish.
 
 * J. Milnor, *On axiomatic homology theory*, Pacific J. Math. 12 (1962), 337–341.
 * C. A. Weibel, *An introduction to homological algebra*, Theorem 3.5.8.
-* [Stacks: More on Algebra, Lemma 15.87.1, Tag 0919](https://stacks.math.columbia.edu/tag/0919)
+* [Stacks: More on Algebra, Lemma 15.88.10, Tag 07KY](https://stacks.math.columbia.edu/tag/07KY)
 -/
 
 public section
@@ -124,6 +124,7 @@ abbrev homology (i : ι) : ModuleTower.{v} R :=
 def dTower (i j : ι) : C.term i ⟶ C.term j :=
   Functor.whiskerLeft C (HomologicalComplex.dNatTrans _ c i j)
 
+/-- The component of `dTower i j` at level `n` is the differential `d i j` of the `n`-th complex. -/
 @[simp]
 theorem dTower_app (i j : ι) (n : ℕᵒᵖ) : (C.dTower i j).app n = (C.obj n).d i j :=
   (rfl)
@@ -159,10 +160,13 @@ def limComplex : HomologicalComplex (ModuleCat.{v} R) c where
     rw [← ModuleCat.ofHom_comp, ← ModuleTower.limMap_comp, dTower_comp_dTower,
       ModuleTower.limMap_zero, ModuleCat.ofHom_zero]
 
+/-- The degree-`i` term of the limit complex is the limit of the degree-`i` terms. -/
 @[simp]
 theorem limComplex_X (i : ι) : C.limComplex.X i = ModuleCat.of R (C.term i).lim :=
   (rfl)
 
+/-- The differential of the limit complex is the map induced on limits by the differentials of the
+tower. -/
 @[simp]
 theorem limComplex_d_hom (i j : ι) :
     (C.limComplex.d i j).hom = ModuleTower.limMap (C.dTower i j) :=
@@ -180,10 +184,13 @@ def productComplex : HomologicalComplex (ModuleCat.{v} R) c where
     rw [← ModuleCat.ofHom_comp, ← ModuleTower.productMap_comp, dTower_comp_dTower,
       ModuleTower.productMap_zero, ModuleCat.ofHom_zero]
 
+/-- The degree-`i` term of the product complex is the product of the degree-`i` terms. -/
 @[simp]
 theorem productComplex_X (i : ι) : C.productComplex.X i = ModuleCat.of R (C.term i).Product :=
   (rfl)
 
+/-- The differential of the product complex is the map induced on products by the differentials of
+the tower. -/
 @[simp]
 theorem productComplex_d_hom (i j : ι) :
     (C.productComplex.d i j).hom = ModuleTower.productMap (C.dTower i j) :=
@@ -196,6 +203,8 @@ def limComplexι : C.limComplex ⟶ C.productComplex where
     ext x : 2
     exact (ModuleTower.coe_limMap_apply (C.dTower i j) x).symm
 
+/-- The degree-`i` component of the inclusion of the limit complex into the product complex is the
+subtype inclusion of the limit. -/
 @[simp]
 theorem limComplexι_f_hom (i : ι) : (C.limComplexι.f i).hom = (C.term i).lim.subtype :=
   (rfl)
@@ -208,6 +217,8 @@ def productComplexShift : C.productComplex ⟶ C.productComplex where
     ext x : 2
     exact (ModuleTower.shift_natural_apply (C.dTower i j) x).symm
 
+/-- The degree-`i` component of the shift map on the product complex is the shift map on the
+degree-`i` product. -/
 @[simp]
 theorem productComplexShift_f_hom (i : ι) : (C.productComplexShift.f i).hom = (C.term i).shift :=
   (rfl)
@@ -219,6 +230,8 @@ def productComplexπ (n : ℕ) : C.productComplex ⟶ C.obj (op n) where
     ext x : 2
     exact (ModuleTower.productMap_apply (C.dTower i j) x n).symm
 
+/-- The degree-`i` component of the `n`-th projection of the product complex is the coordinate
+projection `LinearMap.proj n`. -/
 @[simp]
 theorem productComplexπ_f_hom (n : ℕ) (i : ι) :
     ((C.productComplexπ n).f i).hom = LinearMap.proj n :=
@@ -229,11 +242,15 @@ def limComplexπ (n : ℕ) : C.limComplex ⟶ C.obj (op n) where
   f i := ModuleCat.ofHom ((C.term i).limπ n)
   comm' i j _ := ModuleCat.hom_ext (ModuleTower.limπ_comp_limMap (C.dTower i j) n).symm
 
+/-- The degree-`i` component of the `n`-th projection of the limit complex is the projection
+`limπ n` of the degree-`i` limit. -/
 @[simp]
 theorem limComplexπ_f_hom (n : ℕ) (i : ι) :
     ((C.limComplexπ n).f i).hom = (C.term i).limπ n :=
   (rfl)
 
+/-- The inclusion of the limit complex into the product complex followed by the `n`-th projection is
+the `n`-th projection of the limit complex. -/
 @[reassoc (attr := simp)]
 theorem limComplexι_comp_productComplexπ (n : ℕ) :
     C.limComplexι ≫ C.productComplexπ n = C.limComplexπ n := by
@@ -268,10 +285,12 @@ def limComplexCone : Cone C where
   π := NatTrans.ofOpSequence (fun n ↦ C.limComplexπ n) fun n ↦ by
     simp
 
+/-- The cone point of the limit cone is the limit complex. -/
 @[simp]
 theorem limComplexCone_pt : C.limComplexCone.pt = C.limComplex :=
   (rfl)
 
+/-- The component of the limit cone at level `n` is the `n`-th projection of the limit complex. -/
 @[simp]
 theorem limComplexCone_π_app (n : ℕ) : C.limComplexCone.π.app (op n) = C.limComplexπ n :=
   (rfl)
@@ -293,10 +312,12 @@ def shortComplex : ShortComplex (HomologicalComplex (ModuleCat.{v} R) c) :=
     ext i : 2
     exact (ModuleTower.exact_lim_subtype_shift (C.term i)).linearMap_comp_eq_zero
 
+/-- The first map of the Milnor short complex is the inclusion of the limit complex. -/
 @[simp]
 theorem shortComplex_f : C.shortComplex.f = C.limComplexι :=
   (rfl)
 
+/-- The second map of the Milnor short complex is the shift map of the product complex. -/
 @[simp]
 theorem shortComplex_g : C.shortComplex.g = C.productComplexShift :=
   (rfl)
@@ -339,6 +360,8 @@ def productHomologyEquiv (i : ι) :
       C.isLimitProductComplexFan)
     (ModuleCat.productConeIsLimit fun n ↦ (C.obj (op n)).homology i)).toLinearEquiv
 
+/-- The degree-`i` homology of the product complex maps to the product of the homologies,
+componentwise by the maps induced by the projections. -/
 @[simp]
 theorem productHomologyEquiv_apply (i : ι) (x : C.productComplex.homology i) (n : ℕ) :
     C.productHomologyEquiv i x n = HomologicalComplex.homologyMap (C.productComplexπ n) i x :=
@@ -390,6 +413,8 @@ def homologyToLim (j : ι) : C.limComplex.homology j →ₗ[R] (C.homology j).li
       rw [homology_transition]
       exact congrArg ModuleCat.Hom.hom h
 
+/-- The `n`-th component of the image of a class in the homology of the limit complex is the class
+induced by the `n`-th projection. -/
 @[simp]
 theorem coe_homologyToLim_apply (j : ι) (x : C.limComplex.homology j) (n : ℕ) :
     (C.homologyToLim j x : (C.homology j).Product) n =

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Renewal.LocalBound
+public import TauCeti.Probability.Renewal.TranslateBounds
 public import Mathlib.MeasureTheory.Group.Convolution
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
 import TauCeti.MeasureTheory.Group.Convolution.IntervalBound
@@ -21,8 +21,8 @@ import Mathlib.Topology.UrysohnsLemma
 
 Let `U = ∑ n, F^{∗n}` be the renewal measure of a probability measure `F` on `ℝ≥0` with
 `F {0} < 1`, and regard it as a measure on the real line. Translating it by `-t` gives the measure
-`Uₜ = U.map (s ↦ s - t)`, which sees the renewals near time `t`. The renewal equation
-`U = δ₀ + F ∗ U` translates to
+`Uₜ = U.map (s ↦ s - t)` (`MeasureTheory.Measure.translatedRenewalMeasure`), which sees the
+renewals near time `t`. The renewal equation `U = δ₀ + F ∗ U` translates to
 
 ```text
 Uₜ = δ_{-t} + F ∗ Uₜ.
@@ -40,8 +40,8 @@ measure, identifies every limit of the translates.
 
 ## Main results
 
-* `MeasureTheory.Measure.map_renewalMeasure_eq_dirac_add_conv`: the translated renewal equation
-  `Uₜ = δ_{-t} + F ∗ Uₜ`.
+* `MeasureTheory.Measure.translatedRenewalMeasure_eq_dirac_add_conv`: the translated renewal
+  equation `Uₜ = δ_{-t} + F ∗ Uₜ`.
 * `MeasureTheory.Measure.measure_Icc_le_of_tendsto_integral`: a locally finite vague limit `η` of
   translates `U_{t i}` inherits the local renewal bound, `η [a, b] ≤ U [0, b - a + 2]`, so its
   masses of intervals of a fixed length are bounded uniformly in their position.
@@ -53,11 +53,11 @@ measure, identifies every limit of the translates.
 Testing the translated renewal equation against `f` gives `∫ f dUₜ = f (-t) + ∫ ψ dUₜ` with
 `ψ z = ∫ f (x + z) dF(x)`. The difficulty is that `f` is compactly supported but `ψ` need not be,
 because `F` may have unbounded support. The local renewal bound `U [t, t + h] ≤ U [0, h]`
-(`MeasureTheory.Measure.map_renewalMeasure_Icc_le`) bounds the mass of the translates, and of
-their limit, on intervals of a fixed length uniformly in their position. Splitting `F` into its
-parts on `[0, M]` and on `(M, ∞)` then shows that the second part contributes at most a constant
-multiple of `F (M, ∞)` to every integral, uniformly along the translates, and the first part gives
-a compactly supported test function.
+(`MeasureTheory.Measure.translatedRenewalMeasure_Icc_add_le`) bounds the mass of the translates,
+and of their limit, on intervals of a fixed length uniformly in their position. Splitting `F` into
+its parts on `[0, M]` and on `(M, ∞)` then shows that the second part contributes at most a
+constant multiple of `F (M, ∞)` to every integral, uniformly along the translates, and the first
+part gives a compactly supported test function.
 
 ## References
 
@@ -78,16 +78,16 @@ variable (μ : Measure ℝ≥0)
 
 /-- The renewal equation `U = δ₀ + μ ∗ U`, translated by `-t` on the real line: the translated
 renewal measure `Uₜ` satisfies `Uₜ = δ_{-t} + μ ∗ Uₜ`. -/
-theorem map_renewalMeasure_eq_dirac_add_conv [SFinite μ] (t : ℝ) :
-    μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t) =
-      dirac (-t) + μ.map ((↑) : ℝ≥0 → ℝ) ∗ μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t) := by
+theorem translatedRenewalMeasure_eq_dirac_add_conv [SFinite μ] (t : ℝ) :
+    μ.translatedRenewalMeasure t =
+      dirac (-t) + μ.map ((↑) : ℝ≥0 → ℝ) ∗ μ.translatedRenewalMeasure t := by
   have hcomp : (fun s : ℝ≥0 ↦ (s : ℝ) - t) = (fun x : ℝ ↦ x + -t) ∘ ((↑) : ℝ≥0 → ℝ) := by
     funext s
     simp [sub_eq_add_neg]
   have hcoe : (μ ∗ μ.renewalMeasure).map ((↑) : ℝ≥0 → ℝ) =
       μ.map ((↑) : ℝ≥0 → ℝ) ∗ μ.renewalMeasure.map ((↑) : ℝ≥0 → ℝ) :=
     map_conv_addMonoidHom NNReal.toRealHom.toAddMonoidHom measurable_coe_nnreal_real
-  rw [hcomp, ← map_map (by fun_prop) measurable_coe_nnreal_real]
+  rw [translatedRenewalMeasure_def, hcomp, ← map_map (by fun_prop) measurable_coe_nnreal_real]
   conv_lhs => rw [renewalMeasure_eq_dirac_add_conv]
   rw [Measure.map_add _ _ measurable_coe_nnreal_real, Measure.map_add _ _ (by fun_prop),
     map_dirac' measurable_coe_nnreal_real, map_dirac' (by fun_prop), hcoe, ← conv_dirac,
@@ -102,8 +102,8 @@ variable {μ}
 bound, up to enlarging the length of the interval by `2`. -/
 theorem measure_Icc_le_of_tendsto_integral [IsProbabilityMeasure μ] (hμ : μ {0} < 1)
     {ι : Type*} {l : Filter ι} [l.NeBot] {t : ι → ℝ} {η : Measure ℝ} [IsLocallyFiniteMeasure η]
-    (hη : ∀ f : C_c(ℝ, ℝ), Tendsto (fun i ↦ ∫ x, f x ∂μ.renewalMeasure.map
-      (fun s : ℝ≥0 ↦ (s : ℝ) - t i)) l (𝓝 (∫ x, f x ∂η))) (a b : ℝ) :
+    (hη : ∀ f : C_c(ℝ, ℝ), Tendsto (fun i ↦ ∫ x, f x ∂μ.translatedRenewalMeasure (t i)) l
+      (𝓝 (∫ x, f x ∂η))) (a b : ℝ) :
     η (Icc a b) ≤ μ.renewalMeasure (Iic (b - a + 2).toNNReal) := by
   -- Compare with a Urysohn function equal to one on `[a, b]` and vanishing off `(a - 1, b + 1)`.
   obtain ⟨g, hg1, hg0, hgc, hg01⟩ := exists_continuous_one_zero_of_isCompact
@@ -122,19 +122,20 @@ theorem measure_Icc_le_of_tendsto_integral [IsProbabilityMeasure μ] (hμ : μ {
     _ = ENNReal.ofReal (∫ x, gc x ∂η) := (hlin η).symm
     _ ≤ μ.renewalMeasure (Iic (b - a + 2).toNNReal) := by
         refine le_of_tendsto' ((ENNReal.continuous_ofReal.tendsto _).comp (hη gc)) fun i ↦ ?_
-        have := μ.isLocallyFiniteMeasure_map_renewalMeasure hμ (t i)
+        have := μ.isLocallyFiniteMeasure_translatedRenewalMeasure hμ (t i)
         rw [Function.comp_apply, hlin]
-        calc ∫⁻ x, ENNReal.ofReal (gc x) ∂μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t i)
+        calc ∫⁻ x, ENNReal.ofReal (gc x) ∂μ.translatedRenewalMeasure (t i)
             ≤ ∫⁻ x, (Icc (a - 1) (b + 1)).indicator 1 x
-                ∂μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t i) := lintegral_mono fun x ↦ by
+                ∂μ.translatedRenewalMeasure (t i) := lintegral_mono fun x ↦ by
               by_cases hx : x ∈ Ioo (a - 1) (b + 1)
               · simpa [indicator_of_mem (Ioo_subset_Icc_self hx), gc] using (hg01 x).2
               · simp [gc, hg0 hx]
-          _ = μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t i) (Icc (a - 1) (b + 1)) :=
+          _ = μ.translatedRenewalMeasure (t i) (Icc (a - 1) (b + 1)) :=
               lintegral_indicator_one measurableSet_Icc
           _ ≤ μ.renewalMeasure (Iic (b - a + 2).toNNReal) := by
-              rw [show b - a + 2 = b + 1 - (a - 1) by ring]
-              exact μ.map_renewalMeasure_Icc_le (t i) (a - 1) (b + 1)
+              refine (measure_mono (Icc_subset_Icc_right ?_)).trans
+                (μ.translatedRenewalMeasure_Icc_add_le (t i) (a - 1) (b - a + 2).toNNReal)
+              linarith [Real.le_coe_toNNReal (b - a + 2)]
 
 end Harmonic
 
@@ -151,12 +152,12 @@ dropped: the integrals of compactly supported functions do not determine a measu
 infinite on compact sets. -/
 theorem map_coe_conv_eq_self_of_tendsto_integral (hμ : μ {0} < 1) {ι : Type*} {l : Filter ι}
     [l.NeBot] {t : ι → ℝ} (ht : Tendsto t l atTop) (η : Measure ℝ) [IsLocallyFiniteMeasure η]
-    (hη : ∀ f : C_c(ℝ, ℝ), Tendsto (fun i ↦ ∫ x, f x ∂μ.renewalMeasure.map
-      (fun s : ℝ≥0 ↦ (s : ℝ) - t i)) l (𝓝 (∫ x, f x ∂η))) :
+    (hη : ∀ f : C_c(ℝ, ℝ), Tendsto (fun i ↦ ∫ x, f x ∂μ.translatedRenewalMeasure (t i)) l
+      (𝓝 (∫ x, f x ∂η))) :
     μ.map ((↑) : ℝ≥0 → ℝ) ∗ η = η := by
   -- Local finiteness of the translates makes test functions integrable against them.
-  have hU (i : ι) : IsLocallyFiniteMeasure (μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t i)) :=
-    μ.isLocallyFiniteMeasure_map_renewalMeasure hμ _
+  have hU (i : ι) : IsLocallyFiniteMeasure (μ.translatedRenewalMeasure (t i)) :=
+    μ.isLocallyFiniteMeasure_translatedRenewalMeasure hμ _
   -- The convolution `μ ∗ η` is locally finite, since `η` has uniformly bounded interval masses.
   have : IsLocallyFiniteMeasure (μ.map ((↑) : ℝ≥0 → ℝ) ∗ η) :=
     isLocallyFiniteMeasure_conv_of_measure_Icc_le two_pos (fun c ↦ by
@@ -171,16 +172,17 @@ theorem map_coe_conv_eq_self_of_tendsto_integral (hμ : μ {0} < 1) {ι : Type*}
     simpa [show c + b - (c + a) = b - a by ring] using
       measure_Icc_le_of_tendsto_integral hμ hη (c + a) (c + b)
   have hBU (i : ι) (c : ℝ) :
-      μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t i) (Icc (c + a) (c + b)) ≤ B :=
-    (μ.map_renewalMeasure_Icc_le _ _ _).trans (measure_mono (Iic_subset_Iic.mpr
-      (Real.toNNReal_le_toNNReal (by linarith))))
+      μ.translatedRenewalMeasure (t i) (Icc (c + a) (c + b)) ≤ B :=
+    (measure_mono (Icc_subset_Icc_right (by linarith [Real.le_coe_toNNReal (b - a)]))).trans
+      ((μ.translatedRenewalMeasure_Icc_add_le (t i) (c + a) (b - a).toNNReal).trans
+        (measure_mono (Iic_subset_Iic.mpr (Real.toNNReal_le_toNNReal (by linarith)))))
   -- By the translated renewal equation, `∫ f dUᵢ = f (-tᵢ) + ∫ ψ dUᵢ` for
   -- `ψ z = ∫ f (x + z) dμ(x)`, and `f (-tᵢ)` vanishes eventually.
-  have hdecomp (i : ι) : ∫ x, f x ∂μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t i) =
-      f (-t i) + ∫ z, ∫ x, f (x + z) ∂μ ∂μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t i) := by
-    have hi : Integrable f (μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t i)) := f.integrable
-    rw [map_renewalMeasure_eq_dirac_add_conv] at hi
-    conv_lhs => rw [map_renewalMeasure_eq_dirac_add_conv]
+  have hdecomp (i : ι) : ∫ x, f x ∂μ.translatedRenewalMeasure (t i) =
+      f (-t i) + ∫ z, ∫ x, f (x + z) ∂μ ∂μ.translatedRenewalMeasure (t i) := by
+    have hi : Integrable f (μ.translatedRenewalMeasure (t i)) := f.integrable
+    rw [translatedRenewalMeasure_eq_dirac_add_conv] at hi
+    conv_lhs => rw [translatedRenewalMeasure_eq_dirac_add_conv]
     rw [integral_add_measure (integrable_add_measure.1 hi).1 (integrable_add_measure.1 hi).2,
       integral_dirac, integral_map_coe_conv hf (hBU i) hB]
   have hlim : Tendsto (fun i ↦ f (-t i)) l (𝓝 0) := by
@@ -189,7 +191,7 @@ theorem map_coe_conv_eq_self_of_tendsto_integral (hμ : μ {0} < 1) {ι : Type*}
     exact (CompactlySupportedContinuousMap.eq_zero_of_enorm_le_indicator hf
       fun h ↦ by linarith [h.1]).symm
   have h1 : Tendsto (fun i ↦ ∫ z, ∫ x, f (x + z) ∂μ
-      ∂μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t i)) l (𝓝 (∫ x, f x ∂η)) := by
+      ∂μ.translatedRenewalMeasure (t i)) l (𝓝 (∫ x, f x ∂η)) := by
     have := (hη f).sub hlim
     rw [sub_zero] at this
     refine this.congr fun i ↦ ?_

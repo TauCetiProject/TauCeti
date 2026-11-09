@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
+public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import TauCeti.Topology.VectorBundle.Pullback
 
 /-!
@@ -24,6 +25,13 @@ ground field and intertwines multiplication with composition of scalar functions
 Restriction to an open subset is pullback along its inclusion. No finite-dimensionality,
 compactness, or boundary assumption is needed, and the construction works at every
 differentiability order.
+
+More generally, for a normed field extension `𝕜 ⊆ 𝕜'`, the sections of a `𝕜'`-vector bundle over
+a `𝕜`-manifold form a module over the `𝕜'`-valued functions
+(`ContMDiffSection.instModuleContMDiffMapOfNormedAlgebra`). This action extends the `𝕜`-valued
+function action and the `𝕜'`-scalar action through constant functions, and commutes with pullback
+and restriction. For `𝕜 = ℝ` and `𝕜' = ℂ` it makes the sections of a complex bundle over a real
+manifold a module over the complex-valued functions.
 -/
 
 public section
@@ -187,5 +195,98 @@ def restrictLinearMap (U : Opens M) :
 theorem restrictLinearMap_apply (U : Opens M) (s : Cₛ^n⟮I; F, V⟯) :
     dsimp% only [ContinuousMap.coe_mk]
       (restrictLinearMap I F n V U s = s.restrict U) := (rfl)
+
+/-! ### Functions with values in a normed algebra -/
+
+section NormedAlgebra
+
+variable {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
+  [NormedAlgebra 𝕜 𝕜']
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace 𝕜' F] [IsScalarTower 𝕜 𝕜' F]
+  {n : ℕ∞ω} {V : M → Type*} [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜' (V x)] [VectorBundle 𝕜' F V]
+
+/-- Functions with values in a normed algebra `𝕜'` act by pointwise multiplication on the
+sections of a `𝕜'`-vector bundle over a `𝕜`-manifold. When `𝕜' = 𝕜`,
+`ContMDiffSection.instSMulContMDiffMap` takes precedence; both actions are pointwise. -/
+instance (priority := low) instSMulContMDiffMapOfNormedAlgebra :
+    SMul C^n⟮I, M; 𝓘(𝕜, 𝕜'), 𝕜'⟯ Cₛ^n⟮I; F, V⟯ :=
+  ⟨fun f s ↦ ⟨fun x ↦ f x • s x, f.contMDiff.smul_totalSpace s.contMDiff⟩⟩
+
+/-- Evaluation of the `𝕜'`-valued function action is fibrewise scalar multiplication. -/
+@[simp]
+theorem smul_apply_of_normedAlgebra (f : C^n⟮I, M; 𝓘(𝕜, 𝕜'), 𝕜'⟯) (s : Cₛ^n⟮I; F, V⟯) (x : M) :
+    (f • s) x = f x • s x := (rfl)
+
+/-- Constant `𝕜'`-scalars commute with `𝕜'`-valued functions acting on sections. -/
+instance instSMulCommClassContMDiffMapOfNormedAlgebra :
+    SMulCommClass 𝕜' C^n⟮I, M; 𝓘(𝕜, 𝕜'), 𝕜'⟯ Cₛ^n⟮I; F, V⟯ where
+  smul_comm c f s := by ext x; simp [smul_comm c (f x)]
+
+/-- A constant `𝕜'`-valued function acts on sections by its value. -/
+@[simp]
+theorem const_smul_of_normedAlgebra (c : 𝕜') (s : Cₛ^n⟮I; F, V⟯) :
+    (ContMDiffMap.const c : C^n⟮I, M; 𝓘(𝕜, 𝕜'), 𝕜'⟯) • s = c • s :=
+  ext fun _ ↦ (rfl)
+
+section Pullback
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+  [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- Pullback intertwines the `𝕜'`-valued function action with composition of functions. -/
+@[simp]
+theorem pullback_smul_function_of_normedAlgebra (f : C^n⟮I, M; 𝓘(𝕜, 𝕜'), 𝕜'⟯)
+    (s : Cₛ^n⟮I; F, V⟯) (g : C^n⟮I', N; I, M⟯) :
+    (f • s).pullback g = f.comp g • s.pullback g := by
+  ext x
+  simp only [ContinuousMap.coe_ofClass, pullback_apply, smul_apply_of_normedAlgebra,
+    ContMDiffMap.comp_apply]
+  exact rfl
+
+/-- Restriction intertwines the `𝕜'`-valued function action with restriction of functions. -/
+@[simp]
+theorem restrict_smul_function_of_normedAlgebra (f : C^n⟮I, M; 𝓘(𝕜, 𝕜'), 𝕜'⟯)
+    (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
+    (f • s).restrict U =
+      f.comp (⟨Subtype.val, contMDiff_subtype_val⟩ : C^n⟮I, U; I, M⟯) • s.restrict U :=
+  pullback_smul_function_of_normedAlgebra f s _
+
+end Pullback
+
+variable [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
+
+/-- The sections of a `𝕜'`-vector bundle over a `𝕜`-manifold form a module over the ring of
+`𝕜'`-valued functions of the same regularity. -/
+instance (priority := low) instModuleContMDiffMapOfNormedAlgebra [ContMDiffRing 𝓘(𝕜, 𝕜') n 𝕜'] :
+    Module C^n⟮I, M; 𝓘(𝕜, 𝕜'), 𝕜'⟯ Cₛ^n⟮I; F, V⟯ where
+  one_smul s := by ext x; simp
+  mul_smul f g s := by ext x; simp [mul_smul]
+  smul_zero f := by ext x; simp
+  smul_add f s t := by ext x; simp [smul_add]
+  add_smul f g s := by ext x; simp [add_smul]
+  zero_smul s := by ext x; simp
+
+/-- Ground-field scalars, acting on `𝕜'`-valued functions, and these functions form a tower on
+sections. -/
+instance instIsScalarTowerContMDiffMapOfNormedAlgebra [ContMDiffRing 𝓘(𝕜, 𝕜') n 𝕜']
+    [∀ x, IsScalarTower 𝕜 𝕜' (V x)] :
+    IsScalarTower 𝕜 C^n⟮I, M; 𝓘(𝕜, 𝕜'), 𝕜'⟯ Cₛ^n⟮I; F, V⟯ where
+  smul_assoc c f s := by ext x; simp
+
+/-- `𝕜`-valued functions, acting on `𝕜'`-valued functions by `ContMDiffMap.instSMul'`, and
+`𝕜'`-valued functions form a tower on sections. -/
+instance instIsScalarTowerContMDiffMapContMDiffMapOfNormedAlgebra
+    [∀ x, IsScalarTower 𝕜 𝕜' (V x)] :
+    IsScalarTower C^n⟮I, M; 𝕜⟯ C^n⟮I, M; 𝓘(𝕜, 𝕜'), 𝕜'⟯ Cₛ^n⟮I; F, V⟯ where
+  smul_assoc f g s := by
+    ext x
+    rw [smul_apply_of_normedAlgebra, smul_apply, smul_apply_of_normedAlgebra]
+    exact smul_assoc (f x) (g x) (s x)
+
+end NormedAlgebra
 
 end ContMDiffSection

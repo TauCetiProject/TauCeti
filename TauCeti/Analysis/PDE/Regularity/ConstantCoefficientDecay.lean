@@ -328,6 +328,67 @@ open scoped Distributions InnerProductSpace
 variable {n : ℕ} {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
   {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {ρ r : ℝ}
 
+/-- For a weak solution `u` of `-div(A ∇u) = -div G` on a ball `B_r ⊆ Ω`, with `G - c` square
+integrable on `B_r`, there is an `A`-harmonic `w ∈ H¹(B_r)` (that is, `∫ ⟨A∇w, ∇v⟩ = 0` for all
+`v ∈ H¹₀(B_r)`) with `∫_{B_r} ‖∇u - ∇w‖² ≤ λ⁻² ∫_{B_r} ‖G - c‖²`. -/
+private theorem exists_forall_energyFormH1_eq_zero_setIntegral_norm_gradient_sub_sq_le
+    {lam Lam : ℝ} (hA : UniformlyEllipticOn (ball x₀ r) (fun _ => A) lam Lam)
+    {u : W1p volume Omega 2}
+    {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
+    (hu : ∀ φ : 𝓓(Omega, ℝ),
+      energyFormH1 (fun _ => A) 0 0 u (W1p.ofTestFunctionₗ volume Omega 2 φ) =
+        ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ)
+    (hball : ball x₀ r ⊆ Omega) {c : EuclideanSpace ℝ (Fin (n + 1))}
+    (hGc : MemLp (fun x => G x - c) 2 (volume.restrict (ball x₀ r))) :
+    ∃ w : W1p volume (⟨ball x₀ r, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2,
+      (∀ v : W1p0 volume (⟨ball x₀ r, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2,
+        energyFormH1 (fun _ => A) 0 0 w (v : W1p volume _ 2) = 0) ∧
+      ∫ x in ball x₀ r, ‖W1p.gradient u x - W1p.gradient w x‖ ^ 2 ≤
+        (∫ x in ball x₀ r, ‖G x - c‖ ^ 2) / lam ^ 2 := by
+  set B : Opens (EuclideanSpace ℝ (Fin (n + 1))) := ⟨ball x₀ r, isOpen_ball⟩
+  have hB : B ≤ Omega := hball
+  have hlam : 0 < lam := hA.pos
+  -- The `A`-harmonic replacement `w` of `u` on `B_r`.
+  obtain ⟨w, ⟨hwu, hw⟩, -⟩ :=
+    UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
+      (Omega := B) (b := 0) (c := 0) hA aestronglyMeasurable_const aestronglyMeasurable_const
+      aestronglyMeasurable_const (beta := 0) (fun _ _ => by simp) (gamma := 0)
+      (fun _ _ => by simp) (fun _ _ => le_rfl) subset_rfl (by simpa using hlam) 0
+      (W1p.restrictL hB u)
+  have hw0 : ∀ v : W1p0 volume B 2,
+      energyFormH1 (fun _ => A) 0 0 w (v : W1p volume B 2) = 0 := fun v => by
+    rw [hw v, ← dirichletForcing_apply_eq_setIntegral, dirichletForcing_apply, inner_zero_left]
+  have huw : W1p.restrictL hB u - w ∈ w1p0Submodule volume B 2 := by
+    have h := (ClosedSubmodule.mem_toSubmodule_iff (w - W1p.restrictL hB u)
+      (w1p0Submodule volume B 2)).2 hwu
+    exact (ClosedSubmodule.mem_toSubmodule_iff _ _).1 (sub_mem_comm_iff.1 h)
+  -- The energy distance between `u` and `w` is controlled by `G - c`.
+  have hAB : UniformlyEllipticOn (B : Set (EuclideanSpace ℝ (Fin (n + 1)))) (fun _ => A) lam Lam :=
+    hA
+  have hGcB : MemLp (fun x => G x - c) 2
+      (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))) := hGc
+  have hrep : ∀ v : W1p0 volume B 2,
+      energyFormH1 (fun _ => A) 0 0 (W1p.restrictL hB u) (v : W1p volume B 2) =
+        ⟪hGcB.toLp, W1p.gradient (v : W1p volume B 2)⟫_ℝ :=
+    forall_energyFormH1_restrictL_eq_inner hB
+      (memLp_top_const (energyIntegrand A 0 0)) hu hGcB
+  have hest : lam * ‖W1p.gradient (W1p.restrictL hB u - w)‖ ≤ ‖hGcB.toLp‖ :=
+    hAB.mul_norm_gradient_sub_le aestronglyMeasurable_const huw hw0 hrep
+  have hGn : ‖hGcB.toLp‖ ^ 2 = ∫ x in ball x₀ r, ‖G x - c‖ ^ 2 := by
+    rw [← Lp.integral_norm_sq_eq_norm_sq]
+    refine integral_congr_ae ?_
+    filter_upwards [hGcB.coeFn_toLp] with x hx
+    rw [hx]
+  have hE' : ∫ x in ball x₀ r, ‖W1p.gradient u x - W1p.gradient w x‖ ^ 2 ≤
+      (∫ x in ball x₀ r, ‖G x - c‖ ^ 2) / lam ^ 2 := by
+    calc ∫ x in ball x₀ r, ‖W1p.gradient u x - W1p.gradient w x‖ ^ 2
+        = ‖W1p.gradient (W1p.restrictL hB u - w)‖ ^ 2 :=
+          W1p.setIntegral_norm_gradient_sub_sq_eq hB u w
+      _ ≤ _ := by
+          rw [← hGn, le_div_iff₀ (by positivity), ← mul_pow, mul_comm]
+          exact pow_le_pow_left₀ (by positivity) hest 2
+  exact ⟨w, hw0, hE'⟩
+
 /-- **Comparison with the frozen problem for constant coefficients.** Let `A` be a constant
 coefficient matrix, uniformly elliptic with constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` solve
 `-div(A ∇u) = -div G` weakly on an open set `Ω ⊆ ℝ^{n+1}`, that is
@@ -355,43 +416,13 @@ theorem setIntegral_ball_norm_gradient_sub_setAverage_sq_le_add_of_forall_energy
         (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) + 2) / lam ^ 2 *
           ∫ x in ball x₀ r, ‖G x - c‖ ^ 2 := by
   have hr : 0 < r := hρ.trans_le hρr
-  set B : Opens (EuclideanSpace ℝ (Fin (n + 1))) := ⟨ball x₀ r, isOpen_ball⟩
-  have hB : B ≤ Omega := hball
   have hlam : 0 < lam := hA.pos
   have hx₀ : x₀ ∈ ball x₀ r := mem_ball_self hr
   have hAu : ∀ ξ : EuclideanSpace ℝ (Fin (n + 1)), A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2 :=
     fun ξ => (le_abs_self _).trans
       (abs_toQuadraticForm'_le_of_abs_dotProduct_mulVec_le (hA.upper_bound hx₀) ξ)
-  -- The `A`-harmonic replacement `w` of `u` on `B_r`.
-  obtain ⟨w, ⟨hwu, hw⟩, -⟩ :=
-    UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
-      (Omega := B) (b := 0) (c := 0) hA aestronglyMeasurable_const aestronglyMeasurable_const
-      aestronglyMeasurable_const le_rfl (fun _ _ => by simp) (gamma := 0) (fun _ _ => by simp)
-      (fun _ _ => le_rfl) hr.le subset_rfl (by simpa using hlam) 0 (W1p.restrictL hB u)
-  have hw0 : ∀ v : W1p0 volume B 2,
-      energyFormH1 (fun _ => A) 0 0 w (v : W1p volume B 2) = 0 := fun v => by
-    rw [hw v, ← dirichletForcing_apply_eq_setIntegral, dirichletForcing_apply, inner_zero_left]
-  have huw : W1p.restrictL hB u - w ∈ w1p0Submodule volume B 2 := by
-    have h := (ClosedSubmodule.mem_toSubmodule_iff (w - W1p.restrictL hB u)
-      (w1p0Submodule volume B 2)).2 hwu
-    exact (ClosedSubmodule.mem_toSubmodule_iff _ _).1 (sub_mem_comm_iff.1 h)
-  -- The energy distance between `u` and `w` is controlled by `G - c`.
-  have hAB : UniformlyEllipticOn (B : Set (EuclideanSpace ℝ (Fin (n + 1)))) (fun _ => A) lam Lam :=
-    hA
-  have hGcB : MemLp (fun x => G x - c) 2
-      (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))) := hGc
-  have hrep : ∀ v : W1p0 volume B 2,
-      energyFormH1 (fun _ => A) 0 0 (W1p.restrictL hB u) (v : W1p volume B 2) =
-        ⟪hGcB.toLp, W1p.gradient (v : W1p volume B 2)⟫_ℝ :=
-    forall_energyFormH1_restrictL_eq_inner hB
-      (memLp_top_const (energyIntegrand A 0 0)) hu hGcB
-  have hest : lam * ‖W1p.gradient (W1p.restrictL hB u - w)‖ ≤ ‖hGcB.toLp‖ :=
-    hAB.mul_norm_gradient_sub_le aestronglyMeasurable_const huw hw0 hrep
-  have hGn : ‖hGcB.toLp‖ ^ 2 = ∫ x in ball x₀ r, ‖G x - c‖ ^ 2 := by
-    rw [← Lp.integral_norm_sq_eq_norm_sq]
-    refine integral_congr_ae ?_
-    filter_upwards [hGcB.coeFn_toLp] with x hx
-    rw [hx]
+  obtain ⟨w, hw0, hE'⟩ :=
+    exists_forall_energyFormH1_eq_zero_setIntegral_norm_gradient_sub_sq_le hA hu hball hGc
   -- The gradient of the replacement decays from `B_r` to `B_ρ`.
   have hdec := setIntegral_ball_norm_gradient_sub_setAverage_sq_le_of_forall_energyFormH1_eq_zero
     hlam (hA.lower_bound hx₀) hAu hw0 (x₀ := x₀) (R := r) subset_rfl
@@ -419,14 +450,6 @@ theorem setIntegral_ball_norm_gradient_sub_setAverage_sq_le_add_of_forall_energy
   have hD : 0 ≤ D := hDdef ▸ by positivity
   have hE0 : 0 ≤ ∫ x in ball x₀ r, ‖W1p.gradient u x - W1p.gradient w x‖ ^ 2 :=
     integral_nonneg fun _ => by positivity
-  have hE' : ∫ x in ball x₀ r, ‖W1p.gradient u x - W1p.gradient w x‖ ^ 2 ≤
-      (∫ x in ball x₀ r, ‖G x - c‖ ^ 2) / lam ^ 2 := by
-    calc ∫ x in ball x₀ r, ‖W1p.gradient u x - W1p.gradient w x‖ ^ 2
-        = ‖W1p.gradient (W1p.restrictL hB u - w)‖ ^ 2 :=
-          W1p.setIntegral_norm_gradient_sub_sq_eq hB u w
-      _ ≤ _ := by
-          rw [← hGn, le_div_iff₀ (by positivity), ← mul_pow, mul_comm]
-          exact pow_le_pow_left₀ (by positivity) hest 2
   have h1 : (4 * (D * q) + 2) * ∫ x in ball x₀ r, ‖W1p.gradient u x - W1p.gradient w x‖ ^ 2 ≤
       (4 * D + 2) / lam ^ 2 * ∫ x in ball x₀ r, ‖G x - c‖ ^ 2 := by
     rw [div_mul_eq_mul_div, mul_div_assoc]

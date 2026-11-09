@@ -179,10 +179,7 @@ theorem boundary_two {X : Fin 3 → C} (f : Coherences R X) :
 and `j` is the one indexed by their images under `e`. -/
 noncomputable def Coherences.comap {m : ℕ} {X : Fin (n + 1) → C} (f : Coherences R X)
     {e : Fin (m + 1) → Fin (n + 1)} (he : StrictMono e) : Coherences R (X ∘ e) :=
-  fun i j S d hij hS hd ↦ f (e i) (e j) (S.image e) d (he.monotone hij)
-    (by
-      rw [← coe_subset, coe_image, coe_Ioo]
-      exact (Set.image_mono (by rwa [← coe_Ioo, coe_subset])).trans he.image_Ioo_subset)
+  fun i j S d hij hS hd ↦ f (e i) (e j) (S.image e) d (he.monotone hij) (he.image_subset_Ioo hS)
     (by rwa [card_image_of_injective _ he.injective])
 
 /-- The coherence of the pullback indexed by `i`, `S` and `j` is the coherence indexed by their

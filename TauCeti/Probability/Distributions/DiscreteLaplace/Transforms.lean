@@ -105,11 +105,23 @@ theorem integrableExpSet_intCast_discreteLaplaceMeasure (m : ℤ) {q : ℝ}
   rw [h, h, abs_lt]
   constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
 
+/-- The exact-domain condition `q * exp t < 1 ∧ q * exp (-t) < 1` forces `q < 1`, since the
+product of the two bounds is `q ^ 2 < 1`. -/
+private theorem lt_one_of_mul_exp_lt_one {q t : ℝ} (hq0 : 0 ≤ q)
+    (ht : q * exp t < 1 ∧ q * exp (-t) < 1) : q < 1 := by
+  have h : q ^ 2 < 1 := by
+    have := mul_nonneg hq0 (exp_pos (-t)).le
+    calc q ^ 2 = q * exp t * (q * exp (-t)) := by
+          rw [mul_mul_mul_comm, ← exp_add, add_neg_cancel, exp_zero]; ring
+      _ < 1 := by nlinarith [ht.1, ht.2]
+  nlinarith
+
 /-- The moment-generating function of the signed count, on its exact domain, including `q = 0`. -/
-theorem mgf_intCast_discreteLaplaceMeasure (m : ℤ) {q t : ℝ} (hq0 : 0 ≤ q) (hq1 : q < 1)
+theorem mgf_intCast_discreteLaplaceMeasure (m : ℤ) {q t : ℝ} (hq0 : 0 ≤ q)
     (ht : q * exp t < 1 ∧ q * exp (-t) < 1) :
     mgf (Int.cast : ℤ → ℝ) (discreteLaplaceMeasure m q) t =
       exp (t * m) * (1 - q) ^ 2 / ((1 - q * exp t) * (1 - q * exp (-t))) := by
+  have hq1 := lt_one_of_mul_exp_lt_one hq0 ht
   let p : unitInterval := ⟨1 - q, by constructor <;> linarith⟩
   have hp : p ≠ 0 := ne_of_gt (unitInterval.coe_pos.mp (by dsimp [p]; linarith))
   have hq : 1 - (p : ℝ) = q := by simp [p]
@@ -122,11 +134,12 @@ theorem mgf_intCast_discreteLaplaceMeasure (m : ℤ) {q t : ℝ} (hq0 : 0 ≤ q)
 
 /-- The cumulant-generating function on the exact domain, with the translation separated from
 the two geometric contributions. -/
-theorem cgf_intCast_discreteLaplaceMeasure (m : ℤ) {q t : ℝ} (hq0 : 0 ≤ q) (hq1 : q < 1)
+theorem cgf_intCast_discreteLaplaceMeasure (m : ℤ) {q t : ℝ} (hq0 : 0 ≤ q)
     (ht : q * exp t < 1 ∧ q * exp (-t) < 1) :
     cgf (Int.cast : ℤ → ℝ) (discreteLaplaceMeasure m q) t =
       t * m + 2 * log (1 - q) - log (1 - q * exp t) - log (1 - q * exp (-t)) := by
-  rw [cgf, mgf_intCast_discreteLaplaceMeasure m hq0 hq1 ht,
+  have hq1 := lt_one_of_mul_exp_lt_one hq0 ht
+  rw [cgf, mgf_intCast_discreteLaplaceMeasure m hq0 ht,
     log_div (mul_ne_zero (exp_ne_zero _) (pow_ne_zero _ (by linarith)))
       (mul_ne_zero (by linarith) (by linarith)),
     log_mul (exp_ne_zero _) (pow_ne_zero _ (by linarith)), log_exp,

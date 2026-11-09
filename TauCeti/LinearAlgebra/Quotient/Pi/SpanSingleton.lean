@@ -60,12 +60,10 @@ with `w x₀ = 1`. -/
 theorem exists_eq_smul_of_forall_dvd {R X : Type*} [Monoid R] {v : X → R} {x₀ : X}
     (h : ∀ x, v x₀ ∣ v x) : ∃ w : X → R, w x₀ = 1 ∧ v = v x₀ • w := by
   classical
-  have h' : ∀ x, ∃ c, v x = v x₀ * c := h
-  choose c hc using h'
+  choose c hc using h
   refine ⟨Function.update c x₀ 1, Function.update_self x₀ 1 c, funext fun x ↦ ?_⟩
-  by_cases hx : x = x₀
-  · subst hx
-    simp
+  rcases eq_or_ne x x₀ with rfl | hx
+  · simp
   · simp [Function.update_of_ne hx, hc x]
 
 variable {R : Type*} [Ring R] {X : Type*}
@@ -83,20 +81,9 @@ the coordinate vectors at `x ≠ x₀`. -/
 noncomputable def piSplitAt : (X → R) ≃ₗ[R] ({x // x ≠ x₀} → R) × R where
   toFun u := (fun x ↦ u x - u x₀ * w x, u x₀)
   invFun a x := (if h : x = x₀ then 0 else a.1 ⟨x, h⟩) + a.2 * w x
-  map_add' u v := by
-    ext x
-    · simp only [Prod.fst_add, Pi.add_apply, add_mul]
-      abel
-    · simp only [Prod.snd_add, Pi.add_apply]
-  map_smul' c u := by
-    ext x
-    · simp only [Prod.smul_fst, Pi.smul_apply, smul_eq_mul, RingHom.id_apply, mul_sub, mul_assoc]
-    · simp only [Prod.smul_snd, Pi.smul_apply, smul_eq_mul, RingHom.id_apply]
-  left_inv u := funext fun x ↦ by
-    by_cases h : x = x₀
-    · subst h
-      simp [hw]
-    · simp [h]
+  map_add' u v := by ext <;> simp [add_mul, sub_add_sub_comm]
+  map_smul' c u := by ext <;> simp [mul_sub, mul_assoc]
+  left_inv u := funext fun x ↦ by by_cases h : x = x₀ <;> simp [h, hw]
   right_inv a := Prod.ext (funext fun x ↦ by simp [x.2, hw]) (by simp [hw])
 
 @[simp]
@@ -175,22 +162,17 @@ theorem piSplitAtQuot_single_self [DecidableEq X] :
 /-- **The kernel of the reduction is the span of `q • w`.** -/
 theorem ker_piSplitAtQuot : LinearMap.ker (piSplitAtQuot x₀ w hw q) = Submodule.span R {q • w} := by
   ext u
-  rw [LinearMap.mem_ker, piSplitAtQuot_apply, Prod.mk_eq_zero, Submodule.Quotient.mk_eq_zero,
-    Ideal.mem_span_singleton', Submodule.mem_span_singleton]
+  simp only [LinearMap.mem_ker, piSplitAtQuot_apply, Prod.mk_eq_zero,
+    Submodule.Quotient.mk_eq_zero, Ideal.mem_span_singleton', Submodule.mem_span_singleton,
+    funext_iff, Pi.zero_apply, sub_eq_zero, Subtype.forall, Pi.smul_apply, smul_eq_mul]
   constructor
   · rintro ⟨h, a, ha⟩
-    refine ⟨a, funext fun x ↦ ?_⟩
-    by_cases hx : x = x₀
-    · subst hx
-      simp [hw, ha]
-    · have hx' := congr_fun h ⟨x, hx⟩
-      rw [Pi.zero_apply, ← ha] at hx'
-      simp only [Pi.smul_apply, smul_eq_mul, ← mul_assoc]
-      exact (sub_eq_zero.mp hx').symm
-  · rintro ⟨a, rfl⟩
-    refine ⟨funext fun x ↦ ?_, a, ?_⟩
-    · simp only [Pi.smul_apply, smul_eq_mul, hw, Pi.zero_apply, mul_one, mul_assoc, sub_self]
-    · simp [hw]
+    refine ⟨a, fun x ↦ ?_⟩
+    rcases eq_or_ne x x₀ with rfl | hx
+    · simp [hw, ha]
+    · rw [h x hx, ← ha, mul_assoc]
+  · rintro ⟨a, ha⟩
+    simp [← ha, hw, mul_assoc]
 
 end LinearMap
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Independence.DisjointBlocks
 public import TauCeti.Probability.Renewal.Measure
+import Mathlib.Algebra.Order.Floor.Semiring
 import TauCeti.Probability.Independence.InfinitePi
 
 /-!
@@ -33,9 +34,10 @@ renewal theorem and the key renewal theorem.
   `U [t, t + h] ≤ U [0, h]`.
 * `MeasureTheory.Measure.renewalFunction_add_le` — the uniform increment bound
   `m (t + h) ≤ m t + U [0, h]`.
-* `MeasureTheory.Measure.map_renewalMeasure_Icc_le` — the same bound for the translates
-  `U.map (s ↦ s - t)` on the real line, which are locally finite when `F {0} < 1`
-  (`MeasureTheory.Measure.isLocallyFiniteMeasure_map_renewalMeasure`).
+* `MeasureTheory.Measure.renewalMeasure_Iic_le_add_one_mul` — the linear-growth bound
+  `U [0, u] ≤ (u + 1) * U [0, 1]`.
+* `MeasureTheory.Measure.lintegral_renewalMeasure_Iic_lt_top` — a finite-mean integrable
+  envelope for backward-window masses.
 
 ## Implementation notes
 
@@ -203,26 +205,40 @@ theorem renewalFunction_add_le (t h : ℝ≥0) :
     _ = 1 + (μ.renewalFunction t + μ.renewalMeasure (Iic h)) := by
         rw [renewalMeasure_Iic, add_assoc]
 
-/-- **The local renewal bound for translates.** The translates `U.map (s ↦ s - t)` of the renewal
-measure, regarded as measures on the real line, give every interval at most the renewal mass of an
-initial interval of the same length. -/
-theorem map_renewalMeasure_Icc_le (t a b : ℝ) :
-    μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t) (Icc a b) ≤
-      μ.renewalMeasure (Iic (b - a).toNNReal) := by
-  rw [map_apply (by fun_prop) measurableSet_Icc]
-  refine (measure_mono fun s hs ↦ ?_).trans
-    (μ.renewalMeasure_Icc_add_le (a + t).toNNReal (b - a).toNNReal)
-  simp only [mem_preimage, mem_Icc] at hs
-  constructor
-  · exact Real.toNNReal_le_iff_le_coe.mpr (by linarith)
-  · rw [← NNReal.coe_le_coe, NNReal.coe_add, Real.coe_toNNReal', Real.coe_toNNReal']
-    linarith [le_max_left (a + t) 0, le_max_left (b - a) 0]
+/-- The renewal mass of `[0, u]` grows at most linearly, with bound
+`U [0, u] ≤ (u + 1) * U [0, 1]`. No assumption on the atom at zero or the mean is needed;
+both sides may be infinite. -/
+theorem renewalMeasure_Iic_le_add_one_mul (u : ℝ≥0) :
+    μ.renewalMeasure (Iic u) ≤ ((u : ℝ≥0∞) + 1) * μ.renewalMeasure (Iic 1) := by
+  have hcover : Iic u ⊆ ⋃ k ∈ Finset.range (⌊u⌋₊ + 1),
+      Icc (k : ℝ≥0) (k + 1) := by
+    intro s hs
+    simp only [mem_iUnion, Finset.mem_range, mem_Icc]
+    exact ⟨⌊s⌋₊, Nat.lt_succ_of_le (Nat.floor_mono hs),
+      Nat.floor_le (by positivity), (Nat.lt_floor_add_one s).le⟩
+  calc
+    _ ≤ ∑ k ∈ Finset.range (⌊u⌋₊ + 1),
+        μ.renewalMeasure (Icc (k : ℝ≥0) (k + 1)) :=
+      (measure_mono hcover).trans (measure_biUnion_finset_le _ _)
+    _ ≤ ∑ _k ∈ Finset.range (⌊u⌋₊ + 1), μ.renewalMeasure (Iic 1) :=
+      Finset.sum_le_sum fun k _ ↦ μ.renewalMeasure_Icc_add_le k 1
+    _ = ((⌊u⌋₊ : ℝ≥0∞) + 1) * μ.renewalMeasure (Iic 1) := by simp
+    _ ≤ _ := by
+      gcongr
+      exact_mod_cast Nat.floor_le (a := u) (by positivity)
 
-/-- When `μ {0} < 1`, the translates `U.map (s ↦ s - t)` of the renewal measure are locally finite
-measures on the real line. -/
-theorem isLocallyFiniteMeasure_map_renewalMeasure (hμ : μ {0} < 1) (t : ℝ) :
-    IsLocallyFiniteMeasure (μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t)) :=
-  ⟨fun x ↦ ⟨Icc (x - 1) (x + 1), Icc_mem_nhds (by linarith) (by linarith),
-    (μ.map_renewalMeasure_Icc_le t _ _).trans_lt (μ.renewalMeasure_Iic_lt_top hμ _)⟩⟩
+/-- A finite-mean gap law integrates the renewal mass of its initial intervals.
+This is an integrable envelope for all backward windows of the same lengths. -/
+theorem lintegral_renewalMeasure_Iic_lt_top (hμ : μ {0} < 1)
+    (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂μ) ≠ ∞) :
+    ∫⁻ u, μ.renewalMeasure (Iic u) ∂μ < ∞ := by
+  calc
+    _ ≤ ∫⁻ u, ((u : ℝ≥0∞) + 1) * μ.renewalMeasure (Iic 1) ∂μ :=
+      lintegral_mono μ.renewalMeasure_Iic_le_add_one_mul
+    _ < ∞ := by
+      rw [lintegral_mul_const _ (by fun_prop), lintegral_add_left (by fun_prop)]
+      simp only [lintegral_const, measure_univ, mul_one]
+      exact ENNReal.mul_lt_top (ENNReal.add_lt_top.mpr ⟨hmean.lt_top, by simp⟩)
+        (μ.renewalMeasure_Iic_lt_top hμ 1)
 
 end MeasureTheory.Measure

@@ -14,7 +14,7 @@ public import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
-# Geometric invariance of the Laplacian
+# Calculus and geometric invariance of the Laplacian
 
 Mathlib's `Mathlib/Analysis/InnerProductSpace/Laplacian.lean` records that the Laplacian `Δ`
 commutes with *left* composition by a continuous linear map or equivalence acting on the
@@ -48,11 +48,11 @@ corollaries, where smoothness re-enters, live in the companion files
 `TauCeti/Analysis/InnerProductSpace/Harmonic/Isometry.lean` and
 `TauCeti/Analysis/InnerProductSpace/Harmonic/Dilation.lean`.
 
-The file also records the characterization `laplacian_eq_traceL` of the Laplacian as the trace of
-the second Fréchet derivative and the base second-derivative computation `laplacian_norm_sq`
-(`Δ ‖x‖² = 2 · dim E`), a reusable characteristic value of the Laplacian on the squared norm,
-its chain-rule generalization `ContDiff.laplacian_comp_norm_sq` to radial functions
-`x ↦ ρ (‖x‖²)`, the Leibniz rules `ContDiffAt.laplacian_fun_mul` and
+The file also records the characterization `laplacian_eq_traceL` of the Laplacian as the trace
+`traceL` of the second Fréchet derivative and the base second-derivative computation
+`laplacian_norm_sq` (`Δ ‖x‖² = 2 · dim E`), a reusable characteristic value of the Laplacian on
+the squared norm, its chain-rule generalization `ContDiff.laplacian_comp_norm_sq` to radial
+functions `x ↦ ρ (‖x‖²)`, the Leibniz rules `ContDiffAt.laplacian_fun_mul` and
 `ContDiffAt.laplacian_fun_smul` for products with a scalar function, the chain rule
 `ContDiffAt.laplacian_comp` for a real function of a scalar function, the companion rule
 `ContDiffAt.laplacian_norm_sq` for the squared norm of a vector-valued function, and the locality
@@ -72,6 +72,8 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `TauCeti.laplacian_comp_homothety_right`: `Δ` scales by `c ^ 2` under
   `AffineMap.homothety a c`.
 * `TauCeti.laplacian_comp_smul_right`: the origin-centered homothety special case.
+* `TauCeti.traceL`: the trace `H ↦ ∑ᵢ H eᵢ eᵢ` of a bilinear map, as a continuous linear
+  functional.
 * `TauCeti.laplacian_eq_traceL`: the Laplacian as the trace of the second Fréchet derivative.
 * `TauCeti.laplacian_eq_traceL_iteratedFDeriv`: the same trace, as a continuous linear functional
   of the second iterated Fréchet derivative.
@@ -85,6 +87,8 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   squared norm.
 * `ContDiff.laplacian_comp_norm_sq`: the Laplacian of a radial function `x ↦ ρ (‖x‖ ^ 2)` is
   `4 ‖x‖² ρ'' (‖x‖²) + 2 (dim E) ρ' (‖x‖²)`.
+* `ContDiff.laplacian`: the Laplacian loses two derivatives at every regularity order.
+* `ContDiffAt.laplacian_fun_mul_complex`: the planar product rule in directions `1` and `I`.
 * `ContDiffAt.laplacian_fun_mul`: the Leibniz rule `Δ (f g) = f Δg + 2 ⟪∇f, ∇g⟫ + g Δf`.
 * `ContDiffAt.laplacian_comp`: the chain rule `Δ (F ∘ q) = F''(q) ‖∇q‖² + F'(q) Δq` for a real
   function `F` of a scalar function `q`.
@@ -108,13 +112,24 @@ variable
   {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- The Laplacian of a function is the trace of its second Fréchet derivative, expressed as a
-continuous linear functional of `fderiv ℝ (fderiv ℝ f) x` in the standard orthonormal basis. -/
+/-- The trace `H ↦ ∑ᵢ H eᵢ eᵢ` of a continuous bilinear map in the standard orthonormal basis `e`
+of `E`, as a continuous linear functional. The Laplacian is the trace of the second Fréchet
+derivative (`TauCeti.laplacian_eq_traceL`). -/
+noncomputable def traceL : (E →L[ℝ] E →L[ℝ] F) →L[ℝ] F :=
+  ∑ i, (ContinuousLinearMap.apply ℝ F (stdOrthonormalBasis ℝ E i)).comp
+    (ContinuousLinearMap.apply ℝ (E →L[ℝ] F) (stdOrthonormalBasis ℝ E i))
+
+/-- The trace of a bilinear map is the sum of its diagonal values on the standard orthonormal
+basis. -/
+theorem traceL_apply (H : E →L[ℝ] E →L[ℝ] F) :
+    traceL H = ∑ i, H (stdOrthonormalBasis ℝ E i) (stdOrthonormalBasis ℝ E i) := by
+  simp [traceL]
+
+/-- The Laplacian of a function is the trace of its second Fréchet derivative, expressed as the
+continuous linear functional `traceL` of `fderiv ℝ (fderiv ℝ f) x`. -/
 theorem laplacian_eq_traceL (f : E → F) (x : E) :
-    Δ f x = (∑ i, (ContinuousLinearMap.apply ℝ F (stdOrthonormalBasis ℝ E i)).comp
-      (ContinuousLinearMap.apply ℝ (E →L[ℝ] F) (stdOrthonormalBasis ℝ E i)))
-        (fderiv ℝ (fderiv ℝ f) x) := by
-  simp [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis, iteratedFDeriv_two_apply]
+    Δ f x = traceL (fderiv ℝ (fderiv ℝ f) x) := by
+  simp [traceL_apply, laplacian_eq_iteratedFDeriv_stdOrthonormalBasis, iteratedFDeriv_two_apply]
 
 /-- The Laplacian of a function is the trace of its second iterated Fréchet derivative, expressed
 as a continuous linear functional of `iteratedFDeriv ℝ 2 f x` in the standard orthonormal basis. -/
@@ -127,7 +142,7 @@ theorem laplacian_eq_traceL_iteratedFDeriv (f : E → F) (x : E) :
 `‖Δ f x‖ ≤ dim E * ‖D²f x‖`. -/
 theorem norm_laplacian_le (f : E → F) (x : E) :
     ‖Δ f x‖ ≤ Module.finrank ℝ E * ‖fderiv ℝ (fderiv ℝ f) x‖ := by
-  simpa [laplacian_eq_traceL] using (fderiv ℝ (fderiv ℝ f) x).norm_sum_apply_apply_le
+  simpa [laplacian_eq_traceL, traceL_apply] using (fderiv ℝ (fderiv ℝ f) x).norm_sum_apply_apply_le
     Finset.univ fun i _ ↦ ((stdOrthonormalBasis ℝ E).norm_eq_one i).le
 
 /-- Differences of the Laplacian are bounded by the dimension times the differences of the second
@@ -135,7 +150,7 @@ Fréchet derivative: `‖Δ f x - Δ f y‖ ≤ dim E * ‖D²f x - D²f y‖`. 
 theorem norm_laplacian_sub_laplacian_le (f : E → F) (x y : E) :
     ‖Δ f x - Δ f y‖ ≤
       Module.finrank ℝ E * ‖fderiv ℝ (fderiv ℝ f) x - fderiv ℝ (fderiv ℝ f) y‖ := by
-  rw [laplacian_eq_traceL, laplacian_eq_traceL, ← map_sub]
+  rw [laplacian_eq_traceL, laplacian_eq_traceL, ← map_sub, traceL_apply]
   simpa using (fderiv ℝ (fderiv ℝ f) x - fderiv ℝ (fderiv ℝ f) y).norm_sum_apply_apply_le
     Finset.univ fun i _ ↦ ((stdOrthonormalBasis ℝ E).norm_eq_one i).le
 
@@ -150,6 +165,21 @@ theorem _root_.ContDiffOn.continuousOn_laplacian {f : E → F} {s : Set E} (hf :
 theorem _root_.ContDiff.continuous_laplacian {f : E → F} (hf : ContDiff ℝ 2 f) :
     Continuous (Δ f) :=
   continuousOn_univ.1 (hf.contDiffOn.continuousOn_laplacian isOpen_univ)
+
+/-- The Laplacian loses two derivatives on every finite-dimensional real inner product
+space. The order may be finite, smooth or analytic, and the values may be in any real normed
+space. -/
+theorem _root_.ContDiff.laplacian {n m : WithTop ℕ∞} {f : E → F}
+    (hf : ContDiff ℝ n f) (hm : m + 2 ≤ n) : ContDiff ℝ m (Δ f) := by
+  have hD1 : ContDiff ℝ (m + 1) (fderiv ℝ f) :=
+    hf.fderiv_right (by convert hm using 1; norm_num [add_assoc])
+  have hD : ContDiff ℝ m (fderiv ℝ (fderiv ℝ f)) := hD1.fderiv_right le_rfl
+  let L : (E →L[ℝ] E →L[ℝ] F) →L[ℝ] F :=
+    ∑ i, (ContinuousLinearMap.apply ℝ F (stdOrthonormalBasis ℝ E i)).comp
+      (ContinuousLinearMap.apply ℝ (E →L[ℝ] F) (stdOrthonormalBasis ℝ E i))
+  have hΔ : Δ f = L ∘ fderiv ℝ (fderiv ℝ f) := funext (laplacian_eq_traceL f)
+  rw [hΔ]
+  exact L.contDiff.comp hD
 
 /-- The Laplacian is the sum of the second directional derivatives along an orthonormal basis:
 if `fderiv ℝ f` is differentiable at `x`, then `Δ f x = ∑ᵢ ∂ᵥᵢ (∂ᵥᵢ f) x`. -/
@@ -423,6 +453,23 @@ theorem _root_.ContDiffAt.laplacian_fun_mul {f g : E → ℝ} {x : E} (hf : Cont
     congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis f b) x,
     congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis g b) x, hgrad]
   simp_rw [hterm, Finset.sum_add_distrib, ← Finset.mul_sum]
+
+open Complex Gradient in
+/-- The product rule on the complex plane, with the mixed gradient term expressed in the
+orthonormal directions `1` and `I`. Only twice differentiability at the point is needed. -/
+theorem _root_.ContDiffAt.laplacian_fun_mul_complex {f g : ℂ → ℝ} {x : ℂ}
+    (hf : ContDiffAt ℝ 2 f x) (hg : ContDiffAt ℝ 2 g x) :
+    Δ (fun y ↦ f y * g y) x = f x * Δ g x + g x * Δ f x +
+      2 * (fderiv ℝ f x 1 * fderiv ℝ g x 1 + fderiv ℝ f x I * fderiv ℝ g x I) := by
+  rw [hf.laplacian_fun_mul hg]
+  have hgrad : ⟪∇ f x, ∇ g x⟫_ℝ =
+      fderiv ℝ f x 1 * fderiv ℝ g x 1 + fderiv ℝ f x I * fderiv ℝ g x I := by
+    rw [← orthonormalBasisOneI.sum_inner_mul_inner (∇ f x) (∇ g x)]
+    simp only [Fin.sum_univ_two]
+    simp_rw [inner_gradient_left, real_inner_comm (∇ g x), inner_gradient_left]
+    simp [orthonormalBasisOneI]
+  rw [hgrad]
+  ring
 
 open Filter Gradient Topology in
 /-- **The chain rule for the Laplacian.** For a scalar function `q` twice differentiable at `x`

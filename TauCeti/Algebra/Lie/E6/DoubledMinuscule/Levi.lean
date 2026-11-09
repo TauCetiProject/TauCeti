@@ -51,6 +51,7 @@ theorem weightLeviDefiningHopfIdeal_le_definingIdeal :
   refine ⟨fun j ↦ ?_, ?_⟩
   · apply GeneralLinear.weightLeviDefiningHopfIdeal_toIdeal_le_ker
     intro a b hab
+    simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
     have hne : a ≠ b := fun h ↦ hab (congrArg matrixSummand h)
     have hmatrix := map_genericMatrix_kostantRootSubgroupCoordinateMap_eq_one_add_smul
       (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
@@ -64,6 +65,7 @@ theorem weightLeviDefiningHopfIdeal_le_definingIdeal :
       Int.cast_zero, smul_zero, zero_add, BialgHom.coe_toAlgHom] using hentry
   · apply GeneralLinear.weightLeviDefiningHopfIdeal_toIdeal_le_ker
     intro a b hab
+    simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
     have hne : a ≠ b := fun h ↦ hab (congrArg matrixSummand h)
     simpa only [hne, ↓reduceIte, BialgHom.coe_toAlgHom] using
       GeneralLinear.weightTorusCoordinateMap_X (R := ℤ) matrixWeight a b

@@ -31,6 +31,10 @@ function along the support of `T`, and it has finite order on each compact set.
 * `Distribution.complexPairing`: the complex-linear extension of `T : 𝓓'^{n}(Ω, ℂ)` to complex
   test functions, as a continuous complex-linear map.
 * `Distribution.complexPairing_postcompCLM_ofRealCLM`: on real test functions it is `T`.
+* `Distribution.complexPairing_mapCLM_ofRealCLM_delta`: for the complex point mass at `x` it is
+  evaluation at `x`.
+* `Distribution.complexPairing_eq_integral`, `Distribution.complexPairing_ofFun`: where `T` is
+  integration against a locally integrable function, so is its extension.
 * `Distribution.complexPairing_eq_of_eventuallyEq`: it depends only on the germ of the test
   function along `dsupport T`.
 * `Distribution.exists_norm_complexPairing_le`: it has finite order on each compact set.
@@ -106,6 +110,50 @@ theorem complexPairing_smul (c : ℂ) (T : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω
   simp only [complexPairing_apply]
   simp
   ring
+
+/-- The complex-linear extension of the complex point mass at `x` evaluates a complex test
+function at `x`. -/
+@[simp]
+theorem complexPairing_mapCLM_ofRealCLM_delta (x : E) (φ : 𝓓^{n}(Ω, ℂ)) :
+    (mapCLM ofRealCLM (delta x : 𝓓'^{n}(Ω, ℝ))).complexPairing φ = φ x := by
+  simp only [complexPairing_apply, mapCLM_apply, delta_apply, postcompCLM_apply,
+    Function.comp_apply, ofRealCLM_apply, reCLM_apply, imCLM_apply]
+  rw [mul_comm]
+  exact re_add_im (φ x)
+
+/-- If `T` is integration against a function `f` locally integrable on an open set `U`, on real
+test functions supported in `U`, then its complex-linear extension is integration against `f` on
+complex test functions supported in `U`. -/
+theorem complexPairing_eq_integral [MeasurableSpace E] [OpensMeasurableSpace E]
+    {T : 𝓓'^{n}(Ω, ℂ)} {U : Set E} (hU : IsOpen U) {f : E → ℂ} {μ : MeasureTheory.Measure E}
+    (hf : MeasureTheory.LocallyIntegrableOn f U μ)
+    (hT : ∀ φ : 𝓓^{n}(Ω, ℝ), tsupport φ ⊆ U → T φ = ∫ x, φ x • f x ∂μ) {φ : 𝓓^{n}(Ω, ℂ)}
+    (hφ : tsupport φ ⊆ U) : T.complexPairing φ = ∫ x, φ x * f x ∂μ := by
+  have hpart (L : ℂ →L[ℝ] ℝ) : tsupport (postcompCLM (𝕜 := ℝ) L φ) ⊆ U := by
+    rw [postcompCLM_apply]
+    exact (tsupport_comp_subset (map_zero L) φ).trans hφ
+  -- A real test function supported in `U` is a test function on `U`, so `f` is integrable
+  -- against it.
+  have hint (L : ℂ →L[ℝ] ℝ) :
+      MeasureTheory.Integrable (fun x => postcompCLM (𝕜 := ℝ) L φ x • f x) μ :=
+    TestFunction.integrable_smul (Ω := ⟨U, hU⟩)
+      ⟨postcompCLM (𝕜 := ℝ) L φ, (postcompCLM (𝕜 := ℝ) L φ).contDiff,
+        (postcompCLM (𝕜 := ℝ) L φ).hasCompactSupport, hpart L⟩ hf
+  rw [complexPairing_apply, hT _ (hpart reCLM), hT _ (hpart imCLM),
+    ← MeasureTheory.integral_const_mul,
+    ← MeasureTheory.integral_add (hint reCLM) ((hint imCLM).const_mul I)]
+  refine MeasureTheory.integral_congr_ae (Eventually.of_forall fun x => ?_)
+  simp only [postcompCLM_apply, Function.comp_apply, reCLM_apply, imCLM_apply, real_smul]
+  conv_rhs => rw [← re_add_im (φ x)]
+  ring
+
+/-- On a locally integrable function `f`, the complex-linear extension of the distribution
+`ofFun Ω f μ n` is integration against `f`. -/
+theorem complexPairing_ofFun [MeasurableSpace E] [OpensMeasurableSpace E] {f : E → ℂ}
+    {μ : MeasureTheory.Measure E} (hf : MeasureTheory.LocallyIntegrableOn f Ω μ)
+    (φ : 𝓓^{n}(Ω, ℂ)) :
+    (ofFun Ω f μ n).complexPairing φ = ∫ x, φ x * f x ∂μ :=
+  complexPairing_eq_integral Ω.isOpen hf (fun _ _ => ofFun_apply hf) φ.tsupport_subset
 
 /-- **The complex-linear extension has finite order on each compact set.** For a compact `K ⊆ Ω`
 there are an order `N` and a constant `C` such that `‖T.complexPairing φ‖ ≤ C * M` for every

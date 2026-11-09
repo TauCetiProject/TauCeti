@@ -86,10 +86,10 @@ theorem isNonarchimedean_iff_forall_natCast_le_one :
 
 /-- An absolute value on a field lying over a nonarchimedean absolute value is nonarchimedean: it
 agrees with the latter on the natural numbers, where both are therefore bounded by `1`. -/
-theorem isNonarchimedean_of_liesOver {K : Type*} [CommSemiring K] [Nontrivial K] [Algebra K F]
-    [FaithfulSMul K F] {u : AbsoluteValue K ℝ} [v.LiesOver u] (hu : IsNonarchimedean u) :
-    IsNonarchimedean v :=
+theorem isNonarchimedean_of_liesOver {K : Type*} [CommSemiring K] [Algebra K F] [FaithfulSMul K F]
+    {u : AbsoluteValue K ℝ} [v.LiesOver u] (hu : IsNonarchimedean u) : IsNonarchimedean v :=
   isNonarchimedean_of_forall_natCast_le_one fun n ↦ by
+    have : Nontrivial K := (algebraMap K F).domain_nontrivial
     rw [← map_natCast (algebraMap K F), LiesOver.apply_algebraMap u]
     exact hu.apply_natCast_le_one (by simp) (map_one _)
 

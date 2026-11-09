@@ -152,6 +152,54 @@ section Average
 
 variable [DecidableEq σ] {ι : Type*} [Fintype ι] [DecidableEq ι]
 
+/-- A pair of colourings, one fixed by `π` with fibers of sizes `r` and one fixed by `π`, is a
+colouring by pairs fixed by `π` whose first coordinate has fibers of sizes `r`: the permutation
+character count times the power-sum product is a sum over such colourings by pairs. -/
+private theorem card_filter_smul_psumPart_eq_sum_ite (r : ι → ℕ) (π : Perm α) :
+    #{c : α → ι | c ∘ π = c ∧ ∀ i, #{a | c a = i} = r i} • psumPart σ R π.partition =
+      ∑ h : α → ι × σ, if h ∘ π = h ∧ ∀ i, #{a | (h a).1 = i} = r i
+        then ∏ a, (X (h a).2 : MvPolynomial σ R) else 0 := by
+  rw [psumPart_partition_eq_sum_prod_X, ← sum_const, ← sum_product', ← sum_filter]
+  refine sum_equiv (arrowProdEquivProdArrow α (fun _ => ι) (fun _ => σ)).symm (fun x => ?_)
+    fun x _ => rfl
+  simp only [mem_product, mem_filter, mem_univ, true_and, funext_iff, Function.comp_apply,
+    arrowProdEquivProdArrow, coe_fn_symm_mk, Prod.ext_iff, forall_and]
+  tauto
+
+/-- For a colouring `h` of `α` by pairs, the sum over the permutations preserving `h` and the
+first coordinate fiber sizes `r` of the monomial of `h` is the size of the stabiliser of `h` times
+the term `F` of the fiber sizes of `h`. -/
+private theorem sum_ite_prod_X_eq_natCard_smul (r : ι → ℕ) (F : (ι × σ → ℕ) → MvPolynomial σ R)
+    (hF : F = fun A => if ∀ i, ∑ s, A (i, s) = r i then ∏ s, X s ^ ∑ i, A (i, s) else 0)
+    (h : α → ι × σ) :
+    (∑ π : Perm α, if h ∘ π = h ∧ ∀ i, #{a | (h a).1 = i} = r i
+      then ∏ a, (X (h a).2 : MvPolynomial σ R) else 0) =
+      Nat.card (fiberSubgroup h) • F fun k => #{a | h a = k} := by
+  subst hF
+  have hcard : Nat.card (fiberSubgroup h) = #{π : Perm α | h ∘ π = h} := by
+    rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
+    exact Nat.card_congr (Equiv.subtypeEquivRight fun π => by
+      rw [mem_fiberSubgroup, funext_iff]; rfl)
+  -- the fibers of the two coordinates of `h` are unions of fibers of `h`
+  have hfst : ∀ i, #{a | (h a).1 = i} = ∑ s, #{a | h a = (i, s)} := fun i => by
+    rw [card_eq_sum_card_fiberwise (f := fun a => (h a).2) (t := univ) fun _ _ => mem_univ _]
+    exact sum_congr rfl fun s _ => by
+      rw [filter_filter]
+      exact congrArg card (filter_congr fun a _ => by simp [Prod.ext_iff])
+  have hsnd : ∀ s, #{a | (h a).2 = s} = ∑ i, #{a | h a = (i, s)} := fun s => by
+    rw [card_eq_sum_card_fiberwise (f := fun a => (h a).1) (t := univ) fun _ _ => mem_univ _]
+    exact sum_congr rfl fun i _ => by
+      rw [filter_filter]
+      exact congrArg card (filter_congr fun a _ => by simp [Prod.ext_iff, and_comm])
+  have hX : ∏ a, (X (h a).2 : MvPolynomial σ R) = ∏ s, X s ^ #{a | (h a).2 = s} := by
+    rw [← prod_fiberwise' univ (fun a => (h a).2) fun s => (X s : MvPolynomial σ R)]
+    simp only [prod_const]
+  simp only [← hfst, ← hsnd, ← hX, hcard]
+  split_ifs with hC
+  · simp only [hC, implies_true, and_true]
+    rw [← sum_filter, sum_const]
+  · simp [hC]
+
 /-- **Averaging power sums against invariant colourings gives complete homogeneous polynomials**:
 for `r : ι → ℕ` with total `card α`,
 
@@ -166,51 +214,12 @@ theorem sum_card_smul_psumPart_partition (r : ι → ℕ) (hr : ∑ i, r i = Fin
     ∑ π : Perm α, #{c : α → ι | c ∘ π = c ∧ ∀ i, #{a | c a = i} = r i} •
         psumPart σ R π.partition =
       (Fintype.card α).factorial • ∏ i, hsymm σ R (r i) := by
-  -- a pair of colourings, one fixed by `π` with fibers of sizes `r` and one fixed by `π`, is a
-  -- colouring by pairs fixed by `π` whose first coordinate has fibers of sizes `r`
-  have h1 : ∀ π : Perm α,
-      #{c : α → ι | c ∘ π = c ∧ ∀ i, #{a | c a = i} = r i} • psumPart σ R π.partition =
-        ∑ h : α → ι × σ, if h ∘ π = h ∧ ∀ i, #{a | (h a).1 = i} = r i
-          then ∏ a, (X (h a).2 : MvPolynomial σ R) else 0 := fun π => by
-    rw [psumPart_partition_eq_sum_prod_X, ← sum_const, ← sum_product', ← sum_filter]
-    refine sum_equiv (arrowProdEquivProdArrow α (fun _ => ι) (fun _ => σ)).symm (fun x => ?_)
-      fun x _ => rfl
-    simp only [mem_product, mem_filter, mem_univ, true_and, funext_iff, Function.comp_apply,
-      arrowProdEquivProdArrow, coe_fn_symm_mk, Prod.ext_iff, forall_and]
-    tauto
   -- the term of a colouring by pairs, read off its fiber sizes `A : ι × σ → ℕ`
   let F : (ι × σ → ℕ) → MvPolynomial σ R := fun A =>
     if ∀ i, ∑ s, A (i, s) = r i then ∏ s, X s ^ ∑ i, A (i, s) else 0
-  have h2 : ∀ h : α → ι × σ,
-      (∑ π : Perm α, if h ∘ π = h ∧ ∀ i, #{a | (h a).1 = i} = r i
-        then ∏ a, (X (h a).2 : MvPolynomial σ R) else 0) =
-        Nat.card (fiberSubgroup h) • F fun k => #{a | h a = k} := fun h => by
-    have hcard : Nat.card (fiberSubgroup h) = #{π : Perm α | h ∘ π = h} := by
-      rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
-      exact Nat.card_congr (Equiv.subtypeEquivRight fun π => by
-        rw [mem_fiberSubgroup, funext_iff]; rfl)
-    -- the fibers of the two coordinates of `h` are unions of fibers of `h`
-    have hfst : ∀ i, #{a | (h a).1 = i} = ∑ s, #{a | h a = (i, s)} := fun i => by
-      rw [card_eq_sum_card_fiberwise (f := fun a => (h a).2) (t := univ) fun _ _ => mem_univ _]
-      exact sum_congr rfl fun s _ => by
-        rw [filter_filter]
-        exact congrArg card (filter_congr fun a _ => by simp [Prod.ext_iff])
-    have hsnd : ∀ s, #{a | (h a).2 = s} = ∑ i, #{a | h a = (i, s)} := fun s => by
-      rw [card_eq_sum_card_fiberwise (f := fun a => (h a).1) (t := univ) fun _ _ => mem_univ _]
-      exact sum_congr rfl fun i _ => by
-        rw [filter_filter]
-        exact congrArg card (filter_congr fun a _ => by simp [Prod.ext_iff, and_comm])
-    have hX : ∏ a, (X (h a).2 : MvPolynomial σ R) = ∏ s, X s ^ #{a | (h a).2 = s} := by
-      rw [← prod_fiberwise univ fun a => (h a).2]
-      exact prod_congr rfl fun s _ => by
-        rw [prod_congr rfl fun a ha => by rw [(mem_filter.1 ha).2], prod_const]
-    simp only [F, ← hfst, ← hsnd, ← hX, hcard]
-    split_ifs with hC
-    · simp only [hC, implies_true, and_true]
-      rw [← sum_filter, sum_const]
-    · simp [hC]
-  rw [sum_congr rfl fun π _ => h1 π, sum_comm, sum_congr rfl fun h _ => h2 h,
-    sum_natCard_fiberSubgroup_smul]
+  have h2 := fun h : α → ι × σ => sum_ite_prod_X_eq_natCard_smul (R := R) r F rfl h
+  rw [sum_congr rfl fun π _ => card_filter_smul_psumPart_eq_sum_ite R r π, sum_comm,
+    sum_congr rfl fun h _ => h2 h, sum_natCard_fiberSubgroup_smul]
   congr 1
   -- a fiber-size function with the right row sums is a family of exponent vectors, one per row
   simp only [F]

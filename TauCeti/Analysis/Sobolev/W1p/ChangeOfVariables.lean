@@ -239,10 +239,9 @@ private theorem pullbackJetL_mem_of_contDiffOn (hΦ : DifferentiableOn ℝ Φ U)
     exact (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).locallyIntegrableOn_comp
       (Lp.locallyIntegrableOn (Sobolev1JetLp.gradient T) Fact.out)
   rw [mem_w1pSubmodule_iff_hasWeakFDerivOn]
-  refine ((hasWeakFDerivOn_of_differentiableOn ?_ ((locallyIntegrableOn_congr hder).1 hTloc)
+  exact ((hasWeakFDerivOn_of_differentiableOn ((locallyIntegrableOn_congr hder).1 hTloc)
     fun x hx => (hfy _ (hmaps hx)).comp x (hΦx x hx)).congr_ae hval.symm).congr_ae_deriv
       hder.symm
-  exact (hf.continuousOn.comp hΦ.continuousOn hmaps).locallyIntegrableOn U.isOpen.measurableSet
 
 /-- For `p < ∞` the pulled-back jet of every `u ∈ W^{1,p}(V)` lies in `W^{1,p}(U)`: the set of
 `u` for which it does is closed, and contains the smooth elements, which are dense. -/
@@ -329,7 +328,7 @@ theorem W1p.gradient_compL_ae (u : W1p mu V p) :
     with x h1 h2 h3
   rw [h1, h2, adjointJet_snd, h3]
 
-/-- `W1p.compL Φ …` has operator norm at most `max 1 L * c ^ (-1/p)`. -/
+/-- Pointwise norm bound: `‖W1p.compL Φ … u‖ ≤ max 1 L * c ^ (-1/p) * ‖u‖`. -/
 theorem W1p.norm_compL_le (u : W1p mu V p) :
     ‖W1p.compL Φ hp hΦ hinj hmaps hL hc hdet u‖ ≤ max 1 L * c⁻¹ ^ (1 / p).toReal * ‖u‖ := by
   have h := norm_pullbackJetL_le (hΦ.continuousOn.aemeasurable U.isOpen.measurableSet)
