@@ -69,6 +69,11 @@ section SamplePopulation
 
 variable {ι κ : Type*} [Countable κ] [MeasurableSpace κ] [MeasurableSingletonClass κ]
 
+/-- Reading a fixed population along a varying selection is measurable. -/
+theorem measurable_readPopulation (x : κ → α) :
+    Measurable (fun k : ι → κ => fun i => x (k i)) :=
+  measurable_reindexPopulation.comp measurable_prodMk_right
+
 /-- Sampling a random population along an independent random selection of its indices.
 
 First draw a population `x : κ → α` with law `ρ`; independently draw an index map `k : ι → κ` with
@@ -89,6 +94,15 @@ def samplePopulation (σ : Measure (ι → κ)) (ρ : Measure (κ → α)) : Mea
 theorem samplePopulation_def (σ : Measure (ι → κ)) (ρ : Measure (κ → α)) :
     samplePopulation σ ρ = (σ.prod ρ).map fun p i => p.2 (p.1 i) :=
   Measure.mapₗ_mk_apply_of_aemeasurable measurable_reindexPopulation.aemeasurable
+
+/-- Sampling a deterministic population is the pushforward of the selection law by reading
+that population at the selected indices. -/
+@[simp]
+theorem samplePopulation_dirac (σ : Measure (ι → κ)) [SFinite σ] (x : κ → α) :
+    samplePopulation σ (Measure.dirac x) = σ.map (fun k i => x (k i)) := by
+  rw [samplePopulation_def, Measure.prod_dirac,
+    Measure.map_map measurable_reindexPopulation measurable_prodMk_right]
+  rfl
 
 /-- Sampling a finite population law along a finite selection law gives a finite law. -/
 instance isFiniteMeasure_samplePopulation (σ : Measure (ι → κ)) (ρ : Measure (κ → α))
@@ -143,15 +157,13 @@ population along the selection law. -/
 theorem samplePopulation_eq_bind_population (σ : Measure (ι → κ)) [SFinite σ]
     (ρ : Measure (κ → α)) [SFinite ρ] :
     samplePopulation σ ρ = ρ.bind fun x => σ.map fun k i => x (k i) := by
-  have hsample (x : κ → α) : Measurable fun k : ι → κ => fun i => x (k i) :=
-    measurable_reindexPopulation.comp measurable_prodMk_right
   have hmix : Measurable fun x : κ → α => σ.map fun k : ι → κ => fun i => x (k i) := by
     refine Measure.measurable_of_measurable_coe _ fun A hA => ?_
-    simp_rw [Measure.map_apply (hsample _) hA]
+    simp_rw [Measure.map_apply (measurable_readPopulation _) hA]
     exact measurable_measure_prodMk_right (measurable_reindexPopulation hA)
   ext A hA
   rw [samplePopulation_apply_population hA, Measure.bind_apply hA hmix.aemeasurable]
-  exact lintegral_congr fun x => (Measure.map_apply (hsample x) hA).symm
+  exact lintegral_congr fun x => (Measure.map_apply (measurable_readPopulation x) hA).symm
 
 end SamplePopulation
 
