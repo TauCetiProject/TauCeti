@@ -275,10 +275,10 @@ private theorem exists_eLpNormWkp_compact_le_of_hasWeakConjWirtingerDerivOn (hp 
           · exact eLpNorm_mono_measure _ (Measure.restrict_mono hKΩ' le_rfl)
           · exact hC u f D hu hf₀ h hD
       _ ≤ ↑(C + 1) * (eLpNormWkp p Ω' 0 f + eLpNorm u p (volume.restrict Ω')) := by
-          rw [eLpNormWkp_zero, ENNReal.coe_add, ENNReal.coe_one, add_mul, one_mul,
-            add_comm (_ * _)]
-          gcongr
-          exact le_add_self
+          rw [eLpNormWkp_zero]
+          exact (add_le_add (le_add_self : eLpNorm u p (volume.restrict Ω') ≤
+            eLpNorm f p (volume.restrict Ω') + eLpNorm u p (volume.restrict Ω')) le_rfl).trans_eq
+            (by push_cast; ring)
   | succ k ih =>
     -- The induction hypothesis bounds the directional derivatives `D·w` on `K` by data on `Ω₁`;
     -- the first-order estimate on `closure Ω₁` bounds `D` there by data on `Ω₂`.
