@@ -167,7 +167,7 @@ theorem gaugeTransform_inv_windingPhase_referenceField (f : ContDiffBump (0 : �
   have hn := Circle.re_sq_add_im_sq (windingPhase m z)
   have hsec : referenceSection f m z = windingPhase m z := by
     rw [referenceSection_eq_phase f m hz, coe_windingPhase m hz₀]
-  have hform := gaugeForm_inv (differentiableAt_windingPhase m hz₀)
+  have hform := gaugeForm_inv (windingPhase m) z
   rw [gaugeTransform_apply, referenceField_apply, hsec, vacuumField_apply]
   ext i
   fin_cases i

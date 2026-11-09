@@ -205,12 +205,17 @@ theorem gaugeForm_one (z : ℂ) : gaugeForm 1 z = 0 := by
 
 /-- The logarithmic derivative of the inverse gauge is the negative of the logarithmic
 derivative. -/
-theorem gaugeForm_inv {u : ℂ → Circle} {z : ℂ}
-    (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z) :
-    gaugeForm u⁻¹ z = -gaugeForm u z := by
-  have h := gaugeForm_mul hu (Circle.differentiableAt_coe_inv hu)
-  rw [mul_inv_cancel, gaugeForm_one] at h
-  exact eq_neg_of_add_eq_zero_right h.symm
+@[simp]
+theorem gaugeForm_inv (u : ℂ → Circle) (z : ℂ) : gaugeForm u⁻¹ z = -gaugeForm u z := by
+  ext a
+  have h : fderiv ℝ (fun w ↦ ((u⁻¹ : ℂ → Circle) w : ℂ)) z =
+      (conjCLE : ℂ →L[ℝ] ℂ).comp (fderiv ℝ (fun w ↦ (u w : ℂ)) z) := by
+    simpa only [Pi.inv_apply, Circle.coe_inv_eq_conj, Function.comp_def,
+      Complex.conjCLE_apply] using conjCLE.comp_fderiv (f := fun w ↦ (u w : ℂ)) (x := z)
+  rw [gaugeForm_apply, h, neg_apply, gaugeForm_apply]
+  simp only [Pi.inv_apply, Circle.coe_inv_eq_conj, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, conjCLE_apply, mul_im, conj_re, conj_im]
+  ring
 
 @[simp]
 theorem gaugeTransform_one (x : ℂ → EuclideanSpace ℝ (Fin 4)) : gaugeTransform 1 x = x := by
