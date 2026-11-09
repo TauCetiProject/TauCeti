@@ -48,7 +48,7 @@ public theorem Matrix.one_add_single_mul_one_add_single_of_ne {n R : Type*}
 /-- A linear map on matrices is determined by its values on the matrix units: it sends `A` to the
 sum of `A i j • f (single i j 1)`. -/
 public theorem Matrix.map_eq_sum_sum_smul_single {ι κ R M : Type*} [Fintype ι] [Fintype κ]
-    [DecidableEq ι] [DecidableEq κ] [CommSemiring R] [AddCommMonoid M] [Module R M]
+    [DecidableEq ι] [DecidableEq κ] [Semiring R] [AddCommMonoid M] [Module R M]
     (f : Matrix ι κ R →ₗ[R] M) (A : Matrix ι κ R) :
     f A = ∑ i, ∑ j, A i j • f (Matrix.single i j 1) := by
   conv_lhs => rw [Matrix.matrix_eq_sum_single A]
