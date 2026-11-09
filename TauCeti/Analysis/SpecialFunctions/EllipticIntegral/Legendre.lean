@@ -295,7 +295,7 @@ theorem legendreF_le_self {φ k : ℝ} (hk : k ^ 2 < 1) (hφ : φ ≤ 0) : legen
 theorem legendreF_add_int_mul_pi {k : ℝ} (hk : k ^ 2 < 1) (φ : ℝ) (n : ℤ) :
     legendreF (φ + n * π) k = legendreF φ k + 2 * n * legendreK k :=
   integral_comp_sin_sq_add_int_mul_pi (fun s ↦ (1 - k ^ 2 * s) ^ (-1 / 2 : ℝ))
-    (continuous_legendreF_integrand hk) φ n
+    ((continuous_legendreF_integrand hk).intervalIntegrable _ _) φ n
 
 theorem legendreF_add_pi {k : ℝ} (hk : k ^ 2 < 1) (φ : ℝ) :
     legendreF (φ + π) k = legendreF φ k + 2 * legendreK k := by
@@ -422,7 +422,7 @@ every modulus. -/
 theorem legendreE_add_int_mul_pi (φ k : ℝ) (n : ℤ) :
     legendreE (φ + n * π) k = legendreE φ k + 2 * n * legendreEc k :=
   integral_comp_sin_sq_add_int_mul_pi (fun s ↦ (1 - k ^ 2 * s) ^ (1 / 2 : ℝ))
-    (continuous_legendreE_integrand k) φ n
+    ((continuous_legendreE_integrand k).intervalIntegrable _ _) φ n
 
 theorem legendreE_add_pi (φ k : ℝ) : legendreE (φ + π) k = legendreE φ k + 2 * legendreEc k := by
   simpa using legendreE_add_int_mul_pi φ k 1
@@ -523,15 +523,17 @@ integer `n`. -/
 theorem legendrePi_add_int_mul_pi {k α2 : ℝ} (hk : k ^ 2 < 1) (hα : α2 < 1) (φ : ℝ) (n : ℤ) :
     legendrePi (φ + n * π) k α2 = legendrePi φ k α2 + 2 * n * legendrePic k α2 :=
   integral_comp_sin_sq_add_int_mul_pi (fun s ↦ (1 - α2 * s)⁻¹ * (1 - k ^ 2 * s) ^ (-1 / 2 : ℝ))
-    (continuous_legendrePi_integrand hk hα) φ n
+    ((continuous_legendrePi_integrand hk hα).intervalIntegrable _ _) φ n
 
 theorem legendrePi_add_pi {k α2 : ℝ} (hk : k ^ 2 < 1) (hα : α2 < 1) (φ : ℝ) :
     legendrePi (φ + π) k α2 = legendrePi φ k α2 + 2 * legendrePic k α2 := by
   simpa using legendrePi_add_int_mul_pi hk hα φ 1
 
-theorem legendrePi_int_mul_pi {k α2 : ℝ} (hk : k ^ 2 < 1) (hα : α2 < 1) (n : ℤ) :
-    legendrePi (n * π) k α2 = 2 * n * legendrePic k α2 := by
-  simpa using legendrePi_add_int_mul_pi hk hα 0 n
+/-- `Π(nπ, k, α²) = 2 n Π(k, α²)` for every integer `n`, with no restriction on the parameters (if
+the integrand is not integrable on `[0, π/2]`, both sides are `0`). -/
+theorem legendrePi_int_mul_pi {k α2 : ℝ} (n : ℤ) :
+    legendrePi (n * π) k α2 = 2 * n * legendrePic k α2 :=
+  integral_comp_sin_sq_int_mul_pi (fun s ↦ (1 - α2 * s)⁻¹ * (1 - k ^ 2 * s) ^ (-1 / 2 : ℝ)) n
 
 /-- The integral of the third kind in terms of the first:
 `Π(φ, k, α²) = F(φ, k) + α² ∫₀^φ sin² θ (1 - α² sin² θ)⁻¹ (1 - k² sin² θ)^(-1/2) dθ` for
