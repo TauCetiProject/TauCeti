@@ -404,16 +404,15 @@ theorem span_rootVectors_eq_top {κ : Type*} [Finite κ]
     exact Submodule.sum_mem _ fun j _ ↦
       Submodule.smul_mem _ _ (Submodule.subset_span ⟨Sum.inr j, rfl⟩)
   · set α : H.root := ⟨χ, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hχ⟩⟩
-    obtain ⟨r, hr⟩ := (finrank_eq_one_iff_of_ne_zero' (⟨e α, he α⟩ : rootSpace H χ)
-      (by simpa [Subtype.ext_iff] using he0 α)).mp (finrank_rootSpace_eq_one χ hχ) ⟨z, hz⟩
-    have hz' : z = r • e α := by simpa [Subtype.ext_iff] using hr.symm
+    obtain ⟨r, rfl⟩ : ∃ r : K, r • e α = z := Submodule.mem_span_singleton.mp <| by
+      rwa [← toSubmodule_rootSpace_eq_span χ hχ (e α) (he0 α) (he α)]
     have hbr : ⁅e α, (h₀ : L)⁆ = -(χ h₀) • e α := by
       rw [← lie_skew, ← LieSubalgebra.coe_bracket_of_module,
         lie_eq_smul_of_mem_rootSpace (he α) h₀, neg_smul]
     have hχh₀ : χ h₀ ≠ 0 := hh₀ α α.2
     have he' : e α = (-(χ h₀))⁻¹ • ⁅e α, (h₀ : L)⁆ := by
       rw [hbr, smul_smul, inv_mul_cancel₀ (neg_ne_zero.mpr hχh₀), one_smul]
-    rw [hz', he']
+    rw [he']
     exact Submodule.smul_mem _ _ (Submodule.smul_mem _ _
       (Submodule.subset_span ⟨Sum.inl α, rfl⟩))
 
