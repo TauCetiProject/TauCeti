@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Calculus.Morse.Generic
 -- Private: used only inside proofs.
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
-import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Calculus.TangentGraphChart
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
@@ -112,23 +111,10 @@ private theorem exists_isOpen_ae_hasNondegenerateCriticalPointsOn_norm_sq_sub_co
   have hev : ∀ u ∈ Φ.source, ‖F u - a‖ ^ 2 = g (Φ u) := fun u hu ↦ by
     simp only [g, f, Φ.left_inv hu, hL, hΦe u hu, hab,
       Submodule.norm_sub_add_sq_of_mem_of_mem_orthogonal R _ b.2 c.2, R]
-  refine hasNondegenerateCriticalPointsOn_iff.2 fun u hu hcrit ↦ ?_
-  have hev' : (fun u ↦ ‖F u - a‖ ^ 2) =ᶠ[𝓝 u] g ∘ Φ :=
-    eventually_of_mem (Φ.open_source.mem_nhds hu) hev
-  obtain ⟨hΦu, Tu, hTu⟩ := hΦd u hu
-  have hgu : ContDiffAt ℝ 2 g (Φ u) := by
-    have h := ((hf c (Φ u) (Φ.map_source hu)).comp (Φ u)
-      ((contDiffAt_const (c := c)).prodMk contDiffAt_id)).sub L.contDiff.contDiffAt
-    exact h.add contDiffAt_const
-  -- Criticality passes to `g` at `Φ u`, since the differential of `Φ` there is invertible.
-  have hgcrit : fderiv ℝ (fun w ↦ f c w - L w) (Φ u) = 0 := by
-    rw [hev'.fderiv_eq, fderiv_comp_eq_zero_iff_of_isInvertible (hgu.differentiableAt (by norm_num))
-      (hΦu.differentiableAt (by norm_num)) ⟨Tu, hTu⟩] at hcrit
-    simpa [g, fderiv_add_const] using hcrit
-  have hnd : IsNondegenerateCriticalPoint g (Φ u) :=
-    (isNondegenerateCriticalPoint_add_const_iff _).2
-      (hasNondegenerateCriticalPointsOn_iff.1 ha (Φ.map_source hu) hgcrit)
-  exact (hnd.comp hΦu ⟨Tu, hTu⟩).congr_of_eventuallyEq hev'.symm
+  have hk : ∀ w ∈ Φ.target, ContDiffAt ℝ 2 (fun w ↦ f c w - L w) w := fun w hw ↦
+    ((hf c w hw).comp w ((contDiffAt_const (c := c)).prodMk contDiffAt_id)).sub
+      L.contDiff.contDiffAt
+  exact HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const ha hk hΦd hev
 
 /-- **The squared distance from almost every point is Morse along an immersion.** If `F` is `C²`
 on the open set `U` and its differential is injective at every point of `U`, then for almost every

@@ -280,6 +280,37 @@ private theorem lintegral_le_and_setLIntegral_le {Q : Set E} (hQ : MeasurableSet
               (mul_le_mul' (ENNReal.coe_le_coe.2 h₂) le_rfl))
       _ = _ := by rw [← mul_assoc, ENNReal.coe_mul]
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [MeasurableSpace F]
+  [BorelSpace F] in
+/-- For `1 < τ`, every continuous linear map `A` has a precision `δ > 0` and a map `M` such that,
+if `A` is surjective, `M` is a right inverse of `A`, `δ ‖M‖ < 1`, and the two distortion factors
+`(1 - δ ‖M‖)⁻¹ ^ a * (1 + δ ‖M‖) ^ b`, for `(a, b) = (m - k, m)` and `(m, m - k)`, where `m = dim E`
+and `k = dim F`, are at most `τ`. -/
+private theorem exists_rightInverse_and_precision {τ : ℝ≥0} (hτ : 1 < τ) (A : E →L[ℝ] F) :
+    ∃ (M : F →L[ℝ] E) (δ : ℝ≥0), 0 < δ ∧ (Surjective A →
+      RightInverse M A ∧ δ * ‖M‖₊ < 1 ∧
+      (1 - δ * ‖M‖₊)⁻¹ ^ (finrank ℝ E - finrank ℝ F) * (1 + δ * ‖M‖₊) ^ finrank ℝ E ≤ τ ∧
+      (1 - δ * ‖M‖₊)⁻¹ ^ finrank ℝ E * (1 + δ * ‖M‖₊) ^ (finrank ℝ E - finrank ℝ F) ≤ τ) := by
+  by_cases h : Surjective A
+  · have hR : A.HasRightInverse := .of_surjective_of_finiteDimensional h
+    -- Both factors are continuous in `δ` and equal `1 < τ` at `δ = 0`.
+    have hlim (a b : ℕ) : ∀ᶠ δ : ℝ≥0 in 𝓝 0,
+        (1 - δ * ‖hR.rightInverse‖₊)⁻¹ ^ a * (1 + δ * ‖hR.rightInverse‖₊) ^ b < τ := by
+      have hc : ContinuousAt
+          (fun δ : ℝ≥0 ↦ (1 - δ * ‖hR.rightInverse‖₊)⁻¹ ^ a * (1 + δ * ‖hR.rightInverse‖₊) ^ b)
+          0 := by
+        fun_prop (disch := simp)
+      exact hc.tendsto.eventually_lt_const (by simpa using hτ)
+    have hsmall : ∀ᶠ δ : ℝ≥0 in 𝓝 0, δ * ‖hR.rightInverse‖₊ < 1 :=
+      (continuous_id.mul continuous_const).continuousAt.tendsto.eventually_lt_const
+        (by simp)
+    obtain ⟨δ, ⟨⟨h₁, h₂⟩, h₃⟩, hδ⟩ :=
+      ((((hlim _ _).and (hlim _ _)).and hsmall).filter_mono nhdsWithin_le_nhds).and
+        (self_mem_nhdsWithin (s := Ioi (0 : ℝ≥0))) |>.exists
+    exact ⟨hR.rightInverse, δ, hδ, fun _ ↦
+      ⟨hR.rightInverse_rightInverse, h₃, h₁.le, h₂.le⟩⟩
+  · exact ⟨0, 1, one_pos, fun h' ↦ (h h').elim⟩
+
 /-- A measurable set `s` on which `f` is differentiable with surjective derivative splits into
 countably many disjoint measurable pieces, on each of which `f` is Lipschitz and the coarea formula
 holds up to the factor `τ²`. -/
@@ -293,31 +324,8 @@ private theorem exists_partition_le_and_le (hs : MeasurableSet s)
           ∫⁻ x in P p, ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet ≤
             (τ ^ 2 : ℝ≥0) * ∫⁻ y, μHE[finrank ℝ E - finrank ℝ F] (P p ∩ f ⁻¹' {y}) := by
   have hτ' : (1 : ℝ) < τ := by exact_mod_cast hτ
-  -- For each surjective `A`, choose a right inverse `M A` and a precision `δ A` adapted to `τ`.
-  have hA (A : E →L[ℝ] F) : ∃ (M : F →L[ℝ] E) (δ : ℝ≥0), 0 < δ ∧ (Surjective A →
-      RightInverse M A ∧ δ * ‖M‖₊ < 1 ∧
-      (1 - δ * ‖M‖₊)⁻¹ ^ (finrank ℝ E - finrank ℝ F) * (1 + δ * ‖M‖₊) ^ finrank ℝ E ≤ τ ∧
-      (1 - δ * ‖M‖₊)⁻¹ ^ finrank ℝ E * (1 + δ * ‖M‖₊) ^ (finrank ℝ E - finrank ℝ F) ≤ τ) := by
-    by_cases h : Surjective A
-    · have hR : A.HasRightInverse := .of_surjective_of_finiteDimensional h
-      -- Both factors are continuous in `δ` and equal `1 < τ` at `δ = 0`.
-      have hlim (a b : ℕ) : ∀ᶠ δ : ℝ≥0 in 𝓝 0,
-          (1 - δ * ‖hR.rightInverse‖₊)⁻¹ ^ a * (1 + δ * ‖hR.rightInverse‖₊) ^ b < τ := by
-        have hc : ContinuousAt
-            (fun δ : ℝ≥0 ↦ (1 - δ * ‖hR.rightInverse‖₊)⁻¹ ^ a * (1 + δ * ‖hR.rightInverse‖₊) ^ b)
-            0 := by
-          fun_prop (disch := simp)
-        exact hc.tendsto.eventually_lt_const (by simpa using hτ)
-      have hsmall : ∀ᶠ δ : ℝ≥0 in 𝓝 0, δ * ‖hR.rightInverse‖₊ < 1 :=
-        (continuous_id.mul continuous_const).continuousAt.tendsto.eventually_lt_const
-          (by simp)
-      obtain ⟨δ, ⟨⟨h₁, h₂⟩, h₃⟩, hδ⟩ :=
-        ((((hlim _ _).and (hlim _ _)).and hsmall).filter_mono nhdsWithin_le_nhds).and
-          (self_mem_nhdsWithin (s := Ioi (0 : ℝ≥0))) |>.exists
-      exact ⟨hR.rightInverse, δ, hδ, fun _ ↦
-        ⟨hR.rightInverse_rightInverse, h₃, h₁.le, h₂.le⟩⟩
-    · exact ⟨0, 1, one_pos, fun h' ↦ (h h').elim⟩
-  choose M δ hδpos hδ using hA
+  -- For each `A`, choose a right inverse `M A` and a precision `δ A` adapted to `τ`.
+  choose M δ hδpos hδ using exists_rightInverse_and_precision (E := E) (F := F) hτ
   -- Split `s` into the level sets `τ ^ j ≤ J f x < τ ^ (j + 1)` of the coarea Jacobian, then
   -- into pieces on which `f` is approximated by a linear map.
   set J : E → ℝ := fun x ↦ (fderiv ℝ f x).adjoint.normDet

@@ -121,25 +121,18 @@ private theorem exists_seq_finset_forall_one_lt_re_apply {C : Set (WeakDual 𝕜
   let A : ℕ → Finset E := fun n ↦ Nat.rec ∅ (fun n A ↦ A ∪ F n A) n
   have hgood (n : ℕ) : Good n (A n) := by
     induction n with
-    | zero =>
-      intro f hfC hf
-      exact absurd (hCr f hfC) (by simpa using hf)
+    | zero => exact fun f hfC hf ↦ absurd (hCr f hfC) (by simpa using hf)
     | succ n ih => exact hFgood n _ ih
   have hA (n : ℕ) : ∀ x ∈ A n, ∃ m, x ∈ F m (A m) := by
     induction n with
     | zero => simp [A]
-    | succ n ih =>
-      intro x hx
-      rcases Finset.mem_union.1 hx with hx | hx
-      · exact ih x hx
-      · exact ⟨n, hx⟩
+    | succ n ih => exact fun x hx ↦ (Finset.mem_union.1 hx).elim (ih x) fun hx ↦ ⟨n, hx⟩
   refine ⟨fun n ↦ F n (A n), fun n ↦ hF n _, fun f hfC ↦ ?_⟩
   obtain ⟨n, hn⟩ := exists_nat_ge (‖toStrongDual f‖ / r)
   obtain ⟨x, hx, hfx⟩ := hgood n f hfC <| by
     rw [div_le_iff₀ hr] at hn
     nlinarith
-  obtain ⟨m, hm⟩ := hA n x hx
-  exact ⟨m, x, hm, hfx⟩
+  exact (hA n x hx).imp fun m hm ↦ ⟨x, hm, hfx⟩
 
 /-- Translating a set of functionals with weak-star closed bounded slices by `f₀` gives a set
 which again has weak-star closed bounded slices. -/

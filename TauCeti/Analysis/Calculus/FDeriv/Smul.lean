@@ -23,6 +23,8 @@ instance, to a norm, which is Lipschitz but need not be differentiable.
 
 ## Main results
 
+* `TauCeti.fderiv_smul_apply`: the Leibniz rule for the derivative of a scalar multiple, applied to
+  a direction.
 * `TauCeti.cutoff_sq_mul_norm_fderiv_sq_le`: the two-direction cutoff derivative estimate.
 * `TauCeti.hasStrictFDerivAt_smul_of_isBigO_sub`: a product of two Lipschitz factors vanishing
   at a point is strictly differentiable there, with derivative zero.
@@ -35,6 +37,14 @@ namespace TauCeti
 variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup V] [NormedSpace ℝ V]
 
+/-- **The Leibniz rule for the directional derivative of a scalar multiple.** The derivative of
+`χ • u` at `z` in the direction `e` is `χ z` times that of `u`, plus that of `χ` times `u z`. -/
+theorem fderiv_smul_apply {u : E → V} {χ : E → ℝ} {z : E} (hχ : DifferentiableAt ℝ χ z)
+    (hu : DifferentiableAt ℝ u z) (e : E) :
+    fderiv ℝ (χ • u) z e = χ z • fderiv ℝ u z e + fderiv ℝ χ z e • u z := by
+  simpa only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, add_comm] using
+    congrArg (fun L : E →L[ℝ] V => L e) (fderiv_smul hχ hu)
+
 /-- The squared derivative energy in two directions, weighted by a real scalar function, is
 bounded by the energy of the scalar multiple and the scalar derivative error. No compact support
 or normalization of the directions is needed. -/
@@ -44,9 +54,7 @@ theorem cutoff_sq_mul_norm_fderiv_sq_le {u : E → V} {χ : E → ℝ} {z : E}
       2 * (‖fderiv ℝ (χ • u) z e₁‖ ^ 2 + ‖fderiv ℝ (χ • u) z e₂‖ ^ 2) +
       2 * (fderiv ℝ χ z e₁ ^ 2 + fderiv ℝ χ z e₂ ^ 2) * ‖u z‖ ^ 2 := by
   have hderiv (e : E) : fderiv ℝ (χ • u) z e =
-      χ z • fderiv ℝ u z e + fderiv ℝ χ z e • u z := by
-    simpa only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, add_comm] using
-      congrArg (fun L : E →L[ℝ] V => L e) (fderiv_smul hχ hu)
+      χ z • fderiv ℝ u z e + fderiv ℝ χ z e • u z := fderiv_smul_apply hχ hu e
   have hdir (e : E) :
       χ z ^ 2 * ‖fderiv ℝ u z e‖ ^ 2 ≤
         2 * ‖fderiv ℝ (χ • u) z e‖ ^ 2 + 2 * fderiv ℝ χ z e ^ 2 * ‖u z‖ ^ 2 := by

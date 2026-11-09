@@ -76,7 +76,7 @@ identity when `polar Q v = 0`; over a general ring it can be the identity in oth
   identification of the isometries of a quadratic form with the isometries of its polar bilinear
   form. At the level of groups this is
   `TauCeti.QuadraticMap.orthogonalGroup_eq_isometryGroup_polarBilin`: `O(Q)` is the isometry group
-  `TauCeti.BilinForm.isometryGroup` of `Q.polarBilin`, so the bilinear-form API applies to it. Its
+  `LinearMap.BilinForm.isometryGroup` of `Q.polarBilin`, so the bilinear-form API applies to it. Its
   determinant-one counterpart is
   `TauCeti.QuadraticMap.specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin`.
 * `TauCeti.QuadraticMap.orthogonalGroupEquivIsometryEquiv`: the underlying set of the orthogonal
@@ -385,14 +385,15 @@ section PolarBilin
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- The orthogonal group of a quadratic form is the isometry group of its polar bilinear form, as
-soon as `2` is a regular scalar: `orthogonalGroup Q` and `TauCeti.BilinForm.isometryGroup
+soon as `2` is a regular scalar: `orthogonalGroup Q` and `LinearMap.BilinForm.isometryGroup
 Q.polarBilin` are then two names for the same subgroup of `M ≃ₗ[R] M`, and the bilinear-form API —
 the Gram-matrix criterion, `det ^ 2 = 1`, base change — applies to `O(Q)` through it. Some such
 hypothesis is needed: in characteristic two the polarization forgets `Q` on the diagonal. -/
 theorem orthogonalGroup_eq_isometryGroup_polarBilin (h2 : IsSMulRegular R (2 : R))
-    (Q : QuadraticForm R M) : orthogonalGroup Q = BilinForm.isometryGroup Q.polarBilin := by
+    (Q : QuadraticForm R M) :
+    orthogonalGroup Q = LinearMap.BilinForm.isometryGroup Q.polarBilin := by
   ext f
-  simp only [mem_orthogonalGroup_iff_polar h2, BilinForm.mem_isometryGroup_iff,
+  simp only [mem_orthogonalGroup_iff_polar h2, LinearMap.BilinForm.mem_isometryGroup_iff,
     QuadraticMap.polarBilin_apply_apply]
 
 end PolarBilin

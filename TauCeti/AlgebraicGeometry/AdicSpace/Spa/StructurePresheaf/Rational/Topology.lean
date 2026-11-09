@@ -85,22 +85,20 @@ private theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_top_topCommRingC
       ⟨_, homOfLE hle, _, Presieve.ofArrows.mk i, rfl⟩]
     exact Presieve.isSheafFor_top _
   have hAplus := hplus.isPowerBounded_of_mem
-  refine Presieve.isSheafFor_of_factorsThru _
+  refine Presieve.isSheafFor_ofArrows_of_factorsThru _
+    (fun i ↦ Presieve.ofArrows (fun f : S ↦ U i ⊓ spaBasicOpen Aplus S f)
+      fun _ ↦ homOfLE inf_le_left)
+    (fun i ↦ (isSheafFor_ofArrows_inf_spaBasicOpen_of_span_eq_top_topCommRingCat P hC hA hP hAplus
+      hSne hS (hU i) E).isSeparatedFor)
     (S := Presieve.ofArrows (fun f : S ↦ ⊤ ⊓ spaBasicOpen Aplus S f)
       fun _ ↦ homOfLE inf_le_left)
-    (fun V g hg ↦ ?_)
     (isSheafFor_ofArrows_inf_spaBasicOpen_of_span_eq_top_topCommRingCat P hC hA hP hAplus hSne
-      hS (top_mem_spaRationalOpens Aplus) E) fun V g hg ↦ ?_
+      hS (top_mem_spaRationalOpens Aplus) E) (fun V g hg ↦ ?_) fun i Z g hg ↦ ?_
   · obtain ⟨f⟩ := hg
     obtain ⟨i, hi⟩ := hSU f f.2
     exact ⟨U i, homOfLE fun v hv ↦ hi (mem_spaBasicOpen.mp hv.2), homOfLE le_top,
       Presieve.ofArrows.mk i, rfl⟩
-  · obtain ⟨i⟩ := hg
-    refine ⟨Presieve.ofArrows (fun f : S ↦ U i ⊓ spaBasicOpen Aplus S f)
-      fun _ ↦ homOfLE inf_le_left,
-      (isSheafFor_ofArrows_inf_spaBasicOpen_of_span_eq_top_topCommRingCat P hC hA hP hAplus hSne
-        hS (hU i) E).isSeparatedFor, fun Z g hg ↦ ?_⟩
-    obtain ⟨f⟩ := hg
+  · obtain ⟨f⟩ := hg
     exact ⟨_, homOfLE (inf_le_inf_right _ le_top), homOfLE inf_le_left,
       Presieve.ofArrows.mk f, rfl⟩
 

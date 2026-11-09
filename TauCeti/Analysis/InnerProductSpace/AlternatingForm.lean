@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Contraction
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 
 /-!
 # Alternating forms on a real inner product space
@@ -41,6 +42,7 @@ product, a form is represented by `∑ α(b_{i₁}, …, b_{iₖ}) b*_{i₁} ∧
 * `TauCeti.alternatingFormEquiv_wedge`: the identification carries `x ∧ y` to the wedge of forms.
 * `TauCeti.alternatingFormEquiv_koszulDifferential`: it carries the contraction by `⟪u, ·⟫` to
   the interior product by `u`.
+* `LinearIsometry.alternatingFormEquiv_map`: musical identification commutes with isometries.
 * `TauCeti.alternatingFormInner_eq_sum`: the inner product of forms in an orthonormal basis.
 * `Module.Basis.alternatingFormEquiv_symm_eq_sum`: the element of `⋀ᵏ V` representing a form, in
   an arbitrary basis.
@@ -205,6 +207,26 @@ theorem alternatingFormInner_eq_sum {ι : Type*} [Fintype ι] [LinearOrder ι]
     inner_alternatingFormEquiv_symm_ιMulti, inner_alternatingFormEquiv_symm_ιMulti]
 
 end TauCeti
+
+namespace LinearIsometry
+
+open TauCeti
+
+variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
+
+/-- The musical identification of exterior powers with alternating forms commutes with
+linear isometric embeddings: pulling back the form of the image recovers the original form. -/
+@[simp]
+theorem alternatingFormEquiv_map (e : V →ₗᵢ[ℝ] W) {k : ℕ} (a : ⋀[ℝ]^k V) :
+    (alternatingFormEquiv W k (exteriorPower.map k e.toLinearMap a)).compContinuousLinearMap
+        e.toContinuousLinearMap =
+      alternatingFormEquiv V k a := by
+  ext v
+  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, alternatingFormEquiv_apply]
+  simpa [exteriorPower.map_apply_ιMulti] using
+    exteriorPower.inner_map_map e a (ιMulti ℝ k v)
+
+end LinearIsometry
 
 namespace Module.Basis
 

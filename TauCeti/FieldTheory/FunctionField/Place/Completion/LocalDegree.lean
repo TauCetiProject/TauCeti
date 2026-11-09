@@ -175,44 +175,23 @@ private theorem completionExtension_mem_filtration_one {x : P.Completion}
   have he : (1 : ℤ) ≤ ramificationIdx F P' := by exact_mod_cast ramificationIdx_pos F P'
   nlinarith
 
-/-- A nontrivial combination, with coefficients in the completion below, of functions `u i`
-regular at `P'` with independent residues is nonzero, and its order at `P'` is a multiple of
-`e(P' ∣ P)`. -/
-private theorem exists_ord_sum_completion_eq_mul [Fintype ι] (u : ι → P'.integers)
-    (hu : LinearIndependent (P'.restrict k F).ResidueField fun i ↦ residue P'.integers (u i))
-    (c : ι → (P'.restrict k F).Completion) {i₁ : ι} (hi₁ : c i₁ ≠ 0) :
+/-- Second stage of `exists_ord_sum_completion_eq_mul`: if the normalized coefficients `c i / c i₀`
+are approximated modulo `filtration 1` by functions `d i` regular at the place below, whose
+combination `T` with the `u i` is nonzero of order `0`, then the combination with the `c i` is
+nonzero of order a multiple of `e(P' ∣ P)`. -/
+private theorem exists_ord_sum_completion_eq_mul_of_approx [Fintype ι] (u : ι → P'.integers)
+    (c : ι → (P'.restrict k F).Completion) {i₀ : ι} (hc₀ : c i₀ ≠ 0)
+    (d : ι → (P'.restrict k F).integers)
+    (hd : ∀ i, c i / c i₀ - (P'.restrict k F).completionEmbedding (d i) ∈
+      (P'.restrict k F).completionPlace.filtration 1)
+    (hT : P'.ord (∑ i, algebraMap F F' (d i : F) * (u i : F')) = 0)
+    (hT0 : (∑ i, algebraMap F F' (d i : F) * (u i : F')) ≠ 0) :
     (∑ i, (P'.restrict k F).completionExtension P' rfl (c i) * P'.completionEmbedding (u i)) ≠
         0 ∧
       ∃ m : ℤ, P'.completionPlace.ord
         (∑ i, (P'.restrict k F).completionExtension P' rfl (c i) * P'.completionEmbedding (u i)) =
           ramificationIdx F P' * m := by
-  obtain ⟨i₀, hc₀, hdiv⟩ :=
-    (P'.restrict k F).completionPlace.exists_ne_zero_forall_div_mem_integers c hi₁
-  -- Approximate the normalized coefficients `c i / c i₀` by functions regular at the place below.
-  have happrox : ∀ i, ∃ d : (P'.restrict k F).integers,
-      c i / c i₀ - (P'.restrict k F).completionEmbedding d ∈
-        (P'.restrict k F).completionPlace.filtration 1 := by
-    intro i
-    obtain ⟨d, hd⟩ := (P'.restrict k F).exists_filtration_sub_completionEmbedding_mem
-      (a := 0) (b := 1) zero_le_one
-      ⟨c i / c i₀, (P'.restrict k F).completionPlace.mem_filtration_zero_iff.mpr (hdiv i)⟩
-    exact ⟨⟨d, (P'.restrict k F).mem_filtration_zero_iff.mp d.2⟩, hd⟩
-  choose d hd using happrox
-  have hunit : IsUnit (d i₀) := by
-    have h : ((d i₀ : (P'.restrict k F).integers) : F) - 1 ∈ (P'.restrict k F).filtration 1 := by
-      rw [← (P'.restrict k F).completionEmbedding_mem_filtration_iff, map_sub, map_one]
-      have := ((P'.restrict k F).completionPlace.filtration 1).neg_mem (hd i₀)
-      rwa [div_self hc₀, neg_sub] at this
-    have hres := ((P'.restrict k F).residue_eq_iff_sub_mem_filtration_one (z := 1)).mpr
-      (by simpa using h)
-    rw [map_one] at hres
-    by_contra hnu
-    rw [(residue_eq_zero_iff _).mpr hnu] at hres
-    exact zero_ne_one hres
   set T := ∑ i, algebraMap F F' (d i : F) * (u i : F')
-  have hT := ord_sum_eq_zero_of_isUnit k F P' u hu d hunit
-  have hT0 : T ≠ 0 := sum_ne_zero_of_linearIndependent_residue k F P' u hu (fun i ↦ (d i : F))
-    (i₁ := i₀) (by simpa using hunit.ne_zero)
   set S := ∑ i, (P'.restrict k F).completionExtension P' rfl (c i / c i₀) *
     P'.completionEmbedding (u i)
   have hS : S - P'.completionEmbedding T ∈ P'.completionPlace.filtration 1 := by
@@ -249,6 +228,45 @@ private theorem exists_ord_sum_completion_eq_mul [Fintype ι] (u : ι → P'.int
       rw [completionPlace_valuation, hvS, neg_zero, WithZero.exp_zero]
   refine ⟨hsum ▸ mul_ne_zero hE0 hS0, (P'.restrict k F).completionPlace.ord (c i₀), ?_⟩
   rw [hsum, P'.completionPlace.ord_mul hE0 hS0, ord_completionExtension, hordS, add_zero]
+
+/-- A nontrivial combination, with coefficients in the completion below, of functions `u i`
+regular at `P'` with independent residues is nonzero, and its order at `P'` is a multiple of
+`e(P' ∣ P)`. -/
+private theorem exists_ord_sum_completion_eq_mul [Fintype ι] (u : ι → P'.integers)
+    (hu : LinearIndependent (P'.restrict k F).ResidueField fun i ↦ residue P'.integers (u i))
+    (c : ι → (P'.restrict k F).Completion) {i₁ : ι} (hi₁ : c i₁ ≠ 0) :
+    (∑ i, (P'.restrict k F).completionExtension P' rfl (c i) * P'.completionEmbedding (u i)) ≠
+        0 ∧
+      ∃ m : ℤ, P'.completionPlace.ord
+        (∑ i, (P'.restrict k F).completionExtension P' rfl (c i) * P'.completionEmbedding (u i)) =
+          ramificationIdx F P' * m := by
+  obtain ⟨i₀, hc₀, hdiv⟩ :=
+    (P'.restrict k F).completionPlace.exists_ne_zero_forall_div_mem_integers c hi₁
+  -- Approximate the normalized coefficients `c i / c i₀` by functions regular at the place below.
+  have happrox : ∀ i, ∃ d : (P'.restrict k F).integers,
+      c i / c i₀ - (P'.restrict k F).completionEmbedding d ∈
+        (P'.restrict k F).completionPlace.filtration 1 := by
+    intro i
+    obtain ⟨d, hd⟩ := (P'.restrict k F).exists_filtration_sub_completionEmbedding_mem
+      (a := 0) (b := 1) zero_le_one
+      ⟨c i / c i₀, (P'.restrict k F).completionPlace.mem_filtration_zero_iff.mpr (hdiv i)⟩
+    exact ⟨⟨d, (P'.restrict k F).mem_filtration_zero_iff.mp d.2⟩, hd⟩
+  choose d hd using happrox
+  have hunit : IsUnit (d i₀) := by
+    have h : ((d i₀ : (P'.restrict k F).integers) : F) - 1 ∈ (P'.restrict k F).filtration 1 := by
+      rw [← (P'.restrict k F).completionEmbedding_mem_filtration_iff, map_sub, map_one]
+      have := ((P'.restrict k F).completionPlace.filtration 1).neg_mem (hd i₀)
+      rwa [div_self hc₀, neg_sub] at this
+    have hres := ((P'.restrict k F).residue_eq_iff_sub_mem_filtration_one (z := 1)).mpr
+      (by simpa using h)
+    rw [map_one] at hres
+    by_contra hnu
+    rw [(residue_eq_zero_iff _).mpr hnu] at hres
+    exact zero_ne_one hres
+  exact exists_ord_sum_completion_eq_mul_of_approx P' u c hc₀ d hd
+    (ord_sum_eq_zero_of_isUnit k F P' u hu d hunit)
+    (sum_ne_zero_of_linearIndependent_residue k F P' u hu (fun i ↦ (d i : F))
+      (i₁ := i₀) (by simpa using hunit.ne_zero))
 
 /-- The finite case of `TauCeti.Place.linearIndependent_completionEmbedding_mul_pow`. -/
 private theorem linearIndependent_completionEmbedding_mul_pow_of_finite [Finite ι]

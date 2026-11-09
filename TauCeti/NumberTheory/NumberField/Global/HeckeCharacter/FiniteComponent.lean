@@ -46,6 +46,9 @@ the finite components.
 
 ## Main results
 
+* `TauCeti.GlobalNumberFields.HeckeCharacter.finiteComponent_ofRayClassCharacter_of_isUniformizer`:
+  at a uniformizer of `K_v`, `v` outside the modulus, the component of a ray class character is
+  its value on the prime `v`.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.exists_modulus_finiteComponent_eq_one`: a single
   modulus `𝔪` such that every component `χ_v` is trivial on `U(K_v, 𝔪.exponent v)`.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.conductorExponent_le_iff`: `a_v(χ) ≤ n` exactly when
@@ -119,6 +122,24 @@ theorem finiteComponent_pow (χ : HeckeCharacter K) (n : ℕ) (v : HeightOneSpec
   induction n with
   | zero => simp
   | succ n ih => simp [pow_succ, ih]
+
+/-- **The component of a ray class character at a uniformizer.** For a finite place `v` outside
+the support of `𝔪` and a uniformizer `π` of `K_v`, the component at `v` of the Hecke character of
+a ray class character `η` of `𝔪` takes the value of `η` on the prime `v` at `π`, because the idele
+concentrated at `v` with coordinate `π` has the ray class of `v`
+(`rayClassQuotient_ofAdicCompletion_of_isUniformizer`). -/
+theorem finiteComponent_ofRayClassCharacter_of_isUniformizer {𝔪 : Modulus K}
+    (η : RayClassCharacter 𝔪) {v : HeightOneSpectrum (𝓞 K)} (hv : v ∉ 𝔪.support)
+    {π : (v.adicCompletion K)ˣ} (hπ : IsUniformizer (v.adicCompletion K) π) :
+    (ofRayClassCharacter 𝔪 η).finiteComponent v π =
+      η.onIdeals ⟨v.asIdeal, NumberFieldArithmetic.mem_integralIdealsAway_iff_isPrimeTo.mpr
+        (Ideal.isPrimeTo_asIdeal_iff.mpr hv)⟩ := by
+  rw [finiteComponent_apply, ofRayClassCharacter_apply, RayClassCharacter.onIdeals_apply,
+    idealClass_apply, rayClassQuotient_ofAdicCompletion_of_isUniformizer hv hπ
+      (NumberFieldArithmetic.integralIdealsAwayHom K 𝔪.support ⟨v.asIdeal,
+        NumberFieldArithmetic.mem_integralIdealsAway_iff_isPrimeTo.mpr
+          (Ideal.isPrimeTo_asIdeal_iff.mpr hv)⟩)
+      (NumberFieldArithmetic.coe_integralIdealsAwayHom _ _)]
 
 /-! ### Triviality on the unit filtration -/
 

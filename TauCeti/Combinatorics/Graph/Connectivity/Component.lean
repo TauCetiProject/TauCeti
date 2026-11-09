@@ -10,6 +10,7 @@ public import Mathlib.Combinatorics.Graph.Simple
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import Mathlib.Order.Minimal
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.OfSimpleGraph
+public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Trace
 
 import Mathlib.Basic.Finite.Sum
 import Mathlib.SetTheory.Cardinal.Finite
@@ -424,6 +425,14 @@ theorem connected_iff_forall_reachable :
 theorem Connected.reachable (hG : G.Connected) {x y : α} (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
     G.Reachable x y :=
   (connected_iff_forall_reachable.mp hG).2 hx hy
+
+/-- The graph traced by a walk is connected. -/
+theorem Walk.connected_walkGraph {x y : α} (p : G.Walk x y) : (G.walkGraph p).Connected := by
+  rw [connected_iff_forall_reachable]
+  refine ⟨⟨x, by simp⟩, fun a b ha hb ↦ ?_⟩
+  exact p.reachable_walkGraph_of_mem_support
+    (by simpa only [Walk.vertexSet_walkGraph, Set.mem_ofPred_eq] using ha)
+    (by simpa only [Walk.vertexSet_walkGraph, Set.mem_ofPred_eq] using hb)
 
 /-- Finitely many actual vertices give finitely many connected-component subgraphs. -/
 instance [Finite V(G)] : Finite G.ConnectedComponent :=

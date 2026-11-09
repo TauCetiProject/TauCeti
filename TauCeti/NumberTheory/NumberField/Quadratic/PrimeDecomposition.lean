@@ -353,9 +353,10 @@ end ModFourEqOne
 
 /-! ### The ramified primes dividing `d` -/
 
-/-- **The ramified prime above a prime divisor of `d`.** For squarefree `d` and a prime `p ∣ d`,
-`p 𝓞 ℚ(√d) = (p, √d) ^ 2`, whatever the residue of `d` modulo `4`. -/
-theorem span_natCast_integralSqrt_sq_eq_span_natCast [Fact p.Prime] (hsf : Squarefree d)
+/-- **The ramified prime above a prime divisor of `d`.** For a prime `p ∣ d` with `p ^ 2 ∤ d`
+(in particular for squarefree `d`), `p 𝓞 ℚ(√d) = (p, √d) ^ 2`, whatever the residue of `d`
+modulo `4`. -/
+theorem span_natCast_integralSqrt_sq_eq_span_natCast [Fact p.Prime] (hp2 : ¬ (p : ℤ) ^ 2 ∣ d)
     (hp : (p : ℤ) ∣ d) :
     Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)),
         integralSqrt (omega_sq_eq_algebraMap_int (d := d))} ^ 2 =
@@ -364,7 +365,7 @@ theorem span_natCast_integralSqrt_sq_eq_span_natCast [Fact p.Prime] (hsf : Squar
   obtain ⟨m, hm⟩ := hp
   -- `p ∤ m`, since `p ^ 2 ∤ d`.
   have hpm : IsCoprime (p : ℤ) m := hp'.coprime_iff_not_dvd.mpr fun ⟨k, hk⟩ =>
-    hp'.not_isUnit (hsf p ⟨k, by rw [hm, hk]; ring⟩)
+    hp2 ⟨k, by rw [hm, hk]; ring⟩
   refine Ideal.span_pair_sq_eq_span_singleton_of_isCoprime (m := (m : 𝓞 _)) ?_
     (by simpa using hpm.intCast (R := 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)))
   rw [integralSqrt_sq]

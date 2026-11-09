@@ -185,7 +185,7 @@ theorem totalVariationOn_iSup_le_tsum [OpensMeasurableSpace E] {ι : Type*} {Ω 
   have hsplit : ∫ x, divergenceCLM φ x * u x ∂μ =
       ∑ i, ∫ x, divergenceCLM (ψ i) x * u x ∂μ := by
     rw [← integral_finsetSum _ fun i _ => by
-      simpa using integrable_smul_of_locallyIntegrableOn hu (divergenceCLM (ψ i))]
+      simpa using TestFunction.integrable_smul (divergenceCLM (ψ i)) hu]
     congr 1 with x
     simp [← hsum, Finset.sum_mul]
   rw [hsplit]
@@ -245,7 +245,7 @@ theorem totalVariationOn_sup_of_disjoint [OpensMeasurableSpace E]
       simpa [this] using h₁ x
     · simpa [image_eq_zero_of_notMem_tsupport fun hx' => hx (φ₁.tsupport_subset hx')] using h₂ x
   have hint (ψ : 𝓓(Ω ⊔ Ω', ℝ)) : Integrable (fun x => ψ x * u x) μ := by
-    simpa using integrable_smul_of_locallyIntegrableOn hu ψ
+    simpa using ψ.integrable_smul hu
   rw [← ENNReal.ofReal_add ha₁ ha₂]
   convert ofReal_integral_le_totalVariationOn (μ := μ) (u := u) φ hφ1 using 2
   simp_rw [hdiv, add_mul]
@@ -308,7 +308,7 @@ theorem totalVariationOn_add_le [OpensMeasurableSpace E] (hu : LocallyIntegrable
     totalVariationOn μ Ω (u + v) ≤ totalVariationOn μ Ω u + totalVariationOn μ Ω v := by
   refine totalVariationOn_le_iff.mpr fun φ hφ => ?_
   have hiu : Integrable (fun x => divergenceCLM φ x * u x) μ := by
-    simpa using integrable_smul_of_locallyIntegrableOn hu (divergenceCLM φ)
+    simpa using TestFunction.integrable_smul (divergenceCLM φ) hu
   by_cases hiv : Integrable (fun x => divergenceCLM φ x * v x) μ
   · have hsplit : ∫ x, divergenceCLM φ x * (u + v) x ∂μ =
         ∫ x, divergenceCLM φ x * u x ∂μ + ∫ x, divergenceCLM φ x * v x ∂μ := by
@@ -399,8 +399,8 @@ theorem totalVariationOn_le_liminf [OpensMeasurableSpace E] {ι : Type*} {l : Fi
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
     (.of_forall fun _ => zero_le) (hu.mono fun i hi => ?_)
   rw [edist_eq_enorm_sub,
-    ← integral_sub (by simpa using integrable_smul_of_locallyIntegrableOn hi ψ)
-      (by simpa using integrable_smul_of_locallyIntegrableOn hu₀ ψ)]
+    ← integral_sub (by simpa using ψ.integrable_smul hi)
+      (by simpa using ψ.integrable_smul hu₀)]
   simpa only [mul_sub] using hbound fun x => u i x - u₀ x
 
 /-- **Convergence of variations from an upper bound.** If `w i → u` in `L¹_loc(Ω)` and the

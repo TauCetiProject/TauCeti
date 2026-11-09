@@ -313,6 +313,58 @@ private theorem laurentDiff_pieceRelations (f : A) (u : R₂) :
       (weightedRename (Fin.succEmb 1) isWeightFamily_one_weight
         isWeightFamily_one_weight (fun _ ↦ subset_rfl) d)
 
+/-- The forward direction of `exact_algebraMap_laurentCoverDiff`: a pair of quotient classes with
+equal restrictions to the overlap is the image of a constant. -/
+private theorem exists_algebraMap_eq_of_laurentCoverDiff_mk_eq_zero (f : A) (a b : R₁)
+    (h : laurentCoverDiff A f
+      (Ideal.Quotient.mk (laurentCoverLeIdeal A f) a,
+        Ideal.Quotient.mk (laurentCoverGeIdeal A f) b) = 0) :
+    ∃ z : A, algebraMap A (laurentCoverLe A f × laurentCoverGe A f) z =
+      (Ideal.Quotient.mk (laurentCoverLeIdeal A f) a,
+        Ideal.Quotient.mk (laurentCoverGeIdeal A f) b) := by
+  rw [laurentCoverDiff_mk, Ideal.Quotient.eq_zero_iff_mem,
+    laurentCoverOverlapIdeal, Ideal.mem_span_singleton'] at h
+  obtain ⟨q, hq⟩ := h
+  obtain ⟨u, rfl⟩ := Ideal.Quotient.mk_surjective q
+  obtain ⟨c, d, hcd⟩ := laurentDiff_pieceRelations A f u
+  have hab : laurentDiff A
+      ((weightedC _ isWeightFamily_one_weight f - weightedX _ isWeightFamily_one_weight 0) * c,
+        (1 - weightedC _ isWeightFamily_one_weight f *
+          weightedX _ isWeightFamily_one_weight 0) * d) = laurentDiff A (a, b) := by
+    rw [hcd, mul_comm, hq]
+  have hz : laurentDiff A
+      (a - (weightedC _ isWeightFamily_one_weight f -
+          weightedX _ isWeightFamily_one_weight 0) * c,
+        b - (1 - weightedC _ isWeightFamily_one_weight f *
+          weightedX _ isWeightFamily_one_weight 0) * d) = 0 := by
+    rw [← Prod.mk_sub_mk, map_sub, hab, sub_self]
+  obtain ⟨z, hz⟩ := (exact_algebraMap_laurentDiff A _).mp hz
+  refine ⟨z, Prod.ext ?_ ?_⟩
+  · have hz₁ : weightedC _ isWeightFamily_one_weight z =
+        a - (weightedC _ isWeightFamily_one_weight f -
+          weightedX _ isWeightFamily_one_weight 0) * c := by
+      simpa only [Prod.algebraMap_apply, algebraMap_weightedRestrictedSubring] using
+        congrArg Prod.fst hz
+    -- Expose the product algebra map to compare its first component in the quotient.
+    change Ideal.Quotient.mk (laurentCoverLeIdeal A f)
+      (weightedC _ isWeightFamily_one_weight z) =
+        Ideal.Quotient.mk (laurentCoverLeIdeal A f) a
+    rw [hz₁, map_sub, sub_eq_self, Ideal.Quotient.eq_zero_iff_mem]
+    rw [laurentCoverLeIdeal]
+    exact Ideal.mul_mem_right c _ (Ideal.mem_span_singleton_self _)
+  · have hz₂ : weightedC _ isWeightFamily_one_weight z =
+        b - (1 - weightedC _ isWeightFamily_one_weight f *
+          weightedX _ isWeightFamily_one_weight 0) * d := by
+      simpa only [Prod.algebraMap_apply, algebraMap_weightedRestrictedSubring] using
+        congrArg Prod.snd hz
+    -- Expose the product algebra map to compare its second component in the quotient.
+    change Ideal.Quotient.mk (laurentCoverGeIdeal A f)
+      (weightedC _ isWeightFamily_one_weight z) =
+        Ideal.Quotient.mk (laurentCoverGeIdeal A f) b
+    rw [hz₂, map_sub, sub_eq_self, Ideal.Quotient.eq_zero_iff_mem]
+    rw [laurentCoverGeIdeal]
+    exact Ideal.mul_mem_right d _ (Ideal.mem_span_singleton_self _)
+
 /-- **Wedhorn's Lemma 8.33, exactness in the middle.** For the two Laurent pieces
 `{|f| ≤ 1}` and `{|f| ≥ 1}`, a pair of sections has equal restrictions to the overlap exactly
 when it is a pair of equal constants. -/
@@ -324,49 +376,7 @@ theorem exact_algebraMap_laurentCoverDiff (f : A) :
   obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
   obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective y
   constructor
-  · intro h
-    rw [laurentCoverDiff_mk, Ideal.Quotient.eq_zero_iff_mem,
-      laurentCoverOverlapIdeal, Ideal.mem_span_singleton'] at h
-    obtain ⟨q, hq⟩ := h
-    obtain ⟨u, rfl⟩ := Ideal.Quotient.mk_surjective q
-    obtain ⟨c, d, hcd⟩ := laurentDiff_pieceRelations A f u
-    have hab : laurentDiff A
-        ((weightedC _ isWeightFamily_one_weight f - weightedX _ isWeightFamily_one_weight 0) * c,
-          (1 - weightedC _ isWeightFamily_one_weight f *
-            weightedX _ isWeightFamily_one_weight 0) * d) = laurentDiff A (a, b) := by
-      rw [hcd, mul_comm, hq]
-    have hz : laurentDiff A
-        (a - (weightedC _ isWeightFamily_one_weight f -
-            weightedX _ isWeightFamily_one_weight 0) * c,
-          b - (1 - weightedC _ isWeightFamily_one_weight f *
-            weightedX _ isWeightFamily_one_weight 0) * d) = 0 := by
-      rw [← Prod.mk_sub_mk, map_sub, hab, sub_self]
-    obtain ⟨z, hz⟩ := (exact_algebraMap_laurentDiff A _).mp hz
-    refine ⟨z, Prod.ext ?_ ?_⟩
-    · have hz₁ : weightedC _ isWeightFamily_one_weight z =
-          a - (weightedC _ isWeightFamily_one_weight f -
-            weightedX _ isWeightFamily_one_weight 0) * c := by
-        simpa only [Prod.algebraMap_apply, algebraMap_weightedRestrictedSubring] using
-          congrArg Prod.fst hz
-      -- Expose the product algebra map to compare its first component in the quotient.
-      change Ideal.Quotient.mk (laurentCoverLeIdeal A f)
-        (weightedC _ isWeightFamily_one_weight z) =
-          Ideal.Quotient.mk (laurentCoverLeIdeal A f) a
-      rw [hz₁, map_sub, sub_eq_self, Ideal.Quotient.eq_zero_iff_mem]
-      rw [laurentCoverLeIdeal]
-      exact Ideal.mul_mem_right c _ (Ideal.mem_span_singleton_self _)
-    · have hz₂ : weightedC _ isWeightFamily_one_weight z =
-          b - (1 - weightedC _ isWeightFamily_one_weight f *
-            weightedX _ isWeightFamily_one_weight 0) * d := by
-        simpa only [Prod.algebraMap_apply, algebraMap_weightedRestrictedSubring] using
-          congrArg Prod.snd hz
-      -- Expose the product algebra map to compare its second component in the quotient.
-      change Ideal.Quotient.mk (laurentCoverGeIdeal A f)
-        (weightedC _ isWeightFamily_one_weight z) =
-          Ideal.Quotient.mk (laurentCoverGeIdeal A f) b
-      rw [hz₂, map_sub, sub_eq_self, Ideal.Quotient.eq_zero_iff_mem]
-      rw [laurentCoverGeIdeal]
-      exact Ideal.mul_mem_right d _ (Ideal.mem_span_singleton_self _)
+  · exact exists_algebraMap_eq_of_laurentCoverDiff_mk_eq_zero A f a b
   · rintro ⟨z, hz⟩
     rw [← hz]
     -- Expose the product algebra map; both restrictions of a constant are equal.

@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
+public import TauCeti.Geometry.Symplectic.Lagrangian.Opens
 public import TauCeti.Geometry.Symplectic.Lagrangian.Prod
+public import TauCeti.Geometry.Symplectic.Lagrangian.Rescale
 
 /-!
 # Lagrangian embeddings
@@ -16,10 +19,12 @@ Unlike a Lagrangian immersion it is a homeomorphism onto its image, so it parame
 embedded submanifold and excludes self-intersections. The definition uses the existing
 smooth-immersion, topological-embedding and Lagrangian tangent-image predicates.
 
-Reparametrization by a diffeomorphism, transport by a symplectomorphism, and products preserve
-Lagrangian embeddings. In finite dimension an embedding is Lagrangian if its tangent images
-are isotropic and its source has half the ambient dimension. For a nonempty source this
-condition is also necessary. No global dimension condition is imposed on an empty embedding.
+Reparametrization by a diffeomorphism, transport by a symplectomorphism, products, restriction
+to an open subset of the source and nonzero rescaling of the form preserve Lagrangian embeddings,
+and a map into an open submanifold is a Lagrangian embedding for the restricted form exactly when
+its composition with the inclusion is one. In finite dimension an embedding is Lagrangian if its
+tangent images are isotropic and its source has half the ambient dimension. For a nonempty source
+this condition is also necessary. No global dimension condition is imposed on an empty embedding.
 
 ## References
 
@@ -29,7 +34,7 @@ condition is also necessary. No global dimension condition is imposed on an empt
 
 public noncomputable section
 
-open Manifold Module
+open Manifold Module TopologicalSpace
 open scoped Manifold ContDiff
 
 namespace TauCeti.SmoothTwoForm.IsNondegenerate
@@ -151,5 +156,43 @@ theorem IsLagrangianEmbedding.prodMap (h : hσ.IsLagrangianEmbedding J f)
     (hg.isImmersion.contMDiff.mdifferentiable (by simp))
 
 end Product
+
+section Opens
+
+/-- Restricting a Lagrangian embedding to an open subset of its source gives a Lagrangian
+embedding. -/
+theorem IsLagrangianEmbedding.comp_subtype_val [IsManifold J ∞ N]
+    (h : hσ.IsLagrangianEmbedding J f) (U : Opens N) :
+    hσ.IsLagrangianEmbedding J (f ∘ (Subtype.val : U → N)) :=
+  (isLagrangianEmbedding_iff_of_isSmoothEmbedding (h.isSmoothEmbedding.comp_subtypeVal U)).2 <|
+    h.isLagrangianMap.comp_subtype_val U fun _ _ ↦
+      h.isImmersion.contMDiff.mdifferentiableAt (by simp)
+
+/-- A map into an open submanifold is a Lagrangian embedding for the restricted form exactly when
+its composition with the inclusion is a Lagrangian embedding. -/
+@[simp]
+theorem isLagrangianEmbedding_subtype_val_comp_iff {U : Opens M} {g : N → U} :
+    hσ.IsLagrangianEmbedding J ((Subtype.val : U → M) ∘ g) ↔
+      (hσ.mpullback_subtype_val U).IsLagrangianEmbedding J g := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have hg := TauCeti.isSmoothEmbedding_subtypeVal_comp_iff.1 h.isSmoothEmbedding
+    exact (isLagrangianEmbedding_iff_of_isSmoothEmbedding hg).2 <|
+      (hσ.isLagrangianMap_subtype_val_comp_iff (hg.contMDiff.mdifferentiable (by simp))).1
+        h.isLagrangianMap
+  · have hg := h.isSmoothEmbedding
+    exact (isLagrangianEmbedding_iff_of_isSmoothEmbedding
+      (TauCeti.isSmoothEmbedding_subtypeVal_comp_iff.2 hg)).2 <|
+      (hσ.isLagrangianMap_subtype_val_comp_iff (hg.contMDiff.mdifferentiable (by simp))).2
+        h.isLagrangianMap
+
+end Opens
+
+/-- Nonzero constant rescaling of the form preserves and reflects Lagrangian embeddings. -/
+@[simp]
+theorem isLagrangianEmbedding_smul_iff (c : ℝ) (hc : c ≠ 0) :
+    (hσ.smul c hc).IsLagrangianEmbedding J f ↔ hσ.IsLagrangianEmbedding J f := by
+  refine ⟨fun h ↦ ⟨h.isImmersion, h.isEmbedding, ?_⟩, fun h ↦ ⟨h.isImmersion, h.isEmbedding, ?_⟩⟩
+  · exact (hσ.isLagrangianMap_smul_iff c hc).1 h.isLagrangianMap
+  · exact (hσ.isLagrangianMap_smul_iff c hc).2 h.isLagrangianMap
 
 end TauCeti.SmoothTwoForm.IsNondegenerate

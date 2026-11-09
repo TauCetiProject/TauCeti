@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Determinant
+public import TauCeti.LinearAlgebra.Determinant.Basic
 public import TauCeti.Geometry.Polygon.DoublePoint
 public import TauCeti.KnotTheory.GaussCode.Basic
 
@@ -53,6 +53,8 @@ by Reidemeister moves, are not proved here.
 
 ## Main results
 
+* `Polygon.fract_mem_Ioo_of_mem_crossingTimes`: no crossing time is an integer, since no vertex is
+  a double point.
 * `Polygon.range_visitTime` and `Polygon.strictMono_visitTime`: the visits are the crossing times,
   in increasing order.
 * `Polygon.gaussCode_visit_eq_visit_iff`: two visits belong to the same crossing exactly when
@@ -188,8 +190,8 @@ private theorem exists_smul_eq_vsub_partnerTime {t : ℝ} (ht : t ∈ poly.cross
   exact doublePointPartner_ne ht.2 ha.symm
 
 /-- A crossing time is not a vertex time: its point lies in the interior of an edge. -/
-private theorem fract_mem_Ioo (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) {t : ℝ}
-    (ht : t ∈ poly.crossingTimes p₀ d) : Int.fract t ∈ Ioo (0 : ℝ) 1 := by
+theorem fract_mem_Ioo_of_mem_crossingTimes (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d))
+    {t : ℝ} (ht : t ∈ poly.crossingTimes p₀ d) : Int.fract t ∈ Ioo (0 : ℝ) 1 := by
   refine ⟨(Int.fract_nonneg t).lt_of_ne fun h ↦ ?_, Int.fract_lt_one t⟩
   have hv := ht.2
   rw [boundaryParam_eq_edgePath_edgeIndexAt, ← h, edgePath, lineMap_apply_zero] at hv
@@ -204,7 +206,8 @@ private theorem linearIndependent_of_mem_crossingTimes (hs : poly.IsSimple ℝ)
       poly (finRotate n (edgeIndexAt n (partnerTime poly p₀ d t))) -ᵥ
         poly (edgeIndexAt n (partnerTime poly p₀ d t)), d] := by
   have ht' := partnerTime_mem_crossingTimes ht
-  refine hπ.linearIndependent_of_projAlong_eq hs (fract_mem_Ioo hπ ht) (fract_mem_Ioo hπ ht') ?_ ?_
+  refine hπ.linearIndependent_of_projAlong_eq hs (fract_mem_Ioo_of_mem_crossingTimes hπ ht)
+    (fract_mem_Ioo_of_mem_crossingTimes hπ ht') ?_ ?_
   · rw [← boundaryParam_eq_edgePath_edgeIndexAt, ← boundaryParam_eq_edgePath_edgeIndexAt]
     exact fun h ↦ partnerTime_ne ht (hs.injOn_boundaryParam ht'.1 ht.1 h.symm)
   · rw [← boundaryParam_eq_edgePath_edgeIndexAt, ← boundaryParam_eq_edgePath_edgeIndexAt,
@@ -683,11 +686,7 @@ theorem gaussCode_eq_of_strictMono
   -- The determinant of the edge directions is rescaled by a positive factor.
   obtain ⟨-, -, r, hr, hdir⟩ := hφt t ht
   obtain ⟨-, -, r', hr', hdir'⟩ := hφt t' ht'
-  have hv (u w : V) : ![r • u, r' • w, d] = fun k ↦ ![r, r', 1] k • ![u, w, d] k := by
-    ext k
-    fin_cases k <;> simp
-  rw [hdir, hdir', hv, AlternatingMap.map_smul_univ, Fin.prod_univ_three, smul_eq_mul, sign_mul]
-  simp [sign_pos (mul_pos hr hr')]
+  rw [hdir, hdir', b.det_smul_smul_vecCons, sign_mul, sign_pos (mul_pos hr hr'), one_mul]
 
 end SameDoublePoints
 

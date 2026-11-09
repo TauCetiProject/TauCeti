@@ -29,9 +29,10 @@ section with continuous local factors sums to `m` as well, by the same argument 
 the holomorphicity rows are used; the curvature equation is not needed.
 
 This file proves that the total multiplicity of the zeros equals the framing degree `m`, so that
-framed degree-`m` vortices have their divisors in `Sym^m ℂ`. The classical identification of
-that total multiplicity with the flux `(2π)⁻¹ ∫ i F_a` (Jaffe–Taubes, Chapter III) is not proved
-here, and neither is existence of a vortex for a given divisor.
+framed degree-`m` vortices have their divisors in `Sym^m ℂ`. The identification of the framing
+degree with the flux `(2π)⁻¹ ∫ i F_a` (Jaffe–Taubes, Chapter III) is
+`TauCeti.Vortex.integral_curvature_eq_of_tendsto_sectionValue_mul_inv_pow`. Existence of a vortex
+for a given divisor is not proved here.
 
 ## References
 

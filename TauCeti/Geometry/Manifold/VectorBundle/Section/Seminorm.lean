@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Seminorm
+public import TauCeti.Geometry.Manifold.ContMDiffMap.CLMApply
+public import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
 # Compact chart seminorms for bundle sections
@@ -85,6 +87,17 @@ theorem frameCoordinates_coordChange (e' : Trivialization F (π F V))
   simp only [frameCoordinates_apply, e.coordChangeL_apply e' ⟨hU x.2, hU' x.2⟩,
     e.symm_apply_apply_mk (hU x.2)]
 
+/-- Coefficients in a second frame are obtained by the smooth transition multiplier. -/
+theorem frameCoordinates_eq_clmApply (e' : Trivialization F (π F V))
+    [MemTrivializationAtlas e'] (hU' : (U : Set M) ⊆ e'.baseSet)
+    (s : Cₛ^n⟮I; F, V⟯) :
+    e'.frameCoordinates hU' s = ContMDiffMap.clmApplyLinearMap
+      (frameTransitionMap (I := I) (n := n) e e' hU hU') (e.frameCoordinates hU s) := by
+  ext x
+  simp only [ContMDiffMap.clmApplyLinearMap_apply, frameTransitionMap_apply]
+  exact (e.frameCoordinates_coordChange hU e' hU' s x).symm
+
+
 variable [IsManifold I n M]
 
 /-- The supremum seminorm of the derivative of order `m` in a source chart and bundle frame,
@@ -131,6 +144,14 @@ theorem chartDerivativeSeminorm_bot (x : U) (m : ℕ) (hm : m ≤ n) :
 def chartCkSeminorm (x : U) (K : Compacts (extChartAt I x).target) (k : ℕ) (hk : k ≤ n) :
     Seminorm 𝕜 Cₛ^n⟮I; F, V⟯ :=
   (ContMDiffMap.chartCkSeminorm x K k hk).comp (frameCoordinates e hU)
+
+/-- A compact frame seminorm is the compact chart seminorm of its coefficient function. -/
+@[simp]
+theorem chartCkSeminorm_apply (x : U) (K : Compacts (extChartAt I x).target)
+    (k : ℕ) (hk : k ≤ n) (s : Cₛ^n⟮I; F, V⟯) :
+    chartCkSeminorm e hU x K k hk s =
+      ContMDiffMap.chartCkSeminorm x K k hk (frameCoordinates e hU s) := by
+  rfl
 
 /-- A `C^k` bound is simultaneous control of every frame-coordinate derivative through order `k`. -/
 theorem chartCkSeminorm_le_iff (x : U) (K : Compacts (extChartAt I x).target)

@@ -17,7 +17,7 @@ over an `I`-adically complete ring is `I`-adically complete, which is what the c
 lemma (`surjective_of_mkQ_comp_surjective`) requires of the source of a map out of a finite free
 module. For a principal ideal `(π)`, the `(π)`-adic filtration of a product `ι → R` is read off
 coordinatewise: `x ∈ (π)^n • ⊤` exactly when `π ^ n` divides every coordinate of `x`. Hence
-`π`-adic limits and separation of finite coordinate families can be stated with divisibility alone.
+`π`-adic limits and separation of coordinate families can be stated with divisibility alone.
 
 ## Main results
 
@@ -28,8 +28,8 @@ coordinatewise: `x ∈ (π)^n • ⊤` exactly when `π ^ n` divides every coord
 * `IsHausdorff.pi`: adic Hausdorffness passes to products.
 * `IsPrecomplete.pi`, `IsAdicComplete.pi`: adic precompleteness and completeness pass to finite
   products.
-* `TauCeti.exists_forall_pow_dvd_sub`: a `π`-adically Cauchy sequence of finite coordinate families
-  over a precomplete ring has a limit.
+* `TauCeti.exists_forall_pow_dvd_sub`: a `π`-adically Cauchy sequence of coordinate families over a
+  precomplete ring has a limit.
 * `TauCeti.eq_zero_of_forall_pow_dvd`: over a Hausdorff ring, a coordinate family divisible by every
   power of `π` vanishes.
 -/
@@ -86,26 +86,23 @@ instance IsAdicComplete.pi [Finite ι] [∀ i, IsAdicComplete I (M i)] :
 
 namespace TauCeti
 
-variable {R : Type*} [CommRing R] {ι : Type*}
-
-/-- **Limits of coordinate families.** Over a `π`-adically precomplete ring, a sequence of finite
-coordinate families whose consecutive terms are congruent modulo `π ^ (m + 1)` has a limit,
-congruent to the `m`-th term modulo `π ^ m`. -/
-theorem exists_forall_pow_dvd_sub [Finite ι] (π : R) [IsPrecomplete (Ideal.span {π}) R]
-    (x : ℕ → ι → R) (hx : ∀ m i, π ^ (m + 1) ∣ x (m + 1) i - x m i) :
+/-- **Limits of coordinate families.** Over a `π`-adically precomplete ring, a sequence of
+coordinate families whose consecutive terms are congruent modulo `π ^ m` has a limit, congruent to
+the `m`-th term modulo `π ^ m`. -/
+theorem exists_forall_pow_dvd_sub (π : R) [IsPrecomplete (Ideal.span {π}) R]
+    (x : ℕ → ι → R) (hx : ∀ m i, π ^ m ∣ x (m + 1) i - x m i) :
     ∃ L : ι → R, ∀ m i, π ^ m ∣ L i - x m i := by
+  have hmem (m : ℕ) (r : R) : r ∈ ((Ideal.span {π}) ^ m • ⊤ : Ideal R) ↔ π ^ m ∣ r := by
+    rw [Ideal.smul_eq_mul, Ideal.mul_top, Ideal.span_singleton_pow, Ideal.mem_span_singleton]
   have hcauchy {m m' : ℕ} (hm : m ≤ m') (i : ι) : π ^ m ∣ x m' i - x m i := by
     induction m', hm using Nat.le_induction with
     | base => simp
     | succ m' hm ih =>
       rw [← sub_add_sub_cancel]
-      exact dvd_add ((pow_dvd_pow π (by omega)).trans (hx m' i)) ih
-  obtain ⟨L, hL⟩ := IsPrecomplete.prec (I := Ideal.span {π}) inferInstance (f := x)
-    fun {m m'} hm ↦ by
-      rw [SModEq.sub_mem, mem_span_singleton_pow_smul_top_iff]
-      exact fun i ↦ dvd_sub_comm.mp (hcauchy hm i)
-  exact ⟨L, fun m i ↦ dvd_sub_comm.mp
-    ((mem_span_singleton_pow_smul_top_iff π _ m).1 (SModEq.sub_mem.1 (hL m)) i)⟩
+      exact dvd_add ((pow_dvd_pow π hm).trans (hx m' i)) ih
+  choose L hL using fun i ↦ IsPrecomplete.prec (I := Ideal.span {π}) inferInstance
+    (f := (x · i)) fun hm ↦ by rw [SModEq.sub_mem, hmem, dvd_sub_comm]; exact hcauchy hm i
+  exact ⟨L, fun m i ↦ dvd_sub_comm.mp ((hmem m _).1 (SModEq.sub_mem.1 (hL i m)))⟩
 
 /-- Over a `π`-adically Hausdorff ring, a coordinate family whose coordinates are divisible by
 every power of `π` vanishes. -/

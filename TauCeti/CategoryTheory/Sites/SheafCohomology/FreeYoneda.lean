@@ -29,7 +29,8 @@ naturally both in the object of the site and in the coefficient sheaf.
   functor, the same identification `CategoryTheory.Sheaf.H'AddEquivExt` as an additive
   equivalence, and `CategoryTheory.Sheaf.cohomologyPresheaf_map_apply`, identifying the
   restriction maps of the cohomology presheaf with precomposition by the induced maps of free
-  abelian sheaves;
+  abelian sheaves, and `CategoryTheory.Sheaf.cohomologyPresheafFunctor_map_app_apply`, identifying
+  the maps induced by morphisms of coefficient sheaves with postcomposition;
 * `TauCeti.CategoryTheory.freeYonedaSheafSectionsEquiv`, the additive equivalence between
   morphisms from that sheaf to `F` and sections of `F` over `U`, and
   `TauCeti.CategoryTheory.freeYonedaSheafCorepresentableBy`, the same universal property phrased
@@ -171,6 +172,16 @@ lemma _root_.CategoryTheory.Sheaf.cohomologyPresheaf_map_apply
     F.H'AddEquivExt n U ((F.cohomologyPresheaf n).map i.op x) =
       (Abelian.Ext.mk₀ ((freeYonedaSheafFunctor J).map i)).comp (F.H'AddEquivExt n V x)
         (zero_add n) :=
+  (rfl)
+
+/-- The maps of Mathlib's cohomology presheaves induced by a morphism `f : F ⟶ G` of coefficient
+sheaves are postcomposition with `f`. -/
+lemma _root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor_map_app_apply
+    {F G : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v}} (f : F ⟶ G) (n : ℕ) (U : C)
+    (x : F.H' n U) :
+    G.H'AddEquivExt n U
+        (((_root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor J n).map f).app (op U) x) =
+      (F.H'AddEquivExt n U x).comp (Abelian.Ext.mk₀ f) (add_zero n) :=
   (rfl)
 
 /-- If restriction of sections along `i : U ⟶ V` is surjective, then so is the restriction map
