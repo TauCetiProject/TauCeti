@@ -158,25 +158,29 @@ theorem exists_wordProd_eq (w : P.weylGroup) :
 section
 
 omit [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic] [P.IsReduced] in
-/-- Distinct simple roots give distinct simple reflections: the two reflections already disagree on
-the second simple root, since the two simple roots are linearly independent. -/
+/-- Distinct indices in the support of a base give distinct simple reflections. No hypothesis on
+the characteristic of `R` is needed. -/
 theorem _root_.RootPairing.weylGroup.ofIdx_ne_ofIdx_of_ne
-    [NeZero (2 : R)] {i j : ι} (hi : i ∈ b.support) (hj : j ∈ b.support)
-    (hij : i ≠ j) :
+    {i j : ι} (hi : i ∈ b.support) (hj : j ∈ b.support) (hij : i ≠ j) :
     _root_.RootPairing.weylGroup.ofIdx P i ≠ _root_.RootPairing.weylGroup.ofIdx P j := by
+  -- Agreeing reflections would force both simple coroots to vanish on every `x : M`, since the two
+  -- simple roots are linearly independent; the coroots would then be equal, contradicting `hij`.
   intro hEq
   have hindep : LinearIndependent R ![P.root i, P.root j] :=
     b.linearIndependent_pair_of_ne (i := ⟨i, hi⟩) (j := ⟨j, hj⟩) (by simpa using hij)
-  have happ : P.root (P.reflectionPerm i j) = P.root (P.reflectionPerm j j) := by
-    rw [← RootPairing.weylGroupToPerm_ofIdx_apply P i j,
-      ← RootPairing.weylGroupToPerm_ofIdx_apply P j j, hEq]
-  rw [P.root_reflectionPerm, P.root_reflectionPerm, P.reflection_apply_root,
-    P.reflection_apply_self] at happ
-  -- `happ` now reads `αⱼ - ⟨αⱼ, αᵢ^∨⟩ • αᵢ = -αⱼ`, so `2 • αⱼ` is a multiple of `αᵢ`.
-  have h2 : (2 : R) = 0 :=
-    (LinearIndependent.pair_iff.mp hindep (-P.pairing j i) 2
-      (by linear_combination (norm := module) happ)).2
-  exact two_ne_zero h2
+  have hrefl (x : M) : P.reflection i x = P.reflection j x := by
+    simpa only [RootPairing.weylGroup.ofIdx_smul, RootPairing.Equiv.reflection_smul] using
+      congrArg (· • x) hEq
+  -- The two reflections agree, so `⟨x, αᵢ^∨⟩ • αᵢ = ⟨x, αⱼ^∨⟩ • αⱼ` for every `x`.
+  have hzero (x : M) : P.coroot' i x = 0 ∧ P.coroot' j x = 0 := by
+    have h := hrefl x
+    simp only [RootPairing.reflection_apply] at h
+    have h' := LinearIndependent.pair_iff.mp hindep (P.coroot' i x) (-P.coroot' j x)
+      (by linear_combination (norm := module) -h)
+    exact ⟨h'.1, neg_eq_zero.mp h'.2⟩
+  exact hij (P.coroot.injective (P.toLinearMap.flip.toPerfPair.injective
+    (LinearMap.ext fun x ↦ by
+      simpa [LinearMap.toPerfPair_apply] using (hzero x).1.trans (hzero x).2.symm)))
 
 end
 
