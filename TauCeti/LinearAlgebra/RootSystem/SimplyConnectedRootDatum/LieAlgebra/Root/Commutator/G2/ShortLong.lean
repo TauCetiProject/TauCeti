@@ -18,9 +18,9 @@ computes the integral coefficients of the four-factor Chevalley multiplication f
 The divisions by two and three are exact in ℤ, before passing to the value ring.
 The formulas on Kostant-stable lattices therefore include characteristics two and three.
 
-The short–long element commutator has factors in increasing root height at α + β, 2α + β,
-3α + β and 3α + 2β. Moving the long-root factor in the collection identity to the right
-changes its highest-root coefficient from b to 2b. The correction follows from the
+The short–long element commutator has factors in increasing total degree in α, β at
+α + β, 2α + β, 3α + β and 3α + 2β. Moving the long-root factor in the collection identity to
+the right changes its highest-root coefficient from b to 2b. The correction follows from the
 class-two relation for β and 3α + β and the Jacobi identity, using
 `commutatorElement_chevalleyRootSubgroup_of_lie_eq`. No faithfulness or weight-basis
 assumption is needed.
@@ -399,8 +399,8 @@ theorem chevalleyRootSubgroup_mul_of_g2_short_long {α β γ δ ε ζ : Fin G2.n
 variable {ht}
 
 /-- The ordered short–long G₂ element-commutator formula on a Kostant-stable lattice.
-The factors are in increasing root height. The highest-root coefficient is twice the
-coefficient in the root-collection formula, with the divisions performed in ℤ. -/
+The factors are in increasing total degree in `α`, `β`. The highest-root coefficient is twice
+the coefficient in the root-collection formula, with the divisions performed in ℤ. -/
 theorem commutatorElement_chevalleyRootSubgroup_of_g2_short_long {α β γ δ ε ζ : Fin G2.numRoots}
     (hγ : (G2.simplyConnectedRootDatum ht).root γ =
       (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root β)
