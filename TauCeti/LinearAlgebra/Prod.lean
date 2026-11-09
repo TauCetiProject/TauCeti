@@ -190,6 +190,15 @@ theorem finrank_graph {R M M₂ : Type*} [Ring R] [AddCommGroup M] [Module R M] 
   intro x y h
   exact congr(($h).1)
 
+/-- Exchanging the factors of a product map: `g.prodMap f` is `f.prodMap g` conjugated by the
+exchange of factors `LinearEquiv.prodComm`. -/
+theorem prodMap_comp_prodComm {R M₁ M₂ M₃ M₄ : Type*} [Semiring R] [AddCommMonoid M₁]
+    [Module R M₁] [AddCommMonoid M₂] [Module R M₂] [AddCommMonoid M₃] [Module R M₃]
+    [AddCommMonoid M₄] [Module R M₄] (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₄) :
+    g.prodMap f ∘ₗ (LinearEquiv.prodComm R M₁ M₂).toLinearMap =
+      (LinearEquiv.prodComm R M₃ M₄).toLinearMap ∘ₗ f.prodMap g := by
+  ext <;> simp
+
 end LinearMap
 
 namespace Module.Basis
