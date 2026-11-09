@@ -135,7 +135,7 @@ private theorem range_relBrInfl_unramifiedExtension_le
   let _ := algebraicExtensionNormedFieldTopology K (𝓤 n)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 n)
   have := algebraicExtension_valuativeExtension K (𝓤 n)
-  have : IsUnramified K (𝓤 n) := isUnramified_unramifiedExtension hn
+  have : IsUnramified K (𝓤 n) := isUnramified_unramifiedExtension
   let _ := algebraicExtensionValuativeRel K E
   let _ := algebraicExtensionNormedFieldTopology K E
   have := finiteExtension_isNonarchimedeanLocalField K E
@@ -165,7 +165,7 @@ theorem range_relBrInfl_eq_range_relBrInfl_unramifiedExtension
   let _ := algebraicExtensionNormedFieldTopology K (𝓤 n)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 n)
   have := algebraicExtension_valuativeExtension K (𝓤 n)
-  have : IsUnramified K (𝓤 n) := isUnramified_unramifiedExtension hn
+  have : IsUnramified K (𝓤 n) := isUnramified_unramifiedExtension
   let _ := algebraicExtensionValuativeRel K E
   let _ := algebraicExtensionNormedFieldTopology K E
   have := finiteExtension_isNonarchimedeanLocalField K E
@@ -282,12 +282,12 @@ theorem invMap_brRes (x : Br K) :
   let _ := algebraicExtensionNormedFieldTopology K (𝓤 f)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 f)
   have := algebraicExtension_valuativeExtension K (𝓤 f)
-  have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension f.ne_zero
+  have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension
   let _ := algebraicExtensionValuativeRel L (𝓥 f)
   let _ := algebraicExtensionNormedFieldTopology L (𝓥 f)
   have := finiteExtension_isNonarchimedeanLocalField L (𝓥 f)
   have := algebraicExtension_valuativeExtension L (𝓥 f)
-  have : IsUnramified L (𝓥 f) := isUnramified_unramifiedExtension f.ne_zero
+  have : IsUnramified L (𝓥 f) := isUnramified_unramifiedExtension
   have : ValuativeExtension K (𝓥 f) := ValuativeExtension.trans K L (𝓥 f)
   have : ValuativeExtension (𝓤 f) (𝓥 f) := ι.valuativeExtension
   rw [← brBaseChange_eq_brRes K L σ,

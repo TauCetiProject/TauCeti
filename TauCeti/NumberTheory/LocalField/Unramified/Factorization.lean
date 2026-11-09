@@ -87,7 +87,7 @@ theorem isUnramified_unramifiedExtension_inertiaDegree
     [IsNonarchimedeanLocalField (unramifiedExtension K L (inertiaDegree K L))]
     [ValuativeExtension K (unramifiedExtension K L (inertiaDegree K L))] :
     IsUnramified K (unramifiedExtension K L (inertiaDegree K L)) :=
-  isUnramified_unramifiedExtension_of_isPrimitiveRoot inertiaDegree_pos.ne'
+  isUnramified_unramifiedExtension_of_isPrimitiveRoot
     (exists_isPrimitiveRoot_natCard_pow_inertiaDegree_sub_one K L).choose_spec
 
 variable {K L} in
@@ -113,7 +113,7 @@ theorem dvd_inertiaDegree_of_isPrimitiveRoot {f : ℕ} (hf : f ≠ 0) {ζ : L}
   let _ := finiteIntermediateFieldTopology K L (unramifiedExtension K L f)
   have := finiteIntermediateField_isNonarchimedeanLocalField K L (unramifiedExtension K L f)
   have := finiteIntermediateField_valuativeExtension K L (unramifiedExtension K L f)
-  have := isUnramified_unramifiedExtension_of_isPrimitiveRoot hf hζ
+  have := isUnramified_unramifiedExtension_of_isPrimitiveRoot hζ
   rw [inertiaDegree_tower (K := K) (L := unramifiedExtension K L f) L,
     IsUnramified.inertiaDegree_eq_finrank, finrank_unramifiedExtension_of_isPrimitiveRoot hf hζ]
   exact dvd_mul_right _ _
