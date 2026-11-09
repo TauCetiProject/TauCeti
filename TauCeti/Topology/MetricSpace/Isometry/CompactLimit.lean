@@ -6,7 +6,6 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 module
 
 public import Mathlib.Topology.MetricSpace.Isometry
-public import Mathlib.Topology.MetricSpace.Pseudo.Basic
 public import Mathlib.Topology.Compactness.Compact
 
 /-!
@@ -31,13 +30,11 @@ noncomputable section
 open Set Filter
 open scoped Topology
 
-namespace TauCeti
-
-variable {A B ι : Type*} [MetricSpace A] [MetricSpace B]
+variable {A B ι : Type*} [PseudoMetricSpace A] [MetricSpace B]
 
 /-- Uniformly vanishing distance distortion upgrades pointwise convergence
 to uniform convergence when the source is compact. -/
-theorem tendstoUniformly_of_distortion_and_pointwise [CompactSpace A]
+theorem Isometry.tendstoUniformly_of_distortion_and_pointwise [CompactSpace A]
     {l : Filter ι} {f : ι → A → B} {e : A → B} (he : Isometry e)
     (hpoint : ∀ x, Tendsto (fun k ↦ f k x) l (𝓝 (e x)))
     (hdist : TendstoUniformly (fun k ↦ fun q : A × A ↦ dist (f k q.1) (f k q.2))
@@ -66,6 +63,8 @@ theorem tendstoUniformly_of_distortion_and_pointwise [CompactSpace A]
         dist (f k z) (f k x) := dist_triangle4 _ _ _ _
     _ < ε := by rw [he.dist_eq, dist_comm z x] at *; linarith [hk z hz]
 
+namespace TauCeti
+
 /-- Compactness constructs one simultaneous isometric limit from actual
 pairwise distance convergence, without a supplied embedding. -/
 theorem exists_isometric_ultrafilter_limit [CompactSpace B]
@@ -83,9 +82,12 @@ theorem exists_isometric_ultrafilter_limit [CompactSpace B]
   intro x y
   exact tendsto_nhds_unique ((hpoint x).dist (hpoint y)) ((hdist x y).mono_left hU)
 
+end TauCeti
+
 /-- The compact source image contains every point that is eventually
 arbitrarily close to the approximating images. -/
-theorem mem_range_of_uniform_limit_and_approximation [CompactSpace A]
+theorem Continuous.mem_range_of_uniform_limit_and_approximation
+    {A : Type*} [TopologicalSpace A] [CompactSpace A]
     {l : Filter ι} [l.NeBot] {f : ι → A → B} {e : A → B}
     (he : Continuous e) (hlim : TendstoUniformly f e l) {y : B}
     (hnear : ∀ ε > 0, ∀ᶠ k in l, ∃ x, dist (f k x) y < ε) : y ∈ range e := by
@@ -103,10 +105,12 @@ theorem mem_range_of_uniform_limit_and_approximation [CompactSpace A]
     _ = dist (f k x) y + dist (e x) (f k x) := by congr 1 <;> exact dist_comm _ _
     _ < ε := by linarith [hk x]
 
+namespace TauCeti
+
 /-- Compact-target extraction preserves the relative positions of an entire
 family of compact metric charts along one ultrafilter. -/
 theorem exists_common_isometric_limits_preserving_cross_distances
-    {ι : Type*} {A : ι → Type*} [∀ i, MetricSpace (A i)] [∀ i, CompactSpace (A i)]
+    {ι : Type*} {A : ι → Type*} [∀ i, PseudoMetricSpace (A i)] [∀ i, CompactSpace (A i)]
     {B : Type*} [MetricSpace B] [CompactSpace B]
     {κ : Type*} {l : Filter κ} [l.NeBot]
     (f : κ → ∀ i, A i → B) (D : ∀ i j, A i → A j → ℝ)
@@ -134,14 +138,14 @@ theorem exists_common_isometric_limits_preserving_cross_distances
     exact tendsto_nhds_unique ((hpoint i x).dist (hpoint i y))
       (((hdiag i).tendsto_at (x, y)).mono_left hU)
   have huniform (i : ι) : TendstoUniformly (fun k ↦ f k i) (e i) (U : Filter κ) := by
-    apply tendstoUniformly_of_distortion_and_pointwise (hisom i) (hpoint i)
+    apply (hisom i).tendstoUniformly_of_distortion_and_pointwise (hpoint i)
     rw [Metric.tendstoUniformly_iff]
     exact fun ε hε ↦ hU (Metric.tendstoUniformly_iff.mp (hdiag i) ε hε)
   refine ⟨U, hU, e, hisom, huniform, ?_, ?_⟩
   · intro i j x y
     exact tendsto_nhds_unique ((hpoint i x).dist (hpoint j y)) ((hcross i j x y).mono_left hU)
   · intro i y hy
-    exact mem_range_of_uniform_limit_and_approximation (hisom i).continuous (huniform i)
+    exact (hisom i).continuous.mem_range_of_uniform_limit_and_approximation (huniform i)
       (fun ε hε ↦ hU (hy ε hε))
 
 end TauCeti
