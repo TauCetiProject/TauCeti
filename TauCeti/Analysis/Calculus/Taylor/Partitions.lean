@@ -65,25 +65,11 @@ theorem abs_sum_sub_taylorWithinEval_two_le {f : ℝ → ℝ} {a b : ℝ}
     rw [Real.norm_eq_abs]
     have hi' := Finset.mem_range.1 hi
     have hsub := uIcc_subset_Icc (hx i hi'.le) (hx (i + 1) hi')
-    by_cases h : x i = x (i + 1)
-    · simp [h]
-    obtain ⟨z, hz, hTaylor⟩ := taylor_mean_remainder_lagrange_iteratedDeriv
-      (n := 2) h (fun t ht ↦ (hf t (hsub ht)).contDiffWithinAt)
-    have htay : taylorWithinEval f 2 (uIcc (x i) (x (i + 1))) (x i) (x (i + 1)) =
-        taylorWithinEval f 2 univ (x i) (x (i + 1)) := by
-      simp only [taylor_within_apply]
-      refine Finset.sum_congr rfl fun j hj ↦ ?_
-      rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_uIcc h)
-        ((hf _ (hx i hi'.le)).of_le (by norm_cast; simp at hj; omega)) left_mem_uIcc,
-        iteratedDerivWithin_univ]
-    rw [htay] at hTaylor
     calc
-      _ = |iteratedDeriv 3 f z| * |x (i + 1) - x i| ^ 3 / 6 := by
-        rw [hTaylor, abs_div, abs_mul, abs_pow]
-        norm_num
       _ ≤ M * |x (i + 1) - x i| ^ 3 / 6 := by
-        gcongr
-        exact hM z (hsub (uIoo_subset_uIcc_self hz))
+        simpa [Nat.factorial] using
+          abs_sub_taylorWithinEval_le (n := 2) (fun t ht ↦ hf t (hsub ht))
+            (fun t ht ↦ hM t (hsub (uIoo_subset_uIcc_self ht)))
       _ = |x (i + 1) - x i| * (M / 6 * (x (i + 1) - x i) ^ 2) := by
         rw [pow_succ, sq_abs]
         ring
@@ -132,9 +118,8 @@ theorem tendsto_sub_sum_taylor_two {f : ℝ → ℝ} {a b K : ℝ}
           norm_sum_le_of_le (Finset.range (n k)) hstep
       _ ≤ _ := by gcongr; exact hQk.trans (le_max_left _ _)
   rw [Real.dist_eq, sub_zero]
-  exact hbound.trans_lt (by
-    have hK1 : 0 < max K 0 + 1 := by positivity
-    have := div_mul_cancel₀ ε hK1.ne'
-    nlinarith [div_pos hε hK1])
+  apply hbound.trans_lt
+  rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity : 0 < max K 0 + 1)]
+  linarith
 
 end TauCeti

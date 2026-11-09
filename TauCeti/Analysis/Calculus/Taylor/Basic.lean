@@ -55,22 +55,32 @@ open scoped ContDiff Topology Nat
 
 namespace TauCeti
 
-/-- **Taylor's theorem with a bounded remainder.** If `f` is `C^(n+1)` and its `(n+1)`st
-derivative is bounded in absolute value by `M` strictly between `x₀` and `x`, then its Taylor
+/-- On a nondegenerate unordered interval, the Taylor polynomial at its first endpoint agrees
+with that computed on the whole line whenever the function is sufficiently smooth there. -/
+theorem taylorWithinEval_uIcc_eq_univ {f : ℝ → ℝ} {n : ℕ} {x y : ℝ}
+    (hxy : x ≠ y) (hf : ContDiffAt ℝ n f x) :
+    taylorWithinEval f n (uIcc x y) x y = taylorWithinEval f n univ x y := by
+  simp only [taylor_within_apply, iteratedDerivWithin_univ]
+  refine Finset.sum_congr rfl fun k hk ↦ ?_
+  rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_uIcc hxy)
+    (hf.of_le (mod_cast Nat.le_of_lt_succ (Finset.mem_range.1 hk))) left_mem_uIcc]
+
+/-- **Taylor's theorem with a bounded remainder.** If `f` is `C^(n+1)` near each point between
+`x₀` and `x`, including the endpoints, and its `(n+1)`st derivative is bounded in absolute
+value by `M` strictly between `x₀` and `x`, then its Taylor
 polynomial of order `n` about `x₀` approximates `f x` with error at most
 `M * |x - x₀|^(n+1) / (n+1)!`. -/
-theorem abs_sub_taylorWithinEval_le {f : ℝ → ℝ} {n : ℕ} (hf : ContDiff ℝ (n + 1) f)
-    {M : ℝ} {x₀ x : ℝ} (hM : ∀ t ∈ uIoo x₀ x, |iteratedDeriv (n + 1) f t| ≤ M) :
+theorem abs_sub_taylorWithinEval_le {f : ℝ → ℝ} {n : ℕ} {M x₀ x : ℝ}
+    (hf : ∀ t ∈ uIcc x₀ x, ContDiffAt ℝ (n + 1) f t)
+    (hM : ∀ t ∈ uIoo x₀ x, |iteratedDeriv (n + 1) f t| ≤ M) :
     |f x - taylorWithinEval f n univ x₀ x| ≤ M * |x - x₀| ^ (n + 1) / (n + 1)! := by
   rcases eq_or_ne x₀ x with rfl | hx
   · simp
-  obtain ⟨y, hy, hfy⟩ := taylor_mean_remainder_lagrange_iteratedDeriv hx hf.contDiffOn
-  have htay : taylorWithinEval f n (uIcc x₀ x) x₀ x = taylorWithinEval f n univ x₀ x := by
-    simp only [taylor_within_apply, iteratedDerivWithin_univ]
-    refine Finset.sum_congr rfl fun k hk ↦ ?_
-    rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_uIcc hx)
-      (hf.of_le (mod_cast by grind)).contDiffAt left_mem_uIcc]
-  rw [← htay, hfy, abs_div, abs_mul, abs_pow, Nat.abs_cast]
+  obtain ⟨y, hy, hfy⟩ := taylor_mean_remainder_lagrange_iteratedDeriv hx
+    (fun t ht ↦ (hf t ht).contDiffWithinAt)
+  rw [taylorWithinEval_uIcc_eq_univ hx ((hf x₀ left_mem_uIcc).of_le
+    (mod_cast n.le_succ))] at hfy
+  rw [hfy, abs_div, abs_mul, abs_pow, Nat.abs_cast]
   gcongr
   exact hM y hy
 
@@ -110,10 +120,9 @@ theorem exists_pos_forall_abs_sub_taylorWithinEval_two_le {f : ℝ → ℝ} {a b
     simpa [Real.dist_eq] using hδf z hz' x hx hzx
   have hpoly : taylorWithinEval f 1 (uIcc x y) x y =
       f x + deriv f x * (y - x) := by
-    rw [taylorWithinEval_succ, taylor_within_zero_eval,
-      iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_uIcc h)
-        ((hf x hx).of_le (by norm_num)) left_mem_uIcc]
-    simp [iteratedDeriv_one, smul_eq_mul, mul_comm]
+    rw [taylorWithinEval_uIcc_eq_univ h ((hf x hx).of_le (by norm_num))]
+    simp [taylorWithinEval_succ, taylor_within_zero_eval, iteratedDeriv_one,
+      smul_eq_mul, mul_comm]
   rw [hpoly] at hTaylor
   have heq : f y - taylorWithinEval f 2 univ x y =
       (iteratedDeriv 2 f z - iteratedDeriv 2 f x) * (y - x) ^ 2 / 2 := by
