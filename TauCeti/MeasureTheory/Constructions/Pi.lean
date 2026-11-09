@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.Probability.Independence.Basic
-import TauCeti.MeasureTheory.MeasurableSpace.Embedding
+import TauCeti.MeasureTheory.MeasurableSpace.Pi
 
 /-!
 # Coordinate projections of finite product measures
@@ -253,24 +253,6 @@ theorem measurePreserving_piSplitAt (μ : ∀ i, Measure (α i)) [∀ i, SigmaFi
     (MeasurePreserving.id (Measure.pi fun j : {i : ι // i ≠ i₀} => μ j))).comp
     (measurePreserving_piEquivPiSubtypeProd μ (· = i₀))
 
-omit [Fintype ι] in
-/-- Recombining the glued pair `(u, v)` on the coordinates `{a, b}` with the remaining coordinates
-of `w` is the double update of `w`. -/
-private theorem piEquivPiSubtypeProd_symm_piFinsetUnion_apply {a b : ι} (hab : a ≠ b)
-    (w : ∀ i, α i) (u : α a) (v : α b) :
-    (MeasurableEquiv.piEquivPiSubtypeProd α fun i => i ∈ ({a} : Finset ι) ∪ {b}).symm
-      ((MeasurableEquiv.piFinsetUnion α (Finset.disjoint_singleton.2 hab)
-        ((MeasurableEquiv.piUnique fun i : ({a} : Finset ι) => α i).symm u,
-          (MeasurableEquiv.piUnique fun i : ({b} : Finset ι) => α i).symm v)),
-        (MeasurableEquiv.piEquivPiSubtypeProd α (fun i => i ∈ ({a} : Finset ι) ∪ {b}) w).2) =
-      update (update w a u) b v := by
-  rw [update_eq_updateFinset, update_eq_updateFinset,
-    updateFinset_updateFinset (Finset.disjoint_singleton.2 hab)]
-  simp only [MeasurableEquiv.piUnique_symm_apply, MeasurableEquiv.coe_piFinsetUnion]
-  ext i
-  simp only [MeasurableEquiv.piEquivPiSubtypeProd, MeasurableEquiv.symm_mk, MeasurableEquiv.coe_mk,
-    Equiv.piEquivPiSubtypeProd_symm_apply, Equiv.piEquivPiSubtypeProd_apply, updateFinset_def]
-
 /-- Overwriting the two distinct coordinates `a` and `b` of a product-distributed assignment by an
 independent pair leaves the product law unchanged. -/
 theorem measurePreserving_update_update (μ : ∀ i, Measure (α i))
@@ -323,7 +305,7 @@ theorem measurePreserving_update_update (μ : ∀ i, Measure (α i))
   refine hrefresh.congr (by fun_prop) (ae_of_all _ fun w => ?_)
   -- `MeasurePreserving.comp` stores the composite function definitionally, so the pointwise
   -- statement of the helper applies as it stands.
-  exact piEquivPiSubtypeProd_symm_piFinsetUnion_apply hab w.1 w.2.1 w.2.2
+  exact MeasurableEquiv.piEquivPiSubtypeProd_symm_piFinsetUnion_apply hab w.1 w.2.1 w.2.2
 
 section FinArrow
 
