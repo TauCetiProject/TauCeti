@@ -184,8 +184,9 @@ theorem harmonicOnNhd_ballPoissonIntegral {g : sphere (0 : EuclideanSpace ℝ (F
     HarmonicOnNhd (ballPoissonIntegral g) (sphere (0 : EuclideanSpace ℝ (Fin n)) 1)ᶜ := by
   by_cases hg : Integrable g volume.toSphere
   swap
-  · rw [show ballPoissonIntegral g = fun _ ↦ 0 from
-      funext (ballPoissonIntegral_eq_zero_of_not_integrable hg)]
+  · have hzero : ballPoissonIntegral g = fun _ ↦ 0 :=
+      funext (ballPoissonIntegral_eq_zero_of_not_integrable hg)
+    rw [hzero]
     exact harmonicOnNhd_const 0
   have hU : ∀ x ∈ (sphere (0 : EuclideanSpace ℝ (Fin n)) 1)ᶜ,
       ∀ y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1, (x, (y : EuclideanSpace ℝ (Fin n))) ∈
