@@ -395,9 +395,9 @@ Here criticality is defined intrinsically for the local parameter map;
 `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetParameterMap`
 rewrites it as failure of regularity of the original equation.
 
-The differentiability threshold is the one currently supplied by
-`TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints`, rewritten using the fact
-that the kernel of `D₁.parameterProj D₂` has the same dimension as `ker D₁`. -/
+The differentiability threshold `(dim ker D₁)² + 1` is stated in terms of `ker D₁`, which has the
+same dimension as the kernel of `D₁.parameterProj D₂`; it implies Smale's threshold
+`k > max (index, 0)` of `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints`. -/
 theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_levelSetParameterMap
     {n : ℕ∞ω} {U : Set (D₁.coprod D₂).ker}
     (hf : HasStrictFDerivAt f (D₁.coprod D₂) (x, l))
@@ -426,10 +426,12 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_levelSetPar
         ℕ∞ω) ≤ n := by
     simpa only [ContinuousLinearMap.finrank_ker_parameterProj] using hn
   have hFred := isFredholm_fderiv_levelSetParameterMap hf hD hxl hD₁
-  have hn'' :
-      ((finrank ℝ (fderiv ℝ g 0).ker * finrank ℝ (fderiv ℝ g 0).ker + 1 : ℕ) : ℕ∞ω) ≤ n := by
+  have hn'' : (((fderiv ℝ g 0).index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n := by
     rw [hg']
-    exact hn'
+    refine le_trans ?_ hn'
+    have hi := (D₁.parameterProj D₂).index_eq_finrank_sub
+    have hsq := Nat.le_mul_self (finrank ℝ (D₁.parameterProj D₂).ker)
+    exact_mod_cast (by omega)
   have htarget := (levelSetChart hf (LinearMap.range_eq_top.mpr hD)
     (hD₁.closedComplemented_ker_coprod hD) hxl).open_target.mem_nhds
       (mem_levelSetChart_target hf (LinearMap.range_eq_top.mpr hD)

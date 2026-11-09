@@ -35,9 +35,11 @@ When `[Nontrivial F]`, a point of the stratum with `1 ≤ k` has vanishing first
 stratum consists of critical points and this is a statement about critical values; see
 `TauCeti.not_surjective_fderiv_of_iteratedFDeriv_one_eq_zero`.
 
-The flat-stratum estimate combines with local parametrizations of the other strata to prove
-nullity for the full locus where the first derivative vanishes, by induction on the source
-dimension.
+In Milnor's proof of the Morse--Sard theorem, the flat-stratum estimate combines with local
+parametrizations of the other strata to prove nullity for the full locus where the first
+derivative vanishes, by induction on the source dimension. Tau Ceti proves that nullity at the
+sharp regularity by the Morse decomposition instead, in
+`TauCeti.Analysis.Calculus.Sard.VanishingDerivative`.
 
 At the sharp regularity the stratum is the set where the derivatives of order `1 ≤ i ≤ k` vanish
 for a map that is only `C^k`. The Hölder bound then has exponent `k` and a constant that can be

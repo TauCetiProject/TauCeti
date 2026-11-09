@@ -31,9 +31,9 @@ proving that the images of the intermediate strata `Σ_i \ Σ_{i+1}` are null.
 The scalar component is `ℓ ∘ iteratedFDeriv 𝕜 i f` for a continuous linear functional `ℓ`,
 supplied by Hahn--Banach through `SeparatingDual`, that does not vanish on a nonzero value of the
 derivative of `iteratedFDeriv 𝕜 i f` at `a`. The parametrization is Mathlib's implicit function
-for that scalar component. The statement holds over any `RCLike` field `𝕜`; Sard's theorem uses
-the real case. This is the second stratification step following the flat-stratum estimate in
-`TauCeti.Analysis.Calculus.Sard.FlatStratum`.
+for that scalar component. The statement holds over any `RCLike` field `𝕜`; Milnor's proof of
+Sard's theorem uses the real case. This is the second stratification step of that proof, following
+the flat-stratum estimate in `TauCeti.Analysis.Calculus.Sard.FlatStratum`.
 
 ## Main result
 

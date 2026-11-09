@@ -28,8 +28,9 @@ only at actual zeros.
 
 Smoothness of the section is required only at zeros, and all hypotheses are stated for the
 intrinsic linearizations. The manifold structure on the zeros also uses a smooth bundle. The
-finite differentiability threshold is the current Sard--Smale bound `(dim ker)² + 1`, not the
-optimal bound. No norm on the individual bundle fibers is needed.
+finite differentiability threshold is the quadratic bound `(dim ker)² + 1`, which implies
+Smale's threshold `n > max (index, 0)` of the Sard--Smale theorem but is not the optimal bound. No
+norm on the individual bundle fibers is needed.
 
 The proof reads the section in a source chart and a bundle trivialization at each zero, applies
 the local parametric theorem for Banach-space equations to that coordinate expression, and takes
