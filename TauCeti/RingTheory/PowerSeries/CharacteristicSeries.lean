@@ -40,9 +40,9 @@ Both series are even, and `Td(X) = e^{X/2} Â(X)`.
 
 The low-order coefficients are computed explicitly: the Todd series is
 `1 + X/2 + X²/12 + 0·X³ - X⁴/720 + …`, the Â series is `1 - X²/24 + 7X⁴/5760 + …` and the L
-series is `1 + X²/3 - X⁴/45 + …`. The Todd series is applied to the Chern roots. The even series
-Â and L are applied to one degree-two root `xⱼ` for each oriented real 2-plane, and the products
-are expressed in the elementary symmetric polynomials `pᵢ` of the `xⱼ²`. These are the
+series is `1 + X²/3 - X⁴/45 + 2X⁶/945 + …`. The Todd series is applied to the Chern roots. The
+even series Â and L are applied to one degree-two root `xⱼ` for each oriented real 2-plane, and the
+products are expressed in the elementary symmetric polynomials `pᵢ` of the `xⱼ²`. These are the
 coefficients behind the classical expansions `Td = 1 + c₁/2 + (c₁² + c₂)/12 + …`,
 `Â = 1 - p₁/24 + …` and `L = 1 + p₁/3 + …`.
 
@@ -325,6 +325,16 @@ theorem coeff_four_hirzebruchLSeries :
     coeff 4 (hirzebruchLSeries A) = algebraMap ℚ A (-1 / 45) := by
   rw [coeff_hirzebruchLSeries A (by decide), bernoulli_eq_bernoulli'_of_ne_one (by decide),
     bernoulli'_four]
+  norm_num [Nat.factorial]
+
+/-- `L(X) = 1 + X²/3 - X⁴/45 + 2X⁶/945 + …`. -/
+@[simp]
+theorem coeff_six_hirzebruchLSeries :
+    coeff 6 (hirzebruchLSeries A) = algebraMap ℚ A (2 / 945) := by
+  have h : bernoulli 6 = 1 / 42 := by
+    rw [bernoulli_eq_bernoulli'_of_ne_one (by decide), bernoulli'_def]
+    norm_num [Finset.sum_range_succ, Nat.choose, bernoulli'_eq_zero_of_odd (n := 5) (by decide)]
+  rw [coeff_hirzebruchLSeries A (by decide), h]
   norm_num [Nat.factorial]
 
 end TauCeti

@@ -29,8 +29,6 @@ division algebras.
 
 public section
 
-open scoped IsMulCommutative
-
 namespace IsSeparable
 
 variable {K L A : Type*} [Field K] [Field L] [Ring A] [IsDomain A]

@@ -71,7 +71,7 @@ open Matrix ContCohomology
 universe u
 
 variable {K : Type u} [Field K] [NeZero (2 : K)] {L : Type u} [Field L] [Algebra K L]
-  [FiniteDimensional K L] [Algebra.IsSeparable K L]
+  [FiniteDimensional K L]
 
 /-- **The twisted boundary of the Kummer lift is cohomologous to a cup product.** Let `y` be an
 orthogonal basis of `Tr_*⟨a⟩`, with values `w_j = Tr_{L/K}(a y_j²)`, and let `c_j ∈ Kˢ` be

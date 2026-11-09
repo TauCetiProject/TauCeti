@@ -569,6 +569,18 @@ theorem orderAt_rename {f : σ → τ} (hf : Function.Injective f) (p : MvPolyno
   · exact coeff_rename_eq_zero f _ d fun u hu ↦ h u (by
       simpa only [← hu, degree_mapDomain] using hd)
 
+/-- Substituting `aᵢ + X (f i)` for the variable `Xᵢ`, along an injective map `f`, preserves the
+order: the order of the substituted polynomial at the origin is the order of `p` at `a`. -/
+theorem orderAt_aeval_C_add_X {f : σ → τ} (hf : Function.Injective f) (p : MvPolynomial σ R)
+    (a : σ → R) : (aeval (fun i ↦ C (a i) + X (f i)) p).orderAt (0 : τ → R) = p.orderAt a := by
+  have h : aeval (fun i ↦ C (a i) + X (f i)) p = rename f (taylor a p) := by
+    rw [taylor_apply, ← AlgHom.comp_apply]
+    congr 1
+    ext i
+    simp [add_comm]
+  rw [h, orderAt_rename hf, orderAt_taylor]
+  simp
+
 /-- A zero at which some partial derivative is nonzero has ambient order one. -/
 theorem orderAt_eq_one_of_eval_pderiv_ne_zero (hp : eval a p = 0) {i : σ}
     (hi : eval a (pderiv i p) ≠ 0) : p.orderAt a = 1 := by
