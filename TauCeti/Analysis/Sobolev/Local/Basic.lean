@@ -26,7 +26,8 @@ These predicates concern actual functions; almost-everywhere changes do not affe
 They impose no global integrability condition on the possibly unbounded domain.
 
 This file supplies restriction to arbitrary subsets, linearity, continuous-linear composition,
-decreasing the integrability exponent, and decreasing the derivative order. Smoothness on an
+decreasing the integrability exponent, and decreasing the derivative order. On an open set, local
+`Lᵖ` membership is detected on the open subsets with compact closure inside it. Smoothness on an
 open neighbourhood gives membership, without requiring a global smooth extension.
 On a relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper half-plane the interior is
 `Ω ∩ {0 < im}` (`TauCeti.interior_inter_setOf_im_nonneg`). No boundary trace is asserted here;
@@ -127,6 +128,23 @@ theorem MemLpLoc.sum {ι : Type*} (s : Finset ι) {f : ι → ℂ → F}
   | @insert i s hi ih =>
     simpa only [Finset.sum_insert hi, Pi.add_def] using
       (hf i (Finset.mem_insert_self i s)).add (ih fun j hj => hf j (Finset.mem_insert_of_mem hj))
+
+/-- Local `Lᵖ` membership on `U` gives `Lᵖ` membership on every set whose closure is compact and
+contained in `U`. -/
+theorem MemLpLoc.memLp_restrict_of_isCompact_closure (hf : MemLpLoc p U f) {W : Set ℂ}
+    (hWc : IsCompact (closure W)) (hWU : closure W ⊆ U) : MemLp f p (volume.restrict W) :=
+  (hf _ hWU hWc).mono_measure (Measure.restrict_mono subset_closure le_rfl)
+
+/-- On an open set `Ω`, a function that agrees almost everywhere with an `Lᵖ` function on every
+open `W` whose closure is compact and contained in `Ω` is locally `Lᵖ` on `Ω`. -/
+theorem memLpLoc_of_forall_opens {Ω : Opens ℂ}
+    (h : ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
+      ∃ g : ℂ → F, MemLp g p (volume.restrict (W : Set ℂ)) ∧ g =ᵐ[volume.restrict W] f) :
+    MemLpLoc p Ω f := by
+  refine fun K hKΩ hK => ?_
+  obtain ⟨W, hWo, hKW, hWΩ, hWc⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen hKΩ
+  obtain ⟨g, hg, hgf⟩ := h ⟨W, hWo⟩ hWc hWΩ
+  exact (hg.ae_eq hgf).mono_measure (Measure.restrict_mono hKW le_rfl)
 
 variable [NormedSpace ℝ F] [NormedSpace ℝ G]
 
