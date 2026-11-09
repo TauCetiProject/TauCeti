@@ -36,6 +36,8 @@ lifted relations, then induct on its weight.
 * B. Sturmfels, *Gröbner Bases and Convex Polytopes*, AMS, 1996, Chapter 11.
 * L. Robbiano, M. Sweedler, *Subalgebra bases*, in *Commutative Algebra (Salvador, 1988)*,
   Lecture Notes in Mathematics 1430, Springer, 1990, 61–87.
+* W. Bruns, A. Conca, M. Lembo, arXiv:2504.10019, §2, for monic SAGBI families and bounded
+  subduction.
 -/
 
 public section
@@ -184,17 +186,27 @@ variable {σ ι k : Type*} [Field k] {m : MonomialOrder σ} {c : ι → MvPolyno
 
 /-- Every finite monic SAGBI family admits positive integral weights for which its Rees
 presentation has image the induced weight Rees algebra and its weight-initial algebra is its
-monomial-order initial algebra. No finite-variable assumption is needed. -/
-theorem IsSAGBIBasis.exists_pos_weight_range_weightReesAeval [Finite ι]
+monomial-order initial algebra. The finite toric relations and their bounded certificates are
+provided for the same weight, so `ker_weightReesAeval_eq_span_of_toricIdeal_eq_span` also applies.
+No finite-variable assumption is needed. -/
+theorem IsSAGBIBasis.exists_pos_weight_adjoin_weightInitialForm_eq_and_range_weightReesAeval_eq_inf
+    [Finite ι]
     (hc : ∀ i, m.Monic (c i))
     (h : m.IsSAGBIBasis (Set.range c) (Algebra.adjoin k (Set.range c))) :
     ∃ w : σ → ℕ, (∀ s, 0 < w s) ∧
+      (∀ i, c i ∈ weightFiltration k w (Finsupp.weight w (m.degree (c i)))) ∧
       (∀ i, weightedHomogeneousComponent w (Finsupp.weight w (m.degree (c i))) (c i) =
         monomial (m.degree (c i)) 1) ∧
       Algebra.adjoin k (weightInitialForm w '' (Algebra.adjoin k (Set.range c) : Set _)) =
         m.initialAlgebra (Algebra.adjoin k (Set.range c)) ∧
       (weightReesAeval c (fun i ↦ Finsupp.weight w (m.degree (c i)))).range =
-        weightReesAlgebra k w ⊓ (Polynomial.mapAlgHom (aeval c)).range := by
+        weightReesAlgebra k w ⊓ (Polynomial.mapAlgHom (aeval c)).range ∧
+      ∃ (B : Finset ((ι →₀ ℕ) × (ι →₀ ℕ))) (Q : B → MvPolynomial ι k),
+        TauCeti.toricIdeal k (fun i ↦ m.degree (c i)) =
+          Ideal.span (Set.range fun j : B ↦ monomial j.1.1 (1 : k) - monomial j.1.2 1) ∧
+        (∀ j, Q j ∈ weightFiltrationLT k (fun i ↦ Finsupp.weight w (m.degree (c i)))
+          (Finsupp.weight (fun i ↦ Finsupp.weight w (m.degree (c i))) j.1.1)) ∧
+        ∀ j, aeval c (Q j) = aeval c (monomial j.1.1 (1 : k) - monomial j.1.2 1) := by
   classical
   set a := fun i ↦ m.degree (c i)
   obtain ⟨B, hB, hspan⟩ := TauCeti.exists_finset_toricIdeal_eq_span a
@@ -206,12 +218,9 @@ theorem IsSAGBIBasis.exists_pos_weight_range_weightReesAeval [Finite ι]
   choose Q hQc hQ using fun j : B ↦ h.exists_aeval_eq_aeval_sub hc (hB j.1 j.2)
   obtain ⟨w, hw, hcw, hgw, hQw⟩ := exists_pos_weight_forall_mem_weightFiltrationLT hc hQ
   let d := fun i ↦ Finsupp.weight w (a i)
-  have hwA (u : ι →₀ ℕ) : Finsupp.weight d u =
-      Finsupp.weight w (Finsupp.linearCombination ℕ a u) :=
-    Finsupp.weight_comp_eq_apply_linearCombination (Finsupp.weight w) a u
   have hb (j : B) : (b j).IsWeightedHomogeneous d (Finsupp.weight d j.1.1) := by
-    exact (isWeightedHomogeneous_monomial _ _ _ rfl).sub
-      (isWeightedHomogeneous_monomial _ _ _ (by rw [hwA, hwA, hB j.1 j.2]))
+    exact isWeightedHomogeneous_monomial_sub_monomial_of_mem_toricIdeal
+      (by rw [hJ]; exact Ideal.subset_span ⟨j, rfl⟩)
   have hker : RingHom.ker (aeval (fun i ↦ monomial (a i) (1 : k))) =
       Ideal.span (Set.range b) := by
     rw [← TauCeti.toricIdeal_eq_ker_aeval_monomial, hJ]
@@ -223,7 +232,7 @@ theorem IsSAGBIBasis.exists_pos_weight_range_weightReesAeval [Finite ι]
     apply congrArg Set.range
     funext i
     simp [leadingTerm, (hc i).leadingCoeff_eq_one, a]
-  exact ⟨w, hw, hgw, hinit.trans hlead,
-    range_weightReesAeval_eq_inf hcw hgw hker hb hQw hQc⟩
+  exact ⟨w, hw, hcw, hgw, hinit.trans hlead,
+    range_weightReesAeval_eq_inf hcw hgw hker hb hQw hQc, B, Q, hJ, hQw, hQc⟩
 
 end MonomialOrder
