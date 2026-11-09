@@ -162,6 +162,12 @@ theorem isCanonicalDivisor_divisor {ω : OneForm X} (hω : ∀ x, ω.Meromorphic
     (hω₀ : ∀ x, ω.order x ≠ ⊤) : IsCanonicalDivisor ω.divisor :=
   ⟨ω, hω, hω₀, rfl⟩
 
+/-- A canonical divisor is the divisor of a `1`-form meromorphic and of finite order
+everywhere. -/
+theorem IsCanonicalDivisor.exists_divisor_eq {K : WeilDivisor X} (hK : IsCanonicalDivisor K) :
+    ∃ ω : OneForm X, (∀ x, ω.MeromorphicAt x) ∧ (∀ x, ω.order x ≠ ⊤) ∧ ω.divisor = K :=
+  hK
+
 namespace IsCanonicalDivisor
 
 variable [ConnectedSpace X] {K K' D : WeilDivisor X}
