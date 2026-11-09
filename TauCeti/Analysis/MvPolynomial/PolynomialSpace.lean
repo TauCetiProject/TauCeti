@@ -8,8 +8,6 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.RingTheory.MvPolynomial.RestrictTotalDegree
 import Mathlib.FieldTheory.Finite.Polynomial
-import Mathlib.Algebra.MvPolynomial.Funext
-import TauCeti.RingTheory.MvPolynomial.Finrank
 
 /-!
 # Bounded-degree polynomial functions on Euclidean space
@@ -39,42 +37,47 @@ variable (ι : Type*)
 
 /-- Evaluate a real multivariate polynomial on Euclidean coordinates, linearly in the
 polynomial. -/
-def polynomialEvalL : MvPolynomial ι ℝ →ₗ[ℝ] (EuclideanSpace ℝ ι → ℝ) :=
+def polynomialEvalₗ : MvPolynomial ι ℝ →ₗ[ℝ] (EuclideanSpace ℝ ι → ℝ) :=
   (LinearMap.funLeft ℝ ℝ (EuclideanSpace.equiv ι ℝ)).comp (MvPolynomial.evalₗ ℝ ι)
 
 @[simp]
-theorem polynomialEvalL_apply (p : MvPolynomial ι ℝ) (x : EuclideanSpace ℝ ι) :
-    polynomialEvalL ι p x = eval (fun i ↦ x i) p :=
+theorem polynomialEvalₗ_apply (p : MvPolynomial ι ℝ) (x : EuclideanSpace ℝ ι) :
+    polynomialEvalₗ ι p x = eval (fun i ↦ x i) p :=
   (rfl)
 
 /-- Evaluation on the whole Euclidean space determines a formal polynomial uniquely. -/
-theorem polynomialEvalL_injective : Function.Injective (polynomialEvalL ι) := by
+theorem polynomialEvalₗ_injective : Function.Injective (polynomialEvalₗ ι) := by
   intro p q h
   apply MvPolynomial.funext
   intro x
   have hx := congrFun h ((EuclideanSpace.equiv ι ℝ).symm x)
-  simpa only [polynomialEvalL_apply, PiLp.continuousLinearEquiv_symm_apply,
+  simpa only [polynomialEvalₗ_apply, PiLp.continuousLinearEquiv_symm_apply,
     PiLp.toLp_apply] using hx
 
 /-- The subspace of real polynomial functions of total degree at most `m`. -/
 def polynomialsDegLE (m : ℕ) : Submodule ℝ (EuclideanSpace ℝ ι → ℝ) :=
-  (restrictTotalDegree ι ℝ m).map (polynomialEvalL ι)
+  (restrictTotalDegree ι ℝ m).map (polynomialEvalₗ ι)
+
+/-- The polynomial function space is the image of formal bounded-degree polynomials. -/
+theorem polynomialsDegLE_def (m : ℕ) :
+    polynomialsDegLE ι m = (restrictTotalDegree ι ℝ m).map (polynomialEvalₗ ι) :=
+  (rfl)
 
 /-- Membership is precisely representability by a polynomial of bounded total degree. -/
 theorem mem_polynomialsDegLE_iff {m : ℕ} {f : EuclideanSpace ℝ ι → ℝ} :
     f ∈ polynomialsDegLE ι m ↔
-      ∃ p : MvPolynomial ι ℝ, p.totalDegree ≤ m ∧ polynomialEvalL ι p = f := by
-  simp only [polynomialsDegLE, Submodule.mem_map, mem_restrictTotalDegree]
+      ∃ p : MvPolynomial ι ℝ, p.totalDegree ≤ m ∧ polynomialEvalₗ ι p = f := by
+  simp only [polynomialsDegLE_def, Submodule.mem_map, mem_restrictTotalDegree]
 
 /-- Evaluating a formal polynomial belongs to the function space exactly at its degree
 and above. -/
 @[simp]
-theorem polynomialEvalL_mem_polynomialsDegLE_iff (m : ℕ) (p : MvPolynomial ι ℝ) :
-    polynomialEvalL ι p ∈ polynomialsDegLE ι m ↔ p.totalDegree ≤ m := by
+theorem polynomialEvalₗ_mem_polynomialsDegLE_iff (m : ℕ) (p : MvPolynomial ι ℝ) :
+    polynomialEvalₗ ι p ∈ polynomialsDegLE ι m ↔ p.totalDegree ≤ m := by
   rw [mem_polynomialsDegLE_iff]
   constructor
   · rintro ⟨q, hq, h⟩
-    exact polynomialEvalL_injective ι h ▸ hq
+    exact polynomialEvalₗ_injective ι h ▸ hq
   · exact fun hp ↦ ⟨p, hp, rfl⟩
 
 /-- Increasing the total-degree bound enlarges the polynomial function space. -/
@@ -83,31 +86,31 @@ theorem polynomialsDegLE_mono : Monotone (polynomialsDegLE ι) :=
 
 /-- Formal bounded-degree polynomials and the functions they represent are linearly
 equivalent. -/
-def polynomialEquivPolynomialsDegLE (m : ℕ) :
+def restrictTotalDegreeEquivPolynomialsDegLE (m : ℕ) :
     restrictTotalDegree ι ℝ m ≃ₗ[ℝ] polynomialsDegLE ι m :=
-  Submodule.equivMapOfInjective (polynomialEvalL ι) (polynomialEvalL_injective ι) _
+  Submodule.equivMapOfInjective (polynomialEvalₗ ι) (polynomialEvalₗ_injective ι) _
 
 @[simp]
-theorem coe_polynomialEquivPolynomialsDegLE (m : ℕ) (p : restrictTotalDegree ι ℝ m) :
-    (polynomialEquivPolynomialsDegLE ι m p : EuclideanSpace ℝ ι → ℝ) =
-      polynomialEvalL ι p :=
+theorem coe_restrictTotalDegreeEquivPolynomialsDegLE (m : ℕ) (p : restrictTotalDegree ι ℝ m) :
+    (restrictTotalDegreeEquivPolynomialsDegLE ι m p : EuclideanSpace ℝ ι → ℝ) =
+      polynomialEvalₗ ι p :=
   (rfl)
 
 @[simp]
-theorem polynomialEvalL_polynomialEquivPolynomialsDegLE_symm (m : ℕ)
+theorem polynomialEvalₗ_restrictTotalDegreeEquivPolynomialsDegLE_symm (m : ℕ)
     (f : polynomialsDegLE ι m) :
-    polynomialEvalL ι ((polynomialEquivPolynomialsDegLE ι m).symm f) = f :=
+    polynomialEvalₗ ι ((restrictTotalDegreeEquivPolynomialsDegLE ι m).symm f) = f :=
   Submodule.map_equivMapOfInjective_symm_apply _ _ _ _
 
 @[simp]
-theorem polynomialEvalL_C (c : ℝ) :
-    polynomialEvalL ι (C c) = fun _ ↦ c := by
+theorem polynomialEvalₗ_C (c : ℝ) :
+    polynomialEvalₗ ι (C c) = fun _ ↦ c := by
   ext x
   simp
 
 @[simp]
-theorem polynomialEvalL_X (i : ι) :
-    polynomialEvalL ι (X i) = fun x ↦ x i := by
+theorem polynomialEvalₗ_X (i : ι) :
+    polynomialEvalₗ ι (X i) = fun x ↦ x i := by
   ext x
   simp
 
@@ -115,14 +118,14 @@ theorem polynomialEvalL_X (i : ι) :
 @[simp]
 theorem const_mem_polynomialsDegLE (m : ℕ) (c : ℝ) :
     (fun _ : EuclideanSpace ℝ ι ↦ c) ∈ polynomialsDegLE ι m := by
-  rw [← polynomialEvalL_C ι c, polynomialEvalL_mem_polynomialsDegLE_iff]
+  rw [← polynomialEvalₗ_C ι c, polynomialEvalₗ_mem_polynomialsDegLE_iff]
   simp
 
 /-- A coordinate function belongs exactly when the degree bound is positive. -/
 @[simp]
 theorem coordinate_mem_polynomialsDegLE_iff (m : ℕ) (i : ι) :
     (fun x : EuclideanSpace ℝ ι ↦ x i) ∈ polynomialsDegLE ι m ↔ 1 ≤ m := by
-  rw [← polynomialEvalL_X ι i, polynomialEvalL_mem_polynomialsDegLE_iff, totalDegree_X]
+  rw [← polynomialEvalₗ_X ι i, polynomialEvalₗ_mem_polynomialsDegLE_iff, totalDegree_X]
 
 /-- Degree-zero polynomial functions are exactly the constant functions. -/
 theorem mem_polynomialsDegLE_zero_iff {f : EuclideanSpace ℝ ι → ℝ} :
@@ -140,7 +143,7 @@ theorem mem_polynomialsDegLE_zero_iff {f : EuclideanSpace ℝ ι → ℝ} :
 
 /-- Bounded-degree polynomial functions form a finite-dimensional space. -/
 instance [Finite ι] (m : ℕ) : FiniteDimensional ℝ (polynomialsDegLE ι m) :=
-  inferInstanceAs (Module.Finite ℝ ((restrictTotalDegree ι ℝ m).map (polynomialEvalL ι)))
+  inferInstanceAs (Module.Finite ℝ ((restrictTotalDegree ι ℝ m).map (polynomialEvalₗ ι)))
 
 /-- The dimension of polynomial functions of total degree at most `m` is the number of
 monomials of that degree or less. -/
@@ -148,7 +151,7 @@ monomials of that degree or less. -/
 theorem finrank_polynomialsDegLE [Fintype ι] (m : ℕ) :
     Module.finrank ℝ (polynomialsDegLE ι m) =
       (m + Fintype.card ι).choose (Fintype.card ι) := by
-  rw [← (polynomialEquivPolynomialsDegLE ι m).finrank_eq,
+  rw [← (restrictTotalDegreeEquivPolynomialsDegLE ι m).finrank_eq,
     finrank_restrictTotalDegree]
 
 end TauCeti
