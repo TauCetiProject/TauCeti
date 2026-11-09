@@ -41,8 +41,10 @@ both `C` and `k[G]` are semisimple by Maschke's theorem, and semisimple represen
 same character are equivalent
 (`Representation.nonempty_equiv_of_character_eq_of_isSemisimpleRepresentation`).
 
-This is the ungraded statement only: the coinvariant algebra is graded, and its graded character
-(the fake-degree polynomials) is a finer invariant not computed here.
+This is the ungraded statement only: the coinvariant algebra is graded, and its graded character,
+a finer invariant, is computed in
+`TauCeti.RepresentationTheory.SymmetricAlgebra.Coinvariant.Character`. The fake-degree
+polynomials extracted from it are not computed.
 
 ## Main results
 

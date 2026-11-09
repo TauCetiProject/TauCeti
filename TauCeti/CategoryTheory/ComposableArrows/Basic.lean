@@ -20,7 +20,10 @@ reindexing the string along a functor of the indexing posets reindexes its arrow
 `CategoryTheory.ComposableArrows.precomp` shifts them
 (`CategoryTheory.ComposableArrows.totalArrow_precomp_succ_succ`), and applying a functor to the
 string maps its arrows along the functor
-(`CategoryTheory.ComposableArrows.totalArrow_mapComposableArrows_obj`).
+(`CategoryTheory.ComposableArrows.totalArrow_mapComposableArrows_obj`) and commutes with
+prepending (`CategoryTheory.Functor.mapComposableArrows_obj_precomp`). A string of at least one
+arrow is already determined by its first arrow and the remaining string
+(`CategoryTheory.ComposableArrows.ext_succ_of_totalArrow`).
 
 All vertices of a composable string in a groupoid have the same isomorphism class.
 
@@ -28,6 +31,8 @@ All vertices of a composable string in a groupoid have the same isomorphism clas
 
 * `CategoryTheory.ComposableArrows.totalArrow`: the arrow of a string between two positions.
 * `CategoryTheory.ComposableArrows.ext_of_totalArrow`: a string is determined by its arrows.
+* `CategoryTheory.ComposableArrows.ext_succ_of_totalArrow`: a string is determined by its first
+  arrow and its remaining arrows.
 * `CategoryTheory.ComposableArrows.quotient_mk_obj`: the vertices of a string in a groupoid are
   isomorphic.
 -/
@@ -85,6 +90,21 @@ theorem totalArrow_precomp_zero_succ_succ (F : ComposableArrows C n) {X : C}
   -- At these indices precomp inserts f before the original arrow from vertex 0 to j + 1.
   rfl
 
+/-- An arrow from the new first vertex of a prepended string to a shifted vertex is the prepended
+arrow followed by an arrow of the original string. Unlike
+`CategoryTheory.ComposableArrows.totalArrow_precomp_zero_succ_succ`, this holds uniformly in the
+target position, including the first arrow. -/
+theorem totalArrow_precomp_zero_succ (F : ComposableArrows C n) {X : C} (f : X ⟶ F.left)
+    (j : Fin (n + 1)) :
+    (F.precomp f).totalArrow 0 j.succ (Fin.zero_le _) =
+      ⟨X, F.obj j, f ≫ F.map (homOfLE (Fin.zero_le j))⟩ := by
+  obtain ⟨_ | j, hj⟩ := j
+  · -- The first arrow is `f` itself, followed by the identity of the old first vertex: `0` and
+    -- `⟨0, hj⟩` are the same element of `Fin (n + 1)`, so `homOfLE` is its identity arrow.
+    exact congrArg (fun g ↦ (⟨X, F.obj ⟨0, hj⟩, g⟩ : Quiver.Total C))
+      ((Category.comp_id f).symm.trans (by rw [← F.map_id]; rfl))
+  · rfl
+
 /-- Arrows between shifted vertices of a prepended string are the arrows of the original
 string. -/
 @[simp]
@@ -124,6 +144,25 @@ theorem ext_of_totalArrow {F G : ComposableArrows C n}
   have := h i j g.le
   simp only [totalArrow, Quiver.Total.mk.injEq] at this
   exact this.2.2
+
+/-- A string of at least one composable arrow is determined by its first arrow and the string
+`F.δ₀` of the remaining arrows. -/
+theorem ext_succ_of_totalArrow {F G : ComposableArrows C (n + 1)} (h : F.δ₀ = G.δ₀)
+    (w : F.totalArrow 0 1 (Fin.zero_le _) = G.totalArrow 0 1 (Fin.zero_le _)) : F = G := by
+  obtain ⟨h₀, h₁, hw⟩ := Quiver.Total.mk.inj w
+  exact ext_succ h₀ h ((conj_eqToHom_iff_heq _ _ h₀ h₁).2 hw)
+
+/-- Applying a functor to a string with a prepended arrow prepends the image of that arrow to the
+image of the string. -/
+@[simp]
+theorem _root_.CategoryTheory.Functor.mapComposableArrows_obj_precomp {D : Type*} [Category D]
+    (Φ : C ⥤ D) (F : ComposableArrows C n) {X : C} (f : X ⟶ F.left) :
+    (Φ.mapComposableArrows (n + 1)).obj (F.precomp f) =
+      ((Φ.mapComposableArrows n).obj F).precomp (Φ.map f) := by
+  refine ext_succ_of_totalArrow rfl ?_
+  rw [totalArrow_mapComposableArrows_obj, totalArrow_def, totalArrow_def]
+  -- By definition of `precomp`, both first arrows are `Φ.map f`.
+  rfl
 
 end CategoryTheory.ComposableArrows
 

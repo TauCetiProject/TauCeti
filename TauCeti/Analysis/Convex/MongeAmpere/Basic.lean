@@ -11,8 +11,7 @@ public import TauCeti.Analysis.Convex.Measure
 public import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Analysis.Convex.Alexandrov
 import TauCeti.Analysis.Convex.Extrema
-import Mathlib.Analysis.InnerProductSpace.Dual
-import Mathlib.Analysis.LocallyConvex.Separation
+import TauCeti.Analysis.Convex.SlopeSets
 
 /-!
 # The Aleksandrov Monge–Ampère measure of a convex function
@@ -167,8 +166,8 @@ end Overlap
 
 section Convex
 
-variable (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥)
-include hf hbot
+variable (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2})
+include hf
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
   [μ.IsAddHaarMeasure]
@@ -176,10 +175,17 @@ variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (μ : Meas
 /-- **Subgradient images of Borel subsets of the domain are null measurable.** For a convex
 `f : E → EReal` on a finite-dimensional real inner product space, the subgradient image of the
 part of a measurable set inside the interior of the effective domain is null measurable for every
-additive Haar measure. -/
+additive Haar measure. If `f` takes the value `⊥`, then no point has a subgradient and the image
+is empty. -/
 theorem nullMeasurableSet_subgradientImage {s : Set E} (hs : MeasurableSet s) :
     NullMeasurableSet (subgradientImage (innerₗ E) f (s ∩ interior {x | f x ≠ ⊤})) μ := by
   set D := interior {x | f x ≠ ⊤}
+  by_cases hbot : ∀ x, f x ≠ ⊥
+  swap
+  · convert MeasurableSet.empty.nullMeasurableSet
+    refine eq_empty_of_forall_notMem fun y hy => hbot ?_
+    obtain ⟨x, -, hx⟩ := (mem_subgradientImage_iff _).1 hy
+    exact apply_ne_bot_of_mem_subdifferential _ hx
   -- On open sets: an open subset of `D` is a countable union of compact sets.
   have hopen : ∀ U, IsOpen U → NullMeasurableSet (subgradientImage (innerₗ E) f (U ∩ D)) μ := by
     intro U hU
@@ -239,7 +245,7 @@ def mongeAmpereMeasure (μ : Measure E) (f : E → EReal) : Measure E :=
         exact measure_iUnion₀
           (fun i j hij => hμ (aedisjoint_subgradientImage ν f
             ((hd hij).mono inter_subset_left inter_subset_left)))
-          fun i => (nullMeasurableSet_subgradientImage hf hbot ν (hg i)).mono_ac hμ
+          fun i => (nullMeasurableSet_subgradientImage hf ν (hg i)).mono_ac hμ
   else 0
 
 variable (μ : Measure E) {ν : Measure E} [ν.IsAddHaarMeasure]
@@ -413,7 +419,7 @@ theorem injOn_gradient_inter_setOf_det_ne_zero (hf : Convex ℝ {p : E × ℝ | 
   exact apply_sub_eq_zero_of_forall_mem_subdifferential_norm_sub_le hf hy₁ hy₂ (hP x₁ hx₁.1).2
 
 /-- **Change of variables along the gradient of a convex function.** Let `f : E → EReal` be convex,
-with real representative `F x = (f x).toReal`, and let `t` be a measurable set at each point of
+with real representative `F x = (f x).toReal`, and let `t` be a set at each point of
 which the subdifferential of `f` is the single gradient `∇F x`, with the expansion
 `y' = ∇F x + H x (x' - x) + o(‖x' - x‖)` for a positive `H x`, and suppose the part of `t` where
 `det (H x) ≠ 0` is measurable. Then `∫_{∇F(t)} g dμ = ∫_t det (H x) g (∇F x) dμ` for
@@ -422,7 +428,7 @@ every additive Haar measure `μ`. The gradient is injective on the nondegenerate
 null set. -/
 theorem withDensity_image_gradient_eq_setLIntegral
     (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) {H : E → E →L[ℝ] E} {t : Set E}
-    (ht : MeasurableSet t) (htZ : MeasurableSet (t ∩ {x | (H x).det ≠ 0}))
+    (htZ : MeasurableSet (t ∩ {x | (H x).det ≠ 0}))
     (hP : ∀ x ∈ t, subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧
       (H x).IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
         ‖y' - (∇ fun x' => (f x').toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
@@ -440,6 +446,11 @@ theorem withDensity_image_gradient_eq_setLIntegral
   have hZ0 : μ.withDensity g (G '' (t \ Z)) = 0 :=
     withDensity_absolutelyContinuous μ g
       (addHaar_image_eq_zero_of_det_fderivWithin_eq_zero μ (hder _ sdiff_subset) hdeg)
+  have hzero : ∫⁻ x in t \ Z, ENNReal.ofReal (H x).det * g (G x) ∂μ = 0 := by
+    refine le_antisymm ?_ bot_le
+    simpa only [lintegral_zero] using setLIntegral_mono (μ := μ) (s := t \ Z)
+      (f := fun x => ENNReal.ofReal (H x).det * g (G x)) (g := fun _ => 0) measurable_const
+      fun x hx => by simp [hdeg x hx]
   calc μ.withDensity g (G '' t) = μ.withDensity g (G '' Z) := by
         refine le_antisymm ?_ (measure_mono (image_mono inter_subset_left))
         calc μ.withDensity g (G '' t) = μ.withDensity g (G '' Z ∪ G '' (t \ Z)) := by
@@ -451,9 +462,8 @@ theorem withDensity_image_gradient_eq_setLIntegral
         exact lintegral_image_eq_lintegral_abs_det_fderiv_mul μ htZ (hder _ inter_subset_left)
           hinj g
     _ = ∫⁻ x in t, ENNReal.ofReal (H x).det * g (G x) ∂μ := by
-        rw [← lintegral_inter_add_sdiff _ t htZ, inter_eq_right.2 inter_subset_left,
-          setLIntegral_congr_fun (ht.diff htZ) (g := fun _ => 0)
-            fun x hx => by simp [hdeg x hx], lintegral_zero, add_zero]
+        rw [← lintegral_inter_add_sdiff _ t htZ, inter_eq_right.2 inter_subset_left, hzero,
+          add_zero]
         refine setLIntegral_congr_fun htZ fun x hx => ?_
         rw [abs_of_nonneg ((ContinuousLinearMap.isPositive_toLinearMap_iff _).2
           (hP x hx.1).2.1).det_nonneg]
@@ -505,7 +515,7 @@ theorem mongeAmpereMeasure_eq_withDensity_det (hf : Convex ℝ {p : E × ℝ | f
     rw [(hP x hx.2).1, mem_singleton_iff, eq_comm]
   rw [himage]
   simpa [withDensity_one] using
-    withDensity_image_gradient_eq_setLIntegral μ hf hS (hS.inter hN) (fun x hx => hP x hx.2) 1
+    withDensity_image_gradient_eq_setLIntegral μ hf (hS.inter hN) (fun x hx => hP x hx.2) 1
 
 /-- **The Monge–Ampère measure of a twice differentiable convex function on an open set.** If `u`
 is convex on an open set `Ω`, and `u` and its gradient are differentiable on `Ω`, then the
@@ -579,10 +589,9 @@ theorem ofReal_neg_pow_mul_addHaar_ball_le_mul_mongeAmpereMeasure (hΩo : IsOpen
   have hh : 0 < h := by linarith
   set d := infDist x₀ Ωᶜ
   set D := diam Ω
-  -- The complement of `Ω` is nonempty, and `x₀` is at positive distance `d` from it, attained at
-  -- some `z ∉ Ω`; the ball of radius `d` about `x₀` lies in `Ω`, so `D ≥ 2 * d > 0`.
+  -- The complement of `Ω` is nonempty, and `x₀` is at positive distance `d` from it; the ball of
+  -- radius `d` about `x₀` lies in `Ω`, so `D ≥ 2 * d > 0`.
   have hΩc : Ωᶜ.Nonempty := nonempty_compl.2 fun h' => NormedSpace.unbounded_univ ℝ E (h' ▸ hΩ)
-  obtain ⟨z, hz, hzd⟩ := hΩo.isClosed_compl.exists_infDist_eq_dist hΩc x₀
   have hd : 0 < d := (hΩo.isClosed_compl.notMem_iff_infDist_pos hΩc).1 fun h' => h' hx₀
   have hD : 0 < D := by
     have hsub : ball x₀ d ⊆ Ω := by simpa using ball_infDist_subset_compl (x := x₀) (s := Ωᶜ)
@@ -591,52 +600,11 @@ theorem ofReal_neg_pow_mul_addHaar_ball_le_mul_mongeAmpereMeasure (hΩo : IsOpen
     linarith
   -- The admissible slopes.
   set P := {p : E | ∀ x ∈ frontier Ω, u x₀ + inner ℝ (x - x₀) p ≤ 0}
-  have hPconv : Convex ℝ P := by
-    intro p hp q hq a b ha hb hab x hx
-    have h₁ := mul_le_mul_of_nonneg_left (hp x hx) ha
-    have h₂ := mul_le_mul_of_nonneg_left (hq x hx) hb
-    rw [inner_add_right, real_inner_smul_right, real_inner_smul_right]
-    nlinarith
-  have hball : ball 0 (h / D) ⊆ P := by
-    intro p hp x hx
-    rw [mem_ball_zero_iff] at hp
-    have hxD : ‖x - x₀‖ ≤ D := by
-      rw [← dist_eq_norm]
-      calc dist x x₀ ≤ diam (closure Ω) :=
-            dist_le_diam_of_mem hΩ.closure (frontier_subset_closure hx) (subset_closure hx₀)
-        _ = D := diam_closure Ω
-    have := (real_inner_le_norm (x - x₀) p).trans
-      (mul_le_mul hxD hp.le (norm_nonneg p) hD.le)
-    rw [mul_div_cancel₀ h hD.ne'] at this
-    linarith
-  -- A supporting half-space of `Ω` through `z` gives a slope of norm `h / d`.
-  obtain ⟨g, hg⟩ := geometric_hahn_banach_open_point hu.1 hΩo hz
-  set w := (InnerProductSpace.toDual ℝ E).symm g
-  have hw : ∀ a, inner ℝ w a = g a := fun a => InnerProductSpace.toDual_symm_apply
-  have hw0 : w ≠ 0 := fun h' => by simpa [← hw, h'] using hg x₀ hx₀
-  have hw0' : 0 < ‖w‖ := norm_pos_iff.2 hw0
-  have hq : (h / (d * ‖w‖)) • w ∈ P := by
-    intro x hx
-    have hgx : g x ≤ g z :=
-      closure_minimal (fun a ha => (hg a ha).le) (isClosed_le g.continuous continuous_const)
-        (frontier_subset_closure hx)
-    have hdz : d = ‖z - x₀‖ := by
-      rw [dist_comm, dist_eq_norm] at hzd
-      exact hzd
-    have hgz : g (z - x₀) ≤ ‖w‖ * d := by
-      rw [← hw, hdz]
-      exact real_inner_le_norm w (z - x₀)
-    rw [map_sub] at hgz
-    have key : h / (d * ‖w‖) * (g x - g x₀) ≤ h :=
-      calc h / (d * ‖w‖) * (g x - g x₀) ≤ h / (d * ‖w‖) * (‖w‖ * d) :=
-            mul_le_mul_of_nonneg_left (by linarith) (by positivity)
-        _ = h := by field_simp
-    rw [real_inner_smul_right, real_inner_comm, hw, map_sub]
-    have hdef : h = -u x₀ := rfl
-    linarith
-  have hqn : dist ((h / (d * ‖w‖)) • w) 0 = h / d := by
-    rw [dist_zero_right, norm_smul, Real.norm_of_nonneg (by positivity)]
-    field_simp
+  have hPconv : Convex ℝ P := convex_setOf_forall_add_inner_le _ _ _
+  have hball : ball 0 (h / D) ⊆ P :=
+    ball_subset_setOf_forall_add_inner_le hΩ hx₀ frontier_subset_closure
+  obtain ⟨q, hq, hqn⟩ :=
+    exists_mem_setOf_forall_add_inner_le_dist_eq hΩo hu.1 hx₀ frontier_subset_closure hh.le hΩc
   -- Every admissible slope is a subgradient of `u` relative to `Ω` at a point of `Ω`.
   have hPS : P ⊆ ⋃ x ∈ Ω ∩ Ω, {y | ∀ x' ∈ Ω, u x + inner ℝ (x' - x) y ≤ u x'} := by
     intro p hp

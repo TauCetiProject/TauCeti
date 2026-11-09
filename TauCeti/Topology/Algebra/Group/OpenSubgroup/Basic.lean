@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Topology.Algebra.OpenSubgroup
 import Mathlib.Topology.Compactness.LocallyCompact
+import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
-# Topological group and compactness instances on open subgroups
+# Topology of open subgroups and their coset spaces
 
 An open subgroup `U : OpenSubgroup G` carries a `Group` structure through `SubgroupClass` and the
 subspace topology through `SetLike.coe`, but instance search does not unfold `↥U` to
@@ -21,6 +22,12 @@ separate and joint continuity of multiplication, continuity of inversion, `IsTop
 `LocallyCompactSpace` (using openness alone), and `WeaklyLocallyCompactSpace` and `CompactSpace`
 (using that an open subgroup of a topological group with separately continuous multiplication is
 also closed).
+
+The continuity criteria `OpenSubgroup.continuous_mk_inf_iff` and
+`OpenSubgroup.continuous_mk_comap_iff` describe maps into coset spaces of intersections and
+preimages. These apply to arbitrary open subgroups, without normality. Separate continuity of
+multiplication makes the target coset spaces discrete; the preimage criterion only needs this
+on the target group of the homomorphism.
 
 ## Main instances
 
@@ -86,5 +93,68 @@ addition is compact, since it is closed. -/]
 instance instCompactSpace [SeparatelyContinuousMul G] [CompactSpace G] (U : OpenSubgroup G) :
     CompactSpace U :=
   isCompact_iff_compactSpace.mp U.isClosed.isCompact
+
+variable {H X : Type*} [Group H] [TopologicalSpace H] [TopologicalSpace X]
+
+/-- A map into the coset space of an intersection of open subgroups is continuous if and only
+if its projections to both coset spaces are continuous. Normality is not required. -/
+theorem continuous_mk_inf_iff [SeparatelyContinuousMul G] {U V : OpenSubgroup G} {g : X → G} :
+    (Continuous fun x ↦ (g x : G ⧸ (U ⊓ V).toSubgroup)) ↔
+      (Continuous fun x ↦ (g x : G ⧸ U.toSubgroup)) ∧
+      (Continuous fun x ↦ (g x : G ⧸ V.toSubgroup)) := by
+  constructor
+  · intro h
+    have hU : Continuous (Subgroup.quotientMapOfLE
+        (inf_le_left : U.toSubgroup ⊓ V.toSubgroup ≤ U.toSubgroup)) :=
+      (QuotientGroup.isQuotientMap_mk _).continuous_iff.mpr QuotientGroup.continuous_mk
+    have hV : Continuous (Subgroup.quotientMapOfLE
+        (inf_le_right : U.toSubgroup ⊓ V.toSubgroup ≤ V.toSubgroup)) :=
+      (QuotientGroup.isQuotientMap_mk _).continuous_iff.mpr QuotientGroup.continuous_mk
+    exact ⟨hU.comp h, hV.comp h⟩
+  · rintro ⟨hU, hV⟩
+    apply IsLocallyConstant.continuous
+    rw [IsLocallyConstant.iff_isOpen_fiber_apply]
+    intro x
+    have hfiber :
+        (fun y ↦ (g y : G ⧸ (U ⊓ V).toSubgroup)) ⁻¹' {(g x : G ⧸ (U ⊓ V).toSubgroup)} =
+          (fun y ↦ (g y : G ⧸ U.toSubgroup)) ⁻¹' {(g x : G ⧸ U.toSubgroup)} ∩
+          (fun y ↦ (g y : G ⧸ V.toSubgroup)) ⁻¹' {(g x : G ⧸ V.toSubgroup)} := by
+      ext y
+      simp only [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_inter_iff, QuotientGroup.eq]
+      exact Subgroup.mem_inf
+    rw [hfiber]
+    exact (hU.isOpen_preimage _ (isOpen_discrete _)).inter
+      (hV.isOpen_preimage _ (isOpen_discrete _))
+
+/-- A map into the coset space of the preimage of an open subgroup is continuous if and only
+if its composite with the homomorphism and the target coset projection is continuous.
+Normality and continuity of the group operations on the source are not required. -/
+theorem continuous_mk_comap_iff [SeparatelyContinuousMul H] (U : OpenSubgroup H) (f : G →* H)
+    (hf : Continuous f) {g : X → G} :
+    (Continuous fun x ↦ (g x : G ⧸ (U.comap f hf).toSubgroup)) ↔
+      (Continuous fun x ↦ (f (g x) : H ⧸ U.toSubgroup)) := by
+  let φ : G ⧸ (U.comap f hf).toSubgroup → H ⧸ U.toSubgroup :=
+    Quotient.map' f fun a b h ↦ by
+      simpa only [QuotientGroup.leftRel_apply, toSubgroup_comap, Subgroup.mem_comap,
+        map_mul, map_inv] using h
+  constructor
+  · intro h
+    have hφ : Continuous φ :=
+      (QuotientGroup.isQuotientMap_mk _).continuous_iff.mpr
+        (QuotientGroup.continuous_mk.comp hf)
+    exact hφ.comp h
+  · intro h
+    apply IsLocallyConstant.continuous
+    rw [IsLocallyConstant.iff_isOpen_fiber_apply]
+    intro x
+    have hfiber :
+        (fun y ↦ (g y : G ⧸ (U.comap f hf).toSubgroup)) ⁻¹'
+          {(g x : G ⧸ (U.comap f hf).toSubgroup)} =
+        (fun y ↦ (f (g y) : H ⧸ U.toSubgroup)) ⁻¹' {(f (g x) : H ⧸ U.toSubgroup)} := by
+      ext y
+      simp only [Set.mem_preimage, Set.mem_singleton_iff, QuotientGroup.eq]
+      simp only [toSubgroup_comap, Subgroup.mem_comap, map_mul, map_inv]
+    rw [hfiber]
+    exact h.isOpen_preimage _ (isOpen_discrete _)
 
 end OpenSubgroup
