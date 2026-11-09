@@ -335,13 +335,14 @@ and takes values in the upper half-plane, where `q` is holomorphic with nonvanis
 then on `T` the residue term `w * F''(w) / F'(w)` is computed from that of `q` at
 `ζ = -1 / H w` and from `H`. -/
 private theorem mul_logDeriv_deriv_eq_of_eqOn_comp_neg_inv {F q H : ℂ → ℂ} {T : Set ℂ}
-    (hq : DifferentiableOn ℂ q upperHalfPlaneSet) (hqn : ∀ z ∈ upperHalfPlaneSet, deriv q z ≠ 0)
-    (hT : IsOpen T) (hHd : DifferentiableOn ℂ H T)
+    (hqn : ∀ z ∈ upperHalfPlaneSet, deriv q z ≠ 0) (hT : IsOpen T) (hHd : DifferentiableOn ℂ H T)
     (hHT : ∀ w ∈ T, H w ∈ upperHalfPlaneSet)
     (hFq : EqOn F (fun w => q (-(H w)⁻¹)) T) {w : ℂ} (hw : w ∈ T) :
     w * logDeriv (deriv F) w =
       (-((-(H w)⁻¹) * logDeriv (deriv q) (-(H w)⁻¹)) - 2) * (w * logDeriv H w) +
         w * logDeriv (deriv H) w := by
+  have hq : DifferentiableOn ℂ q upperHalfPlaneSet := fun z hz =>
+    (differentiableAt_of_deriv_ne_zero (hqn z hz)).differentiableWithinAt
   have hsim : 0 < (H w).im := hHT w hw
   have hs0 : H w ≠ 0 := fun h => by simp [h] at hsim
   have hζ : -(H w)⁻¹ ∈ upperHalfPlaneSet := im_neg_inv_pos.mpr hsim
@@ -429,7 +430,6 @@ Both the asymptotic of a map at infinity and its residue at a finite real point 
 this by a change of coordinate. -/
 theorem tendsto_mul_logDeriv_deriv_nhdsWithin_of_eqOn_comp
     {F q : ℂ → ℂ} {r : ℝ} {L : ℂ} (hr : 0 < r)
-    (hq : DifferentiableOn ℂ q upperHalfPlaneSet)
     (hqn : ∀ z ∈ upperHalfPlaneSet, deriv q z ≠ 0)
     (hqL : Tendsto (fun z : ℂ => z * logDeriv (deriv q) z)
       (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 L))
@@ -485,7 +485,7 @@ theorem tendsto_mul_logDeriv_deriv_nhdsWithin_of_eqOn_comp
   rw [← hS]
   refine Tendsto.congr' ?_ (by simpa using (hfirst.mul hsimple).add hrest)
   filter_upwards [self_mem_nhdsWithin] with w hw
-  simpa using (mul_logDeriv_deriv_eq_of_eqOn_comp_neg_inv hq hqn (hV.inter isOpen_upperHalfPlaneSet)
+  simpa using (mul_logDeriv_deriv_eq_of_eqOn_comp_neg_inv hqn (hV.inter isOpen_upperHalfPlaneSet)
     (hHd.mono inter_subset_left) (fun w hw => (hHT w hw.1 hw.2).1.2) hFq
     (hST hw)).symm
 
@@ -502,7 +502,6 @@ directly. -/
 theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_neg_inv
     {f q : ℂ → ℂ} {r : ℝ} {L : ℂ} (hr : 0 < r)
     (hfn : ∀ z ∈ upperHalfPlaneSet, deriv f z ≠ 0)
-    (hq : DifferentiableOn ℂ q upperHalfPlaneSet)
     (hqn : ∀ z ∈ upperHalfPlaneSet, deriv q z ≠ 0)
     (hqL : Tendsto (fun z : ℂ => z * logDeriv (deriv q) z)
       (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 L))
@@ -516,7 +515,7 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_neg_inv
     (hinj : InjOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im})) :
     Tendsto (fun z : ℂ => z * logDeriv (deriv f) z)
       (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 L) := by
-  have hlim := tendsto_mul_logDeriv_deriv_nhdsWithin_of_eqOn_comp (F := fun w => f (-w⁻¹)) hr hq
+  have hlim := tendsto_mul_logDeriv_deriv_nhdsWithin_of_eqOn_comp (F := fun w => f (-w⁻¹)) hr
     hqn hqL hgq hg0 hcont hholo hreal hupper hinj
   have hlim' : Tendsto (fun w => w * logDeriv (deriv fun w => (f (-w⁻¹) - 0) / 1) w)
       (𝓝[Metric.ball 0 1 ∩ upperHalfPlaneSet] 0) (𝓝 (-L - 2)) := by
