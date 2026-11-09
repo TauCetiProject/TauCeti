@@ -66,16 +66,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 
 namespace SmoothSimplex
 
-/-- The derivative of a continuous affine map is its linear part. -/
-private theorem hasFDerivAt_continuousAffineMap {V W : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] [NormedAddCommGroup W] [NormedSpace ℝ W] (A : V →ᴬ[ℝ] W) (y : V) :
-    HasFDerivAt A A.contLinear y := by
-  have h : (A : V → W) = fun x ↦ A.contLinear x + A 0 := by
-    funext x
-    simpa using congrFun A.toAffineMap.decomp x
-  rw [h]
-  exact A.contLinear.hasFDerivAt.add_const (A 0)
-
 variable [IsManifold I 2 M]
 
 /-- **Stokes' theorem for a smooth singular simplex.** The integral of the exterior derivative of
@@ -122,10 +112,9 @@ theorem integral_mextDeriv [CompleteSpace F] (σ : SmoothSimplex I M (p + 1))
   refine setIntegral_congr_fun (isClosed_fullSimplex p).measurableSet fun y hy ↦ ?_
   have hAy : A y ∈ Δ := mapsTo_simplexMapAmbient _ hy
   have hA : fderivWithin ℝ A (fullSimplex p) y = A.contLinear :=
-    (hasFDerivAt_continuousAffineMap A y).hasFDerivWithinAt.fderivWithin
-      (uniqueDiffOn_fullSimplex p y hy)
+    A.fderivWithin (uniqueDiffOn_fullSimplex p y hy)
   rw [mpullbackWithin_comp_at (t := Δ)
-    (hasFDerivAt_continuousAffineMap A y).differentiableAt.mdifferentiableAt.mdifferentiableWithinAt
+    A.differentiableWithinAt.mdifferentiableWithinAt
     ((σ.contMDiffOn_extension _ hAy).mdifferentiableWithinAt (by simp))
     (mapsTo_simplexMapAmbient _)
     (uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.2 (uniqueDiffOn_fullSimplex p y hy)),
