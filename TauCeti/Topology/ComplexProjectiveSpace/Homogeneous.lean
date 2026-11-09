@@ -97,16 +97,6 @@ instance instMulActionUnitaryGroup :
     induction p using ComplexProjectiveSpace.inductionOn with
     | h x => rw [smul_mk, smul_mk, smul_mk, map_mul, mul_smul]
 
-/-- The action of a unitary matrix on the unit sphere is jointly continuous. -/
-private theorem continuous_toLinearIsometryEquiv_smul :
-    Continuous fun p : unitaryGroup (Fin (n + 1)) ℂ ×
-        sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 ↦
-      UnitaryGroup.toLinearIsometryEquiv p.1 • p.2 := by
-  refine continuous_induced_rng.2 <| (continuous_uncurry_toEuclideanCLM.comp
-    ((continuous_subtype_val.comp continuous_fst).prodMk
-      (continuous_subtype_val.comp continuous_snd))).congr fun p ↦ ?_
-  simp [toLpLin_apply]
-
 /-- The action of `U(n + 1)` on `CPⁿ` is continuous. -/
 instance instContinuousSMulUnitaryGroup :
     ContinuousSMul (unitaryGroup (Fin (n + 1)) ℂ) (ComplexProjectiveSpace n) where
@@ -116,7 +106,8 @@ instance instContinuousSMulUnitaryGroup :
     have hq := ((IsOpenQuotientMap.id (X := unitaryGroup (Fin (n + 1)) ℂ)).prodMap
       (isOpenQuotientMap_mk n)).isQuotientMap
     rw [hq.continuous_iff]
-    exact ((continuous_mk n).comp continuous_toLinearIsometryEquiv_smul).congr fun p ↦
+    exact ((continuous_mk n).comp
+      UnitaryGroup.continuous_toLinearIsometryEquiv_smul_unitSphere).congr fun p ↦
       (smul_mk p.1 p.2).symm
 
 variable (n) in

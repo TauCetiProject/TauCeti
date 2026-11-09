@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.LinearAlgebra.Matrix.Rank
 public import TauCeti.Analysis.Normed.Lp.PiLp
+public import TauCeti.Geometry.Sphere.LinearIsometry
 
 /-!
 # The map of a matrix on Euclidean space
@@ -64,7 +65,9 @@ diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
   (`Matrix.UnitaryGroup.toLinearIsometryEquiv_injective`,
   `Matrix.UnitaryGroup.toLinearIsometryEquiv_surjective`), preserves determinants
   (`Matrix.UnitaryGroup.det_toLinearIsometryEquiv`) and is continuous for the operator-norm
-  topology (`Matrix.UnitaryGroup.continuous_toLinearIsometryEquiv`);
+  topology (`Matrix.UnitaryGroup.continuous_toLinearIsometryEquiv`), and its action on the unit
+  sphere is jointly continuous
+  (`Matrix.UnitaryGroup.continuous_toLinearIsometryEquiv_smul_unitSphere`);
 * `Matrix.toEuclideanCLM_apply_apply` — the coordinate formula for the continuous linear map of
   a matrix, which depends continuously on the matrix (`Matrix.continuous_toEuclideanCLM`) and
   conversely (`Matrix.continuous_toEuclideanCLM_symm`);
@@ -282,6 +285,16 @@ theorem UnitaryGroup.continuous_toLinearIsometryEquiv :
   refine (continuous_toEuclideanCLM.comp continuous_subtype_val).congr fun A ↦ ?_
   ext x
   simp
+
+/-- The action of the unitary group on the unit sphere of Euclidean space, through the linear
+isometries of unitary matrices, is jointly continuous. -/
+theorem UnitaryGroup.continuous_toLinearIsometryEquiv_smul_unitSphere :
+    Continuous fun p : unitaryGroup ι 𝕜 × Metric.sphere (0 : EuclideanSpace 𝕜 ι) 1 ↦
+      UnitaryGroup.toLinearIsometryEquiv p.1 • p.2 := by
+  refine continuous_induced_rng.2 <| (continuous_uncurry_toEuclideanCLM.comp
+    ((continuous_subtype_val.comp continuous_fst).prodMk
+      (continuous_subtype_val.comp continuous_snd))).congr fun p ↦ ?_
+  simp [toLpLin_apply]
 
 /-- The determinant of a diagonal continuous linear map is the product of its diagonal entries. -/
 @[simp]
