@@ -12,6 +12,8 @@ public import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 public import Mathlib.LinearAlgebra.Span.Defs
 public import TauCeti.Analysis.Normed.Module.RCLike.Real
 import Mathlib.Tactic.Module
+import Mathlib.Topology.Algebra.Module.Equiv.Basic
+import Mathlib.Topology.Instances.Nat
 
 /-!
 # Metric balls and spheres in normed spaces
@@ -33,6 +35,11 @@ norm conditions for `R⁻¹ • z` when `R > 0`.
 They need only a norm homogeneous under real scalar multiplication; no additive structure
 or metric on the vector type is required.
 
+For `0 < ε`, the rescaling `z ↦ ε⁻¹ • (z - y)` pulls `closedBall 0 R` back to
+`closedBall y (ε * R)` (`TauCeti.inv_smul_sub_mem_closedBall_zero_iff`), so composing it with a
+function supported in the closed unit ball gives a function supported in `closedBall y ε`
+(`TauCeti.tsupport_comp_inv_smul_sub_subset_closedBall`).
+
 In a nontrivial real normed space, one ball lies in another exactly when its radius plus the
 distance between the centres is at most the radius of the other. The sufficiency holds in every
 pseudometric space (`Metric.closedBall_subset_closedBall'`, `Metric.ball_subset_ball'`); the
@@ -44,8 +51,14 @@ For `t ≥ 0`, the outer parallel set `K + t • closedBall 0 1` of a compact se
 A scalar of norm one maps the product of a set with a ball about zero to itself when it acts on the
 ball factor (`TauCeti.mapsTo_prodMk_smul_ball`).
 
+A closed ball of positive radius is homeomorphic to the closed unit ball by a rescaling that
+matches the boundary spheres (`TauCeti.exists_homeomorph_closedBall_one_norm_eq`).
+
 Half the difference body of a bounded set lies in a ball of half its diameter. A bounded set
 centrally symmetric up to translation lies in a ball of half its diameter about its center.
+
+The balls of radius `‖v‖ / 2` about the points `x + j • v`, `j : ℕ`, are pairwise disjoint
+(`TauCeti.pairwise_disjoint_ball_add_natCast_smul`).
 -/
 
 public section
@@ -166,6 +179,29 @@ theorem norm_inv_smul_of_nonneg {z : E} {R : ℝ} (hR : 0 ≤ R) : ‖R⁻¹ •
 
 end Normalization
 
+section Rescaling
+
+open Metric
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- For `0 < ε`, the rescaled point `ε⁻¹ • (z - y)` lies in `closedBall 0 R` exactly when `z` lies
+in `closedBall y (ε * R)`. -/
+theorem inv_smul_sub_mem_closedBall_zero_iff {ε : ℝ} (hε : 0 < ε) {R : ℝ} {y z : E} :
+    ε⁻¹ • (z - y) ∈ closedBall (0 : E) R ↔ z ∈ closedBall y (ε * R) := by
+  simp [norm_smul, abs_of_pos hε, dist_eq_norm, inv_mul_le_iff₀ hε]
+
+/-- Rescaling a function supported in the closed unit ball to `z ↦ χ (ε⁻¹ • (z - y))` gives a
+function supported in `closedBall y ε`. -/
+theorem tsupport_comp_inv_smul_sub_subset_closedBall {α : Type*} [Zero α] {χ : E → α}
+    (hχs : tsupport χ ⊆ closedBall 0 1) {ε : ℝ} (hε : 0 < ε) (y : E) :
+    tsupport (fun z ↦ χ (ε⁻¹ • (z - y))) ⊆ closedBall y ε := by
+  intro z hz
+  have h := hχs (tsupport_comp_subset_preimage χ (f := fun z ↦ ε⁻¹ • (z - y)) (by fun_prop) hz)
+  rwa [inv_smul_sub_mem_closedBall_zero_iff hε, mul_one] at h
+
+end Rescaling
+
 section Subset
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Nontrivial E] {x y : E} {r s : ℝ}
@@ -252,5 +288,37 @@ theorem subset_closedBall_diam_div_two_of_neg_eq_vadd {H : Set E}
   exact norm_half_smul_sub_le (dist_eq_norm y _ ▸ dist_le_diam_of_mem hH hy hy')
 
 end Diameter
+
+section Rescaling
+
+/-- The closed ball of radius `r > 0` is homeomorphic to the unit closed ball by a rescaling that
+carries the boundary sphere onto the boundary sphere. -/
+theorem exists_homeomorph_closedBall_one_norm_eq {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] {r : ℝ} (hr : 0 < r) :
+    ∃ S : Metric.closedBall (0 : V) r ≃ₜ Metric.closedBall (0 : V) 1,
+      ∀ v : Metric.closedBall (0 : V) r, ‖(S v : V)‖ = 1 ↔ ‖(v : V)‖ = r := by
+  refine ⟨(Homeomorph.smulOfNeZero r⁻¹ (inv_ne_zero hr.ne')).subtype fun v ↦ by
+    simp [norm_smul, abs_of_pos hr, inv_mul_le_iff₀ hr], fun v ↦ ?_⟩
+  simp [norm_smul, abs_of_pos hr, inv_mul_eq_one₀ hr.ne', eq_comm]
+
+end Rescaling
+
+section Disjoint
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The balls of radius `‖v‖ / 2` about the points `x + j • v`, `j : ℕ`, are pairwise disjoint. -/
+theorem pairwise_disjoint_ball_add_natCast_smul (x v : E) :
+    Pairwise (Function.onFun Disjoint fun j : ℕ => ball (x + (j : ℝ) • v) (‖v‖ / 2)) := by
+  intro i j hij
+  refine ball_disjoint_ball ?_
+  have h : (1 : ℝ) ≤ |(i : ℝ) - j| := by
+    simpa only [Nat.dist_eq] using Nat.pairwise_one_le_dist hij
+  have hdist : dist (x + (i : ℝ) • v) (x + (j : ℝ) • v) = |(i : ℝ) - j| * ‖v‖ := by
+    rw [dist_eq_norm, add_sub_add_left_eq_sub, ← sub_smul, norm_smul, Real.norm_eq_abs]
+  rw [hdist, add_halves]
+  nlinarith [norm_nonneg v]
+
+end Disjoint
 
 end TauCeti
