@@ -277,7 +277,6 @@ private theorem symm_euclideanQuadrantFaceParam (q : EuclideanQuadrant m) :
 
 /-- A face chart, extended to the model vector space, reads a point of the face section through
 the extended chart of `M` and deletes the coordinate `i`. -/
-@[simp]
 theorem extend_faceChart_faceSection
     (p : {p : M // p ∈ e.source ∧ e.extend (𝓡c (m + 1)) p i = 0}) :
     (faceChart he i p₀).extend (𝓡c m)
