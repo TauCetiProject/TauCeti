@@ -15,6 +15,9 @@ A subspace reduces an endomorphism when both it and its orthogonal complement ar
 For a symmetric endomorphism, invariance of the subspace alone is enough. When an orthogonal
 projection exists, reduction is equivalently commutation with that projection; in particular the
 orthogonal projection onto a subspace invariant under a symmetric endomorphism commutes with it.
+More generally, an idempotent whose range and kernel are orthogonal both for the inner product and
+for the form of a symmetric endomorphism commutes with that endomorphism
+(`LinearMap.IsSymmetric.commute_of_isIdempotentElem`).
 
 For a bounded operator `A` on a Hilbert space and a complete subspace invariant under both `A`
 and its adjoint, the adjoint of the restriction of `A` is the restriction of the adjoint
@@ -83,6 +86,29 @@ theorem _root_.LinearMap.IsSymmetric.starProjection_apply_comm {A : Module.End �
   have h := (U.isReducing_iff_commute_starProjection A).mp
     ((hA.isReducing_iff_mem_invtSubmodule U).mpr hU)
   simpa only [_root_.mul_apply_eq_comp, ContinuousLinearMap.coe_coe] using congr($(h.eq) x)
+
+open scoped InnerProductSpace in
+/-- An idempotent endomorphism `p` whose range is orthogonal to its kernel, both for the inner
+product and for the form `⟪A ·, ·⟫` of a symmetric endomorphism `A`, commutes with `A`: its range
+and its kernel are invariant under `A`. -/
+theorem _root_.LinearMap.IsSymmetric.commute_of_isIdempotentElem {A p : Module.End 𝕜 E}
+    (hA : A.IsSymmetric) (hp : IsIdempotentElem p) (hpp : ∀ x y, ⟪p x, y - p y⟫_𝕜 = 0)
+    (hAp : ∀ x y, ⟪A (p x), y - p y⟫_𝕜 = 0) : Commute p A := by
+  refine (LinearMap.IsIdempotentElem.commute_iff hp).mpr
+    ⟨(mem_invtSubmodule _).mpr ?_, (mem_invtSubmodule _).mpr ?_⟩
+  · -- The component of `A (p x)` in the kernel of `p` is orthogonal to itself.
+    rintro _ ⟨x, rfl⟩
+    refine ⟨A (p x), (sub_eq_zero.mp (inner_self_eq_zero (𝕜 := 𝕜).mp ?_)).symm⟩
+    rw [inner_sub_left, hAp, hpp, sub_zero]
+  · -- For `k` in the kernel, `‖p (A k)‖² = ⟪A (p (A k)), k - p k⟫ = 0`.
+    intro k hk
+    rw [LinearMap.mem_ker] at hk
+    rw [Submodule.mem_comap, LinearMap.mem_ker]
+    have h := hpp (A k) (A k)
+    have hA' := hAp (A k) k
+    rw [hk, sub_zero, hA (p (A k)) k] at hA'
+    rw [inner_sub_right, sub_eq_zero, hA'] at h
+    exact inner_self_eq_zero.mp h.symm
 
 
 variable {U V : Submodule 𝕜 E} {A : End 𝕜 E}

@@ -81,13 +81,8 @@ theorem _root_.ContDiffOn.metricChangeBetween (hh : ContDiffOn ℝ n h s)
   have hT := hh.metricChangeTransport hpos
   have hS := hh.sqrt_continuousLinearMapOfBilin hpos
   have hK : ContDiffOn ℝ n (fun x ↦
-      (k x).bilinearComp (h x).metricChangeTransport (h x).metricChangeTransport) s := by
-    have h := (contDiff_precomp_comp (𝕜 := ℝ) (G := ℝ)).comp_contDiffOn (hk.prodMk hT)
-    apply h.congr
-    intro x _
-    -- Both constructions pull the bilinear form back in its two slots by the same operator.
-    ext u v
-    rfl
+      (k x).bilinearComp (h x).metricChangeTransport (h x).metricChangeTransport) s :=
+    hk.clm_bilinearComp hT hT
   have hKT := hK.metricChangeTransport fun x hx ↦
     isStrictlyPositive_bilinearComp_metricChangeTransport (h x) (k x) (hpos x hx) (kpos x hx)
   exact ((hT.mul hKT).mul hS).congr fun x _ ↦ metricChangeBetween_def (h x) (k x)
