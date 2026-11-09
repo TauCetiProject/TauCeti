@@ -167,7 +167,15 @@ theorem exists_integral_plucker_reduction (v : AbsoluteValue K ℝ) (hv : IsNona
       Matrix.one_mul]
   -- Extend the off-pivot columns of the normalized family by zero on the
   -- other rows. This matrix has square zero.
-  obtain ⟨N, hNN, hN, hcol, hout, hrow⟩ := v.exists_square_zero_extension e B fun a j _ ↦ hb a j
+  obtain ⟨N, hNN, hcol, hout, hrow⟩ := Matrix.exists_sq_eq_zero_extension e B
+  have hN (i j : ι) : v (N i j) ≤ 1 := by
+    by_cases hi : i ∈ range e
+    · obtain ⟨a, rfl⟩ := hi
+      by_cases hj : j ∈ range e
+      · simp [hcol _ _ hj]
+      · rw [hrow a j hj]
+        exact hb a j
+    · simp [hout i hi j]
   have hunit (i j : ι) : v ((1 : Matrix ι ι K) i j) ≤ 1 := by
     by_cases h : i = j <;> simp [Matrix.one_apply, h]
   have hbound (i j : ι) : v ((1 - N) i j) ≤ 1 ∧ v ((1 + N) i j) ≤ 1 := by
