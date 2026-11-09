@@ -25,10 +25,10 @@ the scalar symplectic matrices, `c • 1` with `c ^ 2 = 1`
 (`TauCeti.GLSymplectic.mem_ker_adjointAction_iff`), which over a ring without zero divisors is
 the central subgroup `{±1}`.
 
-Over a field `K` with `2 ≠ 0`, the Killing form `κ` of `sp l K` is `(2 n + 2) trace (X Y)` and
-its Cartan involution is `θ X = -Xᵀ` (`LieAlgebra.Symplectic.killingForm_cartanInvolution_apply`).
-Pulled back by `Ad(A)`, the form `κ(X, θ Y)` becomes `κ(X, θ (Ad(Aᵀ A) Y))`, where
-`Aᵀ A = (θ A)⁻¹ A` for the group Cartan involution `θ A = (Aᵀ)⁻¹`
+The Cartan involution `θ X = -Xᵀ` of `sp l R` is intertwined by `Ad` with the group Cartan
+involution `θ A = (Aᵀ)⁻¹` (`TauCeti.GLSymplectic.adjointAction_cartanInvolution_apply`). Since the
+Killing form `κ` is invariant under the Lie automorphism `Ad(A)`, the form `κ(X, θ Y)` pulled
+back by `Ad(A)` becomes `κ(X, θ (Ad(Aᵀ A) Y))`, where `Aᵀ A = (θ A)⁻¹ A`
 (`TauCeti.GLSymplectic.killingForm_adjointAction_cartanInvolution_adjointAction`).
 
 Over an ordered field the *Cartan metric* `-κ(X, θ Y)` is positive definite
@@ -215,32 +215,24 @@ theorem comap_map_adjointAction_GLOrthogonal_subgroupOf :
   rw [Subgroup.comap_map_eq, sup_eq_left]
   exact ker_adjointAction_le_GLOrthogonal_subgroupOf
 
-end CommRing
-
-section Field
-
-variable {K : Type*} [Field K] [NeZero (2 : K)]
-
 /-- **The Cartan metric pulled back by the adjoint action.** For `A` in the symplectic group,
-`κ(Ad(A) X, θ (Ad(A) Y)) = κ(X, θ (Ad(Aᵀ A) Y))`, where `κ` is the Killing form of `sp l K`,
-`θ` is its Cartan involution and `Aᵀ A = (θ A)⁻¹ A`. -/
-theorem killingForm_adjointAction_cartanInvolution_adjointAction (A : GLSymplectic l K)
-    (X Y : sp l K) :
-    killingForm K (sp l K) (adjointAction l K A X)
-        (LieAlgebra.Symplectic.cartanInvolution l K (adjointAction l K A Y)) =
-      killingForm K (sp l K) X (LieAlgebra.Symplectic.cartanInvolution l K
-        (adjointAction l K ((GLSymplectic.cartanInvolution A)⁻¹ * A) Y)) := by
-  simp only [killingForm_cartanInvolution_apply, coe_adjointAction_apply,
-    coe_cartanInvolution_inv_mul]
-  -- The inverse of `(θ A)⁻¹ A` is `A⁻¹ θ A = A⁻¹ A⁻ᵀ`.
-  simp only [Subgroup.coe_mul, Subgroup.coe_inv, _root_.mul_inv_rev, inv_inv, Units.val_mul,
-    coe_cartanInvolution, Matrix.GeneralLinearGroup.coe_inverseTranspose]
-  -- Both sides are `-(2 n + 2) trace (X A⁻¹ A⁻ᵀ Yᵀ Aᵀ A)`, after cycling `A` in the trace.
-  simp only [transpose_mul, transpose_transpose, Matrix.mul_assoc]
-  rw [trace_mul_comm ((A : GL (l ⊕ l) K) : Matrix (l ⊕ l) (l ⊕ l) K)]
-  simp only [Matrix.mul_assoc]
+`κ(Ad(A) X, θ (Ad(A) Y)) = κ(X, θ (Ad(Aᵀ A) Y))`, where `κ` is the Killing form of `sp l R`,
+`θ` is its Cartan involution and `Aᵀ A = (θ A)⁻¹ A`. This follows from the invariance of `κ`
+under the Lie automorphism `Ad(A)`. -/
+theorem killingForm_adjointAction_cartanInvolution_adjointAction (A : GLSymplectic l R)
+    (X Y : sp l R) :
+    killingForm R (sp l R) (adjointAction l R A X)
+        (LieAlgebra.Symplectic.cartanInvolution l R (adjointAction l R A Y)) =
+      killingForm R (sp l R) X (LieAlgebra.Symplectic.cartanInvolution l R
+        (adjointAction l R ((GLSymplectic.cartanInvolution A)⁻¹ * A) Y)) := by
+  -- `θ (Ad(A) Y) = Ad(θ A) (θ Y) = Ad(A) (Ad(A⁻¹ θ A) (θ Y)) = Ad(A) (θ (Ad((θ A)⁻¹ A) Y))`.
+  rw [← adjointAction_cartanInvolution_apply, ← adjointAction_cartanInvolution_apply, map_mul,
+    map_inv, cartanInvolution_cartanInvolution]
+  conv_lhs => rw [← mul_inv_cancel_left A (GLSymplectic.cartanInvolution A), map_mul,
+    mul_apply_eq_comp]
+  exact LieAlgebra.killingForm_of_equiv_apply (adjointAux A) X _
 
-end Field
+end CommRing
 
 section OrderedField
 
