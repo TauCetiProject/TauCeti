@@ -94,7 +94,7 @@ theorem map_comap_mkQ_span_singleton (S : Submodule R M) (f : M →ₗ[R] N) (v 
 
 /-- The map `φ` induces a linear isomorphism from the quotient of `P` by the preimage of `F`
 under `φ` onto the subquotient `(F ⊔ range φ) ⧸ F`. For `φ = p.subtype` this is the second
-isomorphism theorem `Submodule.quotientInfEquivSupQuotient`. -/
+isomorphism theorem `LinearMap.quotientInfEquivSupQuotient`. -/
 noncomputable def quotientComapEquivSupQuotient {P : Type*} [AddCommGroup P] [Module R P]
     (F : Submodule R M) (φ : P →ₗ[R] M) :
     (P ⧸ F.comap φ) ≃ₗ[R]
