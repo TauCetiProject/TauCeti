@@ -19,12 +19,18 @@ derivatives of `Df` are those of `f` shifted by one order. So does each directio
 `x ↦ Df(x) v`. These are the coefficients that appear when the Leibniz rule is applied to the
 product of a Schwartz function or a tempered distribution with `f`.
 
+A finite product of functions of temperate growth has temperate growth, the multiplicative
+counterpart of Mathlib's `Function.HasTemperateGrowth.sum`. Polynomial symbols such as
+`ξ ↦ ∏ᵢ ⟪ξ, mᵢ⟫` of iterated derivatives are of this form.
+
 ## Main results
 
 * `Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le`: bounded derivatives give temperate
   growth.
 * `Function.HasTemperateGrowth.fderiv`: `Df` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv_apply`: `x ↦ Df(x) v` has temperate growth.
+* `Function.HasTemperateGrowth.prod`: a finite product of functions of temperate growth has
+  temperate growth.
 -/
 
 public section
@@ -52,5 +58,17 @@ growth. -/
 theorem fderiv_apply (hf : f.HasTemperateGrowth) (v : E) :
     (fun x ↦ _root_.fderiv ℝ f x v).HasTemperateGrowth :=
   (ContinuousLinearMap.apply ℝ F v).hasTemperateGrowth.comp hf.fderiv
+
+/-- A finite product of functions of temperate growth has temperate growth. -/
+@[fun_prop]
+theorem prod {ι R : Type*} [NormedCommRing R] [NormedAlgebra ℝ R] {f : ι → E → R}
+    {s : Finset ι} (hf : ∀ i ∈ s, (f i).HasTemperateGrowth) :
+    (∏ i ∈ s, f i ·).HasTemperateGrowth := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s has ih =>
+    obtain ⟨hf, h⟩ := by simpa using! hf
+    simpa [has] using! hf.mul (ih h)
 
 end Function.HasTemperateGrowth
