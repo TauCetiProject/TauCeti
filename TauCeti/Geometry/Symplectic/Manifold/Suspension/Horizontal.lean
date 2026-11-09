@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Projection
+public import TauCeti.Geometry.Manifold.Instances.MappingTorus.Submersion
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Basic
@@ -24,8 +25,11 @@ where the *horizontal plane* `H = span(∂_s, T)`
 (`TauCeti.SmoothMappingTorus.suspensionHorizontalSubspace`) consists of the vectors whose mapping
 torus component is a multiple of `T`, and the *vertical space* `V`
 (`TauCeti.SmoothMappingTorus.suspensionVerticalSubspace`) is the pullback along the projection
-`X_φ → Y_φ` of the vertical tangent space `ker dp` of the mapping torus. The vertical component
-`ξ_V` of a tangent vector `ξ` is its image under Mathlib's projection
+`X_φ → Y_φ` of the vertical tangent space `ker dp` of the mapping torus. Since `p` is a
+submersion, `V` is the kernel distribution of the submersion `(s, y) ↦ (s, p y)` and so a smooth
+distribution of rank `dim M`, the vertical bundle of `X_φ`
+(`TauCeti.SmoothMappingTorus.isContMDiffDistribution_suspensionVerticalSubspace`). The vertical
+component `ξ_V` of a tangent vector `ξ` is its image under Mathlib's projection
 `Submodule.projection` onto `V` along `H`.
 
 Write `ω_v` for the fiber form `σ_v` pulled back to `X_φ`. Since `ω_v` kills both `∂_s` and `T`,
@@ -66,6 +70,10 @@ compatibility of `J` with the full symplectic form `Ω = ds ∧ dt + σ_v` is ne
   of `u` maps `e` into the line spanned by `T`.
 * `TauCeti.SmoothMappingTorus.isCompl_suspensionVerticalSubspace_suspensionHorizontalSubspace`:
   `T X_φ = V ⊕ H`.
+* `TauCeti.SmoothMappingTorus.suspensionVerticalSubspace_eq_ker_mfderiv_prodMap`,
+  `TauCeti.SmoothMappingTorus.isContMDiffDistribution_suspensionVerticalSubspace`: `V` is the
+  kernel distribution of the submersion `(s, y) ↦ (s, p y)`, a smooth distribution of rank
+  `dim M`.
 * `TauCeti.SmoothMappingTorus.eval₂_mpullback_snd_fiberForm_projection_projection`: `ω_v` only sees
   vertical components.
 * `TauCeti.SmoothMappingTorus.apply_mem_suspensionHorizontalSubspace`: a block structure
@@ -235,6 +243,43 @@ theorem isCompl_suspensionVerticalSubspace_suspensionHorizontalSubspace :
       exact hc
     · rw [← map_add, e.symm_apply_eq]
       exact Prod.ext (zero_add _) ((add_comm _ _).trans hcw)
+
+variable (φ) in
+/-- The vertical space of `X_φ = (ℝ / ℤ)_s × Y_φ` is the kernel of the differential of
+`(s, y) ↦ (s, p y)`, the product of the identity of the `s`-circle with the projection
+`p : Y_φ → ℝ / ℤ`. -/
+theorem suspensionVerticalSubspace_eq_ker_mfderiv_prodMap
+    (q : UnitAddCircle × SmoothMappingTorus φ) :
+    suspensionVerticalSubspace φ q =
+      (mfderiv (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (𝓘(ℝ).prod 𝓘(ℝ)) (Prod.map id (proj φ)) q).ker := by
+  ext ξ
+  obtain ⟨v, rfl⟩ := (Manifold.tangentSpaceProdEquiv q).symm.surjective ξ
+  rw [mem_suspensionVerticalSubspace_iff, ContinuousLinearEquiv.apply_symm_apply,
+    LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
+    Manifold.mfderiv_prodMap_apply mdifferentiableAt_id
+      ((contMDiff_proj φ).mdifferentiableAt (by simp)),
+    mfderiv_id, ContinuousLinearMap.id_apply, ContinuousLinearEquiv.map_eq_zero_iff,
+    Prod.mk_eq_zero]
+
+variable (φ) in
+/-- **The vertical bundle of the symplectic suspension.** For a diffeomorphism of a
+finite-dimensional smooth manifold `M`, the vertical spaces `V`, the pullback to
+`X_φ = (ℝ / ℤ)_s × Y_φ` of the vertical tangent spaces `ker dp` of the mapping torus, form a smooth
+distribution of rank `dim M`: they are the kernels of the differential of the submersion
+`(s, y) ↦ (s, p y)`. -/
+theorem isContMDiffDistribution_suspensionVerticalSubspace [FiniteDimensional ℝ E] :
+    IsContMDiffDistribution (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ (Module.finrank ℝ E)
+      (suspensionVerticalSubspace φ) := by
+  have hsub : Manifold.IsSubmersion (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (𝓘(ℝ).prod 𝓘(ℝ)) ∞
+      (Prod.map (id : UnitAddCircle → UnitAddCircle) (proj φ)) :=
+    Manifold.IsSubmersion.id.prodMap (isSubmersion_proj φ)
+  have h := hsub.isContMDiffDistribution_ker_mfderiv (m := ∞) le_rfl
+  have hk : Module.finrank ℝ (ℝ × ℝ × E) - Module.finrank ℝ (ℝ × ℝ) = Module.finrank ℝ E := by
+    simp only [Module.finrank_prod, Module.finrank_self]
+    omega
+  rw [hk] at h
+  convert h using 1
+  exact funext (suspensionVerticalSubspace_eq_ker_mfderiv_prodMap φ)
 
 /-! ### The pulled back fiber form and vertical components -/
 
