@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.MarkovChain.EntranceLimits
 public import TauCeti.Probability.MarkovChain.Recurrence
 public import TauCeti.Probability.Process.Excursion.MarkovChain
+public import TauCeti.Probability.Process.Occupation
 public import TauCeti.Probability.Renewal.StrongLaw
 
 /-!
@@ -17,6 +18,10 @@ For a chain started at a state to which it returns almost surely, the fraction o
 times spent at that state converges almost surely to the reciprocal extended mean return time.
 The inverse is taken in `ℝ≥0∞` before conversion to `ℝ`; in particular the frequency is zero
 when the mean return time is infinite.
+
+For a chain started from a point mass, the expected number of visits to any target state
+at times one through `n` is the sum of the corresponding transition probabilities.
+This identity requires neither recurrence nor countability.
 
 The proof consumes the independent-excursion decomposition
 `TauCeti.Probability.iIndepFun_excursionProcess` and the renewal strong law. An excursion
@@ -46,8 +51,23 @@ open scoped ENNReal NNReal
 
 namespace ProbabilityTheory.Kernel
 
-variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [Countable α]
-  (κ : Kernel α α) [IsMarkovKernel κ] {y : α}
+variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
+  (κ : Kernel α α) [IsMarkovKernel κ]
+
+/-- The expected number of visits to `y` at times one through `n`, starting from `x`,
+is the sum of the corresponding transition probabilities. -/
+theorem integral_visitCount_succ_markovChainLaw_dirac (x y : α) (n : ℕ) :
+    (∫ ω, (visitCount (fun k => ω (k + 1)) y n : ℝ)
+      ∂markovChainLaw (Measure.dirac x) κ) =
+      ∑ i ∈ Finset.range n, ((κ ^ (i + 1)) x).real {y} := by
+  rw [integral_visitCount (fun i (ω : ℕ → α) => ω (i + 1))
+    (fun i => measurable_pi_apply (i + 1))]
+  apply Finset.sum_congr rfl
+  intro i hi
+  simp only [Measure.real, Measure.markovChainLaw_setOf_apply_eq_comp,
+    Measure.dirac_bind (κ ^ (i + 1)).measurable]
+
+variable [Countable α] {y : α}
 
 /-- **The occupation law of large numbers at a recurrent starting state.** The proportion of
 positive times through `n` spent at `y` converges to the reciprocal extended mean first return.

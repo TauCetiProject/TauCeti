@@ -1,56 +1,55 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Codex
 -/
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Module
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Morphism
+public import TauCeti.Algebra.Coalgebra.Comodule.Preadditive
 public import TauCeti.RingTheory.SimpleModule.Isotypic
 
 /-!
-# Coefficient spaces of simple comodules are isotypic components
+# Simple coefficient spaces are isotypic components
 
-Let `C` be a coalgebra over a commutative ring `R` which is projective as an `R`-module, for
-instance any coalgebra over a field. Regard `C` and its right comodules as left modules over the
-convolution dual `C →ₗ[R] R`, through `TauCeti.Comodule.convolutionModule`; comodule morphisms
-and subcomodules are then the module maps and submodules.
+The coefficient space of a simple right comodule is precisely its isotypic component
+in the regular module over the convolution dual. This comparison works for every coalgebra
+which is projective over its commutative ground ring, in particular over every field and for
+infinite-dimensional coalgebras: it uses the full linear dual, not field-valued points.
+Indeed each matrix-coefficient map `M → C` is a morphism out of the simple module `M`, and
+conversely each copy of `M` inside `C` consists of matrix coefficients of `M`, each element of
+`C` being its own coefficient against the counit.
 
-For a simple right comodule `M`, the span of the matrix coefficients of `M` is exactly the
-`M`-isotypic component of the regular comodule `C`. Indeed each matrix-coefficient map `M → C`
-is a morphism out of the simple module `M`, and conversely each copy of `M` inside `C` consists
-of matrix coefficients of `M`, each element of `C` being its own coefficient against the counit.
+Consequently the coefficient spaces of pairwise non-isomorphic simple comodules are
+independent, and distinct simple coefficient spaces are independent, even without a
+cosemisimplicity assumption. The independence argument transports Mathlib's
+`sSupIndep_isotypicComponents` through restriction of scalars, using
+`Subcomodule.convolutionSubmoduleOrderIso` to compare the notions of simplicity.
+Two simple comodules which are projective over the ground ring, for instance any two simple
+comodules over a field, have the same coefficient space exactly when they are isomorphic, so
+coefficient spaces label the isomorphism classes of simple comodules.
 
-Consequently the coefficient spaces of pairwise non-isomorphic simple comodules are independent,
-and so are the coefficient spaces of the simple right coideals of `C`. Over a field, two simple
-comodules have the same coefficient space exactly when they are isomorphic. These are the
-independence and labelling halves of the algebraic Peter--Weyl decomposition of the coordinate
-ring of a linearly reductive group into the coefficient spaces of its irreducible
-representations.
+## Main declarations
 
-## Main statements
-
-* `TauCeti.Comodule.matrixCoefficientSubmodule_eq_isotypicComponent_restrictScalars`: the
-  coefficient space of a simple comodule `M` is the `M`-isotypic component of `C`.
-* `TauCeti.Comodule.iSupIndep_matrixCoefficientSubmodule`: coefficient spaces of pairwise
-  non-isomorphic simple comodules are independent.
-* `TauCeti.Comodule.sSupIndep_matrixCoefficientSubmodule_image_isAtom`: the coefficient spaces
-  of the simple right coideals of `C` form an independent set.
-* `TauCeti.Comodule.matrixCoefficientSubmodule_eq_iff`: two simple comodules, projective over
-  the ground ring, have the same coefficient space exactly when there is a nonzero morphism
-  between them.
+* `matrixCoefficientSubmodule_eq_isotypicComponent`: the coefficient/isotypic comparison.
+* `iSupIndep_matrixCoefficientSubmodule`: coefficient spaces of pairwise non-isomorphic simple
+  comodules are independent.
+* `matrixCoefficientSubmodule_eq_iff`: two simple comodules, projective over the ground ring,
+  have the same coefficient space exactly when there is a nonzero morphism between them.
+* `sSupIndep_simpleCoefficientSubmodules`: independence of the distinct simple blocks.
 
 ## References
 
-* M. Sweedler, *Hopf Algebras* (1969), Chapters II and XIV.
-* S. Montgomery, *Hopf Algebras and Their Actions on Rings* (1993), §5.1, the coradical as a
-  direct sum of simple subcoalgebras.
+* M. Sweedler, *Hopf Algebras*, Chapters II and XIV.
+* J. S. Milne, *Algebraic Groups* (2017), §12, matrix coefficients.
 -/
 
-public section
+public noncomputable section
 
 namespace TauCeti.Comodule
+
+attribute [local instance] convolutionModule
 
 section Semiring
 
@@ -70,12 +69,12 @@ theorem matrixCoefficientSubmodule_ne_bot [Module.Projective R M] [Nontrivial M]
 
 end Semiring
 
+section Ring
+
 variable {R C M N : Type*} [CommRing R]
   [AddCommGroup C] [Module R C] [Coalgebra R C] [Module.Projective R C]
   [AddCommGroup M] [Module R M] [Comodule R C M]
   [AddCommGroup N] [Module R N] [Comodule R C N]
-
-attribute [local instance] convolutionModule
 
 /-- Every copy of `M` inside the regular comodule consists of matrix coefficients of `M`: the
 `M`-isotypic component of `C`, for the convolution-dual action, lies in the coefficient space of
@@ -96,7 +95,7 @@ theorem isotypicComponent_restrictScalars_le_matrixCoefficientSubmodule :
 /-- The matrix coefficients of a simple comodule `M` lie in the `M`-isotypic component of the
 regular comodule, since each matrix-coefficient map is a morphism out of the simple module
 `M`. -/
-theorem matrixCoefficientSubmodule_le_isotypicComponent_restrictScalars
+theorem matrixCoefficientSubmodule_le_isotypicComponent
     [IsSimpleOrder (Subcomodule R C M)] :
     matrixCoefficientSubmodule (R := R) (C := C) (M := M) ≤
       (isotypicComponent (WithConv (C →ₗ[R] R)) C M).restrictScalars R := by
@@ -105,14 +104,13 @@ theorem matrixCoefficientSubmodule_le_isotypicComponent_restrictScalars
     simpa using
       (matrixCoefficientHom (C := C) φ).toConvolutionLinearMap.apply_mem_isotypicComponent m
 
-/-- **The coefficient space of a simple comodule is an isotypic component.** For a simple right
-comodule `M`, the span of its matrix coefficients is the `M`-isotypic component of the regular
-comodule `C`, viewed as a module over the convolution dual. -/
-theorem matrixCoefficientSubmodule_eq_isotypicComponent_restrictScalars
+/-- The coefficient space of a simple comodule is its isotypic component in the
+regular convolution-dual module, restricted to the ground ring. -/
+theorem matrixCoefficientSubmodule_eq_isotypicComponent
     [IsSimpleOrder (Subcomodule R C M)] :
     matrixCoefficientSubmodule (R := R) (C := C) (M := M) =
       (isotypicComponent (WithConv (C →ₗ[R] R)) C M).restrictScalars R :=
-  le_antisymm matrixCoefficientSubmodule_le_isotypicComponent_restrictScalars
+  le_antisymm matrixCoefficientSubmodule_le_isotypicComponent
     isotypicComponent_restrictScalars_le_matrixCoefficientSubmodule
 
 /-- Simple comodules joined by a nonzero morphism, which is then an isomorphism, have the same
@@ -126,8 +124,8 @@ theorem matrixCoefficientSubmodule_eq_of_ne_zero [IsSimpleOrder (Subcomodule R C
   have hf' : f.toConvolutionLinearMap ≠ 0 := fun h ↦ hf <| by
     ext m
     simpa using LinearMap.congr_fun h m
-  rw [matrixCoefficientSubmodule_eq_isotypicComponent_restrictScalars,
-    matrixCoefficientSubmodule_eq_isotypicComponent_restrictScalars,
+  rw [matrixCoefficientSubmodule_eq_isotypicComponent,
+    matrixCoefficientSubmodule_eq_isotypicComponent,
     (LinearEquiv.ofBijective _ (LinearMap.bijective_of_ne_zero hf')).isotypicComponent_eq]
 
 /-- If the only comodule morphism from a nonzero comodule `M` to `N` is zero, then `M` and `N`
@@ -148,8 +146,8 @@ theorem disjoint_matrixCoefficientSubmodule [IsSimpleOrder (Subcomodule R C M)]
   have := isSimpleModule_convolution_iff.mpr ‹IsSimpleOrder (Subcomodule R C M)›
   have := isSimpleModule_convolution_iff.mpr ‹IsSimpleOrder (Subcomodule R C N)›
   have := IsSimpleModule.nontrivial (WithConv (C →ₗ[R] R)) M
-  rw [matrixCoefficientSubmodule_eq_isotypicComponent_restrictScalars,
-    matrixCoefficientSubmodule_eq_isotypicComponent_restrictScalars,
+  rw [matrixCoefficientSubmodule_eq_isotypicComponent,
+    matrixCoefficientSubmodule_eq_isotypicComponent,
     Submodule.disjoint_restrictScalars_iff]
   exact disjoint_isotypicComponent _ _ M N (not_nonempty_convolutionLinearEquiv h)
 
@@ -167,28 +165,9 @@ theorem iSupIndep_matrixCoefficientSubmodule {ι : Type*} (M : ι → Type*)
   have hind := iSupIndep_isotypicComponent (WithConv (C →ₗ[R] R)) C M fun i j he ↦
     by_contra fun hij ↦ not_nonempty_convolutionLinearEquiv (hM hij) he
   intro i
-  simp_rw [matrixCoefficientSubmodule_eq_isotypicComponent_restrictScalars,
+  simp_rw [matrixCoefficientSubmodule_eq_isotypicComponent,
     ← Submodule.restrictScalars_iSup, Submodule.disjoint_restrictScalars_iff]
   exact hind i
-
-/-- **Coefficient spaces of simple right coideals are independent.** The coefficient spaces of
-the simple subcomodules of the regular comodule `C` form an independent set of submodules
-of `C`. -/
-theorem sSupIndep_matrixCoefficientSubmodule_image_isAtom :
-    sSupIndep ((fun S : Subcomodule R C C ↦ matrixCoefficientSubmodule (R := R) (C := C) (M := S))
-      '' {S | IsAtom S}) := by
-  rw [sSupIndep_iff]
-  -- Index the set by itself, choosing a simple right coideal with each coefficient space.
-  choose S hS hSP using fun P : (fun S : Subcomodule R C C ↦
-    matrixCoefficientSubmodule (R := R) (C := C) (M := S)) '' {S | IsAtom S} ↦ P.2
-  have : ∀ P, IsSimpleOrder (Subcomodule R C (S P)) :=
-    fun P ↦ Subcomodule.isSimpleOrder_iff_isAtom.mpr (hS P)
-  have hind := iSupIndep_matrixCoefficientSubmodule (R := R) (C := C) (fun P ↦ S P)
-    fun P Q hPQ f ↦ by_contra fun hf ↦
-      hPQ (Subtype.ext <| (hSP P).symm.trans <| (matrixCoefficientSubmodule_eq_of_ne_zero hf).trans
-        (hSP Q))
-  convert hind with P
-  exact (hSP P).symm
 
 /-- **Coefficient spaces label simple comodules.** Two simple comodules which are projective
 over the ground ring, for instance any two simple comodules over a field, have the same
@@ -206,5 +185,88 @@ theorem matrixCoefficientSubmodule_eq_iff [Module.Projective R M]
   have hd := disjoint_matrixCoefficientSubmodule hzero
   rw [← h, disjoint_self] at hd
   exact matrixCoefficientSubmodule_ne_bot hd
+
+end Ring
+
+section Field
+
+universe u v w
+
+variable {k : Type u} [Field k]
+  {C : Type v} [AddCommGroup C] [Module k C] [Coalgebra k C]
+  {M : Type w} [AddCommGroup M] [Module k M] [Comodule k C M]
+
+/-- Every simple comodule occurs in the regular convolution-dual module. In particular
+its isotypic component is one of Mathlib's nonzero isotypic components. -/
+theorem isotypicComponent_convolution_mem_isotypicComponents
+    [IsSimpleOrder (Subcomodule k C M)] :
+    isotypicComponent (WithConv (C →ₗ[k] k)) C M ∈
+      isotypicComponents (WithConv (C →ₗ[k] k)) C := by
+  let D := WithConv (C →ₗ[k] k)
+  have : IsSimpleModule D M := isSimpleModule_convolution_iff.mpr inferInstance
+  have : Nontrivial M := IsSimpleModule.nontrivial D M
+  obtain ⟨m, hm⟩ := exists_ne (0 : M)
+  obtain ⟨φ, hφ⟩ := Module.Projective.exists_dual_ne_zero k hm
+  let f := (matrixCoefficientHom (C := C) φ).toConvolutionLinearMap
+  have hf : f ≠ 0 := by
+    intro hf
+    apply hφ
+    have h := congrArg (Coalgebra.counit (R := k) (A := C)) (DFunLike.congr_fun hf m)
+    simpa [f] using h
+  let e := LinearEquiv.ofInjective f (f.injective_or_eq_zero.resolve_right hf)
+  have : IsSimpleModule D (LinearMap.range f) := IsSimpleModule.congr e.symm
+  exact ⟨LinearMap.range f, inferInstance, e.isotypicComponent_eq⟩
+
+/-- The distinct coefficient spaces of simple comodules whose carriers have the same
+universe as the coalgebra. Indexing by spaces, rather than by all simple objects,
+avoids repeating a block for isomorphic comodules. -/
+def simpleCoefficientSubmodules (k : Type u) [Field k]
+    (C : Type v) [AddCommGroup C] [Module k C] [Coalgebra k C] :
+    Set (Submodule k C) :=
+  {P | ∃ M : ComoduleCat.{u, v, v} k C,
+    IsSimpleOrder (Subcomodule k C M) ∧
+      P = matrixCoefficientSubmodule (R := k) (C := C) (M := M)}
+
+/-- Membership in the family of simple coefficient spaces is witnessed by a simple comodule. -/
+theorem mem_simpleCoefficientSubmodules {P : Submodule k C} :
+    P ∈ simpleCoefficientSubmodules k C ↔
+      ∃ M : ComoduleCat.{u, v, v} k C, IsSimpleOrder (Subcomodule k C M) ∧
+        P = matrixCoefficientSubmodule (R := k) (C := C) (M := M) := Iff.rfl
+
+/-- The coefficient space of a simple comodule belongs to the family of simple coefficient
+spaces. -/
+@[simp]
+theorem matrixCoefficientSubmodule_mem_simpleCoefficientSubmodules
+    {M : Type v} [AddCommGroup M] [Module k M] [Comodule k C M]
+    [IsSimpleOrder (Subcomodule k C M)] :
+    matrixCoefficientSubmodule (R := k) (C := C) (M := M) ∈
+      simpleCoefficientSubmodules k C :=
+  ⟨ComoduleCat.of k C M, inferInstance, rfl⟩
+
+/-- Zero is not a simple coefficient space. -/
+@[simp]
+theorem bot_notMem_simpleCoefficientSubmodules :
+    (⊥ : Submodule k C) ∉ simpleCoefficientSubmodules k C := by
+  rintro ⟨M, hM, h⟩
+  have : IsSimpleModule (WithConv (C →ₗ[k] k)) M := isSimpleModule_convolution_iff.mpr hM
+  have := IsSimpleModule.nontrivial (WithConv (C →ₗ[k] k)) M
+  exact matrixCoefficientSubmodule_ne_bot (R := k) (C := C) (M := M) h.symm
+
+/-- Distinct simple coefficient spaces are independent. This holds over arbitrary fields,
+and does not require that the coalgebra be linearly reductive. -/
+theorem sSupIndep_simpleCoefficientSubmodules :
+    sSupIndep (simpleCoefficientSubmodules k C) := by
+  let D := WithConv (C →ₗ[k] k)
+  have hind : iSupIndep fun P : isotypicComponents D C ↦ P.1.restrictScalars k := by
+    intro P
+    simpa only [← Submodule.restrictScalars_iSup, Submodule.disjoint_restrictScalars_iff]
+      using (sSupIndep_iff _).mp (sSupIndep_isotypicComponents D C) P
+  apply hind.sSupIndep_range.mono
+  rintro P ⟨M, hM, rfl⟩
+  let := hM
+  exact ⟨⟨_, isotypicComponent_convolution_mem_isotypicComponents (C := C) (M := M)⟩,
+    matrixCoefficientSubmodule_eq_isotypicComponent.symm⟩
+
+end Field
 
 end TauCeti.Comodule

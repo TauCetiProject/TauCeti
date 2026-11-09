@@ -456,7 +456,8 @@ private theorem continuousOn_update_neg_inv_invFunOn {A : Set ℂ} {c b : ℂ} {
           inf_le_left)).mono_left
             (nhdsWithin_mono _ (sdiff_subset_sdiff_left inter_subset_right))
       · exact eventually_nhdsWithin_of_forall fun s hs => hfAq s hs.1.1 hs.1.2 hs.2
-    simpa using (tendsto_inv₀_cobounded.comp ((tendsto_invFunOn_cobounded hA hfc).comp hq)).neg
+    have hφ := (tendsto_invFunOn_cobounded_cocompact hA hfc).mono_right cobounded_eq_cocompact.ge
+    simpa using (tendsto_inv₀_cobounded.comp (hφ.comp hq)).neg
 
 /-- The comparison map is holomorphic on the open upper half-disc, where `f⁻¹` agrees with the
 holomorphic inverse of `f` on the open set `T`. -/
@@ -548,9 +549,10 @@ private theorem exists_comparison_of_halfStripExterior {R ρ : ℝ} {c b : ℂ} 
   have hH : ∀ s ∈ upperHalfPlaneSet, s ≠ 0 := fun s (hs : 0 < s.im) h => by simp [h] at hs
   -- `f` is a closed embedding of `A`; `φ` is its continuous inverse on the closed image.
   set φ := invFunOn f A
-  have hfA : IsClosed (f '' A) := isClosed_image_of_tendsto_cobounded hA hfc hp
+  have hp' : Tendsto f (cocompact ℂ ⊓ 𝓟 A) (cobounded ℂ) := by rwa [← cobounded_eq_cocompact]
+  have hfA : IsClosed (f '' A) := isClosed_image_of_tendsto_cobounded hA hfc hp'
   have hφc : ContinuousOn φ (f '' A) :=
-    continuousOn_of_leftInvOn_of_tendsto_cobounded hA hfc hfi.leftInvOn_invFunOn hp
+    continuousOn_of_leftInvOn_of_tendsto_cobounded hA hfc hfi.leftInvOn_invFunOn hp'
   have hφA : ∀ y ∈ f '' A, φ y ∈ A ∧ f (φ y) = y := fun y hy => ⟨invFunOn_mem hy, invFunOn_eq hy⟩
   have hφU : ∀ y ∈ f '' T, φ y ∈ T ∧ φ y = invFunOn f T y := by
     rintro y ⟨z, hz, rfl⟩

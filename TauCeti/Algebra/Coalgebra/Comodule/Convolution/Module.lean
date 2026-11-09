@@ -25,9 +25,10 @@ No finiteness hypothesis on the coalgebra or the comodule is required.
 The module structure is named, rather than a global instance: install
 `Comodule.convolutionModule` locally when using the module-side API. The order
 isomorphism `Subcomodule.convolutionSubmoduleOrderIso` transports simplicity to
-`IsSimpleModule`, and `Subcomodule.isSimpleOrder_iff_isAtom` identifies the simple subcomodules
-with the atoms of the subcomodule lattice. This lets module-theoretic results, such as the
-Jacobson density theorem, apply to simple comodules and their matrix coefficients.
+`IsSimpleModule`. This lets module-theoretic results, such as the Jacobson density
+theorem, apply to simple comodules and their matrix coefficients.
+`Subcomodule.isSimpleModule_convolution_iff_isAtom` also compares an atom with
+the convolution-dual module on its inherited comodule carrier.
 
 This is a fully faithful passage to modules, not an equivalence with all modules over
 the convolution dual of an infinite-dimensional coalgebra.
@@ -270,19 +271,24 @@ end TauCeti.Comodule
 
 namespace TauCeti.Subcomodule
 
-/-- A subcomodule is a simple comodule in its own right exactly when it is an atom of the lattice
-of subcomodules. -/
-theorem isSimpleOrder_iff_isAtom {S : Subcomodule R C M} :
-    IsSimpleOrder (Subcomodule R C S) ↔ IsAtom S := by
-  -- The inclusion identifies `S` with its convolution-dual submodule as convolution-dual modules.
-  have hrange : LinearMap.range (subtype S).toConvolutionLinearMap = S.toConvolutionSubmodule := by
-    ext x
-    simp
-  let e := (LinearEquiv.ofInjective _ fun _ _ h ↦ Subtype.ext (by simpa using h)).trans
-    (LinearEquiv.ofEq _ _ hrange)
-  rw [← Comodule.isSimpleModule_convolution_iff, ← convolutionSubmoduleOrderIso.isAtom_iff,
-    convolutionSubmoduleOrderIso_apply, ← isSimpleModule_iff_isAtom]
-  exact ⟨fun _ ↦ .congr e.symm, fun _ ↦ .congr (N := S.toConvolutionSubmodule) e⟩
+/-- A subcomodule is an atom exactly when its inherited convolution-dual module is simple. -/
+theorem isSimpleModule_convolution_iff_isAtom (S : Subcomodule R C M) :
+    IsSimpleModule (WithConv (C →ₗ[R] R)) S ↔ IsAtom S := by
+  let f : S →ₗ[WithConv (C →ₗ[R] R)] M := S.subtype.toConvolutionLinearMap
+  have hf : Function.Injective f := by
+    intro x y h
+    exact Subtype.ext (by simpa [f] using h)
+  have hr : LinearMap.range f = S.toConvolutionSubmodule := by
+    ext m
+    constructor
+    · rintro ⟨x, rfl⟩
+      simp [f]
+    · intro hm
+      exact ⟨⟨m, hm⟩, by simp [f]⟩
+  rw [LinearEquiv.isSimpleModule_iff (R := WithConv (C →ₗ[R] R))
+      (M := S) (N := LinearMap.range f) (LinearEquiv.ofInjective f hf),
+    isSimpleModule_iff_isAtom, hr, ← convolutionSubmoduleOrderIso_apply,
+    OrderIso.isAtom_iff]
 
 end TauCeti.Subcomodule
 

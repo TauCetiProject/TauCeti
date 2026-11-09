@@ -70,12 +70,7 @@ theorem support_stableMeasure_of_abs_lt_one (hα : α ∈ Ioc 0 2) (hβ : |β| <
     apply eq_univ_of_univ_subset
     simpa only [Measure.support_eq_univ] using
       (gaussianReal_absolutelyContinuous' m (by positivity : 2 * s ^ 2 ≠ 0)).support_mono
-  · have hmap : (stableMeasure α β 1 0).map (fun x ↦ m + (s : ℝ) * x) =
-        stableMeasure α β s m := by
-      simpa [Real.sign_of_pos (NNReal.coe_pos.2 hs)] using
-        (stableMeasure_map_affine (α := α) (β := β) (s := 1) (m := 0)
-          (a := m) (b := (s : ℝ)) (Or.inl (NNReal.coe_pos.2 hs).ne'))
-    rw [← hmap, support_map_affine (NNReal.coe_pos.2 hs).ne',
+  · rw [← stableMeasure_one_zero_map_affine hs, support_map_affine (NNReal.coe_pos.2 hs).ne',
       support_standardStableMeasure_of_abs_lt_one ⟨hα.1, htwo⟩ hβ, image_univ]
     exact range_eq_univ.mpr fun y ↦ ⟨(y - m) / s, by
       field_simp [(NNReal.coe_pos.2 hs).ne']
