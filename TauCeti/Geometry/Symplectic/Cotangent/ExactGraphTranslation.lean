@@ -170,7 +170,7 @@ lemma strongDualCotangentSymplecticForm_fderiv_cotangentExactGraphTranslation
       strongDualCotangentSymplecticForm v w := by
   apply strongDualCotangentSymplecticForm_fderiv_cotangentFiberTranslate_of_extDeriv_eq_zero
   · exact (differentiableAt_differentialOneForm hdf).const_smul t
-  · rw [extDeriv_smul, extDeriv_differentialOneForm_apply_eq_zero hdf hf]
+  · rw [extDeriv_smul, extDeriv_differentialOneForm_apply_eq_zero hf]
     exact smul_zero _
 
 end TauCeti

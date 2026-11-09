@@ -61,11 +61,22 @@ lemma differentiableAt_differentialOneForm {f : V → ℝ} {x : V}
     DifferentiableAt ℝ (differentialOneForm f) x :=
   (ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ) (0 : Fin 1)).differentiableAt.comp x hf
 
-/-- The exterior derivative of `df` vanishes at every point where the derivative of `df` exists
-and is symmetric. -/
+/-- The exterior derivative of `df` vanishes at every point where the second derivative of `f` is
+symmetric; no differentiability of `df` is needed. -/
 lemma extDeriv_differentialOneForm_apply_eq_zero {f : V → ℝ} {x : V}
-    (hdf : DifferentiableAt ℝ (fderiv ℝ f) x) (hf : IsSymmSndFDerivAt ℝ f x) :
+    (hf : IsSymmSndFDerivAt ℝ f x) :
     extDeriv (differentialOneForm f) x = 0 := by
+  by_cases hdf : DifferentiableAt ℝ (fderiv ℝ f) x
+  swap
+  · let L := ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ) (0 : Fin 1)
+    have hfd : fderiv ℝ f = L.symm ∘ differentialOneForm f := by
+      funext y
+      simp [L, differentialOneForm]
+    have : ¬ DifferentiableAt ℝ (differentialOneForm f) x := fun h ↦ hdf (by
+      rw [hfd]
+      exact L.symm.differentiableAt.comp x h)
+    simp only [extDeriv, fderiv_zero_of_not_differentiableAt this]
+    exact map_zero _
   ext v
   have hv : v = ![v 0, v 1] := by
     funext i
@@ -88,9 +99,7 @@ lemma contDiff_differentialOneForm {f : V → ℝ} {m n : WithTop ℕ∞}
 lemma extDeriv_differentialOneForm_eq_zero {f : V → ℝ} (hf : ContDiff ℝ 2 f) :
     extDeriv (differentialOneForm f) = 0 := by
   funext x
-  exact extDeriv_differentialOneForm_apply_eq_zero
-    ((hf.fderiv_right le_rfl).differentiable one_ne_zero x)
-    (hf.contDiffAt.isSymmSndFDerivAt (by simp))
+  exact extDeriv_differentialOneForm_apply_eq_zero (hf.contDiffAt.isSymmSndFDerivAt (by simp))
 
 end TauCeti
 

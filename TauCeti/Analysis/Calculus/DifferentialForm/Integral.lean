@@ -62,11 +62,12 @@ private theorem integral_extDeriv_coordinate_eq_zero {n : ℕ}
 coefficient integrates to zero for every basis and its normalized Haar measure. -/
 theorem _root_.Module.Basis.integral_extDeriv_eq_zero {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {n : ℕ}
+    [MeasurableSpace E] [BorelSpace E] {n : ℕ}
     (b : Module.Basis (Fin (n + 1)) ℝ E) {ω : E → E [⋀^Fin n]→L[ℝ] ℝ}
     (hω : ContDiff ℝ 1 ω) (hc : HasCompactSupport ω) :
     Integrable (fun x ↦ extDeriv ω x b) b.addHaar ∧
       (∫ x, extDeriv ω x b ∂b.addHaar) = 0 := by
+  have : FiniteDimensional ℝ E := Module.Finite.of_basis b
   let L := b.equivFun.symm.toContinuousLinearEquiv
   let C := ContinuousAlternatingMap.compContinuousLinearMapCLM (F := ℝ) (ι := Fin n)
     L.toContinuousLinearMap
@@ -105,7 +106,7 @@ and `ψ` of degree `l` on a space of dimension `N = k + l + 1`, with `ψ` compac
 integrated against its Haar measure; the degrees `k + 1 + l` and `k + (l + 1)` of the two wedges
 are identified with `N` by `Fin.cast`. -/
 theorem _root_.Module.Basis.integral_extDeriv_wedge_eq_integral_wedge_extDeriv {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
     [BorelSpace E] {k l N : ℕ} (b : Module.Basis (Fin N) ℝ E) (hN : k + l + 1 = N)
     {φ : E → E [⋀^Fin k]→L[ℝ] ℝ} {ψ : E → E [⋀^Fin l]→L[ℝ] ℝ}
     (hφ : ContDiff ℝ 1 φ) (hψ : ContDiff ℝ 1 ψ) (hc : HasCompactSupport ψ) :

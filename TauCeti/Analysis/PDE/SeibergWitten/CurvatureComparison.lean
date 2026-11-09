@@ -71,6 +71,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [MeasurableSpace E] [BorelSpace E] {n : ℕ}
   {α : E → ℂ} {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} {χ : ℝ → ℝ} {ζ : E → E [⋀^Fin n]→L[ℝ] ℝ}
 
+omit [FiniteDimensional ℝ E] in
 /-- **The cutoff current against a test form.** For a compactly supported C1 test form `ζ` of
 degree `n` on a space of dimension `2 + n`, the pairing of `Θ - i F_a = Θ + db` with `ζ` is the
 pairing of the cutoff phase form `χ(|α|²) τ` with `dζ`. Top-degree coefficients are taken on a
