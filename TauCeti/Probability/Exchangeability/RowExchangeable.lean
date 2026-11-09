@@ -670,11 +670,11 @@ theorem RowExchangeable.measure_setOf_forall_mem_eq_lintegral_prod [IsFiniteMeas
     _ = ∏ t : Fin r, (lam ω : Measure (ι → α)) {v : ι → α | v (c t).1 ∈ B t} :=
         Finset.prod_fiberwise Finset.univ g _
 
-/-- **De Finetti for a row exchangeable array.** Over a countable row index and a nonempty standard
+/-- **De Finetti for a row exchangeable array.** Over a countable row index and a standard
 Borel state space, the columns of a row exchangeable array are conditionally i.i.d., and their
 directing measure almost surely factors over the rows: conditionally on it, the rows are
 independent as well as identically distributed within each row. -/
-theorem RowExchangeable.exists_directing_pi_eq_prod [StandardBorelSpace α] [Nonempty α]
+theorem RowExchangeable.exists_directing_pi_eq_prod [StandardBorelSpace α]
     [IsFiniteMeasure μ] (h : RowExchangeable μ Y) (hY : ∀ p, AEMeasurable (Y p) μ) :
     ∃ lam : Ω → ProbabilityMeasure (ι → α), ConditionallyIIDWith μ (arrayCol Y) lam ∧
       ∀ (B : ι → Set α) (F : Finset ι), (∀ a ∈ F, MeasurableSet (B a)) →
