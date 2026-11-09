@@ -1,3 +1,5 @@
+# Adapted from Mathlib's comment-label workflow:
+# https://github.com/leanprover-community/mathlib4/blob/master/.github/workflows/labels_from_comment.yml
 # Any contributor may add/remove an allowlisted label with a standalone LABEL/-LABEL line.
 # Only newly posted conversation comments count; editing/deleting a comment does not undo it.
 # The last matching line for each label wins. Labels and matching are case-sensitive.
@@ -11,8 +13,22 @@ permissions: {}
 
 jobs:
   label:
-    if: github.repository == 'TauCetiProject/TauCeti'
-    runs-on: ubuntu-latest
+    # Reject ordinary comments before allocating a runner. This broad, case-insensitive
+    # prefilter must include every label below; the parser still enforces exact commands.
+    if: >-
+      github.repository == 'TauCetiProject/TauCeti' && (
+        contains(github.event.comment.body, 'dont-repair-in-queue') ||
+        contains(github.event.comment.body, 'hold') ||
+        contains(github.event.comment.body, 'keep') ||
+        contains(github.event.comment.body, 'mathlib-overlap') ||
+        contains(github.event.comment.body, 'documentation') ||
+        contains(github.event.comment.body, 'enhancement') ||
+        contains(github.event.comment.body, 'help wanted')
+      )
+    # Keep comment commands responsive when GitHub-hosted runners are backlogged.
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-2x4-with-features
+      - namespace-features:github.run-id=${{ github.run_id }}
     timeout-minutes: 5
     steps:
       # No checkout: neither PR code nor comment text is ever executed.
@@ -51,6 +67,7 @@ jobs:
           owner: TauCetiProject
           repositories: TauCeti
           permission-issues: write
+          permission-pull-requests: write
 
       - name: Apply label commands
         if: steps.commands.outputs.labels != '[]'

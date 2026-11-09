@@ -9,7 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 public import TauCeti.Analysis.CStarAlgebra.Action.KMS.Basic
 public import TauCeti.Analysis.VonNeumannAlgebra.Adjoin
 import TauCeti.Analysis.CStarAlgebra.Action.GaussianSmearing
-import TauCeti.Analysis.CStarAlgebra.GNS
+import TauCeti.Analysis.CStarAlgebra.GNS.Basic
 import TauCeti.Analysis.VonNeumannAlgebra.Density
 
 /-!
