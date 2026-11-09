@@ -422,15 +422,6 @@ theorem hasPrescriptionProperty_presentedProP_demushkinWordNeTwo_iff (hq : p ∣
   obtain ⟨k, hk⟩ := hn
   -- For the crossed homomorphism `F` with `F (x_i) = δ_{ij}`, only the commutator factor
   -- containing `x_j` contributes to the value on the relator.
-  have hsum : ∀ j < n, ∀ F : freeProP p (Fin n) → ℤ_[p],
-      IsCrossedHom (χ.comp (presentedProP.mk p _)) F →
-      (∀ i, F (freeProPGen p n i) = if i = j then 1 else 0) →
-      ∑ i ∈ range (n / 2), F (labuteComm (freeProPGen p n (2 * i)) (freeProPGen p n (2 * i + 1))) =
-        F (labuteComm (freeProPGen p n (2 * (j / 2))) (freeProPGen p n (2 * (j / 2) + 1))) :=
-    fun j hj F hF hFv ↦ Finset.sum_eq_single _
-      (fun i _ hi ↦ hF.map_labuteComm_eq_zero_of_eq_zero
-        (by rw [hFv, ite_eq_right (by omega)]) (by rw [hFv, ite_eq_right (by omega)]))
-      fun h0 ↦ absurd (mem_range.2 (by omega)) h0
   -- The value of `F` on the relator, for `F (x_i) = δ_{ij}` and `j ≠ 0`, is `χ(x₁)^q F (x_a, x_b)`
   -- for the commutator factor `(x_a, x_b)` containing `x_j`.
   have hval : ∀ j, 0 < j → j < n → ∀ F : freeProP p (Fin n) → ℤ_[p],
@@ -439,7 +430,10 @@ theorem hasPrescriptionProperty_presentedProP_demushkinWordNeTwo_iff (hq : p ∣
       F (demushkinWordNeTwo q n (freeProPGen p n)) = 0 →
       F (labuteComm (freeProPGen p n (2 * (j / 2))) (freeProPGen p n (2 * (j / 2) + 1))) = 0 := by
     intro j hj₀ hj F hF hFv hFr
-    rw [hF.map_demushkinWordNeTwo, hsum j hj F hF hFv, hFv 0, ite_eq_right (by omega), mul_zero,
+    have hsum := hF.sum_map_labuteComm_eq_of_forall_eq_ite (s := 0) (m := n / 2) (Nat.zero_le _)
+      (by omega) hFv
+    simp only [add_zero, Nat.sub_zero] at hsum
+    rw [hF.map_demushkinWordNeTwo, hsum, hFv 0, ite_eq_right (by omega), mul_zero,
       add_zero, ← Units.val_pow_eq_pow_val] at hFr
     exact (Units.mul_right_eq_zero _).1 hFr
   -- The partner of `x_i`, `i ≠ 1`, in its commutator factor has `χ = 1`.
@@ -454,7 +448,10 @@ theorem hasPrescriptionProperty_presentedProP_demushkinWordNeTwo_iff (hq : p ∣
     obtain ⟨F₀, hF₀, hF₀v, hF₀r⟩ :=
       hχ.exists_isCrossedHom_comp_mk_forall_freeProPGen_eq_ite hrels (by omega : 0 < n)
     have hr := hF₀r _ rfl
-    rw [hF₀.map_demushkinWordNeTwo, hsum 0 (by omega) F₀ hF₀ hF₀v,
+    have hsum := hF₀.sum_map_labuteComm_eq_of_forall_eq_ite (s := 0) (m := n / 2) (Nat.zero_le _)
+      (by omega) hF₀v
+    simp only [add_zero, Nat.sub_zero] at hsum
+    rw [hF₀.map_demushkinWordNeTwo, hsum,
       presentedProP.comp_mk_freeProPGen, hx0, Units.val_one, one_pow, one_mul] at hr
     simp only [Nat.zero_div, Nat.mul_zero, Nat.zero_add, hF₀v, ite_eq_left, one_pow, sum_const,
       card_range, nsmul_eq_mul, mul_one] at hr
