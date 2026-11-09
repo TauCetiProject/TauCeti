@@ -75,6 +75,15 @@ namespace IsSl2Triple
 
 open LieAlgebra LieAlgebra.IsKilling LieModule TauCeti
 
+/-- An inner automorphism `g ∈ Int(L)` carries an `sl₂` triple `(h, e, f)` to the `sl₂` triple
+`(g h, g e, g f)`. -/
+theorem smul_of_mem_intLieAlgebra {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L]
+    [LieAlgebra ℚ L] {g : LinearMap.GeneralLinearGroup K L} (hg : g ∈ intLieAlgebra K L)
+    {h e f : L} (t : IsSl2Triple h e f) : IsSl2Triple (g • h) (g • e) (g • f) := by
+  have := t.map (intLieAlgebraLieEquiv ⟨g, hg⟩).toLieHom
+  simp only [LieEquiv.coe_toLieHom, intLieAlgebraLieEquiv_apply] at this
+  exact this ((smul_ne_zero_iff_ne g).mpr t.h_ne_zero)
+
 section Split
 
 variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ L]
@@ -94,9 +103,7 @@ theorem exists_mem_intLieAlgebra_smul_mem_dominantNeutralElements (b : (rootSyst
     fun i ↦ t.exists_int_weight_apply (i : Weight K H L)
   obtain ⟨g, hg, hgH⟩ := exists_mem_intLieAlgebra_forall_smul_eq_coweightEquiv w
   -- the inner automorphism `g` carries the triple to a triple
-  have t' : IsSl2Triple (g • (h : L)) (g • e) (g • f) := by
-    simpa using t.map (intLieAlgebraLieEquiv ⟨g, hg⟩).toLieHom
-      (by simpa [smul_ne_zero_iff_ne] using t.h_ne_zero)
+  have t' := t.smul_of_mem_intLieAlgebra hg
   rw [hgH] at t'
   exact ⟨g, hg, _, (b.mem_dominantNeutralElements_iff _).mpr ⟨⟨_, _, t'⟩, hw⟩,
     fun y ↦ hgH y ▸ SetLike.coe_mem _, hgH h, t'⟩
@@ -123,14 +130,10 @@ theorem exists_mem_intLieAlgebra_smul_mem_dominantNeutralElements_of_isAlgClosed
   have hg₁h : (g₁ : LinearMap.GeneralLinearGroup K L) • h ∈ H := by
     rw [← hg₁]
     exact ⟨h, hhH', by simp⟩
-  have t₁ : IsSl2Triple ((g₁ : LinearMap.GeneralLinearGroup K L) • h)
-      ((g₁ : LinearMap.GeneralLinearGroup K L) • e)
-      ((g₁ : LinearMap.GeneralLinearGroup K L) • f) := by
-    simpa using t.map (intLieAlgebraLieEquiv g₁).toLieHom
-      (by simpa [smul_ne_zero_iff_ne] using t.h_ne_zero)
   -- then an inner automorphism `g₂` normalizing `H` makes it dominant
   obtain ⟨g₂, hg₂, h', hh', -, hg₂h, t₂⟩ :=
-    exists_mem_intLieAlgebra_smul_mem_dominantNeutralElements b (h := ⟨_, hg₁h⟩) t₁
+    exists_mem_intLieAlgebra_smul_mem_dominantNeutralElements b (h := ⟨_, hg₁h⟩)
+      (t.smul_of_mem_intLieAlgebra g₁.2)
   exact ⟨g₂ * g₁, mul_mem hg₂ g₁.2, h', hh', by rwa [mul_smul],
     by simpa only [mul_smul] using t₂⟩
 
