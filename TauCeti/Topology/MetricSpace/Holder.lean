@@ -32,6 +32,7 @@ This is how an almost-everywhere Hölder estimate becomes a Hölder continuous r
 of full measure for a measure that is positive on open sets is dense.
 
 Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants.
+Postcomposition with an isometry keeps the constant and the exponent.
 
 Finally, on a metric space the infimum defining Mathlib's extended Hölder seminorm `eHolderNorm r f`
 is attained, so the seminorm is the best constant in the Hölder inequality. Equivalently, it is the
@@ -56,6 +57,8 @@ points, the form in which Hölder seminorms are written in analysis texts.
   constant `C` and exponent `r` stays within `C ρ^r` of its value at the centre.
 * `HolderOnWith.extend_of_dense`: a Hölder function on a dense set extends to a Hölder
   function on the whole space.
+* `Isometry.comp_holderOnWith`, `Isometry.comp_holderWith`: postcomposition with an isometry
+  preserves Hölder bounds.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 * `HolderOnWith.add`: sums of Hölder functions on a set.
 * `IsCompact.exists_holderOnWith_thickening_and_norm_le`: a function which is Hölder on a ball
@@ -132,6 +135,20 @@ theorem holderOnWith_iff_dist_le {X Y : Type*} [PseudoMetricSpace X] [PseudoMetr
     {C r : ℝ≥0} {f : X → Y} {s : Set X} :
     HolderOnWith C r f s ↔ ∀ x ∈ s, ∀ y ∈ s, dist (f x) (f y) ≤ C * dist x y ^ (r : ℝ) :=
   ⟨fun hf _ hx _ hy => hf.dist_le hx hy, HolderOnWith.of_dist_le⟩
+
+/-- Postcomposition with an isometry preserves a Hölder bound on a set, with the same constant
+and exponent. -/
+theorem Isometry.comp_holderOnWith {X Y Z : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    [PseudoEMetricSpace Z] {g : Y → Z} (hg : Isometry g) {C r : ℝ≥0} {f : X → Y} {s : Set X}
+    (hf : HolderOnWith C r f s) : HolderOnWith C r (g ∘ f) s := fun x hx y hy => by
+  simpa only [Function.comp_apply, hg.edist_eq] using hf x hx y hy
+
+/-- Postcomposition with an isometry preserves a global Hölder bound, with the same constant and
+exponent. -/
+theorem Isometry.comp_holderWith {X Y Z : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    [PseudoEMetricSpace Z] {g : Y → Z} (hg : Isometry g) {C r : ℝ≥0} {f : X → Y}
+    (hf : HolderWith C r f) : HolderWith C r (g ∘ f) :=
+  holderOnWith_univ.mp (hg.comp_holderOnWith (hf.holderOnWith univ))
 
 /-- A function that satisfies the Hölder bound with constant `K` and exponent `r` between points of
 `s` at distance less than `δ > 0`, and whose values on `s` lie within distance `D` of each other,
@@ -332,3 +349,21 @@ theorem eHolderNorm_eq_iSup_dist {X Y : Type*} [MetricSpace X] [PseudoMetricSpac
   refine iSup_congr fun x => iSup_congr fun y => iSup_congr fun hxy => ?_
   rw [ENNReal.ofReal_div_of_pos (Real.rpow_pos_of_pos (dist_pos.2 hxy) _), edist_dist,
     edist_dist, ENNReal.ofReal_rpow_of_nonneg dist_nonneg r.coe_nonneg]
+
+/-- A curve on a set `S` of times with `d(u s, u t)² ≤ c |s - t|` is `1/2`-Hölder continuous on `S`
+with constant `c ^ (1 / 2)`. -/
+theorem HolderOnWith.of_edist_sq_le {u : ℝ → X} {S : Set ℝ} {c : ℝ} (hc0 : 0 ≤ c)
+    (hsq : ∀ s ∈ S, ∀ t ∈ S, s ≤ t → edist (u s) (u t) ^ 2 ≤ ENNReal.ofReal (c * |s - t|)) :
+    HolderOnWith (c.toNNReal ^ (2⁻¹ : ℝ)) (1 / 2) u S := by
+  refine fun s hs t ht ↦
+    ((ENNReal.le_rpow_inv_iff (y := ENNReal.ofReal (c * |s - t|)) two_pos).2 ?_).trans_eq ?_
+  · rw [ENNReal.rpow_two]
+    rcases le_total s t with hst | hst
+    · exact hsq s hs t ht hst
+    · rw [edist_comm, abs_sub_comm]
+      exact hsq t ht s hs hst
+  · -- the exponent `1 / 2 : ℝ≥0` is coerced to `ℝ` here and must become `2⁻¹`
+    have hhalf : ((1 / 2 : ℝ≥0) : ℝ) = 2⁻¹ := by norm_num
+    rw [ENNReal.coe_rpow_of_nonneg _ (by norm_num), ENNReal.ofNNReal_toNNReal, edist_dist,
+      Real.dist_eq, hhalf, ENNReal.ofReal_mul hc0,
+      ENNReal.mul_rpow_of_nonneg _ _ (by norm_num)]

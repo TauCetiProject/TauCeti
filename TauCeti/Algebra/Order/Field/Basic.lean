@@ -46,6 +46,9 @@ than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
 It also records the power inequality `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n)`
 from `L / (2 r) < m + 1`, which bounds the volume of a convex set containing a ball and a point.
 
+It also records how to bound a sum `U + Y` from `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`:
+solve the second estimate for `Y` and substitute it into the first.
+
 ## Main results
 
 * `TauCeti.le_of_forall_mem_Ioc_mul_le`: if `a ≤ m + ε * C` for every `ε ∈ (0, δ₀]`, then
@@ -69,6 +72,9 @@ from `L / (2 r) < m + 1`, which bounds the volume of a convex set containing a b
   `0 ≤ ε`, `0 < K` and `a + b ≤ K`.
 * `TauCeti.mul_pow_le_two_pow_mul_succ_mul_pow`: `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) *
   (r / 2) ^ n)` for `0 < r`, `1 ≤ n` and `L / (2 r) < m + 1`.
+* `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
+  `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
+* `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
 -/
 
 public section
@@ -229,6 +235,28 @@ theorem mul_pow_le_two_pow_mul_succ_mul_pow {α : Type*} [Field α] [LinearOrder
     _ = 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n) := by
       rw [mul_left_comm (2 ^ (n + 1) : α), h2, hrn]
       ring
+
+/-- If `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`, where `a, b ≥ 0`, `c > 0` and `Z, W ≥ 0`,
+then `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)`. -/
+theorem add_le_mul_add_mul_of_le_of_le {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {U Y Z W M a b c : α} (hc : 0 < c)
+    (ha : 0 ≤ a) (hb : 0 ≤ b) (hZ : 0 ≤ Z) (hW : 0 ≤ W)
+    (hX : U ≤ 2 * Z + 2 * M ^ 2 * Y) (hY : c / 2 * Y ≤ a * Z + b * W) :
+    U + Y ≤ (2 + (2 * M ^ 2 + 1) * (2 / c) * (a + b)) * Z +
+      (2 + (2 * M ^ 2 + 1) * (2 / c) * (a + b)) * W := by
+  have hY' : Y ≤ 2 / c * (a * Z + b * W) := by
+    rw [div_mul_eq_mul_div, le_div_iff₀ hc]
+    linarith
+  have hk : 0 ≤ (2 * M ^ 2 + 1) * (2 / c) := by positivity
+  nlinarith [mul_le_mul_of_nonneg_left hY' (by positivity : (0 : α) ≤ 2 * M ^ 2 + 1),
+    mul_nonneg (mul_nonneg hk hb) hZ, mul_nonneg (mul_nonneg hk ha) hW,
+    mul_nonneg (mul_nonneg hk ha) hZ, mul_nonneg (mul_nonneg hk hb) hW]
+
+/-- Absorbing the term `X * J` with `X ≤ 1 / 2` into the left side: `J ≤ Y + X * J` gives
+`J ≤ 2 * Y` for `0 ≤ J`. -/
+theorem le_two_mul_of_le_add_mul {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    {J X Y : α} (hJ : 0 ≤ J) (hX : X ≤ 1 / 2) (h : J ≤ Y + X * J) : J ≤ 2 * Y := by
+  nlinarith [mul_le_mul_of_nonneg_right hX hJ]
 
 end TauCeti
 
