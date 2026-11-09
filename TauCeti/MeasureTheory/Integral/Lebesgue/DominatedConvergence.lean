@@ -9,13 +9,15 @@ public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
+import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 
 /-!
 # Consequences of dominated convergence for Lebesgue integrals
 
 A function `f : α → ℝ≥0∞` of finite Lebesgue integral exceeds a large constant `M` only by an
-amount of small integral: `∫⁻ x, f x - M ∂μ → 0` as `M → ∞`. This is dominated convergence with
-the bound `f`, since `f x - M` vanishes for `M ≥ f x` and `f` is almost everywhere finite.
+amount of small integral: `∫⁻ x, f x - M ∂μ → 0` as `M → ∞`. The excess and the truncation
+`min f M` add up to `f`, so by superadditivity of the integral the integral of the excess is at
+most `∫⁻ f - ∫⁻ min f M`, which tends to `0` by monotone convergence for the truncations.
 
 The file also records a squeeze principle: if `f n ≤ g n + h n` and the integrals of `g n` and
 `h n` tend to `0`, so does the integral of `f n`; and the reverse Fatou lemma for integrals over
@@ -48,23 +50,19 @@ open scoped ENNReal NNReal
 
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α}
 
-/-- **Uniformly small tails.** If `f : α → ℝ≥0∞` is almost everywhere measurable with finite
-Lebesgue integral, then the integral of its excess `f x - M` over a finite level `M` tends to `0`
-as `M → ∞`. -/
-theorem tendsto_lintegral_tsub_atTop {f : α → ℝ≥0∞} (hf : AEMeasurable f μ)
-    (hfi : ∫⁻ x, f x ∂μ ≠ ∞) :
+/-- **Uniformly small tails.** If `f : α → ℝ≥0∞` has finite Lebesgue integral, then the integral
+of its excess `f x - M` over a finite level `M` tends to `0` as `M → ∞`. -/
+theorem tendsto_lintegral_tsub_atTop {f : α → ℝ≥0∞} (hfi : ∫⁻ x, f x ∂μ ≠ ∞) :
     Tendsto (fun M : ℝ≥0 ↦ ∫⁻ x, f x - M ∂μ) atTop (𝓝 0) := by
-  have h := tendsto_lintegral_filter_of_dominated_convergence' (l := atTop)
-    (F := fun (M : ℝ≥0) x ↦ f x - M) (f := fun _ ↦ 0) f
-    (Eventually.of_forall fun M ↦ hf.sub aemeasurable_const)
-    (Eventually.of_forall fun M ↦ ae_of_all _ fun x ↦ tsub_le_self) hfi ?_
-  · simpa using h
-  -- At a point where `f` is finite, the excess vanishes once `M ≥ f x`.
-  filter_upwards [ae_lt_top' hf hfi] with x hx
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [eventually_ge_atTop (f x).toNNReal] with M hM
-  rw [eq_comm, tsub_eq_zero_iff_le]
-  exact (ENNReal.coe_toNNReal hx.ne).symm.trans_le (ENNReal.coe_le_coe.2 hM)
+  -- The excess and the truncation at level `M` add up to `f`, and the integral is superadditive.
+  have hle (M : ℝ≥0) : ∫⁻ x, f x - M ∂μ ≤ ∫⁻ x, f x ∂μ - ∫⁻ x, min (f x) M ∂μ :=
+    ENNReal.le_sub_of_add_le_right
+      (ne_top_of_le_ne_top hfi (lintegral_mono fun _ ↦ min_le_left _ _))
+      ((le_lintegral_add _ _).trans (lintegral_mono fun x ↦ (tsub_add_min (a := f x)).le))
+  have h := ENNReal.Tendsto.sub (tendsto_const_nhds (x := ∫⁻ x, f x ∂μ))
+    (tendsto_lintegral_min_atTop (f := f) (μ := μ)) (.inl hfi)
+  rw [tsub_self] at h
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h (fun _ ↦ zero_le) hle
 
 /-- If `f n ≤ g n + h n` pointwise, `g n` is almost everywhere measurable, and the Lebesgue
 integrals of `g n` and `h n` tend to `0`, then so do those of `f n`. -/
