@@ -45,13 +45,6 @@ namespace WeierstrassCurve
 
 variable {F : Type*} [Field F] (W : WeierstrassCurve F)
 
-private lemma chord_x_ne {q₁ q₂ w₁ w₂ : F} (hw₁0 : w₁ ≠ 0) (hw₂0 : w₂ ≠ 0)
-    (hx : q₁ * w₂ - q₂ * w₁ ≠ 0) : q₁ / w₁ ≠ q₂ / w₂ := by
-  intro h
-  apply hx
-  field_simp at h
-  linear_combination h
-
 /-- The parametrized point `(q/w, -1/w)` is nonsingular whenever `(q, w)` satisfies the
 Weierstrass equation in the `(z, w)`-chart and the discriminant does not vanish. -/
 lemma chord_point_nonsingular {q w : F}
@@ -63,7 +56,6 @@ lemma chord_point_nonsingular {q w : F}
   rw [Affine.equation_iff]
   field_simp
   linear_combination hw
-
 
 /-- The cubic in the chord parameter left by substituting the line `w = Λ z + N` into the
 `(z, w)`-form of the Weierstrass equation, with its leading coefficient carried as the parameter
@@ -155,43 +147,14 @@ private lemma chord_addY {AA Λ N q₁ q₂ w₁ w₂ T₃ wT : F}
 
 variable [DecidableEq F]
 
-private lemma chord_addX_addY {q₁ q₂ w₁ w₂ Λ N T₃ wT : F}
-    (hw₁ : w₁ = q₁ ^ 3 + W.a₁ * q₁ * w₁ + W.a₂ * q₁ ^ 2 * w₁ + W.a₃ * w₁ ^ 2 +
-      W.a₄ * q₁ * w₁ ^ 2 + W.a₆ * w₁ ^ 3)
-    (hw₂ : w₂ = q₂ ^ 3 + W.a₁ * q₂ * w₂ + W.a₂ * q₂ ^ 2 * w₂ + W.a₃ * w₂ ^ 2 +
-      W.a₄ * q₂ * w₂ ^ 2 + W.a₆ * w₂ ^ 3)
-    (hslope : Λ * (q₂ - q₁) = w₂ - w₁)
-    (hN : N = w₁ - Λ * q₁)
-    (hT₃ : (1 + W.a₂ * Λ + W.a₄ * Λ ^ 2 + W.a₆ * Λ ^ 3) * (T₃ + q₁ + q₂) =
-      -(W.a₁ * Λ + W.a₂ * N + W.a₃ * Λ ^ 2 + 2 * W.a₄ * Λ * N + 3 * W.a₆ * Λ ^ 2 * N))
-    (hwT : wT = Λ * T₃ + N)
-    (hA : (1 + W.a₂ * Λ + W.a₄ * Λ ^ 2 + W.a₆ * Λ ^ 3) ≠ 0)
-    (hw₁0 : w₁ ≠ 0) (hw₂0 : w₂ ≠ 0) (hwT0 : wT ≠ 0)
-    (hx : q₁ * w₂ - q₂ * w₁ ≠ 0) :
-    T₃ / wT = W.toAffine.addX (q₁ / w₁) (q₂ / w₂)
-        (W.toAffine.slope (q₁ / w₁) (q₂ / w₂) (-1 / w₁) (-1 / w₂)) ∧
-      (1 - W.a₁ * T₃ - W.a₃ * wT) / wT =
-        W.toAffine.addY (q₁ / w₁) (q₂ / w₂) (-1 / w₁)
-          (W.toAffine.slope (q₁ / w₁) (q₂ / w₂) (-1 / w₁) (-1 / w₂)) := by
-  have hxq := chord_x_ne hw₁0 hw₂0 hx
-  have hline₁ : w₁ = Λ * q₁ + N := by linear_combination -hN
-  have hline₂ : w₂ = Λ * q₂ + N := by linear_combination -hN - hslope
-  have hqw : q₁ * w₂ - q₂ * w₁ = N * (q₁ - q₂) := by
-    linear_combination q₁ * hline₂ - q₂ * hline₁
-  have hN0 : N ≠ 0 := fun h ↦ hx (by rw [hqw, h, zero_mul])
-  have hq12 : q₁ - q₂ ≠ 0 := fun h ↦ hx (by rw [hqw, h, mul_zero])
-  have hℓ : W.toAffine.slope (q₁ / w₁) (q₂ / w₂) (-1 / w₁) (-1 / w₂) = Λ / N := by
-    rw [Affine.slope_of_X_ne hxq, div_eq_div_iff (sub_ne_zero.mpr hxq) hN0]
-    field_simp
-    linear_combination (w₂ - Λ * q₂) * hline₁ - w₁ * hline₂ + Λ * q₂ * hline₁
-  have hCub₁ := chordCubic_eq_zero W rfl hw₁ hline₁
-  have hCub₂ := chordCubic_eq_zero W rfl hw₂ hline₂
-  rw [hℓ]
-  exact ⟨chord_addX W rfl hline₁ hline₂ hCub₁ hCub₂ hT₃ hwT hA hq12 hN0 hw₁0 hw₂0 hwT0,
-    chord_addY W rfl hline₁ hline₂ hCub₁ hCub₂ hT₃ hwT hA hq12 hN0 hw₁0 hw₂0 hwT0⟩
+/-- The chord construction computes the group law, at the level of nonsingular points.
 
-
-/-- The chord construction computes the group law, at the level of nonsingular points. -/
+Let `(q₁, w₁)` and `(q₂, w₂)` be points of the `(z, w)`-chart whose affine points
+`(qᵢ / wᵢ, -1 / wᵢ)` are nonsingular with distinct `x`-coordinates, let `w = Λ z + N` be the
+chord through them, and let `T₃` be the third root of the cubic cut out by the chord (given by
+Vieta's formula `hT₃`), with `wT = Λ T₃ + N`. Then the sum of the two affine points is the point
+`(T₃ / wT, (1 - a₁ T₃ - a₃ wT) / wT)`, the negation of the third intersection point, and that
+point is nonsingular. -/
 lemma chord_point_add {q₁ q₂ w₁ w₂ Λ N T₃ wT : F}
     (hw₁ : w₁ = q₁ ^ 3 + W.a₁ * q₁ * w₁ + W.a₂ * q₁ ^ 2 * w₁ + W.a₃ * w₁ ^ 2 +
       W.a₄ * q₁ * w₁ ^ 2 + W.a₆ * w₁ ^ 3)
@@ -209,13 +172,25 @@ lemma chord_point_add {q₁ q₂ w₁ w₂ Λ N T₃ wT : F}
     (h₂ : W.toAffine.Nonsingular (q₂ / w₂) (-1 / w₂)) :
     ∃ h₃ : W.toAffine.Nonsingular (T₃ / wT) ((1 - W.a₁ * T₃ - W.a₃ * wT) / wT),
       Affine.Point.some _ _ h₁ + Affine.Point.some _ _ h₂ = Affine.Point.some _ _ h₃ := by
-  obtain ⟨hX, hY⟩ := chord_addX_addY W hw₁ hw₂ hslope hN hT₃ hwT hA hw₁0 hw₂0 hwT0 hx
-  have hxq := chord_x_ne hw₁0 hw₂0 hx
-  have hxy : ¬(q₁ / w₁ = q₂ / w₂ ∧ -1 / w₁ = W.toAffine.negY (q₂ / w₂) (-1 / w₂)) :=
-    fun h ↦ hxq h.1
-  refine ⟨hX ▸ hY ▸ Affine.nonsingular_add h₁ h₂ hxy, ?_⟩
-  rw [Affine.Point.add_some hxy]
-  simp only [Affine.Point.some.injEq]
+  have hxq : q₁ / w₁ ≠ q₂ / w₂ := by rwa [Ne, div_eq_div_iff hw₁0 hw₂0, ← sub_eq_zero]
+  have hline₁ : w₁ = Λ * q₁ + N := by linear_combination -hN
+  have hline₂ : w₂ = Λ * q₂ + N := by linear_combination -hN - hslope
+  have hqw : q₁ * w₂ - q₂ * w₁ = N * (q₁ - q₂) := by
+    linear_combination q₁ * hline₂ - q₂ * hline₁
+  have hN0 : N ≠ 0 := fun h ↦ hx (by rw [hqw, h, zero_mul])
+  have hq12 : q₁ - q₂ ≠ 0 := fun h ↦ hx (by rw [hqw, h, mul_zero])
+  -- the slope of the chord through the two points is `Λ / N` in the affine chart
+  have hℓ : W.toAffine.slope (q₁ / w₁) (q₂ / w₂) (-1 / w₁) (-1 / w₂) = Λ / N := by
+    rw [Affine.slope_of_X_ne hxq, div_eq_div_iff (sub_ne_zero.mpr hxq) hN0]
+    field_simp
+    linear_combination w₂ * hline₁ - w₁ * hline₂
+  have hCub₁ := chordCubic_eq_zero W rfl hw₁ hline₁
+  have hCub₂ := chordCubic_eq_zero W rfl hw₂ hline₂
+  have hX := chord_addX W rfl hline₁ hline₂ hCub₁ hCub₂ hT₃ hwT hA hq12 hN0 hw₁0 hw₂0 hwT0
+  have hY := chord_addY W rfl hline₁ hline₂ hCub₁ hCub₂ hT₃ hwT hA hq12 hN0 hw₁0 hw₂0 hwT0
+  rw [← hℓ] at hX hY
+  refine ⟨hX ▸ hY ▸ Affine.nonsingular_add h₁ h₂ fun h ↦ hxq h.1, ?_⟩
+  rw [Affine.Point.add_of_X_ne hxq, Affine.Point.some.injEq]
   exact ⟨hX.symm, hY.symm⟩
 
 end WeierstrassCurve

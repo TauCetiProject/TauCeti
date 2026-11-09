@@ -95,10 +95,9 @@ private theorem pentagonTerminalPartner_injective :
   rw [← h] at hF
   obtain ⟨honeD, hpD, hrD⟩ := G.pentagonTerminalSource_underlying C D
   obtain ⟨honeF, hpF, hrF⟩ := G.pentagonTerminalSource_underlying C F
-  have hbackD := hD.symm honeD hpD hrD
-  have hbackF := hF.symm honeF hpF hrF
+  have hbackD := hD.symm hpD hrD
+  have hbackF := hF.symm hpF hrF
   have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
-    (D.val.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide honeD)
   apply Subtype.ext
   apply GridPentagonRectangleDecomposition.toRectangleDecomposition_injective
   exact (GridRectangleDecomposition.existsUnique_isRecut _ hone

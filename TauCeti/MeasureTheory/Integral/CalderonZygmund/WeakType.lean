@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
+import Mathlib.MeasureTheory.Function.LpSeminorm.Count
 import TauCeti.MeasureTheory.Function.Lp.InfiniteSum
 
 /-!
@@ -202,6 +203,37 @@ section WeakType
 
 variable {ι : Type*} [Fintype ι] {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+omit [CompleteSpace E] in
+/-- **The weak-type bound on a one-point space.** For empty `ι`, the space `ι → ℝ` is a single
+point carrying the Dirac measure, so `t |{‖T f‖ > t}| ≤ ‖T‖ ‖f‖₁` for any bounded operator on
+`L²`. -/
+theorem mul_volume_lt_enorm_le_of_isEmpty [IsEmpty ι]
+    (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 (volume : Measure (ι → ℝ)))
+    (f : Lp E 2 (volume : Measure (ι → ℝ))) (t : ℝ≥0∞) :
+    t * volume {x | t < ‖T f x‖ₑ} ≤ ‖T‖ₑ * ∫⁻ x, ‖f x‖ₑ := by
+  classical
+  let x0 : ι → ℝ := fun i => isEmptyElim i
+  have hvol : (volume : Measure (ι → ℝ)) = Measure.dirac x0 := by
+    rw [volume_pi, Measure.pi_of_empty]
+  have hnormF : ‖T f‖ₑ = ‖T f x0‖ₑ := by
+    rw [Lp.enorm_def]
+    have := eLpNorm_dirac ((T f : Lp F 2 volume) : (ι → ℝ) → F) x0 (p := 2) (by norm_num)
+    rwa [← hvol] at this
+  have hnormE : ‖f‖ₑ = ‖f x0‖ₑ := by
+    rw [Lp.enorm_def]
+    have := eLpNorm_dirac ((f : Lp E 2 volume) : (ι → ℝ) → E) x0 (p := 2) (by norm_num)
+    rwa [← hvol] at this
+  have hint (g : (ι → ℝ) → ℝ≥0∞) : ∫⁻ x, g x = g x0 := by
+    have := lintegral_dirac x0 g
+    rwa [← hvol] at this
+  calc t * volume {x | t < ‖T f x‖ₑ} ≤ t * volume {x | t ≤ ‖T f x‖ₑ} :=
+        mul_le_mul' le_rfl (measure_mono (Set.ofPred_subset_ofPred.2 fun x hx => hx.le))
+    _ ≤ ∫⁻ x, ‖T f x‖ₑ :=
+        mul_meas_ge_le_lintegral₀ (Lp.aestronglyMeasurable (T f)).enorm t
+    _ = ‖T f‖ₑ := by rw [hint, hnormF]
+    _ ≤ ‖T‖ₑ * ‖f‖ₑ := T.le_opENorm f
+    _ = ‖T‖ₑ * ∫⁻ x, ‖f x‖ₑ := by rw [hint, hnormE]
 
 omit [CompleteSpace E] in
 /-- Chebyshev's inequality for the image of the good part under an operator bounded on `L²`. -/
