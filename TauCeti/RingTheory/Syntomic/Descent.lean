@@ -132,7 +132,8 @@ private theorem exists_finrank_tensor_ker_add_le {ι σ : Type} [Finite ι] [Fin
     exact hr
   · obtain ⟨ι', σ', _, _, P', hP'⟩ := hT.exists_presentation
     -- The kernel of `K[ι] → K ⊗[k] A` is the extension of the kernel of `k[ι] → A`.
-    have hker := P.ker_baseChange_eq_map K
+    have hker : PK.ker = P.ker.map (algebraMap P.Ring PK.Ring) :=
+      P.toGenerators.ker_baseChange_eq_map K
     have : Module.Flat P.Ring PK.Ring :=
       Module.Flat.isBaseChange (R := k) (M := K) _ _ (Algebra.IsPushout.out (R := k) (S := P.Ring)
         (R' := K) (S' := PK.Ring))
@@ -159,9 +160,7 @@ theorem exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of
   have : Algebra.FinitePresentation k A := .of_finitePresentation_tensorProduct_of_faithfullyFlat K
   let P := Algebra.Presentation.ofFinitePresentation k A
   obtain ⟨F, _, _, hF, hfin⟩ := exists_finrank_tensor_ker_add_le P h q
-  have : Module.Finite P.Ring P.ker := by
-    rw [Module.Finite.iff_fg, ← P.span_range_relation_eq_ker]
-    exact Submodule.fg_span (Set.finite_range _)
+  have : Module.Finite P.Ring P.ker := Module.Finite.iff_fg.mpr P.fg_ker
   obtain ⟨s, hs, r, hr, hrs⟩ :=
     Module.exists_finset_card_le_finrank_and_smul_mem_span (R := P.Ring) (M := P.ker) (F := F)
   let ϕ : P.Ring →ₐ[k] A := MvPolynomial.aeval P.val

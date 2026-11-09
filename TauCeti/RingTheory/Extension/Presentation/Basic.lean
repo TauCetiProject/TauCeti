@@ -26,8 +26,8 @@ by its values on the generators (`Algebra.Generators.algHom_ext`, in
 * `Algebra.Presentation.lift_val`: `P.lift x hx` sends the `i`-th generator to `x i`.
 * `MvPolynomial.map_ker_aeval_eq_ker_aeval_tmul`: base change of the kernel of a surjection
   `R[ι] → S` is the kernel of the corresponding map `B[ι] → B ⊗[R] S`.
-* `Algebra.Presentation.ker_baseChange_eq_map`: the kernel of the base change of a presentation is
-  the extension of its kernel.
+* `Algebra.Generators.ker_baseChange_eq_map`: the kernel of the base change of generators is the
+  extension of their kernel.
 -/
 
 public section
@@ -57,19 +57,6 @@ theorem lift_val (x : ι → T) (hx : ∀ r, aeval x (P.relation r) = 0) (i : ι
     P.lift x hx (P.val i) = x i := by
   rw [lift, ← aeval_X (R := R) P.val i, AlgHom.liftOfSurjective_apply, aeval_X]
 
-section BaseChange
-
-attribute [local instance] MvPolynomial.algebraMvPolynomial
-
-/-- The kernel of the base change of a presentation to `K` is the extension of its kernel. -/
-theorem ker_baseChange_eq_map (K : Type*) [CommRing K] [Algebra R K] :
-    (P.baseChange K).ker = P.ker.map (algebraMap P.Ring (P.baseChange K).Ring) := by
-  rw [← P.span_range_relation_eq_ker, Ideal.map_span, ← Set.range_comp]
-  exact (P.baseChange K).ker_eq_ker_aeval_val.trans
-    (P.span_range_relation_eq_ker_baseChange K).symm
-
-end BaseChange
-
 end Presentation
 
 /-- Base change of the kernel of a surjection from a polynomial ring onto `S`: if `ϕ : R[ι] → S`
@@ -96,5 +83,13 @@ theorem _root_.MvPolynomial.map_ker_aeval_eq_ker_aeval_tmul {ι : Type*} {val : 
     simp [PA]
   rw [h₁, h₂] at h
   exact h
+
+/-- The kernel of the base change of generators to `K` is the extension of their kernel. -/
+theorem Generators.ker_baseChange_eq_map {ι : Type*} (P : Generators R S ι) (K : Type*)
+    [CommRing K] [Algebra R K] :
+    (P.baseChange K).ker = P.ker.map (map (algebraMap R K)) := by
+  rw [Generators.ker_eq_ker_aeval_val, P.ker_eq_ker_aeval_val,
+    map_ker_aeval_eq_ker_aeval_tmul K P.aeval_val_surjective]
+  rfl
 
 end Algebra
