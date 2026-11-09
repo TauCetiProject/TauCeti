@@ -226,7 +226,7 @@ theorem _root_.ContinuousOn.apply_ne_apply_of_injOn_Ico {α δ : Type*}
     (hf.mono (by rw [uIcc_of_le hm.1.le]; exact Icc_subset_Icc le_rfl hm.2.le)) hv
   obtain ⟨t, ht, htv⟩ := intermediate_value_uIcc
     (hf.mono (by rw [uIcc_of_le hm.2.le]; exact Icc_subset_Icc hm.1.le le_rfl))
-    (show v ∈ uIcc (f m) (f b) by rwa [← hab', uIcc_comm])
+    (by simpa only [← hab', uIcc_comm] using hv)
   rw [uIcc_of_le hm.1.le] at hs
   rw [uIcc_of_le hm.2.le] at ht
   have htb : t ≠ b := by rintro rfl; exact hva (htv.symm.trans hab'.symm)
