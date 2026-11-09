@@ -186,8 +186,9 @@ theorem torusCommHopfAlgProperty_semisimpleFactor
   let _ : IsReduced (semisimpleFactor k H) := isReduced_of_smooth k _
   let _ : ConnectedSpace (PrimeSpectrum (semisimpleFactor k H)) :=
     (hH.image (_root_.CommHopfAlgCat.ofHom (semisimplePartBialgHom k H))).connectedSpace k _
-  exact torusCommHopfAlgProperty.of_groupLikeSetSpan_eq_top _
-    (groupLikeSetSpan_semisimpleFactor_eq_top k H)
+  exact splitTorusCommHopfAlgProperty.torus k _
+    (splitTorusCommHopfAlgProperty.of_groupLikeSetSpan_eq_top _
+      (groupLikeSetSpan_semisimpleFactor_eq_top k H))
 
 private theorem mapDomain_semisimplePart_mapDomain_unipotentPart
     (g : WithConv (H →ₐ[k] A)) :

@@ -334,8 +334,8 @@ private theorem lintegral_symplecticForm_le_liminf_of_tendsto_rescale_of_subset
     have hz₀ : (z₀, v w) ∈ U ×ˢ (univ : Set V) := ⟨hδU (mem_ball_self hδ), mem_univ _⟩
     have hUV := (hU.prod isOpen_univ).mem_nhds hz₀
     have hP := ω.tendsto_smul_perturbedFDeriv_rescale hc hε (hv w) (hdv w)
-      ((ω.continuousOn_uncurry_hamiltonianVectorField hU hKs).continuousAt hUV)
-      ((ω.continuousOn_uncurry_hamiltonianVectorField hU hKt).continuousAt hUV)
+      ((ω.continuousOn_uncurry_hamiltonianVectorField hKs).continuousAt hUV)
+      ((ω.continuousOn_uncurry_hamiltonianVectorField hKt).continuousAt hUV)
     have hω := ((ω.continuous_apply_comp continuous_fst continuous_snd).tendsto _).comp
       ((hP stdComplexLineReal).prodMk_nhds (hP stdComplexLineImag))
     refine (ENNReal.tendsto_ofReal hω).congr' (hB.mono fun i hi ↦ ?_)

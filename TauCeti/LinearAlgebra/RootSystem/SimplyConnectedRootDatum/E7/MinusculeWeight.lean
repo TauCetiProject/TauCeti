@@ -30,9 +30,18 @@ The table is closed under negation, and it carries an alternating sign, normaliz
 negative. The sign supplies the entries of the invariant alternating form of the minuscule
 carrier.
 
+Twice the inverse Cartan matrix defines an integral quadratic form on the weight lattice.
+The table is exactly the set of weights with coordinates in `[-1, 1]` and quadratic value `3`
+under this form.
+
 ## Main declarations
 
 * `TauCeti.DynkinType.e7MinusculeWeight`: the fifty-six weights in fundamental coordinates.
+* `TauCeti.DynkinType.e7TwiceInverse`: the integral twice-inverse Cartan matrix.
+* `TauCeti.DynkinType.cartanMatrix_E7_mul_e7TwiceInverse`: its product with the Cartan matrix
+  is twice the identity.
+* `TauCeti.DynkinType.mem_range_e7MinusculeWeight_of_bounded_of_quadratic_eq_three`: weights
+  with coordinates in `[-1, 1]` and quadratic value `3` belong to the table.
 * `TauCeti.DynkinType.odd_e7MinusculeWeight_add_add`: every weight pairs oddly with the sum of
   the simple coroots at the Bourbaki nodes `2`, `5` and `7`.
 * `TauCeti.DynkinType.e7MinusculeReflection`: the permutation induced by a simple reflection.
@@ -103,6 +112,44 @@ def e7MinusculeWeight : Fin 56 → Fin 7 → ℤ := ![
   ![0, 1, -1, 0, 0, 0, 0], ![0, -1, -1, 1, 0, 0, 0],
   ![0, 0, 0, -1, 1, 0, 0], ![0, 0, 0, 0, -1, 1, 0],
   ![0, 0, 0, 0, 0, -1, 1], ![0, 0, 0, 0, 0, 0, -1]]
+
+/-- Twice the inverse of the type-`E₇` Cartan matrix in Bourbaki node order (Plate VI).
+Its integral entries allow finite checks of the weight-lattice quadratic form. -/
+def e7TwiceInverse : Matrix (Fin 7) (Fin 7) ℤ := !![
+  4, 4, 6, 8, 6, 4, 2;
+  4, 7, 8, 12, 9, 6, 3;
+  6, 8, 12, 16, 12, 8, 4;
+  8, 12, 16, 24, 18, 12, 6;
+  6, 9, 12, 18, 15, 10, 5;
+  4, 6, 8, 12, 10, 8, 4;
+  2, 3, 4, 6, 5, 4, 3]
+
+/-- The E₇ Cartan matrix times its integral twice-inverse is twice the identity. -/
+theorem cartanMatrix_E7_mul_e7TwiceInverse : CartanMatrix.E 7 * e7TwiceInverse = 2 := by
+  rw [CartanMatrix.E_seven_eq]
+  decide
+
+private theorem bounded_weights_exhaustion : ∀ w : Fin 7 → Fin 3,
+    (∑ i, (∑ j, e7TwiceInverse i j * ((w j : ℤ) - 1)) * ((w i : ℤ) - 1)) = 3 →
+      ∃ a, e7MinusculeWeight a = fun j ↦ (w j : ℤ) - 1 := by
+  unfold e7TwiceInverse
+  simp only [Fin.forall_fin_succ_pi, Fin.forall_fin_zero_pi]
+  decide +kernel
+
+/-- An integral weight with simple-coroot coordinates in `[-1, 1]` and quadratic value `3`
+under twice the inverse Cartan matrix belongs to the minuscule table. -/
+theorem mem_range_e7MinusculeWeight_of_bounded_of_quadratic_eq_three (w : Fin 7 → ℤ)
+    (hw : ∀ i, -1 ≤ w i ∧ w i ≤ 1)
+    (hn : (∑ i, (∑ j, e7TwiceInverse i j * w j) * w i) = 3) :
+    w ∈ Set.range e7MinusculeWeight := by
+  let v : Fin 7 → Fin 3 := fun i ↦ ⟨(w i + 1).toNat, by have := hw i; omega⟩
+  have hv : (fun i ↦ (v i : ℤ) - 1) = w := by
+    funext i
+    have := hw i
+    simp only [v]
+    omega
+  obtain ⟨a, ha⟩ := bounded_weights_exhaustion v (by simpa only [← hv] using hn)
+  exact ⟨a, ha.trans hv⟩
 
 /-- The fifty-six minuscule weights are pairwise distinct. -/
 theorem e7MinusculeWeight_injective : Function.Injective e7MinusculeWeight := by

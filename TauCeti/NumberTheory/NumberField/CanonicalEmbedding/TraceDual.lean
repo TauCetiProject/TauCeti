@@ -41,6 +41,8 @@ the Dedekind zeta function.
 
 * `TauCeti.NumberField.mixedEmbedding.mixedInner_mixedEmbedding_traceToEuclidean`:
   `mixedInner K (σ x) (traceToEuclidean K (σ y)) = Tr_{K/ℚ} (x y)`.
+* `TauCeti.NumberField.mixedEmbedding.normAtPlace_traceToEuclidean`: it multiplies the absolute
+  value at `w` by `mult w`.
 * `TauCeti.NumberField.mixedEmbedding.det_traceToEuclidean`: its determinant is `(-4) ^ r₂`.
 * `TauCeti.NumberField.mixedEmbedding.comap_mixedDual_idealLattice`,
   `TauCeti.NumberField.mixedEmbedding.mixedDual_idealLattice`: the Euclidean dual of `σ(I)` is
@@ -85,6 +87,18 @@ theorem traceToEuclidean_apply_isComplex (x : mixedSpace K)
     (w : {w : InfinitePlace K // IsComplex w}) :
     (traceToEuclidean K x).2 w = 2 * conj (x.2 w) := by
   simp [traceToEuclidean, Units.smul_def, Complex.real_smul]
+
+/-- `traceToEuclidean K` multiplies the absolute value at each infinite place by its
+multiplicity: it fixes the real coordinates and doubles the complex ones. -/
+@[simp]
+theorem normAtPlace_traceToEuclidean (x : mixedSpace K) (w : InfinitePlace K) :
+    normAtPlace w (traceToEuclidean K x) = mult w * normAtPlace w x := by
+  rcases isReal_or_isComplex w with hw | hw
+  · rw [normAtPlace_apply_of_isReal hw, normAtPlace_apply_of_isReal hw,
+      traceToEuclidean_apply_isReal, mult_isReal ⟨w, hw⟩, Nat.cast_one, one_mul]
+  · rw [normAtPlace_apply_of_isComplex hw, normAtPlace_apply_of_isComplex hw,
+      traceToEuclidean_apply_isComplex, mult_isComplex ⟨w, hw⟩, norm_mul, Complex.norm_conj,
+      Complex.norm_ofNat, Nat.cast_ofNat]
 
 variable [NumberField K]
 
