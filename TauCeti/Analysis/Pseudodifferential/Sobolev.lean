@@ -52,6 +52,8 @@ Since the `H^s` norm is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`, this is the est
 
 * `TauCeti.Symbol.HasCompactSpatialSupport.exists_one_add_norm_pow_mul_norm_fourier_le`: rapid
   decay of the Fourier transform in the position.
+* `TauCeti.Symbol.HasCompactSpatialSupport.fourier_spatialDeriv`: the Fourier transform of a
+  position derivative is `2πi θ_j â(θ, ξ)`.
 * `TauCeti.Symbol.HasCompactSpatialSupport.fourier_quantizeSchwartzValue`: the Fourier transform
   of `Op(a) u`.
 * `TauCeti.Symbol.HasCompactSpatialSupport.exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le`:
@@ -74,6 +76,7 @@ noncomputable section
 
 open MeasureTheory Real FourierTransform TemperedDistribution
 open scoped ENNReal NNReal SchwartzMap BesselPotentialSpace RealInnerProductSpace ContDiff
+  LineDeriv
 
 namespace TauCeti
 
@@ -176,6 +179,26 @@ theorem HasCompactSpatialSupport.exists_one_add_norm_pow_mul_norm_fourier_le
     _ = 2 ^ N * (‖𝓕 (g ξ) η‖ + ‖η‖ ^ N * ‖𝓕 (g ξ) η‖) := by ring
     _ ≤ 2 ^ N * (B₀ * (1 + ‖ξ‖ ^ 2) ^ (m / 2) + B₁ * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by gcongr
     _ = 2 ^ N * (B₀ + B₁) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by ring
+
+/-- The Fourier transform in the position of the position derivative `∂_{x_j} a` is
+`2πi θ_j â(θ, ξ)`. -/
+theorem HasCompactSpatialSupport.fourier_spatialDeriv (ha : a.HasCompactSpatialSupport)
+    (j : Fin n) (ξ θ : CoordinateSpace n) :
+    𝓕 (fun y ↦ (Symbol.spatialDeriv j a).coefficient (y, ξ)) θ =
+      (2 * π * Complex.I * θ j) • 𝓕 (fun y ↦ a.coefficient (y, ξ)) θ := by
+  set f := (ha.hasCompactSupport_slice ξ).toSchwartzMap (a.contDiff_coefficient_slice ξ)
+  have hf : (fun y ↦ a.coefficient (y, ξ)) = ⇑f :=
+    (funext (HasCompactSupport.toSchwartzMap_toFun _ _)).symm
+  have hdf : (fun y ↦ (Symbol.spatialDeriv j a).coefficient (y, ξ)) =
+      ⇑(∂_{EuclideanSpace.single j (1 : ℝ)} f : 𝓢(CoordinateSpace n, V →L[ℂ] W)) := by
+    funext y
+    rw [SchwartzMap.lineDerivOp_apply_eq_fderiv, ← hf, ← fderiv_coefficient_single]
+  have hg : (fun x : CoordinateSpace n ↦ ⟪x, EuclideanSpace.single j (1 : ℝ)⟫).HasTemperateGrowth :=
+    ((innerSL ℝ).flip _).hasTemperateGrowth
+  rw [hdf, hf, ← SchwartzMap.fourier_coe, ← SchwartzMap.fourier_coe,
+    SchwartzMap.fourier_lineDerivOp_eq, smul_apply, SchwartzMap.smulLeftCLM_apply_apply hg,
+    EuclideanSpace.inner_single_right, smul_comm, ← Complex.coe_smul, smul_smul]
+  simp [mul_comm]
 
 end Decay
 
