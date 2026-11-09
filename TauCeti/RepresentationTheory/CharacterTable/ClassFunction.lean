@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.ConjFinite
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RepresentationTheory.Character
+public import TauCeti.LinearAlgebra.Trace.Basic
 
 /-!
 # Class functions
@@ -302,10 +303,8 @@ theorem invMap_ofCharacter {V : Type w} [AddCommGroup V] [Module k V]
     · exact (Representation.char_dual ρ g).symm
     · have hVd : ¬ Module.Finite k (Module.Dual k V) := fun h =>
         hV ((Module.finite_dual_iff k).mp h)
-      simp only [Representation.character, LinearMap.trace]
-      rw [dite_eq_right (fun ⟨s, ⟨b⟩⟩ => hV (Module.Finite.of_basis b)),
-        dite_eq_right (fun ⟨s, ⟨b⟩⟩ => hVd (Module.Finite.of_basis b))]
-      rfl)
+      simp [Representation.character, TauCeti.LinearMap.trace_eq_zero_of_not_finite hV,
+        TauCeti.LinearMap.trace_eq_zero_of_not_finite hVd])
 
 /-- The character of a finite-dimensional bundled representation is a class function. -/
 noncomputable def ofFDRep (V : FDRep k G) : ClassFunction k G :=
