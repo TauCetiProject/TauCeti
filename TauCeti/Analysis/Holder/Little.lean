@@ -70,6 +70,13 @@ small scales: for every `ε > 0` there is `δ > 0` such that
 def MemLittleHolder [PseudoMetricSpace Y] (α : ℝ≥0) (f : X → Y) : Prop :=
   ∀ ε > 0, ∃ δ > 0, ∀ x y, dist x y < δ → dist (f x) (f y) ≤ ε * dist x y ^ (α : ℝ)
 
+/-- Characterization of `MemLittleHolder`: for every `ε > 0` there is `δ > 0` such that
+`dist (f x) (f y) ≤ ε * dist x y ^ α` whenever `dist x y < δ`. -/
+theorem memLittleHolder_iff [PseudoMetricSpace Y] {α : ℝ≥0} {f : X → Y} :
+    MemLittleHolder α f ↔
+      ∀ ε > 0, ∃ δ > 0, ∀ x y, dist x y < δ → dist (f x) (f y) ≤ ε * dist x y ^ (α : ℝ) :=
+  Iff.rfl
+
 /-- A Hölder function of exponent `β` is little Hölder of every smaller exponent `α < β`. -/
 theorem _root_.HolderWith.memLittleHolder [PseudoMetricSpace Y] {C α β : ℝ≥0} {f : X → Y}
     (hf : HolderWith C β f) (hαβ : α < β) : MemLittleHolder α f := by
