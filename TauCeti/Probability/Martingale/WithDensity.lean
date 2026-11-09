@@ -25,7 +25,7 @@ representative pointwise with conditional expectations. Neither form upgrades
 fixed-time agreement to indistinguishability.
 
 The proof uses the conditional-density set-integral identity from
-`MeasureTheory.StronglyMeasurable.setIntegral_condExp_toReal_smul` and the native
+`MeasureTheory.AEStronglyMeasurable.setIntegral_condExp_toReal_smul` and the native
 conditional-expectation characterization of martingales.
 
 ## References
@@ -56,12 +56,13 @@ theorem StronglyAdapted.martingale_withDensity_iff (hX : StronglyAdapted ℱ X)
   have hadapt : StronglyAdapted ℱ
       (fun t ω ↦ μ[fun x ↦ (w x).toReal | ℱ t] ω • X t ω) :=
     fun t ↦ stronglyMeasurable_condExp.smul (hX t)
-  have hint' := fun t ↦ (hX t).integrable_condExp_toReal_smul hw (hint t)
+  have hint' := fun t ↦ (hX t).aestronglyMeasurable.integrable_condExp_toReal_smul hw (hint t)
   rw [hX.martingale_iff_setIntegral_eq hint, hadapt.martingale_iff_setIntegral_eq hint']
   refine forall_congr' fun s ↦ forall_congr' fun t ↦ imp_congr_right fun hst ↦ ?_
   refine forall_congr' fun A ↦ imp_congr_right fun hA ↦ ?_
-  rw [(hX s).setIntegral_condExp_toReal_smul (ℱ.le s) hw (hint s) hA,
-    (hX t).setIntegral_condExp_toReal_smul (ℱ.le t) hw (hint t) (ℱ.mono hst A hA)]
+  rw [(hX s).aestronglyMeasurable.setIntegral_condExp_toReal_smul (ℱ.le s) hw (hint s) hA,
+    (hX t).aestronglyMeasurable.setIntegral_condExp_toReal_smul (ℱ.le t) hw (hint t)
+      (ℱ.mono hst A hA)]
 
 /-- The martingale change-of-measure criterion with any strongly adapted version
 `Z` of the conditional density, such as a selected continuous density process.

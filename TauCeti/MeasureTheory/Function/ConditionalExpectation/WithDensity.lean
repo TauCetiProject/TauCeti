@@ -127,9 +127,11 @@ theorem condExp_withDensity_eq_div {f : Ω → ℝ} (hm : m ≤ mΩ)
         μ[fun y ↦ (w y).toReal | m] x := by
   simpa only [smul_eq_mul, div_eq_inv_mul] using condExp_withDensity hm hw hf
 
-/-- A variable known in `m`, integrable under the changed measure, remains integrable
-under the original measure after multiplication by the conditional density. -/
-theorem StronglyMeasurable.integrable_condExp_toReal_smul (hf : StronglyMeasurable[m] f)
+/-- A variable known in `m` up to `μ`-almost-everywhere equality, integrable under the
+changed measure, remains integrable under the original measure after multiplication by the
+conditional density. -/
+theorem AEStronglyMeasurable.integrable_condExp_toReal_smul
+    (hf : AEStronglyMeasurable[m] f μ)
     (hw : AEMeasurable w μ) [IsFiniteMeasure (μ.withDensity w)]
     (hint : Integrable f (μ.withDensity w)) :
     Integrable (fun x ↦ μ[fun y ↦ (w y).toReal | m] x • f x) μ := by
@@ -139,11 +141,13 @@ theorem StronglyMeasurable.integrable_condExp_toReal_smul (hf : StronglyMeasurab
   have hweighted := (integrable_withDensity_iff_integrable_smul₀' hw htop).mp hint
   exact integrable_condExp.congr
     (condExp_smul_of_aestronglyMeasurable_right
-      (integrable_toReal_of_lintegral_ne_top hw hmass) hweighted hf.aestronglyMeasurable)
+      (integrable_toReal_of_lintegral_ne_top hw hmass) hweighted hf)
 
 /-- On events in `m`, integration against the conditional density is integration
-under the changed measure, for an `m`-measurable integrable observable. -/
-theorem StronglyMeasurable.setIntegral_condExp_toReal_smul (hf : StronglyMeasurable[m] f)
+under the changed measure, for an observable integrable under that measure and
+`m`-strongly measurable up to `μ`-almost-everywhere equality. -/
+theorem AEStronglyMeasurable.setIntegral_condExp_toReal_smul
+    (hf : AEStronglyMeasurable[m] f μ)
     (hm : m ≤ mΩ) [SigmaFinite (μ.trim hm)] (hw : AEMeasurable w μ)
     [IsFiniteMeasure (μ.withDensity w)] (hint : Integrable f (μ.withDensity w))
     {s : Set Ω} (hs : MeasurableSet[m] s) :
@@ -153,7 +157,7 @@ theorem StronglyMeasurable.setIntegral_condExp_toReal_smul (hf : StronglyMeasura
   have htop := ae_lt_top' hw hmass
   have hweighted := (integrable_withDensity_iff_integrable_smul₀' hw htop).mp hint
   have hpull := condExp_smul_of_aestronglyMeasurable_right
-    (integrable_toReal_of_lintegral_ne_top hw hmass) hweighted hf.aestronglyMeasurable
+    (integrable_toReal_of_lintegral_ne_top hw hmass) hweighted hf
   calc
     ∫ x in s, μ[fun y ↦ (w y).toReal | m] x • f x ∂μ =
         ∫ x in s, μ[fun y ↦ (w y).toReal • f y | m] x ∂μ :=
