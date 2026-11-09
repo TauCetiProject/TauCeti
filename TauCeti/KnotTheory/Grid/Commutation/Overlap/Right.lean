@@ -739,23 +739,6 @@ theorem OMonomial_mul_OMonomial_recutRightEqRightSecond
       hrectangle hpentagon hsecond).OMonomial_mul_OMonomial_of_isRepartition D
       h.isRepartition G R
 
-/-- A rectangle between states whose columns end at a column `m` strictly inside the cyclic
-interval from `l` to the rotation of `a` covers only columns of `cIco l (finRotate n a)` and
-avoids both `a` and its rotation. -/
-private lemma coveredColumns_initial_piece_subset_notMem
-    {u v : GridState n} (E : GridRectangleBetween u v) {l : Fin n}
-    (hEleft : E.left = l) (hcol : E.right ∈ Grid.cIoo l (finRotate n a)) :
-    E.toGridRectangle.coveredColumns ⊆ Grid.cIco l (finRotate n a) ∧
-    a ∉ E.toGridRectangle.coveredColumns ∧
-    finRotate n a ∉ E.toGridRectangle.coveredColumns := by
-  obtain ⟨ha, hb⟩ := Grid.notMem_cIco_of_mem_cIoo_finRotate hcol
-  rw [← hEleft] at ha hb
-  refine ⟨fun c hc => ?_, ?_, ?_⟩
-  · rw [GridRectangleBetween.mem_coveredColumns, hEleft] at hc
-    exact Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hc hcol
-  · rwa [GridRectangleBetween.mem_coveredColumns]
-  · rwa [GridRectangleBetween.mem_coveredColumns]
-
 /-- Columns of an initial subrectangle of the rectangle in a rectangle--pentagon decomposition whose
 terminal side is common: if the pentagon's initial column splits the rectangle, the initial piece
 covers a subset of the rectangle's columns and avoids the commuted column `a`, which the rectangle
@@ -773,7 +756,9 @@ private lemma coveredColumns_initial_piece_rectangle
   have hcol' : D.pentagon.left ∈ Grid.cIoo D.rectangle.left (finRotate n a) := by
     simpa only [hcommon, D.pentagon.right_eq] using hcol
   obtain ⟨hsub, haNot, hbNot⟩ :=
-    coveredColumns_initial_piece_subset_notMem (a := a) E hEleft (hEright ▸ hcol')
+    E.coveredColumns_subset_and_notMem_of_right_mem_cIoo (a := a)
+      (by rwa [hEleft, hEright])
+  rw [hEleft] at hsub
   refine ⟨fun c hc => ?_, haNot, ?_, hbNot⟩
   · rw [GridRectangleBetween.mem_coveredColumns, hcommon, D.pentagon.right_eq]
     exact hsub hc
@@ -794,7 +779,9 @@ private lemma coveredColumns_initial_piece_pentagon
     a ∉ E.toGridRectangle.coveredColumns ∧
     finRotate n a ∉ E.toGridRectangle.coveredColumns := by
   obtain ⟨hsub, haNot, hbNot⟩ :=
-    coveredColumns_initial_piece_subset_notMem (a := a) E hEleft (hEright ▸ hcol')
+    E.coveredColumns_subset_and_notMem_of_right_mem_cIoo (a := a)
+      (by rwa [hEleft, hEright])
+  rw [hEleft] at hsub
   refine ⟨fun c hc => ?_, haNot, hbNot⟩
   rw [GridRectangleBetween.mem_coveredColumns, D.pentagon.right_eq]
   exact hsub hc
