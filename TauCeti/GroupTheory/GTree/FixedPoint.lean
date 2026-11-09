@@ -197,7 +197,8 @@ theorem isHyperbolic_mul_of_disjoint {s t : G} (hs : T.IsElliptic s) (ht : T.IsE
   -- Join the fixed vertices of `s` to those of `t` by a shortest path.
   have hs' : (fixedBy T.V s).Nonempty := (isElliptic_iff.mp hs).imp fun _ hv => mem_fixedBy.mpr hv
   have ht' : (fixedBy T.V t).Nonempty := (isElliptic_iff.mp ht).imp fun _ hv => mem_fixedBy.mpr hv
-  obtain ⟨a, ha, b, hb, p, hp, hpst⟩ := T.isTree.exists_isReduced_path hs' ht'
+  obtain ⟨a, ha, b, hb, p, hp, hpst⟩ :=
+    ((connected_iff _).mp (IsTree.connected _ T.isTree)).2.exists_isReduced_path hs' ht'
   have hab : a ≠ b := fun h => Set.disjoint_left.mp hst ha (h ▸ hb)
   refine isHyperbolic_mul_of_isReduced hp hab (mem_fixedBy.mp ha) (fun f hf hsf => ?_)
     (mem_fixedBy.mp hb) (fun e he hte => ?_)
