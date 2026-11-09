@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MonoidAlgebra.Grading
-public import Mathlib.Algebra.Polynomial.Laurent
-public import Mathlib.Data.ZMod.QuotientGroup
+public import Mathlib.Algebra.Module.Equiv.Basic
+public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.RingTheory.GradedAlgebra.Basic
 
@@ -46,10 +45,10 @@ grading graded-isomorphic to a shift has such a generator.
   the shift `A(d)` if and only if it has a unit in degree `-d`.
 * `TauCeti.sub_mem_homogeneousUnitDegrees_iff` and `TauCeti.ShiftClassGroup.mk_eq_mk_iff`: the
   shifts `A(d)` and `A(e)` are graded-isomorphic if and only if `d - e ∈ homogeneousUnitDegrees 𝒜`.
-* `TauCeti.homogeneousUnitDegrees_gradeBy`: for the group algebra `R[G]` graded by an additive
-  homomorphism `f : G →+ ι`, the homogeneous unit degrees are the range of `f`.
-* `TauCeti.shiftClassGroupLaurentPolynomialEquiv`: for the Laurent ring `R[T;T⁻¹]` with `T` of
-  degree `w`, the shift class group is `ZMod |w|`.
+
+The group-algebra and Laurent-polynomial examples, `TauCeti.homogeneousUnitDegrees_gradeBy` and
+`TauCeti.shiftClassGroupLaurentPolynomialEquiv`, are in `TauCeti.Algebra.MonoidAlgebra.Grading`
+and `TauCeti.Algebra.Polynomial.Laurent.Units`.
 
 -/
 
@@ -174,20 +173,13 @@ theorem exists_linearEquiv_of_isUnit_mem [AddSubmonoidClass σM A] [Decompositio
     [SetLike.GradedSMul 𝒜 ℳ] {u : A} (hu : IsUnit u) {c : ι} (hmem : u ∈ ℳ c) :
     ∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n - c) := by
   obtain ⟨v, rfl⟩ := hu
-  let φ : A ≃ₗ[A] A :=
-    { toFun y := y * v
-      invFun y := y * ((v⁻¹ : Aˣ) : A)
-      map_add' _ _ := add_mul _ _ _
-      map_smul' _ _ := mul_assoc _ _ _
-      left_inv _ := by simp
-      right_inv _ := by simp }
-  exact ⟨φ, fun n x ↦ mul_mem_iff_of_isUnit_mem 𝒜 ℳ v.isUnit hmem⟩
+  exact ⟨v.mulRightLinearEquiv A, fun n x ↦ mul_mem_iff_of_isUnit_mem 𝒜 ℳ v.isUnit hmem⟩
 
 variable {𝒜 ℳ}
 
 /-- A graded isomorphism from a shift `A(d)` onto a grading `ℳ` of `A` sends `1` to a homogeneous
 generator of `ℳ`: a unit of degree `-d`. -/
-theorem isUnit_apply_one_and_apply_one_mem {d : ι} (φ : A ≃ₗ[A] A)
+theorem _root_.LinearEquiv.isUnit_apply_one_and_apply_one_mem {d : ι} (φ : A ≃ₗ[A] A)
     (hφ : ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d)) : IsUnit (φ 1) ∧ φ 1 ∈ ℳ (-d) := by
   -- An `A`-linear endomorphism of `A` is right multiplication by its value at `1`.
   have hmul (ψ : A ≃ₗ[A] A) (x : A) : ψ x = x * ψ 1 := by
@@ -206,7 +198,7 @@ unit lying in `ℳ (-d)`. -/
 theorem exists_linearEquiv_iff_exists_isUnit_mem [AddSubmonoidClass σM A] [Decomposition ℳ]
     [SetLike.GradedSMul 𝒜 ℳ] {d : ι} :
     (∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d)) ↔ ∃ u : A, IsUnit u ∧ u ∈ ℳ (-d) := by
-  refine ⟨fun ⟨φ, hφ⟩ ↦ ⟨φ 1, isUnit_apply_one_and_apply_one_mem φ hφ⟩, fun ⟨u, hu, hmem⟩ ↦ ?_⟩
+  refine ⟨fun ⟨φ, hφ⟩ ↦ ⟨φ 1, φ.isUnit_apply_one_and_apply_one_mem hφ⟩, fun ⟨u, hu, hmem⟩ ↦ ?_⟩
   obtain ⟨φ, hφ⟩ := exists_linearEquiv_of_isUnit_mem 𝒜 ℳ hu hmem
   exact ⟨φ, fun n x ↦ by rw [hφ, sub_neg_eq_add]⟩
 
@@ -229,7 +221,7 @@ theorem sub_mem_homogeneousUnitDegrees_iff {d e : ι} :
     obtain ⟨φ, hφ⟩ := exists_linearEquiv_of_isUnit_mem 𝒜 𝒜 u.isUnit hu
     exact ⟨φ, fun n x ↦ by rw [hφ (n + e), show n + e - (e - d) = n + d by abel]⟩
   · -- The image of `1` is a unit of degree `e - d`.
-    obtain ⟨hu, hmem⟩ := isUnit_apply_one_and_apply_one_mem (ℳ := fun n ↦ 𝒜 (n + e)) φ hφ
+    obtain ⟨hu, hmem⟩ := φ.isUnit_apply_one_and_apply_one_mem (ℳ := fun n ↦ 𝒜 (n + e)) hφ
     rw [← neg_mem_iff, neg_sub]
     exact mem_homogeneousUnitDegrees_of_mem (u := hu.unit) (by simpa [neg_add_eq_sub] using hmem)
 
@@ -268,51 +260,5 @@ theorem eq_map_mulLeft_of_isUnit_mem {u : A} (hu : IsUnit u) {c : ι} (hmem : u 
     exact (mul_mem_iff_of_isUnit_mem 𝒜 ℳ hu hmem).mpr ha
 
 end Commutative
-
-section GroupAlgebra
-
-open AddMonoidAlgebra
-
-open scoped LaurentPolynomial
-
-variable {ι G : Type*} [AddGroup ι] [AddGroup G]
-
-/-- For the group algebra `R[G]` over a nontrivial commutative semiring, graded by an additive
-homomorphism `f : G →+ ι` (so that `single g r` has degree `f g`), the degrees of the homogeneous
-units are the range of `f`: each `single g 1` is a homogeneous unit of degree `f g`, and a nonzero
-element of degree `d` has a monomial of degree `d`. -/
-@[simp]
-theorem homogeneousUnitDegrees_gradeBy (R : Type*) [CommSemiring R] [Nontrivial R]
-    (f : G →+ ι) : homogeneousUnitDegrees (gradeBy R f) = f.range := by
-  refine le_antisymm (homogeneousUnitDegrees_le_iff.mpr fun u d hu ↦ ?_) fun d ⟨g, hg⟩ ↦ ?_
-  · obtain ⟨g, hg⟩ : (u : R[G]).coeff.support.Nonempty := by
-      rw [Finsupp.support_nonempty_iff, Ne, ← coeff_zero, coeff_inj]
-      exact u.ne_zero
-    exact ⟨g, (mem_gradeBy_iff R f d _).mp hu hg⟩
-  · let v : R[G]ˣ := ⟨single g 1, single (-g) 1, by simp [AddMonoidAlgebra.one_def],
-      by simp [AddMonoidAlgebra.one_def]⟩
-    exact mem_homogeneousUnitDegrees_of_mem (u := v) (hg ▸ single_mem_gradeBy _ _ _)
-
-/-- For the Laurent ring `R[T;T⁻¹]` over a nontrivial commutative semiring, graded with `T` of
-degree `w`, the degrees of the homogeneous units are the multiples of `w` (by
-`homogeneousUnitDegrees_gradeBy`), so the shift class group is `ZMod |w|`. This is the graded ring
-of `𝔾_m` acting on itself by `s • x = s ^ w * x`. -/
-noncomputable def shiftClassGroupLaurentPolynomialEquiv (R : Type*) [CommSemiring R]
-    [Nontrivial R] (w : ℤ) :
-    ShiftClassGroup (gradeBy R (zmultiplesHom ℤ w) : ℤ → Submodule R R[T;T⁻¹]) ≃+
-      ZMod w.natAbs :=
-  (QuotientAddGroup.quotientAddEquivOfEq (by simp)).trans
-    (Int.quotientZMultiplesEquivZMod w)
-
-/-- The identification of the shift classes of `R[T;T⁻¹]` with `ZMod |w|` sends the class of a
-shift `d` to `d mod |w|`. -/
-@[simp]
-theorem shiftClassGroupLaurentPolynomialEquiv_mk (R : Type*) [CommSemiring R] [Nontrivial R]
-    (w d : ℤ) : shiftClassGroupLaurentPolynomialEquiv R w d = d := by
-  -- Both quotient equivalences are induced by maps on representatives, and the last one is the
-  -- cast `ℤ → ZMod |w|`; Mathlib states no lemma evaluating them on a class.
-  rfl
-
-end GroupAlgebra
 
 end TauCeti
