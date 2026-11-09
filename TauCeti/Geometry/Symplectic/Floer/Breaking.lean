@@ -12,7 +12,7 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Geometry.Symplectic.Floer.Translation
+import TauCeti.Geometry.Symplectic.Floer.Translation.Basic
 import TauCeti.MeasureTheory.Integral.Lebesgue.ApproximateBound
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
