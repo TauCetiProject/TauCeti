@@ -157,7 +157,7 @@ theorem exists_negativeDisc_homotopy_euclidean
     (ψ₁.transHomeomorph S.toHomeomorph) (hsplit ψ₀ hf₀) (hsplit ψ₁ hf₁) (by simpa using h₀)
     (by simpa using h₁) (by simpa using hp) (hTS ▸ S.differentiableAt.comp 0 hT0)
   rw [hTS, S.comp_fderiv, S.symm.comp_right_fderiv, map_zero] at hh
-  refine ⟨e.trans (h.trans e.symm), ?_, δ₀, hδ₀, fun δ hδ ↦ ?_⟩
+  refine ⟨e.trans ((h.toLinearIsometryEquiv rfl).trans e.symm), ?_, δ₀, hδ₀, fun δ hδ ↦ ?_⟩
   · rw [EuclideanSpace.polarFactor_adjoint_comp_comp_piLpExtendByZero]
     funext w
     exact congrArg e.symm (congrFun hh (e w))
@@ -169,7 +169,8 @@ theorem exists_negativeDisc_homotopy_euclidean
   refine ⟨⟨fun p ↦ G (p.1, ⟨e p.2, he p.2⟩), by fun_prop⟩, fun w ↦ ?_, fun w ↦ ?_,
     fun t w ↦ ?_⟩
   · simp only [ContinuousMap.coe_mk, hG0, hsymm]
-  · simp only [ContinuousMap.coe_mk, hG1, LinearIsometryEquiv.trans_apply]
+  · simp only [ContinuousMap.coe_mk, hG1, LinearIsometryEquiv.trans_apply,
+      LinearIsometry.coe_toLinearIsometryEquiv]
     rw [← hsymm, LinearIsometryEquiv.apply_symm_apply]
   · simpa using hGf t ⟨e w, he w⟩
 
