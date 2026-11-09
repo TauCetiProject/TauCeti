@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
 import Mathlib.FieldTheory.Minpoly.Field
 
@@ -61,16 +60,3 @@ theorem adjoin_simple_eq_bot_iff_natDegree_eq_one {p : K[X]} {x : L} (hp : Irred
     natDegree_mul_C (inv_ne_zero (leadingCoeff_ne_zero.mpr hp.ne_zero))]
 
 end TauCeti.IntermediateField
-
-namespace IntermediateField
-
-open scoped IntermediateField
-
-/-- If `L = K(y)` for an element `y` of the bottom intermediate field, then `[L : K] = 1`. -/
-theorem finrank_eq_one_of_adjoin_eq_top_of_mem_bot {K L : Type*} [Field K] [Field L] [Algebra K L]
-    {y : L} (hgen : K⟮y⟯ = ⊤) (hy : y ∈ (⊥ : IntermediateField K L)) :
-    Module.finrank K L = 1 := by
-  rw [adjoin_simple_eq_bot_iff.2 hy] at hgen
-  exact bot_eq_top_iff_finrank_eq_one.mp hgen
-
-end IntermediateField

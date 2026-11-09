@@ -8,8 +8,8 @@ module
 public import TauCeti.FieldTheory.FunctionField.Different.Derivative
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Radical
 import TauCeti.FieldTheory.FunctionField.Different.Tower
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
+import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 
 /-!
 # The different of a radical extension `y ^ n = u`
@@ -174,9 +174,8 @@ theorem differentExponent_add_one_eq_of_pow_eq_of_gcd_ord_eq_one {y : F'} {n : �
     exact hn Nat.cast_zero
   rcases eq_or_ne u 0 with rfl | hu
   · simp only [ord_zero, Int.gcd_zero_right, Int.natAbs_natCast] at h
-    rw [differentExponent_eq_zero_of_finrank_eq_one k F P'
-      (IntermediateField.finrank_eq_one_of_adjoin_eq_top_of_mem_bot hgen
-        (by rw [eq_zero_of_pow_eq_zero (hy.trans (map_zero _))]; exact zero_mem _)), h]
+    rw [differentExponent_eq_zero_of_pow_eq_of_dvd_ord k F hgen hy hn
+      (by rw [ord_zero]; exact dvd_zero _), h]
   obtain ⟨z, c, hgenz, hz, hc, hz0⟩ :=
     exists_adjoin_eq_top_pow_eq_ord_eq_one k F (P'.restrict k F) hgen hy hu h
   -- `d ≤ (n - 1) · ord_{P'} z`, while `n · ord_{P'} z = e(P' ∣ P) ≤ d + 1`; so `ord_{P'} z = 1`.
@@ -220,14 +219,11 @@ private theorem ramificationIdx_eq_and_differentExponent_add_one_eq_of_pow_eq {y
     rintro rfl
     exact hn Nat.cast_zero
   rcases eq_or_ne u 0 with rfl | hu
-  · have hfin := IntermediateField.finrank_eq_one_of_adjoin_eq_top_of_mem_bot hgen
-      (by rw [eq_zero_of_pow_eq_zero (hy.trans (map_zero _))]; exact zero_mem _)
-    have h1 := ramificationIdx_le_finrank F P'
-    have h2 := ramificationIdx_pos F P'
-    rw [hfin] at h1
-    simp [differentExponent_eq_zero_of_finrank_eq_one k F P' hfin,
+  · simp only [ord_zero, Int.gcd_zero_right, Int.natAbs_natCast,
       Nat.div_self (Nat.pos_of_ne_zero hn0)]
-    omega
+    have hdvd : (n : ℤ) ∣ (P'.restrict k F).ord 0 := by rw [ord_zero]; exact dvd_zero _
+    exact ⟨ramificationIdx_eq_one_of_pow_eq_of_dvd_ord k F hgen hy hn hdvd,
+      by rw [differentExponent_eq_zero_of_pow_eq_of_dvd_ord k F hgen hy hn hdvd]⟩
   set m := (P'.restrict k F).ord u
   set r := Int.gcd n m
   set s := n / r
