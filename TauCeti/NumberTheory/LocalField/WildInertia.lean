@@ -748,7 +748,7 @@ theorem le_maximalTameExtension_iff [Algebra.IsSeparable K L] :
   have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K) N
   have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K) N
   have : IsGalois K N := ⟨⟩
-  have : ValuativeExtension L N := (IsScalarTower.toAlgHom K L N).valuativeExtension
+  have : ValuativeExtension L N := .of_isScalarTower (K := K)
   rw [← normalClosure_le_iff_of_normal, le_maximalTameExtension_iff_of_isGalois N]
   exact ⟨fun h ↦ h.tower_bot (L := L), fun h ↦ h.normalClosure⟩
 
