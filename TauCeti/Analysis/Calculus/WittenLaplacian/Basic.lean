@@ -296,23 +296,6 @@ private theorem fderiv_sum_wittenSummand_apply {f : (ι → ℝ) → ℝ} {φ : 
   simp only [FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.comp_apply,
     LinearMap.coe_toContinuousLinearMap', fderiv_wittenSummand_apply hf hφ]
 
-/-- A double sum `∑ⱼ ∑ᵢ εⱼ εᵢ Xⱼᵢ` with symmetric coefficients vanishes, since creations
-anticommute. -/
-private theorem sum_sum_exteriorCreation_exteriorCreation_eq_zero (X : ι → ι → Finset ι → ℝ)
-    (hX : ∀ i j, X i j = X j i) :
-    ∑ j, ∑ i, (Pi.basisFun ℝ ι).exteriorCreation j
-      ((Pi.basisFun ℝ ι).exteriorCreation i (X j i)) = 0 := by
-  set ε := (Pi.basisFun ℝ ι).exteriorCreation
-  have hanti : ∀ i j v, ε i (ε j v) = -ε j (ε i v) := fun i j v ↦
-    eq_neg_of_add_eq_zero_left
-      congr($((Pi.basisFun ℝ ι).exteriorCreation_mul_exteriorCreation_add_swap i j) v)
-  have h : ∑ j, ∑ i, ε j (ε i (X j i)) = -∑ j, ∑ i, ε j (ε i (X j i)) := by
-    conv_lhs => rw [Finset.sum_comm]
-    simp only [← Finset.sum_neg_distrib]
-    refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [hanti i j, hX i j]
-  exact self_eq_neg.mp h
-
 /-- **The Witten differential squares to zero**: `d_t d_t φ = 0` at `x` for `f` and `φ` that are
 `C²` at `x`. -/
 theorem euclideanWittenExtDeriv_euclideanWittenExtDeriv_apply {f : (ι → ℝ) → ℝ}
@@ -331,8 +314,9 @@ theorem euclideanWittenExtDeriv_euclideanWittenExtDeriv_apply {f : (ι → ℝ) 
       fderiv ℝ φ y (Pi.single i 1) + (t * fderiv ℝ f y (Pi.single i 1)) • φ y) := by
     funext y
     simp only [euclideanWittenExtDeriv_apply, one_smul, ε]
-  rw [euclideanWittenExtDeriv_apply, ← sum_sum_exteriorCreation_exteriorCreation_eq_zero X
-    fun i j ↦ by simp only [X, hS i j, hH i j]; module]
+  rw [euclideanWittenExtDeriv_apply,
+    ← (Pi.basisFun ℝ ι).sum_sum_exteriorCreation_exteriorCreation_eq_zero X
+      fun i j ↦ by simp only [X, hS i j, hH i j]; module]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [hdiff, fderiv_sum_wittenSummand_apply hf hφ t 1 ε (Pi.single j 1), ← hdiff,
     euclideanWittenExtDeriv_apply, Finset.smul_sum, ← Finset.sum_add_distrib, map_sum]

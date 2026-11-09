@@ -28,9 +28,11 @@ In coordinates `εᵢ` moves the coefficient of `s` to `insert i s` and `ιᵢ` 
 `i` to the front (`Module.Basis.exteriorCreation_apply`, `Module.Basis.exteriorContraction_apply`).
 They satisfy the canonical anticommutation relation `εᵢ ιⱼ + ιⱼ εᵢ = δᵢⱼ`
 (`Module.Basis.exteriorCreation_mul_exteriorContraction_add_swap`), creations anticommute among
-themselves (`Module.Basis.exteriorCreation_mul_exteriorCreation_add_swap`), and so do contractions
-(`Module.Basis.exteriorContraction_mul_exteriorContraction_add_swap`). The product `εᵢ ιᵢ` is the
-occupation projection onto the coordinates `s` containing `i`
+themselves (`Module.Basis.exteriorCreation_mul_exteriorCreation_add_swap`), so a double sum
+`∑ⱼ ∑ᵢ εⱼ εᵢ Xⱼᵢ` with symmetric coefficients vanishes
+(`Module.Basis.sum_sum_exteriorCreation_exteriorCreation_eq_zero`), and contractions anticommute
+too (`Module.Basis.exteriorContraction_mul_exteriorContraction_add_swap`). The product `εᵢ ιᵢ` is
+the occupation projection onto the coordinates `s` containing `i`
 (`Module.Basis.exteriorCreation_mul_exteriorContraction_self_apply`), so the commutator
 `⁅εᵢ, ιᵢ⁆` multiplies the coefficient of `s` by `1` if `i ∈ s` and by `-1` otherwise
 (`Module.Basis.lie_exteriorCreation_exteriorContraction_self_apply`), and `ιᵢ` is the transpose
@@ -165,6 +167,21 @@ theorem exteriorCreation_mul_exteriorCreation_add_swap (i j : I) :
   simp only [LinearMap.add_apply, mul_apply_eq_comp, exteriorCreation_equivFun, ← map_add,
     ← mul_assoc, ← add_mul, ExteriorAlgebra.ι_add_mul_swap, zero_mul, map_zero,
     LinearMap.zero_apply]
+
+/-- A double sum `∑ⱼ ∑ᵢ εⱼ εᵢ Xⱼᵢ` with symmetric coefficients vanishes, since creations
+anticommute and square to zero. -/
+theorem sum_sum_exteriorCreation_exteriorCreation_eq_zero (X : I → I → Finset I → R)
+    (hX : ∀ i j, X i j = X j i) :
+    ∑ j, ∑ i, b.exteriorCreation j (b.exteriorCreation i (X j i)) = 0 := by
+  rw [← Fintype.sum_prod_type']
+  refine Finset.sum_involution (fun p _ ↦ p.swap) (fun ⟨j, i⟩ _ ↦ ?_)
+    (fun ⟨j, i⟩ _ h hp ↦ h ?_) (fun p _ ↦ Finset.mem_univ _) (fun p _ ↦ p.swap_swap)
+  · rw [Prod.swap_prod_mk, hX i j]
+    exact congr($(b.exteriorCreation_mul_exteriorCreation_add_swap j i) (X j i))
+  · obtain rfl : i = j := congrArg Prod.fst hp
+    obtain ⟨x, hx⟩ := b.ExteriorAlgebra.equivFun.surjective (X i i)
+    rw [← hx, exteriorCreation_equivFun, exteriorCreation_equivFun, ← mul_assoc,
+      ExteriorAlgebra.ι_sq_zero, zero_mul, map_zero]
 
 /-- **Exterior contractions anticommute**: `ιᵢ ιⱼ + ιⱼ ιᵢ = 0`. -/
 theorem exteriorContraction_mul_exteriorContraction_add_swap (i j : I) :
