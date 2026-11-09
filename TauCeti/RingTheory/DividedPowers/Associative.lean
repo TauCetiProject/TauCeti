@@ -39,7 +39,7 @@ the generally noncommutative universal enveloping algebra.
 * `TauCeti.Associative.dividedPower_sub`: the corresponding signed expansion for a difference.
 * `TauCeti.Associative.map_dividedPower`: divided powers are natural under algebra homomorphisms.
 * `TauCeti.Associative.dividedPower_apply_mem_of_pow_two_eq_zero`: a square-zero endomorphism
-  preserving a set containing zero has all divided powers preserving it.
+  preserving a set has all divided powers preserving it, on the vectors of the set.
 * `TauCeti.Associative.dividedPower_units_conj`: divided powers are equivariant for conjugation by
   a unit.
 * `TauCeti.Associative.dividedPower_conj_smul_mem`: conjugation by a set-preserving unit transports
@@ -157,12 +157,15 @@ theorem dividedPower_apply_mem_of_pow_eq_zero
       LinearMap.zero_apply]
     exact hzero
 
-/-- Every divided power of a square-zero endomorphism preserves a set containing zero once the
-endomorphism itself does. -/
+/-- Every divided power of a square-zero endomorphism preserves a set once the endomorphism itself
+does. The set contains zero, being closed under `f` and `f ^ 2 = 0`, as soon as it has a vector. -/
 theorem dividedPower_apply_mem_of_pow_two_eq_zero
-    (f : Module.End ℚ V) (N : Set V) (hzero : 0 ∈ N) (hf : f ^ 2 = 0)
+    (f : Module.End ℚ V) (N : Set V) (hf : f ^ 2 = 0)
     (hN : ∀ {v : V}, v ∈ N → f v ∈ N) (n : ℕ) {v : V} (hv : v ∈ N) :
     dividedPower n f v ∈ N := by
+  have hzero : 0 ∈ N := by
+    have h := hN (hN hv)
+    rwa [← _root_.mul_apply_eq_comp, ← pow_two, hf, LinearMap.zero_apply] at h
   apply dividedPower_apply_mem_of_pow_eq_zero f N hzero 2 hf _ n hv
   intro k hk
   have hk' : k = 0 ∨ k = 1 := by omega
