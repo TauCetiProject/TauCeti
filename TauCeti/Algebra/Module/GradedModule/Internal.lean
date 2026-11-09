@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Binomial
 public import Mathlib.RingTheory.Finiteness.Basic
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.Algebra.Module.NatInt
 import TauCeti.Algebra.Module.Submodule.Finite
 
 /-!
@@ -720,16 +721,6 @@ namespace InternalGrading
 section KoszulTwistMul
 
 variable {R : Type u} {A : Type v} [Ring R]
-
-/-- Without any compatibility between the `R`-action and the product, the scalars `±1` still
-commute with multiplication, because `(-1) • a` is the additive inverse of `a`. -/
-private theorem intUnits_smul_mul_smul [NonUnitalNonAssocSemiring A] [Module R A]
-    (u v : ℤˣ) (a b : A) :
-    (((u : ℤ) : R) • a) * (((v : ℤ) : R) • b) = (((u * v : ℤˣ) : ℤ) : R) • (a * b) := by
-  let : AddCommGroup A := Module.addCommMonoidToAddCommGroup R
-  let : NonUnitalNonAssocRing A := { ‹NonUnitalNonAssocSemiring A›, this with }
-  rcases Int.units_eq_one_or u with rfl | rfl <;> rcases Int.units_eq_one_or v with rfl | rfl <;>
-    simp
 
 /-- **The Koszul twist of a graded algebra is multiplicative**: degrees add under multiplication,
 so the signs `(-1) ^ (q |a|)` multiply. -/
