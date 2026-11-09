@@ -69,9 +69,9 @@ theorem Convex.zero_mem_interior_of_symmetric {𝕜 E : Type*} [Field 𝕜] [Lin
 namespace TauCeti
 
 /-- A closed segment is compact: it is the continuous image of `Icc 0 1`. -/
-theorem isCompact_segment (𝕜 : Type*) {E : Type*} [Field 𝕜] [LinearOrder 𝕜]
-    [IsStrictOrderedRing 𝕜] [TopologicalSpace 𝕜] [CompactIccSpace 𝕜] [AddCommGroup E]
-    [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E] (x y : E) :
+theorem isCompact_segment (𝕜 : Type*) {E : Type*} [Ring 𝕜] [PartialOrder 𝕜] [AddRightMono 𝕜]
+    [TopologicalSpace 𝕜] [CompactIccSpace 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+    [ContinuousAdd E] [ContinuousSMul 𝕜 E] (x y : E) :
     IsCompact (segment 𝕜 x y) := by
   rw [segment_eq_image']
   exact isCompact_Icc.image (by fun_prop)
