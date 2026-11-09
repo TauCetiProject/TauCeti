@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.CategoryTheory.CoarseSpace
+public import TauCeti.Topology.CategoryTheory.Functor.IsomorphismClasses
 public import TauCeti.Topology.CategoryTheory.Nerve.FullSubcategory
 
 /-!
-# Saturated open restrictions of classifying spaces
+# Saturated open and closed restrictions of classifying spaces
 
 For a groupoid `C` with continuous source, let `P` be an isomorphism-invariant property of
 objects. In every degree, the nerve of the full restriction to `P` is precisely the part
@@ -17,10 +18,15 @@ of the nerve whose coarse image lies in the image of `P`. If `P` is open, realiz
 this inclusion is an open embedding, and its range is exactly the preimage of that coarse
 subset. `CategoryTheory.ObjectProperty.fatClassifyingSpaceRestrictionHomeomorph` identifies
 this preimage, with its subspace topology, with the fat classifying space of the restriction.
+If `P` is closed, realization of the inclusion is instead a closed embedding with the same range
+(`CategoryTheory.ObjectProperty.isClosedEmbedding_fatClassifyingSpaceMap_ι`), and the coarse
+space of the restriction is the closed subspace of the coarse space over the image of `P`
+(`CategoryTheory.ObjectProperty.isClosedEmbedding_isomorphismClasses_map_ι`).
 
 No properness, étaleness, effectiveness or continuity of composition is needed here.
-This is an open-restriction theorem; it makes no assertion about realization of a closed
-union of faces.
+The closed statement identifies the fat classifying space of a closed saturated restriction, such
+as a closed union of faces, as a closed subspace. It supplies no neighbourhood-deformation data
+for that pair.
 
 The realization argument uses the augmented open-subspace theorem in
 `TauCeti.AlgebraicTopology.FatRealization`, as in the action-groupoid specialization
@@ -77,6 +83,30 @@ theorem isOpenEmbedding_fatClassifyingSpaceMap_ι (hP : IsOpen {x | P x}) :
     dsimp only [Functor.whiskerLeft_app]
     rw [TauCeti.coe_topologicalNerveMap_app]
     exact P.isOpenEmbedding_mapComposableArrows_ι hs hP _
+  · exact P.range_topologicalNerveMap_ι hs
+
+omit [IsGroupoid C] [TopologicalSpace (Quiver.Total C)] in
+/-- The coarse space of a saturated closed full subcategory is a closed subspace of the coarse
+space. Its image consists of the classes of objects satisfying `P`. -/
+theorem isClosedEmbedding_isomorphismClasses_map_ι (hP : IsClosed {x | P x}) :
+    IsClosedEmbedding (X := Quotient (isIsomorphicSetoid P.FullSubcategory))
+      (Y := Quotient (isIsomorphicSetoid C)) (isomorphismClasses.map P.ι.toCatHom) :=
+  P.ι.isClosedEmbedding_isomorphismClasses_map (TauCeti.isClosedEmbedding_obj_fullSubcategory hP)
+    fun x _ e ↦ ⟨⟨_, P.prop_of_iso e x.property⟩, rfl⟩
+
+include hs in
+/-- The inclusion of a saturated closed full subgroupoid induces a closed embedding on fat
+classifying spaces. All isotropy arrows are retained. -/
+theorem isClosedEmbedding_fatClassifyingSpaceMap_ι (hP : IsClosed {x | P x}) :
+    IsClosedEmbedding (TauCeti.fatClassifyingSpaceMap P.ι P.continuous_mapTotal_ι) := by
+  rw [TauCeti.fatClassifyingSpaceMap_eq]
+  apply TauCeti.fatRealization.isClosedEmbedding_map_of_range_eq_preimage
+    (TauCeti.fatClassifyingSpace.coarseAugmentation hs)
+    (V := Quotient.mk (isIsomorphicSetoid C) '' {x | P x})
+  · intro m
+    dsimp only [Functor.whiskerLeft_app]
+    rw [TauCeti.coe_topologicalNerveMap_app]
+    exact P.isClosedEmbedding_mapComposableArrows_ι hs hP _
   · exact P.range_topologicalNerveMap_ι hs
 
 /-- The preimage of a saturated coarse subset is the image of the fat classifying space

@@ -17,6 +17,9 @@ continuous on objects induces a continuous map on these quotients. If its object
 quotient map, so is the induced map. Consequently a fully faithful functor whose object map
 is quotient induces a homeomorphism `CategoryTheory.Functor.isomorphismClassesHomeomorph`.
 In particular this applies to fully faithful refinements with open surjective object map.
+A fully faithful functor whose object map is a closed embedding with range closed under
+isomorphisms induces a closed embedding
+(`CategoryTheory.Functor.isClosedEmbedding_isomorphismClasses_map`).
 
 For groupoids these quotients are the coarse spaces. The construction keeps all arrows and
 requires no faithfulness of an isotropy action. It does not require a continuous choice of
@@ -54,6 +57,36 @@ theorem isQuotientMap_isomorphismClasses_map (F : C ⥤ D) (hF : IsQuotientMap F
   exact (isQuotientMap_quotient_mk' (X := C) (s := isIsomorphicSetoid C)).of_comp_isQuotientMap
     (F.isomorphismClasses_map_comp_mk.symm ▸
       (isQuotientMap_quotient_mk' (X := D) (s := isIsomorphicSetoid D)).comp hF)
+
+/-- A fully faithful functor whose object map is a closed embedding, with range closed under
+isomorphisms, induces a closed embedding on isomorphism classes. For groupoids this identifies the
+coarse space of a closed saturated full subgroupoid with a closed subspace of the coarse space. -/
+theorem isClosedEmbedding_isomorphismClasses_map (F : C ⥤ D) [F.Full] [F.Faithful]
+    (hF : IsClosedEmbedding F.obj)
+    (hsat : ∀ ⦃x : C⦄ ⦃y : D⦄, (F.obj x ≅ y) → y ∈ Set.range F.obj) :
+    IsClosedEmbedding (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) := by
+  set φ : Quotient (isIsomorphicSetoid C) → Quotient (isIsomorphicSetoid D) :=
+    ⇑(isomorphismClasses.map F.toCatHom)
+  have hφ (x : C) : φ (Quotient.mk _ x) = Quotient.mk _ (F.obj x) := F.isomorphismClasses_map_mk x
+  refine .of_continuous_injective_isClosedMap
+    (F.continuous_isomorphismClasses_map hF.continuous) F.isomorphismClasses_map_injective
+    fun W hW ↦
+      (isQuotientMap_quotient_mk' (X := D) (s := isIsomorphicSetoid D)).isClosed_preimage.mp ?_
+  -- The classes in the image of `W` are those of the closed set `F.obj '' (mk ⁻¹' W)`.
+  convert hF.isClosedMap _
+    (hW.preimage (isQuotientMap_quotient_mk' (X := C) (s := isIsomorphicSetoid C)).continuous)
+    using 1
+  ext y
+  constructor
+  · rintro ⟨q, hq, hqy⟩
+    induction q using Quotient.inductionOn with | h x =>
+    obtain ⟨e⟩ := Quotient.exact ((hφ x).symm.trans hqy)
+    obtain ⟨x', rfl⟩ := hsat e
+    refine ⟨x', ?_, rfl⟩
+    exact (congrArg (· ∈ W) (Quotient.sound (s := isIsomorphicSetoid C) ⟨F.preimageIso e⟩)).mp hq
+  · rintro ⟨x, hx, rfl⟩
+    exact ⟨_, hx, hφ x⟩
 
 /-- A fully faithful functor with quotient object map identifies the spaces of isomorphism
 classes homeomorphically. For groupoids this is the coarse homeomorphism of the refinement. -/
