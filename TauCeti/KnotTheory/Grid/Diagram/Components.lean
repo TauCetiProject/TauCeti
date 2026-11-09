@@ -44,6 +44,8 @@ relabelings, as well as by diagonal reflection, half-turn rotation, and exchangi
 * `TauCeti.GridDiagram.IsKnot`: the represented link has exactly one component.
 * `TauCeti.GridDiagram.IsKnot.traversalIndex`: on a knot grid, the number of steps of the
   component permutation from a base column to a column.
+* `TauCeti.GridDiagram.reprString` and `Repr (GridDiagram n)`: a labeled box-drawing
+  representation using `link%` syntax.
 
 ## References
 
@@ -108,7 +110,7 @@ same square. -/
 theorem componentPerm_apply_ne_self (c : Fin n) : G.componentPerm c ≠ c := by
   intro h
   apply G.disjoint c
-  simpa [componentPerm] using congrArg (fun d => G.X d) h
+  rw [← G.X_componentPerm_apply c, h]
 
 /-- Every column belongs to the support of the component permutation. -/
 @[simp]
@@ -262,7 +264,7 @@ theorem IsKnot.traversalIndex_lt (c : Fin n) : hG.traversalIndex c₀ c < n := b
 
 /-- Distinct columns have distinct traversal indices. -/
 theorem IsKnot.traversalIndex_injective : Function.Injective (hG.traversalIndex c₀) :=
-  fun c c' h => by
+  fun c c' h ↦ by
     rw [← hG.pow_traversalIndex_apply c₀ c, ← hG.pow_traversalIndex_apply c₀ c', h]
 
 end traversalIndex
@@ -502,6 +504,98 @@ theorem isKnot_rotate : G.rotate.IsKnot ↔ G.IsKnot := by
 @[simp]
 theorem isKnot_swapMarkings : G.swapMarkings.IsKnot ↔ G.IsKnot := by
   simp [IsKnot]
+
+end GridDiagram
+
+namespace GridDiagram
+
+variable {n : ℕ}
+
+private structure ReprMark (n : ℕ) where
+  row : Fin n
+  col : Fin n
+  isO : Bool
+  deriving DecidableEq
+
+private def componentMarks (G : GridDiagram n) (columns : List (Fin n)) : List (ReprMark n) :=
+  columns.flatMap fun c ↦
+    [⟨G.O c, c, true⟩, ⟨G.O c, G.componentPerm c, false⟩]
+
+private def componentLabel (G : GridDiagram n) (cycle : Equiv.Perm (Fin n)) :
+    Finset (ReprMark n) :=
+  match List.argmin (fun mark : ReprMark n ↦ n * (n - mark.row.val) + mark.col.val)
+      (componentMarks G ((List.finRange n).filter fun c ↦ c ∈ cycle.support)) with
+  | some mark => {mark}
+  | none => ∅
+
+private def componentLabels (G : GridDiagram n) : Finset (ReprMark n) :=
+  G.componentCycles.biUnion (componentLabel G)
+
+private def indices : List (Fin n) :=
+  List.finRange n
+
+private def insideInterval (a b x : Fin n) : Bool :=
+  decide (min a.val b.val < x.val ∧ x.val < max a.val b.val)
+
+private def coversEdge (a b c d : Fin n) : Bool :=
+  decide (min a.val b.val ≤ c.val ∧ d.val ≤ max a.val b.val)
+
+private def crossingAt (G : GridDiagram n) (r c : Fin n) : Bool :=
+  G.O c ≠ r ∧ G.X c ≠ r ∧
+    insideInterval (G.O.toPerm.symm r) (G.X.toPerm.symm r) c ∧
+    insideInterval (G.O c) (G.X c) r
+
+private def centerChar (G : GridDiagram n) (labels : Finset (ReprMark n)) (r c : Fin n) : Char :=
+  if G.O c = r ∨ G.X c = r then
+    if (⟨r, c, true⟩ : ReprMark n) ∈ labels then
+      '○'
+    else if (⟨r, c, false⟩ : ReprMark n) ∈ labels then
+      '×'
+    else
+      let oCol := G.O.toPerm.symm r
+      let xCol := G.X.toPerm.symm r
+      let oRow := G.O c
+      let xRow := G.X c
+      let east := c.val == min oCol.val xCol.val
+      let north := r.val == max oRow.val xRow.val
+      if east then if north then '┌' else '└' else if north then '┐' else '┘'
+  else if crossingAt G r c then '│'
+  else if insideInterval (G.O.toPerm.symm r) (G.X.toPerm.symm r) c then '─'
+  else if insideInterval (G.O c) (G.X c) r then '│'
+  else ' '
+
+private def horizontalEdgeChar (G : GridDiagram n) (r c d : Fin n) : Char :=
+  let oCol := G.O.toPerm.symm r
+  let xCol := G.X.toPerm.symm r
+  if c.val + 1 == d.val && coversEdge oCol xCol c d then '─' else ' '
+
+private def rowChars (G : GridDiagram n) (labels : Finset (ReprMark n)) (r : Fin n) : List Char :=
+  List.ofFn fun i : Fin (2 * n - 1) ↦
+    if h : i.val % 2 = 0 then
+      centerChar G labels r ⟨i.val / 2, by omega⟩
+    else
+      horizontalEdgeChar G r ⟨i.val / 2, by omega⟩ ⟨i.val / 2 + 1, by omega⟩
+
+private def rowString (G : GridDiagram n) (labels : Finset (ReprMark n)) (r : Fin n) : String :=
+  String.ofList (rowChars G labels r)
+
+private def drawingLines (G : GridDiagram n) : List String :=
+  let labels := componentLabels G
+  indices.reverse.map fun r ↦ rowString G labels r
+
+/-- The canonical box-drawing string for a grid diagram. Each component's
+topmost-leftmost marking identifies its `O`/`X` coloring. -/
+def reprString (G : GridDiagram n) : String :=
+  String.intercalate "\n" (drawingLines G)
+
+/-- The `Repr` instance emits a `link%` term for this grid diagram. -/
+instance : Repr (GridDiagram n) where
+  reprPrec G _ :=
+    if G.reprString.isEmpty then
+      Std.Format.text "link% \"\""
+    else
+      let lines := G.reprString.splitOn "\n" |>.map fun line ↦ "  " ++ line
+      Std.Format.text ("link% \"\n" ++ String.intercalate "\n" lines ++ "\n\"")
 
 end GridDiagram
 
