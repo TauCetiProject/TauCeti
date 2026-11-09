@@ -136,18 +136,6 @@ end Vertical
 
 section Fibre
 
-/-- The slice `x ↦ (0, x)` of `ℝ × M` is an immersion with complement `ℝ`: in the product charts
-it is the inclusion `u ↦ (0, u)`. -/
-private theorem isImmersion_prodMk_zero [IsManifold I n M] :
-    IsImmersion I (𝓘(ℝ).prod I) n (Prod.mk (0 : ℝ) : M → ℝ × M) :=
-  IsImmersionOfComplement.isImmersion (F := ℝ) fun x ↦
-    IsImmersionAtOfComplement.mk_of_continuousAt_of_extChartAt
-      (continuous_const.prodMk continuous_id).continuousAt
-      (ContinuousLinearEquiv.prodComm ℝ E ℝ) fun u hu ↦ by
-        rw [extChartAt_prod, extChartAt_model_space_eq_id]
-        -- In the chart of `M`, the second component is `u` itself.
-        simpa using (extChartAt I x).right_inv hu
-
 variable [T2Space M] [LocallyCompactSpace M] [IsManifold I n M]
 
 /-- **The fibre inclusions are smooth embeddings.** For each real `t`, the fibre inclusion
@@ -160,7 +148,7 @@ theorem isSmoothEmbedding_mk (t : ℝ) : IsSmoothEmbedding I (𝓘(ℝ).prod I) 
     funext fun x ↦ by simp [flow_mk]
   rw [← h, isImmersion_diffeomorph_comp_iff]
   exact isImmersion_isLocalDiffeomorphAt_comp (fun x ↦ isLocalDiffeomorph_uncurry_mk φ _)
-    isImmersion_prodMk_zero
+    (isImmersion_prodMkRight_of_extChartAt_eq_zero (by simp))
 
 end Fibre
 
