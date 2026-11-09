@@ -36,7 +36,7 @@ Conversely, for almost complex structures tamed by `ω`, the energy density of a
 exactly where `∂_s u` does
 (`SmoothTwoForm.IsNondegenerate.floerEnergyDensity_cylindrical_eq_zero_iff`). The energy density
 of a `C¹` map is continuous
-(`SmoothTwoForm.IsNondegenerate.continuous_floerEnergyDensity_cylindrical`), so a `C¹` solution
+(`SmoothTwoForm.IsNondegenerate.continuous_floerEnergyDensity_zero_left`), so a `C¹` solution
 on the strip `ℝ × [0, 1]` has zero energy exactly when it is stationary there
 (`SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_eq_zero_iff`).
 
@@ -190,7 +190,9 @@ private theorem IsNondegenerate.eqOn_floerEnergyDensity_zero (hω : ω.IsNondege
     (hE : ∫⁻ z in (univ : Set ℝ) ×ˢ Ioo 0 1,
       ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) = 0) :
     EqOn (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u) 0 ((univ : Set ℝ) ×ˢ Icc 0 1) := by
-  have hρ := hω.continuous_floerEnergyDensity_cylindrical hH hu
+  have hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
+    hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
+  have hρ := hω.continuous_floerEnergyDensity_zero_left hKt hu
   -- A continuous function with zero integral over the open strip vanishes there.
   have hc := ENNReal.continuous_ofReal.comp hρ
   have hae := (lintegral_eq_zero_iff' hc.measurable.aemeasurable).1 hE
@@ -199,8 +201,8 @@ private theorem IsNondegenerate.eqOn_floerEnergyDensity_zero (hω : ω.IsNondege
     have h := Measure.eqOn_open_of_ae_eq hae (isOpen_univ.prod isOpen_Ioo) hc.continuousOn
       continuous_zero.continuousOn hz
     exact le_antisymm (ENNReal.ofReal_eq_zero.1 h)
-      (hω.floerEnergyDensity_cylindrical_nonneg (hJ z (strip_Ioo_subset_Icc hz))
-        (hfloer z (strip_Ioo_subset_Icc hz)))
+      (hω.floerEnergyDensity_zero_left_nonneg (Kt := fun w ↦ H w.2)
+        (hJ z (strip_Ioo_subset_Icc hz)) (hfloer z (strip_Ioo_subset_Icc hz)))
   -- By continuity it vanishes on the closed strip.
   exact h0.of_subset_closure hρ.continuousOn continuous_zero.continuousOn strip_Ioo_subset_Icc
     closure_univ_prod_Ioo.ge

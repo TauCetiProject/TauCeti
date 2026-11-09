@@ -40,15 +40,13 @@ rewrites the right-hand side as a difference of actions of the two loops, in two
 
 For a solution of the Floer equation and almost complex structures tamed by `ω`, the energy
 density is nonnegative
-(`TauCeti.SmoothTwoForm.IsNondegenerate.floerEnergyDensity_cylindrical_nonneg`), so for a weakly
+(`TauCeti.SmoothTwoForm.IsNondegenerate.floerEnergyDensity_zero_left_nonneg`), so for a weakly
 exact form the contractible action of the loops decreases along a Floer cylinder
 (`TauCeti.SmoothTwoForm.IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction`).
 This monotonicity underlies the action filtration of the Floer complex.
 
 ## Main results
 
-* `TauCeti.SmoothTwoForm.IsNondegenerate.continuous_floerEnergyDensity_cylindrical`: the energy
-  density of a `C¹` map for a cylindrical perturbation is continuous.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_cylindrical`: the energy of a
   map over `[a, b] × [0, 1]` for a cylindrical perturbation.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_contractibleLoopAction_sub`: for a
@@ -80,54 +78,13 @@ variable {E HM M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologica
   {I : ModelWithCorners ℝ E HM} [TopologicalSpace M] [ChartedSpace HM M]
   [IsManifold I (⊤ : ℕ∞) M]
 
-/-! ### Floer cylinders -/
-
 variable {ω : SmoothTwoForm I M} {H : ℝ → M → ℝ} {u : ℝ × ℝ → M}
-
-/-- The Floer energy density of a solution of `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` for the
-cylindrical perturbation `K = H_t dt` is nonnegative when `J` is tamed by `ω` at `u z`. -/
-theorem IsNondegenerate.floerEnergyDensity_cylindrical_nonneg (hω : ω.IsNondegenerate)
-    {z : ℝ × ℝ} {J : AlmostComplexStructure (TangentSpace I (u z))}
-    (hJ : (hω.symplecticFormAt (u z)).Tames J)
-    (hfloer : mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
-      J (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
-        ω.hamiltonianVectorField (H z.2) (u z)) = 0) :
-    0 ≤ ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z :=
-  floerEnergyDensity_nonneg hω hJ <|
-    (ω.isComplexLinearMap_perturbedMFDeriv_iff _ _ u z J).2 (by simpa using hfloer)
 
 /-! ### The energy identity for cylindrical perturbations -/
 
 section Energy
 
 variable [FiniteDimensional ℝ E]
-
-/-- **Continuity of the Floer energy density of a cylindrical perturbation.** For a jointly `C¹`
-time-dependent Hamiltonian `H` and a `C¹` map `u`, the Floer energy density of `u` for the
-cylindrical perturbation `K = H_t dt` is continuous on the whole plane: it is the symplectic area
-density `ω(∂_s u, ∂_t u)` plus the partial derivative `∂_s (H_t(u))`. -/
-theorem IsNondegenerate.continuous_floerEnergyDensity_cylindrical (hω : ω.IsNondegenerate)
-    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) :
-    Continuous (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u) := by
-  have hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
-    hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
-  -- The symplectic area density is continuous along the `C¹` map `u`.
-  let area : ℝ × ℝ → ℝ := fun z ↦ SmoothBundleForm.eval₂ ω (u z)
-    (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag)
-  have harea_cont : Continuous area :=
-    ((ω.isSmoothForm.of_le (by simp)).continuous_apply_mfderiv hu (1, 0) (0, 1)).congr fun z ↦ by
-      simp [area, SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
-  -- The derivative term `d(K(u))` is continuous, since `K_t(u)` is `C¹`.
-  have hf : ContDiff ℝ 1 fun w ↦ H w.2 (u w) :=
-    contMDiff_iff_contDiff.mp (hKt.comp (contMDiff_id.prodMk hu))
-  have hdK : Continuous fun z ↦ fderiv ℝ (fun w ↦ H w.2 (u w)) z stdComplexLineReal :=
-    (hf.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  -- Pointwise, the energy density is the area density plus `d(K(u))`.
-  refine (harea_cont.add hdK).congr fun z ↦ ?_
-  rw [hω.floerEnergyDensity_eq ((hu z).mdifferentiableAt one_ne_zero)
-    (contMDiffAt_const.mdifferentiableAt one_ne_zero)
-    ((hKt _).mdifferentiableAt one_ne_zero), hamiltonianCurvature_cylindrical]
-  simp [area]
 
 /-- **The energy identity for a cylindrical perturbation.** Let `H` be a `C¹` time-dependent
 Hamiltonian and `u` a `C¹` map, for a nondegenerate two-form on a finite-dimensional manifold.
@@ -146,7 +103,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cylindrical (hω : ω.IsNond
   have hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
     hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
   have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
-  have hE := hω.continuous_floerEnergyDensity_cylindrical hH hu
+  have hE := hω.continuous_floerEnergyDensity_zero_left hKt hu
   have h := hω.integral_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2) isOpen_univ
     hu.contMDiffOn contMDiffOn_const hKt.contMDiffOn hab' (subset_univ _)
     (hE.continuousOn.integrableOn_compact isCompact_Icc)
@@ -230,7 +187,8 @@ theorem IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction
       contractibleLoopAction ω.1 H (fun t ↦ u (a, t)) := by
   have h := hω.integral_floerEnergyDensity_eq_contractibleLoopAction_sub hωe hH hu hper hab hv
   have hnonneg := setIntegral_nonneg (μ := volume) (measurableSet_Icc.prod measurableSet_Icc)
-    fun z hz ↦ hω.floerEnergyDensity_cylindrical_nonneg (hJ z hz) (hfloer z hz)
+    fun z hz ↦ hω.floerEnergyDensity_zero_left_nonneg (Kt := fun w ↦ H w.2) (hJ z hz)
+      (hfloer z hz)
   linarith
 
 end Energy

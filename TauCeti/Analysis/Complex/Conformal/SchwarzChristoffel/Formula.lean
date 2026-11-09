@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Prevertex
 
 -- Non-public: the boundary-arc continuation of the pre-Schwarzian derivative and the passage from
 -- decay along the upper half-plane to decay at infinity are used only in the proof.
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.Conformal.Reflection.LogDeriv
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.Contour.PolarPart.PartialFraction
@@ -181,9 +182,8 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary
     EqOn f (fun z => deriv f z₀ / schwarzChristoffelIntegrand a e z₀ *
       schwarzChristoffelPrimitive a e z₀ z + f z₀) upperHalfPlaneSet := by
   have hfin : (range fun i => ((a i : ℝ) : ℂ)).Finite := finite_range _
-  have hre : (range fun i => ((a i : ℝ) : ℂ)) ⊆ {z : ℂ | z.im = 0} := by
-    rintro _ ⟨i, rfl⟩
-    simp
+  have hre : (range fun i => ((a i : ℝ) : ℂ)) ⊆ {z : ℂ | z.im = 0} :=
+    fun _ ⟨i, hi⟩ => by simp [← hi]
   -- Reflection across the boundary sides continues the pre-Schwarzian derivative off the
   -- prevertices.
   obtain ⟨φ, hφd, hφf, hφconj⟩ :=
@@ -196,15 +196,12 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary
   have hpole : ∀ i, Tendsto (fun z => (z - ((a i : ℝ) : ℂ)) * φ z)
       (𝓝[≠] ((a i : ℝ) : ℂ)) (𝓝 ((e i : ℝ) : ℂ)) := by
     intro i
-    have hdiff : ((range fun j => ((a j : ℝ) : ℂ)) \ {((a i : ℝ) : ℂ)}).Finite := hfin.sdiff
-    obtain ⟨ρ, hρ, hsub⟩ :=
-      Metric.isOpen_iff.mp hdiff.isClosed.isOpen_compl ((a i : ℝ) : ℂ) (by simp)
+    obtain ⟨ρ, hρ, hsub⟩ := Metric.isOpen_iff.mp
+      (hfin.sdiff (t := {((a i : ℝ) : ℂ)})).isClosed.isOpen_compl ((a i : ℝ) : ℂ) (by simp)
     have hφρ : DifferentiableOn ℂ φ (Metric.ball ((a i : ℝ) : ℂ) ρ \ {((a i : ℝ) : ℂ)}) :=
       hφd.mono fun z hz hzS => hsub hz.1 ⟨hzS, hz.2⟩
     have hball (r : ℝ) : MapsTo (starRingEnd ℂ) (Metric.ball ((a i : ℝ) : ℂ) r)
-        (Metric.ball ((a i : ℝ) : ℂ) r) := fun z hz => by
-      rw [Metric.mem_ball, ← Complex.conj_ofReal, Complex.dist_conj_conj]
-      exact hz
+        (Metric.ball ((a i : ℝ) : ℂ) r) := fun z hz => conj_mem_ball_of_im_eq_zero (by simp) hz
     rcases hvertex i with ⟨hei, r, hr, b, hb, hcont, hinj, hsector, hrays⟩ |
       ⟨hei, r, hr, c, b, hb, g, hgf, hg0, hgc, hgi, hsector, hrays⟩ |
       ⟨hei, r, hr, c, b, hb, g, hgf, hg0, hgc, hgr, hgu, hgi⟩ |

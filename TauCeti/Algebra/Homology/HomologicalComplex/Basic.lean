@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomologicalComplex
+public import Mathlib.CategoryTheory.ConcreteCategory.Basic
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.Algebra.Homology.QuasiIso
@@ -73,6 +74,14 @@ namespace HomologicalComplex
 
 variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] {ι : Type*}
   {c : ComplexShape ι} {K : HomologicalComplex C c} {s : K ⟶ K}
+
+/-- A chain map of complexes in a concrete category with zero morphisms commutes with the
+differentials, on elements. -/
+theorem Hom.comm_apply {FC : C → C → Type*} {CC : C → Type w}
+    [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory.{w} C FC]
+    {K L : HomologicalComplex C c} (φ : K ⟶ L) (i j : ι) (x : ToType (K.X i)) :
+    L.d i j (φ.f i x) = φ.f j (K.d i j x) := by
+  rw [← ConcreteCategory.comp_apply, φ.comm, ConcreteCategory.comp_apply]
 
 /-- Degreewise recursion for the powers of a chain endomorphism. -/
 lemma pow_f_succ (m : ℕ) (i : ι) :
@@ -259,9 +268,13 @@ lemma shortExact_mk_iCycles_toCycles (i j : ι) [K.HasHomology i] [K.HasHomology
 /-- The map `Kᵢ ⟶ Zⱼ(K)` onto the cycles is an isomorphism when `i` and `j` are adjacent, `K` is
 exact in degree `j` and the cycles of `K` in degree `i` vanish. -/
 lemma isIso_toCycles_of_isZero_cycles [Balanced C] {i j : ι} [K.HasHomology i] [K.HasHomology j]
-    [(K.cyclesShortComplex i j).HasHomology] (hij : c.Rel i j) (hK : K.ExactAt j)
-    (hZ : IsZero (K.cycles i)) : IsIso (K.toCycles i j) :=
-  (K.cyclesShortComplex_shortExact i j hij hK).isIso_g_iff.2 hZ
+    (hij : c.Rel i j) (hK : K.ExactAt j) (hZ : IsZero (K.cycles i)) :
+    IsIso (K.toCycles i j) := by
+  have := epi_toCycles_of_exactAt hK (c.prev_eq' hij)
+  have := Preadditive.mono_of_isZero_kernel' _
+    (isKernelOfComp (K.iCycles j) (K.d i j) (K.cyclesIsKernel i j (c.next_eq' hij))
+      (K.iCycles_toCycles i j) (K.toCycles_i i j)) hZ
+  exact isIso_of_mono_of_epi _
 
 /-- The cycle sequence `Zᵢ(K) ⟶ Kᵢ ⟶ Zⱼ(K)`, with its outer terms replaced along isomorphisms
 `X ≅ Zᵢ(K)` and `Zⱼ(K) ≅ Y`, is short exact when `i` and `j` are adjacent and `K` is exact in
@@ -288,7 +301,7 @@ end HomologicalComplex
 namespace CochainComplex
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [Balanced C] (K : CochainComplex C ℕ)
-  [K.HasHomology 0] [K.HasHomology 1] [(K.cyclesShortComplex 0 1).HasHomology]
+  [K.HasHomology 0] [K.HasHomology 1]
 
 /-- The map `K⁰ ⟶ Z¹(K)` onto the cycles in degree `1` is an isomorphism when `K` is exact in
 degrees `0` and `1`, since the cycles `Z⁰(K) ≅ H⁰(K)` then vanish. -/
