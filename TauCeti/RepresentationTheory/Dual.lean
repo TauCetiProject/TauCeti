@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Intertwining
-public import TauCeti.LinearAlgebra.Dual.Contraction
 public import TauCeti.LinearAlgebra.LinearEquiv.Basic
 public import TauCeti.RepresentationTheory.Invariants
+public import TauCeti.RingTheory.PicardGroup.Contraction
 
 /-!
 # Invariants of the dual representation
@@ -290,15 +290,15 @@ variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
 
 /-- **The dual of a line tensored with the line is trivial.** For a one-dimensional
 representation, the contraction `Dual V ⊗ V ≃ k`, `f ⊗ v ↦ f v`
-(`TauCeti.contractLeftEquivOfFinrankEqOne`), is an equivalence onto the trivial
-representation. -/
+(`Module.Invertible.linearEquiv`), is an equivalence onto the trivial representation. -/
 noncomputable def dualTprodEquivTrivialOfFinrankEqOne (ρ : Representation k G V)
     (h : finrank k V = 1) :
     (tprod (dual ρ) ρ).Equiv (trivial k G k) :=
-  .mk (TauCeti.contractLeftEquivOfFinrankEqOne h) fun g ↦
+  haveI := Module.Invertible.of_finrank_eq_one h
+  .mk (Module.Invertible.linearEquiv k V) fun g ↦
     _root_.TensorProduct.ext' fun f v ↦ by
       simp only [LinearMap.coe_comp, Function.comp_apply, tprod_apply, TensorProduct.map_tmul,
-        LinearEquiv.coe_coe, TauCeti.contractLeftEquivOfFinrankEqOne_tmul, dual_apply,
+        LinearEquiv.coe_coe, Module.Invertible.linearEquiv_tmul, dual_apply,
         Module.Dual.transpose_apply, trivial_apply]
       rw [inv_self_apply]
 
@@ -306,7 +306,8 @@ noncomputable def dualTprodEquivTrivialOfFinrankEqOne (ρ : Representation k G V
 theorem dualTprodEquivTrivialOfFinrankEqOne_tmul (ρ : Representation k G V)
     (h : finrank k V = 1) (f : Module.Dual k V) (v : V) :
     dualTprodEquivTrivialOfFinrankEqOne ρ h (f ⊗ₜ v) = f v :=
-  TauCeti.contractLeftEquivOfFinrankEqOne_tmul h f v
+  haveI := Module.Invertible.of_finrank_eq_one h
+  Module.Invertible.linearEquiv_tmul f v
 
 end Representation
 
