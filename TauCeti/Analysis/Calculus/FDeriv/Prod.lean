@@ -49,6 +49,8 @@ every horizontal line.
 * `TauCeti.fderiv_comp_fst_add_comp_snd`: the same for the totalized derivative.
 * `TauCeti.fderiv_comp_fst_add_comp_snd_eq_zero_iff`: a separated sum of differentiable functions
   is critical at `(a, b)` exactly when both summands are critical at `a` and `b`.
+* `DifferentiableAt.hasFDerivAt_slice_fst`: the derivative of a slice `y ↦ g (y, t)` of a map
+  differentiable at the point `(y, t)`.
 * `TauCeti.fderiv_slice_left`, `TauCeti.fderiv_slice_right`: the derivatives of the two slices
   of a function on a product are the restrictions of its derivative.
 * `TauCeti.fderiv_comp_snd_apply_mk_zero`: a function of the second variable alone has zero
@@ -332,6 +334,24 @@ theorem fderivWithin_prodMk_fst_clm_apply_snd {s : Set X} {a₀ : X} {F : X → 
 
 end FstClmApplySnd
 
+
 end TauCeti
+
+section SliceFst
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- The derivative of a slice `y ↦ g (y, p.2)` of a map on a product that is differentiable at `p`,
+in the first variable. -/
+theorem DifferentiableAt.hasFDerivAt_slice_fst {g : E × H → G} {p : E × H}
+    (hg : DifferentiableAt 𝕜 g p) :
+    HasFDerivAt (fun y ↦ g (y, p.2)) ((fderiv 𝕜 g p).comp (ContinuousLinearMap.inl 𝕜 E H)) p.1 := by
+  simpa [Function.comp_def] using
+    hg.hasFDerivAt.comp p.1 (hasFDerivAt_prodMk_left p.1 p.2)
+
+end SliceFst
 
 end
