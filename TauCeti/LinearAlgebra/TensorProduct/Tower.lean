@@ -33,6 +33,8 @@ across the tensor sign of `R ⊗[B] M`.
 
 * `TensorProduct.tmul_eq_one_tmul_smul_of_mem`: in `R ⊗[B] M`, for a subring `B` of `R` and
   `r ∈ B`, `r ⊗ m = 1 ⊗ r • m`.
+* `Submodule.one_tmul_mem_baseChange_of_smul_mem`: if `a • x ∈ N` and `a` becomes a unit in `A`,
+  then `1 ⊗ₜ x` lies in the base change of `N` to `A`.
 -/
 
 public section
@@ -76,3 +78,14 @@ theorem TensorProduct.tmul_eq_one_tmul_smul_of_mem {R M : Type*} [CommRing R] [A
     [Module R M] {B : Subring R} {r : R} (hr : r ∈ B) (m : M) :
     r ⊗ₜ[B] m = (1 : R) ⊗ₜ (r • m) := by
   simpa [Subring.smul_def] using smul_tmul (⟨r, hr⟩ : B) (1 : R) m
+
+/-- If `a • x` lies in a submodule `N` and `a` becomes a unit in the algebra `A`, then `1 ⊗ₜ x`
+lies in the base change of `N` to `A`. -/
+theorem Submodule.one_tmul_mem_baseChange_of_smul_mem {R A M : Type*} [CommSemiring R]
+    [CommSemiring A] [Algebra R A] [AddCommMonoid M] [Module R M] (N : Submodule R M) {a : R}
+    (ha : IsUnit (algebraMap R A a)) {x : M} (hx : a • x ∈ N) :
+    (1 : A) ⊗ₜ x ∈ N.baseChange A := by
+  obtain ⟨u, hu⟩ := ha
+  have h := (N.baseChange A).smul_mem (↑u⁻¹ : A) (tmul_mem_baseChange_of_mem 1 hx)
+  rwa [← smul_tmul, ← Algebra.algebraMap_eq_smul_one, ← hu, smul_tmul', smul_eq_mul,
+    Units.inv_mul] at h
