@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
 
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 
 /-!
@@ -50,6 +51,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   its derivatives (`TauCeti.Manifold.curveVelocityWithin_eq_derivWithin`).
 * `TauCeti.Manifold.curveVelocityLiftWithin` and `TauCeti.Manifold.curveVelocityLift`: the
   corresponding curves in the tangent bundle, together with their projection and fibre formulas.
+  By `Filter.EventuallyEq.curveVelocityLiftWithin_eq`, the velocity lift within `s` at `t`
+  depends only on the germ of the curve within `s` at `t` and on its value at `t`.
 * `TauCeti.Manifold.tangentMap_curveVelocityLiftWithin`: tangent maps carry velocity lifts to
   velocity lifts, with `TauCeti.Manifold.tangentMap_curveVelocityLift` as its unrestricted form.
 * `ContMDiffOn.contMDiffOn_curveVelocityLiftWithin`: the within-domain velocity lift of a
@@ -99,6 +102,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
 * `TauCeti.Manifold.mfderiv_eq_zero_of_eqOn_Iic` and
   `TauCeti.Manifold.mfderiv_eq_zero_of_eqOn_Ici`: a real curve constant on a closed half-line has
   zero manifold derivative in the interior of that half-line.
+* `TauCeti.Manifold.curveVelocityLift_eq_of_mdifferentiableAt_if_le`: two real curves meeting at
+  `c`, whose concatenation at `c` is differentiable there, have the same velocity at `c`.
 -/
 
 public section
@@ -526,6 +531,20 @@ theorem curveVelocityLift_proj (γ : 𝕜 → M) (t : 𝕜) :
 theorem curveVelocityLift_snd (γ : 𝕜 → M) (t : 𝕜) :
     (curveVelocityLift I γ t).2 = curveVelocity I γ t := (rfl)
 
+/-- Two curves which agree within `s` near `t`, and at `t`, have the same velocity lift within
+`s` at `t`. No differentiability is assumed; the velocities are compared as points of the tangent
+bundle, since the two curves pass through `t` at propositionally equal points. -/
+theorem _root_.Filter.EventuallyEq.curveVelocityLiftWithin_eq {δ : 𝕜 → M}
+    (h : γ =ᶠ[𝓝[s] t] δ) (ht : γ t = δ t) :
+    curveVelocityLiftWithin I γ s t = curveVelocityLiftWithin I δ s t := by
+  have hv : curveVelocityWithin I γ s t =
+      tangentSpaceCast I (δ t) (γ t) (curveVelocityWithin I δ s t) := by
+    rw [curveVelocityWithin_apply, curveVelocityWithin_apply, h.mfderivWithin_eq ht]
+    rfl
+  refine TotalSpace.ext ht ?_
+  rw [curveVelocityLiftWithin_snd, curveVelocityLiftWithin_snd, hv]
+  exact TauCeti.heq_tangentSpaceCast ht.symm _
+
 variable
   {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 G H'}
@@ -744,6 +763,36 @@ theorem mfderiv_eq_zero_of_eqOn_Ici (h : EqOn γ (fun _ => p) (Ici a)) (ht : a <
     mfderiv 𝓘(ℝ, ℝ) I γ t = 0 :=
   ((hasMFDerivAt_const (I := 𝓘(ℝ, ℝ)) (I' := I) p t).congr_of_eventuallyEq
     (by filter_upwards [Ioi_mem_nhds ht] with s hs using h (mem_Ici.2 hs.le))).mfderiv
+
+/-- **Velocities at a differentiable junction.** Let `δ` and `γ` be real curves which meet at the
+parameter `c` and are differentiable there. If the curve which follows `δ` up to `c` and `γ`
+after `c` is differentiable at `c`, then `δ` and `γ` have the same velocity at `c`: their
+velocity lifts at `c` are the same point of the tangent bundle. -/
+theorem curveVelocityLift_eq_of_mdifferentiableAt_if_le {δ : ℝ → N} {c : ℝ}
+    (hjoin : δ c = γ c) (hδ : MDifferentiableAt 𝓘(ℝ, ℝ) I δ c)
+    (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ c)
+    (hη : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun t ↦ if t ≤ c then δ t else γ t) c) :
+    curveVelocityLift I δ c = curveVelocityLift I γ c := by
+  set η : ℝ → N := fun t ↦ if t ≤ c then δ t else γ t
+  have hηc : η c = δ c := ite_eq_left le_rfl
+  have hL : η =ᶠ[𝓝[Iic c] c] δ := eventually_nhdsWithin_of_forall fun _ ht ↦ ite_eq_left ht
+  have hR : η =ᶠ[𝓝[Ici c] c] γ := eventually_nhdsWithin_of_forall fun t ht ↦ by
+    rcases (mem_Ici.1 ht).eq_or_lt with rfl | hlt
+    · exact hηc.trans hjoin
+    · exact ite_eq_right hlt.not_ge
+  have hlift {β : ℝ → N} {u : Set ℝ} (hβ : MDifferentiableAt 𝓘(ℝ, ℝ) I β c)
+      (hu : UniqueDiffWithinAt ℝ u c) :
+      curveVelocityLiftWithin I β u c = curveVelocityLift I β c := by
+    rw [curveVelocityLiftWithin_apply, curveVelocityLift_apply,
+      curveVelocityWithin_subset (subset_univ u) hu hβ.mdifferentiableWithinAt,
+      curveVelocityWithin_univ]
+  calc curveVelocityLift I δ c = curveVelocityLiftWithin I δ (Iic c) c :=
+        (hlift hδ (uniqueDiffWithinAt_Iic c)).symm
+    _ = curveVelocityLiftWithin I η (Iic c) c := (hL.curveVelocityLiftWithin_eq hηc).symm
+    _ = curveVelocityLiftWithin I η (Ici c) c := by
+        rw [hlift hη (uniqueDiffWithinAt_Iic c), hlift hη (uniqueDiffWithinAt_Ici c)]
+    _ = curveVelocityLiftWithin I γ (Ici c) c := hR.curveVelocityLiftWithin_eq (hηc.trans hjoin)
+    _ = curveVelocityLift I γ c := hlift hγ (uniqueDiffWithinAt_Ici c)
 
 end TauCeti.Manifold
 
