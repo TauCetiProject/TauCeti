@@ -20,8 +20,7 @@ multiplicative section `𝓀[K]ˣ →* 𝒪[K]ˣ`. This file adds its zero-prese
 that the two constructions agree on units. Both lifts are natural along an extension `L/K`:
 the inclusion `𝒪[K] → 𝒪[L]` carries the Teichmüller representative of `a ∈ 𝓀[K]` to the
 Teichmüller representative of the image of `a` in `𝓀[L]`. It also records that, for
-`q = #𝓀[K]` and `f ≠ 0`, `q ^ f - 1` is a unit in `𝒪[K]`, and that an exponent prime to the
-residue characteristic `p` is nonzero.
+`q = #𝓀[K]` and `f ≠ 0`, `q ^ f - 1` is a unit in `𝒪[K]`.
 
 ## Main definitions
 
@@ -31,7 +30,6 @@ residue characteristic `p` is nonzero.
 
 * `TauCeti.residue_teichmullerLift`: the lift is a section of reduction.
 * `TauCeti.isUnit_natCast_natCard_pow_sub_one`: for `f ≠ 0`, `q ^ f - 1` is a unit in `𝒪[K]`.
-* `TauCeti.ne_zero_of_coprime_ringChar`: an exponent `m` prime to `p` is nonzero.
 * `TauCeti.exists_isPrimitiveRoot_natCard_residueField_sub_one`: `K` contains a primitive
   `(q - 1)`-st root of unity.
 * `TauCeti.eq_teichmullerLift_iff`: an element of `𝒪[K]` is `teichmullerLift K a` exactly
@@ -57,12 +55,6 @@ noncomputable section
 open IsLocalRing ValuativeRel
 
 namespace TauCeti
-
-/-- An exponent prime to the residue characteristic is nonzero. -/
-theorem ne_zero_of_coprime_ringChar {K : Type*} [Field K] [ValuativeRel K] {m : ℕ}
-    (hm : m.Coprime (ringChar 𝓀[K])) : m ≠ 0 := by
-  rintro rfl
-  exact CharP.ringChar_ne_one (Nat.coprime_zero_left _ |>.1 hm)
 
 variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
