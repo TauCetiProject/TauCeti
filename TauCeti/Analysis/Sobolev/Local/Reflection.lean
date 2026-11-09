@@ -281,7 +281,8 @@ private theorem setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → 
       ⟨imCutoff n * χ, (contDiff_imCutoff n).mul hχ, hχc.mul_left, hθs⟩
     have hθ := hgW.integral_lineDeriv_smul_eq_neg_integral_smul θ
     have hcoe : ((θ : 𝓓(Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}), ℝ)) : ℂ → ℝ) =
-        imCutoff n * χ := rfl
+        imCutoff n * χ := by
+      simp [θ, TestFunction.coe_mk]
     have hld (z : ℂ) : lineDeriv ℝ (imCutoff n * χ) z v =
         imCutoff n z * fderiv ℝ χ z v + D n z := by
       rw [((hasFDerivAt_imCutoff n z).mul (hχ.differentiable (by simp) z).hasFDerivAt
@@ -552,8 +553,7 @@ theorem HasWeakLineDerivOn.planarReflection_I {Ω : Opens ℂ}
       simp [hψdef, imDilation_of_im_eq_zero _ (Complex.ofReal_im x)]
     have hIBP := setIntegral_fderiv_smul_eq_neg hgW hg hg' hχ hχc hχΩ (Or.inr hχ0)
     have hdχ (w : ℂ) : fderiv ℝ (fun w => φ w - ψ w) w I = fderiv ℝ φ w I - fderiv ℝ ψ w I := by
-      rw [fderiv_fun_sub (hφd w) (hψ.differentiable (by simp) w)]
-      rfl
+      rw [fderiv_fun_sub (hφd w) (hψ.differentiable (by simp) w), sub_apply]
     have hdψc : Continuous fun z => fderiv ℝ ψ z I :=
       (hψ.continuous_fderiv (by simp)).clm_apply continuous_const
     have iA : IntegrableOn (fun z => fderiv ℝ φ z I • g z) {z : ℂ | 0 < z.im} :=
@@ -754,8 +754,9 @@ theorem planarReflectionBound_higherReflectionCoeff (k : ℕ) (p : ℝ≥0∞) :
 
 /-- **The `Lᵖ` bound for the reflection.** For `1 ≤ p ≤ ∞`, the reflection of `g` on `Ω` is
 bounded in `Lᵖ(Ω)` by `planarReflectionBound d p` times the `Lᵖ` norm of `g` on `Ω ∩ {0 ≤ im}`.
-Applied to the components of the weak derivatives of `planarReflectionFDeriv`, it bounds every
-derivative of the extension by the corresponding derivative of `g`. -/
+The normal component of `planarReflectionFDeriv d Dg` is a `planarReflection` with the weights
+`d j * higherReflectionNode j`, so this lemma also bounds it, with the constant
+`planarReflectionBound (fun j => d j * higherReflectionNode j) p`. -/
 theorem eLpNorm_planarReflection_le {p : ℝ≥0∞} (hp : 1 ≤ p) {Ω : Set ℂ}
     (hΩ : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin k, imDilation (higherReflectionNode j) z ∈ Ω)
     (d : Fin k → ℝ) (g : ℂ → F) :
