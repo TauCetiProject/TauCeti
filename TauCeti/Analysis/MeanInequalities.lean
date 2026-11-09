@@ -57,6 +57,11 @@ hyperplane sections in the Kneser–Süss equality argument for Brunn–Minkowsk
 * `ENNReal.Lp_add_le_tsum`: Minkowski's inequality for unconditional sums in `ℝ≥0∞`.
 * `ENNReal.inner_le_Lp_mul_Lq_tsum`: Hölder's inequality for unconditional sums in `ℝ≥0∞`.
 * `ENNReal.Lq_le_Lp_tsum`: the `ℓᵖ` norm of an `ℝ≥0∞`-valued family is antitone in `p`.
+* `Real.Lq_le_Lp_of_nonneg`: the same for finite sums of nonnegative reals.
+* `Real.Lp_le_mul_Lp_of_nonneg`: termwise domination `0 ≤ f i ≤ c * g i` bounds the finite
+  `ℓᵖ` expression of `f` by `c` times that of `g`.
+* `Real.Lp_const_of_nonneg`: the finite `ℓᵖ` expression of a constant `t ≥ 0` over `s` is
+  `#s ^ (1 / p) * t`.
 
 ## References
 
@@ -192,3 +197,54 @@ theorem Lq_le_Lp_tsum {ι : Type*} (f : ι → ℝ≥0∞) {p q : ℝ} (hp : 0 <
         rw [ENNReal.tsum_mul_right, ← hSp, ← rpow_add_of_nonneg _ _ hp.le hpq', add_sub_cancel]
 
 end ENNReal
+
+namespace Real
+
+/-- The `ℓᵖ` norms of a finite nonnegative real family decrease as the exponent grows: for
+`0 < p ≤ q`, `(∑ i ∈ s, f i ^ q) ^ (1 / q) ≤ (∑ i ∈ s, f i ^ p) ^ (1 / p)`. -/
+theorem Lq_le_Lp_of_nonneg {ι : Type*} (s : Finset ι) {f : ι → ℝ} (hf : ∀ i ∈ s, 0 ≤ f i)
+    {p q : ℝ} (hp : 0 < p) (hpq : p ≤ q) :
+    (∑ i ∈ s, f i ^ q) ^ (1 / q) ≤ (∑ i ∈ s, f i ^ p) ^ (1 / p) := by
+  have hq : 0 < q := hp.trans_le hpq
+  -- Transport the unconditional `ℝ≥0∞` inequality along `ENNReal.ofReal`.
+  have hofReal {r : ℝ} (hr : 0 < r) :
+      ENNReal.ofReal ((∑ i ∈ s, f i ^ r) ^ (1 / r)) =
+        (∑' i : s, ENNReal.ofReal (f i) ^ r) ^ (1 / r) := by
+    rw [← ENNReal.ofReal_rpow_of_nonneg (Finset.sum_nonneg fun i hi ↦
+        rpow_nonneg (hf i hi) r) (one_div_nonneg.2 hr.le), tsum_fintype,
+      ENNReal.ofReal_sum_of_nonneg fun i hi ↦ rpow_nonneg (hf i hi) r]
+    congr 1
+    rw [← Finset.sum_coe_sort s]
+    exact Finset.sum_congr rfl fun i _ ↦ (ENNReal.ofReal_rpow_of_nonneg (hf i i.2) hr.le).symm
+  have h := ENNReal.Lq_le_Lp_tsum (fun i : s ↦ ENNReal.ofReal (f i)) hp hpq
+  rw [← hofReal hq, ← hofReal hp] at h
+  exact (ENNReal.ofReal_le_ofReal_iff (rpow_nonneg (Finset.sum_nonneg fun i hi ↦
+    rpow_nonneg (hf i hi) p) _)).1 h
+
+/-- The `ℓᵖ` expression of a finite nonnegative family dominated termwise by `c` times another is
+at most `c` times the other's: if `0 ≤ f i ≤ c * g i`, then
+`(∑ i ∈ s, f i ^ p) ^ (1 / p) ≤ c * (∑ i ∈ s, g i ^ p) ^ (1 / p)`. -/
+theorem Lp_le_mul_Lp_of_nonneg {ι : Type*} (s : Finset ι) {f g : ι → ℝ} {p c : ℝ} (hp : 0 < p)
+    (hc : 0 ≤ c) (hf : ∀ i ∈ s, 0 ≤ f i) (hfg : ∀ i ∈ s, f i ≤ c * g i) :
+    (∑ i ∈ s, f i ^ p) ^ (1 / p) ≤ c * (∑ i ∈ s, g i ^ p) ^ (1 / p) := by
+  calc (∑ i ∈ s, f i ^ p) ^ (1 / p) ≤ (∑ i ∈ s, (c * g i) ^ p) ^ (1 / p) := by
+        gcongr with i hi
+        · exact Finset.sum_nonneg fun i hi ↦ rpow_nonneg (hf i hi) p
+        · exact hf i hi
+        · exact hfg i hi
+    _ ≤ c * (∑ i ∈ s, g i ^ p) ^ (1 / p) := by
+        rcases hc.eq_or_lt with rfl | hc
+        · simp [zero_rpow hp.ne', zero_rpow (inv_ne_zero hp.ne')]
+        have hg (i : ι) (hi : i ∈ s) : 0 ≤ g i :=
+          nonneg_of_mul_nonneg_right (by simpa [mul_comm] using (hf i hi).trans (hfg i hi)) hc
+        rw [Finset.sum_congr rfl fun i hi ↦ mul_rpow hc.le (hg i hi), ← Finset.mul_sum,
+          mul_rpow (rpow_nonneg hc.le p) (Finset.sum_nonneg fun i hi ↦ rpow_nonneg (hg i hi) p),
+          ← rpow_mul hc.le, mul_one_div_cancel hp.ne', rpow_one]
+
+/-- The finite `ℓᵖ` expression of a constant `t ≥ 0` over `s` is `#s ^ (1 / p) * t`. -/
+theorem Lp_const_of_nonneg {ι : Type*} (s : Finset ι) {t p : ℝ} (ht : 0 ≤ t) (hp : p ≠ 0) :
+    (∑ _i ∈ s, t ^ p) ^ (1 / p) = (s.card : ℝ) ^ (1 / p) * t := by
+  rw [Finset.sum_const, nsmul_eq_mul, mul_rpow s.card.cast_nonneg (rpow_nonneg ht p), one_div,
+    rpow_rpow_inv ht hp]
+
+end Real

@@ -48,6 +48,8 @@ This is the image needed when a change of variables `y = x ^ a` is performed on 
 A real number whose natural powers grow at most polynomially, `r ^ n ≤ C * (1 + n) ^ s` for all
 `n`, is at most `1`. This is how a spectral radius bound is read off from polynomially growing
 norms, as for the monomials of a weighted Sobolev algebra.
+Likewise, if `n ^ b ≤ C * n ^ a` for every natural number `n`, then `b ≤ a`; this is how a
+power-law exponent is read off from testing an inequality on `n` copies of one vector.
 
 A two-sided real exponential with positive decay rate is little-o of every real power of
 `|x|` outside compact subsets of the real line.
@@ -86,6 +88,7 @@ with the corresponding integral of `q`-th powers.
 * `Real.image_rpow_Ioo_zero_one`: a positive power maps the open unit interval onto itself.
 * `Real.tendsto_pow_div_mul_sub_pow_atTop`: `D ^ n / (n ω (D ^ n - ρ ^ n)) → (n ω)⁻¹` as `D → ∞`.
 * `Real.le_one_of_forall_pow_le_mul_rpow`: `r ≤ 1` when `r ^ n ≤ C * (1 + n) ^ s` for all `n`.
+* `Real.le_of_forall_natCast_rpow_le_mul_rpow`: `b ≤ a` when `n ^ b ≤ C * n ^ a` for all `n`.
 * `TauCeti.exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: a positive-rate exponential beats every
   real power at both ends of the real line.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
@@ -198,6 +201,21 @@ theorem le_one_of_forall_pow_le_mul_rpow {r C s : ℝ}
   rw [rpow_add h0, rpow_one, rpow_natCast, mul_div_assoc', le_div_iff₀ (by positivity), one_mul]
   calc r * r ^ n ≤ r * (C * (1 + n) ^ s) := by gcongr; exact h n
     _ = C * r * (1 + n) ^ s := by ring
+
+/-- If `n ^ b ≤ C * n ^ a` for every natural number `n`, then `b ≤ a`: otherwise
+`n ^ (b - a)` eventually exceeds `C`. -/
+theorem le_of_forall_natCast_rpow_le_mul_rpow {a b C : ℝ}
+    (h : ∀ n : ℕ, (n : ℝ) ^ b ≤ C * (n : ℝ) ^ a) : b ≤ a := by
+  by_contra! hab
+  have hev := ((tendsto_rpow_atTop (sub_pos.2 hab)).comp
+    tendsto_natCast_atTop_atTop).eventually (eventually_gt_atTop C)
+  obtain ⟨n, hCn, hn⟩ := (hev.and (eventually_gt_atTop 0)).exists
+  have hn' : (0 : ℝ) < n := by exact_mod_cast hn
+  have hb := h n
+  rw [← sub_add_cancel b a, rpow_add hn'] at hb
+  have hpos := rpow_pos_of_pos hn' a
+  simp only [Function.comp_apply] at hCn
+  nlinarith
 
 /-- If `0 ≤ A ≤ e^{-t}` and `0 ≤ c`, then `A ^ c ≤ e^{-c t}`. -/
 theorem rpow_le_exp_neg_mul {A t c : ℝ} (hA : 0 ≤ A) (hAt : A ≤ exp (-t)) (hc : 0 ≤ c) :
