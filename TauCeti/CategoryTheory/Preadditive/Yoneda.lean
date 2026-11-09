@@ -7,23 +7,28 @@ module
 
 public import Mathlib.Algebra.Category.Grp.Colimits
 public import Mathlib.Algebra.Category.Grp.EpiMono
+public import Mathlib.Algebra.Homology.ShortComplex.Ab
 public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.CategoryTheory.Preadditive.Yoneda.Basic
+public import TauCeti.Algebra.Homology.ShortComplex.FunctorCategory
 
 /-!
 # The preadditive Yoneda and coYoneda functors
 
 For a preadditive category `C`, the preadditive Yoneda embedding sends `Y : C` to the functor
-`(-, Y) : Cᵒᵖ ⥤ AddCommGrpCat`. This file records how it acts on morphisms, and three facts
+`(-, Y) : Cᵒᵖ ⥤ AddCommGrpCat`. This file records how it acts on morphisms, and four facts
 about it.
 
 * The embedding is itself additive: `preadditiveYoneda.map (f + g)` is the sum of the images.
 * A natural transformation out of `(-, Y)` is determined by its value on `𝟙 Y`, by the Yoneda
   lemma. No additivity of the target functor is needed.
-* A morphism `(-, Y) ⟶ F` lifts along every epimorphism `(-, Y') ⟶ F` to the image of a morphism
-  `Y ⟶ Y'`. This is the form in which representable functors are projective that is used to
-  build presentations of finitely presented functors.
+* A morphism `(-, Y) ⟶ G` lifts along every epimorphism `F ⟶ G` out of an additive functor `F`.
+  So representable functors are projective among additive functors. In particular a morphism
+  `(-, Y) ⟶ F` lifts along every epimorphism `(-, Y') ⟶ F` to the image of a morphism `Y ⟶ Y'`,
+  which is the form used to build presentations of finitely presented functors.
+* Epimorphisms from representable functors onto the outer terms of an exact sequence
+  `F' ⟶ F ⟶ F''` assemble into an epimorphism `(-, Y' ⊞ Y'') ⟶ F`.
 
 Dually, for an object `M` with `Γ = End M`, the functor `Hom(M, -)` (Mathlib's
 `CategoryTheory.preadditiveCoyonedaObj M`) takes values in `Γᵐᵒᵖ`-modules. By the Yoneda
@@ -38,8 +43,12 @@ argument, it is bijective on the morphisms `M ⟶ Y`: a `Γᵐᵒᵖ`-linear map
 * `CategoryTheory.preadditiveYoneda_additive`: the preadditive Yoneda embedding is additive.
 * `CategoryTheory.preadditiveYoneda_obj_hom_ext`: morphisms out of `(-, Y)` agreeing on `𝟙 Y`
   are equal.
+* `CategoryTheory.exists_comp_eq_of_epi_of_additive`: lifting along an epimorphism out of an
+  additive functor.
 * `CategoryTheory.exists_preadditiveYoneda_map_comp_eq`: lifting along an epimorphism out of a
   representable functor.
+* `CategoryTheory.epi_preadditiveYoneda_biprod`: the epimorphism `(-, Y' ⊞ Y'') ⟶ F` built from
+  epimorphisms onto the outer terms of an exact sequence.
 * `CategoryTheory.preadditiveCoyonedaObj_map_bijective_self`: `Hom(M, -)` is bijective on the
   morphisms out of `M`.
 -/
@@ -78,16 +87,66 @@ instance preadditiveYoneda_additive :
     ext Z (h : Z.unop ⟶ _)
     exact Preadditive.comp_add _ _ _ h f g
 
+/-- A morphism from a representable functor `(-, Y)` to `G` lifts along any epimorphism
+`F ⟶ G` out of an additive functor `F`. -/
+theorem exists_comp_eq_of_epi_of_additive {Y : C} {F G : Cᵒᵖ ⥤ AddCommGrpCat.{v}} [F.Additive]
+    (π : F ⟶ G) [Epi π] (α : preadditiveYoneda.obj Y ⟶ G) :
+    ∃ s : preadditiveYoneda.obj Y ⟶ F, s ≫ π = α := by
+  obtain ⟨x, hx⟩ :=
+    (AddCommGrpCat.epi_iff_surjective (π.app (op Y))).1 inferInstance (α.app (op Y) (𝟙 Y))
+  -- The Yoneda morphism of `x` sends `h : Z ⟶ Y` to `F(h) x`; it respects addition because `F`
+  -- is additive. Elements of `(-, Y)` at `Z` are morphisms `Z ⟶ Y`, but only up to unfolding
+  -- `preadditiveYoneda`, so the components are given on `Z.unop ⟶ Y` and naturality is
+  -- `F.map_comp` applied to `x`.
+  let s : preadditiveYoneda.obj Y ⟶ F :=
+    { app Z := AddCommGrpCat.ofHom (
+        { toFun h := F.map h.op x
+          map_zero' := by simp
+          map_add' a b := by simp } : (Z.unop ⟶ Y) →+ F.obj Z)
+      naturality Z Z' h := by
+        ext (a : Z.unop ⟶ Y)
+        exact ConcreteCategory.congr_hom (F.map_comp a.op h) x }
+  refine ⟨s, preadditiveYoneda_obj_hom_ext ?_⟩
+  exact (congrArg (π.app (op Y)) (by simp : F.map (𝟙 Y).op x = x)).trans hx
+
 /-- A morphism from a representable functor `(-, Y)` to `F` lifts along any epimorphism
 `(-, Y') ⟶ F`, and the lift is the image of a morphism `Y ⟶ Y'`. -/
 theorem exists_preadditiveYoneda_map_comp_eq {Y Y' : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
     (p : preadditiveYoneda.obj Y' ⟶ F) [Epi p] (α : preadditiveYoneda.obj Y ⟶ F) :
     ∃ u : Y ⟶ Y', preadditiveYoneda.map u ≫ p = α := by
-  obtain ⟨u, hu⟩ :=
-    (AddCommGrpCat.epi_iff_surjective (p.app (op Y))).1 inferInstance (α.app (op Y) (𝟙 Y))
-  refine ⟨u, preadditiveYoneda_obj_hom_ext ?_⟩
-  exact (congrArg (p.app (op Y))
-    ((preadditiveYoneda_map_app_apply u (op Y) (𝟙 Y)).trans (Category.id_comp u))).trans hu
+  obtain ⟨s, hs⟩ := exists_comp_eq_of_epi_of_additive p α
+  obtain ⟨u, rfl⟩ := preadditiveYoneda.map_surjective s
+  exact ⟨u, hs⟩
+
+/-- In an exact sequence `F' ⟶ F ⟶ F''`, an epimorphism `p : (-, Y') ⟶ F'` together with a
+morphism `s : (-, Y'') ⟶ F` whose composite to `F''` is an epimorphism give an epimorphism
+`(-, Y' ⊞ Y'') ⟶ F`, restricting to `p ≫ f` and to `s` on the two summands. -/
+theorem epi_preadditiveYoneda_biprod [HasBinaryBiproducts C]
+    {S : ShortComplex (Cᵒᵖ ⥤ AddCommGrpCat.{v})} (hS : S.Exact) {Y' Y'' : C}
+    (p : preadditiveYoneda.obj Y' ⟶ S.X₁) [Epi p] (s : preadditiveYoneda.obj Y'' ⟶ S.X₂)
+    [Epi (s ≫ S.g)] :
+    Epi (preadditiveYoneda.map (biprod.fst : Y' ⊞ Y'' ⟶ _) ≫ p ≫ S.f +
+      preadditiveYoneda.map biprod.snd ≫ s) := by
+  rw [NatTrans.epi_iff_epi_app]
+  intro Z
+  rw [AddCommGrpCat.epi_iff_surjective]
+  intro x
+  -- Write `S.g x` as the image of some `b : Z ⟶ Y''`; then `x - s b` comes from `F'`, so it is
+  -- the image of some `a : Z ⟶ Y'`, and `x` is the image of `(a, b) : Z ⟶ Y' ⊞ Y''`.
+  obtain ⟨(b : Z.unop ⟶ Y''), hb⟩ :=
+    (AddCommGrpCat.epi_iff_surjective ((s ≫ S.g).app Z)).1 inferInstance (S.g.app Z x)
+  obtain ⟨y, hy⟩ := (ShortComplex.ab_exact_iff _).1
+    ((ShortComplex.exact_iff_evaluation _).1 hS Z) (x - s.app Z b)
+    ((map_sub _ _ _).trans (sub_eq_zero.2 hb.symm))
+  obtain ⟨(a : Z.unop ⟶ Y'), rfl⟩ :=
+    (AddCommGrpCat.epi_iff_surjective (p.app Z)).1 inferInstance y
+  refine ⟨biprod.lift a b, ?_⟩
+  -- Evaluating a sum of composites of natural transformations at `Z`, and `(-, u)` at `v`, are
+  -- definitionally `f (p (v ≫ u)) + s (v ≫ u')`; the elements of `(-, Y)` at `Z` are morphisms
+  -- `Z ⟶ Y` only up to unfolding, so the first step is by `rfl`.
+  calc _ = S.f.app Z (p.app Z (biprod.lift a b ≫ biprod.fst)) +
+        s.app Z (biprod.lift a b ≫ biprod.snd) := rfl
+    _ = x := by rw [biprod.lift_fst, biprod.lift_snd]; exact eq_sub_iff_add_eq.1 hy
 
 /-- **Yoneda for `Hom(M, -)` as a `Γᵐᵒᵖ`-module, `Γ = End M`.** Composition identifies the
 morphisms `M ⟶ Y` with the `Γᵐᵒᵖ`-linear maps `Hom(M, M) → Hom(M, Y)`: a linear map `φ` is
