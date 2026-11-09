@@ -54,8 +54,10 @@ theorem Irreducible.re_eq_of_aeval_eq_zero {p : ℝ[X]} (hp : Irreducible p) {z 
   · -- A real root `a` makes `X - C a` a divisor of `p`, so `w` is a root of `X - C a`.
     have hzr : z = (z.re : ℂ) := Complex.ext rfl (by simp [him])
     have hXdvd : X - C z.re ∣ p := by
-      rw [dvd_iff_isRoot, IsRoot, ← Complex.ofReal_eq_zero, ← Complex.coe_algebraMap,
-        ← aeval_algebraMap_apply_eq_algebraMap_eval, Complex.coe_algebraMap, ← hzr, hz]
+      have hre : aeval (algebraMap ℝ ℂ z.re) p = 0 := hzr ▸ hz
+      rw [aeval_algebraMap_apply_eq_algebraMap_eval,
+        map_eq_zero_iff _ (algebraMap ℝ ℂ).injective] at hre
+      exact dvd_iff_isRoot.mpr hre
     have := hdvd (not_isUnit_X_sub_C _) hXdvd
     rw [map_sub, aeval_X, aeval_C, Complex.coe_algebraMap, sub_eq_zero] at this
     simp [this]

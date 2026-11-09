@@ -42,6 +42,7 @@ Baker--Campbell--Hausdorff expansion.
   (`TauCeti.norm_exp_smul_le_mul_exp_of_norm_pow_le`).
 * `TauCeti.norm_exp_smul_le_mul_exp_norm_of_norm_exp_pow_le`: if the powers of `exp x` are
   bounded by `C`, then `‖exp (t • x)‖ ≤ C * Real.exp ‖x‖` uniformly in `t ≥ 0`.
+* `TauCeti.exp_smul_one`: `exp (c • 1) = exp c • 1` for an `RCLike` scalar `c`.
 * `TauCeti.norm_exp_smul_one_le`: `‖exp (c • 1)‖ ≤ Real.exp c` for real `c` when `‖1‖ ≤ 1`.
 -/
 
@@ -176,14 +177,18 @@ theorem norm_exp_smul_le_mul_exp_norm_of_norm_exp_pow_le [CompleteSpace 𝔸]
   rw [Real.exp_le_exp, RCLike.norm_ofReal, abs_of_nonneg hs0]
   nlinarith [norm_nonneg x]
 
+/-- The exponential of a scalar multiple of the unit is the scalar exponential times the unit:
+`exp (c • 1) = exp c • 1`. -/
+theorem exp_smul_one (c : 𝕜) : exp (c • (1 : 𝔸)) = exp c • (1 : 𝔸) := by
+  rw [← Algebra.algebraMap_eq_smul_one, ← algebraMap_exp_comm, Algebra.algebraMap_eq_smul_one]
+
 end RCLike
 
 /-- If the unit has norm at most one, then the norm of the exponential of a real scalar multiple
 of the unit is at most the corresponding scalar exponential. -/
 theorem norm_exp_smul_one_le [NormedAlgebra ℝ 𝔸] (h_one : ‖(1 : 𝔸)‖ ≤ 1) (c : ℝ) :
     ‖exp (c • (1 : 𝔸))‖ ≤ Real.exp c := by
-  rw [← Algebra.algebraMap_eq_smul_one, ← algebraMap_exp_comm, ← Real.exp_eq_exp_ℝ,
-    norm_algebraMap, Real.norm_of_nonneg (Real.exp_nonneg c)]
+  rw [exp_smul_one, ← Real.exp_eq_exp_ℝ, norm_smul, Real.norm_of_nonneg (Real.exp_nonneg c)]
   exact mul_le_of_le_one_right (Real.exp_nonneg c) h_one
 
 end TauCeti

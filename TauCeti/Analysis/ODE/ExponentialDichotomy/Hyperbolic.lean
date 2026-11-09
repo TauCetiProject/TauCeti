@@ -144,12 +144,11 @@ theorem exists_norm_exp_smul_le_of_aeval_eq_zero' (T : V →L[ℂ] V) {q : ℂ[X
   have hTN : (t : ℂ) • T = (t : ℂ) • N + (-((t : ℂ) * β)) • (1 : V →L[ℂ] V) := by
     rw [hN, smul_add, smul_smul, neg_smul]
     abel
-  rw [hTN, exp_add_of_commute ((Commute.one_right _).smul_right _),
-    ← Algebra.algebraMap_eq_smul_one, ← algebraMap_exp_comm, Algebra.algebraMap_eq_smul_one,
-    mul_smul_comm, mul_one, norm_smul, ← Complex.exp_eq_exp_ℂ, Complex.norm_exp, mul_comm]
+  rw [hTN, exp_add_of_commute ((Commute.one_right _).smul_right _), TauCeti.exp_smul_one,
+    mul_smul_comm, mul_one, norm_smul, ← Complex.exp_eq_exp_ℂ, mul_comm]
   gcongr
   · exact TauCeti.norm_exp_smul_le_mul_exp_norm_of_norm_exp_pow_le (by simp) hC ht
-  · simp [mul_comm]
+  · simp [Complex.norm_exp, mul_comm]
 
 end Complex
 
