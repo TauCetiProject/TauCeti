@@ -193,7 +193,7 @@ theorem toContinuousMap_δ (σ : SmoothSimplex I M (p + 1)) (i : Fin (p + 2)) (x
     toContinuousMap ((smoothSingularSubcomplex I M : SSet).δ i σ) x =
       σ.toContinuousMap (simplexFace p i x) := by
   rw [toContinuousMap_apply, toContinuousMap_apply, fullSimplexEquivStdSimplex_simplexFace]
-  rfl
+  exact TopCat.toSSetObjEquiv_δ_apply σ.1 i _
 
 end SmoothSimplex
 
