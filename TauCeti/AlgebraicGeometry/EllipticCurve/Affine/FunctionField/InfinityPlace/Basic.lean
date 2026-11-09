@@ -260,7 +260,15 @@ theorem infinityPlace.mk_Y :
       = WithZero.exp 3 := by
   simpa using infinityPlace_algebraMap_of_natDegree_norm W three_ne_zero (natDegree_norm_mk_Y W)
 
+/-- The generic abscissa has a double pole at infinity. -/
+@[simp]
+theorem infinityPlace_genericX :
+    W.infinityPlace W.genericX = WithZero.exp 2 := by
+  rw [genericX_def, CoordinateRing.mk_C_eq_algebraMap]
+  exact infinityPlace.X W
+
 /-- The generic ordinate has a triple pole at infinity. -/
+@[simp]
 theorem infinityPlace_genericY :
     W.infinityPlace W.genericY = WithZero.exp 3 := by
   rw [genericY_def]
@@ -352,6 +360,14 @@ theorem infinityPlace.X_div_mk_Y :
       algebraMap W.CoordinateRing W.FunctionField (CoordinateRing.mk W Y)) = WithZero.exp (-1) := by
   rw [map_div₀, infinityPlace.X, infinityPlace.mk_Y, ← WithZero.exp_sub]
   norm_num
+
+/-- The local parameter `-x/y` has a simple zero at infinity. -/
+-- Evaluate the parameter before simp distributes the valuation over division.
+@[simp↓]
+theorem infinityPlace_neg_genericX_div_genericY :
+    W.infinityPlace (-W.genericX / W.genericY) = WithZero.exp (-1) := by
+  rw [neg_div, Valuation.map_neg, genericX_def, genericY_def,
+    CoordinateRing.mk_C_eq_algebraMap, infinityPlace.X_div_mk_Y]
 
 -- The place is discrete of rank one for free — its value group is a subgroup of the cyclic group
 -- `ℤᵐ⁰ˣ`, nontrivial by the instance above — but discreteness alone leaves the generator as

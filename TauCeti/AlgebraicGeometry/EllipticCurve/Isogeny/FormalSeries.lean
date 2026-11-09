@@ -59,9 +59,7 @@ private theorem exists_powerSeries_parameter :
       (g : K⸨X⸩) = W₁.functionFieldLaurentExpansion
         (φ.fieldPullback (-W₂.toAffine.genericX / W₂.toAffine.genericY)) := by
   apply φ.exists_powerSeries_constantCoeff_zero_of_infinityPlace_lt_one
-  rw [neg_div, Valuation.map_neg, Affine.genericX_def, Affine.genericY_def,
-    Affine.CoordinateRing.mk_C_eq_algebraMap, Affine.infinityPlace.X_div_mk_Y,
-    ← WithZero.exp_zero]
+  rw [Affine.infinityPlace_neg_genericX_div_genericY, ← WithZero.exp_zero]
   exact WithZero.exp_lt_exp.mpr (by norm_num)
 
 /-- The expansion of the pulled-back target parameter `-x₂/y₂`, as a power series in `-x₁/y₁`. -/
@@ -70,7 +68,6 @@ noncomputable def formalSeries : K⟦X⟧ :=
     (φ.fieldPullback (-W₂.toAffine.genericX / W₂.toAffine.genericY))).coeff n
 
 /-- The formal series is the Laurent expansion of the actual function-field pullback. -/
-@[simp]
 theorem coe_formalSeries :
     (φ.formalSeries : K⸨X⸩) = W₁.functionFieldLaurentExpansion
       (φ.fieldPullback (-W₂.toAffine.genericX / W₂.toAffine.genericY)) := by

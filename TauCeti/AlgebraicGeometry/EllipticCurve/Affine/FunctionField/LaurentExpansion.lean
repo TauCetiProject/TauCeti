@@ -63,12 +63,16 @@ theorem functionFieldLaurentExpansion_genericY :
   rw [Affine.genericY_def, AdjoinRoot.mk_X, functionFieldLaurentExpansion_algebraMap,
     laurentExpansion_root]
 
+private theorem functionFieldLaurentExpansion_genericY_ne_zero :
+    W.functionFieldLaurentExpansion W.toAffine.genericY ≠ 0 :=
+  (map_ne_zero_iff W.functionFieldLaurentExpansion
+    W.functionFieldLaurentExpansion.injective).mpr W.toAffine.genericY_ne_zero
+
 /-- The function `-1/y` expands to the formal power series `w(z)`. -/
 @[simp]
 theorem functionFieldLaurentExpansion_neg_inv_genericY :
     W.functionFieldLaurentExpansion (-W.toAffine.genericY⁻¹) = (formalW W : K⸨X⸩) := by
-  have hy := (map_ne_zero_iff W.functionFieldLaurentExpansion
-    W.functionFieldLaurentExpansion.injective).mpr W.toAffine.genericY_ne_zero
+  have hy := W.functionFieldLaurentExpansion_genericY_ne_zero
   apply (mul_right_inj' hy).mp
   rw [map_neg, map_inv₀, mul_neg, mul_inv_cancel₀ hy]
   rw [Affine.genericY_def, AdjoinRoot.mk_X, functionFieldLaurentExpansion_algebraMap,
@@ -80,8 +84,7 @@ theorem functionFieldLaurentExpansion_neg_inv_genericY :
 theorem functionFieldLaurentExpansion_neg_genericX_div_genericY :
     W.functionFieldLaurentExpansion (-W.toAffine.genericX / W.toAffine.genericY) =
       (PowerSeries.X : K⟦X⟧) := by
-  have hy := (map_ne_zero_iff W.functionFieldLaurentExpansion
-    W.functionFieldLaurentExpansion.injective).mpr W.toAffine.genericY_ne_zero
+  have hy := W.functionFieldLaurentExpansion_genericY_ne_zero
   have hx : W.functionFieldLaurentExpansion W.toAffine.genericX =
       -((PowerSeries.X : K⟦X⟧) * W.functionFieldLaurentExpansion W.toAffine.genericY) := by
     rw [Affine.genericX_def, Affine.genericY_def,
@@ -117,13 +120,10 @@ theorem valuation_functionFieldLaurentExpansion (f : W.toAffine.FunctionField) :
     simp only [v, Valuation.comap_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
     rw [functionFieldLaurentExpansion_neg_genericX_div_genericY, ofPowerSeries_X,
       LaurentSeries.valuation_single_zpow]
-  have hw : W.toAffine.infinityPlace (-W.toAffine.genericX / W.toAffine.genericY) =
-      WithZero.exp (-1) := by
-    rw [neg_div, Valuation.map_neg, Affine.genericX_def, Affine.genericY_def,
-      Affine.CoordinateRing.mk_C_eq_algebraMap, Affine.infinityPlace.X_div_mk_Y]
   exact DFunLike.congr_fun (Valuation.eq_of_isEquiv_of_surjective
     (Valuation.surjective_of_map_eq_exp_neg_one v hv)
-    (Valuation.surjective_of_map_eq_exp_neg_one W.toAffine.infinityPlace hw) hequiv) f
+    (Valuation.surjective_of_map_eq_exp_neg_one W.toAffine.infinityPlace
+      W.toAffine.infinityPlace_neg_genericX_div_genericY) hequiv) f
 
 /-- The valuation of the Laurent expansion represents the same place as infinity. -/
 theorem isEquiv_comap_functionFieldLaurentExpansion :
