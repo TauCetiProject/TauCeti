@@ -96,6 +96,7 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   best constant, with no loss.
 * `TauCeti.setIntegral_norm_sub_setAverage_sq_le_add_of_subset`: the decay of the square mean
   oscillation from `t` to `s ⊆ t` passes from a comparison function `H` to `f`.
+* `TauCeti.setIntegral_norm_sq_le_add_of_subset`: the same for the square integral itself.
 * `TauCeti.setIntegral_norm_sub_toLp_fst_setAverage_sq_le`: for a function with values in the
   Euclidean product `ℝ × E`, the best constant of the form `(c, 0)`.
 * `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality
@@ -389,6 +390,34 @@ theorem sq_setAverage_norm_le_setAverage_norm_sq (hs0 : μ s ≠ 0) (hs : μ s �
     (⨍ x in s, ‖g x‖ ∂μ) ^ 2 ≤ ⨍ x in s, ‖g x‖ ^ 2 ∂μ :=
   (Even.convexOn_pow even_two).map_set_average_le (continuous_pow 2).continuousOn isClosed_univ
     hs0 hs (ae_of_all _ fun _ ↦ Set.mem_univ _) hg.norm hg2
+
+/-- **Comparison of square integrals on nested sets.** Let `s ⊆ t`, let `f` and `H` be square
+integrable on `t`, and suppose the square integral of `H` decays from `t` to `s` with factor
+`K ≥ 0`: `∫_s ‖H‖² ≤ K ∫_t ‖H‖²`. Then the square integral of `f` decays with the same factor, up
+to the distance between `f` and `H`: `∫_s ‖f‖² ≤ 4K ∫_t ‖f‖² + (4K + 2) ∫_t ‖f - H‖²`. -/
+theorem setIntegral_norm_sq_le_add_of_subset {t : Set X} {f H : X → F} (hst : s ⊆ t)
+    (hf : MemLp f 2 (μ.restrict t)) (hH : MemLp H 2 (μ.restrict t)) {K : ℝ} (hK : 0 ≤ K)
+    (hdecay : ∫ x in s, ‖H x‖ ^ 2 ∂μ ≤ K * ∫ x in t, ‖H x‖ ^ 2 ∂μ) :
+    ∫ x in s, ‖f x‖ ^ 2 ∂μ ≤
+      4 * K * ∫ x in t, ‖f x‖ ^ 2 ∂μ + (4 * K + 2) * ∫ x in t, ‖f x - H x‖ ^ 2 ∂μ := by
+  have hfH : IntegrableOn (fun x => ‖f x - H x‖ ^ 2) t μ :=
+    (hf.sub hH).integrable_norm_pow two_ne_zero
+  have hHf : IntegrableOn (fun x => ‖H x - f x‖ ^ 2) t μ :=
+    (hH.sub hf).integrable_norm_pow two_ne_zero
+  -- On `s`, split `f = H + (f - H)`; on `t`, split `H = f + (H - f)`.
+  have step1 : ∫ x in s, ‖f x‖ ^ 2 ∂μ ≤
+      2 * (∫ x in s, ‖H x‖ ^ 2 ∂μ) + 2 * ∫ x in s, ‖f x - H x‖ ^ 2 ∂μ := by
+    simpa only [add_sub_cancel] using MeasureTheory.setIntegral_norm_add_sq_le
+      (IntegrableOn.mono_set (hH.integrable_norm_pow two_ne_zero) hst) (hfH.mono_set hst)
+  have step2 : ∫ x in t, ‖H x‖ ^ 2 ∂μ ≤
+      2 * (∫ x in t, ‖f x‖ ^ 2 ∂μ) + 2 * ∫ x in t, ‖f x - H x‖ ^ 2 ∂μ := by
+    simpa only [add_sub_cancel, norm_sub_rev (H _)] using
+      MeasureTheory.setIntegral_norm_add_sq_le (hf.integrable_norm_pow two_ne_zero) hHf
+  have step3 : ∫ x in s, ‖f x - H x‖ ^ 2 ∂μ ≤ ∫ x in t, ‖f x - H x‖ ^ 2 ∂μ :=
+    setIntegral_mono_set hfH (ae_of_all _ fun _ => by positivity) hst.eventuallyLE
+  have := mul_le_mul_of_nonneg_left step2 hK
+  have h0 : 0 ≤ ∫ x in t, ‖f x - H x‖ ^ 2 ∂μ := integral_nonneg fun _ => by positivity
+  linarith
 
 end SquareIntegrable
 
