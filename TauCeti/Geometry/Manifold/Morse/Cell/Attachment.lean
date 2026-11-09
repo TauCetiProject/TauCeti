@@ -182,7 +182,7 @@ private theorem snd_eq_zero_of_mfderiv_milnorFunction_eq_zero (hμ : ContDiff �
   set b := ‖(e (ψ i x)).2‖ ^ 2
   -- The curve `γ` scales the positive coordinates of `x` by `t`.
   set L : ℝ → EuclideanSpace ℝ (Fin n) := fun t ↦ e.symm ((e (ψ i x)).1, t • (e (ψ i x)).2)
-  set γ : ℝ → M := fun t ↦ φ.symm (L t)
+  set γ : ℝ → M := fun t ↦ (ψ i).symm (L t)
   have hL1 : L 1 = ψ i x := by simp [L]
   have hLt : L 1 ∈ (ψ i).target := hL1 ▸ φ.map_source hx
   -- `F ∘ γ` has derivative `0` at `1`, since `x = γ 1` is a critical point of `F`.
@@ -200,8 +200,7 @@ private theorem snd_eq_zero_of_mfderiv_milnorFunction_eq_zero (hμ : ContDiff �
       fun t ↦ c + (-a + t ^ 2 * b) - μ (a + 2 * (t ^ 2 * b)) := by
     filter_upwards [(e.symm.continuous.comp (continuous_const.prodMk (continuous_id.smul
       continuous_const))).continuousAt.preimage_mem_nhds ((ψ i).open_target.mem_nhds hLt)] with t ht
-    simpa [L, e, a, b, γ, φ, norm_smul, mul_pow] using
-      (milnorFunction_symm_apply k hψ (hf i) (μ := μ) ht).2
+    simpa [L, e, γ, norm_smul, mul_pow] using (milnorFunction_symm_apply k hψ (hf i) (μ := μ) ht).2
   have hq := (hasDerivAt_pow 2 (1 : ℝ)).mul_const b
   have hg := ((hq.const_add (-a)).const_add c).sub
     (((hμ.differentiable (by simp)) _).hasDerivAt.comp 1 ((hq.const_mul 2).const_add a))

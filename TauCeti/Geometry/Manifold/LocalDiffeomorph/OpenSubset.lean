@@ -25,7 +25,7 @@ manifold is diffeomorphic to it through its inclusion.
 ## Main declarations
 
 * `PartialDiffeomorph.restrOpen`: the restriction of a partial diffeomorphism to an open set.
-* `PartialDiffeomorph.contMDiffOn_restrOpen_toOpenPartialHomeomorph` and its `symm` version: the
+* `PartialDiffeomorph.contMDiffOn_toOpenPartialHomeomorph_restrOpen` and its `symm` version: the
   restrictions of the underlying open partial homeomorphism to an open set are smooth.
 * `Diffeomorph.ofTop`: an open subset equal to `⊤` is diffeomorphic to the ambient manifold.
 * `TauCeti.isLocalDiffeomorph_subtype_val`: the inclusion of an open subset is a `C^n` local
@@ -88,41 +88,41 @@ theorem coe_restrOpen_symm (hs : IsOpen s) :
 
 
 /-- The open partial homeomorphism of a partial diffeomorphism has its source. -/
-theorem source_toOpenPartialHomeomorph :
+theorem toOpenPartialHomeomorph_source :
     Φ.toOpenPartialHomeomorph.source = Φ.source :=
   congrArg PartialEquiv.source (Φ.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv)
 
-/-- The open partial homeomorph of a partial diffeomorphism has its target. -/
-theorem target_toOpenPartialHomeomorph :
+/-- The open partial homeomorphism of a partial diffeomorphism has its target. -/
+theorem toOpenPartialHomeomorph_target :
     Φ.toOpenPartialHomeomorph.target = Φ.target :=
   congrArg PartialEquiv.target (Φ.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv)
 
-/-- The inverse of the open partial homeomorph of a partial diffeomorphism is the inverse
+/-- The inverse of the open partial homeomorphism of a partial diffeomorphism is the inverse
 function of the partial diffeomorphism. -/
 @[simp]
-theorem coe_symm_toOpenPartialHomeomorph :
+theorem coe_toOpenPartialHomeomorph_symm :
     ⇑Φ.toOpenPartialHomeomorph.symm = Φ.symm :=
   rfl
 
-/-- Restricting the open partial homeomorph of a partial diffeomorphism to an open set keeps it
+/-- Restricting the open partial homeomorphism of a partial diffeomorphism to an open set keeps it
 smooth on its source. -/
-theorem contMDiffOn_restrOpen_toOpenPartialHomeomorph {V : Set M} (hV : IsOpen V) :
+theorem contMDiffOn_toOpenPartialHomeomorph_restrOpen {V : Set M} (hV : IsOpen V) :
     ContMDiffOn I J n (Φ.toOpenPartialHomeomorph.restrOpen V hV)
       (Φ.toOpenPartialHomeomorph.restrOpen V hV).source := by
   rw [OpenPartialHomeomorph.coe_restrOpen, OpenPartialHomeomorph.restrOpen_source,
-    Φ.toFun'_toOpenPartialHomeomorph, Φ.source_toOpenPartialHomeomorph]
+    Φ.toFun'_toOpenPartialHomeomorph, Φ.toOpenPartialHomeomorph_source]
   exact Φ.contMDiffOn.mono inter_subset_left
 
-/-- The inverse of the restriction of the open partial homeomorph of a partial diffeomorphism to
+/-- The inverse of the restriction of the open partial homeomorphism of a partial diffeomorphism to
 an open set is smooth on the target of the restriction. -/
-theorem contMDiffOn_symm_restrOpen_toOpenPartialHomeomorph {V : Set M} (hV : IsOpen V) :
+theorem contMDiffOn_toOpenPartialHomeomorph_restrOpen_symm {V : Set M} (hV : IsOpen V) :
     ContMDiffOn J I n (Φ.toOpenPartialHomeomorph.restrOpen V hV).symm
       (Φ.toOpenPartialHomeomorph.restrOpen V hV).target := by
   have htarget : (Φ.toOpenPartialHomeomorph.restrOpen V hV).target ⊆ Φ.target := by
     rw [OpenPartialHomeomorph.restrOpen_toPartialEquiv, PartialEquiv.restr_target,
-      ← Φ.target_toOpenPartialHomeomorph]
+      ← Φ.toOpenPartialHomeomorph_target]
     exact inter_subset_left
-  rw [OpenPartialHomeomorph.coe_restrOpen_symm, Φ.coe_symm_toOpenPartialHomeomorph]
+  rw [OpenPartialHomeomorph.coe_restrOpen_symm, Φ.coe_toOpenPartialHomeomorph_symm]
   exact Φ.symm.contMDiffOn.mono htarget
 
 end PartialDiffeomorph

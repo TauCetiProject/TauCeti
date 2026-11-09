@@ -52,7 +52,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
-/-- A chart whose inverse coordinates `(z₁, z₂)` satisfy `exp z₁ * exp z₂ = x` is a slice chart
+/-- A chart sending each `x` in its source to coordinates `(z₁, z₂)` with
+`exp z₁ * exp z₂ = x` is a slice chart
 for a subgroup `K` on any open subset of its source where the transverse coordinate `z₂` lies in
 a ball on which `exp z₂ ∈ K` forces `z₂ = 0`, once `exp z₁ ∈ K` for all tangential `z₁`. -/
 private theorem isSliceChart_restrOpen_of_lieExp_mul_lieExp [T2Space G] {K : Subgroup G}
@@ -106,7 +107,7 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
   have hV : IsOpen V := Φ₀.continuousOn.isOpen_inter_preimage Φ₀.open_source
     (Metric.isOpen_ball.preimage continuous_snd)
   have hΦ₀_source : Φ₀.source = hf.localInverse.source :=
-    hf.localInverse.source_toOpenPartialHomeomorph
+    hf.localInverse.toOpenPartialHomeomorph_source
   have hΦ₀_apply (x : G) : Φ₀ x = hf.localInverse x := by
     rw [hf.localInverse.toFun'_toOpenPartialHomeomorph]
   have h1 : (1 : G) ∈ Φ₀.source := by
@@ -118,8 +119,8 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
     rw [Submodule.lieExpMulLieExp_zero] at h
     rwa [hΦ₀_apply]
   refine ⟨q, Φ₀.restrOpen V hV, hpq, ⟨h1, h1, ?_⟩, ?_,
-    hf.localInverse.contMDiffOn_restrOpen_toOpenPartialHomeomorph hV,
-    hf.localInverse.contMDiffOn_symm_restrOpen_toOpenPartialHomeomorph hV⟩
+    hf.localInverse.contMDiffOn_toOpenPartialHomeomorph_restrOpen hV,
+    hf.localInverse.contMDiffOn_toOpenPartialHomeomorph_restrOpen_symm hV⟩
   · -- The inverse chart sends `1` to `0`, whose transverse coordinate lies in every positive ball.
     rw [Set.mem_preimage, hzero]
     exact Metric.mem_ball_self hε
