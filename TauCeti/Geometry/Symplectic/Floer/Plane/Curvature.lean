@@ -800,23 +800,6 @@ theorem lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le (ω : Sympl
   simpa using ω.constSmooth.lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le hH
     (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff) hB u
 
-omit [FiniteDimensional ℝ V] in
-/-- The components of the perturbation in real coordinates are differentiable in the domain
-point. -/
-private theorem differentiableAt_perturbation_domain (hH : Periodic H 1)
-    (hHs : ContDiff ℝ 1 (uncurry H)) (z : ℝ × ℝ) (x : V) (v : ℂ) :
-    DifferentiableAt ℝ (fun z' ↦ p.perturbation H (Complex.equivRealProdCLM.symm z') x v) z :=
-  PSSPlane.differentiableAt_perturbation_domain hH
-    (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff) z x v
-
-omit [FiniteDimensional ℝ V] in
-/-- The components of the perturbation are differentiable in the target point. -/
-private theorem differentiableAt_perturbation_target (hH : Periodic H 1)
-    (hHs : ContDiff ℝ 1 (uncurry H)) (w : ℂ) (x : V) (v : ℂ) :
-    DifferentiableAt ℝ (fun y ↦ p.perturbation H w y v) x :=
-  mdifferentiableAt_iff_differentiableAt.1 (PSSPlane.mdifferentiableAt_perturbation_target hH
-    (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff) w x v)
-
 /-- **The energy identity on discs of a PSS plane.** Let `K` be the perturbation of a PSS plane
 given by a period-one `C¹` Hamiltonian `H`, with components `K_s(z) = K(z)(1)` and
 `K_t(z) = K(z)(i)` in the global coordinate `z = s + i t` of `ℂ`, and let `u` be a `C¹` map. For
@@ -862,6 +845,7 @@ theorem hamiltonianCurvature_pssPlanePerturbation_eq_zero_of_two_lt (ω : Symple
     rw [h, endCoord_zero, Complex.zero_re, mul_zero] at hz
     norm_num at hz
   obtain ⟨w, -, rfl⟩ := SmoothTwoForm.mem_image_realChart (p := p) h₀
+  have hH' := contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff
   have hw : 2 < p.endSign * w.1 := by
     rwa [realChart_apply, ContinuousLinearEquiv.symm_apply_apply, re_endCoord_cylindricalEndLift,
       Complex.equivRealProdCLM_symm_apply_re] at hz
@@ -870,10 +854,12 @@ theorem hamiltonianCurvature_pssPlanePerturbation_eq_zero_of_two_lt (ω : Symple
     (Ks := fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
     (Kt := fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
     (w := w) (x := x) (contDiff_realChart (n := 2) p.contDiff_cylindricalEndLift).contDiffAt
-    (differentiableAt_perturbation_domain hH hHs _ _ 1)
-    (differentiableAt_perturbation_domain hH hHs _ _ Complex.I)
-    (differentiableAt_perturbation_target hH hHs _ _ 1)
-    (differentiableAt_perturbation_target hH hHs _ _ Complex.I)
+    (PSSPlane.differentiableAt_perturbation_domain hH hH' _ _ 1)
+    (PSSPlane.differentiableAt_perturbation_domain hH hH' _ _ Complex.I)
+    (mdifferentiableAt_iff_differentiableAt.1
+      (PSSPlane.mdifferentiableAt_perturbation_target hH hH' _ _ 1))
+    (mdifferentiableAt_iff_differentiableAt.1
+      (PSSPlane.mdifferentiableAt_perturbation_target hH hH' _ _ Complex.I))
   rw [SmoothTwoForm.perturbationPullback_realChart_cylindricalEndLift,
     SmoothTwoForm.perturbationPullback_realChart_cylindricalEndLift,
     equivRealProdCLM_symm_stdComplexLineReal,
