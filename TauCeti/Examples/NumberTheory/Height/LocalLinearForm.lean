@@ -60,7 +60,7 @@ example (v : FinitePlace ℚ) :
           v (∑ _ : Fin 1, (2 : ℚ) * 3) := by
   simp [map_mul]
 
-/-- The normalized coordinate-height estimate also covers a vanishing linear-form value. -/
+/-- At a vanishing linear-form value, the totalized quotient has height one. -/
 example : mulHeight₁ ((1 : ℚ) * 1 / ∑ i : Fin 2, (![1, 1] : Fin 2 → ℚ) i *
     (![1, -1] : Fin 2 → ℚ) i) = 1 := by
   norm_num [Fin.sum_univ_two]

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.Height.Basic
 public import TauCeti.NumberTheory.Height.FundamentalInequality
-import Mathlib.Algebra.Order.AbsoluteValue.Int
 
 /-!
 # Local Liouville bounds for linear forms
@@ -94,18 +93,17 @@ namespace NumberField
 variable {K ι : Type*} [Field K] [NumberField K] [Fintype ι]
 
 /-- **Local Liouville inequality for a linear form at an infinite place.** The product of
-the two local sup norms, raised to the place's multiplicity, is bounded by the local value
-of the form times the product of the projective heights and the triangle-inequality constant. -/
+the two local sup norms, raised to `v.mult`, is bounded by the local value of the form
+raised to `v.mult`, times `card ι ^ [K : ℚ]` and the product of the projective heights.
+The constant and the projective heights are not raised to `v.mult`. -/
 theorem InfinitePlace.iSup_mul_iSup_pow_mult_le (v : InfinitePlace K) (a x : ι → K)
     (hz : ∑ i, a i * x i ≠ 0) :
     ((⨆ i, v (a i)) * ⨆ i, v (x i)) ^ v.mult ≤
       (Fintype.card ι : ℝ) ^ Module.finrank ℚ K * (mulHeight a * mulHeight x) *
         v (∑ i, a i * x i) ^ v.mult := by
   classical
-  have : Nonempty ι := by
-    by_contra h
-    have : IsEmpty ι := not_nonempty_iff.mp h
-    simp at hz
+  obtain ⟨k, -, -⟩ := Finset.exists_ne_zero_of_sum_ne_zero hz
+  have : Nonempty ι := ⟨k⟩
   obtain ⟨i, hi⟩ := exists_eq_ciSup_of_finite (f := fun i ↦ v (a i))
   obtain ⟨j, hj⟩ := exists_eq_ciSup_of_finite (f := fun j ↦ v (x j))
   have h := (v.max_apply_one_pow_mult_le_mulHeight₁
@@ -117,7 +115,7 @@ theorem InfinitePlace.iSup_mul_iSup_pow_mult_le (v : InfinitePlace K) (a x : ι 
       simpa only [map_div₀, map_mul] using h)
   rw [← hi, ← hj]
   rw [div_pow] at hlocal
-  exact (div_le_iff₀ (pow_pos (v.1.pos hz) _)).mp hlocal
+  exact (div_le_iff₀ (pow_pos (InfinitePlace.pos_iff.mpr hz) _)).mp hlocal
 
 /-- **Local Liouville inequality for a linear form at a finite place.** The constant
 `card ι ^ [K : ℚ]` remains present, since the global height still uses the infinite places. -/
@@ -127,16 +125,14 @@ theorem FinitePlace.iSup_mul_iSup_le (v : FinitePlace K) (a x : ι → K)
       (Fintype.card ι : ℝ) ^ Module.finrank ℚ K * (mulHeight a * mulHeight x) *
         v (∑ i, a i * x i) := by
   classical
-  have : Nonempty ι := by
-    by_contra h
-    have : IsEmpty ι := not_nonempty_iff.mp h
-    simp at hz
+  obtain ⟨k, -, -⟩ := Finset.exists_ne_zero_of_sum_ne_zero hz
+  have : Nonempty ι := ⟨k⟩
   obtain ⟨i, hi⟩ := exists_eq_ciSup_of_finite (f := fun i ↦ v (a i))
   obtain ⟨j, hj⟩ := exists_eq_ciSup_of_finite (f := fun j ↦ v (x j))
   have h := (le_max_left _ _).trans ((v.max_apply_one_le_mulHeight₁
     (a i * x j / ∑ k, a k * x k)).trans (mulHeight₁_mul_div_sum_mul_le a x i j))
   rw [NumberField.totalWeight_eq_finrank, map_div₀, map_mul] at h
   rw [← hi, ← hj]
-  exact (div_le_iff₀ (v.1.pos hz)).mp h
+  exact (div_le_iff₀ (FinitePlace.pos_iff.mpr hz)).mp h
 
 end NumberField
