@@ -478,7 +478,7 @@ theorem kyFanSum_comp_linearIsometryEquiv (A : E →ₗ[𝕜] F) (V : E' ≃ₗ�
 in the target ambient space, does not change its Ky Fan singular-value sums. -/
 @[simp]
 theorem kyFanSum_subtype_comp_comp_orthogonalProjectionOnto
-    (U : Submodule 𝕜 E) (W : Submodule 𝕜 F) [U.HasOrthogonalProjection]
+    (U : Submodule 𝕜 E) (W : Submodule 𝕜 F)
     (T : U →ₗ[𝕜] W) (k : ℕ) :
     (W.subtype ∘ₗ T ∘ₗ U.orthogonalProjectionOnto.toLinearMap).kyFanSum k =
       T.kyFanSum k := by
