@@ -13,6 +13,8 @@ public import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
+import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
+import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -41,6 +43,15 @@ the inverse map is needed. When `U = Φ⁻¹(V)` and `Φ` is proper, for instanc
 precomposition also preserves zero boundary values: a test function on `V` composed with `Φ`
 vanishes off the compact set `Φ⁻¹(tsupport φ) ⊆ U`.
 
+The same change of variables at exponent one, applied on small balls, gives the chain rule for
+weak derivatives under a `C¹` map `Φ`, injective with invertible derivative on `U` and mapping it
+into `V`, with no bound on `DΦ` or on the Jacobian: if `Du` is a weak derivative of `u` on `V`,
+then `x ↦ Du(Φ x) ∘ DΦ(x)` is one of `u ∘ Φ` on `U`, for any complete codomain. On a ball whose
+closure lies in `U` the derivative of `Φ` is bounded and its Jacobian is bounded below, so
+`TauCeti.W1p.compL` applies to each scalar component `ℓ ∘ u`; the local identities glue
+(`TauCeti.hasWeakFDerivOn_iff_locally`) and continuous linear functionals detect the
+vector-valued identity (`TauCeti.hasWeakFDerivOn_of_forall_strongDual`).
+
 Such changes of variables are the standard tool for flattening the boundary of a domain that is
 locally the region above a graph, which reduces trace and extension problems there to the
 half-space, where `TauCeti.W1p.halfSpaceTrace` and `TauCeti.W1p.extendByReflectionL` apply.
@@ -53,6 +64,9 @@ half-space, where `TauCeti.W1p.halfSpaceTrace` and `TauCeti.W1p.extendByReflecti
   weak gradient is `DΦ* (∇u ∘ Φ)`, almost everywhere on `U`.
 * `TauCeti.W1p.norm_compL_le`, `TauCeti.W1p.opNorm_compL_le`: the norm bound.
 * `TauCeti.W1p.compL_mem_w1p0Submodule`: precomposition maps `W^{1,p}_0(V)` into `W^{1,p}_0(U)`.
+* `TauCeti.HasWeakFDerivOn.comp_contDiffOn_diffeo`: the chain rule for weak derivatives under a
+  `C¹` change of variables.
+* `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add`: its affine case `x ↦ A x + b`.
 
 ## References
 
@@ -366,5 +380,125 @@ theorem W1p.compL_mem_w1p0Submodule (hΦp : IsProperMap Φ) (hUV : (U : Set E) =
   exact image_eq_zero_of_notMem_tsupport hxK
 
 end ChangeOfVariables
+
+/-! ### The chain rule for weak derivatives under a `C¹` change of variables -/
+
+section AffineMap
+
+variable {𝕜 E' F' : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+
+/-- The affine map `x ↦ A x + b` has derivative `A` at every point. -/
+theorem _root_.ContinuousLinearEquiv.fderiv_add_const (A : E' ≃L[𝕜] F') (b : F') (x : E') :
+    fderiv 𝕜 (fun x => A x + b) x = (A : E' →L[𝕜] F') :=
+  (A.hasFDerivAt.add_const b).fderiv
+
+/-- The derivative of the affine map `x ↦ A x + b` has nonzero determinant at every point. -/
+theorem _root_.ContinuousLinearEquiv.det_fderiv_add_const_ne_zero (A : E' ≃L[𝕜] E') (b x : E') :
+    (fderiv 𝕜 (fun x => A x + b) x).det ≠ 0 := by
+  rw [A.fderiv_add_const]
+  exact A.toLinearEquiv.isUnit_det'.ne_zero
+
+end AffineMap
+
+section ChainRule
+
+variable [mu.IsAddHaarMeasure] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The scalar chain rule on a ball whose closure lies in `U`, from the first-order change of
+variables `TauCeti.W1p.compL` at exponent one. -/
+private theorem hasWeakFDerivOn_comp_ball {u : E → ℝ} {Du : E → E →L[ℝ] ℝ}
+    (hu : HasWeakFDerivOn mu V u Du) (hΦ : ContDiffOn ℝ 1 Φ U) (hinj : InjOn Φ U)
+    (hdet : ∀ x ∈ (U : Set E), (fderiv ℝ Φ x).det ≠ 0) (hmaps : MapsTo Φ U V) {x : E} {r : ℝ}
+    (hr : Metric.closedBall x r ⊆ U) :
+    HasWeakFDerivOn mu ⟨Metric.ball x r, Metric.isOpen_ball⟩ (fun y => u (Φ y))
+      (fun y => (Du (Φ y)).comp (fderiv ℝ Φ y)) := by
+  set B : Opens E := ⟨Metric.ball x r, Metric.isOpen_ball⟩
+  have hK : IsCompact (Metric.closedBall x r) := isCompact_closedBall x r
+  have hBU : (B : Set E) ⊆ U := Metric.ball_subset_closedBall.trans hr
+  obtain ⟨c, L, hc, hcK, hLK⟩ :=
+    exists_det_bounds_of_isCompact U.isOpen hΦ hK hr fun y hy => hdet y (hr hy)
+  -- An open neighbourhood `V'` of `Φ (closedBall x r)` with compact closure in `V`.
+  have hΦK : IsCompact (Φ '' Metric.closedBall x r) :=
+    hK.image_of_continuousOn (hΦ.continuousOn.mono hr)
+  obtain ⟨W, hWo, hKW, hWV, hWc⟩ := exists_open_between_and_isCompact_closure hΦK V.isOpen
+    ((image_mono hr).trans hmaps.image_subset)
+  set V' : Opens E := ⟨W, hWo⟩
+  have hV'V : V' ≤ V := subset_closure.trans hWV
+  have hmaps' : MapsTo Φ B V' := fun y hy => hKW ⟨y, Metric.ball_subset_closedBall hy, rfl⟩
+  have hΦB : DifferentiableOn ℝ Φ B := (hΦ.differentiableOn one_ne_zero).mono hBU
+  have hcB : ∀ y ∈ (B : Set E), c ≤ |(fderiv ℝ Φ y).det| := fun y hy =>
+    hcK y (Metric.ball_subset_closedBall hy)
+  have hLB : ∀ y ∈ (B : Set E), ‖fderiv ℝ Φ y‖ ≤ L := fun y hy =>
+    hLK y (Metric.ball_subset_closedBall hy)
+  -- The value and the gradient of `u` are integrable on `V'`.
+  set g : E → E := fun y => (InnerProductSpace.toDual ℝ E).symm (Du y)
+  have hg : ∀ y, innerSL ℝ (g y) = Du y := fun y => by
+    ext v
+    simp [g, InnerProductSpace.toDual_symm_apply]
+  have hu1 : MemLp u 1 (mu.restrict V') := memLp_one_iff_integrable.2
+    ((hu.locallyIntegrableOn.integrableOn_compact_subset hWV hWc).mono_set subset_closure)
+  have hDu1 : MemLp Du 1 (mu.restrict V') := memLp_one_iff_integrable.2
+    ((hu.locallyIntegrableOn_deriv.integrableOn_compact_subset hWV hWc).mono_set subset_closure)
+  have hg1 : MemLp g 1 (mu.restrict V') :=
+    (InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv.toContinuousLinearMap.comp_memLp'
+      hDu1
+  have hw : HasWeakFDerivOn mu V' (hu1.toLp u) (fun y => innerSL ℝ (hg1.toLp g y)) := by
+    refine ((hu.mono hV'V).congr_ae hu1.coeFn_toLp.symm).congr_ae_deriv ?_
+    filter_upwards [hg1.coeFn_toLp] with y hy
+    rw [hy, hg]
+  set w : W1p mu V' 1 := W1p.mk (hu1.toLp u) (hg1.toLp g) hw
+  have hcomp := W1p.hasWeakFDerivOn
+    (W1p.compL Φ ENNReal.one_ne_top hΦB (hinj.mono hBU) hmaps' hLB hc hcB w)
+  -- Almost-everywhere statements on `V'` pull back to `B` along `Φ`.
+  have hpull : ∀ {P : E → Prop}, (∀ᵐ z ∂mu.restrict V', P z) → ∀ᵐ y ∂mu.restrict B, P (Φ y) :=
+    fun h => ae_comp_of_map_absolutelyContinuous
+      (hΦB.continuousOn.aemeasurable B.isOpen.measurableSet)
+      (Measure.absolutelyContinuous_of_le_smul
+        (map_restrict_le_smul_restrict_of_differentiableOn mu B.isOpen hΦB (hinj.mono hBU)
+          hmaps' hc hcB)) h
+  refine (hcomp.congr_ae ?_).congr_ae_deriv ?_
+  · filter_upwards [W1p.value_compL_ae Φ ENNReal.one_ne_top hΦB (hinj.mono hBU) hmaps' hLB hc
+      hcB w, hpull hu1.coeFn_toLp] with y h1 h2
+    rw [h1, W1p.value_mk, h2]
+  · filter_upwards [W1p.gradient_compL_ae Φ ENNReal.one_ne_top hΦB (hinj.mono hBU) hmaps' hLB hc
+      hcB w, hpull hg1.coeFn_toLp] with y h1 h2
+    rw [h1, W1p.gradient_mk, h2, ← hg (Φ y)]
+    ext v
+    simp [ContinuousLinearMap.adjoint_inner_left]
+
+/-- **The chain rule for weak derivatives under a `C¹` change of variables.** Let `Φ` be `C¹`
+and injective on an open set `U`, with invertible derivative there, mapping `U` into an open set
+`V`. If `Du` is a weak derivative of `u` on `V`, then `x ↦ Du(Φ x) ∘ DΦ(x)` is a weak derivative
+of `u ∘ Φ` on `U`. The derivative of `Φ` need not be bounded on `U`, nor its Jacobian bounded
+below, and the codomain may be any complete real normed space. -/
+theorem HasWeakFDerivOn.comp_contDiffOn_diffeo {u : E → F} {Du : E → E →L[ℝ] F}
+    (hu : HasWeakFDerivOn mu V u Du) (hΦ : ContDiffOn ℝ 1 Φ U)
+    (hinj : InjOn Φ U) (hdet : ∀ x ∈ (U : Set E), (fderiv ℝ Φ x).det ≠ 0)
+    (hmaps : MapsTo Φ U V) :
+    HasWeakFDerivOn mu U (fun x => u (Φ x)) (fun x => (Du (Φ x)).comp (fderiv ℝ Φ x)) := by
+  have := hu.completeSpace
+  have hDloc := hu.locallyIntegrableOn_deriv.comp_fderiv_contDiffOn_diffeo U.isOpen hΦ hinj hdet
+    hmaps
+  refine hasWeakFDerivOn_of_forall_strongDual
+    (hu.locallyIntegrableOn.comp_contDiffOn_diffeo U.isOpen hΦ hinj hdet hmaps)
+    (fun v => (ContinuousLinearMap.apply ℝ F v).locallyIntegrableOn_comp hDloc) fun ℓ => ?_
+  refine hasWeakFDerivOn_iff_locally.2 fun x hx => ?_
+  obtain ⟨r, hr, hrU⟩ := Metric.nhds_basis_closedBall.mem_iff.1 (U.isOpen.mem_nhds hx)
+  exact ⟨_, Metric.mem_ball_self hr,
+    hasWeakFDerivOn_comp_ball (hu.clm_comp ℓ) hΦ hinj hdet hmaps hrU⟩
+
+/-- **Affine changes of variables.** For `A : E ≃L[ℝ] E` and `b : E` with `x ↦ A x + b` mapping `U`
+into `V`, a weak derivative `Du` of `u` on `V` gives the weak derivative `x ↦ Du (A x + b) ∘ A` of
+`x ↦ u (A x + b)` on `U`. -/
+theorem HasWeakFDerivOn.comp_continuousLinearEquiv_add {u : E → F} {Du : E → E →L[ℝ] F}
+    (hu : HasWeakFDerivOn mu V u Du) (A : E ≃L[ℝ] E) (b : E)
+    (hmaps : MapsTo (fun x => A x + b) U V) :
+    HasWeakFDerivOn mu U (fun x => u (A x + b)) (fun x => (Du (A x + b)).comp (A : E →L[ℝ] E)) := by
+  simpa only [A.fderiv_add_const] using hu.comp_contDiffOn_diffeo (Φ := fun x => A x + b)
+    (A.contDiff.add contDiff_const).contDiffOn ((add_left_injective b).comp A.injective).injOn
+    (fun x _ => A.det_fderiv_add_const_ne_zero b x) hmaps
+
+end ChainRule
 
 end TauCeti
