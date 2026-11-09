@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
+import TauCeti.MeasureTheory.OptimalTransport.Duality.CyclicalMonotonicity
 
 /-!
-# Weak duality for the Wasserstein distance with quantized potentials
+# Duality for the Wasserstein distance
 
 Kantorovich weak duality bounds the dual value of a feasible pair of potentials by the transport
 cost. This file records the form of that bound for the `p`-Wasserstein distance when the
@@ -21,10 +23,15 @@ two `L^p` displacements `‖d(·, Q₁ ·)‖_{L^p (A)}` and `‖d(·, Q₂ ·)�
 Such potentials arise from strong duality on a finite subspace onto which the laws have been
 quantized, and the bound transfers the finite dual certificate back to the original laws.
 
+For the quadratic cost, Kantorovich duality concentrates a coupling realizing a finite `W₂`
+distance on a measurable set that is cyclically monotone for the cost `‖x - y‖ ^ 2 / 2`.
+
 ## Main statements
 
 * `TauCeti.ofReal_integral_add_integral_le_wassersteinEDist_add_rpow` — weak duality for potentials
   that are feasible for the quantized cost.
+* `TauCeti.exists_isCyclicallyMonotone_of_eLpNorm_eq` — a coupling realizing a finite `W₂`
+  distance is concentrated on a measurable set that is cyclically monotone for the quadratic cost.
 -/
 
 public section
@@ -104,5 +111,40 @@ theorem ofReal_integral_add_integral_le_wassersteinEDist_add_rpow (hp1 : 1 ≤ p
     tsub_le_iff_right.1 (le_wassersteinEDist fun γ hγ ↦ tsub_le_iff_right.2 (key γ hγ))
   calc D = (D ^ p.toReal⁻¹) ^ p.toReal := (ENNReal.rpow_inv_rpow hr.ne' D).symm
     _ ≤ (wassersteinEDist p A B + e) ^ p.toReal := by gcongr
+
+section Quadratic
+
+variable {E : Type*} [NormedAddCommGroup E] [CompleteSpace E] [MeasurableSpace E] [BorelSpace E]
+  [SecondCountableTopology E]
+
+/-- A coupling realizing `W₂ (μ, ν) < ∞` is concentrated on a measurable set that is cyclically
+monotone for the quadratic cost. -/
+theorem exists_isCyclicallyMonotone_of_eLpNorm_eq {μ ν : Measure E}
+    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] {π : Measure (E × E)}
+    (hπ : IsCoupling π μ ν)
+    (hopt : eLpNorm (fun z : E × E ↦ edist z.1 z.2) 2 π = wassersteinEDist 2 μ ν)
+    (hfin : wassersteinEDist 2 μ ν ≠ ∞) :
+    ∃ S : Set (E × E), MeasurableSet S ∧
+      IsCyclicallyMonotone (fun z : E × E ↦ ‖z.1 - z.2‖ ^ 2 / 2) S ∧ π Sᶜ = 0 := by
+  have h2 := (isOptimalCoupling_edist_rpow_iff measurable_edist two_ne_zero
+    ENNReal.ofNat_ne_top).2 ⟨hπ, hopt⟩
+  rw [ENNReal.toReal_ofNat] at h2
+  have hq := isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two h2
+  -- The half-squared cost is dominated by the squared distance, whose integral is `W₂ ^ 2`.
+  have hcost : transportCost (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
+    rw [← hq.lintegral_eq]
+    refine ne_top_of_le_ne_top ?_ (lintegral_mono fun z ↦
+      (le_mul_of_one_le_left zero_le one_le_two).trans_eq
+        (edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two z).symm)
+    have h2' := h2.lintegral_edist_rpow_eq measurable_edist two_ne_zero ENNReal.ofNat_ne_top
+    rw [ENNReal.toReal_ofNat] at h2'
+    rw [h2']
+    exact ENNReal.rpow_ne_top_of_nonneg zero_le_two hfin
+  obtain ⟨S, hS, hcm, hπS⟩ :=
+    hq.exists_isCyclicallyMonotone_of_lowerSemicontinuous
+      continuous_ofReal_norm_sub_sq_div_two.lowerSemicontinuous hcost
+  exact ⟨S, hS, (isCyclicallyMonotone_ofReal_iff fun _ ↦ by positivity).1 hcm, hπS⟩
+
+end Quadratic
 
 end TauCeti
