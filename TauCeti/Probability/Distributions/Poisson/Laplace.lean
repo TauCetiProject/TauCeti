@@ -27,20 +27,17 @@ namespace TauCeti.Probability
 theorem lintegral_expNeg_mul_natCast_poissonMeasure (r : ℝ≥0) (c : ℝ≥0∞) :
     ∫⁻ k : ℕ, (ENNReal.expNeg (c * k) : ℝ≥0∞) ∂poissonMeasure r =
       (ENNReal.expNeg ((r : ℝ≥0∞) * (1 - (ENNReal.expNeg c : ℝ≥0∞))) : ℝ≥0∞) := by
-  have heval (k : ℕ) : ENNReal.expNeg (c * k) = ENNReal.expNeg c ^ k := by
-    induction k with
-    | zero => simp
-    | succ k hk => simp [Nat.cast_add, mul_add, ENNReal.expNeg_add, hk, pow_succ]
-  simp_rw [heval]
+  simp_rw [ENNReal.expNeg_mul_natCast]
   have hpow (k : ℕ) : ((ENNReal.expNeg c : ℝ≥0) ^ k : ℝ≥0∞) =
       ENNReal.ofReal ((ENNReal.expNeg c : ℝ) ^ k) := by simp
   simp_rw [ENNReal.coe_pow, hpow]
   rw [lintegral_ofReal_poissonMeasure (fun _ => by positivity) r
     (hasSum_pow_poissonMeasure r (ENNReal.expNeg c : ℝ))]
-  rw [← ENNReal.coe_one, ← ENNReal.coe_sub, ← ENNReal.coe_mul, ENNReal.expNeg_coe]
+  have harg : (r : ℝ≥0∞) * (1 - (ENNReal.expNeg c : ℝ≥0∞)) =
+      ((r * (1 - ENNReal.expNeg c) : ℝ≥0) : ℝ≥0∞) := by push_cast; rfl
+  rw [harg, ENNReal.expNeg_coe]
   congr 2
-  rw [NNReal.coe_mul, NNReal.coe_sub (ENNReal.expNeg_le_one c)]
-  push_cast
+  push_cast [NNReal.coe_sub (ENNReal.expNeg_le_one c)]
   ring
 
 end TauCeti.Probability

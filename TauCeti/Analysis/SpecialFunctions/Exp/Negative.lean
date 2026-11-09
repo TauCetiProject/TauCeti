@@ -65,6 +65,13 @@ theorem expNeg_le_one (x : ℝ≥0∞) : expNeg x ≤ 1 := by
     EReal.neg_add (.inl (EReal.coe_ennreal_ne_bot _)) (.inr (EReal.coe_ennreal_ne_bot _)),
     sub_eq_add_neg, EReal.exp_add, toNNReal_mul]
 
+/-- A natural multiple becomes a power, including at infinity. -/
+@[simp] theorem expNeg_mul_natCast (x : ℝ≥0∞) (n : ℕ) :
+    expNeg (x * n) = expNeg x ^ n := by
+  induction n with
+  | zero => simp
+  | succ n hn => simp [Nat.cast_add, mul_add, hn, pow_succ]
+
 /-- Continuity includes convergence to zero when the argument tends to infinity. -/
 @[fun_prop] theorem continuous_expNeg : Continuous expNeg := by
   apply continuous_iff_continuousAt.mpr
