@@ -289,10 +289,8 @@ theorem exists_one_add_norm_sq_rpow_le_of_mem_tsupport_inhomogeneousLittlewoodPa
   have hc₁ : 0 < c₁ := lt_min one_pos (half_pos φ.rIn_pos)
   have hc₂ : 0 < c₂ := by linarith [φ.rOut_pos]
   refine ⟨max (c₁ ^ t) (c₂ ^ t), by positivity, fun j ξ hξ ↦ ?_⟩
-  set s := Real.sqrt (1 + ‖ξ‖ ^ 2) with hs_def
-  have hs : (1 + ‖ξ‖ ^ 2) ^ (t / 2) = s ^ t := by
-    rw [hs_def, Real.sqrt_eq_rpow, ← Real.rpow_mul (by positivity)]
-    ring_nf
+  set s := Real.sqrt (1 + ‖ξ‖ ^ 2)
+  have hs : (1 + ‖ξ‖ ^ 2) ^ (t / 2) = s ^ t := Real.rpow_div_two_eq_sqrt t (by positivity)
   have h2 : (0 : ℝ) < 2 ^ j := by positivity
   -- upper bound `s ≤ c₂ 2^j`
   have hupper : s ≤ c₂ * 2 ^ j := by
@@ -477,8 +475,7 @@ theorem exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_rpow_le (k :
         (1 + ‖ξ‖ ^ 2) ^ ((k : ℝ) / 2) ≤ B := by
   obtain ⟨B, hB0, hB⟩ := φ.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_le k
   refine ⟨B, hB0, fun j ξ ↦ le_trans ?_ (hB j ξ)⟩
-  rw [div_eq_inv_mul, Real.rpow_mul (by positivity), Real.rpow_natCast, inv_eq_one_div,
-    ← Real.sqrt_eq_rpow]
+  rw [Real.rpow_div_two_eq_sqrt _ (by positivity), Real.rpow_natCast]
   gcongr
   exact sqrt_one_add_norm_sq_le ξ
 
