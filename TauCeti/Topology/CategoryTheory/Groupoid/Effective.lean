@@ -27,13 +27,14 @@ the ineffective automorphisms of an object `x` form a normal subgroup
 `TauCeti.ineffectiveKernel hs x` of `Aut x`, the ineffective kernel, and an isomorphism `x ≅ y`
 carries the ineffective kernel at `x` onto the one at `y`. In particular its order only depends
 on the isomorphism class of `x`. When the source-target map is also proper, the automorphism
-groups are finite (`TauCeti.finite_hom_of_proper_source_target`), hence so are the ineffective
-kernels.
+groups are finite (`TauCeti.finite_aut_of_proper_source_target`), hence so are the ineffective
+kernels (`TauCeti.finite_ineffectiveKernel`).
 
 Two parallel arrows are related by the germ relation `TauCeti.germRel C` when they induce the same
 germ, that is, when one followed by the inverse of the other is ineffective. This is a congruence,
 and the quotient groupoid `TauCeti.EffectiveQuotient C` is the effective quotient. Its objects are
-those of `C`, with the same topology, and it has the same isomorphism classes, so effective
+those of `C` (`TauCeti.EffectiveQuotient.objEquiv`), with the same topology
+(`TauCeti.EffectiveQuotient.objHomeomorph`), and it has the same isomorphism classes, so effective
 reduction does not change the coarse space. Its isotropy group at `x` is `Aut x` divided by the
 ineffective kernel. Ineffective isotropy is retained by `C` itself: distinct arrows inducing the
 same germ remain distinct there. The arrow topology of the effective quotient is not constructed
@@ -136,6 +137,7 @@ this means that `f` and `f'` induce the same germ at their source. -/
 def germRel : HomRel C :=
   fun x _ f f' ↦ (⟨x, x, f ≫ inv f'⟩ : Quiver.Total C) ∈ ineffectiveArrows C
 
+@[simp]
 theorem germRel_iff {x y : C} {f f' : x ⟶ y} :
     germRel C f f' ↔ (⟨x, x, f ≫ inv f'⟩ : Quiver.Total C) ∈ ineffectiveArrows C :=
   Iff.rfl
@@ -162,6 +164,26 @@ instance : (toEffectiveQuotient C).Full :=
 instance : (toEffectiveQuotient C).EssSurj :=
   inferInstanceAs (CategoryTheory.Quotient.functor (germRel C)).EssSurj
 
+variable (C) in
+/-- The objects of the effective quotient are the objects of the groupoid. -/
+@[expose] def EffectiveQuotient.objEquiv : C ≃ EffectiveQuotient C :=
+  (CategoryTheory.Quotient.equiv (germRel C)).symm
+
+@[simp]
+theorem EffectiveQuotient.objEquiv_apply (x : C) :
+    EffectiveQuotient.objEquiv C x = (toEffectiveQuotient C).obj x :=
+  (rfl)
+
+@[simp]
+theorem EffectiveQuotient.objEquiv_symm_toEffectiveQuotient_obj (x : C) :
+    (EffectiveQuotient.objEquiv C).symm ((toEffectiveQuotient C).obj x) = x :=
+  (rfl)
+
+@[simp]
+theorem toEffectiveQuotient_obj_objEquiv_symm (x : EffectiveQuotient C) :
+    (toEffectiveQuotient C).obj ((EffectiveQuotient.objEquiv C).symm x) = x :=
+  (rfl)
+
 section Lift
 
 variable {D : Type*} [Category* D] (F : C ⥤ D)
@@ -176,6 +198,11 @@ relation to the same arrow factors through the effective quotient. -/
 theorem EffectiveQuotient.toEffectiveQuotient_comp_lift :
     toEffectiveQuotient C ⋙ EffectiveQuotient.lift F H = F :=
   CategoryTheory.Quotient.lift_spec _ _ _
+
+@[simp]
+theorem EffectiveQuotient.lift_obj_toEffectiveQuotient_obj (x : C) :
+    (EffectiveQuotient.lift F H).obj ((toEffectiveQuotient C).obj x) = F.obj x :=
+  (rfl)
 
 @[simp]
 theorem EffectiveQuotient.lift_map_toEffectiveQuotient_map {x y : C} (f : x ⟶ y) :
@@ -223,7 +250,7 @@ theorem isomorphismClasses_map_toEffectiveQuotient_bijective :
         exact _root_.Quotient.sound (isIsomorphic_toEffectiveQuotient_obj_iff.mp
           (_root_.Quotient.exact h))
   · induction q using _root_.Quotient.inductionOn with
-    | h x => exact ⟨_root_.Quotient.mk _ x.as, rfl⟩
+    | h x => exact ⟨_root_.Quotient.mk _ ((EffectiveQuotient.objEquiv C).symm x), rfl⟩
 
 variable [TopologicalSpace C]
 
@@ -232,11 +259,24 @@ variable (C) in
 instance : TopologicalSpace (EffectiveQuotient C) :=
   TopologicalSpace.induced (CategoryTheory.Quotient.equiv (germRel C)) ‹_›
 
+variable (C) in
+/-- The objects of the effective quotient are homeomorphic to the objects of the groupoid. -/
+def EffectiveQuotient.objHomeomorph : C ≃ₜ EffectiveQuotient C :=
+  (Equiv.toHomeomorphOfIsInducing (EffectiveQuotient.objEquiv C).symm ⟨rfl⟩).symm
+
+@[simp]
+theorem EffectiveQuotient.objHomeomorph_apply (x : C) :
+    EffectiveQuotient.objHomeomorph C x = (toEffectiveQuotient C).obj x :=
+  (rfl)
+
+@[simp]
+theorem EffectiveQuotient.objHomeomorph_symm_apply (x : EffectiveQuotient C) :
+    (EffectiveQuotient.objHomeomorph C).symm x = (EffectiveQuotient.objEquiv C).symm x :=
+  (rfl)
+
 /-- The projection to the effective quotient is a homeomorphism on objects. -/
 theorem isHomeomorph_toEffectiveQuotient_obj : IsHomeomorph (toEffectiveQuotient C).obj :=
-  -- The object map of the projection is the inverse of `CategoryTheory.Quotient.equiv`.
-  (Equiv.toHomeomorphOfIsInducing (X := EffectiveQuotient C)
-    (CategoryTheory.Quotient.equiv (germRel C)) ⟨rfl⟩).symm.isHomeomorph
+  (EffectiveQuotient.objHomeomorph C).isHomeomorph
 
 variable (C) in
 /-- Effective reduction does not change the coarse space: the projection to the effective quotient
@@ -363,6 +403,12 @@ theorem map_autMulEquivOfIso_ineffectiveKernel {x y : C} (e : x ≅ y) :
   rw [Subgroup.mem_map_equiv, ← autMulEquivOfIso_mem_ineffectiveKernel_iff hs e,
     MulEquiv.apply_symm_apply]
 
+/-- When the source-target map is also proper, the ineffective kernels are finite. -/
+theorem finite_ineffectiveKernel (hp : IsProperMap (fun a : Quiver.Total C ↦ (a.left, a.right)))
+    (x : C) : Finite (ineffectiveKernel hs x) :=
+  have := finite_aut_of_proper_source_target hp hs x
+  inferInstance
+
 /-- The order of the ineffective kernel only depends on the isomorphism class of the object. -/
 theorem card_ineffectiveKernel_eq_of_iso {x y : C} (e : x ≅ y) :
     Nat.card (ineffectiveKernel hs x) = Nat.card (ineffectiveKernel hs y) := by
@@ -373,14 +419,14 @@ include hs in
 /-- In an étale groupoid the germ relation is a congruence. -/
 theorem congruence_germRel : Congruence (germRel C) where
   equivalence :=
-    { refl _ := by simpa [germRel_iff] using id_mem_ineffectiveArrows hs _
-      symm h := by simpa [germRel_iff] using inv_mem_ineffectiveArrows_iff.mpr h
+    { refl _ := by simpa using id_mem_ineffectiveArrows hs _
+      symm h := by simpa using inv_mem_ineffectiveArrows_iff.mpr h
       trans h h' := by
-        simpa [germRel_iff] using comp_mem_ineffectiveArrows hs.isOpenMap h h' rfl }
+        simpa using comp_mem_ineffectiveArrows hs.isOpenMap h h' rfl }
   comp_left f g g' h := by
-    simpa [germRel_iff] using (conj_mem_ineffectiveArrows_iff hs f).mpr h
+    simpa using (conj_mem_ineffectiveArrows_iff hs f).mpr h
   comp_right g h := by
-    simpa [germRel_iff] using h
+    simpa using h
 
 include hs in
 /-- In an étale groupoid, two parallel arrows have the same image in the effective quotient
