@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Projection
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 public import TauCeti.Geometry.Manifold.VectorBundle.Prod
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.LinearAlgebra.Basis.Fin
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
@@ -52,54 +54,6 @@ public noncomputable section
 
 open Bundle Module Set TauCeti
 open scoped Manifold ContDiff InnerProductSpace Topology
-
-section LinearAlgebra
-
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {k : ℕ}
-
-/-- If the zeroth coordinate of `v` in a basis `b` is nonzero, then the orthogonal projections onto
-`(𝕜 ∙ v)ᗮ` of the remaining basis vectors span `(𝕜 ∙ v)ᗮ`. -/
-theorem Submodule.span_range_starProjection_orthogonal_basis_succ
-    (b : Basis (Fin (k + 1)) 𝕜 E) {v : E} (hv : b.repr v 0 ≠ 0) :
-    span 𝕜 (range fun j : Fin k ↦ (𝕜 ∙ v)ᗮ.starProjection (b j.succ)) = (𝕜 ∙ v)ᗮ := by
-  apply le_antisymm
-  · rw [span_le]
-    rintro _ ⟨j, rfl⟩
-    exact starProjection_apply_mem _ _
-  intro w hw
-  set t := b.repr w 0 / b.repr v 0
-  -- `w - t • v` has zeroth coordinate zero, so it is a combination of the other basis vectors.
-  have h0 : b.repr (w - t • v) 0 = 0 := by
-    simp only [map_sub, map_smul, Finsupp.coe_sub, Finsupp.coe_smul, Pi.sub_apply,
-      Pi.smul_apply, smul_eq_mul, t]
-    field_simp
-    ring
-  have hd : w - t • v = ∑ j : Fin k, b.repr (w - t • v) j.succ • b j.succ := by
-    conv_lhs => rw [← b.sum_repr (w - t • v)]
-    rw [Fin.sum_univ_succ, h0, zero_smul, zero_add]
-  have hw' : w = ∑ j : Fin k, b.repr (w - t • v) j.succ • (𝕜 ∙ v)ᗮ.starProjection (b j.succ) :=
-    calc w = (𝕜 ∙ v)ᗮ.starProjection w := (starProjection_eq_self_iff.mpr hw).symm
-      _ = (𝕜 ∙ v)ᗮ.starProjection (w - t • v) + t • (𝕜 ∙ v)ᗮ.starProjection v := by
-        rw [← map_smul, ← map_add, sub_add_cancel]
-      _ = _ := by
-        rw [starProjection_orthogonalComplement_singleton_eq_zero, smul_zero, add_zero]
-        conv_lhs => rw [hd]
-        simp only [map_sum, map_smul]
-  rw [hw']
-  exact sum_mem fun j _ ↦ smul_mem _ _ (subset_span ⟨j, rfl⟩)
-
-end LinearAlgebra
-
-/-- A nonzero vector of a space of dimension `k + 1` has nonzero zeroth coordinate in some basis
-indexed by `Fin (k + 1)`. -/
-private theorem exists_finBasis_repr_zero_ne_zero {F : Type*} [AddCommGroup F] [Module ℂ F]
-    [FiniteDimensional ℂ F] {k : ℕ} (hk : finrank ℂ F = k + 1) {v : F} (hv : v ≠ 0) :
-    ∃ b : Basis (Fin (k + 1)) ℂ F, b.repr v 0 ≠ 0 := by
-  let b₀ := Module.finBasisOfFinrankEq ℂ F hk
-  obtain ⟨i₀, hi₀⟩ : ∃ i, b₀.repr v i ≠ 0 := by
-    by_contra! h
-    exact hv (b₀.repr.injective (by ext i; simp [h i]))
-  exact ⟨b₀.reindex (Equiv.swap i₀ 0), by simpa using hi₀⟩
 
 namespace Bundle.ContMDiffRiemannianMetric
 
@@ -193,7 +147,7 @@ theorem hasLocalContMDiffSubbundleFrames_orthogonalSpan [FiniteDimensional ℂ F
   have he (x : B) (hx : x ∈ e.baseSet) (v : V x) :
       e.continuousLinearEquivAt ℂ x hx v = (e ⟨x, v⟩).2 :=
     congrFun (e.continuousLinearEquivAt_apply ℂ x hx) v
-  obtain ⟨b, hb⟩ := exists_finBasis_repr_zero_ne_zero hk (v := (e ⟨x₀, s x₀⟩).2) (by
+  obtain ⟨b, hb⟩ := Module.Basis.exists_repr_zero_ne_zero hk (v := (e ⟨x₀, s x₀⟩).2) (by
     rw [← he x₀ hx₀]
     exact (map_ne_zero_iff _ (e.continuousLinearEquivAt ℂ x₀ hx₀).injective).mpr (hne x₀))
   -- The open set where the zeroth coordinate of `s` stays nonzero.
