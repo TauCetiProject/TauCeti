@@ -179,13 +179,15 @@ variable [FiniteDimensional F F']
 
 attribute [local instance] isLocalization_integralClosure
 
-variable [Algebra.IsSeparable F F']
-
 /-- The rank of the local integral closure is the degree of the field extension:
 `rank_{𝒪_P} 𝒪'_P = [F' : F]`. -/
 theorem finrank_integralClosure :
     Module.finrank (P.integers) (integralClosure (P.integers) F') = Module.finrank F F' :=
-  IsIntegralClosure.rank (P.integers) F F' _
+  (IsLocalizedModule.finrank_eq (P.integers)⁰
+    (IsScalarTower.toAlgHom (P.integers) (integralClosure (P.integers) F') F').toLinearMap
+    le_rfl).symm.trans (IsFractionRing.finrank_right_eq (P.integers) F F').symm
+
+variable [Algebra.IsSeparable F F']
 
 /-! ### A local integral basis -/
 
