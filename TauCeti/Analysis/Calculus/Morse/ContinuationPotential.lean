@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.Morse.IntervalBase
 public import TauCeti.Analysis.Calculus.Morse.Prod
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.ODE.ExistUnique
+import TauCeti.Topology.LocallyConstant.Preconnected
 
 /-!
 # The large-constant product continuation potential
@@ -325,14 +326,6 @@ section Trajectory
 
 variable {C δ c : ℝ} {τ b : ℝ → ℝ} {I : Set ℝ}
 
-/-- A predicate whose truth value is locally constant along a preconnected set `I` holds on all
-of `I` once it holds at one point of `I`. -/
-private theorem forall_of_eventually_iff (hI : IsPreconnected I) {p : ℝ → Prop}
-    (hloc : ∀ s ∈ I, ∀ᶠ r in 𝓝 s, (p r ↔ p s)) {s₀ : ℝ} (hs₀ : s₀ ∈ I) (hp : p s₀) :
-    ∀ s ∈ I, p s := fun _ hs ↦
-  (hI.induction₂ (fun x y ↦ (p y ↔ p x)) (fun x hx ↦ nhdsWithin_le_nhds (hloc x hx))
-    (fun _ _ _ _ _ _ h₁ h₂ ↦ h₂.trans h₁) (fun _ _ _ _ h ↦ h.symm) hs₀ hs).2 hp
-
 /-- Near a point where `τ` takes a zero `c` of the base field, with `b` vanishing while `τ` is
 within `δ` of `c`, the equation `τ' = C τ (1 - τ²) - b` is the base equation, whose solutions are
 unique; so `τ` is locally constant there. -/
@@ -366,7 +359,8 @@ theorem eqOn_const_of_hasDerivAt_intervalBase (hc : c * (1 - c ^ 2) = 0) (hδ : 
     (hb : ∀ s ∈ I, |τ s - c| < δ → b s = 0) {s₀ : ℝ} (hs₀ : s₀ ∈ I) (hτs₀ : τ s₀ = c) :
     EqOn τ (fun _ ↦ c) I := by
   -- Whether `τ = c` is locally constant along `I`, hence constant on the preconnected set `I`.
-  refine forall_of_eventually_iff hI (fun s hs ↦ ?_) hs₀ hτs₀
+  refine fun s hs ↦ (hI.apply_eq_of_eventually_eq (f := fun s ↦ τ s = c)
+    (fun s hs ↦ nhdsWithin_le_nhds ?_) hs hs₀).mpr hτs₀
   by_cases h : τ s = c
   · exact (eventuallyEq_const_of_hasDerivAt hc hδ hIo hτ hb hs h).mono fun r hr ↦ by simp [hr, h]
   · exact ((hτ s hs).continuousAt.eventually_ne h).mono fun r hr ↦ by simp [hr, h]
@@ -380,7 +374,8 @@ theorem mapsTo_Ioo_of_hasDerivAt_intervalBase (hδ : 0 < δ) (hIo : IsOpen I) (h
     (hs₀ : s₀ ∈ I) (hτs₀ : τ s₀ ∈ Ioo 0 1) :
     MapsTo τ I (Ioo 0 1) := by
   -- Whether `τ ∈ (0, 1)` is locally constant along `I`, hence constant on the preconnected set `I`.
-  refine forall_of_eventually_iff (p := fun s ↦ τ s ∈ Ioo 0 1) hI (fun s hs ↦ ?_) hs₀ hτs₀
+  refine fun s hs ↦ (hI.apply_eq_of_eventually_eq (f := fun s ↦ τ s ∈ Ioo 0 1)
+    (fun s hs ↦ nhdsWithin_le_nhds ?_) hs hs₀).mpr hτs₀
   have hcont := (hτ s hs).continuousAt
   by_cases h : τ s ∈ Ioo 0 1
   · exact (hcont.eventually_mem (isOpen_Ioo.mem_nhds h)).mono fun r hr ↦ by simp [hr, h]
