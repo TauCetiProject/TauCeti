@@ -39,6 +39,8 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
 * `LinearMap.BilinForm.eq_bot_of_le_orthogonal` and
   `LinearMap.BilinForm.sSupIndep_of_pairwise_le_orthogonal`: for an anisotropic form, a
   self-orthogonal submodule is zero and pairwise orthogonal submodules are independent.
+* `LinearMap.BilinForm.apply_eq_zero_of_mem_span`: the spans of two mutually orthogonal sets of
+  vectors are orthogonal.
 * `LinearMap.BilinForm.apply_eq_zero_of_mem_biSup`: in a pairwise orthogonal family, the sums over
   disjoint sets of indices are orthogonal.
 * `LinearMap.BilinForm.iIsOrtho.apply_sum_sum`: the self-pairing of the sum of a finite
@@ -132,6 +134,13 @@ theorem sSupIndep_of_pairwise_le_orthogonal {B : LinearMap.BilinForm K V}
   refine B.iSupIndep_of_restrict_separatingRight (fun i j hij x hx y hy ↦ ?_) fun i y hy ↦ ?_
   · exact hS j.2 i.2 (fun h ↦ hij (Subtype.ext h.symm)) hy x hx
   · exact Subtype.ext <| hani y (by simpa using hy y)
+
+/-- Vectors in the spans of two sets of mutually orthogonal vectors are orthogonal. -/
+theorem apply_eq_zero_of_mem_span {B : LinearMap.BilinForm K V} {s t : Set V}
+    (h : ∀ x ∈ s, ∀ y ∈ t, B x y = 0) {x y : V} (hx : x ∈ Submodule.span K s)
+    (hy : y ∈ Submodule.span K t) : B x y = 0 :=
+  (Submodule.span_le.mpr fun y hy ↦ Submodule.mem_orthogonalBilin_span.mpr fun x hx ↦
+    h x hx y hy : Submodule.span K t ≤ (Submodule.span K s).orthogonalBilin B) hy x hx
 
 /-- In a family of pairwise orthogonal submodules, the sums of the members indexed by two disjoint
 sets are orthogonal. -/

@@ -9,6 +9,9 @@ public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
+import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
@@ -29,6 +32,12 @@ transpose of the Gram matrix in the original basis; for a symmetric form it is t
 matrix, which is how the dual of a lattice is described in coordinates. Likewise, the
 coordinates of a vector are recovered from its pairings with the basis vectors through the inverse
 Gram matrix.
+
+The Gram matrix of a family of vectors that is not a basis is used in the same way. A family whose
+Gram matrix is `c` times a matrix of unit determinant, for a non-zero-divisor `c`, is a basis of
+its span. An isometry `Matrix.toBilin' G ≅ Matrix.toBilin' G'` turns a family with Gram matrix `G`
+into one with Gram matrix `G'` and the same span, and the Gram determinant of the span of two
+orthogonal such families is determined up to squares by their Gram matrices.
 
 ## Main results
 
@@ -55,6 +64,11 @@ Gram matrix.
   up to isometry by `B` and conversely: such pairs `(B₁, D₁)` and `(B₂, D₂)` have `B₁ ≅ B₂` exactly
   when `D₁ ≅ D₂`. On a lattice `D` is the form `c B⁻¹`, read on the dual lattice, so this compares
   isometry classes of lattices with those of their `c`-scaled duals.
+* `LinearMap.BilinForm.exists_span_range_eq_of_equivalent_toBilin'`: an isometry of Gram forms
+  replaces a family by another of the prescribed Gram matrix with the same span.
+* `LinearMap.BilinForm.exists_det_toMatrix_eq_of_eq_span`: the Gram determinant of the span of two
+  orthogonal blocks; `LinearMap.BilinForm.isSquare_mul_det_mul_det_of_eq_span` compares it before
+  and after one block is exchanged.
 -/
 
 public section
@@ -306,5 +320,96 @@ theorem equivalent_iff_equivalent_of_toMatrix_mul_eq_smul {B₁ D₁ : BilinForm
       ((Matrix.mul_eq_smul_one_comm hc).mp h₂)⟩
 
 end Dual
+
+section GramFamily
+
+open LinearMap (BilinForm)
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M}
+
+/-- **Transporting a family along an isometry of Gram forms.** If a family `v` has Gram matrix
+`G`, and the forms `Matrix.toBilin' G` and `Matrix.toBilin' G'` are isometric, then some family `v'`
+spanning the same submodule as `v` has Gram matrix `G'`. -/
+theorem exists_span_range_eq_of_equivalent_toBilin' {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {v : ι → M} {G G' : Matrix ι ι R} (hG : ∀ i j, B (v i) (v j) = G i j)
+    (h : (Matrix.toBilin' G).Equivalent (Matrix.toBilin' G')) :
+    ∃ v' : ι → M, (∀ i j, B (v' i) (v' j) = G' i j) ∧
+      Submodule.span R (Set.range v') = Submodule.span R (Set.range v) := by
+  obtain ⟨ψ⟩ := h
+  -- `Φ` sends a coordinate vector to the corresponding combination of `v`.
+  let Φ := Fintype.linearCombination R v
+  have hΦ (x y : ι → R) : B (Φ x) (Φ y) = Matrix.toBilin' G x y := by
+    simp only [Φ, Fintype.linearCombination_apply, Matrix.toBilin'_apply, map_sum, map_smul,
+      LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul, hG]
+    rw [Finset.sum_comm]
+    simp only [Finset.mul_sum]
+    exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
+  let b := (Pi.basisFun R ι).map ψ.symm.toLinearEquiv
+  refine ⟨fun i ↦ Φ (b i), fun i j ↦ ?_, ?_⟩
+  · simp [b, hΦ, Matrix.toBilin'_single]
+  · rw [Set.range_comp' Φ b, ← Submodule.map_span, b.span_eq, Submodule.map_top,
+      Fintype.range_linearCombination]
+
+/-- The Gram matrix of the concatenation of two mutually orthogonal families `v` and `t`, with
+Gram matrices `c * A` and `c * G`, is `c` times the block-diagonal matrix of `A` and `G`. -/
+theorem IsRefl.apply_sum_elim_eq_mul_fromBlocks (hB : B.IsRefl) {c : R} {ι κ : Type*}
+    {v : ι → M} {t : κ → M} {A : Matrix ι ι R} {G : Matrix κ κ R}
+    (hA : ∀ i j, B (v i) (v j) = c * A i j) (hG : ∀ i j, B (t i) (t j) = c * G i j)
+    (hvt : ∀ i j, B (v i) (t j) = 0) (i j : ι ⊕ κ) :
+    B (Sum.elim v t i) (Sum.elim v t j) = c * Matrix.fromBlocks A 0 0 G i j := by
+  rcases i with i | i <;> rcases j with j | j <;> simp [hA, hG, hvt, hB _ _ (hvt _ _)]
+
+/-- **The Gram determinant of the span of two orthogonal blocks.** Let `v` and `t` be mutually
+orthogonal families with Gram matrices `c * A` and `c * G`, where `c` is a non-zero-divisor and
+`A` and `G` have unit determinants. Then in every basis of the span of `v` and `t` of size `n`, the
+Gram determinant is `c ^ n * det A * det G` times a square. -/
+theorem exists_det_toMatrix_eq_of_eq_span [Nontrivial R] (hB : B.IsRefl) {c : R}
+    (hc : c ∈ nonZeroDivisors R) {p m : ℕ} {v : Fin p → M} {t : Fin m → M}
+    {A : Matrix (Fin p) (Fin p) R} {G : Matrix (Fin m) (Fin m) R}
+    (hA : ∀ i j, B (v i) (v j) = c * A i j) (hG : ∀ i j, B (t i) (t j) = c * G i j)
+    (hvt : ∀ i j, B (v i) (t j) = 0) (hAu : IsUnit A.det) (hGu : IsUnit G.det)
+    {P : Submodule R M} (hP : P = Submodule.span R (Set.range (Sum.elim v t))) {n : ℕ}
+    (d : Basis (Fin n) R P) :
+    ∃ r : R, ((B.restrict P).toMatrix d).det = r ^ 2 * (c ^ n * (A.det * G.det)) := by
+  classical
+  have hu := hB.apply_sum_elim_eq_mul_fromBlocks hA hG hvt
+  have hli := linearIndependent_of_isUnit_det hc hu
+    (by rw [Matrix.det_fromBlocks_zero₂₁]; exact hAu.mul hGu)
+  -- The concatenated family is a basis of `P`, in which the Gram matrix is block diagonal.
+  let b : Basis (Fin p ⊕ Fin m) R P := (Basis.span hli).map (LinearEquiv.ofEq _ _ hP.symm)
+  have hb : (B.restrict P).toMatrix b = c • Matrix.fromBlocks A 0 0 G := by
+    ext i j
+    simp [toMatrix_apply, b, Basis.span_apply, hu]
+  have hcard : Fintype.card (Fin p ⊕ Fin m) = n := by
+    rw [← finrank_eq_card_basis b, finrank_eq_card_basis d, Fintype.card_fin]
+  let e : Fin p ⊕ Fin m ≃ Fin n := Fintype.equivFinOfCardEq hcard
+  refine ⟨((b.reindex e).toMatrix d).det, ?_⟩
+  rw [det_toMatrix_eq_det_sq_mul_det (b.reindex e) d, det_toMatrix_reindex, hb, Matrix.det_smul,
+    Matrix.det_fromBlocks_zero₂₁, hcard]
+
+/-- **Exchanging a block of an orthogonal sum.** Let `v` and `v'` be families with Gram matrices
+`c * A` and `c * A'`, both orthogonal to a family `t` with Gram matrix `c * G`, where `c` is a
+non-zero-divisor and `A`, `A'` and `G` have unit determinants. If `u * det A * det A'` is a square,
+then so is `u` times the Gram determinants of the spans `P` of `v` and `t` and `P'` of `v'` and
+`t`, in any bases of the same size. -/
+theorem isSquare_mul_det_mul_det_of_eq_span [Nontrivial R] (hB : B.IsRefl) {c u : R}
+    (hc : c ∈ nonZeroDivisors R) {p m : ℕ} {v v' : Fin p → M} {t : Fin m → M}
+    {A A' : Matrix (Fin p) (Fin p) R} {G : Matrix (Fin m) (Fin m) R}
+    (hA : ∀ i j, B (v i) (v j) = c * A i j)
+    (hA' : ∀ i j, B (v' i) (v' j) = c * A' i j) (hG : ∀ i j, B (t i) (t j) = c * G i j)
+    (hvt : ∀ i j, B (v i) (t j) = 0) (hv't : ∀ i j, B (v' i) (t j) = 0) (hAu : IsUnit A.det)
+    (hA'u : IsUnit A'.det) (hGu : IsUnit G.det) (hu : IsSquare (u * A.det * A'.det))
+    {P P' : Submodule R M} (hP : P = Submodule.span R (Set.range (Sum.elim v t)))
+    (hP' : P' = Submodule.span R (Set.range (Sum.elim v' t))) {n : ℕ}
+    (d : Basis (Fin n) R P) (d' : Basis (Fin n) R P') :
+    IsSquare (u * ((B.restrict P).toMatrix d).det * ((B.restrict P').toMatrix d').det) := by
+  obtain ⟨r, hr⟩ := exists_det_toMatrix_eq_of_eq_span hB hc hA hG hvt hAu hGu hP d
+  obtain ⟨r', hr'⟩ := exists_det_toMatrix_eq_of_eq_span hB hc hA' hG hv't hA'u hGu hP' d'
+  obtain ⟨s, hs⟩ := hu
+  refine ⟨r * r' * c ^ n * G.det * s, ?_⟩
+  rw [hr, hr']
+  linear_combination (r * r' * c ^ n * G.det) ^ 2 * hs
+
+end GramFamily
 
 end LinearMap.BilinForm

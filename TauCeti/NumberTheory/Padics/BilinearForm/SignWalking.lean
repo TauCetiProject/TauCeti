@@ -11,11 +11,11 @@ public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Even.Henselian
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Replace
-import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
-import TauCeti.LinearAlgebra.BilinearForm.LocalRing
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.NumberTheory.Padics.BilinearForm.BinaryDiagonal
 import TauCeti.NumberTheory.Padics.BilinearForm.MixedSignWalking.Basic
 import TauCeti.NumberTheory.Padics.BilinearForm.MixedSignWalking.EvenLower
+import TauCeti.NumberTheory.Padics.BilinearForm.Oddity
 import TauCeti.NumberTheory.Padics.DyadicUnits
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.SerreSigns
@@ -91,110 +91,6 @@ namespace LinearMap.BilinForm
 
 variable {M : Type*} [AddCommGroup M] [Module ℤ_[2] M] {B : BilinForm ℤ_[2] M}
   {N : ℕ → Submodule ℤ_[2] M}
-
-/-! ### Constituents with a common complement -/
-
-/-- The characteristic vectors of `P = ⟨x, t⟩`, with `B x x = 2 ^ k a`, `x` orthogonal to `t` and
-`B` equal to `2 ^ k C` on `P`, have self-pairings `C w w ≡ a + 2 ^ (-k) B w₀ w₀ (mod 8)` for a
-vector `w₀` of the span of `t` that depends only on `t` and its Gram matrix. -/
-private theorem two_pow_mul_eight_dvd_of_eq_span (hB : B.IsSymm) {k m : ℕ} {x : M} {a : ℤ_[2]}
-    {t : Fin m → M} {G : Matrix (Fin m) (Fin m) ℤ_[2]} (hx : B x x = 2 ^ k * a)
-    (hG : ∀ i j, B (t i) (t j) = 2 ^ k * G i j) (hxt : ∀ j, B x (t j) = 0) (hau : IsUnit a)
-    (hGu : IsUnit G.det) {P : Submodule ℤ_[2] M}
-    (hP : P = Submodule.span ℤ_[2] (Set.range (Sum.elim ![x] t)))
-    {C : BilinForm ℤ_[2] P} (hC : (2 : ℤ_[2]) ^ k • C = B.restrict P) {w : P}
-    (hw : C.IsCharacteristic w) :
-    2 ^ k * 8 ∣ 2 ^ k * C w w - 2 ^ k * a -
-      B (∑ j, ((fun j ↦ G j j) ᵥ* G⁻¹) j • t j) (∑ j, ((fun j ↦ G j j) ᵥ* G⁻¹) j • t j) := by
-  classical
-  have h2k : (2 : ℤ_[2]) ^ k ∈ nonZeroDivisors ℤ_[2] :=
-    mem_nonZeroDivisors_of_ne_zero (pow_ne_zero k two_ne_zero)
-  have hcan : ∀ r s : ℤ_[2], 2 ^ k * r = 2 ^ k * s → r = s := fun r s ↦
-    (mul_cancel_left_mem_nonZeroDivisors h2k).mp
-  -- `w₀ = ∑ c j • t j` pairs with each `t j` as `t j` pairs with itself.
-  set c : Fin m → ℤ_[2] := (fun j ↦ G j j) ᵥ* G⁻¹
-  have hcG : c ᵥ* G = fun j ↦ G j j := by
-    rw [Matrix.vecMul_vecMul, Matrix.nonsing_inv_mul _ hGu, Matrix.vecMul_one]
-  set w₀ : M := ∑ j, c j • t j
-  have hw₀t (l : Fin m) : B w₀ (t l) = 2 ^ k * G l l := by
-    have := congrFun hcG l
-    simp only [Matrix.vecMul, dotProduct] at this
-    simp [w₀, map_sum, hG, ← this, Finset.mul_sum, mul_left_comm]
-  have hxw₀ : B x w₀ = 0 := by simp [w₀, map_sum, hxt]
-  -- A basis of `P` adapted to `x` and `t`.
-  have hu := hB.isRefl.apply_sum_elim_eq_mul_fromBlocks (A := !![a]) (G := G) (v := ![x]) (t := t)
-    (fun i j ↦ by fin_cases i; fin_cases j; simpa using hx) hG
-    (fun i j ↦ by fin_cases i; simpa using hxt j)
-  have hdet : IsUnit (Matrix.fromBlocks !![a] 0 0 G).det := by
-    rw [Matrix.det_fromBlocks_zero₂₁, Matrix.det_fin_one_of]
-    exact hau.mul hGu
-  have hli := linearIndependent_of_isUnit_det h2k hu hdet
-  let b : Basis (Fin 1 ⊕ Fin m) ℤ_[2] P := (Basis.span hli).map (LinearEquiv.ofEq _ _ hP.symm)
-  have hb (i : Fin 1 ⊕ Fin m) : (b i : M) = Sum.elim ![x] t i := by simp [b, Basis.span_apply]
-  have hBC (y z : P) : 2 ^ k * C y z = B y z := by
-    simpa using LinearMap.congr_fun₂ hC y z
-  have hCs : C.IsSymm := ⟨fun y z ↦ hcan _ _ (by rw [hBC, hBC, hB.eq])⟩
-  have : Module.Free ℤ_[2] P := .of_basis b
-  have : C.IsPerfPair := (hP ▸ isModular_restrict_span_range h2k hu hdet).isPerfPair_of_smul_eq
-    h2k hC
-  -- `x + w₀` is a characteristic vector, of self-pairing `2 ^ k a + B w₀ w₀`.
-  have hxP : x ∈ P := hP ▸ Submodule.subset_span ⟨Sum.inl 0, rfl⟩
-  have hw₀P : w₀ ∈ P := Submodule.sum_mem _ fun j _ ↦ Submodule.smul_mem _ _
-    (hP ▸ Submodule.subset_span ⟨Sum.inr j, rfl⟩)
-  let w₁ : P := ⟨x + w₀, P.add_mem hxP hw₀P⟩
-  have hw₁ : C.IsCharacteristic w₁ := by
-    refine (hCs.isCharacteristic_iff_forall_basis PadicInt.two_dvd_sq_sub_self b).mpr fun i ↦ ?_
-    have : C w₁ (b i) - C (b i) (b i) = 0 := hcan _ _ (by
-      rw [mul_sub, hBC, hBC, mul_zero]
-      rcases i with i | j
-      · fin_cases i
-        simp [w₁, hb, hB.eq w₀ x, hxw₀]
-      · simp [w₁, hb, hxt, hw₀t, hG])
-    rw [this]
-    exact dvd_zero 2
-  have hw₁w₁ : 2 ^ k * C w₁ w₁ = 2 ^ k * a + B w₀ w₀ := by
-    rw [hBC]
-    simp [w₁, hx, hxw₀, hB.eq w₀ x]
-  obtain ⟨r, hr⟩ := hw₁.eight_dvd_apply_self_sub_apply_self hCs hw
-  exact ⟨r, by linear_combination 2 ^ k * hr + hw₁w₁⟩
-
-/-- Replacing `x` by `x'` in `P = ⟨x, t⟩` changes the oddity of the unimodular rescaling by
-`a' - a` modulo `8`, where `B x x = 2 ^ k a` and `B x' x' = 2 ^ k a'`. -/
-private theorem eight_dvd_sub_sub_of_eq_span (hB : B.IsSymm) {k m : ℕ} {x x' : M} {a a' : ℤ_[2]}
-    {t : Fin m → M} {G : Matrix (Fin m) (Fin m) ℤ_[2]} (hx : B x x = 2 ^ k * a)
-    (hx' : B x' x' = 2 ^ k * a') (hG : ∀ i j, B (t i) (t j) = 2 ^ k * G i j)
-    (hxt : ∀ j, B x (t j) = 0) (hx't : ∀ j, B x' (t j) = 0) (hau : IsUnit a) (ha'u : IsUnit a')
-    (hGu : IsUnit G.det) {P P' : Submodule ℤ_[2] M}
-    (hP : P = Submodule.span ℤ_[2] (Set.range (Sum.elim ![x] t)))
-    (hP' : P' = Submodule.span ℤ_[2] (Set.range (Sum.elim ![x'] t)))
-    {C : BilinForm ℤ_[2] P} {C' : BilinForm ℤ_[2] P'} (hC : (2 : ℤ_[2]) ^ k • C = B.restrict P)
-    (hC' : (2 : ℤ_[2]) ^ k • C' = B.restrict P') {w : P} {w' : P'} (hw : C.IsCharacteristic w)
-    (hw' : C'.IsCharacteristic w') : (8 : ℤ_[2]) ∣ C' w' w' - C w w - (a' - a) := by
-  obtain ⟨r, hr⟩ := two_pow_mul_eight_dvd_of_eq_span hB hx hG hxt hau hGu hP hC hw
-  obtain ⟨r', hr'⟩ := two_pow_mul_eight_dvd_of_eq_span hB hx' hG hx't ha'u hGu hP' hC' hw'
-  refine ⟨r' - r, (mul_cancel_left_mem_nonZeroDivisors
-    (mem_nonZeroDivisors_of_ne_zero (pow_ne_zero k (two_ne_zero (α := ℤ_[2]))))).mp ?_⟩
-  linear_combination hr' - hr
-
-/-- Replacing `v` by `v'` in `P = ⟨v, t⟩` multiplies the Gram determinant by `det A' / det A` up
-to squares, where `v` and `v'` have Gram matrices `c A` and `c A'`. -/
-private theorem isSquare_mul_det_mul_det_of_eq_span (hB : B.IsSymm) {c u : ℤ_[2]}
-    (hc : c ∈ nonZeroDivisors ℤ_[2]) {p m : ℕ} {v v' : Fin p → M} {t : Fin m → M}
-    {A A' : Matrix (Fin p) (Fin p) ℤ_[2]} {G : Matrix (Fin m) (Fin m) ℤ_[2]}
-    (hA : ∀ i j, B (v i) (v j) = c * A i j)
-    (hA' : ∀ i j, B (v' i) (v' j) = c * A' i j) (hG : ∀ i j, B (t i) (t j) = c * G i j)
-    (hvt : ∀ i j, B (v i) (t j) = 0) (hv't : ∀ i j, B (v' i) (t j) = 0) (hAu : IsUnit A.det)
-    (hA'u : IsUnit A'.det) (hGu : IsUnit G.det) (hu : IsSquare (u * A.det * A'.det))
-    {P P' : Submodule ℤ_[2] M} (hP : P = Submodule.span ℤ_[2] (Set.range (Sum.elim v t)))
-    (hP' : P' = Submodule.span ℤ_[2] (Set.range (Sum.elim v' t))) {n : ℕ}
-    (d : Basis (Fin n) ℤ_[2] P) (d' : Basis (Fin n) ℤ_[2] P') :
-    IsSquare (u * ((B.restrict P).toMatrix d).det * ((B.restrict P').toMatrix d').det) := by
-  obtain ⟨r, hr⟩ := exists_det_toMatrix_eq_of_eq_span hB.isRefl hc hA hG hvt hAu hGu hP d
-  obtain ⟨r', hr'⟩ := exists_det_toMatrix_eq_of_eq_span hB.isRefl hc hA' hG hv't hA'u hGu hP' d'
-  obtain ⟨s, hs⟩ := hu
-  refine ⟨r * r' * c ^ n * G.det * s, ?_⟩
-  rw [hr, hr']
-  linear_combination (r * r' * c ^ n * G.det) ^ 2 * hs
 
 /-! ### Vectors of constituents of type I and type II -/
 
@@ -281,10 +177,10 @@ private theorem IsJordanSplitting.exists_signWalk_aux [Module.Free ℤ_[2] M] [M
     ⟨m', s, H, hH, hHu, hws, hw's, hNl, hN'l⟩⟩ :=
     h.exists_isJordanSplitting_of_span_eq hB h2 hkl hv hw hA hA' hD hD' hAu hA'u hDu hD'u hvw' hspan
   exact ⟨N', hN', hagree,
-    fun n d d' ↦ isSquare_mul_det_mul_det_of_eq_span hB (pow_mem h2 k) hA hA' hG hvt hv't hAu
-      hA'u hGu h5A hNk hN'k d d',
-    fun n d d' ↦ isSquare_mul_det_mul_det_of_eq_span hB (pow_mem h2 l) hD hD' hH hws hw's hDu
-      hD'u hHu h5D hNl hN'l d d',
+    fun n d d' ↦ isSquare_mul_det_mul_det_of_eq_span hB.isRefl (pow_mem h2 k) hA hA' hG hvt hv't
+      hAu hA'u hGu h5A hNk hN'k d d',
+    fun n d d' ↦ isSquare_mul_det_mul_det_of_eq_span hB.isRefl (pow_mem h2 l) hD hD' hH hws hw's
+      hDu hD'u hHu h5D hNl hN'l d d',
     ⟨m, t, G, hG, hGu, hvt, hv't, hNk, hN'k⟩, ⟨m', s, H, hH, hHu, hws, hw's, hNl, hN'l⟩⟩
 
 /-- `5 det U det V = -15` is a square in `ℤ_[2]`. -/
@@ -372,7 +268,7 @@ private theorem IsJordanSplitting.exists_signWalk_unary_binary [Module.Free ℤ_
       (by simpa using ha) (by simpa using h5a) hDu hD'u
       (fun i j ↦ by fin_cases i; fin_cases j <;> simp [hz'1, hz'2]) hspan' h5A h5D
   refine ⟨N', hN', hagree, hdu, hdp, fun C C' w w' hC hC' hw hw' ↦ ?_⟩
-  exact eight_dvd_sub_sub_four ha (eight_dvd_sub_sub_of_eq_span hB hxx hz'0 hG
+  exact eight_dvd_sub_sub_four ha (hB.eight_dvd_sub_sub_of_eq_span hxx hz'0 hG
     (fun j ↦ by simpa using hvt 0 j) (fun j ↦ by simpa using hv't 0 j) ha h5a hGu hNu hN'u hC hC'
     hw hw')
 
@@ -580,10 +476,10 @@ theorem IsJordanSplitting.exists_signWalk_add_two_of_odd_of_odd [Module.Free ℤ
       (fun i j ↦ by fin_cases i; fin_cases j; simpa using hz' 0 1) hspan' (h5 a) (h5 b)
   refine ⟨N', hN', hagree, hdk, hdl, fun C C' w w' hC hC' hw hw' ↦ ?_,
     fun C C' w w' hC hC' hw hw' ↦ ?_⟩
-  · exact eight_dvd_sub_sub_four ha (eight_dvd_sub_sub_of_eq_span hB hxx hz'0 hG
+  · exact eight_dvd_sub_sub_four ha (hB.eight_dvd_sub_sub_of_eq_span hxx hz'0 hG
       (fun j ↦ by simpa using hvt 0 j) (fun j ↦ by simpa using hv't 0 j) ha h5a hGu hNk hN'k hC
       hC' hw hw')
-  · exact eight_dvd_sub_sub_four hb (eight_dvd_sub_sub_of_eq_span hB hyy hz'1 hH
+  · exact eight_dvd_sub_sub_four hb (hB.eight_dvd_sub_sub_of_eq_span hyy hz'1 hH
       (fun j ↦ by simpa using hws 0 j) (fun j ↦ by simpa using hw's 0 j) hb h5b hHu hNl hN'l hC
       hC' hw hw')
 

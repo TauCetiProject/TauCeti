@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
 import TauCeti.LinearAlgebra.BilinearForm.LocalRing
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 
 /-!
 # Replacing blocks of two Jordan constituents
@@ -108,12 +109,6 @@ theorem IsJordanSplitting.update_update (h : B.IsJordanSplitting π N) (hB : B.I
   by_cases hil : i = l
   · exact hil ▸ le_sup_right.trans hkl'
   exact hN'i hik hil ▸ le_iSup N' i
-
-/-- Vectors in the spans of two sets of mutually orthogonal vectors are orthogonal. -/
-private theorem apply_eq_zero_of_mem_span {s t : Set M} (h : ∀ x ∈ s, ∀ y ∈ t, B x y = 0)
-    {x y : M} (hx : x ∈ Submodule.span R s) (hy : y ∈ Submodule.span R t) : B x y = 0 :=
-  (Submodule.span_le.mpr fun y hy ↦ Submodule.mem_orthogonalBilin_span.mpr fun x hx ↦
-    h x hx y hy : Submodule.span R t ≤ (Submodule.span R s).orthogonalBilin B) hy x hx
 
 variable [IsLocalRing R]
 
