@@ -13,7 +13,7 @@ public import TauCeti.Combinatorics.Graph.Stallings.Folded
 The product of two based labelled Serre graphs pairs darts carrying the same signed letter.
 Its closed paths project to closed paths in both factors. For folded factors, paths with the
 same reduced label combine in the product, so it accepts exactly the subgroup intersection.
-Foldedness is preserved by the product.
+Foldedness and finiteness are preserved by the product.
 
 The construction is the fibre product over the labelled rose used in Stallings' subgroup
 intersection method.
@@ -187,6 +187,14 @@ theorem prodLift_unique {R : StallingsGraph.{u, z, t} α}
     apply Subtype.ext
     simp only [prodLift_mapE, Hom.comp_graphHom, SerreGraph.Hom.comp_mapE,
       Function.comp_apply, prodFst_mapE, prodSnd_mapE]
+
+instance (S : StallingsGraph.{u, v, w} α) (T : StallingsGraph.{u, x, y} α)
+    [Finite S.graph.V] [Finite T.graph.V] : Finite (S.prod T).graph.V :=
+  inferInstanceAs (Finite (S.graph.V × T.graph.V))
+
+instance (S : StallingsGraph.{u, v, w} α) (T : StallingsGraph.{u, x, y} α)
+    [Finite S.graph.E] [Finite T.graph.E] : Finite (S.prod T).graph.E :=
+  inferInstanceAs (Finite {e : S.graph.E × T.graph.E // S.label e.1 = T.label e.2})
 
 /-- Every word read at a vertex pair is read at each coordinate. -/
 theorem prod_subgroup_le (S : StallingsGraph.{u, v, w} α)

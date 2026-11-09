@@ -166,6 +166,9 @@ theorem finiteDimensional_functionField (φ : Isogeny W₁ W₂)
 theorem degree_ne_zero (φ : Isogeny W₁ W₂) : φ.degree ≠ 0 :=
   φ.degree_pos.ne'
 
+/-- The degree of an isogeny is nonzero, available to typeclass inference. -/
+instance (φ : Isogeny W₁ W₂) : NeZero φ.degree := ⟨φ.degree_ne_zero⟩
+
 /-- **Degree one means an isomorphism of function fields.** The degree measures
 `W₁.FunctionField` over the image of `fieldPullback`, so it is one exactly when that image is
 everything. -/

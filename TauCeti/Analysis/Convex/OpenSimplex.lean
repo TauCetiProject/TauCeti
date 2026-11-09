@@ -19,7 +19,8 @@ normed space is the intrinsic interior of its convex hull. This file
 identifies it with the set of affine combinations of `p` with all weights positive
 (`AffineIndependent.mem_intrinsicInterior_convexHull_iff`), and shows that a proper face misses
 it: a point of the open simplex lying in the convex hull of `p '' s` forces `s` to contain every
-index (`AffineIndependent.eq_univ_of_mem_intrinsicInterior_convexHull`).
+index (`AffineIndependent.eq_univ_of_mem_intrinsicInterior_convexHull`). The centroid of the
+family lies in its open simplex (`AffineIndependent.centroid_mem_intrinsicInterior_convexHull`).
 
 So the open simplices of the faces of a simplex partition it, which is what makes the open
 simplices of a geometric simplicial complex disjoint
@@ -35,6 +36,8 @@ space need not be finite-dimensional.
 * `AffineIndependent.mem_intrinsicInterior_convexHull_iff`: the intrinsic interior of the convex
   hull of an affinely independent finite family consists of its affine combinations with positive
   weights.
+* `AffineIndependent.centroid_mem_intrinsicInterior_convexHull`: the centroid of a simplex lies
+  in its intrinsic interior.
 * `AffineIndependent.eq_univ_of_mem_intrinsicInterior_convexHull`: a proper face of a simplex
   misses its intrinsic interior.
 
@@ -94,6 +97,16 @@ theorem AffineIndependent.mem_intrinsicInterior_convexHull_iff (hp : AffineIndep
     filter_upwards [hev] with y hy hyA
     obtain ⟨v, hv, rfl⟩ := eq_affineCombination_of_mem_affineSpan_of_fintype hyA
     exact affineCombination_mem_convexHull (fun i _ => (hf v hv i ▸ hy i).le) hv
+
+/-- The centroid of a nonempty affinely independent finite family lies in the open simplex it
+spans. -/
+theorem AffineIndependent.centroid_mem_intrinsicInterior_convexHull [Nonempty ι]
+    (hp : AffineIndependent ℝ p) :
+    Finset.univ.centroid ℝ p ∈ intrinsicInterior ℝ (convexHull ℝ (range p)) :=
+  hp.mem_intrinsicInterior_convexHull_iff.2 ⟨_, fun _ => by
+    simpa [Finset.centroidWeights_apply] using Fintype.card_pos,
+    Finset.univ.sum_centroidWeights_eq_one_of_card_ne_zero ℝ Finset.univ_nonempty.card_pos.ne',
+    rfl⟩
 
 omit [Fintype ι] in
 /-- **A proper face misses the open simplex.** If a point of the intrinsic interior of the convex

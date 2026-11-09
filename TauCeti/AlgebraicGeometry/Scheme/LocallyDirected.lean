@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Gluing
+public import Mathlib.AlgebraicGeometry.Limits
 
 /-!
 # Opens of locally directed colimits of schemes
@@ -22,15 +23,19 @@ the images of the `F j` in the colimit meet.
 * `AlgebraicGeometry.Scheme.IsLocallyDirected.preimage_le_iSup_preimage_inf_opensRange`: the
   preimage in `F j` of an open contained in the image of `F i` is covered by its intersections with
   the images of the `F k` mapping to both `F i` and `F j`.
+* `AlgebraicGeometry.Scheme.range_pushout_inl_union_range_pushout_inr`: a pushout of two open
+  immersions is covered by the images of its two pieces.
 -/
 
 public section
 
 open CategoryTheory Limits
 
-namespace AlgebraicGeometry.Scheme.IsLocallyDirected
+namespace AlgebraicGeometry.Scheme
 
 universe u
+
+namespace IsLocallyDirected
 
 variable {J : Type u} [SmallCategory J] (F : J ⥤ Scheme.{u})
   [∀ {i j} (f : i ⟶ j), IsOpenImmersion (F.map f)] [(F ⋙ Scheme.forget).IsLocallyDirected]
@@ -57,4 +62,23 @@ theorem preimage_le_iSup_preimage_inf_opensRange
   refine TopologicalSpace.Opens.mem_iSup.mpr ⟨⟨k, fj, fi⟩, hy, z, ?_⟩
   rw [← Scheme.Hom.comp_apply, colimit.w]
 
-end AlgebraicGeometry.Scheme.IsLocallyDirected
+end IsLocallyDirected
+
+/-- **A pushout of open immersions is covered by its two pieces.** Every point of the pushout of
+two open immersions `X ⟵ W ⟶ Z` of schemes lies in the image of `X` or of `Z`. -/
+theorem range_pushout_inl_union_range_pushout_inr {W X Z : Scheme.{u}} (g : W ⟶ X)
+    (h : W ⟶ Z) [IsOpenImmersion g] [IsOpenImmersion h] :
+    Set.range (pushout.inl g h) ∪ Set.range (pushout.inr g h) = Set.univ := by
+  refine Set.eq_univ_of_forall fun p ↦ ?_
+  -- Every point of a locally directed colimit comes from one of the three pieces of the span,
+  -- and the apex maps through the left piece.
+  obtain ⟨i, q, rfl⟩ := Scheme.IsLocallyDirected.ι_jointly_surjective (span g h) p
+  rcases i with _ | _ | _
+  · refine Or.inl ⟨g q, ?_⟩
+    rw [← Scheme.Hom.comp_apply, ← colimit.w (span g h) (WidePushoutShape.Hom.init .left)]
+    -- `pushout.inl` is the colimit inclusion of the left piece of the span.
+    rfl
+  · exact Or.inl ⟨q, rfl⟩
+  · exact Or.inr ⟨q, rfl⟩
+
+end AlgebraicGeometry.Scheme

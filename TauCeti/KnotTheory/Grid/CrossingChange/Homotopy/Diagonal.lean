@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.CrossingChange.Homotopy.Annulus
 import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Annulus
-import TauCeti.KnotTheory.Grid.Commutation.Homotopy.PentagonPair
+import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Pentagon.Pair
 
 /-!
 # The diagonal of the crossing change homotopy equation

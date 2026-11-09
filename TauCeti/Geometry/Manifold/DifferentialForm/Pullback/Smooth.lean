@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 
 /-!
 # Smooth pullback of differential forms
@@ -24,7 +25,9 @@ corner points. No invertibility, finite dimensionality, or completeness is requi
 
 For smooth maps, `SmoothForm.mpullback` bundles this operation as a linear map on smooth forms.
 Its underlying rough form is the existing `TauCeti.mpullback`. Pullback along a smooth map with a
-smooth right inverse, such as a vector bundle projection, is injective.
+smooth right inverse, such as a vector bundle projection, is injective. The diffeomorphisms of `M`
+preserving a smooth form form a subgroup of the diffeomorphism group, its stabilizer
+(`TauCeti.SmoothForm.diffeomorphStabilizer`).
 
 Conversely, regularity descends along a local section: if `s` is a `C^n` local section of `f`
 through `x`, a form is `C^m` near `f x` exactly when its pullback along `f` is `C^m` near `x`,
@@ -204,6 +207,51 @@ theorem IsSmoothForm.mpullback (hω : IsSmoothForm I' m ω)
   exact (isSmoothBundleForm_def _ _).mp
     (IsSmoothBundleForm.mpullback ((isSmoothBundleForm_def _ _).mpr hω.contMDiff) hf le_rfl)
 
+/-- The pullback of a continuous form along a `C¹` map `u` from a normed space, evaluated on fixed
+vectors, is continuous. For `u` a map of the plane this is the integrand of a rectangle
+integral. -/
+theorem IsSmoothForm.continuous_mpullback_apply {φ : RoughForm I M F k} (hφ : IsSmoothForm I 0 φ)
+    {u : E' → M} (hu : ContMDiff 𝓘(ℝ, E') I 1 u) (v : Fin k → E') :
+    Continuous fun z ↦ TauCeti.mpullback 𝓘(ℝ, E') I u φ z v := by
+  have h := isSmoothForm_modelSpace_iff.mp (hφ.mpullback (by simpa using hu))
+  exact (ContinuousAlternatingMap.apply ℝ E' F v).continuous.comp h.continuous
+
+/-- For a continuous two-form `φ` and a `C¹` map `u` from a normed space, the form evaluated on
+the derivatives of `u` along two fixed vectors, `z ↦ φ (u z) (du_z a, du_z b)`, is continuous. -/
+theorem IsSmoothForm.continuous_apply_mfderiv {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ)
+    {u : E' → M} (hu : ContMDiff 𝓘(ℝ, E') I 1 u) (a b : E') :
+    Continuous fun z ↦ φ (u z) ![mfderiv 𝓘(ℝ, E') I u z a, mfderiv 𝓘(ℝ, E') I u z b] :=
+  (hφ.continuous_mpullback_apply hu ![a, b]).congr fun z ↦ mpullback_apply_pair u φ z a b
+
+/-- For a continuous two-form `φ` and a map `u` from a normed space which is `C¹` on an open set
+`U`, the form evaluated on the derivatives of `u` along two fixed vectors,
+`z ↦ φ (u z) (du_z a, du_z b)`, is continuous on `U`. -/
+theorem IsSmoothForm.continuousOn_apply_mfderiv {φ : RoughForm I M F 2}
+    (hφ : IsSmoothForm I 0 φ) {u : E' → M} {U : Set E'} (hU : IsOpen U)
+    (hu : ContMDiffOn 𝓘(ℝ, E') I 1 u U) (a b : E') :
+    ContinuousOn (fun z ↦ φ (u z) ![mfderiv 𝓘(ℝ, E') I u z a, mfderiv 𝓘(ℝ, E') I u z b]) U := by
+  -- The derivatives along fixed vectors are continuous tangent fields along `u` on `U`.
+  have hv (e : E') : ContMDiffOn 𝓘(ℝ, E') I.tangent 0
+      (fun w ↦ TotalSpace.mk' E (u w) (mfderiv 𝓘(ℝ, E') I u w e)) U :=
+    contMDiffOn_zero_iff.2 fun z hz ↦
+      (((hu.contMDiffAt (hU.mem_nhds hz)).continuousAt_tangentMap le_rfl).comp
+        ((tangentBundleModelSpaceHomeomorph 𝓘(ℝ, E')).symm.continuous.continuousAt.comp
+          (continuous_id.prodMk continuous_const).continuousAt)).continuousWithinAt
+  have h := ContMDiffOn.continuousAlternatingMap_bundle_apply
+    (v := fun i ↦ ![fun w ↦ mfderiv 𝓘(ℝ, E') I u w a, fun w ↦ mfderiv 𝓘(ℝ, E') I u w b] i)
+    (hφ.contMDiff.comp_contMDiffOn (hu.of_le zero_le_one)) (fun i ↦ by fin_cases i <;> exact hv _)
+  refine ((continuous_snd.comp (Trivial.homeomorphProd M F).continuous).comp_continuousOn
+    (contMDiffOn_zero_iff.1 h)).congr fun z _ ↦ congrArg (φ (u z)) (funext fun i ↦ ?_)
+  fin_cases i <;> rfl
+
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- Pulling a form back along a diffeomorphism and then along its inverse returns the form. -/
+@[simp]
+theorem mpullback_symm_mpullback (hn : n ≠ 0) (φ : M ≃ₘ^n⟮I, I'⟯ M')
+    (ω : RoughForm I' M' F k) : mpullback I' I φ.symm (mpullback I I' φ ω) = ω := by
+  rw [← mpullback_comp (φ.symm.mdifferentiable hn) (φ.mdifferentiable hn),
+    show (φ : M → M') ∘ φ.symm = id from funext φ.apply_symm_apply, mpullback_id]
+
 namespace SmoothForm
 
 open scoped ContDiff
@@ -244,6 +292,13 @@ theorem mpullback_apply_eq_smul_of_mpullback_eq_smul {hf : ContMDiff I I' ∞ f}
     TauCeti.mpullback (F := F) I I' f φ'.1 x = c • φ.1 x := by
   have h := congrFun (congrArg Subtype.val h) x
   rwa [coe_mpullback, SetLike.val_smul, Pi.smul_apply] at h
+
+/-- If the pullback of `φ'` is `c` times `φ` at `x`, then the pullback of `-φ'` is `-c` times `φ`
+at `x`. -/
+theorem mpullback_neg_apply_eq_neg_smul {hf : ContMDiff I I' ∞ f} {φ' : SmoothForm I' M' F k}
+    {φ : SmoothForm I M F k} {x : M} {c : ℝ} (h : (mpullback f hf φ').1 x = c • φ.1 x) :
+    (mpullback f hf (-φ')).1 x = -c • φ.1 x := by
+  rw [map_neg, NegMemClass.coe_neg, Pi.neg_apply, h, neg_smul]
 
 /-- Evaluation of the smooth pullback of a two-form on a pair of tangent vectors. -/
 theorem eval₂_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f)
@@ -374,20 +429,54 @@ theorem mpullback_symm_mpullback (φ : M ≃ₘ⟮I, I'⟯ M') (β : SmoothForm 
     mpullback φ.symm φ.symm.contMDiff (mpullback φ φ.contMDiff β) = β :=
   mpullback_symm_eq_of_mpullback_eq rfl
 
+/-- Pullback along a composite of diffeomorphisms is the composite of the pullbacks. -/
+theorem mpullback_trans (φ : M ≃ₘ⟮I, I'⟯ M') (ψ : M' ≃ₘ⟮I', I''⟯ M'')
+    (γ : SmoothForm I'' M'' F k) :
+    mpullback (φ.trans ψ) (φ.trans ψ).contMDiff γ =
+      mpullback φ φ.contMDiff (mpullback ψ ψ.contMDiff γ) := by
+  rw [← LinearMap.comp_apply, ← mpullback_comp]
+  rfl
+
+/-- Pullback along a diffeomorphism `φ` transports pointwise proportionality: at `x`, the
+pullback of `α` is `c` times the pullback of `β` exactly when `α` is `c` times `β` at `φ x`. -/
+theorem mpullback_apply_eq_smul_iff (φ : M ≃ₘ⟮I, I'⟯ M') (α β : SmoothForm I' M' F k) (c : ℝ)
+    (x : M) :
+    (mpullback φ φ.contMDiff α).1 x = c • (mpullback φ φ.contMDiff β).1 x ↔
+      α.1 (φ x) = c • β.1 (φ x) := by
+  rw [coe_mpullback, coe_mpullback, ← Pi.smul_apply, ← TauCeti.mpullback_smul]
+  exact TauCeti.mpullback_apply_eq_mpullback_apply_iff
+    (φ.isInvertible_mfderiv (n := ∞) (by simp) (x := x)).surjective
+
+/-- The **stabilizer** of a smooth form `σ` in the diffeomorphism group of `M`: the smooth
+diffeomorphisms `φ` with `φ^* σ = σ`. For a symplectic form `ω` this is the group of
+symplectomorphisms `Symp(M, ω)`, and for a volume form the group of volume-preserving
+diffeomorphisms. -/
+def diffeomorphStabilizer (σ : SmoothForm I M F k) : Subgroup (M ≃ₘ⟮I, I⟯ M) where
+  carrier := {φ | mpullback φ φ.contMDiff σ = σ}
+  one_mem' := by simp [Diffeomorph.coe_one]
+  mul_mem' := fun {φ ψ} hφ hψ ↦ by
+    simp only [Set.mem_ofPred_eq, Diffeomorph.coe_mul] at hφ hψ ⊢
+    rw [mpullback_comp ψ φ ψ.contMDiff φ.contMDiff, LinearMap.comp_apply, hφ, hψ]
+  inv_mem' := fun {φ} hφ ↦ by
+    simp only [Set.mem_ofPred_eq, Diffeomorph.coe_inv] at hφ ⊢
+    exact mpullback_symm_eq_of_mpullback_eq hφ
+
+/-- A diffeomorphism lies in the stabilizer of `σ` exactly when it pulls `σ` back to itself. -/
+@[simp]
+theorem mem_diffeomorphStabilizer {σ : SmoothForm I M F k} {φ : M ≃ₘ⟮I, I⟯ M} :
+    φ ∈ diffeomorphStabilizer σ ↔ mpullback φ φ.contMDiff σ = σ :=
+  Iff.rfl
+
+/-- A diffeomorphism preserves a smooth form exactly when it preserves its value at every point:
+`(φ^* σ)_x = σ_x` for all `x`. -/
+theorem mem_diffeomorphStabilizer_iff_forall {σ : SmoothForm I M F k} {φ : M ≃ₘ⟮I, I⟯ M} :
+    φ ∈ diffeomorphStabilizer σ ↔ ∀ x, TauCeti.mpullback I I φ σ.1 x = σ.1 x := by
+  rw [mem_diffeomorphStabilizer, Subtype.ext_iff, coe_mpullback, funext_iff]
+
 /-- A smooth form preserved by a diffeomorphism `φ` is preserved by every integer power of `φ`. -/
 theorem mpullback_zpow_eq_self {φ : M ≃ₘ⟮I, I⟯ M} {σ : SmoothForm I M F k}
-    (hσ : mpullback φ φ.contMDiff σ = σ) (j : ℤ) : mpullback ⇑(φ ^ j) (φ ^ j).contMDiff σ = σ := by
-  -- The diffeomorphisms preserving `σ` form a subgroup.
-  let S : Subgroup (M ≃ₘ⟮I, I⟯ M) :=
-    { carrier := {ψ | mpullback ψ ψ.contMDiff σ = σ}
-      one_mem' := by simp [Diffeomorph.coe_one]
-      mul_mem' := fun {ψ χ} hψ hχ ↦ by
-        simp only [Set.mem_ofPred_eq, Diffeomorph.coe_mul] at hψ hχ ⊢
-        rw [mpullback_comp χ ψ χ.contMDiff ψ.contMDiff, LinearMap.comp_apply, hψ, hχ]
-      inv_mem' := fun {ψ} hψ ↦ by
-        simp only [Set.mem_ofPred_eq, Diffeomorph.coe_inv] at hψ ⊢
-        exact mpullback_symm_eq_of_mpullback_eq hψ }
-  exact S.zpow_mem (x := φ) hσ j
+    (hσ : mpullback φ φ.contMDiff σ = σ) (j : ℤ) : mpullback ⇑(φ ^ j) (φ ^ j).contMDiff σ = σ :=
+  (diffeomorphStabilizer σ).zpow_mem (x := φ) hσ j
 
 variable {F₁ F₂ F₃ : Type*}
   [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]

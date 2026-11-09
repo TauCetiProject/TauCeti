@@ -8,11 +8,14 @@ module
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.RingTheory.QuotSMulTop
-import Mathlib.RingTheory.Regular.IsSMulRegular
+public import Mathlib.RingTheory.Regular.IsSMulRegular
+import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
+import Mathlib.LinearAlgebra.TensorProduct.Pi
 
 /-!
-# Reducing linear maps modulo an ideal
+# Reducing modules and linear maps modulo an ideal
 
 An `R`-linear map `f : M → N` carries `I • M` into `I • N` for every ideal `I` of a commutative ring
 `R`, so it induces an `R ⧸ I`-linear map `M ⧸ I • M → N ⧸ I • N`. This is Mathlib's
@@ -26,9 +29,17 @@ short exact sequence `0 → K ⧸ x K → P ⧸ x P → M ⧸ x M → 0`.
 Mathlib makes `QuotSMulTop x M = M ⧸ x M` a module over `R ⧸ (x)`; this action is induced by the
 `R`-action on `M`, the analogue for `x • ⊤` of Mathlib's `Module.Quotient.mk_smul_mk` for `I • ⊤`.
 
+Reductions of cyclic modules commute: `(R ⧸ (s)) ⧸ r (R ⧸ (s))` and `(R ⧸ (r)) ⧸ s (R ⧸ (r))` are
+both `R ⧸ (r, s)`. For an `R`-algebra `A` and an `A`-module `N`, reducing modulo the image of
+`r : R` in `A` is reducing the underlying `R`-module modulo `r`. A finite free `R`-module of rank
+`d` reduces modulo `r` to `(R ⧸ (r)) ^ d`, so it has `#(R ⧸ (r)) ^ d` elements. Finally, in a
+domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ m)`.
+
 ## Main definitions
 
 * `Ideal.mapQSMulTop`: the `R ⧸ I`-linear map `M ⧸ I • M → N ⧸ I • N` induced by `f : M →ₗ[R] N`.
+* `QuotSMulTop.quotSpanSingletonComm`: `(R ⧸ (s)) ⧸ r (R ⧸ (s)) ≃ (R ⧸ (r)) ⧸ s (R ⧸ (r))`.
+* `QuotSMulTop.restrictScalarsEquiv`: `N ⧸ (algebraMap R A r) N ≃ N ⧸ r N` as `R`-modules.
 
 ## Main results
 
@@ -43,6 +54,10 @@ Mathlib makes `QuotSMulTop x M = M ⧸ x M` a module over `R ⧸ (x)`; this acti
 * `QuotSMulTop.ker_mapQ_mkQ` and `QuotSMulTop.mapQ_mkQ_surjective`: for an ideal `I` and `y : R`,
   the map `N ⧸ I N → (N ⧸ y N) ⧸ I (N ⧸ y N)` is surjective with kernel `y (N ⧸ I N)`, so that
   quotienting by `I` and by `y` may be done in either order.
+* `QuotSMulTop.natCard_eq_pow_finrank`: a finite free `R`-module `M` has
+  `#(M ⧸ r M) = #(R ⧸ (r)) ^ finrank R M`.
+* `Prime.isSMulRegular_quotient_span_pow`: in a domain, if the prime `π` does not divide `r`, then
+  `r` is regular on `R ⧸ (π ^ m)`.
 -/
 
 public section
@@ -161,3 +176,58 @@ theorem mapQ_mkQ_surjective (I : Ideal S) (y : S) :
   exact ⟨Submodule.Quotient.mk n, rfl⟩
 
 end QuotSMulTop
+
+namespace QuotSMulTop
+
+variable {R : Type*} [CommRing R]
+
+/-- Reducing `R ⧸ (s)` modulo `r` is reducing `R ⧸ (r)` modulo `s`: both are `R ⧸ (r, s)`. -/
+noncomputable def quotSpanSingletonComm (r s : R) :
+    QuotSMulTop r (R ⧸ Ideal.span {s}) ≃ₗ[R] QuotSMulTop s (R ⧸ Ideal.span {r}) :=
+  equivQuotTensor r _ ≪≫ₗ TensorProduct.comm R _ _ ≪≫ₗ (equivQuotTensor s _).symm
+
+/-- `quotSpanSingletonComm` sends the class of `x` to the class of `x`. -/
+@[simp]
+theorem quotSpanSingletonComm_mk_mk (r s x : R) :
+    quotSpanSingletonComm r s (Submodule.Quotient.mk (Ideal.Quotient.mk _ x)) =
+      Submodule.Quotient.mk (Ideal.Quotient.mk _ x) := by
+  simp [quotSpanSingletonComm, equivQuotTensor, LinearEquiv.symm_apply_eq, Algebra.smul_def]
+
+variable {A N : Type*} [CommRing A] [Algebra R A] [AddCommGroup N] [Module A N] [Module R N]
+  [IsScalarTower R A N]
+
+/-- Reducing an `A`-module `N` modulo the image of `r : R` in `A` is reducing the underlying
+`R`-module modulo `r`. -/
+noncomputable def restrictScalarsEquiv (r : R) :
+    QuotSMulTop (algebraMap R A r) N ≃ₗ[R] QuotSMulTop r N :=
+  (Submodule.Quotient.restrictScalarsEquiv R _).symm ≪≫ₗ
+    Submodule.quotEquivOfEq _ _
+      (by rw [element_smul_restrictScalars, Submodule.restrictScalars_top])
+
+/-- `restrictScalarsEquiv` sends the class of `x` to the class of `x`. -/
+@[simp]
+theorem restrictScalarsEquiv_mk (r : R) (x : N) :
+    restrictScalarsEquiv (A := A) r (Submodule.Quotient.mk x) = Submodule.Quotient.mk x := by
+  simp [restrictScalarsEquiv]
+
+/-- **The reduction of a finite free module.** A finite free `R`-module `M` reduces modulo `r` to
+`(R ⧸ (r)) ^ finrank R M`, so `M ⧸ r M` has `#(R ⧸ (r)) ^ finrank R M` elements. -/
+theorem natCard_eq_pow_finrank (r : R) (M : Type*) [AddCommGroup M] [Module R M]
+    [Module.Free R M] [Module.Finite R M] :
+    Nat.card (QuotSMulTop r M) = Nat.card (R ⧸ Ideal.span {r}) ^ Module.finrank R M := by
+  nontriviality R
+  let b := Module.Free.chooseBasis R M
+  let e := QuotSMulTop.congr r b.equivFun ≪≫ₗ equivQuotTensor r _ ≪≫ₗ
+    TensorProduct.piScalarRight R R (R ⧸ Ideal.span {r}) _
+  rw [Nat.card_congr e.toEquiv, Nat.card_fun, Module.finrank_eq_card_chooseBasisIndex,
+    Nat.card_eq_fintype_card (α := Module.Free.ChooseBasisIndex R M)]
+
+end QuotSMulTop
+
+/-- In a domain, if the prime `π` does not divide `r`, then `r` is regular on `R ⧸ (π ^ m)`:
+`π ^ m ∣ r x` forces `π ^ m ∣ x`. -/
+theorem Prime.isSMulRegular_quotient_span_pow {R : Type*} [CommRing R] [IsDomain R] {π r : R}
+    (hπ : Prime π) (hr : ¬π ∣ r) (m : ℕ) : IsSMulRegular (R ⧸ Ideal.span {π ^ m}) r :=
+  (isSMulRegular_quotient_iff_mem_of_smul_mem _ r).2 fun x hx ↦ by
+    rw [smul_eq_mul, Ideal.mem_span_singleton] at hx
+    exact Ideal.mem_span_singleton.2 (hπ.pow_dvd_of_dvd_mul_left m hr hx)

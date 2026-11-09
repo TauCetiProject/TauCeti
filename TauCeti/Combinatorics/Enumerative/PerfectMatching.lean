@@ -43,6 +43,7 @@ travel.
 
 * `TauCeti.IsPerfectMatching f`: the permutation `f` is an involution with no fixed point.
 * `TauCeti.PerfectMatching α`: the type of perfect matchings of `α`.
+* `TauCeti.PerfectMatching.ofInvolutive`: the perfect matching from a fixed-point-free involution.
 * `TauCeti.PerfectMatching.congr`: transporting a perfect matching along an equivalence.
 * `TauCeti.PerfectMatching.reconnect`: cutting two arcs and joining their ends the other way.
 * `TauCeti.PerfectMatching.restrict`: the perfect matching induced on the complement of an arc.
@@ -95,7 +96,7 @@ variable {α : Type u} {β : Type v} {γ : Type w}
 /-- A permutation of `α` is a **perfect matching** when it is an involution with no fixed
 point, so that it pairs off the elements of `α`. -/
 def IsPerfectMatching (f : Equiv.Perm α) : Prop :=
-  (∀ a, f (f a) = a) ∧ ∀ a, f a ≠ a
+  Function.Involutive f ∧ ∀ a, f a ≠ a
 
 /-- A permutation is a perfect matching exactly when it is an involution with no fixed
 point. -/
@@ -143,6 +144,18 @@ def mk (f : Equiv.Perm α) (hinv : ∀ a, f (f a) = a) (hne : ∀ a, f a ≠ a) 
 @[simp]
 theorem val_mk (f : Equiv.Perm α) (hinv : ∀ a, f (f a) = a) (hne : ∀ a, f a ≠ a) :
     (mk f hinv hne).val = f := (rfl)
+
+/-- A fixed-point-free involution gives a perfect matching. -/
+def ofInvolutive {f : α → α} (hinv : Function.Involutive f) (hne : ∀ a, f a ≠ a) :
+    PerfectMatching α :=
+  .mk (hinv.toPerm _) (fun a ↦ by rw [Function.Involutive.coe_toPerm]; exact hinv a)
+    (fun a h ↦ hne a (by rwa [Function.Involutive.coe_toPerm] at h))
+
+@[simp]
+theorem ofInvolutive_apply {f : α → α} (hinv : Function.Involutive f) (hne : ∀ a, f a ≠ a)
+    (a : α) :
+    (ofInvolutive hinv hne).val a = f a := by
+  simp [ofInvolutive]
 
 variable {a b : α} {D : PerfectMatching α}
 
@@ -333,8 +346,9 @@ section Congr
 without fixed points. -/
 theorem isPerfectMatching_permCongr (e : α ≃ β) {f : Equiv.Perm α} (hf : IsPerfectMatching f) :
     IsPerfectMatching (e.permCongr f) := by
-  refine ⟨fun b => by simp [hf.1], fun b hb => hf.2 (e.symm b) ?_⟩
-  simpa using congrArg e.symm hb
+  refine ⟨fun b ↦ ?_, fun b hb ↦ hf.2 (e.symm b) ?_⟩
+  · simpa using congrArg e (hf.1 (e.symm b))
+  · simpa using congrArg e.symm hb
 
 /-- A permutation is a perfect matching exactly when its transport along an equivalence is. -/
 theorem isPerfectMatching_permCongr_iff (e : α ≃ β) {f : Equiv.Perm α} :

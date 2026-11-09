@@ -23,8 +23,9 @@ remaining case,
 `Γ₁(N) · diag(1, p) · Γ₁(N) = (⋃_{b < p} Γ₁(N) · !![1, b; 0, p])  ∪  Γ₁(N) · σ · diag(p, 1)`,
 
 a disjoint union of `p + 1` **right** cosets. Here `σ = !![m, n; N, p]` is any integral matrix
-with `m p − n N = 1`: an element of `Γ₀(N)`, *not* of `Γ₁(N)`, and it is that twist which later
-supplies the factor `χ(p)` in the Hecke recurrence at a good prime.
+with `m p − n N = 1`: an element of `Γ₀(N)` whose lower-right entry is `p`, so that it lies in
+`Γ₁(N)` only when `p ≡ 1 (mod N)`, and it is that twist which later supplies the factor `χ(p)`
+in the Hecke recurrence at a good prime.
 
 ## Where the hypotheses enter
 
@@ -63,7 +64,7 @@ Disjointness of the last coset from the others uses only `1 < p` and integrality
 * `HeckeRing.GL2.exists_mem_Gamma1_natDiagGL_mul_eq_primeRep_none`:
   `diag(1, p) · !![m p, n; N, 1] = σ · diag(p, 1)` with `!![m p, n; N, 1] ∈ Γ₁(N)` — the reverse
   inclusion for the twisted coset.
-* `HeckeRing.GL2.exists_adjugateGL_natDiagGL_eq`: for an index coprime to the level, the
+* `HeckeRing.GL2.exists_adjugate_natDiagGL_eq`: for an index coprime to the level, the
   adjugate of `diag(1, n)` factors on either side through `diag(1, n)`, a `Γ₁(N)` element,
   and a `Γ₀(N)` element whose diamond label is `n⁻¹`.
 * `HeckeRing.GL2.exists_natDiagGL_mul_mapGL_eq_of_isCoprime`: for `t` coprime to `n N`, matrices
@@ -108,20 +109,20 @@ variable {N p : ℕ} {σ : SL(2, ℤ)}
 
 local notation "φ" => Matrix.GeneralLinearGroup.map (n := Fin 2) (algebraMap ℚ ℝ)
 
--- Kept separate so that the real matrix computation of `exists_adjugateGL_natDiagGL_eq` runs on
+-- Kept separate so that the real matrix computation of `exists_adjugate_natDiagGL_eq` runs on
 -- the explicit matrices of `A` and `B`, away from the congruence conditions.
-private lemma adjugateGL_natDiagGL_eq_of_coe_mapGL {n : ℕ} [NeZero n] {u v : ℤ}
+private lemma adjugate_natDiagGL_eq_of_coe_mapGL {n : ℕ} [NeZero n] {u v : ℤ}
     (huv : u * n + v * N = 1) {A B : SL(2, ℤ)}
     (hA : (↑(mapGL ℝ A) : Matrix (Fin 2) (Fin 2) ℝ) = !![(n : ℝ), -v; (N : ℝ), u])
     (hB : (↑(mapGL ℝ B) : Matrix (Fin 2) (Fin 2) ℝ) = !![(u : ℝ) * n, v; -(N : ℝ), 1]) :
-    TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) = mapGL ℝ A * φ (natDiagGL 2 ![1, n] * mapGL ℚ B) ∧
-      TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
+    (φ (natDiagGL 2 ![1, n])).adjugate = mapGL ℝ A * φ (natDiagGL 2 ![1, n] * mapGL ℚ B) ∧
+      (φ (natDiagGL 2 ![1, n])).adjugate =
         φ (mapGL ℚ B * natDiagGL 2 ![1, n]) * mapGL ℝ A := by
   have hR : (u : ℝ) * n + v * N = 1 := by exact_mod_cast huv
   -- over `ℝ`, every entry of either factorisation is a multiple of `u n + v N = 1`
   refine ⟨Units.ext ?_, Units.ext ?_⟩
   all_goals
-    rw [map_mul, map_mapGL, TauCeti.adjugateGL_val, Units.val_mul, Units.val_mul,
+    rw [map_mul, map_mapGL, GeneralLinearGroup.coe_adjugate, Units.val_mul, Units.val_mul,
       Matrix.GeneralLinearGroup.val_map_apply, coe_map_natDiagGL_one, hA, hB,
       Matrix.adjugate_fin_two_of, Matrix.mul_fin_two, Matrix.mul_fin_two]
     congrm !![?_, ?_; ?_, ?_]
@@ -134,12 +135,12 @@ private lemma adjugateGL_natDiagGL_eq_of_coe_mapGL {n : ℕ} [NeZero n] {u v : �
 either side.** For `n` coprime to `N` there are `A ∈ Γ₀(N)` with diamond label `⟨n⟩⁻¹` (its
 lower-right entry is `n⁻¹ mod N`) and `B ∈ Γ₁(N)` with
 `adj(diag(1, n)) = A · diag(1, n) · B = B · diag(1, n) · A` in `GL₂(ℝ)`. -/
-lemma exists_adjugateGL_natDiagGL_eq {n : ℕ} [NeZero n] (hn : n.Coprime N) :
+lemma exists_adjugate_natDiagGL_eq {n : ℕ} [NeZero n] (hn : n.Coprime N) :
     ∃ A : SL(2, ℤ), ∃ hA : A ∈ Gamma0 N,
       (Gamma0Map N).toHomUnits ⟨A, hA⟩ = (ZMod.unitOfCoprime n hn)⁻¹ ∧ ∃ B ∈ Gamma1 N,
-        TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
+        (φ (natDiagGL 2 ![1, n])).adjugate =
           mapGL ℝ A * φ (natDiagGL 2 ![1, n] * mapGL ℚ B) ∧
-        TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
+        (φ (natDiagGL 2 ![1, n])).adjugate =
           φ (mapGL ℚ B * natDiagGL 2 ![1, n]) * mapGL ℝ A := by
   obtain ⟨u, v, huv⟩ := Nat.isCoprime_iff_coprime.mpr hn
   let A : SL(2, ℤ) :=
@@ -148,7 +149,7 @@ lemma exists_adjugateGL_natDiagGL_eq {n : ℕ} [NeZero n] (hn : n.Coprime N) :
     ⟨!![u * n, v; -(N : ℤ), 1], by rw [Matrix.det_fin_two_of]; linear_combination huv⟩
   refine ⟨A, mem_Gamma0_iff_dvd.mpr dvd_rfl, eq_inv_of_mul_eq_one_left <| Units.ext ?_, B,
     mem_Gamma1_of_dvd_lowerRow (dvd_neg.mpr dvd_rfl) (dvd_zero _),
-    adjugateGL_natDiagGL_eq_of_coe_mapGL huv (by rw [coe_mapGL_fin_two]; simp [A])
+    adjugate_natDiagGL_eq_of_coe_mapGL huv (by rw [coe_mapGL_fin_two]; simp [A])
       (by rw [coe_mapGL_fin_two]; simp [B])⟩
   -- the diamond label of `A` is its lower-right entry `u`, and `u n ≡ 1 (mod N)`
   simpa [A, Gamma0Map_apply] using congrArg (Int.cast : ℤ → ZMod N) huv

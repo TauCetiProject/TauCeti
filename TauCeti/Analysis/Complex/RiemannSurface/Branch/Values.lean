@@ -12,8 +12,8 @@ public import Mathlib.Topology.Covering.Basic
 /-!
 # Coverings away from branch values
 
-For a finite holomorphic map of connected Riemann surfaces, the branch values are the images
-of the points of local multiplicity greater than one. With compact source this is a finite
+For a finite holomorphic map of Riemann surfaces with connected target, the branch values are the
+images of the points of local multiplicity greater than one. With compact source this is a finite
 closed set, and the map is a covering over its complement. Every fibre of this covering has
 cardinality equal to the analytic degree of the map. Conversely, a branch value cannot admit
 an evenly covered neighbourhood: a local homeomorphism has local multiplicity one. Local
@@ -78,7 +78,7 @@ theorem mem_branchValues_iff (f : FiniteHolomorphicMap X Y) (y : Y) :
     y ∈ f.branchValues ↔ ∃ x, f x = y ∧ 1 < localMultiplicity f x := by
   simp [branchValues, and_comm]
 
-variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y] [PreconnectedSpace X]
+variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
 
 /-- Away from branch values, every point of the fibre has local multiplicity one. -/
 -- Simplify nonmembership before `mem_branchValues_iff` rewrites the inner membership.
@@ -181,7 +181,7 @@ theorem ncard_fiber_restrictPreimage_compl (f : FiniteHolomorphicMap X Y) {S : S
   exact (f.card_fiber_eq_degree_iff y).2 fun hy ↦ y.property (hS hy)
 
 /-- **Branch values of a composite**: for finite holomorphic maps `f : X → Y` and `g : Y → Z`,
-with `X` compact and connected and `Y` connected, the branch values of `g ∘ f` are the images
+with `X` compact and `Y` connected, the branch values of `g ∘ f` are the images
 under `g` of the branch values of `f` together with the branch values of `g`. -/
 theorem branchValues_comp {Z : Type*} [TopologicalSpace Z] [ChartedSpace ℂ Z]
     [IsManifold 𝓘(ℂ) 1 Z] (g : FiniteHolomorphicMap Y Z) (f : FiniteHolomorphicMap X Y) :

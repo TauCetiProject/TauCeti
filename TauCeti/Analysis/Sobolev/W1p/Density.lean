@@ -259,9 +259,8 @@ private theorem tendsto_truncate (hp : p ≠ ∞) {C : ℝ} (hC : 0 ≤ C)
     (hbound : ∀ n (x : E), ‖∇ (truncCutoff n) x‖ ≤ C) (u : W1p mu ⊤ p) :
     Tendsto (fun n => truncate hC hbound n u) atTop (𝓝 u) := by
   rw [tendsto_subtype_rng, Lp.tendsto_Lp_iff_tendsto_eLpNorm']
-  exact tendsto_eLpNorm_sub_of_ae_tendsto (C := (2 + C).toNNReal)
-    (zero_lt_one.trans_le Fact.out).ne' hp
-    (Eventually.of_forall fun n => Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _)
+  exact tendsto_eLpNorm_sub_of_ae_tendsto (C := (2 + C).toNNReal) hp
+    (Eventually.of_forall fun n => Lp.aestronglyMeasurable _)
     (Lp.memLp (u : Sobolev1JetLp mu ⊤ p))
     (Eventually.of_forall fun n =>
       (norm_coe_truncate_sub_le hC hbound n u).mono fun _ hx => by

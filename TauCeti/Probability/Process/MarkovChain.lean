@@ -77,6 +77,9 @@ along it, so no canonical sample space is imposed on users.
 * `TauCeti.Probability.hasLaw_markovChainLaw_iff` — a process on an arbitrary measure space has
   path law `markovChainLaw ν κ` exactly when it starts from `ν` and its prefix laws satisfy the
   Markov recursion.
+* `TauCeti.Probability.prefixLaw_compProd_apply_prod` — for any process, the prefix-law side of
+  that recursion, evaluated on a rectangle `A ×ˢ C`, is the integral of `κ (X n) C` over the event
+  `{(X 0, …, X n) ∈ A}`.
 * `TauCeti.Probability.hasLaw_markovChainLaw_iff_prefixLaw_singleton` — on a countable state space,
   a process has path law `markovChainLaw ν κ` exactly when its finite path masses are given by the
   product formula.
@@ -271,7 +274,8 @@ theorem markovChainLaw_map_prefix_succ_eq_compProd [SFinite ν] (n : ℕ) :
         · rfl
     _ = (((markovChainLaw ν κ).map (frestrictLe n)) ⊗ₘ markovStep κ n).map
           (Prod.map (iicEquivFin α n) id) := by
-        rw [markovChainLaw, Kernel.map_frestrictLe_trajMeasure_compProd_of_sFinite]
+        rw [markovChainLaw,
+          Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure_of_sFinite]
     _ = ((markovChainLaw ν κ).map (frestrictLe n)).map (iicEquivFin α n) ⊗ₘ
           κ.comap (fun w : Fin (n + 1) → α => w (Fin.last n))
             (measurable_pi_apply (Fin.last n)) := by
@@ -350,6 +354,31 @@ theorem _root_.MeasureTheory.Measure.markovChainLaw_setOf_apply_eq_comp
     (measurableSet_singleton y)]
   simp only [Set.preimage, Set.mem_singleton_iff]
 
+omit [IsMarkovKernel κ] in
+/-- The section at `v` of the singleton of a pair `(Fin.init w, a)`, measured by the kernel `κ`
+read off the last coordinate of `v`, is the indicator of `v = Fin.init w` times the transition
+weight from the last coordinate of `Fin.init w` to `a`. -/
+private theorem comap_apply_prodMk_preimage_singleton {n : ℕ}
+    (w : Fin (n + 2) → α) (v : Fin (n + 1) → α) :
+    (κ.comap (fun y : Fin (n + 1) → α => y (Fin.last n)) (measurable_pi_apply (Fin.last n))) v
+        (Prod.mk v ⁻¹' ({(Fin.init w, w (Fin.last (n + 1)))} :
+          Set ((Fin (n + 1) → α) × α)))
+      = Set.indicator {Fin.init w}
+          (fun _ => κ (w (Fin.last n).castSucc) {w (Fin.last (n + 1))}) v := by
+  by_cases hv : v = Fin.init w
+  · subst hv
+    have hfibre : (Prod.mk (Fin.init w) ⁻¹'
+        ({(Fin.init w, w (Fin.last (n + 1)))} : Set ((Fin (n + 1) → α) × α)))
+        = {w (Fin.last (n + 1))} := by
+      ext c; simp
+    rw [hfibre, Kernel.comap_apply]
+    simp [Fin.init]
+  · have hfibre : (Prod.mk v ⁻¹'
+        ({(Fin.init w, w (Fin.last (n + 1)))} : Set ((Fin (n + 1) → α) × α))) = ∅ := by
+      ext c; simp [hv]
+    rw [hfibre]
+    simp [hv]
+
 /-- **The finite path masses of the chain.** On a state space with measurable singletons the mass a
 homogeneous Markov chain gives to a finite path is the initial weight of its first state times the
 product of the transition weights along it. This is the defining product form of the
@@ -387,27 +416,7 @@ theorem markovChainLaw_map_prefix_apply_singleton [SFinite ν]
       ← Measure.map_apply hprod (measurableSet_singleton _),
       markovChainLaw_map_prefix_succ_eq_compProd, Measure.compProd_apply
         (measurableSet_singleton _)]
-    have hint : ∀ v : Fin (n + 1) → α,
-        (κ.comap (fun y : Fin (n + 1) → α => y (Fin.last n))
-            (measurable_pi_apply (Fin.last n))) v
-          (Prod.mk v ⁻¹' ({(Fin.init w, w (Fin.last (n + 1)))} :
-            Set ((Fin (n + 1) → α) × α)))
-        = Set.indicator {Fin.init w}
-            (fun _ => κ (w (Fin.last n).castSucc) {w (Fin.last (n + 1))}) v := by
-      intro v
-      by_cases hv : v = Fin.init w
-      · subst hv
-        have hfibre : (Prod.mk (Fin.init w) ⁻¹'
-            ({(Fin.init w, w (Fin.last (n + 1)))} : Set ((Fin (n + 1) → α) × α)))
-            = {w (Fin.last (n + 1))} := by
-          ext c; simp
-        rw [hfibre, Kernel.comap_apply]
-        simp [Fin.init]
-      · have hfibre : (Prod.mk v ⁻¹'
-            ({(Fin.init w, w (Fin.last (n + 1)))} : Set ((Fin (n + 1) → α) × α))) = ∅ := by
-          ext c; simp [hv]
-        rw [hfibre]
-        simp [hv]
+    have hint := comap_apply_prodMk_preimage_singleton κ w
     rw [lintegral_congr hint, lintegral_indicator (measurableSet_singleton _),
       setLIntegral_const, ih (Fin.init w), Fin.prod_univ_castSucc]
     have hsucc : (Fin.last n).succ = Fin.last (n + 1) := Fin.succ_last n
@@ -516,6 +525,25 @@ theorem hasLaw_markovChainLaw_iff [IsFiniteMeasure ν] (hX : ∀ n, AEMeasurable
   refine ⟨fun h => ?_, fun h => ⟨hY, Measure.eq_markovChainLaw ν κ h.1 h.2⟩⟩
   rw [pathLaw_def, h.map_eq]
   exact ⟨markovChainLaw_map_eval_zero ν κ, markovChainLaw_map_prefix_succ_eq_compProd ν κ⟩
+
+omit [IsMarkovKernel κ] in
+/-- The joint law of a prefix `(X 0, …, X n)` of a process and one further `κ`-step from its last
+coordinate, evaluated on a rectangle `A ×ˢ C`: it is the integral of `κ (X n) C` over the event
+`{(X 0, …, X n) ∈ A}`. -/
+theorem prefixLaw_compProd_apply_prod [SFinite μ] [IsSFiniteKernel κ] (hX : ∀ n, Measurable (X n))
+    (n : ℕ) {A : Set (Fin (n + 1) → α)} (hA : MeasurableSet A) {C : Set α} (hC : MeasurableSet C) :
+    (prefixLaw μ X (n + 1) ⊗ₘ κ.comap (fun w : Fin (n + 1) → α => w (Fin.last n))
+        (measurable_pi_apply (Fin.last n))) (A ×ˢ C) =
+      ∫⁻ ω in (fun ω (i : Fin (n + 1)) => X i ω) ⁻¹' A, κ (X n ω) C ∂μ := by
+  have hpre : Measurable fun ω (i : Fin (n + 1)) => X i ω := measurable_pi_iff.2 fun i => hX i
+  have : SFinite (prefixLaw μ X (n + 1)) := by
+    rw [prefixLaw_def, blockLaw_def]
+    infer_instance
+  rw [Measure.compProd_apply_prod hA hC, prefixLaw_def, blockLaw_def]
+  simp only [Kernel.comap_apply]
+  rw [setLIntegral_map (f := fun w : Fin (n + 1) → α => κ (w (Fin.last n)) C) hA
+    ((κ.measurable_coe hC).comp (measurable_pi_apply _)) hpre]
+  simp
 
 /-- **Product-formula characterization of the law of a Markov chain.** On a countable state space
 with measurable singletons, the path of a coordinatewise a.e. measurable process `X` has law

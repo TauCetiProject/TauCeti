@@ -119,7 +119,7 @@ theorem mem_range_adeleExtension_iff {a : AdeleRing (𝓞 L) L} :
     (ρ := adeleGaloisRep K L) (f := adeleExtensionLinearMap K L)
     (fun σ x v ↦ by
       rw [adeleGaloisRep_apply, adeleGaloisRep_apply, Algebra.smul_def, Algebra.smul_def, map_mul,
-        adeleGaloisAction_algebraMap])
+        adeleGaloisAction_algebraMap, AlgEquiv.smul_def])
     (fun σ w ↦ adeleGaloisAction_adeleExtension K L σ w)
     (surjective_liftBaseChange_adeleExtensionLinearMap K L)
   rw [RingHom.mem_range, ← Set.mem_range]

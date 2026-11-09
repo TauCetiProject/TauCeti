@@ -52,6 +52,19 @@ inductive Homotopic {a : Γ.V} : ∀ {b : Γ.V}, Γ.Path a b → Γ.Path a b →
   | backtrack {b c} (p : Γ.Path a b) (e : Quiver.Hom b c) :
       Homotopic ((p.cons e).cons (Quiver.reverse e)) p
 
+/-- Multiplicative dart weights compatible with reversal are invariant under backtrack homotopy. -/
+theorem Homotopic.weight_eq {G : Type*} [Group G] (wt : Γ.E → G)
+    (hwt : ∀ e, wt (Γ.rev e) = (wt e)⁻¹) {a b : Γ.V} {p q : Γ.Path a b}
+    (h : Homotopic Γ p q) :
+    p.weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) =
+      q.weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) := by
+  induction h with
+  | refl => rfl
+  | symm _ ih => exact ih.symm
+  | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
+  | cons _ _ ih => simp only [Quiver.Path.weight_cons, ih]
+  | backtrack p e => simp [Γ.reverse_val, hwt, mul_assoc]
+
 /-- Homotopy is preserved by placing a fixed path before the paths being compared. -/
 theorem Homotopic.comp_left {a b c : Γ.V} {q r : Γ.Path b c}
     (h : Homotopic Γ q r) (p : Γ.Path a b) :
@@ -166,6 +179,26 @@ private theorem isReduced_reduceSnoc {a b c : Γ.V} (p : Γ.Path a b)
     · simpa only [reduceSnoc_cons_of_ne Γ q f e h] using
         (isReduced_cons_cons Γ q f e).mpr ⟨hp, h⟩
 
+/-- Reduction only deletes darts, preserving their order. -/
+theorem darts_reduce_sublist {a b : Γ.V} (p : Γ.Path a b) :
+    (darts Γ (reduce Γ p)).Sublist (darts Γ p) := by
+  classical
+  have hs {a b c : Γ.V} (q : Γ.Path a b) (e : Quiver.Hom b c) :
+      (darts Γ (reduceSnoc Γ q e)).Sublist (darts Γ (q.cons e)) := by
+    cases q with
+    | nil => simp [reduceSnoc]
+    | @cons d _ q f =>
+      by_cases h : e.1 = Γ.rev f.1
+      · cases endpoint_eq_of_reverse_val Γ f e h
+        simp only [reduceSnoc, dite_eq_left h, darts_cons]
+        exact (List.sublist_append_left _ _).trans (List.sublist_append_left _ _)
+      · simp [reduceSnoc, h]
+  induction p with
+  | nil => simp [reduce_nil]
+  | cons p e ih =>
+    rw [reduce_cons]
+    exact (hs _ _).trans (by simpa only [darts_cons] using ih.append_right [e.1])
+
 /-- Every path reduces to a path with no immediate backtracking. -/
 @[simp] theorem isReduced_reduce {a b : Γ.V} (p : Γ.Path a b) :
     IsReduced Γ (reduce Γ p) := by
@@ -196,6 +229,32 @@ theorem reduce_cons_of_reduce_eq_cons_reverse {a b c : Γ.V} (p : Γ.Path a b)
     (h : reduce Γ p = q.cons (Quiver.reverse e)) : reduce Γ (p.cons e) = q := by
   rw [reduce_cons, h]
   simpa only [Quiver.reverse_reverse] using reduceSnoc_cons_reverse Γ q (Quiver.reverse e)
+
+/-- Free reduction never lengthens a path. -/
+theorem length_reduce_le {a b : Γ.V} (p : Γ.Path a b) :
+    (reduce Γ p).length ≤ p.length := by
+  induction p with
+  | nil => simp [reduce_nil]
+  | @cons b c p e ih =>
+    by_cases h : IsReduced Γ ((reduce Γ p).cons e)
+    · rw [reduce_cons_of_isReduced Γ p e h, Quiver.Path.length_cons,
+        Quiver.Path.length_cons]
+      omega
+    · -- The appended dart backtracks against the last dart of the reduced prefix.
+      generalize hq : reduce Γ p = q at h ih
+      cases q with
+      | nil => exact absurd (isReduced_toPath Γ e) h
+      | @cons d _ q f =>
+        have hfe : e.1 = Γ.rev f.1 := by
+          by_contra hne
+          exact h ((isReduced_cons_cons Γ q f e).mpr
+            ⟨hq ▸ isReduced_reduce Γ p, hne⟩)
+        obtain rfl : c = d := endpoint_eq_of_reverse_val Γ f e hfe
+        obtain rfl : e = Quiver.reverse f := hom_eq_reverse_of_val_eq Γ f e hfe
+        rw [reduce_cons_of_reduce_eq_cons_reverse Γ p q _ (by
+          rw [hq, Quiver.reverse_reverse]), Quiver.Path.length_cons]
+        rw [Quiver.Path.length_cons] at ih
+        omega
 
 /-- Reduction leaves an already reduced path unchanged. -/
 @[simp] theorem reduce_eq_self_of_isReduced {a b : Γ.V} (p : Γ.Path a b)

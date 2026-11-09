@@ -54,11 +54,15 @@ defined without the hypothesis `d ≤ n`, so that charts and analytic functions 
   `TauCeti.AnalyticOnSubmanifold.prod`, `TauCeti.AnalyticOnSubmanifold.comp`: ambient analytic
   functions, compositions and pairs.
 * `TauCeti.IsAnalyticSubmanifold.inter`, `TauCeti.AnalyticOnSubmanifold.inter`,
+  `TauCeti.isAnalyticSubmanifold_of_locally_isAnalyticSubmanifold`,
+  `TauCeti.isAnalyticSubmanifold_iff_exists_isOpen`,
   `TauCeti.analyticOnSubmanifold_of_locally_analyticOnSubmanifold`: restriction to relatively
   open subsets (nonempty ones, for submanifolds), and locality.
 * `TauCeti.AnalyticOnSubmanifold.exists_analyticAt_eqOn`,
   `TauCeti.AnalyticOnSubmanifold.exists_analyticOnNhd_eqOn`: local ambient analytic extensions.
 * `TauCeti.AnalyticOnSubmanifold.continuousOn`: intrinsic analytic functions are continuous.
+* `TauCeti.AnalyticOnSubmanifold.analyticOnNhd_of_isOpen`, `IsOpen.analyticOnSubmanifold_iff`: on
+  open sets, analyticity in charts is ambient analyticity.
 * `TauCeti.IsAnalyticSubmanifold.of_isOpen_preimage_val`: nonempty relatively open subsets.
 * `TauCeti.isAnalyticSubmanifold_coordSubspace`, `IsOpen.isAnalyticSubmanifold`,
   `TauCeti.isAnalyticSubmanifold_singleton`: coordinate subspaces, open sets and points.
@@ -298,6 +302,26 @@ theorem IsAnalyticSubmanifold.of_isOpen_preimage_val (hS : IsAnalyticSubmanifold
       exact ⟨hTS hxT, (Set.ext_iff.mp hUT ⟨x, hTS hxT⟩).mpr hxT⟩
   simpa only [h] using hS.inter hU (h.symm ▸ hne)
 
+/-- **Locality.** A nonempty set that is locally a `d`-dimensional analytic submanifold around each
+of its points is a `d`-dimensional analytic submanifold. -/
+theorem isAnalyticSubmanifold_of_locally_isAnalyticSubmanifold (hne : S.Nonempty)
+    (h : ∀ x ∈ S, ∃ U, IsOpen U ∧ x ∈ U ∧ IsAnalyticSubmanifold d (S ∩ U)) :
+    IsAnalyticSubmanifold d S := by
+  rcases hne with ⟨x₀, hx₀⟩
+  obtain ⟨_, _, _, h₀⟩ := h x₀ hx₀
+  refine ⟨⟨x₀, hx₀⟩, h₀.le, fun x hx ↦ ?_⟩
+  obtain ⟨U, hU, hxU, hSU⟩ := h x hx
+  obtain ⟨e, hxe, he⟩ := hSU.exists_isAnalyticChart x ⟨hx, hxU⟩
+  exact ⟨e.restrOpen U hU, ⟨hxe, hxU⟩, (he.restrOpen hU).of_inter inter_subset_right⟩
+
+/-- A set is a `d`-dimensional analytic submanifold if and only if it is nonempty and locally a
+`d`-dimensional analytic submanifold around each of its points. -/
+theorem isAnalyticSubmanifold_iff_exists_isOpen :
+    IsAnalyticSubmanifold d S ↔
+      S.Nonempty ∧ ∀ x ∈ S, ∃ U, IsOpen U ∧ x ∈ U ∧ IsAnalyticSubmanifold d (S ∩ U) :=
+  ⟨fun hS ↦ ⟨hS.nonempty, fun x _ ↦ ⟨univ, isOpen_univ, mem_univ x, by simpa using hS⟩⟩,
+    fun ⟨hne, h⟩ ↦ isAnalyticSubmanifold_of_locally_isAnalyticSubmanifold hne h⟩
+
 /-! ### Analytic functions on analytic submanifolds -/
 
 /-- A function `f` on `𝕜ⁿ` is *analytic on* `S` in dimension `d` if every point `x ∈ S` lies in the
@@ -482,6 +506,22 @@ theorem _root_.AnalyticOnNhd.analyticOnSubmanifold (hf : AnalyticOnNhd 𝕜 f S)
   obtain ⟨e, hxe, he⟩ := hS.exists_isAnalyticChart x hx
   exact ⟨e, hxe, he, (hf x hx).comp_of_eq (he.analyticAt_symm_firstCoords hxe hx)
     (he.symm_firstCoords_firstCoords_apply hxe hx)⟩
+
+/-- A function analytic in the charts of an open set is analytic there as a function on `𝕜ⁿ`. -/
+theorem AnalyticOnSubmanifold.analyticOnNhd_of_isOpen (hf : AnalyticOnSubmanifold d f U)
+    (hU : IsOpen U) : AnalyticOnNhd 𝕜 f U := by
+  intro x hx
+  obtain ⟨V, hV, hxV, g, hg, hfg⟩ := hf.exists_analyticAt_eqOn hx
+  exact hg.congr (eventuallyEq_of_mem ((hU.inter hV).mem_nhds ⟨hx, hxV⟩) hfg.symm)
+
+/-- On an open subset of `𝕜ⁿ`, analyticity in `n`-dimensional submanifold charts is ambient
+analyticity. -/
+theorem _root_.IsOpen.analyticOnSubmanifold_iff (hU : IsOpen U) :
+    AnalyticOnSubmanifold n f U ↔ AnalyticOnNhd 𝕜 f U := by
+  refine ⟨fun hf ↦ hf.analyticOnNhd_of_isOpen hU, fun hf ↦ ?_⟩
+  rcases U.eq_empty_or_nonempty with rfl | hne
+  · rintro _ ⟨⟩
+  · exact hf.analyticOnSubmanifold (hU.isAnalyticSubmanifold hne)
 
 /-- The composition of an analytic function on `S` with a function analytic on a set containing
 its values on `S` is analytic on `S`. -/

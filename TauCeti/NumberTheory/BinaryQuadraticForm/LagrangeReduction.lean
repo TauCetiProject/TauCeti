@@ -45,6 +45,8 @@ discriminant `5`, and the rotation `S` carries the first to the second. So
 
 * `TauCeti.BinaryQuadraticForm.IsLagrangeReduced.three_mul_abs_a_mul_abs_c_le_abs_discrim`: a
   Lagrange reduced form has `3 |a| |c| ≤ |D|`.
+* `TauCeti.BinaryQuadraticForm.IsLagrangeReduced.four_mul_sq_a_lt_discrim`: for a positive
+  nonsquare discriminant, a Lagrange reduced form has `4 a² < D`.
 * `TauCeti.BinaryQuadraticForm.mem_lagrangeReducedForms`: for `D ≠ 0`, the set
   `lagrangeReducedForms D` contains every Lagrange reduced form of discriminant `D`.
 * `TauCeti.BinaryQuadraticForm.exists_smul_isLagrangeReduced`: every form of nonsquare
@@ -116,6 +118,28 @@ theorem a_ne_zero (hf : f.IsLagrangeReduced) (hD : f.discrim ≠ 0) : f.a ≠ 0 
 theorem c_ne_zero (hf : f.IsLagrangeReduced) (hD : f.discrim ≠ 0) : f.c ≠ 0 := by
   intro hc
   exact hf.a_ne_zero hD (abs_nonpos_iff.mp (by simpa [hc] using hf.2))
+
+/-- A Lagrange reduced form `a x² + b x y + c y²` of positive nonsquare discriminant `D` has
+`4 a² < D`. -/
+theorem four_mul_sq_a_lt_discrim (hf : f.IsLagrangeReduced) (hpos : 0 < f.discrim)
+    (hD : ¬ IsSquare f.discrim) : 4 * f.a ^ 2 < f.discrim := by
+  obtain ⟨hb, hac⟩ := isLagrangeReduced_iff.mp hf
+  have hA := abs_nonneg f.a
+  have hb' : f.b ^ 2 ≤ f.a ^ 2 := by
+    rw [← sq_abs f.b, ← sq_abs f.a]
+    exact pow_le_pow_left₀ (abs_nonneg _) hb 2
+  have hac' : |f.a| * |f.a| ≤ |f.a| * |f.c| := mul_le_mul_of_nonneg_left hac hA
+  rw [abs_mul_abs_self, ← abs_mul f.a f.c] at hac'
+  rw [discrim_def, discrim] at hpos ⊢
+  -- the outer coefficients have opposite signs, so `D = b² + 4 |a| |c| ≥ 4 a²`
+  have hneg : f.a * f.c < 0 := by
+    by_contra! h
+    rw [abs_of_nonneg h] at hac'
+    nlinarith
+  rw [abs_of_neg hneg] at hac'
+  refine lt_of_le_of_ne (by nlinarith [sq_nonneg f.b]) fun h ↦ hD ⟨2 * f.a, ?_⟩
+  rw [discrim_def, discrim]
+  linarith
 
 end IsLagrangeReduced
 

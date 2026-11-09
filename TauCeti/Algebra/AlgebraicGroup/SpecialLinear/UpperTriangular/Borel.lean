@@ -134,7 +134,7 @@ theorem isBorelCandidate_definingHopfIdeal :
     HopfIdeal.IsBorelCandidate k
       (FiniteTypeCommHopfAlgCat.of k (SpecialLinear.coordinateHopfAlgebra k n))
       (definingHopfIdeal k n) :=
-  HopfIdeal.IsBorelCandidate.mk (smoothCommHopfAlgProperty_coordinateHopfAlgebra n k)
+  HopfIdeal.IsBorelCandidate.mk (smoothCommHopfAlgProperty_coordinateHopfAlgebra k n)
     (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra n k)
     (geometricallySolvablePointsCommHopfAlgProperty_coordinateHopfAlgebra n k)
 

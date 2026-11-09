@@ -64,6 +64,18 @@ theorem mem_typeD_posRootCone_iff {x : Fin n → ℤ} :
       exact Fin.ext (by simp [typeDSimpleIndex_val])⟩
   exact mem_posRootCone_iff_exists_nat_of_bijOn P (typeDSimplyConnectedBase n hn) he
 
+/-- A numbered type-D simple root belongs to the integral positive root cone. -/
+theorem root_typeDSimpleIndex_mem_posRootCone (i : Fin n) :
+    (P).root (typeDSimpleIndex n hn i) ∈
+      posRootCone P (typeDSimplyConnectedBase n hn) :=
+  root_mem_posRootCone_of_mem_posRoots P (typeDSimplyConnectedBase n hn)
+    (support_subset_posRoots P (typeDSimplyConnectedBase n hn) (by simp))
+
+/-- A numbered type-D simple coroot evaluates the corresponding weight coordinate. -/
+theorem coroot'_typeDSimpleIndex_apply (i : Fin n) (x : Fin n → ℤ) :
+    (P).coroot' (typeDSimpleIndex n hn i) x = x i := by
+  simp [RootPairing.coroot', toLinearMap_typeDSimplyConnectedRootDatum]
+
 private theorem rootForm_eq_of_parity (s t : Finset (Fin n))
     (hpar : Even s.card ↔ Even t.card) :
     (P).RootForm (μ s) (μ s) = (P).RootForm (μ t) (μ t) := by
@@ -107,17 +119,14 @@ theorem typeDSpin_raisingPath_iff_mem_posRootCone (s t : Finset (Fin n)) :
     | refl => simp
     | @tail t u h htu ih =>
       obtain ⟨i, hi, rfl⟩ := (typeDSpinRaisingStep_iff _ _).mp htu
-      have hroot : (P).root (typeDSimpleIndex n hn i) ∈
-          posRootCone P (typeDSimplyConnectedBase n hn) := by
-        exact root_mem_posRootCone_of_mem_posRoots P (typeDSimplyConnectedBase n hn)
-          (support_subset_posRoots P (typeDSimplyConnectedBase n hn) (by simp))
       have heq : μ (typeDSpinReflection i t) - μ s =
           (μ t - μ s) + (P).root (typeDSimpleIndex n hn i) := by
         rw [typeDSpinWeight_typeDSpinReflection hn, hi, root_typeDSimpleIndex hn]
         simp only [neg_smul, one_smul, sub_neg_eq_add]
         abel
       rw [heq]
-      exact (posRootCone P (typeDSimplyConnectedBase n hn)).add_mem ih hroot
+      exact (posRootCone P (typeDSimplyConnectedBase n hn)).add_mem ih
+        (root_typeDSimpleIndex_mem_posRootCone hn i)
   · intro h
     obtain ⟨c, hc⟩ := (mem_typeD_posRootCone_iff hn).mp h
     refine (P).toInvariantForm.reflTransGen_of_sub_eq_sum
@@ -125,9 +134,7 @@ theorem typeDSpin_raisingPath_iff_mem_posRootCone (s t : Finset (Fin n)) :
       typeDSpinWeight_injective (rootForm_typeDSpinWeight_eq hn)
       (f := typeDSimpleIndex n hn) (fun s i hi ↦ ?_) hc
     have hai : μ s i = -1 := by
-      have hpair : (P).coroot' (typeDSimpleIndex n hn i) (μ s) = μ s i := by
-        simp [RootPairing.coroot', toLinearMap_typeDSimplyConnectedRootDatum]
-      rw [hpair] at hi
+      rw [coroot'_typeDSimpleIndex_apply hn] at hi
       rcases typeDSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one s i with h | h | h <;> omega
     refine ⟨typeDSpinReflection i s, ⟨i, hai, rfl⟩, ?_⟩
     rw [typeDSpinWeight_typeDSpinReflection hn, hai, root_typeDSimpleIndex hn]

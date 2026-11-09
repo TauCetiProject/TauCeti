@@ -92,6 +92,23 @@ theorem eq_of_mem_intrinsicInterior (hs : s ∈ K.faces) (ht : t ∈ K.faces)
     simpa using hy'
   exact (key hs ht hxs hxt).antisymm (key ht hs hxt hxs)
 
+/-- Distinct faces of a geometric simplicial complex have disjoint open simplices. -/
+theorem pairwise_disjoint_intrinsicInterior (K : SimplicialComplex ℝ E) :
+    Pairwise fun s t : K.faces => Disjoint (intrinsicInterior ℝ (convexHull ℝ (s : Set E)))
+      (intrinsicInterior ℝ (convexHull ℝ (t : Set E))) := by
+  intro s t hst
+  exact Set.disjoint_left.mpr fun x hxs hxt =>
+    hst (Subtype.ext (eq_of_mem_intrinsicInterior s.2 t.2 hxs hxt))
+
+/-- The open simplex of a face outside a subcomplex misses the subcomplex's underlying space. -/
+theorem disjoint_intrinsicInterior_space_of_not_mem {A : SimplicialComplex ℝ E}
+    (hAK : A ≤ K) (hs : s ∈ K.faces) (hsA : s ∉ A.faces) :
+    Disjoint (intrinsicInterior ℝ (convexHull ℝ (s : Set E))) A.space := by
+  refine Set.disjoint_left.mpr fun x hxs hxA => ?_
+  obtain ⟨t, ht, hxt⟩ := mem_space_iff.mp hxA
+  obtain ⟨u, hu, -, hxu⟩ := exists_mem_faces_subset_mem_intrinsicInterior ht hxt
+  exact hsA (eq_of_mem_intrinsicInterior hs (hAK hu) hxs hxu ▸ hu)
+
 /-- **The carrier of a point.** Every point of the underlying space of a geometric simplicial
 complex lies in the open simplex of exactly one of its faces. -/
 theorem existsUnique_mem_intrinsicInterior (hx : x ∈ K.space) :

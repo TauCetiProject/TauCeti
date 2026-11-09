@@ -30,7 +30,10 @@ When `K` is algebraically closed of characteristic zero, every extension of `K�
 is isomorphic to the level `K⸨u⸩`, `u ^ e = t` (`TauCeti.LaurentSeries.Level.algEquivOfFinrankEq`),
 so every finite extension `L` carries a residue of forms
 `TauCeti.LaurentSeries.Level.residueOfFinrankEq`, computed through any such isomorphism and
-preserved by isomorphisms of extensions.
+preserved by isomorphisms of extensions. This residue is the coefficient of `t⁻¹` in
+`Tr_{L/K⸨t⸩}(x)`, so it can be computed without choosing a level presentation. For a tower
+`L/M/K⸨t⸩`, transitivity of trace gives `Res_M(Tr_{L/M}(x) dt) = Res_L(x dt)`. All residues use
+the same base differential `dt`; the ramification factors are already included in the residue.
 
 ## Main definitions
 
@@ -53,6 +56,17 @@ preserved by isomorphisms of extensions.
   isomorphism with the level does not depend on the isomorphism.
 * `TauCeti.LaurentSeries.Level.residueOfFinrankEq_apply`: the residue of a finite extension is
   computed through any isomorphism with the level.
+* `TauCeti.LaurentSeries.Level.residueOfFinrankEq_eq_coeff_neg_one_trace`: the residue of
+  `x dt` is the coefficient of `t⁻¹` in its trace to the base Laurent field.
+* `TauCeti.LaurentSeries.Level.residueOfFinrankEq_trace`: trace preserves residues in finite
+  towers, with every form expressed as a multiple of the same base differential `dt`.
+
+The trace comparison transports `TauCeti.LaurentSeries.Level.coeff_neg_one_trace` using
+Mathlib's `Algebra.trace_eq_of_algEquiv` and `Algebra.trace_trace`.
+
+## References
+
+* J. Tate, *Residues of differentials on curves*, Ann. Sci. ÉNS 1 (1968).
 -/
 
 public section
@@ -166,6 +180,25 @@ theorem residueOfFinrankEq_algEquiv_apply {L' : Type*} [Field L'] [Algebra K⸨X
   rw [residueOfFinrankEq_apply h' (ψ.symm.trans (algEquivOfFinrankEq h)),
     residueOfFinrankEq_apply h (algEquivOfFinrankEq h), AlgEquiv.trans_apply,
     AlgEquiv.symm_apply_apply]
+
+/-- The residue of `x dt` in a finite extension is the residue of its trace down to the
+base Laurent field. This computes the residue without a choice of level presentation. -/
+theorem residueOfFinrankEq_eq_coeff_neg_one_trace (h : finrank K⸨X⸩ L = e) (x : L) :
+    residueOfFinrankEq h x = (Algebra.trace K⸨X⸩ L x).coeff (-1) := by
+  rw [residueOfFinrankEq_apply h (algEquivOfFinrankEq h), residue_apply,
+    ← coeff_neg_one_trace, Algebra.trace_eq_of_algEquiv]
+
+/-- Trace preserves residues in any tower of finite extensions of `K⸨t⸩`, with every
+form expressed as a multiple of the same base differential `dt`. -/
+theorem residueOfFinrankEq_trace {M : Type*} [Field M] [Algebra K⸨X⸩ M]
+    [Algebra M L] [IsScalarTower K⸨X⸩ M L] {d : ℕ+}
+    (hM : finrank K⸨X⸩ M = d) (hL : finrank K⸨X⸩ L = e) (x : L) :
+    residueOfFinrankEq hM (Algebra.trace M L x) = residueOfFinrankEq hL x := by
+  have : FiniteDimensional K⸨X⸩ M := .of_finrank_pos (hM ▸ d.pos)
+  have : FiniteDimensional K⸨X⸩ L := .of_finrank_pos (hL ▸ e.pos)
+  have : FiniteDimensional M L := .right K⸨X⸩ M L
+  rw [residueOfFinrankEq_eq_coeff_neg_one_trace,
+    residueOfFinrankEq_eq_coeff_neg_one_trace, Algebra.trace_trace]
 
 end FiniteExtension
 

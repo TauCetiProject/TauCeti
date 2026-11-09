@@ -40,7 +40,8 @@ that every interval `[s, s + δ]`, `δ > 0`, contains a level carrying a closed 
 contractible in `M` of period at most `K`
 (`IsNondegenerate.ae_forall_exists_hasContractibleClosedCharacteristicOfPeriodLE`).
 The bound `K` does not depend on `δ`, which is what allows passing to the limit `δ → 0` to obtain a
-closed characteristic on the level `F⁻¹(s)` itself; that limit is not treated here.
+closed characteristic on the level `F⁻¹(s)` itself; that limit is taken in
+`TauCeti.Geometry.Symplectic.Capacity.AlmostExistence`.
 
 ## Main results
 
@@ -192,6 +193,27 @@ theorem exists_hasContractibleClosedCharacteristicOfPeriodLE (hσ : σ.IsNondege
     hcpt hint hne hZ hG hf hf_nonneg hf_le hfA hf0 hK hno).ofReal_iSup_le_relContractibleHZCapacity)
     ).not_gt hcap
 
+omit [FiniteDimensional ℝ E] in
+/-- The relative capacities of the sublevel sets `{F < u}`, `u ≤ b`, are given by a monotone
+nonnegative real function `φ u` of the level, when the capacity of `{F < b}` is finite. -/
+private theorem exists_monotone_ofReal_eq_relContractibleHZCapacity {b : ℝ}
+    (hcap : σ.relContractibleHZCapacity {x | F x < b} Z ≠ (∞ : ℝ≥0∞)) :
+    ∃ φ : ℝ → ℝ, Monotone φ ∧ (∀ u, 0 ≤ φ u) ∧
+      ∀ u ≤ b, σ.relContractibleHZCapacity {x | F x < u} Z = ENNReal.ofReal (φ u) := by
+  have hfin (u : ℝ) : σ.relContractibleHZCapacity {x | F x < min u b} Z ≠ (∞ : ℝ≥0∞) :=
+    ne_top_of_le_ne_top hcap (relContractibleHZCapacity_mono
+      (ofPred_subset_ofPred.2 fun x hx ↦ lt_of_lt_of_le hx (min_le_right u b)) subset_rfl)
+  refine ⟨fun u ↦ (σ.relContractibleHZCapacity {x | F x < min u b} Z).toReal,
+    fun u v huv ↦ ENNReal.toReal_mono (hfin v)
+      (relContractibleHZCapacity_mono
+        (ofPred_subset_ofPred.2 fun x hx ↦ lt_of_lt_of_le hx (min_le_min_right b huv))
+        subset_rfl),
+    fun u ↦ ENNReal.toReal_nonneg, fun u hu ↦ ?_⟩
+  have h := ENNReal.ofReal_toReal (hfin u)
+  rw [min_eq_left hu] at h
+  simp only [min_eq_left hu]
+  exact h.symm
+
 /-- **Closed characteristics near almost every level.** Let `F` be smooth, with `{F < b}` in the
 interior of `M` and compact sublevel sets `{F ≤ s}` for `s < b`, let every value in `(a, b)` be
 attained by `F`, and let `Z ⊆ {F ≤ a}`. If the relative capacity
@@ -205,21 +227,9 @@ theorem ae_forall_exists_hasContractibleClosedCharacteristicOfPeriodLE (hσ : σ
     ∀ᵐ s, s ∈ Ioo a b → ∃ K, ∀ δ > 0, ∃ c ∈ Icc s (s + δ),
       σ.HasContractibleClosedCharacteristicOfPeriodLE univ F c K := by
   have hFc : Continuous F := hF.continuous
-  have hfin (u : ℝ) : σ.relContractibleHZCapacity {x | F x < min u b} Z ≠ (∞ : ℝ≥0∞) :=
-    ne_top_of_le_ne_top hcap (relContractibleHZCapacity_mono
-      (ofPred_subset_ofPred.2 fun x hx ↦ lt_of_lt_of_le hx (min_le_right u b)) subset_rfl)
   -- The capacities of the sublevel sets, a monotone function of the level.
-  set φ : ℝ → ℝ := fun u ↦ (σ.relContractibleHZCapacity {x | F x < min u b} Z).toReal with hφ
-  have hmono : Monotone φ := fun u v huv ↦ ENNReal.toReal_mono (hfin v)
-    (relContractibleHZCapacity_mono
-      (ofPred_subset_ofPred.2 fun x hx ↦ lt_of_lt_of_le hx (min_le_min_right b huv)) subset_rfl)
-  have hφeq {u : ℝ} (hu : u ≤ b) :
-      σ.relContractibleHZCapacity {x | F x < u} Z = ENNReal.ofReal (φ u) := by
-    have h := ENNReal.ofReal_toReal (hfin u)
-    rw [min_eq_left hu] at h
-    rw [hφ]
-    simp only [min_eq_left hu]
-    exact h.symm
+  obtain ⟨φ, hmono, hφ0, hφeq⟩ :=
+    exists_monotone_ofReal_eq_relContractibleHZCapacity (Z := Z) hcap
   filter_upwards [hmono.ae_differentiableAt] with s hs hsI
   -- The right difference quotients of `φ` at `s` are eventually below `|φ'(s)| + 1`.
   set L := deriv φ s
@@ -245,8 +255,8 @@ theorem ae_forall_exists_hasContractibleClosedCharacteristicOfPeriodLE (hσ : σ
     (V := {x | F x < s}) (Z := Z)
     ⟨{x | F x < s}, isOpen_lt hFc continuous_const,
       ⟨x₁, by rw [mem_ofPred_eq, hx₁]; linarith [hsI.1]⟩, subset_rfl⟩
-    (by rw [hφeq hsI.2.le]; exact ENNReal.ofReal_ne_top) hη0
-  rw [hφeq hsI.2.le, ENNReal.toReal_ofReal (by positivity)] at hGsup
+    (by rw [hφeq _ hsI.2.le]; exact ENNReal.ofReal_ne_top) hη0
+  rw [hφeq _ hsI.2.le, ENNReal.toReal_ofReal (hφ0 _)] at hGsup
   -- The cutoff `f`, stepping down from `A = (|L| + 2) η` to `0` across `[s, s + η / 2]`.
   set A := (|L| + 2) * η with hA
   have hA0 : 0 ≤ A := by positivity
@@ -266,8 +276,8 @@ theorem ae_forall_exists_hasContractibleClosedCharacteristicOfPeriodLE (hσ : σ
       -- `c(s + η) < c(s) + (|L| + 1) η < max G + A`.
       have h := hδ₀' ⟨hη0, hηδ₀⟩
       rw [smul_eq_mul, inv_mul_lt_iff₀ hη0] at h
-      rw [hφeq hηb.le]
-      have hφ0 : 0 ≤ φ (s + η) := ENNReal.toReal_nonneg
+      rw [hφeq _ hηb.le]
+      have := hφ0 (s + η)
       exact (ENNReal.ofReal_lt_ofReal_iff (by linarith)).2 (by rw [hA]; linarith))
   exact ⟨c, ⟨hc.1, by linarith [hc.2]⟩, hcc⟩
 

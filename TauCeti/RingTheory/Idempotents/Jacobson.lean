@@ -27,6 +27,8 @@ lies in the Jacobson radical.
 
 * `IsIdempotentElem.eq_zero_of_mem_jacobson_bot`: an idempotent in the Jacobson radical
   `Ideal.jacobson ⊥` of a not necessarily commutative ring is zero.
+* `Ideal.Quotient.isIdempotentElem_mk_iff`: `a` is idempotent modulo `I` if and only if
+  `a * a - a ∈ I`.
 * `IsIdempotentElem.eq_of_sub_mem_of_le_jacobson_bot`: idempotents congruent modulo an ideal in
   the Jacobson radical are equal.
 * `Ideal.injOn_quotient_mk_isIdempotentElem`: modulo an ideal in the Jacobson radical, the quotient
@@ -60,6 +62,11 @@ theorem IsIdempotentElem.eq_zero_of_mem_jacobson_bot {R : Type*} [Ring R] {e : R
     exact sub_eq_zero.mp ((Submodule.mem_bot R).mp hz)
   calc e = z * (1 - e) * e := by rw [hz', one_mul]
     _ = 0 := by rw [mul_assoc, he.one_sub_mul_self, mul_zero]
+
+/-- An element is idempotent modulo a two-sided ideal `I` if and only if `a * a - a ∈ I`. -/
+theorem Ideal.Quotient.isIdempotentElem_mk_iff {R : Type*} [Ring R] {I : Ideal R} [I.IsTwoSided]
+    {a : R} : IsIdempotentElem (Ideal.Quotient.mk I a) ↔ a * a - a ∈ I := by
+  rw [IsIdempotentElem, ← map_mul, Ideal.Quotient.eq]
 
 variable {R : Type*} [CommRing R]
 

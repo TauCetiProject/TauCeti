@@ -46,14 +46,14 @@ private theorem isQuasicoherent_symmetricPower_affine {X : Scheme.{u}} [IsAffine
     (SheafOfModules.isQuasicoherent (Spec Γ(X, ⊤)).ringCatSheaf).prop_of_iso
       ((Scheme.Modules.restrictSymmetricPowerIso X.isoSpec.inv n).app M)
       (isQuasicoherent_symmetricPower_spec n (M.restrict X.isoSpec.inv))
-  exact isQuasicoherent_of_isQuasicoherent_restrict_iso X.isoSpec _
+  exact (Scheme.Modules.isQuasicoherent_restrict_iff_of_isIso _ X.isoSpec.inv).1 this
 
 /-- Every symmetric power of a quasicoherent module sheaf on an arbitrary scheme is
 quasicoherent. No finite-generation, flatness, or characteristic assumption is needed. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_symmetricPower
     {X : Scheme.{u}} (n : ℕ) (M : X.Modules) [M.IsQuasicoherent] :
     ((SheafOfModules.symmetricPower X.sheaf n).obj M).IsQuasicoherent := by
-  refine isQuasicoherent_of_isQuasicoherent_restrict_affineOpens _ fun U ↦ ?_
+  refine (Scheme.Modules.isQuasicoherent_iff_forall_affineOpens _).2 fun U ↦ ?_
   have : IsAffine U.1.toScheme := U.2
   exact (SheafOfModules.isQuasicoherent U.1.toScheme.ringCatSheaf).prop_of_iso
     ((Scheme.Modules.restrictSymmetricPowerIso U.1.ι n).app M)

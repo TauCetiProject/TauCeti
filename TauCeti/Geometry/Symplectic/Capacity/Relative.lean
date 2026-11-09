@@ -62,6 +62,8 @@ relative capacity gives closed characteristics, contractible in `W`, on almost e
 ## Main results
 
 * `TauCeti.SmoothTwoForm.relContractibleHZCapacity_mono`: monotonicity in the pair.
+* `TauCeti.SmoothTwoForm.relContractibleHZCapacity_le_contractibleHZCapacity`: when `Z` has
+  nonempty interior, `c°_HZ(V, Z) ≤ c°_HZ(V)`.
 * `TauCeti.SmoothTwoForm.exists_isRelContractibleHZAdmissible_lt_iSup`: a finite capacity is
   approximated by the maxima of admissible Hamiltonians.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.relContractibleHZCapacity_smul`: conformality.
@@ -154,6 +156,26 @@ theorem relContractibleHZCapacity_mono {V' Z' : Set M} (hV : V' ⊆ V) (hZ : Z �
     σ.relContractibleHZCapacity V' Z' ≤ σ.relContractibleHZCapacity V Z :=
   relContractibleHZCapacity_le_iff.2 fun _ hF ↦
     (hF.mono hV hZ).ofReal_iSup_le_relContractibleHZCapacity
+
+/-- A `(V, Z)`-admissible Hamiltonian is `HZ°`-admissible for `V` as soon as `Z` has nonempty
+interior: it attains its maximum on the interior of `Z`, and its loops contractible in `V` are
+contractible in `M`. -/
+theorem IsRelContractibleHZAdmissible.isContractibleHZAdmissible
+    (hF : σ.IsRelContractibleHZAdmissible V Z F) (hZ : (interior Z).Nonempty) :
+    σ.IsContractibleHZAdmissible V F where
+  toIsHZNormalized := hF.toIsHZNormalized
+  exists_isOpen_isMaxOn :=
+    ⟨interior Z, isOpen_interior, hZ, fun z hz ↦ hF.isMaxOn z (interior_subset hz)⟩
+  eq_of_isMIntegralCurve T γ hT hT1 hγ hper := fun ⟨g, hg, hgγ⟩ ↦
+    hF.eq_of_isMIntegralCurve T γ hT hT1 hγ hper
+      ⟨(⟨Subtype.val, continuous_subtype_val⟩ : C(V, M)).comp g, hg.comp_right _, hgγ⟩
+
+/-- **The relative capacity is bounded by the absolute one.** If `Z` has nonempty interior, then
+`c°_HZ(V, Z) ≤ c°_HZ(V)`. -/
+theorem relContractibleHZCapacity_le_contractibleHZCapacity (hZ : (interior Z).Nonempty) :
+    σ.relContractibleHZCapacity V Z ≤ σ.contractibleHZCapacity V :=
+  relContractibleHZCapacity_le_iff.2 fun _ hF ↦
+    (hF.isContractibleHZAdmissible hZ).ofReal_iSup_le_contractibleHZCapacity
 
 /-- The zero Hamiltonian is `(V, Z)`-admissible as soon as `V` contains a nonempty open set: its
 Hamiltonian vector field vanishes, so its periodic orbits are constant. In particular the

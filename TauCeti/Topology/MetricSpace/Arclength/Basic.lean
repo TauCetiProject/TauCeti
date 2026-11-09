@@ -77,6 +77,15 @@ theorem naturalParameterization_toReal_eVariationOn (hγ : BoundedVariationOn γ
     hγ.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo (left_mem_Icc.2 hab)
       (right_mem_Icc.2 hab)
 
+/-- If a curve of bounded variation on `[a, b]` (`a ≤ b`) has equal endpoint values `γ a = γ b`,
+then its natural parameterization takes equal values at `0` and at the length of the curve. -/
+theorem naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn
+    (hγ : BoundedVariationOn γ (Icc a b)) (hab : a ≤ b) (hclosed : γ a = γ b) :
+    naturalParameterization γ (Icc a b) a 0 =
+      naturalParameterization γ (Icc a b) a (eVariationOn γ (Icc a b)).toReal :=
+  (hγ.locallyBoundedVariationOn.naturalParameterization_zero (left_mem_Icc.mpr hab)).trans
+    (hclosed.trans (hγ.naturalParameterization_toReal_eVariationOn hab).symm)
+
 /-- Cumulative variation maps the parameter interval of a continuous rectifiable curve onto its
 length interval. -/
 theorem image_variationOnFromTo_Icc (hγ : BoundedVariationOn γ (Icc a b))
@@ -203,6 +212,69 @@ theorem exists_arclength_homeomorph (hγ : BoundedVariationOn γ (Icc a b))
   refine ⟨e.toHomeomorph, e.strictMono, ?_⟩
   intro t
   rw [OrderIso.coe_toHomeomorph, StrictMono.coe_orderIsoOfSurjective]
+
+/-- A rectifiable curve injective on the open interval `(a, b)` with `a < b` has strictly positive
+total variation. -/
+theorem toReal_eVariationOn_pos_of_injOn_Ioo (hγ : BoundedVariationOn γ (Icc a b))
+    (hab : a < b) (hinj : InjOn γ (Ioo a b)) :
+    0 < (eVariationOn γ (Icc a b)).toReal := by
+  have hm := hγ.locallyBoundedVariationOn.strictMonoOn_variationOnFromTo_of_injOn_Ioo
+    (left_mem_Icc.mpr hab.le) hinj
+  simpa only [variationOnFromTo.self, variationOnFromTo.eq_of_le _ _ hab.le, inter_self] using
+    hm (left_mem_Icc.mpr hab.le) (right_mem_Icc.mpr hab.le) hab
+
+/-- Composing a continuous rectifiable curve with an increasing continuous map onto `[a, b]`
+leaves its natural parameterization unchanged on the length interval. -/
+theorem eqOn_naturalParameterization_comp_of_monotoneOn (hγ : BoundedVariationOn γ (Icc a b))
+    (hcont : ContinuousOn γ (Icc a b)) {c d : ℝ} {φ : ℝ → ℝ} (hcd : c ≤ d)
+    (hφ : ContinuousOn φ (Icc c d)) (hφm : MonotoneOn φ (Icc c d))
+    (hφc : φ c = a) (hφd : φ d = b) :
+    EqOn (naturalParameterization (γ ∘ φ) (Icc c d) c) (naturalParameterization γ (Icc a b) a)
+      (Icc 0 (eVariationOn γ (Icc a b)).toReal) := by
+  have hab : a ≤ b := hφc ▸ hφd ▸ hφm (left_mem_Icc.2 hcd) (right_mem_Icc.2 hcd) hcd
+  have himage : φ '' Icc c d = Icc a b := by
+    rw [hφ.image_Icc_of_monotoneOn hcd hφm, hφc, hφd]
+  have hL : eVariationOn (γ ∘ φ) (Icc c d) = eVariationOn γ (Icc a b) := by
+    rw [eVariationOn.comp_eq_of_monotoneOn _ _ hφm, himage]
+  have hγφ : BoundedVariationOn (γ ∘ φ) (Icc c d) := by rwa [BoundedVariationOn, hL]
+  have hcontφ : ContinuousOn (γ ∘ φ) (Icc c d) :=
+    hcont.comp hφ (himage ▸ mapsTo_image φ (Icc c d))
+  rw [← hL]
+  refine (hγφ.eqOn_naturalParameterization hcontφ hcd fun t ht ↦ ?_).symm
+  have hφt : φ t ∈ Icc a b := himage ▸ mem_image_of_mem φ ht
+  rw [Function.comp_apply,
+    variationOnFromTo.comp_eq_of_monotoneOn γ φ hφm (left_mem_Icc.2 hcd) ht, himage, hφc,
+    hγ.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo (left_mem_Icc.2 hab) hφt,
+    Function.comp_apply]
+
+/-- Composing a continuous rectifiable curve with a decreasing continuous map onto `[a, b]`
+reverses its natural parameterization on the length interval. -/
+theorem eqOn_naturalParameterization_comp_of_antitoneOn (hγ : BoundedVariationOn γ (Icc a b))
+    (hcont : ContinuousOn γ (Icc a b)) {c d : ℝ} {φ : ℝ → ℝ} (hcd : c ≤ d)
+    (hφ : ContinuousOn φ (Icc c d)) (hφm : AntitoneOn φ (Icc c d))
+    (hφc : φ c = b) (hφd : φ d = a) :
+    EqOn (naturalParameterization (γ ∘ φ) (Icc c d) c)
+      (fun u ↦ naturalParameterization γ (Icc a b) a ((eVariationOn γ (Icc a b)).toReal - u))
+      (Icc 0 (eVariationOn γ (Icc a b)).toReal) := by
+  have hab : a ≤ b := hφc ▸ hφd ▸ hφm (left_mem_Icc.2 hcd) (right_mem_Icc.2 hcd) hcd
+  have himage : φ '' Icc c d = Icc a b := by
+    rw [hφ.image_Icc_of_antitoneOn hcd hφm, hφc, hφd]
+  have hL : eVariationOn (γ ∘ φ) (Icc c d) = eVariationOn γ (Icc a b) := by
+    rw [eVariationOn.comp_eq_of_antitoneOn _ _ hφm, himage]
+  have hγφ : BoundedVariationOn (γ ∘ φ) (Icc c d) := by rwa [BoundedVariationOn, hL]
+  have hcontφ : ContinuousOn (γ ∘ φ) (Icc c d) :=
+    hcont.comp hφ (himage ▸ mapsTo_image φ (Icc c d))
+  rw [← hL]
+  refine (hγφ.eqOn_naturalParameterization hcontφ hcd fun t ht ↦ ?_).symm
+  have hφt : φ t ∈ Icc a b := himage ▸ mem_image_of_mem φ ht
+  have hvar : variationOnFromTo (γ ∘ φ) (Icc c d) c t =
+      (eVariationOn γ (Icc a b)).toReal - variationOnFromTo γ (Icc a b) a (φ t) := by
+    rw [variationOnFromTo.comp_eq_of_antitoneOn γ φ hφm (left_mem_Icc.2 hcd) ht, himage, hφc,
+      ← variationOnFromTo.sub_right hγ.locallyBoundedVariationOn (left_mem_Icc.2 hab)
+        (right_mem_Icc.2 hab) hφt, variationOnFromTo.eq_of_le _ _ hab, inter_self]
+  rw [Function.comp_apply, hL, hvar, sub_sub_cancel]
+  exact hγ.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo
+    (left_mem_Icc.2 hab) hφt
 
 end BoundedVariationOn
 

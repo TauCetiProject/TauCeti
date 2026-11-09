@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.FormalGroup.Basic
 public import Mathlib.RingTheory.PowerSeries.Inverse
 public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.MvPowerSeries.Derivative
-public import TauCeti.RingTheory.FormalGroup.Hom
+public import TauCeti.RingTheory.FormalGroup.Hom.Basic
 
 import Mathlib.RingTheory.PowerSeries.WellKnown
 import TauCeti.RingTheory.PowerSeries.Derivative
@@ -513,7 +513,7 @@ theorem derivative_exp :
     rw [← F.derivative_log, ← PowerSeries.derivative_subst hsub, F.subst_exp_log]
     exact PowerSeries.derivative_X
   have hi := congrArg (PowerSeries.subst F.exp) F.invariantDifferential_mul_subst_pderiv
-  rw [PowerSeries.subst_mul hsub, PowerSeries.subst_one hsub] at hi
+  rw [PowerSeries.subst_mul hsub, PowerSeries.subst_one] at hi
   calc
     PowerSeries.derivative F.exp =
         (PowerSeries.subst F.exp F.invariantDifferential *

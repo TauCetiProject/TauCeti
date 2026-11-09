@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.LocalRing.Basic
 public import Mathlib.RingTheory.Nilpotent.Basic
+import Mathlib.RingTheory.LocalRing.RingHom.Basic
 
 /-!
 # The truncated polynomial algebra `R[X]/(Xⁿ)`
@@ -31,6 +32,8 @@ material, as `AdjoinRoot.eq_mulRight_of_root_mul` in `TauCeti.RingTheory.AdjoinR
 
 * `TauCeti.isNilpotent_root_X_pow`: the class of `X` is nilpotent in `R[X]/(Xⁿ)`.
 * `TauCeti.isLocalRing_adjoinRoot_X_pow`: over a local ring `R`, so is `R[X]/(Xⁿ)` for `n ≠ 0`.
+* `TauCeti.isLocalRing_adjoinRoot_X_sub_C_pow`: the translated thickening `R[X]/((X-c)ⁿ)`
+  is local as well.
 
 The dimension of `R[X]/(Xⁿ)` over `R` is not recorded here: `AdjoinRoot f` is by definition
 `R[X] ⧸ (f)`, so Mathlib's `finrank_quotient_span_eq_natDegree` over a field, and
@@ -105,5 +108,13 @@ instance isLocalRing_adjoinRoot_X_pow [IsLocalRing R] (n : ℕ) [NeZero n] :
   · exact Or.inl (isUnit_of_isUnit_lift_X_pow h)
   · refine Or.inr (isUnit_of_isUnit_lift_X_pow ?_)
     rwa [map_sub, map_one]
+
+/-- A thickening of a rational polynomial point over a local ring is local. -/
+theorem isLocalRing_adjoinRoot_X_sub_C_pow [IsLocalRing R] (c : R) (n : ℕ) [NeZero n] :
+    IsLocalRing (AdjoinRoot ((X - C c) ^ n)) := by
+  let e : AdjoinRoot ((X : R[X]) ^ n) ≃ₐ[R] AdjoinRoot ((X - C c) ^ n) :=
+    Ideal.quotientEquivAlg _ _ (algEquivAevalXAddC (-c)) (by
+      simp [Ideal.map_span, algEquivAevalXAddC, sub_eq_add_neg])
+  exact e.toRingEquiv.isLocalRing
 
 end TauCeti

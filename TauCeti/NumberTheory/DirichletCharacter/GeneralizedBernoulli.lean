@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.BernoulliPolynomials
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
+import TauCeti.Data.ZMod.Count
 
 /-!
 # Generalized Bernoulli numbers
@@ -41,9 +42,11 @@ terms used in Eisenstein series with character.
   character, while `DirichletCharacter.generalizedBernoulli_zero_one` evaluates the trivial one.
 * `DirichletCharacter.generalizedBernoulli_one_of_ne_one` and
   `DirichletCharacter.natCast_mul_generalizedBernoulli_one_of_ne_one` give the two useful forms
-  of `B₁,χ` for a nontrivial character.
+  of `B₁,χ` for a nontrivial character, and
+  `DirichletCharacter.natCast_mul_generalizedBernoulli_one_of_dvd` computes it from the
+  representatives modulo any multiple of the modulus.
 * `DirichletCharacter.generalizedBernoulli_eq_zero_of_apply_neg_one_eq_neg` gives `Bₖ,χ = 0` when
-  `k ≠ 1` and the parities of `χ` and `k` differ.
+  the parities of `χ` and `k` differ, except for `k = 1` at modulus one.
 
 ## References
 
@@ -111,20 +114,14 @@ Bernoulli numbers. Thus degree one is `1 / 2`; in every other degree this agrees
 @[simp]
 theorem generalizedBernoulli_modOne (χ : DirichletCharacter R 1) (n : ℕ) :
     χ.generalizedBernoulli n = algebraMap ℚ R (_root_.bernoulli' n) := by
-  rw [χ.level_one, generalizedBernoulli]
-  rw [← Finset.singleton_eq_univ (0 : ZMod 1), Finset.sum_singleton]
-  have hzero : (0 : ZMod 1) = 1 := Subsingleton.elim _ _
-  have hchar : (1 : DirichletCharacter R 1) (0 : ZMod 1) = 1 := by
-    rw [hzero, map_one]
-  rw [hchar, one_mul]
-  simp [Polynomial.bernoulli_eval_one]
+  rw [χ.level_one, generalizedBernoulli_def, Fintype.sum_subsingleton _ 1, map_one, one_mul]
+  simp [Subsingleton.elim (1 : ZMod 1) 0, Polynomial.bernoulli_eval_one]
 
 /-- The zeroth generalized Bernoulli number is `N⁻¹` times the sum of the character values. -/
 theorem generalizedBernoulli_zero [NeZero N] (χ : DirichletCharacter R N) :
     χ.generalizedBernoulli 0 =
       algebraMap ℚ R (N : ℚ)⁻¹ * ∑ a : ZMod N, χ a := by
-  rw [generalizedBernoulli]
-  norm_num [Polynomial.bernoulli_zero]
+  simp [generalizedBernoulli_def]
 
 /-- The zeroth generalized Bernoulli number of a nontrivial character is zero. -/
 @[simp]
@@ -148,13 +145,9 @@ theorem generalizedBernoulli_one [NeZero N] (χ : DirichletCharacter R N) :
       (∑ a : ZMod N, χ a *
         algebraMap ℚ R (((if a = 0 then N else a.val : ℕ) : ℚ) / N)) -
         algebraMap ℚ R (2⁻¹ : ℚ) * ∑ a : ZMod N, χ a := by
-  rw [generalizedBernoulli]
-  have hExp : ((1 : ℕ) : ℤ) - 1 = 0 := by norm_num
-  rw [hExp, zpow_zero, map_one, one_mul, Polynomial.bernoulli_one]
-  simp_rw [Polynomial.eval_sub, Polynomial.eval_X, Polynomial.eval_C, map_sub, mul_sub]
-  rw [Finset.sum_sub_distrib]
-  rw [Finset.mul_sum]
-  exact congrArg₂ (· - ·) rfl (Finset.sum_congr rfl fun a _ ↦ mul_comm _ _)
+  simp only [generalizedBernoulli_def, Nat.cast_one, sub_self, zpow_zero, map_one, one_mul,
+    Polynomial.bernoulli_one, eval_sub, eval_X, eval_C, map_sub, mul_sub,
+    Finset.sum_sub_distrib, Finset.sum_mul, mul_comm (algebraMap ℚ R 2⁻¹)]
 
 /-- For a nontrivial character, `B₁,χ` is the character-weighted sum of the rational residues
 `a / N`; the constant term of the first Bernoulli polynomial cancels. -/
@@ -177,46 +170,72 @@ theorem natCast_mul_generalizedBernoulli_one_of_ne_one [IsDomain R] [NeZero N]
   rw [generalizedBernoulli_one_of_ne_one hχ, Finset.mul_sum]
   refine Finset.sum_congr rfl fun a _ ↦ ?_
   rw [← map_natCast (algebraMap ℚ R) N, mul_left_comm, ← map_mul,
-    mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr (NeZero.ne N)), map_natCast]
+    mul_div_cancel₀ _ (NeZero.ne _), map_natCast]
 
-/-- The generalized Bernoulli number `Bₖ,χ` vanishes when `k ≠ 1` and
-`χ (-1) = -(-1) ^ k`. -/
+/-- **`B₁,χ` from the representatives modulo a multiple of the modulus.** For a nontrivial
+character `χ ≠ 1` modulo `N ∣ M`, the sum of `χ(a mod N) a` over the representatives `0 ≤ a < M`
+is `M B₁,χ`: each block of `N` consecutive representatives contributes `N B₁,χ`, since the shift
+by a multiple of `N` contributes `∑_a χ(a) = 0`, which uses `χ ≠ 1`. At `M = N` this is
+`natCast_mul_generalizedBernoulli_one_of_ne_one`. -/
+theorem natCast_mul_generalizedBernoulli_one_of_dvd [IsDomain R] [NeZero N] {M : ℕ} [NeZero M]
+    (hNM : N ∣ M) {χ : DirichletCharacter R N} (hχ : χ ≠ 1) :
+    (M : R) * χ.generalizedBernoulli 1 = ∑ a : ZMod M, χ (a.val : ZMod N) * (a.val : R) := by
+  have hB : (N : R) * χ.generalizedBernoulli 1 = ∑ i ∈ Finset.range N, χ i * (i : R) := by
+    rw [natCast_mul_generalizedBernoulli_one_of_ne_one hχ,
+      ← ZMod.sum_val_eq_sum_range (fun i ↦ χ i * (i : R))]
+    simp
+  have hsum : ∑ i ∈ Finset.range N, χ i = 0 := by
+    rw [← ZMod.sum_val_eq_sum_range (fun i ↦ χ i)]
+    simpa using MulChar.sum_eq_zero_of_ne_one hχ
+  rw [ZMod.sum_val_eq_sum_range (fun i ↦ χ i * (i : R))]
+  obtain ⟨L, rfl⟩ := hNM
+  have key (k : ℕ) : ∑ i ∈ Finset.range (N * k), χ i * (i : R) =
+      (N * k : ℕ) * χ.generalizedBernoulli 1 := by
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      rw [Nat.mul_succ, Finset.sum_range_add, ih]
+      simp only [Nat.cast_add, Nat.cast_mul, ZMod.natCast_self, zero_mul, zero_add, mul_add,
+        Finset.sum_add_distrib, ← hB]
+      rw [← Finset.sum_mul, hsum]
+      ring
+  exact (key L).symm
+
+/-- The generalized Bernoulli number `Bₖ,χ` vanishes when `χ (-1) = -(-1) ^ k`, unless `k = 1`
+and `N = 1`. That exception is genuine: by `generalizedBernoulli_modOne`, `B₁,χ = 1 / 2` for the
+character modulo one. -/
 @[simp]
 theorem generalizedBernoulli_eq_zero_of_apply_neg_one_eq_neg [NeZero N]
-    {χ : DirichletCharacter R N} {k : ℕ} (hk : k ≠ 1) (hχ : χ (-1) = -(-1) ^ k) :
+    {χ : DirichletCharacter R N} {k : ℕ} (hk : k ≠ 1 ∨ N ≠ 1) (hχ : χ (-1) = -(-1) ^ k) :
     χ.generalizedBernoulli k = 0 := by
-  have hN : (N : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
+  have hN : (N : ℚ) ≠ 0 := NeZero.ne _
   -- `β a` is the Bernoulli factor `Bₖ(ã / N)` of the residue `a`
   set β : ZMod N → ℚ := fun a ↦
     (Polynomial.bernoulli k).eval (((if a = 0 then N else a.val : ℕ) : ℚ) / N) with hβ
-  -- Reflection `a ↦ -a` multiplies each summand by `χ (-1) * (-1) ^ k = -1`.
-  -- At the zero residue, `Bₖ(0) = Bₖ(1)` because `k ≠ 1`.
-  -- Thus `β (-a) = (-1) ^ k * β a` also at zero.
-  have hβneg (a : ZMod N) : β (-a) = (-1) ^ k * β a := by
-    by_cases ha : a = 0
-    · subst a
-      simp only [hβ, neg_zero, ↓reduceIte]
+  -- Reflection `a ↦ -a` multiplies `β a` by `(-1) ^ k`: for `a ≠ 0` by
+  -- `Bₖ(1 - x) = (-1) ^ k * Bₖ(x)`, and at `a = 0` because `Bₖ(0) = Bₖ(1)` when `k ≠ 1`.
+  have hβneg (a : ZMod N) (ha : a ≠ 0 ∨ k ≠ 1) : β (-a) = (-1) ^ k * β a := by
+    rcases eq_or_ne a 0 with rfl | ha'
+    · simp only [hβ, neg_zero, ↓reduceIte]
       rw [div_self hN, ← bernoulli_eval_one_sub, sub_self, bernoulli_eval_zero,
-        bernoulli_eval_one, bernoulli_eq_bernoulli'_of_ne_one hk]
-    · have : NeZero a := ⟨ha⟩
-      simp only [hβ, neg_eq_zero, ha, ↓reduceIte]
+        bernoulli_eval_one, bernoulli_eq_bernoulli'_of_ne_one (ha.resolve_left (by simp))]
+    · have : NeZero a := ⟨ha'⟩
+      simp only [hβ, neg_eq_zero, ha', ↓reduceIte]
       rw [ZMod.val_neg_of_ne_zero, Nat.cast_sub a.val_le, sub_div, div_self hN,
         bernoulli_eval_one_sub]
-  -- so each summand `χ a * β a` is odd in `a`
-  have hneg (a : ZMod N) :
-      χ (-a) * algebraMap ℚ R (β (-a)) = -(χ a * algebraMap ℚ R (β a)) := by
-    have hχa : χ (-a) = -(-1) ^ k * χ a := by rw [neg_eq_neg_one_mul a, map_mul, hχ]
-    have hsq : ((-1 : R) ^ k) * (-1) ^ k = 1 := by rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
-    rw [hχa, hβneg, map_mul, map_pow, map_neg, map_one]
-    linear_combination (-(χ a * algebraMap ℚ R (β a))) * hsq
-  have hS : ∑ a, χ a * algebraMap ℚ R (β a) = 0 := by
-    have h := Equiv.sum_comp (Equiv.neg (ZMod N)) fun a ↦ χ a * algebraMap ℚ R (β a)
-    simp only [Equiv.neg_apply, hneg, Finset.sum_neg_distrib] at h
-    -- `R` is a `ℚ`-algebra, so `-S = S` forces `S = 0`
-    have h2 : (2 : R) * ∑ a, χ a * algebraMap ℚ R (β a) = 0 := by linear_combination -h
-    rw [← one_mul (∑ a, _), ← map_one (algebraMap ℚ R), ← inv_mul_cancel₀ (two_ne_zero' ℚ),
-      map_mul, map_ofNat, mul_assoc, h2, mul_zero]
+  -- Hence each summand `χ a * β a` is odd in `a`, since `χ (-1) * (-1) ^ k = -1`. In the
+  -- remaining case `a = 0`, `k = 1`, the summand vanishes because `N ≠ 1` gives `χ 0 = 0`.
+  have hodd : Function.Odd fun a ↦ χ a * algebraMap ℚ R (β a) := by
+    intro a
+    by_cases ha : a ≠ 0 ∨ k ≠ 1
+    · dsimp only
+      rw [hβneg a ha, neg_eq_neg_one_mul a, map_mul, hχ]
+      rcases neg_one_pow_eq_or R k with h | h <;> simp [h]
+    · obtain ⟨rfl, rfl⟩ : a = 0 ∧ k = 1 := by tauto
+      simp [χ.map_zero' (hk.resolve_left (by simp))]
+  -- `R` is a `ℚ`-module, so the sum of the odd function vanishes
+  have : HasUniqueDiv R := .of_module_rat R
   rw [generalizedBernoulli_def]
-  exact (congrArg (_ * ·) hS).trans (mul_zero _)
+  exact mul_eq_zero_of_right _ hodd.sum_eq_zero
 
 end DirichletCharacter

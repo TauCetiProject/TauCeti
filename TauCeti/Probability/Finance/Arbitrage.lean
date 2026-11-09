@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
-public import TauCeti.Probability.Finance.SimpleStrategy
+public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 
 /-!
 # Arbitrage and martingale measures for simple strategies
@@ -19,7 +19,7 @@ unit of account (`TauCeti.Finance.isArbitrage_mul_iff`). An arbitrage with integ
 wealth has positive expected terminal wealth (`TauCeti.Finance.IsArbitrage.integral_pos`).
 
 This file proves the easy half of the fundamental theorem of asset pricing for the simple
-strategies of `TauCeti.Probability.Finance.SimpleStrategy`. Suppose that, under a measure `Q`,
+strategies of `TauCeti.Probability.Finance.SimpleStrategy.Basic`. Suppose that, under a measure `Q`,
 the discounted stock price `X = S / β` is a martingale along the trading dates `τ 0, …, τ n`:
 each `X (τ j)` is integrable and `ℱ (τ j)`-measurable, and `E_Q[X (τ (j + 1)) | ℱ (τ j)] = X (τ j)`.
 Then for a stock holding `a j` chosen at `τ j` with integrable trading gains:
@@ -34,6 +34,17 @@ Then for a stock holding `a j` chosen at `τ j` with integrable trading gains:
 * if moreover `Q` and `P` have the same null sets and the bond price is positive, no
   self-financing strategy is an arbitrage under `P`
   (`TauCeti.Finance.IsSelfFinancing.not_isArbitrage`).
+
+More generally, if the wealth `V` of any trading strategy, measured in units of a numeraire `N`
+that is positive at the later date, is a supermartingale under a measure `Q` with the same null
+sets as `P`, then trading between two dates is not an arbitrage under `P`
+(`MeasureTheory.Supermartingale.not_isArbitrage`). In particular this applies when the wealth in
+units of `N` is a `Q`-martingale; then, at every earlier date `t` at which `N_t` is almost surely
+nonzero, the wealth is also determined by its terminal value through the conditional pricing
+formula `V_t = N_t E_Q[V_T / N_T | ℱ_t]` (`MeasureTheory.Martingale.ae_eq_mul_condExp_div`),
+which gives the law of one price at such dates
+(`MeasureTheory.Martingale.ae_eq_of_ae_eq_of_div`), both in
+`TauCeti/Probability/Martingale/Basic.lean`.
 
 No integrability of the holdings themselves is assumed beyond that of each trading gain
 `a j (X (τ (j + 1)) - X (τ j))`, and apart from the integrability and measurability of the
@@ -264,3 +275,36 @@ theorem IsSelfFinancing.not_isArbitrage (hPQ : P ≪ Q) (hQP : Q ≪ P)
 end SelfFinancing
 
 end TauCeti.Finance
+
+/-! ### Wealth that is a supermartingale in units of a numeraire -/
+
+namespace MeasureTheory
+
+open TauCeti.Finance
+
+variable {Ω ι : Type*} {mΩ : MeasurableSpace Ω} {P Q : Measure Ω} [Preorder ι]
+  {ℱ : Filtration ι mΩ} {V N : ι → Ω → ℝ} {i j : ι}
+
+/-- **No arbitrage under an equivalent supermartingale measure.** If the wealth `V` of a strategy,
+measured in units of a numeraire `N` that is positive at the later date `j`, is a supermartingale
+under a measure `Q` equivalent to `P`, then trading from `i` to `j ≥ i` is not an arbitrage under
+`P`. -/
+theorem Supermartingale.not_isArbitrage [SigmaFiniteFiltration Q ℱ]
+    (hV : Supermartingale (V / N) ℱ Q) (hPQ : P ≪ Q) (hQP : Q ≪ P) (hN : ∀ᵐ ω ∂P, 0 < N j ω)
+    (hij : i ≤ j) : ¬IsArbitrage P (V i) (V j) := fun h ↦ by
+  -- Measured in units of `N`, the trade is still an arbitrage, now under `Q`.
+  have hA : IsArbitrage Q (V i) ((V / N) j) := by
+    have h' := (isArbitrage_mul_iff (c₀ := 1) (c := (N j)⁻¹) (.of_forall fun _ ↦ one_ne_zero)
+      (hQP.ae_le (hN.mono fun ω hω ↦ by simpa using hω))).2
+      ((isArbitrage_iff_of_absolutelyContinuous hPQ hQP).1 h)
+    rwa [one_mul, ← div_eq_inv_mul] at h'
+  -- It costs nothing, so its expected value in units of `N` is zero at `i`, and cannot grow.
+  have hi : ∫ ω, (V / N) i ω ∂Q = 0 := by
+    refine integral_eq_zero_of_ae ?_
+    filter_upwards [hA.1] with ω hω
+    simp [hω]
+  have hle : ∫ ω, (V / N) j ω ∂Q ≤ ∫ ω, (V / N) i ω ∂Q := by
+    simpa only [setIntegral_univ] using hV.setIntegral_le hij MeasurableSet.univ
+  exact (hA.integral_pos (hV.integrable j)).not_ge (hle.trans hi.le)
+
+end MeasureTheory

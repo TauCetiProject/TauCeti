@@ -47,6 +47,13 @@ theorem coeff_pow_natAbs_le_rootCoeffBound {k : ℕ} (hk : k < e) (j : ℕ) :
           fun j ↦ ((zeta e ^ k).coeff j).natAbs) (Finset.mem_range.mpr hk))
   · simp [coeff_eq_zero_of_totient_le _ (Nat.le_of_not_gt hj)]
 
+/-- For a nonzero conductor the root coefficient bound is positive, since the constant
+coefficient of `ζ ^ 0 = 1` is `1`. -/
+theorem one_le_rootCoeffBound [NeZero e] : 1 ≤ rootCoeffBound e := by
+  have h := coeff_pow_natAbs_le_rootCoeffBound (e := e) (NeZero.pos e) 0
+  rw [pow_zero, ← Int.cast_one, coeff_intCast] at h
+  simpa using h
+
 /-- A sum of `e`-th roots of unity has an exact cyclotomic representative whose coefficients
 are bounded by the number of summands times `rootCoeffBound e`. Multiplicities are retained. -/
 theorem exists_complexEmbedding_eq_sum_and_coeff_natAbs_le [NeZero e] (s : Multiset ℂ)

@@ -178,7 +178,7 @@ theorem normalizerQuotientSubgroupFiberOrbitIsPretransitive (H : Subgroup (deck 
     [MulAction.IsPretransitive (_root_.Subgroup.normalizer (H : Set (deck p))) (p ⁻¹' {b})] :
     MulAction.IsPretransitive
       (Subgroup.normalizerQuotient H) (SubgroupFiberOrbitQuotient H b) :=
-  TauCeti.MulAction.normalizerQuotientOrbitRelQuotientIsPretransitive
+  Subgroup.normalizerQuotient_isPretransitive_orbitRelQuotient
     (X := p ⁻¹' {b}) H
 
 /-- If `H` is normal and the deck action on the chosen fibre is transitive, then the
@@ -187,7 +187,7 @@ theorem normalizerQuotientSubgroupFiberOrbitIsPretransitiveOfNormal
     [MulAction.IsPretransitive (deck p) (p ⁻¹' {b})] (H : Subgroup (deck p)) [H.Normal] :
     MulAction.IsPretransitive
       (Subgroup.normalizerQuotient H) (SubgroupFiberOrbitQuotient H b) :=
-  TauCeti.MulAction.normalizerQuotientOrbitRelQuotientIsPretransitiveOfNormal
+  Subgroup.normalizerQuotient_isPretransitive_orbitRelQuotient_of_normal
     (X := p ⁻¹' {b}) H
 
 /-- The normalizer quotient acts transitively on a normal subgroup fibre quotient whenever the

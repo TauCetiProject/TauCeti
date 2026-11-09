@@ -53,23 +53,30 @@ public section
 
 open CategoryTheory Abelian
 
-universe w v u
+universe w' w v u
 
 namespace CategoryTheory
 
 namespace Sheaf
 
-variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
-  [HasSheafify J AddCommGrpCat.{v}] [HasExt.{w} (Sheaf J AddCommGrpCat.{v})]
-  {S : ShortComplex (Sheaf J AddCommGrpCat.{v})} (hS : S.ShortExact)
-
 namespace H
 
+variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
+  [HasSheafify J AddCommGrpCat.{w}] [HasExt.{w'} (Sheaf J AddCommGrpCat.{w})]
+  {S : ShortComplex (Sheaf J AddCommGrpCat.{w})} (hS : S.ShortExact)
+
+/-- Cohomology takes the identity sheaf map to the identity morphism of abelian groups. -/
+@[simp]
+lemma ofHom_map_id (F : Sheaf J AddCommGrpCat.{w}) (n : ℕ) :
+    AddCommGrpCat.ofHom (map (𝟙 F) n) = 𝟙 (AddCommGrpCat.of (H F n)) := by
+  ext x
+  exact map_id_apply x
+
 /-- A monomorphism of abelian sheaves is injective on cohomology in degree zero. -/
-theorem map_injective {F G : Sheaf J AddCommGrpCat.{v}} (f : F ⟶ G) [Mono f] :
+theorem map_injective {F G : Sheaf J AddCommGrpCat.{w}} (f : F ⟶ G) [Mono f] :
     Function.Injective (map f 0) := by
   intro x y hxy
-  apply (Ext.addEquiv₀ (C := Sheaf J AddCommGrpCat.{v})).injective
+  apply (Ext.addEquiv₀ (C := Sheaf J AddCommGrpCat.{w})).injective
   rw [← cancel_mono f, ← addEquiv₀_map, ← addEquiv₀_map, hxy]
 
 include hS
@@ -136,6 +143,10 @@ namespace H'
 
 open Opposite TauCeti.CategoryTheory
 
+variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
+  [HasSheafify J AddCommGrpCat.{v}] [HasExt.{w'} (Sheaf J AddCommGrpCat.{v})]
+  {S : ShortComplex (Sheaf J AddCommGrpCat.{v})} (hS : S.ShortExact)
+
 include hS
 
 /-- If `Hⁿ⁺¹(V, F₁)` vanishes, then `Hⁿ(V, F₂) ⟶ Hⁿ(V, F₃)` is surjective. Here `Hⁿ(V, -)` is
@@ -198,8 +209,7 @@ theorem subsingleton_X₁_one (V : C) (hg : Function.Surjective (S.g.hom.app (op
   rw [AddMonoidHom.flip_apply, Ext.bilinearComp_apply_apply, Ext.mk₀_comp_mk₀,
     ← Ext.mk₀_addEquiv₀_apply x₃]
   congr 1
-  apply (freeYonedaSheafSectionsEquiv J V S.X₃).injective
-  rw [freeYonedaSheafSectionsEquiv_naturality_right, AddEquiv.apply_symm_apply, ht]
+  rw [freeYonedaSheafSectionsEquiv_symm_naturality_right, ht, AddEquiv.symm_apply_apply]
 
 /-- If `H¹(V, F₁)` vanishes, then the sequence of sections `0 ⟶ F₁(V) ⟶ F₂(V) ⟶ F₃(V) ⟶ 0` is
 short exact. -/

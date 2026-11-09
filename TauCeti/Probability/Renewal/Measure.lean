@@ -89,6 +89,14 @@ theorem renewalMeasure_apply (μ : Measure α) {s : Set α} (hs : MeasurableSet 
     μ.renewalMeasure s = ∑' n, μ.convolutionPower n s := by
   rw [renewalMeasure_def, MeasureTheory.Measure.sum_apply _ hs]
 
+/-- A measurable additive homomorphism transports the renewal measure to the renewal measure
+of the transported increment law. -/
+theorem map_renewalMeasure {β : Type*} [MeasurableSpace β] [AddMonoid β]
+    [MeasurableAdd₂ α] [MeasurableAdd₂ β] (μ : Measure α) [SFinite μ]
+    (f : α →+ β) (hf : Measurable f) :
+    μ.renewalMeasure.map f = (μ.map f).renewalMeasure := by
+  simp only [renewalMeasure_def, map_sum hf.aemeasurable, map_convolutionPower μ f hf]
+
 /-- Each convolution power is dominated by the renewal measure. -/
 theorem convolutionPower_le_renewalMeasure (μ : Measure α) (n : ℕ) :
     μ.convolutionPower n ≤ μ.renewalMeasure :=
@@ -207,7 +215,7 @@ theorem integral_renewalCountNat (hT : ∀ n, Measurable (T n)) (hindep : iIndep
     (by fun_prop), ← lintegral_renewalCount hindep hid t]
   congr 1
   refine lintegral_congr_ae ?_
-  filter_upwards [ae_natCast_renewalCountNat hT hindep hid hzero] with ω hω
+  filter_upwards [ae_natCast_renewalCountNat hindep hid hzero] with ω hω
   rw [ENNReal.ofReal_natCast, hω t]
 
 end TauCeti.Probability

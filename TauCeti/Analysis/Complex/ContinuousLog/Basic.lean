@@ -239,6 +239,23 @@ theorem eq_of_isPreconnected_of_forall_exp_eq_one {P : Set ℂ} (hP : IsPreconne
       exact ⟨mem_ball_self Real.pi_pos, hy⟩
   exact hP.constant_of_mapsTo hdisc continuousOn_id (fun w hw => h w hw) h₁ h₂
 
+/-- **Two continuous logarithms differ by a constant multiple of `2πi`.** On a preconnected space,
+two continuous functions with the same exponential differ by `k * (2 * π * I)` for a single
+integer `k`. -/
+theorem exists_int_forall_eq_add_of_exp_eq [PreconnectedSpace X] {u v : X → ℂ}
+    (hu : Continuous u) (hv : Continuous v) (h : ∀ x, Complex.exp (u x) = Complex.exp (v x)) :
+    ∃ k : ℤ, ∀ x, v x = u x + k * (2 * π * Complex.I) := by
+  rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
+  · exact ⟨0, fun x => isEmptyElim x⟩
+  have h1 (x : X) : Complex.exp (v x - u x) = 1 := by
+    rw [Complex.exp_sub, h x, div_self (Complex.exp_ne_zero _)]
+  obtain ⟨k, hk⟩ := Complex.exp_eq_one_iff.1 (h1 x₀)
+  refine ⟨k, fun x => ?_⟩
+  have := eq_of_isPreconnected_of_forall_exp_eq_one (isPreconnected_range (hv.sub hu))
+    (by rintro _ ⟨y, rfl⟩; exact h1 y) (mem_range_self x) (mem_range_self x₀)
+  simp only [Pi.sub_apply] at this
+  linear_combination this + hk
+
 /-- Two logarithms of `g` on `S` and on `T` with preconnected overlap combine into one function that
 is a logarithm of `g` on `S ∪ T` and is continuous on each of the two pieces. Two logarithms of `g`
 differ, on the overlap, by a logarithm of `1`; that difference is constant there by
@@ -344,87 +361,37 @@ continuous logarithm on `K`.
 
 Contrapositively: if a closed set `K` carries no continuous logarithm of the Borsuk map of `a` and
 `b`, then `b ∉ connectedComponentIn Kᶜ a`; for `a`, `b` outside `K` that says the two points lie in
-different components of `Kᶜ`, and otherwise one of them lies in `K` itself.
-
-The proof moves the second point rather than constructing the logarithm. The set of points `w` of
-`Kᶜ` for which `z ↦ (z - a) / (z - w)` has a logarithm on `K` is open, because displacing `w` by
-less than half its distance to `K` multiplies the Borsuk map by a factor covered by
-`TauCeti.hasContinuousLogOn_sub_div_sub_of_norm_lt`; the same estimate run backwards makes the
-complementary set of `Kᶜ` open too. Since `a` itself is in the first set — its Borsuk map is the
-constant `1` — and the component of `a` is preconnected, the component lies in it. -/
+different components of `Kᶜ`, and otherwise one of them lies in `K` itself. -/
 theorem hasContinuousLogOn_sub_div_sub (hK : IsClosed K) (hb : b ∈ connectedComponentIn Kᶜ a) :
     HasContinuousLogOn (fun z => (z - a) / (z - b)) K := by
-  have ha : a ∈ Kᶜ := by
-    by_contra hmem
-    rw [connectedComponentIn_eq_empty hmem] at hb
-    exact hb
+  have ha : a ∈ Kᶜ := connectedComponentIn_nonempty_iff.mp ⟨b, hb⟩
   -- displacing the second point preserves the existence of a logarithm
-  have step : ∀ w w' : ℂ, w ∉ K → (∀ z ∈ K, ‖w - w'‖ < ‖z - w'‖) →
-      HasContinuousLogOn (fun z => (z - a) / (z - w)) K →
+  have step (w w' : ℂ) (hlt : ∀ z ∈ K, ‖w - w'‖ < ‖z - w'‖)
+      (hlog : HasContinuousLogOn (fun z => (z - a) / (z - w)) K) :
       HasContinuousLogOn (fun z => (z - a) / (z - w')) K := by
-    intro w w' hwK hlt hlog
     refine (hlog.mul (hasContinuousLogOn_sub_div_sub_of_norm_lt hlt)).congr fun z hz => ?_
-    have hzw : z - w ≠ 0 := sub_ne_zero.mpr fun hzeq => hwK (hzeq ▸ hz)
-    have hzw' : z - w' ≠ 0 := by
-      intro h0
-      have := hlt z hz
-      rw [h0, norm_zero] at this
-      exact absurd this (not_lt.mpr (norm_nonneg _))
+    have hzw : z - w ≠ 0 := sub_ne_zero.mpr (by rintro rfl; exact lt_irrefl _ (hlt _ hz))
+    have hzw' : z - w' ≠ 0 := norm_pos_iff.mp ((norm_nonneg _).trans_lt (hlt z hz))
     field_simp
-  -- every point off `K` is at a positive distance from it
-  have hradius : ∀ w ∉ K, ∃ ε > 0, ∀ z ∈ K, ε ≤ ‖z - w‖ := by
-    intro w hw
-    obtain ⟨ε, hε, hsub⟩ := Metric.isOpen_iff.mp hK.isOpen_compl w hw
-    refine ⟨ε, hε, fun z hz => le_of_not_gt fun hlt => ?_⟩
-    exact hsub (by simpa [Metric.mem_ball, dist_eq_norm] using hlt) hz
-  set G : Set ℂ := {w | w ∉ K ∧ HasContinuousLogOn (fun z => (z - a) / (z - w)) K} with hG
-  set B : Set ℂ := {w | w ∉ K ∧ ¬ HasContinuousLogOn (fun z => (z - a) / (z - w)) K} with hB
-  -- the displacement estimate, in the form both openness proofs use
-  have hnear : ∀ w ∉ K, ∀ ε > 0, (∀ z ∈ K, ε ≤ ‖z - w‖) → ∀ w' ∈ ball w (ε / 2),
-      w' ∉ K ∧ (∀ z ∈ K, ‖w - w'‖ < ‖z - w'‖) ∧ ∀ z ∈ K, ‖w' - w‖ < ‖z - w‖ := by
-    intro w _ ε hε hεK w' hw'
+  -- the existence of a logarithm is locally constant in the second point, on the component
+  refine (isPreconnected_connectedComponentIn.induction₂'
+    (fun w w' => HasContinuousLogOn (fun z => (z - a) / (z - w)) K ↔
+      HasContinuousLogOn (fun z => (z - a) / (z - w')) K) (fun w hw => ?_)
+    (fun _ _ _ _ _ _ => Iff.trans) (mem_connectedComponentIn ha) hb).mp
+    ((hasContinuousLogOn_const one_ne_zero).congr fun z hz => ?_)
+  · -- displacing `w` by less than half its distance to `K` works in both directions
+    obtain ⟨ε, hε, hsub⟩ :=
+      Metric.isOpen_iff.mp hK.isOpen_compl w (connectedComponentIn_subset _ _ hw)
+    have hfar (z) (hz : z ∈ K) : ε ≤ ‖z - w‖ :=
+      le_of_not_gt fun h => hsub (by rwa [Metric.mem_ball, dist_eq_norm]) hz
+    filter_upwards [nhdsWithin_le_nhds (Metric.ball_mem_nhds w (half_pos hε))] with w' hw'
     rw [Metric.mem_ball, dist_eq_norm] at hw'
-    have hsymm : ‖w - w'‖ < ε / 2 := by rwa [norm_sub_rev]
-    have hw'K : w' ∉ K := fun hz => absurd (hεK w' hz) (by linarith)
-    refine ⟨hw'K, fun z hz => ?_, fun z hz => lt_of_lt_of_le (by linarith) (hεK z hz)⟩
-    have htri : ‖z - w‖ ≤ ‖z - w'‖ + ‖w' - w‖ := by
-      calc ‖z - w‖ = ‖z - w' + (w' - w)‖ := by rw [sub_add_sub_cancel]
-        _ ≤ ‖z - w'‖ + ‖w' - w‖ := norm_add_le _ _
-    have := hεK z hz
-    linarith
-  have hGopen : IsOpen G := by
-    rw [Metric.isOpen_iff]
-    rintro w hw
-    rw [hG, mem_ofPred_eq] at hw
-    obtain ⟨ε, hε, hεK⟩ := hradius w hw.1
-    refine ⟨ε / 2, by positivity, fun w' hw' => ?_⟩
-    obtain ⟨hw'K, hfar, -⟩ := hnear w hw.1 ε hε hεK w' hw'
-    exact ⟨hw'K, step w w' hw.1 hfar hw.2⟩
-  have hBopen : IsOpen B := by
-    rw [Metric.isOpen_iff]
-    rintro w hw
-    rw [hB, mem_ofPred_eq] at hw
-    obtain ⟨ε, hε, hεK⟩ := hradius w hw.1
-    refine ⟨ε / 2, by positivity, fun w' hw' => ?_⟩
-    obtain ⟨hw'K, -, hback⟩ := hnear w hw.1 ε hε hεK w' hw'
-    exact ⟨hw'K, fun hlog' => hw.2 (step w' w hw'K hback hlog')⟩
-  have hsub : connectedComponentIn Kᶜ a ⊆ G := by
-    refine isPreconnected_connectedComponentIn.subset_left_of_subset_union hGopen hBopen ?_ ?_ ?_
-    · rw [Set.disjoint_left]
-      rintro x hx hx'
-      rw [hG, mem_ofPred_eq] at hx
-      rw [hB, mem_ofPred_eq] at hx'
-      exact hx'.2 hx.2
-    · intro x hx
-      have hxK : x ∉ K := connectedComponentIn_subset _ _ hx
-      by_cases hlog : HasContinuousLogOn (fun z => (z - a) / (z - x)) K
-      · exact Or.inl ⟨hxK, hlog⟩
-      · exact Or.inr ⟨hxK, hlog⟩
-    · refine ⟨a, mem_connectedComponentIn ha, ha, (hasContinuousLogOn_const one_ne_zero).congr ?_⟩
-      intro z hz
-      have : z - a ≠ 0 := sub_ne_zero.mpr fun hzeq => ha (hzeq ▸ hz)
-      simp [div_self this]
-  exact (hsub hb).2
+    have h1 (z) (hz : z ∈ K) : ‖w - w'‖ < ‖z - w'‖ := by
+      linarith [hfar z hz, norm_sub_le_norm_sub_add_norm_sub z w' w, norm_sub_rev w w']
+    have h2 (z) (hz : z ∈ K) : ‖w' - w‖ < ‖z - w‖ := by linarith [hfar z hz]
+    exact ⟨⟨step w w' h1, step w' w h2⟩, step w' w h2, step w w' h1⟩
+  · have : z - a ≠ 0 := sub_ne_zero.mpr fun hzeq => ha (hzeq ▸ hz)
+    simp [div_self this]
 
 /-- **A bounded closed set with no continuous logarithm of a Borsuk map encloses one of the two
 points.** This is `TauCeti.hasContinuousLogOn_sub_div_sub` read through

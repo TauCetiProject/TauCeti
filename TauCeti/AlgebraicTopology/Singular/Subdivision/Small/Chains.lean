@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Endomorphism
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Basic
+public import TauCeti.AlgebraicTopology.Singular.Subspace
 
 /-!
 # Singular chains subordinate to an open cover
@@ -30,6 +31,10 @@ small-chain equivalence and prove excision.
   the small subcomplex of the preimage family.
 * `TopCat.toSmallSingularSubcomplex`: the singular simplicial set of a subset of a member of the
   family maps into the small subcomplex.
+* `TopCat.chainComplexMap_f_toSmallSingularSubcomplex_comp`: restriction of singular cochains
+  along the small-chain inclusion followed by a subspace inclusion.
+* `TopCat.chainComplexMap_smallSingularSubcomplex_ι_comp_eq_zero`: a chain map vanishing on the
+  singular chains of each member of the family vanishes on the small chains.
 * `TauCeti.AffineChain.smallSingularChain`: push affine chains forward along a small simplex
   with values in the small-chain complex.
 * `TauCeti.AffineChain.exists_singularChain_small_factor`: a pushed-forward affine chain supported
@@ -72,6 +77,17 @@ lemma mem_smallSingularSubcomplex_iff (U : ι → Set X) {n : SimplexCategoryᵒ
     σ ∈ (X.smallSingularSubcomplex U).obj n ↔
       ∃ i, Set.range (X.toSSetObjEquiv n σ) ⊆ U i :=
   Iff.rfl
+
+/-- Every affine subsimplex of a small singular simplex lies in a member of the same family. -/
+lemma exists_range_comp_affineMapMk_subset_of_mem_smallSingularSubcomplex
+    (U : ι → Set X) {m k : ℕ} {σ : (TopCat.toSSet.obj X) _⦋m⦌}
+    (hσ : σ ∈ (X.smallSingularSubcomplex U).obj _)
+    (a : Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) :
+    ∃ i, Set.range ((X.toSSetObjEquiv _ σ).comp (StdSimplex.continuousAffineMapMk a)) ⊆ U i := by
+  obtain ⟨i, hi⟩ := (mem_smallSingularSubcomplex_iff X U σ).1 hσ
+  refine ⟨i, ?_⟩
+  rw [ContinuousMap.coe_comp]
+  exact (Set.range_comp_subset_range _ _).trans hi
 
 /-- Shrinking the members of the family shrinks the small singular subcomplex. -/
 lemma smallSingularSubcomplex_mono {U U' : ι → Set X} (h : ∀ i, U i ⊆ U' i) :
@@ -152,6 +168,46 @@ lemma smallSingularSubcomplexMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) (r : ι → κ
   ext n σ
   rfl
 
+/-- A chain map out of the singular chains of `X` vanishes on the chains of the singular simplices
+lying in some member of the family `U` as soon as it vanishes on the singular chains of each
+member. -/
+lemma chainComplexMap_smallSingularSubcomplex_ι_comp_eq_zero {C : Type u} [Category.{v} C]
+    [Preadditive C] [HasCoproducts.{w} C] {T : C} {K : ChainComplex C ℕ}
+    (F : (TopCat.toSSet.obj X).chainComplex T ⟶ K)
+    (hF : ∀ i, SSet.chainComplexMap
+      (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal (U i)))) T ≫ F = 0) :
+    SSet.chainComplexMap (X.smallSingularSubcomplex U).ι T ≫ F = 0 := by
+  ext n : 1
+  refine SSet.chainComplex_hom_ext fun σ ↦ ?_
+  obtain ⟨i, hi⟩ := (mem_smallSingularSubcomplex_iff X U σ.1).1 σ.2
+  -- `σ` is the image of a singular simplex of `U i`
+  obtain ⟨τ, hτ⟩ := (mem_range_toSSet_subtypeVal_iff (U i) _ σ.1).2 hi
+  have h : (TopCat.toSSet.obj (TopCat.of (U i))).ιChainComplex (R := T) τ ≫
+      (SSet.chainComplexMap (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal (U i))))
+        T).f n ≫ F.f n = 0 := by
+    rw [← HomologicalComplex.comp_f, hF, HomologicalComplex.zero_f, comp_zero]
+  rw [SSet.ι_chainComplexMap_f_assoc, hτ] at h
+  simp only [HomologicalComplex.comp_f, HomologicalComplex.zero_f, comp_zero,
+    SSet.ι_chainComplexMap_f_assoc]
+  exact h
+
+end TopCat
+
+namespace TopCat
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
+  {R M : C} {X : TopCat.{w}}
+
+/-- Restricting singular cochains of `X` to the simplices subordinate to a cover, and then to a
+subspace lying in a member of the cover, is restricting to that subspace. -/
+lemma chainComplexMap_f_toSmallSingularSubcomplex_comp {ι : Type*} (U : ι → Set X)
+    {S' : Set X} {i : ι} (hS' : S' ⊆ U i) (n : ℕ) (z : ((toSSet.obj X).chainComplex R).X n ⟶ M) :
+    (SSet.chainComplexMap (toSmallSingularSubcomplex U hS') R).f n ≫
+        (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f n ≫ z =
+      (SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal S'))) R).f n ≫ z := by
+  rw [← Category.assoc, ← HomologicalComplex.comp_f, ← Functor.map_comp,
+    toSmallSingularSubcomplex_ι]
+
 end TopCat
 
 namespace TauCeti
@@ -205,8 +261,9 @@ def smallSingularChain {m : ℕ} (σ : (X.smallSingularSubcomplex U : SSet) _⦋
   linearCombination ℤ fun v ↦ (X.smallSingularSubcomplex U : SSet).ιChainComplex
     ⟨(X.toSSetObjEquiv _).symm
       ((X.toSSetObjEquiv _ σ.val).comp (StdSimplex.continuousAffineMapMk v)), by
-      obtain ⟨i, hi⟩ := σ.property
-      exact ⟨i, fun _ ⟨z, hz⟩ ↦ hi ⟨StdSimplex.continuousAffineMapMk v z, hz⟩⟩⟩
+      rw [TopCat.mem_smallSingularSubcomplex_iff, Equiv.apply_symm_apply]
+      exact TopCat.exists_range_comp_affineMapMk_subset_of_mem_smallSingularSubcomplex
+        X U σ.property v⟩
 
 @[simp]
 lemma smallSingularChain_single {m k : ℕ}
@@ -216,8 +273,9 @@ lemma smallSingularChain_single {m k : ℕ}
       (X.smallSingularSubcomplex U : SSet).ιChainComplex
         ⟨(X.toSSetObjEquiv _).symm
           ((X.toSSetObjEquiv _ σ.val).comp (StdSimplex.continuousAffineMapMk v)), by
-          obtain ⟨i, hi⟩ := σ.property
-          exact ⟨i, fun _ ⟨z, hz⟩ ↦ hi ⟨StdSimplex.continuousAffineMapMk v z, hz⟩⟩⟩ := by
+          rw [TopCat.mem_smallSingularSubcomplex_iff, Equiv.apply_symm_apply]
+          exact TopCat.exists_range_comp_affineMapMk_subset_of_mem_smallSingularSubcomplex
+            X U σ.property v⟩ := by
   simp [smallSingularChain]
 
 /-- The small-chain push-forward agrees with the ordinary push-forward after inclusion. -/

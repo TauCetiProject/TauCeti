@@ -9,6 +9,8 @@ public import Mathlib.Data.Fin.Rev
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 
+import TauCeti.Data.Fin.Rev
+
 /-!
 # The pinned type-A graph automorphism on matrices
 
@@ -387,19 +389,12 @@ theorem typeAGraphAutomorphism_transvectionUnit_of_ne (r : ℕ) {i j : Fin (r + 
   rw [typeAGraphAutomorphism_transvectionUnit_aux, typeAGraphSign_inv]
   congr 1
   rw [coe_typeAGraphSign, coe_typeAGraphSign]
-  -- Reversing both indices preserves the parity of the total exponent.
-  have hmod : ((j.rev : ℕ) + (i.rev : ℕ) + 1) % 2 = ((i : ℕ) + (j : ℕ) + 1) % 2 := by
-    have hi := i.isLt
-    have hj := j.isLt
-    simp only [Fin.val_rev]
-    omega
   calc ((-1 : A) ^ (j.rev : ℕ)) * (-c) * ((-1 : A) ^ (i.rev : ℕ))
       = (-1 : A) ^ ((j.rev : ℕ) + (i.rev : ℕ) + 1) * c := by
         rw [pow_add, pow_add, pow_one]
         ring
     _ = (-1 : A) ^ ((i : ℕ) + (j : ℕ) + 1) * c := by
-        rw [neg_one_pow_eq_pow_mod_two ((j.rev : ℕ) + (i.rev : ℕ) + 1),
-          neg_one_pow_eq_pow_mod_two ((i : ℕ) + (j : ℕ) + 1), hmod]
+        rw [Fin.neg_one_pow_rev_add_rev_add_one]
 
 /-- **The pinned graph automorphism reverses the positive simple-root subgroups without changing
 their parameters.** In Bourbaki numbering, the node `i` is carried to `i.rev`. The sign that

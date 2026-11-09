@@ -28,6 +28,10 @@ identification, bases of `K.X i` and `L.X i` give the basis `HomologicalComplex.
 `(K ⊞ L).X i`, made of their images under the two biproduct inclusions; this is how a direct sum
 of based complexes is based.
 
+On elements, `biprod.lift` and `biprod.desc` act componentwise
+(`HomologicalComplex.biprod_desc_f_apply`, `HomologicalComplex.biprod_lift_f_apply`),
+which is how elements of the middle term of a Mayer–Vietoris sequence are handled.
+
 ## References
 
 * Charles A. Weibel, *An Introduction to Homological Algebra*, Section 1.3.
@@ -135,5 +139,30 @@ theorem biprodXBasis_inr (k : σ) :
   simp
 
 end Basis
+
+/-! ### Elements of biproducts of complexes of modules -/
+
+section Elements
+
+variable {K₁ K₂ : HomologicalComplex (ModuleCat.{v} R) c} (φ₁ : K₁ ⟶ K) (φ₂ : K₂ ⟶ K)
+  (ψ₁ : K ⟶ K₁) (ψ₂ : K ⟶ K₂) (i : ι)
+
+/-- `biprod.desc φ₁ φ₂` sends an element `x` of a term of `K₁ ⊞ K₂` to the sum of the images of
+its two components. -/
+theorem biprod_desc_f_apply (x : (K₁ ⊞ K₂).X i) :
+    ((biprod.desc φ₁ φ₂).f i).hom x =
+      (φ₁.f i).hom (((biprod.fst : K₁ ⊞ K₂ ⟶ K₁).f i).hom x) +
+        (φ₂.f i).hom (((biprod.snd : K₁ ⊞ K₂ ⟶ K₂).f i).hom x) := by
+  simp [biprod.desc_eq]
+
+/-- `biprod.lift ψ₁ ψ₂` sends an element `x` of a term of `K` to the sum of the inclusions of its
+two images. -/
+theorem biprod_lift_f_apply (x : K.X i) :
+    ((biprod.lift ψ₁ ψ₂).f i).hom x =
+      ((biprod.inl : K₁ ⟶ K₁ ⊞ K₂).f i).hom ((ψ₁.f i).hom x) +
+        ((biprod.inr : K₂ ⟶ K₁ ⊞ K₂).f i).hom ((ψ₂.f i).hom x) := by
+  simp [biprod.lift_eq]
+
+end Elements
 
 end HomologicalComplex

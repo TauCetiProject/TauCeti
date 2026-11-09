@@ -44,7 +44,7 @@ lemma `TauCeti.exists_eq_smul_lazardCocycle`; its value in degree `pᵏ` comes f
 `∑_{j < p} C_{pᵏ}(j, 1) = -1` in characteristic `p`.
 
 The homomorphism defect itself and its basic API are in
-`TauCeti.RingTheory.FormalGroup.Hom`.
+`TauCeti.RingTheory.FormalGroup.Hom.Basic`.
 
 ## Main results
 

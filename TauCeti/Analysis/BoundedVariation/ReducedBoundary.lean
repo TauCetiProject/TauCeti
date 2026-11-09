@@ -10,6 +10,7 @@ public import TauCeti.Analysis.BoundedVariation.PolarDecomposition
 public import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 import TauCeti.MeasureTheory.Covering.Besicovitch
 
 /-!
@@ -343,12 +344,7 @@ theorem eventually_setIntegral_norm_outerNormal_sub_le
       ≤ ∫ y in S, ((η + 2 / η) - 2 / η * ⟪ν, n y⟫) ∂lam := by
         refine setIntegral_mono_on_ae (hn.sub hν').norm ((hc _).sub (hin.const_mul _)) hSm ?_
         filter_upwards [hn1] with y hy _
-        -- For unit vectors, `‖a - ν‖² = 2 (1 - ⟪a, ν⟫)` and `‖a - ν‖ ≤ η + ‖a - ν‖² / η`.
-        have h := norm_sub_sq_real (n y) ν
-        rw [hy, hν, real_inner_comm] at h
-        rw [show η + 2 / η - 2 / η * ⟪ν, n y⟫ = (η * η + ‖n y - ν‖ ^ 2) / η by
-          field_simp; linarith, le_div_iff₀ hη]
-        nlinarith [sq_nonneg (‖n y - ν‖ - η), norm_nonneg (n y - ν)]
+        exact norm_sub_le_add_div_sub_inner hy hν hη
     _ = lam.real S * ((η + 2 / η) - 2 / η * ⟪ν, ⨍ y in S, n y ∂lam⟫) := by
         rw [integral_sub (hc _) (hin.const_mul _), integral_const_mul, integral_inner hn,
           setIntegral_const, ← measure_smul_setAverage _ hSfin, inner_smul_right, smul_eq_mul]

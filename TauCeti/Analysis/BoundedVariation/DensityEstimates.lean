@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.CutByBall
 public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
+public import Mathlib.Geometry.Euclidean.Volume.Measure
+public import Mathlib.MeasureTheory.Measure.Hausdorff
 import TauCeti.Analysis.Calculus.BumpFunction.LipschitzCutoff
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Analysis.Distribution.TestFunction.Divergence
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import Mathlib.Analysis.Calculus.Monotone
@@ -17,6 +20,8 @@ import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.Topology.Instances.ENNReal
+import TauCeti.Geometry.Euclidean.Volume.Measure
+import TauCeti.MeasureTheory.Covering.HausdorffDensity
 
 /-!
 # The derivative of a set of finite perimeter on balls, and the upper density estimate
@@ -56,12 +61,26 @@ boundary only use that `s` has locally finite perimeter in `Ω`, and the forms w
 use that `s` is null-measurable and that `μ` is finite on compact sets. Only the upper density
 estimates use that `μ` is an additive Haar measure.
 
+By the upper density comparison for Hausdorff measure
+(`MeasureTheory.Measure.measure_le_mul_hausdorffMeasure`), the upper density estimate bounds the
+perimeter measure by Hausdorff measure on the reduced boundary:
+`|Dχ_s| (A) ≤ n μ(ball 0 1) μH[n - 1] (A)` for every `A ⊆ ∂*s`
+(`TauCeti.variationMeasure_preimage_le_mul_hausdorffMeasure`). Since `|Dχ_s|` is concentrated on
+`∂*s`, it vanishes on `Hⁿ⁻¹`-null sets: `|Dχ_s| ≪ Hⁿ⁻¹`
+(`TauCeti.map_variationMeasure_absolutelyContinuous_euclideanHausdorffMeasure`). As `|Dχ_s|` is
+concentrated on `∂*s`, this amounts to `|Dχ_s| ≪ Hⁿ⁻¹⌊∂*s`, one ingredient of the identification
+`|Dχ_s| = Hⁿ⁻¹⌊∂*s` in De Giorgi's structure theorem.
+
 ## References
 
 * F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, Chapter 15 (the
-  density estimates at points of the reduced boundary).
+  density estimates at points of the reduced boundary) and Theorem 15.9 (De Giorgi's structure
+  theorem, whose proof compares `|Dχ_s|` with `Hⁿ⁻¹` on `∂*s`, as in
+  `TauCeti.variationMeasure_preimage_le_mul_hausdorffMeasure`).
 * L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, revised edition,
-  §5.7 (the density estimates at points of the reduced boundary).
+  §5.7 (the density estimates at points of the reduced boundary) and §5.8 (the structure theorem
+  for `∂*E`, whose proof gives the comparison with `Hⁿ⁻¹` and the absolute continuity
+  `|Dχ_s| ≪ Hⁿ⁻¹`).
 -/
 
 public section
@@ -296,5 +315,75 @@ theorem eventually_perimeter_ball_le [μ.IsAddHaarMeasure] (hx : x ∈ reducedBo
     (U := ⟨ball x r, isOpen_ball⟩)
     fun y hy => hεΩ (closedBall_subset_closedBall hrε.2 (hball hy))]
   exact (measure_mono (preimage_mono hball)).trans hr
+
+/-- **The perimeter measure is bounded by Hausdorff measure on the reduced boundary.** Let `μ` be
+an additive Haar measure on a space of dimension `n`. Every set `A` of points of the reduced
+boundary `∂*s` satisfies `|Dχ_s| (A) ≤ n μ(ball 0 1) μH[n - 1] (A)`, where `μH[n - 1]` is the raw,
+unnormalized Hausdorff measure. -/
+theorem variationMeasure_preimage_le_mul_hausdorffMeasure [μ.IsAddHaarMeasure] {A : Set E}
+    (hA : A ⊆ reducedBoundary μ Ω s) :
+    variationMeasure μ Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' A) ≤
+      ENNReal.ofReal (finrank ℝ E * μ.real (ball 0 1)) * μH[((finrank ℝ E - 1 : ℕ) : ℝ)] A := by
+  rcases A.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
+  · simp
+  set n := finrank ℝ E
+  set d : ℝ := ((n - 1 : ℕ) : ℝ)
+  set K := ENNReal.ofReal (n * μ.real (ball 0 1))
+  have hK : K = ENNReal.ofReal n * ENNReal.ofReal (μ.real (ball 0 1)) :=
+    ENNReal.ofReal_mul (Nat.cast_nonneg _)
+  -- A point of the reduced boundary carries a unit vector, so `E` has positive dimension.
+  have hn : 0 < n := by
+    obtain ⟨-, ν, hν, -⟩ := mem_reducedBoundary.1 (hA hx₀)
+    have : Nontrivial E := ⟨⟨ν, 0, fun h => by simp [h] at hν⟩⟩
+    exact finrank_pos
+  have hK0 : K ≠ 0 := (ENNReal.ofReal_pos.2 (mul_pos (Nat.cast_pos.2 hn)
+    (ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne))).ne'
+  have h2 : (2 : ℝ≥0∞) ^ d ≠ 0 := (ENNReal.rpow_pos two_pos ENNReal.ofNat_ne_top).ne'
+  have h2top : (2 : ℝ≥0∞) ^ d ≠ ∞ :=
+    ENNReal.rpow_ne_top_of_ne_zero two_ne_zero ENNReal.ofNat_ne_top
+  -- For each `t > 1`, the upper density estimate gives the bound with the factor `t`.
+  have key (t : ℝ≥0) (ht : 1 < t) :
+      variationMeasure μ Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' A) ≤ t * (K * μH[d] A) := by
+    have ht0 : (t : ℝ≥0∞) ≠ 0 := by simpa using (zero_lt_one.trans ht).ne'
+    have hle := Measure.measure_le_mul_hausdorffMeasure (variationMeasure μ Ω (s.indicator 1))
+      (d := d) (c := t * K / 2 ^ d) (ENNReal.div_ne_zero.2 ⟨mul_ne_zero ht0 hK0, h2top⟩)
+      (ENNReal.div_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top ENNReal.ofReal_ne_top) h2)
+      (A := ((↑) : Ω → E) ⁻¹' A) fun y hy => ?_
+    · rw [ENNReal.mul_div_cancel h2 h2top, ← Isometry.hausdorffMeasure_image
+        (isometry_subtype_coe (s := (Ω : Set E))) (Or.inl (by positivity))] at hle
+      exact hle.trans (by rw [mul_assoc]; gcongr; exact image_preimage_subset _ _)
+    filter_upwards [eventually_variationMeasure_closedBall_le (hA hy) ht, self_mem_nhdsWithin]
+      with r hr (hr0 : 0 < r)
+    rw [← Subtype.preimage_closedBall]
+    refine hr.trans_eq ?_
+    have h2r : ENNReal.ofReal (2 * r) ^ d = 2 ^ d * ENNReal.ofReal r ^ (n - 1) := by
+      rw [ENNReal.ofReal_mul_rpow zero_le_two, ENNReal.ofReal_ofNat,
+        ENNReal.rpow_natCast (ENNReal.ofReal r)]
+    rw [h2r, ← mul_assoc, ENNReal.div_mul_cancel h2 h2top, ENNReal.ofReal_mul (by positivity),
+      ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow hr0.le, hK]
+    ring
+  -- Let `t → 1⁺`.
+  refine ge_of_tendsto (f := fun t : ℝ≥0 => (t : ℝ≥0∞) * (K * μH[d] A)) (x := 𝓝[>] 1) ?_
+    (eventually_mem_nhdsWithin.mono key)
+  simpa using ENNReal.Tendsto.mul_const (ENNReal.tendsto_coe.2
+    (tendsto_nhdsWithin_of_tendsto_nhds tendsto_id)) (Or.inl one_ne_zero)
+
+/-- **The perimeter measure is absolutely continuous with respect to `Hⁿ⁻¹`.** For an additive
+Haar measure on a space of dimension `n`, the perimeter measure `|Dχ_s|` of a set `s` in an open
+set `Ω`, viewed as a measure on the ambient space, vanishes on every `μHE[n - 1]`-null set. -/
+theorem map_variationMeasure_absolutelyContinuous_euclideanHausdorffMeasure
+    [μ.IsAddHaarMeasure] :
+    (variationMeasure μ Ω (s.indicator 1)).map ((↑) : Ω → E) ≪ μHE[finrank ℝ E - 1] := by
+  refine Measure.AbsolutelyContinuous.mk fun N hN hN0 => ?_
+  rw [Measure.map_apply measurable_subtype_coe hN]
+  -- Off the reduced boundary `|Dχ_s|` vanishes; on it, use the Hausdorff measure bound.
+  have hsub : ((↑) : Ω → E) ⁻¹' N ⊆ ((↑) : Ω → E) ⁻¹' (N ∩ reducedBoundary μ Ω s) ∪
+      {y | ↑y ∉ reducedBoundary μ Ω s} := fun y hy =>
+    (em (↑y ∈ reducedBoundary μ Ω s)).imp (fun h => ⟨hy, h⟩) id
+  refine measure_mono_null hsub (measure_union_null (nonpos_iff_eq_zero.1 ?_)
+    (ae_iff.1 ae_mem_reducedBoundary))
+  refine (variationMeasure_preimage_le_mul_hausdorffMeasure inter_subset_right).trans_eq ?_
+  rw [measure_mono_null inter_subset_left
+    (Measure.euclideanHausdorffMeasure_eq_zero_iff.1 hN0), mul_zero]
 
 end TauCeti

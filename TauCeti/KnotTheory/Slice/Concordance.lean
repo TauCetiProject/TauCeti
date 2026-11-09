@@ -9,13 +9,23 @@ public import TauCeti.Analysis.Normed.Group.BallSphere
 public import TauCeti.Analysis.Normed.Module.Ball.Retraction
 public import TauCeti.Geometry.Manifold.Boundary.Invariance
 public import TauCeti.Geometry.Manifold.Boundary.Collar.ClosedBall
+public import TauCeti.Geometry.Manifold.Immersion.Differential
+public import TauCeti.Geometry.Manifold.Instances.Cylinder
 public import TauCeti.Geometry.Manifold.LocallyFlat.Ball
 public import TauCeti.Geometry.Manifold.LocallyFlat.Concordance.Basic
 public import TauCeti.Geometry.Manifold.LocallyFlat.Smooth
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
 public import TauCeti.KnotTheory.Slice.Basic
 
+import Mathlib.Analysis.Normed.Group.CocompactMap
+import Mathlib.Geometry.Manifold.ImmersionDiff
+import Mathlib.Topology.Maps.Proper.CompactlyGenerated
+import TauCeti.Geometry.Manifold.Instances.ClosedBall.Collar
+import TauCeti.Geometry.Manifold.Instances.ClosedBall.Immersion
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
+
 /-!
-# Topological sliceness is a topological concordance invariant
+# Sliceness and concordance
 
 A knot is slice when it bounds a disc in the four-ball, and two knots are concordant when they
 cobound an annulus in `S³ × [0, 1]`. Gluing a slice disc of one knot to a concordance annulus gives
@@ -62,6 +72,27 @@ The converse of the great-circle case, that a topologically slice knot is topolo
 to the unknot, needs a ball about an interior point of the slice disc whose complement is a
 product, and is not proved here.
 
+For a smooth concordance (`TauCeti.SmoothEmbedding.Concordance`) from a great circle to `K`, the
+same cone is a smooth embedding of the whole plane into `E`
+(`TauCeti.SmoothEmbedding.Concordance.exists_isSmoothEmbedding_cap`). Near the origin it is the
+linear isometry `ι`. Away from the origin, precomposing it with exponential polar coordinates of
+the plane, a local diffeomorphism, gives the track followed by exponential polar coordinates of
+`E`, another local diffeomorphism (`TauCeti.isLocalDiffeomorph_polar`); so it is smooth with
+injective differential there. It preserves the norm outside the unit disc, so it is proper, hence
+a closed embedding. Near the unit circle and beyond it is the cone `s • K u` over `K`. Its
+restriction to the closed unit disc is a smooth slice disc of `K`, so **a knot smoothly concordant
+to a great circle is smoothly slice** (`TauCeti.SmoothEmbedding.Concordant.isSmoothlySlice`). It is
+an immersion of manifolds with boundary for a different reason at the two kinds of points:
+
+* at a point of the open disc, which it maps into the open ball, because the cap is an immersion
+  of the ambient spaces there (`TauCeti.isImmersionAt_closedBall_of_norm_lt_one`);
+* at a point of the boundary circle, because in the radial collars of the disc and of the ball it
+  is the product of `K` with the identity of the half-line
+  (`TauCeti.isImmersionAt_of_comp_ballCollar_eventuallyEq_prodMap`).
+
+As in the topological case, the converse, that a smoothly slice knot is smoothly concordant to the
+unknot, is not proved here.
+
 ## Main results
 
 * `TauCeti.IsTopologicallySlice.of_topologicallyConcordant`: a knot topologically concordant to a
@@ -72,6 +103,13 @@ product, and is not proved here.
   great circle is topologically slice.
 * `TauCeti.isTopologicallySlice_of_topologicallyConcordant_unknot`: a knot in `S³` topologically
   concordant to the unknot is topologically slice.
+* `TauCeti.SmoothEmbedding.Concordance.exists_isSmoothEmbedding_cap`: the cap of a smooth
+  concordance from a great circle to `K` is a smooth embedding of the plane, equal to `ι` near the
+  origin and to the cone over `K` near the unit circle and beyond.
+* `TauCeti.SmoothEmbedding.Concordant.isSmoothlySlice`: a knot smoothly concordant to a great
+  circle is smoothly slice.
+* `TauCeti.isSmoothlySlice_of_concordant_unknot`: a knot in `S³` smoothly concordant to the unknot
+  is smoothly slice.
 
 ## References
 
@@ -87,10 +125,10 @@ public section
 
 noncomputable section
 
-namespace TauCeti
+open Metric Set Topology Module Manifold
+open scoped EuclideanSpace Manifold ContDiff
 
-open Metric Set Topology Module
-open scoped EuclideanSpace Manifold
+namespace TauCeti
 
 /-! ### Capping a collared track -/
 
@@ -191,15 +229,14 @@ private theorem snd_eq_one_iff (hΦ : IsCollaredTrack K₀ K Φ) (x : Circle) (t
   · exact ht
   · linarith [(hΦ.lt_snd_apply_iff x h1).2 ht]
 
-/-- The cone on a collared track stays in the closed unit ball over the closed unit disc. -/
-private theorem norm_capMap_le_one (hΦ : IsCollaredTrack K₀ K Φ) {z : ℂ} (hz : ‖z‖ ≤ 1) :
-    ‖capMap Φ z‖ ≤ 1 := by
+/-- The cone on a collared track meets the closed unit ball exactly over the closed unit disc. -/
+private theorem norm_capMap_le_one_iff (hΦ : IsCollaredTrack K₀ K Φ) (z : ℂ) :
+    ‖capMap Φ z‖ ≤ 1 ↔ ‖z‖ ≤ 1 := by
   rcases eq_or_ne z 0 with rfl | hz0
   · simp [capMap_zero]
   obtain ⟨⟨x, t⟩, rfl⟩ := mem_range_polarC hz0
-  rw [norm_polarC, Real.exp_le_one_iff, sub_nonpos] at hz
-  rw [capMap_polarC, norm_polar, Real.exp_le_one_iff, sub_nonpos, snd_le_one_iff hΦ]
-  exact hz
+  rw [capMap_polarC, norm_polar, norm_polarC, Real.exp_le_one_iff, Real.exp_le_one_iff, sub_nonpos,
+    sub_nonpos, snd_le_one_iff hΦ]
 
 /-- The cone on a collared track meets the unit sphere exactly over the unit circle. -/
 private theorem norm_capMap_eq_one_iff (hΦ : IsCollaredTrack K₀ K Φ) (z : ℂ) :
@@ -224,7 +261,8 @@ private theorem exp_neg_one_lt_norm_capMap (hΦ : IsCollaredTrack K₀ K Φ) {z 
 /-- The cone on a collared track, restricted to the closed unit disc. -/
 private def capDisc (hΦ : IsCollaredTrack K₀ K Φ) (z : closedBall (0 : ℂ) 1) :
     closedBall (0 : E) 1 :=
-  ⟨capMap Φ z, mem_closedBall_zero_iff.2 (norm_capMap_le_one hΦ (mem_closedBall_zero_iff.1 z.2))⟩
+  ⟨capMap Φ z,
+    mem_closedBall_zero_iff.2 ((norm_capMap_le_one_iff hΦ z).2 (mem_closedBall_zero_iff.1 z.2))⟩
 
 private theorem coe_capDisc (hΦ : IsCollaredTrack K₀ K Φ) (z : closedBall (0 : ℂ) 1) :
     (capDisc hΦ z : E) = capMap Φ z :=
@@ -318,6 +356,106 @@ private theorem one_le_of_isTopologicalSliceDisc (hΨ : IsTopologicalSliceDisc K
   rw [Complex.finrank_real_complex, (Fact.out : finrank ℝ E = n + 1)] at hle
   omega
 
+omit [Fact (finrank ℝ E = n + 1)] in
+/-- The extended slice chart `y ↦ (φ (r y) - log (max ‖y‖ 1) • e₀, ...)` is injective on the set of
+points `y` retracting into the source of the slice chart `φ`: its zeroth coordinate recovers
+`log (max ‖y‖ 1)`, because `φ` sends the unit sphere into the boundary hyperplane. -/
+private theorem injOn_extendedSliceChart [FiniteDimensional ℝ E]
+    (hdim : finrank ℝ E = 2 + finrank ℝ (EuclideanSpace ℝ (Fin (n - 1))))
+    {φ : OpenPartialHomeomorph (closedBall (0 : E) 1)
+      (EuclideanHalfSpace 2 × EuclideanSpace ℝ (Fin (n - 1)))}
+    {Θ : E → EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin (n - 1))}
+    (hΘ : ∀ y, Θ y = ((φ (radialRetractionToClosedBall zero_le_one y)).1.1 -
+        Real.log (max ‖y‖ 1) • EuclideanSpace.single 0 1,
+      (φ (radialRetractionToClosedBall zero_le_one y)).2)) :
+    InjOn Θ (radialRetractionToClosedBall zero_le_one ⁻¹' φ.source) := by
+  -- The chart `φ` sends the unit sphere into the boundary hyperplane.
+  have hsphere {w : closedBall (0 : E) 1} (hw : w ∈ φ.source) (hw1 : ‖(w : E)‖ = 1) :
+      (φ w).1.1 0 = 0 :=
+    φ.coe_fst_apply_zero_eq_zero_of_notMem_interior hdim hw (by
+      rw [interior_closedBall _ one_ne_zero, mem_ball_zero_iff, hw1]
+      exact lt_irrefl 1)
+  set W : Set E := radialRetractionToClosedBall zero_le_one ⁻¹' φ.source
+  -- The zeroth coordinate of `Θ` recovers `log (max ‖y‖ 1)`, so `Θ` is injective on `W`.
+  have hlogΘ {y : E} (hy : y ∈ W) : Real.log (max ‖y‖ 1) = max (-(Θ y).1 0) 0 := by
+    have hcoord : (Θ y).1 0 =
+        (φ (radialRetractionToClosedBall zero_le_one y)).1.1 0 - Real.log (max ‖y‖ 1) := by
+      simp [hΘ]
+    rcases le_or_gt ‖y‖ 1 with hy1 | hy1
+    · rw [hcoord, max_eq_right hy1, Real.log_one, sub_zero]
+      exact (max_eq_right (neg_nonpos.2 (φ (radialRetractionToClosedBall zero_le_one y)).1.2)).symm
+    · have h0 := hsphere hy
+        (by rw [norm_radialRetractionToClosedBall zero_le_one, min_eq_right hy1.le])
+      have hlogpos : 0 < Real.log ‖y‖ := Real.log_pos hy1
+      rw [hcoord, h0, max_eq_left hy1.le, zero_sub, neg_neg, max_eq_left hlogpos.le]
+  intro y hy y' hy' h
+  have hlog : Real.log (max ‖y‖ 1) = Real.log (max ‖y'‖ 1) := by
+    rw [hlogΘ hy, hlogΘ hy', h]
+  have hφeq : φ (radialRetractionToClosedBall zero_le_one y) =
+      φ (radialRetractionToClosedBall zero_le_one y') := by
+    have h2 : (φ (radialRetractionToClosedBall zero_le_one y)).2 =
+        (φ (radialRetractionToClosedBall zero_le_one y')).2 := by
+      simpa only [hΘ] using congrArg Prod.snd h
+    refine Prod.ext (Subtype.ext ?_) h2
+    have h1 := congrArg Prod.fst h
+    simp only [hΘ, hlog] at h1
+    exact sub_left_injective h1
+  have hr : radialRetraction (1 : ℝ) y = radialRetraction 1 y' :=
+    by simpa only [coe_radialRetractionToClosedBall] using
+      congrArg Subtype.val (φ.injOn hy hy' hφeq)
+  have hm : max ‖y‖ 1 = max ‖y'‖ 1 :=
+    Real.log_injOn_pos (lt_max_of_lt_right one_pos) (lt_max_of_lt_right one_pos) hlog
+  rw [← max_norm_one_smul_radialRetraction_one y, ← max_norm_one_smul_radialRetraction_one y',
+    hr, hm]
+
+/-- The invariance-of-domain step of `isLocallyFlat_coneExt`: if the extended chart `Θ` is an open
+embedding on an open set `W` and its last coordinates vanish on the cone extension, then the cone
+extension is locally flat near every `z` whose image lies in `W`. The first coordinates of `Θ`
+then flatten the cone extension to the coordinate plane. -/
+private theorem exists_isLocallyFlat_coneExt_comp_coe_of_isOpenEmbedding
+    (hΨ : IsTopologicalSliceDisc K₀ Ψ) {z : ℂ} {W : Set E} (hW : IsOpen W)
+    {Θ : E → EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin (n - 1))}
+    (hΘW : IsOpenEmbedding (W.domRestrict Θ))
+    (hslice : ∀ w, coneExt Ψ w ∈ W → (Θ (coneExt Ψ w)).2 = 0) (hz : coneExt Ψ z ∈ W) :
+    ∃ U : Set ℂ, IsOpen U ∧ z ∈ U ∧
+      IsLocallyFlat (EuclideanHalfSpace 2) (EuclideanSpace ℝ (Fin (n - 1)))
+        (coneExt Ψ ∘ ((↑) : U → ℂ)) := by
+  -- On the preimage `U` of `W`, the cone extension is carried by `Θ` into the coordinate plane.
+  set U : Set ℂ := coneExt Ψ ⁻¹' W
+  have hc := continuous_coneExt hΨ.continuous
+  have hU : IsOpen U := hc.isOpen_preimage _ hW
+  let h₀ : ℂ → EuclideanSpace ℝ (Fin 2) := fun w => (Θ (coneExt Ψ w)).1
+  have hΘext {w : ℂ} (hw : w ∈ U) : Θ (coneExt Ψ w) = (h₀ w, 0) :=
+    Prod.ext rfl (hslice _ hw)
+  have hΘc : ContinuousOn Θ W := continuousOn_iff_continuous_domRestrict.2 hΘW.continuous
+  have hΘinj : InjOn Θ W := Set.injOn_iff_injective.2 hΘW.injective
+  have hh₀c : ContinuousOn h₀ U :=
+    continuous_fst.comp_continuousOn (hΘc.comp hc.continuousOn fun _ hw => hw)
+  have hh₀inj : InjOn h₀ U := by
+    intro w hw w' hw' h
+    refine coneExt_injective hΨ (hΘinj hw hw' ?_)
+    rw [hΘext hw, hΘext hw', h]
+  have hh₀ : IsOpenEmbedding (U.domRestrict h₀) :=
+    hU.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn (E := ℂ)
+      (F := EuclideanSpace ℝ (Fin 2)) hh₀c hh₀inj (by simp [Complex.finrank_real_complex])
+  -- Assemble: the coordinate plane is locally flat, and `Θ` pulls it back to the cone extension.
+  have h1 : IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) (EuclideanSpace ℝ (Fin (n - 1)))
+      ((fun x : EuclideanSpace ℝ (Fin 2) => (x, (0 : EuclideanSpace ℝ (Fin (n - 1))))) ∘
+        U.domRestrict h₀) :=
+    isLocallyFlat_prodMkLeft.comp_isOpenEmbedding hh₀
+  let cW : U → W := fun w => ⟨coneExt Ψ w, w.2⟩
+  have hcW : W.domRestrict Θ ∘ cW =
+      (fun x : EuclideanSpace ℝ (Fin 2) => (x, (0 : EuclideanSpace ℝ (Fin (n - 1))))) ∘
+        U.domRestrict h₀ := by
+    funext w
+    exact hΘext w.2
+  have h2 : IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) (EuclideanSpace ℝ (Fin (n - 1)))
+      (coneExt Ψ ∘ ((↑) : U → ℂ)) :=
+    (IsLocallyFlat.of_isOpenEmbedding_comp hΘW (hcW ▸ h1)).isOpenEmbedding_comp
+      hW.isOpenEmbedding_subtypeVal
+  exact ⟨U, hU, hz,
+    h2.transIsOpenEmbedding (EuclideanHalfSpace.isOpenEmbedding_interiorEmbedding 1)⟩
+
 /-- Near every point of the plane, the cone extension of a slice disc is locally flat. A
 flattening chart `φ` of the ball at the point `Ψ (radialRetractionToClosedBall zero_le_one z)`
 sends the sphere into the boundary hyperplane of the half-space
@@ -339,13 +477,6 @@ private theorem exists_isLocallyFlat_coneExt_comp_coe (hΨ : IsTopologicalSliceD
     rw [finrank_prod, finrank_euclideanSpace_fin, hdim]
   obtain ⟨φ, hφz, hφ⟩ :=
     hΨ.isLocallyFlat.exists_isSliceChart (radialRetractionToClosedBall zero_le_one z)
-  -- The chart `φ` sends the unit sphere into the boundary hyperplane.
-  have hsphere {w : closedBall (0 : E) 1} (hw : w ∈ φ.source) (hw1 : ‖(w : E)‖ = 1) :
-      (φ w).1.1 0 = 0 :=
-    φ.coe_fst_apply_zero_eq_zero_of_notMem_interior hdim hw (by
-      rw [interior_closedBall _ one_ne_zero, mem_ball_zero_iff, hw1]
-      exact lt_irrefl 1)
-  -- The extended chart `Θ` on the open set `W` of points retracting into the source of `φ`.
   set W : Set E := radialRetractionToClosedBall zero_le_one ⁻¹' φ.source
   have hW : IsOpen W :=
     (continuous_radialRetractionToClosedBall zero_le_one).isOpen_preimage _ φ.open_source
@@ -362,79 +493,19 @@ private theorem exists_isLocallyFlat_coneExt_comp_coe (hΨ : IsTopologicalSliceD
         (lt_max_of_lt_right one_pos).ne'
     exact (((continuous_subtype_val.comp_continuousOn (continuous_fst.comp_continuousOn hφr)).sub
       ((hlog.smul continuous_const).continuousOn))).prodMk (continuous_snd.comp_continuousOn hφr)
-  -- The zeroth coordinate of `Θ` recovers `log (max ‖y‖ 1)`, so `Θ` is injective on `W`.
-  have hlogΘ {y : E} (hy : y ∈ W) : Real.log (max ‖y‖ 1) = max (-(Θ y).1 0) 0 := by
-    have hcoord : (Θ y).1 0 =
-        (φ (radialRetractionToClosedBall zero_le_one y)).1.1 0 - Real.log (max ‖y‖ 1) := by
-      simp [Θ]
-    rcases le_or_gt ‖y‖ 1 with hy1 | hy1
-    · rw [hcoord, max_eq_right hy1, Real.log_one, sub_zero]
-      exact (max_eq_right (neg_nonpos.2 (φ (radialRetractionToClosedBall zero_le_one y)).1.2)).symm
-    · have h0 := hsphere hy
-        (by rw [norm_radialRetractionToClosedBall zero_le_one, min_eq_right hy1.le])
-      have hlogpos : 0 < Real.log ‖y‖ := Real.log_pos hy1
-      rw [hcoord, h0, max_eq_left hy1.le, zero_sub, neg_neg, max_eq_left hlogpos.le]
-  have hΘinj : InjOn Θ W := by
-    intro y hy y' hy' h
-    have hlog : Real.log (max ‖y‖ 1) = Real.log (max ‖y'‖ 1) := by
-      rw [hlogΘ hy, hlogΘ hy', h]
-    have hφeq : φ (radialRetractionToClosedBall zero_le_one y) =
-        φ (radialRetractionToClosedBall zero_le_one y') := by
-      have h2 : (Θ y).2 = (Θ y').2 := congrArg Prod.snd h
-      refine Prod.ext (Subtype.ext ?_) h2
-      have h1 := congrArg Prod.fst h
-      simp only [Θ, hlog] at h1
-      exact sub_left_injective h1
-    have hr : radialRetraction (1 : ℝ) y = radialRetraction 1 y' :=
-      by simpa only [coe_radialRetractionToClosedBall] using
-        congrArg Subtype.val (φ.injOn hy hy' hφeq)
-    have hm : max ‖y‖ 1 = max ‖y'‖ 1 :=
-      Real.log_injOn_pos (lt_max_of_lt_right one_pos) (lt_max_of_lt_right one_pos) hlog
-    rw [← max_norm_one_smul_radialRetraction_one y, ← max_norm_one_smul_radialRetraction_one y',
-      hr, hm]
+  have hΘinj := injOn_extendedSliceChart hdim (φ := φ) (Θ := Θ) fun _ => rfl
   -- By invariance of domain, `Θ` is an open embedding on `W`.
   have hΘW : IsOpenEmbedding (W.domRestrict Θ) :=
     hW.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn hΘc hΘinj hdim'
-  -- On the preimage `U` of `W`, the cone extension is carried by `Θ` into the coordinate plane.
-  set U : Set ℂ := coneExt Ψ ⁻¹' W
-  have hc := continuous_coneExt hΨ.continuous
-  have hU : IsOpen U := hc.isOpen_preimage _ hW
-  have hzU : z ∈ U := by
-    simp only [U, W, Set.mem_preimage]
-    rwa [radialRetractionToClosedBall_coneExt hΨ]
-  have hslice {w : ℂ} (hw : w ∈ U) : (Θ (coneExt Ψ w)).2 = 0 := by
+  have hslice : ∀ w, coneExt Ψ w ∈ W → (Θ (coneExt Ψ w)).2 = 0 := fun w hw => by
     have hw' : Ψ (radialRetractionToClosedBall zero_le_one w) ∈ φ.source := by
       rw [← radialRetractionToClosedBall_coneExt hΨ]
       exact hw
     have := (hφ.mem_iff hw').1 (mem_range_self _)
     simp only [Θ, radialRetractionToClosedBall_coneExt hΨ]
     exact this.2
-  let h₀ : ℂ → EuclideanSpace ℝ (Fin 2) := fun w => (Θ (coneExt Ψ w)).1
-  have hΘext {w : ℂ} (hw : w ∈ U) : Θ (coneExt Ψ w) = (h₀ w, 0) :=
-    Prod.ext rfl (hslice hw)
-  have hh₀c : ContinuousOn h₀ U :=
-    continuous_fst.comp_continuousOn (hΘc.comp hc.continuousOn fun _ hw => hw)
-  have hh₀inj : InjOn h₀ U := by
-    intro w hw w' hw' h
-    refine coneExt_injective hΨ (hΘinj hw hw' ?_)
-    rw [hΘext hw, hΘext hw', h]
-  have hh₀ : IsOpenEmbedding (U.domRestrict h₀) :=
-    hU.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn (E := ℂ)
-      (F := EuclideanSpace ℝ (Fin 2)) hh₀c hh₀inj (by simp [Complex.finrank_real_complex])
-  -- Assemble: the coordinate plane is locally flat, and `Θ` pulls it back to the cone extension.
-  have h1 : IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) V'
-      ((fun x : EuclideanSpace ℝ (Fin 2) => (x, (0 : V'))) ∘ U.domRestrict h₀) :=
-    isLocallyFlat_prodMkLeft.comp_isOpenEmbedding hh₀
-  let cW : U → W := fun w => ⟨coneExt Ψ w, w.2⟩
-  have hcW : W.domRestrict Θ ∘ cW =
-      (fun x : EuclideanSpace ℝ (Fin 2) => (x, (0 : V'))) ∘ U.domRestrict h₀ := by
-    funext w
-    exact hΘext w.2
-  have h2 : IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) V' (coneExt Ψ ∘ ((↑) : U → ℂ)) :=
-    (IsLocallyFlat.of_isOpenEmbedding_comp hΘW (hcW ▸ h1)).isOpenEmbedding_comp
-      hW.isOpenEmbedding_subtypeVal
-  exact ⟨U, hU, hzU,
-    h2.transIsOpenEmbedding (EuclideanHalfSpace.isOpenEmbedding_interiorEmbedding 1)⟩
+  exact exists_isLocallyFlat_coneExt_comp_coe_of_isOpenEmbedding hΨ hW hΘW hslice
+    (by simpa only [W, mem_preimage, radialRetractionToClosedBall_coneExt hΨ] using hφz)
 
 /-- **The cone extension of a locally flat slice disc is locally flat.** Extending a locally flat
 slice disc `Ψ` of `K₀` beyond the unit circle by the cone `r • K₀ u`, `r ≥ 1`, gives a locally
@@ -466,7 +537,7 @@ private theorem isLocallyFlat_capDisc_comp_coe_of_pos_of_lt (hF : finrank ℝ F 
     IsLocallyFlat (EuclideanHalfSpace 2) (EuclideanSpace ℝ (Fin (n - 1)))
       (capDisc hΦ ∘ ((↑) : U → _)) := by
   have hmem (z : U) : ‖(capDisc hΦ z : E)‖ < 1 :=
-    lt_of_le_of_ne (norm_capMap_le_one hΦ (mem_closedBall_zero_iff.1 z.1.2))
+    lt_of_le_of_ne ((norm_capMap_le_one_iff hΦ z).2 (mem_closedBall_zero_iff.1 z.1.2))
       ((norm_capMap_eq_one_iff hΦ (z : ℂ)).not.2 (hU₀ z z.2).2.ne)
   -- The track in polar coordinates, on the range of the polar coordinates of the plane.
   have h1 := (hΦ'.isOpenEmbedding_comp isOpenEmbedding_polar).comp_homeomorph
@@ -597,7 +668,7 @@ private theorem norm_glueMap_le_one (hΨ : IsTopologicalSliceDisc K₀ Ψ) (hΦ 
   rcases le_or_gt ‖z‖ (Real.exp (-1)) with hz1 | hz1
   · exact (norm_glueMap_le_exp_neg_one hΨ hz1).trans (Real.exp_le_one_iff.2 (by norm_num))
   · rw [glueMap_of_lt hz1]
-    exact norm_capMap_le_one hΦ hz
+    exact (norm_capMap_le_one_iff hΦ z).2 hz
 
 private theorem norm_glueMap_eq_one_iff (hΨ : IsTopologicalSliceDisc K₀ Ψ)
     (hΦ : IsCollaredTrack K₀ K Φ) (z : ℂ) : ‖glueMap Ψ Φ z‖ = 1 ↔ ‖z‖ = 1 := by
@@ -767,5 +838,198 @@ theorem isTopologicallySlice_of_topologicallyConcordant_unknot (hF : finrank ℝ
     (h : TopologicallyConcordant F F' unknot K) : IsTopologicallySlice K := by
   rw [unknot_eq_greatCircle] at h
   exact h.isTopologicallySlice hF hF'
+
+/-! ### Capping a smooth concordance -/
+
+section Smooth
+
+attribute [local instance] finrank_real_complex_fact'
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
+  [Fact (finrank ℝ E = n + 1)] {ι : ℂ →ₗᵢ[ℝ] E} {K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
+  {Φ : Circle × ℝ → sphere (0 : E) 1 × ℝ}
+
+/-- Near the origin the cone on a track starting at the great circle `ι S¹` is the flat disc
+`ι D²`: the track is the product of the great circle with the identity for times `t ≤ 0`. -/
+private theorem capMap_eq_of_norm_le
+    (hΦ : IsCollaredTrack (SmoothCircleEmbedding.greatCircle (n := n) ι) K Φ) {z : ℂ}
+    (hz : ‖z‖ ≤ Real.exp (-1)) : capMap Φ z = ι z := by
+  rcases eq_or_ne z 0 with rfl | hz0
+  · rw [capMap_zero, map_zero]
+  obtain ⟨⟨x, t⟩, rfl⟩ := mem_range_polarC hz0
+  have ht : t ≤ 0 := by
+    rw [norm_polarC, Real.exp_le_exp] at hz
+    linarith
+  rw [capMap_polarC, hΦ.apply_of_nonpos x ht, polar_apply, polarC_apply,
+    SmoothCircleEmbedding.coe_greatCircle_apply, LinearIsometry.map_smul]
+
+/-- Read in polar coordinates, the cone on a track is the track read in polar coordinates. -/
+private theorem capMap_comp_polarC : capMap Φ ∘ polarC = polar ∘ Φ :=
+  funext capMap_polarC
+
+/-- Near the origin the cone on a track starting at the great circle `ι S¹` is `ι`. -/
+private theorem capMap_eventuallyEq_of_norm_lt
+    (hΦ : IsCollaredTrack (SmoothCircleEmbedding.greatCircle (n := n) ι) K Φ) {w : ℂ}
+    (hw : ‖w‖ < Real.exp (-1)) : capMap Φ =ᶠ[𝓝 w] ι :=
+  Filter.mem_of_superset ((isOpen_lt continuous_norm continuous_const).mem_nhds hw)
+    fun _ hz => capMap_eq_of_norm_le hΦ (le_of_lt hz)
+
+/-- Beyond the collar width `ε` of the final end, the cone on a track ending at `K` is the cone
+`s • K u` over `K`. -/
+private theorem capMap_smul_of_exp_neg_le {ε : ℝ}
+    (hε : ∀ (x : Circle) (t : ℝ), 1 - ε ≤ t → Φ (x, t) = (K x, t)) (u : Circle) {s : ℝ}
+    (hs : Real.exp (-ε) ≤ s) : capMap Φ (s • (u : ℂ)) = s • (K u : E) := by
+  have hs0 : 0 < s := (Real.exp_pos _).trans_le hs
+  have hlog : -ε ≤ Real.log s := by
+    simpa only [Real.log_exp] using Real.log_le_log (Real.exp_pos _) hs
+  have h : s • (u : ℂ) = polarC (u, 1 + Real.log s) := by
+    rw [polarC_apply, add_sub_cancel_left, Real.exp_log hs0]
+  rw [h, capMap_polarC, hε u _ (by linarith), polar_apply, add_sub_cancel_left, Real.exp_log hs0]
+
+/-- Outside the open unit disc the cone on a track ending at `K` preserves the norm. -/
+private theorem norm_capMap_of_one_le
+    (hΦ : IsCollaredTrack (SmoothCircleEmbedding.greatCircle (n := n) ι) K Φ) {z : ℂ}
+    (hz : 1 ≤ ‖z‖) : ‖capMap Φ z‖ = ‖z‖ := by
+  obtain ⟨⟨x, t⟩, rfl⟩ := mem_range_polarC (norm_pos_iff.1 (one_pos.trans_le hz))
+  rw [norm_polarC, Real.one_le_exp_iff, sub_nonneg] at hz
+  rw [capMap_polarC, hΦ.apply_of_one_le x hz, norm_polar, norm_polarC]
+
+/-- The cone on an injective collared track ending at `K` is a closed embedding: it is proper,
+since it preserves the norm outside the unit disc. -/
+private theorem isClosedEmbedding_capMap
+    (hΦ : IsCollaredTrack (SmoothCircleEmbedding.greatCircle (n := n) ι) K Φ)
+    (hinj : Function.Injective Φ) (hcont : Continuous (capMap Φ)) :
+    IsClosedEmbedding (capMap Φ) := by
+  have hprop : IsProperMap (capMap Φ) :=
+    isProperMap_iff_tendsto_cocompact.2 ⟨hcont, Filter.tendsto_cocompact_cocompact_of_norm
+      fun R => ⟨max R 1, fun z hz => by
+        rw [norm_capMap_of_one_le hΦ ((le_max_right _ _).trans hz.le)]
+        exact (le_max_left _ _).trans_lt hz⟩⟩
+  exact .of_continuous_injective_isClosedMap hcont (capMap_injective hinj) hprop.isClosedMap
+
+variable (F : SmoothEmbedding.Concordance (SmoothCircleEmbedding.greatCircle (n := n) ι) K)
+
+/-- Away from the origin the cone on a smooth concordance is smooth with injective differential:
+precomposed with polar coordinates of the plane, a local diffeomorphism, it is the track followed
+by polar coordinates of `E`, a local diffeomorphism. -/
+private theorem contMDiffAt_capMap_and_injective_mfderiv {w : ℂ} (hw : w ≠ 0) :
+    ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, E) ∞ (capMap F) w ∧
+      Function.Injective (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, E) (capMap F) w) := by
+  obtain ⟨q, rfl⟩ := mem_range_polarC hw
+  have hp : IsLocalDiffeomorphAt ((𝓡 1).prod 𝓘(ℝ)) 𝓘(ℝ, ℂ) ∞ polarC q :=
+    isLocalDiffeomorph_polar (V := ℂ) (n := 1) q
+  refine ⟨(hp.contMDiffAt_comp_iff le_rfl).1 ?_, ?_⟩
+  · rw [capMap_comp_polarC]
+    exact (isLocalDiffeomorph_polar (F q)).contMDiffAt.comp q (F.toSmoothEmbedding.contMDiff q)
+  · refine ((IsDiffImmersionAt.comp_isLocalDiffeomorphAt_left_iff rfl hp (by simp)).2 ?_)
+      |>.mfderiv_injective
+    rw [capMap_comp_polarC]
+    exact ((isLocalDiffeomorph_polar (F q)).isDiffImmersionAt (by simp)).comp
+      (F.toSmoothEmbedding.isImmersion.isDiffImmersionAt (by simp) q)
+
+/-- The cone on a smooth concordance is an immersion at every point: near the origin it is the
+linear isometry `ι`, and away from the origin its differential is injective. -/
+private theorem isImmersionAt_capMap (w : ℂ) :
+    IsImmersionAt 𝓘(ℝ, ℂ) 𝓘(ℝ, E) ∞ (capMap F) w := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have hΦ := F.isCollaredTrack
+  by_cases hw : ‖w‖ < Real.exp (-1)
+  · have hs : IsOpen (ball (0 : ℂ) (Real.exp (-1))) := isOpen_ball
+    have hon : ContDiffOn ℝ ∞ (capMap F) (ball (0 : ℂ) (Real.exp (-1))) :=
+      ι.contDiff.contDiffOn.congr fun z hz =>
+        capMap_eq_of_norm_le hΦ (le_of_lt (mem_ball_zero_iff.1 hz))
+    refine (hon.isImmersionAt_iff_injective_fderiv hs (mem_ball_zero_iff.2 hw) (by simp)).2 ?_
+    -- `ι` coerces to the function of its continuous linear map, whose derivative is itself.
+    have hι : fderiv ℝ ι w = ι.toContinuousLinearMap := ι.toContinuousLinearMap.fderiv
+    rw [(capMap_eventuallyEq_of_norm_lt hΦ hw).fderiv_eq, hι]
+    exact ι.injective
+  · have hw0 : w ≠ 0 := by
+      rintro rfl
+      exact hw (by simpa using Real.exp_pos (-1))
+    have hon : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, E) ∞ (capMap F) {0}ᶜ := fun z hz =>
+      (contMDiffAt_capMap_and_injective_mfderiv F hz).1.contMDiffWithinAt
+    exact (hon.isImmersionAt_iff_injective_mfderiv isOpen_compl_singleton hw0 (by simp)).2
+      (contMDiffAt_capMap_and_injective_mfderiv F hw0).2
+
+/-- **The cap of a smooth concordance from a great circle is a smooth embedding of the plane.**
+If `F` is a smooth concordance from the great circle `ι S¹` to a knot `K` in `Sⁿ`, there is a
+smooth embedding `c : ℂ → E` such that
+
+* near the origin, on the closed disc of radius `exp (-1)`, `c` is the linear isometry `ι`;
+* for some `r < 1` and all radii `s ≥ r`, `c (s • u) = s • K u`: near the unit circle and beyond,
+  `c` is the cone over `K`;
+* `c` meets the closed unit ball exactly over the closed unit disc, and the unit sphere exactly
+  over the unit circle.
+
+The witness is constructed from the track of `F` read in exponential polar coordinates
+`(u, t) ↦ exp (t - 1) • u` (see the module docstring), but the statement only records the
+properties above: on the closed unit disc, `c` is `ι` on the disc of radius `exp (-1)` and the cone
+over `K` on the annulus `r ≤ ‖z‖ ≤ 1`. -/
+theorem SmoothEmbedding.Concordance.exists_isSmoothEmbedding_cap
+    (F : SmoothEmbedding.Concordance (SmoothCircleEmbedding.greatCircle (n := n) ι) K) :
+    ∃ c : ℂ → E, IsSmoothEmbedding 𝓘(ℝ, ℂ) 𝓘(ℝ, E) ∞ c ∧
+      (∀ z : ℂ, ‖z‖ ≤ Real.exp (-1) → c z = ι z) ∧
+      (∃ r < 1, ∀ (u : Circle) (s : ℝ), r ≤ s → c (s • (u : ℂ)) = s • (K u : E)) ∧
+      (∀ z : ℂ, ‖c z‖ ≤ 1 ↔ ‖z‖ ≤ 1) ∧ (∀ z : ℂ, ‖c z‖ = 1 ↔ ‖z‖ = 1) := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have hΦ := F.isCollaredTrack
+  have himm : IsImmersion 𝓘(ℝ, ℂ) 𝓘(ℝ, E) ∞ (capMap F) :=
+    isImmersion_iff_forall_isImmersionAt.2 (isImmersionAt_capMap F)
+  obtain ⟨ε, hε, hεF⟩ := hΦ.exists_pos_apply_eq_right
+  refine ⟨capMap F, ⟨himm, (isClosedEmbedding_capMap hΦ F.toSmoothEmbedding.isEmbedding.injective
+      himm.contMDiff.continuous).isEmbedding⟩,
+    fun z hz => capMap_eq_of_norm_le hΦ hz, ⟨Real.exp (-ε), ?_, fun u s hs =>
+      capMap_smul_of_exp_neg_le hεF u hs⟩, norm_capMap_le_one_iff hΦ, norm_capMap_eq_one_iff hΦ⟩
+  simpa using hε
+
+/-- **A knot smoothly concordant to a great circle is smoothly slice.** If a knot `K` in the unit
+sphere `Sⁿ` of `E` is smoothly concordant to the great circle `ι S¹`, then `K` bounds a smooth slice
+disc in the closed unit ball `Dⁿ⁺¹`: the restriction of the cap of the concordance
+(`TauCeti.SmoothEmbedding.Concordance.exists_isSmoothEmbedding_cap`) to the closed unit disc. -/
+theorem SmoothEmbedding.Concordant.isSmoothlySlice
+    (h : SmoothEmbedding.Concordant (SmoothCircleEmbedding.greatCircle (n := n) ι) K) :
+    IsSmoothlySlice K := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  obtain ⟨F⟩ := SmoothEmbedding.concordant_iff_nonempty.1 h
+  obtain ⟨c, hc, -, ⟨r, hr, hcone⟩, hball, hsphere⟩ := F.exists_isSmoothEmbedding_cap
+  let Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1 :=
+    Set.codRestrict (c ∘ Subtype.val) _ fun z ↦
+      mem_closedBall_zero_iff.2 ((hball z).2 (mem_closedBall_zero_iff.1 z.2))
+  have hΦ (z : closedBall (0 : ℂ) 1) : (Φ z : E) = c z := rfl
+  refine IsSmoothSliceDisc.isSmoothlySlice (Φ := Φ) ⟨⟨isImmersion_iff_forall_isImmersionAt.2
+    fun x ↦ ?_, (hc.isEmbedding.comp IsEmbedding.subtypeVal).codRestrict _ _⟩, ?_, fun z ↦ ?_⟩
+  · rcases (mem_closedBall_zero_iff.1 x.2).lt_or_eq with hx | hx
+    · -- In the open disc `Φ` is the restriction of the embedding `c` between open balls.
+      exact isImmersionAt_closedBall_of_norm_lt_one (by simp) hΦ
+        (isImmersion_iff_forall_isImmersionAt.1 hc.isImmersion x) hx
+        (((hball x).2 hx.le).lt_of_ne fun h1 ↦ hx.ne ((hsphere x).1 h1))
+    · -- Near the boundary circle `Φ` is the cone over `K`, read in the radial collars.
+      let u : Circle := ⟨x, mem_sphere_zero_iff_norm.2 hx⟩
+      have hxu : ballCollarC (u, 0) = x := Subtype.ext <| by
+        simp [coe_ballCollarC, polarC_apply, u]
+      rw [← hxu]
+      refine isImmersionAt_of_comp_ballCollar_eventuallyEq_prodMap
+        (isImmersion_iff_forall_isImmersionAt.1 K.isImmersion u) ?_
+      have hW : IsOpen {q : Circle × EuclideanHalfSpace 1 | r < Real.exp (-q.2.1 0)} :=
+        isOpen_lt continuous_const (by fun_prop)
+      filter_upwards [hW.mem_nhds (by simpa using hr)] with ⟨w, s⟩ hs
+      refine Subtype.ext ?_
+      have hw : (ballCollarC (w, s) : ℂ) = Real.exp (-s.1 0) • (w : ℂ) := by
+        rw [coe_ballCollarC, polarC_apply, sub_sub_cancel_left]
+      simp only [Function.comp_apply, coe_ballCollar]
+      exact (hΦ _).trans ((congrArg c hw).trans (hcone w _ hs.le))
+  · ext z
+    simp [boundary_closedBall, hΦ, hsphere]
+  · rw [hΦ, Set.coe_inclusion sphere_subset_closedBall]
+    simpa using hcone z 1 hr.le
+
+/-- **A knot in `S³` smoothly concordant to the unknot is smoothly slice.** -/
+theorem isSmoothlySlice_of_concordant_unknot
+    {K : SmoothCircleEmbedding (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1)}
+    (h : SmoothEmbedding.Concordant unknot K) : IsSmoothlySlice K := by
+  rw [unknot_eq_greatCircle] at h
+  exact h.isSmoothlySlice
+
+end Smooth
 
 end TauCeti

@@ -147,6 +147,27 @@ lemma η_app_whiskerRight_comp_η_app_comp_associator_hom_natTrans_app (F G H : 
         (F ⊗ G ⊗ H).functor.map (α_ x y z).inv :=
   associator_hom_unit_unit V F G H x y z
 
+/-- The inverse associator restricted along two Day convolution units regroups the three
+factors by the inverse pointwise associator. -/
+@[reassoc (attr := simp)]
+lemma whiskerLeft_η_app_comp_η_app_comp_associator_inv_natTrans_app (F G H : C ⊛⥤ V)
+    (x y z : C) :
+    F.functor.obj x ◁ (η G H).app (y, z) ≫ (η F (G ⊗ H)).app (x, y ⊗ z) ≫
+        (α_ F G H).inv.natTrans.app (x ⊗ y ⊗ z) =
+      (α_ _ _ _).inv ≫ (η F G).app (x, y) ▷ H.functor.obj z ≫
+        (η (F ⊗ G) H).app (x ⊗ y, z) ≫ ((F ⊗ G) ⊗ H).functor.map (α_ x y z).hom := by
+  let : DayConvolution F.functor G.functor := convolution C V (C ⊛⥤ V) F G
+  let : DayConvolution G.functor H.functor := convolution C V (C ⊛⥤ V) G H
+  let : DayConvolution F.functor (DayConvolution.convolution G.functor H.functor) :=
+    convolution₂ C V (C ⊛⥤ V) F G H
+  let : DayConvolution (DayConvolution.convolution F.functor G.functor) H.functor :=
+    convolution₂' C V (C ⊛⥤ V) F G H
+  have h : (α_ F G H).inv.natTrans =
+      (DayConvolution.associator F.functor G.functor H.functor).inv :=
+    ι_map_associator_inv_eq_associator_inv C V (C ⊛⥤ V) F G H
+  rw [h]
+  exact DayConvolution.associator_inv_unit_unit F.functor G.functor H.functor x y z
+
 /-- The left unitor `𝟙_ ⊗ F ≅ F` restricted along the Day convolution units. -/
 @[reassoc (attr := simp)]
 lemma ν_whiskerRight_comp_η_app_comp_leftUnitor_hom_natTrans_app (F : C ⊛⥤ V) (y : C) :

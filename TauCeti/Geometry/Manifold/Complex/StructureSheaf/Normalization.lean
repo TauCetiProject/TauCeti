@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.NodeLocalRing
+public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Node.LocalRing
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.DiscreteValuationRing
 public import Mathlib.RingTheory.Polynomial.RationalRoot
 

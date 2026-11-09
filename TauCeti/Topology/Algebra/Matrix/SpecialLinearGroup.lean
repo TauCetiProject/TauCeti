@@ -17,7 +17,8 @@ import Mathlib.Analysis.SpecificLimits.Basic
 The special linear group `SL(n, R)` carries the topology induced from the matrices, which is the
 product topology on the entries. So a sequence, or more generally a function along any filter,
 converges in `SL(n, R)` exactly when each of its entries converges. For the same reason `SL(n, R)`
-acts jointly continuously on column vectors.
+acts jointly continuously on column vectors. Over a `T1` topological ring it is a closed subset of
+the matrices, so it is σ-compact when `R` is.
 
 ## Main results
 
@@ -25,6 +26,8 @@ acts jointly continuously on column vectors.
   convergence.
 * `Matrix.SpecialLinearGroup.instContinuousSMulVec`: `SL(n, R)` acts jointly continuously on
   column vectors.
+* `Matrix.SpecialLinearGroup.instSigmaCompactSpace`: over a σ-compact `T1` topological ring,
+  `SL(n, R)` is σ-compact.
 * `Matrix.SpecialLinearGroup.exists_tendsto_dilation_conj`: a sequence in `SL(2, ℝ)` whose diagonal
   entries converge to those of a diagonal matrix `D`, and whose off-diagonal products tend to `0`,
   converges to `D` after conjugating each term by a suitable power of a dilation.
@@ -52,6 +55,12 @@ instance instContinuousSMulVec [ContinuousAdd R] [ContinuousMul R] :
     ContinuousSMul (SpecialLinearGroup n R) (n → R) :=
   IsInducing.id.continuousSMul (M := Matrix n n R) continuous_subtype_val
     (SpecialLinearGroup.smul_def _ _)
+
+/-- Over a σ-compact `T1` topological ring, `SL(n, R)` is σ-compact, as a closed subset of the
+σ-compact space of matrices. -/
+instance instSigmaCompactSpace [IsTopologicalRing R] [T1Space R] [SigmaCompactSpace R] :
+    SigmaCompactSpace (SpecialLinearGroup n R) :=
+  isClosedEmbedding_val.sigmaCompactSpace
 
 /-- If the diagonal entries of a sequence of matrices of `SL(2, ℝ)` converge to those of a diagonal
 matrix `D` and the products of its off-diagonal entries tend to `0`, then conjugating each term by a

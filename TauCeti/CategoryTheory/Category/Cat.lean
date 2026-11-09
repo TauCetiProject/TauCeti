@@ -8,10 +8,11 @@ module
 public import Mathlib.CategoryTheory.Category.Cat
 
 /-!
-# Coherence isomorphisms of identity functors in Cat
+# Isomorphisms and coherence in Cat
 
-The associator and right unitor of identity functors in the bicategory of categories are
-identity natural transformations.
+A 2-morphism in `Cat` is invertible if all its components are invertible. The associator and
+right unitor of identity functors in the bicategory of categories are identity natural
+transformations.
 -/
 
 public section
@@ -21,6 +22,16 @@ universe w v
 open CategoryTheory Bicategory
 
 namespace CategoryTheory.Cat
+
+/-- A 2-morphism in `Cat` is invertible if all its components are invertible. -/
+lemma Hom₂.isIso_of_isIso_app {C D : Cat.{v, w}} {F G : C ⟶ D} (α : F ⟶ G)
+    [∀ X, IsIso (α.toNatTrans.app X)] : IsIso α := by
+  have := NatIso.isIso_of_isIso_app α.toNatTrans
+  refine ⟨⟨(inv α.toNatTrans).toCatHom₂, ?_, ?_⟩⟩
+  · apply Hom₂.ext
+    simp
+  · apply Hom₂.ext
+    simp
 
 /-- The associator of three identity functors in `Cat` is the identity. -/
 @[simp]

@@ -209,21 +209,15 @@ private theorem reverseEvenFirstToSecondAlgEquiv_action
     (reverseEvenToSecondAlgHom_one_zero e hswap)
     (MulOpposite.op (e x).1, MulOpposite.op (e x).2)).symm
 
-/-- In a polarized six-dimensional quadratic space, the odd half-spin representation is
-equivalent to the dual of the even half-spin representation. The equivalence is noncanonical:
-it is obtained from the anti-isomorphism between the two simple factors of the even Clifford
-algebra induced by reversal. The vanishing of the polarization line is included in the result
-because it follows from the dimension hypothesis. -/
-theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
-    [NeZero (2 : K)] (P : SpinPolarizationData Q) (hV : finrank K V = 6) :
-    ∃ hline : P.line = ⊥, Nonempty ((spinMinusSubrep P hline).toRepresentation.Equiv
-      (spinPlusSubrep P hline).toRepresentation.dual) := by
+/-- Reversal gives an anti-isomorphism between the endomorphism algebras of the two half-spin
+modules in dimension six, intertwining the two actions of the even Clifford algebra. -/
+private theorem exists_algEquiv_op_spinPlusAction_reverseEven [NeZero (2 : K)]
+    (P : SpinPolarizationData Q) (hline : P.line = ⊥) (hV : finrank K V = 6) :
+    ∃ a : (Module.End K (spinPlus Q P))ᵐᵒᵖ ≃ₐ[K] Module.End K (spinMinus Q P),
+      ∀ x : even Q, a (MulOpposite.op (spinPlusAction Q P hline x)) =
+        spinMinusAction Q P hline (reverseEven Q x) := by
   let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
-  have hline : P.line = ⊥ := P.line_eq_bot_of_even_finrank (hV ▸ by decide)
-  refine ⟨hline, ?_⟩
-  -- First compute the half-spin dimensions and transport reversal to an anti-isomorphism between
-  -- the two endomorphism factors of the even Clifford algebra.
   have hWfin : finrank K P.W = 3 :=
     P.finrank_W_eq_of_finrank_eq_two_mul (l := 3) (by omega)
   have hW : P.W ≠ ⊥ := Submodule.finrank_eq_zero.not.1 (by omega)
@@ -237,29 +231,48 @@ theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
   have hswap : reverseEvenProdEquiv ep (MulOpposite.op (1, 0)) = (0, 1) := by
     rw [reverseEvenProdEquiv_apply]
     exact evenCliffordEquivProdEnd_reverse_one_zero_of_finrank_eq_six P hline hV
-  let a : (Module.End K (spinPlus Q P))ᵐᵒᵖ ≃ₐ[K]
-      Module.End K (spinMinus Q P) :=
-    reverseEvenFirstToSecondAlgEquiv ep hswap (hplus.trans hminus.symm)
   have hep (x : even Q) : ep x =
       (spinPlusAction Q P hline x, spinMinusAction Q P hline x) := by
     simpa only [ep, evenSpinActionProd_apply] using
       P.evenCliffordEquivProdEnd_apply hline x
-  have hep_fst (x : even Q) : (ep x).1 = spinPlusAction Q P hline x := by
-    exact congrArg Prod.fst (hep x)
-  have hep_snd (x : even Q) : (ep x).2 = spinMinusAction Q P hline x := by
-    exact congrArg Prod.snd (hep x)
-  have ha (x : even Q) :
-      a (MulOpposite.op (spinPlusAction Q P hline x)) =
-        spinMinusAction Q P hline (reverseEven Q x) := by
-    rw [← hep_fst x, ← hep_snd (reverseEven Q x)]
-    exact reverseEvenFirstToSecondAlgEquiv_action ep hswap
-      (hplus.trans hminus.symm) x
-  -- Scalar duality turns that anti-isomorphism into an isomorphism of endomorphism algebras;
-  -- Skolem--Noether then realizes it as conjugation by a linear equivalence.
-  let c : Module.End K (Module.Dual K (spinPlus Q P)) ≃ₐ[K]
-      Module.End K (spinMinus Q P) :=
-    (Module.dualEndAlgEquiv K (spinPlus Q P)).symm.trans a
-  obtain ⟨T, hT⟩ := c.eq_linearEquivConjAlgEquiv
+  refine ⟨reverseEvenFirstToSecondAlgEquiv ep hswap (hplus.trans hminus.symm), fun x ↦ ?_⟩
+  simpa only [hep] using
+    reverseEvenFirstToSecondAlgEquiv_action ep hswap (hplus.trans hminus.symm) x
+
+/-- Scalar duality and Skolem--Noether realize reversal as a linear equivalence from the dual of
+the even half-spin module to the odd half-spin module that intertwines the transposed even action
+with the reversed odd action. -/
+private theorem exists_linearEquiv_dual_spinPlus_conj [NeZero (2 : K)]
+    (P : SpinPolarizationData Q) (hline : P.line = ⊥) (hV : finrank K V = 6) :
+    ∃ T : Module.Dual K (spinPlus Q P) ≃ₗ[K] spinMinus Q P, ∀ (x : even Q)
+      (φ : Module.Dual K (spinPlus Q P)),
+      T ((spinPlusAction Q P hline x).dualMap φ) =
+        spinMinusAction Q P hline (reverseEven Q x) (T φ) := by
+  let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  obtain ⟨a, ha⟩ := exists_algEquiv_op_spinPlusAction_reverseEven P hline hV
+  obtain ⟨T, hT⟩ :=
+    ((Module.dualEndAlgEquiv K (spinPlus Q P)).symm.trans a).eq_linearEquivConjAlgEquiv
+  refine ⟨T, fun x φ ↦ ?_⟩
+  have h := LinearMap.congr_fun (AlgEquiv.congr_fun hT ((spinPlusAction Q P hline x).dualMap))
+    (T φ)
+  simp only [AlgEquiv.trans_apply, Module.dualEndAlgEquiv_symm_dualMap, ha,
+    LinearEquiv.conjAlgEquiv_apply] at h
+  simpa using h.symm
+
+/-- In a polarized six-dimensional quadratic space, the odd half-spin representation is
+equivalent to the dual of the even half-spin representation. The equivalence is noncanonical:
+it is obtained from the anti-isomorphism between the two simple factors of the even Clifford
+algebra induced by reversal. The vanishing of the polarization line is included in the result
+because it follows from the dimension hypothesis. -/
+theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
+    [NeZero (2 : K)] (P : SpinPolarizationData Q) (hV : finrank K V = 6) :
+    ∃ hline : P.line = ⊥, Nonempty ((spinMinusSubrep P hline).toRepresentation.Equiv
+      (spinPlusSubrep P hline).toRepresentation.dual) := by
+  let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+  have hline : P.line = ⊥ := P.line_eq_bot_of_even_finrank (hV ▸ by decide)
+  refine ⟨hline, ?_⟩
+  obtain ⟨T, hT⟩ := exists_linearEquiv_dual_spinPlus_conj P hline hV
   let eplus : spinPlus Q P ≃ₗ[K] (spinPlusSubrep P hline).toSubmodule :=
     LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm
   let eminus : spinMinus Q P ≃ₗ[K] (spinMinusSubrep P hline).toSubmodule :=
@@ -267,7 +280,6 @@ theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
   let E : (spinMinusSubrep P hline).toSubmodule ≃ₗ[K]
       Module.Dual K (spinPlusSubrep P hline).toSubmodule :=
     eminus.symm.trans <| T.symm.trans eplus.symm.dualMap
-  -- It remains to show that the conjugating equivalence intertwines the two Spin actions.
   refine ⟨Representation.Equiv.mk E ?_⟩
   intro g
   apply LinearMap.ext
@@ -275,54 +287,16 @@ theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
   apply eplus.dualMap.injective
   apply LinearMap.ext
   intro p
-  -- Reversal converts the inverse even-half-spin action into the odd-half-spin action.
-  have hcInv : c ((spinPlusAction Q P hline (spinGroupToEven Q g⁻¹)).dualMap) =
-      spinMinusAction Q P hline (spinGroupToEven Q g) := by
-    simp only [c, AlgEquiv.trans_apply, Module.dualEndAlgEquiv_symm_dualMap]
-    have hrevInv : reverseEven Q (spinGroupToEven Q g⁻¹) = spinGroupToEven Q g := by
-      apply Subtype.ext
-      rw [coe_reverseEven_apply, coe_spinGroupToEven_apply, coe_spinGroupToEven_apply]
-      calc
-        reverse ((g⁻¹ : spinGroup Q) : CliffordAlgebra Q) =
-            reverse (((spinGroupToEvenUnitary Q g⁻¹ : evenUnitaryGroup Q) :
-              (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
-                rw [coe_spinGroupToEvenUnitary_apply]
-                rfl
-        _ = ((((spinGroupToEvenUnitary Q g⁻¹ : evenUnitaryGroup Q) :
-              (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) :=
-          evenUnitaryGroup.reverse_eq_inv Q (spinGroupToEvenUnitary Q g⁻¹)
-        _ = (g : CliffordAlgebra Q) := by simp
-    rw [ha, hrevInv]
-  have hconjInv := AlgEquiv.congr_fun hT
-    ((spinPlusAction Q P hline (spinGroupToEven Q g⁻¹)).dualMap)
-  rw [hcInv] at hconjInv
-  simp only [LinearEquiv.conjAlgEquiv_apply] at hconjInv
   -- Apply the conjugacy equation to the chosen odd spinor.
   have hintertwine :
       T.symm (spinMinusAction Q P hline (spinGroupToEven Q g) (eminus.symm s)) =
         (spinPlusAction Q P hline (spinGroupToEven Q g⁻¹)).dualMap
           (T.symm (eminus.symm s)) := by
-    have h := congrArg T.symm <| LinearMap.congr_fun hconjInv (eminus.symm s)
-    simpa using h
-  -- Translate the ambient exterior-algebra actions to the two subrepresentation actions.
-  have hplusAction :
-      eplus.symm ((spinPlusSubrep P hline).toRepresentation g⁻¹ (eplus p)) =
-        spinPlusAction Q P hline (spinGroupToEven Q g⁻¹) p := by
-    apply Subtype.ext
-    -- Expose the exterior-algebra carriers so the established Spin action formula applies.
-    change (((spinPlusSubrep P hline).toRepresentation g⁻¹ (eplus p) :
-      (spinPlusSubrep P hline).toSubmodule) : ExteriorAlgebra K P.W) =
-        (spinPlusAction Q P hline (spinGroupToEven Q g⁻¹) p : ExteriorAlgebra K P.W)
-    have heplus : eplus p = ⟨p, (mem_spinPlusSubrep P hline).2 p.2⟩ := by
-      apply Subtype.ext
-      rfl
-    rw [heplus]
-    exact (coe_spinPlusAction_spinGroupToEven_apply P hline g⁻¹ p).symm
-  have hminusAction : eminus.symm ((spinMinusSubrep P hline).toRepresentation g s) =
-      spinMinusAction Q P hline (spinGroupToEven Q g) (eminus.symm s) := by
-    apply Subtype.ext
-    simpa [eminus] using
-      (coe_spinMinusAction_spinGroupToEven_apply P hline g (eminus.symm s)).symm
+    have h := hT (spinGroupToEven Q g⁻¹) (T.symm (eminus.symm s))
+    rw [reverseEven_spinGroupToEven_inv, LinearEquiv.apply_symm_apply] at h
+    exact T.symm_apply_eq.2 h.symm
+  have hplusAction := spinPlusSubrep_toRepresentation_apply_eq_spinPlusAction P hline g⁻¹ p
+  have hminusAction := spinMinusSubrep_toRepresentation_apply_eq_spinMinusAction P hline g s
   -- The remaining equality is the evaluation pairing for the transported dual action.
   simp only [E, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
     LinearEquiv.dualMap_apply]

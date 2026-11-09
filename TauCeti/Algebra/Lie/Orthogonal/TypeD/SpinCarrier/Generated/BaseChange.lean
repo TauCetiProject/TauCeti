@@ -54,19 +54,11 @@ theorem map_baseChangeHopfIdeal_generatedDefiningIdeal_le :
         (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n)).hom.hom ≤
       generatedDefiningIdeal n hn K := by
   rw [generatedDefiningIdeal_def, generatedDefiningIdeal_def]
-  have h := HopfIdeal.map_mono
-    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n)).hom.hom
-    (CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal_le
-      (K := K) (generatorCoordinateMap n hn k))
-  rw [CommHopfAlgCat.map_commonKernelHopfIdeal,
-    ← CommHopfAlgCat.commonKernelHopfIdeal_comp_of_injective
-      (fun j ↦ (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n)).inv ≫
-        CommHopfAlgCat.baseChangeMap (generatorCoordinateMap n hn k j))
-      (fun j ↦ (generatorCoordinateAlgebraBaseChangeIso n k K j).hom)
-      (fun j ↦ (ConcreteCategory.bijective_of_isIso
-        (generatorCoordinateAlgebraBaseChangeIso n k K j).hom).1),
-    funext (generatorCoordinateMap_baseChange n hn k K)] at h
-  exact h
+  exact CommHopfAlgCat.map_baseChangeHopfIdeal_commonKernelHopfIdeal_le
+    (generatorCoordinateMap n hn k)
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n))
+    (generatorCoordinateAlgebraBaseChangeIso n k K) (generatorCoordinateMap n hn K)
+    (generatorCoordinateMap_baseChange n hn k K)
 
 private theorem baseChange_generatedDefiningIdeal_le_ker :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (generatedDefiningIdeal n hn k)).toIdeal ≤
@@ -167,9 +159,11 @@ theorem generatedCoordinateHopfAlgebraBaseChangeMap_surjective :
   rw [← hcomp, _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] at hsurj
   exact hsurj.of_comp
 
-/-- Every numbered root subgroup and the weight torus commute with the comparison. -/
+/-- Every numbered root subgroup and the weight torus commute with the comparison. This is the
+form of `baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom`
+for the comparison map, which needs no freeness of `K` over `k`. -/
 @[reassoc (attr := simp)]
-theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom
+theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom'
     (j : (Fin n ⊕ Fin n) ⊕ Unit) :
     CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateLift n hn k j) ≫
         (generatorCoordinateAlgebraBaseChangeIso n k K j).hom =

@@ -19,7 +19,7 @@ On every set of forward-moved points closed under passing to larger images, the 
 an initial segment (`Equiv.Perm.image_upRank`).
 
 The backward moves have the same total length as the forward ones
-(`Equiv.Perm.sum_sub_apply_eq_sum_apply_sub`). At each gap as many points cross forward as
+(`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`). At each gap as many points cross forward as
 backward. If `σ` moves the points below `N` forward and the others backward, then below every
 threshold there are at most as many backward depths as forward ranks at each gap
 (`Equiv.Perm.card_cross_backward_le`). Charging a backward move across `j` gaps by
@@ -118,14 +118,20 @@ theorem prod_upRank {M : Type*} [CommMonoid M] (β : ℕ → M) :
   rw [← image_upRank σ (fun x hx ↦ (mem_filter.1 hx).2) fun x _ y hy _ ↦ by simpa using hy,
     prod_image fun x hx y hy ↦ upRank_injOn σ (by simpa using hx) (by simpa using hy)]
 
-/-- The backward moves of `σ` have the same total length as its forward moves. -/
-theorem sum_sub_apply_eq_sum_apply_sub :
-    ∑ x : Fin L, ((x : ℕ) - σ x) = ∑ x : Fin L, ((σ x : ℕ) - x) := by
-  have h := Equiv.sum_comp σ fun x : Fin L ↦ ((x : ℕ) : ℤ)
-  have hx (x : Fin L) : (((x : ℕ) - σ x : ℕ) : ℤ) =
-      (((σ x : ℕ) - x : ℕ) : ℤ) + ((x : ℕ) : ℤ) - ((σ x : ℕ) : ℤ) := by omega
-  rw [← Nat.cast_inj (R := ℤ), Nat.cast_sum, Nat.cast_sum, sum_congr rfl fun x _ ↦ hx x,
-    sum_sub_distrib, sum_add_distrib, h, add_sub_cancel_right]
+/-- **Backward crossings at depth below `t`.** If `σ` moves the points below `N` forward, then the
+points that cross the gap `c` backward at depth below `t` number at most `c + t - max c N`. -/
+theorem card_cross_backward_le_sub_max {N : ℕ} (hfwd : ∀ x : Fin L, (x : ℕ) < N → (x : ℕ) ≤ σ x)
+    (c t : ℕ) :
+    #{x : Fin L | ((σ x : ℕ) < c ∧ c ≤ x) ∧ (x : ℕ) - c < t} ≤ c + t - max c N := by
+  refine (card_le_card_of_injOn (fun x : Fin L ↦ (x : ℕ)) (t := Ico (max c N) (c + t))
+    (fun x hx ↦ ?_) fun x _ y _ h ↦ Fin.ext h).trans_eq (Nat.card_Ico _ _)
+  simp only [coe_filter, mem_univ, true_and, Set.mem_ofPred_eq] at hx
+  have : N ≤ (x : ℕ) := by
+    by_contra! hN
+    have := hfwd x hN
+    omega
+  simp only [coe_Ico, Set.mem_Ico, max_le_iff]
+  omega
 
 /-- **Charges at one gap.** If `σ` moves the points below `N` forward and the others backward,
 then for every `t`, at most as many backward moves cross the gap `c` at depth below `t` as
@@ -171,16 +177,7 @@ theorem card_cross_backward_le {N : ℕ} (hfwd : ∀ x : Fin L, (x : ℕ) < N �
       have := hbwd x hN
       omega
     simp [hx.2, this]
-  have hlow : #{x : Fin L | ((σ x : ℕ) < c ∧ c ≤ x) ∧ (x : ℕ) - c < t} ≤ c + t - max c N := by
-    refine (card_le_card_of_injOn (fun x : Fin L ↦ (x : ℕ)) (t := Ico (max c N) (c + t))
-      (fun x hx ↦ ?_) fun x _ y _ h ↦ Fin.ext h).trans_eq (Nat.card_Ico _ _)
-    simp only [coe_filter, mem_univ, true_and, Set.mem_ofPred_eq] at hx
-    have : N ≤ (x : ℕ) := by
-      by_contra! hN
-      have := hfwd x hN
-      omega
-    simp only [coe_Ico, Set.mem_Ico, max_le_iff]
-    omega
+  have hlow := σ.card_cross_backward_le_sub_max hfwd c t
   have hsplit : #{x ∈ P | upRank σ x < t} ≤
       #{x : Fin L | ((x : ℕ) < c ∧ c ≤ σ x) ∧ upRank σ x < t} +
         #(P.filter fun x : Fin L ↦ c ≤ (x : ℕ)) := by

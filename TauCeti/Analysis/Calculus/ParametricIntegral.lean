@@ -364,6 +364,29 @@ theorem contDiffOn_integral_smul_of_contDiffOn {G : Type v} [NormedAddCommGroup 
   simp only [Function.comp_apply, hsmul, ContinuousLinearEquiv.integral_comp_comm,
     ContinuousLinearEquiv.apply_symm_apply]
 
+/-- The first-order remainder of an integral against a weight over a compact parameter space is
+the integral of the pointwise remainder: if `F` and a candidate partial derivative `D` are
+continuous along `{x} × ι(α)` and `{x₀} × ι(α)`, then the integral of
+`g y • F (x, ι y)`, minus that of `g y • F (x₀, ι y)`, minus the integral of
+`g y • D (x₀, ι y)` applied to `x - x₀`, is the integral of the pointwise remainder. -/
+theorem integral_smul_sub_sub_apply {P : Type*} [TopologicalSpace P] {ι : α → P}
+    {W : Set (E × P)} {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {F : E × P → G} {D : E × P → E →L[ℝ] G} (hg : Integrable g μ) (hι : Continuous ι)
+    (hF : ContinuousOn F W) (hD : ContinuousOn D W) {x x₀ : E} (hx : ∀ y, (x, ι y) ∈ W)
+    (hx₀ : ∀ y, (x₀, ι y) ∈ W) :
+    (∫ y, g y • F (x, ι y) ∂μ) - (∫ y, g y • F (x₀, ι y) ∂μ) -
+        (∫ y, g y • D (x₀, ι y) ∂μ) (x - x₀) =
+      ∫ y, g y • (F (x, ι y) - F (x₀, ι y) - D (x₀, ι y) (x - x₀)) ∂μ := by
+  have hFx := integrable_smul_of_continuousOn hg hι hF hx
+  have hFx₀ := integrable_smul_of_continuousOn hg hι hF hx₀
+  have hDx : ContinuousOn (fun p ↦ D p (x - x₀)) W :=
+    (ContinuousLinearMap.apply ℝ G (x - x₀)).continuous.comp_continuousOn hD
+  rw [ContinuousLinearMap.integral_apply (integrable_smul_of_continuousOn hg hι hD hx₀)]
+  simp only [smul_apply, smul_sub]
+  rw [integral_sub (by exact hFx.sub hFx₀ :
+      Integrable (fun y ↦ g y • F (x, ι y) - g y • F (x₀, ι y)) μ)
+    (integrable_smul_of_continuousOn hg hι hDx hx₀), integral_sub hFx hFx₀]
+
 /-! ### Parameters in a convex set
 
 The parameter `x` now ranges over a convex set `s`, which need not be open, and the integrand is
@@ -417,28 +440,18 @@ theorem _root_.Convex.hasFDerivWithinAt_integral_smul_of_contDiffOn {G : Type*}
     with x hx hxδ
   -- the mean value inequality on the convex set `s ∩ ball x₀ δ`, for each parameter `y`
   have hsδ : Convex ℝ (s ∩ Metric.ball x₀ δ) := hs.inter (convex_ball x₀ δ)
-  have hvD' (z : E) (hz : z ∈ s ∩ Metric.ball x₀ δ) (y : α) :
-      ‖D (z, ι y) - D (x₀, ι y)‖ < ε := by
-    simpa only [dist_eq_norm] using hvD z (hball ⟨hz.2, hz.1⟩) y (mem_univ y)
   have hpt (y : α) : ‖F (x, ι y) - F (x₀, ι y) - D (x₀, ι y) (x - x₀)‖ ≤ ε * ‖x - x₀‖ :=
     hsδ.norm_image_sub_le_of_norm_hasFDerivWithin_le' (f := fun z ↦ F (z, ι y))
       (f' := fun z ↦ D (z, ι y))
       (fun z (hz : z ∈ s ∩ Metric.ball x₀ δ) ↦ (hderiv z hz.1 y).mono inter_subset_left)
-      (fun z hz ↦ (hvD' z hz y).le)
+      (fun z hz ↦ by
+        simpa only [dist_eq_norm] using (hvD z (hball ⟨hz.2, hz.1⟩) y (mem_univ y)).le)
       ⟨hx₀, Metric.mem_ball_self hδ⟩ ⟨hx, hxδ⟩
-  have hDx : ContinuousOn (fun p ↦ D p (x - x₀)) W :=
-    (ContinuousLinearMap.apply ℝ G (x - x₀)).continuous.comp_continuousOn hD
   calc ‖(∫ y, g y • F (x, ι y) ∂μ) - (∫ y, g y • F (x₀, ι y) ∂μ) -
         (∫ y, g y • D (x₀, ι y) ∂μ) (x - x₀)‖
-      = ‖∫ y, g y • (F (x, ι y) - F (x₀, ι y) - D (x₀, ι y) (x - x₀)) ∂μ‖ := by
-        have hFx := integrable_smul_of_continuousOn hg hι hF.continuousOn (hsW x hx)
-        have hFx₀ := integrable_smul_of_continuousOn hg hι hF.continuousOn (hsW x₀ hx₀)
-        rw [ContinuousLinearMap.integral_apply
-          (integrable_smul_of_continuousOn hg hι hD (hsW x₀ hx₀))]
-        simp only [smul_apply, smul_sub]
-        rw [integral_sub (by exact hFx.sub hFx₀ :
-            Integrable (fun y ↦ g y • F (x, ι y) - g y • F (x₀, ι y)) μ)
-          (integrable_smul_of_continuousOn hg hι hDx (hsW x₀ hx₀)), integral_sub hFx hFx₀]
+      = ‖∫ y, g y • (F (x, ι y) - F (x₀, ι y) - D (x₀, ι y) (x - x₀)) ∂μ‖ :=
+        congrArg norm (integral_smul_sub_sub_apply hg hι hF.continuousOn hD (hsW x hx)
+          (hsW x₀ hx₀))
     _ ≤ ∫ y, ‖g y‖ * (ε * ‖x - x₀‖) ∂μ := by
         refine norm_integral_le_of_norm_le ((hg.norm.mul_const _)) (ae_of_all _ fun y ↦ ?_)
         rw [norm_smul]

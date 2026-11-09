@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Group.Action.Equipartition
 public import TauCeti.Algebra.Group.Action.Paradoxical
-public import TauCeti.MeasureTheory.Measure.AddContent
+public import TauCeti.MeasureTheory.Measure.AddContent.Basic
 
 /-!
 # Invariant contents and paradoxical sets
