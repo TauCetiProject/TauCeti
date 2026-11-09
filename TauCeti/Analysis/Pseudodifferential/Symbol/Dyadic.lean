@@ -22,8 +22,8 @@ piece is frequency-localized at scale `2^j`, and its estimates are uniform in `j
 The derivatives of the cutoffs satisfy `‖D^k ψⱼ ξ‖ ≤ B 2^{-jk}`, and `⟨ξ⟩ ≤ C 2^j` on the
 support of `ψⱼ`, so `‖D^k ψⱼ ξ‖ ⟨ξ⟩ ^ k` is bounded independently of `j`: the cutoffs form a
 bounded family of symbols of order zero
-(`ContDiffBump.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_le`). The Leibniz rule
-(`TauCeti.norm_mixedDeriv_comp_snd_smul_le`) then gives symbol estimates for the pieces with
+(`ContDiffBump.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_rpow_le`). The Leibniz
+rule (`TauCeti.norm_mixedDeriv_comp_snd_smul_le`) then gives symbol estimates for the pieces with
 constants independent of `j`.
 
 ## Main declarations
@@ -63,26 +63,6 @@ namespace Symbol
 
 variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {m : ℝ} (φ : ContDiffBump (0 : CoordinateSpace n))
-
-/-! ### The cutoffs -/
-
-/-- `⟨ξ⟩ ^ k ≤ (1 + ‖ξ‖) ^ k`. -/
-private theorem rpow_weight_natCast_le (ξ : CoordinateSpace n) (k : ℕ) :
-    (1 + ‖ξ‖ ^ 2) ^ ((k : ℝ) / 2) ≤ (1 + ‖ξ‖) ^ k := by
-  rw [div_eq_mul_inv, mul_comm, Real.rpow_mul (by positivity), Real.rpow_natCast]
-  gcongr
-  rw [← one_div, ← Real.sqrt_eq_rpow, Real.sqrt_le_iff]
-  exact ⟨by positivity, by nlinarith [norm_nonneg ξ]⟩
-
-/-- The derivatives of the Littlewood–Paley cutoffs satisfy the order-zero symbol estimates
-uniformly in the scale: `‖D^k ψⱼ ξ‖ ⟨ξ⟩ ^ k ≤ B` with `B` independent of `j`. -/
-private theorem exists_norm_iteratedFDeriv_mul_rpow_weight_le (k : ℕ) :
-    ∃ B, 0 ≤ B ∧ ∀ (j : ℕ) (ξ : CoordinateSpace n),
-      ‖iteratedFDeriv ℝ k (φ.inhomogeneousLittlewoodPaley j) ξ‖ *
-        (1 + ‖ξ‖ ^ 2) ^ ((k : ℝ) / 2) ≤ B := by
-  obtain ⟨B, hB0, hB⟩ := φ.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_le k
-  exact ⟨B, hB0, fun j ξ => (mul_le_mul_of_nonneg_left (rpow_weight_natCast_le ξ k)
-    (norm_nonneg _)).trans (hB j ξ)⟩
 
 /-! ### The Leibniz bound -/
 
@@ -154,7 +134,7 @@ def littlewoodPaleyPiece (a : Symbol n V W m) (j : ℕ) : Symbol n V W m where
   contDiff_coefficient :=
     ((φ.contDiff_inhomogeneousLittlewoodPaley j).comp contDiff_snd).smul a.contDiff_coefficient
   exists_bound K hK α β := by
-    choose B hB0 hB using exists_norm_iteratedFDeriv_mul_rpow_weight_le φ
+    choose B hB0 hB using φ.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_rpow_le
     choose D hD0 hD using fun w => a.exists_bound K hK α w
     exact ⟨leibnizConst B D β, leibnizConst_nonneg hB0 hD0 β, fun x hx ξ =>
       norm_mixedDeriv_littlewoodPaley_smul_le φ hB a.contDiff_coefficient hD0
@@ -209,7 +189,7 @@ theorem exists_norm_mixedDeriv_littlewoodPaleyPiece_le (a : Symbol n V W m)
     ∃ C, 0 ≤ C ∧ ∀ (j : ℕ), ∀ x ∈ K, ∀ ξ,
       ‖mixedDeriv α β (a.littlewoodPaleyPiece φ j).coefficient x ξ‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  choose B hB0 hB using exists_norm_iteratedFDeriv_mul_rpow_weight_le φ
+  choose B hB0 hB using φ.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_rpow_le
   choose D hD0 hD using fun w => a.exists_bound K hK α w
   exact ⟨leibnizConst B D β, leibnizConst_nonneg hB0 hD0 β, fun j x hx ξ =>
     norm_mixedDeriv_littlewoodPaley_smul_le φ hB a.contDiff_coefficient hD0
@@ -222,7 +202,7 @@ theorem IsUniform.exists_norm_mixedDeriv_littlewoodPaleyPiece_le {a : Symbol n V
     ∃ C, 0 ≤ C ∧ ∀ (j : ℕ) x ξ,
       ‖mixedDeriv α β (a.littlewoodPaleyPiece φ j).coefficient x ξ‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  choose B hB0 hB using exists_norm_iteratedFDeriv_mul_rpow_weight_le φ
+  choose B hB0 hB using φ.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_rpow_le
   choose D hD0 hD using fun w => isUniform_iff.1 ha α w
   exact ⟨leibnizConst B D β, leibnizConst_nonneg hB0 hD0 β, fun j x ξ =>
     norm_mixedDeriv_littlewoodPaley_smul_le φ hB a.contDiff_coefficient hD0
@@ -237,50 +217,6 @@ theorem IsUniform.littlewoodPaleyPiece {a : Symbol n V W m} (ha : a.IsUniform) (
 
 /-! ### Dyadic estimates -/
 
-/-- On the support of `ψⱼ`, the weight `⟨ξ⟩` is comparable to `2^j`, so every power `⟨ξ⟩ ^ t` is
-bounded by a constant times `(2^j) ^ t`. -/
-private theorem exists_rpow_weight_le_two_pow (t : ℝ) :
-    ∃ c, 0 ≤ c ∧ ∀ (j : ℕ) (ξ : CoordinateSpace n),
-      ξ ∈ tsupport (φ.inhomogeneousLittlewoodPaley j) →
-        (1 + ‖ξ‖ ^ 2) ^ (t / 2) ≤ c * ((2 : ℝ) ^ j) ^ t := by
-  set c₁ := min 1 (φ.rIn / 2)
-  set c₂ := 1 + φ.rOut
-  have hc₁ : 0 < c₁ := lt_min one_pos (half_pos φ.rIn_pos)
-  have hc₂ : 0 < c₂ := by linarith [φ.rOut_pos]
-  refine ⟨max (c₁ ^ t) (c₂ ^ t), by positivity, fun j ξ hξ => ?_⟩
-  set s := Real.sqrt (1 + ‖ξ‖ ^ 2)
-  have hs : (1 + ‖ξ‖ ^ 2) ^ (t / 2) = s ^ t := by
-    rw [show s = (1 + ‖ξ‖ ^ 2) ^ ((1 : ℝ) / 2) from Real.sqrt_eq_rpow _,
-      ← Real.rpow_mul (by positivity)]
-    ring_nf
-  have h2 : (0 : ℝ) < 2 ^ j := by positivity
-  -- upper bound `s ≤ c₂ 2^j`
-  have hupper : s ≤ c₂ * 2 ^ j := by
-    have hξ' : ‖ξ‖ ≤ 2 ^ j * φ.rOut :=
-      mem_closedBall_zero_iff.1 (φ.tsupport_inhomogeneousLittlewoodPaley_subset_closedBall j hξ)
-    have h1 : s ≤ 1 + ‖ξ‖ := Real.sqrt_le_iff.2 ⟨by positivity, by nlinarith [norm_nonneg ξ]⟩
-    have : (1 : ℝ) ≤ 2 ^ j := one_le_pow₀ one_le_two
-    nlinarith
-  -- lower bound `c₁ 2^j ≤ s`
-  have hlower : c₁ * 2 ^ j ≤ s := by
-    have hnorm : ‖ξ‖ ≤ s := (le_abs_self _).trans (Real.abs_le_sqrt (by linarith))
-    have hone : 1 ≤ s := Real.one_le_sqrt.2 (by nlinarith [norm_nonneg ξ])
-    rcases j with _ | j
-    · simp only [pow_zero, mul_one]
-      exact (min_le_left _ _).trans hone
-    · have hξ' := (φ.tsupport_inhomogeneousLittlewoodPaley_succ_subset j hξ).1
-      calc c₁ * 2 ^ (j + 1) ≤ φ.rIn / 2 * 2 ^ (j + 1) := by gcongr; exact min_le_right _ _
-        _ = 2 ^ j * φ.rIn := by ring
-        _ ≤ s := hξ'.trans hnorm
-  rw [hs]
-  rcases le_total 0 t with ht | ht
-  · calc s ^ t ≤ (c₂ * 2 ^ j) ^ t := Real.rpow_le_rpow (by positivity) hupper ht
-      _ = c₂ ^ t * ((2 : ℝ) ^ j) ^ t := Real.mul_rpow hc₂.le h2.le
-      _ ≤ max (c₁ ^ t) (c₂ ^ t) * ((2 : ℝ) ^ j) ^ t := by gcongr; exact le_max_right _ _
-  · calc s ^ t ≤ (c₁ * 2 ^ j) ^ t := Real.rpow_le_rpow_of_nonpos (by positivity) hlower ht
-      _ = c₁ ^ t * ((2 : ℝ) ^ j) ^ t := Real.mul_rpow hc₁.le h2.le
-      _ ≤ max (c₁ ^ t) (c₂ ^ t) * ((2 : ℝ) ^ j) ^ t := by gcongr; exact le_max_left _ _
-
 /-- **Dyadic estimates.** For a uniform symbol of order `m`, the `j`-th piece and its mixed
 derivatives satisfy `‖∂ₓ^α ∂_ξ^β aⱼ(x, ξ)‖ ≤ C (2^j) ^ (m - |β|)` uniformly in `x`, `ξ` and `j`:
 each frequency derivative gains a factor `2^{-j}`. -/
@@ -290,7 +226,8 @@ theorem IsUniform.exists_norm_mixedDeriv_littlewoodPaleyPiece_le_two_pow {a : Sy
       ‖mixedDeriv α β (a.littlewoodPaleyPiece φ j).coefficient x ξ‖ ≤
         C * ((2 : ℝ) ^ j) ^ (m - β.length) := by
   obtain ⟨C, hC0, hC⟩ := ha.exists_norm_mixedDeriv_littlewoodPaleyPiece_le φ α β
-  obtain ⟨c, hc0, hc⟩ := exists_rpow_weight_le_two_pow φ (n := n) (m - β.length)
+  obtain ⟨c, hc0, hc⟩ :=
+    φ.exists_one_add_norm_sq_rpow_le_of_mem_tsupport_inhomogeneousLittlewoodPaley (m - β.length)
   refine ⟨C * c, by positivity, fun j x ξ => ?_⟩
   by_cases hξ : ξ ∈ tsupport (φ.inhomogeneousLittlewoodPaley j)
   · calc ‖mixedDeriv α β (a.littlewoodPaleyPiece φ j).coefficient x ξ‖

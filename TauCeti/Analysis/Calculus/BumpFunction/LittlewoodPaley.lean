@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Analysis.Distribution.TemperateGrowth
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
@@ -39,11 +41,14 @@ decompose a tempered distribution into frequency blocks for Besov and Bessel-pot
 * `ContDiffBump.inhomogeneousLittlewoodPaley`: the inhomogeneous partition `ψ₀ = φ, ψ₁, ψ₂, …`.
 * `ContDiffBump.hasSum_inhomogeneousLittlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for every `ξ`.
 * `ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`: finite overlap of the pieces.
+* `ContDiffBump.exists_one_add_norm_sq_rpow_le_of_mem_tsupport_inhomogeneousLittlewoodPaley`: on
+  the support of `ψⱼ`, `(1 + ‖ξ‖ ^ 2) ^ (t / 2) ≤ c (2^j) ^ t` with `c` independent of `j`.
 * `ContDiffBump.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_le`: the uniform rescaled
   derivative bounds for the inhomogeneous partition, and
   `ContDiffBump.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_le`: their weighted
   form `‖D^k ψⱼ ξ‖ (1 + ‖ξ‖) ^ k ≤ B`, so the pieces form a bounded family of symbols of order
-  zero.
+  zero; `ContDiffBump.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_rpow_le` is the
+  same bound with the Japanese bracket weight `(1 + ‖ξ‖ ^ 2) ^ (k / 2)`.
 
 ## References
 
@@ -273,6 +278,49 @@ theorem tsupport_inhomogeneousLittlewoodPaley_subset_closedBall (j : ℕ) :
   · exact (φ.tsupport_inhomogeneousLittlewoodPaley_succ_subset j).trans fun ξ hξ ↦
       mem_closedBall_zero_iff.2 hξ.2
 
+/-- On the support of `ψⱼ`, the Japanese bracket `(1 + ‖ξ‖ ^ 2) ^ (1 / 2)` is comparable to `2^j`,
+so every power `(1 + ‖ξ‖ ^ 2) ^ (t / 2)` is bounded by a constant independent of `j` times
+`(2^j) ^ t`. -/
+theorem exists_one_add_norm_sq_rpow_le_of_mem_tsupport_inhomogeneousLittlewoodPaley (t : ℝ) :
+    ∃ c, 0 ≤ c ∧ ∀ (j : ℕ) (ξ : E), ξ ∈ tsupport (φ.inhomogeneousLittlewoodPaley j) →
+      (1 + ‖ξ‖ ^ 2) ^ (t / 2) ≤ c * ((2 : ℝ) ^ j) ^ t := by
+  set c₁ := min 1 (φ.rIn / 2)
+  set c₂ := 1 + φ.rOut
+  have hc₁ : 0 < c₁ := lt_min one_pos (half_pos φ.rIn_pos)
+  have hc₂ : 0 < c₂ := by linarith [φ.rOut_pos]
+  refine ⟨max (c₁ ^ t) (c₂ ^ t), by positivity, fun j ξ hξ ↦ ?_⟩
+  set s := Real.sqrt (1 + ‖ξ‖ ^ 2) with hs_def
+  have hs : (1 + ‖ξ‖ ^ 2) ^ (t / 2) = s ^ t := by
+    rw [hs_def, Real.sqrt_eq_rpow, ← Real.rpow_mul (by positivity)]
+    ring_nf
+  have h2 : (0 : ℝ) < 2 ^ j := by positivity
+  -- upper bound `s ≤ c₂ 2^j`
+  have hupper : s ≤ c₂ * 2 ^ j := by
+    have hξ' : ‖ξ‖ ≤ 2 ^ j * φ.rOut :=
+      mem_closedBall_zero_iff.1 (φ.tsupport_inhomogeneousLittlewoodPaley_subset_closedBall j hξ)
+    have h1 : s ≤ 1 + ‖ξ‖ := sqrt_one_add_norm_sq_le ξ
+    have : (1 : ℝ) ≤ 2 ^ j := one_le_pow₀ one_le_two
+    nlinarith
+  -- lower bound `c₁ 2^j ≤ s`
+  have hlower : c₁ * 2 ^ j ≤ s := by
+    have hnorm : ‖ξ‖ ≤ s := (le_abs_self _).trans (Real.abs_le_sqrt (by linarith))
+    have hone : 1 ≤ s := Real.one_le_sqrt.2 (by nlinarith [norm_nonneg ξ])
+    rcases j with _ | j
+    · simp only [pow_zero, mul_one]
+      exact (min_le_left _ _).trans hone
+    · have hξ' := (φ.tsupport_inhomogeneousLittlewoodPaley_succ_subset j hξ).1
+      calc c₁ * 2 ^ (j + 1) ≤ φ.rIn / 2 * 2 ^ (j + 1) := by gcongr; exact min_le_right _ _
+        _ = 2 ^ j * φ.rIn := by ring
+        _ ≤ s := hξ'.trans hnorm
+  rw [hs]
+  rcases le_total 0 t with ht | ht
+  · calc s ^ t ≤ (c₂ * 2 ^ j) ^ t := Real.rpow_le_rpow (by positivity) hupper ht
+      _ = c₂ ^ t * ((2 : ℝ) ^ j) ^ t := Real.mul_rpow hc₂.le h2.le
+      _ ≤ max (c₁ ^ t) (c₂ ^ t) * ((2 : ℝ) ^ j) ^ t := by gcongr; exact le_max_right _ _
+  · calc s ^ t ≤ (c₁ * 2 ^ j) ^ t := Real.rpow_le_rpow_of_nonpos (by positivity) hlower ht
+      _ = c₁ ^ t * ((2 : ℝ) ^ j) ^ t := Real.mul_rpow hc₁.le h2.le
+      _ ≤ max (c₁ ^ t) (c₂ ^ t) * ((2 : ℝ) ^ j) ^ t := by gcongr; exact le_max_left _ _
+
 /-- The partial sums of the inhomogeneous partition telescope:
 `∑_{j ≤ N} ψⱼ ξ = φ (2^{-N} ξ)`. -/
 theorem sum_inhomogeneousLittlewoodPaley_range (N : ℕ) (ξ : E) :
@@ -420,6 +468,19 @@ theorem exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_le (k : ℕ)
   · rw [Function.notMem_support.1 (fun h ↦ hξ (support_iteratedFDeriv_subset (𝕜 := ℝ) k h)),
       norm_zero, zero_mul]
     positivity
+
+/-- The bound `exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_le` with the Japanese
+bracket weight: `‖D^k ψⱼ ξ‖ (1 + ‖ξ‖ ^ 2) ^ (k / 2) ≤ B` with `B` independent of `j`. -/
+theorem exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_rpow_le (k : ℕ) :
+    ∃ B, 0 ≤ B ∧ ∀ (j : ℕ) (ξ : E),
+      ‖iteratedFDeriv ℝ k (φ.inhomogeneousLittlewoodPaley j) ξ‖ *
+        (1 + ‖ξ‖ ^ 2) ^ ((k : ℝ) / 2) ≤ B := by
+  obtain ⟨B, hB0, hB⟩ := φ.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_le k
+  refine ⟨B, hB0, fun j ξ ↦ le_trans ?_ (hB j ξ)⟩
+  rw [div_eq_inv_mul, Real.rpow_mul (by positivity), Real.rpow_natCast, inv_eq_one_div,
+    ← Real.sqrt_eq_rpow]
+  gcongr
+  exact sqrt_one_add_norm_sq_le ξ
 
 end FiniteDimensional
 
