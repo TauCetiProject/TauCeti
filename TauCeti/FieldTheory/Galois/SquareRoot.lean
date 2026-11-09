@@ -16,7 +16,7 @@ public import Mathlib.SetTheory.Cardinal.Finite
 import TauCeti.Algebra.Algebra.Equiv
 import Mathlib.Algebra.Ring.Commute
 import Mathlib.Data.Fintype.Pi
-import Mathlib.FieldTheory.Galois.Infinite
+import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 import TauCeti.FieldTheory.Galois.Basic
 import TauCeti.FieldTheory.Separable.PrimeDegree
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
@@ -38,7 +38,7 @@ generating a quadratic extension is negated by an automorphism.
 * `AlgEquiv.apply_eq_or_eq_neg_of_sq_eq`: `σ x = ± x` when `x ^ 2` comes from the base.
 * `TauCeti.exists_algEquiv_apply_eq_neg_of_sq_eq`: some automorphism negates a square root
   `y` generating a quadratic extension `K⟮y⟯ / K`.
-* `TauCeti.two_ne_zero_of_sq_eq`: a square root outside the base field of a Galois
+* `TauCeti.two_ne_zero_of_sq_eq`: a square root outside the base field of a separable
   extension forces `2 ≠ 0` in the base field.
 * `Subgroup.card_le_two_pow_of_forall_apply_eq_self`: a subgroup in which only the identity fixes
   each of `n` square roots has at most `2ⁿ` elements.
@@ -88,19 +88,22 @@ theorem exists_algEquiv_apply_eq_neg_of_sq_eq {K L : Type*} [Field K] [Field L] 
   obtain rfl := Set.mem_singleton_iff.mp hx
   exact h
 
-/-- A square root outside the base field of a Galois extension forces the characteristic
-to differ from `2`: otherwise `-α = α`, so `α` would be fixed by every automorphism, since an
-automorphism sends it to `± α`, and would lie in `K`. -/
+/-- A square root outside the base field of a separable extension forces the characteristic
+to differ from `2`: in characteristic `2`, separability gives `K⟮α⟯ = K⟮α ^ 2⟯`, and `α ^ 2` comes
+from `K`, so `α` would lie in `K`. -/
 theorem two_ne_zero_of_sq_eq {K L : Type*} [Field K] [Field L] [Algebra K L]
-    [IsGalois K L] {c : K} {α : L} (hα : α ^ 2 = algebraMap K L c)
+    [Algebra.IsSeparable K L] {c : K} {α : L} (hα : α ^ 2 = algebraMap K L c)
     (hαK : α ∉ Set.range (algebraMap K L)) : (2 : K) ≠ 0 := by
   intro h2
-  have hneg : -α = α := by
-    rw [neg_eq_iff_add_eq_zero, ← two_mul]
-    have : (2 : L) = 0 := by rw [← map_ofNat (algebraMap K L) 2, h2, map_zero]
-    rw [this, zero_mul]
-  refine hαK ((InfiniteGalois.mem_range_algebraMap_iff_fixed α).2 fun τ ↦ ?_)
-  exact (τ.apply_eq_or_eq_neg_of_sq_eq hα).elim id fun h ↦ h.trans hneg
+  have : CharP K 2 := CharTwo.of_one_ne_zero_of_two_eq_zero one_ne_zero h2
+  have : ExpChar K 2 := ExpChar.prime Nat.prime_two
+  have h := IntermediateField.adjoin_simple_eq_adjoin_pow_expChar_of_isSeparable' K L α 2
+  rw [hα] at h
+  refine hαK ?_
+  have hmem : α ∈ K⟮α⟯ := IntermediateField.mem_adjoin_simple_self K α
+  rw [h, IntermediateField.adjoin_simple_eq_bot_iff.mpr
+    (IntermediateField.mem_bot.mpr ⟨c, rfl⟩)] at hmem
+  exact IntermediateField.mem_bot.mp hmem
 
 end TauCeti
 
