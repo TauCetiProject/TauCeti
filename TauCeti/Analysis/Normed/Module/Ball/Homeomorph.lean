@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 public import Mathlib.Analysis.Normed.Module.Convex
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.UnitInterval
+import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # Homeomorphisms onto the unit balls of normed spaces
@@ -51,6 +52,9 @@ valued in the closed unit ball.
   is homeomorphic to a closed ball of the same dimension.
 * `TauCeti.nonempty_homeomorph_Icc_prod_closedBall`: a nondegenerate closed rectangle is
   homeomorphic to the closed unit ball of any two-dimensional real normed space.
+* `TauCeti.exists_homeomorph_unitInterval_closedBall`: the unit interval is homeomorphic to the
+  closed unit ball of any one-dimensional real normed space, with its endpoints going to the unit
+  sphere.
 -/
 
 public section
@@ -304,5 +308,24 @@ theorem nonempty_homeomorph_Icc_prod_closedBall {F : Type*} [NormedAddCommGroup 
     (by rw [interior_prod_eq, interior_Icc, interior_Icc]
         exact (nonempty_Ioo.mpr hab).prod (nonempty_Ioo.mpr hcd))
     (by simp [hF])
+
+open unitInterval in
+/-- The unit interval is homeomorphic to the closed unit ball of any one-dimensional real normed
+space, by a homeomorphism carrying the endpoints `0` and `1` onto the unit sphere. On `ℝ` it is
+`t ↦ 2t - 1`, followed by `TauCeti.closedBallHomeomorphOfFinrankEq`. -/
+theorem exists_homeomorph_unitInterval_closedBall {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (hE : Module.finrank ℝ E = 1) :
+    ∃ h : I ≃ₜ closedBall (0 : E) 1, ∀ t, ‖(h t : E)‖ = 1 ↔ t = 0 ∨ t = 1 := by
+  have : FiniteDimensional ℝ E := .of_finrank_pos (by omega)
+  let i : I ≃ₜ closedBall (0 : ℝ) 1 := (iccHomeoI (-1 : ℝ) 1 (by norm_num)).symm.trans
+    (Homeomorph.setCongr (by rw [Real.closedBall_eq_Icc]; norm_num))
+  refine ⟨i.trans (closedBallHomeomorphOfFinrankEq (by simp [hE])), fun t => ?_⟩
+  have hi : ((i t : closedBall (0 : ℝ) 1) : ℝ) = 2 * t - 1 := by
+    simp only [i, Homeomorph.trans_apply, Homeomorph.setCongr_apply, iccHomeoI_symm_apply_coe]
+    ring
+  simp only [Homeomorph.trans_apply, coe_closedBallHomeomorphOfFinrankEq_apply,
+    ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff, hi, Real.norm_eq_abs,
+    abs_eq zero_le_one, Subtype.ext_iff, Set.Icc.coe_zero, Set.Icc.coe_one]
+  grind
 
 end TauCeti

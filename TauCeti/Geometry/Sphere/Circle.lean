@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Topology.Category.TopCat.Sphere
 public import TauCeti.Geometry.Sphere.LinearIsometry
+import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
 /-!
 # Identification of the unit circle in two-dimensional Euclidean space with the complex circle
@@ -38,6 +39,8 @@ circle `Circle = {z : ℂ | ‖z‖ = 1}` via the standard orthonormal basis iso
   the antipodal map.
 * `TauCeti.EuclideanSpace.sphereHomeomorphCircle_neg`: the homeomorphism negates under
   the antipodal map.
+* `TauCeti.sphereHomeomorphCircleOfFinrankEqTwo`: the unit sphere of any two-dimensional real
+  normed space is homeomorphic to `Circle`.
 * `TauCeti.sphereOneHomeomorphCircle`, `TauCeti.sphereOneIsoCircle`: Mathlib's circle
   `TopCat.sphere 1` is homeomorphic, and isomorphic in `TopCat`, to `Circle`, lifted to the same
   universe.
@@ -146,6 +149,15 @@ lemma sphereHomeomorphCircle_neg
 end
 
 end EuclideanSpace
+
+/-- The unit sphere of any two-dimensional real normed space is homeomorphic to Mathlib's complex
+unit circle `Circle`, through `TauCeti.sphereHomeomorphOfFinrankEq` and
+`TauCeti.EuclideanSpace.sphereHomeomorphCircle`. The homeomorphism is a choice, not a canonical
+identification; it carries statements about `Circle` to such spheres. -/
+noncomputable def sphereHomeomorphCircleOfFinrankEqTwo {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (hF : Module.finrank ℝ F = 2) : sphere (0 : F) 1 ≃ₜ Circle :=
+  have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
+  (sphereHomeomorphOfFinrankEq (by simp [hF])).trans EuclideanSpace.sphereHomeomorphCircle
 
 section TopCatSphere
 
