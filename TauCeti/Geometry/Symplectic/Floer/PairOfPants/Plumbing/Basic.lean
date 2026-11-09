@@ -79,7 +79,7 @@ public noncomputable section
 
 open Set Real Manifold Topology Function
 open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
-open TauCeti.Complex (realChart realChart_apply contDiff_realChart injective_realChart)
+open TauCeti.Complex (realChart realChart_apply contDiff_realChart realChart_injective)
 
 namespace TauCeti.Floer
 
@@ -307,7 +307,7 @@ private theorem setLIntegral_enorm_hamiltonianCurvature_plumbedPerturbation_le_i
   have htgt {w : ℝ × ℝ} (hw : w ∈ S) (y : M) (v : ℂ) :=
     mdifferentiableAt_plumbedPerturbation_target hq hHa hHb hHas hHbs hab hL (hS₄ hw) y v
   rw [ω.lintegral_enorm_hamiltonianCurvature_image hSm
-    (injective_realChart (q.plumbingMap_injective L)).injOn
+    (realChart_injective (q.plumbingMap_injective L)).injOn
     (fun w _ ↦ (contDiff_realChart_plumbingMap q L).contDiffAt)
     (fun w hw ↦ hdom hw _ 1) (fun w hw ↦ hdom hw _ Complex.I)
     (fun w hw ↦ htgt hw _ 1) (fun w hw ↦ htgt hw _ Complex.I)]

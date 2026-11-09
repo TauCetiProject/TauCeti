@@ -72,7 +72,7 @@ public noncomputable section
 
 open Set Real Manifold Topology Function
 open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
-open TauCeti.Complex (realChart realChart_apply contDiff_realChart injective_realChart)
+open TauCeti.Complex (realChart realChart_apply contDiff_realChart realChart_injective)
 
 namespace TauCeti.Floer
 
@@ -500,10 +500,6 @@ theorem lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le (ω : Smoot
           (Complex.equivRealProdCLM v) =
         fun z x ↦ positivePlanePerturbation H (e z) x v :=
     funext fun z ↦ funext fun x ↦ perturbationPullback_inputEndPerturbation ha v z x
-  have h₁ : Complex.equivRealProdCLM 1 = stdComplexLineReal := by
-    ext <;> simp [stdComplexLineReal_eq]
-  have hI : Complex.equivRealProdCLM Complex.I = stdComplexLineImag := by
-    ext <;> simp [stdComplexLineImag_eq]
   calc _ = ∫⁻ z in univ, ‖ω.hamiltonianCurvature
         (fun z x ↦ inputEndPerturbation H c a (e z) x 1)
         (fun z x ↦ inputEndPerturbation H c a (e z) x Complex.I) z (u z)‖ₑ :=
@@ -518,14 +514,14 @@ theorem lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le (ω : Smoot
         (fun z x ↦ positivePlanePerturbation H (e z) x 1)
         (fun z x ↦ positivePlanePerturbation H (e z) x Complex.I) w (u (φ w))‖ₑ := by
         rw [ω.lintegral_enorm_hamiltonianCurvature_image hSm
-          (injective_realChart (f := fun w : ℂ => c + a * w)
+          (realChart_injective (f := fun w : ℂ => c + a * w)
             fun _ _ h ↦ mul_left_cancel₀ ha (add_left_cancel h)).injOn
           (fun w _ ↦ (contDiff_realChart (by fun_prop)).contDiffAt)
           (fun w hw ↦ differentiableAt_inputEndPerturbation_domain hH hHs ha (hne hw) _ 1)
           (fun w hw ↦ differentiableAt_inputEndPerturbation_domain hH hHs ha (hne hw) _ Complex.I)
           (fun w hw ↦ mdifferentiableAt_inputEndPerturbation_target hH hHs ha (hne hw) _ 1)
           (fun w hw ↦ mdifferentiableAt_inputEndPerturbation_target hH hHs ha (hne hw) _
-            Complex.I), ← h₁, ← hI, hpull 1, hpull Complex.I]
+            Complex.I), ← equivRealProdCLM_one, ← equivRealProdCLM_I, hpull 1, hpull Complex.I]
     _ ≤ _ := setLIntegral_le_lintegral _ _
     _ ≤ _ := lintegral_enorm_hamiltonianCurvature_positivePlanePerturbation_le ω hH hHs hB _
 
