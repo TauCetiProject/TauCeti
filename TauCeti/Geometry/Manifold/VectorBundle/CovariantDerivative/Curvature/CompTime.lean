@@ -63,7 +63,7 @@ theorem scalarCurvature_compTime_of_eq_add {ψ : ℝ → ℝ} (hφ : ContDiff �
     contMDiff_id.prodMap (contDiff_id.add contDiff_const).contMDiff
   have hinv (q : M × ℝ) :
       (mfderiv (I.prod 𝓘(ℝ)) (I.prod 𝓘(ℝ)) (Prod.map id (· + c) : M × ℝ → M × ℝ) q).IsInvertible :=
-    TauCeti.Manifold.isInvertible_mfderiv_prodMap_id (by fun_prop) (by simp)
+    TauCeti.Manifold.isInvertible_mfderiv_prodMap_id (by simp)
   have heq : G.compTime hψ = (G.compTime hφ).pullback _ hc fun q ↦ (hinv q).injective := by
     ext q v w
     have hd (u : TangentSpace (I.prod 𝓘(ℝ)) q) :
