@@ -118,11 +118,38 @@ section Field
 
 variable {K : Type*} [Field K] [DecidableEq K] {A B N D : K}
 
-/-- **Correctness of Montgomery doubling on native points.** For nonzero `B` and `D` and
-`4N = (A + 2)D`, the output is nonzero and has vanishing cross difference with the coordinate
-pair of `P + P`. No ellipticity assumption is needed. In characteristic two, the scaled
-relation and `D ≠ 0` force `A = 0`, so only that degenerate model is covered. -/
-theorem double_coordinates (hB : B ≠ 0) (hD : D ≠ 0)
+omit [DecidableEq K] in
+/-- For `B = 0` the model is the cusp `y² = x³`, whose nonsingular affine points have `x ≠ 0`. -/
+private theorem x_ne_zero_of_nonsingular_zero {A x y : K}
+    (h : (model A 0).toAffine.Nonsingular x y) : x ≠ 0 := by
+  rintro rfl
+  rw [Affine.nonsingular_iff] at h
+  obtain ⟨h1, h2⟩ := h
+  rw [Affine.equation_iff] at h1
+  simp only [model_a₁, mul_zero, zero_mul, add_zero, model_a₃, ne_eq, OfNat.ofNat_ne_zero,
+    not_false_eq_true, zero_pow, model_a₂, model_a₄, model_a₆, pow_eq_zero_iff, not_true_eq_false,
+    sub_zero, false_or] at h1 h2
+  exact h2 (by rw [h1, neg_zero])
+
+omit [DecidableEq K] in
+/-- The coordinate pair of a native point is nonzero. For `B ≠ 0` this is
+`coordinates_ne_zero`; for `B = 0` the model is the cusp `y² = x³` and its nonsingular affine
+points have `x ≠ 0`. -/
+private theorem coordinates_ne_zero_of_field (P : (model A B).toAffine.Point) :
+    coordinates A B P ≠ 0 := by
+  by_cases hB : B = 0
+  · subst hB
+    rcases P with _ | ⟨x, y, hP⟩
+    · simp [← Affine.Point.zero_def, Pair.eq_zero_iff]
+    · simp [Pair.eq_zero_iff, x_ne_zero_of_nonsingular_zero hP]
+  · exact coordinates_ne_zero hB P
+
+/-- **Correctness of Montgomery doubling on native points.** For nonzero `D` and `4N = (A + 2)D`,
+the output is nonzero and has vanishing cross difference with the coordinate pair of `P + P`. No
+ellipticity assumption is needed, nor `B ≠ 0`: for `B = 0` the model is the cusp `y² = x³`. In
+characteristic two, the scaled relation and `D ≠ 0` force `A = 0`, so only that degenerate model
+is covered. -/
+theorem double_coordinates (hD : D ≠ 0)
     (h : 4 * N = (A + 2) * D) (P : (model A B).toAffine.Point) :
     double N D (coordinates A B P) ≠ 0 ∧
       (double N D (coordinates A B P)).cross (coordinates A B (P + P)) = 0 := by
@@ -130,8 +157,12 @@ theorem double_coordinates (hB : B ≠ 0) (hD : D ≠ 0)
   · simp [← Affine.Point.zero_def, Pair.eq_zero_iff, Pair.cross_def, hD]
   · rw [coordinates_some, double_some_eq h]
     constructor
-    · have hn := Affine.den_duplication_ne_zero_or_num_duplication_ne_zero hP
-      simpa [Pair.ne_zero_iff, hD, hB, or_comm] using hn
+    · by_cases hB : B = 0
+      · subst hB
+        have hx := x_ne_zero_of_nonsingular_zero hP
+        simp [Pair.ne_zero_iff, hD, hx, model_b₄, model_b₆, model_b₈]
+      · have hn := Affine.den_duplication_ne_zero_or_num_duplication_ne_zero hP
+        simpa [Pair.ne_zero_iff, hD, hB, or_comm] using hn
     · by_cases hy : y = (model A B).toAffine.negY x y
       · have hd := (Affine.den_duplication_eq_zero_iff hP.1).mpr hy
         rw [Affine.Point.add_self_of_Y_eq hy, coordinates_zero, Pair.cross_def, hd]
@@ -148,17 +179,17 @@ theorem double_coordinates (hB : B ≠ 0) (hD : D ≠ 0)
 
 /-- Doubling any nonzero representative of a native point gives a nonzero representative
 of its double. This is the representative-independent form used by `x`-only scalar arithmetic. -/
-theorem double_coordinates_of_cross_eq_zero (hB : B ≠ 0) (hD : D ≠ 0)
+theorem double_coordinates_of_cross_eq_zero (hD : D ≠ 0)
     (h : 4 * N = (A + 2) * D) {P : (model A B).toAffine.Point} {S : Pair K}
     (hS : S ≠ 0) (hSP : S.cross (coordinates A B P) = 0) :
     double N D S ≠ 0 ∧
       (double N D S).cross (coordinates A B (P + P)) = 0 := by
-  obtain ⟨c, rfl⟩ := (Pair.cross_eq_zero_iff_exists_smul (coordinates_ne_zero hB P)).mp hSP
+  obtain ⟨c, rfl⟩ := (Pair.cross_eq_zero_iff_exists_smul (coordinates_ne_zero_of_field P)).mp hSP
   have hc : c ≠ 0 := by
     intro hc
     apply hS
     ext <;> simp [hc]
-  obtain ⟨hn, hx⟩ := double_coordinates hB hD h P
+  obtain ⟨hn, hx⟩ := double_coordinates hD h P
   rw [double_smul]
   constructor
   · rw [Pair.ne_zero_iff] at hn ⊢

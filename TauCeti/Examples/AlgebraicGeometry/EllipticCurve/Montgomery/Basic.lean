@@ -147,8 +147,8 @@ private noncomputable def generatorSeven : (model (0 : ZMod 7) 1).toAffine.Point
 private theorem four_nsmul_generatorSeven_ne_zero : (4 : ℕ) • generatorSeven ≠ 0 := by
   have hD : (4 : ZMod 7) ≠ 0 := by decide
   have hND : 4 * (2 : ZMod 7) = (0 + 2) * 4 := by decide
-  obtain ⟨h₁, h₂⟩ := double_coordinates one_ne_zero hD hND generatorSeven
-  have h₄ := (double_coordinates_of_cross_eq_zero one_ne_zero hD hND h₁ h₂).2
+  obtain ⟨h₁, h₂⟩ := double_coordinates hD hND generatorSeven
+  have h₄ := (double_coordinates_of_cross_eq_zero hD hND h₁ h₂).2
   intro h
   rw [← two_nsmul, ← two_nsmul, ← mul_nsmul, h, coordinates_zero] at h₄
   simp only [generatorSeven, coordinates_some, Pair.cross_def, double_x, double_z] at h₄
