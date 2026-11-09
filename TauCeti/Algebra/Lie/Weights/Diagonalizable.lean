@@ -214,9 +214,11 @@ theorem isSemisimple_toEnd_cartan (x : H) : (toEnd K H M x).IsSemisimple := by
     exact hy.of_mem_adjoin_singleton
       (Subalgebra.smul_mem _ (Algebra.self_mem_adjoin_singleton _ _) c)
 
+omit [FiniteDimensional K L] in
 /-- A split Cartan subalgebra acts triangularizably on every finite-dimensional module. -/
 instance instIsTriangularizableCartan : IsTriangularizable K H M where
   maxGenEigenspace_eq_top x := by
+    have := finite_of_isKilling (R := K) (L := L)
     let f : H.root → End K M := fun α ↦ toEnd K H M (IsKilling.coroot α)
     have hdiag (α : H.root) : ⨆ μ : K, (f α).eigenspace μ = ⊤ := by
       exact iSup_eigenspace_toEnd_coroot_eq_top (H.isNonZero_coe_root α)
@@ -292,7 +294,6 @@ variable (K H M) in
 algebra with a split Cartan subalgebra is spanned by its simultaneous eigenspaces. -/
 theorem iSup_weightSpace_eq_top :
     ⨆ χ : Weight K H M, weightSpace M (χ : H → K) = ⊤ := by
-  have := finite_of_isKilling (R := K) (L := L)
   simpa only [genWeightSpace_eq_weightSpace] using iSup_genWeightSpace_eq_top' K H M
 
 omit [FiniteDimensional K L] in
@@ -303,7 +304,6 @@ Killing-semisimple Lie algebra with a split Cartan subalgebra is the internal di
 simultaneous eigenspaces, so `χ ↦ finrank (weightSpace M χ)` counts honest multiplicities. -/
 theorem isInternal_weightSpace :
     DirectSum.IsInternal fun χ : Weight K H M ↦ (weightSpace M (χ : H → K)).toSubmodule := by
-  have := finite_of_isKilling (R := K) (L := L)
   simpa only [genWeightSpace_eq_weightSpace] using isInternal_genWeightSpace K H M
 
 /-! ### Traces -/
@@ -315,7 +315,6 @@ theorem trace_toEnd_pow_eq_sum_finrank_nsmul (h : H) (m : ℕ) :
     LinearMap.trace K M (toEnd K H M h ^ m) =
       ∑ chi : Weight K H M, finrank K (genWeightSpace M chi) • chi h ^ m := by
   classical
-  have := finite_of_isKilling (R := K) (L := L)
   -- the weight space of `chi` is an honest eigenspace, on which `h` acts by the scalar `chi h`
   have hact (chi : Weight K H M) (n : ℕ) (x : M) (hx : x ∈ genWeightSpace M chi) :
       (toEnd K H M h ^ n) x = chi h ^ n • x := by
