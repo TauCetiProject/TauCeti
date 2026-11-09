@@ -69,15 +69,6 @@ open TauCeti.Probability
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {B : ℝ≥0 → Ω → ℝ}
   {n : ℕ} {t : Fin (n + 1) → ℝ≥0}
 
-/-- The square of every Brownian increment is square integrable, in either time order. -/
-theorem memLp_sq_sub (hB : IsPreBrownianReal B P) (s t : ℝ≥0) :
-    MemLp (fun ω ↦ (B s ω - B t ω) ^ 2) 2 P := by
-  let : ENNReal.HolderTriple 4 4 2 := .of_toReal (by
-    norm_num [Real.holderTriple_iff])
-  have h := (hB.hasLaw_sub s t).memLp (memLp_id_gaussianReal' 4 (by norm_num))
-  simpa only [pow_two, Pi.mul_def, Pi.sub_def] using
-    (h.mul h : MemLp ((B s - B t) * (B s - B t)) 2 P)
-
 /-- Every Brownian quadratic sum is square integrable, even on an unordered grid. -/
 theorem memLp_quadraticSum (hB : IsPreBrownianReal B P) (t : Fin (n + 1) → ℝ≥0) :
     MemLp (quadraticSum B t) 2 P := by

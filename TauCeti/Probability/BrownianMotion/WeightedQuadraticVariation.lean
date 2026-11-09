@@ -57,7 +57,7 @@ theorem integral_mul_centered_sq_increment (hB : IsFilteredPreBrownianReal ℱ B
     (∫ ω, Y ω * ((B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) ∂P) = 0 := by
   rw [(indepFun_centered_sq_increment hB hst hY).integral_fun_mul_eq_mul_integral
     hYi.aestronglyMeasurable
-      (hB.toIsPreBrownianReal.memLp_centered_sq_increment hst).aestronglyMeasurable,
+      hB.toIsPreBrownianReal.memLp_centered_sq_increment.aestronglyMeasurable,
     hB.toIsPreBrownianReal.integral_centered_sq_increment hst,
     mul_zero]
 
@@ -66,7 +66,7 @@ square integrable. -/
 theorem memLp_mul_centered_sq_increment (hB : IsFilteredPreBrownianReal ℱ B P)
     {s t : ℝ≥0} (hst : s ≤ t) {Y : Ω → ℝ} (hY : Measurable[ℱ s] Y) (hYi : MemLp Y 2 P) :
     MemLp (fun ω ↦ Y ω * ((B t ω - B s ω) ^ 2 - ((t : ℝ) - s))) 2 P := by
-  have hD := hB.toIsPreBrownianReal.memLp_centered_sq_increment hst
+  have hD := hB.toIsPreBrownianReal.memLp_centered_sq_increment (s := s) (t := t)
   refine (memLp_two_iff_integrable_sq (hYi.aestronglyMeasurable.mul
     hD.aestronglyMeasurable)).2 ?_
   simpa only [mul_pow, Function.comp_def, id_eq, Pi.mul_def] using
@@ -85,7 +85,7 @@ theorem integral_sq_mul_centered_sq_increment (hB : IsFilteredPreBrownianReal �
     (indepFun_centered_sq_increment hB hst hY).comp (measurable_id.pow_const 2)
       (measurable_id.pow_const 2)
   rw [hind.integral_fun_mul_eq_mul_integral hYi.integrable_sq.aestronglyMeasurable
-    (hB.toIsPreBrownianReal.memLp_centered_sq_increment hst).integrable_sq.aestronglyMeasurable,
+    hB.toIsPreBrownianReal.memLp_centered_sq_increment.integrable_sq.aestronglyMeasurable,
     hB.toIsPreBrownianReal.integral_sq_centered_sq_increment hst]
   ring
 

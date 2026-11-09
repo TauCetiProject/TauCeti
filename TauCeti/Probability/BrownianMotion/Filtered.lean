@@ -144,17 +144,20 @@ theorem integral_pow_four_sub_of_le (hB : IsPreBrownianReal B P) {s t : ℝ≥0}
   simpa only [Function.comp_apply, Pi.sub_apply] using
     ((hB.hasLaw_sub_of_le hst).integral_comp (f := fun x : ℝ ↦ x ^ 4) (by fun_prop)).trans hm
 
-/-- The centered square of a Brownian increment is square integrable. -/
-theorem memLp_centered_sq_increment (hB : IsPreBrownianReal B P)
-    {s t : ℝ≥0} (hst : s ≤ t) :
+/-- The square of every Brownian increment is square integrable, in either time order. -/
+theorem memLp_sq_sub (hB : IsPreBrownianReal B P) (s t : ℝ≥0) :
+    MemLp (fun ω ↦ (B s ω - B t ω) ^ 2) 2 P := by
+  let : ENNReal.HolderTriple 4 4 2 := .of_toReal (by
+    norm_num [Real.holderTriple_iff])
+  have h := (hB.hasLaw_sub s t).memLp (memLp_id_gaussianReal' 4 (by norm_num))
+  simpa only [pow_two, Pi.mul_def, Pi.sub_def] using
+    (h.mul h : MemLp ((B s - B t) * (B s - B t)) 2 P)
+
+/-- The centered square of a Brownian increment is square integrable, in either time order. -/
+theorem memLp_centered_sq_increment (hB : IsPreBrownianReal B P) {s t : ℝ≥0} :
     MemLp (fun ω ↦ (B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) 2 P := by
   have := (hB.hasLaw_eval 0).isProbabilityMeasure
-  have hlaw := hB.hasLaw_sub_of_le hst
-  have h2 : MemLp (fun ω ↦ (B t ω - B s ω) ^ 2) 2 P :=
-    (memLp_two_iff_integrable_sq
-      ((hlaw.aemeasurable.pow_const 2).aestronglyMeasurable)).2
-      (by simpa only [← pow_mul, Pi.sub_def] using hB.integrable_pow_increment hst 4)
-  exact h2.sub (memLp_const _)
+  exact (hB.memLp_sq_sub t s).sub (memLp_const _)
 
 /-- The centered square of a Brownian increment has mean zero. -/
 theorem integral_centered_sq_increment (hB : IsPreBrownianReal B P)
