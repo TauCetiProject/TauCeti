@@ -127,10 +127,8 @@ theorem tendsto_maximalIntegralCurve_neg_mgradient_pow_four (x₀ : ℝ) :
 /-- The critical point `0` of `x ↦ x⁴` is degenerate: its second derivative vanishes. -/
 theorem not_isManifoldNondegenerateCriticalPoint_pow_four :
     ¬ IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 4) 0 := by
-  rw [isManifoldNondegenerateCriticalPoint_iff]
-  simp only [extChartAt_model_space_eq_id, PartialEquiv.refl_symm, PartialEquiv.refl_coe,
-    Function.comp_id, id_eq]
-  rw [isNondegenerateCriticalPoint_real_iff (by fun_prop)]
+  rw [isManifoldNondegenerateCriticalPoint_modelSpace_iff,
+    isNondegenerateCriticalPoint_real_iff (by fun_prop)]
   simp
 
 /-- **Polynomial, not exponential, convergence to a degenerate minimum.** For `x₀ ≠ 0`, the
@@ -207,8 +205,7 @@ private theorem hasDerivAt_sqSubSqTrajectory (a t : ℝ) :
     fin_cases i <;> simp
   · ext i
     fin_cases i
-    · simp
-      ring
+    · simp [mul_comm, mul_left_comm]
     · simp
 
 /-- **The stable trajectory of the saddle `x² - y²`.** The trajectory of `-grad (x² - y²)` through
@@ -263,40 +260,38 @@ theorem not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient
   rw [div_lt_iff₀ (abs_pos.2 ha)] at hbig
   linarith
 
+/-- A property holding near the origin of the Euclidean plane holds at some nonzero point of each
+coordinate axis. -/
+private theorem exists_smul_single_of_eventually (i : Fin 2)
+    {P : EuclideanSpace ℝ (Fin 2) → Prop} (h : ∀ᶠ z in 𝓝 0, P z) :
+    ∃ s : ℝ, s ≠ 0 ∧ P (s • EuclideanSpace.single i 1) := by
+  have hcont : Continuous fun s : ℝ ↦ s • EuclideanSpace.single i (1 : ℝ) :=
+    continuous_id.smul continuous_const
+  have hc : Tendsto (fun s : ℝ ↦ s • EuclideanSpace.single i (1 : ℝ)) (𝓝[≠] 0) (𝓝 0) := by
+    simpa using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
+  obtain ⟨s, hs, hne⟩ := ((hc.eventually h).and self_mem_nhdsWithin).exists
+  exact ⟨s, hne, hs⟩
+
 /-- The saddle point `0` of `x² - y²` is not a local minimum: `f` is negative along the second
 axis. -/
 theorem not_isLocalMin_sq_sub_sq :
-    ¬ IsLocalMin (fun z : EuclideanSpace ℝ (Fin 2) ↦ z 0 ^ 2 - z 1 ^ 2) 0 := by
-  intro h
-  have hcont : Continuous fun s : ℝ ↦ s • EuclideanSpace.single (1 : Fin 2) (1 : ℝ) :=
-    continuous_id.smul continuous_const
-  have hc : Tendsto (fun s : ℝ ↦ s • EuclideanSpace.single (1 : Fin 2) (1 : ℝ)) (𝓝[≠] 0)
-      (𝓝 0) := by
-    simpa using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
-  obtain ⟨s, hs, hne⟩ := ((hc.eventually h).and self_mem_nhdsWithin).exists
-  exact hne (by simpa using hs)
+    ¬ IsLocalMin (fun z : EuclideanSpace ℝ (Fin 2) ↦ z 0 ^ 2 - z 1 ^ 2) 0 := fun h ↦ by
+  obtain ⟨s, hs, hle⟩ := exists_smul_single_of_eventually 1 h
+  exact hs (by simpa using hle)
 
 /-- The saddle point `0` of `x² - y²` is not a local maximum: `f` is positive along the first
 axis. -/
 theorem not_isLocalMax_sq_sub_sq :
-    ¬ IsLocalMax (fun z : EuclideanSpace ℝ (Fin 2) ↦ z 0 ^ 2 - z 1 ^ 2) 0 := by
-  intro h
-  have hcont : Continuous fun s : ℝ ↦ s • EuclideanSpace.single (0 : Fin 2) (1 : ℝ) :=
-    continuous_id.smul continuous_const
-  have hc : Tendsto (fun s : ℝ ↦ s • EuclideanSpace.single (0 : Fin 2) (1 : ℝ)) (𝓝[≠] 0)
-      (𝓝 0) := by
-    simpa using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
-  obtain ⟨s, hs, hne⟩ := ((hc.eventually h).and self_mem_nhdsWithin).exists
-  exact hne (by simpa using hs)
+    ¬ IsLocalMax (fun z : EuclideanSpace ℝ (Fin 2) ↦ z 0 ^ 2 - z 1 ^ 2) 0 := fun h ↦ by
+  obtain ⟨s, hs, hle⟩ := exists_smul_single_of_eventually 0 h
+  exact hs (by simpa using hle)
 
 /-- **The saddle point is nondegenerate.** The origin is a nondegenerate critical point of
 `x² - y²`, so the exponential convergence theorem applies to the trajectories converging to it. -/
 theorem isManifoldNondegenerateCriticalPoint_sq_sub_sq :
     IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, EuclideanSpace ℝ (Fin 2))
       (fun z : EuclideanSpace ℝ (Fin 2) ↦ z 0 ^ 2 - z 1 ^ 2) 0 := by
-  rw [isManifoldNondegenerateCriticalPoint_iff]
-  simp only [extChartAt_model_space_eq_id, PartialEquiv.refl_symm, PartialEquiv.refl_coe,
-    Function.comp_id, id_eq]
+  rw [isManifoldNondegenerateCriticalPoint_modelSpace_iff]
   -- In the coordinates of `ℝ²`, the function is the separated sum of `s²` and `-s²`.
   let φ : Fin 2 → ℝ → ℝ := ![fun s ↦ s ^ 2, fun s ↦ -s ^ 2]
   have hφ : ∀ i, ContDiffAt ℝ 2 (φ i) ((0 : Fin 2 → ℝ) i) := by

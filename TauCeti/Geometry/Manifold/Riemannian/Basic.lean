@@ -152,7 +152,7 @@ theorem toIsContinuousRiemannianBundle [IsContMDiffRiemannianBundle IB n F V] :
 every tangent space (`riemannianMetricVectorSpace`), is analytic, in particular smooth. -/
 instance vectorSpace {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] :
     IsContMDiffRiemannianBundle 𝓘(ℝ, E) ω E (fun x : E ↦ TangentSpace 𝓘(ℝ, E) x) :=
-  ⟨⟨_, (riemannianMetricVectorSpace E).contMDiff, fun _ _ _ ↦ rfl⟩⟩
+  Bundle.instIsContMDiffRiemannianBundle (riemannianMetricVectorSpace E)
 
 end IsContMDiffRiemannianBundle
 
