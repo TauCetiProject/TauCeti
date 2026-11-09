@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Distribution.Support
 import Mathlib.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.Support
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 
 /-!
 # Complex-valued distributions on complex-valued test functions
@@ -35,6 +36,8 @@ function along the support of `T`, and it has finite order on each compact set.
   evaluation at `x`.
 * `Distribution.complexPairing_eq_integral`, `Distribution.complexPairing_ofFun`: where `T` is
   integration against a locally integrable function, so is its extension.
+* `Distribution.complexPairing_lineDerivOp`: the extension of a derivative `∂_v T` pairs `T` with
+  `-∂_v φ`.
 * `Distribution.complexPairing_eq_of_eventuallyEq`: it depends only on the germ of the test
   function along `dsupport T`.
 * `Distribution.exists_norm_complexPairing_le`: it has finite order on each compact set.
@@ -49,6 +52,7 @@ public section
 noncomputable section
 
 open Complex Filter Set TopologicalSpace TestFunction
+open LineDeriv
 open scoped Distributions Topology
 
 namespace Distribution
@@ -154,6 +158,16 @@ theorem complexPairing_ofFun [MeasurableSpace E] [OpensMeasurableSpace E] {f : E
     (φ : 𝓓^{n}(Ω, ℂ)) :
     (ofFun Ω f μ n).complexPairing φ = ∫ x, φ x * f x ∂μ :=
   complexPairing_eq_integral Ω.isOpen hf (fun _ _ => ofFun_apply hf) φ.tsupport_subset
+
+/-- The complex-linear extension of the derivative `∂_v T` pairs `T` with `-∂_v φ`, as the
+derivative itself does on real test functions. -/
+@[simp]
+theorem complexPairing_lineDerivOp (T : 𝓓'(Ω, ℂ)) (v : E) (φ : 𝓓(Ω, ℂ)) :
+    (∂_{v} T).complexPairing φ = -T.complexPairing (∂_{v} φ) := by
+  simp only [complexPairing_apply, lineDerivOp_apply_apply, map_neg,
+    TestFunction.lineDerivOp_eq_lineDerivCLM ℝ,
+    TestFunction.lineDerivCLM_postcompCLM]
+  ring
 
 /-- **The complex-linear extension has finite order on each compact set.** For a compact `K ⊆ Ω`
 there are an order `N` and a constant `C` such that `‖T.complexPairing φ‖ ≤ C * M` for every
