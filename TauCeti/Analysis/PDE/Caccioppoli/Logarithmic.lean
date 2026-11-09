@@ -11,6 +11,7 @@ import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
 import TauCeti.Analysis.Sobolev.W1p.ChainRule
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # The logarithmic Caccioppoli inequality for positive supersolutions
@@ -422,9 +423,8 @@ theorem exists_setIntegral_ball_log_sub_setAverage_sq_le :
     (Omega := ⟨ball x₀ R, isOpen_ball⟩) hR subset_rfl w
   have hcacc := hc h ha hu hR (by linarith : R < 2 * R) hball hm hum
   have hvol : mu.real (ball x₀ (2 * R)) = 2 ^ n * mu.real (ball x₀ R) := by
-    have hb : ∀ ρ : ℝ, 0 < ρ → mu.real (ball x₀ ρ) = ρ ^ n * mu.real (ball 0 1) := fun ρ hρ => by
-      rw [measureReal_def, Measure.addHaar_ball_of_pos mu x₀ hρ, ENNReal.toReal_mul,
-        ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
+    have hb : ∀ ρ : ℝ, 0 < ρ → mu.real (ball x₀ ρ) = ρ ^ n * mu.real (ball 0 1) := fun ρ hρ =>
+      mu.addHaar_real_ball_of_pos x₀ hρ
     rw [hb _ (by linarith), hb _ hR]
     ring
   calc ∫ x in ball x₀ R,

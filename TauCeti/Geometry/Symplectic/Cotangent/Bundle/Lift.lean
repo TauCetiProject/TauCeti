@@ -73,7 +73,7 @@ theorem mpullback_cotangent_liouvilleForm (h : M ≃ₘ⟮I, J⟯ N) :
   funext z
   ext v
   rw [mpullback_liouvilleForm_apply_of_proj_apply_eq h.cotangent.contMDiff
-    (proj_cotangent h) z (h.mdifferentiable (by simp) z.proj), liouvilleForm_apply]
+    (proj_cotangent h) z, liouvilleForm_apply]
   exact cotangent_snd_apply_mfderiv h z _
 
 end Liouville
