@@ -39,6 +39,8 @@ reverses orientation.
 * `Topology.IsOpenEmbedding.localOrientationEquiv_id`,
   `Topology.IsOpenEmbedding.localOrientationEquiv_trans`: the correspondence of local
   orientations is functorial.
+* `Topology.IsOpenEmbedding.localHomologyMap_localOrientationEquiv_symm`: the map of local
+  homology induced by `j` carries the local orientation corresponding to `z` back to `z`.
 * `TauCeti.HomologicalOrientation.localOrientationEquiv_comap_apply`: the local
   orientation of the pullback at `x` corresponds to the local orientation at `j x`.
 * `TauCeti.HomologicalOrientation.comap_neg`, `TauCeti.HomologicalOrientation.comap_id`,
@@ -95,6 +97,16 @@ lemma coe_localOrientationEquiv_symm (hj : IsOpenEmbedding j) (x : M) {d : ℕ}
       (localHomologyIsoOfIsOpenEmbedding (A := ModuleCat.{w} ℤ)
         (ModuleCat.of ℤ (ULift.{w} ℤ)) hj x d).inv z.val :=
   (rfl)
+
+/-- The map of local homology induced by `j` carries the local orientation at `x` corresponding
+to a local orientation `z` at `j x` back to `z`. -/
+lemma localHomologyMap_localOrientationEquiv_symm (hj : IsOpenEmbedding j) (x : M) {d : ℕ}
+    (z : LocalOrientation N (j x) d) (h : j ⁻¹' {j x} ⊆ {x}) :
+    localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) ⟨j, hj.continuous⟩ h d
+      ((hj.localOrientationEquiv x d).symm z).val = z.val := by
+  have h' := (localHomologyIsoOfIsOpenEmbedding (A := ModuleCat.{w} ℤ)
+    (ModuleCat.of ℤ (ULift.{w} ℤ)) hj x d).inv_hom_id_apply z.val
+  rwa [localHomologyIsoOfIsOpenEmbedding_hom, ← coe_localOrientationEquiv_symm] at h'
 
 /-- The correspondence of local orientations commutes with reversal. -/
 @[simp]

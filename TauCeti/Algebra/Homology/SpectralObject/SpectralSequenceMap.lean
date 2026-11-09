@@ -189,11 +189,11 @@ private noncomputable abbrev spectralSequenceHomologyDataLeftHomologyMapData (r 
   { φK := EMap φ _ _ _ (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) (sub_add_cancel _ _) rfl
     φH := EMap φ _ _ _ (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) (sub_add_cancel _ _) rfl
     commi := hi
-    commf' := ShortComplex.LeftHomologyMapData.commf'_of_commi _
+    commf' := ShortComplex.LeftHomologyMapData.commf'_of_commi
       (X.spectralSequenceHomologyData data r r' hrr' hr _ pq _ rfl rfl _ _ _ _ _ _ rfl rfl
         rfl rfl rfl rfl (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) rfl).left
       (Y.spectralSequenceHomologyData data r r' hrr' hr _ pq _ rfl rfl _ _ _ _ _ _ rfl rfl
-        rfl rfl rfl rfl (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) rfl).left _ hi
+        rfl rfl rfl rfl (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) rfl).left hi
     commπ := hπ }
 
 /-- The morphisms of pages `spectralSequencePageMap` are compatible with the isomorphisms between
