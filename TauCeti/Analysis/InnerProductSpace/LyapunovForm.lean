@@ -39,6 +39,12 @@ which needs the spectral splitting of `A`, is not proved here.
 * `ContinuousLinearMap.HasLyapunovForm.exists_eventually_nhds`: one Lyapunov form serves every
   operator close enough to `A`; `ContinuousLinearMap.isOpen_setOf_hasLyapunovForm` is the
   corresponding openness statement.
+* `ContinuousLinearMap.mul_norm_le_opNorm_mul_norm_apply_of_forall_le_inner`: a symmetric Lyapunov
+  form `S` of `A` satisfies `c ‖v‖ ≤ ‖A‖ ‖S v‖`, so it is bounded below
+  (`ContinuousLinearMap.exists_pos_forall_mul_norm_le_norm_apply_of_forall_le_inner`).
+* `ContinuousLinearMap.hasLyapunovForm_one_sub_smul_add_smul`: a symmetric Lyapunov form `S` of
+  `A` is a Lyapunov form of every `(1 - t) A + t S` with `0 ≤ t ≤ 1`, which joins `A` to the
+  bounded-below symmetric operator `S` through operators with Lyapunov forms.
 * `ContinuousLinearMap.HasLyapunovForm.eq_zero_of_apply_eq_neg_smul_of_apply_eq_smul`: `A` has no
   purely imaginary eigenvalue, and in particular is injective.
 * `ContinuousLinearMap.HasLyapunovForm.neg_adjoint`: in finite dimensions, `-A†` has a Lyapunov
@@ -130,6 +136,59 @@ theorem HasLyapunovForm.eq_zero_of_apply_eq_neg_smul_of_apply_eq_smul (h : A.Has
   have hw0 : ‖w‖ ^ 2 = 0 := by nlinarith [sq_nonneg ‖v‖, sq_nonneg ‖w‖]
   exact ⟨norm_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp hv0),
     norm_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp hw0)⟩
+
+/-- **The norm estimate for a Lyapunov form.** If `S` is symmetric and `c ‖v‖² ≤ ⟪S (A v), v⟫` for
+every `v`, then `c ‖v‖ ≤ ‖A‖ ‖S v‖`. -/
+theorem mul_norm_le_opNorm_mul_norm_apply_of_forall_le_inner {S : E →L[ℝ] E}
+    (hS : (S : E →ₗ[ℝ] E).IsSymmetric) {c : ℝ} (h : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (A v), v⟫_ℝ) (v : E) :
+    c * ‖v‖ ≤ ‖A‖ * ‖S v‖ := by
+  rcases (norm_nonneg v).eq_or_lt with hv | hv
+  · rw [← hv, mul_zero]
+    positivity
+  have h₁ : ⟪S (A v), v⟫_ℝ ≤ ‖A‖ * ‖S v‖ * ‖v‖ := by
+    rw [hS.apply_clm]
+    calc ⟪A v, S v⟫_ℝ ≤ ‖A v‖ * ‖S v‖ := real_inner_le_norm _ _
+      _ ≤ ‖A‖ * ‖v‖ * ‖S v‖ := by gcongr; exact A.le_opNorm v
+      _ = ‖A‖ * ‖S v‖ * ‖v‖ := by ring
+  have h₂ : c * ‖v‖ * ‖v‖ ≤ ‖A‖ * ‖S v‖ * ‖v‖ := by nlinarith [h v]
+  exact le_of_mul_le_mul_right h₂ hv
+
+/-- A symmetric Lyapunov form `S` of `A`, with `c ‖v‖² ≤ ⟪S (A v), v⟫` and `c > 0`, is bounded
+below by a positive constant: `α ‖v‖ ≤ ‖S v‖`. -/
+theorem exists_pos_forall_mul_norm_le_norm_apply_of_forall_le_inner {S : E →L[ℝ] E}
+    (hS : (S : E →ₗ[ℝ] E).IsSymmetric) {c : ℝ} (hc : 0 < c)
+    (h : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (A v), v⟫_ℝ) : ∃ α > 0, ∀ v, α * ‖v‖ ≤ ‖S v‖ := by
+  refine ⟨c / (‖A‖ + 1), by positivity, fun v ↦ ?_⟩
+  rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
+  nlinarith [mul_norm_le_opNorm_mul_norm_apply_of_forall_le_inner hS h v, norm_nonneg (S v)]
+
+/-- **A Lyapunov form is a Lyapunov form along the segment to itself.** If `S` is a symmetric
+Lyapunov form of `A`, with `c ‖v‖² ≤ ⟪S (A v), v⟫` and `c > 0`, then for `0 ≤ t ≤ 1` the operator
+`(1 - t) A + t S` has the Lyapunov form `S`, since `⟪S (S v), v⟫ = ‖S v‖²`. So every operator with
+a symmetric Lyapunov form is joined to a bounded-below symmetric operator through operators with
+Lyapunov forms. -/
+theorem hasLyapunovForm_one_sub_smul_add_smul {S : E →L[ℝ] E}
+    (hS : (S : E →ₗ[ℝ] E).IsSymmetric) {c : ℝ} (hc : 0 < c)
+    (h : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (A v), v⟫_ℝ) {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) :
+    ((1 - t) • A + t • S).HasLyapunovForm := by
+  obtain ⟨α, hα, hgap⟩ := exists_pos_forall_mul_norm_le_norm_apply_of_forall_le_inner hS hc h
+  refine ⟨S, hS, min c (α ^ 2), lt_min hc (by positivity), fun v ↦ ?_⟩
+  have hform : ⟪S (((1 - t) • A + t • S) v), v⟫_ℝ =
+      (1 - t) * ⟪S (A v), v⟫_ℝ + t * ‖S v‖ ^ 2 := by
+    simp only [add_apply, smul_apply, map_add, map_smul, inner_add_left, real_inner_smul_left,
+      hS.apply_clm (S v), real_inner_self_eq_norm_sq]
+  have hSv : α ^ 2 * ‖v‖ ^ 2 ≤ ‖S v‖ ^ 2 := by
+    rw [← mul_pow]
+    exact pow_le_pow_left₀ (by positivity) (hgap v) 2
+  rw [hform]
+  have hm₁ := min_le_left c (α ^ 2)
+  have hm₂ := min_le_right c (α ^ 2)
+  have hv := sq_nonneg ‖v‖
+  have h₁ : (1 - t) * (min c (α ^ 2) * ‖v‖ ^ 2) ≤ (1 - t) * ⟪S (A v), v⟫_ℝ :=
+    mul_le_mul_of_nonneg_left ((mul_le_mul_of_nonneg_right hm₁ hv).trans (h v)) (by linarith)
+  have h₂ : t * (min c (α ^ 2) * ‖v‖ ^ 2) ≤ t * ‖S v‖ ^ 2 :=
+    mul_le_mul_of_nonneg_left ((mul_le_mul_of_nonneg_right hm₂ hv).trans hSv) ht₀
+  linarith
 
 /-- An operator with a Lyapunov form is injective. -/
 theorem HasLyapunovForm.injective (h : A.HasLyapunovForm) : Function.Injective A := by
