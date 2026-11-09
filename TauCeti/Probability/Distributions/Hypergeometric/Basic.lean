@@ -277,11 +277,8 @@ theorem integral_hypergeometricMeasure {E : Type*} [NormedAddCommGroup E] [Norme
       ∑ k ∈ Finset.range (n + 1), (hypergeometricWeight N K n k).toReal • f k := by
   rw [hypergeometricMeasure_eq_sum_dirac hK, integral_finsetSum_measure]
   · simp
-  · by_cases hn : n ≤ N
-    · exact fun _ _ ↦
-        (integrable_dirac (by simp)).smul_measure
-          (hypergeometricWeight_ne_top N K n _ hn)
-    · simp [hypergeometricWeight_eq_zero_of_lt hK (not_le.mp hn)]
+  · exact integrable_finsetSum_measure.mp
+      (hypergeometricMeasure_eq_sum_dirac hK ▸ integrable_hypergeometricMeasure f N K n)
 
 /-! ## Cumulative masses -/
 
