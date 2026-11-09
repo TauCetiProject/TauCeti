@@ -415,12 +415,6 @@ private theorem not_all_mem_right (h : MalitzPair R₁ R₂ Γ Δ)
     {φ : L[[ℕ]].BoundedFormulaω Empty 1} (hall : φ.all ∈ Δ) : False := by
   simpa using h.existential_right _ hall
 
-/-- A model of `Γ` containing `¬ ∀ x, φ x` satisfies `∃ x, ¬ φ x`. -/
-private theorem entails_ex_not_of_not_all_mem {T : L[[ℕ]].Theoryω}
-    {φ : L[[ℕ]].BoundedFormulaω Empty 1} (hn : φ.all.not ∈ T) : T.Entails φ.not.ex :=
-  Theoryω.entails_iff.2 fun _ _ _ hM => by
-    simpa [SentenceInf.realize_def, realize_ex, realize_not] using hM.realize_of_mem hn
-
 /-- Existential witness on the left: a fresh constant never occurs in a separator, so existential
 instantiation removes it. -/
 private theorem not_all_left (h : MalitzPair R₁ R₂ Γ Δ) {φ : L[[ℕ]].BoundedFormulaω Empty 1}
@@ -433,7 +427,8 @@ private theorem not_all_left (h : MalitzPair R₁ R₂ Γ Δ) {φ : L[[ℕ]].Bou
   · rw [constantSupport_not]
     exact (constantSupport_inst_subset φ _).trans (Set.union_subset_union (by simp) (by simp))
   · refine Theoryω.Entails.of_insert_inst (φ := φ.not) (notMem_of_notMem_theorySupport hcΓ)
-      (by simpa using hcφ) (fun hc => hcΔ (hs hc)) (entails_ex_not_of_not_all_mem hn) ?_
+      (by simpa using hcφ) (fun hc => hcΔ (hs hc))
+      (Theoryω.entails_of_mem hn).ex_not_of_not_all ?_
     rwa [inst_def, substBounds_not, ← inst_def]
 
 /-- Existential witness on the right: the separator is universally quantified over the fresh
@@ -457,7 +452,8 @@ private theorem not_all_right (h : MalitzPair R₁ R₂ Γ Δ) {φ : L[[ℕ]].Bo
   · rw [constantSupport_all, constantSupport_abstractConst]
     exact fun d hd => (hθ hd.1).resolve_right hd.2
   · refine Theoryω.Entails.of_insert_inst (φ := φ.not) (notMem_of_notMem_theorySupport hcΔ)
-      (fun hc => hcΔ (hφK (by simpa using hc))) (by simp) (entails_ex_not_of_not_all_mem hn) ?_
+      (fun hc => hcΔ (hφK (by simpa using hc))) (by simp)
+      (Theoryω.entails_of_mem hn).ex_not_of_not_all ?_
     rwa [inst_def, substBounds_not, ← inst_def]
 
 private theorem eq_refl_left (h : MalitzPair R₁ R₂ Γ Δ) (t : L[[ℕ]].Term (Empty ⊕ Fin 0)) :
