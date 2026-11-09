@@ -164,6 +164,11 @@ instance : (toEffectiveQuotient C).Full :=
 instance : (toEffectiveQuotient C).EssSurj :=
   inferInstanceAs (CategoryTheory.Quotient.functor (germRel C)).EssSurj
 
+/-- The projection to the effective quotient reflects isomorphisms, as does any functor out of a
+groupoid. -/
+instance : (toEffectiveQuotient C).ReflectsIsomorphisms :=
+  ⟨fun _ _ ↦ inferInstance⟩
+
 variable (C) in
 /-- The objects of the effective quotient are the objects of the groupoid. -/
 @[expose] def EffectiveQuotient.objEquiv : C ≃ EffectiveQuotient C :=
@@ -241,16 +246,9 @@ theorem isomorphismClasses_map_toEffectiveQuotient_bijective :
     Function.Bijective (α := _root_.Quotient (isIsomorphicSetoid C))
       (β := _root_.Quotient (isIsomorphicSetoid (EffectiveQuotient C)))
       (isomorphismClasses.map (toEffectiveQuotient C).toCatHom) := by
-  refine ⟨fun q r ↦ ?_, fun q ↦ ?_⟩
-  · induction q using _root_.Quotient.inductionOn with
-    | h x =>
-      induction r using _root_.Quotient.inductionOn with
-      | h y =>
-        intro h
-        exact _root_.Quotient.sound (isIsomorphic_toEffectiveQuotient_obj_iff.mp
-          (_root_.Quotient.exact h))
-  · induction q using _root_.Quotient.inductionOn with
-    | h x => exact ⟨_root_.Quotient.mk _ ((EffectiveQuotient.objEquiv C).symm x), rfl⟩
+  refine ⟨(toEffectiveQuotient C).isomorphismClasses_map_injective, fun q ↦ ?_⟩
+  induction q using _root_.Quotient.inductionOn with
+  | h x => exact ⟨_root_.Quotient.mk _ ((EffectiveQuotient.objEquiv C).symm x), rfl⟩
 
 variable [TopologicalSpace C]
 
@@ -284,16 +282,14 @@ induces a homeomorphism between the spaces of isomorphism classes. -/
 noncomputable def EffectiveQuotient.isomorphismClassesHomeomorph :
     _root_.Quotient (isIsomorphicSetoid C) ≃ₜ
       _root_.Quotient (isIsomorphicSetoid (EffectiveQuotient C)) :=
-  (isHomeomorph_iff_isQuotientMap_injective.2
-    ⟨(toEffectiveQuotient C).isQuotientMap_isomorphismClasses_map
-      isHomeomorph_toEffectiveQuotient_obj.isQuotientMap,
-      isomorphismClasses_map_toEffectiveQuotient_bijective.injective⟩).homeomorph _
+  (toEffectiveQuotient C).isomorphismClassesHomeomorph
+    isHomeomorph_toEffectiveQuotient_obj.isQuotientMap
 
 @[simp]
 theorem EffectiveQuotient.isomorphismClassesHomeomorph_apply_mk (x : C) :
     EffectiveQuotient.isomorphismClassesHomeomorph C (_root_.Quotient.mk _ x) =
       _root_.Quotient.mk _ ((toEffectiveQuotient C).obj x) :=
-  (rfl)
+  (toEffectiveQuotient C).isomorphismClassesHomeomorph_apply_mk _ x
 
 variable [IsTopologicalGroupoid C]
 
