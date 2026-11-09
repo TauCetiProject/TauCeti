@@ -116,7 +116,7 @@ theorem differentExponent_eq_zero_of_pow_eq_of_dvd_ord {y : F'} {n : ℕ} {u : F
     exact hn Nat.cast_zero
   rcases eq_or_ne u 0 with rfl | hu
   · exact differentExponent_eq_zero_of_finrank_eq_one k F P'
-      (IntermediateField.finrank_eq_one_of_adjoin_eq_top_of_pow_eq_zero hn0 hgen
+      (IntermediateField.finrank_eq_one_of_adjoin_eq_top_of_pow_eq_zero hgen
         (hy.trans (map_zero _)))
   -- Divide `y` by `w ∈ F` with `n · ord_P w = ord_P u`, to get a generator `z` whose `n`-th power
   -- `c` is a unit at `P`.
@@ -175,7 +175,7 @@ theorem differentExponent_add_one_eq_of_pow_eq_of_gcd_ord_eq_one {y : F'} {n : �
   rcases eq_or_ne u 0 with rfl | hu
   · simp only [ord_zero, Int.gcd_zero_right, Int.natAbs_natCast] at h
     rw [differentExponent_eq_zero_of_finrank_eq_one k F P'
-      (IntermediateField.finrank_eq_one_of_adjoin_eq_top_of_pow_eq_zero hn0 hgen
+      (IntermediateField.finrank_eq_one_of_adjoin_eq_top_of_pow_eq_zero hgen
         (hy.trans (map_zero _))), h]
   obtain ⟨z, c, hgenz, hz, hc, hz0⟩ :=
     exists_adjoin_eq_top_pow_eq_ord_eq_one k F (P'.restrict k F) hgen hy hu h
@@ -220,7 +220,7 @@ private theorem ramificationIdx_eq_and_differentExponent_add_one_eq_of_pow_eq {y
     rintro rfl
     exact hn Nat.cast_zero
   rcases eq_or_ne u 0 with rfl | hu
-  · have hfin := IntermediateField.finrank_eq_one_of_adjoin_eq_top_of_pow_eq_zero hn0 hgen
+  · have hfin := IntermediateField.finrank_eq_one_of_adjoin_eq_top_of_pow_eq_zero hgen
       (hy.trans (map_zero _))
     have h1 := ramificationIdx_le_finrank F P'
     have h2 := ramificationIdx_pos F P'

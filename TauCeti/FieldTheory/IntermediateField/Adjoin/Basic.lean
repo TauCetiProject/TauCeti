@@ -72,11 +72,11 @@ theorem finrank_eq_one_of_adjoin_zero_eq_top {K L : Type*} [Field K] [Field L] [
   rw [adjoin_zero] at hgen
   exact bot_eq_top_iff_finrank_eq_one.mp hgen
 
-/-- If `L = K(y)` with `y ^ n = 0` and `n ≠ 0`, then `[L : K] = 1`. -/
+/-- If `L = K(y)` with `y ^ n = 0`, then `[L : K] = 1`. -/
 theorem finrank_eq_one_of_adjoin_eq_top_of_pow_eq_zero {K L : Type*} [Field K] [Field L]
-    [Algebra K L] {y : L} {n : ℕ} (hn : n ≠ 0) (hgen : K⟮y⟯ = ⊤) (hy : y ^ n = 0) :
+    [Algebra K L] {y : L} {n : ℕ} (hgen : K⟮y⟯ = ⊤) (hy : y ^ n = 0) :
     Module.finrank K L = 1 := by
-  rw [pow_eq_zero_iff hn] at hy
-  exact finrank_eq_one_of_adjoin_zero_eq_top (hy ▸ hgen)
+  rw [eq_zero_of_pow_eq_zero hy] at hgen
+  exact finrank_eq_one_of_adjoin_zero_eq_top hgen
 
 end IntermediateField
