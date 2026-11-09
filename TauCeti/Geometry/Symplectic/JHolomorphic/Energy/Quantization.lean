@@ -156,17 +156,9 @@ theorem exists_pos_forall_eventually_le_setIntegral_norm_fderiv_one_sq_ball
     nlinarith
   have hreal : ‖fderiv ℝ (u i) (z i) 1‖ ≤ B := by
     nlinarith [sq_nonneg (‖fderiv ℝ (u i) (z i) 1‖ - 1)]
-  have himag : ‖fderiv ℝ (u i) (z i) I‖ ≤ max a 0 * B := by
-    rw [hCR i (z i) hzr]
-    exact ((J (u i (z i))).le_opNorm _).trans
-      (by gcongr; exact (ha _ (huK i hzr)).trans (le_max_left _ _))
-  have hop : ‖fderiv ℝ (u i) (z i)‖ ≤ (1 + max a 0) * B := by
-    refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
-    calc ‖fderiv ℝ (u i) (z i) v‖
-        ≤ (‖fderiv ℝ (u i) (z i) 1‖ + ‖fderiv ℝ (u i) (z i) I‖) * ‖v‖ :=
-          (fderiv ℝ (u i) (z i)).norm_apply_le_norm_one_add_norm_I v
-      _ ≤ (B + max a 0 * B) * ‖v‖ := by gcongr
-      _ = (1 + max a 0) * B * ‖v‖ := by ring
+  have hop : ‖fderiv ℝ (u i) (z i)‖ ≤ (1 + max a 0) * B :=
+    (fderiv ℝ (u i) (z i)).norm_le_of_apply_I_eq (hCR i (z i) hzr)
+      ((ha _ (huK i hzr)).trans (le_max_left _ _)) hreal
   linarith
 
 end TauCeti
