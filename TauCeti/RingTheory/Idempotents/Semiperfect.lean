@@ -8,17 +8,22 @@ module
 public import TauCeti.RingTheory.Idempotents.Corner.Local
 public import TauCeti.RingTheory.Idempotents.Primitive.Decomposition
 public import TauCeti.RingTheory.Jacobson.Semiperfect
+public import TauCeti.RingTheory.Idempotents.Projective
+public import TauCeti.Algebra.Module.Projective.Local
+public import TauCeti.RingTheory.Idempotents.Conjugate
+public import TauCeti.Algebra.Group.Idempotent
 
 /-!
-# Local idempotents of a semiperfect ring
+# Semiperfect rings and local idempotents
 
 A ring `A` is semiperfect when its radical quotient `A ⧸ J(A)` is semisimple and idempotents lift
-modulo `J(A)` (`TauCeti.IsSemiperfectRing`). This file proves that in a semiperfect ring, `1` is a
-sum of pairwise orthogonal idempotents whose corners `eᵢAeᵢ` are local rings; equivalently, `A`
-decomposes as a direct sum of left ideals `Aeᵢ` with local endomorphism rings.
+modulo `J(A)` (`TauCeti.IsSemiperfectRing`). This file proves Lam's characterization (23.6): `A` is
+semiperfect exactly when `1` is a sum of pairwise orthogonal idempotents whose corners `eᵢAeᵢ` are
+local rings; equivalently, `A` is a finite direct sum of left ideals `Aeᵢ` with local endomorphism
+rings.
 
-The proof lifts idempotents one at a time, as the definition of semiperfectness allows, and does
-not need to lift a whole orthogonal family.
+**Only if.** The proof lifts idempotents one at a time, as the definition of semiperfectness
+allows, and does not need to lift a whole orthogonal family.
 
 * Write `1 = ē₁ + ⋯ + ēₙ` in `A ⧸ J(A)` with orthogonal primitive idempotents, and lift each `ēᵢ`
   to an idempotent `eᵢ`. The corner `eᵢAeᵢ` is local
@@ -31,17 +36,31 @@ not need to lift a whole orthogonal family.
 * The idempotents of the decomposition `A = ⨁ Aeᵢ` are orthogonal, and generate the same left
   ideals, so their images modulo the radical are again primitive and their corners local.
 
+**If.** Each `Aeᵢ` is projective with local endomorphism ring, so it has a unique maximal
+submodule, its radical `J(A) eᵢ` (`Module.Projective.isCoatom_jacobson_of_isLocalRing_end`), and
+the left ideal of `ēᵢ` in `A ⧸ J(A)` is simple. Hence `A ⧸ J(A)` is semisimple. An idempotent `x`
+of `A ⧸ J(A)` is conjugate by a unit to a partial sum of the `ēᵢ`
+(`CompleteOrthogonalIdempotents.exists_units_mul_mul_eq_sum`), and that unit lifts to a unit of `A`
+(`TauCeti.Ring.isLocalHom_mk_jacobson`), which conjugates the corresponding partial sum of the `eᵢ`
+to an idempotent lifting `x`.
+
 ## Main results
 
 * `TauCeti.IsSemiperfectRing.exists_completeOrthogonalIdempotents_isLocalRing_corner`: **in a
   semiperfect ring, `1` is a sum of orthogonal idempotents with local corners.**
+* `IsIdempotentElem.isSimpleModule_span_singleton_mk_jacobson`: a local idempotent generates a
+  simple left ideal modulo the radical.
+* `TauCeti.isSemisimpleRing_quotient_jacobson_of_isLocalRing_corner`: if `1` is a sum of orthogonal
+  idempotents with local corners, the radical quotient is semisimple.
+* `TauCeti.IsSemiperfectRing.of_isLocalRing_corner`: **such a ring is semiperfect.**
+* `TauCeti.isSemiperfectRing_iff_exists_completeOrthogonalIdempotents_isLocalRing_corner`: Lam's
+  characterization.
 
 ## References
 
 * T. Y. Lam, *A First Course in Noncommutative Rings*, 2nd ed., GTM 131, Springer (2001),
-  Theorem (23.6), the "only if" direction: in a semiperfect ring `1` is a sum of mutually
-  orthogonal local idempotents. The proof here replaces the lifting of orthogonal families by
-  Nakayama's lemma.
+  (21.18) and Theorem (23.6). The proof of the "only if" direction here replaces the lifting of
+  orthogonal families by Nakayama's lemma.
 -/
 
 public section
@@ -139,5 +158,129 @@ theorem IsSemiperfectRing.exists_completeOrthogonalIdempotents_isLocalRing_corne
     ((isPrimitiveIdempotent_iff_isIndecomposableModule ((hf.idem i).map π)).2 ?_)
   rw [hspan]
   exact (hprim i).isIndecomposableModule
+
+section Converse
+
+/-- **A local idempotent is simple modulo the radical**: if the corner `eAe` is local, the left
+ideal of `ē` in `A ⧸ J(A)` is simple. The left ideal `Ae` is projective with local endomorphism
+ring, so its radical is its unique maximal submodule
+(`Module.Projective.isCoatom_jacobson_of_isLocalRing_end`); that radical is `Ae ∩ J(A)`, the
+kernel of `Ae ⟶ A ⧸ J(A)`. -/
+theorem _root_.IsIdempotentElem.isSimpleModule_span_singleton_mk_jacobson {e : A}
+    (he : IsIdempotentElem e) [IsLocalRing he.Corner] :
+    IsSimpleModule (A ⧸ Ring.jacobson A)
+      (Ideal.span {Ideal.Quotient.mk (Ring.jacobson A) e} : Ideal (A ⧸ Ring.jacobson A)) := by
+  set J := Ring.jacobson A
+  set L : Ideal A := Ideal.span {e}
+  have := he.isLocalRing_end_of_isLocalRing_corner
+  have := he.projective_span_singleton
+  have : Module.Finite A L := Module.Finite.iff_fg.mpr (Submodule.fg_span_singleton _)
+  have hne : e ≠ 0 := fun h ↦ one_ne_zero (α := he.Corner) (Subtype.ext (by simp [h]))
+  have : Nontrivial L :=
+    ⟨⟨spanSingletonGenerator e, 0, fun h ↦ hne (by simpa using congrArg Subtype.val h)⟩⟩
+  -- The kernel of `Ae ⟶ A ⧸ J` is the radical of `Ae`, a maximal submodule.
+  have hker : LinearMap.ker (J.mkQ ∘ₗ L.subtype) = Module.jacobson A L := by
+    rw [LinearMap.ker_comp, Submodule.ker_mkQ]
+    refine le_antisymm (fun x hx ↦ ?_) ?_
+    · have : x = (x : A) • spanSingletonGenerator e := (smul_spanSingletonGenerator he x).symm
+      rw [this]
+      exact Ring.jacobson_smul_top_le A L
+        (Submodule.smul_mem_smul (Submodule.mem_comap.mp hx) Submodule.mem_top)
+    · exact Submodule.map_le_iff_le_comap.mp (Module.map_jacobson_le L.subtype)
+  have : IsSimpleModule A (L ⧸ LinearMap.ker (J.mkQ ∘ₗ L.subtype)) :=
+    isSimpleModule_iff_isCoatom.mpr (hker ▸ Module.Projective.isCoatom_jacobson_of_isLocalRing_end)
+  have hrange : LinearMap.range (J.mkQ ∘ₗ L.subtype) = Submodule.map J.mkQ L := by
+    rw [LinearMap.range_comp, Submodule.range_subtype]
+  have hM : IsSimpleModule A (Submodule.map J.mkQ L) :=
+    IsSimpleModule.congr ((J.mkQ ∘ₗ L.subtype).quotKerEquivRange.trans
+      (LinearEquiv.ofEq _ _ hrange)).symm
+  -- The image of `Ae` is the left ideal of `ē`, and its `A`-submodules are its left ideals.
+  have hsmul (a : A) (z : A ⧸ J) : a • z = Ideal.Quotient.mk J a * z := by
+    induction z using Submodule.Quotient.induction_on
+    rfl
+  have hmem (z : A ⧸ J) :
+      z ∈ Submodule.map J.mkQ L ↔ z ∈ (Ideal.span {Ideal.Quotient.mk J e} : Ideal (A ⧸ J)) := by
+    rw [Submodule.mem_map, Ideal.mem_span_singleton']
+    constructor
+    · rintro ⟨y, hy, rfl⟩
+      obtain ⟨c, rfl⟩ := Ideal.mem_span_singleton'.mp hy
+      exact ⟨Ideal.Quotient.mk J c, (map_mul (Ideal.Quotient.mk J) c e).symm⟩
+    · rintro ⟨c, rfl⟩
+      obtain ⟨c, rfl⟩ := Ideal.Quotient.mk_surjective c
+      exact ⟨c * e, Ideal.mul_mem_left _ _ (Ideal.mem_span_singleton_self e),
+        map_mul (Ideal.Quotient.mk J) c e⟩
+  have : RingHomSurjective (Ideal.Quotient.mk J) := ⟨Ideal.Quotient.mk_surjective⟩
+  let l : Submodule.map J.mkQ L →ₛₗ[Ideal.Quotient.mk J]
+      (Ideal.span {Ideal.Quotient.mk J e} : Ideal (A ⧸ J)) :=
+    { toFun z := ⟨z, (hmem z).1 z.2⟩
+      map_add' _ _ := rfl
+      map_smul' a z := Subtype.ext (hsmul a z) }
+  have hl : Function.Bijective l :=
+    ⟨fun z z' h ↦ by
+      have := congrArg Subtype.val h
+      exact Subtype.ext this,
+      fun z ↦ ⟨⟨z, (hmem z).2 z.2⟩, rfl⟩⟩
+  exact (LinearMap.isSimpleModule_iff_of_bijective l hl).1 hM
+
+variable {ι : Type*} [Fintype ι] {e : ι → A}
+
+/-- **The radical quotient is semisimple** when `1` is a sum of orthogonal idempotents with local
+corners: it is the sum of the simple left ideals of the images `ēᵢ`
+(`IsIdempotentElem.isSimpleModule_span_singleton_mk_jacobson`). -/
+theorem isSemisimpleRing_quotient_jacobson_of_isLocalRing_corner
+    (he : CompleteOrthogonalIdempotents e) (hloc : ∀ i, IsLocalRing (he.idem i).Corner) :
+    IsSemisimpleRing (A ⧸ Ring.jacobson A) := by
+  have hē := he.map (Ideal.Quotient.mk (Ring.jacobson A))
+  have hsimple (i : ι) : IsSimpleModule (A ⧸ Ring.jacobson A)
+      (Ideal.span {Ideal.Quotient.mk (Ring.jacobson A) (e i)} : Ideal (A ⧸ Ring.jacobson A)) :=
+    have := hloc i
+    (he.idem i).isSimpleModule_span_singleton_mk_jacobson
+  refine isSemisimpleModule_of_isSemisimpleModule_submodule'
+    (p := fun i ↦ (Ideal.span {Ideal.Quotient.mk (Ring.jacobson A) (e i)} : Ideal _))
+    (fun i ↦ inferInstance) ?_
+  -- The left ideals of the `ēᵢ` add up to the left ideal of `∑ ēᵢ = 1`.
+  have hsum := hē.toOrthogonalIdempotents.span_singleton_sum_eq_sup Finset.univ
+  simp only [Function.comp_apply] at hsum
+  rw [← Finset.sup_univ_eq_iSup, ← hsum]
+  simpa using congrArg (fun y ↦ (Ideal.span {y} : Ideal _)) hē.complete
+
+/-- **A ring in which `1` is a sum of orthogonal idempotents with local corners is
+semiperfect** (Lam (23.6), the "if" direction). The radical quotient is semisimple
+(`TauCeti.isSemisimpleRing_quotient_jacobson_of_isLocalRing_corner`). An idempotent `x` of it is
+conjugate to a partial sum `∑ i ∈ t, ēᵢ` by a unit
+(`CompleteOrthogonalIdempotents.exists_units_mul_mul_eq_sum`); lifting that unit to a unit `w` of
+`A` (`TauCeti.Ring.isLocalHom_mk_jacobson`) gives the idempotent `w⁻¹ (∑ i ∈ t, eᵢ) w` lifting
+`x`. -/
+theorem IsSemiperfectRing.of_isLocalRing_corner (he : CompleteOrthogonalIdempotents e)
+    (hloc : ∀ i, IsLocalRing (he.idem i).Corner) : IsSemiperfectRing A where
+  isSemisimpleRing := isSemisimpleRing_quotient_jacobson_of_isLocalRing_corner he hloc
+  exists_isIdempotentElem_eq x hx := by
+    set π := Ideal.Quotient.mk (Ring.jacobson A)
+    have hē := he.map π
+    have hsimple (i : ι) : IsSimpleModule (A ⧸ Ring.jacobson A)
+        (Ideal.span {(π ∘ e) i} : Ideal (A ⧸ Ring.jacobson A)) :=
+      have := hloc i
+      (he.idem i).isSimpleModule_span_singleton_mk_jacobson
+    obtain ⟨t, v, hv⟩ := hē.exists_units_mul_mul_eq_sum hsimple hx
+    -- Lift the unit `v` to a unit `w` of `A`.
+    obtain ⟨u, hu⟩ := Ideal.Quotient.mk_surjective (v : A ⧸ Ring.jacobson A)
+    obtain ⟨w, rfl⟩ := isUnit_of_map_unit π u (hu ▸ v.isUnit)
+    have hw : Units.map π.toMonoidHom w = v := Units.ext hu
+    refine ⟨(↑w⁻¹ : A) * (∑ i ∈ t, e i) * w,
+      IsIdempotentElem.mul_mul_of_mul_eq_one
+        (he.toOrthogonalIdempotents.isIdempotentElem_sum (s := t)) w.mul_inv, ?_⟩
+    rw [← hv, ← hw, map_mul, map_mul, map_sum]
+    simp [π]
+
+end Converse
+
+/-- **Lam (23.6)**: a ring is semiperfect exactly when `1` is a sum of orthogonal idempotents with
+local corners, that is, when the ring is a finite direct sum of left ideals with local
+endomorphism rings. -/
+theorem isSemiperfectRing_iff_exists_completeOrthogonalIdempotents_isLocalRing_corner :
+    IsSemiperfectRing A ↔ ∃ (n : ℕ) (f : Fin n → A) (hf : CompleteOrthogonalIdempotents f),
+      ∀ i, IsLocalRing (hf.idem i).Corner :=
+  ⟨fun _ ↦ IsSemiperfectRing.exists_completeOrthogonalIdempotents_isLocalRing_corner,
+    fun ⟨_, _, hf, hloc⟩ ↦ IsSemiperfectRing.of_isLocalRing_corner hf hloc⟩
 
 end TauCeti
