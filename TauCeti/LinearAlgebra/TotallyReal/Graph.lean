@@ -56,11 +56,6 @@ theorem mem_conjGraph {K : E ≃L[ℝ] E} {Ψ : E →L[ℝ] E} {x : E × E} :
 
 variable {K : E ≃L[ℝ] E}
 
-/-- An automorphism anticommuting with `i` has inverse anticommuting with `i`. -/
-private theorem symm_apply_I_smul (hK : ∀ z, K (Complex.I • z) = -(Complex.I • K z)) (z : E) :
-    K.symm (Complex.I • K z) = -(Complex.I • z) := by
-  rw [K.symm_apply_eq, map_neg, hK, neg_neg]
-
 /-- **The conjugate graph of the identity is maximal totally real.** For an automorphism `K`
 anticommuting with `i`, the subspace `{(K z, z)}` of `E × E` is complementary to its image under
 multiplication by `i`. -/
@@ -123,7 +118,14 @@ theorem conjGraph_eq_map (hK : ∀ z, K (Complex.I • z) = -(Complex.I • K z)
       Ψ.complexLinearPart z = Ψ z := by
     simp only [ContinuousLinearMap.complexLinearPart_apply, ContinuousLinearMap.coe_comp,
       ContinuousLinearEquiv.coe_coe, Function.comp_apply, K.symm_apply_apply]
-    rw [symm_apply_I_smul hK, map_neg]
+    -- `K⁻¹` also anticommutes with `i`.
+    have hKs := (isComplexAntilinear_of_apply
+      (J := (LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ)
+      (J' := (LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ)
+      (F := (K.toLinearEquiv : E →ₗ[ℝ] E)) hK).symm.apply (K z)
+    simp only [LinearMap.coe_restrictScalars, LinearMap.lsmul_apply, LinearEquiv.coe_coe,
+      ContinuousLinearEquiv.coe_symm_toLinearEquiv, K.symm_apply_apply] at hKs
+    rw [hKs, map_neg]
     module
   have hmap (z : E) : ((LinearMap.fst ℝ E E).prod
       (((Ψ.comp (K.symm : E →L[ℝ] E)).complexLinearPart.restrictScalars ℝ :

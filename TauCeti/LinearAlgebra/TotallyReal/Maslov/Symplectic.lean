@@ -52,6 +52,9 @@ by the automorphisms `id × P t`. Consequences:
 * homotopic loops of linear symplectic maps have the same index
   (`TauCeti.maslovIndex_symplecticGraphLoop_eq_of_homotopy`).
 
+A loop `δ` as in the main theorem always exists
+(`TauCeti.exists_path_det_complexLinearPart`).
+
 ## References
 
 * J. Robbin and D. Salamon, *The Maslov index for paths*, Topology **32** (1993), 827–844,
@@ -230,18 +233,16 @@ theorem maslovIndex_symplecticGraphLoop (hK : ∀ z, K (Complex.I • z) = -(Com
   · simpa using (map_graphFrame_one hK Ψ hsymp t).symm
   · rw [graphFrame_zero_eq_one hsymp hΨ01]
 
-/-- The complex-linear parts of a loop of linear symplectic maps have a loop of normalized
-determinants. -/
-private theorem exists_path_det_complexLinearPart {Ψ : I → E →L[ℝ] E} (hΨ : Continuous Ψ)
+/-- The complex-linear parts of a loop of linear symplectic maps have a loop `δ` of normalized
+determinants, `det (P t) = |det (P t)| δ t`, as asked for by
+`TauCeti.maslovIndex_symplecticGraphLoop`. -/
+theorem exists_path_det_complexLinearPart {Ψ : I → E →L[ℝ] E} (hΨ : Continuous Ψ)
     (hsymp : ∀ t x y, (⟪Ψ t x, Ψ t y⟫_ℂ).im = (⟪x, y⟫_ℂ).im) (hΨ01 : Ψ 0 = Ψ 1) :
     ∃ (x : Circle) (δ : Path x x), ∀ t,
       LinearMap.det ((Ψ t).complexLinearPart : E →ₗ[ℂ] E) =
         ‖LinearMap.det ((Ψ t).complexLinearPart : E →ₗ[ℂ] E)‖ * δ t :=
   exists_path_det_eq_norm_mul (ContinuousLinearMap.continuous_complexLinearPart.comp hΨ)
-    (by rw [hΨ01]) fun t => by
-      have h := ((Ψ t).complexLinearPartEquiv (hsymp t)).toLinearEquiv.isUnit_det'.ne_zero
-      rwa [show (((Ψ t).complexLinearPartEquiv (hsymp t)).toLinearEquiv : E →ₗ[ℂ] E) =
-        ((Ψ t).complexLinearPart : E →ₗ[ℂ] E) from LinearMap.ext fun z => by simp] at h
+    (by rw [hΨ01]) fun t => ContinuousLinearMap.det_complexLinearPart_ne_zero (hsymp t)
 
 /-- **The Maslov index of the graph loop does not depend on the conjugation.** -/
 theorem maslovIndex_symplecticGraphLoop_congr_conj

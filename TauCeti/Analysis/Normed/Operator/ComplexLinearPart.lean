@@ -28,25 +28,30 @@ A continuous real-linear operator `Ψ : E →L[ℝ] F` between complex normed sp
 which is a continuous complex-linear operator (`ContinuousLinearMap.complexLinearPart`). Its
 underlying real-linear map is the algebraic complex-linear part `TauCeti.complexLinearPart` for the
 complex structures given by multiplication by `i`
-(`ContinuousLinearMap.coe_complexLinearPart`), and the difference `Ψ - Ψ.complexLinearPart` is the
-complex-antilinear part. A complex-linear operator is its own complex-linear part, and taking the
-complex-linear part commutes with composition by complex-linear operators on either side. The
-complex-linear part depends continuously on `Ψ`
+(`ContinuousLinearMap.coe_complexLinearPart`). Likewise the **complex-antilinear part**
+`Ψ.complexAntilinearPart z = ½ (Ψ z + i Ψ (i z))` is a continuous complex-antilinear operator
+(`ContinuousLinearMap.complexAntilinearPart`), and `Ψ` is the sum of its two parts. A
+complex-linear operator is its own complex-linear part, and taking the complex-linear part
+commutes with composition by complex-linear operators on either side. The complex-linear part
+depends continuously on `Ψ`
 (`ContinuousLinearMap.continuous_complexLinearPart`), so a continuous family of real-linear
 operators has a continuous family of complex-linear parts.
 
 For a real-linear map `Ψ` between complex inner product spaces preserving the standard
-symplectic form `Im ⟪·, ·⟫`, the complex-linear part `P` and the complex-antilinear part `Ψ - P`
-satisfy `‖P z‖² = ‖z‖² + ‖Ψ z - P z‖²` (`ContinuousLinearMap.norm_sq_complexLinearPart_apply`).
+symplectic form `Im ⟪·, ·⟫`, the complex-linear part `P` and the complex-antilinear part `A`
+satisfy `‖P z‖² = ‖z‖² + ‖A z‖²` (`ContinuousLinearMap.norm_sq_complexLinearPart_apply`).
 So the complex-linear part of a linear symplectic map is injective, and for an endomorphism of a
 finite-dimensional space it is a complex-linear automorphism
-(`ContinuousLinearMap.complexLinearPartEquiv`). This is how the graph of a linear symplectic map
-is moved into place by complex-linear automorphisms in
+(`ContinuousLinearMap.complexLinearPartEquiv`), in particular of nonzero determinant
+(`ContinuousLinearMap.det_complexLinearPart_ne_zero`). This is how the graph of a linear
+symplectic map is moved into place by complex-linear automorphisms in
 `TauCeti.LinearAlgebra.TotallyReal.Maslov.Symplectic`.
 
 ## Main declarations
 
 * `ContinuousLinearMap.complexLinearPart`: the complex-linear part of a real-linear operator.
+* `ContinuousLinearMap.complexAntilinearPart`: the complex-antilinear part of a real-linear
+  operator, with `ContinuousLinearMap.complexLinearPart_add_complexAntilinearPart_apply`.
 * `ContinuousLinearMap.complexLinearPart_add`, `ContinuousLinearMap.complexLinearPart_smul`, …:
   real-linearity in the operator.
 * `ContinuousLinearMap.complexLinearPart_restrictScalars`: a complex-linear operator is its own
@@ -61,6 +66,7 @@ is moved into place by complex-linear automorphisms in
   preserving `Im ⟪·, ·⟫`.
 * `ContinuousLinearMap.complexLinearPartEquiv`: the complex-linear part of such a map, as a
   complex-linear automorphism in finite dimension.
+* `ContinuousLinearMap.det_complexLinearPart_ne_zero`: its determinant is nonzero.
 
 ## References
 
@@ -108,6 +114,40 @@ theorem coe_complexLinearPart (Ψ : E →L[ℝ] F) :
         ((LinearMap.lsmul ℂ F Complex.I).restrictScalars ℝ) (Ψ : E →ₗ[ℝ] F) := by
   ext v
   simp
+
+/-- The **complex-antilinear part** `z ↦ ½ (Ψ z + i Ψ (i z))` of a continuous real-linear
+operator between complex normed spaces, as a continuous complex-antilinear operator. -/
+def complexAntilinearPart (Ψ : E →L[ℝ] F) : E →L⋆[ℂ] F where
+  toFun v := (2⁻¹ : ℝ) • (Ψ v + Complex.I • Ψ (Complex.I • v))
+  map_add' v w := by simp only [map_add, smul_add]; module
+  map_smul' c v := by
+    -- Split `c • v` into real multiples of `v` and `I • v`.
+    rw [← Complex.re_smul_add_im_smul c v, ← Complex.re_smul_add_im_smul (starRingEnd ℂ c)]
+    simp only [smul_add, smul_comm Complex.I, smul_smul, Complex.I_mul_I, neg_smul, one_smul,
+      map_add, map_smul, map_neg, Complex.conj_re, Complex.conj_im]
+    module
+  cont := by fun_prop
+
+/-- The defining formula of the complex-antilinear part. -/
+@[simp]
+theorem complexAntilinearPart_apply (Ψ : E →L[ℝ] F) (v : E) :
+    Ψ.complexAntilinearPart v = (2⁻¹ : ℝ) • (Ψ v + Complex.I • Ψ (Complex.I • v)) :=
+  (rfl)
+
+/-- The complex-antilinear part is, as a function, the algebraic complex-antilinear part
+`TauCeti.complexAntilinearPart` for the complex structures given by multiplication by `i`. -/
+theorem coe_complexAntilinearPart (Ψ : E →L[ℝ] F) :
+    ⇑Ψ.complexAntilinearPart =
+      TauCeti.complexAntilinearPart ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ)
+        ((LinearMap.lsmul ℂ F Complex.I).restrictScalars ℝ) (Ψ : E →ₗ[ℝ] F) := by
+  ext v
+  simp
+
+/-- A real-linear operator is the sum of its complex-linear and complex-antilinear parts. -/
+theorem complexLinearPart_add_complexAntilinearPart_apply (Ψ : E →L[ℝ] F) (v : E) :
+    Ψ.complexLinearPart v + Ψ.complexAntilinearPart v = Ψ v := by
+  simp only [complexLinearPart_apply, complexAntilinearPart_apply]
+  module
 
 /-- A complex-linear operator is its own complex-linear part. -/
 @[simp]
@@ -199,18 +239,18 @@ variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V]
   [NormedAddCommGroup W] [InnerProductSpace ℂ W]
 
 /-- For a real-linear map `Ψ` preserving the symplectic form `Im ⟪·, ·⟫`, the complex-linear part
-`P` and the complex-antilinear part `Ψ - P` satisfy `‖P z‖² = ‖z‖² + ‖Ψ z - P z‖²`. -/
+`P` and the complex-antilinear part `A` satisfy `‖P z‖² = ‖z‖² + ‖A z‖²`. -/
 theorem norm_sq_complexLinearPart_apply {Ψ : V →L[ℝ] W}
     (hΨ : ∀ x y, (⟪Ψ x, Ψ y⟫_ℂ).im = (⟪x, y⟫_ℂ).im) (z : V) :
-    ‖Ψ.complexLinearPart z‖ ^ 2 = ‖z‖ ^ 2 + ‖Ψ z - Ψ.complexLinearPart z‖ ^ 2 := by
+    ‖Ψ.complexLinearPart z‖ ^ 2 = ‖z‖ ^ 2 + ‖Ψ.complexAntilinearPart z‖ ^ 2 := by
   set a := Ψ.complexLinearPart z
-  set b := Ψ z - a
+  set b := Ψ.complexAntilinearPart z
   -- `Ψ z = a + b` and `Ψ (i z) = i a - i b`.
-  have hz : Ψ z = a + b := by simp [b]
+  have hz : Ψ z = a + b := (complexLinearPart_add_complexAntilinearPart_apply Ψ z).symm
   have hIz : Ψ (Complex.I • z) = Complex.I • a - Complex.I • b := by
     have hI : Complex.I • Complex.I • Ψ (Complex.I • z) = -Ψ (Complex.I • z) := by
       rw [smul_smul, Complex.I_mul_I, neg_one_smul]
-    simp only [a, b, complexLinearPart_apply]
+    simp only [a, b, complexLinearPart_apply, complexAntilinearPart_apply]
     linear_combination (norm := module) hI
   have key := hΨ z (Complex.I • z)
   rw [hz, hIz] at key
@@ -229,7 +269,7 @@ theorem complexLinearPart_injective {Ψ : V →L[ℝ] W}
   refine (injective_iff_map_eq_zero _).2 fun z hz => ?_
   have h := norm_sq_complexLinearPart_apply hΨ z
   rw [hz, norm_zero] at h
-  have hz2 : ‖z‖ ^ 2 = 0 := by nlinarith [sq_nonneg ‖Ψ z - 0‖, sq_nonneg ‖z‖]
+  have hz2 : ‖z‖ ^ 2 = 0 := by nlinarith [sq_nonneg ‖Ψ.complexAntilinearPart z‖, sq_nonneg ‖z‖]
   exact norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 hz2)
 
 variable [FiniteDimensional ℂ V]
@@ -247,6 +287,22 @@ theorem coe_complexLinearPartEquiv (Ψ : V →L[ℝ] V)
     (hΨ : ∀ x y, (⟪Ψ x, Ψ y⟫_ℂ).im = (⟪x, y⟫_ℂ).im) :
     (Ψ.complexLinearPartEquiv hΨ : V →L[ℂ] V) = Ψ.complexLinearPart :=
   (rfl)
+
+/-- The linear automorphism underlying `ContinuousLinearMap.complexLinearPartEquiv` is the
+complex-linear part. -/
+@[simp]
+theorem coe_toLinearEquiv_complexLinearPartEquiv (Ψ : V →L[ℝ] V)
+    (hΨ : ∀ x y, (⟪Ψ x, Ψ y⟫_ℂ).im = (⟪x, y⟫_ℂ).im) :
+    ((Ψ.complexLinearPartEquiv hΨ).toLinearEquiv : V →ₗ[ℂ] V) = Ψ.complexLinearPart :=
+  (rfl)
+
+/-- The complex-linear part of a real-linear endomorphism preserving `Im ⟪·, ·⟫` has nonzero
+determinant. -/
+theorem det_complexLinearPart_ne_zero {Ψ : V →L[ℝ] V}
+    (hΨ : ∀ x y, (⟪Ψ x, Ψ y⟫_ℂ).im = (⟪x, y⟫_ℂ).im) :
+    LinearMap.det (Ψ.complexLinearPart : V →ₗ[ℂ] V) ≠ 0 := by
+  rw [← coe_toLinearEquiv_complexLinearPartEquiv Ψ hΨ]
+  exact (Ψ.complexLinearPartEquiv hΨ).toLinearEquiv.isUnit_det'.ne_zero
 
 /-- The automorphism `ContinuousLinearMap.complexLinearPartEquiv` acts as the complex-linear
 part. -/
