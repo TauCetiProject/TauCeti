@@ -104,7 +104,8 @@ theorem MemBesov.memℓp (hu : MemBesov φ s p q u) {g : ℕ → Lp F p (volume 
     (hg : ∀ j, littlewoodPaleyBlock F φ j u = g j) :
     Memℓp (fun j : ℕ ↦ (2 : ℝ) ^ (j * s) * ‖g j‖) q := by
   obtain ⟨g', hg', hm⟩ := hu
-  have : g = g' := funext fun j ↦ Lp.toTemperedDistribution_injective ((hg j).symm.trans (hg' j))
+  have : g = g' := funext fun j ↦ LinearMap.ker_eq_bot.mp Lp.ker_toTemperedDistributionCLM_eq_bot
+    ((hg j).symm.trans (hg' j))
   rwa [this]
 
 /-- The zero distribution lies in every Besov space. -/
