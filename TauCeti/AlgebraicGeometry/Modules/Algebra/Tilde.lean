@@ -18,7 +18,8 @@ maps `M → Γ(T, ⊤)`, where `R` acts on `Γ(T, ⊤)` through `R ≅ Γ(Spec R
 `AlgebraicGeometry.tilde.adjunction` between `~` and global sections, followed by the
 identification `Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv` of global sections of `q_* 𝒪_T`
 with global functions on `T`. The description is natural in `T`
-(`AlgebraicGeometry.Scheme.Hom.tildeHomPushforwardEquiv_comp`).
+(`AlgebraicGeometry.Scheme.Hom.tildeHomPushforwardEquiv_comp`) and in `M`
+(`AlgebraicGeometry.Scheme.Hom.tildeHomPushforwardEquiv_tilde_map_comp`).
 
 It is the analogue for `M~` of `AlgebraicGeometry.Scheme.Hom.freeHomPushforwardEquiv`, which
 describes module maps out of a free sheaf, and it computes the points of relative spectra of
@@ -30,7 +31,8 @@ symmetric algebras over an affine base.
   structure of `Γ(q_* 𝒪_T, ⊤)` is multiplication by the image of `R` in `Γ(T, ⊤)`;
 * `AlgebraicGeometry.Scheme.Hom.tildeHomPushforwardEquiv`: module maps `M~ ⟶ q_* 𝒪_T` are the
   `R`-linear maps `M → Γ(T, ⊤)`;
-* `AlgebraicGeometry.Scheme.Hom.tildeHomPushforwardEquiv_comp`: naturality in `T`.
+* `AlgebraicGeometry.Scheme.Hom.tildeHomPushforwardEquiv_comp`: naturality in `T`;
+* `AlgebraicGeometry.Scheme.Hom.tildeHomPushforwardEquiv_tilde_map_comp`: naturality in `M`.
 
 ## References
 
@@ -170,6 +172,15 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.tildeHomPushforwardEquiv_comp {V : Sch
   (congrArg p.pushforwardStructureAlgebraΓRingEquiv.symm
       (CommMon.sectionsAlgHom_apply (Scheme.Hom.pushforwardStructureAlgebraMap g h) ⊤ _).symm).trans
     (Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_sectionsAlgHom g h _)
+
+/-- The bijection `Scheme.Hom.tildeHomPushforwardEquiv` is natural in the module: precomposing a
+module map with `f~ : N~ ⟶ M~` precomposes its linear map with `f : N ⟶ M`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.tildeHomPushforwardEquiv_tilde_map_comp
+    (q : T ⟶ Spec R) {M N : ModuleCat.{u} R} (f : N ⟶ M)
+    (φ : tilde M ⟶ (Scheme.Modules.pushforward q).obj (𝟙_ T.Modules)) (n : N) :
+    q.tildeHomPushforwardEquiv N (tilde.map f ≫ φ) n = q.tildeHomPushforwardEquiv M φ (f n) :=
+  congrArg (fun g ↦ q.pushforwardStructureAlgebraΓRingEquiv.symm (g.hom n))
+    (tilde.adjunction.homEquiv_naturality_left f φ)
 
 end
 
