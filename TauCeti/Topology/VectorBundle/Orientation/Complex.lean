@@ -120,6 +120,7 @@ theorem complex_apply (b : B) :
 
 /-- A complex-linear trivialization of the atlas reads the canonical orientation of every fibre
 over its base set as the canonical orientation of the model fibre. -/
+@[simp]
 theorem mapOrientation_complex (e : Trivialization F (π F E)) [MemTrivializationAtlas e] {b : B}
     (hb : b ∈ e.baseSet) :
     e.mapOrientation _ hb (complex F E b) = complexOrientation F := by
