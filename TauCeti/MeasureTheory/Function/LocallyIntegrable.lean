@@ -449,9 +449,8 @@ theorem Continuous.integrable_smul_of_continuousOn {𝕜 F : Type*} [Topological
     [NormedAddCommGroup F] [SMulZeroClass 𝕜 F] [ContinuousSMul 𝕜 F] {a : X → 𝕜} {b : X → F}
     {U : Set X} (hb : Continuous b) (hbc : HasCompactSupport b) (hbU : tsupport b ⊆ U)
     (ha : ContinuousOn a U) : Integrable (fun x ↦ a x • b x) μ :=
-  (TauCeti.continuous_smul_of_continuousOn_of_tsupport_subset hb hbU
-    ha).integrable_of_hasCompactSupport
-    (hbc.mono' fun _ hx ↦ subset_tsupport _ (right_ne_zero_of_smul hx))
+  (hb.smul_of_continuousOn_of_tsupport_subset hbU ha).integrable_of_hasCompactSupport
+    hbc.smul_left
 
 /-- A function continuous on a compact set `K` lies in every `Lᵖ` on each measurable subset of
 `K`, for a measure that is finite on compact sets: it is bounded there, and the subset has finite
