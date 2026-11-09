@@ -71,16 +71,34 @@ variable {X : Type*} [MeasurableSpace X] [MeasurableSingletonClass X] [Decidable
 /-- For a finite nonempty `F`, the counting-measure Følner ratio of `F` at `m` is below
 `ENNReal.ofReal ε` exactly when `|mF △ F| < ε · |F|`. -/
 theorem MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff {M : Type*}
-    [SMul M X] {F : Finset X} (hF : F.Nonempty) (m : M) {ε : ℝ} (hε : 0 < ε) :
+    [SMul M X] {F : Finset X} (hF : F.Nonempty) (m : M) {ε : ℝ} :
     Measure.count ((m • (F : Set X)) ∆ F) / Measure.count (F : Set X) < ENNReal.ofReal ε ↔
       (#((m • F) ∆ F) : ℝ) < ε * #F := by
   -- Turn the counting measures into cardinalities.
   simp only [← coe_smul_finset, ← coe_symmDiff, Measure.count_apply_finset]
+  rcases le_or_gt ε 0 with hε | hε
+  · rw [ENNReal.ofReal_of_nonpos hε]
+    exact iff_of_false (by simp) (not_lt.2 ((mul_nonpos_of_nonpos_of_nonneg hε
+      (Nat.cast_nonneg _)).trans (Nat.cast_nonneg _)))
   -- Clear the denominator in `ℝ≥0∞`, then compare a natural number with a real.
   rw [ENNReal.div_lt_iff (by simp [hF.ne_empty]) (by simp), ← ENNReal.ofReal_natCast #F,
     ← ENNReal.ofReal_mul hε.le]
   exact ENNReal.natCast_lt_ofReal
 
+omit [MeasurableSingletonClass X] in
+/-- The counting-measure Følner ratio of a measurable finite set bounds the cardinality ratio
+from above. -/
+theorem MeasureTheory.Measure.card_smul_symmDiff_div_card_le_count_div_count {M : Type*}
+    [SMul M X] {F : Finset X} (hFm : MeasurableSet (F : Set X)) (m : M) :
+    (#((m • F) ∆ F) : ℝ≥0∞) / #F ≤
+      Measure.count ((m • (F : Set X)) ∆ F) / Measure.count (F : Set X) := by
+  rw [Measure.count_apply_finset' hFm]
+  refine ENNReal.div_le_div_right ?_ _
+  rw [← coe_smul_finset, ← coe_symmDiff]
+  calc (#((m • F) ∆ F) : ℝ≥0∞) = ∑' _ : (((m • F) ∆ F : Finset X) : Set X), (1 : ℝ≥0∞) := by simp
+    _ ≤ _ := Measure.le_count_apply
+
+omit [MeasurableSingletonClass X] in
 /-- The real cardinality ratios of a counting-measure Følner family of finite sets tend to
 zero for every group element. -/
 theorem IsFoelner.tendsto_card_smul_symmDiff_div_card [MulAction G X] {ι : Type*}
@@ -89,10 +107,15 @@ theorem IsFoelner.tendsto_card_smul_symmDiff_div_card [MulAction G X] {ι : Type
     Tendsto (fun i => (#((g • F i) ∆ F i) : ℝ) / #(F i)) l (𝓝 0) := by
   have hlimit := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
     (hF.tendsto_meas_smul_symmDiff g)
-  simpa only [Function.comp_def, ← coe_smul_finset, ← coe_symmDiff,
-    Measure.count_apply_finset, ENNReal.toReal_div, ENNReal.toReal_natCast,
-    ENNReal.toReal_zero] using hlimit
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlimit
+    (Eventually.of_forall fun i => by positivity) ?_
+  filter_upwards [hF.eventually_measurableSet,
+    (hF.tendsto_meas_smul_symmDiff g).eventually (gt_mem_nhds zero_lt_one)] with i hFm hlt
+  have hle := Measure.card_smul_symmDiff_div_card_le_count_div_count hFm g
+  have := ENNReal.toReal_mono hlt.ne_top hle
+  simpa [ENNReal.toReal_div, Function.comp_def] using this
 
+omit [MeasurableSingletonClass X] in
 /-- A Følner family for counting measure along a nontrivial filter passes every finite test: for
 each finite `K ⊆ G` and `ε > 0` there is a finite nonempty `F ⊆ X` with `|gF △ F| < ε · |F|` for
 all `g ∈ K`. -/
@@ -104,14 +127,19 @@ theorem IsFoelner.exists_finset_card_smul_symmDiff_lt [MulAction G X] {ι : Type
       Measure.count ((g • F i) ∆ F i) / Measure.count (F i) < ENNReal.ofReal ε :=
     (eventually_all_finset K).2 fun g _ =>
       (hF.tendsto_meas_smul_symmDiff g).eventually (gt_mem_nhds (ENNReal.ofReal_pos.2 hε))
-  obtain ⟨i, hi0, hitop, hiK⟩ :=
-    (hF.eventually_meas_ne_zero.and (hF.eventually_meas_ne_top.and hK)).exists
-  have hfin : (F i).Finite := Measure.count_apply_lt_top.1 (lt_top_iff_ne_top.2 hitop)
+  obtain ⟨i, hi0, hitop, hmeas, hiK⟩ :=
+    (hF.eventually_meas_ne_zero.and (hF.eventually_meas_ne_top.and
+      (hF.eventually_measurableSet.and hK))).exists
+  have hfin : (F i).Finite := (Measure.count_apply_lt_top' hmeas).1 (lt_top_iff_ne_top.2 hitop)
   have hne : hfin.toFinset.Nonempty := by
     simpa [Set.nonempty_iff_ne_empty] using mt Measure.count_eq_zero_iff.2 hi0
+  have hmeas' : MeasurableSet (hfin.toFinset : Set X) := by simpa using hmeas
   refine ⟨hfin.toFinset, hne, fun g hg => ?_⟩
-  rw [← Measure.count_smul_symmDiff_div_count_lt_ofReal_iff hne g hε, Set.Finite.coe_toFinset]
-  exact hiK g hg
+  have hlt := (Measure.card_smul_symmDiff_div_card_le_count_div_count hmeas' g).trans_lt
+    (by simpa only [Set.Finite.coe_toFinset] using hiK g hg)
+  rw [ENNReal.div_lt_iff (by simp [hne.ne_empty]) (by simp),
+    ← ENNReal.ofReal_natCast #hfin.toFinset, ← ENNReal.ofReal_mul hε.le] at hlt
+  exact ENNReal.natCast_lt_ofReal.1 hlt
 
 namespace TauCeti
 
@@ -136,8 +164,7 @@ theorem exists_isFoelner_atTop [MulAction G X]
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbound
     (Eventually.of_forall fun _ => zero_le) ?_
   filter_upwards [eventually_ge_atTop ({g}, 0)] with i hi
-  refine ((Measure.count_smul_symmDiff_div_count_lt_ofReal_iff (hne i) g
-    (by positivity)).2 (hlt i g ?_)).le
+  refine ((Measure.count_smul_symmDiff_div_count_lt_ofReal_iff (hne i) g).2 (hlt i g ?_)).le
   exact hi.1 (mem_singleton_self g)
 
 end TauCeti

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Amenable.Finite
 public import TauCeti.GroupTheory.Amenable.WeakStar
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 public import Mathlib.GroupTheory.Finiteness
@@ -35,10 +36,10 @@ restricts to a function in the `UCB` space of each of them.
 * `TauCeti.Amenable.of_forall_finset_subset_range`: a topological group is amenable if each of its
   finite subsets lies in the range of a continuous homomorphism from an amenable topological group,
   drawn from a fixed family.
-* `TauCeti.amenable_iSup_of_directed`: the union of a nonempty directed family of amenable
-  subgroups is an amenable subgroup.
+* `TauCeti.amenable_iSup_of_directed`: the union of a directed family of amenable subgroups is
+  an amenable subgroup.
 * `TauCeti.Amenable.of_directed_of_iSup_eq_top`: a topological group which is the union of a
-  nonempty directed family of amenable subgroups is amenable.
+  directed family of amenable subgroups is amenable.
 * `TauCeti.Amenable.of_forall_fg`: a topological group whose finitely generated subgroups are
   amenable is amenable.
 
@@ -70,11 +71,14 @@ theorem Amenable.of_forall_finset_subset_range {ι : Type*} {K : ι → Type*} [
   rw [← hk]
   exact hm.map_apply_leftTranslation (φ i) k p.2
 
-/-- The union `⨆ i, H i` of a nonempty directed family of amenable subgroups `H i` of a topological
+/-- The union `⨆ i, H i` of a directed family of amenable subgroups `H i` of a topological
 group is an amenable subgroup. -/
-theorem amenable_iSup_of_directed {ι : Type*} [Nonempty ι] {H : ι → Subgroup G}
+theorem amenable_iSup_of_directed {ι : Type*} {H : ι → Subgroup G}
     (hH : Directed (· ≤ ·) H) [∀ i, Amenable (H i)] : Amenable ↥(⨆ i, H i) := by
   classical
+  obtain hι | hι := isEmpty_or_nonempty ι
+  · rw [iSup_of_empty]
+    infer_instance
   refine .of_forall_finset_subset_range
     (fun i => ContinuousMonoidHom.subgroupInclusion (le_iSup H i)) fun s => ?_
   have hH' : Directed (· ⊆ ·) fun i => (H i : Set G) :=
@@ -84,9 +88,9 @@ theorem amenable_iSup_of_directed {ι : Type*} [Nonempty ι] {H : ι → Subgrou
     exact Set.image_subset_iff.2 fun x _ => x.2
   exact ⟨i, fun x hx => ⟨⟨x, hi (Finset.mem_image_of_mem _ hx)⟩, rfl⟩⟩
 
-/-- A topological group which is the union of a nonempty directed family of amenable subgroups is
+/-- A topological group which is the union of a directed family of amenable subgroups is
 amenable. -/
-theorem Amenable.of_directed_of_iSup_eq_top {ι : Type*} [Nonempty ι] {H : ι → Subgroup G}
+theorem Amenable.of_directed_of_iSup_eq_top {ι : Type*} {H : ι → Subgroup G}
     (hH : Directed (· ≤ ·) H) (htop : ⨆ i, H i = ⊤) [∀ i, Amenable (H i)] : Amenable G :=
   have := amenable_iSup_of_directed hH
   .of_denseRange (ContinuousMonoidHom.subgroupSubtype (⨆ i, H i))
