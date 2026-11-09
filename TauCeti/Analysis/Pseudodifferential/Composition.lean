@@ -33,6 +33,9 @@ not developed here, of the asymptotic expansion `a # b ∼ ∑_α (1/i)^|α|/α!
 
 * `TauCeti.Symbol.sharp`: the composition symbol `a # b`, a symbol of order `m + m'`, with
   coefficient `TauCeti.Symbol.coefficient_sharp`.
+* `TauCeti.Symbol.add_sharp`, `TauCeti.Symbol.smul_sharp`, `TauCeti.Symbol.sharp_add`,
+  `TauCeti.Symbol.sharp_smul`, `TauCeti.Symbol.zero_sharp`, `TauCeti.Symbol.sharp_zero`: `a # b` is
+  linear in each factor.
 * `TauCeti.Symbol.quantizeSchwartzValue_sharp`: `Op(a # b) u = Op(a) (Op(b) u)` for Schwartz
   functions `u`, where `Op(b) u` is a test function.
 * `TauCeti.Symbol.coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq`: `a # b` is the only
@@ -705,6 +708,86 @@ theorem coefficient_sharp (a : Symbol n W U m) {b : Symbol n V W m'}
     (x ξ : CoordinateSpace n) :
     (a.sharp hb).coefficient (x, ξ) = ∫ θ, (𝐞 ⟪θ, x⟫ : ℂ) •
       (a.coefficient (x, ξ + (2 * π) • θ)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) θ) := (rfl)
+
+/-! #### Linearity in each factor -/
+
+/-- The composition symbol is additive in the left factor: `(a₁ + a₂) # b = a₁ # b + a₂ # b`. -/
+theorem add_sharp (a₁ a₂ : Symbol n W U m) {b : Symbol n V W m'}
+    (hb : b.HasCompactSpatialSupport) :
+    (a₁ + a₂).sharp hb = a₁.sharp hb + a₂.sharp hb := by
+  ext1
+  funext p
+  rw [coefficient_add, Pi.add_apply, coefficient_sharp_eq, coefficient_sharp_eq,
+    coefficient_sharp_eq, sharpCoeff, sharpCoeff, sharpCoeff,
+    ← integral_add (integrable_sharpIntegrand a₁ hb p) (integrable_sharpIntegrand a₂ hb p)]
+  simp only [coefficient_add, Pi.add_apply, ContinuousLinearMap.add_comp, smul_add]
+
+/-- The composition symbol is homogeneous in the left factor: `(c • a) # b = c • (a # b)`. -/
+@[simp]
+theorem smul_sharp (c : ℂ) (a : Symbol n W U m) {b : Symbol n V W m'}
+    (hb : b.HasCompactSpatialSupport) :
+    (c • a).sharp hb = c • a.sharp hb := by
+  ext1
+  funext p
+  rw [coefficient_smul, Pi.smul_apply, coefficient_sharp_eq, coefficient_sharp_eq, sharpCoeff,
+    sharpCoeff, ← integral_smul]
+  simp only [coefficient_smul, Pi.smul_apply, ContinuousLinearMap.smul_comp, smul_comm c]
+
+/-- The zero symbol is a left zero for the composition: `0 # b = 0`. -/
+@[simp]
+theorem zero_sharp {b : Symbol n V W m'} (hb : b.HasCompactSpatialSupport) :
+    (0 : Symbol n W U m).sharp hb = 0 := by
+  ext1
+  funext p
+  simp [coefficient_sharp_eq, sharpCoeff]
+
+/-- The Fourier transform of a position slice is additive for symbols with compact spatial
+support, whose position slices are integrable. -/
+private theorem HasCompactSpatialSupport.fourierSlice_add {b₁ b₂ : Symbol n V W m'}
+    (hb₁ : b₁.HasCompactSpatialSupport) (hb₂ : b₂.HasCompactSpatialSupport)
+    (θ ξ : CoordinateSpace n) :
+    fourierSlice (b₁ + b₂) θ ξ = fourierSlice b₁ θ ξ + fourierSlice b₂ θ ξ := by
+  have hint {b : Symbol n V W m'} (hb : b.HasCompactSpatialSupport) :
+      Integrable fun y ↦ 𝐞 (-⟪y, θ⟫) • b.coefficient (y, ξ) := by
+    have hc := (b.contDiff_coefficient_slice ξ).continuous
+    exact (hc.integrable_of_hasCompactSupport (hb.hasCompactSupport_slice ξ)).norm.mono'
+      ((Real.continuous_fourierChar.comp (continuous_id.inner continuous_const).neg).smul
+        hc).aestronglyMeasurable
+      (ae_of_all _ fun y ↦ by rw [Circle.smul_def, norm_smul, Circle.norm_coe, one_mul])
+  rw [fourierSlice_apply, fourierSlice_apply, fourierSlice_apply, Real.fourier_eq,
+    Real.fourier_eq, Real.fourier_eq, ← integral_add (hint hb₁) (hint hb₂)]
+  simp only [coefficient_add, Pi.add_apply, Circle.smul_def, smul_add]
+
+/-- The composition symbol is additive in the right factor: `a # (b₁ + b₂) = a # b₁ + a # b₂`. -/
+theorem sharp_add (a : Symbol n W U m) {b₁ b₂ : Symbol n V W m'}
+    (hb₁ : b₁.HasCompactSpatialSupport) (hb₂ : b₂.HasCompactSpatialSupport) :
+    a.sharp (hb₁.add hb₂) = a.sharp hb₁ + a.sharp hb₂ := by
+  ext1
+  funext p
+  rw [coefficient_add, Pi.add_apply, coefficient_sharp_eq, coefficient_sharp_eq,
+    coefficient_sharp_eq, sharpCoeff, sharpCoeff, sharpCoeff,
+    ← integral_add (integrable_sharpIntegrand a hb₁ p) (integrable_sharpIntegrand a hb₂ p)]
+  simp only [hb₁.fourierSlice_add hb₂, ContinuousLinearMap.comp_add, smul_add]
+
+/-- The composition symbol is homogeneous in the right factor: `a # (c • b) = c • (a # b)`. -/
+theorem sharp_smul (a : Symbol n W U m) {b : Symbol n V W m'}
+    (hb : b.HasCompactSpatialSupport) (c : ℂ) :
+    a.sharp (hb.smul c) = c • a.sharp hb := by
+  ext1
+  funext p
+  rw [coefficient_smul, Pi.smul_apply, coefficient_sharp_eq, coefficient_sharp_eq, sharpCoeff,
+    sharpCoeff, ← integral_smul]
+  refine integral_congr_ae (ae_of_all _ fun θ ↦ ?_)
+  simp only [fourierSlice_apply, Real.fourier_eq, coefficient_smul, Pi.smul_apply,
+    smul_comm _ c, integral_smul, ContinuousLinearMap.comp_smul]
+
+/-- The zero symbol is a right zero for the composition: `a # 0 = 0`. -/
+@[simp]
+theorem sharp_zero (a : Symbol n W U m) (h : (0 : Symbol n V W m').HasCompactSpatialSupport) :
+    a.sharp h = 0 := by
+  ext1
+  funext p
+  simp [coefficient_sharp_eq, sharpCoeff, fourierSlice_apply, Real.fourier_eq, Circle.smul_def]
 
 /-- **Leibniz rule in the position.** `∂_{x_j} (a # b) = (∂_{x_j} a) # b + a # (∂_{x_j} b)`. -/
 theorem spatialDeriv_sharp (a : Symbol n W U m) {b : Symbol n V W m'}
