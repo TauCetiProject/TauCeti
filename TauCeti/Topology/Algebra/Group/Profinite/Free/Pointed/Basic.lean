@@ -97,9 +97,12 @@ variable {C x₀}
 
 /-- The intersection of two admissible open normal subgroups is admissible. -/
 private theorem IsAdmissible.inf {U V : OpenNormalSubgroup (freeProC C X)}
-    (hU : IsAdmissible C x₀ U) (hV : IsAdmissible C x₀ V) : IsAdmissible C x₀ (U ⊓ V) :=
-  ⟨(OpenSubgroup.continuous_mk_inf_iff (U := U.toOpenSubgroup) (V := V.toOpenSubgroup)).mpr
-    ⟨hU.1, hV.1⟩, Subgroup.mem_inf.mpr ⟨hU.2, hV.2⟩⟩
+    (hU : IsAdmissible C x₀ U) (hV : IsAdmissible C x₀ V) : IsAdmissible C x₀ (U ⊓ V) := by
+  refine ⟨?_, Subgroup.mem_inf.mpr ⟨hU.2, hV.2⟩⟩
+  rw [OpenNormalSubgroup.toSubgroup_inf]
+  simpa only [OpenSubgroup.toSubgroup_inf] using
+    (OpenSubgroup.continuous_mk_inf_iff (U := U.toOpenSubgroup) (V := V.toOpenSubgroup)).mpr
+      ⟨hU.1, hV.1⟩
 
 variable (C x₀)
 
@@ -270,13 +273,16 @@ private theorem isAdmissible_comap_lift (hP : IsProC C P) {f : X → P} (hf : Co
     (hf₀ : f x₀ = 1) (V : OpenNormalSubgroup P) :
     IsAdmissible C x₀ (V.comap (freeProC.lift hP f : freeProC C X →* P)
       (freeProC.lift hP f).continuous) := by
-  refine ⟨(OpenSubgroup.continuous_mk_comap_iff V.toOpenSubgroup
-    (freeProC.lift hP f : freeProC C X →* P) (freeProC.lift hP f).continuous).mpr (by
-    simpa only [Function.comp_def, MonoidHom.coe_ofClass, freeProC.lift_of] using
-      QuotientGroup.continuous_mk.comp hf), ?_⟩
-  refine OpenNormalSubgroup.mem_comap.mpr ?_
-  rw [MonoidHom.coe_ofClass, freeProC.lift_of, hf₀]
-  exact one_mem _
+  refine ⟨?_, ?_⟩
+  · rw [OpenNormalSubgroup.toSubgroup_comap,
+      ← OpenSubgroup.toSubgroup_comap V.toOpenSubgroup]
+    exact (OpenSubgroup.continuous_mk_comap_iff V.toOpenSubgroup
+        (freeProC.lift hP f : freeProC C X →* P) (freeProC.lift hP f).continuous).mpr (by
+          simpa only [Function.comp_def, MonoidHom.coe_ofClass, freeProC.lift_of] using
+            QuotientGroup.continuous_mk.comp hf)
+  · refine OpenNormalSubgroup.mem_comap.mpr ?_
+    rw [MonoidHom.coe_ofClass, freeProC.lift_of, hf₀]
+    exact one_mem _
 
 /-- The kernel dies under the lift of a continuous base-point-preserving map to a profinite pro-`C`
 group. -/
