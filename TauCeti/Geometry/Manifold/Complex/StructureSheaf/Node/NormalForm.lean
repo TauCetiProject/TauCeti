@@ -153,19 +153,17 @@ theorem isDistinguishedAt_nodeNormalForm {b : E}
 
 /-! ### The coordinate change on the stalk at the node -/
 
-/-- Holomorphic stalks at equal points are identified. The origin is fixed by the coordinate
-change only propositionally, since `0 + 0 = 0` in `ℂ` is not a definitional equality. A cast,
-unlike `TopCat.Presheaf.stalkCongr`, is computed by `subst`. -/
-private def stalkEquivOfEq {p q : (E × ℂ) × ℂ} (h : p = q) :
-    (holomorphicStructureSheaf 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ)).presheaf.stalk p ≃+*
-      (holomorphicStructureSheaf 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ)).presheaf.stalk q :=
-  h ▸ RingEquiv.refl _
-
-private theorem toFilterGerm_stalkEquivOfEq {p q : (E × ℂ) × ℂ} (h : p = q)
+/-- Transporting a holomorphic stalk along `p = q` with `RingEquiv.cast` keeps its
+representative. The origin is fixed by the coordinate change only propositionally, since
+`0 + 0 = 0` in `ℂ` is not a definitional equality. A cast, unlike
+`TopCat.Presheaf.stalkCongr`, is computed by `subst`. -/
+private theorem toFilterGerm_ringEquivCast {p q : (E × ℂ) × ℂ} (h : p = q)
     {g : (holomorphicStructureSheaf 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ)).presheaf.stalk p}
     {f : (E × ℂ) × ℂ → ℂ}
     (hg : toFilterGerm 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ) p (𝓝 p) le_rfl g = f) :
-    toFilterGerm 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ) q (𝓝 q) le_rfl (stalkEquivOfEq h g) = f := by
+    toFilterGerm 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ) q (𝓝 q) le_rfl
+      (RingEquiv.cast (R := fun p ↦ (holomorphicStructureSheaf 𝓘(ℂ, (E × ℂ) × ℂ)
+        ((E × ℂ) × ℂ)).presheaf.stalk p) h g) = f := by
   subst h
   exact hg
 
@@ -179,7 +177,9 @@ origin, which the coordinate change fixes. -/
 private def nodeCoordinateStalkEquiv (b : E) :
     (holomorphicStructureSheaf 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ)).presheaf.stalk ((b, 0), 0) ≃+*
       (holomorphicStructureSheaf 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ)).presheaf.stalk ((b, 0), 0) :=
-  (stalkEquivOfEq (nodeCoordinateChange_origin b)).trans
+  (RingEquiv.cast (R := fun p ↦
+    (holomorphicStructureSheaf 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ)).presheaf.stalk p)
+    (nodeCoordinateChange_origin b)).trans
     (nodeCoordinateChange.holomorphicStalkEquiv ((b, 0), 0))
 
 /-- The stalk automorphism composes representatives with the coordinate change. -/
@@ -190,7 +190,7 @@ private theorem toFilterGerm_nodeCoordinateStalkEquiv {b : E}
     toFilterGerm 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ) ((b, 0), 0) (𝓝 ((b, 0), 0)) le_rfl
         (nodeCoordinateStalkEquiv b g) = (f ∘ nodeCoordinateChange : (E × ℂ) × ℂ → ℂ) := by
   rw [nodeCoordinateStalkEquiv, RingEquiv.trans_apply, Diffeomorph.holomorphicStalkEquiv_apply,
-    toFilterGerm_stalkPrecomp, toFilterGerm_stalkEquivOfEq _ hg, Germ.coe_compTendsto]
+    toFilterGerm_stalkPrecomp, toFilterGerm_ringEquivCast _ hg, Germ.coe_compTendsto]
 
 /-- The coordinate change carries the node equation to its normal form. -/
 private theorem nodeCoordinateStalkEquiv_nodeEquation (b : E)
