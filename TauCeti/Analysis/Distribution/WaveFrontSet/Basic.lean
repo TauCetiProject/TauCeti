@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.Analysis.Distribution.ComplexPairing
 import TauCeti.Analysis.Distribution.Support
+import TauCeti.Analysis.Distribution.TestFunction.Convergence
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Fourier.Inversion
@@ -34,7 +35,8 @@ not microlocally smooth.
 
 ## Main declarations
 
-* `Distribution.localFourier T φ`: the Fourier transform `η ↦ T (φ e_η)` of `φ T`.
+* `Distribution.localFourier T φ`: the Fourier transform `η ↦ T (φ e_η)` of `φ T`; it is
+  continuous (`Distribution.continuous_localFourier`).
 * `Distribution.IsMicrolocallySmoothAt T x ξ`: microlocal smoothness at `(x, ξ)`.
 * `Distribution.waveFrontSet T`: the wave front set.
 
@@ -136,6 +138,24 @@ theorem localFourier_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω, �
 @[simp]
 theorem localFourier_zero_cutoff (T : 𝓓'(Ω, ℂ)) (η : E) : T.localFourier 0 η = 0 := by
   simpa using localFourier_smul_cutoff T 0 0 η
+
+/-- The localized Fourier transform `η ↦ T (φ e_η)` is continuous in the frequency. -/
+theorem continuous_localFourier (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
+    Continuous (T.localFourier φ) := by
+  set ψ : E → 𝓓(Ω, ℂ) := fun η ↦
+    bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ
+  have hT : T.localFourier φ = fun η ↦ T.complexPairing (ψ η) :=
+    funext fun η ↦ localFourier_eq T φ fun x ↦ by
+      simp [ψ, bilinLeftCLM_apply, TauCeti.fourierAtom_eq_fourierChar,
+        -TauCeti.fourierAtom_apply]
+  rw [hT]
+  -- The modulated cutoffs `φ e_η` share the support of `φ` and depend smoothly on `η`.
+  refine T.complexPairing.continuous.comp (continuous_of_contDiff_uncurry
+    φ.hasCompactSupport.isCompact φ.tsupport_subset (fun η ↦ ?_) ?_)
+  · simp only [ψ, bilinLeftCLM_apply, ContinuousLinearMap.mul_apply']
+    exact tsupport_mul_subset_left
+  · simp only [ψ, bilinLeftCLM_apply, ContinuousLinearMap.mul_apply']
+    exact (φ.contDiff.comp contDiff_snd).mul TauCeti.contDiff_uncurry_fourierAtom
 
 /-- A complex distribution `T` is **microlocally smooth** at `(x, ξ)` if some complex test
 function `φ` with `φ x ≠ 0` has localized Fourier transform `localFourier T φ` rapidly
