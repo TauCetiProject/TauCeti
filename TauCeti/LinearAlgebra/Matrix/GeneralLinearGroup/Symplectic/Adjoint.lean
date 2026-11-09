@@ -97,27 +97,12 @@ theorem mul_mul_inv_mem_sp {A : GL (l ⊕ l) R} (hA : A ∈ GLSymplectic l R)
     {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX : X ∈ sp l R) :
     (A : Matrix (l ⊕ l) (l ⊕ l) R) * X * ((A⁻¹ : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R) ∈
       sp l R := by
-  set a := (A : Matrix (l ⊕ l) (l ⊕ l) R)
-  set b := ((A⁻¹ : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R)
-  have hab : a * b = 1 := A.mul_inv
-  have hba : b * a = 1 := A.inv_mul
-  have hJ : a * J l R * aᵀ = J l R := mem_iff.mp hA
-  -- Move `A⁻¹` and its transpose past `J` using `A J Aᵀ = J`.
-  have h₁ : b * J l R = J l R * aᵀ := by
-    calc b * J l R = b * (a * J l R * aᵀ) := by rw [hJ]
-      _ = (b * a) * J l R * aᵀ := by simp only [Matrix.mul_assoc]
-      _ = J l R * aᵀ := by rw [hba, Matrix.one_mul]
-  have h₂ : J l R * bᵀ = a * J l R := by
-    calc J l R * bᵀ = a * J l R * aᵀ * bᵀ := by rw [hJ]
-      _ = a * J l R * (b * a)ᵀ := by rw [transpose_mul]; simp only [Matrix.mul_assoc]
-      _ = a * J l R := by rw [hba, transpose_one, Matrix.mul_one]
-  rw [mem_sp_iff_mul_J_add_J_mul_transpose_eq_zero] at hX ⊢
-  calc a * X * b * J l R + J l R * (a * X * b)ᵀ
-      = a * X * (b * J l R) + J l R * bᵀ * Xᵀ * aᵀ := by
-        simp only [transpose_mul, Matrix.mul_assoc]
-    _ = a * (X * J l R + J l R * Xᵀ) * aᵀ := by
-        rw [h₁, h₂]; simp only [Matrix.mul_add, Matrix.add_mul, Matrix.mul_assoc]
-    _ = 0 := by rw [hX, Matrix.mul_zero, Matrix.zero_mul]
+  rw [sp, mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule,
+    Matrix.IsSkewAdjoint] at hX ⊢
+  -- Mathlib's `Matrix.isAdjointPair_equiv` with `P = A`, using `Aᵀ J A = J`.
+  rw [← mem_iff'.mp hA] at hX
+  simpa only [coe_units_inv, Matrix.mul_neg, Matrix.neg_mul] using
+    (isAdjointPair_equiv (J l R) X (-X) _ A.isUnit).mp hX
 
 /-- The conjugation `X ↦ A X A⁻¹` of `sp l R` by a symplectic matrix, as a Lie automorphism:
 Mathlib's `Matrix.lieConj` restricted to `sp l R`. -/
@@ -127,13 +112,11 @@ private def adjointAux (A : GLSymplectic l R) : sp l R ≃ₗ⁅R⁆ sp l R :=
       ext X
       constructor
       · rintro ⟨Y, hY, rfl⟩
-        change Matrix.lieConj _ _ Y ∈ sp l R
-        rw [Matrix.lieConj_apply, ← coe_units_inv]
+        rw [LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom, Matrix.lieConj_apply, ← coe_units_inv]
         exact mul_mul_inv_mem_sp A.2 hY
       · intro hX
         refine ⟨_, mul_mul_inv_mem_sp (inv_mem A.2) hX, ?_⟩
-        change Matrix.lieConj _ _ _ = X
-        simp [← coe_units_inv, Matrix.mul_assoc])
+        simp [LieHom.coe_toLinearMap, ← coe_units_inv, Matrix.mul_assoc])
 
 /-- The matrix of `adjointAux A X` is `A X A⁻¹`. -/
 private theorem coe_adjointAux_apply (A : GLSymplectic l R) (X : sp l R) :
