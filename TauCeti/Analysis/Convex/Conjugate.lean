@@ -170,6 +170,14 @@ theorem le_add_fenchelConjugate (hx : f x ≠ ⊥) (hy : fenchelConjugate B f y 
   · rw [add_comm]
     exact (EReal.sub_le_iff_le_add (.inl hx) (.inl hx')).1 (sub_le_fenchelConjugate B f x y)
 
+/-- **The Fenchel–Young inequality** between real representatives, `B x y ≤ (f x).toReal +
+(f⋆ y).toReal`, at points where `f x` and `f⋆ y` are both finite. -/
+theorem le_toReal_add_toReal_fenchelConjugate (hbot : f x ≠ ⊥) (hx : f x ≠ ⊤)
+    (hy : fenchelConjugate B f y ≠ ⊤) : B x y ≤ (f x).toReal + (fenchelConjugate B f y).toReal := by
+  have h := le_add_fenchelConjugate B hbot (fenchelConjugate_ne_bot B hx y)
+  rwa [← EReal.coe_toReal hx hbot, ← EReal.coe_toReal hy (fenchelConjugate_ne_bot B hx y),
+    ← EReal.coe_add, EReal.coe_le_coe_iff] at h
+
 /-- The conjugate of the constant `⊤` is the constant `⊥`. -/
 @[simp]
 theorem fenchelConjugate_top (y : F) : fenchelConjugate B (⊤ : E → EReal) y = ⊥ :=
