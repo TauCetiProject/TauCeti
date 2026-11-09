@@ -14,9 +14,6 @@ public import TauCeti.CategoryTheory.MorphismProperty.LiftingProperty
 public import Mathlib.CategoryTheory.Presentable.Finite
 
 import Mathlib.AlgebraicTopology.SimplicialSet.Presentable
-import Mathlib.CategoryTheory.Filtered.Connected
-import Mathlib.CategoryTheory.Limits.Constructions.Over.Connected
-import Mathlib.CategoryTheory.Presentable.Adjunction
 
 /-!
 # The level projective weak factorization systems of symmetric spectra
@@ -131,17 +128,6 @@ section SmallObject
 
 attribute [local instance] Cardinal.fact_isRegular_aleph0
   Cardinal.orderBotAleph0OrdToType
-
-/-- The free spectrum `F_n (K₊)` on a finitely presentable simplicial set is finitely
-presentable. -/
-instance isFinitelyPresentable_free_obj_addBasepoint (n : ℕ) (K : SSet.{0})
-    [IsFinitelyPresentable.{0} K] : IsFinitelyPresentable.{0} ((free n).obj (addBasepoint.obj K)) :=
-  have : (evaluation n ⋙ forgetBasepoint).IsCardinalAccessible Cardinal.aleph0.{0} :=
-    { preservesColimitOfShape J _ _ := by
-        have := isFiltered_of_isCardinalFiltered J Cardinal.aleph0.{0}
-        have := IsFiltered.isConnected J
-        infer_instance }
-  (freeAddBasepointAdjunction n).isCardinalPresentable_leftAdjoint_obj _ K
 
 /-- Free cells on maps with finitely presentable domains admit the small object argument with
 countable cell attachments. -/
