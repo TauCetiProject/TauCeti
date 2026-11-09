@@ -402,15 +402,7 @@ theorem order_coe_rename {f : σ → τ} (hf : Function.Injective f) (p : MvPoly
     ((rename f p : MvPolynomial τ R) : MvPowerSeries τ R).order =
       (p : MvPowerSeries σ R).order := by
   refine eq_of_forall_le_iff fun n ↦ ?_
-  have key (q : MvPowerSeries σ R) :
-      n ≤ q.order ↔ ∀ d : σ →₀ ℕ, (d.degree : ℕ∞) < n → MvPowerSeries.coeff d q = 0 :=
-    ⟨fun h d hd ↦ MvPowerSeries.coeff_of_lt_order (lt_of_lt_of_le hd h),
-      fun h ↦ MvPowerSeries.le_order h⟩
-  have key' (q : MvPowerSeries τ R) :
-      n ≤ q.order ↔ ∀ d : τ →₀ ℕ, (d.degree : ℕ∞) < n → MvPowerSeries.coeff d q = 0 :=
-    ⟨fun h d hd ↦ MvPowerSeries.coeff_of_lt_order (lt_of_lt_of_le hd h),
-      fun h ↦ MvPowerSeries.le_order h⟩
-  rw [key, key']
+  rw [MvPowerSeries.le_order_iff, MvPowerSeries.le_order_iff]
   refine ⟨fun h d hd ↦ ?_, fun h d hd ↦ ?_⟩
   · simpa only [coeff_coe, coeff_rename_mapDomain f hf] using
       h (d.mapDomain f) (by simpa only [degree_mapDomain] using hd)
@@ -481,8 +473,7 @@ theorem orderAt_def (p : MvPolynomial σ R) (a : σ → R) :
 total degree less than `n` vanishes. -/
 theorem le_orderAt_iff {n : ℕ∞} :
     n ≤ p.orderAt a ↔ ∀ d : σ →₀ ℕ, (d.degree : ℕ∞) < n → (taylor a p).coeff d = 0 := by
-  refine ⟨fun h d hd ↦ ?_, fun h ↦ MvPowerSeries.le_order fun d hd ↦ by simpa using h d hd⟩
-  simpa using MvPowerSeries.coeff_of_lt_order (lt_of_lt_of_le hd h)
+  simp only [orderAt_def, MvPowerSeries.le_order_iff, coeff_coe]
 
 theorem orderAt_le {d : σ →₀ ℕ} (h : (taylor a p).coeff d ≠ 0) : p.orderAt a ≤ d.degree :=
   MvPowerSeries.order_le (by simpa using h)

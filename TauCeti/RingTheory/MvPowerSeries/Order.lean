@@ -68,6 +68,12 @@ section AddSub
 
 variable {σ R : Type*} {n : ℕ∞}
 
+/-- A power series has order at least `n` exactly when all its coefficients in total degree
+less than `n` vanish. -/
+theorem le_order_iff [Semiring R] {f : MvPowerSeries σ R} :
+    n ≤ f.order ↔ ∀ d : σ →₀ ℕ, (d.degree : ℕ∞) < n → coeff d f = 0 :=
+  ⟨fun h _ hd ↦ coeff_of_lt_order (lt_of_lt_of_le hd h), le_order⟩
+
 /-- A lower bound on the orders of two series bounds the order of their sum. -/
 theorem le_order_add [Semiring R] {f g : MvPowerSeries σ R} (hf : n ≤ f.order)
     (hg : n ≤ g.order) : n ≤ (f + g).order :=
