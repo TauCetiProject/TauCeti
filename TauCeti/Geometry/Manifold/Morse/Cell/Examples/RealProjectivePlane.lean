@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 public import TauCeti.Geometry.Manifold.Morse.Cell.Comparison
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
-import TauCeti.Geometry.Sphere.Circle
+public import TauCeti.Geometry.Sphere.Circle
 import TauCeti.Analysis.InnerProductSpace.Reflection
 
 /-!
@@ -64,6 +64,8 @@ around the core of the Möbius band, in opposite directions for the two charts.
   `TauCeti.exists_iso_morseCellAttachment_realProjPlaneTopReflChart_realProjPlaneTopChart`:
   `α₋ = α₊ ∘ r` and `χ₋ = χ₊ ∘ r` strictly, and the resulting homeomorphism of cell attachments
   relative to `{f ≤ 2 - ε}`.
+* `TauCeti.realProjPlaneCoreDegree_eq_degree`: the core degree of `g` is the degree of any loop
+  `t ↦ ρ (g (cos 2πt, sin 2πt))`.
 * `TauCeti.realProjPlaneCoreDegree_eq_of_homotopic`,
   `TauCeti.coe_realProjPlaneCoreMap_apply` and
   `TauCeti.realProjPlaneCoreDegree_realProjPlaneCoreMap`: the core degree is a homotopy
@@ -636,6 +638,35 @@ private theorem coreDegreeLoop_apply
         (g (diskBoundaryHomeomorphCircle.symm (Circle.exp (2 * Real.pi * t)))) := by
   simp only [Path.map_coe, Function.comp_apply, Circle.expLoop_apply, ContinuousMap.comp_apply,
     ContinuousMap.coe_ofClass]
+
+/-- The defining equation of the core degree, through the parametrization
+`TauCeti.sphereOneHomeomorphCircle` of the boundary circle `∂D²`. -/
+theorem realProjPlaneCoreDegree_def
+    (g : C(TopCat.diskBoundary.{0} 2,
+      {x : ℙ ℝ (Fin 3 → ℝ) | projectiveMomentFunction ℝ ![0, 1, 2] x < 2})) :
+    realProjPlaneCoreDegree g = Circle.degree (Circle.expLoop.map
+      (realProjPlaneCoreAngle.comp (g.comp
+        (ContinuousMap.ofClass
+          (sphereOneHomeomorphCircle.trans Homeomorph.ulift).symm))).continuous) := by
+  rw [realProjPlaneCoreDegree]
+  rfl
+
+/-- **Characteristic formula for the core degree.** The core degree of `g` is the degree of any
+loop `γ` in the circle with `γ t = ρ (g (cos 2πt, sin 2πt))` for all `t`, where `ρ` is the core
+angle `TauCeti.realProjPlaneCoreAngle`. -/
+theorem realProjPlaneCoreDegree_eq_degree
+    (g : C(TopCat.diskBoundary.{0} 2,
+      {x : ℙ ℝ (Fin 3 → ℝ) | projectiveMomentFunction ℝ ![0, 1, 2] x < 2}))
+    {x : Circle} (γ : Path x x)
+    (hγ : ∀ (t : unitInterval) (s : TopCat.diskBoundary.{0} 2),
+      (s.down : EuclideanSpace ℝ (Fin 2)) =
+          !₂[Real.cos (2 * Real.pi * t), Real.sin (2 * Real.pi * t)] →
+        γ t = realProjPlaneCoreAngle (g s)) :
+    realProjPlaneCoreDegree g = Circle.degree γ :=
+  Circle.degree_congr _ _ fun t ↦ by
+    rw [coreDegreeLoop_apply]
+    exact (hγ t _ (by rw [diskBoundaryHomeomorphCircle_symm_apply_down,
+      EuclideanSpace.coe_sphereHomeomorphCircle_symm_exp])).symm
 
 /-- **The core degree is a homotopy invariant.** -/
 theorem realProjPlaneCoreDegree_eq_of_homotopic
