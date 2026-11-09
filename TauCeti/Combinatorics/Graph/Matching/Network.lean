@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Graph.Matching.Capacitated
 public import TauCeti.Combinatorics.Network.AuxiliaryTerminals
-public import TauCeti.Combinatorics.Network.Basic
 
 /-!
 # The flow network of a bipartite multigraph
@@ -36,11 +35,13 @@ The construction follows the classical network proof of Kőnig's theorem; see A.
 * `Graph.bipartiteCapacity`: the capacities after adjoining the fresh source and sink.
 * `Graph.bipartiteNetwork`: the corresponding zero-lower-bound integer network.
 * `Graph.bipartiteCoverSourceSide`: the source side associated to a vertex cover.
-* `Graph.bipartiteCutCover`: the cover extracted from a source side.
+* `Graph.bipartiteCutCover`: the candidate cover extracted from a source side; a low-capacity cut
+  guarantees that it covers every edge.
 
 ## Main results
 
-* `Graph.IsVertexCover.arrowSum_bipartiteCapacity`: a cover gives a cut of the same weight.
+* `Graph.IsVertexCover.arrowSum_bipartiteCapacity_bipartiteCoverSourceSide`: a cover gives a cut
+  of the same weight.
 * `Graph.IsBipartition.arrowSum_bipartiteCapacity_eq_sum_bipartiteCutCover`: a low-capacity cut
   has the same weight as its associated cover.
 * `Graph.IsBipartition.isVertexCover_bipartiteCutCover`: every cut below the large capacity gives
@@ -59,49 +60,37 @@ namespace Graph
 variable {alpha : Type u} {beta : Type v} {G : Graph alpha beta}
 variable {L R : Finset V(G)}
 
-/-- The arrow family obtained by directing every actual edge of `G` from its end in `L` to its
-other end.  Under a bipartition by `L, R`, these are exactly the edges directed from `L` to `R`. -/
-@[expose] def BipartiteHom (G : Graph alpha beta) (L : Finset V(G)) (x y : V(G)) : Type v :=
-  {e : E(G) // G.IsLink e x y ∧ x ∈ L}
-
-instance [Finite E(G)] (x y : V(G)) : Finite (G.BipartiteHom L x y) := by
-  unfold BipartiteHom
-  infer_instance
-
-noncomputable instance [Fintype E(G)] (x y : V(G)) : Fintype (G.BipartiteHom L x y) :=
-  Fintype.ofFinite (G.BipartiteHom L x y)
-
-namespace BipartiteHom
-
-/-- The original edge underlying an arrow of the bipartite arrow family. -/
-@[expose] def edge {x y : V(G)} (e : G.BipartiteHom L x y) : E(G) := e.1
-
-@[simp]
-theorem edge_mk {x y : V(G)} (e : E(G)) (h : G.IsLink e x y ∧ x ∈ L) :
-    edge (⟨e, h⟩ : G.BipartiteHom L x y) = e :=
-  rfl
-
-/-- The source of every bipartite arrow belongs to `L`. -/
-theorem source_mem {x y : V(G)} (e : G.BipartiteHom L x y) : x ∈ L :=
-  e.2.2
-
-/-- The target of every bipartite arrow belongs to `R`. -/
-theorem target_mem (hLR : G.IsBipartition L R) {x y : V(G)} (e : G.BipartiteHom L x y) :
-    y ∈ R :=
-  hLR.mem_right_of_isLink e.2.1 e.source_mem
-
-end BipartiteHom
-
 /-- The capacity assigned to every original edge in the bipartite network.  It exceeds the
 capacity of the cut obtained by deleting all source arrows. -/
-@[expose] def bipartiteLargeCapacity (L : Finset V(G)) (b : V(G) → ℕ) : ℤ :=
-  (∑ x ∈ L, b x : ℕ) + 1
+def bipartiteLargeCapacity (L : Finset V(G)) (b : V(G) → ℕ) : ℤ :=
+  ((∑ x ∈ L, b x) + 1 : ℕ)
+
+/-- The large capacity is one more than the total capacity on `L`. -/
+theorem bipartiteLargeCapacity_def (L : Finset V(G)) (b : V(G) → ℕ) :
+    bipartiteLargeCapacity L b = ((∑ x ∈ L, b x) + 1 : ℕ) :=
+  (rfl)
 
 /-- The capacities of the bipartite network: `b v` on the terminal arrow at `v`, and
 `b(L) + 1` on every original edge directed from `L` to `R`. -/
-@[expose] def bipartiteCapacity (L R : Finset V(G)) (b : V(G) → ℕ) :
+def bipartiteCapacity (L R : Finset V(G)) (b : V(G) → ℕ) :
     Assignment (AuxTerminalHom (G.BipartiteHom L) L R) ℤ :=
-  auxTerminalCapacity (fun _ ↦ bipartiteLargeCapacity L b) (fun x ↦ b x) fun x ↦ b x
+  auxTerminalCapacity (A := L) (B := R)
+    (fun _ ↦ bipartiteLargeCapacity L b) (fun x ↦ (b x : ℤ)) fun x ↦ (b x : ℤ)
+
+/-- The bipartite capacity as an auxiliary-terminal capacity. -/
+theorem bipartiteCapacity_def (L R : Finset V(G)) (b : V(G) → ℕ) :
+    bipartiteCapacity L R b =
+      auxTerminalCapacity (A := L) (B := R)
+        (fun _ ↦ bipartiteLargeCapacity L b) (fun x ↦ (b x : ℤ)) fun x ↦ (b x : ℤ) :=
+  (rfl)
+
+/-- Every capacity in the bipartite network is nonnegative. -/
+theorem bipartiteCapacity_nonneg (L R : Finset V(G)) (b : V(G) → ℕ) :
+    0 ≤ bipartiteCapacity L R b :=
+  auxTerminalCapacity_nonneg (fun _ _ _ ↦ by
+      rw [bipartiteLargeCapacity_def]
+      exact Int.natCast_nonneg _)
+    (fun _ _ ↦ Int.natCast_nonneg _) fun _ _ ↦ Int.natCast_nonneg _
 
 @[simp]
 theorem bipartiteCapacity_original (b : V(G) → ℕ) {x y : V(G)}
@@ -123,12 +112,8 @@ theorem bipartiteCapacity_sink (b : V(G) → ℕ) {x : V(G)} (hx : x ∈ R) :
 @[expose] noncomputable def bipartiteNetwork
     (G : Graph alpha beta) (L R : Finset V(G)) (b : V(G) → ℕ) :
   Network ℤ (V(G) ⊕ Bool) :=
-  Network.ofCapacity (AuxTerminalHom (G.BipartiteHom L) L R) (bipartiteCapacity L R b) <| by
-    rw [AuxTerminalHom.forall_iff]
-    exact ⟨fun _ _ e ↦ by
-        rw [bipartiteCapacity_original]
-        exact Int.natCast_nonneg _,
-      fun _ ↦ by simp, fun _ ↦ by simp⟩
+  Network.ofCapacity (AuxTerminalHom (G.BipartiteHom L) L R) (bipartiteCapacity L R b)
+    fun {_ _} e ↦ bipartiteCapacity_nonneg L R b _ _ e
 
 @[simp]
 theorem bipartiteNetwork_Hom (b : V(G) → ℕ) :
@@ -141,36 +126,50 @@ theorem bipartiteNetwork_upper (b : V(G) → ℕ) {x y : V(G) ⊕ Bool}
     (bipartiteNetwork G L R b).upper e = bipartiteCapacity L R b e :=
   rfl
 
+@[simp]
+theorem bipartiteNetwork_lower (b : V(G) → ℕ) {x y : V(G) ⊕ Bool}
+    (e : (bipartiteNetwork G L R b).Hom x y) :
+    (bipartiteNetwork G L R b).lower e = 0 :=
+  rfl
+
 /-- The source side associated to a vertex set `C`: it contains the fresh source, the vertices of
 `L` outside `C`, and the vertices of `R` inside `C`. -/
-@[expose] noncomputable def bipartiteCoverSourceSide
+noncomputable def bipartiteCoverSourceSide
     (L R C : Finset V(G)) : Finset (V(G) ⊕ Bool) := by
   classical
   exact ((L \ C) ∪ (R ∩ C)).disjSum {false}
+
+@[simp]
+theorem inl_mem_bipartiteCoverSourceSide (L R C : Finset V(G)) (x : V(G)) :
+    inl x ∈ bipartiteCoverSourceSide L R C ↔
+      (x ∈ L ∧ x ∉ C) ∨ (x ∈ R ∧ x ∈ C) := by
+  simp [bipartiteCoverSourceSide]
+
+@[simp]
+theorem inr_mem_bipartiteCoverSourceSide (L R C : Finset V(G)) (t : Bool) :
+    inr t ∈ bipartiteCoverSourceSide L R C ↔ t = false := by
+  simp [bipartiteCoverSourceSide]
 
 @[simp]
 theorem bipartiteCoverSourceSide_toLeft [DecidableEq V(G)] (L R C : Finset V(G)) :
     (bipartiteCoverSourceSide L R C).toLeft = (L \ C) ∪ (R ∩ C) :=
   by
     ext x
-    simp [bipartiteCoverSourceSide]
+    simp
 
-@[simp]
-theorem source_mem_bipartiteCoverSourceSide (L R C : Finset V(G)) :
-    inr false ∈ bipartiteCoverSourceSide L R C := by
-  simp [bipartiteCoverSourceSide]
-
-@[simp]
-theorem sink_notMem_bipartiteCoverSourceSide (L R C : Finset V(G)) :
-    inr true ∉ bipartiteCoverSourceSide L R C := by
-  simp [bipartiteCoverSourceSide]
-
-/-- The vertex cover extracted from a source side `S`: vertices of `L` outside `S`, together with
-vertices of `R` inside `S`. -/
-@[expose] noncomputable def bipartiteCutCover
+/-- The vertex set associated to a source side `S`: vertices of `L` outside `S`, together with
+vertices of `R` inside `S`. It is a vertex cover when the cut capacity is below `b(L) + 1`; see
+`Graph.IsBipartition.isVertexCover_bipartiteCutCover`. -/
+noncomputable def bipartiteCutCover
     (L R : Finset V(G)) (S : Finset (V(G) ⊕ Bool)) : Finset V(G) := by
   classical
   exact (L \ S.toLeft) ∪ (R ∩ S.toLeft)
+
+@[simp]
+theorem mem_bipartiteCutCover (L R : Finset V(G)) (S : Finset (V(G) ⊕ Bool)) (x : V(G)) :
+    x ∈ bipartiteCutCover L R S ↔
+      (x ∈ L ∧ inl x ∉ S) ∨ (x ∈ R ∧ inl x ∈ S) := by
+  simp [bipartiteCutCover]
 
 private theorem sum_bipartiteCoverSourceSide [DecidableEq V(G)]
     (hLR : G.IsBipartition L R) (b : V(G) → ℕ)
@@ -181,35 +180,19 @@ private theorem sum_bipartiteCoverSourceSide [DecidableEq V(G)]
   classical
   have hL : L \ ((L \ C) ∪ (R ∩ C)) = L ∩ C := by
     ext x
-    simp only [mem_sdiff, mem_union, mem_inter]
-    constructor
-    · rintro ⟨hxL, hnot⟩
-      refine ⟨hxL, ?_⟩
-      by_contra hxC
-      exact hnot (.inl ⟨hxL, hxC⟩)
-    · rintro ⟨hxL, hxC⟩
-      refine ⟨hxL, ?_⟩
-      rintro (⟨_, hnotC⟩ | ⟨hxR, _⟩)
-      · exact hnotC hxC
-      · exact disjoint_left.1 hLR.disjoint hxL hxR
+    have hdisjoint : x ∈ L → x ∈ R → False :=
+      fun hxL hxR ↦ disjoint_left.1 hLR.disjoint hxL hxR
+    grind
   have hR : R ∩ ((L \ C) ∪ (R ∩ C)) = R ∩ C := by
     ext x
-    simp only [mem_inter, mem_union, mem_sdiff]
-    constructor
-    · rintro ⟨hxR, ⟨hxL, _⟩ | ⟨_, hxC⟩⟩
-      · exact (disjoint_left.1 hLR.disjoint hxL hxR).elim
-      · exact ⟨hxR, hxC⟩
-    · rintro ⟨hxR, hxC⟩
-      exact ⟨hxR, .inr ⟨hxR, hxC⟩⟩
+    have hdisjoint : x ∈ L → x ∈ R → False :=
+      fun hxL hxR ↦ disjoint_left.1 hLR.disjoint hxL hxR
+    grind
   rw [hL, hR, ← sum_union]
   · congr 1
     ext x
-    simp only [mem_union, mem_inter]
-    constructor
-    · rintro (⟨_, hxC⟩ | ⟨_, hxC⟩) <;> exact hxC
-    · intro hxC
-      exact (hLR.mem_or_mem x).elim (fun hxL ↦ .inl ⟨hxL, hxC⟩)
-        (fun hxR ↦ .inr ⟨hxR, hxC⟩)
+    have hmem := hLR.mem_or_mem x
+    grind
   · exact hLR.disjoint.mono inter_subset_left inter_subset_left
 
 private theorem sum_bipartiteCutCover [DecidableEq V(G)]
@@ -219,7 +202,7 @@ private theorem sum_bipartiteCutCover [DecidableEq V(G)]
   classical
   have hcover : bipartiteCutCover L R S = (L \ S.toLeft) ∪ (R ∩ S.toLeft) := by
     ext x
-    simp [bipartiteCutCover]
+    simp
   rw [hcover, sum_union]
   exact hLR.disjoint.mono sdiff_subset inter_subset_left
 
@@ -227,31 +210,27 @@ private theorem bipartiteHom_closed_of_arrowSum_lt [Fintype V(G)] [DecidableEq V
     [Fintype E(G)] (b : V(G) → ℕ) {S : Finset (V(G) ⊕ Bool)}
     (hsmall : arrowSum (bipartiteCapacity L R b) S Sᶜ < bipartiteLargeCapacity L b) :
     ∀ {x y : V(G)}, G.BipartiteHom L x y → x ∈ S.toLeft → y ∈ S.toLeft := by
-  have hcap_nonneg : 0 ≤ bipartiteCapacity L R b :=
-    AuxTerminalHom.forall_iff.2 ⟨fun _ _ e ↦ by
-        rw [bipartiteCapacity_original]
-        exact Int.natCast_nonneg _,
-      fun _ ↦ by simp,
-      fun _ ↦ by simp⟩
   intro x y e hx
   by_contra hy
   have hx' : inl x ∈ S := by simpa using hx
   have hy' : inl y ∈ Sᶜ := by
     simp only [mem_compl]
     exact fun hyS ↦ hy (Finset.mem_toLeft.2 hyS)
-  have hle := apply_le_arrowSum hcap_nonneg hx' hy' (AuxTerminalHom.original e)
+  have hle := apply_le_arrowSum (bipartiteCapacity_nonneg L R b) hx' hy'
+    (AuxTerminalHom.original e)
   rw [bipartiteCapacity_original] at hle
   exact (not_lt_of_ge hle) hsmall
 
 /-- A vertex cover gives a terminal-separating cut whose capacity is exactly the weight of the
 cover. -/
-theorem IsVertexCover.arrowSum_bipartiteCapacity [Fintype V(G)] [DecidableEq V(G)]
+theorem IsVertexCover.arrowSum_bipartiteCapacity_bipartiteCoverSourceSide
+    [Fintype V(G)] [DecidableEq V(G)]
     [Fintype E(G)] {C : Finset V(G)}
     (hC : G.IsVertexCover (C : Set V(G))) (hLR : G.IsBipartition L R) (b : V(G) → ℕ) :
     arrowSum (bipartiteCapacity L R b) (bipartiteCoverSourceSide L R C)
         (bipartiteCoverSourceSide L R C)ᶜ = ∑ x ∈ C, (b x : ℤ) := by
   classical
-  rw [bipartiteCapacity]
+  rw [bipartiteCapacity_def]
   rw [arrowSum_auxTerminalCapacity (S := bipartiteCoverSourceSide L R C)
     (fun _ ↦ bipartiteLargeCapacity L b) (fun x ↦ (b x : ℤ)) (fun x ↦ (b x : ℤ))
     (by simp) (by simp)]
@@ -260,15 +239,14 @@ theorem IsVertexCover.arrowSum_bipartiteCapacity [Fintype V(G)] [DecidableEq V(G
       sum_bipartiteCoverSourceSide hLR b C
   · intro x y e hx
     have hxC : x ∉ C := by
-      simpa [bipartiteCoverSourceSide, e.source_mem,
-        disjoint_left.1 hLR.disjoint] using hx
+      simpa [e.source_mem, disjoint_left.1 hLR.disjoint] using hx
     have hyR := e.target_mem hLR
     have hyC : y ∈ C := by
       rw [isVertexCover_def] at hC
-      rcases hC e.2.1 with h | h
+      rcases hC e.isLink with h | h
       · exact (hxC h).elim
       · exact h
-    simp [bipartiteCoverSourceSide, hyR, hyC]
+    simp [hyR, hyC]
 
 /-- A terminal-separating cut below the large capacity has the same capacity as the weight of its
 associated vertex cover. -/
@@ -282,7 +260,7 @@ theorem IsBipartition.arrowSum_bipartiteCapacity_eq_sum_bipartiteCutCover
   have hclosed : ∀ {x y : V(G)}, G.BipartiteHom L x y →
       x ∈ S.toLeft → y ∈ S.toLeft :=
     bipartiteHom_closed_of_arrowSum_lt b hsmall
-  rw [bipartiteCapacity]
+  rw [bipartiteCapacity_def]
   rw [arrowSum_auxTerminalCapacity (S := S) (fun _ ↦ bipartiteLargeCapacity L b)
     (fun x ↦ (b x : ℤ)) (fun x ↦ (b x : ℤ)) hsource hsink]
   rw [arrowSum_compl_eq_zero_of_forall_mem]
@@ -307,16 +285,20 @@ theorem IsBipartition.isVertexCover_bipartiteCutCover [Fintype V(G)] [DecidableE
   · by_cases hxS : x ∈ S.toLeft
     · have hyS : y ∈ S.toLeft :=
         hclosed (⟨⟨e, he.edge_mem⟩, he, hxy.1⟩ : G.BipartiteHom L x y) hxS
+      have hyS' : inl y ∈ S := by simpa using hyS
       right
-      simp [bipartiteCutCover, hxy.2, hyS]
+      simp [hxy.2, hyS']
     · left
-      simp [bipartiteCutCover, hxy.1, hxS]
+      have hxS' : inl x ∉ S := by simpa using hxS
+      simp [hxy.1, hxS']
   · by_cases hyS : y ∈ S.toLeft
     · have hxS : x ∈ S.toLeft :=
         hclosed (⟨⟨e, he.edge_mem⟩, he.symm, hxy.2⟩ : G.BipartiteHom L y x) hyS
+      have hxS' : inl x ∈ S := by simpa using hxS
       left
-      simp [bipartiteCutCover, hxy.1, hxS]
+      simp [hxy.1, hxS']
     · right
-      simp [bipartiteCutCover, hxy.2, hyS]
+      have hyS' : inl y ∉ S := by simpa using hyS
+      simp [hxy.2, hyS']
 
 end Graph
