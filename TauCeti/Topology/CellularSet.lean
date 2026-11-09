@@ -73,6 +73,8 @@ of compact sets with diameters tending to `0`. The collapse is their pointwise l
 
 * M. Brown, *A proof of the generalized Schoenflies theorem*, Bull. Amer. Math. Soc. 66 (1960),
   74–76.
+* N. Sahoo, *The Generalized Schoenflies Theorem*, expository notes on Brown's paper, Lemma 3.2
+  (the recognition of a compact set from a map collapsing exactly a cellular set).
 -/
 
 public section
