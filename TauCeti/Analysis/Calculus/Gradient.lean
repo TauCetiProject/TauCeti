@@ -279,6 +279,7 @@ theorem hasGradientAt_norm_sq_sub {E : Type*} [NormedAddCommGroup E] [InnerProdu
   simp
 
 /-- The gradient of `y ↦ ‖y - x₀‖ ^ 2` at `x` is `2 • (x - x₀)`. -/
+@[simp]
 theorem gradient_norm_sq_sub {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     [CompleteSpace E] (x₀ x : E) : ∇ (fun y : E => ‖y - x₀‖ ^ 2) x = (2 : ℝ) • (x - x₀) :=
   (hasGradientAt_norm_sq_sub x₀ x).gradient
