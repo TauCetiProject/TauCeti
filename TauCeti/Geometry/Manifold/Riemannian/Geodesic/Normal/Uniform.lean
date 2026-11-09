@@ -113,7 +113,7 @@ theorem exists_mem_nhds_forall_isNormalDomain_ball (p : M) :
   have hFS : F '' S ∈ 𝓝 (p, p) := by
     have hlocS : IsLocalDiffeomorphOn I.tangent (I.prod I) ∞ F S := fun z ↦ z.2.1.2.1
     have hFp : F (zeroSection E (TangentSpace I) p) = (p, p) := by simp [F, zeroSection]
-    exact (hlocS.isOpen_image hSopen).mem_nhds ⟨_, hpS, hFp⟩
+    exact (hlocS.isLocalHomeomorphOn.isOpen_image hSopen).mem_nhds ⟨_, hpS, hFp⟩
   obtain ⟨W₁, hW₁, W₂, hW₂, hW⟩ := mem_nhds_prod_iff.1 hFS
   refine ⟨r, hr, W₁ ∩ W₂ ∩ A, inter_mem (inter_mem hW₁ hW₂) (hAopen.mem_nhds hpA),
     fun q hq ↦ ⟨?_, ?_⟩⟩
