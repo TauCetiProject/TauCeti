@@ -90,15 +90,15 @@ include hX
 
 /-- Along a trajectory joining distinct critical points, `df_y (X y) < 0`, read in the preferred
 chart at `y`. -/
-private theorem fderiv_comp_chartAt_symm_apply_lt_zero (hd : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f y)
+private theorem fderiv_comp_chartAt_symm_apply_lt_zero
     (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) :
     fderiv ℝ (f ∘ (chartAt E y).symm) (chartAt E y y) (X y) < 0 := by
-  rw [MDifferentiableAt.fderiv_comp_chartAt_symm hd]
+  rw [TauCeti.fderiv_comp_chartAt_symm]
   exact hX.mvfderiv_apply_lt_zero y (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hab hy)
 
 /-- Along a trajectory joining distinct critical points, `df_y` is onto `ℝ`, read in the preferred
 chart at `y`: it does not vanish on `X y`. -/
-private theorem surjective_fderiv_comp_chartAt_symm (hd : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f y)
+private theorem surjective_fderiv_comp_chartAt_symm
     (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) :
     Function.Surjective (fderiv ℝ (f ∘ (chartAt E y).symm) (chartAt E y y)) := by
   -- A linear form that is negative on some vector `v` of the model space is nonzero.
@@ -106,7 +106,7 @@ private theorem surjective_fderiv_comp_chartAt_symm (hd : MDifferentiableAt 𝓘
       (fderiv ℝ (f ∘ (chartAt E y).symm) (chartAt E y y) : E →ₗ[ℝ] ℝ) ≠ 0 := fun v hv h0 ↦
     hv.ne (by rw [← ContinuousLinearMap.coe_coe, h0, LinearMap.zero_apply])
   exact LinearMap.surjective_of_ne_zero
-    (key _ (hX.fderiv_comp_chartAt_symm_apply_lt_zero hd hab hy))
+    (key _ (hX.fderiv_comp_chartAt_symm_apply_lt_zero hab hy))
 
 /-- **`f` strictly decreases along a connecting trajectory.** A trajectory from a critical point
 `a` to a different critical point `b` meets no critical point, so `f` is strictly antitone along
@@ -226,17 +226,16 @@ theorem exists_tendsto_flow_of_tendsto (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(�
 `a ≠ b`, the tangent space of `W^u(a) ∩ W^s(b)` and the kernel of `df_y`, the tangent space of the
 level of `f` through `y`, span the tangent space of `M`. -/
 theorem span_mtangentConeAt_unstableSet_inter_stableSet_sup_ker_eq_top
-    (hf : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f y) (hab : a ≠ b)
-    (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) :
+    (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) :
     Submodule.span ℝ
         (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y) ⊔
       (mvfderiv 𝓘(ℝ, E) f y).ker = ⊤ := by
   have hmem := hX.mem_span_mtangentConeAt_unstableSet_inter_stableSet hy
-  rw [hf.ker_mvfderiv_eq_ker_fderiv_comp_chartAt_symm]
+  rw [TauCeti.ker_mvfderiv_eq_ker_fderiv_comp_chartAt_symm]
   refine top_unique ?_
   rw [← LinearMap.span_singleton_sup_ker_eq_top
     (fderiv ℝ (f ∘ (chartAt E y).symm) (chartAt E y y) : E →ₗ[ℝ] ℝ)
-    (hX.fderiv_comp_chartAt_symm_apply_lt_zero hf hab hy).ne]
+    (hX.fderiv_comp_chartAt_symm_apply_lt_zero hab hy).ne]
   exact sup_le_sup_right ((Submodule.span_singleton_le_iff_mem (R := ℝ) (M := E) _ _).2 hmem) _
 
 /-- Under transversality, the level slice through `y` is cut out of `W^u(a) ∩ W^s(b)` by a
@@ -266,11 +265,11 @@ private theorem level_slice (hf : IsMorse 𝓘(ℝ, E) f) (ha : mfderiv 𝓘(ℝ
     ext
     simp
   have hrange : (mvfderiv 𝓘(ℝ, E) f y).range = ⊤ := by
-    rw [← MDifferentiableAt.fderiv_comp_chartAt_symm (hf.contMDiff.mdifferentiable (by simp) y)]
+    rw [← TauCeti.fderiv_comp_chartAt_symm]
     exact LinearMap.range_eq_top_of_surjective _
-      (hX.surjective_fderiv_comp_chartAt_symm (hf.contMDiff.mdifferentiable (by simp) y) hab hy)
+      (hX.surjective_fderiv_comp_chartAt_symm hab hy)
   have htr' := hX.span_mtangentConeAt_unstableSet_inter_stableSet_sup_ker_eq_top
-    (hf.contMDiff.mdifferentiable (by simp) y) hab hy
+    hab hy
   -- In finite dimensions every subspace is complemented.
   have hcc (p : Submodule ℝ E) : p.ClosedComplemented :=
     .of_finiteDimensional_quotient (Submodule.closed_of_finiteDimensional _)
@@ -335,10 +334,9 @@ theorem finrank_span_mtangentConeAt_unstableSet_inter_stableSet_level_add_manifo
     Module.finrank ℝ (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E)
         (hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {x | f x = c}) y)) +
       manifoldMorseIndex 𝓘(ℝ, E) f b + 1 = manifoldMorseIndex 𝓘(ℝ, E) f a := by
-  have hd := hf.contMDiff.mdifferentiable (by simp)
-  have hsup := hX.span_mtangentConeAt_unstableSet_inter_stableSet_sup_ker_eq_top (hd y) hab hy
+  have hsup := hX.span_mtangentConeAt_unstableSet_inter_stableSet_sup_ker_eq_top hab hy
   have hslice := (hX.level_slice hf ha hb hab hy htr hyc).2
-  rw [(hd y).ker_mvfderiv_eq_ker_fderiv_comp_chartAt_symm] at hsup hslice
+  rw [TauCeti.ker_mvfderiv_eq_ker_fderiv_comp_chartAt_symm] at hsup hslice
   -- Cutting by the hyperplane `ker df_y`, which is transverse, lowers the dimension by one.
   have hdim := Submodule.finrank_sup_add_finrank_inf_eq
     (Submodule.span ℝ
@@ -348,7 +346,7 @@ theorem finrank_span_mtangentConeAt_unstableSet_inter_stableSet_level_add_manifo
   have hker := LinearMap.finrank_range_add_finrank_ker
     (fderiv ℝ (f ∘ (chartAt E y).symm) (chartAt E y y) : E →ₗ[ℝ] ℝ)
   rw [LinearMap.range_eq_top_of_surjective _
-      (hX.surjective_fderiv_comp_chartAt_symm (hd y) hab hy), finrank_top,
+      (hX.surjective_fderiv_comp_chartAt_symm hab hy), finrank_top,
     Module.finrank_self] at hker
   have hW :=
     hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hf ha hb hy
