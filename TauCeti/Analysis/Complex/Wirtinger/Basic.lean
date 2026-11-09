@@ -56,6 +56,7 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   `C^m`.
 * `DifferentiableAt.conjWirtingerDeriv_eq_zero`, `DifferentiableAt.wirtingerDeriv_eq_fderiv`:
   for complex differentiable `g`, `\bar∂g = 0` and `∂g` is the complex derivative.
+* `TauCeti.conjWirtingerDeriv_const_smul`: `\bar∂` commutes with complex scalar multiplication.
 * `TauCeti.conjWirtingerDeriv_eq_sum_smul`: `\bar∂` depends complex-linearly on the real
   derivative.
 * `TauCeti.conjWirtingerDeriv_fun_sum`: `\bar∂` of a finite sum of real-differentiable functions.
@@ -225,6 +226,13 @@ theorem conjWirtingerDeriv_sub {g₁ g₂ : V → W} {x : V} (h₁ : Differentia
     conjWirtingerDeriv (g₁ - g₂) x = conjWirtingerDeriv g₁ x - conjWirtingerDeriv g₂ x := by
   ext v
   simp only [conjWirtingerDeriv_apply, fderiv_sub h₁ h₂, sub_apply]
+  module
+
+/-- The conjugate Wirtinger derivative commutes with multiplication by a complex constant. -/
+theorem conjWirtingerDeriv_const_smul {g : V → W} {x : V} (c : ℂ) :
+    conjWirtingerDeriv (c • g) x = c • conjWirtingerDeriv g x := by
+  ext v
+  simp only [conjWirtingerDeriv_apply, fderiv_const_smul_field c, Pi.smul_apply, smul_apply]
   module
 
 /-- The conjugate Wirtinger derivative in the direction `v` is the one-variable conjugate

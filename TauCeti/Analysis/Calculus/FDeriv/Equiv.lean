@@ -10,9 +10,10 @@ public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Congr
+import Mathlib.Analysis.Calculus.FDeriv.Equiv
 
 /-!
-# The derivative of the inverse of an open partial homeomorphism
+# Derivatives under local and linear equivalences
 
 Mathlib's `OpenPartialHomeomorph.hasFDerivAt_symm` computes the derivative of the inverse from an
 invertible derivative of the map. Without assuming that invertibility, this file records that when
@@ -28,6 +29,12 @@ to the identity.
 * `OpenPartialHomeomorph.fderiv_symm_apply_fderiv_apply`,
   `OpenPartialHomeomorph.fderiv_apply_fderiv_symm_apply`: the same identities evaluated at a
   vector.
+
+Precomposition by a continuous linear equivalence preserves the image of the vanishing-derivative
+locus, with no differentiability premise. This follows the totalized derivative calculation in
+[KLS](https://github.com/human-ai-mathematics/kls-lean), commit
+`65810c73f9dd7945fc646ab484cb19d673f5291d`,
+`formalization/FunctionalInequalities/Analysis/Sard/Basic.lean`.
 -/
 
 public section
@@ -76,3 +83,26 @@ theorem fderiv_apply_fderiv_symm_apply (e : OpenPartialHomeomorph E F) {p : F}
     DFunLike.congr_fun (e.fderiv_comp_fderiv_symm hp hd hds) w
 
 end OpenPartialHomeomorph
+
+/-- Precomposition by a continuous linear equivalence preserves the image of the locus where
+the totalized Fréchet derivative vanishes. No differentiability hypothesis is needed. -/
+theorem ContinuousLinearEquiv.image_vanishingFDeriv_comp {𝕜 : Type*}
+    [NontriviallyNormedField 𝕜] {E F G : Type*}
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] (e : E ≃L[𝕜] F) (u : F → G) :
+    u '' {x | fderiv 𝕜 u x = 0} = (u ∘ e) '' {y | fderiv 𝕜 (u ∘ e) y = 0} := by
+  ext z
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    refine ⟨e.symm x, ?_, by simp⟩
+    have hx0 : fderiv 𝕜 u x = 0 := hx
+    simp only [Set.mem_ofPred_eq, e.comp_right_fderiv, e.apply_symm_apply, hx0,
+      ContinuousLinearMap.zero_comp]
+  · rintro ⟨y, hy, rfl⟩
+    refine ⟨e y, ?_, rfl⟩
+    ext v
+    have hzero : fderiv 𝕜 (u ∘ e) y = 0 := hy
+    rw [e.comp_right_fderiv] at hzero
+    have := congrArg (fun L : E →L[𝕜] G ↦ L (e.symm v)) hzero
+    simpa using this
