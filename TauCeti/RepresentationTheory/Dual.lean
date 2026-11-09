@@ -93,6 +93,15 @@ theorem dual_comp {R G H V : Type*} [CommSemiring R] [Group G] [Group H] [AddCom
   ext
   simp
 
+/-- An element acting trivially on a module also acts trivially on its dual. -/
+theorem ker_le_ker_dual {R G V : Type*} [CommSemiring R] [Group G] [AddCommMonoid V]
+    [Module R V] (ρ : Representation R G V) : ρ.ker ≤ ρ.dual.ker := by
+  intro g hg
+  rw [MonoidHom.mem_ker]
+  have hinv := MonoidHom.mem_ker.mp (ρ.ker.inv_mem hg)
+  ext ℓ x
+  simp [dual_apply, hinv, Module.End.one_eq_id, Module.Dual.transpose_apply]
+
 section Field
 
 variable {K G V : Type*} [Field K] [Group G] [AddCommGroup V] [Module K V]
@@ -139,6 +148,12 @@ theorem dual_apply_eq_one_iff : ρ.dual g = 1 ↔ ρ g = 1 := by
   simp only [Submodule.span_singleton_eq_bot.2 rfl, Submodule.mem_bot, sub_eq_zero] at h
   rw [← h, LinearMap.ext_iff]
   exact forall_congr' fun φ ↦ eq_comm
+
+/-- A representation over a field and its dual have the same kernel. -/
+@[simp]
+theorem ker_dual : ρ.dual.ker = ρ.ker := by
+  ext g
+  simp only [MonoidHom.mem_ker, dual_apply_eq_one_iff]
 
 /-- Over a field, the dual representation is faithful exactly when the representation is. -/
 theorem dual_injective_iff : Function.Injective ρ.dual ↔ Function.Injective ρ := by
@@ -199,7 +214,7 @@ end Averaging
 section Finite
 
 variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
-variable [Finite G] [Invertible (Nat.card G : k)]
+variable [Invertible (Nat.card G : k)]
 
 /-- **The dual of a representation has as many invariants as the representation**, whenever `|G|`
 is invertible in `k`. Restricting functionals to the invariants identifies the invariant functionals
@@ -208,9 +223,11 @@ projection onto `ρ.invariants` (`apply_averageMap_of_mem_invariants_dual`), and
 on `ρ.invariants` extends through that projection to an invariant one. -/
 theorem finrank_invariants_dual (ρ : Representation k G V) :
     finrank k ρ.dual.invariants = finrank k ρ.invariants := by
+  have hne : (Nat.card G : k) ≠ 0 := (isUnit_of_invertible _).ne_zero
+  have : Finite G := Nat.finite_of_card_ne_zero fun h => hne (by simp [h])
   have : Fintype G := Fintype.ofFinite G
   let _ : Invertible (Fintype.card G : k) :=
-    invertibleOfNonzero (by rw [← Nat.card_eq_fintype_card]; exact (isUnit_of_invertible _).ne_zero)
+    invertibleOfNonzero (by rw [← Nat.card_eq_fintype_card]; exact hne)
   -- Restriction of an invariant functional to the invariants.
   let r : ρ.dual.invariants →ₗ[k] Module.Dual k ρ.invariants :=
     { toFun := fun ψ => (ψ : Module.Dual k V).comp ρ.invariants.subtype
@@ -316,7 +333,7 @@ intertwiners `X → Y` are the invariants of `Dual X ⊗ Y`, and those `Y → X`
 dual `Dual Y ⊗ X` (`Representation.dualTprodEquivDualDualTprod`), which are as many
 (`TauCeti.Representation.finrank_invariants_dual`). Over a semisimple group algebra this is the
 symmetry of the multiplicity pairing of `X` and `Y`. -/
-theorem finrank_hom_comm [Finite G] [Invertible (Nat.card G : k)] (X Y : FDRep k G) :
+theorem finrank_hom_comm [Invertible (Nat.card G : k)] (X Y : FDRep k G) :
     finrank k (X ⟶ Y) = finrank k (Y ⟶ X) := by
   rw [← finrank_invariants_dual_tprod X Y, ← finrank_invariants_dual_tprod Y X,
     (Representation.Equiv.invariantsLinearEquiv (V := TensorProduct k (Module.Dual k Y) X)

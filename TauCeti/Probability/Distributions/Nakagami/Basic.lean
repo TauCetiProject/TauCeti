@@ -265,7 +265,7 @@ theorem nakagamiMeasure_eq_chiMeasure (hm : 0 < m) (hΩ : 0 < Ω) :
   have hsq : (chiMeasure (2 * m) (√(Ω / (2 * m)))).map (fun x ↦ x ^ 2) =
       gammaMeasure m (m / Ω) := by
     rw [chiMeasure_map_sq hs, chiSquaredMeasure_eq_gammaMeasure hk,
-      gammaMeasure_map_const_mul (half_pos hk) one_half_pos (by positivity)]
+      gammaMeasure_map_const_mul (by positivity)]
     congr 1
     · ring
     · rw [sq_sqrt (by positivity)]
@@ -298,8 +298,7 @@ theorem cdf_nakagamiMeasure_eq (hm : 0 < m) (hΩ : 0 < Ω) (x : ℝ) :
       if x < 0 then 0 else regularizedGamma m (m / Ω * x ^ 2) := by
   let _ := isProbabilityMeasure_nakagamiMeasure hm hΩ
   let _ := isProbabilityMeasure_gammaMeasure hm (div_pos hm hΩ)
-  rw [cdf_eq_real, nakagamiMeasure_of_pos hm hΩ,
-    map_measureReal_apply (by fun_prop) measurableSet_Iic]
+  rw [nakagamiMeasure_of_pos hm hΩ, Measure.cdf_map _ _ (by fun_prop)]
   by_cases hx : x < 0
   · have he : Real.sqrt ⁻¹' Iic x = ∅ := by
       ext y

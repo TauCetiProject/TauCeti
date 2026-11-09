@@ -13,6 +13,7 @@ public import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 public import Mathlib.Probability.IdentDistribIndep
 public import Mathlib.Probability.Independence.InfinitePi
 public import TauCeti.MeasureTheory.MeasurableSpace.Pi
+public import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 
 /-!
 # Wigner matrices
@@ -27,6 +28,7 @@ This file defines `TauCeti.wignerMatrix` and proves the structural facts consume
 and resolvent methods:
 
 * the entry formulas and `wignerMatrix_isHermitian`;
+* the Hermitian trace-square identity `Matrix.IsHermitian.trace_mul_self_eq_sum_norm_sq`;
 * the matrix depends only on the entries in its corner (`wignerMatrix_congr`), and the top-left
   `m × m` corner of `Hₙ` is `√(m/n) Hₘ` (`submatrix_castLE_wignerMatrix`);
 * measurability in the sample point;
@@ -392,13 +394,8 @@ theorem integral_re_trace_wignerMatrix_mul_self {σ2 s : ℝ}
     simp only [← Finset.mul_sum, h, Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.mem_univ,
       ↓reduceIte, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
     ring
-  -- `trₙ Hₙ² = n⁻¹ ∑ᵢⱼ |Hᵢⱼ|²` because `Hₙ` is Hermitian.
-  have htrace (ω : Ω) : (wignerMatrix ξ η n ω * wignerMatrix ξ η n ω).trace =
-      ((∑ i, ∑ j, ‖wignerMatrix ξ η n ω i j‖ ^ 2 : ℝ) : ℂ) := by
-    simp only [trace, diag_apply, Matrix.mul_apply, Complex.ofReal_sum, Complex.ofReal_pow]
-    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [← (wignerMatrix_isHermitian ξ η ω n).apply j i, Complex.star_def, Complex.mul_conj']
-  simp_rw [htrace, ← Complex.ofReal_natCast, ← Complex.ofReal_inv,
+  simp_rw [(wignerMatrix_isHermitian ξ η _ _).trace_mul_self_eq_sum_norm_sq,
+    ← Complex.ofReal_natCast, ← Complex.ofReal_inv,
     ← Complex.ofReal_mul, Complex.ofReal_re]
   rw [integral_const_mul, integral_finsetSum _ fun i _ ↦
     integrable_finsetSum _ fun j _ ↦ integrable_norm_wignerMatrix_apply_sq hξi hηi i j]

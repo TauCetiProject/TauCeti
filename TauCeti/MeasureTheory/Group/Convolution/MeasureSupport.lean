@@ -41,6 +41,21 @@ theorem ae_mem_mconv_of_ae_mem {S T C : Set M} (hC : MeasurableSet C) (hST : S *
   filter_upwards [hS] with x hx
   exact hT.mono fun y hy ↦ hST (Set.mul_mem_mul hx hy)
 
+variable {A : Type*} [AddMonoid A] [MeasurableSpace A] [MeasurableAdd₂ A]
+
+/-- Every convolution power concentrates on a measurable set containing zero and closed
+under addition, provided the original measure concentrates there. -/
+theorem ae_mem_convolutionPower_of_ae_mem {μ : Measure A} [SFinite μ] {C : Set A}
+    (hC : MeasurableSet C) (h0 : 0 ∈ C) (hadd : C + C ⊆ C)
+    (hμ : ∀ᵐ x ∂μ, x ∈ C) (n : ℕ) : ∀ᵐ x ∂μ.convolutionPower n, x ∈ C := by
+  induction n with
+  | zero =>
+    rw [convolutionPower_zero]
+    exact (ae_dirac_iff hC).2 h0
+  | succ n ih =>
+    rw [convolutionPower_succ]
+    exact ae_mem_conv_of_ae_mem hC hadd ih hμ
+
 variable [TopologicalSpace M] [ContinuousMul M] [OpensMeasurableSpace M]
 
 /-- A product of support points belongs to the support of the multiplicative convolution. -/
@@ -72,8 +87,7 @@ theorem support_mconv (hμ : μ.support ∈ ae μ) (hν : ν.support ∈ ae ν) 
     rintro _ ⟨x, hx, y, hy, rfl⟩
     exact mul_mem_support_mconv hx hy
 
-variable {A : Type*} [AddMonoid A] [TopologicalSpace A] [ContinuousAdd A]
-  [MeasurableSpace A] [OpensMeasurableSpace A] [MeasurableAdd₂ A]
+variable [TopologicalSpace A] [ContinuousAdd A] [OpensMeasurableSpace A]
 
 /-- A finite sum of support points of `μ` belongs to the support of
 `μ.convolutionPower l.length`; the empty list gives the zeroth power (`dirac 0`). -/
