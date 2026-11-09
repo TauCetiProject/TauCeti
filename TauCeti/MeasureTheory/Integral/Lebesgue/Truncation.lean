@@ -45,21 +45,25 @@ open scoped ENNReal NNReal
 
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α}
 
-/-- **Integrals of truncations.** If `f : α → ℝ≥0∞` is almost everywhere measurable, then the
-integrals of its truncations `min f M` tend to the integral of `f` as the finite level `M` tends
-to `∞`, whether or not that integral is finite. -/
-theorem tendsto_lintegral_min_atTop {f : α → ℝ≥0∞} (hf : AEMeasurable f μ) :
+/-- **Integrals of truncations.** For `f : α → ℝ≥0∞`, the integrals of its truncations `min f M`
+tend to the integral of `f` as the finite level `M` tends to `∞`, whether or not that integral is
+finite. -/
+theorem tendsto_lintegral_min_atTop {f : α → ℝ≥0∞} :
     Tendsto (fun M : ℝ≥0 ↦ ∫⁻ x, min (f x) M ∂μ) atTop (𝓝 (∫⁻ x, f x ∂μ)) := by
-  -- Monotone convergence along integer levels; the integral at level `M` lies between the
-  -- integral at level `⌊M⌋₊` and the integral of `f`.
-  have hnat : Tendsto (fun n : ℕ ↦ ∫⁻ x, min (f x) n ∂μ) atTop (𝓝 (∫⁻ x, f x ∂μ)) := by
-    refine lintegral_tendsto_of_tendsto_of_monotone (fun _ ↦ hf.min aemeasurable_const)
+  -- Replace `f` by a measurable minorant with the same integral.
+  obtain ⟨g, hgm, hgf, hint⟩ := exists_measurable_le_lintegral_eq μ f
+  rw [hint]
+  -- Monotone convergence along integer levels for `g`; the integral of `min f M` lies between
+  -- the integral of `min g ⌊M⌋₊` and the integral of `f`.
+  have hnat : Tendsto (fun n : ℕ ↦ ∫⁻ x, min (g x) n ∂μ) atTop (𝓝 (∫⁻ x, g x ∂μ)) := by
+    refine lintegral_tendsto_of_tendsto_of_monotone
+      (fun _ ↦ (hgm.min measurable_const).aemeasurable)
       (.of_forall fun _ _ _ hmn ↦ min_le_min_left _ (by exact_mod_cast hmn))
       (.of_forall fun x ↦ ?_)
     simpa using tendsto_const_nhds.min ENNReal.tendsto_nat_nhds_top
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le (hnat.comp tendsto_nat_floor_atTop)
-    tendsto_const_nhds (fun M ↦ lintegral_mono fun _ ↦ min_le_min_left _ ?_)
-    fun _ ↦ lintegral_mono fun _ ↦ min_le_left _ _
+    tendsto_const_nhds (fun M ↦ lintegral_mono fun x ↦ min_le_min (hgf x) ?_)
+    fun _ ↦ (lintegral_mono fun _ ↦ min_le_left _ _).trans_eq hint
   simpa using ENNReal.coe_le_coe.2 (Nat.floor_le (a := M) zero_le)
 
 /-- The `q`-th power integral of a truncation of `f` is a truncated integral of `‖f‖ ^ q`. -/
@@ -72,12 +76,11 @@ theorem lintegral_enorm_rpow_eq_setLIntegral {E : Type*} [TopologicalSpace E]
   filter_upwards [hg] with x hx
   by_cases hxR : x ∈ R <;> simp [hx, hxR, ENNReal.zero_rpow_of_pos hq]
 
-/-- **Monotone convergence through truncations.** For a σ-finite measure `μ` and `0 < q`, if
-`∫⁻ φ ^ q ≤ C` for every measurable `φ ≤ G` with `∫⁻ φ ^ q` finite, then `∫⁻ G ^ q ≤ C`.
-
-The truncations `min G N`, cut off outside the `N`-th spanning set of `μ`, have finite
-`∫⁻ φ ^ q` and increase to `G`. -/
-theorem lintegral_rpow_le_of_forall_le [SigmaFinite μ] {G : α → ℝ≥0∞} (hG : Measurable G)
+/-- The case of `TauCeti.lintegral_rpow_le_of_forall_le` for a measurable `G`: the truncations
+`min G N`, cut off outside the `N`-th spanning set of `μ`, have finite `∫⁻ φ ^ q` and increase to
+`G`. -/
+private theorem lintegral_rpow_le_of_forall_le_of_measurable [SigmaFinite μ] {G : α → ℝ≥0∞}
+    (hG : Measurable G)
     {q : ℝ} (hq : 0 < q) {C : ℝ≥0∞} (h : ∀ φ : α → ℝ≥0∞, Measurable φ → (∀ x, φ x ≤ G x) →
       ∫⁻ x, φ x ^ q ∂μ ≠ ∞ → ∫⁻ x, φ x ^ q ∂μ ≤ C) :
     ∫⁻ x, G x ^ q ∂μ ≤ C := by
@@ -120,5 +123,25 @@ theorem lintegral_rpow_le_of_forall_le [SigmaFinite μ] {G : α → ℝ≥0∞} 
         lintegral_iSup (fun N => (hφm N).pow_const q) fun N N' h x =>
           ENNReal.rpow_le_rpow (hφmono h x) hq.le
     _ ≤ C := iSup_le fun N => h (φ N) (hφm N) (hφG N) (hφfin N)
+
+/-- **Monotone convergence through truncations.** For a σ-finite measure `μ` and `0 < q`, if
+`∫⁻ φ ^ q ≤ C` for every measurable `φ ≤ G` with `∫⁻ φ ^ q` finite, then `∫⁻ G ^ q ≤ C`, with no
+measurability assumption on `G`.
+
+The integral of `G ^ q` is a supremum of integrals of simple functions `s ≤ G ^ q`, and
+`s ^ (1 / q)` is a measurable minorant of `G`. -/
+theorem lintegral_rpow_le_of_forall_le [SigmaFinite μ] {G : α → ℝ≥0∞} {q : ℝ} (hq : 0 < q)
+    {C : ℝ≥0∞} (h : ∀ φ : α → ℝ≥0∞, Measurable φ → (∀ x, φ x ≤ G x) →
+      ∫⁻ x, φ x ^ q ∂μ ≠ ∞ → ∫⁻ x, φ x ^ q ∂μ ≤ C) :
+    ∫⁻ x, G x ^ q ∂μ ≤ C := by
+  rw [lintegral_def]
+  refine iSup₂_le fun s hs => ?_
+  rw [← SimpleFunc.lintegral_eq_lintegral]
+  have hsG (x : α) : s x ^ q⁻¹ ≤ G x :=
+    (ENNReal.rpow_le_rpow (hs x) (inv_nonneg.2 hq.le)).trans_eq (ENNReal.rpow_rpow_inv hq.ne' _)
+  calc ∫⁻ x, s x ∂μ = ∫⁻ x, (s x ^ q⁻¹) ^ q ∂μ := by
+        simp_rw [ENNReal.rpow_inv_rpow hq.ne']
+    _ ≤ C := lintegral_rpow_le_of_forall_le_of_measurable (s.measurable.pow_const _) hq
+        (fun φ hφ hφg => h φ hφ fun x => (hφg x).trans (hsG x))
 
 end TauCeti
