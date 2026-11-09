@@ -15,7 +15,8 @@ import Mathlib.Topology.MetricSpace.Bounded
 
 In a seminormed additive group, the squared distance between two points is at most twice the sum
 of their squared distances to any third point: the triangle inequality through `c`, squared with
-`(x + y) ^ 2 ≤ 2 (x ^ 2 + y ^ 2)`.
+`(x + y) ^ 2 ≤ 2 (x ^ 2 + y ^ 2)`. The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of a squared
+distance is at most `1`.
 
 An unbounded set stays unbounded after removing a closed ball, since a closed ball is bounded.
 
@@ -27,16 +28,21 @@ values there.
 
 Near `0`, the product `‖x‖ * R` is eventually less than any positive bound.
 
+A sum `z + a` with `‖a‖ < ‖z‖` is nonzero.
+
 ## Main declarations
 
 * `TauCeti.norm_sub_sq_le_two_mul` -- the squared triangle inequality through an intermediate
   point.
+* `TauCeti.inv_one_add_norm_sub_sq_le_one` -- the reciprocal transform of a squared distance is at
+  most `1`.
 * `TauCeti.not_isBounded_inter_lt_norm_sub` -- the part of an unbounded set outside a closed ball
   is unbounded.
 * `Set.Nontrivial.pos_of_forall_norm_le` -- a bound on the norms of a nontrivial set is positive.
 * `TauCeti.mapsTo_closedBall_of_forall_norm_le` -- a map bounded by `M` on `s` sends `s` into the
   closed ball of radius `2 * M` around any of its values on `s`.
 * `TauCeti.eventually_norm_mul_lt` -- eventually near `0`, `‖x‖ * R < ρ` for any `ρ > 0`.
+* `TauCeti.add_ne_zero_of_norm_lt` -- `z + a ≠ 0` when `‖a‖ < ‖z‖`.
 -/
 
 public section
@@ -53,6 +59,11 @@ theorem norm_sub_sq_le_two_mul {E : Type*} [SeminormedAddCommGroup E] (a b c : E
   (pow_le_pow_left₀ (norm_nonneg _)
     ((norm_sub_le_norm_sub_add_norm_sub a c b).trans_eq (by rw [norm_sub_rev c b])) 2).trans
     add_sq_le
+
+/-- The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of the squared distance is at most `1`. -/
+theorem inv_one_add_norm_sub_sq_le_one {E : Type*} [SeminormedAddCommGroup E] (x a : E) :
+    (1 + ‖x - a‖ ^ 2)⁻¹ ≤ 1 :=
+  inv_le_one_of_one_le₀ (le_add_of_nonneg_right (by positivity))
 
 /-- An unbounded set stays unbounded after removing a closed ball: its far part
 `s ∩ {w | ρ < ‖w - c‖}` is unbounded. -/
@@ -81,5 +92,10 @@ theorem mapsTo_closedBall_of_forall_norm_le {α F : Type*} [SeminormedAddCommGro
 theorem eventually_norm_mul_lt {E : Type*} [SeminormedAddGroup E] (R : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
     ∀ᶠ x in 𝓝 (0 : E), ‖x‖ * R < ρ :=
   (tendsto_norm_zero.mul_const R).eventually (gt_mem_nhds (by rwa [zero_mul]))
+
+/-- A sum `z + a` with `‖a‖ < ‖z‖` is nonzero. -/
+theorem add_ne_zero_of_norm_lt {E : Type*} [SeminormedAddGroup E] {a z : E} (h : ‖a‖ < ‖z‖) :
+    z + a ≠ 0 :=
+  fun h' ↦ h.ne' (by rw [eq_neg_of_add_eq_zero_left h', norm_neg])
 
 end TauCeti
