@@ -143,7 +143,7 @@ on nonempty open sets.
 
 This form allows the density to take arbitrary values on the boundary. -/
 theorem support_withDensity_eq_closure_of_subset {X : Type*} [TopologicalSpace X]
-    [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure]
+    [MeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure]
     {f : X → ℝ≥0∞} {U : Set X} (hf : Measurable f) (hU : IsOpen U)
     (hU_support : U ⊆ Function.support f)
     (hsupport_closure : Function.support f ⊆ closure U) :
@@ -155,7 +155,8 @@ theorem support_withDensity_eq_closure_of_subset {X : Type*} [TopologicalSpace X
   · rw [support_eq_forall_isOpen]
     intro x hx V hxV hV
     obtain ⟨y, hyV, hyU⟩ := mem_closure_iff.mp hx V hV hxV
-    rw [withDensity_apply _ hV.measurableSet, setLIntegral_pos_iff hf]
+    refine lt_of_lt_of_le ?_ (withDensity_apply_le f V)
+    rw [setLIntegral_pos_iff hf]
     exact ((hU.inter hV).measure_pos μ ⟨y, hyU, hyV⟩).trans_le
       (measure_mono fun _ hz ↦ ⟨hU_support hz.1, hz.2⟩)
 
@@ -163,7 +164,7 @@ theorem support_withDensity_eq_closure_of_subset {X : Type*} [TopologicalSpace X
 topological support equal to the closure of that set, provided the reference measure is positive
 on nonempty open sets. -/
 theorem support_withDensity_eq_closure {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
-    [OpensMeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → ℝ≥0∞}
+    {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → ℝ≥0∞}
     {U : Set X} (hf : Measurable f) (hU : IsOpen U) (hsupp : Function.support f = U) :
     (μ.withDensity f).support = closure U := by
   exact support_withDensity_eq_closure_of_subset hf hU (hsupp.ge)
@@ -328,12 +329,14 @@ theorem continuous_eq_of_withDensity_ofReal_eq {X : Type*} [TopologicalSpace X]
 /-- A measure with log-density bounded above almost everywhere against a finite measure is
 finite. -/
 theorem isFiniteMeasure_withDensity_ofReal_exp {α : Type*} [MeasurableSpace α] {μ : Measure α}
-    [IsFiniteMeasure μ] {g : α → ℝ} {M : ℝ} (hg : AEMeasurable g μ) (hgM : ∀ᵐ x ∂μ, g x ≤ M) :
+    [IsFiniteMeasure μ] {g : α → ℝ} {M : ℝ} (hgM : ∀ᵐ x ∂μ, g x ≤ M) :
     IsFiniteMeasure (μ.withDensity fun x ↦ ENNReal.ofReal (Real.exp (g x))) := by
-  refine isFiniteMeasure_withDensity_ofReal (Integrable.of_bound
-    (Real.measurable_exp.comp_aemeasurable hg).aestronglyMeasurable (Real.exp M)
-    (hgM.mono fun x hx ↦ ?_)).2
-  rwa [Function.comp_apply, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp]
+  refine ⟨?_⟩
+  rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
+  refine lt_of_le_of_lt (lintegral_mono_ae (g := fun _ ↦ ENNReal.ofReal (Real.exp M))
+    (hgM.mono fun x hx ↦ ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2 hx))) ?_
+  rw [lintegral_const]
+  exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top (measure_lt_top _ _)
 
 end MeasureTheory
 
