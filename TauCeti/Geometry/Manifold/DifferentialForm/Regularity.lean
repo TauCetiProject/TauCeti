@@ -569,6 +569,12 @@ theorem coe_ofFunction [IsManifold I 1 M] (f : C^∞⟮I, M; 𝓘(ℝ, F), F⟯)
     (ofFunction f : RoughForm I M F 0) = RoughForm.ofFunction I f :=
   (rfl)
 
+/-- Evaluating the smooth `0`-form of a function on the empty tuple of tangent vectors recovers the
+function. -/
+theorem ofFunction_apply_zero [IsManifold I 1 M] (f : C^∞⟮I, M; 𝓘(ℝ, F), F⟯) :
+    (fun y ↦ (ofFunction f).1 y 0) = f :=
+  funext fun y ↦ by rw [coe_ofFunction, RoughForm.ofFunction_apply]
+
 /-- The exterior derivative of a smooth form is a smooth section. -/
 theorem contMDiff_mextDeriv [IsManifold I 2 M] (φ : SmoothForm I M F k) :
     ContMDiff I (I.prod 𝓘(ℝ, E [⋀^Fin (k + 1)]→L[ℝ] F)) ∞
