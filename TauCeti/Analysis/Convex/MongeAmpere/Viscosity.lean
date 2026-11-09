@@ -249,7 +249,7 @@ theorem isMongeAmpereViscositySubsolution_of_withDensity_le_mongeAmpereMeasure [
   set I := ContinuousLinearMap.id ℝ E
   -- Choose `t > 0` with `det (A + t) < f x₀`.
   obtain ⟨t, htA, ht⟩ : ∃ t : ℝ, (A + t • I).det < f x₀ ∧ 0 < t :=
-    (((ContinuousLinearMap.eventually_det_add_smul_id_lt hlt).filter_mono
+    ((((ContinuousLinearMap.tendsto_det_add_smul_id A).eventually_lt_const hlt).filter_mono
       nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := Ioi (0 : ℝ)))).exists
   -- Choose `R > 0` such that on `ball x₀ R`: `x ∈ Ω`, `φ` is convex near `x`,
   -- `u - φ ≤ u x₀ - φ x₀`, `φ` and `∇ φ` are differentiable, and `det (D²φ + t) < f`.
@@ -331,7 +331,7 @@ theorem isMongeAmpereViscositySupersolution_of_mongeAmpereMeasure_le_withDensity
   simp only [ContinuousLinearMap.coe_coe, RCLike.re_to_real] at hA
   -- Choose `-κ / 2 < t < 0` with `f x₀ < det (A + t)`.
   obtain ⟨t, ⟨htA, htκ⟩, ht⟩ : ∃ t : ℝ, (f x₀ < (A + t • I).det ∧ -(κ / 2) < t) ∧ t < 0 :=
-    ((((ContinuousLinearMap.eventually_lt_det_add_smul_id hlt).and
+    (((((ContinuousLinearMap.tendsto_det_add_smul_id A).eventually_const_lt hlt).and
       (lt_mem_nhds (by linarith : -(κ / 2) < 0))).filter_mono nhdsWithin_le_nhds).and
       (self_mem_nhdsWithin (s := Iio (0 : ℝ)))).exists
   -- Choose `R > 0` such that on `ball x₀ R`: `x ∈ Ω`, `u - φ ≥ u x₀ - φ x₀`, `φ` and `∇ φ` are
