@@ -26,8 +26,8 @@ a Lie algebra over `R[X]`.
 
 ## Main results
 
-* `TauCeti.Module.End.aeval_lie_right_of_lie_right`: if `φ` commutes with every inner derivation,
-  so does every polynomial in `φ`.
+* `TauCeti.Module.End.aeval_lie_right_of_lie_right`: if an endomorphism `φ` of a Lie module `M`
+  over `L` commutes with the action of every `x : L`, so does every polynomial in `φ`.
 -/
 
 public section
@@ -36,19 +36,21 @@ open Polynomial
 
 namespace TauCeti
 
-variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 
-/-- **Every polynomial in an endomorphism commuting with inner derivations commutes with them**:
-if `φ ⁅x, y⁆ = ⁅x, φ y⁆` for all `x, y`, then `f(φ) ⁅x, y⁆ = ⁅x, f(φ) y⁆` for every `f ∈ R[X]`. -/
-theorem Module.End.aeval_lie_right_of_lie_right {φ : Module.End R L}
-    (h : ∀ x y : L, φ ⁅x, y⁆ = ⁅x, φ y⁆) (f : R[X]) (x y : L) :
-    aeval φ f ⁅x, y⁆ = ⁅x, aeval φ f y⁆ := by
+/-- **Every polynomial in an endomorphism commuting with the action of `L` commutes with it**: if
+an endomorphism `φ` of a Lie module `M` satisfies `φ ⁅x, m⁆ = ⁅x, φ m⁆` for all `x, m`, then
+`f(φ) ⁅x, m⁆ = ⁅x, f(φ) m⁆` for every `f ∈ R[X]`. For `M = L` these are the endomorphisms commuting
+with every inner derivation. -/
+theorem Module.End.aeval_lie_right_of_lie_right [AddCommGroup M] [Module R M] [LieRingModule L M]
+    [LieModule R L M] {φ : Module.End R M} (h : ∀ (x : L) (m : M), φ ⁅x, m⁆ = ⁅x, φ m⁆) (f : R[X])
+    (x : L) (m : M) : aeval φ f ⁅x, m⁆ = ⁅x, aeval φ f m⁆ := by
   induction f using Polynomial.induction_on' with
   | add f g hf hg => simp only [map_add, LinearMap.add_apply, hf, hg, lie_add]
   | monomial n c =>
     simp only [aeval_monomial, mul_apply_eq_comp, Module.algebraMap_end_apply, lie_smul]
     congr 1
-    induction n generalizing y with
+    induction n generalizing m with
     | zero => simp only [pow_zero, one_apply_eq_self]
     | succ n ih => rw [pow_succ, mul_apply_eq_comp, mul_apply_eq_comp, h, ih]
 
@@ -75,8 +77,7 @@ noncomputable abbrev Module.AEval'.lieAlgebra {φ : Module.End R L}
   lie_smul f x y := by
     obtain ⟨x, rfl⟩ := (Module.AEval'.of φ).surjective x
     obtain ⟨y, rfl⟩ := (Module.AEval'.of φ).surjective y
-    rw [← Module.AEval.of_aeval_smul, Module.AEval'.of_lie_of, Module.AEval'.of_lie_of,
-      ← Module.AEval.of_aeval_smul, Module.End.smul_def, Module.End.smul_def,
+    simp only [← Module.AEval.of_aeval_smul, Module.AEval'.of_lie_of, Module.End.smul_def,
       Module.End.aeval_lie_right_of_lie_right h]
 
 end TauCeti
