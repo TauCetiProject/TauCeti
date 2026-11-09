@@ -45,11 +45,9 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
 
 private theorem indepFun_centered_sq_increment (hB : IsFilteredPreBrownianReal ℱ B P)
     {s t : ℝ≥0} (hst : s ≤ t) {Y : Ω → ℝ} (hY : Measurable[ℱ s] Y) :
-    IndepFun Y (fun ω ↦ (B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) P := by
-  have h : IndepFun Y (B t - B s) P :=
-    (IndepFun_iff_Indep _ _ _).2
-      (indep_of_indep_of_le_left (hB.indep_sub hst).symm hY.comap_le)
-  exact h.comp measurable_id ((measurable_id.pow_const 2).sub measurable_const)
+    IndepFun Y (fun ω ↦ (B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) P :=
+  (hB.indepFun_sub hst hY).comp measurable_id
+    ((measurable_id.pow_const 2).sub measurable_const)
 
 /-- A past-measurable integrable height times the centered square of a future Brownian
 increment has mean zero. No boundedness or second moment of the height is required. -/

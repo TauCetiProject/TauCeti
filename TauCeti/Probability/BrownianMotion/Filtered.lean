@@ -64,6 +64,15 @@ structure IsFilteredPreBrownianReal (ℱ : Filtration ℝ≥0 mΩ) (W : ℝ≥0 
   /-- The increment `W t - W s` is independent of `ℱ s`. -/
   indep_sub ⦃s t : ℝ≥0⦄ : s ≤ t → Indep (.comap (W t - W s) inferInstance) (ℱ s) P
 
+/-- A random variable measurable at the left endpoint is independent of the following
+Brownian increment. -/
+theorem IsFilteredPreBrownianReal.indepFun_sub {ℱ : Filtration ℝ≥0 mΩ}
+    {W : ℝ≥0 → Ω → ℝ} {P : Measure Ω} (hW : IsFilteredPreBrownianReal ℱ W P)
+    {s t : ℝ≥0} (hst : s ≤ t) {E : Type*} [MeasurableSpace E] {Y : Ω → E}
+    (hY : Measurable[ℱ s] Y) : IndepFun Y (W t - W s) P :=
+  (IndepFun_iff_Indep _ _ _).2
+    (indep_of_indep_of_le_left (hW.indep_sub hst).symm hY.comap_le)
+
 /-- Fixed-time almost-sure equality preserves the filtered pre-Brownian property, provided
 the replacement is adapted to the same filtration. Adaptedness is not inferred from a.e. equality
 on a raw filtration. -/

@@ -31,8 +31,6 @@ case `E = ℝ`.
 
 ## Main statements
 
-* `TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero`: the second-moment identity
-  for pairwise orthogonal random vectors with integrable pairwise inner products.
 * `TauCeti.integral_norm_sum_sq_of_pairwise_indepFun`: Bienaymé's identity for random vectors.
 * `TauCeti.integral_norm_finiteMean_sub_sq`: the mean-square error of a sample mean.
 * `TauCeti.integral_finiteMean_sub_sq`: the same identity for real random variables.

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Filtered
-import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Moments.Chebyshev
 import TauCeti.Algebra.BigOperators.Fin
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
