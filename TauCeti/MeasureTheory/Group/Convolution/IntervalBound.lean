@@ -114,8 +114,8 @@ theorem lintegral_enorm_setIntegral_le [IsFiniteMeasure μ] [SFinite ν]
 
 /-- Integrating the translates of `f` over `S` against a finite measure gives a continuous
 function. -/
-theorem continuous_setIntegral_comp_add [IsFiniteMeasure μ] (f : C_c(ℝ, ℝ))
-    (S : Set ℝ≥0) : Continuous fun z : ℝ ↦ ∫ x in S, f (x + z) ∂μ := by
+theorem _root_.CompactlySupportedContinuousMap.continuous_setIntegral_comp_add [IsFiniteMeasure μ]
+    (f : C_c(ℝ, ℝ)) (S : Set ℝ≥0) : Continuous fun z : ℝ ↦ ∫ x in S, f (x + z) ∂μ := by
   obtain ⟨D, hD⟩ := (map_continuous f).bounded_above_of_compact_support f.hasCompactSupport
   exact continuous_of_dominated (bound := fun _ ↦ D) (fun z ↦ by fun_prop)
     (fun z ↦ ae_of_all _ fun x ↦ hD _) (integrable_const D) (ae_of_all _ fun x ↦ by fun_prop)
@@ -126,7 +126,7 @@ theorem integrable_setIntegral_comp_add [IsFiniteMeasure μ] [SFinite ν]
     (hf : ∀ y, ‖f y‖ₑ ≤ (Icc a b).indicator (fun _ ↦ (C : ℝ≥0∞)) y)
     (hν : ∀ c, ν (Icc (c + a) (c + b)) ≤ B) (hB : B ≠ ∞) (S : Set ℝ≥0) :
     Integrable (fun z : ℝ ↦ ∫ x in S, f (x + z) ∂μ) ν :=
-  ⟨(continuous_setIntegral_comp_add f S).aestronglyMeasurable,
+  ⟨(f.continuous_setIntegral_comp_add S).aestronglyMeasurable,
     (lintegral_enorm_setIntegral_le hf hν S).trans_lt (by finiteness)⟩
 
 /-- Integrating against `μ ∗ ν` is integrating `z ↦ ∫ f (x + z) dμ(x)` against `ν`. -/
@@ -207,7 +207,7 @@ theorem tendsto_integral_integral_comp_add [IsFiniteMeasure μ] {ι : Type*}
   obtain ⟨n, hn⟩ := (he.eventually (gt_mem_nhds (by positivity : 0 < ε / 3))).exists
   -- On `[0, n]` the function is a compactly supported test function.
   let g : C_c(ℝ, ℝ) := ⟨⟨fun z ↦ ∫ x in Iic (n : ℝ≥0), f (x + z) ∂μ,
-    continuous_setIntegral_comp_add f _⟩, hasCompactSupport_setIntegral_Iic hf _⟩
+    f.continuous_setIntegral_comp_add _⟩, hasCompactSupport_setIntegral_Iic hf _⟩
   filter_upwards [Metric.tendsto_nhds.1 (hlim g) (ε / 3) (by positivity)] with i hi
   simp only [g, CompactlySupportedContinuousMap.coe_mk, ContinuousMap.coe_mk] at hi
   have h1 := dist_integral_setIntegral_Iic_le (μ := μ) hf (hν' i) hB n
