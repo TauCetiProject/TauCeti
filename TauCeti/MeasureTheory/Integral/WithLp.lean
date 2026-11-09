@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.Analysis.Calculus.FDeriv.Integrable
-import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
