@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The iteration lemma for decay estimates on concentric balls
@@ -191,12 +192,6 @@ theorem exists_le_mul_div_rpow_mul_add_mul_rpow_of_le_mul_add {A α β γ : ℝ}
         exacts [le_max_left _ _, le_max_right _ _]
     _ = _ := by ring
 
-/-- `ρ ^ γ ≤ R₁ ^ (γ - β) ρ ^ β` for `0 < ρ ≤ R₁` and `β ≤ γ`. -/
-theorem rpow_le_rpow_sub_mul_rpow {ρ R₁ β γ : ℝ} (hρ : 0 < ρ) (hρR : ρ ≤ R₁) (hβγ : β ≤ γ) :
-    ρ ^ γ ≤ R₁ ^ (γ - β) * ρ ^ β :=
-  calc ρ ^ γ = ρ ^ (γ - β) * ρ ^ β := by rw [← Real.rpow_add hρ, sub_add_cancel]
-    _ ≤ R₁ ^ (γ - β) * ρ ^ β := by gcongr
-
 /-- The real-number bookkeeping at the end of the proof of the interior oscillation estimate: from
 the iterated bound `φ s ≤ C₁ ((s / R₁)^β φ R₁ + B s^β)` and `φ R₁ ≤ 2 M₀`, with `R₁ = R / 2`,
 `M₀ = D (Q + R^γ F)` and `B = K F R₁^(γ - β)`, one gets
@@ -251,7 +246,7 @@ theorem exists_le_mul_rpow_of_essOsc_step {α₀ C₀ K D γ : ℝ} (hα₀ : 0 
   have hR : 0 < R := by linarith only [hs, hsR]
   have hB : 0 ≤ K * F * (R / 2) ^ (γ - β) := by positivity
   have hfin := hiter hB hε₀.le hmono hφ0 (fun s ρ hs hsρ hρ => (hstep s ρ hs hsρ hρ).trans <| by
-      have := rpow_le_rpow_sub_mul_rpow (hs.trans_le hsρ) hρ hβγ
+      have := Real.rpow_le_rpow_sub_mul_rpow (hs.trans_le hsρ) hρ hβγ
       have := hs.trans_le hsρ
       calc _ ≤ C₀ * ((s / ρ) ^ α₀ + 0) * φ ρ + K * ((R / 2) ^ (γ - β) * ρ ^ β) * F := by gcongr
         _ = _ := by ring) s (R / 2) hs hsR le_rfl

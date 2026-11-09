@@ -233,6 +233,12 @@ theorem tendsto_pow_div_mul_sub_pow_atTop {n : ℕ} {ω : ℝ} (hn0 : n ≠ 0) (
   rw [div_pow, one_sub_div (pow_pos hD0 n).ne', inv_div]
   field_simp
 
+/-- `ρ ^ γ ≤ R₁ ^ (γ - β) ρ ^ β` for `0 < ρ ≤ R₁` and `β ≤ γ`. -/
+theorem rpow_le_rpow_sub_mul_rpow {ρ R₁ β γ : ℝ} (hρ : 0 < ρ) (hρR : ρ ≤ R₁) (hβγ : β ≤ γ) :
+    ρ ^ γ ≤ R₁ ^ (γ - β) * ρ ^ β :=
+  calc ρ ^ γ = ρ ^ (γ - β) * ρ ^ β := by rw [← Real.rpow_add hρ, sub_add_cancel]
+    _ ≤ R₁ ^ (γ - β) * ρ ^ β := by gcongr
+
 end Real
 
 /-- Real powers `g i ^ f i` with finitely supported exponents `f` have finite multiplicative
