@@ -13,6 +13,9 @@ public import TauCeti.RepresentationTheory.Compact.UnitaryModel
 public import TauCeti.Topology.Algebra.Group.Subgroup
 public import TauCeti.Topology.Algebra.UnitaryGroup
 
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
+
 /-!
 # The maximal compact subgroups of the real and complex general linear groups
 
@@ -48,6 +51,11 @@ product over Haar measure of `K` and changing coordinates by the automorphism st
 averaged form makes every element of `K` an isometry. The matrix of that automorphism conjugates
 `K` into `U`, by `Matrix.mem_unitaryGroup_iff_inner_toEuclideanCLM`.
 
+An arbitrary compact complex matrix subgroup meets the upper triangular matrices with nonnegative
+real diagonal only at the identity. More generally, its only element with nonnegative real
+spectrum is the identity. The triangular intersection is the uniqueness condition in the
+Iwasawa decomposition.
+
 ## Main results
 
 * `Matrix.GeneralLinearGroup.mem_unitarySubgroup_of_isCompact_of_polarUnitary_mem`: an element of
@@ -56,6 +64,10 @@ averaged form makes every element of `K` an isometry. The matrix of that automor
   the unitary subgroup is the unitary subgroup.
 * `Matrix.GeneralLinearGroup.exists_conj_smul_le_unitarySubgroup`: every compact subgroup is
   conjugate into the unitary subgroup.
+* `Matrix.GeneralLinearGroup.eq_one_of_mem_isCompact_subgroup_of_spectrum_nonneg`: an element
+  of a compact matrix subgroup whose complex spectrum is nonnegative real is the identity.
+* `Matrix.IsUpperTriangular.eq_one_of_mem_isCompact_subgroup_of_diag_nonneg`: a compact matrix
+  subgroup meets the upper triangular matrices with nonnegative real diagonal only in the identity.
 * `Matrix.GeneralLinearGroup.maximal_isCompact_iff`: the maximal compact subgroups are exactly the
   conjugates of the unitary subgroup.
 * `Matrix.GeneralLinearGroup.eq_inf_unitarySubgroup_of_isCompact_of_le_of_polarUnitary_mem` and
@@ -66,6 +78,8 @@ averaged form makes every element of `K` an isometry. The matrix of that automor
 ## References
 
 * A. W. Knapp, *Lie Groups Beyond an Introduction*, second edition, Chapter VI.
+* A. W. Knapp, *Lie Groups Beyond an Introduction*, first edition, Birkhäuser (1996),
+  Chapter VI, §4, Theorem 6.46 (the compact/triangular intersection in the Iwasawa decomposition).
 * B. C. Hall, *Lie Groups, Lie Algebras, and Representations*, second edition, Section 2.5.
 -/
 
@@ -147,6 +161,51 @@ theorem exists_conj_smul_le_unitarySubgroup {K : Subgroup (GL ι 𝕜)}
     simp [tautologicalRep_apply, MulAut.smul_def, B, ContinuousLinearEquiv.toUnit]
   rw [hop, hop]
   exact he.inner_map_map _ x y
+
+open scoped Matrix.Norms.L2Operator in
+/-- An element of a compact complex matrix subgroup with nonnegative real spectrum is the
+identity. The subgroup need not be unitary for the standard inner product. -/
+theorem eq_one_of_mem_isCompact_subgroup_of_spectrum_nonneg (g : GL ι ℂ)
+    {K : Subgroup (GL ι ℂ)} (hK : IsCompact (K : Set (GL ι ℂ))) (hg : g ∈ K)
+    (hnonneg : ∀ z ∈ spectrum ℂ (g : Matrix ι ι ℂ), 0 ≤ z) : g = 1 := by
+  obtain ⟨c, hc⟩ := Matrix.GeneralLinearGroup.exists_conj_smul_le_unitarySubgroup hK
+  let u : GL ι ℂ := c * g * c⁻¹
+  have hu : (u : Matrix ι ι ℂ) ∈ unitary (Matrix ι ι ℂ) := by
+    have humem := hc ((Subgroup.mem_smul_pointwise_iff_exists _ _ _).mpr ⟨g, hg, rfl⟩)
+    exact TauCeti.mem_unitary_units_iff.mp (mem_unitarySubgroup_iff.mp humem)
+  have hspec : spectrum ℂ (u : Matrix ι ι ℂ) ⊆ {1} := by
+    intro z hz
+    have hzg : z ∈ spectrum ℂ (g : Matrix ι ι ℂ) := by
+      simpa only [u, Units.val_mul, Units.val_inv_eq_inv_val,
+        spectrum.units_conjugate] using hz
+    have hn := spectrum.norm_eq_one_of_unitary hu hz
+    obtain ⟨r, hr, hzr⟩ := RCLike.nonneg_iff_exists_ofReal.mp (hnonneg z hzg)
+    rw [← hzr, RCLike.norm_ofReal, abs_of_nonneg hr] at hn
+    simp only [Set.mem_singleton_iff, ← hzr, hn, RCLike.ofReal_one]
+  have huone : (u : Matrix ι ι ℂ) = 1 :=
+    CFC.eq_one_of_spectrum_subset_one (R := ℂ) (u : Matrix ι ι ℂ) hspec
+      (isStarNormal_of_mem_unitary hu)
+  have huone' : u = 1 := Units.ext huone
+  apply (MulAut.conj c).injective
+  simpa only [u, MulAut.conj_apply, map_one] using huone'
+
+
+/-- An upper triangular element of a compact complex matrix subgroup whose diagonal entries
+are nonnegative real numbers is the identity. -/
+theorem _root_.Matrix.IsUpperTriangular.eq_one_of_mem_isCompact_subgroup_of_diag_nonneg
+    [LinearOrder ι]
+    {g : GL ι ℂ} (htri : (g : Matrix ι ι ℂ).IsUpperTriangular)
+    {K : Subgroup (GL ι ℂ)} (hK : IsCompact (K : Set (GL ι ℂ))) (hg : g ∈ K)
+    (hdiag : ∀ i, 0 ≤ (g : Matrix ι ι ℂ) i i) : g = 1 := by
+  apply g.eq_one_of_mem_isCompact_subgroup_of_spectrum_nonneg hK hg
+  intro z hz
+  have hz' := (Matrix.mem_spectrum_iff_isRoot_charpoly.mp hz).eq_zero
+  rw [Matrix.charpoly_of_isUpperTriangular _ htri, Polynomial.eval_prod] at hz'
+  simp only [Polynomial.eval_sub, Polynomial.eval_X, Polynomial.eval_C] at hz'
+  obtain ⟨i, _, hi⟩ := Finset.prod_eq_zero_iff.mp hz'
+  rw [sub_eq_zero.mp hi]
+  exact hdiag i
+
 
 /-- **The maximal compact subgroups of `GL ι 𝕜` are the conjugates of the unitary subgroup.** Over
 `ℝ` these are the conjugates of the orthogonal group `O(n)`, and over `ℂ` of the unitary group
