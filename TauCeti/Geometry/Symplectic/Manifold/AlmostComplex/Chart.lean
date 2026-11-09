@@ -103,6 +103,21 @@ theorem inChart_extChartAt_self : J.inChart x (extChartAt I x x) = J.toEndomorph
   -- Both chart derivatives are the identities on the native model tangent spaces.
   rfl
 
+/-- On the chart target, the finite coordinate field is `J` at the corresponding point,
+conjugated by the derivatives of the chart and of its inverse. -/
+theorem inChart_apply_eq_mfderiv {z : E} (hz : z ∈ (extChartAt I x).target) (w : E) :
+    J.inChart x z w =
+      mfderiv I 𝓘(ℝ, E) (extChartAt I x) ((extChartAt I x).symm z)
+        (J ((extChartAt I x).symm z)
+          (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (Set.range I) z w)) := by
+  have hz' : (extChartAt I x).symm z ∈ (chartAt H x).source := by
+    rw [← extChartAt_source I]
+    exact (extChartAt I x).map_target hz
+  rw [inChart_def, ContinuousLinearMap.inCoordinates,
+    TangentBundle.continuousLinearMapAt_trivializationAt hz',
+    TangentBundle.symmL_trivializationAt hz', (extChartAt I x).right_inv hz]
+  rfl
+
 @[simp]
 theorem inChart_ofLE (h : m ≤ n) : (J.ofLE h).inChart x = J.inChart x := by
   funext z
