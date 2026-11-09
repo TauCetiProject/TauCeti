@@ -420,7 +420,7 @@ theorem injOn_gradient_inter_setOf_det_ne_zero (hf : Convex ℝ {p : E × ℝ | 
   exact apply_sub_eq_zero_of_forall_mem_subdifferential_norm_sub_le hf hy₁ hy₂ (hP x₁ hx₁.1).2
 
 /-- **Change of variables along the gradient of a convex function.** Let `f : E → EReal` be convex,
-with real representative `F x = (f x).toReal`, and let `t` be a measurable set at each point of
+with real representative `F x = (f x).toReal`, and let `t` be a set at each point of
 which the subdifferential of `f` is the single gradient `∇F x`, with the expansion
 `y' = ∇F x + H x (x' - x) + o(‖x' - x‖)` for a positive `H x`, and suppose the part of `t` where
 `det (H x) ≠ 0` is measurable. Then `∫_{∇F(t)} g dμ = ∫_t det (H x) g (∇F x) dμ` for
@@ -448,13 +448,10 @@ theorem withDensity_image_gradient_eq_setLIntegral
     withDensity_absolutelyContinuous μ g
       (addHaar_image_eq_zero_of_det_fderivWithin_eq_zero μ (hder _ sdiff_subset) hdeg)
   have hzero : ∫⁻ x in t \ Z, ENNReal.ofReal (H x).det * g (G x) ∂μ = 0 := by
-    obtain ⟨φ, hφ, hφle, hφeq⟩ := exists_measurable_le_lintegral_eq (μ.restrict (t \ Z))
-      fun x => ENNReal.ofReal (H x).det * g (G x)
-    rw [hφeq, lintegral_eq_zero_iff hφ, EventuallyEq, ae_iff]
-    change (μ.restrict (t \ Z)) {x | φ x ≠ 0} = 0
-    rw [Measure.restrict_apply (t := {x | φ x ≠ 0}) (hφ (measurableSet_singleton (0 : ℝ≥0∞)).compl)]
-    refine measure_mono_null (t := ∅) (fun x hx => hx.1 ?_) measure_empty
-    exact nonpos_iff_eq_zero.1 ((hφle x).trans_eq (by simp [hdeg x hx.2]))
+    refine le_antisymm ?_ bot_le
+    simpa only [lintegral_zero] using setLIntegral_mono (μ := μ) (s := t \ Z)
+      (f := fun x => ENNReal.ofReal (H x).det * g (G x)) (g := fun _ => 0) measurable_const
+      fun x hx => by simp [hdeg x hx]
   calc μ.withDensity g (G '' t) = μ.withDensity g (G '' Z) := by
         refine le_antisymm ?_ (measure_mono (image_mono inter_subset_left))
         calc μ.withDensity g (G '' t) = μ.withDensity g (G '' Z ∪ G '' (t \ Z)) := by
