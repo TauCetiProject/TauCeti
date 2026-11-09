@@ -31,11 +31,8 @@ variable {G X Y : Type*} [Group G] [MulAction G X] [MulAction G Y]
 def orbitRelQuotientStabilizerMap (y : Y) :
     MulAction.orbitRel.Quotient (MulAction.stabilizer G y) X →
       MulAction.orbitRel.Quotient G (X × Y) :=
-  Quotient.map' (fun x => (x, y)) fun x x' h => by
-    obtain ⟨g, hg⟩ := h
-    refine ⟨(g : G), Prod.ext ?_ ?_⟩
-    · simpa only [Subgroup.smul_def, Prod.smul_def, Prod.fst] using hg
-    · exact MulAction.mem_stabilizer_iff.mp g.2
+  Quotient.map' (fun x => (x, y)) fun _ _ ⟨g, hg⟩ =>
+    ⟨g, Prod.ext (by simpa [Subgroup.smul_def] using hg) (MulAction.mem_stabilizer_iff.mp g.2)⟩
 
 @[simp]
 theorem orbitRelQuotientStabilizerMap_mk (y : Y) (x : X) :
@@ -45,23 +42,18 @@ theorem orbitRelQuotientStabilizerMap_mk (y : Y) (x : X) :
 /-- Fixing the mark identifies stabilizer orbits faithfully with diagonal orbits. -/
 theorem orbitRelQuotientStabilizerMap_injective (y : Y) :
     Function.Injective (orbitRelQuotientStabilizerMap (G := G) (X := X) y) := by
-  intro q q'
-  refine Quotient.inductionOn₂' q q' ?_
-  intro x x' h
+  rintro ⟨x⟩ ⟨x'⟩ h
   obtain ⟨g, hg⟩ := Quotient.exact' h
   refine Quotient.sound' ⟨⟨g, MulAction.mem_stabilizer_iff.mpr (congrArg Prod.snd hg)⟩, ?_⟩
-  simpa only [Subgroup.smul_def, Prod.smul_def, Prod.fst] using congrArg Prod.fst hg
+  simpa [Subgroup.smul_def] using congrArg Prod.fst hg
 
 /-- Every diagonal orbit admits a representative with mark `y` when the marking action is
 transitive. -/
 theorem orbitRelQuotientStabilizerMap_surjective [MulAction.IsPretransitive G Y] (y : Y) :
     Function.Surjective (orbitRelQuotientStabilizerMap (G := G) (X := X) y) := by
-  intro q
-  refine Quotient.inductionOn' q ?_
   rintro ⟨x, z⟩
-  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G y z
-  refine ⟨Quotient.mk'' (g⁻¹ • x), Quotient.sound' ⟨g⁻¹, ?_⟩⟩
-  simp [← hg]
+  obtain ⟨g, rfl⟩ := MulAction.exists_smul_eq G y z
+  exact ⟨Quotient.mk'' (g⁻¹ • x), Quotient.sound' ⟨g⁻¹, by simp⟩⟩
 
 /-- Stabilizer orbits with a fixed mark are exactly diagonal orbits with a moving mark. -/
 noncomputable def orbitRelQuotientStabilizerEquiv [MulAction.IsPretransitive G Y] (y : Y) :
@@ -80,7 +72,7 @@ theorem orbitRelQuotientStabilizerEquiv_symm_mk [MulAction.IsPretransitive G Y]
     (y : Y) (x : X) :
     (orbitRelQuotientStabilizerEquiv (G := G) y).symm (Quotient.mk'' (x, y)) =
       Quotient.mk'' x := by
-  exact (orbitRelQuotientStabilizerEquiv (G := G) y).symm_apply_apply (Quotient.mk'' x)
+  rw [Equiv.symm_apply_eq, orbitRelQuotientStabilizerEquiv_mk]
 
 /-- Move the mark back to `y` by applying the inverse translator to the object as well. -/
 @[simp]
@@ -88,8 +80,7 @@ theorem orbitRelQuotientStabilizerEquiv_symm_mk_smul [MulAction.IsPretransitive 
     (y : Y) (x : X) (g : G) :
     (orbitRelQuotientStabilizerEquiv (G := G) y).symm (Quotient.mk'' (x, g • y)) =
       Quotient.mk'' (g⁻¹ • x) := by
-  apply (orbitRelQuotientStabilizerEquiv (G := G) y).injective
-  simp only [Equiv.apply_symm_apply, orbitRelQuotientStabilizerEquiv_mk]
+  rw [Equiv.symm_apply_eq, orbitRelQuotientStabilizerEquiv_mk]
   exact Quotient.sound' ⟨g, by simp⟩
 
 end TauCeti.MulAction
