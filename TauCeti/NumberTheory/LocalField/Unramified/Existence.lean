@@ -238,24 +238,6 @@ instance isGalois_unramifiedExtension (f : ℕ) : IsGalois K (unramifiedExtensio
   exact IsCyclotomicExtension.isGalois {d} K _
 
 variable {K Ω} in
-/-- The unramified extension of degree `0` is `K` itself, hence unramified. -/
-private theorem isUnramified_unramifiedExtension_zero
-    [ValuativeRel (unramifiedExtension K Ω 0)] [TopologicalSpace (unramifiedExtension K Ω 0)]
-    [IsNonarchimedeanLocalField (unramifiedExtension K Ω 0)]
-    [ValuativeExtension K (unramifiedExtension K Ω 0)] :
-    IsUnramified K (unramifiedExtension K Ω 0) := by
-  have hrank : Module.finrank K (unramifiedExtension K Ω 0) = 1 := by
-    rw [unramifiedExtension_zero]
-    exact IntermediateField.finrank_bot
-  have hbij := Algebra.finrank_eq_one_iff_bijective_algebraMap.1 hrank
-  refine isUnramified_of_adjoin_eq_top_of_isUnit_aeval_derivative (b := 1) (p := X - 1) ?_ ?_ ?_
-  · refine top_le_iff.1 fun x _ ↦ ?_
-    obtain ⟨k, rfl⟩ := hbij.2 x
-    simp
-  · simp
-  · simp
-
-variable {K Ω} in
 /-- **The unramified extension of degree `f` is unramified** when `Ω` contains a primitive
 `(q^f − 1)`-st root of unity. For `f = 0` it is `K` itself. This holds for any structure of
 nonarchimedean local field on it compatible with `K`. -/
@@ -266,7 +248,9 @@ theorem isUnramified_unramifiedExtension_of_isPrimitiveRoot {f : ℕ} {ζ : Ω}
     [ValuativeExtension K (unramifiedExtension K Ω f)] :
     IsUnramified K (unramifiedExtension K Ω f) := by
   rcases eq_or_ne f 0 with rfl | hf
-  · exact isUnramified_unramifiedExtension_zero
+  · exact isUnramified_of_finrank_eq_one <| by
+      rw [unramifiedExtension_zero]
+      exact IntermediateField.finrank_bot
   have hL := unramifiedExtension_eq_adjoin_simple hf hζ
   have hn0 : Nat.card 𝓀[K] ^ f - 1 ≠ 0 :=
     Nat.sub_ne_zero_of_lt (Nat.one_lt_pow hf Finite.one_lt_card)
@@ -384,12 +368,16 @@ instance isSplittingField_unramifiedExtension (f : ℕ) :
 variable {K Ω} in
 /-- **The unramified extension of degree `f` is unramified.** This holds for any structure of
 nonarchimedean local field on it compatible with `K`. -/
-theorem isUnramified_unramifiedExtension {f : ℕ} (hf : f ≠ 0)
+theorem isUnramified_unramifiedExtension {f : ℕ}
     [ValuativeRel (unramifiedExtension K Ω f)] [TopologicalSpace (unramifiedExtension K Ω f)]
     [IsNonarchimedeanLocalField (unramifiedExtension K Ω f)]
     [ValuativeExtension K (unramifiedExtension K Ω f)] :
-    IsUnramified K (unramifiedExtension K Ω f) :=
-  isUnramified_unramifiedExtension_of_isPrimitiveRoot
+    IsUnramified K (unramifiedExtension K Ω f) := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · exact isUnramified_of_finrank_eq_one <| by
+      rw [unramifiedExtension_zero]
+      exact IntermediateField.finrank_bot
+  exact isUnramified_unramifiedExtension_of_isPrimitiveRoot
     (exists_isPrimitiveRoot_natCard_pow_sub_one (K := K) Ω hf).choose_spec
 
 variable {K Ω} in
@@ -415,7 +403,7 @@ theorem existsUnique_isUnramified_finrank_eq {f : ℕ} (hf : f ≠ 0) :
     let _ := finiteIntermediateFieldTopology K Ω (unramifiedExtension K Ω f)
     have := finiteIntermediateField_isNonarchimedeanLocalField K Ω (unramifiedExtension K Ω f)
     have := finiteIntermediateField_valuativeExtension K Ω (unramifiedExtension K Ω f)
-    exact isUnramified_unramifiedExtension hf
+    exact isUnramified_unramifiedExtension
   rintro E ⟨_, hE, rfl⟩
   let _ := finiteIntermediateFieldValuativeRel K Ω E
   let _ := finiteIntermediateFieldTopology K Ω E

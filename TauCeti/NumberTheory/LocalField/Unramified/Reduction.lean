@@ -68,7 +68,7 @@ theorem nonempty_residueFieldAlgEquiv_unramifiedExtension
   let _ := finiteIntermediateFieldTopology K Ω L
   have _ := finiteIntermediateField_isNonarchimedeanLocalField K Ω L
   have _ := finiteIntermediateField_valuativeExtension K Ω L
-  have _ : IsUnramified K L := isUnramified_unramifiedExtension hf
+  have _ : IsUnramified K L := isUnramified_unramifiedExtension
   have hL : Module.finrank 𝓀[K] 𝓀[L] = f := by
     rw [← inertiaDegree_def, IsUnramified.inertiaDegree_eq_finrank,
       finrank_unramifiedExtension hf]
