@@ -46,6 +46,8 @@ This is the manifold counterpart of `TauCeti.periodicSolutionEquivFixedPoints` i
 
 ## Main results
 
+* `TauCeti.mem_periodicSolutions_const_iff`: the periodic solutions of an autonomous field are its
+  periodic integral curves.
 * `TauCeti.timeDependentFlowOf_add_period_of_mem`: translating both times by a period of the field
   preserves the domain and the flow.
 * `TauCeti.mem_timeDependentFlowDomain_of_isFixedPt`: for `T ≠ 0`, the trajectory of a fixed point
@@ -87,6 +89,11 @@ theorem mem_periodicSolutions {γ : ℝ → M} :
     γ ∈ periodicSolutions X T ↔
       (∀ t, HasMFDerivAt 𝓘(ℝ, ℝ) I γ t ((1 : ℝ →L[ℝ] ℝ).smulRight (X t (γ t)))) ∧
         ∀ t, γ (t + T) = γ t :=
+  Iff.rfl
+
+/-- The periodic solutions of an autonomous field `Y` are its periodic integral curves. -/
+theorem mem_periodicSolutions_const_iff {Y : (x : M) → TangentSpace I x} {γ : ℝ → M} :
+    γ ∈ periodicSolutions (fun _ ↦ Y) T ↔ IsMIntegralCurve γ Y ∧ Periodic γ T :=
   Iff.rfl
 
 section Flow

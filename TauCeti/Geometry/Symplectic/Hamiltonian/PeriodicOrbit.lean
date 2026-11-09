@@ -108,12 +108,12 @@ theorem exists_pos_forall_periodicSolutions_smul_eq [CompactSpace M] (h : σ.IsN
   rw [hX]
   ext γ
   refine ⟨fun hγ ↦ ⟨γ 0, ?_, hconst ε hε hεε₀ γ hγ⟩, ?_⟩
-  · have hγv : IsMIntegralCurve γ (ε • σ.hamiltonianVectorField F) :=
-      (mem_periodicSolutions.1 hγ).1
+  · have hγv := (mem_periodicSolutions_const_iff.1 hγ).1
     rw [hconst ε hε hεε₀ γ hγ, isMIntegralCurve_const_iff] at hγv
     exact (hzero _).1 hγv
   · rintro ⟨x, hx, rfl⟩
-    exact mem_periodicSolutions.2 ⟨isMIntegralCurve_const_iff.2 ((hzero x).2 hx), fun _ ↦ rfl⟩
+    exact mem_periodicSolutions_const_iff.2
+      ⟨isMIntegralCurve_const_iff.2 ((hzero x).2 hx), fun _ ↦ rfl⟩
 
 end SmoothTwoForm.IsNondegenerate
 

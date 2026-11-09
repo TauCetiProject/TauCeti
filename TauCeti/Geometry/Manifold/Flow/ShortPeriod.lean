@@ -133,20 +133,12 @@ theorem exists_pos_forall_isMIntegralCurve_eq_const_of_periodic
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) :
     ∃ T₀ > (0 : ℝ), ∀ γ : ℝ → M, IsMIntegralCurve γ v →
       ∀ T, 0 < T → T ≤ T₀ → Periodic γ T → γ = fun _ ↦ γ 0 := by
-  classical
   choose W hW δ hδ hγ using exists_mem_nhds_forall_isMIntegralCurve_eq_const_of_periodic hv
   obtain ⟨s, -, hs⟩ := isCompact_univ.elim_nhds_subcover W fun p _ ↦ hW p
-  -- The least of the finitely many times `δ p`, `p ∈ s`.
-  obtain ⟨T₀, hT₀, hle⟩ : ∃ T₀ > (0 : ℝ), ∀ p ∈ s, T₀ ≤ δ p := by
-    clear hs
-    induction s using Finset.induction_on with
-    | empty => exact ⟨1, one_pos, by simp⟩
-    | insert q s _ ih =>
-      obtain ⟨T₀, hT₀, hle⟩ := ih
-      refine ⟨min T₀ (δ q), lt_min hT₀ (hδ q), fun p hp ↦ ?_⟩
-      rcases Finset.mem_insert.1 hp with rfl | hp
-      · exact min_le_right _ _
-      · exact (min_le_left _ _).trans (hle p hp)
+  -- A time below each of the finitely many times `δ p`, `p ∈ s`.
+  obtain ⟨T₀, hle, hT₀⟩ := ((eventually_all_finset s).2 fun p _ ↦
+    eventually_nhdsWithin_of_eventually_nhds (eventually_le_nhds (hδ p))).and
+      (self_mem_nhdsWithin : Ioi (0 : ℝ) ∈ 𝓝[>] 0) |>.exists
   refine ⟨T₀, hT₀, fun γ hγv T hT hTT₀ hper ↦ ?_⟩
   obtain ⟨p, hps, hp⟩ := mem_iUnion₂.1 (hs (mem_univ (γ 0)))
   exact hγ p γ hγv hp T hT (hTT₀.trans (hle p hps)) hper
@@ -161,13 +153,12 @@ theorem exists_pos_forall_mem_periodicSolutions_smul_eq_const
       ∀ γ ∈ periodicSolutions (fun _ ↦ ε • v) 1, γ = fun _ ↦ γ 0 := by
   obtain ⟨T₀, hT₀, h⟩ := exists_pos_forall_isMIntegralCurve_eq_const_of_periodic hv
   refine ⟨T₀, hT₀, fun ε hε hεT₀ γ hγ ↦ ?_⟩
-  obtain ⟨hγv, hγper⟩ := mem_periodicSolutions.1 hγ
+  obtain ⟨hγv, hγper⟩ := mem_periodicSolutions_const_iff.1 hγ
   -- `t ↦ γ (t / ε)` is an `ε`-periodic integral curve of `v`.
-  have hγv : IsMIntegralCurve γ (ε • v) := hγv
   have hδ : IsMIntegralCurve (γ ∘ (· * ε⁻¹)) v := by
     simpa [smul_smul, inv_mul_cancel₀ hε.ne'] using hγv.comp_mul ε⁻¹
   have hper : Periodic (γ ∘ (· * ε⁻¹)) ε := fun t ↦ by
-    simp [add_mul, mul_inv_cancel₀ hε.ne', hγper]
+    simp [add_mul, mul_inv_cancel₀ hε.ne', hγper _]
   have hconst := h _ hδ ε hε hεT₀ hper
   funext t
   simpa [hε.ne'] using congrFun hconst (t * ε)

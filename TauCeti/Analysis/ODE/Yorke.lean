@@ -11,9 +11,11 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 import Mathlib.Analysis.BoundedVariation
+import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.FDeriv.NormComparison
 import TauCeti.Analysis.Fourier.Wirtinger
 
 /-!
@@ -66,20 +68,6 @@ open scoped NNReal Topology
 
 namespace TauCeti
 
-/-- If `g` changes at most `K` times as much as `x` near `t`, then the derivative of `g` at `t` is
-at most `K` times that of `x`. -/
-private theorem norm_le_mul_norm_of_hasDerivAt_of_eventually_le {E F : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {g : ℝ → E} {x : ℝ → F} {g' : E} {x' : F} {t K : ℝ} (hg : HasDerivAt g g' t)
-    (hx : HasDerivAt x x' t) (h : ∀ᶠ u in 𝓝 t, ‖g u - g t‖ ≤ K * ‖x u - x t‖) :
-    ‖g'‖ ≤ K * ‖x'‖ := by
-  refine le_of_tendsto_of_tendsto (hasDerivAt_iff_tendsto_slope.1 hg).norm
-    ((hasDerivAt_iff_tendsto_slope.1 hx).norm.const_mul K) ?_
-  filter_upwards [nhdsWithin_le_nhds h] with u hu
-  simp only [slope_def_module, norm_smul, norm_inv, Real.norm_eq_abs]
-  calc |u - t|⁻¹ * ‖g u - g t‖ ≤ |u - t|⁻¹ * (K * ‖x u - x t‖) := by gcongr
-    _ = K * (|u - t|⁻¹ * ‖x u - x t‖) := by ring
-
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {f : V → V} {x : ℝ → V} {K : ℝ≥0} {a b : ℝ}
 
@@ -110,11 +98,15 @@ private theorem norm_deriv_comp_le (hx : ∀ t ∈ Icc a b, HasDerivAt x (f (x t
     (hf : LipschitzOnWith K f (x '' Icc a b)) {t : ℝ} (ht : t ∈ Ioo a b) :
     ‖deriv (fun t ↦ f (x t)) t‖ ≤ K * ‖f (x t)‖ := by
   by_cases hd : DifferentiableAt ℝ (fun t ↦ f (x t)) t
-  · refine norm_le_mul_norm_of_hasDerivAt_of_eventually_le hd.hasDerivAt
-      (hx t (Ioo_subset_Icc_self ht)) ?_
-    filter_upwards [Icc_mem_nhds ht.1 ht.2] with u hu
-    rw [← dist_eq_norm, ← dist_eq_norm]
-    exact hf.dist_le_mul _ (mem_image_of_mem _ hu) _ (mem_image_of_mem _ (Ioo_subset_Icc_self ht))
+  · -- Compare the two components of `u ↦ (f (x u), x u)` near `t`.
+    have hle : ∀ᶠ u in 𝓝 t, ‖f (x u) - f (x t)‖ ≤ K * ‖x u - x t‖ := by
+      filter_upwards [Icc_mem_nhds ht.1 ht.2] with u hu
+      rw [← dist_eq_norm, ← dist_eq_norm]
+      exact hf.dist_le_mul _ (mem_image_of_mem _ hu) _
+        (mem_image_of_mem _ (Ioo_subset_Icc_self ht))
+    simpa using (hd.hasDerivAt.prodMk (hx t (Ioo_subset_Icc_self ht))).hasFDerivAt
+      |>.norm_apply_le_mul_norm_apply (L := ContinuousLinearMap.fst ℝ V V)
+        (M := ContinuousLinearMap.snd ℝ V V) (by simpa using hle) 1
   · rw [deriv_zero_of_not_differentiableAt hd, norm_zero]
     positivity
 
