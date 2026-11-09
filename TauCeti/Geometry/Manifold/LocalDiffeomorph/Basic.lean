@@ -45,7 +45,7 @@ serve as partial diffeomorphisms in constructions of local submanifolds.
 
 ## Main results
 
-* `TauCeti.coe_diffeomorphOfBijective`: the associated global diffeomorphism
+* `IsLocalDiffeomorph.coe_diffeomorphOfBijective`: the associated global diffeomorphism
   has the original forward map.
 * `OpenPartialHomeomorph.toPartialDiffeomorphOfMemMaximalAtlas`: extend any maximal-atlas chart
   for a boundaryless model to a partial diffeomorphism onto the model vector space.
@@ -169,9 +169,9 @@ variable {𝕂 : Type*} [NontriviallyNormedField 𝕂]
 /-- The diffeomorphism associated to a bijective local diffeomorphism has the given forward map.
 This computation rule lets callers use the constructor without unfolding its choice of inverse. -/
 @[simp]
-theorem coe_diffeomorphOfBijective
+theorem _root_.IsLocalDiffeomorph.coe_diffeomorphOfBijective
     {I : ModelWithCorners 𝕂 E H} {J : ModelWithCorners 𝕂 F G} {n : WithTop ℕ∞}
-    {f : M → N} {hf : _root_.IsLocalDiffeomorph I J n f} {hf' : Function.Bijective f} :
+    {f : M → N} (hf : IsLocalDiffeomorph I J n f) (hf' : Function.Bijective f) :
     ⇑(hf.diffeomorphOfBijective hf') = f := by
   rfl
 

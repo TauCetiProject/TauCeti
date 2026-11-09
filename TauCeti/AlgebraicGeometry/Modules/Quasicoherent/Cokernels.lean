@@ -78,13 +78,13 @@ private theorem isQuasicoherent_cokernel_affine {X : Scheme.{u}} [IsAffine X]
   have : (F.obj (cokernel f)).IsQuasicoherent :=
     (SheafOfModules.isQuasicoherent (Spec Γ(X, ⊤)).ringCatSheaf).prop_of_iso
       (PreservesCokernel.iso F f).symm (isQuasicoherent_cokernel_spec (F.map f))
-  exact isQuasicoherent_of_isQuasicoherent_restrict_iso X.isoSpec (cokernel f)
+  exact (Scheme.Modules.isQuasicoherent_restrict_iff_of_isIso _ X.isoSpec.inv).1 this
 
 /-- The ambient cokernel of a morphism of quasicoherent sheaves on any scheme is quasicoherent. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_cokernel
     {X : Scheme.{u}} {M N : X.Modules} (f : M ⟶ N)
     [M.IsQuasicoherent] [N.IsQuasicoherent] : (cokernel f).IsQuasicoherent := by
-  refine isQuasicoherent_of_isQuasicoherent_restrict_affineOpens (cokernel f) fun U ↦ ?_
+  refine (Scheme.Modules.isQuasicoherent_iff_forall_affineOpens (cokernel f)).2 fun U ↦ ?_
   let F := Scheme.Modules.restrictFunctor U.1.ι
   exact (SheafOfModules.isQuasicoherent U.1.toScheme.ringCatSheaf).prop_of_iso
     (PreservesCokernel.iso F f).symm (isQuasicoherent_cokernel_affine (F.map f))

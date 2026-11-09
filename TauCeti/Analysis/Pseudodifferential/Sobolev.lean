@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.Continuous
+import TauCeti.Analysis.Fourier.Parametric
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.MeasureTheory.Integral.SchurTest
 
@@ -63,8 +64,18 @@ families of operators.
 
 ## Main declarations
 
-* `TauCeti.Symbol.HasCompactSpatialSupport.exists_one_add_norm_pow_mul_norm_fourier_le`: rapid
-  decay of the Fourier transform in the position.
+* `TauCeti.Symbol.HasCompactSpatialSupport.exists_one_add_norm_pow_mul_norm_fourier_le`,
+  `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_fourier_slice_le`: rapid decay of the
+  Fourier transform in the position.
+* Further facts about the Fourier transform `â(η, ξ)` of the position slices: linearity in `a`
+  (`TauCeti.Symbol.HasCompactSpatialSupport.fourier_slice_add`,
+  `TauCeti.Symbol.HasCompactSpatialSupport.fourier_slice_smul`), joint continuity
+  (`TauCeti.Symbol.HasCompactSpatialSupport.continuous_fourier_slice`), differentiability in `ξ`
+  with the Fourier transform of `∂_ξ a` as derivative
+  (`TauCeti.Symbol.HasCompactSpatialSupport.hasFDerivAt_fourier_slice`,
+  `TauCeti.Symbol.HasCompactSpatialSupport.coordinateDeriv_fourier_slice`), and
+  `(∂_{x_j} a)^(η, ξ) = 2πi ηⱼ â(η, ξ)`
+  (`TauCeti.Symbol.HasCompactSpatialSupport.fourier_spatialDeriv_slice`).
 * `TauCeti.Symbol.HasCompactSpatialSupport.fourier_quantizeSchwartzValue`: the Fourier transform
   of `Op(a) u`.
 * `TauCeti.Symbol.HasCompactSpatialSupport.exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le`:
@@ -95,6 +106,7 @@ noncomputable section
 
 open MeasureTheory Real FourierTransform TemperedDistribution TopologicalSpace
 open scoped ENNReal NNReal SchwartzMap BesselPotentialSpace RealInnerProductSpace ContDiff Topology
+  LineDeriv
 
 namespace TauCeti
 
@@ -109,23 +121,58 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddComm
 
 /-! ### Rapid decay of the Fourier transform in the position -/
 
+/-- The position slice `y ↦ a(y, ξ)` of a symbol with compact spatial support, as a Schwartz
+function. -/
+def HasCompactSpatialSupport.sliceSchwartz (ha : a.HasCompactSpatialSupport)
+    (ξ : CoordinateSpace n) : 𝓢(CoordinateSpace n, V →L[ℂ] W) :=
+  (ha.hasCompactSupport_slice ξ).toSchwartzMap (a.contDiff_coefficient_slice ξ)
+
+@[simp]
+theorem HasCompactSpatialSupport.coe_sliceSchwartz (ha : a.HasCompactSpatialSupport)
+    (ξ : CoordinateSpace n) : ⇑(ha.sliceSchwartz ξ) = fun y ↦ a.coefficient (y, ξ) :=
+  funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+
+/-- The Fourier transform of the Schwartz slice is the Fourier transform of the position slice. -/
+theorem HasCompactSpatialSupport.fourier_sliceSchwartz (ha : a.HasCompactSpatialSupport)
+    (ξ η : CoordinateSpace n) :
+    𝓕 (ha.sliceSchwartz ξ) η = 𝓕 (fun y ↦ a.coefficient (y, ξ)) η := by
+  rw [SchwartzMap.fourier_coe, ha.coe_sliceSchwartz]
+
+/-- The Fourier transform of the position slice is additive in the symbol. -/
+theorem HasCompactSpatialSupport.fourier_slice_add {b : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) (hb : b.HasCompactSpatialSupport) (ξ η : CoordinateSpace n) :
+    𝓕 (fun y ↦ (a + b).coefficient (y, ξ)) η =
+      𝓕 (fun y ↦ a.coefficient (y, ξ)) η + 𝓕 (fun y ↦ b.coefficient (y, ξ)) η := by
+  have h : (ha.add hb).sliceSchwartz ξ = ha.sliceSchwartz ξ + hb.sliceSchwartz ξ := by
+    ext y
+    simp
+  rw [← (ha.add hb).fourier_sliceSchwartz, h, FourierTransform.fourier_add, add_apply,
+    ha.fourier_sliceSchwartz, hb.fourier_sliceSchwartz]
+
+/-- The Fourier transform of the position slice is homogeneous in the symbol. -/
+theorem HasCompactSpatialSupport.fourier_slice_smul (ha : a.HasCompactSpatialSupport) (c : ℂ)
+    (ξ η : CoordinateSpace n) :
+    𝓕 (fun y ↦ (c • a).coefficient (y, ξ)) η = c • 𝓕 (fun y ↦ a.coefficient (y, ξ)) η := by
+  have h : (ha.smul c).sliceSchwartz ξ = c • ha.sliceSchwartz ξ := by
+    ext y
+    simp
+  rw [← (ha.smul c).fourier_sliceSchwartz, h, FourierTransform.fourier_smul,
+    ← ha.fourier_sliceSchwartz]
+  rfl
+
 /-- The Schwartz seminorms of the position slices of a symbol vanishing outside a compact set `K`
 grow at most like `⟨ξ⟩ ^ m`, with a constant given by the seminorms `p_{K,α,[]}(a)` of its
 position derivatives. -/
 private theorem HasCompactSpatialSupport.seminorm_slice_le (ha : a.HasCompactSpatialSupport)
     {K : Compacts (CoordinateSpace n)} (haK : ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0) {R : ℝ}
     (hR : 0 ≤ R) (hKR : ∀ x ∈ K, ‖x‖ ≤ R) (k l : ℕ) (ξ : CoordinateSpace n) :
-    SchwartzMap.seminorm ℂ k l
-      ((ha.hasCompactSupport_slice ξ).toSchwartzMap (a.contDiff_coefficient_slice ξ)) ≤
+    SchwartzMap.seminorm ℂ k l (ha.sliceSchwartz ξ) ≤
         R ^ k * (∑ r : Fin l → Fin n, Symbol.seminorm K (List.ofFn r) [] a) *
           (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
   have hP : 0 ≤ ∑ r : Fin l → Fin n, Symbol.seminorm K (List.ofFn r) [] a :=
     Finset.sum_nonneg fun r _ ↦ apply_nonneg _ _
   refine SchwartzMap.seminorm_le_bound ℂ k l _ (by positivity) fun x ↦ ?_
-  have hslice : ⇑((ha.hasCompactSupport_slice ξ).toSchwartzMap (a.contDiff_coefficient_slice ξ)) =
-      fun y ↦ a.coefficient (y, ξ) :=
-    funext (HasCompactSupport.toSchwartzMap_toFun _ _)
-  rw [hslice]
+  rw [ha.coe_sliceSchwartz]
   by_cases hx : x ∈ K
   · have hD : ‖iteratedFDeriv ℝ l (fun y ↦ a.coefficient (y, ξ)) x‖ ≤
         ∑ r : Fin l → Fin n, Symbol.seminorm K (List.ofFn r) [] a * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
@@ -189,7 +236,7 @@ theorem exists_one_add_norm_pow_mul_norm_fourier_le_sum_seminorm
   set D := c₀ * ∑ i ∈ s₀, max R 0 ^ i.1 + c₁ * ∑ i ∈ s₁, max R 0 ^ i.1
   refine ⟨t, 2 ^ N * D, by positivity, fun a haK η ξ ↦ ?_⟩
   have ha : a.HasCompactSpatialSupport := hasCompactSpatialSupport_iff.2 ⟨K, K.isCompact, haK⟩
-  set g := (ha.hasCompactSupport_slice ξ).toSchwartzMap (a.contDiff_coefficient_slice ξ)
+  set g := ha.sliceSchwartz ξ
   set P := ∑ α ∈ t, Symbol.seminorm K α [] a
   set w := (1 + ‖ξ‖ ^ 2) ^ (m / 2)
   have hP : 0 ≤ P := Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _
@@ -209,8 +256,8 @@ theorem exists_one_add_norm_pow_mul_norm_fourier_le_sum_seminorm
       _ = c * (∑ i ∈ s, max R 0 ^ i.1) * P * w := by
           rw [← Finset.sum_mul, ← Finset.sum_mul]
           ring
-  have hF : 𝓕 (fun x ↦ a.coefficient (x, ξ)) η = 𝓕 g η := by
-    rw [SchwartzMap.fourier_coe, funext (HasCompactSupport.toSchwartzMap_toFun _ _)]
+  have hF : 𝓕 (fun x ↦ a.coefficient (x, ξ)) η = 𝓕 g η :=
+    (ha.fourier_sliceSchwartz ξ η).symm
   have e₀ : ‖𝓕 g η‖ ≤ c₀ * (∑ i ∈ s₀, max R 0 ^ i.1) * P * w :=
     (SchwartzMap.norm_le_seminorm ℂ _ η).trans (hs hc₀ Finset.subset_union_left h₀)
   have e₁ : ‖η‖ ^ N * ‖𝓕 g η‖ ≤ c₁ * (∑ i ∈ s₁, max R 0 ^ i.1) * P * w := by
@@ -241,6 +288,75 @@ theorem HasCompactSpatialSupport.exists_one_add_norm_pow_mul_norm_fourier_le
     exists_one_add_norm_pow_mul_norm_fourier_le_sum_seminorm (V := V) (W := W) (m := m) ⟨K, hK⟩ N
   exact ⟨C * ∑ α ∈ t, Symbol.seminorm ⟨K, hK⟩ α [] a,
     mul_nonneg hC (Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _), h a hKa⟩
+
+/-- **Rapid decay.** For every `r`, the Fourier transform of the position slice satisfies
+`‖â(η, ξ)‖ ≤ C ⟨ξ⟩ ^ m ⟨η⟩ ^ (-r)`. -/
+theorem HasCompactSpatialSupport.exists_norm_fourier_slice_le (ha : a.HasCompactSpatialSupport)
+    (r : ℝ) : ∃ C, 0 ≤ C ∧ ∀ η ξ : CoordinateSpace n,
+      ‖𝓕 (fun y ↦ a.coefficient (y, ξ)) η‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+  obtain ⟨C, hC0, hC⟩ := ha.exists_one_add_norm_pow_mul_norm_fourier_le ⌈r⌉₊
+  refine ⟨C, hC0, fun η ξ ↦ ?_⟩
+  -- `⟨η⟩ ^ r ≤ (1 + ‖η‖) ^ ⌈r⌉₊`
+  have hw : (1 + ‖η‖ ^ 2) ^ (r / 2) ≤ (1 + ‖η‖) ^ ⌈r⌉₊ :=
+    (Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖η‖])
+      (by linarith [Nat.le_ceil r])).trans (one_add_norm_sq_rpow_le_one_add_norm_pow η ⌈r⌉₊)
+  have hpos : 0 < (1 + ‖η‖ ^ 2) ^ (r / 2) := by positivity
+  rw [show -r / 2 = -(r / 2) by ring, Real.rpow_neg (by positivity), ← div_eq_mul_inv,
+    le_div_iff₀ hpos]
+  calc ‖𝓕 (fun y ↦ a.coefficient (y, ξ)) η‖ * (1 + ‖η‖ ^ 2) ^ (r / 2)
+      ≤ ‖𝓕 (fun y ↦ a.coefficient (y, ξ)) η‖ * (1 + ‖η‖) ^ ⌈r⌉₊ := by gcongr
+    _ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by rw [mul_comm]; exact hC η ξ
+
+/-! ### Regularity of the Fourier transform in the position -/
+
+/-- The Fourier transform `â(η, ξ)` of the position slice of a symbol with compact spatial support
+is jointly continuous in `η` and `ξ`. -/
+theorem HasCompactSpatialSupport.continuous_fourier_slice (ha : a.HasCompactSpatialSupport) :
+    Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦
+      𝓕 (fun y ↦ a.coefficient (y, q.2)) q.1 := by
+  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
+  simpa only [Real.fourier_eq, Circle.smul_def] using
+    continuous_integral_fourierChar_smul a.contDiff_coefficient.continuous hK hKa
+
+/-- The Fourier transform in the position of the spatial derivative `∂_{x_j} a` is
+`2πi ηⱼ â(η, ξ)`. -/
+theorem HasCompactSpatialSupport.fourier_spatialDeriv_slice (ha : a.HasCompactSpatialSupport)
+    (j : Fin n) (η ξ : CoordinateSpace n) :
+    𝓕 (fun y ↦ (Symbol.spatialDeriv j a).coefficient (y, ξ)) η =
+      ((2 * π * Complex.I) * ⟪η, EuclideanSpace.single j (1 : ℝ)⟫) •
+        𝓕 (fun y ↦ a.coefficient (y, ξ)) η := by
+  have hd : ⇑(∂_{EuclideanSpace.single j (1 : ℝ)} (ha.sliceSchwartz ξ) :
+      𝓢(CoordinateSpace n, V →L[ℂ] W)) = fun y ↦ (Symbol.spatialDeriv j a).coefficient (y, ξ) := by
+    funext y
+    rw [SchwartzMap.lineDerivOp_apply, (ha.sliceSchwartz ξ).differentiableAt.lineDeriv_eq_fderiv,
+      ha.coe_sliceSchwartz, fderiv_coefficient_single]
+  rw [← hd, ← SchwartzMap.fourier_coe, SchwartzMap.fourier_lineDerivOp_apply,
+    ha.fourier_sliceSchwartz]
+
+/-- **Differentiation in the frequency.** The Fourier transform `â(η, ξ)` of the position slice
+of a symbol with compact spatial support is differentiable in `ξ`, with the Fourier transform of
+the frequency derivative as derivative. -/
+theorem HasCompactSpatialSupport.hasFDerivAt_fourier_slice (ha : a.HasCompactSpatialSupport)
+    (η ξ₀ : CoordinateSpace n) :
+    HasFDerivAt (fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η)
+      (∫ y, (𝐞 (-⟪y, η⟫) : ℂ) • fderiv ℝ (fun ξ ↦ a.coefficient (y, ξ)) ξ₀) ξ₀ := by
+  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
+  simpa only [Real.fourier_eq, Circle.smul_def] using
+    hasFDerivAt_integral_fourierChar_smul (a.contDiff_coefficient.of_le (by simp)) hK hKa η ξ₀
+
+/-- The coordinate derivative `∂_{ξ_j} â(η, ξ)` is the Fourier transform of the position slice of
+the frequency derivative `∂_{ξ_j} a`. -/
+theorem HasCompactSpatialSupport.coordinateDeriv_fourier_slice (ha : a.HasCompactSpatialSupport)
+    (j : Fin n) (η ξ : CoordinateSpace n) :
+    coordinateDeriv [j] (fun ξ ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η) ξ =
+      𝓕 (fun y ↦ (Symbol.frequencyDeriv j a).coefficient (y, ξ)) η := by
+  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
+  rw [coordinateDeriv_cons, coordinateDeriv_nil, (ha.hasFDerivAt_fourier_slice η ξ).fderiv,
+    integral_fourierChar_smul_fderiv_apply (a.contDiff_coefficient.of_le (by simp)) hK hKa η ξ,
+    Real.fourier_eq]
+  simp only [Circle.smul_def, coefficient_frequencyDeriv, coordinateDeriv_cons,
+    coordinateDeriv_nil]
 
 end Decay
 

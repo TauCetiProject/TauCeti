@@ -17,12 +17,19 @@ of the commutative semiring `K`, as for `ZMod 2`, a module isomorphic to `K` has
 generator. This is what makes Thom classes with such coefficients unique on every fibre, without
 any orientation.
 
+Conversely, a linear functional `Ψ` on a module `N ≃ₗ[K] K` taking the value `1` on `x` makes `x`
+a generator: `Ψ` factors through the isomorphism as multiplication by `Ψ (e⁻¹ 1)`, so `e x` is a
+unit of `K` and `a ↦ a • x` is bijective.
+
 ## Main results
 
 * `LinearEquiv.span_singleton_apply_eq_top_iff`: a linear equivalence carries generators to
   generators.
 * `LinearEquiv.eq_of_span_singleton_eq_top`: a module isomorphic to a commutative semiring whose
   only unit is `1` has a single generator.
+* `LinearEquiv.isUnit_apply_of_apply_eq_one`, `LinearEquiv.bijective_smul_of_apply_eq_one`: an
+  element on which a linear functional takes the value `1` is carried to a unit, and generates
+  freely.
 -/
 
 public section
@@ -48,5 +55,24 @@ theorem eq_of_span_singleton_eq_top {K N : Type*} [CommSemiring K] [Subsingleton
     exact φ.span_singleton_apply_eq_top_iff.2 hz
   exact φ.injective (by
     rw [← (hunit hx).unit_spec, ← (hunit hy).unit_spec, Subsingleton.elim (hunit hx).unit])
+
+/-- If a linear functional `Ψ` on a module `N ≃ₗ[K] K` takes the value `1` on `x`, then `e x` is a
+unit of `K`, with inverse `Ψ (e⁻¹ 1)`. -/
+theorem isUnit_apply_of_apply_eq_one {K N : Type*} [CommSemiring K] [AddCommMonoid N]
+    [Module K N] (e : N ≃ₗ[K] K) (Ψ : N →ₗ[K] K) {x : N} (hx : Ψ x = 1) : IsUnit (e x) := by
+  -- `x = e x • e⁻¹ 1`, so `Ψ x = e x * Ψ (e⁻¹ 1)`.
+  have hxe : x = e x • e.symm 1 := by simp [← map_smul]
+  exact IsUnit.of_mul_eq_one (Ψ (e.symm 1)) <| by simpa [hx] using (congrArg Ψ hxe).symm
+
+/-- If a linear functional `Ψ` on a module `N ≃ₗ[K] K` takes the value `1` on `x`, then
+`a ↦ a • x` is bijective. -/
+theorem bijective_smul_of_apply_eq_one {K N : Type*} [CommSemiring K] [AddCommMonoid N]
+    [Module K N] (e : N ≃ₗ[K] K) (Ψ : N →ₗ[K] K) {x : N} (hx : Ψ x = 1) :
+    Function.Bijective fun a : K ↦ a • x := by
+  -- `a ↦ a • x` is `a ↦ e⁻¹ (a * e x)`, a composite of bijections.
+  convert e.symm.bijective.comp
+    (Units.mulRight (e.isUnit_apply_of_apply_eq_one Ψ hx).unit).bijective using 1
+  funext a
+  simp [← smul_eq_mul]
 
 end LinearEquiv
