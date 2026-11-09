@@ -38,13 +38,7 @@ private theorem cauchyPVExistsAt_triangleCurve {c p q z : ℂ}
   have hAC := absolutelyContinuousOnInterval_triangleCurve c p q
   have havoid : z ∉ triangleCurve c p q '' uIcc 0 3 := by
     simpa only [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 3), image_triangleCurve] using hz
-  have hsub := uIcc_subset_uIcc hs ht
-  have hAC' := hAC.mono hsub
-  have havoid' : z ∉ triangleCurve c p q '' uIcc s t :=
-    fun h ↦ havoid (image_mono hsub h)
-  exact Contour.cauchyPVExistsAt_of_avoidance hAC'.continuousOn
-    (fun v hv he ↦ havoid' ⟨v, hv, he⟩)
-    (hAC'.intervalIntegrable_inv_sub_mul_deriv havoid')
+  exact hAC.cauchyPVExistsAt_inv_sub_of_mem_uIcc hs ht havoid
 
 /-- Away from the three edges, the triangle winding number is the sum of the edge windings. -/
 theorem windingNumber_triangleCurve_eq_sum {c p q z : ℂ}
