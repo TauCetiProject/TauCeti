@@ -6,12 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Trace.Extension
-import TauCeti.Analysis.Calculus.FDeriv.Integrable
-import TauCeti.Analysis.Calculus.FDeriv.WithLp
-import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.MeasureTheory.Integral.WithLp
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
-import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.MeasureTheory.Function.Holder
 
 /-!
