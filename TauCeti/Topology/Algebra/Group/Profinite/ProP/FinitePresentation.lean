@@ -47,8 +47,7 @@ variable {X : Type u} (rels : Set (freeProP p X))
 relation subgroup. -/
 theorem finite_H2_iff_exists_finite_relation_system
     (hrels : rels ⊆ proPFrattini p (freeProP p X))
-    (e : presentedProP p X rels ≃ₜ* G)
-    (htriv : ∀ (g : G) (m : ZMod p), g • m = m) :
+    (e : presentedProP p X rels ≃ₜ* G) :
     Finite (H2 G (ZMod p)) ↔
       ∃ s : Finset (freeProP p X),
         (normalClosure (s : Set (freeProP p X))).topologicalClosure =
@@ -60,7 +59,7 @@ theorem finite_H2_iff_exists_finite_relation_system
   have hpro : IsProP p (freeProP p X) := isProP_freeProP p X
   constructor
   · intro h
-    have hfg := (finite_H2_iff rels hrels e htriv).mp h
+    have hfg := (finite_H2_iff rels hrels e).mp h
     obtain ⟨t, ht⟩ :=
       (hpro.isTopologicallyFinitelyGenerated_quotient_pLowerCentralStep_iff
         Fact.out hclosed).mp hfg
@@ -87,7 +86,7 @@ theorem finite_H2_iff_exists_finite_relation_system
         (R ⧸ (pLowerCentralStep p R).subgroupOf R) :=
       (hpro.isTopologicallyFinitelyGenerated_quotient_pLowerCentralStep_iff
         Fact.out hclosed).mpr ⟨t, by rw [ht]; exact hsclosure⟩
-    exact (finite_H2_iff rels hrels e htriv).mpr hfg
+    exact (finite_H2_iff rels hrels e).mpr hfg
 
 end presentedProP
 
@@ -99,7 +98,6 @@ theorem IsProP.finite_H2_iff_exists_finite_minimal_presentation
     [CompactSpace G] [TotallyDisconnectedSpace G]
     [DistribMulAction G (ZMod p)] [ContinuousSMul G (ZMod p)]
     (hG : IsProP p G) (h : IsTopologicallyFinitelyGenerated G)
-    (htriv : ∀ (g : G) (m : ZMod p), g • m = m)
     (X : Type u) [Finite X] (hX : Nat.card X = topologicalGeneratorRankNat G h) :
     Finite (H2 G (ZMod p)) ↔
       ∃ s : Finset (freeProP p X),
@@ -111,14 +109,14 @@ theorem IsProP.finite_H2_iff_exists_finite_minimal_presentation
   constructor
   · intro hf
     obtain ⟨s, hsclosure⟩ :=
-      (presentedProP.finite_H2_iff_exists_finite_relation_system rels hrels e htriv).mp hf
+      (presentedProP.finite_H2_iff_exists_finite_relation_system rels hrels e).mp hf
     have e' : presentedProP p X (s : Set (freeProP p X)) ≃ₜ* G :=
       (presentedProP.congrOfClosureEq (rels := rels) hsclosure.symm).symm.trans e
     exact ⟨s, (presentedProP.subset_proPFrattini_iff_card_eq
       (s : Set (freeProP p X)) e' h).mpr hX, ⟨e'⟩⟩
   · rintro ⟨s, hs, ⟨e'⟩⟩
     exact (presentedProP.finite_H2_iff_exists_finite_relation_system
-      (s : Set (freeProP p X)) hs e' htriv).mpr
+      (s : Set (freeProP p X)) hs e').mpr
         ⟨s, rfl⟩
 
 end TauCeti
