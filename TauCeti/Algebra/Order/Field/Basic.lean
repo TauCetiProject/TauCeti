@@ -202,7 +202,7 @@ theorem mul_add_mul_add_le_mul_one_add_mul_add {R : Type*} [CommSemiring R] [Par
 /-- The absorption step of an a priori estimate: if `K₀ + N = K + γ N + 2 β e H`, with
 `H ≤ C (K₀ + N)` and `2 C β e H ≤ H / 2`, then `C (K₀ + N) ≤ 2 C (1 + γ) (K + N)`, for
 nonnegative `C`, `K`, `N` and `γ`. -/
-theorem mul_le_two_mul_one_add_mul_of_absorb {R : Type*} [Field R] [LinearOrder R]
+theorem mul_add_le_two_mul_one_add_mul_add {R : Type*} [Field R] [LinearOrder R]
     [IsStrictOrderedRing R] {C K N γ β e H K₀ : R} (hC : 0 ≤ C)
     (hK : 0 ≤ K) (hN : 0 ≤ N) (hγ : 0 ≤ γ) (hK₀ : K₀ + N = K + γ * N + 2 * β * e * H)
     (hHle : H ≤ C * (K₀ + N)) (habs : 2 * C * β * e * H ≤ 1 / 2 * H) :
