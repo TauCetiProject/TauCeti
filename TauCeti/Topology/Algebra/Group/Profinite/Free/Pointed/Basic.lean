@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Compactification.OnePoint.Basic
+import TauCeti.Topology.Algebra.Group.OpenSubgroup.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.ProC
 public import TauCeti.Topology.Algebra.Group.Profinite.Generation
 public import TauCeti.Topology.Algebra.Group.Profinite.Limit
@@ -97,7 +98,8 @@ variable {C x₀}
 /-- The intersection of two admissible open normal subgroups is admissible. -/
 private theorem IsAdmissible.inf {U V : OpenNormalSubgroup (freeProC C X)}
     (hU : IsAdmissible C x₀ U) (hV : IsAdmissible C x₀ V) : IsAdmissible C x₀ (U ⊓ V) :=
-  ⟨OpenNormalSubgroup.continuous_mk_inf hU.1 hV.1, Subgroup.mem_inf.mpr ⟨hU.2, hV.2⟩⟩
+  ⟨(OpenSubgroup.continuous_mk_inf_iff (U := U.toOpenSubgroup) (V := V.toOpenSubgroup)).mpr
+    ⟨hU.1, hV.1⟩, Subgroup.mem_inf.mpr ⟨hU.2, hV.2⟩⟩
 
 variable (C x₀)
 
@@ -268,7 +270,8 @@ private theorem isAdmissible_comap_lift (hP : IsProC C P) {f : X → P} (hf : Co
     (hf₀ : f x₀ = 1) (V : OpenNormalSubgroup P) :
     IsAdmissible C x₀ (V.comap (freeProC.lift hP f : freeProC C X →* P)
       (freeProC.lift hP f).continuous) := by
-  refine ⟨OpenNormalSubgroup.continuous_mk_comap V _ _ (by
+  refine ⟨(OpenSubgroup.continuous_mk_comap_iff V.toOpenSubgroup
+    (freeProC.lift hP f : freeProC C X →* P) (freeProC.lift hP f).continuous).mpr (by
     simpa only [Function.comp_def, MonoidHom.coe_ofClass, freeProC.lift_of] using
       QuotientGroup.continuous_mk.comp hf), ?_⟩
   refine OpenNormalSubgroup.mem_comap.mpr ?_
