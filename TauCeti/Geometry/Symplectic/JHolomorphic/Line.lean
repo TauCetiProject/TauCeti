@@ -31,7 +31,8 @@ energy and elliptic estimates.
   `(1, 0)` and `(0, 1)` in the standard complex line.
 * `TauCeti.equivRealProdCLM_symm_stdComplexLineReal` and
   `TauCeti.equivRealProdCLM_symm_stdComplexLineImag`: under `Complex.equivRealProdCLM` they are
-  the complex numbers `1` and `i`.
+  the complex numbers `1` and `i`; `TauCeti.equivRealProdCLM_one` and
+  `TauCeti.equivRealProdCLM_I` are the forward forms.
 * `LinearMap.apply_stdComplexLine`: a real-linear map is determined by its values on the
   coordinate vectors.
 * `TauCeti.isComplexLinearMap_stdComplexLine_iff`: complex-linearity out of the standard
@@ -102,6 +103,14 @@ lemma equivRealProdCLM_symm_stdComplexLineReal :
 lemma equivRealProdCLM_symm_stdComplexLineImag :
     Complex.equivRealProdCLM.symm stdComplexLineImag = Complex.I := by
   apply Complex.ext <;> simp [stdComplexLineImag_eq]
+
+/-- The complex number `1` is the real coordinate vector of `ℝ × ℝ`. -/
+lemma equivRealProdCLM_one : Complex.equivRealProdCLM 1 = stdComplexLineReal := by
+  rw [← equivRealProdCLM_symm_stdComplexLineReal, ContinuousLinearEquiv.apply_symm_apply]
+
+/-- The complex number `i` is the imaginary coordinate vector of `ℝ × ℝ`. -/
+lemma equivRealProdCLM_I : Complex.equivRealProdCLM Complex.I = stdComplexLineImag := by
+  rw [← equivRealProdCLM_symm_stdComplexLineImag, ContinuousLinearEquiv.apply_symm_apply]
 
 lemma AlmostComplexStructure.product_apply_stdComplexLineReal :
     AlmostComplexStructure.product ℝ stdComplexLineReal = stdComplexLineImag :=

@@ -113,12 +113,8 @@ private theorem integral_symplecticForm_fderiv_truncation (ω : SymplecticForm V
   have h := ω.integral_fderiv_apply_truncation hv hR
   simp only [Function.comp_apply] at h
   rw [← h]
-  have h₁ : Complex.equivRealProdCLM 1 = stdComplexLineReal := by
-    rw [← equivRealProdCLM_symm_stdComplexLineReal, ContinuousLinearEquiv.apply_symm_apply]
-  have hI : Complex.equivRealProdCLM Complex.I = stdComplexLineImag := by
-    rw [← equivRealProdCLM_symm_stdComplexLineImag, ContinuousLinearEquiv.apply_symm_apply]
   simp only [ContinuousLinearEquiv.comp_right_fderiv, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, h₁, hI]
+    ContinuousLinearEquiv.coe_coe, equivRealProdCLM_one, equivRealProdCLM_I]
   have hpre : Complex.measurableEquivRealProd ⁻¹'
       (Complex.equivRealProdCLM.symm ⁻¹' truncation R) = truncation R := by
     ext w
