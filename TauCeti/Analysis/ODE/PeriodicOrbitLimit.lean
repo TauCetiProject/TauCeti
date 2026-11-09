@@ -386,33 +386,6 @@ section Convergence
 
 variable {K : Set V} {C : ℝ}
 
-/-- On the half-cylinder `s > a`, a map with derivative bounded by `C` is `C`-Lipschitz, since
-the half-cylinder is convex. -/
-private theorem norm_sub_le_of_norm_fderiv_le (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
-    (hC : ∀ z ∈ Ioi a ×ˢ univ, ‖fderiv ℝ u z‖ ≤ C) {z w : ℝ × ℝ} (hz : z ∈ Ioi a ×ˢ univ)
-    (hw : w ∈ Ioi a ×ˢ univ) : ‖u w - u z‖ ≤ C * ‖w - z‖ :=
-  Convex.norm_image_sub_le_of_norm_fderiv_le (fun _ hy ↦ (hu.differentiableOn one_ne_zero
-    ).differentiableAt ((isOpen_Ioi.prod isOpen_univ).mem_nhds hy)) hC
-    ((convex_Ioi a).prod convex_univ) hz hw
-
-/-- Under a derivative bound `C`, the loops at `s, s' > a` are uniformly within `C |s' - s|`. -/
-private theorem dist_le_of_norm_fderiv_le_fst (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
-    (hC : ∀ z ∈ Ioi a ×ˢ univ, ‖fderiv ℝ u z‖ ≤ C) {s s' : ℝ} (hs : a < s) (hs' : a < s')
-    (t : ℝ) : dist (u (s', t)) (u (s, t)) ≤ C * |s' - s| := by
-  rw [dist_eq_norm]
-  simpa [Prod.norm_def] using
-    norm_sub_le_of_norm_fderiv_le hu hC (z := (s, t)) (w := (s', t)) ⟨hs, trivial⟩ ⟨hs', trivial⟩
-
-/-- Under a derivative bound `C`, each loop at `s > a` is `C`-Lipschitz. -/
-private theorem lipschitzWith_slice_of_norm_fderiv_le (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
-    (hC : ∀ z ∈ Ioi a ×ˢ univ, ‖fderiv ℝ u z‖ ≤ C) {s : ℝ} (hs : a < s) :
-    LipschitzWith C.toNNReal fun t ↦ u (s, t) :=
-  LipschitzWith.of_dist_le_mul fun t t' ↦ by
-    rw [Real.coe_toNNReal C ((norm_nonneg _).trans (hC (s, 0) ⟨hs, trivial⟩)), Real.dist_eq,
-      dist_eq_norm]
-    simpa [Prod.norm_def] using
-      norm_sub_le_of_norm_fderiv_le hu hC (z := (s, t')) (w := (s, t)) ⟨hs, trivial⟩ ⟨hs, trivial⟩
-
 /-- **A loop with small defect near every late time.** If the squared defect has finite integral
 over `(a, ∞) × [0, 1]`, then for every `ε > 0` and every large enough `s`, some loop at a time
 `σ ∈ [s, s + ε]` has squared defect integral less than `ε`. -/
@@ -459,6 +432,16 @@ private theorem exists_tendstoUniformly_of_mapClusterPt (hu : ContDiffOn ℝ 1 u
       Tendsto (fun n ↦ ∫ t in (0 : ℝ)..1, ‖sliceDefect X u (σ n, t)‖ ^ 2) atTop (𝓝 0) ∧
       TendstoUniformly (fun n t ↦ u (σ n, t)) (UniformFun.toFun y) atTop := by
   have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC (a + 1, 0) ⟨lt_add_one a, trivial⟩)
+  -- By the mean value inequality on the convex half-cylinder, `u` is `C`-Lipschitz, and so is
+  -- each of its slices `s ↦ u (s, t)`.
+  have hL : LipschitzOnWith C.toNNReal u (Ioi a ×ˢ univ) :=
+    ((convex_Ioi a).prod convex_univ).lipschitzOnWith_of_nnnorm_fderiv_le
+      (fun z hz ↦ (hu.differentiableOn one_ne_zero).differentiableAt
+        ((isOpen_Ioi.prod isOpen_univ).mem_nhds hz))
+      fun z hz ↦ (Real.le_toNNReal_iff_coe_le hC0).2 (hC z hz)
+  have hLs (t : ℝ) : LipschitzOnWith C.toNNReal (fun s ↦ u (s, t)) (Ioi a) := by
+    simpa [Function.comp_def] using
+      hL.comp (LipschitzWith.prodMk_right t).lipschitzOnWith fun s hs ↦ ⟨hs, trivial⟩
   -- For each `n`, a late loop uniformly `1 / (n + 1)`-close to `y`, and a loop with small defect
   -- at most `1 / (n + 1)` later.
   have hsel : ∀ n : ℕ, ∃ s σ : ℝ, a < s ∧ σ ∈ Icc s (s + 1 / (n + 1)) ∧
@@ -490,8 +473,9 @@ private theorem exists_tendstoUniformly_of_mapClusterPt (hu : ContDiffOn ℝ 1 u
       ≤ dist (u (σ n, t)) (u (s n, t)) + dist (u (s n, t)) (UniformFun.toFun y t) := by
         rw [dist_comm]; exact dist_triangle _ _ _
     _ ≤ C * (1 / (n + 1)) + 1 / (n + 1) :=
-        add_le_add ((dist_le_of_norm_fderiv_le_fst hu hC (has n) (hσa n) t).trans
-          (mul_le_mul_of_nonneg_left hσs hC0)) (hsy n t).le
+        add_le_add (((hLs t).dist_le_mul _ (hσa n) _ (has n)).trans <| by
+          rw [Real.coe_toNNReal C hC0, Real.dist_eq]
+          exact mul_le_mul_of_nonneg_left hσs hC0) (hsy n t).le
     _ = (C + 1) * (1 / (n + 1)) := by ring
     _ < δ := hn
 
@@ -540,6 +524,12 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop (hu : ContDiffOn ℝ 1
     ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (X t (x t)) t) ∧
       TendstoUniformly (fun s t ↦ u (s, t)) x atTop := by
   have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC (a + 1, 0) ⟨lt_add_one a, trivial⟩)
+  -- By the mean value inequality on the convex half-cylinder, `u` is `C`-Lipschitz.
+  have hL : LipschitzOnWith C.toNNReal u (Ioi a ×ˢ univ) :=
+    ((convex_Ioi a).prod convex_univ).lipschitzOnWith_of_nnnorm_fderiv_le
+      (fun z hz ↦ (hu.differentiableOn one_ne_zero).differentiableAt
+        ((isOpen_Ioi.prod isOpen_univ).mem_nhds hz))
+      fun z hz ↦ (Real.le_toNNReal_iff_coe_le hC0).2 (hC z hz)
   set ℓ : ℝ → ℝ →ᵤ V := fun s ↦ UniformFun.ofFun fun t ↦ u (s, t)
   -- The loops lie in the set `S` of `1`-periodic, `C`-Lipschitz loops in `K`, which is compact by
   -- the Arzelà–Ascoli theorem.
@@ -548,15 +538,19 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop (hu : ContDiffOn ℝ 1
   have hScpt : IsCompact S := isCompact_setOf_periodic_lipschitzWith hK C.toNNReal
   have hmaps : MapsTo ℓ (Ici (a + 1)) S := fun s hs ↦
     have has : a < s := (lt_add_one a).trans_le hs
-    ⟨hper s has, huK s has, lipschitzWith_slice_of_norm_fderiv_le hu hC has⟩
+    ⟨hper s has, huK s has, by
+      have h := hL.comp (LipschitzWith.prodMk_left s).lipschitzOnWith
+        fun t (_ : t ∈ univ) ↦ ⟨has, trivial⟩
+      rw [lipschitzOnWith_univ, mul_one] at h
+      exact h⟩
   -- The loops depend `C`-Lipschitz continuously on `s`.
   have hcont : ContinuousOn ℓ (Ici (a + 1)) := by
     refine LipschitzOnWith.continuousOn (K := C.toNNReal) fun s hs s' hs' ↦
       UniformFun.edist_le.2 fun t ↦ ?_
-    have h := dist_le_of_norm_fderiv_le_fst hu hC ((lt_add_one a).trans_le hs')
-      ((lt_add_one a).trans_le hs) t
-    rw [edist_dist, edist_dist, Real.dist_eq]
-    exact (ENNReal.ofReal_le_ofReal h).trans_eq (ENNReal.ofReal_mul hC0)
+    have hLs : LipschitzOnWith C.toNNReal (fun s ↦ u (s, t)) (Ioi a) := by
+      simpa [Function.comp_def] using
+        hL.comp (LipschitzWith.prodMk_right t).lipschitzOnWith fun s hs ↦ ⟨hs, trivial⟩
+    exact hLs ((lt_add_one a).trans_le hs) ((lt_add_one a).trans_le hs')
   -- Its ω-limit points are periodic solutions in `K`, and these are isolated.
   set O : Set (ℝ →ᵤ V) := {f | Periodic (UniformFun.toFun f) 1 ∧
     (∀ t, HasDerivAt (UniformFun.toFun f) (X t (UniformFun.toFun f t)) t) ∧
