@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import Mathlib.Topology.GDelta.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Topology.Baire.Lemmas
 import TauCeti.Algebra.Group.Prod
 import TauCeti.Analysis.Calculus.Sard.OutermostStratum
@@ -73,26 +74,19 @@ regular values is then the Baire category theorem. The `CompleteSpace F` assumpt
 both the Baire instance and the local properness used above to prove closedness.
 
 The regularity threshold is inherited from the finite-dimensional theorem applied to the slices,
-maps from a space of dimension `dim ker` to one of dimension `dim coker`. In general this is `C^k`
-with `k ≥ (dim ker)² + 1`, the bound of `TauCeti.interior_image_criticalPoints_eq_empty`. When the
-index `dim ker - dim coker` is at most two, the slices satisfy the hypotheses of the Morse--Sard
-theorem at the sharp regularity,
-`TauCeti.interior_image_criticalPoints_eq_empty_of_finrank_le_add_two`, and the threshold
-becomes Smale's `k > max (index, 0)`. The proof is written once, with the finite-dimensional input
-as a hypothesis on the slices, and specialized to the two bounds.
+maps from a space of dimension `dim ker` to one of dimension `dim coker`. The Morse--Sard theorem
+`TauCeti.interior_image_criticalPoints_eq_empty` holds for them at Sard's regularity
+`k > max (dim ker - dim coker, 0)`, which is Smale's threshold `k > max (index, 0)`.
 
 ## Main results
 
 * `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints`: the local form -- inside
   any neighbourhood of a point with Fredholm derivative there is a neighbourhood whose critical
   values are closed and nowhere dense.
-* `TauCeti.isMeagre_image_criticalPoints_of_isFredholm`: **the Sard--Smale theorem**.
+* `TauCeti.isMeagre_image_criticalPoints_of_isFredholm`: **the Sard--Smale theorem**, at Smale's
+  regularity `k > max (index, 0)`.
 * `TauCeti.dense_compl_image_criticalPoints_of_isFredholm`: the regular values of a Fredholm map
   are dense, the form transversality arguments consume.
-* `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_index_le_two`,
-  `TauCeti.isMeagre_image_criticalPoints_of_isFredholm_of_index_le_two` and
-  `TauCeti.dense_compl_image_criticalPoints_of_isFredholm_of_index_le_two`: the same at Smale's
-  sharp regularity `k > max (index, 0)`, for Fredholm maps of index at most two.
 
 ## References
 
@@ -415,8 +409,8 @@ private theorem exists_mem_nhds_isClosed_isNowhereDense_image_of_isOpen
 /-- **Sard--Smale, locally**, with the finite-dimensional input left as a hypothesis `hslice`: a
 Morse--Sard statement at regularity `C^k` for maps from a subspace of dimension `dim ker` of `E`
 to a subspace of dimension `dim coker` of `F`. The fibrewise step applies it to the obstruction
-slices of the Lyapunov--Schmidt normal form. Both public local forms below are instances: one
-with the quadratic Morse--Sard bound, one with the sharp bound in codimension at most two. -/
+slices of the Lyapunov--Schmidt normal form. The public local form below supplies it from the
+finite-dimensional Morse--Sard theorem. -/
 private theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_slice
     {f : E → F} {a : E} {U : Set E} {k : ℕ} (hk : 1 ≤ k) (hf : ContDiffAt ℝ (k : ℕ∞ω) f a)
     (hFred : (fderiv ℝ f a).IsFredholm)
@@ -471,48 +465,29 @@ private theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_
   exact exists_mem_nhds_isClosed_isNowhereDense_image_of_isOpen hT hFred hNopen haN hU
     (fun x hx ↦ (hfN x hx).continuousAt) hregopen hNint
 
-/-- **Sard--Smale, locally.** Near a point where a sufficiently smooth map has Fredholm
-derivative there is a neighbourhood on which the critical values form a closed nowhere dense set.
-The neighbourhood can be taken inside any prescribed neighbourhood `U` of the point, so the
-conclusion can be confined to a region on which `f` is known to be the map of interest.
+/-- **Sard--Smale, locally.** Near a point where the derivative of `f` is a Fredholm operator of
+index `i`, and `f` is `C^k` with `k > max (i, 0)`, there is a neighbourhood, inside any
+prescribed neighbourhood `U` of the point, on which the critical values form a closed nowhere
+dense set. The neighbourhood can be confined to `U`, a region on which `f` is known to be the map
+of interest.
 
 Completeness of the target enters through Smale's local properness lemma, which supplies the
 compactness used to prove that the local critical-value image is closed.
 
-The regularity threshold `(dim ker)² + 1` is the one inherited from the finite-dimensional
-Morse--Sard theorem `TauCeti.interior_image_criticalPoints_eq_empty`, which the fibrewise step
-applies to the obstruction slice, a map out of `ker (fderiv ℝ f a)`. For index at most two,
-`TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_index_le_two` lowers it
-to Smale's sharp threshold. -/
+This is Smale's regularity threshold. The obstruction slices of the normal form are maps from a
+space of dimension `dim ker` to one of dimension `dim coker`, whose difference is `i`, so the
+finite-dimensional Morse--Sard theorem `TauCeti.interior_image_criticalPoints_eq_empty` applies to
+them at this regularity. -/
 theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
     {f : E → F} {a : E} {U : Set E} {n : ℕ∞ω} (hf : ContDiffAt ℝ n f a)
     (hFred : (fderiv ℝ f a).IsFredholm)
-    (hn : ((finrank ℝ (fderiv ℝ f a).ker * finrank ℝ (fderiv ℝ f a).ker + 1 : ℕ) : ℕ∞ω) ≤ n)
-    (hU : U ∈ 𝓝 a) :
-    ∃ N ∈ 𝓝 a, N ⊆ U ∧ IsClosed (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) ∧
-      IsNowhereDense (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) :=
-  exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_slice (by omega) (hf.of_le hn)
-    hFred (fun _ _ _ _ hX _ _ _ hg ↦ interior_image_criticalPoints_eq_empty hg (by rw [hX])) hU
-
-/-- **Sard--Smale at the sharp regularity, locally, in index at most two.** Near a point where the
-derivative of `f` is a Fredholm operator of index `i ≤ 2`, and `f` is `C^k` with
-`k > max (i, 0)`, there is a neighbourhood, inside any prescribed neighbourhood `U` of the point,
-on which the critical values form a closed nowhere dense set.
-
-This is Smale's regularity threshold. The obstruction slices of the normal form are maps from a
-space of dimension `dim ker` to one of dimension `dim coker`, whose difference is `i`, so the
-finite-dimensional Morse--Sard theorem at the sharp regularity in codimension at most two,
-`TauCeti.interior_image_criticalPoints_eq_empty_of_finrank_le_add_two`, applies to them. -/
-theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_index_le_two
-    {f : E → F} {a : E} {U : Set E} {n : ℕ∞ω} (hf : ContDiffAt ℝ n f a)
-    (hFred : (fderiv ℝ f a).IsFredholm) (hindex : (fderiv ℝ f a).index ≤ 2)
     (hn : (((fderiv ℝ f a).index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n) (hU : U ∈ 𝓝 a) :
     ∃ N ∈ 𝓝 a, N ⊆ U ∧ IsClosed (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) ∧
       IsNowhereDense (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) := by
   have hi := (fderiv ℝ f a).index_eq_finrank_sub
   refine exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_slice (by omega)
     (hf.of_le hn) hFred (fun X Y _ _ hX hY _ _ hg ↦ ?_) hU
-  refine interior_image_criticalPoints_eq_empty_of_finrank_le_add_two hg (by omega) ?_
+  refine interior_image_criticalPoints_eq_empty hg ?_
   exact_mod_cast (show finrank ℝ X - finrank ℝ Y + 1 ≤ (fderiv ℝ f a).index.toNat + 1 by omega)
 
 end Local
@@ -521,24 +496,20 @@ section Global
 
 variable [CompleteSpace E] [CompleteSpace F] {U : Set E} [LindelofSpace U] {f : E → F}
 
-/-- **The Sard--Smale theorem.** The critical values of a sufficiently smooth Fredholm map on a
-Lindelöf subset of a Banach space form a meagre set. The subset need not be open; smoothness
-is assumed at each of its points in the ambient space. Every subset of a separable Banach space
-is Lindelöf.
+/-- **The Sard--Smale theorem.** Let `f` be a Fredholm map on a Lindelöf subset `U` of a Banach
+space, which at each point `x` of `U` has derivative of index `i x` and is `C^k` with
+`k > max (i x, 0)`. Then the critical values taken on `U` form a meagre set. The subset need not
+be open; smoothness is assumed at each of its points in the ambient space. Every subset of a
+separable Banach space is Lindelöf.
 
 Sard's theorem itself is false in infinite dimensions, and "measure zero" has no meaning there;
 what survives is that the Fredholm condition confines the failure of regularity to a
-finite-dimensional direction, in which the finite-dimensional theorem applies fibrewise.
-
-The regularity threshold is the pointwise one of
-`TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints`: at each point `C^k` with
-`k ≥ (dim ker)² + 1`. In particular `n = ∞` needs no side condition. For maps of index at most
-two, `TauCeti.isMeagre_image_criticalPoints_of_isFredholm_of_index_le_two` only needs Smale's
-sharp threshold. -/
+finite-dimensional direction, in which the finite-dimensional theorem applies fibrewise. The
+regularity threshold is Smale's; in negative index, where the regular fibres are empty, `C¹`
+suffices, and `n = ∞` needs no side condition. -/
 theorem isMeagre_image_criticalPoints_of_isFredholm {n : ℕ∞ω}
     (hf : ∀ x ∈ U, ContDiffAt ℝ n f x) (hFred : ∀ x ∈ U, (fderiv ℝ f x).IsFredholm)
-    (hn : ∀ x ∈ U, ((finrank ℝ (fderiv ℝ f x).ker * finrank ℝ (fderiv ℝ f x).ker + 1 : ℕ) : ℕ∞ω)
-      ≤ n) :
+    (hn : ∀ x ∈ U, (((fderiv ℝ f x).index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n) :
     IsMeagre (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)})) := by
   refine (IsLindelof.of_coe (s := U)).isMeagre_image_inter_of_forall_exists_mem_nhds
     fun x hx ↦ ?_
@@ -547,48 +518,13 @@ theorem isMeagre_image_criticalPoints_of_isFredholm {n : ℕ∞ω}
   exact ⟨N, hN, hNnd.isMeagre⟩
 
 /-- **Sard--Smale**, in the form transversality arguments consume: the regular values of a
-sufficiently smooth Fredholm map restricted to a Lindelöf subset are dense, being the complement
-of a meagre set in a Baire space. The regularity threshold is that of
-`TauCeti.isMeagre_image_criticalPoints_of_isFredholm`. -/
+Fredholm map restricted to a Lindelöf subset are dense, being the complement of a meagre set in a
+Baire space. The hypotheses are those of `TauCeti.isMeagre_image_criticalPoints_of_isFredholm`. -/
 theorem dense_compl_image_criticalPoints_of_isFredholm {n : ℕ∞ω}
     (hf : ∀ x ∈ U, ContDiffAt ℝ n f x) (hFred : ∀ x ∈ U, (fderiv ℝ f x).IsFredholm)
-    (hn : ∀ x ∈ U, ((finrank ℝ (fderiv ℝ f x).ker * finrank ℝ (fderiv ℝ f x).ker + 1 : ℕ) : ℕ∞ω)
-      ≤ n) :
+    (hn : ∀ x ∈ U, (((fderiv ℝ f x).index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n) :
     Dense (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)}))ᶜ :=
   dense_of_mem_residual (isMeagre_image_criticalPoints_of_isFredholm hf hFred hn)
-
-/-- **The Sard--Smale theorem at Smale's sharp regularity, in index at most two.** Let `f` be a
-Fredholm map on a Lindelöf subset `U` of a Banach space whose derivative at each point `x` of `U`
-has index `i x ≤ 2`, and which is `C^k` at `x` with `k > max (i x, 0)`. Then the critical values
-taken on `U` form a meagre set.
-
-This is Smale's threshold `k > max (index, 0)`, sharper than the quadratic threshold of
-`TauCeti.isMeagre_image_criticalPoints_of_isFredholm` whenever the kernel has dimension at
-least two. Index at most two covers the trajectory and strip moduli of index one and two, and
-negative index, where the regular fibres are empty and `C¹` suffices. -/
-theorem isMeagre_image_criticalPoints_of_isFredholm_of_index_le_two {n : ℕ∞ω}
-    (hf : ∀ x ∈ U, ContDiffAt ℝ n f x) (hFred : ∀ x ∈ U, (fderiv ℝ f x).IsFredholm)
-    (hindex : ∀ x ∈ U, (fderiv ℝ f x).index ≤ 2)
-    (hn : ∀ x ∈ U, (((fderiv ℝ f x).index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n) :
-    IsMeagre (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)})) := by
-  refine (IsLindelof.of_coe (s := U)).isMeagre_image_inter_of_forall_exists_mem_nhds
-    fun x hx ↦ ?_
-  obtain ⟨N, hN, -, -, hNnd⟩ :=
-    exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_index_le_two
-      (hf x hx) (hFred x hx) (hindex x hx) (hn x hx) (U := univ) Filter.univ_mem
-  exact ⟨N, hN, hNnd.isMeagre⟩
-
-/-- **Sard--Smale at the sharp regularity, in index at most two**, in the form transversality
-arguments consume: the regular values of such a map restricted to a Lindelöf subset are dense.
-The hypotheses are those of `TauCeti.isMeagre_image_criticalPoints_of_isFredholm_of_index_le_two`.
--/
-theorem dense_compl_image_criticalPoints_of_isFredholm_of_index_le_two {n : ℕ∞ω}
-    (hf : ∀ x ∈ U, ContDiffAt ℝ n f x) (hFred : ∀ x ∈ U, (fderiv ℝ f x).IsFredholm)
-    (hindex : ∀ x ∈ U, (fderiv ℝ f x).index ≤ 2)
-    (hn : ∀ x ∈ U, (((fderiv ℝ f x).index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n) :
-    Dense (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)}))ᶜ :=
-  dense_of_mem_residual (isMeagre_image_criticalPoints_of_isFredholm_of_index_le_two hf hFred
-    hindex hn)
 
 end Global
 

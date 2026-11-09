@@ -34,6 +34,12 @@ decomposition; it does not apply lower-dimensional Sard to a derivative stratum:
   (`TauCeti.MorseSard.norm_sub_le_insertNth`), so no constant changes.  Second countability makes
   countably many of these neighbourhoods suffice.
 
+The decomposition depends only on `A` and the order, not on the function. It therefore serves all
+coordinates of a vector-valued map at once, which gives the Morse criticality lemma
+`TauCeti.exists_cover_of_critical` for `C^(k+1)` maps into any finite-dimensional real normed
+space: the set where the derivative vanishes is covered by countably many points and bounded
+pieces on which the map oscillates by `o(‖y - x‖ ^ (k + 1))`.
+
 Adapted from [KLS](https://github.com/human-ai-mathematics/kls-lean) at commit
 `65810c73f9dd7945fc646ab484cb19d673f5291d`, `formalization/FunctionalInequalities/Analysis/Sard/`.
 The decomposition follows A. Norton, *A critical set with nonnull image has large Hausdorff
@@ -340,27 +346,28 @@ private theorem hasDecompRel_self : ∀ (k n : ℕ) (A : Set (Fin n → ℝ)), H
         · exact Or.inl hxU
         · exact Or.inr ⟨hx, hxU⟩)
 
-/-- **The Morse criticality lemma.**  The set on which a `C^(k+1)` function is critical is covered
-by a countable set and countably many bounded pieces, on each of which the function has a uniform
-`o(‖y - x‖ ^ (k + 1))` modulus.  Neither the set nor the pieces are assumed measurable. -/
-theorem _root_.TauCeti.exists_cover_of_critical (A : Set (Fin n → ℝ)) {f : (Fin n → ℝ) → ℝ}
-    (hf : ContDiff ℝ (k + 1) f) (hA : ∀ x ∈ A, fderiv ℝ f x = 0) :
+/-- The Morse criticality lemma for real-valued functions, with the cover chosen uniformly: it
+depends only on `A` and the order, and every `C^(k+1)` function critical on `A` has a uniform
+`o(‖y - x‖ ^ (k + 1))` modulus on each of its pieces. -/
+private theorem exists_cover_of_critical_real (k : ℕ) (A : Set (Fin n → ℝ)) :
     ∃ (A₀ : Set (Fin n → ℝ)) (P : Set (Set (Fin n → ℝ))), A₀.Countable ∧ P.Countable ∧
-      A ⊆ A₀ ∪ ⋃₀ P ∧
-      ∀ S ∈ P, Bornology.IsBounded S ∧ ∀ ε : ℝ, 0 < ε → ∃ δ : ℝ, 0 < δ ∧
-        ∀ x ∈ S, ∀ y ∈ S, ‖y - x‖ < δ → |f y - f x| ≤ ε * ‖y - x‖ ^ (k + 1) := by
+      A ⊆ A₀ ∪ ⋃₀ P ∧ (∀ S ∈ P, Bornology.IsBounded S) ∧
+      ∀ f : (Fin n → ℝ) → ℝ, ContDiff ℝ (k + 1) f → (∀ x ∈ A, fderiv ℝ f x = 0) →
+        ∀ S ∈ P, ∀ ε : ℝ, 0 < ε → ∃ δ : ℝ, 0 < δ ∧
+          ∀ x ∈ S, ∀ y ∈ S, ‖y - x‖ < δ → |f y - f x| ≤ ε * ‖y - x‖ ^ (k + 1) := by
   classical
   obtain ⟨A₀, P, hA₀, hP, hcov, hcar, hflat⟩ := MorseSard.hasDecompRel_self k n A
-  have hfd : ContDiff ℝ k (fderiv ℝ f) := hf.fderiv_right (by exact_mod_cast le_rfl)
-  have hdiff : Differentiable ℝ f := hf.differentiable (by simp)
-  refine ⟨A₀, (fun q : MorseSard.Piece n => q.carrier) '' P, hA₀, hP.image _, ?_, ?_⟩
+  refine ⟨A₀, (fun q : MorseSard.Piece n => q.carrier) '' P, hA₀, hP.image _, ?_, ?_, ?_⟩
   · rw [sUnion_image]
     exact hcov
   · rintro S ⟨q, hq, rfl⟩
-    obtain ⟨hq1, hq2, κ, hdisk⟩ := hcar q hq
-    have hbody : IsCompact (q.parametrization '' closedBall (0 : Fin q.dimension → ℝ) 1) :=
-      (isCompact_closedBall _ _).image ((isDisk_iff.mp hdisk).1.continuous)
-    refine ⟨hbody.isBounded.subset hq2, ?_⟩
+    obtain ⟨-, hq2, κ, hdisk⟩ := hcar q hq
+    exact ((isCompact_closedBall _ _).image
+      ((isDisk_iff.mp hdisk).1.continuous)).isBounded.subset hq2
+  · rintro f hf hA S ⟨q, hq, rfl⟩
+    obtain ⟨-, hq2, κ, hdisk⟩ := hcar q hq
+    have hfd : ContDiff ℝ k (fderiv ℝ f) := hf.fderiv_right (by exact_mod_cast le_rfl)
+    have hdiff : Differentiable ℝ f := hf.differentiable (by simp)
     have hcoord : ∀ j : Fin n,
         MorseSard.FlatAlong q.parametrization q.carrier k
           fun x ↦ fderiv ℝ f x (Pi.single j (1 : ℝ)) := by
@@ -380,5 +387,49 @@ theorem _root_.TauCeti.exists_cover_of_critical (A : Set (Fin n → ℝ)) {f : (
     rw [hb'] at this
     rw [norm_sub_rev]
     exact this
+
+/-- **The Morse criticality lemma.**  The set on which a `C^(k+1)` map into a finite-dimensional
+real normed space is critical, in the sense that its derivative vanishes, is covered by a
+countable set and countably many bounded pieces, on each of which the map has a uniform
+`o(‖y - x‖ ^ (k + 1))` modulus.  Neither the set nor the pieces are assumed measurable. -/
+theorem _root_.TauCeti.exists_cover_of_critical {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [FiniteDimensional ℝ F] (A : Set (Fin n → ℝ)) {f : (Fin n → ℝ) → F}
+    (hf : ContDiff ℝ (k + 1) f) (hA : ∀ x ∈ A, fderiv ℝ f x = 0) :
+    ∃ (A₀ : Set (Fin n → ℝ)) (P : Set (Set (Fin n → ℝ))), A₀.Countable ∧ P.Countable ∧
+      A ⊆ A₀ ∪ ⋃₀ P ∧
+      ∀ S ∈ P, Bornology.IsBounded S ∧ ∀ ε : ℝ, 0 < ε → ∃ δ : ℝ, 0 < δ ∧
+        ∀ x ∈ S, ∀ y ∈ S, ‖y - x‖ < δ → ‖f y - f x‖ ≤ ε * ‖y - x‖ ^ (k + 1) := by
+  obtain ⟨A₀, P, hA₀, hP, hcov, hbdd, hmod⟩ := exists_cover_of_critical_real k A
+  refine ⟨A₀, P, hA₀, hP, hcov, fun S hS ↦ ⟨hbdd S hS, fun ε hε ↦ ?_⟩⟩
+  -- Read `f` in the coordinates of a basis of `F`; each coordinate is critical on `A`.
+  let e : F ≃L[ℝ] (Fin (Module.finrank ℝ F) → ℝ) := (Module.finBasis ℝ F).equivFunL
+  let L : Fin (Module.finrank ℝ F) → F →L[ℝ] ℝ :=
+    fun j ↦ (ContinuousLinearMap.proj j).comp (e : F →L[ℝ] Fin (Module.finrank ℝ F) → ℝ)
+  set C := ‖(e.symm : (Fin (Module.finrank ℝ F) → ℝ) →L[ℝ] F)‖
+  have hC : 0 < C + 1 := by positivity
+  have hcoord : ∀ j, ∀ᶠ δ in 𝓝[>] (0 : ℝ), ∀ x ∈ S, ∀ y ∈ S, ‖y - x‖ < δ →
+      |L j (f y) - L j (f x)| ≤ ε / (C + 1) * ‖y - x‖ ^ (k + 1) := by
+    intro j
+    obtain ⟨δ, hδ, h⟩ := hmod (L j ∘ f) ((L j).contDiff.comp hf)
+      (fun x hx ↦ by
+        rw [((L j).hasFDerivAt.comp x (hf.differentiable (by simp) x).hasFDerivAt).fderiv,
+          hA x hx, ContinuousLinearMap.comp_zero])
+      S hS (ε / (C + 1)) (by positivity)
+    filter_upwards [Ioo_mem_nhdsGT hδ] with δ' hδ' x hx y hy hxy
+    exact h x hx y hy (hxy.trans hδ'.2)
+  obtain ⟨δ, hall, hδ⟩ := ((Filter.eventually_all.2 hcoord).and self_mem_nhdsWithin).exists
+  refine ⟨δ, hδ, fun x hx y hy hxy ↦ ?_⟩
+  have hcoords : ‖e (f y - f x)‖ ≤ ε / (C + 1) * ‖y - x‖ ^ (k + 1) :=
+    (pi_norm_le_iff_of_nonneg (by positivity)).2 fun j ↦ by
+      simpa [L, Real.norm_eq_abs] using hall j x hx y hy hxy
+  calc ‖f y - f x‖ = ‖e.symm (e (f y - f x))‖ := by rw [e.symm_apply_apply]
+    _ ≤ C * ‖e (f y - f x)‖ :=
+        (e.symm : (Fin (Module.finrank ℝ F) → ℝ) →L[ℝ] F).le_opNorm _
+    _ ≤ C * (ε / (C + 1) * ‖y - x‖ ^ (k + 1)) := by gcongr
+    _ ≤ ε * ‖y - x‖ ^ (k + 1) := by
+        rw [← mul_assoc]
+        gcongr
+        rw [mul_div_assoc', div_le_iff₀ hC]
+        nlinarith
 
 end TauCeti.MorseSard

@@ -123,7 +123,8 @@ universal Fredholm equation form a meagre set.
 
 The hypotheses are imposed only along the level set `f⁻¹(c)`. There the fixed-parameter
 linearization must be Fredholm, the total linearization must be surjective, and the smoothness
-order must meet the current Sard--Smale threshold `(dim ker)² + 1`. Second countability of the
+order must be at least `(dim ker)² + 1`, a sufficient bound above Smale's threshold
+`k > max (index, 0)`. Second countability of the
 universal source makes the level set second countable and hence allows the local nowhere dense
 exceptional sets to be reduced to a countable family. -/
 theorem isMeagre_setOf_not_isRegularParameter [SecondCountableTopology (E × Λ)]
