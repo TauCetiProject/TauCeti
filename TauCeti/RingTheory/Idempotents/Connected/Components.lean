@@ -129,6 +129,7 @@ theorem mem_basicOpen_connectedComponentsIdempotent
 
 /-- The idempotent selecting a connected component is nonzero, because the component is nonempty
 and the idempotent does not vanish at any of its points. -/
+@[simp]
 theorem connectedComponentsIdempotent_ne_zero (C : ConnectedComponents (PrimeSpectrum R)) :
     connectedComponentsIdempotent C ≠ 0 := by
   obtain ⟨x, hx⟩ := ConnectedComponents.surjective_coe C
