@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Ring.Equiv
 public import Mathlib.CategoryTheory.Conj
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.RingTheory.LocalRing.Basic
+import TauCeti.CategoryTheory.IrreducibleMorphism
 
 /-!
 # Endomorphism rings under isomorphisms and additive functors
@@ -91,9 +92,9 @@ theorem isSplitEpi_or_isSplitEpi_of_add_eq_id [IsLocalRing (End Z)] {a : Z ⟶ A
   have hab : End.of (a ≫ x) + End.of (b ≫ y) = (1 : End Z) := End.ext h
   refine (IsLocalRing.isUnit_or_isUnit_of_add_one hab).imp (fun hu ↦ ?_) fun hu ↦ ?_
   · have : IsIso (a ≫ x) := (isUnit_iff_isIso _).mp hu
-    exact IsSplitEpi.mk' ⟨inv (a ≫ x) ≫ a, by simp⟩
+    exact isSplitEpi_of_isSplitEpi_comp a x
   · have : IsIso (b ≫ y) := (isUnit_iff_isIso _).mp hu
-    exact IsSplitEpi.mk' ⟨inv (b ≫ y) ≫ b, by simp⟩
+    exact isSplitEpi_of_isSplitEpi_comp b y
 
 /-- **The identity of an object with a local endomorphism ring cannot be a sum of two morphisms
 factoring through non-split-monomorphisms out of it.** -/
@@ -102,8 +103,8 @@ theorem isSplitMono_or_isSplitMono_of_add_eq_id [IsLocalRing (End Z)] {x : Z ⟶
   have hab : End.of (x ≫ a) + End.of (y ≫ b) = (1 : End Z) := End.ext h
   refine (IsLocalRing.isUnit_or_isUnit_of_add_one hab).imp (fun hu ↦ ?_) fun hu ↦ ?_
   · have : IsIso (x ≫ a) := (isUnit_iff_isIso _).mp hu
-    exact IsSplitMono.mk' ⟨a ≫ inv (x ≫ a), by rw [← Category.assoc, IsIso.hom_inv_id]⟩
+    exact isSplitMono_of_isSplitMono_comp x a
   · have : IsIso (y ≫ b) := (isUnit_iff_isIso _).mp hu
-    exact IsSplitMono.mk' ⟨b ≫ inv (y ≫ b), by rw [← Category.assoc, IsIso.hom_inv_id]⟩
+    exact isSplitMono_of_isSplitMono_comp y b
 
 end TauCeti
