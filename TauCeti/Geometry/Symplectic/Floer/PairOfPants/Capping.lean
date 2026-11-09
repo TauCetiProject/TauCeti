@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Basic
 import TauCeti.Analysis.Complex.ThricePuncturedSphere.Exchange
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
-import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
 
 /-!
 # Capping the ends of the pair of pants with PSS planes
