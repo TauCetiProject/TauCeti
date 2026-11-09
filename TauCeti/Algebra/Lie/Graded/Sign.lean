@@ -189,15 +189,10 @@ theorem signDecomposition_apply (x : L) (s : SignType) :
     (signDecomposition ℒ θ x s : L) =
       ∑ n ∈ (DirectSum.decompose ℒ x).support,
         if SignType.sign (θ n) = s then (DirectSum.decompose ℒ x n : L) else 0 := by
-  conv_lhs => rw [← DirectSum.sum_support_decompose ℒ x]
-  simp only [map_sum, DirectSum.sum_apply, AddSubmonoidClass.coe_finsetSum]
-  refine Finset.sum_congr rfl fun n _ => ?_
-  have hn := (DirectSum.decompose ℒ x n).property
-  have he := DirectSum.decompose_coe (fun s => (signSubalgebra ℒ θ s).toSubmodule)
-    (i := SignType.sign (θ n)) ⟨_, le_signSubalgebra ℒ θ n hn⟩
-  simp only [signDecomposition, DirectSum.decomposeLinearEquiv_apply, he,
-    DirectSum.coe_of_apply]
-  split <;> rfl
+  simpa [Finset.sum_filter, signDecomposition, DirectSum.decomposeLinearEquiv_apply] using
+    DirectSum.decompose_map_eq_sum ℒ (fun s => (signSubalgebra ℒ θ s).toSubmodule)
+      (AddMonoidHom.id L) (fun n => SignType.sign (θ n))
+      (fun n _ hx => le_signSubalgebra ℒ θ n hx) x s
 
 /-- Sign projections preserve homogeneous submodules. In particular, they preserve
 the homogeneous ideals used in graded nilpotent truncations. -/
@@ -241,18 +236,9 @@ theorem map_signDecomposition (f : L →+ L')
     (hf : ∀ n, ∀ x ∈ ℒ n, f x ∈ ℳ n) (x : L) (s : SignType) :
     f (signDecomposition ℒ θ x s : L) =
       (signDecomposition ℳ θ (f x) s : L') := by
-  let a : ∀ s, signSubalgebra ℳ θ s := fun s =>
-    ⟨f (signDecomposition ℒ θ x s : L),
-      map_mem_signSubalgebra ℒ θ ℳ f hf (signDecomposition ℒ θ x s).property⟩
-  have hsum : ∑ s, (a s : L') = f x := by
-    simpa only [a, ← map_sum] using congrArg f (sum_signDecomposition ℒ θ x)
-  have h := congrArg (fun y => (signDecomposition ℳ θ y s : L')) hsum
-  have hc : ∀ t, signDecomposition ℳ θ (a t : L') =
-      DirectSum.of (fun s => (signSubalgebra ℳ θ s).toSubmodule) t (a t) := fun t =>
-    DirectSum.decompose_coe (fun s => (signSubalgebra ℳ θ s).toSubmodule) (a t)
-  simp only [map_sum, hc, DirectSum.sum_apply, AddSubmonoidClass.coe_finsetSum,
-    DirectSum.coe_of_apply, apply_ite, ZeroMemClass.coe_zero, Finset.sum_ite_eq',
-    Finset.mem_univ, ite_true] at h
-  exact h
+  simpa [signDecomposition, DirectSum.decomposeLinearEquiv_apply] using
+    DirectSum.map_decompose_shift (fun s => (signSubalgebra ℒ θ s).toSubmodule)
+      (fun s => (signSubalgebra ℳ θ s).toSubmodule) f id Function.injective_id
+      (fun _ _ hx => map_mem_signSubalgebra ℒ θ ℳ f hf hx) s x
 
 end TauCeti
