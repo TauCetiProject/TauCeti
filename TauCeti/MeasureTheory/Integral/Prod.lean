@@ -16,8 +16,8 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
 
 * `TauCeti.ae_of_ae_fst` / `TauCeti.ae_of_ae_snd` transfer an a.e. statement about one factor to the
   product measure, along `Measure.quasiMeasurePreserving_fst` / `_snd`.
-* `TauCeti.integrable_left_of_mul_prod_of_ae_pos`: integrability of a separated product whose
-  right factor is positive almost everywhere implies integrability of its left factor.
+* `TauCeti.integrable_left_of_mul_prod_of_ae_ne_zero`: integrability of a separated product whose
+  right factor is nonzero almost everywhere implies integrability of its left factor.
 * `TauCeti.exists_ae_eq_const_of_ae_prod_eq`: if `f x = g y` for almost every `(x, y)` in a product
   of nonzero measures, then `f` and `g` are almost everywhere the same constant. This is the
   uniqueness of a function of the form `f(x) + g(y)` up to one additive constant.
@@ -144,14 +144,14 @@ theorem ae_of_ae_snd {p : β → Prop} (hp : ∀ᵐ y ∂ν, p y) :
     ∀ᵐ q : α × β ∂(μ.prod ν), p q.2 :=
   Measure.quasiMeasurePreserving_snd.tendsto_ae.eventually hp
 
-/-- If a separated product `f x * g y` is integrable and `g` is positive almost everywhere
-under a probability measure, then `f` is integrable. -/
-theorem integrable_left_of_mul_prod_of_ae_pos [SFinite μ] [IsProbabilityMeasure ν]
+/-- If a separated product `f x * g y` is integrable and `g` is nonzero almost everywhere
+under a nonzero s-finite measure, then `f` is integrable. -/
+theorem integrable_left_of_mul_prod_of_ae_ne_zero [SFinite μ] [SFinite ν] [NeZero ν]
     {f : α → ℝ} {g : β → ℝ}
     (hfg : Integrable (fun z ↦ f z.1 * g z.2) (μ.prod ν))
-    (hg : ∀ᵐ y ∂ν, 0 < g y) : Integrable f μ := by
+    (hg : ∀ᵐ y ∂ν, g y ≠ 0) : Integrable f μ := by
   obtain ⟨y, hgy, hy⟩ := (hg.and hfg.prod_left_ae).exists
-  exact (integrable_mul_const_iff (isUnit_iff_ne_zero.2 hgy.ne') f).1 hy
+  exact (integrable_mul_const_iff (isUnit_iff_ne_zero.2 hgy) f).1 hy
 
 /-- If `f x = g y` for `μ.prod ν`-almost every `(x, y)`, with both measures nonzero, then `f` and
 `g` are almost everywhere equal to one and the same constant. -/

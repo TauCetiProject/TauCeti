@@ -245,7 +245,8 @@ theorem integrable_prod_rpow_dirichletMeasure_iff {a q : ι → ℝ}
       exact Finset.prod_pos fun j _ ↦ Real.rpow_pos_of_pos (hy j) _
     -- A positive Dirichlet slice lets product integrability descend to the Beta factor.
     have hf : Integrable f (betaMeasure (a (e none)) (∑ j : κ, a (e (some j)))) :=
-      integrable_left_of_mul_prod_of_ae_pos (by simpa [mu] using hsep) hpositive
+      integrable_left_of_mul_prod_of_ae_ne_zero (by simpa [mu] using hsep)
+        (hpositive.mono fun _ h ↦ h.ne')
     have hi := ((integrable_rpow_mul_one_sub_rpow_betaMeasure_iff
       (ha (e none)) hsum_a).1 (by simpa [f] using hf)).1
     simpa [he_none] using hi
