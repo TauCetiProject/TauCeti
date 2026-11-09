@@ -527,20 +527,22 @@ theorem degreeOneDeriv_gradedBracket_gradedMkZero_of_of_ne {i j k : X} (hj : j �
     (hk : k ≠ i) :
     degreeOneDeriv p X i (gradedBracket p (freeProP p X) 0 0
         (gradedMkZero p (freeProP p X) (of j)) (gradedMkZero p (freeProP p X) (of k))) = 0 := by
-  rcases lt_trichotomy j k with hjk | rfl | hkj
-  · have h := degreeOneDeriv_degreeOneBasis_inr (p := p) i ⟨(j, k), hjk⟩
+  -- The ordered case, `j < k`, is the basis element `[ξ_j, ξ_k]`; the other cases reduce to it.
+  have key : ∀ {j k : X}, j < k → j ≠ i → k ≠ i →
+      degreeOneDeriv p X i (gradedBracket p (freeProP p X) 0 0
+        (gradedMkZero p (freeProP p X) (of j)) (gradedMkZero p (freeProP p X) (of k))) = 0 := by
+    intro j k hjk hj hk
+    have h := degreeOneDeriv_degreeOneBasis_inr (p := p) i ⟨(j, k), hjk⟩
     rwa [degreeOneBasis_apply, degreeOneFamily_inr, ite_eq_right hj, ite_eq_right hk,
       sub_zero] at h
+  rcases lt_trichotomy j k with hjk | rfl | hkj
+  · exact key hjk hj hk
   · rw [gradedBracket_self, map_zero]
-  · have h := degreeOneDeriv_degreeOneBasis_inr (p := p) i ⟨(k, j), hkj⟩
-    rw [degreeOneBasis_apply, degreeOneFamily_inr, ite_eq_right hk, ite_eq_right hj,
-      sub_zero] at h
-    dsimp only at h
-    have hs := gradedCast_gradedBracket_swap (gradedMkZero p (freeProP p X) (of j))
+  · have hs := gradedCast_gradedBracket_swap (gradedMkZero p (freeProP p X) (of j))
       (gradedMkZero p (freeProP p X) (of k))
     rw [gradedCast_rfl] at hs
     rw [← neg_eq_zero, ← map_neg, ← hs]
-    exact h
+    exact key hkj hk hj
 
 /-- **A class with spanning derivatives, in rank two.** In `F = freeProP p (Fin 2)` the
 derivatives of the bracket class `[ξ_0, ξ_1]` are `∂_0 = ξ_1` and `∂_1 = -ξ_0`, which span
