@@ -91,7 +91,10 @@ import TauCeti.Data.Set.PowersetCard
   `Finset.card_mul_card_le_two_mul_card_filter_ne_product` says that these pairs make up at least
   half of the product when the second factor has two elements, and
   `Finset.card_filter_ne_product_mul_card_le` bounds the proportion of these pairs in a
-  subproduct of the product of two equal or disjoint finsets.
+  subproduct of the product of two equal or disjoint finsets. Likewise
+  `Finset.sq_mul_card_filter_ne_product_le` says that a rectangle with `ε`-fraction sides carries
+  an `ε²`-fraction of the distinct pairs of a disjoint block, and `Finset.card_offDiag_le_sq`
+  states `#s.offDiag ≤ #s ^ 2`.
 * `TauCeti.sum_piecewise_eq_sum_update_of_card_eq_succ` reindexes a sum of `Finset.piecewise` terms
   over the subsets of size one less than `card ι` as a sum of `Function.update` terms over `ι`. It
   is what turns a formula indexed by "all but one point" into one indexed by the omitted point, as
@@ -212,6 +215,24 @@ theorem filter_ne_product_of_disjoint {s t : Finset α} [DecidableEq α] (hst : 
     (s ×ˢ t).filter (fun p => p.1 ≠ p.2) = s ×ˢ t :=
   filter_true_of_mem fun _ hp =>
     hst.forall_ne_finset (mem_product.mp hp).1 (mem_product.mp hp).2
+
+/-- A rectangle `X ×ˢ Y` inside a block `A ×ˢ B` of disjoint sets, with sides carrying an
+`ε`-fraction of `A` and `B`, carries an `ε²`-fraction of the ordered distinct pairs of the block. -/
+theorem sq_mul_card_filter_ne_product_le {α R : Type*} [DecidableEq α] [CommSemiring R]
+    [LinearOrder R] [IsStrictOrderedRing R] {ε : R} {A B X Y : Finset α} (hε : 0 ≤ ε)
+    (hAB : Disjoint A B) (hX : X ⊆ A) (hY : Y ⊆ B) (hXc : ε * #A ≤ #X) (hYc : ε * #B ≤ #Y) :
+    ε ^ 2 * #((A ×ˢ B).filter fun p => p.1 ≠ p.2) ≤
+      (#((X ×ˢ Y).filter fun p => p.1 ≠ p.2) : R) := by
+  rw [filter_ne_product_of_disjoint hAB, filter_ne_product_of_disjoint (hAB.mono hX hY),
+    card_product, card_product]
+  push_cast
+  calc ε ^ 2 * (#A * #B : R) = (ε * #A) * (ε * #B) := by ring
+    _ ≤ #X * #Y := mul_le_mul hXc hYc (by positivity) (Nat.cast_nonneg _)
+
+/-- A finset has at most `#s ^ 2` ordered pairs of distinct elements. -/
+theorem card_offDiag_le_sq (s : Finset α) : #s.offDiag ≤ #s ^ 2 := by
+  rw [offDiag_card, sq]
+  exact Nat.sub_le _ _
 
 /-- Counting the pairs with distinct coordinates in `s ×ˢ t` by their first coordinate: each
 `u ∈ s` is paired with the elements of `t` other than `u`. -/
