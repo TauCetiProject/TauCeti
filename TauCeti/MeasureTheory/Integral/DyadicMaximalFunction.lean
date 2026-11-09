@@ -189,7 +189,7 @@ private theorem setLAverage_ball_le_of_forall_dyadicCube {r : ℝ} (hr : 0 < r)
       _ < 2 ^ k + r := add_lt_add (dist_lt_of_mem_dyadicCube hz hyQ) (mem_ball.1 hyB)
       _ ≤ 3 * r := by linarith
   have hdisj : M.PairwiseDisjoint fun m => dyadicCube k m := fun m _ m' _ hne =>
-    disjoint_dyadicCube hne
+    disjoint_dyadicCube.2 hne
   have hvol : volume (ball x (3 * r)) = 3 ^ Fintype.card ι * volume (ball x r) := by
     rw [Real.volume_pi_ball _ (by positivity), Real.volume_pi_ball _ hr,
       show 2 * (3 * r) = 3 * (2 * r) by ring, mul_pow, ENNReal.ofReal_mul (by positivity),
