@@ -191,6 +191,7 @@ theorem singularSlant_singularCross (X Y : TopCat.{w}) {M N : ModuleCat.{w} k}
 
 /-- The slant product of a cross product of classes of degrees `p` and `q` by a homology class of
 degree `p' ≠ p` vanishes. -/
+@[simp]
 theorem singularSlant_singularCross_of_ne (X Y : TopCat.{w}) {M N : ModuleCat.{w} k}
     (P : ModuleCat.{w} k) (μ : M ⊗ N ⟶ P) {p q p' q' n : ℕ} (h : p + q = n) (h' : p' + q' = n)
     (hp : p' ≠ p) (x : ((singularHomologyFunctor (ModuleCat.{w} k) p').obj R).obj X)
@@ -203,6 +204,7 @@ theorem singularSlant_singularCross_of_ne (X Y : TopCat.{w}) {M N : ModuleCat.{w
 /-- **The slant product of a cross product with coefficients in `k`**: for `a ∈ Hᵖ(X; k)`,
 `b ∈ H^q(Y; k)` and `x ∈ Hₚ(X; k)`, with the multiplication `k ⊗ k ⟶ k` as pairing,
 `(a × b) / x = ⟨a, x⟩ • b`. -/
+@[simp]
 theorem singularSlant_singularCross_leftUnitor (X Y : TopCat.{w}) (p q n : ℕ) (h : p + q = n)
     (x : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ (ModuleCat.{w} k))).obj X)
     (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)

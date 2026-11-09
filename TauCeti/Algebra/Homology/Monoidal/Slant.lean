@@ -508,6 +508,7 @@ lemma slantCochain_cupCochain_of_ne {p q p' q' n : ℕ} (h : p + q = n) (h' : p'
 /-- **The slant product of a cup product of classes**, along the identity of `K ⊗ L`:
 `(a ⌣ b) / x` is the class `b` with its coefficients changed along `n ↦ μ (⟨a, x⟩ ⊗ n)`. For
 coefficients in the ring itself and `μ` the multiplication, this is `⟨a, x⟩ • b`. -/
+@[simp]
 theorem slant_cup (p q n : ℕ) (h : p + q = n) (x : K.homology p)
     (a : (K.linearYonedaObj k M).homology p) (b : (L.linearYonedaObj k N).homology q) :
     slant k (𝟙 (HomologicalComplex.tensorObj K L)) p q n h x
@@ -526,6 +527,7 @@ theorem slant_cup (p q n : ℕ) (h : p + q = n) (x : K.homology p)
 
 /-- The slant product of a cup product of classes of degrees `p` and `q` by a homology class of
 degree `p' ≠ p` vanishes. -/
+@[simp]
 theorem slant_cup_of_ne {p q p' q' n : ℕ} (h : p + q = n) (h' : p' + q' = n) (hp : p' ≠ p)
     (x : K.homology p') (a : (K.linearYonedaObj k M).homology p)
     (b : (L.linearYonedaObj k N).homology q) :
