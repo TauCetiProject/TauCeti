@@ -65,6 +65,7 @@ theorem toDensity_apply (φ : RoughForm I M ℝ m) (o : Manifold.Orientation I M
 
 /-- On a positively oriented basis of a tangent space, the density of a top form is the form
 itself. -/
+@[simp]
 theorem toDensity_apply_of_orientation_eq (φ : RoughForm I M ℝ m)
     {o : Manifold.Orientation I M (Fin m)} {x : M} {b : Basis (Fin m) ℝ (TangentSpace I x)}
     (hb : b.orientation = o.orientationAt x) : φ.toDensity o x b = φ x b :=
@@ -73,6 +74,7 @@ theorem toDensity_apply_of_orientation_eq (φ : RoughForm I M ℝ m)
 
 /-- On a negatively oriented basis of a tangent space, the density of a top form is the
 negated form. -/
+@[simp]
 theorem toDensity_apply_of_orientation_eq_neg (φ : RoughForm I M ℝ m)
     {o : Manifold.Orientation I M (Fin m)} {x : M} {b : Basis (Fin m) ℝ (TangentSpace I x)}
     (hb : b.orientation = -o.orientationAt x) : φ.toDensity o x b = -φ x b :=
