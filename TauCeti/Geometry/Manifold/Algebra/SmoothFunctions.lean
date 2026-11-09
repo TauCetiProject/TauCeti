@@ -20,6 +20,8 @@ algebra of smooth functions.
 * `ContMDiffMap.coe_sum`: the coercion of a finite sum of smooth maps is the sum of the coercions.
 * `ContMDiffMap.compRightAlgHom`: precomposition with a smooth map `φ : N → M`, as an algebra
   homomorphism `C^n⟮I, M; 𝓘(𝕜, A), A⟯ →ₐ[𝕜] C^n⟮J, N; 𝓘(𝕜, A), A⟯`.
+* `ContMDiffMap.evalAlgHom`: evaluation at a point, as an algebra homomorphism
+  `C^n⟮I, M; 𝓘(𝕜, A), A⟯ →ₐ[𝕜] A`.
 * `TauCeti.sub_algebraMap_eq_sum_mul_sub_algebraMap`: the bundled form of a pointwise
   factorization of `g - g x` in the algebra of smooth functions.
 -/
@@ -44,7 +46,7 @@ theorem coe_sum {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     ⇑(∑ i ∈ s, f i) = ∑ i ∈ s, ⇑(f i) :=
   map_sum coeFnAddMonoidHom f s
 
-section CompRight
+section AlgHom
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -85,7 +87,22 @@ theorem compRightAlgHom_comp (φ : C^n⟮J, N; I, M⟯) (ψ : C^n⟮K, P; J, N�
     compRightAlgHom 𝕜 A (φ.comp ψ) = (compRightAlgHom 𝕜 A ψ).comp (compRightAlgHom 𝕜 A φ) :=
   (rfl)
 
-end CompRight
+variable {A} in
+/-- Evaluation at a point `x : M`, as an algebra homomorphism from the `C^n` functions on `M`
+to their values. This is the algebra version of `ContMDiffMap.evalRingHom`. -/
+def evalAlgHom (x : M) : C^n⟮I, M; 𝓘(𝕜, A), A⟯ →ₐ[𝕜] A where
+  toFun f := f x
+  map_one' := rfl
+  map_mul' _ _ := rfl
+  map_zero' := rfl
+  map_add' _ _ := rfl
+  commutes' _ := rfl
+
+@[simp]
+theorem evalAlgHom_apply (x : M) (f : C^n⟮I, M; 𝓘(𝕜, A), A⟯) : evalAlgHom x f = f x :=
+  (rfl)
+
+end AlgHom
 
 end ContMDiffMap
 
