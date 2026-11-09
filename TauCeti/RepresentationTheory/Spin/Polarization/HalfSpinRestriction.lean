@@ -78,13 +78,11 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
   (b : OrthonormalBasis (Fin (2 * ℓ + 1)) ℝ V) (hb : b.toBasis.orientation = o)
   -- Term-mode index bounds, as in `TauCeti.SpinPolarizationData.spinAction_complexVolume`.
   (hbW : ∀ k : Fin ℓ,
-    1 ⊗ₜ b ⟨2 * k, Nat.lt_succ_of_lt (Nat.mul_lt_mul_of_pos_left k.2 Nat.zero_lt_two)⟩ -
-      Complex.I ⊗ₜ b ⟨2 * k + 1,
-        Nat.succ_lt_succ (Nat.mul_lt_mul_of_pos_left k.2 Nat.zero_lt_two)⟩ ∈ P.W)
+    1 ⊗ₜ b ⟨2 * k, k.two_mul_val_lt_two_mul_add_one⟩ -
+      Complex.I ⊗ₜ b ⟨2 * k + 1, k.two_mul_val_add_one_lt_two_mul_add_one⟩ ∈ P.W)
   (hbW' : ∀ k : Fin ℓ,
-    1 ⊗ₜ b ⟨2 * k, Nat.lt_succ_of_lt (Nat.mul_lt_mul_of_pos_left k.2 Nat.zero_lt_two)⟩ +
-      Complex.I ⊗ₜ b ⟨2 * k + 1,
-        Nat.succ_lt_succ (Nat.mul_lt_mul_of_pos_left k.2 Nat.zero_lt_two)⟩ ∈ P.W')
+    1 ⊗ₜ b ⟨2 * k, k.two_mul_val_lt_two_mul_add_one⟩ +
+      Complex.I ⊗ₜ b ⟨2 * k + 1, k.two_mul_val_add_one_lt_two_mul_add_one⟩ ∈ P.W')
   (hline : 1 ⊗ₜ b (Fin.last (2 * ℓ)) ∈ P.line)
   {S : Type*} [AddCommGroup S] [Module ℂ S] [Module (CliffordAlgebra (Q₁.baseChange ℂ)) S]
   [IsScalarTower ℂ (CliffordAlgebra (Q₁.baseChange ℂ)) S] [FiniteDimensional ℂ S]

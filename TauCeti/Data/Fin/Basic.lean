@@ -73,6 +73,8 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.natCast_ne_zero`: the cast of a natural number `0 < a < n` to `Fin n` (under
   `open Fin.NatCast`) is nonzero.
 * `Fin.val_one_of_two_le`: the element `1` of `Fin m` has value `1` once `2 ≤ m`.
+* `Fin.two_mul_val_lt_two_mul_add_one` and `Fin.two_mul_val_add_one_lt_two_mul_add_one`: the
+  indices `2 * k` and `2 * k + 1`, for `k : Fin ℓ`, lie in `Fin (2 * ℓ + 1)`.
 * `Fin.insertNth_insertNth`: two insertions into a tuple commute, up to reindexing by `succAbove`
   and `predAbove`; the dual of Mathlib's `Fin.removeNth_removeNth_eq_swap`.
 * `Fin.insertNth_append_castAdd` and `Fin.insertNth_append_natAdd`: insertion into either block
@@ -544,6 +546,17 @@ theorem natCast_ne_zero {n a : ℕ} [NeZero n] (ha : a ≠ 0) (han : a < n) : (a
 when `m` is not syntactically of the form `n + 2`. -/
 theorem val_one_of_two_le {m : ℕ} [NeZero m] (hm : 2 ≤ m) : ((1 : Fin m) : ℕ) = 1 := by
   rw [val_one', Nat.mod_eq_of_lt hm]
+
+/-- The even index `2 * k` of a pair `(2 * k, 2 * k + 1)` indexed by `k : Fin ℓ` lies in
+`Fin (2 * ℓ + 1)`. -/
+theorem two_mul_val_lt_two_mul_add_one {ℓ : ℕ} (k : Fin ℓ) : 2 * (k : ℕ) < 2 * ℓ + 1 := by
+  omega
+
+/-- The odd index `2 * k + 1` of a pair `(2 * k, 2 * k + 1)` indexed by `k : Fin ℓ` lies in
+`Fin (2 * ℓ + 1)`. -/
+theorem two_mul_val_add_one_lt_two_mul_add_one {ℓ : ℕ} (k : Fin ℓ) :
+    2 * (k : ℕ) + 1 < 2 * ℓ + 1 := by
+  omega
 
 /-- Below the top element of `Fin n`, the order successor increments the value. -/
 theorem val_orderSucc_of_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n) :

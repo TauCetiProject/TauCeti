@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Fin.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.RepresentationTheory.Spin.LineSign
 -- Private: orthonormal-basis orthogonality and list products of endomorphisms are used only
@@ -113,13 +114,11 @@ variable [FiniteDimensional ℝ V] {ℓ : ℕ} [Fact (finrank ℝ V = 2 * ℓ + 
   {o : Orientation ℝ V (Fin (2 * ℓ + 1))} (hQ : ∀ v, Q v = -‖v‖ ^ 2)
   (b : OrthonormalBasis (Fin (2 * ℓ + 1)) ℝ V) (hb : b.toBasis.orientation = o)
   (hbW : ∀ k : Fin ℓ,
-    1 ⊗ₜ b ⟨2 * k, Nat.lt_succ_of_lt (Nat.mul_lt_mul_of_pos_left k.2 Nat.zero_lt_two)⟩ -
-      Complex.I ⊗ₜ b ⟨2 * k + 1,
-        Nat.succ_lt_succ (Nat.mul_lt_mul_of_pos_left k.2 Nat.zero_lt_two)⟩ ∈ P.W)
+    1 ⊗ₜ b ⟨2 * k, k.two_mul_val_lt_two_mul_add_one⟩ -
+      Complex.I ⊗ₜ b ⟨2 * k + 1, k.two_mul_val_add_one_lt_two_mul_add_one⟩ ∈ P.W)
   (hbW' : ∀ k : Fin ℓ,
-    1 ⊗ₜ b ⟨2 * k, Nat.lt_succ_of_lt (Nat.mul_lt_mul_of_pos_left k.2 Nat.zero_lt_two)⟩ +
-      Complex.I ⊗ₜ b ⟨2 * k + 1,
-        Nat.succ_lt_succ (Nat.mul_lt_mul_of_pos_left k.2 Nat.zero_lt_two)⟩ ∈ P.W')
+    1 ⊗ₜ b ⟨2 * k, k.two_mul_val_lt_two_mul_add_one⟩ +
+      Complex.I ⊗ₜ b ⟨2 * k + 1, k.two_mul_val_add_one_lt_two_mul_add_one⟩ ∈ P.W')
   (hline : 1 ⊗ₜ b (Fin.last (2 * ℓ)) ∈ P.line)
 include hQ hb hbW hbW'
 

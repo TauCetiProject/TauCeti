@@ -66,15 +66,15 @@ theorem apply_eq_apply_of_forall_mem_even {ω : CliffordAlgebra Q} (hω : ω ∈
   | ι v =>
     -- `ω * ι Q v` is even and acts as `ι Q v` does on both modules.
     have hv : ω * ι Q v ∈ even Q := by
-      rw [← Subalgebra.mem_toSubmodule, even_toSubmodule, show (0 : ZMod 2) = 1 + 1 from rfl]
+      have h2 : (0 : ZMod 2) = 1 + 1 := by decide
+      rw [← Subalgebra.mem_toSubmodule, even_toSubmodule, h2]
       exact evenOdd_mul_le Q 1 1 (Submodule.mul_mem_mul hω (ι_mem_evenOdd_one Q v))
     have := hT _ hv m
     rwa [map_mul, map_mul, h₁, h₂, one_mul, one_mul] at this
   | mul x y hx hy =>
     simp only [map_mul, Module.End.mul_eq_comp, LinearMap.comp_apply]
     rw [hx, hy]
-  | add x y hx hy => rw [map_add, map_add, LinearMap.add_apply, LinearMap.add_apply, map_add, hx,
-      hy]
+  | add x y hx hy => simp only [map_add, LinearMap.add_apply, hx, hy]
 
 end CommRing
 

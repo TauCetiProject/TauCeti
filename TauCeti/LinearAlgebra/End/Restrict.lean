@@ -42,7 +42,7 @@ def restrictEnd (φ : A →ₐ[R] Module.End R M) (p : Submodule R M)
   commutes' r := by ext; simp
 
 @[simp]
-theorem restrictEnd_apply_coe (φ : A →ₐ[R] Module.End R M) (p : Submodule R M)
+theorem coe_restrictEnd_apply (φ : A →ₐ[R] Module.End R M) (p : Submodule R M)
     (hp : ∀ a, ∀ x ∈ p, φ a x ∈ p) (a : A) (x : p) :
     (φ.restrictEnd p hp a x : M) = φ a x :=
   (rfl)

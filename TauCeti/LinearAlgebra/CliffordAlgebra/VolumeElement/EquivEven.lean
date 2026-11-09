@@ -196,7 +196,7 @@ theorem coe_eigenspaceComplexVolumeAction_apply (μ : ℂ) (x : CliffordAlgebra 
     (ψ : (Algebra.lsmul ℂ ℂ E (complexVolume Q₁ o')).eigenspace μ) :
     (eigenspaceComplexVolumeAction hQ₁ o' μ x ψ : E) =
       equivOfIsometry (complexProdIsometryEquiv hQ₁).symm (toEven (Q.baseChange ℂ) x) • (ψ : E) :=
-  AlgHom.restrictEnd_apply_coe _ _ _ x ψ
+  AlgHom.coe_restrictEnd_apply _ _ _ x ψ
 
 /-- **The label of the restricted half-spinors, as an operator**: for `n` odd and `V ⊕ ℝ`
 oriented by `(e₁, …, eₙ, e₀)`, the volume element `ω_ℂ` of `V` acts on the `μ`-eigenspace of the
@@ -212,9 +212,10 @@ theorem eigenspaceComplexVolumeAction_complexVolume (hn : Odd n)
     equivOfIsometry_toEven_complexVolume_smul hQ₁ o o' hn b hb hQb ho' ψ.2]
   simp
 
-/-- **Putting `e₀` first keeps the label**: for `n` odd and `V ⊕ ℝ` oriented by
+/-- **Putting `e₀` first interchanges the labels**: for `n` odd and `V ⊕ ℝ` oriented by
 `(e₀, e₁, …, eₙ)`, the volume element `ω_ℂ` of `V` acts on the `μ`-eigenspace of the chirality
-element `Γ` of `V ⊕ ℝ` by the scalar `μ`. -/
+element `Γ` of `V ⊕ ℝ` by the scalar `μ` (rather than `-μ`), the orientation of `V ⊕ ℝ` being
+reversed. -/
 theorem eigenspaceComplexVolumeAction_complexVolume_of_cons (hn : Odd n)
     (b : OrthonormalBasis (Fin n) ℝ V) (hb : b.toBasis.orientation = o)
     (hQb : (QuadraticMap.associated Q).IsOrthoᵢ b.toBasis)
