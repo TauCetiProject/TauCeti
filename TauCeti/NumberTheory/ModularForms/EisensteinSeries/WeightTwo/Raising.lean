@@ -111,7 +111,7 @@ theorem raisedWeight_intCast (x : Fin 2 → ℤ) :
       ZMod.intCast_zmod_eq_zero_iff_dvd]
   simp only [hdvd]
   split_ifs with h
-  · rw [h1, ZMod.natCast_val_div_eq_intCast_div (mul_comm M t).dvd h]
+  · rw [h1, ZMod.natCast_val_div_eq_intCast_div (mul_comm M t).dvd _]
     congr 1
     ext i
     fin_cases i <;> rfl
