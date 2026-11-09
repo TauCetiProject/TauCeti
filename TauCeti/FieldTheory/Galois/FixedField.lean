@@ -611,6 +611,30 @@ theorem restrictScalars_mem_zpowers (σ : M ≃ₐ[K] M) [Finite (Subgroup.zpowe
   intro x hx
   exact τ.commutes ⟨x, hx⟩
 
+
+/-- The `m`-th roots `τ` of `σ` in `Gal(M/E)`, where `E = M ^ ⟨σ⟩`, that, read over `K`, lie in a
+set `S` correspond to the `m`-th roots of `σ` in `S ∩ ⟨σ⟩`. -/
+theorem card_fixedField_pow_roots (σ : M ≃ₐ[K] M) [Finite (Subgroup.zpowers σ)]
+    (S : Set (M ≃ₐ[K] M)) (m : ℕ) :
+    Nat.card {τ : M ≃ₐ[↥(fixedField (Subgroup.zpowers σ))] M //
+        τ ^ m = σ.toFixedFieldAlgEquiv ∧ AlgEquiv.restrictScalars K τ ∈ S} =
+      Nat.card {w : M ≃ₐ[K] M // w ∈ S ∧ w ∈ Subgroup.zpowers σ ∧ w ^ m = σ} := by
+  refine Nat.card_congr (Equiv.ofBijective (fun τ ↦ ⟨AlgEquiv.restrictScalars K τ.1, τ.2.2,
+    σ.restrictScalars_mem_zpowers τ.1, ?_⟩) ⟨?_, ?_⟩)
+  · rw [← AlgEquiv.restrictScalarsHom_apply, ← map_pow, τ.2.1,
+      AlgEquiv.restrictScalarsHom_apply, AlgEquiv.restrictScalars_toFixedFieldAlgEquiv]
+  · intro τ₁ τ₂ h
+    exact Subtype.ext (AlgEquiv.restrictScalars_injective K (congrArg Subtype.val h))
+  · rintro ⟨w, hwC, ⟨k, rfl⟩, hwm⟩
+    have hk : AlgEquiv.restrictScalars K (σ.toFixedFieldAlgEquiv ^ k) = σ ^ k := by
+      rw [← AlgEquiv.restrictScalarsHom_apply, map_zpow, AlgEquiv.restrictScalarsHom_apply,
+        AlgEquiv.restrictScalars_toFixedFieldAlgEquiv]
+    refine ⟨⟨σ.toFixedFieldAlgEquiv ^ k, ?_, hk ▸ hwC⟩, Subtype.ext hk⟩
+    apply AlgEquiv.restrictScalars_injective K
+    rw [← AlgEquiv.restrictScalarsHom_apply, map_pow, AlgEquiv.restrictScalarsHom_apply, hk,
+      AlgEquiv.restrictScalars_toFixedFieldAlgEquiv]
+    exact hwm
+
 end AlgEquiv
 
 namespace TauCeti
