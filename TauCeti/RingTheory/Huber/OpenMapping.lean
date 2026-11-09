@@ -252,7 +252,7 @@ topological `A`-algebra, and is continuous, injective and has closed range, is a
 Henkel's open mapping theorem over the Tate ring `A` makes the corestriction onto the closed range
 a homeomorphism. -/
 theorem IsTateRing.isClosedEmbedding_of_isClosed_range {N : Type*} [CommRing N] [Algebra A N]
-    [UniformSpace N] [IsTopologicalRing N] [ContinuousConstSMul A N]
+    [TopologicalSpace N] [IsTopologicalRing N] [ContinuousConstSMul A N]
     [TopologicalSpace.IsCompletelyMetrizableSpace N] (ρ : A →+* N)
     (hρ : ∀ a, ρ a = algebraMap A N a) (hc : Continuous ρ) (hinj : Function.Injective ρ)
     (hr : IsClosed (Set.range ρ)) : IsClosedEmbedding ρ := by
