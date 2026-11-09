@@ -19,18 +19,19 @@ or manifold structure assumed.
 
 The fibres and the kernel setoid describe parameter redundancy. Their quotient is equivalent
 to the realized-function type, and maps constant on fibres factor uniquely through the
-parametrization. Reparametrization, restriction of parameters, and composition on inputs or
-outputs interact with these constructions through the ordinary set-image APIs.
+parametrization. Reparametrization and restriction of parameters interact with these
+constructions through the ordinary set-image APIs.
 Use `realizedFunctions_def` with Mathlib's `Set.range_comp_subset_range`,
 `Function.Surjective.range_comp`, `Set.range_domRestrict`, `Set.range_eq_empty`,
 `Set.range_unique`, and `Set.range_comp` for these range computations.
 Likewise, `fiber_def` exposes the singleton preimage for `Set.preimage_singleton_nonempty`
 and `Set.preimage_comp`.
-For cancellation of output or input composition, first rewrite parameter equivalence with
-`parameterSetoid_iff`. For an injective output map `h` with proof `hh`, use
-`hh.comp_left.eq_iff`; for a surjective input map `a` with proof `ha`, use
-`ha.injective_comp_right.eq_iff`. These use the public characterization, so they also apply
-from modules importing this one.
+
+For composition on outputs or inputs, import `TauCeti.Geometry.Neuromanifold.Transport`.
+The image formulas are `realizedFunctions_postcomp` and `realizedFunctions_precomp`.
+An injective output map or a surjective input map preserves and reflects parameter equivalence
+by `parameterSetoid_postcomp` or `parameterSetoid_precomp`, respectively; the corresponding
+fibre equalities are `fiber_postcomp` and `fiber_precomp`.
 
 Given an equivalence relation `s` on parameters, such as the symmetries of an architecture, a
 parameter `w` is identifiable modulo `s` (`IdentifiableAt`) when its whole realization fibre is
