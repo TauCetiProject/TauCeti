@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Category.Grp.Colimits
 public import Mathlib.Algebra.Category.Grp.EpiMono
+public import Mathlib.Algebra.Homology.ShortComplex.Ab
+public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.CategoryTheory.Preadditive.Yoneda.Basic
@@ -15,7 +17,7 @@ public import Mathlib.CategoryTheory.Preadditive.Yoneda.Basic
 # The preadditive Yoneda and coYoneda functors
 
 For a preadditive category `C`, the preadditive Yoneda embedding sends `Y : C` to the functor
-`(-, Y) : Cᵒᵖ ⥤ AddCommGrpCat`. This file records how it acts on morphisms, and three facts
+`(-, Y) : Cᵒᵖ ⥤ AddCommGrpCat`. This file records how it acts on morphisms, and four facts
 about it.
 
 * The embedding is itself additive: `preadditiveYoneda.map (f + g)` is the sum of the images.
@@ -25,6 +27,9 @@ about it.
   So representable functors are projective among additive functors. In particular a morphism
   `(-, Y) ⟶ F` lifts along every epimorphism `(-, Y') ⟶ F` to the image of a morphism `Y ⟶ Y'`,
   which is the form used to build presentations of finitely presented functors.
+* A sequence `(-, W) ⟶ (-, Z) ⟶ F` whose first map is `(-, w)` is exact exactly when every
+  morphism `z : V ⟶ Z` killed by the second map factors through `w`. So exactness at a
+  representable functor is a factorization property in `C`.
 
 Dually, for an object `M` with `Γ = End M`, the functor `Hom(M, -)` (Mathlib's
 `CategoryTheory.preadditiveCoyonedaObj M`) takes values in `Γᵐᵒᵖ`-modules. By the Yoneda
@@ -32,10 +37,16 @@ argument, it is bijective on the morphisms `M ⟶ Y`: a `Γᵐᵒᵖ`-linear map
 `φ : Hom(M, M) → Hom(M, Y)` is composition with `φ (𝟙 M)`, since
 `φ f = φ (f • 𝟙 M) = f ≫ φ (𝟙 M)`.
 
+For an additive functor `G : C ⥤ D`, Mathlib's natural transformation
+`CategoryTheory.preadditiveYonedaMap G X : (-, X) ⟶ (G -, G X)` is an epimorphism when `G` is
+full, and the morphisms `f` with `(-, f)` killed by it are those killed by `G`. For the quotient
+functor by an ideal `I` of `C`, its target is the quotient `(-, X) / I(-, X)`.
+
 ## Main declarations
 
 * `CategoryTheory.preadditiveYoneda_map_app_apply`: the natural transformation `(-, f)` acts by
-  postcomposition with `f`.
+  postcomposition with `f`, and `CategoryTheory.preadditiveYoneda_obj_map_apply` the functor
+  `(-, X)` by precomposition.
 * `CategoryTheory.preadditiveYoneda_additive`: the preadditive Yoneda embedding is additive.
 * `CategoryTheory.preadditiveYoneda_obj_hom_ext`: morphisms out of `(-, Y)` agreeing on `𝟙 Y`
   are equal.
@@ -45,11 +56,16 @@ argument, it is bijective on the morphisms `M ⟶ Y`: a `Γᵐᵒᵖ`-linear map
   representable functor.
 * `CategoryTheory.preadditiveCoyonedaObj_map_bijective_self`: `Hom(M, -)` is bijective on the
   morphisms out of `M`.
+* `CategoryTheory.preadditiveYonedaMap_app_apply`: the natural transformation
+  `(-, X) ⟶ (G -, G X)` acts by applying `G`.
+* `CategoryTheory.preadditiveYoneda_map_comp_preadditiveYonedaMap_eq_zero_iff`: the natural
+  transformation `(-, X) ⟶ (G -, G X)` kills `(-, f)` exactly when `G` kills `f`.
+* `CategoryTheory.exact_preadditiveYoneda_map_iff`: exactness at a representable functor.
 -/
 
 public section
 
-universe v u
+universe v u u'
 
 open Opposite CategoryTheory.Limits
 
@@ -61,6 +77,12 @@ variable {C : Type u} [Category.{v} C] [Preadditive C]
 @[simp]
 theorem preadditiveYoneda_map_app_apply {X Y : C} (f : X ⟶ Y) (Z : Cᵒᵖ) (g : Z.unop ⟶ X) :
     (preadditiveYoneda.map f).app Z g = g ≫ f :=
+  rfl
+
+/-- The functor `(-, X)` acts on morphisms by precomposition. -/
+@[simp]
+theorem preadditiveYoneda_obj_map_apply {X : C} {Z W : Cᵒᵖ} (f : Z ⟶ W) (g : Z.unop ⟶ X) :
+    (preadditiveYoneda.obj X).map f g = f.unop ≫ g :=
   rfl
 
 /-- Two morphisms out of the representable functor `(-, Y)` agree as soon as they agree on the
@@ -131,5 +153,64 @@ theorem preadditiveCoyonedaObj_map_bijective_self (M Y : C) :
             (Category.comp_id f))
     ext f
     exact key f
+
+/-! ### The natural transformation `(-, X) ⟶ (G -, G X)` induced by an additive functor -/
+
+section preadditiveYonedaMap
+
+variable {D : Type u'} [Category.{v} D] [Preadditive D] (G : C ⥤ D) [G.Additive]
+
+/-- The natural transformation `(-, X) ⟶ (G -, G X)` applies `G`. -/
+theorem preadditiveYonedaMap_app_apply (X : C) (Z : Cᵒᵖ) (g : Z.unop ⟶ X) :
+    (preadditiveYonedaMap G X).app Z g = G.map g :=
+  rfl
+
+/-- The natural transformation `(-, X) ⟶ (G -, G X)` is an epimorphism when `G` is full. -/
+instance epi_preadditiveYonedaMap [G.Full] (X : C) : Epi (preadditiveYonedaMap G X) := by
+  have (Z : Cᵒᵖ) : Epi ((preadditiveYonedaMap G X).app Z) :=
+    (AddCommGrpCat.epi_iff_surjective _).2 fun g ↦ ⟨G.preimage g, G.map_preimage g⟩
+  exact NatTrans.epi_of_epi_app _
+
+/-- The natural transformation `(-, X) ⟶ (G -, G X)` kills `(-, f)` exactly when `G` kills `f`. -/
+@[simp]
+theorem preadditiveYoneda_map_comp_preadditiveYonedaMap_eq_zero_iff {Y X : C}
+    (f : Y ⟶ X) : preadditiveYoneda.map f ≫ preadditiveYonedaMap G X = 0 ↔ G.map f = 0 := by
+  -- Both sides are read off on `𝟙 Y`, where `(-, f)` followed by the transformation gives
+  -- `G.map (𝟙 Y ≫ f)`.
+  have key : (preadditiveYoneda.map f ≫ preadditiveYonedaMap G X).app (op Y) (𝟙 Y) = G.map f := by
+    rw [NatTrans.comp_app]
+    refine (ConcreteCategory.comp_apply _ _ _).trans ?_
+    rw [preadditiveYoneda_map_app_apply, preadditiveYonedaMap_app_apply, Category.id_comp]
+  -- Stated for an abstract element: `simp` cannot rewrite at `𝟙 Y`, whose type `Y ⟶ Y` is only
+  -- definitionally the carrier of `(-, Y)` at `op Y`.
+  have hzero (x : (preadditiveYoneda.obj Y).obj (op Y)) :
+      (0 : preadditiveYoneda.obj Y ⟶ G.op ⋙ preadditiveYoneda.obj (G.obj X)).app (op Y) x = 0 := by
+    simp
+  refine ⟨fun h ↦ ?_, fun h ↦ preadditiveYoneda_obj_hom_ext ?_⟩
+  · exact key.symm.trans ((congrArg (fun α ↦ α.app (op Y) (𝟙 Y)) h).trans (hzero _))
+  · exact key.trans (h.trans (hzero _).symm)
+
+end preadditiveYonedaMap
+
+/-- A sequence `(-, W) ⟶ (-, Z) ⟶ F` whose first map is `(-, w)` is exact exactly when every
+morphism `z : V ⟶ Z` killed by `α` factors through `w`. -/
+theorem exact_preadditiveYoneda_map_iff {W Z : C} (w : W ⟶ Z) {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
+    (α : preadditiveYoneda.obj Z ⟶ F) (h : preadditiveYoneda.map w ≫ α = 0) :
+    (ShortComplex.mk _ _ h).Exact ↔
+      ∀ ⦃V : C⦄ (z : V ⟶ Z), α.app (op V) z = 0 → ∃ x : V ⟶ W, x ≫ w = z := by
+  -- Exactness in the functor category is exactness at each object, which in `AddCommGrpCat`
+  -- is the elementwise statement `ShortComplex.ab_exact_iff`; there `(-, w)` sends `x` to
+  -- `x ≫ w` (`preadditiveYoneda_map_app_apply`).
+  have key : ∀ V : C,
+      ((ShortComplex.mk _ _ h).map ((evaluation Cᵒᵖ AddCommGrpCat.{v}).obj (op V))).Exact ↔
+        ∀ z : V ⟶ Z, α.app (op V) z = 0 → ∃ x : V ⟶ W, x ≫ w = z := fun V ↦
+    ShortComplex.ab_exact_iff _
+  refine ⟨fun hS V ↦ (key V).1 (hS.map _), fun H ↦ ?_⟩
+  rw [ShortComplex.exact_iff_isZero_homology, Functor.isZero_iff]
+  intro V
+  refine IsZero.of_iso ?_ ((ShortComplex.mk _ _ h).mapHomologyIso
+    ((evaluation Cᵒᵖ AddCommGrpCat.{v}).obj V)).symm
+  rw [← ShortComplex.exact_iff_isZero_homology]
+  exact (key V.unop).2 (@H V.unop)
 
 end CategoryTheory
