@@ -32,6 +32,9 @@ on:
       FLEET_READ_TOKEN: { required: false }
       TAUCETI_GITHUB_STATE_TOKEN: { required: false }
     outputs:
+      hosted-slot:
+        description: Native GitHub bulk-build concurrency slot, from 0 through 18
+        value: ${{ jobs.pick.outputs.hosted-slot }}
       skip-pr-build:
         description: Eligible manual self-tested assertion for this exact PR head
         value: ${{ jobs.pick.outputs.skip-pr-build }}
@@ -66,6 +69,7 @@ jobs:
     timeout-minutes: 5
     continue-on-error: true
     outputs:
+      hosted-slot: ${{ steps.hosted-slot.outputs.slot }}
       skip-pr-build: ${{ steps.local-route.outputs.skip }}
       runner: ${{ steps.pick.outputs.runner }}
       pool: ${{ steps.pick.outputs.pool }}
@@ -75,6 +79,16 @@ jobs:
       namespace_busy: ${{ steps.pick.outputs.namespace_busy }}
       namespace_cap: ${{ steps.pick.outputs.namespace_cap }}
     steps:
+      - name: Choose a native GitHub bulk-build concurrency slot
+        id: hosted-slot
+        env:
+          HOSTED_RUN_ID: ${{ github.run_id }}
+        run: |
+          python3 - <<'PYTHON'
+          import os
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              print("slot=" + str(int(os.environ["HOSTED_RUN_ID"]) % 19), file=output)
+          PYTHON
       - name: Checkout workflow-pinned runner selector
         uses: actions/checkout@v4
         with:
