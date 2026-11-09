@@ -323,7 +323,7 @@ private theorem intervalIntegrable_realWindingIntegrand_of_crossing_windows {γ 
         (h_imm.continuousOn.mono (uIcc_of_le hab).ge)
         h_imm.isPiecewiseC1On.intervalIntegrable_deriv hm_pos hA hlu hu h_far').2
   exact sorted_crossing_gluing_induction h_piece (fun _ _ _ _ _ h₁ h₂ ↦ h₁.trans h₂)
-    (T.sort (· ≤ ·)) (Finset.sortedLT_sort T) (fun _ ↦ hρ_pos.le) a le_rfl hab
+    (T.sort (· ≤ ·)) (Finset.sortedLT_sort T) a le_rfl hab
     (fun t ht ↦ by linarith [(h_endpts t ((Finset.mem_sort _).mp ht)).1])
     (fun t ht ↦ by linarith [(h_endpts t ((Finset.mem_sort _).mp ht)).2])
     (fun t ht t' ht' hne ↦ (h_pair t ((Finset.mem_sort _).mp ht) t'
