@@ -400,6 +400,17 @@ namespace TauCeti
 
 variable {𝕜 : Type*} [RCLike 𝕜] {ι κ : Type*} [Fintype ι] [Fintype κ]
 
+omit [Fintype κ] in
+/-- Summing over a fibre of an equivalence selects the unique term in that fibre. -/
+@[simp]
+theorem _root_.Equiv.sum_fiber_eq {M : Type*} [AddCommMonoid M] [DecidableEq κ]
+    (e : ι ≃ κ) (b : ι → M) (j : κ) :
+    ∑ i with e i = j, b i = b (e.symm j) := by
+  classical
+  simp only [← e.eq_symm_apply]
+  rw [Finset.filter_eq' Finset.univ (e.symm j)]
+  simp
+
 /-- Sum the coordinates of a Euclidean vector over each fibre of `f`.
 
 This is Mathlib's `FunOnFinite.map` read in Euclidean coordinates. -/
@@ -410,6 +421,13 @@ def euclideanFiberSum (f : ι → κ) (x : EuclideanSpace 𝕜 ι) : EuclideanSp
 theorem euclideanFiberSum_apply [DecidableEq κ] (f : ι → κ) (x : EuclideanSpace 𝕜 ι) (j : κ) :
     euclideanFiberSum f x j = ∑ i with f i = j, x i := by
   simp [euclideanFiberSum, FunOnFinite.map_apply_apply]
+
+/-- Fibrewise summation along an equivalence just reindexes the coordinates. -/
+@[simp]
+theorem euclideanFiberSum_equiv_apply (e : ι ≃ κ) (x : EuclideanSpace 𝕜 ι) (j : κ) :
+    euclideanFiberSum e x j = x (e.symm j) := by
+  classical
+  rw [euclideanFiberSum_apply, e.sum_fiber_eq]
 
 /-- Fibrewise summation is continuous. -/
 @[fun_prop]
