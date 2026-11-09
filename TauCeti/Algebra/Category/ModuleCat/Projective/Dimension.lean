@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Category.ModuleCat.FiniteLength
 public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.RingTheory.Jacobson.Semiprimary
+import TauCeti.Algebra.Category.ModuleCat.Projective.Basic
 import TauCeti.LinearAlgebra.FreeModule.PID
 
 /-!
@@ -140,29 +141,30 @@ theorem projective_projectiveShortComplex_X₁ [Small.{v} R] {M : ModuleCat.{v} 
 /-- **Dimension shifting along a projective presentation.** For a surjection `f : P → M` from a
 projective module, `M` has projective dimension at most `n + 1` exactly when `ker f` has
 projective dimension at most `n`. -/
-theorem _root_.LinearMap.hasProjectiveDimensionLE_succ_iff_ker [Small.{v} R] {P M : Type v}
+theorem _root_.LinearMap.hasProjectiveDimensionLE_succ_iff_ker {P M : Type v}
     [AddCommGroup P] [Module R P] [Module.Projective R P] [AddCommGroup M] [Module R M]
     {f : P →ₗ[R] M} (hf : Function.Surjective f) (n : ℕ) :
     HasProjectiveDimensionLE (ModuleCat.of R M) (n + 1) ↔
       HasProjectiveDimensionLE (ModuleCat.of R (LinearMap.ker f)) n :=
   (LinearMap.shortExact_shortComplexKer hf).hasProjectiveDimensionLT_X₃_iff n
-    ((IsProjective.iff_projective P).mp ‹_›)
+    (inferInstanceAs (Projective (ModuleCat.of R P)))
 
 /-- For a surjection `f` from a projective module onto a module `M` that is not projective, the
 projective dimension of `M` is one more than that of `ker f`. -/
-theorem _root_.LinearMap.projectiveDimension_ker_add_one [Small.{v} R] {P M : Type v}
+theorem _root_.LinearMap.projectiveDimension_ker_add_one {P M : Type v}
     [AddCommGroup P] [Module R P] [Module.Projective R P] [AddCommGroup M] [Module R M]
     {f : P →ₗ[R] M} (hf : Function.Surjective f) (hM : ¬ Module.Projective R M) :
     projectiveDimension (ModuleCat.of R (LinearMap.ker f)) + 1 =
       projectiveDimension (ModuleCat.of R M) :=
   ((LinearMap.shortExact_shortComplexKer hf).projectiveDimension_X₃_eq_succ_of_not_projective
-    ((IsProjective.iff_projective P).mp ‹_›) (mt (IsProjective.iff_projective M).mpr hM)).symm
+    (inferInstanceAs (Projective (ModuleCat.of R P))) fun hMp ↦
+      hM (have := hMp; f.moduleProjective_of_projective_of_surjective hf)).symm
 
 /-- **Projective dimension along a projective resolution.** Along a resolution
 `⋯ → F₁ → F₀ → M → 0` of `M` by projective modules, exact everywhere, the image of
 `d k : F_{k+1} → F_k` is projective exactly when `M` has projective dimension at most `k + 1`. In
 particular this projectivity does not depend on the resolution. -/
-theorem projective_range_iff_hasProjectiveDimensionLE [Small.{v} R] (k : ℕ) {F : ℕ → Type v}
+theorem projective_range_iff_hasProjectiveDimensionLE (k : ℕ) {F : ℕ → Type v}
     [∀ i, AddCommGroup (F i)] [∀ i, Module R (F i)] [∀ i, Module.Projective R (F i)]
     {M : Type v} [AddCommGroup M] [Module R M] {d : ∀ i, F (i + 1) →ₗ[R] F i}
     {ε : F 0 →ₗ[R] M} (hε : Function.Surjective ε) (h₀ : Function.Exact (d 0) ε)
@@ -172,8 +174,10 @@ theorem projective_range_iff_hasProjectiveDimensionLE [Small.{v} R] (k : ℕ) {F
   rw [ε.hasProjectiveDimensionLE_succ_iff_ker hε]
   induction k generalizing M F with
   | zero =>
-    rw [← projective_iff_hasProjectiveDimensionLE_zero, ← IsProjective.iff_projective,
-      LinearMap.exact_iff.mp h₀]
+    rw [← projective_iff_hasProjectiveDimensionLE_zero, LinearMap.exact_iff.mp h₀]
+    exact ⟨fun _ ↦ inferInstanceAs (Projective (ModuleCat.of R (LinearMap.range (d 0)))),
+      fun _ ↦ (d 0).rangeRestrict.moduleProjective_of_projective_of_surjective
+        (LinearMap.surjective_rangeRestrict _)⟩
   | succ k ih =>
     -- Shift the resolution: `d (i + 1)` resolves `ker ε` along the corestriction of `d 0`.
     let ε' : F 1 →ₗ[R] LinearMap.ker ε := (d 0).codRestrict (LinearMap.ker ε)
