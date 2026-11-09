@@ -6,14 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.DensityEstimates
+public import Mathlib.Analysis.FunctionalSpaces.SobolevInequality
+import TauCeti.Analysis.BoundedVariation.Compactness
+import TauCeti.Analysis.BoundedVariation.Dilation
+import TauCeti.Analysis.BoundedVariation.LowerDensityEstimates
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.Distribution.TestFunction.Dilation
 import TauCeti.Analysis.Distribution.TestFunction.Divergence
 import TauCeti.Analysis.Distribution.TestFunction.Translation
+import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
 # Blow-ups at points of the reduced boundary
@@ -21,10 +27,36 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
 Let `Ω` be an open set of a finite-dimensional real inner product space `E`, let `s` be a set
 whose reduced boundary `∂*s` in `Ω` contains `x`, and let `ν = ν_s x` be the outer normal there.
 The **blow-ups** of `s` at `x` are the sets `s_{x,r} = (s - x) / r`, written here as the
-preimages `(fun y => x + r • y) ⁻¹' s`. This file shows that, as `r → 0⁺`, the distributional
-derivative of `χ_{s_{x,r}}` points in the direction `-ν` up to an error that vanishes in the
-limit. This is the step of De Giorgi's structure theorem that identifies the normal of every
-blow-up limit.
+preimages `(fun y => x + r • y) ⁻¹' s`. This file shows that, as `r → 0⁺`, the blow-ups are
+relatively compact for local convergence in measure, that every limit has locally finite perimeter
+and fills a definite proportion of every ball around the origin together with its complement, and
+that the distributional derivative of `χ_{s_{x,r}}` points in the direction `-ν` up to an error that
+vanishes in the limit. These are the steps of De Giorgi's structure theorem that produce blow-up
+limits and identify their normal.
+
+* The scaling identities `TauCeti.perimeter_ball_zero_preimage_add_smul` and
+  `MeasureTheory.Measure.addHaar_preimage_add_smul_inter_ball`, proved with the other dilation
+  results, give `P(s_{x,r}; ball 0 R) = r^(1-n) P(s; ball x (r R))` and
+  `μ(s_{x,r} ∩ ball 0 ρ) = r^(-n) μ(s ∩ ball x (r ρ))` against an additive Haar measure, where
+  `n = dim E`. They transport the estimates below between `s` and its blow-ups.
+* `TauCeti.eventually_perimeter_ball_zero_preimage_add_smul_le`: by the upper density estimate
+  `TauCeti.eventually_perimeter_ball_le`, for every `t > 1` and `R > 0`,
+  `P(s_{x,r}; ball 0 R) ≤ t n μ(ball 0 1) R^(n-1)` for every small `r > 0`.
+* `TauCeti.exists_subseq_tendsto_measure_symmDiff_inter_preimage_add_smul`: **compactness of the
+  blow-ups.** Along every sequence `r i → 0⁺`, a subsequence of the blow-ups converges locally in
+  measure to a measurable set. This is the compactness theorem for sets of locally finite
+  perimeter (`TauCeti.exists_subseq_tendsto_measure_symmDiff_inter_of_perimeter_le`), applied
+  after cutting `s` by a small ball of finite perimeter (`TauCeti.ae_perimeter_inter_ball_le`), so
+  that the perimeter bounds hold for every term of the sequence and not only for small radii.
+* `TauCeti.perimeter_ball_zero_le_of_tendsto_measure_symmDiff_inter`: by lower semicontinuity
+  (`TauCeti.perimeter_le_liminf`), a blow-up limit `F` satisfies
+  `P(F; ball 0 R) ≤ t n μ(ball 0 1) R^(n-1)`, so it has locally finite perimeter in `E`.
+* `TauCeti.ofReal_pow_le_mul_measure_inter_ball_of_tendsto_measure_symmDiff_inter` and
+  `TauCeti.ofReal_pow_le_mul_measure_ball_sdiff_of_tendsto_measure_symmDiff_inter`: in dimension
+  `n ≥ 2`, the lower density estimates at the reduced boundary pass to the limit, so that
+  `ρ ^ n ≤ K ^ n μ(F ∩ ball 0 ρ)` and `ρ ^ n ≤ K ^ n μ(ball 0 ρ \ F)` for every `ρ > 0`, with the
+  constant `K` of `TauCeti.eventually_ofReal_pow_le_mul_measure_inter_ball`. Neither `F` nor its
+  complement is null near the origin.
 
 * `TauCeti.eventually_neg_le_integral_divergenceCLM_mul_indicator_preimage`: against an additive
   Haar measure, for every test vector field `φ` on `E` with `⟪φ, ν⟫ ≥ 0` pointwise,
@@ -256,5 +288,254 @@ theorem integral_divergenceCLM_mul_indicator_nonneg_of_tendsto_measure_symmDiff_
   rw [← neg_le_iff_add_nonneg]
   exact ge_of_tendsto hlim (hr.eventually
     (eventually_neg_le_integral_divergenceCLM_mul_indicator_preimage hx φ hφ hε))
+
+/-! ### Perimeter and volume of the blow-ups -/
+
+/-- The upper density bound `P(s; ball x (r R)) ≤ t n ω (r R) ^ (n - 1)` passes to the blow-up
+`s_{x,r}` as `P(s_{x,r}; ball 0 R) ≤ t n ω R ^ (n - 1)`, in positive dimension `n`. -/
+private theorem perimeter_ball_zero_preimage_add_smul_le_of_le [Nontrivial E] {s' : Set E}
+    {t : ℝ≥0} {r : ℝ} (hr : 0 < r) {R : ℝ}
+    (h : perimeter μ ⟨ball x (r * R), isOpen_ball⟩ s' ≤
+      t * ENNReal.ofReal (finrank ℝ E * (r * R) ^ (finrank ℝ E - 1) * μ.real (ball 0 1))) :
+    perimeter μ ⟨ball 0 R, isOpen_ball⟩ ((fun y => x + r • y) ⁻¹' s') ≤
+      t * ENNReal.ofReal (finrank ℝ E * R ^ (finrank ℝ E - 1) * μ.real (ball 0 1)) := by
+  rw [perimeter_ball_zero_preimage_add_smul hr]
+  refine (mul_le_mul_right h _).trans_eq ?_
+  obtain ⟨m, hm⟩ : ∃ m, finrank ℝ E = m + 1 := ⟨_, (Nat.sub_add_cancel finrank_pos).symm⟩
+  rw [mul_left_comm, ← ENNReal.ofReal_mul (by positivity)]
+  congr 2
+  rw [hm, Nat.add_sub_cancel, mul_pow, pow_succ]
+  field_simp
+
+/-- The upper density estimate at a point of the reduced boundary, on every ball of small radius
+contained in `Ω`. -/
+private theorem exists_forall_perimeter_ball_le (hx : x ∈ reducedBoundary μ Ω s) {t : ℝ≥0}
+    (ht : 1 < t) : ∃ ρ₀ > 0, ball x ρ₀ ⊆ Ω ∧ ∀ ρ ∈ Ioo 0 ρ₀,
+      perimeter μ ⟨ball x ρ, isOpen_ball⟩ s ≤
+        t * ENNReal.ofReal (finrank ℝ E * ρ ^ (finrank ℝ E - 1) * μ.real (ball 0 1)) := by
+  obtain ⟨ε, hε, hεΩ⟩ := Metric.mem_nhds_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
+  obtain ⟨ρ₀, hρ₀, hsub⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1 (eventually_perimeter_ball_le hx ht)
+  exact ⟨min ρ₀ ε, lt_min hρ₀ hε, (ball_subset_ball (min_le_right _ _)).trans hεΩ,
+    fun ρ hρ => hsub ⟨hρ.1, hρ.2.trans_le (min_le_left _ _)⟩⟩
+
+/-- **The blow-ups at a point of the reduced boundary have locally bounded perimeter.** Against an
+additive Haar measure, let `x` be a point of the reduced boundary of `s` in `Ω`. For every `t > 1`
+and `R > 0`, the blow-ups `s_{x,r} = (fun y => x + r • y) ⁻¹' s` satisfy, for every small `r > 0`,
+
+`P(s_{x,r}; ball 0 R) ≤ t n μ(ball 0 1) R ^ (n - 1)`,     `n = dim E`. -/
+theorem eventually_perimeter_ball_zero_preimage_add_smul_le (hx : x ∈ reducedBoundary μ Ω s)
+    {t : ℝ≥0} (ht : 1 < t) {R : ℝ} (hR : 0 < R) :
+    ∀ᶠ r in 𝓝[>] (0 : ℝ), perimeter μ ⟨ball 0 R, isOpen_ball⟩ ((fun y => x + r • y) ⁻¹' s) ≤
+      t * ENNReal.ofReal (finrank ℝ E * R ^ (finrank ℝ E - 1) * μ.real (ball 0 1)) := by
+  have hν1 : ‖outerNormal μ Ω s x‖ = 1 := norm_outerNormal hx
+  have : Nontrivial E := ⟨⟨outerNormal μ Ω s x, 0, fun h => by simp [h] at hν1⟩⟩
+  obtain ⟨ρ₀, hρ₀, -, hP⟩ := exists_forall_perimeter_ball_le hx ht
+  filter_upwards [Ioo_mem_nhdsGT (div_pos hρ₀ hR)] with r hr
+  exact perimeter_ball_zero_preimage_add_smul_le_of_le hr.1
+    (hP _ ⟨mul_pos hr.1 hR, (lt_div_iff₀ hR).1 hr.2⟩)
+
+/-! ### Compactness of the blow-ups -/
+
+/-- The compactness of the blow-ups along a sequence of positive radii. -/
+private theorem exists_subseq_tendsto_measure_symmDiff_inter_preimage_add_smul_of_pos
+    (hx : x ∈ reducedBoundary μ Ω s) {r : ℕ → ℝ} (hpos : ∀ i, 0 < r i)
+    (hr : Tendsto r atTop (𝓝 0)) :
+    ∃ F, MeasurableSet F ∧ ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ K, IsCompact K →
+      Tendsto (fun j => μ ((((fun y => x + r (φ j) • y) ⁻¹' s) ∆ F) ∩ K)) atTop (𝓝 0) := by
+  have hν1 : ‖outerNormal μ Ω s x‖ = 1 := norm_outerNormal hx
+  have : Nontrivial E := ⟨⟨outerNormal μ Ω s x, 0, fun h => by simp [h] at hν1⟩⟩
+  obtain ⟨ρ₀, hρ₀, hρ₀Ω, hP⟩ := exists_forall_perimeter_ball_le hx (t := 2) one_lt_two
+  have hsΩ : NullMeasurableSet (s ∩ Ω) μ := nullMeasurableSet_inter_of_mem_reducedBoundary hx
+  -- `s ∩ Ω` agrees with `s` on the balls `ball x ρ`, `ρ ≤ ρ₀`.
+  have hagree {ρ : ℝ} (hρ : ρ ≤ ρ₀) {a : Set E} (ha : a ⊆ ball x ρ) : s ∩ Ω ∩ a = s ∩ a := by
+    rw [inter_assoc, inter_eq_right.2 (ha.trans ((ball_subset_ball hρ).trans hρ₀Ω))]
+  -- Cut `s ∩ Ω` by a ball `ball x ρ`, `ρ < ρ₀`, to a set `s'` of finite perimeter.
+  obtain ⟨ρ, hρ, hcut⟩ : ∃ ρ ∈ Ioo 0 ρ₀, perimeter μ ⊤ (s ∩ Ω ∩ ball x ρ) ≤
+      perimeter μ ⟨ball x ρ, isOpen_ball⟩ (s ∩ Ω) +
+        ENNReal.ofReal (deriv (fun ρ' => μ.real (s ∩ Ω ∩ ball x ρ')) ρ) := by
+    have : (ae (volume.restrict (Ioo (0 : ℝ) ρ₀))).NeBot :=
+      ae_restrict_neBot.2 (by simp [hρ₀])
+    exact ((ae_restrict_mem measurableSet_Ioo).and
+      (ae_restrict_of_ae (ae_perimeter_inter_ball_le hsΩ x))).exists
+  set s' := s ∩ Ω ∩ ball x ρ
+  have hs' : NullMeasurableSet s' μ := hsΩ.inter measurableSet_ball.nullMeasurableSet
+  have hagree' {a : Set E} (ha : a ⊆ ball x ρ) : s' ∩ a = s ∩ a := by
+    rw [inter_assoc, inter_eq_right.2 ha, hagree hρ.2.le ha]
+  have hfin : perimeter μ ⊤ s' ≠ ∞ := by
+    refine ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨?_, ENNReal.ofReal_ne_top⟩) hcut
+    rw [perimeter_congr_of_inter_eq (hagree hρ.2.le subset_rfl)]
+    exact ne_top_of_le_ne_top (by finiteness) (hP ρ hρ)
+  -- The blow-ups of `s'` have locally bounded perimeter, uniformly along the sequence.
+  have hbound (R : ℝ) (hR : 0 < R) : ∃ M : ℝ≥0, ∀ i,
+      perimeter μ ⟨ball 0 R, isOpen_ball⟩ ((fun y => x + r i • y) ⁻¹' s') ≤ M := by
+    obtain ⟨N, hN⟩ := eventually_atTop.1 (hr.eventually (gt_mem_nhds (div_pos hρ.1 hR)))
+    set A := (2 : ℝ≥0) * ENNReal.ofReal (finrank ℝ E * R ^ (finrank ℝ E - 1) * μ.real (ball 0 1))
+    set B := ∑ i ∈ Finset.range N,
+      perimeter μ ⟨ball 0 R, isOpen_ball⟩ ((fun y => x + r i • y) ⁻¹' s')
+    have hB : B ≠ ∞ := by
+      refine ENNReal.sum_ne_top.2 fun i _ => ?_
+      rw [perimeter_ball_zero_preimage_add_smul (hpos i)]
+      exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+        (ne_top_of_le_ne_top hfin (perimeter_mono le_top))
+    refine ⟨(A + B).toNNReal, fun i => ?_⟩
+    rw [ENNReal.coe_toNNReal (ENNReal.add_ne_top.2 ⟨by finiteness, hB⟩)]
+    rcases lt_or_ge i N with hi | hi
+    · exact (Finset.single_le_sum (f := fun j => perimeter μ ⟨ball 0 R, isOpen_ball⟩
+        ((fun y => x + r j • y) ⁻¹' s')) (fun j _ => zero_le) (Finset.mem_range.2 hi)).trans
+          le_add_self
+    · refine le_add_right ?_
+      have hrR : r i * R < ρ := (lt_div_iff₀ hR).1 (hN i hi)
+      refine perimeter_ball_zero_preimage_add_smul_le_of_le (hpos i) ?_
+      rw [perimeter_congr_of_inter_eq (hagree' (ball_subset_ball hrR.le))]
+      exact hP _ ⟨mul_pos (hpos i) hR, hrR.trans hρ.2⟩
+  obtain ⟨F, hF, φ, hφ, hconv⟩ := exists_subseq_tendsto_measure_symmDiff_inter_of_perimeter_le
+    (Ω := ⊤) (s := fun i => (fun y => x + r i • y) ⁻¹' s')
+    (fun i => hs'.preimage (μ.quasiMeasurePreserving_add_smul x (hpos i).ne')) fun K hK _ => by
+      obtain ⟨R, hKR⟩ := hK.isBounded.subset_ball 0
+      obtain ⟨M, hM⟩ := hbound (max R 1) (lt_max_of_lt_right one_pos)
+      exact ⟨⟨ball 0 (max R 1), isOpen_ball⟩, hKR.trans (ball_subset_ball (le_max_left _ _)),
+        le_top, M, hM⟩
+  -- The blow-ups of `s` and `s'` agree on every bounded set, for small radii.
+  refine ⟨F, hF, φ, hφ, fun K hK => ?_⟩
+  obtain ⟨R, hKR⟩ := hK.isBounded.subset_ball 0
+  set R' := max R 1
+  have hR' : 0 < R' := lt_max_of_lt_right one_pos
+  refine (hconv K hK (subset_univ _)).congr' ?_
+  filter_upwards [(hr.comp hφ.tendsto_atTop).eventually (gt_mem_nhds (div_pos hρ.1 hR'))]
+    with j hj
+  have hrR : r (φ j) * R' < ρ := (lt_div_iff₀ hR').1 hj
+  exact congrArg μ <| preimage_add_smul_symmDiff_inter_eq (hpos _)
+    (hagree' (ball_subset_ball hrR.le)) (hKR.trans (ball_subset_ball (le_max_left _ _)))
+
+/-- **Compactness of the blow-ups at a point of the reduced boundary.** Against an additive Haar
+measure, let `x` be a point of the reduced boundary of `s` in `Ω`. Along every sequence of radii
+`r i → 0⁺`, a subsequence of the blow-ups `(fun y => x + r i • y) ⁻¹' s` converges locally in
+measure to a measurable set `F`: `μ ((s_{x, r (φ j)} ∆ F) ∩ K) → 0` for every compact `K`.
+
+The blow-ups have locally bounded perimeter
+(`TauCeti.eventually_perimeter_ball_zero_preimage_add_smul_le`), so this is an instance of the
+compactness theorem for sets of locally finite perimeter
+(`TauCeti.exists_subseq_tendsto_measure_symmDiff_inter_of_perimeter_le`). -/
+theorem exists_subseq_tendsto_measure_symmDiff_inter_preimage_add_smul
+    (hx : x ∈ reducedBoundary μ Ω s) {r : ℕ → ℝ} (hr : Tendsto r atTop (𝓝[>] 0)) :
+    ∃ F, MeasurableSet F ∧ ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ K, IsCompact K →
+      Tendsto (fun j => μ ((((fun y => x + r (φ j) • y) ⁻¹' s) ∆ F) ∩ K)) atTop (𝓝 0) := by
+  -- Drop the finitely many nonpositive radii.
+  obtain ⟨N, hN⟩ := eventually_atTop.1 (hr.eventually self_mem_nhdsWithin)
+  obtain ⟨F, hF, φ, hφ, hconv⟩ :=
+    exists_subseq_tendsto_measure_symmDiff_inter_preimage_add_smul_of_pos hx
+      (r := fun i => r (i + N)) (fun i => hN _ (Nat.le_add_left N i))
+      ((hr.mono_right nhdsWithin_le_nhds).comp (tendsto_add_atTop_nat N))
+  exact ⟨F, hF, fun j => φ j + N, fun i j hij => Nat.add_lt_add_right (hφ hij) N, hconv⟩
+
+/-! ### Blow-up limits -/
+
+/-- **Blow-up limits have locally bounded perimeter.** Against an additive Haar measure, let `x` be
+a point of the reduced boundary of `s` in `Ω`. If the blow-ups `(fun y => x + r i • y) ⁻¹' s`, along
+radii `r i → 0⁺`, converge locally in measure to a null-measurable set `F`, then for every `t > 1`
+and `R > 0`,
+
+`P(F; ball 0 R) ≤ t n μ(ball 0 1) R ^ (n - 1)`,     `n = dim E`.
+
+In particular `F` has locally finite perimeter in `E`. -/
+theorem perimeter_ball_zero_le_of_tendsto_measure_symmDiff_inter
+    (hx : x ∈ reducedBoundary μ Ω s) {t : ℝ≥0} (ht : 1 < t) {ι : Type*} {l : Filter ι}
+    [l.NeBot] {r : ι → ℝ} (hr : Tendsto r l (𝓝[>] 0)) {F : Set E} (hF : NullMeasurableSet F μ)
+    (hconv : ∀ K, IsCompact K →
+      Tendsto (fun i => μ ((((fun y => x + r i • y) ⁻¹' s) ∆ F) ∩ K)) l (𝓝 0))
+    {R : ℝ} (hR : 0 < R) :
+    perimeter μ ⟨ball 0 R, isOpen_ball⟩ F ≤
+      t * ENNReal.ofReal (finrank ℝ E * R ^ (finrank ℝ E - 1) * μ.real (ball 0 1)) := by
+  obtain ⟨ε, hε, hεΩ⟩ := Metric.mem_nhds_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
+  have hsΩ : NullMeasurableSet (s ∩ Ω) μ := nullMeasurableSet_inter_of_mem_reducedBoundary hx
+  -- For small radii, the blow-ups of `s` and of the null-measurable set `s ∩ Ω` agree on
+  -- `ball 0 R`.
+  have hagree : ∀ᶠ i in l, 0 < r i ∧ s ∩ Ω ∩ ball x (r i * R) = s ∩ ball x (r i * R) := by
+    filter_upwards [hr.eventually (Ioo_mem_nhdsGT (div_pos hε hR))] with i hi
+    refine ⟨hi.1, ?_⟩
+    rw [inter_assoc, inter_eq_right.2
+      ((ball_subset_ball ((lt_div_iff₀ hR).1 hi.2).le).trans hεΩ)]
+  calc perimeter μ ⟨ball 0 R, isOpen_ball⟩ F
+      ≤ liminf (fun i => perimeter μ ⟨ball 0 R, isOpen_ball⟩
+          ((fun y => x + r i • y) ⁻¹' (s ∩ Ω))) l :=
+        perimeter_le_liminf ((hr.eventually self_mem_nhdsWithin).mono fun i hi =>
+          hsΩ.preimage (μ.quasiMeasurePreserving_add_smul x (ne_of_gt hi))) hF fun K hK hKR =>
+            (hconv K hK).congr' (hagree.mono fun i hi =>
+              congrArg μ (preimage_add_smul_symmDiff_inter_eq hi.1 hi.2.symm hKR))
+    _ ≤ _ := by
+        refine liminf_le_of_frequently_le' (Eventually.frequently ?_)
+        filter_upwards [hagree,
+          hr.eventually (eventually_perimeter_ball_zero_preimage_add_smul_le hx ht hR)]
+          with i hi hle
+        rwa [perimeter_congr_of_inter_eq (Ω := ⟨ball 0 R, isOpen_ball⟩)
+          (preimage_add_smul_inter_ball_eq hi.1 hi.2)]
+
+/-- **Blow-up limits fill a definite proportion of every ball centred at the origin.** Let `E` have
+dimension `n ≥ 2`, let `p = n / (n - 1)` and let `μ` be an additive Haar measure. Let `x` be a point
+of the reduced boundary of `s` in `Ω`. If the blow-ups `(fun y => x + r i • y) ⁻¹' s`, along radii
+`r i → 0⁺`, converge locally in measure to `F`, then for every `t > 1` and `ρ > 0`,
+
+`ρ ^ n ≤ ((1 + t) n C) ^ n μ(F ∩ ball 0 ρ)`,
+
+where `C` is the constant `MeasureTheory.eLpNormLESNormFDerivOneConst μ p` of the
+Gagliardo–Nirenberg–Sobolev inequality. This is the lower density estimate
+`TauCeti.eventually_ofReal_pow_le_mul_measure_inter_ball` passed to the limit. -/
+theorem ofReal_pow_le_mul_measure_inter_ball_of_tendsto_measure_symmDiff_inter {p : ℝ≥0}
+    (hp : NNReal.HolderConjugate (finrank ℝ E) p) (hx : x ∈ reducedBoundary μ Ω s) {t : ℝ≥0}
+    (ht : 1 < t) {ι : Type*} {l : Filter ι} [l.NeBot] {r : ι → ℝ} (hr : Tendsto r l (𝓝[>] 0))
+    {F : Set E} (hconv : ∀ K, IsCompact K →
+      Tendsto (fun i => μ ((((fun y => x + r i • y) ⁻¹' s) ∆ F) ∩ K)) l (𝓝 0))
+    {ρ : ℝ} (hρ : 0 < ρ) :
+    ENNReal.ofReal (ρ ^ finrank ℝ E) ≤
+      ((1 + t) * finrank ℝ E * eLpNormLESNormFDerivOneConst μ p : ℝ≥0) ^ finrank ℝ E *
+        μ (F ∩ ball 0 ρ) := by
+  set c : ℝ≥0∞ := ((1 + t) * finrank ℝ E * eLpNormLESNormFDerivOneConst μ p : ℝ≥0) ^ finrank ℝ E
+  have hc : c ≠ ∞ := by finiteness
+  obtain ⟨ρ₀, hρ₀, hsub⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1
+    (eventually_ofReal_pow_le_mul_measure_inter_ball hp hx ht)
+  -- The rescaled lower density estimate holds for the blow-ups with small radii, and passes to
+  -- the limit since `μ(s_{x,r} ∩ ball 0 ρ) ≤ μ(F ∩ ball 0 ρ) + μ((s_{x,r} ∆ F) ∩ closedBall 0 ρ)`.
+  have hlim := ENNReal.Tendsto.const_mul (a := c)
+    ((hconv _ (isCompact_closedBall 0 ρ)).const_add (μ (F ∩ ball 0 ρ))) (.inr hc)
+  rw [add_zero] at hlim
+  refine ge_of_tendsto hlim ?_
+  filter_upwards [hr.eventually (Ioo_mem_nhdsGT (div_pos hρ₀ hρ))] with i hi
+  have hri : 0 < r i := hi.1
+  have hsub' : (fun y => x + r i • y) ⁻¹' s ∩ ball 0 ρ ⊆
+      F ∩ ball 0 ρ ∪ (((fun y => x + r i • y) ⁻¹' s) ∆ F) ∩ closedBall 0 ρ := by
+    rintro y ⟨hys, hyρ⟩
+    by_cases hyF : y ∈ F
+    · exact .inl ⟨hyF, hyρ⟩
+    · exact .inr ⟨.inl ⟨hys, hyF⟩, ball_subset_closedBall hyρ⟩
+  calc ENNReal.ofReal (ρ ^ finrank ℝ E)
+      = ENNReal.ofReal ((r i ^ finrank ℝ E)⁻¹) * ENNReal.ofReal ((r i * ρ) ^ finrank ℝ E) := by
+        rw [← ENNReal.ofReal_mul (by positivity), mul_pow, inv_mul_cancel_left₀ (by positivity)]
+    _ ≤ ENNReal.ofReal ((r i ^ finrank ℝ E)⁻¹) * (c * μ (s ∩ ball x (r i * ρ))) :=
+        mul_le_mul_right (hsub ⟨mul_pos hri hρ, (lt_div_iff₀ hρ).1 hi.2⟩) _
+    _ = c * μ ((fun y => x + r i • y) ⁻¹' s ∩ ball 0 ρ) := by
+        rw [Measure.addHaar_preimage_add_smul_inter_ball μ x hri, mul_left_comm]
+    _ ≤ c * (μ (F ∩ ball 0 ρ) + μ ((((fun y => x + r i • y) ⁻¹' s) ∆ F) ∩ closedBall 0 ρ)) :=
+        mul_le_mul_right ((measure_mono hsub').trans (measure_union_le _ _)) _
+
+/-- **The complement of a blow-up limit fills a definite proportion of every ball centred at the
+origin.** Under the hypotheses of
+`TauCeti.ofReal_pow_le_mul_measure_inter_ball_of_tendsto_measure_symmDiff_inter`, for every `t > 1`
+and `ρ > 0`,
+
+`ρ ^ n ≤ ((1 + t) n C) ^ n μ(ball 0 ρ \ F)`. -/
+theorem ofReal_pow_le_mul_measure_ball_sdiff_of_tendsto_measure_symmDiff_inter {p : ℝ≥0}
+    (hp : NNReal.HolderConjugate (finrank ℝ E) p) (hx : x ∈ reducedBoundary μ Ω s) {t : ℝ≥0}
+    (ht : 1 < t) {ι : Type*} {l : Filter ι} [l.NeBot] {r : ι → ℝ} (hr : Tendsto r l (𝓝[>] 0))
+    {F : Set E} (hconv : ∀ K, IsCompact K →
+      Tendsto (fun i => μ ((((fun y => x + r i • y) ⁻¹' s) ∆ F) ∩ K)) l (𝓝 0))
+    {ρ : ℝ} (hρ : 0 < ρ) :
+    ENNReal.ofReal (ρ ^ finrank ℝ E) ≤
+      ((1 + t) * finrank ℝ E * eLpNormLESNormFDerivOneConst μ p : ℝ≥0) ^ finrank ℝ E *
+        μ (ball 0 ρ \ F) := by
+  -- The blow-ups of the complement converge to the complement of `F`.
+  rw [sdiff_eq, inter_comm]
+  refine ofReal_pow_le_mul_measure_inter_ball_of_tendsto_measure_symmDiff_inter hp
+    (s := sᶜ) (by rwa [reducedBoundary_compl]) ht hr (fun K hK => ?_) hρ
+  simpa only [preimage_compl, compl_symmDiff_compl] using hconv K hK
 
 end TauCeti
