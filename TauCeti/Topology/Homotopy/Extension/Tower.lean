@@ -120,16 +120,14 @@ private theorem eq_of_le (hK : IsCofibrationExhaustion K) {Z : Type*} (f : ∀ n
   | base => rfl
   | succ n hmn ih => rw [hf n x (hK.monotone hmn hx), ih]
 
-/-- Functions on the stages which agree along each inclusion `K n ⊆ K (n + 1)` glue to a function
-on the union. -/
-private theorem exists_glue (hK : IsCofibrationExhaustion K) {Z : Type*} (f : ∀ n, K n → Z)
-    (hf : ∀ n (x : X) (hx : x ∈ K n), f (n + 1) ⟨x, hK.monotone n.le_succ hx⟩ = f n ⟨x, hx⟩) :
-    ∃ F : X → Z, ∀ n (x : K n), F x = f n x := by
-  choose N hN using hK.exists_mem
-  refine ⟨fun x ↦ f (N x) ⟨x, hN x⟩, fun n x ↦ ?_⟩
-  rcases le_total (N x) n with h | h
-  · exact (hK.eq_of_le f hf h x (hN x)).symm
-  · exact hK.eq_of_le f hf h x x.2
+/-- Values on the stages which agree along each inclusion `K n ⊆ K (n + 1)` agree on every overlap
+`K m ∩ K n`, so they glue by `Set.liftCover`. -/
+private theorem eq_of_mem (hK : IsCofibrationExhaustion K) {Z : Type*} (f : ∀ n, K n → Z)
+    (hf : ∀ n (x : X) (hx : x ∈ K n), f (n + 1) ⟨x, hK.monotone n.le_succ hx⟩ = f n ⟨x, hx⟩)
+    (m n : ℕ) (x : X) (hm : x ∈ K m) (hn : x ∈ K n) : f m ⟨x, hm⟩ = f n ⟨x, hn⟩ := by
+  rcases le_total m n with h | h
+  · exact (hK.eq_of_le f hf h x hm).symm
+  · exact hK.eq_of_le f hf h x hn
 
 /-- A function on `X` which agrees on each stage with a continuous function is continuous. -/
 private theorem continuous_of_eq (hK : IsCofibrationExhaustion K) {Z : Type*} [TopologicalSpace Z]
@@ -173,7 +171,9 @@ private theorem exists_succ (hK : IsCofibrationExhaustion K) (hL : IsCofibration
   let g₀ : C(B, A) := (ιK : C(K n, A)).comp (g.comp (ιL.symm : C(B, L n)))
   let H₀ : (g₀.comp h₀.toFun).Homotopy (ContinuousMap.id A) :=
     ((Homotopy.refl (ιK : C(K n, A))).comp (H.compContinuousMap (ιK.symm : C(A, K n)))).cast
-      (ContinuousMap.ext fun _ ↦ congrArg (fun y ↦ ιK (g y)) (ιL.symm_apply_apply _).symm)
+      (ContinuousMap.ext fun _ ↦ by
+        simp only [g₀, h₀, HomotopyEquiv.trans_apply, Homeomorph.coe_toHomotopyEquiv, comp_apply,
+          ContinuousMap.coe_ofClass, Homeomorph.symm_apply_apply])
       (ContinuousMap.ext fun _ ↦ by simp)
   obtain ⟨g', H', hg', hH', -⟩ :=
     (hK.hasHomotopyExtensionProperty n).exists_inverse_extending_homotopy
@@ -205,9 +205,13 @@ theorem exists_comp_homotopic_id (hK : IsCofibrationExhaustion K) (hL : IsCofibr
     ∃ (g : C(Y, X)) (e' : ∀ n, L n ≃ₕ K n), (∀ n (y : L n), (e' n y : X) = g y) ∧
       (g.comp φ).Homotopic (ContinuousMap.id X) := by
   obtain ⟨g, H, hg, hH⟩ := hK.exists_stages hL e he
-  obtain ⟨G, hG⟩ := hL.exists_glue (fun n y ↦ (g n y : X)) hg
-  obtain ⟨F, hF⟩ := hK.exists_glue (fun n x t ↦ (H n (t, x) : X)) fun n x hx ↦
-    funext fun t ↦ hH n t x hx
+  let G := liftCover L (fun n y ↦ (g n y : X)) (hL.eq_of_mem (fun n y ↦ (g n y : X)) hg)
+    hL.iUnion_eq
+  have hG : ∀ n (y : L n), G y = g n y := fun _ ↦ liftCover_coe
+  let F := liftCover K (fun n x t ↦ (H n (t, x) : X))
+    (hK.eq_of_mem (fun n x t ↦ (H n (t, x) : X)) fun n x hx ↦ funext fun t ↦ hH n t x hx)
+    hK.iUnion_eq
+  have hF : ∀ n (x : K n), F x = fun t ↦ (H n (t, x) : X) := fun _ ↦ liftCover_coe
   have hGc : Continuous G := hL.continuous_of_eq (fun n ↦ ⟨fun y ↦ (g n y : X), by fun_prop⟩) hG
   have hFc : Continuous fun p : I × X ↦ F p.2 p.1 :=
     hK.continuous_prod_of_eq (fun n ↦ ⟨fun p ↦ (H n p : X), by fun_prop⟩) fun n t x ↦
