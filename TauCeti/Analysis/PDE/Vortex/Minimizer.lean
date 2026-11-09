@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.Vortex.ReducedFunctional
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 public import Mathlib.Topology.Semicontinuity.Defs
 import Mathlib.Analysis.InnerProductSpace.Convex
-import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Topology.Instances.EReal.Lemmas
 import Mathlib.Topology.Semicontinuity.Basic
 import TauCeti.Analysis.Convex.Uniform.Basic
@@ -70,15 +69,6 @@ private theorem lowerSemicontinuous_lintegral_potential (P : Polynomial ℂ) {ν
   subst hν
   exact lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub P
 
-/-- The square of the `L²` norm is weakly lower semicontinuous, as an extended integral. -/
-private theorem lowerSemicontinuous_lintegral_norm_sq {ν : Measure ℂ} :
-    LowerSemicontinuous fun v : WeakSpace ℝ (Lp ℂ 2 ν) ↦
-      ∫⁻ z, ENNReal.ofReal (‖(toWeakSpace ℝ (Lp ℂ 2 ν)).symm v z‖ ^ 2) ∂ν := by
-  have hconv : ConvexOn ℝ univ fun x : ℂ ↦ ‖x‖ ^ 2 :=
-    convexOn_univ_norm.pow (fun x _ ↦ norm_nonneg x) 2
-  exact lowerSemicontinuous_lintegral_ofReal_comp_toWeakSpace_symm
-    Measure.AbsolutelyContinuous.rfl (by fun_prop) hconv
-
 /-- Taubes's functional as the sum of an extended nonnegative energy, the Dirichlet energy and the
 potential, and the linear term. -/
 private theorem sobolevReducedFunctional_eq_add (P : Polynomial ℂ)
@@ -120,7 +110,7 @@ theorem lowerSemicontinuous_sobolevReducedFunctional {P : Polynomial ℂ} (hm : 
   -- The energy is a sum of two weakly lower semicontinuous convex integrals.
   have hpot := (lowerSemicontinuous_lintegral_potential P (by simp)).comp
     (WeakSpace.map (W1p.valueL (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2))).continuous
-  have hdir := lowerSemicontinuous_lintegral_norm_sq.comp
+  have hdir := lowerSemicontinuous_lintegral_norm_sq_comp_toWeakSpace_symm.comp
     (WeakSpace.map (W1p.gradientL (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2))).continuous
   simp only [Function.comp_def, hval, hgrad] at hpot hdir
   have hdiv (c : ℝ≥0∞) (hc : c ≠ 0) : Continuous fun x : ℝ≥0∞ ↦ x / c :=

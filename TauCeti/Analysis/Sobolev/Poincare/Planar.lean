@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Sobolev.W1p.Density
+import TauCeti.MeasureTheory.Function.Lp.IntegralFunctional
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
@@ -54,8 +55,6 @@ functions to their closure, which is all of `W^{1,2}(E)`.
 * `TauCeti.integral_sq_le_mul_sq_integral_norm_fderiv`: the Gagliardo–Nirenberg–Sobolev
   inequality `∫ f² ≤ G (∫ ‖Df‖)²` in dimension two, for Bochner integrals.
 * `TauCeti.exists_integral_sq_le_of_finrank_eq_two`: the `L²` bound above.
-* `TauCeti.continuous_setIntegral_sqrt_one_add_sq_sub_one`: the integral of the modular over a
-  set is continuous on `L²`.
 * `TauCeti.W1p.exists_norm_value_sq_le_of_finrank_eq_two`: the `L²` bound on `W^{1,2}(E)`.
 
 ## References
@@ -122,57 +121,6 @@ private theorem continuous_hasCompactSupport_modularRoot_comp {X : Type*} [Topol
     (Continuous fun x ↦ modularRoot (w x)) ∧ HasCompactSupport fun x ↦ modularRoot (w x) :=
   ⟨contDiff_modularRoot.continuous.comp hw,
     hws.comp_left (g := modularRoot) (by simp [modularRoot])⟩
-
-/-! ### The modular on `L²` -/
-
-/-- On `L²`, the integral of the modular `√(1 + v²) - 1` over a set is continuous in `v`. The
-modular is at most `v² / 2`, so the integral is finite, and its local Lipschitz bound
-`|g(a) - g(b)| ≤ |a - b| (|a| + |b|)` gives `|∫ g(b) - ∫ g(a)| ≤ ‖b - a‖ (‖b‖ + ‖a‖)` by the
-Cauchy–Schwarz inequality. -/
-theorem continuous_setIntegral_sqrt_one_add_sq_sub_one {α : Type*} [MeasurableSpace α]
-    {ν : Measure α} (t : Set α) :
-    Continuous fun v : Lp ℝ 2 ν ↦ ∫ x in t, (√(1 + v x ^ 2) - 1) ∂ν := by
-  have hint (v : Lp ℝ 2 ν) : Integrable (fun x ↦ √(1 + v x ^ 2) - 1) ν := by
-    refine ((Lp.memLp v).integrable_sq.div_const 2).mono' (by fun_prop) (ae_of_all _ fun x ↦ ?_)
-    rw [Real.norm_of_nonneg (sub_nonneg.mpr (Real.one_le_sqrt_one_add_sq _))]
-    exact Real.sqrt_one_add_sq_sub_one_le_sq_div_two _
-  -- Cauchy–Schwarz: `∫ ‖f‖ ‖g‖ ≤ ‖f‖₂ ‖g‖₂`.
-  have hcs (f g : Lp ℝ 2 ν) : ∫ x, ‖f x‖ * ‖g x‖ ∂ν ≤ ‖f‖ * ‖g‖ := by
-    have h := sq_integral_mul_le_integral_sq_mul_integral_sq (Lp.memLp f).norm (Lp.memLp g).norm
-    rw [Lp.integral_norm_sq_eq_norm_sq, Lp.integral_norm_sq_eq_norm_sq, ← mul_pow] at h
-    exact (abs_le_of_sq_le_sq h (by positivity)).trans' (le_abs_self _)
-  have hbound (a b : Lp ℝ 2 ν) :
-      dist (∫ x in t, (√(1 + b x ^ 2) - 1) ∂ν) (∫ x in t, (√(1 + a x ^ 2) - 1) ∂ν) ≤
-        ‖b - a‖ * ‖b‖ + ‖b - a‖ * ‖a‖ := by
-    have hba := (Lp.memLp (b - a)).norm
-    have hi1 : Integrable (fun x ↦ ‖(b - a) x‖ * ‖b x‖) ν := hba.integrable_mul (Lp.memLp b).norm
-    have hi2 : Integrable (fun x ↦ ‖(b - a) x‖ * ‖a x‖) ν := hba.integrable_mul (Lp.memLp a).norm
-    rw [Real.dist_eq, ← integral_sub (hint b).integrableOn
-      (hint a).integrableOn]
-    calc |∫ x in t, ((√(1 + b x ^ 2) - 1) - (√(1 + a x ^ 2) - 1)) ∂ν|
-        ≤ ∫ x in t, (‖(b - a) x‖ * ‖b x‖ + ‖(b - a) x‖ * ‖a x‖) ∂ν := by
-          refine abs_integral_le_integral_abs.trans
-            (integral_mono_ae ?_ (hi1.add hi2).integrableOn ?_)
-          · exact ((hint b).sub
-              (hint a)).integrableOn.abs
-          · filter_upwards [ae_restrict_of_ae (Lp.coeFn_sub b a)] with x hx
-            rw [hx, Pi.sub_apply, Real.norm_eq_abs, Real.norm_eq_abs, Real.norm_eq_abs,
-              sub_sub_sub_cancel_right, ← mul_add]
-            exact Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le _ _
-      _ ≤ ∫ x, (‖(b - a) x‖ * ‖b x‖ + ‖(b - a) x‖ * ‖a x‖) ∂ν :=
-          setIntegral_le_integral (hi1.add hi2) (ae_of_all _ fun x ↦ by positivity)
-      _ ≤ ‖b - a‖ * ‖b‖ + ‖b - a‖ * ‖a‖ := by
-          rw [integral_add hi1 hi2]
-          exact add_le_add (hcs _ _) (hcs _ _)
-  rw [continuous_iff_continuousAt]
-  intro a
-  rw [ContinuousAt, tendsto_iff_dist_tendsto_zero]
-  refine squeeze_zero (fun _ ↦ dist_nonneg) (fun b ↦ hbound a b) ?_
-  have : Tendsto (fun b : Lp ℝ 2 ν ↦ ‖b - a‖ * ‖b‖ + ‖b - a‖ * ‖a‖) (𝓝 a)
-      (𝓝 (‖a - a‖ * ‖a‖ + ‖a - a‖ * ‖a‖)) := by
-    have hc : Continuous fun b : Lp ℝ 2 ν ↦ ‖b - a‖ * ‖b‖ + ‖b - a‖ * ‖a‖ := by fun_prop
-    exact hc.tendsto a
-  simpa using this
 
 /-! ### Integral inequalities -/
 
