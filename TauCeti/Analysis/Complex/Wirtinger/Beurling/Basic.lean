@@ -20,8 +20,9 @@ for `1 < p < ∞`, and extension from the dense Schwartz functions gives the con
 complex-linear operator `TauCeti.beurlingLp` on all of Lp.
 
 The extension is characterized by its action on Schwartz functions. The coefficient space may
-be any complex Hilbert space. Identification with the principal-value kernel and with the
-Wirtinger derivative of the Cauchy potential is subsequent work.
+be any complex Hilbert space. `TauCeti.Analysis.Complex.Wirtinger.Beurling.Cauchy` shows that on
+smooth compactly supported functions the operator agrees almost everywhere with the Wirtinger
+derivative of the Cauchy transform.
 
 ## References
 
@@ -102,6 +103,11 @@ variable (F) in
 /-- The Beurling Fourier multiplier on L² with complex Hilbert coefficients. -/
 def beurlingL2 : Lp F 2 (volume : Measure ℂ) →L[ℂ] Lp F 2 (volume : Measure ℂ) :=
   Lp.fourierMultiplierCLM F beurlingSymbolLinf
+
+variable (F) in
+/-- The L² Beurling operator is the Fourier multiplier with the Beurling symbol. -/
+theorem beurlingL2_def : beurlingL2 F = Lp.fourierMultiplierCLM F beurlingSymbolLinf :=
+  (rfl)
 
 /-- On the Fourier side the L² operator multiplies by the Beurling symbol. -/
 @[simp]
