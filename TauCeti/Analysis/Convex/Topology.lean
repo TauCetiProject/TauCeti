@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Convex.Join
 public import Mathlib.Analysis.Convex.Topology
+public import Mathlib.Topology.Sets.Compacts
+public import TauCeti.Analysis.Convex.Join
 
 /-!
 # Interiors of convex sets
@@ -19,7 +21,9 @@ The interior of a sum of two convex sets with nonempty interiors is the sum of t
 interiors. In particular, this describes the interior of the sum of two interval supports.
 
 A closed segment `segment 𝕜 x y` is compact, being the convex hull of the finite set `{x, y}`.
-More generally, the convex join of two compact sets is compact (`IsCompact.convexJoin`).
+More generally, the convex join of two compact sets is compact (`IsCompact.convexJoin`). So every
+compact set `K` lies in a compact set star-convex about any given point `y`, the union of the
+segments from `y` to `y` and to the points of `K` (`TopologicalSpace.Compacts.starHull`).
 -/
 
 public section
@@ -98,3 +102,33 @@ theorem IsCompact.convexJoin {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [I
       exact ⟨a, ha, b, hb, θ, hθ, rfl⟩
   rw [this]
   exact ((hs.prod ht).prod isCompact_Icc).image (by fun_prop)
+
+namespace TopologicalSpace.Compacts
+
+variable (𝕜 : Type*) {E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [TopologicalSpace 𝕜] [CompactIccSpace 𝕜] [IsTopologicalRing 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+  [ContinuousSMul 𝕜 E] (y : E) (K : Compacts E)
+
+/-- The star hull of a compact set `K` about `y`: the union of the segments from `y` to `y` and to
+the points of `K`. It is a compact set containing `y` and `K` and star-convex about `y`. -/
+def starHull : Compacts E :=
+  ⟨convexJoin 𝕜 {y} (insert y K), isCompact_singleton.convexJoin (K.isCompact.insert y)⟩
+
+@[simp]
+theorem coe_starHull : (K.starHull 𝕜 y : Set E) = convexJoin 𝕜 {y} (insert y (K : Set E)) :=
+  (rfl)
+
+theorem insert_subset_starHull : insert y (K : Set E) ⊆ K.starHull 𝕜 y :=
+  subset_convexJoin_right (singleton_nonempty y)
+
+theorem mem_starHull_self : y ∈ K.starHull 𝕜 y :=
+  insert_subset_starHull 𝕜 y K (mem_insert y _)
+
+theorem le_starHull : K ≤ K.starHull 𝕜 y :=
+  (subset_insert y _).trans (insert_subset_starHull 𝕜 y K)
+
+theorem starConvex_starHull : StarConvex 𝕜 y (K.starHull 𝕜 y : Set E) :=
+  TauCeti.starConvex_convexJoin_singleton_left y _
+
+end TopologicalSpace.Compacts
