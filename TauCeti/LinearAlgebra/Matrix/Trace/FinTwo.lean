@@ -128,18 +128,19 @@ theorem discr_smul_sub_smul_one_fin_two (A : Matrix (Fin 2) (Fin 2) R) (a b : R)
   push_cast
   ring
 
-/-- Multiplying a parabolic matrix by a scalar whose square is `1` gives a parabolic matrix. -/
-theorem isParabolic_smul_of_sq_eq_one {r : R} (hr : r ^ 2 = 1)
+/-- Multiplying a parabolic matrix by a unit scalar gives a parabolic matrix. -/
+theorem isParabolic_smul_of_isUnit {r : R} (hr : IsUnit r)
     {m : Matrix (Fin 2) (Fin 2) R}
     (h : m.IsParabolic) : (r • m).IsParabolic := by
+  obtain ⟨u, rfl⟩ := hr
   refine ⟨?_, ?_⟩
   · rintro ⟨s, hs⟩
-    refine h.1 ⟨r * s, ?_⟩
-    have hm : m = r • (r • m) := by rw [smul_smul, ← sq, hr, one_smul]
+    refine h.1 ⟨↑u⁻¹ * s, ?_⟩
+    have hm : m = (↑u⁻¹ : R) • ((u : R) • m) := by rw [smul_smul, Units.inv_mul, one_smul]
     rw [hm, ← hs]
     ext i j
     by_cases hij : i = j <;> simp [Matrix.scalar_apply, hij]
-  · simpa [h.2] using discr_smul_sub_smul_one_fin_two m r 0
+  · simpa [h.2] using discr_smul_sub_smul_one_fin_two m u 0
 
 /-- The discriminant of a power of a `2 × 2` matrix `A` is a square multiple of the discriminant
 of `A`. In particular a power of an elliptic matrix is not hyperbolic, and a power of a hyperbolic

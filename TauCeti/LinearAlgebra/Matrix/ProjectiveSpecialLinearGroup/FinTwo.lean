@@ -99,7 +99,7 @@ theorem isParabolic_mk_iff (a : SL(2, R)) :
     simp [Matrix.scalar_apply, Matrix.mul_diagonal, mul_comm]
   have hr2 : r ^ 2 = 1 := by simpa using hr
   rw [GeneralLinearGroup.IsParabolic, SpecialLinearGroup.coe_GL_coe_matrix, hab]
-  exact Matrix.isParabolic_smul_of_sq_eq_one hr2 hpar
+  exact Matrix.isParabolic_smul_of_isUnit (IsUnit.of_mul_eq_one r (by rw [← sq, hr2])) hpar
 
 /-- Parabolicity is invariant under conjugation in `PSL(2, R)`. -/
 @[simp]
