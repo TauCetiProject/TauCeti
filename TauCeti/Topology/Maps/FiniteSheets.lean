@@ -18,11 +18,13 @@ of each sheet over `x` and an open neighbourhood `V i` of it. Then `U` shrinks t
 
 ## Main results
 
-* `exists_isOpen_lift_mem_of_finite_sheets`: the finite shrinking of a base neighbourhood across
-  sheets.
+* `TauCeti.exists_isOpen_lift_mem_of_finite_sheets`: the finite shrinking of a base neighbourhood
+  across sheets.
 -/
 
 public section
+
+namespace TauCeti
 
 open Set
 
@@ -47,3 +49,5 @@ theorem exists_isOpen_lift_mem_of_finite_sheets {q : Y → X} {x : X} {U : Set X
     inter_subset_left, fun i w hw ↦ mem_iInter.mp hw.2 i, fun i z hz hw ↦ ?_⟩
   obtain ⟨z', ⟨hz'S, hz'V⟩, hz'⟩ := mem_iInter.mp hw.2 i
   rwa [← hSi i hz'S hz hz']
+
+end TauCeti
