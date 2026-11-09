@@ -27,7 +27,12 @@ rotation of the cylinder: `φ_∞(z + i/2) = -φ_∞(z)`
 (`Puncture.re_endCoord_inf_neg`), shifts the angular coordinate by `1/2` modulo `1`
 (`Puncture.exists_endCoord_inf_neg`), and reverses the angular form
 (`Puncture.endAngularForm_inf_neg`). The remaining translation by `1` moves the centre of the
-output end; it is absorbed by the input-exchange family of Floer perturbation data.
+output end; it is absorbed by the input-exchange family of Floer perturbation data. The domain
+of the member of that family whose output end is recentred at `c` is truncated by
+`TauCeti.ThricePuncturedSphere.exchangeTruncation c R`: the closed disc `‖w - c‖ ≤ 2 exp (2πR)`,
+bounded by the circle `s = -R` of the recentred output end, with the parts `s > R` of the two input
+ends removed. For `c = 0` it is the truncation `S_R`
+(`TauCeti.ThricePuncturedSphere.exchangeTruncation_zero`).
 
 ## References
 
@@ -107,3 +112,33 @@ theorem exists_endCoord_inf_neg {w : ℂ} (hw : w ≠ 0) :
   ring
 
 end TauCeti.ThricePuncturedSphere.Puncture
+
+namespace TauCeti.ThricePuncturedSphere
+
+open Puncture
+
+/-- The truncation of the thrice-punctured sphere `S = ℂ ∖ {0, 1}` with its output end recentred
+at `c`: the closed disc `‖w - c‖ ≤ 2 exp (2πR)`, bounded by the circle `s = -R` of the end at `∞`
+translated by `c`, with the open discs of radius `exp (-2πR) / 2` about `0` and `1`, the parts
+`s > R` of the two input ends, removed. -/
+noncomputable def exchangeTruncation (c R : ℝ) : Set ℂ :=
+  {w | Real.exp (-(2 * π * R)) / 2 ≤ ‖w‖} ∩ {w | Real.exp (-(2 * π * R)) / 2 ≤ ‖w - 1‖} ∩
+    Metric.closedBall (c : ℂ) (2 * Real.exp (2 * π * R))
+
+@[simp]
+theorem mem_exchangeTruncation {c R : ℝ} {w : ℂ} :
+    w ∈ exchangeTruncation c R ↔ Real.exp (-(2 * π * R)) / 2 ≤ ‖w‖ ∧
+      Real.exp (-(2 * π * R)) / 2 ≤ ‖w - 1‖ ∧ ‖w - c‖ ≤ 2 * Real.exp (2 * π * R) := by
+  simp [exchangeTruncation, dist_eq_norm, and_assoc]
+
+/-- Without recentring, the truncation is the truncation `S_R` of the thrice-punctured sphere. -/
+@[simp]
+theorem exchangeTruncation_zero (R : ℝ) : exchangeTruncation 0 R = truncation R := by
+  rw [truncation_eq, exchangeTruncation, Complex.ofReal_zero]
+
+/-- The truncation with recentred output end is closed. -/
+theorem isClosed_exchangeTruncation (c R : ℝ) : IsClosed (exchangeTruncation c R) :=
+  ((isClosed_le continuous_const continuous_norm).inter (isClosed_le continuous_const
+    (continuous_norm.comp (continuous_id.sub continuous_const)))).inter Metric.isClosed_closedBall
+
+end TauCeti.ThricePuncturedSphere
