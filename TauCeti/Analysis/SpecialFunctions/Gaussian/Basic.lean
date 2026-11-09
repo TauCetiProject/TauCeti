@@ -14,11 +14,14 @@ import Mathlib.Tactic.GCongr
 
 A polynomial weight times a real Gaussian is bounded. This file records an explicit bound for
 `(1 + r) ^ m * exp (-a r²)` on `r ≥ 0`, the scalar estimate behind the decay of Gaussian Schwartz
-functions.
+functions. It also records a linear lower bound for the increment `exp (-κ (R - t)²) - exp (-κ R²)`
+on `0 ≤ t ≤ R`, the growth of a Gaussian barrier along the inward normal of a sphere.
 
 ## Main results
 
 * `TauCeti.one_add_pow_mul_exp_neg_mul_sq_le`: an explicit bound for `(1 + r) ^ m * exp (-a r²)`.
+* `TauCeti.mul_le_exp_neg_mul_sub_sq_sub`: the linear lower bound
+  `κ R exp (-κ R²) t ≤ exp (-κ (R - t)²) - exp (-κ R²)`.
 -/
 
 public section
@@ -54,5 +57,21 @@ theorem one_add_pow_mul_exp_neg_mul_sq_le {a : ℝ} (ha : 0 < a) (m : ℕ) {r : 
     _ = m ! / (a / 2) ^ m * Real.exp a := by
       rw [mul_assoc, mul_left_comm (Real.exp (a / 2 * u ^ 2)), ← Real.exp_add, add_neg_cancel,
         Real.exp_zero, mul_one]
+
+/-- The Gaussian `exp (-κ s²)` grows at least linearly as `s` decreases from `R`: for `0 ≤ κ` and
+`0 ≤ t ≤ R`, `κ R exp (-κ R²) t ≤ exp (-κ (R - t)²) - exp (-κ R²)`. In Hopf's lemma this is the
+growth of the Gaussian barrier along the inward normal of a sphere. -/
+theorem mul_le_exp_neg_mul_sub_sq_sub {κ R t : ℝ} (hκ : 0 ≤ κ) (ht : 0 ≤ t)
+    (htR : t ≤ R) :
+    κ * R * Real.exp (-κ * R ^ 2) * t ≤ Real.exp (-κ * (R - t) ^ 2) - Real.exp (-κ * R ^ 2) := by
+  have hsplit : Real.exp (-κ * (R - t) ^ 2) =
+      Real.exp (-κ * R ^ 2) * Real.exp (κ * (2 * R * t - t ^ 2)) := by
+    rw [← Real.exp_add]
+    ring_nf
+  have h1 := Real.add_one_le_exp (κ * (2 * R * t - t ^ 2))
+  have h2 : κ * (R * t) ≤ κ * (2 * R * t - t ^ 2) :=
+    mul_le_mul_of_nonneg_left (by nlinarith) hκ
+  rw [hsplit]
+  nlinarith [Real.exp_pos (-κ * R ^ 2)]
 
 end TauCeti

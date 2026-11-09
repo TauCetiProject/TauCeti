@@ -76,6 +76,8 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
   `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_neg`: linearity of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_norm_sq`: the operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`
   applied to `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`.
+* `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq`: the operator
+  `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to the Gaussian `exp (-κ ‖x - y‖²)`.
 * `TauCeti.PDE.le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`: **the weak maximum
   principle** for `-L + c`, `c ≥ 0`.
 * `TauCeti.PDE.ge_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_ge_frontier`: the weak minimum
@@ -279,6 +281,27 @@ theorem sum_mul_fderiv_fderiv_add_fderiv_norm_sq {A : Matrix ι ι ℝ}
       fderiv ℝ (fun y : EuclideanSpace ℝ ι ↦ ‖y‖ ^ 2) x v = 2 * A.trace + 2 * ⟪x, v⟫ := by
   simp only [fderiv_fderiv_norm_sq_apply]
   simp [EuclideanSpace.inner_single_left, Matrix.trace, Finset.mul_sum, mul_comm]
+
+/-- The Gaussian barrier under `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`: with `ξ = x - y`, it is
+`exp (-κ ‖ξ‖²) (4 κ² ξᵀ A ξ - 2 κ (tr A + ⟪ξ, v⟫))`. -/
+theorem sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq (A : Matrix ι ι ℝ)
+    (κ : ℝ) (y x v : EuclideanSpace ℝ ι) :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun z : EuclideanSpace ℝ ι ↦
+        Real.exp (-κ * ‖z - y‖ ^ 2)) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
+      fderiv ℝ (fun z : EuclideanSpace ℝ ι ↦ Real.exp (-κ * ‖z - y‖ ^ 2)) x v =
+    Real.exp (-κ * ‖x - y‖ ^ 2) *
+      (4 * κ ^ 2 * A.toQuadraticForm' (x - y) - 2 * κ * (A.trace + ⟪x - y, v⟫)) := by
+  simp only [fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply, fderiv_exp_neg_mul_norm_sub_sq_apply,
+    EuclideanSpace.inner_single_right, one_mul, conj_trivial, toQuadraticForm'_apply, dotProduct,
+    mulVec, Matrix.trace, Matrix.diag, Finset.mul_sum, PiLp.single_apply, WithLp.ofLp_sub]
+  set E := Real.exp (-κ * ‖x - y‖ ^ 2)
+  set d := x.ofLp - y.ofLp
+  have hterm (i j : ι) : A i j * (E * (4 * κ ^ 2 * d i * d j - 2 * κ * if j = i then 1 else 0)) =
+      E * (4 * κ ^ 2 * (d i * (A i j * d j))) - E * (2 * κ * if j = i then A i j else 0) := by
+    split_ifs <;> ring
+  simp only [hterm, Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ, ite_true,
+    ← Finset.mul_sum]
+  ring
 
 variable [Nonempty ι]
 

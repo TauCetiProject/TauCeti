@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
 import Mathlib.Analysis.InnerProductSpace.Convex
 import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 
 /-!
 # Hopf's boundary-point lemma for elliptic operators in non-divergence form
@@ -92,27 +93,6 @@ open scoped RealInnerProductSpace
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- The Gaussian barrier under `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`: with `ξ = x - y`, it is
-`exp (-κ ‖ξ‖²) (4 κ² ξᵀ A ξ - 2 κ (tr A + ⟪ξ, v⟫))`. -/
-private theorem sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq (A : Matrix ι ι ℝ)
-    (κ : ℝ) (y x v : EuclideanSpace ℝ ι) :
-    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun z : EuclideanSpace ℝ ι ↦
-        Real.exp (-κ * ‖z - y‖ ^ 2)) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
-      fderiv ℝ (fun z : EuclideanSpace ℝ ι ↦ Real.exp (-κ * ‖z - y‖ ^ 2)) x v =
-    Real.exp (-κ * ‖x - y‖ ^ 2) *
-      (4 * κ ^ 2 * A.toQuadraticForm' (x - y) - 2 * κ * (A.trace + ⟪x - y, v⟫)) := by
-  simp only [fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply, fderiv_exp_neg_mul_norm_sub_sq_apply,
-    EuclideanSpace.inner_single_right, one_mul, conj_trivial, toQuadraticForm'_apply, dotProduct,
-    mulVec, Matrix.trace, Matrix.diag, Finset.mul_sum, PiLp.single_apply, WithLp.ofLp_sub]
-  set E := Real.exp (-κ * ‖x - y‖ ^ 2)
-  set d := x.ofLp - y.ofLp
-  have hterm (i j : ι) : A i j * (E * (4 * κ ^ 2 * d i * d j - 2 * κ * if j = i then 1 else 0)) =
-      E * (4 * κ ^ 2 * (d i * (A i j * d j))) - E * (2 * κ * if j = i then A i j else 0) := by
-    split_ifs <;> ring
-  simp only [hterm, Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ, ite_true,
-    ← Finset.mul_sum]
-  ring
-
 /-- **The Gaussian barrier is a subsolution on an annulus.** Let `A` satisfy
 `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` with `0 < λ`, let `‖v‖ ≤ β` and `0 ≤ c ≤ γ`, and let
 `0 < ρ ≤ ‖x - y‖ ≤ R`. If `1 ≤ κ` and `2 (n Λ + β R) + γ ≤ 4 λ ρ² κ`, then the barrier
@@ -157,21 +137,6 @@ private theorem mul_le_sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq_
   have hcw : c * (E - Real.exp (-κ * R ^ 2)) ≤ γ * E := by
     nlinarith [mul_le_mul_of_nonneg_right hcγ hE.le, mul_nonneg hc hER.le]
   nlinarith [mul_le_mul_of_nonneg_left hkey hE.le]
-
-/-- Along the inward normal, the Gaussian barrier grows at least linearly: for `0 ≤ κ` and
-`0 ≤ t ≤ R`, `κ R exp (-κ R²) t ≤ exp (-κ (R - t)²) - exp (-κ R²)`. -/
-private theorem mul_le_exp_neg_mul_sub_sq_sub {κ R t : ℝ} (hκ : 0 ≤ κ) (ht : 0 ≤ t)
-    (htR : t ≤ R) :
-    κ * R * Real.exp (-κ * R ^ 2) * t ≤ Real.exp (-κ * (R - t) ^ 2) - Real.exp (-κ * R ^ 2) := by
-  have hsplit : Real.exp (-κ * (R - t) ^ 2) =
-      Real.exp (-κ * R ^ 2) * Real.exp (κ * (2 * R * t - t ^ 2)) := by
-    rw [← Real.exp_add]
-    ring_nf
-  have h1 := Real.add_one_le_exp (κ * (2 * R * t - t ^ 2))
-  have h2 : κ * (R * t) ≤ κ * (2 * R * t - t ^ 2) :=
-    mul_le_mul_of_nonneg_left (by nlinarith) hκ
-  rw [hsplit]
-  nlinarith [Real.exp_pos (-κ * R ^ 2)]
 
 /-- The core of Hopf's lemma, on a ball on whose closure `u` is continuous and on whose sphere
 `u ≤ u x₀`: the barrier argument on the annulus `R / 2 ≤ ‖x - y‖ ≤ R`. -/
