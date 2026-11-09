@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Monoid.MulUnit
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.Analysis.Normed.Group.Ultra
+import TauCeti.Analysis.Normed.Ring.Ultra
 
 /-!
 # Multiplicative units of normed rings
@@ -80,23 +81,6 @@ theorem map {u : R} (hu : IsNormMulUnit u) (φ : R →* S)
 end IsNormMulUnit
 
 end NormOneRing
-
-section Ultrametric
-
-variable {A : Type*} [NormedRing A] [IsUltrametricDist A]
-
-/-- In an ultrametric normed ring, multiplication by a perturbation `1 + a` of one with
-`‖a‖ < 1` preserves norms. -/
-theorem norm_one_add_mul_of_norm_lt_one {a : A} (ha : ‖a‖ < 1) (x : A) :
-    ‖(1 + a) * x‖ = ‖x‖ := by
-  rw [add_mul, one_mul]
-  by_cases hx : x = 0
-  · simp [hx]
-  have hax : ‖a * x‖ < ‖x‖ :=
-    (norm_mul_le _ _).trans_lt (by simpa using mul_lt_mul_of_pos_right ha (norm_pos_iff.mpr hx))
-  rw [IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm hax.ne', max_eq_left hax.le]
-
-end Ultrametric
 
 section Perturbation
 
