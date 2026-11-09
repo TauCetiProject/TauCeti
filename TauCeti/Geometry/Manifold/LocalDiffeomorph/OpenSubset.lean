@@ -17,6 +17,11 @@ to its intersection with an open set. This file provides the same operation for 
 domains are subsets of the original ones. It is used to make charts small, for example to make
 finitely many charts centred at distinct points pairwise disjoint.
 
+A partial diffeomorphism is also a diffeomorphism between its source and its target, each an open
+subset carrying the charts Mathlib restricts to it. This is the analogue for partial
+diffeomorphisms of Mathlib's `OpenPartialHomeomorph.toHomeomorphSourceTarget`, and lets results
+about diffeomorphisms be applied to a partial diffeomorphism on its domain.
+
 The file also records that the inclusion of an open subset, with the charts Mathlib restricts to
 it, is a local diffeomorphism. Structures defined through charts, such as orientations, can then
 be compared on an open subset and on the ambient manifold. An open subset equal to the whole
@@ -25,6 +30,8 @@ manifold is diffeomorphic to it through its inclusion.
 ## Main declarations
 
 * `PartialDiffeomorph.restrOpen`: the restriction of a partial diffeomorphism to an open set.
+* `PartialDiffeomorph.toDiffeomorphSourceTarget`: a partial diffeomorphism as a diffeomorphism
+  between its open source and its open target.
 * `Diffeomorph.ofTop`: an open subset equal to `⊤` is diffeomorphic to the ambient manifold.
 * `TauCeti.isLocalDiffeomorph_subtype_val`: the inclusion of an open subset is a `C^n` local
   diffeomorphism.
@@ -82,6 +89,35 @@ theorem coe_restrOpen (hs : IsOpen s) : ⇑(Φ.restrOpen s hs) = Φ :=
 @[simp]
 theorem coe_restrOpen_symm (hs : IsOpen s) :
     ⇑(Φ.restrOpen s hs).toPartialEquiv.symm = Φ.toPartialEquiv.symm :=
+  (rfl)
+
+/-- A partial diffeomorphism is a diffeomorphism between its source and its target, as open
+subsets of `M` and `N`. -/
+def toDiffeomorphSourceTarget :
+    (⟨Φ.source, Φ.open_source⟩ : TopologicalSpace.Opens M) ≃ₘ^n⟮I, J⟯
+      (⟨Φ.target, Φ.open_target⟩ : TopologicalSpace.Opens N) where
+  toEquiv := Φ.toOpenPartialHomeomorph.toHomeomorphSourceTarget.toEquiv
+  contMDiff_toFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1 fun x ↦
+    ((Φ.contMDiffOn x x.2).contMDiffAt (Φ.open_source.mem_nhds x.2)).comp x
+      contMDiff_subtype_val.contMDiffAt
+  contMDiff_invFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1 fun x ↦
+    ((Φ.symm.contMDiffOn x x.2).contMDiffAt (Φ.open_target.mem_nhds x.2)).comp x
+      contMDiff_subtype_val.contMDiffAt
+
+/-- The diffeomorphism `PartialDiffeomorph.toDiffeomorphSourceTarget` evaluates as the partial
+diffeomorphism. -/
+@[simp]
+theorem toDiffeomorphSourceTarget_apply_coe
+    (x : (⟨Φ.source, Φ.open_source⟩ : TopologicalSpace.Opens M)) :
+    (Φ.toDiffeomorphSourceTarget x : N) = Φ x :=
+  (rfl)
+
+/-- The inverse of `PartialDiffeomorph.toDiffeomorphSourceTarget` evaluates as the inverse of the
+partial diffeomorphism. -/
+@[simp]
+theorem toDiffeomorphSourceTarget_symm_apply_coe
+    (x : (⟨Φ.target, Φ.open_target⟩ : TopologicalSpace.Opens N)) :
+    (Φ.toDiffeomorphSourceTarget.symm x : M) = Φ.symm x :=
   (rfl)
 
 end PartialDiffeomorph
