@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.FourierMultiplier
 import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Hessian
 import TauCeti.Analysis.Distribution.SchwartzSpace.Prod
@@ -272,7 +273,7 @@ private theorem eLpNorm_lineDerivOp_lineDerivOp_le_of_succ (v w : EuclideanSpace
     set S := ENNReal.ofReal (R ^ ((Module.finrank ℝ ℝ : ℝ) / p.toReal))
     have hD_norm (f : 𝓢(ℝ, ℝ)) : eLpNorm (⇑(D f)) p volume = S * eLpNorm (⇑f) p volume := by
       have h : ⇑(D f) = fun t => f (R⁻¹ • t) := funext fun t => by simp [D, δ, mul_comm]
-      rw [h, Measure.eLpNorm_comp_inv_smul volume f hR p]
+      rw [h, Measure.eLpNorm_comp_inv_smul volume f hR.ne' p, abs_of_pos hR]
     have hD_deriv (f : 𝓢(ℝ, ℝ)) : ∂_{(1 : ℝ)} (D f) = R⁻¹ • D (∂_{(1 : ℝ)} f) := by
       have h : δ 1 = R⁻¹ • (1 : ℝ) := by simp [δ]
       rw [lineDerivOp_compCLMOfContinuousLinearEquiv, ← map_smul, h,
@@ -329,12 +330,9 @@ theorem exists_eLpNorm_fourierMultiplierCLM_hessianSymbolLp_le (hn : 3 ≤ n)
     have hT : adjoint (Lp.fourierMultiplierCLM F (hessianSymbolLp v w)) =
         Lp.fourierMultiplierCLM F (hessianSymbolLp v w) := by
       rw [Lp.adjoint_fourierMultiplierCLM, star_hessianSymbolLp]
-    have hre : ∀ f g : Lp F 2 (volume : Measure (EuclideanSpace ℝ (Fin n))),
-        inner ℝ f g = Complex.re (inner ℂ f g) := fun f g => by
-      rw [L2.inner_def, L2.inner_def]
-      exact integral_re (L2.integrable_inner (𝕜 := ℂ) f g)
     exact ((eq_adjoint_iff _ _).2 fun f g => by
-      rw [hre, hre, coe_restrictScalars', ← adjoint_inner_right, hT]).symm
+      rw [L2.real_inner_eq_re_inner, L2.real_inner_eq_re_inner, coe_restrictScalars',
+        ← adjoint_inner_right, hT]).symm
   -- The kernel satisfies the size and smoothness estimates with exponent `δ = 1`.
   have hfin : (Module.finrank ℝ (EuclideanSpace ℝ (Fin n)) : ℝ) = n := by
     rw [finrank_euclideanSpace_fin]

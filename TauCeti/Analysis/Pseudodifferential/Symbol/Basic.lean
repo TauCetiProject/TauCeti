@@ -32,11 +32,16 @@ space, and develop the first operations of the symbol calculus:
 * `TauCeti.Symbol.ofSpatial`: a smooth coefficient `f(x)` independent of the frequency, the symbol
   of multiplication by `f`, has order `0`; in particular so does a constant
   (`TauCeti.Symbol.const`);
+* `TauCeti.Symbol.ofFrequency`: a smooth coefficient `b(ξ)` independent of the position with
+  `‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩^(m - k)` has order `m`, with estimates uniform in the position
+  (`TauCeti.Symbol.isUniform_ofFrequency`);
 * `TauCeti.Symbol.comp`: the pointwise composition `b(x, ξ) ∘ a(x, ξ)` (for matrices, the matrix
   product) of symbols of orders `m'` and `m` has order `m' + m`. By the Leibniz rule
   `ContinuousLinearMap.mixedDeriv_of_bilinear`, `∂_x^α ∂_ξ^β (b ∘ a)` is a sum of terms
   `∂_x^{α₁} ∂_ξ^{β₁} b ∘ ∂_x^{α₂} ∂_ξ^{β₂} a`, each of size
-  `⟨ξ⟩^(m' - |β₁|) ⟨ξ⟩^(m - |β₂|) = ⟨ξ⟩^(m' + m - |β|)`.
+  `⟨ξ⟩^(m' - |β₁|) ⟨ξ⟩^(m - |β₂|) = ⟨ξ⟩^(m' + m - |β|)`. It is bilinear and associative, with
+  the constant symbol `id` as identity, and spatial and frequency derivatives obey the Leibniz
+  rule (`TauCeti.Symbol.spatialDeriv_comp`, `TauCeti.Symbol.frequencyDeriv_comp`).
 
 A symbol is *smoothing* (`TauCeti.Symbol.IsSmoothing`) if it is a symbol of every order. Smoothing
 symbols are closed under the operations above, and they form a two-sided ideal under composition
@@ -44,6 +49,9 @@ symbols are closed under the operations above, and they form a two-sided ideal u
 coefficient vanishing at all large frequencies is smoothing
 (`TauCeti.Symbol.isSmoothing_ofBoundedFrequencySupport`), while in positive dimension a nonzero
 constant is not (`TauCeti.Symbol.isSmoothing_const_iff`).
+
+The image of a symbol under a continuous linear map of the coefficient spaces, such as conjugation
+by isomorphisms of `V` and `W`, has the same order (`TauCeti.Symbol.map`).
 
 The estimates are only required locally uniformly in `x`. The predicate
 `TauCeti.Symbol.IsUniform` asks for constants independent of `x`, and
@@ -53,6 +61,10 @@ compact set. Symbols with compact spatial support are uniform
 uniform exactly when all derivatives of `f` are bounded (`TauCeti.Symbol.isUniform_ofSpatial_iff`),
 so the local estimates alone do not give uniform ones: a coordinate function `x_j` is a symbol of
 order `0` that is not uniform (`TauCeti.Symbol.not_isUniform_ofSpatial_smul`).
+Composition preserves uniform estimates (`TauCeti.Symbol.IsUniform.comp`) and compact spatial
+support of either factor. Composing with the symbol of multiplication by a compactly supported
+smooth function (`TauCeti.Symbol.hasCompactSpatialSupport_ofSpatial_iff`) is therefore a spatial
+cutoff, producing a symbol with uniform estimates.
 
 The mixed derivative `TauCeti.mixedDeriv α β a x ξ`, defined with the coordinate derivatives,
 takes the frequency derivatives first. For smooth `a` the two kinds of derivatives commute
@@ -86,6 +98,24 @@ theorem rpow_weight_pos (ξ : CoordinateSpace n) (t : ℝ) :
     0 < (1 + ‖ξ‖ ^ 2) ^ (t / 2) :=
   Real.rpow_pos_of_pos (by positivity) _
 
+/-- Above radius `t > 0`, raising the order of the weight `⟨ξ⟩^s` to `s' ≥ s` costs at most the
+factor `t^(s - s')`. -/
+theorem rpow_weight_le_rpow_mul_rpow_weight {t s s' : ℝ} {ξ : CoordinateSpace n}
+    (ht : 0 < t) (hξ : t ≤ ‖ξ‖) (hs : s ≤ s') :
+    (1 + ‖ξ‖ ^ 2) ^ (s / 2) ≤ t ^ (s - s') * (1 + ‖ξ‖ ^ 2) ^ (s' / 2) := by
+  have hw : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
+  have hsplit : (1 + ‖ξ‖ ^ 2) ^ (s / 2) =
+      (1 + ‖ξ‖ ^ 2) ^ ((s - s') / 2) * (1 + ‖ξ‖ ^ 2) ^ (s' / 2) := by
+    rw [← Real.rpow_add hw]
+    ring_nf
+  have ht2 : t ^ (s - s') = (t ^ 2) ^ ((s - s') / 2) := by
+    rw [← Real.rpow_natCast t 2, ← Real.rpow_mul ht.le]
+    ring_nf
+  rw [hsplit, ht2]
+  refine mul_le_mul_of_nonneg_right (Real.rpow_le_rpow_of_nonpos (by positivity) ?_
+    (by linarith)) (by positivity)
+  nlinarith [norm_nonneg ξ]
+
 variable (n) in
 /-- The class `S^m_{1,0}` of symbols of order `m` on `ℝⁿ × ℝⁿ` with values in `V →L[ℂ] W`: smooth
 maps `a` such that on every compact set `K` of positions and for all words `α`, `β` of coordinate
@@ -109,6 +139,19 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddComm
 theorem coefficient_injective :
     Function.Injective (coefficient : Symbol n V W m → CoordinateSpace n × CoordinateSpace n → _) :=
   fun _ _ h => Symbol.ext h
+
+/-- A symbol of order `m` has the growth bound `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m` uniformly for `x` in each
+compact set. -/
+theorem exists_norm_coefficient_le (a : Symbol n V W m) (K : Set (CoordinateSpace n))
+    (hK : IsCompact K) :
+    ∃ C, ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  obtain ⟨C, -, hC⟩ := a.exists_bound K hK [] []
+  exact ⟨C, fun x hx ξ ↦ by simpa using hC x hx ξ⟩
+
+/-- Each frequency slice `ξ ↦ a(x, ξ)` of a symbol is continuous. -/
+theorem continuous_coefficient_slice (a : Symbol n V W m) (x : CoordinateSpace n) :
+    Continuous fun ξ ↦ a.coefficient (x, ξ) :=
+  a.contDiff_coefficient.continuous.comp (continuous_const.prodMk continuous_id)
 
 /-- A symbol satisfies its estimates with constants uniform in the position. -/
 def IsUniform (a : Symbol n V W m) : Prop :=
@@ -145,6 +188,26 @@ theorem HasCompactSpatialSupport.isUniform {a : Symbol n V W m}
     rw [mixedDeriv_eq_zero_of_eventually hzero, norm_zero]
     exact mul_nonneg hC (rpow_weight_pos ξ _).le
 
+/-- A position slice `x ↦ a(x, ξ)` of a symbol is smooth. -/
+theorem contDiff_coefficient_slice (a : Symbol n V W m) (ξ : CoordinateSpace n) :
+    ContDiff ℝ ∞ fun x ↦ a.coefficient (x, ξ) :=
+  a.contDiff_coefficient.comp (contDiff_id.prodMk contDiff_const)
+
+/-- A position slice `x ↦ a(x, ξ)` of a symbol with compact spatial support has compact
+support. -/
+theorem HasCompactSpatialSupport.hasCompactSupport_slice {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) (ξ : CoordinateSpace n) :
+    HasCompactSupport fun x ↦ a.coefficient (x, ξ) := by
+  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
+  exact HasCompactSupport.intro hK fun x hx ↦ hKa x hx ξ
+
+/-- A symbol of order `m` is bounded by `C ⟨ξ⟩ ^ m` locally uniformly in the position. -/
+theorem exists_bound_coefficient (a : Symbol n V W m) (K : Set (CoordinateSpace n))
+    (hK : IsCompact K) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  obtain ⟨C, hC, hCK⟩ := a.exists_bound K hK [] []
+  exact ⟨C, hC, fun x hx ξ ↦ by simpa [mixedDeriv_nil_nil] using hCK x hx ξ⟩
+
 section Module
 
 instance : Zero (Symbol n V W m) where
@@ -179,7 +242,7 @@ instance : Neg (Symbol n V W m) where
       exists_bound := fun K hK α β => by
         obtain ⟨C, hC, ha⟩ := a.exists_bound K hK α β
         exact ⟨C, hC, fun x hx ξ => by
-          rw [mixedDeriv_neg a.contDiff_coefficient, norm_neg]
+          rw [mixedDeriv_neg, norm_neg]
           exact ha x hx ξ⟩ }
 
 instance : Sub (Symbol n V W m) where
@@ -261,6 +324,16 @@ theorem HasCompactSpatialSupport.smul {a : Symbol n V W m} (ha : a.HasCompactSpa
   obtain ⟨K, hK, hKa⟩ := ha
   exact ⟨K, hK, fun x hx ξ => by simp [hKa x hx ξ]⟩
 
+theorem HasCompactSpatialSupport.neg {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport) :
+    (-a).HasCompactSpatialSupport := by
+  obtain ⟨K, hK, hKa⟩ := ha
+  exact ⟨K, hK, fun x hx ξ => by simp [hKa x hx ξ]⟩
+
+theorem HasCompactSpatialSupport.sub {a b : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) : (a - b).HasCompactSpatialSupport := by
+  rw [sub_eq_add_neg]
+  exact ha.add hb.neg
+
 end Module
 
 section Inclusion
@@ -296,6 +369,14 @@ theorem HasCompactSpatialSupport.inclusion {a : Symbol n V W m} (ha : a.HasCompa
     (h : m ≤ m') : (inclusion h a).HasCompactSpatialSupport := by
   obtain ⟨K, hK, hKa⟩ := ha
   exact ⟨K, hK, fun x hx ξ => by rw [coefficient_inclusion, hKa x hx ξ]⟩
+
+/-- A symbol whose coefficient is that of a symbol with compact spatial support, possibly of a
+different order, has compact spatial support. -/
+theorem HasCompactSpatialSupport.of_coefficient_eq {a : Symbol n V W m} {b : Symbol n V W m'}
+    (ha : a.HasCompactSpatialSupport) (h : b.coefficient = a.coefficient) :
+    b.HasCompactSpatialSupport := by
+  obtain ⟨K, hK, hKa⟩ := ha
+  exact ⟨K, hK, fun x hx ξ => by rw [h, hKa x hx ξ]⟩
 
 end Inclusion
 
@@ -383,6 +464,48 @@ theorem mixedDeriv_spatialDeriv (j : Fin n) (a : Symbol n V W m) (α β : List (
     funext fun p => coefficient_spatialDeriv j a p.1 p.2
   rw [h, mixedDeriv_coordinateDeriv_fst a.contDiff_coefficient]
 
+/-- The position derivative of a symbol in the `j`-th coordinate direction is the coefficient of
+its spatial derivative `∂_{x_j} a`. -/
+theorem fderiv_coefficient_single (a : Symbol n V W m) (j : Fin n) (x ξ : CoordinateSpace n) :
+    fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x (EuclideanSpace.single j 1) =
+      (spatialDeriv j a).coefficient (x, ξ) := by
+  rw [coefficient_spatialDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
+
+/-- The position derivative of a symbol of order `m` is bounded by `C ⟨ξ⟩ ^ m` locally uniformly in
+the position. -/
+theorem exists_bound_fderiv_coefficient (a : Symbol n V W m) (K : Set (CoordinateSpace n))
+    (hK : IsCompact K) :
+    ∃ C, ∀ x ∈ K, ∀ ξ,
+      ‖fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  choose C hC0 hC using fun j ↦ (spatialDeriv j a).exists_bound_coefficient K hK
+  obtain ⟨D, -, hD⟩ :=
+    (EuclideanSpace.basisFun (Fin n) ℝ).toBasis.exists_opNorm_le (F := V →L[ℂ] W)
+  refine ⟨D * ∑ j, C j, fun x hx ξ ↦ ?_⟩
+  rw [mul_assoc]
+  refine hD (mul_nonneg (Finset.sum_nonneg fun j _ ↦ hC0 j) (by positivity)) fun j ↦ ?_
+  rw [OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply, fderiv_coefficient_single]
+  refine (hC j x hx ξ).trans ?_
+  gcongr
+  exact Finset.single_le_sum (fun i _ ↦ hC0 i) (Finset.mem_univ j)
+
+/-- The symbol estimates of `a` bound the Fréchet derivatives in `ξ` of each position derivative
+`∂_x^α a(x, ξ)`: the `i`-th one is at most `G ⟨ξ⟩^(m - i)` for `x` in a compact set. -/
+theorem exists_norm_iteratedFDeriv_coordinateDeriv_le (a : Symbol n V W m)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α : List (Fin n)) (i : ℕ) :
+    ∃ G, 0 ≤ G ∧ ∀ x ∈ K, ∀ ξ,
+      ‖iteratedFDeriv ℝ i (fun η => coordinateDeriv α (fun y => a.coefficient (y, η)) x) ξ‖ ≤
+        G * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2) := by
+  choose A hA0 hA using fun β : List (Fin n) => a.exists_bound K hK α β
+  refine ⟨∑ w : Fin i → Fin n, A (List.ofFn w), Finset.sum_nonneg fun w _ => hA0 _,
+    fun x hx ξ => ?_⟩
+  have hg : ContDiff ℝ ∞ fun η => coordinateDeriv α (fun y => a.coefficient (y, η)) x :=
+    (a.contDiff_coefficient.coordinateDeriv_fst α).comp (contDiff_prodMk_right x)
+  refine (norm_iteratedFDeriv_le_sum_coordinateDeriv (contDiff_infty.1 hg _) ξ).trans ?_
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun w _ => ?_
+  have h := hA (List.ofFn w) x hx ξ
+  rwa [List.length_ofFn, mixedDeriv_eq_coordinateDeriv_snd a.contDiff_coefficient] at h
+
 theorem IsUniform.frequencyDeriv {a : Symbol n V W m} (ha : a.IsUniform) (j : Fin n) :
     (frequencyDeriv j a).IsUniform := by
   intro α β
@@ -460,6 +583,16 @@ theorem isUniform_ofSpatial_iff {f : CoordinateSpace n → V →L[ℂ] W} (hf : 
       exact (hC x).trans (le_max_left _ _)
     · exact ⟨0, le_rfl, fun x ξ => by simp [hc, mixedDeriv_comp_fst f α hβ]⟩
 
+/-- The symbol of multiplication by `f` has compact spatial support exactly when `f` has compact
+support. Composing with it is a spatial cutoff: by `HasCompactSpatialSupport.comp_right`, a
+compactly supported smooth `f` cuts every symbol off to one with compact spatial support, which
+therefore satisfies uniform estimates. -/
+theorem hasCompactSpatialSupport_ofSpatial_iff {f : CoordinateSpace n → V →L[ℂ] W}
+    (hf : ContDiff ℝ ∞ f) : (ofSpatial f hf).HasCompactSpatialSupport ↔ HasCompactSupport f := by
+  refine ⟨fun ⟨K, hK, hKf⟩ => HasCompactSupport.intro hK fun x hx => ?_, fun h => ?_⟩
+  · simpa using hKf x hx 0
+  · exact ⟨tsupport f, h, fun x hx _ => by simpa using image_eq_zero_of_notMem_tsupport hx⟩
+
 /-- The local estimates do not imply the uniform ones: the coordinate function `x_j`, times a
 nonzero coefficient `T`, is a symbol of order `0` that is unbounded in the position. -/
 theorem not_isUniform_ofSpatial_smul (j : Fin n) {T : V →L[ℂ] W} (hT : T ≠ 0)
@@ -491,14 +624,61 @@ theorem isUniform_const (T : V →L[ℂ] W) : (const T : Symbol n V W 0).IsUnifo
 
 end Spatial
 
+section Frequency
+
+variable {b : CoordinateSpace n → V →L[ℂ] W}
+
+/-- The frequency-only estimates hold with constants uniform in the position. -/
+private theorem exists_bound_comp_snd (hb : ContDiff ℝ ∞ b)
+    (hbound : ∀ k : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k b ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2))
+    (α β : List (Fin n)) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ξ,
+      ‖mixedDeriv α β (fun p => b p.2) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+  rcases eq_or_ne α [] with rfl | hα
+  · obtain ⟨C, hC⟩ := hbound β.length
+    refine ⟨max C 0, le_max_right _ _, fun x ξ => ?_⟩
+    rw [mixedDeriv_nil_comp_snd]
+    calc ‖coordinateDeriv β b ξ‖ ≤ ‖iteratedFDeriv ℝ β.length b ξ‖ :=
+          norm_coordinateDeriv_le β (hb.of_le (mod_cast le_top)) ξ
+      _ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := hC ξ
+      _ ≤ max C 0 * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) :=
+          mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
+  · exact ⟨0, le_rfl, fun x ξ => by simp [mixedDeriv_comp_snd b hα]⟩
+
+/-- A smooth frequency-only coefficient `a(x, ξ) = b(ξ)` whose derivatives satisfy
+`‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩ ^ (m - k)` is a symbol of order `m`. Its quantization is the Fourier
+multiplier `b(D)` (`TauCeti.Symbol.quantizeSchwartzValue_ofFrequency`). -/
+def ofFrequency (b : CoordinateSpace n → V →L[ℂ] W) (hb : ContDiff ℝ ∞ b)
+    (hbound : ∀ k : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k b ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2)) :
+    Symbol n V W m where
+  coefficient p := b p.2
+  contDiff_coefficient := hb.comp contDiff_snd
+  exists_bound _ _ α β :=
+    (exists_bound_comp_snd hb hbound α β).imp fun _ hC => ⟨hC.1, fun x _ ξ => hC.2 x ξ⟩
+
+variable (hb : ContDiff ℝ ∞ b)
+  (hbound : ∀ k : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k b ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2))
+
+@[simp]
+theorem coefficient_ofFrequency (p : CoordinateSpace n × CoordinateSpace n) :
+    (ofFrequency b hb hbound).coefficient p = b p.2 := (rfl)
+
+/-- A frequency-only symbol satisfies its estimates uniformly in the position. -/
+theorem isUniform_ofFrequency : (ofFrequency b hb hbound).IsUniform :=
+  isUniform_iff.2 (exists_bound_comp_snd hb hbound)
+
+end Frequency
+
 section Comp
 
 variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {m'' : ℝ}
 
 /-- The product estimate behind `TauCeti.Symbol.comp`: bounds `C s t ⟨ξ⟩^(m' - |t|)` and
 `D s t ⟨ξ⟩^(m - |t|)` on all mixed derivatives of `b` and `a` at `(x, ξ)` bound the mixed
-derivative `∂_x^α ∂_ξ^β` of `b ∘ a` by a constant times `⟨ξ⟩^(m' + m - |β|)`. -/
-private theorem norm_mixedDeriv_comp_le {b : CoordinateSpace n × CoordinateSpace n → W →L[ℂ] U}
+derivative `∂_x^α ∂_ξ^β` of `b ∘ a` by a constant times `⟨ξ⟩^(m' + m - |β|)`. The constant sums
+`C s₁ t₁ * D s₂ t₂` over all splittings of `α` into `s₁, s₂` and of `β` into `t₁, t₂`, as in the
+Leibniz rule. -/
+theorem norm_mixedDeriv_comp_le {b : CoordinateSpace n × CoordinateSpace n → W →L[ℂ] U}
     {a : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hb : ContDiff ℝ ∞ b)
     (ha : ContDiff ℝ ∞ a) {x ξ : CoordinateSpace n} {C D : List (Fin n) → List (Fin n) → ℝ}
     (hC : ∀ s t, ‖mixedDeriv s t b x ξ‖ ≤ C s t * (1 + ‖ξ‖ ^ 2) ^ ((m' - t.length) / 2))
@@ -678,6 +858,49 @@ theorem HasCompactSpatialSupport.comp_left {a : Symbol n V W m}
   obtain ⟨K, hK, hKa⟩ := ha
   exact ⟨K, hK, fun x hx ξ => by simp [hKa x hx ξ]⟩
 
+/-- The constant symbol `id` is a left identity for composition. -/
+@[simp]
+theorem const_id_comp (a : Symbol n V W m) :
+    (const (ContinuousLinearMap.id ℂ W)).comp a = inclusion (zero_add m).ge a := by
+  ext1
+  funext p
+  simp
+
+/-- The constant symbol `id` is a right identity for composition. -/
+@[simp]
+theorem comp_const_id (b : Symbol n W U m') :
+    b.comp (const (ContinuousLinearMap.id ℂ W)) = inclusion (add_zero m').ge b := by
+  ext1
+  funext p
+  simp
+
+/-- The Leibniz rule for a spatial derivative of a composition. -/
+theorem spatialDeriv_comp (j : Fin n) (b : Symbol n W U m') (a : Symbol n V W m) :
+    spatialDeriv j (b.comp a) = (spatialDeriv j b).comp a + b.comp (spatialDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simpa only [coefficient_spatialDeriv, coefficient_comp, coefficient_add, Pi.add_apply] using
+    coordinateDeriv_singleton_clm_comp (f := fun y => b.coefficient (y, ξ))
+      (g := fun y => a.coefficient (y, ξ))
+      ((b.contDiff_coefficient.comp (contDiff_prodMk_left ξ)).of_le (by simp))
+      ((a.contDiff_coefficient.comp (contDiff_prodMk_left ξ)).of_le (by simp)) j x
+
+/-- The Leibniz rule for a frequency derivative of a composition. The orders `m' - 1 + m` and
+`m' + (m - 1)` of the two terms are identified with the order `m' + m - 1` of the left side
+through `Symbol.inclusion`. -/
+theorem frequencyDeriv_comp (j : Fin n) (b : Symbol n W U m') (a : Symbol n V W m) :
+    frequencyDeriv j (b.comp a) =
+      inclusion (by linarith) ((frequencyDeriv j b).comp a) +
+        inclusion (by linarith) (b.comp (frequencyDeriv j a)) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simpa only [coefficient_frequencyDeriv, coefficient_comp, coefficient_add, Pi.add_apply,
+    coefficient_inclusion] using
+    coordinateDeriv_singleton_clm_comp (f := fun η => b.coefficient (x, η))
+      (g := fun η => a.coefficient (x, η))
+      ((b.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (by simp))
+      ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (by simp)) j ξ
+
 end Comp
 
 section Smoothing
@@ -832,6 +1055,36 @@ theorem isSmoothing_const_iff (hn : n ≠ 0) {T : V →L[ℂ] W} :
     exact fun _ => ⟨0, by funext p; simp⟩
 
 end Smoothing
+
+section Map
+
+variable {V' W' : Type*} [NormedAddCommGroup V'] [NormedSpace ℂ V'] [NormedAddCommGroup W']
+  [NormedSpace ℂ W']
+
+/-- The image `x, ξ ↦ Φ (a(x, ξ))` of a symbol under a continuous linear map `Φ` of the coefficient
+spaces is a symbol of the same order. For isomorphisms `e₁ : V ≃L[ℂ] V'` and `e₂ : W ≃L[ℂ] W'`,
+conjugation `T ↦ e₂ ∘ T ∘ e₁⁻¹` transports symbols with coefficients in `V →L[ℂ] W` to symbols
+with coefficients in `V' →L[ℂ] W'`. -/
+def map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m) : Symbol n V' W' m where
+  coefficient := Φ ∘ a.coefficient
+  contDiff_coefficient := Φ.contDiff.comp a.contDiff_coefficient
+  exists_bound K hK α β := by
+    obtain ⟨C, hC0, hC⟩ := a.exists_bound K hK α β
+    refine ⟨‖Φ‖ * C, by positivity, fun x hx ξ ↦ ?_⟩
+    rw [Φ.mixedDeriv_comp_left a.contDiff_coefficient, mul_assoc]
+    exact Φ.le_opNorm_of_le (hC x hx ξ)
+
+@[simp]
+theorem coefficient_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m)
+    (p : CoordinateSpace n × CoordinateSpace n) : (a.map Φ).coefficient p = Φ (a.coefficient p) :=
+  (rfl)
+
+theorem HasCompactSpatialSupport.map {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
+    (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) : (a.map Φ).HasCompactSpatialSupport := by
+  obtain ⟨K, hK, hKa⟩ := ha
+  exact ⟨K, hK, fun x hx ξ ↦ by rw [coefficient_map, hKa x hx ξ, map_zero]⟩
+
+end Map
 
 end Symbol
 

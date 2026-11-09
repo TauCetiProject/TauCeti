@@ -76,6 +76,14 @@ theorem schwarzChristoffelIntegrand_def (a e : ι → ℝ) (z : ℂ) :
     schwarzChristoffelIntegrand a e z = ∏ i, (z - (a i : ℂ)) ^ (e i : ℂ) :=
   (rfl)
 
+/-- Away from the prevertices, the Schwarz--Christoffel integrand is the exponential of the sum of
+the principal logarithms of its factors. -/
+theorem schwarzChristoffelIntegrand_eq_exp_sum_log (a e : ι → ℝ) {z : ℂ}
+    (hz : ∀ i, z ≠ (a i : ℂ)) :
+    schwarzChristoffelIntegrand a e z = exp (∑ i, log (z - (a i : ℂ)) * (e i : ℂ)) := by
+  simp only [schwarzChristoffelIntegrand_def, exp_sum]
+  exact prod_congr rfl fun i _ => cpow_def_of_ne_zero (sub_ne_zero.2 (hz i)) _
+
 /-- With every turning exponent zero, the Schwarz--Christoffel integrand is constant one. -/
 @[simp]
 theorem schwarzChristoffelIntegrand_zero (a : ι → ℝ) :

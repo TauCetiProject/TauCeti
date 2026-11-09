@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Compactness.Compact
 public import Mathlib.Topology.Compactness.SigmaCompact
 public import Mathlib.Topology.Connected.Basic
+public import Mathlib.Topology.DiscreteSubset
 public import Mathlib.Topology.Separation.Hausdorff
 import TauCeti.Topology.Separation.InvFunOn
 
@@ -112,6 +113,15 @@ theorem isCompact_inter_preimage_comp_prodMk_left {Y Z : Type*} [TopologicalSpac
   rw [h]
   exact ((hHp K hK hKU).inter_right (isClosed_singleton.preimage continuous_snd)).image
     continuous_fst
+
+/-- A compact set contains no infinite subset all of whose subsets are closed: such a subset would
+be closed, hence compact, and discrete. -/
+theorem _root_.IsCompact.finite_of_forall_isClosed {K S : Set X}
+    (hK : IsCompact K) (hSK : S ⊆ K) (hS : ∀ T ⊆ S, IsClosed T) : S.Finite := by
+  have hd : IsDiscrete S :=
+    isDiscrete_iff_forall_mem_exists_isClosed.2 fun T hT ↦
+      ⟨T, hS T hT, Set.inter_eq_left.2 hT⟩
+  exact (hK.of_isClosed_subset (hS S subset_rfl) hSK).finite hd
 
 end TauCeti
 

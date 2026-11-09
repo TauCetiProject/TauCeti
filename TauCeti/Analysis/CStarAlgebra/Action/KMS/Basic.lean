@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Analytic
-public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
 public import TauCeti.Analysis.CStarAlgebra.Action.Hom
 public import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
-import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Complex.PhragmenLindelof
 import TauCeti.Analysis.CStarAlgebra.Action.GaussianSmearing
@@ -155,10 +153,6 @@ theorem norm_le (hF : α.IsKMSFunction β φ a b F) {z : ℂ} (hz : z ∈ im ⁻
     refine Asymptotics.IsBigO.of_bound C (Filter.eventually_inf_principal.mpr <|
       .of_forall fun z hz => ?_)
     simpa using hC _ (mem_image_of_mem F (preimage_mono Ioo_subset_Icc_self hz))
-
-end IsKMSFunction
-
-namespace IsKMSFunction
 
 /-- For an entire analytic `b`, the KMS function of the pair `a, b` is `z ↦ φ (a α_z(b))`. -/
 theorem apply_eq_apply_mul_entireExtension (hF : α.IsKMSFunction β φ a b F)

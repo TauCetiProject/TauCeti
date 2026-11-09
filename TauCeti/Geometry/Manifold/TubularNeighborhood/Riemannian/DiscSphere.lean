@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Riemannian.Coordinates
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Metric
 public import TauCeti.Topology.VectorBundle.DiscSphere
@@ -84,14 +85,9 @@ theorem exists_isClosedEmbedding_normalExp_disc
   have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   have : IsManifold J (∞ + 1) N := by simpa using (inferInstance : IsManifold J ∞ N)
   let := f.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
-  let g := f.normalContMDiffRiemannianMetric (m := ∞) hn (by simp) hdim
-  let : IsContinuousRiemannianBundle P ν := by
-    have hg : g.toContinuousRiemannianMetric.toRiemannianMetric =
-        f.normalRiemannianMetric hn :=
-      f.toRiemannianMetric_normalContMDiffRiemannianMetric (m := ∞) hn (by simp) hdim
-    have h := Bundle.instIsContinuousRiemannianBundle g.toContinuousRiemannianMetric
-    rw [hg] at h
-    exact h
+  let := f.isContMDiffRiemannianBundle_normalRiemannianMetric (m := ∞) hn (by simp) hdim
+  let : IsContinuousRiemannianBundle P ν :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
   have : T2Space M := f.isEmbedding.t2Space
   cases isEmpty_or_nonempty M with
   | inl hM =>
@@ -102,35 +98,26 @@ theorem exists_isClosedEmbedding_normalExp_disc
       closure_empty, true_and]
     refine ⟨.of_isEmpty _, ⟨.of_subsingleton _, ?_⟩, ⟨.of_subsingleton _, ?_⟩, trivial⟩ <;>
       simpa only [range_eq_empty] using (isClosed_empty : IsClosed (∅ : Set N))
-  | inr hM =>
-    let := hM
+  | inr _ =>
     -- Shrink smooth normal-exponential coordinates using the induced fibre metric.
     obtain ⟨Φ, hzero, hdomain, htarget, -, hΦ⟩ :=
       f.exists_partialDiffeomorph_normalExp_subset (m := ∞) hn (by simp) (by simp) hdim hO hfO
     obtain ⟨r, hr, -, hdisc⟩ := Φ.open_source.exists_contMDiffMap_norm_le_subset_bundle
       (I := I) (V := ν) (n := ⊤) hzero (continuous_const (y := (1 : ℝ)))
       (fun _ => zero_lt_one)
-    let D := {p : TotalSpace P ν | ‖p.2‖ ≤ r p.proj}
-    let U := {p : TotalSpace P ν | ‖p.2‖ < r p.proj}
-    let S := {p : TotalSpace P ν | ‖p.2‖ = r p.proj}
-    have hD : D ⊆ Φ.source := fun p hp => hdisc p.proj p.2 hp
-    have hUD : U ⊆ D := fun p (hp : ‖p.2‖ < r p.proj) => le_of_lt hp
-    have hSD : S ⊆ D := fun p (hp : ‖p.2‖ = r p.proj) => le_of_eq hp
-    -- Compact closed discs have closed images; the sphere is a closed subset of the discs.
-    have hcompact : IsCompact D := TauCeti.isCompact_setOf_norm_le_bundle r.contMDiff.continuous
-    have hd : IsClosedEmbedding (D.domRestrict Φ) := by
-      let : CompactSpace D := isCompact_iff_compactSpace.mp hcompact
-      exact ((Φ.toOpenPartialHomeomorph.continuousOn.mono hD).domRestrict).isClosedEmbedding
-        (fun p q hpq => Subtype.ext (Φ.toPartialEquiv.injOn (hD p.property) (hD q.property) hpq))
-    have hs : IsClosed S := isClosed_eq (TauCeti.continuous_norm_bundle P ν)
-      (r.contMDiff.continuous.comp (FiberBundle.continuous_proj P ν))
-    have hsphere : IsClosedEmbedding (S.domRestrict Φ) :=
-      hd.comp (IsClosedEmbedding.inclusion hSD (hs.preimage continuous_subtype_val))
-    have hu : IsOpen U := isOpen_lt (TauCeti.continuous_norm_bundle P ν)
-      (r.contMDiff.continuous.comp (FiberBundle.continuous_proj P ν))
-    have hopen : IsOpenEmbedding (U.domRestrict Φ) :=
-      Φ.toOpenPartialHomeomorph.isOpenEmbedding_restrict.comp
-        (IsOpenEmbedding.inclusion (hUD.trans hD) (hu.preimage continuous_subtype_val))
+    have hD : {p : TotalSpace P ν | ‖p.2‖ ≤ r p.proj} ⊆ Φ.source := fun p hp => hdisc p.proj p.2 hp
+    have hrc := r.contMDiff.continuous
+    have hd : IsClosedEmbedding
+        ({p : TotalSpace P ν | ‖p.2‖ ≤ r p.proj}.domRestrict Φ) :=
+      Φ.toOpenPartialHomeomorph.isClosedEmbedding_domRestrict_norm_le_bundle hrc hD
+    have hsphere : IsClosedEmbedding
+        ({p : TotalSpace P ν | ‖p.2‖ = r p.proj}.domRestrict Φ) :=
+      Φ.toOpenPartialHomeomorph.isClosedEmbedding_domRestrict_norm_eq_bundle hrc
+        (fun p (hp : ‖p.2‖ = r p.proj) => hD (le_of_eq hp))
+    have hopen : IsOpenEmbedding
+        ({p : TotalSpace P ν | ‖p.2‖ < r p.proj}.domRestrict Φ) :=
+      Φ.toOpenPartialHomeomorph.isOpenEmbedding_domRestrict_norm_lt_bundle hrc
+        (fun p (hp : ‖p.2‖ < r p.proj) => hD (le_of_lt hp))
     refine ⟨r, hr, hD.trans hdomain, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [← hΦ]
       exact (Φ.toPartialEquiv.mapsTo.mono_left hD).image_subset.trans htarget
@@ -138,8 +125,8 @@ theorem exists_isClosedEmbedding_normalExp_disc
     · simpa only [hΦ] using hd
     · simpa only [hΦ] using hsphere
     · simpa only [PartialDiffeomorph.toFun'_toOpenPartialHomeomorph, hΦ] using
-        Φ.toOpenPartialHomeomorph.closure_image_norm_lt_bundle r.contMDiff.continuous hr hD
+        Φ.toOpenPartialHomeomorph.closure_image_norm_lt_bundle hrc hr hD
     · simpa only [PartialDiffeomorph.toFun'_toOpenPartialHomeomorph, hΦ] using
-        Φ.toOpenPartialHomeomorph.frontier_image_norm_lt_bundle r.contMDiff.continuous hr hD
+        Φ.toOpenPartialHomeomorph.frontier_image_norm_lt_bundle hrc hr hD
 
 end TauCeti.SmoothEmbedding

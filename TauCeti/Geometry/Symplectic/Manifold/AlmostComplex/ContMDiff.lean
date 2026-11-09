@@ -144,6 +144,10 @@ def toSmooth (J : ContMDiffAlmostComplexStructure I ⊤ M) : SmoothAlmostComplex
 theorem toSmooth_toEndomorphism (J : ContMDiffAlmostComplexStructure I ⊤ M) :
     J.toSmooth.toEndomorphism = J.toEndomorphism := (rfl)
 
+/-- Smooth conversion preserves the action on tangent vectors. -/
+theorem toSmooth_apply (J : ContMDiffAlmostComplexStructure I ⊤ M) (x : M)
+    (v : TangentSpace I x) : J.toSmooth x v = J x v := (rfl)
+
 end ContMDiffAlmostComplexStructure
 
 namespace SmoothAlmostComplexStructure

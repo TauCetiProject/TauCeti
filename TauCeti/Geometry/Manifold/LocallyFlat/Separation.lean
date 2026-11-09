@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.LocallyFlat.TwoSided
+import TauCeti.Topology.Connected.Basic
 
 /-!
 # Separating locally bicollared embeddings are two-sided
@@ -35,9 +36,10 @@ bicollared as soon as the complement of its image is disconnected
 Brown deduces that a locally flat `(n - 1)`-sphere in the `n`-sphere is bicollared, for `n ≥ 2`,
 from the Jordan–Brouwer separation theorem.
 
-Conversely, the two sides of a global bicollar of a map whose image separates a preconnected
-space into `A` and `B` lie one in `A` and the other in `B`, when the domain is preconnected
-(`TauCeti.IsBicollar.mapsTo_or_mapsTo`).
+Conversely, the two sides of a global bicollar of a map from a preconnected space into a
+preconnected space lie on opposite sides of any separation of the complement of its image
+(`TauCeti.IsBicollar.mapsTo_and_mapsTo_or_mapsTo_and_mapsTo`): if both lay in one part, the
+collar would be a neighbourhood of the image missing the other part, which would then be clopen.
 
 ## Main results
 
@@ -53,8 +55,9 @@ space into `A` and `B` lie one in `A` and the other in `B`, when the domain is p
 * `TauCeti.IsLocallyBicollared.exists_isBicollar` and
   `TauCeti.IsLocallyBicollared.isBicollared_of_not_isPreconnected_compl_range`: for a compact
   domain, it is bicollared.
-* `TauCeti.IsBicollar.mapsTo_or_mapsTo`: the sides of a global bicollar of a separating map lie in
-  different complementary regions.
+* `TauCeti.IsBicollar.mapsTo_and_mapsTo_or_mapsTo_and_mapsTo` and
+  `TauCeti.IsBicollar.exists_isOpen_compl_range_eq_union`: the two sides of a bicollar lie on
+  opposite sides of a separation of the complement of the image.
 
 ## References
 
@@ -149,38 +152,37 @@ private theorem image_subset_of_inter_nonempty {U : Set N} (hU : IsPreconnected 
   rw [← mem_preimage, hbf] at hqf
   exact hs0 (hqf.2 ▸ hq.2)
 
-/-- The side of the local bicollar in `image_subset_of_inter_nonempty` lies in `A` or in `B`. -/
-private theorem image_subset_or_image_subset {U : Set N} (hU : IsPreconnected U)
-    {b : U × ℝ → M} (hb : IsBicollar (f ∘ ((↑) : U → N)) b)
+omit [TopologicalSpace N] in
+/-- Let `b` be a bicollar over a preconnected space `U` which meets the image of `f` only along its
+zero slice, such as a local bicollar as in `exists_isPreconnected_isBicollar` or a global bicollar
+of `f`. A side of `b` at depths in a preconnected set `s` avoiding `0` lies in `A` or in `B`. -/
+private theorem image_subset_or_image_subset {U : Type*} [TopologicalSpace U]
+    [PreconnectedSpace U] {g : U → M} {b : U × ℝ → M} (hb : IsBicollar g b)
     (hbf : b ⁻¹' range f = univ ×ˢ ({0} : Set ℝ)) {s : Set ℝ} (hs : IsPreconnected s)
     (hs0 : (0 : ℝ) ∉ s) (hA : IsOpen A) (hB : IsOpen B) (hAB : Disjoint A B)
-    (hcompl : (range f)ᶜ = A ∪ B) (hs₀ : s.Nonempty) [Nonempty U] :
+    (hcompl : (range f)ᶜ = A ∪ B) :
     b '' (univ ×ˢ s) ⊆ A ∨ b '' (univ ×ˢ s) ⊆ B := by
-  obtain ⟨t, ht⟩ := hs₀
-  have hmem : b (Classical.arbitrary U, t) ∈ A ∪ B := by
-    rw [← hcompl]
-    intro hf
-    rw [← mem_preimage, hbf] at hf
-    exact hs0 (hf.2 ▸ ht)
-  have hq : b (Classical.arbitrary U, t) ∈ b '' (univ ×ˢ s) := ⟨_, ⟨mem_univ _, ht⟩, rfl⟩
-  rcases hmem with hA' | hB'
-  · exact .inl (image_subset_of_inter_nonempty hU hb hbf hs hs0 hA hB hAB hcompl ⟨_, hq, hA'⟩)
-  · exact .inr (image_subset_of_inter_nonempty hU hb hbf hs hs0 hB hA hAB.symm
-      (hcompl.trans (union_comm _ _)) ⟨_, hq, hB'⟩)
+  refine ((isPreconnected_univ.prod hs).image _
+    hb.isOpenEmbedding.continuous.continuousOn).subset_or_subset hA hB hAB ?_
+  rintro _ ⟨q, hq, rfl⟩
+  rw [← hcompl]
+  intro hqf
+  rw [← mem_preimage, hbf] at hqf
+  exact hs0 (hqf.2 ▸ hq.2)
 
-/-- A local bicollar whose two sides both lie in `A` sweeps out a neighbourhood of its zero slice
-missing `B`. -/
-private theorem notMem_closure_of_image_subset {U : Set N} {b : U × ℝ → M}
-    (hb : IsBicollar (f ∘ ((↑) : U → N)) b) (hAB : Disjoint A B) (hcompl : (range f)ᶜ = A ∪ B)
-    (hpos : b '' (univ ×ˢ Ioi 0) ⊆ A) (hneg : b '' (univ ×ˢ Iio 0) ⊆ A) (y : U) :
-    f y ∉ closure B := by
+omit [TopologicalSpace N] in
+/-- A bicollar of a map `g` with image in that of `f`, such as a local or global bicollar of `f`,
+whose two sides both lie in `A` sweeps out a neighbourhood of its zero slice missing `B`. -/
+private theorem notMem_closure_of_image_subset {U : Type*} [TopologicalSpace U] {g : U → M}
+    {b : U × ℝ → M} (hb : IsBicollar g b) (hgf : ∀ y, g y ∈ range f) (hAB : Disjoint A B)
+    (hcompl : (range f)ᶜ = A ∪ B) (hpos : b '' (univ ×ˢ Ioi 0) ⊆ A)
+    (hneg : b '' (univ ×ˢ Iio 0) ⊆ A) (y : U) : g y ∉ closure B := by
   intro hy
   obtain ⟨_, ⟨⟨u, t⟩, rfl⟩, hB'⟩ := mem_closure_iff_nhds.1 hy (range b)
     (hb.isOpenEmbedding.isOpen_range.mem_nhds ⟨(y, 0), hb.apply_zero y⟩)
   rcases lt_trichotomy t 0 with ht | rfl | ht
   · exact disjoint_left.1 hAB (hneg ⟨(u, t), ⟨mem_univ _, ht⟩, rfl⟩) hB'
-  · refine (hcompl ▸ subset_union_right : B ⊆ (range f)ᶜ) hB' ⟨u, ?_⟩
-    exact (hb.apply_zero u).symm
+  · exact (hcompl ▸ subset_union_right : B ⊆ (range f)ᶜ) hB' (hb.apply_zero u ▸ hgf u)
   · exact disjoint_left.1 hAB (hpos ⟨(u, t), ⟨mem_univ _, ht⟩, rfl⟩) hB'
 
 /-- **Two-sidedness from the frontier.** Let `f` be a locally bicollared embedding of a locally
@@ -193,24 +195,26 @@ theorem isLocallyBicollaredWithSides_of_range_subset_closure [LocallyConnectedSp
     (hfB : range f ⊆ closure B) : IsLocallyBicollaredWithSides f A B := by
   refine isLocallyBicollaredWithSides_iff.2 fun x => ?_
   obtain ⟨U, hU, hxU, hUc, b, hb, hbf⟩ := h.exists_isPreconnected_isBicollar hf x
-  have : Nonempty U := ⟨⟨x, hxU⟩⟩
   have hcompl' : (range f)ᶜ = B ∪ A := hcompl.trans (union_comm _ _)
-  have hpos := image_subset_or_image_subset hUc hb hbf isPreconnected_Ioi
-    (lt_irrefl 0) hA hB hAB hcompl nonempty_Ioi
-  have hneg := image_subset_or_image_subset hUc hb hbf isPreconnected_Iio
-    (lt_irrefl 0) hA hB hAB hcompl nonempty_Iio
+  have : PreconnectedSpace U := isPreconnected_iff_preconnectedSpace.1 hUc
+  have hpos := image_subset_or_image_subset hb hbf isPreconnected_Ioi
+    (lt_irrefl 0) hA hB hAB hcompl
+  have hneg := image_subset_or_image_subset hb hbf isPreconnected_Iio
+    (lt_irrefl 0) hA hB hAB hcompl
   -- The two sides cannot both lie in `A`, nor both in `B`, since `f x` is in both closures.
   have hx : f ((⟨x, hxU⟩ : U) : N) ∈ range f := mem_range_self _
   refine ⟨U, hU, hxU, ?_⟩
   rcases hpos with hpA | hpB <;> rcases hneg with hnA | hnB
-  · exact absurd (hfB hx) (notMem_closure_of_image_subset hb hAB hcompl hpA hnA _)
+  · exact absurd (hfB hx)
+      (notMem_closure_of_image_subset (f := f) hb (fun _ => mem_range_self _) hAB hcompl hpA hnA _)
   · exact ⟨b, hb, fun p hp => hpA ⟨p, hp, rfl⟩, fun p hp => hnB ⟨p, hp, rfl⟩⟩
   · refine ⟨_, hb.comp_prodMap_id_neg, fun p hp => hnA ⟨_, ⟨mem_univ _, ?_⟩, rfl⟩,
       fun p hp => hpB ⟨_, ⟨mem_univ _, ?_⟩, rfl⟩⟩
     · exact neg_neg_of_pos hp.2
     · exact neg_pos.2 hp.2
   · exact absurd (hfA hx)
-      (notMem_closure_of_image_subset hb hAB.symm hcompl' hpB hnB _)
+      (notMem_closure_of_image_subset (f := f) hb (fun _ => mem_range_self _) hAB.symm hcompl' hpB
+        hnB _)
 
 /-- **The image of a separating map lies in the closure of each side.** Let `f` be a locally
 bicollared embedding of a preconnected, locally connected space into a preconnected space, and
@@ -291,90 +295,76 @@ Hausdorff space is bicollared as soon as the complement of its image is not prec
 theorem isBicollared_of_not_isPreconnected_compl_range [CompactSpace N] [PreconnectedSpace N]
     [LocallyConnectedSpace N] [T2Space M] [PreconnectedSpace M] (h : IsLocallyBicollared f)
     (hf : Injective f) (hsep : ¬ IsPreconnected (range f)ᶜ) : IsBicollared f := by
-  have hopen : IsOpen (range f)ᶜ := (isCompact_range h.continuous).isClosed.isOpen_compl
-  simp only [IsPreconnected, not_forall, not_nonempty_iff_eq_empty, exists_prop] at hsep
-  obtain ⟨u, v, hu, hv, huv, hsu, hsv, hsuv⟩ := hsep
-  obtain ⟨b, hb, -⟩ := h.exists_isBicollar hf (hopen.inter hu) (hopen.inter hv)
-    (disjoint_iff_inter_eq_empty.2 (by rw [inter_inter_inter_comm, inter_self, hsuv]))
-    (by rw [← inter_union_distrib_left, inter_eq_left.2 huv]) hsu hsv
+  obtain ⟨A, B, hA, hB, hA₀, hB₀, hAB, hcompl⟩ :=
+    ((isCompact_range h.continuous).isClosed.isOpen_compl.not_isPreconnected_iff).1 hsep
+  obtain ⟨b, hb, -⟩ := h.exists_isBicollar hf hA hB hAB hcompl hA₀ hB₀
   exact hb.isBicollared
 
 end IsLocallyBicollared
 
-section GlobalBicollar
+namespace IsBicollar
 
 variable {b : N × ℝ → M}
 
-namespace IsBicollar
+/-- If both sides of a bicollar of `f` lie in `A`, where the complement of the image of `f` is the
+union of disjoint open sets `A` and `B`, then `B` is clopen: the collar is an open neighbourhood of
+the image of `f` which misses `B`. -/
+private theorem isClosed_of_mapsTo_of_mapsTo (h : IsBicollar f b) (hA : IsOpen A)
+    (hAB : Disjoint A B) (hcompl : (range f)ᶜ = A ∪ B) (hpos : MapsTo b (univ ×ˢ Ioi 0) A)
+    (hneg : MapsTo b (univ ×ˢ Iio 0) A) : IsClosed B := by
+  refine closure_subset_iff_isClosed.1 fun z hz => ?_
+  have hzf : z ∉ range f := by
+    rintro ⟨x, rfl⟩
+    exact IsLocallyBicollared.notMem_closure_of_image_subset h (fun _ => mem_range_self _) hAB
+      hcompl hpos.image_subset hneg.image_subset x hz
+  exact ((hcompl ▸ hzf : z ∈ A ∪ B)).resolve_left
+    (disjoint_right.1 (hAB.closure_right hA) hz)
 
-/-- In a preconnected space, the two sides of a bicollar of a map whose image separates the
-space into `A` and `B` cannot both lie in `A`. -/
-private theorem not_mapsTo_Ioi_and_Iio [PreconnectedSpace M] (h : IsBicollar f b)
-    (hA : IsOpen A) (hB : IsOpen B) (hAB : Disjoint A B) (hcompl : (range f)ᶜ = A ∪ B)
-    (hA₀ : A.Nonempty) (hB₀ : B.Nonempty) (hpos : MapsTo b (univ ×ˢ Ioi 0) A)
-    (hneg : MapsTo b (univ ×ˢ Iio 0) A) : False := by
-  -- The image of `b` lies in the image of `f` together with `A`.
-  have hrange : range b ⊆ range f ∪ A := by
-    rintro _ ⟨⟨x, t⟩, rfl⟩
-    rcases lt_trichotomy t 0 with ht | rfl | ht
-    · exact Or.inr (hneg ⟨mem_univ x, ht⟩)
-    · exact Or.inl ⟨x, (h.apply_zero x).symm⟩
-    · exact Or.inr (hpos ⟨mem_univ x, ht⟩)
-  have hfB : Disjoint (range f) B :=
-    disjoint_left.2 fun m hmf hmB ↦ (by rw [hcompl]; exact Or.inr hmB : m ∈ (range f)ᶜ) hmf
-  -- So `range b ∪ A` and `B` disconnect `M`.
-  have hdisj : Disjoint (range b ∪ A) B := by
-    refine disjoint_union_left.2 ⟨disjoint_left.2 fun m hm hmB ↦ ?_, hAB⟩
-    rcases hrange hm with hf | hA'
-    · exact disjoint_left.1 hfB hf hmB
-    · exact disjoint_left.1 hAB hA' hmB
-  have hcover : (univ : Set M) ⊆ (range b ∪ A) ∪ B := by
-    intro m _
-    by_cases hm : m ∈ range f
-    · exact Or.inl (Or.inl (h.range_subset_range hm))
-    · rcases (hcompl ▸ hm : m ∈ A ∪ B) with hm | hm
-      · exact Or.inl (Or.inr hm)
-      · exact Or.inr hm
-  rcases isPreconnected_univ.subset_or_subset (h.isOpenEmbedding.isOpen_range.union hA) hB hdisj
-      hcover with h₁ | h₁
-  · obtain ⟨m, hm⟩ := hB₀
-    exact disjoint_left.1 hdisj (h₁ (mem_univ m)) hm
-  · obtain ⟨m, hm⟩ := hA₀
-    exact disjoint_left.1 hAB hm (h₁ (mem_univ m))
-
-/-- **The sides of a bicollar lie in different complementary regions.** Let `b` be a bicollar of a
-map `f` from a preconnected space into a preconnected space `M`, and suppose the complement of
-the image of `f` is the union of two disjoint nonempty open sets `A` and `B`. Then one side of the
-bicollar lies in `A` and the other in `B`. -/
-theorem mapsTo_or_mapsTo [PreconnectedSpace N] [PreconnectedSpace M] (h : IsBicollar f b)
-    (hA : IsOpen A) (hB : IsOpen B) (hAB : Disjoint A B) (hcompl : (range f)ᶜ = A ∪ B)
-    (hA₀ : A.Nonempty) (hB₀ : B.Nonempty) :
-    (MapsTo b (univ ×ˢ Ioi 0) A ∧ MapsTo b (univ ×ˢ Iio 0) B) ∨
-      (MapsTo b (univ ×ˢ Ioi 0) B ∧ MapsTo b (univ ×ˢ Iio 0) A) := by
+/-- **The two sides of a bicollar lie on opposite sides of a separation.** Let `b` be a bicollar of
+a map `f` from a preconnected space into a preconnected space, and write the complement of the
+image of `f` as the union of disjoint nonempty open sets `A` and `B`. Then the positive side of
+`b` lies in one of `A` and `B`, and its negative side lies in the other. -/
+theorem mapsTo_and_mapsTo_or_mapsTo_and_mapsTo [PreconnectedSpace N] [PreconnectedSpace M]
+    (h : IsBicollar f b) (hA : IsOpen A) (hB : IsOpen B) (hAB : Disjoint A B)
+    (hcompl : (range f)ᶜ = A ∪ B) (hA₀ : A.Nonempty) (hB₀ : B.Nonempty) :
+    MapsTo b (univ ×ˢ Ioi 0) A ∧ MapsTo b (univ ×ˢ Iio 0) B ∨
+      MapsTo b (univ ×ˢ Ioi 0) B ∧ MapsTo b (univ ×ˢ Iio 0) A := by
   -- Each side is preconnected and misses the image of `f`, so it lies in `A` or in `B`.
-  have side : ∀ s : Set ℝ, IsPreconnected s → (0 : ℝ) ∉ s →
+  have hside {s : Set ℝ} (hs : IsPreconnected s) (hs0 : (0 : ℝ) ∉ s) :
       MapsTo b (univ ×ˢ s) A ∨ MapsTo b (univ ×ˢ s) B := by
-    intro s hs h0
-    have hpre : IsPreconnected (b '' (univ ×ˢ s)) :=
-      (isPreconnected_univ.prod hs).image _ h.isOpenEmbedding.continuous.continuousOn
-    have hsub : b '' (univ ×ˢ s) ⊆ A ∪ B := by
-      rw [← hcompl]
-      rintro _ ⟨z, hz, rfl⟩ hzf
-      have hz0 : z ∈ b ⁻¹' range f := hzf
-      rw [h.preimage_range] at hz0
-      exact h0 (hz0.2 ▸ hz.2)
-    exact (hpre.subset_or_subset hA hB hAB hsub).imp (fun h₁ ↦ (mapsTo_image b _).mono_right h₁)
-      fun h₁ ↦ (mapsTo_image b _).mono_right h₁
-  rcases side _ isPreconnected_Ioi (lt_irrefl 0) with hp | hp <;>
-    rcases side _ isPreconnected_Iio (lt_irrefl 0) with hn | hn
-  · exact (h.not_mapsTo_Ioi_and_Iio hA hB hAB hcompl hA₀ hB₀ hp hn).elim
-  · exact Or.inl ⟨hp, hn⟩
-  · exact Or.inr ⟨hp, hn⟩
-  · exact (h.not_mapsTo_Ioi_and_Iio hB hA hAB.symm (hcompl.trans (union_comm _ _)) hB₀ hA₀ hp
-      hn).elim
+    simpa only [mapsTo_iff_image_subset] using
+      IsLocallyBicollared.image_subset_or_image_subset h h.preimage_range hs hs0 hA hB hAB hcompl
+  -- Both sides in the same set would make the other set clopen, nonempty and not everything.
+  have hne {A' B' : Set M} (hA' : IsOpen A') (hB' : IsOpen B') (hAB' : Disjoint A' B')
+      (hcompl' : (range f)ᶜ = A' ∪ B') (hA'₀ : A'.Nonempty) (hB'₀ : B'.Nonempty)
+      (hpos : MapsTo b (univ ×ˢ Ioi 0) A') (hneg : MapsTo b (univ ×ˢ Iio 0) A') : False := by
+    rcases isClopen_iff.1 ⟨h.isClosed_of_mapsTo_of_mapsTo hA' hAB' hcompl' hpos hneg, hB'⟩ with
+      hB'e | hB'u
+    · exact hB'₀.ne_empty hB'e
+    · obtain ⟨z, hz⟩ := hA'₀
+      exact disjoint_left.1 hAB' hz (hB'u ▸ mem_univ z)
+  rcases hside isPreconnected_Ioi (lt_irrefl 0) with hpA | hpB <;>
+    rcases hside isPreconnected_Iio (lt_irrefl 0) with hnA | hnB
+  · exact (hne hA hB hAB hcompl hA₀ hB₀ hpA hnA).elim
+  · exact Or.inl ⟨hpA, hnB⟩
+  · exact Or.inr ⟨hpB, hnA⟩
+  · exact (hne hB hA hAB.symm (hcompl.trans (union_comm _ _)) hB₀ hA₀ hpB hnB).elim
+
+/-- **A separating bicollared map has two sides.** Let `b` be a bicollar of a map `f` from a
+compact preconnected space into a preconnected Hausdorff space, such that the complement of the
+image of `f` is not preconnected. Then that complement is the union of two disjoint open sets,
+one containing the positive side of `b` and the other its negative side. -/
+theorem exists_isOpen_compl_range_eq_union [CompactSpace N] [PreconnectedSpace N] [T2Space M]
+    [PreconnectedSpace M] (h : IsBicollar f b) (hsep : ¬ IsPreconnected (range f)ᶜ) :
+    ∃ A B : Set M, IsOpen A ∧ IsOpen B ∧ Disjoint A B ∧ (range f)ᶜ = A ∪ B ∧
+      MapsTo b (univ ×ˢ Ioi 0) A ∧ MapsTo b (univ ×ˢ Iio 0) B := by
+  obtain ⟨A, B, hA, hB, hA₀, hB₀, hAB, hcompl⟩ :=
+    ((isCompact_range h.continuous).isClosed.isOpen_compl.not_isPreconnected_iff).1 hsep
+  rcases h.mapsTo_and_mapsTo_or_mapsTo_and_mapsTo hA hB hAB hcompl hA₀ hB₀ with
+    ⟨hpos, hneg⟩ | ⟨hpos, hneg⟩
+  · exact ⟨A, B, hA, hB, hAB, hcompl, hpos, hneg⟩
+  · exact ⟨B, A, hB, hA, hAB.symm, hcompl.trans (union_comm _ _), hpos, hneg⟩
 
 end IsBicollar
-
-end GlobalBicollar
 
 end TauCeti

@@ -435,6 +435,34 @@ theorem cyclicTotalDifferential_cyclicCochainsToTotal {m : ℕ} (φ : cyclicCoch
   · exact cyclicTotalDifferentialAux_single_apply_of_lt m hq φ.1
   · rw [hcyc, hφ]
 
+omit [IsScalarTower R A A] [SMulCommClass R A A] in
+/-- In row `q + 1` of a total cochain `x` of degree `m`, the horizontal differential out of the
+column `m - (q + 1)` of `x (q + 1)`, followed by the one out of the column `m - q`, vanishes. -/
+private theorem cyclicBicomplexHorizontal_cyclicBicomplexHorizontal_of_mem {m : ℕ}
+    {x : ∀ k : ℕ, MultilinearMap R (fun _ : Fin (k + 1) ↦ A) M}
+    (hx : x ∈ cyclicTotalCochains R A M m) (q : ℕ) :
+    cyclicBicomplexHorizontal R A M (m - q) (q + 1)
+      (cyclicBicomplexHorizontal R A M (m - (q + 1)) (q + 1) (x (q + 1))) = 0 := by
+  -- Below row `m + 1`, the column `m - (q + 1)` precedes the column `m - q`.
+  rcases lt_or_ge q m with hq | hq
+  · rw [show m - q = m - (q + 1) + 1 by omega, cyclicBicomplexHorizontal_cyclicBicomplexHorizontal]
+  · rw [mem_cyclicTotalCochains_iff.1 hx (q + 1) (by omega), map_zero, map_zero]
+
+/-- In row `q + 1` of a total cochain `x` of degree `m`, the square leaving `x (q + 1)` in the
+column `m - (q + 1)` anticommutes. -/
+private theorem cyclicBicomplexVertical_cyclicBicomplexHorizontal_of_mem {m : ℕ}
+    {x : ∀ k : ℕ, MultilinearMap R (fun _ : Fin (k + 1) ↦ A) M}
+    (hx : x ∈ cyclicTotalCochains R A M m) (q : ℕ) :
+    cyclicBicomplexVertical R A M (m - q) (q + 1)
+        (cyclicBicomplexHorizontal R A M (m - (q + 1)) (q + 1) (x (q + 1))) =
+      -cyclicBicomplexHorizontal R A M (m - (q + 1)) (q + 2)
+        (cyclicBicomplexVertical R A M (m - (q + 1)) (q + 1) (x (q + 1))) := by
+  -- Below row `m + 1`, the column `m - (q + 1)` precedes the column `m - q`.
+  rcases lt_or_ge q m with hq | hq
+  · rw [show m - q = m - (q + 1) + 1 by omega, cyclicBicomplexVertical_cyclicBicomplexHorizontal]
+  · rw [mem_cyclicTotalCochains_iff.1 hx (q + 1) (by omega), map_zero, map_zero, map_zero,
+      map_zero, neg_zero]
+
 end Total
 
 section TotalAssoc
@@ -447,23 +475,6 @@ private theorem cyclicTotalDifferentialAux_cyclicTotalDifferentialAux {m : ℕ}
     {x : ∀ k : ℕ, MultilinearMap R (fun _ : Fin (k + 1) ↦ A) M}
     (hx : x ∈ cyclicTotalCochains R A M m) :
     cyclicTotalDifferentialAux R A M (m + 1) (cyclicTotalDifferentialAux R A M m x) = 0 := by
-  rw [mem_cyclicTotalCochains_iff] at hx
-  -- Below row `m + 1`, the column `m - (q + 1)` of row `q + 1` precedes the column `m - q`.
-  have hcol {q : ℕ} (hq : q < m) : m - q = m - (q + 1) + 1 := by omega
-  -- the composite of the horizontal differentials in row `q + 1`
-  have hhor (q : ℕ) : cyclicBicomplexHorizontal R A M (m - q) (q + 1)
-      (cyclicBicomplexHorizontal R A M (m - (q + 1)) (q + 1) (x (q + 1))) = 0 := by
-    by_cases hq : q < m
-    · rw [hcol hq, cyclicBicomplexHorizontal_cyclicBicomplexHorizontal]
-    · rw [hx (q + 1) (by omega), map_zero, map_zero]
-  -- the anticommuting square leaving row `q + 1`, column `m - (q + 1)`
-  have hsq (q : ℕ) : cyclicBicomplexVertical R A M (m - q) (q + 1)
-      (cyclicBicomplexHorizontal R A M (m - (q + 1)) (q + 1) (x (q + 1))) +
-        cyclicBicomplexHorizontal R A M (m - (q + 1)) (q + 2)
-          (cyclicBicomplexVertical R A M (m - (q + 1)) (q + 1) (x (q + 1))) = 0 := by
-    by_cases hq : q < m
-    · rw [hcol hq, cyclicBicomplexVertical_cyclicBicomplexHorizontal, neg_add_cancel]
-    · rw [hx (q + 1) (by omega), map_zero, map_zero, map_zero, map_zero, add_zero]
   funext q
   cases q with
   | zero =>
@@ -471,7 +482,8 @@ private theorem cyclicTotalDifferentialAux_cyclicTotalDifferentialAux {m : ℕ}
       cyclicBicomplexHorizontal_cyclicBicomplexHorizontal, Pi.zero_apply]
   | succ q =>
     rw [cyclicTotalDifferentialAux_apply_succ, cyclicTotalDifferentialAux_apply_succ,
-      Nat.add_sub_add_right, map_add, hhor, add_zero, Pi.zero_apply]
+      Nat.add_sub_add_right, map_add, cyclicBicomplexHorizontal_cyclicBicomplexHorizontal_of_mem hx,
+      add_zero, Pi.zero_apply]
     cases q with
     | zero =>
       rw [cyclicTotalDifferentialAux_apply_zero, Nat.sub_zero, Nat.sub_zero,
@@ -479,7 +491,8 @@ private theorem cyclicTotalDifferentialAux_cyclicTotalDifferentialAux {m : ℕ}
       exact neg_add_cancel _
     | succ q =>
       rw [cyclicTotalDifferentialAux_apply_succ, Nat.add_sub_add_right, map_add,
-        cyclicBicomplexVertical_cyclicBicomplexVertical, zero_add, hsq]
+        cyclicBicomplexVertical_cyclicBicomplexVertical, zero_add,
+        cyclicBicomplexVertical_cyclicBicomplexHorizontal_of_mem hx, neg_add_cancel]
 
 /-- The total differential squares to zero. -/
 @[simp]
@@ -501,6 +514,38 @@ section Reduction
 variable {R A M : Type*} [CommRing R] [NonUnitalSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
 
+/-- **Killing one column.** Let `x` be a family of cochains whose total differential vanishes in
+row `k ≤ m`, and let `y` be a total cochain of degree `m` whose total differential agrees with `x`
+in the rows `q < k`. If `k + 1` is invertible, adding a suitable cochain in row `k` to `y` makes
+them agree in the rows `q ≤ k`, by exactness of row `k` away from column zero. -/
+private theorem exists_forall_lt_succ_eq_cyclicTotalDifferentialAux {m k : ℕ} (hk : k ≤ m)
+    (hR : IsUnit ((k : R) + 1)) {x : ∀ k : ℕ, MultilinearMap R (fun _ : Fin (k + 1) ↦ A) M}
+    (hdx : cyclicTotalDifferentialAux R A M (m + 1) x k = 0)
+    {y : ∀ k : ℕ, MultilinearMap R (fun _ : Fin (k + 1) ↦ A) M}
+    (hy : y ∈ cyclicTotalCochains R A M m)
+    (hxy : ∀ q < k, x q = cyclicTotalDifferentialAux R A M m y q) :
+    ∃ y' ∈ cyclicTotalCochains R A M m,
+      ∀ q < k + 1, x q = cyclicTotalDifferentialAux R A M m y' q := by
+  -- the remainder `x - D y` vanishes below row `k` and has the same differential as `x`
+  have hlt : ∀ q < k, (x - cyclicTotalDifferentialAux R A M m y) q = 0 := fun q hq ↦ by
+    rw [Pi.sub_apply, hxy q hq, sub_self]
+  rw [← sub_zero (cyclicTotalDifferentialAux R A M (m + 1) x),
+    ← cyclicTotalDifferentialAux_cyclicTotalDifferentialAux hy, ← map_sub,
+    cyclicTotalDifferentialAux_apply_of_forall_lt _ _ _ hlt,
+    show m + 1 - k = m - k + 1 by omega] at hdx
+  have := hR.invertible
+  obtain ⟨z, hz⟩ : (x - cyclicTotalDifferentialAux R A M m y) k ∈
+      LinearMap.range (cyclicBicomplexHorizontal R A M (m - k) k) := by
+    rw [range_cyclicBicomplexHorizontal_eq_ker_cyclicBicomplexHorizontal]
+    exact hdx
+  refine ⟨y + Pi.single k z, add_mem hy (single_mem_cyclicTotalCochains hk z), fun q hq ↦ ?_⟩
+  rw [map_add, Pi.add_apply]
+  rcases Nat.lt_succ_iff_lt_or_eq.1 hq with hq | rfl
+  · rw [cyclicTotalDifferentialAux_single_apply_of_lt m hq, add_zero, hxy q hq]
+  · rw [cyclicTotalDifferentialAux_apply_of_forall_lt m q (Pi.single q z)
+      fun q' hq' ↦ Pi.single_eq_of_ne hq'.ne _, Pi.single_eq_same, hz, Pi.sub_apply,
+      add_sub_cancel]
+
 /-- **Killing the columns of a total cochain.** Let `x` be a total cochain of degree `m + 1` whose
 total differential vanishes below row `m + 1`. If `q + 1` is invertible for `q ≤ m`, then `x` is
 the sum of a cochain in column zero and the total differential of a total cochain of degree `m`. -/
@@ -520,28 +565,8 @@ private theorem exists_eq_single_add_cyclicTotalDifferentialAux {m : ℕ}
     | zero => exact ⟨0, zero_mem _, fun q hq ↦ absurd hq (Nat.not_lt_zero q)⟩
     | succ k ih =>
       obtain ⟨y, hy, hxy⟩ := ih (by omega)
-      have hk' : k ≤ m := by omega
-      -- the remainder `x - D y` vanishes below row `k` and has the same differential as `x`
-      have hlt : ∀ q < k, (x - cyclicTotalDifferentialAux R A M m y) q = 0 := fun q hq ↦ by
-        rw [Pi.sub_apply, hxy q hq, sub_self]
-      have hcol : m + 1 - k = m - k + 1 := by omega
-      have hd := hdx k hk'
-      rw [← sub_zero (cyclicTotalDifferentialAux R A M (m + 1) x),
-        ← cyclicTotalDifferentialAux_cyclicTotalDifferentialAux hy, ← map_sub,
-        cyclicTotalDifferentialAux_apply_of_forall_lt _ _ _ hlt, hcol] at hd
-      have := (hR k hk').invertible
-      obtain ⟨z, hz⟩ : (x - cyclicTotalDifferentialAux R A M m y) k ∈
-          LinearMap.range (cyclicBicomplexHorizontal R A M (m - k) k) := by
-        rw [range_cyclicBicomplexHorizontal_eq_ker_cyclicBicomplexHorizontal]
-        exact hd
-      refine ⟨y + Pi.single k z, add_mem hy (single_mem_cyclicTotalCochains hk' z),
-        fun q hq ↦ ?_⟩
-      rw [map_add, Pi.add_apply]
-      rcases Nat.lt_succ_iff_lt_or_eq.1 hq with hq | rfl
-      · rw [cyclicTotalDifferentialAux_single_apply_of_lt m hq, add_zero, hxy q hq]
-      · rw [cyclicTotalDifferentialAux_apply_of_forall_lt m q (Pi.single q z)
-          fun q' hq' ↦ Pi.single_eq_of_ne hq'.ne _, Pi.single_eq_same, hz, Pi.sub_apply,
-          add_sub_cancel]
+      exact exists_forall_lt_succ_eq_cyclicTotalDifferentialAux (by omega) (hR k (by omega))
+        (hdx k (by omega)) hy hxy
   -- The remainder vanishes below row `m + 1`, so it is concentrated in column zero.
   obtain ⟨y, hy, hxy⟩ := key (m + 1) le_rfl
   refine ⟨y, hy, (x - cyclicTotalDifferentialAux R A M m y) (m + 1), ?_⟩
@@ -681,6 +706,60 @@ private theorem cyclicCochainComplexToTotal_f_injective (n : ℕ) :
     cyclicCochainsToTotal_injective R A M n <| by
       rw [← cyclicCochainComplexToTotal_f_apply, ← cyclicCochainComplexToTotal_f_apply, h]
 
+variable {R A M} in
+/-- In degree `m`, a cyclic cochain whose image in the total complex is a total coboundary is a
+cyclic coboundary, when `q + 1` is invertible for `q < m`. Here `p` is the degree preceding
+`m`. -/
+private theorem exists_cyclicCochainComplex_d_eq {m p : ℕ} (hp : (ComplexShape.up ℕ).prev m = p)
+    (hR : ∀ q < m, IsUnit ((q : R) + 1)) (φ : (cyclicCochainComplex R A M).X m)
+    (y : (cyclicTotalComplex R A M).X p)
+    (hy : (cyclicTotalComplex R A M).d p m y = (cyclicCochainComplexToTotal R A M).f m φ) :
+    ∃ ψ, (cyclicCochainComplex R A M).d p m ψ = φ := by
+  cases m with
+  | zero =>
+    -- In degree zero there are no total coboundaries, so `φ = 0`.
+    obtain rfl : p = 0 := hp.symm.trans CochainComplex.prev_nat_zero
+    refine ⟨0, cyclicCochainComplexToTotal_f_injective R A M 0 ?_⟩
+    rw [← hy, (cyclicTotalComplex R A M).shape 0 0 (by simp)]
+    simp
+  | succ m =>
+    obtain rfl : m = p := (CochainComplex.prev_nat_succ m).symm.trans hp
+    have hy' := congrArg (cyclicTotalComplexXIso R A M (m + 1)).hom hy
+    rw [cyclicTotalComplex_d_apply, cyclicCochainComplexToTotal_f_apply] at hy'
+    obtain ⟨ψ, hψ⟩ := exists_cyclicHochschildCoboundary_eq (fun q hq ↦ hR q (by omega)) _ _ hy'
+    refine ⟨(cyclicCochainComplexXIso R A M m).inv ψ,
+      (ModuleCat.mono_iff_injective (cyclicCochainComplexXIso R A M (m + 1)).hom).1
+        inferInstance ?_⟩
+    rw [cyclicCochainComplex_d_apply, Iso.inv_hom_id_apply, hψ]
+
+variable {R A M} in
+/-- In degree `m`, every total cocycle is the image of a cyclic cochain up to a total coboundary,
+when `q + 1` is invertible for `q < m`. Here `p` is the degree preceding `m`. -/
+private theorem exists_cyclicCochainComplexToTotal_f_add_cyclicTotalComplex_d_eq {m p : ℕ}
+    (hp : (ComplexShape.up ℕ).prev m = p) (hR : ∀ q < m, IsUnit ((q : R) + 1))
+    (x : (cyclicTotalComplex R A M).X m) (hx : (cyclicTotalComplex R A M).d m (m + 1) x = 0) :
+    ∃ φ y, (cyclicCochainComplexToTotal R A M).f m φ + (cyclicTotalComplex R A M).d p m y = x := by
+  have hL (n : ℕ) :=
+    (ModuleCat.mono_iff_injective (cyclicTotalComplexXIso R A M n).hom).1 inferInstance
+  have hx' : cyclicTotalDifferential R A M m ((cyclicTotalComplexXIso R A M m).hom x) = 0 := by
+    rw [← cyclicTotalComplex_d_apply, hx, map_zero]
+  cases m with
+  | zero =>
+    -- In degree zero a total cocycle is a cyclic cocycle in column zero.
+    obtain rfl : p = 0 := hp.symm.trans CochainComplex.prev_nat_zero
+    obtain ⟨φ, hφ⟩ := exists_cyclicCochainsToTotal_eq_of_zero _ hx'
+    refine ⟨(cyclicCochainComplexXIso R A M 0).inv φ, 0, hL 0 ?_⟩
+    rw [map_zero, add_zero, cyclicCochainComplexToTotal_f_apply, Iso.inv_hom_id_apply, hφ]
+  | succ m =>
+    -- In positive degree it is a cyclic cocycle in column zero up to a total coboundary.
+    obtain rfl : m = p := (CochainComplex.prev_nat_succ m).symm.trans hp
+    obtain ⟨φ, y, hφy⟩ := exists_cyclicCochainsToTotal_add_cyclicTotalDifferential_eq
+      (fun q hq ↦ hR q (by omega)) _ hx'
+    refine ⟨(cyclicCochainComplexXIso R A M (m + 1)).inv φ,
+      (cyclicTotalComplexXIso R A M m).inv y, hL (m + 1) ?_⟩
+    rw [map_add, cyclicCochainComplexToTotal_f_apply, cyclicTotalComplex_d_apply,
+      Iso.inv_hom_id_apply, Iso.inv_hom_id_apply, hφy]
+
 /-- In degree `m`, a cyclic cocycle whose image is a total coboundary is a cyclic coboundary. -/
 private theorem injective_homologyMap_cyclicCochainComplexToTotal (m : ℕ)
     (hR : ∀ q < m, IsUnit ((q : R) + 1)) :
@@ -688,92 +767,38 @@ private theorem injective_homologyMap_cyclicCochainComplexToTotal (m : ℕ)
   refine (injective_iff_map_eq_zero _).2 fun c hc ↦ ?_
   obtain ⟨φ, hφ, rfl⟩ := (cyclicCochainComplex R A M).exists_homologyπ_moduleCatCyclesMk_eq
     _ (CochainComplex.next ℕ m) c
-  rw [HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk] at hc
-  cases m with
-  | zero =>
-    -- In degree zero there are no total coboundaries, so `φ = 0`.
-    rw [HomologicalComplex.moduleCat_homologyπ_eq_zero_iff _ CochainComplex.prev_nat_zero] at hc
-    obtain ⟨y, hy⟩ := hc
-    have hy' := congrArg ((cyclicTotalComplex R A M).iCycles 0) hy
-    rw [← ModuleCat.comp_apply, HomologicalComplex.toCycles_i,
-      HomologicalComplex.iCycles_moduleCatCyclesMk,
-      HomologicalComplex.shape _ 0 0 (by simp)] at hy'
-    obtain rfl : φ = 0 :=
-      cyclicCochainComplexToTotal_f_injective R A M 0 (by rw [← hy', map_zero]; simp)
-    convert map_zero (ConcreteCategory.hom ((cyclicCochainComplex R A M).homologyπ 0)) using 2
-    exact (cyclicCochainComplex R A M).moduleCat_iCycles_injective 0 (by
-      rw [HomologicalComplex.iCycles_moduleCatCyclesMk, map_zero])
-  | succ m =>
-    rw [HomologicalComplex.moduleCat_homologyπ_eq_zero_iff _ (CochainComplex.prev_nat_succ m)]
-      at hc ⊢
-    obtain ⟨y, hy⟩ := hc
-    have hy' := congrArg ((cyclicTotalComplex R A M).iCycles (m + 1)) hy
-    rw [← ModuleCat.comp_apply, HomologicalComplex.toCycles_i,
-      HomologicalComplex.iCycles_moduleCatCyclesMk] at hy'
-    have hy'' := congrArg (cyclicTotalComplexXIso R A M (m + 1)).hom hy'
-    rw [cyclicTotalComplex_d_apply, cyclicCochainComplexToTotal_f_apply] at hy''
-    obtain ⟨ψ, hψ⟩ := exists_cyclicHochschildCoboundary_eq (fun q hq ↦ hR q (by omega)) _ _ hy''
-    refine ⟨(cyclicCochainComplexXIso R A M m).inv ψ,
-      (cyclicCochainComplex R A M).moduleCat_iCycles_injective (m + 1) ?_⟩
-    rw [← ModuleCat.comp_apply, HomologicalComplex.toCycles_i,
-      HomologicalComplex.iCycles_moduleCatCyclesMk]
-    refine (ModuleCat.mono_iff_injective (cyclicCochainComplexXIso R A M (m + 1)).hom).1
-      inferInstance ?_
-    rw [cyclicCochainComplex_d_apply, Iso.inv_hom_id_apply, hψ]
+  rw [HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk,
+    HomologicalComplex.moduleCat_homologyπ_eq_zero_iff _ rfl] at hc
+  obtain ⟨y, hy⟩ := hc
+  have hy' := congrArg ((cyclicTotalComplex R A M).iCycles m) hy
+  rw [HomologicalComplex.moduleCat_iCycles_toCycles_apply,
+    HomologicalComplex.iCycles_moduleCatCyclesMk] at hy'
+  obtain ⟨ψ, hψ⟩ := exists_cyclicCochainComplex_d_eq rfl hR φ y hy'
+  rw [HomologicalComplex.moduleCat_homologyπ_eq_zero_iff _ rfl]
+  refine ⟨ψ, (cyclicCochainComplex R A M).moduleCat_iCycles_injective m ?_⟩
+  rw [HomologicalComplex.moduleCat_iCycles_toCycles_apply,
+    HomologicalComplex.iCycles_moduleCatCyclesMk, hψ]
 
 /-- In degree `m`, every total cocycle is the image of a cyclic cocycle up to a total coboundary. -/
 private theorem surjective_homologyMap_cyclicCochainComplexToTotal (m : ℕ)
     (hR : ∀ q < m, IsUnit ((q : R) + 1)) :
     Function.Surjective (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) m) := by
-  have hL (n : ℕ) :=
-    (ModuleCat.mono_iff_injective (cyclicTotalComplexXIso R A M n).hom).1 inferInstance
   intro c
   obtain ⟨x, hx, rfl⟩ := (cyclicTotalComplex R A M).exists_homologyπ_moduleCatCyclesMk_eq
     _ (CochainComplex.next ℕ m) c
-  have hx' : cyclicTotalDifferential R A M m ((cyclicTotalComplexXIso R A M m).hom x) = 0 := by
-    rw [← cyclicTotalComplex_d_apply, hx, map_zero]
-  -- a cyclic cochain whose image is a total cocycle is a cyclic cocycle
-  have hcocycle (φ : (cyclicCochainComplex R A M).X m)
-      (hφ : (cyclicTotalComplex R A M).d m (m + 1)
-        ((cyclicCochainComplexToTotal R A M).f m φ) = 0) :
-      (cyclicCochainComplex R A M).d m (m + 1) φ = 0 :=
-    cyclicCochainComplexToTotal_f_injective R A M (m + 1)
-      (by rw [← HomologicalComplex.Hom.comm_apply, hφ, map_zero])
-  cases m with
-  | zero =>
-    -- In degree zero a total cocycle is a cyclic cocycle in column zero.
-    obtain ⟨φ, hφ⟩ := exists_cyclicCochainsToTotal_eq_of_zero _ hx'
-    have hfφ : (cyclicCochainComplexToTotal R A M).f 0
-        ((cyclicCochainComplexXIso R A M 0).inv φ) = x :=
-      hL 0 (by rw [cyclicCochainComplexToTotal_f_apply, Iso.inv_hom_id_apply, hφ])
-    refine ⟨(cyclicCochainComplex R A M).homologyπ 0
-      ((cyclicCochainComplex R A M).moduleCatCyclesMk _ _ (CochainComplex.next ℕ 0)
-        (hcocycle _ (by rw [hfφ, hx]))), ?_⟩
-    rw [HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk]
-    congr 1
-    exact (cyclicTotalComplex R A M).moduleCat_iCycles_injective 0 (by
-      rw [HomologicalComplex.iCycles_moduleCatCyclesMk,
-        HomologicalComplex.iCycles_moduleCatCyclesMk, hfφ])
-  | succ m =>
-    -- In positive degree it is a cyclic cocycle in column zero up to a total coboundary.
-    obtain ⟨φ, y, hφy⟩ := exists_cyclicCochainsToTotal_add_cyclicTotalDifferential_eq
-      (fun q hq ↦ hR q (by omega)) _ hx'
-    have hfφ : (cyclicCochainComplexToTotal R A M).f (m + 1)
-        ((cyclicCochainComplexXIso R A M (m + 1)).inv φ) +
-          (cyclicTotalComplex R A M).d m (m + 1) ((cyclicTotalComplexXIso R A M m).inv y) = x :=
-      hL (m + 1) (by
-        rw [map_add, cyclicCochainComplexToTotal_f_apply, cyclicTotalComplex_d_apply,
-          Iso.inv_hom_id_apply, Iso.inv_hom_id_apply, hφy])
-    refine ⟨(cyclicCochainComplex R A M).homologyπ (m + 1)
-      ((cyclicCochainComplex R A M).moduleCatCyclesMk _ _ (CochainComplex.next ℕ (m + 1))
-        (hcocycle _ (by
-          rw [← sub_eq_of_eq_add hfφ.symm, map_sub, hx,
-            HomologicalComplex.d_comp_d_apply, sub_zero]))), ?_⟩
-    rw [HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk]
-    refine ((cyclicTotalComplex R A M).moduleCat_homologyπ_eq_of_iCycles_sub_eq_d
-      ((cyclicTotalComplexXIso R A M m).inv y) ?_).symm
-    rw [HomologicalComplex.iCycles_moduleCatCyclesMk,
-      HomologicalComplex.iCycles_moduleCatCyclesMk, ← hfφ, add_sub_cancel_left]
+  obtain ⟨φ, y, hφy⟩ :=
+    exists_cyclicCochainComplexToTotal_f_add_cyclicTotalComplex_d_eq rfl hR x hx
+  -- the cyclic cochain `φ` is a cocycle, since its image `x - d y` is a total cocycle
+  have hφ : (cyclicCochainComplex R A M).d m (m + 1) φ = 0 :=
+    cyclicCochainComplexToTotal_f_injective R A M (m + 1) (by
+      rw [← HomologicalComplex.Hom.comm_apply, eq_sub_of_add_eq hφy, map_sub, hx,
+        HomologicalComplex.d_comp_d_apply, sub_zero, map_zero])
+  refine ⟨(cyclicCochainComplex R A M).homologyπ m
+    ((cyclicCochainComplex R A M).moduleCatCyclesMk φ _ (CochainComplex.next ℕ m) hφ), ?_⟩
+  rw [HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk]
+  refine ((cyclicTotalComplex R A M).moduleCat_homologyπ_eq_of_iCycles_sub_eq_d y ?_).symm
+  rw [HomologicalComplex.iCycles_moduleCatCyclesMk,
+    HomologicalComplex.iCycles_moduleCatCyclesMk, ← hφy, add_sub_cancel_left]
 
 /-- **Cyclic cochains compute the cohomology of the cyclic bicomplex.** In degree `m`, the
 inclusion of Connes' cyclic cochain complex into column zero of the total complex of the cyclic

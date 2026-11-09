@@ -195,8 +195,9 @@ theorem IsBicollar.exists_pathComponents_sphere (h : IsBicollar f b) (hE : 2 ≤
     · exact Or.inr ((hjoined hr hq).1 hr').symm
   have hAo : IsOpen A := hX.pathComponentIn p
   have hBo : IsOpen B := hX.pathComponentIn q
-  rcases h.mapsTo_or_mapsTo hAo hBo hAB hXAB ⟨p, mem_pathComponentIn_self hp⟩
-      ⟨q, mem_pathComponentIn_self hq⟩ with ⟨hpos, hneg⟩ | ⟨hpos, hneg⟩
+  rcases h.mapsTo_and_mapsTo_or_mapsTo_and_mapsTo hAo hBo hAB hXAB
+      ⟨p, mem_pathComponentIn_self hp⟩ ⟨q, mem_pathComponentIn_self hq⟩ with
+    ⟨hpos, hneg⟩ | ⟨hpos, hneg⟩
   · exact ⟨A, B, hAo, hBo, hAB, hXAB, isPathConnected_pathComponentIn hp,
       isPathConnected_pathComponentIn hq, hpos, hneg⟩
   · exact ⟨B, A, hBo, hAo, hAB.symm, hXAB.trans (union_comm _ _),

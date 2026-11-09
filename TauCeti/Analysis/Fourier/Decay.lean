@@ -17,7 +17,11 @@ import TauCeti.Analysis.Fourier.FourierCoeffOn
 A smooth compactly supported function is a Schwartz function, so its Fourier transform is again a
 Schwartz function and therefore decays faster than every negative power of `‖v‖`. This file records
 that decay in the elementary form `‖v‖ ^ k * ‖𝓕 f v‖ ≤ C`, which is the shape a Fourier transform
-is used in when it weights a comparison test.
+is used in when it weights a comparison test. Without smoothness or compact support, integrating by
+parts `N` times gives the explicit bound `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖` for a `C^N` function
+whose derivatives up to order `N` are integrable. The file also records the angular-frequency form
+`∫ exp(-i ⟪v, ξ⟫) f v dv = 𝓕 f ((2π)⁻¹ ξ)` of the Fourier transform, whose integrand is
+integrable whenever `f` is.
 
 The periodic analogue concerns Fourier coefficients on `AddCircle T`. Integrating by parts over a
 period, with no boundary term by periodicity, multiplies the `n`-th Fourier coefficient by
@@ -31,6 +35,14 @@ strip around the real axis has exponentially decaying Fourier coefficients, by C
 * `TauCeti.exists_norm_pow_mul_norm_fourier_le`: for every exponent `k`, the Fourier transform of a
   smooth compactly supported function on a finite-dimensional real inner product space satisfies
   `‖v‖ ^ k * ‖𝓕 f v‖ ≤ C` for some `C > 0`.
+* `TauCeti.exists_one_add_norm_pow_mul_norm_fourier_le`: the same decay with the weight
+  `(1 + ‖v‖) ^ k`.
+* `TauCeti.pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv`: if `f` is `C^N` and its
+  derivatives up to order `N` are integrable, then `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖`.
+* `TauCeti.integral_exp_smul_eq_fourier`: the integral `∫ exp(-i ⟪v, ξ⟫) f v dv` in angular
+  frequency is the Fourier transform `𝓕 f ((2π)⁻¹ ξ)`.
+* `TauCeti.integrable_exp_neg_inner_smul`: multiplying an integrable function by the phase
+  `exp(-i ⟪v, ξ⟫)` keeps it integrable.
 * `TauCeti.exists_abs_pow_mul_norm_fourierCoeff_le`: if `f : AddCircle T → ℂ` is `C^k` as a
   periodic function on `ℝ`, then `|n| ^ k * ‖fourierCoeff f n‖ ≤ C` for some `C`.
 * `TauCeti.periodic_cexp_two_pi_mul_I_mul_div`: the Fourier monomial `z ↦ e^{2πinz/T}` on `ℂ` is
@@ -63,6 +75,66 @@ theorem exists_norm_pow_mul_norm_fourier_le (hf : ContDiff ℝ ∞ f) (hsupp : H
     simp
   have h := hC v
   rwa [norm_iteratedFDeriv_zero, SchwartzMap.fourier_coe, hcoe0] at h
+
+/-- The Fourier transform of a smooth compactly supported function decays faster than every power
+of `(1 + ‖v‖)⁻¹`, because it is a Schwartz function. -/
+theorem exists_one_add_norm_pow_mul_norm_fourier_le (hf : ContDiff ℝ ∞ f)
+    (hsupp : HasCompactSupport f) (k : ℕ) : ∃ C : ℝ, ∀ v : V, (1 + ‖v‖) ^ k * ‖𝓕 f v‖ ≤ C := by
+  have hcoe : ⇑(hsupp.toSchwartzMap hf) = f := funext (hsupp.toSchwartzMap_toFun hf)
+  let g : SchwartzMap V E := 𝓕 (hsupp.toSchwartzMap hf)
+  refine ⟨2 ^ k * (Finset.Iic (k, 0)).sup (fun m ↦ SchwartzMap.seminorm ℂ m.1 m.2) g,
+    fun v ↦ ?_⟩
+  have h := SchwartzMap.one_add_le_sup_seminorm_apply (𝕜 := ℂ) (m := (k, 0)) le_rfl le_rfl g v
+  rwa [norm_iteratedFDeriv_zero, SchwartzMap.fourier_coe, hcoe] at h
+
+open MeasureTheory Real in
+/-- **Integration by parts.** If `f` is `C^N` and its derivatives of order at most `N` are
+integrable, then `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖`. -/
+theorem pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv {N : ℕ} (hf : ContDiff ℝ N f)
+    (hf' : ∀ n ≤ N, Integrable (iteratedFDeriv ℝ n f)) (w : V) :
+    (2 * π * ‖w‖) ^ N * ‖𝓕 f w‖ ≤ ∫ v, ‖iteratedFDeriv ℝ N f v‖ := by
+  have key := congrFun (Real.fourier_iteratedFDeriv (N := N) hf
+    (fun n hn ↦ hf' n (mod_cast hn)) le_rfl) w
+  have hle : ‖𝓕 (iteratedFDeriv ℝ N f) w (fun _ ↦ w)‖ ≤
+      (∫ v, ‖iteratedFDeriv ℝ N f v‖) * ‖w‖ ^ N := by
+    refine ((𝓕 (iteratedFDeriv ℝ N f) w).le_opNorm _).trans ?_
+    rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+    gcongr
+    exact Real.norm_fourier_le_integral_norm _ _
+  have heq : ‖𝓕 (iteratedFDeriv ℝ N f) w (fun _ ↦ w)‖ =
+      (2 * π * ‖w‖) ^ N * ‖𝓕 f w‖ * ‖w‖ ^ N := by
+    rw [key, VectorFourier.fourierPowSMulRight_apply]
+    simp only [neg_apply, Finset.prod_const, Finset.card_univ, Fintype.card_fin, norm_smul,
+      norm_pow, norm_neg, Complex.norm_mul, Complex.norm_ofNat, Complex.norm_real,
+      Real.norm_eq_abs, abs_of_pos pi_pos, Complex.norm_I, mul_one]
+    rw [innerSL_apply_apply, real_inner_self_eq_norm_sq, abs_of_nonneg (by positivity)]
+    ring
+  rcases eq_or_ne (‖w‖ ^ N) 0 with h | h
+  · obtain ⟨hw, hN⟩ := pow_eq_zero_iff'.mp h
+    rw [hw, mul_zero, zero_pow hN, zero_mul]
+    exact integral_nonneg fun _ ↦ norm_nonneg _
+  · exact le_of_mul_le_mul_right (heq ▸ hle) (lt_of_le_of_ne (by positivity) (Ne.symm h))
+
+open Real in
+open scoped RealInnerProductSpace in
+/-- The Fourier transform in angular frequency: `∫ exp(-i ⟪v, ξ⟫) f v dv = 𝓕 f ((2π)⁻¹ ξ)`. -/
+theorem integral_exp_smul_eq_fourier (f : V → E) (ξ : V) :
+    ∫ v, Complex.exp (-(⟪v, ξ⟫ * Complex.I)) • f v = 𝓕 f ((2 * π)⁻¹ • ξ) := by
+  rw [Real.fourier_eq']
+  congr 1 with v
+  rw [inner_smul_right]
+  congr 2
+  push_cast
+  field_simp
+
+open MeasureTheory in
+open scoped RealInnerProductSpace in
+/-- Multiplying an integrable function by the phase `exp(-i ⟪v, ξ⟫)` keeps it integrable. -/
+theorem integrable_exp_neg_inner_smul (hf : Integrable f) (ξ : V) :
+    Integrable fun v ↦ Complex.exp (-(⟪v, ξ⟫ * Complex.I)) • f v :=
+  hf.norm.mono' ((by fun_prop : Continuous fun v : V ↦
+    Complex.exp (-(⟪v, ξ⟫ * Complex.I))).aestronglyMeasurable.smul hf.aestronglyMeasurable)
+    (ae_of_all _ fun v ↦ by simp [norm_smul, Complex.norm_exp])
 
 section Circle
 

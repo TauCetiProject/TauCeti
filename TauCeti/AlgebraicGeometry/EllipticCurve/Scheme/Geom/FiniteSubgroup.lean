@@ -9,6 +9,8 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.PointsDivisor
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveLevel
 import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
+import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
+import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale.Locus
 import TauCeti.CategoryTheory.Monoidal.Cartesian.Over
 import Mathlib.AlgebraicGeometry.Morphisms.FlatMono
@@ -114,16 +116,7 @@ theorem IsFiberwiseInjective.exists_grpObj_isMonHom_pointsDivisor (hφ : E.IsFib
   have : IsFinite D.hom :=
     inferInstanceAs (IsFinite ((E.pointsDivisor φ).subschemeι ≫ E.structureMap))
   have : IsProper (D ⊗ D).hom := by rw [Over.tensorObj_hom]; infer_instance
-  have hqc {T : Over S} (f : T ⟶ Over.mk E.structureMap) [IsProper T.hom] :
-      QuasiCompact f.left := by
-    have : IsProper (f.left ≫ E.structureMap) := by
-      exact (Over.w f).symm ▸ (inferInstance : IsProper T.hom)
-    have := IsProper.of_comp f.left E.structureMap
-    infer_instance
-  have hcheck {T : Scheme.{u}} (f : T ⟶ E.carrier) [QuasiCompact f]
-      (𝒱 : T.OpenCover) (h : ∀ a, I ≤ (𝒱.f a ≫ f).ker) : I ≤ f.ker := by
-    rw [← f.iInf_ker_openCover_map_comp 𝒱]
-    exact le_iInf h
+  have : IsSeparated (Over.mk E.structureMap).hom := inferInstanceAs (IsSeparated E.structureMap)
   -- The section cover detects the three subgroup equations: the unit lies on the divisor,
   -- and multiplication and inversion preserve it after restriction to the section charts.
   apply (GroupScheme.exists_grpObj_isMonHom_iff_ker_le i).mpr
@@ -132,8 +125,9 @@ theorem IsFiberwiseInjective.exists_grpObj_isMonHom_pointsDivisor (hφ : E.IsFib
   refine ⟨?_, ?_, ?_⟩
   · simpa [i, I, map_one, one_left] using E.pointsDivisor_le_ker φ 1
   · -- Cover the product by pairs of the disjoint sections.
-    have := hqc ((i ⊗ₘ i) ≫ μ[Over.mk E.structureMap])
-    apply hcheck _ (Scheme.Pullback.openCoverOfLeftRight 𝒰 𝒰 D.hom D.hom)
+    have := quasiCompact_left_of_quasiCompact_hom ((i ⊗ₘ i) ≫ μ[Over.mk E.structureMap])
+    apply Scheme.Hom.le_ker_of_openCover _ _
+      (Scheme.Pullback.openCoverOfLeftRight 𝒰 𝒰 D.hom D.hom)
     rintro ⟨a, b⟩
     have h : (Scheme.Pullback.openCoverOfLeftRight 𝒰 𝒰 D.hom D.hom).f (a, b) ≫
         ((i ⊗ₘ i) ≫ μ[Over.mk E.structureMap]).left =
@@ -143,8 +137,8 @@ theorem IsFiberwiseInjective.exists_grpObj_isMonHom_pointsDivisor (hφ : E.IsFib
       exact h
     rw [h]
     exact (E.pointsDivisor_le_ker φ (a * b)).trans (Scheme.Hom.le_ker_comp _ _)
-  · have := hqc (i ≫ ι[Over.mk E.structureMap])
-    apply hcheck _ 𝒰
+  · have := quasiCompact_left_of_quasiCompact_hom (i ≫ ι[Over.mk E.structureMap])
+    apply Scheme.Hom.le_ker_of_openCover _ _ 𝒰
     intro a
     have h : 𝒰.f a ≫ (i ≫ ι[Over.mk E.structureMap]).left = (φ a⁻¹).left := by
       dsimp only [𝒰]

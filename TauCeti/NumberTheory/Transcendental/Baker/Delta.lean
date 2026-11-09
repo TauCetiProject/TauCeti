@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.GCDMonoid.Finset
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.Algebra.Polynomial.Lifts
+public import Mathlib.Algebra.Polynomial.Sequence
 public import Mathlib.RingTheory.Binomial
 import Mathlib.Algebra.Polynomial.Taylor
 import Mathlib.Data.Nat.Choose.Bounds
@@ -48,12 +49,20 @@ Read at a single prime `p`, the denominator bound with `L = lcm(1, …, k)` says
 
 ## Main results
 
+* `TauCeti.degree_multichoose_X_add_one`: `Δ(X; k)` has degree `k`.
 * `TauCeti.multichoose_X_add_one_comp_C_add_C_mul_X_mem_lifts`: `Δ(a + L X; k)` has integral
   coefficients.
 * `TauCeti.pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast`: Baker's
   denominator bound, `L ^ m Δ(x; k, l, m) ∈ ℤ` for integral `x`.
 * `TauCeti.lcm_pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast`: its classical
   form, with `L = lcm(1, …, k)`.
+* `TauCeti.pow_mul_eval_hasseDeriv_map_multichoose_X_add_one_comp_C_mul_X_mem_range_intCast`: the
+  denominator bound for `Δ(q X; k)` over a field of characteristic zero, at points `x` with
+  `q x` integral.
+* `TauCeti.eval_map_multichoose_X_add_one_comp_C_mul_X_mem_range_intCast`: its case `m = 0`,
+  `Δ(q x; k) ∈ ℤ`.
+* `TauCeti.bakerDeltaSequence`: for `q ≠ 0`, the polynomials `Δ(q X; k)` over a field of
+  characteristic zero form a polynomial sequence.
 * `TauCeti.abs_eval_hasseDeriv_multichoose_X_add_one_pow_le`: the size bound.
 
 ## References
@@ -81,6 +90,23 @@ private theorem multichoose_X_add_one_succ (k : ℕ) :
     nsmul_eq_mul]
   push_cast
   linear_combination -(Ring.multichoose (X + 1 : ℚ[X]) k * X) * h
+
+/-- Baker's binomial polynomial `Δ(X; k)` has degree `k`. -/
+@[simp]
+theorem degree_multichoose_X_add_one (k : ℕ) :
+    (Ring.multichoose (X + 1 : ℚ[X]) k).degree = k := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [multichoose_X_add_one_succ, degree_mul, ih, ← C_1,
+      degree_linear (inv_ne_zero (by positivity))]
+    norm_cast
+
+/-- Baker's binomial polynomial `Δ(X; k)` has natural degree `k`. -/
+@[simp]
+theorem natDegree_multichoose_X_add_one (k : ℕ) :
+    (Ring.multichoose (X + 1 : ℚ[X]) k).natDegree = k :=
+  natDegree_eq_of_degree_eq_some (degree_multichoose_X_add_one k)
 
 /-- Composition with `q` is the binomial-ring specialisation `X ↦ q`: `Δ(q; n)` is
 `Ring.multichoose (q + 1) n`. -/
@@ -174,6 +200,84 @@ theorem lcm_pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast
   simpa using pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast
     (L := ((Finset.Icc 1 k).lcm id : ℕ)) (fun j hj => Int.natCast_dvd_natCast.mpr
       (Finset.dvd_lcm (f := id) hj)) l m x
+
+/-- **Baker's denominator bound at points of a scaled lattice.** Let `K` be a field of
+characteristic zero, `q` an integer and `x ∈ K` with `q x` an integer, and let `L` be an integer
+divisible by each of `1, …, k`. Then for every `m`,
+
+`L ^ m (1 / m!) (d / dx) ^ m Δ(q x; k)`
+
+is an integer. Here `Δ(q X; k)` is mapped to `K[X]` and differentiated in `X`. For `q = 1` and
+`x` integral this is the case `l = 1` of
+`TauCeti.pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast`. -/
+theorem pow_mul_eval_hasseDeriv_map_multichoose_X_add_one_comp_C_mul_X_mem_range_intCast
+    {K : Type*} [Field K] [CharZero K] {k : ℕ} {L : ℤ}
+    (hL : ∀ j ∈ Finset.Icc 1 k, (j : ℤ) ∣ L) (q : ℤ) {x : K}
+    (hx : (q : K) * x ∈ Set.range (Int.cast : ℤ → K)) (m : ℕ) :
+    (L : K) ^ m * (hasseDeriv m (((Ring.multichoose (X + 1 : ℚ[X]) k).comp
+      (C (q : ℚ) * X)).map (algebraMap ℚ K))).eval x ∈ Set.range (Int.cast : ℤ → K) := by
+  obtain ⟨a, ha⟩ := hx
+  -- The Taylor expansion of `Δ(q X; k)` at `x` is `Δ(a + q X; k)`, with `a = q x`.
+  have htaylor : taylor x (((Ring.multichoose (X + 1 : ℚ[X]) k).comp
+      (C (q : ℚ) * X)).map (algebraMap ℚ K)) =
+      ((Ring.multichoose (X + 1 : ℚ[X]) k).comp (C (a : ℚ) + C (q : ℚ) * X)).map
+        (algebraMap ℚ K) := by
+    rw [taylor_apply, Polynomial.map_comp, Polynomial.map_comp, comp_assoc]
+    congr 1
+    simp only [Polynomial.map_mul, Polynomial.map_add, Polynomial.map_C, Polynomial.map_X,
+      mul_comp, C_comp, X_comp]
+    rw [mul_add, ← C_mul, map_intCast (algebraMap ℚ K), map_intCast (algebraMap ℚ K), ha, add_comm]
+  -- Rescaling `X` by `L` makes the coefficients integral.
+  have hL' : ∀ j ∈ Finset.Icc 1 k, (j : ℤ) ∣ q * L := fun j hj ↦ (hL j hj).mul_left q
+  have h := multichoose_X_add_one_comp_C_add_C_mul_X_mem_lifts hL' a
+  have e : (Ring.multichoose (X + 1 : ℚ[X]) k).comp (C (a : ℚ) + C ((q * L : ℤ) : ℚ) * X) =
+      ((Ring.multichoose (X + 1 : ℚ[X]) k).comp (C (a : ℚ) + C (q : ℚ) * X)).comp
+        (C (L : ℚ) * X) := by
+    rw [comp_assoc]
+    congr 1
+    simp only [add_comp, C_comp, mul_comp, X_comp, Int.cast_mul, C_mul]
+    ring
+  rw [e, lifts_iff_coeff_lifts] at h
+  obtain ⟨z, hz⟩ := h m
+  rw [comp_C_mul_X_coeff, eq_intCast] at hz
+  refine ⟨z, ?_⟩
+  rw [← taylor_coeff, htaylor, coeff_map, ← map_intCast (algebraMap ℚ K) L, ← map_pow, ← map_mul,
+    mul_comm, ← hz, map_intCast]
+
+/-- **Integer values of Baker's binomial polynomial at points of a scaled lattice.** Let `K` be a
+field of characteristic zero, `q` an integer and `x ∈ K` with `q x` an integer. Then `Δ(q x; k)`
+is an integer. -/
+theorem eval_map_multichoose_X_add_one_comp_C_mul_X_mem_range_intCast {K : Type*} [Field K]
+    [CharZero K] (k : ℕ) (q : ℤ) {x : K} (hx : (q : K) * x ∈ Set.range (Int.cast : ℤ → K)) :
+    (((Ring.multichoose (X + 1 : ℚ[X]) k).comp (C (q : ℚ) * X)).map (algebraMap ℚ K)).eval x ∈
+      Set.range (Int.cast : ℤ → K) := by
+  -- This is the case `m = 0` of the denominator bound, with `L = k!`.
+  simpa using pow_mul_eval_hasseDeriv_map_multichoose_X_add_one_comp_C_mul_X_mem_range_intCast
+    (L := (k.factorial : ℤ)) (fun j hj ↦ Int.natCast_dvd_natCast.2
+      (Nat.dvd_factorial (Finset.mem_Icc.1 hj).1 (Finset.mem_Icc.1 hj).2)) q hx 0
+
+/-- For an integer `q ≠ 0`, Baker's binomial polynomials `Δ(q X; k)`, mapped to `K[X]` for a
+field `K` of characteristic zero, form a polynomial sequence: `Δ(q X; k)` has degree `k`. -/
+noncomputable def bakerDeltaSequence (K : Type*) [Field K] [CharZero K] {q : ℤ} (hq : q ≠ 0) :
+    Polynomial.Sequence K where
+  elems' k := ((Ring.multichoose (X + 1 : ℚ[X]) k).comp (C (q : ℚ) * X)).map (algebraMap ℚ K)
+  degree_eq' k := by
+    have hlin : (C (q : ℚ) * X).degree = 1 := degree_C_mul_X (Int.cast_ne_zero.2 hq)
+    rw [degree_map_eq_of_injective (algebraMap ℚ K).injective,
+      degree_comp (by rw [hlin]; exact zero_lt_one), hlin, degree_multichoose_X_add_one, mul_one]
+
+/-- The `k`-th term of `TauCeti.bakerDeltaSequence K hq` is `Δ(q X; k)`. -/
+@[simp]
+theorem bakerDeltaSequence_apply (K : Type*) [Field K] [CharZero K] {q : ℤ} (hq : q ≠ 0)
+    (k : ℕ) :
+    bakerDeltaSequence K hq k =
+      ((Ring.multichoose (X + 1 : ℚ[X]) k).comp (C (q : ℚ) * X)).map (algebraMap ℚ K) :=
+  (rfl)
+
+/-- The leading coefficients of the polynomials `Δ(q X; k)` are units. -/
+theorem isUnit_leadingCoeff_bakerDeltaSequence (K : Type*) [Field K] [CharZero K] {q : ℤ}
+    (hq : q ≠ 0) (k : ℕ) : IsUnit (bakerDeltaSequence K hq k).leadingCoeff :=
+  isUnit_iff_ne_zero.2 (leadingCoeff_ne_zero.2 ((bakerDeltaSequence K hq).ne_zero k))
 
 /-- The coefficient length of the translate `Δ(X + x; k)` is at most `(n + k + 1 choose k)`
 whenever `|x| ≤ n`. -/

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.GaugeRescale
-public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 public import Mathlib.Analysis.Normed.Module.Convex
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
@@ -47,8 +46,7 @@ valued in the closed unit ball.
   finite dimension `k` is homeomorphic to the cube `Iᵏ`.
 * `TauCeti.sphereHomeomorphOfFinrankEq` and `TauCeti.closedBallHomeomorphOfFinrankEq`: the unit
   spheres, and the closed unit balls, of two finite-dimensional real normed spaces of the same
-  dimension are homeomorphic; `TauCeti.sphereHomeomorphOfFinrankEq_neg`: the first commutes with
-  the antipodal map.
+  dimension are homeomorphic.
 * `TauCeti.nonempty_homeomorph_closedBall_of_convex`: a compact convex set with nonempty interior
   is homeomorphic to a closed ball of the same dimension.
 * `TauCeti.nonempty_homeomorph_Icc_prod_closedBall`: a nondegenerate closed rectangle is
@@ -263,20 +261,6 @@ theorem coe_sphereHomeomorphOfFinrankEq_apply (hEF : Module.finrank ℝ E = Modu
       (ContinuousLinearEquiv.ofFinrankEq hEF).unitBallHomeomorph x :=
   (rfl)
 
-/-- `TauCeti.sphereHomeomorphOfFinrankEq` commutes with the antipodal map. -/
-theorem sphereHomeomorphOfFinrankEq_neg (hEF : Module.finrank ℝ E = Module.finrank ℝ F)
-    (x : sphere (0 : E) 1) :
-    sphereHomeomorphOfFinrankEq hEF (-x) = -sphereHomeomorphOfFinrankEq hEF x := by
-  ext
-  rw [coe_neg_sphere, coe_sphereHomeomorphOfFinrankEq_apply,
-    coe_sphereHomeomorphOfFinrankEq_apply, coe_neg_sphere,
-    ContinuousLinearEquiv.unitBallHomeomorph_apply,
-    ContinuousLinearEquiv.unitBallHomeomorph_apply, map_neg, gaugeRescale_def, gaugeRescale_def,
-    gauge_neg, gauge_neg, smul_neg]
-  · exact fun y hy ↦ by simpa using hy
-  · rintro _ ⟨y, hy, rfl⟩
-    exact ⟨-y, by simpa using hy, map_neg _ y⟩
-
 /-- The closed unit balls of two finite-dimensional real normed spaces of the same dimension are
 homeomorphic, through `ContinuousLinearEquiv.unitBallHomeomorph` applied to
 `ContinuousLinearEquiv.ofFinrankEq`. -/
@@ -294,15 +278,20 @@ theorem coe_closedBallHomeomorphOfFinrankEq_apply
       (ContinuousLinearEquiv.ofFinrankEq hEF).unitBallHomeomorph x :=
   (rfl)
 
-/-- **Convex bodies are balls.** A compact convex set with nonempty interior in a
-finite-dimensional real normed space is homeomorphic to the closed unit ball of any real normed
-space of the same dimension. -/
+omit [FiniteDimensional ℝ E] in
+/-- **Convex bodies are balls.** A compact convex set with nonempty interior in a real normed space
+(which is then finite-dimensional, by Riesz's theorem) is homeomorphic to the closed unit ball of
+any finite-dimensional real normed space of the same dimension. -/
 theorem nonempty_homeomorph_closedBall_of_convex {s : Set E} (hc : Convex ℝ s)
     (hs : IsCompact s) (hn : (interior s).Nonempty)
     (hEF : Module.finrank ℝ E = Module.finrank ℝ F) :
     Nonempty (s ≃ₜ closedBall (0 : F) 1) := by
+  -- a compact set with an interior point forces `E` to be finite-dimensional (Riesz)
+  obtain ⟨x, hx⟩ := hn
+  have : FiniteDimensional ℝ E :=
+    .of_totallyBounded_nhds ℝ (mem_interior_iff_mem_nhds.mp hx) hs.totallyBounded
   obtain ⟨h, -, hcl, -⟩ :=
-    exists_homeomorph_image_interior_closure_frontier_eq_unitBall hc hn hs.isBounded
+    exists_homeomorph_image_interior_closure_frontier_eq_unitBall hc ⟨x, hx⟩ hs.isBounded
   rw [hs.isClosed.closure_eq] at hcl
   exact ⟨((h.image s).trans (Homeomorph.setCongr hcl)).trans
     (closedBallHomeomorphOfFinrankEq hEF)⟩
@@ -312,9 +301,10 @@ end FinrankEq
 /-- A product of two nondegenerate closed real intervals is homeomorphic to the closed unit ball
 of any two-dimensional real normed space. -/
 theorem nonempty_homeomorph_Icc_prod_closedBall {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] [FiniteDimensional ℝ F] {a b c d : ℝ} (hab : a < b) (hcd : c < d)
+    [NormedSpace ℝ F] {a b c d : ℝ} (hab : a < b) (hcd : c < d)
     (hF : Module.finrank ℝ F = 2) :
     Nonempty ((Icc a b ×ˢ Icc c d) ≃ₜ closedBall (0 : F) 1) :=
+  haveI : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
   nonempty_homeomorph_closedBall_of_convex ((convex_Icc _ _).prod (convex_Icc _ _))
     (isCompact_Icc.prod isCompact_Icc)
     (by rw [interior_prod_eq, interior_Icc, interior_Icc]

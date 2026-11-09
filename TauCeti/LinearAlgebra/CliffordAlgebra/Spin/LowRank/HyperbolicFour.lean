@@ -76,6 +76,7 @@ noncomputable def hyperbolicFourEvenEquivMatrixProd :
   simpa using (splitEvenPolarization K 2).evenCliffordEquivProdMatrix
     (splitEvenPolarization_W_ne_bot K (by norm_num)) (finrank_splitEvenSpace K 2)
 
+omit [NeZero (2 : K)] in
 /-- The hyperbolic even-Clifford equivalence applies the matrix-product model of the canonical
 polarization. The latter's application theorem identifies its two coordinates with the matrices
 of the two half-spin actions. -/
@@ -95,6 +96,7 @@ noncomputable def hyperbolicFourCenterEvenEquivProd :
   (centerCongr (hyperbolicFourEvenEquivMatrixProd K)).trans
     (centerProdAlgEquivOfIsCentral K _ _)
 
+omit [NeZero (2 : K)] in
 /-- The inverse of the hyperbolic centre equivalence sends a pair of scalars to the even Clifford
 element whose two matrix components are the corresponding scalar matrices. -/
 @[simp]
