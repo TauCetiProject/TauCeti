@@ -8,7 +8,8 @@ module
 public import Mathlib.Topology.MetricSpace.Lipschitz
 public import Mathlib.Topology.MetricSpace.Isometry
 public import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
-public import Mathlib.Topology.Order.MonotoneConvergence
+public import TauCeti.Topology.Order.MonotoneConvergence
+public import TauCeti.Topology.Compactness.Compact
 public import Mathlib.Order.Filter.Ultrafilter.Basic
 public import Mathlib.Tactic.Linarith
 public import Mathlib.Tactic.Push
@@ -91,9 +92,8 @@ theorem neg_dist_le_busemann {ray : ℝ → M}
 theorem tendsto_busemannApprox {ray : ℝ → M}
     (hray : Isometry ((Ici (0 : ℝ)).domRestrict ray)) (x : M) :
     Tendsto (fun t ↦ busemannApprox ray t x) atTop (𝓝 (busemann ray x)) :=
-  tendsto_comp_val_Ici_atTop.mp
-    (tendsto_atTop_ciInf (Set.antitoneOn_iff_antitone.mp (busemannApprox_antitone hray x))
-      (busemannApprox_bddBelow hray x))
+  tendsto_atTop_ciInf_of_antitoneOn_Ici (busemannApprox_antitone hray x)
+    (by rw [image_eq_range]; exact busemannApprox_bddBelow hray x)
 
 /-- The actual Busemann function is 1-Lipschitz. -/
 theorem lipschitzWith_busemann {ray : ℝ → M} (hray : Isometry ((Ici (0 : ℝ)).domRestrict ray)) :
@@ -149,9 +149,9 @@ theorem exists_isometry_restrict_hyperfilter_limit [ProperSpace M]
       t ∈ I → Tendsto (fun k ↦ curve k t) (hyperfilter ℕ : Filter ℕ) (𝓝 x) := by
     intro t
     by_cases ht : t ∈ I
-    · obtain ⟨x, _, hx⟩ := (isCompact_closedBall (curve 0 0) (R + |t|)).ultrafilter_le_nhds'
-        ((hyperfilter ℕ).map fun k ↦ curve k t) (hball t ht)
-      rw [Ultrafilter.coe_map] at hx
+    · obtain ⟨x, -, hx⟩ :=
+        (isCompact_closedBall (curve 0 0) (R + |t|)).exists_tendsto_of_eventually_mem
+          (U := hyperfilter ℕ) (hball t ht)
       exact ⟨x, fun _ ↦ hx⟩
     · exact ⟨curve 0 0, fun h ↦ absurd h ht⟩
   choose ray hray using hlimit
