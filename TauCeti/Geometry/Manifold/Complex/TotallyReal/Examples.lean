@@ -42,7 +42,7 @@ theorem isTotallyRealEmbedding_realLocus {ι : Type*} [Fintype ι] (n : ℕ∞ω
     funext i
     apply Complex.ofReal_injective
     simpa [L] using congrFun h i
-  rw [isTotallyRealEmbedding_continuousLinearMap_iff]
+  rw [ContinuousLinearMap.isTotallyRealEmbedding_iff]
   refine ⟨by simp [Module.finrank_pi_fintype, Nat.mul_comm], ?_⟩
   have hJ : (AlmostComplexStructure.ofComplexModule (ι → ℂ)).toLinearMap =
       (LinearMap.lsmul ℂ (ι → ℂ) I).restrictScalars ℝ := by
@@ -119,7 +119,7 @@ theorem not_isTotallyRealEmbedding_complexLine (n : ℕ∞ω) :
       (AlmostComplexStructure.ofComplexModule (ℂ × ℂ)).constSmooth.almostComplexStructureAt
       ((ContinuousLinearMap.inl ℂ ℂ ℂ).restrictScalars ℝ) := by
   intro h
-  have ht := (isTotallyRealEmbedding_continuousLinearMap_iff _ _).1 h |>.2 |>.isTotallyReal
+  have ht := (ContinuousLinearMap.isTotallyRealEmbedding_iff _ _).1 h |>.2 |>.isTotallyReal
   rw [isTotallyReal_iff, Submodule.disjoint_def] at ht
   have hz : (1, 0) = (0 : ℂ × ℂ) := ht (1, 0) ⟨1, rfl⟩
     ⟨(-I, 0), ⟨-I, rfl⟩, by

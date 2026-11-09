@@ -27,7 +27,7 @@ assumes half-dimensionality or a nonempty source.
 * `isTotallyRealEmbedding_of_contMDiff`: construct embeddings without supplying immersion.
 * `SmoothTwoForm.IsNondegenerate.IsLagrangianMap.isTotallyRealEmbedding`: the pointwise tame
   comparison with an independently supplied `C^n` embedding.
-* `isTotallyRealEmbedding_continuousLinearMap_iff`: the vector-space model criterion.
+* `ContinuousLinearMap.isTotallyRealEmbedding_iff`: the vector-space model criterion.
 
 ## References
 
@@ -204,7 +204,8 @@ omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] [IsManifold I' n N]
   [IsManifold I' n P] in
 /-- A diffeomorphism of the source preserves and reflects the maximal total reality of tangent
 images. -/
-theorem _root_.Diffeomorph.isMaximalTotallyRealMap_comp_iff (φ : P ≃ₘ^n⟮I', I'⟯ N) (hn : n ≠ 0) :
+theorem _root_.Diffeomorph.isMaximalTotallyRealMap_comp_diffeomorph_iff
+    (φ : P ≃ₘ^n⟮I', I'⟯ N) (hn : n ≠ 0) :
     IsMaximalTotallyRealMap I' I A (f ∘ φ) ↔ IsMaximalTotallyRealMap I' I A f := by
   simp only [isMaximalTotallyRealMap_iff, φ.range_mfderiv_comp_diffeomorph hn,
     Function.comp_apply]
@@ -213,16 +214,17 @@ theorem _root_.Diffeomorph.isMaximalTotallyRealMap_comp_iff (φ : P ≃ₘ^n⟮I
   exact h x
 
 /-- Reparametrizing by a diffeomorphism preserves and reflects totally real embeddings. -/
-theorem _root_.Diffeomorph.isTotallyRealEmbedding_comp_iff (φ : P ≃ₘ^n⟮I', I'⟯ N) (hn : n ≠ 0) :
+theorem _root_.Diffeomorph.isTotallyRealEmbedding_comp_diffeomorph_iff
+    (φ : P ≃ₘ^n⟮I', I'⟯ N) (hn : n ≠ 0) :
     IsTotallyRealEmbedding I' I n A (f ∘ φ) ↔ IsTotallyRealEmbedding I' I n A f := by
   constructor
   · intro h
     exact ⟨(isSmoothEmbedding_comp_diffeomorph_iff φ).1 h.isSmoothEmbedding,
       h.two_mul_finrank,
-      (φ.isMaximalTotallyRealMap_comp_iff hn).1 h.isMaximalTotallyRealMap⟩
+      (φ.isMaximalTotallyRealMap_comp_diffeomorph_iff hn).1 h.isMaximalTotallyRealMap⟩
   · intro h
     exact ⟨isSmoothEmbedding_comp_diffeomorph φ h.isSmoothEmbedding, h.two_mul_finrank,
-      (φ.isMaximalTotallyRealMap_comp_iff hn).2 h.isMaximalTotallyRealMap⟩
+      (φ.isMaximalTotallyRealMap_comp_diffeomorph_iff hn).2 h.isMaximalTotallyRealMap⟩
 
 end Reparametrization
 
@@ -298,7 +300,7 @@ theorem _root_.ContinuousLinearMap.isMaximalTotallyRealMap_iff (L : V →L[ℝ] 
 
 /-- For a continuous linear map, half-dimensionality and maximal total reality characterize
 all finite and infinite embedding regularities. Injectivity follows from those conditions. -/
-theorem isTotallyRealEmbedding_continuousLinearMap_iff
+theorem _root_.ContinuousLinearMap.isTotallyRealEmbedding_iff
     [FiniteDimensional ℝ V] (n : ℕ∞ω) (L : V →L[ℝ] W) :
     IsTotallyRealEmbedding 𝓘(ℝ, V) 𝓘(ℝ, W) n J.constSmooth.almostComplexStructureAt L ↔
       2 * finrank ℝ V = finrank ℝ W ∧
