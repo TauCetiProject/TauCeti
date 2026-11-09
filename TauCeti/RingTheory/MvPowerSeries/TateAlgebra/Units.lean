@@ -145,7 +145,7 @@ theorem isNormMulUnit_of_norm_coeff_mul_prod_lt {f : IsRestricted.subring (R := 
     exact h0.isUnit.ne_zero (by simp [a])
   -- The Gauss norm of `f` is attained at the constant coefficient.
   have hfa : ‖f‖ = ‖a‖ := by
-    obtain ⟨t, ht⟩ := exists_achievesGaussNorm f
+    obtain ⟨t, ht⟩ := f.2.exists_achievesGaussNorm
     rw [AchievesGaussNorm, ← norm_eq_gaussNorm] at ht
     rcases eq_or_ne t 0 with rfl | ht0
     · simpa [a, coeff_zero_eq_constantCoeff_apply] using ht.symm

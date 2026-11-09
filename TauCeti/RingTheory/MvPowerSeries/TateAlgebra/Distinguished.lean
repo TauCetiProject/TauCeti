@@ -287,7 +287,7 @@ private theorem exists_triangularDegree_dominant (f : ExtraTate) (hf : f ≠ 0)
           triangularDegree (fun i ↦ b ^ ((k i : ℕ) + 1)) d →
         ‖coeff d (f : MvPowerSeries (Option σ) R)‖ ≤ ε := by
   classical
-  obtain ⟨d₀, hd₀⟩ := exists_achievesGaussNorm f
+  obtain ⟨d₀, hd₀⟩ := f.2.exists_achievesGaussNorm
   obtain ⟨ε, hε0, hεM, hε⟩ := exists_norm_coeff_mul_prod_gap f hf
   simp only [AchievesGaussNorm, ← norm_eq_gaussNorm, one_pow, Finsupp.prod_fun_one,
     mul_one] at hd₀ hε

@@ -199,7 +199,7 @@ theorem exists_norm_restrictedExpandComponent_mul_prod_eq
     (f : IsRestricted.subring (R := R) r) :
     ∃ ν : σ →₀ ℕ, (∀ i, ν i < p) ∧
       ‖restrictedExpandComponent hp ht ν f‖ * ν.prod (r · ^ ·) = ‖f‖ := by
-  obtain ⟨α, hα⟩ := exists_achievesGaussNorm f
+  obtain ⟨α, hα⟩ := f.2.exists_achievesGaussNorm
   set ν := α.mapRange (· % p) (Nat.zero_mod p)
   set μ := α.mapRange (· / p) (Nat.zero_div p)
   refine ⟨ν, fun i ↦ Nat.mod_lt _ (Nat.pos_of_ne_zero hp),

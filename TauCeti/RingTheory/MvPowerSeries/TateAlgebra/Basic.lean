@@ -61,9 +61,9 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
   `MvPowerSeries.IsRestricted.norm_coeff_mul_norm_coeff_lt`: the product of the coefficients at
   such exponents of two series dominates every other summand of the product coefficient;
   `MvPowerSeries.IsRestricted.exists_norm_coeff_mul_norm_coeff_lt` chooses such exponents.
-* `MvPowerSeries.exists_achievesGaussNorm` and `MvPowerSeries.exists_norm_coeff_mul_prod_gap`: a
-  restricted series attains its norm, and its smaller weighted coefficient norms stay below a
-  constant smaller than its norm.
+* `MvPowerSeries.IsRestricted.exists_achievesGaussNorm` and
+  `MvPowerSeries.exists_norm_coeff_mul_prod_gap`: a restricted series attains its norm, and its
+  smaller weighted coefficient norms stay below a constant smaller than its norm.
 * The restricted-series subring inherits `CompleteSpace`, `IsUltrametricDist`, and
   `NormMulClass` from its coefficient ring.
 * `MvPowerSeries.dense_closure_monomial`: polynomials with coefficients in a dense subset of the
@@ -319,13 +319,12 @@ theorem exists_norm_coeff_mul_prod_gap (f : IsRestricted.subring (R := R) c) (hf
     · exact le_max_of_le_right (hmax t (Finset.mem_filter.mpr ⟨hF.mem_toFinset.mpr h, ht⟩))
     · exact le_max_of_le_left (le_of_not_ge h)
 
-omit hc in
+omit [IsUltrametricDist R] hc in
 /-- A restricted series attains its Gauss norm at some exponent, at any polyradius. -/
-theorem exists_achievesGaussNorm (f : IsRestricted.subring (R := R) c) :
-    ∃ t, AchievesGaussNorm norm c (f : MvPowerSeries σ R) t := by
-  set v : (σ →₀ ℕ) → ℝ := fun t ↦ ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)
-  have hv : Tendsto v cofinite (𝓝 0) := f.2
-  obtain ⟨t, ht⟩ := hv.exists_forall_le_of_le (a := 0) (by simp [v])
+theorem IsRestricted.exists_achievesGaussNorm {f : MvPowerSeries σ R} (hf : IsRestricted c f) :
+    ∃ t, AchievesGaussNorm norm c f t := by
+  set v : (σ →₀ ℕ) → ℝ := fun t ↦ ‖coeff t f‖ * t.prod (c · ^ ·)
+  obtain ⟨t, ht⟩ := Filter.Tendsto.exists_forall_le_of_le (v := v) (a := 0) hf (by simp [v])
   refine ⟨t, ?_⟩
   rw [AchievesGaussNorm, gaussNorm]
   exact le_antisymm (le_ciSup ⟨v t, by rintro _ ⟨s, rfl⟩; exact ht s⟩ t) (ciSup_le ht)
@@ -335,7 +334,7 @@ since the norm is attained. -/
 theorem norm_lt_iff {f : IsRestricted.subring (R := R) c} {r : ℝ} :
     ‖f‖ < r ↔ ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) < r := by
   refine ⟨fun h t ↦ (norm_coeff_mul_prod_le f t).trans_lt h, fun h ↦ ?_⟩
-  obtain ⟨t, ht⟩ := exists_achievesGaussNorm f
+  obtain ⟨t, ht⟩ := f.2.exists_achievesGaussNorm
   rw [norm_eq_gaussNorm, ← ht]
   exact h t
 
@@ -347,7 +346,7 @@ theorem norm_coeff_le_norm (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)
 /-- At unit polyradius a restricted series has a coefficient whose norm is its Gauss norm. -/
 theorem exists_norm_coeff_eq_norm (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) :
     ∃ t, ‖coeff t (f : MvPowerSeries σ R)‖ = ‖f‖ := by
-  obtain ⟨t, ht⟩ := exists_achievesGaussNorm f
+  obtain ⟨t, ht⟩ := f.2.exists_achievesGaussNorm
   exact ⟨t, by simpa [AchievesGaussNorm, ← norm_eq_gaussNorm] using ht⟩
 
 /-- The norm of a restricted monomial is its weighted coefficient norm. -/
