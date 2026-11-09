@@ -145,6 +145,15 @@ theorem quantizationKernel_add {b : E × E → V →L[ℂ] W} (ha : Integrable (
   congr 1 with ζ
   simp only [Pi.add_apply, Circle.smul_def, smul_add]
 
+/-- The kernel is additive over finite sums of coefficients at every position where all the
+frequency slices are integrable. -/
+theorem quantizationKernel_sum {ι : Type*} (s : Finset ι) {a : ι → E × E → V →L[ℂ] W}
+    (ha : ∀ i ∈ s, Integrable (fun ξ ↦ a i (x, ξ))) (y : E) :
+    quantizationKernel (∑ i ∈ s, a i) x y = ∑ i ∈ s, quantizationKernel (a i) x y := by
+  simp only [quantizationKernel_def, Finset.sum_apply, Circle.smul_def, Finset.smul_sum]
+  exact integral_finsetSum s fun i hi ↦ by
+    simpa only [Circle.smul_def] using integrable_quantizationKernel_integrand (ha i hi) y
+
 /-- **Continuity in the second variable.** If the frequency slice `ξ ↦ a(x, ξ)` is integrable, then
 `y ↦ K_a(x, y)` is continuous. -/
 theorem continuous_quantizationKernel_right (ha : Integrable (fun ξ ↦ a (x, ξ))) :
