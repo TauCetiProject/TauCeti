@@ -38,6 +38,9 @@ of positive (negative) square has at most as many members as the positive (negat
   vanishing negative index of inertia.
 * `QuadraticForm.forall_nonpos_iff_sigPos_eq_zero`: nonpositivity is characterized by
   vanishing positive index of inertia.
+* `QuadraticForm.exists_submodule_finrank_eq_sigPos_and_posDef` and
+  `QuadraticForm.exists_submodule_finrank_eq_sigNeg_and_negDef`: a definite subspace of dimension
+  the corresponding index of inertia exists, without finite-dimensionality.
 * `QuadraticForm.sigPos_restrict_le`: restriction to a subspace cannot increase the
   positive index of inertia.
 * `QuadraticForm.sigNeg_restrict_le`: restriction to a subspace cannot increase the
@@ -160,6 +163,30 @@ theorem sigNeg_smul_of_neg (Q : _root_.QuadraticForm R M) {a : R} (ha : a < 0) :
     _ = sigPos Q := sigPos_smul_of_pos Q hpos
 
 end CommRing
+
+section Field
+
+variable {K M : Type*} [Field K] [LinearOrder K] [AddCommGroup M] [Module K M]
+
+/-- **A positive-definite subspace of dimension the positive index of inertia exists.** This is
+Mathlib's `exists_finrank_eq_sigPos_and_posDef` without the finite-dimensionality assumption: for
+an infinite-dimensional space both `sigPos Q` and `finrank` are `0` by convention, and `⊥` is
+positive definite. -/
+theorem exists_submodule_finrank_eq_sigPos_and_posDef (Q : _root_.QuadraticForm K M) :
+    ∃ V : Submodule K M, Module.finrank K V = sigPos Q ∧ (Q.restrict V).PosDef := by
+  by_cases h : Module.Finite K M
+  · exact _root_.exists_finrank_eq_sigPos_and_posDef Q
+  · refine ⟨⊥, ?_, fun x hx ↦ (hx <| Subsingleton.elim x 0).elim⟩
+    rw [finrank_bot]
+    exact (Nat.le_zero.mp ((sigPos_le_finrank Q).trans_eq (Module.finrank_of_not_finite h))).symm
+
+/-- **A negative-definite subspace of dimension the negative index of inertia exists.** -/
+theorem exists_submodule_finrank_eq_sigNeg_and_negDef (Q : _root_.QuadraticForm K M) :
+    ∃ V : Submodule K M, Module.finrank K V = sigNeg Q ∧ ((-Q).restrict V).PosDef :=
+  exists_submodule_finrank_eq_sigPos_and_posDef (-Q)
+
+end Field
+
 
 variable {K M : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   [AddCommGroup M] [Module K M] [FiniteDimensional K M]
