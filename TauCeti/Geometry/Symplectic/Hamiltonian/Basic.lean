@@ -166,6 +166,13 @@ theorem hamiltonianVectorField_const (ω : SymplecticForm V) (c : ℝ) :
   rw [Pi.zero_apply, eq_comm, eq_hamiltonianVectorField_iff]
   simp
 
+/-- Adding a constant to a Hamiltonian does not change its Hamiltonian vector field. -/
+@[simp]
+theorem hamiltonianVectorField_add_const (ω : SymplecticForm V) (H : V → ℝ) (c : ℝ) :
+    ω.hamiltonianVectorField (fun y ↦ H y + c) = ω.hamiltonianVectorField H := by
+  funext x
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, fderiv_add_const]
+
 /-- The Hamiltonian vector field of the linear function `ω(a, ·)` is the constant `a`. -/
 @[simp]
 theorem hamiltonianVectorField_apply_left (ω : SymplecticForm V) (a x : V) :
@@ -323,6 +330,13 @@ theorem poissonBracket_const_left (ω : SymplecticForm V) (c : ℝ) (G : V → �
 theorem poissonBracket_const_right (ω : SymplecticForm V) (F : V → ℝ) (c : ℝ) (x : V) :
     ω.poissonBracket F (fun _ ↦ c) x = 0 := by
   simp [poissonBracket_def]
+
+/-- The Poisson bracket of two functions does not change when constants are added to them. -/
+@[simp]
+theorem poissonBracket_add_const (ω : SymplecticForm V) (F G : V → ℝ) (a b : ℝ) :
+    ω.poissonBracket (fun x ↦ F x + a) (fun x ↦ G x + b) = ω.poissonBracket F G := by
+  funext x
+  simp only [poissonBracket_def, hamiltonianVectorField_add_const]
 
 /-- The Poisson bracket is homogeneous in its first argument: `{c F, G} = c {F, G}`. -/
 @[simp]

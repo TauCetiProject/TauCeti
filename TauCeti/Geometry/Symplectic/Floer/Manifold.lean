@@ -136,6 +136,30 @@ theorem hamiltonianCurvature_cylindrical (ω : SmoothTwoForm I M) (H : ℝ → M
   rw [hamiltonianCurvature_zero_left, stdComplexLineReal_eq]
   exact fderiv_comp_snd_apply_mk_zero (fun t ↦ H t x) z 1
 
+/-- **The curvature of target-independent data** is the curl `∂_s κ_t - ∂_t κ_s` of the one-form
+`κ_s ds + κ_t dt` on the domain, at every target point: the Poisson bracket of two constants
+vanishes. -/
+theorem hamiltonianCurvature_const (ω : SmoothTwoForm I M) (κs κt : ℝ × ℝ → ℝ) (z : ℝ × ℝ)
+    (x : M) :
+    ω.hamiltonianCurvature (fun z _ ↦ κs z) (fun z _ ↦ κt z) z x =
+      fderiv ℝ κt z stdComplexLineReal - fderiv ℝ κs z stdComplexLineImag := by
+  rw [hamiltonianCurvature_def, poissonBracket_const_left, sub_zero]
+
+/-- **The curvature under a change of normalization.** Adding functions `κ_s(z)`, `κ_t(z)` of the
+domain point alone to the components of the perturbation shifts its curvature by the curl
+`∂_s κ_t - ∂_t κ_s` of the added one-form. -/
+theorem hamiltonianCurvature_add_const (ω : SmoothTwoForm I M) {Ks Kt : ℝ × ℝ → M → ℝ}
+    {κs κt : ℝ × ℝ → ℝ} {z : ℝ × ℝ} {x : M} (hKs : DifferentiableAt ℝ (fun w ↦ Ks w x) z)
+    (hKt : DifferentiableAt ℝ (fun w ↦ Kt w x) z) (hκs : DifferentiableAt ℝ κs z)
+    (hκt : DifferentiableAt ℝ κt z) :
+    ω.hamiltonianCurvature (fun z x ↦ Ks z x + κs z) (fun z x ↦ Kt z x + κt z) z x =
+      ω.hamiltonianCurvature Ks Kt z x +
+        (fderiv ℝ κt z stdComplexLineReal - fderiv ℝ κs z stdComplexLineImag) := by
+  rw [hamiltonianCurvature_def, hamiltonianCurvature_def, poissonBracket_add_const,
+    fderiv_fun_add hKt hκt, fderiv_fun_add hKs hκs]
+  simp only [add_apply]
+  ring
+
 /-- The intrinsic perturbed derivative `du - X_K`, valued in `T_(u z) M`.
 As with `mfderiv`, using this as an actual differential requires differentiability of `u`. -/
 def perturbedMFDeriv (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
@@ -169,6 +193,18 @@ theorem perturbedMFDeriv_apply_stdComplexLineImag (ω : SmoothTwoForm I M)
     ω.perturbedMFDeriv Ks Kt u z stdComplexLineImag =
       mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z) := by
   simp [perturbedMFDeriv_apply]
+
+/-- **The Floer equation does not see the normalization.** Adding functions `κ_s(z)`, `κ_t(z)` of
+the domain point alone to the components of the perturbation leaves the perturbed derivative
+`du - X_K(u)` unchanged, because adding a constant does not change a Hamiltonian vector field. -/
+theorem perturbedMFDeriv_add_const (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (κs κt : ℝ × ℝ → ℝ) :
+    ω.perturbedMFDeriv (fun z x ↦ Ks z x + κs z) (fun z x ↦ Kt z x + κt z) =
+      ω.perturbedMFDeriv Ks Kt := by
+  funext u z
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  rw [perturbedMFDeriv_apply, perturbedMFDeriv_apply, hamiltonianVectorField_add_const,
+    hamiltonianVectorField_add_const]
 
 /-- The perturbed derivative is complex linear exactly when the coordinate Floer equation
 `∂s u - X_(Ks) + J (∂t u - X_(Kt)) = 0` holds in the target tangent fiber. -/
@@ -212,6 +248,17 @@ theorem floerEnergyDensity_zero (ω : SmoothTwoForm I M) (u : ℝ × ℝ → M) 
       SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) := by
   simp [floerEnergyDensity_def]
+
+/-- **The energy density does not see the normalization.** Adding functions `κ_s(z)`, `κ_t(z)` of
+the domain point alone to the components of the perturbation leaves the Floer energy density
+unchanged. -/
+@[simp]
+theorem floerEnergyDensity_add_const (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (κs κt : ℝ × ℝ → ℝ) :
+    ω.floerEnergyDensity (fun z x ↦ Ks z x + κs z) (fun z x ↦ Kt z x + κt z) =
+      ω.floerEnergyDensity Ks Kt := by
+  funext u z
+  rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedMFDeriv_add_const]
 
 variable {ω : SmoothTwoForm I M} {Ks Kt : ℝ × ℝ → M → ℝ}
   {u : ℝ × ℝ → M} {z : ℝ × ℝ}

@@ -82,6 +82,28 @@ theorem pairOfPantsPerturbation_def (H : Puncture → ℝ → M → ℝ) (w : �
         q.endAngularForm w := by
   rw [pairOfPantsPerturbation]
 
+/-- The perturbation is additive in the end Hamiltonians. -/
+theorem pairOfPantsPerturbation_add (H G : Puncture → ℝ → M → ℝ) (w : ℂ) (x : M) :
+    pairOfPantsPerturbation (fun q t y ↦ H q t y + G q t y) w x =
+      pairOfPantsPerturbation H w x + pairOfPantsPerturbation G w x := by
+  simp only [pairOfPantsPerturbation_def, mul_add, add_smul, Finset.sum_add_distrib]
+
+/-- The perturbation of the negated Hamiltonians is the negated perturbation. -/
+theorem pairOfPantsPerturbation_neg (H : Puncture → ℝ → M → ℝ) (w : ℂ) (x : M) :
+    pairOfPantsPerturbation (fun q t y ↦ -H q t y) w x = -pairOfPantsPerturbation H w x := by
+  rw [pairOfPantsPerturbation_def, pairOfPantsPerturbation_def, ← Finset.sum_neg_distrib]
+  -- The scalars act on covectors `ℂ →L[ℝ] ℝ`; `neg_smul` needs them named to find its instance.
+  exact Finset.sum_congr rfl fun q _ ↦ by
+    rw [mul_neg]; exact neg_smul (R := ℝ) (M := ℂ →L[ℝ] ℝ) _ _
+
+/-- If the end Hamiltonians take the same values at two target points, so does the perturbation.
+In particular, the perturbation of Hamiltonians of time alone does not depend on the target
+point. -/
+theorem pairOfPantsPerturbation_eq_of_forall_eq {H : Puncture → ℝ → M → ℝ} {x y : M}
+    (h : ∀ q t, H q t x = H q t y) (w : ℂ) :
+    pairOfPantsPerturbation H w x = pairOfPantsPerturbation H w y := by
+  simp only [pairOfPantsPerturbation_def, h]
+
 variable {H : Puncture → ℝ → M → ℝ}
 
 /-- Where the cutoff of the end `q` is nonzero, the point lies on the part `±s > 1` of that end,

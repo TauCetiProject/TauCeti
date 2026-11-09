@@ -120,6 +120,15 @@ theorem hamiltonianAction_const (ω : SymplecticForm V) (H : ℝ → V → ℝ) 
     ω.hamiltonianAction H (fun _ ↦ v) = ∫ t in (0 : ℝ)..1, H t v := by
   simp [hamiltonianAction_def]
 
+/-- **The action under a change of normalization.** Adding a function `c(t)` of time to the
+Hamiltonian shifts the Hamiltonian action of every loop by `∫₀¹ c`. -/
+theorem hamiltonianAction_add_const (ω : SymplecticForm V) (H : ℝ → V → ℝ) {c : ℝ → ℝ}
+    {x : ℝ → V} (hH : IntervalIntegrable (fun t ↦ H t (x t)) volume 0 1)
+    (hc : IntervalIntegrable c volume 0 1) :
+    ω.hamiltonianAction (fun t y ↦ H t y + c t) x =
+      ω.hamiltonianAction H x + ∫ t in (0 : ℝ)..1, c t := by
+  rw [hamiltonianAction_def, hamiltonianAction_def, intervalIntegral.integral_add hH hc, add_assoc]
+
 end Action
 
 section Curvature

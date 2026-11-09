@@ -330,7 +330,7 @@ private theorem contMDiff_uncurry_of_contDiff
 
 /-- The components of the perturbation in real coordinates are differentiable in the domain
 point, at points of `S`. -/
-private theorem differentiableAt_pairOfPantsPerturbation_domain (hH : ∀ q, Periodic (H q) 1)
+theorem differentiableAt_pairOfPantsPerturbation_domain (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
     (x : V) (v : ℂ) :
     DifferentiableAt ℝ

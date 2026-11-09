@@ -231,6 +231,30 @@ theorem hamiltonianCurvature_eq_zero_of_cylindrical (ω : SymplecticForm V)
   rw [ω.hamiltonianCurvature_congr_of_eventuallyEq hs ht]
   exact ω.hamiltonianCurvature_cylindrical (fun t ↦ Kt (c, t)) (c, t) x
 
+/-- **The curvature of target-independent data** is the curl `∂_s κ_t - ∂_t κ_s` of the one-form
+`κ_s ds + κ_t dt` on the domain, at every target point: the Poisson bracket of two constants
+vanishes. -/
+theorem hamiltonianCurvature_const (ω : SymplecticForm V) (κs κt : ℝ × ℝ → ℝ) (z : ℝ × ℝ)
+    (x : V) :
+    ω.hamiltonianCurvature (fun z _ ↦ κs z) (fun z _ ↦ κt z) z x =
+      fderiv ℝ κt z stdComplexLineReal - fderiv ℝ κs z stdComplexLineImag := by
+  rw [hamiltonianCurvature_def, poissonBracket_const_left, sub_zero]
+
+/-- **The curvature under a change of normalization.** Adding functions `κ_s(z)`, `κ_t(z)` of the
+domain point alone to the components of the perturbation shifts its curvature by the curl
+`∂_s κ_t - ∂_t κ_s` of the added one-form. -/
+theorem hamiltonianCurvature_add_const (ω : SymplecticForm V) {Ks Kt : ℝ × ℝ → V → ℝ}
+    {κs κt : ℝ × ℝ → ℝ} {z : ℝ × ℝ} {x : V} (hKs : DifferentiableAt ℝ (fun w ↦ Ks w x) z)
+    (hKt : DifferentiableAt ℝ (fun w ↦ Kt w x) z) (hκs : DifferentiableAt ℝ κs z)
+    (hκt : DifferentiableAt ℝ κt z) :
+    ω.hamiltonianCurvature (fun z x ↦ Ks z x + κs z) (fun z x ↦ Kt z x + κt z) z x =
+      ω.hamiltonianCurvature Ks Kt z x +
+        (fderiv ℝ κt z stdComplexLineReal - fderiv ℝ κs z stdComplexLineImag) := by
+  rw [hamiltonianCurvature_def, hamiltonianCurvature_def, poissonBracket_add_const,
+    fderiv_fun_add hKt hκt, fderiv_fun_add hKs hκs]
+  simp only [add_apply]
+  ring
+
 end Curvature
 
 section Differential
@@ -321,6 +345,18 @@ theorem perturbedFDeriv_congr_of_eventuallyEq (ω : SymplecticForm V) (Ks Kt : �
   refine ContinuousLinearMap.ext fun a ↦ ?_
   simp only [perturbedFDeriv_apply, h.fderiv_eq, h.eq_of_nhds]
 
+/-- **The Floer equation does not see the normalization.** Adding functions `κ_s(z)`, `κ_t(z)` of
+the domain point alone to the components of the perturbation leaves the perturbed derivative
+`du - X_K(u)` unchanged, because adding a constant does not change a Hamiltonian vector field. -/
+theorem perturbedFDeriv_add_const (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (κs κt : ℝ × ℝ → ℝ) :
+    ω.perturbedFDeriv (fun z x ↦ Ks z x + κs z) (fun z x ↦ Kt z x + κt z) =
+      ω.perturbedFDeriv Ks Kt := by
+  funext u z
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  rw [perturbedFDeriv_apply, perturbedFDeriv_apply, hamiltonianVectorField_add_const,
+    hamiltonianVectorField_add_const]
+
 end Differential
 
 section Density
@@ -347,6 +383,17 @@ theorem floerEnergyDensity_zero (ω : SymplecticForm V) (u : ℝ × ℝ → V) (
       ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
   simp [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
     perturbedFDeriv_apply_stdComplexLineImag]
+
+/-- **The energy density does not see the normalization.** Adding functions `κ_s(z)`, `κ_t(z)` of
+the domain point alone to the components of the perturbation leaves the Floer energy density
+unchanged. -/
+@[simp]
+theorem floerEnergyDensity_add_const (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (κs κt : ℝ × ℝ → ℝ) :
+    ω.floerEnergyDensity (fun z x ↦ Ks z x + κs z) (fun z x ↦ Kt z x + κt z) =
+      ω.floerEnergyDensity Ks Kt := by
+  funext u z
+  rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedFDeriv_add_const]
 
 /-- The Floer energy density commutes with translations of the domain. -/
 theorem floerEnergyDensity_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)

@@ -217,6 +217,23 @@ theorem hamiltonianVectorField_add {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f
       σ.hamiltonianVectorField f x + σ.hamiltonianVectorField g x := by
   simp [hamiltonianVectorField_def, mvfderiv_add hf hg]
 
+/-- Adding a constant to a Hamiltonian does not change its Hamiltonian vector field. -/
+@[simp]
+theorem hamiltonianVectorField_add_const (σ : SmoothTwoForm I M) (f : M → ℝ) (c : ℝ) :
+    σ.hamiltonianVectorField (fun y ↦ f y + c) = σ.hamiltonianVectorField f := by
+  funext x
+  by_cases hf : MDifferentiableAt I 𝓘(ℝ) f x
+  · rw [show (fun y ↦ f y + c) = f + fun _ ↦ c from rfl,
+      hamiltonianVectorField_add hf mdifferentiableAt_const, hamiltonianVectorField_const,
+      Pi.zero_apply, add_zero]
+  · -- Neither function is differentiable at `x`, so both derivatives vanish there.
+    have hfc : ¬MDifferentiableAt I 𝓘(ℝ) (fun y ↦ f y + c) x := fun h ↦ by
+      have h' := h.add (mdifferentiableAt_const (c := -c))
+      rw [show ((fun y ↦ f y + c) + fun _ ↦ -c) = f from funext fun y ↦ by simp] at h'
+      exact hf h'
+    simp [hamiltonianVectorField_def, mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hf,
+      mfderiv_zero_of_not_mdifferentiableAt hfc]
+
 /-- The Hamiltonian vector field of `-f` is the opposite of that of `f`. -/
 @[simp]
 theorem hamiltonianVectorField_neg (x : M) :
@@ -448,6 +465,13 @@ theorem poissonBracket_const_right (σ : SmoothTwoForm I M) (f : M → ℝ) (c :
     σ.poissonBracket f (fun _ ↦ c) x = 0 := by
   rw [poissonBracket_def, hamiltonianVectorField_const, ← SmoothForm.bilinFormAt_apply,
     Pi.zero_apply, map_zero]
+
+/-- The Poisson bracket of two functions does not change when constants are added to them. -/
+@[simp]
+theorem poissonBracket_add_const (σ : SmoothTwoForm I M) (f g : M → ℝ) (a b : ℝ) :
+    σ.poissonBracket (fun x ↦ f x + a) (fun x ↦ g x + b) = σ.poissonBracket f g := by
+  funext x
+  simp only [poissonBracket_def, hamiltonianVectorField_add_const]
 
 /-- The Poisson bracket is additive in its first argument on differentiable functions. -/
 theorem poissonBracket_add_left {k : M → ℝ} {x : M}
