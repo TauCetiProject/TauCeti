@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.SchurComplement
-import Mathlib.Tactic.Ring
+import Mathlib.RingTheory.Localization.Defs
 
 /-!
 # Determinants of invariant hyperplane restrictions
@@ -17,29 +17,25 @@ restriction of `A` in those coordinates. If `A` kills `u`, with last coordinate
 one, then the weighted determinant `w (Fin.last n) * det X` equals the pairing
 of `w` with `u` times the last principal minor of `A`.
 
-The determinant of the first rows of `C` must be a unit. Neither the last coordinate
-of `w` nor the pairing need be a unit, or even nonzero. This form therefore
+The determinant of the first `n` rows of `C` must be a non-zero-divisor. Neither the last
+coordinate of `w` nor the pairing need be a unit, or even nonzero. This form therefore
 works over arbitrary commutative rings, including at specializations where the
 right kernel lies in the invariant hyperplane.
 
-The calculation uses Mathlib's rank-one determinant identity
-`Matrix.det_one_add_replicateCol_mul_replicateRow` (Weinstein--Aronszajn).
+The calculation inverts that determinant in the total ring of fractions and then uses
+Mathlib's rank-one determinant identity `Matrix.det_one_add_replicateCol_mul_replicateRow`
+(Weinstein--Aronszajn).
 -/
 
 public section
-
-open Finset
 
 namespace Matrix
 
 variable {R : Type*} [CommRing R] {n : ℕ}
 
-/-- The determinant of an invariant hyperplane restriction in terms of a principal minor.
-The columns of `C` lie in the kernel of `w`, their first `n` coordinates form an invertible
-matrix, and `X` intertwines `A` with those columns. A right null vector `u` is normalized
-by `u (Fin.last n) = 1`. Neither `w (Fin.last n)` nor `w ⬝ᵥ u` needs to be a unit
-or nonzero. -/
-theorem det_of_intertwining_of_mulVec_eq_zero
+/-- The case of `det_of_intertwining_of_mulVec_eq_zero` where the top block of `C` has a
+unit determinant. -/
+private theorem det_of_intertwining_of_mulVec_eq_zero_of_isUnit
     (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
     (C : Matrix (Fin (n + 1)) (Fin n) R) (X : Matrix (Fin n) (Fin n) R)
     (u w : Fin (n + 1) → R)
@@ -85,11 +81,33 @@ theorem det_of_intertwining_of_mulVec_eq_zero
     rw [det_mul, det_mul, hdet, det_mul] at h
     exact hC.mul_right_cancel (by simpa only [D, mul_comm, mul_left_comm, mul_assoc] using h.symm)
   have hpair : w (Fin.last n) * (1 + z ⬝ᵥ v) = w ⬝ᵥ u := by
-    have hwtop_apply (i : Fin n) : w i.castSucc = w (Fin.last n) * z i :=
-      congrFun hwtop i
-    simp only [dotProduct, Fin.sum_univ_castSucc, hulast, mul_one, hwtop_apply,
-      v, mul_add, Finset.mul_sum, mul_assoc]
-    ring
+    rw [mul_add, mul_one, ← smul_eq_mul, ← smul_dotProduct, ← hwtop, add_comm]
+    simp only [dotProduct, Fin.sum_univ_castSucc, hulast, mul_one, v]
   rw [hX, mul_left_comm, hpair, mul_comm]
+
+/-- The determinant of an invariant hyperplane restriction in terms of a principal minor.
+The columns of `C` lie in the kernel of `w`, the determinant of their first `n` coordinates
+is a non-zero-divisor, and `X` intertwines `A` with those columns. A right null vector `u` is
+normalized by `u (Fin.last n) = 1`. Neither `w (Fin.last n)` nor `w ⬝ᵥ u` needs to be a unit
+or nonzero. -/
+theorem det_of_intertwining_of_mulVec_eq_zero
+    (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
+    (C : Matrix (Fin (n + 1)) (Fin n) R) (X : Matrix (Fin n) (Fin n) R)
+    (u w : Fin (n + 1) → R)
+    (hu : A *ᵥ u = 0) (hulast : u (Fin.last n) = 1)
+    (hw : w ᵥ* C = 0)
+    (hC : (C.submatrix Fin.castSucc id).det ∈ nonZeroDivisors R) (hAX : A * C = C * X) :
+    w (Fin.last n) * X.det = (w ⬝ᵥ u) * (A.submatrix Fin.castSucc Fin.castSucc).det := by
+  -- Pass to the total ring of fractions, where the determinant becomes a unit.
+  let f := algebraMap R (Localization (nonZeroDivisors R))
+  apply IsLocalization.injective (Localization (nonZeroDivisors R)) le_rfl
+  have h := det_of_intertwining_of_mulVec_eq_zero_of_isUnit (A.map f) (C.map f) (X.map f)
+    (f ∘ u) (f ∘ w) (by ext i; simp [← RingHom.map_mulVec, hu])
+    (by simp [hulast]) (by ext j; simp [← RingHom.map_vecMul, hw])
+    (by rw [submatrix_map, ← RingHom.mapMatrix_apply, ← RingHom.map_det]
+        exact IsLocalization.map_units _ (⟨_, hC⟩ : nonZeroDivisors R))
+    (by rw [← Matrix.map_mul, hAX, Matrix.map_mul])
+  simpa only [map_mul, RingHom.map_det, RingHom.mapMatrix_apply, RingHom.map_dotProduct,
+    submatrix_map, Function.comp_apply] using h
 
 end Matrix

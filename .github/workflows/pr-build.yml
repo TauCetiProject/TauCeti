@@ -119,6 +119,14 @@ jobs:
     # builds keep the picker's choice. The labels must be served in this organisation
     # before the variable is set: an unserved label queues the required build until
     # it expires. Clear the variable to return staging to the picker.
+    # Nineteen native concurrency groups cap all hosted bulk builds across
+    # workflows, leaving one of the organization's 20 slots for small jobs and
+    # roadmap merge builds. Waiting here consumes no runner. Other pools retain
+    # their existing concurrency; failed pickers share conservative slot zero.
+    concurrency:
+      group: ${{ contains(fromJSON('["ubuntu-latest","ubuntu-24.04","ubuntu-22.04"]'), (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && vars.STAGING_RUNS_ON != '') && fromJSON(vars.STAGING_RUNS_ON) || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"'))) && format('tauceti-hosted-bulk-{0}', needs.pick-runner.outputs.hosted-slot || '0') || format('unlimited-sandboxed-build-{0}', github.run_id) }}
+      queue: max
+      cancel-in-progress: false
     runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && vars.STAGING_RUNS_ON != '') && fromJSON(vars.STAGING_RUNS_ON) || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"')) }}
     outputs:
       status-sha: ${{ steps.pr.outputs.status_sha }}
@@ -915,14 +923,6 @@ jobs:
               "userns=$host_ns->$sb_ns); refusing to run candidate code"
             exit 1
           fi
-
-      - name: Hydrate optional trusted local dependency prefill
-        if: ${{ env.INFRA != '1' && env.IS_BATCH != 'true' && startsWith(runner.name, 'fleet-') }}
-        # Missing/mismatched payloads leave normal setup intact. Configuration has
-        # already passed the exact-head and integrated attestation above.
-        timeout-minutes: 2
-        continue-on-error: true
-        run: python3 gate/scripts/dependency_prefill.py pr
 
       # Restore only Mathlib's compressed, content-addressed `.ltar` download store from a
       # trusted main publisher. This workflow never writes that GitHub Actions cache. The keys

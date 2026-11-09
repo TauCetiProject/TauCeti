@@ -66,6 +66,9 @@ smooth compatibility and a countable cover, and is not asserted here.
   it names is surjective.
 * `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetParameterMap`:
   local parametric transversality.
+* `TauCeti.exists_mem_nhds_isNowhereDense_not_surjective_fderiv_comp_inl`: local parametric
+  transversality as a neighbourhood of a solution in the level set together with one nowhere dense
+  set of parameters.
 
 ## References
 
@@ -501,6 +504,61 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetPar
   refine ⟨N, hN, hNsub.trans (Set.inter_subset_inter_left _ Set.inter_subset_left), ?_, ?_⟩
   · rw [← hset]; exact hNclosed
   · rw [← hset]; exact hNdense
+
+/-- **Local step of global parametric transversality.** Near a solution `z` of `f z = c` at which
+`f` meets a Sard--Smale regularity threshold, the linearization in the fixed variable is Fredholm
+and the total linearization is surjective, there is a neighbourhood `Q` of `z` in the level set and
+a nowhere dense set of parameters containing the parameter of every point of `Q` where the
+fixed-variable derivative fails to be surjective. -/
+theorem exists_mem_nhds_isNowhereDense_not_surjective_fderiv_comp_inl
+    {f : E × Λ → F} {c : F} {n : ℕ∞ω} (z : {z : E × Λ | f z = c})
+    (hcont : ContDiffAt ℝ n f z)
+    (hFred : ContinuousLinearMap.IsFredholm
+        ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)))
+    (htotal : Surjective (fderiv ℝ f z))
+    (hn : ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).SardSmaleThreshold n) :
+    ∃ Q ∈ 𝓝 z, ∃ B : Set Λ, IsNowhereDense B ∧
+      ∀ w : {z : E × Λ | f z = c}, w ∈ Q →
+        ¬ Surjective ((fderiv ℝ f w).comp (ContinuousLinearMap.inl ℝ E Λ)) →
+          (w : E × Λ).2 ∈ B := by
+  let fixedDeriv (z : {z : E × Λ | f z = c}) : E →L[ℝ] F :=
+    (fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)
+  let parameterDeriv (z : {z : E × Λ | f z = c}) : Λ →L[ℝ] F :=
+    (fderiv ℝ f z).comp (ContinuousLinearMap.inr ℝ E Λ)
+  have hn0 : n ≠ 0 := hn.ne_zero
+  have hstrict : HasStrictFDerivAt f ((fixedDeriv z).coprod (parameterDeriv z)) z := by
+    simpa only [fixedDeriv, parameterDeriv,
+      ContinuousLinearMap.coprod_comp_inl_inr] using
+      hcont.hasStrictFDerivAt_fderiv hn0
+  have hfixed : ContinuousLinearMap.IsFredholm (fixedDeriv z) := hFred
+  have hsurj : Surjective ((fixedDeriv z).coprod (parameterDeriv z)) := by
+    simpa only [fixedDeriv, parameterDeriv,
+      ContinuousLinearMap.coprod_comp_inl_inr] using htotal
+  obtain ⟨N, hNnhds, -, -, hNnowhere⟩ :=
+    exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetParameterMap
+      hstrict hcont hfixed hsurj z.2 hn (U := univ) Filter.univ_mem
+  let Φ := levelSetChart hstrict (LinearMap.range_eq_top.mpr hsurj)
+    (hfixed.closedComplemented_ker_coprod hsurj) z.2
+  let g := levelSetParameterMap hstrict hsurj
+    (hfixed.closedComplemented_ker_coprod hsurj) z.2
+  obtain ⟨Q₀, hQ₀nhds, hQ₀⟩ := exists_mem_nhds_forall_mem_source_and_levelSetChart_mem
+    hstrict hsurj (hfixed.closedComplemented_ker_coprod hsurj) z.2 hNnhds
+  let Q : Set {z : E × Λ | f z = c} := Subtype.val ⁻¹' Q₀
+  let B : Set Λ := g ''
+    (N ∩ {k | ¬ Surjective ((fderiv ℝ f ((Φ.symm k : {z : E × Λ | f z = c}) : E × Λ)).comp
+      (ContinuousLinearMap.inl ℝ E Λ))})
+  have hQnhds : Q ∈ 𝓝 z := continuous_subtype_val.continuousAt.preimage_mem_nhds hQ₀nhds
+  refine ⟨Q, hQnhds, B, hNnowhere, ?_⟩
+  intro w hwQ hwbad
+  obtain ⟨hwsource, hwN⟩ := hQ₀ w hwQ
+  have hwback : Φ.symm (Φ w) = w := Φ.left_inv hwsource
+  have hwbad' : ¬ Surjective ((fderiv ℝ f ((Φ.symm (Φ w) : {z : E × Λ | f z = c}) : E × Λ)).comp
+      (ContinuousLinearMap.inl ℝ E Λ)) := by
+    rw [hwback]
+    exact hwbad
+  refine ⟨Φ w, ⟨hwN, hwbad'⟩, ?_⟩
+  exact levelSetParameterMap_levelSetChart hstrict hsurj
+    (hfixed.closedComplemented_ker_coprod hsurj) z.2 hwsource
 
 end Real
 

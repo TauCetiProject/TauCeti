@@ -227,8 +227,7 @@ theorem integral_norm_sub_sq_ball {R : ℝ} (x₀ : E) :
   have h := integral_norm_sub_rpow_ball (mu := mu) (s := 2) (by linarith) hR.le x₀
   simp_rw [norm_sub_rev x₀, Real.rpow_two] at h
   have hball : mu.real (ball x₀ R) = R ^ Module.finrank ℝ E * mu.real (ball (0 : E) 1) := by
-    rw [measureReal_def, Measure.addHaar_ball_of_pos mu _ hR, ENNReal.toReal_mul,
-      ENNReal.toReal_ofReal (by positivity), measureReal_def]
+    exact mu.addHaar_real_ball_of_pos x₀ hR
   rw [h, hball, Real.rpow_add hR, Real.rpow_two, Real.rpow_natCast]
   field_simp
 
