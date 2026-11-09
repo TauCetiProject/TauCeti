@@ -86,6 +86,8 @@ structure.
 * `Module.Dual.kksForm_quotientLieAnnihilatorEquiv`: naturality of the KKS form.
 * `Module.Dual.toSubmodule_lieAnnihilator_coprod`, `Module.Dual.kksForm_coprod`: the stabilizer
   and the KKS form of a product functional.
+* `Module.Dual.finrank_quotient_lieAnnihilator_coprod`: the dimensions of the tangent models add
+  over products.
 * `Module.Dual.kksForm_eq_kirillovForm_of_coadjointTangentMap_eq`: the KKS form inverts the
   Lie–Poisson sharp map.
 
@@ -286,6 +288,12 @@ theorem quotientLieAnnihilatorEquiv_mk (ξ : L) :
       Submodule.Quotient.mk (f ξ) :=
   (rfl)
 
+@[simp]
+theorem quotientLieAnnihilatorEquiv_symm_mk (ξ : L) :
+    (quotientLieAnnihilatorEquiv ν' hf hν).symm (Submodule.Quotient.mk (f ξ)) =
+      Submodule.Quotient.mk ξ := by
+  rw [LinearEquiv.symm_apply_eq, quotientLieAnnihilatorEquiv_mk]
+
 /-- **Naturality of the Kirillov–Kostant–Souriau form.** Along a surjective Lie algebra map
 `f : L → L'` with `ν = ν' ∘ f`, the equivalence `[ξ] ↦ [f ξ]` of algebraic tangent models carries
 `ω_ν'` to `ω_ν`. -/
@@ -377,6 +385,19 @@ theorem kksForm_coprod
   | H ξ =>
     induction y using Submodule.Quotient.induction_on with
     | H η => simp
+
+/-- **Coadjoint orbit dimensions add over products.** When the algebraic tangent models of `ν₁` and
+`ν₂` are free of finite rank, that of `(η₁, η₂) ↦ ν₁ η₁ + ν₂ η₂` in `L₁ × L₂` has rank
+`rank (L₁ ⧸ L₁_ν₁) + rank (L₂ ⧸ L₂_ν₂)`. -/
+theorem finrank_quotient_lieAnnihilator_coprod [StrongRankCondition R]
+    [Module.Free R (L₁ ⧸ (lieAnnihilator R L₁ ν₁).toSubmodule)]
+    [Module.Free R (L₂ ⧸ (lieAnnihilator R L₂ ν₂).toSubmodule)]
+    [Module.Finite R (L₁ ⧸ (lieAnnihilator R L₁ ν₁).toSubmodule)]
+    [Module.Finite R (L₂ ⧸ (lieAnnihilator R L₂ ν₂).toSubmodule)] :
+    finrank R ((L₁ × L₂) ⧸ (lieAnnihilator R (L₁ × L₂) (ν₁.coprod ν₂)).toSubmodule) =
+      finrank R (L₁ ⧸ (lieAnnihilator R L₁ ν₁).toSubmodule) +
+        finrank R (L₂ ⧸ (lieAnnihilator R L₂ ν₂).toSubmodule) := by
+  rw [(ν₁.quotientLieAnnihilatorProdEquiv ν₂).finrank_eq, Module.finrank_prod]
 
 end Prod
 

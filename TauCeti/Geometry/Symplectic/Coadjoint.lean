@@ -27,9 +27,7 @@ symplectomorphism from `ω_ν` to `ω_ν'`
 (`Module.Dual.isSymplectomorphism_quotientLieAnnihilatorEquiv`), and for a product functional
 `(η₁, η₂) ↦ ν₁ η₁ + ν₂ η₂` on `L₁ × L₂` the equivalence `[(ξ₁, ξ₂)] ↦ ([ξ₁], [ξ₂])` is a
 symplectomorphism onto the direct sum of `ω_ν₁` and `ω_ν₂`
-(`Module.Dual.isSymplectomorphism_quotientLieAnnihilatorProdEquiv`). In particular the dimensions
-of the tangent models add over products
-(`Module.Dual.finrank_quotient_lieAnnihilator_coprod`).
+(`Module.Dual.isSymplectomorphism_quotientLieAnnihilatorProdEquiv`).
 
 ## References
 
@@ -92,16 +90,6 @@ theorem isSymplectomorphism_quotientLieAnnihilatorProdEquiv :
     SymplecticForm.IsSymplectomorphism (kksSymplecticForm (ν₁.coprod ν₂))
       (ν₁.kksSymplecticForm.prod ν₂.kksSymplecticForm) (ν₁.quotientLieAnnihilatorProdEquiv ν₂) :=
   SymplecticForm.isSymplectomorphism_iff.mpr fun x y ↦ (kksForm_coprod ν₁ ν₂ x y).symm
-
-/-- **Coadjoint orbit dimensions add over products.** The algebraic tangent model of the coadjoint
-orbit of `(η₁, η₂) ↦ ν₁ η₁ + ν₂ η₂` in `L₁ × L₂` has dimension `dim (L₁ ⧸ L₁_ν₁) +
-dim (L₂ ⧸ L₂_ν₂)`. -/
-theorem finrank_quotient_lieAnnihilator_coprod [FiniteDimensional ℝ L₁]
-    [FiniteDimensional ℝ L₂] :
-    finrank ℝ ((L₁ × L₂) ⧸ (lieAnnihilator ℝ (L₁ × L₂) (ν₁.coprod ν₂)).toSubmodule) =
-      finrank ℝ (L₁ ⧸ (lieAnnihilator ℝ L₁ ν₁).toSubmodule) +
-        finrank ℝ (L₂ ⧸ (lieAnnihilator ℝ L₂ ν₂).toSubmodule) := by
-  rw [(ν₁.quotientLieAnnihilatorProdEquiv ν₂).finrank_eq, Module.finrank_prod]
 
 end Prod
 

@@ -11,10 +11,11 @@ public import TauCeti.Geometry.Symplectic.Coadjoint
 /-!
 # Adjoint invariance of the Kirillov–Kostant–Souriau form
 
-Let `G` be a real Lie group with Lie algebra `𝔤 = GroupLieAlgebra I G`, acting on `𝔤*` by the
-coadjoint representation `Ad*_g ν = ν ∘ Ad_{g⁻¹}`. Each adjoint map `Ad_g` is a Lie algebra
-automorphism of `𝔤` (`TauCeti.Lie.tangentAd`), and the translate `Ad*_g ν` pulls back along it to
-`ν` (`TauCeti.Lie.coadjointRepresentation_apply_comp_tangentAd`). The naturality of the
+Let `G` be a Lie group over a nontrivially normed field `𝕜`, with Lie algebra
+`𝔤 = GroupLieAlgebra I G`, acting on `𝔤*` by the coadjoint representation `Ad*_g ν = ν ∘ Ad_{g⁻¹}`.
+Each adjoint map `Ad_g` is a Lie algebra automorphism of `𝔤` (`TauCeti.Lie.tangentAd`), and the
+translate `Ad*_g ν` pulls back along it to `ν`
+(`TauCeti.Lie.coadjointRepresentation_apply_comp_tangentAd`). The naturality of the
 Kirillov–Kostant–Souriau form under surjective Lie algebra maps
 (`Module.Dual.quotientLieAnnihilatorEquiv`) therefore gives, at the level of the algebraic tangent
 models of the coadjoint orbit:
@@ -22,7 +23,7 @@ models of the coadjoint orbit:
 * the infinitesimal stabilizer of the translate is the translate of the infinitesimal stabilizer,
   `𝔤_{Ad*_g ν} = Ad_g 𝔤_ν` (`TauCeti.Lie.lieAnnihilator_coadjointRepresentation_apply`), the
   infinitesimal form of `G_{Ad*_g ν} = g G_ν g⁻¹` (`Representation.stabilizer_conj`);
-* `[ξ] ↦ [Ad_g ξ]` is a symplectomorphism from `(𝔤 ⧸ 𝔤_ν, ω_ν)` to
+* for a real Lie group, `[ξ] ↦ [Ad_g ξ]` is a symplectomorphism from `(𝔤 ⧸ 𝔤_ν, ω_ν)` to
   `(𝔤 ⧸ 𝔤_{Ad*_g ν}, ω_{Ad*_g ν})`
   (`TauCeti.Lie.isSymplectomorphism_quotientLieAnnihilatorEquiv_tangentAd`).
 
@@ -47,23 +48,26 @@ namespace TauCeti.Lie
 open Module
 open scoped ContDiff
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+section Field
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
-  [LieGroup I (minSmoothness ℝ 3) G]
+  [LieGroup I (minSmoothness 𝕜 3) G]
 
 local instance : LieGroup I 1 G :=
-  LieGroup.of_le (I := I) (G := G) (m := 1) (n := minSmoothness ℝ 3)
+  LieGroup.of_le (I := I) (G := G) (m := 1) (n := minSmoothness 𝕜 3)
     ((by norm_num : (1 : ℕ∞ω) ≤ 3).trans le_minSmoothness)
 
 /-- The translate `Ad*_g ν = ν ∘ Ad_{g⁻¹}` pulls back along the adjoint automorphism `Ad_g` to
 `ν`. -/
 @[simp]
 theorem coadjointRepresentation_apply_comp_tangentAd (g : G)
-    (ν : Dual ℝ (GroupLieAlgebra I G)) :
-    (coadjointRepresentation ℝ I G g ν).comp
-        ((tangentAd (I := I) g : GroupLieAlgebra I G →ₗ⁅ℝ⁆ GroupLieAlgebra I G) :
-          GroupLieAlgebra I G →ₗ[ℝ] GroupLieAlgebra I G) = ν := by
+    (ν : Dual 𝕜 (GroupLieAlgebra I G)) :
+    (coadjointRepresentation 𝕜 I G g ν).comp
+        ((tangentAd (I := I) g : GroupLieAlgebra I G →ₗ⁅𝕜⁆ GroupLieAlgebra I G) :
+          GroupLieAlgebra I G →ₗ[𝕜] GroupLieAlgebra I G) = ν := by
   ext X
   simp only [LinearMap.comp_apply, LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom, tangentAd_apply,
     coadjointRepresentation_apply]
@@ -73,14 +77,27 @@ theorem coadjointRepresentation_apply_comp_tangentAd (g : G)
 /-- **The infinitesimal stabilizer of a translate.** `ξ` stabilizes `Ad*_g ν` exactly when
 `Ad_{g⁻¹} ξ` stabilizes `ν`, that is, `𝔤_{Ad*_g ν} = Ad_g 𝔤_ν`. -/
 theorem lieAnnihilator_coadjointRepresentation_apply (g : G)
-    (ν : Dual ℝ (GroupLieAlgebra I G)) :
-    lieAnnihilator ℝ (GroupLieAlgebra I G) (coadjointRepresentation ℝ I G g ν) =
-      (lieAnnihilator ℝ (GroupLieAlgebra I G) ν).comap (tangentAd (I := I) g⁻¹ :
-        GroupLieAlgebra I G →ₗ⁅ℝ⁆ GroupLieAlgebra I G) := by
+    (ν : Dual 𝕜 (GroupLieAlgebra I G)) :
+    lieAnnihilator 𝕜 (GroupLieAlgebra I G) (coadjointRepresentation 𝕜 I G g ν) =
+      (lieAnnihilator 𝕜 (GroupLieAlgebra I G) ν).comap (tangentAd (I := I) g⁻¹ :
+        GroupLieAlgebra I G →ₗ⁅𝕜⁆ GroupLieAlgebra I G) := by
   refine Dual.lieAnnihilator_eq_comap (tangentAd (I := I) g⁻¹).surjective ?_
   ext X
   simp only [LinearMap.comp_apply, LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom, tangentAd_apply,
     coadjointRepresentation_apply]
+
+end Field
+
+section Real
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+  [LieGroup I (minSmoothness ℝ 3) G]
+
+local instance : LieGroup I 1 G :=
+  LieGroup.of_le (I := I) (G := G) (m := 1) (n := minSmoothness ℝ 3)
+    ((by norm_num : (1 : ℕ∞ω) ≤ 3).trans le_minSmoothness)
 
 /-- **The Kirillov–Kostant–Souriau form is invariant under the adjoint action.** The equivalence
 `[ξ] ↦ [Ad_g ξ]` from the algebraic tangent model `𝔤 ⧸ 𝔤_ν` of the coadjoint orbit through `ν` to
@@ -92,5 +109,7 @@ theorem isSymplectomorphism_quotientLieAnnihilatorEquiv_tangentAd (g : G)
       (Dual.quotientLieAnnihilatorEquiv (coadjointRepresentation ℝ I G g ν)
         (tangentAd (I := I) g).surjective (coadjointRepresentation_apply_comp_tangentAd g ν)) :=
   Dual.isSymplectomorphism_quotientLieAnnihilatorEquiv _ _ _
+
+end Real
 
 end TauCeti.Lie
