@@ -79,17 +79,25 @@ theorem support_map_multinomialToEuclidean_negativeMultinomialMeasure
     congr 1
     ext i
     simp
-  · ext x
-    constructor
-    · rintro ⟨k, hk, rfl⟩
-      exact fun i => ⟨⟨k i, (multinomialToEuclidean_apply k i).symm⟩,
-        fun hi => by simp [hk i hi]⟩
-    · intro hx
-      choose k hk using fun i => (hx i).1
-      refine ⟨k, fun i hi => ?_, ?_⟩
-      · exact Nat.cast_eq_zero.mp ((hk i).trans ((hx i).2 hi))
-      · ext i
-        exact (multinomialToEuclidean_apply k i).trans (hk i)
+  · -- Express the constraint as a product so the product-image lemma can match it.
+    rw [show {k : ι → ℕ | ∀ i, p i = 0 → k i = 0} =
+        univ.pi (fun i => {n | p i = 0 → n = 0}) by ext k; simp]
+    -- The cast's body is unexposed; identify its factorization using the coordinate API.
+    rw [show multinomialToEuclidean (ι := ι) =
+        (EuclideanSpace.equiv ι ℝ).symm ∘ Pi.map (fun _ => (Nat.cast : ℕ → ℝ)) by
+          ext k i
+          exact multinomialToEuclidean_apply k i]
+    rw [image_comp, piMap_image_univ_pi,
+      (EuclideanSpace.equiv ι ℝ).symm.image_eq_preimage_symm]
+    ext x
+    simp only [mem_preimage, mem_pi, mem_univ, forall_const, mem_ofPred_eq]
+    apply forall_congr'
+    intro i
+    by_cases hi : p i = 0
+    · have hzero : x i = 0 → x i ∈ range (Nat.cast : ℕ → ℝ) :=
+        fun hx => ⟨0, by simp [hx]⟩
+      simpa [hi] using hzero
+    · simp [hi]
   · exact image_empty _
 
 end TauCeti.Probability
