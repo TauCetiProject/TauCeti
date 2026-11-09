@@ -38,44 +38,7 @@ universe u
 namespace TauCeti.SchemePointTopology
 
 variable {k R : Type u} [CommRing k] [CommRing R] [Algebra k R]
-  {X Y Z : Scheme.{u}} {fX : X ⟶ Spec (.of k)} {fY : Y ⟶ Spec (.of k)}
-  {fZ : Z ⟶ Spec (.of k)}
-
-/-- The identity morphism acts as the identity on points. -/
-@[simp]
-theorem map_id (x : Points (R := R) fX) : map (𝟙 X) (Category.id_comp fX) x = x := by
-  apply Subtype.ext
-  simp
-
-/-- Composition of morphisms acts by composition of the maps on points. -/
-@[simp]
-theorem map_map (g : X ⟶ Y) (h : Y ⟶ Z) (hg : g ≫ fY = fX) (hh : h ≫ fZ = fY)
-    (x : Points (R := R) fX) :
-    map h hh (map g hg x) = map (g ≫ h) (by rw [Category.assoc, hh, hg]) x := by
-  apply Subtype.ext
-  simp
-
-/-- Applying a morphism to a chart point composes the chart with that morphism. -/
-@[simp]
-theorem map_chartPoint (g : X ⟶ Y) (hg : g ≫ fY = fX)
-    (A : CommAlgCat.{u} k) (i : Spec (.of A) ⟶ X)
-    (hi : i ≫ fX = Spec.algebraMap k A) (x : A →ₐ[k] R) :
-    map g hg (chartPoint fX A i hi x) =
-      chartPoint fY A (i ≫ g) (by rw [Category.assoc, hg, hi]) x := by
-  apply Subtype.ext
-  simp
-
-/-- On affine schemes the induced map on points is precomposition of algebra maps,
-under the native equivalence `Spec.homEquivAlgHom`. -/
-@[simp]
-theorem map_homEquivAlgHom_symm {A B : Type u} [CommRing A] [CommRing B]
-    [Algebra k A] [Algebra k B] (φ : A →ₐ[k] B) (x : B →ₐ[k] R) :
-    map (Spec.map (CommRingCat.ofHom (φ : A →+* B)))
-      (by rw [← Spec.map_comp]; congr 1; ext a; exact φ.commutes a)
-      (Spec.homEquivAlgHom.symm x) = Spec.homEquivAlgHom.symm (x.comp φ) := by
-  apply Subtype.ext
-  simp only [map_val, Spec.homEquivAlgHom_symm_apply_val, AlgHom.toRingHom_eq_coe,
-    AlgHom.comp_toRingHom, CommRingCat.ofHom_comp, Spec.map_comp]
+  {X Y : Scheme.{u}} {fX : X ⟶ Spec (.of k)} {fY : Y ⟶ Spec (.of k)}
 
 variable [TopologicalSpace R] [ContinuousMul R] [IsLocalRing R] [IsOpenUnits R]
 
