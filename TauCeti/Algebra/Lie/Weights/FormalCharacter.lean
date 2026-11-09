@@ -358,7 +358,7 @@ characters of `M` and `P`. -/
 theorem formalCharacter_eq_add_of_exact (f : M →ₗ⁅K,L⁆ N) (g : N →ₗ⁅K,L⁆ P)
     (h : Function.Exact f g) (hf : Function.Injective f) (hg : Function.Surjective g) :
     formalCharacter K L N = formalCharacter K L M + formalCharacter K L P := by
-  have : IsTriangularizable K L P := isTriangularizable_of_surjective g hg
+  have : IsTriangularizable K L P := g.isTriangularizable_of_surjective hg
   refine AddMonoidAlgebra.ext (Finsupp.ext fun χ ↦ ?_)
   simp only [formalCharacter_coeff, AddMonoidAlgebra.coeff_add, Finsupp.add_apply]
   exact_mod_cast (finrank_genWeightSpace_add_finrank_genWeightSpace_eq f g h hf hg

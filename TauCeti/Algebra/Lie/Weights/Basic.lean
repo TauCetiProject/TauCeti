@@ -26,7 +26,7 @@ weight-space theory. The transport and finrank identities hold over any commutat
   corresponding weight space.
 * `LieModule.isTriangularizable_of_iSup_genWeightSpace_eq_top`: a module spanned by its
   generalized weight spaces is triangularizable, over any commutative ring and without finiteness.
-* `LieModule.isTriangularizable_of_surjective`: triangularizability passes to the image of a
+* `LieModuleHom.isTriangularizable_of_surjective`: triangularizability passes to the image of a
   surjective Lie-module homomorphism.
 * `LieModule.genWeightSpaceOf_eq_iSup_genWeightSpace`: for a finite-dimensional triangularizable
   module, a generalized eigenspace of one element is the sum of the generalized weight spaces of
@@ -158,8 +158,8 @@ theorem isTriangularizable_of_iSup_genWeightSpace_eq_top
 omit [LieRing.IsNilpotent L] in
 /-- **Triangularizability passes to quotients.** The image of a triangularizable Lie module under a
 surjective Lie-module homomorphism is triangularizable. -/
-theorem isTriangularizable_of_surjective {M₂ : Type*} [AddCommGroup M₂] [Module R M₂]
-    [LieRingModule L M₂] [LieModule R L M₂] [IsTriangularizable R L M]
+theorem _root_.LieModuleHom.isTriangularizable_of_surjective {M₂ : Type*} [AddCommGroup M₂]
+    [Module R M₂] [LieRingModule L M₂] [LieModule R L M₂] [IsTriangularizable R L M]
     (f : M →ₗ⁅R,L⁆ M₂) (hf : Function.Surjective f) : IsTriangularizable R L M₂ := by
   refine ⟨fun x ↦ top_unique fun p _ ↦ ?_⟩
   obtain ⟨n, rfl⟩ := hf p
