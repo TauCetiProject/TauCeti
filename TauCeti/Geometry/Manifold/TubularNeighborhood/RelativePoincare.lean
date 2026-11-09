@@ -13,12 +13,13 @@ public import TauCeti.Geometry.Manifold.TubularNeighborhood.Existence
 
 Let `f : M → N` be a smooth embedding of finite-dimensional boundaryless manifolds, with `N`
 Hausdorff and second countable, and let `O` be an open neighbourhood of its image. This file
-proves that `O` contains an open neighbourhood `W` of the image of `f` on which every closed form
-of positive degree that restricts to zero along `f` is exact, with a primitive vanishing along
-the image of `f` as a full ambient tensor
+proves that `O` contains an open neighbourhood `W` of the image of `f` with the following
+property. Every closed `C^r` form `η` of positive degree on `N`, with `r ≥ 1`, that restricts to
+zero along `f` becomes exact on restriction to `W`, with a `C^r` primitive vanishing along the
+image of `f` as a full ambient tensor
 (`TauCeti.SmoothEmbedding.exists_isSmoothForm_relative_primitive`). The ambient form `η` itself
 need not vanish along the image of `f`, only its pullback `f^* η` does. The neighbourhood `W`
-is chosen before the form, so it serves every form of every degree at once.
+is chosen before the form, so it serves every such form of every degree at once.
 
 The neighbourhood `W` is a tubular neighbourhood: by the tubular neighbourhood theorem
 (`TauCeti.SmoothEmbedding.exists_diffeomorph_normalBundle_subset`) it is the image of a
@@ -93,10 +94,13 @@ theorem exists_isSmoothForm_relative_primitive (f : SmoothEmbedding I J ∞ M N)
       (mpullback J J (Subtype.val : W → N) η) = 0 := by
     rw [← mpullback_comp ((Φ.contMDiff.comp (contMDiff_zeroSection ℝ _)).mdifferentiable
       (by simp)) (hval.mdifferentiable (by simp)), hcomp, hi]
-  obtain ⟨β, hβ, hdβ, hβ₀⟩ := Φ.exists_isSmoothForm_relative_primitive hr hηW hclosedW hiW
+  obtain ⟨β, hβ, hdβ, hβ₀⟩ := Φ.exists_isSmoothForm_relative_primitive hr
+    (by exact_mod_cast (le_top : r + 1 ≤ ⊤)) hηW hclosedW hiW
   refine ⟨β, hβ, hdβ, fun x ↦ ?_⟩
-  rw [show (⟨f x, hfW (mem_range_self x)⟩ : W) = Φ (zeroSection P _ x) from
-    Subtype.ext (hΦ x).symm]
+  -- The point `f x` of `W` is the image under `Φ` of the zero vector over `x`.
+  have hx : (⟨f x, hfW (mem_range_self x)⟩ : W) = Φ (zeroSection P _ x) :=
+    Subtype.ext (hΦ x).symm
+  rw [hx]
   exact hβ₀ x
 
 end TauCeti.SmoothEmbedding

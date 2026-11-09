@@ -231,6 +231,19 @@ theorem mpullback_symm_mpullback (hn : n ≠ 0) (φ : M ≃ₘ^n⟮I, I'⟯ M')
   rw [← mpullback_comp (φ.symm.mdifferentiable hn) (φ.mdifferentiable hn),
     show (φ : M → M') ∘ φ.symm = id from funext φ.apply_symm_apply, mpullback_id]
 
+omit [IsManifold I 1 M] in
+/-- Pulling back along the retraction `0 ∘ π` of a vector bundle onto its zero section factors
+through the restriction to the zero section. -/
+theorem mpullback_zeroSection_comp_proj {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
+    {V : M → Type*} [TopologicalSpace (TotalSpace F' V)] [∀ x, AddCommMonoid (V x)]
+    [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F' V]
+    [VectorBundle ℝ F' V] (ω : RoughForm (I.prod 𝓘(ℝ, F')) (TotalSpace F' V) F k) :
+    mpullback (I.prod 𝓘(ℝ, F')) (I.prod 𝓘(ℝ, F')) (zeroSection F' V ∘ TotalSpace.proj) ω =
+      mpullback (I.prod 𝓘(ℝ, F')) I (π F' V)
+        (mpullback I (I.prod 𝓘(ℝ, F')) (zeroSection F' V) ω) :=
+  mpullback_comp ((contMDiff_proj (n := 1) V).mdifferentiable one_ne_zero)
+    ((contMDiff_zeroSection (n := 1) ℝ V).mdifferentiable one_ne_zero) ω
+
 namespace SmoothForm
 
 open scoped ContDiff
