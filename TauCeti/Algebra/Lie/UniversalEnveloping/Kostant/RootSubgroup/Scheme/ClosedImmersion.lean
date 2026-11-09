@@ -65,9 +65,10 @@ criterion supplies the same closed subgroup.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_apply_of_isRootStep`: the same
   statement read as a matrix entry.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupPoints_apply_baseChange_basis_of_action`:
-  the class-two exponential formula for an operator with one nonzero basis column.
+  the exponential formula for a root operator sending one basis vector to another and killing the
+  rest.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_transvectionUnit_of_action`:
-  a class-two root operator with one nonzero basis column exponentiates to a transvection.
+  a root operator with one nonzero basis column exponentiates to a transvection.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_sum`: a nilpotent root
   operator exponentiates to the finite sum of its integral divided-power matrices.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_one_add_smul` and, in the same
