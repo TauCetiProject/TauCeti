@@ -12,10 +12,11 @@ public import Mathlib.RingTheory.PicardGroup
 # Operations on fractional ideals
 
 Two facts about Mathlib's `FractionalIdeal.ringEquivOfRingEquiv`, the transport of fractional
-ideals along a ring equivalence `f : R ≃+* R'` extended to fraction rings, and two facts about
-principal fractional ideals: a fractional ideal and its integral numerator are invertible together,
-and scaling by a unit is cancelled by scaling by its inverse. The principal-ideal map has the
-base-ring units as its kernel and is unchanged by negation of a generator.
+ideals along a ring equivalence `f : R ≃+* R'` extended to fraction rings, and facts about
+fractional ideals: a fractional ideal and its integral numerator are invertible together, a
+fractional ideal whose underlying `A`-submodule has an `A`-submodule inverse for multiplication is
+invertible, and scaling by a unit is cancelled by scaling by its inverse. The principal-ideal map
+has the base-ring units as its kernel and is unchanged by negation of a generator.
 
 The principal-map kernel is adapted from Michael Stoll's elliptic-curves formalisation
 (`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/FractionalIdeal.lean`
@@ -31,6 +32,8 @@ at pin `66889eada51a`, Apache 2.0, by Michael Stoll).
 * `FractionalIdeal.toPrincipalIdeal_neg`: negating a generator preserves its principal ideal.
 * `FractionalIdeal.isUnit_num_iff`: a fractional ideal and its integral numerator are invertible
   together, over any localization.
+* `FractionalIdeal.isUnit_of_restrictScalars_mul_eq_one`: a fractional ideal is invertible once its
+  underlying `A`-submodule times some `A`-submodule `t` equals the image of `R`.
 * `FractionalIdeal.spanSingleton_inv_mul_cancel_left`: scaling by a unit and then by its inverse
   returns the fractional ideal.
 * `Ideal.moduleInvertible_of_isUnit_fractionalIdeal`: an ideal invertible in a faithful
@@ -148,7 +151,7 @@ lemma toPrincipalIdeal_eq_one_iff {R : Type*} [CommRing R]
   rw [← neg_one_mul x, map_mul, hneg, one_mul]
 
 /-- **Criterion for invertibility of a fractional ideal.** A fractional ideal whose
-`A`-submodule has an `A`-submodule inverse for multiplication, with product the unit submodule,
+`A`-submodule has an `A`-submodule inverse for multiplication, with product the image of `R`,
 is invertible. -/
 theorem isUnit_of_restrictScalars_mul_eq_one {R : Type*} [CommRing R] [IsDomain R]
     {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] {A : Type*} [CommRing A]
