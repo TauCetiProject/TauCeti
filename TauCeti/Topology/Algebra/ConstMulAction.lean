@@ -17,6 +17,7 @@ public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.LocallyFinite
 
 import Mathlib.Topology.Algebra.Group.Basic
+import Mathlib.Topology.Maps.Proper.Basic
 
 /-!
 # Transfer instances for restricted and properly discontinuous actions
@@ -46,6 +47,8 @@ open embedding.
   every invariant subspace.
 * `TauCeti.properlyDiscontinuousSMul_of_conjAct_smul_eq`: a conjugate `g H g⁻¹` of a
   properly discontinuous subgroup `H` acts properly discontinuously.
+* `TauCeti.isOpen_setOf_forall_smul_mem`: under a continuous action of a compact space, the
+  points whose whole orbit lies in an open set form an open set.
 * `TauCeti.isClosed_stabilizer`: the stabilizer of a point with continuous orbit map in a `T₁`
   space is closed.
 * `TauCeti.finite_stabilizer_of_properlyDiscontinuousSMul`: a properly discontinuous action has
@@ -94,6 +97,17 @@ theorem isClosed_stabilizer {G X : Type*} [Group G] [MulAction G X] [Topological
     [TopologicalSpace X] [T1Space X] {x : X} (hx : Continuous fun g : G ↦ g • x) :
     IsClosed (MulAction.stabilizer G x : Set G) :=
   isClosed_singleton.preimage hx
+
+/-- Under a jointly continuous action of a compact space, the points whose whole orbit lies in an
+open set `s` form an open set: the largest invariant subset of an open set is open. -/
+theorem isOpen_setOf_forall_smul_mem {G X : Type*} [SMul G X] [TopologicalSpace G]
+    [CompactSpace G] [TopologicalSpace X] [ContinuousSMul G X] {s : Set X} (hs : IsOpen s) :
+    IsOpen {x : X | ∀ g : G, g • x ∈ s} := by
+  have hc : IsClosed (Prod.snd '' ((fun p : G × X ↦ p.1 • p.2) ⁻¹' sᶜ)) :=
+    isClosedMap_snd_of_compactSpace _ (hs.isClosed_compl.preimage continuous_smul)
+  convert hc.isOpen_compl using 1
+  ext x
+  simp
 
 section DisjointTranslates
 
