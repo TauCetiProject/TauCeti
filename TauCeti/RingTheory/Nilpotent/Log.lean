@@ -125,7 +125,7 @@ theorem subst_C_log {a : A} (ha : IsNilpotent a) :
 
 private theorem subst_C_exp_sub_one {a : A} (ha : IsNilpotent a) :
     (exp A - 1).subst (C a) = C (IsNilpotent.exp a - 1) := by
-  simp only [subst_sub (HasSubst.C ha), subst_C_exp ha, subst_one (HasSubst.C ha),
+  simp only [subst_sub (HasSubst.C ha), subst_C_exp ha, subst_one,
     map_sub, map_one]
 
 end PowerSeries
@@ -150,7 +150,7 @@ private theorem exp_log_comm {A : Type*} [CommRing A] [Algebra ℚ A]
   have h := PowerSeries.subst_comp_subst_apply
     (R := A) (PowerSeries.HasSubst.log (A := A)) hC (PowerSeries.exp A)
   rw [PowerSeries.subst_exp_log, PowerSeries.subst_add hC,
-    PowerSeries.subst_one hC, PowerSeries.subst_X hC] at h
+    PowerSeries.subst_one, PowerSeries.subst_X hC] at h
   apply PowerSeries.C_injective
   simpa only [← map_one PowerSeries.C, ← map_add PowerSeries.C,
     PowerSeries.subst_C_log ha, add_sub_cancel,
