@@ -33,6 +33,8 @@ and Hurewicz fibrations are closed under composition and base change.
 * `TauCeti.IsHurewiczFibration.comp`: Hurewicz fibrations are closed under composition.
 * `TauCeti.IsHurewiczFibration.pullback`: the base change of a Hurewicz fibration along any map is
   a Hurewicz fibration.
+* `TauCeti.IsHurewiczFibration.comp_subtypeVal`: the restriction of a Hurewicz fibration to a
+  subset of the total space closed under joining by paths is a Hurewicz fibration.
 * `Homeomorph.isHurewiczFibration`, `TauCeti.isHurewiczFibration_fst`: homeomorphisms and product
   projections are Hurewicz fibrations.
 
@@ -107,6 +109,14 @@ theorem pullback {B' : Type v'} [TopologicalSpace B'] (hp : IsHurewiczFibration.
 theorem comp_homeomorph {E' : Type u'} [TopologicalSpace E'] (hp : IsHurewiczFibration.{w} p)
     (e : E' ≃ₜ E) : IsHurewiczFibration.{w} (p ∘ e) :=
   hp.comp e.isHurewiczFibration
+
+/-- The restriction of a Hurewicz fibration to a subset of the total space that is closed under
+joining by paths, for instance a union of path components, is a Hurewicz fibration. -/
+theorem comp_subtypeVal (hp : IsHurewiczFibration.{w} p) {S : Set E}
+    (hS : ∀ ⦃e e' : E⦄, e ∈ S → Joined e e' → e' ∈ S) :
+    IsHurewiczFibration.{w} (p ∘ Subtype.val : S → B) :=
+  ⟨hp.1.comp continuous_subtype_val,
+    fun A _ ↦ HasHomotopyLiftingProperty.comp_subtypeVal (hp.2 A) hS⟩
 
 end IsHurewiczFibration
 
