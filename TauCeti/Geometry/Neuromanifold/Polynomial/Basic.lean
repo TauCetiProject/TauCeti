@@ -219,6 +219,16 @@ polynomial in the parameters. -/
     polynomialCoefficientCoordinates P w i = eval w ((inputPolynomial P i.1).coeff i.2) := by
   simp [polynomialCoefficientCoordinates, coeff_map]
 
+/-- Evaluating the tuple with the finite coefficient coordinates of the model at a parameter
+recovers the realization at that parameter. -/
+theorem tupleEvaluation_boundedCoefficientEquiv_symm_polynomialCoefficientCoordinates
+    (P : J → MvPolynomial (W ⊕ X) K) (w : W → K) :
+    tupleEvaluation J (restrictTotalDegree X K (polynomialInputDegree P))
+        ((boundedCoefficientEquiv X K J _).symm (polynomialCoefficientCoordinates P w)) =
+      polynomialRealization P w := by
+  rw [polynomialCoefficientCoordinates, LinearEquiv.symm_apply_apply]
+  exact congrFun (tupleEvaluation_comp_polynomialCoefficientMap P) w
+
 /-- Enlarging the uniform input-degree bound by zero-padding the coefficient coordinates
 preserves the realization at every parameter and every input. -/
 theorem tupleEvaluation_padding_polynomialCoefficientCoordinates

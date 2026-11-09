@@ -61,7 +61,7 @@ with `‖T x‖ ≤ C ‖T₀ x‖ ^ (1 - θ) ‖T₁ x‖ ^ θ` for all `x` is 
 theorem of_norm_le_mul_rpow_mul_rpow {T₀ : X →ₗ[𝕜] Y₀} (hT₀ : IsCompactOperator T₀)
     (T₁ : X →L[𝕜] Y₁) {T : X →ₗ[𝕜] Y} {C θ : ℝ} (hθ₀ : 0 ≤ θ) (hθ₁ : θ < 1)
     (hT : ∀ x, ‖T x‖ ≤ C * ‖T₀ x‖ ^ (1 - θ) * ‖T₁ x‖ ^ θ) : IsCompactOperator T := by
-  refine isCompactOperator_of_totallyBounded_image_closedBall zero_lt_one ?_
+  refine (isCompactOperator_iff_totallyBounded_image_closedBall _ zero_lt_one).mpr ?_
   rw [totallyBounded_iff]
   intro ε hε
   -- Differences of points of the closed unit ball have `T₁`-norm at most `M`.

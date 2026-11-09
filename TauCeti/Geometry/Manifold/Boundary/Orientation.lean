@@ -95,10 +95,9 @@ theorem isOutwardPointing_iff_mul_mvfderiv_neg [IsManifold (𝓡∂ (n + 1)) 1 M
       (NormedSpace.fromTangentSpace (extChartAt (𝓡∂ (n + 1)) x x)
         (mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))
           (extChartAt (𝓡∂ (n + 1)) x) x v)) 0 := by
-    rw [ht, mvfderiv_comp_apply_of_differentiableAt (I := 𝓡∂ (n + 1))
-      (EuclideanSpace.proj (0 : Fin (n + 1))).differentiableAt
+    rw [ht, (EuclideanSpace.proj (0 : Fin (n + 1))).mvfderiv_comp_apply (I := 𝓡∂ (n + 1))
       (mdifferentiableAt_extChartAt (mem_chart_source _ x))]
-    simp only [ContinuousLinearMap.fderiv, mvfderiv_apply_eq_mfderiv_apply,
+    simp only [mvfderiv_apply_eq_mfderiv_apply,
       mfderiv_extChartAt_self, NormedSpace.fromTangentSpace_apply]
     -- The tangent fibre of the half-space model is the model space itself, on which `proj 0` is
     -- evaluation in slot `0`; the tangent-space wrapper blocks the rewriting lemmas for both.

@@ -154,13 +154,8 @@ theorem sharpMaximalFunction_zero (μ : Measure X) : sharpMaximalFunction μ (0 
 /-- The sharp maximal function depends only on the a.e. class of `f`. -/
 theorem sharpMaximalFunction_congr_ae {g : X → F} (h : f =ᵐ[μ] g) :
     sharpMaximalFunction μ f = sharpMaximalFunction μ g := by
-  have hosc (s : Set X) : ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ₑ ∂μ =
-      ⨍⁻ y in s, ‖g y - ⨍ z in s, g z ∂μ‖ₑ ∂μ := by
-    have hs : f =ᵐ[μ.restrict s] g := ae_restrict_of_ae h
-    rw [average_congr hs]
-    exact laverage_congr (hs.mono fun y hy => by simp only [hy])
   funext x
-  simp only [sharpMaximalFunction, hosc]
+  simp only [sharpMaximalFunction, setLAverage_enorm_sub_setAverage_congr_ae h]
 
 /-- The sharp maximal function does not see constants: adding a constant to an a.e. strongly
 measurable `f` leaves `f^#` unchanged. -/
@@ -175,12 +170,8 @@ theorem sharpMaximalFunction_add_const [CompleteSpace F] (hf : AEStronglyMeasura
 theorem sharpMaximalFunction_const_smul {𝕜 : Type*} [NormedDivisionRing 𝕜] [Module 𝕜 F]
     [NormSMulClass 𝕜 F] [SMulCommClass ℝ 𝕜 F] (k : 𝕜) (x : X) :
     sharpMaximalFunction μ (k • f) x = ‖k‖ₑ * sharpMaximalFunction μ f x := by
-  have hosc (s : Set X) : ⨍⁻ y in s, ‖k • f y - ⨍ z in s, k • f z ∂μ‖ₑ ∂μ =
-      ‖k‖ₑ * ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ₑ ∂μ := by
-    have havg : ⨍ z in s, k • f z ∂μ = k • ⨍ z in s, f z ∂μ := integral_smul k f
-    simp_rw [havg, ← smul_sub, enorm_smul, setLAverage_eq,
-      lintegral_const_mul' _ _ enorm_ne_top, mul_div_assoc]
-  simp only [sharpMaximalFunction, Pi.smul_apply, hosc, ENNReal.mul_iSup]
+  simp only [sharpMaximalFunction, Pi.smul_apply, setLAverage_enorm_const_smul_sub_setAverage,
+    ENNReal.mul_iSup]
 
 /-- The sharp maximal function is subadditive on a.e. strongly measurable functions. -/
 theorem sharpMaximalFunction_add_le {g : X → F} (hf : AEStronglyMeasurable f μ)
