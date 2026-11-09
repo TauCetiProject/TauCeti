@@ -77,6 +77,18 @@ end Sign
 
 theorem one_ne_ofAdd_one : (1 : Multiplicative (ZMod 2)) ≠ Multiplicative.ofAdd 1 := by decide
 
+/-- Every element of `C₂` is `1` or the generator `σ = Multiplicative.ofAdd 1`. -/
+theorem eq_one_or_eq_ofAdd_one (g : Multiplicative (ZMod 2)) :
+    g = 1 ∨ g = Multiplicative.ofAdd 1 := by
+  revert g
+  decide
+
+/-- A sum over `C₂` is the sum of the values at `1` and at the generator. -/
+theorem sum_cyclicTwo {M : Type*} [AddCommMonoid M] (f : Multiplicative (ZMod 2) → M) :
+    ∑ g, f g = f 1 + f (Multiplicative.ofAdd 1) :=
+  Fintype.sum_eq_add _ _ one_ne_ofAdd_one fun g hg ↦ by
+    rcases eq_one_or_eq_ofAdd_one g with rfl | rfl <;> simp at hg
+
 /-- The generator `σ = Multiplicative.ofAdd 1` of `C₂` squares to `1`. -/
 theorem ofAdd_one_mul_ofAdd_one :
     (Multiplicative.ofAdd (1 : ZMod 2)) * Multiplicative.ofAdd 1 = 1 := by decide
@@ -97,8 +109,7 @@ theorem eq_single_one_add_single_ofAdd_one (x : MonoidAlgebra R (Multiplicative 
     x = single 1 (x.coeff 1) +
       single (Multiplicative.ofAdd 1) (x.coeff (Multiplicative.ofAdd 1)) := by
   ext g
-  have hg : g = 1 ∨ g = Multiplicative.ofAdd 1 := by revert g; decide
-  rcases hg with rfl | rfl <;>
+  rcases eq_one_or_eq_ofAdd_one g with rfl | rfl <;>
     simp [coeff_add, coeff_single, one_ne_ofAdd_one, one_ne_ofAdd_one.symm]
 
 /-- The product of two elements of `R[C₂]` written as `a + bσ`: since `σ² = 1`,
