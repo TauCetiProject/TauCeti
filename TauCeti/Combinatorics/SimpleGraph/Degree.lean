@@ -28,11 +28,11 @@ set is finite, without requiring a finite vertex set.
 
 public section
 
-namespace TauCeti
+namespace SimpleGraph
 
 /-- **Two distinct neighbours of `v` other than a given vertex `x`, from a degree of at least
 three.** -/
-theorem _root_.SimpleGraph.exists_adj_adj_ne_of_three_le_degree {V : Type*}
+theorem exists_adj_adj_ne_of_three_le_degree {V : Type*}
     {G : SimpleGraph V} {v : V} [Fintype (G.neighborSet v)] (hv : 3 ≤ G.degree v) (x : V) :
     ∃ a b, G.Adj v a ∧ G.Adj v b ∧ a ≠ b ∧ a ≠ x ∧ b ≠ x := by
   classical
@@ -45,7 +45,7 @@ theorem _root_.SimpleGraph.exists_adj_adj_ne_of_three_le_degree {V : Type*}
   exact ⟨a, b, ha.2, hb.2, hab, ha.1, hb.1⟩
 
 /-- A pretransitive action preserving adjacency gives equal degrees in a locally finite graph. -/
-theorem _root_.SimpleGraph.degree_eq_of_pretransitive
+theorem degree_eq_of_pretransitive
     {V : Type*} {G : SimpleGraph V} [G.LocallyFinite]
     {Γ : Type*} [Group Γ] [MulAction Γ V]
     [MulAction.IsPretransitive Γ V]
@@ -63,4 +63,4 @@ theorem _root_.SimpleGraph.degree_eq_of_pretransitive
           exact hact g h }
   exact (e.degree_eq i).symm
 
-end TauCeti
+end SimpleGraph
