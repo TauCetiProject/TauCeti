@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Fuchsian
 public import TauCeti.NumberTheory.ModularForms.LevelOne.FunctionField
+import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
 
 /-!
 # The field of modular functions of level `N` with cyclotomic Fourier coefficients
@@ -30,6 +31,23 @@ pulling back substitutes `q_M = q_N ^ (N / M)` in the expansion at `∞`. Since 
 `TauCeti.ModularGroup.coeffSubfield_cuspDatumInfty_bot` into `F_N`; in particular `j` is a modular
 function of every level.
 
+Since `Γ(N)` is normal in `SL(2, ℤ)`, every `γ ∈ SL(2, ℤ)` induces a biholomorphism of `X(N)`,
+sending the orbit of `τ` to the orbit of `γ • τ`. Pulling back along it gives the action of
+`SL(2, ℤ)` on the meromorphic functions on `X(N)` by fractional linear maps, `F ↦ F ∘ γ`
+(`TauCeti.modularFunctionAction`). It is a right action, so it is bundled as a homomorphism to the
+opposite of the automorphism group: `γ * δ` acts by `γ` and then by `δ`. It is trivial on `Γ(N)`,
+so it descends along the reduction `SL(2, ℤ) → SL(2, ℤ/Nℤ)`, which is surjective
+(`TauCeti.modularFunctionActionZMod`). Since `-1` acts trivially, this is an action of
+`SL(2, ℤ/Nℤ) / {±1}`; for `N = 2`, where `-1 = 1` in `SL(2, ℤ/2ℤ)`, there is nothing to quotient
+by. The functions pulled back from `X(1)` are fixed by this action.
+
+Conversely, a function fixed by `SL(2, ℤ)` has a value at the orbit of `τ` depending only on the
+`SL(2, ℤ)`-orbit of `τ`, so it is pulled back from `X(1)`
+(`Subgroup.exists_compactifiedQuotientComap_eq_iff`). Hence the fixed field of
+`SL(2, ℤ/Nℤ)` is the function field of `X(1)`, and the functions in `F_N` fixed by `SL(2, ℤ/Nℤ)`
+are those pulled back from level-one functions with coefficients in `ℚ(ζ_N)`, which form the field
+`ℚ(ζ_N)(j)` by `TauCeti.ModularGroup.coeffSubfield_cuspDatumInfty_eq_closure`.
+
 ## Main declarations
 
 * `TauCeti.modularFunctionField`: the field `F_N`.
@@ -42,6 +60,21 @@ function of every level.
 * `TauCeti.modularFunctionFieldMap` and `TauCeti.modularFunctionFieldMapOfLevelOne`: the level maps
   `F_M →+* F_N` and `ℚ(j) →+* F_N`, bundled as ring homomorphisms, with their identity and
   composition laws.
+* `TauCeti.modularFunctionAction`: the right action of `SL(2, ℤ)` on the meromorphic functions on
+  `X(N)`, with `TauCeti.modularFunctionAction_apply_ofQuotient` (the action is `F ↦ F ∘ γ`),
+  `TauCeti.unop_modularFunctionAction_mul_apply` (multiplication order),
+  `TauCeti.modularFunctionAction_eq_one_of_mem` and `TauCeti.modularFunctionAction_neg`.
+* `TauCeti.modularFunctionActionZMod`: the induced right action of `SL(2, ℤ/Nℤ)`, identifying `g`
+  and `-g` (`TauCeti.modularFunctionActionZMod_neg`).
+* `TauCeti.unop_modularFunctionActionZMod_compactifiedQuotientComap`: the functions pulled back
+  from `X(1)` are invariant.
+* `TauCeti.forall_unop_modularFunctionAction_apply_eq_iff` and
+  `TauCeti.forall_unop_modularFunctionActionZMod_apply_eq_iff`: conversely, the invariant functions
+  are pulled back from `X(1)`.
+* `TauCeti.fixedField_unop_range_modularFunctionActionZMod`: the fixed field of `SL(2, ℤ/Nℤ)` is
+  the function field of `X(1)`.
+* `TauCeti.modularFunctionField_inf_fixedField_eq_closure`: the functions in `F_N` fixed by
+  `SL(2, ℤ/Nℤ)` form the field `ℚ(ζ_N)(j)`.
 
 ## References
 
@@ -53,8 +86,8 @@ function of every level.
 
 public noncomputable section
 
-open CongruenceSubgroup Subgroup.CompactifiedQuotient TauCeti.RiemannSurface
-open scoped MatrixGroups
+open CongruenceSubgroup MulOpposite Subgroup.CompactifiedQuotient TauCeti.RiemannSurface
+open scoped MatrixGroups Pointwise UpperHalfPlane
 
 namespace TauCeti
 
@@ -206,5 +239,202 @@ theorem modularFunctionFieldMap_comp_modularFunctionFieldMapOfLevelOne (h : M �
     (modularFunctionFieldMap h).comp (modularFunctionFieldMapOfLevelOne M) =
       modularFunctionFieldMapOfLevelOne N :=
   RingHom.ext fun _ ↦ Subtype.ext (Subgroup.compactifiedQuotientComap_trans _ _ _).symm
+
+/-! ### The action of `SL(2, ℤ)` on the function field of `X(N)` -/
+
+section Action
+
+omit [NeZero M] [NeZero N]
+
+variable (N) in
+/-- **The action of `SL(2, ℤ)` on the function field of `X(N)`.** The image in `PSL(2, ℝ)` of every
+`γ ∈ SL(2, ℤ)` normalizes the effective image of `Γ(N)`, so it induces a biholomorphism of `X(N)`
+sending the orbit of `τ` to the orbit of `γ • τ`, and pulling back along it is an automorphism
+`F ↦ F ∘ γ` of the field of meromorphic functions on `X(N)`. This is a right action by fractional
+linear maps: acting by `γ * δ` is acting by `γ` and then by `δ`
+(`TauCeti.unop_modularFunctionAction_mul_apply`). So it is a homomorphism to the opposite of the
+automorphism group. -/
+def modularFunctionAction :
+    SL(2, ℤ) →* (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient ≃ₐ[ℂ]
+      MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient)ᵐᵒᵖ :=
+  (Subgroup.compactifiedQuotientNormalizerComap _).comp <| sl2zToPSL2R.codRestrict _ fun γ ↦
+    Subgroup.conjAct_pointwise_smul_iff.mp (conjAct_sl2zToPSL2R_smul_map_Gamma γ)
+
+/-- `γ ∈ SL(2, ℤ)` acts on the function field of `X(N)` by pulling back along the conjugation by
+its image in `PSL(2, ℝ)`. -/
+theorem unop_modularFunctionAction (γ : SL(2, ℤ)) :
+    unop (modularFunctionAction N γ) =
+      Subgroup.compactifiedQuotientConjComap (conjAct_sl2zToPSL2R_smul_map_Gamma γ) := by
+  rw [modularFunctionAction, MonoidHom.comp_apply]
+  exact Subgroup.unop_compactifiedQuotientNormalizerComap _ _
+
+/-- **The action is by fractional linear maps**: `γ` sends `F` to the function whose value at the
+orbit of `τ` is the value of `F` at the orbit of `γ • τ`. -/
+@[simp]
+theorem modularFunctionAction_apply_ofQuotient (γ : SL(2, ℤ))
+    (F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) (τ : ℍ) :
+    unop (modularFunctionAction N γ) F (ofQuotient (Quotient.mk _ τ)) =
+      F (ofQuotient (Quotient.mk _ (γ • τ))) := by
+  rw [unop_modularFunctionAction, Subgroup.compactifiedQuotientConjComap_apply,
+    Subgroup.compactifiedQuotientConj_ofQuotient, Subgroup.quotientConjHomeomorph_mk,
+    UpperHalfPlane.sl2zToPSL2R_smul]
+
+/-- **Multiplication order.** The action is a right action: acting by `γ * δ` is acting by `γ`
+and then by `δ`. -/
+theorem unop_modularFunctionAction_mul_apply (γ δ : SL(2, ℤ))
+    (F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) :
+    unop (modularFunctionAction N (γ * δ)) F =
+      unop (modularFunctionAction N δ) (unop (modularFunctionAction N γ) F) := by
+  rw [map_mul, unop_mul, AlgEquiv.mul_apply]
+
+/-- The elements of `Γ(N)` act trivially on the function field of `X(N)`. -/
+theorem modularFunctionAction_eq_one_of_mem {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma N) :
+    modularFunctionAction N γ = 1 := by
+  rw [modularFunctionAction, MonoidHom.comp_apply]
+  exact Subgroup.compactifiedQuotientNormalizerComap_eq_one (Subgroup.mem_map_of_mem _ hγ)
+
+/-- `-γ` acts on the function field of `X(N)` as `γ` does, since both have the same image in
+`PSL(2, ℝ)`. -/
+@[simp]
+theorem modularFunctionAction_neg (γ : SL(2, ℤ)) :
+    modularFunctionAction N (-γ) = modularFunctionAction N γ := by
+  rw [modularFunctionAction, MonoidHom.comp_apply, MonoidHom.comp_apply]
+  exact congrArg _ (Subtype.ext (sl2zToPSL2R_neg γ))
+
+/-- **Pullbacks from `X(1)` are invariant.** The pullback along `X(N) → X(1)` of a meromorphic
+function on the level-one curve is fixed by every `γ ∈ SL(2, ℤ)`. -/
+@[simp]
+theorem unop_modularFunctionAction_compactifiedQuotientComap (γ : SL(2, ℤ))
+    (F : MeromorphicFunction psl2zToPSL2R.range.CompactifiedQuotient) :
+    unop (modularFunctionAction N γ)
+        (Subgroup.compactifiedQuotientComap (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R F) =
+      Subgroup.compactifiedQuotientComap (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R F := by
+  rw [modularFunctionAction, MonoidHom.comp_apply]
+  exact Subgroup.unop_compactifiedQuotientNormalizerComap_compactifiedQuotientComap _
+    ((⊤ : Subgroup SL(2, ℤ)).map_sl2zToPSL2R_le_range_psl2zToPSL2R
+      (Subgroup.mem_map_of_mem _ (Subgroup.mem_top γ))) F
+
+/-- The kernel of the reduction `SL(2, ℤ) → SL(2, ℤ/Nℤ)`, which is `Γ(N)`, acts trivially on the
+function field of `X(N)`. -/
+theorem ker_map_le_ker_modularFunctionAction :
+    (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N))).ker ≤
+      (modularFunctionAction N).ker :=
+  fun _ hγ ↦ MonoidHom.mem_ker.mpr (modularFunctionAction_eq_one_of_mem (Gamma_mem'.mpr hγ))
+
+variable (N) in
+/-- **The action of `SL(2, ℤ/Nℤ)` on the function field of `X(N)`.** The action of `SL(2, ℤ)`
+is trivial on `Γ(N)`, the kernel of the surjective reduction `SL(2, ℤ) → SL(2, ℤ/Nℤ)`, so it
+descends to a right action of `SL(2, ℤ/Nℤ)`. It identifies `g` and `-g`
+(`TauCeti.modularFunctionActionZMod_neg`), so it is an action of `SL(2, ℤ/Nℤ) / {±1}`. -/
+def modularFunctionActionZMod :
+    SL(2, ZMod N) →* (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient ≃ₐ[ℂ]
+      MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient)ᵐᵒᵖ :=
+  (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N))).liftOfSurjective
+    Matrix.SpecialLinearGroup.map_intCast_zmod_surjective
+    ⟨modularFunctionAction N, ker_map_le_ker_modularFunctionAction⟩
+
+/-- The reduction of `γ ∈ SL(2, ℤ)` modulo `N` acts on the function field of `X(N)` as `γ`
+does. -/
+@[simp]
+theorem modularFunctionActionZMod_map (γ : SL(2, ℤ)) :
+    modularFunctionActionZMod N (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ) =
+      modularFunctionAction N γ :=
+  MonoidHom.liftOfRightInverse_comp_apply _ _ _ _ γ
+
+/-- `-g` acts on the function field of `X(N)` as `g` does. -/
+@[simp]
+theorem modularFunctionActionZMod_neg (g : SL(2, ZMod N)) :
+    modularFunctionActionZMod N (-g) = modularFunctionActionZMod N g := by
+  obtain ⟨γ, rfl⟩ := Matrix.SpecialLinearGroup.map_intCast_zmod_surjective (d := N) g
+  rw [← Matrix.SpecialLinearGroup.coe_int_neg, modularFunctionActionZMod_map,
+    modularFunctionActionZMod_map, modularFunctionAction_neg]
+
+/-- **Pullbacks from `X(1)` are invariant.** The pullback along `X(N) → X(1)` of a meromorphic
+function on the level-one curve is fixed by every `g ∈ SL(2, ℤ/Nℤ)`. -/
+@[simp]
+theorem unop_modularFunctionActionZMod_compactifiedQuotientComap (g : SL(2, ZMod N))
+    (F : MeromorphicFunction psl2zToPSL2R.range.CompactifiedQuotient) :
+    unop (modularFunctionActionZMod N g)
+        (Subgroup.compactifiedQuotientComap (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R F) =
+      Subgroup.compactifiedQuotientComap (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R F := by
+  obtain ⟨γ, rfl⟩ := Matrix.SpecialLinearGroup.map_intCast_zmod_surjective (d := N) g
+  rw [modularFunctionActionZMod_map, unop_modularFunctionAction_compactifiedQuotientComap]
+
+end Action
+
+/-! ### The fixed field of the action -/
+
+section FixedField
+
+/-- **The functions fixed by `SL(2, ℤ)`.** A meromorphic function on `X(N)` is fixed by every
+`γ ∈ SL(2, ℤ)` exactly when it is the pullback along `X(N) → X(1)` of a meromorphic function on the
+level-one curve. -/
+theorem forall_unop_modularFunctionAction_apply_eq_iff
+    {F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient} :
+    (∀ γ : SL(2, ℤ), unop (modularFunctionAction N γ) F = F) ↔
+      ∃ G : MeromorphicFunction psl2zToPSL2R.range.CompactifiedQuotient,
+        Subgroup.compactifiedQuotientComap (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R G =
+          F := by
+  refine ⟨fun hF ↦ (Gamma N).exists_compactifiedQuotientComap_eq_iff.mpr
+    fun γ τ ↦ by rw [← modularFunctionAction_apply_ofQuotient, hF], ?_⟩
+  rintro ⟨G, rfl⟩ γ
+  exact unop_modularFunctionAction_compactifiedQuotientComap γ G
+
+/-- **The functions fixed by `SL(2, ℤ/Nℤ)`.** A meromorphic function on `X(N)` is fixed by every
+`g ∈ SL(2, ℤ/Nℤ)` exactly when it is the pullback along `X(N) → X(1)` of a meromorphic function on
+the level-one curve. -/
+theorem forall_unop_modularFunctionActionZMod_apply_eq_iff
+    {F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient} :
+    (∀ g : SL(2, ZMod N), unop (modularFunctionActionZMod N g) F = F) ↔
+      ∃ G : MeromorphicFunction psl2zToPSL2R.range.CompactifiedQuotient,
+        Subgroup.compactifiedQuotientComap (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R G =
+          F := by
+  rw [← forall_unop_modularFunctionAction_apply_eq_iff,
+    Matrix.SpecialLinearGroup.map_intCast_zmod_surjective.forall]
+  simp only [modularFunctionActionZMod_map]
+
+/-- **The fixed field of `SL(2, ℤ/Nℤ)`.** The subfield of the function field of `X(N)` fixed by the
+action of `SL(2, ℤ/Nℤ)` is the function field of `X(1)`, embedded by pulling back along
+`X(N) → X(1)`. -/
+theorem fixedField_unop_range_modularFunctionActionZMod :
+    IntermediateField.fixedField (modularFunctionActionZMod N).range.unop =
+      (Subgroup.compactifiedQuotientComap
+        (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R).fieldRange := by
+  ext F
+  rw [IntermediateField.mem_fixedField_iff, AlgHom.mem_fieldRange,
+    ← forall_unop_modularFunctionActionZMod_apply_eq_iff]
+  refine ⟨fun h g ↦ h _ ⟨g, op_unop _⟩, ?_⟩
+  rintro h σ ⟨g, hg⟩
+  rw [← unop_op σ, ← hg]
+  exact h g
+
+/-- **The modular functions of level `N` fixed by `SL(2, ℤ/Nℤ)` are `ℚ(ζ_N)(j)`.** The functions
+in `F_N` fixed by the action of `SL(2, ℤ/Nℤ)` on the function field of `X(N)` form the subfield
+generated by `j`, pulled back from `X(1)`, and the constants in `ℚ(ζ_N)`. -/
+theorem modularFunctionField_inf_fixedField_eq_closure :
+    modularFunctionField N ⊓
+        (IntermediateField.fixedField (modularFunctionActionZMod N).range.unop).toSubfield =
+      Subfield.closure (insert (Subgroup.compactifiedQuotientComap
+          (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R ModularGroup.jMeromorphicFunction)
+        (algebraMap ℂ _ '' Subfield.closure {z : ℂ | z ^ N = 1})) := by
+  set φ := Subgroup.compactifiedQuotientComap (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R
+  -- the right-hand side is the image of `ℚ(ζ_N)(j)` on `X(1)`
+  have hmap : Subfield.closure (insert (φ ModularGroup.jMeromorphicFunction)
+      (algebraMap ℂ _ '' Subfield.closure {z : ℂ | z ^ N = 1})) =
+      (coeffSubfield ModularGroup.cuspDatumInfty (Subfield.closure {z : ℂ | z ^ N = 1})).map
+        (φ : _ →+* _) := by
+    rw [ModularGroup.coeffSubfield_cuspDatumInfty_eq_closure, RingHom.map_field_closure,
+      Set.image_insert_eq, Set.image_image]
+    simp only [RingHom.coe_coe, AlgHom.commutes]
+  ext F
+  rw [hmap, Subfield.mem_inf, IntermediateField.mem_toSubfield,
+    fixedField_unop_range_modularFunctionActionZMod, AlgHom.mem_fieldRange, Subfield.mem_map]
+  constructor
+  · rintro ⟨hF, G, rfl⟩
+    exact ⟨G, compactifiedQuotientComap_levelOne_mem_modularFunctionField_iff.mp hF, rfl⟩
+  · rintro ⟨G, hG, rfl⟩
+    exact ⟨compactifiedQuotientComap_levelOne_mem_modularFunctionField_iff.mpr hG, G, rfl⟩
+
+end FixedField
 
 end TauCeti

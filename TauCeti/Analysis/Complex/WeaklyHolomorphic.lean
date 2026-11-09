@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.Normed.Module.DoubleDual
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
-import TauCeti.Analysis.Complex.Conformal.NormalFamilies
 import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
 public import TauCeti.MeasureTheory.Integral.Circle.Integral
 
@@ -20,28 +19,27 @@ differentiable on `U` for every continuous linear functional `ℓ` on `E`, then 
 complex differentiable on `U`. This lets holomorphy of vector-valued functions, such as resolvents
 and other operator-valued functions, be checked one scalar functional at a time.
 
-The proof has three steps.
+The proof has two steps.
 
-* On a compact subset of `U` every scalar function `z ↦ ℓ (f z)` is bounded, so the uniform
-  boundedness principle (`TauCeti.NormedSpace.isBounded_iff_forall_dual_isBounded`) bounds the
-  norm of `f` there.
-* The scalar Cauchy estimate for the derivative of `z ↦ ℓ (f z)` and the mean value inequality
-  (`TauCeti.dist_le_of_forall_mem_closedBall_two_mul_norm_le`) give a Lipschitz estimate for each
-  `ℓ ∘ f` with constant proportional to `‖ℓ‖`. By Hahn–Banach
-  (`NormedSpace.norm_le_dual_bound`) this is a Lipschitz estimate for `f` itself, so `f` is
-  continuous on `U`.
-* Being continuous, `f` has a Banach-valued Cauchy integral over every small circle in `U`, and
-  this integral is analytic inside the circle. Continuous linear functionals commute with circle
-  integrals (`ContinuousLinearMap.circleIntegral_comp_comm`), so the scalar Cauchy integral formula
-  shows that every functional takes the same value on `f` and on its Cauchy integral. These
-  functionals separate points, so `f` agrees with its Cauchy integral near each point of `U`.
+* Weak differentiability gives continuity, on any set `U`. Along a sequence `zₙ → c` in `U` the
+  difference quotients of `f` at `c` are bounded after applying any functional, so the uniform
+  boundedness principle (`TauCeti.NormedSpace.isBounded_iff_forall_dual_isBounded`) bounds their
+  norms, which makes `f` continuous at `c`.
+* For `U` open, being continuous, `f` has a Banach-valued Cauchy integral over every small circle
+  in `U`, and this integral is analytic inside the circle. Continuous linear functionals commute
+  with circle integrals (`ContinuousLinearMap.circleIntegral_comp_comm`), so the scalar Cauchy
+  integral formula shows that every functional takes the same value on `f` and on its Cauchy
+  integral. These functionals separate points, so `f` agrees with its Cauchy integral near each
+  point of `U`.
 
 Completeness of `E` is used only in the last step, where the vector-valued integral is formed.
 
 ## Main results
 
-* `TauCeti.continuousOn_of_forall_dual`: weak holomorphy on an open set implies continuity, even
-  when `E` is not complete.
+* `TauCeti.continuousWithinAt_of_forall_dual`: weak differentiability within a set at a point
+  implies continuity within the set at that point.
+* `TauCeti.continuousOn_of_forall_dual`: weak differentiability on any set implies continuity,
+  even when `E` is not complete.
 * `TauCeti.differentiableOn_of_forall_dual`: weak holomorphy on an open set implies holomorphy.
 * `TauCeti.differentiableOn_iff_forall_dual`, `TauCeti.differentiable_iff_forall_dual`: the
   equivalence of holomorphy and weak holomorphy.
@@ -53,7 +51,7 @@ Completeness of `E` is used only in the last step, where the vector-valued integ
 
 public section
 
-open Complex Metric Set
+open Complex Metric Set Filter Topology
 
 open scoped Real NNReal
 
@@ -63,39 +61,50 @@ namespace TauCeti
 
 variable {f : ℂ → E} {U : Set ℂ}
 
-/-- A weakly holomorphic function on an open set is continuous there. This needs no completeness
-of `E`. -/
+/-- A function that is weakly differentiable within `U` at `c` is continuous within `U` at `c`.
+This needs neither openness of `U` nor completeness of `E`. -/
+theorem continuousWithinAt_of_forall_dual {c : ℂ}
+    (hf : ∀ ℓ : StrongDual ℂ E, DifferentiableWithinAt ℂ (fun z ↦ ℓ (f z)) U c) :
+    ContinuousWithinAt f U c := by
+  rw [ContinuousWithinAt, tendsto_iff_seq_tendsto]
+  intro z hz
+  -- The difference quotients `w n` are weakly bounded, hence norm bounded by uniform boundedness.
+  set w : ℕ → E := fun n ↦ ((‖z n - c‖ : ℂ))⁻¹ • (f (z n) - f c)
+  have hzc : Tendsto (fun n ↦ ‖z n - c‖) atTop (𝓝 0) := by
+    have h1 : Tendsto z atTop (𝓝 c) := (tendsto_nhdsWithin_iff.1 hz).1
+    simpa using (h1.sub_const c).norm
+  have hbdd : Bornology.IsBounded (range w) := by
+    refine (NormedSpace.isBounded_iff_forall_dual_isBounded ℂ).2 fun ℓ ↦ ?_
+    obtain ⟨C, hC⟩ := (hf ℓ).isBigO_sub.bound
+    have hev : ∀ᶠ n in atTop, ‖ℓ (w n)‖ ≤ max C 0 := by
+      filter_upwards [hz.eventually hC] with n hn
+      simp only [w, map_smul, map_sub]
+      rcases eq_or_ne (z n) c with h | h
+      · simp [h]
+      · have hpos : 0 < ‖z n - c‖ := norm_pos_iff.2 (sub_ne_zero.2 h)
+        rw [norm_smul, norm_inv, Complex.norm_real, norm_norm, inv_mul_le_iff₀ hpos, mul_comm]
+        exact hn.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hpos.le)
+    obtain ⟨B, hB⟩ := (IsBoundedUnder.bddAbove_range (f := fun n ↦ ‖ℓ (w n)‖) ⟨max C 0, hev⟩)
+    refine isBounded_iff_forall_norm_le.2 ⟨B, ?_⟩
+    rintro _ ⟨_, ⟨n, rfl⟩, rfl⟩
+    exact hB ⟨n, rfl⟩
+  obtain ⟨M, hM⟩ := isBounded_iff_forall_norm_le.1 hbdd
+  have key : ∀ n, ‖f (z n) - f c‖ ≤ M * ‖z n - c‖ := fun n ↦ by
+    rcases eq_or_ne (z n) c with h | h
+    · simp [h]
+    · have hpos : 0 < ‖z n - c‖ := norm_pos_iff.2 (sub_ne_zero.2 h)
+      have := hM _ ⟨n, rfl⟩
+      simp only [w, norm_smul, norm_inv, Complex.norm_real, norm_norm] at this
+      rwa [inv_mul_le_iff₀ hpos, mul_comm] at this
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  refine squeeze_zero (fun n ↦ norm_nonneg _) key ?_
+  simpa using hzc.const_mul M
+
+/-- A function that is weakly differentiable on a set `U` is continuous on `U`. This needs neither
+openness of `U` nor completeness of `E`. -/
 theorem continuousOn_of_forall_dual
-    (hf : ∀ ℓ : StrongDual ℂ E, DifferentiableOn ℂ (fun z ↦ ℓ (f z)) U) (hU : IsOpen U) :
-    ContinuousOn f U := by
-  intro c hc
-  obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1 hU c hc
-  have hr : 0 < ε / 3 := by positivity
-  have hsub : closedBall c (2 * (ε / 3)) ⊆ U := (closedBall_subset_ball (by linarith)).trans hεU
-  -- By uniform boundedness, `f` is norm bounded on the compact ball `closedBall c (2 * (ε / 3))`.
-  obtain ⟨M, hM⟩ : ∃ M, ∀ z ∈ closedBall c (2 * (ε / 3)), ‖f z‖ ≤ M := by
-    have hbdd : Bornology.IsBounded (f '' closedBall c (2 * (ε / 3))) := by
-      refine (NormedSpace.isBounded_iff_forall_dual_isBounded ℂ).2 fun ℓ ↦ ?_
-      rw [image_image]
-      exact ((isCompact_closedBall c _).image_of_continuousOn
-        ((hf ℓ).continuousOn.mono hsub)).isBounded
-    obtain ⟨M, hM⟩ := isBounded_iff_forall_norm_le.1 hbdd
-    exact ⟨M, fun z hz ↦ hM _ (mem_image_of_mem f hz)⟩
-  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM c (mem_closedBall_self (by positivity)))
-  -- Each `ℓ ∘ f` is bounded by `‖ℓ‖ * M`, hence Lipschitz with constant `‖ℓ‖ * M / (ε / 3)` on
-  -- `ball c (ε / 3)`; by Hahn–Banach this bounds `f` itself.
-  have hLip : LipschitzOnWith (M / (ε / 3)).toNNReal f (ball c (ε / 3)) :=
-    LipschitzOnWith.of_dist_le' fun z hz w hw ↦ by
-      rw [dist_eq_norm, dist_eq_norm]
-      refine NormedSpace.norm_le_dual_bound ℂ _ (by positivity) fun ℓ ↦ ?_
-      have := dist_le_of_forall_mem_closedBall_two_mul_norm_le hU (hf ℓ) hr hsub
-        (fun y hy ↦ (ℓ.le_opNorm _).trans (mul_le_mul_of_nonneg_left (hM y hy) (norm_nonneg ℓ)))
-        hz hw
-      rw [dist_eq_norm, dist_eq_norm, ← map_sub] at this
-      calc ‖ℓ (f z - f w)‖ ≤ ‖ℓ‖ * M / (ε / 3) * ‖z - w‖ := this
-        _ = M / (ε / 3) * ‖z - w‖ * ‖ℓ‖ := by ring
-  exact (hLip.continuousOn.continuousAt
-    (isOpen_ball.mem_nhds (mem_ball_self hr))).continuousWithinAt
+    (hf : ∀ ℓ : StrongDual ℂ E, DifferentiableOn ℂ (fun z ↦ ℓ (f z)) U) :
+    ContinuousOn f U := fun c hc ↦ continuousWithinAt_of_forall_dual fun ℓ ↦ hf ℓ c hc
 
 /-- **Weak holomorphy implies holomorphy.** If `E` is a complex Banach space and
 `z ↦ ℓ (f z)` is complex differentiable on the open set `U` for every continuous linear
@@ -103,7 +112,7 @@ functional `ℓ` on `E`, then `f` is complex differentiable on `U`. -/
 theorem differentiableOn_of_forall_dual [CompleteSpace E]
     (hf : ∀ ℓ : StrongDual ℂ E, DifferentiableOn ℂ (fun z ↦ ℓ (f z)) U) (hU : IsOpen U) :
     DifferentiableOn ℂ f U := by
-  have hcont := continuousOn_of_forall_dual hf hU
+  have hcont := continuousOn_of_forall_dual hf
   intro c hc
   obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1 hU c hc
   obtain ⟨R, hR, hRε⟩ : ∃ R : ℝ≥0, 0 < R ∧ (R : ℝ) < ε :=

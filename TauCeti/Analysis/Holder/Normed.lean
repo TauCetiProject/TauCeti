@@ -28,6 +28,9 @@ parallel notion of Hölder continuity.
 * `TauCeti.HolderSpace`: bounded continuous globally `α`-Hölder functions.
 * `TauCeti.HolderSpace.instNormedAddCommGroup`: the supremum-plus-Hölder normed group structure.
 * `TauCeti.HolderSpace.instCompleteSpace`: completeness when the codomain is complete.
+* `TauCeti.HolderSpace.holderWith`, `TauCeti.HolderSpace.holderWith_nnnorm`: the Hölder bound
+  with the canonical seminorm, and with the Hölder-space norm.
+* `TauCeti.supportedHolderSubmodule`: the Hölder subspace supported in a prescribed set.
 * `TauCeti.HolderSpace.constL`, `TauCeti.HolderSpace.evalCLM`, and
   `TauCeti.HolderSpace.toBoundedContinuousFunctionCLM`: continuous linear maps for constants,
   evaluation, and inclusion, with operator-norm bounds.
@@ -167,6 +170,11 @@ theorem smul_apply (c : ℝ) (f : HolderSpace α X Y) (x : X) : (c • f) x = c 
 
 @[simp]
 theorem neg_apply (f : HolderSpace α X Y) (x : X) : (-f) x = -f x := (rfl)
+
+/-- A bounded Hölder function is Hölder with its canonical Hölder seminorm. -/
+theorem holderWith (f : HolderSpace α X Y) :
+    HolderWith (nnHolderNorm α (f : X → Y)) α (f : X → Y) := by
+  simpa only [coe_toBoundedContinuousFunction] using f.memHolder.holderWith
 
 /-- The underlying bounded continuous function determines a Hölder-space element. -/
 theorem toBoundedContinuousFunction_injective :
@@ -322,6 +330,42 @@ private theorem norm_sub_limit_toBoundedContinuousFunction_le
     _ ≤ ‖u n - u N‖ := norm_toBoundedContinuousFunction_le _
     _ ≤ C := hbound n hn
 
+/-- The limit in `X →ᵇ Y` of a Cauchy sequence of Hölder functions is Hölder. -/
+private theorem memHolder_of_tendsto_of_cauchySeq {u : ℕ → HolderSpace α X Y} {F : X →ᵇ Y}
+    (hu : CauchySeq u) (hF : Tendsto (fun n ↦ (u n).toBoundedContinuousFunction) atTop (𝓝 F)) :
+    MemHolder α (F : X → Y) := by
+  rcases Metric.cauchySeq_iff.mp hu 1 zero_lt_one with ⟨N, hN⟩
+  have hbound : ∀ n ≥ N, ‖u n - u N‖ ≤ (1 : ℝ) := fun n hn ↦ by
+    simpa only [dist_eq_norm] using (hN n hn N le_rfl).le
+  have h :=
+    (holderWith_sub_of_tendsto_of_norm_sub_le hF N 1 hbound).memHolder.add (u N).memHolder
+  have heq :
+      ((fun x ↦ F x - u N x) + ((u N).toBoundedContinuousFunction : X → Y)) = (F : X → Y) := by
+    funext x
+    exact sub_add_cancel (F x) (u N x)
+  rwa [heq] at h
+
+/-- If `‖u n - u N‖ ≤ C` for all `n ≥ N` and `u` converges to `F` in `X →ᵇ Y`, then `u N` is within
+`2 * C` of the Hölder limit of `u`. -/
+private theorem norm_sub_ofBoundedContinuousFunction_le {u : ℕ → HolderSpace α X Y} {F : X →ᵇ Y}
+    (hF : Tendsto (fun n ↦ (u n).toBoundedContinuousFunction) atTop (𝓝 F))
+    (hholderF : MemHolder α (F : X → Y)) (N : ℕ) (C : ℝ≥0) (hbound : ∀ n ≥ N, ‖u n - u N‖ ≤ C) :
+    ‖u N - ofBoundedContinuousFunction F hholderF‖ ≤ 2 * C := by
+  have hfF : (ofBoundedContinuousFunction F hholderF).toBoundedContinuousFunction = F :=
+    toBoundedContinuousFunction_ofBoundedContinuousFunction F hholderF
+  have hseminorm : nnHolderNorm α
+      ((ofBoundedContinuousFunction F hholderF - u N).toBoundedContinuousFunction : X → Y) ≤ C := by
+    rw [toBoundedContinuousFunction_sub, hfF]
+    exact (holderWith_sub_of_tendsto_of_norm_sub_le hF N C hbound).nnholderNorm_le
+  have hsup :
+      ‖(ofBoundedContinuousFunction F hholderF - u N).toBoundedContinuousFunction‖ ≤ C := by
+    rw [toBoundedContinuousFunction_sub, hfF]
+    exact_mod_cast norm_sub_limit_toBoundedContinuousFunction_le hF N C hbound
+  rw [norm_sub_rev, norm_def]
+  calc
+    _ ≤ (C : ℝ) + C := add_le_add hsup (by exact_mod_cast hseminorm)
+    _ = 2 * (C : ℝ) := by ring
+
 /-- Bounded global `α`-Hölder functions form a Banach space when the codomain is Banach. -/
 noncomputable instance instCompleteSpace [CompleteSpace Y] : CompleteSpace (HolderSpace α X Y) :=
   Metric.complete_of_cauchySeq_tendsto fun u hu ↦ by
@@ -329,57 +373,22 @@ noncomputable instance instCompleteSpace [CompleteSpace Y] : CompleteSpace (Hold
       (toBoundedContinuousFunctionCLM (α := α) (X := X) (Y := Y)).uniformContinuous.comp_cauchySeq
         hu
     obtain ⟨F, hF⟩ := cauchySeq_tendsto_of_complete hu'
-    rcases Metric.cauchySeq_iff.mp hu 1 zero_lt_one with ⟨N₀, hN₀⟩
-    have hbound₀ : ∀ n ≥ N₀, ‖u n - u N₀‖ ≤ (1 : ℝ) := by
-      intro n hn
-      simpa only [dist_eq_norm] using (hN₀ n hn N₀ le_rfl).le
-    have hholderDiff₀ : HolderWith 1 α (fun x ↦ F x - u N₀ x) :=
-      holderWith_sub_of_tendsto_of_norm_sub_le hF N₀ 1 hbound₀
-    have hholderF : MemHolder α (F : X → Y) := by
-      have h := hholderDiff₀.memHolder.add (u N₀).memHolder
-      have heq : ((fun x ↦ F x - u N₀ x) +
-          ((u N₀).toBoundedContinuousFunction : X → Y)) = (F : X → Y) := by
-        funext x
-        exact sub_add_cancel (F x) (u N₀ x)
-      rw [heq] at h
-      exact h
-    let f : HolderSpace α X Y := ofBoundedContinuousFunction F hholderF
-    refine ⟨f, Metric.tendsto_atTop.2 fun ε hε ↦ ?_⟩
-    let C : ℝ≥0 := ⟨ε / 4, (div_nonneg hε.le (by norm_num))⟩
+    refine ⟨ofBoundedContinuousFunction F (memHolder_of_tendsto_of_cauchySeq hu hF),
+      Metric.tendsto_atTop.2 fun ε hε ↦ ?_⟩
+    let C : ℝ≥0 := ⟨ε / 4, div_nonneg hε.le (by norm_num)⟩
     have hC : (C : ℝ) = ε / 4 := rfl
     rcases Metric.cauchySeq_iff.mp hu (ε / 4) (div_pos hε (by norm_num)) with ⟨N, hN⟩
-    have hbound : ∀ n ≥ N, ‖u n - u N‖ ≤ C := by
-      intro n hn
+    have hbound : ∀ n ≥ N, ‖u n - u N‖ ≤ C := fun n hn ↦ by
       rw [hC]
       simpa only [dist_eq_norm] using (hN n hn N le_rfl).le
-    have hholderDiff : HolderWith C α (fun x ↦ F x - u N x) :=
-      holderWith_sub_of_tendsto_of_norm_sub_le hF N C hbound
-    have hsup : ‖F - (u N).toBoundedContinuousFunction‖ ≤ C := by
-      exact_mod_cast norm_sub_limit_toBoundedContinuousFunction_le hF N C hbound
     refine ⟨N, fun n hn ↦ ?_⟩
-    have hfF : f.toBoundedContinuousFunction = F :=
-      toBoundedContinuousFunction_ofBoundedContinuousFunction F hholderF
-    have hseminorm :
-        nnHolderNorm α ((f - u N).toBoundedContinuousFunction : X → Y) ≤ C := by
-      rw [toBoundedContinuousFunction_sub, hfF]
-      exact hholderDiff.nnholderNorm_le
-    have hsup' : ‖(f - u N).toBoundedContinuousFunction‖ ≤ C := by
-      rw [toBoundedContinuousFunction_sub, hfF]
-      exact hsup
-    have hlimit : ‖u N - f‖ ≤ 2 * C := by
-      rw [norm_sub_rev, norm_def]
-      calc
-        ‖(f - u N).toBoundedContinuousFunction‖ +
-            (nnHolderNorm α ((f - u N).toBoundedContinuousFunction : X → Y) : ℝ) ≤
-            (C : ℝ) + C := add_le_add hsup' (by exact_mod_cast hseminorm)
-        _ = 2 * (C : ℝ) := by ring
     rw [dist_eq_norm]
     calc
-      ‖u n - f‖ ≤ ‖u n - u N‖ + ‖u N - f‖ := by
-        calc
-          ‖u n - f‖ = ‖(u n - u N) + (u N - f)‖ := congrArg norm (by abel)
-          _ ≤ ‖u n - u N‖ + ‖u N - f‖ := norm_add_le _ _
-      _ ≤ C + 2 * C := add_le_add (hbound n hn) hlimit
+      ‖u n - ofBoundedContinuousFunction F _‖ =
+          ‖(u n - u N) + (u N - ofBoundedContinuousFunction F _)‖ := congrArg norm (by abel)
+      _ ≤ ‖u n - u N‖ + ‖u N - ofBoundedContinuousFunction F _‖ := norm_add_le _ _
+      _ ≤ C + 2 * C := add_le_add (hbound n hn)
+        (norm_sub_ofBoundedContinuousFunction_le hF _ N C hbound)
       _ < ε := by
         rw [hC]
         linarith
@@ -388,6 +397,10 @@ noncomputable instance instCompleteSpace [CompleteSpace Y] : CompleteSpace (Hold
 theorem nnHolderNorm_le (f : HolderSpace α X Y) :
     (nnHolderNorm α (f.toBoundedContinuousFunction : X → Y) : ℝ) ≤ ‖f‖ :=
   nnHolderNorm_le_holderNorm f.toBoundedContinuousFunction
+
+/-- A bounded Hölder function is Hölder with constant its Hölder-space norm. -/
+theorem holderWith_nnnorm (f : HolderSpace α X Y) : HolderWith ‖f‖₊ α f :=
+  f.holderWith.mono f.nnHolderNorm_le
 
 /-- A constant function as an element of the bounded Hölder space. -/
 def const (c : Y) : HolderSpace α X Y :=
@@ -553,5 +566,33 @@ theorem norm_compLipschitzL_le_one (hg : LipschitzWith 1 g) :
 end compLipschitz
 
 end HolderSpace
+
+/-- Bounded Hölder functions vanishing off a prescribed set, as a normed subspace of the
+native supremum-plus-Hölder space. The domain, codomain and support set are arbitrary. -/
+def supportedHolderSubmodule {X Y : Type*} [MetricSpace X] [NormedAddCommGroup Y]
+    [NormedSpace ℝ Y] (α : ℝ≥0) (s : Set X) : Submodule ℝ (HolderSpace α X Y) where
+  carrier := {f | ∀ z ∉ s, f z = 0}
+  zero_mem' := by simp
+  add_mem' := by
+    intro f g hf hg z hz
+    simp [hf z hz, hg z hz]
+  smul_mem' := by
+    intro a f hf z hz
+    simp [hf z hz]
+
+/-- Membership in the fixed-support Hölder subspace is vanishing off the support set. -/
+@[simp]
+theorem mem_supportedHolderSubmodule_iff {X Y : Type*} [MetricSpace X]
+    [NormedAddCommGroup Y] [NormedSpace ℝ Y] {α : ℝ≥0} {s : Set X}
+    {f : HolderSpace α X Y} :
+    f ∈ supportedHolderSubmodule α s ↔ ∀ z ∉ s, f z = 0 := Iff.rfl
+
+/-- A bounded Hölder function in the fixed-support submodule is supported in that set. -/
+theorem support_subset_of_mem_supportedHolderSubmodule {X Y : Type*} [MetricSpace X]
+    [NormedAddCommGroup Y] [NormedSpace ℝ Y] {α : ℝ≥0} {s : Set X}
+    {f : HolderSpace α X Y} (hf : f ∈ supportedHolderSubmodule α s) : Function.support f ⊆ s := by
+  intro z hz
+  by_contra h
+  exact hz (hf z h)
 
 end TauCeti

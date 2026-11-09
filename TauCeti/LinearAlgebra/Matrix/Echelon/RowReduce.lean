@@ -67,14 +67,15 @@ increasing, so the choice is confined to `TauCeti.rowReduce` itself.
 
 The algebraic assumptions reflect the different parts of the argument. The invariant
 `IsRowReduceState` and the lemma that starts a sweep in it need only `[Zero F] [One F]`: the state
-records a `1` in each pivot column and a `0` elsewhere, and reads nothing else of `F`.
-Extending the invariant across a
-pivoting step needs `[NonAssocRing F]`, to subtract a multiple of the pivot row; it never divides,
-so it is stated for an arbitrary already-normalised row. The row space `rowSpan` of a state, with
-the three lemmas characterising it as the span of the rows the state carries, needs only
-`[Semiring F]`: those only take and reflect a span. The sweep itself needs `[DivisionRing F]`
-and `[DecidableEq F]`, to scale a row by `(v j)⁻¹` and to test entries against zero, so every
-result about what the sweep *does* to the invariant or to the row space is stated there. Only
+records a `1` in each pivot column and a `0` elsewhere, and reads nothing else of `F`. Extending
+the invariant across a pivoting step needs `[NonAssocRing F]`, to subtract a multiple of the pivot
+row; it never divides, so it is stated for an arbitrary already-normalised row. The row space
+`rowSpan` of a state, with the three lemmas characterising it as the span of the rows the state
+carries, needs only `[Semiring F]`: those only take and reflect a span. Preserving the row space
+across a pivoting step needs `[Ring F]`, and is likewise stated for an arbitrary pivot row lying in
+the row space. The sweep itself needs `[DivisionRing F]` and `[DecidableEq F]`, to scale a row by
+`(v j)⁻¹` and to test entries against zero, so every result about what the sweep *does* to the
+invariant or to the row space is stated there. Only
 `TauCeti.rank_rowReduceMatrix` and `TauCeti.length_rowReduce_ofFn` need `F` commutative,
 `Matrix.rank` being defined over a commutative semiring.
 
@@ -196,52 +197,39 @@ private theorem isRowReduceState_append_pivot {cs : List (Fin n)} {j : Fin n}
     (hgt : ∀ c ∈ cs, j < c) (hpj : p j = 1) (hp0 : ∀ d, d ∉ j :: cs → p d = 0) :
     IsRowReduceState cs
       (s.1.map (fun q => (q.1, q.2 - q.2 j • p)) ++ [(j, p)], s.2.map fun w => w - w j • p) := by
-  have hplow : ∀ d : Fin n, d < j → p d = 0 := fun d hd => hp0 d fun hmem => by
-    rcases List.mem_cons.mp hmem with rfl | hmem
-    · exact absurd hd (lt_irrefl d)
-    · exact absurd (hgt d hmem) (not_lt.mpr hd.le)
+  have hplow : ∀ d : Fin n, d < j → p d = 0 := fun d hd =>
+    hp0 d fun h => (List.mem_cons.mp h).elim hd.ne fun h => (hgt d h).asymm hd
   have hppivot : ∀ q ∈ s.1, p q.1 = 0 := fun q hq =>
     hplow q.1 (hs.pivot_lt q hq j List.mem_cons_self)
   constructor
-  · rintro q hq c hc
-    simp only [List.mem_append, List.mem_map, List.mem_singleton] at hq
-    rcases hq with ⟨q', hq', rfl⟩ | rfl
-    · exact hs.pivot_lt q' hq' c (List.mem_cons_of_mem _ hc)
-    · exact hgt c hc
+  · simp only [List.mem_append, List.mem_map, List.mem_singleton]
+    rintro _ (⟨q, hq, rfl⟩ | rfl) c hc
+    exacts [hs.pivot_lt q hq c (List.mem_cons_of_mem _ hc), hgt c hc]
   · rw [List.map_append, List.map_map]
-    refine List.pairwise_append.mpr ⟨?_, by simp, ?_⟩
-    · exact hs.pivot_pairwise
-    · simp only [List.mem_map, List.map_cons, List.map_nil, List.mem_singleton,
-        Function.comp_apply]
-      rintro a ⟨q', hq', rfl⟩ b hb
-      exact hb ▸ hs.pivot_lt q' hq' j List.mem_cons_self
-  · rintro q hq
-    simp only [List.mem_append, List.mem_map, List.mem_singleton] at hq
-    rcases hq with ⟨q', hq', rfl⟩ | rfl
-    · simp [hs.self q' hq', hppivot q' hq']
-    · exact hpj
-  · rintro q hq d hd
-    simp only [List.mem_append, List.mem_map, List.mem_singleton] at hq
-    rcases hq with ⟨q', hq', rfl⟩ | rfl
-    · have : d < j := hd.trans (hs.pivot_lt q' hq' j List.mem_cons_self)
-      simp [hs.eq_zero_of_lt q' hq' d hd, hplow d this]
+    refine List.pairwise_append.mpr ⟨hs.pivot_pairwise, by simp, ?_⟩
+    simp only [List.mem_map, List.map_cons, List.map_nil, List.mem_singleton, Function.comp_apply]
+    rintro _ ⟨q, hq, rfl⟩ _ rfl
+    exact hs.pivot_lt q hq _ List.mem_cons_self
+  · simp only [List.mem_append, List.mem_map, List.mem_singleton]
+    rintro _ (⟨q, hq, rfl⟩ | rfl)
+    exacts [by simp [hs.self q hq, hppivot q hq], hpj]
+  · simp only [List.mem_append, List.mem_map, List.mem_singleton]
+    rintro _ (⟨q, hq, rfl⟩ | rfl) d hd
+    · simp [hs.eq_zero_of_lt q hq d hd,
+        hplow d (hd.trans (hs.pivot_lt q hq j List.mem_cons_self))]
     · exact hplow d hd
-  · rintro q hq q' hq' hne
-    simp only [List.mem_append, List.mem_map, List.mem_singleton] at hq hq'
-    rcases hq with ⟨a, ha, rfl⟩ | rfl <;> rcases hq' with ⟨b, hb, rfl⟩ | rfl
-    · simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
-      rw [hs.eq_zero_of_ne a ha b hb (by simpa using hne), hppivot b hb]
-      simp
+  · simp only [List.mem_append, List.mem_map, List.mem_singleton]
+    rintro _ (⟨a, ha, rfl⟩ | rfl) _ (⟨b, hb, rfl⟩ | rfl) hne
+    · simp [hs.eq_zero_of_ne a ha b hb hne, hppivot b hb]
     · simp [hpj]
     · exact hppivot b hb
     · exact absurd rfl hne
-  · rintro w hw d hd
-    simp only [List.mem_map] at hw
-    obtain ⟨w', hw', rfl⟩ := hw
+  · simp only [List.mem_map]
+    rintro _ ⟨w, hw, rfl⟩ d hd
     rcases eq_or_ne d j with rfl | hne
     · simp [hpj]
     · have hdmem : d ∉ j :: cs := by simp [hne, hd]
-      simp [hs.todo_eq_zero w' hw' d hdmem, hp0 d hdmem]
+      simp [hs.todo_eq_zero w hw d hdmem, hp0 d hdmem]
 
 end NonAssocRing
 
@@ -350,16 +338,15 @@ variable (L : List (Fin n → F))
 
 /-- The pivot columns are strictly increasing along the rows. -/
 theorem strictMono_fst_get_rowReduce :
-    StrictMono fun i : Fin (rowReduce L).length => ((rowReduce L).get i).1 := by
-  intro i i' hii'
-  exact List.pairwise_iff_get.mp (List.pairwise_map.mp (pairwise_map_fst_rowReduce L)) i i' hii'
+    StrictMono fun i : Fin (rowReduce L).length => ((rowReduce L).get i).1 :=
+  List.pairwise_iff_get.mp (List.pairwise_map.mp (pairwise_map_fst_rowReduce L))
 
 /-- The recorded column of a reduced row is its leading entry. -/
 theorem isLeadingEntry_rowReduceMatrix (i : Fin (rowReduce L).length) :
-    (rowReduceMatrix L).IsLeadingEntry i ((rowReduce L).get i).1 := by
-  refine ⟨fun d hd => rowReduce_eq_zero_of_lt L (List.get_mem _ _) hd, ?_⟩
-  rw [rowReduceMatrix_apply, rowReduce_self L (List.get_mem _ _)]
-  exact one_ne_zero
+    (rowReduceMatrix L).IsLeadingEntry i ((rowReduce L).get i).1 :=
+  ⟨fun d hd => rowReduce_eq_zero_of_lt L (List.get_mem _ _) hd, by
+    rw [rowReduceMatrix_apply, rowReduce_self L (List.get_mem _ _)]
+    exact one_ne_zero⟩
 
 /-- **The pivots of the reduced matrix are the recorded columns.** -/
 theorem isPivotedBy_rowReduceMatrix :
@@ -408,29 +395,54 @@ private def rowSpan (s : RowReduceState F n) : Submodule F (Fin n → F) :=
 
 /-- A recorded row lies in the row space of its state. -/
 private theorem mem_rowSpan_of_mem_fst {s : RowReduceState F n} {q : Fin n × (Fin n → F)}
-    (hq : q ∈ s.1) : q.2 ∈ rowSpan s := by
-  refine Submodule.subset_span ?_
-  simp only [Set.mem_ofPred_eq, List.mem_append, List.mem_map]
-  exact Or.inl ⟨q, hq, rfl⟩
+    (hq : q ∈ s.1) : q.2 ∈ rowSpan s :=
+  Submodule.subset_span (List.mem_append_left _ (List.mem_map_of_mem hq))
 
 /-- An unused row lies in the row space of its state. -/
 private theorem mem_rowSpan_of_mem_snd {s : RowReduceState F n} {w : Fin n → F} (hw : w ∈ s.2) :
-    w ∈ rowSpan s := by
-  refine Submodule.subset_span ?_
-  simp only [Set.mem_ofPred_eq, List.mem_append]
-  exact Or.inr hw
+    w ∈ rowSpan s :=
+  Submodule.subset_span (List.mem_append_right _ hw)
 
 /-- The row space is the smallest submodule containing every row the state carries. -/
 private theorem rowSpan_le {s : RowReduceState F n} {p : Submodule F (Fin n → F)}
     (h₁ : ∀ q ∈ s.1, q.2 ∈ p) (h₂ : ∀ w ∈ s.2, w ∈ p) : rowSpan s ≤ p := by
-  refine Submodule.span_le.mpr ?_
-  rintro v hv
+  refine Submodule.span_le.mpr fun v hv => ?_
   simp only [Set.mem_ofPred_eq, List.mem_append, List.mem_map] at hv
-  rcases hv with ⟨q, hq, rfl⟩ | hv
-  · exact h₁ q hq
-  · exact h₂ v hv
+  obtain ⟨q, hq, rfl⟩ | hv := hv
+  exacts [h₁ q hq, h₂ v hv]
 
 end Semiring
+
+section Ring
+
+variable {F : Type u} [Ring F] {n : ℕ}
+
+/-- Recording a row `p` of the row space as a pivot row, and subtracting multiples of it from
+every other row, recorded or not, preserves the row space.
+
+This is the pivoting branch of `TauCeti.rowReduceStep`, stated for an arbitrary row of the row space
+rather than for the `(v j)⁻¹ • v` that the sweep builds. -/
+private theorem rowSpan_append_pivot {s : RowReduceState F n} {j : Fin n} {p : Fin n → F}
+    (hp : p ∈ rowSpan s) :
+    rowSpan ((s.1.map (fun q => (q.1, q.2 - q.2 j • p)) ++ [(j, p)],
+      s.2.map fun w => w - w j • p) : RowReduceState F n) = rowSpan s := by
+  set s' : RowReduceState F n :=
+    (s.1.map (fun q => (q.1, q.2 - q.2 j • p)) ++ [(j, p)], s.2.map fun w => w - w j • p)
+  have hp' : p ∈ rowSpan s' := mem_rowSpan_of_mem_fst (q := (j, p)) (by simp [s'])
+  refine le_antisymm (rowSpan_le ?_ ?_) (rowSpan_le (fun q hq => ?_) fun w hw => ?_)
+  · simp only [s', List.mem_append, List.mem_map, List.mem_singleton]
+    rintro _ (⟨q, hq, rfl⟩ | rfl)
+    exacts [sub_mem (mem_rowSpan_of_mem_fst hq) (Submodule.smul_mem _ _ hp), hp]
+  · simp only [s', List.mem_map]
+    rintro _ ⟨w, hw, rfl⟩
+    exact sub_mem (mem_rowSpan_of_mem_snd hw) (Submodule.smul_mem _ _ hp)
+  · have : q.2 - q.2 j • p ∈ rowSpan s' :=
+      mem_rowSpan_of_mem_fst (s := s') (List.mem_append_left _ (List.mem_map_of_mem hq))
+    simpa using add_mem this (Submodule.smul_mem _ (q.2 j) hp')
+  · have : w - w j • p ∈ rowSpan s' := mem_rowSpan_of_mem_snd (s := s') (List.mem_map_of_mem hw)
+    simpa using add_mem this (Submodule.smul_mem _ (w j) hp')
+
+end Ring
 
 section DivisionRing
 
@@ -441,43 +453,9 @@ private theorem rowSpan_rowReduceStep (j : Fin n) (s : RowReduceState F n) :
     rowSpan (rowReduceStep j s) = rowSpan s := by
   rcases hfind : s.2.find? (fun w => decide (w j ≠ 0)) with _ | v
   · rw [rowReduceStep_of_find?_eq_none hfind]
-  · have hv : v ∈ s.2 := List.mem_of_find?_eq_some hfind
-    set p : Fin n → F := (v j)⁻¹ • v with hpdef
-    have hstep : rowReduceStep j s =
-        (s.1.map (fun q => (q.1, q.2 - q.2 j • p)) ++ [(j, p)], s.2.map fun w => w - w j • p) := by
-      rw [rowReduceStep_of_find?_eq_some hfind, hpdef]
-    have hp : p ∈ rowSpan s := Submodule.smul_mem _ _ (mem_rowSpan_of_mem_snd hv)
-    rw [hstep]
-    have hp' : p ∈ rowSpan (s.1.map (fun q => (q.1, q.2 - q.2 j • p)) ++ [(j, p)],
-        s.2.map fun w => w - w j • p) :=
-      mem_rowSpan_of_mem_fst (q := (j, p)) (by simp)
-    refine le_antisymm (rowSpan_le ?_ ?_) (rowSpan_le ?_ ?_)
-    · rintro q hq
-      simp only [List.mem_append, List.mem_map, List.mem_singleton] at hq
-      rcases hq with ⟨q', hq', rfl⟩ | rfl
-      · exact Submodule.sub_mem _ (mem_rowSpan_of_mem_fst hq') (Submodule.smul_mem _ _ hp)
-      · exact hp
-    · rintro w hw
-      simp only [List.mem_map] at hw
-      obtain ⟨w', hw', rfl⟩ := hw
-      exact Submodule.sub_mem _ (mem_rowSpan_of_mem_snd hw') (Submodule.smul_mem _ _ hp)
-    · intro q hq
-      have hmem : ((q.1, q.2 - q.2 j • p) :
-          Fin n × (Fin n → F)) ∈ s.1.map (fun q => (q.1, q.2 - q.2 j • p)) ++ [(j, p)] := by
-        simp only [List.mem_append, List.mem_map]
-        exact Or.inl ⟨q, hq, rfl⟩
-      have hq' := mem_rowSpan_of_mem_fst
-        (s := (s.1.map (fun q => (q.1, q.2 - q.2 j • p)) ++ [(j, p)], s.2.map fun w => w - w j • p))
-        hmem
-      simpa using Submodule.add_mem _ hq' (Submodule.smul_mem _ (q.2 j) hp')
-    · intro w hw
-      have hmem : w - w j • p ∈ s.2.map (fun w => w - w j • p) := by
-        simp only [List.mem_map]
-        exact ⟨w, hw, rfl⟩
-      have hw' := mem_rowSpan_of_mem_snd
-        (s := (s.1.map (fun q => (q.1, q.2 - q.2 j • p)) ++ [(j, p)], s.2.map fun w => w - w j • p))
-        hmem
-      simpa using Submodule.add_mem _ hw' (Submodule.smul_mem _ (w j) hp')
+  · rw [rowReduceStep_of_find?_eq_some hfind]
+    exact rowSpan_append_pivot
+      (Submodule.smul_mem _ _ (mem_rowSpan_of_mem_snd (List.mem_of_find?_eq_some hfind)))
 
 /-- A whole sweep preserves the row space. -/
 private theorem rowSpan_rowReduceAux (cs : List (Fin n)) (s : RowReduceState F n) :
@@ -495,14 +473,11 @@ theorem span_rowReduce (L : List (Fin n → F)) :
     rw [rowSpan_rowReduceAux]
     simp [rowSpan]
   rw [← hend]
-  refine le_antisymm (Submodule.span_le.mpr fun v hv => Submodule.subset_span ?_)
-    (rowSpan_le (fun q hq => Submodule.subset_span ?_) fun w hw => ?_)
-  · simp only [Set.mem_ofPred_eq, List.mem_append]
-    exact Or.inl hv
-  · simp only [Set.mem_ofPred_eq, List.mem_map]
-    exact ⟨q, hq, rfl⟩
-  · rw [rowReduceAux_snd_eq_zero L hw]
-    exact Submodule.zero_mem _
+  refine le_antisymm
+    (Submodule.span_le.mpr fun v hv => Submodule.subset_span (List.mem_append_left _ hv))
+    (rowSpan_le (fun q hq => Submodule.subset_span (List.mem_map_of_mem hq)) fun w hw => ?_)
+  rw [rowReduceAux_snd_eq_zero L hw]
+  exact zero_mem _
 
 end DivisionRing
 
@@ -524,9 +499,8 @@ theorem rank_rowReduceMatrix : (rowReduceMatrix L).rank = (rowReduce L).length :
 rows of a matrix is the rank of that matrix. -/
 theorem length_rowReduce_ofFn {m : ℕ} (A : Matrix (Fin m) (Fin n) F) :
     (rowReduce (List.ofFn A)).length = A.rank := by
-  have hrows : Set.range A.row = {v | v ∈ List.ofFn A} := by
-    ext v
-    exact (List.mem_ofFn' A v).symm
+  have hrows : Set.range A.row = {v | v ∈ List.ofFn A} :=
+    Set.ext fun v => (List.mem_ofFn' A v).symm
   rw [← rank_rowReduceMatrix, Matrix.rank_eq_finrank_span_row, Matrix.rank_eq_finrank_span_row,
     range_row_rowReduceMatrix, hrows, span_rowReduce]
 

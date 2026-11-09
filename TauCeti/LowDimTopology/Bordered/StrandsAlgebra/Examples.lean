@@ -6,19 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Data.ZMod.Defs
+import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading
 import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Matched
 
 /-!
-# Products in small strands algebras
+# Products and gradings in small strands algebras
 
 Two products in the strands algebras `A(4, 2)` and `A(3, 1)` of Lipshitz, Ozsváth and Thurston
-over `𝔽₂`, with points `1, …, n` written `0, …, n - 1`.
+over `𝔽₂`, and one grading, with points `1, …, n` written `0, …, n - 1`.
 
 * In `A(4, 2)` the diagrams `φ = (1 ↦ 3, 2 ↦ 2)` and `ψ = (2 ↦ 4, 3 ↦ 3)` each have one
   crossing, and their composite `(1 ↦ 3, 2 ↦ 4)` has none. Since `0 ≠ 1 + 1` the concatenation
   has a double crossing and the product `φ ψ` is zero, although the target of `φ` is the source of
   `ψ`.
 * In `A(3, 1)` the product of `(1 ↦ 2)` and `(2 ↦ 3)` is `(1 ↦ 3)`: no diagram has a crossing.
+* In `A(3, 1)` the strand `(1 ↦ 2)` has grading `(-1/2, e₂ - e₁)`: it has no crossing, and the
+  multiplicity of its class at its starting point is `1/2`. This is the grading of the chord `ρ₁`
+  of the torus algebra.
 
 Two products in the algebra `A(T²)` of the genus-one pointed matched circle, whose points
 `1, 2, 3, 4` are matched as `{1, 3}` and `{2, 4}`, encoded by the parity of `0, 1, 2, 3`. Its Reeb
@@ -30,7 +34,7 @@ horizontal strands.
   the product of generators needs the actual points to agree, not just their pairs.
 -/
 
-open TauCeti StrandsAlgebra StrandDiagram
+open TauCeti StrandsAlgebra StrandDiagram StrandGradingGroup
 
 example :
     let φ : StrandDiagram (Fin 4) :=
@@ -91,3 +95,30 @@ example :
   · rw [horizontalCompletion_mul_horizontalCompletion (hgen 1 2 (by decide)) (hgen 0 1 (by decide))]
     refine ite_eq_right_iff.2 fun hc ↦ absurd hc.2.target_eq ?_
     simp
+
+example :
+    let φ : StrandDiagram (Fin 3) :=
+      ⟨PEquiv.single 0 1, fun _ _ hk ↦ by
+        obtain ⟨rfl, rfl⟩ := (PEquiv.mem_single_iff _ _ _ _).1 hk
+        decide⟩
+    φ.grading = mk (-1 / 2) ![-1, 1, 0] := by
+  intro φ
+  have hinv : φ.inversionCount = 0 := by
+    rw [inversionCount_def, Finset.card_eq_zero, Finset.eq_empty_iff_forall_notMem]
+    simp only [mem_inversions]
+    decide
+  have hS : φ.source = {0} := by
+    ext j
+    simp only [mem_source, Finset.mem_singleton]
+    revert j
+    decide
+  have hb : φ.boundary = ![-1, 1, 0] := by
+    funext x
+    simp only [boundary_apply, mem_target, mem_source]
+    revert x
+    decide
+  have hlt : ({y | y < 0} : Finset (Fin 3)) = ∅ := by decide
+  ext
+  · rw [grading_maslov, hinv, hS, Finset.sum_singleton, pointMultiplicity_apply, hb, hlt]
+    norm_num
+  · rw [grading_boundary, hb, mk_boundary]

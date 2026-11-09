@@ -9,7 +9,11 @@ public import Mathlib.Algebra.Group.End
 import Mathlib.Algebra.Group.AddChar
 
 /-!
-# Powers of an additively indexed family of endomorphisms
+# Automorphisms as permutations, and powers of an additively indexed family of endomorphisms
+
+The permutation underlying an automorphism, `MulAut.toPerm`, acts as the automorphism does, and
+it determines the automorphism by `MulEquiv.toEquiv_injective`. This moves `orderOf` and cycle
+arguments from automorphisms to permutations.
 
 A family `f : ℕ → M →* M` of endomorphisms of a type with multiplication and a distinguished
 one, indexed additively so that `f 0` is the identity and `f (a + b)` is the composite of `f a`
@@ -23,10 +27,19 @@ for that shape once, so that each Chevalley carrier only supplies its two iterat
 
 ## Main results
 
+* `MulAut.toPerm_apply`: the permutation underlying an automorphism applies as the automorphism.
 * `TauCeti.Monoid.End.pow_eq_of_add_eq_comp`: `f k ^ m = f (k * m)` in `Monoid.End M`.
 -/
 
 public section
+
+namespace MulAut
+
+/-- The permutation underlying an automorphism acts as the automorphism does. -/
+@[simp]
+theorem toPerm_apply {M : Type*} [Mul M] (f : MulAut M) (x : M) : toPerm M f x = f x := rfl
+
+end MulAut
 
 namespace TauCeti
 

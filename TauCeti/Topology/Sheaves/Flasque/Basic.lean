@@ -12,6 +12,7 @@ public import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.HasExt
 public import Mathlib.Topology.Sheaves.Abelian
 public import Mathlib.Topology.Sheaves.Flasque
 public import Mathlib.Topology.Sheaves.Skyscraper
+public import TauCeti.Topology.Sheaves.Cohomology.Instances
 import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
 
 /-!

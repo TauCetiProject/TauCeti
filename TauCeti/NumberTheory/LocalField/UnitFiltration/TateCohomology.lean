@@ -171,20 +171,20 @@ private theorem gradedMap_apply {n : ℕ} (x : hA.step hσ n) {a : 𝒪[L]} (ha 
 
 private theorem gradedMap_ρ {n : ℕ} (σ : L ≃ₐ[K] L) (x : hA.step hσ n) :
     hA.gradedMap hσ n ⟨(hA.rep hσ).ρ σ x, hA.step_le_comap hσ n σ x.2⟩ =
-      ((latticeRep hσ).quotSMulTop ϖ).restrictScalarsInt σ (hA.gradedMap hσ n x) := by
+      ((latticeRep hσ).quotSMulTop ϖ).restrictScalars ℤ σ (hA.gradedMap hσ n x) := by
   obtain ⟨a, ha, hx⟩ := hA.mem_filtration_iff.1 ((hA.mem_step hσ).1 x.2)
   have hσx : (hA.toUnits hσ ((hA.rep hσ).ρ σ x) : L) = ((1 + ϖ ^ n • (σ • a) : 𝒪[L]) : L) := by
     rw [toUnits_ρ, AlgEquiv.smul_units_def, Units.coe_map, MonoidHom.coe_ofClass, hx,
       ← AlgEquiv.coe_smul_integerRing, smul_add, smul_one, smul_comm]
   rw [hA.gradedMap_apply hσ x ha hx, hA.gradedMap_apply hσ _ (hσ σ ha) hσx,
-    Representation.restrictScalarsInt_apply, Representation.quotSMulTop_apply_mk]
+    Representation.restrictScalars_apply, Representation.quotSMulTop_apply_mk]
   simp [LinearMap.restrict_apply]
 
 /-- The map `1 + ϖ ^ n • a ↦ a mod ϖ • A` onto the graded piece, as a morphism of integral
 representations. -/
 private def gradedHom (n : ℕ) :
     (hA.rep hσ).subrepresentation (hA.step hσ n) (hA.step_le_comap hσ n) ⟶
-      Rep.of ((latticeRep hσ).quotSMulTop ϖ).restrictScalarsInt :=
+      Rep.of (((latticeRep hσ).quotSMulTop ϖ).restrictScalars ℤ) :=
   Rep.ofHom
     { toFun := hA.gradedMap hσ n
       map_add' := map_add _
@@ -215,8 +215,8 @@ private theorem herbrandQuotient_rep
   TateCohomology.herbrandQuotient_eq_one_of_filtration (hA.step_le_comap hσ) (hA.gradedHom hσ)
     (hA.step_zero hσ) (hA.eq_zero_of_forall_mem_step hσ) (hA.exists_forall_sub_sum_mem_step hσ)
     (hA.gradedHom_surjective hσ) (hA.mem_step_succ_of_gradedHom_eq_zero hσ)
-    (fun _ ↦ TateCohomology.isZero_restrictScalarsInt_quotSMulTop_of_equiv_leftRegular e ϖ 0)
-    (fun _ ↦ TateCohomology.isZero_restrictScalarsInt_quotSMulTop_of_equiv_leftRegular e ϖ (-1))
+    (fun _ ↦ TateCohomology.isZero_restrictScalars_quotSMulTop_of_equiv_leftRegular e ϖ 0)
+    (fun _ ↦ TateCohomology.isZero_restrictScalars_quotSMulTop_of_equiv_leftRegular e ϖ (-1))
 
 /-! ### Comparison with the unit group -/
 

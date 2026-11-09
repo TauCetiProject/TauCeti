@@ -77,21 +77,13 @@ noncomputable def internalHomModule (A : GalRep n F) :
 
 attribute [local instance] internalHomModule
 
-/-- The conjugation action on `Hom(A, μₙ)` commutes with its `ZMod n`-scalar action. -/
-theorem internalHom_smulCommClass (A : GalRep n F) :
-    SMulCommClass (Field.absoluteGaloisGroup F) (ZMod n)
-      (InternalHom (Field.absoluteGaloisGroup F) A.V (muNRep n F).V) :=
-  ⟨fun g c φ => ZMod.map_smul
-    (DistribSMul.toAddMonoidHom
-      (InternalHom (Field.absoluteGaloisGroup F) A.V (muNRep n F).V) g) c φ⟩
-
 /-- Scalar multiplication on the discrete internal hom is continuous. -/
 theorem internalHom_continuousSMul (A : GalRep n F) :
     ContinuousSMul (ZMod n)
       (InternalHom (Field.absoluteGaloisGroup F) A.V (muNRep n F).V) :=
   ⟨continuous_of_discreteTopology⟩
 
-attribute [local instance] internalHom_smulCommClass internalHom_continuousSMul
+attribute [local instance] internalHom_continuousSMul
 
 /-- **The Tate dual** `A' = Hom(A, μₙ)`, with the conjugation action. -/
 def tateDual (A : GalRep n F) : GalRep n F :=

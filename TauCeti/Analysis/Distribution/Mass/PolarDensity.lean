@@ -82,10 +82,13 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   [FiniteDimensional ℝ F] {Ω : Opens E} {T : 𝓓(Ω, F) →L[ℝ] ℝ}
 
-/-- Existence of a density of dual norm at most one representing `T` against `‖T‖`. -/
-private theorem exists_le_one (hT : HasLocallyFiniteMass T) :
-    ∃ τ : Ω → StrongDual ℝ F, Measurable τ ∧ (∀ᵐ x ∂massMeasure T, ‖τ x‖ ≤ 1) ∧
-      ∀ φ : 𝓓(Ω, F), T φ = ∫ x, τ x (φ x) ∂massMeasure T := by
+/-- A distribution of locally finite mass is represented by integration against a measurable
+field `g` of linear functionals, locally integrable with respect to a measure `ρ` that is finite on
+compact sets and dominates `‖T‖`. -/
+private theorem exists_measurable_dual_density (hT : HasLocallyFiniteMass T) :
+    ∃ ρ : Measure Ω, IsFiniteMeasureOnCompacts ρ ∧ massMeasure T ≪ ρ ∧
+      ∃ g : Ω → StrongDual ℝ F, Measurable g ∧ LocallyIntegrable g ρ ∧
+        ∀ φ : 𝓓(Ω, F), T φ = ∫ x, g x (φ x) ∂ρ := by
   have := Ω.isOpen.locallyCompactSpace
   set lam := massMeasure T
   let b := Module.finBasis ℝ F
@@ -130,10 +133,19 @@ private theorem exists_le_one (hT : HasLocallyFiniteMass T) :
           rw [← integral_finsetSum _ fun i _ => (hf' i (ψ i)).1]
           congr 1 with x
           simp [hg, ψ]
-  -- The dual norm of `g` is bounded by the density `k` of `‖T‖` with respect to `ρ`.
-  set k := lam.rnDeriv ρ
   have hgint : LocallyIntegrable g ρ := locallyIntegrable_iff.2 fun K hK =>
     integrable_finsetSum _ fun i _ => (hfK i K hK).smul_const (c i)
+  exact ⟨ρ, hρ, hlam, g, hgm, hgint, hrep⟩
+
+/-- Existence of a density of dual norm at most one representing `T` against `‖T‖`. -/
+private theorem exists_le_one (hT : HasLocallyFiniteMass T) :
+    ∃ τ : Ω → StrongDual ℝ F, Measurable τ ∧ (∀ᵐ x ∂massMeasure T, ‖τ x‖ ≤ 1) ∧
+      ∀ φ : 𝓓(Ω, F), T φ = ∫ x, τ x (φ x) ∂massMeasure T := by
+  have := Ω.isOpen.locallyCompactSpace
+  set lam := massMeasure T
+  obtain ⟨ρ, hρ, hlam, g, hgm, hgint, hrep⟩ := exists_measurable_dual_density hT
+  -- The dual norm of `g` is bounded by the density `k` of `‖T‖` with respect to `ρ`.
+  set k := lam.rnDeriv ρ
   have hbound : ∀ᵐ x ∂ρ, ‖g x‖ₑ ≤ k x := by
     refine TauCeti.ae_enorm_le_of_forall_enorm_integral_apply_le hgint
       (Measure.measurable_rnDeriv _ _)
@@ -142,25 +154,12 @@ private theorem exists_le_one (hT : HasLocallyFiniteMass T) :
     rw [Measure.setLIntegral_rnDeriv hlam, ← hrep, massMeasure_preimage_coe hT U.isOpen]
     exact enorm_le_localMass hφU hφ
   -- Normalize `g` by `k`.
-  refine ⟨fun x => (k x).toReal⁻¹ • g x,
-    ((Measure.measurable_rnDeriv _ _).ennreal_toReal.inv).smul hgm, hlam.ae_le ?_, fun φ => ?_⟩
-  · filter_upwards [hbound, Measure.rnDeriv_lt_top lam ρ] with x hx hk
-    have hle : ‖g x‖ ≤ (k x).toReal := by
-      rwa [← ofReal_norm, ENNReal.ofReal_le_iff_le_toReal hk.ne] at hx
-    rw [norm_smul, norm_inv, Real.norm_of_nonneg ENNReal.toReal_nonneg, inv_mul_eq_div]
-    exact div_le_one_of_le₀ hle ENNReal.toReal_nonneg
-  · rw [hrep, ← integral_toReal_rnDeriv_mul hlam]
-    refine integral_congr_ae ?_
-    filter_upwards [hbound, Measure.rnDeriv_lt_top lam ρ] with x hx hk
-    rw [smul_apply, smul_eq_mul, ← mul_assoc]
-    rcases eq_or_ne (k x).toReal 0 with h0 | h0
-    · have : g x = 0 := by
-        rw [ENNReal.toReal_eq_zero_iff] at h0
-        rcases h0 with h0 | h0
-        · simpa [h0, enorm_eq_nnnorm] using hx
-        · exact absurd h0 hk.ne
-      simp [this]
-    · rw [mul_inv_cancel₀ h0, one_mul]
+  obtain ⟨σ, hσm, hσ1, hσg⟩ := Measure.exists_norm_le_one_toReal_rnDeriv_smul_eq hlam hgm hbound
+  refine ⟨σ, hσm, hσ1, fun φ => ?_⟩
+  rw [hrep, ← integral_toReal_rnDeriv_mul hlam]
+  refine integral_congr_ae ?_
+  filter_upwards [hσg] with x hx
+  rw [← hx, smul_apply, smul_eq_mul]
 
 omit [FiniteDimensional ℝ F] in
 /-- A density of dual norm at most one representing `T` against `‖T‖` has norm one almost

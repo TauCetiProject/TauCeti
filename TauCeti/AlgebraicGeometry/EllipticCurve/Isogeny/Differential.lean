@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Neg
 public import TauCeti.RingTheory.Kaehler.BaseChange
 public import TauCeti.RingTheory.Kaehler.MapSemilinear
 import TauCeti.FieldTheory.IntermediateField.FieldRange
+import TauCeti.LinearAlgebra.Dimension.FinrankOne
 import Mathlib.RingTheory.Unramified.Field
 
 /-!
@@ -211,8 +212,8 @@ theorem isSeparable_iff_pullbackDifferential_ne_zero [W₁.IsElliptic] [W₂.IsE
     have hspan : Submodule.span W₂.FunctionField {invariantDifferential W₂} = ⊤ :=
       (Submodule.span_singleton_eq_top_iff W₂.FunctionField _).mpr fun η ↦
         (existsUnique_smul_invariantDifferential W₂ η).exists
-    rw [TauCeti.range_mapBaseChange_eq_span_singleton
-      F W₂.FunctionField W₁.FunctionField _ hspan]
+    rw [TauCeti.range_mapBaseChange_eq_span_image F W₂.FunctionField W₁.FunctionField hspan,
+      Set.image_singleton]
     congr 2
     exact kaehlerDifferentialMap_eq_pullbackDifferential φ halg _
   -- In the one-dimensional `Ω[K₁/F]`, a differential spans exactly when it is nonzero.

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Action
-public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.EndChart
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.LinearAlgebra.Determinant.Prod
@@ -274,7 +274,7 @@ by the cutoff. -/
 private theorem integrable_truncation_mul (T : ℝ) {F : ℝ × ℝ → ℝ}
     (hF : ContinuousOn F thricePuncturedSphereReal) : Integrable fun z ↦ truncation T z * F z :=
   (contDiff_truncation T).continuous.integrable_mul_of_continuousOn
-    (hasCompactSupport_truncation T) isOpen_thricePuncturedSphereReal
+    (hasCompactSupport_truncation T)
     (fun _ hz ↦ mem_tsupport_truncation hz) hF
 
 /-- A function continuous on the thrice-punctured sphere becomes integrable after multiplication
@@ -284,7 +284,7 @@ private theorem integrable_fderiv_truncation_mul (T : ℝ) (v : ℝ × ℝ) {F :
     Integrable fun z ↦ fderiv ℝ (truncation T) z v * F z :=
   (((contDiff_truncation T).continuous_fderiv one_ne_zero).clm_apply
     continuous_const).integrable_mul_of_continuousOn
-    ((hasCompactSupport_truncation T).fderiv_apply (𝕜 := ℝ) v) isOpen_thricePuncturedSphereReal
+    ((hasCompactSupport_truncation T).fderiv_apply (𝕜 := ℝ) v)
     (fun _ hz ↦ mem_tsupport_truncation (tsupport_fderiv_apply_subset ℝ v hz)) hF
 
 /-- The two-form `dχ ∧ α` for the cutoff `χ` at height `T` and the one-form `α = K(u) + λ(u)`,
@@ -356,6 +356,28 @@ section Ends
 
 variable {H : Puncture → ℝ → V → ℝ} {u : ℝ × ℝ → V}
 
+/-- Along the end `q`, where `±s > 0`, the derivative of the cutoff at height `T ≥ 0`, composed with
+the Jacobian of the end chart, is `-β'(±s - T) (±1)` times the longitudinal coordinate. -/
+private theorem fderiv_truncation_endChart_apply {T : ℝ} (hT : 0 ≤ T) {q : Puncture} {ζ : ℝ × ℝ}
+    (hζ : 0 < q.endSign * ζ.1) (v : ℝ × ℝ) :
+    fderiv ℝ (truncation T) (endChart q ζ) (fderiv ℝ (endChart q) ζ v) =
+      -(deriv smoothTransition (q.endSign * ζ.1 - T) * q.endSign) * v.1 := by
+  have hφ : DifferentiableAt ℝ (endChart q) ζ := (hasFDerivAt_endChart q ζ).differentiableAt
+  -- In end coordinates the cutoff is `1 - β(±s - T)`, a function of `s` alone.
+  set g : ℝ → ℝ := fun s ↦ 1 - smoothTransition (q.endSign * s - T)
+  have hg : HasDerivAt g (-(deriv smoothTransition (q.endSign * ζ.1 - T) * q.endSign)) ζ.1 := by
+    have h := (((hasDerivAt_id ζ.1).const_mul q.endSign).sub_const T).smoothTransition
+    simpa using h.const_sub 1
+  have hloc : truncation T ∘ endChart q =ᶠ[𝓝 ζ] g ∘ Prod.fst := by
+    have hopen : IsOpen {ζ' : ℝ × ℝ | 0 < q.endSign * ζ'.1} :=
+      isOpen_lt continuous_const (continuous_const.mul continuous_fst)
+    filter_upwards [hopen.mem_nhds hζ] with ζ' hζ'
+    exact truncation_endChart hT hζ'
+  have hcomp := fderiv_comp ζ ((contDiff_truncation T).differentiable one_ne_zero _) hφ
+  have h₁ := congrArg (· v) hcomp
+  rw [hloc.fderiv_eq, ((hg.hasFDerivAt.comp ζ (hasFDerivAt_fst)).fderiv)] at h₁
+  simpa [mul_comm] using h₁.symm
+
 omit [FiniteDimensional ℝ V] in
 /-- **The boundary term in end coordinates.** On the end `q`, for `T ≥ 2`, the two-form
 `dχ ∧ α`, transported to the coordinates of the end with its Jacobian, is
@@ -379,22 +401,9 @@ private theorem abs_det_mul_wedge_endChart (ω : SymplecticForm V) (hH : ∀ q, 
   have hu₁ : DifferentiableAt ℝ u (endChart q ζ) :=
     (hu.differentiableOn (by norm_num) _ hw).differentiableAt
       (isOpen_thricePuncturedSphereReal.mem_nhds hw)
-  -- In end coordinates the cutoff is `1 - β(±s - T)`, a function of `s` alone.
-  set g : ℝ → ℝ := fun s ↦ 1 - smoothTransition (q.endSign * s - T)
-  have hg : HasDerivAt g (-(deriv smoothTransition (q.endSign * ζ.1 - T) * q.endSign)) ζ.1 := by
-    have h := (((hasDerivAt_id ζ.1).const_mul q.endSign).sub_const T).smoothTransition
-    simpa using h.const_sub 1
-  have hloc : truncation T ∘ endChart q =ᶠ[𝓝 ζ] g ∘ Prod.fst := by
-    have hopen : IsOpen {ζ' : ℝ × ℝ | 0 < q.endSign * ζ'.1} :=
-      isOpen_lt continuous_const (continuous_const.mul continuous_fst)
-    filter_upwards [hopen.mem_nhds hζ] with ζ' hζ'
-    exact truncation_endChart (by linarith) hζ'
   have hκ (v : ℝ × ℝ) :
-      κ (L v) = -(deriv smoothTransition (q.endSign * ζ.1 - T) * q.endSign) * v.1 := by
-    have hcomp := fderiv_comp ζ ((contDiff_truncation T).differentiable one_ne_zero _) hφ
-    have h₁ := congrArg (· v) hcomp
-    rw [hloc.fderiv_eq, ((hg.hasFDerivAt.comp ζ (hasFDerivAt_fst)).fderiv)] at h₁
-    simpa [mul_comm] using h₁.symm
+      κ (L v) = -(deriv smoothTransition (q.endSign * ζ.1 - T) * q.endSign) * v.1 :=
+    fderiv_truncation_endChart_apply (by linarith) hζ v
   -- The pulled-back one-form `α ∘ dφ` on `∂_t` is `K` in end coordinates plus `½ ω(u_q, ∂_t u_q)`.
   have hdu (e : ℝ × ℝ) : fderiv ℝ u (endChart q ζ) e =
       e.1 • fderiv ℝ u (endChart q ζ) stdComplexLineReal +

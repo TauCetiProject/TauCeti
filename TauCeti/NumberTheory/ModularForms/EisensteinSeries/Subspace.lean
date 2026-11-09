@@ -245,6 +245,59 @@ theorem eq_of_changeLevel_eq [NeZero N] {a b : CharIndex N k} (ht : a.t = b.t)
   obtain rfl := DirichletCharacter.changeLevel_injective _ hphi
   rfl
 
+-- The body is exposed so that the characters of `a.swap`, whose types depend on its moduli, can
+-- be identified with those of `a` (`swap_psi`, `swap_phi`).
+/-- The index `(phi, psi, t)` obtained from `(psi, phi, t)` by exchanging the two characters. -/
+@[expose] def swap : CharIndex N k where
+  u := a.v
+  v := a.u
+  t := a.t
+  psi := a.phi
+  phi := a.psi
+  psi_primitive := a.phi_primitive
+  phi_primitive := a.psi_primitive
+  parity := by rw [mul_comm]; exact a.parity
+  level_dvd := by rw [mul_comm a.v]; exact a.level_dvd
+
+/-- The first modulus of the exchanged index is the second modulus. -/
+@[simp] theorem swap_u : a.swap.u = a.v := (rfl)
+
+/-- The second modulus of the exchanged index is the first modulus. -/
+@[simp] theorem swap_v : a.swap.v = a.u := (rfl)
+
+/-- Exchanging the characters keeps the raising parameter. -/
+@[simp] theorem swap_t : a.swap.t = a.t := (rfl)
+
+/-- The first character of the exchanged index is the second character. -/
+@[simp] theorem swap_psi : a.swap.psi = a.phi := (rfl)
+
+/-- The second character of the exchanged index is the first character. -/
+@[simp] theorem swap_phi : a.swap.phi = a.psi := (rfl)
+
+/-- Exchanging the characters twice gives back the index. -/
+@[simp] theorem swap_swap : a.swap.swap = a := (rfl)
+
+/-- Exchanging the characters is an involution. -/
+theorem swap_involutive : Function.Involutive (swap : CharIndex N k → CharIndex N k) :=
+  swap_swap
+
+/-- Exchanging the characters does not change the nebentypus. -/
+@[simp] theorem nebentypus_swap : a.swap.nebentypus = a.nebentypus := by
+  rw [nebentypus_def, nebentypus_def, mul_comm]
+  -- the raised characters of `a.swap` are those of `a`, by the definition of `swap`
+  rfl
+
+/-- In odd weight no index is fixed by exchanging its characters: the two characters of an index
+have opposite parities. -/
+theorem swap_ne_self (hk : Odd k) : a.swap ≠ a := by
+  intro h
+  -- `a.swap.psi` is `a.phi` by the definition of `swap`
+  have hpsi : a.phi (-1) = a.psi (-1) := congrArg (fun b : CharIndex N k ↦ b.psi (-1)) h
+  have hsq : a.psi (-1) * a.psi (-1) = 1 := by rw [← map_mul a.psi, neg_one_mul, neg_neg, map_one]
+  have hpar := a.parity
+  rw [hpsi, hsq, (hk.natCast (R := ℤ)).neg_one_zpow] at hpar
+  norm_num at hpar
+
 /-- The normalized raised character Eisenstein series attached to an index. -/
 def form [NeZero N] (hk : 3 ≤ (k : ℤ)) :
     ModularForm ((Gamma1 N).map (mapGL ℝ)) (k : ℤ) :=

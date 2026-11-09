@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import TauCeti.Analysis.SpecialFunctions.Erf
-public import TauCeti.Analysis.SpecialFunctions.Gamma
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 
 /-!
 # The lower incomplete gamma function

@@ -24,6 +24,8 @@ univariate polynomial in the variable `Xᵢ`, on monomials.
 
 * `TauCeti.prod_map_X_eq_monomial`: the product of a multiset of variables is the monomial with
   coefficient `1` at the multiplicity function of the multiset.
+* `TauCeti.prod_X_pow_eq_monomial_equivFunOnFinite_symm`: `(X₁ ⋯ Xₙ) ^ k` is the
+  monomial with all exponents `k`.
 * `MvPolynomial.coeff_prod_univ_X_pow`: the coefficients of the monomial `∏ᵢ Xᵢ ^ Lᵢ` in finitely
   many variables.
 * `MvPolynomial.coeff_prod_X_pow_mul_prod_X_pow`: the coefficients of a product `Xᵃ Yᵇ` of
@@ -47,6 +49,14 @@ theorem prod_map_X_eq_monomial {σ : Type*} [DecidableEq σ] {R : Type*} [CommSe
     (s.map (X : σ → MvPolynomial σ R)).prod = monomial s.toFinsupp (1 : R) := by
   rw [Finset.prod_multiset_map_count, ← prod_X_pow_eq_monomial, Multiset.toFinsupp_support]
   exact Finset.prod_congr rfl fun a _ => by rw [Multiset.toFinsupp_apply]
+
+/-- A power of the product of all variables is the monomial with all exponents equal to that
+power. -/
+theorem prod_X_pow_eq_monomial_equivFunOnFinite_symm {σ R : Type*} [CommSemiring R]
+    [Fintype σ] (k : ℕ) :
+    (∏ i, X i : MvPolynomial σ R) ^ k = monomial (Finsupp.equivFunOnFinite.symm fun _ ↦ k) 1 := by
+  rw [monomial_eq, C_1, one_mul, Finsupp.prod_fintype _ _ (by simp), ← Finset.prod_pow]
+  simp
 
 end TauCeti
 

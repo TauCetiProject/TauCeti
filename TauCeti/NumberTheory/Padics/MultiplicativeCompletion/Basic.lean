@@ -166,43 +166,31 @@ theorem padicCompletionUnits_smul_apply (a : ℤ_[p])
 instance padicCompletionUnitsPadicModule :
     Module ℤ_[p] (Additive ↑(padicCompletionUnits p L)) where
   one_smul x := by
-    apply Additive.toMul.injective
-    apply Subtype.ext
-    funext m
+    ext m
     simpa only [padicCompletionUnits_smul_apply, Nat.cast_one, pow_one] using
       pow_eq_pow_of_modEq (PadicInt.appr_natCast_modEq 1 m)
         (QuotientGroup.pow_eq_one_quotient_range_powMonoidHom _ (x.toMul.1 m))
   mul_smul a b x := by
-    apply Additive.toMul.injective
-    apply Subtype.ext
-    funext m
+    ext m
     simp only [padicCompletionUnits_smul_apply]
     rw [← pow_mul, mul_comm (b.appr m)]
     exact pow_eq_pow_of_modEq (PadicInt.appr_mul_modEq a b m)
       (QuotientGroup.pow_eq_one_quotient_range_powMonoidHom _ _)
   smul_zero a := by
-    apply Additive.toMul.injective
-    apply Subtype.ext
-    funext m
+    ext m
     simp
   smul_add a x y := by
-    apply Additive.toMul.injective
-    apply Subtype.ext
-    funext m
+    ext m
     simp only [padicCompletionUnits_smul_apply, toMul_add, Subgroup.coe_mul, Pi.mul_apply]
     exact mul_pow (x.toMul.1 m) (y.toMul.1 m) (a.appr m)
   add_smul a b x := by
-    apply Additive.toMul.injective
-    apply Subtype.ext
-    funext m
+    ext m
     simp only [padicCompletionUnits_smul_apply, toMul_add, Subgroup.coe_mul, Pi.mul_apply]
     rw [← pow_add]
     exact pow_eq_pow_of_modEq (PadicInt.appr_add_modEq a b m)
       (QuotientGroup.pow_eq_one_quotient_range_powMonoidHom _ _)
   zero_smul x := by
-    apply Additive.toMul.injective
-    apply Subtype.ext
-    funext m
+    ext m
     simpa only [padicCompletionUnits_smul_apply, Nat.cast_zero, pow_zero, toMul_zero,
       OneMemClass.coe_one, Pi.one_apply] using
       pow_eq_pow_of_modEq (PadicInt.appr_natCast_modEq 0 m)
@@ -296,12 +284,10 @@ private def padicCompletionUnitsMulEquiv (σ : L ≃ₐ[K] L) :
   { padicCompletionUnitsMap p L K σ with
     invFun := padicCompletionUnitsMap p L K σ.symm
     left_inv x := by
-      apply Subtype.ext
-      funext m
+      ext m
       simp [← padicCompletionPowerClassMap_symm]
     right_inv x := by
-      apply Subtype.ext
-      funext m
+      ext m
       simp [← padicCompletionPowerClassMap_symm] }
 
 @[simp]
@@ -348,7 +334,6 @@ def padicCompletionUnitsLinearMap (σ : L ≃ₐ[K] L) :
     apply Additive.toMul.injective
     exact map_mul (padicCompletionUnitsAut p L K σ) x.toMul y.toMul
   map_smul' a x := by
-    apply Additive.toMul.injective
     ext m
     simp only [toMul_ofMul, RingHom.id_apply, padicCompletionUnitsAut_apply,
       padicCompletionUnits_smul_apply]
@@ -471,7 +456,6 @@ theorem padicCompletionUnitsCongr_smul [Fact p.Prime] (e : L ≃* L') (a : ℤ_[
     (x : Additive ↑(padicCompletionUnits p L)) :
     Additive.ofMul (padicCompletionUnitsCongr p e (a • x).toMul) =
       a • Additive.ofMul (padicCompletionUnitsCongr p e x.toMul) := by
-  apply Additive.toMul.injective
   ext m
   simp [padicCompletionUnitsCongr_apply, padicCompletionUnits_smul_apply, map_pow]
 

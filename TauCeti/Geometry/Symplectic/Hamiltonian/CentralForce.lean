@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Standard
 public import TauCeti.Analysis.InnerProductSpace.NormPow
-public import TauCeti.Analysis.InnerProductSpace.GramPair
+public import TauCeti.Analysis.InnerProductSpace.Gram.Pair
 public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import Mathlib.Analysis.Calculus.Deriv.Mul
 public import Mathlib.Geometry.Euclidean.Angle.Unoriented.Basic
@@ -96,6 +96,13 @@ noncomputable def centralForceHamiltonian (m : ℝ) (U : ℝ → ℝ) (x : V × 
 theorem centralForceHamiltonian_apply (m : ℝ) (U : ℝ → ℝ) (q p : V) :
     centralForceHamiltonian m U (q, p) = ‖p‖ ^ 2 / (2 * m) + U ‖q‖ :=
   (rfl)
+
+/-- A central-force Hamiltonian is continuous at every point `(q, p)` such that the potential `U`
+is continuous at `‖q‖`. -/
+theorem continuousAt_centralForceHamiltonian {m : ℝ} {U : ℝ → ℝ} {x : V × V}
+    (hU : ContinuousAt U ‖x.1‖) : ContinuousAt (centralForceHamiltonian m U) x :=
+  ((continuous_snd.norm.pow 2).continuousAt.div_const _).add
+    (hU.comp (f := fun y : V × V ↦ ‖y.1‖) continuous_fst.norm.continuousAt)
 
 /-- The derivative of the Kepler potential `-κ / r` at a nonzero radius is `κ / r²`. -/
 theorem hasDerivAt_kepler_potential (κ : ℝ) {r : ℝ} (hr : r ≠ 0) :
@@ -423,7 +430,7 @@ theorem stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian
     (stdSymplecticForm (V := V)).poissonBracket
       (fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2)
       (centralForceHamiltonian m U) x = 0 := by
-  rw [stdSymplecticForm_poissonBracket (hasFDerivAt_sq_sub_inner_sq x)
+  rw [stdSymplecticForm_poissonBracket (hasStrictFDerivAt_sq_sub_inner_sq x).hasFDerivAt
     (hasFDerivAt_centralForceHamiltonian hU hq)]
   have hr : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
   simp only [inner_sub_left, real_inner_smul_left, real_inner_smul_right,
@@ -446,8 +453,8 @@ theorem sq_sub_inner_sq_eq_of_hasDerivAt {m : ℝ} {U : ℝ → ℝ} {γ : ℝ �
   -- The derivative of `ℓ²` along `γ` is the Poisson bracket `{ℓ², H} = 0`.
   have hderiv (t : ℝ) (ht : t ∈ s) : HasDerivAt
       ((fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2) ∘ γ) 0 t := by
-    have h := (hasFDerivAt_sq_sub_inner_sq (γ t)).comp_hasDerivAt t (hγ t ht)
-    rwa [← (hasFDerivAt_sq_sub_inner_sq (γ t)).fderiv,
+    have h := (hasStrictFDerivAt_sq_sub_inner_sq (γ t)).hasFDerivAt.comp_hasDerivAt t (hγ t ht)
+    rwa [← (hasStrictFDerivAt_sq_sub_inner_sq (γ t)).hasFDerivAt.fderiv,
       ← SymplecticForm.poissonBracket_eq_fderiv,
       stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian
         (hU t ht).hasDerivAt (hq t ht)] at h

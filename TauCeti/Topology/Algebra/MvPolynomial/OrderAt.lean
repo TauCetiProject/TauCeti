@@ -71,7 +71,8 @@ end Continuity
 
 section Factors
 
-variable [CommRing R] [TopologicalSpace R] [IsTopologicalSemiring R] [NoZeroDivisors R] [T1Space R]
+variable [CommSemiring R] [TopologicalSpace R] [IsTopologicalSemiring R] [NoZeroDivisors R]
+  [T1Space R]
   {Y : Type*} {l : Filter Y} {f : Y → σ → R} {a : σ → R}
 
 /-- Along a parametrization tending to `a`, a divisor of a nonzero polynomial has eventually
@@ -112,7 +113,7 @@ end MvPolynomial
 /-- Constant finite ambient order of a polynomial product on a preconnected parameter set
 implies constant ambient order of every factor. Repeated factors and the empty product are
 allowed, but the product must be nonzero. -/
-theorem IsPreconnected.orderAt_eq_of_prod {σ R Y ι : Type*} [CommRing R]
+theorem IsPreconnected.orderAt_eq_of_prod {σ R Y ι : Type*} [CommSemiring R]
     [NoZeroDivisors R] [TopologicalSpace R] [IsTopologicalSemiring R] [T1Space R]
     [TopologicalSpace Y] {S : Set Y} (hS : IsPreconnected S)
     (p : ι → MvPolynomial σ R) (s : Finset ι) {f : Y → σ → R}

@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.NumberTheory.HilbertSymbol.SquareClassIndex
 import TauCeti.NumberTheory.LocalField.FiniteExtension.SquareClass
+import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.DirectIndex
 import TauCeti.NumberTheory.LocalField.QuadraticForm.UnramifiedClass
 import TauCeti.NumberTheory.LocalField.Squares
 
@@ -21,8 +22,10 @@ Let `K` be a nonarchimedean local field with `2 ≠ 0`, in any residue character
 from `K(√a)`, that is the subgroup `N` of `Kˣ` consisting of the `b` of the form `x² - a y²` with
 `x, y ∈ K`, form a subgroup of index two in `Kˣ` for every nonsquare radicand `a`.
 
-The index is computed by counting square classes, uniformly in the residue characteristic and in
-the quadratic defect of `a`. For `L = K(√a)`,
+For odd-valuation radicands the index is computed directly from the base field's unit norm
+families by `TauCeti.quadraticNormSubgroup_index_eq_two_of_odd`. For the remaining radicands,
+the index is computed by counting square classes in a quadratic extension, uniformly in the
+residue characteristic and quadratic defect. For `L = K(√a)`,
 `TauCeti.two_mul_index_quadraticNormSubgroup_mul_card_squareClass` gives
 `2 · (Kˣ : N) · #(Lˣ/(Lˣ)²) = #(Kˣ/(Kˣ)²)²` over any field with `2 ≠ 0`. Over a local field
 `#(Kˣ/(Kˣ)²) = 4 q^{v_K(2)}`, with `q = #𝓀[K]`, and since `[L : K] = 2`,
@@ -81,6 +84,8 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 a subgroup of index two in `Kˣ` for every `a` that is not a square. -/
 theorem quadraticNormSubgroup_index_eq_two_of_not_isSquare (h2 : (2 : K) ≠ 0) {a : Kˣ}
     (ha : ¬IsSquare a) : (quadraticNormSubgroup (a : K)).index = 2 := by
+  by_cases hodd : Odd (normalizedValuation K a).toAdd
+  · exact quadraticNormSubgroup_index_eq_two_of_odd h2 hodd
   have : Fact (¬IsSquare (a : K)) := ⟨Units.isSquare_coe_iff.not.mpr ha⟩
   have h := two_mul_index_quadraticNormSubgroup_mul_card_squareClass a h2
   rw [card_squareClass_eq_four_mul_pow_finrank h2, QuadraticAlgebra.finrank_eq_two,

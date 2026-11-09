@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Sard.FlatStratum
 public import TauCeti.Analysis.Calculus.Sard.IntermediateStratum
-import TauCeti.Analysis.Calculus.Sard.EqualDimension
-import TauCeti.Analysis.Calculus.Sard.LowDimension
+import TauCeti.Analysis.Calculus.Sard.LowEqualDimension
 import TauCeti.MeasureTheory.Measure.Haar.Hausdorff
 import TauCeti.MeasureTheory.Measure.LocallyNull
 
@@ -142,6 +141,45 @@ private theorem subset_flatStratum_union_iUnion (f : E → F) (s : Set E) (N : �
     omega
   exact mem_biUnion ⟨hjpos, hjN⟩ ⟨hx, hjzero, Nat.find_spec hp⟩
 
+omit [FiniteDimensional ℝ F] [BorelSpace F] [Nontrivial F] [ν.IsAddHaarMeasure] in
+/-- **Local nullity near a point of an intermediate stratum.** Let `f` be `C^{r+i}` at `a`, with
+`1 ≤ i` and `1 ≤ r`, let its derivatives of order `i` vanish at `a` and those of order `i + 1`
+not, and let `f` be `C^r` with vanishing derivative along `s`. If the images of such sets in the
+kernel of any linear functional on `E` are null, the image under `f` of a neighbourhood of `a` in
+the stratum `Σ_i \ Σ_{i+1}` is null. -/
+private theorem exists_nhdsWithin_stratum_image_null (r i : ℕ) (hr : 1 ≤ r) (hi : 1 ≤ i) {a : E}
+    (hfa : ContDiffAt ℝ ((r : ℕ∞ω) + i) f a) (hai : iteratedFDeriv ℝ i f a = 0)
+    (hai1 : iteratedFDeriv ℝ (i + 1) f a ≠ 0) (hf : ∀ x ∈ s, ContDiffAt ℝ r f x)
+    (hs : ∀ x ∈ s, fderiv ℝ f x = 0)
+    (ih : ∀ g' : E →L[ℝ] ℝ, finrank ℝ ↥g'.ker + 1 = finrank ℝ E → ∀ (f' : ↥g'.ker → F)
+      (s' : Set ↥g'.ker), (∀ x ∈ s', ContDiffAt ℝ r f' x) → (∀ x ∈ s', fderiv ℝ f' x = 0) →
+        ν (f' '' s') = 0) :
+    ∃ t ∈ 𝓝[{x ∈ s | (∀ j, 1 ≤ j → j ≤ i → iteratedFDeriv ℝ j f x = 0) ∧
+      iteratedFDeriv ℝ (i + 1) f x ≠ 0}] a, ν (f '' t) = 0 := by
+  obtain ⟨g, g', θ, -, -, -, -, -, hθ, -, hcover, hrank⟩ :=
+    exists_parametrization_iteratedFDeriv_eq_zero hfa
+      (by exact_mod_cast (by omega : r ≠ 0)) hai hai1
+  obtain ⟨w, hw, hθw⟩ := hθ.contDiffOn (m := (r : ℕ∞ω)) le_rfl
+    fun h ↦ absurd h (natCast_ne_infty _)
+  -- Every point of the stratum close to `a` is `θ z` for some `z` where `θ` is `C^r`.
+  refine ⟨_ ∩ {x | iteratedFDeriv ℝ i f x = 0 → x ∈ θ '' interior w},
+    inter_mem_nhdsWithin _ (hcover _ (isOpen_interior.mem_nhds (mem_interior_iff_mem_nhds.2 hw))),
+    ?_⟩
+  have hθz : ∀ z ∈ interior w, ContDiffAt ℝ (r : ℕ∞ω) θ z := fun z hz ↦
+    (hθw.mono interior_subset).contDiffAt (isOpen_interior.mem_nhds hz)
+  refine measure_mono_null (fun y hy ↦ ?_)
+    (ih g' hrank (f ∘ θ) (interior w ∩ θ ⁻¹' s) ?_ ?_)
+  · obtain ⟨x, ⟨⟨hxs, hxi, -⟩, hxV⟩, rfl⟩ := hy
+    obtain ⟨z, hz, rfl⟩ := hxV (hxi i hi le_rfl)
+    exact ⟨z, ⟨hz, hxs⟩, rfl⟩
+  · rintro z ⟨hzw, hzs⟩
+    exact (hf (θ z) hzs).comp z (hθz z hzw)
+  · rintro z ⟨hzw, hzs⟩
+    have hone : (1 : ℕ∞ω) ≤ (r : ℕ∞ω) := mod_cast hr
+    have hfz : DifferentiableAt ℝ f (θ z) := ((hf (θ z) hzs).of_le hone).differentiableAt_one
+    rw [fderiv_comp z hfz ((hθz z hzw).of_le hone).differentiableAt_one, hs (θ z) hzs,
+      ContinuousLinearMap.zero_comp]
+
 /-- The induction behind `TauCeti.addHaar_image_eq_zero_of_fderiv_eq_zero`, on the dimension `n`
 of the source. The source is quantified inside the statement because the induction step replaces
 it by the kernel of a linear functional, a space of dimension one less. -/
@@ -181,34 +219,11 @@ private theorem addHaar_image_eq_zero_of_fderiv_eq_zero_aux (n : ℕ) :
       refine measure_image_null_of_locally_null (HereditarilyLindelofSpace.isLindelof _)
         fun a ha ↦ ?_
       obtain ⟨has, hai, hai1⟩ := ha
-      replace hai := hai i hi.1 le_rfl
-      have hfa : ContDiffAt ℝ (((n * n + 1 : ℕ) : ℕ∞ω) + i) f a :=
-        (hf a has).of_le (mod_cast show n * n + 1 + i ≤ k by have := hi.2; omega)
-      obtain ⟨g, g', θ, -, -, -, -, -, hθ, -, hcover, hrank⟩ :=
-        exists_parametrization_iteratedFDeriv_eq_zero hfa (by simp) hai hai1
-      obtain ⟨w, hw, hθw⟩ := hθ.contDiffOn (m := ((n * n + 1 : ℕ) : ℕ∞ω)) le_rfl
-        fun h ↦ absurd h (natCast_ne_infty _)
-      have hwmem : interior w ∈ 𝓝 (0 : ↥g'.ker) :=
-        isOpen_interior.mem_nhds (mem_interior_iff_mem_nhds.2 hw)
-      -- Every point of the stratum close to `a` is `θ z` for some `z` where `θ` is `C^r`.
-      refine ⟨_ ∩ {x | iteratedFDeriv ℝ i f x = 0 → x ∈ θ '' interior w},
-        inter_mem_nhdsWithin _ (hcover _ hwmem), ?_⟩
-      have hθz : ∀ z ∈ interior w, ContDiffAt ℝ ((n * n + 1 : ℕ)) θ z := fun z hz ↦
-        (hθw.mono interior_subset).contDiffAt (isOpen_interior.mem_nhds hz)
-      refine measure_mono_null (fun y hy ↦ ?_)
-        (ih ↥g'.ker (by omega) (n * n + 1) le_rfl (f ∘ θ) (interior w ∩ θ ⁻¹' s) ?_ ?_)
-      · obtain ⟨x, ⟨⟨hxs, hxi, -⟩, hxV⟩, rfl⟩ := hy
-        obtain ⟨z, hz, rfl⟩ := hxV (hxi i hi.1 le_rfl)
-        exact ⟨z, ⟨hz, hxs⟩, rfl⟩
-      · rintro z ⟨hzw, hzs⟩
-        exact ((hf (θ z) hzs).of_le (mod_cast show n * n + 1 ≤ k by omega)).comp z
-          (hθz z hzw)
-      · rintro z ⟨hzw, hzs⟩
-        have hone : (1 : ℕ∞ω) ≤ ((n * n + 1 : ℕ) : ℕ∞ω) := mod_cast Nat.le_add_left 1 (n * n)
-        have hfz : DifferentiableAt ℝ f (θ z) :=
-          ((hf (θ z) hzs).of_le (mod_cast show 1 ≤ k by omega)).differentiableAt_one
-        rw [fderiv_comp z hfz ((hθz z hzw).of_le hone).differentiableAt_one, hs (θ z) hzs,
-          ContinuousLinearMap.zero_comp]
+      refine exists_nhdsWithin_stratum_image_null ν (n * n + 1) i (by omega) hi.1
+        ((hf a has).of_le (mod_cast show n * n + 1 + i ≤ k by have := hi.2; omega))
+        (hai i hi.1 le_rfl) hai1
+        (fun x hx ↦ (hf x hx).of_le (mod_cast show n * n + 1 ≤ k by omega)) hs
+        fun g' hg' ↦ ih ↥g'.ker (by omega) (n * n + 1) le_rfl
 
 /-- **Sard's theorem on the locus where the derivative vanishes.** Let `f` be a map between
 finite-dimensional real normed spaces with nontrivial target, and let `s` be a set at each point
@@ -299,17 +314,9 @@ private theorem addHaar_image_eq_zero_of_fderiv_eq_zero_of_finrank_le_add_two_au
     have hF : 0 < finrank ℝ F := finrank_pos
     have hdiff : ∀ x ∈ s, DifferentiableAt ℝ f x := fun x hx ↦
       ((hf x hx).of_le (mod_cast show 1 ≤ k by omega)).differentiableAt_one
-    rcases lt_trichotomy (finrank ℝ E) (finrank ℝ F) with hEF | hEF | hEF
-    · -- A lower-dimensional source: the whole image is null.
-      exact DifferentiableOn.addHaar_image_eq_zero_of_finrank_lt_finrank ν
-        (fun x hx ↦ (hdiff x hx).differentiableWithinAt) hEF
-    · -- Equal dimensions: every point of `s` is critical.
-      borelize E
-      refine addHaar_image_eq_zero_of_not_surjective_fderivWithin ν hEF
-        (fun x hx ↦ (hdiff x hx).hasFDerivAt.hasFDerivWithinAt) fun x hx hsurj ↦ ?_
-      obtain ⟨y, hy⟩ := exists_ne (0 : F)
-      obtain ⟨v, hv⟩ := hsurj y
-      exact hy (by rw [← hv, hs x hx, zero_apply])
+    rcases le_or_gt (finrank ℝ E) (finrank ℝ F) with hEF | hEF
+    · exact addHaar_image_eq_zero_of_finrank_le_finrank ν hEF fun x hx ↦
+      ((hdiff x hx).hasFDerivAt.congr_fderiv (hs x hx)).hasFDerivWithinAt
     -- A larger source: stratify `s` down to the sharp depth `N`.
     set N := finrank ℝ E - finrank ℝ F + 1 with hNdef
     have hsub := subset_flatStratum_union_iUnion f s N hs
@@ -332,28 +339,10 @@ private theorem addHaar_image_eq_zero_of_fderiv_eq_zero_of_finrank_le_add_two_au
       refine measure_image_null_of_locally_null (HereditarilyLindelofSpace.isLindelof _)
         fun a ha ↦ ?_
       obtain ⟨has, hai, hai1⟩ := ha
-      have hfa : ContDiffAt ℝ (((N - 1 : ℕ) : ℕ∞ω) + 1) f a :=
-        (hf a has).of_le (mod_cast show N - 1 + 1 ≤ k by omega)
-      obtain ⟨g, g', θ, -, -, -, -, -, hθ, -, hcover, hrank⟩ :=
-        exists_parametrization_iteratedFDeriv_eq_zero hfa (by simp; omega) (hai 1 le_rfl le_rfl)
-          hai1
-      obtain ⟨w, hw, hθw⟩ := hθ.contDiffOn (m := ((N - 1 : ℕ) : ℕ∞ω)) le_rfl
-        fun h ↦ absurd h (natCast_ne_infty _)
-      refine ⟨_ ∩ {x | iteratedFDeriv ℝ 1 f x = 0 → x ∈ θ '' interior w},
-        inter_mem_nhdsWithin _ (hcover _ (interior_mem_nhds.2 hw)), ?_⟩
-      have hθz : ∀ z ∈ interior w, ContDiffAt ℝ (N - 1 : ℕ) θ z := fun z hz ↦
-        (hθw.mono interior_subset).contDiffAt (isOpen_interior.mem_nhds hz)
-      refine measure_mono_null (fun y hy ↦ ?_)
-        (ih ↥g'.ker (by omega) (by omega) (N - 1) (by omega) (f ∘ θ) (interior w ∩ θ ⁻¹' s) ?_ ?_)
-      · obtain ⟨x, ⟨⟨hxs, hxi, -⟩, hxV⟩, rfl⟩ := hy
-        obtain ⟨z, hz, rfl⟩ := hxV (hxi 1 le_rfl le_rfl)
-        exact ⟨z, ⟨hz, hxs⟩, rfl⟩
-      · rintro z ⟨hzw, hzs⟩
-        exact ((hf (θ z) hzs).of_le (mod_cast show N - 1 ≤ k by omega)).comp z (hθz z hzw)
-      · rintro z ⟨hzw, hzs⟩
-        have hone : (1 : ℕ∞ω) ≤ ((N - 1 : ℕ) : ℕ∞ω) := mod_cast (by omega : 1 ≤ N - 1)
-        rw [fderiv_comp z (hdiff (θ z) hzs) ((hθz z hzw).of_le hone).differentiableAt_one,
-          hs (θ z) hzs, ContinuousLinearMap.zero_comp]
+      refine exists_nhdsWithin_stratum_image_null ν (N - 1) 1 (by omega) le_rfl
+        ((hf a has).of_le (mod_cast show N - 1 + 1 ≤ k by omega)) (hai 1 le_rfl le_rfl) hai1
+        (fun x hx ↦ (hf x hx).of_le (mod_cast show N - 1 ≤ k by omega)) hs
+        fun g' hg' ↦ ih ↥g'.ker (by omega) (by omega) (N - 1) (by omega)
     · -- The strata `Σ_i \ Σ_{i+1}` with `i ≥ 2` have small Hausdorff dimension.
       refine addHaar_image_eq_zero_of_iteratedFDeriv_ne_zero ν hi1
         (fun x hx ↦ (hf x hx.1).of_le (mod_cast show i + 1 ≤ k by omega)) (fun x hx ↦ hx.2) ?_
