@@ -97,17 +97,8 @@ action on any ideal `I` of `T'` is nilpotent. -/
 theorem _root_.LieIdeal.isNilpotent_ad_toLinearMap_of_isNilpotent_ad {T' : LieSubalgebra R L}
     (I : LieIdeal R T') (x : T') (hx : IsNilpotent (LieAlgebra.ad R L (x : L))) :
     IsNilpotent (LieIdeal.ad I x).toLinearMap := by
-  obtain ⟨n, hn⟩ := hx
-  -- the inclusion `I → L` intertwines `ad x` on `L` with the adjoint action of `x` on `I`
-  let f : I →ₗ[R] L := T'.incl.toLinearMap ∘ₗ I.incl.toLinearMap
-  have hf : Function.Injective f := Subtype.val_injective.comp Subtype.val_injective
-  have hcomm : (LieAlgebra.ad R L (x : L)).comp f = f.comp (LieIdeal.ad I x).toLinearMap :=
-    LinearMap.ext fun s ↦ by
-      change ⁅(x : L), ((s : T') : L)⁆ = (((LieIdeal.ad I x s : I) : T') : L)
-      rw [LieIdeal.coe_ad_apply, LieSubalgebra.coe_bracket]
-  refine ⟨n, LinearMap.ext fun s ↦ hf ?_⟩
-  have hpow := LinearMap.congr_fun (Module.End.commute_pow_left_of_commute hcomm n) s
-  rw [hn, LinearMap.zero_comp] at hpow
-  simpa using hpow.symm
+  obtain ⟨n, hn⟩ := T'.isNilpotent_ad_of_isNilpotent_ad hx
+  exact ⟨n, Module.End.submodule_pow_eq_zero_of_pow_eq_zero (N := I.toSubmodule)
+    (LinearMap.ext fun s ↦ (congrArg Subtype.val (LieIdeal.ad_apply_apply I x s)).symm) hn⟩
 
 end TauCeti

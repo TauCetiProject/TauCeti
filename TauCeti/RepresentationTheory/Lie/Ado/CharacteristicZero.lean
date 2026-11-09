@@ -113,12 +113,13 @@ private theorem isAdoStage_of_sup {T T' H : LieSubalgebra K L}
   -- representation of `T` across that split extension, and check the two Ado-stage conditions on
   -- `T'`: the centre lies in `I`, and the nilradical either lies in `I` or contains all of `T'`.
   obtain ⟨V, _, _, _, σ, hσZ, hσN⟩ := hT
-  have hTT' : T ≤ T' := (LieSubalgebra.toSubmodule_le_toSubmodule T T').mp (hsup ▸ le_sup_left)
-  have hHT' : H ≤ T' := (LieSubalgebra.toSubmodule_le_toSubmodule H T').mp (hsup ▸ le_sup_right)
+  have hTT' : T ≤ T' := LieSubalgebra.le_left_of_sup_eq hsup
+  have hHT' : H ≤ T' := LieSubalgebra.le_right_of_sup_eq hsup
   -- `T`, read inside `T'`, is an ideal `I` of `T'` complemented by `H`.
   let I : LieIdeal K T' := T.idealOfLeNormalizer
-    (LieSubalgebra.le_normalizer_of_sup_eq hsup fun h hh t ht ↦ (hHT h hh t ht).1)
-  have hmemI {x : T'} : x ∈ I ↔ (x : L) ∈ T := T.mem_idealOfLeNormalizer_iff _
+    (LieSubalgebra.le_normalizer_of_le_sup hsup.ge fun h hh ↦
+      (LieSubalgebra.mem_normalizer_iff T h).mpr fun t ht ↦ (hHT h hh t ht).1)
+  have hmemI {x : T'} : x ∈ I ↔ (x : L) ∈ T := T.mem_idealOfLeNormalizer _
   let H' : LieSubalgebra K T' := H.comap T'.incl
   have hc : IsCompl I.toSubmodule H'.toSubmodule :=
     LieSubalgebra.isCompl_idealOfLeNormalizer_comap_incl _ hsup hdisj
@@ -135,8 +136,7 @@ private theorem isAdoStage_of_sup {T T' H : LieSubalgebra K L}
   obtain ⟨W, _, _, _, ρ, hker, hiff, hall⟩ := exists_semiDirectSum_rep_of_forall_mem ψ NI
     (σ.comp ι) (fun s hs ↦ hσN _ (hNI.mp hs))
     fun h s ↦ hNI.mpr (by
-      rw [show (ψ h) s = LieIdeal.ad I (H'.incl h) s from rfl, LieIdeal.coe_ad_apply,
-        LieSubalgebra.coe_bracket]
+      simp only [ψ, LieHom.comp_apply, LieIdeal.ad_apply_apply]
       exact (hHT _ h.2 _ (hmemI.mp s.2)).2)
   have he (z : T') (hz : (z : L) ∈ T) :
       e.symm z = LieAlgebra.SemiDirectSum.inl ψ ⟨z, hmemI.mpr hz⟩ :=
