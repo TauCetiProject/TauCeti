@@ -169,12 +169,11 @@ private theorem dotProduct_self_eq_one (x : S²) : ofLp (x : ℝ³) ⬝ᵥ ofLp 
 private theorem isHamiltonianVectorField_rotationTangent (ξ : Fin 3 → ℝ) :
     sphereAreaForm.IsHamiltonianVectorField (fun x : S² ↦ ofLp (x : ℝ³) ⬝ᵥ ξ)
       (rotationTangent ξ) := SmoothTwoForm.isHamiltonianVectorField_iff.2 fun x v ↦ by
-  have hxv := dotProduct_mvfderiv_eq_zero x v
+  have hxv := (dotProduct_comm _ _).trans (dotProduct_mvfderiv_eq_zero x v)
   -- `x ⬝ ((ξ × x) × w) = (ξ ⬝ w) (x ⬝ x) - (x ⬝ w) (x ⬝ ξ) = ξ ⬝ w` for `w ⊥ x`.
   rw [eval₂_sphereAreaForm, mvfderiv_rotationTangent, ofLp_toLp, cross_cross_eq_smul_sub_smul,
-    dotProduct_sub, dotProduct_smul, dotProduct_smul, dotProduct_self_eq_one,
-    dotProduct_comm (ofLp (x : ℝ³)) (ofLp (mvfderiv (𝓡 2) ι x v)), hxv, mvfderiv_height,
-    smul_eq_mul, smul_eq_mul, mul_one, zero_mul, sub_zero, dotProduct_comm]
+    mvfderiv_height]
+  simp_all [dotProduct_self_eq_one, dotProduct_comm ξ]
 
 private theorem hamiltonianVectorField_height (ξ : Fin 3 → ℝ) :
     sphereAreaForm.hamiltonianVectorField (fun x : S² ↦ ofLp (x : ℝ³) ⬝ᵥ ξ) = rotationTangent ξ :=
@@ -200,9 +199,8 @@ theorem sphereAreaForm_poissonBracket (ξ η : Fin 3 → ℝ) :
   rw [SmoothTwoForm.poissonBracket_def, hamiltonianVectorField_height,
     hamiltonianVectorField_height,
     SmoothTwoForm.isHamiltonianVectorField_iff.1 (isHamiltonianVectorField_rotationTangent ξ) x,
-    mvfderiv_height,
-    mvfderiv_rotationTangent, ofLp_toLp, dotProduct_comm,
-    triple_product_permutation (ofLp (x : ℝ³))]
+    mvfderiv_height, mvfderiv_rotationTangent]
+  simp [dotProduct_comm, triple_product_permutation (ofLp (x : ℝ³))]
 
 /-! ### The rotation action of `so(3)` and its moment map -/
 
@@ -276,9 +274,10 @@ theorem orbitTangent_sphereRotationAction (x : S²) : sphereRotationAction.orbit
     ⟨soThreeEquiv ℝ (ofLp (x : ℝ³) ⨯₃ ofLp (mvfderiv (𝓡 2) ι x v)), ?_⟩
   have hxv := dotProduct_mvfderiv_eq_zero x v
   apply injective_mvfderiv_subtypeVal_sphere x
+  apply ofLp_injective
   -- `(x × v) × x = (x ⬝ x) v - (v ⬝ x) x = v` for `v ⊥ x`.
   rw [mvfderiv_sphereRotationAction_apply, coe_soThreeEquiv, crossProductMatrix_mulVec,
-    cross_cross_eq_smul_sub_smul, dotProduct_self_eq_one, hxv, one_smul, zero_smul, sub_zero,
-    toLp_ofLp]
+    cross_cross_eq_smul_sub_smul, hxv]
+  simp [dotProduct_self_eq_one]
 
 end TauCeti
