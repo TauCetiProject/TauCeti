@@ -24,12 +24,12 @@ shape, possibly unbounded in both directions or cyclic.
   `HomologicalComplex.Acyclic.nonempty_homotopy_id_zero_of_projective_cycles` in
   `TauCeti.Algebra.Homology.Split`.)
 * In an abelian category, a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of complexes with `X₃`
-  exact at a degree `j` which is the target of a relation induces a short exact sequence of cycles
-  in degree `j`. When the cycles of `X₂` in degree `j` have projective dimension `< n`, those of
-  `X₁` do as soon as those of `X₃` have projective dimension `< n + 1`. In particular, when the
-  cycles of `X₂` are projective, those of `X₁` are syzygies of those of `X₃`, and their projective
-  dimension drops by one. Likewise, along an exact range of projectives the projective dimension
-  of the cycles drops by one in each degree.
+  exact at a degree `j` induces a short exact sequence of cycles in degree `j`. When the cycles
+  of `X₂` in degree `j` have projective dimension `< n`, those of `X₁` do as soon as those of `X₃`
+  have projective dimension `< n + 1`. In particular, when the cycles of `X₂` are projective,
+  those of `X₁` are syzygies of those of `X₃`, and their projective dimension drops by one.
+  Likewise, along an exact range of projectives the projective dimension of the cycles drops by
+  one in each degree.
 * With enough projectives, and when every index is both the source and the target of a relation
   of the shape, every complex receives a degreewise epimorphism from a contractible complex with
   projective terms, the mapping cone of the identity of a complex with zero differential made of
