@@ -126,6 +126,7 @@ variable {M : Type} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
 `p`-form over smooth `(p + 1)`-chains is integrating the form over their boundaries: the integration
 cochain of `dφ` is the integration cochain of `φ` composed with the boundary of the smooth singular
 chain complex. -/
+@[reassoc]
 theorem d_comp_integrationCochain {φ : RoughForm I M F p} (hφ : IsSmoothForm I 1 φ) :
     ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).d (p + 1) p ≫
       integrationCochain φ = integrationCochain (mextDeriv φ) := by
