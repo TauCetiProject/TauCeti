@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Section
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.SectionTopology
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Topology
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Topology
-import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Cone
 import TauCeti.Geometry.Manifold.VectorBundle.Section.FrameCover
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Comp
@@ -24,18 +25,19 @@ any covering system of smooth frames, which does not depend on the cover. The me
 chart C∞ topology `Bundle.ContMDiffRiemannianMetric.chartCInftyTopology` of uniform convergence
 on compact chart sets of all coordinate derivatives of the chart Gram matrices.
 
-These agree: the chart C∞ topology is the subspace topology of the section space
-(`Bundle.ContMDiffRiemannianMetric.chartCInftyTopology_eq_induced_toSymmetricSection`). In the
+These agree: the chart C∞ topology is the subspace topology
+`Bundle.ContMDiffRiemannianMetric.frameTopology` of the section space
+(`Bundle.ContMDiffRiemannianMetric.chartCInftyTopology_eq_frameTopology`). In the
 trivialization of `Sym²(T*M)` induced by the chart at `x₀`, the coordinates of
 `g.toSymmetricSection` are the chart metric of `g` at `x₀` composed with that chart. Hence the
 frame coordinates and the chart metric are obtained from each other by composing with the chart
-or its inverse, and composition with a fixed smooth map is continuous for the compact derivative
-topologies.
+`TauCeti.extChartAtDiffeomorph` or its inverse, and composition with a fixed smooth map is
+continuous for the compact derivative topologies.
 
 Consequently `toSymmetricSection` embeds the metrics into the section space, and on a compact
 manifold its image, the metric cone, is open, so that the metrics form an open subspace of the
-section space (`Bundle.ContMDiffRiemannianMetric.isOpenEmbedding_toSymmetricSection`). In
-particular every chart C∞ statement about metrics, such as the openness of positive scalar
+section space (`Bundle.ContMDiffRiemannianMetric.isOpenEmbedding_toSymmetricSection_chartCInfty`).
+In particular every chart C∞ statement about metrics, such as the openness of positive scalar
 curvature, is a statement about the subspace topology from the space of smooth sections of
 `Sym²(T*M)`.
 
@@ -44,12 +46,12 @@ curvature, is a statement about the subspace topology from the space of smooth s
 * `Bundle.ContMDiffRiemannianMetric.coe_trivializationAt_toSymmetricSection_snd`: the
   coordinates of the section of a metric in the trivialization at `x₀` are the coordinates of the
   metric in the tangent trivialization at `x₀`.
-* `Bundle.ContMDiffRiemannianMetric.chartCInftyTopology_eq_induced_toSymmetricSection`: the chart
-  C∞ topology is induced by the frame topology of any covering frame system of `Sym²(T*M)`.
-* `Bundle.ContMDiffRiemannianMetric.isEmbedding_toSymmetricSection`: the section of a metric is
-  an embedding for these topologies.
-* `Bundle.ContMDiffRiemannianMetric.isOpenEmbedding_toSymmetricSection`: on a compact manifold
-  it is an open embedding.
+* `Bundle.ContMDiffRiemannianMetric.chartCInftyTopology_eq_frameTopology`: the chart C∞
+  topology is induced by the frame topology of any covering frame system of `Sym²(T*M)`.
+* `Bundle.ContMDiffRiemannianMetric.isEmbedding_toSymmetricSection_chartCInfty`: the section of a
+  metric is an embedding for these topologies.
+* `Bundle.ContMDiffRiemannianMetric.isOpenEmbedding_toSymmetricSection_chartCInfty`: on a compact
+  manifold it is an open embedding.
 
 ## References
 
@@ -100,10 +102,6 @@ theorem coe_trivializationAt_toSymmetricSection_snd
 
 /-! ### The chart cover of `Sym²(T*M)` -/
 
-/-- The domain of the chart at `x₀`, as an open set. -/
-private def chartSourceOpens (x₀ : M) : Opens M :=
-  ⟨(chartAt H x₀).source, (chartAt H x₀).open_source⟩
-
 /-- The trivialization of `Sym²(T*M)` at `x₀`. -/
 private abbrev symTriv (x₀ : M) :
     Trivialization (symmetricBilinearMaps ℝ E ℝ)
@@ -113,19 +111,15 @@ private abbrev symTriv (x₀ : M) :
     (fun x : M ↦ symmetricBilinearMaps ℝ (TangentSpace I x) ℝ) x₀
 
 private theorem chartSourceOpens_subset_baseSet (x₀ : M) :
-    (chartSourceOpens (H := H) x₀ : Set M) ⊆ (symTriv (I := I) x₀).baseSet := by
+    (chartSourceOpens H x₀ : Set M) ⊆ (symTriv (I := I) x₀).baseSet := by
   intro x hx
-  simpa [chartSourceOpens] using hx
+  simpa using hx
 
 variable [I.Boundaryless]
 
-/-- The target of the extended chart at `x₀`, as an open subset of the model space. -/
-private def chartTargetOpens (x₀ : M) : Opens E :=
-  ⟨(extChartAt I x₀).target, isOpen_extChartAt_target x₀⟩
-
 /-- The chart target, as a subtype of the model space, is its own open-set form. -/
 private def chartTargetHomeomorph (x₀ : M) :
-    (extChartAt I x₀).target ≃ₜ chartTargetOpens (I := I) x₀ where
+    (extChartAt I x₀).target ≃ₜ extChartTargetOpens I x₀ where
   toFun z := ⟨z, z.2⟩
   invFun z := ⟨z, z.2⟩
   left_inv _ := rfl
@@ -138,36 +132,10 @@ private theorem coe_chartTargetHomeomorph_apply (x₀ : M) (z : (extChartAt I x�
     (chartTargetHomeomorph x₀ z : E) = z :=
   (rfl)
 
-/-- The extended chart at `x₀` as a smooth map from its domain onto its target. -/
-private def chartMap (x₀ : M) :
-    C^∞⟮I, chartSourceOpens (H := H) x₀; 𝓘(ℝ, E), chartTargetOpens (I := I) x₀⟯ :=
-  ⟨fun p ↦ ⟨extChartAt I x₀ p, (extChartAt I x₀).map_source (by
-      rw [extChartAt_source]
-      exact p.2)⟩,
-    (ContMDiff.subtypeVal_comp_iff (chartTargetOpens (I := I) x₀) _).mp
-      ((contMDiffOn_extChartAt (x := x₀)).comp_contMDiff contMDiff_subtype_val
-        fun p ↦ p.2)⟩
-
-/-- The inverse of the extended chart at `x₀` as a smooth map from its target onto its domain. -/
-private def chartSymmMap (x₀ : M) :
-    C^∞⟮𝓘(ℝ, E), chartTargetOpens (I := I) x₀; I, chartSourceOpens (H := H) x₀⟯ :=
-  ⟨fun z ↦ ⟨(extChartAt I x₀).symm z, by
-      have h := (extChartAt I x₀).map_target z.2
-      rw [extChartAt_source] at h
-      exact h⟩,
-    (ContMDiff.subtypeVal_comp_iff (chartSourceOpens (H := H) x₀) _).mp
-      ((contMDiffOn_extChartAt_symm x₀).comp_contMDiff contMDiff_subtype_val
-        fun z ↦ z.2)⟩
-
-@[simp]
-private theorem coe_chartSymmMap_apply (x₀ : M) (z : chartTargetOpens (I := I) x₀) :
-    (chartSymmMap x₀ z : M) = (extChartAt I x₀).symm z :=
-  (rfl)
-
 /-- The frame coordinates of the section of a metric in the trivialization at `x₀`. -/
 private def symFrameCoordinates
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (x₀ : M) :
-    C^∞⟮I, chartSourceOpens (H := H) x₀; 𝓘(ℝ, symmetricBilinearMaps ℝ E ℝ),
+    C^∞⟮I, chartSourceOpens H x₀; 𝓘(ℝ, symmetricBilinearMaps ℝ E ℝ),
       symmetricBilinearMaps ℝ E ℝ⟯ :=
   (symTriv (I := I) x₀).frameCoordinates (chartSourceOpens_subset_baseSet x₀)
     g.toSymmetricSection
@@ -175,31 +143,29 @@ private def symFrameCoordinates
 /-- The chart metric at `x₀`, as a smooth map on the chart target with symmetric values. -/
 private def symChartMetric
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (x₀ : M) :
-    C^∞⟮𝓘(ℝ, E), chartTargetOpens (I := I) x₀; 𝓘(ℝ, symmetricBilinearMaps ℝ E ℝ),
+    C^∞⟮𝓘(ℝ, E), extChartTargetOpens I x₀; 𝓘(ℝ, symmetricBilinearMaps ℝ E ℝ),
       symmetricBilinearMaps ℝ E ℝ⟯ :=
-  (symFrameCoordinates g x₀).comp (chartSymmMap x₀)
+  (symFrameCoordinates g x₀).comp (extChartAtDiffeomorph (I := I) ∞ x₀).symm.toContMDiffMap
 
 private theorem coe_symChartMetric_apply
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (x₀ : M)
-    (z : chartTargetOpens (I := I) x₀) :
+    (z : extChartTargetOpens I x₀) :
     (symChartMetric g x₀ z : E →L[ℝ] E →L[ℝ] ℝ) = g.toNondegenerateMetric.chartMetric x₀ z := by
   have hz : (extChartAt I x₀).symm z ∈ (chartAt H x₀).source := by
     simpa using (extChartAt I x₀).map_target z.2
   simp only [symChartMetric, symFrameCoordinates, ContMDiffMap.comp_apply,
     Trivialization.frameCoordinates_apply]
-  rw [ContMDiffNondegenerateMetric.chartMetric_def, coe_chartSymmMap_apply]
+  rw [ContMDiffNondegenerateMetric.chartMetric_def, Diffeomorph.coe_coe,
+    coe_extChartAtDiffeomorph_symm_apply]
   exact coe_trivializationAt_toSymmetricSection_snd g hz
 
 private theorem symFrameCoordinates_eq_comp
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (x₀ : M) :
-    symFrameCoordinates g x₀ = (symChartMetric g x₀).comp (chartMap x₀) := by
+    symFrameCoordinates g x₀ =
+      (symChartMetric g x₀).comp (extChartAtDiffeomorph (I := I) ∞ x₀).toContMDiffMap := by
   refine ContMDiffMap.ext fun p ↦ ?_
-  simp only [symChartMetric, ContMDiffMap.comp_apply]
-  congr 1
-  apply Subtype.ext
-  exact ((extChartAt I x₀).left_inv (by
-    rw [extChartAt_source]
-    exact p.2)).symm
+  simp only [symChartMetric, ContMDiffMap.comp_apply, Diffeomorph.coe_coe,
+    Diffeomorph.symm_apply_apply]
 
 /-! ### Derivatives of the chart metric -/
 
@@ -223,13 +189,13 @@ private theorem isInducing_symInclusion (m : ℕ) : IsInducing (symInclusion (E 
 private theorem chartMetricDerivative_eq
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (x₀ : M) (m : ℕ) :
     g.chartMetricDerivative x₀ m = ((symInclusion m).comp
-      (ContMDiffMap.openIteratedFDerivContinuousMap (chartTargetOpens (I := I) x₀)
+      (ContMDiffMap.openIteratedFDerivContinuousMap (extChartTargetOpens I x₀)
         (symChartMetric g x₀) m (by exact_mod_cast le_top))).comp
       (chartTargetHomeomorph (I := I) x₀ :
-        C((extChartAt I x₀).target, chartTargetOpens (I := I) x₀)) := by
+        C((extChartAt I x₀).target, extChartTargetOpens I x₀)) := by
   ext1 z
-  have hT : IsOpen ((chartTargetOpens (I := I) x₀ : Set E)) := (chartTargetOpens x₀).isOpen
-  have hz : (z : E) ∈ (chartTargetOpens (I := I) x₀ : Set E) := z.2
+  have hT : IsOpen ((extChartTargetOpens I x₀ : Set E)) := (extChartTargetOpens I x₀).isOpen
+  have hz : (z : E) ∈ (extChartTargetOpens I x₀ : Set E) := z.2
   refine (chartMetricDerivative_apply g x₀ m z).trans ?_
   simp only [ContinuousMap.comp_apply, ContinuousMap.coe_ofClass, coe_chartTargetHomeomorph_apply,
     ContMDiffMap.openIteratedFDerivContinuousMap_apply, symInclusion_apply]
@@ -253,7 +219,7 @@ private theorem continuous_symChartMetric (x₀ : M) :
   apply ((ContinuousMap.isInducing_postcomp _
     (isInducing_symInclusion (E := E) m)).continuous_iff).mpr
   refine ((ContinuousMap.continuous_precomp ((chartTargetHomeomorph (I := I) x₀).symm :
-    C(chartTargetOpens (I := I) x₀, (extChartAt I x₀).target))).comp
+    C(extChartTargetOpens I x₀, (extChartAt I x₀).target))).comp
       (continuous_chartMetricDerivative ⊤ x₀ le_top)).congr fun g ↦ ?_
   -- The two descriptions of the chart target are identified by mutually inverse identity maps.
   ext1 z
@@ -263,9 +229,23 @@ private theorem continuous_symChartMetric (x₀ : M) :
 
 /-! ### Comparison of the topologies -/
 
-/-- The chart C∞ topology on smooth metrics is the subspace topology from the compact derivative
-topology on smooth sections of `Sym²(T*M)`, for any covering system of smooth frames. -/
-theorem chartCInftyTopology_eq_induced_toSymmetricSection [LocallyCompactSpace E]
+omit [I.Boundaryless] in
+private theorem frameTopology_eq_induced {ι : Type*}
+    (e : ι → Trivialization (symmetricBilinearMaps ℝ E ℝ)
+      (π (symmetricBilinearMaps ℝ E ℝ)
+        (fun x : M ↦ symmetricBilinearMaps ℝ (TangentSpace I x) ℝ)))
+    [∀ i, MemTrivializationAtlas (e i)]
+    (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet) :
+    frameTopology I ∞ e U hU =
+      .induced toSymmetricSection (ContMDiffSection.frameTopology (I := I) (n := ∞) e U hU) := by
+  let _ := ContMDiffSection.frameTopology (I := I) (n := ∞) e U hU
+  let _ := frameTopology I ∞ e U hU
+  exact (isEmbedding_toSymmetricSection_frameTopology (IB := I) (n := ∞) e U hU).eq_induced
+
+/-- The chart C∞ topology on smooth metrics is the subspace topology `frameTopology` from the
+compact derivative topology on smooth sections of `Sym²(T*M)`, for any covering system of smooth
+frames. -/
+theorem chartCInftyTopology_eq_frameTopology [LocallyCompactSpace E]
     {ι : Type*}
     (e : ι → Trivialization (symmetricBilinearMaps ℝ E ℝ)
       (π (symmetricBilinearMaps ℝ E ℝ)
@@ -273,28 +253,28 @@ theorem chartCInftyTopology_eq_induced_toSymmetricSection [LocallyCompactSpace E
     [∀ i, MemTrivializationAtlas (e i)]
     (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
     (hcover : ∀ x, ∃ i, x ∈ U i) :
-    chartCInftyTopology (I := I) (M := M) =
-      .induced toSymmetricSection (ContMDiffSection.frameTopology (I := I) (n := ∞) e U hU) := by
-  rw [ContMDiffSection.frameTopology_eq_of_covers e U hU hcover (symTriv (I := I) (M := M))
-    chartSourceOpens chartSourceOpens_subset_baseSet
+    chartCInftyTopology (I := I) (M := M) = frameTopology I ∞ e U hU := by
+  rw [frameTopology_eq_induced, ContMDiffSection.frameTopology_eq_of_covers e U hU hcover
+    (symTriv (I := I) (M := M)) (chartSourceOpens H) chartSourceOpens_subset_baseSet
     fun x ↦ ⟨x, mem_chart_source H x⟩]
   apply le_antisymm
   · -- In the chart C∞ topology, each frame coordinate is the chart metric composed with a chart.
     rw [← continuous_iff_le_induced]
     let _ := chartCInftyTopology (I := I) (M := M)
     let _ := ContMDiffSection.frameTopology (I := I) (n := ∞) (symTriv (I := I) (M := M))
-      chartSourceOpens chartSourceOpens_subset_baseSet
+      (chartSourceOpens H) chartSourceOpens_subset_baseSet
     apply (ContMDiffSection.continuous_frameTopology_iff_frameCoordinates (I := I) (n := ∞)
-      (symTriv (I := I) (M := M)) chartSourceOpens chartSourceOpens_subset_baseSet).mpr
+      (symTriv (I := I) (M := M)) (chartSourceOpens H) chartSourceOpens_subset_baseSet).mpr
     intro x₀
     refine (ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp
       ((continuous_symChartMetric x₀).prodMk
-        (continuous_const (y := chartMap (I := I) x₀)))).congr fun g ↦ ?_
+        (continuous_const (y := (extChartAtDiffeomorph (I := I) ∞ x₀).toContMDiffMap)))).congr
+          fun g ↦ ?_
     exact (symFrameCoordinates_eq_comp g x₀).symm
   · -- Conversely, each chart metric is a frame coordinate composed with an inverse chart.
     rw [← continuous_id_iff_le]
     let _ := ContMDiffSection.frameTopology (I := I) (n := ∞) (symTriv (I := I) (M := M))
-      chartSourceOpens chartSourceOpens_subset_baseSet
+      (chartSourceOpens H) chartSourceOpens_subset_baseSet
     let _ : TopologicalSpace (ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) :=
       .induced toSymmetricSection inferInstance
     apply (continuous_chartCk_iff_continuous_chartMetricDerivative ⊤).mpr
@@ -302,27 +282,28 @@ theorem chartCInftyTopology_eq_induced_toSymmetricSection [LocallyCompactSpace E
     have hframe : Continuous (fun g : ContMDiffRiemannianMetric I ∞ E
         (fun x : M ↦ TangentSpace I x) ↦ symFrameCoordinates g x₀) :=
       (ContMDiffSection.continuous_frameCoordinates (I := I) (n := ∞)
-        (symTriv (I := I) (M := M)) chartSourceOpens chartSourceOpens_subset_baseSet x₀).comp
+        (symTriv (I := I) (M := M)) (chartSourceOpens H) chartSourceOpens_subset_baseSet x₀).comp
           continuous_induced_dom
     have hchart : Continuous (fun g : ContMDiffRiemannianMetric I ∞ E
         (fun x : M ↦ TangentSpace I x) ↦ symChartMetric g x₀) :=
       ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp
-        (hframe.prodMk (continuous_const (y := chartSymmMap (I := I) x₀)))
+        (hframe.prodMk
+          (continuous_const (y := (extChartAtDiffeomorph (I := I) ∞ x₀).symm.toContMDiffMap)))
     have hjet : Continuous (fun g : ContMDiffRiemannianMetric I ∞ E
         (fun x : M ↦ TangentSpace I x) ↦
-        ContMDiffMap.openIteratedFDerivContinuousMap (chartTargetOpens (I := I) x₀)
+        ContMDiffMap.openIteratedFDerivContinuousMap (extChartTargetOpens I x₀)
           (symChartMetric g x₀) m (by exact_mod_cast le_top)) :=
       (continuous_apply (⟨m, by exact_mod_cast le_top⟩ : {m : ℕ // (m : ℕ∞ω) ≤ ∞})).comp
         ((ContMDiffMap.continuous_openWeakWhitneyJet _).comp hchart) |>.congr fun g ↦
           ContMDiffMap.openWeakWhitneyJet_apply _ _ _
     have hincl := (ContinuousMap.continuous_postcomp (symInclusion (E := E) m)).comp hjet
     refine ((ContinuousMap.continuous_precomp (chartTargetHomeomorph (I := I) x₀ :
-      C((extChartAt I x₀).target, chartTargetOpens (I := I) x₀))).comp hincl).congr fun g ↦ ?_
+      C((extChartAt I x₀).target, extChartTargetOpens I x₀))).comp hincl).congr fun g ↦ ?_
     exact (chartMetricDerivative_eq g x₀ m).symm
 
 /-- The section of a metric embeds the smooth metrics with the chart C∞ topology into the smooth
 sections of `Sym²(T*M)` with the compact derivative topology of any covering frame system. -/
-theorem isEmbedding_toSymmetricSection [LocallyCompactSpace E]
+theorem isEmbedding_toSymmetricSection_chartCInfty [LocallyCompactSpace E]
     {ι : Type*}
     (e : ι → Trivialization (symmetricBilinearMaps ℝ E ℝ)
       (π (symmetricBilinearMaps ℝ E ℝ)
@@ -336,13 +317,13 @@ theorem isEmbedding_toSymmetricSection [LocallyCompactSpace E]
       (V := fun x : M ↦ TangentSpace I x)) := by
   let _ := chartCInftyTopology (I := I) (M := M)
   let _ := ContMDiffSection.frameTopology (I := I) (n := ∞) e U hU
-  exact ⟨⟨chartCInftyTopology_eq_induced_toSymmetricSection e U hU hcover⟩,
-    toSymmetricSection_injective⟩
+  exact ⟨⟨(chartCInftyTopology_eq_frameTopology e U hU hcover).trans
+    (frameTopology_eq_induced e U hU)⟩, toSymmetricSection_injective⟩
 
 /-- On a compact manifold the smooth metrics with the chart C∞ topology form an open subspace of
 the smooth sections of `Sym²(T*M)`, with the compact derivative topology of any covering frame
 system. -/
-theorem isOpenEmbedding_toSymmetricSection [FiniteDimensional ℝ E] [CompactSpace M]
+theorem isOpenEmbedding_toSymmetricSection_chartCInfty [FiniteDimensional ℝ E] [CompactSpace M]
     {ι : Type*}
     (e : ι → Trivialization (symmetricBilinearMaps ℝ E ℝ)
       (π (symmetricBilinearMaps ℝ E ℝ)
@@ -356,7 +337,7 @@ theorem isOpenEmbedding_toSymmetricSection [FiniteDimensional ℝ E] [CompactSpa
       (V := fun x : M ↦ TangentSpace I x)) := by
   let _ := chartCInftyTopology (I := I) (M := M)
   let _ := ContMDiffSection.frameTopology (I := I) (n := ∞) e U hU
-  refine ⟨isEmbedding_toSymmetricSection e U hU hcover, ?_⟩
+  refine ⟨isEmbedding_toSymmetricSection_chartCInfty e U hU hcover, ?_⟩
   rw [range_toSymmetricSection]
   exact isOpen_positiveDefiniteSymmetricSections_frameTopology e U hU hcover
 
