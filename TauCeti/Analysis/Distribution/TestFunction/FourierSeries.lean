@@ -52,6 +52,8 @@ the resulting double series converge.
 
 ## Main results
 
+* `TauCeti.contDiff_tsum_mul_cexp_inner`: a trigonometric series `∑ a i exp (2πi ⟪x, w i⟫)` whose
+  coefficients decay faster than every power of the frequencies is smooth.
 * `ContDiffMapSupportedIn.seminorm_modulate_le`: the polynomial bound on the derivatives of a
   modulated cutoff.
 * `ContDiffMapSupportedIn.exists_seminorm_modulate_le`: a continuous seminorm grows at most
@@ -116,6 +118,28 @@ private theorem norm_iteratedFDeriv_exp_phase_le (w x : E) (k : ℕ) :
   rw [norm_exp_phase, one_mul]
   gcongr
   exact norm_phase_le w
+
+/-- **Smoothness of a rapidly converging trigonometric series.** If the coefficients `a i` decay
+faster than every power of the frequencies `w i`, in the sense that `‖w i‖ ^ k ‖a i‖` is summable
+for every `k`, then `x ↦ ∑' i, a i * exp (2πi ⟪x, w i⟫)` is smooth. -/
+theorem _root_.TauCeti.contDiff_tsum_mul_cexp_inner {ι : Type*} {a : ι → ℂ} {w : ι → E}
+    (ha : ∀ k : ℕ, Summable fun i ↦ ‖w i‖ ^ k * ‖a i‖) :
+    ContDiff ℝ ∞ fun x ↦ ∑' i, a i * cexp (2 * π * I * ⟪x, w i⟫) := by
+  have h : (fun x ↦ ∑' i, a i * cexp (2 * π * I * ⟪x, w i⟫)) =
+      fun x ↦ ∑' i, a i • cexp (phase (w i) x) := by
+    ext x
+    simp only [phase_apply, smul_eq_mul]
+  rw [h]
+  refine contDiff_tsum (v := fun k i ↦ (2 * π) ^ k * (‖w i‖ ^ k * ‖a i‖))
+    (fun i ↦ (contDiff_exp_phase (w i)).const_smul (a i)) (fun k _ ↦ (ha k).mul_left _)
+    fun k i x _ ↦ ?_
+  rw [iteratedFDeriv_const_smul_apply'
+    ((contDiff_exp_phase (w i)).contDiffAt.of_le (mod_cast le_top)), norm_smul]
+  calc ‖a i‖ * ‖iteratedFDeriv ℝ k (fun y ↦ cexp (phase (w i) y)) x‖
+      ≤ ‖a i‖ * (2 * π * ‖w i‖) ^ k := by
+        gcongr
+        exact norm_iteratedFDeriv_exp_phase_le (w i) x k
+    _ = (2 * π) ^ k * (‖w i‖ ^ k * ‖a i‖) := by ring
 
 /-- `(1 + 2π a) ^ k ≤ (2π) ^ k (1 + a) ^ k` for `a ≥ 0`, since `2π ≥ 1`. -/
 private theorem one_add_two_pi_mul_pow_le {a : ℝ} (ha : 0 ≤ a) (k : ℕ) :

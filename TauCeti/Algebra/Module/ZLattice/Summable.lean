@@ -32,6 +32,8 @@ majorant used to sum Fourier coefficients on the torus `(ℝ / ℤ)^d`.
   `0 < c`.
 * `ZLattice.summable_one_add_norm_pow_inv`: `∑ ℓ ∈ L, (1 + ‖ℓ‖) ^ (-r)` converges once the
   natural number `r` exceeds the rank of `L`.
+* `ZLattice.summable_one_add_norm_pow_mul_norm_of_le`: hence a family bounded by
+  `C (1 + ‖ℓ‖) ^ (-(k + rank L + 1))` is summable against `(1 + ‖ℓ‖) ^ k`.
 * `TauCeti.summable_pi_int_norm_rpow`: `∑ n : d → ℤ, ‖n‖ ^ r` converges for `r < -card d`.
 * `TauCeti.summable_pi_int_inv_one_add_norm_pow`: `∑ n : d → ℤ, (1 + ‖n‖) ^ (-(card d + 1))`
   converges.
@@ -74,6 +76,21 @@ theorem summable_one_add_norm_pow_inv {r : ℕ} (hr : Module.finrank ℤ L < r) 
   rw [norm_inv, norm_pow, Real.norm_of_nonneg (by positivity), ← inv_pow]
   gcongr
   simp
+
+/-- On a discrete subgroup `L` of a finite-dimensional real normed space, a family `f` with
+`(1 + ‖ℓ‖) ^ (k + rank L + 1) ‖f ℓ‖ ≤ C` stays summable after multiplication by `(1 + ‖ℓ‖) ^ k`.
+In particular a family decaying faster than every power of `1 + ‖ℓ‖` is summable against every
+such power. -/
+theorem summable_one_add_norm_pow_mul_norm_of_le {F : Type*} [SeminormedAddCommGroup F]
+    {f : L → F} {k : ℕ} {C : ℝ}
+    (hf : ∀ ℓ : L, (1 + ‖(ℓ : E)‖) ^ (k + Module.finrank ℤ L + 1) * ‖f ℓ‖ ≤ C) :
+    Summable fun ℓ : L ↦ (1 + ‖(ℓ : E)‖) ^ k * ‖f ℓ‖ := by
+  set r := Module.finrank ℤ L + 1
+  have hsum := summable_one_add_norm_pow_inv L (r := r) (by omega)
+  refine (hsum.mul_left C).of_nonneg_of_le (fun ℓ ↦ by positivity) fun ℓ ↦ ?_
+  have hpos : 0 < (1 + ‖(ℓ : E)‖) ^ r := by positivity
+  rw [← div_eq_mul_inv, le_div_iff₀ hpos, mul_right_comm, ← pow_add]
+  simpa only [r, add_assoc] using hf ℓ
 
 end ZLattice
 
