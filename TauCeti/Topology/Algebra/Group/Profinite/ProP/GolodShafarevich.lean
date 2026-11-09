@@ -93,8 +93,8 @@ theorem _root_.IsPGroup.sq_topologicalGeneratorRankNat_lt_four_mul_finrank_cohom
   let X := ULift.{u} (Fin (topologicalGeneratorRankNat G hfg))
   obtain ⟨rels, hrels, ⟨e⟩⟩ :=
     hG.isProP.exists_subset_proPFrattini_continuousMulEquiv_presentedProP hfg X (by simp [X])
-  obtain ⟨t, htcard, ht⟩ := (presentedProP.finrank_H2_le_iff rels hrels e (fun _ _ ↦ rfl)
-    ((presentedProP.finite_H2_iff rels hrels e fun _ _ ↦ rfl).1 hH2) _).1 le_rfl
+  obtain ⟨t, htcard, ht⟩ := (presentedProP.finrank_H2_le_iff rels hrels e
+    ((presentedProP.finite_H2_iff rels hrels e).1 hH2) _).1 le_rfl
   let s : Finset (freeProP p X) := t.image Subtype.val
   let π : freeProP p X →ₜ* G := (e : presentedProP p X rels →ₜ* G).comp (presentedProP.mk p rels)
   have hπ : Function.Surjective π := e.surjective.comp (presentedProP.mk_surjective p rels)
