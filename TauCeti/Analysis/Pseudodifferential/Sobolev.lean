@@ -711,6 +711,19 @@ theorem quantizeSobolev_smul (ha : a.HasCompactSpatialSupport) (c : ℂ)
     quantizeSchwartzValue_smul_left, smul_comm (φ _) c]
   exact integral_smul c _
 
+/-- The zero symbol quantizes to the zero operator `H^s → H^{s - m}`. -/
+theorem quantizeSobolev_zero (h : (0 : Symbol n V W m).HasCompactSpatialSupport) (s : ℝ) :
+    (0 : Symbol n V W m).quantizeSobolev h s = 0 := by
+  have h₀ := quantizeSobolev_add h h (by rwa [add_zero]) s
+  rwa [quantizeSobolev_congr (add_zero 0) _ h s, left_eq_add] at h₀
+
+/-- The operator `Op(a) : H^s → H^{s - m}` takes the negated symbol to the negated operator. -/
+theorem quantizeSobolev_neg (ha : a.HasCompactSpatialSupport)
+    (hna : (-a).HasCompactSpatialSupport) (s : ℝ) :
+    (-a).quantizeSobolev hna s = -a.quantizeSobolev ha s := by
+  rw [quantizeSobolev_congr (neg_one_smul ℂ a).symm hna (ha.smul (-1)) s,
+    quantizeSobolev_smul ha, neg_one_smul]
+
 /-- The operator `Op(a) : H^s → H^{s - m}` is additive in the symbol, so it takes differences of
 symbols to differences of operators. -/
 theorem quantizeSobolev_sub {b : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
@@ -730,13 +743,13 @@ theorem continuous_quantizeSobolev {X : Type*} [TopologicalSpace X] {a : X → S
   obtain ⟨u, C, -, hbound⟩ :=
     exists_norm_quantizeSobolev_le_sum_seminorm (V := V) (W := W) (m := m) K s
   refine continuous_iff_continuousAt.2 fun t₀ ↦ ?_
-  have hsub (t : X) : ∀ x ∉ K, ∀ ξ, (a t - a t₀).coefficient (x, ξ) = 0 := fun x hx ξ ↦ by
-    simp [haK t x hx ξ, haK t₀ x hx ξ]
+  have hK (t : X) : (a t).HasCompactSpatialSupport :=
+    hasCompactSpatialSupport_iff.2 ⟨K, K.isCompact, haK t⟩
   rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
   refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun t ↦ ?_)
     (g := fun t ↦ C * ∑ α ∈ u, Symbol.seminorm K α [] (a t - a t₀)) ?_
-  · rw [← quantizeSobolev_sub _ _ (hasCompactSpatialSupport_iff.2 ⟨K, K.isCompact, hsub t⟩)]
-    exact hbound _ _ (hsub t)
+  · rw [← quantizeSobolev_sub (hK t) (hK t₀) ((hK t).sub (hK t₀))]
+    exact hbound _ _ fun x hx ξ ↦ by simp [haK t x hx ξ, haK t₀ x hx ξ]
   · have h : Filter.Tendsto (fun t ↦ ∑ α ∈ u, Symbol.seminorm K α [] (a t - a t₀))
         (𝓝 t₀) (𝓝 0) := by
       simpa using tendsto_finsetSum u fun α _ ↦
