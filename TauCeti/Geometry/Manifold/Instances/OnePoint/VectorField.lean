@@ -13,7 +13,8 @@ public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.RingTheory.Polynomial.Basic
-public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
+public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Holomorphic vector fields on the Riemann sphere
@@ -35,11 +36,12 @@ inverted chart the derivative of the transition `z ↦ z⁻¹` is `-z⁻²`, so 
 polynomial of degree at most `2`. Conversely `-w² (a + b w⁻¹ + c w⁻²) = -(a w² + b w + c)` is
 entire.
 
-This is the kernel Check of the Riemann–Roch index formula for `∂bar` on `TS²`: the real index
-`n χ + 2 c₁ = 1 · 2 + 2 · 2 = 6` is the real dimension of the holomorphic vector fields, the Lie
-algebra of `PSL₂(ℂ)`, while the formula with `c₁` in place of `2 c₁` would give `4`
-(`OnePoint.finrank_real_holomorphicVectorFields` and
-`OnePoint.finrank_real_holomorphicVectorFields_ne`).
+The holomorphic vector fields form the Lie algebra of `PSL₂(ℂ)`, and they are the kernel of the
+Cauchy–Riemann operator `∂bar` on `TS²`. Their real dimension `6`
+(`OnePoint.finrank_real_holomorphicVectorFields`) agrees with the value
+`n χ + 2 c₁ = 1 · 2 + 2 · 2` of the Riemann–Roch index formula. This file only computes the
+dimension of the kernel: identifying it with the index also needs the vanishing of the cokernel of
+`∂bar` and the evaluation `c₁(TS²)[S²] = 2`, neither of which is proved here.
 
 ## Main declarations
 
@@ -72,48 +74,6 @@ namespace OnePoint
 
 /-! ### The tangent bundle read in the two charts -/
 
-/-- In the preferred trivialization of the tangent bundle of the Riemann sphere at a finite point,
-a tangent vector at a finite point reads as itself: both charts are the affine chart. -/
-theorem trivializationAt_coe_apply_coe (z₀ z v : ℂ) :
-    (trivializationAt ℂ (TangentSpace 𝓘(ℂ, ℂ)) (z₀ : OnePoint ℂ) ⟨(z : OnePoint ℂ), v⟩).2 = v := by
-  have h : (affineChart : OpenPartialHomeomorph (OnePoint ℂ) ℂ) ∘ affineChart.symm = id :=
-    funext fun _ ↦ by simp
-  simp [TangentBundle.trivializationAt_apply, h]
-
-/-- In the preferred trivialization of the tangent bundle of the Riemann sphere at `∞`, a tangent
-vector at `∞` reads as itself. -/
-theorem trivializationAt_infty_apply_infty (v : ℂ) :
-    (trivializationAt ℂ (TangentSpace 𝓘(ℂ, ℂ)) (∞ : OnePoint ℂ) ⟨∞, v⟩).2 = v := by
-  have h : (invChart : OpenPartialHomeomorph (OnePoint ℂ) ℂ) ∘ invChart.symm = id :=
-    funext fun _ ↦ invChart.right_inv (by simp)
-  simp [TangentBundle.trivializationAt_apply, h]
-
-/-- In the preferred trivialization of the tangent bundle of the Riemann sphere at `∞`, a tangent
-vector `v` at a nonzero finite point `z` reads as `-z⁻² v`: the derivative of the chart transition
-`z ↦ z⁻¹`. -/
-theorem trivializationAt_infty_apply_coe {z : ℂ} (hz : z ≠ 0) (v : ℂ) :
-    (trivializationAt ℂ (TangentSpace 𝓘(ℂ, ℂ)) (∞ : OnePoint ℂ) ⟨(z : OnePoint ℂ), v⟩).2 =
-      -(z ^ 2)⁻¹ * v := by
-  have h : (invChart : OpenPartialHomeomorph (OnePoint ℂ) ℂ) ∘ affineChart.symm = fun w ↦ w⁻¹ :=
-    funext fun _ ↦ by simp
-  simp [TangentBundle.trivializationAt_apply, h, (hasDerivAt_inv hz).hasFDerivAt.fderiv, mul_comm]
-
-/-- A function on the Riemann sphere is differentiable at a point exactly when it is
-differentiable at the corresponding point after composing with the inverse of a chart of the
-atlas whose source contains the point. -/
-theorem mdifferentiableAt_iff_differentiableAt_comp_symm {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℂ F] {e : OpenPartialHomeomorph (OnePoint ℂ) ℂ} (he : e ∈ atlas ℂ (OnePoint ℂ))
-    {x : OnePoint ℂ} (hx : x ∈ e.source) {g : OnePoint ℂ → F} :
-    MDifferentiableAt 𝓘(ℂ, ℂ) 𝓘(ℂ, F) g x ↔ DifferentiableAt ℂ (g ∘ e.symm) (e x) := by
-  rw [← mdifferentiableAt_iff_differentiableAt]
-  refine ⟨fun hg ↦ ?_, fun hg ↦ ?_⟩
-  · refine MDifferentiableAt.comp (I' := 𝓘(ℂ, ℂ)) _ ?_
-      (mdifferentiableAt_atlas_symm he (e.map_source hx))
-    rwa [e.left_inv hx]
-  · refine (hg.comp x (mdifferentiableAt_atlas he hx)).congr_of_eventuallyEq ?_
-    filter_upwards [e.eventually_left_inverse hx] with y hy
-    simp [hy]
-
 /-- A vector field on the Riemann sphere is holomorphic at a finite point `z₀` exactly when its
 coefficient in the affine chart is complex differentiable at `z₀`. -/
 theorem mdifferentiableAt_tangent_coe_iff (X : OnePoint ℂ → ℂ) (z₀ : ℂ) :
@@ -121,10 +81,10 @@ theorem mdifferentiableAt_tangent_coe_iff (X : OnePoint ℂ → ℂ) (z₀ : ℂ
         (fun x ↦ (⟨x, X x⟩ : TangentBundle 𝓘(ℂ, ℂ) (OnePoint ℂ))) (z₀ : OnePoint ℂ) ↔
       DifferentiableAt ℂ (fun z : ℂ ↦ X z) z₀ := by
   refine (mdifferentiableAt_section (IB := 𝓘(ℂ, ℂ)) (F := ℂ) (E := TangentSpace 𝓘(ℂ, ℂ)) X).trans ?_
-  rw [mdifferentiableAt_iff_differentiableAt_comp_symm (e := affineChart) (Or.inl rfl)
-      (by simp)]
-  refine Iff.of_eq (congrArg₂ _ (funext fun z ↦ ?_) (by simp))
-  rw [Function.comp_apply, affineChart_symm_apply]
+  rw [TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm]
+  refine Iff.of_eq (congrArg₂ _ (funext fun z ↦ ?_) (by simp [chartAt_coe]))
+  have hz : (extChartAt 𝓘(ℂ, ℂ) (z₀ : OnePoint ℂ)).symm z = z := by simp [chartAt_coe]
+  rw [Function.comp_apply, hz]
   exact trivializationAt_coe_apply_coe z₀ z (X z)
 
 /-- The coefficient of a vector field on the Riemann sphere in the inverted chart: at `w ≠ 0` it
@@ -135,6 +95,7 @@ def invChartCoeff (X : OnePoint ℂ → ℂ) (w : ℂ) : ℂ :=
   (trivializationAt ℂ (TangentSpace 𝓘(ℂ, ℂ)) (∞ : OnePoint ℂ)
     ⟨invChart.symm w, X (invChart.symm w)⟩).2
 
+@[simp]
 theorem invChartCoeff_zero (X : OnePoint ℂ → ℂ) : invChartCoeff X 0 = X ∞ := by
   rw [invChartCoeff, invChart_symm_zero]
   exact trivializationAt_infty_apply_infty _
@@ -151,8 +112,8 @@ theorem mdifferentiableAt_tangent_infty_iff (X : OnePoint ℂ → ℂ) :
         (fun x ↦ (⟨x, X x⟩ : TangentBundle 𝓘(ℂ, ℂ) (OnePoint ℂ))) (∞ : OnePoint ℂ) ↔
       DifferentiableAt ℂ (invChartCoeff X) 0 := by
   refine (mdifferentiableAt_section (IB := 𝓘(ℂ, ℂ)) (F := ℂ) (E := TangentSpace 𝓘(ℂ, ℂ)) X).trans ?_
-  rw [mdifferentiableAt_iff_differentiableAt_comp_symm (e := invChart) (Or.inr rfl)
-      (by simp), invChart_infty]
+  have h0 : extChartAt 𝓘(ℂ, ℂ) (∞ : OnePoint ℂ) ∞ = 0 := by simp [chartAt_infty]
+  rw [TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm, h0]
   rfl
 
 /-! ### Polynomial vector fields -/
@@ -187,24 +148,18 @@ theorem polynomialVectorField_infty (p : ℂ[X]) :
 theorem polynomialVectorField_injective : Injective polynomialVectorField := fun p q h ↦
   Polynomial.funext fun z ↦ by simpa using congrFun h z
 
-/-- A polynomial of degree less than `3` is `a + b z + c z²`. -/
-private theorem eval_eq_of_mem_degreeLT {p : ℂ[X]} (hp : p ∈ degreeLT ℂ 3) (z : ℂ) :
-    p.eval z = p.coeff 0 + p.coeff 1 * z + p.coeff 2 * z ^ 2 := by
-  rcases eq_or_ne p 0 with rfl | hp0
-  · simp
-  have hn : p.natDegree < 3 := (natDegree_lt_iff_degree_lt hp0).2 (mem_degreeLT.1 hp)
-  rw [eval_eq_sum_range' hn]
-  simp [Finset.sum_range_succ]
-
 /-- The inverted-chart coefficient of `p(z) ∂_z` for `p = a + b z + c z²` is
 `-(a w² + b w + c)`. -/
-private theorem invChartCoeff_polynomialVectorField {p : ℂ[X]} (hp : p ∈ degreeLT ℂ 3) (w : ℂ) :
+@[simp]
+theorem invChartCoeff_polynomialVectorField {p : ℂ[X]} (hp : p ∈ degreeLT ℂ 3) (w : ℂ) :
     invChartCoeff (polynomialVectorField p) w =
       -(p.coeff 0 * w ^ 2 + p.coeff 1 * w + p.coeff 2) := by
   rcases eq_or_ne w 0 with rfl | hw
-  · simp [invChartCoeff_zero]
-  rw [invChartCoeff_of_ne_zero _ hw, polynomialVectorField_coe, eval_eq_of_mem_degreeLT hp]
+  · simp
+  rw [invChartCoeff_of_ne_zero _ hw, polynomialVectorField_coe, eval_eq_sum_degreeLTEquiv hp]
+  simp [Fin.sum_univ_three, degreeLTEquiv]
   field_simp
+  ring
 
 /-! ### Holomorphic vector fields -/
 
@@ -249,8 +204,10 @@ theorem mdifferentiable_tangent_iff (X : OnePoint ℂ → ℂ) :
       have heq : invChartCoeff X =ᶠ[𝓝[≠] 0]
           fun w ↦ -(p.coeff 0 * w ^ 2 + p.coeff 1 * w + p.coeff 2) := by
         filter_upwards [self_mem_nhdsWithin] with w (hw : w ≠ 0)
-        rw [invChartCoeff_of_ne_zero _ hw, hp', eval_eq_of_mem_degreeLT hpmem]
+        rw [invChartCoeff_of_ne_zero _ hw, hp', eval_eq_sum_degreeLTEquiv hpmem]
+        simp [Fin.sum_univ_three, degreeLTEquiv]
         field_simp
+        ring
       have h0 := tendsto_nhds_unique
         (hh.continuousAt.tendsto.mono_left nhdsWithin_le_nhds)
         (((hq.tendsto 0).mono_left nhdsWithin_le_nhds).congr' heq.symm)
@@ -287,6 +244,21 @@ def holomorphicVectorFieldsEquiv : holomorphicVectorFields ≃ₗ[ℂ] degreeLT 
   (LinearEquiv.ofEq _ _ holomorphicVectorFields_eq_map).trans
     (Submodule.equivMapOfInjective _ polynomialVectorField_injective _).symm
 
+/-- The holomorphic vector field corresponding to a polynomial of degree less than `3` is its
+polynomial vector field. -/
+@[simp]
+theorem coe_holomorphicVectorFieldsEquiv_symm_apply (p : degreeLT ℂ 3) :
+    (holomorphicVectorFieldsEquiv.symm p : OnePoint ℂ → ℂ) = polynomialVectorField p := by
+  simp [holomorphicVectorFieldsEquiv]
+
+/-- The polynomial corresponding to a holomorphic vector field is its coefficient in the affine
+chart. -/
+@[simp]
+theorem eval_holomorphicVectorFieldsEquiv_apply (X : holomorphicVectorFields) (z : ℂ) :
+    (holomorphicVectorFieldsEquiv X : ℂ[X]).eval z = (X : OnePoint ℂ → ℂ) z := by
+  conv_rhs => rw [← holomorphicVectorFieldsEquiv.symm_apply_apply X]
+  rw [coe_holomorphicVectorFieldsEquiv_symm_apply, polynomialVectorField_coe]
+
 /-- The holomorphic vector fields on the Riemann sphere form a complex vector space of
 dimension `3`. -/
 theorem finrank_holomorphicVectorFields : Module.finrank ℂ holomorphicVectorFields = 3 := by
@@ -294,19 +266,8 @@ theorem finrank_holomorphicVectorFields : Module.finrank ℂ holomorphicVectorFi
     Module.finrank_fin_fun]
 
 /-- The holomorphic vector fields on the Riemann sphere form a real vector space of dimension `6`,
-the real dimension of `PSL₂(ℂ)`.
-
-**Index Check on `TS²`.** This space is the kernel of `∂bar` on `TS²` (whose cokernel vanishes),
-and `6` is the Riemann–Roch index `n χ + 2 c₁ = 1 · 2 + 2 · 2` with `n = 1`, `χ(S²) = 2` and
-`c₁(TS²)[S²] = 2`. -/
+the real dimension of `PSL₂(ℂ)`. -/
 theorem finrank_real_holomorphicVectorFields : Module.finrank ℝ holomorphicVectorFields = 6 := by
   rw [finrank_real_of_complex, finrank_holomorphicVectorFields]
-
-/-- **Index Check on `TS²`, wrong formula.** The variant `n χ + c₁` of the index formula, with
-`c₁` in place of `2 c₁`, would predict real dimension `4`, which is wrong. -/
-theorem finrank_real_holomorphicVectorFields_ne :
-    Module.finrank ℝ holomorphicVectorFields ≠ 1 * 2 + 2 := by
-  rw [finrank_real_holomorphicVectorFields]
-  decide
 
 end OnePoint
