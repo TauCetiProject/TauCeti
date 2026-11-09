@@ -582,14 +582,14 @@ variable {D ι Λ} in
 /-- A base element `SemidirectProduct.inl t` acts on a function coordinatewise, by `t j` at the
 coordinate `j`. -/
 @[simp]
-theorem inl_smul (t : ι → D) (x : ι → Λ) :
+theorem product_inl_smul (t : ι → D) (x : ι → Λ) :
     (SemidirectProduct.inl t : WreathProduct D ι) • x = fun j ↦ t j • x j :=
   rfl
 
 variable {D ι Λ} in
 /-- The coordinate inclusion of the base group at `i` acts on a function by moving its value at `i`
 by `g` and leaving every other coordinate alone. -/
-theorem inl_mulSingle_smul [DecidableEq ι] (i : ι) (g : D) (x : ι → Λ) :
+theorem product_inl_mulSingle_smul [DecidableEq ι] (i : ι) (g : D) (x : ι → Λ) :
     (SemidirectProduct.inl (Pi.mulSingle i g : ι → D) : WreathProduct D ι) • x =
       Function.update x i (g • x i) := by
   funext j
