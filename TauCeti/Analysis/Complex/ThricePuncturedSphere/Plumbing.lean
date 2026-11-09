@@ -375,17 +375,11 @@ theorem mem_plumbedTruncation_iff {q : Puncture} {L R : ℝ} {w : ℂ} :
 `ℂ ∖ {0, 1, ψ_{q,L}(1)}`. -/
 theorem plumbedTruncation_subset {q : Puncture} (hq : q ≠ inf) {L : ℝ} (hL : 0 < L) (R : ℝ) :
     q.plumbedTruncation L R ⊆ {w | (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1} := by
-  rintro w (⟨hw, hwL⟩ | ⟨w', ⟨hw', hwL'⟩, rfl⟩)
-  · refine ⟨⟨(mem_truncation.1 hw).1, (mem_truncation.1 hw).2.1⟩, fun h => ?_⟩
-    have h' : (q.endCoord w).re ≤ L / 2 := hwL
-    rw [h, re_endCoord_plumbingMap q L one_ne_zero] at h'
-    linarith [re_endCoord_inf_one_pos]
-  · obtain ⟨hw0, hw1, -⟩ := mem_truncation.1 hw'
-    have h' : -(L / 2) ≤ (inf.endCoord w').re := hwL'
-    refine ⟨q.ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos ?_,
-      (q.plumbingMap_injective L).ne hw1⟩
-    rw [endSign_eq_one hq, one_mul, re_endCoord_plumbingMap q L hw0]
-    linarith
+  rw [← plumbingMap_image_union hq hL, plumbedTruncation_def, union_comm]
+  refine union_subset_union (image_mono fun w hw => ?_) fun w hw => ?_ <;>
+    obtain ⟨⟨hw0, hw1, -⟩, hwL⟩ := And.imp_left mem_truncation.1 hw
+  · exact ⟨⟨hw0, hw1⟩, by linarith [show -(L / 2) ≤ (inf.endCoord w).re from hwL]⟩
+  · exact ⟨⟨hw0, hw1⟩, by linarith [show (q.endCoord w).re ≤ L / 2 from hwL]⟩
 
 /-- The truncated plumbed sphere is compact. -/
 theorem isCompact_plumbedTruncation (q : Puncture) (L R : ℝ) :

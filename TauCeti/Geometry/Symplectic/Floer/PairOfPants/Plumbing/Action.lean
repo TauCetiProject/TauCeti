@@ -294,12 +294,13 @@ private theorem integral_floerEnergyDensity_plumbedPerturbation_inserted (ω : S
     (hu.comp (contDiff_realChart_plumbingMap q L).contDiffOn fun z hz ↦ by
       have hre : -(inf.endCoord (Complex.equivRealProdCLM.symm z)).re < L / 2 + 1 := by
         simpa [endSign_inf] using hz.2.2
-      refine ⟨q.ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos ?_, fun h ↦ hz.2.1 ?_⟩
-      · rw [equivRealProdCLM_symm_realChart, endSign_eq_one hq, one_mul,
-          re_endCoord_plumbingMap q L hz.1]
-        linarith
-      · rw [equivRealProdCLM_symm_realChart] at h
-        exact q.plumbingMap_injective L h)
+      -- The plumbing map sends the part `Re z > -L` of the inserted sphere into the
+      -- four-punctured sphere.
+      have h : q.plumbingMap L (Complex.equivRealProdCLM.symm z) ∈
+          {w | (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1} := by
+        rw [← plumbingMap_image_union hq (by linarith)]
+        exact Or.inl (mem_image_of_mem _ ⟨⟨hz.1, hz.2.1⟩, by linarith⟩)
+      rwa [← equivRealProdCLM_symm_realChart (q.plumbingMap L) z] at h)
   -- The loop along the cut is the loop along the circle `Re z = L/2` of the end `q`, and the
   -- loops along the input ends are the images under the plumbing map.
   have hneck : (fun t : ℝ ↦ (u ∘ realChart (q.plumbingMap L)) (Complex.equivRealProdCLM

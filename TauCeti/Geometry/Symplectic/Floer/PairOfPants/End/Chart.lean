@@ -132,13 +132,6 @@ theorem re_endCoord_endChart (q : Puncture) (z : ℝ × ℝ) :
   rw [equivRealProdCLM_symm_endChart, re_endCoord_cylindricalEndLift]
   simp [Complex.equivRealProdCLM_symm_apply]
 
-/-- The longitudinal coordinate of an end, in the real coordinates, is measurable. -/
-theorem measurable_re_endCoord (q : Puncture) :
-    Measurable fun z : ℝ × ℝ ↦ (q.endCoord (Complex.equivRealProdCLM.symm z)).re := by
-  simp_rw [re_endCoord]
-  exact (Real.measurable_log.comp (by fun_prop : Continuous fun z : ℝ × ℝ ↦
-    ‖(Complex.equivRealProdCLM.symm z - q.endCenter) / q.endScale‖).measurable).neg.div_const _
-
 /-- The end chart sends the part `±s > 0` of the end into `S`. -/
 theorem endChart_mem_thricePuncturedSphereReal {q : Puncture} {z : ℝ × ℝ}
     (hz : 0 < q.endSign * z.1) :
@@ -280,20 +273,6 @@ theorem measurableSet_endStrip (q : Puncture) : MeasurableSet (endStrip q) := by
   rw [endStrip_def]
   exact (measurableSet_lt measurable_const (measurable_const.mul measurable_id)).prod
     measurableSet_Ico
-
-/-- The truncation `S_R` of the pair of pants is measurable in the real coordinates. -/
-theorem measurableSet_preimage_truncation (R : ℝ) :
-    MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
-  (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-    (isCompact_truncation R)).isClosed.measurableSet
-
-/-- The part `±s ≤ c` of the end `q` of the truncation `S_R` is measurable in the real
-coordinates. -/
-theorem measurableSet_preimage_truncation_inter (q : Puncture) (R c : ℝ) :
-    MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
-      {z | q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ c}) :=
-  (measurableSet_preimage_truncation R).inter
-    (measurableSet_le ((measurable_re_endCoord q).const_mul _) measurable_const)
 
 /-- The end charts preserve orientation. -/
 theorem det_fderiv_endChart_nonneg (q : Puncture) (ζ : ℝ × ℝ) :

@@ -9,10 +9,13 @@ public import TauCeti.Analysis.Complex.ThricePuncturedSphere.CylindricalEnds
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.DivLeIff
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
+import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 
 /-!
 # Logarithmic coordinates on the cylindrical ends of the thrice-punctured sphere
@@ -41,8 +44,11 @@ coordinate on at most one end (`Puncture.endSign_mul_re_endCoord_nonpos`). Bound
 longitudinal coordinates by `R` cuts out the truncation `S_R` of the thrice-punctured sphere
 (`TauCeti.ThricePuncturedSphere.truncation`), a compact set
 (`TauCeti.ThricePuncturedSphere.isCompact_truncation`) over which integrals of data on `S` are
-taken. The truncations increase with `R` and exhaust `S`
-(`TauCeti.ThricePuncturedSphere.truncation_mono`,
+taken. In the real coordinates `ℝ × ℝ ≃ ℂ` the longitudinal coordinates are measurable
+(`Puncture.measurable_re_endCoord`), and so are the truncation and its parts `±s ≤ c` on an end
+(`TauCeti.ThricePuncturedSphere.measurableSet_preimage_truncation`,
+`TauCeti.ThricePuncturedSphere.measurableSet_preimage_truncation_inter`). The truncations
+increase with `R` and exhaust `S` (`TauCeti.ThricePuncturedSphere.truncation_mono`,
 `TauCeti.ThricePuncturedSphere.iUnion_truncation`), so integrals over `S` are their limits as
 `R → ∞`.
 
@@ -464,6 +470,13 @@ theorem endSign_mul_re_endCoord_nonpos {q r : Puncture} (hqr : q ≠ r) {w : ℂ
   exact cylindricalEndLift_ne_cylindricalEndLift hqr h h'
     ((q.cylindricalEndLift_endCoord hq).trans (r.cylindricalEndLift_endCoord hr).symm)
 
+/-- The longitudinal coordinate of an end, in the real coordinates `ℝ × ℝ ≃ ℂ`, is measurable. -/
+theorem measurable_re_endCoord (q : Puncture) :
+    Measurable fun z : ℝ × ℝ ↦ (q.endCoord (Complex.equivRealProdCLM.symm z)).re := by
+  simp_rw [re_endCoord]
+  exact (Real.measurable_log.comp (by fun_prop : Continuous fun z : ℝ × ℝ ↦
+    ‖(Complex.equivRealProdCLM.symm z - q.endCenter) / q.endScale‖).measurable).neg.div_const _
+
 end TauCeti.ThricePuncturedSphere.Puncture
 
 namespace TauCeti.ThricePuncturedSphere
@@ -572,6 +585,20 @@ theorem isCompact_truncation (R : ℝ) : IsCompact (truncation R) := by
   exact (isCompact_closedBall _ _).inter_left
     ((isClosed_le continuous_const continuous_norm).inter
       (isClosed_le continuous_const (continuous_norm.comp (continuous_id.sub continuous_const))))
+
+/-- The truncation `S_R` of the thrice-punctured sphere is measurable in the real coordinates. -/
+theorem measurableSet_preimage_truncation (R : ℝ) :
+    MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
+  (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+    (isCompact_truncation R)).isClosed.measurableSet
+
+/-- The part `±s ≤ c` of the end `q` of the truncation `S_R` is measurable in the real
+coordinates. -/
+theorem measurableSet_preimage_truncation_inter (q : Puncture) (R c : ℝ) :
+    MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
+      {z | q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ c}) :=
+  (measurableSet_preimage_truncation R).inter
+    (measurableSet_le ((measurable_re_endCoord q).const_mul _) measurable_const)
 
 /-- The truncations of the thrice-punctured sphere increase with the cutoff. -/
 theorem truncation_mono : Monotone truncation := fun _ _ hRR' _ hw =>
