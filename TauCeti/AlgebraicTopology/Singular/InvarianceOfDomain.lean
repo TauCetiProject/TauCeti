@@ -155,13 +155,6 @@ variable {E F M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
   [TopologicalSpace M] [ChartedSpace E M] [TopologicalSpace N] [ChartedSpace F N]
 
 omit [FiniteDimensional ℝ E] in
-/-- In a space charted on a nontrivial real normed space, no singleton is open. -/
-private theorem not_isOpen_singleton_of_chartedSpace [Nontrivial E] (x : M) : ¬IsOpen {x} :=
-  fun hx ↦ not_isOpen_singleton (chartAt E x x) <| by
-    simpa using (chartAt E x).isOpen_image_of_subset_source hx
-      (singleton_subset_iff.2 (mem_chart_source E x))
-
-omit [FiniteDimensional ℝ E] in
 /-- **Invariance of domain.** Let `M` and `N` be topological manifolds without boundary, charted
 on real normed spaces `E` and `F` with `F` finite dimensional and `finrank ℝ E = finrank ℝ F`. If
 `f : M → N` is continuous and injective on an open set `U`, then `f '' U` is open. For `M` and `N`
@@ -173,20 +166,11 @@ theorem IsOpen.image_of_continuousOn_of_injOn {f : M → N} {U : Set M} (hU : Is
     IsOpen (f '' U) := by
   by_cases hE : FiniteDimensional ℝ E
   swap
-  · -- `E` is infinite dimensional, so `finrank ℝ F = 0` and `N` is discrete; an injection from an
-    -- open set of `M` to a discrete space forces the open set to be empty.
+  · -- `E` is infinite dimensional, so `finrank ℝ F = 0` and `N` is discrete: every subset of
+    -- `N` is open.
     have hFs : Subsingleton F := Module.finrank_zero_iff.1 (hEF ▸ Module.finrank_of_not_finite hE)
-    have hEn : Nontrivial E := by
-      by_contra h
-      have := not_nontrivial_iff_subsingleton.1 h
-      exact hE inferInstance
     have := ChartedSpace.discreteTopology (H := F) (M := N)
-    suffices hU0 : U = ∅ by simp [hU0]
-    refine eq_empty_iff_forall_notMem.2 fun x hx ↦
-      not_isOpen_singleton_of_chartedSpace (E := E) x ?_
-    have := hf.isOpen_inter_preimage hU (isOpen_discrete {f x})
-    rwa [show U ∩ f ⁻¹' {f x} = {x} from Set.ext fun y ↦ ⟨fun hy ↦ hinj hy.1 hx hy.2,
-      fun hy ↦ by rw [mem_singleton_iff.1 hy]; exact ⟨hx, rfl⟩⟩] at this
+    exact isOpen_discrete _
   rw [isOpen_iff_mem_nhds]
   rintro _ ⟨x, hx, rfl⟩
   -- Read `f` in charts near `x` and `f x`, on an open set `W` around `x`.
