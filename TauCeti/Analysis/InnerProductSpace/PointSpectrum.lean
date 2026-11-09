@@ -440,7 +440,7 @@ theorem re_inner_apply_self_le_of_pointSpectrumIn (hA : A.IsSymmetric) (hU : ∀
     (h : A.PointSpectrumIn U (Set.Iic a)) {x : E} (hx : x ∈ U) :
     RCLike.re ⟪A x, x⟫_𝕜 ≤ a * ‖x‖ ^ 2 := by
   set hB := hA.restrict_invariant hU
-  have key := hB.re_inner_le_of_eigenbasis (hB.eigenvectorBasis rfl)
+  have key := LinearMap.re_inner_le_of_eigenbasis _ (hB.eigenvectorBasis rfl)
     (hB.apply_eigenvectorBasis rfl) (s := Set.univ)
     (fun i _ ↦ h (hA.eigenvalues_restrict_mem hU i)) (x := ⟨x, hx⟩)
     ((OrthonormalBasis.mem_spanIndices_iff _).mpr fun i hi ↦ (hi (Set.mem_univ i)).elim)
@@ -453,7 +453,7 @@ theorem le_re_inner_apply_self_of_pointSpectrumIn (hA : A.IsSymmetric) (hU : ∀
     (h : A.PointSpectrumIn U (Set.Ici a)) {x : E} (hx : x ∈ U) :
     a * ‖x‖ ^ 2 ≤ RCLike.re ⟪A x, x⟫_𝕜 := by
   set hB := hA.restrict_invariant hU
-  have key := hB.le_re_inner_of_eigenbasis (hB.eigenvectorBasis rfl)
+  have key := LinearMap.le_re_inner_of_eigenbasis _ (hB.eigenvectorBasis rfl)
     (hB.apply_eigenvectorBasis rfl) (s := Set.univ)
     (fun i _ ↦ h (hA.eigenvalues_restrict_mem hU i)) (x := ⟨x, hx⟩)
     ((OrthonormalBasis.mem_spanIndices_iff _).mpr fun i hi ↦ (hi (Set.mem_univ i)).elim)
