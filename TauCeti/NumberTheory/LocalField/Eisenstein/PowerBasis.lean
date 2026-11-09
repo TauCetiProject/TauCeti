@@ -49,13 +49,12 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 namespace TauCeti
 
 /-- A generator of `L/K` that is a root of an Eisenstein polynomial `f` over `𝒪[K]` has degree
-`deg f`, and its norm is an irreducible element of `𝒪[K]`. -/
+`deg f`, and its norm is irreducible in `𝒪[K]`. -/
 private theorem finrank_and_norm_of_eisenstein_adjoin_eq_top [Algebra K L]
     [ValuativeExtension K L] (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
     (ξ : 𝒪[L]) (hroot : (f.map (algebraMap 𝒪[K] 𝒪[L])).IsRoot ξ)
     (hgen : K⟮(ξ : L)⟯ = ⊤) :
-    Module.finrank K L = f.natDegree ∧
-      ∃ c : 𝒪[K], Irreducible c ∧ Algebra.norm K (ξ : L) = (c : K) := by
+    Module.finrank K L = f.natDegree ∧ Irreducible (Algebra.norm 𝒪[K] ξ) := by
   have : Module.Finite K L := finite_of_valuativeExtension K L
   have hint : IsIntegral 𝒪[K] ξ := IsIntegral.of_finite 𝒪[K] ξ
   have hassoc : Associated (minpoly 𝒪[K] ξ) f := hf.associated_minpoly hf.isUnit_leadingCoeff hroot
@@ -77,10 +76,12 @@ private theorem finrank_and_norm_of_eisenstein_adjoin_eq_top [Algebra K L]
   set c : 𝒪[K] := (-1) ^ f.natDegree * (minpoly 𝒪[K] ξ).coeff 0 with hc
   have hnormirr : Irreducible c := by
     simpa [c] using (irreducible_units_mul ((-1 : 𝒪[K]ˣ) ^ f.natDegree)).mpr hminc0
-  refine ⟨(PowerBasis.finrank pb).trans hpbdim, c, hnormirr, ?_⟩
-  rw [← hpbgen, Algebra.PowerBasis.norm_gen_eq_coeff_zero_minpoly, hpbgen, hminpoly,
-    hpbdim, Polynomial.coeff_map, hc]
-  simp [Algebra.algebraMap_ofSubsemiring_apply]
+  have hnorm : Algebra.norm K (ξ : L) = (c : K) := by
+    rw [← hpbgen, Algebra.PowerBasis.norm_gen_eq_coeff_zero_minpoly, hpbgen, hminpoly,
+      hpbdim, Polynomial.coeff_map, hc]
+    simp [Algebra.algebraMap_ofSubsemiring_apply]
+  refine ⟨(PowerBasis.finrank pb).trans hpbdim, ?_⟩
+  rwa [show Algebra.norm 𝒪[K] ξ = c from Subtype.ext ((coe_norm_integerRing ξ).trans hnorm)]
 
 private theorem eisenstein_adjoin_eq_top_data [Algebra K L] [ValuativeExtension K L]
     (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
@@ -88,8 +89,8 @@ private theorem eisenstein_adjoin_eq_top_data [Algebra K L] [ValuativeExtension 
     (hgen : K⟮(ξ : L)⟯ = ⊤) :
     Irreducible ξ ∧ inertiaDegree K L = 1 ∧ ramificationIndex K L = f.natDegree := by
   have : Module.Finite K L := finite_of_valuativeExtension K L
-  obtain ⟨hrank, c, hc, hnorm⟩ := finrank_and_norm_of_eisenstein_adjoin_eq_top f hf ξ hroot hgen
-  obtain ⟨hξirr, hf_one⟩ := irreducible_and_inertiaDegree_eq_one_of_norm ξ c hc hnorm
+  obtain ⟨hrank, hnorm⟩ := finrank_and_norm_of_eisenstein_adjoin_eq_top f hf ξ hroot hgen
+  obtain ⟨hξirr, hf_one⟩ := irreducible_norm_iff_irreducible_and_inertiaDegree_eq_one.mp hnorm
   refine ⟨hξirr, hf_one, ?_⟩
   have hef := ramificationIndex_mul_inertiaDegree (K := K) (L := L)
   rw [hf_one, mul_one, hrank] at hef
