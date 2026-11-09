@@ -140,7 +140,6 @@ theorem _root_.Polynomial.psc_natDegree_gcd_ne_zero {p q : K[X]} {m n : ℕ}
   clear_value g
   have hgp : g ∣ p := hg ▸ EuclideanDomain.gcd_dvd_left p q
   have hgq : g ∣ q := hg ▸ EuclideanDomain.gcd_dvd_right p q
-  have hg0 : g ≠ 0 := fun h => hp (EuclideanDomain.gcd_eq_zero_iff.mp (hg ▸ h)).1
   set d := g.natDegree with hd
   rw [psc_def, Ne, ← Matrix.exists_mulVec_eq_zero_iff]
   rintro ⟨v, hv, hMv⟩
@@ -154,7 +153,7 @@ theorem _root_.Polynomial.psc_natDegree_gcd_ne_zero {p q : K[X]} {m n : ℕ}
   generalize hB : ofFn (n - d) (fun k => v (Fin.natAdd (m - d) k)) = B at hwin
   have hAdeg : A.degree < (m - d : ℕ) := hA ▸ ofFn_degree_lt _
   have hBdeg : B.degree < (n - d : ℕ) := hB ▸ ofFn_degree_lt _
-  have hzero := Polynomial.mul_add_mul_eq_zero_of_coeff_window hp hm hn hgp hgq hg0 hAdeg hBdeg hwin
+  have hzero := Polynomial.mul_add_mul_eq_zero_of_coeff_window hp hm.le hn hgp hgq hAdeg hBdeg hwin
   -- Bézout for the gcd forces `A = 0`, and then `B = 0`.
   have hA0 : A = 0 :=
     eq_zero_of_mul_add_mul_eq_zero_of_degree_lt hzero (by rw [hm, ← hg]; exact hAdeg)

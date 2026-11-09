@@ -76,19 +76,20 @@ degrees `d, …, m + n - d - 1`, where `d` is the degree of a common divisor `g`
 the divisor `g` forces it to vanish. -/
 theorem _root_.Polynomial.mul_add_mul_eq_zero_of_coeff_window {S : Type*} [CommSemiring S]
     [NoZeroDivisors S] {p q A B g : S[X]} {m n : ℕ} (hp : p ≠ 0)
-    (hm : p.natDegree = m) (hn : q.natDegree ≤ n) (hgp : g ∣ p) (hgq : g ∣ q) (hg0 : g ≠ 0)
+    (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (hgp : g ∣ p) (hgq : g ∣ q)
     (hAdeg : A.degree < (m - g.natDegree : ℕ)) (hBdeg : B.degree < (n - g.natDegree : ℕ))
     (hwin : ∀ i : Fin ((m - g.natDegree) + (n - g.natDegree)),
       (A * q + B * p).coeff (i + g.natDegree) = 0) :
     A * q + B * p = 0 := by
+  have hg0 : g ≠ 0 := ne_zero_of_dvd_ne_zero hp hgp
   set d := g.natDegree with hd
-  have hdm : d ≤ m := hm ▸ natDegree_le_of_dvd hgp hp
+  have hdm : d ≤ m := (natDegree_le_of_dvd hgp hp).trans hm
   have hsumdeg : (A * q + B * p).degree < ((m - d) + (n - d) + d : ℕ) := by
     rcases eq_or_ne q 0 with rfl | hq0
     · rw [mul_zero, zero_add]
-      exact (degree_mul_lt_of_degree_lt_of_natDegree_le hBdeg hm.le).trans_le
+      exact (degree_mul_lt_of_degree_lt_of_natDegree_le hBdeg hm).trans_le
         (WithBot.coe_le_coe.mpr (by omega : n - d + m ≤ m - d + (n - d) + d))
-    · exact degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le hm.le hn hdm
+    · exact degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le hm hn hdm
         ((natDegree_le_of_dvd hgq hq0).trans hn) hAdeg hBdeg
   have hdeg : (A * q + B * p).degree < d := by
     rw [degree_lt_iff_coeff_zero]
