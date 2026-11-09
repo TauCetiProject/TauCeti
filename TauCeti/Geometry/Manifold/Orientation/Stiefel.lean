@@ -47,8 +47,6 @@ Proposition 6.17 are compared.
   nonzero top form on `Fin 2 → E` with the normals `(u, 0)`, `(v, u)`, `(0, v)`.
 * `TauCeti.orientation_eq_orientationAt_stiefelTwoOrientation_iff`: a tangent basis is positive
   exactly when the contraction is positive on it.
-* `TauCeti.stiefelTwoReflection`: the frame reflection `(u, v) ↦ (u, -v)`, smooth by
-  `TauCeti.contMDiff_stiefelTwoReflection`.
 * `TauCeti.isOrientationPreservingAt_stiefelTwoReflection`,
   `TauCeti.isOrientationReversingAt_stiefelTwoReflection`: it preserves the orientation in odd
   dimension and reverses it in even dimension.
@@ -75,15 +73,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-- The model space of the Stiefel manifold of orthonormal two-frames of `E`. -/
 local notation "𝓢" => 𝓘(ℝ, Fin (2 * finrank ℝ E - Nat.choose (2 + 1) 2) → ℝ)
-
-omit [FiniteDimensional ℝ E] in
-/-- The Stiefel manifold of orthonormal two-frames of a space of dimension `m + 2` has dimension
-`2 m + 1`. -/
-theorem finrank_stiefelTwoModel :
-    finrank ℝ (Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) = 2 * m + 1 := by
-  rw [Module.finrank_fin_fun, (Fact.out : finrank ℝ E = m + 1 + 1)]
-  simp only [Nat.choose, Nat.reduceAdd]
-  omega
 
 /-- The contraction `w ↦ Ω((w₀, 0), (w₁, w₀), (0, w₁), ·)` of a top form on `Fin 2 → E` with the
 three normals of the Stiefel manifold. -/
@@ -124,6 +113,31 @@ private theorem isSmoothForm_stiefelTopForm
   (isSmoothForm_modelSpace_iff.2 (contDiff_zero.2 (continuous_stiefelNormalForm Ω))).mpullback
     (contMDiff_coe_stiefel E 2)
 
+/-- Three vectors whose images under a linear map `D` are linearly independent, followed by a
+linearly independent family in the kernel of `D`, are linearly independent. It is stated for an
+arbitrary length `k`, so that the nested `Fin.cons` indices are not normalized. -/
+private theorem linearIndependent_cons_cons_cons_of_map {R M N : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] (D : M →ₗ[R] N) {k : ℕ} {v : Fin k → M}
+    (hv : LinearIndependent R v) (hDv : ∀ i, D (v i) = 0) {x y z : M}
+    (hxyz : LinearIndependent R ![D x, D y, D z]) :
+    LinearIndependent R (Fin.cons x (Fin.cons y (Fin.cons z v)) : Fin (k + 1 + 1 + 1) → M) := by
+  rw [Fintype.linearIndependent_iff] at hxyz ⊢
+  intro g hg
+  simp only [Fin.sum_univ_succ, Fin.cons_zero, Fin.cons_succ] at hg
+  have hD := congrArg D hg
+  simp only [map_add, map_smul, map_sum, hDv, smul_zero, Finset.sum_const_zero, add_zero,
+    map_zero] at hD
+  have h3 := hxyz ![g 0, g (Fin.succ 0), g (Fin.succ (Fin.succ 0))] (by
+    simpa [Fin.sum_univ_three, add_assoc] using hD)
+  have hg0 : g 0 = 0 := h3 0
+  have hg1 : g (Fin.succ 0) = 0 := h3 1
+  have hg2 : g (Fin.succ (Fin.succ 0)) = 0 := h3 2
+  rw [hg0, hg1, hg2] at hg
+  simp only [zero_smul, zero_add] at hg
+  have hrest := (Fintype.linearIndependent_iff.1 hv) _ hg
+  intro i
+  exact Fin.cases hg0 (fun i ↦ Fin.cases hg1 (fun i ↦ Fin.cases hg2 (fun i ↦ hrest i) i) i) i
+
 omit [Fact (finrank ℝ E = m + 1 + 1)] in
 /-- **The normals and a tangent frame span `Fin 2 → E`.** At a frame `w = (u, v)`, the normals
 `(u, 0)`, `(v, u)`, `(0, v)` followed by the image of a tangent basis of the Stiefel manifold are
@@ -134,38 +148,13 @@ theorem linearIndependent_stiefelTwo_normal_cons (w : stiefel E 2)
     LinearIndependent ℝ (Fin.cons ![w.1 0, 0] (Fin.cons ![w.1 1, w.1 0] (Fin.cons ![0, w.1 1]
       fun i ↦ mfderiv 𝓢 𝓘(ℝ, Fin 2 → E) ((↑) : stiefel E 2 → Fin 2 → E) w (b i))) :
         Fin (2 * m + 1 + 1 + 1 + 1) → Fin 2 → E) := by
-  -- Three vectors whose images under a linear map `D` are linearly independent, followed by a
-  -- linearly independent family in the kernel of `D`, are linearly independent. It is stated for
-  -- an arbitrary length `k`, so that the nested `Fin.cons` indices are not normalized.
-  have key : ∀ (D : (Fin 2 → E) →ₗ[ℝ] Sym2 (Fin 2) → ℝ) {k : ℕ} {v : Fin k → Fin 2 → E},
-      LinearIndependent ℝ v → (∀ i, D (v i) = 0) →
-      ∀ {x y z : Fin 2 → E}, LinearIndependent ℝ ![D x, D y, D z] →
-        LinearIndependent ℝ
-          (Fin.cons x (Fin.cons y (Fin.cons z v)) : Fin (k + 1 + 1 + 1) → Fin 2 → E) := by
-    intro D k v hv hDv x y z hxyz
-    rw [Fintype.linearIndependent_iff] at hxyz ⊢
-    intro g hg
-    simp only [Fin.sum_univ_succ, Fin.cons_zero, Fin.cons_succ] at hg
-    have hD := congrArg D hg
-    simp only [map_add, map_smul, map_sum, hDv, smul_zero, Finset.sum_const_zero, add_zero,
-      map_zero] at hD
-    have h3 := hxyz ![g 0, g (Fin.succ 0), g (Fin.succ (Fin.succ 0))] (by
-      simpa [Fin.sum_univ_three, add_assoc] using hD)
-    have hg0 : g 0 = 0 := h3 0
-    have hg1 : g (Fin.succ 0) = 0 := h3 1
-    have hg2 : g (Fin.succ (Fin.succ 0)) = 0 := h3 2
-    rw [hg0, hg1, hg2] at hg
-    simp only [zero_smul, zero_add] at hg
-    have hrest := (Fintype.linearIndependent_iff.1 hv) _ hg
-    intro i
-    exact Fin.cases hg0 (fun i ↦ Fin.cases hg1 (fun i ↦ Fin.cases hg2 (fun i ↦ hrest i) i) i) i
   obtain ⟨hu, hv, huv⟩ := mem_stiefel_two_iff.1 w.2
   set ι := mfderiv 𝓢 𝓘(ℝ, Fin 2 → E) ((↑) : stiefel E 2 → Fin 2 → E) w
   have hker (t : TangentSpace 𝓢 w) : gramSym2Deriv E 2 w.1 (ι t) = 0 := by
     have h : ι t ∈ LinearMap.range ι.toLinearMap := ⟨t, rfl⟩
     rwa [range_mfderiv_coe_stiefel] at h
   have hvu : ⟪w.1 1, w.1 0⟫ = 0 := by rw [real_inner_comm, huv]
-  refine key (gramSym2Deriv E 2 w.1).toLinearMap
+  refine linearIndependent_cons_cons_cons_of_map (gramSym2Deriv E 2 w.1).toLinearMap
     ((b.linearIndependent.map' _ (LinearMap.ker_eq_bot.2 (injective_mfderiv_coe_stiefel w))))
     (fun i ↦ hker (b i)) ?_
   -- The images of the normals take the values `2, 0, 0`, `0, 2, 0` and `0, 0, 2` at the pairs
@@ -235,36 +224,6 @@ private theorem det_frameFlip :
   rw [h, LinearMap.det_pi, Fin.prod_univ_two]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, LinearMap.det_id, one_mul]
   rw [← neg_one_smul ℝ (LinearMap.id : E →ₗ[ℝ] E), LinearMap.det_smul, LinearMap.det_id, mul_one]
-
-/-- The **frame reflection** `(u, v) ↦ (u, -v)` of the Stiefel manifold of orthonormal
-two-frames. -/
-def stiefelTwoReflection (w : stiefel E 2) : stiefel E 2 :=
-  ⟨![w.1 0, -w.1 1], by
-    obtain ⟨hu, hv, huv⟩ := mem_stiefel_two_iff.1 w.2
-    exact mem_stiefel_two_iff.2 ⟨by simpa using hu, by simpa using hv, by simpa using huv⟩⟩
-
-omit [FiniteDimensional ℝ E] [Fact (finrank ℝ E = m + 1 + 1)] in
-@[simp]
-theorem coe_stiefelTwoReflection (w : stiefel E 2) :
-    (stiefelTwoReflection w : Fin 2 → E) = ![w.1 0, -w.1 1] :=
-  (rfl)
-
-omit [FiniteDimensional ℝ E] [Fact (finrank ℝ E = m + 1 + 1)] in
-/-- The frame reflection is an involution. -/
-@[simp]
-theorem stiefelTwoReflection_stiefelTwoReflection (w : stiefel E 2) :
-    stiefelTwoReflection (stiefelTwoReflection w) = w := by
-  refine Subtype.ext (funext fun i ↦ ?_)
-  fin_cases i <;> simp
-
-/-- The frame reflection is smooth. -/
-theorem contMDiff_stiefelTwoReflection {r : ℕ∞ω} :
-    ContMDiff 𝓢 𝓢 r (stiefelTwoReflection (E := E)) := by
-  have h : ContMDiff 𝓢 𝓘(ℝ, Fin 2 → E) r fun w : stiefel E 2 ↦ frameFlip (w : Fin 2 → E) :=
-    frameFlip.contMDiff.comp (contMDiff_coe_stiefel E 2)
-  convert ContMDiff.codRestrict_stiefel h fun w ↦ (frameFlip_apply (w : Fin 2 → E)).symm ▸
-    (stiefelTwoReflection w).2 using 2 with w
-  exact Subtype.ext (frameFlip_apply _).symm
 
 /-- The derivative of the frame reflection, read in `Fin 2 → E`, is `(a, b) ↦ (a, -b)`. -/
 private theorem mfderiv_coe_mfderiv_stiefelTwoReflection (w : stiefel E 2)

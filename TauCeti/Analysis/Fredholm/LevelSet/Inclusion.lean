@@ -81,9 +81,7 @@ theorem range_mfderiv_coe_levelSet (z : ↥{x | f x = c}) :
     K.symm.toLinearEquiv.range).trans (D z.1).ker.range_subtype
 
 /-- **Maps into a regular level set.** A `C^m` map into `E` with values in the level set is a
-`C^m` map into the level set. Each preferred chart is an affine map of `E` restricted to the level
-set (`TauCeti.levelSetChartAt_apply`), so in charts the map is that affine map composed with the
-given map. -/
+`C^m` map into the level set. -/
 theorem _root_.ContMDiff.codRestrict_levelSet {E' H M : Type*} [NormedAddCommGroup E']
     [NormedSpace 𝕜 E'] [TopologicalSpace H] {I : ModelWithCorners 𝕜 E' H} [TopologicalSpace M]
     [ChartedSpace H M] {m : ℕ∞ω} {g : M → E} (hg : ContMDiff I 𝓘(𝕜, E) m g)
@@ -91,6 +89,8 @@ theorem _root_.ContMDiff.codRestrict_levelSet {E' H M : Type*} [NormedAddCommGro
     letI := levelSetChartedSpace hf hFred hsurj hindex
     ContMDiff I 𝓘(𝕜, Fin n → 𝕜) m (fun x ↦ (⟨g x, hgc x⟩ : ↥{x | f x = c})) := by
   let _ := levelSetChartedSpace hf hFred hsurj hindex
+  -- Each preferred chart is an affine map of `E` restricted to the level set
+  -- (`TauCeti.levelSetChartAt_apply`), so in charts the map is that affine map composed with `g`.
   intro x
   rw [contMDiffAt_iff_target]
   refine ⟨(hg.continuous.subtype_mk _).continuousAt, ?_⟩

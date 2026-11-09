@@ -60,6 +60,11 @@ manifold structure.
   the Stiefel manifold.
 * `TauCeti.range_mfderiv_coe_stiefel`: the tangent space of the Stiefel manifold at `v`, as the
   range of the differential of the inclusion, is the kernel of the derivative of the Gram map.
+* `TauCeti.finrank_stiefelTwoModel`: the manifold of orthonormal two-frames of a space of
+  dimension `m + 2` has dimension `2 m + 1`.
+* `TauCeti.stiefelTwoReflection`: the frame reflection `(u, v) ↦ (u, -v)`, an involution
+  (`TauCeti.stiefelTwoReflection_stiefelTwoReflection`), smooth by
+  `TauCeti.contMDiff_stiefelTwoReflection`.
 
 ## References
 
@@ -316,6 +321,51 @@ theorem mem_stiefel_two_iff_mem_range_mvfderiv {n : ℕ}
   rw [mem_stiefel_two_iff, range_mvfderiv_subtypeVal,
     Submodule.mem_orthogonal_singleton_iff_inner_right]
   simp [norm_eq_of_mem_sphere x, and_comm]
+
+/-! ### Orthonormal two-frames -/
+
+variable {E}
+
+/-- The Stiefel manifold of orthonormal two-frames of a space of dimension `m + 2` has dimension
+`2 m + 1`. -/
+theorem finrank_stiefelTwoModel {m : ℕ} [Fact (finrank ℝ E = m + 1 + 1)] :
+    finrank ℝ (Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) = 2 * m + 1 := by
+  rw [Module.finrank_fin_fun, (Fact.out : finrank ℝ E = m + 1 + 1)]
+  simp only [Nat.choose, Nat.reduceAdd]
+  omega
+
+/-- The **frame reflection** `(u, v) ↦ (u, -v)` of the Stiefel manifold of orthonormal
+two-frames. -/
+def stiefelTwoReflection (w : stiefel E 2) : stiefel E 2 :=
+  ⟨![w.1 0, -w.1 1], by
+    obtain ⟨hu, hv, huv⟩ := mem_stiefel_two_iff.1 w.2
+    exact mem_stiefel_two_iff.2 ⟨by simpa using hu, by simpa using hv, by simpa using huv⟩⟩
+
+@[simp]
+theorem coe_stiefelTwoReflection (w : stiefel E 2) :
+    (stiefelTwoReflection w : Fin 2 → E) = ![w.1 0, -w.1 1] :=
+  (rfl)
+
+/-- The frame reflection is an involution. -/
+@[simp]
+theorem stiefelTwoReflection_stiefelTwoReflection (w : stiefel E 2) :
+    stiefelTwoReflection (stiefelTwoReflection w) = w := by
+  refine Subtype.ext (funext fun i ↦ ?_)
+  fin_cases i <;> simp
+
+/-- The frame reflection is smooth. -/
+theorem contMDiff_stiefelTwoReflection [FiniteDimensional ℝ E] {r : ℕ∞ω} :
+    ContMDiff 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ)
+      𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) r (stiefelTwoReflection (E := E)) := by
+  have h (L : (Fin 2 → E) →L[ℝ] E) :
+      ContMDiff 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) 𝓘(ℝ, E) r
+        fun w : stiefel E 2 ↦ L w :=
+    L.contMDiff.comp (contMDiff_coe_stiefel E 2)
+  refine ContMDiff.codRestrict_stiefel (g := fun w : stiefel E 2 ↦ ![w.1 0, -w.1 1])
+    (contMDiff_pi_module_iff.2 fun i ↦ ?_) fun w ↦ (stiefelTwoReflection w).2
+  fin_cases i
+  · exact h (ContinuousLinearMap.proj 0)
+  · exact h (-ContinuousLinearMap.proj 1)
 
 end
 

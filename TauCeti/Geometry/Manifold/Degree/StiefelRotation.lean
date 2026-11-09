@@ -53,6 +53,8 @@ dimension `2 m + 1`.
 * `TauCeti.contMDiff_stiefelTwoRotation`: it is smooth.
 * `TauCeti.isInvertible_mfderiv_stiefelTwoRotation`: its derivative is invertible where
   `Im z ≠ 0`.
+* `TauCeti.stiefelTwoRotationInvolution`: the involution `((u, v), z) ↦ ((u, -v), conj z)`, under
+  which the map is invariant.
 * `TauCeti.stiefelTwoRotation_eq_iff`: the two preimages of a point `(u, q)` with `q ≠ ±u`.
 * `TauCeti.isRegularValue_stiefelTwoRotation`: such points are regular values.
 * `TauCeti.degreeAtRegularValue_stiefelTwoRotation`: the degree is `±(1 + (-1)ⁿ)` there.
@@ -87,13 +89,18 @@ local notation "𝓢" => 𝓘(ℝ, Fin (2 * finrank ℝ E - Nat.choose (2 + 1) 2
 
 /-! ### The rotation map -/
 
+/-- The second vector `v` of an orthonormal pair `(u, v)` with `u = p`, as a unit vector of `p^⊥`,
+the space of the rotation family of the sphere at `p`. -/
+private def stiefelTwoSnd (p : sphere (0 : E) 1) (w : stiefel E 2) (hw : w.1 0 = p) :
+    sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 :=
+  ⟨⟨w.1 1, Submodule.mem_orthogonal_singleton_iff_inner_right.2
+      (hw ▸ (mem_stiefel_two_iff.1 w.2).2.2)⟩,
+    mem_sphere_zero_iff_norm.2 (mem_stiefel_two_iff.1 w.2).2.1⟩
+
 omit [FiniteDimensional ℝ E] [Fact (finrank ℝ E = m + 1 + 1)] in
-private theorem norm_re_smul_add_im_smul (w : stiefel E 2) (z : sphere (0 : ℂ) 1) :
-    ‖(z : ℂ).re • w.1 0 + (z : ℂ).im • w.1 1‖ = 1 := by
-  obtain ⟨hu, hv, huv⟩ := mem_stiefel_two_iff.1 w.2
-  rw [← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero]
-  simp [norm_add_sq_real, norm_smul, real_inner_smul_left, real_inner_smul_right, huv, hu, hv]
-  linarith [Complex.re_sq_add_im_sq_of_mem_sphere z.2]
+private theorem coe_stiefelTwoSnd (p : sphere (0 : E) 1) (w : stiefel E 2) (hw : w.1 0 = p) :
+    ((stiefelTwoSnd p w hw : (ℝ ∙ (p : E))ᗮ) : E) = w.1 1 :=
+  rfl
 
 /-- The **Stiefel rotation map** `T¹Sⁿ⁻¹ × S¹ → Sⁿ⁻¹ × Sⁿ⁻¹`: an orthonormal pair `(u, v)`, a
 point `u` of the unit sphere with a unit tangent vector `v` at it, and a point `z` of the unit
@@ -101,8 +108,8 @@ circle of `ℂ` are sent to `u` and to `Re z • u + Im z • v`, the point reac
 towards `v` by the angle of `z`. -/
 def stiefelTwoRotation (x : stiefel E 2 × sphere (0 : ℂ) 1) :
     sphere (0 : E) 1 × sphere (0 : E) 1 :=
-  (stiefelProj E 2 0 x.1, ⟨(x.2 : ℂ).re • x.1.1 0 + (x.2 : ℂ).im • x.1.1 1,
-    mem_sphere_zero_iff_norm.2 (norm_re_smul_add_im_smul x.1 x.2)⟩)
+  (stiefelProj E 2 0 x.1, sphereRotationFamily (stiefelProj E 2 0 x.1)
+    (stiefelTwoSnd _ x.1 (coe_stiefelProj 0 x.1).symm, x.2))
 
 omit [FiniteDimensional ℝ E] [Fact (finrank ℝ E = m + 1 + 1)] in
 @[simp]
@@ -113,8 +120,8 @@ theorem coe_fst_stiefelTwoRotation (x : stiefel E 2 × sphere (0 : ℂ) 1) :
 omit [FiniteDimensional ℝ E] [Fact (finrank ℝ E = m + 1 + 1)] in
 @[simp]
 theorem coe_snd_stiefelTwoRotation (x : stiefel E 2 × sphere (0 : ℂ) 1) :
-    ((stiefelTwoRotation x).2 : E) = (x.2 : ℂ).re • x.1.1 0 + (x.2 : ℂ).im • x.1.1 1 :=
-  (rfl)
+    ((stiefelTwoRotation x).2 : E) = (x.2 : ℂ).re • x.1.1 0 + (x.2 : ℂ).im • x.1.1 1 := by
+  simp [stiefelTwoRotation, coe_stiefelTwoSnd]
 
 /-- The smooth map `((u, v), z) ↦ (u, v)`, read in `Fin 2 → E`. -/
 private theorem contMDiff_coe_fst {r : ℕ∞ω} :
@@ -132,11 +139,15 @@ theorem contMDiff_stiefelTwoRotation {r : ℕ∞ω} :
   have hv (i : Fin 2) : ContMDiff ((𝓢).prod (𝓡 1)) 𝓘(ℝ, E) r
       fun x : stiefel E 2 × sphere (0 : ℂ) 1 ↦ (x.1 : Fin 2 → E) i :=
     (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ E) i).contMDiff.comp contMDiff_coe_fst
-  exact ((contMDiff_stiefelProj E 2 0).comp contMDiff_fst).prodMk
-    (ContMDiff.codRestrict_sphere
+  have h₂ : ContMDiff ((𝓢).prod (𝓡 1)) (𝓡 (m + 1)) r
+      fun x : stiefel E 2 × sphere (0 : ℂ) 1 ↦ (stiefelTwoRotation x).2 := by
+    convert ContMDiff.codRestrict_sphere
       (((Complex.reCLM.contMDiff.comp hz).smul (hv 0)).add
         ((Complex.imCLM.contMDiff.comp hz).smul (hv 1)))
-      fun x ↦ (stiefelTwoRotation x).2.2)
+      fun x ↦ show (x.2 : ℂ).re • x.1.1 0 + (x.2 : ℂ).im • x.1.1 1 ∈ sphere (0 : E) 1 from
+        coe_snd_stiefelTwoRotation x ▸ (stiefelTwoRotation x).2.2 using 1
+    exact funext fun x ↦ Subtype.ext (coe_snd_stiefelTwoRotation x)
+  exact ((contMDiff_stiefelProj E 2 0).comp contMDiff_fst).prodMk h₂
 
 /-! ### The derivative -/
 
@@ -200,7 +211,8 @@ theorem mvfderiv_coe_snd_stiefelTwoRotation_apply (x : stiefel E 2 × sphere (0 
       (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ Complex.reCLM (y.2 : ℂ)) •
           (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ (y.1 : Fin 2 → E) 0) +
         (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ Complex.imCLM (y.2 : ℂ)) •
-          (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ (y.1 : Fin 2 → E) 1) := rfl
+          (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ (y.1 : Fin 2 → E) 1) :=
+    funext coe_snd_stiefelTwoRotation
   rw [hf, mvfderiv_add ((hL _).smul (hv 0)) ((hL _).smul (hv 1)),
     mvfderiv_smul (hL _) (hv 0), mvfderiv_smul (hL _) (hv 1)]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply]
@@ -209,10 +221,7 @@ theorem mvfderiv_coe_snd_stiefelTwoRotation_apply (x : stiefel E 2 × sphere (0 
   abel
 
 /-- At a point `((u, v), z)` with `Im z ≠ 0`, the derivative of the Stiefel rotation map is
-invertible. If a tangent vector `(t, c)` is sent to zero, the first component gives `a = 0`, where
-`(a, b)` is `t` read in `Fin 2 → E`. Then `b` is orthogonal to `u` and `v`, as `t` is tangent to
-the Stiefel manifold, and pairing the second component with `u` and `v` kills `c`, so that
-`Im z • b = 0`. -/
+invertible. -/
 theorem isInvertible_mfderiv_stiefelTwoRotation {x : stiefel E 2 × sphere (0 : ℂ) 1}
     (hx : (x.2 : ℂ).im ≠ 0) :
     (mfderiv ((𝓢).prod (𝓡 1)) ((𝓡 (m + 1)).prod (𝓡 (m + 1))) stiefelTwoRotation
@@ -231,6 +240,10 @@ theorem isInvertible_mfderiv_stiefelTwoRotation {x : stiefel E 2 × sphere (0 : 
     ring
   have hinj : Function.Injective
       (mfderiv ((𝓢).prod (𝓡 1)) ((𝓡 (m + 1)).prod (𝓡 (m + 1))) stiefelTwoRotation x) := by
+    -- If a tangent vector `(t, c)` is sent to zero, the first component gives `a = 0`, where
+    -- `(a, b)` is `t` read in `Fin 2 → E`. Then `b` is orthogonal to `u` and `v`, as `t` is
+    -- tangent to the Stiefel manifold, and pairing the second component with `u` and `v` kills
+    -- `c`, so that `Im z • b = 0`.
     rw [injective_iff_map_eq_zero]
     intro p hp
     obtain ⟨hu, hv, huv⟩ := mem_stiefel_two_iff.1 x.1.2
@@ -304,6 +317,26 @@ def stiefelTwoRotationInvolution (x : stiefel E 2 × sphere (0 : ℂ) 1) :
 
 omit [FiniteDimensional ℝ E] [Fact (finrank ℝ E = m + 1 + 1)] in
 @[simp]
+theorem fst_stiefelTwoRotationInvolution (x : stiefel E 2 × sphere (0 : ℂ) 1) :
+    (stiefelTwoRotationInvolution x).1 = stiefelTwoReflection x.1 :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] [Fact (finrank ℝ E = m + 1 + 1)] in
+@[simp]
+theorem coe_snd_stiefelTwoRotationInvolution (x : stiefel E 2 × sphere (0 : ℂ) 1) :
+    ((stiefelTwoRotationInvolution x).2 : ℂ) = (starRingEnd ℂ) (x.2 : ℂ) :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] [Fact (finrank ℝ E = m + 1 + 1)] in
+/-- The map `((u, v), z) ↦ ((u, -v), conj z)` is an involution. -/
+@[simp]
+theorem stiefelTwoRotationInvolution_stiefelTwoRotationInvolution
+    (x : stiefel E 2 × sphere (0 : ℂ) 1) :
+    stiefelTwoRotationInvolution (stiefelTwoRotationInvolution x) = x :=
+  Prod.ext (stiefelTwoReflection_stiefelTwoReflection x.1) (Subtype.ext (by simp))
+
+omit [FiniteDimensional ℝ E] [Fact (finrank ℝ E = m + 1 + 1)] in
+@[simp]
 theorem stiefelTwoRotation_stiefelTwoRotationInvolution (x : stiefel E 2 × sphere (0 : ℂ) 1) :
     stiefelTwoRotation (stiefelTwoRotationInvolution x) = stiefelTwoRotation x := by
   refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)
@@ -317,53 +350,30 @@ theorem stiefelTwoRotation_eq_iff {x y : stiefel E 2 × sphere (0 : ℂ) 1}
     (hx : (x.2 : ℂ).im ≠ 0) :
     stiefelTwoRotation y = stiefelTwoRotation x ↔ y = x ∨ y = stiefelTwoRotationInvolution x := by
   refine ⟨fun h ↦ ?_, ?_⟩
-  · obtain ⟨hu, hv, huv⟩ := mem_stiefel_two_iff.1 x.1.2
-    obtain ⟨hu', hv', huv'⟩ := mem_stiefel_two_iff.1 y.1.2
+  · set p := stiefelProj E 2 0 x.1
+    have hp : x.1.1 0 = (p : E) := (coe_stiefelProj 0 x.1).symm
     have h₁ : y.1.1 0 = x.1.1 0 := by
       simpa using congrArg (fun q : sphere (0 : E) 1 × sphere (0 : E) 1 ↦ (q.1 : E)) h
-    have h₂ : (y.2 : ℂ).re • y.1.1 0 + (y.2 : ℂ).im • y.1.1 1 =
-        (x.2 : ℂ).re • x.1.1 0 + (x.2 : ℂ).im • x.1.1 1 := by
-      simpa using congrArg (fun q : sphere (0 : E) 1 × sphere (0 : E) 1 ↦ (q.2 : E)) h
-    rw [h₁] at h₂ huv'
-    have hu2 : ⟪x.1.1 0, x.1.1 0⟫ = 1 := by rw [real_inner_self_eq_norm_sq, hu, one_pow]
-    have hu0 : x.1.1 0 ≠ 0 := fun h0 ↦ by simp [h0] at hu
-    -- Pairing with `u` identifies the real parts.
-    have hre : (y.2 : ℂ).re = (x.2 : ℂ).re := by
-      have := congrArg (fun e ↦ ⟪x.1.1 0, e⟫) h₂
-      simpa [inner_add_right, inner_smul_right, hu2, huv, huv', hu0] using this
-    rw [hre, add_right_inj] at h₂
-    -- The imaginary parts agree up to sign, by the norms of the unit vectors `v` and `v'`.
-    have him : (y.2 : ℂ).im ^ 2 = (x.2 : ℂ).im ^ 2 := by
-      have := congrArg (fun e ↦ ‖e‖ ^ 2) h₂
-      simpa [norm_smul, hv, hv', mul_pow] using this
-    rcases sq_eq_sq_iff_eq_or_eq_neg.1 him with him | him
-    · refine .inl (Prod.ext (Subtype.ext (funext fun i ↦ ?_)) (Subtype.ext (Complex.ext hre him)))
+    -- Both points lie in the domain of the rotation family of the sphere at `u`.
+    have h₂ : sphereRotationFamily p (stiefelTwoSnd p y.1 (h₁.trans hp), y.2) =
+        sphereRotationFamily p (stiefelTwoSnd p x.1 hp, x.2) := by
+      have h' := congrArg (fun q : sphere (0 : E) 1 × sphere (0 : E) 1 ↦ (q.2 : E)) h
+      simp only [coe_snd_stiefelTwoRotation, h₁] at h'
+      refine Subtype.ext ?_
+      simpa only [coe_sphereRotationFamily, coe_stiefelTwoSnd, ← hp] using h'
+    rcases (sphereRotationFamily_eq_sphereRotationFamily_iff p hx).1 h₂ with h₃ | ⟨hv, hz⟩
+    · have hv : y.1.1 1 = x.1.1 1 := congrArg (fun q ↦ ((q.1 : (ℝ ∙ (p : E))ᗮ) : E)) h₃
+      refine .inl (Prod.ext (Subtype.ext (funext fun i ↦ ?_)) (Prod.mk.inj h₃).2)
       fin_cases i
-      · exact h₁
-      · simpa [him, hx] using h₂
-    · refine .inr (Prod.ext (Subtype.ext (funext fun i ↦ ?_))
-        (Subtype.ext (Complex.ext (by simpa [stiefelTwoRotationInvolution] using hre)
-          (by simpa [stiefelTwoRotationInvolution] using him))))
+      exacts [h₁, hv]
+    · refine .inr (Prod.ext (Subtype.ext (funext fun i ↦ ?_)) (Subtype.ext (by simpa using hz)))
+      rw [coe_stiefelTwoSnd, coe_stiefelTwoSnd] at hv
       fin_cases i
-      · simpa [stiefelTwoRotationInvolution] using h₁
-      · rw [him, neg_smul, ← smul_neg] at h₂
-        simpa [stiefelTwoRotationInvolution] using
-          neg_eq_iff_eq_neg.1 (smul_right_injective E hx h₂)
+      · simpa using h₁
+      · simpa using hv
   · rintro (rfl | rfl)
     · rfl
     · exact stiefelTwoRotation_stiefelTwoRotationInvolution x
-
-omit [FiniteDimensional ℝ E] [Fact (finrank ℝ E = m + 1 + 1)] in
-/-- A point of `T¹Sⁿ⁻¹ × S¹` with `Im z = 0` is sent to `(u, u)` or `(u, -u)`. -/
-private theorem stiefelTwoRotation_snd_eq_or_eq_neg_of_im_eq_zero
-    {x : stiefel E 2 × sphere (0 : ℂ) 1} (hx : (x.2 : ℂ).im = 0) :
-    (stiefelTwoRotation x).2 = (stiefelTwoRotation x).1 ∨
-      (stiefelTwoRotation x).2 = -(stiefelTwoRotation x).1 := by
-  have hre : (x.2 : ℂ).re ^ 2 = 1 ^ 2 := by
-    linarith [sq_eq_zero_iff.2 hx, Complex.re_sq_add_im_sq_of_mem_sphere x.2.2]
-  rcases sq_eq_sq_iff_eq_or_eq_neg.1 hre with h | h
-  · exact .inl (Subtype.ext (by simp [h, hx]))
-  · exact .inr (Subtype.ext (by simp [h, hx]))
 
 omit [FiniteDimensional ℝ E] in
 /-- Every point `(u, q)` of `Sⁿ⁻¹ × Sⁿ⁻¹` with `q ≠ ±u` is the image of a point with `Im z > 0`. -/
@@ -388,8 +398,11 @@ theorem isRegularValue_stiefelTwoRotation {y : sphere (0 : E) 1 × sphere (0 : E
     IsRegularValue ((𝓢).prod (𝓡 1)) ((𝓡 (m + 1)).prod (𝓡 (m + 1))) stiefelTwoRotation y := by
   rw [isRegularValue_iff]
   rintro x rfl
+  -- The second component is the rotation family of the sphere at `u`, which sends the points
+  -- with `Im z = 0` to `±u`.
   have him : (x.2 : ℂ).im ≠ 0 := fun h0 ↦
-    (stiefelTwoRotation_snd_eq_or_eq_neg_of_im_eq_zero h0).elim hy hy'
+    (sphereRotationFamily_eq_or_eq_neg_of_im_eq_zero (stiefelProj E 2 0 x.1)
+      (x := (stiefelTwoSnd _ x.1 (coe_stiefelProj 0 x.1).symm, x.2)) h0).elim hy hy'
   rw [isRegularPoint_iff]
   exact (isInvertible_mfderiv_stiefelTwoRotation him).surjective
 
