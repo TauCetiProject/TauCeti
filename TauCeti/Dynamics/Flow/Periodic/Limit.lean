@@ -33,7 +33,8 @@ which turn such a family of periodic orbits into a periodic orbit through `x₀`
   locally path-connected and semilocally simply connected (`Flow.exists_nullhomotopic_of_tendsto`),
   as for instance every manifold and every open subset of one is. Taking for `j` the identity gives
   null-homotopy in `X`; taking for `X` an invariant open subset of a space and for `j` its inclusion
-  into a larger subset `Y` gives null-homotopy in `Y`, although the flow need not preserve `Y`.
+  into a larger subset `Y` gives null-homotopy in `Y`, although the flow need not preserve `Y`
+  (`Flow.exists_nullhomotopic_of_tendsto_of_isInvariant`).
 
 For the last statement, the limit loop lies in a tube: a chain of open sets along a partition of
 the loop, in which any two paths with common ends are homotopic. Tubes are open in the
@@ -53,6 +54,8 @@ the Hofer–Zehnder–Struwe almost existence theorem.
   rest points.
 * `Flow.exists_nullhomotopic_of_tendsto`: limits of periodic orbits of positive limit period that
   are contractible after a continuous map are contractible after that map.
+* `Flow.exists_nullhomotopic_of_tendsto_of_isInvariant`: limits of periodic orbits in an invariant
+  open set `U ⊆ W` that are contractible in `W` are contractible in `W`.
 
 ## References
 
@@ -206,5 +209,34 @@ theorem exists_nullhomotopic_of_tendsto [LocallyPathConnectedSpace X]
   rw [Path.map_trans, Path.map_trans] at key
   exact Path.Homotopic.trans_right_cancel <| key.trans <|
     (Path.Homotopic.trans_right_of_nullhomotopic hγ).trans (Path.Homotopic.refl_trans _).symm
+
+/-- **Limits of periodic orbits contractible in a subset.** Let `X` be strongly locally
+contractible, as every manifold is, and let `U ⊆ W` be an open set invariant under `ϕ`. Suppose that
+`xᵢ → x₀` and `Tᵢ → T₀ > 0` along a nontrivial filter, with `x₀ ∈ U` returning to itself at time
+`T₀` and eventually `xᵢ ∈ U` returning to itself at time `Tᵢ`, and that eventually the loop
+`t ↦ ϕ t xᵢ` lifts to a null-homotopic map `ℝ/Tᵢℤ → W`. Then the loop `t ↦ ϕ t x₀` lifts to a
+null-homotopic map `ℝ/T₀ℤ → W`. The flow need not preserve `W`: the statement applies
+`exists_nullhomotopic_of_tendsto` to the flow restricted to `U` and to the inclusion of `U`
+into `W`. -/
+theorem exists_nullhomotopic_of_tendsto_of_isInvariant [StronglyLocallyContractibleSpace X]
+    [l.NeBot] {U W : Set X} (hU : IsOpen U) (hinv : IsInvariant ϕ U) (hUW : U ⊆ W)
+    (hxU : ∀ᶠ i in l, x i ∈ U) (hx₀ : x₀ ∈ U) (hx : Tendsto x l (𝓝 x₀))
+    (hT : Tendsto T l (𝓝 T₀)) (hT₀ : 0 < T₀) (h₀ : ϕ T₀ x₀ = x₀)
+    (hret : ∀ᶠ i in l, ϕ (T i) (x i) = x i)
+    (h : ∀ᶠ i in l, ∃ g : C(AddCircle (T i), W), g.Nullhomotopic ∧ ∀ t : ℝ, (g t : X) = ϕ t (x i)) :
+    ∃ g : C(AddCircle T₀, W), g.Nullhomotopic ∧ ∀ t : ℝ, (g t : X) = ϕ t x₀ := by
+  have : StronglyLocallyContractibleSpace U := hU.stronglyLocallyContractibleSpace
+  -- The base points as points of `U`, eventually equal to `xᵢ`.
+  classical
+  let y (i : ι) : U := if hi : x i ∈ U then ⟨x i, hi⟩ else ⟨x₀, hx₀⟩
+  have hy : ∀ᶠ i in l, (y i : X) = x i := hxU.mono fun i hi ↦ by simp [y, hi]
+  obtain ⟨g₀, hg₀, hg₀x⟩ := (ϕ.restrict hinv).exists_nullhomotopic_of_tendsto
+    (x := y) (x₀ := ⟨x₀, hx₀⟩) (ContinuousMap.inclusion hUW)
+    (tendsto_subtype_rng.2 (hx.congr' (hy.mono fun _ h ↦ h.symm))) hT hT₀
+    (Subtype.ext (by simpa using h₀))
+    ((hret.and hy).mono fun i hi ↦ Subtype.ext (by simpa [hi.2] using hi.1))
+    ((h.and hy).mono fun i hi ↦ hi.1.imp fun g hg ↦
+      ⟨hg.1, fun t ↦ Subtype.ext (by simpa [hi.2] using hg.2 t)⟩)
+  exact ⟨g₀, hg₀, fun t ↦ by simp [hg₀x]⟩
 
 end Flow

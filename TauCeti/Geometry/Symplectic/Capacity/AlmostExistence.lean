@@ -156,32 +156,6 @@ private theorem apply_globalFlow_eq (hσ : σ.IsNondegenerate) (hF : MDifferenti
       (mem_univ 0) (mem_univ t)
   rwa [(globalFlow v hv hcomplete).map_zero_apply] at h
 
-omit [T2Space M] in
-/-- **Limits of orbits contractible in `W`.** On a strongly locally contractible space `M`, such
-as a manifold, let a flow `ϕ` preserve the levels of a continuous `F`, with `{F < b} ⊆ W`. Let
-`xᵢ → x₀` and `Tᵢ → T₀ > 0` along a nontrivial filter, with `xᵢ` and `x₀` in `{F < b}` and
-returning to themselves at the times `Tᵢ` and `T₀`. If every loop `t ↦ ϕ t xᵢ` is contractible in
-`W`, then so is `t ↦ ϕ t x₀`. The flow need not preserve `W`; it is restricted to the invariant
-open set `{F < b}`. -/
-private theorem exists_nullhomotopic_of_tendsto_of_apply_eq [StronglyLocallyContractibleSpace M]
-    {ϕ : Flow ℝ M} (hϕF : ∀ t x, F (ϕ t x) = F x) (hFc : Continuous F) {b : ℝ}
-    (hW : {x | F x < b} ⊆ W)
-    {ι : Type*} {l : Filter ι} [l.NeBot] {x : ι → M} {T : ι → ℝ} {x₀ : M} {T₀ : ℝ}
-    (hxb : ∀ i, F (x i) < b) (hx₀b : F x₀ < b) (hx : Tendsto x l (𝓝 x₀))
-    (hT : Tendsto T l (𝓝 T₀)) (hT₀ : 0 < T₀) (h₀ : ϕ T₀ x₀ = x₀) (hret : ∀ i, ϕ (T i) (x i) = x i)
-    (h : ∀ i, ∃ g : C(AddCircle (T i), W), g.Nullhomotopic ∧ ∀ t : ℝ, (g t : M) = ϕ t (x i)) :
-    ∃ g : C(AddCircle T₀, W), g.Nullhomotopic ∧ ∀ t : ℝ, (g t : M) = ϕ t x₀ := by
-  have : StronglyLocallyContractibleSpace {x | F x < b} :=
-    (isOpen_lt hFc continuous_const).stronglyLocallyContractibleSpace
-  have hinv : IsInvariant ϕ {x | F x < b} := fun t y (hy : F y < b) ↦
-    show F (ϕ t y) < b by rwa [hϕF]
-  obtain ⟨g₀, hg₀, hg₀x⟩ := (ϕ.restrict hinv).exists_nullhomotopic_of_tendsto
-    (x := fun i ↦ ⟨x i, hxb i⟩) (x₀ := ⟨x₀, hx₀b⟩) (ContinuousMap.inclusion hW)
-    (tendsto_subtype_rng.2 hx) hT hT₀ (Subtype.ext (by simpa using h₀))
-    (.of_forall fun i ↦ Subtype.ext (by simpa using hret i))
-    (.of_forall fun i ↦ (h i).imp fun g hg ↦ ⟨hg.1, fun t ↦ Subtype.ext (by simpa using hg.2 t)⟩)
-  exact ⟨g₀, hg₀, fun t ↦ by simp [hg₀x]⟩
-
 /-- **A closed characteristic on a limiting level.** Let `F` be `C²`, `s` a regular value of `F`
 and `{F ≤ b}` compact for some `b > s`, with `{F < b} ⊆ W`. If levels of `F` arbitrarily close to
 `s` carry closed characteristics, contractible in `W`, of period at most `K`, then so does the
@@ -222,7 +196,7 @@ theorem hasContractibleClosedCharacteristicOfPeriodLE_of_frequently (hσ : σ.Is
   -- By compactness, the periods and base points converge along `u`.
   obtain ⟨⟨T₀, x₀⟩, -, hlim⟩ := (isCompact_Icc.prod hcpt).ultrafilter_le_nhds
     (u.map fun c ↦ (T c, γ c 0)) (le_principal_iff.2 (Ultrafilter.mem_map.2
-      (univ_mem' fun c ↦ ⟨⟨(hT c).le, hTK c⟩, show F (γ c 0) ≤ b from (hxU c).le⟩)))
+      (univ_mem' fun c ↦ ⟨⟨(hT c).le, hTK c⟩, (hxU c).le⟩)))
   have hTlim : Tendsto T u (𝓝 T₀) := (continuous_fst.tendsto _).comp hlim
   have hxlim : Tendsto (fun c ↦ γ c 0) u (𝓝 x₀) := (continuous_snd.tendsto _).comp hlim
   -- The limit orbit lies on the level `s`, where `v = X_F` does not vanish.
@@ -238,9 +212,13 @@ theorem hasContractibleClosedCharacteristicOfPeriodLE_of_frequently (hσ : σ.Is
   -- Contractibility in `W` passes to the limit.
   have : StronglyLocallyContractibleSpace H := I.stronglyLocallyContractibleSpace
   have : StronglyLocallyContractibleSpace M := ChartedSpace.stronglyLocallyContractibleSpace H M
-  obtain ⟨g₀, hg₀, hg₀x⟩ := exists_nullhomotopic_of_tendsto_of_apply_eq hϕF hF.continuous hW hxU
-    (hFx₀.trans_lt hsb) hxlim hTlim hT₀ hfix₀ hret
-    fun c ↦ ⟨g c, hg c, fun t ↦ (hgγ c t).trans (hϕγ c t).symm⟩
+  -- The flow preserves the open sublevel set `{F < b}`, but need not preserve `W`.
+  have hinv : IsInvariant ϕ {x | F x < b} := fun t y hy ↦ by
+    simpa only [mem_ofPred_eq, hϕF] using hy
+  obtain ⟨g₀, hg₀, hg₀x⟩ := ϕ.exists_nullhomotopic_of_tendsto_of_isInvariant
+    (isOpen_lt hF.continuous continuous_const) hinv hW (.of_forall hxU) (hFx₀.trans_lt hsb) hxlim
+    hTlim hT₀ hfix₀ (.of_forall hret)
+    (.of_forall fun c ↦ ⟨g c, hg c, fun t ↦ (hgγ c t).trans (hϕγ c t).symm⟩)
   refine hasContractibleClosedCharacteristicOfPeriodLE_iff.2 ⟨T₀, fun t ↦ ϕ t x₀, hT₀,
     le_of_tendsto hTlim (.of_forall hTK), fun t ↦ ?_, fun t ↦ ?_, ?_,
     fun t ↦ (hϕF t x₀).trans hFx₀, g₀, hg₀, hg₀x⟩
