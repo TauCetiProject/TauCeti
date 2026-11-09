@@ -46,6 +46,9 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   submodule of the functions `E → ℝ`.
 * `TemperedDistribution.exists_memSobolev_ae_eq_of_mem_realSobolevFunctions`: two real functions
   `f`, `g` in `realSobolevFunctions E s p` give a complex `H^{s,p}` function `f + i g`.
+* `TemperedDistribution.memLp_of_mem_realSobolevFunctions`,
+  `TemperedDistribution.mem_realSobolevFunctions_zero_iff`: these lie in `Lᵖ`, and at order `0`
+  they are exactly the real `Lᵖ` functions.
 * `TemperedDistribution.MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le`: for
   `1 < p < ∞`, Fourier multipliers whose symbols satisfy Mihlin's condition map `H^{s,p}` to
   `H^{s,p}`.
@@ -366,6 +369,19 @@ theorem exists_memSobolev_ae_eq_of_mem_realSobolevFunctions {s : ℝ} {f g : E �
       Lp.toTemperedDistributionCLM_apply] at e
     rw [e]
     exact ha.add (hb.smul Complex.I)
+
+/-- Every element of `realSobolevFunctions E s p` lies in `Lᵖ`, whatever the order `s`. -/
+theorem memLp_of_mem_realSobolevFunctions {s : ℝ} {f : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s p) : MemLp f p volume :=
+  let ⟨u, _, huf⟩ := hf
+  (Lp.memLp u).ae_eq huf
+
+/-- A real function lies in `realSobolevFunctions E 0 p` exactly when it lies in `Lᵖ`. -/
+@[simp]
+theorem mem_realSobolevFunctions_zero_iff {f : E → ℝ} :
+    f ∈ realSobolevFunctions E 0 p ↔ MemLp f p volume :=
+  ⟨memLp_of_mem_realSobolevFunctions,
+    fun hf ↦ ⟨hf.toLp f, memSobolev_zero_iff.2 ⟨_, rfl⟩, hf.coeFn_toLp⟩⟩
 
 /-- For `1 < p < ∞`, the real `H^{s,p}` functions decrease as the order increases. -/
 theorem realSobolevFunctions_mono (hp : 1 < p) (hp_top : p ≠ ∞) {s s' : ℝ} (h : s' ≤ s) :

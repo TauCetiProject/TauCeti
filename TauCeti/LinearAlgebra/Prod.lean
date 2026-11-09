@@ -40,6 +40,7 @@ quadratic forms with the subgroup preserving both summands.
   automorphisms, independently of the off-diagonal block.
 * `LinearEquiv.nonempty_linearEquiv_of_isUnit_snd_comp_inr`: a linear equivalence `M × P ≃ N × P`
   whose lower-right block is invertible gives `M ≃ N`.
+* `LinearMap.finrank_graph`: the graph of a linear map `M → M₂` has the dimension of `M`.
 * `TauCeti.LinearMap.lsmul_restrictScalars_prodMap`: multiplication by a scalar on a product of
   complex modules is the product map of the two multiplications.
 -/
@@ -179,6 +180,17 @@ theorem nonempty_linearEquiv_of_isUnit_snd_comp_inr (e₁ : (M × P) ≃ₗ[A] (
 end Cancellation
 
 end LinearEquiv
+
+namespace LinearMap
+
+/-- The graph of a linear map `f : M → M₂` has the dimension of `M`. -/
+theorem finrank_graph {R M M₂ : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup M₂]
+    [Module R M₂] (f : M →ₗ[R] M₂) : Module.finrank R (graph f) = Module.finrank R M := by
+  rw [graph_eq_range_prod, finrank_range_of_inj]
+  intro x y h
+  exact congr(($h).1)
+
+end LinearMap
 
 namespace Module.Basis
 
