@@ -5,24 +5,20 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
-public import Mathlib.Topology.MetricSpace.Lipschitz
 public import Mathlib.Topology.MetricSpace.Isometry
 public import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
-public import TauCeti.Topology.Order.MonotoneConvergence
 public import TauCeti.Topology.Compactness.Compact
 public import Mathlib.Order.Filter.Ultrafilter.Basic
 public import Mathlib.Tactic.Linarith
 public import Mathlib.Tactic.Push
 
 /-!
-# Busemann functions and limiting metric rays
+# Metric rays as limits of minimizing segments
 
-For a ray whose restriction to nonnegative times is an isometry, normalized distances
-converge to a 1-Lipschitz Busemann function. The convention is `busemann ray (ray t) = -t`.
-In a proper space, minimizing segments with compactly anchored initial points have a
-common ultrafilter limit on an exhausted domain. In particular a closed noncompact set
-containing minimizing radial segments contains a ray. These are metric prerequisites
-for Busemann superlevel sets in the noncompact ancient-solution analysis.
+In a proper metric space, isometric segments with compactly anchored initial points admit a
+common ultrafilter limit on an exhausted domain. A closed noncompact set that contains
+minimizing radial segments contains a ray. This supplies the metric limit construction for
+rays as limits of minimizing geodesic segments.
 
 Public formalization references:
 [lean-eval-submissions](https://github.com/frenzymath/lean-eval-submissions) and
@@ -37,91 +33,6 @@ open scoped Topology
 namespace TauCeti
 
 variable {M : Type*} [MetricSpace M]
-
-/-- The signed distance to the moving ray point, normalized by its parameter. -/
-def busemannApprox (ray : ℝ → M) (t : ℝ) (x : M) : ℝ := dist (ray t) x - t
-
-/-- The decreasing limit of the normalized distances along the ray. -/
-noncomputable def busemann (ray : ℝ → M) (x : M) : ℝ :=
-  ⨅ t : Ici (0 : ℝ), busemannApprox ray t x
-
-/-- The triangle inequality makes normalized ray distances decrease with time. -/
-theorem busemannApprox_antitone {ray : ℝ → M}
-    (hray : Isometry ((Ici (0 : ℝ)).domRestrict ray)) (x : M) :
-    AntitoneOn (fun t ↦ busemannApprox ray t x) (Ici (0 : ℝ)) := by
-  intro s hs t ht hst
-  have hd : dist (ray t) (ray s) = t - s := by
-    rw [show dist (ray t) (ray s) = |t - s| by
-      simpa only [domRestrict_apply, Subtype.dist_eq, Real.dist_eq] using
-        hray.dist_eq ⟨t, ht⟩ ⟨s, hs⟩, abs_of_nonneg (sub_nonneg.mpr hst)]
-  have h := dist_triangle (ray t) (ray s) x
-  rw [hd] at h
-  dsimp [busemannApprox]
-  linarith
-
-/-- Normalized ray distances are bounded below by minus the distance to the initial point. -/
-theorem neg_dist_le_busemannApprox {ray : ℝ → M} (hray : Isometry ((Ici (0 : ℝ)).domRestrict ray))
-    (x : M) {t : ℝ} (ht : 0 ≤ t) :
-    -dist x (ray 0) ≤ busemannApprox ray t x := by
-  have hd : dist (ray 0) (ray t) = t := by
-    simpa only [domRestrict_apply, Subtype.dist_eq, Real.dist_eq, zero_sub, abs_neg,
-      abs_of_nonneg ht] using hray.dist_eq ⟨0, le_rfl⟩ ⟨t, ht⟩
-  have h := dist_triangle (ray 0) x (ray t)
-  rw [hd, dist_comm (ray 0) x, dist_comm x (ray t)] at h
-  dsimp [busemannApprox]
-  linarith
-
-/-- The normalized distance family has an actual finite lower bound. -/
-theorem busemannApprox_bddBelow {ray : ℝ → M}
-    (hray : Isometry ((Ici (0 : ℝ)).domRestrict ray)) (x : M) :
-    BddBelow (range fun t : Ici (0 : ℝ) ↦ busemannApprox ray t x) :=
-  ⟨-dist x (ray 0), by rintro _ ⟨t, rfl⟩; exact neg_dist_le_busemannApprox hray x t.2⟩
-
-/-- The Busemann value is bounded above by every nonnegative-time approximation. -/
-theorem busemann_le_approx {ray : ℝ → M} (hray : Isometry ((Ici (0 : ℝ)).domRestrict ray))
-    (x : M) {t : ℝ} (ht : 0 ≤ t) : busemann ray x ≤ busemannApprox ray t x :=
-  ciInf_le (busemannApprox_bddBelow hray x) ⟨t, ht⟩
-
-/-- The Busemann value is bounded below by the negative distance to the ray origin. -/
-theorem neg_dist_le_busemann {ray : ℝ → M}
-    (hray : Isometry ((Ici (0 : ℝ)).domRestrict ray)) (x : M) :
-    -dist x (ray 0) ≤ busemann ray x :=
-  le_ciInf fun t ↦ neg_dist_le_busemannApprox hray x t.2
-
-/-- Normalized distances converge to the actual Busemann function. -/
-theorem tendsto_busemannApprox {ray : ℝ → M}
-    (hray : Isometry ((Ici (0 : ℝ)).domRestrict ray)) (x : M) :
-    Tendsto (fun t ↦ busemannApprox ray t x) atTop (𝓝 (busemann ray x)) :=
-  tendsto_atTop_ciInf_of_antitoneOn_Ici (busemannApprox_antitone hray x)
-    (by rw [image_eq_range]; exact busemannApprox_bddBelow hray x)
-
-/-- The actual Busemann function is 1-Lipschitz. -/
-theorem lipschitzWith_busemann {ray : ℝ → M} (hray : Isometry ((Ici (0 : ℝ)).domRestrict ray)) :
-    LipschitzWith 1 (busemann ray) := by
-  apply LipschitzWith.of_le_add
-  intro x y
-  have h : busemann ray x - dist x y ≤ busemann ray y := by
-    apply le_ciInf
-    rintro ⟨t, ht⟩
-    have h₁ := busemann_le_approx hray x ht
-    have h₂ := dist_triangle (ray t) y x
-    rw [dist_comm y x] at h₂
-    dsimp [busemannApprox] at h₁ ⊢
-    linarith
-  linarith
-
-/-- The chosen sign convention evaluates the Busemann function to minus the ray parameter. -/
-theorem busemann_apply_ray {ray : ℝ → M} (hray : Isometry ((Ici (0 : ℝ)).domRestrict ray))
-    {s : ℝ} (hs : 0 ≤ s) : busemann ray (ray s) = -s := by
-  apply le_antisymm
-  · simpa only [busemannApprox, dist_self, zero_sub] using busemann_le_approx hray (ray s) hs
-  · apply le_ciInf
-    rintro ⟨t, ht⟩
-    dsimp [busemannApprox]
-    rw [show dist (ray t) (ray s) = |t - s| by
-      simpa only [domRestrict_apply, Subtype.dist_eq, Real.dist_eq] using
-        hray.dist_eq ⟨t, ht⟩ ⟨s, hs⟩]
-    linarith [le_abs_self (t - s)]
 
 /-- A single ultrafilter constructs a minimizing limit on every exhausted window. -/
 theorem exists_isometry_restrict_hyperfilter_limit [ProperSpace M]
