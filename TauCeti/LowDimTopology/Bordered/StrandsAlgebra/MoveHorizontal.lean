@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Resolution
+import TauCeti.Data.Finset.Basic
 
 /-!
 # Moving a horizontal strand
@@ -43,6 +44,9 @@ These are the facts behind the closure of `A(Z)` under products and the differen
 * `TauCeti.StrandDiagram.Composable.moveHorizontal`,
   `TauCeti.StrandDiagram.mem_resolvableInversions_moveHorizontal`: moving preserves nonzero
   products and the terms of the differential.
+* `TauCeti.StrandDiagram.injOn_source_moveHorizontal_iff`,
+  `TauCeti.StrandDiagram.injOn_target_moveHorizontal_iff`: moving to a point with the same image
+  under a map does not change whether the map is injective on the starting or ending points.
 
 ## References
 
@@ -197,6 +201,24 @@ theorem moveHorizontal_trans (hpφ : p ∈ φ p) (hsφ : q ∉ φ.source) (htφ 
       have hkq : k ≠ q := fun h ↦ htφ (mem_target.2 ⟨i, h ▸ hk⟩)
       simp [hk, moveHorizontal_apply hpψ hsψ htψ, hkp, hkq]
 
+/-- Moving a horizontal strand to a point with the same image under `m` does not change whether
+`m` is injective on the starting points. -/
+theorem injOn_source_moveHorizontal_iff {β : Type*} {m : α → β} (hm : m p = m q) :
+    Set.InjOn m (φ.moveHorizontal p q).source ↔ Set.InjOn m φ.source := by
+  by_cases h : p ∈ φ p ∧ q ∉ φ.source ∧ q ∉ φ.target
+  · rw [source_moveHorizontal h.1 h.2.1 h.2.2,
+      Finset.injOn_insert_erase_iff (mem_source.2 ⟨p, h.1⟩) h.2.1 hm]
+  · rw [moveHorizontal_of_not h]
+
+/-- Moving a horizontal strand to a point with the same image under `m` does not change whether
+`m` is injective on the ending points. -/
+theorem injOn_target_moveHorizontal_iff {β : Type*} {m : α → β} (hm : m p = m q) :
+    Set.InjOn m (φ.moveHorizontal p q).target ↔ Set.InjOn m φ.target := by
+  by_cases h : p ∈ φ p ∧ q ∉ φ.source ∧ q ∉ φ.target
+  · rw [target_moveHorizontal h.1 h.2.1 h.2.2,
+      Finset.injOn_insert_erase_iff (mem_target.2 ⟨p, h.1⟩) h.2.2 hm]
+  · rw [moveHorizontal_of_not h]
+
 /-- Moving a horizontal strand does not change whether two other strands cross. -/
 theorem mem_inversions_moveHorizontal_iff (hp : p ∈ φ p) (hs : q ∉ φ.source)
     (ht : q ∉ φ.target) {r : α × α} (h₁ : r.1 ≠ p) (h₂ : r.2 ≠ p) (h₃ : r.1 ≠ q)
@@ -345,7 +367,7 @@ theorem mem_resolvableInversions_moveHorizontal {r : α × α} (hr : r ∈ φ.re
     (hp : p ∈ φ.resolve r p) (hs : q ∉ φ.source) (ht : q ∉ φ.target) :
     r ∈ (φ.moveHorizontal p q).resolvableInversions := by
   rw [mem_resolvableInversions] at hr ⊢
-  obtain ⟨hpφ, h₁, h₂⟩ := mem_resolve_self hr.1 hp
+  obtain ⟨hpφ, h₁, h₂⟩ := mem_self_and_ne_of_mem_resolve_self hr.1 hp
   have h₃ : r.1 ≠ q := fun h ↦ hs (h ▸ fst_mem_source_of_mem_inversions hr.1)
   have h₄ : r.2 ≠ q := fun h ↦ hs (h ▸ snd_mem_source_of_mem_inversions hr.1)
   have hs' : q ∉ (φ.resolve r).source := by rwa [source_resolve]
