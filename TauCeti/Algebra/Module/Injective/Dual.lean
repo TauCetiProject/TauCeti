@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Injective
-public import Mathlib.LinearAlgebra.Dual.Lemmas
-public import TauCeti.LinearAlgebra.Dual.RightAction
+public import Mathlib.LinearAlgebra.Dual.Defs
+public import TauCeti.Algebra.Module.Injective.Coinduced
 
 /-!
 # The dual regular module is injective
@@ -19,6 +18,9 @@ containing finite-dimensional modules, without a self-injectivity assumption on 
 The action on the dual is specified through an equivariant linear equivalence, rather than
 installed as a global instance on all duals. This follows the convention of
 `TauCeti.LinearAlgebra.Dual.RightAction`.
+
+It is the case `V = k` of the injectivity of the coinduced module `Hom_k(A, V)`, see
+`TauCeti.Algebra.Module.Injective.Coinduced`.
 
 ## Main results
 
@@ -43,25 +45,7 @@ variable [Field k] [Ring A] [Algebra k A] [AddCommGroup Q] [Module A Q] [Module 
 injective left module over any algebra over a field. -/
 theorem moduleInjective_of_dual_regular (e : Q ≃ₗ[k] Module.Dual k A)
     (he : ∀ (a : A) (q : Q) (x : A), e (a • q) x = e q (x * a)) :
-    Module.Injective A Q := by
-  have := e.isScalarTower_of_dual_regular he
-  apply Module.Baer.injective
-  intro I f
-  -- Extend the functional obtained by evaluation at the unit from the ideal to the algebra.
-  let eI : I.restrictScalars k →ₗ[k] I :=
-    { toFun := fun x => ⟨x, x.property⟩
-      map_add' := fun _ _ => rfl
-      map_smul' := fun _ _ => rfl }
-  let l : I.restrictScalars k →ₗ[k] k :=
-    (Module.Dual.eval k A 1).comp (e.toLinearMap.comp ((f.restrictScalars k).comp eI))
-  obtain ⟨ψ, hψ⟩ := LinearMap.exists_extend l
-  let g : A →ₗ[A] Q :=
-    { toFun := fun a => e.symm (ψ.comp (LinearMap.mulRight k a))
-      map_add' := fun a b => by apply e.injective; ext x; simp [mul_add]
-      map_smul' := fun a b => by apply e.injective; ext x; simp [he, mul_assoc] }
-  refine ⟨g, fun a ha => e.injective (LinearMap.ext fun x => ?_)⟩
-  have hx : x * a ∈ I := I.mul_mem_left x ha
-  have hf : f ⟨x * a, hx⟩ = x • f ⟨a, ha⟩ := f.map_smul x ⟨a, ha⟩
-  simpa [g, l, eI, hf, he] using LinearMap.congr_fun hψ ⟨x * a, hx⟩
+    Module.Injective A Q :=
+  e.moduleInjective_of_coinduced he
 
 end LinearEquiv

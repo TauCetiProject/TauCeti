@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Projective
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Algebra.Module.Injective.Dual
 import TauCeti.Algebra.Module.Injective.SelfInjective
 public import TauCeti.LinearAlgebra.Dual.RightAction
-import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 
 /-!
 # Linear duality exchanges projective and injective modules
