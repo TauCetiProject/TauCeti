@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Algebra.RestrictScalars
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
-public import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Basic
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
@@ -275,8 +274,7 @@ def restrictScalarsSelfLinearEquiv (x : M) :
   right_inv v := by simp
   map_add' v w := by simp only [map_add]
   map_smul' c v := by
-    rw [RestrictScalars.addEquiv_map_smul, map_smul, RingHom.id_apply,
-      algebraMap_smul, map_smul]
+    simp only [RestrictScalars.addEquiv_map_smul, map_smul, RingHom.id_apply, algebraMap_smul]
 
 /-- Native self-model scalar restriction preserves preferred tangent coordinates. -/
 @[simp]

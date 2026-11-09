@@ -245,15 +245,14 @@ theorem restrictScalarsHomeomorph_tangentMap {f : M → N}
     (p : TangentBundle 𝓘(𝕜', E) M) (hf : MDifferentiableAt 𝓘(𝕜', E) 𝓘(𝕜', E') f p.proj) :
     restrictScalarsHomeomorph 𝕜 N (tangentMap 𝓘(𝕜', E) 𝓘(𝕜', E') f p) =
       tangentMap 𝓘(𝕜, E) 𝓘(𝕜, E') f (restrictScalarsHomeomorph 𝕜 M p) := by
-  have h := congrArg (fun L : E →L[𝕜] E' ↦
-    L (tangentSpaceCastModel 𝓘(𝕜', E) p.proj p.2))
-    (hf.mfderiv_restrictScalars 𝕜)
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply] at h
-  -- Repackage the coordinate equality as a tangent vector over f p.proj. The carrier
-  -- equivalence was defined with precisely these model casts.
-  convert congrArg (fun w : E' ↦ (⟨f p.proj,
-    (tangentSpaceCastModel 𝓘(𝕜, E') (f p.proj)).symm w⟩ : TangentBundle 𝓘(𝕜, E') N))
-    h.symm using 1 <;> rfl
+  obtain ⟨x, v⟩ := p
+  rw [restrictScalarsHomeomorph_apply 𝕜 M x v]
+  have h := hf.mfderiv_restrictScalarsSelf_apply 𝕜
+    ((RestrictScalars.addEquiv 𝕜 𝕜' _).symm v)
+  simp only [AddEquiv.apply_symm_apply,
+    TangentSpace.restrictScalarsSelfLinearEquiv_apply] at h
+  simpa only [tangentMap, restrictScalarsHomeomorph_apply] using
+    congrArg (fun w : TangentSpace 𝓘(𝕜, E') (f x) ↦
+      (⟨f x, w⟩ : TangentBundle 𝓘(𝕜, E') N)) h
 
 end TangentBundle

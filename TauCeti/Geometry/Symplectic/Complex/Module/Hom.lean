@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
+public import TauCeti.Geometry.Symplectic.Transport
 
 /-!
 # Complex-linear real maps are exactly `ℂ`-linear maps
@@ -189,3 +190,49 @@ theorem complexLinearMapEquiv_symm_apply (J : AlmostComplexStructure V)
   rfl
 
 end TauCeti
+
+namespace TauCeti.AlmostComplexStructure
+
+/-- A commuting square with a complex-linear map intertwines transported complex structures. -/
+theorem ofRestrictScalars_transport_naturality
+    {M M' N N' : Type*} [AddCommGroup M] [Module ℂ M] [AddCommGroup M'] [Module ℝ M']
+    [AddCommGroup N] [Module ℂ N] [AddCommGroup N'] [Module ℝ N'] :
+    letI : AddCommMonoid (RestrictScalars ℝ ℂ M) :=
+      (instAddCommGroupRestrictScalars ℝ ℂ M).toAddCommMonoid
+    letI := RestrictScalars.realModule M
+    letI : AddCommMonoid (RestrictScalars ℝ ℂ N) :=
+      (instAddCommGroupRestrictScalars ℝ ℂ N).toAddCommMonoid
+    letI := RestrictScalars.realModule N
+    ∀ (e : RestrictScalars ℝ ℂ M ≃ₗ[ℝ] M') (e' : RestrictScalars ℝ ℂ N ≃ₗ[ℝ] N')
+      (f : M →ₗ[ℂ] N) (g : M' →ₗ[ℝ] N'),
+      (∀ x, g (e ((RestrictScalars.addEquiv ℝ ℂ M).symm x)) =
+        e' ((RestrictScalars.addEquiv ℝ ℂ N).symm (f x))) → ∀ X,
+      g ((ofRestrictScalars M).transport e X) = (ofRestrictScalars N).transport e' (g X) := by
+  let : AddCommMonoid (RestrictScalars ℝ ℂ M) :=
+    (instAddCommGroupRestrictScalars ℝ ℂ M).toAddCommMonoid
+  let := RestrictScalars.realModule M
+  let : AddCommMonoid (RestrictScalars ℝ ℂ N) :=
+    (instAddCommGroupRestrictScalars ℝ ℂ N).toAddCommMonoid
+  let := RestrictScalars.realModule N
+  intro e e' f g h X
+  let F := e'.symm.toLinearMap ∘ₗ g ∘ₗ e.toLinearMap
+  have hF_apply (x : RestrictScalars ℝ ℂ M) :
+      F x = (RestrictScalars.addEquiv ℝ ℂ N).symm
+        (f (RestrictScalars.addEquiv ℝ ℂ M x)) := by
+    have h' := h (RestrictScalars.addEquiv ℝ ℂ M x)
+    simp only [AddEquiv.symm_apply_apply] at h'
+    simp only [F, LinearMap.comp_apply, LinearEquiv.coe_coe]
+    rw [h', e'.symm_apply_apply]
+  have hF : IsComplexLinearMap (ofRestrictScalars M) (ofRestrictScalars N) F := by
+    rw [isComplexLinearMap_iff_apply]
+    intro x
+    simp only [hF_apply, ofRestrictScalars_apply, AddEquiv.apply_symm_apply, f.map_smul]
+  have hconj : e.arrowCongr e' F = g := by
+    ext x
+    simp only [LinearEquiv.arrowCongr_apply, F, LinearMap.comp_apply,
+      LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
+  have htransport := hF.arrowCongr e e'
+  rw [hconj, isComplexLinearMap_iff_apply] at htransport
+  exact htransport X
+
+end TauCeti.AlmostComplexStructure
