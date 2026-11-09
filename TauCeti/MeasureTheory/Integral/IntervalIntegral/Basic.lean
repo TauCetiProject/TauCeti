@@ -174,23 +174,18 @@ theorem tendsto_intervalIntegral_atTop_atBot {w : ℝ → ℝ}
     (hwm : ∀ᵐ t ∂volume, m ≤ w t) :
     Tendsto (fun t ↦ ∫ r in a..t, w r) atTop atTop ∧
       Tendsto (fun t ↦ ∫ r in a..t, w r) atBot atBot := by
-  -- Compare with the integral `m * (t - a)` of the constant lower bound.
-  constructor
-  · refine tendsto_atTop_mono' atTop ?_
-      (tendsto_atTop_add_const_right _ (-(m * a)) (tendsto_id.const_mul_atTop hm))
-    filter_upwards [eventually_ge_atTop a] with t ht
-    have h := intervalIntegral.integral_mono_ae ht intervalIntegrable_const (hw t) hwm
-    simp only [intervalIntegral.integral_const, smul_eq_mul] at h
-    simp only [id]
-    linarith
-  · refine tendsto_atBot_mono' atBot ?_
-      (tendsto_atBot_add_const_right _ (-(m * a)) (tendsto_id.const_mul_atBot hm))
-    filter_upwards [eventually_le_atBot a] with t ht
-    have h := intervalIntegral.integral_mono_ae ht intervalIntegrable_const (hw t).symm hwm
-    simp only [intervalIntegral.integral_const, smul_eq_mul] at h
-    rw [intervalIntegral.integral_symm]
-    simp only [id]
-    linarith
+  -- Compare with the integral `(t - a) * m` of the constant lower bound.
+  refine ⟨tendsto_atTop_mono' _ ?_
+      ((tendsto_atTop_add_const_right _ (-a) tendsto_id).atTop_mul_const hm),
+    tendsto_atBot_mono' _ ?_
+      ((tendsto_atBot_add_const_right _ (-a) tendsto_id).atBot_mul_const hm)⟩
+  · filter_upwards [eventually_ge_atTop a] with t ht
+    simpa [sub_eq_add_neg] using
+      intervalIntegral.integral_mono_ae ht intervalIntegrable_const (hw t) hwm
+  · filter_upwards [eventually_le_atBot a] with t ht
+    rw [intervalIntegral.integral_symm t, neg_le]
+    simpa [sub_eq_add_neg, add_comm, ← neg_mul] using
+      intervalIntegral.integral_mono_ae ht intervalIntegrable_const (hw t).symm hwm
 
 end TauCeti
 
