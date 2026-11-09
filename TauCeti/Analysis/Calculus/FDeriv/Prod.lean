@@ -49,6 +49,8 @@ every horizontal line.
 * `TauCeti.fderiv_comp_fst_add_comp_snd`: the same for the totalized derivative.
 * `TauCeti.fderiv_comp_fst_add_comp_snd_eq_zero_iff`: a separated sum of differentiable functions
   is critical at `(a, b)` exactly when both summands are critical at `a` and `b`.
+* `TauCeti.hasFDerivAt_slice_fst`, `TauCeti.hasFDerivAt_comp_sub_coords`: the derivative of a slice
+  `y ↦ g (y, t)` of a differentiable map, also at a shifted point.
 * `TauCeti.fderiv_slice_left`, `TauCeti.fderiv_slice_right`: the derivatives of the two slices
   of a function on a product are the restrictions of its derivative.
 * `TauCeti.fderiv_comp_snd_apply_mk_zero`: a function of the second variable alone has zero
@@ -331,6 +333,31 @@ theorem fderivWithin_prodMk_fst_clm_apply_snd {s : Set X} {a₀ : X} {F : X → 
   rw [hfst_app, hsnd_app, add_comm]
 
 end FstClmApplySnd
+
+section SliceFst
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- The derivative of a slice `y ↦ g (y, p.2)` of a differentiable map on a product, in the first
+variable. -/
+theorem hasFDerivAt_slice_fst {g : E × H → G} (hg : Differentiable 𝕜 g) (p : E × H) :
+    HasFDerivAt (fun y ↦ g (y, p.2)) ((fderiv 𝕜 g p).comp (ContinuousLinearMap.inl 𝕜 E H)) p.1 := by
+  simpa [Function.comp_def] using
+    (hg p).hasFDerivAt.comp p.1 (hasFDerivAt_prodMk_left p.1 p.2)
+
+omit [NormedSpace 𝕜 H] in
+/-- The derivative in the first variable of the slice at a shifted point, in the shape used for
+translates. -/
+theorem hasFDerivAt_comp_sub_coords {g : E × H → G} {g' : E × H → E →L[𝕜] G}
+    (h : ∀ p : E × H, HasFDerivAt (fun y ↦ g (y, p.2)) (g' p) p.1) (z : E × H) (t : H) (x : E) :
+    HasFDerivAt (fun y ↦ g (y - z.1, t - z.2)) (g' (x - z.1, t - z.2)) x := by
+  simpa [Function.comp_def] using
+    (h (x - z.1, t - z.2)).comp x ((hasFDerivAt_id x).sub_const z.1)
+
+end SliceFst
 
 end TauCeti
 
