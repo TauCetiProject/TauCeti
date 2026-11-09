@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Star
+import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import Mathlib.Analysis.Calculus.FDeriv.Comp
+import Mathlib.Analysis.Calculus.FDeriv.Equiv
 
 /-!
 # The unit circle: the unit sphere of `ℂ`, the exponential and the coordinate function
@@ -32,6 +36,11 @@ and records that the coordinate function `z ↦ z` is a unitary element of `C(S�
 * `Circle.re_sq_add_im_sq` and `Circle.coe_add_inv_coe`: `Re z ^ 2 + Im z ^ 2 = 1` and
   `z + z⁻¹ = 2 Re z` on the circle, and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first
   identity for a point of `sphere (0 : ℂ) 1`.
+* `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
+  complex exponentials on the circle.
+* `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
+* `Circle.differentiableAt_coe_inv`: the pointwise inverse of a differentiable circle-valued map
+  is differentiable.
 -/
 
 public section
@@ -39,6 +48,7 @@ public section
 noncomputable section
 
 open Metric
+open scoped ComplexConjugate
 
 namespace Circle
 
@@ -69,6 +79,64 @@ theorem _root_.Complex.re_sq_add_im_sq_of_mem_sphere {z : ℂ} (hz : z ∈ spher
 /-- For a point of the circle, `z + z⁻¹ = 2 Re z`. -/
 theorem coe_add_inv_coe (z : Circle) : (z : ℂ) + (z : ℂ)⁻¹ = 2 * (z : ℂ).re := by
   rw [← coe_inv, coe_inv_eq_conj, Complex.add_conj, Complex.ofReal_mul, Complex.ofReal_ofNat]
+
+/-- Raising `exp (π * I / d)` to a nonzero natural power `d` gives `-1`. -/
+theorem exp_pow_eq_neg_one (d : ℕ) (hd : d ≠ 0) :
+    (Circle.exp (Real.pi / d) : ℂ) ^ d = -1 := by
+  rw [Circle.coe_exp, ← Complex.exp_nat_mul]
+  have hmul : (d : ℂ) * (↑(Real.pi / d) * Complex.I) = Real.pi * Complex.I := by
+    push_cast
+    field_simp
+  rw [hmul, Complex.exp_pi_mul_I]
+
+/-- For distinct natural powers, rotation by `exp (π * I / |p - q|)` negates their mixed
+  power. -/
+theorem mixed_power_rotation_factor {p q : ℕ} (hpq : p ≠ q) :
+    (Circle.exp (Real.pi / (if p < q then q - p else p - q)) : ℂ) ^ p *
+      conj (Circle.exp (Real.pi / (if p < q then q - p else p - q)) : ℂ) ^ q = -1 := by
+  let d := if p < q then q - p else p - q
+  have hd : d ≠ 0 := by
+    dsimp [d]
+    split_ifs with h
+    · exact Nat.sub_ne_zero_of_lt h
+    · exact Nat.sub_ne_zero_of_lt (lt_of_le_of_ne (le_of_not_gt h) (Ne.symm hpq))
+  have hcases : p < q ∨ q < p := lt_or_gt_of_ne hpq
+  let u : Circle := Circle.exp (Real.pi / d)
+  have huk : (u : ℂ) ^ d = -1 := by
+    simpa [u] using exp_pow_eq_neg_one d hd
+  have hconj : conj (u : ℂ) = (u : ℂ)⁻¹ := (Circle.coe_inv_eq_conj u).symm
+  have hfactor : (u : ℂ) ^ p * conj (u : ℂ) ^ q = -1 := by
+    rcases hcases with hpq' | hqp'
+    · have hq : q = p + d := by
+        simpa [d, hpq', Nat.add_comm] using (Nat.sub_add_cancel (Nat.le_of_lt hpq')).symm
+      rw [hconj, hq, pow_add, inv_pow, inv_pow]
+      calc
+        (u : ℂ) ^ p * (((u : ℂ) ^ p)⁻¹ * ((u : ℂ) ^ d)⁻¹) =
+            ((u : ℂ) ^ p * ((u : ℂ) ^ p)⁻¹) * ((u : ℂ) ^ d)⁻¹ := by rw [← mul_assoc]
+        _ = ((u : ℂ) ^ d)⁻¹ := by field_simp
+        _ = -1 := by rw [huk]; norm_num
+    · have hp : p = q + d := by
+        simpa [d, not_lt_of_ge (le_of_lt hqp'), Nat.add_comm] using
+          (Nat.sub_add_cancel (Nat.le_of_lt hqp')).symm
+      rw [hconj, hp, pow_add, inv_pow]
+      calc
+        ((u : ℂ) ^ q * (u : ℂ) ^ d) * ((u : ℂ) ^ q)⁻¹ = (u : ℂ) ^ d := by field_simp
+        _ = -1 := huk
+  simpa only [u, d] using hfactor
+
+/-- Every point of the circle has an `n`-th root on the circle, for `n ≠ 0`: `exp (i arg z / n)`.
+-/
+theorem exists_pow_nat_eq (z : Circle) {n : ℕ} (hn : n ≠ 0) : ∃ y : Circle, y ^ n = z :=
+  ⟨exp (Complex.arg z / n), by
+    rw [← exp_nsmul, nsmul_eq_mul, mul_div_cancel₀ _ (Nat.cast_ne_zero.2 hn), exp_arg]⟩
+
+/-- The pointwise inverse of a circle-valued map that is differentiable at `z`, as a map into `ℂ`,
+is differentiable at `z`. -/
+theorem differentiableAt_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {u : E → Circle} {z : E} (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z) :
+    DifferentiableAt ℝ (fun w ↦ ((u⁻¹ w : Circle) : ℂ)) z := by
+  simpa only [Pi.inv_apply, coe_inv_eq_conj, Function.comp_def, Complex.conjCLE_apply] using
+    Complex.conjCLE.differentiableAt.comp z hu
 
 /-- The map `t ↦ exp (i t)` from the real line to the circle, as a continuous homomorphism
 from `Multiplicative ℝ`. -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 
+import TauCeti.CategoryTheory.Groupoid.SingleObj
 import TauCeti.Topology.Homotopy.Path
 
 /-!
@@ -56,6 +57,8 @@ drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
   exactly when every loop there is nullhomotopic.
 * `Path.homotopic_refl_of_forall_mem_of_subsingleton`: a loop lying in a set whose fundamental
   group at the basepoint is trivial is nullhomotopic.
+* `TauCeti.exists_functor_map_asHom_eq`: a homomorphism out of the fundamental group of a
+  path-connected space extends to a functor from its fundamental groupoid.
 * `TauCeti.simplyConnectedSpace_of_subsingleton_fundamentalGroup`: a path-connected space whose
   fundamental group at one basepoint is trivial is simply connected.
 -/
@@ -289,5 +292,25 @@ theorem simplyConnectedSpace_of_subsingleton_fundamentalGroup [PathConnectedSpac
     (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath
       (PathConnectedSpace.somePath x y)).symm.injective.subsingleton
   exact subsingleton_fundamentalGroup_iff.1 this γ
+
+variable {K : Type*} [Monoid K]
+
+/-- A homomorphism out of the fundamental group of a path connected space extends to a functor
+from its fundamental groupoid to the one-object category on the units of the target: the
+functor sends the based loops `g.asHom` to the image of `g` in the units. -/
+theorem exists_functor_map_asHom_eq {Y : Type*} [TopologicalSpace Y] [PathConnectedSpace Y]
+    (y : Y) (f : FundamentalGroup Y y →* K) :
+    ∃ F : FundamentalGroupoid Y ⥤ SingleObj Kˣ,
+      ∀ g : FundamentalGroup Y y, F.map g.asHom = f.toHomUnits g := by
+  classical
+  let b := FundamentalGroupoid.mk y
+  let τ (z : FundamentalGroupoid Y) : b ⟶ z :=
+    if hz : z = b then eqToHom hz.symm else (FundamentalGroupoid.nonempty_hom _ _).some
+  have hτ : τ b = 𝟙 _ := by simp [τ]
+  refine ⟨Groupoid.functorOfEndHom b τ f.toHomUnits, fun g ↦ ?_⟩
+  rw [Groupoid.functorOfEndHom_map]
+  -- Pin the chosen basepoint carrier before applying its normalized transport equation.
+  change f.toHomUnits (.of (τ b ≫ g.asHom ≫ inv (τ b))) = _
+  erw [hτ, IsIso.inv_id, Category.id_comp, Category.comp_id]
 
 end TauCeti

@@ -49,6 +49,7 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
 * `expNegInvGlue.lt_one`: `expNegInvGlue x < 1`.
 * `expNegInvGlue.hasDerivAt`: the derivative of `expNegInvGlue` at `x` is
   `x⁻² expNegInvGlue x`.
+* `Real.smoothTransition.abs_le_one`: `|Real.smoothTransition x| ≤ 1`.
 * `Real.smoothTransition.deriv_of_neg`: `deriv Real.smoothTransition x = 0` for `x < 0`.
 * `Real.smoothTransition.deriv_of_one_lt`: `deriv Real.smoothTransition x = 0` for `1 < x`.
 * `Real.smoothTransition.hasCompactSupport_deriv`: the derivative is compactly supported.
@@ -107,6 +108,10 @@ theorem hasDerivAt (x : ℝ) : HasDerivAt expNegInvGlue (x⁻¹ ^ 2 * expNegInvG
 end expNegInvGlue
 
 namespace Real.smoothTransition
+
+/-- The smooth transition function takes values of absolute value at most one. -/
+theorem abs_le_one (x : ℝ) : |smoothTransition x| ≤ 1 :=
+  (abs_of_nonneg (nonneg x)).trans_le (le_one x)
 
 /-- The smooth transition function has derivative zero to the left of `0`, where it is
 identically zero. -/
@@ -344,6 +349,16 @@ theorem tendsto_add_mul_add_deriv_mul {t d e k : ℝ} :
     refine tendsto_const_nhds.congr' ?_
     filter_upwards [hev] with n hn
     simp [one_of_one_le hn.le, deriv_of_one_lt hn, not_le.2 ht]
+
+/-- `x + (1 - smoothTransition x)` is at least `x`. -/
+theorem le_add_one_sub (x : ℝ) : x ≤ x + (1 - smoothTransition x) := by
+  linarith [le_one x]
+
+/-- `x + (1 - smoothTransition x)` is nonzero for `x ≥ 0`. -/
+theorem add_one_sub_ne_zero {x : ℝ} (hx : 0 ≤ x) : x + (1 - smoothTransition x) ≠ 0 := by
+  rcases hx.eq_or_lt with h | h
+  · simp [← h]
+  · exact (h.trans_le (le_add_one_sub x)).ne'
 
 end Real.smoothTransition
 
