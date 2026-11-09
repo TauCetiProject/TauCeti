@@ -84,7 +84,7 @@ theorem norm_sub_le_of_forall_energyFormH1_eq
   set w := u - u'
   -- Test both equations against `w = u - u'` and compare the two energy forms at `u'`.
   have hdiff := norm_energyFormH1_le_of_bounds (a := a - a') (b := b - b') (c := c - c') hLam
-    ha hbeta hgamma hb hc (u' : W1p mu Omega 2) w
+    ha hb hc (u' : W1p mu Omega 2) w
   have hnorm (v : W1p0 mu Omega 2) : ‖(v : W1p mu Omega 2)‖ = ‖v‖ := Submodule.norm_coe v
   rw [energyFormH1_sub hcoeff hcoeff', hnorm, hnorm] at hdiff
   have hw : energyFormH1 a b c (w : W1p mu Omega 2) w =
