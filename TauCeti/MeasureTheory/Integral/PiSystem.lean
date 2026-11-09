@@ -28,6 +28,7 @@ public section
 namespace TauCeti
 
 open MeasureTheory
+open scoped ENNReal
 
 /-- **The Dynkin (π-λ) step for Bochner integrals.** A function whose integral vanishes on the
 whole space and on every member of a π-system generating a sub-σ-algebra `m` has vanishing
@@ -47,7 +48,7 @@ theorem setIntegral_eq_zero_of_isPiSystem {X E : Type*} {m m0 : MeasurableSpace 
 /-- A function with zero integral on a generating π-system is zero almost everywhere if
 members of that system give a countable cover on which the function is integrable.
 No finiteness assumption on the ambient measure or global integrability is required. -/
-theorem ae_eq_zero_of_forall_setIntegral_eq_zero_of_isPiSystem
+theorem ae_eq_zero_of_setIntegral_eq_zero_of_isPiSystem_of_countable_cover
     {X E κ : Type*} {m : MeasurableSpace X} [Countable κ]
     [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
     {μ : Measure X} {C : Set (Set X)}
@@ -71,5 +72,18 @@ theorem ae_eq_zero_of_forall_setIntegral_eq_zero_of_isPiSystem
     · exact hzero _ (hpi _ hQ _ (hs n) hne)
     · rw [Set.not_nonempty_iff_eq_empty.mp hne]
       simp
+
+/-- Testing set integrals on a countably spanning generating π-system determines a
+Banach-valued function integrable on each generating set. -/
+theorem ae_eq_zero_of_setIntegral_eq_zero_of_isPiSystem
+    {X E : Type*} {m : MeasurableSpace X}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    {μ : Measure X} {S : Set (Set X)}
+    (hgen : m = MeasurableSpace.generateFrom S) (hpi : IsPiSystem S)
+    (hcover : IsCountablySpanning S) {f : X → E} (hf : ∀ s ∈ S, IntegrableOn f s μ)
+    (hS : ∀ s ∈ S, ∫ x in s, f x ∂μ = 0) : f =ᵐ[μ] 0 := by
+  obtain ⟨v, hv, hcover⟩ := hcover
+  exact ae_eq_zero_of_setIntegral_eq_zero_of_isPiSystem_of_countable_cover hgen.symm hpi v hv hcover
+    (fun n ↦ hf _ (hv n)) hS
 
 end TauCeti

@@ -5,15 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Probability.Process.Indistinguishable
 public import Mathlib.Probability.Process.Predictable
 public import Mathlib.Topology.Order.Cadlag
+public import TauCeti.Order.Interval.Set.Prod
 import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.MeasureTheory.Constructions.Polish.StronglyMeasurable
 
 /-!
-# Predictable rectangles and left-continuous adapted processes
+# Elementary predictable sets and predictability of adapted processes
 
-Elementary predictable rectangles form a π-system generating the predictable sigma-algebra
-for linearly ordered time with a least element and a countable cofinal sequence.
+Initial slices and bounded predictable rectangles form a pi-system generating the predictable
+sigma-algebra when the time index has a bottom element and a countable cofinal sequence.
 
 Left-continuous adapted processes in nonnegative real time are strongly predictable. The proof uses
 left endpoint step approximations on countable regular partitions, including the initial value
@@ -21,107 +24,26 @@ on the predictable time-zero slice. Continuous paths give a corollary. This supp
 of continuous asset processes and hence of Borel functions of time and those assets.
 
 Predictable sets are measurable in the ambient time-product sigma-algebra.
+
+An adapted process with almost-surely left-continuous paths has a predictable indistinguishable
+version, even when the filtration is neither complete nor right-continuous. This does not assert
+literal predictability of the original process or everywhere left continuity of the selected
+version.
+
 The time projection is measurable for the predictable sigma-algebra, so deterministic Borel
 time dependence can be combined with predictable processes. A predictably measurable function
 remains strongly predictable when extended by zero outside a measurable set of times.
+
+## References
+
+* I. Karatzas, S. E. Shreve, *Brownian Motion and Stochastic Calculus*, Springer, 1991,
+  Chapter 1, for predictable versions of adapted continuous processes.
 -/
 
 public section
 
-open MeasureTheory Filter Set TopologicalSpace
+open MeasureTheory ProbabilityTheory Filter Set TopologicalSpace
 open scoped NNReal Topology
-
-namespace MeasureTheory.Filtration
-
-variable {ι Ω : Type*} [LinearOrder ι] [OrderBot ι] {mΩ : MeasurableSpace Ω}
-  (ℱ : Filtration ι mΩ)
-
-/-- Elementary predictable rectangles, including the initial slices. Positive-time rectangles
-use information at their left endpoint and are open on the left, closed on the right. -/
-def predictableRectangles : Set (Set (ι × Ω)) :=
-  {R | (∃ A, MeasurableSet[ℱ ⊥] A ∧ R = {⊥} ×ˢ A) ∨
-    ∃ s t A, MeasurableSet[ℱ s] A ∧ R = Ioc s t ×ˢ A}
-
-/-- Membership in the elementary predictable rectangle family. -/
-theorem mem_predictableRectangles {R : Set (ι × Ω)} :
-    R ∈ ℱ.predictableRectangles ↔
-      (∃ A, MeasurableSet[ℱ ⊥] A ∧ R = {⊥} ×ˢ A) ∨
-        ∃ s t A, MeasurableSet[ℱ s] A ∧ R = Ioc s t ×ˢ A := Iff.rfl
-
-/-- An initial slice is an elementary predictable rectangle. -/
-@[simp]
-theorem singleton_bot_prod_mem_predictableRectangles {A : Set Ω}
-    (hA : MeasurableSet[ℱ ⊥] A) : {⊥} ×ˢ A ∈ ℱ.predictableRectangles :=
-  Or.inl ⟨A, hA, rfl⟩
-
-/-- A bounded-time rectangle using information at its left endpoint is predictable. -/
-@[simp]
-theorem Ioc_prod_mem_predictableRectangles (s t : ι) {A : Set Ω}
-    (hA : MeasurableSet[ℱ s] A) : Ioc s t ×ˢ A ∈ ℱ.predictableRectangles :=
-  Or.inr ⟨s, t, A, hA, rfl⟩
-
-/-- Every elementary predictable rectangle is predictably measurable. -/
-theorem measurableSet_of_mem_predictableRectangles {R : Set (ι × Ω)}
-    (hR : R ∈ ℱ.predictableRectangles) : MeasurableSet[ℱ.predictable] R := by
-  rcases hR with ⟨A, hA, rfl⟩ | ⟨s, t, A, hA, rfl⟩
-  · exact measurableSet_predictable_singleton_bot_prod hA
-  · exact measurableSet_predictable_Ioc_prod s t hA
-
-/-- Elementary predictable rectangles are closed under nonempty intersections. -/
-theorem isPiSystem_predictableRectangles : IsPiSystem ℱ.predictableRectangles := by
-  rintro R (⟨A, hA, rfl⟩ | ⟨s, t, A, hA, rfl⟩)
-    Q (⟨B, hB, rfl⟩ | ⟨u, v, B, hB, rfl⟩) hne
-  · simpa only [prod_inter_prod, inter_self] using
-      ℱ.singleton_bot_prod_mem_predictableRectangles (hA.inter hB)
-  · exact False.elim (hne.not_disjoint (by simp [Set.disjoint_prod]))
-  · exact False.elim (hne.not_disjoint (by simp [Set.disjoint_prod]))
-  · simpa only [prod_inter_prod, Ioc_inter_Ioc] using
-      ℱ.Ioc_prod_mem_predictableRectangles (max s u) (min t v)
-        ((ℱ.mono (le_max_left _ _) _ hA).inter (ℱ.mono (le_max_right _ _) _ hB))
-
-/-- Every elementary rectangle has finite measure if bounded-time strips do. -/
-theorem measure_ne_top_of_mem_predictableRectangles
-    (μ : @Measure (ι × Ω) ℱ.predictable)
-    (hμ : ∀ t, μ (Iic t ×ˢ univ) ≠ ⊤) {R : Set (ι × Ω)}
-    (hR : R ∈ ℱ.predictableRectangles) : μ R ≠ ⊤ := by
-  rcases hR with ⟨A, hA, rfl⟩ | ⟨s, t, A, hA, rfl⟩
-  · exact ne_top_of_le_ne_top (hμ ⊥) (measure_mono (prod_mono
-      (singleton_subset_iff.2 self_mem_Iic) (subset_univ A)))
-  · exact ne_top_of_le_ne_top (hμ t) (measure_mono (prod_mono
-      Ioc_subset_Iic_self (subset_univ A)))
-
-variable [(atTop : Filter ι).IsCountablyGenerated]
-
-/-- Bounded-time elementary rectangles generate the native predictable sigma-algebra. -/
-theorem generateFrom_predictableRectangles :
-    MeasurableSpace.generateFrom ℱ.predictableRectangles = ℱ.predictable := by
-  obtain ⟨u, hu⟩ := exists_seq_tendsto (atTop : Filter ι)
-  apply le_antisymm
-  · exact MeasurableSpace.generateFrom_le fun R hR ↦
-      ℱ.measurableSet_of_mem_predictableRectangles hR
-  · refine measurableSpace_le_predictable_of_measurableSet (fun A hA ↦ ?_) (fun s A hA ↦ ?_)
-    · exact MeasurableSpace.measurableSet_generateFrom
-        (ℱ.singleton_bot_prod_mem_predictableRectangles hA)
-    · rw [← iUnion_Ioc_eq_Ioi_self_iff.2 (fun x _ ↦ (tendsto_atTop.1 hu x).exists),
-        iUnion_prod_const]
-      exact MeasurableSet.iUnion fun n ↦ MeasurableSpace.measurableSet_generateFrom
-        (ℱ.Ioc_prod_mem_predictableRectangles s (u n) hA)
-
-/-- Countably many elementary predictable rectangles cover the whole time-state space.
-The initial slice is included separately from the positive-time intervals. -/
-theorem exists_predictableRectangles_cover :
-    ∃ s : Option ℕ → Set (ι × Ω), (∀ n, s n ∈ ℱ.predictableRectangles) ∧ ⋃ n, s n = univ := by
-  obtain ⟨u, hu⟩ := exists_seq_tendsto (atTop : Filter ι)
-  refine ⟨fun n ↦ n.elim ({⊥} ×ˢ univ) (fun k ↦ Ioc ⊥ (u k) ×ˢ univ), ?_, ?_⟩
-  · rintro (_ | n)
-    · exact ℱ.singleton_bot_prod_mem_predictableRectangles MeasurableSet.univ
-    · exact ℱ.Ioc_prod_mem_predictableRectangles _ _ MeasurableSet.univ
-  · rw [iUnion_option]
-    simp only [Option.elim_none, Option.elim_some, ← iUnion_prod_const]
-    rw [iUnion_Ioc_eq_Ioi_self_iff.2 (fun x _ ↦ (tendsto_atTop.1 hu x).exists), ← union_prod]
-    simp only [← Iic_bot, Iic_union_Ioi, univ_prod_univ]
-
-end MeasureTheory.Filtration
 
 section Arithmetic
 
@@ -145,6 +67,109 @@ theorem MeasureTheory.IsStronglyPredictable.const_mul [Mul E] [ContinuousMul E]
   exact h.const_mul c
 
 end Arithmetic
+
+namespace MeasureTheory.Filtration
+
+variable {ι Ω : Type*} [LinearOrder ι] [OrderBot ι] {m : MeasurableSpace Ω}
+    (ℱ : Filtration ι m)
+
+/-- Elementary predictable sets are initial slices `{⊥} ×ˢ A` with `A ∈ ℱ ⊥`, and
+bounded rectangles `Ioc s t ×ˢ A` with `A ∈ ℱ s`. If `t ≤ s`, the rectangle is empty. -/
+def elementarySets : Set (Set (ι × Ω)) :=
+  {u | ∃ A, MeasurableSet[ℱ ⊥] A ∧ u = {⊥} ×ˢ A} ∪
+    {u | ∃ s t A, MeasurableSet[ℱ s] A ∧ u = Ioc s t ×ˢ A}
+
+/-- Membership in the elementary predictable rectangles, including the initial slice. -/
+@[simp]
+theorem mem_elementarySets_iff {u : Set (ι × Ω)} :
+    u ∈ ℱ.elementarySets ↔
+      (∃ A, MeasurableSet[ℱ ⊥] A ∧ u = {⊥} ×ˢ A) ∨
+        ∃ s t A, MeasurableSet[ℱ s] A ∧ u = Ioc s t ×ˢ A := Iff.rfl
+
+/-- An initial slice measurable at the bottom time is elementary predictable. -/
+theorem singleton_bot_prod_mem_elementarySets {A : Set Ω}
+    (hA : MeasurableSet[ℱ ⊥] A) : {⊥} ×ˢ A ∈ ℱ.elementarySets :=
+  (mem_elementarySets_iff ℱ).mpr (Or.inl ⟨A, hA, rfl⟩)
+
+/-- A bounded rectangle with its spatial set measurable at the left endpoint is
+elementary predictable. -/
+theorem Ioc_prod_mem_elementarySets (s t : ι) {A : Set Ω}
+    (hA : MeasurableSet[ℱ s] A) : Ioc s t ×ˢ A ∈ ℱ.elementarySets :=
+  (mem_elementarySets_iff ℱ).mpr (Or.inr ⟨s, t, A, hA, rfl⟩)
+
+/-- Every elementary set is predictable. -/
+theorem measurableSet_predictable_of_mem_elementarySets {u : Set (ι × Ω)}
+    (hu : u ∈ ℱ.elementarySets) : MeasurableSet[ℱ.predictable] u := by
+  rcases hu with ⟨A, hA, rfl⟩ | ⟨s, t, A, hA, rfl⟩
+  · exact measurableSet_predictable_singleton_bot_prod hA
+  · exact measurableSet_predictable_Ioc_prod s t hA
+
+/-- Elementary predictable sets form a pi-system. -/
+theorem isPiSystem_elementarySets : IsPiSystem ℱ.elementarySets := by
+  rintro u (⟨A, hA, rfl⟩ | ⟨s, t, A, hA, rfl⟩)
+    v (⟨B, hB, rfl⟩ | ⟨s', t', B, hB, rfl⟩) hne
+  · exact Or.inl ⟨A ∩ B, hA.inter hB, by
+      ext p
+      simp only [mem_inter_iff, mem_prod, mem_singleton_iff]
+      tauto⟩
+  · obtain ⟨p, hpA, hpB⟩ := hne
+    have hp0 : p.1 = ⊥ := hpA.1
+    have hlt := hpB.1.1
+    simp [hp0] at hlt
+  · obtain ⟨p, hpA, hpB⟩ := hne
+    have hp0 : p.1 = ⊥ := hpB.1
+    have hlt := hpA.1.1
+    simp [hp0] at hlt
+  · refine Or.inr ⟨max s s', min t t', A ∩ B,
+      (ℱ.mono (le_max_left _ _) _ hA).inter (ℱ.mono (le_max_right _ _) _ hB), ?_⟩
+    ext p
+    simp only [mem_inter_iff, mem_prod, mem_Ioc, max_lt_iff, le_min_iff]
+    tauto
+
+/-- If a predictable measure has a null initial slice, every subset slice is null. -/
+theorem measure_singleton_bot_prod_eq_zero
+    (μ : @Measure (ι × Ω) ℱ.predictable)
+    (hzero : μ ({⊥} ×ˢ (univ : Set Ω)) = 0) (A : Set Ω) :
+    μ ({⊥} ×ˢ A) = 0 :=
+  measure_mono_null (prod_mono_right (subset_univ A)) hzero
+
+variable [(atTop : Filter ι).IsCountablyGenerated]
+
+/-- A countable subfamily of the elementary predictable sets covers the whole space. -/
+theorem isCountablySpanning_elementarySets : IsCountablySpanning ℱ.elementarySets := by
+  obtain ⟨u, _, hu⟩ := exists_seq_monotone_tendsto_atTop_atTop ι
+  let v : ℕ → Set (ι × Ω)
+    | 0 => {⊥} ×ˢ univ
+    | n + 1 => Ioc ⊥ (u n) ×ˢ univ
+  refine ⟨v, ?_, ?_⟩
+  · intro n
+    cases n with
+    | zero => exact ℱ.singleton_bot_prod_mem_elementarySets MeasurableSet.univ
+    | succ n => exact ℱ.Ioc_prod_mem_elementarySets ⊥ (u n) MeasurableSet.univ
+  · rw [← union_iUnion_nat_succ]
+    simp only [v]
+    rw [iUnion_Ioc_prod_eq_Ioi_prod hu]
+    ext p
+    simp only [mem_union, mem_prod, mem_singleton_iff, mem_univ, and_true,
+      mem_Ioi, bot_lt_iff_ne_bot, iff_true]
+    exact Classical.em _
+
+/-- Bounded elementary rectangles and the initial slices generate the predictable sigma-algebra. -/
+theorem predictable_eq_generateFrom_elementarySets :
+    ℱ.predictable = MeasurableSpace.generateFrom ℱ.elementarySets := by
+  obtain ⟨u, _, hu⟩ := exists_seq_monotone_tendsto_atTop_atTop ι
+  apply le_antisymm
+  · apply measurableSpace_le_predictable_of_measurableSet
+    · intro A hA
+      exact MeasurableSpace.measurableSet_generateFrom (ℱ.singleton_bot_prod_mem_elementarySets hA)
+    · intro s A hA
+      rw [← iUnion_Ioc_prod_eq_Ioi_prod hu s A]
+      exact MeasurableSet.iUnion fun n =>
+        MeasurableSpace.measurableSet_generateFrom (ℱ.Ioc_prod_mem_elementarySets s (u n) hA)
+  · exact MeasurableSpace.generateFrom_le fun _ hu =>
+      ℱ.measurableSet_predictable_of_mem_elementarySets hu
+
+end MeasureTheory.Filtration
 
 -- Unlike floor sampling on half-open intervals, this samples strictly before every positive
 -- time, including partition nodes. The cells are therefore predictable rectangles `(s, t]`.
@@ -228,6 +253,18 @@ private lemma measurable_leftSample {ℱ : Filtration ℝ≥0 m} {u : ℝ≥0 �
   exact (measurableSet_predictable_singleton_bot_prod ((hu 0).measurable hA)).union
     (.iUnion fun k => measurableSet_predictable_Ioc_prod _ _ ((hu _).measurable hA))
 
+private lemma stronglyMeasurable_leftSample {ℱ : Filtration ℝ≥0 m} {u : ℝ≥0 → Ω → E}
+    (hu : StronglyAdapted ℱ u) (n : ℕ) :
+    StronglyMeasurable[ℱ.predictable] (fun p : ℝ≥0 × Ω => u (leftSample n p.1) p.2) := by
+  have hs : IsSeparable (⋃ k : ℕ, Set.range (u (k / (n + 1)))) :=
+    .iUnion fun k => (hu (k / (n + 1))).isSeparable_range
+  refine stronglyMeasurable_iff_measurable_separable.mpr ⟨measurable_leftSample hu n, hs.mono ?_⟩
+  rintro _ ⟨p, rfl⟩
+  refine Set.mem_iUnion.mpr ⟨⌈p.1 * (n + 1)⌉₊ - 1, ?_⟩
+  dsimp only
+  rw [leftSample_eq_natCast_div]
+  exact Set.mem_range_self p.2
+
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- An adapted process with left-continuous sample paths is predictable. -/
 theorem MeasureTheory.StronglyAdapted.isStronglyPredictable_of_isLeftContinuous
@@ -235,17 +272,7 @@ theorem MeasureTheory.StronglyAdapted.isStronglyPredictable_of_isLeftContinuous
     (hc : ∀ ω, IsLeftContinuous (fun s => u s ω)) :
     IsStronglyPredictable ℱ u := by
   borelize E
-  have hm (n : ℕ) : StronglyMeasurable[ℱ.predictable]
-      (fun p : ℝ≥0 × Ω => u (leftSample n p.1) p.2) := by
-    have hs : IsSeparable (⋃ k : ℕ, Set.range (u (k / (n + 1)))) :=
-      .iUnion fun k => (hu (k / (n + 1))).isSeparable_range
-    refine stronglyMeasurable_iff_measurable_separable.mpr ⟨measurable_leftSample hu n, hs.mono ?_⟩
-    rintro _ ⟨p, rfl⟩
-    refine Set.mem_iUnion.mpr ⟨⌈p.1 * (n + 1)⌉₊ - 1, ?_⟩
-    dsimp only
-    rw [leftSample_eq_natCast_div]
-    exact Set.mem_range_self p.2
-  apply stronglyMeasurable_of_tendsto atTop hm
+  apply stronglyMeasurable_of_tendsto atTop (stronglyMeasurable_leftSample hu)
   apply tendsto_pi_nhds.mpr
   intro p
   apply (continuousWithinAt_Iio_iff_Iic.mp (hc p.2 p.1)).tendsto.comp
@@ -267,6 +294,27 @@ theorem MeasureTheory.Filtration.predictable_le_prod {ι Ω : Type*} {m : Measur
   measurableSpace_le_predictable_of_measurableSet
     (fun _ hA => (measurableSet_singleton _).prod (ℱ.le _ _ hA))
     (fun _ _ hA => measurableSet_Ioi.prod (ℱ.le _ _ hA))
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- An adapted process with almost-surely left-continuous paths has a predictable
+indistinguishable version on the same raw filtration. No completeness or right continuity of
+the filtration is required. The selected version need not be left-continuous on exceptional
+paths. -/
+theorem MeasureTheory.StronglyAdapted.exists_isStronglyPredictable_indist_of_ae_isLeftContinuous
+    [Nonempty E] [IsCompletelyMetrizableSpace E]
+    {ℱ : Filtration ℝ≥0 m} {u : ℝ≥0 → Ω → E} {P : Measure Ω}
+    (hu : StronglyAdapted ℱ u) (hc : ∀ᵐ ω ∂P, IsLeftContinuous (fun t => u t ω)) :
+    ∃ v : ℝ≥0 → Ω → E, IsStronglyPredictable ℱ v ∧ v ≡ᵐ[P] u := by
+  borelize E
+  let v t ω := limUnder atTop (fun n => u (leftSample n t) ω)
+  refine ⟨v, ?_, ?_⟩
+  · let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+    exact StronglyMeasurable.limUnder (stronglyMeasurable_leftSample hu)
+  · filter_upwards [hc] with ω hω
+    intro t
+    exact ((continuousWithinAt_Iio_iff_Iic.mp (hω t)).tendsto.comp
+      (tendsto_nhdsWithin_iff.mpr
+        ⟨tendsto_leftSample t, .of_forall fun n => leftSample_le n t⟩)).limUnder_eq
 
 /-- Calendar time is measurable for the predictable sigma-algebra. -/
 theorem MeasureTheory.Filtration.measurable_fst_predictable {ι Ω : Type*} {m : MeasurableSpace Ω}

@@ -240,10 +240,10 @@ private theorem algorithmicOggExponent_reductionSymbol_cases (W : WeierstrassCur
   refine ⟨fun hg ↦ ?_, fun hm ↦ ?_, fun ha ↦ ?_⟩
   · rw [(reductionSymbol_eq_I_zero_iff W).2 hg,
       (localMinimalDiscriminantValuation_eq_zero_iff R W).2 hg]
-    exact ReductionSymbol.algorithmicOggExponent_I_zero
+    simp
   · obtain ⟨n, hn⟩ := (exists_reductionSymbol_eq_I_add_one_iff W).2 hm
     rw [hn, ((reductionSymbol_eq_I_iff W _).1 hn).2]
-    exact ReductionSymbol.algorithmicOggExponent_I _ n.succ_pos
+    simp
   · obtain ⟨W', D, ϖ, hmin, hD, hϖ, h⟩ := W.exists_isTateTerminal_reductionSymbol R
     exact h.two_le_algorithmicOggExponent hϖ ((forall_reductionSymbol_ne_I_iff W).2 ha)
       (W.localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_baseChange R D hD).symm
@@ -319,7 +319,7 @@ every reduction symbol has at least one component. -/
 theorem algorithmicOggExponent_le_localMinimalDiscriminantValuation (W : WeierstrassCurve K)
     [W.IsElliptic] : W.algorithmicOggExponent R ≤ W.localMinimalDiscriminantValuation R := by
   rw [← Nat.cast_le (α := ℤ), natCast_algorithmicOggExponent,
-    ReductionSymbol.algorithmicOggExponent_eq]
+    ReductionSymbol.algorithmicOggExponent_def]
   have := (W.reductionSymbol R).componentCount_pos
   omega
 
