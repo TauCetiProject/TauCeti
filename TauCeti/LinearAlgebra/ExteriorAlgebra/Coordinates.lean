@@ -27,8 +27,9 @@ In coordinates `εᵢ` moves the coefficient of `s` to `insert i s` and `ιᵢ` 
 `s` to `s.erase i`, each with the shuffle sign `TauCeti.ExteriorAlgebra.basisEraseSign` that moves
 `i` to the front (`Module.Basis.exteriorCreation_apply`, `Module.Basis.exteriorContraction_apply`).
 They satisfy the canonical anticommutation relation `εᵢ ιⱼ + ιⱼ εᵢ = δᵢⱼ`
-(`Module.Basis.exteriorCreation_mul_exteriorContraction_add`), creations anticommute among
-themselves (`Module.Basis.exteriorCreation_mul_exteriorCreation_add`), the product `εᵢ ιᵢ` is the
+(`Module.Basis.exteriorCreation_mul_exteriorContraction_add_swap`), creations anticommute among
+themselves (`Module.Basis.exteriorCreation_mul_exteriorCreation_add_swap`), and so do contractions
+(`Module.Basis.exteriorContraction_mul_exteriorContraction_add_swap`). The product `εᵢ ιᵢ` is the
 occupation projection onto the coordinates `s` containing `i`
 (`Module.Basis.exteriorCreation_mul_exteriorContraction_self_apply`), so the commutator
 `⁅εᵢ, ιᵢ⁆` multiplies the coefficient of `s` by `1` if `i ∈ s` and by `-1` otherwise
@@ -140,7 +141,7 @@ theorem exteriorContraction_apply (i : I) (φ : Finset I → R) (s : Finset I) :
 
 /-- **The canonical anticommutation relation**: `εᵢ ιⱼ + ιⱼ εᵢ` is the identity when `i = j` and
 zero otherwise. -/
-theorem exteriorCreation_mul_exteriorContraction_add (i j : I) :
+theorem exteriorCreation_mul_exteriorContraction_add_swap (i j : I) :
     b.exteriorCreation i * b.exteriorContraction j +
         b.exteriorContraction j * b.exteriorCreation i =
       if i = j then 1 else 0 := by
@@ -156,7 +157,7 @@ theorem exteriorCreation_mul_exteriorContraction_add (i j : I) :
   · simp
 
 /-- **Exterior creations anticommute**: `εᵢ εⱼ + εⱼ εᵢ = 0`. -/
-theorem exteriorCreation_mul_exteriorCreation_add (i j : I) :
+theorem exteriorCreation_mul_exteriorCreation_add_swap (i j : I) :
     b.exteriorCreation i * b.exteriorCreation j + b.exteriorCreation j * b.exteriorCreation i =
       0 := by
   refine LinearMap.ext fun φ ↦ ?_
@@ -164,6 +165,16 @@ theorem exteriorCreation_mul_exteriorCreation_add (i j : I) :
   simp only [LinearMap.add_apply, mul_apply_eq_comp, exteriorCreation_equivFun, ← map_add,
     ← mul_assoc, ← add_mul, ExteriorAlgebra.ι_add_mul_swap, zero_mul, map_zero,
     LinearMap.zero_apply]
+
+/-- **Exterior contractions anticommute**: `ιᵢ ιⱼ + ιⱼ ιᵢ = 0`. -/
+theorem exteriorContraction_mul_exteriorContraction_add_swap (i j : I) :
+    b.exteriorContraction i * b.exteriorContraction j +
+        b.exteriorContraction j * b.exteriorContraction i =
+      0 := by
+  refine LinearMap.ext fun φ ↦ ?_
+  obtain ⟨x, rfl⟩ := b.ExteriorAlgebra.equivFun.surjective φ
+  simp only [LinearMap.add_apply, mul_apply_eq_comp, exteriorContraction_equivFun, ← map_add,
+    contractLeft_comm (b.coord i) (b.coord j), neg_add_cancel, map_zero, LinearMap.zero_apply]
 
 /-- **The occupation projection**: `εᵢ ιᵢ` keeps the coefficients of the index sets containing `i`
 and kills the others. -/
@@ -182,7 +193,7 @@ theorem exteriorCreation_mul_exteriorContraction_self_apply (i : I) (φ : Finset
 theorem lie_exteriorCreation_exteriorContraction_self_apply (i : I) (φ : Finset I → R)
     (s : Finset I) :
     ⁅b.exteriorCreation i, b.exteriorContraction i⁆ φ s = if i ∈ s then φ s else -φ s := by
-  have h := congr($(b.exteriorCreation_mul_exteriorContraction_add i i) φ s)
+  have h := congr($(b.exteriorCreation_mul_exteriorContraction_add_swap i i) φ s)
   simp only [LinearMap.add_apply, Pi.add_apply, ↓reduceIte, one_apply_eq_self] at h
   rw [Ring.lie_def, LinearMap.sub_apply, Pi.sub_apply]
   have hp := b.exteriorCreation_mul_exteriorContraction_self_apply i φ s

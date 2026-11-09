@@ -24,11 +24,11 @@ The exterior derivative is `d = ∑ᵢ εᵢ ∂ᵢ`, and for the Euclidean metr
 
 For a function `f` and a real parameter `t`, Witten's deformation `d_t = e^{-tf} d e^{tf}` of the
 exterior derivative is `d_t = d + t df ∧ = ∑ᵢ εᵢ (∂ᵢ + t ∂ᵢf)`
-(`TauCeti.euclideanWittenDiff`), and its formal adjoint is
-`d_t^* = d^* + t ι_{∇f} = ∑ᵢ ιᵢ (-∂ᵢ + t ∂ᵢf)` (`TauCeti.euclideanWittenCodiff`), since
+(`TauCeti.euclideanWittenExtDeriv`), and its formal adjoint is
+`d_t^* = d^* + t ι_{∇f} = ∑ᵢ ιᵢ (-∂ᵢ + t ∂ᵢf)` (`TauCeti.euclideanWittenCodifferential`), since
 multiplication by `t ∂ᵢf` is symmetric: the pointwise pairings `⟨d_t φ, ψ⟩` and `⟨φ, d_t^* ψ⟩`
 differ by a divergence
-(`TauCeti.sum_euclideanWittenDiff_mul_sub_sum_mul_euclideanWittenCodiff`). The
+(`TauCeti.sum_euclideanWittenExtDeriv_mul_sub_sum_mul_euclideanWittenCodifferential`). The
 **Witten Laplacian** is `Δ_t = d_t d_t^* + d_t^* d_t` (`TauCeti.euclideanWittenLaplacian`).
 
 The main result is Witten's formula for `Δ_t` in the orthonormal frame `∂ᵢ`
@@ -45,22 +45,22 @@ finitely many critical points, all nondegenerate, `|df|` bounded below outside a
 the Hessian of `f` bounded, this is the mechanism by which the low-lying spectrum of `Δ_t`
 concentrates near the critical points; no spectral statement is proved here. The proof expands
 `d_t d_t^*` and `d_t^* d_t` and uses the canonical anticommutation relation `εᵢ ιⱼ + ιⱼ εᵢ = δᵢⱼ`
-(`Module.Basis.exteriorCreation_mul_exteriorContraction_add`), together with the symmetry of
+(`Module.Basis.exteriorCreation_mul_exteriorContraction_add_swap`), together with the symmetry of
 second derivatives of `C²` maps.
 
 ## Main definitions
 
-* `TauCeti.euclideanWittenDiff`: the deformed exterior derivative `d_t = d + t df ∧`.
-* `TauCeti.euclideanWittenCodiff`: its formal adjoint `d_t^* = d^* + t ι_{∇f}`.
+* `TauCeti.euclideanWittenExtDeriv`: the deformed exterior derivative `d_t = d + t df ∧`.
+* `TauCeti.euclideanWittenCodifferential`: its formal adjoint `d_t^* = d^* + t ι_{∇f}`.
 * `TauCeti.euclideanWittenLaplacian`: the Witten Laplacian `d_t d_t^* + d_t^* d_t`.
 
 ## Main results
 
-* `TauCeti.euclideanWittenDiff_apply_eq_exp_smul`: the conjugation formula
+* `TauCeti.euclideanWittenExtDeriv_apply_eq_exp_smul`: the conjugation formula
   `d_t = e^{-tf} d e^{tf}`.
-* `TauCeti.euclideanWittenDiff_euclideanWittenDiff_apply`: `d_t d_t = 0` on `C²` forms.
-* `TauCeti.sum_euclideanWittenDiff_mul_sub_sum_mul_euclideanWittenCodiff`: the Lagrange identity
-  exhibiting `d_t^*` as the formal adjoint of `d_t`.
+* `TauCeti.euclideanWittenExtDeriv_euclideanWittenExtDeriv_apply`: `d_t d_t = 0` on `C²` forms.
+* `TauCeti.sum_euclideanWittenExtDeriv_mul_sub_sum_mul_euclideanWittenCodifferential`: the
+  Lagrange identity exhibiting `d_t^*` as the formal adjoint of `d_t`.
 * `TauCeti.euclideanWittenLaplacian_apply`: Witten's frame formula for the Witten Laplacian.
 
 ## References
@@ -81,7 +81,7 @@ variable {ι : Type*} [Fintype ι] [LinearOrder ι]
 /-- **The Witten differential** `d_t = d + t df ∧` on differential forms on `ℝ^ι`, written in the
 coordinates of the exterior basis: `d_t φ = ∑ᵢ εᵢ (∂ᵢ φ + t ∂ᵢ f · φ)`, with `εᵢ` exterior
 multiplication by `dx^i`. -/
-def euclideanWittenDiff (f : (ι → ℝ) → ℝ) (t : ℝ) (φ : (ι → ℝ) → Finset ι → ℝ) :
+def euclideanWittenExtDeriv (f : (ι → ℝ) → ℝ) (t : ℝ) (φ : (ι → ℝ) → Finset ι → ℝ) :
     (ι → ℝ) → Finset ι → ℝ :=
   fun x ↦ ∑ i, (Pi.basisFun ℝ ι).exteriorCreation i
     (fderiv ℝ φ x (Pi.single i 1) + (t * fderiv ℝ f x (Pi.single i 1)) • φ x)
@@ -89,7 +89,7 @@ def euclideanWittenDiff (f : (ι → ℝ) → ℝ) (t : ℝ) (φ : (ι → ℝ) 
 /-- **The Witten codifferential** `d_t^* = d^* + t ι_{∇f}`, the formal adjoint of the Witten
 differential for the Euclidean metric, written in the coordinates of the exterior basis:
 `d_t^* φ = ∑ᵢ ιᵢ (-∂ᵢ φ + t ∂ᵢ f · φ)`, with `ιᵢ` contraction with `∂ᵢ`. -/
-def euclideanWittenCodiff (f : (ι → ℝ) → ℝ) (t : ℝ) (φ : (ι → ℝ) → Finset ι → ℝ) :
+def euclideanWittenCodifferential (f : (ι → ℝ) → ℝ) (t : ℝ) (φ : (ι → ℝ) → Finset ι → ℝ) :
     (ι → ℝ) → Finset ι → ℝ :=
   fun x ↦ ∑ i, (Pi.basisFun ℝ ι).exteriorContraction i
     (-fderiv ℝ φ x (Pi.single i 1) + (t * fderiv ℝ f x (Pi.single i 1)) • φ x)
@@ -97,80 +97,87 @@ def euclideanWittenCodiff (f : (ι → ℝ) → ℝ) (t : ℝ) (φ : (ι → ℝ
 /-- **The Witten Laplacian** `Δ_t = d_t d_t^* + d_t^* d_t` on differential forms on `ℝ^ι`. -/
 def euclideanWittenLaplacian (f : (ι → ℝ) → ℝ) (t : ℝ) (φ : (ι → ℝ) → Finset ι → ℝ) :
     (ι → ℝ) → Finset ι → ℝ :=
-  euclideanWittenDiff f t (euclideanWittenCodiff f t φ) +
-    euclideanWittenCodiff f t (euclideanWittenDiff f t φ)
+  euclideanWittenExtDeriv f t (euclideanWittenCodifferential f t φ) +
+    euclideanWittenCodifferential f t (euclideanWittenExtDeriv f t φ)
 
-theorem euclideanWittenDiff_apply (f : (ι → ℝ) → ℝ) (t : ℝ) (φ : (ι → ℝ) → Finset ι → ℝ)
+theorem euclideanWittenExtDeriv_apply (f : (ι → ℝ) → ℝ) (t : ℝ) (φ : (ι → ℝ) → Finset ι → ℝ)
     (x : ι → ℝ) :
-    euclideanWittenDiff f t φ x = ∑ i, (Pi.basisFun ℝ ι).exteriorCreation i
+    euclideanWittenExtDeriv f t φ x = ∑ i, (Pi.basisFun ℝ ι).exteriorCreation i
       (fderiv ℝ φ x (Pi.single i 1) + (t * fderiv ℝ f x (Pi.single i 1)) • φ x) :=
   (rfl)
 
-theorem euclideanWittenCodiff_apply (f : (ι → ℝ) → ℝ) (t : ℝ) (φ : (ι → ℝ) → Finset ι → ℝ)
+theorem euclideanWittenCodifferential_apply (f : (ι → ℝ) → ℝ) (t : ℝ) (φ : (ι → ℝ) → Finset ι → ℝ)
     (x : ι → ℝ) :
-    euclideanWittenCodiff f t φ x = ∑ i, (Pi.basisFun ℝ ι).exteriorContraction i
+    euclideanWittenCodifferential f t φ x = ∑ i, (Pi.basisFun ℝ ι).exteriorContraction i
       (-fderiv ℝ φ x (Pi.single i 1) + (t * fderiv ℝ f x (Pi.single i 1)) • φ x) :=
   (rfl)
 
 theorem euclideanWittenLaplacian_def (f : (ι → ℝ) → ℝ) (t : ℝ) (φ : (ι → ℝ) → Finset ι → ℝ) :
     euclideanWittenLaplacian f t φ =
-      euclideanWittenDiff f t (euclideanWittenCodiff f t φ) +
-        euclideanWittenCodiff f t (euclideanWittenDiff f t φ) :=
+      euclideanWittenExtDeriv f t (euclideanWittenCodifferential f t φ) +
+        euclideanWittenCodifferential f t (euclideanWittenExtDeriv f t φ) :=
   (rfl)
 
 /-- At `t = 0` the Witten differential is the exterior derivative `d = ∑ᵢ εᵢ ∂ᵢ`. -/
-theorem euclideanWittenDiff_zero_apply (f : (ι → ℝ) → ℝ) (φ : (ι → ℝ) → Finset ι → ℝ)
+theorem euclideanWittenExtDeriv_zero_apply (f : (ι → ℝ) → ℝ) (φ : (ι → ℝ) → Finset ι → ℝ)
     (x : ι → ℝ) :
-    euclideanWittenDiff f 0 φ x =
+    euclideanWittenExtDeriv f 0 φ x =
       ∑ i, (Pi.basisFun ℝ ι).exteriorCreation i (fderiv ℝ φ x (Pi.single i 1)) := by
-  simp only [euclideanWittenDiff_apply, zero_mul, zero_smul, add_zero]
+  simp only [euclideanWittenExtDeriv_apply, zero_mul, zero_smul, add_zero]
 
 /-- At `t = 0` the Witten codifferential is the Euclidean codifferential `d^* = -∑ᵢ ιᵢ ∂ᵢ`. -/
-theorem euclideanWittenCodiff_zero_apply (f : (ι → ℝ) → ℝ) (φ : (ι → ℝ) → Finset ι → ℝ)
+theorem euclideanWittenCodifferential_zero_apply (f : (ι → ℝ) → ℝ) (φ : (ι → ℝ) → Finset ι → ℝ)
     (x : ι → ℝ) :
-    euclideanWittenCodiff f 0 φ x =
+    euclideanWittenCodifferential f 0 φ x =
       -∑ i, (Pi.basisFun ℝ ι).exteriorContraction i (fderiv ℝ φ x (Pi.single i 1)) := by
-  simp only [euclideanWittenCodiff_apply, zero_mul, zero_smul, add_zero, map_neg,
+  simp only [euclideanWittenCodifferential_apply, zero_mul, zero_smul, add_zero, map_neg,
     Finset.sum_neg_distrib]
 
-theorem euclideanWittenDiff_add_apply (f : (ι → ℝ) → ℝ) (t : ℝ) {φ ψ : (ι → ℝ) → Finset ι → ℝ}
+theorem euclideanWittenExtDeriv_add_apply (f : (ι → ℝ) → ℝ) (t : ℝ) {φ ψ : (ι → ℝ) → Finset ι → ℝ}
     {x : ι → ℝ} (hφ : DifferentiableAt ℝ φ x) (hψ : DifferentiableAt ℝ ψ x) :
-    euclideanWittenDiff f t (φ + ψ) x =
-      euclideanWittenDiff f t φ x + euclideanWittenDiff f t ψ x := by
-  simp only [euclideanWittenDiff_apply, fderiv_add hφ hψ, ← Finset.sum_add_distrib, ← map_add,
+    euclideanWittenExtDeriv f t (φ + ψ) x =
+      euclideanWittenExtDeriv f t φ x + euclideanWittenExtDeriv f t ψ x := by
+  simp only [euclideanWittenExtDeriv_apply, fderiv_add hφ hψ, ← Finset.sum_add_distrib, ← map_add,
     add_apply, Pi.add_apply, smul_add]
   refine Finset.sum_congr rfl fun i _ ↦ congrArg _ ?_
   abel
 
-theorem euclideanWittenCodiff_add_apply (f : (ι → ℝ) → ℝ) (t : ℝ) {φ ψ : (ι → ℝ) → Finset ι → ℝ}
-    {x : ι → ℝ} (hφ : DifferentiableAt ℝ φ x) (hψ : DifferentiableAt ℝ ψ x) :
-    euclideanWittenCodiff f t (φ + ψ) x =
-      euclideanWittenCodiff f t φ x + euclideanWittenCodiff f t ψ x := by
-  simp only [euclideanWittenCodiff_apply, fderiv_add hφ hψ, ← Finset.sum_add_distrib, ← map_add,
-    add_apply, Pi.add_apply, smul_add, neg_add]
+theorem euclideanWittenCodifferential_add_apply (f : (ι → ℝ) → ℝ) (t : ℝ)
+    {φ ψ : (ι → ℝ) → Finset ι → ℝ} {x : ι → ℝ} (hφ : DifferentiableAt ℝ φ x)
+    (hψ : DifferentiableAt ℝ ψ x) :
+    euclideanWittenCodifferential f t (φ + ψ) x =
+      euclideanWittenCodifferential f t φ x + euclideanWittenCodifferential f t ψ x := by
+  simp only [euclideanWittenCodifferential_apply, fderiv_add hφ hψ, ← Finset.sum_add_distrib,
+    ← map_add, add_apply, Pi.add_apply, smul_add, neg_add]
   refine Finset.sum_congr rfl fun i _ ↦ congrArg _ ?_
   abel
 
-theorem euclideanWittenDiff_smul (f : (ι → ℝ) → ℝ) (t c : ℝ) (φ : (ι → ℝ) → Finset ι → ℝ) :
-    euclideanWittenDiff f t (c • φ) = c • euclideanWittenDiff f t φ := by
+theorem euclideanWittenExtDeriv_smul (f : (ι → ℝ) → ℝ) (t c : ℝ) (φ : (ι → ℝ) → Finset ι → ℝ) :
+    euclideanWittenExtDeriv f t (c • φ) = c • euclideanWittenExtDeriv f t φ := by
   funext x
-  simp only [euclideanWittenDiff_apply, fderiv_const_smul_field, Pi.smul_apply, Finset.smul_sum,
+  simp only [euclideanWittenExtDeriv_apply, fderiv_const_smul_field, Pi.smul_apply, Finset.smul_sum,
     ← map_smul, smul_apply, smul_add, smul_comm c]
 
-theorem euclideanWittenCodiff_smul (f : (ι → ℝ) → ℝ) (t c : ℝ) (φ : (ι → ℝ) → Finset ι → ℝ) :
-    euclideanWittenCodiff f t (c • φ) = c • euclideanWittenCodiff f t φ := by
+theorem euclideanWittenCodifferential_smul (f : (ι → ℝ) → ℝ) (t c : ℝ)
+    (φ : (ι → ℝ) → Finset ι → ℝ) :
+    euclideanWittenCodifferential f t (c • φ) = c • euclideanWittenCodifferential f t φ := by
   funext x
-  simp only [euclideanWittenCodiff_apply, fderiv_const_smul_field, Pi.smul_apply, Finset.smul_sum,
-    ← map_smul, smul_apply, smul_add, smul_neg, smul_comm c]
+  simp only [euclideanWittenCodifferential_apply, fderiv_const_smul_field, Pi.smul_apply,
+    Finset.smul_sum, ← map_smul, smul_apply, smul_add, smul_neg, smul_comm c]
+
+theorem euclideanWittenLaplacian_smul (f : (ι → ℝ) → ℝ) (t c : ℝ) (φ : (ι → ℝ) → Finset ι → ℝ) :
+    euclideanWittenLaplacian f t (c • φ) = c • euclideanWittenLaplacian f t φ := by
+  simp only [euclideanWittenLaplacian_def, euclideanWittenCodifferential_smul,
+    euclideanWittenExtDeriv_smul, smul_add]
 
 /-- **The Witten differential is the conjugate `d_t = e^{-tf} d e^{tf}` of the exterior
 derivative.** For `f` and `φ` differentiable at `x`, `d_t φ = e^{-tf} d (e^{tf} φ)` at `x`. -/
-theorem euclideanWittenDiff_apply_eq_exp_smul {f : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → Finset ι → ℝ}
+theorem euclideanWittenExtDeriv_apply_eq_exp_smul {f : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → Finset ι → ℝ}
     {x : ι → ℝ} (hf : DifferentiableAt ℝ f x) (hφ : DifferentiableAt ℝ φ x) (t : ℝ) :
-    euclideanWittenDiff f t φ x =
-      Real.exp (-(t * f x)) • euclideanWittenDiff f 0 (fun y ↦ Real.exp (t * f y) • φ y) x := by
+    euclideanWittenExtDeriv f t φ x =
+      Real.exp (-(t * f x)) • euclideanWittenExtDeriv f 0 (fun y ↦ Real.exp (t * f y) • φ y) x := by
   have h := ((hf.hasFDerivAt.const_mul t).exp).fun_smul hφ.hasFDerivAt
-  rw [euclideanWittenDiff_zero_apply, h.fderiv, euclideanWittenDiff_apply, Finset.smul_sum]
+  rw [euclideanWittenExtDeriv_zero_apply, h.fderiv, euclideanWittenExtDeriv_apply, Finset.smul_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [← map_smul]
   congr 1
@@ -181,10 +188,11 @@ theorem euclideanWittenDiff_apply_eq_exp_smul {f : (ι → ℝ) → ℝ} {φ : (
 /-- **The Lagrange identity: `d_t^*` is the formal adjoint of `d_t`.** For forms `φ`, `ψ`
 differentiable at `x`, the pointwise pairings `⟨d_t φ, ψ⟩` and `⟨φ, d_t^* ψ⟩` differ by the
 divergence `∑ᵢ ∂ᵢ ⟨φ, ιᵢ ψ⟩`, whose integral vanishes for compactly supported forms. -/
-theorem sum_euclideanWittenDiff_mul_sub_sum_mul_euclideanWittenCodiff (f : (ι → ℝ) → ℝ) (t : ℝ)
-    {φ ψ : (ι → ℝ) → Finset ι → ℝ} {x : ι → ℝ} (hφ : DifferentiableAt ℝ φ x)
-    (hψ : DifferentiableAt ℝ ψ x) :
-    ∑ s, euclideanWittenDiff f t φ x s * ψ x s - ∑ s, φ x s * euclideanWittenCodiff f t ψ x s =
+theorem sum_euclideanWittenExtDeriv_mul_sub_sum_mul_euclideanWittenCodifferential
+    (f : (ι → ℝ) → ℝ) (t : ℝ) {φ ψ : (ι → ℝ) → Finset ι → ℝ} {x : ι → ℝ}
+    (hφ : DifferentiableAt ℝ φ x) (hψ : DifferentiableAt ℝ ψ x) :
+    ∑ s, euclideanWittenExtDeriv f t φ x s * ψ x s -
+        ∑ s, φ x s * euclideanWittenCodifferential f t ψ x s =
       ∑ i, fderiv ℝ (fun y ↦ ∑ s, φ y s * (Pi.basisFun ℝ ι).exteriorContraction i (ψ y) s) x
         (Pi.single i 1) := by
   set ε := (Pi.basisFun ℝ ι).exteriorCreation
@@ -212,13 +220,13 @@ theorem sum_euclideanWittenDiff_mul_sub_sum_mul_euclideanWittenCodiff (f : (ι �
       HasFDerivAt.fun_sum fun s _ ↦ (hφs s).mul (hψs s)
     rw [h.fderiv]
     simp [add_comm, mul_comm]
-  have e₁ : ∑ s, euclideanWittenDiff f t φ x s * ψ x s = ∑ i, ∑ s, ε i
+  have e₁ : ∑ s, euclideanWittenExtDeriv f t φ x s * ψ x s = ∑ i, ∑ s, ε i
       (fderiv ℝ φ x (Pi.single i 1) + (t * fderiv ℝ f x (Pi.single i 1)) • φ x) s * ψ x s := by
-    simp only [euclideanWittenDiff_apply, Finset.sum_apply, Finset.sum_mul]
+    simp only [euclideanWittenExtDeriv_apply, Finset.sum_apply, Finset.sum_mul]
     exact Finset.sum_comm
-  have e₂ : ∑ s, φ x s * euclideanWittenCodiff f t ψ x s = ∑ i, ∑ s, φ x s * κ i
+  have e₂ : ∑ s, φ x s * euclideanWittenCodifferential f t ψ x s = ∑ i, ∑ s, φ x s * κ i
       (-fderiv ℝ ψ x (Pi.single i 1) + (t * fderiv ℝ f x (Pi.single i 1)) • ψ x) s := by
-    simp only [euclideanWittenCodiff_apply, Finset.sum_apply, Finset.mul_sum]
+    simp only [euclideanWittenCodifferential_apply, Finset.sum_apply, Finset.mul_sum]
     exact Finset.sum_comm
   rw [e₁, e₂, ← Finset.sum_sub_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
@@ -296,8 +304,8 @@ private theorem sum_sum_exteriorCreation_exteriorCreation_eq_zero (X : ι → ι
       ((Pi.basisFun ℝ ι).exteriorCreation i (X j i)) = 0 := by
   set ε := (Pi.basisFun ℝ ι).exteriorCreation
   have hanti : ∀ i j v, ε i (ε j v) = -ε j (ε i v) := fun i j v ↦
-    eq_neg_of_add_eq_zero_left congr($((Pi.basisFun ℝ ι).exteriorCreation_mul_exteriorCreation_add
-      i j) v)
+    eq_neg_of_add_eq_zero_left
+      congr($((Pi.basisFun ℝ ι).exteriorCreation_mul_exteriorCreation_add_swap i j) v)
   have h : ∑ j, ∑ i, ε j (ε i (X j i)) = -∑ j, ∑ i, ε j (ε i (X j i)) := by
     conv_lhs => rw [Finset.sum_comm]
     simp only [← Finset.sum_neg_distrib]
@@ -307,9 +315,9 @@ private theorem sum_sum_exteriorCreation_exteriorCreation_eq_zero (X : ι → ι
 
 /-- **The Witten differential squares to zero**: `d_t d_t φ = 0` at `x` for `f` and `φ` that are
 `C²` at `x`. -/
-theorem euclideanWittenDiff_euclideanWittenDiff_apply {f : (ι → ℝ) → ℝ}
+theorem euclideanWittenExtDeriv_euclideanWittenExtDeriv_apply {f : (ι → ℝ) → ℝ}
     {φ : (ι → ℝ) → Finset ι → ℝ} {x : ι → ℝ} (hf : ContDiffAt ℝ 2 f x) (hφ : ContDiffAt ℝ 2 φ x)
-    (t : ℝ) : euclideanWittenDiff f t (euclideanWittenDiff f t φ) x = 0 := by
+    (t : ℝ) : euclideanWittenExtDeriv f t (euclideanWittenExtDeriv f t φ) x = 0 := by
   set ε := (Pi.basisFun ℝ ι).exteriorCreation
   set D : ι → Finset ι → ℝ := fun i ↦ fderiv ℝ φ x (Pi.single i 1)
   set S : ι → ι → Finset ι → ℝ := fun i j ↦ fderiv ℝ (fderiv ℝ φ) x (Pi.single i 1) (Pi.single j 1)
@@ -319,15 +327,15 @@ theorem euclideanWittenDiff_euclideanWittenDiff_apply {f : (ι → ℝ) → ℝ}
   have hH : ∀ i j, H i j = H j i := fun i j ↦ (hf.isSymmSndFDerivAt (by simp)) _ _
   set X : ι → ι → Finset ι → ℝ := fun j i ↦
     S j i + (t * H j i) • φ x + (t * g i) • D j + (t * g j) • D i + (t ^ 2 * g j * g i) • φ x
-  have hdiff : euclideanWittenDiff f t φ = fun y ↦ ∑ i, ε i ((1 : ℝ) •
+  have hdiff : euclideanWittenExtDeriv f t φ = fun y ↦ ∑ i, ε i ((1 : ℝ) •
       fderiv ℝ φ y (Pi.single i 1) + (t * fderiv ℝ f y (Pi.single i 1)) • φ y) := by
     funext y
-    simp only [euclideanWittenDiff_apply, one_smul, ε]
-  rw [euclideanWittenDiff_apply, ← sum_sum_exteriorCreation_exteriorCreation_eq_zero X
+    simp only [euclideanWittenExtDeriv_apply, one_smul, ε]
+  rw [euclideanWittenExtDeriv_apply, ← sum_sum_exteriorCreation_exteriorCreation_eq_zero X
     fun i j ↦ by simp only [X, hS i j, hH i j]; module]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [hdiff, fderiv_sum_wittenSummand_apply hf hφ t 1 ε (Pi.single j 1), ← hdiff,
-    euclideanWittenDiff_apply, Finset.smul_sum, ← Finset.sum_add_distrib, map_sum]
+    euclideanWittenExtDeriv_apply, Finset.smul_sum, ← Finset.sum_add_distrib, map_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   simp only [ε, X, D, S, g, H, map_add, map_smul]
   module
@@ -360,29 +368,29 @@ theorem euclideanWittenLaplacian_apply {f : (ι → ℝ) → ℝ} {φ : (ι → 
   set Z : ι → ι → Finset ι → ℝ := fun i j ↦
     -S i j + (t * g j) • D i - (t * g i) • D j + (t ^ 2 * g i * g j) • φ x
   set W : ι → ι → Finset ι → ℝ := fun i j ↦ (t * H i j) • φ x
-  have hcod : euclideanWittenCodiff f t φ = fun y ↦ ∑ i, κ i ((-1 : ℝ) •
+  have hcod : euclideanWittenCodifferential f t φ = fun y ↦ ∑ i, κ i ((-1 : ℝ) •
       fderiv ℝ φ y (Pi.single i 1) + (t * fderiv ℝ f y (Pi.single i 1)) • φ y) := by
     funext y
-    simp only [euclideanWittenCodiff_apply, neg_one_smul, κ]
-  have hdiff : euclideanWittenDiff f t φ = fun y ↦ ∑ i, ε i ((1 : ℝ) •
+    simp only [euclideanWittenCodifferential_apply, neg_one_smul, κ]
+  have hdiff : euclideanWittenExtDeriv f t φ = fun y ↦ ∑ i, ε i ((1 : ℝ) •
       fderiv ℝ φ y (Pi.single i 1) + (t * fderiv ℝ f y (Pi.single i 1)) • φ y) := by
     funext y
-    simp only [euclideanWittenDiff_apply, one_smul, ε]
-  have h₁ : euclideanWittenDiff f t (euclideanWittenCodiff f t φ) x =
+    simp only [euclideanWittenExtDeriv_apply, one_smul, ε]
+  have h₁ : euclideanWittenExtDeriv f t (euclideanWittenCodifferential f t φ) x =
       ∑ i, ∑ j, ε i (κ j (Z i j + W i j)) := by
-    rw [euclideanWittenDiff_apply]
+    rw [euclideanWittenExtDeriv_apply]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [hcod, fderiv_sum_wittenSummand_apply hf hφ t (-1) κ (Pi.single i 1), ← hcod,
-      euclideanWittenCodiff_apply, Finset.smul_sum, ← Finset.sum_add_distrib, map_sum]
+      euclideanWittenCodifferential_apply, Finset.smul_sum, ← Finset.sum_add_distrib, map_sum]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     simp only [ε, κ, Z, W, D, S, g, H, map_add, map_sub, map_smul, map_neg]
     module
-  have h₂ : euclideanWittenCodiff f t (euclideanWittenDiff f t φ) x =
+  have h₂ : euclideanWittenCodifferential f t (euclideanWittenExtDeriv f t φ) x =
       ∑ i, ∑ j, κ j (ε i (Z i j - W i j)) := by
-    rw [euclideanWittenCodiff_apply, Finset.sum_comm]
+    rw [euclideanWittenCodifferential_apply, Finset.sum_comm]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     rw [hdiff, fderiv_sum_wittenSummand_apply hf hφ t 1 ε (Pi.single j 1), ← hdiff,
-      euclideanWittenDiff_apply, Finset.smul_sum, ← Finset.sum_neg_distrib,
+      euclideanWittenExtDeriv_apply, Finset.smul_sum, ← Finset.sum_neg_distrib,
       ← Finset.sum_add_distrib, map_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     have hS' := hS j i
@@ -392,7 +400,7 @@ theorem euclideanWittenLaplacian_apply {f : (ι → ℝ) → ℝ} {φ : (ι → 
     module
   rw [euclideanWittenLaplacian_def, Pi.add_apply, h₁, h₂,
     sum_creation_contraction_of_anticommutator ε κ
-      (Pi.basisFun ℝ ι).exteriorCreation_mul_exteriorContraction_add,
+      (Pi.basisFun ℝ ι).exteriorCreation_mul_exteriorContraction_add_swap,
     Finset.smul_sum]
   congr 1
   · refine Finset.sum_congr rfl fun i _ ↦ ?_
@@ -402,6 +410,26 @@ theorem euclideanWittenLaplacian_apply {f : (ι → ℝ) → ℝ} {φ : (ι → 
     rw [Finset.smul_sum]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     simp only [W, H, map_smul, smul_smul]
+
+/-- The Witten Laplacian is additive on forms that are `C²` at the point, for `f` that is `C²` at
+the point. -/
+theorem euclideanWittenLaplacian_add_apply {f : (ι → ℝ) → ℝ} {φ ψ : (ι → ℝ) → Finset ι → ℝ}
+    {x : ι → ℝ} (hf : ContDiffAt ℝ 2 f x) (hφ : ContDiffAt ℝ 2 φ x) (hψ : ContDiffAt ℝ 2 ψ x)
+    (t : ℝ) :
+    euclideanWittenLaplacian f t (φ + ψ) x =
+      euclideanWittenLaplacian f t φ x + euclideanWittenLaplacian f t ψ x := by
+  have hd : fderiv ℝ (φ + ψ) =ᶠ[nhds x] fderiv ℝ φ + fderiv ℝ ψ := by
+    filter_upwards [hφ.eventually (by simp), hψ.eventually (by simp)] with y hφy hψy
+    exact fderiv_add (hφy.differentiableAt (by norm_num)) (hψy.differentiableAt (by norm_num))
+  have hφ' : DifferentiableAt ℝ (fderiv ℝ φ) x :=
+    (hφ.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  have hψ' : DifferentiableAt ℝ (fderiv ℝ ψ) x :=
+    (hψ.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  rw [euclideanWittenLaplacian_apply (φ := φ + ψ) hf (hφ.add hψ),
+    euclideanWittenLaplacian_apply hf hφ, euclideanWittenLaplacian_apply hf hψ, hd.fderiv_eq,
+    fderiv_add hφ' hψ']
+  simp only [add_apply, Pi.add_apply, map_add, smul_add, neg_add, Finset.sum_add_distrib]
+  abel
 
 end FrameFormula
 
