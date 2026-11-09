@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Green.WindingWeight.Basic
 import TauCeti.Analysis.Green.WindingWeight.FiniteSum
-import Mathlib.Basic.Complex.BigOperators
 
 /-!
 # Winding weights on a field domain
@@ -50,6 +49,7 @@ theorem indicator_sum_windingWeight_eq_self {ι : Type*} {s : Finset ι}
   by_cases hz : z ∈ U
   · exact indicator_of_mem hz _
   · rw [indicator_of_notMem hz, sum_windingWeight_eq_zero_of_notMem
-      (fun i hi ht ↦ hz (htrace i hi ht)) (hindex z hz)]
+      (w := fun i ↦ (w i : ℝ)) (fun i hi ht ↦ hz (htrace i hi ht))
+      (by simpa only [Complex.ofReal_intCast] using hindex z hz)]
 
 end TauCeti.Green

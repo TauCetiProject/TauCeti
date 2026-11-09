@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Green.WindingWeight.FiniteSum
 public import TauCeti.Analysis.Green.Basic
 import TauCeti.Analysis.Green.Approximation.FiniteSum
 import TauCeti.Analysis.Green.Polygonal.Green
-import TauCeti.Analysis.Green.WindingWeight.Domain
 import TauCeti.Analysis.Green.Limit
 import TauCeti.Analysis.Green.Localization
 
@@ -73,15 +72,17 @@ private theorem green_ac_winding_sum_of_hasCompactSupport {ι : Type*} {s : Fins
     (ContDiff.continuous_curl hP hQ).aestronglyMeasurable
     (by simpa only [Real.norm_eq_abs] using Eventually.of_forall hC) hwconv
   have hzero (z) (hz : z ∉ U) : W z * curl P Q z = 0 := by
-    simp only [W, sum_windingWeight_eq_zero_of_notMem (fun i hi ht ↦ hz (htrace i hi ht))
-      (hindex z hz), zero_mul]
+    simp only [W, sum_windingWeight_eq_zero_of_notMem (w := fun i ↦ (w i : ℝ))
+      (fun i hi ht ↦ hz (htrace i hi ht))
+      (by simpa only [Complex.ofReal_intCast] using hindex z hz), zero_mul]
   refine ⟨hint, ?_⟩
   have heq : (∑ i ∈ s, (w i : ℝ) * ∫ t in a i..b i, circulationFun P Q (γ i) t) =
       ∫ z in U, W z * curl P Q z := by
     have hzero_n : ∀ᶠ n in atTop, ∀ z ∉ U, Wn n z * curl P Q z = 0 := by
       filter_upwards [hdomain] with n hdom z hz
-      simp only [Wn, sum_windingWeight_eq_zero_of_notMem (fun i hi ht ↦ hz (hdom.1 i hi ht))
-        (hdom.2 z hz), zero_mul]
+      simp only [Wn, sum_windingWeight_eq_zero_of_notMem (w := fun i ↦ (w i : ℝ))
+        (fun i hi ht ↦ hz (hdom.1 i hi ht))
+        (by simpa only [Complex.ofReal_intCast] using hdom.2 z hz), zero_mul]
     have harea_n : ∀ᶠ n in atTop, (∫ z : ℂ, Wn n z * curl P Q z) =
         ∫ z in U, Wn n z * curl P Q z := hzero_n.mono (fun _ hz ↦
       (setIntegral_eq_integral_of_forall_compl_eq_zero hz).symm)
