@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Tensor.Induction.Basic
-import TauCeti.LinearAlgebra.PiTensorProduct.ZMod
+import TauCeti.Algebra.Algebra.ULift
+import TauCeti.RingTheory.PiTensorProduct.Surjective
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 public import TauCeti.Topology.Algebra.Group.WreathProduct.Monomial
 
@@ -162,13 +163,14 @@ example {G : Type v} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
   have : Fintype (G ⧸ U) := Fintype.ofFinite _
   refine ⟨A, z, ?_, fun g ↦ ?_⟩
   · intro hz
-    let e : (⨂[ℤ] _ : G ⧸ U, M) ≃ₗ[ℤ] M := PiTensorProduct.uliftZModEquiv 2
+    let e : (⨂[ℤ] _ : G ⧸ U, M) ≃ₗ[ℤ] M :=
+      (PiTensorProduct.constantAlgEquivOfSurjective
+        (ULift.algebraMap_surjective (ZMod.ringHom_surjective _))).toLinearEquiv
     -- State zero in the tensor carrier, rather than in the bundled object's opaque projection.
     have hz0 : z = (0 : ⨂[ℤ] _ : G ⧸ U, M) := hz
     have hz' : e z = 0 := (congrArg e hz0).trans e.map_zero
-    have hez : e z = (1 : M) := by
-      apply ULift.ext
-      simp [e, z, M]
+    have hez : e z = (1 : M) :=
+      (PiTensorProduct.constantAlgEquivOfSurjective_tprod _ _).trans Finset.prod_const_one
     exact one_ne_zero (congrArg ULift.down (hez.symm.trans hz'))
   · rw [DiscreteRep.tensorInduced_ρ_apply_tprod]
     -- The `compHom` action of the trivial representation reduces to the identity.

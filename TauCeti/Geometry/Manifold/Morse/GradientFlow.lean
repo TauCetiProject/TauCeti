@@ -295,7 +295,7 @@ omit hK hmem
 /-- **Negative gradient trajectories of a proper Morse function converge.** If `f` is a proper
 Morse function bounded below, the maximal integral curve of `-grad f` through any point converges
 to a critical point of `f`, for any `C¹` Riemannian metric. -/
-theorem IsMorse.exists_tendsto_maximalIntegralCurve_neg_mgradient [I.Boundaryless]
+theorem IsMorse.exists_tendsto_maximalIntegralCurve_neg_mgradient
     (hf : IsMorse I f) (hp : IsProperMap f) (hbdd : BddBelow (range f)) (x : M) :
     ∃ p ∈ criticalPoints I f, Tendsto (maximalIntegralCurve (-mgradient I f) x) atTop (𝓝 p) := by
   have hf2 : ContMDiff I 𝓘(ℝ) 2 f := hf.contMDiff.of_le (by norm_cast)

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 public import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 
 /-!
@@ -49,11 +50,7 @@ theorem generates_mod_torsion_iff_no_smaller_logEmbedding (hr : rank K = 1)
         ‖logEmbedding K (Additive.ofMul v)‖ <
           ‖logEmbedding K (Additive.ofMul u)‖ := by
   classical
-  have hnorm (v : (𝓞 K)ˣ) :
-      ‖logEmbedding K (Additive.ofMul v)‖ =
-        ((Subgroup.closure {v} ⊔ torsion K).index : ℝ) * regulator K := by
-    rw [norm_logEmbedding_eq_mult_abs_log hr v NumberField.Units.dirichletUnitTheorem.w₀,
-      mult_abs_log_eq_index_mul_regulator hr v NumberField.Units.dirichletUnitTheorem.w₀]
+  have hnorm := norm_logEmbedding_eq_index_mul_regulator (K := K) hr
   have hupos : 0 < ‖logEmbedding K (Additive.ofMul u)‖ := by
     rw [norm_pos_iff, ne_eq, NumberField.Units.dirichletUnitTheorem.logEmbedding_eq_zero_iff]
     exact hu
@@ -70,19 +67,7 @@ theorem generates_mod_torsion_iff_no_smaller_logEmbedding (hr : rank K = 1)
     have := regulator_pos K
     exact (not_lt_of_ge (le_mul_of_one_le_left this.le (by exact_mod_cast hvindex))) hvlt
   · intro hmin
-    let i : Fin (rank K) := ⟨0, by omega⟩
-    let g : (𝓞 K)ˣ := fundSystem K i
-    have hrange : Set.range (fundSystem K) = {g} := by
-      ext x
-      simp only [Set.mem_range, Set.mem_singleton_iff]
-      constructor
-      · rintro ⟨j, rfl⟩
-        congr 1
-        exact Fin.ext (by omega)
-      · rintro rfl
-        exact ⟨i, rfl⟩
-    have hggen : Subgroup.closure {g} ⊔ torsion K = ⊤ := by
-      simpa only [hrange] using closure_fundSystem_sup_torsion_eq_top (K := K)
+    obtain ⟨g, hggen⟩ := exists_closure_sup_torsion_eq_top_of_rank_eq_one (K := K) hr
     have hgindex : (Subgroup.closure {g} ⊔ torsion K).index = 1 :=
       Subgroup.index_eq_one.mpr hggen
     have hgpos : 0 < ‖logEmbedding K (Additive.ofMul g)‖ := by

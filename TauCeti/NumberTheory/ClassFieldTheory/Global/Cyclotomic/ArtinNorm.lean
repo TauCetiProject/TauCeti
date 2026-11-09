@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.FiniteExtension
 import TauCeti.NumberTheory.NumberField.Global.Places.Semilocal
+import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.DedekindDomain.SelmerGroup
 
 /-!
@@ -243,7 +244,7 @@ theorem hasFiniteMulSupport_abelianizedLocalCyclotomicCharacter_artinMap (x : K�
       IsLocalRing.residue_eq_zero_iff] at h0
     exact h0 hpunit
   have hq : IsUnit (Nat.card 𝓀[v.adicCompletion K] : ℤ_[p]) :=
-    PadicInt.isUnit_iff.2 (PadicInt.norm_natCast_eq_one_iff.2 hcop)
+    PadicInt.isUnit_natCast_of_coprime hcop
   -- By the unramified formula the character is `q ^ v(x)`, and `v(x) = 0`.
   have hx : normalizedValuation (v.adicCompletion K)
       (Units.map (algebraMap K (v.adicCompletion K)) x) = 1 := by
