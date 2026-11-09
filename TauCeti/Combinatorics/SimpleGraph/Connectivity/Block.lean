@@ -155,8 +155,8 @@ theorem Adj.exists_isBlock_superset_pair [Finite V] (h : G.Adj u v) :
     ∃ B, G.IsBlock B ∧ {u, v} ⊆ B :=
   exists_isBlock_superset (G.induce_pair_connected_of_adj h) (G.not_isCutVertex_induce_pair u v)
 
-/-- In an acyclic simple graph, the endpoints of every edge form a block. -/
-theorem IsAcyclic.isBlock_pair (hG : G.IsAcyclic) (h : G.Adj u v) :
+/-- The endpoints of a bridge edge form a block. -/
+theorem IsBridge.isBlock_pair (hb : G.IsBridge s(u, v)) (h : G.Adj u v) :
     G.IsBlock ({u, v} : Set V) := by
   rw [isBlock_iff]
   refine ⟨G.induce_pair_connected_of_adj h, G.not_isCutVertex_induce_pair u v, ?_⟩
@@ -186,9 +186,40 @@ theorem IsAcyclic.isBlock_pair (hG : G.IsAcyclic) (h : G.Adj u v) :
   let uC : C := ⟨u, huvC (by simp)⟩
   let vC : C := ⟨v, huvC (by simp)⟩
   have huv : (G.induce C).Adj uC vC := h
-  have hbridge : (G.induce C).IsBridge s(uC, vC) :=
-    isAcyclic_iff_forall_adj_isBridge.mp (hG.induce C) huv
+  have hbridge : (G.induce C).IsBridge s(uC, vC) := by
+    apply (isBridge_iff_forall_cycle_notMem huv).mpr
+    intro z p hp hep
+    have hp' : (p.map (Embedding.induce (G := G) C).toHom).IsCycle :=
+      hp.map (f := (Embedding.induce (G := G) C).toHom)
+        (Embedding.induce (G := G) C).injective
+    apply hb.notMem_edges_of_isCycle hp'
+    rw [Walk.edges_map]
+    simpa [uC, vC] using List.mem_map_of_mem
+      (f := Sym2.map ((Embedding.induce (G := G) C) : C → V)) hep
   exact (isEdgeConnected_two_iff_forall_not_isBridge.mp hvertex.isEdgeConnected s(uC, vC)) hbridge
+
+/-- In an acyclic simple graph, the endpoints of every edge form a block. -/
+theorem IsAcyclic.isBlock_pair (hG : G.IsAcyclic) (h : G.Adj u v) :
+    G.IsBlock ({u, v} : Set V) :=
+  (isAcyclic_iff_forall_adj_isBridge.mp hG h).isBlock_pair h
+
+/-- Every nonsingleton block in an acyclic graph is the endpoint set of one of its edges. -/
+theorem IsAcyclic.exists_adj_pair_of_isBlock (hG : G.IsAcyclic) (hB : G.IsBlock B)
+    (hB' : B.Nontrivial) : ∃ u v, G.Adj u v ∧ B = {u, v} := by
+  obtain ⟨u, huB, v, hvB, huv⟩ := hB'
+  obtain ⟨p⟩ := hB.connected.preconnected ⟨u, huB⟩ ⟨v, hvB⟩
+  have hp : ¬p.Nil := Walk.not_nil_of_ne fun h ↦ huv (congrArg Subtype.val h)
+  let x : V := p.snd.1
+  have hxB : x ∈ B := p.snd.property
+  have hadj : G.Adj u x := induce_adj.mp (p.adj_snd hp)
+  have hpair : G.IsBlock ({u, x} : Set V) := hG.isBlock_pair hadj
+  have hpairB : ({u, x} : Set V) ⊆ B := by
+    intro y hy
+    rcases Set.mem_insert_iff.mp hy with rfl | hy
+    · exact huB
+    · exact Set.mem_singleton_iff.mp hy ▸ hxB
+  exact ⟨u, x, hadj,
+    (hpair.eq_of_subset hB.connected hB.not_isCutVertex hpairB).symm⟩
 
 /-! ### Intersections and edge uniqueness -/
 

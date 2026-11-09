@@ -61,13 +61,8 @@ theorem path_isVertexConnected_one : (pathGraph 4).IsVertexConnected 1 := by
   exact ⟨connected_pathGraph.mpr (by decide), inferInstance⟩
 
 /-- No vertex of the four-vertex path is isolated. -/
-theorem path_not_isIsolated (v : Fin 4) : ¬(pathGraph 4).IsIsolated v := by
-  intro h
-  fin_cases v
-  · exact h 1 (by simp [pathGraph_adj])
-  · exact h 0 (by simp [pathGraph_adj])
-  · exact h 1 (by simp [pathGraph_adj])
-  · exact h 2 (by simp [pathGraph_adj])
+theorem path_not_isIsolated (v : Fin 4) : ¬(pathGraph 4).IsIsolated v :=
+  (preconnected_pathGraph 4).not_isIsolated v
 
 /-- The four-vertex path is not two-vertex-connected. -/
 theorem path_not_isVertexConnected_two : ¬(pathGraph 4).IsVertexConnected 2 := by
@@ -90,28 +85,17 @@ theorem path_isBlock_iff {B : Set (Fin 4)} :
     (pathGraph 4).IsBlock B ↔ B = {0, 1} ∨ B = {1, 2} ∨ B = {2, 3} := by
   constructor
   · intro hB
-    obtain ⟨v, hvB⟩ := hB.nonempty
-    have hmore : ∃ w ∈ B, w ≠ v := by
+    obtain ⟨a, haB⟩ := hB.nonempty
+    have hmore : ∃ w ∈ B, w ≠ a := by
       by_contra h
       simp only [not_exists, not_and, not_not] at h
-      have hBv : B = {v} := Set.eq_singleton_iff_unique_mem.mpr ⟨hvB, h⟩
-      exact path_not_isIsolated v ((isBlock_singleton_iff_isIsolated (pathGraph 4) v).mp
-        (hBv ▸ hB))
-    obtain ⟨w, hwB, hwv⟩ := hmore
-    obtain ⟨p⟩ := hB.connected.preconnected ⟨v, hvB⟩ ⟨w, hwB⟩
-    have hp : ¬p.Nil := Walk.not_nil_of_ne fun h ↦ hwv (congrArg Subtype.val h).symm
-    let x : Fin 4 := p.snd.1
-    have hxB : x ∈ B := p.snd.property
-    have hadj : (pathGraph 4).Adj v x := induce_adj.mp (p.adj_snd hp)
-    have hpair : (pathGraph 4).IsBlock ({v, x} : Set (Fin 4)) :=
-      (isAcyclic_pathGraph 4).isBlock_pair hadj
-    have hpairB : ({v, x} : Set (Fin 4)) ⊆ B := by
-      intro y hy
-      rcases Set.mem_insert_iff.mp hy with rfl | hy
-      · exact hvB
-      · exact Set.mem_singleton_iff.mp hy ▸ hxB
-    have hBpair : B = {v, x} :=
-      (hpair.eq_of_subset hB.connected hB.not_isCutVertex hpairB).symm
+      have hBa : B = {a} := Set.eq_singleton_iff_unique_mem.mpr ⟨haB, h⟩
+      exact path_not_isIsolated a ((isBlock_singleton_iff_isIsolated (pathGraph 4) a).mp
+        (hBa ▸ hB))
+    obtain ⟨w, hwB, hwa⟩ := hmore
+    have hB' : B.Nontrivial := ⟨a, haB, w, hwB, Ne.symm hwa⟩
+    obtain ⟨v, x, hadj, hBpair⟩ :=
+      (isAcyclic_pathGraph 4).exists_adj_pair_of_isBlock hB hB'
     rw [hBpair]
     fin_cases v
     · left
