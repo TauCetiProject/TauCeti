@@ -61,4 +61,10 @@ theorem ιNatTrans_app_comp {d e b : D} (f : d ⟶ e) (g : e ⟶ b) (x : C.obj d
     eqToHom_trans (C := C.obj b)]
   rfl
 
+/-- A morphism of a Grothendieck construction is invertible if its base and fiber
+morphisms are invertible. -/
+instance isIso_of_base_fiber {X Y : Grothendieck C} (f : X ⟶ Y)
+    [IsIso f.base] [IsIso f.fiber] : IsIso f :=
+  (isoMk (asIso f.base) (asIso f.fiber)).isIso_hom
+
 end CategoryTheory.Grothendieck
