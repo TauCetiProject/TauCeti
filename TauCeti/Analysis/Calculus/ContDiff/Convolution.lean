@@ -351,6 +351,7 @@ theorem _root_.HasCompactSupport.fderiv_convolution_left_apply_le (hρc : HasCom
   rw [smul_eq_mul, inv_mul_le_iff₀ hs0]
   linarith
 
+omit [SFinite μ] in
 /-- The mollification `ρ ⋆ u` of a function bounded by `M`, by a `C¹` compactly supported kernel
 `ρ`, has derivative bounded by `M * ∫ ‖Dρ‖`, uniformly in the point. -/
 theorem _root_.HasCompactSupport.norm_fderiv_convolution_left_le [IsFiniteMeasureOnCompacts μ]
@@ -358,6 +359,8 @@ theorem _root_.HasCompactSupport.norm_fderiv_convolution_left_le [IsFiniteMeasur
     (huM : ∀ y, ‖u y‖ ≤ M) (x : G) :
     ‖fderiv ℝ (ρ ⋆[lsmul ℝ ℝ, μ] u) x‖ ≤ M * ∫ y, ‖fderiv ℝ ρ y‖ ∂μ := by
   have hM : 0 ≤ M := (norm_nonneg _).trans (huM 0)
+  obtain rfl | hfd := hρc.eq_zero_or_finiteDimensional ℝ hρ.continuous
+  · simp [zero_convolution]
   refine opNorm_le_bound _ (mul_nonneg hM (integral_nonneg fun y ↦ norm_nonneg _)) fun d ↦ ?_
   have hgi : Integrable (fun y ↦ ‖fderiv ℝ ρ y‖) μ :=
     (hρ.continuous_fderiv one_ne_zero).norm.integrable_of_hasCompactSupport (hρc.fderiv ℝ).norm
@@ -371,6 +374,7 @@ theorem _root_.HasCompactSupport.norm_fderiv_convolution_left_le [IsFiniteMeasur
   · rw [integral_mul_const, integral_sub_left_eq_self (fun y ↦ ‖fderiv ℝ ρ y‖) μ x]
     ring
 
+omit [SFinite μ] in
 /-- The mollification `ρ ⋆ u` of a function bounded by `M`, by a `C¹` compactly supported kernel
 `ρ`, is Lipschitz with constant `M * ∫ ‖Dρ‖`. -/
 theorem _root_.HasCompactSupport.lipschitzWith_convolution_left [IsFiniteMeasureOnCompacts μ]
