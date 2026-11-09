@@ -16,11 +16,12 @@ So the source of a continuous separated map to a Hausdorff space is Hausdorff. C
 separated (`IsCoveringMap.isSeparatedMap`), so the total space of a covering of a Hausdorff space
 is Hausdorff.
 
-The fibers of a locally injective map are discrete, so a compact subset of one fiber is finite
+The fibers of a locally injective map are discrete
+(`IsLocallyInjective.isDiscrete_preimage_singleton`), so a compact subset of one fiber is finite
 (`IsLocallyInjective.finite_preimage_singleton_inter`); this needs no topology on the codomain.
-If the total space of a locally injective map is Hausdorff, two sections of it over a preconnected
-set that are continuous on that set and agree at one of its points agree on all of it
-(`IsLocallyInjective.eqOn_of_leftInvOn`).
+For a separated, locally injective map, such as a covering map or any locally injective map with
+Hausdorff total space, two sections over a preconnected set that are continuous on that set and
+agree at one of its points agree on all of it (`IsSeparatedMap.eqOn_of_leftInvOn`).
 -/
 
 public section
@@ -41,34 +42,35 @@ theorem IsSeparatedMap.t2Space (sep : IsSeparatedMap f) (hf : Continuous f) : T2
 theorem IsCoveringMap.t2Space (hf : IsCoveringMap f) : T2Space X :=
   hf.isSeparatedMap.t2Space hf.continuous
 
-section FiniteFiber
+section IsLocallyInjective
+
+open Set
 
 variable {E B : Type*} [TopologicalSpace E] {p : E → B}
+
+/-- The fibers of a locally injective map, such as a local homeomorphism, are discrete. -/
+theorem IsLocallyInjective.isDiscrete_preimage_singleton (hp : IsLocallyInjective p) (b : B) :
+    IsDiscrete (p ⁻¹' {b}) := by
+  -- `p` is constant on the fiber and locally injective.
+  have hb : p ∘ ((↑) : ↥(p ⁻¹' {b}) → E) = fun _ ↦ b := funext fun e ↦ e.2
+  exact ⟨(discreteTopology_iff_locallyInjective b).2 <|
+    hb ▸ hp.comp_right continuous_subtype_val Subtype.val_injective⟩
 
 /-- A compact set of points in one fiber of a locally injective map, such as a local
 homeomorphism, is finite. -/
 theorem IsLocallyInjective.finite_preimage_singleton_inter (hp : IsLocallyInjective p)
-    {s : Set E} {b : B} (hs : IsCompact (p ⁻¹' {b} ∩ s)) : (p ⁻¹' {b} ∩ s).Finite := by
-  -- The fiber is discrete: `p` is constant on it and locally injective.
-  have hb : p ∘ ((↑) : ↥(p ⁻¹' {b} ∩ s) → E) = fun _ ↦ b := funext fun e ↦ e.2.1
-  exact hs.finite ⟨(discreteTopology_iff_locallyInjective b).2 <|
-    hb ▸ hp.comp_right continuous_subtype_val Subtype.val_injective⟩
-
-end FiniteFiber
-
-section LeftInvOn
-
-open Set
-
-variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] {p : E → X}
+    {s : Set E} {b : B} (hs : IsCompact (p ⁻¹' {b} ∩ s)) : (p ⁻¹' {b} ∩ s).Finite :=
+  hs.finite <| (hp.isDiscrete_preimage_singleton b).mono inter_subset_left
 
 /-- Two sections of `p` over a preconnected set `S` that are continuous on `S` and agree at one
-point of `S` agree on `S`, when `p` is locally injective and the total space is Hausdorff. -/
-theorem IsLocallyInjective.eqOn_of_leftInvOn [T2Space E] (hinj : IsLocallyInjective p)
-    {S : Set X} {s s' : X → E} (hS : IsPreconnected S) (hs : ContinuousOn s S)
-    (hs' : ContinuousOn s' S) (hl : LeftInvOn p s S) (hl' : LeftInvOn p s' S) {y : X} (hy : y ∈ S)
-    (hee' : s y = s' y) : EqOn s s' S :=
-  (T2Space.isSeparatedMap p).eqOn_of_comp_eqOn hinj hS hs hs'
+point of `S` agree on `S`, when `p` is separated and locally injective. Every map with Hausdorff
+total space is separated (`T2Space.isSeparatedMap`), and so is every covering map
+(`IsCoveringMap.isSeparatedMap`). -/
+theorem IsSeparatedMap.eqOn_of_leftInvOn [TopologicalSpace B] (sep : IsSeparatedMap p)
+    (hinj : IsLocallyInjective p) {S : Set B} {s s' : B → E} (hS : IsPreconnected S)
+    (hs : ContinuousOn s S) (hs' : ContinuousOn s' S) (hl : LeftInvOn p s S)
+    (hl' : LeftInvOn p s' S) {y : B} (hy : y ∈ S) (hee' : s y = s' y) : EqOn s s' S :=
+  sep.eqOn_of_comp_eqOn hinj hS hs hs'
     (fun z hz ↦ by simp only [Function.comp_apply, hl hz, hl' hz]) hy hee'
 
-end LeftInvOn
+end IsLocallyInjective
