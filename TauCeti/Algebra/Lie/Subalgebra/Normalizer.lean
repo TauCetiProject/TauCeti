@@ -61,8 +61,6 @@ theorem toLieSubalgebra_idealOfLeNormalizer (hT' : T' ≤ T.normalizer) (hle : T
 `T'` normalizes `T`. -/
 theorem le_normalizer_of_le_sup (hsup : T'.toSubmodule ≤ T.toSubmodule ⊔ H.toSubmodule)
     (hH : H ≤ T.normalizer) : T' ≤ T.normalizer :=
-  (toSubmodule_le_toSubmodule _ _).mp <| hsup.trans <| sup_le
-    ((toSubmodule_le_toSubmodule _ _).mpr T.le_normalizer)
-    ((toSubmodule_le_toSubmodule _ _).mpr hH)
+  hsup.trans (sup_le T.le_normalizer hH)
 
 end LieSubalgebra
