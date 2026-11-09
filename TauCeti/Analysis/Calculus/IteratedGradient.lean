@@ -35,6 +35,7 @@ normed, complete structures are recovered by unfolding the recursion rather than
 
 * `TauCeti.IteratedGradient`: the basis-free target of an iterated gradient.
 * `TauCeti.iteratedGradientChain`: the classical derivative fields of a scalar function.
+* `TauCeti.inner_iteratedGradientChain_one_apply`: the order-one field is the second derivative.
 * `Filter.EventuallyEq.iteratedGradientChain`: functions that agree near a point have fields that
   agree near that point.
 * `TauCeti.contDiffAt_iteratedGradientChain`: the `j`th field of a `Cⁿ` function is
@@ -49,7 +50,7 @@ noncomputable section
 
 namespace TauCeti
 
-open scoped ContDiff Topology
+open scoped ContDiff InnerProductSpace Topology
 
 universe u
 
@@ -118,6 +119,17 @@ theorem iteratedGradientChain_zero (f : F → ℝ) :
 theorem iteratedGradientChain_succ (f : F → ℝ) (j : ℕ) :
     iteratedGradientChain f (j + 1) = fderiv ℝ (iteratedGradientChain f j) :=
   (rfl)
+
+/-- The inner-product characterization of the order-one iterated-gradient field: it is the second
+derivative of `f`. -/
+theorem inner_iteratedGradientChain_one_apply (f : F → ℝ) (x v w : F) :
+    ⟪iteratedGradientChain f 1 x v, w⟫_ℝ = fderiv ℝ (fderiv ℝ f) x v w := by
+  have h : iteratedGradientChain f 1 x =
+      InnerProductSpace.continuousLinearMapOfBilin (fderiv ℝ (fderiv ℝ f) x) :=
+    (InnerProductSpace.toDual ℝ F).symm.toContinuousLinearEquiv.comp_fderiv
+      (f := fderiv ℝ f) (x := x)
+  rw [h]
+  exact InnerProductSpace.continuousLinearMapOfBilin_apply _ _ _
 
 /-- Scalar functions that agree near a point have iterated-gradient fields that agree near that
 point, at every order. -/

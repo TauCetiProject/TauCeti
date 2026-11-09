@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Matrix.Contraction
 public import TauCeti.Topology.Algebra.Module.Trace
 public import TauCeti.Analysis.PDE.Regularity.Hessian.ConstantCoefficient
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.Analysis.Sobolev.Wkp.Density
 import TauCeti.Analysis.Sobolev.Wkp.Laplacian

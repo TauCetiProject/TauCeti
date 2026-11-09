@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.PDE.Ellipticity.Basic
 public import TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.Analysis.Matrix.Contraction
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Sobolev.Wkp.Local.UniformApproximation
