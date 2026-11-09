@@ -98,16 +98,17 @@ theorem isUnitary (W : Subcomodule 𝕜 A M) (hM : Comodule.IsUnitary 𝕜 A M) 
 
 /-- The orthogonal complement of a subcomodule of a finite unitary Hopf comodule,
 with its inherited coaction. -/
-noncomputable def orthogonal (W : Subcomodule 𝕜 A M) (hM : Comodule.IsUnitary 𝕜 A M) :
+noncomputable def unitaryOrthogonal (W : Subcomodule 𝕜 A M) (hM : Comodule.IsUnitary 𝕜 A M) :
     Subcomodule 𝕜 A M :=
   (W.subtype.adjoint (W.isUnitary hM) hM).ker
 
 /-- The underlying submodule of the orthogonal subcomodule is the usual orthogonal
 complement. -/
 @[simp]
-theorem orthogonal_toSubmodule (W : Subcomodule 𝕜 A M) (hM : Comodule.IsUnitary 𝕜 A M) :
-    (W.orthogonal hM).toSubmodule = W.toSubmoduleᗮ := by
-  rw [orthogonal, Comodule.Hom.ker_toSubmodule, Comodule.Hom.adjoint_toLinearMap,
+theorem unitaryOrthogonal_toSubmodule (W : Subcomodule 𝕜 A M)
+    (hM : Comodule.IsUnitary 𝕜 A M) :
+    (W.unitaryOrthogonal hM).toSubmodule = W.toSubmoduleᗮ := by
+  rw [unitaryOrthogonal, Comodule.Hom.ker_toSubmodule, Comodule.Hom.adjoint_toLinearMap,
     ← LinearMap.orthogonal_range, subtype_toLinearMap]
   congr 1
   exact Submodule.range_subtype _
@@ -115,23 +116,25 @@ theorem orthogonal_toSubmodule (W : Subcomodule 𝕜 A M) (hM : Comodule.IsUnita
 /-- Membership in the orthogonal subcomodule is orthogonality to every vector of the
 original subcomodule. -/
 @[simp]
-theorem mem_orthogonal (W : Subcomodule 𝕜 A M) (hM : Comodule.IsUnitary 𝕜 A M) (x : M) :
-    x ∈ W.orthogonal hM ↔ ∀ w ∈ W, inner 𝕜 w x = 0 := by
-  rw [← mem_toSubmodule, orthogonal_toSubmodule]
+theorem mem_unitaryOrthogonal (W : Subcomodule 𝕜 A M) (hM : Comodule.IsUnitary 𝕜 A M)
+    (x : M) : x ∈ W.unitaryOrthogonal hM ↔ ∀ w ∈ W, inner 𝕜 w x = 0 := by
+  rw [← mem_toSubmodule, unitaryOrthogonal_toSubmodule]
   exact Submodule.mem_orthogonal _ _
 
 /-- A subcomodule and its orthogonal complement are complementary as submodules. -/
-theorem isCompl_orthogonal (W : Subcomodule 𝕜 A M) (hM : Comodule.IsUnitary 𝕜 A M) :
-    IsCompl W.toSubmodule (W.orthogonal hM).toSubmodule := by
-  rw [orthogonal_toSubmodule]
+theorem isCompl_unitaryOrthogonal (W : Subcomodule 𝕜 A M)
+    (hM : Comodule.IsUnitary 𝕜 A M) :
+    IsCompl W.toSubmodule (W.unitaryOrthogonal hM).toSubmodule := by
+  rw [unitaryOrthogonal_toSubmodule]
   exact W.toSubmodule.isCompl_orthogonal
 
 /-- Taking orthogonal complements twice recovers the original subcomodule. -/
 @[simp]
-theorem orthogonal_orthogonal (W : Subcomodule 𝕜 A M) (hM : Comodule.IsUnitary 𝕜 A M) :
-    (W.orthogonal hM).orthogonal hM = W := by
+theorem unitaryOrthogonal_unitaryOrthogonal (W : Subcomodule 𝕜 A M)
+    (hM : Comodule.IsUnitary 𝕜 A M) :
+    (W.unitaryOrthogonal hM).unitaryOrthogonal hM = W := by
   ext x
-  simp only [← mem_toSubmodule, orthogonal_toSubmodule, Submodule.orthogonal_orthogonal]
+  simp only [← mem_toSubmodule, unitaryOrthogonal_toSubmodule, Submodule.orthogonal_orthogonal]
 
 end TauCeti.Subcomodule
 
@@ -146,6 +149,6 @@ variable {𝕜 A M : Type*} [RCLike 𝕜] [Ring A] [StarRing A]
 theorem IsUnitary.isCompletelyReducible (hM : IsUnitary 𝕜 A M) :
     IsCompletelyReducible 𝕜 A M :=
   IsCompletelyReducible.of_exists_isCompl fun W =>
-    ⟨W.orthogonal hM, W.isCompl_orthogonal hM⟩
+    ⟨W.unitaryOrthogonal hM, W.isCompl_unitaryOrthogonal hM⟩
 
 end TauCeti.Comodule
