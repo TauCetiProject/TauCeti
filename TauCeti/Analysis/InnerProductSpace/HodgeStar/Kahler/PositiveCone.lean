@@ -8,8 +8,6 @@ module
 public import Mathlib.Analysis.Convex.Cone.Basic
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Hermitian
--- Private: the negative-part inequality is used only in proofs.
-import TauCeti.Algebra.Order.Group.MinMax
 
 /-!
 # The cone of positive `(1,1)`-forms and the distance to it
@@ -434,8 +432,11 @@ private theorem sqrt_le_dist_of_mem_positiveCone {F μ G : ⋀[ℝ]^2 V}
   have key := two_mul_sub_sq_add_sub_sq c d ‖μ‖ ‖ν‖
   have hu : 0 ≤ d - ‖ν‖ / √2 := by rw [sub_nonneg, div_le_iff₀' hs]; exact h2
   have hw : 0 ≤ d + ‖ν‖ / √2 := by linarith [div_nonneg (norm_nonneg ν) hs.le]
-  linarith [sq_le_sq.2 (abs_min_zero_le_abs_sub (a := c - ‖μ‖ / √2) hu),
-    sq_le_sq.2 (abs_min_zero_le_abs_sub (a := c + ‖μ‖ / √2) hw)]
+  -- `|min 0 a| ≤ |a - b|` for `0 ≤ b`, from `abs_min_sub_min_le_max`
+  have hm (a b : ℝ) (hb : 0 ≤ b) : min 0 a ^ 2 ≤ (a - b) ^ 2 := sq_le_sq.2 <| by
+    simpa only [min_eq_left hb, sub_self, sub_zero, abs_zero,
+      max_eq_right (abs_nonneg (a - b))] using abs_min_sub_min_le_max 0 a 0 b
+  linarith [hm (c - ‖μ‖ / √2) _ hu, hm (c + ‖μ‖ / √2) _ hw]
 
 /-- **The distance to the positive cone**: with `F⁻ = μ` the anti-self-dual part of `F` and
 `c = ⟪ω, F⟫ / 2`, the distance from `F` to the cone of positive `(1,1)`-forms is
@@ -475,7 +476,7 @@ theorem infDist_positiveCone_le {F μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ 
     linarith
   have h₂' : -K ≤ c + ‖μ‖ / √2 := by linarith [div_nonneg (norm_nonneg μ) hs.le]
   have hm (l : ℝ) (hl : -K ≤ l) : min 0 l ^ 2 ≤ K ^ 2 :=
-    (sq_le_sq.2 (abs_min_zero_le_abs_sub (b := l + K) (by linarith))).trans_eq (by ring)
+    sq_le_sq' (le_min (by linarith) hl) ((min_le_left 0 l).trans hK₀)
   have hss : √2 ^ 2 = 2 := Real.sq_sqrt zero_le_two
   refine Real.sqrt_le_iff.2 ⟨by positivity, ?_⟩
   nlinarith [hm _ h₁, hm _ h₂', norm_nonneg (F - μ - c • J.kahlerForm),
