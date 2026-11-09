@@ -261,11 +261,10 @@ theorem toLpₗᵢ_precompEquivOfLift_symm {ψ : AddCircle T → AddCircle T}
     (hψφ : Function.LeftInverse ψ φ) (a : CircleSobolev 0 ℂ) :
     toLpₗᵢ T ((precompEquivOfLift hF hper hφ hc hcF hMF).symm a) =ᵐ[haarAddCircle]
       toLpₗᵢ T a ∘ ψ := by
-  have hψ : ψ = symmOfLift hF hper hφ hc hcF := funext fun y ↦ by
-    obtain ⟨x, rfl⟩ := (bijective_of_lift
+  have hψ : ψ = symmOfLift hF hper hφ hc hcF :=
+    eq_homeomorphOfLift_symm_of_leftInverse
       (strictMono_of_hasDerivAt_pos hF fun x ↦ hc.trans_le (hcF x))
-      (continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt) hper hφ).2 y
-    rw [hψφ x, symmOfLift_apply_apply]
+      (continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt) hper hφ hψφ
   subst hψ
   rw [precompEquivOfLift_symm_apply]
   exact toLpₗᵢ_precomp _ _ _ a
