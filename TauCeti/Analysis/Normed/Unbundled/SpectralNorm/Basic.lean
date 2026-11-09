@@ -25,7 +25,7 @@ namespace TauCeti
 
 open Polynomial
 
-variable {K : Type*} [NontriviallyNormedField K]
+variable {K : Type*} [NormedField K]
 
 /-- The spectral norm of an element that is transcendental over `K` is zero, since its minimal
 polynomial is `0`. -/
