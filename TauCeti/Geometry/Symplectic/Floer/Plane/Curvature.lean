@@ -435,9 +435,7 @@ private theorem integral_floerEnergyDensity_image_realChart (ω : SymplecticForm
     ω.integral_hamiltonianCurvature_image hmeas hinj (fun w _ ↦ hφ.contDiffAt)
       (fun w _ ↦ hdet w)
       (fun w _ ↦ differentiableAt_perturbation_domain hH hHs _ _ 1)
-      (fun w _ ↦ differentiableAt_perturbation_domain hH hHs _ _ Complex.I)
-      (fun w _ ↦ differentiableAt_perturbation_target hH hHs _ _ 1)
-      (fun w _ ↦ differentiableAt_perturbation_target hH hHs _ _ Complex.I),
+      (fun w _ ↦ differentiableAt_perturbation_domain hH hHs _ _ Complex.I),
     SmoothTwoForm.perturbationPullback_realChart_cylindricalEndLift,
     SmoothTwoForm.perturbationPullback_realChart_cylindricalEndLift,
     equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag,
@@ -649,8 +647,6 @@ theorem hamiltonianCurvature_pssPlanePerturbation_eq_zero_of_two_lt (ω : Symple
     (w := w) (x := x) (contDiff_realChart (n := 2) p.contDiff_cylindricalEndLift).contDiffAt
     (differentiableAt_perturbation_domain hH hHs _ _ 1)
     (differentiableAt_perturbation_domain hH hHs _ _ Complex.I)
-    (differentiableAt_perturbation_target hH hHs _ _ 1)
-    (differentiableAt_perturbation_target hH hHs _ _ Complex.I)
   rw [SmoothTwoForm.perturbationPullback_realChart_cylindricalEndLift,
     SmoothTwoForm.perturbationPullback_realChart_cylindricalEndLift,
     equivRealProdCLM_symm_stdComplexLineReal,
