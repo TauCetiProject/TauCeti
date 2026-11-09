@@ -164,6 +164,20 @@ theorem norm_smul_of_isUnit_of_norm_eq_one {u : R} (hu : IsUnit u) (h1 : ‖u‖
 
 end NormOne
 
+/-- **The shell, for a positive real number**: for a real base `0 < r < 1`, every `a > 0` has a
+unique rescaling `r ^ n * a`, `n ∈ ℤ`, with `r < r ^ n * a ≤ 1`. -/
+theorem existsUnique_zpow_mul_mem_Ioc {r a : ℝ} (hr0 : 0 < r) (hr1 : r < 1) (ha : 0 < a) :
+    ∃! n : ℤ, r ^ n * a ∈ Ioc r 1 := by
+  -- Package `r` and `a` as units of `ℝ≥0`; the shell is then a fundamental domain for
+  -- multiplication by the powers of `r⁻¹`.
+  let q : ℝ≥0ˣ := Units.mk0 r.toNNReal (Real.toNNReal_pos.mpr hr0).ne'
+  let u : ℝ≥0ˣ := Units.mk0 a.toNNReal (Real.toNNReal_pos.mpr ha).ne'
+  have hq : 1 < q⁻¹ := one_lt_inv'.mpr <| by
+    simpa [← Units.val_lt_val, q, ← NNReal.coe_lt_coe, Real.coe_toNNReal _ hr0.le] using hr1
+  convert existsUnique_sub_zpow_mem_Ioc hq u q using 2 with n
+  simp [← Units.val_lt_val, ← Units.val_le_val, ← NNReal.coe_lt_coe, ← NNReal.coe_le_coe, q, u,
+    Real.coe_toNNReal _ ha.le, Real.coe_toNNReal _ hr0.le, mul_comm]
+
 /-- A **multiplicative pseudo-uniformiser** of a seminormed ring `R`: a unit `ϖ` with
 `0 < ‖ϖ‖ < 1` by which left multiplication scales the norm exactly, `‖ϖ * x‖ = ‖ϖ‖ * ‖x‖`.
 This is data: it records a choice of such a unit for the given norm. -/
@@ -208,20 +222,6 @@ theorem nontrivial : Nontrivial R :=
 theorem norm_inv : ‖((ϖ.unit⁻¹ : Rˣ) : R)‖ = ‖(ϖ.unit : R)‖⁻¹ :=
   norm_units_inv_of_norm_mul ϖ.norm_pos.ne' ϖ.norm_mul
 
-/-- **The shell, for a positive real number**: every `a > 0` has a unique rescaling
-`‖ϖ‖ ^ n * a`, `n ∈ ℤ`, with `‖ϖ‖ < ‖ϖ‖ ^ n * a ≤ 1`. -/
-theorem existsUnique_zpow_mul_mem_Ioc {a : ℝ} (ha : 0 < a) :
-    ∃! n : ℤ, ‖(ϖ.unit : R)‖ ^ n * a ∈ Ioc ‖(ϖ.unit : R)‖ 1 := by
-  -- Package `‖ϖ‖` and `a` as units of `ℝ≥0`; the shell is then a fundamental domain for
-  -- multiplication by the powers of `‖ϖ‖⁻¹`.
-  let q : ℝ≥0ˣ := Units.mk0 ‖(ϖ.unit : R)‖₊ (by simpa [← NNReal.coe_ne_zero] using ϖ.norm_pos.ne')
-  let u : ℝ≥0ˣ := Units.mk0 a.toNNReal (Real.toNNReal_pos.mpr ha).ne'
-  have hq : 1 < q⁻¹ := one_lt_inv'.mpr <| by
-    simpa [← Units.val_lt_val, q, ← NNReal.coe_lt_coe] using ϖ.norm_lt_one
-  convert existsUnique_sub_zpow_mem_Ioc hq u q using 2 with n
-  simp [← Units.val_lt_val, ← Units.val_le_val, ← NNReal.coe_lt_coe, ← NNReal.coe_le_coe, q, u,
-    Real.coe_toNNReal _ ha.le, mul_comm]
-
 section Module
 
 variable {M : Type*} [SeminormedAddGroup M] [MulActionWithZero R M] [IsBoundedSMul R M]
@@ -251,11 +251,13 @@ with `‖ϖ‖ < ‖ϖ ^ n • m‖ ≤ 1`. -/
 theorem existsUnique_norm_zpow_smul_mem_Ioc {m : M} (hm : ‖m‖ ≠ 0) :
     ∃! n : ℤ, ‖((ϖ.unit ^ n : Rˣ) : R) • m‖ ∈ Ioc ‖(ϖ.unit : R)‖ 1 := by
   simpa only [ϖ.norm_zpow_smul] using
-    ϖ.existsUnique_zpow_mul_mem_Ioc (lt_of_le_of_ne (norm_nonneg m) (Ne.symm hm))
+    existsUnique_zpow_mul_mem_Ioc ϖ.norm_pos ϖ.norm_lt_one
+      (lt_of_le_of_ne (norm_nonneg m) (Ne.symm hm))
 
 omit [MulActionWithZero R M] [IsBoundedSMul R M] in
-/-- Rescale a vector of nonzero norm into a prescribed ball, controlling the inverse scaling
-factor by a constant times the original norm. This is the common shell estimate for global
+/-- For a vector `m` of nonzero norm and `δ > ‖ϖ‖ ^ k`, there is an integer `n` with
+`‖ϖ‖ ^ n * ‖m‖ < δ` whose inverse factor satisfies
+`(‖ϖ‖ ^ n)⁻¹ ≤ (‖ϖ‖ ^ (k + 1))⁻¹ * ‖m‖`. This is the common shell estimate for global
 operator bounds and quantitative preimage bounds. -/
 theorem exists_zpow_mul_norm_lt {m : M} (hm : ‖m‖ ≠ 0) {δ : ℝ} (k : ℤ)
     (hδ : ‖(ϖ.unit : R)‖ ^ k < δ) :
@@ -264,7 +266,8 @@ theorem exists_zpow_mul_norm_lt {m : M} (hm : ‖m‖ ≠ 0) {δ : ℝ} (k : ℤ
   set r := ‖(ϖ.unit : R)‖
   have hr0 : 0 < r := ϖ.norm_pos
   obtain ⟨n, ⟨hn₁, hn₂⟩, -⟩ :=
-    ϖ.existsUnique_zpow_mul_mem_Ioc (lt_of_le_of_ne (norm_nonneg m) (Ne.symm hm))
+    existsUnique_zpow_mul_mem_Ioc ϖ.norm_pos ϖ.norm_lt_one
+      (lt_of_le_of_ne (norm_nonneg m) (Ne.symm hm))
   have hpow : r ^ (n + k) = r ^ n * r ^ k := zpow_add₀ hr0.ne' n k
   refine ⟨n + k, ?_, ?_⟩
   · calc r ^ (n + k) * ‖m‖ = r ^ k * (r ^ n * ‖m‖) := by rw [hpow]; ring
