@@ -24,10 +24,12 @@ onto `N₀` (compare `TauCeti.DGRightModuleHom.isQuasiIso_iff_forall_exists`).
 Attaching free generators `Q` along cycles `a q` of `K_m`
 (`TauCeti.RowFiniteTwistingCocycle.attach`) and sending the generator `e_q` to an element `c q`
 with `d (c q) = g (a q)` extends `g` to `Sum.elim g c : K_{attach} → M`. This file proves that
-the extension is again a quasi-isomorphism, now onto `N₁`, as soon as the new generators are
-quasi-isomorphic to the quotient `N₁ / N₀`: every `y : Q →₀ A` with `d y = 0` and every `w ∈ N₁`
+the extension is again a quasi-isomorphism, now onto `N₁`, as soon as the elements `c q` lie in
+`N₁` (so that the extension lands in `N₁`) and the new generators are quasi-isomorphic to the
+quotient `N₁ / N₀`: every `y : Q →₀ A` with `d y = 0` and every `w ∈ N₁`
 with `c(y) - d w ∈ N₀` admit `y'` and `w' ∈ N₁` with `d y' = y` and `c(y') + d w' - w ∈ N₀`
-(`TauCeti.RowFiniteTwistingCocycle.exists_attach_differential_eq_of_forall_exists`). The proof
+(`TauCeti.RowFiniteTwistingCocycle.exists_attach_differential_eq_of_forall_exists`, whose
+conclusion on relative cycles holds without the membership `c q ∈ N₁`). The proof
 is the five lemma for the short exact sequences `0 → K_m → K_{attach} → K_0(Q) → 0` and
 `0 → N₀ → N₁ → N₁ / N₀ → 0`, written as a chase on elements so that no quotient complex is formed.
 
@@ -37,9 +39,9 @@ The attaching data are found from the relative cycles of `N₁` modulo `N₀`
 boundary `d k` with `k ∈ N₀`. The cycle `u` is the attaching cycle and `z + k` the corrected image
 of the new generator, of the same degree as `z` when `N₀` is a homogeneous submodule. Putting the
 two steps together (`TauCeti.RowFiniteTwistingCocycle.exists_attach_of_forall_exists`), relative
-cycles `c₀ q` representing generators of `N₁ / N₀` give a cell attachment together with a
-quasi-isomorphism onto `N₁`, of the same shape as the one onto `N₀` that it started from, so the
-step can be iterated along a filtration.
+cycles `c₀ q` of `N₁` representing generators of `N₁ / N₀` give a cell attachment together with
+a map landing in `N₁` that is a quasi-isomorphism onto `N₁`, of the same shape as the one onto
+`N₀` that it started from, so the step can be iterated along a filtration.
 
 This is the inductive step in the construction of semi-free resolutions one cell at a time, as in
 Brown's twisted tensor products: for the chains on the based path space of a CW complex, filtered
@@ -96,7 +98,9 @@ Let `g : K_m → M` land in `N₀ ≤ N₁` and have relative cycles, with targe
 relative boundaries. Extend it to the attached module by sending each new generator `e_q` to an
 element `c q` bounding the image of its attaching cycle. If the new generators are
 quasi-isomorphic, through `c`, to `N₁` modulo `N₀`, then every relative cycle of the extension
-with target in `N₁` is a relative boundary with target in `N₁`. -/
+with target in `N₁` is a relative boundary with target in `N₁`. This conclusion does not need the
+new images `c q` to lie in `N₁`; when they do, the extension lands in `N₁` and the conclusion says
+that it is a quasi-isomorphism onto `N₁`. -/
 theorem exists_attach_differential_eq_of_forall_exists (hN : N₀ ≤ N₁) (hgN : ∀ x, g x ∈ N₀)
     (hg : ∀ x, linearCombination A g (m.m x) = dM (g x)) {c : Q → M}
     (hc : ∀ q, linearCombination A g (a q) = dM (c q))
@@ -199,9 +203,9 @@ into `N₀` in degree `-ind x`, commute with the differentials and have relative
 target in the homogeneous submodule `N₀`, that are relative boundaries. Let `c₀ q`, of degree
 `-indQ q`, be relative cycles of `N₁` modulo `N₀ ≤ N₁` through which the free module on `Q`, with
 its coefficient differential, is quasi-isomorphic to `N₁` modulo `N₀`. Then there are attaching
-cycles `a q` of `K_m` and corrections `c q ≡ c₀ q` modulo `N₀`, of the same degrees, with
-`d (c q) = g (a q)`, such that `Sum.elim g c` on the attached module has relative cycles, with
-target in `N₁`, that are relative boundaries. -/
+cycles `a q` of `K_m` and corrections `c q ≡ c₀ q` modulo `N₀`, of the same degrees and in `N₁`,
+with `d (c q) = g (a q)`, such that `Sum.elim g c` on the attached module, which lands in `N₁`, has
+relative cycles, with target in `N₁`, that are relative boundaries. -/
 theorem exists_attach_of_forall_exists (hN₀ : N₀.IsHomogeneous ℳ) (hN : N₀ ≤ N₁)
     (hgN : ∀ x, g x ∈ N₀) (hgdeg : ∀ x, g x ∈ ℳ (-ind x))
     (hg : ∀ x, linearCombination A g (m.m x) = dM (g x))
@@ -209,13 +213,14 @@ theorem exists_attach_of_forall_exists (hN₀ : N₀.IsHomogeneous ℳ) (hN : N�
       linearCombination A g u = dM w → w ∈ N₀ → ∃ (u' : P →₀ A) (w' : M), w' ∈ N₀ ∧
         rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m.m u' = u ∧
           linearCombination A g u' + dM w' = w)
-    {c₀ : Q → M} (hc₀ : ∀ q, c₀ q ∈ ℳ (-indQ q)) (hdc₀ : ∀ q, dM (c₀ q) ∈ N₀)
+    {c₀ : Q → M} (hc₀ : ∀ q, c₀ q ∈ ℳ (-indQ q)) (hc₀N : ∀ q, c₀ q ∈ N₁)
+    (hdc₀ : ∀ q, dM (c₀ q) ∈ N₀)
     (hQ : ∀ (y : Q →₀ A) (w : M), mapRange.linearMap d y = 0 → w ∈ N₁ →
       linearCombination A c₀ y - dM w ∈ N₀ → ∃ (y' : Q →₀ A) (w' : M), w' ∈ N₁ ∧
         mapRange.linearMap d y' = y ∧ linearCombination A c₀ y' + dM w' - w ∈ N₀) :
     ∃ (a : Q → P →₀ A) (ha : ∀ q y, a q y ∈ 𝒜 (ind y - indQ q + 1))
       (hca : ∀ q, rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m.m (a q) = 0) (c : Q → M),
-      (∀ q, c q ∈ ℳ (-indQ q)) ∧ (∀ q, c q - c₀ q ∈ N₀) ∧
+      (∀ q, c q ∈ ℳ (-indQ q)) ∧ (∀ q, c q ∈ N₁) ∧ (∀ q, c q - c₀ q ∈ N₀) ∧
       (∀ q, linearCombination A g (a q) = dM (c q)) ∧
       ∀ (f : P ⊕ Q →₀ A) (w : M),
         rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (m.attach a ha hca).m f = 0 →
@@ -236,7 +241,8 @@ theorem exists_attach_of_forall_exists (hN₀ : N₀.IsHomogeneous ℳ) (hN : N�
     exact Submodule.span_le.2 (Set.range_subset_iff.2 hk)
       (mem_span_range_iff_exists_finsupp.2 ⟨y, by rw [linearCombination_apply]⟩)
   refine ⟨a, ha', hca, fun q ↦ c₀ q + k q, fun q ↦ add_mem (hc₀ q) (hkdeg q),
-    fun q ↦ by simpa using hk q, hak, fun f w hf hfw hw ↦ ?_⟩
+    fun q ↦ N₁.add_mem (hc₀N q) (hN (hk q)), fun q ↦ by simpa using hk q, hak,
+    fun f w hf hfw hw ↦ ?_⟩
   refine m.exists_attach_differential_eq_of_forall_exists hM ha' hca hN hgN hg hak hK
     (fun y w hy hw hyw ↦ ?_) hf hfw hw
   obtain ⟨y', w', hw', hy', hyw'⟩ := hQ y w hy hw <| by
