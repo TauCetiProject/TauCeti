@@ -147,13 +147,14 @@ theorem integral_rpow_quarterCircle {q : ℝ} (hq : -1 < q) :
   field_simp
 
 /-- The mean of the quarter-circle law is `8 / (3 π)`. -/
+@[simp]
 theorem integral_id_quarterCircle : ∫ s, s ∂quarterCircle = 8 / (3 * π) := by
   have h := integral_rpow_quarterCircle (q := 1) (by norm_num)
-  simp_rw [rpow_one] at h
-  rw [h, show ((1 : ℝ) + 1) / 2 = 1 by norm_num, beta_one_left (by norm_num)]
-  ring
+  norm_num at h
+  rw [h, div_div]
 
 /-- The square of a quarter-circle variable has the Marchenko–Pastur law of ratio one. -/
+@[simp]
 theorem map_sq_quarterCircle : quarterCircle.map (· ^ 2) = marchenkoPastur 1 := by
   -- Both laws are carried by `[0, 4]` and have the Catalan numbers as moments.
   have hsq : ∀ᵐ x ∂quarterCircle.map (· ^ 2), x ∈ Icc (0 : ℝ) 4 := by
@@ -171,6 +172,7 @@ theorem map_sq_quarterCircle : quarterCircle.map (· ^ 2) = marchenkoPastur 1 :=
   exact integral_pow_two_mul_quarterCircle n
 
 /-- The square root of a `marchenkoPastur 1` variable has the quarter-circle law. -/
+@[simp]
 theorem map_sqrt_marchenkoPastur_one : (marchenkoPastur 1).map sqrt = quarterCircle := by
   rw [← map_sq_quarterCircle, Measure.map_map continuous_sqrt.measurable (by fun_prop)]
   have h : (sqrt ∘ fun s : ℝ ↦ s ^ 2) =ᵐ[quarterCircle] id := by
