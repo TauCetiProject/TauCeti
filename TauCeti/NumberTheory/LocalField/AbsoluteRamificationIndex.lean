@@ -178,19 +178,6 @@ theorem charP_residueField : CharP 𝓀[K] p := by
   rw [← absoluteRamificationIndex_eq_natCastValuation]
   exact (absoluteRamificationIndex_pos K p).ne'
 
-/-- In a tower `ℚ_[p] ⊆ K ⊆ L` of local fields whose valuative relations extend that of `ℚ_[p]`,
-the valuative relation of `L` also extends that of `K`, for the ambient algebra structure.
-
-`AlgHom.valuativeExtension` states this for the algebra structure `ι.toAlgebra` of an algebra map
-`ι : K →ₐ[ℚ_[p]] L`. `ValuativeExtension K L` only involves `algebraMap K L`, and for
-`ι = IsScalarTower.toAlgHom ℚ_[p] K L` the `algebraMap` of `ι.toAlgebra` is `algebraMap K L` by
-definition, so the field is transferred to the ambient `[Algebra K L]` without change. -/
-private theorem valuativeExtension_of_isScalarTower (L : Type*) [Field L] [ValuativeRel L]
-    [TopologicalSpace L] [IsNonarchimedeanLocalField L] [FinitePadicExtension L p] [Algebra K L]
-    [IsScalarTower ℚ_[p] K L] :
-    ValuativeExtension K L :=
-  ⟨fun {_ _} ↦ (IsScalarTower.toAlgHom ℚ_[p] K L).valuativeExtension.vle_iff_vle⟩
-
 /-- In a tower `L/K/ℚ_[p]`, the absolute ramification index of `L` is the product of the
 relative ramification index of `L/K` and the absolute ramification index of `K`. -/
 theorem absoluteRamificationIndex_tower (L : Type*) [Field L] [ValuativeRel L]
@@ -198,7 +185,7 @@ theorem absoluteRamificationIndex_tower (L : Type*) [Field L] [ValuativeRel L]
     [IsScalarTower ℚ_[p] K L] :
     absoluteRamificationIndex L p =
       ramificationIndex K L * absoluteRamificationIndex K p := by
-  have := valuativeExtension_of_isScalarTower K p L
+  have : ValuativeExtension K L := .of_isScalarTower (K := ℚ_[p])
   simpa only [absoluteRamificationIndex, Nat.mul_comm] using
     ramificationIndex_tower (K := ℚ_[p]) (L := K) L
 
