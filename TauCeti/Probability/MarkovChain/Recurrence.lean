@@ -19,8 +19,9 @@ and infinite at a transient state.
 
 Every state reachable from a recurrent state is recurrent and hits the original state
 almost surely. Consequently a recurrent communicating class is closed. In an irreducible
-chain with a recurrent state, every state is hit almost surely from every initial law, and on
-a countable state space almost every path visits every state infinitely often. These results
+chain with a recurrent state, every state is hit almost surely from every initial law, and almost
+every path visits every state infinitely often; countability of the state space follows from
+irreducibility with measurable singletons. These results
 supply the state-classification input to coupling arguments.
 
 On a finite nonempty state space some state is recurrent: the chain spends its infinitely many
@@ -249,19 +250,13 @@ theorem isRecurrent_iff_isRecurrent [IsIrreducible Measure.count κ] (x y : S) :
     κ.IsRecurrent x ↔ κ.IsRecurrent y :=
   Communicates.isRecurrent_iff (isIrreducible_count_iff_forall_communicates.mp ‹_› x y)
 
-/-- In an irreducible chain with a recurrent state on a countable state space, from any initial
-measure, almost every path visits every state infinitely often. -/
+/-- In an irreducible chain with a recurrent state, from any initial measure, almost every path
+visits every state infinitely often. The state space is automatically countable by
+`countable_of_isIrreducible_count`. -/
 theorem IsRecurrent.ae_forall_infinite_setOf_eq [IsIrreducible Measure.count κ]
     (hx : κ.IsRecurrent x) (ν : Measure S) :
     ∀ᵐ ω ∂markovChainLaw ν κ, ∀ y, {n | ω n = y}.Infinite := by
-  -- An irreducible chain lives on a countable space: every state carries positive mass
-  -- for some `(κ ^ n) x`, and each such finite measure has countably many atoms.
-  have hc : (⋃ n : ℕ, {y | 0 < (κ ^ n) x {y}}).Countable :=
-    Set.countable_iUnion fun n => Measure.countable_meas_pos_of_disjoint_iUnion
-      (fun y => measurableSet_singleton y) fun _ _ h => Set.disjoint_singleton.mpr h
-  have : Countable S := Set.countable_univ_iff.mp (hc.mono fun y _ =>
-    Set.mem_iUnion.mpr (((reaches_def x y).mp
-      (isIrreducible_count_iff_forall_reaches.mp ‹_› x y))))
+  have := countable_of_isIrreducible_count (κ := κ)
   have hS : MeasurableSet {ω : ℕ → S | ∀ y, {n | ω n = y}.Infinite} := by
     simp_rw [← forall_successiveVisit_lt_top_iff (X := fun n (ω : ℕ → S) => ω n),
       lt_top_iff_ne_top, Set.ofPred_forall]
