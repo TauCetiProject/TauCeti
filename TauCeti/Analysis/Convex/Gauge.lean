@@ -63,21 +63,10 @@ theorem setOfPred_gauge_le_eq_closure_smul_of_pos (hc : Convex ℝ s) (hs₀ : s
 `closure {0}`. No separation axiom or convexity is needed. -/
 theorem gauge_le_zero_iff_mem_closure_zero (hb : Bornology.IsVonNBounded ℝ s) (hs₀ : s ∈ 𝓝 0) :
     gauge s x ≤ 0 ↔ x ∈ closure ({0} : Set E) := by
-  constructor
-  · intro hx
-    have hx0 : gauge s x = 0 := le_antisymm hx (gauge_nonneg x)
-    have hle : pure x ≤ Filter.comap (gauge s) (𝓝 0) := by
-      rw [← Filter.map_le_iff_le_comap, Filter.map_pure, hx0]
-      exact pure_le_nhds 0
-    exact specializes_iff_mem_closure.1 (specializes_iff_pure.2 (hle.trans
-      (comap_gauge_nhds_zero_le (absorbent_nhds_zero hs₀) hb))).symm
-  · intro h
-    refine le_of_forall_pos_le_add fun r hr => ?_
-    have hx : x ∈ r • s :=
-      mem_of_mem_nhds ((specializes_iff_mem_closure.2 h).symm.nhds_le_nhds
-        ((set_smul_mem_nhds_zero_iff hr.ne').2 hs₀))
-    rw [zero_add]
-    exact gauge_le_of_mem hr.le hx
+  rw [show gauge s x ≤ 0 ↔ gauge s x = 0 from ⟨fun h => le_antisymm h (gauge_nonneg x), le_of_eq⟩,
+    ← pure_le_nhds_iff, ← Filter.map_pure (gauge s) x, Filter.map_le_iff_le_comap,
+    comap_gauge_nhds_zero hb hs₀, ← specializes_iff_pure, specializes_comm,
+    specializes_iff_mem_closure]
 
 /-- For a bounded convex neighbourhood `s` of `0` and `0 ≤ t`, the sublevel set
 `{x | gauge s x ≤ t}` is the closure of the dilate `t • s`. At `t = 0` both sides are
