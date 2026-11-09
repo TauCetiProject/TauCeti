@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Quaternion
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
+public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.Topology.Algebra.Star.Unitary
 public import Mathlib.Topology.Instances.Matrix
 
@@ -182,6 +183,33 @@ section Transitive
 
 variable [DecidableEq ι]
 
+/-- **A quaternionic Householder reflection is unitary.** If `vᴴ v = s` and `c² s = 2 c`, then
+`H = 1 - c v vᴴ` is a Hermitian involution, hence unitary. -/
+private theorem one_sub_smul_vecMulVec_mem_unitary {v : ι → ℍ} {s c : ℝ}
+    (hvv : star v ⬝ᵥ v = s) (hc : c * c * s = 2 * c) :
+    1 - c • Matrix.vecMulVec v (star v) ∈ unitary (Matrix ι ι ℍ) := by
+  set P : Matrix ι ι ℍ := Matrix.vecMulVec v (star v) with hP
+  have hPP : P * P = s • P := by
+    rw [hP, Matrix.vecMulVec_mul_vecMulVec, hvv, ← Matrix.vecMulVec_smul]
+    congr 1
+    funext k
+    exact coe_mul_eq_smul _ _
+  have hPstar : star P = P := by
+    rw [hP, Matrix.star_eq_conjTranspose, Matrix.conjTranspose_vecMulVec, star_star]
+  have hHstar : star (1 - c • P) = 1 - c • P := by
+    rw [star_sub, star_one]
+    congr 1
+    refine Matrix.ext fun k l ↦ ?_
+    rw [Matrix.star_apply, Matrix.smul_apply, Quaternion.star_smul, ← Matrix.star_apply, hPstar,
+      Matrix.smul_apply]
+  have hHH : (1 - c • P) * (1 - c • P) = 1 := by
+    calc (1 - c • P) * (1 - c • P) = 1 - (2 * c - c * c * s) • P := by
+          rw [sub_mul, mul_sub, mul_sub, mul_one, one_mul, mul_one, smul_mul_smul_comm, hPP,
+            smul_smul]
+          module
+      _ = 1 := by rw [hc, sub_self, zero_smul, sub_zero]
+  exact ⟨by rw [hHstar, hHH], by rw [hHstar, hHH]⟩
+
 /-- **A quaternionic Householder reflection.** If a unit vector `y` has a real `i`-th coordinate,
 the reflection `H = 1 - (2 / |v|²) v vᴴ` in `v = eᵢ - y` is a unitary matrix with `H eᵢ = y`. -/
 private theorem exists_mem_unitary_mulVec_single_eq {y : ι → ℍ}
@@ -200,45 +228,17 @@ private theorem exists_mem_unitary_mulVec_single_eq {y : ι → ℍ}
   have hvi : star v ⬝ᵥ Pi.single i 1 = ((1 - r : ℝ) : ℍ) := by
     simp [hv, dotProduct_single, hyi]
   have hs2 : s = 2 * (1 - r) := by
-    have h : (s : ℍ) = 1 - (r : ℍ) - ((r : ℍ) - 1) := by
-      rw [← hvv, hv, star_sub, sub_dotProduct, dotProduct_sub, dotProduct_sub, hy]
-      simp only [← Pi.single_star, star_one, single_dotProduct, one_mul, Pi.single_eq_same,
-        dotProduct_single, mul_one, Pi.star_apply, hyi, star_coe]
-    have h' := congrArg QuaternionAlgebra.re h
-    simp only [re_coe, re_sub, re_one] at h'
+    have h := congrArg QuaternionAlgebra.re hvv
+    simp [hv, sub_dotProduct, dotProduct_sub, hy, hyi] at h
     linarith
-  set P : Matrix ι ι ℍ := Matrix.vecMulVec v (star v) with hP
-  set c : ℝ := 2 / s with hc
-  have hPP : P * P = s • P := by
-    rw [hP, Matrix.vecMulVec_mul_vecMulVec, hvv, ← Matrix.vecMulVec_smul]
-    congr 1
-    funext k
-    exact coe_mul_eq_smul _ _
-  have hcs : c * c * s = 2 * c := by
-    rw [hc]
+  have hcs : 2 / s * (2 / s) * s = 2 * (2 / s) := by
     field_simp
-  have hPstar : star P = P := by
-    rw [hP, Matrix.star_eq_conjTranspose, Matrix.conjTranspose_vecMulVec, star_star]
-  set H : Matrix ι ι ℍ := 1 - c • P with hH
-  have hHstar : star H = H := by
-    rw [hH, star_sub, star_one]
-    congr 1
-    refine Matrix.ext fun k l ↦ ?_
-    rw [Matrix.star_apply, Matrix.smul_apply, Quaternion.star_smul, ← Matrix.star_apply, hPstar,
-      Matrix.smul_apply]
-  have hHH : H * H = 1 := by
-    calc H * H = 1 - (2 * c - c * c * s) • P := by
-          rw [hH, sub_mul, mul_sub, mul_sub, mul_one, one_mul, mul_one, smul_mul_smul_comm, hPP,
-            smul_smul]
-          module
-      _ = 1 := by rw [hcs, sub_self, zero_smul, sub_zero]
-  refine ⟨H, ⟨by rw [hHstar, hHH], by rw [hHstar, hHH]⟩, ?_⟩
-  rw [hH, Matrix.sub_mulVec, Matrix.one_mulVec, Matrix.smul_mulVec, hP,
-    Matrix.vecMulVec_mulVec, hvi]
+  refine ⟨_, one_sub_smul_vecMulVec_mem_unitary hvv hcs, ?_⟩
+  rw [Matrix.sub_mulVec, Matrix.one_mulVec, Matrix.smul_mulVec, Matrix.vecMulVec_mulVec, hvi]
   have hv' : op ((1 - r : ℝ) : ℍ) • v = (1 - r) • v := by
     funext k
     exact mul_coe_eq_smul _ _
-  rw [hv', smul_smul, hc, hs2, show 2 / (2 * (1 - r)) * (1 - r) = 1 by
+  rw [hv', smul_smul, hs2, show 2 / (2 * (1 - r)) * (1 - r) = 1 by
     have : 1 - r ≠ 0 := fun h ↦ hs0 (by rw [hs2, h, mul_zero])
     field_simp, one_smul, hv, sub_sub_cancel]
 
@@ -270,13 +270,8 @@ theorem exists_quaternionUnitaryIsometry_apply_single_eq (i : ι)
     rcases eq_or_ne k i with rfl | hk
     · simp [hd, self_mul_star, star_mul_self, hu]
     · simp [hd, Function.update_of_ne hk]
-  have hDu : Matrix.diagonal d ∈ unitary (Matrix ι ι ℍ) := by
-    refine ⟨?_, ?_⟩ <;>
-      rw [Matrix.star_eq_conjTranspose, Matrix.diagonal_conjTranspose,
-        Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one] <;>
-      congr 1 <;> funext k
-    · exact (hdd k).1
-    · exact (hdd k).2
+  have hDu : Matrix.diagonal d ∈ unitary (Matrix ι ι ℍ) :=
+    Matrix.diagonal_mem_unitary.2 (Pi.mem_unitary_iff.2 hdd)
   refine ⟨⟨H * Matrix.diagonal d, mul_mem hH hDu⟩, ?_⟩
   rw [quaternionUnitaryIsometry_apply, ← Matrix.mulVec_mulVec, Matrix.diagonal_mulVec_single,
     Matrix.mulVec_single, ← Matrix.mulVec_single_one, hHy]
