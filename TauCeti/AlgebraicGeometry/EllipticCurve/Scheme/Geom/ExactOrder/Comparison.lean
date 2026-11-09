@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Naive
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveExactOrder.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.FiniteSubgroup
-import TauCeti.AlgebraicGeometry.Scheme.Over
+import TauCeti.CategoryTheory.Comma.Over.StrictInitial
 import TauCeti.Data.ZMod.MonoidHomEquiv
 import TauCeti.Data.ZMod.FinEquiv
 
@@ -84,7 +84,8 @@ theorem isOfExactOrder_iff_isOfNaiveExactOrder
   refine ⟨fun hP ↦ ?_, fun hP ↦ hP.isOfExactOrder hN⟩
   rcases eq_or_ne N 0 with rfl | hN0
   · have : IsEmpty S := ⟨fun s ↦ hN s (by simp)⟩
-    refine isOfNaiveExactOrder_iff.mpr ⟨over_hom_ext_of_isEmpty _ _, fun d _ _ ↦ ?_⟩
+    refine isOfNaiveExactOrder_iff.mpr
+      ⟨(Over.isTerminalOfIsInitial isInitialOfIsEmpty _).hom_ext _ _, fun d _ _ ↦ ?_⟩
     exact ⟨fun z ↦ isEmptyElim ((equalizer (P ^ d) 1).hom z)⟩
   have : NeZero N := ⟨hN0⟩
   let φ := (zmodMonoidHomEquiv N _).symm ⟨P, hP.pow_eq_one⟩
