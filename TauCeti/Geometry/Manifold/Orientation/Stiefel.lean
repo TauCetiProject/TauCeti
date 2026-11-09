@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Instances.Stiefel
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+import TauCeti.LinearAlgebra.LinearIndependent.Kernel
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
@@ -113,31 +114,6 @@ private theorem isSmoothForm_stiefelTopForm
   (isSmoothForm_modelSpace_iff.2 (contDiff_zero.2 (continuous_stiefelNormalForm Ω))).mpullback
     (contMDiff_coe_stiefel E 2)
 
-/-- Three vectors whose images under a linear map `D` are linearly independent, followed by a
-linearly independent family in the kernel of `D`, are linearly independent. It is stated for an
-arbitrary length `k`, so that the nested `Fin.cons` indices are not normalized. -/
-private theorem linearIndependent_cons_cons_cons_of_map {R M N : Type*} [Ring R] [AddCommGroup M]
-    [Module R M] [AddCommGroup N] [Module R N] (D : M →ₗ[R] N) {k : ℕ} {v : Fin k → M}
-    (hv : LinearIndependent R v) (hDv : ∀ i, D (v i) = 0) {x y z : M}
-    (hxyz : LinearIndependent R ![D x, D y, D z]) :
-    LinearIndependent R (Fin.cons x (Fin.cons y (Fin.cons z v)) : Fin (k + 1 + 1 + 1) → M) := by
-  rw [Fintype.linearIndependent_iff] at hxyz ⊢
-  intro g hg
-  simp only [Fin.sum_univ_succ, Fin.cons_zero, Fin.cons_succ] at hg
-  have hD := congrArg D hg
-  simp only [map_add, map_smul, map_sum, hDv, smul_zero, Finset.sum_const_zero, add_zero,
-    map_zero] at hD
-  have h3 := hxyz ![g 0, g (Fin.succ 0), g (Fin.succ (Fin.succ 0))] (by
-    simpa [Fin.sum_univ_three, add_assoc] using hD)
-  have hg0 : g 0 = 0 := h3 0
-  have hg1 : g (Fin.succ 0) = 0 := h3 1
-  have hg2 : g (Fin.succ (Fin.succ 0)) = 0 := h3 2
-  rw [hg0, hg1, hg2] at hg
-  simp only [zero_smul, zero_add] at hg
-  have hrest := (Fintype.linearIndependent_iff.1 hv) _ hg
-  intro i
-  exact Fin.cases hg0 (fun i ↦ Fin.cases hg1 (fun i ↦ Fin.cases hg2 (fun i ↦ hrest i) i) i) i
-
 omit [Fact (finrank ℝ E = m + 1 + 1)] in
 /-- **The normals and a tangent frame span `Fin 2 → E`.** At a frame `w = (u, v)`, the normals
 `(u, 0)`, `(v, u)`, `(0, v)` followed by the image of a tangent basis of the Stiefel manifold are
@@ -154,7 +130,7 @@ theorem linearIndependent_stiefelTwo_normal_cons (w : stiefel E 2)
     have h : ι t ∈ LinearMap.range ι.toLinearMap := ⟨t, rfl⟩
     rwa [range_mfderiv_coe_stiefel] at h
   have hvu : ⟪w.1 1, w.1 0⟫ = 0 := by rw [real_inner_comm, huv]
-  refine linearIndependent_cons_cons_cons_of_map (gramSym2Deriv E 2 w.1).toLinearMap
+  refine linearIndependent_finCons_finCons_finCons_of_map (gramSym2Deriv E 2 w.1).toLinearMap
     ((b.linearIndependent.map' _ (LinearMap.ker_eq_bot.2 (injective_mfderiv_coe_stiefel w))))
     (fun i ↦ hker (b i)) ?_
   -- The images of the normals take the values `2, 0, 0`, `0, 2, 0` and `0, 0, 2` at the pairs
