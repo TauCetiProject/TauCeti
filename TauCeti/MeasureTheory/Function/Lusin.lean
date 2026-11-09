@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import Mathlib.MeasureTheory.Measure.Regular
 
@@ -47,7 +48,10 @@ maps produced by `ProbabilityTheory.HasLaw` are only almost-everywhere measurabl
   target;
 * `TauCeti.exists_isClosed_measure_sdiff_lt_continuousOn_of_ae_eq` — Lusin's conclusion transfers
   to an almost-everywhere equal map, which reduces each almost-everywhere version to its
-  everywhere counterpart.
+  everywhere counterpart;
+* `LowerSemicontinuous.aemeasurable_comp_of_forall_exists_isClosed_continuousOn` — a lower
+  semicontinuous function of a map that is continuous on closed sets with arbitrarily small
+  complement mass is almost-everywhere measurable.
 
 ## References
 
@@ -175,5 +179,27 @@ theorem _root_.MeasureTheory.AEStronglyMeasurable.exists_isClosed_measure_sdiff_
       (ne_top_of_le_ne_top hμs (measure_mono hts)) hε
 
 end StronglyMeasurable
+
+/-- A lower semicontinuous function of a map that is continuous on closed sets with arbitrarily
+small complement mass is almost-everywhere measurable: the map is continuous on countably many
+closed sets whose union is a full-measure set, and on each of them the composite is lower
+semicontinuous. -/
+theorem _root_.LowerSemicontinuous.aemeasurable_comp_of_forall_exists_isClosed_continuousOn
+    {Ω W : Type*} [TopologicalSpace Ω] [MeasurableSpace Ω] [OpensMeasurableSpace Ω]
+    [TopologicalSpace W] {h : W → ℝ≥0∞} {Φ : Ω → W} {μ : Measure Ω}
+    (hh : LowerSemicontinuous h)
+    (hΦ : ∀ ε : ℝ≥0∞, ε ≠ 0 → ∃ C, IsClosed C ∧ ContinuousOn Φ C ∧ μ Cᶜ ≤ ε) :
+    AEMeasurable (fun x ↦ h (Φ x)) μ := by
+  choose C hC hΦC hμC using fun n : ℕ ↦ hΦ (n : ℝ≥0∞)⁻¹ (by simp)
+  have hmeas : ∀ n, AEMeasurable (fun x ↦ h (Φ x)) (μ.restrict (C n)) := fun n ↦
+    aemeasurable_restrict_of_measurable_subtype (hC n).measurableSet
+      (hh.comp (hΦC n).domRestrict).measurable
+  have hnull : μ (⋃ n, C n)ᶜ = 0 := by
+    by_contra hne
+    obtain ⟨n, hn⟩ := ENNReal.exists_inv_nat_lt hne
+    exact hn.not_ge ((measure_mono (compl_subset_compl.2 (subset_iUnion C n))).trans (hμC n))
+  rw [← Measure.restrict_eq_self_of_ae_mem (s := ⋃ n, C n) (measure_eq_zero_iff_ae_notMem.1 hnull
+    |>.mono fun x hx ↦ not_not.1 hx)]
+  exact aemeasurable_iUnion_iff.2 hmeas
 
 end TauCeti
