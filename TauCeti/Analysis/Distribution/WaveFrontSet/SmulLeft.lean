@@ -59,6 +59,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {Ω : Open
 
 /-- The localized Fourier transform of `g T` with cutoff `φ` is the localized Fourier transform of
 `T` with cutoff `g φ`. -/
+@[simp]
 theorem localFourier_smulLeftCLM (hg : ContDiff ℝ ∞ g) (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) :
     (smulLeftCLM hg T).localFourier φ η =
       T.localFourier (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) hg φ) η := by
@@ -100,9 +101,8 @@ theorem isMicrolocallySmoothAt_smulLeftCLM_of_notMem_tsupport (hg : ContDiff ℝ
     · simp [bilinLeftCLM_apply, hy]
     · simp [bilinLeftCLM_apply,
         image_eq_zero_of_notMem_tsupport (inter_subset_left (hψ (subset_tsupport _ hy)))]
-  refine isMicrolocallySmoothAt_iff.2 ⟨ψ, by simp [hψx], univ, isOpen_univ, mem_univ ξ,
-    fun _ _ _ _ ↦ mem_univ _, fun N ↦ ⟨0, fun η _ ↦ ?_⟩⟩
-  simp [localFourier_smulLeftCLM, hgψ]
+  exact isMicrolocallySmoothAt_of_forall_decay (φ := ψ) (by simp [hψx])
+    (fun N ↦ ⟨0, fun η ↦ by simp [hgψ]⟩) ξ
 
 /-- **Microlocal smoothness where the multiplier does not vanish.** If `g x ≠ 0`, then `g T` is
 microlocally smooth at `(x, ξ)` exactly when `T` is. -/

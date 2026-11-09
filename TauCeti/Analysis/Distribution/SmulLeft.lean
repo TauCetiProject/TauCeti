@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
+import TauCeti.Analysis.Distribution.Support
 
 /-!
 # Multiplication of complex distributions by smooth complex functions
@@ -25,6 +26,7 @@ the complex multipliers include the characters `x ↦ exp(i ⟪x, η⟫)` of Fou
 * `Distribution.smulLeftCLM`: the product `g T`, complex-linear and continuous in `T`.
 * `Distribution.complexPairing_smulLeftCLM`: on complex test functions, `(g T) φ = T (g φ)`.
 * `Distribution.smulLeftCLM_apply_eq_complexPairing`: the same formula on real test functions.
+* `Distribution.dsupport_smulLeftCLM_subset_inter`: `g T` is supported in `tsupport g ∩ dsupport T`.
 * `Distribution.smulLeftCLM_ofReal_apply`: for real `g` the product is `φ ↦ T (g φ)`, the
   precomposition with `TestFunction.smulLeftCLM`.
 * `Distribution.smulLeftCLM_smulLeftCLM`, `Distribution.smulLeftCLM_const`: multiplying in turn
@@ -64,8 +66,14 @@ def smulLeftCLM (hg : ContDiff ℝ n g) : 𝓓'^{n}(Ω, ℂ) →L[ℂ] 𝓓'^{n}
     -- Precomposition with a test-function operator commutes with complex scalars, although
     -- `precompCompactConvergenceCLM` is only bundled as a real-linear map.
     have hP (L : 𝓓^{n}(Ω, ℝ) →L[ℝ] 𝓓^{n}(Ω, ℝ)) :
-        L.precompCompactConvergenceCLM ℂ (c • T) = c • L.precompCompactConvergenceCLM ℂ T :=
-      (rfl)
+        L.precompCompactConvergenceCLM ℂ (c • T) = c • L.precompCompactConvergenceCLM ℂ T := by
+      ext φ
+      -- Precomposition is `T ↦ T ∘ L` on the underlying continuous linear maps, and scalars act
+      -- pointwise on `→L_c`, so both sides send `φ` to `c • T (L φ)`. Mathlib states
+      -- `precompCompactConvergenceCLM_apply` through the `→L_c` type synonym, where it does not
+      -- rewrite, so the evaluation is unfolded with `change`.
+      change (c • T) (L φ) = c • T (L φ)
+      rw [smul_apply]
     rw [RingHom.id_apply, hP, hP, smul_comm I c]
     exact (smul_add c _ _).symm
   cont := by fun_prop
@@ -79,6 +87,7 @@ theorem smulLeftCLM_apply (hg : ContDiff ℝ n g) (T : 𝓓'^{n}(Ω, ℂ)) (φ :
 
 /-- **The product with a smooth function on complex test functions.** The complex-linear
 extension of `g T` pairs a complex test function `φ` with `T` after multiplying it by `g`. -/
+@[simp]
 theorem complexPairing_smulLeftCLM (hg : ContDiff ℝ n g) (T : 𝓓'^{n}(Ω, ℂ))
     (φ : 𝓓^{n}(Ω, ℂ)) :
     (smulLeftCLM hg T).complexPairing φ =
@@ -97,9 +106,8 @@ theorem complexPairing_smulLeftCLM (hg : ContDiff ℝ n g) (T : 𝓓'^{n}(Ω, �
     ring
   rw [complexPairing_apply, complexPairing_apply T, hre, him, smulLeftCLM_apply,
     smulLeftCLM_apply, map_sub, map_add]
-  ring_nf
-  rw [I_sq]
-  ring_nf
+  linear_combination
+    T (TestFunction.smulLeftCLM (imCLM.contDiff.comp hg) (postcompCLM (𝕜 := ℝ) imCLM φ)) * I_sq
 
 /-- **The product with a smooth function on real test functions.** `(g T) φ` is the pairing of
 `T` with the complex test function `g φ`. -/
@@ -110,6 +118,28 @@ theorem smulLeftCLM_apply_eq_complexPairing (hg : ContDiff ℝ n g) (T : 𝓓'^{
   rw [← complexPairing_postcompCLM_ofRealCLM, complexPairing_smulLeftCLM]
   refine congrArg T.complexPairing (TestFunction.ext fun x ↦ ?_)
   simp [bilinLeftCLM_apply, real_smul]
+
+/-- **The support of a smooth multiple.** The product `g T` is supported both in the closed
+support of `g` and in the support of `T`. -/
+theorem dsupport_smulLeftCLM_subset_inter (hg : ContDiff ℝ n g) (T : 𝓓'^{n}(Ω, ℂ)) :
+    dsupport (smulLeftCLM hg T) ⊆ tsupport g ∩ dsupport T := by
+  -- `g T` is `T (re g • ·) + i T (im g • ·)`, and both terms are supported in the target set.
+  have hsupp {u : E → ℝ} (hu : ContDiff ℝ n u) (hug : tsupport u ⊆ tsupport g) {x : E}
+      (hx : x ∉ tsupport g ∩ dsupport T) :
+      ∃ s, IsVanishingOn (T ∘ TestFunction.smulLeftCLM hu) s ∧ IsOpen s ∧ x ∈ s :=
+    (notMem_dsupport_iff x).1 fun h ↦
+      hx (Set.inter_subset_inter_left _ hug (dsupport_comp_smulLeftCLM_subset T hu h))
+  refine Set.compl_subset_compl.1 fun x hx ↦ ?_
+  obtain ⟨s, hs, hso, hxs⟩ :=
+    hsupp (reCLM.contDiff.comp hg) (tsupport_comp_subset (map_zero reCLM) g) hx
+  obtain ⟨t, ht, hto, hxt⟩ :=
+    hsupp (imCLM.contDiff.comp hg) (tsupport_comp_subset (map_zero imCLM) g) hx
+  refine (notMem_dsupport_iff x).2 ⟨s ∩ t, fun φ hφ ↦ ?_, hso.inter hto, hxs, hxt⟩
+  have hre : T (TestFunction.smulLeftCLM (reCLM.contDiff.comp hg) φ) = 0 :=
+    hs φ (hφ.trans Set.inter_subset_left)
+  have him : T (TestFunction.smulLeftCLM (imCLM.contDiff.comp hg) φ) = 0 :=
+    ht φ (hφ.trans Set.inter_subset_right)
+  rw [smulLeftCLM_apply, hre, him, mul_zero, add_zero]
 
 /-- For a real multiplier `g`, the product `g T` is the precomposition of `T` with the
 multiplication `φ ↦ g φ` of real test functions. -/
