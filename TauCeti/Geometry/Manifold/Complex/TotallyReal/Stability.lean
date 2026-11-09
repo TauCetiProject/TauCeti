@@ -95,14 +95,12 @@ variable {E H M F H' N : Type*}
   {I' : ModelWithCorners ℝ F H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' 1 N]
   {ι : N → M}
 
-/-- The local chart form of stability. If `ι` is `C¹` at `x₀` with injective differential and
-`im dι_{x₀}` is maximal totally real for a `J₀` that is injective on `im dι_{x₀}`, then near
-`x₀` every operator on `T_{ι x}M` whose expression in the chart at `ι x₀` is within a fixed `ε`
-of `J₀` keeps `im dι_x` maximal totally real. The operators need not square to minus the
-identity. -/
+/-- The local chart form of stability. If `ι` is `C¹` at `x₀` and `im dι_{x₀}` is maximal
+totally real for a `J₀` such that `J₀ ∘ dι_{x₀}` is injective, then near `x₀` every operator on
+`T_{ι x}M` whose expression in the chart at `ι x₀` is within a fixed `ε` of `J₀` keeps `im dι_x`
+maximal totally real. The operators need not square to minus the identity. -/
 theorem exists_pos_eventually_isMaximalTotallyReal_range_mfderiv {x₀ : N}
-    (hι : ContMDiffAt I' I 1 ι x₀) (hinj : Injective (mfderiv I' I ι x₀))
-    {J₀ : TangentSpace I (ι x₀) →L[ℝ] TangentSpace I (ι x₀)}
+    (hι : ContMDiffAt I' I 1 ι x₀) {J₀ : TangentSpace I (ι x₀) →L[ℝ] TangentSpace I (ι x₀)}
     (hJ₀ : Injective (J₀.comp (mfderiv I' I ι x₀)))
     (h : IsMaximalTotallyReal J₀.toLinearMap
       (LinearMap.range (mfderiv I' I ι x₀).toLinearMap)) :
@@ -116,7 +114,7 @@ theorem exists_pos_eventually_isMaximalTotallyReal_range_mfderiv {x₀ : N}
     Manifold.inTangentCoordinates_eq_self_of_eq id ι _ rfl rfl
   obtain ⟨ε, hε, hstab⟩ := exists_pos_isMaximalTotallyReal_range_of_isCompact
     (isCompact_singleton (X := (F →L[ℝ] E) × (E →L[ℝ] E)) (x := (mfderiv I' I ι x₀, J₀)))
-    (by rintro _ rfl; exact hinj) (by rintro _ rfl; exact hJ₀)
+    (by rintro _ rfl; exact fun a b hab ↦ hJ₀ (congrArg J₀ hab)) (by rintro _ rfl; exact hJ₀)
     (by rintro _ rfl; exact h)
   refine ⟨ε, hε, ?_⟩
   filter_upwards [hD.eventually (Metric.ball_mem_nhds _ hε), chart_source_mem_nhds H' x₀,
@@ -134,7 +132,7 @@ theorem eventually_forall_isMaximalTotallyReal_of_isCompact {T : Type*} [Topolog
     (hK : IsCompact K)
     (h𝒥 : ∀ x ∈ K, ContinuousAt (fun q : T × M ↦ TotalSpace.mk' (E →L[ℝ] E)
       (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y) q.2 (𝒥 q.1 q.2)) (t₀, ι x))
-    (hι : ∀ x ∈ K, ContMDiffAt I' I 1 ι x) (hinj : ∀ x ∈ K, Injective (mfderiv I' I ι x))
+    (hι : ∀ x ∈ K, ContMDiffAt I' I 1 ι x)
     (hJ : ∀ x ∈ K, Injective ((𝒥 t₀ (ι x)).comp (mfderiv I' I ι x)))
     (h : ∀ x ∈ K, IsMaximalTotallyReal (𝒥 t₀ (ι x)).toLinearMap
       (LinearMap.range (mfderiv I' I ι x).toLinearMap)) :
@@ -142,7 +140,7 @@ theorem eventually_forall_isMaximalTotallyReal_of_isCompact {T : Type*} [Topolog
       (LinearMap.range (mfderiv I' I ι x).toLinearMap) := by
   refine hK.eventually_forall_of_forall_eventually fun x₀ hx₀ ↦ ?_
   obtain ⟨ε, hε, hloc⟩ := exists_pos_eventually_isMaximalTotallyReal_range_mfderiv
-    (hι x₀ hx₀) (hinj x₀ hx₀) (hJ x₀ hx₀) (h x₀ hx₀)
+    (hι x₀ hx₀) (hJ x₀ hx₀) (h x₀ hx₀)
   have hc := ((continuousAt_hom_bundle (RingHom.id ℝ) _).1 ((h𝒥 x₀ hx₀).comp
     (f := fun q : T × N ↦ (q.1, ι q.2))
     (continuousAt_fst.prodMk ((hι x₀ hx₀).continuousAt.comp (x := (t₀, x₀))
@@ -160,7 +158,7 @@ theorem exists_pos_forall_isMaximalTotallyReal_of_isCompact
     {J₀ : ∀ y : M, TangentSpace I y →L[ℝ] TangentSpace I y} {K : Set N} (hK : IsCompact K)
     (hJ₀c : ∀ x ∈ K, ContinuousAt (fun y : M ↦ TotalSpace.mk' (E →L[ℝ] E)
       (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y) y (J₀ y)) (ι x))
-    (hι : ∀ x ∈ K, ContMDiffAt I' I 1 ι x) (hinj : ∀ x ∈ K, Injective (mfderiv I' I ι x))
+    (hι : ∀ x ∈ K, ContMDiffAt I' I 1 ι x)
     (hJ : ∀ x ∈ K, Injective ((J₀ (ι x)).comp (mfderiv I' I ι x)))
     (h : ∀ x ∈ K, IsMaximalTotallyReal (J₀ (ι x)).toLinearMap
       (LinearMap.range (mfderiv I' I ι x).toLinearMap)) :
@@ -180,7 +178,7 @@ theorem exists_pos_forall_isMaximalTotallyReal_of_isCompact
           IsMaximalTotallyReal A.toLinearMap
             (LinearMap.range (mfderiv I' I ι x).toLinearMap) := by
     obtain ⟨ε, hε, hev⟩ := exists_pos_eventually_isMaximalTotallyReal_range_mfderiv
-      (hι c hc) (hinj c hc) (hJ c hc) (h c hc)
+      (hι c hc) (hJ c hc) (h c hc)
     have hcont := ((continuousAt_hom_bundle (RingHom.id ℝ) _).1
       ((hJ₀c c hc).comp (x := c) (hι c hc).continuousAt)).2
     refine ⟨ε / 2, half_pos hε, ?_⟩
@@ -230,7 +228,7 @@ theorem eventually_forall_isMaximalTotallyReal
     (h x hx).injective_of_two_mul_finrank_eq
       (fun a b hab ↦ Subtype.ext ((J.freeze p₀).injective (ι x) hab)) hdim
   refine eventually_forall_isMaximalTotallyReal_of_isCompact
-    (𝒥 := fun p ↦ (J.freeze p).toEndomorphism) hK (fun _ _ ↦ ?_) hι hinj
+    (𝒥 := fun p ↦ (J.freeze p).toEndomorphism) hK (fun _ _ ↦ ?_) hι
     (fun x hx ↦ ((J.freeze p₀).injective (ι x)).comp (hinj x hx)) h
   simpa only [freeze_toEndomorphism_apply] using J.contMDiff.continuous.continuousAt
 

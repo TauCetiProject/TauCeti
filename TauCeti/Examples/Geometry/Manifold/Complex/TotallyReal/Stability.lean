@@ -46,7 +46,7 @@ example : ∃ ε > 0, ∀ A : ℂ →L[ℝ] ℂ, dist A (ContinuousLinearMap.lsm
       (mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ) ofRealCLM 0)) :=
     (smul_right_injective ℂ I_ne_zero).comp hinj
   obtain ⟨ε, hε, hev⟩ := exists_pos_eventually_isMaximalTotallyReal_range_mfderiv
-    (ι := ofRealCLM) (x₀ := 0) ofRealCLM.contMDiff.contMDiffAt hinj hJ
+    (ι := ofRealCLM) (x₀ := 0) ofRealCLM.contMDiff.contMDiffAt hJ
     (by rw [ContinuousLinearMap.mfderiv_eq]; exact hmax)
   refine ⟨ε, hε, fun A hA ↦ ?_⟩
   have h := hev.self_of_nhds A
