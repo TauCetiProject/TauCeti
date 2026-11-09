@@ -28,9 +28,10 @@ exactly the multiplicity of that point, while compactness of the complement of t
 neighbourhoods keeps nearby fibres from having any further points. Over a connected `Y` the fibre
 sum is therefore the same at every point, and this common value is the **degree**
 `TauCeti.RiemannSurface.degree f`. The degree dominates every local multiplicity and is
-multiplicative under composition; when `X` is nonempty (so that some fibre sum is nonzero) it is
-positive. Surjectivity of such a map onto a connected target, and nonconstancy of the composite of
-two such maps, come from the open mapping theorem for Riemann surfaces:
+multiplicative under composition of maps whose intermediate surface is connected; when `X` is
+nonempty (so that some fibre sum is nonzero) it is positive. Surjectivity of such a map onto a
+connected target, and nonconstancy of the composite of two such maps, come from the open mapping
+theorem for Riemann surfaces:
 `TauCeti.RiemannSurface.surjective_of_forall_not_eventuallyConst` and
 `TauCeti.RiemannSurface.not_eventuallyConst_comp` in
 `TauCeti.Analysis.Complex.RiemannSurface.OpenMapping`.
@@ -153,7 +154,8 @@ of a compact `X`, with `Y` connected, every fibre sum equals the degree
 of any point, counted with local multiplicities. The supremum only avoids choosing a point of
 `Y`. Over a disconnected target the degree of such a map is its largest fibre sum
 (`TauCeti.RiemannSurface.fiberMultiplicitySum_le_degree`), which still bounds the local
-multiplicities and is multiplicative; the value is junk only when the fibre sums are unbounded. -/
+multiplicities (and is multiplicative under composition when the intermediate surface is
+connected); the value is junk only when the fibre sums are unbounded. -/
 def degree (f : X → Y) : ℕ := ⨆ y, fiberMultiplicitySum f y
 
 theorem degree_def (f : X → Y) : degree f = ⨆ y, fiberMultiplicitySum f y :=
