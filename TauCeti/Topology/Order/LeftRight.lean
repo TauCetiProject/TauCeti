@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecificLimits.Basic
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.Order.LeftRightNhds
 
