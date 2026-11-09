@@ -168,6 +168,11 @@ theorem edgePath_insertVertex_succ_self :
     (poly.insertVertex i c).edgePath R i.succ = AffineMap.lineMap c (poly (finRotate n i)) := by
   rw [edgePath, insertVertex_apply_succ_self, insertVertex_apply_finRotate_succ_self]
 
+/-- Moving along an edge by `c` translates a point of it by `c` times the edge direction. -/
+theorem edgePath_add (k : Fin n) (r c : R) : poly.edgePath R k (r + c) =
+    c • (poly (finRotate n k) -ᵥ poly k) +ᵥ poly.edgePath R k r := by
+  simp only [edgePath, AffineMap.lineMap_apply, vadd_vadd, ← add_smul, add_comm]
+
 end EdgePath
 
 /-! ### Points of the boundary -/
@@ -182,6 +187,12 @@ a parameter in `[0, 1]`. -/
 theorem mem_boundary_iff :
     x ∈ poly.boundary R ↔ ∃ i, ∃ t ∈ Icc (0 : R) 1, poly.edgePath R i t = x := by
   simp only [boundary, mem_iUnion, edgeSet_eq_image_edgePath, mem_image]
+
+/-- The point of an edge at a parameter in `[0, 1]` lies on the edge. -/
+theorem edgePath_mem_edgeSet (k : Fin n) {r : R} (hr : r ∈ Icc (0 : R) 1) :
+    poly.edgePath R k r ∈ poly.edgeSet R k := by
+  rw [edgeSet_eq_image_edgePath]
+  exact mem_image_of_mem _ hr
 
 variable [ZeroLEOneClass R] (poly : Polygon P n) (i : Fin n)
 

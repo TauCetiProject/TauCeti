@@ -63,12 +63,7 @@ theorem mem_integrableExpSet_id_stableMeasure_iff_one_zero {s : ℝ≥0} {m : �
     (hs : 0 < s) :
     t ∈ integrableExpSet id (stableMeasure α β s m) ↔
       (s : ℝ) * t ∈ integrableExpSet id (stableMeasure α β 1 0) := by
-  have hmap : (stableMeasure α β 1 0).map (fun x ↦ m + s * x) =
-      stableMeasure α β s m := by
-    simpa [Real.sign_of_pos (NNReal.coe_pos.mpr hs)] using
-      stableMeasure_map_affine (α := α) (β := β) (s := 1) (m := 0) (a := m) (b := s)
-        (Or.inl (NNReal.coe_ne_zero.mpr hs.ne'))
-  rw [← hmap, integrableExpSet_id_map_affine, mem_preimage]
+  rw [← stableMeasure_one_zero_map_affine hs, integrableExpSet_id_map_affine, mem_preimage]
 
 /-- The standardized totally skewed stable law has finite exponential moments on the
 half-line `β * t ≤ 0`, by lower semicontinuity along its compensated approximations. -/
