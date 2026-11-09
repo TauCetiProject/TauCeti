@@ -85,7 +85,7 @@ theorem simplexSupport_none : simplexSupport n a none = -a := (rfl)
 theorem simplexSupport_some (k : Fin n) : simplexSupport n a (some k) = 0 := (rfl)
 
 /-- The pairing of a functional with the coordinate normal `e_k` is its value on `e_k`. -/
-private theorem facetPairing_simplexNormal_some (x : StrongDual ℝ (Fin n → ℝ)) (k : Fin n) :
+theorem facetPairing_simplexNormal_some (x : StrongDual ℝ (Fin n → ℝ)) (k : Fin n) :
     facetPairing ((Int.castAddHom ℝ).compLeft (Fin n)) (simplexNormal n) (some k) x =
       x (Pi.single k 1) := by
   rw [facetPairing_apply, simplexNormal_some]
@@ -95,7 +95,7 @@ private theorem facetPairing_simplexNormal_some (x : StrongDual ℝ (Fin n → �
 
 /-- The pairing of a functional with the normal `-(e_1 + ⋯ + e_n)` is minus the sum of its values
 on the `e_k`. -/
-private theorem facetPairing_simplexNormal_none (x : StrongDual ℝ (Fin n → ℝ)) :
+theorem facetPairing_simplexNormal_none (x : StrongDual ℝ (Fin n → ℝ)) :
     facetPairing ((Int.castAddHom ℝ).compLeft (Fin n)) (simplexNormal n) none x =
       -∑ k, x (Pi.single k 1) := by
   have h : (Int.castAddHom ℝ).compLeft (Fin n) (simplexNormal n none) =
@@ -288,12 +288,11 @@ private theorem exists_activeSet_simplex_eq_singleton (hn : n ≠ 0) (ha : 0 < a
     · rw [mem_facetPolyhedron_simplex_iff]
       simp only [hy (fun _ ↦ a / n), Finset.sum_const, Finset.card_univ, Fintype.card_fin,
         nsmul_eq_mul]
-      exact ⟨fun _ ↦ by positivity, by field_simp; rfl⟩
+      exact ⟨fun _ ↦ by positivity, (mul_div_cancel₀ a hn'.ne').le⟩
     · ext m
       rcases m with _ | k
       · simp only [none_mem_activeSet_simplex_iff, hy (fun _ ↦ a / n), Finset.sum_const,
-          Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-        field_simp
+          Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_div_cancel₀ a hn'.ne']
         simp
       · simp only [some_mem_activeSet_simplex_iff, hy (fun _ ↦ a / n)]
         simp [ha.ne', hn]
@@ -305,7 +304,9 @@ private theorem exists_activeSet_simplex_eq_singleton (hn : n ≠ 0) (ha : 0 < a
       · exact le_rfl
     have hsum : ∑ k, y k < a := by
       calc ∑ k, y k ≤ ∑ _k : Fin n, a / (2 * n) := Finset.sum_le_sum fun k _ ↦ hyk k
-        _ = a / 2 := by simp; field_simp
+        _ = a / 2 := by
+          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+          field_simp
         _ < a := by linarith
     refine ⟨∑ k, y k • ContinuousLinearMap.proj k, ?_, ?_⟩
     · rw [mem_facetPolyhedron_simplex_iff]

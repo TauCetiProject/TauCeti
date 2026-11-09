@@ -74,7 +74,7 @@ theorem hirzebruchSupport_def (a b : ℝ) : hirzebruchSupport a b = ![0, 0, -b, 
 variable {k : ℤ} {a b : ℝ}
 
 /-- The four facet pairings of the Hirzebruch trapezoid, in the coordinates `x(e₁)`, `x(e₂)`. -/
-private theorem facetPairing_hirzebruch (x : StrongDual ℝ (Fin 2 → ℝ)) (j : Fin 4) :
+theorem facetPairing_hirzebruch (x : StrongDual ℝ (Fin 2 → ℝ)) (j : Fin 4) :
     facetPairing ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k) j x =
       ![x (Pi.single 0 1), x (Pi.single 1 1), -x (Pi.single 1 1),
         -x (Pi.single 0 1) - k * x (Pi.single 1 1)] j := by
@@ -83,8 +83,12 @@ private theorem facetPairing_hirzebruch (x : StrongDual ℝ (Fin 2 → ℝ)) (j 
     ext i
     fin_cases i <;> simp
   rw [facetPairing_apply, h, map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul]
-  fin_cases j <;> simp [hirzebruchNormal_def]
-  ring
+  fin_cases j
+  · simp [hirzebruchNormal_def]
+  · simp [hirzebruchNormal_def]
+  · simp [hirzebruchNormal_def]
+  · simp [hirzebruchNormal_def]
+    ring
 
 /-- **The Hirzebruch trapezoid.** The polyhedron of the Hirzebruch presentation consists of the
 functionals `x` with `0 ≤ x(e₁)`, `0 ≤ x(e₂) ≤ b` and `x(e₁) + k x(e₂) ≤ a`. -/
