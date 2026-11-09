@@ -293,12 +293,12 @@ theorem mem_iff_dvd_repr_of_diagonal_basis (N : Submodule R M)
   have hrepr : ∀ (c : ι →₀ R) (i),
       b.repr (c.sum fun j r ↦ r • a j • b j) i = a i * c i := by
     intro c i
-    rw [Finsupp.sum, map_sum, Finsupp.finsetSum_apply]
-    simp only [← mul_smul, map_smul, Basis.repr_self, Finsupp.smul_apply, Finsupp.single_apply,
-      smul_eq_mul, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq', Finsupp.mem_support_iff]
-    split_ifs with h
-    · exact mul_comm _ _
-    · simp [not_not.mp h]
+    rw [map_finsuppSum, Finsupp.sum_apply]
+    simp only [map_smul, Basis.repr_self_apply, Finsupp.smul_apply, smul_eq_mul, mul_ite, mul_one,
+      mul_zero]
+    have key : ∀ (j : ι) (r : R), (if j = i then r * a j else 0) = a i * if j = i then r else 0 :=
+      fun j r ↦ by split_ifs with h <;> simp [h, mul_comm]
+    simp only [key, ← Finsupp.mul_sum, Finsupp.sum_ite_self_eq']
   constructor
   · rintro ⟨c, rfl⟩ i
     exact ⟨c i, hrepr c i⟩
