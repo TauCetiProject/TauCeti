@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Analysis.Holder.Normed
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-import Mathlib.Analysis.MeanInequalitiesPow
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Calculus.BumpFunction.HolderApproximation
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
@@ -37,11 +36,12 @@ difference quotients tend to zero at small scales: for every `ε > 0` there is `
   Hölder function is approximated by its convolutions with normalized bumps at small scales. So
   the Banach space `h^{0,α}` is the completion of the smooth Lipschitz functions in the
   `C^{0,α}` norm.
-* `TauCeti.not_memLittleHolder_norm_rpow` and `TauCeti.HolderSpace.littleHolder_ne_top`: the cusp
-  `x ↦ ‖x‖ ^ α`, `0 < α ≤ 1`, is `α`-Hölder (`TauCeti.holderWith_norm_rpow`) but has difference
-  quotient `1` between `0` and every other point. Truncated at height `1`, it is a bounded Hölder
-  function outside `h^{0,α}`, so in positive dimension the smooth Lipschitz functions are not dense
-  in the full Hölder space.
+* `TauCeti.not_memLittleHolder_of_eqOn_norm_rpow`, `TauCeti.not_memLittleHolder_norm_rpow` and
+  `TauCeti.HolderSpace.littleHolder_ne_top`: the cusp `x ↦ ‖x‖ ^ α`, `0 < α ≤ 1`, is `α`-Hölder
+  (`TauCeti.holderWith_norm_rpow`) but has difference quotient `1` between `0` and every other
+  point, so no function agreeing with it near `0` is little Hölder. Truncated at height `1`, it is
+  a bounded Hölder function outside `h^{0,α}`. So for `α < 1`, in positive dimension, the smooth
+  Lipschitz functions are not dense in the full Hölder space.
 
 ## References
 
@@ -116,6 +116,10 @@ theorem MemLittleHolder.add (hf : MemLittleHolder α f) (hg : MemLittleHolder α
         (h₂ x y (hxy.trans_le (min_le_right _ _)))
     _ = ε * dist x y ^ (α : ℝ) := by ring
 
+/-- The negation of a little Hölder function is little Hölder. -/
+theorem MemLittleHolder.neg (hf : MemLittleHolder α f) : MemLittleHolder α (-f) := by
+  simpa only [MemLittleHolder, Pi.neg_apply, dist_neg_neg] using hf
+
 /-- A scalar multiple of a little Hölder function is little Hölder. -/
 theorem MemLittleHolder.const_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 Y]
     (hf : MemLittleHolder α f) (c : 𝕜) : MemLittleHolder α (c • f) := by
@@ -132,16 +136,7 @@ theorem MemLittleHolder.const_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpac
 /-- The difference of two little Hölder functions is little Hölder. -/
 theorem MemLittleHolder.sub (hf : MemLittleHolder α f) (hg : MemLittleHolder α g) :
     MemLittleHolder α (f - g) := by
-  intro ε hε
-  obtain ⟨δ₁, hδ₁, h₁⟩ := hf (ε / 2) (half_pos hε)
-  obtain ⟨δ₂, hδ₂, h₂⟩ := hg (ε / 2) (half_pos hε)
-  refine ⟨min δ₁ δ₂, lt_min hδ₁ hδ₂, fun x y hxy ↦ ?_⟩
-  calc dist ((f - g) x) ((f - g) y) ≤ dist (f x) (f y) + dist (g x) (g y) :=
-        dist_sub_sub_le _ _ _ _
-    _ ≤ ε / 2 * dist x y ^ (α : ℝ) + ε / 2 * dist x y ^ (α : ℝ) :=
-      add_le_add (h₁ x y (hxy.trans_le (min_le_left _ _)))
-        (h₂ x y (hxy.trans_le (min_le_right _ _)))
-    _ = ε * dist x y ^ (α : ℝ) := by ring
+  simpa only [sub_eq_add_neg] using hf.add hg.neg
 
 end Predicate
 
@@ -151,46 +146,34 @@ section Cusp
 
 variable {E : Type*} {α : ℝ≥0}
 
+/-- A real function that agrees with the cusp `x ↦ ‖x‖ ^ α`, `α > 0`, on a ball about `0` is not
+little Hölder: its `α`-Hölder difference quotient between `0` and every other point of the ball is
+`1`, so its quotients do not tend to zero at small scales. -/
+theorem not_memLittleHolder_of_eqOn_norm_rpow [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [Nontrivial E] (hα : 0 < α) {f : E → ℝ} {r : ℝ} (hr : 0 < r)
+    (hf : EqOn f (fun x ↦ ‖x‖ ^ (α : ℝ)) (ball 0 r)) : ¬ MemLittleHolder α f := by
+  intro h
+  obtain ⟨δ, hδ, hδh⟩ := h (1 / 2) one_half_pos
+  set s := min δ r / 2
+  have hs : 0 < s := half_pos (lt_min hδ hr)
+  have hsδr : s < min δ r := half_lt_self (lt_min hδ hr)
+  obtain ⟨x, hx⟩ := exists_norm_eq E hs.le
+  have hfx : f x = s ^ (α : ℝ) :=
+    (hf (mem_ball_zero_iff.2 (hx ▸ hsδr.trans_le (min_le_right _ _)))).trans (by simp only [hx])
+  have hf0 : f 0 = 0 := (hf (mem_ball_self hr)).trans <| by
+    simp only [norm_zero, Real.zero_rpow (NNReal.coe_pos.2 hα).ne']
+  have hpos : 0 < s ^ (α : ℝ) := Real.rpow_pos_of_pos hs _
+  have key := hδh x 0 (by rw [dist_zero_right, hx]; exact hsδr.trans_le (min_le_left _ _))
+  rw [hfx, hf0, Real.dist_eq, sub_zero, abs_of_pos hpos, dist_zero_right, hx] at key
+  linarith
+
 /-- **The cusp is not little Hölder.** For `α > 0` the function `x ↦ ‖x‖ ^ α` has `α`-Hölder
 difference quotient `1` between `0` and every other point, so its quotients do not tend to zero at
 small scales. -/
 theorem not_memLittleHolder_norm_rpow [NormedAddCommGroup E] [NormedSpace ℝ E] [Nontrivial E]
     (hα : 0 < α) :
-    ¬ MemLittleHolder α (fun x : E ↦ ‖x‖ ^ (α : ℝ)) := by
-  intro h
-  obtain ⟨δ, hδ, hδh⟩ := h (1 / 2) one_half_pos
-  obtain ⟨x, hx⟩ := exists_norm_eq E (half_pos hδ).le
-  have hx0 : dist x 0 < δ := by rw [dist_zero_right, hx]; exact half_lt_self hδ
-  have hpos : 0 < (δ / 2) ^ (α : ℝ) := Real.rpow_pos_of_pos (half_pos hδ) _
-  have key := hδh x 0 hx0
-  dsimp only at key
-  rw [dist_zero_right, hx, norm_zero, Real.zero_rpow (NNReal.coe_pos.2 hα).ne', Real.dist_eq,
-    sub_zero, abs_of_pos hpos] at key
-  linarith
-
-/-- For `α ≤ 1`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölder with constant `1`. -/
-theorem holderWith_norm_rpow [SeminormedAddCommGroup E] (hα : α ≤ 1) :
-    HolderWith 1 α (fun x : E ↦ ‖x‖ ^ (α : ℝ)) := by
-  have hα' : (α : ℝ) ≤ 1 := hα
-  -- Subadditivity of `t ↦ t ^ α` gives `b ^ α - a ^ α ≤ (b - a) ^ α` for `0 ≤ a ≤ b`.
-  have key : ∀ a b : ℝ, 0 ≤ a → a ≤ b → b ^ (α : ℝ) - a ^ (α : ℝ) ≤ (b - a) ^ (α : ℝ) := by
-    intro a b ha hab
-    have h := Real.rpow_add_le_add_rpow ha (sub_nonneg.2 hab) α.coe_nonneg hα'
-    rw [add_sub_cancel] at h
-    linarith
-  rw [← holderOnWith_univ]
-  refine HolderOnWith.of_dist_le fun x _ y _ ↦ ?_
-  rw [Real.dist_eq, NNReal.coe_one, one_mul]
-  have hxy : |‖x‖ - ‖y‖| ≤ dist x y := by
-    rw [dist_eq_norm]; exact abs_norm_sub_norm_le x y
-  rcases le_total ‖y‖ ‖x‖ with h | h
-  · rw [abs_of_nonneg (sub_nonneg.2 (Real.rpow_le_rpow (norm_nonneg y) h α.coe_nonneg))]
-    refine (key _ _ (norm_nonneg y) h).trans (Real.rpow_le_rpow (sub_nonneg.2 h) ?_ α.coe_nonneg)
-    exact (le_abs_self _).trans hxy
-  · rw [abs_of_nonpos (sub_nonpos.2 (Real.rpow_le_rpow (norm_nonneg x) h α.coe_nonneg)), neg_sub]
-    refine (key _ _ (norm_nonneg x) h).trans (Real.rpow_le_rpow (sub_nonneg.2 h) ?_ α.coe_nonneg)
-    rw [abs_sub_comm] at hxy
-    exact (le_abs_self _).trans hxy
+    ¬ MemLittleHolder α (fun x : E ↦ ‖x‖ ^ (α : ℝ)) :=
+  not_memLittleHolder_of_eqOn_norm_rpow hα one_pos (eqOn_refl _ _)
 
 end Cusp
 
@@ -269,10 +252,7 @@ theorem exists_contDiff_lipschitzWith_norm_sub_lt (hα : α < 1) (f : HolderSpac
   have hg₀lip : LipschitzWith _ g₀ :=
     (ρ.hasCompactSupport_normed (μ := μ)).lipschitzWith_convolution_left
       (ρ.contDiff_normed (n := 1)) f.continuous.locallyIntegrable hM
-  have hg₀M : ∀ w, ‖g₀ w‖ ≤ M := fun w ↦ by
-    have h := norm_integral_kernel_smul_sub_le (μ := μ) ρ.integrable_normed hM w
-    simpa only [Real.norm_of_nonneg (ρ.nonneg_normed _), ρ.integral_normed, one_mul, g₀,
-      convolution_def, lsmul_apply] using h
+  have hg₀M : ∀ w, ‖g₀ w‖ ≤ M := ρ.norm_normed_convolution_le hM
   -- `g₀` is bounded and Lipschitz, hence an element of the Hölder space.
   let g₁ : E →ᵇ Y := .ofNormedAddCommGroup g₀ hg₀smooth.continuous M hg₀M
   have hg₁ : MemHolder α (g₁ : E → Y) := by
@@ -329,28 +309,12 @@ theorem littleHolder_ne_top {α : ℝ≥0} {E : Type*} [NormedAddCommGroup E] [N
     exact min_le_right _ _
   let f : HolderSpace α E ℝ :=
     ofBoundedContinuousFunction (.ofNormedAddCommGroup c (hc.continuous hα0) 1 hcb) hc.memHolder
-  intro htop
-  obtain ⟨δ, hδ, hδf⟩ := mem_littleHolder_iff.1 (htop ▸ Submodule.mem_top (x := f)) (1 / 2)
-    one_half_pos
-  -- Below height `1` the truncated cusp is the cusp, with quotient `1` between `0` and `x`.
-  set r := min δ 1 / 2 with hr_def
-  have hr : 0 < r := half_pos (lt_min hδ one_pos)
-  obtain ⟨x, hx⟩ := exists_norm_eq E hr.le
-  have hrα : 0 < r ^ (α : ℝ) := Real.rpow_pos_of_pos hr _
   have hfc : ∀ y, f y = c y := fun y ↦ (ofBoundedContinuousFunction_apply _ _ y).trans (by simp)
-  have hfx : f x = r ^ (α : ℝ) := by
-    rw [hfc]
-    simp only [c]
-    rw [hx, min_eq_left (Real.rpow_le_one hr.le (by linarith [min_le_right δ 1]) α.coe_nonneg)]
-  have hf0 : f 0 = 0 := by
-    rw [hfc]
-    simp only [c]
-    rw [norm_zero, Real.zero_rpow (NNReal.coe_pos.2 hα0).ne', min_eq_left zero_le_one]
-  have hx0 : dist x 0 < δ := by
-    rw [dist_zero_right, hx]; linarith [min_le_left δ 1]
-  have key := hδf x 0 hx0
-  rw [hfx, hf0, Real.dist_eq, sub_zero, abs_of_pos hrα, dist_zero_right, hx] at key
-  linarith
+  -- Below height `1` the truncated cusp is the cusp.
+  refine fun htop ↦ not_memLittleHolder_of_eqOn_norm_rpow hα0 one_pos (fun x hx ↦ ?_)
+    (mem_littleHolder_iff.1 (htop ▸ Submodule.mem_top (x := f)))
+  exact (hfc x).trans (min_eq_left
+    (Real.rpow_le_one (norm_nonneg x) (mem_ball_zero_iff.1 hx).le α.coe_nonneg))
 
 end HolderSpace
 

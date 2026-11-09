@@ -18,7 +18,8 @@ any uniformly continuous Banach-valued function. For uniformly continuous functi
 upgrades the pointwise convergence of Mathlib's
 `ContDiffBump.convolution_tendsto_right_of_continuous` to uniform convergence, and allows
 simultaneous approximation of the derivatives of a compactly supported smooth function.
-Normalized-bump convolution also preserves a function's Lipschitz constant, since it averages the
+Normalized-bump convolution also preserves a uniform bound on a function
+(`ContDiffBump.norm_normed_convolution_le`) and its Lipschitz constant, since it averages the
 differences of translates (`ContDiffBump.dist_normed_convolution_le_of_dist_sub_le`).
 
 The file also bounds the topological support of `ρ.normed μ ⋆ g` by the Minkowski sum
@@ -207,6 +208,20 @@ theorem ContDiffBump.dist_normed_convolution_le_of_dist_sub_le {G F : Type*}
         exact mul_le_mul_of_nonneg_left (by simpa only [dist_eq_norm] using hB t)
           (ρ.nonneg_normed t)
     _ = B := by rw [integral_mul_const, ρ.integral_normed, one_mul]
+
+/-- Convolution with a nonnegative normalized bump preserves a uniform bound on the norm. -/
+theorem ContDiffBump.norm_normed_convolution_le {G F : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [FiniteDimensional ℝ G] [MeasurableSpace G] [BorelSpace G]
+    {μ : Measure G} [μ.IsAddHaarMeasure] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {g : G → F} (ρ : ContDiffBump (0 : G)) {M : ℝ} (hM : ∀ x, ‖g x‖ ≤ M) (x : G) :
+    ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] g) x‖ ≤ M := by
+  rw [convolution_def]
+  calc ‖∫ t, lsmul ℝ ℝ (ρ.normed μ t) (g (x - t)) ∂μ‖ ≤ ∫ t, ρ.normed μ t * M ∂μ := by
+        refine norm_integral_le_of_norm_le (ρ.integrable_normed.mul_const _)
+          (ae_of_all _ fun t ↦ ?_)
+        rw [lsmul_apply, norm_smul, Real.norm_of_nonneg (ρ.nonneg_normed t)]
+        exact mul_le_mul_of_nonneg_left (hM _) (ρ.nonneg_normed t)
+    _ = M := by rw [integral_mul_const, ρ.integral_normed, one_mul]
 
 /-- Convolution with a nonnegative normalized bump preserves the Lipschitz constant,
 including for Banach-valued functions. -/
