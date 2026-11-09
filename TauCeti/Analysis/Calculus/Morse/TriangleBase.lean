@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.IntervalBase
 public import TauCeti.Analysis.Calculus.Morse.Prod
-import Mathlib.Analysis.Calculus.Deriv.Prod
 
 /-!
 # The ordered-triangle base of a composition of continuations
@@ -134,8 +133,12 @@ theorem gradient_triangleBasePotential_eq_zero_iff (hC : C ≠ 0) {z : WithLp 2 
   simp only [WithLp.ext_iff, Prod.ext_iff, WithLp.ofLp_fst, WithLp.ofLp_snd]
   have := hz.2.1
   constructor
-  · rintro ⟨hu | hu, hv | hv⟩ <;> simp_all
-    linarith
+  · rintro ⟨hu | hu, hv | hv⟩
+    · exact Or.inl ⟨hu, hv⟩
+    · -- `u = 0` and `v = 1` contradict `v ≤ u`.
+      linarith
+    · exact Or.inr (Or.inl ⟨hu, hv⟩)
+    · exact Or.inr (Or.inr ⟨hu, hv⟩)
   · rintro (⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩) <;> simp [hu, hv]
 
 /-- For `C ≠ 0` the source `(0, 0)` is a nondegenerate critical point. -/
@@ -203,6 +206,24 @@ theorem snd_triangleBaseFlow (C s : ℝ) (z : WithLp 2 (ℝ × ℝ)) :
 theorem triangleBaseFlow_zero (C : ℝ) (z : WithLp 2 (ℝ × ℝ)) : triangleBaseFlow C 0 z = z := by
   simp [triangleBaseFlow, WithLp.ext_iff, Prod.ext_iff]
 
+/-- The flow fixes the source `(0, 0)`. -/
+@[simp]
+theorem triangleBaseFlow_toLp_zero_zero (C s : ℝ) :
+    triangleBaseFlow C s (WithLp.toLp 2 (0, 0)) = WithLp.toLp 2 (0, 0) := by
+  simp [triangleBaseFlow]
+
+/-- The flow fixes the corner `(1, 0)`. -/
+@[simp]
+theorem triangleBaseFlow_toLp_one_zero (C s : ℝ) :
+    triangleBaseFlow C s (WithLp.toLp 2 (1, 0)) = WithLp.toLp 2 (1, 0) := by
+  simp [triangleBaseFlow]
+
+/-- The flow fixes the sink `(1, 1)`. -/
+@[simp]
+theorem triangleBaseFlow_toLp_one_one (C s : ℝ) :
+    triangleBaseFlow C s (WithLp.toLp 2 (1, 1)) = WithLp.toLp 2 (1, 1) := by
+  simp [triangleBaseFlow]
+
 /-- **The flow property** on the square `[-1, 1]²`. -/
 theorem triangleBaseFlow_add (C s r : ℝ) {z : WithLp 2 (ℝ × ℝ)} (hu : z.fst ∈ Icc (-1) 1)
     (hv : z.snd ∈ Icc (-1) 1) :
@@ -216,14 +237,11 @@ theorem isIntegralCurve_triangleBaseFlow (C : ℝ) {z : WithLp 2 (ℝ × ℝ)} (
     (hv : z.snd ∈ Icc (-1) 1) :
     IsIntegralCurve (fun s ↦ triangleBaseFlow C s z)
       (fun _ w ↦ -∇ (triangleBasePotential C) w) := by
-  intro s
-  have h := (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ ℝ).symm.hasFDerivAt.comp_hasDerivAt s
-    (HasDerivAt.prodMk (hasDerivAt_intervalBaseFlow C s hu) (hasDerivAt_intervalBaseFlow C s hv))
-  refine h.congr_deriv ?_
-  simp only [ContinuousLinearEquiv.coe_coe, WithLp.prodContinuousLinearEquiv_symm_apply,
-    gradient_triangleBasePotential, fst_triangleBaseFlow, snd_triangleBaseFlow, ← WithLp.toLp_neg,
-    Prod.neg_mk]
-  congr 2 <;> ring
+  have hd : Differentiable ℝ (intervalBasePotential C) :=
+    (contDiff_intervalBasePotential C (n := 1)).differentiable one_ne_zero
+  unfold triangleBaseFlow triangleBasePotential
+  exact (isIntegralCurve_intervalBaseFlow C hu).separatedSum (isIntegralCurve_intervalBaseFlow C hv)
+    (fun _ ↦ hd _) (fun _ ↦ hd _)
 
 /-- **The flow preserves the triangle.** -/
 theorem mapsTo_triangleBaseFlow (C s : ℝ) :
@@ -257,8 +275,7 @@ private theorem tendsto_triangleBaseFlow {l : Filter ℝ} {z : WithLp 2 (ℝ × 
     (hu : Tendsto (fun s ↦ intervalBaseFlow C s z.fst) l (𝓝 a))
     (hv : Tendsto (fun s ↦ intervalBaseFlow C s z.snd) l (𝓝 b)) :
     Tendsto (fun s ↦ triangleBaseFlow C s z) l (𝓝 (WithLp.toLp 2 (a, b))) :=
-  ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ ℝ).symm.continuous.tendsto (a, b)).comp
-    (hu.prodMk_nhds hv)
+  ((WithLp.prod_continuous_toLp 2 ℝ ℝ).tendsto (a, b)).comp (hu.prodMk_nhds hv)
 
 /-- For `C > 0`, the flow line through a point of the open square `(-1, 1)²` starts at the
 source `(0, 0)`. -/
@@ -296,8 +313,9 @@ theorem tendsto_triangleBaseFlow_atBot_toLp_one_zero (hC : 0 < C) {z : WithLp 2 
 `(0, 1)²`, where `U(t) = log t - (1 / 2) log (1 - t²)` is the time coordinate of the interval base
 (`TauCeti.intervalBaseTimeCoordinate`). It is constant along the flow
 (`TauCeti.triangleBaseOrbitParameter_triangleBaseFlow`) and classifies the orbits
-(`TauCeti.exists_triangleBaseFlow_eq_iff`). On the triangle it is nonnegative, and it vanishes
-exactly on the diagonal. -/
+(`TauCeti.exists_triangleBaseFlow_eq_iff`). On the part of the triangle in the open square
+`(0, 1)²` it is nonnegative and vanishes exactly on the diagonal. Its values off `(0, 1)²` are
+meaningless. -/
 noncomputable def triangleBaseOrbitParameter (z : WithLp 2 (ℝ × ℝ)) : ℝ :=
   intervalBaseTimeCoordinate z.fst - intervalBaseTimeCoordinate z.snd
 
