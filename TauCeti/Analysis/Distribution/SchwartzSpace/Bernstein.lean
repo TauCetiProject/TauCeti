@@ -98,9 +98,10 @@ private theorem exists_eq_sum_fourierMultiplierCLM_lineDerivOp (θ : ℝ) :
         simp only [m, real_inner_comm ξ (b i)]
         push_cast
         field_simp
-      rw [Finset.sum_congr rfl fun i _ => hterm i, ← Finset.sum_smul, ← Complex.ofReal_sum,
-        ← Finset.sum_div, b.sum_sq_inner_right, div_self (pow_ne_zero 2 hξ0), Complex.ofReal_one,
-        one_smul]
+      have hsum : ∑ i, inner ℝ (b i) ξ ^ 2 / ‖ξ‖ ^ 2 = 1 := by
+        rw [← Finset.sum_div, b.sum_sq_inner_right, div_self (pow_ne_zero 2 hξ0)]
+      rw [Finset.sum_congr rfl fun i _ => hterm i, ← Finset.sum_smul, ← Complex.ofReal_sum, hsum]
+      simp
   simpa using congrArg 𝓕⁻ key
 
 /-- The reverse Bernstein inequality for the first partial derivatives, at frequency scale `1`. -/
@@ -219,7 +220,9 @@ theorem exists_eLpNorm_le_eLpNorm_iteratedFDeriv_of_support_fourier_subset (k : 
   -- The dilation `g = f (R⁻¹ • ·)` has its frequencies in the annulus `1 ≤ ‖ξ‖ ≤ θ`.
   let g : 𝓢(E, F) := compCLMOfContinuousLinearEquiv ℝ
     (LinearEquiv.smulOfNeZero ℝ E R⁻¹ (inv_ne_zero hR.ne')).toContinuousLinearEquiv f
-  have hg : ⇑g = fun x => f (R⁻¹ • x) := rfl
+  have hg : ⇑g = fun x => f (R⁻¹ • x) := by
+    ext x
+    simp [g, compCLMOfContinuousLinearEquiv_apply]
   have hgsupp : Function.support ⇑(𝓕 g : 𝓢(E, F)) ⊆ {ξ | 1 ≤ ‖ξ‖ ∧ ‖ξ‖ ≤ θ} := by
     rw [fourier_coe, hg, TauCeti.support_fourier_comp_smul _ (inv_ne_zero hR.ne'), ← fourier_coe]
     rintro _ ⟨ξ, hξ, rfl⟩
@@ -228,9 +231,12 @@ theorem exists_eLpNorm_le_eLpNorm_iteratedFDeriv_of_support_fourier_subset (k : 
     exacts [(le_inv_mul_iff₀ hR).2 (by linarith), (inv_mul_le_iff₀ hR).2 (by linarith)]
   have hmain := hC g hgsupp
   rw [hg, Measure.eLpNorm_iteratedFDeriv_comp_inv_smul volume (f.smooth k) hR.ne' p,
-    Measure.eLpNorm_comp_inv_smul volume _ hR.ne' p, abs_of_pos hR, Real.rpow_sub hR,
-    Real.rpow_natCast, div_eq_mul_inv _ (R ^ k), ← inv_pow,
-    ENNReal.ofReal_mul (by positivity)] at hmain
+    Measure.eLpNorm_comp_inv_smul volume _ hR.ne' p, abs_of_pos hR] at hmain
+  have hscale : ENNReal.ofReal (R ^ ((finrank ℝ E : ℝ) / p.toReal - k)) =
+      ENNReal.ofReal (R ^ ((finrank ℝ E : ℝ) / p.toReal)) * ENNReal.ofReal (R⁻¹ ^ k) := by
+    rw [← ENNReal.ofReal_mul (by positivity), Real.rpow_sub hR, Real.rpow_natCast, inv_pow,
+      div_eq_mul_inv]
+  rw [hscale] at hmain
   have h0 : ENNReal.ofReal (R ^ (finrank ℝ E / p.toReal)) ≠ 0 := by
     simpa using Real.rpow_pos_of_pos hR _
   refine (ENNReal.mul_le_mul_iff_right h0 ENNReal.ofReal_ne_top).1 ?_
