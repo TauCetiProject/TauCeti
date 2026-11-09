@@ -19,9 +19,9 @@ submersion, with the model space `E` of the fibre as complement. On the covering
 is the first projection followed by the quotient map `ℝ → ℝ / ℤ`, and both the orbit projection
 `ℝ × M → Y_φ` and the quotient map of the circle are local diffeomorphisms.
 
-Consequently, when `E` is finite-dimensional and `φ` is smooth, the kernels `V_y = ker dp_y` form
-a `C^m` distribution of rank `dim E` on `Y_φ` for every `m ≤ ∞`, the **vertical distribution** of
-the mapping torus. Its local frames are the submersion-coordinate frames of
+Consequently, when `E` is finite-dimensional, the kernels `V_y = ker dp_y` form a `C^m`
+distribution of rank `dim E` on `Y_φ` for every `m` with `m + 1 ≤ n`, the **vertical
+distribution** of the mapping torus. Its local frames are the submersion-coordinate frames of
 `Manifold.IsSubmersionAtOfComplement.isDistributionFrameOn_ker_mfderiv`, and
 `TauCeti.IsContMDiffDistribution.contMDiffVectorBundle` makes it a `C^m` vector bundle, the
 vertical tangent bundle of `Y_φ`. At each point it is the tangent space of the fibre through that
@@ -36,8 +36,8 @@ by the suspension vector field `T = ∂_t`
   `TauCeti.SmoothMappingTorus.isSubmersion_proj`: the projection of the mapping torus to the
   circle is a `C^n` submersion with complement `E`.
 * `TauCeti.SmoothMappingTorus.isContMDiffDistribution_ker_mfderiv_proj`: the vertical
-  distribution `y ↦ ker dp_y` of a smooth mapping torus is a `C^m` distribution of rank `dim E`
-  for every `m ≤ ∞`.
+  distribution `y ↦ ker dp_y` of a `C^n` mapping torus is a `C^m` distribution of rank `dim E`
+  for every `m` with `m + 1 ≤ n`.
 
 ## References
 
@@ -81,12 +81,14 @@ theorem isSubmersion_proj : IsSubmersion (𝓘(ℝ).prod I) 𝓘(ℝ) n (proj φ
 
 end Submersion
 
-/-- **The vertical distribution of a mapping torus.** For a smooth diffeomorphism `φ` of a manifold
+/-- **The vertical distribution of a mapping torus.** For a `C^n` diffeomorphism `φ` of a manifold
 modelled on a finite-dimensional space `E`, the vertical tangent spaces `ker dp_y` of the
 projection `p : Y_φ → ℝ / ℤ` form a `C^m` distribution of rank `dim E` on the mapping torus, for
-every `m ≤ ∞`. -/
-theorem isContMDiffDistribution_ker_mfderiv_proj [FiniteDimensional ℝ E] [IsManifold I ∞ M]
-    (φ : M ≃ₘ⟮I, I⟯ M) {m : ℕ∞ω} (hm : m + 1 ≤ ∞) :
+every `m` with `m + 1 ≤ n`. The `C^1` manifold structure of `Y_φ` used in the statement is found
+by instance search when `n = ∞`, and comes from `IsManifold.of_le` otherwise. -/
+theorem isContMDiffDistribution_ker_mfderiv_proj [FiniteDimensional ℝ E] {n : ℕ∞ω}
+    [IsManifold I n M] (φ : M ≃ₘ^n⟮I, I⟯ M) [IsManifold (𝓘(ℝ).prod I) 1 (SmoothMappingTorus φ)]
+    {m : ℕ∞ω} (hm : m + 1 ≤ n) :
     IsContMDiffDistribution (𝓘(ℝ).prod I) m (finrank ℝ E)
       fun y : SmoothMappingTorus φ ↦ (mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y).ker := by
   have h := (isSubmersion_proj φ).isContMDiffDistribution_ker_mfderiv hm

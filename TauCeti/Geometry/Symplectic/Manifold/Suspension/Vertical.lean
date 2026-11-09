@@ -77,7 +77,7 @@ theorem suspensionVerticalSubspace_eq_ker_mfderiv (q : UnitAddCircle × SmoothMa
   ext ξ
   obtain ⟨v, rfl⟩ :=
     (Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := 𝓘(ℝ).prod I) q).symm.surjective ξ
-  rw [mem_suspensionVerticalSubspace_iff, ContinuousLinearEquiv.apply_symm_apply,
+  simp only [mem_suspensionVerticalSubspace_iff, ContinuousLinearEquiv.apply_symm_apply,
     LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
     Manifold.mfderiv_prodMap_apply mdifferentiableAt_id
       ((contMDiff_proj φ).mdifferentiableAt (by simp)),
@@ -120,23 +120,13 @@ theorem ker_bilinFormAt_mpullback_snd_fiberForm (h : σ.IsNondegenerate)
     (q : UnitAddCircle × SmoothMappingTorus φ) :
     LinearMap.ker ((SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ)).bilinFormAt q) =
       suspensionHorizontalSubspace φ q := by
+  rw [SmoothTwoForm.ker_bilinFormAt_mpullback contMDiff_snd _
+    (by rw [mfderiv_snd]; exact LinearMap.snd_surjective), ker_bilinFormAt_fiberForm h]
+  -- Both sides ask that the mapping torus component of `ξ` lie in `ℝ ∙ T`.
   ext ξ
-  rw [mem_suspensionHorizontalSubspace_iff, ← ker_bilinFormAt_fiberForm (hσ := hσ) h,
-    LinearMap.mem_ker, LinearMap.mem_ker]
-  -- `ω_v(ξ, η) = σ_v(ξ_Y, η_Y)` for the mapping torus components `ξ_Y` and `η_Y`, and every
-  -- tangent vector of `Y_φ` is the mapping torus component of a tangent vector of `X_φ`.
-  have hω (η : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) q) :
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ)).bilinFormAt q ξ η =
-        (fiberForm φ σ hσ).bilinFormAt q.2 (Manifold.tangentSpaceProdEquiv q ξ).2
-          (Manifold.tangentSpaceProdEquiv q η).2 := by
-    rw [SmoothForm.bilinFormAt_apply, SmoothForm.eval₂_mpullback_snd,
-      SmoothForm.bilinFormAt_apply]
-  refine ⟨fun hξ ↦ LinearMap.ext fun w ↦ ?_, fun hξ ↦ LinearMap.ext fun η ↦ ?_⟩
-  · have hw := hω ((Manifold.tangentSpaceProdEquiv q).symm (0, w))
-    rw [hξ, ContinuousLinearEquiv.apply_symm_apply, LinearMap.zero_apply] at hw
-    rw [LinearMap.zero_apply]
-    exact hw.symm
-  · rw [hω, hξ, LinearMap.zero_apply, LinearMap.zero_apply]
+  rw [mem_suspensionHorizontalSubspace_iff, Submodule.mem_comap, mfderiv_snd,
+    Manifold.tangentSpaceProdEquiv_apply]
+  rfl
 
 /-- The pulled back fiber form `ω_v` of a nondegenerate two-form `σ` preserved by `φ` is
 nondegenerate on the vertical space `V_X` at every point of `X_φ = (ℝ / ℤ) × Y_φ`. -/
