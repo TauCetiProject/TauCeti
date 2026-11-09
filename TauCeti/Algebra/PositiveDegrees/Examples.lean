@@ -127,14 +127,14 @@ theorem not_exists_positiveDegreeMap_wedge_snd :
 theorem changeDegree_nonnegIntegers_scale_two_modulus (k : ℕ) :
     (PositiveDegreeMap.changeDegree nonnegIntegers (nonnegIntegers.scale 2)
       (nonnegIntegers.scale_monoid 2).symm).modulus k = k / 2 :=
-  PositiveDegreeMap.changeDegree_scale_modulus 2 (n := 1) (by simp) (by simp) k
+  PositiveDegreeMap.changeDegree_self_scale_modulus 2 (n := 1) (by simp) (by simp) k
 
 /-- On the nonnegative integers, the change of degree from `2 δ` back to `δ(a) = a` has
 modulus `2 k`. -/
-theorem changeDegree_nonnegIntegers_scale_two_symm_modulus (k : ℕ) :
+theorem changeDegree_scale_two_nonnegIntegers_modulus (k : ℕ) :
     (PositiveDegreeMap.changeDegree (nonnegIntegers.scale 2) nonnegIntegers
       (nonnegIntegers.scale_monoid 2)).modulus k = 2 * k :=
-  PositiveDegreeMap.changeDegree_scale_symm_modulus 2 (n := 1) (by simp) (by simp) k
+  PositiveDegreeMap.changeDegree_scale_self_modulus 2 (n := 1) (by simp) (by simp) k
 
 /-- The quadratic wedge of integer points `0 ≤ b ≤ a ≤ b²`. -/
 def quadraticWedgeMonoid : AddSubmonoid (ℤ × ℤ) where
@@ -208,14 +208,14 @@ theorem quadraticWedgeSnd_monoid : quadraticWedgeSnd.monoid = quadraticWedgeMono
 theorem quadraticWedgeSnd_degree (n : ℤ × ℤ) : quadraticWedgeSnd.degree n = n.2 := (rfl)
 
 /-- Both coordinate degrees live on the quadratic wedge. -/
-theorem quadraticWedgeFst_monoid_eq_snd :
+theorem quadraticWedgeFst_monoid_eq_quadraticWedgeSnd_monoid :
     quadraticWedgeFst.monoid = quadraticWedgeSnd.monoid := (rfl)
 
 /-- The change of degree from `δ(a, b) = a` to `δ'(a, b) = b` on the quadratic wedge has
 modulus `k²`, attained at `(k², k)`. -/
 theorem changeDegree_quadraticWedgeFst_snd_modulus (k : ℕ) :
     (PositiveDegreeMap.changeDegree quadraticWedgeFst quadraticWedgeSnd
-      quadraticWedgeFst_monoid_eq_snd).modulus k = k ^ 2 := by
+      quadraticWedgeFst_monoid_eq_quadraticWedgeSnd_monoid).modulus k = k ^ 2 := by
   apply le_antisymm
   · rw [PositiveDegreeMap.changeDegree_modulus_le_iff]
     rintro n ⟨h0, -, h2⟩ hk
@@ -223,7 +223,7 @@ theorem changeDegree_quadraticWedgeFst_snd_modulus (k : ℕ) :
     simp only [quadraticWedgeFst_degree, Nat.cast_pow]
     exact h2.trans (pow_le_pow_left₀ h0 hk 2)
   · have h := (PositiveDegreeMap.changeDegree quadraticWedgeFst quadraticWedgeSnd
-      quadraticWedgeFst_monoid_eq_snd).degree_le k (n := ((k : ℤ) ^ 2, k))
+      quadraticWedgeFst_monoid_eq_quadraticWedgeSnd_monoid).degree_le k (n := ((k : ℤ) ^ 2, k))
       ⟨by simp, by dsimp only; nlinarith, le_rfl⟩ (by simp)
     simp only [quadraticWedgeFst_degree] at h
     exact_mod_cast h
@@ -232,14 +232,14 @@ theorem changeDegree_quadraticWedgeFst_snd_modulus (k : ℕ) :
 modulus `k`, attained at `(k, k)`. -/
 theorem changeDegree_quadraticWedgeSnd_fst_modulus (k : ℕ) :
     (PositiveDegreeMap.changeDegree quadraticWedgeSnd quadraticWedgeFst
-      quadraticWedgeFst_monoid_eq_snd.symm).modulus k = k := by
+      quadraticWedgeFst_monoid_eq_quadraticWedgeSnd_monoid.symm).modulus k = k := by
   apply le_antisymm
   · rw [PositiveDegreeMap.changeDegree_modulus_le_iff]
     rintro n ⟨-, h1, -⟩ hk
     simp only [quadraticWedgeFst_degree] at hk
     simpa only [quadraticWedgeSnd_degree] using h1.trans hk
   · have h := (PositiveDegreeMap.changeDegree quadraticWedgeSnd quadraticWedgeFst
-      quadraticWedgeFst_monoid_eq_snd.symm).degree_le k (n := ((k : ℤ), k))
+      quadraticWedgeFst_monoid_eq_quadraticWedgeSnd_monoid.symm).degree_le k (n := ((k : ℤ), k))
       ⟨by simp, le_rfl, by dsimp only; nlinarith⟩ (by simp)
     simp only [quadraticWedgeSnd_degree] at h
     exact_mod_cast h

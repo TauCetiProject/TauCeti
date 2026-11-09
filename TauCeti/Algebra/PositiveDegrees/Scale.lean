@@ -69,13 +69,13 @@ namespace PositiveDegreeMap
 variable (d : PositiveDegrees N) (c : ℕ) [NeZero c]
 
 /-- Changing from `δ` to `c δ` needs source cutoff at most `⌊k / c⌋` at target order `k`. -/
-theorem changeDegree_scale_modulus_le (k : ℕ) :
+theorem changeDegree_self_scale_modulus_le (k : ℕ) :
     (changeDegree d (d.scale c) (d.scale_monoid c).symm).modulus k ≤ k / c :=
   (changeDegree_modulus_le_iff _ _ _ _ _).mpr fun _ _ hk =>
     not_lt.mp fun h => (not_lt.mpr hk) ((d.lt_scale_degree_iff c).mpr h)
 
 /-- Changing from `c δ` back to `δ` needs source cutoff at most `c k` at target order `k`. -/
-theorem changeDegree_scale_symm_modulus_le (k : ℕ) :
+theorem changeDegree_scale_self_modulus_le (k : ℕ) :
     (changeDegree (d.scale c) d (d.scale_monoid c)).modulus k ≤ c * k :=
   (changeDegree_modulus_le_iff _ _ _ _ _).mpr fun _ _ hk => by
     rw [PositiveDegrees.scale_degree, Nat.cast_mul]
@@ -85,25 +85,26 @@ variable {d}
 
 /-- If `δ` takes the value one on the allowed monoid, the change from `δ` to `c δ` has
 modulus exactly `⌊k / c⌋`. -/
-theorem changeDegree_scale_modulus {n : N} (hn : n ∈ d.monoid) (h1 : d.degree n = 1)
+theorem changeDegree_self_scale_modulus {n : N} (hn : n ∈ d.monoid) (h1 : d.degree n = 1)
     (k : ℕ) : (changeDegree d (d.scale c) (d.scale_monoid c).symm).modulus k = k / c := by
-  refine le_antisymm (changeDegree_scale_modulus_le d c k) ?_
-  have hm : (k / c) • n ∈ d.monoid := d.monoid.nsmul_mem hn _
-  have h := (changeDegree d (d.scale c) (d.scale_monoid c).symm).degree_le k hm (by
-    rw [changeDegree_apply, PositiveDegrees.scale_degree, map_nsmul, h1, nsmul_eq_mul, mul_one]
-    exact_mod_cast Nat.mul_div_le k c)
-  rw [map_nsmul, h1, nsmul_eq_mul, mul_one] at h
+  have hdeg (m : ℕ) : d.degree (m • n) = m := by simp [h1]
+  refine le_antisymm (changeDegree_self_scale_modulus_le d c k) ?_
+  have h := (changeDegree d (d.scale c) (d.scale_monoid c).symm).degree_le k
+    (d.monoid.nsmul_mem hn (k / c)) (by
+      rw [changeDegree_apply, PositiveDegrees.scale_degree, hdeg]
+      exact_mod_cast Nat.mul_div_le k c)
+  rw [hdeg] at h
   exact_mod_cast h
 
 /-- If `δ` takes the value one on the allowed monoid, the change from `c δ` back to `δ` has
 modulus exactly `c k`. -/
-theorem changeDegree_scale_symm_modulus {n : N} (hn : n ∈ d.monoid) (h1 : d.degree n = 1)
+theorem changeDegree_scale_self_modulus {n : N} (hn : n ∈ d.monoid) (h1 : d.degree n = 1)
     (k : ℕ) : (changeDegree (d.scale c) d (d.scale_monoid c)).modulus k = c * k := by
-  refine le_antisymm (changeDegree_scale_symm_modulus_le d c k) ?_
-  have hm : k • n ∈ (d.scale c).monoid := d.monoid.nsmul_mem hn _
-  have h := (changeDegree (d.scale c) d (d.scale_monoid c)).degree_le k hm (by
-    rw [changeDegree_apply, map_nsmul, h1, nsmul_eq_mul, mul_one])
-  rw [PositiveDegrees.scale_degree, map_nsmul, h1, nsmul_eq_mul, mul_one] at h
+  have hdeg (m : ℕ) : d.degree (m • n) = m := by simp [h1]
+  refine le_antisymm (changeDegree_scale_self_modulus_le d c k) ?_
+  have h := (changeDegree (d.scale c) d (d.scale_monoid c)).degree_le k
+    (d.monoid.nsmul_mem hn k) (by rw [changeDegree_apply, hdeg])
+  rw [PositiveDegrees.scale_degree, hdeg] at h
   exact_mod_cast h
 
 end PositiveDegreeMap
