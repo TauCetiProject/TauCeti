@@ -717,48 +717,6 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_endPiece
       intervalIntegral.integral_zero, zero_sub, intervalIntegral.integral_const_mul]
     ring
 
-/-- Over a compact part `T` of `S`, along a map which is `C¹` on `S`, the Floer energy density of
-the pair-of-pants perturbation is integrable: it differs from the symplectic area density, which is
-continuous on `S`, by the exterior derivative `d(K(u))`, which is continuous on `S`, and by the
-curvature. -/
-private theorem IsNondegenerate.integrableOn_floerEnergyDensity_pairOfPantsPerturbation
-    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {u : ℝ × ℝ → M}
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {T : Set (ℝ × ℝ)}
-    (hT : IsCompact T) (hTS : T ⊆ thricePuncturedSphereReal) :
-    IntegrableOn (ω.floerEnergyDensity
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u) T := by
-  have hmem : MapsTo (fun w ↦ (w, u w)) thricePuncturedSphereReal
-      (thricePuncturedSphereReal ×ˢ (univ : Set M)) := fun _ hz ↦ ⟨hz, mem_univ _⟩
-  have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv
-    isOpen_thricePuncturedSphereReal hu stdComplexLineReal stdComplexLineImag
-  simp only [← SmoothBundleForm.eval₂_apply] at harea
-  replace harea := (harea.mono hTS).integrableOn_compact (μ := volume) hT
-  -- Each pulled-back component `K(u)` is `C¹` on `S`, so its derivative is continuous on `S`.
-  have hd (v : ℂ) (e : ℝ × ℝ) : IntegrableOn (fun z ↦ fderiv ℝ
-      (fun w ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm w) (u w) v) z e) T := by
-    have hK : ContDiffOn ℝ 1
-        (fun w ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm w) (u w) v)
-        thricePuncturedSphereReal :=
-      contMDiffOn_iff_contDiffOn.mp ((contMDiffOn_pairOfPantsPerturbation hH hHs v).comp
-        (contMDiffOn_id.prodMk hu) hmem)
-    exact (((hK.continuousOn_fderiv_of_isOpen isOpen_thricePuncturedSphereReal le_rfl).clm_apply
-      continuousOn_const).mono hTS).integrableOn_compact hT
-  have hR := (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs
-    hu.continuousOn).mono_set hTS
-  refine ((harea.add ((hd Complex.I stdComplexLineReal).sub (hd 1 stdComplexLineImag))).sub
-    hR).congr_fun (fun z hz ↦ ?_) hT.isClosed.measurableSet
-  have hzS := hTS hz
-  have hzS' : (z, u z) ∈ thricePuncturedSphereReal ×ˢ (univ : Set M) := hmem hzS
-  have hKz (v : ℂ) := ((contMDiffOn_pairOfPantsPerturbation hH hHs v).contMDiffAt
-    ((isOpen_thricePuncturedSphereReal.prod isOpen_univ).mem_nhds hzS')).mdifferentiableAt
-      one_ne_zero
-  rw [hω.floerEnergyDensity_eq ((hu.contMDiffAt
-    (isOpen_thricePuncturedSphereReal.mem_nhds hzS)).mdifferentiableAt one_ne_zero) (hKz 1)
-    (hKz Complex.I)]
-  rfl
-
 /-- **The energy identity on the truncated pair of pants, for a manifold target.** Let `K` be the
 pair-of-pants perturbation of period-one `C¹` Hamiltonians `H_q` on a finite-dimensional manifold
 with a nondegenerate two-form, with components `K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)` in the
@@ -797,7 +755,11 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
     Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
   have hTS : T ⊆ thricePuncturedSphereReal := fun z hz =>
     mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
-  have hE := hω.integrableOn_floerEnergyDensity_pairOfPantsPerturbation hH hHs hu hT hTS
+  have hE := hω.integrableOn_floerEnergyDensity isOpen_thricePuncturedSphereReal hu
+    (contMDiffOn_pairOfPantsPerturbation hH hHs 1)
+    (contMDiffOn_pairOfPantsPerturbation hH hHs Complex.I) hT hTS
+    ((integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs
+      hu.continuousOn).mono_set hTS)
   have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv
     isOpen_thricePuncturedSphereReal hu stdComplexLineReal stdComplexLineImag
   simp only [← SmoothBundleForm.eval₂_apply] at harea

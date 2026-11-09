@@ -85,6 +85,11 @@ form they recover the vector-space definitions.
   perturbation data vanishing outside a compact set, the energy over any region containing that
   set is `∫ u^* ω - ∫ R_K(u)`, with no boundary term; the vector-space case is
   `SymplecticForm.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero`.
+* `SmoothTwoForm.IsNondegenerate.integrableOn_floerEnergyDensity`: over a compact set where `u`
+  and `K` are `C¹` nearby, the energy density is integrable as soon as the curvature is.
+* `SmoothTwoForm.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero`: where the
+  perturbation data vanish the energy is the area, so energy minus area plus integrated curvature
+  does not change when a region is shrunk to the part where the data live.
 * `SmoothTwoForm.perturbedMFDeriv_perturbationPullback`,
   `SmoothTwoForm.floerEnergyDensity_perturbationPullback`,
   `SmoothTwoForm.hamiltonianCurvature_perturbationPullback`: naturality of the perturbed
@@ -766,6 +771,82 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero
   rw [setIntegral_congr_fun hD fun z _ ↦ hpt z, integral_sub hsum hR,
     integral_add harea hdi.integrableOn, hdD, add_zero]
 
+
+/-- **The energy density is integrable over compact sets, for a manifold target.** Let `u` and the
+perturbation data `K = K_s ds + K_t dt` be `C¹` over an open set `U`, for a nondegenerate two-form
+on a finite-dimensional manifold. Over a compact set `C ⊆ U` over which the curvature `R_K(u)` is
+integrable, the energy density is integrable: by the pointwise energy identity it differs from the
+symplectic area density and the exterior derivative `d(K(u))`, which are continuous on `U`, by the
+curvature. -/
+theorem IsNondegenerate.integrableOn_floerEnergyDensity [FiniteDimensional ℝ E]
+    (hω : ω.IsNondegenerate) {U C : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U)
+    (hKs : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Ks) (U ×ˢ univ))
+    (hKt : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt) (U ×ˢ univ))
+    (hC : IsCompact C) (hCU : C ⊆ U)
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) C) :
+    IntegrableOn (ω.floerEnergyDensity Ks Kt u) C := by
+  have hmem : MapsTo (fun w ↦ (w, u w)) U (U ×ˢ (univ : Set M)) := fun _ hz ↦ ⟨hz, mem_univ _⟩
+  have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv hU hu
+    stdComplexLineReal stdComplexLineImag
+  simp only [← SmoothBundleForm.eval₂_apply] at harea
+  replace harea := (harea.mono hCU).integrableOn_compact (μ := volume) hC
+  -- Each pulled-back component `K(u)` is `C¹` on `U`, so its derivative is continuous on `U`.
+  have hd {K : ℝ × ℝ → M → ℝ}
+      (hK : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ univ)) (e : ℝ × ℝ) :
+      IntegrableOn (fun z ↦ fderiv ℝ (fun w ↦ K w (u w)) z e) C := by
+    have hK' : ContDiffOn ℝ 1 (fun w ↦ K w (u w)) U :=
+      contMDiffOn_iff_contDiffOn.mp (hK.comp (contMDiffOn_id.prodMk hu) hmem)
+    exact (((hK'.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const).mono
+      hCU).integrableOn_compact hC
+  refine ((harea.add ((hd hKt stdComplexLineReal).sub (hd hKs stdComplexLineImag))).sub
+    hR).congr_fun (fun z hz ↦ ?_) hC.isClosed.measurableSet
+  have hzU := hCU hz
+  have hzU' : (z, u z) ∈ U ×ˢ (univ : Set M) := hmem hzU
+  rw [hω.floerEnergyDensity_eq ((hu.contMDiffAt (hU.mem_nhds hzU)).mdifferentiableAt one_ne_zero)
+    ((hKs.contMDiffAt ((hU.prod isOpen_univ).mem_nhds hzU')).mdifferentiableAt one_ne_zero)
+    ((hKt.contMDiffAt ((hU.prod isOpen_univ).mem_nhds hzU')).mdifferentiableAt one_ne_zero)]
+  rfl
+
+/-- **Shrinking to where the datum lives, for a manifold target.** Let `T ⊆ D` with `D`
+measurable, and let `K_s` and `K_t` vanish near every point of `D \ T`. If the energy density, the
+symplectic area density and the curvature `R_K(u)` are integrable over `D`, then the Floer energy
+minus the symplectic area plus the integrated curvature is the same over `D` as over `T`. On a
+vector-space target, where integrability follows from continuity, this is
+`SymplecticForm.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero`. -/
+theorem integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero {D T : Set (ℝ × ℝ)}
+    (hD : MeasurableSet D) (hTD : T ⊆ D) (hKsD : ∀ z ∈ D \ T, Ks =ᶠ[𝓝 z] 0)
+    (hKtD : ∀ z ∈ D \ T, Kt =ᶠ[𝓝 z] 0) (hE : IntegrableOn (ω.floerEnergyDensity Ks Kt u) D)
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) D)
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) D) :
+    (∫ z in D, ω.floerEnergyDensity Ks Kt u z) -
+      (∫ z in D, (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+      (∫ z in D, ω.hamiltonianCurvature Ks Kt z (u z)) =
+    (∫ z in T, ω.floerEnergyDensity Ks Kt u z) -
+      (∫ z in T, (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+      ∫ z in T, ω.hamiltonianCurvature Ks Kt z (u z) := by
+  -- Off `T` the datum vanishes, so the energy is the area and the curvature vanishes.
+  have hzero (z : ℝ × ℝ) (hz : z ∈ D \ T) :
+      ω.floerEnergyDensity Ks Kt u z -
+        (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ) +
+        ω.hamiltonianCurvature Ks Kt z (u z) = 0 := by
+    have hKs' : Ks =ᶠ[𝓝 z] fun _ _ ↦ 0 := hKsD z hz
+    have hKt' : Kt =ᶠ[𝓝 z] fun _ _ ↦ 0 := hKtD z hz
+    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq hKs' hKt', hamiltonianCurvature_zero]
+    simp [floerEnergyDensity_def, hKs'.self_of_nhds, hKt'.self_of_nhds,
+      hamiltonianVectorField_const]
+  have h := setIntegral_eq_of_subset_of_forall_sdiff_eq_zero (μ := volume) hD hTD hzero
+  have e₁ := integral_add (hE.sub hA) hR
+  have e₂ := integral_sub hE hA
+  have e₃ := integral_add ((hE.mono_set hTD).sub (hA.mono_set hTD)) (hR.mono_set hTD)
+  have e₄ := integral_sub (hE.mono_set hTD) (hA.mono_set hTD)
+  simp only [Pi.sub_apply] at e₁ e₃
+  linarith
 
 end Integral
 
