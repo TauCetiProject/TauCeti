@@ -731,12 +731,12 @@ theorem HasCompactSpatialSupport.sharp (ha : a.HasCompactSpatialSupport)
 
 /-- The constant symbol `1` is a left identity for the composition: `1 # b = b`. On the level of
 coefficients this is the Fourier inversion formula `∫ exp(2πi ⟪η, x⟫) b̂(η, ξ) dη = b(x, ξ)`. -/
+@[simp]
 theorem coefficient_const_id_sharp [CompleteSpace W] (hb : b.HasCompactSpatialSupport) :
     ((const (ContinuousLinearMap.id ℂ W)).sharp b hb).coefficient = b.coefficient := by
   funext ⟨x, ξ⟩
-  set f := (hb.hasCompactSupport_slice ξ).toSchwartzMap (b.contDiff_coefficient_slice ξ)
-  have hf : (fun y ↦ b.coefficient (y, ξ)) = ⇑f :=
-    (funext (HasCompactSupport.toSchwartzMap_toFun _ _)).symm
+  set f := hb.sliceSchwartz ξ
+  have hf : (fun y ↦ b.coefficient (y, ξ)) = ⇑f := (hb.coe_sliceSchwartz ξ).symm
   have hinv : 𝓕⁻ (𝓕 ⇑f) = ⇑f := f.continuous.fourierInv_fourier_eq f.integrable
     (by rw [← SchwartzMap.fourier_coe]; exact (𝓕 f).integrable)
   calc ((const (ContinuousLinearMap.id ℂ W)).sharp b hb).coefficient (x, ξ) = 𝓕⁻ (𝓕 ⇑f) x := by
