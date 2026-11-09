@@ -34,7 +34,6 @@ the independent-Beta construction become marginal laws of `TauCeti.Probability.l
 
 ## Main results
 
-* `TauCeti.Probability.map_coe_lkjMeasure`: the LKJ law as an independent-Beta Gram law;
 * `TauCeti.Probability.map_symmetricCongruenceLinearMap_submatrix_one_lkjMeasure`: principal
   blocks;
 * `TauCeti.Probability.map_coe_apply_lkjMeasure_of_ne` and
@@ -58,26 +57,6 @@ open MeasureTheory ProbabilityTheory
 namespace TauCeti.Probability
 
 variable {p q : ℕ} {η : ℝ}
-
-/-- **The LKJ law as an independent-Beta Gram law.** Forgetting symmetry, an LKJ matrix of
-positive shape `η` has the law of the Gram matrix of independent partial correlations, each
-the centered symmetric Beta variable `-1 + 2 * X` with `X ~ Beta(a, a)` and
-`a = lkjPartialCorrelationShape p η ij`. -/
-theorem map_coe_lkjMeasure (hη : 0 < η) :
-    (lkjMeasure p η).map (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-        (R : Matrix (Fin p) (Fin p) ℝ)) =
-      (Measure.pi fun ij : strictLowerTriangle p ↦
-        (betaMeasure (lkjPartialCorrelationShape p η ij)
-          (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x)).map
-        partialCorrelationGram := by
-  rw [← map_correlationMatrix_map_correlationCoordinatesOfPartialCorrelation_pi_betaMeasure hη,
-    Measure.map_map measurable_subtype_coe (correlationMatrix p).continuous.measurable,
-    Measure.map_map (measurable_subtype_coe.comp (correlationMatrix p).continuous.measurable)
-      continuous_correlationCoordinatesOfPartialCorrelation.measurable]
-  refine Measure.map_congr ?_
-  filter_upwards [ae_abs_lt_one_pi_centered_betaMeasure (lkjPartialCorrelationShape_pos hη)]
-    with z hz
-  exact coe_correlationMatrix_correlationCoordinatesOfPartialCorrelation fun ij ↦ (hz ij).le
 
 /-- Leading principal blocks of LKJ matrices. -/
 private theorem map_symmetricCongruenceLinearMap_submatrix_castLE_lkjMeasure (h : q ≤ p)
