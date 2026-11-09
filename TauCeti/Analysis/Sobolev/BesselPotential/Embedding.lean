@@ -154,7 +154,7 @@ theorem MemSobolev.eLpNorm_one_le_mul_enorm_toBesselPotentialSpace {s : ℝ} {f 
     eLpNorm v 1 volume ≤ eLpNorm (fun ξ : E => (1 + ‖ξ‖ ^ 2) ^ (-s / 2)) 2 volume *
       ‖hf.toBesselPotentialSpace‖ₑ := by
   have h :=
-    TauCeti.eLpNorm_one_le_eLpNorm_one_add_norm_sq_rpow_neg_mul_eLpNorm_one_add_norm_sq_rpow_smul
+    TauCeti.eLpNorm_one_le_eLpNorm_rpow_neg_one_add_norm_sq_mul_eLpNorm_one_add_norm_sq_rpow_smul
       (volume : Measure E) s (v : E → F)
   rwa [hf.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialSpace hv] at h
 
