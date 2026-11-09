@@ -44,10 +44,10 @@ namespace TauCeti
 the same exponent and conjugation-related unit germs near `(x, 0)`, including on the hyperplane
 `z = 0`. The branch `r₂` has Laurent form `z ^ n * W₂` near `(x, 0)` and `r₁` has form
 `z ^ m * W₁` near `(τ x, 0)`, with `r₂ b = conj (r₁ (τ b.1, conj b.2))` off the hyperplane. -/
-theorem exponent_eq_and_unit_conj {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+theorem exponent_eq_and_unit_conj {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {r₁ r₂ W₁ W₂ : E × ℂ → ℂ} {m n : ℤ} {τ : E → E} {x : E} (hτ : ContinuousAt τ x)
-    (hW₂a : AnalyticAt ℂ W₂ (x, 0)) (hW₂0 : W₂ (x, 0) ≠ 0)
-    (hW₁a : AnalyticAt ℂ W₁ (τ x, 0)) (hW₁0 : W₁ (τ x, 0) ≠ 0)
+    (hW₂a : AnalyticAt ℝ W₂ (x, 0)) (hW₂0 : W₂ (x, 0) ≠ 0)
+    (hW₁a : AnalyticAt ℝ W₁ (τ x, 0)) (hW₁0 : W₁ (τ x, 0) ≠ 0)
     (hform₂ : ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 → r₂ b = b.2 ^ n * W₂ b)
     (hform₁ : ∀ᶠ b in 𝓝 (τ x, (0 : ℂ)), b.2 ≠ 0 → r₁ b = b.2 ^ m * W₁ b)
     (hr : ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 → r₂ b = conj (r₁ (τ b.1, conj b.2))) :
@@ -55,8 +55,7 @@ theorem exponent_eq_and_unit_conj {E : Type*} [NormedAddCommGroup E] [NormedSpac
   have hκt : Tendsto (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (𝓝 (x, (0 : ℂ))) (𝓝 (τ x, (0 : ℂ))) := by
     simpa only [Prod.map_def, map_zero] using
       hτ.tendsto.prodMap_nhds (Complex.continuous_conj.tendsto (0 : ℂ))
-  refine hW₂a.restrictScalars (𝕜 := ℝ) |>.laurent_eq_of_conj hW₂0
-    (hW₁a.restrictScalars (𝕜 := ℝ)) hW₁0 hτ ?_
+  refine hW₂a.laurent_eq_of_conj hW₂0 hW₁a hW₁0 hτ ?_
   filter_upwards [hform₂, hr, hκt.eventually hform₁] with b h₂ h₃ h₁ hb0
   rw [← h₂ hb0, h₃ hb0, h₁ (by simpa only [ne_eq, map_eq_zero] using hb0)]
 
@@ -169,8 +168,10 @@ theorem exists_analyticOnNhd_nonmonic_laurent_conj
   have hcompat (x : U) (i : Fin d) := exponent_eq_and_unit_conj
     (r₁ := r i) (r₂ := r (σ i)) (W₁ := W i) (W₂ := W (σ i)) (m := e i) (n := e (σ i))
     (hτ.continuousAt (hU.mem_nhds x.2))
-    (hWa (σ i) _ ⟨x.2, mem_ball_self hR'⟩) (hW0 (σ i) _ ⟨x.2, mem_ball_self hR'⟩)
-    (hWa i _ ⟨hτU x.2, mem_ball_self hR'⟩) (hW0 i _ ⟨hτU x.2, mem_ball_self hR'⟩)
+    ((hWa (σ i) _ ⟨x.2, mem_ball_self hR'⟩).restrictScalars (𝕜 := ℝ))
+    (hW0 (σ i) _ ⟨x.2, mem_ball_self hR'⟩)
+    ((hWa i _ ⟨hτU x.2, mem_ball_self hR'⟩).restrictScalars (𝕜 := ℝ))
+    (hW0 i _ ⟨hτU x.2, mem_ball_self hR'⟩)
     ((hform x.1 x.2).mono fun _ h hb ↦ h.2 hb (σ i))
     ((hform (τ x.1) (hτU x.2)).mono fun _ h hb ↦ h.2 hb i)
     (by
