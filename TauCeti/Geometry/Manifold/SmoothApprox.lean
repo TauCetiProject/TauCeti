@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Existence
-public import TauCeti.Geometry.Manifold.Immersion.Differential
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.Euclidean
 public import Mathlib.Geometry.Manifold.SmoothApprox
-public import Mathlib.Geometry.Manifold.WhitneyEmbedding
 public import Mathlib.Topology.Homotopy.Basic
 
 /-!
@@ -41,8 +40,6 @@ smooth partitions of unity. The target `M` is boundaryless.
 
 ## Main results
 
-* `TauCeti.SmoothEmbedding.exists_contMDiffOn_retraction`: a smooth embedding into a second
-  countable Hausdorff manifold has a smooth retraction from a neighbourhood of its image.
 * `TauCeti.SmoothEmbedding.exists_contMDiff_homotopicRel`: relative Whitney approximation into a
   manifold with a smooth embedding into a finite-dimensional normed space.
 * `TauCeti.SmoothEmbedding.exists_contMDiff_homotopy`: homotopic `C^n` maps into such a manifold
@@ -64,69 +61,6 @@ open Bundle Function Metric Set Topology
 open scoped ContDiff Manifold
 
 namespace TauCeti.SmoothEmbedding
-
-section Retraction
-
-variable {E V H G M N : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  [TopologicalSpace H] [TopologicalSpace G]
-  {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ V G}
-  [I.Boundaryless] [J.Boundaryless]
-  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N]
-  [T2Space N] [SecondCountableTopology N]
-
-/-- **Smooth retractions onto embedded submanifolds.** A smooth embedding `f : M → N` of a
-nonempty boundaryless manifold into a second countable Hausdorff boundaryless manifold has a
-smooth retraction `r : N → M` on an open neighbourhood `W` of its image, inside any prescribed
-open neighbourhood `O` of the image: `r` is smooth on `W` and `r ∘ f = id`. Outside `W` the
-values of `r` are arbitrary. -/
-theorem exists_contMDiffOn_retraction [Nonempty M] (f : SmoothEmbedding I J ∞ M N) {O : Set N}
-    (hO : IsOpen O) (hfO : range f ⊆ O) :
-    ∃ W : Set N, IsOpen W ∧ range f ⊆ W ∧ W ⊆ O ∧
-      ∃ r : N → M, ContMDiffOn J I ∞ r W ∧ ∀ x, r (f x) = x := by
-  classical
-  have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
-  let P := EuclideanSpace ℝ (Fin (Module.finrank ℝ V - Module.finrank ℝ E))
-  have hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E :=
-    finrank_euclideanSpace_fin
-  let := f.normalSpaceFiberBundle hn hdim
-  -- A tubular neighbourhood `Φ` of `f`; the retraction is its base projection.
-  obtain ⟨W, hWO, Φ, hΦ⟩ := f.exists_diffeomorph_normalBundle_subset (P := P) hdim hO hfO
-  let r : N → M := fun y ↦ if h : y ∈ W then (Φ.symm ⟨y, h⟩).proj else Classical.arbitrary M
-  have hrW (w : W) : r w = (Φ.symm w).proj := by simp [r, w.2]
-  have hfW (x : M) : f x ∈ W := by
-    rw [← hΦ x]
-    exact (Φ _).2
-  refine ⟨W, W.isOpen, range_subset_iff.2 hfW, hWO, r, fun y hy ↦ ?_, fun x ↦ ?_⟩
-  · have hsmooth : ContMDiff J I ∞ fun w : W ↦ r w := by
-      simp only [hrW]
-      exact (contMDiff_proj (fun x ↦ f.NormalSpace x hn)).comp Φ.symm.contMDiff
-    exact (contMDiffAt_subtype_iff (x := ⟨y, hy⟩).1 (hsmooth _)).contMDiffWithinAt
-  · have h : Φ.symm ⟨f x, hfW x⟩ = zeroSection P (fun x ↦ f.NormalSpace x hn) x :=
-      Φ.symm_apply_eq.2 (Subtype.ext (hΦ x).symm)
-    rw [hrW ⟨f x, hfW x⟩, h, zeroSection_proj]
-
-end Retraction
-
-section Euclidean
-
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-
-/-- A compact Hausdorff boundaryless manifold has a smooth embedding into a Euclidean space.
-This is Mathlib's Whitney embedding theorem `exists_embedding_euclidean_of_compact`, with its
-injective differential read as an immersion. -/
-theorem exists_nonempty_euclidean_of_compact [CompactSpace M] [T2Space M] :
-    ∃ n : ℕ, Nonempty (SmoothEmbedding I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) ∞ M
-      (EuclideanSpace ℝ (Fin n))) := by
-  obtain ⟨n, e, he, hemb, hinj⟩ := exists_embedding_euclidean_of_compact (I := I) (M := M)
-  exact ⟨n, ⟨.ofIsSmoothEmbedding e
-    ⟨he.isImmersion_of_injective_mfderiv (by simp) hinj, hemb.isEmbedding⟩⟩⟩
-
-end Euclidean
 
 section Approximation
 
