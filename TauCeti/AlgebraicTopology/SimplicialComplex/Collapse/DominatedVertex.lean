@@ -53,18 +53,8 @@ private theorem exists_isFreePair_incident {K : PreAbstractSimplicialComplex ι}
   have hσ : σ ∈ K := hmax.prop.1
   have hvσ : v ∈ σ := hmax.prop.2.1
   have hwσ : w ∉ σ := hmax.prop.2.2
-  refine ⟨σ, ⟨hσ, hdom σ hσ hvσ, Finset.ssubset_insert hwσ, ?_⟩, hvσ, hwσ⟩
-  intro τ hτ hστ
-  by_cases hwτ : w ∈ τ
-  · have hsub : σ ⊆ τ.erase w := Finset.subset_erase.mpr ⟨hστ, hwσ⟩
-    have hmem : τ.erase w ∈ K :=
-      (K.isRelLowerSet_faces hτ).2 (Finset.erase_subset _ _) ⟨v, hsub hvσ⟩
-    have hτS : τ.erase w ∈ S := by
-      dsimp [S]
-      exact ⟨hmem, hsub hvσ, Finset.notMem_erase _ _⟩
-    have heq := hmax.eq_of_ge hτS hsub
-    exact Or.inr (by rw [← heq, Finset.insert_erase hwτ])
-  · exact Or.inl (hmax.eq_of_ge ⟨hτ, hστ hvσ, hwτ⟩ hστ)
+  refine ⟨σ, IsFreePair.of_maximal_notMem hσ (hdom σ hσ hvσ) hwσ fun τ hτ hwτ hστ ↦ ?_, hvσ, hwσ⟩
+  exact hmax.eq_of_ge ⟨hτ, hστ hvσ, hwτ⟩ hστ
 
 /-- A finite collection of faces containing `v` and missing `w` can be removed by free-pair
 collapses, pairing each such face with the face obtained by adjoining `w`. -/

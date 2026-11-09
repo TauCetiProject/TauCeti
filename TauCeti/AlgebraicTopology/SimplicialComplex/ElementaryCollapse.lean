@@ -86,6 +86,27 @@ theorem mem_deletion_of_not_subset_upper (h : IsFreePair K σ τ) {ω : Finset �
     (hω : ω ∈ K) (hωτ : ¬ ω ⊆ τ) : ω ∈ deletion K σ :=
   mem_deletion.mpr ⟨hω, fun hσω => hωτ (h.subset_upper_of_lower_subset hω hσω)⟩
 
+/-- A face `σ` missing `w`, maximal among the faces of `K` that contain `σ` and miss `w`, and with
+`insert w σ ∈ K`, forms a free pair with `insert w σ`.
+
+Maximality is used twice: a coface of `σ` missing `w` is `σ` itself, and a coface `ω` containing
+`w` has `ω.erase w` a coface of `σ` missing `w`, hence equal to `σ`. -/
+theorem of_maximal_notMem [DecidableEq ι] {w : ι} (hσ : σ ∈ K) (hins : insert w σ ∈ K)
+    (hw : w ∉ σ) (hmax : ∀ ⦃τ : Finset ι⦄, τ ∈ K → w ∉ τ → σ ⊆ τ → τ = σ) :
+    IsFreePair K σ (insert w σ) where
+  lower_mem := hσ
+  upper_mem := hins
+  lower_ssubset_upper := Finset.ssubset_insert hw
+  eq_lower_or_eq_upper ω hω hσω := by
+    by_cases hwω : w ∈ ω
+    · refine Or.inr ?_
+      have hsub : σ ⊆ ω.erase w := Finset.subset_erase.mpr ⟨hσω, hw⟩
+      have hmem : ω.erase w ∈ K :=
+        (K.isRelLowerSet_faces hω).2 (Finset.erase_subset _ _)
+          (((K.isRelLowerSet_faces hσ).1).mono hsub)
+      rw [← hmax hmem (Finset.notMem_erase _ _) hsub, Finset.insert_erase hwω]
+    · exact Or.inl (hmax hω hwω hσω)
+
 end IsFreePair
 
 /-- Deleting the lower face of a free pair retains exactly the original faces other than the

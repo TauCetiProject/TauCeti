@@ -59,25 +59,11 @@ variable {ι : Type*} [DecidableEq ι] {K : _root_.PreAbstractSimplicialComplex 
   {v : ι} {σ : Finset ι}
 
 /-- In a cone, a face `σ` missing the apex and maximal with that property is a free face, with
-`insert v σ` as its unique proper coface.
-
-Maximality is used twice: a coface of `σ` missing the apex is `σ` itself, and a coface `ω`
-containing the apex has `ω.erase v` a coface of `σ` missing the apex, hence equal to `σ`. -/
+`insert v σ` as its unique proper coface. -/
 private theorem IsCone.isFreePair (h : IsCone K v) (hσ : σ ∈ K) (hv : v ∉ σ)
     (hmax : ∀ ⦃τ : Finset ι⦄, τ ∈ K → v ∉ τ → σ ⊆ τ → τ = σ) :
-    IsFreePair K σ (insert v σ) where
-  lower_mem := hσ
-  upper_mem := h.insert_mem hσ
-  lower_ssubset_upper := Finset.ssubset_insert hv
-  eq_lower_or_eq_upper ω hω hσω := by
-    by_cases hvω : v ∈ ω
-    · refine Or.inr ?_
-      have hsub : σ ⊆ ω.erase v := Finset.subset_erase.mpr ⟨hσω, hv⟩
-      have hmem : ω.erase v ∈ K :=
-        (K.isRelLowerSet_faces hω).2 (Finset.erase_subset _ _)
-          (((K.isRelLowerSet_faces hσ).1).mono hsub)
-      rw [← hmax hmem (Finset.notMem_erase _ _) hsub, Finset.insert_erase hvω]
-    · exact Or.inl (hmax hω hvω hσω)
+    IsFreePair K σ (insert v σ) :=
+  IsFreePair.of_maximal_notMem hσ (h.insert_mem hσ) hv hmax
 
 omit [DecidableEq ι] in
 /-- A finite complex with a face missing `v` has one that is maximal among the faces missing
