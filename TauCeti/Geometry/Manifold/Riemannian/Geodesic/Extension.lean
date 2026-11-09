@@ -28,8 +28,8 @@ interval containing `[a, b]`. This gives, for instance, the endpoint velocities 
 is only known to be a geodesic in the interior of its parameter interval, such as a
 length-minimizing curve whose endpoints lie on the boundary of a domain.
 
-The metric only needs to be `C²` and the manifold `C³`, and nothing is assumed about the
-completeness of the manifold.
+The extension theorems need a `C²` metric on a `C³` manifold without boundary, and nothing is
+assumed about the completeness of the manifold.
 
 ## Main results
 
@@ -61,12 +61,15 @@ namespace TauCeti.Manifold
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 3 M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I 2 E (fun x : M ↦ TangentSpace I x)]
   {γ : ℝ → M} {a b : ℝ}
 
 namespace IsGeodesicCurveOn
+
+section ConstantSpeed
+
+variable [IsManifold I 2 M] [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
 /-- The velocity lift of a geodesic on a preconnected parameter set `s` accumulates at a point of
 the tangent bundle along any nontrivial filter which is eventually in `s` and along which the
@@ -75,7 +78,7 @@ theorem exists_mapClusterPt_curveVelocityLiftWithin {s : Set ℝ} (hγ : IsGeode
     (hs : IsPreconnected s) {l : Filter ℝ} [l.NeBot] (hl : s ∈ l) {p : M}
     (hp : Tendsto γ l (𝓝 p)) :
     ∃ z : TangentBundle I M, MapClusterPt z l (curveVelocityLiftWithin I γ s) := by
-  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 2) (F := E)
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1) (F := E)
     (V := fun x : M ↦ TangentSpace I x)
   have := Manifold.locallyCompact_of_finiteDimensional (M := M) I
   obtain ⟨τ, hτ⟩ := l.nonempty_of_mem hl
@@ -89,7 +92,10 @@ theorem exists_mapClusterPt_curveVelocityLiftWithin {s : Set ℝ} (hγ : IsGeode
   obtain ⟨z, -, hz⟩ := (hK.norm_le_bundle _).exists_mapClusterPt hmem
   exact ⟨z, hz⟩
 
-variable [I.Boundaryless] [T2Space M]
+end ConstantSpeed
+
+variable [I.Boundaryless] [T2Space M] [IsManifold I 3 M]
+  [IsContMDiffRiemannianBundle I 2 E (fun x : M ↦ TangentSpace I x)]
 
 /-- **Extension of a geodesic past a finite left endpoint.** A geodesic on `(a, b)` whose velocity
 lift accumulates at a point of the tangent bundle as `t → a⁺` agrees on `(a, b)` with a geodesic
