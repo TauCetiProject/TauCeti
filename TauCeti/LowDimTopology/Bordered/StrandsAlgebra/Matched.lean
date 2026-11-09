@@ -527,11 +527,16 @@ def matchedIdem (t : Finset β) : matchedSubalgebra R m :=
 
 open scoped Classical in
 /-- The idempotent `I(t)` as an element of the strands algebra: a sum of idempotents `I(s)`. -/
-@[simp]
 theorem coe_matchedIdem (t : Finset β) :
     (matchedIdem R m t : StrandsAlgebra R α) =
       ∑ s ∈ univ.filter fun s : Finset α ↦ Set.InjOn m (s : Set α) ∧ s.image m = t, idem s :=
   (rfl)
+
+/-- The idempotents `I(t)` are cycles of the strands algebra. -/
+@[simp]
+theorem differential_matchedIdem (t : Finset β) :
+    differential R α (matchedIdem R m t : StrandsAlgebra R α) = 0 := by
+  simp [coe_matchedIdem]
 
 /-- The idempotents `I(t)` are orthogonal: `I(t) I(t')` is `I(t)` when `t = t'` and zero
 otherwise. -/

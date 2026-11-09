@@ -255,52 +255,6 @@ theorem moveHorizontal_resolve (hp : p ∈ φ p) (hs : q ∉ φ.source) (ht : q 
     exact hip h
   simp [hiq, hip, hsq, hsp]
 
-/-- The strands of `φ` passing over a point `x` that is not the end point of a strand starting
-elsewhere: the starting points of `φ` below `x` are those of these strands and of the strands
-ending below `x`. -/
-private theorem card_filter_lt_lt_endpoint_add_card_filter_target_lt {x : α}
-    (hx : x ∈ φ x ∨ x ∉ φ.target) :
-    #{i ∈ φ.source | i < x ∧ x < φ.endpoint i} + #{j ∈ φ.target | j < x} =
-      #{i ∈ φ.source | i < x} := by
-  have h := card_filter_add_card_filter_not (s := {i ∈ φ.source | i < x}) (x < φ.endpoint ·)
-  simp only [filter_filter] at h
-  rw [← h, card_nbij' (s := {i ∈ φ.source | i < x ∧ ¬x < φ.endpoint i}) φ.endpoint φ.startpoint]
-  · intro i hi
-    simp only [coe_filter, Set.mem_ofPred_eq, not_lt] at hi ⊢
-    refine ⟨endpoint_mem_target hi.1, lt_of_le_of_ne hi.2.2 fun he ↦ ?_⟩
-    have hmem : x ∈ φ i := he ▸ endpoint_mem hi.1
-    rcases hx with hx | hx
-    · exact hi.2.1.ne (φ.eq_of_mem_of_mem hmem hx)
-    · exact hx (mem_target.2 ⟨i, hmem⟩)
-  · intro j hj
-    simp only [coe_filter, Set.mem_ofPred_eq, not_lt] at hj ⊢
-    refine ⟨startpoint_mem_source hj.1, ?_, by rw [endpoint_startpoint hj.1]; exact hj.2.le⟩
-    exact (φ.le_of_mem (mem_startpoint hj.1)).trans_lt hj.2
-  · intro i hi
-    simp only [coe_filter, Set.mem_ofPred_eq] at hi
-    exact startpoint_endpoint hi.1
-  · intro j hj
-    simp only [coe_filter, Set.mem_ofPred_eq] at hj
-    exact endpoint_startpoint hj.1
-
-/-- The crossings of `φ` other than those of a horizontal strand at `p`, and those of the strands
-of `φ` passing over `p`. -/
-private theorem inversionCount_eq_of_mem (hp : p ∈ φ p) :
-    φ.inversionCount = #((φ.source.erase p).inversions φ.endpoint) +
-      #{i ∈ φ.source | i < p ∧ p < φ.endpoint i} := by
-  have hpS : p ∈ φ.source := mem_source.2 ⟨p, hp⟩
-  have key := card_inversions_insert φ.endpoint (notMem_erase p φ.source)
-  rw [insert_erase hpS, endpoint_eq_of_mem hp] at key
-  have h₂ : #{b ∈ φ.source.erase p | b < p ∧ p < φ.endpoint b} =
-      #{i ∈ φ.source | i < p ∧ p < φ.endpoint i} := by
-    rw [filter_erase, erase_eq_of_notMem (by simp)]
-  have h₃ : #{b ∈ φ.source.erase p | p < b ∧ φ.endpoint b < p} = 0 := by
-    rw [card_eq_zero, filter_eq_empty_iff]
-    intro b hb ⟨hpb, hbp⟩
-    exact (hpb.trans_le (φ.le_of_mem (endpoint_mem (mem_of_mem_erase hb)))).not_gt hbp
-  rw [inversionCount_def, inversions_def, key]
-  omega
-
 /-- **Crossings after moving a horizontal strand.** Moving the horizontal strand of `φ` at `p` to
 a point `q` where `φ` has no strand changes the crossings with that strand from the strands passing
 over `p` to those passing over `q`. Counting the strands passing over a point by their starting and
