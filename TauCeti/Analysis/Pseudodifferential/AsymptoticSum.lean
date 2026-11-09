@@ -434,36 +434,10 @@ theorem exists_term_eq
   obtain ⟨r, hr⟩ := hb N
   exact ⟨r, fun p => by simp [← hr, Finset.sum_apply]⟩
 
-variable (n V W m) in
-/-- The homogeneous terms `(a_{m-j})ⱼ` of a classical symbol of order `m`, as a linear map to the
-sequences of homogeneous symbols of degrees `m - j`. -/
-def termsLinearMap : ClassicalSymbol n V W m →ₗ[ℂ]
-    ∀ j : ℕ, HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m - j) where
-  toFun a := a.term
-  map_add' a b := funext fun j => term_add a b j
-  map_smul' c a := funext fun j => term_smul a c j
-
-@[simp]
-theorem termsLinearMap_apply (a : ClassicalSymbol n V W m) : termsLinearMap n V W m a = a.term :=
-  (rfl)
-
 /-- Every sequence of homogeneous terms of degrees `m - j` is the expansion of a classical symbol of
 order `m`. -/
 theorem termsLinearMap_surjective : Function.Surjective (termsLinearMap n V W m) :=
-  exists_term_eq
-
-/-- The classical symbols with vanishing homogeneous terms are exactly the smoothing ones. -/
-theorem mem_ker_termsLinearMap {a : ClassicalSymbol n V W m} :
-    a ∈ LinearMap.ker (termsLinearMap n V W m) ↔ a.toSymbol.IsSmoothing := by
-  simp only [LinearMap.mem_ker, termsLinearMap_apply, isSmoothing_toSymbol_iff, funext_iff,
-    Pi.zero_apply]
-
-/-- **Uniqueness modulo smoothing.** Two classical symbols of order `m` differ by a smoothing
-symbol exactly when they have the same homogeneous terms. -/
-theorem isSmoothing_toSymbol_sub_iff {a b : ClassicalSymbol n V W m} :
-    (a.toSymbol - b.toSymbol).IsSmoothing ↔ a.term = b.term := by
-  rw [← toSymbol_sub, isSmoothing_toSymbol_iff, funext_iff]
-  simp [sub_eq_zero]
+  fun a => (exists_term_eq a).imp fun b hb => (termsLinearMap_apply b).trans hb
 
 variable (n V W m) in
 /-- Classical symbols of order `m` modulo smoothing symbols are the formal sums of homogeneous terms
@@ -477,7 +451,7 @@ def termsEquiv : (ClassicalSymbol n V W m ⧸ LinearMap.ker (termsLinearMap n V 
 @[simp]
 theorem termsEquiv_mk (a : ClassicalSymbol n V W m) :
     termsEquiv n V W m (Submodule.Quotient.mk a) = a.term :=
-  LinearMap.quotKerEquivOfSurjective_apply_mk _ _ a
+  (LinearMap.quotKerEquivOfSurjective_apply_mk _ _ a).trans (termsLinearMap_apply a)
 
 end ClassicalSymbol
 
