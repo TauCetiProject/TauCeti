@@ -131,7 +131,7 @@ theorem manifoldMorseIndex_transContinuousLinearEquiv (e : E ≃L[ℝ] E') :
   let g : E → ℝ := f ∘ (extChartAt I x).symm
   let a : E := extChartAt I x x
   have hfun : f ∘ (extChartAt (I.transContinuousLinearEquiv e) x).symm =
-      g ∘ (e.symm.toContinuousLinearMap : E' → E) := by
+      g ∘ e.symm := by
     rw [I.coe_extChartAt_transContinuousLinearEquiv_symm]
     rfl
   have hpoint : extChartAt (I.transContinuousLinearEquiv e) x x = e a := by
@@ -139,11 +139,7 @@ theorem manifoldMorseIndex_transContinuousLinearEquiv (e : E ≃L[ℝ] E') :
       congrFun (I.coe_extChartAt_transContinuousLinearEquiv e x) x
   rw [manifoldMorseIndex_def, manifoldMorseIndex_def, hfun, hpoint]
   rw [morseIndex_def, morseIndex_def]
-  have hquad : hessianQuadraticForm
-      (g ∘ (e.symm.toContinuousLinearMap : E' → E)) (e a) =
-      (hessianQuadraticForm g (e.symm (e a))).comp e.symm.toLinearMap :=
-    e.symm.hessianQuadraticForm_comp g (e a)
-  rw [hquad]
+  rw [e.symm.hessianQuadraticForm_comp g (e a)]
   simpa only [ContinuousLinearEquiv.symm_apply_apply, g, a] using
     (QuadraticMap.Equivalent.sigNeg_eq
     ⟨QuadraticMap.isometryEquivOfCompLinearEquiv

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.LinearAlgebra.QuadraticForm.Real
 public import TauCeti.Analysis.Calculus.Morse.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Matrix.HermitianSignature.Continuity
 
 /-!
@@ -177,11 +178,7 @@ theorem _root_.ContinuousLinearEquiv.hessianQuadraticForm_comp (L : F ≃L[ℝ] 
     hessianQuadraticForm (f ∘ L) b = (hessianQuadraticForm f (L b)).comp L.toLinearMap := by
   ext v
   simp only [hessianQuadraticForm_apply, QuadraticMap.comp_apply]
-  let Φ : (E →L[ℝ] ℝ) ≃L[ℝ] (F →L[ℝ] ℝ) :=
-    ContinuousLinearEquiv.arrowCongr L.symm (ContinuousLinearEquiv.refl ℝ ℝ)
-  have h1 : fderiv ℝ (f ∘ L) = Φ ∘ (fderiv ℝ f ∘ L) := funext fun y ↦ L.comp_right_fderiv
-  rw [h1, Φ.comp_fderiv, L.comp_right_fderiv]
-  rfl
+  exact L.fderiv_fderiv_comp_right_apply_apply f b v v
 
 /-- The Hessian of `ℓ ∘ φ`, for a continuous linear functional `ℓ`, is `ℓ` applied to the second
 derivative of `φ`. -/
