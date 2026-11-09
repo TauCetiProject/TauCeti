@@ -199,14 +199,13 @@ theorem torsionMapAlong_bijective_of_natCard {N : ℤ} (hN : (N : F) ≠ 0)
       (by rwa [← map_intCast g, map_ne_zero] : (N : SeparableClosure K) ≠ 0) with P
     simp only [Submodule.mem_torsionBy_iff, AddSubgroup.torsionBy, Submodule.mem_toAddSubgroup]
     convert Iff.rfl
-  have hfin : Finite (Submodule.torsionBy ℤ ((W.map f).map g).toAffine.Point N) :=
-    Nat.finite_of_card_ne_zero (by
-      rw [hKs]
-      exact pow_ne_zero 2 (Int.natAbs_ne_zero.mpr (by rintro rfl; exact hN Int.cast_zero)))
+  have hN₀ : N ≠ 0 := by rintro rfl; exact hN Int.cast_zero
+  have : Finite (Submodule.torsionBy ℤ ((W.map f).map g).toAffine.Point N) :=
+    ((W.map f).map g).finite_torsionBy hN₀
   have hK : Nat.card (Submodule.torsionBy ℤ (W.map f).toAffine.Point N) ≤ N.natAbs ^ 2 :=
     hKs ▸ Nat.card_le_card_of_injective _ ((W.map f).torsionMapAlong_injective g N)
   have : Finite (Submodule.torsionBy ℤ (W.map f).toAffine.Point N) :=
-    Finite.of_injective _ ((W.map f).torsionMapAlong_injective g N)
+    (W.map f).finite_torsionBy hN₀
   exact (W.torsionMapAlong_injective f N).bijective_of_nat_card_le (hK.trans_eq hF.symm)
 
 omit [IsSepClosed K] in
