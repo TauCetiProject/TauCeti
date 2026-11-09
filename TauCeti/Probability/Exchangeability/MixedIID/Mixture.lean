@@ -111,12 +111,17 @@ This is the sharp form of mixing-law uniqueness: the mixture representation writ
 witnesses for one and the same process (`mixedIID_mixingLaw_unique`) is the special case
 `hpath = rfl`. -/
 theorem mixedIID_mixingLaw_eq_of_pathLaw_eq {Ω' : Type*} [MeasurableSpace Ω']
-    {μ : Measure Ω} [IsFiniteMeasure μ] {μ' : Measure Ω'} [IsFiniteMeasure μ']
+    {μ : Measure Ω} [IsFiniteMeasure μ] {μ' : Measure Ω'}
     {X : ℕ → Ω → α} {Y : ℕ → Ω' → α}
     {ν : Ω → ProbabilityMeasure α} {ν' : Ω' → ProbabilityMeasure α}
     (h : MixedIIDWith μ X ν) (h' : MixedIIDWith μ' Y ν')
     (hpath : pathLaw μ X = pathLaw μ' Y) :
     μ.map ν = μ'.map ν' := by
+  have : IsFiniteMeasure (μ'.map fun ω i => Y i ω) := by
+    rw [← pathLaw_def, ← hpath, pathLaw_def]
+    infer_instance
+  have : IsFiniteMeasure μ' :=
+    Measure.isFiniteMeasure_of_map (AEMeasurable.of_eval h'.aemeasurable)
   have : IsFiniteMeasure (μ.map ν) := Measure.isFiniteMeasure_map _ _
   refine TauCeti.MeasureTheory.Measure.ext_of_bind_infinitePi_eq ?_
   rw [← pathLaw_eq_bind_infinitePi_of_mixedIIDWith h,

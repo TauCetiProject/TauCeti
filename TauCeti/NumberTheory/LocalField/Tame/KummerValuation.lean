@@ -37,39 +37,6 @@ open _root_.ValuativeRel
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
-/-- The tame Kummer character of `a` is the normalized valuation of `a` times the tame
-character, written multiplicatively. -/
-theorem tameKummerCharacter_eq_inertiaTameCharacter_zpow (a : Kˣ) :
-    tameKummerCharacter K a = inertiaTameCharacter K ^ (normalizedValuation K a).toAdd := by
-  obtain ⟨π, hπ⟩ := exists_isUniformizer K
-  have hu := tameKummerCharacter_eq_one_of_mem_unitFiltration_zero
-    (mul_zpow_neg_mem_unitFiltration_zero ((isUniformizer_def π).1 hπ) a)
-  have ha : a = (a * π ^ (-(normalizedValuation K a).toAdd)) *
-      π ^ (normalizedValuation K a).toAdd := by group
-  calc
-    tameKummerCharacter K a = tameKummerCharacter K
-        (a * π ^ (-(normalizedValuation K a).toAdd)) *
-        tameKummerCharacter K (π ^ (normalizedValuation K a).toAdd) := by
-      rw [← tameKummerCharacter_mul, ← ha]
-    _ = inertiaTameCharacter K ^ (normalizedValuation K a).toAdd := by
-      rw [hu, one_mul, tameKummerCharacter_zpow,
-        ← inertiaTameCharacter_eq_tameKummerCharacter hπ]
-
-/-- At level `m`, inertia acts on the `m`-th roots of `a` by the valuation power of the
-level-`m` tame character. -/
-theorem inertiaKummerCharacter_apply_eq_proj_zpow {m : ℕ}
-    (hm : m.Coprime (ringChar 𝓀[K])) (a : Kˣ) (σ : inertiaSubgroup K) :
-    inertiaKummerCharacter K m hm a σ =
-      PrimeToPTateModule.proj ⟨m, ne_zero_of_coprime_ringChar hm, hm⟩
-        (inertiaTameCharacter K σ) ^ (normalizedValuation K a).toAdd := by
-  calc
-    _ = PrimeToPTateModule.proj ⟨m, ne_zero_of_coprime_ringChar hm, hm⟩
-        (tameKummerCharacter K a σ) :=
-      (proj_tameKummerCharacter_apply a ⟨m, ne_zero_of_coprime_ringChar hm, hm⟩ σ).symm
-    _ = _ := by
-      rw [tameKummerCharacter_eq_inertiaTameCharacter_zpow,
-        ContinuousMonoidHom.zpow_apply, map_zpow]
-
 variable (K) in
 /-- The `ℓ`-adic Kummer character of `a` on inertia, with values in the multiplicatively
 written Tate twist. Its finite components are `σ(α)/α` for `α ^ (ℓ ^ n) = a`. -/

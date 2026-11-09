@@ -133,6 +133,20 @@ theorem amiceRadius_pow (h n : ℕ) :
   congr 1
   ring
 
+/-- `r_0 ^ (p - 1) = p⁻¹`: the radius `r_0 = p ^ (-1 / (p - 1))` is the radius of convergence of
+the `p`-adic exponential. -/
+theorem amiceRadius_zero_pow_sub_one : amiceRadius p 0 ^ (p - 1) = (p : ℝ)⁻¹ := by
+  rw [amiceRadius_pow, Nat.cast_sub hp.out.one_le, Nat.cast_one, pow_zero, mul_one,
+    div_self (sub_one_pos (p := p)).ne', Real.rpow_neg_one]
+
+/-- `r_{h+1} ^ p = r_h`: each radius is the `p`-th root of the previous one. -/
+theorem amiceRadius_succ_pow (h : ℕ) : amiceRadius p (h + 1) ^ p = amiceRadius p h := by
+  have := natCast_pos (p := p)
+  have := sub_one_pos (p := p)
+  rw [amiceRadius_pow, amiceRadius_def, pow_succ]
+  congr 1
+  field_simp
+
 /-- The radii `r_h` increase strictly with the level `h`. -/
 theorem strictMono_amiceRadius : StrictMono (amiceRadius p) := by
   refine strictMono_nat_of_lt_succ fun h ↦ Real.rpow_lt_rpow_of_exponent_lt one_lt_natCast ?_
