@@ -231,9 +231,9 @@ theorem negativePlanePerturbation_cylindricalEndLift_apply (hH : Periodic H 1) (
     simpa [pairOfPantsPerturbation_single_inf] using h
   · -- The end lift lands in the pole disc, where the perturbation vanishes.
     have hw : ‖inf.cylindricalEndLift z‖ ≤ 2 * Real.exp (2 * π) := by
-      rw [cylindricalEndLift_inf, norm_mul, Complex.norm_exp]
-      rw [show (-(2 * (π : ℂ)) * z).re = -(2 * π * z.re) by simp [Complex.mul_re],
-        show ‖(2 : ℂ)‖ = 2 by simp]
+      have h := norm_cylindricalEndLift_sub_endCenter inf z
+      rw [endCenter_inf, sub_zero, endScale_inf, Complex.norm_ofNat] at h
+      rw [h]
       gcongr
       nlinarith [Real.pi_pos]
     rw [negativePlanePerturbation_eq_zero_of_norm_le hw, smoothTransition.zero_of_nonpos
@@ -319,11 +319,12 @@ theorem positivePlanePerturbation_cylindricalEndLift_apply (hH : Periodic H 1) (
     simpa [pairOfPantsPerturbation_single_zero] using h
   · -- The end lift lies off the disc of radius `exp (-2π) / 2`, where the perturbation vanishes.
     have hw : Real.exp (-(2 * π)) / 2 ≤ ‖zero.cylindricalEndLift z‖ := by
-      rw [cylindricalEndLift_zero, norm_div, Complex.norm_exp]
-      rw [show (-(2 * (π : ℂ)) * z).re = -(2 * π * z.re) by simp [Complex.mul_re],
-        show ‖(2 : ℂ)‖ = 2 by simp]
-      have h : -(2 * π) ≤ -(2 * π * z.re) := by nlinarith [Real.pi_pos]
-      gcongr
+      have h := norm_cylindricalEndLift_sub_endCenter zero z
+      rw [endCenter_zero, sub_zero, endScale_zero, norm_div, norm_one, Complex.norm_ofNat] at h
+      have h' : -(2 * π) ≤ -(2 * π * z.re) := by nlinarith [Real.pi_pos]
+      have := Real.exp_le_exp.2 h'
+      rw [h]
+      linarith
     rw [positivePlanePerturbation_eq_zero_of_le_norm hw, smoothTransition.zero_of_nonpos
       (by linarith), zero_mul, mul_zero, zero_apply]
 
