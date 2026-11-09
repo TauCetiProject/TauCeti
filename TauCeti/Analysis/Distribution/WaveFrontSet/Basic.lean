@@ -603,9 +603,6 @@ theorem IsMicrolocallySmoothAt.compCLMOfContinuousLinearEquiv {T : 𝓓'(Ω, ℂ
     (compCLMOfContinuousLinearEquiv e hVO T).IsMicrolocallySmoothAt x ξ := by
   obtain ⟨φ, hφ, Γ, hΓ, hξ, hcone, hdecay⟩ := h
   set A : E →L[ℝ] E := (e.symm : E →L[ℝ] E)†
-  have hφφ : e.transportTestFunction hVO (e.symm.transportTestFunction hOV φ) = φ := by
-    ext y
-    simp
   -- The cutoff `φ ∘ e` and the cone `A⁻¹ Γ` carry the decay of `T` over to its pullback.
   refine ⟨e.symm.transportTestFunction hOV φ, by simpa using hφ, A ⁻¹' Γ,
     hΓ.preimage A.continuous, hξ, fun t ht η hη => ?_, fun N => ?_⟩
@@ -623,8 +620,9 @@ theorem IsMicrolocallySmoothAt.compCLMOfContinuousLinearEquiv {T : 𝓓'(Ω, ℂ
   have hηA : 1 + ‖η‖ ≤ (1 + ‖(e : E →L[ℝ] E)‖) * (1 + ‖A η‖) := by
     nlinarith [norm_nonneg (A η), norm_nonneg (e : E →L[ℝ] E)]
   have hC' := hC (A η) hη
-  rw [localFourier_compCLMOfContinuousLinearEquiv, hφφ, norm_mul, Complex.norm_real,
-    Real.norm_of_nonneg (by positivity), mul_left_comm]
+  rw [localFourier_compCLMOfContinuousLinearEquiv,
+    ContinuousLinearEquiv.transportTestFunction_transportTestFunction_symm, norm_mul,
+    Complex.norm_real, Real.norm_of_nonneg (by positivity), mul_left_comm]
   refine mul_le_mul_of_nonneg_left ?_ (by positivity)
   calc (1 + ‖η‖) ^ N * ‖T.localFourier φ (A η)‖
       ≤ ((1 + ‖(e : E →L[ℝ] E)‖) * (1 + ‖A η‖)) ^ N * ‖T.localFourier φ (A η)‖ := by
