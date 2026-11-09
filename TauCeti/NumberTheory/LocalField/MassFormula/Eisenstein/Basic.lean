@@ -17,6 +17,7 @@ import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 import TauCeti.Algebra.Polynomial.Degree.Operations
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.Polynomial.Eisenstein.Basic
+import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 
 /-!
 # Eisenstein generators of the counted extensions
@@ -212,26 +213,61 @@ theorem adjoin_mem_totallyRamifiedOfDegree_two_of_sq_add_mul_add_eq_zero {b c : 
     (natDegree_X_pow_add_C_mul_X_add_C _ _ le_rfl)
     (by simpa [Algebra.algebraMap_ofSubsemiring_apply] using hx)
 
-/-- **The discriminant exponent of a root of an Eisenstein quadratic.** If `b ∈ 𝓂[K]` and `c` is a
-uniformizer of `K`, a root `x` in the separable closure of `X ^ 2 + b X + c` generates an extension
-of discriminant exponent `min (2 v_K(b)) (2 v_K(2) + 1)`. -/
+/-- If `b` is a unit and `c` lies in the maximal ideal, a root in the separable closure of
+`X ^ 2 + b X + c` already lies in `K`: the reduction `X (X + b)` has the simple root `0`, which
+Hensel's lemma lifts to a root in `𝒪[K]`. -/
+theorem adjoin_eq_bot_of_sq_add_mul_add_eq_zero_of_isUnit {b c : 𝒪[K]} (hb : IsUnit b)
+    (hc : c ∈ 𝓂[K]) {x : SeparableClosure K}
+    (hx : x ^ 2 + algebraMap K (SeparableClosure K) b * x +
+      algebraMap K (SeparableClosure K) c = 0) :
+    K⟮x⟯ = ⊥ := by
+  have hd : IsUnit (b ^ 2 + 4 * -c) := by
+    rw [← IsLocalRing.notMem_maximalIdeal]
+    intro h
+    have h4 : 4 * -c ∈ 𝓂[K] := Ideal.mul_mem_left _ _ (neg_mem hc)
+    exact IsLocalRing.notMem_maximalIdeal.mpr (hb.pow 2) (by simpa using sub_mem h h4)
+  obtain ⟨s, hs, -, -⟩ := HenselianLocalRing.exists_quadratic_root_of_isUnit_discriminant
+    (a := b) (b := -c) (t := 0) hd (by simpa using hc)
+  have hs' : algebraMap K (SeparableClosure K) s ^ 2 +
+      algebraMap K (SeparableClosure K) b * algebraMap K (SeparableClosure K) s +
+        algebraMap K (SeparableClosure K) c = 0 := by
+    have := congrArg (fun y : 𝒪[K] ↦ algebraMap K (SeparableClosure K) (y : K)) hs
+    simpa using this
+  have hfac : (x - algebraMap K (SeparableClosure K) s) *
+      (x + algebraMap K (SeparableClosure K) s + algebraMap K (SeparableClosure K) b) = 0 := by
+    linear_combination hx - hs'
+  rw [IntermediateField.adjoin_simple_eq_bot_iff, IntermediateField.mem_bot]
+  rcases mul_eq_zero.mp hfac with h | h
+  · exact ⟨s, (sub_eq_zero.mp h).symm⟩
+  · exact ⟨-(s : K) - b, by simp only [map_sub, map_neg]; linear_combination -h⟩
+
+/-- **The discriminant exponent of a root of an Eisenstein quadratic.** If `c` is a uniformizer of
+`K`, a root `x` in the separable closure of `X ^ 2 + b X + c` generates an extension of
+discriminant exponent `min (2 v_K(b)) (2 v_K(2) + 1)`. -/
 theorem natCast_discriminantExponent_adjoin_eq_min_of_sq_add_mul_add_eq_zero {b c : 𝒪[K]}
-    (hb : b ∈ 𝓂[K]) (hc : Irreducible c) {x : SeparableClosure K}
+    (hc : Irreducible c) {x : SeparableClosure K}
     (hx : x ^ 2 + algebraMap K (SeparableClosure K) b * x +
       algebraMap K (SeparableClosure K) c = 0) :
     ((K⟮x⟯).discriminantExponent : ℕ∞) = min (2 * addVal 𝒪[K] b) (2 * addVal 𝒪[K] 2 + 1) := by
-  have hd := natCast_discriminantExponent_adjoin_eq_iInf_of_eisenstein
-    (isEisensteinAt_X_pow_add_C_mul_X_add_C_of_irreducible hb hc le_rfl)
-    (by simpa [Algebra.algebraMap_ofSubsemiring_apply] using hx)
-  rw [natDegree_X_pow_add_C_mul_X_add_C _ _ le_rfl] at hd
-  -- The two terms of the infimum are `2 v_K(b)` and `2 v_K(2) + 1`.
-  rw [hd]
-  refine le_antisymm (le_min (iInf_le_of_le 0 ?_) (iInf_le_of_le 1 ?_)) (le_iInf fun i ↦ ?_)
-  · simp [nsmul_eq_mul]
-  · simp [coeff_X, coeff_C, one_add_one_eq_two, nsmul_eq_mul]
-  · fin_cases i
+  by_cases hb : b ∈ 𝓂[K]
+  · have hd := natCast_discriminantExponent_adjoin_eq_iInf_of_eisenstein
+      (isEisensteinAt_X_pow_add_C_mul_X_add_C_of_irreducible hb hc le_rfl)
+      (by simpa [Algebra.algebraMap_ofSubsemiring_apply] using hx)
+    rw [natDegree_X_pow_add_C_mul_X_add_C _ _ le_rfl] at hd
+    -- The two terms of the infimum are `2 v_K(b)` and `2 v_K(2) + 1`.
+    rw [hd]
+    refine le_antisymm (le_min (iInf_le_of_le 0 ?_) (iInf_le_of_le 1 ?_)) (le_iInf fun i ↦ ?_)
     · simp [nsmul_eq_mul]
     · simp [coeff_X, coeff_C, one_add_one_eq_two, nsmul_eq_mul]
+    · fin_cases i
+      · simp [nsmul_eq_mul]
+      · simp [coeff_X, coeff_C, one_add_one_eq_two, nsmul_eq_mul]
+  · have hbu := IsLocalRing.notMem_maximalIdeal.mp hb
+    have hcm : c ∈ 𝓂[K] := by
+      by_contra h
+      exact hc.not_isUnit (IsLocalRing.notMem_maximalIdeal.mp h)
+    rw [adjoin_eq_bot_of_sq_add_mul_add_eq_zero_of_isUnit hbu hcm hx]
+    simp [addVal_eq_zero_iff.mpr hbu]
 
 /-- **The discriminant exponent of `K(√ϖ)`.** For a uniformizer `ϖ` of `K`, a square root of `ϖ`
 in the separable closure generates an extension of discriminant exponent `2 v_K(2) + 1`. -/
@@ -241,7 +277,7 @@ theorem natCast_discriminantExponent_adjoin_of_sq_eq_of_irreducible {ϖ : 𝒪[K
     ((K⟮x⟯).discriminantExponent : ℕ∞) = 2 * addVal 𝒪[K] 2 + 1 := by
   -- `x` is a root of the Eisenstein polynomial `X ^ 2 + 0 X - ϖ`.
   rw [natCast_discriminantExponent_adjoin_eq_min_of_sq_add_mul_add_eq_zero (b := 0) (c := -ϖ)
-    (Ideal.zero_mem _) (Associated.irreducible ⟨-1, by simp⟩ hϖ) (by simp [hx])]
+    (Associated.irreducible ⟨-1, by simp⟩ hϖ) (by simp [hx])]
   simp
 
 omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
@@ -267,14 +303,14 @@ theorem adjoin_mem_totallyRamifiedOfDegree_two_of_sq_eq_one_sub {ϖ : 𝒪[K]} (
   exact adjoin_mem_totallyRamifiedOfDegree_two_of_sq_add_mul_add_eq_zero (neg_mem h2) hϖ
     (sq_add_mul_add_eq_zero_of_sq_eq_one_sub hx)
 
-/-- **The discriminant exponent of `K(√(1 - ϖ))`.** For a uniformizer `ϖ` of a local field `K` of
-residue characteristic `2`, a square root of `1 - ϖ` in the separable closure generates an
-extension of discriminant exponent `2 v_K(2)`. -/
+/-- **The discriminant exponent of `K(√(1 - ϖ))`.** For a uniformizer `ϖ` of a local field `K`, a
+square root of `1 - ϖ` in the separable closure generates an extension of discriminant exponent
+`2 v_K(2)`. In odd residue characteristic both sides are `0`. -/
 theorem natCast_discriminantExponent_adjoin_of_sq_eq_one_sub_of_irreducible {ϖ : 𝒪[K]}
-    (h2 : (2 : 𝒪[K]) ∈ 𝓂[K]) (hϖ : Irreducible ϖ) {x : SeparableClosure K}
+    (hϖ : Irreducible ϖ) {x : SeparableClosure K}
     (hx : x ^ 2 = 1 - algebraMap K (SeparableClosure K) ϖ) :
     ((K⟮x⟯).discriminantExponent : ℕ∞) = 2 * addVal 𝒪[K] 2 := by
-  have h := natCast_discriminantExponent_adjoin_eq_min_of_sq_add_mul_add_eq_zero (neg_mem h2) hϖ
+  have h := natCast_discriminantExponent_adjoin_eq_min_of_sq_add_mul_add_eq_zero hϖ
     (sq_add_mul_add_eq_zero_of_sq_eq_one_sub hx)
   rw [IntermediateField.adjoin_simple_add_algebraMap, AddValuation.map_neg] at h
   rw [h]
