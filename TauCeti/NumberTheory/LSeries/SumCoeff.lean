@@ -43,9 +43,10 @@ Probabilistic Number Theory*, Chapter II.1).
 * `TauCeti.LSeries.norm_mul_integral_le_of_bound`: uniformly bounded partial sums give the
   explicit bound `C * ‖s‖ / s.re` on `Re(s) > 0`.
 * `TauCeti.LSeries.exists_differentiableOn_eq_LSeries_sub_div_of_isBigO`: if instead the partial
-  sums are `κ n + O(n ^ r)`, then `LSeries f s - κ / (s - 1)` continues
-  holomorphically from `Re s > 1` to `Re s > r`. When `r < 1` this half-plane contains `s = 1`, so
-  there `LSeries f` has at most a simple pole, at `s = 1`, with residue `κ`.
+  sums are `κ n + O(n ^ r)` and `LSeries f` converges absolutely on `Re s > 1`, then
+  `LSeries f s - κ / (s - 1)` continues holomorphically from `Re s > 1` to `Re s > r`. When
+  `r < 1` this half-plane contains `s = 1`, so there `LSeries f` has at most a simple pole, at
+  `s = 1`, with residue `κ`.
 -/
 
 public section
