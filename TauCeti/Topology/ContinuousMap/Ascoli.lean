@@ -11,7 +11,9 @@ public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Topology.MetricSpace.Pseudo.Real
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
+public import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
 
+import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
 import Mathlib.Topology.MetricSpace.IsometricSMul
 import Mathlib.Topology.MetricSpace.Lipschitz
 import Mathlib.Topology.MetricSpace.UniformConvergence
@@ -41,7 +43,9 @@ and adds companion statements used for compactness and finite approximation of f
   approximations on compact sets, with approximants drawn from the family itself.
 * Conversely, on a weakly locally compact domain, a compact subset of `C(X, Y)` is equicontinuous.
 * A sequence of continuous `1`-periodic loops in a compact subset of a pseudometric space, with a
-  common modulus of continuity on `[0, 1]`, has a subsequence converging uniformly on `ℝ`.
+  common modulus of continuity on `[0, 1]`, has a subsequence converging uniformly on `ℝ`. In
+  particular the `1`-periodic `L`-Lipschitz loops in a compact set form a compact subset of
+  `ℝ →ᵤ M`.
 * The translates `(s, t) ↦ u(s + σₙ, t)`, `σₙ → ∞`, of a Lipschitz map on a half-plane `s ≥ b`
   with values in a compact set have a subsequence converging locally uniformly on the plane.
 
@@ -65,6 +69,8 @@ endpoints `eₙ` stay at distance at least `1` from each other
   is equicontinuous.
 * `TauCeti.exists_tendstoUniformly_subseq_of_periodic_of_modulus`: Arzelà–Ascoli for periodic
   loops with a common modulus of continuity.
+* `TauCeti.isCompact_setOf_periodic_lipschitzWith`: the `1`-periodic `L`-Lipschitz loops in a
+  compact set are compact for uniform convergence on `ℝ`.
 * `TauCeti.exists_subseq_tendstoLocallyUniformly_comp_add`: translates `u(s + σₙ, t)`, `σₙ → ∞`,
   of a Lipschitz map on a half-plane `s ≥ b` with values in a compact set have a locally
   uniformly convergent subsequence.
@@ -203,6 +209,7 @@ theorem IsCompact.equicontinuous [WeaklyLocallyCompactSpace X] [UniformSpace Y]
 namespace TauCeti
 
 open Function
+open scoped NNReal UniformConvergence
 
 /-- **Periodic Arzelà–Ascoli.** A sequence of continuous `1`-periodic loops in a compact set `K`,
 sharing a modulus of continuity `ρ` with `ρ(h) → 0` as `h → 0` on `[0, 1]`, has a subsequence
@@ -241,6 +248,26 @@ theorem exists_tendstoUniformly_subseq_of_periodic_of_modulus {M : Type*} [Pseud
     rw [heq]
     exact hunif.comp p
   exact ⟨ψ, hψ, x, hxper, hux.continuous (Frequently.of_forall fun n ↦ hy _), hux⟩
+
+/-- **Periodic Arzelà–Ascoli, compact form.** In the topology of uniform convergence on `ℝ`, the
+`1`-periodic `L`-Lipschitz loops with values in a compact set `K` form a compact set. -/
+theorem isCompact_setOf_periodic_lipschitzWith {M : Type*} [MetricSpace M] {K : Set M}
+    (hK : IsCompact K) (L : ℝ≥0) :
+    IsCompact {f : ℝ →ᵤ M | Periodic (UniformFun.toFun f) 1 ∧
+      (∀ t, UniformFun.toFun f t ∈ K) ∧ LipschitzWith L (UniformFun.toFun f)} := by
+  refine IsSeqCompact.isCompact fun f hf ↦ ?_
+  have hρ : Tendsto (fun h : ℝ ↦ L * h) (𝓝 0) (𝓝 0) := by
+    simpa using (tendsto_id (x := 𝓝 (0 : ℝ))).const_mul (L : ℝ)
+  obtain ⟨ψ, hψ, x, hxper, -, hux⟩ := exists_tendstoUniformly_subseq_of_periodic_of_modulus hK
+    (fun n ↦ (hf n).2.2.continuous) (fun n ↦ (hf n).1) (fun n ↦ (hf n).2.1) hρ
+    fun n t₁ _ t₂ _ ht ↦ by
+      simpa [Real.dist_eq, abs_of_nonneg (sub_nonneg.2 ht)] using (hf n).2.2.dist_le_mul t₂ t₁
+  -- The limit is again periodic, `L`-Lipschitz and with values in `K`.
+  refine ⟨UniformFun.ofFun x, ⟨hxper, fun t ↦ hK.isClosed.mem_of_tendsto (hux.tendsto_at t)
+    (Eventually.of_forall fun n ↦ (hf (ψ n)).2.1 t), LipschitzWith.of_dist_le_mul fun t t' ↦
+      le_of_tendsto ((hux.tendsto_at t).dist (hux.tendsto_at t'))
+        (Eventually.of_forall fun n ↦ (hf (ψ n)).2.2.dist_le_mul t t')⟩, ψ, hψ,
+    UniformFun.tendsto_iff_tendstoUniformly.2 hux⟩
 
 /-- **Arzelà–Ascoli for translates along an end.** Let `u` be Lipschitz on the half-plane
 `s ≥ b` of `ℝ × ℝ`, with values there in a compact subset of a pseudometric space, and let
