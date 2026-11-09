@@ -41,6 +41,23 @@ open ValuativeRel
 
 namespace TauCeti
 
+/-- The discriminant `t² - 4c` of the integral coefficients `t = 2b/s`, `c = (b² - u)/s²` is a
+unit, when `2` has the valuation of `s ≠ 0` and `u` has valuation `1`. -/
+private theorem isUnit_sq_sub_four_mul_of_valuation_two {K : Type*} [Field K] [ValuativeRel K]
+    {s u b : K} (hs : s ≠ 0) (hu : valuation K u = 1) (hv2 : valuation K 2 = valuation K s)
+    {t c : 𝒪[K]} (ht : (t : K) = 2 * b / s) (hc : (c : K) = (b ^ 2 - u) / s ^ 2) :
+    IsUnit (t ^ 2 - 4 * c) := by
+  refine (Valuation.Integers.isUnit_iff_valuation_eq_one
+    (Valuation.integer.integers (valuation K))).mpr ?_
+  have hval : ((t ^ 2 - 4 * c : 𝒪[K]) : K) = 2 ^ 2 * u / s ^ 2 := by
+    have h4 : ((4 : 𝒪[K]) : K) = 4 := map_ofNat (algebraMap 𝒪[K] K) 4
+    simp only [AddSubgroupClass.coe_sub, SubmonoidClass.coe_pow, MulMemClass.coe_mul, h4, ht, hc]
+    field_simp
+    ring
+  rw [Algebra.algebraMap_ofSubsemiring_apply, hval, map_div₀, map_mul, hu, mul_one, map_pow,
+    map_pow, hv2]
+  exact div_self (pow_ne_zero _ ((Valuation.ne_zero_iff _).mpr hs))
+
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
@@ -66,7 +83,7 @@ theorem exists_basis_integerRing_of_defectExponent_eq_two_mul_natCastValuation
   have hπ0 : (π : K) ≠ 0 := fun h ↦ hπ.ne_zero (Subtype.ext h)
   have hvπ : valuation K (π : K) ≠ 0 := (Valuation.ne_zero_iff _).mpr hπ0
   have hπe : (π : K) ^ e ≠ 0 := pow_ne_zero e hπ0
-  have hx := not_mem_range_algebraMap_of_sq_eq_of_not_isSquare
+  have hx := notMem_range_algebraMap_of_sq_eq_of_not_isSquare
     (Units.isSquare_coe_iff.not.mpr hsq) hx2
   -- An attained approximation `b²` of `u`, of order `2e`.
   obtain ⟨b, y, hy, hyd⟩ := exists_defectExponent_eq hsq
@@ -92,7 +109,8 @@ theorem exists_basis_integerRing_of_defectExponent_eq_two_mul_natCastValuation
   let c : 𝒪[K] := ⟨(b ^ 2 - u) / (π : K) ^ (2 * e), hcv.le⟩
   -- The discriminant `t² - 4c = 4u/π^{2e}` is a unit.
   have hdisc : IsUnit (t ^ 2 - 4 * c) :=
-    isUnit_sq_sub_four_mul_of_valuation_two hπ0 hu hv2 rfl rfl
+    isUnit_sq_sub_four_mul_of_valuation_two hπe hu (hv2.trans (map_pow _ _ _).symm) rfl
+      (by rw [← pow_mul'])
   obtain ⟨B, h0, h1, htr, hn⟩ := exists_basis_integerRing_of_sq_eq_of_isUnit_discrim
     (s := (π : K) ^ e) (t := t) (c := c) hx hx2 hπe (mul_div_cancel₀ (2 * b) hπe).symm
     (by rw [← pow_mul, mul_comm e 2]; exact (mul_div_cancel₀ _ (pow_ne_zero _ hπ0)).symm) hdisc

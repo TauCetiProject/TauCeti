@@ -23,7 +23,7 @@ unless `u * x = 1` (`TauCeti.exists_unit_conj_of_mul_ne_one`). The rational func
 `x / (1 - x)²`, `x² / (1 - x)³` and `x / (1 - x)³` of the Tate coordinates satisfy the linear
 relation `TauCeti.div_one_sub_sq_add_sq_div_one_sub_cube`. A square root in a field extension of a
 non-square of the base field does not lie in the base field
-(`TauCeti.not_mem_range_algebraMap_of_sq_eq_of_not_isSquare`).
+(`TauCeti.notMem_range_algebraMap_of_sq_eq_of_not_isSquare`).
 -/
 
 public section
@@ -86,7 +86,7 @@ theorem inv_sq_div_one_sub_inv_cube_eq_neg_sub (x : K) :
 
 /-- A square root in an extension field of an element that is not a square in `K` does not lie
 in `K`. -/
-theorem not_mem_range_algebraMap_of_sq_eq_of_not_isSquare {L : Type*} [Field L] [Algebra K L]
+theorem notMem_range_algebraMap_of_sq_eq_of_not_isSquare {L : Type*} [Field L] [Algebra K L]
     {u : K} (hsq : ¬IsSquare u) {x : L} (hx2 : x ^ 2 = algebraMap K L u) :
     x ∉ Set.range (algebraMap K L) := by
   rintro ⟨y, rfl⟩
