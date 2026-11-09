@@ -48,6 +48,12 @@ namespace TauCeti
 
 namespace MeasureTheory
 
+/-- The vector of singleton masses is measurable in the measure. -/
+theorem measurable_singleton_evals {ι : Type*} [MeasurableSpace ι]
+    [MeasurableSingletonClass ι] :
+    Measurable fun ξ : Measure ι => fun i => ξ {i} :=
+  measurable_pi_iff.2 fun i => Measure.measurable_coe (measurableSet_singleton i)
+
 /-- A countable mixture of Dirac measures at fixed atoms `g i` is measurable in the weights.
 
 Evaluating on a measurable set turns the measure into the sum
