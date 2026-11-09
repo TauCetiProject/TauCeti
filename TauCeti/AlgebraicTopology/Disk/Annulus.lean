@@ -22,6 +22,8 @@ is combined with a deformation of the surrounding annulus, as in cell reattachme
 * `TauCeti.TopCat.annulusParam`, `TauCeti.TopCat.annulusDir`: the annulus coordinates.
 * `TauCeti.TopCat.add_one_sub_mul_annulusParam_smul_annulusDir`: a point of the annulus is
   recovered from its coordinates.
+* `TauCeti.TopCat.annulusPoint`: the point of the annulus with given coordinates, as a continuous
+  map, and `TauCeti.TopCat.annulusPoint_annulusParam_annulusDir`: it inverts the coordinates.
 * `TauCeti.TopCat.discGlue`: the gluing of a map on the ball of radius `d` and a map on the
   annulus, with a parameter space `P`.
 -/
@@ -122,6 +124,54 @@ theorem smul_diskBoundary_mem_closedBall (hd : 0 ≤ d) (θ : TopCat.diskBoundar
     d • (θ.down : EuclideanSpace ℝ (Fin k)) ∈ closedBall (0 : EuclideanSpace ℝ (Fin k)) d := by
   rw [mem_closedBall_zero_iff, norm_smul, mem_sphere_zero_iff_norm.1 θ.down.2,
     Real.norm_of_nonneg hd, mul_one]
+
+/-- The radius `d + (1 - d) s` of the annulus coordinates is at least `d`. -/
+private theorem le_add_one_sub_mul (hd₁ : d ≤ 1) (s : I) : d ≤ d + (1 - d) * s :=
+  le_add_of_nonneg_right (mul_nonneg (sub_nonneg.2 hd₁) s.2.1)
+
+/-- The norm of `(d + (1 - d) s) • θ` is `d + (1 - d) s`. -/
+private theorem norm_add_one_sub_mul_smul (hd₀ : 0 ≤ d) (hd₁ : d ≤ 1)
+    (p : I × TopCat.diskBoundary.{u} k) :
+    ‖(d + (1 - d) * p.1) • (p.2.down : EuclideanSpace ℝ (Fin k))‖ = d + (1 - d) * p.1 := by
+  rw [norm_smul, mem_sphere_zero_iff_norm.1 p.2.down.2, mul_one,
+    Real.norm_of_nonneg (hd₀.trans (le_add_one_sub_mul hd₁ p.1))]
+
+/-- The point `(d + (1 - d) s) • θ` of the annulus `d ≤ ‖w‖ ≤ 1` of the disk with annulus
+coordinates `(s, θ)`, for `0 ≤ d ≤ 1`. For `0 < d` it inverts the annulus coordinates
+(`TauCeti.TopCat.annulusPoint_annulusParam_annulusDir`). -/
+def annulusPoint (hd₀ : 0 ≤ d) (hd₁ : d ≤ 1) : C(I × TopCat.diskBoundary.{u} k, TopCat.disk.{u} k)
+    where
+  toFun p := ⟨⟨(d + (1 - d) * p.1) • p.2.down.1, mem_closedBall_zero_iff.2
+    ((norm_add_one_sub_mul_smul hd₀ hd₁ p).trans_le (by nlinarith [p.1.2.2]))⟩⟩
+  continuous_toFun := continuous_uliftUp.comp (Continuous.subtype_mk (by fun_prop) _)
+
+@[simp]
+theorem coe_annulusPoint_apply_down (hd₀ : 0 ≤ d) (hd₁ : d ≤ 1)
+    (p : I × TopCat.diskBoundary.{u} k) :
+    ((annulusPoint hd₀ hd₁ p).down : EuclideanSpace ℝ (Fin k)) =
+      (d + (1 - d) * p.1) • (p.2.down : EuclideanSpace ℝ (Fin k)) :=
+  (rfl)
+
+/-- The annulus point with coordinates `(s, θ)` has norm `d + (1 - d) s`. -/
+theorem norm_annulusPoint (hd₀ : 0 ≤ d) (hd₁ : d ≤ 1) (p : I × TopCat.diskBoundary.{u} k) :
+    ‖(annulusPoint hd₀ hd₁ p).down.1‖ = d + (1 - d) * p.1 :=
+  norm_add_one_sub_mul_smul hd₀ hd₁ p
+
+/-- The outer circle `s = 1` of the annulus is the boundary sphere. -/
+@[simp]
+theorem annulusPoint_one (hd₀ : 0 ≤ d) (hd₁ : d ≤ 1) (θ : TopCat.diskBoundary.{u} k) :
+    annulusPoint hd₀ hd₁ (1, θ) = TopCat.diskBoundaryInclusion k θ :=
+  ULift.ext (Subtype.ext (by
+    rw [coe_annulusPoint_apply_down, TopCat.coe_diskBoundaryInclusion_apply_down, Icc.coe_one,
+      mul_one, add_sub_cancel, one_smul]))
+
+/-- A point of the annulus is the annulus point of its annulus coordinates. -/
+@[simp]
+theorem annulusPoint_annulusParam_annulusDir (hd : 0 < d) (hd₁ : d ≤ 1)
+    (w : {w : TopCat.disk.{u} k // d ≤ ‖w.down.1‖}) :
+    annulusPoint hd.le hd₁ (annulusParam d w.1, annulusDir hd w) = w.1 :=
+  ULift.ext (Subtype.ext ((coe_annulusPoint_apply_down _ _ _).trans
+    (add_one_sub_mul_annulusParam_smul_annulusDir hd hd₁ w)))
 
 /-- The function underlying `TauCeti.TopCat.discGlue`. -/
 private def discGlueFun (hd : 0 < d) (A : C(P × closedBall (0 : EuclideanSpace ℝ (Fin k)) d, Y))
