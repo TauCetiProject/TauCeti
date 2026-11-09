@@ -30,6 +30,8 @@ This file supplies general constructions for Lie modules that are missing from M
 
 ## Main results
 
+* `LieIdeal.center_eq_bot_of_isCompl_center`: an ideal complementary to the centre is
+  centreless; this needs only a commutative base ring, with no finite-dimensionality assumption.
 * `LieModule.isIrreducible_compLieHom_of_eq_bot_or_eq_top`: an underlying-submodule dichotomy for
   a representation implies irreducibility of the induced Lie module.
 * `Module.Basis.repr_lie_eq_sum`: a Lie bracket coordinate is a weighted sum of bracket columns.
@@ -561,3 +563,31 @@ theorem ext_on_of_lieSpan_eq_top {R L L' M N : Type*} [CommRing R] [LieRing L]
   exact LinearMap.ext fun m => LinearMap.mem_eqLocus.mp (hle (LieSubmodule.mem_top m))
 
 end LinearMap
+
+namespace LieIdeal
+
+open LieAlgebra
+
+/-- An ideal complementary to the centre of a Lie algebra has zero centre. -/
+theorem center_eq_bot_of_isCompl_center {R L : Type*} [CommRing R] [LieRing L]
+    [LieAlgebra R L] (J : LieIdeal R L) (hcompl : IsCompl (LieAlgebra.center R L) J) :
+    LieAlgebra.center R J = ⊥ := by
+  rw [LieSubmodule.eq_bot_iff]
+  intro x hx
+  have hcx : (x : L) ∈ center R L := by
+    apply (LieModule.mem_maxTrivSubmodule R L L (x : L)).mpr
+    intro y
+    have hy : y ∈ center R L ⊔ J := by
+      rw [hcompl.sup_eq_top]
+      exact LieSubmodule.mem_top y
+    obtain ⟨c, hc, d, hd, rfl⟩ := (LieSubmodule.mem_sup (center R L) J y).mp hy
+    have hcbr : ⁅c, (x : L)⁆ = 0 := by
+      rw [← lie_skew c (x : L),
+        (LieModule.mem_maxTrivSubmodule R L L c).mp hc (x : L), neg_zero]
+    rw [add_lie, hcbr, zero_add]
+    have hdbr := (LieModule.mem_maxTrivSubmodule R J J x).mp hx (⟨d, hd⟩ : J)
+    simpa only [LieHom.map_lie, map_zero, LieIdeal.incl_apply] using congrArg J.incl hdbr
+  have hzero : (x : L) ∈ (⊥ : LieIdeal R L) := hcompl.disjoint.le_bot ⟨hcx, x.property⟩
+  exact Subtype.ext ((LieSubmodule.mem_bot _).mp hzero)
+
+end LieIdeal

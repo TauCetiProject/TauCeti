@@ -34,6 +34,8 @@ Killing form; that consequence is `TauCeti/Algebra/Lie/Killing/InvariantForm.lea
 
 ## Main results
 
+* `LinearMap.BilinForm.lieInvariant.compl₁₂`: pullback along a Lie homomorphism preserves
+  invariance.
 * `LinearMap.BilinForm.lieInvariant.apply_lie_cyclic`: a symmetric invariant form satisfies
   `Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c`.
 * `TauCeti.LieModule.traceForm_mem_invariantForms`: the trace form of a Lie module, in particular
@@ -56,6 +58,15 @@ Killing form; that consequence is `TauCeti/Algebra/Lie/Killing/InvariantForm.lea
 -/
 
 public section
+
+/-- Pullback along a Lie homomorphism preserves invariance of a bilinear form. -/
+theorem LinearMap.BilinForm.lieInvariant.compl₁₂ {R L L' : Type*} [CommRing R]
+    [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+    {B : LinearMap.BilinForm R L} (hB : B.lieInvariant L) (f : L' →ₗ⁅R⁆ L) :
+    LinearMap.BilinForm.lieInvariant L' (B.compl₁₂ f.toLinearMap f.toLinearMap) := by
+  intro x y z
+  simpa only [LinearMap.compl₁₂_apply, LieHom.map_lie, LieHom.coe_toLinearMap] using
+    hB (f x) (f y) (f z)
 
 open Module (Dual finrank)
 
