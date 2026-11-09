@@ -107,6 +107,29 @@ theorem CondIndepFun.exists_independent_coding
       rw [hprod]
     _ = μ.map fun ω => (Z ω, X ω, Y ω) := hcode
 
+omit [StandardBorelSpace Ω] in
+/-- If a randomization `f` realizes a nonzero finite law, its noise is a probability measure. -/
+private theorem isProbabilityMeasure_of_map_prod_eq {ξ : Type*} [MeasurableSpace ξ]
+    {μ : Measure Ω} [IsFiniteMeasure μ] (hμ : μ ≠ 0) {X : Ω → β} {Z : Ω → δ}
+    (hZ : Measurable Z) (hX : Measurable X) {ρ : Measure ξ} {f : δ → ξ → β}
+    (hf : Measurable (Function.uncurry f))
+    (hfX : ((μ.map Z).prod ρ).map (fun p => (p.1, f p.1 p.2)) = μ.map fun ω => (Z ω, X ω)) :
+    IsProbabilityMeasure ρ := by
+  have h := congrArg (fun m => m Set.univ) hfX
+  have hF : Measurable (fun p : δ × ξ => (p.1, f p.1 p.2)) := measurable_fst.prodMk hf
+  simp only [Measure.map_apply hF MeasurableSet.univ, Set.preimage_univ,
+    Measure.map_apply (hZ.prodMk hX) MeasurableSet.univ] at h
+  have hμu : μ Set.univ ≠ 0 := by simpa using hμ
+  by_cases hs : SFinite ρ
+  · have hprod := Measure.prod_prod (μ := μ.map Z) (ν := ρ) Set.univ Set.univ
+    rw [Set.univ_prod_univ, Measure.map_apply hZ MeasurableSet.univ, Set.preimage_univ] at hprod
+    rw [hprod] at h
+    refine ⟨(ENNReal.mul_right_inj hμu (measure_ne_top _ _)).1 ?_⟩
+    rw [mul_one]
+    exact h
+  · rw [Measure.prod_eq_zero_of_not_sfinite hs, FunLike.coe_zero, Pi.zero_apply] at h
+    exact absurd h.symm hμu
+
 /-- **Gluing conditionally independent codings.** Suppose `X` and `Y` are conditionally independent
 given `Z`, and each is realized, jointly with `Z`, by a measurable function of `Z` and an
 independent noise, with laws `ρ₁` and `ρ₂`. Then feeding independent noises into the two codings
@@ -118,13 +141,18 @@ theorem CondIndepFun.map_prod_prod_eq_of_map_prod_eq
     (hZ : Measurable Z)
     (h : CondIndepFun (MeasurableSpace.comap Z inferInstance) hZ.comap_le X Y μ)
     (hX : Measurable X) (hY : Measurable Y)
-    {ρ₁ : Measure ξ} {ρ₂ : Measure ζ} [IsProbabilityMeasure ρ₁] [IsProbabilityMeasure ρ₂]
+    {ρ₁ : Measure ξ} {ρ₂ : Measure ζ}
     {f : δ → ξ → β} {g : δ → ζ → γ}
     (hf : Measurable (Function.uncurry f)) (hg : Measurable (Function.uncurry g))
     (hfX : ((μ.map Z).prod ρ₁).map (fun p => (p.1, f p.1 p.2)) = μ.map fun ω => (Z ω, X ω))
     (hgY : ((μ.map Z).prod ρ₂).map (fun p => (p.1, g p.1 p.2)) = μ.map fun ω => (Z ω, Y ω)) :
     ((μ.map Z).prod (ρ₁.prod ρ₂)).map (fun p => (p.1, f p.1 p.2.1, g p.1 p.2.2)) =
       μ.map fun ω => (Z ω, X ω, Y ω) := by
+  -- For the zero measure both sides vanish; otherwise the noises are probability measures.
+  by_cases hμ : μ = 0
+  · simp [hμ]
+  have := isProbabilityMeasure_of_map_prod_eq hμ hZ hX hf hfX
+  have := isProbabilityMeasure_of_map_prod_eq hμ hZ hY hg hgY
   -- The randomizations realize the kernels `z ↦ ρ₁.map (f z)` and `z ↦ ρ₂.map (g z)`, which are
   -- therefore versions of the conditional distributions of `X` and `Y` given `Z`.
   let κ : Kernel δ β := ⟨fun z => ρ₁.map (f z),
@@ -237,6 +265,7 @@ theorem iCondIndepFun.map_prod_pi_eq_of_ae_map_eq
     simp_rw [hzmap]
   rw [hpush, Measure.pi_pi]
 
+omit [∀ i, Nonempty (β i)] in
 /-- **Gluing conditionally independent codings of a finite family.** Suppose a finite family is
 conditionally independent given `Z`, and each coordinate `X i` is realized, jointly with `Z`, by a
 measurable function of `Z` and an independent noise with law `ρ i`. Then feeding independent
@@ -253,6 +282,12 @@ theorem iCondIndepFun.map_prod_pi_eq_of_map_prod_eq
       μ.map fun ω => (Z ω, X i ω)) :
     ((μ.map Z).prod (Measure.pi ρ)).map (fun p => (p.1, fun i => f i p.1 (p.2 i))) =
       μ.map fun ω => (Z ω, fun i => X i ω) := by
+  -- For the zero measure both sides vanish; otherwise `Ω`, hence every `β i`, is nonempty.
+  by_cases hμ : μ = 0
+  · simp [hμ]
+  have : Nonempty Ω := (nonempty_of_measure_ne_zero (μ := μ) (s := Set.univ)
+    (by simpa using hμ)).to_type
+  have : ∀ i, Nonempty (β i) := fun i => ⟨X i (Classical.arbitrary Ω)⟩
   -- Each randomization realizes the kernel `z ↦ (ρ i).map (f i z)`, which is therefore a version
   -- of the conditional distribution of `X i` given `Z`.
   have hmap (i : ι) : ∀ᵐ z ∂μ.map Z, (ρ i).map (f i z) = condDistrib (X i) Z μ z := by
