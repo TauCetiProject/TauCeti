@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import Mathlib.RingTheory.LocalProperties.FinitePresentation
 public import Mathlib.RingTheory.Finiteness.Finsupp
 public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+public import TauCeti.AlgebraicGeometry.Modules.FiniteType
 
 /-!
 # Finite presentation of modules and their associated sheaves
@@ -18,7 +19,8 @@ public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 An `R`-module is finitely presented if and only if its associated sheaf on `Spec R` is finitely
 presented. More generally, the sections of a finitely presented sheaf over any affine open are
 a finitely presented module over its ring of functions. On an affine scheme, the sheaf admits
-a global presentation with finitely many generators and relations.
+a global presentation with finitely many generators and relations. The sheaf associated with a
+finite module is of finite type, as a quotient of the sheaf associated with a finite free module.
 
 The forward implication uses Mathlib's `presentationTilde`, whose generating and relation
 families are precisely those of the module presentation. For the converse, finite local sheaf
@@ -68,6 +70,16 @@ instance isFinitePresentation_tilde [Module.FinitePresentation R M] :
   let P := presentationTilde M (s : Set M) hs (t : Set (s →₀ R)) ht
   have : P.IsFinite := isFinite_presentationTilde M _ hs _ ht
   exact P.isFinitePresentation
+
+/-- The sheaf associated with a finite module is of finite type. -/
+instance isFiniteType_tilde [Module.Finite R M] : (tilde M).IsFiniteType := by
+  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R M
+  let F := ModuleCat.of R (Fin n → R)
+  let p : F ⟶ M := ModuleCat.ofHom f
+  have : Epi p := (ModuleCat.epi_iff_surjective p).2 hf
+  have : Epi (tilde.map p) := (tilde.functor R).map_epi p
+  have : (tilde F).IsFiniteType := SheafOfModules.instIsFiniteTypeOfIsFinitePresentation (tilde F)
+  exact Scheme.Modules.isFiniteType_of_epi (tilde.map p)
 
 /-- A finite global presentation on `Spec R` gives a finitely presented module of global
 sections over `R`. -/
