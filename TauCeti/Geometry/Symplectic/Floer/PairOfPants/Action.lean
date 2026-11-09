@@ -127,6 +127,32 @@ private theorem integral_symplecticForm_fderiv_truncation (ω : SymplecticForm V
     Complex.measurableEquivRealProd.measurableEmbedding _ _, hpre]
   rfl
 
+/-- The curvature of the pair-of-pants perturbation vanishes on `S` outside the truncation `S_R`
+for `R ≥ 2`, which contains the collars `1 ≤ ±s ≤ 2` of the ends. So along any map `u`, the
+integrated curvature over `S` is the integrated curvature over `S_R`. -/
+theorem setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_eq_truncation
+    (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (u : ℝ × ℝ → V) {R : ℝ} (hR : 2 ≤ R) :
+    ∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          z (u z) =
+      ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, ω.hamiltonianCurvature
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          z (u z) := by
+  refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
+    ((isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
+      (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)).measurableSet
+    (fun z hz ↦ ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩) fun z hz ↦ ?_
+  obtain ⟨q, hq⟩ : ∃ q : Puncture,
+      R < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re := by
+    by_contra! h
+    exact hz.2 (mem_truncation.2 ⟨hz.1.1, hz.1.2, h⟩)
+  exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs hz.1
+    (by linarith) _
+
 /-- **The energy identity on the truncated pair of pants, in terms of actions.** Let `K` be the
 pair-of-pants perturbation of period-one `C¹` Hamiltonians `H_q` on the three ends of
 `S = ℂ ∖ {0, 1}`, with components `K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)` in the global coordinate
@@ -155,27 +181,8 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_ha
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z) := by
-  -- The curvature vanishes on `S` outside `S_R`, which contains the collars of the ends.
-  have hcurv : ∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          z (u z) =
-      ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, ω.hamiltonianCurvature
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          z (u z) := by
-    refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
-      ((isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
-        (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)).measurableSet
-      (fun z hz ↦ ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩) fun z hz ↦ ?_
-    obtain ⟨q, hq⟩ : ∃ q : Puncture,
-        R < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re := by
-      by_contra! h
-      exact hz.2 (mem_truncation.2 ⟨hz.1.1, hz.1.2, h⟩)
-    exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs hz.1
-      (by linarith) _
-  rw [hcurv, integral_floerEnergyDensity_pairOfPantsPerturbation_truncation ω hH hHs
+  rw [setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_eq_truncation ω hH hHs u hR,
+    integral_floerEnergyDensity_pairOfPantsPerturbation_truncation ω hH hHs
       (hu.of_le one_le_two) (by linarith : (1 : ℝ) ≤ R),
     integral_symplecticForm_fderiv_truncation ω hu (by linarith),
     smoothTransition.one_of_one_le (by linarith : (1 : ℝ) ≤ R - 1), one_mul]

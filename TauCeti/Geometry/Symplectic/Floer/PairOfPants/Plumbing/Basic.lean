@@ -66,6 +66,8 @@ does not depend on `L`. The curvature of the neck itself vanishes, as the datum 
   the sum of bounds for the six end Hamiltonians of the two pairs of pants, uniformly in `L`;
   `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le` is the
   case of a symplectic vector space.
+* `TauCeti.SymplecticForm.abs_setIntegral_hamiltonianCurvature_plumbedPerturbation_le`: for a
+  symplectic vector space, the same bound for the integral of the curvature over any region.
 
 ## References
 
@@ -106,7 +108,7 @@ theorem contMDiffAt_plumbedPerturbation {n : ℕ∞} (hq : q ≠ inf)
 omit [TopologicalSpace M] [ChartedSpace G M] in
 /-- Near a point off the collar `Re z ≥ L - 2` of the end `q`, the plumbed perturbation is the
 perturbation of the receiving pair of pants. -/
-private theorem eventually_plumbedPerturbation_eq (hq : q ≠ inf) (hab : Hb q = Ha inf) {w : ℂ}
+theorem eventually_plumbedPerturbation_eq (hq : q ≠ inf) (hab : Hb q = Ha inf) {w : ℂ}
     (hw : w ≠ q.endCenter) (h : (q.endCoord w).re < L - 2) :
     ∀ᶠ w' in 𝓝 w, plumbedPerturbation Ha Hb q L w' = pairOfPantsPerturbation Hb w' := by
   filter_upwards [((q.contDiffAt_re_endCoord hw (n := 0)).continuousAt).eventually
@@ -117,7 +119,7 @@ omit [TopologicalSpace M] [ChartedSpace G M] in
 /-- Near a point off the collar `Re z ≤ 2 - L` of the end at `∞` of the inserted pair of pants,
 the pullback of the plumbed perturbation along the plumbing map is the perturbation of the
 inserted pair of pants. -/
-private theorem eventually_plumbedPerturbation_plumbingMap (hq : q ≠ inf) (hab : Hb q = Ha inf)
+theorem eventually_plumbedPerturbation_plumbingMap (hq : q ≠ inf) (hab : Hb q = Ha inf)
     {w : ℂ} (hw : w ≠ 0) (h : 2 - L < (inf.endCoord w).re) :
     ∀ᶠ w' in 𝓝 w, ∀ x v, plumbedPerturbation Ha Hb q L (q.plumbingMap L w') x
       (q.plumbingFactor L * v) = pairOfPantsPerturbation Ha w' x v := by
@@ -125,6 +127,20 @@ private theorem eventually_plumbedPerturbation_plumbingMap (hq : q ≠ inf) (hab
     (inf.contDiffAt_re_endCoord (by simpa using hw) (n := 0)).continuousAt
   filter_upwards [eventually_ne_nhds hw, hc.eventually (lt_mem_nhds h)] with w' hw' h' x v
   exact plumbedPerturbation_plumbingMap hq hab hw' h'.le x v
+
+/-- The plumbing map is smooth in real coordinates. -/
+theorem contDiff_realChart_plumbingMap (q : Puncture) (L : ℝ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (realChart (q.plumbingMap L)) := by
+  have hψ : q.plumbingMap L = fun w => q.endCenter + q.plumbingFactor L * w :=
+    funext (plumbingMap_apply q L)
+  exact contDiff_realChart (by rw [hψ]; fun_prop)
+
+/-- The plumbing map is injective in real coordinates. -/
+theorem injective_realChart_plumbingMap (q : Puncture) (L : ℝ) :
+    Injective (realChart (q.plumbingMap L)) := fun a b h ↦ by
+  rw [realChart_apply, realChart_apply] at h
+  exact Complex.equivRealProdCLM.symm.injective
+    (q.plumbingMap_injective L (Complex.equivRealProdCLM.injective h))
 
 end TauCeti.Floer
 
@@ -135,18 +151,6 @@ open Floer MeasureTheory
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
   {Ha Hb : Puncture → ℝ → M → ℝ} {q : Puncture} {L : ℝ}
-
-private theorem contDiff_realChart_plumbingMap (q : Puncture) (L : ℝ) {n : WithTop ℕ∞} :
-    ContDiff ℝ n (realChart (q.plumbingMap L)) := by
-  have hψ : q.plumbingMap L = fun w => q.endCenter + q.plumbingFactor L * w :=
-    funext (plumbingMap_apply q L)
-  exact contDiff_realChart (by rw [hψ]; fun_prop)
-
-private theorem injective_realChart_plumbingMap (q : Puncture) (L : ℝ) :
-    Injective (realChart (q.plumbingMap L)) := fun a b h ↦ by
-  rw [realChart_apply, realChart_apply] at h
-  exact Complex.equivRealProdCLM.symm.injective
-    (q.plumbingMap_injective L (Complex.equivRealProdCLM.injective h))
 
 /-- At points other than the four punctures, the components of the plumbed perturbation of `C¹`
 Hamiltonians are differentiable in the domain point. -/
@@ -418,5 +422,30 @@ theorem lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le (ω : Symple
   simpa using ω.constSmooth.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le hq hHa hHb
     (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHas r).contMDiff)
     (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hab hL hBa hBb u
+
+/-- **The integrated curvature of the plumbed perturbation over any region.** For period-one `C¹`
+Hamiltonians on a symplectic vector space with `|Ha r| ≤ Ba r` and `|Hb r| ≤ Bb r`, every map `u`
+into it and every set `s` of the plane, the integral of the curvature `R_K(z, u(z))` of the plumbed
+perturbation over `s` is at most `∑ r, Ba r + ∑ r, Bb r` in absolute value, for every neck length
+`L > 4`. -/
+theorem abs_setIntegral_hamiltonianCurvature_plumbedPerturbation_le (ω : SymplecticForm V)
+    (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) {Ba Bb : Puncture → ℝ}
+    (hBa : ∀ r t x, |Ha r t x| ≤ Ba r) (hBb : ∀ r t x, |Hb r t x| ≤ Bb r) (u : ℝ × ℝ → V)
+    (s : Set (ℝ × ℝ)) :
+    |∫ z in s, ω.hamiltonianCurvature
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)| ≤ ∑ r, Ba r + ∑ r, Bb r := by
+  have hBa₀ (r : Puncture) : 0 ≤ Ba r := (abs_nonneg _).trans (hBa r 0 (u 0))
+  have hBb₀ (r : Puncture) : 0 ≤ Bb r := (abs_nonneg _).trans (hBb r 0 (u 0))
+  rw [← ENNReal.ofReal_le_ofReal_iff (add_nonneg (Finset.sum_nonneg fun r _ ↦ hBa₀ r)
+      (Finset.sum_nonneg fun r _ ↦ hBb₀ r)), ← Real.enorm_eq_ofReal_abs,
+    ENNReal.ofReal_add (Finset.sum_nonneg fun r _ ↦ hBa₀ r) (Finset.sum_nonneg fun r _ ↦ hBb₀ r),
+    ENNReal.ofReal_sum_of_nonneg fun r _ ↦ hBa₀ r, ENNReal.ofReal_sum_of_nonneg fun r _ ↦ hBb₀ r]
+  exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
+    (ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le hq hHa hHb hHas hHbs hab hL hBa
+      hBb u))
 
 end TauCeti.SymplecticForm
