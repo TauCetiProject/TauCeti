@@ -15,6 +15,7 @@ import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.SpecialFunctions.Integrability.Rpow
 import TauCeti.Analysis.Sobolev.Local.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
@@ -70,30 +71,6 @@ theorem memWkpLoc_one_norm : MemWkpLoc p U 1 (fun z : ℂ => ‖z‖) :=
   lipschitzWith_one_norm.memWkpLoc_one
 
 /-! ### The norm is not in `W^{2,p}` for `p ≥ 2` -/
-
-/-- The derivative of the norm, as a map into `ℂ →L[ℝ] ℝ`, has derivative of norm at least
-`‖z‖⁻¹` away from the origin: by the Hessian formula for `‖·‖ ^ p` with `p = 1`, it takes the
-value `‖z‖` on the tangential direction `I * z` twice. -/
-private theorem inv_norm_le_norm_fderiv_fderiv_norm {z : ℂ} (hz : z ≠ 0) :
-    ‖z‖⁻¹ ≤ ‖fderiv ℝ (fderiv ℝ fun y : ℂ => ‖y‖) z‖ := by
-  set v : ℂ := Complex.I * z
-  have hv : ‖v‖ = ‖z‖ := by simp [v]
-  have hzv : inner ℝ z v = 0 := by
-    simp only [v, Complex.inner, Complex.mul_re, Complex.mul_im, Complex.I_re, Complex.I_im,
-      Complex.conj_re, Complex.conj_im]
-    ring
-  have hz0 : 0 < ‖z‖ := norm_pos_iff.2 hz
-  have hH := iteratedFDeriv_two_norm_rpow_apply 1 hz v v
-  simp only [Real.rpow_one, iteratedFDeriv_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one, hzv, mul_zero, zero_add, one_mul, real_inner_self_eq_norm_sq,
-    hv] at hH
-  have hvv : fderiv ℝ (fderiv ℝ fun y : ℂ => ‖y‖) z v v = ‖z‖ := by
-    rw [hH, show (1 : ℝ) - 2 = -1 by norm_num, Real.rpow_neg_one]
-    field_simp
-  have hle := (fderiv ℝ (fderiv ℝ fun y : ℂ => ‖y‖) z).le_opNorm₂ v v
-  rw [hvv, Real.norm_of_nonneg hz0.le, hv, mul_assoc] at hle
-  rw [inv_le_iff_one_le_mul₀ hz0]
-  nlinarith
 
 /-- The norm `z ↦ ‖z‖` is not in the local class `W^{2,p}` on any set whose interior contains the
 origin, for `p ≥ 2`. Its second weak derivative has size `‖z‖⁻¹`, and `‖z‖ ^ (-2)` is not
@@ -156,7 +133,11 @@ theorem not_memWkpLoc_two_norm (hp : 2 ≤ p) (h0 : (0 : ℂ) ∈ interior U) :
       ← Real.inv_rpow (norm_nonneg z)]
     refine Real.rpow_le_rpow (by positivity) ?_ (by norm_num)
     rw [norm_norm]
-    exact inv_norm_le_norm_fderiv_fderiv_norm hz0
+    -- The tangential direction `I * z` is orthogonal to `z`.
+    refine inv_norm_le_norm_fderiv_fderiv_norm hz0 (mul_ne_zero Complex.I_ne_zero hz0) ?_
+    simp only [Complex.inner, Complex.mul_re, Complex.mul_im, Complex.I_re, Complex.I_im,
+      Complex.conj_re, Complex.conj_im]
+    ring
   have := (integrableOn_norm_rpow_ball_iff (E := ℂ) (mu := volume) (s := -2)
     (half_pos hr)).1 hsing
   simp [Complex.finrank_real_complex] at this
@@ -281,64 +262,19 @@ theorem not_memWkpLoc_indicator_re_pos {k : ℕ} {z₀ : ℂ} (hz₀ : z₀ ∈ 
 
 /-! ### A square-root profile on the half-disc -/
 
-/-- The derivative of `z ↦ √z.im` in the open upper half-plane. -/
-private theorem hasFDerivAt_sqrt_im {z : ℂ} (hz : 0 < z.im) :
-    HasFDerivAt (fun y : ℂ => √y.im) ((1 / (2 * √z.im)) • Complex.imCLM) z := by
-  simpa [Function.comp_def] using
-    (Real.hasDerivAt_sqrt hz.ne').comp_hasFDerivAt z Complex.imCLM.hasFDerivAt
-
-private theorem continuous_sqrt_im : Continuous fun z : ℂ => √z.im := by fun_prop
-
 /-- The open upper half-plane. -/
 private def openUpperHalfPlane : Opens ℂ := ⟨{z | 0 < z.im}, isOpen_lt continuous_const
   Complex.continuous_im⟩
 
-private theorem continuousOn_sqrt_im_deriv :
-    ContinuousOn (fun z : ℂ => (1 / (2 * √z.im)) • Complex.imCLM) (openUpperHalfPlane : Set ℂ) := by
-  refine ContinuousOn.smul (ContinuousOn.div continuousOn_const
-    (continuous_const.mul (Real.continuous_sqrt.comp Complex.continuous_im)).continuousOn
-    fun z hz => ?_) continuousOn_const
-  have hz : 0 < z.im := hz
-  exact mul_ne_zero two_ne_zero (Real.sqrt_pos.2 hz).ne'
-
 private theorem hasWeakFDerivOn_sqrt_im :
     HasWeakFDerivOn volume openUpperHalfPlane (fun z : ℂ => √z.im)
-      (fun z => (1 / (2 * √z.im)) • Complex.imCLM) :=
-  hasWeakFDerivOn_of_hasFDerivAt_off_countable countable_empty continuous_sqrt_im.continuousOn
-    (continuousOn_sqrt_im_deriv.locallyIntegrableOn openUpperHalfPlane.isOpen.measurableSet)
-    fun _ hz => hasFDerivAt_sqrt_im hz.1
-
-private theorem norm_sqrt_im_deriv (z : ℂ) :
-    ‖(1 / (2 * √z.im)) • Complex.imCLM‖ = ‖1 / (2 * √z.im)‖ := by
-  rw [norm_smul, Complex.imCLM_norm, mul_one]
-
-/-- The function `t ↦ (2 √t)⁻¹` is in `Lᵖ(0, c)` for `p < 2`. -/
-private theorem memLp_inv_two_sqrt (hp : p < 2) {c : ℝ} (hc : 0 < c) :
-    MemLp (fun t : ℝ => 1 / (2 * √t)) p (volume.restrict (Icc 0 c)) := by
-  have : IsFiniteMeasure (volume.restrict (Icc (0 : ℝ) c)) := ⟨by simp⟩
-  set q : ENNReal := max p 1
-  have hq1 : 1 ≤ q := le_max_right _ _
-  have hq2 : q < 2 := max_lt hp ENNReal.one_lt_two
-  have hqtop : q ≠ ⊤ := ne_top_of_lt hq2
-  have hr2 : q.toReal < 2 := by
-    simpa using (ENNReal.toReal_lt_toReal hqtop (by simp)).2 hq2
-  have hr0 : 0 ≤ q.toReal := ENNReal.toReal_nonneg
-  refine MemLp.mono_exponent ?_ (le_max_left p 1)
-  have hmeas : AEStronglyMeasurable (fun t : ℝ => 1 / (2 * √t)) (volume.restrict (Icc 0 c)) :=
-    (by fun_prop : Measurable fun t : ℝ => 1 / (2 * √t)).aestronglyMeasurable
-  refine (integrable_norm_rpow_iff hmeas (zero_lt_one.trans_le hq1).ne' hqtop).1 ?_
-  rw [← IntegrableOn, integrableOn_Icc_iff_integrableOn_Ioo]
-  have hpow : IntegrableOn (fun t : ℝ => t ^ (-(q.toReal / 2))) (Ioo 0 c) :=
-    (intervalIntegral.integrableOn_Ioo_rpow_iff hc).2 (by linarith)
-  refine (integrableOn_congr_fun (fun t ht => ?_) measurableSet_Ioo).1
-    (hpow.const_mul ((1 / 2 : ℝ) ^ q.toReal))
-  have ht0 : 0 < t := ht.1
-  rw [Real.norm_of_nonneg (by positivity), Real.sqrt_eq_rpow]
-  conv_rhs => rw [Real.div_rpow zero_le_one (by positivity), Real.one_rpow,
-    Real.mul_rpow zero_le_two (by positivity), ← Real.rpow_mul ht0.le]
-  rw [Real.div_rpow zero_le_one zero_le_two, Real.one_rpow, Real.rpow_neg ht0.le,
-    show (1 / 2 : ℝ) * q.toReal = q.toReal / 2 by ring]
-  field_simp
+      (fun z => (1 / (2 * √z.im)) • Complex.imCLM) := by
+  have hD : ContinuousOn (fun z : ℂ => (1 / (2 * √z.im)) • Complex.imCLM) {z | 0 < z.im} := by
+    fun_prop (disch := exact fun z hz => mul_ne_zero two_ne_zero (Real.sqrt_pos.2 hz).ne')
+  exact hasWeakFDerivOn_of_hasFDerivAt_off_countable countable_empty
+    (by fun_prop : Continuous fun z : ℂ => √z.im).continuousOn
+    (hD.locallyIntegrableOn openUpperHalfPlane.isOpen.measurableSet)
+    fun z hz => Complex.imCLM.hasFDerivAt.sqrt hz.1.ne'
 
 /-- On the closed upper half-disc `ball 0 1 ∩ {z | 0 ≤ z.im}`, the map `z ↦ √z.im` is in the
 local class `W^{1,p}` exactly when `p < 2`. The `Lᵖ` bounds are imposed on compact sets reaching
@@ -381,7 +317,7 @@ theorem memWkpLoc_sqrt_im_iff :
     have hgK : MemLp (fun z : ℂ => 1 / (2 * √z.im)) 2 (volume.restrict K) :=
       (hD'2.ae_eq haeK).congr_norm
         (by fun_prop : Measurable fun z : ℂ => 1 / (2 * √z.im)).aestronglyMeasurable
-        (Eventually.of_forall fun z => norm_sqrt_im_deriv z)
+        (Eventually.of_forall fun z => by rw [norm_smul, Complex.imCLM_norm, mul_one])
     have hiK := (integrable_norm_rpow_iff hgK.aestronglyMeasurable two_ne_zero
       ENNReal.ofNat_ne_top).2 hgK
     have hg : IntegrableOn (fun t : ℝ => ‖1 / (2 * √t)‖ ^ (2 : ENNReal).toReal)
@@ -399,21 +335,35 @@ theorem memWkpLoc_sqrt_im_iff :
     have := (intervalIntegral.integrableOn_Ioo_rpow_iff (by norm_num : (0 : ℝ) < 1 / 4)).1 hinv
     linarith
   · intro hp
-    refine memWkpLoc_succ_iff.2 ⟨continuous_sqrt_im.continuousOn.memLpLoc, D, hDU,
-      memWkpLoc_zero_iff.2 (memLpLoc_iff.2 fun K hKU hK => ?_)⟩
+    refine memWkpLoc_succ_iff.2
+      ⟨(by fun_prop : Continuous fun z : ℂ => √z.im).continuousOn.memLpLoc, D, hDU,
+        memWkpLoc_zero_iff.2 (memLpLoc_iff.2 fun K hKU hK => ?_)⟩
     have hKR : K ⊆ Icc (-1) 1 ×ℂ Icc 0 1 := fun z hz => by
       have hz1 : ‖z‖ < 1 := mem_ball_zero_iff.1 (hKU hz).1
       have hre := (Complex.abs_re_le_norm z).trans hz1.le
       have him := (Complex.abs_im_le_norm z).trans hz1.le
       exact ⟨abs_le.1 hre, (hKU hz).2, (abs_le.1 him).2⟩
     have : IsFiniteMeasure (volume.restrict (Icc (-1 : ℝ) 1)) := ⟨by simp⟩
+    have hp' : p ≠ ⊤ := ne_top_of_lt hp
+    have hp2 : p.toReal < 2 := by
+      simpa using (ENNReal.toReal_lt_toReal hp' (by simp)).2 hp
+    -- The derivative profile `t ↦ (2 √t)⁻¹` is in `Lᵖ(0, 1)` for `p < 2`.
+    have hsq : MemLp (fun t : ℝ => 1 / (2 * √t)) p (volume.restrict (Icc 0 1)) := by
+      rw [Measure.restrict_congr_set Ioo_ae_eq_Icc.symm]
+      refine ((memLp_rpow_neg_restrict_Ioo one_pos hp' (by linarith : 1 / 2 * p.toReal < 1))
+        |>.const_mul (1 / 2)).ae_eq
+        ((ae_restrict_iff' measurableSet_Ioo).2 (Eventually.of_forall fun t ht => ?_))
+      dsimp only
+      rw [Real.sqrt_eq_rpow, Real.rpow_neg ht.1.le]
+      field_simp
     have hR : MemLp (fun z : ℂ => 1 / (2 * √z.im)) p
         (volume.restrict (Icc (-1) 1 ×ℂ Icc 0 1)) :=
-      ((memLp_inv_two_sqrt hp one_pos).comp_snd (volume.restrict (Icc (-1 : ℝ) 1)))
+      (hsq.comp_snd (volume.restrict (Icc (-1 : ℝ) 1)))
         |>.comp_measurePreserving
           (Complex.measurePreserving_measurableEquivRealProd_reProdIm measurableSet_Icc
             measurableSet_Icc)
-    refine (hR.congr_norm ?_ (Eventually.of_forall fun z => (norm_sqrt_im_deriv z).symm))
+    refine (hR.congr_norm ?_ (Eventually.of_forall fun z => by
+      rw [norm_smul, Complex.imCLM_norm, mul_one]))
       |>.mono_measure (Measure.restrict_mono hKR le_rfl)
     exact ((by fun_prop : Measurable fun z : ℂ => 1 / (2 * √z.im)).smul_const
       Complex.imCLM).aestronglyMeasurable
@@ -425,9 +375,10 @@ exponent, although it extends continuously to the real axis. Together with
 theorem memWkpLoc_sqrt_im_ball_inter_im_pos :
     MemWkpLoc p (ball (0 : ℂ) 1 ∩ {z | 0 < z.im}) 1 (fun z : ℂ => √z.im) := by
   set V : Set ℂ := ball (0 : ℂ) 1 ∩ {z | 0 < z.im}
-  refine memWkpLoc_succ_iff.2 ⟨continuous_sqrt_im.continuousOn.memLpLoc, _,
-    hasWeakFDerivOn_sqrt_im.mono fun z hz => (interior_subset (s := V) hz).2,
-    memWkpLoc_zero_iff.2 (continuousOn_sqrt_im_deriv.mono fun z hz => ?_).memLpLoc⟩
-  exact (hz : z ∈ V).2
+  refine memWkpLoc_succ_iff.2
+    ⟨(by fun_prop : Continuous fun z : ℂ => √z.im).continuousOn.memLpLoc, _,
+      hasWeakFDerivOn_sqrt_im.mono fun z hz => (interior_subset (s := V) hz).2,
+      memWkpLoc_zero_iff.2 (ContinuousOn.memLpLoc ?_)⟩
+  fun_prop (disch := exact fun z hz => mul_ne_zero two_ne_zero (Real.sqrt_pos.2 hz.2).ne')
 
 end TauCeti
