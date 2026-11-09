@@ -592,6 +592,8 @@ theorem conormalContMDiffVectorBundle {i : Q → M} (hi : ContMDiff J I m i) (hm
   let := FiberBundle.pullback (F := E →L[𝕜] 𝕜) (E := T') ic
   let := VectorBundle.pullback (𝕜 := 𝕜) (F := E →L[𝕜] 𝕜) (E := T') ic
   let := ContMDiffVectorBundle.pullback (E →L[𝕜] 𝕜) T' J ic
+  -- The frame criterion allows a scalar extension; here it is the trivial one over `𝕜`.
+  have : ∀ q, IsScalarTower 𝕜 𝕜 ((ic *ᵖ T') q) := fun _ ↦ IsScalarTower.left 𝕜
   exact (hasLocalContMDiffSubbundleFrames_conormalSpace hi hmn hinj hk).contMDiffVectorBundle
 
 /-- **The canonical inclusion `conormalInclusion` of the conormal bundle into `T*M` is `C^n`.** -/

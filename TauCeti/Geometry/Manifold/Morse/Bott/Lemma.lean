@@ -80,8 +80,7 @@ private theorem ker_fderiv_fderiv_comp_le_range_inl (hi : i.IsNondegenerateCriti
   have hcritx : mvfderiv I f (i s) = 0 := mem_criticalPoints.mp (hi.mem_criticalPoints s)
   have hQ0 : fderiv ℝ (f ∘ (e.extend I).symm) (L (a, 0)) = 0 := by
     rw [← hxL]
-    exact (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero he1 hx
-      (hfx.mdifferentiableAt two_ne_zero)).mp hcritx
+    exact (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero he1 hx).mp hcritx
   have hQ2 : ContDiffAt ℝ 2 (f ∘ (e.extend I).symm) (L (a, 0)) := by
     rw [← hxL]
     exact (contMDiffAt_iff_contDiffAt_comp_extend_symm he hx).mp hfx
@@ -215,9 +214,8 @@ theorem exists_morseBott_chart (hi : i.IsNondegenerateCriticalSubmanifold f)
   -- The zero section consists of critical points of `g`.
   have hcrit_g {b : E'} (hb : b ∈ φ.target) : fderiv ℝ g (b, 0) = 0 := by
     obtain ⟨hy, hw, -, -⟩ := hsec hb
-    have hdiff := (hi.contMDiffAt (φ.symm b)).mdifferentiableAt two_ne_zero
     have hzero : fderiv ℝ (f ∘ ξ.symm) (ξ (i (φ.symm b))) = 0 :=
-      (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero he1 hy hdiff).mp
+      (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero he1 hy).mp
         (mem_criticalPoints.mp (hi.mem_criticalPoints (φ.symm b)))
     rw [hg, ← comp_assoc, L.comp_right_fderiv, ← hw, hzero, ContinuousLinearMap.zero_comp]
   have hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ g (b, 0) = 0 :=
