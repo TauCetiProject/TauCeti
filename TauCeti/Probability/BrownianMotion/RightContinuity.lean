@@ -56,10 +56,10 @@ theorem indep_shift_rightCont_natural (hW : IsBrownianReal W P)
     apply Indep.symm
     refine indep_comap_of_ae_tendsto (X := fun n ω (v : I) =>
         W (u n + v) ω - W (u n) ω) (ℱ.rightCont.le s)
-      (fun n => (measurable_pi_iff.2 fun (v : I) =>
-        (hmeas (u n + v)).measurable.sub (hmeas (u n)).measurable).aemeasurable)
-      (measurable_pi_iff.2 fun (v : I) =>
-        (hmeas (s + v)).measurable.sub (hmeas s).measurable).aemeasurable ?_ ?_
+      (fun n => (I.measurable_restrict.comp
+        (TauCeti.measurable_shift_sub (fun t => (hmeas t).measurable) (u n))).aemeasurable)
+      (I.measurable_restrict.comp
+        (TauCeti.measurable_shift_sub (fun t => (hmeas t).measurable) s)).aemeasurable ?_ ?_
     · intro n
       have hfull : Indep (MeasurableSpace.comap
           (fun ω v => W (u n + v) ω - W (u n) ω) inferInstance) (ℱ (u n)) P := by
@@ -79,7 +79,8 @@ theorem indep_shift_rightCont_natural (hW : IsBrownianReal W P)
   · intro I
     simpa only [MeasurableSpace.comap_process_pi, iSup_subtype'] using hfinite I
   · intro I
-    exact iSup₂_le fun v _ => ((hmeas (s + v)).measurable.sub (hmeas s).measurable).comap_le
+    exact iSup₂_le fun v _ =>
+      ((TauCeti.measurable_shift_sub (fun t => (hmeas t).measurable) s).eval (a := v)).comap_le
   · exact ℱ.rightCont.le s
   · exact fun I J hIJ => iSup_le_iSup_of_subset hIJ
 
@@ -96,7 +97,7 @@ theorem rightCont_natural_le_nullAugment (hW : IsBrownianReal W P)
   -- Restore the ambient instance: mFuture is also eligible for measurable-space synthesis.
   let : MeasurableSpace Ω := mΩ
   have hfuture : mFuture ≤ mΩ :=
-    (measurable_pi_iff.2 fun v => (hmeas (s + v)).measurable.sub (hmeas s).measurable).comap_le
+    (TauCeti.measurable_shift_sub (fun t => (hmeas t).measurable) s).comap_le
   have hle : ℱ.rightCont s ≤ ℱ s ⊔ mFuture :=
     (ℱ.rightCont_le_of_lt (lt_add_one s)).trans
       (Filtration.natural_le_sup_comap_shift W hmeas s (s + 1))

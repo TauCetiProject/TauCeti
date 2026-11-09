@@ -31,6 +31,18 @@ noncomputable section
 open TopologicalSpace
 open scoped NNReal
 
+namespace TauCeti
+
+/-- Coordinatewise measurability makes the whole future-increment process measurable.
+No probability law or path regularity is required. -/
+theorem measurable_shift_sub {Ω ι E : Type*} [MeasurableSpace Ω] [Add ι]
+    [MeasurableSpace E] [Sub E] [MeasurableSub₂ E] {W : ι → Ω → E}
+    (hmeas : ∀ t, Measurable (W t)) (s : ι) :
+    Measurable (fun ω v => W (s + v) ω - W s ω) :=
+  measurable_pi_iff.2 fun v => (hmeas (s + v)).sub (hmeas s)
+
+end TauCeti
+
 namespace MeasureTheory.Filtration
 
 variable {Ω ι : Type*} {m : MeasurableSpace Ω}
