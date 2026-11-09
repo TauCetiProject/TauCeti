@@ -84,6 +84,36 @@ private theorem contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add {G f : �
       conjWirtingerDeriv_add haz (hKz.restrictScalars ℝ), hKz.conjWirtingerDeriv_eq_zero,
       add_zero, haf z hzV]
 
+/-- Telescoping step: if consecutive differences `h (k + 1) - h k` are holomorphic on the growing
+balls `ball c (r k)` and are approximated within `2⁻ᵏ` on `closedBall c (r k)` by entire functions
+`P k`, then on `ball c (r m)` the corrected limit `h 0 + ∑' k, (h (k + 1) - h k - P k)` is `h m`
+plus a holomorphic function. -/
+private theorem exists_differentiableOn_eqOn_add_tsum {h P : ℕ → ℂ → W} {c : ℂ} {r : ℕ → ℝ}
+    (hr : Monotone r) (hP : ∀ k, Differentiable ℂ (P k))
+    (hdiff : ∀ k, DifferentiableOn ℂ (h (k + 1) - h k) (ball c (r k)))
+    (hP_lt : ∀ k, ∀ z ∈ closedBall c (r k), ‖(h (k + 1) - h k) z - P k z‖ < (1 / 2 : ℝ) ^ k)
+    (m : ℕ) : ∃ K : ℂ → W, DifferentiableOn ℂ K (ball c (r m)) ∧
+      EqOn (fun z ↦ h 0 z + ∑' k, (h (k + 1) - h k - P k) z) (h m + K) (ball c (r m)) := by
+  set e : ℕ → ℂ → W := fun k ↦ h (k + 1) - h k - P k
+  have he_le {k : ℕ} (hmk : m ≤ k) {z : ℂ} (hz : z ∈ ball c (r m)) :
+      ‖e k z‖ ≤ (1 / 2 : ℝ) ^ k :=
+    (hP_lt k z (closedBall_subset_closedBall (hr hmk) (ball_subset_closedBall hz))).le
+  have hsumm : Summable fun k ↦ (1 / 2 : ℝ) ^ (k + m) :=
+    (summable_nat_add_iff m).2 summable_geometric_two
+  refine ⟨fun z ↦ ∑' k, e (k + m) z - ∑ k ∈ Finset.range m, P k z, ?_, fun z hz ↦ ?_⟩
+  · refine DifferentiableOn.sub ?_ (DifferentiableOn.fun_sum fun k _ ↦ (hP k).differentiableOn)
+    refine differentiableOn_tsum_of_summable_norm hsumm (fun k ↦ ?_) isOpen_ball
+      fun k z hz ↦ he_le (Nat.le_add_left m k) hz
+    exact ((hdiff (k + m)).sub (hP (k + m)).differentiableOn).mono
+      (ball_subset_ball (hr (Nat.le_add_left m k)))
+  · have hs : Summable fun k ↦ e k z := (summable_nat_add_iff m).1 <|
+      .of_norm_bounded hsumm fun k ↦ he_le (Nat.le_add_left m k) hz
+    have htel : ∑ k ∈ Finset.range m, e k z = h m z - h 0 z - ∑ k ∈ Finset.range m, P k z := by
+      simp only [e, Pi.sub_apply, Finset.sum_sub_distrib, Finset.sum_range_sub fun k ↦ h k z]
+    simp only [Pi.add_apply]
+    rw [← hs.sum_add_tsum_nat_add m, htel]
+    abel
+
 /-- **The Dolbeault lemma on a disc.** Let `f` be `Cⁿ`, `n ≥ 1`, on the open disc `eball c R`
 of radius `R ≤ ∞`. Then there is a function `g`, `Cⁿ` on the disc, with `\bar∂ g = f` on the
 disc. -/
@@ -129,29 +159,12 @@ theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_eball {f : ℂ → 
       ∀ z ∈ closedBall c (r k), ‖(h (k + 1) - h k) z - P z‖ < (1 / 2 : ℝ) ^ k :=
     (hdiff k).exists_differentiable_norm_sub_lt (hrs k) (by positivity)
   choose P hP hP_lt using happrox
-  set e : ℕ → ℂ → W := fun k ↦ h (k + 1) - h k - P k
-  have he_le {m k : ℕ} (hmk : m ≤ k) {z : ℂ} (hz : z ∈ ball c (r m)) :
-      ‖e k z‖ ≤ (1 / 2 : ℝ) ^ k :=
-    (hP_lt k z (closedBall_subset_closedBall (hr_mono.monotone hmk)
-      (ball_subset_closedBall hz))).le
-  have hsumm (m : ℕ) : Summable fun k ↦ (1 / 2 : ℝ) ^ (k + m) :=
-    (summable_nat_add_iff m).2 summable_geometric_two
   -- On `ball c (r m)`, the limit is `h m` plus a holomorphic function.
-  set G : ℂ → W := fun z ↦ h 0 z + ∑' k, e k z
+  set G : ℂ → W := fun z ↦ h 0 z + ∑' k, (h (k + 1) - h k - P k) z
   have hkey (m : ℕ) : ∃ K : ℂ → W, DifferentiableOn ℂ K (ball c (r m)) ∧
-      EqOn G (h m + K) (ball c (r m)) := by
-    refine ⟨fun z ↦ ∑' k, e (k + m) z - ∑ k ∈ Finset.range m, P k z, ?_, fun z hz ↦ ?_⟩
-    · refine DifferentiableOn.sub ?_ (DifferentiableOn.fun_sum fun k _ ↦ (hP k).differentiableOn)
-      refine differentiableOn_tsum_of_summable_norm (hsumm m) (fun k ↦ ?_) isOpen_ball
-        fun k z hz ↦ he_le (Nat.le_add_left m k) hz
-      exact ((hdiff (k + m)).sub (hP (k + m)).differentiableOn).mono (ball_subset_ball
-        ((hr_mono.monotone (Nat.le_add_left m k)).trans (hrs (k + m)).le))
-    · have hs : Summable fun k ↦ e k z := (summable_nat_add_iff m).1 <|
-        .of_norm_bounded (hsumm m) fun k ↦ he_le (Nat.le_add_left m k) hz
-      have htel : ∑ k ∈ Finset.range m, e k z = h m z - h 0 z - ∑ k ∈ Finset.range m, P k z := by
-        simp only [e, Pi.sub_apply, Finset.sum_sub_distrib, Finset.sum_range_sub fun k ↦ h k z]
-      simp only [G, Pi.add_apply, ← hs.sum_add_tsum_nat_add m, htel]
-      abel
+      EqOn G (h m + K) (ball c (r m)) :=
+    exists_differentiableOn_eqOn_add_tsum hr_mono.monotone hP
+      (fun k ↦ (hdiff k).mono (ball_subset_ball (hrs k).le)) hP_lt m
   -- Every point of the disc lies in some `ball c (r m)`, where `\bar∂ (h m) = f`.
   refine ⟨G, contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add hn fun z hz ↦ ?_⟩
   obtain ⟨m, hm⟩ := (hu_lim.eventually (lt_mem_nhds hz)).exists
