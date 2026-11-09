@@ -10,8 +10,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.Analysis.Complex.AbsMax
 import Mathlib.Analysis.Complex.OpenMapping
-import Mathlib.Analysis.SpecialFunctions.Complex.Arg
-import Mathlib.Topology.Order.DenselyOrdered
+import TauCeti.Analysis.Complex.Annulus.Basic
 
 /-!
 # Kernel and adjoint kernel of the Cauchy–Riemann operator on the annulus with real boundary values
@@ -57,76 +56,6 @@ public section
 open Complex Set Metric Module
 
 namespace TauCeti.Complex
-
-/-- The open annulus `ball 0 r₂ \ closedBall 0 r₁` is the set of points with norm in
-`Ioo r₁ r₂`. -/
-private theorem ball_diff_closedBall_eq_preimage (r₁ r₂ : ℝ) :
-    ball (0 : ℂ) r₂ \ closedBall 0 r₁ = norm ⁻¹' Ioo r₁ r₂ := by
-  ext z
-  simp only [mem_sdiff, mem_ball_zero_iff, mem_closedBall_zero_iff, not_le, mem_preimage,
-    mem_Ioo]
-  exact and_comm
-
-/-- The closed annulus `closedBall 0 r₂ \ ball 0 r₁` is the set of points with norm in
-`Icc r₁ r₂`. -/
-private theorem closedBall_diff_ball_eq_preimage (r₁ r₂ : ℝ) :
-    closedBall (0 : ℂ) r₂ \ ball 0 r₁ = norm ⁻¹' Icc r₁ r₂ := by
-  ext z
-  simp only [mem_sdiff, mem_ball_zero_iff, mem_closedBall_zero_iff, not_lt, mem_preimage,
-    mem_Icc]
-  exact and_comm
-
-/-- Polar coordinates `(r, θ) ↦ r e^{iθ}` map `S × ℝ` onto the set of points with norm in `S`,
-for any set `S` of nonnegative radii. -/
-private theorem image_polar_prod_univ {S : Set ℝ} (hS : S ⊆ Ici 0) :
-    (fun p : ℝ × ℝ => (p.1 : ℂ) * exp (p.2 * I)) '' (S ×ˢ univ) = norm ⁻¹' S := by
-  ext z
-  constructor
-  · rintro ⟨⟨r, θ⟩, ⟨hr, -⟩, rfl⟩
-    rw [mem_preimage, norm_mul, norm_exp_ofReal_mul_I, mul_one, norm_real, Real.norm_eq_abs,
-      abs_of_nonneg (hS hr)]
-    exact hr
-  · intro hz
-    exact ⟨(‖z‖, arg z), ⟨hz, mem_univ _⟩, norm_mul_exp_arg_mul_I z⟩
-
-/-- Polar coordinates are continuous. -/
-private theorem continuous_polar :
-    Continuous fun p : ℝ × ℝ => (p.1 : ℂ) * exp (p.2 * I) := by
-  fun_prop
-
-/-- The open annulus is connected. -/
-theorem isPreconnected_ball_diff_closedBall {r₁ : ℝ} (hr₁ : 0 ≤ r₁) (r₂ : ℝ) :
-    IsPreconnected (ball (0 : ℂ) r₂ \ closedBall 0 r₁) := by
-  rw [ball_diff_closedBall_eq_preimage,
-    ← image_polar_prod_univ (S := Ioo r₁ r₂) fun r hr => hr₁.trans hr.1.le]
-  exact (isPreconnected_Ioo.prod isPreconnected_univ).image _
-    continuous_polar.continuousOn
-
-/-- The closure of the open annulus is the closed annulus. -/
-theorem closure_ball_diff_closedBall {r₁ r₂ : ℝ} (hr₁ : 0 ≤ r₁) (h : r₁ < r₂) :
-    closure (ball (0 : ℂ) r₂ \ closedBall 0 r₁) = closedBall 0 r₂ \ ball 0 r₁ := by
-  rw [ball_diff_closedBall_eq_preimage, closedBall_diff_ball_eq_preimage]
-  refine Subset.antisymm
-    (closure_minimal (preimage_mono Ioo_subset_Icc_self)
-      (isClosed_Icc.preimage continuous_norm)) ?_
-  rw [← image_polar_prod_univ (S := Icc r₁ r₂) fun r hr => hr₁.trans hr.1,
-    ← image_polar_prod_univ (S := Ioo r₁ r₂) fun r hr => hr₁.trans hr.1.le]
-  have hcl : closure (Ioo r₁ r₂ ×ˢ (univ : Set ℝ)) = Icc r₁ r₂ ×ˢ univ := by
-    rw [closure_prod_eq, closure_Ioo h.ne, closure_univ]
-  rw [← hcl]
-  exact image_closure_subset_closure_image continuous_polar
-
-/-- The frontier of the open annulus lies on the two boundary circles. -/
-theorem frontier_ball_diff_closedBall_subset {r₁ r₂ : ℝ} (hr₁ : 0 ≤ r₁) (h : r₁ < r₂) :
-    frontier (ball (0 : ℂ) r₂ \ closedBall 0 r₁) ⊆ sphere 0 r₁ ∪ sphere 0 r₂ := by
-  rw [(isOpen_ball.sdiff isClosed_closedBall).frontier_eq, closure_ball_diff_closedBall hr₁ h]
-  intro z hz
-  simp only [mem_sdiff, mem_ball_zero_iff, mem_closedBall_zero_iff, not_lt, not_and, not_le]
-    at hz
-  simp only [mem_union, mem_sphere_zero_iff_norm]
-  rcases hz.1.1.lt_or_eq with h₂ | h₂
-  · exact Or.inl (le_antisymm (hz.2 h₂) hz.1.2)
-  · exact Or.inr h₂
 
 /-- If `f` is holomorphic on the open annulus, continuous on the closed annulus and real on both
 boundary circles, then its imaginary part is nonnegative on the closed annulus. This is the
@@ -177,20 +106,9 @@ theorem exists_eq_ofReal_of_im_eq_zero_on_annulus_boundary {r₁ r₂ : ℝ} (hr
       abs_of_nonneg (by linarith), mem_Ioo]
     constructor <;> linarith
   -- open mapping: `f` is constant on `U`
-  obtain ⟨w, hw⟩ : ∃ w, ∀ z ∈ ball (0 : ℂ) r₂ \ closedBall 0 r₁, f z = w := by
-    rcases (hf.analyticOnNhd (isOpen_ball.sdiff isClosed_closedBall)).is_constant_or_isOpen
-      (isPreconnected_ball_diff_closedBall hr₁ r₂) with hc | ho
-    · exact hc
-    exfalso
-    obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 (ho _ Subset.rfl
-      (isOpen_ball.sdiff isClosed_closedBall)) _ (mem_image_of_mem f hz₀)
-    obtain ⟨z, hz, hfz⟩ := hball (show f _ + (ε / 2 : ℝ) * I ∈ ball (f _) ε by
-      rw [mem_ball, dist_eq, add_sub_cancel_left, norm_mul, norm_I, mul_one, norm_real,
-        Real.norm_eq_abs, abs_of_pos (half_pos hε)]
-      exact half_lt_self hε)
-    have := congrArg Complex.im hfz
-    rw [him z (hUA hz), add_im, him _ (hUA hz₀), im_ofReal_mul, I_im, mul_one] at this
-    linarith [half_pos hε]
+  have hU : IsOpen (ball (0 : ℂ) r₂ \ closedBall 0 r₁) := isOpen_ball.sdiff isClosed_closedBall
+  obtain ⟨w, hw⟩ := (hf.analyticOnNhd hU).eq_const_of_im_eq_const (fun z hz => him z (hUA hz)) hU
+    ⟨⟨_, hz₀⟩, isPreconnected_ball_diff_closedBall hr₁ r₂⟩
   have hweq : EqOn f (fun _ => w) (closedBall 0 r₂ \ ball 0 r₁) :=
     EqOn.of_subset_closure hw hfc continuousOn_const hUA
       (closure_ball_diff_closedBall hr₁ h).ge
@@ -284,6 +202,24 @@ annulus with real boundary values on both circles: the restrictions to
 noncomputable def annulusRealBoundaryAdjointKernel (r₁ r₂ : ℝ) :
     Submodule ℝ (↥(closedBall (0 : ℂ) r₂ \ ball 0 r₁) → ℂ) :=
   (realBoundaryAdjointHolomorphic r₁ r₂).map (LinearMap.funLeft ℝ ℂ Subtype.val)
+
+/-- A function on the closed annulus lies in `annulusRealBoundaryKernel` exactly when it is the
+restriction of a function in `realBoundaryHolomorphic`. -/
+theorem mem_annulusRealBoundaryKernel_iff {r₁ r₂ : ℝ}
+    {f : ↥(closedBall (0 : ℂ) r₂ \ ball 0 r₁) → ℂ} :
+    f ∈ annulusRealBoundaryKernel r₁ r₂ ↔
+      ∃ F ∈ realBoundaryHolomorphic r₁ r₂,
+        ∀ z : ↥(closedBall (0 : ℂ) r₂ \ ball 0 r₁), F z = f z :=
+  Submodule.mem_map.trans <| exists_congr fun _ => and_congr_right fun _ => funext_iff
+
+/-- A function on the closed annulus lies in `annulusRealBoundaryAdjointKernel` exactly when it
+is the restriction of a function in `realBoundaryAdjointHolomorphic`. -/
+theorem mem_annulusRealBoundaryAdjointKernel_iff {r₁ r₂ : ℝ}
+    {g : ↥(closedBall (0 : ℂ) r₂ \ ball 0 r₁) → ℂ} :
+    g ∈ annulusRealBoundaryAdjointKernel r₁ r₂ ↔
+      ∃ G ∈ realBoundaryAdjointHolomorphic r₁ r₂,
+        ∀ z : ↥(closedBall (0 : ℂ) r₂ \ ball 0 r₁), G z = g z :=
+  Submodule.mem_map.trans <| exists_congr fun _ => and_congr_right fun _ => funext_iff
 
 /-- The annulus kernel with real boundary values is the line of real constants. -/
 theorem annulusRealBoundaryKernel_eq_span {r₁ r₂ : ℝ} (hr₁ : 0 ≤ r₁) (h : r₁ < r₂) :
