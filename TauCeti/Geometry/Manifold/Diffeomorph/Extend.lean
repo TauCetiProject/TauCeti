@@ -254,7 +254,7 @@ diffeomorphism `φ` of the model space fixing every point outside a compact subs
 interior of the target of the extended chart at `x` extends to a `C^n` diffeomorphism of `M`: it
 reads as `φ` through the chart (`Diffeomorph.chartExtend_extChartAt_symm`) and fixes every point
 outside the preimage of `K` under the chart (`Diffeomorph.chartExtend_eq_self`). Its inverse is
-the extension of `φ.symm`. -/
+the extension of `φ.symm` (`Diffeomorph.chartExtend_symm`). -/
 noncomputable def chartExtend (φ : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, E)⟯ E) (x : M) (hK : IsCompact K)
     (hKt : K ⊆ interior (extChartAt I x).target) (hφ : ∀ p ∉ K, φ p = p) :
     M ≃ₘ^n⟮I, I⟯ M :=
@@ -287,6 +287,13 @@ variable {φ : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, E)⟯ E} {x : M} {hK : IsC
 /-- The extension of `φ` through the chart is `TauCeti.chartExtend` of `φ`. -/
 @[simp]
 theorem coe_chartExtend : ⇑(φ.chartExtend x hK hKt hφ) = TauCeti.chartExtend I φ x := (rfl)
+
+/-- The inverse of the extension of `φ` through the chart is the extension of `φ.symm`. -/
+@[simp]
+theorem chartExtend_symm :
+    (φ.chartExtend x hK hKt hφ).symm = φ.symm.chartExtend x hK hKt fun p hp ↦
+      (congrArg φ.symm (hφ p hp)).symm.trans (φ.symm_apply_apply p) :=
+  (rfl)
 
 /-- The extension of `φ` through the chart reads as `φ` on the chart. -/
 theorem chartExtend_extChartAt_symm {p : E} (hp : p ∈ (extChartAt I x).target) :
