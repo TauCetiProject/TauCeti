@@ -31,28 +31,36 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
 * `TauCeti.Floer.endChart q`: the end lift of `q` in the real coordinates `ℝ × ℝ ≃ ℂ`.
 * `TauCeti.Floer.endStrip q`: the part `±s > 1/2`, `t ∈ [-1/2, 1/2)` of the cylinder of the end
   `q`.
+* `TauCeti.Floer.signedEndChart q`: the end chart precomposed with `ζ ↦ ±ζ`, whose longitudinal
+  coordinate tends to `+∞` towards the puncture on every end.
 
 ## Main results
 
-* `TauCeti.Floer.contDiffAt_uncurry_pairOfPantsPerturbation`: in real coordinates, the
-  components of the perturbation are `Cⁿ` on `S × V` for `Cⁿ` Hamiltonians.
+* `TauCeti.Floer.contDiffAt_uncurry_pairOfPantsPerturbation`,
+  `TauCeti.Floer.differentiableAt_pairOfPantsPerturbation`: in real coordinates, the
+  components of the perturbation are `Cⁿ` on `S × V` for `Cⁿ` Hamiltonians, and in particular
+  differentiable in the target point for `C¹` Hamiltonians.
 * `TauCeti.Floer.endChart_mem_thricePuncturedSphereReal`, `TauCeti.Floer.re_endCoord_endChart`:
   the end chart sends the part `±s > 0` of the end into `S` and preserves the longitudinal
   coordinate.
 * `TauCeti.Floer.injOn_endChart`, `TauCeti.Floer.det_fderiv_endChart_nonneg`,
   `TauCeti.Floer.det_fderiv_endChart_pos`: the end chart is injective on the strip, preserves
   orientation and is a local diffeomorphism.
-* `TauCeti.Floer.eq_of_endChart_eq`: more generally, it is injective on any set of points whose
-  angular coordinates differ by less than one period.
 * `TauCeti.Floer.isComplexLinearMap_fderiv_endChart`: the end chart is holomorphic.
 * `TauCeti.Floer.pairwise_disjoint_image_endChart`: the images of the three strips are disjoint.
 * `TauCeti.Floer.mem_image_endChart`: they contain every point of `S` with signed longitudinal
   coordinate greater than `1/2` on some end.
+* `TauCeti.Floer.injOn_endChart_univ_prod_Ico`: the end chart is injective on every band of
+  angular width one.
 * `TauCeti.Floer.perturbationPullback_endChart_eq_cylindricalEndLift`: the pullback of a
   perturbation along the end chart is the perturbation evaluated on the image of a tangent vector
   under the end lift.
 * `TauCeti.Floer.perturbationPullback_endChart`: the pullback of the pair-of-pants perturbation
   along the end chart is its component in the end coordinates.
+* `TauCeti.Floer.isComplexLinearMap_fderiv_signedEndChart`,
+  `TauCeti.Floer.injOn_signedEndChart`, `TauCeti.Floer.perturbationPullback_signedEndChart`: the
+  signed end chart is holomorphic and injective on the half-strip `s > 2`, `t ∈ [0, 1)`, and there
+  the pair-of-pants perturbation pulls back to the cylindrical datum `±H_q(±t) dt`.
 
 ## References
 
@@ -100,6 +108,16 @@ theorem contDiffAt_uncurry_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Per
     ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
       contDiff_snd).contDiffAt).clm_apply contDiffAt_const
 
+/-- In the real coordinates of `S`, the components of the pair-of-pants perturbation are
+differentiable in the target point, for `C¹` Hamiltonians. -/
+theorem differentiableAt_pairOfPantsPerturbation (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
+    (x : V) (v : ℂ) :
+    DifferentiableAt ℝ (fun y ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) y v)
+      x :=
+  ((contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x v).differentiableAt
+    one_ne_zero).comp _ ((differentiableAt_const _).prodMk differentiableAt_id)
+
 /-- The end lift of `q`, in the real coordinates `ℝ × ℝ ≃ ℂ`. -/
 noncomputable def endChart (q : Puncture) (z : ℝ × ℝ) : ℝ × ℝ :=
   Complex.equivRealProdCLM (q.cylindricalEndLift (Complex.equivRealProdCLM.symm z))
@@ -124,9 +142,8 @@ theorem equivRealProdCLM_symm_endChart (q : Puncture) (z : ℝ × ℝ) :
 /-- The longitudinal coordinate of the end `q` at the image of `(s, t)` is `s`. -/
 theorem re_endCoord_endChart (q : Puncture) (z : ℝ × ℝ) :
     (q.endCoord (Complex.equivRealProdCLM.symm (endChart q z))).re = z.1 := by
-  obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift (Complex.equivRealProdCLM.symm z)
-  rw [equivRealProdCLM_symm_endChart, hk]
-  simp
+  rw [equivRealProdCLM_symm_endChart, re_endCoord_cylindricalEndLift]
+  simp [Complex.equivRealProdCLM_symm_apply]
 
 /-- The end chart sends the part `±s > 0` of the end into `S`. -/
 theorem endChart_mem_thricePuncturedSphereReal {q : Puncture} {z : ℝ × ℝ}
@@ -218,37 +235,19 @@ theorem perturbationPullback_endChart (q : Puncture) (v : ℝ × ℝ) :
   funext z x
   rw [pairOfPantsEndComponent_def, Complex.equivRealProdCLM_symm_apply, ← Complex.mk_eq_add_mul_I]
 
-/-- Two points of the cylinder of an end whose angular coordinates differ by less than one
-period have the same image under the end chart only if they are equal. -/
-theorem eq_of_endChart_eq {q : Puncture} {a b : ℝ × ℝ} (h : endChart q a = endChart q b)
-    (hab : |a.2 - b.2| < 1) : a = b := by
-  rw [endChart_apply, endChart_apply] at h
-  have h' := Complex.equivRealProdCLM.injective h
-  rw [cylindricalEndLift_eq, cylindricalEndLift_eq, add_right_inj,
-    mul_right_inj' q.endScale_ne_zero, Complex.exp_eq_exp_iff_exists_int] at h'
-  obtain ⟨n, hn⟩ := h'
-  have hπ : -(2 * (π : ℂ)) ≠ 0 := by
-    simp [Real.pi_ne_zero]
-  have hA : Complex.equivRealProdCLM.symm a =
-      Complex.equivRealProdCLM.symm b - n * Complex.I := by
-    refine mul_left_cancel₀ hπ ?_
-    rw [hn]
-    ring_nf
-  have hre : a.1 = b.1 := by simpa using congrArg Complex.re hA
-  have him : a.2 = b.2 - n := by simpa using congrArg Complex.im hA
-  have hn0 : n = 0 := by
-    have h1 : |(n : ℝ)| < 1 := by
-      rw [show (n : ℝ) = b.2 - a.2 by linarith, abs_sub_comm]
-      exact hab
-    exact_mod_cast Int.abs_lt_one_iff.1 (by exact_mod_cast h1)
-  subst hn0
-  exact Prod.ext hre (by simpa using him)
+/-- The end chart is injective on every band `ℝ × [t₀, t₀ + 1)` of angular width one: two points
+with the same image differ by an integer multiple of `i`. -/
+theorem injOn_endChart_univ_prod_Ico (q : Puncture) (t₀ : ℝ) :
+    InjOn (endChart q) (univ ×ˢ Ico t₀ (t₀ + 1)) := by
+  intro a ha b hb hab
+  have h := q.injOn_cylindricalEndLift t₀ (by simpa using ha.2) (by simpa using hb.2)
+    (Complex.equivRealProdCLM.injective hab)
+  exact Complex.equivRealProdCLM.symm.injective h
 
 /-- The end lift is injective on the strip `endStrip q`, whose angular coordinate ranges over one
 period. -/
-theorem injOn_endChart (q : Puncture) : InjOn (endChart q) (endStrip q) := fun a ha b hb hab ↦
-  eq_of_endChart_eq hab
-    (abs_sub_lt_iff.2 ⟨by linarith [ha.2.2, hb.2.1], by linarith [ha.2.1, hb.2.2]⟩)
+theorem injOn_endChart (q : Puncture) : InjOn (endChart q) (endStrip q) :=
+  (injOn_endChart_univ_prod_Ico q (-1 / 2)).mono (prod_mono (subset_univ _) (by norm_num))
 
 /-- Every point of `S` where some end has signed longitudinal coordinate greater than `1/2` is the
 image of a point of that end's strip. -/
@@ -305,6 +304,118 @@ theorem pairwise_disjoint_image_endChart :
     (Complex.equivRealProdCLM.injective h).symm
   · simpa using endSign_mul_pos_of_mem_endStrip hζ
   · simpa using endSign_mul_pos_of_mem_endStrip hζ'
+
+/-- The end loops `t ↦ u(φ_q(R + i t))` of a map on the pair of pants are `1`-periodic. -/
+theorem periodic_endLoop {α : Type*} (u : ℝ × ℝ → α) (q : Puncture) (R : ℝ) :
+    Periodic (fun t : ℝ ↦ u (Complex.equivRealProdCLM (q.cylindricalEndLift (↑R + ↑t * Complex.I))))
+      1 := fun t ↦
+  congrArg (fun w ↦ u (Complex.equivRealProdCLM w)) (q.periodic_cylindricalEndLift R t)
+
+/-- The end chart of `q` precomposed with `ζ ↦ ±ζ`, the sign being that of the end. Unlike
+`endChart q`, its longitudinal coordinate tends to `+∞` towards the puncture on the output end as
+well as on the inputs. -/
+noncomputable def signedEndChart (q : Puncture) : ℝ × ℝ → ℝ × ℝ :=
+  endChart q ∘ fun ζ ↦ q.endSign • ζ
+
+theorem signedEndChart_apply (q : Puncture) (ζ : ℝ × ℝ) :
+    signedEndChart q ζ = endChart q (q.endSign • ζ) :=
+  (rfl)
+
+/-- The signed end chart in coordinates: `(s, t) ↦ φ_q(±s ± i t)`. -/
+theorem signedEndChart_mk (q : Puncture) (s t : ℝ) :
+    signedEndChart q (s, t) = endChart q (q.endSign * s, q.endSign * t) := by
+  simp [signedEndChart]
+
+private theorem endSign_mul_fst_smul (q : Puncture) (ζ : ℝ × ℝ) :
+    q.endSign * (q.endSign • ζ).1 = ζ.1 := by
+  simp
+
+/-- The derivative of the signed end chart is `±` that of the end chart at `±ζ`. -/
+theorem hasFDerivAt_signedEndChart (q : Puncture) (ζ : ℝ × ℝ) :
+    HasFDerivAt (signedEndChart q) (q.endSign • fderiv ℝ (endChart q) (q.endSign • ζ)) ζ := by
+  have h := ((contDiff_endChart q 1).differentiable one_ne_zero (q.endSign • ζ)).hasFDerivAt.comp ζ
+    ((hasFDerivAt_id ζ).const_smul q.endSign)
+  rwa [ContinuousLinearMap.comp_smul, ContinuousLinearMap.comp_id] at h
+
+/-- The signed end charts are smooth. -/
+theorem contDiff_signedEndChart (q : Puncture) (n : WithTop ℕ∞) :
+    ContDiff ℝ n (signedEndChart q) :=
+  (contDiff_endChart q n).comp (contDiff_const_smul _)
+
+/-- The signed end charts preserve orientation. -/
+theorem det_fderiv_signedEndChart_nonneg (q : Puncture) (ζ : ℝ × ℝ) :
+    0 ≤ (fderiv ℝ (signedEndChart q) ζ).det := by
+  rw [(hasFDerivAt_signedEndChart q ζ).fderiv, ContinuousLinearMap.det,
+    ContinuousLinearMap.toLinearMap_smul, LinearMap.det_smul]
+  exact mul_nonneg (by simp [Module.finrank_prod, sq_nonneg]) (det_fderiv_endChart_nonneg q _)
+
+/-- The signed end charts are holomorphic. -/
+theorem isComplexLinearMap_fderiv_signedEndChart (q : Puncture) (ζ : ℝ × ℝ) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product ℝ)
+      (fderiv ℝ (signedEndChart q) ζ : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
+  rw [(hasFDerivAt_signedEndChart q ζ).fderiv, ContinuousLinearMap.toLinearMap_smul]
+  exact (isComplexLinearMap_fderiv_endChart q _).smul _
+
+/-- The signed end chart sends the half-cylinder `s > 0` into `S`. -/
+theorem signedEndChart_mem_thricePuncturedSphereReal {q : Puncture} {ζ : ℝ × ℝ}
+    (hζ : 0 < ζ.1) : signedEndChart q ζ ∈ thricePuncturedSphereReal :=
+  endChart_mem_thricePuncturedSphereReal (by rwa [endSign_mul_fst_smul])
+
+/-- The signed end chart is injective on the half-strip `s > 2`, `t ∈ [0, 1)`. -/
+theorem injOn_signedEndChart (q : Puncture) :
+    InjOn (signedEndChart q) (Ioi 2 ×ˢ Ico 0 1) := by
+  intro a ha b hb hab
+  -- The angular coordinates of `±a` and `±b` differ by less than one period.
+  have hlt : |(q.endSign • a).2 - (q.endSign • b).2| < 1 := by
+    rw [Prod.smul_snd, Prod.smul_snd, smul_eq_mul, smul_eq_mul, ← mul_sub, abs_mul, abs_endSign,
+      one_mul, abs_sub_lt_iff]
+    constructor <;> linarith [ha.2.1, ha.2.2, hb.2.1, hb.2.2]
+  obtain ⟨h₁, h₂⟩ := abs_sub_lt_iff.1 hlt
+  -- So both lie in the band of angular width one starting at the smaller of them.
+  have hband (c : ℝ) (hc : c - (q.endSign • a).2 < 1) (hc' : c - (q.endSign • b).2 < 1) :
+      c < min (q.endSign • a).2 (q.endSign • b).2 + 1 := by
+    rw [← min_add_add_right]
+    exact lt_min (by linarith) (by linarith)
+  have h := injOn_endChart_univ_prod_Ico q (min (q.endSign • a).2 (q.endSign • b).2)
+    ⟨mem_univ _, min_le_left _ _, hband _ (by simp) (by linarith)⟩
+    ⟨mem_univ _, min_le_right _ _, hband _ (by linarith) (by simp)⟩ hab
+  exact smul_right_injective _ (endSign_ne_zero q) h
+
+/-- On the part `s ≥ 2` of the signed end chart, the pair-of-pants perturbation pulls back to the
+cylindrical datum `±H_q(±t) dt`. -/
+theorem perturbationPullback_signedEndChart {X : Type*} {H : Puncture → ℝ → X → ℝ}
+    (hH : ∀ q, Periodic (H q) 1) {q : Puncture} {ζ : ℝ × ℝ} (hζ : 2 ≤ ζ.1) :
+    perturbationPullback (signedEndChart q)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        stdComplexLineReal ζ = (fun _ ↦ 0) ∧
+      perturbationPullback (signedEndChart q)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        stdComplexLineImag ζ = fun x ↦ q.endSign * H q (q.endSign * ζ.2) x := by
+  have hpos : 0 < q.endSign * (q.endSign • ζ).1 := by
+    rw [endSign_mul_fst_smul]
+    linarith
+  have hd : DifferentiableAt ℝ (endChart q) (q.endSign • ζ) :=
+    (contDiff_endChart q 1).differentiable one_ne_zero _
+  have hψ : DifferentiableAt ℝ (fun ζ : ℝ × ℝ ↦ q.endSign • ζ) ζ :=
+    ((hasFDerivAt_id ζ).const_smul q.endSign).differentiableAt
+  have hcomp (v : ℝ × ℝ) : perturbationPullback (signedEndChart q)
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) v ζ =
+        perturbationPullback (fun ζ : ℝ × ℝ ↦ q.endSign • ζ)
+          (pairOfPantsEndComponent H q (Complex.equivRealProdCLM.symm stdComplexLineReal))
+          (pairOfPantsEndComponent H q (Complex.equivRealProdCLM.symm stdComplexLineImag)) v ζ := by
+    rw [← perturbationPullback_endChart, ← perturbationPullback_endChart]
+    exact perturbationPullback_comp _ _ hd hψ v
+  have hfd : fderiv ℝ (fun ζ : ℝ × ℝ ↦ q.endSign • ζ) ζ = q.endSign • ContinuousLinearMap.id ℝ _ :=
+    ((hasFDerivAt_id ζ).const_smul q.endSign).fderiv
+  refine ⟨?_, ?_⟩ <;> rw [hcomp] <;> funext x <;>
+    simp only [perturbationPullback_apply, hfd, equivRealProdCLM_symm_stdComplexLineReal,
+      equivRealProdCLM_symm_stdComplexLineImag, pairOfPantsEndComponent_one_of_pos (hH q) hpos,
+      pairOfPantsEndComponent_I_of_pos (hH q) hpos, endSign_mul_fst_smul,
+      smoothTransition.one_of_one_le (show 1 ≤ ζ.1 - 1 by linarith)] <;>
+    simp [stdComplexLineReal_eq, stdComplexLineImag_eq]
 
 end Floer
 

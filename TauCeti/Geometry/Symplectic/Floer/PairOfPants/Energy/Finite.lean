@@ -83,18 +83,13 @@ private theorem floerEnergyDensity_endChart_nonneg (ω : SymplecticForm V)
     0 ≤ ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H q w.2) (u ∘ endChart q) ζ := by
   have hpos : 0 < q.endSign * ζ.1 := by linarith
   have hS := endChart_mem_thricePuncturedSphereReal hpos
-  -- The components of the perturbation are differentiable in the target point.
-  have hK (v : ℂ) : DifferentiableAt ℝ
-      (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm (endChart q ζ)) x v)
-      (u (endChart q ζ)) :=
-    ((contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hS _ v).differentiableAt
-      one_ne_zero).comp _ ((differentiableAt_const _).prodMk differentiableAt_id)
   have hpb := ω.floerEnergyDensity_perturbationPullback
     (Ks := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
     (Kt := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
     (hasFDerivAt_endChart q ζ).differentiableAt
     ((hu.contDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hS)).differentiableAt two_ne_zero)
-    (hK 1) (hK Complex.I)
+    (differentiableAt_pairOfPantsPerturbation hH hHs hS _ 1)
+    (differentiableAt_pairOfPantsPerturbation hH hHs hS _ Complex.I)
   -- In the end coordinates, the pulled-back datum is `H_q(t) dt` at `ζ`.
   have hKs : perturbationPullback (endChart q)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)

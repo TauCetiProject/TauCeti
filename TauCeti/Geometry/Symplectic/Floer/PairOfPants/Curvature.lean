@@ -338,17 +338,6 @@ private theorem differentiableAt_pairOfPantsPerturbation_domain (hH : ∀ q, Per
   SmoothTwoForm.differentiableAt_pairOfPantsPerturbation_domain hH
     (contMDiff_uncurry_of_contDiff hHs) hz x v
 
-/-- The components of the perturbation are differentiable in the target point, at points
-of `S`. -/
-private theorem differentiableAt_pairOfPantsPerturbation_target (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
-    (x : V) (v : ℂ) :
-    DifferentiableAt ℝ (fun y => pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) y v)
-      x :=
-  mdifferentiableAt_iff_differentiableAt.1
-    (SmoothTwoForm.mdifferentiableAt_pairOfPantsPerturbation_target hH
-      (contMDiff_uncurry_of_contDiff hHs) hz x v)
-
 variable [FiniteDimensional ℝ V]
 
 /-- **The curvature on an end.** The curvature is a two-form, so on the end `q` it is
@@ -631,15 +620,15 @@ private theorem integral_floerEnergyDensity_image_endChart (ω : SymplecticForm 
   simp only [h₀, floerEnergyDensity_zero] at harea
   rw [harea, ω.integral_floerEnergyDensity_image hmeas hinj (fun w _ => hφ w)
       (fun w _ => det_fderiv_endChart_nonneg q w) (fun w hw => hud (hsU hw))
-      (fun w hw => differentiableAt_pairOfPantsPerturbation_target hH hHs (hS (hsU hw)) _ 1)
-      (fun w hw => differentiableAt_pairOfPantsPerturbation_target hH hHs (hS (hsU hw)) _ _),
+      (fun w hw => differentiableAt_pairOfPantsPerturbation hH hHs (hS (hsU hw)) _ 1)
+      (fun w hw => differentiableAt_pairOfPantsPerturbation hH hHs (hS (hsU hw)) _ _),
     ω.integral_hamiltonianCurvature_image hmeas hinj
       (fun w _ => (contDiff_endChart q 2).contDiffAt)
       (fun w _ => det_fderiv_endChart_nonneg q w)
       (fun w hw => differentiableAt_pairOfPantsPerturbation_domain hH hHs (hS (hsU hw)) _ 1)
       (fun w hw => differentiableAt_pairOfPantsPerturbation_domain hH hHs (hS (hsU hw)) _ _)
-      (fun w hw => differentiableAt_pairOfPantsPerturbation_target hH hHs (hS (hsU hw)) _ 1)
-      (fun w hw => differentiableAt_pairOfPantsPerturbation_target hH hHs (hS (hsU hw)) _ _),
+      (fun w hw => differentiableAt_pairOfPantsPerturbation hH hHs (hS (hsU hw)) _ 1)
+      (fun w hw => differentiableAt_pairOfPantsPerturbation hH hHs (hS (hsU hw)) _ _),
     perturbationPullback_endChart, perturbationPullback_endChart,
     equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag]
   exact integral_floerEnergyDensity_endChart_rect ω hH hHs hu hab hUo hU₁ hpos hS

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Sobolev.FiniteMeasure
 
+import TauCeti.MeasureTheory.Measure.OpenPos
+
 /-!
 # The borderline Sobolev embedding `p = n` and Trudinger's inequality
 
@@ -364,7 +366,7 @@ theorem setLIntegral_exp_norm_div_rpow_le_of_eLpNorm_fderiv_le (hu : ContDiff �
     μ.real (ball 0 1) ^ (-(finrank ℝ E : ℝ)⁻¹)
   have hc : 0 < c := by
     have : 0 < μ.real (ball 0 1) :=
-      ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
+      Metric.measureReal_ball_pos μ 0 one_pos
     positivity
   have hq : 0 ≤ (finrank ℝ E : ℝ) / (finrank ℝ E - 1) := div_nonneg (by linarith) (by linarith)
   have hSA : (eLpNorm (fderiv ℝ u) (finrank ℝ E) μ).toReal ≤ A :=

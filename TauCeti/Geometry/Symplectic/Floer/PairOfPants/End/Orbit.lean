@@ -26,10 +26,11 @@ The two inputs `0`, `1` and the output `∞` enter with the signs `±1` of their
 the generators of the Floer complexes at the ends of a pair-of-pants solution, and this is the form
 of the energy identity which bounds the product coefficients.
 
-The proof reads each end in the *signed end chart* `(s, t) ↦ φ_q(±s ± i t)`, the end chart
-`TauCeti.Floer.endChart` precomposed with multiplication by the sign of the end. It is holomorphic
-(`TauCeti.Floer.isComplexLinearMap_fderiv_endChart`), injective on half-open strips of angular
-width one (`TauCeti.Floer.eq_of_endChart_eq`), and its longitudinal coordinate tends to `+∞`
+The proof reads each end in the *signed end chart* `(s, t) ↦ φ_q(±s ± i t)`
+(`TauCeti.Floer.signedEndChart`), the end chart `TauCeti.Floer.endChart` precomposed with
+multiplication by the sign of the end. It is holomorphic
+(`TauCeti.Floer.isComplexLinearMap_fderiv_signedEndChart`), injective on half-open strips of angular
+width one (`TauCeti.Floer.injOn_signedEndChart`), and its longitudinal coordinate tends to `+∞`
 towards the puncture on the output end as well as on the inputs. On its half-cylinder `s > 2` the
 pair-of-pants datum pulls back to the cylindrical datum `±H_q(±t) dt`, so `u` read in this chart is
 a finite-energy Floer half-cylinder, and the asymptotic analysis of
@@ -67,118 +68,12 @@ namespace TauCeti
 
 namespace Floer
 
-/-- The end chart of `q` precomposed with `ζ ↦ ±ζ`, the sign being that of the end. Its
-longitudinal coordinate tends to `+∞` towards the puncture on every end, and it is holomorphic,
-so the end of a Floer pair of pants read in it is a Floer half-cylinder `s > 0`. -/
-private noncomputable def signedEndChart (q : Puncture) : ℝ × ℝ → ℝ × ℝ :=
-  endChart q ∘ fun ζ ↦ q.endSign • ζ
-
-private theorem signedEndChart_mk (q : Puncture) (s t : ℝ) :
-    signedEndChart q (s, t) = endChart q (q.endSign * s, q.endSign * t) := by
-  simp [signedEndChart]
-
-private theorem endSign_mul_endSign_mul (q : Puncture) (s : ℝ) :
-    q.endSign * (q.endSign * s) = s := by
-  rw [← mul_assoc, endSign_mul_self, one_mul]
-
-private theorem endSign_mul_fst_smul (q : Puncture) (ζ : ℝ × ℝ) :
-    q.endSign * (q.endSign • ζ).1 = ζ.1 := by
-  rw [Prod.smul_fst, smul_eq_mul, endSign_mul_endSign_mul]
-
-private theorem hasFDerivAt_signedEndChart (q : Puncture) (ζ : ℝ × ℝ) :
-    HasFDerivAt (signedEndChart q) (q.endSign • fderiv ℝ (endChart q) (q.endSign • ζ)) ζ := by
-  have h := ((contDiff_endChart q 1).differentiable one_ne_zero (q.endSign • ζ)).hasFDerivAt.comp ζ
-    ((hasFDerivAt_id ζ).const_smul q.endSign)
-  rwa [ContinuousLinearMap.comp_smul, ContinuousLinearMap.comp_id] at h
-
-private theorem contDiff_signedEndChart (q : Puncture) (n : WithTop ℕ∞) :
-    ContDiff ℝ n (signedEndChart q) :=
-  (contDiff_endChart q n).comp (contDiff_const_smul _)
-
-private theorem det_fderiv_signedEndChart_nonneg (q : Puncture) (ζ : ℝ × ℝ) :
-    0 ≤ (fderiv ℝ (signedEndChart q) ζ).det := by
-  rw [(hasFDerivAt_signedEndChart q ζ).fderiv, ContinuousLinearMap.det,
-    ContinuousLinearMap.toLinearMap_smul, LinearMap.det_smul]
-  exact mul_nonneg (by simp [Module.finrank_prod, sq_nonneg]) (det_fderiv_endChart_nonneg q _)
-
-private theorem isComplexLinearMap_fderiv_signedEndChart (q : Puncture) (ζ : ℝ × ℝ) :
-    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product ℝ)
-      (fderiv ℝ (signedEndChart q) ζ : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
-  rw [(hasFDerivAt_signedEndChart q ζ).fderiv, ContinuousLinearMap.toLinearMap_smul]
-  exact (isComplexLinearMap_fderiv_endChart q _).smul _
-
-private theorem signedEndChart_mem_thricePuncturedSphereReal {q : Puncture} {ζ : ℝ × ℝ}
-    (hζ : 0 < ζ.1) : signedEndChart q ζ ∈ thricePuncturedSphereReal :=
-  endChart_mem_thricePuncturedSphereReal (by rwa [endSign_mul_fst_smul])
-
-private theorem injOn_signedEndChart (q : Puncture) :
-    InjOn (signedEndChart q) (Ioi 2 ×ˢ Ico 0 1) := by
-  intro a ha b hb hab
-  have h := eq_of_endChart_eq hab (by
-    rw [Prod.smul_snd, Prod.smul_snd, smul_eq_mul, smul_eq_mul, ← mul_sub, abs_mul, abs_endSign,
-      one_mul, abs_sub_lt_iff]
-    constructor <;> linarith [ha.2.1, ha.2.2, hb.2.1, hb.2.2])
-  exact smul_right_injective _ (endSign_ne_zero q) h
-
-/-- On the part `s ≥ 2` of the signed end chart, the pair-of-pants perturbation pulls back to the
-cylindrical datum `±H_q(±t) dt`. -/
-private theorem perturbationPullback_signedEndChart {X : Type*} {H : Puncture → ℝ → X → ℝ}
-    (hH : ∀ q, Periodic (H q) 1) {q : Puncture} {ζ : ℝ × ℝ} (hζ : 2 ≤ ζ.1) :
-    perturbationPullback (signedEndChart q)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        stdComplexLineReal ζ = (fun _ ↦ 0) ∧
-      perturbationPullback (signedEndChart q)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        stdComplexLineImag ζ = fun x ↦ q.endSign * H q (q.endSign * ζ.2) x := by
-  have hpos : 0 < q.endSign * (q.endSign • ζ).1 := by
-    rw [endSign_mul_fst_smul]
-    linarith
-  have hd : DifferentiableAt ℝ (endChart q) (q.endSign • ζ) :=
-    (contDiff_endChart q 1).differentiable one_ne_zero _
-  have hψ : DifferentiableAt ℝ (fun ζ : ℝ × ℝ ↦ q.endSign • ζ) ζ :=
-    ((hasFDerivAt_id ζ).const_smul q.endSign).differentiableAt
-  have hcomp (v : ℝ × ℝ) : perturbationPullback (signedEndChart q)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) v ζ =
-        perturbationPullback (fun ζ : ℝ × ℝ ↦ q.endSign • ζ)
-          (pairOfPantsEndComponent H q (Complex.equivRealProdCLM.symm stdComplexLineReal))
-          (pairOfPantsEndComponent H q (Complex.equivRealProdCLM.symm stdComplexLineImag)) v ζ := by
-    rw [← perturbationPullback_endChart, ← perturbationPullback_endChart]
-    exact perturbationPullback_comp _ _ hd hψ v
-  have hfd : fderiv ℝ (fun ζ : ℝ × ℝ ↦ q.endSign • ζ) ζ = q.endSign • ContinuousLinearMap.id ℝ _ :=
-    ((hasFDerivAt_id ζ).const_smul q.endSign).fderiv
-  refine ⟨?_, ?_⟩ <;> rw [hcomp] <;> funext x <;>
-    simp only [perturbationPullback_apply, hfd, equivRealProdCLM_symm_stdComplexLineReal,
-      equivRealProdCLM_symm_stdComplexLineImag, pairOfPantsEndComponent_one_of_pos (hH q) hpos,
-      pairOfPantsEndComponent_I_of_pos (hH q) hpos, endSign_mul_fst_smul,
-      smoothTransition.one_of_one_le (show 1 ≤ ζ.1 - 1 by linarith)] <;>
-    simp [stdComplexLineReal_eq, stdComplexLineImag_eq]
-
-/-- The components of the pair-of-pants datum are differentiable in the target point at every
-point of `S`. -/
-private theorem differentiableAt_pairOfPantsPerturbation {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
-    (v : ℂ) (x : V) :
-    DifferentiableAt ℝ (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v)
-      x :=
-  ((contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz _ v).differentiableAt
-    one_ne_zero).comp _ ((differentiableAt_const _).prodMk differentiableAt_id)
-
 /-- Precomposing a `1`-periodic function with `t ↦ ±t` keeps it `1`-periodic. -/
 private theorem periodic_comp_endSign_mul {α : Type*} {f : ℝ → α} (hf : Periodic f 1)
     (q : Puncture) : Periodic (fun t ↦ f (q.endSign * t)) 1 := by
   rcases endSign_eq_one_or_eq_neg_one q with h | h <;> rw [h]
   · simpa using hf
   · simpa using (hf.const_mul (-1)).neg
-
-/-- The end loops `t ↦ u(φ_q(R + i t))` of a map on the pair of pants are `1`-periodic. -/
-private theorem periodic_endLoop {α : Type*} (u : ℝ × ℝ → α) (q : Puncture) (R : ℝ) :
-    Periodic (fun t : ℝ ↦ u (Complex.equivRealProdCLM (q.cylindricalEndLift (↑R + ↑t * Complex.I))))
-      1 := fun t ↦
-  congrArg (fun w ↦ u (Complex.equivRealProdCLM w)) (q.periodic_cylindricalEndLift R t)
 
 end Floer
 
@@ -227,8 +122,8 @@ private theorem isComplexLinearMap_signedEndChart (ω : SymplecticForm V)
   exact ω.isComplexLinearMap_perturbedFDeriv_perturbationPullback
     ((contDiff_signedEndChart q 1).differentiable one_ne_zero ζ)
     ((hu.contDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hS)).differentiableAt two_ne_zero)
-    (differentiableAt_pairOfPantsPerturbation hH hHs hS 1 _)
-    (differentiableAt_pairOfPantsPerturbation hH hHs hS Complex.I _)
+    (differentiableAt_pairOfPantsPerturbation hH hHs hS _ 1)
+    (differentiableAt_pairOfPantsPerturbation hH hHs hS _ Complex.I)
     (isComplexLinearMap_fderiv_signedEndChart q ζ) hfloer
 
 /-- On the part `s ≥ 2` of the signed end chart, the energy density of the end half-cylinder is
@@ -248,8 +143,8 @@ private theorem floerEnergyDensity_signedEndChart (ω : SymplecticForm V)
   exact ω.floerEnergyDensity_perturbationPullback
     ((contDiff_signedEndChart q 1).differentiable one_ne_zero ζ)
     ((hu.contDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hS)).differentiableAt two_ne_zero)
-    (differentiableAt_pairOfPantsPerturbation hH hHs hS 1 _)
-    (differentiableAt_pairOfPantsPerturbation hH hHs hS Complex.I _)
+    (differentiableAt_pairOfPantsPerturbation hH hHs hS _ 1)
+    (differentiableAt_pairOfPantsPerturbation hH hHs hS _ Complex.I)
 
 /-- A finite-energy pair of pants has finite energy on the end half-cylinder `s > 2` of each
 signed end chart. -/
@@ -317,8 +212,8 @@ map `u` read in the signed end chart is a finite-energy Floer half-cylinder `s >
 private theorem exists_periodic_signedEndChart
     (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal)
-    {K : Set V} (hK : IsCompact K) {q : Puncture}
-    (huK : ∀ ζ : ℝ × ℝ, 2 < q.endSign * ζ.1 → u (endChart q ζ) ∈ K) {c M : ℝ} (hc : 0 < c)
+    {C : Set V} (hC : IsCompact C) {q : Puncture}
+    (huK : ∀ ζ : ℝ × ℝ, 2 < q.endSign * ζ.1 → u (endChart q ζ) ∈ C) {c M : ℝ} (hc : 0 < c)
     {J : ℝ × ℝ → AlmostComplexStructure V}
     (hJc : ∀ ζ : ℝ × ℝ, 2 < q.endSign * ζ.1 → ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (endChart q ζ) v))
     (hJM : ∀ ζ : ℝ × ℝ, 2 < q.endSign * ζ.1 → ∀ v, ‖J (endChart q ζ) v‖ ≤ M * ‖v‖)
@@ -341,7 +236,7 @@ private theorem exists_periodic_signedEndChart
         (𝓝 (ω.hamiltonianAction (fun t x ↦ q.endSign * H q (q.endSign * t) x) y)) := by
   -- Points `ζ` of the half-cylinder `s > 2` of the signed end chart lie on the part `±s > 2`.
   have hend {ζ : ℝ × ℝ} (hζ : 2 < ζ.1) : 2 < q.endSign * (q.endSign • ζ).1 := by
-    rwa [endSign_mul_fst_smul]
+    simpa using hζ
   have hH' : ContDiff ℝ 1 (uncurry fun t x ↦ q.endSign * H q (q.endSign * t) x) :=
     contDiff_const.mul ((hHs q).comp ((contDiff_const.mul contDiff_fst).prodMk contDiff_snd))
   have hH'per : Periodic (fun t x ↦ q.endSign * H q (q.endSign * t) x) 1 := fun t ↦ by
@@ -354,10 +249,14 @@ private theorem exists_periodic_signedEndChart
       periodic_comp_endSign_mul (periodic_endLoop u q (q.endSign * s)) q
   obtain ⟨y, hyper, hy, ⟨φ, -, hφ, hφy⟩, hA⟩ :=
     ω.exists_periodic_hasDerivAt_tendsto_hamiltonianAction_of_floer (J := fun ζ ↦
-      J (signedEndChart q ζ)) hH' hH'per hv (fun s _ ↦ hper s) hK
-      (fun s hs t ↦ huK _ (hend (ζ := (s, t)) hs)) hc (fun ζ hζ v ↦ hJc _ (hend hζ.1) v)
-      (fun ζ hζ v ↦ hJM _ (hend hζ.1) v)
-      (fun ζ hζ ↦ ω.isComplexLinearMap_signedEndChart hH hHs hu hζ.1.le (hfloer _ (hend hζ.1)))
+      J (signedEndChart q ζ)) hH' hH'per hv (fun s _ ↦ hper s) hC
+      (fun s hs t ↦ by
+        rw [comp_apply, signedEndChart_apply]
+        exact huK _ (hend (ζ := (s, t)) hs)) hc
+      (fun ζ hζ v ↦ signedEndChart_apply q ζ ▸ hJc _ (hend hζ.1) v)
+      (fun ζ hζ v ↦ signedEndChart_apply q ζ ▸ hJM _ (hend hζ.1) v)
+      (fun ζ hζ ↦ ω.isComplexLinearMap_signedEndChart hH hHs hu hζ.1.le
+        (signedEndChart_apply q ζ ▸ hfloer _ (hend hζ.1)))
       (ω.lintegral_floerEnergyDensity_signedEndChart_ne_top hH hHs hu q hE)
   exact ⟨y, hyper, hy, ⟨φ, hφ, hφy⟩, hA⟩
 
@@ -373,8 +272,8 @@ action `A_{H_q}(x)` as `R → ∞`. -/
 theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pairOfPantsPerturbation
     (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal)
-    {K : Set V} (hK : IsCompact K) {q : Puncture}
-    (huK : ∀ ζ : ℝ × ℝ, 2 < q.endSign * ζ.1 → u (endChart q ζ) ∈ K) {c M : ℝ} (hc : 0 < c)
+    {C : Set V} (hC : IsCompact C) {q : Puncture}
+    (huK : ∀ ζ : ℝ × ℝ, 2 < q.endSign * ζ.1 → u (endChart q ζ) ∈ C) {c M : ℝ} (hc : 0 < c)
     {J : ℝ × ℝ → AlmostComplexStructure V}
     (hJc : ∀ ζ : ℝ × ℝ, 2 < q.endSign * ζ.1 → ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (endChart q ζ) v))
     (hJM : ∀ ζ : ℝ × ℝ, 2 < q.endSign * ζ.1 → ∀ v, ‖J (endChart q ζ) v‖ ≤ M * ‖v‖)
@@ -399,7 +298,7 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pairOfPantsPerturba
       (q.cylindricalEndLift (↑(q.endSign * R) + ↑(q.endSign * t) * Complex.I))) := by
     rw [signedEndChart_mk, endChart_mk]
   obtain ⟨y, hyper, hy, ⟨φ, hφ, hφy⟩, hA⟩ :=
-    ω.exists_periodic_signedEndChart hH hHs hu hK huK hc hJc hJM hfloer hE
+    ω.exists_periodic_signedEndChart hH hHs hu hC huK hc hJc hJM hfloer hE
   refine ⟨fun t ↦ y (q.endSign * t), periodic_comp_endSign_mul hyper q, fun t ↦ ?_,
     ⟨φ, hφ, ?_⟩, ?_⟩
   · -- The orbit of `±H_q(±t)` read backwards on the output end is an orbit of `H_q`.
@@ -437,7 +336,7 @@ uniformly along some sequence `R_n → ∞`, and the energy of `u` is
 theorem exists_periodic_lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq
     (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal)
-    {K : Set V} (hK : IsCompact K) (huK : ∀ z ∈ thricePuncturedSphereReal, u z ∈ K) {c M : ℝ}
+    {C : Set V} (hC : IsCompact C) (huK : ∀ z ∈ thricePuncturedSphereReal, u z ∈ C) {c M : ℝ}
     (hc : 0 < c) {J : ℝ × ℝ → AlmostComplexStructure V}
     (hJc : ∀ z ∈ thricePuncturedSphereReal, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v))
     (hJM : ∀ z ∈ thricePuncturedSphereReal, ∀ v, ‖J z v‖ ≤ M * ‖v‖)
@@ -469,7 +368,7 @@ theorem exists_periodic_lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq
       endChart q ζ ∈ thricePuncturedSphereReal :=
     endChart_mem_thricePuncturedSphereReal (by linarith)
   choose x hx using fun q ↦
-    ω.exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pairOfPantsPerturbation hH hHs hu hK
+    ω.exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pairOfPantsPerturbation hH hHs hu hC
       (q := q) (fun _ hζ ↦ huK _ (hS hζ)) hc (fun _ hζ ↦ hJc _ (hS hζ))
       (fun _ hζ ↦ hJM _ (hS hζ)) (fun _ hζ ↦ hfloer _ (hS hζ)) hE
   have hJ : ∀ z ∈ thricePuncturedSphereReal, ω.Tames (J z) := fun z hz v hv ↦

@@ -29,6 +29,8 @@ off a compact set on which `A` is continuous, so `A` need not be continuous else
 
 * `TauCeti.integrable_fderiv_apply`: for `f` of class `C¹` with compact support, an a.e. strongly
   measurable `G` and an integrable `Z`, the map `x ↦ fderiv 𝕜 f (G x) (Z x)` is integrable.
+* `TauCeti.integrable_fderiv_apply_of_tsupport_subset`: the same when `Z` is only integrable after
+  cutting off to the points `x` with `G x` in a set `K` containing the topological support of `f`.
 * `TauCeti.integrable_cutoff_fderiv_sq_mul_norm_sq`,
   `TauCeti.integrable_norm_fderiv_sq_add`, `TauCeti.integrable_cutoff_sq_mul_norm_fderiv_sq`,
   `TauCeti.integrable_mul_norm_defect_sq`: integrability of the derivative energy densities
@@ -57,6 +59,21 @@ theorem integrable_fderiv_apply {f : E → F} (hf : ContDiff 𝕜 1 f) (hfc : Ha
     (Continuous.comp_aestronglyMeasurable₂ (g := fun (L : E →L[𝕜] F) w ↦ L w)
       (by fun_prop) (hDf.comp_aestronglyMeasurable hG) hZ.1)
     (.of_forall fun x ↦ (fderiv 𝕜 f _).le_of_opNorm_le (hC _) _)
+
+/-- The derivative of a `C¹` compactly supported function `f`, evaluated along an a.e. strongly
+measurable family of points `G` and applied to a family of vectors `Z`, is integrable as soon as
+`Z` is integrable after cutting off to the points `x` with `G x ∈ K`, for a set `K` containing the
+topological support of `f`: off `K` the derivative vanishes. -/
+theorem integrable_fderiv_apply_of_tsupport_subset {f : E → F} (hf : ContDiff 𝕜 1 f)
+    (hfc : HasCompactSupport f) {K : Set E} (hfK : tsupport f ⊆ K) {G : α → E}
+    (hG : AEStronglyMeasurable G μ) {Z : α → E}
+    (hZ : Integrable ({x | G x ∈ K}.indicator Z) μ) :
+    Integrable (fun x ↦ fderiv 𝕜 f (G x) (Z x)) μ :=
+  (integrable_fderiv_apply hf hfc hG hZ).congr
+    (Filter.Eventually.of_forall fun x ↦ by
+      by_cases hxK : G x ∈ K
+      · simp [hxK]
+      · simp [hxK, fderiv_of_notMem_tsupport 𝕜 fun h ↦ hxK (hfK h)])
 
 section Energy
 

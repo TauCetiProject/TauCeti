@@ -43,6 +43,8 @@ onto the fundamental interval `(F 0, F 0 + T]`, and applies the change of variab
   `∫ F' x • g (φ x) dx = ∫ g x dx` over the circle, for a lift with nonnegative derivative.
 * `Function.Periodic.eqOn_zero_of_intervalIntegral_eq_zero`: a continuous periodic function which
   is nonnegative over a period and has integral zero over a period vanishes inside that period.
+* `Function.Periodic.intervalIntegral_comp_neg`: running a periodic function backwards does not
+  change its integral over a period.
 -/
 
 public section
@@ -193,3 +195,9 @@ theorem Function.Periodic.eqOn_zero_of_intervalIntegral_eq_zero {f : ℝ → ℝ
   exact Measure.eqOn_open_of_ae_eq (ae_restrict_of_ae_restrict_of_subset
     (fun t ht ↦ Or.inl (Ioo_subset_Ioc_self ht)) hzero) isOpen_Ioo hf.continuousOn
     continuousOn_const ht
+
+/-- Running a `T`-periodic function backwards does not change its integral over a period. -/
+theorem Function.Periodic.intervalIntegral_comp_neg {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {f : ℝ → E} {T : ℝ} (hf : Function.Periodic f T) :
+    ∫ t in 0..T, f (-t) = ∫ t in 0..T, f t := by
+  simpa using hf.intervalIntegral_add_eq (-T) 0

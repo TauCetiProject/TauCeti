@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
 # Integrability and Stokes formulas for symplectic area
@@ -185,11 +186,27 @@ theorem loopArea_comp_neg (ω : SymplecticForm V) {x : ℝ → V} (hx : Function
     rw [← deriv_comp_add_const, show (fun y ↦ x (y + 1)) = x from funext hx]
   have hper : Function.Periodic (fun t ↦ ω (x t) (deriv x t)) 1 := fun t ↦ by
     simp only [hx t, hd t]
-  have h := intervalIntegral.integral_comp_neg (a := (0 : ℝ)) (b := 1)
-    (fun t ↦ ω (x t) (deriv x t))
-  have hshift := hper.intervalIntegral_add_eq (-1) 0
-  simp only [neg_zero, show (-1 : ℝ) + 1 = 0 by norm_num, zero_add] at h hshift
-  simp only [loopArea_def, deriv_comp_neg, map_neg, intervalIntegral.integral_neg, h, hshift]
+  simp only [loopArea_def, deriv_comp_neg, map_neg, intervalIntegral.integral_neg,
+    hper.intervalIntegral_comp_neg]
+  ring
+
+/-- **The loop area of a circle traversed forwards.** If `g` is `2π`-periodic, the loop
+`t ↦ g(θ₀ + 2πt)` runs once through a period of `g`, so its loop area is the area
+`½ ∫_{-π}^{π} ω(g(θ), g'(θ)) dθ` of `g` over one period. -/
+theorem loopArea_comp_add_mul (ω : SymplecticForm V) {g : ℝ → V} (hg : Function.Periodic g (2 * π))
+    (θ₀ : ℝ) :
+    ω.loopArea (fun t ↦ g (θ₀ + 2 * π * t)) =
+      (1 / 2 : ℝ) * ∫ θ in -π..π, ω (g θ) (deriv g θ) := by
+  -- Traverse the reflected function `θ ↦ g(-θ)` backwards.
+  have hg' : Function.Periodic (fun θ ↦ g (-θ)) (2 * π) := fun θ ↦ by
+    simp only
+    rw [show -(θ + 2 * π) = -θ - 2 * π by ring, ← hg (-θ - 2 * π), sub_add_cancel]
+  have h := ω.loopArea_comp_sub_mul hg' (-θ₀)
+  have hloop : (fun t ↦ g (-(-θ₀ - 2 * π * t))) = fun t ↦ g (θ₀ + 2 * π * t) :=
+    funext fun t ↦ congrArg g (by ring)
+  simp only [hloop, deriv_comp_neg, map_neg] at h
+  rw [h, intervalIntegral.integral_neg,
+    intervalIntegral.integral_comp_neg (fun θ ↦ ω (g θ) (deriv g θ)), neg_neg]
   ring
 
 variable [FiniteDimensional ℝ V] {u : ℝ × ℝ → V} {a b : ℝ}
