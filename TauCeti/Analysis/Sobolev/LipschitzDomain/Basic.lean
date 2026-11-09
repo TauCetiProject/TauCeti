@@ -55,6 +55,9 @@ support-containment lemmas provide the shared geometry for chart trace and exten
 * `Set.IsLipschitzChartWith.smul`: positive dilation of a chart, with explicit coordinates
   `TauCeti.dilateConj`, graph and radii.
 * `Set.IsLipschitzDomainWith.smul`: positive dilations preserve Lipschitz domains and constants.
+* `Set.isLipschitzDomainWith_image_iff`: the image of a set `Ω ⊆ F` under an affine isometry onto
+  the model space is a Lipschitz domain exactly when `Ω` is open with a chart at every frontier
+  point.
 * `Set.IsLipschitzDomainWith.exists_finset_isLipschitzChartWith_cover`: the frontier of a bounded
   Lipschitz domain is covered by finitely many chart cylinders with a common Lipschitz constant.
 * `Set.IsLipschitzDomainWith.exists_finset_isLipschitzChartWith_two_mul_lt_cover`: the frontier of
@@ -621,6 +624,19 @@ theorem isLipschitzDomainWith_image_affineIsometryEquiv_iff
   have himage : g.symm '' g '' Omega = Omega :=
     g.toContinuousAffineEquiv.symm_image_image Omega
   simpa only [himage] using h.image_affineIsometryEquiv g.symm
+
+/-- **Lipschitz domains in another ambient space.** For an affine isometry `g` from `F` onto the
+model space `WithLp 2 (ℝ × E)`, the image `g '' Omega` is a Lipschitz domain with constant `L`
+exactly when `Omega` is open and has a local `L`-Lipschitz graph chart at each of its frontier
+points. This transports Lipschitz domains of the model space to sets in `F`, such as the complex
+plane, which carry no `Set.IsLipschitzDomainWith` predicate of their own. -/
+theorem isLipschitzDomainWith_image_iff {Omega : Set F} {L : ℝ≥0}
+    (g : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) :
+    (g '' Omega).IsLipschitzDomainWith L ↔
+      IsOpen Omega ∧ ∀ x ∈ frontier Omega, Omega.IsLipschitzDomainAtWith (E := E) L x := by
+  rw [isLipschitzDomainWith_iff, ← g.coe_toHomeomorph, ← g.toHomeomorph.image_frontier,
+    g.toHomeomorph.isOpen_image, forall_mem_image]
+  simp only [g.coe_toHomeomorph, isLipschitzDomainAtWith_image_affineIsometryEquiv_iff]
 
 section Dilation
 

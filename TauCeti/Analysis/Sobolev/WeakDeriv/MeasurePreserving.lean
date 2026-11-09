@@ -51,6 +51,9 @@ multiplied by a Lipschitz constant of `Φ` on `closure W`, and these tend to zer
 ## Main declarations
 
 * `TauCeti.HasWeakFDerivOn.comp_measurePreserving`: the weak chain rule.
+* `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv`,
+  `TauCeti.hasWeakFDerivOn_comp_continuousLinearEquiv_iff`: the case of a measure-preserving
+  continuous linear equivalence, such as a linear isometry between inner product spaces.
 
 ## References
 
@@ -220,5 +223,33 @@ theorem HasWeakFDerivOn.comp_measurePreserving {U : Opens E} {V : Opens E'} {u :
   filter_upwards [hindD] with x hx
   simp only [Function.comp_apply] at hx
   rw [hx]
+
+
+/-- **The weak chain rule for linear changes of variables.** If `u` has weak derivative `D` on the
+open set `V`, and the continuous linear equivalence `e` carries `μ` to `ν` and maps `U` into `V`,
+then `u ∘ e` has weak derivative `x ↦ D (e x) ∘L e` on `U`. Linear isometries between
+finite-dimensional real inner product spaces carry volume to volume
+(`LinearIsometryEquiv.measurePreserving`). -/
+theorem HasWeakFDerivOn.comp_continuousLinearEquiv {U : Opens E} {V : Opens E'} {u : E' → F}
+    {D : E' → E' →L[ℝ] F} (h : HasWeakFDerivOn ν V u D) (e : E ≃L[ℝ] E')
+    (he : MeasurePreserving e μ ν) (hUV : MapsTo e U V) :
+    HasWeakFDerivOn μ U (u ∘ e) fun x => (D (e x)).comp (e : E →L[ℝ] E') := by
+  simpa only [e.fderiv] using h.comp_measurePreserving he
+    (e : E →L[ℝ] E').lipschitzWith.locallyLipschitz.locallyLipschitzOn hUV
+
+/-- **Weak derivatives through a linear change of variables.** If the continuous linear
+equivalence `e` carries `μ` to `ν` and `U = e ⁻¹' V`, then `u ∘ e` has weak derivative
+`x ↦ D (e x) ∘L e` on `U` exactly when `u` has weak derivative `D` on `V`. -/
+theorem hasWeakFDerivOn_comp_continuousLinearEquiv_iff {U : Opens E} {V : Opens E'} {u : E' → F}
+    {D : E' → E' →L[ℝ] F} (e : E ≃L[ℝ] E') (he : MeasurePreserving e μ ν)
+    (hUV : (U : Set E) = e ⁻¹' V) :
+    HasWeakFDerivOn μ U (u ∘ e) (fun x => (D (e x)).comp (e : E →L[ℝ] E')) ↔
+      HasWeakFDerivOn ν V u D := by
+  refine ⟨fun h => ?_, fun h => h.comp_continuousLinearEquiv e he (hUV ▸ mapsTo_preimage e V)⟩
+  have he' : MeasurePreserving e.symm ν μ :=
+    MeasurePreserving.symm e.toHomeomorph.toMeasurableEquiv he
+  have hVU : MapsTo e.symm V U := fun y hy => by simpa [hUV] using hy
+  simpa [Function.comp_def, ContinuousLinearMap.comp_assoc] using
+    h.comp_continuousLinearEquiv e.symm he' hVU
 
 end TauCeti
