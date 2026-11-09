@@ -45,6 +45,8 @@ is a cycle.
   commutes with the differentials.
 * `mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero`: the Maurer–Cartan equation of a
   row is the vanishing of its twisted differential.
+* The zero cocycle, whose differential is the coefficient differential alone
+  (`rowFiniteTwistedDifferential_zero`).
 * `linearCombination_rowFiniteTwistedDifferential` and
   `forall_linearCombination_rowFiniteTwistedDifferential_iff`: maps out of the free module
   commute with the differentials exactly when they do so on generators.
@@ -185,6 +187,20 @@ theorem m_mem_rowFiniteTotalGrading (m : RowFiniteTwistingCocycle 𝒜 d P ind) 
     convert m.mem_graded x y using 2
     ring
 
+omit [GradedAlgebra 𝒜] in
+/-- The zero twisting cocycle. Its free module carries the coefficient differential alone, so it
+is the direct sum of shifted copies of the algebra, one for each generator. -/
+instance : Zero (RowFiniteTwistingCocycle 𝒜 d P ind) where
+  zero :=
+    { m := 0
+      mem_graded := fun _ _ ↦ zero_mem _
+      twisting := fun _ ↦ by simp }
+
+omit [GradedAlgebra 𝒜] in
+@[simp]
+theorem zero_m : (0 : RowFiniteTwistingCocycle 𝒜 d P ind).m = 0 :=
+  (rfl)
+
 end RowFiniteTwistingCocycle
 
 section SignedMap
@@ -274,6 +290,14 @@ theorem rowFiniteTwistedDifferential_apply (m : P → P →₀ A) (f : P →₀ 
       Finsupp.mapRange.linearMap d f +
         f.sum (fun x a ↦ (InternalGrading.ofDecomposition 𝒜).koszulTwist 1 a • m x) := by
   simp only [rowFiniteTwistedDifferential, LinearMap.add_apply, rowFiniteSignedMap_apply]
+
+/-- With zero rows, the differential is the coefficient differential alone. -/
+@[simp]
+theorem rowFiniteTwistedDifferential_zero :
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (0 : P → P →₀ A) =
+      Finsupp.mapRange.linearMap d := by
+  ext x a y
+  simp [rowFiniteTwistedDifferential, rowFiniteSignedMap]
 
 /-- The differential evaluated on a single homogeneous coefficient. -/
 theorem rowFiniteTwistedDifferential_single (m : P → P →₀ A) (x : P)
