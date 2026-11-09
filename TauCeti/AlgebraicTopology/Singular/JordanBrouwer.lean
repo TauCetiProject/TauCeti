@@ -213,14 +213,50 @@ def reducedSingularHomologySphereComplRangeSphereIso {i : ℕ}
     reducedSingularHomologySphereIso M
       ((EuclideanSpace.basisFun (ULift.{w} (Fin (i + finrank ℝ E + 1))) ℝ).reindex Equiv.ulift)
 
+omit [FiniteDimensional ℝ E] in
+/-- The unit sphere of an infinite-dimensional real normed space does not inject into the unit
+sphere of a real normed space of dimension `dim E + 1 = 1`: the former is infinite, as it spans
+the space, while the latter has two points. -/
+private lemma false_of_not_finiteDimensional_of_injective (hEF : finrank ℝ F = finrank ℝ E + 1)
+    (hE : ¬ FiniteDimensional ℝ E) (hi : Function.Injective h) : False := by
+  rw [Module.finrank_of_not_finite hE, zero_add] at hEF
+  have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
+  obtain ⟨v, hv0, hv⟩ := finrank_eq_one_iff'.1 hEF
+  have hvpos : 0 < ‖v‖ := norm_pos_iff.2 hv0
+  have hF : (sphere (0 : F) 1).Finite := by
+    refine ({‖v‖⁻¹ • v, -(‖v‖⁻¹ • v)} : Set F).toFinite.subset fun w hw ↦ ?_
+    obtain ⟨c, rfl⟩ := hv w
+    have hn : |c| * ‖v‖ = 1 := by simpa [norm_smul] using hw
+    simp only [mem_insert_iff, mem_singleton_iff]
+    rcases le_total 0 c with hc | hc
+    · rw [abs_of_nonneg hc] at hn
+      exact Or.inl (by rw [eq_inv_of_mul_eq_one_left hn])
+    · rw [abs_of_nonpos hc] at hn
+      refine Or.inr ?_
+      rw [show c = -‖v‖⁻¹ by linarith [eq_inv_of_mul_eq_one_left hn], neg_smul]
+  have : Finite (sphere (0 : E) 1) := have := hF.to_subtype; .of_injective h hi
+  have hspan : Submodule.span ℝ (sphere (0 : E) 1) = ⊤ := by
+    refine eq_top_iff.2 fun x _ ↦ ?_
+    by_cases hx : x = 0
+    · simp [hx]
+    have hx' : x = ‖x‖ • (‖x‖⁻¹ • x) := by
+      rw [smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.2 hx), one_smul]
+    rw [hx']
+    exact Submodule.smul_mem _ _ (Submodule.subset_span (by simp [norm_smul, hx]))
+  exact hE (Module.finite_def.2 (hspan ▸ Submodule.fg_span (Set.toFinite _)))
+
+omit [FiniteDimensional ℝ E] in
 /-- **The Jordan–Brouwer separation theorem.** The complement of the image of a continuous injection
-of the unit sphere of a finite-dimensional real normed space `E` into the unit sphere of a real
+of the unit sphere of a real normed space `E` into the unit sphere of a real
 normed space of dimension `dim E + 1` has exactly two path components (Hatcher,
 *Algebraic Topology*, Corollary 2B.2). -/
 theorem natCard_zerothHomotopy_sphere_compl_range_eq_two (hEF : finrank ℝ F = finrank ℝ E + 1)
     (hc : Continuous h) (hi : Function.Injective h) :
     Nat.card (ZerothHomotopy ↥(range h)ᶜ) = 2 := by
   classical
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · exact (false_of_not_finiteDimensional_of_injective hEF hE hi).elim
   let K := ULift.{w} ℚ
   let e := reducedSingularHomologySphereComplRangeSphereIso (ModuleCat.of K K) (i := 0)
     (by rw [hEF, zero_add]) hc hi
@@ -260,11 +296,15 @@ theorem natCard_connectedComponents_sphere_compl_range_eq_two
   rw [Nat.card_congr connectedComponentsEquivZerothHomotopy]
   exact natCard_zerothHomotopy_sphere_compl_range_eq_two hEF hc hi
 
+omit [FiniteDimensional ℝ E] in
 /-- **The Jordan–Brouwer separation theorem, connected form.** The complement of the image of a
-continuous injection of the unit sphere of a finite-dimensional real normed space `E` into the unit
+continuous injection of the unit sphere of a real normed space `E` into the unit
 sphere of a real normed space of dimension `dim E + 1` is not preconnected. -/
 theorem not_isPreconnected_compl_range_sphere (hEF : finrank ℝ F = finrank ℝ E + 1)
     (hc : Continuous h) (hi : Function.Injective h) : ¬ IsPreconnected (range h)ᶜ := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · exact (false_of_not_finiteDimensional_of_injective hEF hE hi).elim
   intro hconn
   have := isPreconnected_iff_preconnectedSpace.mp hconn
   have hle : Nat.card (ConnectedComponents ↥(range h)ᶜ) ≤ 1 := by
