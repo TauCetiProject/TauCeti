@@ -9,11 +9,13 @@ public import Mathlib.Analysis.Calculus.Deriv.Prod
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.ODE.Basic
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+public import Mathlib.Analysis.SpecialFunctions.Sigmoid
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import TauCeti.Analysis.Calculus.Morse.OneDimensional
 public import TauCeti.Analysis.Calculus.Morse.Pi
 import Mathlib.Analysis.ODE.ExistUnique
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Analysis.SpecialFunctions.Sigmoid
 
 /-!
 # The negative gradient flow of the Euclidean quartic
@@ -42,8 +44,9 @@ On `(0, 1)` the function `quarticTime x = log x - log (1 - x²) / 2` is a time c
 flow translates it, `quarticTime (quarticFlow t x) = quarticTime x + t`
 (`TauCeti.quarticTime_quarticFlow`), and it identifies `(0, 1)` with `ℝ`, with inverse
 `quarticOrbit s = eˢ / √(1 + e^{2s})`. Hence the trajectories from `0` to `1` form a single orbit,
-and in the time coordinate `s` the identities `x² = e^{2s} / (1 + e^{2s})` and
-`1 - x² = 1 / (1 + e^{2s})` display the two asymptotic rates exactly.
+and in the time coordinate `s` the identities `x² = e^{2s} / (1 + e^{2s})`, the sigmoid
+`σ (2s)` (`TauCeti.sq_quarticOrbit_eq_sigmoid`), and `1 - x² = 1 / (1 + e^{2s})` display the two
+asymptotic rates exactly.
 
 The separated sum `quarticWellSum y = ∑ i, quarticWell (y i)` on `ι → ℝ` is the standard model
 for compactified spaces of broken trajectories and for the comparison of Morse chains with
@@ -199,15 +202,11 @@ private theorem quarticFlow_radicand_pos {x : ℝ} (hx : x ^ 2 ≤ 1) (t : ℝ) 
     rw [sq_abs] at this
     linarith
 
-private theorem exp_two_mul_eq_sq (t : ℝ) : exp (2 * t) = exp t ^ 2 := by
-  rw [← exp_nat_mul]
-  norm_num
-
 /-- The square of the flow, `x² e^{2t} / (1 - x² + x² e^{2t})`. -/
 theorem sq_quarticFlow {x : ℝ} (hx : x ^ 2 ≤ 1) (t : ℝ) :
     quarticFlow t x ^ 2 = x ^ 2 * exp (2 * t) / (1 - x ^ 2 + x ^ 2 * exp (2 * t)) := by
   rw [quarticFlow_def, div_pow, sq_sqrt (quarticFlow_radicand_pos hx t).le, mul_pow,
-    exp_two_mul_eq_sq]
+    ← exp_nat_mul, Nat.cast_ofNat]
 
 /-- One minus the square of the flow, `(1 - x²) / (1 - x² + x² e^{2t})`. -/
 theorem one_sub_sq_quarticFlow {x : ℝ} (hx : x ^ 2 ≤ 1) (t : ℝ) :
@@ -226,7 +225,7 @@ theorem quarticFlow_zero_right (t : ℝ) : quarticFlow t 0 = 0 := by
 
 @[simp]
 theorem quarticFlow_one (t : ℝ) : quarticFlow t 1 = 1 := by
-  rw [quarticFlow_def, exp_two_mul_eq_sq]
+  rw [quarticFlow_def, show exp (2 * t) = exp t ^ 2 by rw [← exp_nat_mul, Nat.cast_ofNat]]
   simp [sqrt_sq (exp_pos t).le, (exp_pos t).ne']
 
 @[simp]
@@ -259,29 +258,17 @@ theorem sq_quarticFlow_lt_one {x : ℝ} (hx : x ^ 2 < 1) (t : ℝ) : quarticFlow
     exact div_pos (by linarith) (quarticFlow_radicand_pos hx.le t)
   linarith
 
-private theorem sq_le_one_iff_mem_Icc {x : ℝ} : x ^ 2 ≤ 1 ↔ x ∈ Icc (-1) 1 := by
-  rw [sq_le_one_iff_abs_le_one, abs_le, mem_Icc]
-
-private theorem sq_lt_one_iff_mem_Ioo {x : ℝ} : x ^ 2 < 1 ↔ x ∈ Ioo (-1) 1 := by
-  rw [sq_lt_one_iff_abs_lt_one, abs_lt, mem_Ioo]
-
-private theorem eq_or_eq_of_mem_Icc_of_notMem_Ioo {x : ℝ} (hx : x ∈ Icc (-1) 1)
-    (hx' : x ∉ Ioo (-1) 1) : x = -1 ∨ x = 1 := by
-  rw [mem_Icc] at hx
-  rw [mem_Ioo, not_and_or, not_lt, not_lt] at hx'
-  rcases hx' with h | h
-  · exact .inl (le_antisymm h hx.1)
-  · exact .inr (le_antisymm hx.2 h)
-
 /-- The flow keeps `[-1, 1]` invariant. -/
 theorem quarticFlow_mem_Icc {x : ℝ} (hx : x ∈ Icc (-1) 1) (t : ℝ) :
     quarticFlow t x ∈ Icc (-1) 1 :=
-  sq_le_one_iff_mem_Icc.1 (sq_quarticFlow_le_one (sq_le_one_iff_mem_Icc.2 hx) t)
+  abs_le.1 ((sq_le_one_iff_abs_le_one _).1
+    (sq_quarticFlow_le_one ((sq_le_one_iff_abs_le_one x).2 (abs_le.2 hx)) t))
 
 /-- The flow keeps `(-1, 1)` invariant. -/
 theorem quarticFlow_mem_Ioo {x : ℝ} (hx : x ∈ Ioo (-1) 1) (t : ℝ) :
     quarticFlow t x ∈ Ioo (-1) 1 :=
-  sq_lt_one_iff_mem_Ioo.1 (sq_quarticFlow_lt_one (sq_lt_one_iff_mem_Ioo.2 hx) t)
+  abs_lt.1 ((sq_lt_one_iff_abs_lt_one _).1
+    (sq_quarticFlow_lt_one ((sq_lt_one_iff_abs_lt_one x).2 (abs_lt.2 hx)) t))
 
 /-- **The flow solves the negative gradient equation** `x' = x (1 - x²)`. -/
 theorem hasDerivAt_quarticFlow {x : ℝ} (hx : x ^ 2 ≤ 1) (t : ℝ) :
@@ -299,13 +286,14 @@ theorem hasDerivAt_quarticFlow {x : ℝ} (hx : x ^ 2 ≤ 1) (t : ℝ) :
   have hr : 0 < r := sqrt_pos.2 hD
   rw [← hs]
   field_simp
-  rw [exp_two_mul_eq_sq] at hs ⊢
+  have h2 : exp (2 * t) = exp t ^ 2 := by rw [← exp_nat_mul, Nat.cast_ofNat]
+  rw [h2] at hs ⊢
   linear_combination (-x) * hs
 
 /-- The flow is an integral curve of the negative gradient field of the quartic. -/
 theorem isIntegralCurve_quarticFlow {x : ℝ} (hx : x ∈ Icc (-1) 1) :
     IsIntegralCurve (fun t ↦ quarticFlow t x) (fun _ y ↦ -∇ quarticWell y) := fun t ↦ by
-  simpa using hasDerivAt_quarticFlow (sq_le_one_iff_mem_Icc.2 hx) t
+  simpa using hasDerivAt_quarticFlow ((sq_le_one_iff_abs_le_one x).2 (abs_le.2 hx)) t
 
 /-- **The flow property** `φ (s + t) = φ s ∘ φ t` on `[-1, 1]`. -/
 theorem quarticFlow_add {x : ℝ} (hx : x ^ 2 ≤ 1) (s t : ℝ) :
@@ -327,15 +315,16 @@ private theorem quarticFlow_eq_div_sqrt (x t : ℝ) :
     quarticFlow t x = x / √((1 - x ^ 2) * exp (-(2 * t)) + x ^ 2) := by
   have hE : 1 - x ^ 2 + x ^ 2 * exp (2 * t) =
       exp t ^ 2 * ((1 - x ^ 2) * exp (-(2 * t)) + x ^ 2) := by
-    rw [← exp_two_mul_eq_sq, mul_add, ← mul_assoc, mul_comm (exp _), mul_assoc, ← exp_add]
+    rw [← exp_nat_mul, Nat.cast_ofNat, mul_add, ← mul_assoc, mul_comm (exp _), mul_assoc, ← exp_add]
     simp only [add_neg_cancel, exp_zero, mul_one]
     ring
   rw [quarticFlow_def, hE, sqrt_mul (sq_nonneg _), sqrt_sq (exp_pos t).le, mul_comm (exp t),
     mul_div_mul_right _ _ (exp_pos t).ne']
 
-/-- **Forward limit**: as `t → ∞` the flow from `x ∈ [-1, 1]` tends to the sign of `x`, the
-minimum `±1` on its side of `0`, or `0` if `x = 0`. -/
-theorem tendsto_quarticFlow_atTop {x : ℝ} (hx : x ∈ Icc (-1) 1) :
+/-- **Forward limit**: as `t → ∞` the flow from `x` tends to the sign of `x`, the minimum `±1` on
+its side of `0`, or `0` if `x = 0`. The closed formula has this limit for every `x`, although it is
+a trajectory only for `x ∈ [-1, 1]`. -/
+theorem tendsto_quarticFlow_atTop (x : ℝ) :
     Tendsto (fun t ↦ quarticFlow t x) atTop (𝓝 (SignType.sign x)) := by
   rcases eq_or_ne x 0 with rfl | hx0
   · simp
@@ -351,7 +340,7 @@ theorem tendsto_quarticFlow_atTop {x : ℝ} (hx : x ∈ Icc (-1) 1) :
 /-- **Backward limit**: as `t → -∞` the flow from `x ∈ (-1, 1)` tends to the maximum `0`. -/
 theorem tendsto_quarticFlow_atBot {x : ℝ} (hx : x ∈ Ioo (-1) 1) :
     Tendsto (fun t ↦ quarticFlow t x) atBot (𝓝 0) := by
-  have hx1 := sq_lt_one_iff_mem_Ioo.2 hx
+  have hx1 := (sq_lt_one_iff_abs_lt_one x).2 (abs_lt.2 hx)
   have hexp : Tendsto (fun t : ℝ ↦ exp (2 * t)) atBot (𝓝 0) :=
     tendsto_exp_atBot.comp (tendsto_id.const_mul_atBot two_pos)
   have h := (tendsto_exp_atBot.const_mul x).div
@@ -366,7 +355,9 @@ theorem tendsto_quarticFlow_atBot_ite {x : ℝ} (hx : x ∈ Icc (-1) 1) :
     Tendsto (fun t ↦ quarticFlow t x) atBot (𝓝 (if x ∈ Ioo (-1) 1 then 0 else x)) := by
   split_ifs with hx'
   · exact tendsto_quarticFlow_atBot hx'
-  · rcases eq_or_eq_of_mem_Icc_of_notMem_Ioo hx hx' with rfl | rfl <;> simp
+  · have h : x ∈ Icc (-1) 1 \ Ioo (-1) 1 := ⟨hx, hx'⟩
+    rw [Icc_sdiff_Ioo_same (by norm_num)] at h
+    rcases h with rfl | rfl <;> simp
 
 /-- The negative gradient field of the quartic is `2`-Lipschitz on `[-1, 1]`: the difference
 quotient of `x (1 - x²)` is `1 - (x² + x y + y²)`. -/
@@ -408,8 +399,8 @@ theorem quarticTime_quarticFlow {x : ℝ} (hx : x ∈ Ioo 0 1) (t : ℝ) :
     log_exp, log_sqrt hD.le, log_div (by linarith) hD.ne']
   ring
 
-/-- The **unit-speed orbit** `eˢ / √(1 + e^{2s})` from `0` to `1`, the inverse of the time
-coordinate. -/
+/-- The **flow-time-parametrized orbit** `eˢ / √(1 + e^{2s})` from `0` to `1`, the inverse of the
+time coordinate. -/
 def quarticOrbit (s : ℝ) : ℝ := exp s / √(1 + exp (2 * s))
 
 theorem quarticOrbit_def (s : ℝ) : quarticOrbit s = exp s / √(1 + exp (2 * s)) := (rfl)
@@ -419,7 +410,7 @@ theorem quarticOrbit_pos (s : ℝ) : 0 < quarticOrbit s :=
 
 /-- In the time coordinate `s`, `x² = e^{2s} / (1 + e^{2s})`: the orbit leaves `0` at rate `1`. -/
 theorem sq_quarticOrbit (s : ℝ) : quarticOrbit s ^ 2 = exp (2 * s) / (1 + exp (2 * s)) := by
-  rw [quarticOrbit_def, div_pow, sq_sqrt (by positivity), exp_two_mul_eq_sq]
+  rw [quarticOrbit_def, div_pow, sq_sqrt (by positivity), ← exp_nat_mul, Nat.cast_ofNat]
 
 /-- In the time coordinate `s`, `1 - x² = 1 / (1 + e^{2s})`: the orbit approaches `1` at
 rate `2`. -/
@@ -429,28 +420,37 @@ theorem one_sub_sq_quarticOrbit (s : ℝ) : 1 - quarticOrbit s ^ 2 = 1 / (1 + ex
   field_simp
   ring
 
-theorem quarticOrbit_mem_Ioo (s : ℝ) : quarticOrbit s ∈ Ioo 0 1 := by
-  refine ⟨quarticOrbit_pos s, ?_⟩
-  have h := one_sub_sq_quarticOrbit s
-  have : 0 < 1 - quarticOrbit s ^ 2 := by rw [h]; positivity
-  nlinarith [quarticOrbit_pos s]
+/-- In the time coordinate `s`, `x²` is the sigmoid `σ (2s)`, so the time coordinate is half the
+logit of `x²`. -/
+theorem sq_quarticOrbit_eq_sigmoid (s : ℝ) : quarticOrbit s ^ 2 = sigmoid (2 * s) := by
+  rw [sq_quarticOrbit, sigmoid_def, exp_neg]
+  field_simp
+  ring
+
+theorem quarticOrbit_mem_Ioo (s : ℝ) : quarticOrbit s ∈ Ioo 0 1 :=
+  ⟨quarticOrbit_pos s, (sq_lt_one_iff₀ (quarticOrbit_pos s).le).1
+    (sq_quarticOrbit_eq_sigmoid s ▸ sigmoid_lt_one _)⟩
+
+/-- Twice the time coordinate of `x ∈ (0, 1)` is the logit `log (u / (1 - u))` of `u = x²`. -/
+theorem two_mul_quarticTime {x : ℝ} (hx : x ∈ Ioo 0 1) :
+    2 * quarticTime x = log (x ^ 2 / (1 - x ^ 2)) := by
+  have hx1 : x ^ 2 < 1 := (sq_lt_one_iff₀ hx.1.le).2 hx.2
+  rw [quarticTime_def, log_div (pow_pos hx.1 2).ne' (sub_pos.2 hx1).ne', log_pow]
+  push_cast
+  ring
 
 @[simp]
 theorem quarticTime_quarticOrbit (s : ℝ) : quarticTime (quarticOrbit s) = s := by
-  have : 0 < 1 + exp (2 * s) := by positivity
-  rw [quarticTime_def, one_sub_sq_quarticOrbit, quarticOrbit_def,
-    log_div (exp_pos s).ne' (sqrt_pos.2 this).ne', log_exp, log_sqrt this.le, one_div, log_inv]
-  ring
+  have h := two_mul_quarticTime (quarticOrbit_mem_Ioo s)
+  rw [sq_quarticOrbit_eq_sigmoid, log_sigmoid_div_one_sub] at h
+  linarith
 
+@[simp]
 theorem quarticOrbit_quarticTime {x : ℝ} (hx : x ∈ Ioo 0 1) : quarticOrbit (quarticTime x) = x := by
-  have hx1 : 0 < 1 - x ^ 2 := by nlinarith [hx.1, hx.2]
-  have he : exp (2 * quarticTime x) = x ^ 2 / (1 - x ^ 2) := by
-    rw [quarticTime_def, show 2 * (log x - log (1 - x ^ 2) / 2) = 2 * log x - log (1 - x ^ 2) by
-      ring, exp_sub, exp_log hx1, exp_two_mul_eq_sq, exp_log hx.1]
+  have hx1 : x ^ 2 < 1 := (sq_lt_one_iff₀ hx.1.le).2 hx.2
   refine (pow_left_inj₀ (quarticOrbit_pos _).le hx.1.le two_ne_zero).1 ?_
-  rw [sq_quarticOrbit, he]
-  field_simp
-  ring
+  rw [sq_quarticOrbit_eq_sigmoid, two_mul_quarticTime hx,
+    sigmoid_log_div_one_sub (pow_pos hx.1 2) hx1]
 
 /-- The time coordinate identifies `(0, 1)` with `ℝ`. -/
 theorem bijOn_quarticTime : BijOn quarticTime (Ioo 0 1) univ :=
@@ -459,12 +459,12 @@ theorem bijOn_quarticTime : BijOn quarticTime (Ioo 0 1) univ :=
     fun s _ ↦ ⟨quarticOrbit s, quarticOrbit_mem_Ioo s, quarticTime_quarticOrbit s⟩⟩
 
 /-- **The trajectories from `0` to `1` form one orbit**: in the time coordinate the flow from
-`x ∈ (0, 1)` is the unit-speed orbit started at time `quarticTime x`. -/
+`x ∈ (0, 1)` is the flow-time-parametrized orbit started at time `quarticTime x`. -/
 theorem quarticFlow_eq_quarticOrbit {x : ℝ} (hx : x ∈ Ioo 0 1) (t : ℝ) :
     quarticFlow t x = quarticOrbit (quarticTime x + t) := by
   have hx' : x ∈ Ioo (-1) 1 := ⟨by linarith [hx.1], hx.2⟩
   have hy : quarticFlow t x ∈ Ioo 0 1 :=
-    ⟨quarticFlow_pos hx.1 (sq_le_one_iff_mem_Icc.2 (Ioo_subset_Icc_self hx')) t,
+    ⟨quarticFlow_pos hx.1 ((sq_lt_one_iff₀ hx.1.le).2 hx.2).le t,
       (quarticFlow_mem_Ioo hx' t).2⟩
   rw [← quarticTime_quarticFlow hx, quarticOrbit_quarticTime hy]
 
@@ -482,9 +482,6 @@ def quarticWellSumFlow (t : ℝ) (y : ι → ℝ) : ι → ℝ := fun i ↦ quar
 theorem quarticWellSumFlow_apply (t : ℝ) (y : ι → ℝ) (i : ι) :
     quarticWellSumFlow t y i = quarticFlow t (y i) := (rfl)
 
-private theorem mem_Icc_neg_one_one_iff {y : ι → ℝ} : y ∈ Icc (-1) 1 ↔ ∀ i, y i ∈ Icc (-1) 1 := by
-  simp only [mem_Icc, Pi.le_def, Pi.neg_apply, Pi.one_apply, forall_and]
-
 @[simp]
 theorem quarticWellSumFlow_zero_left (y : ι → ℝ) : quarticWellSumFlow 0 y = y :=
   funext fun i ↦ quarticFlow_zero_left (y i)
@@ -492,12 +489,13 @@ theorem quarticWellSumFlow_zero_left (y : ι → ℝ) : quarticWellSumFlow 0 y =
 /-- The flow property of the coordinatewise flow on the cube. -/
 theorem quarticWellSumFlow_add {y : ι → ℝ} (hy : y ∈ Icc (-1) 1) (s t : ℝ) :
     quarticWellSumFlow (s + t) y = quarticWellSumFlow s (quarticWellSumFlow t y) :=
-  funext fun i ↦ quarticFlow_add (sq_le_one_iff_mem_Icc.2 (mem_Icc_neg_one_one_iff.1 hy i)) s t
+  funext fun i ↦ quarticFlow_add ((sq_le_one_iff_abs_le_one _).2 (abs_le.2 ⟨hy.1 i, hy.2 i⟩)) s t
 
 /-- The flow keeps the cube `[-1, 1]^ι` invariant. -/
 theorem quarticWellSumFlow_mem_Icc {y : ι → ℝ} (hy : y ∈ Icc (-1) 1) (t : ℝ) :
     quarticWellSumFlow t y ∈ Icc (-1) 1 :=
-  mem_Icc_neg_one_one_iff.2 fun i ↦ quarticFlow_mem_Icc (mem_Icc_neg_one_one_iff.1 hy i) t
+  ⟨fun i ↦ (quarticFlow_mem_Icc ⟨hy.1 i, hy.2 i⟩ t).1,
+    fun i ↦ (quarticFlow_mem_Icc ⟨hy.1 i, hy.2 i⟩ t).2⟩
 
 /-- The coordinatewise flow solves the negative gradient equation `yᵢ' = -(yᵢ³ - yᵢ)` of the
 Euclidean quartic. -/
@@ -506,20 +504,21 @@ theorem hasDerivAt_quarticWellSumFlow {y : ι → ℝ} (hy : y ∈ Icc (-1) 1) (
       (fun i ↦ -deriv quarticWell (quarticWellSumFlow t y i)) t :=
   hasDerivAt_pi.2 fun i ↦ by
     simpa [gradient_eq_deriv'] using
-      isIntegralCurve_quarticFlow (mem_Icc_neg_one_one_iff.1 hy i) t
+      isIntegralCurve_quarticFlow ⟨hy.1 i, hy.2 i⟩ t
 
-/-- **Forward limits on the cube**: every point of `[-1, 1]^ι` flows to the critical point given
-by the signs of its coordinates. -/
-theorem tendsto_quarticWellSumFlow_atTop {y : ι → ℝ} (hy : y ∈ Icc (-1) 1) :
+/-- **Forward limits**: every point flows to the critical point given by the signs of its
+coordinates. On the cube `[-1, 1]^ι` this is the forward limit of the negative gradient
+trajectory through the point. -/
+theorem tendsto_quarticWellSumFlow_atTop (y : ι → ℝ) :
     Tendsto (fun t ↦ quarticWellSumFlow t y) atTop (𝓝 fun i ↦ (SignType.sign (y i) : ℝ)) :=
-  tendsto_pi_nhds.2 fun i ↦ tendsto_quarticFlow_atTop (mem_Icc_neg_one_one_iff.1 hy i)
+  tendsto_pi_nhds.2 fun i ↦ tendsto_quarticFlow_atTop (y i)
 
 /-- **Backward limits on the cube**: as `t → -∞` a point of `[-1, 1]^ι` tends to the critical
 point keeping its coordinates equal to `±1` and replacing the others by `0`. -/
 theorem tendsto_quarticWellSumFlow_atBot {y : ι → ℝ} (hy : y ∈ Icc (-1) 1) :
     Tendsto (fun t ↦ quarticWellSumFlow t y) atBot
       (𝓝 fun i ↦ if y i ∈ Ioo (-1) 1 then 0 else y i) :=
-  tendsto_pi_nhds.2 fun i ↦ tendsto_quarticFlow_atBot_ite (mem_Icc_neg_one_one_iff.1 hy i)
+  tendsto_pi_nhds.2 fun i ↦ tendsto_quarticFlow_atBot_ite ⟨hy.1 i, hy.2 i⟩
 
 /-- **Connecting trajectories in the cube.** A point `y` of `[-1, 1]^ι` lies on a trajectory from
 `p` to `q` exactly when each coordinate either moves, with `p i = 0`, `y i ∈ (-1, 1)` and `q i`
@@ -530,14 +529,15 @@ theorem tendsto_quarticWellSumFlow_atBot_atTop_iff {y p q : ι → ℝ} (hy : y 
       ∀ i, (y i ∈ Ioo (-1) 1 ∧ p i = 0 ∧ q i = SignType.sign (y i)) ∨
         ((y i = -1 ∨ y i = 1) ∧ p i = y i ∧ q i = y i) := by
   have hbot := tendsto_quarticWellSumFlow_atBot hy
-  have htop := tendsto_quarticWellSumFlow_atTop hy
+  have htop := tendsto_quarticWellSumFlow_atTop y
   have key : ∀ i, (p i = (if y i ∈ Ioo (-1) 1 then 0 else y i) ∧
       q i = SignType.sign (y i)) ↔ ((y i ∈ Ioo (-1) 1 ∧ p i = 0 ∧ q i = SignType.sign (y i)) ∨
         ((y i = -1 ∨ y i = 1) ∧ p i = y i ∧ q i = y i)) := fun i ↦ by
     by_cases hi : y i ∈ Ioo (-1) 1
     · have : ¬(y i = -1 ∨ y i = 1) := by rintro (h | h) <;> simp [h] at hi
       simp [hi, this]
-    · have h := eq_or_eq_of_mem_Icc_of_notMem_Ioo (mem_Icc_neg_one_one_iff.1 hy i) hi
+    · have h : y i ∈ Icc (-1) 1 \ Ioo (-1) 1 := ⟨⟨hy.1 i, hy.2 i⟩, hi⟩
+      rw [Icc_sdiff_Ioo_same (by norm_num), mem_insert_iff, mem_singleton_iff] at h
       have hs : (SignType.sign (y i) : ℝ) = y i := by rcases h with h | h <;> simp [h]
       simp [hi, h, hs]
   refine ⟨fun ⟨hp, hq⟩ i ↦ (key i).1 ⟨congrFun (tendsto_nhds_unique hp hbot) i,
@@ -601,7 +601,7 @@ theorem eq_quarticWellSumFlow_of_isIntegralCurve {γ : ℝ → ι → ℝ}
   have hi : IsIntegralCurve (fun t ↦ γ t i) (fun _ y ↦ -∇ quarticWell y) := fun t ↦ by
     simpa [gradient_eq_deriv'] using hasDerivAt_pi.1 (hγ t) i
   exact congrFun (eq_quarticFlow_of_isIntegralCurve hi
-    fun t ↦ mem_Icc_neg_one_one_iff.1 (hmem t) i) t
+    fun t ↦ ⟨(hmem t).1 i, (hmem t).2 i⟩) t
 
 end Sum
 
