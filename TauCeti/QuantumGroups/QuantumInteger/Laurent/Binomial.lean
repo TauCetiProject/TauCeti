@@ -48,7 +48,9 @@ domain `ℤ[v, v⁻¹]`.
   argument.
 
 The normalization and negative-upper-argument convention are those of G. Lusztig,
-*Introduction to Quantum Groups*, Chapters 1 and 34.
+*Introduction to Quantum Groups*, Chapters 1 and 34. The symmetric normalization, with
+`[n]_v = (v^n - v^(-n)) / (v - v⁻¹)` invariant under `v ↦ v⁻¹`, follows J. C. Jantzen,
+*Lectures on Quantum Groups*, Chapter 0.
 -/
 
 public section

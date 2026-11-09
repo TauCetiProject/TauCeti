@@ -11,7 +11,6 @@ public import TauCeti.Algebra.Polynomial.Laurent.Basic
 
 import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 import Mathlib.RingTheory.Localization.FractionRing
-import Mathlib.Tactic.NormNum
 
 /-!
 # Detecting Laurent polynomials by evaluations
@@ -126,11 +125,8 @@ theorem eq_of_forall_laurentEval_eq {p p' : ℤ[T;T⁻¹]}
   have hinj : Function.Injective (laurentEval (R := ℤ) v) := by
     rwa [← laurentEval_unique v { f with commutes' := fun c => by simp } (by simp [v])]
   refine hinj (h K v ?_)
-  -- `v - v⁻¹` is the image of `T - T⁻¹`, which is nonzero since its value at `2` is `3 / 2`.
-  have hT : (T 1 - T (-1) : ℤ[T;T⁻¹]) ≠ 0 := by
-    intro h₀
-    have h₂ := congrArg (laurentEval (R := ℤ) (Units.mk0 (2 : ℚ) two_ne_zero)) h₀
-    norm_num at h₂
+  -- `v - v⁻¹` is the image of `T - T⁻¹`, which is nonzero.
+  have hT := T_sub_T_ne_zero (R := ℤ) (by decide : (1 : ℤ) ≠ -1)
   simpa [Units.val_inv_eq_inv_val] using hinj.ne hT
 
 end TauCeti
