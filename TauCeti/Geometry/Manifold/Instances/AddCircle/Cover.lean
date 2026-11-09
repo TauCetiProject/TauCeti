@@ -32,8 +32,8 @@ parametrized by the longer circle `AddCircle p`. Its pullback of the time form a
 behaviour are recorded with the time form (`AddCircle.mpullback_coverMap_timeForm`) and the
 orientation of the circle (`AddCircle.isOrientationPreservingAt_coverMap`).
 
-The product quotient map `ℝ × ℝ → AddCircle p × ℝ` is also a local diffeomorphism,
-with derivative the identity in the real tangent coordinates.
+The product quotient maps `ℝ × ℝ → AddCircle p × ℝ` and `ℝ × ℝ → ℝ × AddCircle p` are also local
+diffeomorphisms, the first with derivative the identity in the real tangent coordinates.
 
 ## Main definitions
 
@@ -106,6 +106,15 @@ theorem isLocalDiffeomorph_prodMap_coe_id (n : ℕ∞ω) :
   rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
   exact (isLocalDiffeomorph_coe p n).prodMap
     (Diffeomorph.refl 𝓘(ℝ) ℝ n).isLocalDiffeomorph
+
+/-- The quotient map on the second factor of the real plane is a local diffeomorphism onto the
+circle cylinder, for every differentiability order. -/
+theorem isLocalDiffeomorph_prodMap_id_coe (n : ℕ∞ω) :
+    IsLocalDiffeomorph 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) n
+      (Prod.map (id : ℝ → ℝ) ((↑) : ℝ → AddCircle p)) := by
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+  exact (Diffeomorph.refl 𝓘(ℝ) ℝ n).isLocalDiffeomorph.prodMap
+    (isLocalDiffeomorph_coe p n)
 
 /-- The product quotient map onto the circle cylinder has derivative the identity in the real
 plane model of its tangent spaces. -/
