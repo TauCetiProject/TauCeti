@@ -299,18 +299,15 @@ private theorem coe_skip (a : Fin (k + 1)) (i : Fin k) :
       (by simp only [Fin.le_def, Fin.val_castSucc, Fin.val_succ]; omega)]
     simp
 
-private theorem skip_strictMono (a : Fin (k + 1)) : StrictMono (skip a) := fun i j h => by
-  rw [Fin.lt_def, coe_skip, coe_skip]
-  rw [Fin.lt_def] at h
-  split_ifs <;> omega
+private theorem skip_strictMono (a : Fin (k + 1)) : StrictMono (skip a) :=
+  (Fin.strictMono_succAbove a.castSucc).comp (Fin.strictMono_succAbove a)
 
-private theorem skip_ne_castSucc (a : Fin (k + 1)) (i : Fin k) : skip a i ≠ a.castSucc := by
-  rw [Ne, Fin.ext_iff, coe_skip, Fin.val_castSucc]
-  split_ifs <;> omega
+private theorem skip_ne_castSucc (a : Fin (k + 1)) (i : Fin k) : skip a i ≠ a.castSucc :=
+  Fin.succAbove_ne a.castSucc _
 
 private theorem skip_ne_succ (a : Fin (k + 1)) (i : Fin k) : skip a i ≠ a.succ := by
-  rw [Ne, Fin.ext_iff, coe_skip, Fin.val_succ]
-  split_ifs <;> omega
+  rw [skip, ← Fin.succAbove_of_le_castSucc a.castSucc a le_rfl]
+  exact Fin.succAbove_right_injective.ne (Fin.succAbove_ne a i)
 
 /-- The point of `Fin k` labelling a boundary point of `Fin (k + 2)` other than `a` and
 `a + 1`. -/
@@ -713,22 +710,26 @@ private theorem isNestedInsert_nested_append {n p : ℕ} (x : PlanarMatching (n 
 
 /-- Gluing a planar matching to the fully nested matching on its right pulls every strand
 straight: the result is the planar matching itself. -/
+@[simp]
 theorem glueMiddle_append_nested {n p : ℕ} (x : PlanarMatching (n + p)) :
     glueMiddle p (x.append (nested p)) = x :=
   (glueMiddle_of_isNestedInsert_left p _ (isNestedInsert_append_nested x)).1
 
 /-- Gluing a planar matching to the fully nested matching on its right closes no circle. -/
+@[simp]
 theorem glueMiddleCircles_append_nested {n p : ℕ} (x : PlanarMatching (n + p)) :
     glueMiddleCircles p (x.append (nested p)) = 0 :=
   (glueMiddle_of_isNestedInsert_left p _ (isNestedInsert_append_nested x)).2
 
 /-- Gluing the fully nested matching to a planar matching on its right pulls every strand
 straight: the result is the planar matching itself. -/
+@[simp]
 theorem glueMiddle_nested_append {n p : ℕ} (x : PlanarMatching (n + p)) :
     glueMiddle n ((nested n).append x) = x :=
   (glueMiddle_of_isNestedInsert_right n le_rfl _ (isNestedInsert_nested_append x)).1
 
 /-- Gluing the fully nested matching to a planar matching on its right closes no circle. -/
+@[simp]
 theorem glueMiddleCircles_nested_append {n p : ℕ} (x : PlanarMatching (n + p)) :
     glueMiddleCircles n ((nested n).append x) = 0 :=
   (glueMiddle_of_isNestedInsert_right n le_rfl _ (isNestedInsert_nested_append x)).2
@@ -761,10 +762,6 @@ theorem matching_comp (f : TLDiagram n m) (g : TLDiagram m p) :
 theorem circles_comp (f : TLDiagram n m) (g : TLDiagram m p) :
     (f.comp g).circles = f.circles + g.circles +
       PlanarMatching.glueMiddleCircles m (f.matching.append g.matching) := (rfl)
-
-/-- The matching of the identity diagram is the fully nested one. -/
-private theorem matching_id (n : ℕ) : (id n).matching = PlanarMatching.nested n :=
-  PlanarMatching.ext fun a => by rw [id_matching_val, PlanarMatching.nested_val]
 
 /-- The identity diagram is a right unit for composition. -/
 @[simp]
@@ -814,8 +811,8 @@ theorem cup_comp_cap : cup.comp cap = ⟨(id 0).matching, 1⟩ := by
     PlanarMatching.unskipN, PlanarMatching.pv_append_left, PlanarMatching.pv_append_right,
     pv_cup_matching, pv_cap_matching]
 
-/-- **A cap followed by a cup** is the diagram `e₁ : 2 → 2` joining the two bottom points and the
-two top points. -/
+/-- **A cap followed by a cup** has the matching of the diagram `e₁ : 2 → 2`, joining the two
+bottom points and the two top points. -/
 theorem cap_comp_cup_matching_val : (cap.comp cup).matching.1.val = swap 0 1 * swap 2 3 := by
   refine Equiv.ext fun i => Fin.ext ?_
   rw [← PlanarMatching.pv_coe, matching_comp, PlanarMatching.glueMiddle_zero,
