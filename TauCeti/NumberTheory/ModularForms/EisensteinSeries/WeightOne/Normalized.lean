@@ -63,7 +63,7 @@ theorem qExpansion_normalizedCharE1MF_coeff (huv : u * v ∣ N)
       DirichletCharacter.twistedDivisorSum 0 ψ φ n := by
   let _ : NeZero v := NeZero.of_dvd (dvd_of_mul_left_dvd huv)
   have hv : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
-  have hg := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hv hφ.inv
+  have hg := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hφ.inv
     (isPrimitive_stdAddChar v)
   have hscale : 2 * (-2 * π * I) / v * gaussSum φ⁻¹ stdAddChar ≠ 0 := by
     exact mul_ne_zero (div_ne_zero (by simp [Real.pi_ne_zero]) hv) hg
