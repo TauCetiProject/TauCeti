@@ -536,7 +536,7 @@ variable {a : E × E → V →L[ℂ] W} {x : E} {C C' m m' : ℝ}
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The line derivative in the direction `v` of the phase `ζ ↦ 𝐞 ⟪ζ, x⟫` is
 `2πi ⟪v, x⟫ 𝐞 ⟪ζ, x⟫`. This is Mathlib's derivative of `ζ ↦ 𝐞 (-L x ζ)` with `L = -innerSL ℝ`. -/
-private lemma hasLineDerivAt_fourierChar_inner (x v ζ : E) :
+theorem hasLineDerivAt_fourierChar_inner (x v ζ : E) :
     HasLineDerivAt ℝ (fun ζ ↦ (𝐞 ⟪ζ, x⟫ : ℂ)) ((2 * π * Complex.I * ⟪v, x⟫) * 𝐞 ⟪ζ, x⟫) ζ v := by
   convert (hasFDerivAt_fourierChar_neg_bilinear_right (-innerSL ℝ) x ζ).hasLineDerivAt v
     using 1 <;> simp [innerSL_apply_apply ℝ, real_inner_comm x]
