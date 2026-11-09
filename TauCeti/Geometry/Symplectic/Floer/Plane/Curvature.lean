@@ -170,6 +170,15 @@ private theorem differentiableAt_perturbation_domain (hH : Periodic H 1)
   exact ((hK _).comp z (Complex.equivRealProdCLM.symm.differentiableAt.prodMk
     (differentiableAt_const x))).clm_apply (differentiableAt_const v)
 
+omit [FiniteDimensional ℝ V] in
+/-- The components of the perturbation are differentiable in the target point. -/
+private theorem differentiableAt_perturbation_target (hH : Periodic H 1)
+    (hHs : ContDiff ℝ 1 (uncurry H)) (w : ℂ) (x : V) (v : ℂ) :
+    DifferentiableAt ℝ (fun y ↦ p.perturbation H w y v) x := by
+  have hK := (contDiff_perturbation_prod (p := p) hH hHs).differentiable one_ne_zero
+  exact ((hK _).comp x ((differentiableAt_const w).prodMk differentiableAt_id)).clm_apply
+    (differentiableAt_const v)
+
 /-- The end lift is injective on the band `endStrip p`, whose angular coordinate ranges over one
 period. -/
 private theorem injOn_realChart (p : PSSPlane) :
@@ -376,9 +385,7 @@ private theorem integral_floerEnergyDensity_image_realChart (ω : SymplecticForm
     ω.integral_hamiltonianCurvature_image hmeas hinj (fun w _ ↦ hφ.contDiffAt)
       (fun w _ ↦ hdet w)
       (fun w _ ↦ differentiableAt_perturbation_domain hH hHs _ _ 1)
-      (fun w _ ↦ differentiableAt_perturbation_domain hH hHs _ _ Complex.I)
-      (fun w _ ↦ differentiableAt_perturbation_target hH hHs _ _ 1)
-      (fun w _ ↦ differentiableAt_perturbation_target hH hHs _ _ Complex.I),
+      (fun w _ ↦ differentiableAt_perturbation_domain hH hHs _ _ Complex.I),
     perturbationPullback_realChart_cylindricalEndLift,
     perturbationPullback_realChart_cylindricalEndLift,
     equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag,
@@ -590,8 +597,6 @@ theorem hamiltonianCurvature_pssPlanePerturbation_eq_zero_of_two_lt (ω : Symple
     (w := w) (x := x) (contDiff_realChart (n := 2) p.contDiff_cylindricalEndLift).contDiffAt
     (differentiableAt_perturbation_domain hH hHs _ _ 1)
     (differentiableAt_perturbation_domain hH hHs _ _ Complex.I)
-    (differentiableAt_perturbation_target hH hHs _ _ 1)
-    (differentiableAt_perturbation_target hH hHs _ _ Complex.I)
   rw [perturbationPullback_realChart_cylindricalEndLift,
     perturbationPullback_realChart_cylindricalEndLift, equivRealProdCLM_symm_stdComplexLineReal,
     equivRealProdCLM_symm_stdComplexLineImag,
