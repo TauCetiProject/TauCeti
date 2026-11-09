@@ -50,6 +50,9 @@ of `L_x` are separate.
   whenever `L_x*` has a spectral gap.
 * `TauCeti.Vortex.integral_inner_gaugeFixedRightInverse_of_equation_eq_zero`: the same at an
   actual vortex with unit-modulus end.
+* `exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint_testFunction`: the
+  spectral gap on test fields at such a vortex, the hypothesis of the norm bound and of the
+  least-norm characterization.
 
 ## References
 
@@ -174,9 +177,13 @@ theorem gaugeFixedRightInverse_apply_eq_iff (hx : Continuous x)
   rw [gaugeFixedRightInverse_eq hx]
   exact LinearMap.adjointRightInverse_apply_eq_iff (exists_norm_ambientToLp_le hx hgap)
 
-/-- The spectral gap at an actual vortex with unit-modulus end, on test fields. -/
-private theorem exists_gap_of_equation_eq_zero (hx : ContDiff ℝ 1 x)
-    (hsol : ∀ z, equation x z = 0)
+/-- **The spectral gap on test fields.** At an actual vortex with unit-modulus end there is
+`c > 0` with `c ∫ |η|² ≤ ∫ |L_x* η|²` for every test field `η ∈ 𝓓²(ℂ)`: the form of
+`TauCeti.Vortex.exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` taken as
+hypothesis by `TauCeti.Vortex.norm_gaugeFixedRightInverse_le` and
+`TauCeti.Vortex.gaugeFixedRightInverse_apply_eq_iff`. -/
+theorem exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint_testFunction
+    (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
     ∃ c > 0, ∀ η : 𝓓^{2}((⊤ : Opens ℂ), EuclideanSpace ℝ (Fin 4)),
       c * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ :=
@@ -195,6 +202,7 @@ theorem integral_inner_gaugeFixedRightInverse_of_equation_eq_zero (hx : ContDiff
     (η : 𝓓^{2}((⊤ : Opens ℂ), EuclideanSpace ℝ (Fin 4))) :
     ∫ z, ⟪gaugeFixedRightInverse μ x f z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ :=
   integral_inner_gaugeFixedRightInverse hx.continuous
-    (exists_gap_of_equation_eq_zero hx hsol hlim) f η
+    (exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint_testFunction hx hsol
+      hlim) f η
 
 end TauCeti.Vortex

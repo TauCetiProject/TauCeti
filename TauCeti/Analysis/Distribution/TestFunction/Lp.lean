@@ -145,6 +145,18 @@ theorem indicatorToLp_union [IsFiniteMeasureOnCompacts μ] {B : Set Ω} (hA : Me
       ← MemLp.toLp_add]
     exact MemLp.toLp_congr _ _ (.of_eq (indicator_union_of_disjoint hAB _))
 
+omit [NormedSpace ℝ F] in
+/-- The `Lᵖ(ν)` class of a function supported in a set `K` of finite measure and bounded by `M`
+has norm at most `ν(K)^(1/p) M`. -/
+private theorem norm_toLp_le_of_support_subset {X : Type*} [MeasurableSpace X] {ν : Measure X}
+    {g : X → F} (hg : MemLp g p ν) {K : Set X} (hK : ν K ≠ ⊤) (hgK : Function.support g ⊆ K)
+    {M : ℝ} (hM : 0 ≤ M) (hgM : ∀ x, ‖g x‖ ≤ M) :
+    ‖hg.toLp g‖ ≤ (ν K ^ p.toReal⁻¹).toReal * M := by
+  rw [Lp.norm_toLp, ← ENNReal.toReal_ofReal hM, ← ENNReal.toReal_mul]
+  exact ENNReal.toReal_mono
+    (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity) hK) ENNReal.ofReal_ne_top)
+    (eLpNorm_le_of_ae_bound_of_support_subset hg.aestronglyMeasurable hgK (ae_of_all _ hgM))
+
 variable [Fact (1 ≤ p)]
 
 section FiniteOnCompacts
@@ -157,15 +169,11 @@ private theorem hasLocallyFiniteMass_memLp_toLp :
       (memLp_subtype (p := p) (μ := μ) φ).toLp fun x : Ω => φ x := by
   refine Distribution.hasLocallyFiniteMass_def.2 fun K hK hKΩ =>
     ⟨(μ ((↑) ⁻¹' K) ^ p.toReal⁻¹).toReal, ENNReal.toReal_nonneg, fun φ hφK => ?_⟩
-  have hfin : μ ((↑) ⁻¹' K) ^ p.toReal⁻¹ ≠ ⊤ :=
-    ENNReal.rpow_ne_top_of_nonneg (by positivity)
-      (Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' hK
-        (by simpa using hKΩ)).measure_ne_top
-  rw [Lp.norm_toLp, ← ENNReal.toReal_ofReal (norm_nonneg (φ : E →ᵇ F)), ← ENNReal.toReal_mul]
-  exact ENNReal.toReal_mono (ENNReal.mul_ne_top hfin ENNReal.ofReal_ne_top)
-    (eLpNorm_le_of_ae_bound_of_support_subset (memLp_subtype (p := 1) φ).aestronglyMeasurable
-      (fun x hx => hφK (subset_tsupport _ hx))
-      (ae_of_all _ fun x => BoundedContinuousFunction.norm_coe_le_norm (φ : E →ᵇ F) x))
+  exact norm_toLp_le_of_support_subset _
+    (Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' hK
+      (by simpa using hKΩ)).measure_ne_top
+    (fun x hx => hφK (subset_tsupport _ hx)) (norm_nonneg (φ : E →ᵇ F))
+    fun x => BoundedContinuousFunction.norm_coe_le_norm (φ : E →ᵇ F) x
 
 variable (p μ) in
 /-- The class in `Lᵖ(μ)` of the restriction to `Ω` of a test function on `Ω`, for a measure `μ`
@@ -244,15 +252,9 @@ private theorem hasLocallyFiniteMass_memLp_ambientToLp :
       (φ.continuous.memLp_of_hasCompactSupport (p := p) (μ := ν) φ.hasCompactSupport).toLp φ := by
   refine Distribution.hasLocallyFiniteMass_def.2 fun K hK _ =>
     ⟨(ν K ^ p.toReal⁻¹).toReal, ENNReal.toReal_nonneg, fun φ hφK => ?_⟩
-  rw [Lp.norm_toLp, ← ENNReal.toReal_ofReal (norm_nonneg (φ : E →ᵇ F)), ← ENNReal.toReal_mul]
-  exact ENNReal.toReal_mono
-    (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity) hK.measure_ne_top)
-      ENNReal.ofReal_ne_top)
-    (eLpNorm_le_of_ae_bound_of_support_subset
-      (φ.continuous.memLp_of_hasCompactSupport (p := 1) (μ := ν)
-        φ.hasCompactSupport).aestronglyMeasurable
-      (fun x hx => hφK (subset_tsupport _ hx))
-      (ae_of_all _ fun x => BoundedContinuousFunction.norm_coe_le_norm (φ : E →ᵇ F) x))
+  exact norm_toLp_le_of_support_subset _ hK.measure_ne_top
+    (fun x hx => hφK (subset_tsupport _ hx)) (norm_nonneg (φ : E →ᵇ F))
+    fun x => BoundedContinuousFunction.norm_coe_le_norm (φ : E →ᵇ F) x
 
 variable (p ν) in
 /-- The class in `Lᵖ(ν)` of a test function on `Ω`, for a measure `ν` on the ambient space `E`
