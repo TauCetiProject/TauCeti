@@ -320,15 +320,20 @@ theorem _root_.HasCompactSupport.conjWirtingerDeriv_integral_sub_inv_smul_apply_
   simp only [FunLike.coe_smul, Pi.smul_apply]
   match_scalars <;> field_simp
 
+omit [CompleteSpace F] in
 /-- The Cauchy transform of a compactly supported `C¹` map `f` is complex differentiable at every
 point where `f` vanishes. -/
 theorem _root_.HasCompactSupport.differentiableAt_integral_sub_inv_smul_of_eq_zero {f : ℂ → F}
     (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) {w : ℂ} (hw : f w = 0) :
     DifferentiableAt ℂ (fun w ↦ ∫ z, (w - z)⁻¹ • f z) w := by
+  by_cases hF : CompleteSpace F
+  swap
+  · simp [integral_of_not_completeSpace hF]
   rw [differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero
     (hc.hasFDerivAt_integral_sub_inv_smul hf w).differentiableAt,
     hc.conjWirtingerDeriv_integral_sub_inv_smul_apply_one hf, hw, smul_zero]
 
+omit [CompleteSpace F] in
 /-- The Cauchy transform of a `C¹` map `f` vanishing outside a compact set `k` is holomorphic on
 the complement of `k`. For compactly supported `f`, taking `k = tsupport f` shows that the
 transform is holomorphic off the support of `f`. Applied to a family `g p` vanishing outside a
