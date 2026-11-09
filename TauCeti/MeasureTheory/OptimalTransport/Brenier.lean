@@ -229,10 +229,10 @@ private theorem IsCoupling.integrable_toReal_of_ae_mem_subdifferential [IsFinite
         ((hμ1.inner_const y₀).sub (integrable_const _))
         ((hπ.integrable_inner hμ hν).sub ((hν1.const_inner x₀).sub (integrable_const _)))
     · filter_upwards [hgraph] with z hz
-      linarith [le_toReal_add_toReal_fenchelConjugate (innerₗ E) (hbot _) hz.1 hy₀,
+      linarith [le_toReal_add_toReal_fenchelConjugate (innerₗ E) hz.1 hy₀,
         innerₗ_apply_apply z.1 y₀]
     · filter_upwards [hgraph] with z hz
-      linarith [le_toReal_add_toReal_fenchelConjugate (innerₗ E) (hbot _) hx₀ hz.2.1,
+      linarith [le_toReal_add_toReal_fenchelConjugate (innerₗ E) hx₀ hz.2.1,
         innerₗ_apply_apply x₀ z.2, hz.2.2]
   · refine (hπ.measurePreserving_snd.integrable_comp hv.ereal_toReal.aestronglyMeasurable).1 <|
       integrable_of_le_of_le (f := fun z => (fenchelConjugate (innerₗ E) u z.2).toReal)
@@ -243,10 +243,10 @@ private theorem IsCoupling.integrable_toReal_of_ae_mem_subdifferential [IsFinite
         ((hν1.const_inner x₀).sub (integrable_const _))
         ((hπ.integrable_inner hμ hν).sub ((hμ1.inner_const y₀).sub (integrable_const _)))
     · filter_upwards [hgraph] with z hz
-      linarith [le_toReal_add_toReal_fenchelConjugate (innerₗ E) (hbot _) hx₀ hz.2.1,
+      linarith [le_toReal_add_toReal_fenchelConjugate (innerₗ E) hx₀ hz.2.1,
         innerₗ_apply_apply x₀ z.2]
     · filter_upwards [hgraph] with z hz
-      linarith [le_toReal_add_toReal_fenchelConjugate (innerₗ E) (hbot _) hz.1 hy₀,
+      linarith [le_toReal_add_toReal_fenchelConjugate (innerₗ E) hz.1 hy₀,
         innerₗ_apply_apply z.1 y₀, hz.2.2]
 
 /-- A plan concentrated on the subdifferential graph of a function `u`, such that `u` and its
@@ -290,7 +290,7 @@ private theorem IsCoupling.integral_inner_le_of_ae_mem_subdifferential [IsFinite
     filter_upwards [hσ.measurePreserving_fst.quasiMeasurePreserving.ae hμfin,
       hσ.measurePreserving_snd.quasiMeasurePreserving.ae hνfin] with z hx hy
     simpa only [innerₗ_apply_apply] using
-      le_toReal_add_toReal_fenchelConjugate (innerₗ E) (hbot z.1) hx hy
+      le_toReal_add_toReal_fenchelConjugate (innerₗ E) hx hy
   calc ∫ z, ⟪z.1, z.2⟫ ∂σ
       ≤ ∫ z, ((u z.1).toReal + (fenchelConjugate (innerₗ E) u z.2).toReal) ∂σ :=
         integral_mono_ae (hσ.integrable_inner hμ hν)
