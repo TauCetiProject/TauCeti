@@ -11,6 +11,7 @@ import TauCeti.RingTheory.FittingIdeal.BaseChange
 import TauCeti.RingTheory.Kaehler.Hypersurface
 import TauCeti.RingTheory.Localization.Away.Quotient
 import TauCeti.RingTheory.Node.Hessian
+import TauCeti.RingTheory.RingHom.Etale
 import TauCeti.RingTheory.RingHom.Quotient
 
 /-!
@@ -56,20 +57,39 @@ universe u v w t
 
 namespace Algebra.Presentation
 
+/-- If `W → T₀` is étale, `W ⧸ (f) ≅ S[1/a]` and `J` is the extension of `(f)` to `T₀`, then
+`T₀ ⧸ J` is étale over `S` through `S → S[1/a] ≅ W ⧸ (f) → T₀ ⧸ J`. -/
+private theorem etale_quotientMap_comp_localizationAway {R S : Type*} {W T₀ : Type u}
+    [CommRing R] [CommRing S] [Algebra R S] [CommRing W] [CommRing T₀] [Algebra R W]
+    [Algebra W T₀] [Algebra.Etale W T₀] {f : W} {a : S}
+    (e : (W ⧸ Ideal.span {f}) ≃ₐ[R] Localization.Away a) {J : Ideal T₀}
+    (hJ : (Ideal.span {f}).map (algebraMap W T₀) = J) :
+    (((Ideal.quotientMap J (algebraMap W T₀) (Ideal.map_le_iff_le_comap.1 hJ.le)).comp
+      (e.symm : Localization.Away a →+* W ⧸ Ideal.span {f})).comp
+        (algebraMap S (Localization.Away a))).Etale := by
+  subst hJ
+  have hS : (algebraMap S (Localization.Away a)).Etale := RingHom.etale_algebraMap.2 inferInstance
+  have he : (e.symm : Localization.Away a →+* W ⧸ Ideal.span {f}).Etale :=
+    .of_bijective e.symm.bijective
+  have hW := RingHom.IsStableUnderBaseChange.quotientMap RingHom.Etale.isStableUnderBaseChange
+    (algebraMap W T₀) (Ideal.span {f}) (RingHom.etale_algebraMap.2 inferInstance)
+  exact (hW.comp he).comp hS
+
 variable {R : Type u} {S : Type v} {ι : Type w} {σ : Type t} [CommRing R] [CommRing S]
   [Algebra R S] [Algebra.EssFiniteType R S]
   [Algebra.FormallyUnramified R (S ⧸ fittingIdeal S Ω[S⁄R] 1)] [Finite ι] [Finite σ]
 
 /-- Near a point `q` of the singular locus, `S` is a hypersurface `W ⧸ (f)` in a smooth relative
-surface, up to inverting some `a ∉ q`, and `f` is critical with nondegenerate Hessian at the
-point `P₀` of `W` above `q`. -/
+surface, up to inverting some `a ∉ q` (so that `q` is the contraction of its extension to
+`S[1/a]`), and `f` is critical with nondegenerate Hessian at the point `P₀` of `W` above `q`. -/
 private theorem exists_critical_hypersurface [Nonempty σ] (P : Presentation R S ι σ)
     (hP : Nat.card ι = 1 + Nat.card σ) (q : Ideal S) [q.IsPrime]
     (hq : fittingIdeal S Ω[S⁄R] 1 ≤ q) :
     ∃ (W : Type u) (_ : CommRing W) (_ : Algebra R W) (_ : Algebra.Smooth R W)
       (bW : Module.Basis (Fin 2) W Ω[W⁄R]) (f : W) (a : S)
       (e : (W ⧸ Ideal.span {f}) ≃ₐ[R] Localization.Away a) (P₀ : Ideal W) (_ : P₀.IsPrime),
-      a ∉ q ∧ (∀ w, w ∈ P₀ ↔ e (Ideal.Quotient.mk _ w) ∈ q.map (algebraMap S _)) ∧ f ∈ P₀ ∧
+      (q.map (algebraMap S (Localization.Away a))).comap (algebraMap S _) = q ∧
+      (∀ w, w ∈ P₀ ↔ e (Ideal.Quotient.mk _ w) ∈ q.map (algebraMap S _)) ∧ f ∈ P₀ ∧
       (∀ i, (bW.coord i).compDer (D R W) f ∈ P₀) ∧
       (hessian (fun i ↦ (bW.coord i).compDer (D R W)) f).det ∉ P₀ := by
   -- Reindexing the presentation by finite types in `Type` keeps `W` in the universe of `R`.
@@ -116,8 +136,9 @@ private theorem exists_critical_hypersurface [Nonempty σ] (P : Presentation R S
   -- So `f` is critical with nondegenerate Hessian at the point above `q`.
   have hcrit := bW.forall_mem_and_det_hessian_notMem_of_formallyUnramified f P₀
     (by simpa only [Fintype.card_fin] using Ideal.comap_mono hle)
-  exact ⟨W, inferInstance, inferInstance, inferInstance, bW, f, a, e, P₀, inferInstance, ha,
-    fun _ ↦ Iff.rfl, by simp [P₀, Ideal.Quotient.mk_singleton_self], hcrit.1, hcrit.2⟩
+  exact ⟨W, inferInstance, inferInstance, inferInstance, bW, f, a, e, P₀, inferInstance, hqa,
+    fun _ ↦ Ideal.mem_comap.trans Ideal.mem_comap,
+    by simp [P₀, Ideal.Quotient.mk_singleton_self], hcrit.1, hcrit.2⟩
 
 /-- **The étale local chart of a nodal relative curve.** Let `S` have a presentation `P` over
 `R` with one more generator than relations, and suppose that the singular locus
@@ -142,55 +163,35 @@ theorem exists_etale_nodeAlgebra_hom_of_formallyUnramified (P : Presentation R S
   · -- Without relations `S` is a polynomial ring in one variable, which has no singular point.
     refine absurd (top_le_iff.1 ?_) ‹q.IsPrime›.ne_top
     rwa [← P.fittingIdeal_kaehlerDifferential_eq_top (k := 1) (by simp [hP])]
-  obtain ⟨W, _, _, _, bW, f, a, e, P₀, _, ha, hP₀, hf₀, hf, hdet⟩ :=
+  obtain ⟨W, _, _, _, bW, f, a, e, P₀, _, hqa, hP₀, hf₀, hf, hdet⟩ :=
     P.exists_critical_hypersurface hP q hq
   let Sa := Localization.Away a
-  let B := W ⧸ Ideal.span {f}
-  let ε : Sa →+* B := e.symm
   -- The hypersurface is étale locally a node `uv = h` over an étale extension of the base.
   obtain ⟨R', _, _, _, T₀, _, _, _, _, _, _, _, Q₀, _, h, s, t, φ, hPQ, hfQ, hs, ht, -,
       hφ₀, hφ₁, hφ⟩ := bW.exists_etale_nodeAlgebra_hom_of_critical f P₀ hf₀ hf hdet
-  -- The chart is the quotient `T = T₀ ⧸ (f)`, étale over `B = W ⧸ (f)` by base change.
+  -- The chart is `T = T₀ ⧸ (f)`, étale over `S` through `S → S[1/a] ≅ W ⧸ (f) → T`.
   let J := Ideal.span {algebraMap W T₀ f}
   have hJ : (Ideal.span {f}).map (algebraMap W T₀) = J := by
     rw [Ideal.map_span, Set.image_singleton]
-  let ψ : B →+* T₀ ⧸ J := (Ideal.quotientEquivAlgOfEq W hJ : _ ≃ₐ[W] T₀ ⧸ J).toRingHom.comp
-    (Ideal.quotientMap _ (algebraMap W T₀) Ideal.le_comap_map)
-  -- On representatives, `ψ` is the map `W → T₀` itself, by construction.
-  have hψ (w : W) : ψ (Ideal.Quotient.mk _ w) = Ideal.Quotient.mk J (algebraMap W T₀ w) := rfl
-  have hψet : ψ.Etale := RingHom.Etale.respectsIso.1 _ _ <|
-    RingHom.IsStableUnderBaseChange.quotientMap RingHom.Etale.isStableUnderBaseChange _ _
-      (RingHom.etale_algebraMap.2 inferInstance)
-  -- `T` is étale over `S` through `S → S[1/a] ≅ W ⧸ (f) → T`.
-  let : Algebra S (T₀ ⧸ J) := ((ψ.comp ε).comp (algebraMap S Sa)).toAlgebra
-  have : Algebra.Etale S (T₀ ⧸ J) := by
-    let : Algebra Sa B := ε.toAlgebra
-    let : Algebra B (T₀ ⧸ J) := ψ.toAlgebra
-    let : Algebra Sa (T₀ ⧸ J) := (ψ.comp ε).toAlgebra
-    have : Algebra.Etale Sa B := RingHom.Etale.of_bijective (f := ε) e.symm.bijective
-    have : Algebra.Etale B (T₀ ⧸ J) := hψet
-    -- These towers hold by construction of the algebra structures.
-    have : IsScalarTower Sa B (T₀ ⧸ J) := .of_algebraMap_eq fun _ ↦ rfl
-    have : IsScalarTower S Sa (T₀ ⧸ J) := .of_algebraMap_eq fun _ ↦ rfl
-    have : Algebra.Etale Sa (T₀ ⧸ J) := .comp Sa B _
-    exact .comp S Sa _
+  let ψ : W ⧸ Ideal.span {f} →+* T₀ ⧸ J :=
+    Ideal.quotientMap J (algebraMap W T₀) (Ideal.map_le_iff_le_comap.1 hJ.le)
+  let : Algebra S (T₀ ⧸ J) := ((ψ.comp (e.symm : Sa →+* _)).comp (algebraMap S Sa)).toAlgebra
+  have : Algebra.Etale S (T₀ ⧸ J) :=
+    RingHom.etale_algebraMap.1 (etale_quotientMap_comp_localizationAway e hJ)
   have : IsScalarTower R S (T₀ ⧸ J) := .of_algebraMap_eq fun r ↦ by
     -- By construction, `algebraMap S T` is the composite `S → S[1/a] ≅ W ⧸ (f) → T`.
     change _ = ψ (e.symm (algebraMap S Sa (algebraMap R S r)))
     rw [← IsScalarTower.algebraMap_apply, AlgEquiv.commutes,
-      ← Ideal.Quotient.mk_algebraMap R (Ideal.span {f}), hψ, ← IsScalarTower.algebraMap_apply,
-      Ideal.Quotient.mk_algebraMap]
+      ← Ideal.Quotient.mk_algebraMap R (Ideal.span {f}), Ideal.quotientMap_mk,
+      ← IsScalarTower.algebraMap_apply, Ideal.Quotient.mk_algebraMap]
   -- The prime of the chart lies above `q`.
   have hJQ : J ≤ Q₀ := (Ideal.span_singleton_le_iff_mem _).2 hfQ
   let Q := Q₀.map (Ideal.Quotient.mk J)
   have : Q.IsPrime := Ideal.map_isPrime_of_surjective Ideal.Quotient.mk_surjective
     (by rwa [Ideal.mk_ker])
-  have hψQ (y : B) : ψ y ∈ Q ↔ e y ∈ q.map (algebraMap S Sa) := by
+  have hψQ (y : W ⧸ Ideal.span {f}) : ψ y ∈ Q ↔ e y ∈ q.map (algebraMap S Sa) := by
     obtain ⟨w, rfl⟩ := Ideal.Quotient.mk_surjective y
-    rw [hψ, Ideal.mem_quotient_iff_mem hJQ, ← Ideal.mem_comap, ← hPQ, hP₀]
-  have hqa : (q.map (algebraMap S Sa)).comap (algebraMap S Sa) = q :=
-    IsLocalization.under_map_of_isPrime_disjoint (.powers a) Sa ‹_›
-      ((Ideal.disjoint_powers_iff_notMem_of_isPrime a).2 ha)
+    rw [Ideal.quotientMap_mk, Ideal.mem_quotient_iff_mem hJQ, ← Ideal.mem_comap, ← hPQ, hP₀]
   refine ⟨R', inferInstance, inferInstance, inferInstance, T₀ ⧸ J, inferInstance, inferInstance,
     inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, Q, inferInstance,
     h, φ, ?_, ?_, ?_, hφ⟩
