@@ -133,7 +133,7 @@ theorem W1p.exists_isCompactOperator_value_smul_of_isLipschitzDomainWith {G : Ty
     filter_upwards [W1p.value_restrictL_ae le_top (T u)] with x hx
     rw [← hx, hu]
   obtain ⟨M, hM, hMc⟩ := exists_isCompactOperator_value_smul_of_extensionL hb hnp hqp T
-    (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith ENNReal.coe_ne_top hΩ hb) hTV α
+    (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hΩ hb) hTV α
   exact ⟨M, fun u => by simpa only [W1p.valueL_apply] using hM u, hMc⟩
 
 end TauCeti
