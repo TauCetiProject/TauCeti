@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.FrequencyCutoff
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
@@ -39,12 +38,27 @@ order `m' ≥ m` with constants `C t^{m - m'}`
 (`TauCeti.Symbol.exists_norm_mixedDeriv_cutoff_smul_le`), which tend to zero as `t → ∞` when
 `m' > m`.
 
+The asymptotic sum is unique up to a smoothing symbol: a symbol `b'` of order `m₀` is another
+asymptotic sum of the `aⱼ` exactly when `b' - b` is smoothing
+(`TauCeti.Symbol.forall_exists_remainder_iff_isSmoothing_sub`).
+
+Summing the cut-off terms `χ(ξ) a_{m-j}(x, ξ)` of homogeneous symbols `a_{m-j}` of degrees `m - j`
+gives a classical symbol of order `m` with exactly these homogeneous terms
+(`TauCeti.ClassicalSymbol.term_surjective`). Together with
+`TauCeti.ClassicalSymbol.isSmoothing_toSymbol_sub_iff`, this identifies the classical symbols of
+order `m` modulo smoothing symbols with the sequences of homogeneous terms. This is how formal
+classical expansions, such as the inverse-symbol recursion of a parametrix, become symbols.
+
 ## Main declarations
 
 * `TauCeti.Symbol.exists_norm_mixedDeriv_cutoff_smul_le`: the estimates of the cut-off symbols
   `χ(ξ / t) a(x, ξ)`, uniform in `t ≥ 1`.
 * `TauCeti.Symbol.exists_asymptoticSum`: every sequence of symbols of orders decreasing to `-∞`
   has an asymptotic sum.
+* `TauCeti.Symbol.forall_exists_remainder_iff_isSmoothing_sub`: asymptotic sums are unique modulo
+  smoothing symbols.
+* `TauCeti.ClassicalSymbol.term_surjective`: every sequence of homogeneous terms is the expansion
+  of a classical symbol.
 
 ## References
 
@@ -372,6 +386,57 @@ theorem exists_asymptoticSum {m : ℕ → ℝ} (hm : Antitone m) (hm' : Tendsto 
       fun K hK α β => hrem N hK α β⟩, rfl⟩⟩
   simpa only [Finset.range_zero, Finset.sum_empty, sub_zero] using hrem 0 hK α β
 
+/-- **Uniqueness of asymptotic sums.** Let `b` be an asymptotic sum of symbols `aⱼ` of orders `mⱼ`
+tending to `-∞`: for every `N` the remainder `b - ∑_{j < N} aⱼ` is a symbol of order `m_N`. Then a
+symbol `b'` of order `m₀` is an asymptotic sum of the `aⱼ` exactly when `b' - b` is smoothing. -/
+theorem forall_exists_remainder_iff_isSmoothing_sub {m : ℕ → ℝ} (hm' : Tendsto m atTop atBot)
+    {a : ∀ j, Symbol n V W (m j)} {b : Symbol n V W (m 0)}
+    (hb : ∀ N, ∃ r : Symbol n V W (m N),
+      b.coefficient - ∑ j ∈ Finset.range N, (a j).coefficient = r.coefficient)
+    (b' : Symbol n V W (m 0)) :
+    (∀ N, ∃ r : Symbol n V W (m N),
+      b'.coefficient - ∑ j ∈ Finset.range N, (a j).coefficient = r.coefficient) ↔
+      (b' - b).IsSmoothing := by
+  refine ⟨fun hb' => isSmoothing_iff.2 fun m'' => ?_, fun h N => ?_⟩
+  · -- `b' - b` is the difference of the remainders after `N` terms, of order `m_N ≤ m''`.
+    obtain ⟨N, hN⟩ := (hm'.eventually (eventually_le_atBot m'')).exists
+    obtain ⟨r, hr⟩ := hb N
+    obtain ⟨r', hr'⟩ := hb' N
+    refine ⟨inclusion hN (r' - r), ?_⟩
+    rw [coefficient_inclusion, coefficient_sub, ← hr, ← hr', coefficient_sub]
+    abel
+  · obtain ⟨s, hs⟩ := isSmoothing_iff.1 h (m N)
+    obtain ⟨r, hr⟩ := hb N
+    refine ⟨r + s, ?_⟩
+    rw [coefficient_add, ← hr, hs, coefficient_sub]
+    abel
+
 end Symbol
+
+namespace ClassicalSymbol
+
+open HomogeneousSymbol
+
+variable {m : ℝ}
+
+/-- **Borel summation of classical expansions.** Every sequence of homogeneous terms `a_{m-j}` of
+degrees `m - j` is the sequence of homogeneous terms of a classical symbol of order `m`, namely of
+an asymptotic sum of their cut-off terms `χ(ξ) a_{m-j}(x, ξ)`. This classical symbol is unique up
+to a smoothing symbol (`TauCeti.ClassicalSymbol.isSmoothing_toSymbol_sub_iff`). -/
+theorem term_surjective :
+    Function.Surjective (term : ClassicalSymbol n V W m →
+      (j : ℕ) → HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m - j)) := by
+  intro h
+  let χ : FrequencyCutoff (CoordinateSpace n) := default
+  have hm : Antitone fun j : ℕ => m - j := fun _ _ hij => sub_le_sub_left (Nat.cast_le.2 hij) m
+  have hm' : Tendsto (fun j : ℕ => m - j) atTop atBot :=
+    tendsto_atBot_add_const_left _ m (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)
+  obtain ⟨b, hb⟩ := Symbol.exists_asymptoticSum hm hm' fun j => cutoffSymbol χ (h j)
+  refine ⟨⟨Symbol.inclusion (by simp) b, h, χ, fun N => ?_⟩, rfl⟩
+  obtain ⟨r, hr⟩ := hb N
+  refine ⟨r, fun p => ?_⟩
+  simp [← hr, Finset.sum_apply]
+
+end ClassicalSymbol
 
 end TauCeti

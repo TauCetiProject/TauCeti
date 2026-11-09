@@ -39,8 +39,9 @@ The homogeneous terms enter the expansion through their cut-off terms
   classical symbols of order `m - 1`, and every homogeneous symbol of degree `m` is a principal
   symbol;
 * `TauCeti.ClassicalSymbol.isSmoothing_toSymbol_iff`: a classical symbol is smoothing exactly when
-  all of its homogeneous terms vanish; `TauCeti.ClassicalSymbol.ofIsSmoothing` makes every
-  smoothing symbol classical;
+  all of its homogeneous terms vanish, and `TauCeti.ClassicalSymbol.isSmoothing_toSymbol_sub_iff`:
+  two classical symbols differ by a smoothing symbol exactly when they have the same homogeneous
+  terms; `TauCeti.ClassicalSymbol.ofIsSmoothing` makes every smoothing symbol classical;
 * `TauCeti.ClassicalSymbol.ofHomogeneous`: the classical symbol `χ(ξ) a(x, ξ)` of a single
   homogeneous term, whose principal symbol is `a`.
 
@@ -332,6 +333,13 @@ theorem isSmoothing_toSymbol_iff (a : ClassicalSymbol n V W m) :
   · -- With vanishing terms the remainder after `N` terms is the symbol itself, of order `m - N`.
     obtain ⟨N, hN⟩ := exists_nat_ge (m - m')
     exact ⟨Symbol.inclusion (by linarith) (a.remainder default N), funext fun p => by simp [ha]⟩
+
+/-- Two classical symbols of order `m` differ by a smoothing symbol exactly when they have the same
+homogeneous terms. -/
+theorem isSmoothing_toSymbol_sub_iff (a b : ClassicalSymbol n V W m) :
+    (a.toSymbol - b.toSymbol).IsSmoothing ↔ a.term = b.term := by
+  rw [← toSymbol_sub, isSmoothing_toSymbol_iff, funext_iff]
+  simp only [term_sub, sub_eq_zero]
 
 /-- The classical symbol `χ(ξ) a(x, ξ)` of a single homogeneous term `a` of degree `m`: its
 principal symbol is `a` and its other homogeneous terms vanish. -/
