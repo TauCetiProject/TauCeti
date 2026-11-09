@@ -65,6 +65,8 @@ maps on the plumbed sphere is computed.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation_subset`,
   `TauCeti.ThricePuncturedSphere.Puncture.isCompact_plumbedTruncation`: the truncation `Σ_R` is a
   compact subset of the four-punctured sphere.
+* `TauCeti.ThricePuncturedSphere.Puncture.isOpen_preimage_plumbedSphere`: the plumbed
+  four-punctured sphere is open in the real coordinates.
 * `TauCeti.ThricePuncturedSphere.Puncture.preimage_plumbedTruncation`: in the real coordinates,
   the truncation `Σ_R` is the union of its receiving part and the image of its inserted part under
   the real chart of the plumbing map.
@@ -380,6 +382,13 @@ theorem plumbedTruncation_subset {q : Puncture} (hq : q ≠ inf) {L : ℝ} (hL :
     obtain ⟨⟨hw0, hw1, -⟩, hwL⟩ := And.imp_left mem_truncation.1 hw
   · exact ⟨⟨hw0, hw1⟩, by linarith [show -(L / 2) ≤ (inf.endCoord w).re from hwL]⟩
   · exact ⟨⟨hw0, hw1⟩, by linarith [show (q.endCoord w).re ≤ L / 2 from hwL]⟩
+
+/-- The plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ_{q,L}(1)}` is open in the real
+coordinates. -/
+theorem isOpen_preimage_plumbedSphere (q : Puncture) (L : ℝ) :
+    IsOpen (Complex.equivRealProdCLM.symm ⁻¹'
+      {w : ℂ | (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1}) :=
+  ((isOpen_ne.inter isOpen_ne).inter isOpen_ne).preimage Complex.equivRealProdCLM.symm.continuous
 
 /-- The truncated plumbed sphere is compact. -/
 theorem isCompact_plumbedTruncation (q : Puncture) (L R : ℝ) :

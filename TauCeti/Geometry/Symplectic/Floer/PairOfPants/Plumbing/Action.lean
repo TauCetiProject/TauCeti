@@ -68,14 +68,6 @@ namespace TauCeti.Floer
 
 variable {q : Puncture}
 
-/-- The four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}` is open in the real coordinates. -/
-private theorem isOpen_plumbedSphereReal (q : Puncture) (L : ℝ) :
-    IsOpen {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1) ∧
-      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} :=
-  isOpen_thricePuncturedSphereReal.inter
-    (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
-
 end TauCeti.Floer
 
 namespace TauCeti.SymplecticForm
@@ -234,7 +226,7 @@ private theorem integral_floerEnergyDensity_plumbedPerturbation_inserted (ω : S
     plumbedTruncation_subset hq (by linarith) R
       (by rw [preimage_plumbedTruncation hq]; exact Or.inr (mem_image_of_mem _ hw) :
         realChart (q.plumbingMap L) w ∈ Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R)
-  have hS₄o := isOpen_plumbedSphereReal q L
+  have hS₄o := isOpen_preimage_plumbedSphere q L
   have hK {w : ℝ × ℝ} (hw : w ∈ B) (y : V) (v : ℂ) := (contDiffAt_uncurry_plumbedPerturbation
     hq hHa hHb hHas hHbs hab hL (hBψ hw) y v).differentiableAt one_ne_zero
   have htgt {w : ℝ × ℝ} (hw : w ∈ B) (y : V) (v : ℂ) : DifferentiableAt ℝ
@@ -365,7 +357,7 @@ theorem integral_floerEnergyDensity_plumbedPerturbation_eq_sum_hamiltonianAction
     Complex.equivRealProdCLM.symm z ≠ 1) ∧ Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}
   -- Both integrands are continuous on the four-punctured sphere, which contains the compact set
   -- `Σ_R`, so they are integrable over it.
-  have hS₄o : IsOpen S₄ := isOpen_plumbedSphereReal q L
+  have hS₄o : IsOpen S₄ := isOpen_preimage_plumbedSphere q L
   have hPS₄ : Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R ⊆ S₄ := fun z hz ↦
     plumbedTruncation_subset hq (by linarith) R hz
   have hPc := isCompact_preimage_plumbedTruncation q L R

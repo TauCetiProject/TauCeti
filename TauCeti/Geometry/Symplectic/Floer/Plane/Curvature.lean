@@ -11,8 +11,6 @@ import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
-import Mathlib.RingTheory.Complex
-import Mathlib.RingTheory.Norm.Transitivity
 
 /-!
 # The curvature and the energy identity of the perturbation on a PSS plane
@@ -295,11 +293,8 @@ theorem lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le (ω : Sympl
 positive. -/
 private theorem det_fderiv_realChart_pos (p : PSSPlane) (z : ℝ × ℝ) :
     0 < (fderiv ℝ (realChart p.cylindricalEndLift) z).det := by
-  -- The derivative is multiplication by the complex number `φ'`, whose real determinant is
-  -- `|φ'|²`.
-  rw [(TauCeti.Complex.hasFDerivAt_realChart (p.hasDerivAt_cylindricalEndLift _)).fderiv]
-  simp [ContinuousLinearMap.det, LinearMap.det_restrictScalars, Algebra.norm_complex_apply,
-    Complex.normSq_pos, p.cylindricalEndLift_ne_zero]
+  rw [TauCeti.Complex.det_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _)]
+  simp [Complex.normSq_pos, Real.pi_ne_zero, p.cylindricalEndLift_ne_zero]
 
 /-- The band `ε t ∈ (-1/2, 1/2]` and the closed interval `[-1/2, 1/2]` differ by a null set. -/
 private theorem preimage_endSign_mul_ae_eq (p : PSSPlane) :

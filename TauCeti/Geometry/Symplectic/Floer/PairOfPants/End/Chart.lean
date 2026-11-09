@@ -48,6 +48,8 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
 * `TauCeti.Floer.image_endChart_prod_Ico`: the image of `P × [0, 1)` under the end chart is the
   set of points of `S` whose longitudinal coordinate lies in `P`, for any set `P` of positive
   signed longitudinal coordinates.
+* `TauCeti.Floer.preimage_truncation_inter_eq_image_endChart`: the part `±s > c` of the end `q`
+  in the truncation `S_R` is the image under the end chart of `c < ±s ≤ R`, `t ∈ [0, 1)`.
 * `TauCeti.Floer.perturbationPullback_endChart_eq_cylindricalEndLift`: the pullback of a
   perturbation along the end chart is the perturbation evaluated on the image of a tangent vector
   under the end lift.
@@ -267,6 +269,27 @@ theorem image_endChart_prod_Ico {q : Puncture} {P : Set ℝ} (hP : ∀ s ∈ P, 
       Complex.re_add_im, q.cylindricalEndLift_endCoord
         (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q),
       ContinuousLinearEquiv.apply_symm_apply]
+
+/-- For `0 ≤ c`, the part `±s > c` of the end `q` in the truncation `S_R` is the image under the
+end chart of `c < ±s ≤ R`, `t ∈ [0, 1)`. -/
+theorem preimage_truncation_inter_eq_image_endChart (q : Puncture) {c : ℝ} (hc : 0 ≤ c)
+    (R : ℝ) :
+    Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
+        {z | c < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re} =
+      endChart q '' ({s : ℝ | c < q.endSign * s ∧ q.endSign * s ≤ R} ×ˢ Ico 0 1) := by
+  rw [image_endChart_prod_Ico fun s hs ↦ by linarith [hs.1]]
+  ext z
+  simp only [mem_inter_iff, mem_preimage, mem_truncation, mem_ofPred_eq,
+    mem_thricePuncturedSphereReal_iff]
+  constructor
+  · rintro ⟨⟨h₀, h₁, hR⟩, h⟩
+    exact ⟨⟨h₀, h₁⟩, h, hR q⟩
+  · rintro ⟨⟨h₀, h₁⟩, h, hR⟩
+    refine ⟨⟨h₀, h₁, fun r ↦ ?_⟩, h⟩
+    by_cases hr : q = r
+    · exact hr ▸ hR
+    · linarith [endSign_mul_re_endCoord_nonpos hr (by linarith : 0 < q.endSign *
+        (q.endCoord (Complex.equivRealProdCLM.symm z)).re)]
 
 /-- The strip of an end is measurable. -/
 theorem measurableSet_endStrip (q : Puncture) : MeasurableSet (endStrip q) := by
