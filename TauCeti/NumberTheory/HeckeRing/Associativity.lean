@@ -77,6 +77,21 @@ private lemma subsingleton_fiber (Γ₂ Γ₃ : Subgroup G) (h w d : G) :
     (((mk_mul_out_mul_eq_iff Γ₂ Γ₃ h w d _).mp j₁.2).trans
       ((mk_mul_out_mul_eq_iff Γ₂ Γ₃ h w d _).mp j₂.2).symm))⟩
 
+/-- The fibre of the multiplicity over a fixed first representative is nonempty exactly when
+`w⁻¹d ∈ Γ₂hΓ₃`. -/
+private lemma exists_mk_mul_out_mul_eq_iff (Γ₂ Γ₃ : Subgroup G) (h w d : G) :
+    (∃ j : DecompQuotient Γ₂ Γ₃ h, (w * ((j.out : G) * h) : G ⧸ Γ₃) = (d : G ⧸ Γ₃)) ↔
+      w⁻¹ * d ∈ doubleCoset h Γ₂ Γ₃ := by
+  constructor
+  · rintro ⟨j, hj⟩
+    have hj' := QuotientGroup.eq.mp ((mk_mul_out_mul_eq_iff Γ₂ Γ₃ h w d j).mp hj)
+    exact mem_doubleCoset.mpr ⟨j.out, j.out.2, _, hj', by rw [mul_inv_cancel_left]⟩
+  · intro hd
+    rw [doubleCoset_eq_iUnion_leftCosets, Set.mem_iUnion] at hd
+    obtain ⟨j, hj⟩ := hd
+    rw [mem_leftCoset_iff] at hj
+    exact ⟨j, (mk_mul_out_mul_eq_iff Γ₂ Γ₃ h w d j).mpr (QuotientGroup.eq.mpr hj)⟩
+
 open Classical in
 /-- The fibre of the multiplicity over a fixed first representative: for fixed `w`, there is
 exactly one representative `τⱼ` with `w τⱼ h Γ₃ = d Γ₃` if `w⁻¹d ∈ Γ₂hΓ₃`, and none
@@ -84,22 +99,15 @@ otherwise. -/
 lemma nat_card_fiber (Γ₂ Γ₃ : Subgroup G) (h w d : G) :
     Nat.card {j : DecompQuotient Γ₂ Γ₃ h | (w * ((j.out : G) * h) : G ⧸ Γ₃) = (d : G ⧸ Γ₃)} =
       if w⁻¹ * d ∈ doubleCoset h Γ₂ Γ₃ then 1 else 0 := by
-  have hcond := mk_mul_out_mul_eq_iff Γ₂ Γ₃ h w d
+  have hex := exists_mk_mul_out_mul_eq_iff Γ₂ Γ₃ h w d
+  have := subsingleton_fiber Γ₂ Γ₃ h w d
   split_ifs with hd
   · rw [Nat.card_eq_one_iff_unique]
-    constructor
-    · exact subsingleton_fiber Γ₂ Γ₃ h w d
-    · rw [doubleCoset_eq_iUnion_leftCosets, Set.mem_iUnion] at hd
-      obtain ⟨j, hj⟩ := hd
-      rw [mem_leftCoset_iff] at hj
-      exact ⟨⟨j, (hcond j).mpr (QuotientGroup.eq.mpr hj)⟩⟩
+    exact ⟨inferInstance, ⟨⟨(hex.mpr hd).choose, (hex.mpr hd).choose_spec⟩⟩⟩
   · have : IsEmpty {j : DecompQuotient Γ₂ Γ₃ h |
         (w * ((j.out : G) * h) : G ⧸ Γ₃) = (d : G ⧸ Γ₃)} := by
       rw [Set.isEmpty_coe_sort, Set.eq_empty_iff_forall_notMem]
-      intro j hj
-      have hj' := QuotientGroup.eq.mp ((hcond j).mp hj)
-      exact hd (mem_doubleCoset.mpr ⟨j.out, j.out.2, _, hj', by
-        rw [mul_inv_cancel_left]⟩)
+      exact fun j hj ↦ hd (hex.mp ⟨j, hj⟩)
     rw [Nat.card_of_isEmpty]
 
 /-- Shimura's multiplicity as a one-sided count: the second component of a pair in the fibre
@@ -112,21 +120,8 @@ theorem multiplicity_eq_card_filter (g h d : G) :
   have key : ∀ i : DecompQuotient Γ₁ Γ₂ g,
       (∃ j : DecompQuotient Γ₂ Γ₃ h,
         ((i.out : G) * g * ((j.out : G) * h) : G ⧸ Γ₃) = (d : G ⧸ Γ₃)) ↔
-        ((i.out : G) * g)⁻¹ * d ∈ doubleCoset h Γ₂ Γ₃ := by
-    intro i
-    have hfib := nat_card_fiber Γ₂ Γ₃ h ((i.out : G) * g) d
-    have := subsingleton_fiber Γ₂ Γ₃ h ((i.out : G) * g) d
-    constructor
-    · rintro ⟨j, hj⟩
-      by_contra hQ
-      simp only [hQ, ↓reduceIte, Nat.card_eq_zero] at hfib
-      rcases hfib with hE | hI
-      · exact hE.false ⟨j, hj⟩
-      · exact not_infinite_iff_finite.mpr inferInstance hI
-    · intro hQ
-      simp only [hQ, ↓reduceIte, Nat.card_eq_one_iff_unique] at hfib
-      obtain ⟨j, hj⟩ := hfib.2.some
-      exact ⟨j, hj⟩
+        ((i.out : G) * g)⁻¹ * d ∈ doubleCoset h Γ₂ Γ₃ := fun i ↦
+    exists_mk_mul_out_mul_eq_iff Γ₂ Γ₃ h ((i.out : G) * g) d
   rw [multiplicity_def]
   refine Nat.card_congr (Equiv.ofBijective
     (fun p ↦ ⟨p.1.1, (key p.1.1).mp ⟨p.1.2, p.2⟩⟩) ⟨?_, ?_⟩)
