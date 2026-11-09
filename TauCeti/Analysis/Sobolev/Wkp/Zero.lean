@@ -215,7 +215,6 @@ theorem hasWeakFDerivOn_iteratedGradientTestFunctionLp (k : ℕ)
   have hclassical : HasWeakFDerivOn mu Omega (iteratedGradientTestFunction phi k)
       (fderiv ℝ (iteratedGradientTestFunction phi k)) :=
     hasWeakFDerivOn_of_differentiableOn
-      ((hsmooth.continuous.locallyIntegrable (μ := mu)).locallyIntegrableOn (Omega : Set E))
       (((contDiff_infty_iff_fderiv.mp hsmooth).2.continuous.locallyIntegrable
         (μ := mu)).locallyIntegrableOn (Omega : Set E))
       fun x _ => (hsmooth.differentiable (by simp)) x

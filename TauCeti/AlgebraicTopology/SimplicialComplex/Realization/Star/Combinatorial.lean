@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Realization
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Ball.Basic
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
+import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
 # Interior vertex charts from combinatorial links
@@ -61,29 +62,12 @@ theorem IsCombinatorialSphere.exists_openPartialHomeomorph_openStar_ball
       c (vertex K v) = 0 ∧
       ∀ x : openStarRealization K v, ‖c x.1‖ = 1 - x.1.1 v := by
   obtain ⟨e, he⟩ := h.exists_homeomorph_openStar_ball
-  let U : Set (EuclideanSpace ℝ (Fin (n + 1))) := ball 0 1
-  have hU : IsOpen U := isOpen_ball
-  let : Nonempty U := ⟨⟨0, by simp [U]⟩⟩
-  let j : OpenPartialHomeomorph U (EuclideanSpace ℝ (Fin (n + 1))) :=
-    hU.isOpenEmbedding_subtypeVal.toOpenPartialHomeomorph
-  let f := e.toOpenPartialHomeomorph.trans j
-  let c := f.lift_openEmbedding (K.isOpen_openStarRealization v).isOpenEmbedding_subtypeVal
+  obtain ⟨c, hs, ht, hc⟩ := OpenPartialHomeomorph.exists_source_eq_target_eq_of_homeomorph
+    (K.isOpen_openStarRealization v) isOpen_ball e ⟨vertex K v, by simp [mem_openStarRealization]⟩
   have hradius (x : openStarRealization K v) : ‖c x.1‖ = 1 - x.1.1 v := by
-    calc
-      ‖c x.1‖ = ‖f x‖ := by
-        rw [OpenPartialHomeomorph.lift_openEmbedding_apply]
-      _ = ‖(e x).1‖ := by
-        rw [OpenPartialHomeomorph.trans_apply,
-          Topology.IsOpenEmbedding.toOpenPartialHomeomorph_apply,
-          Homeomorph.toOpenPartialHomeomorph_apply]
-      _ = 1 - x.1.1 v := he x
-  refine ⟨c, ?_, ?_, ?_, hradius⟩
-  · simp only [c, f, j, OpenPartialHomeomorph.lift_openEmbedding_source,
-      OpenPartialHomeomorph.trans_source, Homeomorph.toOpenPartialHomeomorph_source,
-      Topology.IsOpenEmbedding.toOpenPartialHomeomorph_source, preimage_univ, inter_self,
-      Set.image_univ, Subtype.range_coe]
-  · ext
-    simp [c, f, j, U]
+    rw [hc x]
+    exact he x
+  refine ⟨c, hs, ht, ?_, hradius⟩
   · apply norm_eq_zero.mp
     simpa using hradius ⟨vertex K v, by simp [mem_openStarRealization]⟩
 

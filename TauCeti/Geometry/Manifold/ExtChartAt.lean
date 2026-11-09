@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.BumpFunction.Basic
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.Topology.Compactness.Paracompact
 public import Mathlib.Topology.Sets.Compacts
@@ -61,6 +64,9 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
 * `TauCeti.exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt`: a convex neighbourhood of the
   chart point within the model range, inside the chart target, with unique derivatives and
   interior accumulating at the chart point.
+* `TauCeti.exists_contDiffBump_extChartAt_subset`: on a boundaryless manifold, a bump function in
+  the chart at a point of an open set `U`, with closed outer ball in the chart target and image
+  in `U`; `TauCeti.isCompact_extChartAt_symm_image_closedBall` shows such images are compact.
 * `OpenPartialHomeomorph.extendTrans` and `OpenPartialHomeomorph.contDiffOn_extendTrans_comp_symm`:
   charts read in the model vector space and moved by a homeomorphism, and their smooth transition
   maps.
@@ -513,6 +519,42 @@ theorem exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt {E H M : Type*}
   · rw [interior_inter, Metric.isOpen_ball.interior_eq]
     exact Metric.isOpen_ball.inter_closure
       ⟨Metric.mem_ball_self hε, I.range_subset_closure_interior hx⟩
+
+section ClosedBall
+
+open Metric Set
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {x : M}
+
+/-- Around a point `x` of an open set `U` of a boundaryless manifold, some bump function in the
+chart at `x` has its closed outer ball inside the chart target, with image under the inverse chart
+inside `U`. -/
+theorem exists_contDiffBump_extChartAt_subset [BoundarylessManifold I M] {U : Set M}
+    (hU : IsOpen U) (hx : x ∈ U) :
+    ∃ ρ : ContDiffBump (extChartAt I x x),
+      closedBall (extChartAt I x x) ρ.rOut ⊆ (extChartAt I x).target ∧
+        (extChartAt I x).symm '' closedBall (extChartAt I x x) ρ.rOut ⊆ U := by
+  have hU' : (extChartAt I x).symm ⁻¹' U ∈ 𝓝 (extChartAt I x x) :=
+    (continuousAt_extChartAt_symm x).preimage_mem_nhds
+      (by rw [extChartAt_to_inv]; exact hU.mem_nhds hx)
+  have ht : (extChartAt I x).target ∈ 𝓝 (extChartAt I x x) :=
+    mem_interior_iff_mem_nhds.1 ((I.isInteriorPoint_iff).1 BoundarylessManifold.isInteriorPoint)
+  obtain ⟨r, hr, hrU⟩ := Metric.mem_nhds_iff.1 (Filter.inter_mem ht hU')
+  have hball : closedBall (extChartAt I x x) (r / 2) ⊆
+      (extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' U :=
+    (closedBall_subset_ball (half_lt_self hr)).trans hrU
+  refine ⟨⟨r / 4, r / 2, by positivity, by linarith⟩, fun p hp ↦ (hball hp).1, ?_⟩
+  rintro _ ⟨p, hp, rfl⟩
+  exact (hball hp).2
+
+/-- The image under the inverse chart of a closed ball in the chart target is compact. -/
+theorem isCompact_extChartAt_symm_image_closedBall [FiniteDimensional ℝ E] {r : ℝ}
+    (hr : closedBall (extChartAt I x x) r ⊆ (extChartAt I x).target) :
+    IsCompact ((extChartAt I x).symm '' closedBall (extChartAt I x x) r) :=
+  (isCompact_closedBall _ _).image_of_continuousOn ((continuousOn_extChartAt_symm x).mono hr)
+
+end ClosedBall
 
 end TauCeti
 

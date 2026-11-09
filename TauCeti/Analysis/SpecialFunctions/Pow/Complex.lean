@@ -13,6 +13,8 @@ import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Principal complex powers: scaling, sector inversion, and holomorphic products
@@ -26,6 +28,10 @@ raising the result back to the power `r` returns `u` — but only as long as the
 argument stays inside the principal range `(-π, π]`, which is where `Complex.cpow_mul` may be
 applied.  For a positive real exponent `r` that range is reached exactly on the sector
 `-(r * π) < arg u ≤ r * π`.
+
+Rescaling the principal `k`-th root, `z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ)`, gives a `k`-th root
+function that is complex differentiable at a nonzero `z₀` and takes there any prescribed `k`-th
+root `c` of `z₀`, since `z / z₀` stays in the slit plane near `z₀`.
 
 Products `∏ i, (1 - a i * w) ^ e i` are holomorphic near zero, with derivative
 `-∑ i, e i * a i` and second derivative
@@ -59,6 +65,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `TauCeti.ofReal_exp_cpow` -- a principal power of a positive real exponential is an exponential.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
   base on a suitable sector.
+* `TauCeti.exists_differentiableAt_pow_eq` -- near a nonzero point, a prescribed `k`-th root
+  extends to a `k`-th root function complex differentiable at that point.
 * `TauCeti.cpow_mul_inv`, `TauCeti.cpow_add_one'` -- multiplying a principal power by `w⁻¹` or `w`
   lowers or raises the exponent by one, including at the base `0`.
 * `TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow`, `TauCeti.exists_norm_ofReal_add_cpow_le`,
@@ -69,17 +77,17 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   pointwise lower bounds comparing `‖((t : ℂ) + w) ^ s‖` with `(1 + t) ^ s.re` for `w` near
   `z ∈ slitPlane`, `t ≥ 0`, and arbitrary `s : ℂ`.
 * `TauCeti.continuousOn_ofReal_add_cpow`, `TauCeti.continuousOn_ofReal_add_cpow_Ici`,
-  `TauCeti.continuousOn_ofReal_add_cpow_Ici_of_re_pos` -- continuity of `t ↦ (t + x) ^ s` on
-  `(0, ∞)` and `[0, ∞)`.
+  `TauCeti.continuous_ofReal_add_cpow_of_re_pos` -- continuity of `t ↦ (t + x) ^ s` on
+  `(0, ∞)`, on `[0, ∞)`, and everywhere when `0 < s.re`.
 * `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_eq_cpow_half` -- multiplying
   `w ^ (-1/2)` by itself or by `w` gives `w⁻¹` or `w ^ (1/2)`, including at `w = 0`.
 * `Complex.tendsto_ofReal_add_cpow_neg` -- for any complex `x` and real `s > 0`,
   `(t + x) ^ (-s)` tends to `0` as the real number `t` tends to `∞`.
-* `Complex.continuousWithinAt_neg_two_cpow_half_mul_inv`,
+* `Complex.continuousAt_neg_two_cpow_half_mul_inv`,
   `Complex.hasDerivAt_neg_two_cpow_half_mul_inv`,
   `Complex.tendsto_neg_two_cpow_half_mul_inv_atTop` -- continuity at `0`, derivative on `(0, ∞)` and
-  limit at `∞` of `t ↦ -2 (t + x) ^ (1/2) (t + y)⁻¹`, for `x ∈ slitPlane ∪ {0}` and `y ≠ 0`
-  (continuity), `y ∈ slitPlane ∪ {0}` (derivative) or arbitrary `y` (limit).
+  limit at `∞` of `t ↦ -2 (t + x) ^ (1/2) (t + y)⁻¹`. Continuity holds for arbitrary `x` and
+  `y ≠ 0`; the derivative needs `x, y ∈ slitPlane ∪ {0}`; the limit holds for arbitrary `x` and `y`.
 -/
 
 public section
@@ -183,6 +191,16 @@ theorem cpow_inv_cpow_of_arg_mem_Ioc {u : ℂ} {r : ℝ} (hr : 0 < r)
     calc
       u.arg * r⁻¹ ≤ (r * Real.pi) * r⁻¹ := mul_le_mul_of_nonneg_right harg.2 (inv_nonneg.mpr hr.le)
       _ = Real.pi := by field_simp
+
+/-- **A local holomorphic branch of the `k`-th root.** Near a nonzero `z₀` with a chosen `k`-th
+root `c`, there is a `k`-th root function which is complex differentiable at `z₀` and takes the
+value `c` there, namely `z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ)`. -/
+theorem exists_differentiableAt_pow_eq {z₀ c : ℂ} {k : ℕ} (hk : k ≠ 0) (hz₀ : z₀ ≠ 0)
+    (hc : c ^ k = z₀) :
+    ∃ f : ℂ → ℂ, DifferentiableAt ℂ f z₀ ∧ f z₀ = c ∧ ∀ z, f z ^ k = z := by
+  refine ⟨fun z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ), ?_, by simp [div_self hz₀], fun z ↦ ?_⟩
+  · exact ((differentiableAt_id.div_const _).cpow_const (by simp [div_self hz₀])).const_mul c
+  · rw [mul_pow, cpow_nat_inv_pow _ hk, hc, mul_div_cancel₀ _ hz₀]
 
 /-- The reciprocal-coordinate product of principal powers is holomorphic at zero,
 where every base equals one. -/
@@ -360,18 +378,10 @@ theorem exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow {z : ℂ} (hz :
     exact hlow w hw_ball ⟨t, ht⟩
   -- Upper bound `‖(t : ℂ) + w‖ ≤ M * (1 + t)` from the triangle inequality on `ball z c`.
   have hupper : ‖(t : ℂ) + w‖ ≤ M * (1 + t) := by
-    have hwz : ‖w - z‖ < c := by simpa [dist_eq_norm] using hw_ball
-    have hw_norm : ‖w‖ ≤ ‖z‖ + c := by
-      calc ‖w‖ = ‖(w - z) + z‖ := by ring_nf
-        _ ≤ ‖w - z‖ + ‖z‖ := norm_add_le _ _
-        _ ≤ c + ‖z‖ := by linarith
-        _ = ‖z‖ + c := add_comm _ _
-    calc ‖(t : ℂ) + w‖ ≤ ‖(t : ℂ)‖ + ‖w‖ := norm_add_le _ _
-      _ = t + ‖w‖ := by rw [Complex.norm_real, Real.norm_of_nonneg ht]
-      _ ≤ t + (‖z‖ + c) := by linarith
-      _ ≤ M * (1 + t) := by
-        have : 0 ≤ (‖z‖ + c) * t := mul_nonneg (by positivity) ht
-        linarith
+    have h := one_add_norm_add_le (t : ℂ) w
+    rw [Complex.norm_real, Real.norm_of_nonneg ht] at h
+    have hw_norm : ‖w‖ ≤ ‖z‖ + c := (norm_lt_of_mem_ball hw_ball).le
+    nlinarith [norm_nonneg w, mul_le_mul_of_nonneg_right hw_norm h1t.le]
   -- Bound the radial factor `‖(t : ℂ) + w‖ ^ s.re` according to the sign of `s.re`.
   have hrpow : ‖(t : ℂ) + w‖ ^ s.re ≤ max (c ^ s.re) (M ^ s.re) * (1 + t) ^ s.re := by
     rcases le_or_gt s.re 0 with hs | hs
@@ -388,15 +398,7 @@ theorem exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow {z : ℂ} (hz :
           gcongr
           exact le_max_right _ _
   -- Bound the angular factor `1 / exp (arg * s.im) ≤ exp (π * |s.im|)`.
-  have hexp : (Real.exp (((t : ℂ) + w).arg * s.im))⁻¹ ≤ Real.exp (Real.pi * |s.im|) := by
-    rw [← Real.exp_neg]
-    apply Real.exp_le_exp.mpr
-    calc -(((t : ℂ) + w).arg * s.im)
-        ≤ |((t : ℂ) + w).arg * s.im| := neg_le_abs _
-      _ = |((t : ℂ) + w).arg| * |s.im| := abs_mul _ _
-      _ ≤ Real.pi * |s.im| := by
-        gcongr
-        exact Complex.abs_arg_le_pi _
+  have hexp := Complex.inv_exp_arg_mul_le_exp_pi_mul_abs ((t : ℂ) + w) s.im
   calc ‖((t : ℂ) + w) ^ s‖
       ≤ ‖(t : ℂ) + w‖ ^ s.re / Real.exp (((t : ℂ) + w).arg * s.im) :=
         Complex.norm_cpow_le _ _
@@ -441,15 +443,28 @@ theorem continuousOn_ofReal_add_cpow_Ici {x : ℂ} (hx : x ∈ slitPlane) (s : �
   ((Complex.continuous_ofReal.add continuous_const).continuousAt.cpow continuousAt_const
     (ofReal_add_mem_slitPlane hx ht)).continuousWithinAt
 
-/-- For `x ∈ slitPlane ∪ {0}` and a complex exponent `s` with `0 < s.re`, the principal power
-`(t + x) ^ s` is continuous in the real variable `t ≥ 0`. -/
-theorem continuousOn_ofReal_add_cpow_Ici_of_re_pos {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) {s : ℂ}
-    (hs : 0 < s.re) : ContinuousOn (fun t : ℝ => ((t : ℂ) + x) ^ s) (Set.Ici 0) := fun t ht => by
-  have hmem : 0 ≤ ((t : ℂ) + x).re ∨ ((t : ℂ) + x).im ≠ 0 :=
-    (mem_slitPlane_union_zero_iff.mp hx).imp
-      (fun h => by simp only [Complex.add_re, Complex.ofReal_re]; linarith [ht.out]) (by simp)
-  exact (ContinuousAt.comp (f := fun u : ℝ => (u : ℂ) + x)
-    (Complex.continuousAt_cpow_const_of_re_pos hmem hs) (by fun_prop)).continuousWithinAt
+/-- For any `x` and a complex exponent `s` with `0 < s.re`, the principal power `(t + x) ^ s` is
+continuous in the real variable `t`. -/
+theorem continuous_ofReal_add_cpow_of_re_pos {x : ℂ} {s : ℂ} (hs : 0 < s.re) :
+    Continuous (fun t : ℝ => ((t : ℂ) + x) ^ s) := by
+  by_cases him : x.im = 0
+  · -- `t + x` is the real number `t + x.re`, and real-base powers are continuous.
+    have hx : x = (x.re : ℂ) := Complex.ext (by simp) (by simp [him])
+    have h := (Complex.continuous_ofReal_cpow_const hs).comp
+      (continuous_id.add (continuous_const (y := x.re)))
+    convert h using 2 with t
+    rw [hx]
+    simp
+  · refine continuous_iff_continuousAt.2 fun t => ?_
+    exact ContinuousAt.comp (f := fun u : ℝ => (u : ℂ) + x)
+      (Complex.continuousAt_cpow_const_of_re_pos (Or.inr (by simpa using him)) hs) (by fun_prop)
+
+/-- For `w` off the negative real axis and `p ≥ 0`, the principal powers combine:
+`w⁻ʳ * pʳ = (p / w)ʳ`. -/
+theorem one_div_cpow_mul_ofReal_rpow {w : ℂ} (hw : w.arg ≠ Real.pi) {p : ℝ} (hp : 0 ≤ p) (r : ℝ) :
+    (1 / w ^ (r : ℂ)) * ((p ^ r : ℝ) : ℂ) = ((p : ℂ) / w) ^ (r : ℂ) := by
+  rw [div_eq_mul_inv (p : ℂ) w, ofReal_mul_cpow hp, Complex.inv_cpow w (r : ℂ) hw,
+    ← Complex.ofReal_cpow hp, one_div, mul_comm]
 
 end TauCeti
 
@@ -484,18 +499,16 @@ theorem tendsto_ofReal_add_cpow_neg (x : ℂ) {s : ℝ} (hs : 0 < s) :
   simp only [← Complex.ofReal_neg, Complex.norm_cpow_real]
   exact (tendsto_rpow_neg_atTop hs).comp hnorm
 
-/-- The function `t ↦ -2 (t + x)^(1/2) (t + y)⁻¹` is continuous at `0` from the right, even when
+/-- The function `t ↦ -2 (t + x)^(1/2) (t + y)⁻¹` is continuous at `0`, even when
 `x = 0` (as `re (1/2) > 0`). -/
-theorem continuousWithinAt_neg_two_cpow_half_mul_inv {x y : ℂ}
-    (hx : x ∈ slitPlane ∪ {0}) (hy : y ≠ 0) :
-    ContinuousWithinAt
-      (fun t : ℝ => -2 * ((t : ℂ) + x) ^ (1 / 2 : ℂ) * ((t : ℂ) + y)⁻¹) (Set.Ici 0) 0 := by
+theorem continuousAt_neg_two_cpow_half_mul_inv {x y : ℂ} (hy : y ≠ 0) :
+    ContinuousAt
+      (fun t : ℝ => -2 * ((t : ℂ) + x) ^ (1 / 2 : ℂ) * ((t : ℂ) + y)⁻¹) 0 := by
   have hc2 : ContinuousAt (fun t : ℝ => ((t : ℂ) + y)⁻¹) 0 :=
     (by fun_prop : Continuous fun t : ℝ => (t : ℂ) + y).continuousAt.inv₀
       (by rwa [ofReal_zero, zero_add])
-  exact (continuousWithinAt_const.mul
-    (TauCeti.continuousOn_ofReal_add_cpow_Ici_of_re_pos hx (by norm_num) 0 Set.self_mem_Ici)).mul
-    hc2.continuousWithinAt
+  exact (continuousAt_const.mul
+    (TauCeti.continuous_ofReal_add_cpow_of_re_pos (by norm_num)).continuousAt).mul hc2
 
 /-- The derivative of `t ↦ -2 (t + x)^(1/2) (t + y)⁻¹` on `(0, ∞)`:
 `(t + x)^(-1/2) (t + y)⁻¹ - 2 (y - x) (t + x)^(-1/2) (t + y)^(-1/2) (t + y)^(-1/2) (t + y)⁻¹`.
@@ -575,6 +588,24 @@ theorem tendsto_neg_two_cpow_half_mul_inv_atTop {x y : ℂ} :
           (norm_nonneg _) (by positivity)
     _ = 2 * (1 + ‖x‖) ^ (1 / 2 : ℝ) * 4 * ((1 + t) ^ (1 / 2 : ℝ) * (1 + t)⁻¹) := by ring
     _ = 2 * (1 + ‖x‖) ^ (1 / 2 : ℝ) * 4 * (1 + t) ^ (-(1 / 2) : ℝ) := by rw [hrpow]
+
+/-- The principal power of a complex number `u` by a real exponent `r` has positive imaginary part
+when `arg u * r` lies in `(0, π)`. -/
+theorem im_cpow_ofReal_pos {u : ℂ} {r : ℝ} (h0 : 0 < arg u * r) (hπ : arg u * r < Real.pi) :
+    0 < (u ^ (r : ℂ)).im := by
+  have hu : u ≠ 0 := by
+    rintro rfl
+    simp at h0
+  rw [cpow_ofReal_im]
+  exact mul_pos (Real.rpow_pos_of_pos (norm_pos_iff.mpr hu) _)
+    (Real.sin_pos_of_pos_of_lt_pi h0 hπ)
+
+/-- The principal power of a complex number by a real exponent `r` is real when `arg u * r` is `0`
+or `π`. -/
+theorem im_cpow_ofReal_eq_zero {u : ℂ} {r : ℝ} (h : arg u * r = 0 ∨ arg u * r = Real.pi) :
+    (u ^ (r : ℂ)).im = 0 := by
+  rw [cpow_ofReal_im]
+  rcases h with h | h <;> rw [h] <;> simp
 
 end Complex
 

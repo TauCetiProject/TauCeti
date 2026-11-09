@@ -10,7 +10,10 @@ import Mathlib.Basic.ENNReal.Inv
 import Mathlib.Basic.Real.Pointwise
 
 /-!
-# Suprema of the maxima of a class of real functions
+# `ENNReal.ofReal` of differences and suprema of maxima
+
+For `0 ≤ q ≤ p`, the embedding `ENNReal.ofReal` splits `p` into `p - q` and `q`. With `p = 1`
+and `q = θ`, this says that the interpolation weights `1 - θ` and `θ` sum to one in `ℝ≥0∞`.
 
 For a class `P` of functions `α → ℝ`, the quantity
 `⨆ (F : α → ℝ) (_ : P F), ENNReal.ofReal (⨆ x, F x)` in `ℝ≥0∞` is the supremum of the maxima of
@@ -21,6 +24,8 @@ reparametrization of the class along surjections.
 
 ## Main results
 
+* `TauCeti.ofReal_sub_add_ofReal`: `ENNReal.ofReal (p - q) + ENNReal.ofReal q = ENNReal.ofReal p`
+  for `0 ≤ q ≤ p`.
 * `TauCeti.iSup₂_ofReal_iSup_eq_ofReal_mul`: if the class `Q` consists of the `c • F` with `F`
   in `P`, for `c > 0`, then the supremum for `Q` is `c` times that for `P`.
 * `TauCeti.iSup₂_ofReal_iSup_eq_of_comp`: classes related by composition with surjections have
@@ -32,6 +37,12 @@ public section
 namespace TauCeti
 
 variable {α β : Type*}
+
+/-- For `0 ≤ q ≤ p`, `ENNReal.ofReal` adds `p - q` and `q` back up to `p`. -/
+@[simp]
+theorem ofReal_sub_add_ofReal {p q : ℝ} (hq : 0 ≤ q) (hqp : q ≤ p) :
+    ENNReal.ofReal (p - q) + ENNReal.ofReal q = ENNReal.ofReal p := by
+  rw [← ENNReal.ofReal_add (sub_nonneg.2 hqp) hq, sub_add_cancel]
 
 /-- **Rescaling a class of functions.** If, for `c > 0`, the functions satisfying `Q` are exactly
 the `c • F` with `F` satisfying `P`, then the supremum of their maxima is `c` times that for `P`. -/

@@ -33,6 +33,8 @@ vectors indexed by `ι`.
   linear equivalence are the coordinates of the vector transported back.
 * `Module.Basis.linearIndependent_coe_basis`: the vectors of a basis of a submodule `U`, viewed in
   the ambient module, are linearly independent.
+* `Module.Basis.repr_eq_zero_of_mem_of_notMem`: a vector of a submodule spanned by basis vectors has
+  zero coordinate at every basis vector outside the submodule.
 * `Module.Basis.linearIndependent_of_repr_eq_single`: a family indexed by a finite set `S` of
   indices, whose `s`-th member has the coordinates of `b s` at the indices in `S`, is linearly
   independent.
@@ -73,6 +75,16 @@ theorem repr_map_eq_of_map_basis
     exact (congrArg c.repr (hf i)).trans
       ((c.repr_self i).trans (b.repr_self i).symm)
   exact DFunLike.congr_fun h x
+
+/-- A coefficient of a composite is the sum of products of coefficients through a finite
+intermediate basis. The multiplication order also applies over noncommutative semirings. -/
+theorem repr_comp_apply_apply {κ W : Type*} [Fintype κ] [AddCommMonoid W] [Module K W]
+    (b : Basis ι K V) (c : Basis κ K W) (f : V →ₗ[K] W) (g : W →ₗ[K] V) (i k : ι) :
+    b.repr ((g ∘ₗ f) (b i)) k =
+      ∑ j, c.repr (f (b i)) j * b.repr (g (c j)) k := by
+  conv_lhs => rw [LinearMap.comp_apply, ← c.sum_repr (f (b i))]
+  simp only [map_sum, map_smul, Finsupp.coe_finsetSum, Finset.sum_apply,
+    Finsupp.smul_apply, smul_eq_mul]
 
 /-- A linear map intertwines two endomorphisms if it does so on every vector of a basis. -/
 theorem intertwines_of_apply {W : Type*} [AddCommMonoid W] [Module K W]
@@ -118,6 +130,14 @@ independent. -/
 theorem linearIndependent_coe_basis (b : Module.Basis n R U) :
     LinearIndependent R fun i ↦ (b i : M) :=
   b.linearIndependent.map_injOn U.subtype U.injective_subtype.injOn
+
+/-- A vector of a submodule spanned by basis vectors has zero coordinate at every basis vector
+outside the submodule. -/
+theorem repr_eq_zero_of_mem_of_notMem (cb : Basis ι R M) {S : Submodule R M}
+    (hS : S = Submodule.span R (cb '' {j | cb j ∈ S})) {j : ι} (hj : cb j ∉ S) {z : M}
+    (hz : z ∈ S) : cb.repr z j = 0 := by
+  by_contra hn
+  exact hj ((cb.mem_span_image.mp (hS ▸ hz)) (Finsupp.mem_support_iff.mpr hn))
 
 end Submodule
 

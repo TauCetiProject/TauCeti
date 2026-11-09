@@ -89,7 +89,7 @@ private theorem constantCoeff_pow_eq_zero (x : PowerSeries K)
     constantCoeff (x ^ p ^ h : MvPowerSeries Unit K) = 0 := by
   rw [map_pow, ← PowerSeries.constantCoeff_eq, hx, zero_pow (pow_ne_zero h hp.out.ne_zero)]
 
-omit [G.IsComm] in
+omit hp [G.IsComm] in
 /-- Composing `c Xᴹ` with `[p]_F` gives a series whose coefficient of `X ^ (M p ^ h)` is `c uᴹ`,
 where `u` is the coefficient of `X ^ (p ^ h)` in `[p]_F`. -/
 private theorem coeff_subst_nsmulSeries_smul_X_pow (hF : F.height p = h) (M : ℕ) (c : K) :
@@ -186,8 +186,7 @@ private theorem coeff_pSeriesError_add (hF : F.height p = h) (hG : G.height p = 
   have hG₁ := MvPowerSeries.coeff_subst_sub_subst_of_degree_le ψ
     (a := fun _ ↦ ((f + c • PowerSeries.X ^ M) ^ q : PowerSeries K))
     (b := fun _ ↦ (f ^ q : PowerSeries K))
-    (hasSubst_of_constantCoeff_zero fun _ ↦ hq₀ _ hfc)
-    (hasSubst_of_constantCoeff_zero fun _ ↦ hq₀ f hf) (fun _ ↦ hq₀ _ hfc) (fun _ ↦ hq₀ f hf)
+    (fun _ ↦ hq₀ _ hfc) (fun _ ↦ hq₀ f hf)
     (fun _ ↦ hord) (e := Finsupp.single () (M * q)) (by simp)
   have hG₁' : PowerSeries.coeff (M * q) (PowerSeries.subst ((f + c • PowerSeries.X ^ M) ^ q) ψ -
       PowerSeries.subst (f ^ q) ψ) = PowerSeries.coeff 1 ψ * c ^ q := by
@@ -208,6 +207,7 @@ private theorem coeff_pSeriesError_add (hF : F.height p = h) (hG : G.height p = 
   rw [map_sub, map_sub, hF₁, hG₁', hv] at h
   linear_combination h
 
+omit hp in
 /-- Below degree `p ^ h`, the `p`-series failure vanishes. -/
 private theorem coeff_pSeriesError_of_lt (hF : F.height p = h) (hG : G.height p = h)
     {f : PowerSeries K} (hf : PowerSeries.constantCoeff f = 0) {n : ℕ} (hn : n < p ^ h) :

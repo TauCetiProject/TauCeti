@@ -16,6 +16,10 @@ The dyadic grid of level `n` of `[a, b]` consists of the points `a + k * ((b - a
 
 ## Main results
 
+* `TauCeti.dyadicPoint`: the finite-indexed dyadic grid as points of the closed interval.
+* `TauCeti.exists_dyadicPoint_eq_of_le`: the finite-indexed dyadic grids are nested.
+* `TauCeti.dense_iUnion_range_dyadicPoint`: the union of the finite-indexed grids is dense
+  for `a ≤ b`, including the singleton interval `a = b`.
 * `TauCeti.exists_eq_add_mul_div_two_pow_of_le`: a point of the dyadic grid of level `m` lies on
   the dyadic grids of all levels `n ≥ m`.
 * `TauCeti.dense_setOfPred_eq_add_mul_div_two_pow`: the points of the dyadic grids of `[a, b]`,
@@ -28,6 +32,21 @@ open Set
 
 namespace TauCeti
 
+/-- The `k`th point of the level-`n` dyadic grid on `[a,b]`, including both endpoints. -/
+noncomputable def dyadicPoint {a b : ℝ} (hab : a ≤ b) (n : ℕ) (k : Fin (2 ^ n + 1)) : Icc a b :=
+  ⟨a + k * ((b - a) / (2 : ℝ) ^ n), by
+    have hh : 0 ≤ (b - a) / (2 : ℝ) ^ n := by positivity
+    have hk : (k : ℝ) ≤ (2 : ℝ) ^ n := by exact_mod_cast Nat.le_of_lt_succ k.isLt
+    have heq : (2 : ℝ) ^ n * ((b - a) / (2 : ℝ) ^ n) = b - a :=
+      mul_div_cancel₀ _ (by positivity)
+    constructor <;> nlinarith [mul_nonneg (k.val.cast_nonneg : (0 : ℝ) ≤ k) hh]⟩
+
+/-- The real coordinate of a dyadic grid point. -/
+@[simp]
+theorem coe_dyadicPoint {a b : ℝ} (hab : a ≤ b) (n : ℕ) (k : Fin (2 ^ n + 1)) :
+    (dyadicPoint hab n k : ℝ) = a + k * ((b - a) / (2 : ℝ) ^ n) :=
+  (rfl)
+
 /-- A point of the dyadic grid of level `m` of `[a, b]` lies on the dyadic grids of all levels
 `n ≥ m`. -/
 lemma exists_eq_add_mul_div_two_pow_of_le {K : Type*} [Field K] [CharZero K] {a b t : K}
@@ -39,6 +58,15 @@ lemma exists_eq_add_mul_div_two_pow_of_le {K : Type*} [Field K] [CharZero K] {a 
   rw [ht, h2']
   push_cast
   field_simp
+
+/-- A finite-indexed dyadic grid point also belongs to every finer grid. -/
+theorem exists_dyadicPoint_eq_of_le {a b : ℝ} (hab : a ≤ b) {m n : ℕ}
+    (k : Fin (2 ^ m + 1)) (hmn : m ≤ n) :
+    ∃ j, dyadicPoint hab m k = dyadicPoint hab n j := by
+  obtain ⟨j, hj, heq⟩ := exists_eq_add_mul_div_two_pow_of_le
+    (a := a) (b := b) (Nat.le_of_lt_succ k.isLt) rfl hmn
+  refine ⟨⟨j, Nat.lt_succ_of_le hj⟩, Subtype.ext ?_⟩
+  simpa only [coe_dyadicPoint, Fin.val_mk] using heq
 
 /-- The points of the dyadic grids of `[a, b]`, of all levels, are dense in `[a, b]`. -/
 theorem dense_setOfPred_eq_add_mul_div_two_pow {a b : ℝ} (hab : a < b) :
@@ -64,5 +92,20 @@ theorem dense_setOfPred_eq_add_mul_div_two_pow {a b : ℝ} (hab : a < b) :
     ?_, n, k, hkn, rfl⟩
   rw [Metric.mem_ball, Subtype.dist_eq, Real.dist_eq, abs_lt]
   constructor <;> simp only <;> nlinarith
+
+/-- The union of the finite-indexed dyadic grids is dense, including for a singleton interval. -/
+theorem dense_iUnion_range_dyadicPoint {a b : ℝ} (hab : a ≤ b) :
+    Dense (⋃ n, range (dyadicPoint hab n)) := by
+  rcases hab.eq_or_lt with rfl | hlt
+  · have heq : (⋃ n, range (dyadicPoint (le_refl a) n)) = univ := by
+      ext t
+      simp only [mem_iUnion, mem_range, mem_univ, iff_true]
+      exact ⟨0, 0, Subtype.ext (by simpa using t.property.1.antisymm t.property.2)⟩
+    rw [heq]
+    exact dense_univ
+  · apply (dense_setOfPred_eq_add_mul_div_two_pow hlt).mono
+    rintro t ⟨n, k, hk, ht⟩
+    refine mem_iUnion.2 ⟨n, ⟨⟨k, Nat.lt_succ_of_le hk⟩, Subtype.ext ?_⟩⟩
+    simpa only [coe_dyadicPoint, Fin.val_mk] using ht.symm
 
 end TauCeti
