@@ -99,6 +99,14 @@ theorem centralForceEnergyMomentum_one (m : ℝ) (U : ℝ → ℝ) (x : V × V) 
     centralForceEnergyMomentum b m U x 1 = angularMomentum (b 0) (b 1) x :=
   (rfl)
 
+/-- Two states have the same image under the energy–momentum map exactly when they have the same
+energy and the same angular momentum. -/
+theorem centralForceEnergyMomentum_eq_iff {m : ℝ} {U : ℝ → ℝ} {x y : V × V} :
+    centralForceEnergyMomentum b m U x = centralForceEnergyMomentum b m U y ↔
+      centralForceHamiltonian m U x = centralForceHamiltonian m U y ∧
+        angularMomentum (b 0) (b 1) x = angularMomentum (b 0) (b 1) y := by
+  simp [funext_iff, Fin.forall_fin_two]
+
 /-- Away from the collision set, the derivative of the energy–momentum map has the two rows
 `dH = ((U'(‖q‖) / ‖q‖) q, p / m)` and `dL = (⟪p, b₁⟫ b₀ - ⟪p, b₀⟫ b₁, ⟪q, b₀⟫ b₁ - ⟪q, b₁⟫ b₀)`,
 written as pairs of partial gradients. -/
@@ -371,7 +379,7 @@ theorem poissonBracket_centralForceEnergyMomentum_comp_subtypeVal [FiniteDimensi
   rw [hcomp, hcomp,
     ((SymplecticForm.isNondegenerate_constSmooth _).mpullback_subtype_val _).poissonBracket_comp
       (SymplecticForm.isNondegenerate_constSmooth _) contMDiff_subtype_val rfl
-      (by rw [Manifold.mfderiv_subtype_val]; exact (Manifold.tangentSpaceOpenEquiv x).surjective)
+      (isRegularPoint_iff.1 (isRegularPoint_subtype_val x))
       (hdiff i) (hdiff j),
     SymplecticForm.poissonBracket_constSmooth]
   have h := stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum (m := m)
@@ -395,10 +403,6 @@ theorem isIntegrableSystem_centralForceEnergyMomentum [FiniteDimensional ℝ V] 
       (centralForceEnergyMomentum b m U ∘ Subtype.val) := by
   have hF (x : puncturedPhaseSpace V) := contDiffAt_centralForceEnergyMomentum b (m := m)
     (hU.contDiffAt (Ioi_mem_nhds (norm_pos_iff.2 x.2))) x.2
-  have hval (x : puncturedPhaseSpace V) :
-      IsRegularPoint 𝓘(ℝ, V × V) 𝓘(ℝ, V × V) (Subtype.val : puncturedPhaseSpace V → V × V) x := by
-    rw [isRegularPoint_iff, Manifold.mfderiv_subtype_val]
-    exact (Manifold.tangentSpaceOpenEquiv x).surjective
   have hFd (x : puncturedPhaseSpace V) :
       MDifferentiableAt 𝓘(ℝ, V × V) 𝓘(ℝ, Fin 2 → ℝ) (centralForceEnergyMomentum b m U) x :=
     ((hF x).differentiableAt (by simp)).mdifferentiableAt
@@ -411,8 +415,8 @@ theorem isIntegrableSystem_centralForceEnergyMomentum [FiniteDimensional ℝ V] 
     · have hr : 0 < ‖(x : V × V).1‖ := norm_pos_iff.2 x.2
       have hU' : HasDerivAt U (deriv U ‖(x : V × V).1‖) ‖(x : V × V).1‖ :=
         ((hU.differentiableOn (by simp)).differentiableAt (Ioi_mem_nhds hr)).hasDerivAt
-      refine (isRegularPoint_centralForceEnergyMomentum_iff b hm hU' x.2).2 ?_ |>.comp (hval x)
-        (hFd x) (contMDiff_subtype_val.mdifferentiableAt one_ne_zero)
+      refine (isRegularPoint_centralForceEnergyMomentum_iff b hm hU' x.2).2 ?_ |>.comp
+        (isRegularPoint_subtype_val x) (hFd x) (contMDiff_subtype_val.mdifferentiableAt one_ne_zero)
       exact fun h ↦ hx h.1
     · exact dense_setOf_inner_ne_zero
   · rw [Module.finrank_prod, Module.finrank_eq_card_basis b.toBasis]

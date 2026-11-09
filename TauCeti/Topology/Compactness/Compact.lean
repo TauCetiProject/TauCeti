@@ -43,7 +43,7 @@ theorem _root_.IsCompact.inter_of_forall_exists {U S : Set X} (hU : IsCompact U)
 
 /-- **Connected components of a compact set are compact.** The connected component of a compact
 set `K` at a point is closed in `K`, hence compact; it is empty at a point outside `K`. -/
-theorem _root_.IsCompact.isCompact_connectedComponentIn {K : Set X} (hK : IsCompact K)
+protected theorem _root_.IsCompact.connectedComponentIn {K : Set X} (hK : IsCompact K)
     (x : X) : IsCompact (connectedComponentIn K x) := by
   by_cases hx : x ∈ K
   · have : CompactSpace K := isCompact_iff_compactSpace.1 hK

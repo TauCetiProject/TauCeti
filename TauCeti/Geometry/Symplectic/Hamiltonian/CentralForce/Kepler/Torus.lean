@@ -92,6 +92,15 @@ theorem norm_fst_mem_Icc_keplerPeriapsisRadius_keplerApoapsisRadius (hm : 0 < m)
     (norm_pos_iff.2 hq)).1 (effectivePotential_le_centralForceHamiltonian hm.le hq
       (sq_angularMomentum b x))
 
+/-- The energy and the angular momentum of the Kepler problem are jointly continuous off the
+collision set. -/
+private theorem continuousAt_kepler_energyMomentum {x : V × V} (hq : x.1 ≠ 0) :
+    ContinuousAt (fun x : V × V ↦
+      (centralForceHamiltonian m (fun r ↦ -κ / r) x, angularMomentum (b 0) (b 1) x)) x :=
+  (continuousAt_centralForceHamiltonian
+    (continuousAt_const.div continuousAt_id (norm_ne_zero_iff.2 hq))).prodMk
+      (hasFDerivAt_angularMomentum (b 0) (b 1) x).continuousAt
+
 /-- **Bound Kepler levels are compact.** For `m, κ > 0`, a negative energy `E` and a nonzero
 angular momentum `ℓ`, the states off the collision set with energy `E` and angular momentum `ℓ`
 form a compact set. It is empty below the circular energy `-m κ² / (2 ℓ²)`. -/
@@ -128,9 +137,7 @@ theorem isCompact_setOf_centralForceHamiltonian_kepler_eq [FiniteDimensional ℝ
     norm_pos_iff.1 (hr₁.trans_le hx.1.1)
   have hcont : ContinuousOn (fun x : V × V ↦
       (centralForceHamiltonian m (fun r ↦ -κ / r) x, angularMomentum (b 0) (b 1) x)) A :=
-    fun x hx ↦ ((continuousAt_centralForceHamiltonian
-      (continuousAt_const.div continuousAt_id (norm_ne_zero_iff.2 (hq x hx)))).prodMk
-        (hasFDerivAt_angularMomentum (b 0) (b 1) x).continuousAt).continuousWithinAt
+    fun x hx ↦ (continuousAt_kepler_energyMomentum b (hq x hx)).continuousWithinAt
   -- A state of the level lies in `A`, since `‖p‖² = 2 m (E + κ / ‖q‖) < 2 m κ / ‖q‖`.
   have hsub (x : V × V) (hx : x.1 ≠ 0) (hxE : centralForceHamiltonian m (fun r ↦ -κ / r) x = E)
       (hxℓ : angularMomentum (b 0) (b 1) x = ℓ) : x ∈ A := by
@@ -188,8 +195,8 @@ theorem isRegularPoint_centralForceEnergyMomentum_kepler (hm : m ≠ 0) {x : V �
 
 /-- The **bound phase space** of the Kepler problem: the open set of states `(q, p)` off the
 collision set with negative energy `‖p‖² / (2m) - κ / ‖q‖` and nonzero angular momentum. It is a
-union of common levels of the energy and the angular momentum, and with the restriction of the
-standard symplectic form both Hamiltonian flows are complete on it
+union of common levels of the energy and the angular momentum. For `m, κ > 0`, with the restriction
+of the standard symplectic form both Hamiltonian flows are complete on it
 (`TauCeti.isCompleteVectorField_hamiltonianVectorField_keplerBoundPhaseSpace`). -/
 def keplerBoundPhaseSpace (m κ : ℝ) : TopologicalSpace.Opens (V × V) where
   carrier := {x | x.1 ≠ 0 ∧ centralForceHamiltonian m (fun r ↦ -κ / r) x < 0 ∧
@@ -198,9 +205,7 @@ def keplerBoundPhaseSpace (m κ : ℝ) : TopologicalSpace.Opens (V × V) where
     have hcont : ContinuousOn (fun x : V × V ↦
         (centralForceHamiltonian m (fun r ↦ -κ / r) x, angularMomentum (b 0) (b 1) x))
         {x | x.1 ≠ 0} :=
-      fun x hx ↦ ((continuousAt_centralForceHamiltonian
-        (continuousAt_const.div continuousAt_id (norm_ne_zero_iff.2 hx))).prodMk
-          (hasFDerivAt_angularMomentum (b 0) (b 1) x).continuousAt).continuousWithinAt
+      fun x hx ↦ (continuousAt_kepler_energyMomentum b hx).continuousWithinAt
     exact hcont.isOpen_inter_preimage (isOpen_ne_fun continuous_fst continuous_const)
       (isOpen_Iio.prod isOpen_ne)
 
@@ -240,12 +245,9 @@ theorem isCompact_keplerBoundPhaseSpace_preimage_singleton [FiniteDimensional �
   simp only [mem_image, mem_preimage, comp_apply, mem_singleton_iff, mem_ofPred_eq]
   constructor
   · rintro ⟨y, hy, rfl⟩
-    exact ⟨y.2.1, by simpa using congr_fun hy 0, by simpa using congr_fun hy 1⟩
+    exact ⟨y.2.1, (centralForceEnergyMomentum_eq_iff b).1 hy⟩
   · rintro ⟨hy, hyE, hyℓ⟩
-    refine ⟨⟨y, hy, hyE ▸ hE, hyℓ ▸ hℓ⟩, funext fun i ↦ ?_, rfl⟩
-    fin_cases i
-    · simpa using hyE
-    · simpa using hyℓ
+    exact ⟨⟨y, hy, hyE ▸ hE, hyℓ ▸ hℓ⟩, (centralForceEnergyMomentum_eq_iff b).2 ⟨hyE, hyℓ⟩, rfl⟩
 
 /-- The energy and the angular momentum Poisson-commute on the bound phase space. -/
 private theorem poissonBracket_centralForceEnergyMomentum_keplerBoundPhaseSpace
@@ -304,22 +306,13 @@ theorem nonempty_homeomorph_unitAddTorus_keplerBoundPhaseSpace [FiniteDimensiona
     (poissonBracket_centralForceEnergyMomentum_keplerBoundPhaseSpace b)
     (isCompleteVectorField_hamiltonianVectorField_keplerBoundPhaseSpace b hm hκ) (fun y hy ↦ ?_)
     ?_ ((isCompact_keplerBoundPhaseSpace_preimage_singleton b hm hκ
-      x).isCompact_connectedComponentIn x)
+      x).connectedComponentIn x)
   · -- A state of the level has the energy and angular momentum of `x`, so it is regular.
     have hFy := connectedComponentIn_subset _ _ hy
     simp only [mem_preimage, comp_apply, mem_singleton_iff] at hFy
-    have hE : centralForceHamiltonian m (fun r ↦ -κ / r) (y : V × V) =
-        centralForceHamiltonian m (fun r ↦ -κ / r) (x : V × V) := by
-      simpa using congr_fun hFy 0
-    have hℓ : angularMomentum (b 0) (b 1) (y : V × V) =
-        angularMomentum (b 0) (b 1) (x : V × V) := by
-      simpa using congr_fun hFy 1
-    have hval : IsRegularPoint 𝓘(ℝ, V × V) 𝓘(ℝ, V × V)
-        (Subtype.val : keplerBoundPhaseSpace b m κ → V × V) y := by
-      rw [isRegularPoint_iff, Manifold.mfderiv_subtype_val]
-      exact (Manifold.tangentSpaceOpenEquiv y).surjective
+    obtain ⟨hE, hℓ⟩ := (centralForceEnergyMomentum_eq_iff b).1 hFy
     exact (isRegularPoint_centralForceEnergyMomentum_kepler b hm.ne' y.2.1 (hℓ ▸ x.2.2.2)
-      (by rwa [hE, hℓ])).comp hval
+      (by rwa [hE, hℓ])).comp (isRegularPoint_subtype_val y)
       ((contDiffAt_centralForceEnergyMomentum_kepler b (n := 1) y.2.1).differentiableAt
         (by simp)).mdifferentiableAt
       (contMDiff_subtype_val.mdifferentiableAt one_ne_zero)
