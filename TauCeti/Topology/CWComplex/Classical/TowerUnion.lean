@@ -103,6 +103,7 @@ theorem towerOrigin_fst_le : ∀ (k : ℕ) {n : ℕ} (i : cell (W k) n), (towerO
     · rw [towerOrigin, dite_eq_right h]
 
 /-- A new cell is its own origin. -/
+@[simp]
 theorem towerOrigin_of_isNewTowerCell :
     ∀ {k n : ℕ} (i : cell (W k) n) (hi : IsNewTowerCell ι k i), towerOrigin ι k i = ⟨k, i, hi⟩
   | 0, _, _, _ => rfl
@@ -112,6 +113,7 @@ variable {ι} (hι : ∀ k n (i : cell (W k) n), map n (ι k n i) = map n i)
 include hι
 
 /-- The new cell from which a cell of `W k` comes has the same characteristic map. -/
+@[simp]
 theorem map_towerOrigin : ∀ (k : ℕ) {n : ℕ} (i : cell (W k) n),
     map n (towerOrigin ι k i).2.1 = map n i
   | 0, _, _ => rfl
@@ -122,12 +124,14 @@ theorem map_towerOrigin : ∀ (k : ℕ) {n : ℕ} (i : cell (W k) n),
 
 /-- The open cell of the new cell from which a cell of `W k` comes is the open cell of that
 cell. -/
+@[simp]
 theorem openCell_towerOrigin (k : ℕ) {n : ℕ} (i : cell (W k) n) :
     openCell n (towerOrigin ι k i).2.1 = openCell n i := by
   simp only [openCell, map_towerOrigin hι]
 
 /-- The closed cell of the new cell from which a cell of `W k` comes is the closed cell of that
 cell. -/
+@[simp]
 theorem closedCell_towerOrigin (k : ℕ) {n : ℕ} (i : cell (W k) n) :
     closedCell n (towerOrigin ι k i).2.1 = closedCell n i := by
   simp only [closedCell, map_towerOrigin hι]
@@ -206,6 +210,8 @@ def cwSubcomplexTowerUnion : CWComplex (⋃ k, W k) where
     rintro _ ⟨k, rfl⟩
     have hAk : IsClosed (A ∩ W k) := by
       refine CWComplex.closed' (C := W k) _ inter_subset_right fun n (j : cell (W k) n) ↦ ?_
+      -- The field `closed'` states closedness against the raw image `map n j '' closedBall 0 1`,
+      -- which is `closedCell n j` by definition; restate it so the closed-cell API applies.
       change IsClosed (A ∩ W k ∩ closedCell n j)
       rw [inter_assoc, inter_eq_right.2 (closedCell_subset_complex n j),
         ← closedCell_towerOrigin hι k j]
@@ -281,6 +287,7 @@ theorem coe_towerStageCellEquiv_apply {k n : ℕ} (i : cell (W k) n) :
 omit hW in
 /-- A cell of the stage `W k` has the characteristic map of the new cell to which it
 corresponds. -/
+@[simp]
 theorem map_towerStageCellEquiv_symm {k n : ℕ} (c : {c : TowerNewCell ι n // c.1 ≤ k}) :
     map n ((towerStageCellEquiv hι k n).symm c) = map n c.1.2.1 := by
   conv_rhs => rw [← (towerStageCellEquiv hι k n).apply_symm_apply c]
@@ -311,6 +318,7 @@ theorem coe_cwSubcomplexTowerUnionSubcomplex [T2Space X] (k : ℕ) :
 
 /-- The cells of the subcomplex given by the stage `W k` are the cells of the union born at the
 stages up to `k`. -/
+@[simp]
 theorem mem_cwSubcomplexTowerUnionSubcomplex_I_iff [T2Space X] {k n : ℕ}
     (c : @cell X _ (⋃ k, W k) ∅
       (@CWComplex.instRelCWComplex X _ _ (cwSubcomplexTowerUnion hι hW)) n) :
