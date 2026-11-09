@@ -347,7 +347,7 @@ theorem isAdicHom_spfMap_iff {I : Ideal R} {J : Ideal S} (φ : R →+* S) (hφ :
   dsimp only [spfMap, spf]
   rw [Scheme.Hom.ker_Spec_map, Scheme.Hom.ker_Spec_map,
     CommRingCat.hom_ofHom, CommRingCat.hom_ofHom, Ideal.Quotient.factor_ker,
-    Ideal.Quotient.factor_ker, TauCeti.comap_ofIdealTop_map_ΓSpecIso_inv,
+    Ideal.Quotient.factor_ker, Scheme.IdealSheafData.comap_ofIdealTop_map_ΓSpecIso_inv,
     CommRingCat.hom_ofHom, hmap]
   have hinj : Function.Injective (fun K : Ideal S₂ ↦
       Scheme.IdealSheafData.ofIdealTop (K.map (Scheme.ΓSpecIso S₂).inv.hom)) := by

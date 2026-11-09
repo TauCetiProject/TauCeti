@@ -124,8 +124,8 @@ theorem map_genericMatrix_kostantRootSubgroupCoordinateMap_eq_one_add_smul_add_s
           Y.map (Int.cast : ℤ → AdditiveGroup.coordinateHopfAlgebra ℤ) := by
   rw [map_genericMatrix_eq_kostantRootSubgroupMatrix e h ρ M hM i hnil bb,
     kostantRootSubgroupMatrix_eq_one_add_smul_add_smul e h ρ M hM i hnil bb X Y hclass
-      haction hsquare, AdditiveGroup.toAdd_gaPointsMulEquiv, WithConv.ofConv_toConv]
-  rfl
+      haction hsquare, AdditiveGroup.toAdd_gaPointsMulEquiv, WithConv.ofConv_toConv,
+    SymmetricAlgebra.lift_ι_apply, LinearMap.toSpanSingleton_apply, one_smul]
 
 end GenericMatrix
 

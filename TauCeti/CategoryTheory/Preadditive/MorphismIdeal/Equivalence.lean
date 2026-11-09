@@ -37,6 +37,8 @@ quotient categories.
 
 ## Main results
 
+* `TauCeti.MorphismIdeal.comap_mul_of_equivalence`: pullback along an equivalence commutes with
+  products of ideals.
 * `TauCeti.MorphismIdeal.faithful_lift_iff`, `full_lift`, `essSurj_lift`, and
   `isEquivalence_lift`: faithfulness, fullness, essential surjectivity, and equivalence for a
   functor lifted through the quotient by an ideal in its kernel.
@@ -229,6 +231,19 @@ theorem mapEquivalence_inverse (h : I = J.comap e.functor) :
   (rfl)
 
 end equivalence
+
+/-- **Pullback along an equivalence commutes with products of ideals.** Writing `G` for the
+inverse, `I * J` is the pullback along `G` of the pulled-back ideals, so the inclusion
+`mul_comap_le_comap_mul` for `G`, pulled back along the functor, gives the reverse inclusion. -/
+theorem comap_mul_of_equivalence (I J : MorphismIdeal D) (e : C ≌ D) [e.functor.Additive] :
+    (I * J).comap e.functor = I.comap e.functor * J.comap e.functor := by
+  refine le_antisymm ?_ (I.mul_comap_le_comap_mul J e.functor)
+  have h := (I.comap e.functor).mul_comap_le_comap_mul (J.comap e.functor) e.inverse
+  rw [comap_inverse_comap_functor, comap_inverse_comap_functor] at h
+  calc (I * J).comap e.functor
+      ≤ ((I.comap e.functor * J.comap e.functor).comap e.inverse).comap e.functor :=
+        comap_mono _ h
+    _ = I.comap e.functor * J.comap e.functor := comap_functor_comap_inverse e _
 
 end MorphismIdeal
 
