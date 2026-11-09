@@ -451,8 +451,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
   -- derivatives.
   obtain ⟨hZ0, hZ1, hZ2⟩ :=
     holderWith_translate_cutoff (fun i => EuclideanSpace.single i 1) x₀ hZ0 hZ1 hZ2
-  -- Bounds and Hölder constants of `u` and its derivatives on `B_R`.
-  -- The cutoff product `w = ζ u`.
+  -- The cutoff product `w = ζ u`, with bounds on `u` and the `L²` norm of `D²w`.
   set w : E → ℝ := ζ * u
   obtain ⟨hw, hmem, hLw, hsupp, hL2⟩ := cutoff_mul_data hα1.le hζ2 hζs hZ0 hZ1 hZ2 hu hN0 hN1 hN2
     hV hL hM hK (δ := δ) (B₂ := B₂) rfl rfl
@@ -462,7 +461,6 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
     ring
   have key := hCS hlam hEll hEll' (L := L) (K := Z * K + N * B₂) (r := R) hR.le hR hsmall' hL hw
     hmem hsupp hLw
-  -- The `L²` norm of `D²w`.
   -- Comparison of the constants.
   have hlamLam : lam ≤ Lam := by
     have h := (hEll (EuclideanSpace.single 0 1)).trans (hEll' (EuclideanSpace.single 0 1))
