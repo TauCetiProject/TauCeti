@@ -173,12 +173,15 @@ private def quarticWords (x y : A) : ℕ → Set A
   | 7 => {y * y * x * y * y * x * y * x}
   | _ => ∅
 
-/-- If `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 4 = 0`, every product of `t + 1` factors from
-`{x, y}` is an integer combination of the reduced words of length `t + 1`. -/
-private theorem span_pair_pow_succ_le_span_quarticWords (hx : x ^ 2 = 0) (hy : y ^ 3 = 0)
-    (hxy : (x + y) ^ 4 = 0) (t : ℕ) :
-    span ℤ {x, y} ^ (t + 1) ≤ span ℤ (quarticWords x y t) := by
-  -- The rewriting rules, applied after an arbitrary left factor `a`.
+/-- The rewriting rules for `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 4 = 0`, applied after an
+arbitrary left factor `a`. The third is the expansion of `(x + y) ^ 4` and the fourth is an integer
+combination of instances of the first three. -/
+private theorem quartic_rewriting_rules (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 4 = 0) :
+    (∀ a : A, a * x * x = 0) ∧ (∀ a : A, a * y * y * y = 0) ∧
+    (∀ a : A, a * x * y * x * y =
+      -(a * x * y * y * x + a * y * x * y * x + a * y * x * y * y + a * y * y * x * y)) ∧
+    (∀ a : A, a * x * y * y * x * y * y =
+      a * y * x * y * y * x * y - a * y * y * x * y * y * x) := by
   have r₀ (a : A) : a * x * x = 0 := by rw [mul_assoc, ← sq, hx, mul_zero]
   have r₁ (a : A) : a * y * y * y = 0 := by rw [mul_assoc, mul_assoc, ← pow_three, hy, mul_zero]
   -- Expanding `(x + y) ^ 4` leaves the five words with no `x x` and no `y y y`.
@@ -189,11 +192,27 @@ private theorem span_pair_pow_succ_le_span_quarticWords (hx : x ^ 2 = 0) (hy : y
       add_zero]
     noncomm_ring
   -- The overlap of `x y x y` with `y y y` gives the last rule.
-  have r₃ (a : A) : a * x * y * y * x * y * y =
-      a * y * x * y * y * x * y - a * y * y * x * y * y * x := by
-    linear_combination (norm := skip) r₂ a * (y * y) - r₂ (a * y) * y + r₂ (a * y * y)
-    simp only [add_mul, neg_mul, ← mul_assoc, r₁, zero_add, add_zero]
-    noncomm_ring
+  refine ⟨r₀, r₁, r₂, fun a ↦ ?_⟩
+  linear_combination (norm := skip) r₂ a * (y * y) - r₂ (a * y) * y + r₂ (a * y * y)
+  simp only [add_mul, neg_mul, ← mul_assoc, r₁, zero_add, add_zero]
+  noncomm_ring
+
+/-- The expansion of `(x + y) ^ 4` for `x ^ 2 = 0` and `y ^ 3 = 0`, with the words containing
+`x x` or `y y y` removed, the left-factor-free case of `quartic_rewriting_rules`. -/
+private theorem quartic_expansion_eq_zero (hx : x ^ 2 = 0) (hy : y ^ 3 = 0)
+    (hxy : (x + y) ^ 4 = 0) :
+    x * y * x * y + x * y * y * x + y * x * y * x + y * x * y * y + y * y * x * y = 0 := by
+  have h := (quartic_rewriting_rules hx hy hxy).2.2.1 1
+  simp only [one_mul] at h
+  linear_combination (norm := skip) h
+  noncomm_ring
+
+/-- If `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 4 = 0`, every product of `t + 1` factors from
+`{x, y}` is an integer combination of the reduced words of length `t + 1`. -/
+private theorem span_pair_pow_succ_le_span_quarticWords (hx : x ^ 2 = 0) (hy : y ^ 3 = 0)
+    (hxy : (x + y) ^ 4 = 0) (t : ℕ) :
+    span ℤ {x, y} ^ (t + 1) ≤ span ℤ (quarticWords x y t) := by
+  obtain ⟨r₀, r₁, r₂, r₃⟩ := quartic_rewriting_rules hx hy hxy
   have r₀' := r₀ 1
   have r₁' := r₁ 1
   have r₂' := r₂ 1
@@ -222,18 +241,24 @@ private theorem span_pair_pow_succ_le_span_quarticWords (hx : x ^ 2 = 0) (hy : y
   exact span_pow_succ_le_span_of_forall_mul_mem subset_span hS t
 
 /-- The reduced words `quarticWords x y` of lengths one to three lie in the commutator submodule,
-given `x x = 0`, the reduced expansion of `(x + y) ^ 3`, that `2` and `3` are units, and that `x`,
-`y`, `y ^ 2`, `(x + y) ^ 2` and `(x + y) ^ 3` lie in the commutator submodule. -/
+given `x ^ 2 = 0`, `y ^ 3 = 0`, `(x + y) ^ 4 = 0`, that `2` and `3` are units, and that `x`, `y`,
+`y ^ 2`, `(x + y) ^ 2` and `(x + y) ^ 3` lie in the commutator submodule. -/
 private theorem forall_mem_commutatorSubmodule_quarticWords_lengths_one_to_three {k : Type*}
-    [Semiring k] [Module k A] (hxx : x * x = 0)
-    (hcube : (x + y) ^ 3 = x * y * x + x * y * y + y * x * y + y * y * x) (h2 : IsUnit (2 : k))
-    (h3 : IsUnit (3 : k)) (hx₀ : x ∈ commutatorSubmodule k A) (hy₀ : y ∈ commutatorSubmodule k A)
-    (hy₁ : y ^ 2 ∈ commutatorSubmodule k A) (hs : (x + y) ^ 2 ∈ commutatorSubmodule k A)
-    (hc : (x + y) ^ 3 ∈ commutatorSubmodule k A) :
+    [Semiring k] [Module k A] (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 4 = 0)
+    (h2 : IsUnit (2 : k)) (h3 : IsUnit (3 : k)) (hx₀ : x ∈ commutatorSubmodule k A)
+    (hy₀ : y ∈ commutatorSubmodule k A) (hy₁ : y ^ 2 ∈ commutatorSubmodule k A)
+    (hs : (x + y) ^ 2 ∈ commutatorSubmodule k A) (hc : (x + y) ^ 3 ∈ commutatorSubmodule k A) :
     (∀ b ∈ quarticWords x y 0, b ∈ commutatorSubmodule k A) ∧
     (∀ b ∈ quarticWords x y 1, b ∈ commutatorSubmodule k A) ∧
     (∀ b ∈ quarticWords x y 2, b ∈ commutatorSubmodule k A) := by
   let C := commutatorSubmodule k A
+  obtain ⟨r₀, r₁, -⟩ := quartic_rewriting_rules hx hy hxy
+  have hxx : x * x = 0 := by simpa only [one_mul] using r₀ 1
+  have hyyy : y * y * y = 0 := by simpa only [one_mul] using r₁ 1
+  -- The expansion of `(x + y) ^ 3` with the words containing `x x` or `y y y` removed.
+  have hcube : (x + y) ^ 3 = x * y * x + x * y * y + y * x * y + y * y * x := by
+    simp only [pow_succ, pow_zero, one_mul, mul_add, add_mul, hxx, hyyy, r₀, zero_add, add_zero]
+    noncomm_ring
   -- Length two: twice `x y` is `(x + y) ^ 2 - y ^ 2` plus the commutator `x y - y x`.
   have hxy₀ : x * y ∈ C := by
     have h : (2 : k) • (x * y) = (x + y) ^ 2 + -y ^ 2 + (x * y - y * x) := by
@@ -268,15 +293,16 @@ private theorem forall_mem_commutatorSubmodule_quarticWords_lengths_one_to_three
       exact mul_mem_commutatorSubmodule_comm.2 hxyy
     · exact mul_mem_commutatorSubmodule_comm.2 (by rw [← mul_assoc]; exact hxyy)
 
-/-- The reduced words `quarticWords x y` of length four lie in the commutator submodule, given `x x
-= 0`, `a y y y = 0` for every `a`, the vanishing of the sum `hT` of the reduced words of length four
-(the expansion of `(x + y) ^ 4`), and that `2` is a unit. -/
+/-- The reduced words `quarticWords x y` of length four lie in the commutator submodule, given
+`x ^ 2 = 0`, `y ^ 3 = 0`, `(x + y) ^ 4 = 0` and that `2` is a unit. -/
 private theorem forall_mem_commutatorSubmodule_quarticWords_length_four {k : Type*} [Semiring k]
-    [Module k A] (hxx : x * x = 0) (r₁ : ∀ a : A, a * y * y * y = 0)
-    (hT : x * y * x * y + x * y * y * x + y * x * y * x + y * x * y * y + y * y * x * y = 0)
+    [Module k A] (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 4 = 0)
     (h2 : IsUnit (2 : k)) :
     ∀ b ∈ quarticWords x y 3, b ∈ commutatorSubmodule k A := by
   let C := commutatorSubmodule k A
+  obtain ⟨r₀, r₁, -⟩ := quartic_rewriting_rules hx hy hxy
+  have hxx : x * x = 0 := by simpa only [one_mul] using r₀ 1
+  have hT := quartic_expansion_eq_zero hx hy hxy
   -- Length four: `x y y x`, `y x y y` and `y y x y` rotate into words containing `x x` or
   -- `y y y`, and then twice `y x y x` is a sum of commutators.
   have hxyyx : x * y * y * x ∈ C :=
@@ -302,15 +328,16 @@ private theorem forall_mem_commutatorSubmodule_quarticWords_length_four {k : Typ
   exact ⟨hxyyx, hyxyx, hyxyy, hyyxy⟩
 
 /-- The reduced words `quarticWords x y` of lengths five and six lie in the commutator submodule,
-given `x x = 0`, `y y y = 0`, `a x x = 0` and `a y y y = 0` for every `a`, and the vanishing of the
-sum `hT` of the reduced words of length four (the expansion of `(x + y) ^ 4`). -/
+given `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 4 = 0`. -/
 private theorem forall_mem_commutatorSubmodule_quarticWords_lengths_five_six {k : Type*}
-    [Semiring k] [Module k A] (hxx : x * x = 0) (hyyy : y * y * y = 0) (r₀ : ∀ a : A, a * x * x = 0)
-    (r₁ : ∀ a : A, a * y * y * y = 0)
-    (hT : x * y * x * y + x * y * y * x + y * x * y * x + y * x * y * y + y * y * x * y = 0) :
+    [Semiring k] [Module k A] (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 4 = 0) :
     (∀ b ∈ quarticWords x y 4, b ∈ commutatorSubmodule k A) ∧
     (∀ b ∈ quarticWords x y 5, b ∈ commutatorSubmodule k A) := by
   let C := commutatorSubmodule k A
+  obtain ⟨r₀, r₁, -⟩ := quartic_rewriting_rules hx hy hxy
+  have hxx : x * x = 0 := by simpa only [one_mul] using r₀ 1
+  have hyyy : y * y * y = 0 := by simpa only [one_mul] using r₁ 1
+  have hT := quartic_expansion_eq_zero hx hy hxy
   -- Length five: the difference of the expansion multiplied by `y` and by `x` leaves `x y y x y`
   -- up to commutators and words rotating into `x x` or `y y y`.
   have hyyxyy : y * y * x * y * y ∈ C :=
@@ -348,17 +375,17 @@ private theorem forall_mem_commutatorSubmodule_quarticWords_lengths_five_six {k 
       mul_mem_commutatorSubmodule_comm.2 (by simpa only [mul_assoc] using hyyxyyx), hyyxyyx⟩
 
 /-- The reduced words `quarticWords x y` of lengths seven and eight lie in the commutator submodule,
-given `x x = 0`, `y y y = 0`, `a x x = 0` and `a y y y = 0` for every `a`, the vanishing of the sum
-`hT` of the reduced words of length four (the expansion of `(x + y) ^ 4`), and that `2` is a unit.
--/
+given `x ^ 2 = 0`, `y ^ 3 = 0`, `(x + y) ^ 4 = 0` and that `2` is a unit. -/
 private theorem forall_mem_commutatorSubmodule_quarticWords_lengths_seven_eight {k : Type*}
-    [Semiring k] [Module k A] (hxx : x * x = 0) (hyyy : y * y * y = 0) (r₀ : ∀ a : A, a * x * x = 0)
-    (r₁ : ∀ a : A, a * y * y * y = 0)
-    (hT : x * y * x * y + x * y * y * x + y * x * y * x + y * x * y * y + y * y * x * y = 0)
+    [Semiring k] [Module k A] (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 4 = 0)
     (h2 : IsUnit (2 : k)) :
     (∀ b ∈ quarticWords x y 6, b ∈ commutatorSubmodule k A) ∧
     (∀ b ∈ quarticWords x y 7, b ∈ commutatorSubmodule k A) := by
   let C := commutatorSubmodule k A
+  obtain ⟨r₀, r₁, -⟩ := quartic_rewriting_rules hx hy hxy
+  have hxx : x * x = 0 := by simpa only [one_mul] using r₀ 1
+  have hyyy : y * y * y = 0 := by simpa only [one_mul] using r₁ 1
+  have hT := quartic_expansion_eq_zero hx hy hxy
   -- Length seven: the expansion multiplied by `x y y` leaves `x y y x y x y` up to a word rotating
   -- into `x x`.
   have hxyyxyxy : x * y * y * x * y * x * y ∈ C := by
@@ -410,28 +437,14 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_four {B : Type*}
     (hy₀ : y ∈ commutatorSubmodule k B) (hy₁ : y ^ 2 ∈ commutatorSubmodule k B)
     (hs : (x + y) ^ 2 ∈ commutatorSubmodule k B) (hc : (x + y) ^ 3 ∈ commutatorSubmodule k B)
     {t : ℕ} {w : B} (hw : w ∈ span ℤ {x, y} ^ (t + 1)) : w ∈ commutatorSubmodule k B := by
-  have hxx : x * x = 0 := by rw [← sq, hx]
-  have hyyy : y * y * y = 0 := by rw [← pow_three', hy]
-  have r₀ (a : B) : a * x * x = 0 := by rw [mul_assoc, hxx, mul_zero]
-  have r₁ (a : B) : a * y * y * y = 0 := by rw [mul_assoc, mul_assoc, ← mul_assoc y, hyyy, mul_zero]
-  -- The expansions of `(x + y) ^ 3` and `(x + y) ^ 4` with the words containing `x x` or `y y y`
-  -- removed.
-  have hcube : (x + y) ^ 3 = x * y * x + x * y * y + y * x * y + y * y * x := by
-    simp only [pow_succ, pow_zero, one_mul, mul_add, add_mul, hxx, hyyy, r₀, zero_add, add_zero]
-    noncomm_ring
-  have hT : x * y * x * y + x * y * y * x + y * x * y * x + y * x * y * y + y * y * x * y = 0 := by
-    linear_combination (norm := skip) hxy
-    simp only [pow_succ, pow_zero, one_mul, mul_add, add_mul, hxx, hyyy, r₀, r₁, zero_add,
-      add_zero]
-    noncomm_ring
   obtain ⟨l₁, l₂, l₃⟩ :=
-    forall_mem_commutatorSubmodule_quarticWords_lengths_one_to_three (k := k) hxx hcube h2 h3 hx₀
+    forall_mem_commutatorSubmodule_quarticWords_lengths_one_to_three (k := k) hx hy hxy h2 h3 hx₀
       hy₀ hy₁ hs hc
-  have l₄ := forall_mem_commutatorSubmodule_quarticWords_length_four (k := k) hxx r₁ hT h2
+  have l₄ := forall_mem_commutatorSubmodule_quarticWords_length_four (k := k) hx hy hxy h2
   obtain ⟨l₅, l₆⟩ :=
-    forall_mem_commutatorSubmodule_quarticWords_lengths_five_six (k := k) hxx hyyy r₀ r₁ hT
+    forall_mem_commutatorSubmodule_quarticWords_lengths_five_six (k := k) hx hy hxy
   obtain ⟨l₇, l₈⟩ :=
-    forall_mem_commutatorSubmodule_quarticWords_lengths_seven_eight (k := k) hxx hyyy r₀ r₁ hT h2
+    forall_mem_commutatorSubmodule_quarticWords_lengths_seven_eight (k := k) hx hy hxy h2
   have hwords : ∀ b ∈ quarticWords x y t, b ∈ commutatorSubmodule k B := by
     rcases Nat.lt_or_ge t 8 with ht | ht
     · interval_cases t
