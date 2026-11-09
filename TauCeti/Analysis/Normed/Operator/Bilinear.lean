@@ -19,7 +19,8 @@ bilinear map `B (u ·) (u ·)` on `W`. This operation is itself continuous and l
 bilinear maps, such as the coordinate expressions of metrics. In particular, pulling back each
 value of a continuous family of multilinear maps valued in bilinear maps, along `u` in every
 argument, gives a continuous family
-(`Continuous.pullbackBilinL_compContinuousMultilinearMap`).
+(`Continuous.pullbackBilinL_compContinuousMultilinearMap`). Pulling back along a bijection preserves
+nondegeneracy (`ContinuousLinearMap.injective_bilinearComp`).
 
 The quadratic map `x ↦ B x x` of a continuous bilinear map is Lipschitz on every ball, with a
 constant proportional to the radius: `‖B x x - B y y‖ ≤ ‖B‖ (‖x‖ + ‖y‖) ‖x - y‖`
@@ -81,6 +82,16 @@ theorem norm_apply_apply_sub_apply_apply_le (B : V →L[𝕜] V →L[𝕜] G) (x
   calc ‖B x (x - y) + B (x - y) y‖ ≤ ‖B‖ * ‖x‖ * ‖x - y‖ + ‖B‖ * ‖x - y‖ * ‖y‖ :=
         (norm_add_le _ _).trans (add_le_add (B.le_opNorm₂ _ _) (B.le_opNorm₂ _ _))
     _ = ‖B‖ * (‖x‖ + ‖y‖) * ‖x - y‖ := by ring
+
+/-- Pulling a nondegenerate bilinear map back along a bijective continuous linear map keeps it
+nondegenerate. -/
+theorem injective_bilinearComp {B : V →L[𝕜] V →L[𝕜] G} (hB : Function.Injective B)
+    {u : W →L[𝕜] V} (hu : Function.Bijective u) : Function.Injective (B.bilinearComp u u) := by
+  intro w w' hww'
+  refine hu.1 (hB ?_)
+  ext v
+  obtain ⟨v, rfl⟩ := hu.2 v
+  exact congrArg (fun φ ↦ φ v) hww'
 
 section Invertible
 
