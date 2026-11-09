@@ -14,12 +14,11 @@ This file supplies general lemmas about trace-dual fractional ideals. The coerci
 the fractional-ideal and submodule trace duals, allowing submodule results such as localization to
 be transferred to fractional ideals. The elementwise descriptions of the trace dual of `S` and of
 the different ideal, each as the inverse of the other, are what read the different off valuations
-and transport it along automorphisms. The identity-extension
-trace-dual theorem gives the unit different, which is used to compute the relative discriminant of
-the identity extension. The trace criterion `TauCeti.dvd_differentIdeal_iff_forall_intTrace_mem`
-decides when an ideal `I` with `I * Q = p · B` divides the different ideal of an extension of
-Dedekind domains.
-The multiplicity lemmas express divisibility by powers of a prime and Dedekind's universal
+and transport it along automorphisms. The different of the identity extension is the unit ideal,
+which is used to compute the relative discriminant of the identity extension. The trace criterion
+`TauCeti.dvd_differentIdeal_iff_forall_intTrace_mem` decides when an ideal `I` with
+`I * Q = p · B` divides the different ideal of an extension of Dedekind domains.
+The multiplicity lemmas express divisibility by powers of an ideal and Dedekind's universal
 `e - 1` bound as bounds on the different exponent.
 For finite separable fraction-field extensions, the different is nonzero. When it is principal,
 membership in the trace dual is tested by multiplication by a generator, and division by that
@@ -43,22 +42,26 @@ variable (A : Type*) {B : Type*} [CommRing A] [CommRing B] [Algebra A B]
 variable [IsDedekindDomain A] [IsDedekindDomain B] [Module.IsTorsionFree A B] [Module.Finite A B]
 variable [Algebra.IsSeparable (FractionRing A) (FractionRing B)]
 
-/-- The characteristic property of the different exponent at a nonzero prime `P` of `B`: `P ^ n`
-divides the different ideal exactly when `n` is at most the multiplicity of `P` in it. -/
-theorem pow_dvd_differentIdeal_iff_le_multiplicity {P : Ideal B} [P.IsPrime] (hP : P ≠ ⊥)
-    {n : ℕ} : P ^ n ∣ differentIdeal A B ↔ n ≤ multiplicity P (differentIdeal A B) :=
-  (FiniteMultiplicity.of_prime_left (Ideal.prime_of_isPrime hP ‹_›)
+/-- The characteristic property of the multiplicity of a proper ideal `P` of `B` in the different
+ideal, such as the different exponent at a prime: `P ^ n` divides the different ideal exactly when
+`n` is at most that multiplicity. -/
+theorem pow_dvd_differentIdeal_iff_le_multiplicity {P : Ideal B} (hP : P ≠ ⊤) {n : ℕ} :
+    P ^ n ∣ differentIdeal A B ↔ n ≤ multiplicity P (differentIdeal A B) :=
+  (FiniteMultiplicity.of_not_isUnit (mt Ideal.isUnit_iff.mp hP)
     differentIdeal_ne_bot).pow_dvd_iff_le_multiplicity
 
 /-- **Dedekind's different theorem, first part, as a bound on the exponent**: the multiplicity of
-a prime `P` over a nonzero prime `p` in the different ideal is at least `e(P ∣ p) - 1`. -/
-theorem ramificationIdx_sub_one_le_multiplicity_differentIdeal {p : Ideal A} [p.IsMaximal]
-    (hp : p ≠ ⊥) (P : Ideal B) [P.IsPrime] [P.LiesOver p] :
+a prime `P` of `B` in the different ideal is at least `e - 1`, where `e` is the ramification index
+of `P` over `A`. -/
+theorem ramificationIdx_sub_one_le_multiplicity_differentIdeal (P : Ideal B) [P.IsPrime] :
     P.ramificationIdx A - 1 ≤ multiplicity P (differentIdeal A B) := by
-  rw [← pow_dvd_differentIdeal_iff_le_multiplicity A (Ideal.ne_bot_of_liesOver_of_ne_bot hp P),
-    ← Ideal.ramificationIdx'_eq_ramificationIdx p P hp]
+  by_cases hp : P.under A = ⊥
+  · simp [Ideal.eq_bot_of_under_eq_bot hp]
+  have := (Ideal.IsPrime.under A P).isMaximal hp
+  rw [← pow_dvd_differentIdeal_iff_le_multiplicity A Ideal.IsPrime.ne_top',
+    ← Ideal.ramificationIdx'_eq_ramificationIdx (P.under A) P hp]
   exact pow_sub_one_dvd_differentIdeal A P _ hp
-    (Ideal.dvd_iff_le.mpr (Ideal.le_pow_ramificationIdx' (p := p) (P := P)))
+    (Ideal.dvd_iff_le.mpr (Ideal.le_pow_ramificationIdx' (p := P.under A) (P := P)))
 
 end Multiplicity
 
@@ -81,14 +84,7 @@ theorem coe_dual_one_of_isDomain [IsDomain S] :
     (↑(FractionalIdeal.dual R K (1 : FractionalIdeal S⁰ L)) : Submodule S L) =
       Submodule.traceDual R K (1 : Submodule S L) := by
   ext x
-  -- Rewriting through `FractionalIdeal.coe_mk` directly requires Mathlib's transparency override.
-  -- Extensionality reduces the coercion equality to the definitionally equal membership predicates.
-  change x ∈ FractionalIdeal.dual R K (1 : FractionalIdeal S⁰ L) ↔ _
-  have h : (1 : FractionalIdeal S⁰ L) ≠ 0 := one_ne_zero
-  simp [FractionalIdeal.dual, h]
-  -- In the nonzero branch, `dual` stores the trace-dual submodule itself; only its proof field is
-  -- discarded by the coercion, so the two remaining membership predicates are definitionally equal.
-  rfl
+  simp [FractionalIdeal.dual]
 
 end FractionalIdeal
 
@@ -122,10 +118,9 @@ include K in
 theorem algebraMap_ne_zero_of_differentIdeal_eq_span
     [IsDedekindDomain S] [IsTorsionFree R S] {δ : S}
     (hδ : differentIdeal R S = Ideal.span {δ}) : algebraMap S L δ ≠ 0 := by
-  have hδ0 : δ ≠ 0 := by
-    intro h
-    exact differentIdeal_ne_bot_of_isSeparable (K := K) (L := L) (by simpa [h] using hδ)
-  simpa using (IsFractionRing.injective S L).ne hδ0
+  rw [ne_eq, map_eq_zero_iff _ (IsFractionRing.injective S L)]
+  rintro rfl
+  exact differentIdeal_ne_bot_of_isSeparable (K := K) (L := L) (by simpa using hδ)
 
 /-- For a principal different, membership in the complementary module is tested by
 multiplication by its generator. -/
@@ -207,7 +202,8 @@ theorem mem_differentIdeal_iff_forall_mem_traceDual [IsDedekindDomain S] [IsTors
     obtain ⟨y', hy', hyy'⟩ := hmem
     rwa [← IsFractionRing.injective S L hyy']
 
-omit [IsDomain R] [IsFractionRing S L] [IsIntegrallyClosed R] [Algebra.IsSeparable K L] in
+omit [IsDomain R] [IsFractionRing R K] [IsFractionRing S L] [IsIntegrallyClosed R]
+  [FiniteDimensional K L] [Algebra.IsSeparable K L] in
 /-- **The trace dual of `S` is stable under the automorphisms of `L / K`**: an automorphism maps
 `S` onto itself and preserves the trace of `L / K`. -/
 @[simp]
@@ -220,15 +216,9 @@ theorem apply_mem_traceDual_one_iff {σ : Gal(L/K)} {x : L} :
   refine fun τ z hz ↦ Submodule.mem_traceDual.mpr fun a ha ↦ ?_
   obtain ⟨b, rfl⟩ := Submodule.mem_one.mp ha
   -- `Tr (τ z · b) = Tr (τ (z · τ⁻¹ b)) = Tr (z · τ⁻¹ b)`, and `τ⁻¹ b` lies in `S`
-  have hb : τ.symm (algebraMap S L b) = algebraMap S L (galRestrict R K L S τ⁻¹ b) :=
-    (algebraMap_galRestrict_apply R τ⁻¹ b).symm
-  have htr : Algebra.traceForm K L (τ z) (algebraMap S L b) =
-      Algebra.traceForm K L z (algebraMap S L (galRestrict R K L S τ⁻¹ b)) := by
-    have hmul : τ z * algebraMap S L b = τ (z * τ.symm (algebraMap S L b)) := by
-      rw [map_mul, AlgEquiv.apply_symm_apply]
-    rw [← hb, Algebra.traceForm_apply, Algebra.traceForm_apply, hmul,
-      Algebra.trace_eq_of_algEquiv]
-  rw [htr]
+  rw [Algebra.traceForm_apply, ← Algebra.trace_eq_of_algEquiv τ.symm, map_mul,
+    AlgEquiv.symm_apply_apply, ← AlgEquiv.coe_toAlgHom,
+    ← algebraMap_galRestrict'_apply R S S (τ.symm : L →ₐ[K] L)]
   exact Submodule.mem_traceDual.mp hz _ (Submodule.mem_one.mpr ⟨_, rfl⟩)
 
 /-- **The different ideal is stable under the automorphisms of `L / K`**, acting on `S` through
@@ -304,66 +294,18 @@ theorem dvd_differentIdeal_iff_forall_intTrace_mem
 
 end TraceCriterion
 
-variable {A : Type*} [CommRing A] [IsDomain A]
-
-/-- The trace dual of the unit submodule is the unit submodule for the identity extension of a
-domain to its fraction field. -/
-@[simp]
-theorem traceDual_one_fractionRing_self :
-    letI : Algebra (FractionRing A) (FractionRing A) :=
-      FractionRing.liftAlgebra A (FractionRing A)
-    Submodule.traceDual A (FractionRing A) (1 : Submodule A (FractionRing A)) = 1 := by
-  let _ : Algebra (FractionRing A) (FractionRing A) :=
-    FractionRing.liftAlgebra A (FractionRing A)
-  have htrace (x : FractionRing A) : Algebra.trace (FractionRing A) (FractionRing A) x = x := by
-    have htrace' := @Algebra.trace_eq_of_equiv_equiv
-      (FractionRing A) (FractionRing A) (FractionRing A) (FractionRing A)
-      _ _ _ _ (Algebra.id (FractionRing A))
-      (FractionRing.liftAlgebra A (FractionRing A)) (RingEquiv.refl _) (RingEquiv.refl _) ?_ x
-    · simpa [Algebra.trace_self_apply] using htrace'.symm
-    · ext y
-      -- The compatibility goal is definitionally the identity algebra map after
-      -- reducing the two identity equivalences and the lifted algebra wrapper.
-      change algebraMap (FractionRing A) (FractionRing A) y = y
-      rw [FractionRing.algebraMap_liftAlgebra]
-      exact IsLocalization.lift_id y
-  apply le_antisymm
-  · intro x hx
-    have hx' := (@Submodule.mem_traceDual A (FractionRing A) (FractionRing A) A
-      _ _ _ _ _ _ _ (FractionRing.liftAlgebra A (FractionRing A)) _ _ _).mp hx 1 (by simp)
-    rw [Submodule.mem_one]
-    exact (by simpa [Algebra.traceForm_apply, htrace x] using hx')
-  · intro x hx
-    rw [Submodule.mem_traceDual]
-    intro y hy
-    rw [Submodule.mem_one] at hx hy
-    obtain ⟨x, rfl⟩ := hx
-    obtain ⟨y, rfl⟩ := hy
-    refine ⟨x * y, ?_⟩
-    rw [Algebra.traceForm_apply, htrace]
-    simp
-
 variable {D : Type*} [CommRing D] [IsDedekindDomain D]
 
 /-- The different ideal of the identity extension of a Dedekind domain is the unit ideal. -/
 @[simp]
 theorem differentIdeal_self : differentIdeal D D = ⊤ := by
-  let _ : Algebra (FractionRing D) (FractionRing D) :=
-    FractionRing.liftAlgebra D (FractionRing D)
-  rw [differentIdeal]
-  -- Unfolding `differentIdeal` and its coercion exposes the quotient's ambient
-  -- submodule while retaining the comap by `Algebra.linearMap`.
-  change Submodule.comap (Algebra.linearMap D (FractionRing D))
-    (1 / (Submodule.traceDual D (FractionRing D) 1)) = ⊤
-  rw [traceDual_one_fractionRing_self]
-  -- This is a coercion bridge: the unfolded different uses submodule division,
-  -- while the available normalization lemmas for division apply to fractional ideals.
-  rw [show (1 / (1 : Submodule D (FractionRing D))) =
-      (↑((1 : FractionalIdeal D⁰ (FractionRing D)) / 1) : Submodule D (FractionRing D)) by
-    rw [FractionalIdeal.coe_div one_ne_zero, FractionalIdeal.coe_one]]
-  rw [FractionalIdeal.div_one, FractionalIdeal.coe_one]
-  ext x
-  simp [Submodule.mem_one]
+  -- `1` generates `D` over itself, so the derivative `1` of its minimal polynomial `X - 1` lies in
+  -- the different ideal.
+  have h := aeval_derivative_mem_differentIdeal D (FractionRing D) (FractionRing D) (1 : D)
+    (Subsingleton.elim _ _)
+  rwa [← map_one (algebraMap D D),
+    minpoly.eq_X_sub_C_of_algebraMap_inj _ (FaithfulSMul.algebraMap_injective D D),
+    Polynomial.derivative_X_sub_C, map_one, ← Ideal.eq_top_iff_one] at h
 
 end TauCeti
 

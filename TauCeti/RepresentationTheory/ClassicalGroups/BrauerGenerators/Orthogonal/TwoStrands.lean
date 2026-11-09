@@ -102,6 +102,29 @@ It commutes with the signed permutation matrices but not with a rotation. -/
 private def diagonalTensorMatrix : Matrix (Fin 2 → ι) (Fin 2 → ι) R :=
   Matrix.of fun v u => if v = u ∧ v 0 = v 1 then 1 else 0
 
+/-- **Relabelling.** A matrix commuting with the orthogonal group on two strands has the same
+entry at two index patterns that differ by a permutation of the labels. -/
+private theorem apply_perm_pattern
+    (hM : ∀ A : Matrix ι ι R, Aᵀ * A = 1 → Commute M (A.kroneckerPower (Fin 2)))
+    (σ : Equiv.Perm ι) (x₀ x₁ y₀ y₁ : ι) :
+    M ![σ x₀, σ x₁] ![σ y₀, σ y₁] = M ![x₀, x₁] ![y₀, y₁] := by
+  have hc : ∀ a b : ι, ![σ a, σ b] = σ ∘ ![a, b] := fun a b => by
+    ext i; fin_cases i <;> rfl
+  rw [hc, hc]
+  exact apply_comp_comp_of_commute_kroneckerPower hM σ _ _
+
+/-- **Parity.** A matrix commuting with the orthogonal group on two strands has a vanishing entry
+at a pair of index patterns in which some label `a` occurs an odd number of times in total. -/
+private theorem apply_eq_zero_of_not_iff [NoZeroDivisors R]
+    (hM : ∀ A : Matrix ι ι R, Aᵀ * A = 1 → Commute M (A.kroneckerPower (Fin 2)))
+    (h2 : (2 : R) ≠ 0) {a : ι} {v u : Fin 2 → ι}
+    (h : ¬((v 0 = a ↔ v 1 = a) ↔ (u 0 = a ↔ u 1 = a))) : M v u = 0 := by
+  have hpar (w : Fin 2 → ι) :
+      Even (Finset.univ.filter fun i => w i = a).card ↔ (w 0 = a ↔ w 1 = a) := by
+    rw [Finset.card_filter, Fin.sum_univ_two]
+    by_cases h0 : w 0 = a <;> by_cases h1 : w 1 = a <;> simp [h0, h1]
+  exact apply_eq_zero_of_commute_kroneckerPower hM h2 a (by rwa [hpar, hpar])
+
 /-- **The entries of a matrix commuting with the orthogonal group on two strands.** Such a matrix
 is determined by its entries at the four patterns of equality among its indices, so it is a
 combination of the three diagram matrices and of `TauCeti.diagonalTensorMatrix`. -/
@@ -114,12 +137,7 @@ private theorem eq_diagramCombination_add_smul [NoZeroDivisors R]
         (M ![a₀, a₁] ![a₀, a₁] + M ![a₀, a₁] ![a₁, a₀] + M ![a₀, a₀] ![a₁, a₁])) •
         diagonalTensorMatrix R ι := by
   -- Relabelling moves each pattern to a normal form at the labels `a₀` and `a₁`.
-  have hσ (σ : Equiv.Perm ι) (x₀ x₁ y₀ y₁ : ι) :
-      M ![σ x₀, σ x₁] ![σ y₀, σ y₁] = M ![x₀, x₁] ![y₀, y₁] := by
-    have hc : ∀ a b : ι, ![σ a, σ b] = σ ∘ ![a, b] := fun a b => by
-      ext i; fin_cases i <;> rfl
-    rw [hc, hc]
-    exact apply_comp_comp_of_commute_kroneckerPower hM σ _ _
+  have hσ := apply_perm_pattern hM
   have hτ (a : ι) : M ![a, a] ![a, a] = M ![a₀, a₀] ![a₀, a₀] := by
     simpa using (hσ (Equiv.swap a a₀) a a a a).symm
   have hpair {a b : ι} (hab : a ≠ b) : ∃ σ : Equiv.Perm ι, σ a = a₀ ∧ σ b = a₁ := by
@@ -134,14 +152,8 @@ private theorem eq_diagramCombination_add_smul [NoZeroDivisors R]
   have hα {a b : ι} (hab : a ≠ b) : M ![a, a] ![b, b] = M ![a₀, a₀] ![a₁, a₁] := by
     obtain ⟨σ, ha, hb⟩ := hpair hab
     rw [← hσ σ, ha, hb]
-  -- A label occurring an odd number of times forces the entry to vanish.
-  have hpar (w : Fin 2 → ι) (a : ι) :
-      Even (Finset.univ.filter fun i => w i = a).card ↔ (w 0 = a ↔ w 1 = a) := by
-    rw [Finset.card_filter, Fin.sum_univ_two]
-    by_cases h0 : w 0 = a <;> by_cases h1 : w 1 = a <;> simp [h0, h1]
   have hz {a : ι} {v u : Fin 2 → ι} (h : ¬((v 0 = a ↔ v 1 = a) ↔ (u 0 = a ↔ u 1 = a))) :
-      M v u = 0 :=
-    apply_eq_zero_of_commute_kroneckerPower hM h2 a (by rwa [hpar, hpar])
+      M v u = 0 := apply_eq_zero_of_not_iff hM h2 h
   ext v u
   obtain ⟨x₀, x₁, rfl⟩ : ∃ x₀ x₁ : ι, v = ![x₀, x₁] := ⟨v 0, v 1, by ext i; fin_cases i <;> rfl⟩
   obtain ⟨y₀, y₁, rfl⟩ : ∃ y₀ y₁ : ι, u = ![y₀, y₁] := ⟨u 0, u 1, by ext i; fin_cases i <;> rfl⟩

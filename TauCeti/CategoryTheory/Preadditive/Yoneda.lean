@@ -14,7 +14,7 @@ public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import Mathlib.CategoryTheory.Preadditive.Yoneda.Basic
 
 /-!
-# Morphisms out of representable functors with values in abelian groups
+# The preadditive Yoneda and coYoneda functors
 
 For a preadditive category `C`, the preadditive Yoneda embedding sends `Y : C` to the functor
 `(-, Y) : Cᵒᵖ ⥤ AddCommGrpCat`. This file records how it acts on morphisms, three facts about
@@ -30,6 +30,12 @@ it, and its restriction to a full subcategory.
   subcategory of `P` gives a functor `X ↦ (-, X)|_P`, which agrees with `(-, Y)` on objects `Y` of
   that subcategory and preserves epimorphisms when `P` consists of projective objects.
 
+Dually, for an object `M` with `Γ = End M`, the functor `Hom(M, -)` (Mathlib's
+`CategoryTheory.preadditiveCoyonedaObj M`) takes values in `Γᵐᵒᵖ`-modules. By the Yoneda
+argument, it is bijective on the morphisms `M ⟶ Y`: a `Γᵐᵒᵖ`-linear map
+`φ : Hom(M, M) → Hom(M, Y)` is composition with `φ (𝟙 M)`, since
+`φ f = φ (f • 𝟙 M) = f ≫ φ (𝟙 M)`.
+
 ## Main declarations
 
 * `CategoryTheory.preadditiveYoneda_map_app_apply`: the natural transformation `(-, f)` acts by
@@ -39,6 +45,8 @@ it, and its restriction to a full subcategory.
   are equal.
 * `CategoryTheory.exists_preadditiveYoneda_map_comp_eq`: lifting along an epimorphism out of a
   representable functor.
+* `CategoryTheory.preadditiveCoyonedaObj_map_bijective_self`: `Hom(M, -)` is bijective on the
+  morphisms out of `M`.
 * `CategoryTheory.ObjectProperty.restrictedPreadditiveYoneda`: the functor `X ↦ (-, X)|_P`.
 * `CategoryTheory.ObjectProperty.preadditiveYonedaIsoRestricted`: on the full subcategory of `P`,
   the functor `X ↦ (-, X)|_P` is the preadditive Yoneda embedding.
@@ -90,6 +98,26 @@ theorem exists_preadditiveYoneda_map_comp_eq {Y Y' : C} {F : Cᵒᵖ ⥤ AddComm
   refine ⟨u, preadditiveYoneda_obj_hom_ext ?_⟩
   exact (congrArg (p.app (op Y))
     ((preadditiveYoneda_map_app_apply u (op Y) (𝟙 Y)).trans (Category.id_comp u))).trans hu
+
+/-- **Yoneda for `Hom(M, -)` as a `Γᵐᵒᵖ`-module, `Γ = End M`.** Composition identifies the
+morphisms `M ⟶ Y` with the `Γᵐᵒᵖ`-linear maps `Hom(M, M) → Hom(M, Y)`: a linear map `φ` is
+composition with `φ (𝟙 M)`. -/
+theorem preadditiveCoyonedaObj_map_bijective_self (M Y : C) :
+    Function.Bijective ((preadditiveCoyonedaObj M).map : (M ⟶ Y) → _) := by
+  -- The elements of `(preadditiveCoyonedaObj M).obj X` are the morphisms `M ⟶ X`, and
+  -- `(preadditiveCoyonedaObj M).map g` acts on them by composition with `g`; both facts hold by
+  -- definition, so the steps below are stated as equalities of morphisms of `C`.
+  refine ⟨fun g g' h ↦ ?_, fun φ ↦ ⟨φ.hom (𝟙 M), ?_⟩⟩
+  · exact (Category.id_comp g).symm.trans (congr(($h).hom (𝟙 M)).trans (Category.id_comp g'))
+  · let ψ : (M ⟶ M) →ₗ[(End M)ᵐᵒᵖ] (M ⟶ Y) := φ.hom
+    have key (f : M ⟶ M) : f ≫ ψ (𝟙 M) = ψ f :=
+      calc f ≫ ψ (𝟙 M) = MulOpposite.op (End.of f) • ψ (𝟙 M) :=
+            (End.smul_left (r := .op (.of f)) (f := ψ (𝟙 M))).symm
+        _ = ψ (MulOpposite.op (End.of f) • 𝟙 M) := (ψ.map_smul _ _).symm
+        _ = ψ f := congrArg ψ ((End.smul_left (r := .op (.of f)) (f := 𝟙 M)).trans
+            (Category.comp_id f))
+    ext f
+    exact key f
 
 namespace ObjectProperty
 

@@ -51,6 +51,8 @@ to the Chevalley commutator formula for the root subgroups `x_α(u) = Σₙ uⁿ
   `N_{-α,-β} = -N_{α,β}`.
 * `TauCeti.DynkinType.lie_chevalleySystem_eq_zero`: `⁅e_α, e_β⁆ = 0` when `α + β` is neither a
   root nor zero.
+* `TauCeti.DynkinType.lie_chevalleySystem_eq_zero_of_add_eq`: if `γ = α + β` is a root and
+  `α + γ` is not a root, then `⁅e_α, e_γ⁆ = 0`, with no separate nonzero hypothesis.
 
 ## References
 
@@ -238,6 +240,23 @@ theorem lie_chevalleySystem_eq_zero {α β : Fin t.numRoots}
   simpa only [extendRootFamily_rootEquiv] using
     (t.isChevalleySystem_chevalleySystem ht).toIsSl2System.lie_eq_zero_of_rootSpace_add_eq_bot
       _ _ hbot
+
+/-- If `γ = α + β` is a root but `α + γ` is not, then `e_α` commutes with `e_γ`.
+Reducedness makes the summands linearly independent, so `α + γ` cannot be zero. -/
+theorem lie_chevalleySystem_eq_zero_of_add_eq {α β γ : Fin t.numRoots}
+    (hadd : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
+    (h : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ ∉
+      Set.range (t.simplyConnectedRootDatum ht).root) :
+    ⁅t.chevalleySystem ht α, t.chevalleySystem ht γ⁆ = 0 := by
+  let := t.isReduced_simplyConnectedRootDatum ht
+  apply lie_chevalleySystem_eq_zero h
+  intro hz
+  have hli := (t.simplyConnectedRootDatum ht).linearIndependent_of_add_mem_range_root'
+    ⟨γ, hadd⟩
+  have hcoeff := (LinearIndependent.pair_iff.mp hli) (2 : ℤ) 1
+    (by simpa only [hadd, two_smul, one_smul, add_assoc] using hz)
+  norm_num at hcoeff
 
 end
 
