@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Calculus.WittenLaplacian.Basic
 public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Basic
 import Mathlib.Algebra.BigOperators.Field
 import TauCeti.Analysis.Calculus.SecondDerivative
-import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Oscillator
+import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Pi.Oscillator
 
 /-!
 # The harmonic-oscillator model of the Witten Laplacian
@@ -131,8 +131,8 @@ theorem euclideanWittenLaplacian_diagonalQuadratic_apply {x : ι → ℝ} (hφ :
 
 /-- The **Hermite eigenforms** of the Witten Laplacian of `∑ᵢ aᵢ xᵢ² / 2`: for a multi-index
 `k : ι → ℕ` and an index set `s`, the form `∏ᵢ ψ_{kᵢ}(√(t |aᵢ|) xᵢ) dx^s`, with `ψₖ` the Hermite
-functions. They are nonzero `L²` eigenforms when `t > 0` and every `aᵢ` is nonzero; otherwise they
-only satisfy the eigenform equation as a differential identity. -/
+functions. For `t ≥ 0` they satisfy the eigenform equation as a differential identity, and they
+are nonzero `L²` eigenforms when moreover `t > 0` and every `aᵢ` is nonzero. -/
 def hermiteEigenform (a : ι → ℝ) (t : ℝ) (k : ι → ℕ) (s : Finset ι) :
     (ι → ℝ) → Finset ι → ℝ :=
   fun x ↦ (∏ i, hermiteFunction (k i) (√(t * |a i|) * x i)) • Pi.single s 1
@@ -151,36 +151,10 @@ theorem hermiteEigenvalue_def (a : ι → ℝ) (t : ℝ) (k : ι → ℕ) (s : F
     hermiteEigenvalue a t k s = t * ∑ i, (|a i| * (2 * k i + 1) + if i ∈ s then a i else -a i) :=
   (rfl)
 
-omit [LinearOrder ι] in
-/-- The product of dilated Hermite functions underlying a Hermite eigenform. -/
-private theorem contDiff_hermiteProduct (c : ι → ℝ) (k : ι → ℕ) {n : WithTop ℕ∞} :
-    ContDiff ℝ n (fun x : ι → ℝ ↦ ∏ i, hermiteFunction (k i) (c i * x i)) :=
-  contDiff_prod fun i _ ↦ (contDiff_hermiteFunction (k i)).of_le le_top |>.comp
-    (contDiff_const.mul (contDiff_apply ℝ (fun _ : ι ↦ ℝ) i))
-
 /-- The Hermite eigenforms are smooth. -/
 theorem contDiff_hermiteEigenform (a : ι → ℝ) (t : ℝ) (k : ι → ℕ) (s : Finset ι)
     {n : WithTop ℕ∞} : ContDiff ℝ n (hermiteEigenform a t k s) :=
-  (contDiff_hermiteProduct _ k).smul contDiff_const
-
-omit [LinearOrder ι] in
-/-- The second partial derivatives of a product of dilated Hermite functions: differentiating
-twice in `xᵢ` multiplies it by `cᵢ² ((cᵢ xᵢ)² - (2kᵢ + 1))`. -/
-private theorem fderiv_fderiv_hermiteProduct_apply_single_single [DecidableEq ι] (c : ι → ℝ)
-    (k : ι → ℕ) (x : ι → ℝ) (i : ι) :
-    fderiv ℝ (fderiv ℝ fun x : ι → ℝ ↦ ∏ j, hermiteFunction (k j) (c j * x j)) x
-        (Pi.single i 1) (Pi.single i 1) =
-      c i ^ 2 * ((c i * x i) ^ 2 - (2 * k i + 1)) *
-        ∏ j, hermiteFunction (k j) (c j * x j) := by
-  rw [fderiv_fderiv_prod_comp_eval_apply_single_single
-      (φ := fun j y ↦ hermiteFunction (k j) (c j * y))
-      (fun j ↦ ((contDiff_hermiteFunction (k j)).of_le le_top |>.comp
-        (contDiff_const.mul contDiff_id)).contDiffAt) i,
-    ← Finset.mul_prod_erase _ _ (Finset.mem_univ i),
-    ← Finset.mul_prod_erase _ (fun j ↦ hermiteFunction (k j) (c j * x j)) (Finset.mem_univ i),
-    update_self, deriv_deriv_hermiteFunction_comp_mul, mul_assoc]
-  congr 2
-  exact Finset.prod_congr rfl fun j hj ↦ by rw [update_of_ne (Finset.ne_of_mem_erase hj)]
+  (contDiff_prod_hermiteFunction_comp_mul _ k).smul contDiff_const
 
 /-- **The eigenform equation for the Hermite eigenforms.** For `t ≥ 0`, the Witten Laplacian of
 `∑ᵢ aᵢ xᵢ² / 2` maps the form `∏ᵢ ψ_{kᵢ}(√(t |aᵢ|) xᵢ) dx^s` to its multiple by
@@ -193,13 +167,13 @@ theorem euclideanWittenLaplacian_hermiteEigenform (a : ι → ℝ) {t : ℝ} (ht
   set c : ι → ℝ := fun i ↦ √(t * |a i|) with hc_def
   have hc : ∀ i, c i ^ 2 = t * |a i| := fun i ↦ Real.sq_sqrt (mul_nonneg ht (abs_nonneg _))
   set P : (ι → ℝ) → ℝ := fun x ↦ ∏ i, hermiteFunction (k i) (c i * x i) with hP_def
-  have hP : ContDiff ℝ 2 P := contDiff_hermiteProduct c k
+  have hP : ContDiff ℝ 2 P := contDiff_prod_hermiteFunction_comp_mul c k
   have hΨ : hermiteEigenform a t k s = fun x ↦ P x • Pi.single s 1 := rfl
   funext x r
   rw [euclideanWittenLaplacian_diagonalQuadratic_apply
     (contDiff_hermiteEigenform a t k s).contDiffAt, hΨ]
   simp only [fderiv_fderiv_smul_const_apply hP.contDiffAt, Pi.smul_apply, smul_eq_mul]
-  simp only [hP_def, fderiv_fderiv_hermiteProduct_apply_single_single]
+  simp only [hP_def, fderiv_fderiv_prod_hermiteFunction_comp_mul_apply_single_single]
   by_cases hrs : r = s
   · subst hrs
     simp only [Pi.single_eq_same, mul_one, hermiteEigenvalue_def, Finset.mul_sum, Finset.sum_mul,
