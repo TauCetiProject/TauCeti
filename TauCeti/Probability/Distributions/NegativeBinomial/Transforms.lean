@@ -8,7 +8,6 @@ module
 public import Mathlib.Probability.Moments.MGFAnalytic
 public import TauCeti.Probability.Distributions.NegativeBinomial.Basic
 
-import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Probability.Distributions.Dirac
 
@@ -274,7 +273,8 @@ theorem charFun_map_cast_negativeBinomialMeasure
     linarith
   -- The branch information justifies combining the two principal complex powers.
   have hvalue : (1 / (1 - q) ^ (r : ℂ)) * (Real.rpow p r : ℂ) = ((p : ℂ) / (1 - q)) ^ (r : ℂ) :=
-    TauCeti.one_div_cpow_mul_ofReal_rpow hw_re hp r
+    TauCeti.one_div_cpow_mul_ofReal_rpow
+      (fun h ↦ (not_lt_of_ge hw_re.le) (Complex.arg_eq_pi_iff.mp h).1) hp.le r
   have hweight_ne_top (k : ℕ) : negativeBinomialWeight r p k ≠ ⊤ := by
     rw [← negativeBinomialMeasure_singleton hr.le hp hp1]
     exact measure_ne_top _ _
