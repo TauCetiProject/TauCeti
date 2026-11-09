@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ParametricIntegral
-public import Mathlib.Geometry.Manifold.Algebra.LieGroup
+public import Mathlib.Geometry.Manifold.Algebra.Monoid
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Geometry.Manifold.ContMDiff.Prod
 

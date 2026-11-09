@@ -31,9 +31,10 @@ the metric that a manifold with a geometric structure receives through its chart
 
 * `Bundle.trivializationAt_bilinearForm_apply`: a bilinear form on `T_x M`, read in the bundle
   chart at `x₀`, is pulled back along the tangent coordinate change from `x₀` to `x`.
-* `Bundle.contMDiffAt_trivializationAt_bilinearForm_pullback`: the same regularity in bundle
-  coordinates for forms and linear maps depending on a parameter, which gives the joint regularity
-  of pullbacks along families of maps.
+* `Bundle.contMDiffAt_trivializationAt_bilinearForm_pullback`: the pullback of a `C^n` family of
+  bilinear forms along linear maps that are `C^n` in tangent coordinates, both depending on a
+  parameter, is `C^n` when read in a bundle chart. This gives the joint regularity of pullbacks
+  along families of maps.
 * `Bundle.contMDiffAt_bilinearForm_pullback_of_inTangentCoordinates`: the pullback of a `C^n`
   family of bilinear forms along a family of linear maps that is `C^n` in tangent coordinates is a
   `C^n` section.

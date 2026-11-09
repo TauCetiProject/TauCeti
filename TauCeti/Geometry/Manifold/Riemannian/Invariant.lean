@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Mean
 public import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral
 public import TauCeti.Geometry.Manifold.Riemannian.Section
 public import Mathlib.MeasureTheory.Group.Integral
-public import Mathlib.MeasureTheory.Measure.Haar.Basic
+public import TauCeti.RepresentationTheory.Compact.Haar
 
 /-!
 # Invariant Riemannian metrics for finite and compact group actions
@@ -20,8 +20,8 @@ public import Mathlib.MeasureTheory.Measure.Haar.Basic
 Average the pullbacks of a Riemannian metric over a group acting by diffeomorphisms. The result is
 a metric preserved by every element of the group, including elements acting trivially. Its
 regularity is `C^n` when the metric is `C^n` and the action is `C^(n+1)`. In particular a smooth
-action of a finite group, or of a compact Lie group, admits a smooth invariant metric whenever the
-manifold admits a smooth metric.
+action of a finite group, or of a compact Lie group on a boundaryless manifold, admits a smooth
+invariant metric whenever the manifold admits a smooth metric.
 
 For a finite group, `TauCeti.averageRiemannianMetric` is the arithmetic mean of the pulled-back
 metrics; it combines `TauCeti.meanRiemannianMetric` with
@@ -37,8 +37,8 @@ It is positive definite because each `d(a •)_x` is invertible. It is `C^n` bec
 bundle chart, the pulled-back forms depend `C^n` on the point and the group element
 (`Bundle.contMDiffAt_trivializationAt_bilinearForm_pullback`), so their average is `C^n` by
 differentiation under the integral over the compact parameter manifold `G`
-(`TauCeti.contMDiffAt_parametric_integral`). When `μ` is right-invariant, for instance the image
-under inversion of the normalized Haar measure, every element of `G` acts by an isometry of the
+(`TauCeti.contMDiffAt_parametric_integral`). When `μ` is right-invariant, for instance the
+normalized Haar measure `TauCeti.haarProb`, every element of `G` acts by an isometry of the
 averaged metric, and an already invariant metric is unchanged by averaging. A compact Lie group
 acting smoothly by symplectomorphisms thus has an invariant metric, the input from which an
 invariant compatible almost complex structure is obtained by polar normalization.
@@ -57,8 +57,9 @@ invariant compatible almost complex structure is obtained by polar normalization
 * `TauCeti.averageRiemannianMetric_eq_self_iff`,
   `TauCeti.measureAverageRiemannianMetric_eq_self_iff`: averaging fixes exactly the invariant
   metrics.
-* `TauCeti.exists_contMDiffRiemannianMetric_inner_mfderiv`: a compact topological group acting
-  `C^(n+1)` on a boundaryless manifold with a `C^n` metric preserves some `C^n` metric.
+* `TauCeti.exists_contMDiffRiemannianMetric_inner_mfderiv`: a compact topological group that is a
+  manifold modelled on a second-countable space, acting jointly `C^(n+1)` on a boundaryless
+  finite-dimensional manifold with a `C^n` metric, preserves some `C^n` metric.
 
 ## References
 
@@ -181,6 +182,10 @@ variable {G : Type*} [Group G] [MulAction G M] {n : ℕ∞}
 read as a bilinear form on the model vector space. -/
 private def pullbackSMulInner (g : ContMDiffRiemannianMetric I n E (TangentSpace I : M → Type _))
     (a : G) (x : M) : E →L[ℝ] E →L[ℝ] ℝ :=
+  -- `TangentSpace I x` is definitionally `E`. The `@id` ascription reads the form on `T_x M` as a
+  -- form on `E`, so that it can be integrated in the fixed normed space `E →L[ℝ] E →L[ℝ] ℝ`; the
+  -- same ascription below turns the integral back into a value of the fibre
+  -- `T_x M →L[ℝ] T_x M →L[ℝ] ℝ` of the bundle of bilinear forms.
   @id (E →L[ℝ] E →L[ℝ] ℝ) ((ContinuousLinearMap.precomp ℝ (mfderiv I I (a • ·) x)).comp
     ((g.inner (a • x)).comp (mfderiv I I (a • ·) x)))
 
@@ -249,6 +254,8 @@ private theorem averageInner_apply
   rw [averageInner, ContinuousLinearMap.integral_apply (integrable_pullbackSMulInner J μ g x),
     ContinuousLinearMap.integral_apply
       ((integrable_pullbackSMulInner J μ g x).apply_continuousLinearMap v)]
+  -- The integrands agree by unfolding `pullbackSMulInner`, its `@id` ascription and
+  -- `ContinuousLinearMap.precomp`.
   rfl
 
 variable [I.Boundaryless] [SecondCountableTopology E'] [IsManifold I n M] [IsManifold J n G]
@@ -279,13 +286,14 @@ private theorem contMDiff_averageInner
 variable [FiniteDimensional ℝ E]
 
 /-- **The average of a Riemannian metric over a compact group action.** For a group `G` acting
-`C^(n+1)` on a manifold `M`, with `G` a compact manifold carrying a probability measure `μ`, this
-is the `C^n` metric
+jointly `C^(n+1)` on a boundaryless finite-dimensional manifold `M`, with `G` a compact manifold
+modelled on a second-countable space and carrying a probability measure `μ`, this is the `C^n`
+metric
 
 `⟨v, w⟩_x = ∫ g_{a • x}(d(a •)_x v, d(a •)_x w) dμ(a)`.
 
-When `μ` is right-invariant, for instance the image under inversion of the normalized Haar
-measure, every element of `G` acts by an isometry of it
+When `μ` is right-invariant, for instance the normalized Haar measure `TauCeti.haarProb`, every
+element of `G` acts by an isometry of it
 (`TauCeti.measureAverageRiemannianMetric_inner_mfderiv`), and it agrees with `g` exactly when `g`
 is already invariant (`TauCeti.measureAverageRiemannianMetric_eq_self_iff`). -/
 def measureAverageRiemannianMetric
@@ -367,21 +375,20 @@ theorem measureAverageRiemannianMetric_idempotent
   (measureAverageRiemannianMetric_eq_self_iff J μ _).mpr
     (measureAverageRiemannianMetric_inner_mfderiv J μ g)
 
-omit [OpensMeasurableSpace G] [MeasurableMul G] in
-/-- **Invariant metrics for compact group actions.** If a compact topological group acts
-`C^(n+1)` on a manifold that carries a `C^n` Riemannian metric, then it carries a `C^n` Riemannian
-metric for which every element of the group acts by isometries. -/
-theorem exists_contMDiffRiemannianMetric_inner_mfderiv [IsTopologicalGroup G] [BorelSpace G]
+omit [MeasurableSpace G] [OpensMeasurableSpace G] [IsProbabilityMeasure μ] [MeasurableMul G]
+  [μ.IsMulRightInvariant] in
+/-- **Invariant metrics for compact group actions.** If a compact topological group, which is a
+manifold modelled on a second-countable space, acts jointly `C^(n+1)` on a boundaryless
+finite-dimensional manifold that carries a `C^n` Riemannian metric, then that manifold carries a
+`C^n` Riemannian metric for which every element of the group acts by isometries. -/
+theorem exists_contMDiffRiemannianMetric_inner_mfderiv [IsTopologicalGroup G]
     (g : ContMDiffRiemannianMetric I n E (TangentSpace I : M → Type _)) :
     ∃ g' : ContMDiffRiemannianMetric I n E (TangentSpace I : M → Type _),
       ∀ (a : G) (x : M) (v w : TangentSpace I x),
         g'.inner (a • x) (mfderiv I I (a • ·) x v) (mfderiv I I (a • ·) x w) = g'.inner x v w := by
-  -- The inverse of the normalized Haar measure is a right-invariant probability measure.
-  let ν : Measure G := (Measure.haarMeasure ⊤).inv
-  have : IsProbabilityMeasure ν := ⟨by
-    simpa [ν, Measure.inv_apply] using Measure.haarMeasure_self (G := G) (K₀ := ⊤)⟩
-  exact ⟨measureAverageRiemannianMetric J ν g,
-    measureAverageRiemannianMetric_inner_mfderiv J ν g⟩
+  borelize G
+  exact ⟨measureAverageRiemannianMetric J (haarProb G) g,
+    measureAverageRiemannianMetric_inner_mfderiv J (haarProb G) g⟩
 
 end Compact
 
