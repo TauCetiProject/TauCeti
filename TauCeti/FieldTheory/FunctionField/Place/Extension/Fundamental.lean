@@ -42,7 +42,7 @@ integral closure in `F'` is a finite module over it — the hypothesis of Mathli
   uniformizer `t` at `P`.  As `t` has no pole at `P`, the place `P` lies on the finite chart of
   `R_t`; as `t` is transcendental, the integral closure of `k[t]` in the finite extension `F'` of
   `k(t)` is a finite `k[t]`-module with no separability hypothesis
-  (`TauCeti.IsIntegralClosure.finite_adjoin_of_transcendental`), hence a finite `R_t`-module.
+  (`TauCeti.IsIntegralClosure.finite_adjoin`), hence a finite `R_t`-module.
   The valuation ring `𝒪_P` is not used as the model in this case: the integral closure of a
   discrete valuation ring in an inseparable extension need not be finite in general, and it is
   the finiteness of the normalization of `k[t]` that supplies finiteness here.
@@ -151,7 +151,7 @@ theorem sum_ramificationIdx_mul_relativeDegree_eq_finrank_of_isFunctionField
   have : IsFractionRing S F' := integralClosure.isFractionRing_of_finite_extension F F'
   -- `S` is also the integral closure of `k[t]` in `F'`, hence finite over `k[t]` and over `R`.
   have : Module.Finite R S :=
-    IsIntegralClosure.finite_integralClosure_integralClosure_adjoin k htr F'
+    IsIntegralClosure.finite_integralClosure_integralClosure_adjoin k t F'
   -- `P` is finite on `R`, since `t` has no pole at `P`.
   have hR : ∀ r : R, algebraMap R F r ∈ P.integers := fun r ↦
     P.mem_integers_iff.mpr
