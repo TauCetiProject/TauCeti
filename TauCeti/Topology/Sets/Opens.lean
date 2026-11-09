@@ -26,6 +26,8 @@ indexed by.
   satisfying a given predicate form a closed set.
 * `TopologicalSpace.Opens.exists_le_preimage_coe_eq` : every open subset of an open set `Ω`,
   viewed as a subspace, is the trace of an open set contained in `Ω`.
+* `TopologicalSpace.Opens.le_iSup_iff_subset_iUnion` : an open set lies below the supremum of a
+  family of open sets exactly when their underlying sets cover it.
 * `TopologicalSpace.Opens.sigmaCompactSpace_top` : the open subset `⊤` of a σ-compact space is
   σ-compact.
 * `TopologicalSpace.Opens.IsBasis.exists_finset_sup_le_of_isCompact` : a compact subset of an
@@ -73,6 +75,12 @@ theorem exists_le_preimage_coe_eq (Ω : Opens X) {W : Set Ω} (hW : IsOpen W) :
     ∃ U : Opens X, U ≤ Ω ∧ ((↑) : Ω → X) ⁻¹' (U : Set X) = W :=
   ⟨⟨(↑) '' W, Ω.isOpen.isOpenMap_subtype_val W hW⟩, Subtype.coe_image_subset _ _,
     Set.preimage_image_eq W Subtype.val_injective⟩
+
+/-- An open set lies below the supremum of a family of open sets exactly when their underlying
+sets cover it. -/
+theorem le_iSup_iff_subset_iUnion {ι : Sort*} {U : Opens X} {V : ι → Opens X} :
+    U ≤ ⨆ i, V i ↔ (U : Set X) ⊆ ⋃ i, (V i : Set X) := by
+  rw [← SetLike.coe_subset_coe, coe_iSup]
 
 /-- The open subset `⊤` of a σ-compact space is σ-compact, being a closed subspace. -/
 instance sigmaCompactSpace_top [SigmaCompactSpace X] : SigmaCompactSpace (⊤ : Opens X) :=

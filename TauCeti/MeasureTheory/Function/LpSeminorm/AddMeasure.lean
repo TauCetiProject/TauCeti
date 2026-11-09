@@ -22,7 +22,9 @@ Restricting to a finite union of sets gives the form used to pass from local est
 estimate on a set covered by finitely many pieces
 (`MeasureTheory.eLpNorm_restrict_biUnion_finset_le`):
 `eLpNorm f p (μ.restrict (⋃ i ∈ t, s i)) ≤ ∑ i ∈ t, eLpNorm f p (μ.restrict (s i))`.
-No measurability of the sets is needed.
+No measurability of the sets is needed. The same bound holds on any set covered by finitely many
+pieces (`MeasureTheory.eLpNorm_restrict_le_sum_of_subset_iUnion`), so a function in `Lᵖ` on each
+piece is in `Lᵖ` on the covered set (`MeasureTheory.MemLp.restrict_of_subset_iUnion`).
 
 For the real-valued norm `lpNorm`, monotonicity in the measure needs `f ∈ Lᵖ(μ)`, since
 `lpNorm` is `0` off `Lᵖ` (`MeasureTheory.lpNorm_mono_measure`).
@@ -35,6 +37,9 @@ For the real-valued norm `lpNorm`, monotonicity in the measure needs `f ∈ Lᵖ
   subadditive in the measure, at every `p : ℝ≥0∞` (a pseudometrizable codomain with an extended
   norm suffices).
 * `MeasureTheory.eLpNorm_restrict_biUnion_finset_le`: subadditivity over a finite union.
+* `MeasureTheory.eLpNorm_restrict_le_sum_of_subset_iUnion`: subadditivity over a finite cover.
+* `MeasureTheory.MemLp.restrict_of_subset_iUnion`: `Lᵖ` on each piece of a finite cover gives
+  `Lᵖ` on the covered set.
 -/
 
 public section
@@ -118,5 +123,35 @@ theorem eLpNorm_restrict_biUnion_finset_le {ι : Type*} (f : α → ε) (hp : 1 
       _ ≤ eLpNorm f p (μ.restrict (s a)) + eLpNorm f p (μ.restrict (⋃ i ∈ t, s i)) :=
           eLpNorm_add_measure_le f hp
       _ ≤ _ := by gcongr
+
+/-- **Subadditivity of `eLpNorm` over a finite cover.** For `1 ≤ p`, the `Lᵖ` seminorm of `f`
+on a set covered by finitely many sets is at most the sum of its `Lᵖ` seminorms on the pieces. -/
+theorem eLpNorm_restrict_le_sum_of_subset_iUnion {ι : Type*} [Fintype ι] (f : α → ε)
+    (hp : 1 ≤ p) {s : Set α} {t : ι → Set α} (hs : s ⊆ ⋃ i, t i) :
+    eLpNorm f p (μ.restrict s) ≤ ∑ i, eLpNorm f p (μ.restrict (t i)) := by
+  refine (eLpNorm_mono_measure f (Measure.restrict_mono_set μ hs)).trans ?_
+  simpa only [Finset.mem_univ, Set.iUnion_true] using
+    eLpNorm_restrict_biUnion_finset_le (μ := μ) f hp Finset.univ t
+
+/-- A function in `Lᵖ` on each of finitely many sets is in `Lᵖ` on every set they cover. -/
+theorem MemLp.restrict_of_subset_iUnion {ι : Type*} [Finite ι] {f : α → ε} {s : Set α}
+    {t : ι → Set α} (hs : s ⊆ ⋃ i, t i) (hf : ∀ i, MemLp f p (μ.restrict (t i))) :
+    MemLp f p (μ.restrict s) := by
+  have := Fintype.ofFinite ι
+  refine MemLp.mono_measure (Measure.restrict_mono_set μ hs) ?_
+  -- For `1 ≤ p` this is subadditivity of `eLpNorm`; below `1`, that of `∫⁻ ‖f‖ₑ ^ p`.
+  rcases le_or_gt 1 p with hp | hp
+  · exact memLp_iff.2 ((eLpNorm_restrict_le_sum_of_subset_iUnion f hp subset_rfl).trans_lt
+      (ENNReal.sum_lt_top.2 fun i _ => (hf i).eLpNorm_lt_top))
+  have hm : AEStronglyMeasurable f (μ.restrict (⋃ i, t i)) :=
+    aestronglyMeasurable_iUnion_iff.2 fun i => (hf i).aestronglyMeasurable
+  rcases eq_or_ne p 0 with rfl | hp0
+  · exact memLp_zero_iff_aestronglyMeasurable.2 hm
+  have hint := fun {ν : Measure α} (hν : AEStronglyMeasurable f ν) =>
+    eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp.ne_top hν
+  refine (hint hm).2 ((lintegral_iUnion_le t _).trans_lt ?_)
+  rw [tsum_fintype]
+  exact ENNReal.sum_lt_top.2 fun i _ =>
+    (hint (hf i).aestronglyMeasurable).1 (hf i).eLpNorm_lt_top
 
 end MeasureTheory

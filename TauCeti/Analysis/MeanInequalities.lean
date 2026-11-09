@@ -41,10 +41,15 @@ Mathlib states the two-point weighted AM-GM inequality in `ℝ≥0∞` with `ℝ
 (`ENNReal.geom_mean_le_arith_mean2_weighted`); it is restated here for the real weights `1 - θ`
 and `θ`, as they appear in interpolation inequalities such as Prékopa–Leindler.
 
-Finally, the two-point weighted AM-GM inequality is restated after normalizing by positive scalars
+The two-point weighted AM-GM inequality is also restated after normalizing by positive scalars
 `a` and `b`: `A ^ (1 - θ) * B ^ θ ≤ ((1 - θ) * (A / a) + θ * (B / b)) * (a ^ (1 - θ) * b ^ θ)`,
 strictly when `0 < θ < 1` and `A / a ≠ B / b`. This is the form used to compare volumes of
 hyperplane sections in the Kneser–Süss equality argument for Brunn–Minkowski.
+
+The triangle inequality for the Euclidean norm on `ℝ²`, applied to finitely many coordinate pairs
+`(a i, b i)`, reads `√((∑ a i) ^ 2 + (∑ b i) ^ 2) ≤ ∑ √(a i ^ 2 + b i ^ 2)`. It bounds a norm
+defined as the Euclidean combination of two component norms, each subadditive, such as the norm
+of a higher-order Sobolev space.
 
 ## Main statements
 
@@ -52,6 +57,8 @@ hyperplane sections in the Kneser–Süss equality argument for Brunn–Minkowsk
 * `Real.geom_mean_le_arith_mean2_weighted_div_mul`,
   `Real.geom_mean_lt_arith_mean2_weighted_div_mul`: two-point weighted AM-GM after normalizing
   by positive scalars, with the strict form.
+* `Real.sqrt_sum_sq_add_sum_sq_le_sum_sqrt`: the triangle inequality in the plane for finite
+  sums of coordinate pairs.
 * `ENNReal.geom_mean_le_arith_mean2_weighted_ofReal`: two-point weighted AM-GM in `ℝ≥0∞` with
   the real weights `1 - θ` and `θ`.
 * `ENNReal.Lp_add_le_tsum`: Minkowski's inequality for unconditional sums in `ℝ≥0∞`.
@@ -134,6 +141,16 @@ theorem geom_mean_lt_arith_mean2_weighted_div_mul {A B a b θ : ℝ} (hA : 0 ≤
   exact mul_lt_mul_of_pos_right ((geom_mean_lt_arith_mean2_weighted_iff_of_pos
     (by linarith) hθ₀ (div_nonneg hA ha.le) (div_nonneg hB hb.le) (by ring)).2 hne)
     (mul_pos (rpow_pos_of_pos ha _) (rpow_pos_of_pos hb _))
+
+/-- **Triangle inequality in the plane.** For finite families `a` and `b`,
+`√((∑ i ∈ s, a i) ^ 2 + (∑ i ∈ s, b i) ^ 2) ≤ ∑ i ∈ s, √(a i ^ 2 + b i ^ 2)`. -/
+theorem sqrt_sum_sq_add_sum_sq_le_sum_sqrt {ι : Type*} (s : Finset ι) (a b : ι → ℝ) :
+    √((∑ i ∈ s, a i) ^ 2 + (∑ i ∈ s, b i) ^ 2) ≤ ∑ i ∈ s, √(a i ^ 2 + b i ^ 2) := by
+  have h (x y : ℝ) : √(x ^ 2 + y ^ 2) = ‖(⟨x, y⟩ : ℂ)‖ := by
+    rw [Complex.norm_def, Complex.normSq_mk, sq, sq]
+  have hsum : (⟨∑ i ∈ s, a i, ∑ i ∈ s, b i⟩ : ℂ) = ∑ i ∈ s, ⟨a i, b i⟩ :=
+    Complex.ext (by rw [Complex.re_sum]) (by rw [Complex.im_sum])
+  simpa only [h, hsum] using norm_sum_le s fun i => (⟨a i, b i⟩ : ℂ)
 
 end Real
 
