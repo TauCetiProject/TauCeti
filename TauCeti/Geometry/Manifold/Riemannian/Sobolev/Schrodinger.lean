@@ -71,9 +71,9 @@ of this operator on `H¹(M)` is therefore available at every configuration with 
 ## References
 
 * D. Gilbarg and N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Springer (2001), §8.2 (the Lax–Milgram solution of the weak Dirichlet problem).
+  Springer (2001), Theorem 5.8 (the Lax–Milgram theorem) and Chapter 8 (weak solutions).
 * J. W. Morgan, *The Seiberg–Witten equations and applications to the topology of smooth
-  four-manifolds*, Mathematical Notes 44, Princeton University Press (1996), §4.4 (the gauge-fixing
+  four-manifolds*, Mathematical Notes 44, Princeton University Press (1996) (the gauge-fixing
   Laplacian and the local slice).
 -/
 
