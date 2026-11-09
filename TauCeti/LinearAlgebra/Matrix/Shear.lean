@@ -11,13 +11,13 @@ public import Mathlib.Data.Matrix.Mul
 # Square-zero matrices supported on pivot rows
 
 Given a family `B` of rows indexed by a type `α` and an embedding `e : α ↪ ι`,
-`Matrix.exists_sq_eq_zero_extension` produces a matrix `N` on `ι` with square zero, supported on
-the rows `e a` and the columns outside `range e`, and agreeing with `B` there. Over a ring,
-`1 - N` and `1 + N` are then mutually inverse changes of coordinates.
+`Matrix.exists_mul_self_eq_zero_extension` produces a matrix `N` on `ι` with square zero,
+supported on the rows `e a` and the columns outside `range e`, and agreeing with `B` there. Over
+a ring, `1 - N` and `1 + N` are then mutually inverse changes of coordinates.
 
 ## Main results
 
-* `Matrix.exists_sq_eq_zero_extension`: the existence of such a matrix `N`.
+* `Matrix.exists_mul_self_eq_zero_extension`: the existence of such a matrix `N`.
 -/
 
 public section
@@ -28,9 +28,10 @@ namespace Matrix
 
 variable {α ι K : Type*} [Fintype ι] [NonUnitalNonAssocSemiring K]
 
-/-- A matrix supported on the pivot rows and the non-pivot columns, agreeing with a given family
-`B` there, has square zero. -/
-theorem exists_sq_eq_zero_extension (e : α ↪ ι) (B : Matrix α ι K) :
+/-- Given `B : Matrix α ι K` and an embedding `e : α ↪ ι`, there is a matrix `N` on `ι` with
+`N * N = 0` that vanishes outside the rows `e a` and on the columns in `range e`, and satisfies
+`N (e a) j = B a j` for `j ∉ range e`. -/
+theorem exists_mul_self_eq_zero_extension (B : Matrix α ι K) (e : α ↪ ι) :
     ∃ N : Matrix ι ι K, N * N = 0 ∧
       (∀ i, ∀ j ∈ range e, N i j = 0) ∧ (∀ i ∉ range e, ∀ j, N i j = 0) ∧
       ∀ a j, j ∉ range e → N (e a) j = B a j := by
