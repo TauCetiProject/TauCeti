@@ -288,6 +288,7 @@ theorem prod_le_finprod_of_one_le₀ (s : Finset ι) (hf : HasFiniteMulSupport f
   exact Finset.prod_le_prod_of_subset_of_one_le₀ Finset.subset_union_left hf₀
     fun i _ hi ↦ hf₁ i hi
 
+omit [ZeroLEOneClass M₀] in
 /-- The `finprod` of a finitely supported nonnegative family whose factors off a finset are at
 most `1` is at most the product over that finset. This is the `finprod` analogue of
 `Finset.prod_le_prod_of_subset_of_le_one₀`. -/
@@ -296,8 +297,12 @@ theorem finprod_le_prod_of_le_one₀ (s : Finset ι) (hf : HasFiniteMulSupport f
   classical
   rw [finprod_eq_finsetProd_of_mulSupport_subset f (s := s ∪ hf.toFinset)
     fun i hi ↦ Finset.mem_union_right s (hf.mem_toFinset.mpr hi)]
-  exact Finset.prod_le_prod_of_subset_of_le_one₀ Finset.subset_union_left (fun i _ ↦ hf₀ i)
-    fun i _ hi ↦ hf₁ i hi
+  by_cases hsub : hf.toFinset ⊆ s
+  · rw [Finset.union_eq_left.mpr hsub]
+  · obtain ⟨i, -, his⟩ := Finset.not_subset.mp hsub
+    have : ZeroLEOneClass M₀ := ⟨(hf₀ i).trans (hf₁ i his)⟩
+    exact Finset.prod_le_prod_of_subset_of_le_one₀ Finset.subset_union_left (fun i _ ↦ hf₀ i)
+      fun i _ hi ↦ hf₁ i hi
 
 end OrderedWithZero
 

@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.RootSystem.Base
 public import TauCeti.Algebra.Lie.GeneralLinear.Radical
 public import TauCeti.Algebra.Lie.SpecialLinear.Diagonal
 public import TauCeti.Algebra.Lie.Sl2.Basic
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Denominator.Basic
 
 /-!
 # The diagonal Cartan subalgebra and the positive base of `sl₂`
@@ -39,6 +40,8 @@ algebraic closure is assumed.
 * `TauCeti.eq_slTwoRoot_or_eq_neg_slTwoRoot`: the nonzero weights of the adjoint action are `±α`.
 * `TauCeti.slTwoPositiveBase_positive_generator`: the base selects `e` as positive.
 * `TauCeti.coroot_slTwoRoot`: the coroot of `α` is `h`.
+* `TauCeti.posRootsFinset_slTwoPositiveBase` and `TauCeti.weylDenominator_slTwoPositiveBase`: `α`
+  is the only positive root, so the Weyl denominator is `1 - e^{-α}`.
 
 ## References
 
@@ -167,6 +170,23 @@ def slTwoWeight (t : R) : Module.Dual R (slTwoDiagonalCartan R) where
 theorem slTwoWeight_slTwoCartanGenerator (t : R) :
     slTwoWeight t (slTwoCartanGenerator R) = t := by
   simp [slTwoWeight, SpecialLinear.val_singleSubSingle]
+
+/-- A weight of the diagonal Cartan is determined by its value at `h`. -/
+theorem slTwoWeight_injective : Function.Injective (slTwoWeight (R := R)) := fun s t h ↦ by
+  simpa using congr($h (slTwoCartanGenerator R))
+
+/-- Two weights `slTwoWeight` agree exactly when their values at `h` do. -/
+@[simp]
+theorem slTwoWeight_inj {s t : R} : slTwoWeight s = slTwoWeight t ↔ s = t :=
+  slTwoWeight_injective.eq_iff
+
+/-- `slTwoWeight` is additive in its value at `h`. -/
+theorem slTwoWeight_add (s t : R) : slTwoWeight (s + t) = slTwoWeight s + slTwoWeight t :=
+  dual_ext_slTwoCartanGenerator <| by simp
+
+/-- `slTwoWeight` commutes with subtraction of the values at `h`. -/
+theorem slTwoWeight_sub (s t : R) : slTwoWeight (s - t) = slTwoWeight s - slTwoWeight t :=
+  dual_ext_slTwoCartanGenerator <| by simp
 
 end CommRing
 
@@ -403,6 +423,36 @@ theorem coroot_slTwoRoot : IsKilling.coroot (slTwoRoot K) = slTwoCartanGenerator
   Subtype.ext <| ((isSl2Triple_single (R := K) (zero_ne_one' (Fin 2))).h_eq_coroot
     slTwoRoot_isNonZero (single_zero_one_mem_rootSpace_slTwoRoot 1)
     (single_one_zero_mem_rootSpace_neg_slTwoRoot 1)).symm
+
+/-! ### The positive roots and the Weyl denominator -/
+
+/-- The simple root `α`, as a linear form on the diagonal Cartan, is the weight `2`. -/
+theorem toLinear_slTwoRoot : (slTwoRoot K).toLinear = slTwoWeight (2 : K) :=
+  dual_ext_slTwoCartanGenerator <| by
+    rw [Weight.toLinear_apply, slTwoRoot_slTwoCartanGenerator, slTwoWeight_slTwoCartanGenerator]
+
+/-- **The only positive root of `sl₂` is the simple root `α`.** -/
+theorem posRootsFinset_slTwoPositiveBase :
+    posRootsFinset (IsKilling.rootSystem (slTwoDiagonalCartan K)) (slTwoPositiveBase K) =
+      {slTwoRootIndex K} := by
+  have hpos : slTwoRootIndex K ∈
+      posRoots (IsKilling.rootSystem (slTwoDiagonalCartan K)) (slTwoPositiveBase K) :=
+    support_subset_posRoots _ _ slTwoRootIndex_mem_support
+  ext i
+  rw [mem_posRootsFinset, Finset.mem_singleton]
+  refine ⟨fun hi ↦ (eq_slTwoRootIndex_or_eq_reflectionPerm i).resolve_right ?_,
+    fun hi ↦ hi ▸ hpos⟩
+  rintro rfl
+  exact reflectionPerm_self_notMem_posRoots _ _ hpos hi
+
+/-- **The Weyl denominator of `sl₂`** is `1 - e^{-α}`, where `-α` is the weight `-2`. -/
+theorem weylDenominator_slTwoPositiveBase :
+    weylDenominator (IsKilling.rootSystem (slTwoDiagonalCartan K)) (slTwoPositiveBase K) =
+      1 - AddMonoidAlgebra.single (slTwoWeight (-2 : K)) 1 := by
+  rw [weylDenominator_def, posRootsFinset_slTwoPositiveBase, Finset.prod_singleton,
+    IsKilling.rootSystem_root_apply, coe_slTwoRootIndex, toLinear_slTwoRoot]
+  congr 2
+  exact dual_ext_slTwoCartanGenerator <| by simp
 
 end Field
 

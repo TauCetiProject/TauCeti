@@ -181,7 +181,7 @@ theorem automorphyFrame_smul (k : ℤ) (r : ℕ) (q : stabilizer Γ z) {g : SL(2
   set c₀ := denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z
   -- the constant picked up by `(τ - conj z) ^ (-k)` cancels the rotation of `u ^ r`
   have hc₀ : c₀ ^ (-k) * (c₀ ^ (-2 : ℤ)) ^ r = 1 := by
-    rw [zpow_neg_two_pow_eq_zpow₀ (denom_ne_zero _ _) hk]
+    rw [zpow_neg_two_pow_eq_zpow₀ hk]
     exact zpow_neg_mul_zpow_self k (denom_ne_zero _ _)
   rw [automorphyFrame_def, automorphyFrame_def, coordinate_smul,
     coe_stabilizerRotation_eq_denom_zpow q hg, coe_smul_stabilizerBall_of_coe_eq q hg,
@@ -302,7 +302,7 @@ theorem automorphyUntwist_smul (hΓ : Γ ≤ Γ'.map (QuotientGroup.mk' (center 
   set c₀ := denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z
   set D := denom (Matrix.SpecialLinearGroup.mapGL ℝ g) (τ : ℍ)
   have h₁ : c₀ ^ k = (c₀ ^ (-2 : ℤ)) ^ r :=
-    (zpow_neg_two_pow_eq_zpow₀ (denom_ne_zero _ _) (hk g hgΓ' hgz)).symm
+    (zpow_neg_two_pow_eq_zpow₀ (hk g hgΓ' hgz)).symm
   have h₂ : D ^ (-k) * D ^ k = 1 := zpow_neg_mul_zpow_self k (denom_ne_zero _ _)
   rw [hζ, automorphyUntwist_coordinate, automorphyUntwist_coordinate,
     coe_smul_stabilizerBall_of_coe_eq q hgq,

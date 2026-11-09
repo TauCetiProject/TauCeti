@@ -12,6 +12,7 @@ public import TauCeti.FieldTheory.FunctionField.AffineModel.Place
 public import TauCeti.AlgebraicGeometry.WeilDivisor.PicZeroQuotient
 public import TauCeti.FieldTheory.FunctionField.Divisor.Principal
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Principal
+import TauCeti.Data.Nat.MulSucc
 
 /-!
 # The product formula for algebraic function fields
@@ -136,6 +137,22 @@ theorem Divisor.card_mul_succ_le_dim_nsmul_poles_add (hF : IsFunctionField k F) 
   rw [Divisor.dim_def]
   simpa using hcard
 
+/-- The pole divisor of a nonzero transcendental function has degree at most the degree of the
+resulting rational subfield. It is the zero divisor of the inverse function. -/
+private theorem degree_poles_le_finrank_adjoin (hF : IsFunctionField k F) {x : F}
+    (hx : Transcendental k x) (hx0 : x ≠ 0) :
+    Divisor.degree (Divisor.poles hF (Units.mk0 x hx0)) ≤ (Module.finrank k⟮x⟯ F : ℤ) := by
+  let _ : FiniteDimensional k⟮x⁻¹⟯ F := by
+    rw [IntermediateField.adjoin_simple_inv]
+    exact hF.finiteDimensional_adjoin hx
+  have hdegree_le := degree_zeros_le_finrank_adjoin hF (inv_ne_zero hx0)
+  have hunit : Units.mk0 x⁻¹ (inv_ne_zero hx0) = (Units.mk0 x hx0)⁻¹ := by
+    ext
+    simp only [Units.val_mk0, Units.val_inv_eq_inv_val]
+  rw [hunit, ← Divisor.poles_eq_zeros_inv hF (Units.mk0 x hx0),
+    IntermediateField.adjoin_simple_inv] at hdegree_le
+  exact hdegree_le
+
 /-- The pole divisor of a transcendental function has degree equal to the degree of the resulting
 rational subfield.  This is the growth argument in Stichtenoth's proof of Theorem 1.4.11. -/
 private theorem degree_poles_eq_finrank_adjoin (hF : IsFunctionField k F) {x : F}
@@ -183,27 +200,13 @@ private theorem degree_poles_eq_finrank_adjoin (hF : IsFunctionField k F) {x : F
         simpa only [E, q, nsmul_eq_mul] using hupp
       _ = (n : ℤ) * d + e + q := by rw [← hd, ← he]
   have hle : Module.finrank k⟮x⟯ F ≤ d := by
-    by_contra hnot
-    have hgt : d < Module.finrank k⟮x⟯ F := Nat.lt_of_not_ge hnot
-    have hgtZ : (d : ℤ) + 1 ≤ Module.finrank k⟮x⟯ F := by exact_mod_cast hgt
-    dsimp only [n] at hineq
-    push_cast at hineq
-    have hfactor : 0 ≤ (e : ℤ) + q + 1 := by positivity
-    have hmul := mul_le_mul_of_nonneg_right hgtZ hfactor
-    nlinarith
+    refine Nat.le_of_mul_succ_le_mul_add (n := e + q) ?_
+    rw [← add_assoc]
+    exact_mod_cast hineq
   have hdegree_ge : (Module.finrank k⟮x⟯ F : ℤ) ≤ Divisor.degree B := by
     rw [← hd]
     exact_mod_cast hle
-  let _ : FiniteDimensional k⟮x⁻¹⟯ F := by
-    rw [IntermediateField.adjoin_simple_inv]
-    exact hF.finiteDimensional_adjoin hx
-  have hdegree_le := degree_zeros_le_finrank_adjoin hF (inv_ne_zero hx0)
-  have hunit : Units.mk0 x⁻¹ (inv_ne_zero hx0) = (Units.mk0 x hx0)⁻¹ := by
-    ext
-    simp only [Units.val_mk0, Units.val_inv_eq_inv_val]
-  rw [hunit, ← Divisor.poles_eq_zeros_inv hF (Units.mk0 x hx0),
-    IntermediateField.adjoin_simple_inv] at hdegree_le
-  exact le_antisymm (by simpa only [B] using hdegree_le) hdegree_ge
+  exact le_antisymm (degree_poles_le_finrank_adjoin hF hx hx0) hdegree_ge
 
 namespace Divisor
 
