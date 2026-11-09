@@ -35,7 +35,9 @@ theorem apply_tmul_of_comp_eq {X Y Z : Type u} [AddCommMonoid X] [Module A X]
     (h : E ≫ ofHom c = (ofHom a ⊗ₘ ofHom b) ≫ E) (x : X) (y : Y) :
     c (E.hom (x ⊗ₜ[A] y)) = E.hom (a x ⊗ₜ[A] b y) := by
   have hlin := congrArg Hom.hom h
-  rw [hom_comp, hom_comp, hom_tensorHom] at hlin
-  exact LinearMap.congr_fun hlin (x ⊗ₜ[A] y)
+  rw [hom_comp, hom_comp, hom_tensorHom, hom_ofHom, hom_ofHom, hom_ofHom] at hlin
+  have h' := LinearMap.congr_fun hlin (x ⊗ₜ[A] y)
+  change c (E.hom (x ⊗ₜ[A] y)) = E.hom (TensorProduct.map a b (x ⊗ₜ[A] y)) at h'
+  rwa [TensorProduct.map_tmul] at h'
 
 end SemimoduleCat

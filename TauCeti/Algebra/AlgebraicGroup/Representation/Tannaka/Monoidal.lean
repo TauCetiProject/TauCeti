@@ -8,9 +8,9 @@ module
 public import Mathlib.CategoryTheory.Monoidal.NaturalTransformation
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Tannaka.PointFaithful
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.ScalarExtension.Monoidal
-public import TauCeti.CategoryTheory.Monoidal.Conjugation
 
 import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tmul
+import TauCeti.CategoryTheory.Monoidal.Conjugation
 
 /-!
 # Tensor automorphisms from algebraic-group points
