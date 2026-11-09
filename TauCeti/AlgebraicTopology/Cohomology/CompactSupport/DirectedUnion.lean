@@ -66,6 +66,8 @@ variable [T2Space X]
 variable (R k M X) in
 /-- Cohomology with compact supports on the open subsets of a Hausdorff space `X`, as a functor
 `V ↦ Hⁿ_c(V)` along the extensions by zero. -/
+-- Its object part must compute: otherwise `map` and the cocone legs could only be stated through
+-- `eqToHom` transports along equalities of objects.
 @[expose, simps]
 def compactSupportCohomologyOpens (n : ℕ) : Opens X ⥤ ModuleCat.{v} k where
   obj V := ((toTopCat X).obj V).compactSupportCohomology R k M n
@@ -80,6 +82,7 @@ def compactSupportCohomologyOpens (n : ℕ) : Opens X ⥤ ModuleCat.{v} k where
 variable (R k M X) in
 /-- The cocone of the extensions `Hⁿ_c(V) ⟶ Hⁿ_c(X)` along the inclusions of the open subsets
 `V` of a Hausdorff space `X`. -/
+-- Its point must compute, so that its legs are the extensions `Hⁿ_c(V) ⟶ Hⁿ_c(X)` on the nose.
 @[expose, simps]
 def compactSupportCohomologyOpensCocone (n : ℕ) : Cocone (compactSupportCohomologyOpens R k M X n)
     where
