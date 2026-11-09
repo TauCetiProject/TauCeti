@@ -13,6 +13,7 @@ import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
 import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
+import TauCeti.AlgebraicGeometry.Scheme.Over
 
 /-!
 # Points of exact order `N` on an elliptic curve
@@ -134,9 +135,7 @@ theorem isOfExactOrder_def {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} {N : 
 object is a monoid homomorphism, so every point has exact order `N`. -/
 theorem isOfExactOrder_of_isEmpty [IsEmpty S]
     {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} {N : ℕ} : E.IsOfExactOrder P N := by
-  have ht (X : Over S) : IsTerminal X := by
-    have := (isInitialOfIsEmpty (X := S)).isIso_to X.hom
-    exact Over.mkIdTerminal.ofIso (Over.isoMk (asIso X.hom)).symm
+  have ht (X : Over S) : IsTerminal X := isTerminalOfIsEmpty X
   rw [isOfExactOrder_def]
   let X := Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap)
   let _ : MonObj X :=
