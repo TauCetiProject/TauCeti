@@ -94,7 +94,7 @@ theorem residuePsi_monomial (m : ℕ) (a : ZMod p) :
   classical
   simp only [residuePsi, LinearMap.sum_apply, LinearMap.smul_apply]
   rw [Finset.sum_congr rfl fun i hi ↦ congrArg (fun F ↦ (-1 : ZMod p) ^ i • F)
-    (cartier_monomial p i m (NeZero.ne p) (Finset.mem_range.mp hi) a)]
+    (cartier_monomial p i m (Finset.mem_range.mp hi) a)]
   simp [Nat.mod_lt m (Nat.pos_of_ne_zero (NeZero.ne p)), ← map_smul]
 
 /-- Residue averaging fixes constant series. -/
