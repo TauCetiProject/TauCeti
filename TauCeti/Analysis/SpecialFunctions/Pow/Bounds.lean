@@ -343,12 +343,12 @@ private theorem rpow_neg_le_one_div_two_mul_sq_of_neg {d p : ℝ} (hd : d < 0)
   have hneg (y : ℝ) : d ^ y = (-d) ^ y * Real.cos (y * Real.pi) := by
     rw [Real.rpow_def_of_neg hd, Real.rpow_def_of_pos hd', Real.log_neg_eq_log]
   have h1 : d ^ (p - 2) = (-d) ^ (p - 2) * Real.cos (p * Real.pi) := by
-    rw [hneg, show (p - 2) * Real.pi = p * Real.pi - 2 * Real.pi by ring, Real.cos_sub_two_pi]
+    rw [hneg, sub_mul, Real.cos_sub_two_pi]
   have h3 : d ^ (-p) = (-d) ^ (-p) * Real.cos (p * Real.pi) := by
-    rw [hneg, show -p * Real.pi = -(p * Real.pi) by ring, Real.cos_neg]
+    rw [hneg, neg_mul, Real.cos_neg]
   have hsplit := rpow_neg_eq_inv_rpow_sub_two_mul_inv_sq hd' p
   rw [h1] at h2
-  rw [h3, hsplit, show ((-d) ^ 2 : ℝ) = d ^ 2 from neg_sq d]
+  rw [h3, hsplit, neg_sq]
   have hE := rpow_pos_of_pos hd' (p - 2)
   generalize (-d) ^ (p - 2) = E at hE h2 ⊢
   have hc1 := Real.cos_le_one (p * Real.pi)
