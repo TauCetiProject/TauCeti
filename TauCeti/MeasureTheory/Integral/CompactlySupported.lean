@@ -115,8 +115,8 @@ theorem exists_integral_norm_sub_sum_smul_lt (f : C_c(X, E)) (μ : Measure X)
 
 /-- The translates `y ↦ f (y - x)` of a compactly supported continuous function are integrable
 against a measure that is finite on compact sets. -/
-theorem integrable_apply_sub {η : Measure ℝ} [IsFiniteMeasureOnCompacts η] (f : C_c(ℝ, ℝ))
-    (x : ℝ) : Integrable (fun y ↦ f (y - x)) η :=
+theorem integrable_apply_sub {F : Type*} [NormedAddCommGroup F] {η : Measure ℝ}
+    [IsFiniteMeasureOnCompacts η] (f : C_c(ℝ, F)) (x : ℝ) : Integrable (fun y ↦ f (y - x)) η :=
   (f.continuous.comp (continuous_id.sub continuous_const)).integrable_of_hasCompactSupport
     (f.hasCompactSupport.comp_homeomorph (Homeomorph.subRight x))
 

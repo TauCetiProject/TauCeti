@@ -120,7 +120,8 @@ private lemma apply_le_apply_sub_of_mem_support {h : E → ℝ} {C : ℝ} (hC : 
       linarith [(abs_lt.1 hdist).1]
   obtain ⟨n, hn⟩ := exists_nat_gt (2 * C / (M / 2))
   have hδ : 0 < M / 4 * p ^ n := by positivity
-  obtain ⟨z, hz⟩ := exists_lt_of_lt_ciSup (f := g) (show M - M / 4 * p ^ n < M by linarith)
+  have hMlt : M - M / 4 * p ^ n < M := by linarith
+  obtain ⟨z, hz⟩ := exists_lt_of_lt_ciSup (f := g) hMlt
   obtain ⟨w, hw⟩ := key n z hz
   rw [div_lt_iff₀ (by positivity)] at hn
   linarith [(abs_le.1 (hC z)).2, (abs_le.1 (hC w)).1]

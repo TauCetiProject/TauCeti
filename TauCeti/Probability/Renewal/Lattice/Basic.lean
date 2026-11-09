@@ -371,10 +371,10 @@ theorem dense_addSubgroupClosure_support_map_coe_iff :
     have hsupp : ν.support ⊆ AddSubgroup.zmultiples (a : ℝ) :=
       Measure.support_subset_of_isClosed hcl <| (ae_map_iff hcoe hcl.measurableSet).2 <|
         (isLatticeSpan_iff_ae_mem_zmultiples ha.pos).1 ha
-    obtain ⟨g, hgS, hg0, hga⟩ := hd.exists_between (show (0 : ℝ) < a from ha.pos)
+    have ha' : (0 : ℝ) < a := ha.pos
+    obtain ⟨g, hgS, hg0, hga⟩ := hd.exists_between ha'
     obtain ⟨k, rfl⟩ := AddSubgroup.mem_zmultiples_iff.1
       ((AddSubgroup.closure_le _).2 hsupp hgS)
-    have ha' : (0 : ℝ) < a := ha.pos
     rw [zsmul_eq_mul] at hg0 hga
     have hk0 : (0 : ℝ) < k := pos_of_mul_pos_left hg0 ha'.le
     have hk1 : (k : ℝ) < 1 := by nlinarith
