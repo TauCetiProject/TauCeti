@@ -31,12 +31,13 @@ and `B`, each characterized by `ofExact` (`Orientation.kerOfExact_eq_iff`,
 
 The construction is natural: an isomorphism of short exact sequences carries the induced
 orientation to the induced orientation of the transported orientations
-(`Orientation.map_ofExact`). For the split sequence `A → A × C → C` it is the product orientation
-(`Orientation.ofExact_inl_snd`).
+(`Orientation.map_ofExact`), and likewise for the kernel and cokernel orientations
+(`Orientation.map_kerOfExact`, `Orientation.map_cokerOfExact`). For the split sequence
+`A → A × C → C` it is the product orientation (`Orientation.ofExact_inl_snd`).
 
-This is how trajectory spaces of Morse theory are oriented. At a point `x` of a negative gradient
-trajectory from `p` to `q`, with the unstable manifold `W^u(p)` and the stable manifold `W^s(q)`
-meeting transversally, the sequence
+This is how intersections of unstable and stable manifolds in Morse theory are oriented. At a
+point `x` of a negative gradient trajectory from `p` to `q`, with the unstable manifold `W^u(p)`
+and the stable manifold `W^s(q)` meeting transversally, the sequence
 `0 → T_x (W^u(p) ∩ W^s(q)) → T_x W^u(p) → T_x M ⧸ T_x W^s(q) → 0` is exact. Orientations of
 `T_x W^u(p)` and of the normal space `T_x M ⧸ T_x W^s(q)`, which transport along the trajectory
 identifies with the tangent space of `W^u(q)` at `q`, then orient `T_x (W^u(p) ∩ W^s(q))` as a
@@ -59,7 +60,9 @@ Naturality carries these orientations along the flow.
 * `Orientation.ofExact_neg_left`, `Orientation.ofExact_neg_right`: reversal laws.
 * `Orientation.kerOfExact_eq_iff`, `Orientation.cokerOfExact_eq_iff`: the characterizations of
   the kernel and cokernel orientations.
-* `Orientation.map_ofExact`: naturality under isomorphisms of short exact sequences.
+* `Orientation.signBasis_ofExact`: the sign of such a basis relative to the induced orientation.
+* `Orientation.map_ofExact`, `Orientation.map_kerOfExact`, `Orientation.map_cokerOfExact`:
+  naturality under isomorphisms of short exact sequences.
 * `Orientation.ofExact_inl_snd`: for a product, the induced orientation is the product
   orientation.
 
@@ -83,68 +86,22 @@ variable {R A B C : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
   {f : A →ₗ[R] B} {g : B →ₗ[R] C} {m n : ℕ}
   (hf : Function.Injective f) (hfg : Function.Exact f g) (hg : Function.Surjective g)
 
-omit [LinearOrder R] [IsStrictOrderedRing R] in
-/-- The determinant of one reindexed basis of the form `ofExactLift` with respect to another is
-the product of the determinants of the bases of the outer terms. -/
-private theorem det_reindex_ofExactLift (a a' : Basis (Fin m) R A) (c c' : Basis (Fin n) R C)
-    (s s' : Fin n → B) (hs : ∀ j, g (s j) = c j) (hs' : ∀ j, g (s' j) = c' j) :
-    ((Basis.ofExactLift hf hfg a c s hs).reindex finSumFinEquiv).det
-        ((Basis.ofExactLift hf hfg a' c' s' hs').reindex finSumFinEquiv) =
-      a.det a' * c.det c' := by
-  rw [Basis.det_reindex]
-  have he : ((Basis.ofExactLift hf hfg a' c' s' hs').reindex finSumFinEquiv : Fin (m + n) → B) ∘
-      finSumFinEquiv = Basis.ofExactLift hf hfg a' c' s' hs' := by
-    funext i
-    simp
-  rw [he]
-  exact Basis.ofExactLift_det_ofExactLift hf hfg a a' c c' s s' hs hs'
-
-/-- The induced orientation of the middle term, computed in chosen bases and lifts. -/
-private def ofExactOfBases (o : Orientation R A (Fin m)) (p : Orientation R C (Fin n))
-    (a : Basis (Fin m) R A) (c : Basis (Fin n) R C) (s : Fin n → B)
-    (hs : ∀ j, g (s j) = c j) : Orientation R B (Fin (m + n)) :=
-  rayOfNeZero R (((signBasis o a : R) * (signBasis p c : R)) •
-    ((Basis.ofExactLift hf hfg a c s hs).reindex finSumFinEquiv).det) (by
-      apply smul_ne_zero
-      · exact mul_ne_zero (by exact_mod_cast (signBasis o a).ne_zero)
-          (by exact_mod_cast (signBasis p c).ne_zero)
-      · exact Basis.det_ne_zero _)
-
-private theorem ofExactOfBases_eq (o : Orientation R A (Fin m)) (p : Orientation R C (Fin n))
-    (a a' : Basis (Fin m) R A) (c c' : Basis (Fin n) R C) (s s' : Fin n → B)
-    (hs : ∀ j, g (s j) = c j) (hs' : ∀ j, g (s' j) = c' j) :
-    ofExactOfBases hf hfg o p a c s hs = ofExactOfBases hf hfg o p a' c' s' hs' := by
-  unfold ofExactOfBases
-  rw [ray_eq_iff]
-  set L := (Basis.ofExactLift hf hfg a c s hs).reindex finSumFinEquiv
-  set L' := (Basis.ofExactLift hf hfg a' c' s' hs').reindex finSumFinEquiv
-  rw [L.det.eq_smul_basis_det L', smul_smul, det_reindex_ofExactLift]
-  apply sameRay_smul_smul_of_mul_nonneg
-  have hpos := mul_pos (signBasis_mul_det_mul_pos o a a') (signBasis_mul_det_mul_pos p c c')
-  convert hpos.le using 1
-  ring
-
 variable [Module.Free R A] [Module.Finite R A] [Module.Free R C] [Module.Finite R C]
 
 /-- The orientation of the middle term `B` of a short exact sequence `0 → A → B → C → 0` induced
 by orientations `o` of `A` and `p` of `C`, with the subspace first: a basis of `B` made of the
 image of a basis of `A` followed by lifts of a basis of `C` is positive exactly when the two
-bases are both positive or both negative (`Orientation.ofExact_orientation`). Both signs of each
-factor are retained, including in dimension zero. -/
+bases are both positive or both negative (`Orientation.ofExact_orientation`). It is the product
+orientation `Orientation.prod o p` carried to `B` by a splitting `B ≃ₗ[R] A × C` chosen from a
+section of `g`, which exists since `C` is free; by `Orientation.ofExact_orientation` the result
+does not depend on this choice. Both signs of each factor are retained, including in dimension
+zero. -/
 def ofExact (o : Orientation R A (Fin m)) (p : Orientation R C (Fin n))
     (hm : finrank R A = m) (hn : finrank R C = n) : Orientation R B (Fin (m + n)) :=
-  ofExactOfBases hf hfg o p (finBasisOfFinrankEq R A hm) (finBasisOfFinrankEq R C hn)
-    (fun j ↦ Function.surjInv hg (finBasisOfFinrankEq R C hn j))
-    (fun _ ↦ Function.surjInv_eq hg _)
-
-/-- The induced orientation can be computed in any bases of the outer terms and any lifts, using
-their signs relative to the given orientations. -/
-private theorem ofExact_eq_ofExactOfBases (o : Orientation R A (Fin m))
-    (p : Orientation R C (Fin n)) (hm : finrank R A = m) (hn : finrank R C = n)
-    (a : Basis (Fin m) R A) (c : Basis (Fin n) R C) (s : Fin n → B)
-    (hs : ∀ j, g (s j) = c j) :
-    ofExact hf hfg hg o p hm hn = ofExactOfBases hf hfg o p a c s hs :=
-  ofExactOfBases_eq hf hfg o p _ a _ c _ s _ hs
+  Orientation.map (Fin (m + n))
+    (hfg.splitSurjectiveEquiv hf
+      ⟨_, (Module.projective_lifting_property g .id hg).choose_spec⟩).1.symm
+    (prod o p hm hn)
 
 /-- **The orientation of a short exact sequence in bases.** If the first `m` vectors of a basis
 `b` of `B` are the image of a basis `a` of `A` and its last `n` vectors lift a basis `c` of `C`,
@@ -154,32 +111,39 @@ theorem ofExact_orientation (a : Basis (Fin m) R A) (c : Basis (Fin n) R C)
     (hb' : ∀ j, g (b (Fin.natAdd m j)) = c j) (hm : finrank R A = m)
     (hn : finrank R C = n) :
     ofExact hf hfg hg a.orientation c.orientation hm hn = b.orientation := by
-  rw [Basis.eq_reindex_ofExactLift hf hfg a c b hb hb',
-    ofExact_eq_ofExactOfBases hf hfg hg _ _ hm hn a c _ hb']
-  simp only [ofExactOfBases, signBasis_orientation, Units.val_one, Int.cast_one, mul_one,
-    one_smul]
-  -- A basis orientation is by definition the ray of its nonzero determinant form.
-  rfl
+  let e := hfg.splitSurjectiveEquiv hf
+    ⟨_, (Module.projective_lifting_property g .id hg).choose_spec⟩
+  -- The splitting sends `A` to the first factor and lifts the projection to `C`.
+  have hfe (x : A) : e.1.symm (x, 0) = f x := (LinearMap.congr_fun e.2.1 x).symm
+  have hge (y : C) : g (e.1.symm (0, y)) = y := by
+    simpa using LinearMap.congr_fun e.2.2 (e.1.symm (0, y))
+  let b' := ((a.prod c).reindex finSumFinEquiv).map e.1.symm
+  have hb'' : ofExact hf hfg hg a.orientation c.orientation hm hn = b'.orientation := by
+    rw [ofExact, prod_basis_orientation, ← Basis.orientation_map]
+  -- Both `b` and `b'` are images of `a` followed by lifts of `c`, so they differ by a change of
+  -- basis of determinant `a.det a * c.det c = 1`.
+  rw [hb'', Basis.eq_reindex_ofExactLift hf hfg a c b hb hb',
+    Basis.eq_reindex_ofExactLift hf hfg a c b' (fun i ↦ by simp [b', Basis.prod_apply, hfe])
+      (fun j ↦ by simp [b', Basis.prod_apply, hge]),
+    Basis.orientation_reindex, Basis.orientation_reindex]
+  congr 1
+  rw [Basis.orientation_eq_iff_det_pos, Basis.ofExactLift_det_ofExactLift, Basis.det_self,
+    Basis.det_self, mul_one]
+  exact one_pos
 
 /-- Reversing the orientation of the subspace reverses the induced orientation. -/
 @[simp]
 theorem ofExact_neg_left (o : Orientation R A (Fin m)) (p : Orientation R C (Fin n))
     (hm : finrank R A = m) (hn : finrank R C = n) :
     ofExact hf hfg hg (-o) p hm hn = -ofExact hf hfg hg o p hm hn := by
-  simp only [ofExact, ofExactOfBases, signBasis_neg, Units.val_neg, Int.cast_neg, neg_mul,
-    neg_rayOfNeZero]
-  congr 1
-  module
+  simp only [ofExact, prod_neg_left, Orientation.map_neg]
 
 /-- Reversing the orientation of the quotient reverses the induced orientation. -/
 @[simp]
 theorem ofExact_neg_right (o : Orientation R A (Fin m)) (p : Orientation R C (Fin n))
     (hm : finrank R A = m) (hn : finrank R C = n) :
     ofExact hf hfg hg o (-p) hm hn = -ofExact hf hfg hg o p hm hn := by
-  simp only [ofExact, ofExactOfBases, signBasis_neg, Units.val_neg, Int.cast_neg, mul_neg,
-    neg_rayOfNeZero]
-  congr 1
-  module
+  simp only [ofExact, prod_neg_right, Orientation.map_neg]
 
 /-- Simultaneous reversal of both outer orientations preserves the induced orientation. -/
 theorem ofExact_neg_neg (o : Orientation R A (Fin m)) (p : Orientation R C (Fin n))
@@ -187,6 +151,18 @@ theorem ofExact_neg_neg (o : Orientation R A (Fin m)) (p : Orientation R C (Fin 
     ofExact hf hfg hg (-o) (-p) hm hn = ofExact hf hfg hg o p hm hn := by
   rw [ofExact_neg_left, ofExact_neg_right]
   exact neg_neg (ofExact hf hfg hg o p hm hn)
+
+/-- The sign of an arbitrary basis made of the image of a basis `a` of `A` followed by lifts of
+a basis `c` of `C`, relative to the induced orientation, is the product of the signs of `a` and
+`c`. -/
+theorem signBasis_ofExact (o : Orientation R A (Fin m)) (p : Orientation R C (Fin n))
+    (hm : finrank R A = m) (hn : finrank R C = n) (a : Basis (Fin m) R A)
+    (c : Basis (Fin n) R C) (b : Basis (Fin (m + n)) R B)
+    (hb : ∀ i, b (Fin.castAdd n i) = f (a i)) (hb' : ∀ j, g (b (Fin.natAdd m j)) = c j) :
+    signBasis (ofExact hf hfg hg o p hm hn) b = signBasis o a * signBasis p c := by
+  rcases a.orientation_eq_or_eq_neg o with rfl | rfl <;>
+    rcases c.orientation_eq_or_eq_neg p with rfl | rfl <;>
+    simp [ofExact_orientation hf hfg hg a c b hb hb' hm hn]
 
 /-- An orientation of `B` is either the one induced by `o` and `p` or its reverse. -/
 theorem eq_ofExact_or_eq_neg_ofExact (q : Orientation R B (Fin (m + n)))
@@ -381,6 +357,30 @@ theorem map_ofExact (eA : A ≃ₗ[R] A') (eB : B ≃ₗ[R] B') (eC : C ≃ₗ[R
   rcases a.orientation_eq_or_eq_neg o with rfl | rfl <;>
     rcases c.orientation_eq_or_eq_neg p with rfl | rfl <;>
     simp only [ofExact_neg_left, ofExact_neg_right, Orientation.map_neg, hbase]
+
+/-- **Naturality of the kernel orientation** under isomorphisms of short exact sequences. -/
+theorem map_kerOfExact (eA : A ≃ₗ[R] A') (eB : B ≃ₗ[R] B') (eC : C ≃ₗ[R] C')
+    (hfe : ∀ x, eB (f x) = f' (eA x)) (hge : ∀ y, eC (g y) = g' (eB y))
+    (q : Orientation R B (Fin (m + n))) (p : Orientation R C (Fin n)) (hm : finrank R A = m)
+    (hn : finrank R C = n) :
+    Orientation.map (Fin m) eA (kerOfExact hf hfg hg q p hm hn) =
+      kerOfExact hf' hfg' hg' (Orientation.map (Fin (m + n)) eB q)
+        (Orientation.map (Fin n) eC p) (eA.finrank_eq.symm.trans hm)
+        (eC.finrank_eq.symm.trans hn) := by
+  rw [eq_comm, kerOfExact_eq_iff,
+    ← map_ofExact hf hfg hg hf' hfg' hg' eA eB eC hfe hge _ _ hm hn, ofExact_kerOfExact]
+
+/-- **Naturality of the cokernel orientation** under isomorphisms of short exact sequences. -/
+theorem map_cokerOfExact (eA : A ≃ₗ[R] A') (eB : B ≃ₗ[R] B') (eC : C ≃ₗ[R] C')
+    (hfe : ∀ x, eB (f x) = f' (eA x)) (hge : ∀ y, eC (g y) = g' (eB y))
+    (o : Orientation R A (Fin m)) (q : Orientation R B (Fin (m + n))) (hm : finrank R A = m)
+    (hn : finrank R C = n) :
+    Orientation.map (Fin n) eC (cokerOfExact hf hfg hg o q hm hn) =
+      cokerOfExact hf' hfg' hg' (Orientation.map (Fin m) eA o)
+        (Orientation.map (Fin (m + n)) eB q) (eA.finrank_eq.symm.trans hm)
+        (eC.finrank_eq.symm.trans hn) := by
+  rw [eq_comm, cokerOfExact_eq_iff,
+    ← map_ofExact hf hfg hg hf' hfg' hg' eA eB eC hfe hge _ _ hm hn, ofExact_cokerOfExact]
 
 end Map
 
