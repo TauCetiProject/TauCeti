@@ -50,7 +50,7 @@ operation is introduced.
 * `LaurentSeries.orderTop_derivative_eq_sub_one`: the order of `D f` is one less than the first
   exponent whose coefficient survives differentiation.
 * `LaurentSeries.orderTop_derivative_eq_order_sub_one_of_cast_ne_zero`: if the order `r` of
-  `f ≠ 0` is nonzero in a ring without zero divisors, then `ord (D f) = r - 1`.
+  `f` is nonzero in a ring without zero divisors, then `ord (D f) = r - 1`.
 * `LaurentSeries.derivative_eq_zero_iff_exists_C`: without additive torsion the kernel of `D`
   consists of the constants.
 * `LaurentSeries.derivative_inv` and `LaurentSeries.derivative_div`: the inverse and quotient
@@ -264,14 +264,17 @@ theorem weightDerivation_intCastAddHom {R : Type*} [CommRing R] (f : R⸨X⸩) :
   ext n
   rw [coeff_weightDerivation, coeff_single_one_mul_derivative, Int.coe_castAddHom, zsmul_eq_mul]
 
-/-- If `f ≠ 0` has order `r` and `r` is nonzero in a ring `R` without zero divisors, for instance
-a field in which `r` is nonzero, then `f'` has order `r - 1`. -/
+/-- If the order `r` of `f` is nonzero in a ring `R` without zero divisors, for instance a field
+in which `r` is nonzero, then `f'` has order `r - 1`. Nonvanishing of `r` forces `f ≠ 0`, because
+the zero series has order `0`. -/
 theorem orderTop_derivative_eq_order_sub_one_of_cast_ne_zero {R : Type*} [Ring R]
-    [NoZeroDivisors R] {f : R⸨X⸩} (hf : f ≠ 0) (h : (f.order : R) ≠ 0) :
+    [NoZeroDivisors R] {f : R⸨X⸩} (h : (f.order : R) ≠ 0) :
     (derivative R f).orderTop = (f.order - 1 : ℤ) :=
   orderTop_derivative_eq_order_sub_one <| by
     rw [zsmul_eq_mul]
-    exact mul_ne_zero h (leadingCoeff_ne_zero.mpr hf)
+    refine mul_ne_zero h (leadingCoeff_ne_zero.mpr ?_)
+    rintro rfl
+    simp at h
 
 /-- **The kernel of the derivative.** Over a ring without additive torsion, for instance a field
 of characteristic zero, the Laurent series with derivative zero are exactly the constants. -/
