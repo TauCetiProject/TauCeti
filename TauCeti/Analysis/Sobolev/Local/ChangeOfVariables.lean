@@ -8,16 +8,15 @@ module
 public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 
-import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 
 /-!
 # Change of variables in local Sobolev classes on planar sets
 
 Let `Φ` be a `C¹` map on an open set `Ω ⊆ ℂ`, injective with invertible derivative on a set
-`U ⊆ Ω` and mapping `U` into `V`. Precomposition with `Φ` preserves the local classes
-`TauCeti.MemWkpLoc p U k` of orders `k ≤ 1`, for arbitrary sets `U` and `V` reaching their
-boundary; by the inverse function theorem `Φ` maps `interior U` into `interior V`
+`U ⊆ Ω` and mapping `U` into `V`. Precomposition with `Φ` maps `TauCeti.MemWkpLoc p V k` into
+`TauCeti.MemWkpLoc p U k` for `k ≤ 1`, for arbitrary sets `U` and `V` reaching their boundary;
+by the inverse function theorem `Φ` maps `interior U` into `interior V`
 (`Set.MapsTo.interior_of_contDiffOn`). On each compact subset of `U` the derivative of `Φ` is
 bounded and its Jacobian is bounded below
 (`MeasureTheory.exists_det_bounds_of_isCompact`), which controls the local `Lᵖ` norms of `u ∘ Φ`
@@ -148,10 +147,13 @@ theorem MemWkpLoc.comp_continuousLinearEquiv_add {u : ℂ → F} (hu : MemWkpLoc
   set Φ : ℂ → ℂ := fun z => A z + b
   have hΦ : ContDiffOn ℝ 1 Φ univ := (A.contDiff.add contDiff_const).contDiffOn
   have hinj : InjOn Φ U := ((add_left_injective b).comp A.injective).injOn
-  have hdet : ∀ z ∈ U, (fderiv ℝ Φ z).det ≠ 0 := fun z _ => A.det_fderiv_add_const_ne_zero b z
+  have hfd : ∀ z, fderiv ℝ Φ z = (A : ℂ →L[ℝ] ℂ) := fun z => by
+    simp only [Φ, fderiv_add_const, A.fderiv]
+  have hdet : ∀ z ∈ U, (fderiv ℝ Φ z).det ≠ 0 := fun z _ => by
+    rw [hfd]
+    exact A.toLinearEquiv.isUnit_det'.ne_zero
   have hint : MapsTo Φ (interior U) (interior V) :=
-    hmaps.interior_of_contDiffOn (hΦ.mono (subset_univ U)) le_rfl fun z _ =>
-      ⟨A, (A.fderiv_add_const b z).symm⟩
+    hmaps.interior_of_contDiffOn (hΦ.mono (subset_univ U)) le_rfl fun z _ => ⟨A, (hfd z).symm⟩
   induction k generalizing F with
   | zero => exact memWkpLoc_zero_iff.2 (MemLpLoc.comp_contDiffOn_diffeo
       (memWkpLoc_zero_iff.1 hu) isOpen_univ hΦ hinj hdet (subset_univ _) hmaps)

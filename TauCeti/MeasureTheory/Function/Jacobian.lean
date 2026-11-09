@@ -73,7 +73,7 @@ namespace MeasureTheory
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
-  {s t : Set E} {f : E → E} {f' : E → E →L[ℝ] E} {c : ℝ}
+  {Ω s t : Set E} {f : E → E} {f' : E → E →L[ℝ] E} {c : ℝ}
 
 /-- **Pushforward bound from a Jacobian lower bound.** If `f` is injective and differentiable on
 a null-measurable set `s`, and `c ≤ |det f'|` on `s` with `c > 0`, then `f` pushes `μ` restricted to
@@ -103,6 +103,18 @@ theorem map_restrict_le_smul_restrict_image (hs : NullMeasurableSet s μ)
   exact lintegral_mono_ae ((ae_restrict_of_ae (ae_restrict_mem₀ hs)).mono fun x hx =>
     ENNReal.ofReal_le_ofReal (hdet x hx))
 
+/-- **Pushforward bound on a subset of an open set of differentiability.** If `f` is
+differentiable on an open set `Ω`, injective on a measurable set `s ⊆ Ω`, and
+`c ≤ |det (fderiv ℝ f x)|` on `s` with `c > 0`, then `f` pushes `μ` restricted to `s` forward to
+at most `c⁻¹` times `μ` restricted to `f '' s`. -/
+theorem map_restrict_le_smul_restrict_image_of_differentiableOn (hΩ : IsOpen Ω)
+    (hf : DifferentiableOn ℝ f Ω) (hinj : InjOn f s) (hsΩ : s ⊆ Ω) (hs : MeasurableSet s)
+    (hc : 0 < c) (hdet : ∀ x ∈ s, c ≤ |(fderiv ℝ f x).det|) :
+    (μ.restrict s).map f ≤ (ENNReal.ofReal c)⁻¹ • μ.restrict (f '' s) :=
+  map_restrict_le_smul_restrict_image μ hs.nullMeasurableSet (fun x hx =>
+    ((hf x (hsΩ hx)).differentiableAt (hΩ.mem_nhds (hsΩ hx))).hasFDerivAt.hasFDerivWithinAt)
+    hinj hc hdet
+
 /-- **Pushforward bound for a map differentiable on an open set.** If `f` is injective and
 differentiable on an open set `s`, maps `s` into `t`, and `c ≤ |det (fderiv ℝ f x)|` on `s` with
 `c > 0`, then `f` pushes `μ` restricted to `s` forward to at most `c⁻¹` times `μ` restricted to
@@ -111,9 +123,8 @@ theorem map_restrict_le_smul_restrict_of_differentiableOn (hs : IsOpen s)
     (hf : DifferentiableOn ℝ f s) (hinj : InjOn f s) (hmaps : MapsTo f s t) (hc : 0 < c)
     (hdet : ∀ x ∈ s, c ≤ |(fderiv ℝ f x).det|) :
     (μ.restrict s).map f ≤ (ENNReal.ofReal c)⁻¹ • μ.restrict t :=
-  (map_restrict_le_smul_restrict_image μ hs.measurableSet.nullMeasurableSet (fun x hx =>
-    ((hf x hx).differentiableAt (hs.mem_nhds hx)).hasFDerivAt.hasFDerivWithinAt) hinj hc
-      hdet).trans (by gcongr; exact hmaps.image_subset)
+  (map_restrict_le_smul_restrict_image_of_differentiableOn μ hs hf hinj subset_rfl
+    hs.measurableSet hc hdet).trans (by gcongr; exact hmaps.image_subset)
 
 /-! ### Jacobian bounds on compact sets and `Lᵖ` bounds for precomposition -/
 
@@ -141,18 +152,6 @@ theorem exists_det_bounds_of_isCompact (hΩ : IsOpen Ω) (hf : ContDiffOn ℝ 1 
 
 variable [μ.IsAddHaarMeasure]
 
-/-- **Pushforward bound on a subset of an open set of differentiability.** If `f` is
-differentiable on an open set `Ω`, injective on a measurable set `s ⊆ Ω`, and
-`c ≤ |det (fderiv ℝ f x)|` on `s` with `c > 0`, then `f` pushes `μ` restricted to `s` forward to
-at most `c⁻¹` times `μ` restricted to `f '' s`. -/
-theorem map_restrict_le_smul_restrict_image_of_differentiableOn (hΩ : IsOpen Ω)
-    (hf : DifferentiableOn ℝ f Ω) (hinj : InjOn f s) (hsΩ : s ⊆ Ω) (hs : MeasurableSet s)
-    (hc : 0 < c) (hdet : ∀ x ∈ s, c ≤ |(fderiv ℝ f x).det|) :
-    (μ.restrict s).map f ≤ (ENNReal.ofReal c)⁻¹ • μ.restrict (f '' s) :=
-  map_restrict_le_smul_restrict_image μ hs.nullMeasurableSet (fun x hx =>
-    ((hf x (hsΩ hx)).differentiableAt (hΩ.mem_nhds (hsΩ hx))).hasFDerivAt.hasFDerivWithinAt)
-    hinj hc hdet
-
 /-- **`Lᵖ` bound for precomposition on a measurable set.** Under the hypotheses of
 `MeasureTheory.map_restrict_le_smul_restrict_image_of_differentiableOn`,
 `‖u ∘ f‖_{Lᵖ(s)} ≤ c^(-1/p) ‖u‖_{Lᵖ(f s)}`. -/
@@ -162,7 +161,7 @@ theorem eLpNorm_comp_restrict_le (hΩ : IsOpen Ω) (hf : DifferentiableOn ℝ f 
     eLpNorm (fun x => u (f x)) p (μ.restrict s) ≤
       (ENNReal.ofReal c)⁻¹ ^ (1 / p).toReal * eLpNorm u p (μ.restrict (f '' s)) :=
   eLpNorm_comp_le_of_map_le_smul ((hf.continuousOn.mono hsΩ).aemeasurable hs)
-    (map_restrict_le_smul_restrict_image_of_differentiableOn hΩ hf hinj hsΩ hs hc hdet) p
+    (map_restrict_le_smul_restrict_image_of_differentiableOn μ hΩ hf hinj hsΩ hs hc hdet) p
 
 /-- Precomposition with `f` maps `Lᵖ(f s)` into `Lᵖ(s)` under the hypotheses of
 `MeasureTheory.eLpNorm_comp_restrict_le`. -/

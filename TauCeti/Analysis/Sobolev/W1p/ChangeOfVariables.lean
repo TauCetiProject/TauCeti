@@ -12,7 +12,6 @@ public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 public import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 
-import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
@@ -493,9 +492,10 @@ theorem HasWeakFDerivOn.comp_continuousLinearEquiv_add {u : E → F} {Du : E →
     (hu : HasWeakFDerivOn mu V u Du) (A : E ≃L[ℝ] E) (b : E)
     (hmaps : MapsTo (fun x => A x + b) U V) :
     HasWeakFDerivOn mu U (fun x => u (A x + b)) (fun x => (Du (A x + b)).comp (A : E →L[ℝ] E)) := by
-  simpa only [A.fderiv_add_const] using hu.comp_contDiffOn_diffeo (Φ := fun x => A x + b)
+  simpa only [fderiv_add_const, A.fderiv] using hu.comp_contDiffOn_diffeo (Φ := fun x => A x + b)
     (A.contDiff.add contDiff_const).contDiffOn ((add_left_injective b).comp A.injective).injOn
-    (fun x _ => A.det_fderiv_add_const_ne_zero b x) hmaps
+    (fun x _ => by rw [fderiv_add_const, A.fderiv]; exact A.toLinearEquiv.isUnit_det'.ne_zero)
+    hmaps
 
 end ChainRule
 
