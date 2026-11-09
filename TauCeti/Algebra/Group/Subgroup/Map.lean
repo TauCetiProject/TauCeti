@@ -13,8 +13,9 @@ import Mathlib.Tactic.Group
 /-!
 # Maps of subgroups
 
-Mathlib's `MonoidHom.subgroupComap` sends the preimage `K.comap f` of a subgroup `K` to `K`.
-This file records how surjective homomorphisms act on centres and on derived subgroups.
+Lemmas on how homomorphisms act on subgroups: images of centres and derived subgroups under
+surjections, conjugation and images of subgroups, coset spaces and quotient maps, subgroup closure,
+and the action of a subgroup on a `G`-set.
 
 An isomorphism carrying a subgroup `A` onto a subgroup `B` restricts to an isomorphism `↥A ≃* ↥B`,
 and carries the coset space `G ⧸ A` bijectively onto `H ⧸ B`.
@@ -57,8 +58,8 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   induced on quotients.
 * `QuotientGroup.map_mk'_eq_top`: the image of `K` in `G ⧸ N` is everything exactly when
   `N ⊔ K = ⊤`.
-* `MonoidHom.subgroupCongr_injective`, `MonoidHom.subgroupCongr_surjective`: transport along
-  equalities of the domain and codomain preserves injectivity and surjectivity.
+* `MonoidHom.subgroupCongr_injective`: transport along equalities of the domain and codomain
+  preserves injectivity.
 * `Subgroup.subtype_comp_subgroupOfEquivOfLe`, `TauCeti.Subgroup.subtype_comp_congrOfMapEq`: the
   isomorphisms `subgroupOfEquivOfLe` and `congrOfMapEq` commute with the inclusions of subgroups.
 * `Subgroup.subgroupOf_smul_eq`: the actions of `V` and of `V.subgroupOf U` on a `G`-set agree
@@ -218,22 +219,11 @@ theorem _root_.MonoidHom.subgroupCongr_comp {A A' : Subgroup G} {B B' : Subgroup
 /-- Transport along equalities of the domain and codomain preserves injectivity.
 
 The transport composes `f` with two isomorphisms, so it is injective exactly when `f` is; only the
-direction a use site needs is recorded. `MonoidHom.subgroupCongr_surjective` is the companion for
-surjectivity. -/
+direction a use site needs is the one recorded. -/
 theorem _root_.MonoidHom.subgroupCongr_injective {A A' : Subgroup G} {B B' : Subgroup H}
     (hA : A' = A) (hB : B' = B) {f : A →* B} (hf : Function.Injective f) :
     Function.Injective (f.subgroupCongr hA hB) :=
   (MulEquiv.subgroupCongr hB).symm.injective.comp <| hf.comp (MulEquiv.subgroupCongr hA).injective
-
-/-- Transport along equalities of the domain and codomain preserves surjectivity.
-
-The transport composes `f` with two isomorphisms, so it is surjective exactly when `f` is; only the
-direction a use site needs is recorded. `MonoidHom.subgroupCongr_injective` is the companion for
-injectivity. -/
-theorem _root_.MonoidHom.subgroupCongr_surjective {A A' : Subgroup G} {B B' : Subgroup H}
-    (hA : A' = A) (hB : B' = B) {f : A →* B} (hf : Function.Surjective f) :
-    Function.Surjective (f.subgroupCongr hA hB) :=
-  (MulEquiv.subgroupCongr hB).symm.surjective.comp <| hf.comp (MulEquiv.subgroupCongr hA).surjective
 
 /-! ## Transporting the derived subgroup -/
 

@@ -47,21 +47,14 @@ private theorem orthogonal_sum_brackets
   have hli := P.linearIndependent_of_add_mem_range_root' hsum
   have htop := (P.chainBotCoeff_eq_one_and_chainTopCoeff_eq_one_of_pairingIn_eq_zero
     hsum horth).2
-  apply lie_chevalleySystem_eq_zero
-  · rintro ⟨δ, hδ⟩
-    have hδ' : P.root δ = P.root β + (2 : ℕ) • P.root α := by
-      rw [hδ, hγ]
-      module
-    have : 2 ≤ P.chainTopCoeff α β :=
-      (P.root_add_nsmul_mem_range_iff_le_chainTopCoeff hli).1 ⟨δ, hδ'⟩
-    omega
-  · intro hz
-    have hp := congrArg ((t.simplyConnectedRootDatum ht).coroot' α) hz
-    simp only [map_add, hγ, map_add, RootPairing.root_coroot'_eq_pairing, map_zero] at hp
-    have horth' : (t.simplyConnectedRootDatum ht).pairing β α = 0 := by
-      simpa using (t.simplyConnectedRootDatum ht).algebraMap_pairingIn ℤ β α |>.symm.trans
-        (congrArg (algebraMap ℤ ℤ) horth)
-    simp [horth'] at hp
+  apply lie_chevalleySystem_eq_zero_of_add_eq hγ
+  rintro ⟨δ, hδ⟩
+  have hδ' : P.root δ = P.root β + (2 : ℕ) • P.root α := by
+    rw [hδ, hγ]
+    module
+  have : 2 ≤ P.chainTopCoeff α β :=
+    (P.root_add_nsmul_mem_range_iff_le_chainTopCoeff hli).1 ⟨δ, hδ'⟩
+  omega
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)

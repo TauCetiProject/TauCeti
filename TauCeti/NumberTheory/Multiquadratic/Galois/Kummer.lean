@@ -157,7 +157,6 @@ theorem exists_root_adjoin_eq_adjoin [NeZero (2 : K)] (s : Finset L)
       · simpa [h] using hxadj
       · exact IntermediateField.subset_adjoin K _ (by simpa [h] using hy)
     exact Finset.notMem_erase x t (hmin hadjoin (Finset.erase_subset x t) hx)
-  have hzero : (0 : L) ∉ t := fun hx => hnotmem 0 hx (zero_mem _)
   -- Index the chosen square roots by `Fin t.card` and name their radicands.
   set e : Fin t.card ≃ {x // x ∈ t} := t.equivFin.symm
   set root : Fin t.card → L := fun i => (e i : L) with hroot_def
@@ -172,32 +171,7 @@ theorem exists_root_adjoin_eq_adjoin [NeZero (2 : K)] (s : Finset L)
   have hadjoin : IntermediateField.adjoin K (Set.range root) =
       IntermediateField.adjoin K (s : Set L) := by rw [hrange]; exact htadj
   -- Square-class independence, by minimality.
-  have hindep : ∀ S : Finset (Fin t.card), S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i) := by
-    rintro S ⟨i₀, hi₀⟩ ⟨c, hc⟩
-    -- The product of the roots over `S` is `± c`, so `root i₀` lies in the field the others span.
-    set F : IntermediateField K L :=
-      IntermediateField.adjoin K ((t.erase (root i₀) : Finset L) : Set L)
-    have hmemF : ∀ i ∈ S.erase i₀, root i ∈ F :=
-      fun i hi => IntermediateField.subset_adjoin K _ (Finset.mem_coe.mpr
-        (Finset.mem_erase.mpr ⟨fun h => (Finset.mem_erase.mp hi).1 (hroot_inj h),
-          hroot_mem i⟩))
-    have hne : ∀ i, root i ≠ 0 := fun i h => hzero (h ▸ hroot_mem i)
-    set P : L := ∏ i ∈ S.erase i₀, root i with hP
-    have hPmem : P ∈ F := Subalgebra.prod_mem _ fun i hi => hmemF i hi
-    have hPne : P ≠ 0 := Finset.prod_ne_zero_iff.mpr fun i _ => hne i
-    have hprod : root i₀ * P = algebraMap K L c ∨ root i₀ * P = -algebraMap K L c := by
-      rw [hP, Finset.mul_prod_erase S root hi₀]
-      apply sq_eq_sq_iff_eq_or_eq_neg.mp
-      rw [prod_root_sq hd S, hc, map_mul, ← sq]
-    have hi₀F : root i₀ ∈ F := by
-      have hkey : root i₀ = (root i₀ * P) * P⁻¹ := by
-        rw [mul_assoc, mul_inv_cancel₀ hPne, mul_one]
-      rw [hkey]
-      refine mul_mem ?_ (inv_mem hPmem)
-      rcases hprod with h | h
-      · rw [h]; exact IntermediateField.algebraMap_mem _ _
-      · rw [h]; exact neg_mem (IntermediateField.algebraMap_mem _ _)
-    exact hnotmem (root i₀) (hroot_mem i₀) hi₀F
+  have hindep := not_isSquare_prod_of_notMem_adjoin_erase hd hroot_inj hroot_mem hnotmem
   refine ⟨t.card, d, root, fun i => hts (hroot_mem i), hd, hindep, hadjoin, ?_⟩
   rw [← hadjoin]
   simpa [Nat.card_eq_fintype_card] using finrank_adjoin_range (K := K) (L := L) hd hindep

@@ -26,6 +26,69 @@ open scoped Manifold
 
 namespace TauCeti
 
+/-- Transport of the flat half-space Stokes identity for `η` to the Euclidean half-space, given
+that `η` computes the exterior derivative and boundary coefficient of `ω` in coordinates. -/
+private theorem integral_extDerivWithin_euclideanHalfSpace_of_coordinate {n : ℕ}
+    {ω : EuclideanSpace ℝ (Fin (n + 1)) →
+      EuclideanSpace ℝ (Fin (n + 1)) [⋀^Fin n]→L[ℝ] ℝ}
+    {η : (Fin (n + 1) → ℝ) → (Fin (n + 1) → ℝ) [⋀^Fin n]→L[ℝ] ℝ}
+    (hr : IntegrableOn (fun x ↦ extDerivWithin η {y | 0 ≤ y 0} x (Pi.basisFun ℝ (Fin (n + 1))))
+        {x | 0 ≤ x 0} ∧
+      Integrable (fun y : Fin n → ℝ ↦ η (Fin.cons 0 y) (fun i ↦ Pi.single i.succ 1)) ∧
+      (∫ x in {x | 0 ≤ x 0}, extDerivWithin η {y | 0 ≤ y 0} x
+        (Pi.basisFun ℝ (Fin (n + 1)))) =
+          -(∫ y : Fin n → ℝ, η (Fin.cons 0 y) (fun i ↦ Pi.single i.succ 1)))
+    (hd : ∀ x ∈ {x : Fin (n + 1) → ℝ | 0 ≤ x 0},
+      extDerivWithin η {y | 0 ≤ y 0} x (Pi.basisFun ℝ (Fin (n + 1))) =
+      extDerivWithin ω (range (𝓡∂ (n + 1))) ((EuclideanSpace.equiv (Fin (n + 1)) ℝ).symm x)
+        (EuclideanSpace.basisFun (Fin (n + 1)) ℝ))
+    (hb : ∀ y : Fin n → ℝ, η (Fin.cons 0 y) (fun i ↦ Pi.single i.succ 1) =
+      ω (euclideanHalfSpaceBoundaryParam n ((EuclideanSpace.equiv (Fin n) ℝ).symm y))
+        (fun i ↦ euclideanHalfSpaceBoundaryParam n (EuclideanSpace.basisFun (Fin n) ℝ i))) :
+    IntegrableOn (fun x ↦ extDerivWithin ω (range (𝓡∂ (n + 1))) x
+      (EuclideanSpace.basisFun (Fin (n + 1)) ℝ)) (range (𝓡∂ (n + 1))) ∧
+    Integrable (fun y : EuclideanSpace ℝ (Fin n) ↦
+      ω (euclideanHalfSpaceBoundaryParam n y)
+        (fun i ↦ euclideanHalfSpaceBoundaryParam n (EuclideanSpace.basisFun (Fin n) ℝ i))) ∧
+    (∫ x in range (𝓡∂ (n + 1)), extDerivWithin ω (range (𝓡∂ (n + 1))) x
+      (EuclideanSpace.basisFun (Fin (n + 1)) ℝ)) =
+    -(∫ y : EuclideanSpace ℝ (Fin n), ω (euclideanHalfSpaceBoundaryParam n y)
+      (fun i ↦ euclideanHalfSpaceBoundaryParam n (EuclideanSpace.basisFun (Fin n) ℝ i))) := by
+  let L := (EuclideanSpace.equiv (Fin (n + 1)) ℝ).symm
+  let B := (EuclideanSpace.equiv (Fin n) ℝ).symm
+  let H : Set (Fin (n + 1) → ℝ) := {x | 0 ≤ x 0}
+  let T := range (𝓡∂ (n + 1))
+  have hTm : MeasurableSet T := by
+    dsimp only [T]
+    rw [range_modelWithCornersEuclideanHalfSpace]
+    exact isClosed_le continuous_const (EuclideanSpace.proj 0).continuous |>.measurableSet
+  have hHm : MeasurableSet H :=
+    isClosed_le continuous_const (continuous_apply 0) |>.measurableSet
+  have hp := (PiLp.volume_preserving_toLp (Fin (n + 1))).restrict_preimage hTm
+  have hpre : WithLp.toLp 2 ⁻¹' T = H := by
+    ext x
+    simp [T, H, range_modelWithCornersEuclideanHalfSpace]
+  rw [hpre] at hp
+  have hpb := PiLp.volume_preserving_toLp (Fin n)
+  have he := L.toHomeomorph.measurableEmbedding
+  have heb := B.toHomeomorph.measurableEmbedding
+  let d (x : EuclideanSpace ℝ (Fin (n + 1))) :=
+    extDerivWithin ω T x (EuclideanSpace.basisFun (Fin (n + 1)) ℝ)
+  let b (y : EuclideanSpace ℝ (Fin n)) := ω (euclideanHalfSpaceBoundaryParam n y)
+    (fun i ↦ euclideanHalfSpaceBoundaryParam n (EuclideanSpace.basisFun (Fin n) ℝ i))
+  have hint := (hp.integrable_comp_emb he (g := d)).mp (hr.1.congr_fun hd hHm)
+  have hintb := (hpb.integrable_comp_emb heb (g := b)).mp (hr.2.1.congr (by
+    filter_upwards [] with y using hb y))
+  refine ⟨hint, hintb, ?_⟩
+  -- Expand the local scalar coefficients while keeping the half-space set T fixed.
+  change (∫ x in T, d x) = -(∫ y, b y)
+  rw [← hp.integral_comp he d, ← hpb.integral_comp heb b]
+  calc
+    _ = ∫ x in H, extDerivWithin η H x (Pi.basisFun ℝ (Fin (n + 1))) :=
+      setIntegral_congr_fun hHm (fun x hx ↦ (hd x hx).symm)
+    _ = _ := hr.2.2
+    _ = _ := by simp_rw [hb]; rfl
+
 /-- Stokes on the standard half-space, including integrability of the actual exterior derivative
 and the boundary restriction. Only regularity on the closed half-space is required. -/
 theorem _root_.ContDiffOn.integral_extDerivWithin_euclideanHalfSpace {n : ℕ}
@@ -75,35 +138,6 @@ theorem _root_.ContDiffOn.integral_extDerivWithin_euclideanHalfSpace {n : ℕ}
     funext i
     ext j
     refine Fin.cases ?_ (fun k ↦ ?_) j <;> simp [L, EuclideanSpace.basisFun_apply]
-  have hTm : MeasurableSet T := by
-    dsimp only [T]
-    rw [range_modelWithCornersEuclideanHalfSpace]
-    exact isClosed_le continuous_const (EuclideanSpace.proj 0).continuous |>.measurableSet
-  have hHm : MeasurableSet H :=
-    isClosed_le continuous_const (continuous_apply 0) |>.measurableSet
-  have hp := (PiLp.volume_preserving_toLp (Fin (n + 1))).restrict_preimage hTm
-  have hpre : WithLp.toLp 2 ⁻¹' T = H := by
-    ext x
-    simp [T, H, range_modelWithCornersEuclideanHalfSpace]
-  rw [hpre] at hp
-  have hpb := PiLp.volume_preserving_toLp (Fin n)
-  have he := L.toHomeomorph.measurableEmbedding
-  have heb := B.toHomeomorph.measurableEmbedding
-  let d (x : EuclideanSpace ℝ (Fin (n + 1))) :=
-    extDerivWithin ω T x (EuclideanSpace.basisFun (Fin (n + 1)) ℝ)
-  let b (y : EuclideanSpace ℝ (Fin n)) := ω (euclideanHalfSpaceBoundaryParam n y)
-    (fun i ↦ euclideanHalfSpaceBoundaryParam n (EuclideanSpace.basisFun (Fin n) ℝ i))
-  have hint := (hp.integrable_comp_emb he (g := d)).mp (hr.1.congr_fun hd hHm)
-  have hintb := (hpb.integrable_comp_emb heb (g := b)).mp (hr.2.1.congr (by
-    filter_upwards [] with y using hb y))
-  refine ⟨hint, hintb, ?_⟩
-  -- Expand the local scalar coefficients while keeping the half-space set T fixed.
-  change (∫ x in T, d x) = -(∫ y, b y)
-  rw [← hp.integral_comp he d, ← hpb.integral_comp heb b]
-  calc
-    _ = ∫ x in H, extDerivWithin η H x (Pi.basisFun ℝ (Fin (n + 1))) :=
-      setIntegral_congr_fun hHm (fun x hx ↦ (hd x hx).symm)
-    _ = _ := hr.2.2
-    _ = _ := by simp_rw [hb]; rfl
+  exact integral_extDerivWithin_euclideanHalfSpace_of_coordinate hr hd hb
 
 end TauCeti

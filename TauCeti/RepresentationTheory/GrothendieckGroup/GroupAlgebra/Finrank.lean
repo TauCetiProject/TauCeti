@@ -93,11 +93,11 @@ open scoped MonoidAlgebra
 /-- A class induced from a subgroup of order prime to `p` has dimension divisible by
 the `p`-part of the group order, in every characteristic. -/
 theorem ordProj_dvd_finrankK0_indK0 {k G : Type u} [Field k] [Group G] [Finite G]
-    (S : Subgroup G) {p : ℕ} (hp : p.Prime) (hS : ¬ p ∣ Nat.card S)
+    (S : Subgroup G) {p : ℕ} (hS : ¬ p ∣ Nat.card S)
     (y : ExactK0 (finiteModulesExactStructure k[S])) :
     (ordProj[p] (Nat.card G) : ℤ) ∣ finrankK0 k k[G] (indK0 k S y) := by
   rw [finrankK0_indK0]
   exact dvd_mul_of_dvd_left (Int.natCast_dvd_natCast.mpr
-    (S.ordProj_natCard_dvd_index hp hS)) _
+    ((S.ordProj_index_eq_ordProj_natCard hS).symm.dvd.trans (Nat.ordProj_dvd _ _))) _
 
 end Subgroup

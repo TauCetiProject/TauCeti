@@ -9,8 +9,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Class
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
-import TauCeti.NumberTheory.DedekindDomain.FiniteApproximation
 import TauCeti.RingTheory.DedekindDomain.Factorization
+import TauCeti.RingTheory.Localization.ChineseRemainder
 
 /-!
 # Existence of globally minimal and sharp semi-global Weierstrass equations
@@ -221,8 +221,8 @@ private theorem exists_valuation_sub_le_exp_neg_obstructionExponentAt_pow
         WithZero.exp_ne_zero)
     exact ⟨b, hb.le⟩
   choose b hb using hloc
-  obtain ⟨a, ha⟩ := TauCeti.DedekindDomain.exists_eq_mod_localized_prime_pow
-    (fun v : S ↦ v.1) Subtype.val_injective
+  obtain ⟨a, ha⟩ := TauCeti.Localization.AtPrime.exists_mk_algebraMap_eq_of_isMaximal
+    (fun v : S ↦ v.1.asIdeal) (HeightOneSpectrum.asIdeal_injective.comp Subtype.val_injective)
     (fun v ↦ m * (obstructionExponentAt O v.1 W).toNat)
     (fun v ↦ Ideal.Quotient.mk _
       (algebraMap O (Localization.AtPrime v.1.asIdeal) (b v)))

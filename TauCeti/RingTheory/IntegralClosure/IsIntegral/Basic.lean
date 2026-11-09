@@ -64,10 +64,11 @@ theorem isIntegral_trans_common {R P L : Type*} [CommRing R] [CommRing P]
 /-- An element of a field extension of `A` that is a quotient of elements of `A` and is integral
 over `A` has its numerator divisible by its denominator, when `A` is integrally closed. -/
 theorem dvd_of_isIntegral_div
-    {A L : Type*} [CommRing A] [IsDomain A]
+    {A L : Type*} [CommRing A]
     [IsIntegrallyClosed A] [Field L] [Algebra A L] [FaithfulSMul A L] {a d : A} (hd : d ≠ 0)
     (h : IsIntegral A (algebraMap A L a / algebraMap A L d)) : d ∣ a := by
   have hinj : Function.Injective (algebraMap A L) := FaithfulSMul.algebraMap_injective A L
+  have : IsDomain A := hinj.isDomain (algebraMap A L)
   let f : FractionRing A →ₐ[A] L := IsFractionRing.liftAlgHom (g := Algebra.ofId A L) hinj
   have hf : Function.Injective f := (f : FractionRing A →+* L).injective
   have hdF : algebraMap A (FractionRing A) d ≠ 0 := fun h' =>

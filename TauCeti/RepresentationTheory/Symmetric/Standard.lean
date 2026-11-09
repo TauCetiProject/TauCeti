@@ -52,6 +52,8 @@ arbitrary `z` produces all the others, and those differences span.
   irreducible.
 * `TauCeti.char_standardRepresentation`: its character is the character of `k[α]` less `1`, the
   `1` being the character of the trivial quotient of `k[α]` by the standard subrepresentation.
+* `TauCeti.standardRepresentation_injective`: over a nontrivial ring, the standard representation
+  is faithful when `|α| ≥ 3`.
 
 The two remaining halves of the picture hold for an arbitrary permutation representation and are
 proved there, in `TauCeti.RepresentationTheory.Augmentation.Basic`: that `k[α]` is the direct sum of
@@ -290,5 +292,32 @@ end Irreducible
 theorem isIrreducible_standardRepresentation_fin_three {k : Type*} [Field k]
     (h : (3 : k) ≠ 0) : (standardRepresentation k (Fin 3)).IsIrreducible :=
   isIrreducible_standardRepresentation (by decide) (Or.inr (by simpa using h))
+
+section Faithful
+
+variable {k : Type*} [Ring k] [Nontrivial k] {α : Type*} [Fintype α]
+
+/-- **The standard representation is faithful** as soon as `α` has three elements, over any
+nontrivial ring. For `|α| = 2` the hypothesis is needed: the transposition acts on the standard
+line by `-1`, which is the identity in characteristic `2`. -/
+theorem standardRepresentation_injective (h3 : 3 ≤ Fintype.card α) :
+    Function.Injective (standardRepresentation k α) := by
+  classical
+  rw [injective_iff_map_eq_one]
+  intro g hg
+  by_contra hne
+  obtain ⟨x, hx⟩ : ∃ x, g x ≠ x := by
+    by_contra! h
+    exact hne (Equiv.ext h)
+  -- A third point `z`: then `g` moves `x - z` to `g x - g z`, whose coefficient at `g x` is `1`.
+  obtain ⟨z, -, hz⟩ := Finset.exists_mem_notMem_of_card_lt_card (s := {x, g x})
+    (t := Finset.univ) (by grw [Finset.card_le_two, Finset.card_univ]; omega)
+  simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hz
+  have hv := congrArg Subtype.val (LinearMap.congr_fun hg
+    ⟨_, single_sub_single_mem_augmentationSubrepresentation (G := Equiv.Perm α) x z⟩)
+  have hc := congrArg (MonoidAlgebra.coeff · (g x)) hv
+  simp [Representation.ofMulAction_single, Ne.symm hx, Ne.symm hz.2, hz.1] at hc
+
+end Faithful
 
 end TauCeti

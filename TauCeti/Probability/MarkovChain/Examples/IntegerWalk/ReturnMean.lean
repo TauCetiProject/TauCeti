@@ -66,27 +66,7 @@ private theorem tendsto_integerWalk_integral_visitCount_div (p : unitInterval)
     (hp : (p : ℝ) = 1 / 2) (x : ℤ) :
     Tendsto (fun n : ℕ => ∫ ω, (visitCount (fun k => ω (k + 1)) x n : ℝ) / n
       ∂markovChainLaw (Measure.dirac x) (integerWalk p)) atTop (𝓝 0) := by
-  classical
-  let P := markovChainLaw (Measure.dirac x) (integerWalk p)
-  have hint (n : ℕ) :
-      ∫ ω, (visitCount (fun k => ω (k + 1)) x n : ℝ) ∂P =
-        ∑ i ∈ Finset.range n, ((integerWalk p ^ (i + 1)) x).real {x} := by
-    have hsum (ω : ℕ → ℤ) : (visitCount (fun k => ω (k + 1)) x n : ℝ) =
-        ∑ i ∈ Finset.range n, {ω | ω (i + 1) = x}.indicator (fun _ => (1 : ℝ)) ω := by
-      simp only [visitCount_eq_count, Nat.count_eq_card_filter_range, Finset.card_filter,
-        Nat.cast_sum, Nat.cast_ite, Nat.cast_one, Nat.cast_zero, Set.indicator_apply,
-        Set.mem_ofPred_eq]
-    simp_rw [hsum]
-    rw [integral_finsetSum _ (fun i _ => (integrable_const (1 : ℝ)).indicator
-      (measurableSet_eq_fun (measurable_pi_apply (i + 1)) measurable_const))]
-    apply Finset.sum_congr rfl
-    intro i hi
-    rw [integral_indicator (measurableSet_eq_fun (measurable_pi_apply (i + 1)) measurable_const),
-      integral_const, smul_eq_mul, mul_one]
-    simp only [measureReal_def, Measure.restrict_apply_univ, P]
-    rw [Measure.markovChainLaw_setOf_apply_eq_comp, Measure.dirac_bind (Kernel.measurable _)]
-  dsimp only [P] at hint
-  simp_rw [integral_div, hint]
+  simp_rw [integral_div, (integerWalk p).integral_visitCount_succ_markovChainLaw_dirac]
   simpa only [div_eq_inv_mul, Function.comp_apply] using
     ((tendsto_integerWalk_pow_real_self p hp x).comp (tendsto_add_atTop_nat 1)).cesaro
 
