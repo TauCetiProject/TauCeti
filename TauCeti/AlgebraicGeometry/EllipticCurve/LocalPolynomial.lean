@@ -187,13 +187,22 @@ theorem localPolynomial_eq_of_not_hasGoodReduction (W : WeierstrassCurve K)
       C_0, zero_mul, sub_zero]
 
 omit [Finite (IsLocalRing.ResidueField R)] in
-/-- **The local factor at potentially good bad reduction is trivial**: if an elliptic curve has
-potential good reduction while its minimal equation has bad reduction, then its local polynomial
-(`WeierstrassCurve.localPolynomial`) is `1`, multiplicative reduction never being potentially
-good. Unlike `localPolynomial_eq_of_not_hasGoodReduction`, this needs no finite residue field. -/
-theorem localPolynomial_eq_one_of_hasPotentialGoodReduction_of_not_hasGoodReduction [W.IsElliptic]
+/-- **The local factor at potentially good bad reduction is trivial**: if a curve has potential
+good reduction (so is elliptic) while its minimal equation has bad reduction, then its local
+polynomial (`WeierstrassCurve.localPolynomial`) is `1`, multiplicative reduction never being
+potentially good. Unlike `localPolynomial_eq_of_not_hasGoodReduction`, this needs no finite
+residue field. -/
+theorem localPolynomial_eq_one_of_hasPotentialGoodReduction_of_not_hasGoodReduction
     (h : W.HasPotentialGoodReduction R) (hb : ¬ (W.minimal R).HasGoodReduction R) :
     W.localPolynomial R = 1 := by
+  -- potential good reduction forces a unit discriminant, so `W` is elliptic
+  have : W.IsElliptic := by
+    obtain ⟨L, _, _, _, S, _, _, _, _, _, _, _, _, hW⟩ := hasPotentialGoodReduction_iff.1 h
+    obtain ⟨C, hC⟩ := (W.baseChange L).exists_smul_eq_minimal S
+    have h₁ : (C • W.baseChange L).IsElliptic := hC ▸ hW.isElliptic
+    have h₂ : (W.baseChange L).IsElliptic := by
+      simpa using (inferInstance : (C⁻¹ • C • W.baseChange L).IsElliptic)
+    exact ⟨isUnit_iff_ne_zero.2 fun h0 ↦ h₂.isUnit.ne_zero (by simp [baseChange, h0])⟩
   obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal R
   -- multiplicative reduction is never potentially good
   have hm : ¬ (W.minimal R).HasMultiplicativeReduction R := fun hm ↦
