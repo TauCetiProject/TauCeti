@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.FittingIdeal.Determinant
 import TauCeti.LinearAlgebra.Matrix.CornerMinor
+import TauCeti.LinearAlgebra.Matrix.DotProduct
+import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # Codimension-one minors of a matrix with left and right null vectors

@@ -50,10 +50,6 @@ vector and `w` is the geometric vector `(1, t, …, t ^ n)`.
 * `Matrix.det_updateCol_last_smul_col_sub_single_of_det_sub_one_eq_zero`: a determinant formula
   for replacing the last column of `M - 1` by a linear combination of the last columns of `M`
   and `1`.
-* `Matrix.submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero`: a right null vector with unit last
-  coordinate lets the submatrix omitting the last column reproduce `A *ᵥ x`.
-* `Matrix.apply_last_eq_of_dotProduct_eq_zero`: if `w ⬝ᵥ v = 0` and the last coordinate of `w` is
-  a unit, then the last coordinate of `v` is determined by its other coordinates.
 * `Matrix.det_submatrix_castSucc_conj`: the corner minor of `N * A * N⁻¹` equals that of `A`,
   when `A` is annihilated by `u` on the right and by `w` on the left and `N` fixes both.
 -/
@@ -404,34 +400,5 @@ theorem det_submatrix_castSucc_conj (A N : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
     det_projCastSucc_mul_mul N hwN hw, det_mul_mul_inclCastSucc N⁻¹ hNinvu hu]
   have hone : N.det * (N⁻¹).det = 1 := by rw [← Matrix.det_mul, hNinv, Matrix.det_one]
   linear_combination (A.submatrix Fin.castSucc Fin.castSucc).det * hone
-
-/-- If `w ⬝ᵥ v = 0` and `w (Fin.last n)` is a unit, then `v (Fin.last n)` is
-`-(w (last))⁻¹ * ∑ i, w i.castSucc * v i.castSucc`. -/
-theorem apply_last_eq_of_dotProduct_eq_zero {w v : Fin (n + 1) → R} (hv : w ⬝ᵥ v = 0)
-    (hwunit : IsUnit (w (Fin.last n))) :
-    v (Fin.last n) =
-      -((hwunit.unit⁻¹ : Rˣ) : R) * ∑ i : Fin n, w i.castSucc * v i.castSucc := by
-  simp only [dotProduct, Fin.sum_univ_castSucc] at hv
-  calc v (Fin.last n) =
-      ((hwunit.unit⁻¹ : Rˣ) : R) * (w (Fin.last n) * v (Fin.last n)) := by
-        rw [← mul_assoc, hwunit.val_inv_mul, one_mul]
-    _ = _ := by linear_combination ((hwunit.unit⁻¹ : Rˣ) : R) * hv
-
-/-- If `A *ᵥ u = 0` and `u (Fin.last n)` is a unit, then the submatrix of `A` omitting its last
-column sends `x ∘ castSucc - (u (last))⁻¹ x (last) • u ∘ castSucc` to `A *ᵥ x`. -/
-theorem submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero {m : Type*}
-    (A : Matrix m (Fin (n + 1)) R) {u : Fin (n + 1) → R} (hu : A *ᵥ u = 0)
-    (huunit : IsUnit (u (Fin.last n))) (x : Fin (n + 1) → R) :
-    (A.submatrix id Fin.castSucc) *ᵥ (fun i => x i.castSucc -
-      u i.castSucc * ((huunit.unit⁻¹ : Rˣ) : R) * x (Fin.last n)) = A *ᵥ x := by
-  have hcol (i : m) := apply_last_eq_of_dotProduct_eq_zero (w := u) (v := A i)
-    (by rw [dotProduct_comm]; exact congrFun hu i) huunit
-  ext i
-  simp only [mulVec, dotProduct, submatrix_apply, id_eq,
-    Fin.sum_univ_castSucc, hcol, mul_sub, Finset.sum_sub_distrib]
-  simp only [sub_eq_add_neg, neg_mul, Finset.mul_sum, Finset.sum_mul,
-    ← Finset.sum_neg_distrib]
-  congr 1
-  exact Finset.sum_congr rfl fun _ _ => by ring
 
 end Matrix

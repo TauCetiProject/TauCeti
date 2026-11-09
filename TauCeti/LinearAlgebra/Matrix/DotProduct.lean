@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Dot products
@@ -25,6 +26,8 @@ integers transform (R. Steinberg, *Endomorphisms of Linear Algebraic Groups*, §
 
 ## Main results
 
+* `Matrix.apply_last_eq_of_dotProduct_eq_zero`: if `w ⬝ᵥ v = 0` and the last coordinate of `w` is
+  a unit, then the last coordinate of `v` is determined by its other coordinates.
 * `LinearIndependent.exists_dotProduct_ne_zero`: `n` linearly independent forms on `K ^ n` do not
   all vanish at a nonzero point.
 * `Matrix.comp_equiv_symm_dotProduct_reindex_mulVec`: relabelling the indices is an isometry.
@@ -73,3 +76,16 @@ theorem TauCeti.mul_dotProduct_eq_of_mulVec_eq_smul {m n R : Type*} [Fintype m] 
   have key := dotProduct_transpose_mulVec A x y'
   rwa [hx, hy, dotProduct_comm x, dotProduct_comm y', smul_dotProduct, smul_dotProduct,
     dotProduct_comm y, eq_comm] at key
+
+/-- If `w ⬝ᵥ v = 0` and `w (Fin.last n)` is a unit, then `v (Fin.last n)` is
+`-(w (last))⁻¹ * ∑ i, w i.castSucc * v i.castSucc`. -/
+theorem Matrix.apply_last_eq_of_dotProduct_eq_zero {n : ℕ} {R : Type*} [CommRing R]
+    {w v : Fin (n + 1) → R} (hv : w ⬝ᵥ v = 0)
+    (hwunit : IsUnit (w (Fin.last n))) :
+    v (Fin.last n) =
+      -((hwunit.unit⁻¹ : Rˣ) : R) * ∑ i : Fin n, w i.castSucc * v i.castSucc := by
+  simp only [dotProduct, Fin.sum_univ_castSucc] at hv
+  calc v (Fin.last n) =
+      ((hwunit.unit⁻¹ : Rˣ) : R) * (w (Fin.last n) * v (Fin.last n)) := by
+        rw [← mul_assoc, hwunit.val_inv_mul, one_mul]
+    _ = _ := by linear_combination ((hwunit.unit⁻¹ : Rˣ) : R) * hv

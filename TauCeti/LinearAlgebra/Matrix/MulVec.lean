@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 import TauCeti.Algebra.Group.Hom.Defs
+import TauCeti.LinearAlgebra.Matrix.DotProduct
 
 /-!
 # Matrix-vector multiplication
@@ -44,6 +45,8 @@ line.
   matrix is monotone and preserves nonnegativity.
 * `Matrix.mulVec_pos`: a strictly positive matrix sends a nonzero nonnegative vector to a strictly
   positive one.
+* `Matrix.submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero`: a right null vector with unit last
+  coordinate lets the submatrix omitting the last column reproduce `A *ᵥ x`.
 * `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
 -/
 
@@ -146,5 +149,28 @@ theorem mulVec_pos (hA : ∀ i j, 0 < A i j) (hy : 0 ≤ y) (hy0 : y ≠ 0) (i :
     ⟨j, Finset.mem_univ j, mul_pos (hA i j) ((hy j).lt_of_ne' hj)⟩
 
 end StrictOrderedSemiring
+
+section CommRing
+
+variable {n : ℕ} {R : Type*} [CommRing R]
+
+/-- If `A *ᵥ u = 0` and `u (Fin.last n)` is a unit, then the submatrix of `A` omitting its last
+column sends `x ∘ castSucc - (u (last))⁻¹ x (last) • u ∘ castSucc` to `A *ᵥ x`. -/
+theorem submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero {m : Type*}
+    (A : Matrix m (Fin (n + 1)) R) {u : Fin (n + 1) → R} (hu : A *ᵥ u = 0)
+    (huunit : IsUnit (u (Fin.last n))) (x : Fin (n + 1) → R) :
+    (A.submatrix id Fin.castSucc) *ᵥ (fun i => x i.castSucc -
+      u i.castSucc * ((huunit.unit⁻¹ : Rˣ) : R) * x (Fin.last n)) = A *ᵥ x := by
+  have hcol (i : m) := apply_last_eq_of_dotProduct_eq_zero (w := u) (v := A i)
+    (by rw [dotProduct_comm]; exact congrFun hu i) huunit
+  ext i
+  simp only [mulVec, dotProduct, submatrix_apply, id_eq,
+    Fin.sum_univ_castSucc, hcol, mul_sub, Finset.sum_sub_distrib]
+  simp only [sub_eq_add_neg, neg_mul, Finset.mul_sum, Finset.sum_mul,
+    ← Finset.sum_neg_distrib]
+  congr 1
+  exact Finset.sum_congr rfl fun _ _ => by ring
+
+end CommRing
 
 end Matrix
