@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Distribution.FourierMultiplier
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Convolution.Young
+import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
@@ -86,20 +87,6 @@ function by a function of temperate growth multiplies the function pointwise
 public section
 
 noncomputable section
-
-/-- A measure of temperate growth is finite on compact sets: `(1 + ‖x‖) ^ (-n)` is integrable and
-bounded below by a positive constant on any bounded set. -/
-theorem MeasureTheory.Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts
-    {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] (μ : Measure E)
-    [h : μ.HasTemperateGrowth] : IsFiniteMeasureOnCompacts μ := by
-  obtain ⟨n, hn⟩ := h.exists_integrable
-  refine ⟨fun K hK => ?_⟩
-  obtain ⟨R, hR⟩ := hK.isBounded.subset_closedBall (0 : E)
-  have hε : 0 < (1 + max R 0) ^ (-(n : ℝ)) := by positivity
-  refine lt_of_le_of_lt (measure_mono fun x hx => ?_) (hn.measure_norm_ge_lt_top hε)
-  have hx' : ‖x‖ ≤ max R 0 := by simpa using (hR hx).trans (le_max_left R 0)
-  rw [Set.mem_ofPred_eq, Real.norm_of_nonneg (by positivity)]
-  exact Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) (by simp)
 
 namespace MeasureTheory.Lp
 
