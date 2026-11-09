@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.GiryMonad
 import Mathlib.Probability.Kernel.MeasurableIntegral
-import TauCeti.Probability.Kernel.Finite
+import TauCeti.Probability.Kernel.Integral
 
 /-!
 # Integrating against measurable families of measures
@@ -36,26 +36,6 @@ public section
 open MeasureTheory ProbabilityTheory Set Function
 open scoped ENNReal
 
-namespace TauCeti
-
-variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : α → Measure β}
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-private lemma lintegral_eq_mul_normalize (hμ : Measurable μ) {t : α} (ht : μ t univ ≠ ∞)
-    (f : β → ℝ≥0∞) :
-    ∫⁻ x, f x ∂μ t = (1 + μ t univ) * ∫⁻ x, f x ∂(Kernel.mk μ hμ).normalize t := by
-  rw [Kernel.normalize_apply, Kernel.coe_mk, lintegral_smul_measure, smul_eq_mul, ← mul_assoc,
-    ENNReal.mul_inv_cancel (by simp) (by simp [ht]), one_mul]
-
-private lemma integral_eq_smul_normalize (hμ : Measurable μ) {t : α} (ht : μ t univ ≠ ∞)
-    (f : β → F) :
-    ∫ x, f x ∂μ t = (1 + μ t univ).toReal • ∫ x, f x ∂(Kernel.mk μ hμ).normalize t := by
-  have h0 : (1 + μ t univ).toReal ≠ 0 := (ENNReal.toReal_pos (by simp) (by simp [ht])).ne'
-  rw [Kernel.normalize_apply, Kernel.coe_mk, integral_smul_measure, ENNReal.toReal_inv, smul_smul,
-    mul_inv_cancel₀ h0, one_smul]
-
-end TauCeti
-
 /-- Integrating a jointly measurable nonnegative function against a measurable family of measures
 with almost everywhere finite slices gives an almost everywhere measurable function. -/
 theorem Measurable.aemeasurable_lintegral_measure
@@ -68,7 +48,8 @@ theorem Measurable.aemeasurable_lintegral_measure
   have hκ := hf.lintegral_kernel_prod_right (κ := (Kernel.mk μ hμ).normalize)
   refine (hm.mul hκ).aemeasurable.congr ?_
   filter_upwards [hμfin] with a ha
-  exact (TauCeti.lintegral_eq_mul_normalize hμ ha _).symm
+  simpa only [Pi.mul_apply, Kernel.coe_mk] using
+    ((Kernel.mk μ hμ).lintegral_eq_mul_normalize ha (f a)).symm
 
 /-- Integrating a jointly strongly measurable function against a measurable family of measures
 with almost everywhere finite slices gives an almost everywhere strongly measurable function.
@@ -84,4 +65,5 @@ theorem MeasureTheory.StronglyMeasurable.aestronglyMeasurable_integral_measure
   have hκ := hf.integral_kernel_prod_right (κ := (Kernel.mk μ hμ).normalize)
   refine (hm.ennreal_toReal.stronglyMeasurable.smul hκ).aestronglyMeasurable.congr ?_
   filter_upwards [hμfin] with a ha
-  exact (TauCeti.integral_eq_smul_normalize hμ ha _).symm
+  simpa only [Pi.smul_apply', Kernel.coe_mk] using
+    ((Kernel.mk μ hμ).integral_eq_smul_normalize ha (f a)).symm
