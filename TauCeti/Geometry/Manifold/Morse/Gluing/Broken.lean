@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Gluing.BoxCrossing
 public import TauCeti.Geometry.Manifold.Morse.Stable.Gluing
 public import TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice
+import TauCeti.Data.Set.InjOnUnion
 import TauCeti.Dynamics.Flow.LevelCrossing
 
 /-!
@@ -82,22 +83,6 @@ private theorem exists_pos_forall_mul_sq_lt {r₀ ε n : ℝ} (hr₀ : 0 < r₀)
   exact ⟨r₁, hr₁, min_le_left _ _,
     (min_le_right _ _).trans ((div_le_one (by positivity)).2 (by linarith)), fun u hu hu' ↦
     lt_of_le_of_lt (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hu hu' 2) hn) hr₁n⟩
-
-/-- A map on `[0, δ]` is injective if it is injective away from `0` and takes its value at `0`
-nowhere else. -/
-private theorem injective_of_forall_ne_zero {α : Type*} {δ : ℝ} (hδ : 0 ≤ δ)
-    {F : Icc (0 : ℝ) δ → α}
-    (h₀ : ∀ s : Icc (0 : ℝ) δ, (s : ℝ) ≠ 0 → F s ≠ F ⟨0, left_mem_Icc.2 hδ⟩)
-    (h : ∀ s s' : Icc (0 : ℝ) δ, (s : ℝ) ≠ 0 → (s' : ℝ) ≠ 0 → F s = F s' → s = s') :
-    Injective F := by
-  intro s s' hss'
-  by_cases hs : (s : ℝ) = 0 <;> by_cases hs' : (s' : ℝ) = 0
-  · exact Subtype.ext (hs.trans hs'.symm)
-  · obtain rfl : s = ⟨0, left_mem_Icc.2 hδ⟩ := Subtype.ext hs
-    exact absurd hss'.symm (h₀ s' hs')
-  · obtain rfl : s' = ⟨0, left_mem_Icc.2 hδ⟩ := Subtype.ext hs'
-    exact absurd hss' (h₀ s hs)
-  · exact h s s' hs hs' hss'
 
 omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
 /-- A model entrance point of the box `‖u‖ ≤ ε, ‖v‖ ≤ ε` that the passage map sends to the exit
@@ -578,8 +563,12 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet
     refine ⟨hX.flow.isInvariant_unstableSet_inter_stableSet p r _ hs₁, hσ₁, hσ₂, σ₂ + t - σ₁, ?_⟩
     rw [← Flow.map_add, sub_add_cancel, Flow.map_add, ht]
   have hFinj : Injective F := by
-    refine injective_of_forall_ne_zero hδ.le (fun s hs h ↦ (Flow.disjoint_stableSet
-      hqr'.symm).ne_of_mem (hFS s hs).1.2 ((h.trans hF₀) ▸ ha₁.2) rfl) fun s s' hs hs' hss' ↦ ?_
+    refine injective_of_injOn_of_union_eq_univ (A := {s : Icc (0 : ℝ) δ | (s : ℝ) ≠ 0})
+      (B := {⟨0, left_mem_Icc.2 hδ.le⟩}) (P := (· ≠ F ⟨0, left_mem_Icc.2 hδ.le⟩))
+      (eq_univ_of_forall fun s ↦ (ne_or_eq (s : ℝ) 0).imp id Subtype.ext)
+      (fun s ↦ ⟨fun h hs ↦ h (congrArg F (Subtype.ext hs)), fun hs h ↦ (Flow.disjoint_stableSet
+        hqr'.symm).ne_of_mem (hFS s hs).1.2 ((h.trans hF₀) ▸ ha₁.2) rfl⟩)
+      (fun s hs s' hs' hss' ↦ ?_) (injOn_singleton _ _)
     -- Equal first level points put the first points of `B s` and `B s'` on one orbit.
     refine hBinj s s' hs hs' (Flow.levelCrossingTime hX.flow f (f a₁) (B s).1 -
       Flow.levelCrossingTime hX.flow f (f a₁) (B s').1) ?_

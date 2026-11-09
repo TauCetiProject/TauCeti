@@ -73,28 +73,6 @@ theorem splitCoord_linearFlow (t : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ)
 
 end MorseChart
 
-/-- Along the split hyperbolic flow, a bound on the norms of both factors at times `0` and `t`
-holds at every time between them, since `e^{-s}` and `e^s` are monotone in `s`. -/
-private theorem norm_splitQuadraticFlow_le_of_mem_uIcc {Eₛ Eᵤ : Type*} [NormedAddCommGroup Eₛ]
-    [NormedSpace ℝ Eₛ] [NormedAddCommGroup Eᵤ] [NormedSpace ℝ Eᵤ] {z : WithLp 2 (Eₛ × Eᵤ)}
-    {C t s : ℝ} (hs : s ∈ uIcc 0 t) (h₀ : ‖z.fst‖ ≤ C ∧ ‖z.snd‖ ≤ C)
-    (ht : ‖(splitQuadraticFlow t z).fst‖ ≤ C ∧ ‖(splitQuadraticFlow t z).snd‖ ≤ C) :
-    ‖(splitQuadraticFlow s z).fst‖ ≤ C ∧ ‖(splitQuadraticFlow s z).snd‖ ≤ C := by
-  rw [norm_fst_splitQuadraticFlow, norm_snd_splitQuadraticFlow] at ht ⊢
-  have hs₁ := (Real.exp_monotone.image_uIcc_subset (mem_image_of_mem _ hs)).2
-  have hs₂ := ((Real.exp_monotone.comp_antitone fun _ _ h ↦ neg_le_neg h).image_uIcc_subset
-    (mem_image_of_mem _ hs)).2
-  simp only [Function.comp_apply, neg_zero, Real.exp_zero] at hs₁ hs₂
-  constructor
-  · calc Real.exp (-s) * ‖z.fst‖ ≤ max 1 (Real.exp (-t)) * ‖z.fst‖ := by gcongr
-      _ = max ‖z.fst‖ (Real.exp (-t) * ‖z.fst‖) := by
-        rw [max_mul_of_nonneg _ _ (norm_nonneg _), one_mul]
-      _ ≤ C := max_le h₀.1 ht.1
-  · calc Real.exp s * ‖z.snd‖ ≤ max 1 (Real.exp t) * ‖z.snd‖ := by gcongr
-      _ = max ‖z.snd‖ (Real.exp t * ‖z.snd‖) := by
-        rw [max_mul_of_nonneg _ _ (norm_nonneg _), one_mul]
-      _ ≤ C := max_le h₀.2 ht.2
-
 namespace IsAdaptedPseudoGradient
 
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]

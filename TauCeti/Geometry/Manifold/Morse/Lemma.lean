@@ -272,26 +272,6 @@ theorem injOn_toChart_symm_coord_symm_splitCoord_symm :
   φ.splitCoord.symm.injective (φ.coord.symm.injective
     (φ.toChart.symm.injOn (by simpa using hz) (by simpa using hz') h))
 
-/-- The square of the sup norm of a real vector is at most the sum of the squares of its
-coordinates. -/
-private theorem sq_norm_le_sum_sq {ι : Type*} [Fintype ι] (v : ι → ℝ) :
-    ‖v‖ ^ 2 ≤ ∑ i, v i ^ 2 := by
-  have h := PiLp.dist_ofLp_le (WithLp.toLp 2 v) 0
-  rw [dist_zero_right, WithLp.ofLp_toLp, WithLp.ofLp_zero, dist_zero_right] at h
-  simpa [PiLp.norm_sq_eq_of_L2] using pow_le_pow_left₀ (norm_nonneg _) h 2
-
-/-- The sum of the squares of the coordinates of a real vector, indexed by some of the indices
-`Fin n`, is at most `n` times the square of its sup norm. -/
-private theorem sum_sq_le_mul_sq_norm {n : ℕ} {P : Fin n → Prop} [Fintype {i // P i}]
-    (v : {i // P i} → ℝ) : ∑ i, v i ^ 2 ≤ n * ‖v‖ ^ 2 := by
-  have hcard : (Fintype.card {i // P i} : ℝ) ≤ n := by
-    exact_mod_cast (Fintype.card_le_of_injective _ Subtype.val_injective).trans
-      (Fintype.card_fin n).le
-  calc ∑ i, v i ^ 2 ≤ ∑ _i, ‖v‖ ^ 2 := Finset.sum_le_sum fun i _ ↦ by
-        simpa [sq_abs] using pow_le_pow_left₀ (norm_nonneg _) (norm_le_pi_norm v i) 2
-    _ = Fintype.card {i // P i} * ‖v‖ ^ 2 := by simp
-    _ ≤ n * ‖v‖ ^ 2 := by gcongr
-
 /-- **Above the critical value on the entrance face.** At a point of the chart whose contracting
 split coordinate has norm `ε` and whose expanding one is small, `f` exceeds `f x`. -/
 theorem lt_apply_of_norm_fst_eq {ε : ℝ}
@@ -301,7 +281,8 @@ theorem lt_apply_of_norm_fst_eq {ε : ℝ}
     f x < f (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) := by
   rw [φ.apply_toChart_symm_coord_symm_splitCoord_symm hz]
   have h₁ := sq_norm_le_sum_sq z.fst
-  have h₂ := sum_sq_le_mul_sq_norm z.snd
+  have h₂ := sum_sq_le_mul_sq_norm
+    ((Fintype.card_le_of_injective _ Subtype.val_injective).trans_eq (Fintype.card_fin _)) z.snd
   rw [hfst] at h₁
   linarith
 
@@ -314,7 +295,8 @@ theorem apply_lt_of_norm_snd_eq {ε : ℝ}
     f (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) < f x := by
   rw [φ.apply_toChart_symm_coord_symm_splitCoord_symm hz]
   have h₁ := sq_norm_le_sum_sq z.snd
-  have h₂ := sum_sq_le_mul_sq_norm z.fst
+  have h₂ := sum_sq_le_mul_sq_norm
+    ((Fintype.card_le_of_injective _ Subtype.val_injective).trans_eq (Fintype.card_fin _)) z.fst
   rw [hsnd] at h₁
   linarith
 

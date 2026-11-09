@@ -20,6 +20,8 @@ For `p ≥ 1`, the `Lᵖ` distance dominates the sup distance. In the other dire
 distance is at most the square root of the number of coordinates times the sup distance.
 These estimates give inclusions between balls in the two metrics. The corresponding
 Cauchy–Schwarz estimate bounds the sum of coordinate norms by `√(card ι)` times the `L²` norm.
+For a real vector `v` with at most `n` coordinates, the sum of squares `∑ i, v i ^ 2` lies between
+the square of the sup norm and `n` times it.
 The coordinate spaces may be different seminormed groups, or pseudometric spaces for the
 distance comparisons.
 
@@ -162,6 +164,28 @@ theorem preimage_ofLp_ball_subset_ball [Nonempty ι] (x : PiLp 2 β) (r : ℝ) :
 end PseudoMetricSpace
 
 end PiLp
+
+namespace TauCeti
+
+variable {ι : Type*} [Fintype ι]
+
+/-- The square of the sup norm of a real vector is at most the sum of the squares of its
+coordinates. -/
+theorem sq_norm_le_sum_sq (v : ι → ℝ) : ‖v‖ ^ 2 ≤ ∑ i, v i ^ 2 := by
+  have h := PiLp.dist_ofLp_le (WithLp.toLp 2 v) 0
+  rw [dist_zero_right, WithLp.ofLp_toLp, WithLp.ofLp_zero, dist_zero_right] at h
+  simpa [PiLp.norm_sq_eq_of_L2] using pow_le_pow_left₀ (norm_nonneg _) h 2
+
+/-- The sum of the squares of the coordinates of a real vector with at most `n` coordinates is at
+most `n` times the square of its sup norm. -/
+theorem sum_sq_le_mul_sq_norm {n : ℕ} (hn : Fintype.card ι ≤ n) (v : ι → ℝ) :
+    ∑ i, v i ^ 2 ≤ n * ‖v‖ ^ 2 :=
+  calc ∑ i, v i ^ 2 ≤ ∑ _i, ‖v‖ ^ 2 := Finset.sum_le_sum fun i _ ↦ by
+        simpa [sq_abs] using pow_le_pow_left₀ (norm_nonneg _) (norm_le_pi_norm v i) 2
+    _ = Fintype.card ι * ‖v‖ ^ 2 := by simp
+    _ ≤ n * ‖v‖ ^ 2 := by gcongr
+
+end TauCeti
 
 namespace LinearIsometry
 
