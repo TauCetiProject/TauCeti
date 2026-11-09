@@ -72,6 +72,10 @@ use.
 * `TauCeti.isInvertible_toContinuousBilinearMap_iff_separatingLeft`:
   contraction with a bilinear form is invertible exactly when it is left-separating in
   finite dimensions, identifying covectors with vectors for local contraction equations.
+* `ContinuousLinearMap.isInvertible_iff_separatingLeft` and
+  `ContinuousLinearMap.isInvertible_iff_nondegenerate_toBilinForm`: in finite dimensions, a map
+  into the dual is invertible exactly when its bilinear form is left-separating, respectively
+  nondegenerate.
 * `ContinuousLinearMap.isVonNBounded_setOf_lt_one_of_pos`: in finite dimensions, positivity on
   nonzero diagonal vectors already implies the bounded-unit-set condition.
 * `TauCeti.isOpen_setOf_forall_bilinear_apply_self_pos`: strict diagonal positivity is open
@@ -79,6 +83,8 @@ use.
 * `IsCompact.exists_pos_forall_mul_norm_sq_le`: in finite dimensions, a family of continuous
   bilinear forms, continuous on a compact set and positive on nonzero diagonal vectors, is bounded
   below on the diagonal by one positive multiple of the squared norm.
+* `IsCompact.exists_pos_forall_mul_norm_sq_le_compRight`: the same for the forms `b(·, B ·)` with
+  `B` in a compact set of endomorphisms, which gives uniform tameness constants.
 * `TauCeti.convex_setOfPred_symm_pos_isVonNBounded`: the continuous bilinear forms on a real
   topological vector space that are symmetric, positive definite and have a von Neumann bounded
   unit set form a convex set; these are the fibrewise conditions of a Riemannian metric.
@@ -158,6 +164,19 @@ theorem _root_.ContinuousLinearMap.isInvertible_of_separatingLeft
   ContinuousLinearMap.isInvertible_of_injective
     ((L.separatingLeft_toBilinForm_iff_injective).1 hsep)
 
+/-- In finite dimensions, a continuous linear map into the dual is invertible exactly when its
+bilinear form is left-separating. -/
+theorem _root_.ContinuousLinearMap.isInvertible_iff_separatingLeft :
+    L.IsInvertible ↔ L.toBilinForm.SeparatingLeft :=
+  ⟨fun h ↦ L.separatingLeft_toBilinForm_iff_injective.2 h.injective,
+    ContinuousLinearMap.isInvertible_of_separatingLeft⟩
+
+/-- In finite dimensions, a continuous linear map into the dual is invertible exactly when its
+bilinear form is nondegenerate. -/
+theorem _root_.ContinuousLinearMap.isInvertible_iff_nondegenerate_toBilinForm :
+    L.IsInvertible ↔ L.toBilinForm.Nondegenerate :=
+  L.isInvertible_iff_separatingLeft.trans ⟨.ofSeparatingLeft, And.left⟩
+
 omit [CompleteSpace 𝕜] in
 /-- In finite dimensions, the bilinear form of a continuous linear map into the dual is
 nondegenerate exactly when the map is injective. -/
@@ -165,13 +184,6 @@ theorem _root_.ContinuousLinearMap.nondegenerate_toBilinForm_iff_injective
     (L : E →L[𝕜] E →L[𝕜] 𝕜) : L.toBilinForm.Nondegenerate ↔ Function.Injective L :=
   ⟨fun h ↦ L.separatingLeft_toBilinForm_iff_injective.1 h.1, fun h ↦
     .ofSeparatingLeft (L.separatingLeft_toBilinForm_iff_injective.2 h)⟩
-
-variable (𝕜 E) in
-/-- In finite dimensions, the continuous bilinear forms that are nondegenerate form an open set. -/
-theorem isOpen_setOfPred_nondegenerate_toBilinForm :
-    IsOpen {L : E →L[𝕜] E →L[𝕜] 𝕜 | L.toBilinForm.Nondegenerate} := by
-  simpa only [ContinuousLinearMap.nondegenerate_toBilinForm_iff_injective] using
-    ContinuousLinearMap.isOpen_injective
 
 /-- Contraction with a bilinear form on a finite-dimensional space is an invertible
 continuous linear map to the continuous dual exactly when the form is left-separating. -/
@@ -182,11 +194,7 @@ theorem isInvertible_toContinuousBilinearMap_iff_separatingLeft
   have hround : b.toContinuousBilinearMap.toBilinForm = b := by
     ext v w
     simp
-  have hsep : b.SeparatingLeft ↔ Function.Injective b.toContinuousBilinearMap := by
-    simpa only [hround] using
-      b.toContinuousBilinearMap.separatingLeft_toBilinForm_iff_injective
-  exact ⟨fun hb ↦ hsep.mpr hb.injective,
-    fun hb ↦ _root_.ContinuousLinearMap.isInvertible_of_injective (hsep.mp hb)⟩
+  rw [ContinuousLinearMap.isInvertible_iff_separatingLeft, hround]
 
 end FiniteDimensional
 
@@ -393,6 +401,22 @@ theorem _root_.IsCompact.exists_pos_forall_mul_norm_sq_le
     ring
   rw [heq, le_inv_mul_iff₀ (by positivity)] at hh
   linarith
+
+/-- **Uniform coercivity over a compact set of operators.** On a finite-dimensional real normed
+space, let `b` be a continuous bilinear form and `T` a compact set of continuous endomorphisms
+such that `b v (B v)` is positive for every `B ∈ T` and every nonzero `v`. Then one positive
+constant `c` gives `c ‖v‖² ≤ b v (B v)` for every `B ∈ T` and every `v`. For a symplectic form
+`b`, these are uniform tameness constants over a compact set of tamed structures. -/
+theorem _root_.IsCompact.exists_pos_forall_mul_norm_sq_le_compRight
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {T : Set (E →L[ℝ] E)} (hT : IsCompact T) (b : E →L[ℝ] E →L[ℝ] ℝ)
+    (hpos : ∀ B ∈ T, ∀ v, v ≠ 0 → 0 < b v (B v)) :
+    ∃ c > 0, ∀ B ∈ T, ∀ v, c * ‖v‖ ^ 2 ≤ b v (B v) :=
+  -- The forms `b(·, B ·)` depend continuously on `B`.
+  hT.exists_pos_forall_mul_norm_sq_le
+    (b := fun B ↦ ((ContinuousLinearMap.compL ℝ E E ℝ).flip B).comp b)
+    ((ContinuousLinearMap.compL ℝ E E ℝ).flip.continuous.clm_comp continuous_const).continuousOn
+    hpos
 
 /-- On a finite-dimensional real normed space, a continuous bilinear form positive on
 nonzero diagonal vectors has a bounded unit sublevel set. Symmetry is not needed. -/

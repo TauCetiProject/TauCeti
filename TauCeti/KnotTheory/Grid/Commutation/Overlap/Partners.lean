@@ -40,15 +40,13 @@ variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 private theorem source_eq_of_recut
     {D E : GridRectanglePentagonDecomposition C.column C.turnRow x z}
-    {F : GridRectangleDecomposition x z} (hzx : z ≠ x)
+    {F : GridRectangleDecomposition x z}
     (hD : D ∈ G.rectanglePentagonDecompositions C x z)
     (hE : E ∈ G.rectanglePentagonDecompositions C x z)
     (hrD : D.toRectangleDecomposition.IsRecut F)
     (hrE : E.toRectangleDecomposition.IsRecut F) : D = E := by
   apply GridRectanglePentagonDecomposition.toRectangleDecomposition_injective
   exact GridRectangleDecomposition.IsRecut.eq_of_isRecut hrD hrE
-    (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hrD hzx)
-    (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hrE hzx)
     (G.toRectangleDecomposition_first_isEmpty_of_mem_rectanglePentagonDecompositions C hD)
     (G.toRectangleDecomposition_second_isEmpty_of_mem_rectanglePentagonDecompositions C hD)
     (G.toRectangleDecomposition_first_isEmpty_of_mem_rectanglePentagonDecompositions C hE)
@@ -61,11 +59,11 @@ private theorem disjoint_partners_of_disjoint_sources
       C x z)
     (hU : ∀ F, F ∈ U ↔ ∃ D ∈ S, D.toRectangleDecomposition.IsRecut F.toRectangleDecomposition)
     (hV : ∀ F, F ∈ V ↔ ∃ D ∈ T, D.toRectangleDecomposition.IsRecut F.toRectangleDecomposition)
-    (hST : Disjoint S T) (hzx : z ≠ x) : Disjoint U V := by
+    (hST : Disjoint S T) : Disjoint U V := by
   refine Finset.disjoint_left.2 fun F hFU hFV => ?_
   obtain ⟨D, hD, hrD⟩ := (hU F).1 hFU
   obtain ⟨E, hE, hrE⟩ := (hV F).1 hFV
-  have hDE := G.source_eq_of_recut C hzx (hS hD) (hT hE) hrD hrE
+  have hDE := G.source_eq_of_recut C (hS hD) (hT hE) hrD hrE
   subst E
   exact Finset.disjoint_left.mp hST hD hE
 
@@ -85,7 +83,7 @@ private theorem disjoint_cross_partners (hzx : z ≠ x) :
           (G.terminalCrossOverlapSources_subset_rectanglePentagonDecompositions C))
         (G.leftRightOverlapSources_subset C))
       (G.rightLeftOverlapSources_subset C)
-      _ (G.mem_rightLeftOverlapPartners C) h₁ hzx
+      _ (G.mem_rightLeftOverlapPartners C) h₁
     intro F
     simp only [Finset.mem_union,
       mem_initialOverlapPartners, mem_terminalCrossOverlapPartners, mem_leftRightOverlapPartners,
@@ -95,7 +93,7 @@ private theorem disjoint_cross_partners (hzx : z ≠ x) :
         (G.initialOverlapSources_subset_rectanglePentagonDecompositions C)
         (G.terminalCrossOverlapSources_subset_rectanglePentagonDecompositions C))
       (G.leftRightOverlapSources_subset C)
-      _ (G.mem_leftRightOverlapPartners C) h₂ hzx
+      _ (G.mem_leftRightOverlapPartners C) h₂
     intro F
     simp only [Finset.mem_union,
       mem_initialOverlapPartners, mem_terminalCrossOverlapPartners,
@@ -103,7 +101,7 @@ private theorem disjoint_cross_partners (hzx : z ≠ x) :
   · apply G.disjoint_partners_of_disjoint_sources C _ _ _ _
       (G.initialOverlapSources_subset_rectanglePentagonDecompositions C)
       (G.terminalCrossOverlapSources_subset_rectanglePentagonDecompositions C)
-      (G.mem_initialOverlapPartners C) (G.mem_terminalCrossOverlapPartners C) h₃ hzx
+      (G.mem_initialOverlapPartners C) (G.mem_terminalCrossOverlapPartners C) h₃
 
 /-- The union of the four cross-overlap recut partner families for
 terminal-side pentagons. These are the terms accounted for by recutting
@@ -138,15 +136,13 @@ theorem sum_crossOverlapPartners {M : Type*} [AddCommMonoid M]
 
 private theorem initialPentagon_source_eq_of_recut
     {D E : GridRectangleInitialPentagonDecomposition C.column C.turnRow x z}
-    {F : GridRectangleDecomposition x z} (hzx : z ≠ x)
+    {F : GridRectangleDecomposition x z}
     (hD : D ∈ G.rectangleInitialPentagonDecompositions C x z) (hE : E ∈
       G.rectangleInitialPentagonDecompositions C x z)
     (hrD : D.toGridRectangleDecomposition.IsRecut F) (hrE : E.toGridRectangleDecomposition.IsRecut
       F) : D = E := by
   apply GridRectangleInitialPentagonDecomposition.toGridRectangleDecomposition_injective
   exact GridRectangleDecomposition.IsRecut.eq_of_isRecut hrD hrE
-    (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hrD hzx)
-    (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hrE hzx)
     (G.toGridRectangleDecomposition_first_isEmpty_of_mem_rectangleInitialPentagonDecompositions
       C hD)
     (G.toGridRectangleDecomposition_second_isEmpty_of_mem_rectangleInitialPentagonDecompositions
@@ -165,11 +161,11 @@ private theorem initialPentagon_disjoint_partners_of_disjoint_sources
       F.toGridRectangleDecomposition)
     (hV : ∀ F, F ∈ V ↔ ∃ D ∈ T, D.toGridRectangleDecomposition.IsRecut
       F.toGridRectangleDecomposition)
-    (hST : Disjoint S T) (hzx : z ≠ x) : Disjoint U V := by
+    (hST : Disjoint S T) : Disjoint U V := by
   refine Finset.disjoint_left.2 fun F hFU hFV => ?_
   obtain ⟨D, hD, hrD⟩ := (hU F).1 hFU
   obtain ⟨E, hE, hrE⟩ := (hV F).1 hFV
-  have hDE := G.initialPentagon_source_eq_of_recut C hzx (hS hD) (hT hE) hrD hrE
+  have hDE := G.initialPentagon_source_eq_of_recut C (hS hD) (hT hE) hrD hrE
   subst E
   exact Finset.disjoint_left.mp hST hD hE
 
@@ -193,7 +189,7 @@ private theorem initialPentagon_disjoint_cross_partners (hzx : z ≠ x) :
           (G.initialPentagonTerminalOverlapSources_subset C))
         (G.initialPentagonLeftRightOverlapSources_subset C))
       (G.initialPentagonRightLeftOverlapSources_subset C)
-      _ (G.mem_initialPentagonRightLeftOverlapPartners C) h₁ hzx
+      _ (G.mem_initialPentagonRightLeftOverlapPartners C) h₁
     intro F
     simp only [Finset.mem_union,
       mem_initialPentagonInitialCrossOverlapPartners, mem_initialPentagonTerminalOverlapPartners,
@@ -204,7 +200,7 @@ private theorem initialPentagon_disjoint_cross_partners (hzx : z ≠ x) :
         (G.initialPentagonInitialCrossOverlapSources_subset C)
         (G.initialPentagonTerminalOverlapSources_subset C))
       (G.initialPentagonLeftRightOverlapSources_subset C)
-      _ (G.mem_initialPentagonLeftRightOverlapPartners C) h₂ hzx
+      _ (G.mem_initialPentagonLeftRightOverlapPartners C) h₂
     intro F
     simp only [Finset.mem_union,
       mem_initialPentagonInitialCrossOverlapPartners, mem_initialPentagonTerminalOverlapPartners,
@@ -213,7 +209,7 @@ private theorem initialPentagon_disjoint_cross_partners (hzx : z ≠ x) :
       (G.initialPentagonInitialCrossOverlapSources_subset C)
       (G.initialPentagonTerminalOverlapSources_subset C)
       (G.mem_initialPentagonInitialCrossOverlapPartners C)
-      (G.mem_initialPentagonTerminalOverlapPartners C) h₃ hzx
+      (G.mem_initialPentagonTerminalOverlapPartners C) h₃
 
 /-- The union of the four cross-overlap recut partner families for
 initial-side pentagons. These are the terms accounted for by recutting
@@ -254,7 +250,7 @@ theorem sum_initialPentagonCrossOverlapPartners {M : Type*} [AddCommMonoid M]
 
 open scoped Classical in
 /-- Every cross-overlap partner is a counted overlapping domain. -/
-theorem crossOverlapPartners_subset_filter (hzx : z ≠ x) :
+theorem crossOverlapPartners_subset_filter :
     G.crossOverlapPartners C x z ⊆
       (G.pentagonRectangleDecompositions C x z).filter (fun F => ¬F.HasDisjointSides) := by
   intro F hF
@@ -275,19 +271,19 @@ theorem crossOverlapPartners_subset_filter (hzx : z ≠ x) :
     · exact G.terminalCrossOverlapPartners_subset_pentagonRectangleDecompositions C hF
     · exact G.leftRightOverlapPartners_subset C hF
     · exact G.rightLeftOverlapPartners_subset C hF
-  have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hr hzx
+  have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hr
   have hback : F.toRectangleDecomposition.IsRecut D.toRectangleDecomposition :=
-    hr.symm hone
+    hr.symm
       (G.toRectangleDecomposition_first_isEmpty_of_mem_rectanglePentagonDecompositions C hD)
       (G.toRectangleDecomposition_second_isEmpty_of_mem_rectanglePentagonDecompositions C hD)
   have hnot := F.toRectangleDecomposition.not_hasDisjointSides_of_hasOneCommonSide
-    (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback hzx)
+    (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback)
   exact Finset.mem_filter.2 ⟨hcounted, by
     simpa only [GridPentagonRectangleDecomposition.hasDisjointSides_def] using hnot⟩
 
 open scoped Classical in
 /-- Every cross-overlap partner is a counted overlapping domain. -/
-theorem initialPentagonCrossOverlapPartners_subset_filter (hzx : z ≠ x) :
+theorem initialPentagonCrossOverlapPartners_subset_filter :
     G.initialPentagonCrossOverlapPartners C x z ⊆
       (G.initialPentagonRectangleDecompositions C x z).filter
         (fun F => ¬F.toGridRectangleDecomposition.HasDisjointSides) := by
@@ -309,15 +305,15 @@ theorem initialPentagonCrossOverlapPartners_subset_filter (hzx : z ≠ x) :
     · exact G.initialPentagonTerminalOverlapPartners_subset C hF
     · exact G.initialPentagonLeftRightOverlapPartners_subset C hF
     · exact G.initialPentagonRightLeftOverlapPartners_subset C hF
-  have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hr hzx
+  have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hr
   have hback : F.toGridRectangleDecomposition.IsRecut D.toGridRectangleDecomposition :=
-    hr.symm hone
+    hr.symm
       (G.toGridRectangleDecomposition_first_isEmpty_of_mem_rectangleInitialPentagonDecompositions
       C hD)
       (G.toGridRectangleDecomposition_second_isEmpty_of_mem_rectangleInitialPentagonDecompositions
       C hD)
   have hnot := F.toGridRectangleDecomposition.not_hasDisjointSides_of_hasOneCommonSide
-    (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback hzx)
+    (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback)
   exact Finset.mem_filter.2 ⟨hcounted, hnot⟩
 
 variable (R : Type*) [CommSemiring R] [CharP R 2]
@@ -352,9 +348,9 @@ theorem sum_commutation_overlap_eq_iff_sdiff_crossOverlapPartners (hzx : z ≠ x
     G.sum_rectangleInitialPentagonWeight_overlap_eq_sum_partners C R hzx,
     ← G.sum_crossOverlapPartners C (G.pentagonRectangleWeight C R) hzx,
     ← G.sum_initialPentagonCrossOverlapPartners C (G.initialPentagonRectangleWeight C R) hzx,
-    ← Finset.sum_sdiff (G.crossOverlapPartners_subset_filter C hzx)
+    ← Finset.sum_sdiff (G.crossOverlapPartners_subset_filter C)
       (f := G.pentagonRectangleWeight C R),
-    ← Finset.sum_sdiff (G.initialPentagonCrossOverlapPartners_subset_filter C hzx)
+    ← Finset.sum_sdiff (G.initialPentagonCrossOverlapPartners_subset_filter C)
       (f := G.initialPentagonRectangleWeight C R)]
   -- The common recut contributions cancel in characteristic two.
   have hc : ∀ a b c d e f : MvPolynomial (Fin n) R,
