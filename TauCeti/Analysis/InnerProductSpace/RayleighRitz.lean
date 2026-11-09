@@ -199,8 +199,10 @@ theorem inner_map_ritzResidual_eq_zero (A : E →ₗ[𝕜] E) (X : F →ₗᵢ[�
     simp
   simpa using h
 
-/-- The pairing of a sine left singular vector with the Ritz residual of the matching right
-singular vector is the sine times the gap between the two Rayleigh quotients. -/
+/-- The real part of the pairing of the `i`-th left singular vector of `Uᗮ.starProjection ∘ X`
+with the Ritz residual of the matching right singular vector is the corresponding singular value
+times the difference of the two displayed quadratic forms: that of `A` at the left singular
+vector, and that of `Xᴴ A X` at the right singular vector. -/
 theorem IsSymmetric.re_inner_leftSingularVector_ritzResidual
     {A : E →ₗ[𝕜] E} (hA : A.IsSymmetric)
     {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] (hU : U ∈ Module.End.invtSubmodule A)
