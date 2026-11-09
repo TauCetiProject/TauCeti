@@ -49,9 +49,9 @@ The basic properties proved here are:
 * `TemperedDistribution.besovENorm`: the Besov norm `‖u‖_{B^s_{p,q}}`.
 * `TemperedDistribution.MemBesov`: membership in `B^s_{p,q}`.
 * `TemperedDistribution.besovENorm_add_le`, `TemperedDistribution.besovENorm_smul`: the Besov
-  norm is a seminorm.
+  norm is a seminorm for `1 ≤ q`.
 * `TemperedDistribution.besovENorm_mono_smoothness`,
-  `TemperedDistribution.besovENorm_mono_summability`, `TemperedDistribution.besovENorm_one_le`:
+  `TemperedDistribution.besovENorm_anti_summability`, `TemperedDistribution.besovENorm_one_le`:
   the elementary embeddings between Besov spaces.
 * `TemperedDistribution.lpENorm_le_besovENorm_zero_one`: `B^0_{p,1} ⊆ Lᵖ`.
 * `TemperedDistribution.exists_besovENorm_zero_top_le`: `Lᵖ ⊆ B^0_{p,∞}`.
@@ -126,6 +126,7 @@ theorem MemBesov.exists_littlewoodPaleyBlock_eq {u : 𝓢'(E, F)} (hu : MemBesov
 theorem besovENorm_zero : besovENorm φ s p q (0 : 𝓢'(E, F)) = 0 := by
   simp [besovENorm_def]
 
+/-- **Triangle inequality** for the Besov norm, for `1 ≤ q`. -/
 theorem besovENorm_add_le (hq : 1 ≤ q) (u v : 𝓢'(E, F)) :
     besovENorm φ s p q (u + v) ≤ besovENorm φ s p q u + besovENorm φ s p q v := by
   simp only [besovENorm_def]
@@ -178,7 +179,7 @@ theorem besovENorm_mono_smoothness (hs : s' ≤ s) (u : 𝓢'(E, F)) :
 
 /-- **The Besov norm decreases with the summability index**: `B^s_{p,q} ⊆ B^s_{p,r}` for
 `0 < q ≤ r`. -/
-theorem besovENorm_mono_summability (hq : q ≠ 0) (hqr : q ≤ r) (u : 𝓢'(E, F)) :
+theorem besovENorm_anti_summability (hq : q ≠ 0) (hqr : q ≤ r) (u : 𝓢'(E, F)) :
     besovENorm φ s p r u ≤ besovENorm φ s p q u :=
   eLpNorm_count_le_of_exponent_le hq hqr
 
@@ -188,7 +189,7 @@ theorem MemBesov.mono_smoothness (hs : s' ≤ s) {u : 𝓢'(E, F)} (hu : MemBeso
 
 theorem MemBesov.mono_summability (hq : q ≠ 0) (hqr : q ≤ r) {u : 𝓢'(E, F)}
     (hu : MemBesov φ s p q u) : MemBesov φ s p r u :=
-  (besovENorm_mono_summability hq hqr u).trans_lt hu
+  (besovENorm_anti_summability hq hqr u).trans_lt hu
 
 /-- **Lowering the smoothness absorbs the summability index.** The geometric decay of
 `2^{-j(s - s')}` gives `‖u‖_{B^{s'}_{p,1}} ≤ (1 - 2^{-(s - s')})⁻¹ ‖u‖_{B^s_{p,∞}}`. The constant
@@ -213,9 +214,9 @@ theorem besovENorm_one_le (s' s : ℝ) (u : 𝓢'(E, F)) :
 `q' ≥ 1`. -/
 theorem MemBesov.of_lt (hs : s' < s) (hq : q ≠ 0) {q' : ℝ≥0∞} (hq' : 1 ≤ q') {u : 𝓢'(E, F)}
     (hu : MemBesov φ s p q u) : MemBesov φ s' p q' u := by
-  refine ((besovENorm_mono_summability one_ne_zero hq' u).trans
+  refine ((besovENorm_anti_summability one_ne_zero hq' u).trans
     (besovENorm_one_le s' s u)).trans_lt (ENNReal.mul_lt_top ?_ <|
-      (besovENorm_mono_summability hq le_top u).trans_lt hu)
+      (besovENorm_anti_summability hq le_top u).trans_lt hu)
   refine ENNReal.inv_lt_top.2 (tsub_pos_iff_lt.2 ?_)
   exact ENNReal.rpow_lt_one_of_one_lt_of_neg (by norm_num) (sub_neg.2 hs)
 
@@ -240,7 +241,7 @@ theorem lpENorm_le_besovENorm_zero_one (u : 𝓢'(E, F)) :
   -- Their sum represents `u`, by uniqueness of limits in `𝓢'`.
   have hu_eq : u = (∑' j, g j : Lp F p (volume : Measure E)) := by
     refine tendsto_nhds_unique (tendsto_sum_littlewoodPaleyBlock φ u) ?_
-    simp_rw [hg, ← Lp.toTemperedDistributionCLM_apply, ← map_sum]
+    simp_rw [hg, ← Lp.toTemperedDistribution_sum]
     exact ((Lp.toTemperedDistributionCLM F volume p).continuous.tendsto _).comp
       hsum.hasSum.tendsto_sum_nat
   rw [hb, hu_eq, lpENorm_toTemperedDistribution]

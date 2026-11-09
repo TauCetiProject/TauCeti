@@ -69,6 +69,8 @@ function by a function of temperate growth multiplies the function pointwise
   `Lᵖ → 𝓢'` bounded on Schwartz functions takes values in `Lᵖ`.
 * `MeasureTheory.Lp.toTemperedDistribution_injective`: an `Lᵖ` function is determined by its
   tempered distribution.
+* `MeasureTheory.Lp.toTemperedDistribution_add`, `MeasureTheory.Lp.toTemperedDistribution_smul`,
+  `MeasureTheory.Lp.toTemperedDistribution_sum`: the coercion `Lᵖ → 𝓢'` is linear.
 * `TemperedDistribution.lpENorm`: the extended `Lᵖ` norm of a tempered distribution, `‖g‖_p` on
   the distribution of `g ∈ Lᵖ` and `∞` off `Lᵖ`; it is subadditive and absolutely homogeneous.
 
@@ -114,6 +116,47 @@ theorem toTemperedDistribution_injective {μ : Measure E} [μ.HasTemperateGrowth
     [IsLocallyFiniteMeasure μ] {p : ENNReal} [Fact (1 ≤ p)] :
     Function.Injective (toTemperedDistribution : Lp F p μ → 𝓢'(E, F)) :=
   LinearMap.ker_eq_bot.mp ker_toTemperedDistributionCLM_eq_bot
+
+section Linear
+
+variable {μ : Measure E} [μ.HasTemperateGrowth] {p : ENNReal} [Fact (1 ≤ p)]
+
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem toTemperedDistribution_zero : ((0 : Lp F p μ) : 𝓢'(E, F)) = 0 :=
+  map_zero (toTemperedDistributionCLM F μ p)
+
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem toTemperedDistribution_add (f g : Lp F p μ) :
+    ((f + g : Lp F p μ) : 𝓢'(E, F)) = (f : 𝓢'(E, F)) + g :=
+  map_add (toTemperedDistributionCLM F μ p) f g
+
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem toTemperedDistribution_smul (c : ℂ) (f : Lp F p μ) :
+    ((c • f : Lp F p μ) : 𝓢'(E, F)) = c • (f : 𝓢'(E, F)) :=
+  map_smul (toTemperedDistributionCLM F μ p) c f
+
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem toTemperedDistribution_neg (f : Lp F p μ) :
+    ((-f : Lp F p μ) : 𝓢'(E, F)) = -(f : 𝓢'(E, F)) :=
+  map_neg (toTemperedDistributionCLM F μ p) f
+
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem toTemperedDistribution_sub (f g : Lp F p μ) :
+    ((f - g : Lp F p μ) : 𝓢'(E, F)) = (f : 𝓢'(E, F)) - g :=
+  map_sub (toTemperedDistributionCLM F μ p) f g
+
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem toTemperedDistribution_sum {ι : Type*} (s : Finset ι) (f : ι → Lp F p μ) :
+    ((∑ i ∈ s, f i : Lp F p μ) : 𝓢'(E, F)) = ∑ i ∈ s, (f i : 𝓢'(E, F)) :=
+  map_sum (toTemperedDistributionCLM F μ p) f s
+
+end Linear
 
 omit [FiniteDimensional ℝ E] in
 /-- Multiplying the tempered distribution of an `Lᵖ` function `u` by a function `g` of temperate
@@ -306,8 +349,8 @@ theorem lpENorm_lt_top_iff {u : 𝓢'(E, F)} :
 
 @[simp]
 theorem lpENorm_zero : lpENorm p (0 : 𝓢'(E, F)) = 0 := by
-  rw [← map_zero (Lp.toTemperedDistributionCLM F (volume : Measure E) p),
-    Lp.toTemperedDistributionCLM_apply, lpENorm_toTemperedDistribution, enorm_zero]
+  rw [← Lp.toTemperedDistribution_zero (F := F) (μ := volume) (p := p),
+    lpENorm_toTemperedDistribution, enorm_zero]
 
 theorem lpENorm_add_le (u v : 𝓢'(E, F)) : lpENorm p (u + v) ≤ lpENorm p u + lpENorm p v := by
   rcases eq_top_or_lt_top (lpENorm p u) with hu | hu
@@ -316,9 +359,8 @@ theorem lpENorm_add_le (u v : 𝓢'(E, F)) : lpENorm p (u + v) ≤ lpENorm p u +
   · simp [hv]
   obtain ⟨g, rfl⟩ := lpENorm_lt_top_iff.1 hu
   obtain ⟨h, rfl⟩ := lpENorm_lt_top_iff.1 hv
-  rw [← Lp.toTemperedDistributionCLM_apply, ← Lp.toTemperedDistributionCLM_apply, ← map_add,
-    Lp.toTemperedDistributionCLM_apply]
-  simpa using enorm_add_le g h
+  simp only [← Lp.toTemperedDistribution_add, lpENorm_toTemperedDistribution]
+  exact enorm_add_le g h
 
 /-- The extended `Lᵖ` norm is absolutely homogeneous. -/
 theorem lpENorm_smul (c : ℂ) (u : 𝓢'(E, F)) : lpENorm p (c • u) = ‖c‖ₑ * lpENorm p u := by
@@ -330,11 +372,10 @@ theorem lpENorm_smul (c : ℂ) (u : 𝓢'(E, F)) : lpENorm p (c • u) = ‖c‖
     by_contra! h
     obtain ⟨g, hg⟩ := lpENorm_lt_top_iff.1 (lt_top_iff_ne_top.2 h)
     refine (lt_top_iff_ne_top.1 (lpENorm_lt_top_iff.2 ⟨c⁻¹ • g, ?_⟩)) hu
-    rw [← Lp.toTemperedDistributionCLM_apply, map_smul, Lp.toTemperedDistributionCLM_apply, ← hg,
-      inv_smul_smul₀ hc]
+    rw [Lp.toTemperedDistribution_smul, ← hg, inv_smul_smul₀ hc]
   · obtain ⟨g, rfl⟩ := lpENorm_lt_top_iff.1 hu
-    rw [← Lp.toTemperedDistributionCLM_apply, ← map_smul]
-    simp only [Lp.toTemperedDistributionCLM_apply, lpENorm_toTemperedDistribution, enorm_smul]
+    rw [← Lp.toTemperedDistribution_smul, lpENorm_toTemperedDistribution, enorm_smul,
+      lpENorm_toTemperedDistribution]
 
 @[simp]
 theorem lpENorm_neg (u : 𝓢'(E, F)) : lpENorm p (-u) = lpENorm p u := by
