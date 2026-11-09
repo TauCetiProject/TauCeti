@@ -16,8 +16,8 @@ import TauCeti.RingTheory.Unramified.Fiber
 /-!
 # The discriminant criterion for étaleness
 
-A finite-dimensional algebra over a field is étale iff its trace form is nondegenerate, and a
-finite free algebra over any commutative ring is étale iff the discriminant of a basis is a unit
+An algebra over a field is étale iff its trace form is nondegenerate, and a finite free
+algebra over any commutative ring is étale iff the discriminant of a basis is a unit
 (Stacks, Lemma 49.3.1 (0BJF), affine form).
 
 ## Main results
@@ -73,15 +73,7 @@ theorem Algebra.etale_iff_traceForm_nondegenerate (K B : Type*) [Field K] [CommR
     exact (Algebra.traceForm_nondegenerate_congr e).mpr
       ((Algebra.traceForm_pi_nondegenerate_iff Ai).mpr fun i ↦ traceForm_nondegenerate K (Ai i))
   · intro h
-    have : FiniteDimensional K B := by
-      by_contra hfd
-      have htr : Algebra.trace K B = 0 := Algebra.trace_eq_zero_of_not_exists_basis K
-        fun ⟨_, ⟨b⟩⟩ ↦ hfd (Module.Finite.of_basis b)
-      have hsub : Subsingleton B := ⟨fun x y ↦ by
-        have hz : ∀ z : B, z = 0 := fun z ↦ h.1 z fun w ↦ by
-          simp [Algebra.traceForm_apply, htr]
-        rw [hz x, hz y]⟩
-      exact hfd inferInstance
+    have := Algebra.finite_of_traceForm_nondegenerate h
     have : IsReduced B := Algebra.isReduced_of_traceForm_nondegenerate h
     have : IsArtinianRing B := isArtinian_of_tower K inferInstance
     let F (m : MaximalSpectrum B) : Type _ := B ⧸ m.asIdeal
