@@ -57,11 +57,10 @@ theorem IsLengthSpace.exists_lipschitz_path [IsLengthSpace X] {x y : X} {r : ℝ
     rw [Real.coe_toNNReal r (dist_nonneg.trans_lt hr).le]
     exact hd.trans (mul_le_mul_of_nonneg_right hLr (abs_nonneg _))
   refine ⟨⟨fun t ↦ g (L * (t : ℝ)), hLip.continuous⟩, ?_, ?_, hLip⟩
-  · change g (L * 0) = x
-    simpa only [Function.comp_apply, variationOnFromTo.self, hγ.source, mul_zero] using
-      hfactor (left_mem_Icc.2 zero_le_one)
-  · change g (L * 1) = y
-    simpa only [Function.comp_apply, variationOnFromTo.eq_of_le _ _ zero_le_one, inter_self,
-      hγ.target, mul_one] using hfactor (right_mem_Icc.2 zero_le_one)
+  · simpa only [ContinuousMap.coe_mk, Icc.coe_zero, Function.comp_apply, variationOnFromTo.self,
+      hγ.source, mul_zero] using hfactor (left_mem_Icc.2 zero_le_one)
+  · simpa only [ContinuousMap.coe_mk, Icc.coe_one, Function.comp_apply,
+      variationOnFromTo.eq_of_le _ _ zero_le_one, inter_self, hγ.target, mul_one] using
+      hfactor (right_mem_Icc.2 zero_le_one)
 
 end TauCeti

@@ -31,6 +31,8 @@ its distance is its intrinsic distance.
 ## Main definitions and results
 
 * `TauCeti.intrinsicEDist`: the infimum of the lengths of the paths joining two points.
+* `Path.intrinsicEDist_le_eVariationOn`, `TauCeti.le_intrinsicEDist_iff` and
+  `TauCeti.intrinsicEDist_lt_iff`: bounds through the lengths of the joining paths.
 * `TauCeti.edist_le_intrinsicEDist`: the intrinsic distance dominates the original distance.
 * `TauCeti.intrinsicEDist_comm` and `TauCeti.intrinsicEDist_triangle`: symmetry and the triangle
   inequality.
@@ -68,9 +70,21 @@ theorem intrinsicEDist_def (x y : X) :
   (rfl)
 
 /-- A path bounds the intrinsic distance between its endpoints by its length. -/
-theorem intrinsicEDist_le_eVariationOn {x y : X} (γ : Path x y) :
+theorem _root_.Path.intrinsicEDist_le_eVariationOn {x y : X} (γ : Path x y) :
     intrinsicEDist x y ≤ eVariationOn γ univ :=
   iInf_le _ γ
+
+/-- The intrinsic distance is at least `r` exactly when every path between the two points has
+length at least `r`. -/
+theorem le_intrinsicEDist_iff {x y : X} {r : ℝ≥0∞} :
+    r ≤ intrinsicEDist x y ↔ ∀ γ : Path x y, r ≤ eVariationOn γ univ :=
+  le_iInf_iff
+
+/-- The intrinsic distance is less than `r` exactly when some path between the two points has
+length less than `r`. -/
+theorem intrinsicEDist_lt_iff {x y : X} {r : ℝ≥0∞} :
+    intrinsicEDist x y < r ↔ ∃ γ : Path x y, eVariationOn γ univ < r :=
+  iInf_lt_iff
 
 /-- The intrinsic distance dominates the original distance. -/
 theorem edist_le_intrinsicEDist (x y : X) : edist x y ≤ intrinsicEDist x y :=
@@ -82,19 +96,19 @@ theorem edist_le_intrinsicEDist (x y : X) : edist x y ≤ intrinsicEDist x y :=
 @[simp]
 theorem intrinsicEDist_self (x : X) : intrinsicEDist x x = 0 :=
   nonpos_iff_eq_zero.1 <|
-    (intrinsicEDist_le_eVariationOn (Path.refl x)).trans_eq (Path.eVariationOn_refl x)
+    (Path.refl x).intrinsicEDist_le_eVariationOn.trans_eq (Path.eVariationOn_refl x)
 
 /-- Reversal of paths makes the intrinsic distance symmetric. -/
 theorem intrinsicEDist_comm (x y : X) : intrinsicEDist x y = intrinsicEDist y x := by
   have hle (x y : X) : intrinsicEDist x y ≤ intrinsicEDist y x :=
-    le_iInf fun γ ↦ (intrinsicEDist_le_eVariationOn γ.symm).trans_eq (Path.eVariationOn_symm γ)
+    le_iInf fun γ ↦ γ.symm.intrinsicEDist_le_eVariationOn.trans_eq (Path.eVariationOn_symm γ)
   exact le_antisymm (hle x y) (hle y x)
 
 /-- Concatenation of paths gives the triangle inequality for the intrinsic distance. -/
 theorem intrinsicEDist_triangle (x y z : X) :
     intrinsicEDist x z ≤ intrinsicEDist x y + intrinsicEDist y z :=
   ENNReal.le_iInf_add_iInf fun γ δ ↦
-    (intrinsicEDist_le_eVariationOn (γ.trans δ)).trans_eq (Path.eVariationOn_trans γ δ)
+    (γ.trans δ).intrinsicEDist_le_eVariationOn.trans_eq (Path.eVariationOn_trans γ δ)
 
 /-- The intrinsic distance is the infimum of the lengths on `[0, 1]` of the curves `γ : ℝ → X`
 joining `x` to `y` there. -/
@@ -106,7 +120,7 @@ theorem intrinsicEDist_eq_iInf_isCurveJoining (x y : X) :
         continuous_toFun := hγ.continuousOn.domRestrict
         source' := hγ.source
         target' := hγ.target }
-    refine (intrinsicEDist_le_eVariationOn p).trans_eq ?_
+    refine p.intrinsicEDist_le_eVariationOn.trans_eq ?_
     rw [← p.eVariationOn_extend]
     exact eVariationOn.eq_of_eqOn fun t ht ↦ p.extend_apply ht
   · exact iInf₂_le_of_le γ.extend (isCurveJoining_extend γ) γ.eVariationOn_extend.le
@@ -136,6 +150,7 @@ def intrinsicEMetricSpace : EMetricSpace X where
     (edist_le_intrinsicEDist _ _).trans_eq h
 
 /-- The distance of the intrinsic extended metric is the intrinsic distance. -/
+@[simp]
 theorem intrinsicEMetricSpace_edist (x y : X) :
     (intrinsicEMetricSpace (X := X)).edist x y = intrinsicEDist x y :=
   (rfl)
@@ -144,9 +159,8 @@ theorem intrinsicEMetricSpace_edist (x y : X) :
 metric is `1`-Lipschitz. -/
 theorem lipschitzWith_one_id_intrinsicEMetricSpace :
     @LipschitzWith X X intrinsicEMetricSpace.toPseudoEMetricSpace _ 1 id := fun x y ↦ by
-  change edist x y ≤ (1 : ℝ≥0∞) * intrinsicEDist x y
-  rw [one_mul]
-  exact edist_le_intrinsicEDist x y
+  simpa only [intrinsicEMetricSpace_edist, id, ENNReal.coe_one, one_mul] using
+    edist_le_intrinsicEDist x y
 
 /-- The topology of the intrinsic extended metric is finer than the original topology. -/
 theorem continuous_id_intrinsicEMetricSpace :
