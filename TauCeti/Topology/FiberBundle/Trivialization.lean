@@ -210,8 +210,7 @@ theorem symm_mk_coordChange (e₁ e₂ : Trivialization F (π F E)) {b : B} (h�
 
 /-- The equivalence between the fibre over a point of the base set of a trivialization and the
 model fibre, given by the trivialization. Compare `Bundle.Trivialization.linearEquivAt`. -/
--- Exposed so that the fibre coordinates built from it reduce to the trivialization by `rfl`.
-@[expose] noncomputable def equivAt (e : Trivialization F (π F E)) (b : B) (hb : b ∈ e.baseSet) :
+noncomputable def equivAt (e : Trivialization F (π F E)) (b : B) (hb : b ∈ e.baseSet) :
     E b ≃ F where
   toFun p := (e ⟨b, p⟩).2
   invFun := e.symm b

@@ -82,22 +82,22 @@ def equivAt (b : B) : P b ≃ G :=
 /-- The fibre coordinate is the second component of the native trivialization. -/
 theorem equivAt_apply (b : B) (p : P b) :
     τ.equivAt b p = (τ.toTrivialization ⟨b, p⟩).2 :=
-  (rfl)
+  letI := τ.nonempty_fibres
+  Trivialization.equivAt_apply _ b _ p
 
 /-- The homeomorphism records the base point and the group coordinate. -/
 @[simp]
 theorem homeomorph_apply (p : TotalSpace G P) :
-    τ.homeomorph p = (p.proj, τ.equivAt p.proj p.2) :=
-  congrArg (Bundle.Trivial.homeomorphProd B G)
+    τ.homeomorph p = (p.proj, τ.equivAt p.proj p.2) := by
+  rw [equivAt_apply]
+  exact congrArg (Bundle.Trivial.homeomorphProd B G)
     (τ.toTrivialization.homeomorphTrivial_apply τ.baseSet_eq_univ p)
 
 /-- The inverse homeomorphism uses the inverse fibre coordinate. -/
 @[simp]
 theorem homeomorph_symm_apply (x : B × G) :
     τ.homeomorph.symm x = ⟨x.1, (τ.equivAt x.1).symm x.2⟩ := by
-  rw [homeomorph_symm_apply_eq]
-  let := τ.nonempty_fibres
-  exact (τ.toTrivialization.mk_symm (τ.mem_baseSet x.1) x.2).symm
+  simp only [Homeomorph.symm_apply_eq, homeomorph_apply, Equiv.apply_symm_apply]
 
 /-- Global trivializations are determined by their group coordinates. -/
 @[ext]
@@ -111,7 +111,7 @@ theorem ext (h : ∀ b p, τ.equivAt b p = υ.equivAt b p) : τ = υ := by
         apply Prod.ext
         · exact (τ.toTrivialization.coe_fst' (τ.mem_baseSet p.proj)).trans
             (υ.toTrivialization.coe_fst' (υ.mem_baseSet p.proj)).symm
-        · exact h p.proj p.2
+        · exact (τ.equivAt_apply _ _).symm.trans ((h p.proj p.2).trans (υ.equivAt_apply _ _))
       · intro x
         simpa only [homeomorph_symm_apply_eq] using
           DFunLike.congr_fun (congrArg Homeomorph.symm hh) x
@@ -135,8 +135,9 @@ theorem continuous_invFun :
 /-- Global coordinates intertwine the right action with right multiplication. -/
 @[simp]
 theorem equivAt_op_smul (b : B) (p : P b) (g : G) :
-    τ.equivAt b (op g • p) = τ.equivAt b p * g :=
-  τ.toTrivialization.snd_apply_smul (τ.mem_baseSet b) p g
+    τ.equivAt b (op g • p) = τ.equivAt b p * g := by
+  rw [equivAt_apply, equivAt_apply]
+  exact τ.toTrivialization.snd_apply_smul (τ.mem_baseSet b) p g
 
 /-- Assemble global coordinates from equivariant fibre equivalences with jointly continuous
 forward and inverse maps. -/
@@ -172,7 +173,7 @@ theorem equivAt_ofEquiv (e : ∀ b, P b ≃ G)
     (hi : Continuous fun x : B × G ↦ (⟨x.1, (e x.1).symm x.2⟩ : TotalSpace G P))
     (he : ∀ b (p : P b) (g : G), e b (op g • p) = e b p * g) (b : B) (p : P b) :
     (ofEquiv e hc hi he).equivAt b p = e b p :=
-  (rfl)
+  (equivAt_apply _ b p).trans (rfl)
 
 /-- The section whose group coordinate is the identity. -/
 def sectionValue (b : B) : P b := (τ.equivAt b).symm 1
@@ -213,7 +214,8 @@ def ofSection (σ : ∀ b, P b)
 theorem equivAt_ofSection (σ : ∀ b, P b)
     (hσ : Continuous fun b ↦ (⟨b, σ b⟩ : TotalSpace G P)) (b : B) (p : P b) :
     (ofSection σ hσ).equivAt b p = division G (σ b) p :=
-  congrArg Prod.snd (trivializationOfSection_apply σ isOpen_univ hσ.continuousOn ⟨b, p⟩)
+  (equivAt_apply _ b p).trans
+    (congrArg Prod.snd (trivializationOfSection_apply σ isOpen_univ hσ.continuousOn ⟨b, p⟩))
 
 /-- The trivialization constructed from a section selects that same section. -/
 @[simp]
@@ -277,7 +279,7 @@ def gauge (a : C(B, G)) : GlobalTrivialization G P :=
 @[simp]
 theorem equivAt_gauge (a : C(B, G)) (b : B) (p : P b) :
     (τ.gauge a).equivAt b p = a b * τ.equivAt b p :=
-  (rfl)
+  equivAt_ofEquiv _ _ _ _ b p
 
 /-- The inverse coordinate change multiplies by the inverse gauge on the left. -/
 @[simp]
