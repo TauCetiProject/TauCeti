@@ -87,9 +87,10 @@ operators, are separate.
   untwisted along the circle factor is described by the propagator and the return map.
 * `TauCeti.exists_ne_zero_orbitTorusOperator_eq_zero_iff_det_eq_zero`: such a kernel is nonzero
   exactly when `det (ε₂ - Ψ(d)) = 0`.
-* `TauCeti.apply_eq_dysonSeriesLeft_apply_and_pow_apply_eq_smul_of_orbitTorusOperator_eq_zero`:
-  the kernel of the twisted operators on a finite cover, described by the propagator and the
-  `n`-th power of the return map.
+* `TauCeti.eq_one_or_eq_zero_and_apply_eq_dysonSeriesLeft_apply_of_orbitTorusOperator_eq_zero`
+  and `TauCeti.dysonSeriesLeft_pow_apply_eq_smul_of_orbitTorusOperator_eq_zero`: the kernel of
+  the twisted operators on a finite cover, described by the propagator and the `n`-th power of the
+  return map.
 * `TauCeti.exists_ne_zero_orbitTorusOperator_eq_zero_iff_eq_one_and_det_eq_zero`: on a finite
   cover the kernel is nonzero exactly when `ε₁ = 1` and `det (ε₂ - Ψ(d) ^ n) = 0`.
 * `TauCeti.forall_eq_zero_of_orbitTorusOperator_eq_zero_iff_det_ne_zero`: all four twisted
@@ -433,19 +434,17 @@ model operator lifts to every cover, and its twisted versions act on maps `u` wi
 
 /-- **Kernel elements on a finite cover.** Let `k, n ≥ 1` and `a ∈ ℤ`. A `C²` solution of
 `D u = 0` which is twisted by the sign `ε₁` along `(k ℓ, 0)` and by the sign `ε₂` along
-`(a ℓ, n d)` either vanishes or has `ε₁ = 1`. It is given by the propagator,
-`u (s, t) = Ψ(t) (u 0)`, and `u 0` lies in the `ε₂`-eigenspace of `Ψ(d) ^ n`, the return map of
-the `n`-th iterate of the loop. -/
-theorem apply_eq_dysonSeriesLeft_apply_and_pow_apply_eq_smul_of_orbitTorusOperator_eq_zero
+`(a ℓ, n d)` either vanishes or has `ε₁ = 1`, and it is given by the propagator,
+`u (s, t) = Ψ(t) (u 0)`. -/
+theorem eq_one_or_eq_zero_and_apply_eq_dysonSeriesLeft_apply_of_orbitTorusOperator_eq_zero
     (hℓ : 0 < ℓ) (hd : 0 < d) (hJ₀ : ∀ x y, ⟪J₀ x, y⟫ = -⟪x, J₀ y⟫)
     (hJ₀sq : ∀ x, J₀ (J₀ x) = -x) (hS : ∀ t x y, ⟪S t x, y⟫ = ⟪x, S t y⟫)
-    (hScont : Continuous S) (hper : Function.Periodic S d) (hu : ContDiff ℝ 2 u)
-    (hε₁ : ε₁ ^ 2 = 1) (hε₂ : ε₂ ^ 2 = 1) {k n : ℕ} (hk : 0 < k) (hn : 0 < n) {a : ℤ}
+    (hScont : Continuous S) (hu : ContDiff ℝ 2 u) (hε₁ : ε₁ ^ 2 = 1) (hε₂ : ε₂ ^ 2 = 1)
+    {k n : ℕ} (hk : 0 < k) (hn : 0 < n) {a : ℤ}
     (hs : ∀ s t, u (s + k * ℓ, t) = ε₁ • u (s, t))
     (ht : ∀ s t, u (s + a * ℓ, t + n * d) = ε₂ • u (s, t))
     (hD : ∀ z, orbitTorusOperator J₀ S u z = 0) :
-    (ε₁ = 1 ∨ u = 0) ∧ (∀ z, u z = dysonSeriesLeft (fun t => J₀ ∘L S t) z.2 (u 0)) ∧
-      (dysonSeriesLeft (fun t => J₀ ∘L S t) d ^ n) (u 0) = ε₂ • u 0 := by
+    (ε₁ = 1 ∨ u = 0) ∧ ∀ z, u z = dysonSeriesLeft (fun t => J₀ ∘L S t) z.2 (u 0) := by
   have hkℓ : 0 < (k : ℝ) * ℓ := mul_pos (Nat.cast_pos.2 hk) hℓ
   have hT : 0 < 2 * (k : ℝ) * n * d := by positivity
   -- A sign twist along a translation `p` gives periodicity along `2 p`, and twice the integer
@@ -471,12 +470,27 @@ theorem apply_eq_dysonSeriesLeft_apply_and_pow_apply_eq_smul_of_orbitTorusOperat
     · exact .inr <| eq_zero_of_orbitTorusOperator_eq_zero_of_antiperiodic hkℓ hT hJ₀ hS hScont hu
         (one_pow 2) (fun s t => by rw [hs, h, neg_one_smul]) ht' hD
   -- In either case `u` is given by the propagator.
-  have hΨ : ∀ z, u z = dysonSeriesLeft (fun t => J₀ ∘L S t) z.2 (u 0) := by
-    rcases hε₁' with h | h
-    · exact apply_eq_dysonSeriesLeft_apply_of_orbitTorusOperator_eq_zero hkℓ hT hJ₀ hJ₀sq hS
-        hScont hu (one_pow 2) (fun s t => by rw [hs, h, one_smul]) ht' hD
-    · simp [h]
-  refine ⟨hε₁', hΨ, ?_⟩
+  refine ⟨hε₁', fun z => ?_⟩
+  rcases hε₁' with h | h
+  · exact apply_eq_dysonSeriesLeft_apply_of_orbitTorusOperator_eq_zero hkℓ hT hJ₀ hJ₀sq hS
+      hScont hu (one_pow 2) (fun s t => by rw [hs, h, one_smul]) ht' hD z
+  · simp [h]
+
+/-- **Return condition on a finite cover.** Let `k, n ≥ 1` and `a ∈ ℤ`. For a `C²` solution of
+`D u = 0` which is twisted by the sign `ε₁` along `(k ℓ, 0)` and by the sign `ε₂` along
+`(a ℓ, n d)`, the value `u 0` lies in the `ε₂`-eigenspace of `Ψ(d) ^ n`, the return map of the
+`n`-th iterate of the loop. -/
+theorem dysonSeriesLeft_pow_apply_eq_smul_of_orbitTorusOperator_eq_zero (hℓ : 0 < ℓ) (hd : 0 < d)
+    (hJ₀ : ∀ x y, ⟪J₀ x, y⟫ = -⟪x, J₀ y⟫) (hJ₀sq : ∀ x, J₀ (J₀ x) = -x)
+    (hS : ∀ t x y, ⟪S t x, y⟫ = ⟪x, S t y⟫) (hScont : Continuous S)
+    (hper : Function.Periodic S d) (hu : ContDiff ℝ 2 u) (hε₁ : ε₁ ^ 2 = 1) (hε₂ : ε₂ ^ 2 = 1)
+    {k n : ℕ} (hk : 0 < k) (hn : 0 < n) {a : ℤ}
+    (hs : ∀ s t, u (s + k * ℓ, t) = ε₁ • u (s, t))
+    (ht : ∀ s t, u (s + a * ℓ, t + n * d) = ε₂ • u (s, t))
+    (hD : ∀ z, orbitTorusOperator J₀ S u z = 0) :
+    (dysonSeriesLeft (fun t => J₀ ∘L S t) d ^ n) (u 0) = ε₂ • u 0 := by
+  have hΨ := (eq_one_or_eq_zero_and_apply_eq_dysonSeriesLeft_apply_of_orbitTorusOperator_eq_zero
+    hℓ hd hJ₀ hJ₀sq hS hScont hu hε₁ hε₂ hk hn hs ht hD).2
   -- The twist along `(a ℓ, n d)` at the origin is the return condition for `Ψ(n d) = Ψ(d) ^ n`.
   have hM : Continuous fun t => J₀ ∘L S t := (continuous_const (y := J₀)).clm_comp hScont
   have hMper : Function.Periodic (fun t => J₀ ∘L S t) d := fun t => by simp only [hper t]
@@ -510,9 +524,11 @@ theorem exists_ne_zero_orbitTorusOperator_eq_zero_iff_eq_one_and_det_eq_zero
   rw [LinearMap.det_eq_zero_iff_ker_ne_bot, Submodule.ne_bot_iff]
   constructor
   · rintro ⟨u, hu, hne, hs, ht, hD⟩
-    obtain ⟨hε₁', hΨ, hret⟩ :=
-      apply_eq_dysonSeriesLeft_apply_and_pow_apply_eq_smul_of_orbitTorusOperator_eq_zero hℓ hd hJ₀
-        hJ₀sq hS hScont hper hu hε₁ hε₂ hk hn hs ht hD
+    obtain ⟨hε₁', hΨ⟩ :=
+      eq_one_or_eq_zero_and_apply_eq_dysonSeriesLeft_apply_of_orbitTorusOperator_eq_zero hℓ hd
+        hJ₀ hJ₀sq hS hScont hu hε₁ hε₂ hk hn hs ht hD
+    have hret := dysonSeriesLeft_pow_apply_eq_smul_of_orbitTorusOperator_eq_zero hℓ hd hJ₀ hJ₀sq hS
+      hScont hper hu hε₁ hε₂ hk hn hs ht hD
     refine ⟨hε₁'.resolve_right hne, u 0, ?_, fun h0 => hne <| funext fun z => ?_⟩
     · rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, sub_apply, smul_apply,
         one_apply_eq_self, hret, sub_self]
@@ -570,7 +586,7 @@ theorem forall_eq_zero_of_orbitTorusOperator_eq_zero_iff_det_ne_zero [FiniteDime
       (∀ z, orbitTorusOperator J₀ S u z = 0) → u = 0) ↔
       LinearMap.det
         ((1 - dysonSeriesLeft (fun t => J₀ ∘L S t) d ^ (2 * n) : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0 := by
-  set Q := dysonSeriesLeft (fun t => J₀ ∘L S t) d ^ n
+  set Q := dysonSeriesLeft (fun t => J₀ ∘L S t) d ^ n with hQ
   have hcov (ε₁ ε₂ : ℝ) (hε₁ : ε₁ ^ 2 = 1) (hε₂ : ε₂ ^ 2 = 1) :=
     exists_ne_zero_orbitTorusOperator_eq_zero_iff_eq_one_and_det_eq_zero (ε₁ := ε₁) (ε₂ := ε₂)
       hℓ hd hJ₀ hJ₀sq hS hS1 hper hε₁ hε₂ hk hn a
@@ -596,12 +612,10 @@ theorem forall_eq_zero_of_orbitTorusOperator_eq_zero_iff_det_ne_zero [FiniteDime
   · intro h ε₁ ε₂ hε₁ hε₂ u hu hs ht hD
     by_contra hne
     obtain ⟨-, h0⟩ := (hcov ε₁ ε₂ hε₁ hε₂).1 ⟨u, hu, hne, hs, ht, hD⟩
+    rw [← hQ] at h0
     rcases sq_eq_one_iff.1 hε₂ with rfl | rfl
-    · exact h (by
-        rw [show LinearMap.det (((1 : ℝ) • 1 - Q : V →L[ℝ] V) : V →ₗ[ℝ] V) = 0 from h0, zero_mul])
-    · exact h (by
-        rw [show LinearMap.det (((-1 : ℝ) • 1 - Q : V →L[ℝ] V) : V →ₗ[ℝ] V) = 0 from h0,
-          mul_zero, mul_zero])
+    · exact h (by rw [h0, zero_mul])
+    · exact h (by rw [h0, mul_zero, mul_zero])
 
 end Operator
 
