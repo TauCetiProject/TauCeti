@@ -11,8 +11,6 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Star
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.Topology.Algebra.Star
-public import Mathlib.Topology.Algebra.Module.FiniteDimension
-public import Mathlib.Analysis.Normed.Field.Basic
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
 
 /-!
