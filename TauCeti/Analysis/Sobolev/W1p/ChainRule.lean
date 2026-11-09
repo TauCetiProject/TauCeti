@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 public import TauCeti.MeasureTheory.Function.Lp.L1Convergence
 public import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
-public import TauCeti.Topology.EMetricSpace.Lipschitz
 
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
@@ -18,7 +17,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import TauCeti.Topology.MetricSpace.Lipschitz
+import TauCeti.Topology.MetricSpace.Lipschitz.Basic
 
 /-!
 # The chain rule and the positive part in `W^{1,p}(Ω)` for `p < ∞`
@@ -254,7 +253,8 @@ private theorem hasWeakFDerivOn_comp_aux (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F
     (fun i => hphi (ns i) ▸ hasWeakFDerivOn_comp_restrictL_ofTestFunctionₗ hF hVΩ _)
     hconv1 (by simpa only [enorm_innerSL_sub] using (tendsto_lintegral_enorm_smul_sub
       (fun i => hcont.comp_aestronglyMeasurable (Lp.aestronglyMeasurable _))
-      (fun i => Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) (fun _ _ => hM _)
+      (fun i => Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _)
+      (fun _ => .of_forall fun _ => hM _)
       (hns_ae.mono fun x hx => (hcont.tendsto _).comp hx)
       ((Lp.memLp (W1p.gradient w)).integrable Fact.out).2.ne
       ((tendsto_lintegral_enorm_sub_of_tendsto_Lp hgrad).comp hns.tendsto_atTop)))).congr_ae
@@ -687,7 +687,8 @@ theorem W1p.hasWeakFDerivOn_posPartAbove (hp : p ≠ ∞) (k : ℝ) (u : W1p mu 
     (fun n => (contDiff_one_iff_deriv.mp (contDiff_posPartApprox (d n))).2.comp_aestronglyMeasurable
       (((Lp.aestronglyMeasurable _).mono_measure hres).sub aestronglyMeasurable_const))
     (fun _ => (Lp.aestronglyMeasurable _).mono_measure hres)
-    ((Lp.aestronglyMeasurable _).mono_measure hres) (fun n x => nnnorm_deriv_posPartApprox_le _ _)
+    ((Lp.aestronglyMeasurable _).mono_measure hres)
+    (fun n => .of_forall fun x => nnnorm_deriv_posPartApprox_le _ _)
     (.of_forall fun x => by
       simpa only [sub_pos] using tendsto_deriv_posPartApprox hdpos hd0 (W1p.value u x - k))
     (((Lp.memLp (W1p.gradient u)).mono_measure hres).integrable Fact.out).2.ne (by simp)

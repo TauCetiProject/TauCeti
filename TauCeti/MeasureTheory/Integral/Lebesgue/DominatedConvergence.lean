@@ -80,7 +80,7 @@ then `c i • g i → c₀ • g₀` in `L¹`. The functions take values in any 
 theorem tendsto_lintegral_enorm_smul_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {ν : Measure α} {M : ℝ≥0} {c : ℕ → α → ℝ} {c₀ : α → ℝ} {g : ℕ → α → E} {g₀ : α → E}
     (hc : ∀ i, AEStronglyMeasurable (c i) ν) (hg : ∀ i, AEStronglyMeasurable (g i) ν)
-    (hg₀ : AEStronglyMeasurable g₀ ν) (hcM : ∀ i x, ‖c i x‖₊ ≤ M)
+    (hg₀ : AEStronglyMeasurable g₀ ν) (hcM : ∀ i, ∀ᵐ x ∂ν, ‖c i x‖₊ ≤ M)
     (hlim : ∀ᵐ x ∂ν, Tendsto (fun i => c i x) atTop (𝓝 (c₀ x)))
     (hg₀int : ∫⁻ x, ‖g₀ x‖ₑ ∂ν ≠ ∞)
     (hgg : Tendsto (fun i => ∫⁻ x, ‖g i x - g₀ x‖ₑ ∂ν) atTop (𝓝 0)) :
@@ -88,16 +88,16 @@ theorem tendsto_lintegral_enorm_smul_sub {E : Type*} [NormedAddCommGroup E] [Nor
       atTop (𝓝 0) := by
   have hc₀ : AEStronglyMeasurable c₀ ν := aestronglyMeasurable_of_tendsto_ae atTop hc hlim
   -- the bound passes to the almost everywhere limit
-  have hc₀M : ∀ᵐ x ∂ν, ‖c₀ x‖₊ ≤ M := hlim.mono fun x hx =>
-    le_of_tendsto' ((continuous_nnnorm.tendsto _).comp hx) fun i => hcM i x
+  have hc₀M : ∀ᵐ x ∂ν, ‖c₀ x‖₊ ≤ M := (ae_all_iff.2 hcM).and hlim |>.mono fun x ⟨hx, hx'⟩ =>
+    le_of_tendsto' ((continuous_nnnorm.tendsto _).comp hx') hx
   have hC : Tendsto (fun i => ∫⁻ x, ‖c i x - c₀ x‖ₑ * ‖g₀ x‖ₑ ∂ν) atTop (𝓝 0) := by
     simpa using tendsto_lintegral_of_dominated_convergence' (fun x => (M + M) * ‖g₀ x‖ₑ)
       (F := fun i x => ‖c i x - c₀ x‖ₑ * ‖g₀ x‖ₑ) (f := 0)
       (fun i => ((hc i).sub hc₀).enorm.mul hg₀.enorm)
-      (fun i => hc₀M.mono fun x hx => by
+      (fun i => (hcM i).and hc₀M |>.mono fun x ⟨hx, hx'⟩ => by
         dsimp only
         gcongr
-        exact enorm_sub_le.trans (add_le_add (enorm_le_coe.2 (hcM i x)) (enorm_le_coe.2 hx)))
+        exact enorm_sub_le.trans (add_le_add (enorm_le_coe.2 hx) (enorm_le_coe.2 hx')))
       (by rw [lintegral_const_mul' _ _ (by simp)]; exact ENNReal.mul_ne_top (by simp) hg₀int)
       (hlim.mono fun x hx => by
         simpa using ENNReal.Tendsto.mul_const (hx.sub_const (c₀ x)).enorm (Or.inr enorm_ne_top))
@@ -106,7 +106,7 @@ theorem tendsto_lintegral_enorm_smul_sub {E : Type*} [NormedAddCommGroup E] [Nor
     (fun _ => zero_le) fun i => ?_
   rw [← lintegral_const_mul' _ _ ENNReal.coe_ne_top,
     ← lintegral_add_left' (f := fun x => M * ‖g i x - g₀ x‖ₑ) (((hg i).sub hg₀).enorm.const_mul _)]
-  refine lintegral_mono fun x => ?_
+  refine lintegral_mono_ae ((hcM i).mono fun x hx => ?_)
   calc
     ‖c i x • g i x - c₀ x • g₀ x‖ₑ
       = ‖c i x • (g i x - g₀ x) + (c i x - c₀ x) • g₀ x‖ₑ := by
@@ -117,6 +117,6 @@ theorem tendsto_lintegral_enorm_smul_sub {E : Type*} [NormedAddCommGroup E] [Nor
   refine (enorm_add_le _ _).trans (add_le_add ?_ (enorm_smul _ _).le)
   rw [enorm_smul]
   gcongr
-  exact enorm_le_coe.2 (hcM i x)
+  exact enorm_le_coe.2 hx
 
 end TauCeti
