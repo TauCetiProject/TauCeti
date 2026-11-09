@@ -24,6 +24,9 @@ chart. These two steps reduce local statements about smooth functions to the mod
   the extended chart at `x`.
 * `TauCeti.exists_contMDiffMap_comp_eventuallyEq`: near an interior point, every smooth function
   agrees with a smooth function of that localized chart.
+* `TauCeti.exists_contDiff_comp_extChartAt_symm_eventuallyEq`: consequently, near the image of an
+  interior point, the chart expression of a smooth function agrees with a smooth function on the
+  model space.
 -/
 
 public section
@@ -93,5 +96,38 @@ theorem exists_contMDiffMap_comp_eventuallyEq
   -- Likewise expose the constant function in the eventual equality supplied by the bump.
   change β (F y) = 1 at hβy
   rw [hβy, one_mul, hFy, (extChartAt I x).left_inv hy]
+
+/-- **Chart expressions of local factorizations.** Near an interior point `x`, if `f` agrees with
+`g ∘ F` for a map `F` with the germ of the extended chart, then the chart expression
+`f ∘ (extChartAt I x).symm` agrees with `g` near `extChartAt I x x`. -/
+theorem comp_extChartAt_symm_eventuallyEq_of_eventuallyEq_comp
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {Y : Type*}
+    {x : M} (hx : I.IsInteriorPoint x) {F : M → E} (hF : F =ᶠ[nhds x] extChartAt I x)
+    {f : M → Y} {g : E → Y} (hg : f =ᶠ[nhds x] g ∘ F) :
+    f ∘ (extChartAt I x).symm =ᶠ[nhds (extChartAt I x x)] g := by
+  have htarget : (extChartAt I x).target ∈ nhds (extChartAt I x x) :=
+    Filter.mem_of_superset (isOpen_interior.mem_nhds
+      ((ModelWithCorners.isInteriorPoint_iff (I := I)).mp hx)) interior_subset
+  have hsymm : Filter.Tendsto (extChartAt I x).symm (nhds (extChartAt I x x)) (nhds x) := by
+    simpa only [extChartAt_to_inv] using (continuousAt_extChartAt_symm (I := I) x).tendsto
+  filter_upwards [htarget, hsymm.eventually hg, hsymm.eventually hF] with y hy hgy hFy
+  simp only [Function.comp_apply] at hgy hFy ⊢
+  rw [hgy, hFy, (extChartAt I x).right_inv hy]
+
+/-- **Smooth chart expressions.** Near an interior point `x`, the chart expression
+`f ∘ (extChartAt I x).symm` of a smooth function agrees with a smooth function on the model
+space. -/
+theorem exists_contDiff_comp_extChartAt_symm_eventuallyEq
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+    {x : M} (hx : I.IsInteriorPoint x) (f : C^∞⟮I, M; ℝ⟯) :
+    ∃ g : E → ℝ, ContDiff ℝ ∞ g ∧
+      (f : M → ℝ) ∘ (extChartAt I x).symm =ᶠ[nhds (extChartAt I x x)] g := by
+  obtain ⟨F, hF⟩ := exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x
+  obtain ⟨g, hg⟩ := exists_contMDiffMap_comp_eventuallyEq hx F hF f
+  exact ⟨g, g.contMDiff.contDiff, comp_extChartAt_symm_eventuallyEq_of_eventuallyEq_comp hx hF hg⟩
 
 end TauCeti

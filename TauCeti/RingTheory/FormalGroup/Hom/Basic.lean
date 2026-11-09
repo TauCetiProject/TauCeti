@@ -168,8 +168,8 @@ theorem coeff_subst_sub_subst_of_degree_le {τ : Type*} {x y z w : MvPowerSeries
       coeff e (x - y) + coeff e (z - w) := by
   have ha₀ : ∀ i, constantCoeff (![x, z] i) = 0 := fun i ↦ by fin_cases i; exacts [hx, hz]
   have hb₀ : ∀ i, constantCoeff (![y, w] i) = 0 := fun i ↦ by fin_cases i; exacts [hy, hw]
-  rw [MvPowerSeries.coeff_subst_sub_subst_of_degree_le _ (hasSubst_of_constantCoeff_zero ha₀)
-    (hasSubst_of_constantCoeff_zero hb₀) ha₀ hb₀ (fun i ↦ by fin_cases i; exacts [hxy, hzw]) he,
+  rw [MvPowerSeries.coeff_subst_sub_subst_of_degree_le _ ha₀ hb₀
+    (fun i ↦ by fin_cases i; exacts [hxy, hzw]) he,
     Fin.sum_univ_two, G.lin_coeff_X, G.lin_coeff_Y, one_mul, one_mul]
   rfl
 

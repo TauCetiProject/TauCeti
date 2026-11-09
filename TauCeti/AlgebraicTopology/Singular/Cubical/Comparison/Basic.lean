@@ -443,8 +443,7 @@ theorem singularCubicalHomologyIso_hom_singularHomology₀Section {X : TopCat.{u
     HomologicalComplex.homologyπ_naturality, ModuleCat.comp_apply]
   congr 1
   apply HomologicalComplex.moduleCat_iCycles_injective
-  rw [iCycles_cubicalCycleOfPoint, ← ModuleCat.comp_apply,
-    HomologicalComplex.cyclesMap_i, ModuleCat.comp_apply, hi]
+  rw [iCycles_cubicalCycleOfPoint, HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, hi]
   rw [singularToCubical_app_f_zero_simplexChain, Equiv.apply_symm_apply,
     normalizedCubicalChainComplexXEquiv_symm_apply]
 
