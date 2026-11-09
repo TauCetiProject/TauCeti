@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
 public import Mathlib.RingTheory.Idempotents
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.Algebra.Field.Equiv
+import TauCeti.RingTheory.Idempotents.Primitive.Basic
 
 /-!
 # Homogeneous ideals: generators and componentwise absorption
@@ -119,9 +120,9 @@ theorem CompleteOrthogonalIdempotents.mem_zero_of_isHomogeneous_span
   classical
   -- the nonzero-degree components of `e j` lie in `A * e j`, they sum to the nonzero-degree
   -- components of `1`, which vanish, and the ideals `A * e j` are independent
-  have hfix : ∀ j p, (decompose 𝒜 (e j) p : A) * e j = decompose 𝒜 (e j) p := fun j p ↦ by
-    obtain ⟨y, hy⟩ := Ideal.mem_span_singleton'.1 (hI j p (Ideal.mem_span_singleton_self _))
-    rw [← hy, mul_assoc, (he.idem j).eq]
+  have hfix : ∀ j p, (decompose 𝒜 (e j) p : A) * e j = decompose 𝒜 (e j) p := fun j p ↦
+    (TauCeti.mem_span_singleton_iff_mul_eq_self (he.idem j)).1
+      (hI j p (Ideal.mem_span_singleton_self _))
   have hvanish : ∀ p, p ≠ 0 → (decompose 𝒜 (e i) p : A) = 0 := by
     intro p hp
     have hsum : ∑ j, (decompose 𝒜 (e j) p : A) = 0 := by
