@@ -18,19 +18,21 @@ public import TauCeti.LinearAlgebra.TotallyReal.Frame
 Let `γ : V → W` parametrize a submanifold of a normed space `W` and let `J` be a field of
 endomorphisms of `W` with `J² = -1` along `γ`. The adapted normal extension
 `Φ (x, y) = γ x + J (γ x) (Dγ x y)` of `TauCeti.adaptedNormalExtension` has derivative
-`(v, w) ↦ Dγ x v + J (γ x) (Dγ x w)` along the zero section. Over `ℝ`, this file shows that this
-derivative is invertible exactly when `Dγ x` is injective with maximal totally real image, and
-inverts `Φ` near such a point. The inverse `ψ = Φ⁻¹` is the chart of McDuff–Salamon
+`(v, w) ↦ Dγ x v + J (γ x) (Dγ x w)` along the zero section. Over `ℝ` or `ℂ`, this file shows
+that this derivative is invertible exactly when `Dγ x` is injective with maximal totally real
+image, and inverts `Φ` near such a point. The inverse `ψ = Φ⁻¹` is the chart of McDuff–Salamon
 Exercise B.4.10 in the model case `M = W`, `L = γ (V)`.
 
 The chart is packaged as an `OpenPartialHomeomorph (V × V) W` whose underlying map is `Φ`; the
 coordinates on `V × V` are the model coordinates, with the zero section `V × {0}` playing the
 role of `ℝⁿ ⊆ ℂⁿ` and `(v, w) ↦ (-w, v)` the role of multiplication by `i`. Every property
-below is stated for an arbitrary such partial homeomorphism, so a consumer may shrink the chart
-freely, and over an arbitrary nontrivially normed field.
+below the existence statements is stated for an arbitrary such partial homeomorphism, so a
+consumer may shrink the chart freely, and over an arbitrary nontrivially normed field.
 
 * Flattening: the chart sends the zero section of its source onto the parametrized
-  submanifold, and nothing else in its source onto it.
+  submanifold, and nothing else in its source onto it. When `γ` induces the topology of the open
+  parameter set `U`, as an embedding does, the chart can be shrunk so that the zero section of
+  its source goes onto all of `γ (U)` inside its target: `ψ (γ (U)) = ψ (target) ∩ (V × {0})`.
 * Intertwining: along the submanifold, the derivative of `ψ` turns `J` into the standard
   structure.
 * Pushforward: the field `e.pullbackEnd J p = Dψ (e p) ∘ J (e p) ∘ De p`, the structure
@@ -45,7 +47,10 @@ freely, and over an arbitrary nontrivially normed field.
   extension on the zero section is invertible exactly for maximal totally real tangent spaces.
 * `TauCeti.exists_adaptedChart`: the inverse function theorem for the adapted extension, with a
   `C^ℓ` inverse on the whole target.
-* `OpenPartialHomeomorph.isImage_of_coe_eq_adaptedNormalExtension`: flattening.
+* `TauCeti.exists_adaptedChart_of_isInducing`: for an embedded submanifold, an adapted chart
+  that flattens all of `γ (U)` inside its target.
+* `OpenPartialHomeomorph.isImage_of_coe_eq_adaptedNormalExtension`,
+  `OpenPartialHomeomorph.isImage_image_of_coe_eq_adaptedNormalExtension`: flattening.
 * `OpenPartialHomeomorph.fderiv_symm_apply_of_coe_eq_adaptedNormalExtension`: intertwining.
 * `OpenPartialHomeomorph.pullbackEnd_of_coe_eq_adaptedNormalExtension`: the pushed-forward
   structure is standard on the zero section.
@@ -63,24 +68,24 @@ open scoped Topology ContDiff
 
 namespace TauCeti
 
-variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-  [NormedAddCommGroup W] [NormedSpace ℝ W] {γ : V → W} {J : W → W →L[ℝ] W}
+variable {𝕜 V W : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [NormedAddCommGroup W] [NormedSpace 𝕜 W] {γ : V → W} {J : W → W →L[𝕜] W}
 
 /-- **The derivative of the adapted extension on the zero section is invertible exactly at
 maximal totally real points.** For an injective tangent map `Dγ x` and `J² = -1` at `γ x`,
 the derivative of the adapted extension at `(x, 0)` is invertible if and only if the image of
 `Dγ x` is maximal totally real for `J (γ x)`. -/
 theorem isInvertible_fderiv_adaptedNormalExtension_zero_iff [CompleteSpace V] [CompleteSpace W]
-    {x : V} (hγ : ContDiffAt ℝ 1 γ x) (hJ : ContinuousAt J (γ x))
-    (hsq : ∀ v, J (γ x) (J (γ x) v) = -v) (hinj : Function.Injective (fderiv ℝ γ x)) :
-    (fderiv ℝ (adaptedNormalExtension γ J) (x, 0)).IsInvertible ↔
-      IsMaximalTotallyReal (J (γ x)).toLinearMap (fderiv ℝ γ x).range := by
+    {x : V} (hγ : ContDiffAt 𝕜 1 γ x) (hJ : ContinuousAt J (γ x))
+    (hsq : ∀ v, J (γ x) (J (γ x) v) = -v) (hinj : Function.Injective (fderiv 𝕜 γ x)) :
+    (fderiv 𝕜 (adaptedNormalExtension γ J) (x, 0)).IsInvertible ↔
+      IsMaximalTotallyReal (J (γ x)).toLinearMap (fderiv 𝕜 γ x).range := by
   have hJinj : Function.Injective (J (γ x)) := fun a b h ↦ by
     simpa [hsq] using congrArg (J (γ x)) h
-  set D := (fderiv ℝ γ x).coprod ((J (γ x)).comp (fderiv ℝ γ x))
+  set D := (fderiv 𝕜 γ x).coprod ((J (γ x)).comp (fderiv 𝕜 γ x))
   -- The continuous and the algebraic doubled frames have the same underlying function.
-  have hD : ⇑((fderiv ℝ γ x).toLinearMap.coprod ((J (γ x)).toLinearMap.comp
-      (fderiv ℝ γ x).toLinearMap)) = ⇑D := by
+  have hD : ⇑((fderiv 𝕜 γ x).toLinearMap.coprod ((J (γ x)).toLinearMap.comp
+      (fderiv 𝕜 γ x).toLinearMap)) = ⇑D := by
     funext p
     simp [D, ContinuousLinearMap.coprod_apply]
   rw [← bijective_coprod_iff_isMaximalTotallyReal_range hinj (hJinj.comp hinj), hD,
@@ -96,19 +101,19 @@ restricts to a partial homeomorphism around `(x₀, 0)` with source in `U × V`,
 and which is `C^ℓ` with `C^ℓ` inverse. Its inverse is the adapted chart. -/
 theorem exists_adaptedChart [CompleteSpace V] [CompleteSpace W] {U : Set V} {Ω : Set W}
     {x₀ : V} {ℓ : ℕ∞ω} (hU : IsOpen U) (hΩ : IsOpen Ω) (hx₀ : x₀ ∈ U) (hℓ : 1 ≤ ℓ)
-    (hγ : ContDiffOn ℝ (ℓ + 1) γ U) (hJ : ContDiffOn ℝ ℓ J Ω) (hγΩ : MapsTo γ U Ω)
-    (hsq : ∀ v, J (γ x₀) (J (γ x₀) v) = -v) (hinj : Function.Injective (fderiv ℝ γ x₀))
-    (htr : IsMaximalTotallyReal (J (γ x₀)).toLinearMap (fderiv ℝ γ x₀).range) :
+    (hγ : ContDiffOn 𝕜 (ℓ + 1) γ U) (hJ : ContDiffOn 𝕜 ℓ J Ω) (hγΩ : MapsTo γ U Ω)
+    (hsq : ∀ v, J (γ x₀) (J (γ x₀) v) = -v) (hinj : Function.Injective (fderiv 𝕜 γ x₀))
+    (htr : IsMaximalTotallyReal (J (γ x₀)).toLinearMap (fderiv 𝕜 γ x₀).range) :
     ∃ e : OpenPartialHomeomorph (V × V) W, ⇑e = adaptedNormalExtension γ J ∧
       (x₀, 0) ∈ e.source ∧ e.source ⊆ U ×ˢ univ ∧ e.target ⊆ Ω ∧
-      ContDiffOn ℝ ℓ e e.source ∧ ContDiffOn ℝ ℓ e.symm e.target := by
-  have hΦ : ContDiffOn ℝ ℓ (adaptedNormalExtension γ J) (U ×ˢ univ) :=
+      ContDiffOn 𝕜 ℓ e e.source ∧ ContDiffOn 𝕜 ℓ e.symm e.target := by
+  have hΦ : ContDiffOn 𝕜 ℓ (adaptedNormalExtension γ J) (U ×ˢ univ) :=
     contDiffOn_adaptedNormalExtension hU hγ hJ hγΩ
   have hs : IsOpen ((U ×ˢ univ) ∩ adaptedNormalExtension γ J ⁻¹' Ω) :=
     hΦ.continuousOn.isOpen_inter_preimage (hU.prod isOpen_univ) hΩ
   have hmem : (x₀, (0 : V)) ∈ (U ×ˢ univ) ∩ adaptedNormalExtension γ J ⁻¹' Ω :=
     ⟨⟨hx₀, mem_univ _⟩, by simpa only [mem_preimage, adaptedNormalExtension_zero] using hγΩ hx₀⟩
-  have hγ₁ : ContDiffAt ℝ 1 γ x₀ :=
+  have hγ₁ : ContDiffAt 𝕜 1 γ x₀ :=
     (hγ.contDiffAt (hU.mem_nhds hx₀)).of_le (hℓ.trans le_self_add)
   have hJc : ContinuousAt J (γ x₀) := hJ.continuousOn.continuousAt (hΩ.mem_nhds (hγΩ hx₀))
   obtain ⟨E, hE⟩ := (isInvertible_fderiv_adaptedNormalExtension_zero_iff hγ₁ hJc hsq hinj).2 htr
@@ -156,6 +161,26 @@ theorem isImage_of_coe_eq_adaptedNormalExtension (he : ⇑e = TauCeti.adaptedNor
       exact hp
     · rw [hp', he, TauCeti.adaptedNormalExtension_zero]
 
+/-- **Flattening of the whole parametrized piece.** If the source of an adapted chart lies over
+`U` and every point `γ x` of its target with `x ∈ U` comes from the zero section of its source,
+then a point of the source is sent into `γ (U)` exactly when it lies on the zero section. -/
+theorem isImage_image_of_coe_eq_adaptedNormalExtension
+    (he : ⇑e = TauCeti.adaptedNormalExtension γ J) {U : Set V} (hsU : e.source ⊆ U ×ˢ univ)
+    (hU : ∀ x ∈ U, γ x ∈ e.target → (x, 0) ∈ e.source) :
+    e.IsImage {p | p.2 = 0} (γ '' U) := by
+  intro p hp
+  constructor
+  · rintro ⟨x, hx, hxp⟩
+    have hxt : γ x ∈ e.target := by
+      rw [hxp]
+      exact e.map_source hp
+    have h : e (x, 0) = e p := by rw [he, TauCeti.adaptedNormalExtension_zero, hxp, he]
+    exact (congrArg Prod.snd (e.injOn (hU x hx hxt) hp h)).symm
+  · intro h0
+    have hp' : p = (p.1, 0) := Prod.ext rfl h0
+    refine ⟨p.1, (hsU hp).1, ?_⟩
+    rw [hp', he, TauCeti.adaptedNormalExtension_zero]
+
 /-- **Intertwining.** Along the parametrized submanifold, the derivative of an adapted chart
 turns `J` into the standard structure `(v, w) ↦ (-w, v)`, provided `J² = -1` there. -/
 theorem fderiv_symm_apply_of_coe_eq_adaptedNormalExtension
@@ -202,6 +227,53 @@ theorem pullbackEnd_of_coe_eq_adaptedNormalExtension
 end OpenPartialHomeomorph
 
 namespace TauCeti
+
+section Embedded
+
+variable {𝕜 V W : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [NormedAddCommGroup W] [NormedSpace 𝕜 W] {γ : V → W} {J : W → W →L[𝕜] W}
+
+/-- **Adapted charts along an embedded totally real submanifold.** If moreover `γ` induces the
+topology of `U`, as an embedding restricted to `U` does, the chart of `TauCeti.exists_adaptedChart`
+can be chosen so that its zero section goes onto all of `γ (U)` inside its target: a point of
+its source is sent into `γ (U)` exactly when it lies on the zero section. -/
+theorem exists_adaptedChart_of_isInducing [CompleteSpace V] [CompleteSpace W] {U : Set V}
+    {Ω : Set W} {x₀ : V} {ℓ : ℕ∞ω} (hU : IsOpen U) (hΩ : IsOpen Ω) (hx₀ : x₀ ∈ U) (hℓ : 1 ≤ ℓ)
+    (hγ : ContDiffOn 𝕜 (ℓ + 1) γ U) (hJ : ContDiffOn 𝕜 ℓ J Ω) (hγΩ : MapsTo γ U Ω)
+    (hsq : ∀ v, J (γ x₀) (J (γ x₀) v) = -v) (hinj : Function.Injective (fderiv 𝕜 γ x₀))
+    (htr : IsMaximalTotallyReal (J (γ x₀)).toLinearMap (fderiv 𝕜 γ x₀).range)
+    (hind : Topology.IsInducing fun x : U ↦ γ x) :
+    ∃ e : OpenPartialHomeomorph (V × V) W, ⇑e = adaptedNormalExtension γ J ∧
+      (x₀, 0) ∈ e.source ∧ e.source ⊆ U ×ˢ univ ∧ e.target ⊆ Ω ∧
+      ContDiffOn 𝕜 ℓ e e.source ∧ ContDiffOn 𝕜 ℓ e.symm e.target ∧
+      e.IsImage {p | p.2 = 0} (γ '' U) := by
+  obtain ⟨e, he, h₀, hsU, htΩ, hc, hcs⟩ :=
+    exists_adaptedChart hU hΩ hx₀ hℓ hγ hJ hγΩ hsq hinj htr
+  have hγe (x : V) : e (x, 0) = γ x := by rw [he, adaptedNormalExtension_zero]
+  -- The parameters in `U` whose zero-section point lies in the source are cut out by an open `O`.
+  obtain ⟨O, hO, hOS⟩ := hind.isOpen_iff.mp
+    (e.open_source.preimage (by fun_prop : Continuous fun y : U ↦ ((y : V), (0 : V))))
+  have hmem (x : V) (hx : x ∈ U) : γ x ∈ O ↔ (x, 0) ∈ e.source :=
+    Set.ext_iff.mp hOS ⟨x, hx⟩
+  -- Shrinking the source to `e ⁻¹' O` removes the points of `γ (U)` not reached from the zero
+  -- section.
+  let e' := e.restrOpen (e.source ∩ e ⁻¹' O) (e.isOpen_inter_preimage hO)
+  have hsrc : e'.source ⊆ e.source := fun p hp ↦ hp.1
+  have htgt : e'.target ⊆ e.target := fun a ha ↦ ha.1
+  have hsrc' (x : V) (hx : x ∈ U) (hxe : (x, 0) ∈ e.source) : (x, 0) ∈ e'.source := by
+    refine ⟨hxe, hxe, ?_⟩
+    rw [mem_preimage, hγe]
+    exact (hmem x hx).mpr hxe
+  have he' : ⇑e' = adaptedNormalExtension γ J := he
+  refine ⟨e', he', hsrc' x₀ hx₀ h₀, hsrc.trans hsU, htgt.trans htΩ, hc.mono hsrc,
+    hcs.mono htgt, e'.isImage_image_of_coe_eq_adaptedNormalExtension he' (hsrc.trans hsU)
+    fun x hx ha ↦ ?_⟩
+  have hO : γ x ∈ O := by
+    have h := ha.2.2
+    rwa [mem_preimage, e.right_inv ha.1] at h
+  exact hsrc' x hx ((hmem x hx).mp hO)
+
+end Embedded
 
 /-! ### Examples: the flat case and the complex line -/
 
