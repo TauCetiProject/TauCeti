@@ -34,7 +34,8 @@ For a monotone `g` the differential form needs neither continuity nor differenti
 
 It also writes Mathlib's `gronwallBound` with a negative rate `-λ` in terms of the exponential
 integral `E_λ(T) = ∫₀ᵀ e^{λr} dr` (`TauCeti.exp_mul_gronwallBound_neg`), and records that
-`E_λ(T) > 0` for `T > 0` (`TauCeti.integral_exp_mul_pos`) and `E_λ(T) ≤ T e^{|λ|T}` for `T ≥ 0`
+`E_λ(T) > 0` for `T > 0` (`TauCeti.integral_exp_mul_pos`), that `z ↦ E_λ(z - t)` has derivative `1`
+at `t` (`TauCeti.hasDerivAt_integral_exp_mul_sub`), and `E_λ(T) ≤ T e^{|λ|T}`
 (`TauCeti.integral_exp_mul_le`).
 
 Finally, it specializes Mathlib's inequality to exponential decay: a function whose derivative
@@ -160,14 +161,33 @@ theorem integral_exp_mul_pos (lam : ℝ) {T : ℝ} (hT : 0 < T) :
     ((by fun_prop : Continuous fun r ↦ exp (lam * r)).intervalIntegrable _ _)
     (fun _ _ ↦ exp_pos _) hT
 
-/-- The function `E_λ(T) = ∫₀ᵀ e^{λr} dr` satisfies `E_λ(T) ≤ T e^{|λ|T}` for `T ≥ 0`. -/
-theorem integral_exp_mul_le (lam : ℝ) {T : ℝ} (hT : 0 ≤ T) :
+/-- The map `z ↦ ∫ r in 0..(z - t), exp (lam * r)` has derivative `1` at `t`. -/
+theorem hasDerivAt_integral_exp_mul_sub (lam t : ℝ) :
+    HasDerivAt (fun z ↦ ∫ r in 0..(z - t), exp (lam * r)) 1 t := by
+  have hsub : HasDerivAt (fun z : ℝ ↦ z - t) 1 t := (hasDerivAt_id t).sub_const t
+  simpa [Function.comp_def] using ((by fun_prop : Continuous fun r ↦
+    exp (lam * r)).integral_hasStrictDerivAt 0 (t - t)).hasDerivAt.comp (h := fun z ↦ z - t) t
+      hsub
+
+/-- The function `E_λ(T) = ∫₀ᵀ e^{λr} dr` satisfies `E_λ(T) ≤ T e^{|λ|T}`. -/
+theorem integral_exp_mul_le (lam T : ℝ) :
     ∫ r in 0..T, exp (lam * r) ≤ T * exp (|lam| * T) := by
-  have := intervalIntegral.integral_mono_on (g := fun _ ↦ exp (|lam| * T)) hT
-    ((by fun_prop : Continuous fun r ↦ exp (lam * r)).intervalIntegrable _ _)
-    (intervalIntegrable_const (μ := volume)) fun r hr ↦ exp_le_exp.2 <| by
-      nlinarith [le_abs_self lam, abs_nonneg lam, hr.1, hr.2]
-  simpa using this
+  have hc : Continuous fun r ↦ exp (lam * r) := by fun_prop
+  rcases le_total 0 T with hT | hT
+  · have := intervalIntegral.integral_mono_on (g := fun _ ↦ exp (|lam| * T)) hT
+      (hc.intervalIntegrable _ _) (intervalIntegrable_const (μ := volume))
+      fun r hr ↦ exp_le_exp.2 <| by
+        nlinarith [le_abs_self lam, abs_nonneg lam, hr.1, hr.2]
+    simpa using this
+  · rw [intervalIntegral.integral_symm]
+    have := intervalIntegral.integral_mono_on (f := fun _ ↦ exp (|lam| * T)) hT
+      (intervalIntegrable_const (μ := volume)) (hc.intervalIntegrable _ _)
+      fun r hr ↦ exp_le_exp.2 <| by
+        rcases le_total 0 lam with h | h
+        · rw [abs_of_nonneg h]; nlinarith [hr.1, hr.2]
+        · rw [abs_of_nonpos h]; nlinarith [hr.1, hr.2]
+    simp only [intervalIntegral.integral_const, smul_eq_mul, zero_sub] at this
+    linarith
 
 /-- **Exponential decay from a differential inequality.** If `g' ≤ -lam * g` on `[T, ∞)`, then
 `g t ≤ g T * exp (-(lam * (t - T)))` for every `t ≥ T`. -/

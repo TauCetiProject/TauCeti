@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Hom.Monoid
 public import TauCeti.Combinatorics.Network.AugmentingPath
+public import TauCeti.Combinatorics.Network.Shift
 
 /-!
 # Change of coefficients for networks and flows
@@ -16,8 +17,9 @@ theory over `K` to the one over `L`: apply `φ` to every bound and to the value 
 on every arrow, written `Assignment.map`. Additivity makes `φ` commute with arrow sums, excess,
 cut bounds, residual capacities and residual updates, and monotonicity preserves feasibility.
 So a bounded `s`–`t` assignment or an ordinary flow over `K` becomes one over `L`, whose value
-is the image of the original value. The standard examples are the embeddings `ℤ → ℚ → ℝ`, which
-turn integral flows into rational and real ones.
+is the image of the original value. An assignment with prescribed excess, or with excess in
+prescribed vertex intervals, becomes one for the mapped prescriptions. The standard examples are
+the embeddings `ℤ → ℚ → ℝ`, which turn integral flows into rational and real ones.
 
 Every such `φ` preserves maximality, whether or not it is injective: between distinct terminals,
 a maximum assignment attains the cut bound of some cut, `φ` carries this equality to `L`, and
@@ -31,6 +33,8 @@ augmenting walks.
   monotone function `φ`.
 * `TauCeti.BoundedFlow.map φ f` and `TauCeti.Flow.map φ f`: a bounded `s`–`t` assignment or an
   ordinary flow with its coefficients changed along `φ : K →+o L`.
+* `TauCeti.ExcessFlow.map φ f` and `TauCeti.ExcessIntervalFlow.map φ f`: a prescribed-excess or
+  interval-excess assignment with its coefficients changed along `φ : K →+o L`.
 
 ## Main results
 
@@ -220,5 +224,67 @@ theorem isMaximum_map_iff [LinearOrder L] [IsOrderedAddMonoid L] (hst : s ≠ t)
     positiveReachable_map_iff_of_strictMono hφ (map_zero φ)]
 
 end Flow
+
+/-! ### Prescribed and interval excess -/
+
+section Excess
+
+variable [Preorder K] [Preorder L] {lo hi : Assignment Q K}
+
+namespace ExcessFlow
+
+variable {b : V → K}
+
+/-- The assignment for the mapped bounds and the mapped prescribed excess obtained by applying `φ`
+to the value on every arrow. -/
+def map (φ : K →+o L) (f : ExcessFlow lo hi b) : ExcessFlow (lo.map φ) (hi.map φ) (φ ∘ b) :=
+  ⟨f.val.map φ, Assignment.map_mem_Icc (OrderHomClass.mono φ) f.mem_Icc,
+    funext fun v ↦ by rw [← map_excessAt, f.excessAt_eq, Function.comp_apply]⟩
+
+@[simp]
+theorem map_val (φ : K →+o L) (f : ExcessFlow lo hi b) : (f.map φ).val = f.val.map φ :=
+  (rfl)
+
+@[simp]
+theorem map_id (f : ExcessFlow lo hi b) : f.map (OrderAddMonoidHom.id K) = f :=
+  (rfl)
+
+theorem map_map {M : Type*} [AddCommGroup M] [Preorder M] (φ : K →+o L) (ψ : L →+o M)
+    (f : ExcessFlow lo hi b) : (f.map φ).map ψ = f.map (ψ.comp φ) :=
+  (rfl)
+
+end ExcessFlow
+
+namespace ExcessIntervalFlow
+
+variable {a b : V → K}
+
+/-- The assignment for the mapped arrow and vertex bounds obtained by applying `φ` to the value on
+every arrow. -/
+def map (φ : K →+o L) (f : ExcessIntervalFlow lo hi a b) :
+    ExcessIntervalFlow (lo.map φ) (hi.map φ) (φ ∘ a) (φ ∘ b) :=
+  ⟨f.val.map φ, Assignment.map_mem_Icc (OrderHomClass.mono φ) f.mem_Icc,
+    fun v ↦ by
+      rw [← map_excessAt]
+      exact OrderHomClass.mono φ (f.excessAt_mem_Icc.1 v),
+    fun v ↦ by
+      rw [← map_excessAt]
+      exact OrderHomClass.mono φ (f.excessAt_mem_Icc.2 v)⟩
+
+@[simp]
+theorem map_val (φ : K →+o L) (f : ExcessIntervalFlow lo hi a b) : (f.map φ).val = f.val.map φ :=
+  (rfl)
+
+@[simp]
+theorem map_id (f : ExcessIntervalFlow lo hi a b) : f.map (OrderAddMonoidHom.id K) = f :=
+  (rfl)
+
+theorem map_map {M : Type*} [AddCommGroup M] [Preorder M] (φ : K →+o L) (ψ : L →+o M)
+    (f : ExcessIntervalFlow lo hi a b) : (f.map φ).map ψ = f.map (ψ.comp φ) :=
+  (rfl)
+
+end ExcessIntervalFlow
+
+end Excess
 
 end TauCeti
