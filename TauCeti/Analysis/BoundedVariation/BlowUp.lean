@@ -291,14 +291,16 @@ theorem integral_divergenceCLM_mul_indicator_nonneg_of_tendsto_measure_symmDiff_
 
 /-! ### Perimeter and volume of the blow-ups -/
 
-omit [BorelSpace E] [μ.IsAddHaarMeasure] in
-/-- The scaling `r / r ^ n · n (r R) ^ (n - 1) ω = n R ^ (n - 1) ω` of the upper density bound
-under a blow-up, in positive dimension `n`. -/
-private theorem ofReal_div_pow_mul_ofReal_mul_pow [Nontrivial E] {r : ℝ} (hr : 0 < r) (R : ℝ)
-    (t : ℝ≥0) :
-    ENNReal.ofReal (r / r ^ finrank ℝ E) *
-        (t * ENNReal.ofReal (finrank ℝ E * (r * R) ^ (finrank ℝ E - 1) * μ.real (ball 0 1))) =
+/-- The upper density bound `P(s; ball x (r R)) ≤ t n ω (r R) ^ (n - 1)` passes to the blow-up
+`s_{x,r}` as `P(s_{x,r}; ball 0 R) ≤ t n ω R ^ (n - 1)`, in positive dimension `n`. -/
+private theorem perimeter_ball_zero_preimage_add_smul_le_of_le [Nontrivial E] {s' : Set E}
+    {t : ℝ≥0} {r : ℝ} (hr : 0 < r) {R : ℝ}
+    (h : perimeter μ ⟨ball x (r * R), isOpen_ball⟩ s' ≤
+      t * ENNReal.ofReal (finrank ℝ E * (r * R) ^ (finrank ℝ E - 1) * μ.real (ball 0 1))) :
+    perimeter μ ⟨ball 0 R, isOpen_ball⟩ ((fun y => x + r • y) ⁻¹' s') ≤
       t * ENNReal.ofReal (finrank ℝ E * R ^ (finrank ℝ E - 1) * μ.real (ball 0 1)) := by
+  rw [perimeter_ball_zero_preimage_add_smul hr]
+  refine (mul_le_mul_right h _).trans_eq ?_
   obtain ⟨m, hm⟩ : ∃ m, finrank ℝ E = m + 1 := ⟨_, (Nat.sub_add_cancel finrank_pos).symm⟩
   rw [mul_left_comm, ← ENNReal.ofReal_mul (by positivity)]
   congr 2
@@ -329,8 +331,8 @@ theorem eventually_perimeter_ball_zero_preimage_add_smul_le (hx : x ∈ reducedB
   have : Nontrivial E := ⟨⟨outerNormal μ Ω s x, 0, fun h => by simp [h] at hν1⟩⟩
   obtain ⟨ρ₀, hρ₀, -, hP⟩ := exists_forall_perimeter_ball_le hx ht
   filter_upwards [Ioo_mem_nhdsGT (div_pos hρ₀ hR)] with r hr
-  rw [perimeter_ball_zero_preimage_add_smul hr.1, ← ofReal_div_pow_mul_ofReal_mul_pow hr.1]
-  exact mul_le_mul_right (hP _ ⟨mul_pos hr.1 hR, (lt_div_iff₀ hR).1 hr.2⟩) _
+  exact perimeter_ball_zero_preimage_add_smul_le_of_le hr.1
+    (hP _ ⟨mul_pos hr.1 hR, (lt_div_iff₀ hR).1 hr.2⟩)
 
 /-! ### Compactness of the blow-ups -/
 
@@ -383,10 +385,9 @@ private theorem exists_subseq_tendsto_measure_symmDiff_inter_preimage_add_smul_o
           le_add_self
     · refine le_add_right ?_
       have hrR : r i * R < ρ := (lt_div_iff₀ hR).1 (hN i hi)
-      rw [perimeter_ball_zero_preimage_add_smul (hpos i),
-        perimeter_congr_of_inter_eq (hagree' (ball_subset_ball hrR.le))]
-      exact (mul_le_mul_right (hP _ ⟨mul_pos (hpos i) hR, hrR.trans hρ.2⟩) _).trans_eq
-        (ofReal_div_pow_mul_ofReal_mul_pow (hpos i) R 2)
+      refine perimeter_ball_zero_preimage_add_smul_le_of_le (hpos i) ?_
+      rw [perimeter_congr_of_inter_eq (hagree' (ball_subset_ball hrR.le))]
+      exact hP _ ⟨mul_pos (hpos i) hR, hrR.trans hρ.2⟩
   obtain ⟨F, hF, φ, hφ, hconv⟩ := exists_subseq_tendsto_measure_symmDiff_inter_of_perimeter_le
     (Ω := ⊤) (s := fun i => (fun y => x + r i • y) ⁻¹' s')
     (fun i => hs'.preimage (μ.quasiMeasurePreserving_add_smul x (hpos i).ne')) fun K hK _ => by
