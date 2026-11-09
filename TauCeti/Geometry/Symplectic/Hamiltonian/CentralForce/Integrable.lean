@@ -359,9 +359,6 @@ theorem isIntegrableSystem_centralForceEnergyMomentum [FiniteDimensional ℝ V] 
       IsRegularPoint 𝓘(ℝ, V × V) 𝓘(ℝ, V × V) (Subtype.val : puncturedPhaseSpace V → V × V) x := by
     rw [isRegularPoint_iff, Manifold.mfderiv_subtype_val]
     exact (Manifold.tangentSpaceOpenEquiv x).surjective
-  have hFd (x : puncturedPhaseSpace V) :
-      MDifferentiableAt 𝓘(ℝ, V × V) 𝓘(ℝ, Fin 2 → ℝ) (centralForceEnergyMomentum b m U) x :=
-    ((hF x).differentiableAt (by simp)).mdifferentiableAt
   have hdiff (x : puncturedPhaseSpace V) (i : Fin 2) :
       MDifferentiableAt 𝓘(ℝ, V × V) 𝓘(ℝ) (fun y ↦ centralForceEnergyMomentum b m U y i) x :=
     ((contDiffAt_pi.1 (hF x) i).differentiableAt (by simp)).mdifferentiableAt
@@ -394,7 +391,6 @@ theorem isIntegrableSystem_centralForceEnergyMomentum [FiniteDimensional ℝ V] 
       have hU' : HasDerivAt U (deriv U ‖(x : V × V).1‖) ‖(x : V × V).1‖ :=
         ((hU.differentiableOn (by simp)).differentiableAt (Ioi_mem_nhds hr)).hasDerivAt
       refine (isRegularPoint_centralForceEnergyMomentum_iff b hm hU' x.2).2 ?_ |>.comp (hval x)
-        (hFd x) (contMDiff_subtype_val.mdifferentiableAt one_ne_zero)
       exact fun h ↦ hx h.1
     · exact dense_setOf_inner_ne_zero
   · rw [Module.finrank_prod, Module.finrank_eq_card_basis b.toBasis]

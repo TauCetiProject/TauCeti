@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.MeasureTheory.Function.L2Space
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
+public import TauCeti.MeasureTheory.Integral.PiSystem
 
 /-!
 # Inner products of square-integrable functions
@@ -15,9 +19,18 @@ space is integrable. Mathlib states this for elements of `L²` (`MeasureTheory.L
 this file gives the form for functions satisfying `MemLp f 2 μ`, which is how second-moment
 hypotheses on random vectors are usually stated, together with the special case of a quadratic
 form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function.
-For counting measure, singleton-supported vectors separate L² functions. On a compact space with
-a finite measure, the L² pairing of an L² function with a continuous function is an integral
+For counting measure, singleton-supported vectors separate L² functions and determine
+continuous linear maps out of L². On a compact space with a finite measure, the L² pairing of an
+L² function with a continuous function is an integral
 (`MeasureTheory.L2.inner_toLp_continuousMap`), extending Mathlib's `ContinuousMap.inner_toLp`.
+Indicators of any countably spanning generating π-system of finite-measure sets have
+dense real linear span in L².
+
+For a complex inner product space `F` regarded as a real one (`InnerProductSpace.complexToReal`),
+the real inner product on `L²(α, F)` is the real part of the complex one
+(`MeasureTheory.L2.real_inner_eq_re_inner`). For a family of inner product spaces `G i`, evaluating
+coordinate `i` of an `L²(α, ℓ²(G))` function is adjoint to placing an `L²(α, G i)` function in
+coordinate `i` (`MeasureTheory.L2.inner_evalCLM_compLpL`).
 -/
 
 public section
@@ -68,4 +81,83 @@ theorem L2.inner_toLp_continuousMap [TopologicalSpace α] [BorelSpace α] [Compa
   filter_upwards [ContinuousMap.coeFn_toLp (p := 2) (𝕜 := 𝕜) μ g] with x hx
   rw [hx, RCLike.inner_apply]
 
+/-- For a complex inner product space `F` with its induced real structure, the real inner product
+on `L²(α, F)` is the real part of the complex one. -/
+theorem L2.real_inner_eq_re_inner {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+    (f g : Lp F 2 μ) :
+    letI : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+    inner ℝ f g = Complex.re (inner ℂ f g) := by
+  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+  rw [L2.inner_def, L2.inner_def]
+  exact integral_re (L2.integrable_inner (𝕜 := ℂ) f g)
+
+/-- Evaluating coordinate `i` of an `L²(α, ℓ²(G))` function is adjoint to placing an
+`L²(α, G i)` function in coordinate `i`. -/
+theorem L2.inner_evalCLM_compLpL {ι : Type*} [DecidableEq ι] {G : ι → Type*}
+    [∀ i, NormedAddCommGroup (G i)] [∀ i, InnerProductSpace 𝕜 (G i)] (i : ι)
+    (g : Lp (lp G 2) 2 μ) (u : Lp (G i) 2 μ) :
+    ⟪(lp.evalCLM 𝕜 G 2 i).compLpL 2 μ g, u⟫_𝕜 =
+      ⟪g, (lp.singleContinuousLinearMap 𝕜 G 2 i).compLpL 2 μ u⟫_𝕜 := by
+  rw [L2.inner_def, L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [(lp.evalCLM 𝕜 G 2 i).coeFn_compLpL g,
+    (lp.singleContinuousLinearMap 𝕜 G 2 i).coeFn_compLpL u] with x h₁ h₂
+  rw [h₁, h₂, lp.singleContinuousLinearMap_apply, lp.inner_single_right]
+  rfl
+
 end MeasureTheory
+
+namespace ContinuousLinearMap
+
+open MeasureTheory
+
+/-- A continuous linear map out of counting-measure L² that vanishes on all
+singleton-supported vectors is zero. No countability of the index space is needed. -/
+theorem eq_zero_of_apply_indicatorConstLp_singleton
+    {α 𝕜 E F : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+    (T : Lp E 2 (Measure.count : Measure α) →L[𝕜] F)
+    (h : ∀ (i : α) (v : E),
+      T (indicatorConstLp 2 (measurableSet_singleton i) (by simp) v) = 0) : T = 0 := by
+  have ht : T.adjoint = 0 := by
+    apply ContinuousLinearMap.ext
+    intro η
+    rw [zero_apply]
+    refine Lp.eq_zero_of_inner_indicatorConstLp_singleton (𝕜 := 𝕜) _ fun i v => ?_
+    rw [adjoint_inner_right, h, inner_zero_left]
+  calc
+    T = T.adjoint.adjoint := (adjoint_adjoint T).symm
+    _ = 0 := by rw [ht, map_zero]
+
+end ContinuousLinearMap
+
+namespace TauCeti
+
+open MeasureTheory
+open scoped ENNReal
+
+/-- Indicators of a countably spanning generating π-system of finite-measure sets have
+dense real linear span in L². -/
+theorem topologicalClosure_span_indicatorConstLp_eq_top_of_isPiSystem
+    {X : Type*} {m : MeasurableSpace X} {μ : Measure X}
+    {S : Set (Set X)} (hgen : m = MeasurableSpace.generateFrom S)
+    (hpi : IsPiSystem S) (hcover : IsCountablySpanning S) (hfin : ∀ s ∈ S, μ s ≠ ∞) :
+    (Submodule.span ℝ {g : Lp ℝ 2 μ | ∃ (s : Set X) (hs : s ∈ S),
+      g = indicatorConstLp 2 (hgen ▸ MeasurableSpace.measurableSet_generateFrom hs)
+        (hfin s hs) 1}).topologicalClosure = ⊤ := by
+  rw [← Submodule.orthogonal_eq_bot_iff, Submodule.orthogonal_closure]
+  apply bot_unique
+  intro f hf
+  apply Lp.ext
+  have hfi : ∀ s ∈ S, IntegrableOn f s μ := fun s hs =>
+    integrableOn_Lp_of_measure_ne_top f (by norm_num) (hfin s hs)
+  refine (ae_eq_zero_of_setIntegral_eq_zero_of_isPiSystem hgen hpi hcover hfi ?_).trans
+    (Lp.coeFn_zero ℝ 2 μ).symm
+  intro s hs
+  rw [← L2.inner_indicatorConstLp_one
+    (hgen ▸ MeasurableSpace.measurableSet_generateFrom hs) (hfin s hs) f]
+  exact (Submodule.mem_orthogonal _ f).mp hf _
+    (Submodule.subset_span ⟨s, hs, rfl⟩)
+
+end TauCeti
