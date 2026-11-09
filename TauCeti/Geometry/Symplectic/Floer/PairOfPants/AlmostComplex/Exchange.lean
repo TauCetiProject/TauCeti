@@ -43,10 +43,11 @@ main results are:
   `t ↦ J_∞(t + 1/2)`, which matches the half turn of the end at `∞`
   (`TauCeti.Floer.negativePlaneAlmostComplex_neg`).
 * `TauCeti.Floer.exchangeAlmostComplex_cylindricalEndLift` and
-  `TauCeti.Floer.exchangeAlmostComplex_add_cylindricalEndLift_inf`: every member with `0 ≤ c ≤ 1`
-  is `J_q(t, x)` far out on the input end `q`, in the end lift `φ_q`, and every member is
-  `J_∞(t, x)` far out on the output end, in the end lift `c + φ_∞`. These are the end coordinates
-  in which the members of `TauCeti.Floer.exchangePerturbation` are `H_q(t) dt`.
+  `TauCeti.Floer.exchangeAlmostComplex_add_cylindricalEndLift_inf`: if `J_q` has period one,
+  every member with `0 ≤ c ≤ 1` is `J_q(t, x)` far out on the input end `q`, in the end lift
+  `φ_q`, and if `J_∞` has period one, every member is `J_∞(t, x)` far out on the output end, in
+  the end lift `c + φ_∞`. These are the end coordinates in which the members of
+  `TauCeti.Floer.exchangePerturbation` are `H_q(t) dt`.
 * `TauCeti.Floer.contMDiffAt_exchangeAlmostComplex`: for period-one `C^n` end families, the family
   is `C^n` jointly in the parameter `-1 < c < 2`, the domain point of `S` and the point `x`.
 * `TauCeti.Floer.isComplexLinearMap_perturbedFDeriv_exchange_one`: for a symplectic vector space
@@ -89,8 +90,8 @@ private theorem half_le_norm_of_three_lt_norm_sub {c : ℝ} (hc : c ∈ Icc (-1)
     rw [Complex.norm_real, Real.norm_eq_abs, abs_le]
     exact ⟨by linarith [hc.1], hc.2⟩
   have h₁ : ‖(c : ℂ) - 1‖ ≤ 2 := by
-    rw [show (c : ℂ) - 1 = ((c - 1 : ℝ) : ℂ) by push_cast; ring, Complex.norm_real,
-      Real.norm_eq_abs, abs_le]
+    rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs,
+      abs_le]
     exact ⟨by linarith [hc.1], by linarith [hc.2]⟩
   have hw₀ := norm_sub_le w (c : ℂ)
   have hw₁ := norm_sub_le (w - 1) ((c : ℂ) - 1)
@@ -118,9 +119,9 @@ private theorem forall_update_inf_base {P : (ℝ → M → AlmostComplexStructur
 of `J` (with output structure `J₀`) on the disc `‖w - c‖ ≤ 2 exp (2π)`, and the negative plane
 structure of the output structure `J_∞` translated by `c` off that disc. Its output end is the end
 at `∞` recentred at `c`, as for the perturbations `TauCeti.Floer.exchangePerturbation`. At `c = 0`
-it is the pair-of-pants structure (`TauCeti.Floer.exchangeAlmostComplex_zero`), and at `c = 1` it
-is the pair-of-pants structure with exchanged end structures composed with `w ↦ 1 - w`
-(`TauCeti.Floer.exchangeAlmostComplex_one`). -/
+it is the pair-of-pants structure (`TauCeti.Floer.exchangeAlmostComplex_zero`), and at `c = 1`,
+if `J_∞` has period one, it is the pair-of-pants structure with exchanged end structures composed
+with `w ↦ 1 - w` (`TauCeti.Floer.exchangeAlmostComplex_one`). -/
 def exchangeAlmostComplex (h₀ : ω.Compatible J₀)
     (J : Puncture → ℝ → M → AlmostComplexStructure V) (hJ : ∀ q t x, ω.Tames (J q t x))
     (c : ℝ) (w : ℂ) (x : M) : AlmostComplexStructure V :=
@@ -328,16 +329,6 @@ section Solutions
 variable [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V} {H : Puncture → ℝ → V → ℝ}
   {J : Puncture → ℝ → V → AlmostComplexStructure V} {hJ : ∀ q t x, ω.Tames (J q t x)}
-
-omit [FiniteDimensional ℝ V] in
-/-- The exchanged Hamiltonians of `C¹` Hamiltonians are `C¹`. -/
-private theorem contDiff_uncurry_exchangeHamiltonians (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    (q : Puncture) : ContDiff ℝ 1 (uncurry (exchangeHamiltonians H q)) := by
-  cases q
-  · simpa using hHs one
-  · simpa using hHs zero
-  · rw [exchangeHamiltonians_inf]
-    exact (hHs inf).comp ((contDiff_fst.add contDiff_const).prodMk contDiff_snd)
 
 /-- **Solutions at the end of the family.** Let `σ(z) = (1, 0) - z` be the exchange `w ↦ 1 - w` in
 the real coordinates `ℝ × ℝ ≃ ℂ`, let the Hamiltonians `H_q` have period one and be `C¹`, and let

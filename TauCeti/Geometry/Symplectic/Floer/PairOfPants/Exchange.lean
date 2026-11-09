@@ -113,6 +113,17 @@ theorem periodic_exchangeHamiltonians {Y : Type*} {G : Puncture → ℝ → Y}
   · simpa using hG zero
   · simpa using (hG inf).add_const (1 / 2)
 
+/-- The exchanged data of jointly `C^n` end data are jointly `C^n`. -/
+theorem contDiff_uncurry_exchangeHamiltonians {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {n : WithTop ℕ∞}
+    {G : Puncture → ℝ → E → F} (hG : ∀ q, ContDiff ℝ n (uncurry (G q))) (q : Puncture) :
+    ContDiff ℝ n (uncurry (exchangeHamiltonians G q)) := by
+  cases q
+  · simpa using hG one
+  · simpa using hG zero
+  · rw [exchangeHamiltonians_inf]
+    exact (hG inf).comp ((contDiff_fst.add contDiff_const).prodMk contDiff_snd)
+
 /-! ### The family -/
 
 /-- **The input-exchange family of perturbation data.** For `c ∈ ℝ` this is the input part of the
@@ -198,29 +209,6 @@ private theorem norm_ofReal_sub_one_le {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c �
   rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
     Real.norm_of_nonpos (by linarith)]
   linarith
-
-/-- On the part `s > 0` of an input end `q`, the end lift stays within distance `1` of `0` or
-`1`, hence within distance `2` of every `c ∈ [0, 1]`. -/
-theorem norm_cylindricalEndLift_sub_le {q : Puncture} (hq : q ≠ inf) {c : ℝ}
-    (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {z : ℂ} (hz : 0 < z.re) :
-    ‖q.cylindricalEndLift z - c‖ ≤ 2 := by
-  have hφ : ‖q.cylindricalEndLift z - q.endCenter‖ ≤ 1 := by
-    rw [cylindricalEndLift_eq, add_sub_cancel_left, norm_mul, norm_endScale hq,
-      Complex.norm_exp]
-    have : Real.exp (-(2 * (π : ℂ)) * z).re ≤ 1 := by
-      rw [Real.exp_le_one_iff, re_neg_two_pi_mul]
-      nlinarith [Real.pi_pos]
-    linarith
-  have hc : ‖q.endCenter - (c : ℂ)‖ ≤ 1 := by
-    rcases q.endCenter_eq_zero_or_eq_one with h | h <;> rw [h]
-    · rw [zero_sub, norm_neg, Complex.norm_real, Real.norm_of_nonneg hc₀]
-      exact hc₁
-    · rw [norm_sub_rev]
-      exact norm_ofReal_sub_one_le hc₀ hc₁
-  calc ‖q.cylindricalEndLift z - c‖
-      = ‖(q.cylindricalEndLift z - q.endCenter) + (q.endCenter - c)‖ := by ring_nf
-    _ ≤ 1 + 1 := (norm_add_le _ _).trans (add_le_add hφ hc)
-    _ = 2 := by norm_num
 
 /-- The translated plane datum vanishes within distance `2` of `c`. -/
 private theorem negativePlanePerturbation_sub_eq_zero {H : ℝ → M → ℝ} {c : ℝ} {w : ℂ}
