@@ -51,9 +51,9 @@ theorem exists_orderIso_contDiff_inverse_intervalIntegral {w : ℝ → ℝ} (hw 
   have hφ : ∀ t, HasDerivAt φ (w t) t := fun t ↦ (hw.integral_hasStrictDerivAt a t).hasDerivAt
   have hφcont : Continuous φ := continuous_iff_continuousAt.2 fun t ↦ (hφ t).continuousAt
   have hφmono : StrictMono φ := strictMono_of_hasDerivAt_pos hφ hwpos
-  have htop := tendsto_intervalIntegral_atTop (fun t ↦ hw.intervalIntegrable a t) hm
+  have htop := tendsto_atTop_intervalIntegral_of_le (fun t ↦ hw.intervalIntegrable a t) hm
     (ae_of_all _ hwm)
-  have hbot := tendsto_intervalIntegral_atBot (fun t ↦ hw.intervalIntegrable a t) hm
+  have hbot := tendsto_atBot_intervalIntegral_of_le (fun t ↦ hw.intervalIntegrable a t) hm
     (ae_of_all _ hwm)
   let e : ℝ ≃o ℝ := StrictMono.orderIsoOfSurjective φ hφmono (hφcont.surjective htop hbot)
   have hφψ : ∀ s, φ (e.symm s) = s := e.apply_symm_apply

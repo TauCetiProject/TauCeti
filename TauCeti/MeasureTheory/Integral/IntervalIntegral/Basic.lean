@@ -27,9 +27,10 @@ not belong to any particular application.
 * `TauCeti.intervalIntegral.norm_sub_sub_integral_le`: the defect `a₂ - a₁ - ∫ g` from an integral
   equation changes by at most the changes of the endpoint values plus `δ |t₂ - t₁|` when the
   integrand changes by at most `δ`.
-* `TauCeti.tendsto_intervalIntegral_atTop` and `TauCeti.tendsto_intervalIntegral_atBot`: the
-  accumulated integral of a locally integrable function bounded below almost everywhere by a
-  positive constant tends to `+∞` at `+∞` and to `-∞` at `-∞`.
+* `TauCeti.tendsto_atTop_intervalIntegral_of_le` and
+  `TauCeti.tendsto_atBot_intervalIntegral_of_le`: the accumulated integral of a locally integrable
+  function bounded below almost everywhere by a positive constant tends to `+∞` at `+∞` and to
+  `-∞` at `-∞`.
 * `MeasureTheory.IntegrableOn.intervalIntegrable_of_mem_Icc`: a function integrable on `(a, b)`
   for a measure without mass at points is interval integrable between any two points of `[a, b]`.
 * `ContinuousLinearEquiv.intervalIntegral_comp_comm`: a continuous linear equivalence commutes
@@ -169,7 +170,7 @@ theorem setIntegral_norm_inv_smul {E : Type*} [NormedAddCommGroup E] [NormedSpac
 open Filter in
 /-- The accumulated integral `t ↦ ∫ r in a..t, w r` of a locally integrable function bounded below
 almost everywhere by a positive constant tends to `+∞` at `+∞`. -/
-theorem tendsto_intervalIntegral_atTop {w : ℝ → ℝ}
+theorem tendsto_atTop_intervalIntegral_of_le {w : ℝ → ℝ}
     {a : ℝ} (hw : ∀ t, IntervalIntegrable w volume a t) {m : ℝ} (hm : 0 < m)
     (hwm : ∀ᵐ t ∂volume, m ≤ w t) :
     Tendsto (fun t ↦ ∫ r in a..t, w r) atTop atTop := by
@@ -185,7 +186,7 @@ theorem tendsto_intervalIntegral_atTop {w : ℝ → ℝ}
 open Filter in
 /-- The accumulated integral `t ↦ ∫ r in a..t, w r` of a locally integrable function bounded below
 almost everywhere by a positive constant tends to `-∞` at `-∞`. -/
-theorem tendsto_intervalIntegral_atBot {w : ℝ → ℝ}
+theorem tendsto_atBot_intervalIntegral_of_le {w : ℝ → ℝ}
     {a : ℝ} (hw : ∀ t, IntervalIntegrable w volume a t) {m : ℝ} (hm : 0 < m)
     (hwm : ∀ᵐ t ∂volume, m ≤ w t) :
     Tendsto (fun t ↦ ∫ r in a..t, w r) atBot atBot := by
