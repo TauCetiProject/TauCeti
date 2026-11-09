@@ -273,6 +273,22 @@ variable [CompactSpace X] [T2Space X] [T2Space Y] [PreconnectedSpace Y]
   (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) (hne : ∀ x, ¬ EventuallyConst f (𝓝 x))
 include hf hne
 
+omit [PreconnectedSpace Y] in
+/-- The fibre sums of local multiplicities of a holomorphic map from a compact Riemann surface
+which is constant near no point are bounded: they are locally constant, vanish off the compact
+range of the map, and so take only finitely many values. -/
+theorem bddAbove_range_fiberMultiplicitySum : BddAbove (range (fiberMultiplicitySum f)) := by
+  have hfin : (range (fiberMultiplicitySum f ∘ f)).Finite :=
+    ((isLocallyConstant_fiberMultiplicitySum hf hne).comp_continuous hf.continuous).range_finite
+  refine (hfin.insert 0).bddAbove.mono ?_
+  rintro _ ⟨y, rfl⟩
+  by_cases hy : y ∈ range f
+  · obtain ⟨x, rfl⟩ := hy
+    exact Or.inr ⟨x, rfl⟩
+  · refine Or.inl ?_
+    rw [fiberMultiplicitySum_def, show f ⁻¹' {y} = ∅ from
+      eq_empty_iff_forall_notMem.2 fun x hx ↦ hy ⟨x, hx⟩, finsum_mem_empty]
+
 /-- **Fibre independence of the degree.** For a holomorphic map from a compact Riemann surface to
 a connected Riemann surface which is constant near no point, the number of preimages of any point
 counted with local multiplicities is the degree. -/
@@ -283,15 +299,17 @@ theorem fiberMultiplicitySum_eq_degree (y : Y) : fiberMultiplicitySum f y = degr
       y' y
   rw [degree_def, h, ciSup_const]
 
-/-- Every local multiplicity of a holomorphic map from a compact Riemann surface to a connected
-Riemann surface which is constant near no point is at most the degree. -/
+omit [PreconnectedSpace Y] in
+/-- Every local multiplicity of a holomorphic map from a compact Riemann surface which is constant
+near no point is at most the degree. -/
 theorem localMultiplicity_le_degree_of_forall_not_eventuallyConst (x : X) :
     localMultiplicity f x ≤ degree f :=
   (localMultiplicity_le_fiberMultiplicitySum (finite_preimage_singleton hf hne (f x)) rfl).trans
-    (fiberMultiplicitySum_eq_degree hf hne (f x)).le
+    (le_ciSup (bddAbove_range_fiberMultiplicitySum hf hne) (f x))
 
-/-- **Positivity of the degree.** A holomorphic map from a nonempty compact Riemann surface to a
-connected Riemann surface which is constant near no point has positive degree. -/
+omit [PreconnectedSpace Y] in
+/-- **Positivity of the degree.** A holomorphic map from a nonempty compact Riemann surface which
+is constant near no point has positive degree. -/
 theorem degree_pos_of_forall_not_eventuallyConst [Nonempty X] : 0 < degree f :=
   ((localMultiplicity_pos_iff (.of_forall fun z ↦ hf z)).2 (hne (Classical.arbitrary X))).trans_le
     (localMultiplicity_le_degree_of_forall_not_eventuallyConst hf hne _)
@@ -303,17 +321,16 @@ end Degree
 variable [TopologicalSpace Z] [ChartedSpace ℂ Z]
 
 /-- **Multiplicativity of the degree.** For holomorphic maps `f : X → Y` and `g : Y → Z` of
-compact Riemann surfaces with connected targets, both constant near no point, the degree of
+compact Riemann surfaces with `Y` connected, both constant near no point, the degree of
 `g ∘ f` is the product of the degrees: the fibre of `g ∘ f` over `z` is the disjoint union of the
 fibres of `f` over the points of the fibre of `g` over `z`, and the local multiplicities
 multiply. -/
 theorem degree_comp_of_forall_not_eventuallyConst [IsManifold 𝓘(ℂ) 1 Z] [CompactSpace X]
-    [T2Space X] [T2Space Y] [PreconnectedSpace Y] [T2Space Z]
-    [PreconnectedSpace Z] (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f)
+    [T2Space X] [T2Space Y] [PreconnectedSpace Y] [T2Space Z] (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f)
     (hne : ∀ x, ¬ EventuallyConst f (𝓝 x)) (hg : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) g)
     (hneg : ∀ y, ¬ EventuallyConst g (𝓝 y)) : degree (g ∘ f) = degree g * degree f := by
   classical
-  rcases isEmpty_or_nonempty Z with hZ | ⟨⟨z⟩⟩
+  rcases isEmpty_or_nonempty Z with hZ | hZ
   · simp [degree_def]
   rcases isEmpty_or_nonempty X with hX | hX
   · have h₁ : degree f = 0 := Nat.eq_zero_of_le_zero (ciSup_le' fun y ↦ by
@@ -325,36 +342,47 @@ theorem degree_comp_of_forall_not_eventuallyConst [IsManifold 𝓘(ℂ) 1 Z] [Co
     (surjective_of_forall_not_eventuallyConst hf hne)
   have hgf : ∀ x, ¬ EventuallyConst (g ∘ f) (𝓝 x) := fun x ↦
     not_eventuallyConst_comp (.of_forall fun w ↦ hf w) (hne x) (hneg (f x))
-  have hT : (g ⁻¹' {z}).Finite := finite_preimage_singleton hg hneg z
-  -- The fibre of `g ∘ f` over `z` is the disjoint union of the fibres of `f` over `g ⁻¹' {z}`.
-  have hfib : (g ∘ f) ⁻¹' {z} = ⋃ y ∈ g ⁻¹' {z}, f ⁻¹' {y} := by
-    ext x
-    simp
-  have hdisj : (g ⁻¹' {z}).PairwiseDisjoint fun y ↦ f ⁻¹' {y} := fun y _ y' _ hyy' ↦
-    disjoint_left.2 fun x hx hx' ↦ hyy' ((mem_singleton_iff.1 hx).symm.trans hx')
-  -- Over each point `y` of the fibre of `g`, the fibre of `f` contributes `e_g(y) * deg f`.
-  have hpiece : ∀ y ∈ g ⁻¹' {z},
-      ∑ᶠ x ∈ f ⁻¹' {y}, localMultiplicity (g ∘ f) x = localMultiplicity g y * degree f := by
-    intro y _
-    have hS : (f ⁻¹' {y}).Finite := finite_preimage_singleton hf hne y
-    calc ∑ᶠ x ∈ f ⁻¹' {y}, localMultiplicity (g ∘ f) x
-        = ∑ᶠ x ∈ f ⁻¹' {y}, localMultiplicity g y * localMultiplicity f x :=
-          finsum_mem_congr rfl fun x hx ↦ by
-            rw [localMultiplicity_comp_of_eventually_mdifferentiableAt (.of_forall fun w ↦ hg w)
-              (.of_forall fun w ↦ hf w), mem_singleton_iff.1 (mem_preimage.1 hx)]
-      _ = localMultiplicity g y * fiberMultiplicitySum f y := by
-          rw [fiberMultiplicitySum_eq_sum hS, finsum_mem_eq_finite_toFinset_sum _ hS,
-            Finset.mul_sum]
-      _ = localMultiplicity g y * degree f := by rw [fiberMultiplicitySum_eq_degree hf hne y]
-  calc degree (g ∘ f)
-      = fiberMultiplicitySum (g ∘ f) z := (fiberMultiplicitySum_eq_degree (hg.comp hf) hgf z).symm
-    _ = ∑ᶠ y ∈ g ⁻¹' {z}, ∑ᶠ x ∈ f ⁻¹' {y}, localMultiplicity (g ∘ f) x := by
-        rw [fiberMultiplicitySum_def, hfib,
-          finsum_mem_biUnion hdisj hT fun y _ ↦ finite_preimage_singleton hf hne y]
-    _ = ∑ᶠ y ∈ g ⁻¹' {z}, localMultiplicity g y * degree f := finsum_mem_congr rfl hpiece
-    _ = fiberMultiplicitySum g z * degree f := by
-        rw [fiberMultiplicitySum_eq_sum hT, finsum_mem_eq_finite_toFinset_sum _ hT, Finset.sum_mul]
-    _ = degree g * degree f := by rw [fiberMultiplicitySum_eq_degree hg hneg z]
+  -- The fibre sum of `g ∘ f` over `z` is that of `g` times the degree of `f`.
+  have hfs (z : Z) :
+      fiberMultiplicitySum (g ∘ f) z = fiberMultiplicitySum g z * degree f := by
+    have hT : (g ⁻¹' {z}).Finite := finite_preimage_singleton hg hneg z
+    -- The fibre of `g ∘ f` over `z` is the disjoint union of the fibres of `f` over `g ⁻¹' {z}`.
+    have hfib : (g ∘ f) ⁻¹' {z} = ⋃ y ∈ g ⁻¹' {z}, f ⁻¹' {y} := by
+      ext x
+      simp
+    have hdisj : (g ⁻¹' {z}).PairwiseDisjoint fun y ↦ f ⁻¹' {y} := fun y _ y' _ hyy' ↦
+      disjoint_left.2 fun x hx hx' ↦ hyy' ((mem_singleton_iff.1 hx).symm.trans hx')
+    -- Over each point `y` of the fibre of `g`, the fibre of `f` contributes `e_g(y) * deg f`.
+    have hpiece : ∀ y ∈ g ⁻¹' {z},
+        ∑ᶠ x ∈ f ⁻¹' {y}, localMultiplicity (g ∘ f) x = localMultiplicity g y * degree f := by
+      intro y _
+      have hS : (f ⁻¹' {y}).Finite := finite_preimage_singleton hf hne y
+      calc ∑ᶠ x ∈ f ⁻¹' {y}, localMultiplicity (g ∘ f) x
+          = ∑ᶠ x ∈ f ⁻¹' {y}, localMultiplicity g y * localMultiplicity f x :=
+            finsum_mem_congr rfl fun x hx ↦ by
+              rw [localMultiplicity_comp_of_eventually_mdifferentiableAt (.of_forall fun w ↦ hg w)
+                (.of_forall fun w ↦ hf w), mem_singleton_iff.1 (mem_preimage.1 hx)]
+        _ = localMultiplicity g y * fiberMultiplicitySum f y := by
+            rw [fiberMultiplicitySum_eq_sum hS, finsum_mem_eq_finite_toFinset_sum _ hS,
+              Finset.mul_sum]
+        _ = localMultiplicity g y * degree f := by rw [fiberMultiplicitySum_eq_degree hf hne y]
+    calc fiberMultiplicitySum (g ∘ f) z
+        = ∑ᶠ y ∈ g ⁻¹' {z}, ∑ᶠ x ∈ f ⁻¹' {y}, localMultiplicity (g ∘ f) x := by
+          rw [fiberMultiplicitySum_def, hfib,
+            finsum_mem_biUnion hdisj hT fun y _ ↦ finite_preimage_singleton hf hne y]
+      _ = ∑ᶠ y ∈ g ⁻¹' {z}, localMultiplicity g y * degree f := finsum_mem_congr rfl hpiece
+      _ = fiberMultiplicitySum g z * degree f := by
+          rw [fiberMultiplicitySum_eq_sum hT, finsum_mem_eq_finite_toFinset_sum _ hT,
+            Finset.sum_mul]
+  have hbdd := bddAbove_range_fiberMultiplicitySum hg hneg
+  obtain ⟨z, hz⟩ := Nat.sSup_mem (range_nonempty (fiberMultiplicitySum g)) hbdd
+  have hz' : fiberMultiplicitySum g z = degree g := hz
+  refine le_antisymm ?_ ?_
+  · refine ciSup_le' fun z' ↦ ?_
+    rw [hfs, degree_def g]
+    exact Nat.mul_le_mul_right _ (le_ciSup hbdd z')
+  · rw [← hz', ← hfs]
+    exact le_ciSup (bddAbove_range_fiberMultiplicitySum (hg.comp hf) hgf) z
 
 /-! ### The degree of a finite holomorphic map
 
@@ -421,13 +449,14 @@ theorem degree_eq_fiber_sum (y : Y) :
   (fiberMultiplicitySum_eq_degree f.holomorphic f.not_eventuallyConst y).symm.trans
     (fiberMultiplicitySum_eq_sum _)
 
+omit [PreconnectedSpace Y] in
 /-- Every local multiplicity of a finite holomorphic map from a compact Riemann surface
-to a connected Riemann surface is at most its degree. -/
+is at most its degree. -/
 theorem localMultiplicity_le_degree (x : X) : localMultiplicity f x ≤ degree f :=
   localMultiplicity_le_degree_of_forall_not_eventuallyConst f.holomorphic f.not_eventuallyConst x
 
-/-- **Positivity of the degree** of a finite holomorphic map from a compact Riemann surface to a
-connected Riemann surface. -/
+omit [PreconnectedSpace Y] in
+/-- **Positivity of the degree** of a finite holomorphic map from a compact Riemann surface. -/
 theorem degree_pos : 0 < degree f :=
   have : Nonempty X := f.nonconstant.nonempty
   degree_pos_of_forall_not_eventuallyConst f.holomorphic f.not_eventuallyConst
@@ -467,8 +496,8 @@ theorem localMultiplicity_comp [IsManifold 𝓘(ℂ) 1 Z]
     (.of_forall fun y ↦ f.holomorphic y)
 
 /-- **Multiplicativity of the degree** for finite holomorphic maps `f : X → Y` and `g : Y → Z`
-with `X` compact and `Y` and `Z` connected. -/
-theorem degree_comp [IsManifold 𝓘(ℂ) 1 Z] [T2Space Z] [PreconnectedSpace Z]
+with `X` compact and `Y` connected. -/
+theorem degree_comp [IsManifold 𝓘(ℂ) 1 Z] [T2Space Z]
     (g : FiniteHolomorphicMap Y Z) (f : FiniteHolomorphicMap X Y) :
     degree (g.comp f) = degree g * degree f :=
   degree_comp_of_forall_not_eventuallyConst f.holomorphic f.not_eventuallyConst g.holomorphic
