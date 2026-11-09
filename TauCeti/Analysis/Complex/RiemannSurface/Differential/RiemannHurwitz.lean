@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Pullback
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Sphere
-public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Basic
 
 /-!
 # The canonical-divisor form of Riemann–Hurwitz
@@ -53,18 +52,8 @@ variable {X Y : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold �
 
 namespace OneForm
 
-variable [CompactSpace X] [CompactSpace Y]
+variable [CompactSpace X]
 
-/-- **Degree of the divisor of a pulled-back differential.** For a finite holomorphic map `f`
-of compact Riemann surfaces and a `1`-form `ω` meromorphic and of finite order everywhere,
-`deg div(f*ω) = deg f · deg div ω + deg R_f`. -/
-theorem degree_divisor_pullback [T2Space X] [T2Space Y] [PreconnectedSpace Y] (ω : OneForm Y)
-    (f : FiniteHolomorphicMap X Y) (hω : ∀ y, ω.MeromorphicAt y) (hω₀ : ∀ y, ω.order y ≠ ⊤) :
-    WeilDivisor.degree (ω.pullback f).divisor =
-      (degree f : ℤ) * WeilDivisor.degree ω.divisor + ramificationDegree f := by
-  rw [divisor_pullback ω f hω hω₀, map_add, degree_divisorPullback, degree_ramificationDivisor]
-
-omit [CompactSpace Y] in
 /-- The divisor of the pullback of a `1`-form meromorphic and of finite order everywhere by a
 finite holomorphic map is canonical. -/
 theorem isCanonicalDivisor_divisor_pullback (ω : OneForm Y) (f : FiniteHolomorphicMap X Y)

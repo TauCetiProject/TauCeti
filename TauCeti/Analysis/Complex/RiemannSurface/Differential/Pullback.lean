@@ -18,7 +18,8 @@ local multiplicity `e > 0`,
 `ord_x(f*ω) = e * ord_(f x)(ω) + e - 1`.
 
 On compact surfaces this gives the divisor identity
-`div(f*ω) = f*(div ω) + R_f`, the canonical-divisor input to analytic Riemann–Hurwitz.
+`div(f*ω) = f*(div ω) + R_f`, the canonical-divisor input to analytic Riemann–Hurwitz, and
+taking degrees, `deg div(f*ω) = deg f · deg div ω + deg R_f`.
 The local statements require neither compactness nor connectedness; the divisor identity
 requires finite order of the target differential, since the divisor of the zero differential
 does not obey that identity.
@@ -266,6 +267,15 @@ theorem divisor_pullback (ω : OneForm Y) (f : FiniteHolomorphicMap X Y)
   simp only [← WithTop.coe_natCast, ← WithTop.coe_mul, ← WithTop.coe_add,
     WithTop.untop₀_coe]
   ring
+
+/-- **Degree of the divisor of a pulled-back differential.** For a finite holomorphic map `f`
+of compact Riemann surfaces and a `1`-form `ω` meromorphic and of finite order everywhere,
+`deg div(f*ω) = deg f · deg div ω + deg R_f`. -/
+theorem degree_divisor_pullback [T2Space X] [T2Space Y] [PreconnectedSpace Y] (ω : OneForm Y)
+    (f : FiniteHolomorphicMap X Y) (hω : ∀ y, ω.MeromorphicAt y) (hω₀ : ∀ y, ω.order y ≠ ⊤) :
+    AlgebraicGeometry.WeilDivisor.degree (ω.pullback f).divisor =
+      (degree f : ℤ) * AlgebraicGeometry.WeilDivisor.degree ω.divisor + ramificationDegree f := by
+  rw [divisor_pullback ω f hω hω₀, map_add, degree_divisorPullback, degree_ramificationDivisor]
 
 end Compact
 
