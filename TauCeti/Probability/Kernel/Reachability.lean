@@ -143,10 +143,10 @@ theorem isIrreducible_count_iff_forall_communicates [MeasurableSingletonClass S]
   rw [isIrreducible_count_iff_forall_reaches]
   exact ⟨fun h x y => ⟨h x y, h y x⟩, fun h x y => (h x y).1⟩
 
-/-- An irreducible Markov kernel with respect to the counting measure lives on a countable state
-space with measurable singletons: every state is reached from a fixed state, and each finite
+/-- An irreducible s-finite kernel with respect to the counting measure lives on a countable state
+space with measurable singletons: every state is reached from a fixed state, and each s-finite
 measure `(κ ^ n) x` has only countably many atoms. -/
-theorem countable_of_isIrreducible_count [MeasurableSingletonClass S] [IsMarkovKernel κ]
+theorem countable_of_isIrreducible_count [MeasurableSingletonClass S] [IsSFiniteKernel κ]
     [IsIrreducible Measure.count κ] : Countable S := by
   rcases isEmpty_or_nonempty S with hS | ⟨⟨x⟩⟩
   · infer_instance
