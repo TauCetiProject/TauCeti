@@ -228,7 +228,7 @@ theorem ncard_ramifiedPrimes_sub_one_le_narrowTwoRank
     (ramifiedPrimes K).ncard - 1 ≤ NumberField.NarrowClassGroup.twoRank K := by
   obtain ⟨s, hs, heven, hprod⟩ :=
     (isFundamentalDiscr_fundamentalDiscriminant hsf).exists_finset_primeDiscriminant
-  rw [ncard_ramifiedPrimes_eq_card hmin hgen hsf hs heven hprod]
+  rw [ncard_ramifiedPrimes_eq_card hmin hgen hsf hs hprod]
   exact card_sub_one_le_narrowTwoRank hs heven hprod hmin hgen hsf
 
 /-- **The `2`-rank formula for the narrow class group of a quadratic field.** For `K = ℚ(√d)` with

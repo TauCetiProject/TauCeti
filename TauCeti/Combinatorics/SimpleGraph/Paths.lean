@@ -25,6 +25,8 @@ This file collects general facts about paths and cycles in a simple graph, compl
   walk outside the interior of such an arc lie on the remaining path.
 * `SimpleGraph.Walk.IsPath.isCycle_append_append_reverse`: two paths from a common vertex close
   up with a third path into a cycle.
+* `SimpleGraph.Walk.IsPath.isCycle_cons_append_cons_reverse`: two vertex-disjoint paths joined at
+  both ends by distinct edges form a cycle.
 * `SimpleGraph.Walk.exists_eq_append_of_exists_mem_support`: a walk meeting a finset splits at
   its first vertex in it.
 * `SimpleGraph.Walk.exists_eq_append_append_of_countP_lt`: a walk starting in `F` with fewer
@@ -32,6 +34,8 @@ This file collects general facts about paths and cycles in a simple graph, compl
   avoids `T`.
 * `SimpleGraph.Walk.IsCycle.exists_eq_append_append`: a cycle with fewer vertices of `T` outside
   `F` than in `F` has an arc between two distinct vertices of `F` whose interior avoids `T`.
+* `SimpleGraph.exists_isPath_notMem_support_iff`: every walk avoiding one vertex can be shortened
+  to a path avoiding it.
 -/
 
 public section
@@ -142,6 +146,20 @@ theorem IsPath.isCycle_append_append_reverse {x a b : V} {P : G.Walk x a} {Q : G
     rw [length_append]
     omega
 
+/-- Two vertex-disjoint paths `P` from `x` to `y` and `Q` from `x'` to `y'`, joined by distinct
+edges `s(x, x')` and `s(y', y)`, close up into a cycle through both edges. -/
+theorem IsPath.isCycle_cons_append_cons_reverse {x x' y y' : V} {P : G.Walk x y}
+    {Q : G.Walk x' y'} (hP : P.IsPath) (hQ : Q.IsPath) (hPQ : P.support.Disjoint Q.support)
+    (hx : G.Adj x x') (hy : G.Adj y' y) (hxy : s(x, x') ≠ s(y', y)) :
+    (cons hx (Q.append (cons hy P.reverse))).IsCycle := by
+  rw [cons_isCycle_iff, isPath_append, edges_append, List.mem_append, edges_cons, List.mem_cons,
+    edges_reverse, List.mem_reverse]
+  refine ⟨⟨hQ, by simpa using hP, by simpa using hPQ.symm⟩, ?_⟩
+  rintro (h | h | h)
+  · exact hPQ P.start_mem_support (Q.fst_mem_support_of_mem_edges h)
+  · exact hxy h
+  · exact hPQ (P.snd_mem_support_of_mem_edges h) Q.start_mem_support
+
 /-- A walk meeting a set `F` splits at its first vertex `b` in `F`: the first part has `b` as its
 only vertex in `F`, occurring once. -/
 theorem exists_eq_append_of_exists_mem_support [DecidableEq V] (F : Finset V) {v w : V}
@@ -243,3 +261,19 @@ theorem IsCycle.exists_eq_append_append [DecidableEq V] {F T : Finset V} {r : V}
   omega
 
 end SimpleGraph.Walk
+
+namespace SimpleGraph
+
+variable {V : Type u} {G : SimpleGraph V} {s t : V}
+
+/-- A walk avoiding a vertex can be shortened to a path avoiding that vertex. -/
+theorem exists_isPath_notMem_support_iff {x : V} :
+    (∃ p : G.Walk s t, p.IsPath ∧ x ∉ p.support) ↔ ∃ p : G.Walk s t, x ∉ p.support := by
+  classical
+  constructor
+  · rintro ⟨p, -, hp⟩
+    exact ⟨p, hp⟩
+  · rintro ⟨p, hp⟩
+    exact ⟨p.bypass, p.bypass_isPath, fun hx ↦ hp (p.support_bypass_subset_support hx)⟩
+
+end SimpleGraph

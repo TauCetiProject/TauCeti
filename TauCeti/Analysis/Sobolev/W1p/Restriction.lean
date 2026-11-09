@@ -47,7 +47,7 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Set TopologicalSpace
+open _root_.MeasureTheory Set TopologicalSpace
 open scoped Distributions ENNReal Gradient
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
@@ -205,6 +205,12 @@ theorem W1p.value_restrictL_ofTestFunctionₗ_ae (hU : U ≤ Omega) (φ : 𝓓(O
   (W1p.value_restrictL_ae hU _).trans
     (ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hU)
       (W1p.value_ofTestFunctionₗ_ae φ))
+
+/-- A Sobolev function on `Omega` whose value agrees almost everywhere on the smaller open set `U`
+with the value of `u` restricts to `u` on `U`. -/
+theorem W1p.restrictL_eq_of_value_ae_eq (hU : U ≤ Omega) {u : W1p mu U p} {w : W1p mu Omega p}
+    (hvalw : W1p.value w =ᵐ[mu.restrict U] W1p.value u) : W1p.restrictL hU w = u :=
+  W1p.ext_value (Lp.ext ((W1p.value_restrictL_ae hU w).trans hvalw))
 
 /-- Restriction keeps the same weak-gradient representative on the smaller open set. -/
 theorem W1p.gradient_restrictL_ae (hU : U ≤ Omega) (u : W1p mu Omega p) :

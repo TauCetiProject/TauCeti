@@ -214,19 +214,10 @@ private theorem sign_orientedAngle_I_geodesicLine_one_rotation {d t : ℝ} (hd :
     (orientedAngle UpperHalfPlane.I (geodesicLine 1 d) (geodesicLine (↑(rotation θ)) t)).sign =
       SignType.sign (-(geodesicLine (↑(rotation θ)) t).re) := by
   rw [orientedAngle_I_geodesicLine_one_rotation hd ht θ, Real.Angle.sign, Real.Angle.sin_coe,
-    Real.sin_two_mul, mul_assoc, geodesicLine_def, pslMk_smul, re_rotation_smul_mk]
-  have hy : 1 < Real.exp t ^ 2 := one_lt_pow₀ (Real.one_lt_exp_iff.2 ht) two_ne_zero
-  have hN : 0 < Complex.normSq ((Real.cos θ : ℂ) - Complex.I * Real.exp t * Real.sin θ) := by
-    simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.mul_re, Complex.mul_im,
-      Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im]
-    nlinarith [Real.sin_sq_add_cos_sq θ, mul_nonneg (sub_nonneg.2 hy.le) (sq_nonneg (Real.sin θ))]
-  have h : -(Real.sin θ * Real.cos θ * (1 - Real.exp t ^ 2) /
-      Complex.normSq ((Real.cos θ : ℂ) - Complex.I * Real.exp t * Real.sin θ)) =
-      Real.sin θ * Real.cos θ * ((Real.exp t ^ 2 - 1) /
-        Complex.normSq ((Real.cos θ : ℂ) - Complex.I * Real.exp t * Real.sin θ)) := by
-    ring
-  rw [h, sign_mul 2, sign_mul (Real.sin θ * Real.cos θ), sign_pos two_pos,
-    sign_pos (div_pos (by linarith) hN), one_mul, mul_one]
+    Real.sin_two_mul, mul_assoc, geodesicLine_def, pslMk_smul,
+    Left.sign_neg,
+    sign_re_rotation_smul_mk_of_one_lt θ (Real.exp_pos t) (Real.one_lt_exp_iff.2 ht), neg_neg,
+    sign_mul, sign_pos two_pos, one_mul]
 
 /-- The sign of the oriented angle is the sign of `-C.re` once the geodesic from `A` to `B` is
 moved onto the upward imaginary axis. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Sl2.Standard
-public import TauCeti.QuantumGroups.QuantumInteger.Laurent
+public import TauCeti.QuantumGroups.QuantumInteger.Laurent.Basic
 public import TauCeti.QuantumGroups.UqSl2.LadderModule.Basic
 
 import Mathlib.Tactic

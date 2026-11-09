@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.MarkovChain.Visits
+public import TauCeti.Probability.MarkovChain.Recurrence
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 /-!
@@ -16,6 +16,7 @@ almost surely finite from every finite initial measure. Consequently the fractio
 `1, …, n` spent at `y` tends to zero, both almost surely and in expectation. The Green-function
 identity also implies that the time-`n` mass of `y` tends to zero, without irreducibility or
 aperiodicity. No convergence in total variation to the zero measure is asserted.
+As a corollary, every positive-mass atom of a finite invariant measure is recurrent.
 
 The occupation statements transfer to any realization with the same path law. Only measurable
 singletons are needed on the state space, not countability or a topology. Expected occupation
@@ -23,7 +24,7 @@ fractions use bounded convergence, so no moment assumption on return times is ne
 
 ## References
 
-* J. R. Norris, *Markov Chains*, Cambridge University Press (1997), §§1.5 and 1.10.
+* J. R. Norris, *Markov Chains*, Cambridge University Press (1997), §§1.5, 1.7 and 1.10.
 -/
 
 public section
@@ -75,6 +76,17 @@ theorem tendsto_pow_comp_apply_singleton_zero_of_return_lt_one
   rw [tsum_pow_comp_apply_singleton, tsum_pow_apply_singleton_self]
   exact ENNReal.mul_ne_top (measure_ne_top _ _) (by
     simpa only [ne_eq, ENNReal.inv_eq_top, tsub_eq_zero_iff_le, not_le] using hy)
+
+/-- Every positive-mass atom of a finite invariant measure is recurrent. No irreducibility,
+countability or aperiodicity assumption is needed. -/
+theorem Invariant.isRecurrent_of_apply_singleton_ne_zero {κ : Kernel α α}
+    [IsMarkovKernel κ] {ν : Measure α} [IsFiniteMeasure ν]
+    (hν : κ.Invariant ν) {x : α} (hx : ν {x} ≠ 0) : κ.IsRecurrent x := by
+  by_contra h
+  have hlim := κ.tendsto_pow_comp_apply_singleton_zero_of_return_lt_one
+    (isTransient_iff_return_probability_lt_one.mp (isTransient_iff.mpr h)) ν
+  simp only [hν.pow_comp] at hlim
+  exact hx (tendsto_nhds_unique tendsto_const_nhds hlim)
 
 end ProbabilityTheory.Kernel
 

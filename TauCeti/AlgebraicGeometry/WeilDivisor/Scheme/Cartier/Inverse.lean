@@ -230,6 +230,16 @@ theorem coeff_toWeilDivisor (D : CartierDivisor X) (x : CodimensionOnePoint X) :
     WeilDivisor.coeff D.toWeilDivisor x = D.orderAt x :=
   congrFun Finsupp.ofSupportFinite_coe x
 
+/-- If `f` is a local equation of `D` on `V`, then the coefficient of the Weil divisor of `D` at a
+codimension-one point of `V` is the order of `f` there. -/
+theorem coeff_toWeilDivisor_eq_ord (D : CartierDivisor X) (y : CodimensionOnePoint X)
+    {V : X.Opens} [Nonempty V] (hyV : (y : X) ∈ V) (f : X.functionFieldˣ)
+    (hV : rationalUnitClass X V (Additive.ofMul f) = D |_ V) :
+    WeilDivisor.coeff D.toWeilDivisor y = X.ord (f : X.functionField) y := by
+  rw [coeff_toWeilDivisor,
+    orderAt_eq_of_restrict_eq_rationalUnitClass D y V hyV (Additive.ofMul f) hV.symm]
+  simp
+
 /-- The construction from Cartier divisors to Weil divisors is additive. -/
 def toWeilDivisorHom : CartierDivisor X →+ SchemeWeilDivisor X where
   toFun := toWeilDivisor

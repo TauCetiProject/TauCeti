@@ -309,7 +309,7 @@ theorem range_toClassGroup [NeZero n] : (toClassGroup K S n).range =
     refine ⟨fromUnitsNDivisible K S n ⟨x, hmem⟩, ?_⟩
     rw [toClassGroup_fromUnitsNDivisible, nthRootClass_apply]
     congr 1
-    refine units_eq_of_forall_count_eq _ _ fun v ↦ ?_
+    refine FractionalIdeal.units_ext_count fun v ↦ ?_
     rw [count_nthRootHom, coe_unitsNDivisibleToNDivisible, coe_toPrincipalIdeal, hcount v,
       Int.mul_ediv_cancel_left _ (Int.natCast_ne_zero.mpr (NeZero.ne n))]
 
