@@ -60,13 +60,11 @@ theorem identDistrib_renewalRestart_of_expMeasure
       ((hasLaw_renewalExcess_expMeasure hT hindep hlaw t).identDistrib (hlaw 0)).comp
         measurable_real_toNNReal
   have htail : HasLaw (fun ω n ↦ T (n + 1) ω)
-      (Measure.infinitePi (fun _ : ℕ ↦ P.map (T 0))) P := by
-    refine ⟨(Measurable.of_eval fun n ↦ hT (n + 1)).aemeasurable, ?_⟩
-    rw [(hindep.precomp (add_left_injective 1)).map_fun_eq_infinitePi_map
-      (fun n ↦ hT (n + 1))]
-    congr 1
-    funext n
-    exact (hid (n + 1)).map_eq
+      (Measure.infinitePi (fun _ : ℕ ↦ P.map (T 0))) P :=
+    iIndepFun.hasLaw_infinitePi
+      (fun n ↦ (hid (n + 1)).symm.hasLaw (hasLaw_map (hT 0).aemeasurable))
+      (hindep.precomp (add_left_injective 1))
+      (Measurable.of_eval fun n ↦ hT (n + 1)).aemeasurable
   have hU := (hasLaw_renewalUnusedTail hT hindep hid hzero t).identDistrib htail
   have hEU : IndepFun (renewalExcess T t) (renewalUnusedTail T t) P :=
     ((indepFun_renewalUnusedTail_renewalCountNat_renewalExcess hT hindep hid hzero t).comp
