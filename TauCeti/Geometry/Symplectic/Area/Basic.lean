@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 
@@ -182,10 +183,8 @@ theorem loopArea_comp_sub_mul (ω : SymplecticForm V) {g : ℝ → V} (hg : Func
 area. -/
 theorem loopArea_comp_neg (ω : SymplecticForm V) {x : ℝ → V} (hx : Function.Periodic x 1) :
     ω.loopArea (fun t ↦ x (-t)) = -ω.loopArea x := by
-  have hd : Function.Periodic (deriv x) 1 := fun t ↦ by
-    rw [← deriv_comp_add_const, show (fun y ↦ x (y + 1)) = x from funext hx]
   have hper : Function.Periodic (fun t ↦ ω (x t) (deriv x t)) 1 := fun t ↦ by
-    simp only [hx t, hd t]
+    simp only [hx t, hx.deriv t]
   simp only [loopArea_def, deriv_comp_neg, map_neg, intervalIntegral.integral_neg,
     hper.intervalIntegral_comp_neg]
   ring

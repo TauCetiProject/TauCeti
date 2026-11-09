@@ -319,11 +319,11 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pairOfPantsPerturba
       simp only [endSign_mul_endSign_mul]
     rw [hy', hamiltonianAction_endSign ω (hH q) (periodic_comp_endSign_mul hyper q)] at hA
     have h := hA.const_mul q.endSign
-    rw [← mul_assoc, endSign_mul_self, one_mul] at h
+    rw [endSign_mul_endSign_mul] at h
     refine h.congr fun R ↦ ?_
     have hR := hamiltonianAction_endSign ω (hH q) (periodic_endLoop u q (q.endSign * R)) q
     simp only [← hℓ] at hR
-    rw [hR, ← mul_assoc, endSign_mul_self, one_mul]
+    rw [hR, endSign_mul_endSign_mul]
 
 /-- **The energy of a pair of pants in terms of its asymptotic orbits.** Let `K` be the
 pair-of-pants perturbation of period-one `C¹` Hamiltonians `H_q` on the ends of
