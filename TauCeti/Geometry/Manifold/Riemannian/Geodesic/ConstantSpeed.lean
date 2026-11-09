@@ -87,12 +87,11 @@ theorem IsGeodesicCurveOn.inner_curveVelocityWithin_self_eq
   · intro t ht
     have hcoord := differentiableWithinAt_sectionCoord_curveVelocityWithin γ h.uniqueDiffOn
       h.contMDiffOn ht (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
-    exact hmetric.differentiableWithinAt_inner (h.uniqueDiffOn t ht)
-      (h.mdifferentiableOn t ht) hcoord hcoord
+    exact hmetric.differentiableWithinAt_inner (h.mdifferentiableOn t ht) hcoord hcoord
   · intro t ht
     have hcoord := differentiableWithinAt_sectionCoord_curveVelocityWithin γ h.uniqueDiffOn
       h.contMDiffOn ht (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
-    have hprod := hmetric.hasDerivWithinAt_inner_alongCurveWithin (h.uniqueDiffOn t ht)
+    have hprod := hmetric.hasDerivWithinAt_inner_alongCurveWithin
       (h.mdifferentiableOn t ht) hcoord hcoord
     have hderiv : HasDerivWithinAt (fun r ↦
         inner ℝ (curveVelocityWithin I γ s r) (curveVelocityWithin I γ s r)) 0 s t :=

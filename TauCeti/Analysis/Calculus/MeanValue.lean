@@ -318,3 +318,18 @@ theorem Differentiable.abs_sub_le_of_basis_bound {P : Type*}
   have hmain := norm_image_sub_le_of_norm_deriv_le_segment'
     (fun t _ ↦ (hgd t).hasDerivWithinAt) hderiv s (right_mem_Icc.mpr hs.1)
   simpa only [g, zero_smul, add_zero, sub_zero, Real.norm_eq_abs] using hmain
+
+namespace IsPreconnected
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] {f : ℝ → G} {s : Set ℝ}
+
+/-- A function on a preconnected subset of `ℝ` whose derivative within the set vanishes at every
+point of the set takes the same value at any two points of the set. -/
+theorem eq_of_hasDerivWithinAt_zero (hs : IsPreconnected s)
+    (hf : ∀ t ∈ s, HasDerivWithinAt f 0 s t) {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) :
+    f a = f b := by
+  have h := (Real.convex_iff_isPreconnected.2 hs).norm_image_sub_le_of_norm_hasDerivWithin_le
+    hf (C := 0) (fun _ _ ↦ by simp) ha hb
+  simpa [sub_eq_zero, eq_comm] using h
+
+end IsPreconnected
