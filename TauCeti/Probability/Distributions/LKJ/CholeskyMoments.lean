@@ -5,20 +5,20 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Distributions.LKJ.PartialCorrelation
+public import TauCeti.Analysis.Matrix.PartialCorrelation.Basic
 public import TauCeti.Probability.Distributions.Beta.Symmetric
 
 /-!
 # Moments of partial-correlation Cholesky factors
 
-The Cholesky factor built from independent centered symmetric Beta partial correlations has
-explicit natural moments entry by entry.  An entry below the diagonal contributes one power of
-its partial correlation and one square-root residual factor for every preceding column; a
-diagonal entry has only the residual factors.  Independence therefore evaluates every natural
-moment as a finite product of Beta quotients.  Entries above the diagonal are identically zero.
+Products of natural powers of entries of the partial-correlation Cholesky factor split into
+one-dimensional factors. Each partial correlation contributes a natural coordinate power and a
+nonnegative half-integer power of its residual variance. Under independent centered symmetric
+Beta laws, all such joint monomials are integrable and their moments are finite products of Beta
+quotients.
 
-These formulas are the one-entry building blocks for mixed moments of LKJ correlation matrices:
-after expanding `R = L Lᵀ`, each summand is a product of powers of Cholesky entries.
+These joint moments are the building blocks for mixed moments of LKJ correlation matrices: after
+expanding `R = L Lᵀ`, each summand is a product of powers of Cholesky entries.
 
 ## References
 
@@ -38,16 +38,30 @@ namespace TauCeti.Probability
 variable {p : ℕ}
 
 /-- The power of a partial-correlation coordinate occurring in a natural power of one Cholesky
-entry.  It is `n` at the coordinate indexing that entry and zero elsewhere. -/
+entry. It is `n` at the coordinate indexing that entry and zero elsewhere. -/
+@[expose]
 def partialCorrelationCholeskyEntryCoordinatePower (i k : Fin p) (n : ℕ)
     (ij : strictLowerTriangle p) : ℕ :=
   if ij.1 = (i, k) then n else 0
 
-/-- The residual power contributed by a natural power of one Cholesky entry.  Every partial
+/-- The defining formula for the coordinate power of one Cholesky entry. -/
+theorem partialCorrelationCholeskyEntryCoordinatePower_def (i k : Fin p) (n : ℕ)
+    (ij : strictLowerTriangle p) :
+    partialCorrelationCholeskyEntryCoordinatePower i k n ij =
+      if ij.1 = (i, k) then n else 0 := rfl
+
+/-- The residual power contributed by a natural power of one Cholesky entry. Every partial
 correlation in the same row and a preceding column contributes `(1 - z²) ^ (n / 2)`. -/
+@[expose]
 def partialCorrelationCholeskyEntryResidualPower (i k : Fin p) (n : ℕ)
     (ij : strictLowerTriangle p) : ℝ :=
   if ij.1.1 = i ∧ ij.1.2 < k then (n : ℝ) / 2 else 0
+
+/-- The defining formula for the residual power of one Cholesky entry. -/
+theorem partialCorrelationCholeskyEntryResidualPower_def (i k : Fin p) (n : ℕ)
+    (ij : strictLowerTriangle p) :
+    partialCorrelationCholeskyEntryResidualPower i k n ij =
+      if ij.1.1 = i ∧ ij.1.2 < k then (n : ℝ) / 2 else 0 := rfl
 
 @[simp]
 theorem partialCorrelationCholeskyEntryCoordinatePower_apply (i k : Fin p) (n : ℕ)
@@ -62,23 +76,184 @@ theorem partialCorrelationCholeskyEntryCoordinatePower_apply_of_ne (i k : Fin p)
   simp [partialCorrelationCholeskyEntryCoordinatePower, hij]
 
 @[simp]
-theorem partialCorrelationCholeskyEntryResidualPower_of_mem (i k : Fin p) (n : ℕ)
+theorem partialCorrelationCholeskyEntryResidualPower_of_eq_of_lt (i k : Fin p) (n : ℕ)
     (ij : strictLowerTriangle p) (hi : ij.1.1 = i) (hk : ij.1.2 < k) :
     partialCorrelationCholeskyEntryResidualPower i k n ij = (n : ℝ) / 2 := by
   simp [partialCorrelationCholeskyEntryResidualPower, hi, hk]
 
 @[simp]
-theorem partialCorrelationCholeskyEntryResidualPower_of_not_mem (i k : Fin p) (n : ℕ)
+theorem partialCorrelationCholeskyEntryResidualPower_of_not (i k : Fin p) (n : ℕ)
     (ij : strictLowerTriangle p) (h : ¬(ij.1.1 = i ∧ ij.1.2 < k)) :
     partialCorrelationCholeskyEntryResidualPower i k n ij = 0 := by
   simp [partialCorrelationCholeskyEntryResidualPower, h]
 
-private theorem residualPower_nonneg (i k : Fin p) (n : ℕ) (ij : strictLowerTriangle p) :
+/-- Residual powers contributed by Cholesky entries are nonnegative. -/
+theorem partialCorrelationCholeskyEntryResidualPower_nonneg (i k : Fin p) (n : ℕ)
+    (ij : strictLowerTriangle p) :
     0 ≤ partialCorrelationCholeskyEntryResidualPower i k n ij := by
-  unfold partialCorrelationCholeskyEntryResidualPower
+  rw [partialCorrelationCholeskyEntryResidualPower_def]
   split_ifs
   · positivity
   · exact le_rfl
+
+/-- The total natural coordinate power in a monomial of Cholesky entries. -/
+@[expose]
+def partialCorrelationCholeskyMonomialCoordinatePower
+    (m : Fin p × Fin p → ℕ) (ij : strictLowerTriangle p) : ℕ :=
+  ∑ q, partialCorrelationCholeskyEntryCoordinatePower q.1 q.2 (m q) ij
+
+/-- The defining sum for the coordinate power in a Cholesky monomial. -/
+theorem partialCorrelationCholeskyMonomialCoordinatePower_def
+    (m : Fin p × Fin p → ℕ) (ij : strictLowerTriangle p) :
+    partialCorrelationCholeskyMonomialCoordinatePower m ij =
+      ∑ q, partialCorrelationCholeskyEntryCoordinatePower q.1 q.2 (m q) ij := rfl
+
+/-- The total residual power in a monomial of Cholesky entries. -/
+@[expose]
+def partialCorrelationCholeskyMonomialResidualPower
+    (m : Fin p × Fin p → ℕ) (ij : strictLowerTriangle p) : ℝ :=
+  ∑ q, partialCorrelationCholeskyEntryResidualPower q.1 q.2 (m q) ij
+
+/-- The defining sum for the residual power in a Cholesky monomial. -/
+theorem partialCorrelationCholeskyMonomialResidualPower_def
+    (m : Fin p × Fin p → ℕ) (ij : strictLowerTriangle p) :
+    partialCorrelationCholeskyMonomialResidualPower m ij =
+      ∑ q, partialCorrelationCholeskyEntryResidualPower q.1 q.2 (m q) ij := rfl
+
+/-- Residual powers in Cholesky monomials are nonnegative. -/
+theorem partialCorrelationCholeskyMonomialResidualPower_nonneg
+    (m : Fin p × Fin p → ℕ) (ij : strictLowerTriangle p) :
+    0 ≤ partialCorrelationCholeskyMonomialResidualPower m ij := by
+  rw [partialCorrelationCholeskyMonomialResidualPower_def]
+  exact Finset.sum_nonneg fun q _ ↦
+    partialCorrelationCholeskyEntryResidualPower_nonneg q.1 q.2 (m q) ij
+
+private theorem sqrt_pow_eq_rpow_half {x : ℝ} (hx : 0 ≤ x) (n : ℕ) :
+    Real.sqrt x ^ n = x ^ ((n : ℝ) / 2) := by
+  rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul hx]
+  congr 1
+  ring
+
+private theorem pow_partialCorrelationCholeskyEntryFactor
+    {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1) (i k : Fin p) (n : ℕ)
+    (ij : strictLowerTriangle p) :
+    partialCorrelationCholeskyEntryFactor i k ij (z ij) ^ n =
+      z ij ^ partialCorrelationCholeskyEntryCoordinatePower i k n ij *
+        (1 - z ij ^ 2) ^ partialCorrelationCholeskyEntryResidualPower i k n ij := by
+  have hbase : 0 ≤ 1 - z ij ^ 2 :=
+    (sub_pos.mpr ((sq_lt_one_iff_abs_lt_one _).2 (hz ij))).le
+  by_cases hc : ij.1.1 = i ∧ ij.1.2 = k
+  · have hpair : ij.1 = (i, k) := Prod.ext hc.1 hc.2
+    have hr : ¬(ij.1.1 = i ∧ ij.1.2 < k) := fun h ↦ (ne_of_lt h.2) hc.2
+    rw [partialCorrelationCholeskyEntryCoordinatePower_def, ite_eq_left hpair,
+      partialCorrelationCholeskyEntryResidualPower_def, ite_eq_right hr, Real.rpow_zero, mul_one,
+      partialCorrelationCholeskyEntryFactor, ite_eq_left hc, ite_eq_right hr, mul_one]
+  · have hpair : ij.1 ≠ (i, k) := fun h ↦ hc ⟨congrArg Prod.fst h, congrArg Prod.snd h⟩
+    by_cases hr : ij.1.1 = i ∧ ij.1.2 < k
+    · rw [partialCorrelationCholeskyEntryCoordinatePower_def, ite_eq_right hpair,
+        partialCorrelationCholeskyEntryResidualPower_def, ite_eq_left hr, pow_zero, one_mul,
+        partialCorrelationCholeskyEntryFactor, ite_eq_right hc, ite_eq_left hr, one_mul]
+      exact sqrt_pow_eq_rpow_half hbase n
+    · rw [partialCorrelationCholeskyEntryCoordinatePower_def, ite_eq_right hpair,
+        partialCorrelationCholeskyEntryResidualPower_def, ite_eq_right hr, pow_zero,
+        Real.rpow_zero, one_mul, partialCorrelationCholeskyEntryFactor, ite_eq_right hc,
+        ite_eq_right hr, mul_one, one_pow]
+
+/-- On the open partial-correlation cube, a natural power of a lower-triangular Cholesky entry
+factors into coordinate and residual powers. -/
+theorem pow_partialCorrelationCholesky_eq_prod
+    {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1) (i k : Fin p) (n : ℕ)
+    (hki : k ≤ i) :
+    partialCorrelationCholesky z i k ^ n =
+      ∏ ij, z ij ^ partialCorrelationCholeskyEntryCoordinatePower i k n ij *
+        (1 - z ij ^ 2) ^ partialCorrelationCholeskyEntryResidualPower i k n ij := by
+  rw [← prod_partialCorrelationCholeskyEntryFactor z i k hki, ← Finset.prod_pow]
+  exact Finset.prod_congr rfl fun ij _ ↦
+    pow_partialCorrelationCholeskyEntryFactor hz i k n ij
+
+/-- On the open partial-correlation cube, a joint monomial in lower-triangular Cholesky entries
+factors coordinatewise. -/
+theorem prod_pow_partialCorrelationCholesky_eq_prod
+    {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1)
+    (m : Fin p × Fin p → ℕ) (hm : ∀ q, m q ≠ 0 → q.2 ≤ q.1) :
+    (∏ q, partialCorrelationCholesky z q.1 q.2 ^ m q) =
+      ∏ ij, z ij ^ partialCorrelationCholeskyMonomialCoordinatePower m ij *
+        (1 - z ij ^ 2) ^ partialCorrelationCholeskyMonomialResidualPower m ij := by
+  have hentry (q : Fin p × Fin p) :
+      partialCorrelationCholesky z q.1 q.2 ^ m q =
+        ∏ ij, z ij ^ partialCorrelationCholeskyEntryCoordinatePower q.1 q.2 (m q) ij *
+          (1 - z ij ^ 2) ^ partialCorrelationCholeskyEntryResidualPower q.1 q.2 (m q) ij := by
+    by_cases hq : m q = 0
+    · simp [hq, partialCorrelationCholeskyEntryCoordinatePower_def,
+        partialCorrelationCholeskyEntryResidualPower_def]
+    · exact pow_partialCorrelationCholesky_eq_prod hz q.1 q.2 (m q) (hm q hq)
+  calc
+    (∏ q, partialCorrelationCholesky z q.1 q.2 ^ m q) =
+        ∏ q, ∏ ij, z ij ^ partialCorrelationCholeskyEntryCoordinatePower q.1 q.2 (m q) ij *
+          (1 - z ij ^ 2) ^ partialCorrelationCholeskyEntryResidualPower q.1 q.2 (m q) ij :=
+      Finset.prod_congr rfl fun q _ ↦ hentry q
+    _ = ∏ ij, ∏ q, z ij ^ partialCorrelationCholeskyEntryCoordinatePower q.1 q.2 (m q) ij *
+          (1 - z ij ^ 2) ^ partialCorrelationCholeskyEntryResidualPower q.1 q.2 (m q) ij :=
+      Finset.prod_comm
+    _ = ∏ ij, z ij ^ partialCorrelationCholeskyMonomialCoordinatePower m ij *
+        (1 - z ij ^ 2) ^ partialCorrelationCholeskyMonomialResidualPower m ij := by
+      apply Finset.prod_congr rfl
+      intro ij _
+      rw [Finset.prod_mul_distrib, partialCorrelationCholeskyMonomialCoordinatePower_def,
+        partialCorrelationCholeskyMonomialResidualPower_def,
+        Finset.prod_pow_eq_pow_sum]
+      congr 1
+      exact (Real.rpow_sum_of_nonneg
+        (sub_pos.mpr ((sq_lt_one_iff_abs_lt_one _).2 (hz ij))).le
+        (fun q _ ↦ partialCorrelationCholeskyEntryResidualPower_nonneg
+          q.1 q.2 (m q) ij)).symm
+
+/-- The coordinatewise factorization of a lower-triangular Cholesky monomial holds almost
+everywhere under independent centered symmetric Beta laws. -/
+theorem ae_prod_pow_partialCorrelationCholesky_eq_prod
+    {a : strictLowerTriangle p → ℝ} (ha : ∀ ij, 0 < a ij)
+    (m : Fin p × Fin p → ℕ) (hm : ∀ q, m q ≠ 0 → q.2 ≤ q.1) :
+    (fun z ↦ ∏ q, partialCorrelationCholesky z q.1 q.2 ^ m q) =ᵐ[
+      Measure.pi fun ij ↦ (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)]
+      fun z ↦ ∏ ij, z ij ^ partialCorrelationCholeskyMonomialCoordinatePower m ij *
+        (1 - z ij ^ 2) ^ partialCorrelationCholeskyMonomialResidualPower m ij := by
+  filter_upwards [ae_abs_lt_one_pi_centered_betaMeasure ha] with z hz
+  exact prod_pow_partialCorrelationCholesky_eq_prod hz m hm
+
+/-- Every joint natural monomial in lower-triangular entries of the independent
+centered-symmetric-Beta Cholesky construction is integrable. -/
+theorem integrable_prod_pow_partialCorrelationCholesky_pi_betaMeasure
+    {a : strictLowerTriangle p → ℝ} (ha : ∀ ij, 0 < a ij)
+    (m : Fin p × Fin p → ℕ) (hm : ∀ q, m q ≠ 0 → q.2 ≤ q.1) :
+    Integrable (fun z ↦ ∏ q, partialCorrelationCholesky z q.1 q.2 ^ m q)
+      (Measure.pi fun ij ↦ (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)) := by
+  rw [integrable_congr (ae_prod_pow_partialCorrelationCholesky_eq_prod ha m hm)]
+  apply integrable_prod_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure
+    a (partialCorrelationCholeskyMonomialResidualPower m)
+      (partialCorrelationCholeskyMonomialCoordinatePower m) ha
+  intro ij
+  exact add_pos_of_pos_of_nonneg (ha ij)
+    (partialCorrelationCholeskyMonomialResidualPower_nonneg m ij)
+
+/-- Joint natural moments of lower-triangular entries in the independent
+centered-symmetric-Beta Cholesky construction. -/
+theorem integral_prod_pow_partialCorrelationCholesky_pi_betaMeasure
+    {a : strictLowerTriangle p → ℝ} (ha : ∀ ij, 0 < a ij)
+    (m : Fin p × Fin p → ℕ) (hm : ∀ q, m q ≠ 0 → q.2 ≤ q.1) :
+    ∫ z, ∏ q, partialCorrelationCholesky z q.1 q.2 ^ m q
+      ∂(Measure.pi fun ij ↦ (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)) =
+      ∏ ij, if Even (partialCorrelationCholeskyMonomialCoordinatePower m ij) then
+        beta ((((partialCorrelationCholeskyMonomialCoordinatePower m ij : ℕ) : ℝ) + 1) / 2)
+            (a ij + partialCorrelationCholeskyMonomialResidualPower m ij) /
+          beta (1 / 2) (a ij)
+      else 0 := by
+  rw [integral_congr_ae (ae_prod_pow_partialCorrelationCholesky_eq_prod ha m hm)]
+  apply integral_prod_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure
+    a (partialCorrelationCholeskyMonomialResidualPower m)
+      (partialCorrelationCholeskyMonomialCoordinatePower m) ha
+  intro ij
+  exact add_pos_of_pos_of_nonneg (ha ij)
+    (partialCorrelationCholeskyMonomialResidualPower_nonneg m ij)
 
 private theorem ae_pow_partialCorrelationCholesky_eq_prod
     {a : strictLowerTriangle p → ℝ} (ha : ∀ ij, 0 < a ij) (i k : Fin p) (n : ℕ)
@@ -88,69 +263,7 @@ private theorem ae_pow_partialCorrelationCholesky_eq_prod
       fun z ↦ ∏ ij, z ij ^ partialCorrelationCholeskyEntryCoordinatePower i k n ij *
         (1 - z ij ^ 2) ^ partialCorrelationCholeskyEntryResidualPower i k n ij := by
   filter_upwards [ae_abs_lt_one_pi_centered_betaMeasure ha] with z hz
-  have hres (ij : strictLowerTriangle p) : 0 < 1 - z ij ^ 2 :=
-    sub_pos.mpr ((sq_lt_one_iff_abs_lt_one _).2 (hz ij))
-  rcases hki.eq_or_lt with rfl | hki
-  · rw [partialCorrelationCholesky_apply_self, ← Finset.prod_pow]
-    calc
-      (∏ ij with ij.1.1 = k, Real.sqrt (1 - z ij ^ 2) ^ n) =
-          ∏ ij with ij.1.1 = k,
-            z ij ^ partialCorrelationCholeskyEntryCoordinatePower k k n ij *
-              (1 - z ij ^ 2) ^ partialCorrelationCholeskyEntryResidualPower k k n ij := by
-        apply Finset.prod_congr rfl
-        intro ij hij
-        have hi : ij.1.1 = k := (Finset.mem_filter.mp hij).2
-        have hik : ij.1.2 < k := hi ▸ ij.2
-        have hpair : ij.1 ≠ (k, k) := fun h ↦ (ne_of_lt hik) (congrArg Prod.snd h)
-        simp only [partialCorrelationCholeskyEntryCoordinatePower,
-          partialCorrelationCholeskyEntryResidualPower, hpair, hi, hik, and_self, ↓reduceIte,
-          pow_zero, one_mul]
-        rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul (hres ij).le]
-        congr 1
-        ring
-      _ = ∏ ij,
-          z ij ^ partialCorrelationCholeskyEntryCoordinatePower k k n ij *
-            (1 - z ij ^ 2) ^ partialCorrelationCholeskyEntryResidualPower k k n ij := by
-        apply Finset.prod_subset (Finset.filter_subset _ _)
-        intro ij _ hij
-        have hi : ij.1.1 ≠ k := by simpa using hij
-        have hpair : ij.1 ≠ (k, k) := fun h ↦ hi (congrArg Prod.fst h)
-        simp [partialCorrelationCholeskyEntryCoordinatePower,
-          partialCorrelationCholeskyEntryResidualPower, hi, hpair]
-  · rw [partialCorrelationCholesky_apply_of_gt z hki, mul_pow, ← Finset.prod_pow]
-    let target : strictLowerTriangle p := ⟨(i, k), hki⟩
-    let s := Finset.univ.filter fun ij : strictLowerTriangle p ↦
-      ij.1.1 = i ∧ ij.1.2 < k
-    let f := fun ij : strictLowerTriangle p ↦
-      z ij ^ partialCorrelationCholeskyEntryCoordinatePower i k n ij *
-        (1 - z ij ^ 2) ^ partialCorrelationCholeskyEntryResidualPower i k n ij
-    have htarget : target ∉ s := by simp [target, s]
-    calc
-      z target ^ n * ∏ ij ∈ s, Real.sqrt (1 - z ij ^ 2) ^ n =
-          f target * ∏ ij ∈ s, f ij := by
-        congr 1
-        · simp [f, target, partialCorrelationCholeskyEntryCoordinatePower,
-            partialCorrelationCholeskyEntryResidualPower]
-        · apply Finset.prod_congr rfl
-          intro ij hij
-          have hr : ij.1.1 = i ∧ ij.1.2 < k := (Finset.mem_filter.mp hij).2
-          have hpair : ij.1 ≠ (i, k) := fun h ↦
-            (ne_of_lt hr.2) (congrArg Prod.snd h)
-          simp only [f, partialCorrelationCholeskyEntryCoordinatePower,
-            partialCorrelationCholeskyEntryResidualPower, hpair, hr, and_self,
-            ↓reduceIte, pow_zero, one_mul]
-          rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul (hres ij).le]
-          congr 1
-          ring
-      _ = ∏ ij ∈ insert target s, f ij := (Finset.prod_insert htarget).symm
-      _ = ∏ ij, f ij := by
-        apply Finset.prod_subset (by simp [s])
-        intro ij _ hij
-        have ht : ij ≠ target := fun h ↦ hij (by simp [h])
-        have hr : ¬(ij.1.1 = i ∧ ij.1.2 < k) := fun h ↦ hij (by simp [s, h])
-        have hpair : ij.1 ≠ (i, k) := fun h ↦ ht (Subtype.ext h)
-        simp [f, partialCorrelationCholeskyEntryCoordinatePower,
-          partialCorrelationCholeskyEntryResidualPower, hpair, hr]
+  exact pow_partialCorrelationCholesky_eq_prod hz i k n hki
 
 /-- Every natural power of an entry of the independent centered-symmetric-Beta Cholesky
 construction is integrable. -/
@@ -166,7 +279,8 @@ theorem integrable_pow_partialCorrelationCholesky_pi_betaMeasure
       a (partialCorrelationCholeskyEntryResidualPower i k n)
         (partialCorrelationCholeskyEntryCoordinatePower i k n) ha
     intro ij
-    exact add_pos_of_pos_of_nonneg (ha ij) (residualPower_nonneg i k n ij)
+    exact add_pos_of_pos_of_nonneg (ha ij)
+      (partialCorrelationCholeskyEntryResidualPower_nonneg i k n ij)
   · have hik : i < k := lt_of_not_ge hki
     simp [partialCorrelationCholesky_apply_of_lt _ hik]
 
@@ -192,38 +306,11 @@ theorem integral_pow_partialCorrelationCholesky_pi_betaMeasure
       a (partialCorrelationCholeskyEntryResidualPower i k n)
         (partialCorrelationCholeskyEntryCoordinatePower i k n) ha
     intro ij
-    exact add_pos_of_pos_of_nonneg (ha ij) (residualPower_nonneg i k n ij)
+    exact add_pos_of_pos_of_nonneg (ha ij)
+      (partialCorrelationCholeskyEntryResidualPower_nonneg i k n ij)
   · subst n
     simp
   · have hik : i < k := lt_of_not_ge hki
     simp [partialCorrelationCholesky_apply_of_lt _ hik, hn]
-
-/-- Every natural power of an entry in the LKJ partial-correlation Cholesky construction is
-integrable. -/
-theorem integrable_pow_partialCorrelationCholesky_lkj (hη : 0 < η) (i k : Fin p) (n : ℕ) :
-    Integrable (fun z ↦ partialCorrelationCholesky z i k ^ n)
-      (Measure.pi fun ij : strictLowerTriangle p ↦
-        (betaMeasure (lkjPartialCorrelationShape p η ij)
-          (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x)) :=
-  integrable_pow_partialCorrelationCholesky_pi_betaMeasure
-    (lkjPartialCorrelationShape_pos hη) i k n
-
-/-- The natural moments of every entry in the LKJ partial-correlation Cholesky construction are
-the Beta-product moments above, with the column-dependent LKJ shapes. -/
-theorem integral_pow_partialCorrelationCholesky_lkj (hη : 0 < η) (i k : Fin p) (n : ℕ) :
-    ∫ z, partialCorrelationCholesky z i k ^ n
-      ∂(Measure.pi fun ij : strictLowerTriangle p ↦
-        (betaMeasure (lkjPartialCorrelationShape p η ij)
-          (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x)) =
-      if k ≤ i then
-        ∏ ij, if Even (partialCorrelationCholeskyEntryCoordinatePower i k n ij) then
-          beta ((((partialCorrelationCholeskyEntryCoordinatePower i k n ij : ℕ) : ℝ) + 1) / 2)
-              (lkjPartialCorrelationShape p η ij +
-                partialCorrelationCholeskyEntryResidualPower i k n ij) /
-            beta (1 / 2) (lkjPartialCorrelationShape p η ij)
-        else 0
-      else if n = 0 then 1 else 0 :=
-  integral_pow_partialCorrelationCholesky_pi_betaMeasure
-    (lkjPartialCorrelationShape_pos hη) i k n
 
 end TauCeti.Probability

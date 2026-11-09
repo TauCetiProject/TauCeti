@@ -176,6 +176,45 @@ theorem partialCorrelationCholesky_apply_self (z : strictLowerTriangle p → ℝ
   simp only [partialCorrelationCholesky, lt_self_iff_false, ↓reduceIte, one_mul]
   rw [prod_partialCorrelationRow z (fun x ↦ Real.sqrt (1 - x ^ 2)) i i le_rfl, row_filter]
 
+/-- The contribution of one partial-correlation coordinate to an entry of the triangular
+factor. -/
+@[expose]
+def partialCorrelationCholeskyEntryFactor (i k : Fin p) (ij : strictLowerTriangle p)
+    (x : ℝ) : ℝ :=
+  (if ij.1.1 = i ∧ ij.1.2 = k then x else 1) *
+    (if ij.1.1 = i ∧ ij.1.2 < k then Real.sqrt (1 - x ^ 2) else 1)
+
+/-- A lower-triangular entry is the product of its coordinatewise factors. -/
+theorem prod_partialCorrelationCholeskyEntryFactor (z : strictLowerTriangle p → ℝ)
+    (i k : Fin p) (hki : k ≤ i) :
+    (∏ ij, partialCorrelationCholeskyEntryFactor i k ij (z ij)) =
+      partialCorrelationCholesky z i k := by
+  simp only [partialCorrelationCholeskyEntryFactor, Finset.prod_mul_distrib]
+  have hr : (∏ ij : strictLowerTriangle p,
+      if ij.1.1 = i ∧ ij.1.2 < k then Real.sqrt (1 - z ij ^ 2) else 1) =
+      ∏ ij : strictLowerTriangle p with ij.1.1 = i ∧ ij.1.2 < k,
+        Real.sqrt (1 - z ij ^ 2) := by rw [Finset.prod_filter]
+  rw [hr]
+  rcases hki.eq_or_lt with hki | hki
+  · subst k
+    rw [partialCorrelationCholesky_apply_self]
+    have hnone : ∀ ij : strictLowerTriangle p, ¬(ij.1.1 = i ∧ ij.1.2 = i) := by
+      intro ij h
+      have := ij.2
+      simp_all
+    simp only [hnone, ↓reduceIte, Finset.prod_const_one, one_mul]
+    congr 1
+    ext ij
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, and_iff_left_iff_imp]
+    exact fun h ↦ h ▸ ij.2
+  · rw [partialCorrelationCholesky_apply_of_gt z hki]
+    congr 1
+    have heq (ij : strictLowerTriangle p) :
+        (ij.1.1 = i ∧ ij.1.2 = k) ↔ ij = ⟨(i, k), hki⟩ := by
+      simp only [Subtype.ext_iff, Prod.ext_iff]
+    simp_rw [heq]
+    simp
+
 /-- The partial-correlation factor is lower triangular. -/
 theorem isLowerTriangular_partialCorrelationCholesky (z : strictLowerTriangle p → ℝ) :
     (partialCorrelationCholesky z).IsLowerTriangular :=
