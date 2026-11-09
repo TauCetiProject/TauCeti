@@ -212,7 +212,7 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
     ((fderiv ℝ f ((Φ.symm k : ↥{p | f p = 0}) : X × Λ)).comp
       (ContinuousLinearMap.inl ℝ X Λ))})
   obtain ⟨V, hV, hVsub⟩ := exists_mem_nhds_forall_mem_source_and_levelSetChart_mem hstrict
-    hsurj (hFred'.closedComplemented_ker_coprod hsurj) hfzero hN
+    (LinearMap.range_eq_top.mpr hsurj) (hFred'.closedComplemented_ker_coprod hsurj) hfzero hN
   have hne : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≠ ∞ :=
     (fun m : ℕ ↦ (by simp : (m : ℕ∞ω) ≠ ∞)) _
   have hne0 : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≠ 0 :=
