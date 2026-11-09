@@ -39,6 +39,8 @@ We realise both spaces without choosing a norm on `V`:
 * `TauCeti.CompatibleCouple.norm_sumSpace_lt_iff`, `TauCeti.CompatibleCouple.le_norm_sumSpace_iff`:
   the infimum description of the sum norm.
 * `TauCeti.CompatibleCouple.refl`: the couple `(X, X)`, for which both norms are the norm of `X`.
+* `TauCeti.CompatibleCouple.swap`, `TauCeti.CompatibleCouple.sumSwap`: reversal of the endpoints
+  and the canonical isometric identification of their sum spaces.
 
 ## References
 
@@ -362,6 +364,82 @@ theorem sumLift_unique {f : C.SumSpace →L[𝕜] W} (h₀ : f.comp C.fstToSum =
 end Lift
 
 end Sum
+
+/-! ### Reversing the endpoints -/
+
+/-- The compatible couple with the two endpoints exchanged. -/
+-- Reducibility makes double reversal preserve the types of the associated sum spaces.
+abbrev swap : CompatibleCouple 𝕜 X₁ X₀ V where
+  embed₀ := C.embed₁
+  embed₁ := C.embed₀
+  embed₀_injective := C.embed₁_injective
+  embed₁_injective := C.embed₀_injective
+
+@[simp]
+theorem swap_embed₀ : C.swap.embed₀ = C.embed₁ := (rfl)
+
+@[simp]
+theorem swap_embed₁ : C.swap.embed₁ = C.embed₀ := (rfl)
+
+@[simp]
+theorem swap_swap : C.swap.swap = C := (rfl)
+
+section SwapSum
+
+variable [ContinuousAdd V] [T1Space V]
+
+private def sumSwapMap : C.SumSpace →L[𝕜] C.swap.SumSpace :=
+  C.sumLift C.swap.sndToSum C.swap.fstToSum fun x =>
+    C.swap.sumSpace_ext (by simpa using C.embed₀_interFst x)
+
+private theorem sumSwapMap_norm_le (u : C.SumSpace) : ‖C.sumSwapMap u‖ ≤ ‖u‖ := by
+  refine le_of_forall_gt fun r hr => ?_
+  obtain ⟨x₀, x₁, rfl, hx⟩ := C.norm_sumSpace_lt_iff.1 hr
+  simpa [sumSwapMap, add_comm] using
+    (C.swap.norm_fstToSum_add_sndToSum_le x₁ x₀).trans_lt (by simpa [add_comm] using hx)
+
+omit [T1Space V] in
+private theorem sumSwapMap_sumSwapMap (u : C.SumSpace) :
+    C.swap.sumSwapMap (C.sumSwapMap u) = u := by
+  obtain ⟨x₀, x₁, rfl⟩ := C.exists_fstToSum_add_sndToSum_eq u
+  simp [sumSwapMap]
+
+/-- Exchanging the endpoints preserves the sum norm and the element in the ambient space. -/
+def sumSwap : C.SumSpace ≃ₗᵢ[𝕜] C.swap.SumSpace where
+  toFun := C.sumSwapMap
+  invFun := C.swap.sumSwapMap
+  left_inv := C.sumSwapMap_sumSwapMap
+  right_inv := C.swap.sumSwapMap_sumSwapMap
+  map_add' := map_add C.sumSwapMap
+  map_smul' := map_smul C.sumSwapMap
+  norm_map' u := by
+    dsimp
+    refine le_antisymm (C.sumSwapMap_norm_le u) ?_
+    calc
+      ‖u‖ = ‖C.swap.sumSwapMap (C.sumSwapMap u)‖ :=
+        congrArg norm (C.sumSwapMap_sumSwapMap u).symm
+      _ ≤ ‖C.sumSwapMap u‖ := C.swap.sumSwapMap_norm_le _
+
+@[simp]
+theorem sumSwap_fstToSum (x : X₀) : C.sumSwap (C.fstToSum x) = C.swap.sndToSum x :=
+  C.sumLift_fstToSum _ _ (fun y =>
+    C.swap.sumSpace_ext (by simpa using C.embed₀_interFst y)) x
+
+@[simp]
+theorem sumSwap_sndToSum (x : X₁) : C.sumSwap (C.sndToSum x) = C.swap.fstToSum x :=
+  C.sumLift_sndToSum _ _ (fun y =>
+    C.swap.sumSpace_ext (by simpa using C.embed₀_interFst y)) x
+
+@[simp]
+theorem sumSwap_symm : C.sumSwap.symm = C.swap.sumSwap := (rfl)
+
+@[simp]
+theorem sumSpaceEmbed_sumSwap (u : C.SumSpace) :
+    C.swap.sumSpaceEmbed (C.sumSwap u) = C.sumSpaceEmbed u := by
+  obtain ⟨x₀, x₁, rfl⟩ := C.exists_fstToSum_add_sndToSum_eq u
+  simp
+
+end SwapSum
 
 /-! ### The diagonal couple -/
 
