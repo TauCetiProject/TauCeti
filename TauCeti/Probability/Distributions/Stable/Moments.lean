@@ -59,6 +59,25 @@ namespace TauCeti.Probability
 
 variable {α β q : ℝ} {s : ℝ≥0} {m : ℝ}
 
+private theorem rpow_neg_add_one_eq_mul_rpow_mul {q s t : ℝ} (hs : 0 < s) (ht : 0 < t) :
+    t ^ (-(q + 1)) = s ^ (q + 1) * (s * t) ^ (-(q + 1)) := by
+  rw [mul_rpow hs.le ht.le, ← mul_assoc, ← rpow_add hs, add_neg_cancel, rpow_zero, one_mul]
+
+private theorem integral_Ioi_rpow_neg_mul_one_sub_exp_neg_mul_rpow {α q s : ℝ}
+    (hs : 0 < s) (hq : 0 < q) (hqα : q < α) :
+    ∫ t in Ioi (0 : ℝ), t ^ (-(q + 1)) * (1 - exp (-(s * t) ^ α)) =
+      s ^ q * (Gamma (1 - q / α) / q) := by
+  have hscale (t : ℝ) (ht : t ∈ Ioi 0) :
+      t ^ (-(q + 1)) * (1 - exp (-(s * t) ^ α)) =
+        s ^ (q + 1) * ((s * t) ^ (-(q + 1)) * (1 - exp (-(s * t) ^ α))) := by
+    rw [rpow_neg_add_one_eq_mul_rpow_mul hs ht]
+    ring
+  rw [setIntegral_congr_fun measurableSet_Ioi hscale, integral_const_mul,
+    integral_comp_mul_left_Ioi (fun u ↦ u ^ (-(q + 1)) * (1 - exp (-u ^ α))) 0 hs,
+    mul_zero, integral_Ioi_rpow_neg_mul_one_sub_exp_neg_rpow hq hqα, smul_eq_mul,
+    rpow_add hs, rpow_one]
+  field_simp
+
 /-- The standardized law inherits the exact large-jump moment threshold. -/
 private theorem integrable_abs_rpow_standardStableMeasure_iff
     (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hq : 0 < q) :
@@ -137,33 +156,37 @@ theorem integral_abs_sub_rpow_stableMeasure (hα : α ∈ Ioc 0 2) (hq : 0 < q) 
     (f := fun x : ℝ ↦ |x| ^ q) (by fun_prop) (by fun_prop), hcenter]
   set ν := stableMeasure α 0 s 0
   have := isProbabilityMeasure_stableMeasure hα hβ s 0
-  have hre (t : ℝ) : (charFun ν t).re = exp (-|s * t| ^ α) := by
-    have hψ : stableCharacteristicExponent α 0 (s * t) = ((-|s * t| ^ α : ℝ) : ℂ) :=
-      Complex.ext (by simp [hα.1.ne']) (by rw [stableCharacteristicExponent_im_eq_mul]; simp)
-    rw [charFun_stableMeasure hα hβ, hψ]
-    simp only [zero_mul, Complex.ofReal_zero, zero_add]
-    exact Complex.exp_ofReal_re _
   -- The power-weighted characteristic-function deficit is a rescaled Gamma integral.
   have hdeficit : ∫ t in Ioi (0 : ℝ), t ^ (-(q + 1)) * (ν.real univ - (charFun ν t).re) =
       s ^ q * (Gamma (1 - q / α) / q) := by
-    have hg (t : ℝ) (ht : t ∈ Ioi 0) : t ^ (-(q + 1)) * (ν.real univ - (charFun ν t).re) =
-        s ^ (q + 1) * ((s * t) ^ (-(q + 1)) * (1 - exp (-(s * t) ^ α))) := by
-      rw [probReal_univ, hre, abs_of_pos (mul_pos hspos ht),
-        mul_rpow (z := -(q + 1)) hspos.le ht.le, ← mul_assoc, ← mul_assoc, ← rpow_add hspos,
-        add_neg_cancel, rpow_zero, one_mul]
-    rw [setIntegral_congr_fun measurableSet_Ioi hg, integral_const_mul,
-      integral_comp_mul_left_Ioi (fun u ↦ u ^ (-(q + 1)) * (1 - exp (-u ^ α))) 0 hspos,
-      mul_zero, integral_Ioi_rpow_neg_mul_one_sub_exp_neg_rpow hq hqα, smul_eq_mul,
-      rpow_add hspos, rpow_one]
-    field_simp
+    calc
+      _ = ∫ t in Ioi (0 : ℝ), t ^ (-(q + 1)) * (1 - exp (-(s * t) ^ α)) := by
+        apply setIntegral_congr_fun measurableSet_Ioi
+        intro t ht
+        change t ^ (-(q + 1)) * (ν.real univ - (charFun ν t).re) =
+          t ^ (-(q + 1)) * (1 - exp (-(s * t) ^ α))
+        rw [show ν = stableMeasure α 0 s 0 from rfl, probReal_univ,
+          charFun_stableMeasure_zero_skew_zero_location_re hα,
+          abs_of_pos (mul_pos hspos ht)]
+      _ = _ := integral_Ioi_rpow_neg_mul_one_sub_exp_neg_mul_rpow hspos hq hqα
   have hbridge := integral_rpow_mul_sub_re_charFun (μ := ν) hq (hqα.trans_le hα.2)
     ((integrable_abs_rpow_stableMeasure_iff hα hβ hq).2 (Or.inr (Or.inr hqα)))
   rw [hdeficit, Gamma_add_one hq.ne'] at hbridge
   have hΓ : Gamma q ≠ 0 := (Gamma_pos_of_pos hq).ne'
-  have hsin : sin (q * π / 2) ≠ 0 :=
+  have hsin : sin (π * q / 2) ≠ 0 :=
     (sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [pi_pos, hα.2])).ne'
-  field_simp at hbridge ⊢
-  linarith
+  have hden : 2 * (q * Gamma q) * sin (π * q / 2) ≠ 0 := by
+    exact mul_ne_zero (mul_ne_zero two_ne_zero (mul_ne_zero hq.ne' hΓ)) hsin
+  rw [div_mul_eq_mul_div] at hbridge
+  have hcross := (eq_div_iff hden).1 hbridge
+  calc
+    ∫ y, |y| ^ q ∂ν =
+        (s ^ q * (Gamma (1 - q / α) / q) *
+          (2 * (q * Gamma q) * sin (π * q / 2))) / π := by
+      apply (eq_div_iff pi_ne_zero).2
+      simpa only [mul_comm] using hcross.symm
+    _ = s ^ q * (2 * Gamma q * sin (π * q / 2) / π) * Gamma (1 - q / α) := by
+      field_simp [hq.ne']
 
 end TauCeti.Probability
 
