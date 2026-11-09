@@ -286,29 +286,6 @@ open Rep.FiniteCyclicGroup
 
 variable {R G : Type u} [CommRing R] [CommGroup G] [Fintype G]
 
-/-- Naturality of the periodicity: in degrees `3` and `1`, the maps induced on homology by
-`S.g` have images of the same size. -/
-private theorem _root_.CategoryTheory.ShortComplex.natCard_range_homologyMap_periodic_three_eq_one
-    (S : ShortComplex (Rep R G)) (g : G) :
-    Nat.card (range (ModuleCat.Hom.hom
-        (HomologicalComplex.homologyMap (S.map (periodicFunctor R g)).g 3))) =
-      Nat.card (range (ModuleCat.Hom.hom
-        (HomologicalComplex.homologyMap (S.map (periodicFunctor R g)).g 1))) := by
-  have hstep : ∀ {j : ℕ}, Odd j →
-      Nat.card (range (ModuleCat.Hom.hom
-          (HomologicalComplex.homologyMap (S.map (periodicFunctor R g)).g j))) =
-        Nat.card (range (ModuleCat.Hom.hom
-          (ShortComplex.homologyMap (normHomCompSubMap g S.g)))) := by
-    intro j hj
-    rw [← SetLike.coe_sort_coe, coe_range, ← SetLike.coe_sort_coe, coe_range]
-    refine Nat.card_range_eq_card_range_of_comp_eq
-      (periodicHomologyIsoOdd S.X₂ g hj).toLinearEquiv.surjective
-      (periodicHomologyIsoOdd S.X₃ g hj).toLinearEquiv.injective.injOn ?_
-    have h := congrArg ModuleCat.Hom.hom (homologyMap_comp_periodicHomologyIsoOdd g S.g hj)
-    rw [ModuleCat.hom_comp, ModuleCat.hom_comp] at h
-    exact congrArg DFunLike.coe h
-  exact (hstep (by decide)).trans (hstep (by decide)).symm
-
 /-- The six cardinalities produced by the exact hexagon of a short exact sequence of
 representations of a finite cyclic group.
 

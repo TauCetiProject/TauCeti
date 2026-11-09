@@ -10,6 +10,7 @@ public import Mathlib.RepresentationTheory.Homological.GroupHomology.FiniteCycli
 public import TauCeti.RepresentationTheory.Invariants
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 import Mathlib.Algebra.Homology.HomologicalComplexAbelian
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # Tate cohomology of a finite cyclic group is two-periodic
@@ -76,6 +77,8 @@ through the periodic-resolution calculations `Rep.FiniteCyclicGroup.groupCohomol
 * `Rep.FiniteCyclicGroup.homologyMap_comp_periodicHomologyIsoOdd` and
   `homologyMap_comp_periodicHomologyIsoEven`: the odd- and nonzero-even-degree identifications of
   the homology of the periodic complex are natural in the coefficients.
+* `CategoryTheory.ShortComplex.natCard_range_homologyMap_periodic_three_eq_one`: the maps induced by
+  `S.g` on the periodic homology in degrees `3` and `1` have images of the same size.
 * `Rep.FiniteCyclicGroup.natCard_periodicHomology_odd` and `natCard_periodicHomology_even`: the
   homology of the periodic complex in an odd, respectively a nonzero even, degree has the
   cardinality of Tate cohomology in degree `0`, respectively `-1`.
@@ -614,6 +617,29 @@ theorem homologyMap_comp_periodicHomologyIsoEven (f : M ⟶ N) {j : ℕ} (hj : E
     rw [sc_map_comp_periodicScIsoEven]
   exact (ShortComplex.homologyMap_comp _ _).symm.trans
     (h.trans (ShortComplex.homologyMap_comp _ _))
+
+/-- Naturality of the periodicity: in degrees `3` and `1`, the maps induced on homology by
+`S.g` have images of the same size. -/
+theorem _root_.CategoryTheory.ShortComplex.natCard_range_homologyMap_periodic_three_eq_one
+    (S : ShortComplex (Rep R G)) :
+    Nat.card (range (ModuleCat.Hom.hom
+        (HomologicalComplex.homologyMap (S.map (periodicFunctor R g)).g 3))) =
+      Nat.card (range (ModuleCat.Hom.hom
+        (HomologicalComplex.homologyMap (S.map (periodicFunctor R g)).g 1))) := by
+  have hstep : ∀ {j : ℕ}, Odd j →
+      Nat.card (range (ModuleCat.Hom.hom
+          (HomologicalComplex.homologyMap (S.map (periodicFunctor R g)).g j))) =
+        Nat.card (range (ModuleCat.Hom.hom
+          (ShortComplex.homologyMap (normHomCompSubMap g S.g)))) := by
+    intro j hj
+    rw [← SetLike.coe_sort_coe, coe_range, ← SetLike.coe_sort_coe, coe_range]
+    refine Nat.card_range_eq_card_range_of_comp_eq
+      (periodicHomologyIsoOdd S.X₂ g hj).toLinearEquiv.surjective
+      (periodicHomologyIsoOdd S.X₃ g hj).toLinearEquiv.injective.injOn ?_
+    have h := congrArg ModuleCat.Hom.hom (homologyMap_comp_periodicHomologyIsoOdd g S.g hj)
+    rw [ModuleCat.hom_comp, ModuleCat.hom_comp] at h
+    exact congrArg DFunLike.coe h
+  exact (hstep (by decide)).trans (hstep (by decide)).symm
 
 variable (M)
 
