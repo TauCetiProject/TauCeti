@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.NewtonPolygon.Roots
 public import TauCeti.NumberTheory.NewtonPolygon.Weierstrass
 public import TauCeti.RingTheory.PowerSeries.Entire.GoodZero
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
+import TauCeti.RingTheory.Valuation.NormNormalization
 
 /-!
 # Zeros of entire series on spheres and slope multiplicities
@@ -27,13 +28,12 @@ Newton polygon of `f`:
 `newtonSlopeMultiplicity f v σ = ∑ᶠ x ∈ sphere 0 (b ^ σ), order (taylor x f)`
 (`PowerSeries.IsEntire.newtonSlopeMultiplicity_eq_finsum_order_taylor`).
 
-In particular each sphere carries only finitely many zeros
-(`PowerSeries.IsEntire.finite_setOf_norm_eq_and_evalAt_eq_zero`), and a slope of positive
-multiplicity is the negated valuation of an actual zero
-(`PowerSeries.IsEntire.exists_norm_eq_and_evalAt_eq_zero`). The latter is read off a Weierstrass
+A slope of positive multiplicity is the negated valuation of an actual zero
+(`PowerSeries.IsEntire.exists_norm_eq_and_evalAt_eq_zero`). This zero is read off a Weierstrass
 preparation at the radius `b ^ σ`: the prepared polynomial carries the finite unit edges of slope
 `σ`, so it has a root of norm `b ^ σ`. The count then follows by splitting off the factor
-`(X - x) ^ h` at such a zero, which has slope `σ` with multiplicity `h`, since slope multiplicities
+`(X - x) ^ h` at such a zero, which has slope `σ` with multiplicity `h`
+(`PowerSeries.newtonSlopeMultiplicity_X_sub_C_pow`), since slope multiplicities
 of entire series add under products (`PowerSeries.IsEntire.newtonSlopeMultiplicity_mul`) and so do
 orders of zeros. Algebraic closedness is needed for the existence of zeros: over `ℚ_p` the
 polynomial `1 - X ^ 2 / p` has slope `-1 / 2` with multiplicity two but no zero.
@@ -45,8 +45,6 @@ inverses of the nonzero eigenvalues.
 
 * `PowerSeries.IsEntire.exists_norm_eq_and_evalAt_eq_zero`: a slope of positive multiplicity comes
   from a zero on the corresponding sphere.
-* `PowerSeries.IsEntire.finite_setOf_norm_eq_and_evalAt_eq_zero`: a nonzero entire series has only
-  finitely many zeros on each sphere.
 * `PowerSeries.IsEntire.newtonSlopeMultiplicity_eq_finsum_order_taylor`: the multiplicity of a
   slope counts the zeros on the corresponding sphere with multiplicity.
 
@@ -67,26 +65,6 @@ namespace PowerSeries
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
   (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
   (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) {f : K⟦X⟧}
-
-omit [IsUltrametricDist K] [CompleteSpace K] in
-/-- A power of `X - x`, for `x` on the sphere of radius `b ^ σ`, has the slope `σ` with
-multiplicity its exponent. -/
-private theorem newtonSlopeMultiplicity_X_sub_C_pow (hb : 1 < b)
-    (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) {σ : ℝ} {x : K} (hx : ‖x‖ = b ^ σ) (h : ℕ) :
-    ((X - C x) ^ h : K⟦X⟧).newtonSlopeMultiplicity v σ = h := by
-  classical
-  have hx0 : x ≠ 0 := by
-    rintro rfl
-    exact (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ).ne' (by simpa using hx.symm)
-  have hσ : -(v x).untop₀ = σ :=
-    (Real.rpow_right_inj (zero_lt_one.trans hb) hb.ne').mp ((hv x hx0).symm.trans hx)
-  have hpoly : ((X - C x) ^ h : K⟦X⟧) =
-      (((Multiset.replicate h x).map (Polynomial.X - Polynomial.C ·)).prod : Polynomial K) := by
-    simp [Multiset.map_replicate, Multiset.prod_replicate]
-  rw [hpoly, Polynomial.newtonSlopeMultiplicity_coe,
-    Polynomial.newtonSlopes_multiset_prod_X_sub_C (fun _ ↦ v.top_iff.mp),
-    Multiset.filter_eq_self.mpr fun y hy ↦ (Multiset.eq_of_mem_replicate hy).symm ▸ hx0,
-    Multiset.map_replicate, hσ, Multiset.count_replicate_self]
 
 include hb hv
 
@@ -154,7 +132,8 @@ private theorem exists_finset_newtonSlopeMultiplicity_eq_sum [IsAlgClosed K]
     refine ⟨h, g, hh, hfxh, hg, hg0, hgx.ne_zero, rfl, ?_⟩
     rw [← hn, ((isEntire_X.sub (isEntire_C x)).pow h).newtonSlopeMultiplicity_mul v hb hv hg
       (left_ne_zero_of_mul hf0) hg0,
-      newtonSlopeMultiplicity_X_sub_C_pow v hb hv hx]
+      newtonSlopeMultiplicity_X_sub_C_pow v (fun _ ↦ v.top_iff.mp)
+        ((v.norm_eq_rpow_iff hb hv).mp hx)]
   rcases Nat.eq_zero_or_pos n with rfl | hnpos
   · -- With no slope `σ`, there is no zero on the sphere.
     refine ⟨∅, fun x ↦ ⟨fun hx ↦ absurd hx (Finset.notMem_empty x), fun ⟨hx, hfx⟩ ↦ ?_⟩, by simp⟩
@@ -186,13 +165,6 @@ private theorem exists_finset_newtonSlopeMultiplicity_eq_sum [IsAlgClosed K]
   · rw [Finset.sum_insert hxs, isGoodZero_iff_order_taylor_eq.mp hfxh,
       Finset.sum_congr rfl fun y hy ↦ hord (ne_of_mem_of_not_mem hy hxs), ← hsum, hhg]
     exact Nat.cast_add _ _
-
-/-- Over a complete algebraically closed ultrametric field, a nonzero entire series has only
-finitely many zeros on each sphere `‖x‖ = b ^ σ`. -/
-theorem IsEntire.finite_setOf_norm_eq_and_evalAt_eq_zero [IsAlgClosed K] (hf : f.IsEntire)
-    (hf0 : f ≠ 0) (σ : ℝ) : {x : K | ‖x‖ = b ^ σ ∧ f.evalAt x = 0}.Finite := by
-  obtain ⟨s, hs, -⟩ := exists_finset_newtonSlopeMultiplicity_eq_sum v hb hv σ _ f hf hf0 rfl
-  exact s.finite_toSet.subset fun x hx ↦ (hs x).mpr hx
 
 /-- **Slope multiplicities count zeros.** Over a complete algebraically closed ultrametric
 field, the multiplicity of the slope `σ` in the Newton polygon of a nonzero entire series `f` is

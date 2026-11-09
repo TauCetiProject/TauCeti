@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NewtonPolygon.Entire
 public import TauCeti.NumberTheory.NewtonPolygon.Slopes
+import TauCeti.NumberTheory.NewtonPolygon.Roots
 
 /-!
 # Slope multiplicities of Newton polygons of power series
@@ -19,6 +20,8 @@ When the polygon has a finite face of slope `σ`, the multiplicity is the width 
 multiplicity of `σ` in the finite slope multiset `Polynomial.newtonSlopes`
 (`Polynomial.newtonSlopeMultiplicity_coe`). The substitution `X ↦ c X` shifts every slope by
 the valuation of `c`, with the same multiplicities (`PowerSeries.newtonSlopeMultiplicity_rescale`).
+A power `(X - C x) ^ h` has the single slope `-v x`, with multiplicity `h`
+(`PowerSeries.newtonSlopeMultiplicity_X_sub_C_pow`).
 
 Fix a real additive valuation `v` on a normed division ring and a base `b > 1` with
 `‖x‖ = b ^ (-(v x).untop₀)` for nonzero `x`. A nonzero entire series has a finite face of every
@@ -42,6 +45,8 @@ multiplicities are the slope multiplicities of their Newton polygons.
 * `Polynomial.newtonSlopeMultiplicity_coe`: comparison with the finite slope multiset of a
   polynomial.
 * `PowerSeries.newtonSlopeMultiplicity_rescale`: rescaling the variable shifts the slopes.
+* `PowerSeries.newtonSlopeMultiplicity_X_sub_C_pow`: the power `(X - C x) ^ h` has the slope
+  `-v x` with multiplicity `h`.
 * `PowerSeries.IsEntire.newtonSlopeMultiplicity_mul`: multiplicities add under multiplication.
 
 ## References
@@ -162,5 +167,35 @@ variable {R : Type*} [Ring R] (v : AddValuation R (WithTop ℝ))
 theorem newtonSlopeMultiplicity_one (σ : ℝ) : (1 : R⟦X⟧).newtonSlopeMultiplicity v σ = 0 := by
   rw [← Polynomial.coe_one, Polynomial.newtonSlopeMultiplicity_coe, ← Polynomial.C_1,
     Polynomial.newtonSlopes_C, Multiset.count_zero]
+
+end PowerSeries
+
+namespace PowerSeries
+
+variable {R : Type*} [CommRing R] (v : AddValuation R (WithTop ℝ))
+
+/-- If only zero has infinite valuation and `v x = -σ`, the power `(X - C x) ^ h` has the slope
+`σ` with multiplicity `h`. -/
+theorem newtonSlopeMultiplicity_X_sub_C_pow (hv : ∀ x, v x = ⊤ → x = 0) {x : R} {σ : ℝ}
+    (hx : v x = ((-σ : ℝ) : WithTop ℝ)) (h : ℕ) :
+    ((X - C x) ^ h : R⟦X⟧).newtonSlopeMultiplicity v σ = h := by
+  classical
+  have hx0 : x ≠ 0 := by
+    rintro rfl
+    exact WithTop.top_ne_coe (v.map_zero ▸ hx)
+  have hpoly : ((X - C x) ^ h : R⟦X⟧) =
+      (((Multiset.replicate h x).map (Polynomial.X - Polynomial.C ·)).prod : Polynomial R) := by
+    simp [Multiset.map_replicate, Multiset.prod_replicate]
+  rw [hpoly, Polynomial.newtonSlopeMultiplicity_coe,
+    Polynomial.newtonSlopes_multiset_prod_X_sub_C hv,
+    Multiset.filter_eq_self.mpr fun y hy ↦ (Multiset.eq_of_mem_replicate hy).symm ▸ hx0,
+    Multiset.map_replicate, hx, WithTop.untop₀_coe, neg_neg, Multiset.count_replicate_self]
+
+/-- If only zero has infinite valuation and `v x = -σ`, the linear factor `X - C x` has the slope
+`σ` with multiplicity one. -/
+theorem newtonSlopeMultiplicity_X_sub_C (hv : ∀ x, v x = ⊤ → x = 0) {x : R} {σ : ℝ}
+    (hx : v x = ((-σ : ℝ) : WithTop ℝ)) :
+    (X - C x : R⟦X⟧).newtonSlopeMultiplicity v σ = 1 := by
+  simpa using newtonSlopeMultiplicity_X_sub_C_pow v hv hx 1
 
 end PowerSeries

@@ -17,6 +17,8 @@ Two real additive valuations recovering the same norm with specified bases great
 than one differ by the ratio of the logarithms of those bases. The comparison includes
 zero, whose value remains infinity. In particular, fixing the base determines the
 additive valuation uniquely; no choice of scale is installed as a global instance.
+Under norm recovery, the sphere `‖x‖ = b ^ σ` is the level set `v x = -σ`
+(`AddValuation.norm_eq_rpow_iff`).
 -/
 
 public section
@@ -55,5 +57,17 @@ theorem eq_of_norm_eq_rpow (v w : AddValuation K (WithTop ℝ))
     simp [ne_of_gt (Real.log_pos hb)]
   rw [hid, WithTop.map_id] at h
   exact h
+
+/-- Under norm recovery with base `b > 1`, the points of norm `b ^ σ` are exactly those of
+valuation `-σ`. Zero lies on neither side. -/
+theorem norm_eq_rpow_iff (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
+    (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) {x : K} {σ : ℝ} :
+    ‖x‖ = b ^ σ ↔ v x = ((-σ : ℝ) : WithTop ℝ) := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · rw [norm_zero, map_zero]
+    exact iff_of_false (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ).ne WithTop.top_ne_coe
+  rw [hv x hx, Real.rpow_right_inj (zero_lt_one.trans hb) hb.ne',
+    ← WithTop.coe_untop₀_of_ne_top (v.ne_top_iff.mpr hx), WithTop.coe_eq_coe,
+    WithTop.untop₀_coe, neg_eq_iff_eq_neg]
 
 end AddValuation
