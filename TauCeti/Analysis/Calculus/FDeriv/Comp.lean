@@ -64,22 +64,14 @@ point of `f ∘ φ` exactly when `φ b` is a critical point of `f`. -/
 theorem fderiv_comp_eq_zero_iff_of_isInvertible {f : E → G} {φ : F → E} {b : F}
     (hf : DifferentiableAt 𝕜 f (φ b)) (hinv : (fderiv 𝕜 φ b).IsInvertible) :
     fderiv 𝕜 (f ∘ φ) b = 0 ↔ fderiv 𝕜 f (φ b) = 0 := by
+  have hφ := differentiableAt_of_isInvertible_fderiv hinv
   obtain ⟨e, he⟩ := hinv
-  by_cases hφ : DifferentiableAt 𝕜 φ b
-  · -- The differential of `f ∘ φ` at `b` is that of `f` at `φ b` precomposed with the
-    -- equivalence `e`, so one vanishes exactly when the other does.
-    rw [fderiv_comp (x := b) hf hφ, ← he]
-    refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]; ext u; simp⟩
-    ext u
-    simpa using congrArg (fun L : F →L[𝕜] G ↦ L (e.symm u)) h
-  · -- An invertible differential which is zero forces both spaces to be trivial.
-    rw [fderiv_zero_of_not_differentiableAt hφ] at he
-    have he0 (w : F) : e w = 0 := by simpa using congrArg (fun L : F →L[𝕜] E ↦ L w) he
-    have hF : Subsingleton F := ⟨fun u v ↦ e.injective ((he0 u).trans (he0 v).symm)⟩
-    have hE : Subsingleton E := ⟨fun u v ↦ by
-      rw [← e.apply_symm_apply u, ← e.apply_symm_apply v, he0, he0]⟩
-    exact iff_of_true (ContinuousLinearMap.ext fun u ↦ by rw [Subsingleton.elim u 0]; simp)
-      (ContinuousLinearMap.ext fun u ↦ by rw [Subsingleton.elim u 0]; simp)
+  -- The differential of `f ∘ φ` at `b` is that of `f` at `φ b` precomposed with the equivalence
+  -- `e`, so one vanishes exactly when the other does.
+  rw [fderiv_comp (x := b) hf hφ, ← he]
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]; ext u; simp⟩
+  ext u
+  simpa using congrArg (fun L : F →L[𝕜] G ↦ L (e.symm u)) h
 
 /-- Precomposing a real-valued function with scalar multiplication scales the norm of its
 Fréchet derivative by the absolute value of the scalar. -/
