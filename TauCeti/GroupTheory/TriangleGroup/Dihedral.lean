@@ -19,6 +19,16 @@ triangle-group classification: a finite group of order `2m`
 (`TauCeti.TriangleGroup.finite_two_two`). The degenerate signatures are covered as well:
 `(2, 2, 0)` is the infinite dihedral group `DihedralGroup 0`, and `(2, 2, 1)` is the group of
 order two.
+
+## References
+
+* H. S. M. Coxeter, W. O. J. Moser, *Generators and Relations for Discrete Groups*, Springer,
+  §6.4 (the group `Δ(2, 2, m)` is the dihedral group of order `2m`).
+* W. Magnus, *Noneuclidean Tesselations and Their Groups*, Academic Press (1974).
+
+These sources treat the spherical case `2 ≤ m`. The identification for `m = 0` and `m = 1` is
+not taken from them: it is checked directly from the presentation, as the same map on
+generators.
 -/
 
 public section
