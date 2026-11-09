@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Capacity.HoferZehnder
 public import TauCeti.Geometry.Symplectic.Hamiltonian.AlmostExistence
+import TauCeti.Analysis.Calculus.Deriv.Const
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 
@@ -121,23 +122,28 @@ private theorem IsNondegenerate.eq_of_isMIntegralCurve_comp (hσ : σ.IsNondegen
 
 /-- **Admissibility of `μ ∘ F`.** Let `F` be smooth with `{F ≤ b}` compact and contained in the
 interiors of `W` and of `M`, taking values below `a < b` somewhere and above `b` somewhere in the
-interior of `W`. Let `μ ≥ 0` be smooth and nonincreasing, constant on `(-∞, a]` and zero on
-`[b, ∞)`, with `|μ'| ≤ τ` everywhere and `μ' = 0` outside `(a, b)`. If no level `F⁻¹(s)`,
-`s ∈ (a, b)`, carries a nonconstant `T`-periodic orbit of `X_F` with `T ≤ τ` whose loop is
-contractible in `W`, then `μ ∘ F` is `HZ°`-admissible for `W`. -/
+interior of `W`. Let `μ` be smooth and nonincreasing, constant on `(-∞, a]` and zero on
+`[b, ∞)` (so `μ ≥ 0` and `μ' = 0` outside `(a, b)`), with `|μ'| ≤ τ` everywhere. If no
+level `F⁻¹(s)`, `s ∈ (a, b)`, carries a nonconstant `T`-periodic orbit of `X_F` with `T ≤ τ`
+whose loop is contractible in `W`, then `μ ∘ F` is `HZ°`-admissible for `W`. -/
 theorem IsNondegenerate.isContractibleHZAdmissible_comp (hσ : σ.IsNondegenerate)
     (hF : ContMDiff I 𝓘(ℝ) ∞ F) (hcpt : IsCompact {x | F x ≤ b})
     (hW : {x | F x ≤ b} ⊆ interior W) (hM : {x | F x ≤ b} ⊆ I.interior M)
     (ha : ∃ x, F x < a) (hb : ∃ x ∈ interior W, b < F x) {μ : ℝ → ℝ} (hμ : ContDiff ℝ ∞ μ)
-    (hanti : Antitone μ) (hnn : ∀ r, 0 ≤ μ r) (hhigh : ∀ r, b ≤ r → μ r = 0)
+    (hanti : Antitone μ) (hhigh : ∀ r, b ≤ r → μ r = 0)
     (hlow : ∀ r ≤ a, μ r = μ a) (habs : ∀ r, |deriv μ r| ≤ τ)
-    (hzero : ∀ r ∉ Ioo a b, deriv μ r = 0)
     (horb : ∀ s ∈ Ioo a b, ¬σ.HasContractibleClosedCharacteristicOfPeriodLE W F s τ) :
     σ.IsContractibleHZAdmissible W (μ ∘ F) := by
   have hle (r : ℝ) : μ r ≤ μ a := by
     rcases le_total r a with h | h
     · exact (hlow r h).le
     · exact hanti h
+  have hnn (r : ℝ) : 0 ≤ μ r := by
+    rcases le_total r b with h | h
+    · simpa only [hhigh b le_rfl] using hanti h
+    · exact (hhigh r h).ge
+  -- `μ` is constant off `(a, b)`, so `μ'` vanishes there.
+  have hzero := deriv_eq_zero_of_not_mem_Ioo hlow hhigh
   obtain ⟨x₀, hx₀⟩ := ha
   have hFc : Continuous F := hF.continuous
   -- The support of `μ ∘ F` lies in `{F ≤ b}`, since `μ` vanishes on `[b, ∞)`.
@@ -181,7 +187,7 @@ theorem IsNondegenerate.ofReal_mul_sub_le_contractibleHZCapacity (hσ : σ.IsNon
   refine le_of_forall_lt_imp_le_of_dense fun e he ↦ ?_
   have hvτ : e.toReal < τ * (b - a) := ENNReal.toReal_lt_of_lt_ofReal he
   rw [← ENNReal.ofReal_toReal he.ne_top]
-  obtain ⟨μ, hμ, hanti, hnn, hhigh, hlow, habs, hzero⟩ :=
+  obtain ⟨μ, hμ, hanti, -, hhigh, hlow, habs, -⟩ :=
     exists_contDiff_antitone_cutoff_abs_deriv_le hab ENNReal.toReal_nonneg hvτ
   set v := e.toReal
   have hle (r : ℝ) : μ r ≤ v := by
@@ -193,8 +199,8 @@ theorem IsNondegenerate.ofReal_mul_sub_le_contractibleHZCapacity (hσ : σ.IsNon
   have hsup : ⨆ x, (μ ∘ F) x = v :=
     ciSup_eq_of_forall_le_of_forall_lt_exists_gt (fun x ↦ hle _) fun w hw ↦
       ⟨x₀, by simpa [hlow _ hx₀.le] using hw⟩
-  have hadm := hσ.isContractibleHZAdmissible_comp hF hcpt hW hM ⟨x₀, hx₀⟩ hb hμ hanti hnn hhigh
-    (fun r hr ↦ by rw [hlow r hr, hlow a le_rfl]) habs hzero horb
+  have hadm := hσ.isContractibleHZAdmissible_comp hF hcpt hW hM ⟨x₀, hx₀⟩ hb hμ hanti hhigh
+    (fun r hr ↦ by rw [hlow r hr, hlow a le_rfl]) habs horb
   calc ENNReal.ofReal v = ENNReal.ofReal (⨆ x, (μ ∘ F) x) := by rw [hsup]
     _ ≤ _ := hadm.ofReal_iSup_le_contractibleHZCapacity
 
