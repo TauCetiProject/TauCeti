@@ -71,6 +71,9 @@ number of `∂D ∩ α` with `∂E ∩ β`, computed once along the `α`-curves 
   a nonnegative domain from `x` to `y` has a corner at the points of `x` and of `y` on every
   `α`-curve where they differ, so its Maslov index is at least its Euler measure plus half the
   number of such curves.
+* `TauCeti.HeegaardRegionSystem.forall_finite_setOf_isDomainBetween_nonneg_index_iff`: the
+  nonnegative domains ending at `y` with each prescribed Maslov index are finite in number
+  exactly when the only nonnegative domain from `y` to itself of Maslov index zero is zero.
 
 ## References
 
@@ -478,6 +481,53 @@ theorem IsDomainBetween.eulerMeasure_add_half_hammingDist_le_maslovIndex (χ : R
   linarith
 
 end NonnegDomain
+
+section Finite
+
+variable [Fintype Point] [DecidableEq Region] [Fintype Region] {H} {χ : Region → ℤ}
+  {y : H.Generator}
+
+variable (H) in
+/-- The domains from `y` to itself of Maslov index zero at `y`. Unlike periodic domains, they may
+cover the basepoints. -/
+private def selfDomainsIndexZero (χ : Region → ℤ) (y : H.Generator) :
+    AddSubgroup (Region → ℤ) :=
+  (H.alphaArcBoundary.comp H.alphaBoundary).ker ⊓ (H.betaArcBoundary.comp H.betaBoundary).ker ⊓
+    (H.maslovIndex χ y y).ker
+
+private theorem mem_selfDomainsIndexZero_iff {Q : Region → ℤ} :
+    Q ∈ H.selfDomainsIndexZero χ y ↔
+      H.IsDomainBetween y y Q ∧ H.maslovIndex χ y y Q = 0 := by
+  simp [selfDomainsIndexZero, and_assoc]
+
+/-- Only finitely many nonnegative domains connect each generator `x` to `y` with each prescribed
+Maslov index, whatever their basepoint multiplicities, exactly when the only nonnegative domain
+from `y` to itself of Maslov index zero is zero. Such a domain may cover the basepoints, so this
+is stronger than weak admissibility at `y`
+(`TauCeti.HeegaardRegionSystem.weaklyAdmissibleAt_iff_forall_finite`). -/
+theorem forall_finite_setOf_isDomainBetween_nonneg_index_iff :
+    (∀ (x : H.Generator) (m : ℚ),
+      {D : Region → ℤ | H.IsDomainBetween x y D ∧ 0 ≤ D ∧ H.maslovIndex χ x y D = m}.Finite) ↔
+      ∀ Q : Region → ℤ, H.IsDomainBetween y y Q → 0 ≤ Q → H.maslovIndex χ y y Q = 0 → Q = 0 := by
+  constructor
+  · intro hfin Q hQ hQ₀ hμ
+    refine (H.selfDomainsIndexZero χ y).finite_setOf_mem_nonneg_iff.mp
+      ((hfin y 0).subset fun Q hQ => ?_) Q (mem_selfDomainsIndexZero_iff.mpr ⟨hQ, hμ⟩) hQ₀
+    obtain ⟨hQ, hQ₀⟩ := hQ
+    obtain ⟨hdom, hμ⟩ := mem_selfDomainsIndexZero_iff.mp hQ
+    exact ⟨hdom, hQ₀, hμ⟩
+  · intro h x m
+    -- Any two of these domains differ by a domain from `y` to itself of Maslov index zero.
+    refine AddSubgroup.finite_of_forall_sub_mem (P := H.selfDomainsIndexZero χ y)
+      (fun Q hQ hQ₀ => ?_) (fun _ hD => hD.2.1) fun D ⟨hD, _, hDm⟩ D' ⟨hD', _, hD'm⟩ => ?_
+    · obtain ⟨hdom, hμ⟩ := mem_selfDomainsIndexZero_iff.mp hQ
+      exact h Q hdom hQ₀ hμ
+    · refine mem_selfDomainsIndexZero_iff.mpr ⟨?_, ?_⟩
+      · simpa [neg_add_eq_sub] using hD.neg.add hD'
+      · rw [← neg_add_eq_sub, hD.neg.maslovIndex_add χ hD', maslovIndex_neg, hDm, hD'm,
+          neg_add_cancel]
+
+end Finite
 
 end HeegaardRegionSystem
 

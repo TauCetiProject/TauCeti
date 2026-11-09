@@ -26,10 +26,12 @@ differentials of the minus and infinity complexes count domains with every basep
 multiplicity, and strong admissibility gives the finiteness they need: in a diagram with a single
 basepoint whose region Euler characteristics are those of a closed surface, only finitely many
 nonnegative domains from `x` to `y` have a given Maslov index, whatever their basepoint
-multiplicity (Ozsváth–Szabó, Lemma 4.14). Equivalently, the only nonnegative domain from `y` to
-itself of Maslov index zero is zero, even among those covering the basepoint. When the periodic
-domains have even integer Maslov indices, as on a geometric diagram, this finiteness
-characterizes strong admissibility.
+multiplicity (Ozsváth–Szabó, Lemma 4.14). Equivalently
+(`TauCeti.HeegaardRegionSystem.forall_finite_setOf_isDomainBetween_nonneg_index_iff`), the only
+nonnegative domain from `y` to itself of Maslov index zero is zero, even among those covering the
+basepoint. Conversely, this finiteness characterizes strong admissibility: clearing the
+denominator of a rational index `q`, a periodic domain `P` with no coefficient above `q / 2`
+gives the nonnegative index-zero domain `q.num Σ - 2 q.den P`.
 
 ## Main definitions
 
@@ -40,14 +42,11 @@ characterizes strong admissibility.
 
 * `TauCeti.HeegaardRegionSystem.StronglyAdmissible.weaklyAdmissibleAt`: strong admissibility at
   a generator implies weak admissibility there.
-* `TauCeti.HeegaardRegionSystem.forall_finite_setOf_isDomainBetween_nonneg_index_iff`: the
-  nonnegative domains ending at `y` with each prescribed Maslov index are finite in number
-  exactly when the only nonnegative domain from `y` to itself of Maslov index zero is zero.
 * `TauCeti.HeegaardRegionSystem.StronglyAdmissible.finite_setOf_isDomainBetween_nonneg_index`:
   in a strongly admissible diagram, only finitely many nonnegative domains from `x` to `y` have a
   given Maslov index.
-* `TauCeti.HeegaardRegionSystem.stronglyAdmissible_iff_forall_finite`: when periodic domains
-  have even integer Maslov indices, strong admissibility is equivalent to this finiteness.
+* `TauCeti.HeegaardRegionSystem.stronglyAdmissible_iff_forall_finite`: in such a diagram, strong
+  admissibility is equivalent to this finiteness.
 
 ## References
 
@@ -116,46 +115,6 @@ section Finite
 
 variable {χ : Region → ℤ} {x y : H.Generator}
 
-variable (H) in
-/-- The domains from `y` to itself of Maslov index zero at `y`. Unlike periodic domains, they may
-cover the basepoints. -/
-private def selfDomainsIndexZero (χ : Region → ℤ) (y : H.Generator) :
-    AddSubgroup (Region → ℤ) :=
-  (H.alphaArcBoundary.comp H.alphaBoundary).ker ⊓ (H.betaArcBoundary.comp H.betaBoundary).ker ⊓
-    (H.maslovIndex χ y y).ker
-
-private theorem mem_selfDomainsIndexZero_iff {Q : Region → ℤ} :
-    Q ∈ H.selfDomainsIndexZero χ y ↔
-      H.IsDomainBetween y y Q ∧ H.maslovIndex χ y y Q = 0 := by
-  simp [selfDomainsIndexZero, and_assoc]
-
-/-- Only finitely many nonnegative domains connect each generator `x` to `y` with each prescribed
-Maslov index, whatever their basepoint multiplicities, exactly when the only nonnegative domain
-from `y` to itself of Maslov index zero is zero. Such a domain may cover the basepoints, so this
-is stronger than weak admissibility at `y`
-(`TauCeti.HeegaardRegionSystem.weaklyAdmissibleAt_iff_forall_finite`). -/
-theorem forall_finite_setOf_isDomainBetween_nonneg_index_iff :
-    (∀ (x : H.Generator) (m : ℚ),
-      {D : Region → ℤ | H.IsDomainBetween x y D ∧ 0 ≤ D ∧ H.maslovIndex χ x y D = m}.Finite) ↔
-      ∀ Q : Region → ℤ, H.IsDomainBetween y y Q → 0 ≤ Q → H.maslovIndex χ y y Q = 0 → Q = 0 := by
-  constructor
-  · intro hfin Q hQ hQ₀ hμ
-    refine (H.selfDomainsIndexZero χ y).finite_setOf_mem_nonneg_iff.mp
-      ((hfin y 0).subset fun Q hQ => ?_) Q (mem_selfDomainsIndexZero_iff.mpr ⟨hQ, hμ⟩) hQ₀
-    obtain ⟨hQ, hQ₀⟩ := hQ
-    obtain ⟨hdom, hμ⟩ := mem_selfDomainsIndexZero_iff.mp hQ
-    exact ⟨hdom, hQ₀, hμ⟩
-  · intro h x m
-    -- Any two of these domains differ by a domain from `y` to itself of Maslov index zero.
-    refine AddSubgroup.finite_of_forall_sub_mem (P := H.selfDomainsIndexZero χ y)
-      (fun Q hQ hQ₀ => ?_) (fun _ hD => hD.2.1) fun D ⟨hD, _, hDm⟩ D' ⟨hD', _, hD'm⟩ => ?_
-    · obtain ⟨hdom, hμ⟩ := mem_selfDomainsIndexZero_iff.mp hQ
-      exact h Q hdom hQ₀ hμ
-    · refine mem_selfDomainsIndexZero_iff.mpr ⟨?_, ?_⟩
-      · simpa [neg_add_eq_sub] using hD.neg.add hD'
-      · rw [← neg_add_eq_sub, hD.neg.maslovIndex_add χ hD', maslovIndex_neg, hDm, hD'm,
-          neg_add_cancel]
-
 /-- In a diagram with at most one basepoint whose region Euler characteristics `χ` are those of a
 closed surface of genus `n`, strong admissibility at `y` rules out nonzero nonnegative domains
 from `y` to itself of Maslov index zero, even those covering the basepoint. -/
@@ -201,28 +160,40 @@ theorem StronglyAdmissible.finite_setOf_isDomainBetween_nonneg_index [Subsinglet
     (fun _ hQ hQ₀ hμ => hH.eq_zero_of_isDomainBetween_of_nonneg hχ hQ hQ₀ hμ) x m
 
 /-- In a diagram with a single basepoint whose region Euler characteristics `χ` are those of a
-closed surface of genus `n`, and whose periodic domains have even integer Maslov indices at `y`,
-as on a geometric Heegaard diagram, strong admissibility at `y` is exactly the finiteness of the
+closed surface of genus `n`, strong admissibility at `y` is exactly the finiteness of the
 nonnegative domains from each generator to `y` with each prescribed Maslov index. -/
 theorem stronglyAdmissible_iff_forall_finite [Subsingleton Basepoint] (z : Basepoint)
-    (hχ : ∑ r, χ r - Fintype.card Point = 2 - 2 * (n : ℤ))
-    (heven : ∀ P ∈ H.periodicDomains, ∃ k : ℤ, H.maslovIndex χ y y P = 2 * k) :
+    (hχ : ∑ r, χ r - Fintype.card Point = 2 - 2 * (n : ℤ)) :
     H.StronglyAdmissible χ y ↔ ∀ (x : H.Generator) (m : ℚ),
       {D : Region → ℤ | H.IsDomainBetween x y D ∧ 0 ≤ D ∧ H.maslovIndex χ x y D = m}.Finite := by
-  refine ⟨fun hH => hH.finite_setOf_isDomainBetween_nonneg_index hχ, fun hfin P hP hne hμ => ?_⟩
-  obtain ⟨k, hk⟩ := heven P hP
-  rw [hk, mul_div_cancel_left₀ _ two_ne_zero]
+  refine ⟨fun hH => hH.finite_setOf_isDomainBetween_nonneg_index hχ, fun hfin P hP hne _ => ?_⟩
+  set q := H.maslovIndex χ y y P with hq
   by_contra! hle
-  -- Then `k Σ - P` is a nonnegative domain from `y` to itself of Maslov index zero.
-  have hQ := forall_finite_setOf_isDomainBetween_nonneg_index_iff.mp hfin (k • 1 - P)
-    (by simpa only [sub_eq_add_neg] using
-      ((H.isDomainBetween_one y).zsmul k).add (isDomainBetween_self_iff.mpr hP).1.neg)
-    (fun r => by simpa using (show P r ≤ k by exact_mod_cast hle r))
-    (by rw [map_sub, map_zsmul, maslovIndex_one_eq_two hχ, hk, zsmul_eq_mul, mul_comm, sub_self])
-  -- So `P = k Σ`, and `P` vanishes at the basepoint, so `P = 0`.
+  -- Clearing the denominator of the index `q`, `q.num Σ - 2 q.den P` is a nonnegative domain from
+  -- `y` to itself of Maslov index zero.
+  have hQ := forall_finite_setOf_isDomainBetween_nonneg_index_iff.mp hfin
+    (q.num • 1 - (2 * q.den : ℤ) • P)
+    (by
+      simpa only [sub_eq_add_neg] using ((H.isDomainBetween_one y).zsmul q.num).add
+        ((isDomainBetween_self_iff.mpr hP).1.zsmul _).neg)
+    (fun r => by
+      have hr : (2 * q.den : ℚ) * P r ≤ q.num :=
+        calc (2 * q.den : ℚ) * P r ≤ 2 * q.den * (q / 2) :=
+              mul_le_mul_of_nonneg_left (hle r) (by positivity)
+          _ = q.num := by rw [← Rat.mul_den_eq_num]; ring
+      simp only [Pi.zero_apply, Pi.sub_apply, Pi.smul_apply, Pi.one_apply, smul_eq_mul, mul_one]
+      exact sub_nonneg.mpr (by exact_mod_cast hr))
+    (by
+      rw [map_sub, map_zsmul, map_zsmul, maslovIndex_one_eq_two hχ, ← hq, zsmul_eq_mul,
+        zsmul_eq_mul, ← Rat.mul_den_eq_num]
+      push_cast
+      ring)
+  -- So `2 q.den P = q.num Σ`, and `P` vanishes at the basepoint, so `q.num = 0` and `P = 0`.
   rw [sub_eq_zero] at hQ
-  have hk₀ : k = 0 := by simpa [← hQ] using (H.mem_periodicDomains_iff.mp hP).1 z
-  exact hne (by rw [← hQ, hk₀, zero_smul])
+  have hnum : q.num = 0 := by
+    simpa [(H.mem_periodicDomains_iff.mp hP).1 z] using congrFun hQ (H.basepoint z)
+  rw [hnum, zero_smul, eq_comm, smul_eq_zero] at hQ
+  exact hne (hQ.resolve_left (by positivity))
 
 end Finite
 
