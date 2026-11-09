@@ -159,7 +159,6 @@ theorem setIntegral_toLp_insertNth_eq {p : ℕ} (j : Fin (p + 1))
       ∫ y in fullSimplex p, G (simplexMapAmbient (Fin.succAbove 0) y) := by
   simp_rw [toLp_insertNth_eq_simplexMapAmbient]
   exact (simplexMapAmbient j.cycleRange.symm).setIntegral_comp_of_image_eq volume
-    (isCompact_fullSimplex p).isClosed.measurableSet
     (isCompact_fullSimplex p).measure_lt_top.ne (image_simplexMapAmbient_perm _)
     fun z ↦ G (simplexMapAmbient (Fin.succAbove 0) z)
 

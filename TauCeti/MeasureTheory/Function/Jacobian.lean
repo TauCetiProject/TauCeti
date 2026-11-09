@@ -38,7 +38,7 @@ Such constants exist on every compact set on which a `C¹` map has invertible de
 injective and with invertible derivative on an open set preserves local integrability
 (`MeasureTheory.LocallyIntegrableOn.comp_contDiffOn_diffeo`).
 
-A continuous affine map `T` carrying a measurable set `s` of finite measure onto itself preserves
+A continuous affine map `T` carrying a set `s` of finite measure onto itself preserves
 integrals over `s`. When `s` is not null, the linear part of `T` has determinant `±1`, because the
 image of `s` has `|det|` times the measure of `s`, so the change of variables formula has no
 Jacobian factor
@@ -274,9 +274,9 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [NormedAddCommGroup F] [NormedSpace ℝ F] {s : Set E}
 
 /-- **Integrals over a set are invariant under an affine self-map of it.** If a continuous affine
-map `T` carries a measurable set `s` of finite measure onto itself, then
+map `T` carries a set `s` of finite measure onto itself, then
 `∫ x in s, g (T x) ∂μ = ∫ x in s, g x ∂μ` for every `g`. -/
-theorem setIntegral_comp_of_image_eq (T : E →ᴬ[ℝ] E) (hs : MeasurableSet s) (hμ : μ s ≠ ∞)
+theorem setIntegral_comp_of_image_eq (T : E →ᴬ[ℝ] E) (hμ : μ s ≠ ∞)
     (hT : T '' s = s) (g : E → F) :
     ∫ x in s, g (T x) ∂μ = ∫ x in s, g x ∂μ := by
   -- On a null set both integrals vanish.
@@ -286,17 +286,31 @@ theorem setIntegral_comp_of_image_eq (T : E →ᴬ[ℝ] E) (hs : MeasurableSet s
   -- A singular linear part would collapse `s` to a null set.
   have hdet : T.contLinear.det ≠ 0 := fun h ↦
     h₀ (hT ▸ addHaar_image_eq_zero_of_det_fderivWithin_eq_zero μ hd fun _ _ ↦ h)
-  have hinj : InjOn T s := (T.toAffineMap.linear_injective_iff.1
-    ((Module.End.isUnit_iff _).1 ((LinearMap.isUnit_iff_isUnit_det _).2 hdet.isUnit)).1).injOn
+  have hinj : Function.Injective T := T.toAffineMap.linear_injective_iff.1
+    ((Module.End.isUnit_iff _).1 ((LinearMap.isUnit_iff_isUnit_det _).2 hdet.isUnit)).1
+  have hT0 : (T : E → E) = (fun y ↦ y + T 0) ∘ T.contLinear := by
+    funext x
+    simpa [add_comm] using congrFun T.toAffineMap.decomp x
   -- Comparing the measures of `s` and of its image `T '' s = s` forces `|det| = 1`.
   have habs : |T.contLinear.det| = 1 := by
-    have h := lintegral_abs_det_fderiv_eq_addHaar_image μ hs hd hinj
-    rw [hT, setLIntegral_const] at h
-    exact ENNReal.ofReal_eq_one.1 ((ENNReal.mul_eq_right h₀ hμ).1 h)
-  calc ∫ x in s, g (T x) ∂μ = ∫ x in s, |T.contLinear.det| • g (T x) ∂μ := by
-        simp [habs]
-    _ = ∫ x in T '' s, g x ∂μ :=
-        (integral_image_eq_integral_abs_det_fderiv_smul μ hs hd hinj g).symm
-    _ = ∫ x in s, g x ∂μ := by rw [hT]
+    have h : μ (T '' s) = ENNReal.ofReal |T.contLinear.det| * μ s := by
+      rw [hT0, Set.image_comp, Set.image_add_right, measure_preimage_add_right]
+      exact Measure.addHaar_image_continuousLinearMap μ _ s
+    rw [hT] at h
+    exact ENNReal.ofReal_eq_one.1 ((ENNReal.mul_eq_right h₀ hμ).1 h.symm)
+  -- Hence `T` preserves `μ`, and it is a measurable embedding.
+  have hmap : μ.map T = μ := by
+    have hL : μ.map T.contLinear = μ := by
+      rw [show (T.contLinear : E → E) = ((T.contLinear : E →ₗ[ℝ] E) : E → E) from rfl,
+        Measure.map_linearMap_addHaar_eq_smul_addHaar μ hdet]
+      have h1 : |(LinearMap.det (T.contLinear : E →ₗ[ℝ] E))⁻¹| = 1 := by
+        rw [abs_inv]; exact inv_eq_one.2 habs
+      rw [h1]
+      simp
+    rw [hT0, ← Measure.map_map (measurable_add_const _) T.contLinear.continuous.measurable, hL,
+      map_add_right_eq_self]
+  have hmp : MeasurePreserving T μ μ := ⟨T.continuous.measurable, hmap⟩
+  have hpre : T ⁻¹' s = s := by simpa [hT] using hinj.preimage_image s
+  rw [← hmp.setIntegral_preimage_emb (T.continuous.measurableEmbedding hinj) g s, hpre]
 
 end ContinuousAffineMap

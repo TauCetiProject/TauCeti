@@ -138,6 +138,7 @@ variable {X F : Type*} [MetricSpace X] [MeasurableSpace X] [ProperSpace X]
   [OpensMeasurableSpace X] {μ : Measure X} [IsFiniteMeasureOnCompacts μ] [NormedAddCommGroup F]
   [NormedSpace ℝ F] [CompleteSpace F] {f : X → F} {Ω : Set X} {x : X}
 
+omit [IsFiniteMeasureOnCompacts μ] in
 /-- **The mean oscillation of a Hölder function.** If `f` is `α`-Hölder continuous on
 `closedBall x r` with constant `K`, `α > 0`, and this ball has positive measure, then the mean
 oscillation of `f` on the ball is at most `K (2 r)^α`. -/
@@ -145,10 +146,24 @@ theorem setAverage_norm_sub_setAverage_le_of_holderOnWith {K α : ℝ≥0} {r : 
     (hμ : μ (closedBall x r) ≠ 0) (hf : HolderOnWith K α f (closedBall x r)) :
     ⨍ y in closedBall x r, ‖f y - ⨍ z in closedBall x r, f z ∂μ‖ ∂μ ≤
       K * (2 * r) ^ (α : ℝ) := by
-  have hμ' : μ (closedBall x r) ≠ ⊤ := (isCompact_closedBall x r).measure_lt_top.ne
+  have hr : 0 ≤ r := by
+    by_contra h
+    exact hμ (by simp [closedBall_eq_empty.2 (not_le.1 h)])
+  -- If the ball has infinite measure, both averages are `0` by convention.
+  rcases eq_or_ne (μ (closedBall x r)) ⊤ with hμ' | hμ'
+  · simp only [setAverage_eq, measureReal_def, hμ', ENNReal.toReal_top, inv_zero, zero_smul]
+    positivity
   have hcont := hf.continuousOn hα
-  have hint : IntegrableOn f (closedBall x r) μ :=
-    hcont.integrableOn_compact (isCompact_closedBall _ _)
+  -- Continuous functions are integrable on the ball, which has finite measure.
+  have : IsFiniteMeasure (μ.restrict (closedBall x r)) :=
+    ⟨by rwa [Measure.restrict_apply_univ, lt_top_iff_ne_top]⟩
+  have hintOn : ∀ g : X → ℝ, ContinuousOn g (closedBall x r) →
+      IntegrableOn g (closedBall x r) μ := fun g hg ↦ by
+    simpa [IntegrableOn, Measure.restrict_restrict measurableSet_closedBall] using
+      hg.integrableOn_compact (μ := μ.restrict (closedBall x r)) (isCompact_closedBall _ _)
+  have hint : IntegrableOn f (closedBall x r) μ := by
+    simpa [IntegrableOn, Measure.restrict_restrict measurableSet_closedBall] using
+      hcont.integrableOn_compact (μ := μ.restrict (closedBall x r)) (isCompact_closedBall _ _)
   -- Every value of `f` on the ball lies within `K (2 r)^α` of every other one, hence of their
   -- average.
   have hpt : ∀ y ∈ closedBall x r,
@@ -166,7 +181,7 @@ theorem setAverage_norm_sub_setAverage_le_of_holderOnWith {K α : ℝ≥0} {r : 
     exact mem_closedBall.1 hmem
   refine (convex_Iic ((K : ℝ) * (2 * r) ^ (α : ℝ))).set_average_mem isClosed_Iic hμ hμ' ?_ ?_
   · filter_upwards [self_mem_ae_restrict measurableSet_closedBall] with y hy using hpt y hy
-  · exact (hcont.sub continuousOn_const).norm.integrableOn_compact (isCompact_closedBall _ _)
+  · exact hintOn _ (hcont.sub continuousOn_const).norm
 
 /-- **The oscillation of a Hölder function about its average on a domain.** If `f` is `α`-Hölder
 continuous on a null-measurable set `Ω` with constant `K`, then almost everywhere on
@@ -502,20 +517,29 @@ theorem norm_setAverage_closedBall_sub_setAverage_closedBall_le (hα : 0 < α)
   simpa using norm_setAverage_closedBall_sub_le (Ω := univ) (c := 1) hα one_pos
     (by simpa using hf) (fun _ _ _ ↦ by simp) (by simpa using hosc) hε hεr hrρ
 
-/-- **Mean oscillation decay gives convergence of the averages.** Let `α > 0` and `ρ > 0`. If `f`
-is integrable on `closedBall x ρ` and its mean oscillation on `closedBall x r` is at most `M r^α`
-for `0 < r ≤ ρ`, then the averages of `f` over the closed balls around `x` converge to the
-precise representative of `f` at `x`. -/
+/-- **Mean oscillation decay gives convergence of the averages.** Let `α > 0` and `ρ > 0`. If
+the mean oscillation of `f` on `closedBall x r` is at most `M r^α` for `0 < r ≤ ρ`, then the
+averages of `f` over the closed balls around `x` converge to the precise representative of `f`
+at `x`. (If `f` is integrable on no ball around `x`, all the averages are `0` by convention.) -/
 theorem tendsto_setAverage_closedBall_preciseRepresentative_of_setAverage_norm_sub_le
-    (hα : 0 < α) (hρ : 0 < ρ) (hf : IntegrableOn f (closedBall x ρ) μ)
+    (hα : 0 < α) (hρ : 0 < ρ)
     (hosc : ∀ r, 0 < r → r ≤ ρ →
       ⨍ y in closedBall x r, ‖f y - ⨍ z in closedBall x r, f z ∂μ‖ ∂μ ≤ M * r ^ α) :
     Tendsto (fun ε ↦ ⨍ y in closedBall x ε, f y ∂μ) (𝓝[>] 0)
       (𝓝 (preciseRepresentative μ f x)) := by
-  simpa using
-    tendsto_setAverage_closedBall_restrict_preciseRepresentative_of_setAverage_norm_sub_le
-      (Ω := univ) (c := 1) hα hρ one_pos (by simpa using hf) (fun _ _ _ ↦ by simp)
-      (by simpa using hosc)
+  by_cases hex : ∃ ρ' : ℝ, 0 < ρ' ∧ ρ' ≤ ρ ∧ IntegrableOn f (closedBall x ρ') μ
+  · obtain ⟨ρ', hρ', hρ'ρ, hf⟩ := hex
+    simpa using
+      tendsto_setAverage_closedBall_restrict_preciseRepresentative_of_setAverage_norm_sub_le
+        (Ω := univ) (c := 1) hα hρ' one_pos (by simpa using hf) (fun _ _ _ ↦ by simp)
+        (by simpa using fun r hr hrρ' ↦ hosc r hr (hrρ'.trans hρ'ρ))
+  · push Not at hex
+    have hzero : ∀ ε ∈ Ioc (0 : ℝ) ρ, ⨍ y in closedBall x ε, f y ∂μ = 0 := fun ε hε ↦ by
+      rw [setAverage_eq, integral_undef (hex ε hε.1 hε.2), smul_zero]
+    have h0 : Tendsto (fun ε ↦ ⨍ y in closedBall x ε, f y ∂μ) (𝓝[>] 0) (𝓝 0) :=
+      tendsto_const_nhds.congr'
+        (eventuallyEq_of_mem (Ioc_mem_nhdsGT hρ) fun ε hε ↦ (hzero ε hε).symm)
+    rwa [preciseRepresentative_eq_of_tendsto h0]
 
 /-- **The rate of convergence of the averages.** Let `α > 0`. If `f` is integrable on
 `closedBall x ρ` and its mean oscillation on `closedBall x r` is at most `M r^α` for

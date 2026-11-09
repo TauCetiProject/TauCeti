@@ -68,16 +68,31 @@ theorem essSup_sub_essInf_le [(ae ν).NeBot] {f : α → ℝ} {m L : ℝ}
     (Filter.isCoboundedUnder_ge_of_eventually_le _ (hf.mono fun _ hx => hx.2))
   linarith
 
+/-- With respect to the empty filter, the limit superior and the limit inferior of a real function
+agree (both are the junk value `0`). -/
+private theorem limsup_bot_eq_liminf_bot {γ : Type*} (f : γ → ℝ) :
+    Filter.limsup f (⊥ : Filter γ) = Filter.liminf f ⊥ := by
+  simp [Filter.limsup_eq, Filter.liminf_eq]
+
 /-- The essential oscillation of a real function that is essentially bounded with respect to `ν'`
 does not increase when `ν'` is replaced by a measure `ν ≪ ν'`, for example by its restriction to
-a smaller set, provided that `ν` is nonzero. -/
-theorem essSup_sub_essInf_mono_measure [(ae ν).NeBot] {ν' : Measure α} {f : α → ℝ} (hν : ν ≪ ν')
+a smaller set. -/
+theorem essSup_sub_essInf_mono_measure {ν' : Measure α} {f : α → ℝ} (hν : ν ≪ ν')
     (hf₁ : Filter.IsBoundedUnder (· ≤ ·) (ae ν') f)
     (hf₂ : Filter.IsBoundedUnder (· ≥ ·) (ae ν') f) :
     essSup f ν - essInf f ν ≤ essSup f ν' - essInf f ν' := by
-  refine essSup_sub_essInf_le (m := essInf f ν') (hν.ae_le ?_)
-  filter_upwards [ae_le_essSup hf₁, ae_essInf_le hf₂] with x hx₁ hx₂
-  exact ⟨hx₂, by linarith⟩
+  by_cases hne : (ae ν).NeBot
+  · refine essSup_sub_essInf_le (m := essInf f ν') (hν.ae_le ?_)
+    filter_upwards [ae_le_essSup hf₁, ae_essInf_le hf₂] with x hx₁ hx₂
+    exact ⟨hx₂, by linarith⟩
+  · rw [Filter.not_neBot] at hne
+    have h0 : essSup f ν - essInf f ν = 0 := by
+      simp [essSup, essInf, hne, limsup_bot_eq_liminf_bot]
+    rw [h0, sub_nonneg]
+    by_cases hne' : (ae ν').NeBot
+    · exact Filter.liminf_le_limsup hf₁ hf₂
+    · rw [Filter.not_neBot] at hne'
+      simp [essSup, essInf, hne', limsup_bot_eq_liminf_bot]
 
 /-- Let `f` be a function with values in a densely ordered conditionally complete linear order
 with a first-countable order topology, such as `ℝ`. If `f` is not almost everywhere at most `k`

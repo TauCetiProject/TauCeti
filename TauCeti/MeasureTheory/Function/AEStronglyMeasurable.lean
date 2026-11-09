@@ -63,7 +63,7 @@ namespace TauCeti
 namespace MeasureTheory
 
 variable {β : Type*} [ConditionallyCompleteLinearOrder β] [TopologicalSpace β] [OrderTopology β]
-  [SecondCountableTopology β] [MeasurableSpace β] [BorelSpace β]
+  [SecondCountableTopology β]
 
 /-- `AEStronglyMeasurable` for the infimum of an antitone sequence of σ-algebras.
 
@@ -75,6 +75,8 @@ lemma aestronglyMeasurable_iInf_of_antitone
     {m : ℕ → MeasurableSpace α} (h_anti : Antitone m) (f : α → β)
     (hf : ∀ N, @MeasureTheory.AEStronglyMeasurable α β _ (m N) m₀ f μ) :
     @MeasureTheory.AEStronglyMeasurable α β _ (⨅ N, m N) m₀ f μ := by
+  let _ : MeasurableSpace β := borel β
+  have : BorelSpace β := ⟨rfl⟩
   -- Step 1: Extract strongly measurable representatives for each N
   let g : ℕ → α → β := fun N => (hf N).mk f
   have hg_sm : ∀ N, @MeasureTheory.StronglyMeasurable α β _ (m N) (g N) :=
@@ -127,6 +129,8 @@ lemma aestronglyMeasurable_of_tendsto_ae'
     {f : ℕ → α → β} {g : α → β} (hf : ∀ n, @MeasureTheory.AEStronglyMeasurable α β _ m m₀ (f n) μ)
     (hlim : ∀ᵐ x ∂μ, Filter.Tendsto (fun n => f n x) Filter.atTop (nhds (g x))) :
     @MeasureTheory.AEStronglyMeasurable α β _ m m₀ g μ := by
+  let _ : MeasurableSpace β := borel β
+  have : BorelSpace β := ⟨rfl⟩
   -- Strongly measurable representatives of the `f n`.
   let f' : ℕ → α → β := fun n => (hf n).mk (f n)
   have hf'_sm : ∀ n, @MeasureTheory.StronglyMeasurable α β _ m (f' n) :=
@@ -193,10 +197,17 @@ theorem AEStronglyMeasurable.comp_aemeasurable_of_map_absolutelyContinuous
 /-- A measurable family of translations preserves a.e. strong measurability for the product
 measure when the measure on the translated variable is right invariant. -/
 theorem AEStronglyMeasurable.comp_prod_sub
-    {G : Type*} [AddGroup G] [MeasurableSpace G] [MeasurableAdd G] [MeasurableSub₂ G]
+    {G : Type*} [AddGroup G] [MeasurableSpace G] [MeasurableSub₂ G]
     {ν : Measure G} [ν.IsAddRightInvariant] {k : G → F} {c : α → G}
     (hk : AEStronglyMeasurable k ν) (hc : AEMeasurable c μ) :
     AEStronglyMeasurable (fun p : α × G ↦ k (p.2 - c p.1)) (μ.prod ν) := by
+  have hsub : ∀ f g : G → G, Measurable f → Measurable g → Measurable fun y ↦ f y - g y :=
+    fun f g hf hg ↦ measurable_sub.comp (hf.prodMk hg)
+  have hneg : Measurable (fun y : G ↦ -y) := by
+    simpa using hsub _ _ (measurable_const (a := (0 : G))) measurable_id
+  have : MeasurableAdd G :=
+    ⟨fun c ↦ by simpa [sub_neg_eq_add] using hsub _ _ (measurable_const (a := c)) hneg,
+      fun c ↦ by simpa [sub_neg_eq_add] using hsub _ _ measurable_id (measurable_const (a := -c))⟩
   have hm : Measurable (fun p : α × G ↦ p.2 - hc.mk c p.1) :=
     measurable_snd.sub (hc.measurable_mk.comp measurable_fst)
   have hq : QuasiMeasurePreserving (fun p : α × G ↦ p.2 - hc.mk c p.1) (μ.prod ν) ν := by
