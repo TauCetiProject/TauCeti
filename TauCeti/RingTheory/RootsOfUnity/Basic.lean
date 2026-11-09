@@ -11,6 +11,8 @@ public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import Mathlib.RingTheory.RootsOfUnity.CyclotomicUnits
 public import Mathlib.RingTheory.RootsOfUnity.Minpoly
 
+import TauCeti.GroupTheory.Index.NSmul
+
 /-!
 # Basic results on roots of unity
 
@@ -20,8 +22,8 @@ and counts the square roots of unity in a domain in which `2 ≠ 0`; in any doma
 homomorphism into a domain, and with it the nonemptiness of `primitiveRoots n R`. For a prime
 `p` it relates the triviality of the `p`th roots of unity to the absence of a primitive one. It
 also records that roots of unity, and hence the values of a character of a finite group, are
-integral over `ℤ`. It identifies the `n`-torsion of a unit group, written additively, and the
-kernel of the `n`-th power map of a commutative group with the `n`-th roots of unity.
+integral over `ℤ`. It identifies the `n`-torsion of a unit group, written additively, with the
+`n`-th roots of unity, and counts the kernel of the `n`-th power map of a commutative group.
 Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th roots of unity.
 
 ## Main definitions
@@ -30,8 +32,6 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 
 * `TauCeti.torsionByUnitsEquivRootsOfUnity`: the `n`-torsion of `Mˣ`, written additively, is
   `μₙ(M)`, written additively.
-* `TauCeti.powMonoidHomKerEquivRootsOfUnity`: in a commutative group, the kernel of the `n`-th
-  power map is `μₙ`.
 * `TauCeti.rootsOfUnityPowOfDvd`: for `n ∣ m`, the power map `η ↦ η ^ (m / n)` from `μₘ(M)` to
   `μₙ(M)`.
   Its kernel consists of the `(m / n)`-th roots of unity
@@ -291,30 +291,12 @@ instance finite_torsionBy_additive_units {M : Type*} [CommMonoid M] (n : ℕ)
     [Finite (rootsOfUnity n M)] : Finite (Submodule.torsionBy ℤ (Additive Mˣ) (n : ℤ)) :=
   .of_equiv _ ((torsionByUnitsEquivRootsOfUnity n).toEquiv.trans Additive.toMul).symm
 
-/-- In a commutative group, the kernel of the `n`-th power map is the group of `n`-th roots of
-unity, through `toUnits`. -/
-def powMonoidHomKerEquivRootsOfUnity {G : Type*} [CommGroup G] (n : ℕ) :
-    (powMonoidHom n : G →* G).ker ≃* rootsOfUnity n G :=
-  { toUnits.toEquiv.subtypeEquiv fun u ↦ by simp [mem_rootsOfUnity, ← map_pow] with
-    map_mul' _ _ := Subtype.ext (map_mul toUnits _ _) }
-
-@[simp]
-theorem coe_powMonoidHomKerEquivRootsOfUnity_apply {G : Type*} [CommGroup G] (n : ℕ)
-    (u : (powMonoidHom n : G →* G).ker) :
-    (powMonoidHomKerEquivRootsOfUnity n u : Gˣ) = toUnits (u : G) :=
-  (rfl)
-
-@[simp]
-theorem coe_powMonoidHomKerEquivRootsOfUnity_symm_apply {G : Type*} [CommGroup G] (n : ℕ)
-    (ζ : rootsOfUnity n G) : ((powMonoidHomKerEquivRootsOfUnity n).symm ζ : G) = (ζ : Gˣ) :=
-  (rfl)
-
 /-- In a commutative group with enough `n`-th roots of unity, the kernel of the `n`-th power map
 has `n` elements. -/
 theorem natCard_powMonoidHom_ker (G : Type*) [CommGroup G] (n : ℕ) [NeZero n]
     [HasEnoughRootsOfUnity G n] : Nat.card (powMonoidHom n : G →* G).ker = n :=
-  (Nat.card_congr (powMonoidHomKerEquivRootsOfUnity n).toEquiv).trans
-    (HasEnoughRootsOfUnity.natCard_rootsOfUnity G n)
+  (toUnits.card_ker_powMonoidHom n).trans <| by
+    rw [← rootsOfUnity_eq_ker, HasEnoughRootsOfUnity.natCard_rootsOfUnity]
 
 /-- For `n ∣ m`, raising to the power `m / n` maps the `m`-th roots of unity to the `n`-th roots of
 unity. -/

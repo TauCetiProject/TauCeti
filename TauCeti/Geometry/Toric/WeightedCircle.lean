@@ -263,7 +263,9 @@ theorem finite_stabilizer_weightedEllipsoid (ha : 0 < a) (hb : 0 < b) (hε : 0 <
   · have : NeZero a := ⟨ha.ne'⟩
     have hle : MulAction.stabilizer Circle z ≤ (powMonoidHom a : Circle →* Circle).ker :=
       fun u hu ↦ by simpa using (mem_stabilizer_weightedEllipsoid_iff.1 hu).1 h₁
-    have := Finite.of_equiv _ (powMonoidHomKerEquivRootsOfUnity (G := Circle) a).toEquiv.symm
+    have : Finite (powMonoidHom a : Circle →* Circle).ker := Nat.finite_of_card_ne_zero <| by
+      rw [natCard_powMonoidHom_ker Circle a]
+      exact ha.ne'
     exact Finite.of_injective _ (Subgroup.inclusion_injective hle)
 
 /-- **Every stabilizer on the ellipsoid is cyclic** for positive weights and `ε > 0`, being a
