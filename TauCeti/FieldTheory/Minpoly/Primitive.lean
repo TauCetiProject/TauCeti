@@ -48,7 +48,7 @@ clears the denominator of `x` when `F` is a field.
 * `TauCeti.isPrimitive_primitiveMinpoly`, `TauCeti.leadingCoeff_primitiveMinpoly_pos`,
   `TauCeti.irreducible_primitiveMinpoly`, `TauCeti.aeval_primitiveMinpoly`: `F_x` is primitive,
   has positive leading coefficient, and for algebraic `x` is irreducible and vanishes at `x`.
-* `TauCeti.rootSet_primitiveMinpoly`: for algebraic `x`, `F_x` and `minpoly ℚ x` have the same
+* `TauCeti.rootSet_primitiveMinpoly`: `F_x` and `minpoly ℚ x` have the same
   roots in every commutative domain that is a `ℚ`-algebra.
 * `TauCeti.primitiveMinpoly_dvd_iff`: for algebraic `x`, `F_x ∣ P` in `ℤ[X]` iff `P(x) = 0`.
 * `TauCeti.primitiveMinpoly_eq_of_irreducible`: the uniqueness characterisation of `F_x`.
@@ -188,11 +188,16 @@ theorem coeff_zero_primitiveMinpoly_ne_zero {x : F} (hx : IsAlgebraic ℚ x) (hx
   · exact hlc h'
   · exact minpoly.coeff_zero_ne_zero hx.isIntegral hx0 h'
 
-/-- For algebraic `x`, the primitive minimal polynomial has the same roots as `minpoly ℚ x` in
-every commutative domain that is a `ℚ`-algebra: its image in `ℚ[X]` is a nonzero multiple of
-`minpoly ℚ x`. -/
-theorem rootSet_primitiveMinpoly {x : F} (hx : IsAlgebraic ℚ x) (K : Type*) [CommRing K]
+/-- The primitive minimal polynomial has the same roots as `minpoly ℚ x` in every commutative
+domain that is a `ℚ`-algebra: for algebraic `x` its image in `ℚ[X]` is a nonzero multiple of
+`minpoly ℚ x`, and for transcendental `x` both root sets are empty. -/
+@[simp]
+theorem rootSet_primitiveMinpoly (x : F) (K : Type*) [CommRing K]
     [IsDomain K] [Algebra ℚ K] : (primitiveMinpoly x).rootSet K = (minpoly ℚ x).rootSet K := by
+  by_cases hx : IsAlgebraic ℚ x
+  swap
+  · rw [primitiveMinpoly_of_not_isAlgebraic hx,
+      minpoly.eq_zero (isAlgebraic_iff_isIntegral.not.mp hx), rootSet_zero, rootSet_one]
   have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ K).injective
   ext z
   rw [mem_rootSet, mem_rootSet, ← aeval_map_algebraMap ℚ, algebraMap_int_eq,
@@ -234,10 +239,15 @@ theorem primitiveMinpoly_dvd_iff {x : F} (hx : IsAlgebraic ℚ x) {P : ℤ[X]} :
     (associated_map_primitiveMinpoly hx).dvd_iff_dvd_left]
   exact minpoly.dvd ℚ x (by rw [← algebraMap_int_eq, aeval_map_algebraMap, h])
 
-/-- If the primitive minimal polynomial of an algebraic `x` vanishes at `y`, possibly in another
-division ring, then `x` and `y` are conjugate: they have the same minimal polynomial over `ℚ`. -/
-theorem minpoly_eq_of_aeval_primitiveMinpoly_eq_zero {x : F} {y : F'} (hx : IsAlgebraic ℚ x)
+/-- If the primitive minimal polynomial of `x` vanishes at `y`, possibly in another
+division ring, then `x` and `y` are conjugate: they have the same minimal polynomial over `ℚ`.
+(For transcendental `x` the hypothesis is never satisfied.) -/
+theorem minpoly_eq_of_aeval_primitiveMinpoly_eq_zero {x : F} {y : F'}
     (h : aeval y (primitiveMinpoly x) = 0) : minpoly ℚ x = minpoly ℚ y := by
+  by_cases hx : IsAlgebraic ℚ x
+  swap
+  · rw [primitiveMinpoly_of_not_isAlgebraic hx, map_one] at h
+    exact absurd h one_ne_zero
   rw [← aeval_map_algebraMap ℚ, algebraMap_int_eq, map_primitiveMinpoly hx, aeval_mul,
     aeval_C] at h
   exact minpoly.eq_of_irreducible_of_monic (minpoly.irreducible hx.isIntegral)
