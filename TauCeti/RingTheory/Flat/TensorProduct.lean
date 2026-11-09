@@ -56,7 +56,7 @@ for flatness before the Artin–Rees lemma.
 * `Module.Flat.rTensor_rTensor_injective`: tensoring with a flat module preserves injectivity of
   `f.rTensor M`.
 * `Ideal.rTensor_injective_of_isTorsionBySet`: if `M ⧸ I M` is flat over `R ⧸ I`, tensoring
-  with `M` preserves injectivity of maps between modules killed by `I`.
+  with `M` preserves injectivity of maps into a module killed by `I`.
 * `Ideal.subtype_rTensor_injective_of_pow_smul_top_le`: if moreover `Tor₁ᴿ(R ⧸ I, M) = 0`, then
   `N ⊗[R] M → L ⊗[R] M` is injective whenever `I ^ n` kills `L ⧸ N`;
   `Ideal.subtype_rTensor_injective_of_smul_top_le` is the case `n = 1`.
@@ -210,13 +210,13 @@ open TensorProduct LinearMap
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
-/-- If `M ⧸ I M` is flat over `R ⧸ I`, tensoring with `M` preserves injectivity of maps between
-modules killed by `I`. -/
+/-- If `M ⧸ I M` is flat over `R ⧸ I`, tensoring with `M` preserves injectivity of maps into a
+module killed by `I`. -/
 theorem rTensor_injective_of_isTorsionBySet (I : Ideal R)
     [Module.Flat (R ⧸ I) (M ⧸ I • (⊤ : Submodule R M))] {K L : Type*} [AddCommGroup K]
-    [Module R K] [AddCommGroup L] [Module R L] (hK : Module.IsTorsionBySet R K I)
-    (hL : Module.IsTorsionBySet R L I) {f : K →ₗ[R] L} (hf : Function.Injective f) :
-    Function.Injective (f.rTensor M) := by
+    [Module R K] [AddCommGroup L] [Module R L] (hL : Module.IsTorsionBySet R L I)
+    {f : K →ₗ[R] L} (hf : Function.Injective f) : Function.Injective (f.rTensor M) := by
+  have hK : Module.IsTorsionBySet R K I := fun x a ↦ hf (by rw [map_smul, hL, map_zero])
   let _ := hK.module
   let _ := hL.module
   let A := R ⧸ I
@@ -260,9 +260,7 @@ private theorem subtype_rTensor_injective_of_flat
   obtain ⟨q, hq, hμq, hqK⟩ := G.exists_exact_codRestrict_mkQ (I • ⊤) (f := μ) fun g ↦ by
     rw [← hφ]
     exact ⟨fun ⟨u, hu⟩ ↦ ⟨u, congr_arg Subtype.val hu⟩, fun ⟨u, hu⟩ ↦ ⟨u, Subtype.ext hu⟩⟩
-  have hK : Module.IsTorsionBySet R K I := fun x i ↦
-    Subtype.ext (Module.isTorsionBySet_quotient_ideal_smul F I (x := x.1) (a := i))
-  have hKinj := I.rTensor_injective_of_isTorsionBySet (M := M) hK
+  have hKinj := I.rTensor_injective_of_isTorsionBySet (M := M)
     (Module.isTorsionBySet_quotient_ideal_smul F I) K.injective_subtype
   refine (injective_iff_map_eq_zero _).mpr fun t ht ↦ ?_
   have hqt : q.rTensor M t = 0 := hKinj <| by
