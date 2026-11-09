@@ -34,6 +34,10 @@ The homogeneous terms enter the expansion through their cut-off terms
 * `TauCeti.ClassicalSymbol.principal`, the principal symbol, with
   `TauCeti.ClassicalSymbol.exists_sub_cutoffSymbol_principal`: the full symbol and its cut-off
   principal symbol differ by a symbol of order `m - 1`;
+* `TauCeti.ClassicalSymbol.principal_eq_zero_iff` and
+  `TauCeti.ClassicalSymbol.principal_surjective`: the principal symbol vanishes exactly on the
+  classical symbols of order `m - 1`, and every homogeneous symbol of degree `m` is a principal
+  symbol;
 * `TauCeti.ClassicalSymbol.isSmoothing_toSymbol_iff`: a classical symbol is smoothing exactly when
   all of its homogeneous terms vanish; `TauCeti.ClassicalSymbol.ofIsSmoothing` makes every
   smoothing symbol classical;
@@ -358,6 +362,31 @@ theorem term_ofHomogeneous_succ (j : ℕ) : (ofHomogeneous χ a).term (j + 1) = 
   (rfl)
 
 end Examples
+
+section PrincipalKernel
+
+/-- The principal symbol of a classical symbol of order `m` vanishes exactly when its full symbol
+has order `m - 1`. -/
+theorem principal_eq_zero_iff {a : ClassicalSymbol n V W m} :
+    a.principal = 0 ↔ ∃ r : Symbol n V W (m - 1), r.coefficient = a.toSymbol.coefficient := by
+  obtain ⟨r', hr'⟩ := a.exists_sub_cutoffSymbol_principal default
+  constructor
+  · intro h
+    refine ⟨r', ?_⟩
+    rw [hr', h]
+    funext p
+    simp
+  · rintro ⟨r, hr⟩
+    refine eq_zero_of_coefficient_eq_cutoffSymbol default (m' := m - 1) (by linarith) (r - r') ?_
+    rw [Symbol.coefficient_sub, hr, hr', Symbol.coefficient_sub, sub_sub_cancel]
+
+/-- Every homogeneous symbol of degree `m` is the principal symbol of a classical symbol of
+order `m`. -/
+theorem principal_surjective :
+    Function.Surjective (principal : ClassicalSymbol n V W m → _) :=
+  fun a ↦ ⟨ofHomogeneous default a, principal_ofHomogeneous default a⟩
+
+end PrincipalKernel
 
 end ClassicalSymbol
 

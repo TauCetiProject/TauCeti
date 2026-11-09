@@ -116,9 +116,6 @@ instance linearYonedaFunctor_preservesLimitsOfShape_discrete {ι : Type w} [Smal
       (Discrete.equivalence (equivShrink.{v} ι)).symm.op _
   let _ : PreservesColimitsOfShape (Discrete ι) ((linearYoneda k C).obj Y).rightOp :=
     preservesColimitsOfShape_rightOp _ _
-  let _ : PreservesColimitsOfShape (Discrete ι)
-      (((linearYoneda k C).obj Y).rightOp.mapHomologicalComplex (ComplexShape.down α)) :=
-    inferInstance
   let _ : PreservesLimitsOfShape (Discrete ι)
       (((linearYoneda k C).obj Y).rightOp.mapHomologicalComplex (ComplexShape.down α)).op :=
     preservesLimitsOfShape_op _ _
@@ -207,14 +204,10 @@ lemma linearYonedaFunctor_map_f_hom_apply {X X' : (ChainComplex C α)ᵒᵖ} (φ
 lemma _root_.ChainComplex.linearYonedaFunctor_map_smul_id {S : Type*} [CommRing S] [Linear S C]
     (X : ChainComplex C α) (r : S) :
     (linearYonedaFunctor S Y).map (r • 𝟙 X).op = r • 𝟙 (X.linearYonedaObj S Y) := by
-  ext i : 1
-  apply ModuleCat.hom_ext
-  apply LinearMap.ext
-  intro g
-  -- The functor's object and `linearYonedaObj` are definitionally the same Hom complex.
-  -- Give `g` its morphism type explicitly: rewriting cannot unfold its cochain-module type.
-  exact (Linear.smul_comp _ _ _ r (𝟙 (X.X i)) (g : X.X i ⟶ Y)).trans
-    (congrArg (fun f : X.X i ⟶ Y ↦ r • f) (Category.id_comp (g : X.X i ⟶ Y)))
+  -- The functor's object and `linearYonedaObj` are definitionally the same Hom complex, so the
+  -- components are `g ↦ (r • 𝟙) ≫ g` and `g ↦ r • g`; `simp` cannot see through this.
+  ext i (g : X.X i ⟶ Y)
+  exact (Linear.smul_comp _ _ _ r _ g).trans (congrArg (r • ·) (Category.id_comp g))
 
 /-- The cochain homotopy induced by a chain homotopy `h` is precomposition with `h`. -/
 @[simp]
@@ -240,18 +233,18 @@ lemma _root_.ChainComplex.linearYonedaObjMap_f_hom_apply (X : ChainComplex C α)
 @[simp]
 lemma _root_.ChainComplex.linearYonedaObjMap_id (X : ChainComplex C α) (Y : C) :
     X.linearYonedaObjMap k (𝟙 Y) = 𝟙 (X.linearYonedaObj k Y) := by
+  -- The coefficient map is postcomposition by definition (`linearYonedaObjMap_f_hom_apply`).
   ext i (a : X.X i ⟶ Y)
-  simp only [ChainComplex.linearYonedaObjMap_f_hom_apply, Category.comp_id]
-  rfl
+  exact Category.comp_id a
 
 /-- Coefficient maps on cochain complexes preserve composition. -/
 @[simp]
 lemma _root_.ChainComplex.linearYonedaObjMap_comp (X : ChainComplex C α)
     {Y Z T : C} (g : Y ⟶ Z) (h : Z ⟶ T) :
     X.linearYonedaObjMap k (g ≫ h) = X.linearYonedaObjMap k g ≫ X.linearYonedaObjMap k h := by
-  simp only [ChainComplex.linearYonedaObjMap, Functor.map_comp, NatTrans.rightOp_comp,
-    NatTrans.mapHomologicalComplex_comp, NatTrans.comp_app, op_comp]
-  rfl
+  -- The coefficient maps are postcomposition by definition (`linearYonedaObjMap_f_hom_apply`).
+  ext i (a : X.X i ⟶ Y)
+  exact (Category.assoc a g h).symm
 
 /-- Coefficient maps commute with the maps induced by chain maps: postcomposing with `g : Y ⟶ Z`
 and precomposing with `β : X ⟶ X'` can be done in either order. -/
@@ -285,8 +278,8 @@ lemma _root_.ChainComplex.iCycles_cyclesMap_linearYonedaObjMap_apply
     (a : (X.linearYonedaObj k Y).cycles i) :
     (X.linearYonedaObj k Z).iCycles i
         (HomologicalComplex.cyclesMap (X.linearYonedaObjMap k g) i a) =
-      (X.linearYonedaObj k Y).iCycles i a ≫ g := by
-  exact (ConcreteCategory.congr_hom (HomologicalComplex.cyclesMap_i _ i) a).trans
+      (X.linearYonedaObj k Y).iCycles i a ≫ g :=
+  (ConcreteCategory.congr_hom (HomologicalComplex.cyclesMap_i _ i) a).trans
     (X.linearYonedaObjMap_f_hom_apply k g i _)
 
 section Elementwise
