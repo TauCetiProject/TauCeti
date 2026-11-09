@@ -42,6 +42,13 @@ nonunit, such an entry determines a perfect binary summand and an orthogonal dec
   the orthogonal complement of a vector with unit self-pairing in a unimodular form is unimodular.
 * `LinearMap.BilinForm.IsSymm.equivalent_of_equivalent_restrict_orthogonal` recombines two such
   splittings with the same Gram matrix into an isometry.
+* `LinearMap.BilinForm.exists_span_range_eq_of_equivalent_toBilin'`: an isometry of Gram forms
+  replaces a family by another of the prescribed Gram matrix with the same span.
+* `LinearMap.BilinForm.exists_det_toMatrix_eq_of_eq_span`: the Gram determinant of the span of two
+  orthogonal blocks.
+* `LinearMap.BilinForm.IsSymm.exists_orthogonal_isUnit_det_of_isModular`: in a modular form, a
+  block whose Gram matrix has unit determinant up to the modularity factor has an orthogonal
+  complementary family of the same kind.
 -/
 
 public section
@@ -111,6 +118,66 @@ theorem IsSymm.equivalent_of_equivalent_restrict_orthogonal {ι : Type*} [Fintyp
     fin_cases i
     · exact hS
     · exact h
+
+/-- **Transporting a family along an isometry of Gram forms.** If a family `v` has Gram matrix
+`G`, and the forms `Matrix.toBilin' G` and `Matrix.toBilin' G'` are isometric, then some family `v'`
+spanning the same submodule as `v` has Gram matrix `G'`. -/
+theorem exists_span_range_eq_of_equivalent_toBilin' {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {v : ι → M} {G G' : Matrix ι ι R} (hG : ∀ i j, B (v i) (v j) = G i j)
+    (h : (Matrix.toBilin' G).Equivalent (Matrix.toBilin' G')) :
+    ∃ v' : ι → M, (∀ i j, B (v' i) (v' j) = G' i j) ∧
+      Submodule.span R (Set.range v') = Submodule.span R (Set.range v) := by
+  obtain ⟨ψ⟩ := h
+  -- `Φ` sends a coordinate vector to the corresponding combination of `v`.
+  let Φ := Fintype.linearCombination R v
+  have hΦ (x y : ι → R) : B (Φ x) (Φ y) = Matrix.toBilin' G x y := by
+    simp only [Φ, Fintype.linearCombination_apply, Matrix.toBilin'_apply, map_sum, map_smul,
+      LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul, hG]
+    rw [Finset.sum_comm]
+    simp only [Finset.mul_sum]
+    exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
+  let b := (Pi.basisFun R ι).map ψ.symm.toLinearEquiv
+  refine ⟨fun i ↦ Φ (b i), fun i j ↦ ?_, ?_⟩
+  · simp [b, hΦ, Matrix.toBilin'_single]
+  · rw [Set.range_comp' Φ b, ← Submodule.map_span, b.span_eq, Submodule.map_top,
+      Fintype.range_linearCombination]
+
+/-- The Gram matrix of the concatenation of two mutually orthogonal families `v` and `t`, with
+Gram matrices `c * A` and `c * G`, is `c` times the block-diagonal matrix of `A` and `G`. -/
+theorem IsRefl.apply_sum_elim_eq_mul_fromBlocks (hB : B.IsRefl) {c : R} {ι κ : Type*}
+    {v : ι → M} {t : κ → M} {A : Matrix ι ι R} {G : Matrix κ κ R}
+    (hA : ∀ i j, B (v i) (v j) = c * A i j) (hG : ∀ i j, B (t i) (t j) = c * G i j)
+    (hvt : ∀ i j, B (v i) (t j) = 0) (i j : ι ⊕ κ) :
+    B (Sum.elim v t i) (Sum.elim v t j) = c * Matrix.fromBlocks A 0 0 G i j := by
+  rcases i with i | i <;> rcases j with j | j <;> simp [hA, hG, hvt, hB _ _ (hvt _ _)]
+
+/-- **The Gram determinant of the span of two orthogonal blocks.** Let `v` and `t` be mutually
+orthogonal families with Gram matrices `c * A` and `c * G`, where `c` is a non-zero-divisor and
+`A` and `G` have unit determinants. Then in every basis of the span of `v` and `t` of size `n`, the
+Gram determinant is `c ^ n * det A * det G` times a square. -/
+theorem exists_det_toMatrix_eq_of_eq_span [Nontrivial R] (hB : B.IsRefl) {c : R}
+    (hc : c ∈ nonZeroDivisors R) {p m : ℕ} {v : Fin p → M} {t : Fin m → M}
+    {A : Matrix (Fin p) (Fin p) R} {G : Matrix (Fin m) (Fin m) R}
+    (hA : ∀ i j, B (v i) (v j) = c * A i j) (hG : ∀ i j, B (t i) (t j) = c * G i j)
+    (hvt : ∀ i j, B (v i) (t j) = 0) (hAu : IsUnit A.det) (hGu : IsUnit G.det)
+    {P : Submodule R M} (hP : P = Submodule.span R (Set.range (Sum.elim v t))) {n : ℕ}
+    (d : Basis (Fin n) R P) :
+    ∃ r : R, ((B.restrict P).toMatrix d).det = r ^ 2 * (c ^ n * (A.det * G.det)) := by
+  classical
+  have hu := hB.apply_sum_elim_eq_mul_fromBlocks hA hG hvt
+  have hli := linearIndependent_of_isUnit_det hc hu
+    (by rw [Matrix.det_fromBlocks_zero₂₁]; exact hAu.mul hGu)
+  -- The concatenated family is a basis of `P`, in which the Gram matrix is block diagonal.
+  let b : Basis (Fin p ⊕ Fin m) R P := (Basis.span hli).map (LinearEquiv.ofEq _ _ hP.symm)
+  have hb : (B.restrict P).toMatrix b = c • Matrix.fromBlocks A 0 0 G := by
+    ext i j
+    simp [toMatrix_apply, b, Basis.span_apply, hu]
+  have hcard : Fintype.card (Fin p ⊕ Fin m) = n := by
+    rw [← finrank_eq_card_basis b, finrank_eq_card_basis d, Fintype.card_fin]
+  let e : Fin p ⊕ Fin m ≃ Fin n := Fintype.equivFinOfCardEq hcard
+  refine ⟨((b.reindex e).toMatrix d).det, ?_⟩
+  rw [det_toMatrix_eq_det_sq_mul_det (b.reindex e) d, det_toMatrix_reindex, hb, Matrix.det_smul,
+    Matrix.det_fromBlocks_zero₂₁, hcard]
 
 variable [IsLocalRing R]
 
@@ -183,6 +250,37 @@ theorem IsSymm.exists_basis_orthogonal_span_singleton_isUnit_det (hB : B.IsSymm)
   have hTdet := isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_right hdet)
   have hvspan : Submodule.span R (Set.range v) = R ∙ x := by simp [v]
   exact hvspan ▸ ⟨t, hTdet⟩
+
+/-- **The complement of a block in a modular form.** Let `B` be an `a`-modular symmetric form on a
+finite free module over a local ring, with `a` a non-zero-divisor, and let `v` be a family whose
+Gram matrix is `a * A` with `A` of unit determinant. Then `v` together with a family `t` orthogonal
+to it spans the module, and the Gram matrix of `t` is `a * G` with `G` of unit determinant. -/
+theorem IsSymm.exists_orthogonal_isUnit_det_of_isModular [Module.Free R M] [Module.Finite R M]
+    (hB : B.IsSymm) {a : R} (ha : a ∈ nonZeroDivisors R) (hmod : B.IsModular a) {k : ℕ}
+    {v : Fin k → M} {A : Matrix (Fin k) (Fin k) R} (hA : ∀ i j, B (v i) (v j) = a * A i j)
+    (hdet : IsUnit A.det) :
+    ∃ (m : ℕ) (t : Fin m → M) (G : Matrix (Fin m) (Fin m) R),
+      (∀ i j, B (t i) (t j) = a * G i j) ∧ IsUnit G.det ∧ (∀ i j, B (v i) (t j) = 0) ∧
+        Submodule.span R (Set.range v) ⊔ Submodule.span R (Set.range t) = ⊤ := by
+  obtain ⟨C, rfl, hC⟩ := isModular_def.mp hmod
+  have hcan : ∀ r s, a * r = a * s → r = s := fun r s ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp
+  have hCs : C.IsSymm := ⟨fun x y ↦ hcan _ _ (by simpa using hB.eq x y)⟩
+  have hCA (i j : Fin k) : C (v i) (v j) = A i j := hcan _ _ (by simpa using hA i j)
+  -- Split off the span of `v` for the unimodular rescaling `C`, in a basis of size `m + k`.
+  have hk : k ≤ finrank R M := by
+    simpa using (linearIndependent_of_isUnit_det ha hA hdet).fintype_card_le_finrank
+  let b : Basis (Fin (finrank R M - k + k)) R M := Module.finBasisOfFinrankEq R M (by omega)
+  set S := Submodule.span R (Set.range v)
+  set T := C.orthogonal S
+  obtain ⟨hc, t, w, -, hdetb⟩ := hCs.exists_basis_orthogonal b hCA hdet
+  refine ⟨_, T.subtype ∘ t, (C.restrict T).toMatrix t, fun i j ↦ ?_, ?_, fun i j ↦ ?_, ?_⟩
+  · simp [toMatrix_apply]
+  · have hb : IsUnit (C.toMatrix b).det := b.isUnit_det_of_isPerfPair C hC
+    rw [hdetb] at hb
+    exact isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_right hb)
+  · simp [(t j).2 (v i) (Submodule.subset_span ⟨i, rfl⟩)]
+  · rw [Set.range_comp, ← Submodule.map_span, t.span_eq, Submodule.map_top, Submodule.range_subtype]
+    exact hc.sup_eq_top
 
 end Blocks
 
