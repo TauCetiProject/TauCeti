@@ -13,10 +13,11 @@ public import Mathlib.Topology.Coherent
 
 Let `W 0, W 1, …` be subsets of a space `X`, each carrying a classical CW structure, such that
 every cell of `W k` is a cell of `W (k + 1)` with the same characteristic map: this is recorded by
-maps `ι k n : cell (W k) n → cell (W (k + 1)) n` with `map n (ι k n i) = map n i`. If `X` carries
-the topology coherent with the stages `W k` (`Topology.IsCoherentWith (range W)`), then the union
-`⋃ k, W k` is a CW complex (`TauCeti.cwSubcomplexTowerUnion`). When `X` is the union of the
-stages this is the CW structure on the final-topology union of the tower.
+maps `ι k n : cell (W k) n → cell (W (k + 1)) n` with `map n (ι k n i) = map n i`. If a subset of
+the union `⋃ k, W k` is closed as soon as it meets every stage in a closed set, then the union is a
+CW complex (`TauCeti.cwSubcomplexTowerUnion`). This holds when `X` carries the topology coherent
+with the stages (`Topology.IsCoherentWith.isClosed_of_forall_isClosed_inter`), for instance when
+`X` is the union of the stages with the final topology.
 
 A cell of `W k` is *new* (`TauCeti.IsNewTowerCell`) if it is not the image under `ι` of a cell of
 `W (k - 1)`; every cell of `W 0` is new. The `n`-cells of the union are the new `n`-cells of all
@@ -56,6 +57,15 @@ public section
 noncomputable section
 
 open Metric Set Topology Topology.RelCWComplex
+
+/-- If `X` carries the topology coherent with a family `S` of subsets, then a set which meets every
+member of `S` in a closed set is closed. -/
+theorem Topology.IsCoherentWith.isClosed_of_forall_isClosed_inter {X : Type*} [TopologicalSpace X]
+    {S : Set (Set X)} (hS : IsCoherentWith S) {t : Set X} (ht : ∀ s ∈ S, IsClosed (t ∩ s)) :
+    IsClosed t := by
+  refine hS.isClosed_iff.2 fun s hs ↦ ?_
+  have := (ht s hs).preimage (continuous_subtype_val (p := (· ∈ s)))
+  rwa [preimage_inter, Subtype.coe_preimage_self, inter_univ] at this
 
 namespace TauCeti
 
@@ -112,6 +122,31 @@ theorem towerOrigin_of_isNewTowerCell :
 variable {ι} (hι : ∀ k n (i : cell (W k) n), map n (ι k n i) = map n i)
 include hι
 
+/-- A cell of `W k`, seen as a cell of `W (k + 1)`, has the same open cell. -/
+@[simp]
+theorem openCell_ι {k n : ℕ} (i : cell (W k) n) : openCell n (ι k n i) = openCell n i := by
+  simp only [openCell, hι]
+
+/-- A cell of `W k`, seen as a cell of `W (k + 1)`, has the same closed cell. -/
+@[simp]
+theorem closedCell_ι {k n : ℕ} (i : cell (W k) n) : closedCell n (ι k n i) = closedCell n i := by
+  simp only [closedCell, hι]
+
+/-- Distinct cells of `W k` remain distinct as cells of `W (k + 1)`. -/
+theorem injective_ι (k n : ℕ) : Function.Injective (ι k n) := by
+  intro i j h
+  have hij : openCell n i = openCell n j := by rw [← openCell_ι hι i, ← openCell_ι hι j, h]
+  have hd : ¬Disjoint (openCell n i) (openCell n j) :=
+    not_disjoint_iff_nonempty_inter.2 (by rw [hij, inter_self]; exact openCell_nonempty n j)
+  exact sigma_mk_injective (RelCWComplex.eq_of_not_disjoint_openCell hd)
+
+/-- A cell of `W k`, seen as a cell of `W (k + 1)`, comes from the same new cell. -/
+@[simp]
+theorem towerOrigin_ι {k n : ℕ} (i : cell (W k) n) : towerOrigin ι (k + 1) (ι k n i) =
+    towerOrigin ι k i := by
+  have h : ι k n i ∈ range (ι k n) := mem_range_self i
+  rw [towerOrigin, dite_eq_left h, injective_ι hι k n h.choose_spec]
+
 /-- The new cell from which a cell of `W k` comes has the same characteristic map. -/
 @[simp]
 theorem map_towerOrigin : ∀ (k : ℕ) {n : ℕ} (i : cell (W k) n),
@@ -141,16 +176,14 @@ theorem monotone_of_forall_map_eq : Monotone W := by
   refine monotone_nat_of_le_succ fun k ↦ ?_
   rw [← CWComplex.union (C := W k)]
   refine iUnion₂_subset fun n i ↦ ?_
-  have : closedCell n (ι k n i) = closedCell n i := by simp only [closedCell, hι]
-  exact this ▸ closedCell_subset_complex n (ι k n i)
+  exact closedCell_ι hι i ▸ closedCell_subset_complex n (ι k n i)
 
 /-- The open cell of a new cell of `W (k + 1)` does not meet the previous stage `W k`. -/
 theorem disjoint_openCell_of_notMem_range {k n : ℕ} {i : cell (W (k + 1)) n}
     (hi : i ∉ range (ι k n)) : Disjoint (openCell n i) (W k) := by
   rw [← CWComplex.iUnion_openCell_eq_complex (C := W k)]
   refine disjoint_iUnion₂_right.2 fun m j ↦ ?_
-  have : openCell m (ι k m j) = openCell m j := by simp only [openCell, hι]
-  refine this ▸ RelCWComplex.disjoint_openCell_of_ne fun h ↦ hi ?_
+  refine openCell_ι hι j ▸ RelCWComplex.disjoint_openCell_of_ne fun h ↦ hi ?_
   obtain ⟨rfl, h⟩ := Sigma.mk.inj_iff.1 h
   exact ⟨j, (eq_of_heq h).symm⟩
 
@@ -180,13 +213,16 @@ theorem eq_of_not_disjoint_openCell_towerNewCell {c d : Σ n, TowerNewCell ι n}
   by_contra hcd
   exact h (disjoint_openCell_towerNewCell_of_ne hι hcd)
 
-variable (hW : IsCoherentWith (range W))
+variable (hW : ∀ A ⊆ ⋃ k, W k, (∀ k, IsClosed (A ∩ W k)) → IsClosed A)
 
 /-- **The union of a tower of CW complexes.** Let `W 0, W 1, …` be CW complexes in `X` such that
 every cell of `W k` is a cell of `W (k + 1)` with the same characteristic map, through
-`ι k n : cell (W k) n → cell (W (k + 1)) n`. If `X` carries the topology coherent with the stages,
-the union `⋃ k, W k` is a CW complex whose `n`-cells are the new `n`-cells of the stages
-(`TauCeti.cwSubcomplexTowerUnionCellEquiv`), with their characteristic maps.
+`ι k n : cell (W k) n → cell (W (k + 1)) n`. If a subset of `⋃ k, W k` is closed as soon as it
+meets every stage in a closed set, the union is a CW complex whose `n`-cells are the new `n`-cells
+of the stages (`TauCeti.cwSubcomplexTowerUnionCellEquiv`), with their characteristic maps.
+
+The hypothesis `hW` holds when `X` carries the topology coherent with the stages, by
+`Topology.IsCoherentWith.isClosed_of_forall_isClosed_inter`.
 
 The structure is not an instance, since it depends on the maps `ι`. -/
 @[instance_reducible]
@@ -205,19 +241,15 @@ def cwSubcomplexTowerUnion : CWComplex (⋃ k, W k) where
     refine iUnion₂_mono fun m _ ↦ iUnion₂_subset fun j hj ↦ ?_
     exact subset_iUnion₂_of_subset (towerOrigin ι c.1 j) (Finset.mem_image_of_mem _ hj)
       (closedCell_towerOrigin hι c.1 j).ge
-  closed' A _ hA := by
-    refine hW.isClosed_iff.2 ?_
-    rintro _ ⟨k, rfl⟩
-    have hAk : IsClosed (A ∩ W k) := by
-      refine CWComplex.closed' (C := W k) _ inter_subset_right fun n (j : cell (W k) n) ↦ ?_
-      -- The field `closed'` states closedness against the raw image `map n j '' closedBall 0 1`,
-      -- which is `closedCell n j` by definition; restate it so the closed-cell API applies.
-      change IsClosed (A ∩ W k ∩ closedCell n j)
-      rw [inter_assoc, inter_eq_right.2 (closedCell_subset_complex n j),
-        ← closedCell_towerOrigin hι k j]
-      exact hA n (towerOrigin ι k j)
-    have := hAk.preimage (continuous_subtype_val (p := (· ∈ W k)))
-    rwa [preimage_inter, Subtype.coe_preimage_self, inter_univ] at this
+  closed' A hAU hA := by
+    refine hW A hAU fun k ↦ ?_
+    refine CWComplex.closed' (C := W k) _ inter_subset_right fun n (j : cell (W k) n) ↦ ?_
+    -- The field `closed'` states closedness against the raw image `map n j '' closedBall 0 1`,
+    -- which is `closedCell n j` by definition; restate it so the closed-cell API applies.
+    change IsClosed (A ∩ W k ∩ closedCell n j)
+    rw [inter_assoc, inter_eq_right.2 (closedCell_subset_complex n j),
+      ← closedCell_towerOrigin hι k j]
+    exact hA n (towerOrigin ι k j)
   union' := by
     refine Subset.antisymm (iUnion₂_subset fun n c ↦ ?_) (iUnion_subset fun k ↦ ?_)
     · exact (closedCell_subset_complex n c.2.1).trans (subset_iUnion W c.1)
@@ -293,6 +325,28 @@ theorem map_towerStageCellEquiv_symm {k n : ℕ} (c : {c : TowerNewCell ι n // 
   conv_rhs => rw [← (towerStageCellEquiv hι k n).apply_symm_apply c]
   rw [coe_towerStageCellEquiv_apply, map_towerOrigin hι]
 
+omit hW in
+/-- A cell of the stage `W k` has the open cell of the new cell to which it corresponds. -/
+@[simp]
+theorem openCell_towerStageCellEquiv_symm {k n : ℕ} (c : {c : TowerNewCell ι n // c.1 ≤ k}) :
+    openCell n ((towerStageCellEquiv hι k n).symm c) = openCell n c.1.2.1 := by
+  simp only [openCell, map_towerStageCellEquiv_symm hι]
+
+omit hW in
+/-- A cell of the stage `W k` has the closed cell of the new cell to which it corresponds. -/
+@[simp]
+theorem closedCell_towerStageCellEquiv_symm {k n : ℕ} (c : {c : TowerNewCell ι n // c.1 ≤ k}) :
+    closedCell n ((towerStageCellEquiv hι k n).symm c) = closedCell n c.1.2.1 := by
+  simp only [closedCell, map_towerStageCellEquiv_symm hι]
+
+omit hW in
+/-- A cell of the stage `W k`, seen as a cell of `W (k + 1)`, corresponds to the same new cell. -/
+@[simp]
+theorem towerStageCellEquiv_ι {k n : ℕ} (i : cell (W k) n) :
+    towerStageCellEquiv hι (k + 1) n (ι k n i) =
+      ⟨towerStageCellEquiv hι k n i, (towerStageCellEquiv hι k n i).2.trans k.le_succ⟩ :=
+  Subtype.ext (towerOrigin_ι hι i)
+
 /-- **The stages are subcomplexes.** In a Hausdorff space, each stage `W k` of a tower of CW
 complexes is the subcomplex of the union consisting of the cells born at the stages up to `k`. -/
 def cwSubcomplexTowerUnionSubcomplex [T2Space X] (k : ℕ) :
@@ -301,14 +355,21 @@ def cwSubcomplexTowerUnionSubcomplex [T2Space X] (k : ℕ) :
   CWComplex.Subcomplex.mk'' (h := cwSubcomplexTowerUnion hι hW) (⋃ k, W k) (W k)
     (fun n ↦ {c | (cwSubcomplexTowerUnionCellEquiv hι hW n c).1 ≤ k}) <| by
     refine Subset.antisymm (iUnion₂_subset fun n c ↦ ?_) ?_
-    · exact (openCell_subset_complex n c.1.2.1).trans (monotone_of_forall_map_eq hι c.2)
+    · have hc : (cwSubcomplexTowerUnionCellEquiv hι hW n c).1 ≤ k := c.2
+      rw [← (cwSubcomplexTowerUnionCellEquiv hι hW n).symm_apply_apply c,
+        openCell_cwSubcomplexTowerUnionCellEquiv_symm]
+      exact (openCell_subset_complex n _).trans (monotone_of_forall_map_eq hι hc)
     · conv_lhs => rw [← CWComplex.iUnion_openCell_eq_complex (C := W k)]
       refine iUnion₂_subset fun n j ↦ ?_
       rw [← openCell_towerOrigin hι k j]
+      have hj : (cwSubcomplexTowerUnionCellEquiv hι hW n
+          ((cwSubcomplexTowerUnionCellEquiv hι hW n).symm (towerOrigin ι k j))).1 ≤ k := by
+        rw [Equiv.apply_symm_apply]
+        exact towerOrigin_fst_le ι k j
       exact subset_iUnion₂_of_subset n
-        (⟨(cwSubcomplexTowerUnionCellEquiv hι hW n).symm (towerOrigin ι k j),
-          towerOrigin_fst_le ι k j⟩ :
-            {c | (cwSubcomplexTowerUnionCellEquiv hι hW n c).1 ≤ k}) subset_rfl
+        (⟨(cwSubcomplexTowerUnionCellEquiv hι hW n).symm (towerOrigin ι k j), hj⟩ :
+          {c | (cwSubcomplexTowerUnionCellEquiv hι hW n c).1 ≤ k})
+        (openCell_cwSubcomplexTowerUnionCellEquiv_symm hι hW _).ge
 
 /-- The subcomplex of the union given by a stage is that stage. -/
 @[simp]
