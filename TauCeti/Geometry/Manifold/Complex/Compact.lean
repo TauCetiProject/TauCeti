@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Complex
 public import Mathlib.Topology.Perfect
 
 import Mathlib.Geometry.Manifold.MFDeriv.Basic
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Compact open sets and injective holomorphic maps
@@ -52,14 +53,11 @@ theorem MDifferentiableOn.eq_empty_of_injOn_of_isCompact_of_isOpen {U : Set M}
   refine eq_empty_iff_forall_notMem.2 fun a ha ↦ ?_
   have : LocallyConnectedSpace H := I.toHomeomorph.locallyConnectedSpace
   have : LocallyConnectedSpace M := ChartedSpace.locallyConnectedSpace H M
-  have : CompactSpace U := isCompact_iff_compactSpace.1 hc
   -- The connected component of `a` in `U` is open, compact and connected, so `f` is constant
   -- on it; injectivity makes it the open singleton `{a}`.
-  set K := connectedComponentIn U a with hKdef
+  set K := connectedComponentIn U a
   have hKo : IsOpen K := ho.connectedComponentIn
-  have hKc : IsCompact K := by
-    rw [hKdef, connectedComponentIn_eq_image ha]
-    exact isClosed_connectedComponent.isCompact.image continuous_subtype_val
+  have hKc : IsCompact K := hc.connectedComponentIn a
   have hK : K = {a} := by
     refine eq_singleton_iff_unique_mem.2 ⟨mem_connectedComponentIn ha, fun x hx ↦ hinj
       (connectedComponentIn_subset U a hx) ha ?_⟩
