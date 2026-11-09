@@ -21,6 +21,10 @@ This generalizes Mathlib's `PreservesEpimorphisms` instance for `LightCondensed.
 to arbitrary sites. Reflection of epimorphisms needs no separate instance:
 `sheafCompose J (forget A)` is faithful, so Mathlib's `Functor.reflectsEpimorphisms_of_faithful`
 applies.
+
+It also records that a monomorphism of sheaves with values in a concrete category whose forgetful
+functor preserves pullbacks is injective on the sections over every object
+(`CategoryTheory.Sheaf.injective_app_of_mono`).
 -/
 
 public section
@@ -47,5 +51,27 @@ theorem epi_sheafCompose_forget_map_iff {F G : Sheaf J A} (φ : F ⟶ G) :
 
 instance : (sheafCompose J (forget A)).PreservesEpimorphisms :=
   ⟨fun φ _ ↦ (epi_sheafCompose_forget_map_iff J φ).2 inferInstance⟩
+
+end CategoryTheory.Sheaf
+
+namespace CategoryTheory.Sheaf
+
+section Mono
+
+variable {D : Type*} [Category D] {J : GrothendieckTopology D}
+  {C : Type*} [Category C] {FC : C → C → Type*} {CC : C → Type*}
+  [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC]
+  [HasWeakSheafify J C] [HasPullbacks C]
+  [PreservesLimitsOfShape WalkingCospan (forget C)] {F G : Sheaf J C}
+
+/-- A monomorphism of sheaves of a concrete category, whose forgetful functor preserves pullbacks,
+is injective on sections over every object. -/
+theorem injective_app_of_mono (f : F ⟶ G) [Mono f] (W : Dᵒᵖ) :
+    Function.Injective (f.hom.app W) := by
+  have : Mono f.hom := inferInstance
+  have : Mono (f.hom.app W) := inferInstance
+  exact ConcreteCategory.injective_of_mono_of_preservesPullback (f.hom.app W)
+
+end Mono
 
 end CategoryTheory.Sheaf

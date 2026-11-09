@@ -134,10 +134,9 @@ theorem eulerChar_eq_add_finsum_finrank_singularHomology (E : Subcomplex C) :
     eulerChar C = eulerChar (E : Set X) + ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank k
       ((TopPair.ofInclusion (X := TopCat.of X) E.subset_complex).singularHomology
         (ModuleCat.of k k) i : ModuleCat k) := by
-  have hk : finrank k (ModuleCat.of k k) = 1 := finrank_self k
   rw [eulerChar_cwComplex, eulerChar_cwComplex,
-    finsum_finrank_singularHomology_subcomplexPair C (ModuleCat.of k k) E, hk, Nat.cast_one,
-    one_mul]
+    finsum_finrank_singularHomology_subcomplexPair C (ModuleCat.of k k) E,
+    ModuleCat.finrank_of_self, Nat.cast_one, one_mul]
   exact cwEulerChar_eq_add_finsum_card_compl C E
 
 /-- **Additivity of the Euler characteristic along a filtration by subcomplexes.** For a finite

@@ -189,6 +189,66 @@ private theorem kept_add_raised_pred {H E F : A} (m n j : ℕ) (hj0 : 0 < j)
   simpa only [mul_add, add_mul, mul_smul_comm, smul_mul_assoc, mul_assoc] using
     congrArg (fun c ↦ dividedPower (n - j) F * c * dividedPower (m + 1 - j) E) hcoef
 
+/-- Raising by `E` in the case where the raising degree limits the range of the straightening sum.
+The result is stated with the factor `m + 1` cleared. -/
+private theorem e_mul_sum_straighteningSummand_of_lt {H E F : A}
+    (hef : E * F - F * E = H) (hhe : H * E - E * H = 2 • E)
+    (hhf : H * F - F * H = -(2 • F)) (m n : ℕ) (hmn : m < n) :
+    E * ∑ k ∈ range (min m n + 1), straighteningSummand H E F m n k =
+      (m + 1) • ∑ k ∈ range (min (m + 1) n + 1), straighteningSummand H E F (m + 1) n k := by
+  let K := keptStraighteningSummand H E F m n
+  let R := raisedStraighteningSummand H E F m n
+  let T := fun k ↦ (m + 1) • straighteningSummand H E F (m + 1) n k
+  have hmin : min m n = m := min_eq_left (Nat.le_of_lt hmn)
+  have hminSucc : min (m + 1) n = m + 1 := min_eq_left hmn
+  rw [hmin, hminSucc, mul_sum]
+  have hcombine :
+      ∑ j ∈ range (m + 2), T j = ∑ k ∈ range (m + 1), (K k + R k) := by
+    have h := Finset.sum_range_succ_eq_sum_range_add
+      (f := T) (g := K) (h := R) (n := m + 1)
+      (keptStraighteningSummand_zero H E F m n).symm
+      (fun k hk ↦ by
+        simpa only [Nat.add_sub_cancel] using
+          (kept_add_raised_pred m n (k + 1) (by omega) (by omega)).symm)
+    have hbound : K (m + 1) = 0 := by simp [K, keptStraighteningSummand]
+    simpa only [hbound, add_zero] using h
+  rw [Finset.smul_sum, hcombine]
+  apply sum_congr rfl
+  intro k hk
+  have hkm := mem_range.mp hk
+  dsimp only [K, R]
+  exact e_mul_straighteningSummand_of_lt hef hhe hhf
+    (Nat.le_of_lt_succ hkm) (by omega)
+
+/-- Raising by `E` in the case where the lowering degree limits the range of the straightening sum,
+retaining the last kept summand. The result is stated with the factor `m + 1` cleared. -/
+private theorem e_mul_sum_straighteningSummand_of_ge {H E F : A}
+    (hef : E * F - F * E = H) (hhe : H * E - E * H = 2 • E)
+    (hhf : H * F - F * H = -(2 • F)) (m n : ℕ) (hnm : n ≤ m) :
+    E * ∑ k ∈ range (min m n + 1), straighteningSummand H E F m n k =
+      (m + 1) • ∑ k ∈ range (min (m + 1) n + 1), straighteningSummand H E F (m + 1) n k := by
+  let K := keptStraighteningSummand H E F m n
+  let R := raisedStraighteningSummand H E F m n
+  let T := fun k ↦ (m + 1) • straighteningSummand H E F (m + 1) n k
+  have hmin : min m n = n := min_eq_right hnm
+  have hminSucc : min (m + 1) n = n := min_eq_right (by omega)
+  rw [hmin, hminSucc, mul_sum]
+  have hcombine :
+      ∑ j ∈ range (n + 1), T j = (∑ k ∈ range n, (K k + R k)) + K n := by
+    apply Finset.sum_range_succ_eq_sum_range_add
+    · exact (keptStraighteningSummand_zero H E F m n).symm
+    · intro k hk
+      simpa only [Nat.add_sub_cancel] using
+        (kept_add_raised_pred m n (k + 1) (by omega) (by omega)).symm
+  rw [Finset.smul_sum, hcombine, sum_range_succ]
+  congr 1
+  · apply sum_congr rfl
+    intro k hk
+    have hkn := mem_range.mp hk
+    exact e_mul_straighteningSummand_of_lt hef hhe hhf
+      (by omega) hkn
+  · exact e_mul_straighteningSummand_of_eq hhe hnm rfl
+
 private theorem straightening_step {H E F : A}
     (hef : E * F - F * E = H) (hhe : H * E - E * H = 2 • E)
     (hhf : H * F - F * H = -(2 • F)) (m n : ℕ)
@@ -203,54 +263,10 @@ private theorem straightening_step {H E F : A}
       (m + 1) • (dividedPower (m + 1) E * dividedPower n F) =
         E * ∑ k ∈ range (min m n + 1), straighteningSummand H E F m n k := by
     rw [succ_nsmul_dividedPower_succ_mul, ih]
-  rw [hleft, mul_sum]
-  let K := keptStraighteningSummand H E F m n
-  let R := raisedStraighteningSummand H E F m n
-  let T := fun k ↦ (m + 1) • straighteningSummand H E F (m + 1) n k
-  -- The new endpoint vanishes when the raising degree limits the range.
+  rw [hleft]
   by_cases hmn : m < n
-  · have hmin : min m n = m := min_eq_left (Nat.le_of_lt hmn)
-    have hminSucc : min (m + 1) n = m + 1 := min_eq_left hmn
-    rw [hmin, hminSucc]
-    have hcombine :
-        ∑ j ∈ range (m + 2), T j = ∑ k ∈ range (m + 1), (K k + R k) := by
-      have h := Finset.sum_range_succ_eq_sum_range_add
-        (f := T) (g := K) (h := R) (n := m + 1)
-        (keptStraighteningSummand_zero H E F m n).symm
-        (fun k hk ↦ by
-          simpa only [Nat.add_sub_cancel] using
-            (kept_add_raised_pred m n (k + 1) (by omega) (by omega)).symm)
-      have hbound : K (m + 1) = 0 := by simp [K, keptStraighteningSummand]
-      simpa only [hbound, add_zero] using h
-    rw [Finset.smul_sum]
-    rw [hcombine]
-    apply sum_congr rfl
-    intro k hk
-    have hkm := mem_range.mp hk
-    dsimp only [K, R]
-    exact e_mul_straighteningSummand_of_lt hef hhe hhf
-      (Nat.le_of_lt_succ hkm) (by omega)
-  -- Otherwise the lowering degree limits the range, retaining the last kept summand.
-  · have hnm : n ≤ m := by omega
-    have hmin : min m n = n := min_eq_right hnm
-    have hminSucc : min (m + 1) n = n := min_eq_right (by omega)
-    rw [hmin, hminSucc]
-    have hcombine :
-        ∑ j ∈ range (n + 1), T j = (∑ k ∈ range n, (K k + R k)) + K n := by
-      apply Finset.sum_range_succ_eq_sum_range_add
-      · exact (keptStraighteningSummand_zero H E F m n).symm
-      · intro k hk
-        simpa only [Nat.add_sub_cancel] using
-          (kept_add_raised_pred m n (k + 1) (by omega) (by omega)).symm
-    rw [Finset.smul_sum]
-    rw [hcombine, sum_range_succ]
-    congr 1
-    · apply sum_congr rfl
-      intro k hk
-      have hkn := mem_range.mp hk
-      exact e_mul_straighteningSummand_of_lt hef hhe hhf
-        (by omega) hkn
-    · exact e_mul_straighteningSummand_of_eq hhe hnm rfl
+  · exact e_mul_sum_straighteningSummand_of_lt hef hhe hhf m n hmn
+  · exact e_mul_sum_straighteningSummand_of_ge hef hhe hhf m n (by omega)
 
 /-- **The rank-one Kostant straightening formula.** If `H`, `E`, and `F` satisfy the `sl₂`
 commutator relations in an associative `ℚ`-algebra, then the product of a raising divided power

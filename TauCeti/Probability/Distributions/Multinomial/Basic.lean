@@ -267,11 +267,10 @@ theorem inner_multinomialToEuclidean [Fintype ι] (θ : EuclideanSpace ℝ ι) (
   exact Finset.sum_congr rfl fun i _ ↦ mul_comm _ _
 
 /-- The cast of count vectors into Euclidean space is measurable. -/
-theorem measurable_multinomialToEuclidean [Finite ι] :
-    Measurable (multinomialToEuclidean (ι := ι)) := by
-  have := Fintype.ofFinite ι
-  refine (EuclideanSpace.equiv ι ℝ).symm.continuous.measurable.comp ?_
-  exact Measurable.of_eval fun i => measurable_from_nat.comp (measurable_pi_apply i)
+theorem measurable_multinomialToEuclidean :
+    Measurable (multinomialToEuclidean (ι := ι)) :=
+  (WithLp.measurable_toLp 2 (ι → ℝ)).comp
+    (Measurable.of_eval fun i => measurable_from_nat.comp (measurable_pi_apply i))
 
 /-- Casting count vectors into Euclidean space is a measurable embedding. -/
 theorem measurableEmbedding_multinomialToEuclidean [Finite ι] :
