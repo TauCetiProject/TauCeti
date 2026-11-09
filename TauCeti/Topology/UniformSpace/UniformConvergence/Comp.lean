@@ -17,12 +17,15 @@ set of values of the limit suffices, provided that set is compact: by the Heine�
 set, so it sends points close to it close to their images.
 
 This applies, for instance, to families of paths converging uniformly on a compact interval to a
-continuous limit, composed with a continuous integrand.
+continuous limit, composed with a continuous integrand. To compose with a map that also depends on
+the point `a` itself, as a time-dependent integrand does, first pass to the graphs
+`a ↦ (a, F i a)`, which converge uniformly to the graph of the limit
+(`TendstoUniformlyOn.graph`).
 -/
 
 public section
 
-open Set
+open Filter Set
 
 variable {α β γ ι : Type*} [UniformSpace β] [UniformSpace γ]
   {F : ι → α → β} {f : α → β} {s : Set α} {g : β → γ} {p : Filter ι}
@@ -35,3 +38,13 @@ theorem IsCompact.comp_tendstoUniformlyOn (hf : IsCompact (f '' s))
     TendstoUniformlyOn (fun i x ↦ g (F i x)) (fun x ↦ g (f x)) p s := fun _ hu ↦ by
   filter_upwards [h _ (hf.uniformContinuousAt_of_continuousAt g hg hu)] with i hi x hx
   exact hi x hx (mem_image_of_mem f hx)
+
+/-- The graphs `a ↦ (a, F i a)` of a family converging uniformly on `s` converge uniformly on `s`
+to the graph of the limit. -/
+theorem TendstoUniformlyOn.graph [UniformSpace α] (h : TendstoUniformlyOn F f p s) :
+    TendstoUniformlyOn (fun i a ↦ (a, F i a)) (fun a ↦ (a, f a)) p s := by
+  rw [tendstoUniformlyOn_iff_tendsto] at h ⊢
+  rw [uniformity_prod, tendsto_inf, tendsto_comap_iff, tendsto_comap_iff]
+  refine ⟨?_, h⟩
+  exact (tendsto_principal.2 (.of_forall fun _ ↦ SetRel.mem_id.2 rfl)).mono_right
+    refl_le_uniformity
