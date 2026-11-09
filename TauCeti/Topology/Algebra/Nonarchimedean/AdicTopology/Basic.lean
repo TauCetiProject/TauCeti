@@ -46,6 +46,8 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
   `IsAdic` counterpart of `Ideal.isLinearTopology`.
 * `IsAdic.map_of_isOpenQuotientMap` : an open quotient ring map transports an adic
   topology to the adic topology of the extended ideal, without finite generation or completeness.
+* `IsAdic.isOpenQuotientMap_of_surjective` : conversely, a surjection onto a ring with the adic
+  topology of the extended ideal is an open quotient map.
 * `IsAdic.continuous_of_map_le_radical` : a ring homomorphism from an `I`-adic ring to a `J`-adic
   ring is continuous when it carries the finitely generated ideal `I` into the radical of `J`.
 * `IsAdic.continuous_iff_map_le_radical` and
@@ -326,6 +328,25 @@ theorem map_of_isOpenQuotientMap {R S : Type*} [CommRing R] [CommRing S]
     refine ⟨n, ?_⟩
     rw [hmap]
     exact Set.image_subset_iff.mpr hn
+
+/-- Conversely, a surjective ring homomorphism out of an `I`-adic ring is an open quotient map
+when its target carries the adic topology of the extended ideal. Neither finite generation nor
+completeness of the defining ideal is required. -/
+theorem isOpenQuotientMap_of_surjective {R S : Type*} [CommRing R] [CommRing S]
+    [TopologicalSpace R] [TopologicalSpace S] {I : Ideal R} (hI : IsAdic I) {f : R →+* S}
+    (hf : Function.Surjective f) (hS : IsAdic (I.map f)) : IsOpenQuotientMap f := by
+  have : IsTopologicalRing R := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  have : IsTopologicalRing S := hS ▸ (I.map f).nonarchimedean.toIsTopologicalRing
+  -- `f` carries each power of `I` onto the corresponding power of `I.map f`
+  have hmap (n : ℕ) : f '' ((I ^ n : Ideal R) : Set R) = (((I.map f) ^ n : Ideal S) : Set S) := by
+    rw [← Ideal.map_pow, Ideal.map_eq_image_of_surjective f hf]
+  refine ⟨hf, continuous_of_continuousAt_zero f ?_, ?_⟩
+  · rw [ContinuousAt, map_zero]
+    exact (hI.hasBasis_nhds_zero.tendsto_iff hS.hasBasis_nhds_zero).mpr fun n _ ↦
+      ⟨n, trivial, fun x hx ↦ hmap n ▸ Set.mem_image_of_mem f hx⟩
+  · refine (IsTopologicalAddGroup.isOpenMap_iff_nhds_zero (f := f)).mpr ?_
+    exact (hS.hasBasis_nhds_zero.le_basis_iff (hI.hasBasis_nhds_zero.map f)).mpr fun n _ ↦
+      ⟨n, trivial, (hmap n).ge⟩
 
 end IsAdic
 
