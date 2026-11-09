@@ -348,10 +348,10 @@ theorem exists_notMem_closure_of_forall_mem_notMem_halfStrip {c b : ℂ} {ρ : �
     with z hzρ hzre hzim hzU
   exact hU z hzρ hzU ⟨hzre, hzim⟩
 
-/-- The map `w ↦ exp (π * I - (f (-w⁻¹) - c) / b)`, filled in with `0` at the origin, is continuous
-on the part of the closed upper half-plane near `0` where `(f (-w⁻¹) - c) / b` lies in the closed
-half-strip, when `f` is continuous on the closed upper half-plane and tends to infinity at
-infinity there. -/
+/-- For `b ≠ 0`, the map `w ↦ exp (π * I - (f (-w⁻¹) - c) / b)`, filled in with `0` at the origin,
+is continuous on the part of the closed upper half-plane near `0` where `(f (-w⁻¹) - c) / b` lies
+in the closed half-strip, when `f` is continuous on the closed upper half-plane and tends to
+infinity at infinity there. -/
 theorem continuousOn_update_exp_pi_mul_I_sub {f : ℂ → ℂ} {r : ℝ} {c b : ℂ} (hb : b ≠ 0)
     (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
     (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ))
@@ -372,9 +372,9 @@ theorem continuousOn_update_exp_pi_mul_I_sub {f : ℂ → ℂ} {r : ℝ} {c b : 
     exact tendsto_sub_div_of_tendsto_cobounded hb ((tendsto_comp_neg_inv_cobounded hp).mono_left
       (nhdsWithin_mono _ (sdiff_subset_sdiff_left (inter_subset_right (s := ball (0 : ℂ) r)))))
 
-/-- The map `w ↦ exp (π * I - (f (-w⁻¹) - c) / b)`, filled in with `0` at the origin, is injective
-on the part of the closed upper half-plane near `0` where `im ((f (-w⁻¹) - c) / b)` lies in
-`[0, π]`, when `f` is injective on it. -/
+/-- For `b ≠ 0`, the map `w ↦ exp (π * I - (f (-w⁻¹) - c) / b)`, filled in with `0` at the origin,
+is injective on the part of the closed upper half-plane near `0` where `im ((f (-w⁻¹) - c) / b)`
+lies in `[0, π]`, when `f` is injective on it. -/
 theorem injOn_update_exp_pi_mul_I_sub {f : ℂ → ℂ} {r : ℝ} {c b : ℂ} (hb : b ≠ 0)
     (hfi : InjOn f {z : ℂ | 0 ≤ z.im})
     (hζ : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 →
