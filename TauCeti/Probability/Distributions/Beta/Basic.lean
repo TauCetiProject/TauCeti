@@ -29,6 +29,8 @@ that the beta law is carried by `[0, 1]`, so every exponential moment exists.
 * `TauCeti.Probability.integrable_betaMeasure_iff` and `TauCeti.Probability.integral_betaMeasure_eq`
   — integrability and
   integration against the beta law, transferred to the real density;
+* `TauCeti.Probability.integral_betaMeasure_eq_one_div_beta_smul` — the same integral as the
+  reciprocal beta value times the integral of the unnormalized kernel;
 * `TauCeti.Probability.betaMeasure_eq_withDensity_restrict_Ioo` — the law is its density against
   Lebesgue
   measure on the open unit interval;
@@ -127,6 +129,23 @@ theorem integral_betaMeasure_eq {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) (g :
   rw [betaMeasure_eq_withDensity_ofReal]
   exact Probability.integral_withDensity_ofReal (measurable_betaPDFReal α β).aemeasurable
     (ae_of_all _ (betaPDFReal_nonneg hα hβ)) g
+
+/-- **Integral transfer, kernel form.** An integral against a beta law with positive shape
+parameters is the reciprocal of the beta function times the integral of the unnormalized kernel
+over the open unit interval. -/
+theorem integral_betaMeasure_eq_one_div_beta_smul {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
+    (f : ℝ → E) :
+    ∫ x, f x ∂betaMeasure a b =
+      (1 / beta a b) • ∫ x in Ioo (0 : ℝ) 1, (x ^ (a - 1) * (1 - x) ^ (b - 1)) • f x := by
+  rw [integral_betaMeasure_eq ha hb]
+  calc
+    _ = ∫ x, (Ioo (0 : ℝ) 1).indicator (fun x ↦
+        (1 / beta a b) • ((x ^ (a - 1) * (1 - x) ^ (b - 1)) • f x)) x := by
+      congr 1
+      funext x
+      by_cases hx : 0 < x ∧ x < 1 <;>
+        simp [betaPDFReal, mem_Ioo, hx, smul_smul, mul_assoc]
+    _ = _ := by rw [integral_indicator measurableSet_Ioo, integral_smul]
 
 end Transfer
 
