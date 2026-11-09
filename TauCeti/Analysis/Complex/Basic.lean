@@ -116,6 +116,16 @@ theorem im_div_sub_mul_I_sub (hv : v ≠ 0) (h : ℝ) :
   have := im_div_add_mul_I_sub (v := v) (s := s) hv (-h)
   rwa [ofReal_neg, neg_mul, ← sub_eq_add_neg] at this
 
+end LineThrough
+
+end TauCeti
+
+namespace Real
+
+open Complex
+
+variable {v : ℂ} {s : ℝ}
+
 /-- The point `h` units off the line `s ↦ v * s` in the direction `v * I` is at distance
 `‖v‖ * |h|` from the line point. -/
 @[simp]
@@ -131,9 +141,7 @@ theorem dist_sub_mul_I (h : ℝ) : dist (v * (s - h * I)) (v * s) = ‖v‖ * |h
   have := dist_add_mul_I (v := v) (s := s) (-h)
   rwa [ofReal_neg, neg_mul, ← sub_eq_add_neg, abs_neg] at this
 
-end LineThrough
-
-end TauCeti
+end Real
 
 namespace Complex
 

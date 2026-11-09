@@ -81,4 +81,32 @@ theorem _root_.AbsolutelyContinuousOnInterval.exists_int_windingNumber
   refine ⟨n, mul_left_cancel₀ Complex.two_pi_I_ne_zero ?_⟩
   rw [hn, mul_comm]
 
+/-- **Two integers whose complex images are closer than `1` are equal.** -/
+theorem eq_of_dist_intCast_lt_one {m n : ℤ} (h : dist (m : ℂ) (n : ℂ) < 1) : m = n := by
+  by_contra hne
+  have : (1 : ℝ) ≤ dist (m : ℂ) (n : ℂ) := by
+    rw [Complex.isometry_intCast.dist_eq]; exact Int.pairwise_one_le_dist hne
+  linarith
+
+/-- A closed absolutely continuous curve whose winding numbers about two points off the curve differ
+by less than `1` from an integer `k` has winding numbers differing by exactly `k`. -/
+theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_add_intCast_of_dist_lt
+    {Γ : ℝ → ℂ} {w₁ w₂ : ℂ} (hΓ : AbsolutelyContinuousOnInterval Γ a c) (hclosed : Γ a = Γ c)
+    (h₁ : w₁ ∉ Γ '' uIcc a c) (h₂ : w₂ ∉ Γ '' uIcc a c) {k : ℤ}
+    (hdist : dist (windingNumber Γ a c w₁ - windingNumber Γ a c w₂) (k : ℂ) < 1) :
+    windingNumber Γ a c w₁ = windingNumber Γ a c w₂ + k := by
+  obtain ⟨m, hm⟩ := hΓ.exists_int_windingNumber hclosed h₁
+  obtain ⟨n, hn⟩ := hΓ.exists_int_windingNumber hclosed h₂
+  have hmn : m = n + k :=
+    eq_of_dist_intCast_lt_one (n := n + k) (by
+      rw [hm, hn] at hdist
+      push_cast
+      have : dist ((m : ℂ) - (n : ℂ)) (k : ℂ) = dist (m : ℂ) ((n : ℂ) + (k : ℂ)) := by
+        simp only [dist_eq_norm]
+        ring_nf
+      linarith)
+  rw [hm, hn, hmn]
+  push_cast
+  ring
+
 end TauCeti.Contour
