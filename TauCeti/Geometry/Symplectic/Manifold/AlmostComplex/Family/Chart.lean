@@ -210,6 +210,7 @@ def ofChart (q : P × M) (A : EP × E → E →L[ℝ] E)
         (chartFrame (I := I) q.2).symmL_continuousLinearMapAt hr])
 
 /-- The reconstructed family conjugates the prescribed field through the source tangent frame. -/
+@[simp]
 theorem ofChart_toEndomorphism_apply (q : P × M) (A : EP × E → E →L[ℝ] E)
     (hA : ContDiffOn ℝ n A (extChartAt (IP.prod I) q).target)
     (hAA : ∀ z ∈ (extChartAt (IP.prod I) q).target, ∀ v, A z (A z v) = -v)
@@ -222,6 +223,7 @@ theorem ofChart_toEndomorphism_apply (q : P × M) (A : EP × E → E →L[ℝ] E
   exact ofContMDiff_toEndomorphism_apply _ _ _ r
 
 /-- The reconstructed family, read on the original target tangent spaces of the chart source. -/
+@[simp]
 theorem ofChart_tangentEndomorphism (q : P × M) (A : EP × E → E →L[ℝ] E)
     (hA : ContDiffOn ℝ n A (extChartAt (IP.prod I) q).target)
     (hAA : ∀ z ∈ (extChartAt (IP.prod I) q).target, ∀ v, A z (A z v) = -v)
