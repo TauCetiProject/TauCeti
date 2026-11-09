@@ -33,12 +33,12 @@ also drop by one from `a` to `b` and from `b` to `c`. These are the gradings `1,
 Euler characteristic is its Alexander polynomial `t - 1 + t⁻¹`. The absolute normalizations (the
 symmetry of `HFK̂` and `HF̂(S³)` lying in degree `0`) are not formalized here.
 
-The domains counted by the combinatorial hat differential of `CF̂(S³)` from `b` to `c` and from
-`a` to `b` are the bigon `B₂` and the domain `O + B₂ = Σ - B₁`, both of Maslov index one. Both
-avoid `w` and contain `z`, so they lower the Alexander grading by one and are not counted by the
-differential of `HFK̂`; the second is the Whitney disk from the generator of Alexander grading `1`
-to that of grading `0` with `n_z - n_w = 1`. The octagon is neither a bigon nor a square, so the
-diagram is not nice and the combinatorial count of `O + B₂` need not be its holomorphic count.
+The incidence domains in `hatDomains` from `b` to `c` and from `a` to `b` are the bigon `B₂` and
+the domain `O + B₂ = Σ - B₁`, both nonnegative, of Maslov index one and avoiding `w`. Both contain
+`z`, so they lower the Alexander grading by one. These are computations with incidence data only,
+which do not model Whitney disks. In genus one `π₂(Sym¹(T²)) = 0`, so `Σ` is not the domain of a
+sphere class and `O + B₂` is not the domain of a Whitney disk: the unique homotopy class of
+Whitney disks from `a` to `b` has domain `-B₁`.
 
 ## Main definitions
 
@@ -57,8 +57,9 @@ diagram is not nice and the combinatorial count of `O + B₂` need not be its ho
 * `TauCeti.HeegaardRegionSystem.relativeGrading_trefoil_zero_one` and
   `TauCeti.HeegaardRegionSystem.relativeGrading_trefoil_one_two`: so does the Maslov grading.
 * `TauCeti.HeegaardRegionSystem.hatDomains_trefoil_one_two` and
-  `TauCeti.HeegaardRegionSystem.hatDomains_trefoil_zero_one`: the hat differential counts the
-  bigon `B₂` from `b` to `c` and the domain `O + B₂` from `a` to `b`, both containing `z`.
+  `TauCeti.HeegaardRegionSystem.hatDomains_trefoil_zero_one`: the incidence domains in
+  `hatDomains` are the bigon `B₂` from `b` to `c` and the domain `O + B₂` from `a` to `b`, both
+  containing `z`.
 
 ## References
 
@@ -238,7 +239,7 @@ theorem isDomainBetween_trefoil_one_two :
       Pi.sub_apply, generatorChain_trefoilGenerator] <;>
     fin_cases q <;> simp
 
-/-- The domain `O + B₂ = Σ - B₁` is a domain from `a` to `b`. -/
+/-- The incidence domain `O + B₂ = Σ - B₁` is a domain from `a` to `b`. -/
 theorem isDomainBetween_trefoil_zero_one :
     trefoil.IsDomainBetween (trefoilGenerator 0) (trefoilGenerator 1) ![1, 0, 1] := by
   refine isDomainBetween_iff.mpr ⟨funext fun q => ?_, funext fun q => ?_⟩ <;>
@@ -313,10 +314,9 @@ theorem relativeGrading_trefoil_one_two :
     maslovIndex_trefoil_single_two]
   simp
 
-/-- The only domain counted by the hat differential of `CF̂(S³)` from `b` to `c` is the bigon
-`B₂`. It contains the second basepoint `z`, so it lowers the Alexander grading by one
-(`TauCeti.HeegaardRegionSystem.relativeAlexanderGrading_trefoil_one_two`) and is not counted by
-the differential of `HFK̂`. -/
+/-- The only incidence domain in `hatDomains` from `b` to `c` is the bigon `B₂`. It contains the
+second basepoint `z`, so it lowers the Alexander grading by one
+(`TauCeti.HeegaardRegionSystem.relativeAlexanderGrading_trefoil_one_two`). -/
 theorem hatDomains_trefoil_one_two :
     trefoil.hatDomains ![1, 1, 1] (trefoilGenerator 1) (trefoilGenerator 2) = {Pi.single 2 1} := by
   ext D
@@ -331,10 +331,10 @@ theorem hatDomains_trefoil_one_two :
     exact ⟨isDomainBetween_trefoil_one_two, fun _ => by simp,
       Pi.single_nonneg.mpr zero_le_one, maslovIndex_trefoil_single_two⟩
 
-/-- The only domain counted by the hat differential of `CF̂(S³)` from `a` to `b` is `O + B₂`. It
-contains the second basepoint `z`, so it lowers the Alexander grading by one
-(`TauCeti.HeegaardRegionSystem.relativeAlexanderGrading_trefoil_zero_one`) and is not counted by
-the differential of `HFK̂`. -/
+/-- The only incidence domain in `hatDomains` from `a` to `b` is `O + B₂`. It contains the second
+basepoint `z`, so it lowers the Alexander grading by one
+(`TauCeti.HeegaardRegionSystem.relativeAlexanderGrading_trefoil_zero_one`). This is a computation
+with incidence data only: in genus one `O + B₂` is not the domain of a Whitney disk. -/
 theorem hatDomains_trefoil_zero_one :
     trefoil.hatDomains ![1, 1, 1] (trefoilGenerator 0) (trefoilGenerator 1) = {![1, 0, 1]} := by
   ext D
