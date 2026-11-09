@@ -170,7 +170,7 @@ variable [AddCommGroup S'] [Module R S'] [LieRingModule L S']
 Postcomposition with an equivalence identifies the two morphism spaces. -/
 theorem isotypicMultiplicity_eq_of_lieModuleEquiv (e : M ≃ₗ⁅R,L⁆ M') :
     isotypicMultiplicity R L M S = isotypicMultiplicity R L M' S :=
-  (TauCeti.LieModuleEquiv.congrRight (M := S) e).finrank_eq
+  (e.congrRight (M := S)).finrank_eq
 
 /-- **The multiplicity only depends on the equivalence class of the module being counted.**
 Precomposition with an equivalence identifies the two morphism spaces. This is what lets the
@@ -178,7 +178,7 @@ multiplicity be read for an irreducible determined only up to equivalence, such 
 highest-weight quotient. -/
 theorem isotypicMultiplicity_eq_of_lieModuleEquiv_type (e : S ≃ₗ⁅R,L⁆ S') :
     isotypicMultiplicity R L M S = isotypicMultiplicity R L M S' :=
-  (TauCeti.LieModuleEquiv.congrLeft (P := M) e).finrank_eq
+  (e.congrLeft (P := M)).finrank_eq
 
 end Invariance
 

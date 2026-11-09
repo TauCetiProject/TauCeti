@@ -19,9 +19,9 @@ This file supplies general constructions for Lie modules that are missing from M
 ## Main definitions
 
 * `TauCeti.LieModuleEquiv.ofBijective`: a bijective morphism of Lie modules is an equivalence.
-* `TauCeti.LieModuleEquiv.restrictLie`: an equivalence of Lie modules over a Lie algebra, read as
+* `LieModuleEquiv.restrictLie`: an equivalence of Lie modules over a Lie algebra, read as
   one over a Lie subalgebra.
-* `TauCeti.LieModuleEquiv.congrRight` and `TauCeti.LieModuleEquiv.congrLeft`: postcomposition and
+* `LieModuleEquiv.congrRight` and `LieModuleEquiv.congrLeft`: postcomposition and
   precomposition with an equivalence of Lie modules, as linear equivalences of morphism spaces.
 * `TauCeti.lieAnnihilator`: the Lie subalgebra of elements annihilating a vector in a Lie
   module.
@@ -191,13 +191,14 @@ theorem ofBijective_apply (f : M →ₗ⁅R,L⁆ N) (hf : Function.Bijective f) 
 /-- **An equivalence of `L`-modules is an equivalence of `L'`-modules** for a Lie subalgebra
 `L' ≤ L`, with the same underlying map. This is Mathlib's `LieModuleHom.restrictLie` for
 equivalences. -/
-noncomputable def restrictLie [LieAlgebra R L] (e : M ≃ₗ⁅R,L⁆ N) (L' : LieSubalgebra R L) :
-    M ≃ₗ⁅R,L'⁆ N :=
+noncomputable def _root_.LieModuleEquiv.restrictLie [LieAlgebra R L] (e : M ≃ₗ⁅R,L⁆ N)
+    (L' : LieSubalgebra R L) : M ≃ₗ⁅R,L'⁆ N :=
   ofBijective ((e : M →ₗ⁅R,L⁆ N).restrictLie L') ⟨e.injective, e.surjective⟩
 
 @[simp]
-theorem coe_restrictLie [LieAlgebra R L] (e : M ≃ₗ⁅R,L⁆ N) (L' : LieSubalgebra R L) :
-    ⇑(restrictLie e L') = e := by
+theorem _root_.LieModuleEquiv.coe_restrictLie [LieAlgebra R L] (e : M ≃ₗ⁅R,L⁆ N)
+    (L' : LieSubalgebra R L) :
+    ⇑(e.restrictLie L') = e := by
   funext m
   refine (ofBijective_apply ((e : M →ₗ⁅R,L⁆ N).restrictLie L') _ m).trans ?_
   rw [LieModuleHom.coe_restrictLie]
@@ -212,7 +213,7 @@ variable [LieAlgebra R L] [LieModule R L N] [LieModule R L P]
 `(M →ₗ⁅R,L⁆ N) ≃ₗ[R] (M →ₗ⁅R,L⁆ P)` of morphism spaces. This is the Lie-module analogue of
 `LinearEquiv.congrRight`, which is unavailable here because a `LieModuleHom` is not a
 `LinearMap`. -/
-def congrRight (e : N ≃ₗ⁅R,L⁆ P) : (M →ₗ⁅R,L⁆ N) ≃ₗ[R] (M →ₗ⁅R,L⁆ P) where
+def _root_.LieModuleEquiv.congrRight (e : N ≃ₗ⁅R,L⁆ P) : (M →ₗ⁅R,L⁆ N) ≃ₗ[R] (M →ₗ⁅R,L⁆ P) where
   toFun f := (e : N →ₗ⁅R,L⁆ P).comp f
   invFun g := (e.symm : P →ₗ⁅R,L⁆ N).comp g
   map_add' _ _ := by ext m; simp
@@ -221,13 +222,13 @@ def congrRight (e : N ≃ₗ⁅R,L⁆ P) : (M →ₗ⁅R,L⁆ N) ≃ₗ[R] (M �
   right_inv g := by ext m; simp
 
 @[simp]
-theorem congrRight_apply (e : N ≃ₗ⁅R,L⁆ P) (f : M →ₗ⁅R,L⁆ N) (m : M) :
-    congrRight (M := M) e f m = e (f m) := by
+theorem _root_.LieModuleEquiv.congrRight_apply (e : N ≃ₗ⁅R,L⁆ P) (f : M →ₗ⁅R,L⁆ N) (m : M) :
+    LieModuleEquiv.congrRight (M := M) e f m = e (f m) := by
   rfl
 
 @[simp]
-theorem congrRight_symm_apply (e : N ≃ₗ⁅R,L⁆ P) (g : M →ₗ⁅R,L⁆ P) (m : M) :
-    (congrRight (M := M) e).symm g m = e.symm (g m) := by
+theorem _root_.LieModuleEquiv.congrRight_symm_apply (e : N ≃ₗ⁅R,L⁆ P) (g : M →ₗ⁅R,L⁆ P) (m : M) :
+    (LieModuleEquiv.congrRight (M := M) e).symm g m = e.symm (g m) := by
   rfl
 
 end CongrRight
@@ -239,8 +240,8 @@ variable [LieAlgebra R L] [LieModule R L P]
 
 /-- **Precomposition with an equivalence of Lie modules**, as an `R`-linear equivalence
 `(M →ₗ⁅R,L⁆ P) ≃ₗ[R] (N →ₗ⁅R,L⁆ P)` of morphism spaces. This is the source-variable companion of
-`TauCeti.LieModuleEquiv.congrRight`. -/
-def congrLeft (e : M ≃ₗ⁅R,L⁆ N) : (M →ₗ⁅R,L⁆ P) ≃ₗ[R] (N →ₗ⁅R,L⁆ P) where
+`LieModuleEquiv.congrRight`. -/
+def _root_.LieModuleEquiv.congrLeft (e : M ≃ₗ⁅R,L⁆ N) : (M →ₗ⁅R,L⁆ P) ≃ₗ[R] (N →ₗ⁅R,L⁆ P) where
   toFun f := f.comp (e.symm : N →ₗ⁅R,L⁆ M)
   invFun g := g.comp (e : M →ₗ⁅R,L⁆ N)
   map_add' _ _ := by ext n; simp
@@ -249,13 +250,13 @@ def congrLeft (e : M ≃ₗ⁅R,L⁆ N) : (M →ₗ⁅R,L⁆ P) ≃ₗ[R] (N →
   right_inv g := by ext n; simp
 
 @[simp]
-theorem congrLeft_apply (e : M ≃ₗ⁅R,L⁆ N) (f : M →ₗ⁅R,L⁆ P) (n : N) :
-    congrLeft (P := P) e f n = f (e.symm n) := by
+theorem _root_.LieModuleEquiv.congrLeft_apply (e : M ≃ₗ⁅R,L⁆ N) (f : M →ₗ⁅R,L⁆ P) (n : N) :
+    LieModuleEquiv.congrLeft (P := P) e f n = f (e.symm n) := by
   rfl
 
 @[simp]
-theorem congrLeft_symm_apply (e : M ≃ₗ⁅R,L⁆ N) (g : N →ₗ⁅R,L⁆ P) (m : M) :
-    (congrLeft (P := P) e).symm g m = g (e m) := by
+theorem _root_.LieModuleEquiv.congrLeft_symm_apply (e : M ≃ₗ⁅R,L⁆ N) (g : N →ₗ⁅R,L⁆ P) (m : M) :
+    (LieModuleEquiv.congrLeft (P := P) e).symm g m = g (e m) := by
   rfl
 
 end CongrLeft
