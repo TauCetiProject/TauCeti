@@ -647,19 +647,6 @@ theorem IsPerfectMatching.sign_eq [Fintype α] [DecidableEq α] {f : Equiv.Perm 
     Fintype.card_eq_zero_iff.mpr ⟨fun a => hf.2 a a.2⟩
   rw [Equiv.Perm.sign_of_pow_two_eq_one hsq, hfix, Nat.sub_zero]
 
-/-- Two points on a common orbit of an involutive permutation are equal or swapped by it. -/
-theorem _root_.Equiv.Perm.SameCycle.eq_or_eq_apply_of_involutive {f : Equiv.Perm α}
-    (hf : Function.Involutive f) {x y : α} (h : f.SameCycle x y) : y = x ∨ y = f x := by
-  have hsq : f ^ (2 : ℤ) = 1 := Equiv.ext fun a => by simp [sq, hf a]
-  obtain ⟨k, rfl⟩ := h
-  obtain ⟨j, rfl | rfl⟩ := Int.even_or_odd' k
-  · left
-    rw [zpow_mul, hsq]
-    simp
-  · right
-    rw [zpow_add_one, zpow_mul, hsq]
-    simp
-
 /-- An involutive permutation of an infinite type has infinitely many orbits, since each orbit has
 at most two points. -/
 theorem _root_.Equiv.Perm.infinite_quotient_sameCycle_of_involutive [Infinite α]
@@ -672,7 +659,7 @@ theorem _root_.Equiv.Perm.infinite_quotient_sameCycle_of_involutive [Infinite α
   refine (Set.infinite_coe_iff.mp hq) ((Set.toFinite {q.out, f q.out}).subset fun a ha => ?_)
   have hq' : f.SameCycle q.out a :=
     Quotient.exact (s := Equiv.Perm.SameCycle.setoid f) (q.out_eq.trans ha.symm)
-  exact (hq'.eq_or_eq_apply_of_involutive hf).imp id id
+  exact (hf.sameCycle_iff a q.out).mp hq'.symm
 
 /-- **A perfect matching has half as many orbits as points**: its orbits are its pairs. -/
 theorem IsPerfectMatching.two_mul_orbitCount {f : Equiv.Perm α}
