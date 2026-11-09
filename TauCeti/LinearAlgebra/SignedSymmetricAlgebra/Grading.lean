@@ -270,6 +270,23 @@ theorem isHomogeneous_map (f : V →ₗ[R] W)
   apply isHomogeneous_lift
   simpa only [add_zero] using (isHomogeneous_signedSymGenerator H).comp hf
 
+/-- A degree-preserving linear map induces a graded algebra map of signed symmetric algebras.
+Its underlying algebra map is `SignedSym.map`. -/
+noncomputable def gradedMap (f : V →ₗ[R] W) (hf : LinearMap.IsHomogeneous f G.piece H.piece 0) :
+    signedSymPiece G →ₐᵍ[R] signedSymPiece H where
+  toAlgHom := map G H f hf
+  map_mem hx := by
+    simpa only [add_zero, AlgHom.toLinearMap_apply, AlgHom.toRingHom_eq_coe,
+      RingHom.coe_coe] using (isHomogeneous_map G H f hf).map_mem hx
+
+@[simp]
+theorem gradedMap_toAlgHom (f : V →ₗ[R] W) (hf) :
+    (gradedMap G H f hf).toAlgHom = map G H f hf := (rfl)
+
+@[simp]
+theorem gradedMap_apply (f : V →ₗ[R] W) (hf) (a : SignedSym G) :
+    gradedMap G H f hf a = map G H f hf a := (rfl)
+
 end Map
 
 end SignedSym

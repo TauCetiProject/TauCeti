@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 public import Mathlib.Topology.MetricSpace.Lipschitz
+public import TauCeti.Analysis.Calculus.ContDiff.Convolution
 
 import TauCeti.Analysis.Convolution.Basic
 
@@ -30,7 +31,7 @@ normalized forms reduce to one kernel (`ContDiffBump.integral_shrinking_normed_m
 public section
 
 open ContinuousLinearMap MeasureTheory Filter Metric
-open scoped Convolution Topology Pointwise NNReal
+open scoped Convolution Topology Pointwise NNReal ContDiff
 
 namespace ContDiffBump
 
@@ -179,7 +180,59 @@ theorem normed_convolution_mem_Icc (φ : ContDiffBump (0 : G)) {w : G → ℝ} {
     convolution_lsmul_le_of_forall_le (μ := μ) φ.support_normed_eq.subset
     φ.nonneg_normed φ.integral_normed hexists fun y _ => (hwab y).2⟩
 
+open Set in
+/-- Mollifying a function that is continuous on a ball by bumps with radii tending to `0`
+converges uniformly on the half-radius ball, along any filter of parameters. -/
+theorem tendstoUniformlyOn_convolution_indicator_ball {ι : Type*} {l : Filter ι} {x : G}
+    {r : ℝ} (hr : 0 < r) {V : G → F}
+    (hVc : ContinuousOn V (ball x r))
+    {phi : ι → ContDiffBump (0 : G)} (hphi : Tendsto (fun n => (phi n).rOut) l (𝓝 0)) :
+    TendstoUniformlyOn (fun n => (ball x r).indicator V ⋆[
+      (ContinuousLinearMap.lsmul ℝ ℝ).flip, μ] (phi n).normed μ)
+      ((ball x r).indicator V) l (ball x (r / 2)) := by
+  let Fn := fun n => (ball x r).indicator V ⋆[
+    (ContinuousLinearMap.lsmul ℝ ℝ).flip, μ] (phi n).normed μ
+  -- Continuity on the ball makes the truncation measurable.
+  have hVm : AEStronglyMeasurable ((ball x r).indicator V) μ :=
+    (aestronglyMeasurable_indicator_iff measurableSet_ball).2
+      (hVc.aestronglyMeasurable measurableSet_ball)
+  -- The mollifications converge locally uniformly throughout the larger ball.
+  have hlocal : TendstoLocallyUniformlyOn Fn ((ball x r).indicator V) l (ball x r) := by
+    rw [isOpen_ball.tendstoLocallyUniformlyOn_iff_forall_tendsto]
+    intro y hy
+    have hcont : ContinuousAt ((ball x r).indicator V) y :=
+      (hVc.congr fun z hz => indicator_of_mem hz V).continuousAt (isOpen_ball.mem_nhds hy)
+    have hconv : Tendsto (fun p : ι × G => Fn p.1 p.2) (l ×ˢ 𝓝 y)
+        (𝓝 (((ball x r).indicator V) y)) := by
+      simp only [Fn, convolution_flip]
+      exact ContDiffBump.convolution_tendsto_right (hphi.comp tendsto_fst)
+        (Eventually.of_forall fun _ => hVm) (hcont.tendsto.comp tendsto_snd) tendsto_snd
+    apply tendsto_uniformity_iff_dist_tendsto_zero.2
+    simpa only [dist_self, Function.comp_apply] using
+      (hcont.tendsto.comp tendsto_snd).dist hconv
+  have hsub : closedBall x (r / 2) ⊆ ball x r := closedBall_subset_ball (half_lt_self hr)
+  exact ((tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact
+    (isCompact_closedBall x (r / 2))).1 (hlocal.mono hsub)).mono ball_subset_closedBall
+
 end ContDiffBump
+
+/-- Every available Fréchet derivative of compactly supported finite-regularity data commutes
+with normalized-bump convolution. -/
+theorem HasCompactSupport.iteratedFDeriv_normed_convolution
+    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {μ : Measure E} [μ.IsAddHaarMeasure] {f : E → F} {N : ℕ∞} {k : ℕ}
+    (hfc : HasCompactSupport f) (hf : ContDiff ℝ N f) (ρ : ContDiffBump (0 : E))
+    (hk : k ≤ N) :
+    iteratedFDeriv ℝ k (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f) =
+      ρ.normed μ ⋆[lsmul ℝ ℝ, μ] iteratedFDeriv ℝ k f := by
+  have hL : (compContinuousMultilinearMapL ℝ (fun _ : Fin k ↦ E) F F).comp
+      (lsmul ℝ ℝ) = lsmul ℝ ℝ := by
+    ext a m
+    simp
+  rw [← hL]
+  exact hfc.iteratedFDeriv_convolution_right (lsmul ℝ ℝ)
+    ρ.continuous_normed.locallyIntegrable hf hk
 
 /-- Convolution with a nonnegative normalized bump preserves the Lipschitz constant,
 including for Banach-valued functions. -/
