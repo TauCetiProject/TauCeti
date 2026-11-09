@@ -298,11 +298,7 @@ theorem exists_mem_transcendental_and_isSeparable_adjoin [PerfectField k]
     (hlt : degree D < p * (2 * (finrank k V : ℤ) - 2)) :
     ∃ x ∈ V, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
   obtain ⟨x, hxV, hx⟩ := exists_mem_notMem_fieldRange_frobenius hF hex p hD₀ hDg hV hlt
-  cases (inferInstance : ExpChar F p) with
-  | zero => exact (hx ⟨x, by rw [frobenius_def, pow_one]⟩).elim
-  | prime hp =>
-    let _ : Fact p.Prime := ⟨hp⟩
-    exact ⟨x, hxV, hF.transcendental_and_isSeparable_adjoin_of_notMem_fieldRange_frobenius p hx⟩
+  exact ⟨x, hxV, hF.transcendental_and_isSeparable_adjoin_of_notMem_fieldRange_frobenius p hx⟩
 
 end Divisor
 

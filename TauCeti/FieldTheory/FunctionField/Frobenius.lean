@@ -180,22 +180,31 @@ theorem isSeparable_adjoin_iff_notMem_fieldRange_frobenius [PerfectField k]
 one-variable function field over a perfect field of characteristic `p`, an element that is not a
 `p`-th power in `F` is transcendental over `k`, and `F / k(x)` is separable. -/
 theorem transcendental_and_isSeparable_adjoin_of_notMem_fieldRange_frobenius [PerfectField k]
-    (hF : TauCeti.IsFunctionField k F) (p : ℕ) [ExpChar F p] [Fact p.Prime] {x : F}
+    (hF : TauCeti.IsFunctionField k F) (p : ℕ) [ExpChar F p] {x : F}
     (hx : x ∉ (frobenius F p).fieldRange) :
     Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
-  have hDx : D k F x ≠ 0 := fun h ↦ hx ((hF.D_eq_zero_iff_mem_fieldRange_frobenius p x).mp h)
-  exact ⟨transcendental_of_D_ne_zero hDx, hF.isSeparable_adjoin_iff_D_ne_zero.mpr hDx⟩
+  cases (inferInstance : ExpChar F p) with
+  | zero => exact (hx ⟨x, by rw [frobenius_def, pow_one]⟩).elim
+  | prime hp =>
+    let _ : Fact p.Prime := ⟨hp⟩
+    have hDx : D k F x ≠ 0 := fun h ↦ hx ((hF.D_eq_zero_iff_mem_fieldRange_frobenius p x).mp h)
+    exact ⟨transcendental_of_D_ne_zero hDx, hF.isSeparable_adjoin_iff_D_ne_zero.mpr hDx⟩
 
 /-- **An inseparable subextension of prime degree comes from a `p`-th root.** Over a perfect
-field of exponential characteristic `p`, if `x` is transcendental, `[F : k(x)]` is prime and
+field of exponential characteristic `p`, if `[F : k(x)]` is prime and
 `F / k(x)` is not separable, then `x = y ^ p` for an element `y` that generates `F` over `k`. So
 `F` is then a rational function field, and `[F : k(x)] = p`. In characteristic zero the
 hypotheses are contradictory. -/
 theorem exists_pow_eq_and_adjoin_eq_top_of_finrank_prime_of_not_isSeparable [PerfectField k]
-    (hF : TauCeti.IsFunctionField k F) (p : ℕ) [ExpChar F p] {x : F} (hx : Transcendental k x)
+    (hF : TauCeti.IsFunctionField k F) (p : ℕ) [ExpChar F p] {x : F}
     (hprime : (Module.finrank k⟮x⟯ F).Prime) (hsep : ¬ Algebra.IsSeparable k⟮x⟯ F) :
     ∃ y : F, y ^ p = x ∧ k⟮y⟯ = ⊤ := by
-  have : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
+  have : FiniteDimensional k⟮x⟯ F := Module.finite_of_finrank_pos hprime.pos
+  have hx : Transcendental k x := fun halg ↦ by
+    have : FiniteDimensional k k⟮x⟯ := IntermediateField.adjoin.finiteDimensional halg.isIntegral
+    have : FiniteDimensional k F := Module.Finite.trans k⟮x⟯ F
+    obtain ⟨z, hz⟩ := hF.exists_transcendental
+    exact hz (Algebra.IsAlgebraic.isAlgebraic z)
   cases (inferInstance : ExpChar F p) with
   | zero => exact (hsep inferInstance).elim
   | prime hp =>
