@@ -18,7 +18,7 @@ domain (`TauCeti.isLipschitzDomainWith_ball`), so the general theory of
 `TauCeti.Analysis.Sobolev.LipschitzDomain` applies to it. This file records the consequences used
 for the closed disc in the analysis of pseudoholomorphic curves:
 
-* Rellich compactness: for `1 ≤ p < ∞`, the value map `W^{1,p}(D) → Lᵖ(D)` is compact;
+* Rellich compactness: for `1 ≤ p ≤ ∞`, the value map `W^{1,p}(D) → Lᵖ(D)` is compact;
 * a bounded extension operator `W^{1,p}(D) → W^{1,p}(ℝ²)` that is a right inverse of restriction;
 * a bounded trace operator `W^{1,p}(D) → Lᵖ(S¹)` for arc-length measure on the unit circle, which
   restricts functions continuous on the closed disc to the circle;
@@ -66,11 +66,11 @@ theorem isBounded_unitDisc : IsBounded (unitDisc : Set (WithLp 2 (ℝ × ℝ))) 
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- **Rellich compactness on the closed disc.** For `1 ≤ p < ∞`, the value map
+/-- **Rellich compactness on the closed disc.** For `1 ≤ p ≤ ∞`, the value map
 `W^{1,p}(D) → Lᵖ(D)` of the unit disc is a compact operator. -/
-theorem W1p.isCompactOperator_valueL_unitDisc (hp : p ≠ ∞) :
+theorem W1p.isCompactOperator_valueL_unitDisc :
     IsCompactOperator (W1p.valueL (mu := volume) (Omega := unitDisc) (p := p)) :=
-  W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hp
+  W1p.isCompactOperator_valueL_of_isLipschitzDomainWith
     (isLipschitzDomainWith_unitDisc one_pos) isBounded_unitDisc
 
 /-- **Extension from the closed disc.** There is a bounded linear extension operator
