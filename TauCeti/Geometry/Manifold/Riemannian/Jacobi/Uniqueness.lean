@@ -173,17 +173,26 @@ theorem IsJacobiFieldOn.eq_of_eq_of_alongCurveWithin_eq (hV : IsJacobiFieldOn I 
   simpa [neg_one_smul, ← sub_eq_add_neg, sub_eq_zero] using h
 
 /-- **Uniqueness of Jacobi fields on overlapping parameter sets.** Two Jacobi fields along the
-same geodesic, on parameter sets whose intersection is preconnected with unique derivatives, agree
-on the intersection as soon as their values and covariant derivatives agree at one point of it. -/
+same geodesic, on parameter sets whose intersection is preconnected, agree on the intersection as
+soon as their values and covariant derivatives agree at one point of it. -/
 theorem IsJacobiFieldOn.eq_of_eq_of_alongCurveWithin_eq_inter (hV : IsJacobiFieldOn I γ V s)
     (hW : IsJacobiFieldOn I γ W u) (hsu : IsPreconnected (s ∩ u))
-    (hsu' : UniqueDiffOn ℝ (s ∩ u)) (ht₀ : t₀ ∈ s ∩ u) (h₀ : V t₀ = W t₀)
+    (ht₀ : t₀ ∈ s ∩ u) (h₀ : V t₀ = W t₀)
     (h₁ : alongCurveWithin (leviCivitaConnection I M) γ V s t₀ =
       alongCurveWithin (leviCivitaConnection I M) γ W u t₀) (ht : t ∈ s ∩ u) :
-    V t = W t :=
-  (hV.mono hsu' inter_subset_left).eq_of_eq_of_alongCurveWithin_eq
-    (hW.mono hsu' inter_subset_right) hsu ht₀ h₀
-    (by rw [hV.alongCurveWithin_subset (hsu' t₀ ht₀) inter_subset_left ht₀,
-      hW.alongCurveWithin_subset (hsu' t₀ ht₀) inter_subset_right ht₀, h₁]) ht
+    V t = W t := by
+  by_cases hnt : (s ∩ u).Nontrivial
+  · obtain ⟨a, ha, b, hb, hab⟩ := hnt
+    have hsu' : UniqueDiffOn ℝ (s ∩ u) := by
+      have hord := isPreconnected_iff_ordConnected.1 hsu
+      refine uniqueDiffOn_convex hord.convex ((nonempty_Ioo.2 (min_lt_max.2 hab)).mono ?_)
+      exact isOpen_Ioo.subset_interior_iff.2 (Ioo_subset_Icc_self.trans (hord.uIcc_subset ha hb))
+    exact (hV.mono hsu' inter_subset_left).eq_of_eq_of_alongCurveWithin_eq
+      (hW.mono hsu' inter_subset_right) hsu ht₀ h₀
+      (by rw [hV.alongCurveWithin_subset (hsu' t₀ ht₀) inter_subset_left ht₀,
+        hW.alongCurveWithin_subset (hsu' t₀ ht₀) inter_subset_right ht₀, h₁]) ht
+  · rw [Set.not_nontrivial_iff] at hnt
+    rw [hnt ht ht₀]
+    exact h₀
 
 end TauCeti.Manifold
