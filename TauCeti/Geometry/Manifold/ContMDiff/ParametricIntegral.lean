@@ -11,26 +11,37 @@ public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
-# Integrals over a compact manifold of parameters
+# Integrals over a compact set of parameters in a manifold
 
-Let `f : M → N → F` be a function of a point of a manifold `M` and of a parameter in a compact
-manifold `N`, both modelled over `𝕜 = ℝ` or `𝕜 = ℂ`, with values in a normed space over `𝕜`, and
-let `μ` be a finite measure on `N`. If `(x, a) ↦ f x a` is `C^n`, then so is the averaged function
+Let `f : M → N → F` be a function of a point of a manifold `M` and of a parameter in a manifold
+`N`, both modelled over `𝕜 = ℝ` or `𝕜 = ℂ`, with values in a normed space over `𝕜`, and let `μ`
+be a measure on `N`. If `(x, a) ↦ f x a` is `C^n` and `s` is a subset of finite measure contained
+in a compact set `K ⊆ N`, then so is the function
 
-`x ↦ ∫ a, f x a ∂μ`.
+`x ↦ ∫ a in s, f x a ∂μ`.
 
-This is the manifold counterpart of Mathlib's `ContDiff.parametric_integral`, where the
-parameter ranges over a compact subset of a normed space. The typical use is averaging over a
-compact Lie group with its Haar measure, for instance to produce invariant Riemannian metrics.
+This is the manifold counterpart of Mathlib's `ContDiffOn.parametric_integral`, where the
+parameter ranges over a compact subset of a normed space. When `N` is compact and `μ` is finite,
+the integral over all of `N` is `C^n`. The typical use is averaging over a compact Lie group with
+its Haar measure, for instance to produce invariant Riemannian metrics.
 
-The proof is local. For `n` finite, the tube lemma `TauCeti.exists_isOpen_prod_contMDiffOn` makes
-`f` a `C^n` map on `U × N` for an open neighbourhood `U` of the base point. The parameter space is
-covered by finitely many compact sets each contained in one chart. On such a compact set `K`, the
-chart `ψ` of `N` transports the integral over a measurable subset `s ⊆ K` to the integral, against
-the pushforward of `μ` restricted to `s`, of a function that is `C^n` on the product of an open set
-and the compact set `ψ '' K` of the model spaces. Mathlib's `ContDiffOn.parametric_integral`
-applies there. Integrals over the finitely many pieces are then added up by induction on the
-cover.
+## Main results
+
+* `TauCeti.contMDiffAt_parametric_integral`, `ContMDiff.parametric_integral`: the integral over a
+  finite-measure subset of a compact set of parameters is `C^n`.
+* `TauCeti.contMDiffAt_parametric_integral_of_compactSpace`,
+  `ContMDiff.parametric_integral_of_compactSpace`: the integral over a compact manifold of
+  parameters against a finite measure is `C^n`.
+
+The proof is local. Replacing `μ` by its restriction to `s`, it suffices to integrate over `K`
+against a finite measure. For `n` finite, the tube lemma `TauCeti.exists_isOpen_prod_contMDiffOn`
+makes `f` a `C^n` map on `U × V` for an open neighbourhood `U` of the base point and an open set
+`V ⊇ K`. The set `K` is covered by finitely many compact sets each contained in `V` and in one
+chart. On such a compact set `L`, the chart `ψ` of `N` transports the integral over a measurable
+subset `r ⊆ L` to the integral, against the pushforward of the measure restricted to `r`, of a
+function that is `C^n` on the product of an open set and the compact set `ψ '' L` of the model
+spaces. Mathlib's `ContDiffOn.parametric_integral` applies there. Integrals over the finitely many
+pieces are then added up by induction on the cover.
 
 The manifold `M` is assumed boundaryless, so that its chart targets are open in the model space.
 The parameter manifold `N` may have boundary and corners.
@@ -50,17 +61,18 @@ variable {𝕜 : Type*} [RCLike 𝕜]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [MeasurableSpace N] [OpensMeasurableSpace N]
-  {μ : Measure N} [IsFiniteMeasure μ]
+  {μ : Measure N}
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
   {f : M → N → F} {x₀ : M}
 
-/-- The integral of a `C^m` function over a measurable set of parameters contained in a compact
-subset of one chart of the parameter manifold is `C^m` at `x₀`, provided the function is `C^m`
-on `U × N` for an open neighbourhood `U` of `x₀`. -/
-private theorem contMDiffAt_setIntegral_of_subset_chart {m : ℕ} [IsManifold I m M]
-    [IsManifold J m N] {U : Set M} (hU : IsOpen U) (hx₀ : x₀ ∈ U)
-    (hf : ContMDiffOn (I.prod J) 𝓘(𝕜, F) m (uncurry f) (U ×ˢ univ))
-    {b : N} {K : Set N} (hK : IsCompact K) (hKb : K ⊆ (chartAt H' b).source)
+/-- The integral of a `C^m` function, against a finite measure, over a measurable set of parameters
+contained in a compact subset `K` of one chart of the parameter manifold is `C^m` at `x₀`,
+provided the function is `C^m` on `U × V` for an open neighbourhood `U` of `x₀` and a set
+`V ⊇ K`. -/
+private theorem contMDiffAt_setIntegral_of_subset_chart {m : ℕ} [IsFiniteMeasure μ]
+    [IsManifold I m M] [IsManifold J m N] {U : Set M} {V : Set N} (hU : IsOpen U) (hx₀ : x₀ ∈ U)
+    (hf : ContMDiffOn (I.prod J) 𝓘(𝕜, F) m (uncurry f) (U ×ˢ V))
+    {b : N} {K : Set N} (hK : IsCompact K) (hKb : K ⊆ (chartAt H' b).source) (hKV : K ⊆ V)
     {s : Set N} (hs : MeasurableSet s) (hsK : s ⊆ K) :
     ContMDiffAt I 𝓘(𝕜, F) m (fun x ↦ ∫ a in s, f x a ∂μ) x₀ := by
   borelize E'
@@ -82,7 +94,9 @@ private theorem contMDiffAt_setIntegral_of_subset_chart {m : ℕ} [IsManifold I 
       preimage_univ, inter_univ] at h
     refine h.mono ?_
     rintro ⟨y, z⟩ ⟨⟨hy, hyU⟩, ⟨a, ha, rfl⟩⟩
-    exact ⟨⟨hy, (extChartAt J b).map_source (hKψ ha)⟩, hyU, mem_univ _⟩
+    refine ⟨⟨hy, (extChartAt J b).map_source (hKψ ha)⟩, hyU, ?_⟩
+    have : (extChartAt J b).symm (ψ a) = a := ψ.left_inv (hKψ ha)
+    simpa only [PartialEquiv.prod_coe, this] using hKV ha
   -- Transport the integral over `s` to the pushforward measure on the model space.
   set ν := (μ.restrict s).map ψ
   have hψm : AEMeasurable ψ (μ.restrict s) := (hψc.mono hsK).aemeasurable hs
@@ -111,64 +125,88 @@ private theorem contMDiffAt_setIntegral_of_subset_chart {m : ℕ} [IsManifold I 
   filter_upwards [extChartAt_source_mem_nhds (I := I) x₀] with x hx
   simp only [comp_apply, φ.left_inv hx]
 
-variable [CompactSpace N] [T2Space N] {n : ℕ∞} [IsManifold I n M] [IsManifold J n N]
+variable [T2Space N] {n : ℕ∞} [IsManifold I n M] [IsManifold J n N]
 
-/-- **Smoothness of an integral over a compact manifold of parameters.** If `(x, a) ↦ f x a` is
-`C^n` at every point `(x₀, a)`, with the parameter `a` ranging over a compact manifold carrying a
-finite measure `μ`, then `x ↦ ∫ a, f x a ∂μ` is `C^n` at `x₀`. -/
-theorem contMDiffAt_parametric_integral
-    (hf : ∀ a, ContMDiffAt (I.prod J) 𝓘(𝕜, F) n (uncurry f) (x₀, a)) :
-    ContMDiffAt I 𝓘(𝕜, F) n (fun x ↦ ∫ a, f x a ∂μ) x₀ := by
+/-- **Smoothness of an integral over a compact set of parameters.** If `(x, a) ↦ f x a` is `C^n`
+at every point `(x₀, a)` with `a` in a compact subset `K` of the parameter manifold, then
+`x ↦ ∫ a in s, f x a ∂μ` is `C^n` at `x₀` for every subset `s ⊆ K` of finite measure. -/
+theorem contMDiffAt_parametric_integral {K s : Set N} (hK : IsCompact K) (hsK : s ⊆ K)
+    (hμs : μ s ≠ ⊤) (hf : ∀ a ∈ K, ContMDiffAt (I.prod J) 𝓘(𝕜, F) n (uncurry f) (x₀, a)) :
+    ContMDiffAt I 𝓘(𝕜, F) n (fun x ↦ ∫ a in s, f x a ∂μ) x₀ := by
   classical
+  have hKm : MeasurableSet K := hK.isClosed.measurableSet
+  -- The integral over `s` is the integral over `K` against the finite measure `μ.restrict s`.
+  have hres : (μ.restrict s).restrict K = μ.restrict s := by
+    rw [Measure.restrict_restrict hKm, inter_eq_right.2 hsK]
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hμs
+  rw [show (fun x ↦ ∫ a in s, f x a ∂μ) = fun x ↦ ∫ a in K, f x a ∂(μ.restrict s) by
+    simp_rw [hres]]
+  generalize μ.restrict s = ν at this ⊢
   refine contMDiffAt_iff_nat.2 fun m hm ↦ ?_
   have hm' : (m : ℕ∞ω) ≤ n := by exact_mod_cast hm
   have : IsManifold I m M := .of_le hm'
   have : IsManifold J m N := .of_le hm'
-  -- A tube `U × N` on which `f` is `C^m`.
-  obtain ⟨U, V, hU, -, hx₀U, hV, hfU⟩ := exists_isOpen_prod_contMDiffOn (I' := I.prod J)
-    (J := 𝓘(𝕜, F)) (f := uncurry f) isCompact_univ (by simp)
-    fun a _ ↦ (hf a).of_le hm'
-  rw [univ_subset_iff.1 hV] at hfU
-  have hint : ∀ x ∈ U, Integrable (f x) μ := fun x hx ↦
-    integrableOn_univ.1 <| ContinuousOn.integrableOn_compact isCompact_univ <|
-      hfU.continuousOn.comp (continuousOn_const.prodMk continuousOn_id) fun a _ ↦
-        ⟨hx, mem_univ a⟩
-  -- Cover the parameter space by finitely many compact sets, each inside one chart.
-  choose K hKc hbK hKs using fun b : N ↦
-    exists_compact_subset (chartAt H' b).open_source (mem_chart_source H' b)
-  obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover (fun b ↦ interior (K b))
-    (fun _ ↦ isOpen_interior) fun b _ ↦ mem_iUnion.2 ⟨b, hbK b⟩
-  have key : ∀ t : Finset N, ∀ s, MeasurableSet s → s ⊆ ⋃ b ∈ t, K b →
-      ContMDiffAt I 𝓘(𝕜, F) m (fun x ↦ ∫ a in s, f x a ∂μ) x₀ := by
+  -- A tube `U × V` around `{x₀} × K` on which `f` is `C^m`.
+  obtain ⟨U, V, hU, hV, hx₀U, hKV, hfU⟩ := exists_isOpen_prod_contMDiffOn (I' := I.prod J)
+    (J := 𝓘(𝕜, F)) (f := uncurry f) hK (by simp) fun a ha ↦ (hf a ha).of_le hm'
+  have hint : ∀ x ∈ U, IntegrableOn (f x) K ν := fun x hx ↦
+    ContinuousOn.integrableOn_compact hK <|
+      hfU.continuousOn.comp (continuousOn_const.prodMk continuousOn_id) fun a ha ↦
+        ⟨hx, hKV ha⟩
+  -- Cover `K` by finitely many compact sets, each inside `V` and one chart.
+  obtain ⟨t, ht⟩ := hK.elim_finite_subcover (fun b ↦ (chartAt H' b).source ∩ V)
+    (fun b ↦ (chartAt H' b).open_source.inter hV) fun a ha ↦
+      mem_iUnion.2 ⟨a, mem_chart_source H' a, hKV ha⟩
+  obtain ⟨L, hLc, hLs, hKL⟩ := hK.finite_compact_cover t _
+    (fun b _ ↦ (chartAt H' b).open_source.inter hV) ht
+  have key : ∀ t : Finset N, ∀ r, MeasurableSet r → r ⊆ K → r ⊆ ⋃ b ∈ t, L b →
+      ContMDiffAt I 𝓘(𝕜, F) m (fun x ↦ ∫ a in r, f x a ∂ν) x₀ := by
     intro t
     induction t using Finset.induction_on with
     | empty =>
-      intro s _ hst
-      simp only [Finset.notMem_empty, iUnion_of_empty, iUnion_empty, subset_empty_iff] at hst
-      simp only [hst, Measure.restrict_empty, integral_zero_measure]
+      intro r _ _ hrt
+      simp only [Finset.notMem_empty, iUnion_of_empty, iUnion_empty, subset_empty_iff] at hrt
+      simp only [hrt, Measure.restrict_empty, integral_zero_measure]
       exact contMDiffAt_const
     | insert b t _ ih =>
-      intro s hs hst
-      have hKm : MeasurableSet (K b) := (hKc b).isClosed.measurableSet
-      have h₁ := contMDiffAt_setIntegral_of_subset_chart (μ := μ) hU hx₀U hfU (hKc b) (hKs b)
-        (hs.inter hKm) inter_subset_right
-      have h₂ := ih (s \ K b) (hs.diff hKm) fun a ha ↦ by
-        have := hst ha.1
+      intro r hr hrK hrt
+      have hLm : MeasurableSet (L b) := (hLc b).isClosed.measurableSet
+      have h₁ := contMDiffAt_setIntegral_of_subset_chart (μ := ν) hU hx₀U hfU (hLc b)
+        (fun a ha ↦ (hLs b ha).1) (fun a ha ↦ (hLs b ha).2) (hr.inter hLm) inter_subset_right
+      have h₂ := ih (r \ L b) (hr.diff hLm) (sdiff_subset.trans hrK) fun a ha ↦ by
+        have := hrt ha.1
         simp only [Finset.mem_insert, iUnion_iUnion_eq_or_left, mem_union] at this
         exact this.resolve_left ha.2
       refine (h₁.add h₂).congr_of_eventuallyEq ?_
       filter_upwards [hU.mem_nhds hx₀U] with x hx
-      exact (integral_inter_add_sdiff hKm (hint x hx).integrableOn).symm
-  simpa using key t univ MeasurableSet.univ fun a _ ↦ by
-    obtain ⟨b, hb, hab⟩ := mem_iUnion₂.1 (ht (mem_univ a))
-    exact mem_iUnion₂.2 ⟨b, hb, interior_subset hab⟩
+      exact (integral_inter_add_sdiff hLm ((hint x hx).mono_set hrK)).symm
+  exact key t K hKm subset_rfl hKL.subset
+
+/-- **Smoothness of an integral over a compact set of parameters.** If `(x, a) ↦ f x a` is `C^n`,
+then `x ↦ ∫ a in s, f x a ∂μ` is `C^n` for every subset `s` of finite measure contained in a
+compact subset of the parameter manifold. -/
+theorem _root_.ContMDiff.parametric_integral {K s : Set N} (hK : IsCompact K) (hsK : s ⊆ K)
+    (hμs : μ s ≠ ⊤) (hf : ContMDiff (I.prod J) 𝓘(𝕜, F) n (uncurry f)) :
+    ContMDiff I 𝓘(𝕜, F) n (fun x ↦ ∫ a in s, f x a ∂μ) := fun _ ↦
+  contMDiffAt_parametric_integral hK hsK hμs fun _ _ ↦ hf _
+
+variable [CompactSpace N] [IsFiniteMeasure μ]
+
+/-- **Smoothness of an integral over a compact manifold of parameters.** If `(x, a) ↦ f x a` is
+`C^n` at every point `(x₀, a)`, with the parameter `a` ranging over a compact manifold carrying a
+finite measure `μ`, then `x ↦ ∫ a, f x a ∂μ` is `C^n` at `x₀`. -/
+theorem contMDiffAt_parametric_integral_of_compactSpace
+    (hf : ∀ a, ContMDiffAt (I.prod J) 𝓘(𝕜, F) n (uncurry f) (x₀, a)) :
+    ContMDiffAt I 𝓘(𝕜, F) n (fun x ↦ ∫ a, f x a ∂μ) x₀ := by
+  simpa using contMDiffAt_parametric_integral (μ := μ) isCompact_univ subset_rfl
+    (measure_ne_top μ univ) fun a _ ↦ hf a
 
 /-- **Smoothness of an integral over a compact manifold of parameters.** If `(x, a) ↦ f x a` is
 `C^n`, with the parameter `a` ranging over a compact manifold carrying a finite measure `μ`, then
 `x ↦ ∫ a, f x a ∂μ` is `C^n`. -/
-theorem _root_.ContMDiff.parametric_integral
+theorem _root_.ContMDiff.parametric_integral_of_compactSpace
     (hf : ContMDiff (I.prod J) 𝓘(𝕜, F) n (uncurry f)) :
     ContMDiff I 𝓘(𝕜, F) n (fun x ↦ ∫ a, f x a ∂μ) := fun _ ↦
-  contMDiffAt_parametric_integral fun _ ↦ hf _
+  contMDiffAt_parametric_integral_of_compactSpace fun _ ↦ hf _
 
 end TauCeti

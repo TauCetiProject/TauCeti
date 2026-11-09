@@ -37,10 +37,10 @@ It is positive definite because each `d(a •)_x` is invertible. It is `C^n` bec
 bundle chart, the pulled-back forms depend `C^n` on the point and the group element
 (`Bundle.contMDiffAt_trivializationAt_bilinearForm_pullback`), so their average is `C^n` by
 differentiation under the integral over the compact parameter manifold `G`
-(`TauCeti.contMDiffAt_parametric_integral`). When `μ` is right-invariant, for instance the
-normalized Haar measure `TauCeti.haarProb`, every element of `G` acts by an isometry of the
-averaged metric, and an already invariant metric is unchanged by averaging. A compact Lie group
-acting smoothly by symplectomorphisms thus has an invariant metric, the input from which an
+(`TauCeti.contMDiffAt_parametric_integral_of_compactSpace`). When `μ` is right-invariant, for
+instance the normalized Haar measure `TauCeti.haarProb`, every element of `G` acts by an isometry
+of the averaged metric, and an already invariant metric is unchanged by averaging. A compact Lie
+group acting smoothly by symplectomorphisms thus has an invariant metric, the input from which an
 invariant compatible almost complex structure is obtained by polar normalization.
 
 ## Main definitions
@@ -270,7 +270,7 @@ private theorem contMDiff_averageInner
   intro x₀
   refine (contMDiffAt_section x₀).2 ?_
   -- In the trivialization at `x₀`, the section is the integral of the trivialized pullbacks.
-  refine (contMDiffAt_parametric_integral (μ := μ) (J := J)
+  refine (contMDiffAt_parametric_integral_of_compactSpace (μ := μ) (J := J)
     (f := fun x (a : G) ↦ (trivializationAt (E →L[ℝ] E →L[ℝ] ℝ)
       (fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) x₀
       ⟨x, (ContinuousLinearMap.precomp ℝ (mfderiv I I (a • ·) x)).comp
