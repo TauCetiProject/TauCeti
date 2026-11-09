@@ -10,6 +10,7 @@ public import Mathlib.Data.Finset.Sort
 public import Mathlib.Data.List.Rotate
 public import Mathlib.Logic.Equiv.Fin.Rotate
 public import Mathlib.Order.Fin.Tuple
+public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Data.List.Chain
 import Mathlib.Order.Interval.Finset.Fin
 
@@ -48,6 +49,8 @@ Every nonempty finset can be listed by a sequence strictly increasing on a finit
 
 If every element of `I` is at most `s ≤ t`, the sequence `⊥`, the elements of `I` in increasing
 order, `s`, then constantly `t`, is monotone in `ℕ`, `Finset.monotone_bot_orderEmbOfFin_snoc`.
+
+Sorting the interval `[a, b)` of natural numbers lists `a, a + 1, …, b - 1`, `Nat.sort_Ico`.
 -/
 
 public section
@@ -285,3 +288,16 @@ theorem monotone_bot_orderEmbOfFin_snoc {T : Type*} [LinearOrder T] [OrderBot T]
       simp [hn, hnI, hncard, hne, h1]
 
 end Finset
+
+namespace Nat
+
+/-- Sorting the interval `[a, b)` of natural numbers gives the list `a, a + 1, …, b - 1`. -/
+theorem sort_Ico (a b : ℕ) : (Finset.Ico a b).sort = List.range' a (b - a) := by
+  have h : Finset.Ico a b = (List.range' a (b - a)).toFinset := by
+    ext x
+    simp only [Finset.mem_Ico, List.mem_toFinset, List.mem_range'_1]
+    omega
+  rw [h, List.toFinset_sort _ List.nodup_range']
+  exact List.pairwise_le_range'
+
+end Nat
