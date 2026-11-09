@@ -118,14 +118,6 @@ namespace ProductFaceChainSystem
 
 variable {ι : ∀ x z y, C(M x z × M z y, M x y)}
 
-/-- The chains of a product-face chain system vanish when `ind x ≤ ind y`: they would have negative
-dimension. -/
-theorem chain_eq_zero_of_le (s : ProductFaceChainSystem R ind ι) {x y : P} (hxy : ind x ≤ ind y) :
-    s.chain x y = 0 := by
-  rcases (mem_cubicalChainGrading_iff _ R).1 (s.chain_mem x y) with h | ⟨n, c, hn, -⟩
-  · exact h
-  · omega
-
 variable {G : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G]
 
 /-- **The twisting cocycle of a product-face chain system.** Evaluation maps
