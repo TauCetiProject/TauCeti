@@ -44,9 +44,9 @@ this module's real Lie-group instance is local as well.
 * `TauCeti.Lie.realificationDerivationLieEquiv`: the corresponding equivalence with real
   left-invariant derivations for finite-dimensional smooth complex Lie groups.
 
-The canonical `LinearEquiv.complexStructure` transports multiplication by `Complex.I` through
-these equivalences' underlying real-linear equivalences. Its square and bracket laws apply
-directly, without additional geometric endomorphism definitions.
+The canonical `TauCeti.AlmostComplexStructure.ofRestrictScalars` transports multiplication by
+`Complex.I` through the normalized underlying real-linear equivalences using the existing
+`AlmostComplexStructure.transport`. Its square and bracket laws apply directly.
 
 ## Main results
 
@@ -198,19 +198,20 @@ theorem realificationLieEquiv_tangentAd (g : G) (x : GroupLieAlgebra 𝓘(ℂ, E
 theorem realificationLieEquiv_complexStructure_tangentAd
     (g : G) (X : GroupLieAlgebra 𝓘(ℝ, E) G) :
     tangentAd (I := 𝓘(ℝ, E)) g
-        ((realificationLieEquiv (E := E) (G := G)).toLinearEquiv.complexStructure
-          (M := GroupLieAlgebra 𝓘(ℂ, E) G) X) =
-      (realificationLieEquiv (E := E) (G := G)).toLinearEquiv.complexStructure
-        (M := GroupLieAlgebra 𝓘(ℂ, E) G) (tangentAd (I := 𝓘(ℝ, E)) g X) := by
-  apply (realificationLieEquiv (E := E) (G := G)).toLinearEquiv.complexStructure_naturality
-    (M := GroupLieAlgebra 𝓘(ℂ, E) G)
-    (realificationLieEquiv (E := E) (G := G)).toLinearEquiv
+        ((AlmostComplexStructure.ofRestrictScalars (GroupLieAlgebra 𝓘(ℂ, E) G)).transport
+          (realificationLieEquiv (E := E) (G := G)).restrictScalarsLinearEquiv X) =
+      (AlmostComplexStructure.ofRestrictScalars (GroupLieAlgebra 𝓘(ℂ, E) G)).transport
+        (realificationLieEquiv (E := E) (G := G)).restrictScalarsLinearEquiv
+        (tangentAd (I := 𝓘(ℝ, E)) g X) := by
+  apply (realificationLieEquiv (E := E) (G := G)).transport_ofRestrictScalars_naturality
+    (realificationLieEquiv (E := E) (G := G))
     (tangentAd (I := 𝓘(ℂ, E)) g).toLinearEquiv.toLinearMap
     (tangentAd (I := 𝓘(ℝ, E)) g).toLinearEquiv.toLinearMap
   intro y
   have h := (realificationLieEquiv_tangentAd g (RestrictScalars.addEquiv ℝ ℂ _ y)).symm
   rw [AddEquiv.symm_apply_apply] at h
-  convert h using 1 <;> rfl
+  simpa only [LieEquiv.coe_toLinearEquiv, LinearEquiv.coe_coe,
+    ContinuousLinearMap.coe_coe] using h
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
   {K : Type*} [Group K] [TopologicalSpace K] [ChartedSpace F K] [LieGroup 𝓘(ℂ, F) 3 K]
@@ -240,21 +241,21 @@ structures on its source and target. -/
 theorem realificationLieEquiv_complexStructure_groupLieAlgebraMap (φ : G →* K)
     (hφ : MDifferentiableAt 𝓘(ℂ, E) 𝓘(ℂ, F) φ 1) (X : GroupLieAlgebra 𝓘(ℝ, E) G) :
     φ.groupLieAlgebraMap 𝓘(ℝ, E) 𝓘(ℝ, F)
-        ((realificationLieEquiv (E := E) (G := G)).toLinearEquiv.complexStructure
-          (M := GroupLieAlgebra 𝓘(ℂ, E) G) X) =
-      (realificationLieEquiv (E := F) (G := K)).toLinearEquiv.complexStructure
-        (M := GroupLieAlgebra 𝓘(ℂ, F) K)
+        ((AlmostComplexStructure.ofRestrictScalars (GroupLieAlgebra 𝓘(ℂ, E) G)).transport
+          (realificationLieEquiv (E := E) (G := G)).restrictScalarsLinearEquiv X) =
+      (AlmostComplexStructure.ofRestrictScalars (GroupLieAlgebra 𝓘(ℂ, F) K)).transport
+        (realificationLieEquiv (E := F) (G := K)).restrictScalarsLinearEquiv
         (φ.groupLieAlgebraMap 𝓘(ℝ, E) 𝓘(ℝ, F) X) := by
-  apply (realificationLieEquiv (E := E) (G := G)).toLinearEquiv.complexStructure_naturality
-    (M := GroupLieAlgebra 𝓘(ℂ, E) G)
-    (realificationLieEquiv (E := F) (G := K)).toLinearEquiv
+  apply (realificationLieEquiv (E := E) (G := G)).transport_ofRestrictScalars_naturality
+    (realificationLieEquiv (E := F) (G := K))
     (φ.groupLieAlgebraMap 𝓘(ℂ, E) 𝓘(ℂ, F))
     (φ.groupLieAlgebraMap 𝓘(ℝ, E) 𝓘(ℝ, F))
   intro y
   have h := (realificationLieEquiv_groupLieAlgebraMap φ hφ
     (RestrictScalars.addEquiv ℝ ℂ _ y)).symm
   rw [AddEquiv.symm_apply_apply] at h
-  convert h using 1 <;> rfl
+  simpa only [LieEquiv.coe_toLinearEquiv, LinearEquiv.coe_coe,
+    ContinuousLinearMap.coe_coe] using h
 
 end Tangent
 
@@ -302,33 +303,41 @@ theorem realificationDerivationLieEquiv_complexStructure_evaluation
     (D : LeftInvariantDerivation 𝓘(ℝ, E) G) :
     leftInvariantDerivationLieEquivGroupLieAlgebra (I := 𝓘(ℝ, E)) (G := G)
         (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, E)) (n := ∞) (by simp) (1 : G))
-        ((realificationDerivationLieEquiv (E := E) (G := G)).toLinearEquiv.complexStructure
-          (M := GroupLieAlgebra 𝓘(ℂ, E) G) D) =
-      (realificationLieEquiv (E := E) (G := G)).toLinearEquiv.complexStructure
-        (M := GroupLieAlgebra 𝓘(ℂ, E) G)
+        ((AlmostComplexStructure.ofRestrictScalars (GroupLieAlgebra 𝓘(ℂ, E) G)).transport
+          (realificationDerivationLieEquiv (E := E) (G := G)).restrictScalarsLinearEquiv D) =
+      (AlmostComplexStructure.ofRestrictScalars (GroupLieAlgebra 𝓘(ℂ, E) G)).transport
+        (realificationLieEquiv (E := E) (G := G)).restrictScalarsLinearEquiv
         (leftInvariantDerivationLieEquivGroupLieAlgebra (I := 𝓘(ℝ, E)) (G := G)
           (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, E)) (n := ∞) (by simp) (1 : G)) D) := by
   let f := leftInvariantDerivationLieEquivGroupLieAlgebra (I := 𝓘(ℝ, E)) (G := G)
     (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, E)) (n := ∞) (by simp) (1 : G))
-  have he : ((realificationDerivationLieEquiv (E := E) (G := G)).toLinearEquiv.trans
-      f.toLinearEquiv) = (realificationLieEquiv (E := E) (G := G)).toLinearEquiv := by
+  have he : (realificationDerivationLieEquiv (E := E) (G := G)).restrictScalarsLinearEquiv.trans
+      f.toLinearEquiv = (realificationLieEquiv (E := E) (G := G)).restrictScalarsLinearEquiv := by
     ext x
-    simp only [LinearEquiv.trans_apply, LieEquiv.coe_toLinearEquiv,
-      realificationDerivationLieEquiv, LieEquiv.trans_apply]
+    simp only [LinearEquiv.trans_apply, LieEquiv.restrictScalarsLinearEquiv_apply,
+      LieEquiv.coe_toLinearEquiv, realificationDerivationLieEquiv, LieEquiv.trans_apply]
     exact f.apply_symm_apply _
-  have h := (realificationDerivationLieEquiv (E := E) (G := G)).toLinearEquiv
-    |>.complexStructure_trans_apply (M := GroupLieAlgebra 𝓘(ℂ, E) G) f.toLinearEquiv D
-  erw [he] at h
-  exact h.symm
+  have h := (AlmostComplexStructure.ofRestrictScalars (GroupLieAlgebra 𝓘(ℂ, E) G))
+    |>.transport_trans
+      (realificationDerivationLieEquiv (E := E) (G := G)).restrictScalarsLinearEquiv f.toLinearEquiv
+  rw [he] at h
+  have hD := congrArg (fun J : AlmostComplexStructure (GroupLieAlgebra 𝓘(ℝ, E) G) =>
+    J.toLinearMap (f D)) h
+  rw [AlmostComplexStructure.transport_apply] at hD
+  have hf : f.toLinearEquiv.symm (f D) = D := by
+    simpa only [LieEquiv.coe_toLinearEquiv] using f.toLinearEquiv.symm_apply_apply D
+  rw [hf] at hD
+  exact hD
 
 /-- The real adjoint action on invariant derivations commutes with their complex structure. -/
 theorem realificationDerivationLieEquiv_complexStructure_Ad
     (g : G) (D : LeftInvariantDerivation 𝓘(ℝ, E) G) :
     Ad (I := 𝓘(ℝ, E)) g
-        ((realificationDerivationLieEquiv (E := E) (G := G)).toLinearEquiv.complexStructure
-          (M := GroupLieAlgebra 𝓘(ℂ, E) G) D) =
-      (realificationDerivationLieEquiv (E := E) (G := G)).toLinearEquiv.complexStructure
-        (M := GroupLieAlgebra 𝓘(ℂ, E) G) (Ad (I := 𝓘(ℝ, E)) g D) := by
+        ((AlmostComplexStructure.ofRestrictScalars (GroupLieAlgebra 𝓘(ℂ, E) G)).transport
+          (realificationDerivationLieEquiv (E := E) (G := G)).restrictScalarsLinearEquiv D) =
+      (AlmostComplexStructure.ofRestrictScalars (GroupLieAlgebra 𝓘(ℂ, E) G)).transport
+        (realificationDerivationLieEquiv (E := E) (G := G)).restrictScalarsLinearEquiv
+        (Ad (I := 𝓘(ℝ, E)) g D) := by
   apply (leftInvariantDerivationLieEquivGroupLieAlgebra (I := 𝓘(ℝ, E)) (G := G)
     (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, E)) (n := ∞) (by simp) (1 : G))).toLinearEquiv
       |>.injective
@@ -349,10 +358,11 @@ theorem realificationDerivationLieEquiv_complexStructure_lieMap
     (hφ : MDifferentiableAt 𝓘(ℂ, E) 𝓘(ℂ, F) φ 1)
     (D : LeftInvariantDerivation 𝓘(ℝ, E) G) :
     lieMap φ
-        ((realificationDerivationLieEquiv (E := E) (G := G)).toLinearEquiv.complexStructure
-          (M := GroupLieAlgebra 𝓘(ℂ, E) G) D) =
-      (realificationDerivationLieEquiv (E := F) (G := K)).toLinearEquiv.complexStructure
-        (M := GroupLieAlgebra 𝓘(ℂ, F) K) (lieMap φ D) := by
+        ((AlmostComplexStructure.ofRestrictScalars (GroupLieAlgebra 𝓘(ℂ, E) G)).transport
+          (realificationDerivationLieEquiv (E := E) (G := G)).restrictScalarsLinearEquiv D) =
+      (AlmostComplexStructure.ofRestrictScalars (GroupLieAlgebra 𝓘(ℂ, F) K)).transport
+        (realificationDerivationLieEquiv (E := F) (G := K)).restrictScalarsLinearEquiv
+        (lieMap φ D) := by
   apply (leftInvariantDerivationLieEquivGroupLieAlgebra (I := 𝓘(ℝ, F)) (G := K)
     (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, F)) (n := ∞) (by simp) (1 : K))).toLinearEquiv
       |>.injective
@@ -363,7 +373,10 @@ theorem realificationDerivationLieEquiv_complexStructure_lieMap
     (leftInvariantDerivationLieEquivGroupLieAlgebra (I := 𝓘(ℝ, E)) (G := G)
       (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, E)) (n := ∞) (by simp) (1 : G)) D)
   simp only [MonoidHom.groupLieAlgebraMap_apply] at h
-  convert h using 1
+  -- The smooth morphism and its underlying monoid homomorphism have the same function.
+  have hcoe : (φ.toMonoidHom : G → K) = φ := rfl
+  rw [hcoe] at h
+  exact h
 
 end Derivation
 

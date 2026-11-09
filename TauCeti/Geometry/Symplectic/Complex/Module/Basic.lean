@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.RestrictScalars
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.LinearAlgebra.Complex.Module
 
+import Mathlib.Tactic.FastInstance
 import TauCeti.LinearAlgebra.Complex.Orientation
 
 /-!
@@ -28,6 +30,9 @@ structure induced from `ofComplexModule` recovers the original complex module st
 
 ## Main declarations
 
+* `TauCeti.AlmostComplexStructure.ofRestrictScalars`: the canonical structure on a complex module
+  with scalars restricted to the reals, using the normalized module `RestrictScalars.realModule`.
+
 * `TauCeti.AlmostComplexStructure.complexModule`: the `Module ℂ V` with
   `(a + b·i) • v = a • v + b • J v`.
 * `TauCeti.AlmostComplexStructure.complexModule_smul_def`: the defining scalar action.
@@ -35,6 +40,8 @@ structure induced from `ofComplexModule` recovers the original complex module st
 * `TauCeti.AlmostComplexStructure.complexModule_ofReal_smul`: the induced action restricts to the
   original real action.
 * `TauCeti.AlmostComplexStructure.complexModule_isScalarTower`: `ℝ`, `ℂ`, `V` form a scalar tower.
+* `TauCeti.AlmostComplexStructure.ofRestrictScalars`: the canonical almost complex structure
+  on a complex module with scalars restricted to the reals.
 * `TauCeti.AlmostComplexStructure.ofComplexModule`: the almost complex structure `v ↦ i • v` on a
   complex module.
 * `TauCeti.AlmostComplexStructure.ofComplexModule_complexModule`: the round trip recovers `J`.
@@ -186,3 +193,36 @@ end Basis
 end AlmostComplexStructure
 
 end TauCeti
+
+/-- The restricted real module at the additive-group parent used by almost complex structures.
+This normalizes the inherited additive-monoid instance of the scalar-restriction type alias. -/
+@[expose, instance_reducible]
+noncomputable def RestrictScalars.realModule (M : Type*) [AddCommGroup M] [Module ℂ M] :
+    @Module ℝ (RestrictScalars ℝ ℂ M) Real.semiring
+      (instAddCommGroupRestrictScalars ℝ ℂ M).toAddCommMonoid :=
+  fast_instance% RestrictScalars.module ℝ ℂ M
+
+namespace TauCeti.AlmostComplexStructure
+
+/-- Multiplication by `I` is the canonical almost complex structure on a complex module
+with scalars restricted to the reals. -/
+noncomputable def ofRestrictScalars (M : Type*) [AddCommGroup M] [Module ℂ M] :
+    @AlmostComplexStructure (RestrictScalars ℝ ℂ M)
+      (instAddCommGroupRestrictScalars ℝ ℂ M) (RestrictScalars.realModule M) := by
+  letI := RestrictScalars.realModule M
+  letI : @Module ℂ (RestrictScalars ℝ ℂ M) Complex.instSemiring
+      (instAddCommGroupRestrictScalars ℝ ℂ M).toAddCommMonoid :=
+    RestrictScalars.moduleOrig ℝ ℂ M
+  exact ofComplexModule (RestrictScalars ℝ ℂ M)
+
+/-- The scalar-restricted complex structure multiplies the original vector by `I`. -/
+@[simp]
+theorem ofRestrictScalars_apply (M : Type*) [AddCommGroup M] [Module ℂ M]
+    (x : RestrictScalars ℝ ℂ M) :
+    let := RestrictScalars.realModule M
+    (ofRestrictScalars M).toLinearMap x = (RestrictScalars.addEquiv ℝ ℂ M).symm
+      (Complex.I • RestrictScalars.addEquiv ℝ ℂ M x) := by
+  let := RestrictScalars.realModule M
+  rfl
+
+end TauCeti.AlmostComplexStructure

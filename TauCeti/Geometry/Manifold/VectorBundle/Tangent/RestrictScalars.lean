@@ -24,8 +24,8 @@ bundles: the comparison is the identity in their bundle coordinates even when th
 are not themselves `C^n` manifolds. For a smooth complex manifold, it identifies its realified
 complex tangent bundle with the tangent bundle of the underlying real manifold.
 
-We work with arbitrary compatible normed field extensions. The fibrewise linear comparison
-supports boundaryless models; the total-space comparisons use self-modelled manifolds.
+We work with arbitrary compatible normed field extensions and self-modelled manifolds.
+The fibrewise linear comparison uses the native self-model over the smaller field.
 The comparison uses `TauCeti.tangentCoordChange_restrictScalars` on chart overlaps;
 no equality of the two tangent-bundle topologies is assumed. Both manifold instances are
 explicit so that both tangent-bundle topologies can be named. The smaller-field instance can

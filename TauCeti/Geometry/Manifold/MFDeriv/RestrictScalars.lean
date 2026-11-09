@@ -292,7 +292,6 @@ theorem restrictScalarsSelfLinearEquiv_symm_apply (x : M) (v : TangentSpace 𝓘
         ((tangentSpaceCastModel 𝓘(A, E) x).symm (tangentSpaceCastModel 𝓘(R, E) x v)) := by
   rfl
 
-
 end TangentSpace
 
 namespace MDifferentiableAt

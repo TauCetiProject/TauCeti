@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Complex.Module
-public import Mathlib.Algebra.Algebra.RestrictScalars
 import Mathlib.Algebra.Ring.Action.ConjAct
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -30,9 +29,7 @@ A a real-bilinear map vanishing at `(1, I)` and
 Multiplication by `I` and by `-I` are mutually inverse on any complex multiplication action.
 
 A real-linear map between complex modules that commutes with multiplication by `I` is complex
-linear (`LinearMap.complexOfMapISmul`). A real-linear equivalence from a restricted complex
-module transports multiplication by `I` to an endomorphism squaring to `-1`
-(`LinearEquiv.complexStructure`). This transport commutes with composition of equivalences.
+linear (`LinearMap.complexOfMapISmul`).
 
 Likewise an `ℝ`-algebra map out of the complex plane is determined by its value at `I`, so a
 conjugacy `g z = w * f z * w⁻¹` by a unit `w` between two such maps holds everywhere once it holds
@@ -195,80 +192,3 @@ theorem conj_complexAlgHom_apply {A : Type*} [Semiring A] [Algebra ℝ A] (w : A
   simpa [ConjAct.units_smul_def] using DFunLike.congr_fun hfg z
 
 end Units
-
-namespace LinearEquiv
-
-noncomputable section
-
-variable {M M' : Type*} [AddCommGroup M] [Module ℂ M]
-  [AddCommGroup M'] [Module ℝ M'] (e : RestrictScalars ℝ ℂ M ≃ₗ[ℝ] M')
-
-/-- Multiplication by `Complex.I` transported through a real-linear equivalence. -/
-def complexStructure : Module.End ℝ M' :=
-  e.conj (RestrictScalars.lsmul ℝ ℂ M Complex.I)
-
-/-- The transported endomorphism corresponds to multiplication by `Complex.I`. -/
-theorem complexStructure_apply_image (x : RestrictScalars ℝ ℂ M) :
-    e.complexStructure (e x) =
-      e ((RestrictScalars.addEquiv ℝ ℂ M).symm
-        (Complex.I • RestrictScalars.addEquiv ℝ ℂ M x)) := by
-  rw [complexStructure, conj_apply_apply, e.symm_apply_apply,
-    RestrictScalars.lsmul_apply_apply]
-
-/-- The transported complex structure in the original complex coordinates. -/
-theorem complexStructure_apply (x : M') :
-    e.complexStructure x =
-      e ((RestrictScalars.addEquiv ℝ ℂ M).symm
-        (Complex.I • RestrictScalars.addEquiv ℝ ℂ M (e.symm x))) := by
-  rw [complexStructure, conj_apply_apply, RestrictScalars.lsmul_apply_apply]
-
-/-- A transported complex structure squares to minus the identity. -/
-@[simp]
-theorem complexStructure_sq : e.complexStructure ^ 2 = -1 := by
-  rw [pow_two]
-  apply LinearMap.ext
-  intro x
-  rw [mul_apply_eq_comp, LinearMap.neg_apply, one_apply_eq_self]
-  let a := RestrictScalars.addEquiv ℝ ℂ M
-  obtain ⟨y, rfl⟩ := e.surjective x
-  rw [e.complexStructure_apply_image, e.complexStructure_apply_image]
-  have hs : a.symm (Complex.I • a (a.symm (Complex.I • a y))) = -y := by
-    rw [a.apply_symm_apply, smul_smul, Complex.I_mul_I, neg_one_smul, map_neg,
-      a.symm_apply_apply]
-  rw [hs]
-  exact e.map_neg y
-
-/-- Two applications of a transported complex structure negate the vector. -/
-@[simp]
-theorem complexStructure_apply_apply (x : M') :
-    e.complexStructure (e.complexStructure x) = -x := by
-  have h := DFunLike.congr_fun e.complexStructure_sq x
-  simpa only [pow_two, mul_apply_eq_comp, LinearMap.neg_apply, one_apply_eq_self] using h
-
-variable {M'' : Type*} [AddCommGroup M''] [Module ℝ M''] (f : M' ≃ₗ[ℝ] M'')
-
-/-- Composing real-linear equivalences conjugates the transported complex structure. -/
-theorem complexStructure_trans :
-    (e.trans f).complexStructure = f.conj e.complexStructure := by
-  rw [complexStructure, ← conj_trans, trans_apply, complexStructure]
-
-/-- A real-linear equivalence intertwines the complex structures transported through it. -/
-theorem complexStructure_trans_apply (x : M') :
-    (e.trans f).complexStructure (f x) = f (e.complexStructure x) := by
-  rw [complexStructure_trans, conj_apply_apply, f.symm_apply_apply]
-
-/-- A complex-linear map and a real-linear map intertwined by the scalar comparisons also
-intertwine the transported complex structures. -/
-theorem complexStructure_naturality
-    {N N' : Type*} [AddCommGroup N] [Module ℂ N] [AddCommGroup N'] [Module ℝ N']
-    (e' : RestrictScalars ℝ ℂ N ≃ₗ[ℝ] N') (f : M →ₗ[ℂ] N) (g : M' →ₗ[ℝ] N')
-    (h : ∀ y, g (e y) = e' ((RestrictScalars.addEquiv ℝ ℂ N).symm
-      (f (RestrictScalars.addEquiv ℝ ℂ M y)))) (x : M') :
-    g (e.complexStructure x) = e'.complexStructure (g x) := by
-  obtain ⟨y, rfl⟩ := e.surjective x
-  simp only [complexStructure_apply_image, h, AddEquiv.apply_symm_apply]
-  rw [f.map_smul]
-
-end
-
-end LinearEquiv
