@@ -82,7 +82,7 @@ theorem quantile_map_cast_hypergeometricMeasure_eq_lower (hK : K ≤ N) (hn : n 
   · intro j hj
     simp only [Set.mem_ofPred_eq] at hj
     by_contra hnot
-    have hzero := hypergeometricMeasure_real_Iic_eq_zero_of_lt_lower hK hn
+    have hzero := hypergeometricMeasure_real_Iic_eq_zero_of_lt_lower hK
       (lt_of_not_ge hnot)
     rw [hzero] at hj
     exact hu.1.not_ge hj

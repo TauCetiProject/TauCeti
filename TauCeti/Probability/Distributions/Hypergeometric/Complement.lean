@@ -39,20 +39,17 @@ This includes the zero law when the sample size exceeds the population size. -/
 theorem map_sub_hypergeometricMeasure {N K n : ℕ} (hK : K ≤ N) :
     (hypergeometricMeasure N K n).map (fun k ↦ n - k) =
       hypergeometricMeasure N (N - K) n := by
-  by_cases hn : n ≤ N
-  · rw [hypergeometricMeasure_eq_sum_dirac hK,
-      hypergeometricMeasure_eq_sum_dirac (Nat.sub_le N K),
-      Measure.map_finset_sum Measurable.of_discrete.aemeasurable]
-    simp_rw [Measure.map_smul _ Measurable.of_discrete.aemeasurable,
-      Measure.map_dirac' Measurable.of_discrete]
-    rw [← Finset.sum_range_reflect]
-    refine Finset.sum_congr rfl fun k hk ↦ ?_
-    have hkn : k ≤ n := Finset.mem_range_succ_iff.mp hk
-    simp only [Nat.add_sub_cancel, Nat.sub_sub_self hkn,
-      hypergeometricWeight_of_le (Nat.sub_le n k), hypergeometricWeight_of_le hkn,
-      Nat.sub_sub_self hK, mul_comm]
-  · rw [hypergeometricMeasure_eq_zero_of_invalid (by omega), Measure.map_zero,
-      hypergeometricMeasure_eq_zero_of_invalid (by omega)]
+  rw [hypergeometricMeasure_eq_sum_dirac hK,
+    hypergeometricMeasure_eq_sum_dirac (Nat.sub_le N K),
+    Measure.map_finset_sum Measurable.of_discrete.aemeasurable]
+  simp_rw [Measure.map_smul _ Measurable.of_discrete.aemeasurable,
+    Measure.map_dirac' Measurable.of_discrete]
+  rw [← Finset.sum_range_reflect]
+  refine Finset.sum_congr rfl fun k hk ↦ ?_
+  have hkn : k ≤ n := Finset.mem_range_succ_iff.mp hk
+  simp only [Nat.add_sub_cancel, Nat.sub_sub_self hkn,
+    hypergeometricWeight_of_le (Nat.sub_le n k), hypergeometricWeight_of_le hkn,
+    Nat.sub_sub_self hK, mul_comm]
 
 /-- Reflection about half the sample size sends the real cast of a hypergeometric law to the
 real cast of the complementary marked-population law. -/
