@@ -48,6 +48,8 @@ independently of `c` and `r` (`TauCeti.exists_forall_contDiff_plateau`). The squ
 function supported in a closed ball with bounded gradient there has integral at most the squared
 bound times the volume of the ball
 (`TauCeti.setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall`).
+Smooth compactly supported cutoffs equal to `1` on a closed annulus `r ≤ ‖x‖ ≤ R`, `0 < r`, can
+be chosen to vanish near `0` (`TauCeti.exists_contDiff_annulus_cutoff`).
 
 ## References
 
@@ -686,6 +688,27 @@ theorem exists_cutoff_fderiv_bound :
     refine (norm_smul_le r⁻¹ (ContinuousLinearMap.id ℝ E)).trans ?_
     rw [Real.norm_of_nonneg (inv_nonneg.2 hr.le)]
     exact mul_le_of_le_one_right (inv_nonneg.2 hr.le) ContinuousLinearMap.norm_id_le
+
+/-- **Annular cutoffs.** For `0 < r` there is a smooth compactly supported function on `E` that
+equals `1` on the closed annulus `r ≤ ‖x‖ ≤ R` and vanishes on a neighbourhood of `0`. -/
+theorem exists_contDiff_annulus_cutoff {r : ℝ} (hr : 0 < r) (R : ℝ) :
+    ∃ θ : E → ℝ, ContDiff ℝ ∞ θ ∧ HasCompactSupport θ ∧ θ =ᶠ[𝓝 0] 0 ∧
+      ∀ x : E, r ≤ ‖x‖ → ‖x‖ ≤ R → θ x = 1 := by
+  set R' := max R r + 1
+  have hR' : 0 < R' := by positivity
+  -- The difference of a bump equal to `1` on the ball of radius `R'` and one equal to `1` on the
+  -- ball of radius `r / 2` and vanishing outside the ball of radius `r`.
+  set θ₁ : ContDiffBump (0 : E) := ⟨R', R' + 1, hR', by linarith⟩
+  set θ₂ : ContDiffBump (0 : E) := ⟨r / 2, r, by positivity, by linarith⟩
+  refine ⟨fun x ↦ θ₁ x - θ₂ x, θ₁.contDiff.sub θ₂.contDiff,
+    θ₁.hasCompactSupport.sub θ₂.hasCompactSupport, ?_, fun x h₂ h₁ ↦ ?_⟩
+  · filter_upwards [ball_mem_nhds (0 : E) (by positivity : 0 < r / 2)] with x hx
+    have h₁ : x ∈ closedBall (0 : E) R' :=
+      closedBall_subset_closedBall (by linarith [le_max_right R r]) (ball_subset_closedBall hx)
+    simp [θ₁.one_of_mem_closedBall h₁, θ₂.one_of_mem_closedBall (ball_subset_closedBall hx)]
+  · have h₁' : x ∈ closedBall (0 : E) R' :=
+      mem_closedBall_zero_iff.2 (h₁.trans (by linarith [le_max_left R r]))
+    simp [θ₁.one_of_mem_closedBall h₁', θ₂.zero_of_le_dist (by rwa [dist_zero_right])]
 
 end ScaledCutoff
 

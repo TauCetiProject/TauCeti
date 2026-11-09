@@ -7,8 +7,11 @@ module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
+import TauCeti.Analysis.Distribution.SchwartzSpace.Dilation
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
 # The Bernstein inequalities
@@ -19,15 +22,16 @@ radius `R > 0`. Then the derivatives of `f` lie in `Lᵖ` and cost exactly one f
 
 `‖∂ₘ f‖_p ≤ C R ‖m‖ ‖f‖_p`, and `‖∂_{m₁} ⋯ ∂_{mₙ} f‖_p ≤ (C R)ⁿ ‖m₁‖ ⋯ ‖mₙ‖ ‖f‖_p`,
 
-with `C` depending only on `E`, not on `p`, `R`, `f` or `n`. Conversely, if the Fourier transform
-of `f` vanishes outside the closed annulus `a R ≤ ‖ξ‖ ≤ c R` with `a > 0`, then the first
-derivatives are at least of size `R ‖f‖_p`: for an orthonormal basis `(bᵢ)` of `E`,
+with `C` depending only on `E` and the target space `F`, not on `p`, `R`, `f` or `n`. Conversely,
+if the Fourier transform of `f` vanishes outside the closed annulus `a R ≤ ‖ξ‖ ≤ c R` with `a > 0`,
+then the first derivatives are at least of size `R ‖f‖_p`: for an orthonormal basis `(bᵢ)` of `E`,
 
 `‖f‖_p ≤ C R⁻¹ ∑ᵢ ‖∂_{bᵢ} f‖_p`,
 
-with `C` depending only on `E`, `a` and `c`. These are the estimates by which the Littlewood–Paley
-blocks `Δⱼ f` (`TemperedDistribution.isVanishingOn_fourier_littlewoodPaleyBlock`) trade
-derivatives for powers of `2^j` in the dyadic description of Besov and Hölder spaces.
+with `C` depending only on `E`, `F`, `a` and `c`, not on the basis. These are the estimates by
+which the Littlewood–Paley blocks `Δⱼ f`
+(`TemperedDistribution.isVanishingOn_fourier_littlewoodPaleyBlock`) trade derivatives for powers
+of `2^j` in the dyadic description of Besov and Hölder spaces.
 
 The frequency localization is the vanishing of `𝓕 f` on the complement of the ball or annulus, in
 the sense of `Distribution.IsVanishingOn`.
@@ -72,68 +76,21 @@ namespace TemperedDistribution
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
 
-/-- A smooth compactly supported real function, as a complex Schwartz function. -/
-private noncomputable def ofRealSchwartz {θ : E → ℝ} (h₁ : HasCompactSupport θ)
-    (h₂ : ContDiff ℝ ∞ θ) : 𝓢(E, ℂ) :=
-  (h₁.comp_left Complex.ofReal_zero).toSchwartzMap (Complex.ofRealCLM.contDiff.comp h₂)
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem ofRealSchwartz_apply {θ : E → ℝ} (h₁ : HasCompactSupport θ)
-    (h₂ : ContDiff ℝ ∞ θ) (ξ : E) : ofRealSchwartz h₁ h₂ ξ = θ ξ :=
-  rfl
-
-/-- The derivative symbol `ξ ↦ 2πi ⟪ξ, m⟫ θ ξ`, defined as the Fourier transform of the derivative
-`∂ₘ 𝓕⁻ θ` of the kernel of `θ`. -/
-private noncomputable def derivSymbol (θ : 𝓢(E, ℂ)) (m : E) : 𝓢(E, ℂ) :=
-  𝓕 (∂_{m} (𝓕⁻ θ))
-
-private theorem derivSymbol_apply (θ : 𝓢(E, ℂ)) (m ξ : E) :
-    derivSymbol θ m ξ = 2 * π * Complex.I * ⟪ξ, m⟫ * θ ξ := by
-  have : (inner ℝ · m : E → ℝ).HasTemperateGrowth := by fun_prop
-  simp [derivSymbol, SchwartzMap.lineDerivOp_fourierInv_eq,
-    SchwartzMap.smulLeftCLM_apply_apply this, mul_assoc]
-
-/-- The kernel `∂ₘ 𝓕⁻ θ` of the derivative symbol has `L¹` norm at most `‖∇ 𝓕⁻ θ‖₁ ‖m‖`. -/
-private theorem integral_norm_fourierInv_derivSymbol_le (θ : 𝓢(E, ℂ)) (m : E) :
-    ∫ x, ‖𝓕⁻ (derivSymbol θ m : E → ℂ) x‖ ≤
-      (∫ x, ‖fderiv ℝ ⇑(𝓕⁻ θ : 𝓢(E, ℂ)) x‖) * ‖m‖ := by
-  have h : 𝓕⁻ (derivSymbol θ m : E → ℂ) = ∂_{m} (𝓕⁻ θ) := by
-    rw [← SchwartzMap.fourierInv_coe, derivSymbol, FourierTransform.fourierInv_fourier_eq]
-  rw [h]
-  refine (integral_mono (SchwartzMap.integrable _).norm
-    ((SchwartzMap.fderivCLM ℝ E ℂ (𝓕⁻ θ)).integrable.norm.mul_const _) fun x ↦ ?_).trans_eq
-    (integral_mul_const _ _)
-  rw [SchwartzMap.lineDerivOp_apply_eq_fderiv]
-  exact (fderiv ℝ ⇑(𝓕⁻ θ : 𝓢(E, ℂ)) x).le_opNorm m
-
-/-- The dilate `ξ ↦ σ (R⁻¹ • ξ)` of a Schwartz function. -/
-private noncomputable def dilate {R : ℝ} (hR : R ≠ 0) (σ : 𝓢(E, ℂ)) : 𝓢(E, ℂ) :=
-  SchwartzMap.compCLMOfContinuousLinearEquiv ℂ
-    (ContinuousLinearEquiv.smulLeft (Units.mk0 R⁻¹ (inv_ne_zero hR))) σ
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem dilate_apply {R : ℝ} (hR : R ≠ 0) (σ : 𝓢(E, ℂ)) (ξ : E) :
-    dilate hR σ ξ = σ (R⁻¹ • ξ) := by
-  simp [dilate, Units.smul_def]
-
-/-- Dilating a symbol does not change the `L¹` norm of its kernel. -/
-private theorem integral_norm_fourierInv_dilate {R : ℝ} (hR : R ≠ 0) (σ : 𝓢(E, ℂ)) :
-    ∫ x, ‖𝓕⁻ (dilate hR σ : E → ℂ) x‖ = ∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖ := by
-  rw [show (dilate hR σ : E → ℂ) = fun ξ ↦ σ (R⁻¹ • ξ) from funext (dilate_apply hR σ)]
-  exact TauCeti.integral_norm_fourierInv_comp_smul _ (inv_ne_zero hR)
-
-/-- **Bernstein's inequality.** There is `C`, depending only on `E`, such that whenever the
-Fourier transform of `f ∈ Lᵖ`, `1 ≤ p ≤ ∞`, vanishes outside the closed ball of radius `R > 0`,
-every derivative `∂ₘ f` is an `Lᵖ` function with `‖∂ₘ f‖_p ≤ C R ‖m‖ ‖f‖_p`. -/
+/-- **Bernstein's inequality.** There is `C ≥ 0`, depending only on `E` and `F`, such that
+whenever the Fourier transform of `f ∈ Lᵖ`, `1 ≤ p ≤ ∞`, vanishes outside the closed ball of
+radius `R > 0`, every derivative `∂ₘ f` is an `Lᵖ` function with `‖∂ₘ f‖_p ≤ C R ‖m‖ ‖f‖_p`. -/
 theorem exists_lineDerivOp_eq_and_norm_le_of_isVanishingOn :
-    ∃ C : ℝ, ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {R : ℝ}, 0 < R → ∀ f : Lp F p (volume : Measure E),
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {R : ℝ}, 0 < R → ∀ f : Lp F p (volume : Measure E),
       IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ → ∀ m : E,
       ∃ g : Lp F p (volume : Measure E), ∂_{m} (f : 𝓢'(E, F)) = g ∧ ‖g‖ ≤ C * R * ‖m‖ * ‖f‖ := by
   set θ : ContDiffBump (0 : E) := ⟨2, 3, two_pos, by norm_num⟩
-  set θS := ofRealSchwartz θ.hasCompactSupport θ.contDiff
-  refine ⟨∫ x, ‖fderiv ℝ ⇑(𝓕⁻ θS : 𝓢(E, ℂ)) x‖, fun {p} _ {R} hR f hf m ↦ ?_⟩
-  set θR := dilate hR.ne' θS
-  set σ := dilate hR.ne' (derivSymbol θS (R • m))
+  set θS : 𝓢(E, ℂ) :=
+    (θ.hasCompactSupport.toSchwartzMap θ.contDiff).postcompCLM Complex.ofRealCLM
+  refine ⟨∫ x, ‖fderiv ℝ ⇑(𝓕⁻ θS : 𝓢(E, ℂ)) x‖, integral_nonneg fun _ ↦ norm_nonneg _,
+    fun {p} _ {R} hR f hf m ↦ ?_⟩
+  set θR := SchwartzMap.dilate hR.ne' θS
+  -- The symbol `2πi ⟪ξ, m⟫ θ (R⁻¹ • ξ)`, the dilate of the symbol of `∂_{R m} 𝓕⁻ θ`.
+  set σ := SchwartzMap.dilate hR.ne' (𝓕 (∂_{R • m} (𝓕⁻ θS)))
   -- The cutoff `θ (R⁻¹ •)` equals `1` on the ball of radius `2R`, a neighbourhood of the
   -- frequency support, so it reproduces `∂ₘ f`; and `2πi ⟪ξ, m⟫ θ (R⁻¹ • ξ)` is `σ`.
   have hθR : ∀ᶠ ξ in 𝓝ˢ (closedBall (0 : E) R)ᶜᶜ, θR ξ = 1 := by
@@ -144,7 +101,7 @@ theorem exists_lineDerivOp_eq_and_norm_le_of_isVanishingOn :
       rw [mem_closedBall_zero_iff, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hR.le),
         inv_mul_le_iff₀ hR]
       exact (mem_ball_zero_iff.1 hξ).le.trans_eq (mul_comm _ _)
-    simp [θR, dilate_apply, θS, ofRealSchwartz_apply, θ.one_of_mem_closedBall this]
+    simp [θR, θS, θ.one_of_mem_closedBall this]
   have hσ : ∂_{m} (f : 𝓢'(E, F)) = fourierMultiplierCLM F σ f := by
     have hR' : (R : ℂ) ≠ 0 := by exact_mod_cast hR.ne'
     rw [← fourierMultiplierCLM_eq_self_of_isVanishingOn θR.hasTemperateGrowth
@@ -152,72 +109,42 @@ theorem exists_lineDerivOp_eq_and_norm_le_of_isVanishingOn :
       fourierMultiplierCLM_lineDerivOp θR.hasTemperateGrowth]
     congr 2
     funext ξ
-    simp only [σ, θR, dilate_apply, derivSymbol_apply, real_inner_smul_left,
-      real_inner_smul_right, Pi.smul_apply, Pi.mul_apply, smul_eq_mul]
+    simp only [σ, θR, SchwartzMap.dilate_apply, SchwartzMap.fourier_lineDerivOp_apply,
+      FourierTransform.fourier_fourierInv_eq, real_inner_smul_left, real_inner_smul_right,
+      Pi.smul_apply, Pi.mul_apply, smul_eq_mul]
     push_cast
     field_simp
   obtain ⟨g, hg, hgf⟩ := exists_fourierMultiplierCLM_eq_and_norm_le σ f
   refine ⟨g, hσ.trans hg, hgf.trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg f))⟩
-  rw [integral_norm_fourierInv_dilate]
-  refine (integral_norm_fourierInv_derivSymbol_le θS (R • m)).trans_eq ?_
+  rw [SchwartzMap.integral_norm_fourierInv_dilate, ← SchwartzMap.fourierInv_coe,
+    FourierTransform.fourierInv_fourier_eq]
+  refine (SchwartzMap.integral_norm_lineDerivOp_le _ (R • m)).trans_eq ?_
   rw [norm_smul, Real.norm_of_nonneg hR.le, mul_assoc]
 
-/-- **Bernstein's inequality for derivatives of every order.** There is `C`, depending only on
-`E`, such that whenever the Fourier transform of `f ∈ Lᵖ`, `1 ≤ p ≤ ∞`, vanishes outside the
+/-- **Bernstein's inequality for derivatives of every order.** There is `C ≥ 0`, depending only on
+`E` and `F`, such that whenever the Fourier transform of `f ∈ Lᵖ`, `1 ≤ p ≤ ∞`, vanishes outside the
 closed ball of radius `R > 0`, every iterated derivative `∂_{m₀} ⋯ ∂_{m_{n-1}} f` is an `Lᵖ`
 function of norm at most `(C R)ⁿ ‖m₀‖ ⋯ ‖m_{n-1}‖ ‖f‖_p`. -/
 theorem exists_iteratedLineDerivOp_eq_and_norm_le_of_isVanishingOn :
-    ∃ C : ℝ, ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {R : ℝ}, 0 < R → ∀ f : Lp F p (volume : Measure E),
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {R : ℝ}, 0 < R → ∀ f : Lp F p (volume : Measure E),
       IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ → ∀ {n : ℕ} (m : Fin n → E),
       ∃ g : Lp F p (volume : Measure E), ∂^{m} (f : 𝓢'(E, F)) = g ∧
         ‖g‖ ≤ (C * R) ^ n * (∏ i, ‖m i‖) * ‖f‖ := by
-  obtain ⟨C, hC⟩ := exists_lineDerivOp_eq_and_norm_le_of_isVanishingOn (E := E) (F := F)
-  refine ⟨max C 0, fun {p} _ {R} hR f hf n m ↦ ?_⟩
+  obtain ⟨C, hC0, hC⟩ := exists_lineDerivOp_eq_and_norm_le_of_isVanishingOn (E := E) (F := F)
+  refine ⟨C, hC0, fun {p} _ {R} hR f hf n m ↦ ?_⟩
   induction n with
   | zero => exact ⟨f, by simp, by simp⟩
   | succ n ih =>
     obtain ⟨g, hg, hgf⟩ := ih (Fin.tail m)
     obtain ⟨h, hh, hhg⟩ := hC hR g (hg ▸ isVanishingOn_fourier_iteratedLineDerivOp hf _) (m 0)
     refine ⟨h, by rw [iteratedLineDerivOp_succ_left, hg, hh], ?_⟩
-    calc ‖h‖ ≤ max C 0 * R * ‖m 0‖ * ‖g‖ := by
-          refine hhg.trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg g))
+    calc ‖h‖ ≤ C * R * ‖m 0‖ * ‖g‖ := hhg
+      _ ≤ C * R * ‖m 0‖ * ((C * R) ^ n * (∏ i, ‖Fin.tail m i‖) * ‖f‖) := by
           gcongr
-          exact le_max_left _ _
-      _ ≤ max C 0 * R * ‖m 0‖ * ((max C 0 * R) ^ n * (∏ i, ‖Fin.tail m i‖) * ‖f‖) := by
-          gcongr
-      _ = (max C 0 * R) ^ (n + 1) * (∏ i, ‖m i‖) * ‖f‖ := by
+      _ = (C * R) ^ (n + 1) * (∏ i, ‖m i‖) * ‖f‖ := by
           rw [Fin.prod_univ_succ]
           simp only [Fin.tail]
           ring
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- A smooth compactly supported cutoff `θ` equal to `1` on the shell `a / 2 ≤ ‖η‖ ≤ c + 1` and
-vanishing near `0`, so that `θ η / ‖η‖²` is smooth as well. -/
-private theorem exists_annulus_cutoff {a : ℝ} (ha : 0 < a) (c : ℝ) :
-    ∃ θ : E → ℝ, ContDiff ℝ ∞ θ ∧ HasCompactSupport θ ∧ θ 0 = 0 ∧
-      ContDiff ℝ ∞ (fun η ↦ θ η / ‖η‖ ^ 2) ∧ ∀ η : E, a / 2 ≤ ‖η‖ → ‖η‖ ≤ c + 1 → θ η = 1 := by
-  set c' := max c a + 1
-  have hc' : 0 < c' := by positivity
-  set θ₁ : ContDiffBump (0 : E) := ⟨c', c' + 1, hc', by linarith⟩
-  set θ₂ : ContDiffBump (0 : E) := ⟨a / 3, a / 2, by positivity, by linarith⟩
-  have hθ : ContDiff ℝ ∞ fun η ↦ θ₁ η - θ₂ η := θ₁.contDiff.sub θ₂.contDiff
-  have h0 (η : E) (hη : η ∈ ball (0 : E) (a / 3)) : θ₁ η - θ₂ η = 0 := by
-    have h₁ : η ∈ closedBall (0 : E) c' :=
-      closedBall_subset_closedBall (by linarith [le_max_right c a]) (ball_subset_closedBall hη)
-    simp [θ₁.one_of_mem_closedBall h₁, θ₂.one_of_mem_closedBall (ball_subset_closedBall hη)]
-  refine ⟨fun η ↦ θ₁ η - θ₂ η, hθ, θ₁.hasCompactSupport.sub θ₂.hasCompactSupport,
-    h0 0 (mem_ball_self (by positivity)), contDiff_iff_contDiffAt.2 fun η ↦ ?_,
-    fun η h₂ h₁ ↦ ?_⟩
-  · -- Near `0` the quotient vanishes identically; elsewhere `‖η‖² ≠ 0`.
-    rcases eq_or_ne η 0 with rfl | hη
-    · refine (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq ?_
-      filter_upwards [ball_mem_nhds (0 : E) (by positivity : 0 < a / 3)] with x hx
-      simp [h0 x hx]
-    · exact hθ.contDiffAt.div (contDiff_norm_sq ℝ).contDiffAt
-        (pow_ne_zero _ (norm_ne_zero_iff.2 hη))
-  · have h₁' : η ∈ closedBall (0 : E) c' :=
-      mem_closedBall_zero_iff.2 (h₁.trans (by linarith [le_max_left c a]))
-    simp [θ₁.one_of_mem_closedBall h₁', θ₂.zero_of_le_dist (by rwa [dist_zero_right])]
 
 /-- **The reverse Bernstein identity.** Let the symbols `σᵢ` satisfy
 `∑ᵢ 2πi ⟪ξ, vᵢ⟫ σᵢ(ξ) = θ ξ`, where the multiplier with symbol `θ` fixes `f`. Then
@@ -252,18 +179,20 @@ omit [CompleteSpace F] in
 /-- The symbols of the reverse Bernstein inequality: if `q η = -θ η / (4π² ‖η‖²)` with `θ 0 = 0`,
 then `∑ᵢ 2πi ⟪ξ, bᵢ⟫ σᵢ(ξ) = θ (R⁻¹ • ξ)` for the dilated derivative symbols
 `σᵢ(ξ) = 2πi ⟪R⁻¹ • ξ, R⁻¹ • bᵢ⟫ q (R⁻¹ • ξ)`. -/
-private theorem sum_mul_derivSymbol_dilate {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E)
-    {θ : E → ℝ} (hθ0 : θ 0 = 0) {q : 𝓢(E, ℂ)}
+private theorem sum_mul_dilate_fourier_lineDerivOp_eq {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) {θ : E → ℝ} (hθ0 : θ 0 = 0) {q : 𝓢(E, ℂ)}
     (hq : ∀ η, q η = -(4 * (π : ℂ) ^ 2)⁻¹ * ((θ η / ‖η‖ ^ 2 : ℝ) : ℂ)) {R : ℝ} (hR : 0 < R)
     (ξ : E) :
-    ∑ i, 2 * π * Complex.I * (⟪ξ, b i⟫ * dilate hR.ne' (derivSymbol q (R⁻¹ • b i)) ξ) =
-      θ (R⁻¹ • ξ) := by
+    ∑ i, 2 * π * Complex.I *
+        (⟪ξ, b i⟫ * SchwartzMap.dilate hR.ne' (𝓕 (∂_{R⁻¹ • b i} (𝓕⁻ q))) ξ) = θ (R⁻¹ • ξ) := by
   have hsum : ∑ i, ((⟪ξ, b i⟫ : ℝ) : ℂ) ^ 2 = ((‖ξ‖ : ℝ) : ℂ) ^ 2 := by
     exact_mod_cast b.sum_sq_inner_left ξ
   have hterm (i : ι) :
-      2 * π * Complex.I * (⟪ξ, b i⟫ * dilate hR.ne' (derivSymbol q (R⁻¹ • b i)) ξ) =
+      2 * π * Complex.I * (⟪ξ, b i⟫ * SchwartzMap.dilate hR.ne' (𝓕 (∂_{R⁻¹ • b i} (𝓕⁻ q))) ξ) =
         (2 * π * Complex.I) ^ 2 * ((R : ℂ)⁻¹) ^ 2 * q (R⁻¹ • ξ) * ((⟪ξ, b i⟫ : ℝ) : ℂ) ^ 2 := by
-    simp only [dilate_apply, derivSymbol_apply, real_inner_smul_left, real_inner_smul_right]
+    simp only [SchwartzMap.dilate_apply, SchwartzMap.fourier_lineDerivOp_apply,
+      FourierTransform.fourier_fourierInv_eq, real_inner_smul_left, real_inner_smul_right,
+      smul_eq_mul]
     push_cast
     ring
   simp_rw [hterm, ← Finset.mul_sum, hsum, hq]
@@ -274,29 +203,39 @@ private theorem sum_mul_derivSymbol_dilate {ι : Type*} [Fintype ι] (b : Orthon
   have hπ : (π : ℂ) ≠ 0 := by exact_mod_cast Real.pi_ne_zero
   simp only [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hR.le)]
   push_cast
+  simp only [mul_pow, Complex.I_sq]
   field_simp
-  ring_nf
-  simp [Complex.I_sq]
+  ring
 
-/-- **The reverse Bernstein inequality.** Let `(bᵢ)` be an orthonormal basis of `E` and `0 < a`.
-There is `C`, depending only on `E`, `a` and `c`, such that whenever the Fourier transform of
-`f ∈ Lᵖ`, `1 ≤ p ≤ ∞`, vanishes outside the closed annulus `a R ≤ ‖ξ‖ ≤ c R`, `R > 0`, and the
-derivatives `∂_{bᵢ} f` are the `Lᵖ` functions `gᵢ`, then `‖f‖_p ≤ C R⁻¹ ∑ᵢ ‖gᵢ‖_p`. -/
-theorem exists_norm_le_sum_norm_of_lineDerivOp_eq {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) {a : ℝ} (ha : 0 < a) (c : ℝ) :
-    ∃ C : ℝ, ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {R : ℝ}, 0 < R → ∀ f : Lp F p (volume : Measure E),
+/-- **The reverse Bernstein inequality.** Let `0 < a`. There is `C ≥ 0`, depending only on `E`,
+`F`, `a` and `c`, such that for every orthonormal basis `(bᵢ)` of `E`, whenever the Fourier
+transform of `f ∈ Lᵖ`, `1 ≤ p ≤ ∞`, vanishes outside the closed annulus `a R ≤ ‖ξ‖ ≤ c R`, `R > 0`,
+and the derivatives `∂_{bᵢ} f` are the `Lᵖ` functions `gᵢ`, then `‖f‖_p ≤ C R⁻¹ ∑ᵢ ‖gᵢ‖_p`. -/
+theorem exists_norm_le_sum_norm_of_lineDerivOp_eq {a : ℝ} (ha : 0 < a) (c : ℝ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E) {p : ℝ≥0∞}
+      [Fact (1 ≤ p)] {R : ℝ}, 0 < R → ∀ f : Lp F p (volume : Measure E),
       IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) {ξ | a * R ≤ ‖ξ‖ ∧ ‖ξ‖ ≤ c * R}ᶜ →
       ∀ g : ι → Lp F p (volume : Measure E), (∀ i, ∂_{b i} (f : 𝓢'(E, F)) = g i) →
       ‖f‖ ≤ C * R⁻¹ * ∑ i, ‖g i‖ := by
-  obtain ⟨θ, hθ, hθc, hθ0, hq, hθ1⟩ := exists_annulus_cutoff (E := E) ha c
-  set θS := ofRealSchwartz hθc hθ
+  obtain ⟨θ, hθ, hθc, hθ0, hθ1⟩ :=
+    TauCeti.exists_contDiff_annulus_cutoff (E := E) (by positivity : 0 < a / 2) (c + 1)
+  -- Since `θ` vanishes near `0`, the quotient `θ η / ‖η‖²` is smooth.
+  have hq : ContDiff ℝ ∞ (fun η ↦ θ η / ‖η‖ ^ 2) := contDiff_iff_contDiffAt.2 fun η ↦ by
+    rcases eq_or_ne η 0 with rfl | hη
+    · refine (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq ?_
+      filter_upwards [hθ0] with x hx
+      simp [hx]
+    · exact hθ.contDiffAt.div (contDiff_norm_sq ℝ).contDiffAt
+        (pow_ne_zero _ (norm_ne_zero_iff.2 hη))
   have hqc : HasCompactSupport fun η ↦ θ η / ‖η‖ ^ 2 :=
     hθc.mono fun η hη h ↦ hη (by simp [h])
-  set qS : 𝓢(E, ℂ) := (-(4 * (π : ℂ) ^ 2)⁻¹) • ofRealSchwartz hqc hq
+  set θS : 𝓢(E, ℂ) := (hθc.toSchwartzMap hθ).postcompCLM Complex.ofRealCLM
+  set qS : 𝓢(E, ℂ) :=
+    (-(4 * (π : ℂ) ^ 2)⁻¹) • (hqc.toSchwartzMap hq).postcompCLM Complex.ofRealCLM
   set C := ∫ x, ‖fderiv ℝ ⇑(𝓕⁻ qS : 𝓢(E, ℂ)) x‖
-  refine ⟨C, fun {p} _ {R} hR f hf g hg ↦ ?_⟩
-  set θR := dilate hR.ne' θS
-  set σ : ι → 𝓢(E, ℂ) := fun i ↦ dilate hR.ne' (derivSymbol qS (R⁻¹ • b i))
+  refine ⟨C, integral_nonneg fun _ ↦ norm_nonneg _, fun {ι} _ b {p} _ {R} hR f hf g hg ↦ ?_⟩
+  set θR := SchwartzMap.dilate hR.ne' θS
+  set σ : ι → 𝓢(E, ℂ) := fun i ↦ SchwartzMap.dilate hR.ne' (𝓕 (∂_{R⁻¹ • b i} (𝓕⁻ qS)))
   -- `f` is reproduced by `θ (R⁻¹ •)`, which is `1` near the annulus `a R ≤ ‖ξ‖ ≤ c R`.
   have hrep : fourierMultiplierCLM F θR (f : 𝓢'(E, F)) = f := by
     refine fourierMultiplierCLM_eq_self_of_isVanishingOn θR.hasTemperateGrowth hf ?_
@@ -316,16 +255,17 @@ theorem exists_norm_le_sum_norm_of_lineDerivOp_eq {ι : Type*} [Fintype ι]
     have h₂ : a / 2 ≤ ‖R⁻¹ • ξ‖ := by
       rw [hn, le_inv_mul_iff₀ hR]
       exact (mul_comm _ _).trans_le hξ.1.le
-    simp [θR, dilate_apply, θS, ofRealSchwartz_apply, hθ1 _ h₂ h₁]
+    simp [θR, θS, hθ1 _ h₂ h₁]
   have hsymb (ξ : E) : ∑ i, 2 * π * Complex.I * (⟪ξ, b i⟫ * σ i ξ) = θR ξ := by
-    rw [sum_mul_derivSymbol_dilate b hθ0 (fun η ↦ ?_) hR ξ]
-    · simp [θR, dilate_apply, θS, ofRealSchwartz_apply]
-    · simp [qS, ofRealSchwartz_apply]
+    rw [sum_mul_dilate_fourier_lineDerivOp_eq b hθ0.self_of_nhds (fun η ↦ ?_) hR ξ]
+    · simp [θR, θS]
+    · simp [qS]
   refine (norm_le_sum_of_sum_mul_eq (fun i ↦ b i) θR σ hsymb f hrep g hg).trans ?_
   rw [Finset.mul_sum]
   refine Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
-  rw [integral_norm_fourierInv_dilate]
-  refine (integral_norm_fourierInv_derivSymbol_le qS _).trans_eq ?_
+  rw [SchwartzMap.integral_norm_fourierInv_dilate, ← SchwartzMap.fourierInv_coe,
+    FourierTransform.fourierInv_fourier_eq]
+  refine (SchwartzMap.integral_norm_lineDerivOp_le _ _).trans_eq ?_
   rw [norm_smul, b.orthonormal.1 i, mul_one, Real.norm_of_nonneg (inv_nonneg.2 hR.le)]
 
 end TemperedDistribution

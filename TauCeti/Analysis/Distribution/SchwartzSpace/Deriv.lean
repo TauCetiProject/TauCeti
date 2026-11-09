@@ -16,6 +16,8 @@ Directional derivatives of a Schwartz function commute, since its second derivat
 The partial derivatives of the coordinates of a Schwartz function valued in Euclidean space are
 the coordinates of its line derivatives.
 On the plane `ℂ`, the Laplacian is the sum of the second derivatives along `1` and `I`.
+The `L¹` norm of `∂_m f` is at most `‖m‖` times that of the derivative of `f`
+(`SchwartzMap.integral_norm_lineDerivOp_le`).
 
 Applying a continuous real-linear map to the values of a Schwartz function commutes with
 directional differentiation, and hence with the Laplacian. In particular, real and imaginary
@@ -97,6 +99,18 @@ theorem fderiv_apply_eq_lineDerivOp_apply {ι : Type*} [Fintype ι]
   have hp := ((EuclideanSpace.proj i).hasFDerivAt.comp x f.differentiableAt.hasFDerivAt).fderiv
   simpa [Function.comp_def, lineDerivOp_apply_eq_fderiv] using
     congrArg (fun L : V →L[ℝ] ℝ ↦ L v) hp
+
+open MeasureTheory in
+/-- The `L¹` norm of the directional derivative `∂_m f` of a Schwartz function is at most
+`‖m‖` times the `L¹` norm of its derivative. -/
+theorem integral_norm_lineDerivOp_le [MeasurableSpace V] [BorelSpace V]
+    [SecondCountableTopology V] {μ : Measure V} [μ.HasTemperateGrowth] (f : 𝓢(V, F)) (m : V) :
+    ∫ x, ‖∂_{m} f x‖ ∂μ ≤ (∫ x, ‖fderiv ℝ f x‖ ∂μ) * ‖m‖ := by
+  refine (integral_mono (integrable _).norm
+    ((fderivCLM ℝ V F f).integrable.norm.mul_const _) fun x ↦ ?_).trans_eq
+    (integral_mul_const _ _)
+  rw [lineDerivOp_apply_eq_fderiv]
+  exact (fderiv ℝ f x).le_opNorm m
 
 open Laplacian in
 /-- **The Laplacian on the plane in coordinates**: `Δ f = ∂₁² f + ∂₂² f` for a Schwartz function

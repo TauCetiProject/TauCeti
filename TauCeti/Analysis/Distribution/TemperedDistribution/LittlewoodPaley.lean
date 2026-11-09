@@ -255,11 +255,10 @@ theorem exists_littlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] :
     · exact (φ.integral_norm_fourierInv_inhomogeneousLittlewoodPaley_succ j).le.trans
         (le_max_right _ _)
   -- The symbol `ψⱼ` is smooth and compactly supported, hence a Schwartz function.
-  have hσ := (φ.hasCompactSupport_inhomogeneousLittlewoodPaley j).comp_left Complex.ofReal_zero
-  set σ : 𝓢(E, ℂ) :=
-    hσ.toSchwartzMap (Complex.ofRealCLM.contDiff.comp (φ.contDiff_inhomogeneousLittlewoodPaley j))
+  set σ : 𝓢(E, ℂ) := ((φ.hasCompactSupport_inhomogeneousLittlewoodPaley j).toSchwartzMap
+    (φ.contDiff_inhomogeneousLittlewoodPaley j)).postcompCLM Complex.ofRealCLM
   have hσ_coe : (σ : E → ℂ) = fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
-    funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+    funext fun ξ ↦ by simp [σ]
   obtain ⟨g, hg, hgf⟩ := exists_fourierMultiplierCLM_eq_and_norm_le σ f
   rw [hσ_coe] at hg hgf
   exact ⟨g, hg, hgf.trans (mul_le_mul_of_nonneg_right hK (norm_nonneg f))⟩
