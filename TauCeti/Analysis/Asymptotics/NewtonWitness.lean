@@ -109,40 +109,50 @@ private theorem isNewtonWitness_of_le_mul_rpow {C L δ ε R h q p a b e Kc Kl Ke
   have hKe : 0 ≤ Ke * h ^ e := hε₀.trans hε
   -- Each product of the constants is at most the corresponding product of the rates, which is
   -- a single power of `h` (times `h ^ a` when it is compared with `δ`).
-  have hpow (x y : ℝ) : h ^ x * h ^ y = h ^ (x + y) := (Real.rpow_add hh x y).symm
   have e₁ : C ^ 2 * L * ε ≤ Kc ^ 2 * Kl * Ke * h ^ (e - 2 * q - p) := by
     calc C ^ 2 * L * ε ≤ (Kc * h ^ (-q)) ^ 2 * (Kl * h ^ (-p)) * (Ke * h ^ e) := by
           gcongr
       _ = Kc ^ 2 * Kl * Ke * (h ^ (-q) * h ^ (-q) * h ^ (-p) * h ^ e) := by ring
       _ = Kc ^ 2 * Kl * Ke * h ^ (e - 2 * q - p) := by
-          rw [hpow, hpow, hpow]
-          ring_nf
+          rw [← Real.rpow_add hh, ← Real.rpow_add hh, ← Real.rpow_add hh]
+          congr 2
+          ring
   have e₂ : C * ε ≤ Kc * Ke * h ^ (e - q - a) * h ^ a := by
     calc C * ε ≤ Kc * h ^ (-q) * (Ke * h ^ e) := by gcongr
       _ = Kc * Ke * (h ^ (-q) * h ^ e) := by ring
       _ = Kc * Ke * h ^ (e - q - a) * h ^ a := by
-          rw [hpow, mul_assoc (Kc * Ke), hpow]
-          ring_nf
+          rw [mul_assoc (Kc * Ke) (h ^ (e - q - a)), ← Real.rpow_add hh, ← Real.rpow_add hh]
+          congr 2
+          ring
   have e₃ : ε * R ≤ Ke * Kr * h ^ (e - a - b) * h ^ a := by
     calc ε * R ≤ Ke * h ^ e * (Kr * h ^ (-b)) := by gcongr
       _ = Ke * Kr * (h ^ e * h ^ (-b)) := by ring
       _ = Ke * Kr * h ^ (e - a - b) * h ^ a := by
-          rw [hpow, mul_assoc (Ke * Kr), hpow]
-          ring_nf
+          rw [mul_assoc (Ke * Kr) (h ^ (e - a - b)), ← Real.rpow_add hh, ← Real.rpow_add hh]
+          congr 2
+          ring
   have e₄ : C * L * (ε * R) ≤ Kc * Kl * Ke * Kr * h ^ (e - q - p - b) := by
     calc C * L * (ε * R) ≤
           Kc * h ^ (-q) * (Kl * h ^ (-p)) * (Ke * h ^ e * (Kr * h ^ (-b))) := by
           gcongr
       _ = Kc * Kl * Ke * Kr * (h ^ (-q) * h ^ (-p) * h ^ e * h ^ (-b)) := by ring
       _ = Kc * Kl * Ke * Kr * h ^ (e - q - p - b) := by
-          rw [hpow, hpow, hpow]
-          ring_nf
+          rw [← Real.rpow_add hh, ← Real.rpow_add hh, ← Real.rpow_add hh]
+          congr 2
+          ring
   have t₂ := mul_lt_mul_of_pos_right t₂ ha
   have t₃ := mul_lt_mul_of_pos_right t₃ ha
   have hCL : 0 < 2 * C * L := by positivity
   refine ⟨by linarith, by linarith, lt_min (by linarith) ?_⟩
   rw [← one_div, lt_div_iff₀ hCL]
   linarith
+
+/-- Near `0⁺`, a positive power of `h` with any coefficient is below any positive constant. -/
+private theorem eventually_mul_rpow_lt {θ : ℝ} (hθ : 0 < θ) (A : ℝ) {c : ℝ} (hc : 0 < c) :
+    ∀ᶠ h in 𝓝[>] (0 : ℝ), A * h ^ θ < c := by
+  have ht := (Real.continuousAt_rpow_const 0 θ (Or.inr hθ.le)).tendsto.const_mul A
+  rw [Real.zero_rpow hθ.ne', mul_zero] at ht
+  exact (ht.mono_left nhdsWithin_le_nhds).eventually (gt_mem_nhds hc)
 
 variable {ι : Type*} {C L δ : ι → ℝ → ℝ} {q p a b Kc Kl k : ℝ}
 
@@ -159,12 +169,6 @@ theorem eventually_forall_isNewtonWitness {ε R : ι → ℝ → ℝ} {e Ke Kr :
     (hR : ∀ᶠ h in 𝓝[>] 0, ∀ i, 0 ≤ R i h ∧ R i h ≤ Kr * h ^ (-b))
     (h₁ : 2 * q + p < e) (h₂ : q + a < e) (h₃ : a + b < e) (h₄ : q + p + b < e) :
     ∀ᶠ h in 𝓝[>] 0, ∀ i, IsNewtonWitness (C i h) (L i h) (δ i h) (ε i h) (R i h) := by
-  -- Near `0⁺`, a positive power of `h` with any coefficient is below any positive constant.
-  have eventually_mul_rpow_lt {θ : ℝ} (hθ : 0 < θ) (A : ℝ) {c : ℝ} (hc : 0 < c) :
-      ∀ᶠ h in 𝓝[>] (0 : ℝ), A * h ^ θ < c := by
-    have ht := (Real.continuousAt_rpow_const 0 θ (Or.inr hθ.le)).tendsto.const_mul A
-    rw [Real.zero_rpow hθ.ne', mul_zero] at ht
-    exact (ht.mono_left nhdsWithin_le_nhds).eventually (gt_mem_nhds hc)
   filter_upwards [hC, hL, hδ, hε, hR, self_mem_nhdsWithin,
     eventually_mul_rpow_lt (θ := e - 2 * q - p) (by linarith) (2 * Kc ^ 2 * Kl * Ke)
       (c := 1 / 4) (by norm_num),
