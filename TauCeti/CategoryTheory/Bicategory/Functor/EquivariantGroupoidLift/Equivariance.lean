@@ -138,10 +138,13 @@ private lemma actInverseIso_hom_app_comp_transportId_comp_map_counit {p : Γ}
       Cat.Hom.id_toFunctor] at h
     erw [comparisonNaturality_hom_app, N.comparison_naturality_hom_app] at h
     exact h
+  -- `erw`: the goal lives in the joint fiber `N.toLift.jointFiber p`, which is only
+  -- definitionally equal to `fiber actions p` (the type of `hh`), so `rw` cannot match `hh`.
   erw [← Category.assoc, hh, Category.assoc, ← Functor.map_comp]
   have hi : (N.toLift.fiberEquivalence p).counitInv.app x ≫
       (N.toLift.fiberEquivalence p).counit.app x = 𝟙 x :=
     (N.toLift.fiberEquivalence p).counitIso.inv_hom_id_app x
+  -- `erw`: same joint-fiber versus `fiber actions p` defeq as above.
   erw [hi, (act actions p a).map_id, Category.comp_id]
 
 /-- The canonical comparison with reconstructed transport commutes with every prescribed
