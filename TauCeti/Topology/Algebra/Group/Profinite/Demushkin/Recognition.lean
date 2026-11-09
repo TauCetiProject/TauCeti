@@ -127,7 +127,7 @@ theorem natCard_H2_sq_le_natCard_H2_ker (χ : G →ₜ* Multiplicative (ZMod p))
   have h3 : ∀ (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
       [DistribMulAction G A] [ContinuousSMul G A], (∀ a : A, p • a = 0) →
       Subsingleton (continuousCohomology 3 (ofDiscreteModule ℤ G A)) := fun A _ _ _ _ _ hA ↦
-    cohomologicalDimensionLE_iff.mp hcd A (isPPrimaryTorsion_iff.2 fun a ↦ ⟨1, by rw [pow_one, hA]⟩)
+    cohomologicalDimensionLE_iff.mp hcd A (fun a ↦ ⟨1, by rw [pow_one, hA]⟩)
       3 (by norm_num)
   have : ContinuousSMul G (ULift.{u} (ZMod p)) :=
     ⟨continuous_snd.congr fun q ↦ ULift.ext (htriv q.1 q.2.down).symm⟩

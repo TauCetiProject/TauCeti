@@ -214,8 +214,7 @@ theorem exists_iterate_pairHoms {k m : ℕ} {R : Fin k → Set A}
       Fin.append R (Fin.append W fun _ : Fin m ↦ ({1} : Set A)) (Fin.natAdd k j) =
         Fin.append (fun i ↦ algebraMap A (Completion (weightedRestrictedSubring R hR)) '' W i)
           (fun _ : Fin m ↦ ({1} : Set (Completion (weightedRestrictedSubring R hR)))) j :=
-    fun j ↦ Fin.addCases (fun i ↦ by simp)
-      (fun i ↦ by simp only [Fin.append_right, Set.image_singleton, map_one]) j
+    image_algebraMap_append_append_weights R W
   refine ⟨U.iterateSplitHom hR hWD hZ hRZ hZW,
     (U.iterateJoinHom hR hWD hZ hRZ hZW).comp
       ((U.weighted hR).completion.weightedCompletionHom hWD),

@@ -47,15 +47,12 @@ namespace IsLocalDiffeomorphOn
 
 /-- The image of an open set under a local diffeomorphism on that set is open. -/
 theorem isOpen_image (hf : IsLocalDiffeomorphOn I J n f s) (hs : IsOpen s) :
-    IsOpen (f '' s) := by
-  apply isOpen_iff_mem_nhds.mpr
-  rintro _ ⟨x, hx, rfl⟩
-  rw [← hf.isLocalHomeomorphOn.map_nhds_eq hx]
-  exact Filter.image_mem_map (hs.mem_nhds hx)
+    IsOpen (f '' s) :=
+  isOpen_iff_mem_nhds.2 <| forall_mem_image.2 fun _ hx ↦
+    hf.isLocalHomeomorphOn.map_nhds_eq hx ▸ image_mem_map (hs.mem_nhds hx)
 
 variable [Nonempty M]
 
--- The inverse proof adapts `TauCeti.Manifold.IsNormalDomain.contMDiffOn_riemannianLog`.
 /-- The inverse of a local diffeomorphism injective on an open set is `C^n` on its image.
 The values chosen outside the image impose no regularity requirement. -/
 theorem contMDiffOn_invFunOn (hf : IsLocalDiffeomorphOn I J n f s)
@@ -63,16 +60,13 @@ theorem contMDiffOn_invFunOn (hf : IsLocalDiffeomorphOn I J n f s)
     ContMDiffOn J I n (invFunOn f s) (f '' s) := by
   rintro _ ⟨x, hx, rfl⟩
   let h := hf ⟨x, hx⟩
-  have hmem : ∀ᶠ y in 𝓝 (f x), h.localInverse y ∈ s := by
-    have heq := h.localInverse_left_inv h.localInverse_mem_target
-    exact h.contMDiffAt_localInverse.continuousAt.eventually
-      (heq.symm ▸ hs.mem_nhds hx)
-  apply (h.contMDiffAt_localInverse.congr_of_eventuallyEq ?_).contMDiffWithinAt
-  filter_upwards [hmem, h.localInverse.open_source.mem_nhds h.localInverse_mem_source]
-    with y hys hy
-  have hfy := h.localInverse_right_inv hy
-  have hyimage : ∃ z ∈ s, f z = y := ⟨h.localInverse y, hys, hfy⟩
-  exact hinj (invFunOn_mem hyimage) hys ((invFunOn_eq hyimage).trans hfy.symm)
+  have hmem : s ∈ 𝓝 (h.localInverse (f x)) := by
+    rw [h.localInverse_left_inv h.localInverse_mem_target]
+    exact hs.mem_nhds hx
+  refine (h.contMDiffAt_localInverse.congr_of_eventuallyEq ?_).contMDiffWithinAt
+  filter_upwards [h.continuousAt_localInverse.eventually_mem hmem,
+    h.localInverse_open_source.mem_nhds h.localInverse_mem_source] with y hys hy
+  rw [← hinj.leftInvOn_invFunOn hys, h.localInverse_right_inv hy]
 
 /-- A local diffeomorphism injective on an open set, packaged as a partial diffeomorphism
 with that source and its actual image as target. No global injectivity is needed. -/
