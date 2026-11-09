@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.ZLattice.Cylinder
 public import TauCeti.Algebra.Module.ZLattice.Quotient
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Arnold
 import TauCeti.Topology.Algebra.Module.CompactQuotient
 
 /-!
-# Compact regular components are Liouville tori
+# Regular components are cylinders, and compact ones are Liouville tori
 
 Let `σ` be a symplectic form on a `2n`-dimensional boundaryless manifold `M` and let
 `F : M → (ι → ℝ)` be `n` smooth, pairwise Poisson-commuting functions whose Hamiltonian vector
@@ -18,15 +19,18 @@ fields are complete, with the conventions `ι_{X_f} σ = df` and `{f, g} = σ(X_
 
 The Hamiltonian flow action identifies a regular connected component `L` of a common level
 with the quotient of `ι → ℝ` by its discrete stabilizer `Λ`
-(`TauCeti.SmoothTwoForm.IsSymplectic.quotientHamiltonianFlowStabilizerHomeomorph`). If `L` is
-compact, this quotient is compact, so `Λ` spans `ι → ℝ` and is a full lattice. A lattice basis
-then identifies `L` with the torus `(ℝ / ℤ)ⁿ`.
+(`TauCeti.SmoothTwoForm.IsSymplectic.quotientHamiltonianFlowStabilizerHomeomorph`). Without any
+compactness, `Λ` is a free abelian group of some rank `r ≤ n`, and `L` is homeomorphic to the
+cylinder `(ℝ / ℤ)ʳ × ℝⁿ⁻ʳ`. If `L` is compact, the quotient is compact, so `Λ` spans `ι → ℝ` and
+is a full lattice. A lattice basis then identifies `L` with the torus `(ℝ / ℤ)ⁿ`.
 
 Other components of the level need not be regular. The smooth identification and action-angle
 coordinates near `L` are not treated here.
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.IsSymplectic.nonempty_homeomorph_unitAddTorus_prod`: a regular component
+  of a level whose stabilizer has rank `r` is homeomorphic to `(ℝ / ℤ)ʳ × ℝⁿ⁻ʳ`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.span_hamiltonianFlowStabilizer_eq_top`: the stabilizer of a
   point of a compact regular component spans `ι → ℝ`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.nonempty_homeomorph_unitAddTorus`: a compact regular
@@ -59,6 +63,27 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   (hcomm : ∀ i j x, σ.poissonBracket (F · i) (F · j) x = 0)
   (hc : ∀ i, IsCompleteVectorField (σ.hamiltonianVectorField (F · i)))
   {x : M}
+
+/-- **Regular components are cylinders.** Let `F` be a family of `n` Poisson-commuting functions
+with complete Hamiltonian vector fields on a `2n`-dimensional symplectic manifold. If the
+connected component of `x` in its common level `F⁻¹(F x)` consists of regular points of `F`, and
+the stabilizer of `x` in the Hamiltonian flow action has rank `r`, then this component is
+homeomorphic to `(ℝ / ℤ)ʳ × ℝⁿ⁻ʳ`. No compactness is assumed. -/
+theorem nonempty_homeomorph_unitAddTorus_prod
+    (hreg : ∀ y ∈ connectedComponentIn (F ⁻¹' {F x}) x, IsRegularPoint I 𝓘(ℝ, ι → ℝ) F y)
+    (hdim : 2 * Fintype.card ι = finrank ℝ E) :
+    Nonempty (connectedComponentIn (F ⁻¹' {F x}) x ≃ₜ
+      UnitAddTorus (Fin (finrank ℤ (hσ.hamiltonianFlowStabilizer hF hcomm hc x).toIntSubmodule)) ×
+        (Fin (Fintype.card ι -
+          finrank ℤ (hσ.hamiltonianFlowStabilizer hF hcomm hc x).toIntSubmodule) → ℝ)) := by
+  have : DiscreteTopology (hσ.hamiltonianFlowStabilizer hF hcomm hc x) :=
+    hσ.discreteTopology_hamiltonianFlowStabilizer hF hcomm hc
+      (hreg x (mem_connectedComponentIn (by simp)))
+  obtain ⟨e⟩ := AddSubgroup.nonempty_quotient_continuousAddEquiv_unitAddTorus_prod
+    (hσ.hamiltonianFlowStabilizer hF hcomm hc x)
+  rw [finrank_fintype_fun_eq_card] at e
+  exact ⟨(hσ.quotientHamiltonianFlowStabilizerHomeomorph hF hcomm hc hdim hreg).symm.trans
+    e.toHomeomorph⟩
 
 /-- **The period lattice of a compact regular component has full rank.** If the connected
 component of `x` in its common level is compact and consists of regular points, then the stabilizer
