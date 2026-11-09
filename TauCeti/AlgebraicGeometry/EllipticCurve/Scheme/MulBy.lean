@@ -65,9 +65,9 @@ over every point is the spectrum of an algebra of dimension `n²` over its resid
 * `WeierstrassCurve.comp_projModelMulBy_eq_homMk_zpow_left`: for a section `P` of the projective
   model, `nP` is the `n`-th power of `P` bundled as a morphism of `Over (Spec R)`.
 * `WeierstrassCurve.comp_projModelMulBy_add`, `WeierstrassCurve.comp_projModelMulBy_two` and
-  `WeierstrassCurve.comp_projModelMulBy_add_one_eq_projModelZero_iff`: for a section `P` of the
-  projective model, `(m + n)P` is `mP + nP` through the addition morphism, `2P` is `P + P`, and
-  `(n + 1)P = 0` exactly when `nP = -P`.
+  `WeierstrassCurve.comp_projModelMulBy_add_one_eq_projModelZero_iff`: for a morphism `P` to the
+  projective model, `(m + n)P` is `mP + nP` through the addition morphism and `2P` is `P + P`;
+  for a section `P`, `(n + 1)P = 0` exactly when `nP = -P`.
 * `WeierstrassCurve.projModelPointsEquiv_symm_projModelBaseChange_projModelMulBy`: `[n]` sends the
   point with values in a field `L` of a point `P` of `W` over `L` to that of `n • P`;
   `WeierstrassCurve.projModelPoint_projModelMulBy_of_zsmul_some` and
@@ -202,24 +202,29 @@ theorem comp_projModelMulBy_eq_homMk_zpow_left (hP : P ≫ W.projModelOver = �
   -- the underlying morphism of `Over.homMk P _` is `P` by definition
   rfl
 
-/-- **Multiplication by a sum on a section.** For a section `P` of the projective model, the
-`(m + n)`-th multiple of `P` is the sum of its `m`-th and `n`-th multiples, computed by the
-addition morphism. -/
-theorem comp_projModelMulBy_add (hP : P ≫ W.projModelOver = 𝟙 _) (m n : ℤ) :
+/-- **Multiplication by a sum.** For a morphism `P` to the projective model (for instance a
+section), the `(m + n)`-th multiple of `P` is the sum of its `m`-th and `n`-th multiples, computed
+by the addition morphism. -/
+theorem comp_projModelMulBy_add (m n : ℤ) :
     P ≫ W.projModelMulBy (m + n) =
       pullback.lift (P ≫ W.projModelMulBy m) (P ≫ W.projModelMulBy n) (by simp) ≫
         W.additionMorphism := by
-  simp only [comp_projModelMulBy_eq_homMk_zpow_left hP, zpow_add, Hom.mul_def, Over.comp_left,
-    Over.lift_left, mul_projModelOver_left]
-  -- the two sides differ only in the proof of the condition of `pullback.lift`
-  rfl
+  have h : W.projModelMulBy (m + n) =
+      pullback.lift (W.projModelMulBy m) (W.projModelMulBy n) (by simp) ≫
+        W.additionMorphism := by
+    simp only [projModelMulBy, zpow_add, Hom.mul_def, Over.comp_left, Over.lift_left,
+      mul_projModelOver_left]
+    rfl
+  rw [h, ← Category.assoc]
+  congr 1
+  ext <;> simp
 
-/-- **Doubling a section.** For a section `P` of the projective model, `2P` is the addition
-morphism at the pair `(P, P)`. -/
-theorem comp_projModelMulBy_two (hP : P ≫ W.projModelOver = 𝟙 _) :
+/-- **Doubling.** For a morphism `P` to the projective model (for instance a section), `2P` is the
+addition morphism at the pair `(P, P)`. -/
+theorem comp_projModelMulBy_two :
     P ≫ W.projModelMulBy 2 = pullback.lift P P rfl ≫ W.additionMorphism := by
-  rw [show (2 : ℤ) = 1 + 1 by norm_num, comp_projModelMulBy_add hP]
-  simp only [comp_projModelMulBy_eq_homMk_zpow_left hP, zpow_one, Over.homMk_left]
+  rw [show (2 : ℤ) = 1 + 1 by norm_num, comp_projModelMulBy_add]
+  simp [projModelMulBy]
 
 /-- For a section `P` of the projective model, `(n + 1)P = 0` exactly when `nP = -P`. -/
 theorem comp_projModelMulBy_add_one_eq_projModelZero_iff (hP : P ≫ W.projModelOver = 𝟙 _)
