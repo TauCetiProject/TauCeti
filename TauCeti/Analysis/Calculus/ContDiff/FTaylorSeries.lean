@@ -1,11 +1,13 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import TauCeti.Analysis.Calculus.FDeriv.ClosedCover
 public import TauCeti.Analysis.Calculus.FDeriv.Submodule
 public import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 public import Mathlib.Analysis.Calculus.UniformLimitsDeriv
@@ -164,3 +166,105 @@ theorem LinearIsometry.exists_hasFTaylorSeriesUpTo_of_comp (i : E →ₗᵢ[𝕜
   · intro m hm
     exact (J m).comp_continuous_iff.mp
       (by simpa only [Function.comp_def, hJp m hm] using hq.cont m hm)
+
+section ClosedCoverOperations
+
+open scoped BigOperators
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Matching values and one common Taylor series glue across two closed sets at every allowed
+Taylor order. -/
+theorem _root_.HasFTaylorSeriesUpToOn.union_of_isClosed {k : ℕ∞ω} {f : E → F}
+    {p : E → FormalMultilinearSeries 𝕜 E F} {s t : Set E}
+    (hfs : HasFTaylorSeriesUpToOn k f p s)
+    (hft : HasFTaylorSeriesUpToOn k f p t)
+    (hs : IsClosed s) (ht : IsClosed t) (hcover : s ∪ t = univ) :
+    HasFTaylorSeriesUpToOn k f p (s ∪ t) := by
+  classical
+  constructor
+  · intro x hx
+    exact hx.elim (hfs.zero_eq x) (hft.zero_eq x)
+  · intro m hm x _
+    exact (TauCeti.hasFDerivAt_of_isClosed_of_union_eq_univ hs ht hcover
+      (fun hx ↦ hfs.fderivWithin m hm x hx)
+      (fun hx ↦ hft.fderivWithin m hm x hx)).hasFDerivWithinAt
+  · intro m hm
+    exact (hfs.cont m hm).union_of_isClosed (hft.cont m hm) hs ht
+
+/-- A finite sum of functions with Taylor series has the finite sum series on the same set. -/
+theorem _root_.HasFTaylorSeriesUpToOn.sum {k : ℕ∞ω} {ι : Type*} {u : Finset ι}
+    {f : ι → E → F} {p : ι → E → FormalMultilinearSeries 𝕜 E F} {s : Set E}
+    (hf : ∀ i ∈ u, HasFTaylorSeriesUpToOn k (f i) (p i) s) :
+    HasFTaylorSeriesUpToOn k (fun x ↦ ∑ i ∈ u, f i x)
+      (fun x m ↦ ∑ i ∈ u, p i x m) s := by
+  constructor
+  · intro x hx
+    simp only [ContinuousMultilinearMap.curry0_apply, sum_apply]
+    exact Finset.sum_congr rfl (fun i hi ↦ (hf i hi).zero_eq x hx)
+  · intro m hm x hx
+    have hder : HasFDerivWithinAt (fun y ↦ ∑ i ∈ u, p i y m)
+        (∑ i ∈ u, (p i x m.succ).curryLeft) s x :=
+      HasFDerivWithinAt.fun_sum (fun i hi ↦ (hf i hi).fderivWithin m hm x hx)
+    apply hder.congr_fderiv
+    ext v w
+    simp only [ContinuousMultilinearMap.curryLeft_apply, sum_apply]
+  · intro m hm
+    exact continuousOn_finsetSum u (fun i hi ↦ (hf i hi).cont m hm)
+
+/-- Constant scalar multiplication scales every term of a within-set Taylor series. -/
+theorem _root_.HasFTaylorSeriesUpToOn.const_smul {k : ℕ∞ω} {f : E → F}
+    {p : E → FormalMultilinearSeries 𝕜 E F} {s : Set E}
+    (hf : HasFTaylorSeriesUpToOn k f p s) (c : 𝕜) :
+    HasFTaylorSeriesUpToOn k (fun x ↦ c • f x) (fun x m ↦ c • p x m) s := by
+  constructor
+  · intro x hx
+    simpa only [ContinuousMultilinearMap.curry0_apply, smul_apply] using
+      congrArg (fun v : F ↦ c • v) (hf.zero_eq x hx)
+  · intro m hm x hx
+    have hder : HasFDerivWithinAt (fun y ↦ c • p y m)
+        (c • (p x m.succ).curryLeft) s x :=
+      (hf.fderivWithin m hm x hx).const_smul c
+    apply hder.congr_fderiv
+    ext v w
+    simp only [ContinuousMultilinearMap.curryLeft_apply, smul_apply]
+  · intro m hm
+    exact (hf.cont m hm).const_smul c
+
+/-- Piecewise functions on two closed sets covering the space are Cᵏ when all boundary Taylor
+terms through order k agree. -/
+theorem _root_.HasFTaylorSeriesUpToOn.contDiff_piecewise {k : ℕ∞} {f g : E → F}
+    {p q : E → FormalMultilinearSeries 𝕜 E F} {s t : Set E}
+    [DecidablePred (· ∈ s)]
+    (hf : HasFTaylorSeriesUpToOn k f p s) (hg : HasFTaylorSeriesUpToOn k g q t)
+    (hs : IsClosed s) (ht : IsClosed t) (hcover : s ∪ t = univ)
+    (hmatch : ∀ x ∈ s ∩ t, ∀ m : ℕ, m ≤ k → p x m = q x m) :
+    ContDiff 𝕜 k (s.piecewise f g) := by
+  classical
+  let r : E → FormalMultilinearSeries 𝕜 E F := s.piecewise p q
+  have hvalue (x : E) (hx : x ∈ s ∩ t) : f x = g x := by
+    rw [← hf.zero_eq x hx.1, ← hg.zero_eq x hx.2, hmatch x hx 0 (by simp)]
+  have hf' : HasFTaylorSeriesUpToOn k (s.piecewise f g) r s := by
+    apply (hf.congr (fun x hx ↦ by simp [hx])).congr_series
+    intro m hm x hx
+    simp [r, hx]
+  have hg' : HasFTaylorSeriesUpToOn k (s.piecewise f g) r t := by
+    have hfunction : HasFTaylorSeriesUpToOn k (s.piecewise f g) q t := by
+      apply hg.congr
+      intro x hx
+      by_cases hxs : x ∈ s
+      · simpa only [Set.piecewise_eq_of_mem s f g hxs] using hvalue x ⟨hxs, hx⟩
+      · simp [hxs]
+    apply hfunction.congr_series
+    intro m hm x hx
+    by_cases hxs : x ∈ s
+    · simpa only [r, Set.piecewise_eq_of_mem s p q hxs] using
+        (hmatch x ⟨hxs, hx⟩ m (by exact_mod_cast hm)).symm
+    · simp [r, hxs]
+  have hglobal := hf'.union_of_isClosed hg' hs ht hcover
+  rw [hcover] at hglobal
+  exact contDiffOn_univ.mp hglobal.contDiffOn
+
+end ClosedCoverOperations
