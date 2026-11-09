@@ -270,8 +270,10 @@ theorem range_closedOrbit_inter_preimage_proj (t : ℝ) :
     exact ⟨(mk_mem_range_closedOrbit_iff h).2 ⟨j, rfl⟩, mem_range_self _⟩
 
 omit [Fact (0 < (d : ℝ))] in
-/-- The closed orbit of `x` meets each fibre of the projection to the circle in exactly as many
-points as the minimal period of `x`. -/
+/-- The `Set.ncard` of the intersection of the closed orbit of `x` with a fibre of the projection
+to the circle is the minimal period of `x`. For periodic `x` this is the number of intersection
+points; a nonperiodic `x` (possible only when `d = 0`) has minimal period zero and meets the fibre
+in an infinite set, whose `Set.ncard` is also zero. -/
 theorem ncard_range_closedOrbit_inter_preimage_proj (t : ℝ) :
     (range (closedOrbit φ h) ∩ proj φ ⁻¹' {(t : UnitAddCircle)}).ncard = minimalPeriod φ x := by
   rw [← range_mk, ← image_preimage_eq_inter_range, ncard_image_of_injective _ (mk_injective φ t),
