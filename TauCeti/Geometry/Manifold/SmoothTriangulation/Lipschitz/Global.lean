@@ -7,26 +7,30 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothTriangulation.Lipschitz.Basic
 public import TauCeti.Geometry.Manifold.SmoothTriangulation.Secant
-import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
 
 /-!
 # Secant embeddings from quantitative separation
 
-A `C¹` map on a closed simplex with a quantitative separation bound has closed embedded
-secant interpolants on every sufficiently fine edgewise subdivision. The separation assumption
-uses the original barycentric metric and rules out collisions across subdivided faces.
+A map of a complex on a finite vertex type which is `C¹` on every closed simplex and satisfies a
+quantitative separation bound in barycentric coordinates has closed embedded secant
+interpolants on every sufficiently fine edgewise subdivision. The separation assumption uses the
+original barycentric metric and rules out collisions across subdivided faces.
 
 The global secant-error estimate is provided by
-`TauCeti.eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision` in `Lipschitz.Basic`,
-which also applies to arbitrary complexes on finite vertex types. Here its hypotheses are
-obtained by restricting the original map to each face. Mathlib's
-`AntilipschitzWith.add_sub_lipschitzWith` preserves separation under the resulting small error.
-No immersion or completeness assumption is needed.
+`TauCeti.eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision` in `Lipschitz.Basic`.
+Mathlib's `AntilipschitzWith.add_sub_lipschitzWith` preserves separation under the resulting
+small error. No immersion or completeness assumption is needed.
 
 ## Main results
 
+* `TauCeti.exists_pos_eventually_norm_sub_le_mul_norm_secantMap_sub_of_antilipschitzWith`: the
+  secant maps of an anti-Lipschitz map on fine edgewise subdivisions are anti-Lipschitz, with a
+  constant independent of the subdivision.
+* `TauCeti.eventually_isClosedEmbedding_secantMap_edgewiseSubdivision_of_antilipschitzWith`:
+  these secant maps are closed embeddings.
 * `ContDiffOn.eventually_isClosedEmbedding_secantMap_edgewiseSubdivision`: secant embeddings
-  for maps with a quantitative separation bound on the original simplex.
+  for `C¹` maps with a quantitative separation bound on the original simplex.
 
 ## References
 
@@ -40,36 +44,93 @@ open Set Finset Function Filter AbstractSimplicialComplex PreAbstractSimplicialC
 open TauCeti TauCeti.SetLike
 open scoped NNReal
 
+namespace TauCeti
+
+variable {ι E : Type*} [LinearOrder ι] [Fintype ι] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {K : AbstractSimplicialComplex ι} {f : Realization K → E}
+
+/-- **Secant maps of anti-Lipschitz maps are uniformly anti-Lipschitz.** Let `f` be a map of the
+realization of a complex on a finite vertex type which is `C¹` on every closed simplex and
+anti-Lipschitz in barycentric coordinates. There is a constant `C'` such that for all
+sufficiently large `k`, the secant map `s` of `f` on the `k`-th edgewise subdivision satisfies
+`‖x - y‖ ≤ C' * ‖s x - s y‖` for all points `x` and `y` of the subdivision, where `‖x - y‖` is
+the distance of their images in the barycentric coordinates of `|K|`. The constant does not
+depend on `k`. -/
+theorem exists_pos_eventually_norm_sub_le_mul_norm_secantMap_sub_of_antilipschitzWith
+    (hf : ∀ σ : Face K, ∃ F : (σ.1 → ℝ) → E,
+      (∀ x : StandardSimplex σ.1, F (fun a => x.1 a) = f (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ 1 F (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights))
+    {C : ℝ≥0}
+    (hanti : AntilipschitzWith C (f ∘ (K.realizationHomeomorphRange (Set.toFinite K.faces)).symm)) :
+    ∃ C' > 0, ∀ᶠ k in atTop, ∀ x y : Realization (K.edgewiseSubdivision k),
+      ‖((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ) -
+          (edgewiseSubdivisionRealizationMap K k y).1‖ ≤
+        C' * ‖(K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) x -
+          (K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) y‖ := by
+  set e := K.realizationHomeomorphRange (Set.toFinite K.faces)
+  -- Raise the separation constant to a positive one, so that its inverse is a positive margin.
+  set C₁ : ℝ≥0 := C + 1
+  have hC : 0 < C₁ := by positivity
+  have hanti₁ : AntilipschitzWith C₁ (f ∘ e.symm) :=
+    AntilipschitzWith.of_le_mul_dist fun p q => (hanti.le_mul_dist p q).trans <|
+      mul_le_mul_of_nonneg_right (by simp [C₁]) dist_nonneg
+  have hlt : (2 * C₁)⁻¹ < C₁⁻¹ := inv_strictAnti₀ hC (lt_two_mul_self hC)
+  refine ⟨((C₁⁻¹ - (2 * C₁)⁻¹)⁻¹ : NNReal), NNReal.coe_pos.2 (inv_pos.2 (tsub_pos_of_lt hlt)), ?_⟩
+  filter_upwards [eventually_ne_atTop 0, eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision
+    hf (ε := ((2 * C₁)⁻¹ : NNReal)) (NNReal.coe_pos.2 (inv_pos.2 (by positivity)))]
+    with k hk0 hk x y
+  -- Move the secant map to the coordinate image of `|K|` and perturb `f` there.
+  set Ψ := (edgewiseSubdivisionRealizationHomeomorph K hk0).trans e
+  set s := (K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k)
+  have hΨ (x : Realization (K.edgewiseSubdivision k)) :
+      e.symm (Ψ x) = edgewiseSubdivisionRealizationMap K k x := by
+    rw [Homeomorph.trans_apply, e.symm_apply_apply, edgewiseSubdivisionRealizationHomeomorph_apply]
+  have hdist (x y : Realization (K.edgewiseSubdivision k)) : dist (Ψ x) (Ψ y) =
+      ‖((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ) -
+        (edgewiseSubdivisionRealizationMap K k y).1‖ := by
+    rw [Subtype.dist_eq, dist_eq_norm,
+      ← K.coe_realizationHomeomorphRange_symm_apply (Set.toFinite K.faces) (Ψ x),
+      ← K.coe_realizationHomeomorphRange_symm_apply (Set.toFinite K.faces) (Ψ y), hΨ, hΨ]
+  have hlip : LipschitzWith (2 * C₁)⁻¹ (s ∘ Ψ.symm - f ∘ e.symm) :=
+    LipschitzWith.of_dist_le_mul fun p q => by
+      obtain ⟨x, rfl⟩ := Ψ.surjective p
+      obtain ⟨y, rfl⟩ := Ψ.surjective q
+      simpa only [hdist, dist_eq_norm, Pi.sub_apply, comp_apply, Homeomorph.symm_apply_apply,
+        hΨ] using hk x y
+  simpa only [hdist, dist_eq_norm, comp_apply, Homeomorph.symm_apply_apply] using
+    (hanti₁.add_sub_lipschitzWith hlip hlt).le_mul_dist (Ψ x) (Ψ y)
+
+/-- **Secant maps of anti-Lipschitz maps are closed embeddings.** Let `f` be a map of the
+realization of a complex on a finite vertex type which is `C¹` on every closed simplex and
+anti-Lipschitz in barycentric coordinates. For all sufficiently large `k`, the secant map of `f`
+on the `k`-th edgewise subdivision is a closed embedding. -/
+theorem eventually_isClosedEmbedding_secantMap_edgewiseSubdivision_of_antilipschitzWith
+    (hf : ∀ σ : Face K, ∃ F : (σ.1 → ℝ) → E,
+      (∀ x : StandardSimplex σ.1, F (fun a => x.1 a) = f (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ 1 F (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights))
+    {C : ℝ≥0}
+    (hanti : AntilipschitzWith C (f ∘ (K.realizationHomeomorphRange (Set.toFinite K.faces)).symm)) :
+    ∀ᶠ k in atTop, Topology.IsClosedEmbedding
+      ((K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k)) := by
+  obtain ⟨C', -, hC'⟩ :=
+    exists_pos_eventually_norm_sub_le_mul_norm_secantMap_sub_of_antilipschitzWith hf hanti
+  filter_upwards [hC', eventually_ne_atTop 0] with k hk hk0
+  have : CompactSpace (Realization K) := K.compactSpace_realization_of_finite_faces
+    (Set.toFinite K.faces)
+  have : CompactSpace (Realization (K.edgewiseSubdivision k)) :=
+    (edgewiseSubdivisionRealizationHomeomorph K hk0).symm.compactSpace
+  refine (continuous_secantMap _).isClosedEmbedding fun x y hxy => ?_
+  have hle := hk x y
+  rw [hxy, sub_self, norm_zero, mul_zero] at hle
+  exact edgewiseSubdivisionRealizationMap_injective
+    (Subtype.ext (DFunLike.coe_injective (sub_eq_zero.mp (norm_le_zero_iff.mp hle))))
+
+end TauCeti
+
 namespace ContDiffOn
 
 variable {ι E : Type*} [LinearOrder ι] [Fintype ι]
   [NormedAddCommGroup E] [NormedSpace ℝ E]
-
--- Both estimates use the original barycentric metric, rather than the metric on the
--- increasingly large set of subdivision vertices.
-private def subdivisionCoordinates {k : ℕ} (hk : k ≠ 0) :
-    Realization ((⊤ : AbstractSimplicialComplex ι).edgewiseSubdivision k) ≃ₜ
-      range (fun x : Convexity.StdSimplex ℝ ι => ⇑x.weights) :=
-  (edgewiseSubdivisionRealizationHomeomorph ⊤ hk).trans
-    (((⊤ : AbstractSimplicialComplex ι).realizationHomeomorphRange (Set.toFinite _)).trans
-      (Homeomorph.setCongr range_realization_coe_top))
-
-private theorem subdivisionCoordinates_apply_val {k : ℕ} (hk : k ≠ 0)
-    (x : Realization ((⊤ : AbstractSimplicialComplex ι).edgewiseSubdivision k)) :
-    (subdivisionCoordinates hk x).1 =
-      ((edgewiseSubdivisionRealizationMap ⊤ k x).1 : ι → ℝ) := by
-  -- `setCongr` changes only the subtype proof, so the transported coordinate is unchanged.
-  have hcast : ∀ z, ((Homeomorph.setCongr
-      (range_realization_coe_top (ι := ι))) z).1 = z.1 := fun _ => rfl
-  simp only [subdivisionCoordinates, Homeomorph.trans_apply, hcast,
-    coe_realizationHomeomorphRange_apply, edgewiseSubdivisionRealizationHomeomorph_apply]
-
-private theorem subdivisionCoordinates_symm_apply_val {k : ℕ} (hk : k ≠ 0)
-    (z : range fun x : Convexity.StdSimplex ℝ ι => ⇑x.weights) :
-    ((edgewiseSubdivisionRealizationMap ⊤ k ((subdivisionCoordinates hk).symm z)).1 :
-      ι → ℝ) = z.1 :=
-  (subdivisionCoordinates_apply_val hk _).symm.trans
-    (congrArg Subtype.val ((subdivisionCoordinates hk).apply_symm_apply z))
 
 /-- An anti-Lipschitz `C¹` map on a closed simplex has closed embedded secant interpolants
 on every sufficiently fine edgewise subdivision. The separation assumption is on the
@@ -94,10 +155,10 @@ theorem eventually_isClosedEmbedding_secantMap_edgewiseSubdivision
     let L := (Function.ExtendByZero.linearMap ℝ ℝ (Subtype.val : σ.1 → ι)).toContinuousLinearMap
     have hL (x : StandardSimplex σ.1) : L (fun a => x.1 a) = (x.1 : ι → ℝ) := by
       ext i
+      rw [LinearMap.coe_toContinuousLinearMap', Function.ExtendByZero.linearMap_apply]
       by_cases hi : i ∈ σ.1
       · exact Subtype.val_injective.extend_apply (fun a : σ.1 => x.1 a) 0 ⟨i, hi⟩
-      · change Function.extend (Subtype.val : σ.1 → ι) (fun a => x.1 a) 0 i = _
-        rw [Function.extend_apply' _ _ _ (by simpa using hi)]
+      · rw [Function.extend_apply' _ _ _ (by simpa using hi)]
         exact (Finsupp.notMem_support_iff.mp
           (fun h => hi (StandardSimplex.support_subset x h))).symm
     have hmap : MapsTo L (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights)
@@ -109,44 +170,17 @@ theorem eventually_isClosedEmbedding_secantMap_edgewiseSubdivision
     refine ⟨F ∘ L, ?_, hF.comp L.contDiff.contDiffOn hmap⟩
     intro x
     simpa only [Function.comp_apply, f₀, faceInclusion_val] using congrArg F (hL x)
-  have hsep' : AntilipschitzWith (C + 1)
-      ((range fun x : Convexity.StdSimplex ℝ ι => ⇑x.weights).domRestrict F) := by
-    refine AntilipschitzWith.of_le_mul_dist fun x y => (hsep.le_mul_dist x y).trans ?_
-    exact mul_le_mul_of_nonneg_right (by simp) dist_nonneg
-  have hC : 0 < C + 1 := by positivity
-  let δ : ℝ≥0 := (C + 1)⁻¹ / 2
-  have hδ : 0 < δ := by dsimp [δ]; positivity
-  have hsmall : δ < (C + 1)⁻¹ := by dsimp [δ]; exact half_lt_self (inv_pos.mpr hC)
-  filter_upwards [eventually_ne_atTop 0,
-    TauCeti.eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision hC1
-      (NNReal.coe_pos.mpr hδ)]
-    with k hk herror
-  dsimp only at herror ⊢
-  let K : AbstractSimplicialComplex ι := ⊤
-  let q := edgewiseSubdivisionRealizationMap K k
-  let f : Realization K → E := fun x => F (x.1 : ι → ℝ)
-  let s := (K.edgewiseSubdivision k).secantMap (f ∘ q)
-  let e := edgewiseSubdivisionRealizationHomeomorph K hk
-  let d := subdivisionCoordinates (ι := ι) hk
-  let A := (range fun x : Convexity.StdSimplex ℝ ι => ⇑x.weights).domRestrict F
-  let B := s ∘ d.symm
-  have hcoords (x) : ((q (d.symm x)).1 : ι → ℝ) = x.1 :=
-    subdivisionCoordinates_symm_apply_val hk x
-  have herror_coords (x) : s (d.symm x) - f (q (d.symm x)) = (B - A) x := by
-    simp only [Pi.sub_apply, B, A, Function.comp_apply, Set.domRestrict_apply, f, hcoords]
-  have hLip : LipschitzWith δ (B - A) := by
-    refine LipschitzWith.of_dist_le_mul fun x y => ?_
-    have h := herror (d.symm x) (d.symm y)
-    rw [herror_coords, herror_coords, hcoords, hcoords] at h
-    simpa only [dist_eq_norm, Subtype.dist_eq] using h
-  have hB : Injective B := (hsep'.add_sub_lipschitzWith hLip hsmall).injective
-  have hs : Injective s := by
-    intro x y hxy
-    apply d.injective
-    apply hB
-    simpa only [B, Function.comp_apply, Homeomorph.symm_apply_apply] using hxy
-  let : CompactSpace (Realization K) := K.compactSpace_realization_of_finite_faces (Set.toFinite _)
-  let : CompactSpace (Realization (K.edgewiseSubdivision k)) := e.symm.compactSpace
-  exact (continuous_secantMap _).isClosedEmbedding hs
+  -- The barycentric image of the realization is the original simplex, so `hsep` transports.
+  have hanti : AntilipschitzWith C
+      (f₀ ∘ ((⊤ : AbstractSimplicialComplex ι).realizationHomeomorphRange (Set.toFinite _)).symm) :=
+    AntilipschitzWith.of_le_mul_dist fun p q => by
+      have hp : (p : ι → ℝ) ∈ range fun x : Convexity.StdSimplex ℝ ι => ⇑x.weights :=
+        range_realization_coe_top (ι := ι) ▸ p.2
+      have hq : (q : ι → ℝ) ∈ range fun x : Convexity.StdSimplex ℝ ι => ⇑x.weights :=
+        range_realization_coe_top (ι := ι) ▸ q.2
+      simpa only [Subtype.dist_eq, Function.comp_apply, f₀,
+        coe_realizationHomeomorphRange_symm_apply, Set.domRestrict_apply] using
+        hsep.le_mul_dist ⟨p, hp⟩ ⟨q, hq⟩
+  exact eventually_isClosedEmbedding_secantMap_edgewiseSubdivision_of_antilipschitzWith hC1 hanti
 
 end ContDiffOn
