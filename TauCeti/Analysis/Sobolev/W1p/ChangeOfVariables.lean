@@ -39,7 +39,8 @@ in `W^{1,p}(V)` (Meyers–Serrin, `TauCeti.Wkp.dense_contDiffOn_representatives`
 the same holds for every `u ∈ W^{1,p}(V)`. Neither continuity of `DΦ` nor differentiability of
 the inverse map is needed. When `U = Φ⁻¹(V)` and `Φ` is proper, for instance a homeomorphism,
 precomposition also preserves zero boundary values: a test function on `V` composed with `Φ`
-vanishes off the compact set `Φ⁻¹(tsupport φ) ⊆ U`.
+vanishes off the compact set `Φ⁻¹(tsupport φ) ⊆ U`. The same holds when `Φ` has an inverse `Ψ`
+from `V` back to `U` that is continuous on `V`, with `Ψ(tsupport φ)` as the compact set.
 
 Such changes of variables are the standard tool for flattening the boundary of a domain that is
 locally the region above a graph, which reduces trace and extension problems there to the
@@ -52,7 +53,12 @@ half-space, where `TauCeti.W1p.halfSpaceTrace` and `TauCeti.W1p.extendByReflecti
 * `TauCeti.W1p.value_compL_ae`, `TauCeti.W1p.gradient_compL_ae`: its value is `u ∘ Φ` and its
   weak gradient is `DΦ* (∇u ∘ Φ)`, almost everywhere on `U`.
 * `TauCeti.W1p.norm_compL_le`, `TauCeti.W1p.opNorm_compL_le`: the norm bound.
-* `TauCeti.W1p.compL_mem_w1p0Submodule`: precomposition maps `W^{1,p}_0(V)` into `W^{1,p}_0(U)`.
+* `TauCeti.W1p.compL_mem_w1p0Submodule_of_forall_isCompact`: precomposition maps `W^{1,p}_0(V)`
+  into `W^{1,p}_0(U)` when points of `U` sent into a compact `K ⊆ V` lie in a compact subset of
+  `U`.
+* `TauCeti.W1p.compL_mem_w1p0Submodule`: the same when `Φ` is proper and `U = Φ⁻¹(V)`.
+* `TauCeti.W1p.compL_mem_w1p0Submodule_of_leftInvOn`: the same when `Φ` has an inverse `Ψ` from
+  `V` back to `U`, continuous on `V`, in place of properness of `Φ`.
 
 ## References
 
@@ -344,26 +350,52 @@ theorem W1p.opNorm_compL_le :
   ContinuousLinearMap.opNorm_le_bound _ (by positivity)
     (W1p.norm_compL_le Φ hp hΦ hinj hmaps hL hc hdet)
 
-/-- **Zero boundary values are preserved.** If `Φ` is proper and `U = Φ⁻¹(V)`, then
-precomposition with `Φ` maps `W^{1,p}_0(V)` into `W^{1,p}_0(U)`. -/
-theorem W1p.compL_mem_w1p0Submodule (hΦp : IsProperMap Φ) (hUV : (U : Set E) = Φ ⁻¹' V)
+/-- **Zero boundary values are preserved.** If every compact `K ⊆ V` has a compact `K' ⊆ U`
+containing every point of `U` that `Φ` sends into `K`, then precomposition with `Φ` maps
+`W^{1,p}_0(V)` into `W^{1,p}_0(U)`: a test function `φ` on `V` composed with `Φ` vanishes on `U`
+off the compact set obtained from `K = tsupport φ`. -/
+theorem W1p.compL_mem_w1p0Submodule_of_forall_isCompact
+    (hK : ∀ K, IsCompact K → K ⊆ (V : Set E) →
+      ∃ K', IsCompact K' ∧ K' ⊆ (U : Set E) ∧ ∀ x ∈ (U : Set E), Φ x ∈ K → x ∈ K')
     {u : W1p mu V p} (hu : u ∈ w1p0Submodule mu V p) :
     W1p.compL Φ hp hΦ hinj hmaps hL hc hdet u ∈ w1p0Submodule mu U p := by
   refine w1p0Submodule_subset_of_isClosed (p := p)
     ((w1p0Submodule mu U p).isClosed.preimage
       (W1p.compL Φ hp hΦ hinj hmaps hL hc hdet).continuous)
     (fun φ => ?_) hu
-  -- A test function `φ` on `V` composed with `Φ` vanishes off the compact `Φ⁻¹(tsupport φ) ⊆ U`.
-  have hK : IsCompact (Φ ⁻¹' tsupport φ) := hΦp.isCompact_preimage φ.hasCompactSupport.isCompact
-  have hKU : Φ ⁻¹' tsupport φ ⊆ U := hUV ▸ preimage_mono φ.tsupport_subset
-  refine W1p.mem_w1p0Submodule_of_isCompact hp hK hKU ?_
+  obtain ⟨K', hK', hK'U, hΦK'⟩ := hK _ φ.hasCompactSupport.isCompact φ.tsupport_subset
+  refine W1p.mem_w1p0Submodule_of_isCompact hp hK' hK'U ?_
   filter_upwards [W1p.value_compL_ae Φ hp hΦ hinj hmaps hL hc hdet _,
     ae_comp_of_map_absolutelyContinuous (hΦ.continuousOn.aemeasurable U.isOpen.measurableSet)
       (Measure.absolutelyContinuous_of_le_smul
         (map_restrict_le_smul_restrict_of_differentiableOn mu U.isOpen hΦ hinj hmaps hc hdet))
-      (W1p.value_ofTestFunctionₗ_ae (mu := mu) (p := p) φ)] with x h1 h2 hxK
+      (W1p.value_ofTestFunctionₗ_ae (mu := mu) (p := p) φ),
+    ae_restrict_mem U.isOpen.measurableSet] with x h1 h2 hxU hxK
   rw [h1, h2]
-  exact image_eq_zero_of_notMem_tsupport hxK
+  exact image_eq_zero_of_notMem_tsupport fun hx => hxK (hΦK' x hxU hx)
+
+/-- **Zero boundary values are preserved by a proper change of variables.** If `Φ` is proper and
+`U = Φ⁻¹(V)`, then precomposition with `Φ` maps `W^{1,p}_0(V)` into `W^{1,p}_0(U)`. -/
+theorem W1p.compL_mem_w1p0Submodule (hΦp : IsProperMap Φ) (hUV : (U : Set E) = Φ ⁻¹' V)
+    {u : W1p mu V p} (hu : u ∈ w1p0Submodule mu V p) :
+    W1p.compL Φ hp hΦ hinj hmaps hL hc hdet u ∈ w1p0Submodule mu U p :=
+  -- A compact `K ⊆ V` has the compact preimage `Φ⁻¹(K) ⊆ U`.
+  W1p.compL_mem_w1p0Submodule_of_forall_isCompact Φ hp hΦ hinj hmaps hL hc hdet
+    (fun K hK hKV => ⟨Φ ⁻¹' K, hΦp.isCompact_preimage hK, hUV ▸ preimage_mono hKV,
+      fun _ _ hx => hx⟩) hu
+
+/-- **Zero boundary values are preserved by a change of variables with an inverse.** If a map
+`Ψ`, continuous on `V`, sends `V` back into `U` with `Ψ ∘ Φ = id` on `U`, then precomposition
+with `Φ` maps `W^{1,p}_0(V)` into `W^{1,p}_0(U)`. No properness of `Φ` on all of `E` is needed:
+a test function on `V` composed with `Φ` vanishes on `U` off the compact set `Ψ(tsupport φ) ⊆ U`. -/
+theorem W1p.compL_mem_w1p0Submodule_of_leftInvOn {Ψ : E → E} (hΨ : ContinuousOn Ψ V)
+    (hΨmaps : MapsTo Ψ V U) (hΨΦ : LeftInvOn Ψ Φ U) {u : W1p mu V p}
+    (hu : u ∈ w1p0Submodule mu V p) :
+    W1p.compL Φ hp hΦ hinj hmaps hL hc hdet u ∈ w1p0Submodule mu U p :=
+  -- A compact `K ⊆ V` has the compact image `Ψ(K) ⊆ U`, and `x = Ψ (Φ x)` for `x ∈ U`.
+  W1p.compL_mem_w1p0Submodule_of_forall_isCompact Φ hp hΦ hinj hmaps hL hc hdet
+    (fun K hK hKV => ⟨Ψ '' K, hK.image_of_continuousOn (hΨ.mono hKV),
+      (hΨmaps.mono_left hKV).image_subset, fun x hxU hx => ⟨Φ x, hx, hΨΦ hxU⟩⟩) hu
 
 end ChangeOfVariables
 

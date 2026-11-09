@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
 import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 
@@ -368,6 +369,24 @@ theorem continuousLinearEquiv (A : E ≃L[ℝ] E) (hA : MapsTo A U V) :
   pos := abs_pos.2 (LinearEquiv.isUnit_det' A.toLinearEquiv).ne_zero
   le_abs_det x _ := by rw [A.fderiv]
 
+/-- A change of variables `Φ` from `U` into `V` with a right inverse `Ψ` sending `V` into `U` maps
+`U` onto `V`. -/
+theorem image_eq_of_rightInvOn (h : IsChangeOfVariables k U V Φ L c) {Ψ : E → E}
+    (hΨ : MapsTo Ψ V U) (hΦΨ : RightInvOn Ψ Φ V) : Φ '' U = V :=
+  h.mapsTo.image_subset.antisymm (hΦΨ.surjOn hΨ)
+
+/-- The Jacobian of a change of variables `Φ` whose inverse `Ψ` is a change of variables with
+Jacobian bound `c'` is at most `c'⁻¹`. -/
+theorem abs_det_le_inv (h : IsChangeOfVariables k U V Φ L c) {Ψ : E → E} {k' : ℕ} {L' c' : ℝ}
+    (hΨ : IsChangeOfVariables k' V U Ψ L' c') (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U)
+    {y : E} (hy : y ∈ (U : Set E)) :
+    |(fderiv ℝ Φ y).det| ≤ c'⁻¹ := by
+  have hmul := abs_det_mul_abs_det_of_invOn h.differentiableOn h.mapsTo hΨ.differentiableOn hΦΨ
+    hΨΦ hy
+  rw [le_inv_comm₀ (abs_pos.2 fun h0 => by simp [h0] at hmul) hΨ.pos]
+  calc c' ≤ |(fderiv ℝ Ψ (Φ y)).det| := hΨ.le_abs_det _ (h.mapsTo hy)
+    _ = |(fderiv ℝ Φ y).det|⁻¹ := eq_inv_of_mul_eq_one_right hmul
+
 variable [MeasurableSpace E] [BorelSpace E] {mu : Measure E}
 
 /-- A change of variables is almost everywhere measurable on `U`. -/
@@ -390,6 +409,23 @@ theorem ae_comp [mu.IsAddHaarMeasure] (h : IsChangeOfVariables k U V Φ L c) {P 
     (hP : ∀ᵐ y ∂mu.restrict V, P y) : ∀ᵐ x ∂mu.restrict U, P (Φ x) :=
   ae_comp_of_map_absolutelyContinuous h.aemeasurable
     (Measure.absolutelyContinuous_of_le_smul (h.map_restrict_le mu)) hP
+
+/-- Precomposition with a change of variables preserves `Lᵖ`: if `g ∈ Lᵖ(V)`, then
+`g ∘ Φ ∈ Lᵖ(U)`. -/
+theorem memLp_comp [mu.IsAddHaarMeasure] {F : Type*} [NormedAddCommGroup F] {p : ℝ≥0∞}
+    (h : IsChangeOfVariables k U V Φ L c) {g : E → F} (hg : MemLp g p (mu.restrict V)) :
+    MemLp (g ∘ Φ) p (mu.restrict U) :=
+  (hg.of_measure_le_smul (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 h.pos).ne')
+    (h.map_restrict_le mu)).comp_of_map h.aemeasurable
+
+/-- **The change of variables formula.** If a change of variables `Φ` maps `U` onto `V`, then
+`∫_V g = ∫_U |det DΦ| • (g ∘ Φ)`. -/
+theorem setIntegral_eq [mu.IsAddHaarMeasure] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (h : IsChangeOfVariables k U V Φ L c) (hUV : Φ '' U = V) (g : E → F) :
+    ∫ x in V, g x ∂mu = ∫ y in U, |(fderiv ℝ Φ y).det| • g (Φ y) ∂mu := by
+  rw [← hUV, integral_image_eq_integral_abs_det_fderiv_smul mu U.isOpen.measurableSet
+    (fun y hy => ((h.differentiableOn y hy).differentiableAt
+      (U.isOpen.mem_nhds hy)).hasFDerivAt.hasFDerivWithinAt) h.injOn]
 
 end IsChangeOfVariables
 

@@ -6,28 +6,36 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
+public import Mathlib.Topology.Algebra.Module.Determinant
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
+public import Mathlib.Topology.Sets.Opens
 
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Congr
 
 /-!
-# The derivative of the inverse of an open partial homeomorphism
+# The derivative of the inverse of a map
 
 Mathlib's `OpenPartialHomeomorph.hasFDerivAt_symm` computes the derivative of the inverse from an
 invertible derivative of the map. Without assuming that invertibility, this file records that when
 both the map and its inverse are differentiable at corresponding points, their derivatives compose
-to the identity.
+to the identity. It does so for open partial homeomorphisms, and for a map `Φ` differentiable on an
+open set `U` and mapping it into an open set `V`, with an inverse `Ψ` differentiable on `V`
+(`Φ ∘ Ψ = id` on `V` and `Ψ ∘ Φ = id` on `U`); the Jacobians of such `Φ` and `Ψ` are then
+reciprocal.
 
 ## Main results
 
 * `OpenPartialHomeomorph.fderiv_symm_comp_fderiv`: the derivative of the inverse is a left inverse
   of the derivative.
+* `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
+* `TauCeti.abs_det_mul_abs_det_of_invOn`: `|det DΦ(y)| |det DΨ(Φ y)| = 1`.
 -/
 
 public section
 
-open Filter
+open Filter Set TopologicalSpace
+open scoped Topology
 
 namespace OpenPartialHomeomorph
 
@@ -46,3 +54,47 @@ theorem fderiv_symm_comp_fderiv (e : OpenPartialHomeomorph E F) {p : F} (hp : p 
   exact eventually_of_mem (e.open_source.mem_nhds (e.map_target hp)) fun r hr ↦ e.left_inv hr
 
 end OpenPartialHomeomorph
+
+namespace TauCeti
+
+section Field
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {U : Opens E} {V : Opens F}
+  {Φ : E → F} {Ψ : F → E}
+
+/-- **The derivative of the inverse.** If `Φ` is differentiable on `U` and maps it into `V`, and
+`Ψ`, differentiable on `V`, is inverse to `Φ` (`Φ ∘ Ψ = id` on `V`, `Ψ ∘ Φ = id` on `U`), then
+`DΦ(y) ∘ DΨ(Φ y) = id` at every `y ∈ U`. -/
+theorem fderiv_comp_fderiv_eq_id_of_invOn (hΦ : DifferentiableOn 𝕜 Φ U) (hmaps : MapsTo Φ U V)
+    (hΨ : DifferentiableOn 𝕜 Ψ V) (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U)
+    {y : E} (hy : y ∈ (U : Set E)) :
+    fderiv 𝕜 Φ y ∘L fderiv 𝕜 Ψ (Φ y) = ContinuousLinearMap.id 𝕜 F := by
+  have hx : Φ y ∈ (V : Set F) := hmaps hy
+  have hcomp : HasFDerivAt (Φ ∘ Ψ) (fderiv 𝕜 Φ y ∘L fderiv 𝕜 Ψ (Φ y)) (Φ y) := by
+    have hΦd := ((hΦ y hy).differentiableAt (U.isOpen.mem_nhds hy)).hasFDerivAt
+    rw [← hΨΦ hy] at hΦd
+    have := hΦd.comp (Φ y) ((hΨ _ hx).differentiableAt (V.isOpen.mem_nhds hx)).hasFDerivAt
+    rwa [hΨΦ hy] at this
+  have hid : Φ ∘ Ψ =ᶠ[𝓝 (Φ y)] id :=
+    Filter.eventually_of_mem (V.isOpen.mem_nhds hx) fun x hxV => hΦΨ hxV
+  exact (hcomp.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id (Φ y))
+
+end Field
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {U V : Opens E} {Φ Ψ : E → E}
+
+/-- The Jacobians of a map `Φ`, differentiable on `U` and mapping it into `V`, and of its inverse
+`Ψ`, differentiable on `V`, are reciprocal: `|det DΦ(y)| |det DΨ(Φ y)| = 1` at every `y ∈ U`. -/
+theorem abs_det_mul_abs_det_of_invOn (hΦ : DifferentiableOn ℝ Φ U) (hmaps : MapsTo Φ U V)
+    (hΨ : DifferentiableOn ℝ Ψ V) (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U)
+    {y : E} (hy : y ∈ (U : Set E)) :
+    |(fderiv ℝ Φ y).det| * |(fderiv ℝ Ψ (Φ y)).det| = 1 := by
+  have hdet : (fderiv ℝ Φ y ∘L fderiv ℝ Ψ (Φ y)).det =
+      (fderiv ℝ Φ y).det * (fderiv ℝ Ψ (Φ y)).det :=
+    LinearMap.det_comp _ _
+  rw [fderiv_comp_fderiv_eq_id_of_invOn hΦ hmaps hΨ hΦΨ hΨΦ hy] at hdet
+  rw [← abs_mul, ← hdet, ContinuousLinearMap.det, ContinuousLinearMap.coe_id, LinearMap.det_id,
+    abs_one]
+
+end TauCeti
