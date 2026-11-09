@@ -110,8 +110,8 @@ theorem _root_.ContDiffAt.deriv_deriv_sub_quadratic {B : 𝕜 → 𝕜} {t : �
     (hB : ContDiffAt 𝕜 2 B t) (a b c : 𝕜) :
     deriv (deriv (fun s ↦ B s - (a + b * s + c * s ^ 2))) t =
       deriv (deriv B) t - 2 * c := by
-  have h := iteratedDeriv_sub hB
-    (show ContDiffAt 𝕜 2 (fun s ↦ a + b * s + c * s ^ 2) t by fun_prop)
+  have hpoly : ContDiffAt 𝕜 2 (fun s ↦ a + b * s + c * s ^ 2) t := by fun_prop
+  have h := iteratedDeriv_sub hB hpoly
   simpa only [iteratedDeriv_succ, iteratedDeriv_zero, deriv_deriv_quadratic, Pi.sub_def] using h
 
 end Quadratic

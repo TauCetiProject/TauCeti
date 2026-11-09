@@ -34,17 +34,6 @@ open scoped Topology
 
 namespace TauCeti
 
-/-- A negative-second-derivative upper support is incompatible with a local minimum. -/
-theorem not_isLocalMin_of_strict_upper_support {f B : ℝ → ℝ} {c : ℝ}
-    (hcontact : B c = f c) (hupper : ∀ᶠ t in 𝓝 c, f t ≤ B t)
-    (hcont : ContinuousAt B c) (hsecond : deriv (deriv B) c < 0) :
-    ¬ IsLocalMin f c := by
-  intro hmin
-  have hBmin : IsLocalMin B c := by
-    filter_upwards [hmin, hupper] with t ht htB
-    exact hcontact.trans_le (ht.trans htB)
-  exact (deriv_deriv_nonneg_of_isLocalMin hcont hBmin).not_gt hsecond
-
 /-- Touching upper supports with negative second derivative at each interior point
 force the endpoint minimum bound on a compact interval. -/
 theorem min_endpoints_le_of_strict_upper_supports {f : ℝ → ℝ} {a b : ℝ}
@@ -81,8 +70,8 @@ theorem chord_le_of_upper_supports {f : ℝ → ℝ}
   intro ε hε
   let P := fun t : ℝ ↦ f 0 + (f 1 - f 0 - ε) * t + ε * t ^ 2
   let h := fun t ↦ f t - P t
-  have hcont : ContinuousOn h (Icc 0 1) :=
-    hf.sub (show Continuous P by dsimp [P]; fun_prop).continuousOn
+  have hPcont : Continuous P := by dsimp [P]; fun_prop
+  have hcont : ContinuousOn h (Icc 0 1) := hf.sub hPcont.continuousOn
   have hstrict (c : ℝ) (hc : c ∈ Ioo 0 1) :
       ∃ B : ℝ → ℝ, B c = h c ∧ (∀ᶠ t in 𝓝 c, h t ≤ B t) ∧
         ContinuousAt B c ∧ deriv (deriv B) c < 0 := by
@@ -105,23 +94,6 @@ theorem chord_le_of_upper_supports {f : ℝ → ℝ}
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-- Along `s ↦ x + s • v`, subtracting `K * ‖·‖² / 2` lowers the second derivative
-by `K * ‖v‖²`. -/
-theorem deriv_deriv_comp_add_smul_sub_norm_sq {f : E → ℝ} (x v : E) {t : ℝ}
-    (hf : ContDiffAt ℝ 2 f (x + t • v)) (K : ℝ) :
-    deriv (deriv (fun s : ℝ ↦ f (x + s • v) - K * ‖x + s • v‖ ^ 2 / 2)) t =
-      fderiv ℝ (fderiv ℝ f) (x + t • v) v v - K * ‖v‖ ^ 2 := by
-  have hnorm (s : ℝ) : K * ‖x + s • v‖ ^ 2 / 2 =
-      K * ‖x‖ ^ 2 / 2 + (K * inner ℝ x v) * s + (K * ‖v‖ ^ 2 / 2) * s ^ 2 := by
-    rw [norm_add_sq_real, real_inner_smul_right, norm_smul, Real.norm_eq_abs,
-      mul_pow, sq_abs]
-    ring
-  simp_rw [hnorm]
-  have hline : ContDiffAt ℝ 2 (fun s : ℝ ↦ f (x + s • v)) t :=
-    hf.comp t (by fun_prop)
-  rw [hline.deriv_deriv_sub_quadratic, hf.deriv_deriv_comp_add_smul]
-  ring
-
 /-- A uniform bound on the Hessians of upper supports makes the corrected function concave. -/
 theorem concaveOn_sub_norm_sq_of_upper_supports {s : Set E} {f : E → ℝ} {K : ℝ}
     (hs : Convex ℝ s) (hf : ContinuousOn f s)
@@ -139,9 +111,9 @@ theorem concaveOn_sub_norm_sq_of_upper_supports {s : Set E} {f : E → ℝ} {K :
   have hL : Continuous L := by dsimp only [L]; fun_prop
   have hLmem : MapsTo L (Icc 0 1) s := fun _ ht ↦ hs.add_smul_sub_mem hx hy ht
   let F := fun t ↦ f (L t) - K * ‖L t‖ ^ 2 / 2
+  have hquadratic : Continuous (fun t ↦ K * ‖L t‖ ^ 2 / 2) := by fun_prop
   have hF : ContinuousOn F (Icc 0 1) :=
-    (hf.comp hL.continuousOn hLmem).sub
-      (show Continuous (fun t ↦ K * ‖L t‖ ^ 2 / 2) by fun_prop).continuousOn
+    (hf.comp hL.continuousOn hLmem).sub hquadratic.continuousOn
   have hupper (c : ℝ) (hc : c ∈ Ioo 0 1) : ∃ B : ℝ → ℝ,
       B c = F c ∧ (∀ᶠ t in 𝓝 c, F t ≤ B t) ∧
         ContDiffAt ℝ 2 B c ∧ deriv (deriv B) c ≤ 0 := by
@@ -153,17 +125,18 @@ theorem concaveOn_sub_norm_sq_of_upper_supports {s : Set E} {f : E → ℝ} {K :
         exact Filter.Eventually.mono (Icc_mem_nhds hc.1 hc.2) hLmem
       have hnear : ∀ᶠ t in 𝓝 c, f (L t) ≤ B (L t) := hLwithin hupper
       exact hnear.mono (fun t ht ↦ sub_le_sub_right ht _)
-    · exact (hB.comp c (by dsimp only [L]; fun_prop)).sub
-        ((contDiffAt_const.mul ((show ContDiffAt ℝ 2 L c by
-          dsimp only [L]; fun_prop).norm_sq ℝ)).div_const 2)
+    · have hLc : ContDiffAt ℝ 2 L c := by dsimp only [L]; fun_prop
+      exact (hB.comp c hLc).sub
+        ((contDiffAt_const.mul (hLc.norm_sq ℝ)).div_const 2)
     · rw [deriv_deriv_comp_add_smul_sub_norm_sq x (y - x) hB K]
       exact sub_nonpos.mpr (hsecond (y - x))
   have hb1 : b ≤ 1 := by linarith
   have h := chord_le_of_upper_supports hF hupper (x := b) ⟨hb, hb1⟩
   have h0 : L 0 = x := by simp [L]
   have h1 : L 1 = y := by simp [L]
+  have hba : 1 - b = a := by linarith
   have hbform : L b = a • x + b • y := by
-    rw [hLform, show 1 - b = a by linarith]
-  simpa only [F, h0, h1, hbform, show 1 - b = a by linarith, smul_eq_mul] using h
+    rw [hLform, hba]
+  simpa only [F, h0, h1, hbform, hba, smul_eq_mul] using h
 
 end TauCeti

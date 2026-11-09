@@ -123,19 +123,31 @@ namespace TauCeti
 
 /-- Continuous contact-derivative bounds can be integrated over an ordered interval. -/
 theorem sub_le_integral_of_upper_supports {f h : ℝ → ℝ} {a b : ℝ}
-    (hab : a ≤ b) (hf : ContinuousOn f (Icc a b)) (hh : Continuous h)
+    (hab : a ≤ b) (hf : ContinuousOn f (Icc a b)) (hh : ContinuousOn h (Icc a b))
     (hsupport : ∀ x ∈ Ico a b, ∃ g : ℝ → ℝ, ∃ d : ℝ,
       HasDerivWithinAt g d (Ici x) x ∧ g x = f x ∧
         (∀ᶠ y in 𝓝[>] x, f y ≤ g y) ∧ d ≤ h x) :
     f b - f a ≤ ∫ x in a..b, h x := by
   let B : ℝ → ℝ := fun t ↦ f a + ∫ x in a..t, h x
-  have hB : ∀ t, HasDerivAt B (h t) t := fun t ↦
-    (intervalIntegral.integral_hasDerivAt_right (hh.intervalIntegrable a t)
-      hh.aestronglyMeasurable.stronglyMeasurableAtFilter hh.continuousAt).const_add _
+  have hint : IntervalIntegrable h volume a b := hh.intervalIntegrable_of_Icc hab
+  have hBcont : ContinuousOn B (Icc a b) := by
+    apply continuousOn_const.add
+    simpa only [uIcc_of_le hab] using
+      intervalIntegral.continuousOn_primitive_interval' hint left_mem_uIcc
+  have hB : ∀ t ∈ Ico a b, HasDerivWithinAt B (h t) (Ici t) t := by
+    intro t ht
+    have hnhds : Icc a b ∈ 𝓝[≥] t := Icc_mem_nhdsGE_of_mem ht
+    have hright : ContinuousWithinAt h (Ioi t) t :=
+      ((hh t ⟨ht.1, ht.2.le⟩).mono_of_mem_nhdsWithin hnhds).mono Ioi_subset_Ici_self
+    have hmeas : StronglyMeasurableAtFilter h (𝓝[>] t) volume :=
+      ⟨Icc a b, nhdsWithin_mono _ Ioi_subset_Ici_self hnhds,
+        hh.aestronglyMeasurable measurableSet_Icc⟩
+    have hintt : IntervalIntegrable h volume a t :=
+      (hh.mono (Icc_subset_Icc le_rfl ht.2.le)).intervalIntegrable_of_Icc ht.1
+    exact (intervalIntegral.integral_hasDerivWithinAt_right hintt hmeas hright).const_add _
   have hBa : f a ≤ B a := by simp [B]
   have hcomp := image_le_of_upper_supports hf
-    (fun t _ ↦ (hB t).continuousAt.continuousWithinAt)
-    (fun t _ ↦ (hB t).hasDerivWithinAt) hBa hsupport
+    hBcont hB hBa hsupport
       b ⟨hab, le_rfl⟩
   exact sub_le_iff_le_add.mpr (by simpa only [B, add_comm] using hcomp)
 
