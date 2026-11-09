@@ -363,8 +363,9 @@ theorem measurable_measure_symmDiff_setOf_lt (m : Measure α) [SFinite m] {f g :
 
 /-- **A superlevel set with small boundary.** Let `p` be an almost everywhere measurable real
 function and let `q i`, for `i ∈ K`, be finitely many functions whose total `L¹` distance to `p`
-is less than `ε` times the integral of `p`. Then at some level `t > 0` the superlevel set `{p > t}`
-has total boundary `∑ i ∈ K, m ({q i > t} ∆ {p > t})` less than `ε` times its measure. -/
+is less than `ε` times the extended nonnegative integral of the positive part of `p`. Then at some
+level `t > 0` the superlevel set `{p > t}` has total boundary `∑ i ∈ K, m ({q i > t} ∆ {p > t})`
+less than `ε` times its measure. -/
 theorem exists_pos_sum_measure_symmDiff_lt_mul_measure (m : Measure α) [SFinite m] {ι : Type*}
     (K : Finset ι) {p : α → ℝ} {q : ι → α → ℝ} (hp : AEMeasurable p m)
     (hq : ∀ i ∈ K, AEMeasurable (q i) m) {ε : ℝ≥0∞}
