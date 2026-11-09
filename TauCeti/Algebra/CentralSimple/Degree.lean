@@ -51,8 +51,8 @@ columns; that is recorded as
 
 ## Main results
 
-* `IsSimpleRing.isSquare_finrank`: **the dimension of a finite-dimensional central simple
-  algebra is a perfect square**.
+* `IsSimpleRing.isSquare_finrank`: **the dimension of a central simple algebra is a perfect
+  square**.
 * `TauCeti.Algebra.deg`: the degree of a central simple algebra, with
   `TauCeti.Algebra.deg_sq : deg K A ^ 2 = Module.finrank K A`, its multiplicativity
   `TauCeti.Algebra.deg_tensorProduct` and `TauCeti.Algebra.deg_matrix`, the reading
@@ -128,14 +128,18 @@ private theorem exists_algEquiv_matrix_baseChange_of_isSepClosed [IsSepClosed L]
   obtain ⟨n, hn, -, ⟨e⟩⟩ := exists_algEquiv_matrix_of_isSepClosed L (L ⊗[K] A)
   exact ⟨n, hn, TauCeti.Algebra.finrank_eq_sq_of_algEquiv_matrix K A L e, ⟨e⟩⟩
 
-/-- **The dimension of a finite-dimensional central simple algebra is a perfect square.**
+omit [FiniteDimensional K A] in
+/-- **The dimension of a central simple algebra is a perfect square.**
 
 Base change to an algebraic closure of `K` splits `A`, and a full matrix algebra has square
-dimension. Centrality cannot be dropped: `Module.finrank ℝ ℂ = 2`. -/
+dimension. For an infinite-dimensional algebra, `Module.finrank` is the junk value `0 = 0 * 0`.
+Centrality cannot be dropped: `Module.finrank ℝ ℂ = 2`. -/
 theorem isSquare_finrank : IsSquare (Module.finrank K A) := by
-  obtain ⟨n, -, hrank, -⟩ :=
-    exists_algEquiv_matrix_baseChange_of_isSepClosed K (AlgebraicClosure K) A
-  exact ⟨n, by rw [hrank, sq]⟩
+  by_cases h : FiniteDimensional K A
+  · obtain ⟨n, -, hrank, -⟩ :=
+      exists_algEquiv_matrix_baseChange_of_isSepClosed K (AlgebraicClosure K) A
+    exact ⟨n, by rw [hrank, sq]⟩
+  · exact ⟨0, by simp [Module.finrank_of_not_finite h]⟩
 
 end IsSimpleRing
 
