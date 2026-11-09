@@ -59,17 +59,10 @@ semi-free modules, given by a continuation cocycle, has a homotopy inverse given
 cocycle, so the two twisting cocycles are homologous
 (`TauCeti.RowFiniteContinuationCocycle.exists_rowFiniteHomologous_of_forall_exists`). By
 `TauCeti.RowFiniteHomologous.homotopyEquiv`, the twisted complexes `M ⊗ ⟨P⟩` and `M ⊗ ⟨Q⟩` are
-then homotopy equivalent for every differential graded right module `M`. With the invariance in
-the coefficient module, `TauCeti.RowFiniteTwistingCocycle.quasiIso_coefficientCochainComplexMap`,
-this says that the twisted complex computes a derived tensor product: it depends on the
-semi-free module only up to quasi-isomorphism.
-
-For free targets, the cycles of degree `0` of the complex of graded maps `K_mP → K_mQ` are the
-continuation cocycles (`TauCeti.RowFiniteContinuationCocycle.ofRowFiniteHomDifferential`), and the
-families of degree `-1` bounding `ν₁ - ν₀` are the parametrized cocycles
-(`TauCeti.RowFiniteParametrizedCocycle.ofRowFiniteHomDifferential`). Precomposing a parametrized
-cocycle with a continuation cocycle gives a parametrized cocycle
-(`TauCeti.RowFiniteParametrizedCocycle.whiskerLeft`).
+then homotopy equivalent for every differential graded right module `M`. So the twisted complex
+depends on the semi-free module only up to quasi-isomorphisms given by continuation cocycles, as
+it depends on the coefficient module only up to quasi-isomorphism
+(`TauCeti.RowFiniteTwistingCocycle.quasiIso_coefficientCochainComplexMap`).
 
 ## References
 
@@ -86,116 +79,10 @@ open DirectSum
 
 namespace TauCeti
 
-universe uR uA uN uN' uP uQ uS
+universe uR uA uN uN' uP
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {hA : IsDGAlgebra 𝒜 d}
-
-/-! ### Precomposition with a continuation cocycle -/
-
-section Continuation
-
-variable {P : Type uP} {Q : Type uQ} {indP : P → ℤ} {indQ : Q → ℤ}
-  {mP : RowFiniteTwistingCocycle 𝒜 d P indP} {mQ : RowFiniteTwistingCocycle 𝒜 d Q indQ}
-  {N : Type uN} [AddCommGroup N] [Module R N] [Module A N] [IsScalarTower R A N]
-  {𝒩 : ℤ → Submodule R N} [SetLike.GradedSMul 𝒜 𝒩] [DirectSum.Decomposition 𝒩]
-  {dN : N →ₗ[R] N}
-
-/-- **Precomposition with a continuation cocycle commutes with the differential of graded
-maps**: for a continuation cocycle `ν` from `mP` to `mQ`, the differential of the generator
-values `x ↦ Ψ_u (ν x)` of `Ψ_u ∘ ν` is `x ↦ Ψ_(δ u) (ν x)`. -/
-theorem RowFiniteContinuationCocycle.rowFiniteHomDifferential_comp
-    (ν : RowFiniteContinuationCocycle mP mQ) (hN : IsDGLeftModule hA 𝒩 dN) (j : ℤ) (u : Q → N) :
-    rowFiniteHomDifferential 𝒜 mP.m dN j (fun x ↦ rowFiniteSignedMap 𝒜 j u (ν.ν x)) =
-      fun x ↦ rowFiniteSignedMap 𝒜 (j + 1) (rowFiniteHomDifferential 𝒜 mQ.m dN j u)
-        (ν.ν x) := by
-  funext x
-  rw [rowFiniteSignedMap_rowFiniteHomDifferential hN, ν.continuation,
-    rowFiniteSignedMap_linearCombination, rowFiniteHomDifferential_apply]
-
-end Continuation
-
-/-! ### Cocycles between free modules as cycles of the complex of graded maps -/
-
-section FreeTarget
-
-variable {P : Type uP} {Q : Type uQ} {S : Type uS} {indP : P → ℤ} {indQ : Q → ℤ} {indS : S → ℤ}
-  {mP : RowFiniteTwistingCocycle 𝒜 d P indP} {mQ : RowFiniteTwistingCocycle 𝒜 d Q indQ}
-  {mS : RowFiniteTwistingCocycle 𝒜 d S indS}
-
-/-- The rows of a continuation cocycle are a cycle of degree `0` of the complex of graded maps
-`K_mP → K_mQ`. -/
-theorem RowFiniteContinuationCocycle.rowFiniteHomDifferential_ν
-    (ν : RowFiniteContinuationCocycle mP mQ) :
-    rowFiniteHomDifferential 𝒜 mP.m (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m) 0
-      ν.ν = 0 :=
-  (forall_linearCombination_eq_iff_rowFiniteHomDifferential_eq_zero _ _).mp
-    fun x ↦ (ν.continuation x).symm
-
-/-- A cycle of degree `0` of the complex of graded maps `K_mP → K_mQ`, whose row at each `x` has
-total degree `-indP x`, is a continuation cocycle. -/
-def RowFiniteContinuationCocycle.ofRowFiniteHomDifferential (ν : P → Q →₀ A)
-    (hν : ∀ x, ν x ∈ rowFiniteTotalGrading 𝒜 indQ (-indP x))
-    (hδ : rowFiniteHomDifferential 𝒜 mP.m (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m)
-      0 ν = 0) :
-    RowFiniteContinuationCocycle mP mQ where
-  ν := ν
-  mem_graded x y := by
-    simpa only [neg_add_eq_sub] using (mem_rowFiniteTotalGrading_iff _ _).mp (hν x) y
-  continuation x :=
-    ((forall_linearCombination_eq_iff_rowFiniteHomDifferential_eq_zero _ _).mpr hδ x).symm
-
-/-- The rows of a parametrized cocycle from `ν₀` to `ν₁` bound `ν₁ - ν₀` in the complex of graded
-maps `K_mP → K_mQ`. -/
-theorem RowFiniteParametrizedCocycle.rowFiniteHomDifferential_h
-    {ν₀ ν₁ : RowFiniteContinuationCocycle mP mQ} (H : RowFiniteParametrizedCocycle ν₀ ν₁) :
-    rowFiniteHomDifferential 𝒜 mP.m (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m) (-1)
-      H.h = ν₁.ν - ν₀.ν :=
-  funext fun x ↦ by rw [rowFiniteHomDifferential_neg_one_apply, H.parametrized, Pi.sub_apply]
-
-/-- A family of degree `-1` of the complex of graded maps `K_mP → K_mQ`, whose row at each `x`
-has total degree `-1 - indP x` and whose differential is `ν₁ - ν₀`, is a parametrized cocycle
-from `ν₀` to `ν₁`. -/
-def RowFiniteParametrizedCocycle.ofRowFiniteHomDifferential
-    {ν₀ ν₁ : RowFiniteContinuationCocycle mP mQ} (h : P → Q →₀ A)
-    (hh : ∀ x, h x ∈ rowFiniteTotalGrading 𝒜 indQ (-1 - indP x))
-    (hδ : rowFiniteHomDifferential 𝒜 mP.m (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m)
-      (-1) h = ν₁.ν - ν₀.ν) :
-    RowFiniteParametrizedCocycle ν₀ ν₁ where
-  h := h
-  mem_graded x y := by
-    convert (mem_rowFiniteTotalGrading_iff _ _).mp (hh x) y using 2
-    ring
-  parametrized x := by rw [← rowFiniteHomDifferential_neg_one_apply, hδ, Pi.sub_apply]
-
-/-- **Precomposing a parametrized cocycle with a continuation cocycle.** For a continuation
-cocycle `μ` from `mS` to `mP` and a parametrized cocycle `H` from `ν₀` to `ν₁`, the rows
-`x ↦ H (μ x)`, for the signed map `H` of the rows of `H`, form a parametrized cocycle from
-`μ.comp ν₀` to `μ.comp ν₁`. -/
-def RowFiniteParametrizedCocycle.whiskerLeft (hA : IsDGAlgebra 𝒜 d)
-    (μ : RowFiniteContinuationCocycle mS mP) {ν₀ ν₁ : RowFiniteContinuationCocycle mP mQ}
-    (H : RowFiniteParametrizedCocycle ν₀ ν₁) :
-    RowFiniteParametrizedCocycle (μ.comp ν₀ hA) (μ.comp ν₁ hA) :=
-  ofRowFiniteHomDifferential (fun x ↦ rowFiniteSignedMap 𝒜 1 H.h (μ.ν x))
-    (fun x ↦ by
-      convert H.rowFiniteSignedMap_mem_totalGrading (μ.ν_mem_rowFiniteTotalGrading x) using 2
-      ring)
-    (by
-      rw [← rowFiniteSignedMap_neg_one,
-        μ.rowFiniteHomDifferential_comp (mQ.isDGLeftModule_rowFiniteTwistedDifferential hA),
-        H.rowFiniteHomDifferential_h]
-      funext x
-      simp [rowFiniteSignedMap_zero_left, Finsupp.linearCombination_apply, smul_sub,
-        Finsupp.sum_sub])
-
-@[simp]
-theorem RowFiniteParametrizedCocycle.whiskerLeft_h (hA : IsDGAlgebra 𝒜 d)
-    (μ : RowFiniteContinuationCocycle mS mP) {ν₀ ν₁ : RowFiniteContinuationCocycle mP mQ}
-    (H : RowFiniteParametrizedCocycle ν₀ ν₁) (x : S) :
-    (H.whiskerLeft hA μ).h x = rowFiniteSignedMap 𝒜 1 H.h (μ.ν x) :=
-  (rfl)
-
-end FreeTarget
 
 namespace RowFiniteTwistingCocycle
 
@@ -486,8 +373,8 @@ degree-preserving `A`-linear map whose relative cycles are relative boundaries: 
 with `dN c = 0` and `φ c = dN' w` is `(dN u, φ u + dN' v)`. For a morphism of DG left modules this
 says that `φ` is a quasi-isomorphism. Then every degree-preserving chain map `g : K_m → N'`,
 given by the images of the generators, lifts up to homotopy along `φ`: there are a
-degree-preserving chain map `ĝ : K_m → N` and a homotopy `H` of degree `-1`, the signed extension
-of `k`, with `g - φ ∘ ĝ = dN' ∘ H + H ∘ D`. -/
+degree-preserving chain map `ĝ : K_m → N` and a homotopy `H` of degree `-1`, the signed map
+`rowFiniteSignedMap 𝒜 1 k`, with `g - φ ∘ ĝ = dN' ∘ H + H ∘ D`. -/
 theorem exists_lift_homotopy {p₀ : ℤ} (hp₀ : ∀ x, p₀ ≤ ind x) :
     ∃ (ĝ : P → N) (k : P → N'), (∀ x, ĝ x ∈ 𝒩 (-ind x)) ∧ (∀ x, k x ∈ 𝒩' (-ind x - 1)) ∧
       (∀ f, Finsupp.linearCombination A ĝ
@@ -513,7 +400,8 @@ include hm hN in
 /-- **Semi-free modules are K-projective: maps into acyclic modules are null-homotopic.** Let
 `m` be one-sided, with generator indices bounded below, and let `N` be an acyclic DG left
 module: every cycle is a boundary. Then every degree-preserving chain map `g : K_m → N` is
-null-homotopic: `g = dN ∘ H + H ∘ D` for the signed extension `H` of some `k` of degree `-1`. -/
+null-homotopic: `g = dN ∘ H + H ∘ D` for the signed map `H = rowFiniteSignedMap 𝒜 1 k` of some
+`k` of degree `-1`. -/
 theorem exists_nullHomotopy {p₀ : ℤ} (hp₀ : ∀ x, p₀ ≤ ind x)
     (hacyc : ∀ c, dN c = 0 → ∃ u, dN u = c) {g : P → N} (hg : ∀ x, g x ∈ 𝒩 (-ind x))
     (hgd : ∀ x, Finsupp.linearCombination A g (m.m x) = dN (g x)) :
@@ -617,7 +505,7 @@ theorem exists_rowFiniteHomologous_of_forall_exists (ν : RowFiniteContinuationC
   let homQ : RowFiniteParametrizedCocycle (refl mQ hA) (κ'.comp ν hA) :=
     .ofRowFiniteHomDifferential (-η) (fun y ↦ neg_mem (hη y)) <| by
       rw [rowFiniteHomDifferential_neg, eq_sub_of_add_eq' hgκ, neg_sub]
-      exact congrArg (· - _) (funext fun y ↦ (comp_ν κ' ν hA y).symm)
+      exact congrArg (· - _) (funext fun y ↦ by simp [κ', comp_ν, hgdef])
   -- The composite `κ ∘ ν` becomes null-homotopic after `ν`, hence is homotopic to the identity.
   let homQν := homQ.whiskerLeft hA ν
   have hgψ : g ∘ ((ν.comp κ' hA).ν - (refl mP hA).ν) =

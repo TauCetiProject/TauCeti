@@ -583,8 +583,8 @@ theorem linearCombination_eq_add_rowFiniteSignedMap_of_forall_mem_support
     linearCombination_single_eq_add_rowFiniteSignedMap hM m (hk x hx) (f x)
 
 /-- **Homotopies out of the free module are determined on generators.** If
-`e x = dM (k x) + H (m x)` on every generator, where `H` is the signed extension of `k`, then
-`e = dM ∘ H + H ∘ D` on the whole free module. -/
+`e x = dM (k x) + H (m x)` on every generator, where `H` is the signed map
+`rowFiniteSignedMap 𝒜 1 k`, then `e = dM ∘ H + H ∘ D` on the whole free module. -/
 theorem linearCombination_eq_add_rowFiniteSignedMap (hM : IsDGLeftModule h ℳ dM)
     (m : P → P →₀ A) {e k : P → M}
     (hk : ∀ x, e x = dM (k x) + rowFiniteSignedMap 𝒜 1 k (m x)) (f : P →₀ A) :
@@ -592,8 +592,8 @@ theorem linearCombination_eq_add_rowFiniteSignedMap (hM : IsDGLeftModule h ℳ d
       rowFiniteSignedMap 𝒜 1 k (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f) :=
   linearCombination_eq_add_rowFiniteSignedMap_of_forall_mem_support hM m fun x _ ↦ hk x
 
-/-- A map `e` out of the free module is `dM ∘ H + H ∘ D`, for the signed extension `H` of `k`,
-exactly when this holds on the generators. -/
+/-- A map `e` out of the free module is `dM ∘ H + H ∘ D`, for the signed map
+`H = rowFiniteSignedMap 𝒜 1 k`, exactly when this holds on the generators. -/
 theorem forall_linearCombination_eq_add_rowFiniteSignedMap_iff (hM : IsDGLeftModule h ℳ dM)
     (m : P → P →₀ A) (e k : P → M) :
     (∀ f, Finsupp.linearCombination A e f = dM (rowFiniteSignedMap 𝒜 1 k f) +

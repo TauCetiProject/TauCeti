@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Continuation
+public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Hom
 public import TauCeti.Algebra.Homology.DG.Twisted.Homotopy
 import TauCeti.Algebra.Ring.NegOnePow
 
@@ -30,6 +31,14 @@ free-module identity into `D ∘ H + H ∘ D = Ψ¹ - Ψ⁰` on coefficient vect
 (`RowFiniteParametrizedCocycle.coefficientHomotopy_differential`). For finite bases this
 coefficient homotopy is the existing `homotopyMap`.
 
+In the complex of graded maps `K_mP → K_mQ` of `TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Hom`,
+the cycles of degree `0` are the continuation cocycles
+(`TauCeti.RowFiniteContinuationCocycle.ofRowFiniteHomDifferential`), and the families of degree
+`-1` bounding `ν₁ - ν₀` are the parametrized cocycles
+(`TauCeti.RowFiniteParametrizedCocycle.ofRowFiniteHomDifferential`). Precomposing a parametrized
+cocycle with a continuation cocycle gives a parametrized cocycle
+(`TauCeti.RowFiniteParametrizedCocycle.whiskerLeft`).
+
 ## References
 
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
@@ -43,14 +52,15 @@ open DirectSum MulOpposite
 
 namespace TauCeti
 
-universe uR uA uM uP uQ
+universe uR uA uM uN uP uQ uS
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
   {P : Type uP} {Q : Type uQ} {indP : P → ℤ} {indQ : Q → ℤ}
 
 /-- A row-finite parametrized cocycle between continuation cocycles. Its generator equation
-uses the signed extension, so the full chain-homotopy identity is a consequence, not a field. -/
+uses the signed map `rowFiniteSignedMap 𝒜 1 h`, so the full chain-homotopy identity is a
+consequence, not a field. -/
 structure RowFiniteParametrizedCocycle
     {mP : RowFiniteTwistingCocycle 𝒜 d P indP}
     {mQ : RowFiniteTwistingCocycle 𝒜 d Q indQ}
@@ -308,8 +318,131 @@ end Coefficients
 
 end RowFiniteParametrizedCocycle
 
-/-- For finite bases the signed extension is precisely the original homotopy map, with
-regular algebra coefficients, through the actual finite-support/function equivalence. -/
+/-! ### Precomposition with a continuation cocycle -/
+
+section Continuation
+
+variable {hA : IsDGAlgebra 𝒜 d}
+  {mP : RowFiniteTwistingCocycle 𝒜 d P indP} {mQ : RowFiniteTwistingCocycle 𝒜 d Q indQ}
+  {N : Type uN} [AddCommGroup N] [Module R N] [Module A N] [IsScalarTower R A N]
+  {𝒩 : ℤ → Submodule R N} [SetLike.GradedSMul 𝒜 𝒩] [DirectSum.Decomposition 𝒩]
+  {dN : N →ₗ[R] N}
+
+/-- **Precomposition with a continuation cocycle commutes with the differential of graded
+maps**: for a continuation cocycle `ν` from `mP` to `mQ`, the differential of the generator
+values `x ↦ Ψ_u (ν x)` of `Ψ_u ∘ ν` is `x ↦ Ψ_(δ u) (ν x)`. -/
+theorem RowFiniteContinuationCocycle.rowFiniteHomDifferential_comp
+    (ν : RowFiniteContinuationCocycle mP mQ) (hN : IsDGLeftModule hA 𝒩 dN) (j : ℤ) (u : Q → N) :
+    rowFiniteHomDifferential 𝒜 mP.m dN j (fun x ↦ rowFiniteSignedMap 𝒜 j u (ν.ν x)) =
+      fun x ↦ rowFiniteSignedMap 𝒜 (j + 1) (rowFiniteHomDifferential 𝒜 mQ.m dN j u)
+        (ν.ν x) := by
+  funext x
+  rw [rowFiniteSignedMap_rowFiniteHomDifferential hN, ν.continuation,
+    rowFiniteSignedMap_linearCombination, rowFiniteHomDifferential_apply]
+
+end Continuation
+
+/-! ### Cocycles between free modules as cycles of the complex of graded maps -/
+
+section FreeTarget
+
+variable {S : Type uS} {indS : S → ℤ}
+  {mP : RowFiniteTwistingCocycle 𝒜 d P indP} {mQ : RowFiniteTwistingCocycle 𝒜 d Q indQ}
+  {mS : RowFiniteTwistingCocycle 𝒜 d S indS}
+
+/-- The rows of a continuation cocycle are a cycle of degree `0` of the complex of graded maps
+`K_mP → K_mQ`. -/
+theorem RowFiniteContinuationCocycle.rowFiniteHomDifferential_ν
+    (ν : RowFiniteContinuationCocycle mP mQ) :
+    rowFiniteHomDifferential 𝒜 mP.m (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m) 0
+      ν.ν = 0 :=
+  (forall_linearCombination_eq_iff_rowFiniteHomDifferential_eq_zero _ _).mp
+    fun x ↦ (ν.continuation x).symm
+
+/-- A cycle of degree `0` of the complex of graded maps `K_mP → K_mQ`, whose row at each `x` has
+total degree `-indP x`, is a continuation cocycle. -/
+def RowFiniteContinuationCocycle.ofRowFiniteHomDifferential (ν : P → Q →₀ A)
+    (hν : ∀ x, ν x ∈ rowFiniteTotalGrading 𝒜 indQ (-indP x))
+    (hδ : rowFiniteHomDifferential 𝒜 mP.m (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m)
+      0 ν = 0) :
+    RowFiniteContinuationCocycle mP mQ where
+  ν := ν
+  mem_graded x y := by
+    simpa only [neg_add_eq_sub] using (mem_rowFiniteTotalGrading_iff _ _).mp (hν x) y
+  continuation x :=
+    ((forall_linearCombination_eq_iff_rowFiniteHomDifferential_eq_zero _ _).mpr hδ x).symm
+
+@[simp]
+theorem RowFiniteContinuationCocycle.ofRowFiniteHomDifferential_ν (ν : P → Q →₀ A)
+    (hν : ∀ x, ν x ∈ rowFiniteTotalGrading 𝒜 indQ (-indP x))
+    (hδ : rowFiniteHomDifferential 𝒜 mP.m (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m)
+      0 ν = 0) :
+    (ofRowFiniteHomDifferential ν hν hδ).ν = ν :=
+  (rfl)
+
+/-- The rows of a parametrized cocycle from `ν₀` to `ν₁` bound `ν₁ - ν₀` in the complex of graded
+maps `K_mP → K_mQ`. -/
+theorem RowFiniteParametrizedCocycle.rowFiniteHomDifferential_h
+    {ν₀ ν₁ : RowFiniteContinuationCocycle mP mQ} (H : RowFiniteParametrizedCocycle ν₀ ν₁) :
+    rowFiniteHomDifferential 𝒜 mP.m (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m) (-1)
+      H.h = ν₁.ν - ν₀.ν :=
+  funext fun x ↦ by rw [rowFiniteHomDifferential_neg_one_apply, H.parametrized, Pi.sub_apply]
+
+/-- A family of degree `-1` of the complex of graded maps `K_mP → K_mQ`, whose row at each `x`
+has total degree `-1 - indP x` and whose differential is `ν₁ - ν₀`, is a parametrized cocycle
+from `ν₀` to `ν₁`. -/
+def RowFiniteParametrizedCocycle.ofRowFiniteHomDifferential
+    {ν₀ ν₁ : RowFiniteContinuationCocycle mP mQ} (h : P → Q →₀ A)
+    (hh : ∀ x, h x ∈ rowFiniteTotalGrading 𝒜 indQ (-1 - indP x))
+    (hδ : rowFiniteHomDifferential 𝒜 mP.m (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m)
+      (-1) h = ν₁.ν - ν₀.ν) :
+    RowFiniteParametrizedCocycle ν₀ ν₁ where
+  h := h
+  mem_graded x y := by
+    convert (mem_rowFiniteTotalGrading_iff _ _).mp (hh x) y using 2
+    ring
+  parametrized x := by rw [← rowFiniteHomDifferential_neg_one_apply, hδ, Pi.sub_apply]
+
+@[simp]
+theorem RowFiniteParametrizedCocycle.ofRowFiniteHomDifferential_h
+    {ν₀ ν₁ : RowFiniteContinuationCocycle mP mQ} (h : P → Q →₀ A)
+    (hh : ∀ x, h x ∈ rowFiniteTotalGrading 𝒜 indQ (-1 - indP x))
+    (hδ : rowFiniteHomDifferential 𝒜 mP.m (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m)
+      (-1) h = ν₁.ν - ν₀.ν) :
+    (ofRowFiniteHomDifferential h hh hδ).h = h :=
+  (rfl)
+
+/-- **Precomposing a parametrized cocycle with a continuation cocycle.** For a continuation
+cocycle `μ` from `mS` to `mP` and a parametrized cocycle `H` from `ν₀` to `ν₁`, the rows
+`x ↦ H (μ x)`, for the signed map `H` of the rows of `H`, form a parametrized cocycle from
+`μ.comp ν₀` to `μ.comp ν₁`. -/
+def RowFiniteParametrizedCocycle.whiskerLeft (hA : IsDGAlgebra 𝒜 d)
+    (μ : RowFiniteContinuationCocycle mS mP) {ν₀ ν₁ : RowFiniteContinuationCocycle mP mQ}
+    (H : RowFiniteParametrizedCocycle ν₀ ν₁) :
+    RowFiniteParametrizedCocycle (μ.comp ν₀ hA) (μ.comp ν₁ hA) :=
+  ofRowFiniteHomDifferential (fun x ↦ rowFiniteSignedMap 𝒜 1 H.h (μ.ν x))
+    (fun x ↦ by
+      convert H.rowFiniteSignedMap_mem_totalGrading (μ.ν_mem_rowFiniteTotalGrading x) using 2
+      ring)
+    (by
+      rw [← rowFiniteSignedMap_neg_one,
+        μ.rowFiniteHomDifferential_comp (mQ.isDGLeftModule_rowFiniteTwistedDifferential hA),
+        H.rowFiniteHomDifferential_h]
+      funext x
+      simp [rowFiniteSignedMap_zero_left, Finsupp.linearCombination_apply, smul_sub,
+        Finsupp.sum_sub])
+
+@[simp]
+theorem RowFiniteParametrizedCocycle.whiskerLeft_h (hA : IsDGAlgebra 𝒜 d)
+    (μ : RowFiniteContinuationCocycle mS mP) {ν₀ ν₁ : RowFiniteContinuationCocycle mP mQ}
+    (H : RowFiniteParametrizedCocycle ν₀ ν₁) (x : S) :
+    (H.whiskerLeft hA μ).h x = rowFiniteSignedMap 𝒜 1 H.h (μ.ν x) :=
+  (rfl)
+
+end FreeTarget
+
+/-- For finite bases the signed map `rowFiniteSignedMap 𝒜 1 h` is precisely the original homotopy
+map, with regular algebra coefficients, through the actual finite-support/function equivalence. -/
 theorem linearEquivFunOnFinite_rowFiniteSignedMap [Fintype P] [Finite Q]
     (h : P → Q →₀ A) (f : P →₀ A) :
     Finsupp.linearEquivFunOnFinite R A Q (rowFiniteSignedMap 𝒜 1 h f) =
