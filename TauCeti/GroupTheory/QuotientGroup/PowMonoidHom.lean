@@ -16,7 +16,7 @@ The group of `n`-th power classes of a commutative group `G` is the quotient
 This file transports that quotient along a multiplicative equivalence, and identifies the power
 classes of the units of a product with the product of the power classes of the units of the
 factors. Composed with the Chinese Remainder decomposition of `K[X] ⧸ (f)` for a squarefree `f`,
-the latter computes the power classes of units of that étale algebra one field factor at a time
+the latter computes the power classes of units of that algebra one field factor at a time
 (`TauCeti.RingTheory.AdjoinRoot.Factors`).
 
 ## Main definitions
@@ -61,8 +61,8 @@ lemma congrRangePowMonoidHom_mk (e : G ≃* H) (n : ℕ) (g : G) :
 /-- The inverse of `congrRangePowMonoidHom e n` is induced by the inverse of `e`. -/
 @[simp]
 lemma congrRangePowMonoidHom_symm (e : G ≃* H) (n : ℕ) :
-    (congrRangePowMonoidHom e n).symm = congrRangePowMonoidHom e.symm n :=
-  (rfl)
+    (congrRangePowMonoidHom e n).symm = congrRangePowMonoidHom e.symm n := by
+  rw [congrRangePowMonoidHom, QuotientGroup.congr_symm, congrRangePowMonoidHom]
 
 /-- Every class modulo the subgroup of `n`-th powers is killed by `n`. -/
 @[simp]
