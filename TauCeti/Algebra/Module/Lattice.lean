@@ -58,7 +58,7 @@ space over the fraction field.
 * `Submodule.IsLattice.exists_ne_zero_smul_mem`: some nonzero multiple of every ambient vector
   lies in such a submodule.
 * `Submodule.IsLattice.exists_ne_zero_forall_smul_mem`: a single nonzero scalar multiplies a
-  finitely generated submodule into a full lattice submodule.
+  finitely generated submodule into a submodule spanning the ambient space over `K`.
 * `Submodule.IsLattice.exists_maximalIdeal_pow_smul_le`: over a discrete valuation ring, a power
   of the maximal ideal multiplies a finitely generated submodule into a full lattice.
 * `TensorProduct.rationalizationEquiv_baseChange_unitTmulEquiv`: rationalizing that
@@ -488,14 +488,14 @@ theorem _root_.Submodule.finrank_eq_finrank (N : Submodule R V')
 variable (K) in
 omit [IsDomain R] in
 /-- **Clearing denominators.** A single nonzero scalar multiplies a finitely generated submodule
-into a full lattice submodule. -/
-theorem exists_ne_zero_forall_smul_mem (S : Submodule R V') [S.IsLattice K]
-    {M : Submodule R V'} (hM : M.FG) : ∃ r : R, r ≠ 0 ∧ ∀ x ∈ M, r • x ∈ S := by
+into a submodule spanning the ambient space over `K`, such as a full lattice. -/
+theorem exists_ne_zero_forall_smul_mem (S : Submodule R V')
+    (hS : Submodule.span K (S : Set V') = ⊤) {M : Submodule R V'} (hM : M.FG) :
+    ∃ r : R, r ≠ 0 ∧ ∀ x ∈ M, r • x ∈ S := by
   classical
   have := IsDomain.of_faithfulSMul R K
   obtain ⟨t, rfl⟩ := hM
-  choose r hr0 hr using exists_ne_zero_smul_mem K S
-    (IsLattice.span_eq_top (A := K) (M := S))
+  choose r hr0 hr using exists_ne_zero_smul_mem K S hS
   -- The product of these scalars over the generators clears the denominators of their span.
   have hle : span R (t : Set V') ≤ S.comap ((∏ v ∈ t, r v) • LinearMap.id) :=
     span_le.mpr fun v hv ↦ by
@@ -509,7 +509,8 @@ finitely generated submodule into a full lattice. -/
 theorem exists_maximalIdeal_pow_smul_le [IsDiscreteValuationRing R] (S : Submodule R V')
     [S.IsLattice K] {M : Submodule R V'} (hM : M.FG) :
     ∃ n : ℕ, IsLocalRing.maximalIdeal R ^ n • M ≤ S := by
-  obtain ⟨r, hr0, hr⟩ := exists_ne_zero_forall_smul_mem K S hM
+  obtain ⟨r, hr0, hr⟩ :=
+    exists_ne_zero_forall_smul_mem K S (IsLattice.span_eq_top (A := K) (M := S)) hM
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible R
   -- The ideal `(r)` is a power `(ϖ ^ n) = 𝔪 ^ n` of the maximal ideal.
   obtain ⟨n, hn⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible
