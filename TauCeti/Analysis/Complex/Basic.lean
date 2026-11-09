@@ -140,7 +140,7 @@ theorem dist_mul_sub_mul_I (v : ℂ) (s h : ℝ) : dist (v * (s - h * I)) (v * s
   rwa [ofReal_neg, neg_mul, ← sub_eq_add_neg, abs_neg] at this
 
 /-- **Two integers whose complex images are closer than `1` are equal.** -/
-theorem intCast_eq_of_dist_lt_one {m n : ℤ} (h : dist (m : ℂ) (n : ℂ) < 1) : m = n := by
+theorem eq_of_dist_intCast_lt_one {m n : ℤ} (h : dist (m : ℂ) (n : ℂ) < 1) : m = n := by
   by_contra hne
   have : (1 : ℝ) ≤ dist (m : ℂ) (n : ℂ) := by
     rw [Complex.isometry_intCast.dist_eq]; exact Int.pairwise_one_le_dist hne

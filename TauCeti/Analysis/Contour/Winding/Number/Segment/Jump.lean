@@ -14,7 +14,6 @@ import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Concat
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Continuity
 import TauCeti.Analysis.Contour.Winding.LocallyConstant
-import TauCeti.Topology.Order.LeftRight
 
 /-!
 # The winding number differs by one across a straight segment

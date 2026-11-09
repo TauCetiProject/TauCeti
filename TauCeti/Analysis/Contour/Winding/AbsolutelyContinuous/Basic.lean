@@ -92,7 +92,7 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_add_intCast_of_di
   obtain ⟨m, hm⟩ := hΓ.exists_int_windingNumber hclosed h₁
   obtain ⟨n, hn⟩ := hΓ.exists_int_windingNumber hclosed h₂
   have hmn : m = n + k :=
-    Complex.intCast_eq_of_dist_lt_one (n := n + k) (by
+    Complex.eq_of_dist_intCast_lt_one (n := n + k) (by
       rw [hm, hn] at hdist
       push_cast
       have : dist ((m : ℂ) - (n : ℂ)) (k : ℂ) = dist (m : ℂ) ((n : ℂ) + (k : ℂ)) := by
