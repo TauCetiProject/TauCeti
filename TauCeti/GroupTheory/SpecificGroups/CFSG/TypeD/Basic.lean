@@ -72,8 +72,9 @@ realization on the spin module: triality permutes the three eight-dimensional re
 module realizes it. (The spin representation is faithful, so triality does act on the spin carrier
 as an abstract automorphism; it is an explicit linear realization that is missing.) The `³D₄(q)`
 branch is therefore built on the tripled carrier `TauCeti.D4Tripled.groupScheme`, on which triality
-is a permutation of the weight basis, in `TauCeti/GroupTheory/SpecificGroups/CFSG/TrialityD4.lean`;
-the spin-carrier points and Frobenius attached below to a triality-twisted index are not the
+is a permutation of the weight basis, in
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TrialityD4/Basic.lean`; the spin-carrier points and
+Frobenius attached below to a triality-twisted index are not the
 ambient group and Frobenius of that branch.
 
 The spin carrier is not identified with the pinned simply connected Chevalley--Demazure group
@@ -150,9 +151,9 @@ algebraic closure of its prime field.
 It is infinite, and it is the same group for every index on the diagram of a given rank and field
 order. The untwisted and graph-twisted families run their recipes inside it; the triality-twisted
 family's own branch is instead built on the tripled carrier, in
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TrialityD4.lean`. No finiteness, reductivity, pinning or
-maximality statement is attached to it, and it is not identified with the points of the pinned
-simply connected `Dₙ` group scheme, as the module docstring describes. -/
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TrialityD4/Basic.lean`. No finiteness, reductivity,
+pinning or maximality statement is attached to it, and it is not identified with the points of the
+pinned simply connected `Dₙ` group scheme, as the module docstring describes. -/
 abbrev AmbientGroup : Type :=
   TypeDSpinCarrier.points d.1.rank d.four_le_rank d.1.Closure
 

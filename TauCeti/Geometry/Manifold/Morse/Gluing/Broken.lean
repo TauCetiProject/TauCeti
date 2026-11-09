@@ -366,7 +366,7 @@ private theorem IsMorseSmale.exists_gluingArc {hX : IsAdaptedPseudoGradient f X}
     have h1 := hX.eq_of_flow_eq_of_mem_splitPassage_source φ hφ hε₁ (mem_splitGluingPairs.1 hz).1
       (mem_splitGluingPairs.1 hz').1
       (hsmall _ (norm_nonneg _) (hzn ▸ hle s)) (hsmall _ (norm_nonneg _) (hzn' ▸ hle s'))
-      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd hpr' (hP z hz).1) hss'
+      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr' (hP z hz).1) hss'
     have hzz : z = z' := Prod.ext h1 (by
       rw [(mem_splitGluingPairs.1 hz).2.2.2.1, (mem_splitGluingPairs.1 hz').2.2.2.1, h1])
     exact inclusion_injective _ (e.injective (Subtype.ext hzz))
@@ -396,7 +396,7 @@ private theorem IsMorseSmale.exists_gluingArc {hX : IsAdaptedPseudoGradient f X}
       (norm_pos_iff.1 hw₁f0) hw₁f hsnd₁ hw₁s hw₂src (norm_pos_iff.1 hw₂s0) hw₂s hfst₂ hw₂f
       (by linarith) (hsmall _ (by positivity) hκw₁.le) (by linarith)
       (hsmall _ (by positivity) hκw₂.le)
-      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd hpr' hw1) ht
+      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr' hw1) ht
     have hEQ := hpairw hw1.1 hw1f hw2.2 hw2f (mem_splitPassage_source.1 hE).2.1 hEQ'
     -- The pair is a point of the arc of small parameter.
     set s₀ := e.symm ⟨_, subset_closure hEQ⟩ with hs₀def
@@ -484,25 +484,25 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet
     have h₁ := hX.tendsto_flow_levelCrossingTime hfd hpb hb hσ₁
       ((continuous_fst.comp hBc).tendsto s) (.of_forall fun s' ↦ by
         obtain ⟨⟨b', hpb', hb', -⟩, -⟩ := hB s'
-        exact hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd hpb' hb')
+        exact hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpb' hb')
     have h₂ := hX.tendsto_flow_levelCrossingTime hfd har ha hσ₂
       ((continuous_snd.comp hBc).tendsto s) (.of_forall fun s' ↦ by
         obtain ⟨-, ⟨a', ha'r, ha', -⟩⟩ := hB s'
-        exact hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd ha'r ha')
+        exact hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet ha'r ha')
     have e₁ := Flow.flow_levelCrossingTime_flow
-      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd hpb hb) hσ₁ 0
+      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpb hb) hσ₁ 0
     have e₂ := Flow.flow_levelCrossingTime_flow
-      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd har ha) hσ₂ 0
+      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet har ha) hσ₂ 0
     rw [Flow.map_zero_apply] at e₁ e₂
     rw [← e₁] at h₁
     rw [← e₂] at h₂
     exact h₁.prodMk_nhds h₂
   have hF₀ : F ⟨0, left_mem_Icc.2 hδ.le⟩ = (a₁, a₂) := by
     have e₁ := Flow.flow_levelCrossingTime_flow
-      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd hpq' ha₁)
+      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpq' ha₁)
       (by rw [Flow.map_zero_apply] : f (hX.flow 0 a₁) = f a₁) T₁
     have e₂ := Flow.flow_levelCrossingTime_flow
-      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd hqr' ha₂)
+      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hqr' ha₂)
       (by rw [Flow.map_zero_apply] : f (hX.flow 0 a₂) = f a₂) T₂
     rw [Flow.map_zero_apply] at e₁ e₂
     simp only [hFdef, hB₀, e₁, e₂]
@@ -517,9 +517,9 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet
     obtain ⟨σ₂, hσ₂, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hfd hpr' hs₂
       hfa₂.1 (by linarith [hfa₁.1, hfa₁.2, hfa₂.2])
     have e₁ := Flow.flow_levelCrossingTime_flow
-      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd hpr' hs₁) hσ₁ 0
+      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr' hs₁) hσ₁ 0
     have e₂ := Flow.flow_levelCrossingTime_flow
-      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd hpr' hs₂) hσ₂ 0
+      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr' hs₂) hσ₂ 0
     rw [Flow.map_zero_apply] at e₁ e₂
     simp only [hFdef, hSdef, mem_ofPred_eq, e₁, e₂]
     refine ⟨hX.flow.isInvariant_unstableSet_inter_stableSet p r _ hs₁, hσ₁, hσ₂, σ₂ + t - σ₁, ?_⟩
@@ -555,18 +555,18 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet
     -- The points of the trajectories on the levels of the arc's start tend to its start.
     have hm₁ := hX.tendsto_flow_levelCrossingTime hfd hpq' ha₁ (σ₀ := T₁) rfl
       ((continuous_fst.tendsto _).mono_left nhdsWithin_le_nhds)
-      (hSmem.mono fun w hw ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd hpr' hw.1)
+      (hSmem.mono fun w hw ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr' hw.1)
     have hm₂ := hX.tendsto_flow_levelCrossingTime hfd hqr' ha₂ (σ₀ := T₂) rfl
       ((continuous_snd.tendsto _).mono_left nhdsWithin_le_nhds)
-      (hSmem.mono fun w hw ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd hpr'
+      (hSmem.mono fun w hw ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr'
         (hw₂m w hw))
     have hfy₁ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hfd hpq' hy₁
     have hfy₂ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hfd hqr' hy₂
     filter_upwards [hSmem, (hm₁.prodMk_nhds hm₂).eventually hBfwd] with w hw hfw
     have hw2 := hw₂m w hw
     obtain ⟨hw1, hw1f, hw2f, t, ht⟩ := hw
-    have hanti₁ := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd hpr' hw1
-    have hanti₂ := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd hpr' hw2
+    have hanti₁ := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr' hw1
+    have hanti₂ := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr' hw2
     obtain ⟨σ₁, hσ₁, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hfd hpr' hw1
       (by linarith [hfy₁.1, hfa₂.1, hfa₂.2]) hfy₁.2
     obtain ⟨σ₂, hσ₂, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hfd hpr' hw2

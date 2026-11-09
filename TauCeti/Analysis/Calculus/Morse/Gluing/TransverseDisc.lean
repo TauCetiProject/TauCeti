@@ -238,18 +238,10 @@ theorem exists_homeomorph_closure_splitGluingPairs_of_hasStrictFDerivAt
       apply WithLp.ofLp_injective <;> ext <;> simp [hfst, hexit]
   · -- The entry points of orbits through `ψ z` approach `(x₀, 0)`, hence eventually lie in the
     -- part of the entrance graph used by the gluing pairs.
-    have hfst : ∀ᶠ z in 𝓝 (0 : F), (ψ z).fst ≠ 0 :=
-      ((WithLp.fstL 2 ℝ Eₛ Eᵤ).continuous.continuousAt.comp hψ.continuousAt).eventually_ne
-        (by simpa [hψ₀, ← norm_pos_iff, hx₀] using hε)
-    have hcont : ContinuousAt (fun z ↦ (‖(ψ z).fst‖ / ε) • (ψ z).snd) 0 :=
-      ((((WithLp.fstL 2 ℝ Eₛ Eᵤ).continuous.continuousAt.comp hψ.continuousAt).norm.div_const
-        ε).smul ((WithLp.sndL 2 ℝ Eₛ Eᵤ).continuous.continuousAt.comp hψ.continuousAt))
-    have hsmall : ∀ᶠ z in 𝓝 (0 : F), ‖(‖(ψ z).fst‖ / ε) • (ψ z).snd‖ ≤ r₀ * ε := by
-      have h := hcont.tendsto
-      simp only [hψ₀] at h
-      simp at h
-      simpa [dist_zero_right] using
-        h.eventually (closedBall_mem_nhds 0 (by positivity : 0 < r₀ * ε))
+    obtain ⟨hfst, hsmall⟩ := eventually_ne_zero_and_norm_rescale_smul_le
+      ((WithLp.fstL 2 ℝ Eₛ Eᵤ).continuous.continuousAt.comp hψ.continuousAt)
+      ((WithLp.sndL 2 ℝ Eₛ Eᵤ).continuous.continuousAt.comp hψ.continuousAt)
+      (by simpa [hψ₀] using hx₀) (by simp [hψ₀]) hε hr₀
     refine ((hgexh.and (hfst.and hsmall)).prod_nhds hkexh).mono ?_
     rintro ⟨z, z'⟩ ⟨⟨hzg, hz₀, hzs⟩, hz'k⟩ hne hpass
     have hflow := splitQuadraticFlow_splitEntryTime hε hz₀
