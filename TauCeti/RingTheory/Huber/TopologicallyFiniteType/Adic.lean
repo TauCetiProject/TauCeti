@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Ideal.Over
 public import TauCeti.RingTheory.Huber.AdicHom.Basic
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
 
+import TauCeti.RingTheory.AdicCompletion.Surjective
 import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.Huber.Restricted.Adic
 import TauCeti.RingTheory.Huber.WeightedEval.Completion
@@ -94,7 +95,7 @@ section Presentation
 /-- **An algebra strictly topologically of finite type is adic for the extended ideal.** If `B`
 is an open quotient of `A⟨X₁, …, Xₖ⟩` over an `I`-adic ring `A`, with `I` finitely generated,
 then the topology of `B` is the `I·B`-adic one. -/
-theorem IsStrictlyTopologicallyFiniteType.isAdic [IsTopologicalRing B]
+theorem IsStrictlyTopologicallyFiniteType.isAdic
     (h : IsStrictlyTopologicallyFiniteType (algebraMap A B)) (hI : IsAdic I) (hfg : I.FG) :
     IsAdic (I.map (algebraMap A B)) := by
   obtain ⟨k, π, hπ, hcomm⟩ := isStrictlyTopologicallyFiniteType_iff.mp h
@@ -223,23 +224,8 @@ theorem isStrictlyTopologicallyFiniteType_of_isAdic (hI : IsAdic I) (hfg : I.FG)
     have : IsHausdorff (JR.map ψ) B := by
       rw [hmap]
       exact hc.toIsHausdorff
-    refine surjective_of_mk_map_comp_surjective (I := JR) ψ ?_
-    rw [hmap]
-    -- the reduction of `ψ` is an `A`-algebra map whose range contains the generators
-    let ψA : R →ₐ[A] B := { ψ with commutes' := RingHom.congr_fun hψA }
-    let q := (Ideal.Quotient.mkₐ A J).comp ψA
-    have hle : Algebra.adjoin A (Set.range fun i ↦ f (MvPolynomial.X i)) ≤ q.range :=
-      Algebra.adjoin_le <| by
-        rintro _ ⟨i, rfl⟩
-        exact ⟨_, (congrArg (Ideal.Quotient.mk J) (hψX i)).trans (hb i)⟩
-    intro y
-    obtain ⟨p, rfl⟩ := hf y
-    have hp : f p ∈ Algebra.adjoin A (Set.range fun i ↦ f (MvPolynomial.X i)) := by
-      rw [Algebra.adjoin_range_eq_range_aeval]
-      exact ⟨p, (RingHom.congr_fun (congrArg AlgHom.toRingHom (MvPolynomial.aeval_unique f))
-        p).symm⟩
-    obtain ⟨x, hx⟩ := hle hp
-    exact ⟨x, by simpa [q, ψA] using hx⟩
+    exact surjective_of_isPrecomplete_of_lifts_generators hψA hmap hf
+      (fun i ↦ (congrArg (Ideal.Quotient.mk J) (hψX i)).trans (hb i))
   -- `ψ` is open: it carries the powers of `I·A⟨X⟩` onto the open powers of `I·B`
   have hopen : IsOpenMap ψ := by
     refine (IsTopologicalAddGroup.isOpenMap_iff_nhds_zero (f := ψ)).mpr ?_
@@ -255,7 +241,7 @@ end Lift
 topological `A`-algebra `B` is strictly topologically of finite type exactly when `B` is
 noetherian, `I·B`-adic, `I·B`-adically separated and complete, and `B ⧸ I·B` is a finitely
 generated `A ⧸ I`-algebra. Noetherianity of `B` follows from the other three conditions. -/
-theorem isStrictlyTopologicallyFiniteType_algebraMap_iff [IsTopologicalRing B] [IsNoetherianRing A]
+theorem isStrictlyTopologicallyFiniteType_algebraMap_iff [IsNoetherianRing A]
     (hI : IsAdic I) :
     IsStrictlyTopologicallyFiniteType (algebraMap A B) ↔
       IsNoetherianRing B ∧ IsAdic (I.map (algebraMap A B)) ∧
