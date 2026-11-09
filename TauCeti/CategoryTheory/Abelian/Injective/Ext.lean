@@ -24,9 +24,9 @@ identify `Extⁿ(X, Y)` with the cohomology of the complex `Hom(X, I)` in every 
 
 `homologyLinearCoyonedaEquiv` packages this identification as a linear equivalence on
 native homology. It sends the homology class of a cocycle to Mathlib's `extMk` class.
-The equivalence commutes with morphisms of resolutions and gives
-`CategoryTheory.rightDerivedLinearCoyonedaIsoExt`, the natural identification of
-derived covariant Hom with derived-category Ext.
+The equivalence commutes with morphisms of resolutions and with precomposition in the
+first argument. It gives `CategoryTheory.rightDerivedLinearCoyonedaIsoExt`, the
+identification of derived covariant Hom with derived-category Ext, natural in both arguments.
 -/
 
 public section
@@ -169,6 +169,38 @@ lemma homologyLinearCoyonedaEquiv_naturality {Y' : C} (R' : InjectiveResolution 
     homologyLinearCoyonedaEquiv_moduleCatKerHomologyClass]
   exact (R.extMk_comp_mk₀ z.1 (n + 1) rfl z.2 φ).symm
 
+/-- Computing Ext by an injective resolution commutes with precomposition in its first
+argument. -/
+lemma homologyLinearCoyonedaEquiv_naturality_left {X' : C} (g : X' ⟶ X) (n : ℕ)
+    (x : (R.linearCoyonedaComplex k X).homology n) :
+    R.homologyLinearCoyonedaEquiv n
+        (HomologicalComplex.homologyMap
+          ((NatTrans.mapHomologicalComplex ((linearCoyoneda k C).map g.op) _).app
+            R.cocomplex) n x) =
+      (Ext.mk₀ g).comp (R.homologyLinearCoyonedaEquiv n x) (zero_add n) := by
+  obtain ⟨y, rfl⟩ := (R.linearCoyonedaComplex k X).moduleCat_homologyπ_surjective n x
+  rw [← (R.linearCoyonedaComplex k X).moduleCatKerHomologyClass_moduleCatCyclesToKer
+    (m := n + 1) (by simp) y]
+  let z := (R.linearCoyonedaComplex k X).moduleCatCyclesToKer n (n + 1) y
+  let ψ : R.linearCoyonedaComplex k X ⟶ R.linearCoyonedaComplex k X' :=
+    (NatTrans.mapHomologicalComplex ((linearCoyoneda k C).map g.op) _).app R.cocomplex
+  let b := ((ψ.f n).hom.comp
+    (LinearMap.ker ((R.linearCoyonedaComplex k X).d n (n + 1)).hom).subtype).codRestrict
+      (LinearMap.ker ((R.linearCoyonedaComplex k X').d n (n + 1)).hom) fun z ↦ by
+        rw [LinearMap.mem_ker]
+        have hz : (R.linearCoyonedaComplex k X).d n (n + 1) z.1 = 0 := z.2
+        have h := ConcreteCategory.congr_hom (ψ.comm n (n + 1)) z.1
+        simpa only [ModuleCat.comp_apply, hz, map_zero, LinearMap.comp_apply,
+          Submodule.subtype_apply] using h
+  have h := HomologicalComplex.homologyMap_moduleCatHomologyClass
+    (K := R.linearCoyonedaComplex k X) (by simp) (Submodule.subtype _) (fun z ↦ z.2)
+    ψ (Submodule.subtype _) (fun z ↦ z.2) b (fun _ ↦ rfl) z
+  rw [← HomologicalComplex.moduleCatKerHomologyClass_eq_moduleCatHomologyClass,
+    ← HomologicalComplex.moduleCatKerHomologyClass_eq_moduleCatHomologyClass] at h
+  rw [h, homologyLinearCoyonedaEquiv_moduleCatKerHomologyClass,
+    homologyLinearCoyonedaEquiv_moduleCatKerHomologyClass]
+  exact (R.mk₀_comp_extMk z.1 (n + 1) rfl z.2 g).symm
+
 end CategoryTheory.InjectiveResolution
 
 namespace CategoryTheory
@@ -222,5 +254,42 @@ lemma rightDerivedLinearCoyonedaIsoExt_hom_app (n : ℕ) (Y : C) :
         ModuleCat.ofHom ((injectiveResolution Y).homologyLinearCoyonedaEquiv
           (k := k) (X := X) n).toLinearMap :=
   (rfl)
+
+/-- The derived Hom-to-Ext comparison is natural in the contravariant Hom argument. -/
+@[reassoc]
+lemma rightDerivedLinearCoyonedaIsoExt_hom_naturality_left {X' : C} (g : X' ⟶ X) (n : ℕ) :
+    ((linearCoyoneda k C).map g.op).rightDerived n ≫
+        (rightDerivedLinearCoyonedaIsoExt k X' n).hom =
+      (rightDerivedLinearCoyonedaIsoExt k X n).hom ≫
+        (linearExtFunctor k C n).map g.op := by
+  apply NatTrans.ext
+  funext Y
+  rw [NatTrans.comp_app, NatTrans.comp_app,
+    (injectiveResolution Y).rightDerived_app_eq,
+    rightDerivedLinearCoyonedaIsoExt_hom_app,
+    rightDerivedLinearCoyonedaIsoExt_hom_app]
+  ext x
+  -- Normalize the bundled homology modules to the domains of the linear equivalences;
+  -- these occur both as native homology objects and as `ModuleCat.of` their carriers.
+  change (injectiveResolution Y).homologyLinearCoyonedaEquiv n
+      (((injectiveResolution Y).isoRightDerivedObj
+        ((linearCoyoneda k C).obj (Opposite.op X')) n).hom
+        (((injectiveResolution Y).isoRightDerivedObj
+          ((linearCoyoneda k C).obj (Opposite.op X')) n).inv
+          (HomologicalComplex.homologyMap
+            ((NatTrans.mapHomologicalComplex ((linearCoyoneda k C).map g.op) _).app
+              (injectiveResolution Y).cocomplex) n
+            (((injectiveResolution Y).isoRightDerivedObj
+              ((linearCoyoneda k C).obj (Opposite.op X)) n).hom x)))) =
+    (Ext.mk₀ g).comp
+      ((injectiveResolution Y).homologyLinearCoyonedaEquiv n
+        (((injectiveResolution Y).isoRightDerivedObj
+          ((linearCoyoneda k C).obj (Opposite.op X)) n).hom x)) (zero_add n)
+  have h := ConcreteCategory.congr_hom
+    ((injectiveResolution Y).isoRightDerivedObj
+      ((linearCoyoneda k C).obj (Opposite.op X')) n).inv_hom_id
+  simp only [ModuleCat.comp_apply, ModuleCat.id_apply] at h
+  erw [h]
+  exact (injectiveResolution Y).homologyLinearCoyonedaEquiv_naturality_left g n _
 
 end CategoryTheory
