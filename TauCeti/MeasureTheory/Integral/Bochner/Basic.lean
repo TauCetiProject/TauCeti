@@ -72,6 +72,8 @@ for set and probability integrals.
   function on a probability space.
 * `integral_max_sub_sq_le_mul_measureReal` bounds the integral of the squared truncation
   `((f - l)⁺)²` of a function `f ≤ M` by `(M - l)²` times the measure of `{l ≤ f}`.
+* `exists_mem_sub_div_lt_of_sub_lt_integral`: if `f ≤ M` on a probability space has integral
+  within `δ` of `M`, then `f` comes within `δ / μ B` of `M` on every set `B` of positive mass.
 
 ## `L¹` convergence
 
@@ -350,6 +352,25 @@ theorem integral_max_sub_sq_le_mul_measureReal {Ω : Type*} [MeasurableSpace Ω]
           norm_num
     _ = (M - l) ^ 2 * μ.real {x | l ≤ f x} := by
         rw [integral_indicator_const _ hS, smul_eq_mul, mul_comm]
+
+/-- On a probability space, let `f ≤ M` almost everywhere have integral within `δ` of `M`. Then on
+every measurable set `B` of positive mass, `f` comes within `δ / μ B` of `M` somewhere. -/
+theorem exists_mem_sub_div_lt_of_sub_lt_integral {Ω : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} [IsProbabilityMeasure μ] {f : Ω → ℝ} {M δ : ℝ} (hf : Integrable f μ)
+    (hfM : ∀ᵐ x ∂μ, f x ≤ M) (hδ : M - δ < ∫ x, f x ∂μ) {B : Set Ω} (hB : MeasurableSet B)
+    (hpB : 0 < μ.real B) : ∃ x ∈ B, M - δ / μ.real B < f x := by
+  by_contra! hcon
+  have hle : ∫ x, f x ∂μ ≤ ∫ x, (M - B.indicator (fun _ ↦ δ / μ.real B) x) ∂μ := by
+    refine integral_mono_ae hf ((integrable_const M).sub
+      ((integrable_const _).indicator hB)) ?_
+    filter_upwards [hfM] with x hx
+    by_cases hxB : x ∈ B
+    · simpa [hxB, sub_div' hpB.ne'] using hcon x hxB
+    · simpa [hxB] using hx
+  rw [integral_sub (integrable_const M) ((integrable_const _).indicator hB), integral_const,
+    integral_indicator_const _ hB, smul_eq_mul, smul_eq_mul, probReal_univ, one_mul,
+    mul_div_cancel₀ _ hpB.ne'] at hle
+  linarith
 
 /-- The positive part of the integral of a real-valued function is at most the integral of its
 pointwise positive part. No integrability or pointwise sign assumption on `f` is needed. -/
