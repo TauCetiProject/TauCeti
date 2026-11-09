@@ -9,12 +9,11 @@ public import TauCeti.NumberTheory.DirichletCharacter.GeneralizedBernoulli
 public import TauCeti.NumberTheory.DirichletCharacter.GaussSum
 import Mathlib.NumberTheory.ZetaValues
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
-import TauCeti.Analysis.Fourier.ZMod
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
 import TauCeti.Data.ZMod.Count
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Cotangent
-import TauCeti.NumberTheory.ZetaValues
+import TauCeti.NumberTheory.LSeries.ZMod
 
 /-!
 # Generalized Bernoulli numbers and primitive character sums
@@ -55,26 +54,12 @@ namespace DirichletCharacter
 
 variable {N k : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 
-/-- For a primitive character `χ`, the sum `∑ₐ χ(a) n⁻ᵏ e_n(a.val / N)` equals
-`τ(χ) χ⁻¹(n) n⁻ᵏ`, also at nonunit frequencies `n`. -/
-private theorem sum_mul_fourier_val_div_eq_gaussSum_mul (hχ : χ.IsPrimitive) (n : ℤ) :
-    (∑ a : ZMod N, χ a *
-      (1 / (n : ℂ) ^ k * fourier n ((a.val / (N : ℝ) : ℝ) : UnitAddCircle))) =
-    gaussSum χ ZMod.stdAddChar * (χ⁻¹ (n : ZMod N) * (n : ℂ) ^ (-(k : ℤ))) := by
-  simp_rw [ZMod.fourier_val_div_eq_stdAddChar, mul_comm _ (n : ZMod N)]
-  have hgauss := gaussSum_mulShift_of_isPrimitive ZMod.stdAddChar hχ (n : ZMod N)
-  simp only [gaussSum, AddChar.mulShift_apply] at hgauss
-  simp_rw [← mul_assoc, mul_right_comm (χ _) (1 / (n : ℂ) ^ k)]
-  rw [← Finset.sum_mul, hgauss]
-  simp only [zpow_neg, zpow_natCast, one_div, gaussSum]
-  ring
-
 /-- For `k ≥ 2`, `B_{k,χ}` equals `N^(k-1) ∑ₐ χ(a) B_k(a.val / N)`, computed with representatives in
 `{0, …, N-1}`. This is allowed because `B_k(0) = B_k(1)`. -/
-private theorem generalizedBernoulli_eq_pow_mul_sum_bernoulliFun (hk : 2 ≤ k) :
+private theorem generalizedBernoulli_eq_pow_mul_sum_bernoulli_eval (hk : 2 ≤ k) :
     χ.generalizedBernoulli k =
       (N : ℂ) ^ (k - 1) *
-        ∑ a : ZMod N, χ a * bernoulliFun k (a.val / (N : ℝ)) := by
+        ∑ a : ZMod N, χ a * (((Polynomial.bernoulli k).eval ((a.val : ℚ) / N) : ℚ) : ℂ) := by
   classical
   rw [generalizedBernoulli_def]
   have hexp : (k : ℤ) - 1 = ((k - 1 : ℕ) : ℤ) := by omega
@@ -83,16 +68,14 @@ private theorem generalizedBernoulli_eq_pow_mul_sum_bernoulliFun (hk : 2 ≤ k) 
   apply Finset.sum_congr rfl
   intro a _
   congr 1
-  have hcast (x : ℚ) : algebraMap ℚ ℂ ((Polynomial.bernoulli k).eval x) =
-      bernoulliFun k (x : ℝ) := by
-    simp [TauCeti.bernoulliFun_ratCast]
   by_cases ha : a = 0
   · subst a
     simp only [ite_true, div_self (Nat.cast_ne_zero.mpr (NeZero.ne N) : (N : ℚ) ≠ 0),
-      hcast, Rat.cast_one, ZMod.val_zero, Nat.cast_zero, zero_div]
-    exact congrArg ((↑) : ℝ → ℂ)
-      (bernoulliFun_endpoints_eq_of_ne_one (by omega : k ≠ 1))
-  · simp only [ha, ite_false, hcast, Rat.cast_div, Rat.cast_natCast]
+      ZMod.val_zero, Nat.cast_zero, zero_div]
+    have h1 := Polynomial.bernoulli_eval_one_add k 0
+    rw [add_zero, zero_pow (by omega : k - 1 ≠ 0), mul_zero, add_zero] at h1
+    simp [h1]
+  · simp [ha]
 
 /-- The integer-indexed critical-value sum of a primitive character, multiplied by its Gauss
 sum, is an explicit multiple of its generalized Bernoulli number. No parity hypothesis is
@@ -104,22 +87,26 @@ theorem gaussSum_mul_tsum_inv_pow_eq_generalizedBernoulli (hχ : χ.IsPrimitive)
       -(2 * π * I) ^ k / ((k.factorial : ℂ) * (N : ℂ) ^ (k - 1)) *
         χ.generalizedBernoulli k := by
   classical
-  have hNk : (N : ℂ) ^ (k - 1) ≠ 0 :=
-    pow_ne_zero _ (Nat.cast_ne_zero.mpr (NeZero.ne N))
-  -- Apply Mathlib's hasSum_one_div_pow_mul_fourier_mul_bernoulliFun at each residue,
-  -- using its value in [0, 1).
-  have hs (a : ZMod N) :=
-    (hasSum_one_div_pow_mul_fourier_mul_bernoulliFun hk
-      (ZMod.val_div_natCast_mem_Icc a)).mul_left (χ a)
-  have hsum := hasSum_sum (s := Finset.univ) fun a _ ↦ hs a
-  have hresult := hsum.congr_fun
-    (fun n ↦ (sum_mul_fourier_val_div_eq_gaussSum_mul χ hχ n).symm)
-  -- Sum the Fourier identity and restore the power of the modulus in B_{k,χ}.
-  rw [← tsum_mul_left, hresult.tsum_eq, generalizedBernoulli_eq_pow_mul_sum_bernoulliFun χ hk]
-  simp_rw [← mul_assoc, mul_comm (χ _ : ℂ) (-(2 * π * I) ^ k / (k.factorial : ℂ)),
-    mul_assoc]
-  rw [← Finset.mul_sum]
+  have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
+  have hprod := gaussSum_mul_gaussSum_inv_eq_neg_one_mul_card_of_isPrimitive hχ
+    (ZMod.isPrimitive_stdAddChar N)
+  rw [ZMod.card] at hprod
+  -- the series of `χ⁻¹` against `n⁻ᵏ`, in terms of the Fourier transform of `χ⁻¹`
+  have h : ∑' n : ℤ, χ⁻¹ (n : ZMod N) * (n : ℂ) ^ (-(k : ℤ)) = _ :=
+    (ZMod.hasSum_mul_zpow_neg_bernoulli (fun a ↦ χ⁻¹ a) hk).tsum_eq
+  -- the Gauss sum times the transform of `χ⁻¹` at `j` is `N χ j`
+  have hF (j : ZMod N) : gaussSum χ ZMod.stdAddChar * ZMod.dft (fun a ↦ χ⁻¹ a) j =
+      N * χ j := by
+    have h1 : ZMod.dft (fun a ↦ χ⁻¹ a) j = χ (-1) * χ j * gaussSum χ⁻¹ ZMod.stdAddChar := by
+      rw [hχ.inv.fourierTransform_eq_inv_mul_gaussSum, inv_inv, ← neg_one_mul, map_mul]
+    rw [h1]
+    linear_combination (χ j) * (χ (-1)) * hprod + (N * χ j) * χ.apply_neg_one_mul_self
+  rw [h, generalizedBernoulli_eq_pow_mul_sum_bernoulli_eval χ hk, mul_left_comm,
+    Finset.mul_sum]
+  simp_rw [mul_assoc, ← mul_assoc (gaussSum χ ZMod.stdAddChar), hF, mul_assoc]
+  have hNk : (N : ℂ) ^ (k - 1) ≠ 0 := pow_ne_zero _ hN
   field_simp
+  simp_rw [Finset.mul_sum, mul_assoc]
 
 /-- **The cotangent sum of a primitive character.** For a nontrivial primitive `φ` modulo
 `v ∣ N`, `∑_{j mod N} φ⁻¹(j) π cot (π j / N) = N · 2π i g(φ⁻¹) B₁,φ / v`. -/
