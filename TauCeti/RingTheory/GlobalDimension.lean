@@ -32,6 +32,8 @@ dimension is finite, and then it equals the Krull dimension.
   dimension at most `d`, for any `d : WithBot ℕ∞`.
 * `TauCeti.globalDimension_le_iff_hasProjectiveDimensionLE`: `globalDimension R ≤ n` iff every
   module has projective dimension at most `n`, in Mathlib's pointwise vocabulary.
+* `TauCeti.globalDimension_le_iff_hasInjectiveDimensionLE`: `globalDimension R ≤ n` iff every
+  module has injective dimension at most `n`.
 * `TauCeti.globalDimension_le_tfae`: it suffices to bound the projective dimensions of the finite
   modules, or only of the cyclic modules `R ⧸ I` (Stacks, Lemma 10.109.12 (065T)).
 * `Submonoid.globalDimension_localization_le`: localization does not increase the global dimension
@@ -93,6 +95,14 @@ theorem globalDimension_le_iff (d : WithBot ℕ∞) :
 theorem globalDimension_le_iff_hasProjectiveDimensionLE (n : ℕ) :
     globalDimension.{v} R ≤ n ↔ ∀ M : ModuleCat.{v} R, HasProjectiveDimensionLE M n := by
   simp [globalDimension, projectiveDimension_le_iff]
+
+/-- The global dimension is at most `n` iff every module has injective dimension at most `n`:
+both conditions say that all `Ext` groups vanish above degree `n`. -/
+theorem globalDimension_le_iff_hasInjectiveDimensionLE [Small.{v} R] (n : ℕ) :
+    globalDimension.{v} R ≤ n ↔ ∀ M : ModuleCat.{v} R, HasInjectiveDimensionLE M n := by
+  rw [globalDimension_le_iff_hasProjectiveDimensionLE]
+  simp only [hasProjectiveDimensionLT_iff.{v}, hasInjectiveDimensionLT_iff.{v}]
+  exact ⟨fun h N i hi M e ↦ h M i hi e, fun h N i hi M e ↦ h M i hi e⟩
 
 /-- Only the zero ring has global dimension `⊥`. -/
 @[simp]
