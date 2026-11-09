@@ -84,8 +84,6 @@ arbitrary initial time is recovered by translating the parameter with
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf–Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "Maximal interval and homogeneity".
 * [Lee, J. M. (2012). _Introduction to Smooth Manifolds_. Springer New York.][lee2012],
   Chapter 9, Theorems 9.12 and 9.16.
 * [michaellee94, mathlib4#26413: _Existence of maximal solutions for ODEs meeting

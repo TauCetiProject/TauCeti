@@ -67,9 +67,6 @@ acceleration of the curve on this computation.
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf--Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "Covariant derivative along a curve": agreement with the ambient derivative for a
-  pulled-back vector field.
 * M. P. do Carmo, *Riemannian Geometry*, Birkhauser, 1992, Ch. 2, Proposition 2.2(c).
 * The moving-chart operator characterized here was informed by
   `formalized-sources/DoCarmo/DoCarmoLib/Riemannian/Connection/CovariantDerivativeAlong.lean` in
