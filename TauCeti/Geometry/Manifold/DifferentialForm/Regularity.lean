@@ -13,6 +13,7 @@ import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
+import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
 # Regularity of differential forms in charts
@@ -394,15 +395,6 @@ theorem contMDiffAt_mpullback_extChartAt {n : WithTop ℕ∞} [IsManifold I 1 M]
     exact RoughForm.inChartAt_mpullback_extChartAt _ α hz
   exact contMDiffAt_form_of_contDiffWithinAt_inChartAt hx (hη.congr_of_eventuallyEq heq
     (heq.self_of_nhdsWithin (extChartAt_target_subset_range α ((extChartAt I α).map_source hx))))
-
-/-- A point of the chart source at `x` whose chart image lies in `s` lies in the extended chart
-source, and its chart image lies in `s ∩ range I`. -/
-theorem mem_extChartAt_source_and_mem_of_mem_preimage {x y : M} {s : Set E}
-    (hy : y ∈ (chartAt H x).source ∩ extChartAt I x ⁻¹' s) :
-    y ∈ (extChartAt I x).source ∧ extChartAt I x y ∈ s ∩ range I := by
-  rw [extChartAt_source]
-  exact ⟨hy.1, hy.2, extChartAt_target_subset_range x ((extChartAt I x).map_source
-    (by rw [extChartAt_source]; exact hy.1))⟩
 
 /-- A `C^r` form `α` on an open set `s` intersected with the model range, pulled back along the
 chart at `x` and cut off by a `C^r` function supported where the chart lands in `s`, is a `C^r`

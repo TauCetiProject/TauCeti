@@ -99,6 +99,15 @@ theorem comp_extChartAt_symm_comp_extChartAt_eventuallyEq {α : Type*} (f : M �
   filter_upwards [extChartAt_source_mem_nhds (I := I) x] with y hy
   exact congrArg f ((extChartAt I x).left_inv hy)
 
+/-- A point of the chart source at `x` whose chart image lies in `s` lies in the extended chart
+source, and its chart image lies in `s ∩ range I`. -/
+theorem mem_extChartAt_source_and_mem_of_mem_preimage {x y : M} {s : Set E}
+    (hy : y ∈ (chartAt H x).source ∩ extChartAt I x ⁻¹' s) :
+    y ∈ (extChartAt I x).source ∧ extChartAt I x y ∈ s ∩ Set.range I := by
+  rw [extChartAt_source]
+  exact ⟨hy.1, hy.2, extChartAt_target_subset_range x ((extChartAt I x).map_source
+    (by rw [extChartAt_source]; exact hy.1))⟩
+
 /-- Changing extended coordinates transports the coordinate image of a subset of the overlap
 onto its image in the second chart. No differentiability assumption is needed. -/
 theorem extChartAt_coordChange_image (α β : M) {s : Set M}
