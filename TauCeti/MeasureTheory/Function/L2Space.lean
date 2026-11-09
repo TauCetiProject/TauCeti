@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.L2Space
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
+public import TauCeti.MeasureTheory.Integral.PiSystem
 
 /-!
 # Inner products of square-integrable functions
@@ -15,11 +18,14 @@ space is integrable. Mathlib states this for elements of `L²` (`MeasureTheory.L
 this file gives the form for functions satisfying `MemLp f 2 μ`, which is how second-moment
 hypotheses on random vectors are usually stated, together with the special case of a quadratic
 form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function.
-For counting measure, singleton-supported vectors separate L² functions. On a compact space with
-a finite measure, the L² pairing of an L² function with a continuous function is an integral
+For counting measure, singleton-supported vectors separate L² functions and determine
+continuous linear maps out of L². On a compact space with a finite measure, the L² pairing of an
+L² function with a continuous function is an integral
 (`MeasureTheory.L2.inner_toLp_continuousMap`), extending Mathlib's `ContinuousMap.inner_toLp`.
 More generally, the L² pairing of an L² function with the class of any square-integrable
 function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`).
+Indicators of any countably spanning generating π-system of finite-measure sets have
+dense real linear span in L².
 -/
 
 public section
@@ -80,3 +86,58 @@ theorem L2.inner_toLp (f : Lp E 2 μ) {g : α → E} (hg : MemLp g 2 μ) :
   rw [hx]
 
 end MeasureTheory
+
+namespace ContinuousLinearMap
+
+open MeasureTheory
+
+/-- A continuous linear map out of counting-measure L² that vanishes on all
+singleton-supported vectors is zero. No countability of the index space is needed. -/
+theorem eq_zero_of_apply_indicatorConstLp_singleton
+    {α 𝕜 E F : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+    (T : Lp E 2 (Measure.count : Measure α) →L[𝕜] F)
+    (h : ∀ (i : α) (v : E),
+      T (indicatorConstLp 2 (measurableSet_singleton i) (by simp) v) = 0) : T = 0 := by
+  have ht : T.adjoint = 0 := by
+    apply ContinuousLinearMap.ext
+    intro η
+    rw [zero_apply]
+    refine Lp.eq_zero_of_inner_indicatorConstLp_singleton (𝕜 := 𝕜) _ fun i v => ?_
+    rw [adjoint_inner_right, h, inner_zero_left]
+  calc
+    T = T.adjoint.adjoint := (adjoint_adjoint T).symm
+    _ = 0 := by rw [ht, map_zero]
+
+end ContinuousLinearMap
+
+namespace TauCeti
+
+open MeasureTheory
+open scoped ENNReal
+
+/-- Indicators of a countably spanning generating π-system of finite-measure sets have
+dense real linear span in L². -/
+theorem topologicalClosure_span_indicatorConstLp_eq_top_of_isPiSystem
+    {X : Type*} {m : MeasurableSpace X} {μ : Measure X}
+    {S : Set (Set X)} (hgen : m = MeasurableSpace.generateFrom S)
+    (hpi : IsPiSystem S) (hcover : IsCountablySpanning S) (hfin : ∀ s ∈ S, μ s ≠ ∞) :
+    (Submodule.span ℝ {g : Lp ℝ 2 μ | ∃ (s : Set X) (hs : s ∈ S),
+      g = indicatorConstLp 2 (hgen ▸ MeasurableSpace.measurableSet_generateFrom hs)
+        (hfin s hs) 1}).topologicalClosure = ⊤ := by
+  rw [← Submodule.orthogonal_eq_bot_iff, Submodule.orthogonal_closure]
+  apply bot_unique
+  intro f hf
+  apply Lp.ext
+  have hfi : ∀ s ∈ S, IntegrableOn f s μ := fun s hs =>
+    integrableOn_Lp_of_measure_ne_top f (by norm_num) (hfin s hs)
+  refine (ae_eq_zero_of_setIntegral_eq_zero_of_isPiSystem hgen hpi hcover hfi ?_).trans
+    (Lp.coeFn_zero ℝ 2 μ).symm
+  intro s hs
+  rw [← L2.inner_indicatorConstLp_one
+    (hgen ▸ MeasurableSpace.measurableSet_generateFrom hs) (hfin s hs) f]
+  exact (Submodule.mem_orthogonal _ f).mp hf _
+    (Submodule.subset_span ⟨s, hs, rfl⟩)
+
+end TauCeti
