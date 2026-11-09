@@ -29,7 +29,7 @@ half-line law, which is `Set.Iic 0`.
 * `TauCeti.integrable_exp_mul_of_ge` — every nonpositive rate is integrable when `X` is bounded
   below;
 * `TauCeti.isFiniteMeasure_of_integrable_exp_mul` — a statistic bounded below with an integrable
-  exponential at a positive rate lives on a finite measure;
+  exponential at a nonnegative rate lives on a finite measure;
 * `TauCeti.not_integrable_exp_mul_of_not_integrable_rpow` and
   `TauCeti.not_integrable_exp_mul_of_not_integrable_pow` — no positive rate is integrable once a
   real, respectively natural, moment of `X` fails to exist;
@@ -56,10 +56,10 @@ theorem integrable_exp_mul_of_ge [IsFiniteMeasure μ] (t b : ℝ) (ht : t ≤ 0)
     (neg_nonneg.mpr ht) hX.neg (hb.mono fun _ hω ↦ neg_le_neg hω)
   simpa only [neg_mul_neg] using h
 
-/-- A statistic bounded below with an integrable exponential at a positive rate lives on a finite
-measure: the exponential is bounded below by a positive constant. -/
+/-- A statistic bounded below with an integrable exponential at a nonnegative rate lives on a
+finite measure: the exponential is bounded below by a positive constant. -/
 theorem isFiniteMeasure_of_integrable_exp_mul {b t : ℝ} (hb : ∀ᵐ ω ∂μ, b ≤ X ω)
-    (ht : 0 < t) (hexp : Integrable (fun ω ↦ Real.exp (t * X ω)) μ) : IsFiniteMeasure μ := by
+    (ht : 0 ≤ t) (hexp : Integrable (fun ω ↦ Real.exp (t * X ω)) μ) : IsFiniteMeasure μ := by
   have hc : Integrable (fun _ : Ω ↦ Real.exp (t * b)) μ :=
     hexp.mono' aestronglyMeasurable_const (hb.mono fun ω hω ↦ by
       rw [Real.norm_of_nonneg (Real.exp_pos _).le]
@@ -73,7 +73,7 @@ theorem not_integrable_exp_mul_of_not_integrable_rpow {b t : ℝ} (q : ℝ)
     (hb : ∀ᵐ ω ∂μ, b ≤ X ω) (hq : 0 ≤ q)
     (hmom : ¬ Integrable (fun ω ↦ X ω ^ q) μ) (ht : 0 < t) :
     ¬ Integrable (fun ω ↦ Real.exp (t * X ω)) μ := fun hexp ↦ by
-  have := isFiniteMeasure_of_integrable_exp_mul hb ht hexp
+  have := isFiniteMeasure_of_integrable_exp_mul hb ht.le hexp
   have hX : AEMeasurable X μ := Real.aemeasurable_of_aemeasurable_exp_mul ht.ne' hexp.aemeasurable
   exact hmom <| integrable_rpow_of_integrable_exp_mul ht.ne' hexp
     (integrable_exp_mul_of_ge (-t) b (neg_nonpos.mpr ht.le) hX hb) hq
@@ -83,11 +83,9 @@ moment**, the natural-power form of
 `TauCeti.not_integrable_exp_mul_of_not_integrable_rpow`. -/
 theorem not_integrable_exp_mul_of_not_integrable_pow {b t : ℝ} (n : ℕ)
     (hb : ∀ᵐ ω ∂μ, b ≤ X ω) (hmom : ¬ Integrable (fun ω ↦ X ω ^ n) μ) (ht : 0 < t) :
-    ¬ Integrable (fun ω ↦ Real.exp (t * X ω)) μ := fun hexp ↦ by
-  have := isFiniteMeasure_of_integrable_exp_mul hb ht hexp
-  have hX : AEMeasurable X μ := Real.aemeasurable_of_aemeasurable_exp_mul ht.ne' hexp.aemeasurable
-  exact hmom <| integrable_pow_of_integrable_exp_mul ht.ne' hexp
-    (integrable_exp_mul_of_ge (-t) b (neg_nonpos.mpr ht.le) hX hb) n
+    ¬ Integrable (fun ω ↦ Real.exp (t * X ω)) μ :=
+  not_integrable_exp_mul_of_not_integrable_rpow (n : ℝ) hb (Nat.cast_nonneg n)
+    (by simpa only [Real.rpow_natCast] using hmom) ht
 
 /-- A statistic bounded below with a nonintegrable natural power has exponential moments
 exactly at nonpositive rates. -/
