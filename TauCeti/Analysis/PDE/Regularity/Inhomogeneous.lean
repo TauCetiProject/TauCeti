@@ -344,7 +344,7 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp [Nonempty ι] {lam
   obtain ⟨γ, hγdef⟩ : ∃ γ : ℝ, γ = 2 - (Fintype.card ι : ℝ) / r := ⟨_, rfl⟩
   have hr0 : (0 : ℝ) < r := by exact_mod_cast zero_lt_one.trans hr
   have hγ : 0 < γ := hγdef ▸ sub_pos.2 ((div_lt_iff₀ hr0).2 (by linarith only [hrn]))
-  obtain ⟨β, C, hβ, hβα, hC, hiter⟩ := exists_le_mul_rpow_of_essOsc_step hα₀ hC₀ hK hD hγ
+  obtain ⟨β, C, hβ, hβα, hC, hiter⟩ := exists_le_mul_rpow_of_essOsc_step hα₀ hC₀.le hK.le hD.le hγ
   refine ⟨β, C, hβ, hβα.le.trans hα₀1, hC, ?_⟩
   intro Omega a f u x₀ R s h ha hf hu hs hsR hball
   rw [← hγdef]
@@ -371,21 +371,21 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp [Nonempty ι] {lam
     (fun ρ => by rw [hφdef]) (half_pos hR) hM
   -- One comparison step: `φ s ≤ C₀ (s/ρ)^α₀ φ ρ + K ρ^γ F` for `s ≤ ρ ≤ R / 2`.
   have hstep : ∀ s ρ, 0 < s → s ≤ ρ → ρ ≤ R / 2 →
-      φ s ≤ C₀ * ((s / ρ) ^ α₀ + 0) * φ ρ + K * ρ ^ γ * F := by
+      φ s ≤ C₀ * (s / ρ) ^ α₀ * φ ρ + K * ρ ^ γ * F := by
     intro s ρ hs hsρ hρR₁
     have hρ : 0 < ρ := hs.trans_le hsρ
     have hρR : ball x₀ ρ ⊆ ball x₀ R := ball_subset_ball (hρR₁.trans (half_le_self hR.le))
     have hfρ : (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal / lam ≤ F := hFdef ▸
       div_le_div_of_nonneg_right
         (lpNorm_mono_measure hf (Measure.restrict_mono hρR le_rfl)) hlam.le
-    calc φ s ≤ C₀ * ((s / ρ) ^ α₀ + 0) * φ ρ +
+    calc φ s ≤ C₀ * (s / ρ) ^ α₀ * φ ρ +
           K * ρ ^ γ * ((eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal / lam) := by
           simpa only [hφdef, hγdef, add_zero, mul_div_assoc] using
             hosc h ha (hf.mono_measure (Measure.restrict_mono hρR le_rfl)) hu hs hsρ
               (hρR.trans hball) (hMρ ρ hρR₁)
       _ ≤ _ := by gcongr
-  have hφs := hiter hs hsR (by rw [hQdef]; positivity) (by rw [hFdef]; positivity) hmono hφ0 hφR₁
-    hM₀def hstep
+  have hφs := hiter hs hsR (by rw [hQdef]; positivity) (by rw [hFdef]; positivity) hmono hφ0
+    (hM₀def ▸ hφR₁) hstep
   obtain ⟨hb₁, hb₂⟩ :=
     isBoundedUnder_le_abs.mp (isBoundedUnder_of_eventually_le (hMρ s hsR))
   rw [← hQdef, mul_div_assoc, ← hFdef]

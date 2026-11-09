@@ -221,30 +221,32 @@ private theorem oscillation_decay_bound_aux {C₁ K D β γ s R R₁ F Q M₀ B 
 /-- The iteration step of the interior oscillation estimate, as a statement about the essential
 oscillation `φ` alone. If `φ s ≤ C₀ (s/ρ)^α₀ φ ρ + K ρ^γ F` for `s ≤ ρ ≤ R / 2`, with `φ`
 nonnegative and monotone on `(0, R/2]` and `φ (R / 2) ≤ 2 D (Q + R^γ F)`, then
-`φ s ≤ C (s / R)^β (Q + R^γ F)` for `s ≤ R / 2`, where `β < α₀` and `C` depend only on
+`φ s ≤ C (s / R)^β (Q + R^γ F)` for `s ≤ R / 2`, where `β < α₀` and `C > 0` depend only on
 `α₀`, `C₀`, `K`, `D` and `γ`. -/
-theorem exists_le_mul_rpow_of_essOsc_step {α₀ C₀ K D γ : ℝ} (hα₀ : 0 < α₀) (hC₀ : 0 < C₀)
-    (hK : 0 < K) (hD : 0 < D) (hγ : 0 < γ) :
-    ∃ β C : ℝ, 0 < β ∧ β < α₀ ∧ 0 < C ∧ ∀ {φ : ℝ → ℝ} {R s Q F M₀ : ℝ}, 0 < s → s ≤ R / 2 →
+theorem exists_le_mul_rpow_of_essOsc_step {α₀ C₀ K D γ : ℝ} (hα₀ : 0 < α₀) (hC₀ : 0 ≤ C₀)
+    (hK : 0 ≤ K) (hD : 0 ≤ D) (hγ : 0 < γ) :
+    ∃ β C : ℝ, 0 < β ∧ β < α₀ ∧ 0 < C ∧ ∀ {φ : ℝ → ℝ} {R s Q F : ℝ}, 0 < s → s ≤ R / 2 →
       0 ≤ Q → 0 ≤ F → MonotoneOn φ (Ioc 0 (R / 2)) → (∀ ρ ∈ Ioc 0 (R / 2), 0 ≤ φ ρ) →
-      φ (R / 2) ≤ 2 * M₀ → M₀ = D * (Q + R ^ γ * F) →
-      (∀ s ρ, 0 < s → s ≤ ρ → ρ ≤ R / 2 → φ s ≤ C₀ * ((s / ρ) ^ α₀ + 0) * φ ρ + K * ρ ^ γ * F) →
+      φ (R / 2) ≤ 2 * (D * (Q + R ^ γ * F)) →
+      (∀ s ρ, 0 < s → s ≤ ρ → ρ ≤ R / 2 → φ s ≤ C₀ * (s / ρ) ^ α₀ * φ ρ + K * ρ ^ γ * F) →
       φ s ≤ C * (s / R) ^ β * (Q + R ^ γ * F) := by
   obtain ⟨β, hβdef⟩ : ∃ β : ℝ, β = min γ (α₀ / 2) := ⟨_, rfl⟩
   have hβ : 0 < β := hβdef ▸ lt_min hγ (half_pos hα₀)
   have hβγ : β ≤ γ := hβdef ▸ min_le_left _ _
   have hβα : β < α₀ := hβdef ▸ (min_le_right _ _).trans_lt (half_lt_self hα₀)
   obtain ⟨ε₀, C₁, hε₀, hC₁, hiter⟩ :=
-    exists_le_mul_div_rpow_mul_add_mul_rpow_of_le_mul_add hC₀.le hβα hβα
-  refine ⟨β, C₁ * 2 ^ β * (2 * D + K), hβ, hβα, by positivity, ?_⟩
-  intro φ R s Q F M₀ hs hsR hQ hF hmono hφ0 hφR₁ hM₀def hstep
+    exists_le_mul_div_rpow_mul_add_mul_rpow_of_le_mul_add hC₀ hβα hβα
+  refine ⟨β, max 1 (C₁ * 2 ^ β * (2 * D + K)), hβ, hβα, by positivity, ?_⟩
+  intro φ R s Q F hs hsR hQ hF hmono hφ0 hφR₁ hstep
   have hR : 0 < R := by linarith only [hs, hsR]
   have hB : 0 ≤ K * F * (R / 2) ^ (γ - β) := by positivity
   have hfin := hiter hB hε₀.le hmono hφ0 (fun s ρ hs hsρ hρ => (hstep s ρ hs hsρ hρ).trans <| by
       have := Real.rpow_le_rpow_sub_mul_rpow (hs.trans_le hsρ) hρ hβγ
       have := hs.trans_le hsρ
-      calc _ ≤ C₀ * ((s / ρ) ^ α₀ + 0) * φ ρ + K * ((R / 2) ^ (γ - β) * ρ ^ β) * F := by gcongr
+      calc _ ≤ C₀ * (s / ρ) ^ α₀ * φ ρ + K * ((R / 2) ^ (γ - β) * ρ ^ β) * F := by gcongr
         _ = _ := by ring) s (R / 2) hs hsR le_rfl
-  exact oscillation_decay_bound_aux hs hR rfl hγ hK.le hD.le hF hQ hC₁.le hfin hφR₁ hM₀def rfl
+  refine (oscillation_decay_bound_aux hs hR rfl hγ hK hD hF hQ hC₁.le hfin hφR₁ rfl rfl).trans ?_
+  gcongr
+  exact le_max_right _ _
 
 end TauCeti
