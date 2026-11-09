@@ -37,6 +37,8 @@ scalar multiplies the induced map of Čech complexes by that scalar.
 
 * `TauCeti.CategoryTheory.cechComplexFunctorMapIso_hom_app_f_π`: its factors are the images
   under `F` of the projections of the products.
+* `TauCeti.CategoryTheory.cechComplexFunctorMapIso_hom_app_comp_cechComplexMap`: it commutes
+  with the maps induced by morphisms of families.
 * `TauCeti.CategoryTheory.cechComplexFunctor_linear`: the Čech complex functor is linear.
 -/
 
@@ -157,6 +159,31 @@ theorem cechComplexFunctorMapIso_hom_app_f_π (P : Cᵒᵖ ⥤ A) (n : ℕ) (a :
   -- `cechXIso` is the identity
   (_ ≫= (Category.id_comp _).symm).trans <| (cechComplexFunctorMapXIso_hom_π U F P n a).trans
     (congrArg F.map (Category.id_comp _))
+
+/-- **`cechComplexFunctorMapIso` commutes with refinement maps.** For a morphism `φ` from the
+family `U` to a family `V`, applying `F` to the map `Č(V, P) ⟶ Č(U, P)` induced by `φ` and then
+identifying with `Č(U, P ⋙ F)` is identifying with `Č(V, P ⋙ F)` and then applying the map
+induced by `φ`. -/
+@[reassoc]
+theorem cechComplexFunctorMapIso_hom_app_comp_cechComplexMap {κ : Type w} {V : κ → C}
+    [∀ n : ℕ, PreservesLimitsOfShape (Discrete (Fin (n + 1) → κ)) F] (P : Cᵒᵖ ⥤ A)
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    (F.mapHomologicalComplex _).map (cechComplexMap P φ) ≫
+        (cechComplexFunctorMapIso U F).hom.app P =
+      (cechComplexFunctorMapIso V F).hom.app P ≫ cechComplexMap (P ⋙ F) φ := by
+  ext n : 1
+  refine Pi.hom_ext _ _ fun a ↦ ?_
+  simp only [HomologicalComplex.comp_f, Functor.mapHomologicalComplex_map_f]
+  have h₁ := cechComplexFunctorMapIso_hom_app_f_π U F P n a
+  have h₂ := cechComplexMap_f_π (P ⋙ F) φ n a
+  have h₃ := cechComplexFunctorMapIso_hom_app_f_π V F P n (φ.f ∘ a)
+  have h₄ := (F.map_comp _ _).symm.trans
+    ((congrArg F.map (cechComplexMap_f_π P φ n a)).trans (F.map_comp _ _))
+  -- the factors of the Čech terms are only defeq to the products they are projected from, so the
+  -- steps are composed as terms rather than rewrites
+  exact ((Category.assoc _ _ _).trans ((F.map _ ≫= h₁).trans h₄)).trans
+    ((h₃ =≫ _).symm.trans ((Category.assoc _ _ _).trans
+      ((_ ≫= h₂.symm).trans (Category.assoc _ _ _).symm)))
 
 omit [HasProducts.{w} B] in
 /-- The Čech complex functor of a family is linear when the coefficient category is. -/
