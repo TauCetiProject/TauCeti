@@ -197,7 +197,7 @@ private theorem prod_rpow_reindexed_dirichletStickInsert_ae {K : Type*}
   · intro j
     simp
 
-private theorem Integrable.left_of_mul_prod_of_ae_pos {X Y : Type*}
+private theorem integrable_left_of_mul_prod_of_ae_pos {X Y : Type*}
     [MeasurableSpace X] [MeasurableSpace Y] {f : X → ℝ} {g : Y → ℝ}
     {mu : Measure X} {nu : Measure Y} [SFinite mu] [IsProbabilityMeasure nu]
     (hfg : Integrable (fun z ↦ f z.1 * g z.2) (mu.prod nu))
@@ -252,7 +252,7 @@ theorem integrable_prod_rpow_dirichletMeasure_iff {a q : ι → ℝ}
       exact Finset.prod_pos fun j _ ↦ Real.rpow_pos_of_pos (hy j) _
     -- A positive Dirichlet slice lets product integrability descend to the Beta factor.
     have hf : Integrable f (betaMeasure (a (e none)) (∑ j : κ, a (e (some j)))) :=
-      Integrable.left_of_mul_prod_of_ae_pos (by simpa [mu] using hsep) hpositive
+      integrable_left_of_mul_prod_of_ae_pos (by simpa [mu] using hsep) hpositive
     have hi := ((integrable_rpow_mul_one_sub_rpow_betaMeasure_iff
       (ha (e none)) hsum_a).1 (by simpa [f] using hf)).1
     simpa [he_none] using hi
