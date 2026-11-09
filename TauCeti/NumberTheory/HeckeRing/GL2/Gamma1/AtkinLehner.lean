@@ -171,25 +171,10 @@ private lemma atkinLehnerAntiInvolutionGamma1_bar_mem_doubleCoset_of_primitive
   have hσ₀ : mapGL ℚ (σ : SL(2, ℤ)) ∈ (Gamma0 N).map (mapGL ℚ) :=
     Subgroup.mem_map_of_mem _ σ.2
   -- left multiplication by `σ` lands both in the `Γ₁(N)` double coset of `diag(1, m)`
-  have hdescend {y : GL (Fin 2) ℚ} {B : Matrix (Fin 2) (Fin 2) ℤ}
-      (hB : (y : Matrix (Fin 2) (Fin 2) ℚ) = B.map (Int.cast : ℤ → ℚ))
-      (hB00 : B 0 0 = A 0 0) (hB10 : (N : ℤ) ∣ B 1 0)
-      (hy : y ∈ doubleCoset (natDiagGL 2 ![1, m]) ((Gamma0 N).map (mapGL ℚ))
-        ((Gamma0 N).map (mapGL ℚ))) :
-      mapGL ℚ (σ : SL(2, ℤ)) * y ∈ doubleCoset (natDiagGL 2 ![1, m])
-        ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) := by
-    have hX := mapGL_mul_coe_eq_intMatrix 2 (σ : SL(2, ℤ)) 1 y B hB
-    rw [map_one, mul_one, SpecialLinearGroup.coe_one, mul_one] at hX
-    refine mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 hm_pos hX ?_ ?_
-    · obtain ⟨e, he⟩ := hB10
-      simp only [Matrix.mul_apply, Fin.sum_univ_two, he]
-      push_cast
-      rw [hB00, hσ00, ZMod.natCast_self]
-      ring
-    · exact (DoubleCoset.mul_mem_doubleCoset_iff hσ₀).mpr hy
-  have hσx := hdescend hA rfl ⟨c, hc⟩ hx₀
-  have hσbar := hdescend (atkinLehnerAntiInvolution_bar_val N hx A hA c hc) (by simp)
-    ⟨A 0 1, by simp⟩ hbar₀
+  have hσx := mapGL_mul_mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 hm_pos hσ₀ hσ00 hA rfl
+    ⟨c, hc⟩ hx₀
+  have hσbar := mapGL_mul_mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 hm_pos hσ₀ hσ00
+    (atkinLehnerAntiInvolution_bar_val N hx A hA c hc) (by simp) ⟨A 0 1, by simp⟩ hbar₀
   rw [← doubleCoset_eq_of_mem hσx] at hσbar
   -- cancel `σ`, which normalizes `Γ₁(N)`
   obtain ⟨γ₁, hγ₁, γ₂, hγ₂, heq⟩ := mem_doubleCoset.mp hσbar

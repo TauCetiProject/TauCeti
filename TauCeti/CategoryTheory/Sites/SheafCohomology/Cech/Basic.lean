@@ -350,7 +350,7 @@ formal coproducts. -/
 private abbrev cechArrowHom {X Y : FormalCoproduct.{w} C} (φ : X ⟶ Y) :
     Arrow.mk ((FormalCoproduct.isTerminalIncl _ terminalIsTerminal).from X) ⟶
       Arrow.mk ((FormalCoproduct.isTerminalIncl _ terminalIsTerminal).from Y) :=
-  Arrow.homMk φ (𝟙 _) ((FormalCoproduct.isTerminalIncl _ terminalIsTerminal).hom_ext _ _)
+  Arrow.homMk' φ (𝟙 _)
 
 /-- Under the identification of the Čech object of a formal coproduct with the Čech nerve of its
 map to the terminal object, the map induced by `φ` is `Arrow.mapCechNerve`. -/

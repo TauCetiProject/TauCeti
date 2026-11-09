@@ -235,7 +235,7 @@ theorem squarefree_primeDiscriminantRadicand {D : ℤ} (hD : IsPrimeDiscriminant
   · rw [primeDiscriminantRadicand_of_isEvenPrimeDiscriminant hD]
     exact squarefree_evenPrimeDiscriminantRadicand hD
   · rw [primeDiscriminantRadicand_oddPrimeDiscriminant hodd]
-    exact squarefree_oddPrimeDiscriminant hp.squarefree
+    exact squarefree_oddPrimeDiscriminant_iff.mpr hp.squarefree
 
 /-- The radicand attached to a prime discriminant is not a rational square. -/
 theorem not_isSquare_primeDiscriminantRadicand_rat {D : ℤ} (hD : IsPrimeDiscriminant D) :
@@ -245,7 +245,7 @@ theorem not_isSquare_primeDiscriminantRadicand_rat {D : ℤ} (hD : IsPrimeDiscri
     exact not_isSquare_evenPrimeDiscriminantRadicand_rat hD
   · rw [primeDiscriminantRadicand_oddPrimeDiscriminant hodd]
     rw [Rat.isSquare_intCast_iff]
-    exact (squarefree_oddPrimeDiscriminant hp.squarefree).not_isSquare
+    exact (squarefree_oddPrimeDiscriminant_iff.mpr hp.squarefree).not_isSquare
       (by
         rw [Int.isUnit_iff_natAbs_eq]
         simpa [oddPrimeDiscriminant_natAbs] using hp.ne_one)
@@ -254,7 +254,7 @@ theorem not_isSquare_primeDiscriminantRadicand_rat {D : ℤ} (hD : IsPrimeDiscri
 theorem primeDiscriminantRadicand_mod_four_eq_one_of_odd {p : ℕ} (hodd : Odd p) :
     primeDiscriminantRadicand (oddPrimeDiscriminant p) % 4 = 1 := by
   rw [primeDiscriminantRadicand_oddPrimeDiscriminant hodd]
-  exact oddPrimeDiscriminant_mod_four_eq_one hodd
+  exact oddPrimeDiscriminant_mod_four_eq_one_iff.mpr hodd
 
 /-- An even prime discriminant has radicand congruent to `3` or `2` modulo `4`. -/
 theorem primeDiscriminantRadicand_mod_four_eq_three_or_two_of_even {D : ℤ}

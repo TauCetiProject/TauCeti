@@ -102,9 +102,8 @@ theorem mem_initialPentagonRightLeftOverlapPartners_of_right_eq_right
   have hrecut : E.toGridRectangleDecomposition.IsRecut D.toGridRectangleDecomposition := by
     rw [hDrect]
     exact E.toGridRectangleDecomposition.isRecut_recut hone hf hs
-  have hback := hrecut.symm hone hf hs
+  have hback := hrecut.symm hf hs
   have hDone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-    (E.toGridRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
   obtain ⟨hfr, hsl, -, -, -, -⟩ :=
     E.toGridRectangleDecomposition.recut_geometry_of_right_eq_right_of_mem_cIoo hcommon hcol hf hs
   have hDcommon : D.first.right = D.second.left := hfr.trans hsl.symm
