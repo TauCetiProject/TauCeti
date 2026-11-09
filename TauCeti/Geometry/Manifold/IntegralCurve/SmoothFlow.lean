@@ -99,7 +99,7 @@ theorem exists_contMDiffAt_localFlow [FiniteDimensional ℝ E] [I.Boundaryless]
   obtain ⟨s, hst, hsopen, hs0⟩ := mem_nhds_iff.mp (inter_mem ht₁ ht₂)
   refine ⟨U, hU, s, hsopen.mem_nhds hs0, hsopen,
     fun x t ↦ (extChartAt I a).symm (φ (extChartAt I a x) t),
-    contMDiffAt_extChartAt_symm_comp_flow a hφ' (hφ0 _), ?_⟩
+    contMDiffAt_extChartAt_symm_comp_extChartAt_prod a hφ' (hφ0 _), ?_⟩
   intro x hx
   have hxcoord : u₁ (extChartAt I a x) ∧ u₂ (extChartAt I a x) := hx.1
   refine ⟨?_, ?_, ?_⟩

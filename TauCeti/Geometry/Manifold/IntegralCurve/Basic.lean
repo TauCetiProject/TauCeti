@@ -271,7 +271,7 @@ namespace TauCeti
 coordinate equation of a vector field on an open set of times gives an integral curve of the
 field on the manifold, after applying the inverse extended chart. -/
 theorem isMIntegralCurveOn_extChartAt_symm_comp {M : Type*} [TopologicalSpace M]
-    [ChartedSpace H M] [IsManifold I ∞ M] (v : (x : M) → TangentSpace I x) (a : M) {f : ℝ → E}
+    [ChartedSpace H M] [IsManifold I 1 M] (v : (x : M) → TangentSpace I x) (a : M) {f : ℝ → E}
     {s : Set ℝ} (hs : IsOpen s)
     (hmem : ∀ t ∈ s, f t ∈ interior (extChartAt I a).target)
     (hderiv : ∀ t ∈ s, HasDerivAt f (trivializationAt E (TangentSpace I) a
