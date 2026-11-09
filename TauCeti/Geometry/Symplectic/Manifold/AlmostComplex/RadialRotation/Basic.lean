@@ -186,6 +186,7 @@ theorem planeRotatedEndomorphism_apply_apply (θ : ℝ) (v : V) :
   exact (planeRotated θ).apply_apply v
 
 /-- The zero angle gives multiplication by `i`. -/
+@[simp]
 theorem planeRotatedEndomorphism_zero :
     planeRotatedEndomorphism 0 = I • ContinuousLinearMap.id ℝ V := by
   ext1 v

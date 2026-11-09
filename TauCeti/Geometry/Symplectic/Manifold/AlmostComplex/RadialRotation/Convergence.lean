@@ -58,7 +58,7 @@ theorem contDiff_scaledRadialRotationField (ℓ : ℕ) :
 @[simp]
 theorem scaledRadialRotationField_zero (ℓ : ℕ) (z : V) :
     scaledRadialRotationField ℓ (0, z) = I • ContinuousLinearMap.id ℝ V := by
-  simp [scaledRadialRotationField, planeRotatedEndomorphism_zero]
+  simp [scaledRadialRotationField]
 
 /-- The derivatives in the point of a fixed-scale slice are the joint derivatives restricted to
 the point directions. -/
