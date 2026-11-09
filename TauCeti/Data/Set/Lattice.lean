@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Set.Lattice.Indexed
 public import Mathlib.Order.SetNotation
 
 /-!
