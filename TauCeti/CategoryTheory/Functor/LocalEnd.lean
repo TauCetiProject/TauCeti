@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
+public import TauCeti.CategoryTheory.Functor.RingEquivEnd
 public import TauCeti.CategoryTheory.Preadditive.Indecomposable
 import TauCeti.RingTheory.LocalRing.Basic
 
@@ -20,6 +20,9 @@ isomorphism classes even though they are not faithful.
 
 No splitting of idempotents in the quotient is required: locality of its endomorphism ring
 already rules out nontrivial biproduct decompositions.
+
+A fully faithful additive functor both preserves and reflects local endomorphism rings
+(`CategoryTheory.Functor.isLocalRing_end_obj_iff`).
 -/
 
 public section
@@ -94,5 +97,12 @@ theorem nonempty_iso_obj_iff_of_isLocalRing_end [IsLocalRing (End X)] [IsLocalRi
     have : IsIso f := F.isIso_of_map_isIso_of_isLocalRing_end hX hF' f
     exact ⟨asIso f⟩
   · exact fun ⟨e⟩ ↦ ⟨F.mapIso e⟩
+
+/-- **A fully faithful additive functor preserves and reflects local endomorphism rings**: it
+identifies the ring `End X` with `End (F.obj X)`. -/
+theorem isLocalRing_end_obj_iff [F.Full] [F.Faithful] (X : C) :
+    IsLocalRing (End (F.obj X)) ↔ IsLocalRing (End X) :=
+  let e := (FullyFaithful.ofFullyFaithful F).ringEquivEnd X
+  ⟨fun _ ↦ e.symm.isLocalRing, fun _ ↦ e.isLocalRing⟩
 
 end CategoryTheory.Functor
