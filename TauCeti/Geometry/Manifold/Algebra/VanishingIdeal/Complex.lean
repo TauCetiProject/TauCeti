@@ -257,6 +257,10 @@ theorem complexSmoothCotangentEquiv_complexSmoothCotangentMap
   obtain ⟨f, rfl⟩ := Ideal.toCotangent_surjective _ u
   rw [complexSmoothCotangentMap_toCotangent, complexSmoothCotangentEquiv_toCotangent,
     complexSmoothCotangentEquiv_toCotangent]
+  have hcomp : ⇑((f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯).comp φ) =
+      ⇑(f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) ∘ ⇑φ :=
+    funext (ContMDiffMap.comp_apply _ _)
+  rw [hcomp]
   exact mvfderiv_comp y
     ((f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯).contMDiff.mdifferentiable (by simp) _)
     (φ.contMDiff.mdifferentiable (by simp) y)
@@ -291,7 +295,9 @@ def complexSmoothCotangentRestrictEquiv (U : TopologicalSpace.Opens M) {x : U}
     (complexSmoothCotangentMap (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯)
       (y := x) (by simp))
     (complexSmoothCotangentMap_bijective _ _ hx (I.isInteriorPoint_iff_isInteriorPoint_val.mpr hx)
-      ⟨Manifold.tangentSpaceOpenEquiv x, (Manifold.mfderiv_subtype_val x).symm⟩)
+      ⟨Manifold.tangentSpaceOpenEquiv x, by
+        rw [ContMDiffMap.coeFn_mk]
+        exact (Manifold.mfderiv_subtype_val x).symm⟩)
 
 /-- Open restriction is cotangent pullback along the inclusion. -/
 theorem coe_complexSmoothCotangentRestrictEquiv (U : TopologicalSpace.Opens M) {x : U}
@@ -323,7 +329,10 @@ theorem complexSmoothCotangentEquiv_complexSmoothCotangentRestrictEquiv
         (complexSmoothCotangentRestrictEquiv U hx u) =
       (complexSmoothCotangentEquiv hx u).comp
         (Manifold.tangentSpaceOpenEquiv x).toContinuousLinearMap := by
-  rw [← Manifold.mfderiv_subtype_val x]
-  exact complexSmoothCotangentEquiv_complexSmoothCotangentMap _ (by simp) hx _ u
+  simpa only [coe_complexSmoothCotangentRestrictEquiv, ContMDiffMap.coeFn_mk,
+    Manifold.mfderiv_subtype_val] using
+    complexSmoothCotangentEquiv_complexSmoothCotangentMap
+      (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯) (y := x) (by simp) hx
+      (I.isInteriorPoint_iff_isInteriorPoint_val.mpr hx) u
 
 end TauCeti
