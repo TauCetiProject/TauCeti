@@ -180,11 +180,6 @@ noncomputable def datumSteinberg (e : SuzukiReeIndex) :
 theorem datumSteinberg_def (e : SuzukiReeIndex) :
     e.datumSteinberg = e.datumSpecialIsogeny ^ e.1.fieldExponent := (rfl)
 
-/-- The Steinberg character map is the recorded power of the special-isogeny character map. -/
-theorem datumSteinberg_weightMap_eq_pow (e : SuzukiReeIndex) :
-    e.datumSteinberg.weightMap = e.datumSpecialIsogeny.weightMap ^ e.1.fieldExponent := by
-  rw [datumSteinberg_def, RootPairingIsogeny.weightMap_pow]
-
 /-- **The Steinberg map is a scaling times the special isogeny**, by `p ^ m`. Every computation
 below is read off this decomposition. -/
 theorem datumSteinberg_eq_smulId_mul (e : SuzukiReeIndex) :

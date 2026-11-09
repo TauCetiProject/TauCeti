@@ -70,7 +70,7 @@ Steinberg map, for every valid Ree parameter. The exponent is the recorded `2 * 
 not the field order `3 ^ (2 * m + 1)`. -/
 theorem isCharacterMap_steinberg :
     IsCharacterMap d.weightTorus d.steinberg d.toSuzukiReeIndex.datumSteinberg.weightMap := by
-  rw [SuzukiReeIndex.datumSteinberg_weightMap_eq_pow, steinberg_def]
+  rw [SuzukiReeIndex.datumSteinberg_def, RootPairingIsogeny.weightMap_pow, steinberg_def]
   exact d.isCharacterMap_halfFrobenius.pow d.1.fieldExponent
 
 end
