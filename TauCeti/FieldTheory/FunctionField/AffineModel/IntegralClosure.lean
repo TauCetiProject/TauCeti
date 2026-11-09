@@ -40,9 +40,10 @@ The places missing from the finite chart are the poles of `x`, of which there ar
   `TauCeti.isFractionRing_integralClosure_adjoin`: `R_x` is a Dedekind domain with fraction field
   `F`.
 * `TauCeti.isDedekindDomain_holomorphyRing_setOf_mem` and
-  `TauCeti.finiteType_holomorphyRing_setOf_mem`: the same two properties for `R_x` presented as
-  the holomorphy ring of the places at which `x` is regular, the form in which it is a chart of
-  the scheme of `F` in `TauCeti/AlgebraicGeometry/Curves/TwoChartModel/`.
+  `TauCeti.finiteType_holomorphyRing_setOf_mem`: `R_x` is a Dedekind domain and a finitely
+  generated `k`-algebra, presented as the holomorphy ring of the places at which `x` is regular,
+  the form in which it is a chart of the scheme of `F` in
+  `TauCeti/AlgebraicGeometry/Curves/TwoChartModel/`.
 * `TauCeti.isDedekindDomain_holomorphyRing_compl` and `TauCeti.finiteType_holomorphyRing_compl`:
   the ring of functions regular outside a finite nonempty set `T` of places is a finitely generated
   Dedekind domain, since it is `R_x` for a function `x` whose pole set is `T`
