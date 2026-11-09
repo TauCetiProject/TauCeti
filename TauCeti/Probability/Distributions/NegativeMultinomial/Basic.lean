@@ -245,12 +245,17 @@ theorem negativeMultinomialMeasure_eq_sum_dirac {r p₀ : ℝ} (hr : 0 ≤ r) (h
   simp only [negativeMultinomialMeasure_singleton hr hp₀ hp]
 
 /-- At positive shape, a singleton has nonzero mass exactly when every zero-weight category
-has count zero. At shape zero, only the zero count vector has nonzero mass. -/
-theorem negativeMultinomialMeasure_singleton_ne_zero_iff {r p₀ : ℝ} (hr : 0 ≤ r)
+has count zero. At shape zero, only the zero count vector has nonzero mass. For negative shape
+the law is the zero measure and both sides fail. -/
+theorem negativeMultinomialMeasure_singleton_ne_zero_iff {r p₀ : ℝ}
     (hp₀ : 0 < p₀) {p : ι → ℝ≥0} (hp : p₀ + ∑ i, (p i : ℝ) = 1) (k : ι → ℕ) :
     negativeMultinomialMeasure r p₀ p {k} ≠ 0 ↔
       (r = 0 ∧ k = 0) ∨ (0 < r ∧ ∀ i, p i = 0 → k i = 0) := by
   classical
+  by_cases hr : 0 ≤ r
+  swap
+  · rw [negativeMultinomialMeasure_eq_zero_of_invalid fun h ↦ hr h.1]
+    simp [(not_le.mp hr).not_gt, (not_le.mp hr).ne]
   rcases hr.eq_or_lt with rfl | hr
   · rw [negativeMultinomialMeasure_singleton (le_refl 0) hp₀ hp]
     by_cases hk : k = 0 <;> simp [negativeMultinomialWeight, hk]
@@ -282,7 +287,7 @@ theorem negativeMultinomialMeasure_eq_dirac_of_successWeight_eq_one {r : ℝ} (h
       simp [negativeMultinomialWeight, hr.ne', (Real.Gamma_pos_of_pos hr).ne']
   · have hzero : negativeMultinomialMeasure r 1 (0 : ι → ℝ≥0) {k} = 0 := by
       by_contra h
-      have hsupport := (negativeMultinomialMeasure_singleton_ne_zero_iff hr zero_lt_one
+      have hsupport := (negativeMultinomialMeasure_singleton_ne_zero_iff zero_lt_one
         (p := (0 : ι → ℝ≥0)) (by simp) k).mp h
       rcases hsupport with ⟨_, h⟩ | ⟨_, h⟩
       · exact hk h
