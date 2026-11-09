@@ -77,6 +77,13 @@ theorem cond_congr_ae {μ : Measure Ω} {s t : Set Ω} (h : s =ᵐ[μ] t) :
     μ[|s] = μ[|t] := by
   rw [cond, cond, measure_congr h, Measure.restrict_congr_set h]
 
+/-- On a measurable subset of the conditioning event, the real conditional mass is the
+original real mass divided by the real mass of the conditioning event. -/
+theorem cond_real_of_subset {μ : Measure Ω} {s t : Set Ω} (ht : MeasurableSet t)
+    (hsub : t ⊆ s) :
+    (cond μ s).real t = μ.real t / μ.real s := by
+  simp [measureReal_def, cond_apply' ht, inter_eq_right.mpr hsub, div_eq_mul_inv, mul_comm]
+
 /-- Scaling an integral under a conditional measure by the finite mass of the conditioning
 event recovers the corresponding set integral. -/
 theorem _root_.MeasureTheory.Measure.toNNReal_smul_integral_cond_eq_setIntegral

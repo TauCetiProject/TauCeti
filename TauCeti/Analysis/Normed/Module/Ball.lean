@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 public import Mathlib.LinearAlgebra.Span.Defs
 public import TauCeti.Analysis.Normed.Module.RCLike.Real
 import Mathlib.Tactic.Module
+import Mathlib.Topology.Algebra.Module.Equiv.Basic
 
 /-!
 # Metric balls and spheres in normed spaces
@@ -40,6 +41,12 @@ necessity uses a point of the smaller ball on the far side of its centre.
 
 For `t ≥ 0`, the outer parallel set `K + t • closedBall 0 1` of a compact set `K` is its closed
 `t`-thickening (`IsCompact.add_smul_closedBall_eq_cthickening`).
+
+A scalar of norm one maps the product of a set with a ball about zero to itself when it acts on the
+ball factor (`TauCeti.mapsTo_prodMk_smul_ball`).
+
+A closed ball of positive radius is homeomorphic to the closed unit ball by a rescaling that
+matches the boundary spheres (`TauCeti.exists_homeomorph_closedBall_one_norm_eq`).
 
 Half the difference body of a bounded set lies in a ball of half its diameter. A bounded set
 centrally symmetric up to translation lies in a ball of half its diameter about its center.
@@ -83,6 +90,22 @@ theorem preimage_smul_vadd_sphere (x : P) {c : 𝕜} (hc : ‖c‖ ≠ 0) (r : �
   exact mul_right_inj' hc
 
 end Preimage
+
+section ProdBall
+
+open Metric Set
+
+variable {α 𝕜 E : Type*} [Norm 𝕜] [SeminormedAddCommGroup E] [SMul 𝕜 E] [NormSMulClass 𝕜 E]
+
+/-- Acting on the second factor by a scalar of norm one maps the product of a set with a ball about
+zero to itself. -/
+theorem mapsTo_prodMk_smul_ball {U : Set α} {R : ℝ} {ζ : 𝕜} (hζ : ‖ζ‖ = 1) :
+    MapsTo (fun b : α × E ↦ (b.1, ζ • b.2)) (U ×ˢ ball 0 R) (U ×ˢ ball 0 R) := by
+  intro b hb
+  refine ⟨hb.1, ?_⟩
+  simpa only [mem_ball_zero_iff, norm_smul, hζ, one_mul] using hb.2
+
+end ProdBall
 
 section Sphere
 
@@ -233,5 +256,19 @@ theorem subset_closedBall_diam_div_two_of_neg_eq_vadd {H : Set E}
   exact norm_half_smul_sub_le (dist_eq_norm y _ ▸ dist_le_diam_of_mem hH hy hy')
 
 end Diameter
+
+section Rescaling
+
+/-- The closed ball of radius `r > 0` is homeomorphic to the unit closed ball by a rescaling that
+carries the boundary sphere onto the boundary sphere. -/
+theorem exists_homeomorph_closedBall_one_norm_eq {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] {r : ℝ} (hr : 0 < r) :
+    ∃ S : Metric.closedBall (0 : V) r ≃ₜ Metric.closedBall (0 : V) 1,
+      ∀ v : Metric.closedBall (0 : V) r, ‖(S v : V)‖ = 1 ↔ ‖(v : V)‖ = r := by
+  refine ⟨(Homeomorph.smulOfNeZero r⁻¹ (inv_ne_zero hr.ne')).subtype fun v ↦ by
+    simp [norm_smul, abs_of_pos hr, inv_mul_le_iff₀ hr], fun v ↦ ?_⟩
+  simp [norm_smul, abs_of_pos hr, inv_mul_eq_one₀ hr.ne', eq_comm]
+
+end Rescaling
 
 end TauCeti

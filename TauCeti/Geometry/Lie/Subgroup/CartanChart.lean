@@ -72,6 +72,21 @@ theorem exists_complement_data_of_isClosed_subgroup {K : Subgroup G}
     (I := I) (G := G) p q hpq
   exact ⟨q, ε, hpq, hε, hsep, hf⟩
 
+/-- If a product `exp X₁ * exp X₂` of a Lie-subalgebra exponential and a small transverse
+exponential lies in the closed subgroup `K`, then `exp X₂` is trivial, so the product equals
+`exp X₁`. -/
+private theorem lieExp_eq_of_mul_mem [T2Space G] {K : Subgroup G} (hK : IsClosed (K : Set G))
+    {q : Submodule ℝ (LeftInvariantDerivation I G)} {ε : ℝ}
+    (hsep : ∀ X ∈ q, ‖X‖ < ε → (lieExp (I := I) X ∈ K ↔ X = 0))
+    {X₁ X₂ : LeftInvariantDerivation I G} (hX₁ : X₁ ∈ lieSubalgebraOfSubgroup (I := I) K)
+    (hX₂ : X₂ ∈ q) (hnorm : ‖X₂‖ < ε)
+    (hmem : lieExp (I := I) X₁ * lieExp (I := I) X₂ ∈ K) :
+    lieExp (I := I) X₁ * lieExp (I := I) X₂ = lieExp (I := I) X₁ := by
+  have hz1K : lieExp (I := I) X₁ ∈ K := lieExp_mem_of_mem_lieSubalgebraOfSubgroup hK hX₁
+  have hz2K : lieExp (I := I) X₂ ∈ K := by
+    simpa using K.mul_mem (K.inv_mem hz1K) hmem
+  rw [(hsep X₂ hX₂ hnorm).mp hz2K, lieExp_zero, mul_one]
+
 /-- Near the identity, a closed subgroup is exactly the exponential image of its Lie algebra.
 This is the local membership criterion for the embedded Lie-subgroup chart. -/
 theorem exists_mem_nhds_one_iff_exists_mem_lieSubalgebraOfSubgroup_and_lieExp_eq_of_isClosed
@@ -124,23 +139,11 @@ theorem exists_mem_nhds_one_iff_exists_mem_lieSubalgebraOfSubgroup_and_lieExp_eq
       have hzA' : z.2 ∈ Metric.ball (0 : q) ε := by
         simpa only [A, Set.mem_preimage] using hzA
       simpa only [Metric.mem_ball, dist_zero_right, Submodule.norm_coe] using hzA'
-    have hz1p : (z.1 : LeftInvariantDerivation I G) ∈
-        (lieSubalgebraOfSubgroup (I := I) K).toSubmodule := by
-      simpa only [p] using z.1.property
-    have hz1K : lieExp (I := I) (z.1 : LeftInvariantDerivation I G) ∈ K :=
-      lieExp_mem_of_mem_lieSubalgebraOfSubgroup hK
-        ((LieSubalgebra.mem_toSubmodule (lieSubalgebraOfSubgroup (I := I) K)).mp hz1p)
-    have hz2K : lieExp (I := I) (z.2 : LeftInvariantDerivation I G) ∈ K := by
-      have hm := K.mul_mem (K.inv_mem hz1K) hxK
-      rw [← hzprod] at hm
-      simpa using hm
-    have hz20 : (z.2 : LeftInvariantDerivation I G) = 0 :=
-      (hsep (z.2 : LeftInvariantDerivation I G) z.2.property hz2norm).mp hz2K
-    refine ⟨(z.1 : LeftInvariantDerivation I G),
-      (LieSubalgebra.mem_toSubmodule (lieSubalgebraOfSubgroup (I := I) K)).mp hz1p, ?_⟩
-    have hzprod' := hzprod
-    rw [hz20, lieExp_zero, mul_one] at hzprod'
-    exact hzprod'
+    have hz1p : (z.1 : LeftInvariantDerivation I G) ∈ lieSubalgebraOfSubgroup (I := I) K :=
+      (LieSubalgebra.mem_toSubmodule (lieSubalgebraOfSubgroup (I := I) K)).mp
+        (by simpa only [p] using z.1.property)
+    exact ⟨_, hz1p, (lieExp_eq_of_mul_mem hK hsep hz1p z.2.property hz2norm
+      (by rwa [hzprod])).symm.trans hzprod⟩
   -- The reverse direction is the defining exponential-membership property of the Lie subalgebra.
   · rintro ⟨X, hX, rfl⟩
     exact lieExp_mem_of_mem_lieSubalgebraOfSubgroup hK hX
