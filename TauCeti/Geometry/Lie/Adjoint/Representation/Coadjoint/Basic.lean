@@ -90,7 +90,7 @@ section Smooth
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
 
@@ -99,6 +99,7 @@ group with finite-dimensional model is smooth. -/
 theorem contMDiff_coadjointRepresentation_apply (ν : Module.Dual ℝ (GroupLieAlgebra I G))
     (ξ : GroupLieAlgebra I G) :
     ContMDiff I 𝓘(ℝ) ∞ fun g : G ↦ coadjointRepresentation ℝ I G g ν ξ := by
+  have : CompleteSpace E := FiniteDimensional.complete ℝ E
   -- `GroupLieAlgebra I G` is the model space `E`, on which the functional `ν` is continuous.
   refine ((LinearMap.toContinuousLinearMap (show E →ₗ[ℝ] ℝ from ν)).contDiff.comp_contMDiff
     ((contMDiff_tangentAd_apply_const (I := I) (G := G) (show E from ξ)).comp
@@ -114,6 +115,7 @@ coadjoint action, in the direction `η`, is `ν ⁅ξ, η⁆`. -/
 theorem mvfderiv_coadjointRepresentation_apply_one (ν : Module.Dual ℝ (GroupLieAlgebra I G))
     (ξ η : GroupLieAlgebra I G) :
     mvfderiv I (fun g : G ↦ coadjointRepresentation ℝ I G g ν ξ) 1 η = ν ⁅ξ, η⁆ := by
+  have : CompleteSpace E := FiniteDimensional.complete ℝ E
   simp only [coadjointRepresentation_apply, ← tangentAd_apply]
   -- `GroupLieAlgebra I G` reduces definitionally to the model `E`; the `show E from` ascriptions
   -- below expose that model to the manifold derivative API and view `ν` as a linear functional

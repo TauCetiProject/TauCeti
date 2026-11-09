@@ -5,146 +5,151 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.QuantumGroups.QuantumInteger.Binomial
 public import TauCeti.QuantumGroups.QuantumInteger.Factorial
+public import TauCeti.QuantumGroups.QuantumInteger.Laurent.Basic
 public import Mathlib.RingTheory.Binomial
 
 import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 import Mathlib.Tactic
 
 /-!
-# Laurent Gaussian binomials
+# Signed symmetric Laurent Gaussian coefficients
 
-This file defines the symmetric Gaussian binomial `[n choose r]_v` in `ℤ[v, v⁻¹]` by the Pascal
-recursion
-`[n+1 choose r+1]_v = v^(n-r) [n choose r]_v + v^(-(r+1)) [n choose r+1]_v`,
-with `[n choose 0]_v = 1` and `[0 choose r+1]_v = 0`, and its extension
-`[m choose r]_v` to an arbitrary integer upper argument `m`, given for `m = -a < 0` by the
-reflection `[-a choose r]_v = (-1)^r [a+r-1 choose r]_v`.
+`laurentQuantumBinomial n r` is the symmetric Gaussian coefficient in `ℤ[v, v⁻¹]`.
+`signedLaurentQuantumBinomial m r` extends it to every integer upper argument by
+`[-a choose r] = (-1)^r [a+r-1 choose r]`. These integral coefficients can be
+specialized at every unit, including roots of unity where the quotient of quantum
+factorials is undefined.
 
-The Laurent polynomial `[n choose r]_v` is the integral form of the field-valued symmetric quantum
-binomial `TauCeti.quantumBinomial`: it takes the value `[n choose r]_q` at every unit `q` of a
-field, including roots of unity, and the ordinary binomial coefficient at `v = 1`. The signed
-extension is the Laurent polynomial
-`[m choose r]_v = [m]_v [m-1]_v ⋯ [m-r+1]_v / [r]_v!`, and it specializes at `v = 1` to Mathlib's
-integer-valued binomial `Ring.choose m r`. These are the coefficients of the divided powers and
-toral binomials of integral forms of quantized enveloping algebras, whose specializations at roots
-of unity are computed from them.
+Evaluation recovers `quantumBinomial` over a field, with no genericity assumption.
+At `v = 1`, the signed coefficients recover `Ring.choose` on integers. In particular,
+negative weights are retained rather than being truncated to zero.
 
-The identities of `[n choose r]_v` that hold over every field, such as vanishing for `r > n`,
-invariance under `v ↦ v⁻¹` and the factorial formula, are deduced from those of
+The identities of `[n choose r]_v` that hold over every field, such as invariance under
+`v ↦ v⁻¹`, symmetry and the factorial formula, are deduced from those of
 `TauCeti.quantumBinomial` by `TauCeti.eq_of_forall_laurentEval_eq`; the second Pascal rule is the
 image of the defining one under `v ↦ v⁻¹`. The identities of the signed extension follow from its
-product formula, since `[r]_v! ≠ 0` in the domain `ℤ[v, v⁻¹]`.
-
-## Main definitions
-
-* `TauCeti.laurentQuantumBinomial n r`: the Gaussian binomial `[n choose r]_v` in `ℤ[v, v⁻¹]`.
-* `TauCeti.signedLaurentQuantumBinomial m r`: its extension to an integer upper argument `m`.
+product formula `[m choose r]_v [r]_v! = [m]_v [m-1]_v ⋯ [m-r+1]_v`, since `[r]_v! ≠ 0` in the
+domain `ℤ[v, v⁻¹]`.
 
 ## Main results
 
-* `TauCeti.laurentEval_laurentQuantumBinomial`: the value at a unit `q` of a field is the
-  symmetric quantum binomial `[n choose r]_q`.
-* `TauCeti.laurentEval_one_laurentQuantumBinomial`: the value at `v = 1` is `n.choose r`.
 * `TauCeti.laurentQuantumBinomial_succ_succ'`, `TauCeti.invert_laurentQuantumBinomial` and
   `TauCeti.laurentQuantumBinomial_symm`: the second Pascal rule, invariance under `v ↦ v⁻¹`, and
   the symmetry `[n choose n - r]_v = [n choose r]_v` for `r ≤ n`.
 * `TauCeti.laurentQuantumBinomial_mul_laurentQuantumFactorial_mul_laurentQuantumFactorial`:
   `[n choose r]_v [r]_v! [n - r]_v! = [n]_v!` for `r ≤ n`.
+* `TauCeti.signedLaurentQuantumBinomial_mul_laurentQuantumFactorial`: the product formula
+  `[m choose r]_v [r]_v! = [m]_v [m-1]_v ⋯ [m-r+1]_v`, which determines `[m choose r]_v`.
 * `TauCeti.signedLaurentQuantumBinomial_neg`: the reflection
   `[-m choose r]_v = (-1)^r [m + r - 1 choose r]_v` for every integer `m`.
 * `TauCeti.signedLaurentQuantumBinomial_succ_succ`: the Pascal rule for every integer upper
   argument.
-* `TauCeti.signedLaurentQuantumBinomial_mul_laurentQuantumFactorial`: the product formula
-  `[m choose r]_v [r]_v! = [m]_v [m-1]_v ⋯ [m-r+1]_v`, which determines `[m choose r]_v`.
-* `TauCeti.laurentEval_one_signedLaurentQuantumBinomial`: the value at `v = 1` is
-  `Ring.choose m r`.
 
-## References
-
-* G. Lusztig, *Introduction to Quantum Groups*, Progress in Mathematics 110, Section 1.3, for the
-  Gaussian binomials `[m choose r]_v` in `ℤ[v, v⁻¹]` with integer upper argument.
-* J. C. Jantzen, *Lectures on Quantum Groups*, Graduate Studies in Mathematics 6, Chapter 0, for
-  the symmetric normalization.
+The normalization and negative-upper-argument convention are those of G. Lusztig,
+*Introduction to Quantum Groups*, Chapters 1 and 34.
 -/
 
 public section
+
+noncomputable section
 
 open Finset LaurentPolynomial
 
 namespace TauCeti
 
-/-! ### The Gaussian binomial with natural upper argument -/
-
-/-- The symmetric Gaussian binomial `[n choose r]_v` in `ℤ[v, v⁻¹]`, defined by
-`[n choose 0]_v = 1`, `[0 choose r+1]_v = 0` and the Pascal rule
-`[n+1 choose r+1]_v = v^(n-r) [n choose r]_v + v^(-(r+1)) [n choose r+1]_v`. -/
-noncomputable def laurentQuantumBinomial : ℕ → ℕ → ℤ[T;T⁻¹]
+/-- The symmetric Laurent Gaussian `[n choose r]_v`, defined by the Pascal recurrence
+with coefficients `v^(n-r)` and `v^(-(r+1))`. -/
+def laurentQuantumBinomial : ℕ → ℕ → ℤ[T;T⁻¹]
   | _, 0 => 1
   | 0, _ + 1 => 0
   | n + 1, r + 1 =>
     T ((n : ℤ) - r) * laurentQuantumBinomial n r +
       T (-((r : ℤ) + 1)) * laurentQuantumBinomial n (r + 1)
 
-/-- `[n choose 0]_v = 1`. -/
+/-- The zeroth Laurent Gaussian column is constantly one. -/
 @[simp]
 theorem laurentQuantumBinomial_zero_right (n : ℕ) : laurentQuantumBinomial n 0 = 1 := by
-  cases n <;> simp [laurentQuantumBinomial]
+  cases n <;> rfl
 
-/-- `[0 choose r + 1]_v = 0`. -/
-theorem laurentQuantumBinomial_zero_succ (r : ℕ) : laurentQuantumBinomial 0 (r + 1) = 0 := by
-  simp [laurentQuantumBinomial]
+/-- Positive entries of the zeroth row vanish. -/
+theorem laurentQuantumBinomial_zero_succ (r : ℕ) :
+    laurentQuantumBinomial 0 (r + 1) = 0 := (rfl)
 
-/-- The defining Pascal rule
-`[n+1 choose r+1]_v = v^(n-r) [n choose r]_v + v^(-(r+1)) [n choose r+1]_v`. -/
+/-- The defining symmetric Pascal recurrence, with integer exponents. -/
 theorem laurentQuantumBinomial_succ_succ (n r : ℕ) :
     laurentQuantumBinomial (n + 1) (r + 1) =
       T ((n : ℤ) - r) * laurentQuantumBinomial n r +
-        T (-((r : ℤ) + 1)) * laurentQuantumBinomial n (r + 1) := by
-  rw [laurentQuantumBinomial]
+        T (-((r : ℤ) + 1)) * laurentQuantumBinomial n (r + 1) := (rfl)
 
-/-- At a unit `q` of a field, the Gaussian binomial `[n choose r]_v` takes the value of the
-symmetric quantum binomial `[n choose r]_q`. This includes roots of unity and `q = ±1`. -/
-@[simp]
-theorem laurentEval_laurentQuantumBinomial {K : Type*} [Field K] (u : Kˣ) (n r : ℕ) :
-    laurentEval u (laurentQuantumBinomial n r) = quantumBinomial (u : K) n r := by
-  induction n generalizing r with
-  | zero => cases r <;> simp [laurentQuantumBinomial_zero_succ]
-  | succ n ih =>
-    cases r with
-    | zero => simp
-    | succ r =>
-      rw [laurentQuantumBinomial_succ_succ, quantumBinomial_succ_succ]
-      rcases le_or_gt r n with h | h
-      · simp only [map_add, map_mul, laurentEval_T, ih, ← Nat.cast_sub h, ← Nat.cast_add_one,
-          zpow_neg, zpow_natCast, inv_pow, Units.val_inv_eq_inv_val, Units.val_pow_eq_pow_val]
-      · simp [ih, quantumBinomial_eq_zero_of_lt _ h,
-          quantumBinomial_eq_zero_of_lt _ (h.trans r.lt_succ_self)]
-
-/-- `[n choose r]_v = 0` for `n < r`. -/
+/-- Laurent Gaussian coefficients vanish above the diagonal. -/
 @[simp]
 theorem laurentQuantumBinomial_eq_zero_of_lt {n r : ℕ} (h : n < r) :
     laurentQuantumBinomial n r = 0 := by
-  refine eq_of_forall_laurentEval_eq fun K _ u _ => ?_
-  simp [quantumBinomial_eq_zero_of_lt _ h]
+  induction n generalizing r with
+  | zero => cases r <;> simp_all [laurentQuantumBinomial_zero_succ]
+  | succ n ih =>
+    cases r with
+    | zero => omega
+    | succ r => simp [laurentQuantumBinomial_succ_succ, ih (by omega : n < r),
+        ih (by omega : n < r + 1)]
 
-/-- `[n choose n]_v = 1`. -/
+/-- Diagonal Laurent Gaussian coefficients are one. -/
 @[simp]
 theorem laurentQuantumBinomial_self (n : ℕ) : laurentQuantumBinomial n n = 1 := by
-  refine eq_of_forall_laurentEval_eq fun K _ u _ => ?_
-  simp
+  induction n with
+  | zero => simp
+  | succ n ih => simp [laurentQuantumBinomial_succ_succ, ih]
 
-/-- At `v = 1` the Gaussian binomial `[n choose r]_v` is the binomial coefficient
-`n.choose r`. -/
+/-- The first Laurent Gaussian column is the Laurent quantum integer. -/
 @[simp]
-theorem laurentEval_one_laurentQuantumBinomial {A : Type*} [Ring A] (n r : ℕ) :
-    laurentEval (1 : Aˣ) (laurentQuantumBinomial n r) = n.choose r := by
+theorem laurentQuantumBinomial_one_right (n : ℕ) :
+    laurentQuantumBinomial n 1 = laurentQuantumInteger n := by
+  have key : ∀ n : ℕ, (T 1 - T (-1)) * laurentQuantumBinomial n 1 = T n - T (-(n : ℤ)) := by
+    intro n
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      rw [laurentQuantumBinomial_succ_succ]
+      simp only [Nat.cast_zero, sub_zero, laurentQuantumBinomial_zero_right, mul_one,
+        zero_add]
+      calc
+        _ = (T 1 - T (-1)) * T (n : ℤ) +
+            T (-1) * ((T 1 - T (-1)) * laurentQuantumBinomial n 1) := by ring
+        _ = T ((n : ℤ) + 1) - T (-((n : ℤ) + 1)) := by
+          rw [ih]
+          simp only [sub_mul, mul_sub, ← T_add]
+          ring_nf
+  apply mul_left_cancel₀ (T_sub_T_ne_zero (by decide : (1 : ℤ) ≠ -1))
+  rw [key, T_sub_T_neg_mul_laurentQuantumInteger]
+
+/-- Specialization at an arbitrary field unit agrees with the field-valued Pascal
+coefficients, even at roots of unity and at `±1`. -/
+@[simp]
+theorem laurentEval_laurentQuantumBinomial {K : Type*} [Field K] (u : Kˣ) (n r : ℕ) :
+    laurentEval u (laurentQuantumBinomial n r) = quantumBinomial (u : K) n r := by
   induction n generalizing r with
   | zero => cases r <;> simp
   | succ n ih =>
     cases r with
     | zero => simp
-    | succ r => simp [laurentQuantumBinomial_succ_succ, ih, Nat.choose_succ_succ, add_comm]
+    | succ r =>
+      rw [laurentQuantumBinomial_succ_succ, quantumBinomial_succ_succ]
+      simp only [map_add, map_mul, laurentEval_T, ih, Units.val_zpow_eq_zpow_val]
+      rw [← Nat.cast_add_one, zpow_neg, zpow_natCast, inv_pow]
+      by_cases h : r ≤ n
+      · rw [← Nat.cast_sub h, zpow_natCast]
+      · simp [quantumBinomial_eq_zero_of_lt _ (by omega : n < r)]
+
+/-- Specialization at `1` gives ordinary binomial coefficients over any ring. -/
+@[simp]
+theorem laurentEval_one_laurentQuantumBinomial {R : Type*} [Ring R] (n r : ℕ) :
+    laurentEval (1 : Rˣ) (laurentQuantumBinomial n r) = n.choose r := by
+  induction n generalizing r with
+  | zero => cases r <;> simp
+  | succ n ih => cases r <;> simp [laurentQuantumBinomial_succ_succ, ih,
+      Nat.choose_succ_succ]
 
 /-! ### Identities transported from the fraction field -/
 
@@ -170,14 +175,6 @@ theorem laurentQuantumBinomial_symm {n r : ℕ} (h : r ≤ n) :
   refine eq_of_forall_laurentEval_eq fun K _ u _ => ?_
   simp [quantumBinomial_symm _ h]
 
-/-- `[n choose 1]_v = [n]_v`. -/
-@[simp]
-theorem laurentQuantumBinomial_one_right (n : ℕ) :
-    laurentQuantumBinomial n 1 = laurentQuantumInteger n := by
-  refine eq_of_forall_laurentEval_eq fun K _ u hu => ?_
-  rw [laurentEval_laurentQuantumBinomial, laurentEval_laurentQuantumInteger hu,
-    quantumBinomial_one_right hu]
-
 /-- The absorption identity `[n choose r + 1]_v [r + 1]_v = [n choose r]_v [n - r]_v`. -/
 theorem laurentQuantumBinomial_succ_right_eq (n r : ℕ) :
     laurentQuantumBinomial n (r + 1) * laurentQuantumInteger (r + 1) =
@@ -195,31 +192,46 @@ theorem laurentQuantumBinomial_mul_laurentQuantumFactorial_mul_laurentQuantumFac
   simpa [laurentEval_laurentQuantumFactorial hu] using
     quantumBinomial_mul_quantumFactorial_mul_quantumFactorial (u : K) h
 
-/-! ### The Gaussian binomial with integer upper argument -/
+/-- The Laurent Gaussian with signed upper argument. For `a > 0`, its value at `-a`
+is `(-1)^r [a+r-1 choose r]_v`. -/
+def signedLaurentQuantumBinomial : ℤ → ℕ → ℤ[T;T⁻¹]
+  | .ofNat n, r => laurentQuantumBinomial n r
+  | .negSucc n, r => (-1) ^ r * laurentQuantumBinomial (n + r) r
 
-/-- The Gaussian binomial `[m choose r]_v` in `ℤ[v, v⁻¹]` with integer upper argument `m`: it is
-`TauCeti.laurentQuantumBinomial m r` for `m ≥ 0`, and `(-1)^r [a + r - 1 choose r]_v` for
-`m = -a < 0`. It is the Laurent polynomial `[m]_v [m-1]_v ⋯ [m-r+1]_v / [r]_v!`. -/
-noncomputable def signedLaurentQuantumBinomial : ℤ → ℕ → ℤ[T;T⁻¹]
-  | (n : ℕ), r => laurentQuantumBinomial n r
-  | Int.negSucc a, r => (-1) ^ r * laurentQuantumBinomial (a + r) r
-
-/-- For a natural upper argument the signed Gaussian binomial is `[n choose r]_v`. -/
+/-- At nonnegative upper arguments, the signed extension is the ordinary Laurent Gaussian. -/
 @[simp]
 theorem signedLaurentQuantumBinomial_natCast (n r : ℕ) :
-    signedLaurentQuantumBinomial n r = laurentQuantumBinomial n r :=
-  signedLaurentQuantumBinomial.eq_1 r n
+    signedLaurentQuantumBinomial n r = laurentQuantumBinomial n r := (rfl)
 
-/-- For the negative upper argument `-(a + 1)`, the signed Gaussian binomial is
-`(-1)^r [a + r choose r]_v`. -/
-theorem signedLaurentQuantumBinomial_negSucc (a r : ℕ) :
-    signedLaurentQuantumBinomial (Int.negSucc a) r = (-1) ^ r * laurentQuantumBinomial (a + r) r :=
-  signedLaurentQuantumBinomial.eq_2 r a
+/-- The negative-upper-argument reflection formula, without natural subtraction. -/
+theorem signedLaurentQuantumBinomial_neg_succ (n r : ℕ) :
+    signedLaurentQuantumBinomial (-((n : ℤ) + 1)) r =
+      (-1) ^ r * laurentQuantumBinomial (n + r) r := (rfl)
 
-/-- `[m choose 0]_v = 1`. -/
+/-- The zeroth signed Laurent Gaussian column is constantly one. -/
 @[simp]
-theorem signedLaurentQuantumBinomial_zero_right (m : ℤ) : signedLaurentQuantumBinomial m 0 = 1 := by
-  cases m <;> simp [signedLaurentQuantumBinomial_negSucc]
+theorem signedLaurentQuantumBinomial_zero_right (m : ℤ) :
+    signedLaurentQuantumBinomial m 0 = 1 := by
+  cases m <;> simp [signedLaurentQuantumBinomial]
+
+/-- Every coefficient in the row with upper argument `-1` is a sign. -/
+@[simp]
+theorem signedLaurentQuantumBinomial_neg_one (r : ℕ) :
+    signedLaurentQuantumBinomial (-1) r = (-1) ^ r := by
+  simpa only [Nat.cast_zero, zero_add, laurentQuantumBinomial_self, mul_one] using
+    signedLaurentQuantumBinomial_neg_succ 0 r
+
+/-- The first signed Laurent Gaussian column agrees with the Laurent quantum
+integer at every integer index. -/
+@[simp]
+theorem signedLaurentQuantumBinomial_one_right (m : ℤ) :
+    signedLaurentQuantumBinomial m 1 = laurentQuantumInteger m := by
+  cases m with
+  | ofNat n => simp
+  | negSucc n =>
+    simp only [signedLaurentQuantumBinomial, pow_one, neg_one_mul,
+      laurentQuantumBinomial_one_right, Int.negSucc_eq]
+    rw [← Nat.cast_add_one, laurentQuantumInteger_neg]
 
 /-- Reflecting a product of `r` consecutive quantum integers through zero:
 `[-m]_v [-m-1]_v ⋯ [-m-r+1]_v = (-1)^r [m+r-1]_v [m+r-2]_v ⋯ [m]_v`. -/
@@ -252,7 +264,7 @@ theorem signedLaurentQuantumBinomial_mul_laurentQuantumFactorial (m : ℤ) (r : 
   cases m with
   | ofNat n => exact hnat n
   | negSucc a =>
-    rw [signedLaurentQuantumBinomial_negSucc, mul_assoc, hnat, Int.negSucc_eq,
+    rw [Int.negSucc_eq, signedLaurentQuantumBinomial_neg_succ, mul_assoc, hnat,
       prod_laurentQuantumInteger_neg_sub]
     congr 1
     refine prod_congr rfl fun j _ => ?_
@@ -298,19 +310,30 @@ theorem signedLaurentQuantumBinomial_succ_succ (m : ℤ) (r : ℕ) :
 @[simp]
 theorem invert_signedLaurentQuantumBinomial (m : ℤ) (r : ℕ) :
     invert (signedLaurentQuantumBinomial m r) = signedLaurentQuantumBinomial m r := by
-  cases m <;> simp [signedLaurentQuantumBinomial_negSucc]
+  cases m <;> simp [signedLaurentQuantumBinomial]
 
-/-- At `v = 1` the signed Gaussian binomial `[m choose r]_v` is the integer-valued binomial
-`Ring.choose m r`. -/
+/-- The signed Laurent Gaussian specializes at `1` to the integer-valued binomial
+coefficient, also for negative upper arguments. -/
 @[simp]
-theorem laurentEval_one_signedLaurentQuantumBinomial {A : Type*} [Ring A] (m : ℤ) (r : ℕ) :
-    laurentEval (1 : Aˣ) (signedLaurentQuantumBinomial m r) = (Ring.choose m r : ℤ) := by
+theorem laurentEval_one_signedLaurentQuantumBinomial {R : Type*} [Ring R] (m : ℤ) (r : ℕ) :
+    laurentEval (1 : Rˣ) (signedLaurentQuantumBinomial m r) = (Ring.choose m r : ℤ) := by
   cases m with
   | ofNat n => simp [Ring.choose_natCast]
-  | negSucc a =>
-    rw [signedLaurentQuantumBinomial_negSucc, Int.negSucc_eq, Ring.choose_neg,
-      show (a : ℤ) + 1 + r - 1 = ((a + r : ℕ) : ℤ) by push_cast; ring, Ring.choose_natCast,
-      Units.smul_def, Int.coe_negOnePow_natCast]
-    simp
+  | negSucc n =>
+    rw [Int.negSucc_eq, signedLaurentQuantumBinomial_neg_succ, map_mul, map_pow,
+      map_neg, map_one, laurentEval_one_laurentQuantumBinomial, Ring.choose_neg]
+    have he : (n : ℤ) + 1 + r - 1 = (n + r : ℕ) := by omega
+    rw [he, Ring.choose_natCast, Units.smul_def, Int.coe_negOnePow_natCast, zsmul_eq_mul]
+    simp only [Int.cast_mul, Int.cast_pow, Int.cast_neg, Int.cast_one, Int.cast_natCast]
+
+-- Small normalization witnesses: these are symmetric, not the polynomial `1 + v²`.
+example : laurentQuantumBinomial 2 1 = T 1 + T (-1) := by
+  norm_num [laurentQuantumBinomial_succ_succ]
+
+example : signedLaurentQuantumBinomial (-2) 1 = -(T 1 + T (-1)) := by
+  have h := signedLaurentQuantumBinomial_neg_succ 1 1
+  norm_num [laurentQuantumBinomial_succ_succ] at h
+  simpa only [signedLaurentQuantumBinomial_one_right, laurentQuantumInteger_neg,
+    neg_add_rev] using h
 
 end TauCeti

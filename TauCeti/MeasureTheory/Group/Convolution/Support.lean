@@ -49,9 +49,10 @@ theorem support_integral_subset_mul [NormedSpace ℝ E] [MeasurableSpace G] (μ 
 
 variable [TopologicalSpace G] [IsTopologicalGroup G]
 
+omit [NormedAddCommGroup E] in
 /-- A two-variable integrand which vanishes unless `r ∈ K` and `r⁻¹ * s ∈ L`, for compact `K`
 and `L`, is compactly supported on `G × G`. -/
-theorem hasCompactSupport_uncurry_of_inv_mul_mem (hK : IsCompact K) (hL : IsCompact L)
+theorem hasCompactSupport_uncurry_of_inv_mul_mem [Zero E] (hK : IsCompact K) (hL : IsCompact L)
     (hF : ∀ s r, F s r ≠ 0 → r ∈ K ∧ r⁻¹ * s ∈ L) : HasCompactSupport (uncurry F) := by
   refine ((hK.mul hL).prod hK).closure_of_subset fun p hp => ?_
   obtain ⟨hrK, hrL⟩ := hF p.1 p.2 hp

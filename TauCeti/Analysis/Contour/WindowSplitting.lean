@@ -244,14 +244,14 @@ theorem exists_exit_times_truncated_integral_split {γ : ℝ → ℂ} {s : ℂ} 
   set τL := firstExitTimeLeft γ t₀ ρ s with _
   set τR := firstExitTimeRight γ t₀ ρ s with _
   have h_toL : Tendsto τL (𝓝[>] (0 : ℝ)) (𝓝[<] t₀) :=
-    firstExitTimeLeft_tendsto hρ_pos hγ_cont_L h_at h_leave_L
+    tendsto_firstExitTimeLeft hρ_pos hγ_cont_L h_at h_leave_L
   have h_toR : Tendsto τR (𝓝[>] (0 : ℝ)) (𝓝[>] t₀) :=
-    firstExitTimeRight_tendsto hρ_pos hγ_cont_R h_at h_leave_R
+    tendsto_firstExitTimeRight hρ_pos hγ_cont_R h_at h_leave_R
   have h_radL : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ‖γ (τL ε) - s‖ = ε :=
-    eventually_norm_at_firstExitTimeLeft_eq hρ_pos.le hγ_cont_L h_at
+    eventually_norm_sub_firstExitTimeLeft_eq hρ_pos.le hγ_cont_L h_at
       (h_leave_L _ ⟨le_rfl, by linarith⟩)
   have h_radR : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ‖γ (τR ε) - s‖ = ε :=
-    eventually_norm_at_firstExitTimeRight_eq hρ_pos.le hγ_cont_R h_at
+    eventually_norm_sub_firstExitTimeRight_eq hρ_pos.le hγ_cont_R h_at
       (h_leave_R _ ⟨by linarith, le_rfl⟩)
   have h_memL : ∀ᶠ ε in 𝓝[>] (0 : ℝ), τL ε ∈ Ioo (t₀ - ρ) t₀ :=
     h_toL (Ioo_mem_nhdsLT (by linarith))

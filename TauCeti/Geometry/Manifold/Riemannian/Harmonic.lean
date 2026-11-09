@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 
 /-!
@@ -36,13 +37,14 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [IsManifold I ∞ M] [MeasurableSpace M] [BorelSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
 /-- A harmonic `C²` function on a compact boundaryless Riemannian manifold has zero gradient.
 No connectedness assumption is needed. -/
 theorem mgradient_eq_zero_of_laplaceBeltrami_eq_zero {u : M → ℝ}
     (hu : ContMDiff I 𝓘(ℝ) 2 u) (hΔ : ∀ x, laplaceBeltrami I u x = 0) (x : M) :
     mgradient I u x = 0 := by
+  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1)
   have hcont : Continuous fun y ↦ ‖mgradient I u y‖ ^ 2 :=
     continuous_norm_sq_mgradient (hu.of_le one_le_two)
   have hint := integral_mul_laplaceBeltrami (hu.of_le one_le_two)

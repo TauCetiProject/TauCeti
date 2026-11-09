@@ -70,6 +70,7 @@ section Frobenius
 
 variable {K G : Type*} [Field K] [Fintype K] [Group G] [Finite G]
 
+omit [Finite G] in
 /-- **Raising to the `|K|`-th power fixes the coefficient at the identity.** Over a finite field
 `K` whose characteristic does not divide `|G|`, the identity coefficient of `u ^ |K|` is that of
 `u`, for *every* `u` in the group algebra.
@@ -79,6 +80,7 @@ combined with `a ^ |K| = a` in `K`. -/
 theorem coeff_one_pow_card (hG : (Nat.card G : K) ≠ 0) (u : MonoidAlgebra K G) :
     (u ^ Fintype.card K).coeff 1 = u.coeff 1 := by
   classical
+  have : Finite G := Nat.finite_of_card_ne_zero fun h ↦ hG (by simp [h])
   let _ := Fintype.ofFinite G
   have hG' : (Fintype.card G : K) ≠ 0 := by
     rwa [← Nat.card_eq_fintype_card]
