@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
+-- `NontriviallyNormedField` occurs in `Matrix.GeneralLinearGroup.dense_setOf_add_ne_zero`.
+public import Mathlib.Analysis.Normed.Field.Basic
 -- `Matrix.ProjGenLinGroup.mulActionOfGL` descends the `GL₂` action to `PGL₂` below, and
 -- `PGL(2, K)` occurs in the statements.
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
@@ -44,6 +46,8 @@ stabilizer of a cusp, moved to `∞`, consists of translations.
 
 * `OnePoint.smul_some_eq_infty_iff`: `g • (k : OnePoint K) = ∞` exactly when the denominator
   `g 1 0 * k + g 1 1` vanishes.
+* `Matrix.GeneralLinearGroup.dense_setOf_add_ne_zero`: over a nontrivially normed field, the
+  points where that denominator does not vanish are dense.
 * `TauCeti.scalar_smul_onePoint_eq_self` and `TauCeti.mem_center_of_smul_zero_one_infty_eq_self`:
   a scalar matrix fixes every point of the projective line, and a matrix fixing `0`, `1` and `∞`
   is scalar, whence `TauCeti.ker_toPermHom_onePoint_eq_center`, the kernel of the permutation
@@ -53,7 +57,9 @@ stabilizer of a cusp, moved to `∞`, consists of translations.
 * `OnePoint.instMulActionPSL`: the action of `PSL(2, K)` on `OnePoint K`, with `pslMk_smul`.
 * `Matrix.ProjectiveSpecialLinearGroup.toPGL_smul`: the inclusion `PSL(2, K) → PGL(2, K)` is
   compatible with the actions.
-* `OnePoint.instIsMultiplyPretransitiveGL`: `GL(2, K)` acts 2-transitively on `OnePoint K`.
+* `OnePoint.instIsMultiplyPretransitiveGL`: `GL(2, K)` acts 2-transitively on `OnePoint K`, and
+  `OnePoint.exists_smul_zero_infty_eq`: any two distinct points are the images of `0` and `∞`
+  under a matrix of determinant one.
 * `Matrix.ProjectiveSpecialLinearGroup.mk_smul_zero_eq_infty_iff`,
   `mk_smul_infty_eq_infty_iff`, `mk_smul_zero_eq_coe_iff`, `mk_smul_infty_eq_coe_iff`: where the
   class of `!![a, b; c, d]` sends the points `0` and `∞`, in terms of its entries, and
@@ -104,6 +110,25 @@ lemma smul_some_eq_infty_iff {g : GL (Fin 2) K} {k : K} :
   · simp [hz]
 
 end OnePoint
+
+namespace Matrix.GeneralLinearGroup
+
+/-- The points of `𝕜` that the Möbius transformation of `g = !![a, b; c, d]` does not send to `∞`
+are dense: the only one it does send to `∞` is `-d / c`. -/
+theorem dense_setOf_add_ne_zero {𝕜 : Type*} [NontriviallyNormedField 𝕜] (g : GL (Fin 2) 𝕜) :
+    Dense {z : 𝕜 | g 1 0 * z + g 1 1 ≠ 0} := by
+  refine (dense_compl_singleton (-(g 1 1 / g 1 0))).mono fun z hz hz' ↦
+    Set.mem_compl_singleton_iff.1 hz ?_
+  have hc : g 1 0 ≠ 0 := by
+    rintro hc
+    rw [hc, zero_mul, zero_add] at hz'
+    apply g.det_ne_zero
+    rw [det_fin_two, hc, hz']
+    ring
+  field_simp
+  linear_combination hz'
+
+end Matrix.GeneralLinearGroup
 
 namespace TauCeti
 
@@ -221,6 +246,16 @@ instance : MulAction.IsPretransitive PSL(2, K) (OnePoint K) :=
       rw [equivProjectivization_psl_smul, Equiv.apply_symm_apply, Equiv.apply_symm_apply]⟩)
     (equivProjectivization K).symm.surjective inferInstance
 
+/-- The identification `OnePoint.equivProjectivization` intertwines the action of `SL(2, K)` on
+`ℙ K (Fin 2 → K)` with the action of its image in `GL(2, K)` on `OnePoint K`. -/
+lemma equivProjectivization_symm_toGL_smul (γ : SL(2, K)) (p : ℙ K (Fin 2 → K)) :
+    (γ : GL (Fin 2) K) • (equivProjectivization K).symm p =
+      (equivProjectivization K).symm (γ • p) := by
+  rw [Equiv.smul_def (equivProjectivization K), Equiv.apply_symm_apply]
+  -- The `SL(2, K)` and `GL(2, K)` actions on `ℙ K (Fin 2 → K)` are both multiplication of
+  -- representatives by the underlying matrix.
+  rfl
+
 /-- **`GL(2, K)` acts 2-transitively on the projective line**: any two distinct points of
 `OnePoint K` are carried to any two distinct points by some Möbius transformation. This is
 Mathlib's 2-transitivity of `SL(2, K)` on `ℙ K (Fin 2 → K)`, transported along
@@ -228,13 +263,32 @@ Mathlib's 2-transitivity of `SL(2, K)` on `ℙ K (Fin 2 → K)`, transported alo
 instance instIsMultiplyPretransitiveGL :
     MulAction.IsMultiplyPretransitive (GL (Fin 2) K) (OnePoint K) 2 :=
   MulAction.IsPretransitive.of_embedding
-    (f := (⟨(equivProjectivization K).symm, fun g p ↦ by
-      rw [Equiv.smul_def (equivProjectivization K), Equiv.apply_symm_apply]
-      -- The `SL(2, K)` and `GL(2, K)` actions on `ℙ K (Fin 2 → K)` are both multiplication of
-      -- representatives by the underlying matrix.
-      rfl⟩ : ℙ K (Fin 2 → K) →ₑ[(Matrix.SpecialLinearGroup.toGL : SL(2, K) →* GL (Fin 2) K)]
-        OnePoint K))
+    (f := (⟨(equivProjectivization K).symm, fun γ p ↦
+      (equivProjectivization_symm_toGL_smul γ p).symm⟩ :
+        ℙ K (Fin 2 → K) →ₑ[(Matrix.SpecialLinearGroup.toGL : SL(2, K) →* GL (Fin 2) K)]
+          OnePoint K))
     (equivProjectivization K).symm.surjective
+
+/-- **Any two distinct points of the projective line are the images of `0` and `∞` under a matrix
+of determinant one.** This is Mathlib's 2-transitivity of `SL(2, K)` on `ℙ K (Fin 2 → K)`,
+transported along `OnePoint.equivProjectivization`. -/
+theorem exists_smul_zero_infty_eq {a b : OnePoint K} (h : a ≠ b) :
+    ∃ g : GL (Fin 2) K, (g : Matrix (Fin 2) (Fin 2) K).det = 1 ∧
+      g • ((0 : K) : OnePoint K) = a ∧ g • (∞ : OnePoint K) = b := by
+  let e := equivProjectivization K
+  obtain ⟨γ, hγ⟩ := MulAction.exists_smul_eq SL(2, K)
+    (Function.Embedding.embFinTwo (e.injective.ne (coe_ne_infty (0 : K))))
+    (Function.Embedding.embFinTwo (e.injective.ne h))
+  have h₀ := DFunLike.congr_fun hγ 0
+  have h₁ := DFunLike.congr_fun hγ 1
+  rw [Function.Embedding.smul_apply, Function.Embedding.embFinTwo_apply_zero,
+    Function.Embedding.embFinTwo_apply_zero] at h₀
+  rw [Function.Embedding.smul_apply, Function.Embedding.embFinTwo_apply_one,
+    Function.Embedding.embFinTwo_apply_one] at h₁
+  refine ⟨γ, by simp, ?_, ?_⟩
+  · rw [← e.symm_apply_apply ((0 : K) : OnePoint K), equivProjectivization_symm_toGL_smul, h₀,
+      e.symm_apply_apply]
+  · rw [← e.symm_apply_apply ∞, equivProjectivization_symm_toGL_smul, h₁, e.symm_apply_apply]
 
 end OnePoint
 

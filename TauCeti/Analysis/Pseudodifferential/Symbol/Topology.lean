@@ -495,6 +495,7 @@ theorem compRightCLM_apply (a : Symbol n V W m) (b : Symbol n W U m') :
 
 /-- The pointwise composition of two continuous families of symbols is a continuous family of
 symbols. -/
+@[continuity, fun_prop]
 theorem _root_.Continuous.symbol_comp {X : Type*} [TopologicalSpace X] {b : X → Symbol n W U m'}
     {a : X → Symbol n V W m} (hb : Continuous b) (ha : Continuous a) :
     Continuous fun x => (b x).comp (a x) :=

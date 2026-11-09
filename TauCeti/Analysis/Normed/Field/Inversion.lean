@@ -43,6 +43,8 @@ into an open set.
   any point and completed by `0`, is open; the completed inversion of any set has the completed
   inverted closure as closure; and for a centre outside the closure of such an open set, the
   inverted frontier as frontier.
+* `TauCeti.mapsTo_inv_ball_diff_singleton_compl_closedBall`: the inversion maps the punctured ball
+  of radius `R⁻¹` about `0` outside the closed ball of radius `R`.
 -/
 
 public section
@@ -121,6 +123,15 @@ theorem not_isBounded_image_sub_inv_of_mem_closure {s : Set 𝕜} {q : 𝕜} (hq
     rw [lt_inv_comm₀ (by positivity) hz0]
     exact hlt
   linarith [le_max_left M 1]
+
+/-- The inversion maps the punctured ball of radius `R⁻¹` about `0` into the exterior of the
+closed ball of radius `R`. -/
+theorem mapsTo_inv_ball_diff_singleton_compl_closedBall (R : ℝ) :
+    MapsTo (·⁻¹) (ball (0 : 𝕜) R⁻¹ \ {0}) (closedBall 0 R)ᶜ := by
+  rintro w ⟨hw, hw0⟩
+  simp only [mem_ball_zero_iff, mem_singleton_iff] at hw hw0
+  have hR : 0 < R := inv_pos.1 ((norm_nonneg w).trans_lt hw)
+  simpa [norm_inv] using (lt_inv_comm₀ (norm_pos_iff.2 hw0) hR).1 hw
 
 section Completion
 

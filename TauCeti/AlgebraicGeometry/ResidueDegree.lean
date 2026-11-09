@@ -31,11 +31,9 @@ Mathlib's residue-field maps and the field-extension tower law `Module.finrank_m
 
 public section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory
 
-namespace TauCeti
-
-namespace AlgebraicGeometry
+namespace AlgebraicGeometry.Scheme.Hom
 
 universe u
 
@@ -57,60 +55,38 @@ theorem residueDegree_comp (f : X ⟶ Y) (g : Y ⟶ Z) (x : X) :
     IsScalarTower.of_algebraMap_eq' <| by
       rw [RingHom.algebraMap_toAlgebra]
       exact congrArg CommRingCat.Hom.hom (Scheme.residueFieldMap_comp f g x)
-  rw [Scheme.Hom.residueDegree]
+  rw [residueDegree]
   exact (Module.finrank_mul_finrank (Z.residueField (g (f x)))
     (Y.residueField (f x)) (X.residueField x)).symm
 
 /-- A residue degree is positive exactly when the associated residue-field extension is finite. -/
 theorem residueDegree_pos_iff (f : X ⟶ Y) (x : X) :
-    0 < f.residueDegree x ↔
-      (f.residueFieldMap x).hom.Finite := by
+    0 < f.residueDegree x ↔ (f.residueFieldMap x).hom.Finite := by
   let : Algebra (Y.residueField (f x)) (X.residueField x) :=
     (f.residueFieldMap x).hom.toAlgebra
-  rw [Scheme.Hom.residueDegree, RingHom.Finite]
-  constructor
-  · exact Module.finite_of_finrank_pos
-  · intro h
-    let : Module.Finite (Y.residueField (f x)) (X.residueField x) := h
-    exact Module.finrank_pos
+  rw [residueDegree, RingHom.Finite]
+  exact ⟨fun h ↦ Module.finite_of_finrank_pos h, fun _ ↦ Module.finrank_pos⟩
 
 /-- A residue degree is nonzero exactly when the associated residue-field extension is finite. -/
 theorem residueDegree_ne_zero_iff (f : X ⟶ Y) (x : X) :
-    f.residueDegree x ≠ 0 ↔
-      (f.residueFieldMap x).hom.Finite := by
-  rw [← residueDegree_pos_iff f x, Nat.pos_iff_ne_zero]
+    f.residueDegree x ≠ 0 ↔ (f.residueFieldMap x).hom.Finite := by
+  rw [← residueDegree_pos_iff, Nat.pos_iff_ne_zero]
 
 /-- A residue-field map is bijective exactly when its residue degree is one. -/
 theorem residueDegree_eq_one_iff (f : X ⟶ Y) (x : X) :
     f.residueDegree x = 1 ↔ Function.Bijective (f.residueFieldMap x) := by
   let : Algebra (Y.residueField (f x)) (X.residueField x) :=
     (f.residueFieldMap x).hom.toAlgebra
-  rw [Scheme.Hom.residueDegree, Algebra.finrank_eq_one_iff_bijective_algebraMap,
+  rw [residueDegree, Algebra.finrank_eq_one_iff_bijective_algebraMap,
     RingHom.algebraMap_toAlgebra]
 
-/-- An isomorphism of schemes has residue degree one at every point. -/
-@[simp]
-theorem residueDegree_eq_one_of_isIso (f : X ⟶ Y) [IsIso f] (x : X) :
-    f.residueDegree x = 1 :=
-  (residueDegree_eq_one_iff f x).mpr (ConcreteCategory.bijective_of_isIso _)
-
-end AlgebraicGeometry
-
-end TauCeti
-
-namespace AlgebraicGeometry.Scheme.Hom
-
-universe u
-
-variable {X Y : Scheme.{u}}
-
-/-- A morphism which is surjective on stalks, for instance a closed immersion, has residue degree
-one at every point: its residue-field maps are surjective field homomorphisms. -/
+/-- A morphism which is surjective on stalks, for instance a closed immersion, an open immersion
+or an isomorphism, has residue degree one at every point: its residue-field maps are surjective
+field homomorphisms. -/
 @[simp]
 theorem residueDegree_eq_one_of_surjectiveOnStalks (f : X ⟶ Y) [SurjectiveOnStalks f] (x : X) :
     f.residueDegree x = 1 := by
-  refine (TauCeti.AlgebraicGeometry.residueDegree_eq_one_iff f x).mpr
-    ⟨(f.residueFieldMap x).hom.injective, fun z ↦ ?_⟩
+  refine (residueDegree_eq_one_iff f x).mpr ⟨(f.residueFieldMap x).hom.injective, fun z ↦ ?_⟩
   obtain ⟨s, rfl⟩ := X.residue_surjective x z
   obtain ⟨t, rfl⟩ := f.stalkMap_surjective x s
   refine ⟨Y.residue (f x) t, ?_⟩

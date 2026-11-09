@@ -596,18 +596,25 @@ lemma conjScale_mem_gamma1Conj [NeZero q] {δ : SL(2, ℤ)} (hδ : δ ∈ Gamma1
     ← ConjAct.toConjAct_smul]
   exact Subgroup.smul_mem_pointwise_smul _ _ _ ⟨δ, hδ, rfl⟩
 
-/-- For `q ∣ N`, the members of `gamma1Conj q N` are exactly the `diag(q, 1)`-conjugates
+/-- The members of `gamma1Conj q N` are exactly the `diag(q, 1)`-conjugates
 `conjScale q δ c hc` of the matrices `δ ∈ Γ₁(N)`. -/
-lemma mem_gamma1Conj_iff [NeZero q] (hqN : q ∣ N) {γ : SL(2, ℤ)} :
+lemma mem_gamma1Conj_iff [NeZero q] {γ : SL(2, ℤ)} :
     γ ∈ gamma1Conj q N ↔
       ∃ δ ∈ Gamma1 N, ∃ (c : ℤ) (hc : δ 1 0 = q * c), conjScale q δ c hc = γ := by
   refine ⟨fun hγ ↦ ?_, fun ⟨δ, hδ, c, hc, h⟩ ↦ h ▸ conjScale_mem_gamma1Conj hδ hc⟩
   rw [gamma1Conj, conjGL, inv_inv, Subgroup.mem_comap,
     Subgroup.mem_smul_pointwise_iff_exists] at hγ
   obtain ⟨_, ⟨δ, hδ, rfl⟩, hγ⟩ := hγ
-  obtain ⟨c, hc⟩ : (q : ℤ) ∣ δ 1 0 :=
-    (Int.natCast_dvd_natCast.mpr hqN).trans (mem_Gamma1_iff_dvd_lowerRow.mp hδ).1
-  refine ⟨δ, hδ, c, hc, (mapGL_inj (S := ℝ) _ _).mp ?_⟩
+  have hmul : scaleGL q * mapGL ℝ δ = mapGL ℝ γ * scaleGL q := by
+    rw [ConjAct.toConjAct_smul] at hγ
+    rw [← hγ]; group
+  have h10 := congrArg (fun g : GL (Fin 2) ℝ ↦ (g : Matrix (Fin 2) (Fin 2) ℝ) 1 0) hmul
+  simp only [Fin.isValue, Units.val_mul, coe_scaleGL, mapGL_coe_matrix, algebraMap_int_eq,
+    map_apply_coe, RingHom.mapMatrix_apply, Int.coe_castRingHom, Matrix.mul_apply, of_apply,
+    cons_val', cons_val_fin_one, cons_val_one, map_apply, Fin.sum_univ_two, cons_val_zero,
+    zero_mul, one_mul, zero_add, mul_zero, add_zero] at h10
+  have hc : δ 1 0 = q * γ 1 0 := by exact_mod_cast h10.trans (mul_comm _ _)
+  refine ⟨δ, hδ, γ 1 0, hc, (mapGL_inj (S := ℝ) _ _).mp ?_⟩
   rw [← mapGL_conjScale, ← hγ, ConjAct.toConjAct_smul]
 
 /-- For `q ∣ N`, the image of `gamma1Conj q N` in `GL(2, ℝ)` is the whole conjugate
@@ -657,7 +664,7 @@ lemma mem_gamma1Conj_of_mem_Gamma1 [NeZero q] {γ : SL(2, ℤ)} (hγ : γ ∈ Ga
 /-- For `q * M ∣ N`, the conjugate `gamma1Conj q N` lies in `Γ₁(M)`. -/
 lemma gamma1Conj_le_Gamma1 [NeZero q] (hqM : q * M ∣ N) : gamma1Conj q N ≤ Gamma1 M := by
   intro γ hγ
-  obtain ⟨δ, hδ, c, hc, rfl⟩ := (mem_gamma1Conj_iff ((Dvd.intro M rfl).trans hqM)).mp hγ
+  obtain ⟨δ, hδ, c, hc, rfl⟩ := mem_gamma1Conj_iff.mp hγ
   obtain ⟨h10, h11⟩ := mem_Gamma1_iff_dvd_lowerRow.mp hδ
   refine mem_Gamma1_of_dvd_lowerRow ?_
     (by simpa using (Int.natCast_dvd_natCast.mpr (dvd_of_mul_left_dvd hqM)).trans h11)
@@ -675,17 +682,16 @@ lemma Gamma_le_gamma1Conj [NeZero q] : Gamma (q * N) ≤ gamma1Conj q N := fun _
 instance [NeZero q] [NeZero N] : (gamma1Conj q N).FiniteIndex :=
   Subgroup.finiteIndex_of_le Gamma_le_gamma1Conj
 
-/-- For `q ∣ K`, `K' = q m` and `lcm m K = K'`, the conjugate `diag(q, 1) Γ₁(K) diag(q, 1)⁻¹`
+/-- For `K' = q m` and `lcm m K = K'`, the conjugate `diag(q, 1) Γ₁(K) diag(q, 1)⁻¹`
 meets `Γ₁(m)` in the conjugate of `Γ₁(K')`. -/
-lemma gamma1Conj_eq_inf [NeZero q] {m K K' : ℕ} (hqK : q ∣ K) (hm : q * m = K')
+lemma gamma1Conj_eq_inf [NeZero q] {m K K' : ℕ} (hm : q * m = K')
     (hlcm : Nat.lcm m K = K') : gamma1Conj q K' = Gamma1 m ⊓ gamma1Conj q K := by
-  have hqK' : q ∣ K' := Dvd.intro m hm
   have hKK' : K ∣ K' := hlcm ▸ Nat.dvd_lcm_right m K
   refine le_antisymm (le_inf (gamma1Conj_le_Gamma1 (dvd_of_eq hm)) fun γ hγ ↦ ?_) fun γ hγ ↦ ?_
-  · obtain ⟨δ, hδ, c, hc, rfl⟩ := (mem_gamma1Conj_iff hqK').mp hγ
+  · obtain ⟨δ, hδ, c, hc, rfl⟩ := mem_gamma1Conj_iff.mp hγ
     exact conjScale_mem_gamma1Conj (Gamma1_le_Gamma1_of_dvd hKK' hδ) hc
   · obtain ⟨hγm, hγK⟩ := Subgroup.mem_inf.mp hγ
-    obtain ⟨δ, hδ, c, hc, rfl⟩ := (mem_gamma1Conj_iff hqK).mp hγK
+    obtain ⟨δ, hδ, c, hc, rfl⟩ := mem_gamma1Conj_iff.mp hγK
     obtain ⟨h10, h11⟩ := mem_Gamma1_iff_dvd_lowerRow.mp hγm
     have hδm : δ ∈ Gamma1 m := mem_Gamma1_of_dvd_lowerRow
       (by rw [hc]; exact Dvd.dvd.mul_left (by simpa using h10) _) (by simpa using h11)

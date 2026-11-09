@@ -435,6 +435,14 @@ theorem degreeZeroBasis_apply (i : X) :
   -- The identification `gr_0(F) ≅ F ⧸ Φ(F)` carries `x'_i` to the class `⟦x_i⟧`.
   simp
 
+omit [LinearOrder X] in
+/-- The coordinate of the class of a generator `a` at `ξ_i` is `1` if `a = i` and `0` otherwise. -/
+@[simp]
+theorem degreeZeroBasis_repr_gradedMkZero [DecidableEq X] (a i : X) :
+    (degreeZeroBasis p X).repr (gradedMkZero p (freeProP p X) (of a)) i =
+      if a = i then 1 else 0 := by
+  rw [← degreeZeroBasis_apply, Module.Basis.repr_self, Finsupp.single_apply]
+
 omit [Finite X] in
 /-- **The dimension of `gr_1` of a free pro-`p` group of finite rank** is `#X + (#X choose 2)`:
 `gr_1(F) ≅ 𝔽_p^X ⊕ Λ²(𝔽_p^X)`. -/
@@ -561,6 +569,20 @@ theorem mem_gradedPowIterSpan_iff {S : Set X} [Fintype S] {j : ℕ}
           v := by
   rw [gradedPowIterSpan, Set.image_eq_range]
   exact mem_span_range_iff_exists_fun _
+
+/-- **Membership in the span of the `p`-power classes, with coefficients on all generators.** A
+vector `y` of the span of the iterated `p`-powers `π^j ξ_i` over a set `S` of generators is the
+combination `Σ_i c_i π^j ξ_i` of the `π^j ξ_i` over all generators, with coefficients `c_i`
+that vanish outside `S`. -/
+theorem exists_fun_of_mem_gradedPowIterSpan [Fintype X] {S : Set X} {j : ℕ}
+    {y : gradedPiece p (freeProP p X) j} (hy : y ∈ gradedPowIterSpan p X S j) :
+    ∃ c : X → ZMod p, (∀ i, c i ≠ 0 → i ∈ S) ∧
+      ∑ i, c i • gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of i)) = y := by
+  rw [gradedPowIterSpan_def] at hy
+  obtain ⟨f, hfS, hf⟩ := (Finsupp.mem_span_image_iff_linearCombination _).mp hy
+  refine ⟨f, fun i hi ↦ by_contra fun hiS ↦ hi ((Finsupp.mem_supported' _ _).mp hfS i hiS), ?_⟩
+  rw [← hf, Finsupp.linearCombination_apply_of_mem_supported (s := Finset.univ) (ZMod p)
+    (Finset.subset_univ _)]
 
 end PowIterSpan
 

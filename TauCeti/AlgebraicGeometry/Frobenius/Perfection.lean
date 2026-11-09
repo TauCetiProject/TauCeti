@@ -452,6 +452,14 @@ theorem homPerfectionEquiv_symm_comp (g : T ⟶ X) :
     (X.homPerfectionEquiv p hX T).symm g ≫ X.fromPerfection p hX = g :=
   (X.homPerfectionEquiv p hX T).apply_symm_apply g
 
+/-- The lift to the perfection is natural in the perfect source: lifting `h ≫ g` for a morphism
+`h : T' ⟶ T` of perfect schemes is `h` followed by the lift of `g`. -/
+@[simp, reassoc]
+theorem homPerfectionEquiv_symm_comp_left {T' : Scheme.{u}} [IsPerfect T' p] (h : T' ⟶ T)
+    (g : T ⟶ X) :
+    (X.homPerfectionEquiv p hX T').symm (h ≫ g) = h ≫ (X.homPerfectionEquiv p hX T).symm g :=
+  perfection_hom_ext (by simp)
+
 end UniversalProperty
 
 end

@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.RingTheory.Norm.Transitivity
+import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.RingTheory.Norm.RCLike
 
 /-!
@@ -26,11 +27,13 @@ therefore differs from the open ball by a null set. A set inside a closed ball w
 ball of the same radius likewise agrees with it up to a null set. In a nontrivial space, concentric
 balls are ordered by measure as by radius, so the points `x` whose centered ball of radius `‖x‖` has
 measure below `m` form a set of measure `m`. The ratio of the measures of two closed balls is
-controlled by the ratio of their radii raised to the dimension, the shell between concentric balls
+controlled by the ratio of their radii raised to the dimension, also for the restriction of the
+measure to a set of positive density in the balls, the shell between concentric balls
 has measure the difference of the powers of the radii, and the part of a ball outside a translate of
 itself is controlled by the distance between the centres. The measure of an affine image
 `y + r • S` relative to a ball of radius `r` is that of `S` relative to the unit ball, and a
-homothety of ratio `r ≠ 0` pushes the measure forward to its multiple by `|r|⁻ⁿ`. Comparing the
+homothety of ratio `r ≠ 0` pushes the measure forward to its multiple by `|r|⁻ⁿ`, and an
+invertible affine map `x ↦ c + A x` pushes it to its multiple by `|det A|⁻¹`. Comparing the
 measure of the image of the closed unit ball under a linear endomorphism `f` with that of the
 closed ball of radius `‖f‖` bounds `|det f|` by `‖f‖` raised to the dimension; restricting scalars
 to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` field.
@@ -65,6 +68,13 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
   the centered ball has measure below `m` has measure `m`.
 * `MeasureTheory.Measure.addHaar_real_closedBall_div_le`: a closed ball of radius `R ≤ c r` has
   at most `cⁿ` times the measure of a closed ball of radius `r`.
+* `MeasureTheory.Measure.addHaar_real_restrict_closedBall_div_le`,
+  `MeasureTheory.Measure.ofReal_mul_rpow_mul_le_addHaar_restrict_closedBall`: for the restriction
+  of the measure to a set `s` with density at least `c > 0` in a closed ball, the ratio of the
+  measures of nearby balls is at most `2ⁿ / c`, and the measure of a ball of radius `r` is at
+  least `c rⁿ` times that of the unit ball.
+* `MeasureTheory.Measure.addHaar_real_closedBall_mul_eq_pow_mul_addHaar_real_ball`: the closed ball
+  of radius `c r` has `cⁿ` times the measure of the open ball of radius `r`.
 * `MeasureTheory.Measure.addHaar_real_closedBall_sdiff_ball`: the shell between the open ball of
   radius `r > 0` and the concentric closed ball of radius `s ≥ r` has measure `(sⁿ - rⁿ)` times
   that of the unit ball.
@@ -76,6 +86,8 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
   unit ball.
 * `MeasureTheory.Measure.map_addHaar_homothety`: a homothety of nonzero ratio `r` pushes an
   additive Haar measure to its multiple by `|r ^ n|⁻¹`.
+* `MeasureTheory.Measure.map_affine_addHaar_eq_smul`: an invertible affine map `x ↦ c + A x` pushes
+  an additive Haar measure to its multiple by `|det A|⁻¹`.
 * `MeasureTheory.Measure.eLpNorm_ball_le_mul_rpow`: Hölder's inequality on a ball, with the volume
   of the ball written through that of the unit ball.
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
@@ -160,7 +172,7 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_ball_mul_diam_ball_pow_div_le
     mu.real (ball 0 1) * diam (ball x r) ^ (finrank ℝ E + 1) / mu.real (ball x r) ≤
       2 ^ (finrank ℝ E + 1) * r := by
   have homega : 0 < mu.real (ball (0 : E) 1) :=
-    ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne
+    Metric.measureReal_ball_pos mu 0 one_pos
   rw [mu.addHaar_real_ball_of_pos x hr, div_le_iff₀ (by positivity)]
   calc mu.real (ball (0 : E) 1) * diam (ball x r) ^ (finrank ℝ E + 1)
       ≤ mu.real (ball (0 : E) 1) * (2 * r) ^ (finrank ℝ E + 1) := by
@@ -182,7 +194,7 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_ball_rpow_mul_diam_ball_pow_di
   set n := finrank ℝ E
   set ω := mu.real (ball (0 : E) 1)
   have homega : 0 < ω :=
-    ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne
+    Metric.measureReal_ball_pos mu 0 one_pos
   rw [mu.addHaar_real_ball_of_pos x hr]
   calc ω ^ (1 - (n : ℝ)⁻¹) * diam (ball x r) ^ n / (r ^ n * ω)
       ≤ ω ^ (1 - (n : ℝ)⁻¹) * (2 * r) ^ n / (r ^ n * ω) := by
@@ -296,10 +308,64 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_closedBall_div_le
     (x y : E) {c r R : ℝ} (hr : 0 < r) (hR : 0 ≤ R) (hRr : R ≤ c * r) :
     mu.real (closedBall x R) / mu.real (closedBall y r) ≤ c ^ finrank ℝ E := by
   have hball : 0 < mu.real (ball (0 : E) 1) :=
-    ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne
+    Metric.measureReal_ball_pos mu 0 one_pos
   rw [mu.addHaar_real_closedBall x hR, mu.addHaar_real_closedBall y hr.le,
     mul_div_mul_right _ _ hball.ne', div_le_iff₀ (by positivity), ← mul_pow]
   exact pow_le_pow_left₀ hR hRr _
+
+/-- If a set `s` has density at least `c > 0` in `closedBall y ε`, in the sense that
+`c μ(closedBall y ε) ≤ μ(closedBall y ε ∩ s)`, then for `0 ≤ r ≤ 2 ε` a closed ball of radius `r`
+has at most `2ⁿ / c` times the `μ.restrict s`-measure of `closedBall y ε`, whatever its centre,
+where `n` is the dimension. -/
+theorem _root_.MeasureTheory.Measure.addHaar_real_restrict_closedBall_div_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x y : E) {s : Set E} {c : NNReal} {ε r : ℝ} (hc : 0 < c) (hε : 0 < ε) (hr : 0 ≤ r)
+    (hrε : r ≤ 2 * ε) (hd : (c : ENNReal) * mu (closedBall y ε) ≤ mu (closedBall y ε ∩ s)) :
+    (mu.restrict s).real (closedBall x r) / (mu.restrict s).real (closedBall y ε) ≤
+      2 ^ finrank ℝ E / c := by
+  have hy : 0 < mu.real (closedBall y ε) :=
+    ENNReal.toReal_pos (measure_closedBall_pos mu y hε).ne' measure_closedBall_lt_top.ne
+  have hden : c * mu.real (closedBall y ε) ≤ (mu.restrict s).real (closedBall y ε) := by
+    rw [measureReal_restrict_apply measurableSet_closedBall, measureReal_def, measureReal_def,
+      ← ENNReal.coe_toReal, ← ENNReal.toReal_mul]
+    exact ENNReal.toReal_mono
+      ((measure_mono Set.inter_subset_left).trans_lt measure_closedBall_lt_top).ne hd
+  have hnum : (mu.restrict s).real (closedBall x r) ≤ mu.real (closedBall x r) :=
+    ENNReal.toReal_mono measure_closedBall_lt_top.ne (Measure.restrict_apply_le _ _)
+  calc (mu.restrict s).real (closedBall x r) / (mu.restrict s).real (closedBall y ε)
+      ≤ mu.real (closedBall x r) / (c * mu.real (closedBall y ε)) :=
+        div_le_div₀ measureReal_nonneg hnum (mul_pos (NNReal.coe_pos.2 hc) hy) hden
+    _ = mu.real (closedBall x r) / mu.real (closedBall y ε) / c := by rw [mul_comm, div_div]
+    _ ≤ 2 ^ finrank ℝ E / c := by
+        gcongr
+        exact mu.addHaar_real_closedBall_div_le x y hε hr hrε
+
+/-- If a set `s` has density at least `c` in `closedBall x r`, `r > 0`, in the sense that
+`c μ(closedBall x r) ≤ μ(closedBall x r ∩ s)`, then the `μ.restrict s`-measure of the ball is at
+least `c rⁿ μ(closedBall 0 1)`, where `n` is the dimension. -/
+theorem _root_.MeasureTheory.Measure.ofReal_mul_rpow_mul_le_addHaar_restrict_closedBall
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {s : Set E} {c : NNReal} {r : ℝ} (hr : 0 < r)
+    (hd : (c : ENNReal) * mu (closedBall x r) ≤ mu (closedBall x r ∩ s)) :
+    ENNReal.ofReal (c * r ^ (finrank ℝ E : ℝ) * mu.real (closedBall 0 1)) ≤
+      mu.restrict s (closedBall x r) := by
+  rw [Measure.restrict_apply measurableSet_closedBall]
+  refine le_trans (le_of_eq ?_) hd
+  rw [mu.addHaar_closedBall' x hr.le, ← Real.rpow_natCast, ENNReal.ofReal_mul (by positivity),
+    ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_coe_nnreal, mul_assoc, measureReal_def,
+    ENNReal.ofReal_toReal measure_closedBall_lt_top.ne]
+
+/-- The closed ball of radius `c r`, for `c ≥ 0` and `r > 0`, has `cⁿ` times the real measure of
+the open ball of radius `r` with the same centre, where `n` is the dimension. -/
+theorem _root_.MeasureTheory.Measure.addHaar_real_closedBall_mul_eq_pow_mul_addHaar_real_ball
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {c r : ℝ} (hc : 0 ≤ c) (hr : 0 < r) :
+    mu.real (closedBall x (c * r)) = c ^ finrank ℝ E * mu.real (ball x r) := by
+  rw [mu.addHaar_real_closedBall x (by positivity), mu.addHaar_real_ball_of_pos x hr, mul_pow]
+  ring
 
 /-- The shell between the open ball of radius `r > 0` and the concentric closed ball of radius
 `s ≥ r` has real measure `(sⁿ - rⁿ)` times the real measure of the unit ball, where `n` is the
@@ -365,6 +431,26 @@ theorem _root_.MeasureTheory.Measure.map_addHaar_homothety
   rw [hfun, ← Measure.map_map (measurable_const_add _) (measurable_const_smul _),
     map_addHaar_smul mu hr, Measure.map_smul _ (measurable_const_add _).aemeasurable,
     map_add_left_eq_self]
+
+/-- **Image of an additive Haar measure under an invertible affine map.** The image of `μ` under
+`x ↦ c + A x` is `μ` scaled by the reciprocal absolute determinant `|det A|⁻¹`. -/
+theorem _root_.MeasureTheory.Measure.map_affine_addHaar_eq_smul
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    (A : E ≃L[ℝ] E) (c : E) :
+    μ.map (fun x => c + A x) =
+      ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹| • μ := by
+  have hdet : LinearMap.det (A : E →ₗ[ℝ] E) ≠ 0 := ((A : E ≃ₗ[ℝ] E).isUnit_det').ne_zero
+  have hmapA : μ.map A = ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹| • μ :=
+    Measure.map_linearMap_addHaar_eq_smul_addHaar μ hdet
+  calc
+    μ.map (fun x ↦ c + A x) = (μ.map A).map (fun y : E ↦ c + y) :=
+      (Measure.map_map (by fun_prop) (by fun_prop)).symm
+    _ = (ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹| • μ).map (fun y : E ↦ c + y) := by
+      rw [hmapA]
+    _ = ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹| • μ := by
+      rw [Measure.map_smul _ ((by fun_prop : Measurable fun y : E ↦ c + y).aemeasurable),
+        map_add_left_eq_self]
 
 /-- **The determinant is bounded by the operator norm**: `|det f| ≤ ‖f‖ ^ n` for a linear
 endomorphism `f` of a real normed space of finite dimension `n`. The image of the closed unit ball

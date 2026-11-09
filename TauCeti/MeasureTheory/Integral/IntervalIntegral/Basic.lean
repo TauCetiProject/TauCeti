@@ -130,6 +130,39 @@ theorem norm_sub_sub_integral_le {E : Type*} [NormedAddCommGroup E] [NormedSpace
 
 end intervalIntegral
 
+/-- A function vanishing on `(-∞, a]` and on a ball around `a` has zero integral on `a..t` for
+every `t < a + ε`, where `ε` is the radius of that ball. -/
+lemma integral_eq_zero_of_lt_add {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {μ : Measure ℝ} {a ε t : ℝ} {φ : ℝ → E} (hφ0 : ∀ x, x ≤ a → φ x = 0)
+    (hφa : ∀ ⦃y⦄, dist y a < ε → φ y = 0) (ht : t < a + ε) : ∫ s in a..t, φ s ∂μ = 0 := by
+  refine (intervalIntegral.integral_congr (g := fun _ ↦ (0 : E)) fun s hs ↦ ?_).trans
+    intervalIntegral.integral_zero
+  rcases le_or_gt s a with hsa | hsa
+  · exact hφ0 s hsa
+  · refine hφa ?_
+    rw [Real.dist_eq, abs_of_pos (sub_pos.mpr hsa)]
+    linarith [(le_max_iff.1 hs.2).resolve_left hsa.not_ge]
+
+/-- The primitive of a step velocity corrected by its average defect reaches the prescribed
+endpoint. -/
+theorem add_integral_add_inv_smul_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] {a b : ℝ} (hab : a ≠ b) {s : ℝ → E} (hsi : IntervalIntegrable s volume a b)
+    (x y : E) :
+    x + ∫ t in a..b, (s t + (b - a)⁻¹ • (y - x - ∫ t in a..b, s t)) = y := by
+  rw [_root_.intervalIntegral.integral_add hsi (intervalIntegrable_const),
+    _root_.intervalIntegral.integral_const, smul_smul, mul_inv_cancel₀ (sub_ne_zero.mpr hab.symm),
+    one_smul]
+  abel
+
+/-- The `L¹` norm over `(a, b]` of the constant `(b - a)⁻¹ • D` is `‖D‖`. -/
+theorem setIntegral_norm_inv_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {a b : ℝ} (hab : a < b) (D : E) :
+    (∫ _ in Ioc a b, ‖(b - a)⁻¹ • D‖) = ‖D‖ := by
+  rw [setIntegral_const, measureReal_def, Real.volume_Ioc,
+    ENNReal.toReal_ofReal (sub_nonneg.mpr hab.le)]
+  simp only [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos (sub_pos.mpr hab), smul_eq_mul]
+  rw [← mul_assoc, mul_inv_cancel₀ (sub_pos.mpr hab).ne', one_mul]
+
 end TauCeti
 
 /-- A function integrable on `(a, b)` for a measure without mass at points is interval integrable

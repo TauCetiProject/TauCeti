@@ -62,6 +62,32 @@ def ratioFunction (η ω : OneForm X) (hη : ∀ x, η.MeromorphicAt x) (hω : �
     MeromorphicFunction X :=
   MeromorphicFunction.ofMeromorphic fun x ↦ meromorphicAt_ratio (hη x) (hω x)
 
+/-- Division by a fixed meromorphic differential is additive in the numerator. -/
+theorem ratioFunction_add {θ : OneForm X} (hη : ∀ x, η.MeromorphicAt x)
+    (hθ : ∀ x, θ.MeromorphicAt x) (hω : ∀ x, ω.MeromorphicAt x) :
+    ratioFunction (η + θ) ω (fun x ↦ (hη x).add (hθ x)) hω =
+      ratioFunction η ω hη hω + ratioFunction θ ω hθ hω := by
+  have hadd : ratio (η + θ) ω = ratio η ω + ratio θ ω := by
+    funext x
+    simp only [ratio_def, coeff_add, Pi.add_apply, add_div]
+  simpa only [ratioFunction, hadd] using
+    (MeromorphicFunction.ofMeromorphic_add
+      (fun x ↦ meromorphicAt_ratio (hη x) (hω x))
+      (fun x ↦ meromorphicAt_ratio (hθ x) (hω x)))
+
+/-- Division by a fixed meromorphic differential respects complex scalars in the numerator. -/
+theorem ratioFunction_smul (c : ℂ) (hη : ∀ x, η.MeromorphicAt x)
+    (hω : ∀ x, ω.MeromorphicAt x) :
+    ratioFunction (c • η) ω (fun x ↦ (hη x).const_smul c) hω =
+      c • ratioFunction η ω hη hω := by
+  have hsmul : ratio (c • η) ω = (fun _ ↦ c) * ratio η ω := by
+    funext x
+    simp only [ratio_def, coeff_const_smul, Pi.smul_apply, Pi.mul_apply,
+      smul_eq_mul, mul_div_assoc]
+  simpa only [ratioFunction, hsmul, Algebra.smul_def, MeromorphicFunction.ofMeromorphic_const]
+    using (MeromorphicFunction.ofMeromorphic_mul
+      (fun x ↦ meromorphicAt_const c x) (fun x ↦ meromorphicAt_ratio (hη x) (hω x)))
+
 variable (hη : ∀ x, η.MeromorphicAt x) (hω : ∀ x, ω.MeromorphicAt x)
 include hη hω
 
