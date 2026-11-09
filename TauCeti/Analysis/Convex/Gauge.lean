@@ -59,10 +59,10 @@ theorem setOfPred_gauge_le_eq_closure_smul_of_pos (hc : Convex ℝ s) (hs₀ : s
   ext x
   rw [Set.mem_ofPred_eq, closure_smul₀' ht.ne', gauge_le_iff_mem_smul_closure hc hs₀ ht]
 
-/-- For a bounded convex neighbourhood `s` of `0`, the gauge of `x` is at most `0` exactly when
-`x` lies in `closure {0}`. No separation axiom is needed. -/
-theorem gauge_le_zero_iff_mem_closure_zero (hc : Convex ℝ s) (hb : Bornology.IsVonNBounded ℝ s)
-    (hs₀ : s ∈ 𝓝 0) : gauge s x ≤ 0 ↔ x ∈ closure ({0} : Set E) := by
+/-- For a bounded neighbourhood `s` of `0`, the gauge of `x` is at most `0` exactly when `x` lies in
+`closure {0}`. No separation axiom or convexity is needed. -/
+theorem gauge_le_zero_iff_mem_closure_zero (hb : Bornology.IsVonNBounded ℝ s) (hs₀ : s ∈ 𝓝 0) :
+    gauge s x ≤ 0 ↔ x ∈ closure ({0} : Set E) := by
   constructor
   · intro hx
     have hx0 : gauge s x = 0 := le_antisymm hx (gauge_nonneg x)
@@ -73,9 +73,11 @@ theorem gauge_le_zero_iff_mem_closure_zero (hc : Convex ℝ s) (hb : Bornology.I
       (comap_gauge_nhds_zero_le (absorbent_nhds_zero hs₀) hb))).symm
   · intro h
     refine le_of_forall_pos_le_add fun r hr => ?_
-    rw [zero_add, gauge_le_iff_mem_smul_closure hc hs₀ hr, ← closure_smul₀' hr.ne']
-    exact closure_mono (Set.singleton_subset_iff.2
-      (Set.zero_mem_smul_set (mem_of_mem_nhds hs₀))) h
+    have hx : x ∈ r • s :=
+      mem_of_mem_nhds ((specializes_iff_mem_closure.2 h).symm.nhds_le_nhds
+        ((set_smul_mem_nhds_zero_iff hr.ne').2 hs₀))
+    rw [zero_add]
+    exact gauge_le_of_mem hr.le hx
 
 /-- For a bounded convex neighbourhood `s` of `0` and `0 ≤ t`, the sublevel set
 `{x | gauge s x ≤ t}` is the closure of the dilate `t • s`. At `t = 0` both sides are
@@ -88,7 +90,7 @@ theorem setOfPred_gauge_le_eq_closure_smul (hc : Convex ℝ s)
   · ext x
     rw [Set.zero_smul_set (Set.nonempty_of_mem (mem_of_mem_nhds hs₀)), ← Set.singleton_zero,
       Set.mem_ofPred_eq]
-    exact gauge_le_zero_iff_mem_closure_zero hc hb hs₀
+    exact gauge_le_zero_iff_mem_closure_zero hb hs₀
   · exact setOfPred_gauge_le_eq_closure_smul_of_pos hc hs₀ ht
 
 end TauCeti
