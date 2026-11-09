@@ -5,36 +5,35 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.OptimalTransport.Chain
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Infinity.Basic
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Complete
 
 /-!
-# Completeness at the infinite Wasserstein exponent
+# Chains of laws with summable `W_∞` jumps
 
-On a complete separable metric space, every anchored finite-`W_∞` component is complete. The
-measure-level result `TauCeti.exists_isProbabilityMeasure_wassersteinEDist_top_le_tsum` gives the
-quantitative core: if consecutive probability laws are at `W_∞`-distance at most `b n` and
-`b` is summable, then they converge to a probability law whose distance from the `n`th law is at
-most the corresponding tail of `b`.
+On a complete separable metric space,
+`TauCeti.exists_isProbabilityMeasure_wassersteinEDist_top_le_tsum` shows that if consecutive
+probability laws are at `W_∞`-distance at most `b n` and `b` is summable, then they converge to a
+probability law whose distance from the `n`th law is at most the corresponding tail of `b`.
+
+The exponent-uniform chain theorem `TauCeti.exists_isProbabilityMeasure_wassersteinEDist_le_tsum`
+in `TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Complete` covers `p = ∞` as well, but
+only for strict consecutive bounds; the weak bounds here are available because optimal `W_∞`
+couplings exist. Completeness of the anchored `W_∞` components and of `P_∞ (X)` is the case
+`p = ∞` of the instances `TauCeti.WassersteinComponent.instCompleteSpace` and
+`TauCeti.WassersteinSpace.instCompleteSpace` of that file.
 
 The proof chooses an optimal coupling for every consecutive pair using
 `TauCeti.exists_isCoupling_eLpNorm_top_eq_wassersteinEDist`, then realizes all those couplings on
 one path space using `TauCeti.Measure.chainMeasure`. The essential-supremum bounds hold
-simultaneously at every time almost surely, so almost every path is Cauchy. Its pointwise limit
-provides the limiting probability law and retains the same tail bound.
-
-The Cauchy argument is specific to the infinite exponent; the pathwise-limit extraction
-`TauCeti.Measure.exists_measurable_isCoupling_map_chainMeasure` and the completeness criterion
-`TauCeti.WassersteinComponent.completeSpace_of_exists_tendsto_wassersteinEDist` are shared
-with the finite-exponent development in
-`TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Complete`.
+simultaneously at every time almost surely, so almost every path is Cauchy. Its pointwise limit,
+extracted by `TauCeti.Measure.exists_measurable_isCoupling_map_chainMeasure`, provides the
+limiting probability law and retains the same tail bound.
 
 ## Main statements
 
 * `TauCeti.exists_isProbabilityMeasure_wassersteinEDist_top_le_tsum` — a chain of probability
-  laws with summable `W_∞` jumps has a limit law with the corresponding tail bounds;
-* `TauCeti.WassersteinComponent.instCompleteSpaceTop` — every anchored finite-`W_∞` component
-  over a Polish metric space is complete.
+  laws with summable `W_∞` jumps has a limit law with the corresponding tail bounds.
 
 ## References
 
@@ -115,23 +114,5 @@ theorem exists_isProbabilityMeasure_wassersteinEDist_top_le_tsum
         (fun k ↦ by simpa only [Nat.succ_eq_add_one] using hx k) hxlim n
 
 end Limit
-
-section Complete
-
-variable [MeasurableSpace X] [MetricSpace X] [BorelSpace X] [SecondCountableTopology X]
-  [CompleteSpace X] {μ₀ : ProbabilityMeasure X}
-
-/-- Every anchored finite-`W_∞` component over a Polish metric space is complete. -/
-instance WassersteinComponent.instCompleteSpaceTop : CompleteSpace (WassersteinComponent ∞ μ₀) :=
-  WassersteinComponent.completeSpace_of_exists_tendsto_wassersteinEDist fun _ _ hμ ↦ by
-    have hb : ∑' n, (2 : ℝ≥0∞)⁻¹ ^ n ≠ ∞ := by
-      simp [ENNReal.tsum_geometric, ENNReal.one_sub_inv_two]
-    obtain ⟨ν, hν, hle⟩ := exists_isProbabilityMeasure_wassersteinEDist_top_le_tsum hb
-      fun n ↦ (hμ n).le
-    refine ⟨ν, hν, tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_
-      (fun _ ↦ zero_le) hle⟩
-    simpa only [add_comm] using ENNReal.tendsto_sum_nat_add _ hb
-
-end Complete
 
 end TauCeti
