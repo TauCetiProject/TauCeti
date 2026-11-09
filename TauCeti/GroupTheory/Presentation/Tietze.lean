@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.PresentedGroup
 
 /-!
-# Eliminating generators from a group presentation
+# Changing generators of a group presentation
 
 Suppose auxiliary generators `b : β` have definitions `b = w b`, where each `w b` is a word
 in the retained generators `α`. Substituting those words in every other relator gives an
@@ -18,6 +18,11 @@ isomorphic presented group. The other relators may involve both kinds of generat
 family of auxiliary generators. Its generator equations specify both directions of the
 isomorphism, so it can be composed with presentation dictionaries without choosing an
 unspecified isomorphism. Neither generator type nor the relator set needs to be finite.
+
+`PresentedGroup.equivOfGeneratorWords` handles a general change of generators: forward and
+recovery words must preserve the relations and recover each generator modulo the original
+relations. The words need not be inverse substitutions in the free groups. Its evaluation
+lemmas retain both dictionaries on arbitrary words, not merely an unspecified isomorphism.
 
 ## References
 
@@ -30,6 +35,71 @@ public section
 namespace PresentedGroup
 
 variable {α β : Type*}
+
+section GeneratorWords
+
+variable {R : Set (FreeGroup α)} {S : Set (FreeGroup β)}
+  (u : α → FreeGroup β) (v : β → FreeGroup α)
+  (hu : ∀ r ∈ R, mk S (FreeGroup.lift u r) = 1)
+  (hv : ∀ s ∈ S, mk R (FreeGroup.lift v s) = 1)
+  (hvu : ∀ a, mk R (FreeGroup.lift v (u a)) = of a)
+  (huv : ∀ b, mk S (FreeGroup.lift u (v b)) = of b)
+
+/-- **A change of generators specified by forward and recovery words.** If both word
+substitutions preserve the defining relations and the two composite substitutions recover
+every generator in its presented group, they induce inverse group isomorphisms.
+
+All four checks take place modulo the actual defining relations. Recovery only in a finite
+image is insufficient, while equality of the substitutions in the free groups is unnecessary.
+Neither the generator types nor the relation sets need to be finite. -/
+def equivOfGeneratorWords : PresentedGroup R ≃* PresentedGroup S := by
+  let f : PresentedGroup R →* PresentedGroup S :=
+    QuotientGroup.map _ _ (FreeGroup.lift u)
+      (Subgroup.normalClosure_le_normal fun r hr ↦ mk_eq_one_iff.mp (hu r hr))
+  let g : PresentedGroup S →* PresentedGroup R :=
+    QuotientGroup.map _ _ (FreeGroup.lift v)
+      (Subgroup.normalClosure_le_normal fun s hs ↦ mk_eq_one_iff.mp (hv s hs))
+  have hf (w : FreeGroup α) : f (mk R w) = mk S (FreeGroup.lift u w) := rfl
+  have hg (w : FreeGroup β) : g (mk S w) = mk R (FreeGroup.lift v w) := rfl
+  apply MonoidHom.toMulEquiv f g
+  · apply PresentedGroup.ext
+    intro a
+    calc
+      (g.comp f) (of a) = g (f (mk R (FreeGroup.of a))) := rfl
+      _ = mk R (FreeGroup.lift v (u a)) := by rw [hf, FreeGroup.lift_apply_of, hg]
+      _ = of a := hvu a
+  · apply PresentedGroup.ext
+    intro b
+    calc
+      (f.comp g) (of b) = f (g (mk S (FreeGroup.of b))) := rfl
+      _ = mk S (FreeGroup.lift u (v b)) := by rw [hg, FreeGroup.lift_apply_of, hf]
+      _ = of b := huv b
+
+/-- On a free word, the forward isomorphism substitutes the forward generator words. -/
+@[simp]
+theorem equivOfGeneratorWords_mk (w : FreeGroup α) :
+    equivOfGeneratorWords u v hu hv hvu huv (mk R w) = mk S (FreeGroup.lift u w) := by
+  rfl
+
+/-- The forward generator dictionary of a change of presentation. -/
+@[simp]
+theorem equivOfGeneratorWords_of (a : α) :
+    equivOfGeneratorWords u v hu hv hvu huv (of a) = mk S (u a) := by
+  rw [of, equivOfGeneratorWords_mk, FreeGroup.lift_apply_of]
+
+/-- On a free word, the inverse isomorphism substitutes the recovery generator words. -/
+@[simp]
+theorem equivOfGeneratorWords_symm_mk (w : FreeGroup β) :
+    (equivOfGeneratorWords u v hu hv hvu huv).symm (mk S w) = mk R (FreeGroup.lift v w) := by
+  rfl
+
+/-- The recovery generator dictionary of a change of presentation. -/
+@[simp]
+theorem equivOfGeneratorWords_symm_of (b : β) :
+    (equivOfGeneratorWords u v hu hv hvu huv).symm (of b) = mk R (v b) := by
+  rw [of, equivOfGeneratorWords_symm_mk, FreeGroup.lift_apply_of]
+
+end GeneratorWords
 
 /-- Eliminate auxiliary generators with defining words in the retained generators.
 
