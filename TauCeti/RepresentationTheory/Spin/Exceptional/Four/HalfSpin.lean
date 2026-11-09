@@ -6,11 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.MatrixProd
-public import TauCeti.RepresentationTheory.ClassicalGroups.Restriction
 public import TauCeti.RepresentationTheory.Spin.HalfSpin.Standard
 public import TauCeti.RepresentationTheory.Spin.Structure
-public import Mathlib.RepresentationTheory.Intertwining
-import TauCeti.RepresentationTheory.Intertwining
 
 /-!
 # The half-spin representations of the four-dimensional Spin group
