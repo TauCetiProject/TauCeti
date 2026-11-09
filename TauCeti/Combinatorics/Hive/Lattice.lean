@@ -223,6 +223,16 @@ structure IsRhombus {n : ℕ} (a b c d : Vertex n) : Prop where
   /-- The fourth side is a unit lattice edge. -/
   side_da : d.sqDist a = 2
 
+instance {n : ℕ} (a b c d : Vertex n) : Decidable (IsRhombus a b c d) :=
+  decidable_of_iff
+    (a.x + c.x = b.x + d.x ∧ a.y + c.y = b.y + d.y ∧ a.z + c.z = b.z + d.z ∧
+      a.sqDist c = 2 ∧ b.sqDist d = 6 ∧ a.sqDist b = 2 ∧ b.sqDist c = 2 ∧
+      c.sqDist d = 2 ∧ d.sqDist a = 2)
+    ⟨fun ⟨hx, hy, hz, hs, hl, hab, hbc, hcd, hda⟩ =>
+        ⟨hx, hy, hz, hs, hl, hab, hbc, hcd, hda⟩,
+      fun h => ⟨h.midpoint_x, h.midpoint_y, h.midpoint_z, h.short, h.long,
+        h.side_ab, h.side_bc, h.side_cd, h.side_da⟩⟩
+
 namespace IsRhombus
 
 variable {n : ℕ} {a b c d : Vertex n}
