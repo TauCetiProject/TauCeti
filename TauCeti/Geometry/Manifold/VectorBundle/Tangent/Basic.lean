@@ -1168,6 +1168,7 @@ theorem tangentCoordChange_sumInr (x y z : M') :
 /-- The inverse of the canonical tangent-bundle trivialization of `M ⊕ M'` at a point `x` of `M`
 is the inverse trivialization of `M` at `x`. Both sides vanish outside the domain of the chart
 at `x`. -/
+@[simp]
 theorem symmL_trivializationAt_sumInl {x z : M} :
     (trivializationAt E (TangentSpace I : M ⊕ M' → Type _) (Sum.inl x)).symmL 𝕜 (Sum.inl z) =
       (trivializationAt E (TangentSpace I : M → Type _) x).symmL 𝕜 z := by
@@ -1189,6 +1190,7 @@ theorem symmL_trivializationAt_sumInl {x z : M} :
 /-- The inverse of the canonical tangent-bundle trivialization of `M ⊕ M'` at a point `y` of `M'`
 is the inverse trivialization of `M'` at `y`. Both sides vanish outside the domain of the chart
 at `y`. -/
+@[simp]
 theorem symmL_trivializationAt_sumInr {y z : M'} :
     (trivializationAt E (TangentSpace I : M ⊕ M' → Type _) (Sum.inr y)).symmL 𝕜 (Sum.inr z) =
       (trivializationAt E (TangentSpace I : M' → Type _) y).symmL 𝕜 z := by
