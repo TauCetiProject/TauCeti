@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Sequence
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
+import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
+import TauCeti.CategoryTheory.Monoidal.Tor
 
 /-!
 # The Künneth short exact sequence for singular homology
@@ -57,6 +59,13 @@ coefficients in a hereditary commutative ring). The splitting is built from chos
 the cycles of the singular chain complexes and need not be natural in `X` and `Y`; that no natural
 splitting exists is not proved here.
 
+Through the splitting, a natural number `e` that kills the positive-degree homology of `X` and of
+`Y`, with coefficients in a hereditary commutative ring, also kills that of `X × Y` when `X` is
+path connected (`TopCat.nsmul_singularHomology_tensor_eq_zero`). Every tensor product
+summand has a factor of positive degree, and so does every `Tor₁` summand except
+`Tor₁(H₀(X; k), H_q(Y; k))`, which vanishes because `H₀(X; k) ≅ k`. The same number `e` works for
+the product; without the splitting the extension would only show that `e²` kills it.
+
 ## Main definitions and results
 
 * `TopCat.singularHomologyToTor`: the map
@@ -74,6 +83,8 @@ splitting exists is not proved here.
   complexes induced by a pair of continuous maps and by a pair of maps of coefficient modules.
 * `TopCat.singularHomologyKunnethSplitting` and `TopCat.singularHomologyKunnethUnitSplitting`:
   **the splitting of the Künneth sequence**.
+* `TopCat.nsmul_singularHomology_tensor_eq_zero`: a number killing the positive-degree
+  homology of `X` and `Y` kills that of `X × Y`.
 
 ## References
 
@@ -433,6 +444,63 @@ the Künneth map, preceded by the map induced by the inverse unitor. -/
             inferInstanceAs (Module.Projective k k)
           isSplitMono_singularHomologyKunneth X Y (𝟙_ _) (𝟙_ _) (m + 1)) :=
   (rfl)
+
+/-- **A number killing the homology of two spaces kills that of their product.** Over a
+hereditary commutative ring `k`, if a natural number `e` kills the positive-degree homology of a
+path-connected space `X` and of a space `Y`, then it kills the positive-degree homology of
+`X × Y`. -/
+theorem nsmul_singularHomology_tensor_eq_zero [PathConnectedSpace X] {e : ℕ}
+    (hX : ∀ p (x : ((singularHomologyFunctor _ (p + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj X),
+      e • x = 0)
+    (hY : ∀ q (y : ((singularHomologyFunctor _ (q + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj Y),
+      e • y = 0)
+    (n : ℕ) (z : ((singularHomologyFunctor _ (n + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj (X ⊗ Y)) :
+    e • z = 0 := by
+  -- Work with the endomorphisms `e • 𝟙` of the homology modules.
+  replace hX p : e • 𝟙 (((singularHomologyFunctor _ (p + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj X) =
+      0 := by
+    ext x
+    simpa using hX p x
+  replace hY q : e • 𝟙 (((singularHomologyFunctor _ (q + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj Y) =
+      0 := by
+    ext y
+    simpa using hY q y
+  let S := singularHomologyKunnethUnitShortComplex k X Y n
+  have h₁ : e • 𝟙 S.X₁ = 0 := by
+    refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
+    rw [Preadditive.comp_nsmul, Category.comp_id, comp_zero, ← Category.id_comp
+      (GradedObject.Monoidal.ιTensorObj _ _ p q _ h), ← Preadditive.nsmul_comp]
+    convert zero_comp
+    -- One of the two degrees is positive. Whiskering is by definition the action of the
+    -- additive functors `tensorLeft` and `tensorRight`, which preserve `e • 𝟙 = 0`.
+    rcases p with _ | p
+    · obtain rfl : q = n + 1 := by omega
+      rw [← MonoidalCategory.whiskerLeft_id]
+      change e • (tensorLeft _).map (𝟙 _) = 0
+      rw [← Functor.map_nsmul, hY, Functor.map_zero]
+    · rw [← MonoidalCategory.id_whiskerRight]
+      change e • (tensorRight _).map (𝟙 _) = 0
+      rw [← Functor.map_nsmul, hX, Functor.map_zero]
+  have h₃ : e • 𝟙 S.X₃ = 0 := by
+    refine GradedObject.mapBifunctorMapObj_ext _ _ fun p q h ↦ ?_
+    rw [Preadditive.comp_nsmul, Category.comp_id, comp_zero, ← Category.id_comp
+      (GradedObject.ιMapBifunctorMapObj _ _ _ _ p q _ h), ← Preadditive.nsmul_comp]
+    convert zero_comp
+    rcases p with _ | p
+    · -- `H₀(X; k) ≅ k` for path-connected `X`, and `Tor₁(k, -)` vanishes
+      exact IsZero.eq_of_src (IsZero.of_iso (isZero_Tor_succ_tensorUnit _ 0)
+        (((Tor (ModuleCat.{w} k) 1).mapIso (asIso (X.singularHomology₀ε _))).app _)) _ _
+    · exact nsmul_id_Tor_eq_zero (hX p) _ 1
+  let s := singularHomologyKunnethUnitSplitting k X Y n
+  have hf : e • S.f = 0 := by
+    rw [← Category.id_comp S.f, ← Preadditive.nsmul_comp, h₁, zero_comp]
+  have hs : e • s.s = 0 := by
+    rw [← Category.id_comp s.s, ← Preadditive.nsmul_comp, h₃, zero_comp]
+  have h₂ : e • 𝟙 S.X₂ = 0 :=
+    calc e • 𝟙 S.X₂ = s.r ≫ (e • S.f) + S.g ≫ (e • s.s) := by
+          rw [← s.id, smul_add, Preadditive.comp_nsmul, Preadditive.comp_nsmul]
+      _ = 0 := by rw [hf, hs, comp_zero, comp_zero, add_zero]
+  simpa using congr($h₂ z)
 
 end Unit
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Tor
 public import TauCeti.CategoryTheory.Abelian.LeftDerived
 import Mathlib.CategoryTheory.Abelian.Exact
+import TauCeti.CategoryTheory.ObjectProperty.Homology
 
 /-!
 # `Tor` from a projective presentation of length one
@@ -30,6 +31,12 @@ kernels of `Hᵢ(K) ⊗ Bⱼ(L) ⟶ Hᵢ(K) ⊗ Zⱼ(L)`.
 
 These are the specializations to `X ⊗ -` of the computation of left derived functors in
 `TauCeti.CategoryTheory.Abelian.LeftDerived`.
+
+In its underived first variable, `Torₙ₊₁(𝟙_ C, Y)` vanishes
+(`CategoryTheory.isZero_Tor_succ_tensorUnit`), since `𝟙_ C ⊗ -` is isomorphic to the identity
+functor, and if `e • 𝟙 X = 0` for a natural number `e`, then `e` kills every `Torₙ(X, Y)`
+(`CategoryTheory.nsmul_id_Tor_eq_zero`): the objects killed by `e` are closed under subobjects and
+quotients and contain every `X ⊗ P`.
 
 For Mathlib's `CategoryTheory.Tor' C n`, which derives the first variable instead,
 `((Tor' C n).obj X).obj Y` is `Lₙ(- ⊗ Y)(X)`. The file records two facts about it in the
@@ -102,6 +109,34 @@ lemma Tor_obj_map_comp_torOneIsoKernel_hom (X : C) (φ : S ⟶ S') :
   leftDerived_map_comp_leftDerivedOneIsoKernel_hom _ hS' φ
 
 end ShortComplex.ShortExact
+
+/-- The higher `Tor` groups with the tensor unit as first variable vanish: `𝟙_ C ⊗ -` is
+isomorphic to the identity functor, so it is exact. -/
+lemma isZero_Tor_succ_tensorUnit (Y : C) (n : ℕ) :
+    IsZero (((Tor C (n + 1)).obj (𝟙_ C)).obj Y) := by
+  have : ((tensoringLeft C).obj (𝟙_ C)).PreservesHomology :=
+    Functor.preservesHomology_of_map_exact _ fun S hS ↦
+      ShortComplex.exact_of_iso (S.mapNatIso (leftUnitorNatIso C)).symm hS
+  exact Functor.isZero_leftDerived_succ _ Y n
+
+/-- If a natural number `e` kills `X`, in the sense that `e • 𝟙 X = 0`, then it kills every
+`Torₙ(X, Y)`. -/
+lemma nsmul_id_Tor_eq_zero {X : C} {e : ℕ} (hX : e • 𝟙 X = 0) (Y : C) (n : ℕ) :
+    e • 𝟙 (((Tor C n).obj X).obj Y) = 0 := by
+  -- Objects killed by `e` are closed under subobjects and quotients, and contain each `X ⊗ P`.
+  let P : ObjectProperty C := fun Z ↦ e • 𝟙 Z = 0
+  have : P.IsClosedUnderSubobjects := ⟨fun f _ (hZ : _ = 0) ↦ show _ = 0 by
+    rw [← cancel_mono f, Preadditive.nsmul_comp, Category.id_comp, zero_comp,
+      ← Category.comp_id f, ← Preadditive.comp_nsmul, hZ, comp_zero]⟩
+  have : P.IsClosedUnderQuotients := ⟨fun f _ (hZ : _ = 0) ↦ show _ = 0 by
+    rw [← cancel_epi f, Preadditive.comp_nsmul, Category.comp_id, comp_zero,
+      ← Category.id_comp f, ← Preadditive.nsmul_comp, hZ, zero_comp]⟩
+  refine P.prop_leftDerived_obj ((tensoringLeft C).obj X) (fun Z _ ↦ ?_) Y n
+  -- unfold `P`; whiskering by `Z` is by definition the additive functor `tensorRight Z`
+  change e • 𝟙 (X ⊗ Z) = 0
+  rw [← id_whiskerRight]
+  change e • (tensorRight Z).map (𝟙 X) = 0
+  rw [← Functor.map_nsmul, hX, Functor.map_zero]
 
 /-- `Tor'` is additive in its second variable, the one that is not derived. -/
 instance (X : C) (n : ℕ) : ((Tor' C n).obj X).Additive where
