@@ -575,8 +575,8 @@ variable (L : Type*) [Field L] [Algebra K L] (σ : L →ₐ[K] SeparableClosure 
 variable {K n L} in
 /-- If `s ^ n = b` in `L`, then the image of `s` under a `K`-embedding `ι : L → Kˢ` is the
 underlying element of a unit of `Kˢ` whose `n`-th power is `b`. -/
-theorem exists_unit_pow_eq_map [NeZero n] (ι : L →ₐ[K] SeparableClosure K) (b : Kˣ) {s : L}
-    (hs : s ^ n = algebraMap K L b) :
+theorem _root_.AlgHom.exists_unit_pow_eq_map [NeZero n] (ι : L →ₐ[K] SeparableClosure K)
+    (b : Kˣ) {s : L} (hs : s ^ n = algebraMap K L b) :
     ∃ β : (SeparableClosure K)ˣ, (β : SeparableClosure K) = ι s ∧
       β ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom b := by
   have hs0 : ι s ≠ 0 := (map_ne_zero_iff _ ι.injective).2 <| by

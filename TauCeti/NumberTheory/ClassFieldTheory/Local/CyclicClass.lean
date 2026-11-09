@@ -150,7 +150,7 @@ variable [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n) (hn : IsUnit (n : K))
 
 omit [FiniteDimensional K L] [IsGalois K L] in
 /-- The value of a cocycle with carry values, read in `Kˢ` through the embedding of units. -/
-private lemma toMul_embeddedUnitsEquivInvariants_eq {g : L ≃ₐ[K] L} {a : Kˣ}
+private lemma _root_.AlgHom.toMul_embeddedUnitsEquivInvariants_eq {g : L ≃ₐ[K] L} {a : Kˣ}
     (ι : L →ₐ[K] SeparableClosure K)
     (z : groupCohomology.cocycles₂ (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ))
     {p q : ℕ} (hzpq : Additive.toMul (z (g ^ p, g ^ q)) =
@@ -186,7 +186,7 @@ theorem kummerBrauerClass_eq_neg_relBrInfl_cyclicClass (a b : Kˣ) {s : L}
   obtain ⟨α, hα⟩ := exists_pow_eq_units_map hn a
   have hαn : (α : SeparableClosure K) ^ n = algebraMap K _ a := by
     simpa using congrArg Units.val hα
-  obtain ⟨β, hβs, hβ⟩ := exists_unit_pow_eq_map ι b hs
+  obtain ⟨β, hβs, hβ⟩ := ι.exists_unit_pow_eq_map b hs
   -- represent both sides by explicit cocycles `W` and `relBrCocycle K L ι z` on `G_K`; it
   -- remains to show that `W + relBrCocycle K L ι z` is the coboundary of `σ ↦ α ^ χ(σ)`
   obtain ⟨W, hW, hWv⟩ := exists_h2MuToBr_cup_kummerClass (kummerCupPairing ζ hζ) hn hα hβ
@@ -201,8 +201,8 @@ theorem kummerBrauerClass_eq_neg_relBrInfl_cyclicClass (a b : Kˣ) {s : L}
       kummerLog hζ x • (Additive.ofMul α : UnitsCoeff K))).comp hβc.1, fun σ τ ↦ ?_⟩
   -- the restrictions of `σ` and `τ` to `L` are `g ^ p` and `g ^ q` with `p, q < d`, so that
   -- `χ(σ) = m p`, `χ(τ) = m q` and `χ(σ τ) = (m p + m q) % n`
-  obtain ⟨p, hp, hpσ⟩ := exists_pow_lt_finrank_eq hg hord (ι.restrictNormalHom σ)
-  obtain ⟨q, hq, hqτ⟩ := exists_pow_lt_finrank_eq hg hord (ι.restrictNormalHom τ)
+  obtain ⟨p, hp, hpσ⟩ := exists_lt_finrank_eq_pow hg (ι.restrictNormalHom σ)
+  obtain ⟨q, hq, hqτ⟩ := exists_lt_finrank_eq_pow hg (ι.restrictNormalHom τ)
   have hχσ := kummerLog_kummerCocycle_eq hζ hgs ι hβs hβ hpσ
     (hmd ▸ Nat.mul_lt_mul_of_pos_left hp hm0)
   have hχτ := kummerLog_kummerCocycle_eq hζ hgs ι hβs hβ hqτ
@@ -214,7 +214,7 @@ theorem kummerBrauerClass_eq_neg_relBrInfl_cyclicClass (a b : Kˣ) {s : L}
   rw [hpσ, hqτ] at hR
   have hzpq := hzv p q (hord ▸ hp) (hord ▸ hq)
   rw [hord] at hzpq
-  have hRv := toMul_embeddedUnitsEquivInvariants_eq ι z hzpq
+  have hRv := ι.toMul_embeddedUnitsEquivInvariants_eq z hzpq
   have hσα := apply_eq_pow_kummerLog_mul hζ hα σ
   have hτβ := coe_toMul_eq_pow_kummerLog hζ (kummerCocycle hβ τ)
   rw [hχτ] at hτβ

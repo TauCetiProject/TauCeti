@@ -19,8 +19,8 @@ correspondence identifies `[E : F]` with the index of the fixing subgroup of `E`
 
 * `IntermediateField.eq_of_finrank_eq_of_isCyclic`: intermediate fields of a finite cyclic Galois
   extension with the same degree are equal.
-* `TauCeti.exists_pow_lt_finrank_eq`: if `g` generates the Galois group of a finite extension, every
-  automorphism is `g ^ p` for some `p` below the degree.
+* `TauCeti.exists_lt_finrank_eq_pow`: if `g` generates the automorphism group of a finite
+  extension, every automorphism is `g ^ p` for some `p` below the degree.
 -/
 
 public section
@@ -46,13 +46,15 @@ namespace TauCeti
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L] [FiniteDimensional K L]
 
-/-- If `g` generates the Galois group of a finite Galois extension `L / K`, then every element of
-the group is `g ^ p` for some `p` below the degree. -/
-theorem exists_pow_lt_finrank_eq {g : L ≃ₐ[K] L}
-    (hg : ∀ σ, σ ∈ Subgroup.zpowers g) (hord : orderOf g = Module.finrank K L)
-    (τ : L ≃ₐ[K] L) : ∃ p < Module.finrank K L, τ = g ^ p := by
+/-- If `g` generates the automorphism group of a finite extension `L / K`, then every
+automorphism is `g ^ p` for some `p` below the degree. -/
+theorem exists_lt_finrank_eq_pow {g : L ≃ₐ[K] L}
+    (hg : ∀ σ, σ ∈ Subgroup.zpowers g) (τ : L ≃ₐ[K] L) :
+    ∃ p < Module.finrank K L, τ = g ^ p := by
   classical
   obtain ⟨p, hp, hpτ⟩ := Finset.mem_image.1 (mem_zpowers_iff_mem_range_orderOf.1 (hg τ))
-  exact ⟨p, hord ▸ Finset.mem_range.1 hp, hpτ.symm⟩
+  refine ⟨p, lt_of_lt_of_le (Finset.mem_range.1 hp) ?_, hpτ.symm⟩
+  rw [orderOf_eq_card_of_forall_mem_zpowers hg, Nat.card_eq_fintype_card]
+  exact AlgEquiv.card_le
 
 end TauCeti
