@@ -5,15 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Matching.Basic
 public import TauCeti.Combinatorics.Graph.Matching.Hall
 
 /-!
 # Hall's theorem for finite bipartite multigraphs
 
-This file specializes capacitated matching to unit vertex capacities. It first identifies an
-ordinary matching with its zero-one edge multiplicity function, and conversely identifies a
-unit-capacitated matching with the finite set of edges used positively. This transfers the
+This file specializes capacitated matching to unit vertex capacities. Using the lower-level
+correspondence between ordinary matchings and unit-capacitated matchings, it transfers the
 capacitated Kőnig–Ore formula and Hall theorem to ordinary matchings while retaining parallel edge
 identities.
 
@@ -23,10 +21,6 @@ and `S ⊆ L` such that `|M| + |S| = |L| + |N(S)|`. Hall's theorem says that a m
 
 ## Main results
 
-* `Graph.IsMatching.isCapacitatedMatching_indicator`: a matching gives a unit-capacitated
-  matching by assigning multiplicity one to its selected edges.
-* `Graph.IsCapacitatedMatching.support_isMatching`: the positive support of a unit-capacitated
-  matching in a loopless graph is an ordinary matching.
 * `Graph.IsBipartition.exists_isMatching_card_add_card_eq`: the ordinary Kőnig–Ore formula.
 * `Graph.IsBipartition.isGreatest_card_isMatching`: the numerical deficiency formula.
 * `Graph.IsBipartition.exists_isMatching_saturating_left_iff`: Hall's theorem for finite
@@ -49,94 +43,6 @@ namespace Graph
 
 variable {α : Type u} {β : Type v} {G : Graph α β}
 variable {L R : Finset V(G)}
-
-section FiniteEdges
-
-variable [Fintype E(G)]
-
-namespace IsMatching
-
-/-- An ordinary matching, represented by a finite set of actual edges, is a multiset
-capacitated matching for unit vertex capacities when its selected edges have multiplicity one. -/
-theorem isCapacitatedMatching_indicator {M : Finset E(G)} (hM : G.IsMatching (M : Set E(G))) :
-    G.IsCapacitatedMatching (fun _ ↦ 1) ((M : Set E(G)).indicator fun _ ↦ 1) := by
-  classical
-  rw [isCapacitatedMatching_def]
-  intro x
-  calc
-    ∑ e ∈ G.incidentEdges {x}, (M : Set E(G)).indicator (fun _ ↦ 1) e =
-        ∑ e ∈ G.incidentEdges {x}, if e ∈ M then 1 else 0 :=
-      sum_congr rfl fun e _ ↦ Set.indicator_apply _ _ _
-    _ = ((G.incidentEdges {x}).filter (· ∈ M)).card :=
-      sum_boole (R := ℕ) (· ∈ M) (G.incidentEdges {x})
-    _ ≤ 1 := card_le_one.mpr fun e he f hf ↦ by
-      obtain ⟨heinc, heM⟩ := mem_filter.1 he
-      obtain ⟨hfinc, hfM⟩ := mem_filter.1 hf
-      obtain ⟨y, hy, hey⟩ := (mem_incidentEdges G).1 heinc
-      obtain ⟨z, hz, hfz⟩ := (mem_incidentEdges G).1 hfinc
-      exact hM.eq_of_inc heM hfM (Finset.mem_singleton.mp hy ▸ hey)
-        (Finset.mem_singleton.mp hz ▸ hfz)
-
-end IsMatching
-
-namespace IsCapacitatedMatching
-
-/-- Every edge multiplicity in a unit-capacitated matching is at most one. -/
-theorem apply_le_one {x : E(G) → ℕ} (hx : G.IsCapacitatedMatching (fun _ ↦ 1) x)
-    (e : E(G)) : x e ≤ 1 := by
-  obtain ⟨y, z, he⟩ := G.exists_isLink_of_mem_edgeSet e.2
-  have hey : e ∈ G.incidentEdges {⟨y, he.left_mem⟩} :=
-    (mem_incidentEdges G).2 ⟨⟨y, he.left_mem⟩, mem_singleton_self _, he.inc_left⟩
-  exact (single_le_sum (fun _ _ ↦ Nat.zero_le _) hey).trans
-    (isCapacitatedMatching_def.1 hx ⟨y, he.left_mem⟩)
-
-/-- The sum of the multiplicities in a unit-capacitated matching is the cardinality of its
-positive support. -/
-theorem sum_eq_card_support {x : E(G) → ℕ} (hx : G.IsCapacitatedMatching (fun _ ↦ 1) x) :
-    ∑ e, x e = (Finset.univ.filter fun e ↦ x e ≠ 0).card := by
-  classical
-  calc
-    ∑ e, x e = ∑ e, if x e ≠ 0 then 1 else 0 := sum_congr rfl fun e _ ↦ by
-      have hle := hx.apply_le_one e
-      split_ifs with he
-      · omega
-      · simpa using he
-    _ = (Finset.univ.filter fun e ↦ x e ≠ 0).card := by
-      exact sum_boole (R := ℕ) (fun e ↦ x e ≠ 0) univ
-
-/-- In a loopless graph, the positive support of a unit-capacitated matching is an ordinary
-matching. -/
-theorem support_isMatching {x : E(G) → ℕ} (hx : G.IsCapacitatedMatching (fun _ ↦ 1) x)
-    (hG : G.Loopless) : G.IsMatching ({e | x e ≠ 0} : Set E(G)) := by
-  classical
-  rw [isMatching_def]
-  refine ⟨fun e _ y ↦ hG.not_isLoopAt e y, fun e he f hf hef y hinc ↦ ?_⟩
-  have hey : e ∈ G.incidentEdges {⟨y, hinc.1.vertex_mem⟩} :=
-    (mem_incidentEdges G).2 ⟨⟨y, hinc.1.vertex_mem⟩, mem_singleton_self _, hinc.1⟩
-  have hfy : f ∈ G.incidentEdges {⟨y, hinc.1.vertex_mem⟩} :=
-    (mem_incidentEdges G).2 ⟨⟨y, hinc.1.vertex_mem⟩, mem_singleton_self _, hinc.2⟩
-  have hpair : ∑ a ∈ {e, f}, x a ≤ 1 :=
-    (sum_le_sum_of_subset (insert_subset_iff.2 ⟨hey, singleton_subset_iff.2 hfy⟩)).trans
-      (isCapacitatedMatching_def.1 hx ⟨y, hinc.1.vertex_mem⟩)
-  rw [sum_pair hef] at hpair
-  change x e ≠ 0 at he
-  change x f ≠ 0 at hf
-  omega
-
-/-- The finite positive support of a unit-capacitated matching in a loopless graph is an
-ordinary matching. -/
-theorem supportFinset_isMatching {x : E(G) → ℕ}
-    (hx : G.IsCapacitatedMatching (fun _ ↦ 1) x) (hG : G.Loopless) :
-    G.IsMatching (↑(Finset.univ.filter fun e ↦ x e ≠ 0) : Set E(G)) := by
-  have hset : (↑(Finset.univ.filter fun e ↦ x e ≠ 0) : Set E(G)) = {e | x e ≠ 0} := by
-    ext
-    simp
-  rw [hset]
-  exact hx.support_isMatching hG
-
-end IsCapacitatedMatching
-
-end FiniteEdges
 
 variable [Finite E(G)]
 
