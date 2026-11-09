@@ -7,9 +7,11 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
+public import Mathlib.Geometry.Manifold.BumpFunction
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
@@ -116,22 +118,6 @@ private theorem average_mem_tangentSpace
   rw [coe_average_apply]
   exact Submodule.smul_mem _ _ ((J.almostComplexStructureAt x).add_mul_mul_mem_tangentSpace _)
 
-omit [T2Space S] [LocallyCompactSpace S] [MeasurableSpace S] [OpensMeasurableSpace S]
-  [FiniteDimensional ℝ E] [T2Space M] in
-/-- A section of `End(TM)`, evaluated along `u` on a tangent field and paired with a covector
-field, is continuous wherever both fields are continuous into their bundles. -/
-private theorem continuousAt_apply_apply
-    (B : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯) {z : S}
-    (hw : ContinuousAt (fun z ↦ (⟨u z, w z⟩ : TangentBundle I M)) z)
-    (hη : ContinuousAt (fun z ↦ (⟨u z, η z⟩ : CotangentBundle I M)) z) :
-    ContinuousAt (fun z ↦ η z (B (u z) (w z))) z := by
-  have hu : ContinuousAt u z :=
-    (FiberBundle.continuous_proj E (TangentSpace I)).continuousAt.comp hw
-  have hBw := (B.contMDiff.continuous.continuousAt.comp hu).clm_bundle_apply hw
-  have h := ContinuousAt.clm_bundle_apply (E₂ := Bundle.Trivial M ℝ) hη hBw
-  exact continuous_snd.continuousAt.comp
-    ((Bundle.Trivial.homeomorphProd M ℝ).continuous.continuousAt.comp h)
-
 /-- Cutting off the average of a section `A` by a bump function at `u z₀`. If `A (u z₀)`
 anticommutes with `J (u z₀)` and pairs positively with `η z₀` at `w z₀`, a suitable cutoff gives
 a compactly supported section in `W` whose pairing along `u` has positive integral. The cutoff is
@@ -163,7 +149,7 @@ private theorem exists_localizedVariation
       (ContinuousAt (fun z ↦ (⟨u z, w z⟩ : TangentBundle I M)) z ∧
         ContinuousAt (fun z ↦ (⟨u z, η z⟩ : CotangentBundle I M)) z) ∧ 0 < G z :=
     have hGc : ContinuousAt G z₀ :=
-      continuousAt_apply_apply (average J A) hw.self_of_nhds hη.self_of_nhds
+      ContMDiffSection.continuousAt_apply_apply (average J A) hw.self_of_nhds hη.self_of_nhds
     (hw.and hη).and (hGc.eventually (lt_mem_nhds (hG₀ ▸ hpos)))
   obtain ⟨K, hKn, hKsub, hK⟩ := local_compact_nhds hev
   obtain ⟨W₀, hW₀, hW₀K⟩ := mem_comap.1 (hinj hKn)
@@ -192,7 +178,7 @@ private theorem exists_localizedVariation
       have hu : ContinuousAt u z :=
         (FiberBundle.continuous_proj E (TangentSpace I)).continuousAt.comp hwz
       exact (ρ.contMDiff.continuous.continuousAt.comp hu).mul
-        (continuousAt_apply_apply (average J A) hwz hηz)
+        (ContMDiffSection.continuousAt_apply_apply (average J A) hwz hηz)
     · refine (continuousAt_const (y := (0 : ℝ))).congr ?_
       filter_upwards [hK.isClosed.isOpen_compl.mem_nhds hz] with y hy using (hzero y hy).symm
   · by_cases hz : ρ (u z) = 0

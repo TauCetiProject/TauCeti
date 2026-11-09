@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
@@ -45,6 +46,10 @@ the differential does. It gives the smoothness of the cotangent lift of a diffeo
 (`Diffeomorph.cotangent`). The map may also vary smoothly with the parameter
 (`TauCeti.CotangentBundle.contMDiffAt_mk_comp_mfderiv_uncurry`), as the slice inclusions of a
 product manifold do.
+
+Pairing a covector field along a map `u` with the image of a tangent field under a section `B` of
+`End(TM)` is continuous wherever both fields are continuous into their bundles
+(`ContMDiffSection.continuousAt_apply_apply`).
 
 The construction follows the Zulip discussion `Cotangent Bundle as a Manifold` in the channel
 `Is there code for X?`, which observed that Mathlib's continuous-linear-map bundle operations
@@ -275,3 +280,28 @@ end Pullback
 end CotangentBundle
 
 end TauCeti
+
+namespace ContMDiffSection
+
+open TauCeti
+
+variable {𝕜 E H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I 1 M] {n : WithTop ℕ∞} {S : Type*} [TopologicalSpace S]
+  {u : S → M} {w : (z : S) → TangentSpace I (u z)} {η : (z : S) → TangentSpace I (u z) →L[𝕜] 𝕜}
+
+/-- A section `B` of `End(TM)`, evaluated along `u` on a tangent field `w` and paired with a
+covector field `η`, is continuous wherever both fields are continuous into their bundles. -/
+theorem continuousAt_apply_apply
+    (B : Cₛ^n⟮I; E →L[𝕜] E, fun x : M ↦ TangentSpace I x →L[𝕜] TangentSpace I x⟯) {z : S}
+    (hw : ContinuousAt (fun z ↦ (⟨u z, w z⟩ : TangentBundle I M)) z)
+    (hη : ContinuousAt (fun z ↦ (⟨u z, η z⟩ : CotangentBundle I M)) z) :
+    ContinuousAt (fun z ↦ η z (B (u z) (w z))) z := by
+  have hu : ContinuousAt u z :=
+    (FiberBundle.continuous_proj E (TangentSpace I)).continuousAt.comp hw
+  have hBw := (B.contMDiff.continuous.continuousAt.comp hu).clm_bundle_apply hw
+  have h := ContinuousAt.clm_bundle_apply (E₂ := Bundle.Trivial M 𝕜) hη hBw
+  exact continuous_snd.continuousAt.comp
+    ((Bundle.Trivial.homeomorphProd M 𝕜).continuous.continuousAt.comp h)
+
+end ContMDiffSection
