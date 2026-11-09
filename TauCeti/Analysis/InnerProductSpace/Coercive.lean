@@ -32,8 +32,9 @@ bound the change of this form under a perturbation of `A`
 `⟪S (A v), v⟫ - ½ ⟪D v, v⟫` that appears when integrating against a family of quadratic forms
 (`ContinuousLinearMap.neg_mul_norm_sq_le_inner_sub`).
 
-A real coercive quadratic form also stays nonnegative under a small perturbation of the operator
-and a small scalar shift (`inner_add_smul_id_nonneg_of_norm_sub_le`), which gives the convexity
+A real coercive quadratic form also loses at most the size of a perturbation of the operator
+(`sub_norm_mul_norm_sq_le_inner`) and stays nonnegative under a small perturbation and scalar
+shift (`inner_add_smul_id_nonneg_of_norm_sub_le`), which gives the convexity
 of perturbed barrier functions, for instance in the Monge–Ampère viscosity argument.
 
 ## Provenance
@@ -229,21 +230,28 @@ section Real
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
+/-- **A coercive quadratic form loses at most the size of the perturbation.** If
+`κ ‖v‖² ≤ ⟪A v, v⟫`, then `(κ - ‖D - A‖) ‖v‖² ≤ ⟪D v, v⟫`. -/
+theorem sub_norm_mul_norm_sq_le_inner {A : F →L[ℝ] F} {κ : ℝ}
+    (hA : ∀ v, κ * ‖v‖ ^ 2 ≤ inner ℝ (A v) v) (D : F →L[ℝ] F) (v : F) :
+    (κ - ‖D - A‖) * ‖v‖ ^ 2 ≤ inner ℝ (D v) v := by
+  have h₁ : -(‖D - A‖ * ‖v‖ ^ 2) ≤ inner ℝ ((D - A) v) v :=
+    neg_le_of_abs_le ((D - A).abs_inner_apply_le v)
+  have h₂ : inner ℝ (D v) v = inner ℝ (A v) v + inner ℝ ((D - A) v) v := by
+    rw [← inner_add_left]; simp
+  nlinarith [hA v]
+
 /-- **The quadratic form stays nonnegative under small perturbations.** If `κ ‖v‖² ≤ ⟪A v, v⟫`
 and `‖D - A‖ ≤ κ + t`, then `0 ≤ ⟪(D + t • id) v, v⟫`. -/
 theorem inner_add_smul_id_nonneg_of_norm_sub_le {A D : F →L[ℝ] F} {κ t : ℝ}
     (hA : ∀ v, κ * ‖v‖ ^ 2 ≤ inner ℝ (A v) v) (hD : ‖D - A‖ ≤ κ + t) (v : F) :
     0 ≤ inner ℝ ((D + t • ContinuousLinearMap.id ℝ F) v) v := by
-  set B := D - A
-  have h₁ : -(‖B‖ * ‖v‖ ^ 2) ≤ inner ℝ (B v) v := neg_le_of_abs_le (B.abs_inner_apply_le v)
   have h₂ : inner ℝ ((D + t • ContinuousLinearMap.id ℝ F) v) v =
-      inner ℝ (A v) v + inner ℝ (B v) v + t * ‖v‖ ^ 2 := by
-    simp only [B, _root_.add_apply, _root_.sub_apply, _root_.smul_apply,
-      ContinuousLinearMap.id_apply, inner_add_left, inner_sub_left, real_inner_smul_left,
-      real_inner_self_eq_norm_sq]
-    ring
+      inner ℝ (D v) v + t * ‖v‖ ^ 2 := by
+    simp only [_root_.add_apply, _root_.smul_apply, ContinuousLinearMap.id_apply,
+      inner_add_left, real_inner_smul_left, real_inner_self_eq_norm_sq]
   rw [h₂]
-  nlinarith [hA v, mul_nonneg (sub_nonneg.2 hD) (sq_nonneg ‖v‖)]
+  nlinarith [sub_norm_mul_norm_sq_le_inner hA D v, mul_nonneg (sub_nonneg.2 hD) (sq_nonneg ‖v‖)]
 
 end Real
 
