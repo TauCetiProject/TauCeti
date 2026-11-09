@@ -16,7 +16,10 @@ Let `p : E → B` be a Serre fibration (`TauCeti.TopCat.serreFibrations`). Then 
 and `(n - 1)`-connected, that is, when `π_k(p⁻¹(b), e)` is trivial for every `k < n` and every
 point `e` of the fibre (`TauCeti.TopCat.isNConnected_iff_of_mem_serreFibrations`). In particular
 `p` is a weak homotopy equivalence exactly when every fibre is nonempty and weakly contractible
-(`TauCeti.TopCat.isWeakHomotopyEquivalence_iff_of_mem_serreFibrations`).
+(`TauCeti.TopCat.isWeakHomotopyEquivalence_iff_of_mem_serreFibrations`). Its reverse implication,
+stated with path-connected fibres, is also
+`TauCeti.TopCat.isWeakHomotopyEquivalence_of_forall_fiber`, which compares `p` with the identity of
+`B` as a map of Serre fibrations.
 
 The hypothesis is on every fibre. A condition on a single fibre says nothing about the path
 components of `B` that do not contain its base point, and nonemptiness of the fibres is part of
