@@ -42,6 +42,8 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   `RingHom.finiteModulesRestrictScalars` is the restriction of scalars, naturally in the module.
 * `ModuleCat.restrictScalarsAlgebraMapIso`: restricting the scalars of an `S`-module along
   `algebraMap R S` gives back its compatible `R`-module structure.
+* `ModuleCat.restrictScalarsOpOpIso`: restricting scalars along `A ≃+* Aᵐᵒᵖᵐᵒᵖ` carries the
+  `Aᵐᵒᵖᵐᵒᵖ`-module `Aᵐᵒᵖ` to the regular module `A`.
 
 ## Main results
 
@@ -127,7 +129,7 @@ theorem projective_restrictScalars_of_projective (f : R →+* S)
   have : IsScalarTower R S M := ⟨fun r s m ↦ mul_smul (f r) s m⟩
   -- Elaborated before being matched against the goal, so that the `R`-module structure of `M`
   -- is the local one carrying the scalar tower; the goal's is defeq but not syntactically equal.
-  have hRM : Module.Projective R M := Module.Projective.trans (S := S)
+  have hRM : Module.Projective R M := Module.Projective.trans S M
   exact hRM
 
 /-- **Restriction of scalars on finitely generated modules.** A ring homomorphism
@@ -234,5 +236,26 @@ theorem restrictScalarsAlgebraMapIso_inv_apply (M : Type v) [AddCommGroup M] [Mo
     [Module S M] [IsScalarTower R S M] (m : M) :
     (restrictScalarsAlgebraMapIso (R := R) (S := S) M).inv m = m :=
   (rfl)
+
+section OpOp
+
+variable (A : Type u) [Ring A]
+
+/-- Restricting scalars along `A ≃+* Aᵐᵒᵖᵐᵒᵖ` carries `Aᵐᵒᵖ`, the regular right module of `Aᵐᵒᵖ`, to
+the regular module `A`, through `MulOpposite.unop`. -/
+noncomputable def restrictScalarsOpOpIso :
+    (restrictScalars.{u} (RingEquiv.opOp A).toRingHom).obj (of Aᵐᵒᵖᵐᵒᵖ Aᵐᵒᵖ) ≅ of A A :=
+  let X := (restrictScalars.{u} (RingEquiv.opOp A).toRingHom).obj (of Aᵐᵒᵖᵐᵒᵖ Aᵐᵒᵖ)
+  let e : X ≃ₗ[A] A :=
+    { (MulOpposite.opAddEquiv : A ≃+ Aᵐᵒᵖ).symm with
+      map_smul' := fun a x ↦ by
+        rw [restrictScalars.smul_def]
+        -- The element `x` of the restricted module is an element of `Aᵐᵒᵖ`, on which `op (op a)`
+        -- acts by right multiplication by `op a`.
+        exact (congrArg MulOpposite.unop (op_smul_eq_mul (MulOpposite.op a) (x : Aᵐᵒᵖ))).trans
+          (MulOpposite.unop_mul (x : Aᵐᵒᵖ) (MulOpposite.op a)) }
+  e.toModuleIso
+
+end OpOp
 
 end ModuleCat

@@ -97,7 +97,7 @@ theorem IsMorse.exists_relCWComplex_sublevel_deformation_of_isOpenEmbedding
         (∀ x, r (ContinuousMap.inclusion inter_subset_left x) = x) ∧
         Nonempty (((ContinuousMap.inclusion inter_subset_left).comp r).HomotopyRel
           (ContinuousMap.id _) {x | (x : X) ∈ {x | F x ≤ c - ε} ∪ j '' C}) := by
-  obtain ⟨ε, hε, hεδ, C, _, hfin, hC, hcell, r, -, ⟨G⟩⟩ :=
+  obtain ⟨ε, hε, hεδ, C, _, hfin, hC, hcell, -, r, -, ⟨G⟩⟩ :=
     hf.exists_relCWComplex_sublevel_deformation hδ
       (hj.isInducing.isCompact_comp_preimage_Icc hA hcompact)
   -- The lower sublevel of `F ∘ j` is the base of `C ⊆ {F ∘ j ≤ c + ε}`, so `C` is the preimage of

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.GradientFlow.MoreauYosida.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Instances.EReal.Lemmas
 import TauCeti.Data.EReal.Operations
+import TauCeti.Topology.EMetricSpace.Bounded
 
 /-!
 # Existence of resolvent steps and of minimizing movement sequences
@@ -207,6 +208,28 @@ theorem moreauYosida_ne_bot_of_lt (hττ₀ : τ < τ₀) (hx : edist x x₀ ≠
   rw [h, EReal.bot_add, le_bot_iff] at this
   exact h₀ this
 
+/-- **Propagation of coercivity**, real form. If `φ_{τ₀}(x₀) = m` is a real number, `τ < τ₀`,
+and `x` lies within the real distance `D` of `x₀`, then `m - D² / (2 (τ₀ - τ)) ≤ φ_τ(x)`. -/
+theorem coe_sub_div_le_moreauYosida {m D : ℝ} (hττ₀ : τ < τ₀) (hm : moreauYosida φ τ₀ x₀ = m)
+    (hD : 0 ≤ D) (hxD : edist x x₀ ≤ ENNReal.ofReal D) :
+    ((m - D ^ 2 / (2 * (τ₀ - τ)) : ℝ) : EReal) ≤ moreauYosida φ τ x := by
+  have hx : edist x x₀ ≠ ⊤ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top hxD
+  have hQ : edist x x₀ ^ 2 / (2 * ((τ₀ : ℝ≥0∞) - τ)) ≠ ⊤ :=
+    ENNReal.div_ne_top (ENNReal.pow_ne_top hx)
+      (by simp [(tsub_pos_of_lt (ENNReal.coe_lt_coe.2 hττ₀)).ne'])
+  have hτ₀τ : (0 : ℝ) < τ₀ - τ := sub_pos.2 (NNReal.coe_lt_coe.2 hττ₀)
+  have hQD : (edist x x₀ ^ 2 / (2 * ((τ₀ : ℝ≥0∞) - τ))).toReal ≤ D ^ 2 / (2 * (τ₀ - τ)) := by
+    simp only [ENNReal.toReal_div, ENNReal.toReal_pow, ENNReal.toReal_mul, ENNReal.toReal_ofNat,
+      ENNReal.toReal_sub_of_le (ENNReal.coe_le_coe.2 hττ₀.le) ENNReal.coe_ne_top,
+      ENNReal.coe_toReal]
+    gcongr
+    exact ENNReal.toReal_le_of_le_ofReal hD hxD
+  have hcoer := moreauYosida_le_moreauYosida_add (φ := φ) hττ₀ hx
+  rw [hm, ← EReal.coe_ennreal_toReal hQ] at hcoer
+  rw [EReal.coe_sub, EReal.sub_le_iff_le_add (.inl (EReal.coe_ne_bot _))
+    (.inl (EReal.coe_ne_top _))]
+  exact hcoer.trans (add_le_add le_rfl (EReal.coe_le_coe_iff.2 hQD))
+
 /-- A point `v` at finite distance from `x` whose penalized energy with time step `τ` is at most
 `B` lies at distance `d` from `x` with `d² (τ' - τ) ≤ (B - A) 2ττ'`, where `A = φ_{τ'}(x)` for a
 larger time step `τ'`: subtract `A ≤ φ v + d² / (2τ')` from `φ v + d² / (2τ) ≤ B`. -/
@@ -277,15 +300,11 @@ theorem moreauYosidaResolvent_nonempty {l : X → Filter X}
     ⟨_, (EReal.coe_toReal (ne_top_of_le_ne_top htop hmono) hbot').symm⟩
   -- A minimizing sequence `v`, with penalized energies below `M + 1 / (n + 1)`.
   have hseq : ∀ n : ℕ, ∃ v, edist x v ≠ ⊤ ∧
-      φ v + (edist x v ^ 2 / (2 * τ) : ℝ≥0∞) < ((M + 1 / (n + 1) : ℝ) : EReal) := by
-    intro n
+      φ v + (edist x v ^ 2 / (2 * τ) : ℝ≥0∞) < ((M + 1 / (n + 1) : ℝ) : EReal) := fun n ↦ by
     have hlt : moreauYosida φ τ x < ((M + 1 / (n + 1) : ℝ) : EReal) := by
       rw [hM, EReal.coe_lt_coe_iff]
       linarith [Nat.one_div_pos_of_nat (α := ℝ) (n := n)]
-    rw [moreauYosida_def] at hlt
-    obtain ⟨v, hv⟩ := iInf_lt_iff.1 hlt
-    obtain ⟨hvx, hv⟩ := iInf_lt_iff.1 hv
-    exact ⟨v, hvx, hv⟩
+    simpa only [moreauYosida_def, iInf_lt_iff, exists_prop] using hlt
   choose v hvx hv using hseq
   have hle : ∀ n, φ (v n) + (edist x (v n) ^ 2 / (2 * τ) : ℝ≥0∞) ≤ ((M + 1 : ℝ) : EReal) :=
     fun n ↦ (hv n).le.trans <| EReal.coe_le_coe_iff.2 <| add_le_add le_rfl <|
@@ -297,15 +316,10 @@ theorem moreauYosidaResolvent_nonempty {l : X → Filter X}
     refine (le_abs_self _).trans (Real.abs_le_sqrt ?_)
     rw [le_div_iff₀ (sub_pos.2 (NNReal.coe_lt_coe.2 hττ'))]
     exact toReal_edist_sq_mul_le hτ hττ' hA (hvx n) (hle n)
-  have hdiam : Metric.ediam (range v) ≠ ⊤ := by
-    refine ne_top_of_le_ne_top (b := ENNReal.ofReal √C + ENNReal.ofReal √C) (by finiteness)
-      (Metric.ediam_le ?_)
-    rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩
-    exact (edist_triangle_left _ _ x).trans (add_le_add (hR i) (hR j))
+  have hdiam : Metric.ediam (range v) ≠ ⊤ :=
+    ediam_range_ne_top_of_edist_le ENNReal.ofReal_ne_top hR
   obtain ⟨y, ψ, hψ, hy⟩ := hcpt (M + 1) hdiam fun n ↦
     (le_add_of_nonneg_right (EReal.coe_ennreal_nonneg _)).trans (hle n)
-  have hdiam' : Metric.ediam (range (v ∘ ψ)) ≠ ⊤ :=
-    ne_top_of_le_ne_top hdiam (Metric.ediam_mono (range_comp_subset_range ψ v))
   -- The limit `y` is at finite distance from `x`.
   have hyx : edist x y ≠ ⊤ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top <|
     (hd hy).trans (liminf_le_of_frequently_le' (Frequently.of_forall fun k ↦ hR (ψ k)))
@@ -316,7 +330,8 @@ theorem moreauYosidaResolvent_nonempty {l : X → Filter X}
   refine ⟨y, mem_moreauYosidaResolvent_iff_eq_moreauYosida.2
     ⟨hyx, le_antisymm ?_ (moreauYosida_le φ τ hyx)⟩⟩
   rw [hM, ← hlim.liminf_eq]
-  exact (le_liminf_apply_add_edist_sq_div (hd hy) (hφ hdiam' hy)).trans
+  exact (le_liminf_apply_add_edist_sq_div (hd hy)
+    (hφ (ne_top_of_le_ne_top hdiam (Metric.ediam_mono (range_comp_subset_range ψ v))) hy)).trans
     (liminf_le_liminf (Eventually.of_forall fun k ↦ (hv (ψ k)).le))
 
 /-- **Existence of minimizing movement sequences** (Ambrosio–Gigli–Savaré, Corollary 2.2.2).

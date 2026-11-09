@@ -13,8 +13,10 @@ import Mathlib.Tactic.Group
 /-!
 # Maps of subgroups
 
-Mathlib's `MonoidHom.subgroupComap` sends the preimage `K.comap f` of a subgroup `K` to `K`.
-This file records how surjective homomorphisms act on centres and on derived subgroups.
+Lemmas on how homomorphisms act on subgroups: the centre and kernels of surjections, the
+derived subgroup transported along isomorphisms, conjugation and images of subgroups, coset
+spaces and quotient maps, subgroup closure, and
+the action of a subgroup on a `G`-set.
 
 An isomorphism carrying a subgroup `A` onto a subgroup `B` restricts to an isomorphism `↥A ≃* ↥B`,
 and carries the coset space `G ⧸ A` bijectively onto `H ⧸ B`.
@@ -43,11 +45,11 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   kernel lies in the subgroup.
 * `MonoidHom.center_le_ker`: the centre lies in the kernel of a surjection onto a
   centreless group.
-* `TauCeti.Subgroup.map_commutator_eq_commutator`: a surjective homomorphism carries the derived
-  subgroup onto the derived subgroup.
 * `Subgroup.map_inf_comap`: the image of `H ⊓ f⁻¹(K)` is `f(H) ⊓ K`.
 * `Subgroup.normalCore_comap_of_forall_exists_mul_eq`: the normal core of `f⁻¹(B)` is the preimage
   of the normal core of `B` when every element is `f x * b` with `b ∈ B`.
+* `Subgroup.mul_mul_injective_of_disjoint`: the coordinates `u n b` are unique when `U`
+  meets `n B n⁻¹` trivially.
 * `Subgroup.map_conj_map_conj`: successive conjugations of a subgroup compose to one
   conjugation.
 * `Subgroup.map_map_conj`: the image of a conjugate subgroup is the conjugate of the image.
@@ -55,8 +57,8 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   induced on quotients.
 * `QuotientGroup.map_mk'_eq_top`: the image of `K` in `G ⧸ N` is everything exactly when
   `N ⊔ K = ⊤`.
-* `MonoidHom.subgroupCongr_injective`, `MonoidHom.subgroupCongr_surjective`: transport along
-  equalities of the domain and codomain preserves injectivity and surjectivity.
+* `MonoidHom.subgroupCongr_injective`: transport along equalities of the domain and codomain
+  preserves injectivity.
 * `Subgroup.subtype_comp_subgroupOfEquivOfLe`, `TauCeti.Subgroup.subtype_comp_congrOfMapEq`: the
   isomorphisms `subgroupOfEquivOfLe` and `congrOfMapEq` commute with the inclusions of subgroups.
 * `Subgroup.subgroupOf_smul_eq`: the actions of `V` and of `V.subgroupOf U` on a `G`-set agree
@@ -216,35 +218,13 @@ theorem _root_.MonoidHom.subgroupCongr_comp {A A' : Subgroup G} {B B' : Subgroup
 /-- Transport along equalities of the domain and codomain preserves injectivity.
 
 The transport composes `f` with two isomorphisms, so it is injective exactly when `f` is; only the
-direction a use site needs is recorded. `MonoidHom.subgroupCongr_surjective` is the companion for
-surjectivity. -/
+direction a use site needs is the one recorded. -/
 theorem _root_.MonoidHom.subgroupCongr_injective {A A' : Subgroup G} {B B' : Subgroup H}
     (hA : A' = A) (hB : B' = B) {f : A →* B} (hf : Function.Injective f) :
     Function.Injective (f.subgroupCongr hA hB) :=
   (MulEquiv.subgroupCongr hB).symm.injective.comp <| hf.comp (MulEquiv.subgroupCongr hA).injective
 
-/-- Transport along equalities of the domain and codomain preserves surjectivity.
-
-The transport composes `f` with two isomorphisms, so it is surjective exactly when `f` is; only the
-direction a use site needs is recorded. `MonoidHom.subgroupCongr_injective` is the companion for
-injectivity. -/
-theorem _root_.MonoidHom.subgroupCongr_surjective {A A' : Subgroup G} {B B' : Subgroup H}
-    (hA : A' = A) (hB : B' = B) {f : A →* B} (hf : Function.Surjective f) :
-    Function.Surjective (f.subgroupCongr hA hB) :=
-  (MulEquiv.subgroupCongr hB).symm.surjective.comp <| hf.comp (MulEquiv.subgroupCongr hA).surjective
-
 /-! ## Transporting the derived subgroup -/
-
-/-- A surjective homomorphism carries the derived subgroup onto the derived subgroup.
-
-Without surjectivity only `≤` survives (Mathlib's `Subgroup.map_derivedSeries_le_derivedSeries`);
-Mathlib's `map_commutator_eq` keeps an equality for an arbitrary `f`, at the cost of describing the
-image as `⁅f.range, f.range⁆`. Reach for this lemma rather than `Subgroup.map_derivedSeries_eq`
-whenever the derived subgroup is spelled `commutator`; `MulEquiv.commutatorCongr` below is the
-isomorphism it unlocks. -/
-theorem Subgroup.map_commutator_eq_commutator {f : G →* H} (hf : Function.Surjective f) :
-    (commutator G).map f = commutator H := by
-  rw [_root_.map_commutator_eq, MonoidHom.range_eq_top_of_surjective _ hf, _root_.commutator_def]
 
 /-- The isomorphism of derived subgroups restricted from an isomorphism of groups.
 
@@ -253,7 +233,7 @@ so a use site names only `e`, and the target is `commutator H` itself rather tha
 `(commutator G).map e` that `MulEquiv.subgroupMap` would land in. It acts as `e` on elements, and
 its inverse as `e.symm`. -/
 def _root_.MulEquiv.commutatorCongr (e : G ≃* H) : ↥(commutator G) ≃* ↥(commutator H) :=
-  Subgroup.congrOfMapEq e <| Subgroup.map_commutator_eq_commutator e.surjective
+  Subgroup.congrOfMapEq e <| map_commutator_of_surjective e.surjective
 
 /-- The restriction `MulEquiv.commutatorCongr e` to the derived subgroups agrees with `e` on
 underlying
@@ -351,6 +331,23 @@ theorem _root_.Subgroup.normalCore_comap_of_forall_exists_mul_eq (f : G →* H) 
     group
   rw [hconj]
   exact mul_mem (mul_mem (inv_mem hb) (hx y⁻¹)) (inv_mem (inv_mem hb))
+
+/-- The coordinates `u n b` are unique if `U` meets `n B n⁻¹` trivially. -/
+theorem _root_.Subgroup.mul_mul_injective_of_disjoint (U B : Subgroup G) {n : G}
+    (h : Disjoint U (B.map (MulAut.conj n).toMonoidHom)) :
+    Function.Injective (fun p : U × B => (p.1 : G) * n * p.2) := by
+  intro p q hpq
+  have heq : (p.1 : G) * (n * p.2 * n⁻¹) = (q.1 : G) * (n * q.2 * n⁻¹) := by
+    simpa only [mul_assoc] using congrArg (fun x : G => x * n⁻¹) hpq
+  have hconj (b : B) : n * b * n⁻¹ ∈ B.map (MulAut.conj n).toMonoidHom := by
+    simpa only [MulEquiv.coe_toMonoidHom, MulAut.conj_apply] using
+      _root_.Subgroup.mem_map_of_mem (MulAut.conj n).toMonoidHom b.property
+  have hpair := _root_.Subgroup.mul_injective_of_disjoint h
+    (a₁ := (p.1, ⟨n * p.2 * n⁻¹, hconj p.2⟩))
+    (a₂ := (q.1, ⟨n * q.2 * n⁻¹, hconj q.2⟩)) heq
+  refine Prod.ext (congrArg (fun r : U × B.map (MulAut.conj n).toMonoidHom => r.1) hpair) ?_
+  apply Subtype.ext
+  exact mul_left_cancel (mul_right_cancel (congrArg (fun x => (x.2 : G)) hpair))
 
 /-- The image of a conjugate subgroup `gRg⁻¹` under a homomorphism `f` is the conjugate of `f(R)`
 by `f g`.
