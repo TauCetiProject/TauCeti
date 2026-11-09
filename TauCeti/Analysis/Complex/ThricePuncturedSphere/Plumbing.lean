@@ -111,6 +111,12 @@ theorem norm_plumbingFactor (q : Puncture) (L : ℝ) :
   rw [plumbingFactor_eq_mul_ofReal, norm_mul, Complex.norm_real,
     Real.norm_of_nonneg (by positivity), mul_div_assoc]
 
+/-- At a finite puncture the plumbing factor has norm `e^{-2πL} / 4`. -/
+theorem norm_plumbingFactor_of_ne_inf {q : Puncture} (hq : q ≠ inf) (L : ℝ) :
+    ‖q.plumbingFactor L‖ = Real.exp (-(2 * π * L)) / 4 := by
+  rw [norm_plumbingFactor, norm_endScale hq]
+  ring
+
 /-- The first input of the inserted sphere sits at the center of the end it is plumbed into. -/
 @[simp]
 theorem plumbingMap_zero (q : Puncture) (L : ℝ) : q.plumbingMap L 0 = q.endCenter := by

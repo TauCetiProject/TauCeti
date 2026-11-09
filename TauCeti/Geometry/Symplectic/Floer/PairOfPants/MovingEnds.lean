@@ -111,6 +111,33 @@ theorem inputEndPerturbation_eq_zero_of_le_norm_sub {w : ℂ}
     rw [norm_div, le_div_iff₀ (norm_pos_iff.2 ha)]
     linarith
 
+/-- **The input end datum vanishes at its puncture.** At the center `c`, the end coordinate of
+the positive plane datum has longitudinal part `0`, where the cutoff vanishes. -/
+@[simp]
+theorem inputEndPerturbation_self (c a : ℂ) (H : ℝ → M → ℝ) (x : M) :
+    inputEndPerturbation c a H c x = 0 := by
+  have h : (zero.endCoord 0).re = 0 := by simpa using re_endCoord_endCenter zero
+  ext v
+  simp [inputEndPerturbation_apply, positivePlanePerturbation_def, h,
+    smoothTransition.zero_of_nonpos]
+
+/-- **Pushing an input end forward along an affine map.** The pushforward
+`v ↦ K((w - c₀) / f)(v / f)` of the datum of the input end with center `c` and scale `a` along
+`w ↦ c₀ + f w` is the datum of the input end with center `c₀ + f c` and scale `f a`. -/
+theorem inputEndPerturbation_sub_div_comp (c₀ f c a : ℂ) (H : ℝ → M → ℝ) (w : ℂ) (x : M) :
+    (inputEndPerturbation c a H ((w - c₀) / f) x).comp (ContinuousLinearMap.mul ℝ ℂ f⁻¹) =
+      inputEndPerturbation (c₀ + f * c) (f * a) H w x := by
+  ext v
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp [inputEndPerturbation_apply]
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp [inputEndPerturbation_apply]
+  have hw : ((w - c₀) / f - c) / a = (w - (c₀ + f * c)) / (f * a) := by
+    field_simp
+    ring
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.mul_apply',
+    inputEndPerturbation_apply, hw, mul_inv, mul_assoc, mul_left_comm a⁻¹]
+
 /-- **The input end datum on its end.** On the part `s > 0` of the moved end, the pullback of the
 datum along its end lift `z ↦ c + a φ₀(z)` is the continuation datum `β(s - 1) H(t) dt`. -/
 theorem inputEndPerturbation_cylindricalEndLift_of_pos (hH : Periodic H 1) (ha : a ≠ 0) {z : ℂ}

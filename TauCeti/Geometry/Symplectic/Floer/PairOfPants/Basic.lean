@@ -82,6 +82,20 @@ theorem pairOfPantsPerturbation_def (H : Puncture → ℝ → M → ℝ) (w : �
         q.endAngularForm w := by
   rw [pairOfPantsPerturbation]
 
+/-- The perturbation is additive in the Hamiltonians. -/
+theorem pairOfPantsPerturbation_add (H₁ H₂ : Puncture → ℝ → M → ℝ) :
+    pairOfPantsPerturbation (H₁ + H₂) =
+      pairOfPantsPerturbation H₁ + pairOfPantsPerturbation H₂ := by
+  funext w x
+  simp only [pairOfPantsPerturbation_def, Pi.add_apply, mul_add, add_smul, Finset.sum_add_distrib]
+
+/-- The perturbation is homogeneous in the Hamiltonians. -/
+theorem pairOfPantsPerturbation_smul (c : ℝ) (H : Puncture → ℝ → M → ℝ) :
+    pairOfPantsPerturbation (c • H) = c • pairOfPantsPerturbation H := by
+  funext w x
+  simp only [pairOfPantsPerturbation_def, Pi.smul_apply, smul_eq_mul, Finset.smul_sum, smul_smul,
+    mul_left_comm c]
+
 variable {H : Puncture → ℝ → M → ℝ}
 
 /-- Where the cutoff of the end `q` is nonzero, the point lies on the part `±s > 1` of that end,
