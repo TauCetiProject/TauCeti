@@ -11,7 +11,6 @@ public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 import TauCeti.Analysis.Contour.Curve.Distance
 import TauCeti.Analysis.Contour.Winding.Continuity
-import TauCeti.Analysis.Contour.Winding.Integer
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 
 /-!
@@ -193,8 +192,8 @@ theorem exists_ball_windingNumber_zero {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} 
 
 /-- A closed absolutely continuous curve whose winding numbers about two points off the curve differ
 by less than `1` from an integer `k` has winding numbers differing by exactly `k`. -/
-theorem windingNumber_eq_add_intCast_of_dist_lt {Γ : ℝ → ℂ} {w₁ w₂ : ℂ}
-    (hΓ : AbsolutelyContinuousOnInterval Γ a c) (hclosed : Γ a = Γ c)
+theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_add_intCast_of_dist_lt
+    {Γ : ℝ → ℂ} {w₁ w₂ : ℂ} (hΓ : AbsolutelyContinuousOnInterval Γ a c) (hclosed : Γ a = Γ c)
     (h₁ : w₁ ∉ Γ '' uIcc a c) (h₂ : w₂ ∉ Γ '' uIcc a c) {k : ℤ}
     (hdist : dist (windingNumber Γ a c w₁ - windingNumber Γ a c w₂) (k : ℂ) < 1) :
     windingNumber Γ a c w₁ = windingNumber Γ a c w₂ + k := by
