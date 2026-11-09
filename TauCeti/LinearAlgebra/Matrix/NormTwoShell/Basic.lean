@@ -24,21 +24,22 @@ Let `B` be an integer matrix indexed by a finite type `I`, read as the Gram matr
 Dynkin diagram, possibly disconnected, `Q` is the root lattice in simple-root coordinates and `Φ` is
 its set of roots; the coordinate vector `Pi.single i 1` is the simple root `αᵢ`.
 
-The file develops the elementary theory of `Φ` in three layers of hypotheses.
+The file develops the elementary theory of `Φ` in layers of hypotheses.
 
 * For symmetric `B`, `⟪a + b, a + b⟫ = ⟪a, a⟫ + ⟪b, b⟫ + 2⟪a, b⟫`, so for `a, b ∈ Φ` the sum
   `a + b` lies in `Φ` exactly when `⟪a, b⟫ = -1`, and `a - b` exactly when `⟪a, b⟫ = 1`;
   likewise the reflection `x ↦ x - ⟪x, a⟫ a` in a vector of `Φ` preserves `Φ`.
-* For positive definite `B` with even diagonal, every nonzero vector has norm at least two. Two
-  vectors of `Φ` then pair to `2` exactly when they are equal and to `-2` exactly when they are
-  opposite, and otherwise to `-1`, `0` or `1`. The shell is finite.
-* If in addition the off-diagonal entries are nonpositive, as for a simply laced Cartan matrix,
-  every vector of `Φ` has coefficients of one sign: writing `a = a⁺ - a⁻` with disjointly
-  supported nonnegative parts, `⟪a⁺, a⁻⟫ ≤ 0`, so two nonzero parts would give `⟪a, a⟫ ≥ 4`.
-  With diagonal `2`, a nonnegative vector of `Φ` that is not simple pairs to `1` with some simple
-  root `αᵢ`, and `a - αᵢ` is again a nonnegative vector of `Φ`, of height one less. This is the
-  height induction `Matrix.PosDef.normTwoShell_nonneg_induction`: every positive root is reached
-  from a simple root by adding simple roots one at a time without leaving `Φ`.
+* For positive definite `B`, two vectors of `Φ` pair to `2` exactly when they are equal and to `-2`
+  exactly when they are opposite, and otherwise to `-1`, `0` or `1`. The shell is finite.
+* If in addition the diagonal is even, every nonzero vector has norm at least two. When also the
+  off-diagonal entries are nonpositive, as for a simply laced Cartan matrix, every vector of `Φ`
+  has coefficients of one sign: writing `a = a⁺ - a⁻` with disjointly supported nonnegative parts,
+  `⟪a⁺, a⁻⟫ ≤ 0`, so two nonzero parts would give `⟪a, a⟫ ≥ 4`.
+* For positive definite `B` with diagonal `2` alone, a nonnegative vector of `Φ` that is not simple
+  pairs to `1` with some simple root `αᵢ`, and `a - αᵢ` is again a nonnegative vector of `Φ`, of
+  height one less. This is the height induction `Matrix.PosDef.normTwoShell_nonneg_induction`:
+  every nonnegative vector of `Φ` is reached from a simple root by adding simple roots one at a
+  time without leaving `Φ`.
 
 These are the facts about the root set that the integral Chevalley lattice of a simply laced
 diagram is built on: its root vectors are indexed by `Φ`, and its bracket on root vectors is
@@ -230,7 +231,7 @@ theorem finite_normTwoShell (hB : B.PosDef) : B.normTwoShell.Finite := by
   rw [Set.mem_ofPred_eq, toQuadraticForm'_apply]
   exact ha
 
-/-! ### Nonpositive off-diagonal entries -/
+/-! ### Even diagonal and nonpositive off-diagonal entries -/
 
 /-- **Every vector of the norm-two shell has coefficients of one sign**, for a positive definite
 Gram matrix with even diagonal and nonpositive off-diagonal entries, such as a simply laced Cartan
@@ -282,6 +283,8 @@ theorem exists_invariant_pairing_ne_zero (hB : B.PosDef) (hev : ∀ i, Even (B i
     rw [hpair]
     exact mul_ne_zero hB.det_pos.ne'
       (hB.sum_ne_zero_of_mem_normTwoShell hev hoff a.property)
+
+/-! ### Positive roots and height induction, for diagonal `2` -/
 
 /-- **A positive root that is not simple has a simple root whose subtraction leaves a positive
 root.** For a positive definite Gram matrix with diagonal `2`, a nonnegative vector `a` of the
