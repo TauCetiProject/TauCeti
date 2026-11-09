@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.Probability.Martingale.Convergence
+public import TauCeti.Combinatorics.DenseGraphLimits.Kernel.CutNorm
 public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.ConditionalExpectation
 public import TauCeti.Probability.Process.PartitionFiltration
 
@@ -26,6 +27,8 @@ exponent one.
   step graphons, characterized by `TauCeti.DenseGraphLimits.countableStepGraphonAvg_def`.
 * `TauCeti.DenseGraphLimits.tendsto_eLpNorm_countableStepGraphonAvg` gives `L¹`
   convergence of canonical block averages.
+* `TauCeti.DenseGraphLimits.tendsto_cutNorm_sub_countableStepGraphonAvg` gives convergence of
+  canonical block averages in cut norm.
 
 ## References
 
@@ -95,5 +98,19 @@ theorem tendsto_eLpNorm_countableStepGraphonAvg (W : Graphon Ω μ) :
     countableStepGraphonAvg_apply] using
     (stepGraphonAvg_ae_eq_condExp (Finpartition.countablePartition Ω n)
       (fun _ hp => Finpartition.measurableSet_of_mem_countablePartition Ω n hp) W).symm
+
+/-- The canonical block-average step graphons converge to the original graphon in cut norm. -/
+theorem tendsto_cutNorm_sub_countableStepGraphonAvg (W : Graphon Ω μ) :
+    Tendsto (fun n ↦ cutNorm μ (W.toSymmKernel -
+      (countableStepGraphonAvg W n).toSymmKernel)) atTop (𝓝 0) := by
+  have h := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
+    (tendsto_eLpNorm_countableStepGraphonAvg W)
+  simp only [Function.comp_def, ENNReal.toReal_zero] at h
+  refine squeeze_zero (fun _ ↦ cutNorm_nonneg μ _) (fun n ↦ ?_) h
+  refine (cutNorm_le_toReal_eLpNorm μ _).trans (le_of_eq ?_)
+  rw [← eLpNorm_neg]
+  congr 2
+  funext z
+  simp only [SymmKernel.coe_sub, Pi.sub_apply, Pi.neg_apply, Graphon.coe_toSymmKernel, neg_sub]
 
 end TauCeti.DenseGraphLimits

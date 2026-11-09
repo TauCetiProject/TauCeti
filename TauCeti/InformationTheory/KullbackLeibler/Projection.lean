@@ -115,8 +115,7 @@ respect to `π.map f`. -/
 theorem map_fitLaw (hf : Measurable f) :
     (π.fitLaw f μ).map f = (π.map f).withDensity (μ.rnDeriv (π.map f)) := by
   rw [fitLaw_def]
-  exact map_withDensity_eq_withDensity (jac := 1) hf measurable_const (measurable_rnDeriv _ _)
-    (by simp) (by simp)
+  exact map_withDensity_comp hf (measurable_rnDeriv _ _)
 
 /-- If `μ ≪ π.map f` and `μ` has a Lebesgue decomposition with respect to `π.map f`, then
 `f` has law `μ` under `π.fitLaw f μ`. -/

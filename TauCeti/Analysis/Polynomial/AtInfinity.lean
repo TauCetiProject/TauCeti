@@ -19,11 +19,11 @@ import TauCeti.MeasureTheory.Integral.Asymptotics
 
 A monic complex polynomial `P` of degree `m` satisfies `P z / z ^ m → 1` as `z → ∞` in the
 cocompact filter of `ℂ`, which is uniform in the argument of `z`. For every complex polynomial,
-`‖P'‖² / (1 + ‖P‖²)²` is integrable on the plane, and when `P` is nonconstant `(1 + ‖P‖²)⁻¹` is
-square integrable: the first function and the square of the second decay like `‖z‖ ^ (-4)` or
-faster at infinity, while `(1 + ‖P‖²)⁻¹` itself decays only like `‖z‖ ^ (-2)` when `P` has
-degree one. These functions are the density of the pullback of the Fubini–Study area form by
-`P` and the defect of the squared modulus `‖P‖² / (1 + ‖P‖²)` from `1`.
+`‖P'‖² / (1 + ‖P‖²)²` is integrable and square integrable on the plane, and when `P` is
+nonconstant `(1 + ‖P‖²)⁻¹` is square integrable: the first function and the square of the second
+decay like `‖z‖ ^ (-4)` or faster at infinity, while `(1 + ‖P‖²)⁻¹` itself decays only like
+`‖z‖ ^ (-2)` when `P` has degree one. These functions are the density of the pullback of the
+Fubini–Study area form by `P` and the defect of the squared modulus `‖P‖² / (1 + ‖P‖²)` from `1`.
 
 The polynomial input is Mathlib's `Polynomial.isEquivalent_cobounded_leading_monomial`.
 
@@ -32,6 +32,8 @@ The polynomial input is Mathlib's `Polynomial.isEquivalent_cobounded_leading_mon
 * `Polynomial.Monic.tendsto_eval_div_pow_natDegree_cocompact`: `P z / z ^ m → 1`.
 * `Polynomial.integrable_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq`:
   `‖P'‖² / (1 + ‖P‖²)²` is integrable.
+* `Polynomial.memLp_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq`: it is also square
+  integrable.
 * `Polynomial.memLp_inv_one_add_norm_eval_sq`: `(1 + ‖P‖²)⁻¹` is square integrable when `P` is
   nonconstant.
 -/
@@ -89,25 +91,30 @@ private theorem exists_eventually_norm_bounds (hm : 0 < P.natDegree) :
   · calc ‖P.derivative.eval z‖ ^ 2 ≤ (c * ‖z‖ ^ (P.natDegree - 1)) ^ 2 := by gcongr
       _ = c ^ 2 * ‖z‖ ^ (2 * (P.natDegree - 1)) := by ring
 
-/-- For every complex polynomial `P`, the function `‖P'‖² / (1 + ‖P‖²)²`, the density of the
-pullback by `P` of the Fubini–Study area form up to a constant, is integrable on the plane. -/
-theorem integrable_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq (P : Polynomial ℂ) :
-    Integrable fun z ↦ ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 := by
-  rcases Nat.eq_zero_or_pos P.natDegree with h0 | hm
-  · simp [derivative_of_natDegree_zero h0]
-  have hcont : Continuous fun z ↦ ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 :=
-    (P.derivative.continuous.norm.pow 2).div
-      ((continuous_const.add (P.continuous.norm.pow 2)).pow 2) fun z ↦ by positivity
+-- A nonnegative continuous function on the plane with `f z (1 + ‖z‖) ^ 4 ≤ K` at infinity is
+-- integrable: it is `O((1 + ‖z‖) ^ (-4))` and `4 > 2`.
+private theorem integrable_of_eventually_mul_one_add_norm_pow_four_le {f : ℂ → ℝ} {K : ℝ}
+    (hf : Continuous f) (hf0 : ∀ z, 0 ≤ f z)
+    (hb : ∀ᶠ z in cocompact ℂ, f z * (1 + ‖z‖) ^ 4 ≤ K) : Integrable f := by
+  refine hf.locallyIntegrable.integrable_of_isBigO_one_add_norm_rpow_neg (r := 4)
+    (by simp [Complex.finrank_real_complex]; norm_num) (IsBigO.of_bound K ?_)
+  filter_upwards [hb] with z hz
+  rw [Real.norm_of_nonneg (hf0 z), Real.norm_of_nonneg (by positivity),
+    Real.rpow_neg (by positivity), Real.rpow_ofNat, ← div_eq_mul_inv,
+    le_div_iff₀ (by positivity)]
+  exact hz
+
+-- The decay `‖P'‖² / (1 + ‖P‖²)² ≤ K (1 + ‖z‖) ^ (-4)` at infinity, for `m ≥ 1`.
+private theorem exists_eventually_norm_derivative_sq_div_le (hm : 0 < P.natDegree) :
+    ∃ K : ℝ, 0 < K ∧ ∀ᶠ z : ℂ in cocompact ℂ,
+      ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 * (1 + ‖z‖) ^ 4 ≤ K := by
   obtain ⟨c, hc, hb⟩ := exists_eventually_norm_bounds hm
-  refine hcont.locallyIntegrable.integrable_of_isBigO_one_add_norm_rpow_neg (r := 4)
-    (by simp [Complex.finrank_real_complex]; norm_num) (IsBigO.of_bound (16 * c ^ 6) ?_)
+  refine ⟨16 * c ^ 6, by positivity, ?_⟩
   filter_upwards [hb] with z ⟨h₁, hr, ha, hd⟩
   obtain ⟨k, hk⟩ : ∃ k, P.natDegree = k + 1 := ⟨P.natDegree - 1, by omega⟩
   rw [hk] at ha hd
   rw [Nat.add_sub_cancel] at hd
-  rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity),
-    Real.rpow_neg (by positivity), Real.rpow_ofNat, ← div_eq_mul_inv,
-    div_le_div_iff₀ (by positivity) (by positivity)]
+  rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
   -- `‖P'‖² (1 + ‖z‖)⁴ ≲ ‖z‖ ^ (2m + 2) ≤ ‖z‖ ^ (4m) ≲ (1 + ‖P‖²)²`, using `m ≥ 1`.
   have hpow : ‖z‖ ^ (2 * k) * ‖z‖ ^ 4 ≤ (‖z‖ ^ (k + 1)) ^ 4 := by
     rw [← pow_add, ← pow_mul]
@@ -119,6 +126,42 @@ theorem integrable_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq (P : Poly
         mul_le_mul_of_nonneg_left (hpow.trans ha) (by positivity)
     _ = 16 * c ^ 6 * (1 + ‖P.eval z‖ ^ 2) ^ 2 := by ring
 
+private theorem continuous_norm_derivative_eval_sq_div (P : Polynomial ℂ) :
+    Continuous fun z ↦ ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 :=
+  (P.derivative.continuous.norm.pow 2).div
+    ((continuous_const.add (P.continuous.norm.pow 2)).pow 2) fun z ↦ by positivity
+
+/-- For every complex polynomial `P`, the function `‖P'‖² / (1 + ‖P‖²)²`, the density of the
+pullback by `P` of the Fubini–Study area form up to a constant, is integrable on the plane. -/
+theorem integrable_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq (P : Polynomial ℂ) :
+    Integrable fun z ↦ ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 := by
+  rcases Nat.eq_zero_or_pos P.natDegree with h0 | hm
+  · simp [derivative_of_natDegree_zero h0]
+  obtain ⟨K, -, hb⟩ := exists_eventually_norm_derivative_sq_div_le hm
+  exact integrable_of_eventually_mul_one_add_norm_pow_four_le
+    (continuous_norm_derivative_eval_sq_div P) (fun z ↦ by positivity) hb
+
+/-- For every complex polynomial `P`, the function `‖P'‖² / (1 + ‖P‖²)²` is square integrable on
+the plane. -/
+theorem memLp_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq (P : Polynomial ℂ) :
+    MemLp (fun z ↦ ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2) 2 := by
+  have hcont := continuous_norm_derivative_eval_sq_div P
+  rw [memLp_two_iff_integrable_sq hcont.aestronglyMeasurable]
+  rcases Nat.eq_zero_or_pos P.natDegree with h0 | hm
+  · simp [derivative_of_natDegree_zero h0]
+  obtain ⟨K, hK, hb⟩ := exists_eventually_norm_derivative_sq_div_le hm
+  refine integrable_of_eventually_mul_one_add_norm_pow_four_le (K := K ^ 2) (hcont.pow 2)
+    (fun z ↦ by positivity) ?_
+  filter_upwards [hb] with z hz
+  set q := ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2
+  have hq : 0 ≤ q := by positivity
+  have h1 : 1 ≤ (1 + ‖z‖) ^ 4 := one_le_pow₀ (by linarith [norm_nonneg z])
+  -- `q (1 + ‖z‖)⁴ ≤ K` gives `q ≤ K`, hence `q² (1 + ‖z‖)⁴ ≤ K²`.
+  have hqK : q ≤ K := le_trans (le_mul_of_one_le_right hq h1) hz
+  calc q ^ 2 * (1 + ‖z‖) ^ 4 = q * (q * (1 + ‖z‖) ^ 4) := by ring
+    _ ≤ K * K := mul_le_mul hqK hz (by positivity) hK.le
+    _ = K ^ 2 := by ring
+
 /-- For a complex polynomial `P` of degree `m ≥ 1`, the function `(1 + ‖P‖²)⁻¹` is square
 integrable on the plane. -/
 theorem memLp_inv_one_add_norm_eval_sq (hm : 0 < P.natDegree) :
@@ -128,12 +171,10 @@ theorem memLp_inv_one_add_norm_eval_sq (hm : 0 < P.natDegree) :
       (by positivity : (0 : ℝ) < 1 + ‖P.eval z‖ ^ 2).ne'
   rw [memLp_two_iff_integrable_sq hcont.aestronglyMeasurable]
   obtain ⟨c, hc, hb⟩ := exists_eventually_norm_bounds hm
-  refine (hcont.pow 2).locallyIntegrable.integrable_of_isBigO_one_add_norm_rpow_neg (r := 4)
-    (by simp [Complex.finrank_real_complex]; norm_num) (IsBigO.of_bound (16 * c ^ 4) ?_)
+  refine integrable_of_eventually_mul_one_add_norm_pow_four_le (K := 16 * c ^ 4) (hcont.pow 2)
+    (fun z ↦ by positivity) ?_
   filter_upwards [hb] with z ⟨h₁, hr, ha, _⟩
-  rw [Pi.pow_apply, Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity),
-    Real.rpow_neg (by positivity), Real.rpow_ofNat, inv_pow, ← one_div, ← div_eq_mul_inv,
-    div_le_div_iff₀ (by positivity) (by positivity)]
+  rw [inv_pow, inv_mul_le_iff₀ (by positivity)]
   have hpow : ‖z‖ ^ 4 ≤ (‖z‖ ^ P.natDegree) ^ 4 := by
     rw [← pow_mul]
     exact pow_le_pow_right₀ h₁ (by omega)

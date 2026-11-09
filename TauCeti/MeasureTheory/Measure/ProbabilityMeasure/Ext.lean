@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.MeasureTheory.Measure.Typeclasses.ZeroOne
+import TauCeti.MeasureTheory.Measure.GiryMonad
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Coding
 import Mathlib.MeasureTheory.Constructions.Projective
 import Mathlib.MeasureTheory.SetAlgebra
@@ -133,18 +134,6 @@ private theorem measurable_evalReal : Measurable (evalReal (α := α)) :=
   Measurable.of_eval fun s => by
     simpa only [evalReal_apply] using measurable_probabilityMeasure_apply_real s.2
 
-/-- The Giry σ-algebra on `Measure α` is the pullback of the product σ-algebra along the
-all-evaluations map. This is a repackaging of the definition: the instance is already an `iSup`
-of comaps of the individual evaluations. -/
-private theorem measurableSpace_measure_eq_comap_eval :
-    (Measure.instMeasurableSpace : MeasurableSpace (Measure α))
-      = MeasurableSpace.comap (fun μ : Measure α => fun s : MeasIdx α => μ s.1)
-          MeasurableSpace.pi := by
-  rw [MeasurableSpace.pi, MeasurableSpace.comap_iSup]
-  simp only [MeasurableSpace.comap_comp, Function.comp_def]
-  rw [Measure.instMeasurableSpace, iSup_subtype]
-  simp only [← BorelSpace.measurable_eq (α := ENNReal)]
-
 /-- Expresses the `ℝ≥0∞`-valued evaluation `P ↦ (P : Measure α) s` as `ENNReal.ofReal` of its
 real-valued counterpart `evalReal`. -/
 private theorem coe_apply_eq_ofReal_evalReal (s : MeasIdx α) :
@@ -169,7 +158,8 @@ private theorem measurableSpace_probabilityMeasure_eq_comap :
   have hinst : (inferInstance : MeasurableSpace (ProbabilityMeasure α))
       = MeasurableSpace.comap Subtype.val Measure.instMeasurableSpace := rfl
   rw [hinst]
-  rw [measurableSpace_measure_eq_comap_eval, MeasurableSpace.comap_comp, MeasurableSpace.pi,
+  rw [_root_.MeasureTheory.Measure.measurableSpace_eq_comap_eval,
+    MeasurableSpace.comap_comp, MeasurableSpace.pi,
     MeasurableSpace.comap_iSup]
   refine iSup_le fun s => ?_
   rw [MeasurableSpace.comap_comp]
