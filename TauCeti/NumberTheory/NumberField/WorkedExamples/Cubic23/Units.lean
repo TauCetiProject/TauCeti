@@ -398,7 +398,7 @@ theorem cubicUnitEliminationCertificate (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 +
     constructor
     · exact_mod_cast hb_lower_real
     · exact_mod_cast hb_upper_real
-  have hpoly := Polynomial.Monic.eq_X_pow_three_add_of_natDegree_eq_three hmonic hdeg
+  have hpoly := Polynomial.Monic.eq_X_pow_three_add hmonic hdeg
   have heval (x : ℝ) : aeval x g = x ^ 3 + g.coeff 2 * x ^ 2 + g.coeff 1 * x + g.coeff 0 := by
     conv_lhs => rw [hpoly]
     simp
