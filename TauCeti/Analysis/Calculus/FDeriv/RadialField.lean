@@ -13,10 +13,10 @@ import Mathlib.Tactic.Positivity
 # Radial vector fields
 
 For a scalar profile `c`, the radial field `y ↦ c (‖y - x₀‖ ^ 2) • (y - x₀)` has Fréchet derivative
-`c (‖x - x₀‖ ^ 2) • id + (c' (‖x - x₀‖ ^ 2) • 2 • innerSL ℝ (x - x₀)).smulRight (x - x₀)`
-(`HasDerivAt.hasFDerivAt_smul_sub_norm_sq`). If `c` and `c'` are bounded and vanish beyond the
-squared radius `R ^ 2`, then the field and this derivative are bounded in norm
-(`TauCeti.norm_smul_sub_le_of_eq_zero_of_sq_lt`,
+`c (‖x - x₀‖ ^ 2) • id + (c' • 2 • innerSL ℝ (x - x₀)).smulRight (x - x₀)`, where `c'` is the
+derivative of `c` at `‖x - x₀‖ ^ 2` (`HasDerivAt.hasFDerivAt_smul_sub_norm_sq`). If `c` and its
+derivative function `c'` are bounded and vanish beyond the squared radius `R ^ 2`, then the field
+and this derivative are bounded in norm (`TauCeti.norm_smul_sub_le_of_eq_zero_of_sq_lt`,
 `TauCeti.norm_smul_id_add_smulRight_le_of_eq_zero_of_sq_lt`).
 -/
 

@@ -35,6 +35,9 @@ norm-preserving image of the corresponding family of derivatives. Over `ℝ` it 
 instance, `φ ↦ ∇ φ` is linear on real-valued test functions, and `‖∇ φ‖` may be estimated by any
 theorem about `‖Dφ‖`.
 
+The file also computes the gradient of the squared distance `y ↦ ‖y - x₀‖ ^ 2` and records the
+chain rule for the gradient of a real profile composed with a real function.
+
 ## Main declarations
 
 * `TauCeti.norm_gradient_eq_norm_fderiv`: `‖∇ f x‖ = ‖fderiv 𝕜 f x‖`.
@@ -54,6 +57,10 @@ theorem about `‖Dφ‖`.
   continuous at `x`, and its gradient is differentiable near `x`.
 * `TauCeti.hasGradientAt_mul_norm_sq_add` and `TauCeti.gradient_mul_norm_sq_add`: over `ℝ`, the
   quadratic `y ↦ (a / 2) ‖y‖² + c` has gradient `a • y` at `y`.
+* `TauCeti.hasGradientAt_norm_sq_sub` and `TauCeti.gradient_norm_sq_sub`: over `ℝ`, the function
+  `y ↦ ‖y - x₀‖ ^ 2` has gradient `2 • (x - x₀)` at `x`.
+* `HasDerivAt.comp_hasGradientAt`: over `ℝ`, the chain rule for the gradient of `f ∘ g`, namely
+  `f' • g'` when `f` has derivative `f'` at `g x` and `g` has gradient `g'` at `x`.
 * `TauCeti.isSymmetric_of_hasFDerivAt_gradient`: over `ℝ`, the derivative of the gradient (the
   Hessian as an endomorphism of `E`) is a symmetric operator wherever it exists, provided the
   function is differentiable nearby.
