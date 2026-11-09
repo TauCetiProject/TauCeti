@@ -280,45 +280,6 @@ theorem exists_rankAtStalk_tensorProduct_eq {R T' M : Type*} [CommRing R] [CommR
 
 end TauCeti.Module
 
-namespace Submodule
-
-/-- The map `φ` induces a linear isomorphism from the quotient of `P` by the preimage of `F`
-under `φ` onto the subquotient `(F ⊔ range φ) ⧸ F`. For `φ = p.subtype` this is the second
-isomorphism theorem `Submodule.quotientInfEquivSupQuotient`. -/
-noncomputable def quotientComapEquivSupQuotient {R : Type*} [Ring R]
-    {P M : Type*} [AddCommGroup P] [Module R P] [AddCommGroup M] [Module R M]
-    (F : Submodule R M) (φ : P →ₗ[R] M) :
-    (P ⧸ F.comap φ) ≃ₗ[R]
-      (F ⊔ LinearMap.range φ : Submodule R M) ⧸
-        F.submoduleOf (F ⊔ LinearMap.range φ : Submodule R M) :=
-  let ψ : P →ₗ[R] (F ⊔ LinearMap.range φ : Submodule R M) ⧸
-      F.submoduleOf (F ⊔ LinearMap.range φ : Submodule R M) :=
-    (F.submoduleOf (F ⊔ LinearMap.range φ : Submodule R M)).mkQ ∘ₗ
-      φ.codRestrict _ fun c ↦ Submodule.mem_sup_right ⟨c, rfl⟩
-  Submodule.quotEquivOfEq _ _ (by
-    ext c
-    simp only [LinearMap.mem_ker, ψ, LinearMap.comp_apply, Submodule.mkQ_apply,
-      Submodule.Quotient.mk_eq_zero]
-    simp only [Submodule.submoduleOf, Submodule.mem_comap, LinearMap.codRestrict_apply,
-      Submodule.coe_subtype]) ≪≫ₗ
-  ψ.quotKerEquivOfSurjective (by
-    apply LinearMap.range_eq_top.mp
-    simp only [ψ, LinearMap.range_comp, Submodule.map_mkQ_eq_top, LinearMap.range_codRestrict]
-    exact (Submodule.submoduleOf_sup_of_le le_sup_left le_sup_right).symm.trans
-      (Submodule.submoduleOf_eq_top.mpr le_rfl))
-
-@[simp]
-theorem quotientComapEquivSupQuotient_apply_mk {R : Type*} [Ring R]
-    {P M : Type*} [AddCommGroup P] [Module R P] [AddCommGroup M] [Module R M]
-    (F : Submodule R M) (φ : P →ₗ[R] M) (c : P) :
-    quotientComapEquivSupQuotient F φ (Submodule.Quotient.mk c) =
-      Submodule.Quotient.mk (p := F.submoduleOf (F ⊔ LinearMap.range φ : Submodule R M))
-        ⟨φ c, Submodule.mem_sup_right ⟨c, rfl⟩⟩ := by
-  simp [quotientComapEquivSupQuotient]
-  rfl
-
-end Submodule
-
 namespace PrimeSpectrum
 
 open Module

@@ -7,7 +7,8 @@ module
 
 public import Mathlib.RingTheory.FiniteType
 public import TauCeti.Algebra.Polynomial.XPow.Span
-public import TauCeti.Data.Set.Lattice
+public import TauCeti.LinearAlgebra.Submodule.Quotient
+public import TauCeti.Order.CompleteLattice.Basic
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.RingTheory.Spectrum.Prime.Topology
 
