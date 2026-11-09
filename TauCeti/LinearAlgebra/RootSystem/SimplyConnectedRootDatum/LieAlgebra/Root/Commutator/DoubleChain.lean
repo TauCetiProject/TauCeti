@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.DoublyLaced
 import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
 import TauCeti.RingTheory.Nilpotent.ChevalleyCommutator
 import TauCeti.RingTheory.Nilpotent.RootString.Basic
@@ -28,6 +27,9 @@ The proof applies the integral divided-power identity
 The operator transport follows
 `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupPoints_mul_of_lie_lie_eq`, using
 all-root divided-power stability rather than assuming that the roots are simple generators.
+The element-commutator formula specializes
+`TauCeti.DynkinType.commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq`, discharging
+its non-root hypotheses from the double chain.
 
 ## References
 
@@ -138,21 +140,13 @@ theorem commutatorElement_chevalleyRootSubgroup_of_double_chain (h : t ≠ .G2)
       chevalleyRootSubgroup ρ M hM hnil δ A
         (.ofAdd (((t.structureConstant ht α β * (t.structureConstant ht α γ / 2) : ℤ) : A) *
           (u ^ 2 * v))) := by
-  have hcomm {i j : Fin t.numRoots} (hz : ⁅t.chevalleySystem ht i, t.chevalleySystem ht j⁆ = 0)
-      (a b : A) : Commute (chevalleyRootSubgroup ρ M hM hnil i A (.ofAdd a))
-        (chevalleyRootSubgroup ρ M hM hnil j A (.ofAdd b)) := by
-    apply Units.ext
-    simp only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd]
-    exact commute_baseChangeExp M (commute_of_lie_eq_zero ρ hz) _ _ _ _
-  have hβγ := root_add_middle_notMem_of_double_chain h hγ hδ
-  have hβδ := root_add_last_notMem_of_root_eq_add hγ hδ
-  have hc := (hcomm (lie_chevalleySystem_eq_zero hβγ.1 hβγ.2) v
-    ((t.structureConstant ht α β : A) * (u * v))).mul_right
-    (hcomm (lie_chevalleySystem_eq_zero hβδ.1 hβδ.2) v
-      (((t.structureConstant ht α β * (t.structureConstant ht α γ / 2) : ℤ) : A) * (u ^ 2 * v)))
-  rw [commutatorElement_def, chevalleyRootSubgroup_mul_of_double_chain ρ M hM hnil h hγ hδ,
-    mul_inv_cancel_right, mul_assoc _ _ (chevalleyRootSubgroup ρ M hM hnil δ A _), hc.eq,
-    mul_inv_cancel_right]
+  have hdiv : (2 : ℤ) ∣ t.structureConstant ht α γ := by
+    rcases structureConstant_eq_two_or_eq_neg_two_of_double_chain h hγ hδ with hc | hc <;>
+      simp [hc]
+  simpa only [Int.mul_ediv_assoc _ hdiv] using
+    commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq ρ M hM hnil hγ hδ
+      (root_add_last_notMem_of_double_chain h hγ hδ).1
+      (root_add_middle_notMem_of_double_chain h hγ hδ).1 A u v
 
 end
 
