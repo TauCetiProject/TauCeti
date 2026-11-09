@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.EssentialImage
 public import Mathlib.CategoryTheory.Idempotents.Basic
 public import Mathlib.CategoryTheory.Limits.Shapes.ZeroMorphisms
 public import Mathlib.CategoryTheory.ObjectProperty.Retract
@@ -23,10 +24,16 @@ The zero objects form a property stable under retracts, and stability under retr
 by inverse images along functors; in particular, the objects that a functor sends to zero form a
 property stable under retracts.
 
+Conversely, the essential image of a fully faithful functor out of an idempotent-complete category
+is stable under retracts: a retract of `F.obj Z` is cut out by an idempotent of `F.obj Z`, which
+comes from an idempotent of `Z`, and its splitting in the source is sent to the retract.
+
 ## Main results
 
 * `CategoryTheory.ObjectProperty.isIdempotentComplete_fullSubcategory`: the full subcategory of a
   property stable under retracts in an idempotent-complete category is idempotent complete.
+* `CategoryTheory.Functor.essImage_isStableUnderRetracts`: the essential image of a fully faithful
+  functor out of an idempotent-complete category is stable under retracts.
 -/
 
 public section
@@ -57,3 +64,25 @@ instance {C D : Type*} [Category* C] [Category* D] (P : ObjectProperty D)
   of_retract h hY := P.prop_of_retract (h.map F) hY
 
 end CategoryTheory.ObjectProperty
+
+namespace CategoryTheory.Functor
+
+/-- **The essential image of a fully faithful functor out of an idempotent-complete category is
+stable under retracts.** -/
+instance essImage_isStableUnderRetracts {C D : Type*} [Category* C] [Category* D]
+    [IsIdempotentComplete C] (F : C ⥤ D) [F.Full] [F.Faithful] :
+    F.essImage.IsStableUnderRetracts where
+  of_retract {X Y} h := by
+    rintro ⟨Z, ⟨e⟩⟩
+    let h' := h.trans e.symm.retract
+    obtain ⟨p, hp⟩ := F.map_surjective (h'.r ≫ h'.i)
+    have hpp : p ≫ p = p := F.map_injective (by simp [hp])
+    obtain ⟨W, i, q, h₁, h₂⟩ := IsIdempotentComplete.idempotents_split Z p hpp
+    have hri : h'.r ≫ h'.i = F.map (q ≫ i) := by rw [h₂, hp]
+    refine ⟨W, ⟨⟨F.map i ≫ h'.r, h'.i ≫ F.map q, ?_, ?_⟩⟩⟩
+    · rw [Category.assoc, reassoc_of% hri, ← F.map_comp, ← F.map_comp]
+      simp [h₁]
+    · rw [Category.assoc, ← F.map_comp_assoc, ← hri]
+      simp
+
+end CategoryTheory.Functor

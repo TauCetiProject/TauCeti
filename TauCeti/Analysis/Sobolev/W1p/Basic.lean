@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.TestFunctionLp
+public import TauCeti.Analysis.Sobolev.TestFunctionLp.Basic
 import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.MeasureTheory.Function.Lp.Norm
 public import Mathlib.MeasureTheory.Function.Holder
@@ -75,6 +75,8 @@ space. The inner product is needed to interpret the gradient as a weak derivativ
   of `U`.
 * `TauCeti.W1p.exists_value_gradient_ae_eq_continuousLinearMap`: on a bounded `Ω`, a continuous
   linear functional is an element of `W^{1,p}(Ω)` whose weak gradient is its dual vector.
+* `TauCeti.W1p.exists_value_gradient_ae_eq_of_hasCompactSupport`: a compactly supported `C¹`
+  function is an element of `W^{1,p}(E)`, with the `Lᵖ` norms of the function and its gradient.
 * `TauCeti.W1p.ofExponentLE`: on a domain of finite measure, `W^{1,q}(Ω) ⊆ W^{1,p}(Ω)` for
   `p ≤ q`.
 
@@ -524,11 +526,6 @@ theorem W1p.integrable_norm_gradient_sq (u : W1p mu Omega 2) :
   (memLp_two_iff_integrable_sq_norm (Lp.memLp (W1p.gradient u)).aestronglyMeasurable).1
     (Lp.memLp (W1p.gradient u))
 
-/-- The squared pointwise value of a real Sobolev function is integrable. -/
-theorem W1p.integrable_value_sq (u : W1p mu Omega 2) :
-    Integrable (fun x => (W1p.value u x) ^ 2) (mu.restrict Omega) :=
-  (Lp.memLp (W1p.value u)).integrable_sq
-
 /-- The integral of the squared Sobolev gradient is its squared `L²` norm. -/
 theorem W1p.integral_norm_gradient_sq_eq_norm_gradient_sq (u : W1p mu Omega 2) :
     ∫ x in Omega, ‖W1p.gradient u x‖ ^ 2 ∂mu = ‖W1p.gradient u‖ ^ 2 :=
@@ -650,6 +647,28 @@ theorem W1p.coe_ae_eq_zero_of_value_ae_eq_zero {V : Opens E} (hV : V ≤ Omega)
   exact (WithLp.ext_iff _).2 (Prod.ext ((hv' (hV hxV)).symm.trans (hv hxV))
     ((hg' (hV hxV)).symm.trans (hg hxV)))
 
+/-- **The jet of a Sobolev function vanishes off the support of any representative of its value.**
+If the value of `u` agrees almost everywhere on `Ω` with `f`, then outside `tsupport f` the value
+vanishes on the open set `Ω ∖ tsupport f`, hence so does the whole jet
+(`TauCeti.W1p.coe_ae_eq_zero_of_value_ae_eq_zero`). -/
+theorem W1p.coe_ae_eq_zero_of_not_mem_tsupport {u : W1p mu Omega p} {f : E → ℝ}
+    (hu : W1p.value u =ᵐ[mu.restrict (Omega : Set E)] f) :
+    ∀ᵐ x ∂mu.restrict (Omega : Set E),
+      x ∉ tsupport f → (u : Sobolev1JetLp mu Omega p) x = 0 := by
+  let V : Opens E := ⟨(tsupport f)ᶜ ∩ (Omega : Set E),
+    (isClosed_tsupport f).isOpen_compl.inter Omega.isOpen⟩
+  have hV : ∀ᵐ x ∂mu.restrict (V : Set E), W1p.value u x = 0 := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset (Set.inter_subset_right :
+        (V : Set E) ⊆ Omega) hu, ae_restrict_mem V.isOpen.measurableSet] with x hx hxV
+    rw [hx]
+    exact image_eq_zero_of_notMem_tsupport hxV.1
+  have hjet := W1p.coe_ae_eq_zero_of_value_ae_eq_zero
+    (Set.inter_subset_right : (V : Set E) ⊆ Omega) hV
+  rw [ae_restrict_iff' V.isOpen.measurableSet] at hjet
+  rw [ae_restrict_iff' Omega.isOpen.measurableSet]
+  filter_upwards [hjet] with x hx hxΩ hxt
+  exact hx ⟨hxt, hxΩ⟩
+
 /-- Two Sobolev functions are equal when their `Lᵖ` value components are equal.  Uniqueness of
 weak derivatives determines the gradient component. -/
 @[ext]
@@ -752,6 +771,22 @@ theorem W1p.exists_value_gradient_ae_eq_continuousLinearMap
     gradient_eq fun _ => hasGradientAt_iff_hasFDerivAt.2 (by simpa using ℓ.hasFDerivAt)
   simpa only [hgrad] using W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact isOpen_univ
     ℓ.contDiff.contDiffOn hΩ.isCompact_closure subset_closure (Set.subset_univ _)
+
+open scoped Gradient in
+/-- **A compactly supported `C¹` function is a Sobolev function on the whole space.** It is
+represented by an element of `W^{1,p}(E)` whose weak gradient is the classical gradient `∇u`, and
+whose value and gradient components have the `Lᵖ` norms of `u` and of `∇u`. -/
+theorem W1p.exists_value_gradient_ae_eq_of_hasCompactSupport {u : E → ℝ} (hu : ContDiff ℝ 1 u)
+    (hus : HasCompactSupport u) :
+    ∃ v : W1p mu ⊤ p, W1p.value v =ᵐ[mu] u ∧ W1p.gradient v =ᵐ[mu] ∇ u ∧
+      ‖W1p.value v‖ = (eLpNorm u p mu).toReal ∧ ‖W1p.gradient v‖ = (eLpNorm (∇ u) p mu).toReal := by
+  have hμ : mu.restrict ((⊤ : Opens E) : Set E) = mu := by simp
+  obtain ⟨v, hv, hg⟩ := W1p.exists_value_gradient_ae_eq_of_contDiffOn (p := p) hu.contDiffOn
+    (by rw [hμ]; exact hu.continuous.memLp_of_hasCompactSupport hus)
+    (by rw [hμ]; exact hus.memLp_gradient hu)
+  refine ⟨v, by simpa only [hμ] using hv, by simpa only [hμ] using hg, ?_, ?_⟩
+  · rw [Lp.norm_def, eLpNorm_congr_ae hv, hμ]
+  · rw [Lp.norm_def, eLpNorm_congr_ae hg, hμ]
 
 end
 
