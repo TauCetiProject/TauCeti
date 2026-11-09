@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.LocalField.Norm.Basic
 /-!
 # Normalized absolute values under extension of adic completions
 
-Let `R ⊆ B` be infinite Dedekind domains with finite quotients and fraction fields `K ⊆ L`.
+Let `R ⊆ B` be Dedekind domains with finite quotients and fraction fields `K ⊆ L`.
 For height-one primes `w ∣ v`, the canonical map `K_v → L_w` raises the residue-cardinality
 normalized absolute value to the local degree `[L_w : K_v]`. In particular, this map need
 not preserve the norm.
