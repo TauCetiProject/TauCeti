@@ -39,14 +39,9 @@ entry is untouched, so the coprimality condition cutting out `Δ₀(N)` transfer
 Integrality of the new upper-right entry is precisely the hypothesis `N ∣ A 1 0`.
 
 Beyond the anti-involution itself, this file proves that `ι` preserves determinants and fixes
-the double coset of any `x ∈ Δ₀(N)` whose determinant is coprime to the level, or divides a
-power of it. These are the good-prime and bad-prime extremes of the hypothesis
-`HeckeCosetModule.mul_comm_of_antiInvolution` takes for commutativity of
-`R(Γ₀(N), Δ₀(N))` (Shimura, Proposition 3.8); a mixed determinant needs both arguments at once.
-
-A second criterion asks nothing of the determinant as a whole, only that the upper-left entry
-of an integral witness be coprime to it. That one is entrywise; the bad-prime criterion is
-recovered from it, since inside `Δ₀(N)` the upper-left entry is already a unit mod `N`.
+the double coset of any `x ∈ Δ₀(N)` whose determinant is coprime to the level. This is the
+good-prime case of the hypothesis `HeckeCosetModule.mul_comm_of_antiInvolution` takes for
+commutativity of `R(Γ₀(N), Δ₀(N))` (Shimura, Proposition 3.8).
 
 An arbitrary determinant is then settled here, by a single argument that needs no case analysis:
 a primitive witness of determinant `m` and its entry swap, which is primitive of the same
@@ -91,8 +86,7 @@ commutative semiring.
   [`HeckeRIngs/GLn/CongruenceHecke/AtkinLehner.lean`](https://github.com/CBirkbeck/AINTLIB),
   declarations `wN`, `Gamma0_AL_hom`, `Gamma0_AL_involutive`, `Gamma0_AL_map_H`,
   `Gamma0_AL_map_Δ` and `Gamma0_antiInvolution`, and — for the results added here —
-  `Gamma0_AL_bar_det`, `bar_eq_SL2_conj`, `Gamma0_AL_in_DC_coprime`, `Gamma0_AL_in_DC_bad`,
-  `Gamma0_AL_in_DC_of_gcd_a00_m_coprime`, `Gamma0_AL_in_DC_of_smul`,
+  `Gamma0_AL_bar_det`, `bar_eq_SL2_conj`, `Gamma0_AL_in_DC_coprime`, `Gamma0_AL_in_DC_of_smul`,
   `Gamma0_AL_in_DC_primitive`, `Gamma0_AL_in_doubleCoset`, `Gamma0_onHeckeCoset_eq` and
   `instCommRing_Gamma0`, all Apache-2.0 at commit
   `2baa76f742bdb4fb8ee323fabba41203bd390e08`. The source states its own transpose equivalence
