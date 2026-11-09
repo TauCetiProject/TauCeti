@@ -774,17 +774,15 @@ group on an inner product space is conjugate, by a continuous linear automorphis
 to one preserving the inner product.
 
 This is `ContRepresentation.exists_isUnitary_congr` with all of its compact-group
-hypotheses discharged: the statement mentions neither a topology on `G` nor a measure, so the proof
-installs the discrete topology and the Borel structure it averages against — a finite discrete
-group is compact and every representation of it is continuous by `continuous_of_discreteTopology` —
-and the caller is left with a bare finite group. The form being averaged is the explicit
+hypotheses discharged: the statement mentions no topology on `G`, so the proof installs the
+discrete topology — a finite discrete group is compact and every representation of it is
+continuous by `continuous_of_discreteTopology` — and the caller is left with a bare finite group.
+The form being averaged is the explicit
 `|G|⁻¹ ∑ g, ⟪π g ·, π g ·⟫` of `ContRepresentation.inner_gramOperator_eq_inv_mul_sum`. -/
 theorem exists_isUnitary_congr_of_finite (π : ContRepresentation 𝕜 G V) :
     ∃ e : V ≃L[𝕜] V, IsUnitary (ContinuousLinearEquiv.congr e π) := by
   let _ : TopologicalSpace G := ⊥
   have _ : DiscreteTopology G := ⟨rfl⟩
-  let _ : MeasurableSpace G := borel G
-  have _ : BorelSpace G := ⟨rfl⟩
   exact exists_isUnitary_congr π continuous_of_discreteTopology
 
 /-- **Maschke's theorem in orthogonal form.** A finite-dimensional representation `π` of a finite
