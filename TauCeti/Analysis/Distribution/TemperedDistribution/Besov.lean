@@ -41,8 +41,10 @@ are bounded on `Lᵖ` uniformly in `j`.
   `TemperedDistribution.besovENorm_smul`: the norm axioms.
 * `TemperedDistribution.besovENorm_le_of_smoothness_le`,
   `TemperedDistribution.besovENorm_le_of_exponent_ge`: monotonicity in `s` and in `q`.
-* `TemperedDistribution.besovENorm_le_mul_of_smoothness_lt`: `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for
-  `s' < s`, with an explicit finite constant.
+* `TemperedDistribution.besovENorm_le_eLpNorm_pow_mul_besovENorm`: the bound
+  `‖u‖_{B^{s'}_{p,q'}} ≤ ‖(2^{(s' - s) j})_j‖_{ℓ^{q'}} ‖u‖_{B^s_{p,q}}`, whose constant is finite
+  for `s' < s`.
+* `TemperedDistribution.MemBesov.of_smoothness_lt`: `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' < s`.
 * `TemperedDistribution.exists_besovENorm_le_mul_enorm`: `Lᵖ ⊆ B⁰_{p,∞}`.
 
 ## References
@@ -71,7 +73,7 @@ variable (s p q) in
 distribution, in `ℝ≥0∞`, for the Littlewood–Paley blocks `Δⱼ` built from `φ`. -/
 def besovENorm (u : 𝓢'(E, F)) : ℝ≥0∞ :=
   MeasureTheory.eLpNorm
-    (fun j : ℕ ↦ 2 ^ (s * j) * eLpNorm p (littlewoodPaleyBlock F φ j u)) q .count
+    (fun j : ℕ ↦ 2 ^ (s * j) * eLpNorm (littlewoodPaleyBlock F φ j u) p) q .count
 
 variable (s p q) in
 /-- A tempered distribution lies in the **Besov space** `B^s_{p,q}` when its Besov norm is finite.
@@ -82,7 +84,7 @@ def MemBesov (u : 𝓢'(E, F)) : Prop :=
 /-- The defining formula of the Besov norm as the `ℓ^q` norm of the weighted block norms. -/
 theorem besovENorm_def (u : 𝓢'(E, F)) :
     besovENorm φ s p q u = MeasureTheory.eLpNorm
-      (fun j : ℕ ↦ 2 ^ (s * j) * eLpNorm p (littlewoodPaleyBlock F φ j u)) q .count :=
+      (fun j : ℕ ↦ 2 ^ (s * j) * eLpNorm (littlewoodPaleyBlock F φ j u) p) q .count :=
   (rfl)
 
 theorem memBesov_iff {u : 𝓢'(E, F)} : MemBesov φ s p q u ↔ besovENorm φ s p q u < ∞ :=
@@ -90,7 +92,7 @@ theorem memBesov_iff {u : 𝓢'(E, F)} : MemBesov φ s p q u ↔ besovENorm φ s
 
 /-- For `q = ∞` the Besov norm is the supremum `sup_j 2^{js} ‖Δⱼ u‖_p`. -/
 theorem besovENorm_top (u : 𝓢'(E, F)) :
-    besovENorm φ s p ∞ u = ⨆ j : ℕ, 2 ^ (s * j) * eLpNorm p (littlewoodPaleyBlock F φ j u) := by
+    besovENorm φ s p ∞ u = ⨆ j : ℕ, 2 ^ (s * j) * eLpNorm (littlewoodPaleyBlock F φ j u) p := by
   rw [besovENorm, MeasureTheory.eLpNorm_exponent_top
     (MeasureTheory.StronglyMeasurable.of_discrete.aestronglyMeasurable),
     MeasureTheory.eLpNormEssSup_count]
@@ -99,7 +101,7 @@ theorem besovENorm_top (u : 𝓢'(E, F)) :
 /-- For `0 < q < ∞` the Besov norm is `(∑ⱼ (2^{js} ‖Δⱼ u‖_p)^q)^{1/q}`. -/
 theorem besovENorm_eq_tsum (hq0 : q ≠ 0) (hq : q ≠ ∞) (u : 𝓢'(E, F)) :
     besovENorm φ s p q u = (∑' j : ℕ,
-      (2 ^ (s * j) * eLpNorm p (littlewoodPaleyBlock F φ j u)) ^ q.toReal) ^ (1 / q.toReal) := by
+      (2 ^ (s * j) * eLpNorm (littlewoodPaleyBlock F φ j u) p) ^ q.toReal) ^ (1 / q.toReal) := by
   rw [besovENorm, MeasureTheory.eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq
     (MeasureTheory.StronglyMeasurable.of_discrete.aestronglyMeasurable),
     MeasureTheory.lintegral_count]
@@ -107,9 +109,9 @@ theorem besovENorm_eq_tsum (hq0 : q ≠ 0) (hq : q ≠ ∞) (u : 𝓢'(E, F)) :
 
 /-- Each weighted block is bounded by the Besov norm: `2^{js} ‖Δⱼ u‖_p ≤ ‖u‖_{B^s_{p,q}}`. -/
 theorem rpow_mul_eLpNorm_le_besovENorm (hq : q ≠ 0) (u : 𝓢'(E, F)) (j : ℕ) :
-    2 ^ (s * j) * eLpNorm p (littlewoodPaleyBlock F φ j u) ≤ besovENorm φ s p q u := by
+    2 ^ (s * j) * eLpNorm (littlewoodPaleyBlock F φ j u) p ≤ besovENorm φ s p q u := by
   simpa [besovENorm] using MeasureTheory.enorm_le_eLpNorm_count
-    (fun j : ℕ ↦ (2 : ℝ≥0∞) ^ (s * j) * eLpNorm p (littlewoodPaleyBlock F φ j u)) j hq
+    (fun j : ℕ ↦ (2 : ℝ≥0∞) ^ (s * j) * eLpNorm (littlewoodPaleyBlock F φ j u) p) j hq
 
 @[simp]
 theorem besovENorm_zero : besovENorm φ s p q (0 : 𝓢'(E, F)) = 0 := by
@@ -167,10 +169,10 @@ theorem besovENorm_le_of_exponent_ge (hq : q ≠ 0) (hqq' : q ≤ q') (u : 𝓢'
     besovENorm φ s p q' u ≤ besovENorm φ s p q u :=
   MeasureTheory.eLpNorm_count_le_of_exponent_ge hq hqq'
 
-/-- **Strict loss of smoothness absorbs the summability exponent.** For `s' < s` and any `q, q'`,
-`‖u‖_{B^{s'}_{p,q'}} ≤ ‖(2^{(s' - s) j})_j‖_{ℓ^{q'}} ‖u‖_{B^s_{p,q}}`; the geometric constant is
-finite (`MeasureTheory.eLpNorm_pow_count_lt_top`). -/
-theorem besovENorm_le_mul_of_smoothness_lt (hq : q ≠ 0) (u : 𝓢'(E, F)) :
+/-- **Trading smoothness for the summability exponent.** For any `s, s'` and `q ≠ 0`, `q'`,
+`‖u‖_{B^{s'}_{p,q'}} ≤ ‖(2^{(s' - s) j})_j‖_{ℓ^{q'}} ‖u‖_{B^s_{p,q}}`. The geometric constant is
+finite for `s' < s` (see `TemperedDistribution.MemBesov.of_smoothness_lt`). -/
+theorem besovENorm_le_eLpNorm_pow_mul_besovENorm (hq : q ≠ 0) (u : 𝓢'(E, F)) :
     besovENorm φ s' p q' u ≤
       MeasureTheory.eLpNorm (fun j : ℕ ↦ ((2 : ℝ≥0∞) ^ (s' - s)) ^ j) q' .count *
         besovENorm φ s p q u := by
@@ -235,10 +237,12 @@ theorem MemBesov.of_exponent_ge (hq : q ≠ 0) (hqq' : q ≤ q') {u : 𝓢'(E, F
     (hu : MemBesov φ s p q u) : MemBesov φ s p q' u :=
   (besovENorm_le_of_exponent_ge φ hq hqq' u).trans_lt hu
 
-/-- `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' < s` and any `q ≠ 0`, `q'`. -/
+/-- `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' < s` and any `q ≠ 0`, `q'`: strict loss of smoothness
+absorbs the summability exponent, since the geometric constant
+`‖(2^{(s' - s) j})_j‖_{ℓ^{q'}}` is finite (`MeasureTheory.eLpNorm_pow_count_lt_top`). -/
 theorem MemBesov.of_smoothness_lt (hs : s' < s) (hq : q ≠ 0) (q' : ℝ≥0∞) {u : 𝓢'(E, F)}
     (hu : MemBesov φ s p q u) : MemBesov φ s' p q' u := by
-  refine (besovENorm_le_mul_of_smoothness_lt φ hq u).trans_lt (ENNReal.mul_lt_top ?_ hu)
+  refine (besovENorm_le_eLpNorm_pow_mul_besovENorm φ hq u).trans_lt (ENNReal.mul_lt_top ?_ hu)
   refine MeasureTheory.eLpNorm_pow_count_lt_top ?_ q'
   exact ENNReal.rpow_lt_one_of_one_lt_of_neg (by norm_num) (sub_neg.2 hs)
 

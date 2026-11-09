@@ -14,7 +14,7 @@ Let `μ` be a locally finite measure of temperate growth on a finite-dimensional
 `E` (by default `volume`). A tempered distribution `u` *is* an `Lᵖ(μ)` function when it is the
 distribution `φ ↦ ∫ φ • f ∂μ` of some `f ∈ Lᵖ(μ)`; this `f` is unique
 (`MeasureTheory.Lp.ker_toTemperedDistributionCLM_eq_bot`). This file defines the extended `Lᵖ(μ)`
-norm `TemperedDistribution.eLpNorm p u μ` of a tempered distribution: it is `‖f‖ₑ` when `u` is the
+norm `TemperedDistribution.eLpNorm u p μ` of a tempered distribution: it is `‖f‖ₑ` when `u` is the
 distribution of `f ∈ Lᵖ(μ)`, and `∞` when `u` is not an `Lᵖ(μ)` function.
 
 This is the form in which `Lᵖ` norms of distributions enter the dyadic function spaces: a
@@ -73,21 +73,22 @@ end MeasureTheory.Lp
 namespace TemperedDistribution
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
-  [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] {p : ℝ≥0∞}
-  [Fact (1 ≤ p)]
+  [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
 
-variable (p) in
 /-- The **`Lᵖ(μ)` norm of a tempered distribution**, in `ℝ≥0∞`: `‖f‖ₑ` when `u` is the tempered
 distribution of `f ∈ Lᵖ(μ)`, and `∞` when `u` is not an `Lᵖ(μ)` function. The measure `μ`
-defaults to `volume`. -/
-def eLpNorm (u : 𝓢'(E, F)) (μ : Measure E := by volume_tac) [μ.HasTemperateGrowth] : ℝ≥0∞ :=
+defaults to `volume`; the arguments are ordered as in `MeasureTheory.eLpNorm`. -/
+def eLpNorm (u : 𝓢'(E, F)) (p : ℝ≥0∞) [Fact (1 ≤ p)] (μ : Measure E := by volume_tac)
+    [μ.HasTemperateGrowth] : ℝ≥0∞ :=
   ⨅ (f : Lp F p μ) (_ : (f : 𝓢'(E, F)) = u), ‖f‖ₑ
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 variable {μ : Measure E} [μ.HasTemperateGrowth]
 
 /-- A tempered distribution that is not an `Lᵖ` function has infinite `Lᵖ` norm. -/
 theorem eLpNorm_eq_top {u : 𝓢'(E, F)} (hu : ∀ f : Lp F p μ, (f : 𝓢'(E, F)) ≠ u) :
-    eLpNorm p u μ = ∞ := by
+    eLpNorm u p μ = ∞ := by
   simp [eLpNorm, hu]
 
 variable [FiniteDimensional ℝ E] [MeasureTheory.IsLocallyFiniteMeasure μ]
@@ -95,23 +96,23 @@ variable [FiniteDimensional ℝ E] [MeasureTheory.IsLocallyFiniteMeasure μ]
 /-- The `Lᵖ` norm of the tempered distribution of `f ∈ Lᵖ` is `‖f‖ₑ`. -/
 @[simp]
 theorem eLpNorm_toTemperedDistribution (f : Lp F p μ) :
-    eLpNorm p (f : 𝓢'(E, F)) μ = ‖f‖ₑ :=
+    eLpNorm (f : 𝓢'(E, F)) p μ = ‖f‖ₑ :=
   le_antisymm (iInf_le_of_le f (iInf_le _ rfl)) <| le_iInf₂ fun g hg ↦ by
     rw [MeasureTheory.Lp.toTemperedDistribution_injective hg]
 
 /-- A tempered distribution has finite `Lᵖ` norm exactly when it is an `Lᵖ` function. -/
 theorem eLpNorm_lt_top_iff {u : 𝓢'(E, F)} :
-    eLpNorm p u μ < ∞ ↔ ∃ f : Lp F p μ, (f : 𝓢'(E, F)) = u := by
+    eLpNorm u p μ < ∞ ↔ ∃ f : Lp F p μ, (f : 𝓢'(E, F)) = u := by
   refine ⟨fun h ↦ ?_, fun ⟨f, hf⟩ ↦ hf ▸ by simp⟩
   by_contra! hu
   exact h.ne (eLpNorm_eq_top hu)
 
 @[simp]
-theorem eLpNorm_zero : eLpNorm p (0 : 𝓢'(E, F)) μ = 0 := by
+theorem eLpNorm_zero : eLpNorm (0 : 𝓢'(E, F)) p μ = 0 := by
   simpa using eLpNorm_toTemperedDistribution (p := p) (0 : Lp F p μ)
 
 @[simp]
-theorem eLpNorm_eq_zero_iff {u : 𝓢'(E, F)} : eLpNorm p u μ = 0 ↔ u = 0 := by
+theorem eLpNorm_eq_zero_iff {u : 𝓢'(E, F)} : eLpNorm u p μ = 0 ↔ u = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ eLpNorm_zero⟩
   obtain ⟨f, rfl⟩ := eLpNorm_lt_top_iff.1 (h ▸ ENNReal.zero_lt_top)
   rw [eLpNorm_toTemperedDistribution, enorm_eq_zero] at h
@@ -119,17 +120,17 @@ theorem eLpNorm_eq_zero_iff {u : 𝓢'(E, F)} : eLpNorm p u μ = 0 ↔ u = 0 := 
 
 /-- The triangle inequality for the `Lᵖ` norm of tempered distributions. -/
 theorem eLpNorm_add_le (u v : 𝓢'(E, F)) :
-    eLpNorm p (u + v) μ ≤ eLpNorm p u μ + eLpNorm p v μ := by
-  rcases eq_or_ne (eLpNorm p u μ) ∞ with hu | hu
+    eLpNorm (u + v) p μ ≤ eLpNorm u p μ + eLpNorm v p μ := by
+  rcases eq_or_ne (eLpNorm u p μ) ∞ with hu | hu
   · simp [hu]
-  rcases eq_or_ne (eLpNorm p v μ) ∞ with hv | hv
+  rcases eq_or_ne (eLpNorm v p μ) ∞ with hv | hv
   · simp [hv]
   obtain ⟨f, rfl⟩ := eLpNorm_lt_top_iff.1 hu.lt_top
   obtain ⟨g, rfl⟩ := eLpNorm_lt_top_iff.1 hv.lt_top
   simpa [← MeasureTheory.Lp.toTemperedDistribution_add] using enorm_add_le f g
 
 /-- The `Lᵖ` norm of tempered distributions is homogeneous. -/
-theorem eLpNorm_smul (c : ℂ) (u : 𝓢'(E, F)) : eLpNorm p (c • u) μ = ‖c‖ₑ * eLpNorm p u μ := by
+theorem eLpNorm_smul (c : ℂ) (u : 𝓢'(E, F)) : eLpNorm (c • u) p μ = ‖c‖ₑ * eLpNorm u p μ := by
   rcases eq_or_ne c 0 with rfl | hc
   · simp
   by_cases hu : ∃ f : Lp F p μ, (f : 𝓢'(E, F)) = u
@@ -142,7 +143,7 @@ theorem eLpNorm_smul (c : ℂ) (u : 𝓢'(E, F)) : eLpNorm p (c • u) μ = ‖c
     rw [MeasureTheory.Lp.toTemperedDistribution_smul, hf, smul_smul, inv_mul_cancel₀ hc, one_smul]
 
 @[simp]
-theorem eLpNorm_neg (u : 𝓢'(E, F)) : eLpNorm p (-u) μ = eLpNorm p u μ := by
+theorem eLpNorm_neg (u : 𝓢'(E, F)) : eLpNorm (-u) p μ = eLpNorm u p μ := by
   simpa using eLpNorm_smul (p := p) (-1) u
 
 end TemperedDistribution
