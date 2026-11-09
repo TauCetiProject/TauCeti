@@ -22,6 +22,12 @@ the cost of the factor `‖e⁻¹‖ ^ (i + r)`. The second Fréchet derivative 
 to `v` and `w`, is that of `f` at `e y` applied to `e v` and `e w`; when `e` takes values in the
 scalar field, it is `e v * e w` times the second derivative of `f`. No differentiability of `f`
 is needed.
+
+In particular, for a rescaling `z ↦ f (a • z)` the `i`-th derivative at `x` is `a ^ i` times that
+of `f` at `a • x`, again without any differentiability of `f`
+(`TauCeti.iteratedFDeriv_comp_const_smul_apply`). A Hölder bound on a set `t` for `g` or for the
+`i`-th derivative of `f` transfers to the rescaled map on any set that rescaling maps into `t`
+(`HolderOnWith.comp_const_smul`, `TauCeti.holderOnWith_iteratedFDeriv_comp_const_smul`).
 -/
 
 public section
@@ -119,6 +125,67 @@ theorem holderOnWith_iteratedFDeriv_of_comp_right (e : G ≃L[𝕜] E) {f : E �
     _ = _ := by ring
 
 end ContinuousLinearEquiv
+
+section Rescaling
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+open scoped NNReal
+
+/-- If `g` is `r`-Hölder with constant `C` on `t` and rescaling by `a` maps `s` into `t`, then
+`z ↦ g (a • z)` is `r`-Hölder on `s` with constant `C ‖a‖ ^ r`. -/
+theorem HolderOnWith.comp_const_smul {X : Type*} [PseudoMetricSpace X] {g : E → X} {C r : ℝ≥0}
+    {s t : Set E} (hg : HolderOnWith C r g t) (a : 𝕜) (hst : Set.MapsTo (a • ·) s t) :
+    HolderOnWith (C * ‖a‖₊ ^ (r : ℝ)) r (fun z ↦ g (a • z)) s := by
+  have h := hg.comp ((lipschitzWith_smul a).holderWith.holderOnWith s) hst
+  rw [mul_one] at h
+  exact h
+
+namespace TauCeti
+
+/-- **Iterated derivatives of a rescaling.** The `i`-th derivative of `z ↦ f (a • z)` at `x` is
+`a ^ i` times the `i`-th derivative of `f` at `a • x`. Unlike Mathlib's
+`iteratedFDeriv_comp_const_smul`, no differentiability of `f` is needed. -/
+theorem iteratedFDeriv_comp_const_smul_apply (f : E → F) (a : 𝕜) (x : E) (i : ℕ) :
+    iteratedFDeriv 𝕜 i (fun z ↦ f (a • z)) x = a ^ i • iteratedFDeriv 𝕜 i f (a • x) := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · rcases eq_or_ne i 0 with rfl | hi
+    · ext
+      simp
+    · simp only [zero_smul, zero_pow hi, iteratedFDeriv_const_of_ne hi, Pi.zero_apply]
+  · have h := (ContinuousLinearEquiv.smulLeft (Units.mk0 a ha) : E ≃L[𝕜] E)
+      |>.iteratedFDeriv_comp_right f x i
+    ext v
+    simpa [Function.comp_def, ContinuousMultilinearMap.map_smul_univ] using
+      congrArg (fun L ↦ L v) h
+
+/-- The norm of the `i`-th derivative of `z ↦ f (a • z)` at `x` is `‖a‖ ^ i` times that of the
+`i`-th derivative of `f` at `a • x`. No differentiability of `f` is needed. -/
+theorem norm_iteratedFDeriv_comp_const_smul (f : E → F) (a : 𝕜) (x : E) (i : ℕ) :
+    ‖iteratedFDeriv 𝕜 i (fun z ↦ f (a • z)) x‖ = ‖a‖ ^ i * ‖iteratedFDeriv 𝕜 i f (a • x)‖ := by
+  rw [iteratedFDeriv_comp_const_smul_apply, norm_smul, norm_pow]
+
+/-- If the `i`-th derivative of `f` is `r`-Hölder with constant `C` on `t` and rescaling by `a`
+maps `s` into `t`, then the `i`-th derivative of `z ↦ f (a • z)` is `r`-Hölder on `s` with
+constant `‖a‖ ^ i C ‖a‖ ^ r`. No differentiability of `f` is needed. -/
+theorem holderOnWith_iteratedFDeriv_comp_const_smul {f : E → F} {i : ℕ} {C r : ℝ≥0}
+    {s t : Set E} (hf : HolderOnWith C r (iteratedFDeriv 𝕜 i f) t) (a : 𝕜)
+    (hst : Set.MapsTo (a • ·) s t) :
+    HolderOnWith (‖a‖₊ ^ i * (C * ‖a‖₊ ^ (r : ℝ))) r
+      (iteratedFDeriv 𝕜 i fun z ↦ f (a • z)) s := by
+  have h := hf.comp_const_smul a hst
+  refine HolderOnWith.of_dist_le fun x hx y hy ↦ ?_
+  rw [iteratedFDeriv_comp_const_smul_apply, iteratedFDeriv_comp_const_smul_apply, dist_eq_norm,
+    ← smul_sub, norm_smul, norm_pow, ← dist_eq_norm, NNReal.coe_mul, NNReal.coe_pow, coe_nnnorm,
+    mul_assoc]
+  gcongr
+  exact h.dist_le hx hy
+
+end TauCeti
+
+end Rescaling
 
 namespace LinearIsometryEquiv
 

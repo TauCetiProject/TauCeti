@@ -38,6 +38,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   most `n` of a `C^n` map are bounded by one constant.
 * `HasCompactSupport.exists_bound_iteratedFDeriv_of_contDiff`: the derivatives of order at most `n`
   of a compactly supported `C^n` map are bounded by one constant.
+* `ContDiffAt.exists_ball_bound_iteratedFDeriv`: on some ball around a point where a map is
+  `C^n`, its derivatives of order at most `n` are bounded by one constant.
 * `ContDiffOn.exists_norm_iteratedFDerivWithin_clm_apply_comp_le`: the linear bound on the
   derivatives of `z ↦ L z (φ (τ z))`.
 * `ContDiffOn.tendstoUniformlyOn_iteratedFDerivWithin_clm_apply_comp`: its consequence for uniform
@@ -91,6 +93,23 @@ theorem HasCompactSupport.exists_bound_iteratedFDeriv_of_contDiff {f : E → F} 
     rcases Nat.lt_or_eq_of_le hi with hi | rfl
     · exact (hN i (by omega) y).trans (le_max_left _ _)
     · exact (hC y).trans (le_max_right _ _)
+
+/-- On some ball around a point `x` at which `f` is `C^n`, the derivatives of order at most `n`
+of `f` are bounded by a single constant. -/
+theorem ContDiffAt.exists_ball_bound_iteratedFDeriv {f : E → F} {x : E} {n : ℕ}
+    (hf : ContDiffAt 𝕜 n f x) :
+    ∃ r > 0, ∃ A, ∀ i ≤ n, ∀ y ∈ Metric.ball x r, ‖iteratedFDeriv 𝕜 i f y‖ ≤ A := by
+  have hev : ∀ᶠ y in nhds x, ∀ i ∈ Finset.range (n + 1),
+      ‖iteratedFDeriv 𝕜 i f y‖ < ‖iteratedFDeriv 𝕜 i f x‖ + 1 :=
+    (Filter.eventually_all_finset _).mpr fun i hi ↦ ((hf.continuousAt_iteratedFDeriv
+      (by exact_mod_cast Finset.mem_range_succ_iff.mp hi)).norm).eventually
+        (gt_mem_nhds (lt_add_one _))
+  obtain ⟨r, hr0, hr⟩ := Metric.eventually_nhds_iff_ball.mp hev
+  refine ⟨r, hr0, ∑ i ∈ Finset.range (n + 1), (‖iteratedFDeriv 𝕜 i f x‖ + 1),
+    fun i hi y hy ↦ ?_⟩
+  have hi' := Finset.mem_range_succ_iff.mpr hi
+  exact (hr y hy i hi').le.trans (Finset.single_le_sum
+    (f := fun i ↦ ‖iteratedFDeriv 𝕜 i f x‖ + 1) (fun _ _ ↦ by positivity) hi')
 
 /-- On a compact set `K`, the order-`n` derivative of `z ↦ L z (φ (τ z))` is bounded by a constant
 multiple of any common bound `δ` for the derivatives of `φ` of order at most `n` along `τ '' K`.

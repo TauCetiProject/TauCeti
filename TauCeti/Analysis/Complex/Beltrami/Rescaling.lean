@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Holder.Localization
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -86,19 +86,6 @@ private theorem tendsto_const_mul_nnnorm_rpow (c : ℝ≥0) {α : ℝ≥0} (hα0
   rw [h0] at h
   exact NNReal.tendsto_coe.mpr h
 
-/-- If `g` is `α`-Hölder with constant `C` on the ball of radius `ρ` about `0`, then for
-`|ε| R < ρ` the rescaled map `z ↦ g (ε • z)` is `α`-Hölder with constant `C ‖ε‖^α` on the ball
-of radius `R`. -/
-private theorem holderOnWith_comp_smul {X : Type*} [PseudoMetricSpace X] {g : E → X}
-    {C α : ℝ≥0} {ρ R ε : ℝ} (hg : HolderOnWith C α g (ball 0 ρ)) (hε : |ε| * R < ρ) :
-    HolderOnWith (C * ‖ε‖₊ ^ (α : ℝ)) α (fun z ↦ g (ε • z)) (ball 0 R) := by
-  refine HolderOnWith.of_dist_le fun x hx y hy ↦ ?_
-  refine (hg.dist_le (smul_mem_ball_of_abs_mul_lt hε hx)
-    (smul_mem_ball_of_abs_mul_lt hε hy)).trans_eq ?_
-  rw [dist_smul₀, Real.mul_rpow (norm_nonneg ε) dist_nonneg]
-  push_cast
-  ring
-
 section HolderSpace
 
 /-- **Quantitative rescaling in `C^{0,α}`.** If `μ` is `α`-Hölder with constant `C` on the ball
@@ -116,7 +103,7 @@ private theorem holderWith_cutoff_rescale {μ : E → F} {χ : E → ℝ} {α C 
   set f : E → F := fun z ↦ μ (ε • z)
   have hmaps : ∀ z ∈ ball (0 : E) R, ε • z ∈ ball (0 : E) ρ :=
     fun z hz ↦ smul_mem_ball_of_abs_mul_lt hε hz
-  have hfH : HolderOnWith (C * ‖ε‖₊ ^ (α : ℝ)) α f (ball 0 R) := holderOnWith_comp_smul hμ hε
+  have hfH : HolderOnWith (C * ‖ε‖₊ ^ (α : ℝ)) α f (ball 0 R) := hμ.comp_const_smul ε hmaps
   have hfb : ∀ x ∈ ball (0 : E) R, ‖f x‖ ≤ ((C * (‖ε‖₊ * R) ^ (α : ℝ) : ℝ≥0) : ℝ) := by
     intro x hx
     have hρ : 0 < ρ := (by positivity : (0 : ℝ) ≤ |ε| * R).trans_lt hε
@@ -207,38 +194,6 @@ end HolderSpace
 
 section CkHolderSpace
 
-/-- If the derivatives of `μ` through order `ℓ` are bounded by `A` on the ball of radius `ρ`
-about `0`, then for `‖ε‖ ≤ 1` and `|ε| R < ρ` the derivatives of positive order through `ℓ` of
-the rescaled map `z ↦ μ (ε • z)` are bounded by `‖ε‖ A` on the ball of radius `R`. -/
-private theorem norm_iteratedFDeriv_comp_smul_le {μ : E → F} {ℓ i : ℕ} {ρ R ε A : ℝ}
-    (hμ : ContDiffOn ℝ ℓ μ (ball 0 ρ))
-    (hA : ∀ i ≤ ℓ, ∀ x ∈ ball (0 : E) ρ, ‖iteratedFDeriv ℝ i μ x‖ ≤ A) (hε : |ε| * R < ρ)
-    (hε1 : ‖ε‖ ≤ 1) (hi : i ≤ ℓ) (hi0 : i ≠ 0) {z : E} (hz : z ∈ ball (0 : E) R) :
-    ‖iteratedFDeriv ℝ i (fun z ↦ μ (ε • z)) z‖ ≤ ‖ε‖ * A := by
-  have hεz := smul_mem_ball_of_abs_mul_lt hε hz
-  rw [iteratedFDeriv_comp_const_smul_of_isOpen hμ isOpen_ball ε hεz (by exact_mod_cast hi),
-    norm_smul, norm_pow]
-  exact mul_le_mul (pow_le_of_le_one (norm_nonneg ε) hε1 hi0) (hA i hi _ hεz) (norm_nonneg _)
-    (norm_nonneg ε)
-
-/-- If the `ℓ`-th derivative of `μ` is `α`-Hölder with constant `H` on the ball of radius `ρ`
-about `0`, then for `‖ε‖ ≤ 1` and `|ε| R < ρ` the `ℓ`-th derivative of the rescaled map
-`z ↦ μ (ε • z)` is `α`-Hölder with constant `H ‖ε‖^α` on the ball of radius `R`. -/
-private theorem holderOnWith_iteratedFDeriv_comp_smul {μ : E → F} {ℓ : ℕ} {α H : ℝ≥0}
-    {ρ R ε : ℝ} (hμ : ContDiffOn ℝ ℓ μ (ball 0 ρ))
-    (hμH : HolderOnWith H α (iteratedFDeriv ℝ ℓ μ) (ball 0 ρ)) (hε : |ε| * R < ρ)
-    (hε1 : ‖ε‖ ≤ 1) :
-    HolderOnWith (H * ‖ε‖₊ ^ (α : ℝ)) α (iteratedFDeriv ℝ ℓ fun z ↦ μ (ε • z)) (ball 0 R) := by
-  have h := holderOnWith_comp_smul hμH hε
-  refine HolderOnWith.of_dist_le fun x hx y hy ↦ ?_
-  rw [iteratedFDeriv_comp_const_smul_of_isOpen hμ isOpen_ball ε
-      (smul_mem_ball_of_abs_mul_lt hε hx) le_rfl,
-    iteratedFDeriv_comp_const_smul_of_isOpen hμ isOpen_ball ε
-      (smul_mem_ball_of_abs_mul_lt hε hy) le_rfl, dist_eq_norm, ← smul_sub, norm_smul, norm_pow,
-    ← dist_eq_norm]
-  exact (mul_le_of_le_one_left dist_nonneg (pow_le_one₀ (norm_nonneg ε) hε1)).trans
-    (h.dist_le hx hy)
-
 /-- **Rescaling a coefficient to small `C^{ℓ,α}` norm.** Let `0 < α ≤ 1` and let `μ` be of class
 `C^{ℓ,α}` on a ball around `0`: `C^ℓ` there, with `ℓ`-th derivative `α`-Hölder with constant `H`.
 Suppose `μ 0 = 0` and let `χ` be a compactly supported `C^{ℓ + 1}` cutoff. For every `δ > 0`,
@@ -256,23 +211,10 @@ theorem eventually_exists_ckHolderSpace_cutoff_rescale {μ : E → F} {χ : E �
   lift N to ℝ≥0 using hN0
   obtain ⟨R, hR0, hR⟩ := hχc.isCompact.isBounded.subset_ball_lt 0 0
   -- The derivatives of `μ` through order `ℓ` are bounded on a smaller ball.
-  obtain ⟨ρ', hρ'0, hρ'ρ, A, hA⟩ : ∃ ρ' > 0, ρ' ≤ ρ ∧ ∃ A : ℝ,
-      ∀ i ≤ ℓ, ∀ x ∈ ball (0 : E) ρ', ‖iteratedFDeriv ℝ i μ x‖ ≤ A := by
-    have hμ0' : ContDiffAt ℝ ℓ μ 0 := hμ.contDiffAt (ball_mem_nhds 0 hρ)
-    have hev : ∀ᶠ x in 𝓝 (0 : E), ∀ i ∈ Finset.range (ℓ + 1),
-        ‖iteratedFDeriv ℝ i μ x‖ < ‖iteratedFDeriv ℝ i μ 0‖ + 1 :=
-      (eventually_all_finset _).mpr fun i hi ↦ ((hμ0'.continuousAt_iteratedFDeriv
-        (by exact_mod_cast Finset.mem_range_succ_iff.mp hi)).norm).eventually
-          (gt_mem_nhds (lt_add_one _))
-    obtain ⟨r, hr0, hr⟩ := Metric.eventually_nhds_iff_ball.mp hev
-    refine ⟨min r ρ, lt_min hr0 hρ, min_le_right r ρ,
-      ∑ i ∈ Finset.range (ℓ + 1), (‖iteratedFDeriv ℝ i μ 0‖ + 1), fun i hi x hx ↦ ?_⟩
-    have hi' := Finset.mem_range_succ_iff.mpr hi
-    exact (hr x (ball_subset_ball (min_le_left r ρ) hx) i hi').le.trans
-      (Finset.single_le_sum (f := fun i ↦ ‖iteratedFDeriv ℝ i μ 0‖ + 1)
-        (fun _ _ ↦ by positivity) hi')
-  have hμ' := hμ.mono (ball_subset_ball hρ'ρ)
-  have hμH' := hμH.mono (ball_subset_ball hρ'ρ)
+  obtain ⟨r', hr'0, A, hA⟩ := (hμ.contDiffAt (ball_mem_nhds 0 hρ)).exists_ball_bound_iteratedFDeriv
+  have hρ'0 : 0 < min r' ρ := lt_min hr'0 hρ
+  have hμ' := hμ.mono (ball_subset_ball (min_le_right r' ρ))
+  have hμH' := hμH.mono (ball_subset_ball (min_le_right r' ρ))
   -- The size `η` allowed for the derivatives through order `ℓ` on the ball of radius `R`.
   set c : ℝ := 2 ^ ℓ * N * (ℓ + 7)
   set η : ℝ := δ / (2 * (c + 1))
@@ -296,8 +238,10 @@ theorem eventually_exists_ckHolderSpace_cutoff_rescale {μ : E → F} {χ : E �
     hAlim.eventually (ge_mem_nhds hη), hlim.eventually (gt_mem_nhds (half_pos hδ)),
     eventually_abs_mul_lt 1 one_pos] with ε hε hεr hεA hεH hε1
   rw [mul_one, ← Real.norm_eq_abs] at hε1
+  have hmaps : MapsTo (ε • ·) (ball (0 : E) R) (ball 0 (min r' ρ)) :=
+    fun z hz ↦ smul_mem_ball_of_abs_mul_lt hε hz
   have hf : ContDiffOn ℝ ℓ (fun z ↦ μ (ε • z)) (ball 0 R) :=
-    hμ'.comp (contDiff_const_smul ε).contDiffOn fun z hz ↦ smul_mem_ball_of_abs_mul_lt hε hz
+    hμ'.comp (contDiff_const_smul ε).contDiffOn hmaps
   -- Uniform bounds on the derivatives of the rescaled map.
   have hfb : ∀ i ≤ ℓ, ∀ x ∈ ball (0 : E) R,
       ‖iteratedFDeriv ℝ i (fun z ↦ μ (ε • z)) x‖ ≤ η.toNNReal := by
@@ -306,12 +250,18 @@ theorem eventually_exists_ckHolderSpace_cutoff_rescale {μ : E → F} {χ : E �
     rcases eq_or_ne i 0 with rfl | hi0
     · rw [norm_iteratedFDeriv_zero]
       exact (hr _ (smul_mem_ball_of_abs_mul_lt hεr hx)).le
-    · exact (norm_iteratedFDeriv_comp_smul_le hμ' hA hε hε1.le hi hi0 hx).trans hεA
-  have hfH := holderOnWith_iteratedFDeriv_comp_smul hμ' hμH' hε hε1.le
+    · rw [norm_iteratedFDeriv_comp_const_smul]
+      refine (mul_le_mul (pow_le_of_le_one (norm_nonneg ε) hε1.le hi0)
+        (hA i hi _ (ball_subset_ball (min_le_left r' ρ) (hmaps hx))) (norm_nonneg _)
+        (norm_nonneg ε)).trans hεA
+  have hfH : HolderOnWith (H * ‖ε‖₊ ^ (α : ℝ)) α (iteratedFDeriv ℝ ℓ fun z ↦ μ (ε • z))
+      (ball 0 R) :=
+    (holderOnWith_iteratedFDeriv_comp_const_smul hμH' ε hmaps).mono_const
+      (mul_le_of_le_one_left zero_le (pow_le_one₀ zero_le (by exact_mod_cast hε1.le)))
   let u := CkHolderSpace.cutoff hf hχ isOpen_ball (convex_ball 0 R) hR hα hfb hN hfH
   refine ⟨u, mem_supportedCkHolderSubmodule_iff.mpr fun z hz ↦ ?_, fun z ↦ ?_, ?_⟩
   · rw [CkHolderSpace.cutoff_apply, image_eq_zero_of_notMem_tsupport hz, zero_smul]
-  · exact CkHolderSpace.cutoff_apply _ _ _ _ _ _ _ _ _ z
+  · rw [CkHolderSpace.cutoff_apply]
   · refine (CkHolderSpace.norm_cutoff_le hf hχ isOpen_ball (convex_ball 0 R) hR hα hfb hN
       hfH).trans_lt ?_
     rw [Real.coe_toNNReal _ hη.le]

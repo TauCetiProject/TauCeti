@@ -20,10 +20,6 @@ product have norm at most one, reading a function on one factor of a product doe
 norms of its iterated derivatives (`TauCeti.norm_iteratedFDeriv_comp_fst_le`,
 `TauCeti.norm_iteratedFDeriv_comp_snd_le`).
 
-The composition formula also holds at any point mapped into an open set on which the function is
-`C^n` (`ContinuousLinearMap.iteratedFDeriv_comp_right_of_isOpen`), in particular for a rescaling
-`z ↦ f (a • z)` (`TauCeti.iteratedFDeriv_comp_const_smul_of_isOpen`).
-
 For a function of one variable, postcomposition with a continuous linear map commutes with the
 iterated derivative `iteratedDeriv`. This is the one-variable form of Mathlib's
 `ContinuousLinearMap.iteratedFDeriv_comp_left`, used for instance to test identities between
@@ -54,17 +50,6 @@ theorem norm_iteratedFDeriv_comp_right_le (g : G →L[𝕜] E) {f : E → F} (hf
   rw [g.iteratedFDeriv_comp_right hf x hi]
   exact ((iteratedFDeriv 𝕜 i f (g x)).norm_compContinuousLinearMap_le _).trans_eq
     (by rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin])
-
-/-- At a point mapped into an open set on which `f` is `C^n`, the iterated derivative of `f ∘ g`
-is that of `f`, precomposed with `g` in every slot. This is a local form of Mathlib's
-`ContinuousLinearMap.iteratedFDeriv_comp_right`. -/
-theorem iteratedFDeriv_comp_right_of_isOpen (g : G →L[𝕜] E) {f : E → F} {s : Set E}
-    (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s) {x : G} (hx : g x ∈ s) {i : ℕ} (hi : i ≤ n) :
-    iteratedFDeriv 𝕜 i (f ∘ g) x =
-      (iteratedFDeriv 𝕜 i f (g x)).compContinuousLinearMap fun _ ↦ g := by
-  have hU : IsOpen (g ⁻¹' s) := hs.preimage g.continuous
-  have h := g.iteratedFDerivWithin_comp_right hf hs.uniqueDiffOn hU.uniqueDiffOn hx hi
-  rwa [iteratedFDerivWithin_of_isOpen _ hU hx, iteratedFDerivWithin_of_isOpen _ hs hx] at h
 
 /-- Postcomposition with a continuous linear map `g` commutes with the `i`-th iterated derivative
 of a function of one variable that is `C^i` at the point. -/
@@ -100,18 +85,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   {n : WithTop ℕ∞}
-
-/-- At a point `x` with `a • x` in an open set on which `f` is `C^n`, the `i`-th iterated
-derivative of `z ↦ f (a • z)` is `a ^ i` times that of `f` at `a • x`. This is a local form of
-Mathlib's `iteratedFDeriv_comp_const_smul`. -/
-theorem iteratedFDeriv_comp_const_smul_of_isOpen {f : E → F} {s : Set E}
-    (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s) (a : 𝕜) {x : E} (hx : a • x ∈ s) {i : ℕ}
-    (hi : i ≤ n) :
-    iteratedFDeriv 𝕜 i (fun z ↦ f (a • z)) x = a ^ i • iteratedFDeriv 𝕜 i f (a • x) := by
-  have h := (a • ContinuousLinearMap.id 𝕜 E).iteratedFDeriv_comp_right_of_isOpen hf hs hx hi
-  ext v
-  simpa [Function.comp_def, ContinuousMultilinearMap.map_smul_univ] using
-    congrArg (fun L ↦ L v) h
 
 /-- Reading a function on the first factor of a product does not increase the norms of its
 iterated derivatives. -/
