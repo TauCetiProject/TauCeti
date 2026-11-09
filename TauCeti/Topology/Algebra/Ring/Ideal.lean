@@ -72,6 +72,8 @@ a point; it is not a further hypothesis of the theorem but a consequence for its
   `f` is a quotient map. `IsHomeomorph.homeomorph` bundles that as
   `R ⧸ ker f ≃ₜ S`, and the map bundled is the ring homomorphism `RingHom.kerLift`, so the ring
   structure comes along with it and needs no transport of its own.
+* `IsOpenQuotientMap.isTopologicalRing`: the target of an open quotient ring homomorphism out of a
+  topological ring is a topological ring.
 
 ## References
 
@@ -245,3 +247,32 @@ theorem isHomeomorph_kerLift (hq : IsQuotientMap (f : R → S)) : IsHomeomorph (
 end RingHom
 
 end FirstIsomorphism
+
+section OpenQuotient
+
+open Topology
+
+/-- **An open quotient of a topological ring is a topological ring.** If `π : R → B` is a (not
+necessarily unital) ring homomorphism that is an open quotient map and `R` is a topological ring,
+then addition, multiplication and negation on `B` are continuous, because their composites with the
+quotient map `π × π` (resp. `π`) are continuous. -/
+theorem IsOpenQuotientMap.isTopologicalRing {F R B : Type*} [NonUnitalNonAssocRing R]
+    [TopologicalSpace R] [IsTopologicalRing R] [NonUnitalNonAssocRing B] [TopologicalSpace B]
+    [FunLike F R B] [NonUnitalRingHomClass F R B] {π : F}
+    (hπ : IsOpenQuotientMap π) : IsTopologicalRing B := by
+  have h2 := hπ.prodMap hπ
+  have hadd : Continuous fun p : B × B ↦ p.1 + p.2 := by
+    rw [← h2.continuous_comp_iff]
+    exact hπ.continuous.comp (continuous_fst.add continuous_snd) |>.congr fun p ↦ by simp
+  have hmul : Continuous fun p : B × B ↦ p.1 * p.2 := by
+    rw [← h2.continuous_comp_iff]
+    exact hπ.continuous.comp (continuous_fst.mul continuous_snd) |>.congr fun p ↦ by simp
+  have hneg : Continuous fun b : B ↦ -b := by
+    rw [← hπ.continuous_comp_iff]
+    exact hπ.continuous.comp continuous_neg |>.congr fun p ↦ by simp
+  have : ContinuousAdd B := ⟨hadd⟩
+  have : ContinuousMul B := ⟨hmul⟩
+  have : ContinuousNeg B := ⟨hneg⟩
+  exact {}
+
+end OpenQuotient
