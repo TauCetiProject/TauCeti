@@ -8,8 +8,8 @@ module
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeodesic.Stability
 import TauCeti.MeasureTheory.MeasurableSpace.Analytic
-import TauCeti.MeasureTheory.OptimalTransport.Duality.CyclicalMonotonicity
 import TauCeti.MeasureTheory.OptimalTransport.Duality.SchachermayerTeichmann
+import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Duality
 
 /-!
 # Restriction and reparameterization of generalized geodesics
@@ -242,35 +242,6 @@ section Hilbert
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
-
-omit [InnerProductSpace ℝ E] in
-/-- A coupling realizing `W₂ (μ, ν) < ∞` is concentrated on a measurable set that is cyclically
-monotone for the quadratic cost. -/
-private theorem exists_isCyclicallyMonotone_of_eLpNorm_eq {μ ν : Measure E}
-    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] {π : Measure (E × E)}
-    (hπ : IsCoupling π μ ν)
-    (hopt : eLpNorm (fun z : E × E ↦ edist z.1 z.2) 2 π = wassersteinEDist 2 μ ν)
-    (hfin : wassersteinEDist 2 μ ν ≠ ∞) :
-    ∃ S : Set (E × E), MeasurableSet S ∧
-      IsCyclicallyMonotone (fun z : E × E ↦ ‖z.1 - z.2‖ ^ 2 / 2) S ∧ π Sᶜ = 0 := by
-  have h2 := (isOptimalCoupling_edist_rpow_iff measurable_edist two_ne_zero
-    ENNReal.ofNat_ne_top).2 ⟨hπ, hopt⟩
-  rw [ENNReal.toReal_ofNat] at h2
-  have hq := isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two h2
-  -- The half-squared cost is dominated by the squared distance, whose integral is `W₂ ^ 2`.
-  have hcost : transportCost (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
-    rw [← hq.lintegral_eq]
-    refine ne_top_of_le_ne_top ?_ (lintegral_mono fun z ↦
-      (le_mul_of_one_le_left zero_le one_le_two).trans_eq
-        (edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two z).symm)
-    have h2' := h2.lintegral_edist_rpow_eq measurable_edist two_ne_zero ENNReal.ofNat_ne_top
-    rw [ENNReal.toReal_ofNat] at h2'
-    rw [h2']
-    exact ENNReal.rpow_ne_top_of_nonneg zero_le_two hfin
-  obtain ⟨S, hS, hcm, hπS⟩ :=
-    hq.exists_isCyclicallyMonotone_of_lowerSemicontinuous
-      continuous_ofReal_norm_sub_sq_div_two.lowerSemicontinuous hcost
-  exact ⟨S, hS, (isCyclicallyMonotone_ofReal_iff fun _ ↦ by positivity).1 hcm, hπS⟩
 
 variable {γ : Measure (E × E × E)} {μ ν₀ ν₁ : Measure E} {s a b : ℝ}
 
