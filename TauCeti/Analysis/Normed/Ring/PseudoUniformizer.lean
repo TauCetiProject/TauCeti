@@ -164,20 +164,6 @@ theorem norm_smul_of_isUnit_of_norm_eq_one {u : R} (hu : IsUnit u) (h1 : ‖u‖
 
 end NormOne
 
-/-- **The shell, for a positive real number**: for a real base `0 < r < 1`, every `a > 0` has a
-unique rescaling `r ^ n * a`, `n ∈ ℤ`, with `r < r ^ n * a ≤ 1`. -/
-theorem existsUnique_zpow_mul_mem_Ioc {r a : ℝ} (hr0 : 0 < r) (hr1 : r < 1) (ha : 0 < a) :
-    ∃! n : ℤ, r ^ n * a ∈ Ioc r 1 := by
-  -- Package `r` and `a` as units of `ℝ≥0`; the shell is then a fundamental domain for
-  -- multiplication by the powers of `r⁻¹`.
-  let q : ℝ≥0ˣ := Units.mk0 r.toNNReal (Real.toNNReal_pos.mpr hr0).ne'
-  let u : ℝ≥0ˣ := Units.mk0 a.toNNReal (Real.toNNReal_pos.mpr ha).ne'
-  have hq : 1 < q⁻¹ := one_lt_inv'.mpr <| by
-    simpa [← Units.val_lt_val, q, ← NNReal.coe_lt_coe, Real.coe_toNNReal _ hr0.le] using hr1
-  convert existsUnique_sub_zpow_mem_Ioc hq u q using 2 with n
-  simp [← Units.val_lt_val, ← Units.val_le_val, ← NNReal.coe_lt_coe, ← NNReal.coe_le_coe, q, u,
-    Real.coe_toNNReal _ ha.le, Real.coe_toNNReal _ hr0.le, mul_comm]
-
 /-- A **multiplicative pseudo-uniformiser** of a seminormed ring `R`: a unit `ϖ` with
 `0 < ‖ϖ‖ < 1` by which left multiplication scales the norm exactly, `‖ϖ * x‖ = ‖ϖ‖ * ‖x‖`.
 This is data: it records a choice of such a unit for the given norm. -/
