@@ -577,8 +577,7 @@ theorem norm_ofInter_le {θ : ℝ} (hθ : θ ∈ Icc 0 1) (x : C.inter) : ‖ofI
   exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall key)
 
 /-- For the couple `(X, X)`, the norm of `[X, X]_θ` is the norm of `X`: the inclusion into the sum
-space, which is `X`, is an isometry. The lower bound is `norm_toSum_le`; the upper bound comes
-from `norm_ofInter_le`, since every element of the sum space lies in the intersection. -/
+space, which is `X`, is an isometry. -/
 theorem norm_refl {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : ℝ}
     (u : (refl ℂ X).ComplexMethodSpace θ) : ‖u‖ = ‖toSum u‖ := by
   by_cases hθ : θ ∈ Icc 0 1
