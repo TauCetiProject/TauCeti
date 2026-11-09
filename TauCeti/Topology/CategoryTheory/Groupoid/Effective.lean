@@ -101,8 +101,8 @@ theorem left_eq_right_of_mem_ineffectiveArrows {a : Quiver.Total C}
 
 /-- **Ineffective arrows induce the identity germ.** Let the source be a local homeomorphism and
 let `σ` be a local section of the source through `a`, continuous at the source of `a`. Then `a` is
-ineffective exactly when `σ` followed by the target, which is the local homeomorphism of objects
-induced by `a`, is the identity near the source of `a`. -/
+ineffective exactly when `σ` followed by the target, a representative of the germ of the map of
+objects induced by `a`, is the identity near the source of `a`. -/
 theorem mem_ineffectiveArrows_iff_eventually_right_eq [TopologicalSpace C]
     (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C)) {a : Quiver.Total C}
     {σ : C → Quiver.Total C} (hσ : ContinuousAt σ a.left) (hσa : σ a.left = a)
@@ -173,7 +173,7 @@ instance : (toEffectiveQuotient C).ReflectsIsomorphisms :=
 
 variable (C) in
 /-- The objects of the effective quotient are the objects of the groupoid. -/
-@[expose] def EffectiveQuotient.objEquiv : C ≃ EffectiveQuotient C :=
+def EffectiveQuotient.objEquiv : C ≃ EffectiveQuotient C :=
   (CategoryTheory.Quotient.equiv (germRel C)).symm
 
 @[simp]
