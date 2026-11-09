@@ -129,11 +129,15 @@ theorem additiveIntUnitsCoordinateSum_apply (ι : Type*) [Fintype ι]
 
 /-- The hyperplane of sign vectors of coordinate sum zero has dimension one less than the number
 of coordinates. -/
-theorem finrank_ker_additiveIntUnitsCoordinateSum (ι : Type*) [Fintype ι] [Nonempty ι] :
+theorem finrank_ker_additiveIntUnitsCoordinateSum (ι : Type*) [Fintype ι] :
     Module.finrank (ZMod 2) (LinearMap.ker (additiveIntUnitsCoordinateSum ι)) =
       Fintype.card ι - 1 := by
   classical
-  let i₀ : ι := Classical.choice inferInstance
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · -- no coordinates: the ambient space is trivial
+    rw [Module.finrank_zero_of_subsingleton]
+    simp
+  let i₀ : ι := Classical.choice hι
   have hpi : Module.finrank (ZMod 2) (ι → Additive ℤˣ) = Fintype.card ι := by
     rw [Module.finrank_pi_fintype, finrank_zmod_two_additive_intUnits]
     simp
