@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma
+public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Basic
 public import TauCeti.Probability.Distributions.Gamma.Basic
 import TauCeti.Probability.Distributions.Gamma.PDF
 import TauCeti.Probability.Cdf

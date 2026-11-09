@@ -22,26 +22,26 @@ the error function (`erf z = z γ*(1/2, z²)`) are built.
 
 ## Main definitions
 
-* `TauCeti.Complex.tricomiIncompleteGamma a z` — Tricomi's function `γ*(a, z)`.
+* `Complex.tricomiIncompleteGamma a z` — Tricomi's function `γ*(a, z)`.
 
 ## Main results
 
-* `TauCeti.Complex.hasSum_tricomiIncompleteGamma` — the series
+* `Complex.hasSum_tricomiIncompleteGamma` — the series
   `γ*(a, z) = e^{−z} ∑ zᵏ / Γ(a + k + 1)` (DLMF 8.7.1), for all `a` and `z`;
-* `TauCeti.Complex.hasSum_tricomiIncompleteGamma_of_ne_neg_natCast` — the series
+* `Complex.hasSum_tricomiIncompleteGamma_of_ne_neg_natCast` — the series
   `γ*(a, z) = Γ(a)⁻¹ ∑ (−z)ᵏ / (k! (a + k))` (DLMF 8.7.1), for `a ∉ −ℕ`;
-* `TauCeti.Complex.tricomiIncompleteGamma_eq_integral` — the integral
+* `Complex.tricomiIncompleteGamma_eq_integral` — the integral
   `γ*(a, z) = Γ(a)⁻¹ ∫₀¹ t^{a−1} e^{−zt} dt` (DLMF 8.2.7), for `0 < Re a`;
-* `TauCeti.Complex.tricomiIncompleteGamma_eq_mul_tricomiIncompleteGamma_add_one` — the
+* `Complex.tricomiIncompleteGamma_eq_mul_tricomiIncompleteGamma_add_one` — the
   recurrence `γ*(a, z) = z γ*(a + 1, z) + e^{−z} / Γ(a + 1)` in the parameter (DLMF §8.8);
-* `TauCeti.Complex.tricomiIncompleteGamma_zero_right`, `tricomiIncompleteGamma_neg_natCast`,
+* `Complex.tricomiIncompleteGamma_zero_right`, `tricomiIncompleteGamma_neg_natCast`,
   `tricomiIncompleteGamma_zero_left`, `tricomiIncompleteGamma_one_left` — the special values
   `γ*(a, 0) = 1 / Γ(a + 1)` (DLMF 8.4.2), `γ*(−n, z) = zⁿ` (DLMF 8.4.12), `γ*(0, z) = 1` and
-  `γ*(1, z) = (1 − e^{−z}) / z`;
-* `TauCeti.Complex.hasDerivAt_tricomiIncompleteGamma` — `∂γ*(a, z)/∂z = −a γ*(a + 1, z)`, so that
+  `γ*(1, z) = (1 − e^{−z}) / z` for `z ≠ 0`;
+* `Complex.hasDerivAt_tricomiIncompleteGamma` — `∂γ*(a, z)/∂z = −a γ*(a + 1, z)`, so that
   `γ*(a, ·)` is entire (`differentiable_tricomiIncompleteGamma`);
-* `TauCeti.Complex.differentiable_tricomiIncompleteGamma_left` — `γ*(·, z)` is entire;
-* `TauCeti.Complex.tricomiIncompleteGamma_ode` — the differential equation
+* `Complex.differentiable_tricomiIncompleteGamma_left` — `γ*(·, z)` is entire;
+* `Complex.tricomiIncompleteGamma_ode` — the differential equation
   `z w'' + (a + 1 + z) w' + a w = 0` (DLMF 8.2.14).
 
 ## Implementation
@@ -68,7 +68,7 @@ noncomputable section
 open Complex Filter Finset Set MeasureTheory
 open scoped Nat Topology Interval
 
-namespace TauCeti.Complex
+namespace Complex
 
 /-- Tricomi's entire incomplete Gamma function `γ*(a, z) = e^{−z} 𝐌(1, a + 1, z)` (DLMF 8.5.2),
 written through Mathlib's regularized Kummer function `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)`. It is
@@ -133,7 +133,8 @@ theorem tricomiIncompleteGamma_neg_natCast (n : ℕ) (z : ℂ) :
     have h : -((n + 1 : ℕ) : ℂ) + 1 = -n := by push_cast; ring
     rw [h, ih, Gamma_neg_nat_eq_zero, div_zero, add_zero, pow_succ']
 
-/-- At `a = 1`, Tricomi's function is `γ*(1, z) = (1 − e^{−z}) / z`. -/
+/-- At `a = 1`, Tricomi's function is `γ*(1, z) = (1 − e^{−z}) / z` for `z ≠ 0`; at `z = 0` it
+is `γ*(1, 0) = 1` by `tricomiIncompleteGamma_zero_right`. -/
 theorem tricomiIncompleteGamma_one_left {z : ℂ} (hz : z ≠ 0) :
     tricomiIncompleteGamma 1 z = (1 - cexp (-z)) / z := by
   have h := tricomiIncompleteGamma_eq_mul_tricomiIncompleteGamma_add_one 0 z
@@ -167,6 +168,7 @@ theorem hasDerivAt_tricomiIncompleteGamma (a z : ℂ) :
 
 /-- The derivative of Tricomi's function in its argument, as a function:
 `∂γ*(a, ·)/∂z = −a γ*(a + 1, ·)`. -/
+@[simp]
 theorem deriv_tricomiIncompleteGamma (a : ℂ) :
     deriv (tricomiIncompleteGamma a) = fun z => -a * tricomiIncompleteGamma (a + 1) z :=
   funext fun z => (hasDerivAt_tricomiIncompleteGamma a z).deriv
@@ -356,4 +358,4 @@ theorem tricomiIncompleteGamma_eq_integral {a : ℂ} (ha : 0 < a.re) (z : ℂ) :
         HasSum (fun k : ℕ => (-(z * t)) ^ k / k !) (cexp (-(z * t)))).mul_left _
   exact (hasSum_tricomiIncompleteGamma_of_ne_neg_natCast ha' z).unique (hint.mul_left _)
 
-end TauCeti.Complex
+end Complex
