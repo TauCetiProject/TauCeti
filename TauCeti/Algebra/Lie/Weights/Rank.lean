@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.RootSystem.Base
 import TauCeti.Algebra.Lie.AdjointAction.RootExponential
 import TauCeti.Algebra.Lie.Basic
 import TauCeti.Algebra.Lie.Subalgebra.Engel
+import TauCeti.Algebra.Lie.Weights.Basic
 import TauCeti.Algebra.Lie.Weights.Dimension
 
 /-!
