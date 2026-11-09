@@ -19,7 +19,7 @@ Over a nontrivially normed field `𝕜` in which `2 ≠ 0`, for a finite index t
 quadratic function `x ↦ ∑ᵢ aᵢ xᵢ² / 2` on `ι → 𝕜` is named `TauCeti.diagonalQuadratic`. Over `ℝ`
 and up to an additive constant, this is the normal form of a function at a nondegenerate critical
 point given by the Morse lemma. Its derivative at `x` is `v ↦ ∑ᵢ aᵢ xᵢ vᵢ`, so its partial
-derivatives are `aᵢ xᵢ`, and over `ℝ` its second derivative is the diagonal bilinear form
+derivatives are `aᵢ xᵢ`, and its second derivative is the diagonal bilinear form
 `(v, w) ↦ ∑ᵢ aᵢ vᵢ wᵢ`. Its nondegenerate critical points and Morse index are computed in
 `TauCeti.Analysis.Calculus.Morse.Pi`.
 
@@ -74,13 +74,15 @@ theorem hasFDerivAt_diagonalQuadratic [NeZero (2 : 𝕜)] (a x : ι → 𝕜) :
 
 /-- The summands of a diagonal quadratic function, as functions of one variable, have derivative
 `c y`. -/
-theorem deriv_mul_sq_div_two (c y : ℝ) : deriv (fun y : ℝ ↦ c * y ^ 2 / 2) y = c * y := by
+theorem deriv_mul_sq_div_two [NeZero (2 : 𝕜)] (c y : 𝕜) :
+    deriv (fun y : 𝕜 ↦ c * y ^ 2 / 2) y = c * y := by
   have h := ((hasDerivAt_pow 2 y).const_mul c).div_const 2
   rw [h.deriv]
+  field_simp
   ring
 
-private theorem deriv_deriv_mul_sq_div_two (c y : ℝ) :
-    deriv (deriv fun y : ℝ ↦ c * y ^ 2 / 2) y = c := by
+private theorem deriv_deriv_mul_sq_div_two [NeZero (2 : 𝕜)] (c y : 𝕜) :
+    deriv (deriv fun y : 𝕜 ↦ c * y ^ 2 / 2) y = c := by
   rw [funext (deriv_mul_sq_div_two c)]
   simp
 
@@ -92,8 +94,8 @@ theorem fderiv_diagonalQuadratic_apply_single [NeZero (2 : 𝕜)] [DecidableEq �
 
 /-- The Hessian of `∑ᵢ aᵢ xᵢ² / 2` is the diagonal form `∑ᵢ aᵢ vᵢ wᵢ`. -/
 @[simp]
-theorem fderiv_fderiv_diagonalQuadratic_apply (a x v w : ι → ℝ) :
-    fderiv ℝ (fderiv ℝ (diagonalQuadratic a)) x v w = ∑ i, a i * v i * w i := by
+theorem fderiv_fderiv_diagonalQuadratic_apply [NeZero (2 : 𝕜)] (a x v w : ι → 𝕜) :
+    fderiv 𝕜 (fderiv 𝕜 (diagonalQuadratic a)) x v w = ∑ i, a i * v i * w i := by
   unfold diagonalQuadratic
   rw [fderiv_fderiv_sum_comp_eval_apply (φ := fun i y ↦ a i * y ^ 2 / 2) fun i ↦ by fun_prop]
   simp [deriv_deriv_mul_sq_div_two]
