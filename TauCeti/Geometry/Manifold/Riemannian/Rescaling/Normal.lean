@@ -1,0 +1,87 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Uniform
+
+/-!
+# Normal charts for rescaled exponential maps
+
+Let `K` be a compact set of points of a Riemannian manifold `M` and let `λ_j → ∞` be a family of
+scales. For an orthonormal frame `e : F ≃ₗᵢ[ℝ] T_p M` at a point `p ∈ K`, consider the rescaled
+exponential map `x ↦ exp_p (λ_j⁻¹ • e x)` on the model space `F`. For every radius `R`, these maps
+are eventually partial diffeomorphisms with source exactly the Euclidean ball of radius `R`,
+uniformly over all centres `p ∈ K` and all frames `e`. In particular, for `R = L + 1` they are
+diffeomorphisms onto their images on a neighbourhood of the closed ball of radius `L`.
+
+The proof uses a single normal radius for all points of `K`,
+`IsCompact.exists_pos_forall_isNormalDomain_ball`.
+
+See J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapter 6.
+-/
+
+public section
+
+open Bundle Filter Metric Set
+open scoped ContDiff Manifold
+
+namespace TauCeti.Manifold
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+omit [I.Boundaryless] [T2Space M] in
+/-- The exponential map precomposed with a linear isomorphism that maps an open set into a normal
+domain is a partial diffeomorphism with that open set as source. -/
+private theorem exists_partialDiffeomorph_riemannianExp_comp {p : M}
+    {U : Set (TangentSpace I p)} (hn : IsNormalDomain I M p U) (A : F ≃L[ℝ] TangentSpace I p)
+    {s : Set F} (hs : IsOpen s) (hmap : MapsTo A s U) :
+    ∃ Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M ∞,
+      Φ.source = s ∧ ⇑Φ = riemannianExp I M p ∘ A := by
+  have hlocal : IsLocalDiffeomorphOn 𝓘(ℝ, F) I ∞ (riemannianExp I M p ∘ A) s := by
+    intro x
+    have hA := A.toDiffeomorph.isLocalDiffeomorph x.val
+    rw [ContinuousLinearEquiv.coe_toDiffeomorph] at hA
+    exact IsLocalDiffeomorphAt.comp I M hA (hn.isLocalDiffeomorphOn ⟨A x, hmap x.property⟩)
+  have hinj : InjOn (riemannianExp I M p ∘ A) s := fun x hx y hy hxy ↦
+    A.injective (hn.injOn (hmap hx) (hmap hy) hxy)
+  exact ⟨hlocal.partialDiffeomorphOfInjOn hs hinj,
+    hlocal.partialDiffeomorphOfInjOn_source hs hinj,
+    hlocal.coe_partialDiffeomorphOfInjOn hs hinj⟩
+
+/-- **Rescaled normal charts.** For scales `λ_j → ∞` and every radius `R`, the rescaled
+exponential maps `x ↦ exp_p (λ_j⁻¹ • e x)` are eventually partial diffeomorphisms with source the
+Euclidean ball of radius `R`, simultaneously for all centres `p` of a compact set and all
+orthonormal frames `e` at `p`. -/
+theorem _root_.IsCompact.eventually_exists_partialDiffeomorph_riemannianExp_inv_smul
+    {K : Set M} (hK : IsCompact K) {α : Type*} {l : Filter α} {scale : α → ℝ}
+    (hscale : Tendsto scale l atTop) (R : ℝ) :
+    ∀ᶠ j in l, ∀ p ∈ K, ∀ e : F ≃ₗᵢ[ℝ] TangentSpace I p,
+      ∃ Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M ∞,
+        Φ.source = ball 0 R ∧ ⇑Φ = fun x ↦ riemannianExp I M p ((scale j)⁻¹ • e x) := by
+  obtain ⟨r, hr, hnormal⟩ := hK.exists_pos_forall_isNormalDomain_ball (I := I)
+  filter_upwards [hscale.eventually_gt_atTop 0, hscale.eventually_gt_atTop (R / r)]
+    with j hj hjR p hp e
+  let A : F ≃L[ℝ] TangentSpace I p :=
+    e.toContinuousLinearEquiv.trans
+      (LinearEquiv.smulOfNeZero ℝ (TangentSpace I p) (scale j)⁻¹
+        (inv_ne_zero hj.ne')).toContinuousLinearEquiv
+  have hA (x : F) : A x = (scale j)⁻¹ • e x := by simp [A]
+  have hmap : MapsTo A (ball 0 R) (ball 0 r) := by
+    intro x hx
+    rw [hA, mem_ball_zero_iff, norm_smul, e.norm_map, Real.norm_eq_abs, abs_inv, abs_of_pos hj,
+      ← div_eq_inv_mul, div_lt_iff₀ hj]
+    exact (mem_ball_zero_iff.1 hx).trans ((div_lt_iff₀' hr).1 hjR)
+  obtain ⟨Φ, hsource, hΦ⟩ :=
+    exists_partialDiffeomorph_riemannianExp_comp (hnormal p hp) A isOpen_ball hmap
+  exact ⟨Φ, hsource, hΦ.trans (funext fun x ↦ congrArg (riemannianExp I M p) (hA x))⟩
+
+end TauCeti.Manifold
