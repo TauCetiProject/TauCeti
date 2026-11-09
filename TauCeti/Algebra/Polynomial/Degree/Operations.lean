@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Degree.Operations
 public import Mathlib.Algebra.Polynomial.Degree.SmallDegree
 public import Mathlib.Algebra.Polynomial.Eval.Defs
+import Mathlib.Algebra.Polynomial.Degree.Domain
 import Mathlib.Algebra.Polynomial.Degree.Lemmas
 
 /-!
@@ -20,7 +21,9 @@ other of `natDegree` at most `n`: the product has degree below `a + n`.  Stating
 coefficient window of prescribed length needs when it is read off polynomials that may vanish.
 
 `TauCeti.degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le` combines two such product bounds
-into the coefficient window used for polynomial relations with formal degree bounds `m` and `n`.
+into the coefficient window used for polynomial relations with formal degree bounds `m` and `n`;
+`Polynomial.mul_add_mul_eq_zero_of_coeff_window` uses it to show that a relation `A * q + B * p = 0`
+is forced by the vanishing of a window of coefficients.
 `Polynomial.natDegree_multiset_prod_X_sub_C_le` bounds the degree of a product of `card s` monic
 linear factors by `card s` over any commutative ring, without the nontriviality that Mathlib's
 `Polynomial.natDegree_multiset_prod_X_sub_C_eq_card` needs.
@@ -66,6 +69,39 @@ theorem degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le {p q A B : R[X]} {m n
       (WithBot.coe_le_coe.mpr (by omega : m - j + n ≤ (m - j) + (n - j) + j))
   · exact (degree_mul_lt_of_degree_lt_of_natDegree_le hB hm).trans_le
       (WithBot.coe_le_coe.mpr (by omega : n - j + m ≤ (m - j) + (n - j) + j))
+
+/-- A relation `A * q + B * p = 0` is forced by the vanishing of the window of coefficients in
+degrees `d, …, m + n - d - 1`, where `d` is the degree of a common divisor `g` of `p` and `q` and
+`A`, `B` have degrees below `m - d` and `n - d`: the combination then has degree below `d`, so
+the divisor `g` forces it to vanish. -/
+theorem _root_.Polynomial.mul_add_mul_eq_zero_of_coeff_window {S : Type*} [CommSemiring S]
+    [NoZeroDivisors S] {p q A B g : S[X]} {m n : ℕ} (hp : p ≠ 0)
+    (hm : p.natDegree = m) (hn : q.natDegree ≤ n) (hgp : g ∣ p) (hgq : g ∣ q) (hg0 : g ≠ 0)
+    (hAdeg : A.degree < (m - g.natDegree : ℕ)) (hBdeg : B.degree < (n - g.natDegree : ℕ))
+    (hwin : ∀ i : Fin ((m - g.natDegree) + (n - g.natDegree)),
+      (A * q + B * p).coeff (i + g.natDegree) = 0) :
+    A * q + B * p = 0 := by
+  set d := g.natDegree with hd
+  have hdm : d ≤ m := hm ▸ natDegree_le_of_dvd hgp hp
+  have hsumdeg : (A * q + B * p).degree < ((m - d) + (n - d) + d : ℕ) := by
+    rcases eq_or_ne q 0 with rfl | hq0
+    · rw [mul_zero, zero_add]
+      exact (degree_mul_lt_of_degree_lt_of_natDegree_le hBdeg hm.le).trans_le
+        (WithBot.coe_le_coe.mpr (by omega : n - d + m ≤ m - d + (n - d) + d))
+    · exact degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le hm.le hn hdm
+        ((natDegree_le_of_dvd hgq hq0).trans hn) hAdeg hBdeg
+  have hdeg : (A * q + B * p).degree < d := by
+    rw [degree_lt_iff_coeff_zero]
+    intro e he
+    by_cases hlt : e < (m - d) + (n - d) + d
+    · have := hwin ⟨e - d, by omega⟩
+      rwa [Nat.sub_add_cancel he] at this
+    · apply coeff_eq_zero_of_degree_lt
+      exact hsumdeg.trans_le (WithBot.coe_le_coe.mpr
+        (by omega : (m - d) + (n - d) + d ≤ e))
+  exact eq_zero_of_dvd_of_degree_lt
+    (dvd_add (dvd_mul_of_dvd_right hgq _) (dvd_mul_of_dvd_right hgp _))
+    (by rw [degree_eq_natDegree hg0]; exact hdeg)
 
 /-- A product of `card s` monic linear factors has degree at most `card s`; unlike
 `natDegree_multiset_prod_X_sub_C_eq_card`, this needs no nontriviality. -/
