@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Group.Integral
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # The integral and the moments of the Japanese bracket
@@ -107,37 +108,6 @@ section Cone
 open scoped Pointwise
 
 omit [MeasurableSpace V] [BorelSpace V] [FiniteDimensional ℝ V] in
-/-- A point of the dilate `t • ball ξ ρ`, for `t > 0` and `ρ ≤ ‖ξ‖ / 2`, has norm between
-`t ‖ξ‖ / 2` and `3 t ‖ξ‖ / 2`. -/
-private theorem norm_bounds_of_mem_smul_ball {ξ : V} {ρ t : ℝ} (hρ : ρ ≤ ‖ξ‖ / 2) (ht : 0 < t)
-    {x : V} (hx : x ∈ t • ball ξ ρ) : t * ‖ξ‖ / 2 < ‖x‖ ∧ ‖x‖ < 3 * t * ‖ξ‖ / 2 := by
-  obtain ⟨y, hy, rfl⟩ := mem_smul_set.1 hx
-  have hy' : ‖y - ξ‖ < ‖ξ‖ / 2 := (mem_ball_iff_norm.1 hy).trans_le hρ
-  have h₁ := norm_sub_norm_le y ξ
-  have h₂ := norm_sub_norm_le ξ y
-  rw [norm_sub_rev] at h₂
-  rw [norm_smul, Real.norm_of_nonneg ht.le]
-  constructor <;> nlinarith
-
-omit [MeasurableSpace V] [BorelSpace V] [FiniteDimensional ℝ V] in
-/-- For `ξ ≠ 0` and `ρ ≤ ‖ξ‖ / 2`, the dilates `4 ^ k • ball ξ ρ` are pairwise disjoint: their
-norms lie in the disjoint intervals `(4 ^ k ‖ξ‖ / 2, 3 · 4 ^ k ‖ξ‖ / 2)`. -/
-private theorem pairwise_disjoint_four_pow_smul_ball {ξ : V} (hξ : ξ ≠ 0) {ρ : ℝ}
-    (hρ : ρ ≤ ‖ξ‖ / 2) :
-    Pairwise (Function.onFun Disjoint fun k : ℕ ↦ ((4 : ℝ) ^ k) • ball ξ ρ) := by
-  refine (pairwise_disjoint_on _).2 fun j k hjk ↦ Set.disjoint_left.2 fun x hxj hxk ↦ ?_
-  have h₁ := (norm_bounds_of_mem_smul_ball hρ (by positivity) hxj).2
-  have h₂ := (norm_bounds_of_mem_smul_ball hρ (by positivity) hxk).1
-  have h4 : (4 : ℝ) ^ j * 4 ≤ 4 ^ k := by
-    rw [← pow_succ]
-    exact pow_le_pow_right₀ (by norm_num) hjk
-  have h4ξ := mul_le_mul_of_nonneg_right h4 (norm_nonneg ξ)
-  have hpos : 0 < (4 : ℝ) ^ j * ‖ξ‖ := by
-    have := norm_pos_iff.2 hξ
-    positivity
-  linarith
-
-omit [MeasurableSpace V] [BorelSpace V] [FiniteDimensional ℝ V] in
 /-- On the dilate `t • ball ξ ρ`, for `t ≥ 1` and `ρ ≤ ‖ξ‖ / 2`, the bracket
 `(1 + ‖x‖ ^ 2) ^ (-r / 2)` with `r ≤ d` is at least `κ t ^ (-d)`, where
 `κ = (1 + (3 ‖ξ‖ / 2) ^ 2) ^ (-d / 2)`. -/
@@ -210,7 +180,7 @@ theorem not_integrableOn_rpow_neg_one_add_norm_sq (μ : Measure V) [μ.IsAddHaar
       _ ≤ ∑' k : ℕ, ∫⁻ x in ((4 : ℝ) ^ k) • A, ‖(1 + ‖x‖ ^ 2) ^ (-r / 2)‖ₑ ∂μ :=
           tsum_le_tsum hpiece
       _ = ∫⁻ x in ⋃ k : ℕ, ((4 : ℝ) ^ k) • A, ‖(1 + ‖x‖ ^ 2) ^ (-r / 2)‖ₑ ∂μ :=
-          (lintegral_iUnion hSm (pairwise_disjoint_four_pow_smul_ball hξ (min_le_right _ _))
+          (lintegral_iUnion hSm (pairwise_disjoint_pow_smul_ball (by norm_num) (min_le_right _ _))
             _).symm
       _ ≤ ∫⁻ x in Γ, ‖(1 + ‖x‖ ^ 2) ^ (-r / 2)‖ₑ ∂μ := lintegral_mono_set (iUnion_subset hS)
   exact lt_irrefl _ (hint.hasFiniteIntegral.trans_le htop)
