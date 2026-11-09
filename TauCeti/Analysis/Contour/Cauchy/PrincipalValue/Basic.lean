@@ -163,6 +163,17 @@ def cauchyPVAt (γ : ℝ → ℂ) (a b : ℝ) (f : ℂ → ℂ) (z₀ : ℂ) : �
   limUnder (𝓝[>] (0 : ℝ)) fun ε ↦
     ∫ t in a..b, if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0
 
+/-- **The value of a principal value from a closed form of the excised integrals.** If the excised
+integrals agree, for small `ε`, with a function tending to `L`, then the raw principal value is
+`L`; no integrability of the truncated integrands is assumed, in contrast with
+`HasCauchyPVAt.of_tendsto`. -/
+theorem cauchyPVAt_eq_of_tendsto {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ L : ℂ} {F : ℝ → ℂ}
+    (hF : Tendsto F (𝓝[>] (0 : ℝ)) (𝓝 L))
+    (h : ∀ᶠ ε in 𝓝[>] (0 : ℝ),
+      ∫ t in a..b, (if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0) = F ε) :
+    cauchyPVAt γ a b f z₀ = L :=
+  (hF.congr' (h.mono fun _ hε ↦ hε.symm)).limUnder_eq
+
 /-- The Cauchy principal value at `z₀` exists: shorthand for `∃ L, HasCauchyPVAt γ a b f z₀ L`. -/
 def CauchyPVExistsAt (γ : ℝ → ℂ) (a b : ℝ) (f : ℂ → ℂ) (z₀ : ℂ) : Prop :=
   ∃ L : ℂ, HasCauchyPVAt γ a b f z₀ L
