@@ -27,11 +27,9 @@ This file develops the classical symbols of a fixed order as a subspace of the s
 
 * `TauCeti.Symbol.HasClassicalExpansion χ a p`: `a` has the expansion with the terms `p j` of
   degree `m - j` and the cutoff `χ`;
-* `TauCeti.Symbol.HasClassicalExpansion.congr_cutoff`: the expansion does not depend on the cutoff,
-  since two cutoffs agree for `‖ξ‖ ≥ 2`;
+* `TauCeti.Symbol.HasClassicalExpansion.congr_cutoff`: the expansion does not depend on the cutoff;
 * `TauCeti.Symbol.HasClassicalExpansion.unique`: the homogeneous terms are determined by the
-  symbol, by the uniqueness of homogeneous terms
-  `TauCeti.HomogeneousSymbol.eq_zero_of_coefficient_toSymbol_eq`;
+  symbol;
 * `TauCeti.Symbol.classical n V W m`: the subspace of classical symbols of order `m`, with the
   linear maps `TauCeti.Symbol.classicalTerm j` to the homogeneous terms;
 * `TauCeti.Symbol.HasClassicalExpansion.inclusion`: a classical symbol of order `m - k`, `k ∈ ℕ`,
@@ -53,8 +51,7 @@ and `a ∼ ∑ⱼ χ pⱼ`, then `b ∘ a ∼ ∑ₖ χ cₖ` with `cₖ = ∑_{
 (`TauCeti.Symbol.compTerms`), so classical orders add and the principal symbol is multiplicative
 for the pointwise product (`TauCeti.Symbol.principalSymbol_classicalComp`). This is not the
 composition of the operators: the lower order terms of the symbol of a composition of operators
-also involve derivatives of the symbols. The proof removes the leading term of `b` and inducts on
-the number of terms.
+also involve derivatives of the symbols.
 
 ## References
 
@@ -114,7 +111,8 @@ theorem HasClassicalExpansion.unique {χ' : FrequencyCutoff (CoordinateSpace n)}
   funext j
   induction j using Nat.strong_induction_on with
   | _ j ih =>
-    -- The remainders after `j + 1` terms differ by `χ(ξ) (pⱼ - qⱼ)`, of order `m - (j + 1)`.
+    -- The remainders after `j + 1` terms differ by `χ(ξ) (pⱼ - qⱼ)`, of order `m - (j + 1)`, so
+    -- `pⱼ = qⱼ` by the uniqueness of homogeneous terms.
     obtain ⟨r, hr⟩ := hp (j + 1)
     obtain ⟨s, hs⟩ := hq (j + 1)
     have hsum : ∑ i ∈ Finset.range j, (toSymbol χ (p i)).coefficient =
@@ -514,6 +512,7 @@ is not the expansion of the symbol of a composition of operators. -/
 theorem HasClassicalExpansion.comp {b : Symbol n W U m'} (hb : HasClassicalExpansion χ b q)
     (ha : HasClassicalExpansion χ a p) : HasClassicalExpansion χ (b.comp a) (compTerms q p) := by
   intro N
+  -- Induct on the number `N` of terms, removing the leading term of `b` at each step.
   induction N generalizing m' b q with
   | zero => exact ⟨Symbol.inclusion (le_of_eq (by simp)) (b.comp a), by simp⟩
   | succ N ih =>
