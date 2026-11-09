@@ -31,21 +31,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- On the line through `y` parallel to `e`, the second-moment integrand of a set `u` is
-`‖y‖ ^ 2 + t ^ 2` on the section of `u`. -/
-private theorem lintegral_line_indicator_norm_sq_eq (e : E) (he : ‖e‖ = 1) {u : Set E}
-    (y : (ℝ ∙ e)ᗮ)
-    (hu : NullMeasurableSet {t : ℝ | (y : E) + t • e ∈ u} volume) :
-    ∫⁻ t : ℝ, u.indicator (fun x ↦ ENNReal.ofReal (‖x‖ ^ 2)) ((y : E) + t • e) =
-      ∫⁻ t in {t : ℝ | (y : E) + t • e ∈ u}, ENNReal.ofReal (‖y‖ ^ 2 + t ^ 2) := by
-  rw [← lintegral_indicator₀ hu]
-  refine lintegral_congr fun t ↦ ?_
-  exact (Set.indicator_comp_right (fun t : ℝ ↦ (y : E) + t • e)
-      (g := fun x ↦ ENNReal.ofReal (‖x‖ ^ 2)) (x := t)).symm.trans
-    (congr_fun (Set.indicator_congr fun t' _ ↦ by
-      simp only [Function.comp_apply, norm_add_smul_sq e he]) t)
-
 private theorem lintegral_norm_sq_steinerSymmetrization_le_and_eq_iff
     (e : E) (he : ‖e‖ = 1) {s : Set E} (hs : NullMeasurableSet s volume)
     (hmoment : (∫⁻ x in s, ENNReal.ofReal (‖x‖ ^ 2)) ≠ ∞) :
