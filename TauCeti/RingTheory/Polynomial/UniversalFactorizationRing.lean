@@ -12,7 +12,8 @@ public import Mathlib.RingTheory.Polynomial.UniversalFactorizationRing
 
 Composing a point of `Polynomial.UniversalCoprimeFactorizationRing` with values in `R` with the
 reduction `R → R ⧸ I` reduces both factors modulo `I`
-(`Polynomial.UniversalCoprimeFactorizationRing.homEquiv_comp_mkₐ_eq_map`).
+(`Polynomial.UniversalCoprimeFactorizationRing.homEquiv_mkₐ_comp_fst` and
+`Polynomial.UniversalCoprimeFactorizationRing.homEquiv_mkₐ_comp_snd`).
 -/
 
 public section
@@ -21,22 +22,23 @@ open Polynomial
 
 namespace Polynomial.UniversalCoprimeFactorizationRing
 
-variable {R : Type*} [CommRing R] (I : Ideal R)
+variable {R : Type*} [CommRing R] (I : Ideal R) {n : ℕ} (m k : ℕ) (hn : n = m + k)
+  (P : MonicDegreeEq R n) (φ : UniversalCoprimeFactorizationRing m k hn P →ₐ[R] R)
 
 /-- Composing a point of the universal coprime factorization ring with values in `R` with the
-reduction `R → R ⧸ I` reduces both factors modulo `I`. -/
-lemma homEquiv_comp_mkₐ_eq_map {p : R[X]} (m k : ℕ) (hn : p.natDegree = m + k)
-    (P : MonicDegreeEq R p.natDegree) (φ : UniversalCoprimeFactorizationRing m k hn P →ₐ[R] R) :
-    (homEquiv (R ⧸ I) m k hn P
-        ((Ideal.Quotient.mkₐ R I).comp φ)).1.1.1 =
-      (homEquiv R m k hn P φ).1.1.1.map
-        (Ideal.Quotient.mk I) ∧
-    (homEquiv (R ⧸ I) m k hn P
-        ((Ideal.Quotient.mkₐ R I).comp φ)).1.2.1 =
-      (homEquiv R m k hn P φ).1.2.1.map
-        (Ideal.Quotient.mk I) := by
-  rw [homEquiv_comp_fst, homEquiv_comp_snd, ← AlgHom.toRingHom_eq_coe,
-    Ideal.Quotient.mkₐ_toRingHom]
+reduction `R → R ⧸ I` reduces its first factor modulo `I`. -/
+lemma homEquiv_mkₐ_comp_fst :
+    (homEquiv (R ⧸ I) m k hn P ((Ideal.Quotient.mkₐ R I).comp φ)).1.1.1 =
+      (homEquiv R m k hn P φ).1.1.1.map (Ideal.Quotient.mk I) := by
+  rw [homEquiv_comp_fst, ← AlgHom.toRingHom_eq_coe, Ideal.Quotient.mkₐ_toRingHom]
+  simp
+
+/-- Composing a point of the universal coprime factorization ring with values in `R` with the
+reduction `R → R ⧸ I` reduces its second factor modulo `I`. -/
+lemma homEquiv_mkₐ_comp_snd :
+    (homEquiv (R ⧸ I) m k hn P ((Ideal.Quotient.mkₐ R I).comp φ)).1.2.1 =
+      (homEquiv R m k hn P φ).1.2.1.map (Ideal.Quotient.mk I) := by
+  rw [homEquiv_comp_snd, ← AlgHom.toRingHom_eq_coe, Ideal.Quotient.mkₐ_toRingHom]
   simp
 
 end Polynomial.UniversalCoprimeFactorizationRing
