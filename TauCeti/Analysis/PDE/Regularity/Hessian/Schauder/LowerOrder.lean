@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.HolderCoefficient
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.WholeSpace
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Holder.Interpolation
 import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.Normed.Operator.Holder
@@ -105,37 +106,6 @@ private theorem holderOnWith_fderiv_apply_add_mul {s : Set E} {u : E → ℝ} {b
       rw [← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_one]; exact ContinuousLinearMap.norm_id_le)
   · exact mul_le_of_le_one_left zero_le ContinuousLinearMap.opNNNorm_lsmul_le
 
-/-- The bookkeeping of constants in the interior estimate:
-`C₀ (M + N P + N) ≤ C₀ (1 + P) (M + N)`. -/
-private theorem mul_add_mul_add_le_mul_one_add_mul_add (C₀ M N P : ℝ≥0) :
-    C₀ * (M + N * P + N) ≤ C₀ * (1 + P) * (M + N) := by
-  calc C₀ * (M + N * P + N) ≤ C₀ * ((1 + P) * (M + N)) := by
-        gcongr
-        calc M + N * P + N = M + N * (1 + P) := by ring
-          _ ≤ (1 + P) * M + (1 + P) * N := by
-            rw [mul_comm N]
-            gcongr
-            exact le_mul_of_one_le_left zero_le le_self_add
-          _ = (1 + P) * (M + N) := by ring
-    _ = C₀ * (1 + P) * (M + N) := by ring
-
-/-- The absorption step of the global estimate: if `K₀ + N = K + γ N + 2 β ε^α H`, with
-`H ≤ C₀ (K₀ + N)` and `2 C₀ β ε^α ≤ 1 / 2`, then `C₀ (K₀ + N) ≤ 2 C₀ (1 + γ) (K + N)`. -/
-private theorem mul_le_two_mul_one_add_mul_of_absorb {C₀ K N γ β e H K₀ : ℝ} (hC₀ : 0 ≤ C₀)
-    (hK : 0 ≤ K) (hN : 0 ≤ N) (hγ : 0 ≤ γ) (hK₀ : K₀ + N = K + γ * N + 2 * β * e * H)
-    (hHle : H ≤ C₀ * (K₀ + N)) (habs : 2 * C₀ * β * e * H ≤ 1 / 2 * H) :
-    C₀ * (K₀ + N) ≤ 2 * C₀ * (1 + γ) * (K + N) := by
-  have hKγ : 0 ≤ C₀ * (K + γ * N) := by positivity
-  rw [hK₀] at hHle ⊢
-  have hγN : K + γ * N ≤ (1 + γ) * (K + N) := by nlinarith
-  have hsplit : C₀ * (K + γ * N + 2 * β * e * H) = C₀ * (K + γ * N) + 2 * C₀ * β * e * H := by
-    ring
-  rw [hsplit] at hHle ⊢
-  have hH2 : H ≤ 2 * (C₀ * (K + γ * N)) := by linarith
-  have hC₀γ : C₀ * (K + γ * N) ≤ C₀ * ((1 + γ) * (K + N)) :=
-    mul_le_mul_of_nonneg_left hγN hC₀
-  linarith
-
 /-- **The interior Schauder estimate with lower-order terms.** Let `0 < α < 1`, let
 `Ω ⊆ ℝ^{n+1}` be open and `K ⊆ Ω` compact. Let `a` be a matrix-valued coefficient, `b` a
 vector field and `c` a function, each `α`-Hölder on a ball around each `x ∈ K`, with `a x`
@@ -205,7 +175,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_add_fde
     exact h.mono_const (le_of_eq (by ring))
   have key := hC₀ (hu.mono hUΩ) (fun x hx => hN₀ x (hUΩ hx)) (fun x hx => hN₁ x (hUΩ hx))
     (fun x hx => hN₂ x (hUΩ hx)) (fun S hS hSc => hV S (hS.trans hUΩ) hSc) hprin
-  exact key.mono_const (mul_add_mul_add_le_mul_one_add_mul_add C₀ M N P)
+  exact key.mono_const (mul_add_mul_add_le_mul_one_add_mul_add zero_le zero_le zero_le)
 
 /-- **The global Schauder estimate with lower-order terms on the whole space.** Let `0 < α < 1`,
 and let `λ`, `Λ`, `L` and `B` be given. Then there is a constant `C`, depending only on `n`, `α`,
