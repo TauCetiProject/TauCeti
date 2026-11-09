@@ -10,11 +10,15 @@ public import TauCeti.Analysis.Contour.Winding.Number.Basic
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Path
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
 public import Mathlib.Topology.Homotopy.Path
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Analysis.Calculus.ContDiff.Approximation
 import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.NullHomologous
 import TauCeti.Analysis.Contour.Winding.Proximity
 import Mathlib.Analysis.SpecialFunctions.Bernstein
+import Mathlib.MeasureTheory.Integral.CircleIntegral
+import Mathlib.Topology.LocallyConstant.Basic
+import Mathlib.Topology.UniformSpace.HeineCantor
 
 /-!
 # Homotopy invariance of the winding number
@@ -24,6 +28,14 @@ homotopy through `ℂ \ {w}`, have the same winding number about `w`. The proof 
 many horizontal slices of the homotopy by endpoint-preserving smooth approximations, then chains
 the resulting smooth paths with proximity invariance of the winding number.
 
+For closed curves the base point may move. A family of closed piecewise-`C¹` curves avoiding `w`,
+depending jointly continuously on a parameter in a preconnected set, has a constant winding number
+about `w`: nearby curves of the family are uniformly closer to each other than to `w`, so the
+winding number is locally constant in the parameter. Shrinking concentric circles gives the
+annulus and disc forms: if a `C¹` map `f` does not take the value `w` on a closed annulus, the
+images of its two boundary circles wind equally often around `w`, and if `f` does not take the
+value `w` on a closed disc, the image of the boundary circle does not wind around `w` at all.
+
 ## Main results
 
 * `windingNumber_eq_of_pathHomotopy` proves homotopy invariance without any
@@ -32,6 +44,10 @@ the resulting smooth paths with proximity invariance of the winding number.
   preserves the integral of the Cauchy-kernel `1`-form.
 * `isNullHomologous_iff_of_pathHomotopy` transfers null-homology across a homotopy in the ambient
   set.
+* `windingNumber_eq_of_continuousOn_uncurry` proves invariance along a continuous family of
+  closed curves, with a moving base point.
+* `windingNumber_comp_circleMap_eq_of_annulus` and `windingNumber_comp_circleMap_eq_zero` are the
+  annulus and disc forms for the image of a circle under a `C¹` map.
 
 ## Provenance
 
@@ -45,7 +61,7 @@ public section
 
 noncomputable section
 
-open scoped unitInterval
+open scoped unitInterval Topology
 open MeasureTheory Set
 
 namespace TauCeti.Contour
@@ -223,6 +239,73 @@ theorem isNullHomologous_iff_of_pathHomotopy {x y : ℂ} {p q : Path x y} {Ω : 
     exact h.congr_windingNumber fun z hz ↦
       windingNumber_eq_of_pathHomotopy φ hp hq
         (fun st (hst : φ st = z) ↦ hz (hst ▸ hφΩ st))
+
+/-- **Homotopy invariance of the winding number of closed curves.** Let `H p`, for `p` in a
+preconnected set `S` of parameters, be closed piecewise-`C¹` curves on the parameter interval with
+endpoints `a`, `b`, depending jointly continuously on the parameter and the time, and avoiding `w`.
+Then all the curves `H p`, `p ∈ S`, have the same winding number about `w`. Unlike
+`windingNumber_eq_of_pathHomotopy`, the base point `H p a` may move with `p`. -/
+theorem windingNumber_eq_of_continuousOn_uncurry {P : Type*} [TopologicalSpace P] {S : Set P}
+    (hS : IsPreconnected S) {H : P → ℝ → ℂ} {a b : ℝ} {w : ℂ}
+    (hH : ContinuousOn (Function.uncurry H) (S ×ˢ uIcc a b))
+    (hpw : ∀ p ∈ S, IsPiecewiseC1On (H p) a b) (hclosed : ∀ p ∈ S, H p a = H p b)
+    (havoid : ∀ p ∈ S, ∀ t ∈ uIcc a b, H p t ≠ w) {p q : P} (hp : p ∈ S) (hq : q ∈ S) :
+    windingNumber (H p) a b w = windingNumber (H q) a b w := by
+  -- The curves near `H q` stay closer to it than `H q` stays to `w`, so the winding number is
+  -- locally constant in the parameter.
+  have hloc (q : P) (hq : q ∈ S) :
+      ∀ᶠ p in 𝓝[S] q, windingNumber (H p) a b w = windingNumber (H q) a b w := by
+    obtain ⟨t₀, ht₀, hmin⟩ := isCompact_uIcc.exists_isMinOn nonempty_uIcc
+      ((continuous_id.dist continuous_const).comp_continuousOn (hpw q hq).continuousOn :
+        ContinuousOn (fun t ↦ dist (H q t) w) _)
+    obtain ⟨v, hv, hclose⟩ := isCompact_uIcc.mem_uniformity_of_prod hH hq
+      (Metric.dist_mem_uniformity (dist_pos.2 (havoid q hq t₀ ht₀)))
+    filter_upwards [hv, self_mem_nhdsWithin] with p hpv hpS
+    exact (hpw q hq).windingNumber_eq_of_dist_lt_dist (hpw p hpS) (hclosed q hq) (hclosed p hpS)
+      fun t ht ↦ (hclose p hpv t ht).trans_le (hmin ht)
+  -- A locally constant function on a preconnected space is constant.
+  have := isPreconnected_iff_preconnectedSpace.1 hS
+  have hconst : IsLocallyConstant fun x : S ↦ windingNumber (H x) a b w :=
+    (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦
+      (eventually_nhds_subtype_iff S x _).2 (hloc x x.2)
+  exact hconst.apply_eq_of_preconnectedSpace ⟨p, hp⟩ ⟨q, hq⟩
+
+/-- **Concentric circles through an annulus avoiding `w` wind equally often.** If `f` is `C¹` on
+the closed annulus `r₁ ≤ |z - z₀| ≤ r₂`, with `0 ≤ r₁ ≤ r₂`, and does not take the value `w`
+there, then the images under `f` of the two boundary circles, each traversed once from the angle
+`a`, have the same winding number about `w`. -/
+theorem windingNumber_comp_circleMap_eq_of_annulus {f : ℂ → ℂ} {z₀ w : ℂ} {r₁ r₂ : ℝ}
+    (hr₁ : 0 ≤ r₁) (hr : r₁ ≤ r₂)
+    (hf : ContDiffOn ℝ 1 f (Metric.closedBall z₀ r₂ \ Metric.ball z₀ r₁))
+    (hw : ∀ z ∈ Metric.closedBall z₀ r₂ \ Metric.ball z₀ r₁, f z ≠ w) (a : ℝ) :
+    windingNumber (f ∘ circleMap z₀ r₁) a (a + 2 * Real.pi) w =
+      windingNumber (f ∘ circleMap z₀ r₂) a (a + 2 * Real.pi) w := by
+  have hmaps {s : ℝ} (hs : s ∈ Icc r₁ r₂) (θ : ℝ) :
+      circleMap z₀ s θ ∈ Metric.closedBall z₀ r₂ \ Metric.ball z₀ r₁ := by
+    have hθ := Metric.mem_sphere.1 (circleMap_mem_sphere z₀ (hr₁.trans hs.1) θ)
+    simp only [Set.mem_sdiff, Metric.mem_closedBall, Metric.mem_ball, hθ, not_lt]
+    exact ⟨hs.2, hs.1⟩
+  refine windingNumber_eq_of_continuousOn_uncurry (H := fun s θ ↦ f (circleMap z₀ s θ))
+    isPreconnected_Icc ?_ (fun s hs ↦ ?_) (fun s _ ↦ ?_) (fun s hs θ _ ↦ hw _ (hmaps hs θ))
+    (left_mem_Icc.2 hr) (right_mem_Icc.2 hr)
+  · refine hf.continuousOn.comp (Continuous.continuousOn (by unfold circleMap; fun_prop))
+      fun x hx ↦ hmaps hx.1 x.2
+  · exact IsPiecewiseC1On.of_contDiffOn
+      (hf.comp (contDiff_circleMap z₀ s).contDiffOn fun θ _ ↦ hmaps hs θ)
+  · exact congrArg f (periodic_circleMap z₀ s a).symm
+
+/-- **The image of the boundary of a disc missing `w` does not wind around `w`.** If `f` is `C¹`
+on the closed disc of radius `r ≥ 0` about `z₀` and does not take the value `w` there, then the
+image under `f` of the boundary circle, traversed once from the angle `a`, has winding number zero
+about `w`. -/
+theorem windingNumber_comp_circleMap_eq_zero {f : ℂ → ℂ} {z₀ w : ℂ} {r : ℝ} (hr : 0 ≤ r)
+    (hf : ContDiffOn ℝ 1 f (Metric.closedBall z₀ r))
+    (hw : ∀ z ∈ Metric.closedBall z₀ r, f z ≠ w) (a : ℝ) :
+    windingNumber (f ∘ circleMap z₀ r) a (a + 2 * Real.pi) w = 0 := by
+  rw [← sdiff_empty (s := Metric.closedBall z₀ r), ← Metric.ball_zero (x := z₀)] at hf hw
+  rw [← windingNumber_comp_circleMap_eq_of_annulus le_rfl hr hf hw, circleMap_zero_radius,
+    Function.comp_const]
+  exact windingNumber_const _ _ _ _
 
 end TauCeti.Contour
 
