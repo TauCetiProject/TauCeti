@@ -262,6 +262,10 @@ private theorem pathVector_dotProduct [Fintype n] (v w : n → K) (X Y X' Y' : K
   rw [dotProduct_comm w v]
   ring
 
+/-- An algebra map from the Laurent polynomials to the base field fixes constants. -/
+private theorem apply_C (φ : K[T;T⁻¹] →ₐ[K] K) (x : K) : φ (C x) = x := by
+  rw [AlgHom.apply_laurentPolynomial_C, Algebra.algebraMap_self_apply]
+
 /-- Away from the endpoints only the coefficients of the path vector move, so a coefficient-field
 point of the family is the product of the reflection in `v` and the reflection in the
 specialized path vector. -/
@@ -275,11 +279,9 @@ private theorem map_reflectionMatrix_mul [Fintype n] (φ : K[T;T⁻¹] →ₐ[K]
   congr 1
   have h : (φ : K[T;T⁻¹] →+* K) ∘ constVector v = v := by
     funext i
-    simp only [Function.comp_apply, RingHom.coe_coe, constVector, C_eq_algebraMap,
-      AlgHom.commutes, Algebra.algebraMap_self_apply]
+    simp only [Function.comp_apply, RingHom.coe_coe, constVector, apply_C]
   have hc : (φ : K[T;T⁻¹] →+* K) (C c) = c := by
-    simp only [RingHom.coe_coe, C_eq_algebraMap, AlgHom.commutes,
-      Algebra.algebraMap_self_apply]
+    simp only [RingHom.coe_coe, apply_C]
   rw [h, hc]
 
 private theorem reflectionMatrix_comp_pathVector_left (φ : K[T;T⁻¹] →ₐ[K] K) {v w : n → K}
@@ -289,7 +291,7 @@ private theorem reflectionMatrix_comp_pathVector_left (φ : K[T;T⁻¹] →ₐ[K
   have h : (φ : K[T;T⁻¹] →+* K) ∘ pathVector v w X Y = fun i => φ X * v i := by
     funext i
     simp only [Function.comp_apply, RingHom.coe_coe, pathVector, map_add, map_mul,
-      C_eq_algebraMap, AlgHom.commutes, Algebra.algebraMap_self_apply, hY, zero_mul, add_zero]
+      apply_C, hY, zero_mul, add_zero]
   rw [h, reflectionMatrix_smul, hc]
 
 private theorem reflectionMatrix_comp_pathVector_right (φ : K[T;T⁻¹] →ₐ[K] K) {v w : n → K}
@@ -299,7 +301,7 @@ private theorem reflectionMatrix_comp_pathVector_right (φ : K[T;T⁻¹] →ₐ[
   have h : (φ : K[T;T⁻¹] →+* K) ∘ pathVector v w X Y = fun i => φ Y * w i := by
     funext i
     simp only [Function.comp_apply, RingHom.coe_coe, pathVector, map_add, map_mul,
-      C_eq_algebraMap, AlgHom.commutes, Algebra.algebraMap_self_apply, hX, zero_mul, zero_add]
+      apply_C, hX, zero_mul, zero_add]
   rw [h, reflectionMatrix_smul, hd]
 
 /-- Assembling a one-parameter family from path data: a coefficient pair `(X, Y)` for the
@@ -364,23 +366,23 @@ private theorem exists_laurentPath_reflectionMatrix_mul_of_degenerate [Fintype n
   · intro φ hφ
     have hφ1 : φ (T 1) = 1 := by rw [hφ, Units.val_one]
     have hX : φ ((2 - T 1) * C (v ⬝ᵥ w)) = v ⬝ᵥ w := by
-      rw [map_mul, map_sub, map_ofNat, hφ1, AlgHom.apply_laurentPolynomial_C]
+      rw [map_mul, map_sub, map_ofNat, hφ1, apply_C]
       ring
     have hY : φ ((T 1 - 1) * C (v ⬝ᵥ v)) = 0 := by
-      rw [map_mul, map_sub, map_one, hφ1, AlgHom.apply_laurentPolynomial_C]
+      rw [map_mul, map_sub, map_one, hφ1, apply_C]
       ring
     refine ⟨hY, ?_⟩
-    rw [hX, AlgHom.apply_laurentPolynomial_C, hbb, hcv]
+    rw [hX, apply_C, hbb, hcv]
     field_simp
   · intro φ hφ
     have hφ2 : φ (T 1) = 2 := by rw [hφ, val_unitOfInvertible]
     have hX : φ ((2 - T 1) * C (v ⬝ᵥ w)) = 0 := by
       rw [map_mul, map_sub, map_ofNat, hφ2, sub_self, zero_mul]
     have hY : φ ((T 1 - 1) * C (v ⬝ᵥ v)) = v ⬝ᵥ v := by
-      rw [map_mul, map_sub, map_one, hφ2, AlgHom.apply_laurentPolynomial_C]
+      rw [map_mul, map_sub, map_one, hφ2, apply_C]
       ring
     refine ⟨hX, ?_⟩
-    rw [hY, AlgHom.apply_laurentPolynomial_C, hdw]
+    rw [hY, apply_C, hdw]
     field_simp
 
 omit [DecidableEq n] in
@@ -421,6 +423,11 @@ private theorem laurent_normalization_eq_two [NeZero (2 : K)] {a s : K} (ha : a 
           ring]
         exact map_ofNat C 2
 
+/-- An algebra map to the base field that sends `T 1` to a unit `u` sends `T (-1)` to `u⁻¹`. -/
+private theorem apply_T_neg_one {φ : K[T;T⁻¹] →ₐ[K] K} {u : Kˣ} (h : φ (T 1) = (u : K)) :
+    φ (T (-1)) = (u : K)⁻¹ := by
+  rw [AlgHom.apply_laurentPolynomial_T_of_apply_T_one h, zpow_neg_one, Units.val_inv_eq_inv_val]
+
 /-- At the parameter `-1` of the nondegenerate path, the moving vector is proportional to `v`. -/
 private theorem eval_nondegenerate_of_eq_neg_one [NeZero (2 : K)] {a b s : K} (ha : a ≠ 0)
     (hs0 : s ≠ 0) (φ : K[T;T⁻¹] →ₐ[K] K) (hφ : φ (T 1) = -1) :
@@ -428,17 +435,17 @@ private theorem eval_nondegenerate_of_eq_neg_one [NeZero (2 : K)] {a b s : K} (h
       φ (-C b + C s + T 1 * (-C b - C s)) * φ (-C b + C s + T 1 * (-C b - C s)) *
         φ (C (-(2 * a * (s * s))⁻¹) * T (-1)) = 2 / a := by
   have hφ2 : φ (T (-1)) = -1 := by
-    rw [algHom_apply_T_neg_one (u := -1) (by rw [hφ, Units.val_neg, Units.val_one]),
-      Units.val_inv_eq_inv_val, Units.val_neg, Units.val_one]
+    rw [apply_T_neg_one (u := -1) (by rw [hφ, Units.val_neg, Units.val_one]), Units.val_neg,
+      Units.val_one]
     norm_num
   have hX : φ (-C b + C s + T 1 * (-C b - C s)) = 2 * s := by
-    simp only [map_add, map_neg, map_mul, map_sub, AlgHom.apply_laurentPolynomial_C, hφ]
+    simp only [map_add, map_neg, map_mul, map_sub, apply_C, hφ]
     ring
   have hY : φ (C a + T 1 * C a) = 0 := by
-    simp only [map_add, map_mul, AlgHom.apply_laurentPolynomial_C, hφ]
+    simp only [map_add, map_mul, apply_C, hφ]
     ring
   have hEv : φ (C (-(2 * a * (s * s))⁻¹) * T (-1)) = (2 * a * (s * s))⁻¹ := by
-    rw [map_mul, AlgHom.apply_laurentPolynomial_C, hφ2]
+    rw [map_mul, apply_C, hφ2]
     ring
   refine ⟨hY, ?_⟩
   rw [hX, hEv]
@@ -455,18 +462,18 @@ private theorem eval_nondegenerate_of_eq_div [NeZero (2 : K)] {a b s q : K} (ha 
         2 / q := by
   have hφ1 : φ (T 1) = -((b - s) / (b + s)) := by rw [hφ, hu]
   have hφ2 : φ (T (-1)) = -((b + s) / (b - s)) := by
-    rw [algHom_apply_T_neg_one hφ, Units.val_inv_eq_inv_val, hu, ← neg_inv, inv_div]
+    rw [apply_T_neg_one hφ, hu, ← neg_inv, inv_div]
   have hX : φ (-C b + C s + T 1 * (-C b - C s)) = 0 := by
-    simp only [map_add, map_neg, map_mul, map_sub, AlgHom.apply_laurentPolynomial_C, hφ1]
+    simp only [map_add, map_neg, map_mul, map_sub, apply_C, hφ1]
     field_simp
     ring
   have hY : φ (C a + T 1 * C a) = a * (2 * s) / (b + s) := by
-    simp only [map_add, map_mul, AlgHom.apply_laurentPolynomial_C, hφ1]
+    simp only [map_add, map_mul, apply_C, hφ1]
     field_simp
     ring
   have hEv : φ (C (-(2 * a * (s * s))⁻¹) * T (-1)) =
       (b + s) / ((b - s) * (2 * a * (s * s))) := by
-    rw [map_mul, AlgHom.apply_laurentPolynomial_C, hφ2]
+    rw [map_mul, apply_C, hφ2]
     field_simp
   have hms : b - s = a * q / (b + s) := by
     field_simp
