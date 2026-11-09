@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
-public import Mathlib.Analysis.Calculus.FDeriv.Mul
+public import Mathlib.Analysis.Calculus.FDeriv.Pow
 public import Mathlib.Analysis.Calculus.FDeriv.Pi
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
@@ -15,12 +15,13 @@ import TauCeti.Analysis.Calculus.SecondDerivative
 /-!
 # The derivative of a diagonal quadratic form
 
-For a finite index type `ι`, the diagonal quadratic function `x ↦ ∑ᵢ aᵢ xᵢ² / 2` on `ι → ℝ` is
-named `TauCeti.diagonalQuadratic`. Up to an additive constant, this is the normal form of a function
-at a nondegenerate critical point given by the Morse lemma. Its derivative at `x` is
-`v ↦ ∑ᵢ aᵢ xᵢ vᵢ`, so its partial derivatives are `aᵢ xᵢ`, and its second derivative is the
-diagonal bilinear form `(v, w) ↦ ∑ᵢ aᵢ vᵢ wᵢ`. Its nondegenerate critical points and Morse index are
-computed in `TauCeti.Analysis.Calculus.Morse.Pi`.
+Over a nontrivially normed field `𝕜` in which `2 ≠ 0`, for a finite index type `ι`, the diagonal
+quadratic function `x ↦ ∑ᵢ aᵢ xᵢ² / 2` on `ι → 𝕜` is named `TauCeti.diagonalQuadratic`. Over `ℝ`
+and up to an additive constant, this is the normal form of a function at a nondegenerate critical
+point given by the Morse lemma. Its derivative at `x` is `v ↦ ∑ᵢ aᵢ xᵢ vᵢ`, so its partial
+derivatives are `aᵢ xᵢ`, and over `ℝ` its second derivative is the diagonal bilinear form
+`(v, w) ↦ ∑ᵢ aᵢ vᵢ wᵢ`. Its nondegenerate critical points and Morse index are computed in
+`TauCeti.Analysis.Calculus.Morse.Pi`.
 
 ## Main definitions
 
@@ -43,39 +44,33 @@ section DiagonalQuadratic
 
 open Function
 
-variable {ι : Type*} [Fintype ι]
+variable {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [Fintype ι]
 
-/-- The **diagonal quadratic function** `∑ᵢ aᵢ xᵢ² / 2` on `ℝ^ι`, whose Hessian is diagonal with
+/-- The **diagonal quadratic function** `∑ᵢ aᵢ xᵢ² / 2` on `𝕜^ι`, whose Hessian is diagonal with
 eigenvalues `aᵢ`. -/
-noncomputable def diagonalQuadratic (a : ι → ℝ) (x : ι → ℝ) : ℝ :=
+noncomputable def diagonalQuadratic (a : ι → 𝕜) (x : ι → 𝕜) : 𝕜 :=
   ∑ i, a i * x i ^ 2 / 2
 
-theorem diagonalQuadratic_apply (a x : ι → ℝ) :
+theorem diagonalQuadratic_apply (a x : ι → 𝕜) :
     diagonalQuadratic a x = ∑ i, a i * x i ^ 2 / 2 :=
   (rfl)
 
-theorem contDiff_diagonalQuadratic (a : ι → ℝ) {n : WithTop ℕ∞} :
-    ContDiff ℝ n (diagonalQuadratic a) := by
+theorem contDiff_diagonalQuadratic (a : ι → 𝕜) {n : WithTop ℕ∞} :
+    ContDiff 𝕜 n (diagonalQuadratic a) := by
   unfold diagonalQuadratic
   fun_prop
 
 /-- The diagonal quadratic function `∑ᵢ aᵢ xᵢ² / 2` has derivative `v ↦ ∑ᵢ aᵢ xᵢ vᵢ` at `x`. -/
-theorem hasFDerivAt_diagonalQuadratic (a x : ι → ℝ) :
+theorem hasFDerivAt_diagonalQuadratic [NeZero (2 : 𝕜)] (a x : ι → 𝕜) :
     HasFDerivAt (diagonalQuadratic a)
-      (∑ i, (a i * x i) • ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i) x := by
-  have hp : ∀ i, HasFDerivAt (fun x : ι → ℝ ↦ x i)
-      (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i) x :=
-    fun i ↦ hasFDerivAt_apply i x
-  have h := HasFDerivAt.fun_sum (u := Finset.univ) fun i _ ↦
-    ((hp i).mul (hp i)).const_mul (a i / 2)
-  convert h using 1
+      (∑ i, (a i * x i) • ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : ι ↦ 𝕜) i) x := by
+  have hs : HasFDerivAt (fun y : ι → 𝕜 ↦ ∑ i, a i * y i ^ 2) _ x := .fun_sum fun i _ ↦
+    ((hasFDerivAt_pow 2).comp x (hasFDerivAt_apply (𝕜 := 𝕜) i x)).const_mul (a i)
+  convert hs.const_mul (2 : 𝕜)⁻¹ using 1
   · ext y
-    simp only [diagonalQuadratic_apply, Pi.mul_apply]
-    exact Finset.sum_congr rfl fun i _ ↦ by ring
+    simp [diagonalQuadratic_apply, Finset.mul_sum, div_eq_inv_mul]
   · ext v
-    simp only [FunLike.coe_sum, Finset.sum_apply, FunLike.coe_smul, Pi.smul_apply,
-      ContinuousLinearMap.proj_apply, smul_eq_mul, add_apply]
-    exact Finset.sum_congr rfl fun i _ ↦ by ring
+    simp [Finset.mul_sum, mul_left_comm (2 : 𝕜)⁻¹, mul_assoc, two_ne_zero]
 
 /-- The summands of a diagonal quadratic function, as functions of one variable, have derivative
 `c y`. -/
@@ -91,8 +86,8 @@ private theorem deriv_deriv_mul_sq_div_two (c y : ℝ) :
 
 /-- The partial derivatives of `∑ᵢ aᵢ xᵢ² / 2` are `aᵢ xᵢ`. -/
 @[simp]
-theorem fderiv_diagonalQuadratic_apply_single [DecidableEq ι] (a x : ι → ℝ) (i : ι) :
-    fderiv ℝ (diagonalQuadratic a) x (Pi.single i 1) = a i * x i := by
+theorem fderiv_diagonalQuadratic_apply_single [NeZero (2 : 𝕜)] [DecidableEq ι] (a x : ι → 𝕜)
+    (i : ι) : fderiv 𝕜 (diagonalQuadratic a) x (Pi.single i 1) = a i * x i := by
   simp [(hasFDerivAt_diagonalQuadratic a x).fderiv, Pi.single_apply]
 
 /-- The Hessian of `∑ᵢ aᵢ xᵢ² / 2` is the diagonal form `∑ᵢ aᵢ vᵢ wᵢ`. -/

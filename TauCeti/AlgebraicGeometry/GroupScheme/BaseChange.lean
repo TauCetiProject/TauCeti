@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -32,6 +32,11 @@ of group schemes preserves finite limits.
   law of a base change projects to the group law of the original group scheme.
 * `TauCeti.GroupScheme.pullbackMapGrp_preservesFiniteLimits`: base change of group schemes
   preserves finite limits.
+
+The naturality lemma in the test scheme is adapted from Axel Delaval, Jie Xu, and Shitan Xu's
+Jacobian library, release `baef7723da528551b7d2f93bd9a9a53303b04dbc`,
+`Jacobian/AlgebraicGeometry/BaseChange/GroupPoints.lean`, declaration
+`AlgebraicGeometry.baseChangeHomMulEquiv_naturality_left`.
 
 ## References
 
@@ -198,6 +203,15 @@ theorem pullback_mapGrp_inv_left_fst (s : Y ⟶ X) (G : Grp (Over X)) (T : Over 
     baseChangePointMulEquiv_apply_left]
   -- `rw` cannot see through the type of `p.left`, so reassociate by unification
   exact Category.assoc _ _ _
+
+/-- Restriction along a map of test schemes commutes with the point-group equivalence. -/
+theorem baseChangePointMulEquiv_naturality_left
+    (s : Y ⟶ X) (G : Grp (Over X)) {T U : Over Y} (f : U ⟶ T)
+    (p : T ⟶ ((Over.pullback s).mapGrp.obj G).X) :
+    baseChangePointMulEquiv s G U (f ≫ p) =
+      (Over.map s).map f ≫ baseChangePointMulEquiv s G T p := by
+  simp only [baseChangePointMulEquiv_apply]
+  exact (Over.mapPullbackAdj s).homEquiv_naturality_left_symm f p
 
 /-- Pullback of group schemes along an arbitrary base morphism preserves finite limits. In
 particular, it preserves kernels. -/

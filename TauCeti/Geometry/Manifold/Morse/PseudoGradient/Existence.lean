@@ -166,10 +166,10 @@ theorem hasFDerivAt_quadratic (z : E) :
           (φ.coordL : E →L[ℝ] (Fin (Module.finrank ℝ E) → ℝ))) z := by
   have h := ((hasFDerivAt_diagonalQuadratic φ.weight (φ.coordL z)).const_add (f x)).comp z
     φ.coordL.hasFDerivAt
+  rw [coordL_apply] at h
   convert h using 1
-  · ext v
-    simp [quadratic, diagonalQuadratic_apply, Finset.mul_sum, div_eq_inv_mul]
-  · simp
+  ext v
+  simp [quadratic, diagonalQuadratic_apply, Finset.mul_sum, div_eq_inv_mul]
 
 /-- The derivative of the quadratic normal form is `v ↦ Σᵢ wᵢ (L z)ᵢ (L v)ᵢ`. -/
 theorem fderiv_quadratic_apply (z v : E) :
