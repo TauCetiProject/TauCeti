@@ -547,8 +547,8 @@ theorem subst_formalCoordinate_log_formalGroup [Algebra ℚ R] (C : VariableChan
     (W : WeierstrassCurve R) :
     subst (C.formalCoordinate W).toPowerSeries (formalGroup W).log =
       ((C.u⁻¹ : Rˣ) : R) • (formalGroup (C • W)).log := by
-  rw [formalGroup_smul, FormalGroup.log_smul, inv_inv, map_inv, linearCoeff_formalCoordinate,
-    inv_inv, smul_smul, ← Units.val_mul, inv_mul_cancel, Units.val_one, one_smul]
+  rw [formalGroup_smul, FormalGroup.log_smul, inv_inv]
+  simp [smul_smul]
 
 /-- The height ideals of the formal group of a Weierstrass curve do not depend on the chosen
 Weierstrass equation. -/
