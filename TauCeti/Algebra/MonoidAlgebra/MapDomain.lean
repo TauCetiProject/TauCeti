@@ -86,7 +86,7 @@ variable [Monoid M] [Monoid N] (ι : M →* N) {n : N} (hn : ∀ m, Commute (ι 
 
 /-- The action of `single n 1` on an `R[N]`-module `X`, as an `R[M]`-linear endomorphism, when `n`
 commutes with the image of `ι : M →* N` and `R[M]` acts on `X` through `mapDomain ι`. -/
-@[expose] noncomputable def _root_.MonoidHom.singleSMulLinearMap : X →ₗ[MonoidAlgebra R M] X where
+noncomputable def _root_.MonoidHom.singleSMulLinearMap : X →ₗ[MonoidAlgebra R M] X where
   toFun x := (single n 1 : MonoidAlgebra R N) • x
   map_add' := smul_add _
   map_smul' r x := by
@@ -97,7 +97,7 @@ commutes with the image of `ι : M →* N` and `R[M]` acts on `X` through `mapDo
 @[simp]
 theorem _root_.MonoidHom.singleSMulLinearMap_apply (x : X) :
     ι.singleSMulLinearMap hn X hact x = (single n 1 : MonoidAlgebra R N) • x :=
-  rfl
+  (rfl)
 
 end SingleSMul
 

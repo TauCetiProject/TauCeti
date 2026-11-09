@@ -114,10 +114,9 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
   have hg' : Representation.ofModule' X (s * q) =
       ((single q' (1 : A) : MonoidAlgebra A Q) • S).restrictScalars A := by
     ext x
-    -- Unfold both constructed actions; the `A[Q]`-action on `X` is the `A[G]`-action through `φ`.
-    change (single (s * q) (1 : A) : MonoidAlgebra A G) • x =
-      φ (single q' (1 : A)) • (single s (1 : A) : MonoidAlgebra A G) • x
-    rw [← mul_smul]
+    -- Unfold the `A[Q]`-action on `X`: it is the `A[G]`-action through `φ`.
+    change (single (s * q) (1 : A) : MonoidAlgebra A G) • x = φ (single q' (1 : A)) • S x
+    rw [show S x = _ from MonoidHom.singleSMulLinearMap_apply _ _ _ _ x, ← mul_smul]
     simp [φ, q', single_mul_single, hsq.eq]
   have hm : IsUnit (orderOf s : A) :=
     (Nat.coprime_comm.mp ((Nat.Prime.coprime_iff_not_dvd Fact.out).mpr hpm)).isUnit_natCast hp
