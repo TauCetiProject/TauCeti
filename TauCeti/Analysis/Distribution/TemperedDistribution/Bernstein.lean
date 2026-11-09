@@ -6,249 +6,295 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.Support
-public import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-import TauCeti.Analysis.Distribution.TemperateGrowth
+public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Fourier.ChangeOfVariables
-import TauCeti.MeasureTheory.Function.Lp.Dilation
 
 /-!
 # Bernstein's inequalities
 
-Let `E` be a finite-dimensional real inner product space of dimension `n`, and let `f ∈ Lᵖ(E)`
-have its Fourier transform supported in the closed ball of radius `R`, in the sense that the
-tempered distribution `𝓕 f` vanishes on the complement of that ball
-(`Distribution.IsVanishingOn`). **Bernstein's inequality** says that for `1 ≤ p ≤ q ≤ ∞` and
-directions `m₀, …, m_{k-1}`, the derivative `∂^{m} f = ∂_{m₀} ⋯ ∂_{m_{k-1}} f` lies in `L^q` with
+Let `E` be a real inner product space of finite dimension `n`. A tempered distribution `u` is
+*band-limited* to the closed ball of radius `R` when its Fourier transform vanishes outside it,
+`Distribution.IsVanishingOn (𝓕 u) (closedBall 0 R)ᶜ`. **Bernstein's inequalities** say that if
+such a `u` is an `Lᵖ` function `f`, then for `1 ≤ p ≤ q ≤ ∞` every derivative of `f` is an `Lᵠ`
+function, with
 
-`‖∂^{m} f‖_q ≤ C R ^ (k + n (1/p - 1/q)) ‖f‖_p`,
+`‖∂_{m₁} ⋯ ∂_{mₖ} f‖_q ≤ C ^ (k + 1) R ^ (k + n (1/p - 1/q)) ‖m₁‖ ⋯ ‖mₖ‖ ‖f‖_p`
 
-where `C` depends on `p`, `q` and the directions `m`, but not on `R` or `f`
-(`TemperedDistribution.exists_iteratedLineDerivOp_eq_and_norm_le`). For `k = 0` it says that a
-band-limited `Lᵖ` function lies in every `L^q`, `q ≥ p`, with
-`‖f‖_q ≤ C R ^ (n (1/p - 1/q)) ‖f‖_p`
-(`TemperedDistribution.exists_toTemperedDistribution_eq_and_norm_le`). These are the estimates on
-the Littlewood–Paley blocks of a function on which Besov spaces, paraproducts and Strichartz
-estimates rest.
+for a constant `C` depending only on `E`, `p` and `q`
+(`TauCeti.exists_iteratedLineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier`). The case `k = 0`
+is the gain of integrability `‖f‖_q ≤ C R ^ (n (1/p - 1/q)) ‖f‖_p` of a band-limited function, and
+the case `p = q`, `k = 1` says that differentiating costs at most a factor `C R`.
 
-The exponent of `R` is forced by scaling. Fix a smooth cutoff `χ` equal to `1` on the ball of
-radius `2`. On functions whose Fourier transform lives in the ball of radius `R`, the derivative
-`∂^{m}` agrees with the Fourier multiplier whose symbol is the compactly supported smooth function
+These are the basic estimates for functions whose spectrum lies in a ball, such as the
+Littlewood–Paley blocks of a tempered distribution: they convert the frequency localization of a
+block into bounds on its derivatives and on its higher Lebesgue norms.
 
-`σ_R(ξ) = ∏ᵢ 2πi ⟪ξ, mᵢ⟫ · χ(ξ / R)`
+## The argument
 
-(`TemperedDistribution.iteratedLineDerivOp_eq_fourierMultiplierCLM` and
-`TemperedDistribution.fourierMultiplierCLM_eq_self_of_isVanishingOn`). Since
-`σ_R(ξ) = R ^ k σ_1(ξ / R)`, its kernel is `𝓕⁻ σ_R (x) = R ^ (k + n) 𝓕⁻ σ_1 (R x)`, whose `Lʳ`
-norm is `R ^ (k + n (1 - 1/r))` times that of `𝓕⁻ σ_1`. Young's inequality with
-`1/p + 1/r = 1 + 1/q`
-(`TemperedDistribution.exists_fourierMultiplierCLM_eq_and_norm_le_of_inv_add_inv_eq`) bounds the
-multiplier from `Lᵖ` to `L^q` by this norm, and `1 - 1/r = 1/p - 1/q`.
-
-The reverse inequality for functions whose Fourier transform lives in an annulus,
-`‖f‖_p ≤ C R ^ (-k) max_{|α| = k} ‖∂^α f‖_p`, is not proved here.
+Let `χ` be a smooth bump function equal to one on the ball of radius `2`, and `χ_R = χ (R⁻¹ •)`.
+If `𝓕 u` vanishes outside the ball of radius `R`, then `χ_R • 𝓕 u = 𝓕 u`, so `u` is reproduced by
+the Fourier multiplier with symbol `χ_R`
+(`TemperedDistribution.fourierMultiplierCLM_eq_self_of_isVanishingOn`). That multiplier is
+convolution with the Schwartz kernel `𝓕⁻ χ_R`, which maps `Lᵖ` to `Lᵠ` with norm at most
+`‖𝓕⁻ χ_R‖_r`, `1/p + 1/r = 1 + 1/q`, by Young's inequality
+(`TemperedDistribution.exists_fourierMultiplierCLM_toTemperedDistribution_eq`). Similarly `∂_m u` is
+reproduced by the symbol `2πi ⟪ξ, m⟫ χ_R ξ`, whose kernel is `∂_m (𝓕⁻ χ_R)`. Since
+`𝓕⁻ χ_R x = R ^ n 𝓕⁻ χ (R • x)`, the `Lʳ` norm of the first kernel is `R ^ (n (1 - 1/r))` times
+that of `𝓕⁻ χ` (`TauCeti.eLpNorm_fourierInv_comp_inv_smul`), and the `L¹` norm of the second is
+`R` times that of `∂_m 𝓕⁻ χ`, which is at most a fixed multiple of `‖m‖`. Derivatives of a
+band-limited distribution are again band-limited
+(`TemperedDistribution.isVanishingOn_fourier_iteratedLineDerivOp`), so the bounds for one
+derivative iterate.
 
 ## Main declarations
 
-* `TemperedDistribution.exists_iteratedLineDerivOp_eq_and_norm_le`: Bernstein's inequality for
-  derivatives.
-* `TemperedDistribution.exists_toTemperedDistribution_eq_and_norm_le`: the case of no
-  derivatives, the `Lᵖ → L^q` improvement for band-limited functions.
+* `TauCeti.exists_iteratedLineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier`: Bernstein's
+  inequalities.
 
 ## References
 
 * H. Bahouri, J.-Y. Chemin and R. Danchin, *Fourier Analysis and Nonlinear Partial Differential
-  Equations*, Lemma 2.1.
+  Equations*, Grundlehren der mathematischen Wissenschaften 343, Springer, 2011, Lemma 2.1.
 -/
 
 public section
 
 noncomputable section
 
-namespace TemperedDistribution
-
-open MeasureTheory Module LineDeriv Real Metric
-open scoped ENNReal SchwartzMap FourierTransform
+open SchwartzMap ContinuousLinearMap MeasureTheory Metric Distribution Module
+open scoped ENNReal FourierTransform SchwartzMap LineDeriv Convolution
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-variable (E) in
-/-- The cutoff `χ`, equal to `1` on the closed ball of radius `2` and supported in the ball of
-radius `3`. -/
-private def bernsteinCutoff : ContDiffBump (0 : E) := ⟨2, 3, two_pos, by norm_num⟩
+namespace TauCeti
 
-/-- The cutoff `χ (R⁻¹ •)` at radius `R ≠ 0`, as a Schwartz function. -/
-private def cutoffAt {R : ℝ} (hR : R ≠ 0) : 𝓢(E, ℂ) :=
-  (((bernsteinCutoff E).hasCompactSupport.comp_smul (inv_ne_zero hR)).comp_left
-    Complex.ofReal_zero).toSchwartzMap
-    (Complex.ofRealCLM.contDiff.comp ((bernsteinCutoff E).contDiff.comp (contDiff_const_smul _)))
+open TemperedDistribution
+
+/-- The bump function, equal to one on the ball of radius `2`, whose dilations reproduce
+band-limited functions. -/
+private def bump : ContDiffBump (0 : E) := ⟨2, 3, two_pos, by norm_num⟩
+
+/-- The symbol `ξ ↦ χ (R⁻¹ • ξ)`, equal to one on the ball of radius `2 R`, as a Schwartz
+function. -/
+private def cutoff {R : ℝ} (hR : 0 < R) : 𝓢(E, ℂ) :=
+  HasCompactSupport.toSchwartzMap (f := fun ξ ↦ ((bump : ContDiffBump (0 : E)) (R⁻¹ • ξ) : ℂ))
+    ((bump.hasCompactSupport.comp_smul (inv_ne_zero hR.ne')).comp_left Complex.ofReal_zero)
+    (Complex.ofRealCLM.contDiff.comp (bump.contDiff.comp (contDiff_const_smul _)))
 
 omit [MeasurableSpace E] [BorelSpace E] in
-private theorem cutoffAt_apply {R : ℝ} (hR : R ≠ 0) (ξ : E) :
-    cutoffAt hR ξ = (bernsteinCutoff E (R⁻¹ • ξ) : ℂ) :=
-  HasCompactSupport.toSchwartzMap_toFun _ _ ξ
+private theorem cutoff_apply {R : ℝ} (hR : 0 < R) (ξ : E) :
+    cutoff hR ξ = ((bump : ContDiffBump (0 : E)) (R⁻¹ • ξ) : ℂ) :=
+  rfl
 
 omit [MeasurableSpace E] [BorelSpace E] in
-/-- Off the closed ball of radius `R > 0` lies everything where `χ (R⁻¹ •)` differs from `1`. -/
-private theorem tsupport_one_sub_cutoffAt_subset {R : ℝ} (hR : 0 < R) :
-    tsupport (1 - ⇑(cutoffAt (E := E) hR.ne')) ⊆ (closedBall 0 R)ᶜ := by
-  have hsupp : Function.support (1 - ⇑(cutoffAt (E := E) hR.ne')) ⊆ {ξ | 2 * R ≤ ‖ξ‖} := by
-    intro ξ hξ
-    by_contra hlt
-    refine hξ ?_
-    have hmem : R⁻¹ • ξ ∈ closedBall (0 : E) (bernsteinCutoff E).rIn := by
-      rw [mem_closedBall_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg hR.le,
-        inv_mul_le_iff₀ hR]
-      exact (not_le.1 hlt).le.trans_eq (by simp [bernsteinCutoff, mul_comm])
-    simp [cutoffAt_apply, (bernsteinCutoff E).one_of_mem_closedBall hmem]
-  refine (closure_minimal hsupp (isClosed_le continuous_const continuous_norm)).trans ?_
-  intro ξ hξ hball
-  rw [mem_closedBall_zero_iff] at hball
-  have hξ' : 2 * R ≤ ‖ξ‖ := hξ
+/-- The cutoff at scale `R` equals one outside a closed set disjoint from the closed ball of
+radius `R`. -/
+private theorem tsupport_cutoff_sub_one_subset {R : ℝ} (hR : 0 < R) :
+    tsupport (⇑(cutoff (E := E) hR) - 1) ⊆ (closedBall 0 R)ᶜ := by
+  have hsupp : Function.support (⇑(cutoff (E := E) hR) - 1) ⊆ (ball 0 (2 * R))ᶜ := by
+    intro ξ hξ hball
+    apply hξ
+    have : R⁻¹ • ξ ∈ closedBall (0 : E) 2 := by
+      rw [mem_ball_zero_iff] at hball
+      rw [mem_closedBall_zero_iff, norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR]
+      rw [inv_mul_le_iff₀ hR]
+      linarith
+    simp [cutoff_apply, bump.one_of_mem_closedBall this]
+  refine (closure_minimal hsupp isOpen_ball.isClosed_compl).trans ?_
+  refine Set.compl_subset_compl.2 (closedBall_subset_ball ?_)
   linarith
 
-/-- The polynomial symbol `ξ ↦ ∏ᵢ 2πi ⟪ξ, mᵢ⟫` of `∂^{m}`. -/
-private def derivSymbol {k : ℕ} (m : Fin k → E) (ξ : E) : ℂ :=
-  ∏ i, 2 * π * Complex.I * (inner ℝ ξ (m i) : ℂ)
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem hasTemperateGrowth_derivSymbol {k : ℕ} (m : Fin k → E) :
-    (derivSymbol m).HasTemperateGrowth :=
-  Function.HasTemperateGrowth.prod fun i _ ↦ by fun_prop
-
-/-- The symbol `σ_R = ∏ᵢ 2πi ⟪·, mᵢ⟫ · χ (R⁻¹ •)` of `∂^{m}` cut off at frequency radius `2R`,
-as a Schwartz function. -/
-private def symbol {k : ℕ} (m : Fin k → E) {R : ℝ} (hR : R ≠ 0) : 𝓢(E, ℂ) :=
-  SchwartzMap.smulLeftCLM ℂ (derivSymbol m) (cutoffAt hR)
-
 omit [MeasurableSpace E] [BorelSpace E] in
-private theorem symbol_apply {k : ℕ} (m : Fin k → E) {R : ℝ} (hR : R ≠ 0) (ξ : E) :
-    symbol m hR ξ = derivSymbol m ξ * (bernsteinCutoff E (R⁻¹ • ξ) : ℂ) := by
-  rw [symbol, SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_derivSymbol m),
-    cutoffAt_apply, smul_eq_mul]
+/-- The cutoff at scale `R` is the dilation of the cutoff at scale `1`. -/
+private theorem cutoff_eq_comp {R : ℝ} (hR : 0 < R) :
+    ⇑(cutoff (E := E) hR) = fun ξ ↦ cutoff (E := E) one_pos (R⁻¹ • ξ) := by
+  ext ξ
+  simp [cutoff_apply]
 
-omit [CompleteSpace F] in
-/-- On a tempered distribution whose Fourier transform vanishes off the closed ball of radius
-`R > 0`, the derivative `∂^{m}` is the multiplier with the Schwartz symbol `σ_R`. -/
-private theorem iteratedLineDerivOp_eq_fourierMultiplierCLM_symbol {k : ℕ} (m : Fin k → E)
-    {R : ℝ} (hR : 0 < R) {u : 𝓢'(E, F)}
-    (hu : Distribution.IsVanishingOn ⇑(𝓕 u : 𝓢'(E, F)) (closedBall 0 R)ᶜ) :
-    ∂^{m} u = fourierMultiplierCLM F (symbol m hR.ne') u := by
-  have hχ := (cutoffAt (E := E) hR.ne').hasTemperateGrowth
-  calc ∂^{m} u = fourierMultiplierCLM F (derivSymbol m) u :=
-        iteratedLineDerivOp_eq_fourierMultiplierCLM m u
-    _ = fourierMultiplierCLM F (derivSymbol m)
-          (fourierMultiplierCLM F (cutoffAt hR.ne') u) := by
-        rw [fourierMultiplierCLM_eq_self_of_isVanishingOn hχ hu
-          (tsupport_one_sub_cutoffAt_subset hR)]
-    _ = fourierMultiplierCLM F (symbol m hR.ne') u := by
-        have h : ⇑(cutoffAt hR.ne') * derivSymbol m = ⇑(symbol m hR.ne') := by
-          funext ξ
-          rw [Pi.mul_apply, symbol_apply, cutoffAt_apply, mul_comm]
-        rw [fourierMultiplierCLM_fourierMultiplierCLM_apply hχ
-          (hasTemperateGrowth_derivSymbol m), h]
+variable [CompleteSpace F]
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The symbol at radius `R` is the dilate of the symbol at radius `1`:
-`σ_R(ξ) = R ^ k σ_1(R⁻¹ ξ)`. -/
-private theorem symbol_apply_eq {k : ℕ} (m : Fin k → E) {R : ℝ} (hR : R ≠ 0) (ξ : E) :
-    symbol m hR ξ = ((R : ℂ) ^ k • symbol m one_ne_zero) (R⁻¹ • ξ) := by
-  have h (i : Fin k) : 2 * π * Complex.I * (inner ℝ (R⁻¹ • ξ) (m i) : ℂ) =
-      (R : ℂ)⁻¹ * (2 * π * Complex.I * (inner ℝ ξ (m i) : ℂ)) := by
-    rw [real_inner_smul_left]
-    push_cast
-    ring
-  have hR' : (R : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 hR
-  simp only [smul_apply, symbol_apply, derivSymbol, inv_one, one_smul, h,
-    Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul]
-  rw [inv_pow]
-  field_simp
-
-/-- **Scaling of the kernel.** For `R > 0`, the `Lʳ` norm of the kernel `𝓕⁻ σ_R` is
-`R ^ (k + n - n/r)` times that of `𝓕⁻ σ_1`. -/
-private theorem toReal_eLpNorm_fourierInv_symbol {k : ℕ} (m : Fin k → E) {R : ℝ} (hR : 0 < R)
-    (r : ℝ≥0∞) :
-    (eLpNorm (𝓕⁻ ⇑(symbol m hR.ne')) r volume).toReal =
-      R ^ (k + finrank ℝ E - finrank ℝ E * r.toReal⁻¹ : ℝ) *
-        (eLpNorm (𝓕⁻ ⇑(symbol m (one_ne_zero (α := ℝ)))) r volume).toReal := by
-  set σ : 𝓢(E, ℂ) := (R : ℂ) ^ k • symbol m one_ne_zero
-  have hK : 𝓕⁻ ⇑(symbol m hR.ne') =
-      |(R⁻¹ ^ finrank ℝ E)|⁻¹ • fun y ↦ 𝓕⁻ ⇑σ (R⁻¹⁻¹ • y) := by
-    funext y
-    have hσ : ⇑(symbol m hR.ne') = fun ξ ↦ σ (R⁻¹ • ξ) := funext (symbol_apply_eq m hR.ne')
-    rw [hσ, TauCeti.fourierInv_comp_smul (⇑σ) (inv_ne_zero hR.ne'), Pi.smul_apply]
-  have hσK : 𝓕⁻ ⇑σ = (R : ℂ) ^ k • 𝓕⁻ ⇑(symbol m (one_ne_zero (α := ℝ))) := by
-    rw [← SchwartzMap.fourierInv_coe, ← SchwartzMap.fourierInv_coe,
-      FourierInvSMul.fourierInv_smul]
-    rfl
-  rw [hK, eLpNorm_const_smul, Measure.eLpNorm_comp_inv_smul volume _ (inv_ne_zero hR.ne'), hσK,
-    eLpNorm_const_smul, ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_mul,
-    ENNReal.toReal_ofReal (by positivity), toReal_enorm, toReal_enorm, ← mul_assoc, ← mul_assoc]
-  congr 1
-  set n := finrank ℝ E
-  have h1 : ‖|R⁻¹ ^ n|⁻¹‖ = R ^ (n : ℝ) := by
-    rw [Real.norm_eq_abs, abs_inv, abs_abs, abs_of_pos (by positivity), inv_pow, inv_inv,
-      Real.rpow_natCast]
-  have h2 : |R⁻¹| ^ ((n : ℝ) / r.toReal) = R ^ (-(n * r.toReal⁻¹)) := by
-    rw [abs_of_pos (inv_pos.2 hR), Real.inv_rpow hR.le, ← Real.rpow_neg hR.le, div_eq_mul_inv]
-  have h3 : ‖(R : ℂ) ^ k‖ = R ^ (k : ℝ) := by
-    rw [norm_pow, Complex.norm_real, Real.norm_of_nonneg hR.le, Real.rpow_natCast]
-  rw [h1, h2, h3, ← Real.rpow_add hR, ← Real.rpow_add hR]
-  congr 1
-  ring
-
-/-- **Bernstein's inequality.** Let `1 ≤ p ≤ q ≤ ∞` and let `m₀, …, m_{k-1}` be directions in `E`,
-a space of dimension `n`. There is a constant `C` such that for every `R > 0` and every `f ∈ Lᵖ`
-whose Fourier transform vanishes off the closed ball of radius `R`, the derivative
-`∂^{m} f = ∂_{m₀} ⋯ ∂_{m_{k-1}} f` is a function `g ∈ L^q` with
-`‖g‖_q ≤ C R ^ (k + n (1/p - 1/q)) ‖f‖_p`. -/
-theorem exists_iteratedLineDerivOp_eq_and_norm_le {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
-    (hpq : p ≤ q) {k : ℕ} (m : Fin k → E) :
-    ∃ C : ℝ, ∀ {R : ℝ}, 0 < R → ∀ f : Lp F p (volume : Measure E),
-      Distribution.IsVanishingOn ⇑(𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ →
-      ∃ g : Lp F q (volume : Measure E), ∂^{m} (f : 𝓢'(E, F)) = g ∧
-        ‖g‖ ≤ C * R ^ (k + finrank ℝ E * (p.toReal⁻¹ - q.toReal⁻¹)) * ‖f‖ := by
-  have hp : 1 ≤ p := Fact.out
-  have hq : 1 ≤ q := Fact.out
-  -- The exponent `r` of Young's inequality, with `1/r = 1 + 1/q - 1/p`.
-  set r : ℝ≥0∞ := (1 + q⁻¹ - p⁻¹)⁻¹
-  have hp_le : p⁻¹ ≤ 1 + q⁻¹ := (ENNReal.inv_le_one.2 hp).trans le_self_add
-  have hpqr : p⁻¹ + r⁻¹ = 1 + q⁻¹ := by rw [inv_inv, add_tsub_cancel_of_le hp_le]
-  have hr : 1 ≤ r := by
-    refine ENNReal.one_le_inv.2 (tsub_le_iff_right.2 ?_)
-    gcongr
-  clear_value r
-  have hreal : r.toReal⁻¹ = 1 + q.toReal⁻¹ - p.toReal⁻¹ := by
-    have h := congrArg ENNReal.toReal hpqr
-    rw [ENNReal.toReal_add (ENNReal.inv_ne_top.2 (zero_lt_one.trans_le hp).ne')
-        (ENNReal.inv_ne_top.2 (zero_lt_one.trans_le hr).ne'),
-      ENNReal.toReal_add ENNReal.one_ne_top (ENNReal.inv_ne_top.2 (zero_lt_one.trans_le hq).ne'),
-      ENNReal.toReal_inv, ENNReal.toReal_inv, ENNReal.toReal_inv, ENNReal.toReal_one] at h
-    linarith
-  refine ⟨(eLpNorm (𝓕⁻ ⇑(symbol m (one_ne_zero (α := ℝ)))) r volume).toReal,
-    fun {R} hR f hf ↦ ?_⟩
-  obtain ⟨g, hg, hgf⟩ :=
-    exists_fourierMultiplierCLM_eq_and_norm_le_of_inv_add_inv_eq hr hpqr (symbol m hR.ne') f
-  refine ⟨g, (iteratedLineDerivOp_eq_fourierMultiplierCLM_symbol m hR hf).trans hg,
-    hgf.trans_eq ?_⟩
-  rw [toReal_eLpNorm_fourierInv_symbol m hR, hreal, mul_comm (R ^ _)]
-  congr 3
-  ring
-
-/-- **Bernstein's inequality without derivatives.** Let `1 ≤ p ≤ q ≤ ∞` and let `E` have dimension
-`n`. There is a constant `C` such that for every `R > 0`, every `f ∈ Lᵖ` whose Fourier transform
-vanishes off the closed ball of radius `R` lies in `L^q`, with
+/-- **Bernstein's inequality without derivatives.** For `1 ≤ p ≤ q ≤ ∞`, an `Lᵖ` function whose
+Fourier transform vanishes outside the ball of radius `R` is in `Lᵠ`, with
 `‖f‖_q ≤ C R ^ (n (1/p - 1/q)) ‖f‖_p`. -/
-theorem exists_toTemperedDistribution_eq_and_norm_le {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+private theorem exists_eq_and_norm_le {p q : ℝ≥0∞} [hp : Fact (1 ≤ p)] [Fact (1 ≤ q)]
     (hpq : p ≤ q) :
-    ∃ C : ℝ, ∀ {R : ℝ}, 0 < R → ∀ f : Lp F p (volume : Measure E),
-      Distribution.IsVanishingOn ⇑(𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ →
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {R : ℝ}, 0 < R → ∀ f : Lp F p (volume : Measure E),
+      IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ →
       ∃ g : Lp F q (volume : Measure E), (f : 𝓢'(E, F)) = g ∧
-        ‖g‖ ≤ C * R ^ (finrank ℝ E * (p.toReal⁻¹ - q.toReal⁻¹)) * ‖f‖ := by
-  obtain ⟨C, hC⟩ :=
-    exists_iteratedLineDerivOp_eq_and_norm_le (F := F) hpq (Fin.elim0 : Fin 0 → E)
-  exact ⟨C, fun hR f hf ↦ by simpa using hC hR f hf⟩
+        ‖g‖ ≤ C * R ^ ((finrank ℝ E : ℝ) * (p.toReal⁻¹ - q.toReal⁻¹)) * ‖f‖ := by
+  -- The exponent `r` of Young's inequality, with `1/p + 1/r = 1 + 1/q`.
+  set r : ℝ≥0∞ := (1 + q⁻¹ - p⁻¹)⁻¹
+  have hqp : q⁻¹ ≤ p⁻¹ := ENNReal.inv_le_inv.2 hpq
+  have hp1 : p⁻¹ ≤ 1 + q⁻¹ := (ENNReal.inv_le_one.2 hp.out).trans le_self_add
+  have hq1 : q⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 (zero_lt_one.trans_le Fact.out).ne'
+  have hr : 1 ≤ r := ENNReal.one_le_inv.2 (tsub_le_iff_right.2 (by gcongr))
+  have hpqr : p⁻¹ + r⁻¹ = 1 + q⁻¹ := by rw [inv_inv, add_tsub_cancel_of_le hp1]
+  have hrexp : (finrank ℝ E : ℝ) - finrank ℝ E / r.toReal =
+      finrank ℝ E * (p.toReal⁻¹ - q.toReal⁻¹) := by
+    have : r.toReal⁻¹ = 1 + q.toReal⁻¹ - p.toReal⁻¹ := by
+      rw [← ENNReal.toReal_inv, inv_inv, ENNReal.toReal_sub_of_le hp1
+        (ENNReal.add_ne_top.2 ⟨ENNReal.one_ne_top, hq1⟩),
+        ENNReal.toReal_add ENNReal.one_ne_top hq1, ENNReal.toReal_inv, ENNReal.toReal_inv,
+        ENNReal.toReal_one]
+    rw [div_eq_mul_inv, this]
+    ring
+  refine ⟨(eLpNorm (𝓕⁻ (cutoff (E := E) one_pos : E → ℂ)) r volume).toReal,
+    ENNReal.toReal_nonneg, fun {R} hR f hf ↦ ?_⟩
+  obtain ⟨g, hg, -, hgf⟩ :=
+    exists_fourierMultiplierCLM_toTemperedDistribution_eq (cutoff hR) f hr hpqr
+  refine ⟨g, ?_, ?_⟩
+  · rw [← hg, fourierMultiplierCLM_eq_self_of_isVanishingOn hf (cutoff hR).hasTemperateGrowth
+      (tsupport_cutoff_sub_one_subset hR)]
+  · rw [cutoff_eq_comp hR, eLpNorm_fourierInv_comp_inv_smul _ hR, ENNReal.toReal_mul,
+      ENNReal.toReal_ofReal (by positivity), hrexp] at hgf
+    linarith
 
-end TemperedDistribution
+/-- The symbol `ξ ↦ 2πi ⟪ξ, m⟫ χ (R⁻¹ • ξ)` of `∂_m` composed with the reproducing multiplier
+at scale `R`. -/
+private def derivSymbol {R : ℝ} (hR : 0 < R) (m : E) : 𝓢(E, ℂ) :=
+  (2 * Real.pi * Complex.I) • SchwartzMap.smulLeftCLM ℂ (inner ℝ · m) (cutoff hR)
+
+omit [MeasurableSpace E] [BorelSpace E] in
+private theorem coe_derivSymbol {R : ℝ} (hR : 0 < R) (m : E) :
+    ⇑(derivSymbol hR m) =
+      (2 * Real.pi * Complex.I) • (⇑(cutoff hR) * fun ξ ↦ ((inner ℝ ξ m : ℝ) : ℂ)) := by
+  ext ξ
+  simp [derivSymbol, SchwartzMap.smulLeftCLM_apply_apply (g := (inner ℝ · m)) (by fun_prop),
+    mul_comm]
+
+/-- The kernel of `derivSymbol` has `L¹` norm at most `C R ‖m‖`: it is `R` times the dilation of
+the kernel `∂_m 𝓕⁻ χ` at scale `1`, which is bounded by `‖m‖ ‖D 𝓕⁻ χ‖`. -/
+private theorem toReal_eLpNorm_fourierInv_derivSymbol_le {R : ℝ} (hR : 0 < R) (m : E) :
+    (eLpNorm (𝓕⁻ (derivSymbol hR m : E → ℂ)) 1 volume).toReal ≤
+      (eLpNorm (fderiv ℝ (𝓕⁻ (cutoff (E := E) one_pos) : 𝓢(E, ℂ))) 1 volume).toReal * R *
+        ‖m‖ := by
+  set K : 𝓢(E, ℂ) := 𝓕⁻ (cutoff (E := E) one_pos)
+  have hscale : ⇑(derivSymbol hR m) = fun ξ ↦ ((R : ℂ) • derivSymbol one_pos m) (R⁻¹ • ξ) := by
+    ext ξ
+    simp [coe_derivSymbol, cutoff_apply, real_inner_smul_left]
+    have hRc : (R : ℂ) ≠ 0 := by exact_mod_cast hR.ne'
+    field_simp
+  have hK : 𝓕⁻ (derivSymbol one_pos m) = ∂_{m} K :=
+    (SchwartzMap.lineDerivOp_fourierInv_eq _ m).symm
+  have hfin : eLpNorm (fderiv ℝ K) 1 volume ≠ ∞ := by
+    have : fderiv ℝ ⇑K = ⇑(SchwartzMap.fderivCLM ℝ E ℂ K) := by
+      ext1 x
+      rw [SchwartzMap.fderivCLM_apply]
+    rw [this]
+    exact (SchwartzMap.eLpNorm_lt_top _ 1 volume).ne
+  have hderiv : eLpNorm ⇑(∂_{m} K : 𝓢(E, ℂ)) 1 volume ≤ ‖m‖ₑ * eLpNorm (fderiv ℝ K) 1 volume :=
+    eLpNorm_le_mul_eLpNorm_of_ae_le_mul'' 1 (∂_{m} K).continuous.aestronglyMeasurable
+      (ae_of_all _ fun x ↦ by
+        rw [SchwartzMap.lineDerivOp_apply_eq_fderiv, mul_comm]
+        exact ContinuousLinearMap.le_opENorm _ _)
+  have hsmul : ⇑((R : ℂ) • (∂_{m} K : 𝓢(E, ℂ))) = (R : ℂ) • ⇑(∂_{m} K : 𝓢(E, ℂ)) :=
+    funext fun x ↦ smul_apply _ _ _
+  calc (eLpNorm (𝓕⁻ (derivSymbol hR m : E → ℂ)) 1 volume).toReal
+      = R * (eLpNorm ⇑(∂_{m} K : 𝓢(E, ℂ)) 1 volume).toReal := by
+        rw [hscale, eLpNorm_fourierInv_comp_inv_smul _ hR, ← SchwartzMap.fourierInv_coe,
+          FourierTransform.fourierInv_smul, hK, hsmul, eLpNorm_const_smul]
+        simp [abs_of_pos hR]
+    _ ≤ R * (‖m‖ * (eLpNorm (fderiv ℝ K) 1 volume).toReal) := by
+        gcongr
+        calc (eLpNorm ⇑(∂_{m} K : 𝓢(E, ℂ)) 1 volume).toReal
+            ≤ (‖m‖ₑ * eLpNorm (fderiv ℝ K) 1 volume).toReal :=
+              ENNReal.toReal_mono (ENNReal.mul_ne_top enorm_ne_top hfin) hderiv
+          _ = ‖m‖ * (eLpNorm (fderiv ℝ K) 1 volume).toReal := by
+              rw [ENNReal.toReal_mul, toReal_enorm]
+    _ = (eLpNorm (fderiv ℝ K) 1 volume).toReal * R * ‖m‖ := by ring
+
+/-- **Bernstein's inequality for one derivative.** An `Lᵖ` function whose Fourier transform
+vanishes outside the ball of radius `R` has derivatives in `Lᵖ`, with
+`‖∂_m f‖_p ≤ C R ‖m‖ ‖f‖_p`. -/
+private theorem exists_lineDerivOp_eq_and_norm_le {p : ℝ≥0∞} [hp : Fact (1 ≤ p)] :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {R : ℝ}, 0 < R → ∀ f : Lp F p (volume : Measure E),
+      IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ → ∀ m : E,
+      ∃ g : Lp F p (volume : Measure E), ∂_{m} (f : 𝓢'(E, F)) = g ∧
+        ‖g‖ ≤ C * R * ‖m‖ * ‖f‖ := by
+  refine ⟨(eLpNorm (fderiv ℝ (𝓕⁻ (cutoff (E := E) one_pos) : 𝓢(E, ℂ))) 1 volume).toReal,
+    ENNReal.toReal_nonneg, fun {R} hR f hf m ↦ ?_⟩
+  have hinner : (fun ξ : E ↦ ((inner ℝ ξ m : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
+  have hσ := (cutoff (E := E) hR).hasTemperateGrowth
+  -- `∂_m f` is the multiplier with symbol `derivSymbol hR m`.
+  have hdist : ∂_{m} (f : 𝓢'(E, F)) =
+      fourierMultiplierCLM F (derivSymbol hR m) (f : 𝓢'(E, F)) := by
+    conv_lhs => rw [← fourierMultiplierCLM_eq_self_of_isVanishingOn hf hσ
+      (tsupport_cutoff_sub_one_subset hR)]
+    rw [TemperedDistribution.lineDeriv_eq_fourierMultiplierCLM,
+      TemperedDistribution.fourierMultiplierCLM_fourierMultiplierCLM_apply hσ hinner,
+      coe_derivSymbol, TemperedDistribution.fourierMultiplierCLM_smul (hσ.mul hinner),
+      smul_apply]
+  obtain ⟨g, hg, -, hgf⟩ := exists_fourierMultiplierCLM_toTemperedDistribution_eq
+    (derivSymbol hR m) f (q := p) (r := 1) le_rfl (by rw [inv_one, add_comm])
+  exact ⟨g, hdist.trans hg, hgf.trans (mul_le_mul_of_nonneg_right
+    (toReal_eLpNorm_fourierInv_derivSymbol_le hR m) (norm_nonneg f))⟩
+
+/-- **Bernstein's inequality for derivatives at a fixed exponent**, by induction on the number of
+derivatives: `‖∂_{m₁} ⋯ ∂_{mₖ} f‖_p ≤ (C R) ^ k ‖m₁‖ ⋯ ‖mₖ‖ ‖f‖_p`. -/
+private theorem exists_iteratedLineDerivOp_eq_and_norm_le {p : ℝ≥0∞} [Fact (1 ≤ p)] :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {R : ℝ}, 0 < R → ∀ f : Lp F p (volume : Measure E),
+      IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ →
+      ∀ (k : ℕ) (m : Fin k → E), ∃ g : Lp F p (volume : Measure E),
+        ∂^{m} (f : 𝓢'(E, F)) = g ∧ ‖g‖ ≤ (C * R) ^ k * (∏ i, ‖m i‖) * ‖f‖ := by
+  obtain ⟨C, hC, h₁⟩ := exists_lineDerivOp_eq_and_norm_le (E := E) (F := F) (p := p)
+  refine ⟨C, hC, fun {R} hR f hf k ↦ ?_⟩
+  induction k with
+  | zero => exact fun m ↦ ⟨f, by simp, by simp⟩
+  | succ k ih =>
+    intro m
+    obtain ⟨g', hg', hg'n⟩ := ih (Fin.tail m)
+    have hg'f : IsVanishingOn (𝓕 (g' : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ := by
+      rw [← hg']
+      exact isVanishingOn_fourier_iteratedLineDerivOp hf _
+    obtain ⟨g, hg, hgn⟩ := h₁ hR g' hg'f (m 0)
+    refine ⟨g, by rw [LineDeriv.iteratedLineDerivOp_succ_left, hg', hg], ?_⟩
+    calc ‖g‖ ≤ C * R * ‖m 0‖ * ‖g'‖ := hgn
+      _ ≤ C * R * ‖m 0‖ * ((C * R) ^ k * (∏ i, ‖Fin.tail m i‖) * ‖f‖) := by gcongr
+      _ = (C * R) ^ (k + 1) * (∏ i, ‖m i‖) * ‖f‖ := by
+        rw [Fin.prod_univ_succ]
+        simp only [Fin.tail]
+        ring
+
+/-- **Bernstein's inequalities.** For `1 ≤ p ≤ q ≤ ∞` there is a constant `C`, depending only on
+`E`, `p` and `q`, with the following property. Let `f ∈ Lᵖ` have Fourier transform vanishing
+outside the closed ball of radius `R > 0`. Then for all directions `m₁, …, mₖ` the derivative
+`∂_{m₁} ⋯ ∂_{mₖ} f` is an `Lᵠ` function `g` with
+
+`‖g‖_q ≤ C ^ (k + 1) R ^ (k + n (1/p - 1/q)) ‖m₁‖ ⋯ ‖mₖ‖ ‖f‖_p`,
+
+where `n` is the dimension of `E` and `1/∞ = 0`. -/
+theorem exists_iteratedLineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier {p q : ℝ≥0∞}
+    [Fact (1 ≤ p)] [Fact (1 ≤ q)] (hpq : p ≤ q) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (k : ℕ) (m : Fin k → E) {R : ℝ}, 0 < R →
+      ∀ f : Lp F p (volume : Measure E),
+      IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ →
+      ∃ g : Lp F q (volume : Measure E), ∂^{m} (f : 𝓢'(E, F)) = g ∧
+        ‖g‖ ≤ C ^ (k + 1) * R ^ ((k : ℝ) + finrank ℝ E * (p.toReal⁻¹ - q.toReal⁻¹)) *
+          (∏ i, ‖m i‖) * ‖f‖ := by
+  obtain ⟨C₀, hC₀, h₀⟩ := exists_eq_and_norm_le (E := E) (F := F) hpq
+  obtain ⟨C₁, hC₁, hderiv⟩ :=
+    exists_iteratedLineDerivOp_eq_and_norm_le (E := E) (F := F) (p := p)
+  -- The derivatives at the exponent `p`, then the gain of integrability from `p` to `q`.
+  refine ⟨max C₀ C₁, le_max_of_le_left hC₀, fun k m {R} hR f hf ↦ ?_⟩
+  obtain ⟨g, hg, hgn⟩ := hderiv hR f hf k m
+  obtain ⟨h, hh, hhn⟩ := h₀ hR g (by
+    rw [← hg]
+    exact isVanishingOn_fourier_iteratedLineDerivOp hf m)
+  refine ⟨h, hg.trans hh, ?_⟩
+  set d : ℝ := finrank ℝ E * (p.toReal⁻¹ - q.toReal⁻¹)
+  have hC : C₀ * C₁ ^ k ≤ max C₀ C₁ ^ (k + 1) := by
+    rw [pow_succ']
+    gcongr
+    exacts [le_max_left _ _, le_max_right _ _]
+  calc ‖h‖ ≤ C₀ * R ^ d * ‖g‖ := hhn
+    _ ≤ C₀ * R ^ d * ((C₁ * R) ^ k * (∏ i, ‖m i‖) * ‖f‖) := by gcongr
+    _ = C₀ * C₁ ^ k * R ^ ((k : ℝ) + d) * (∏ i, ‖m i‖) * ‖f‖ := by
+        rw [Real.rpow_add hR, Real.rpow_natCast, mul_pow]
+        ring
+    _ ≤ max C₀ C₁ ^ (k + 1) * R ^ ((k : ℝ) + d) * (∏ i, ‖m i‖) * ‖f‖ := by gcongr
+
+end TauCeti

@@ -7,13 +7,9 @@ module
 
 public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
-public import Mathlib.Analysis.Distribution.FourierMultiplier
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
-import TauCeti.Analysis.Convolution.Young
-import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.Analysis.Fourier.Continuous
-import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 
 /-!
 # `Lᵖ` functions as tempered distributions
@@ -41,18 +37,10 @@ function by a function of temperate growth multiplies the function pointwise
 (`MeasureTheory.Lp.smulLeftCLM_toTemperedDistribution_apply`).
 
 * A continuous linear map `T : Lᵖ → 𝓢'`, `p < ∞`, that is given on Schwartz functions by an
-  operator bounded from the `Lᵖ` norm to the `L^q` norm takes values in `L^q`, with the same
-  bound. Schwartz functions are dense in `Lᵖ`, so the bounded operator extends, and the extension
-  agrees with `T` because `𝓢'` is Hausdorff. This is how `Lᵖ` bounds for Fourier multipliers and
-  multiplication operators, proved on Schwartz functions, pass to all of `Lᵖ` or of a Sobolev
-  space.
-* A Fourier multiplier whose symbol `σ` is a Schwartz function maps `Lᵖ` into `L^q` with norm at
-  most `‖𝓕⁻ σ‖_r` whenever `1 ≤ p, r ≤ ∞` and `1/p + 1/r = 1 + 1/q`; in particular it maps every
-  `Lᵖ` into itself with norm at most `‖𝓕⁻ σ‖₁`. On Schwartz functions it is convolution with
-  `𝓕⁻ σ`, which Young's inequality bounds, and the extension above covers `p < ∞`. For `p = ∞`
-  necessarily `r = 1` and `q = ∞`; Schwartz functions are not dense in `L^∞`, and there the
-  multiplier of `f` is identified directly with the convolution `𝓕⁻ σ ⋆ f` by pairing with
-  Schwartz functions and Fubini's theorem.
+  operator bounded in the `Lᵖ` norm takes values in `Lᵖ`, with the same bound. Schwartz functions
+  are dense in `Lᵖ`, so the bounded operator extends, and the extension agrees with `T` because
+  `𝓢'` is Hausdorff. This is how `Lᵖ` bounds for Fourier multipliers and multiplication operators,
+  proved on Schwartz functions, pass to all of `Lᵖ` or of a Sobolev space.
 
 ## Main declarations
 
@@ -74,14 +62,7 @@ function by a function of temperate growth multiplies the function pointwise
   distribution of an `Lᵖ` function `u` with a function `g` of temperate growth pairs with `φ` as
   `∫ φ • (g • u)`.
 * `ContinuousLinearMap.exists_apply_eq_toTemperedDistribution_and_norm_le`: an operator
-  `Lᵖ → 𝓢'` bounded from `Lᵖ` to `L^q` on Schwartz functions takes values in `L^q`.
-* `TemperedDistribution.fourierMultiplierCLM_toTemperedDistribution_apply_eq_integral_convolution`:
-  on `L^∞`, the multiplier with a Schwartz symbol `σ` is convolution with `𝓕⁻ σ`.
-* `TemperedDistribution.exists_fourierMultiplierCLM_eq_and_norm_le_of_inv_add_inv_eq`: the
-  multiplier with a Schwartz symbol `σ` maps `f ∈ Lᵖ` to some `g ∈ L^q` with
-  `‖g‖_q ≤ ‖𝓕⁻ σ‖_r ‖f‖_p`, for `1/p + 1/r = 1 + 1/q`.
-* `TemperedDistribution.exists_fourierMultiplierCLM_eq_and_norm_le`: the multiplier with a
-  Schwartz symbol `σ` maps `f ∈ Lᵖ` to some `g ∈ Lᵖ` with `‖g‖_p ≤ ‖𝓕⁻ σ‖₁ ‖f‖_p`.
+  `Lᵖ → 𝓢'` bounded on Schwartz functions takes values in `Lᵖ`.
 
 ## References
 
@@ -239,164 +220,30 @@ variable {E F : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E]
 
 /-- **Extension from Schwartz functions.** Let `T` be a continuous linear map from `Lᵖ`,
 `p < ∞`, to tempered distributions, which on Schwartz functions `φ` is given by an operator
-`M` on Schwartz functions with `‖M φ‖_q ≤ C ‖φ‖_p`. Then `T` takes values in `L^q`: every `T f`
-is the tempered distribution of some `g ∈ L^q` with `‖g‖_q ≤ C ‖f‖_p`.
+`M` on Schwartz functions with `‖M φ‖_p ≤ C ‖φ‖_p`. Then `T` takes values in `Lᵖ`: every `T f`
+is the tempered distribution of some `g ∈ Lᵖ` with `‖g‖_p ≤ C ‖f‖_p`.
 
 The function `g` is the value at `f` of the bounded extension of `φ ↦ M φ` from the dense
 Schwartz functions to `Lᵖ`; it agrees with `T f` because both sides are continuous in `f` with
 values in the Hausdorff space of tempered distributions. -/
 theorem exists_apply_eq_toTemperedDistribution_and_norm_le {μ : Measure E}
-    [μ.HasTemperateGrowth] [IsFiniteMeasureOnCompacts μ] {p q : ℝ≥0∞} [Fact (1 ≤ p)]
-    [Fact (1 ≤ q)] (hp : p ≠ ∞) (T : Lp F p μ →L[ℂ] 𝓢'(E, F)) (M : 𝓢(E, F) →L[ℂ] 𝓢(E, F))
-    {C : ℝ} (hT : ∀ φ : 𝓢(E, F), T (φ.toLp p μ) = ((M φ).toLp q μ : 𝓢'(E, F)))
-    (hM : ∀ φ : 𝓢(E, F), ‖(M φ).toLp q μ‖ ≤ C * ‖φ.toLp p μ‖) (f : Lp F p μ) :
-    ∃ g : Lp F q μ, T f = g ∧ ‖g‖ ≤ C * ‖f‖ := by
+    [μ.HasTemperateGrowth] [IsFiniteMeasureOnCompacts μ] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hp : p ≠ ∞) (T : Lp F p μ →L[ℂ] 𝓢'(E, F)) (M : 𝓢(E, F) →L[ℂ] 𝓢(E, F)) {C : ℝ}
+    (hT : ∀ φ : 𝓢(E, F), T (φ.toLp p μ) = ((M φ).toLp p μ : 𝓢'(E, F)))
+    (hM : ∀ φ : 𝓢(E, F), ‖(M φ).toLp p μ‖ ≤ C * ‖φ.toLp p μ‖) (f : Lp F p μ) :
+    ∃ g : Lp F p μ, T f = g ∧ ‖g‖ ≤ C * ‖f‖ := by
   set e : 𝓢(E, F) →ₗ[ℂ] Lp F p μ := (SchwartzMap.toLpCLM ℂ F p μ).toLinearMap
   have he : DenseRange e := SchwartzMap.denseRange_toLpCLM (F := F) (μ := μ) hp
-  set S : 𝓢(E, F) →ₗ[ℂ] Lp F q μ := (SchwartzMap.toLpCLM ℂ F q μ).toLinearMap ∘ₗ M.toLinearMap
+  set S : 𝓢(E, F) →ₗ[ℂ] Lp F p μ := e ∘ₗ M.toLinearMap
   have hSe : ∀ φ, ‖S φ‖ ≤ C * ‖e φ‖ := fun φ ↦ by
     simpa only [S, e, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
       SchwartzMap.toLpCLM_apply] using hM φ
   refine ⟨S.extendOfNorm e f, ?_, LinearMap.norm_extendOfNorm_apply_le he _ hSe f⟩
   refine congrFun (he.equalizer (g := T) (h := fun f ↦ (S.extendOfNorm e f : 𝓢'(E, F)))
-    T.continuous ((Lp.toTemperedDistributionCLM F μ q).continuous.comp
+    T.continuous ((Lp.toTemperedDistributionCLM F μ p).continuous.comp
       (S.extendOfNorm e).continuous) (funext fun φ ↦ ?_)) f
   simp only [Function.comp_apply, LinearMap.extendOfNorm_eq he ⟨_, hSe⟩]
   simpa only [S, e, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
     SchwartzMap.toLpCLM_apply] using hT φ
 
 end ContinuousLinearMap
-
-namespace TemperedDistribution
-
-open MeasureTheory
-open scoped ENNReal SchwartzMap FourierTransform Convolution
-
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
-
-/-- The kernel `𝓕⁻ σ` of the multiplier with a Schwartz symbol `σ` is integrable. -/
-private theorem integrable_fourierInv_coe (σ : 𝓢(E, ℂ)) : Integrable (𝓕⁻ (σ : E → ℂ)) := by
-  simpa [SchwartzMap.fourierInv_coe] using (𝓕⁻ σ : 𝓢(E, ℂ)).integrable (μ := volume)
-
-/-- The case `p < ∞` of
-`TemperedDistribution.exists_fourierMultiplierCLM_eq_and_norm_le_of_inv_add_inv_eq`: the bound
-holds on the dense Schwartz functions, and extends. -/
-private theorem exists_fourierMultiplierCLM_eq_and_norm_le_of_ne_top {p q r : ℝ≥0∞}
-    [Fact (1 ≤ p)] [Fact (1 ≤ q)] (hp : p ≠ ∞) (hr : 1 ≤ r) (hpqr : p⁻¹ + r⁻¹ = 1 + q⁻¹)
-    (σ : 𝓢(E, ℂ)) (f : Lp F p (volume : Measure E)) :
-    ∃ g : Lp F q (volume : Measure E), fourierMultiplierCLM F σ (f : 𝓢'(E, F)) = g ∧
-      ‖g‖ ≤ (eLpNorm (𝓕⁻ (σ : E → ℂ)) r volume).toReal * ‖f‖ := by
-  set M : 𝓢(E, F) →L[ℂ] 𝓢(E, F) := SchwartzMap.fourierMultiplierCLM F σ
-  have hM : ∀ φ : 𝓢(E, F),
-      ‖(M φ).toLp q‖ ≤ (eLpNorm (𝓕⁻ (σ : E → ℂ)) r volume).toReal * ‖φ.toLp p‖ := by
-    intro φ
-    have h := SchwartzMap.eLpNorm_fourierMultiplierCLM_le_of_inv_add_inv_eq σ φ
-      (Fact.out : 1 ≤ p) hr hpqr
-    rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (SchwartzMap.coeFn_toLp _ q _),
-      eLpNorm_congr_ae (SchwartzMap.coeFn_toLp _ p _), ← ENNReal.toReal_mul]
-    have hK : eLpNorm (𝓕⁻ (σ : E → ℂ)) r volume ≠ ∞ := by
-      simpa [SchwartzMap.fourierInv_coe] using ((𝓕⁻ σ : 𝓢(E, ℂ)).memLp r volume).eLpNorm_ne_top
-    exact ENNReal.toReal_mono (ENNReal.mul_ne_top hK (φ.memLp p volume).eLpNorm_ne_top) h
-  refine (fourierMultiplierCLM F σ ∘L
-    Lp.toTemperedDistributionCLM F volume p).exists_apply_eq_toTemperedDistribution_and_norm_le
-      hp M (fun φ ↦ ?_) hM f
-  simp only [M, ContinuousLinearMap.comp_apply, Lp.toTemperedDistributionCLM_apply,
-    Lp.toTemperedDistribution_toLp_eq,
-    fourierMultiplierCLM_toTemperedDistributionCLM_eq σ.hasTemperateGrowth]
-
-/-- **A multiplier with Schwartz symbol is convolution with its kernel on `L^∞`.** For
-`f ∈ L^∞` and `K = 𝓕⁻ σ`, the tempered distribution `T_σ f` pairs with a Schwartz function `u` as
-the function `K ⋆ f`. -/
-theorem fourierMultiplierCLM_toTemperedDistribution_apply_eq_integral_convolution (σ : 𝓢(E, ℂ))
-    (f : Lp F ∞ (volume : Measure E)) (u : 𝓢(E, ℂ)) :
-    fourierMultiplierCLM F σ (f : 𝓢'(E, F)) u =
-      ∫ y, u y • (𝓕⁻ (σ : E → ℂ) ⋆[ContinuousLinearMap.lsmul ℂ ℂ] (f : E → F)) y := by
-  set K : E → ℂ := 𝓕⁻ (σ : E → ℂ)
-  have hKi : Integrable K := integrable_fourierInv_coe σ
-  -- The integrand `(x, y) ↦ (K (y - x) * u y) • f x` is integrable on the product: it is an
-  -- integrable function of `(x, y)` times the bounded function `f x`.
-  have hint : Integrable (Function.uncurry fun x y ↦ (K (y - x) * u y) • (f : E → F) x)
-      (volume.prod volume) := by
-    have h1 := (u.integrable (μ := volume)).convolution_integrand
-      (ContinuousLinearMap.mul ℂ ℂ) hKi.comp_neg
-    have h2 : MemLp (fun q : E × E ↦ (f : E → F) q.1) ∞ (volume.prod volume) :=
-      (Lp.memLp f).comp_quasiMeasurePreserving_top Measure.quasiMeasurePreserving_fst
-    refine (h1.smul_of_top_left h2).congr (Filter.Eventually.of_forall fun ⟨x, y⟩ ↦ ?_)
-    simp [neg_sub, mul_comm]
-  -- `𝓕 (σ • 𝓕⁻ u) x = ∫ 𝓕 σ (x - y) * u y` and `𝓕 σ (x - y) = K (y - x)`.
-  have hL : ∀ x, 𝓕 (SchwartzMap.smulLeftCLM ℂ (σ : E → ℂ) (𝓕⁻ u)) x =
-      ∫ y, K (y - x) * u y := by
-    intro x
-    rw [SchwartzMap.fourier_smulLeftCLM_apply, ← integral_sub_left_eq_self _ volume x]
-    simp [K, Real.fourierInv_eq_fourier_neg, SchwartzMap.fourier_coe]
-  simp only [fourierMultiplierCLM_apply_apply, Lp.toTemperedDistribution_apply, hL]
-  calc ∫ x, (∫ y, K (y - x) * u y) • (f : E → F) x
-      = ∫ x, ∫ y, (K (y - x) * u y) • (f : E → F) x := by
-        simp_rw [integral_smul_const]
-    _ = ∫ y, ∫ x, (K (y - x) * u y) • (f : E → F) x := integral_integral_swap hint
-    _ = ∫ y, u y • (K ⋆[ContinuousLinearMap.lsmul ℂ ℂ] (f : E → F)) y := by
-        simp_rw [MeasureTheory.convolution_eq_swap, ContinuousLinearMap.lsmul_apply,
-          ← integral_smul, smul_smul, mul_comm (u _)]
-
-/-- The case `p = ∞` of
-`TemperedDistribution.exists_fourierMultiplierCLM_eq_and_norm_le_of_inv_add_inv_eq`, where
-necessarily `r = 1` and `q = ∞`. Schwartz functions are not dense in `L^∞`, so the multiplier
-of `f` is identified directly with the convolution `𝓕⁻ σ ⋆ f`, which Young's inequality bounds. -/
-private theorem exists_fourierMultiplierCLM_eq_and_norm_le_top (σ : 𝓢(E, ℂ))
-    (f : Lp F ∞ (volume : Measure E)) :
-    ∃ g : Lp F ∞ (volume : Measure E), fourierMultiplierCLM F σ (f : 𝓢'(E, F)) = g ∧
-      ‖g‖ ≤ (eLpNorm (𝓕⁻ (σ : E → ℂ)) 1 volume).toReal * ‖f‖ := by
-  set K : E → ℂ := 𝓕⁻ (σ : E → ℂ)
-  have hKi : Integrable K := integrable_fourierInv_coe σ
-  have hf : AEStronglyMeasurable (f : E → F) volume := Lp.aestronglyMeasurable f
-  set h : E → F := K ⋆[ContinuousLinearMap.lsmul ℂ ℂ] (f : E → F)
-  have hh_le : eLpNorm h ∞ volume ≤ eLpNorm K 1 volume * eLpNorm f ∞ volume := by
-    refine (eLpNorm_convolution_le _ hKi.aestronglyMeasurable hf le_top).trans ?_
-    grw [ContinuousLinearMap.opENorm_lsmul_le, one_mul]
-  have hK1 : eLpNorm K 1 volume ≠ ∞ := (memLp_one_iff_integrable.2 hKi).eLpNorm_ne_top
-  have hh : MemLp h ∞ volume :=
-    hh_le.trans_lt (ENNReal.mul_lt_top hK1.lt_top (Lp.eLpNorm_lt_top f))
-  refine ⟨hh.toLp h, ?_, ?_⟩
-  · ext u
-    rw [fourierMultiplierCLM_toTemperedDistribution_apply_eq_integral_convolution,
-      Lp.toTemperedDistribution_apply]
-    exact integral_congr_ae ((MemLp.coeFn_toLp hh).mono fun y hy ↦ congrArg (u y • ·) hy.symm)
-  · rw [Lp.norm_toLp, Lp.norm_def, ← ENNReal.toReal_mul]
-    exact ENNReal.toReal_mono (ENNReal.mul_ne_top hK1 (Lp.eLpNorm_ne_top f)) hh_le
-
-/-- **`Lᵖ → L^q` bound for a multiplier with Schwartz symbol.** For `1 ≤ p, r ≤ ∞` and
-`1/p + 1/r = 1 + 1/q`, the Fourier multiplier with a Schwartz symbol `σ` maps every `f ∈ Lᵖ` to a
-function `g ∈ L^q` with `‖g‖_q ≤ ‖𝓕⁻ σ‖_r ‖f‖_p`. This is Young's inequality for the convolution
-with the kernel `𝓕⁻ σ`. -/
-theorem exists_fourierMultiplierCLM_eq_and_norm_le_of_inv_add_inv_eq {p q r : ℝ≥0∞}
-    [Fact (1 ≤ p)] [Fact (1 ≤ q)] (hr : 1 ≤ r) (hpqr : p⁻¹ + r⁻¹ = 1 + q⁻¹) (σ : 𝓢(E, ℂ))
-    (f : Lp F p (volume : Measure E)) :
-    ∃ g : Lp F q (volume : Measure E), fourierMultiplierCLM F σ (f : 𝓢'(E, F)) = g ∧
-      ‖g‖ ≤ (eLpNorm (𝓕⁻ (σ : E → ℂ)) r volume).toReal * ‖f‖ := by
-  rcases eq_or_ne p ∞ with rfl | hp
-  · -- For `p = ∞` the relation `1/r = 1 + 1/q` forces `r = 1` and `q = ∞`.
-    have hq1 : 1 + q⁻¹ ≤ 1 + 0 := by
-      rw [add_zero, ← hpqr, ENNReal.inv_top, zero_add]
-      exact ENNReal.inv_le_one.2 hr
-    have hq : q = ∞ := ENNReal.inv_eq_zero.1
-      (nonpos_iff_eq_zero.1 ((ENNReal.add_le_add_iff_left ENNReal.one_ne_top).1 hq1))
-    subst hq
-    have hr1 : r = 1 := by simpa using hpqr
-    subst hr1
-    exact exists_fourierMultiplierCLM_eq_and_norm_le_top σ f
-  · exact exists_fourierMultiplierCLM_eq_and_norm_le_of_ne_top hp hr hpqr σ f
-
-/-- **`Lᵖ` bound for a multiplier with Schwartz symbol.** For `1 ≤ p ≤ ∞`, the Fourier multiplier
-with a Schwartz symbol `σ` maps every `f ∈ Lᵖ` to a function `g ∈ Lᵖ` with
-`‖g‖_p ≤ ‖𝓕⁻ σ‖₁ ‖f‖_p`. -/
-theorem exists_fourierMultiplierCLM_eq_and_norm_le {p : ℝ≥0∞} [Fact (1 ≤ p)] (σ : 𝓢(E, ℂ))
-    (f : Lp F p (volume : Measure E)) :
-    ∃ g : Lp F p (volume : Measure E), fourierMultiplierCLM F σ (f : 𝓢'(E, F)) = g ∧
-      ‖g‖ ≤ (∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖) * ‖f‖ := by
-  have hK := integrable_fourierInv_coe σ
-  rw [integral_norm_eq_lintegral_enorm hK.1, ← eLpNorm_one_eq_lintegral_enorm hK.1]
-  exact exists_fourierMultiplierCLM_eq_and_norm_le_of_inv_add_inv_eq le_rfl
-    (by rw [inv_one, add_comm]) σ f
-
-end TemperedDistribution

@@ -159,7 +159,7 @@ def legendreDiffeomorph :
 /-- The Legendre diffeomorphism is the Legendre map. -/
 @[simp]
 theorem coe_legendreDiffeomorph : ⇑(h.legendreDiffeomorph hL) = legendreMap L :=
-  coe_diffeomorphOfBijective
+  IsLocalDiffeomorph.coe_diffeomorphOfBijective _ _
 
 /-- The inverse of the Legendre diffeomorphism undoes the Legendre map. -/
 @[simp]

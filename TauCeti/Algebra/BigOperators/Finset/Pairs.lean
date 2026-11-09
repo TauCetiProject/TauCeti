@@ -33,11 +33,13 @@ sign of the permutation.
 
 ## Main results
 
+* `TauCeti.sum_fin_product_eq_sum_antidiagonal`: a sum over the pairs of `Fin n × Fin n` with
+  coordinate sum `d < n`, as a sum over the antidiagonal `antidiagonal d` in `ℕ × ℕ`.
 * `TauCeti.sum_univ_prod_eq_sum_lt_add_swap`: a sum over all ordered pairs of a function vanishing
   on the diagonal, as a sum over the increasing pairs of the term plus its transpose.
 * `TauCeti.prod_prod_Ioi_comp_perm`: a product of a symmetric function over the increasing pairs is
   invariant under permuting the indices.
-* `TauCeti.prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag`: a product over weakly increasing
+* `Finset.prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag`: a product over weakly increasing
   pairs separates into the strictly increasing pairs and the diagonal.
 * `TauCeti.prod_prod_Ioi_eq_of_two`: separates the first pair and its cross terms from a product
   over the increasing pairs of a finite ordinal.
@@ -55,6 +57,19 @@ sign of the permutation.
 
 public section
 
+namespace Finset
+
+/-- A product over weakly increasing pairs splits into the strictly increasing pairs and the
+diagonal. -/
+theorem prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag
+    {ι M : Type*} [PartialOrder ι] [LocallyFiniteOrderTop ι] [CommMonoid M] (s : Finset ι)
+    (f : ι → ι → M) :
+    (∏ i ∈ s, ∏ j ∈ Ici i, f i j) = (∏ i ∈ s, ∏ j ∈ Ioi i, f i j) * ∏ i ∈ s, f i i := by
+  simp_rw [← prod_Ioi_mul_eq_prod_Ici]
+  exact prod_mul_distrib
+
+end Finset
+
 namespace TauCeti
 
 open Finset
@@ -66,32 +81,9 @@ theorem sum_fin_product_eq_sum_antidiagonal {M : Type*} [AddCommMonoid M] {n d :
     (hfg : ∀ l, (l.1 : ℕ) + (l.2 : ℕ) = d → f l = g (l.1, l.2)) :
     (∑ l : Fin n × Fin n with (l.1 : ℕ) + (l.2 : ℕ) = d, f l) =
       ∑ l ∈ antidiagonal d, g l := by
-  classical
-  refine Finset.sum_bij (fun l _ ↦ ((l.1 : ℕ), (l.2 : ℕ))) ?_ ?_ ?_ ?_
-  · intro l hl
-    exact Finset.mem_antidiagonal.mpr (Finset.mem_filter.mp hl).2
-  · intro l _ m _ hlm
-    exact Prod.ext (Fin.ext (Prod.mk.inj hlm).1) (Fin.ext (Prod.mk.inj hlm).2)
-  · intro l hl
-    have hl' := Finset.mem_antidiagonal.mp hl
-    refine ⟨(⟨l.1, by omega⟩, ⟨l.2, by omega⟩), ?_, rfl⟩
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-    exact hl'
-  · intro l hl
-    exact hfg l (Finset.mem_filter.mp hl).2
-
-/-- A product over weakly increasing pairs splits into the strictly increasing pairs and the
-diagonal. -/
-theorem prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag
-    {ι M : Type*} [PartialOrder ι] [Fintype ι]
-    [LocallyFiniteOrderTop ι] [CommMonoid M] (f : ι → ι → M) :
-    (∏ i, ∏ j ∈ Ici i, f i j) = (∏ i, ∏ j ∈ Ioi i, f i j) * ∏ i, f i i := by
-  calc
-    (∏ i, ∏ j ∈ Ici i, f i j) = ∏ i, (f i i * ∏ j ∈ Ioi i, f i j) := by
-      apply Finset.prod_congr rfl
-      intro i _
-      exact (mul_prod_Ioi_eq_prod_Ici (f := f i) i).symm
-    _ = _ := by rw [prod_mul_distrib, mul_comm]
+  refine sum_bij' (fun l _ ↦ ((l.1 : ℕ), (l.2 : ℕ)))
+    (fun l hl ↦ (⟨l.1, by grind [mem_antidiagonal]⟩, ⟨l.2, by grind [mem_antidiagonal]⟩))
+    (by simp) (by simp +contextual) (by simp) (by simp) fun l hl ↦ hfg l (mem_filter.mp hl).2
 
 /-- Peel the first two indices off a product over the increasing pairs of `Fin (m + 2)`. -/
 theorem prod_prod_Ioi_eq_of_two {M : Type*} [CommMonoid M] {m : ℕ}
@@ -127,13 +119,10 @@ theorem prod_prod_Ioi_snoc {A M : Type*} [CommMonoid M] {n : ℕ}
     rcases j.eq_castSucc_or_eq_last with ⟨k, rfl⟩ | rfl
     · simp [Fin.le_last]
     · simp
-  rw [Fin.prod_univ_castSucc]
-  simp only [Fin.snoc_castSucc, Fin.snoc_last]
-  simp_rw [hIoi]
   have hlast (i : Fin n) : Fin.last n ∉ (Ioi i).map Fin.castSuccEmb := by simp
-  simp_rw [Finset.prod_insert (hlast _), Finset.prod_map]
-  simp [Fin.snoc_castSucc, Fin.top_eq_last, Fin.snoc_last,
-    Finset.prod_mul_distrib, mul_comm]
+  rw [Fin.prod_univ_castSucc]
+  simp_rw [hIoi, prod_insert (hlast _), prod_map]
+  simp [Fin.top_eq_last, prod_mul_distrib, mul_comm]
 
 /-- The pair product of concatenated tuples is the product over pairs in each tuple and over
 all pairs with one entry in each tuple. -/
@@ -256,19 +245,14 @@ theorem prod_prod_Ioi_scale {A M : Type*} [CommMonoid A] [CommMonoid M] (F : A �
             Fin.snoc (α := fun _ => A) (fun j => a * w₀ j) (a * b) i := by
         rcases i.eq_castSucc_or_eq_last with ⟨j, rfl⟩ | rfl <;> simp
       simp_rw [hs]
-      have hprod : (∏ i, F a (w₀ i)) = F a (∏ i, w₀ i) :=
-        hprod_nonempty w₀
       have hchoose : ((n + 1) + 1).choose 2 = (n + 1).choose 2 + (n + 1) := by
         rw [Nat.choose_succ_succ', Nat.choose_one_right, add_comm]
       rw [prod_prod_Ioi_snoc F (fun j => a * w₀ j) (a * b),
         prod_prod_Ioi_snoc F w₀ b, ih w₀, Fin.prod_snoc, Nat.add_sub_cancel]
       simp_rw [hmulmul]
-      simp only [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
-        hprod, hmul_right, mul_pow, hchoose, pow_add]
-      rw [Nat.add_sub_cancel, pow_succ (F a (∏ i, w₀ i)) n,
-        pow_succ (F a b) n]
-      simp only [pow_one]
-      ac_nf
+      simp only [prod_mul_distrib, prod_const, card_univ, Fintype.card_fin, hprod_nonempty w₀,
+        hmul_right, mul_pow, hchoose, pow_add, Nat.add_sub_cancel, pow_succ]
+      ac_rfl
 
 /-- **A sum over all ordered pairs, folded onto the increasing ones.** A function vanishing on the
 diagonal sums over `l × l` to the sum over the increasing pairs of its value together with its
@@ -284,13 +268,10 @@ theorem sum_univ_prod_eq_sum_lt_add_swap {l : Type*} [Fintype l] [LinearOrder l]
       (by simp)
   have hnot : ∑ ij ∈ {ij : l × l | ij.2 < ij.1}, F ij =
       ∑ ij ∈ {ij : l × l | ¬ ij.1 < ij.2}, F ij := by
-    refine Finset.sum_subset ?_ ?_
-    · intro ij hij
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_lt] at hij ⊢
-      exact hij.le
-    · rintro ⟨a, b⟩ hmem hnotmem
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_lt] at hmem hnotmem
-      exact hdiag a ▸ congrArg (fun c => F (a, c)) (le_antisymm hnotmem hmem).symm
+    refine sum_subset (fun ij ↦ by simpa using le_of_lt) ?_
+    rintro ⟨a, b⟩ h h'
+    obtain rfl : a = b := by simp_all [le_antisymm_iff]
+    exact hdiag a
   rw [← Finset.sum_filter_add_sum_filter_not Finset.univ (fun ij : l × l => ij.1 < ij.2) F,
     ← hnot, hswap, Finset.sum_add_distrib]
 
