@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.Algebra.Polynomial.Degree.Support
 public import Mathlib.Algebra.Polynomial.FieldDivision
 public import Mathlib.RingTheory.Polynomial.Basic
@@ -21,8 +20,6 @@ Elementary facts about modules over a polynomial ring `k[X]`.
   evaluates on `a • z` as a coefficient-weighted sum of the values on `X ^ n • z`.
 * `LinearMap.map_X_pow_smul_smul_eq`: the values of such a functional on `X ^ j • a • t`, when it
   is `1` on `X ^ n • t` and `0` on the other `X ^ l • t`.
-* `TauCeti.Polynomial.torsionOf_eq_span_X_pow`: if `X ^ m` kills `t` but `X ^ (m - 1)` does not,
-  the annihilator of `t` is `(X ^ m)`.
 -/
 
 public section
@@ -71,27 +68,3 @@ theorem map_X_pow_smul_smul_eq (φ : M →ₗ[k] k) {n : ℕ} {t : M}
 end LinearMap
 
 end EvaluateLinearMap
-
-section AnnihilatorOfMaximalOrder
-
-variable {k M : Type*} [Field k] [AddCommMonoid M] [Module k[X] M]
-
-namespace TauCeti.Polynomial
-
-/-- If `X ^ m` kills `t` but `X ^ (m - 1)` does not, the annihilator of `t` is `(X ^ m)`. -/
-theorem torsionOf_eq_span_X_pow {m : ℕ} {t : M} (hm : (X ^ m : k[X]) • t = 0)
-    (ht : (X ^ (m - 1) : k[X]) • t ≠ 0) : Ideal.torsionOf k[X] M t = Ideal.span {X ^ m} := by
-  obtain ⟨g, hg⟩ := (IsPrincipalIdealRing.principal (Ideal.torsionOf k[X] M t)).principal
-  have hmem (n : ℕ) : X ^ n ∈ Ideal.torsionOf k[X] M t ↔ g ∣ X ^ n := by
-    rw [hg, Ideal.submodule_span_eq, Ideal.mem_span_singleton]
-  obtain ⟨i, him, hgi⟩ := (dvd_prime_pow prime_X m).mp
-    ((hmem m).mp ((Ideal.mem_torsionOf_iff _ _).mpr hm))
-  have him' : i = m := by
-    by_contra hne
-    refine ht ((Ideal.mem_torsionOf_iff _ _).mp ((hmem (m - 1)).mpr ?_))
-    exact hgi.dvd.trans (pow_dvd_pow X (by omega))
-  rw [hg, Ideal.submodule_span_eq, Ideal.span_singleton_eq_span_singleton.mpr hgi, him']
-
-end TauCeti.Polynomial
-
-end AnnihilatorOfMaximalOrder
