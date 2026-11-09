@@ -224,15 +224,9 @@ theorem sphereAreaForm_poissonBracket (ξ η : Fin 3 → ℝ) :
 
 /-! ### The rotation action of `so(3)` and its moment map -/
 
-/-- The inclusion `x ↦ ν_x` of `S²` into `so(3)*` pairs `x` with `A = ξ̂` as the height
-`x ⬝ ξ`. -/
-private theorem soThreeDualEquiv_apply_eq (x : S²) (A : so (Fin 3) ℝ) :
-    soThreeDualEquiv ℝ (ofLp (x : ℝ³)) A = ofLp (x : ℝ³) ⬝ᵥ (soThreeEquiv ℝ).symm A :=
-  soThreeDualEquiv_apply _ _
-
 private theorem contMDiff_soThreeDualEquiv_apply (A : so (Fin 3) ℝ) :
     ContMDiff (𝓡 2) 𝓘(ℝ) ∞ fun x : S² ↦ soThreeDualEquiv ℝ (ofLp (x : ℝ³)) A := by
-  simp_rw [soThreeDualEquiv_apply_eq]
+  simp_rw [soThreeDualEquiv_apply]
   exact contMDiff_height _
 
 private theorem poissonBracket_soThreeDualEquiv_apply (A B : so (Fin 3) ℝ) :
@@ -243,7 +237,7 @@ private theorem poissonBracket_soThreeDualEquiv_apply (A B : so (Fin 3) ℝ) :
       (soThreeEquiv ℝ).symm A ⨯₃ (soThreeEquiv ℝ).symm B := by
     conv_lhs => rw [← (soThreeEquiv ℝ).apply_symm_apply A, ← (soThreeEquiv ℝ).apply_symm_apply B]
     rw [lie_soThreeEquiv, LinearEquiv.symm_apply_apply]
-  simp_rw [soThreeDualEquiv_apply_eq, hAB]
+  simp_rw [soThreeDualEquiv_apply, hAB]
   exact sphereAreaForm_poissonBracket _ _
 
 /-- The **infinitesimal action of `so(3)` on `S²` by rotations**: `A ∈ so(3)` generates the
@@ -261,7 +255,7 @@ theorem mvfderiv_sphereRotationAction_apply (A : so (Fin 3) ℝ) (x : S²) :
       toLp 2 ((A : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ ofLp (x : ℝ³)) := by
   have hA : (fun y : S² ↦ soThreeDualEquiv ℝ (ofLp (y : ℝ³)) A) =
       fun y : S² ↦ ofLp (y : ℝ³) ⬝ᵥ (soThreeEquiv ℝ).symm A :=
-    funext fun y ↦ soThreeDualEquiv_apply_eq y A
+    funext fun y ↦ soThreeDualEquiv_apply _ A
   rw [sphereRotationAction, SmoothTwoForm.IsSymplectic.comomentAction_apply, hA,
     mvfderiv_hamiltonianVectorField_sphereAreaForm]
   conv_rhs => rw [← (soThreeEquiv ℝ).apply_symm_apply A]
