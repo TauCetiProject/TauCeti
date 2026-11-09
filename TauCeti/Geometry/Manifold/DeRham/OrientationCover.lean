@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
 public import TauCeti.Geometry.Manifold.Orientation.Cover.Descent
-import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ChangeOfVariables
+import TauCeti.Geometry.Manifold.Orientation.Cover.Integration
 
 /-!
 # De Rham cohomology and the orientation double cover
@@ -27,7 +27,8 @@ or compactness assumption.
 
 **Integrals of pulled-back top forms vanish.** Since `τ` reverses the canonical orientation, the
 integral of a `τ`-invariant top form on `M'` equals its own negative. Pullbacks along `π` are
-`τ`-invariant, so `∫_{M'} π^*φ = 0` for every top form `φ` on `M`, and integration
+`τ`-invariant, so `∫_{M'} π^*φ = 0` for every top form `φ` on `M`
+(`TauCeti.Manifold.OrientationCover.integralTopForm_mpullback_proj_eq_zero`), and integration
 `H^n_c(M') → ℝ` vanishes on the image of `π^*`.
 
 These are the two steps by which top-degree cohomology of a nonorientable manifold is reduced to
@@ -41,8 +42,6 @@ if integration is injective on `H^n_c(M')`, the class `π^*[φ]` of integral zer
   orientation cover is injective on de Rham cohomology.
 * `TauCeti.Manifold.OrientationCover.compactlySupportedDeRhamCohomology_map_proj_injective`:
   pullback to the orientation cover is injective on compactly supported de Rham cohomology.
-* `TauCeti.Manifold.OrientationCover.integralTopForm_eq_zero_of_mpullback_deck_eq`: a
-  deck-invariant top form on the cover has integral zero.
 * `TauCeti.Manifold.OrientationCover.integral_map_proj_eq_zero`: integration on top compactly
   supported cohomology of the cover vanishes on classes pulled back from `M`.
 
@@ -121,25 +120,6 @@ theorem compactlySupportedDeRhamCohomology_map_proj_injective (k : ℕ) :
 end Primitive
 
 section Integral
-
-/-- A top form on the orientation double cover that is invariant under the deck involution has
-integral zero for the canonical orientation, since the deck involution reverses it. -/
-theorem integralTopForm_eq_zero_of_mpullback_deck_eq [IsManifold I 1 M]
-    {φ : RoughForm I (OrientationCover I M) ℝ (Module.finrank ℝ E)}
-    (hφ : mpullback I I VectorBundleOrientationCover.deck φ = φ) :
-    integralTopForm canonicalOrientation φ = 0 := by
-  have h := VectorBundleOrientationCover.deck.isOpenEmbedding
-    |>.integralTopForm_mpullback_of_isOrientationReversingAt isOrientationReversingAt_deck
-      (φ := φ) (by rw [VectorBundleOrientationCover.deck.range_coe]; exact subset_univ _)
-  rw [hφ] at h
-  linarith
-
-/-- The pullback of every top form on `M` to the orientation double cover has integral zero for
-the canonical orientation. -/
-theorem integralTopForm_mpullback_proj_eq_zero [IsManifold I 1 M]
-    (φ : RoughForm I M ℝ (Module.finrank ℝ E)) :
-    integralTopForm canonicalOrientation (mpullback I I VectorBundleOrientationCover.proj φ) = 0 :=
-  integralTopForm_eq_zero_of_mpullback_deck_eq (exists_mpullback_proj_eq_iff.mp ⟨φ, rfl⟩)
 
 /-- Integration on top compactly supported cohomology of the orientation double cover, for its
 canonical orientation, vanishes on every class pulled back from `M`. -/
