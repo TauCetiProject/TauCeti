@@ -162,7 +162,7 @@ theorem sqDist_comm (p q : Vertex n) : sqDist p q = sqDist q p := by
   ring
 
 /-- Translation of a lattice triangle preserves barycentric squared distances. -/
-@[simp] theorem sqDist_add {m : ℕ} (p : Vertex m) (q r : Vertex n) :
+@[simp] theorem sqDist_add_left {m : ℕ} (p : Vertex m) (q r : Vertex n) :
     sqDist (p.add q) (p.add r) = sqDist q r := by
   simp only [sqDist, add_x, add_y, add_z, Nat.cast_add]
   ring
@@ -326,7 +326,7 @@ end IsRhombus
     simpa using h.reflect
   · exact IsRhombus.reflect
 
-@[simp] theorem isRhombus_add_iff {m n : ℕ} (p : Vertex m) {a b c d : Vertex n} :
+@[simp] theorem isRhombus_add_left_iff {m n : ℕ} (p : Vertex m) {a b c d : Vertex n} :
     IsRhombus (p.add a) (p.add b) (p.add c) (p.add d) ↔ IsRhombus a b c d := by
   constructor
   · intro h
@@ -351,7 +351,7 @@ abbrev Rhombus (n : ℕ) :=
 `AB` and `CA`. Rotation gives the other two orientations; translation embeds it
 in every larger triangular lattice. -/
 theorem isRhombus_at_cornerA :
-    IsRhombus (⟨1, 1, 0, rfl⟩ : Vertex 2) ⟨2, 0, 0, rfl⟩
+    IsRhombus (⟨1, 1, 0, rfl⟩ : Vertex 2) (Vertex.cornerA 2)
       ⟨1, 0, 1, rfl⟩ ⟨0, 1, 1, rfl⟩ := by
   constructor <;> norm_num [Vertex.sqDist]
 
