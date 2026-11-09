@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
@@ -29,6 +30,12 @@ For an arbitrary measure, a bound `μ (closedBall x r) ≤ f r` on concentric cl
 for radii arbitrarily close to `ρ` from the right holds at `ρ` when `f` is right-continuous there
 (`MeasureTheory.Measure.measure_closedBall_le_of_frequently_le`).
 
+A set `s` satisfies the *measure density condition* at `closedBall x r` with proportion `A > 0` if
+`A μ (closedBall x r) ≤ μ (closedBall x r ∩ s)`: the set fills at least the proportion `A` of the
+ball. For a measure positive on open sets the piece `closedBall x r ∩ s` then has positive measure
+when `r > 0` (`TauCeti.measure_closedBall_inter_ne_zero`), and for a measure finite on compact sets
+the condition also holds for the real measures (`TauCeti.mul_measureReal_closedBall_le`).
+
 ## Main results
 
 * `TauCeti.monotone_measureReal_inter_ball`: `ρ ↦ μ(s ∩ ball x₀ ρ)` is monotone.
@@ -37,6 +44,9 @@ for radii arbitrarily close to `ρ` from the right holds at `ρ` when `f` is rig
   quotient of `m` is its right derivative, where that exists.
 * `MeasureTheory.Measure.measure_closedBall_le_of_frequently_le`: a closed-ball bound for radii
   arbitrarily close to `ρ` from the right extends to `ρ` for a right-continuous gauge.
+* `TauCeti.measure_closedBall_inter_ne_zero`, `TauCeti.mul_measureReal_closedBall_le`: a set
+  satisfying the measure density condition at a ball of positive radius has positive measure in
+  it, and the condition in terms of real measures.
 -/
 
 public section
@@ -44,7 +54,7 @@ public section
 namespace TauCeti
 
 open MeasureTheory Metric Filter Set
-open scoped ENNReal Topology
+open scoped ENNReal NNReal Topology
 
 variable {E : Type*} [PseudoMetricSpace E] [ProperSpace E] [MeasurableSpace E]
 
@@ -93,6 +103,29 @@ theorem tendsto_measure_inter_ball_sdiff_ball_div_of_hasDerivWithinAt [OpensMeas
     ofReal_measureReal (measure_ne_top_of_subset hsub hfin), inter_sdiff_distrib_left,
     measure_sdiff hsub (hs.inter measurableSet_ball.nullMeasurableSet)
       (measure_ne_top_of_subset hsub hfin)]
+
+section MeasureDensity
+
+variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] {μ : Measure X} {A : ℝ≥0}
+  {s : Set X} {x : X} {r : ℝ}
+
+/-- Under the measure density condition `A μ (closedBall x r) ≤ μ (closedBall x r ∩ s)` with
+`A > 0` and `r > 0`, the piece `closedBall x r ∩ s` has positive measure, for a measure positive
+on open sets. -/
+theorem measure_closedBall_inter_ne_zero [μ.IsOpenPosMeasure] (hA : 0 < A) (hr : 0 < r)
+    (hdens : A * μ (closedBall x r) ≤ μ (closedBall x r ∩ s)) : μ (closedBall x r ∩ s) ≠ 0 :=
+  ((ENNReal.mul_pos (by exact_mod_cast hA.ne') (measure_closedBall_pos μ x hr).ne').trans_le
+    hdens).ne'
+
+/-- The measure density condition `A μ (closedBall x r) ≤ μ (closedBall x r ∩ s)`, in terms of
+real measures, for a measure finite on compact sets in a proper space. -/
+theorem mul_measureReal_closedBall_le [ProperSpace X] [IsFiniteMeasureOnCompacts μ]
+    (hdens : A * μ (closedBall x r) ≤ μ (closedBall x r ∩ s)) :
+    (A : ℝ) * μ.real (closedBall x r) ≤ μ.real (closedBall x r ∩ s) := by
+  simpa [measureReal_def, ENNReal.toReal_mul] using ENNReal.toReal_mono
+    (measure_ne_top_of_subset inter_subset_left measure_closedBall_lt_top.ne) hdens
+
+end MeasureDensity
 
 end TauCeti
 
